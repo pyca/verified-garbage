@@ -1,13 +1,26 @@
 module
 
-public import VerifiedGarbage.Proof.Blowfish.RISCV64.Lookup
-public import VerifiedGarbage.Proof.Blowfish.Feistel
+public import VerifiedGarbage.Proof.Blowfish.RISCV64.Scan
+
+public import VerifiedGarbage.Proof.Blowfish.F
 import VerifiedGarbage.Proof.Blowfish.Schedule
 import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Impl.Blowfish.RISCV64
 public import VerifiedGarbage.Proof.Framework.RISCV64.Keep
 import VerifiedGarbage.Proof.Framework.RISCV64.Steps
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Spec.Blowfish
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.RISCV64.ByteLoad
+public import VerifiedGarbage.Proof.Framework.RISCV64.MRun
+public meta import VerifiedGarbage.Proof.Framework.RISCV64.MRun
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.TCB.RISCV64.Isa
+public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Proof.Framework.RISCV64.Inline
+public import VerifiedGarbage.TCB.Code
 
 /-!
 # Blowfish on RISCV64: F and the block function
@@ -16,7 +29,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 `cipher_run`: `cipher up` takes the halves in the low words of `a3` and
 `a4` to their encryption (`up`) or decryption under the schedule at `a7`,
 changing only `a3`–`a6` and the lookup's temporaries. The structure of
-PPC64LE's (`Proof/Blowfish/PPC64LE/Cipher.lean`).
+PPC64LE's (`Proof/Blowfish/PPC64LE/Ecb.lean`).
 -/
 
 @[expose] public section
@@ -51,7 +64,8 @@ def fRegs7 : List Reg := .a7 :: fRegs
 
 /-- S-box `j`'s lookup, then its accumulation, from `fAcc … (j - 1)` (or
 anything, for `j = 0`) in `a5`, with `sch` at S-box `j`. -/
-theorem step_run {s₀ : State} (E : LookEnv s₀) {j : Nat} (hj : j < 4) {u : State} (k : Keep fRegs7 s₀ u)
+theorem step_run {s₀ : State} (E : LookEnv s₀)
+    (phase : ((s₀.gpr .a6 - s₀.gpr .a7).setWidth 8).toNat < 128) {j : Nat} (hj : j < 4) {u : State} (k : Keep fRegs7 s₀ u)
     (hm : u.mem = s₀.mem) (h7 : u.gpr .a7 = s₀.gpr .a7 + BitVec.ofNat 64 (1024 * j))
     (hp : 0 < j → lo (u.gpr .a5) = fAcc (scheduleAt s₀.mem (s₀.gpr .a7))
       (lo (s₀.gpr .a3)) (j - 1)) {Q : State → Prop}
@@ -61,7 +75,7 @@ theorem step_run {s₀ : State} (E : LookEnv s₀) {j : Nat} (hj : j < 4) {u : S
   have hrd : u.rd ++ u.wr = s₀.rd ++ s₀.wr := by rw [k.2.1, k.2.2]
   have Eu : SchAt u (s₀.gpr .a7) := ⟨fun o h1 h2 => by rw [hrd]; exact E.rd8 o h1 h2, E.al8⟩
   apply WP.seq
-  refine WP.mono (lookup_run Eu hj h7) fun v ⟨v10, vk, vm⟩ => ?_
+  refine WP.mono (lookup_run Eu hj h7 (by rw [k.gpr (by decide)]; exact phase)) fun v ⟨v10, vk, vm⟩ => ?_
   refine WP.mono (WP.keep [.a5] (combine_run v hj) (by
     rcases (by omega_using [hj] : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl <;> decide) rfl)
     fun t ⟨⟨t7, tm⟩, tk⟩ => hQ t ?_ ((k.trans vk).trans tk |>.mono (by decide)) (by rw [tm, vm, hm])
@@ -84,28 +98,29 @@ theorem next_run {s₀ : State} {j : Nat} {u : State} (k : Keep fRegs7 s₀ u)
   rw [t7, h7, Offset.add_add]
   congr 2
 
-theorem f_run {s : State} (E : LookEnv s) :
+theorem f_run {s : State} (E : LookEnv s)
+    (phase : ((s.gpr .a6 - s.gpr .a7).setWidth 8).toNat < 128) :
     WP isa Impl.Blowfish.RISCV64.f s fun t =>
       lo (t.gpr .a5) = Spec.Blowfish.f (scheduleAt s.mem (s.gpr .a7)) (lo (s.gpr .a3)) ∧
         Keep fRegs s t ∧ t.mem = s.mem := by
   unfold Impl.Blowfish.RISCV64.f
   apply WP.reassoc; apply WP.seq
-  refine step_run E (j := 0) (by decide) (Keep.refl _ _) rfl (by simp) (fun h => absurd h (by decide))
+  refine step_run E phase (j := 0) (by decide) (Keep.refl _ _) rfl (by simp) (fun h => absurd h (by decide))
     fun t0 h0 k0 m0 e0 => ?_
   apply WP.seq
   refine WP.mono (next_run (j := 0) k0 (by rw [e0]; simp)) fun u0 ⟨k0', m0', e0', a0⟩ => ?_
   apply WP.reassoc; apply WP.seq
-  refine step_run E (j := 1) (by decide) k0' (m0'.trans m0) e0' (fun _ => by rw [a0]; exact h0)
+  refine step_run E phase (j := 1) (by decide) k0' (m0'.trans m0) e0' (fun _ => by rw [a0]; exact h0)
     fun t1 h1 k1 m1 e1 => ?_
   apply WP.seq
   refine WP.mono (next_run (j := 1) k1 (by rw [e1, e0'])) fun u1 ⟨k1', m1', e1', a1⟩ => ?_
   apply WP.reassoc; apply WP.seq
-  refine step_run E (j := 2) (by decide) k1' (m1'.trans m1) e1' (fun _ => by rw [a1]; exact h1)
+  refine step_run E phase (j := 2) (by decide) k1' (m1'.trans m1) e1' (fun _ => by rw [a1]; exact h1)
     fun t2 h2 k2 m2 e2 => ?_
   apply WP.seq
   refine WP.mono (next_run (j := 2) k2 (by rw [e2, e1'])) fun u2 ⟨k2', m2', e2', a2⟩ => ?_
   apply WP.reassoc; apply WP.seq
-  refine step_run E (j := 3) (by decide) k2' (m2'.trans m2) e2' (fun _ => by rw [a2]; exact h2)
+  refine step_run E phase (j := 3) (by decide) k2' (m2'.trans m2) e2' (fun _ => by rw [a2]; exact h2)
     fun t3 h3 k3 m3 e3 => ?_
   have back : WP isa (.block [.addi sch sch (-2048), .addi sch sch (-1024)]) t3 fun t =>
       t.gpr .a7 = t3.gpr .a7 - BitVec.ofNat 64 2048 - BitVec.ofNat 64 1024 ∧ t.mem = t3.mem := by
@@ -213,7 +228,10 @@ theorem round_step {s₀ : State} (E : LookEnv s₀) (up : Bool) {i : Nat} (hi :
   have kv : Keep cRegs s₀ v := (I.keep.trans vk).mono (by decide)
   have Ev : LookEnv v := E.keep kv (by decide)
   apply WP.seq
-  refine WP.mono (f_run Ev) fun w ⟨w7, wk, wm⟩ => ?_
+  have phase : ((v.gpr .a6 - v.gpr .a7).setWidth 8).toNat < 128 := by
+    rw [vk.gpr (r := .a6) (by decide), vk.gpr (r := .a7) (by decide), I.p, u3]
+    cases up <;> simp [pBase] <;> bv_omega
+  refine WP.mono (f_run Ev phase) fun w ⟨w7, wk, wm⟩ => ?_
   have w3 : w.gpr .a7 = s₀.gpr .a7 := by rw [wk.gpr (by decide), vk.gpr (by decide), u3]
   have w8 : w.gpr .a6 = s₀.gpr .a7 + BitVec.ofNat 64 (pBase up i) := by
     rw [wk.gpr (by decide), vk.gpr (by decide), I.p]

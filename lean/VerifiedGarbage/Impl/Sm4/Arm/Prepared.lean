@@ -22,10 +22,12 @@ def prepareKeys : Prog isa :=
   .seq (.block (saveRegs .r2 ++ [movR sb .r2, movR .r12 .r0, movR .r3 .r1]))
     (.seq keysAny (.block ([movR .r12 sb] ++ restoreRegs .r12)))
 
-/-- Transform the eight blocks in the working space, retaining its key table. -/
+/-- Transform the eight blocks in the working space, retaining its key table:
+a call of `vg_sm4_crypt8`, with the callee-saved registers, which it uses,
+saved around it. -/
 def cryptPrepared : Prog isa :=
   .seq (.block (saveRegs .r0 ++ [movR sb .r0]))
-    (.seq crypt8 (.block ([movR .r12 sb] ++ restoreRegs .r12)))
+    (.seq crypt8Call (.block ([movR .r12 sb] ++ restoreRegs .r12)))
 
 /-! ## The layout -/
 

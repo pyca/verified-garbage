@@ -56,6 +56,12 @@ theorem transpose_keeps_a1 : ((instrs transposeProg.lit).all fun i => dst i != s
 theorem transpose_keeps_a2 : ((instrs transposeProg.lit).all fun i => dst i != some .a2) = true := by
   lit_decide
 
+theorem transpose_keeps_s11 : ((instrs transposeProg.lit).all fun i => dst i != some .s11) = true := by
+  lit_decide
+
+theorem transpose_keeps_ra : ((instrs transposeProg.lit).all fun i => dst i != some .ra) = true := by
+  lit_decide
+
 theorem transpose_code : instrs transposeProg.lit = transposeBody := by
   rw [← transposeProg.lit_eq]; rfl
 
@@ -82,7 +88,8 @@ theorem wordAddr_masks (b : Addr) (j : Nat) :
 theorem transpose_ok {s : State} (h : Room s) (hm : MasksAt s) :
     ∃ s', runBlock isa transpose s = some s' ∧ (∀ j < 64, words s' j = transposeW (words s) j) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧ s'.gpr .s0 = s.gpr .s0 ∧
-      s'.gpr .a1 = s.gpr .a1 ∧ s'.gpr .a2 = s.gpr .a2 ∧ Frame [stR s] s.mem s'.mem := by
+      s'.gpr .a1 = s.gpr .a1 ∧ s'.gpr .a2 = s.gpr .a2 ∧ s'.gpr .s11 = s.gpr .s11 ∧ s'.gpr .ra = s.gpr .ra ∧
+      Frame [stR s] s.mem s'.mem := by
   have e₁ := exec_addi (s := s) (d := .a0) (n := .s0) (imm := (maskOff : Int)) (by decide)
   let s₁ := s.write .a0 (s.gpr .s0 + BitVec.ofInt 64 (maskOff : Int))
   have b₁ : s₁.gpr .s0 = s.gpr .s0 := by simp [s₁, RegUpd.gpr_write]
@@ -128,11 +135,15 @@ theorem transpose_ok {s : State} (h : Room s) (hm : MasksAt s) :
   obtain ⟨s', hs', p⟩ := run lanes_sound laneRel_fun hok hrel he
   have k₁ := transpose_keeps_a1
   have k₂ := transpose_keeps_a2
-  rw [transpose_code] at k₁ k₂
+  have k₃ := transpose_keeps_s11
+  have k₄ := transpose_keeps_ra
+  rw [transpose_code] at k₁ k₂ k₃ k₄
   refine ⟨s', by rw [transpose, runBlock_cons, show base = .s0 from rfl, e₁, runStep_some]; exact hs',
     fun j hj => ?_, p.rd, p.wr, p.sp, p.base.trans b₁,
     (p.other .a1 (by rw [k₁]; decide)).trans (by simp [s₁, RegUpd.gpr_write]),
-    (p.other .a2 (by rw [k₂]; decide)).trans (by simp [s₁, RegUpd.gpr_write]), ?_⟩
+    (p.other .a2 (by rw [k₂]; decide)).trans (by simp [s₁, RegUpd.gpr_write]),
+    (p.other .s11 (by rw [k₃]; decide)).trans (by simp [s₁, RegUpd.gpr_write]),
+    (p.other .ra (by rw [k₄]; decide)).trans (by simp [s₁, RegUpd.gpr_write]), ?_⟩
   · have hpj := List.all_eq_true.mp hpost j (List.mem_range.mpr hj)
     have hs := p.rel.slot j _ (show j < 64 from hj) (beq_iff_eq.mp hpj)
     have bits := outWord_rel (fun q hq a ha => by simp at ha; omega_using [hj, hq, ha]) hs

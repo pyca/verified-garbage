@@ -58,9 +58,9 @@ open VG.Impl.Aes.PPC64LE.Crypto (breg batchRegs)
 
 theorem decGroup_ok : GroupOk (cbcMode false) decGroup := by
   intro s₀ hp k hk s h
-  have hR := h.regs hp
-  have hW := h.wrs hp
-  have facts := batchFacts ⟨8, by decide⟩
+  obtain hR := h.regs hp
+  obtain hW := h.wrs hp
+  obtain facts := batchFacts ⟨8, by decide⟩
   rw [decGroup]
   simp only [List.append_assoc]
   refine WP.seq (saveSlots_wp hp (m := 8) (by decide) hk h fun s₁ g₁ rd₁ wr₁ f₁ e₀ e₁ => ?_)
@@ -71,14 +71,14 @@ theorem decGroup_ok : GroupOk (cbcMode false) decGroup := by
   have gv (r : Reg) (hr : r ∈ preserved) : v.gpr r = s.gpr r := by
     obtain ⟨-, -, -, -, -, -, h9, h10, -⟩ := pres_ne hr
     rw [hl.keep.gpr (by simp [h9, h10]), hu.g r hr, g₁ r h9]
-  have h0 : v.gpr .r0 = 0 := (hl.keep.gpr (by decide)).trans hu.inp.zero
-  have hm := (hl.v _ (by simp [facts.2.2.1])).trans hu.inp.mask
-  have rwv : v.rd ++ v.wr = s.rd ++ s.wr := by rw [hl.keep.2.1, hl.keep.2.2, hu.rd, hu.wr, rd₁, wr₁]
-  have mv : v.mem = s₁.mem := by rw [hl.mem, hu.mem]
+  obtain h0 : v.gpr .r0 = 0 := (hl.keep.gpr (by decide)).trans hu.inp.zero
+  obtain hm := (hl.v _ (by simp [facts.2.2.1])).trans hu.inp.mask
+  obtain rwv : v.rd ++ v.wr = s.rd ++ s.wr := by rw [hl.keep.2.1, hl.keep.2.2, hu.rd, hu.wr, rd₁, wr₁]
+  obtain mv : v.mem = s₁.mem := by rw [hl.mem, hu.mem]
   rw [WP.block_append_iff]
   refine WP.mono (xorSlots_ok s₀ v (by rw [gv _ (by decide), h.r19]) h0 hm fun j hj => by
     rw [rwv, hR]; exact in_rw (by simp) (cSl16 s₀ hj)) fun x hx => ?_
-  have r6x : x.gpr .r6 = blk s₀ k := by
+  obtain r6x : x.gpr .r6 = blk s₀ k := by
     rw [hx.loc.keep.gpr (by decide), hl.keep.gpr (by decide), hu.r6]
   rw [WP.block_append_iff]
   refine WP.mono (stores_ok x r6x ((hx.loc.keep.gpr (by decide)).trans h0)
@@ -88,9 +88,9 @@ theorem decGroup_ok : GroupOk (cbcMode false) decGroup := by
   have gy (r : Reg) (hr : r ∈ preserved) : y.gpr r = s.gpr r := by
     obtain ⟨-, -, -, h6, h7, -⟩ := pres_ne hr
     rw [hy.keep.gpr (by simpa using h6), hx.loc.keep.gpr (by simpa using h7), gv r hr]
-  have rwy : y.rd ++ y.wr = [schR s₀, ivR s₀, dataR s₀, scrR s₀] := by
+  obtain rwy : y.rd ++ y.wr = [schR s₀, ivR s₀, dataR s₀, scrR s₀] := by
     rw [hy.keep.2.1, hy.keep.2.2, hx.loc.keep.2.1, hx.loc.keep.2.2, rwv, hR]
-  have wy : y.wr = [ivR s₀, dataR s₀, scrR s₀] := by
+  obtain wy : y.wr = [ivR s₀, dataR s₀, scrR s₀] := by
     rw [hy.keep.2.2, hx.loc.keep.2.2, hl.keep.2.2, hu.wr, wr₁, hW]
   refine copy_wp (P := Iv s₀) (Q := sl s₀ 8) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by rw [gy _ (by decide), h.r16, ofNat_zero_add]) (by rw [gy _ (by decide), h.r16])
@@ -103,17 +103,17 @@ theorem decGroup_ok : GroupOk (cbcMode false) decGroup := by
       fun w r17 r18 keep mw rdw wrw => ?_
   have g (r : Reg) (hr : r ∈ preserved) (h17 : r ≠ .r17) (h18 : r ≠ .r18) : w.gpr r = s.gpr r := by
     rw [keep r h17 h18, gz r (pres_ne hr).2.2.2.2.2.2.1, gy r hr]
-  have big₁ : Frame (Big s₀) s₀.mem s₁.mem :=
+  obtain big₁ : Frame (Big s₀) s₀.mem s₁.mem :=
     (UPre.big_of h.frame).trans (f₁.sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact ⟨scrR s₀, by simp, Region.sub_prefix (by decide)⟩)
-  have hw : schedule (R s₀) u = wK s₀ := by
+  obtain hw : schedule (R s₀) u = wK s₀ := by
     rw [Proof.Aes.PPC64LE.Crypto.schedule, hu.r3, hu.mem, UPre.sched_bytes hp big₁]
   have slot (j : Nat) (hj : j ≤ 8) : bytesAt s₁.mem (sl s₀ j) 16 = chainK (cbcMode false) s₀ (k + j) := by
     rcases Nat.eq_zero_or_pos j with rfl | hj0
     · exact e₀
     · obtain ⟨i, rfl⟩ : ∃ i, j = i + 1 := ⟨j - 1, by omega_using [hj0]⟩
       rw [e₁ i (by omega_using [hj]), ← Nat.add_assoc, cbcDec_chain s₀ (by omega_using [hk, hj])]
-  have mx : x.mem = s₁.mem := by rw [hx.loc.mem, mv]
+  obtain mx : x.mem = s₁.mem := by rw [hx.loc.mem, mv]
   refine group_step cbcDec_steps hp hk h ?_ ?_ ?_ r17 r18 ?_ (fun r hr hv => ?_) ?_ ?_ ?_ (fun j hj => ?_) ?_
   · rw [g .r14 (by decide) (by decide) (by decide), h.r14]
   · rw [g .r15 (by decide) (by decide) (by decide), h.r15]

@@ -16,9 +16,6 @@ import VerifiedGarbage.Proof.Bignum.X86_64.PubFail
 import VerifiedGarbage.Proof.Bignum.X86_64.Valid
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Offset
-import Mathlib.Order.RelClasses
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Push
 import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!

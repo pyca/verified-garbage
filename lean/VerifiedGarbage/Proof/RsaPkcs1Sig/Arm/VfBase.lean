@@ -66,6 +66,7 @@ abbrev lay : Lay where
   argv := P.argv
   ro := [P.N, P.E, P.DIG, P.SIG, P.PRE]
   rw := [P.SCR]
+  C := 104
 
 end EP
 
@@ -98,7 +99,7 @@ end In
 /-! ## The entry -/
 
 /-- The stack the function uses: the push, the inner frame and the call's. -/
-abbrev stackBytes : Nat := 56 + frameBytes + 56
+abbrev stackBytes : Nat := 56 + frameBytes + 104
 
 /-- The shared contract, with that stack. -/
 abbrev spec : Contract isa := Spec.RsaPkcs1Sig.verifyPrecomputedContract abi stackBytes
@@ -124,18 +125,18 @@ def ep (s : State) : EP where
 
 theorem ep_lay (s : State) :
     (ep s).lay = layOf frameBytes 36 (ep s).argv [(ep s).N, (ep s).E, (ep s).DIG, (ep s).SIG, (ep s).PRE]
-      [(ep s).SCR] s := rfl
+      [(ep s).SCR] s 104 := rfl
 
 theorem in_of_pre {s : State} (h : spec.pre s) : In (ep s) (entered frameBytes s) := by
   sig_pre [Spec.RsaPkcs1Sig.verifyPrecomputedContract, Spec.RsaPkcs1Sig.verifyPrecomputedSig, abi,
     argRegs, reduceClassify, Loc.val] at h
   obtain ⟨hsp, hsa, hrd, hwr, nS, eS, dS, gS, sR, sA, kN, kE, kD, kG, kS, kR, kA, fN, fE, fD, fG, fS, fR,
     kv, el1, elK, slK, rlK⟩ := h
-  have h2192 : 2192 ≤ s.sp.toNat := hsp
+  have h2240 : 2240 ≤ s.sp.toNat := hsp
   have hpush : Frame [FrameStack.belowA s.sp 56] s.mem (entered frameBytes s).mem :=
     FrameStack.pushed_frameA (rs := Impl.RsaPkcs1Sig.Arm.pushRegs) (by show 56 ≤ s.sp.toNat; omega_arith)
   have below : Region.Sub (FrameStack.belowA s.sp 56)
-      ⟨State.addr s.sp - BitVec.ofNat 64 2192, 2192⟩ := by
+      ⟨State.addr s.sp - BitVec.ofNat 64 2240, 2240⟩ := by
     show Region.Sub ⟨State.addr (s.sp - BitVec.ofNat 32 56), 56⟩ _
     rw [FrameStack.addr_sub' (by omega_arith)]
     exact Offset.sub_below _ (by omega_arith) (by omega_arith)

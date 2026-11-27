@@ -4,6 +4,102 @@
 // `src/` as its machine code, which `lean/VerifiedGarbage/TCB/<ISA>/Encode.lean`
 // gives.
 
+vg_sm4_ofb_sm4:
+	sub sp, sp, #112
+	add x4, sp, #0
+	add x5, x4, #0
+	str x19, [x5, #16]
+	str x20, [x5, #24]
+	str x21, [x5, #32]
+	str x22, [x5, #40]
+	str x23, [x5, #48]
+	str x24, [x5, #56]
+	str x25, [x5, #64]
+	str x26, [x5, #72]
+	str x27, [x5, #80]
+	str x28, [x5, #88]
+	add x19, x1, #0
+	add x23, x2, #0
+	add x24, x3, #0
+	ldr x6, [x19, #0]
+	str x6, [x5, #0]
+	ldr x6, [x19, #8]
+	str x6, [x5, #8]
+	cbz x24, 20f
+22:
+	ldr q16, [x0, #0]
+	ldr q17, [x0, #16]
+	ldr q18, [x0, #32]
+	ldr q19, [x0, #48]
+	ldr q20, [x0, #64]
+	ldr q21, [x0, #80]
+	ldr q22, [x0, #96]
+	ldr q23, [x0, #112]
+	ldr q0, [x5, #0]
+	rev32 v0.16b, v0.16b
+	sm4e v0.4s, v16.4s
+	sm4e v0.4s, v17.4s
+	sm4e v0.4s, v18.4s
+	sm4e v0.4s, v19.4s
+	sm4e v0.4s, v20.4s
+	sm4e v0.4s, v21.4s
+	sm4e v0.4s, v22.4s
+	sm4e v0.4s, v23.4s
+	rev64 v0.16b, v0.16b
+	ext v0.16b, v0.16b, v0.16b, #8
+	str q0, [x5, #0]
+	ldr x6, [x23, #0]
+	ldr x7, [x5, #0]
+	eor x6, x6, x7
+	str x6, [x23, #0]
+	ldr x6, [x23, #8]
+	ldr x7, [x5, #8]
+	eor x6, x6, x7
+	str x6, [x23, #8]
+	add x23, x23, #16
+	sub x24, x24, #1
+	cbnz x24, 22b
+	b 21f
+20:
+21:
+	ldr x6, [x5, #0]
+	str x6, [x19, #0]
+	ldr x6, [x5, #8]
+	str x6, [x19, #8]
+	ldr x19, [x5, #16]
+	ldr x20, [x5, #24]
+	ldr x21, [x5, #32]
+	ldr x22, [x5, #40]
+	ldr x23, [x5, #48]
+	ldr x24, [x5, #56]
+	ldr x25, [x5, #64]
+	ldr x26, [x5, #72]
+	ldr x27, [x5, #80]
+	ldr x28, [x5, #88]
+	movz x17, #0, lsl #0
+	add x16, sp, #0
+	stp x17, x17, [x16, #0]
+	stp x17, x17, [x16, #16]
+	stp x17, x17, [x16, #32]
+	stp x17, x17, [x16, #48]
+	stp x17, x17, [x16, #64]
+	stp x17, x17, [x16, #80]
+	stp x17, x17, [x16, #96]
+	add sp, sp, #112
+	movz x6, #0, lsl #0
+	movz x7, #0, lsl #0
+	movi v0.2d, #0
+	movi v16.2d, #0
+	movi v17.2d, #0
+	movi v18.2d, #0
+	movi v19.2d, #0
+	movi v20.2d, #0
+	movi v21.2d, #0
+	movi v22.2d, #0
+	movi v23.2d, #0
+	ret
+	.p2align 6
+
 vg_sm4_ofb:
 	sub sp, sp, #3264
 	add x4, sp, #0
@@ -246,9 +342,10 @@ vg_sm4_ofb:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w6, w6, w11
 	ldr w10, [x5, #260]
 	eor w10, w10, w8
@@ -267,9 +364,10 @@ vg_sm4_ofb:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w7, w7, w11
 	ldr w10, [x5, #264]
 	eor w10, w10, w9
@@ -288,9 +386,10 @@ vg_sm4_ofb:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w8, w8, w11
 	ldr w10, [x5, #268]
 	eor w10, w10, w6
@@ -309,9 +408,10 @@ vg_sm4_ofb:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w9, w9, w11
 	ldr w10, [x5, #272]
 	eor w10, w10, w7
@@ -330,9 +430,10 @@ vg_sm4_ofb:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w6, w6, w11
 	ldr w10, [x5, #276]
 	eor w10, w10, w8
@@ -351,9 +452,10 @@ vg_sm4_ofb:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w7, w7, w11
 	ldr w10, [x5, #280]
 	eor w10, w10, w9
@@ -372,9 +474,10 @@ vg_sm4_ofb:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w8, w8, w11
 	ldr w10, [x5, #284]
 	eor w10, w10, w6
@@ -393,9 +496,10 @@ vg_sm4_ofb:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w9, w9, w11
 	ldr w10, [x5, #288]
 	eor w10, w10, w7
@@ -414,9 +518,10 @@ vg_sm4_ofb:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w6, w6, w11
 	ldr w10, [x5, #292]
 	eor w10, w10, w8
@@ -435,9 +540,10 @@ vg_sm4_ofb:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w7, w7, w11
 	ldr w10, [x5, #296]
 	eor w10, w10, w9
@@ -456,9 +562,10 @@ vg_sm4_ofb:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w8, w8, w11
 	ldr w10, [x5, #300]
 	eor w10, w10, w6
@@ -477,9 +584,10 @@ vg_sm4_ofb:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w9, w9, w11
 	ldr w10, [x5, #304]
 	eor w10, w10, w7
@@ -498,9 +606,10 @@ vg_sm4_ofb:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w6, w6, w11
 	ldr w10, [x5, #308]
 	eor w10, w10, w8
@@ -519,9 +628,10 @@ vg_sm4_ofb:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w7, w7, w11
 	ldr w10, [x5, #312]
 	eor w10, w10, w9
@@ -540,9 +650,10 @@ vg_sm4_ofb:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w8, w8, w11
 	ldr w10, [x5, #316]
 	eor w10, w10, w6
@@ -561,9 +672,10 @@ vg_sm4_ofb:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w9, w9, w11
 	ldr w10, [x5, #320]
 	eor w10, w10, w7
@@ -582,9 +694,10 @@ vg_sm4_ofb:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w6, w6, w11
 	ldr w10, [x5, #324]
 	eor w10, w10, w8
@@ -603,9 +716,10 @@ vg_sm4_ofb:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w7, w7, w11
 	ldr w10, [x5, #328]
 	eor w10, w10, w9
@@ -624,9 +738,10 @@ vg_sm4_ofb:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w8, w8, w11
 	ldr w10, [x5, #332]
 	eor w10, w10, w6
@@ -645,9 +760,10 @@ vg_sm4_ofb:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w9, w9, w11
 	ldr w10, [x5, #336]
 	eor w10, w10, w7
@@ -666,9 +782,10 @@ vg_sm4_ofb:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w6, w6, w11
 	ldr w10, [x5, #340]
 	eor w10, w10, w8
@@ -687,9 +804,10 @@ vg_sm4_ofb:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w7, w7, w11
 	ldr w10, [x5, #344]
 	eor w10, w10, w9
@@ -708,9 +826,10 @@ vg_sm4_ofb:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w8, w8, w11
 	ldr w10, [x5, #348]
 	eor w10, w10, w6
@@ -729,9 +848,10 @@ vg_sm4_ofb:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w9, w9, w11
 	ldr w10, [x5, #352]
 	eor w10, w10, w7
@@ -750,9 +870,10 @@ vg_sm4_ofb:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w6, w6, w11
 	ldr w10, [x5, #356]
 	eor w10, w10, w8
@@ -771,9 +892,10 @@ vg_sm4_ofb:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w7, w7, w11
 	ldr w10, [x5, #360]
 	eor w10, w10, w9
@@ -792,9 +914,10 @@ vg_sm4_ofb:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w8, w8, w11
 	ldr w10, [x5, #364]
 	eor w10, w10, w6
@@ -813,9 +936,10 @@ vg_sm4_ofb:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w9, w9, w11
 	ldr w10, [x5, #368]
 	eor w10, w10, w7
@@ -834,9 +958,10 @@ vg_sm4_ofb:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w6, w6, w11
 	ldr w10, [x5, #372]
 	eor w10, w10, w8
@@ -855,9 +980,10 @@ vg_sm4_ofb:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w7, w7, w11
 	ldr w10, [x5, #376]
 	eor w10, w10, w9
@@ -876,9 +1002,10 @@ vg_sm4_ofb:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w8, w8, w11
 	ldr w10, [x5, #380]
 	eor w10, w10, w6
@@ -897,9 +1024,10 @@ vg_sm4_ofb:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w9, w9, w11
 	rev w9, w9
 	str w9, [x5, #768]
@@ -1150,6 +1278,145 @@ vg_sm4_ofb:
 	stp x17, x17, [x16, #160]
 	stp x17, x17, [x16, #176]
 	add sp, sp, #3264
+	movz x6, #0, lsl #0
+	movz x7, #0, lsl #0
+	movz x8, #0, lsl #0
+	movz x9, #0, lsl #0
+	movz x10, #0, lsl #0
+	movz x11, #0, lsl #0
+	movz x12, #0, lsl #0
+	movz x13, #0, lsl #0
+	movi v0.2d, #0
+	movi v1.2d, #0
+	movi v2.2d, #0
+	movi v3.2d, #0
+	movi v16.2d, #0
+	movi v17.2d, #0
+	movi v18.2d, #0
+	movi v19.2d, #0
+	movi v20.2d, #0
+	movi v21.2d, #0
+	movi v22.2d, #0
+	movi v23.2d, #0
+	movi v24.2d, #0
+	movi v25.2d, #0
+	movi v26.2d, #0
+	movi v27.2d, #0
+	movi v28.2d, #0
+	movi v29.2d, #0
+	movi v30.2d, #0
+	movi v31.2d, #0
+	ret
+	.p2align 6
+
+vg_sm4_ofb_final_sm4:
+	sub sp, sp, #112
+	add x4, sp, #0
+	add x5, x4, #0
+	str x19, [x5, #16]
+	str x20, [x5, #24]
+	str x21, [x5, #32]
+	str x22, [x5, #40]
+	str x23, [x5, #48]
+	str x24, [x5, #56]
+	str x25, [x5, #64]
+	str x26, [x5, #72]
+	str x27, [x5, #80]
+	str x28, [x5, #88]
+	add x19, x1, #0
+	add x23, x2, #0
+	add x24, x3, #0
+	ldr x6, [x19, #0]
+	str x6, [x5, #0]
+	ldr x6, [x19, #8]
+	str x6, [x5, #8]
+	cbz x24, 20f
+22:
+	ldr q16, [x0, #0]
+	ldr q17, [x0, #16]
+	ldr q18, [x0, #32]
+	ldr q19, [x0, #48]
+	ldr q20, [x0, #64]
+	ldr q21, [x0, #80]
+	ldr q22, [x0, #96]
+	ldr q23, [x0, #112]
+	ldr q0, [x5, #0]
+	rev32 v0.16b, v0.16b
+	sm4e v0.4s, v16.4s
+	sm4e v0.4s, v17.4s
+	sm4e v0.4s, v18.4s
+	sm4e v0.4s, v19.4s
+	sm4e v0.4s, v20.4s
+	sm4e v0.4s, v21.4s
+	sm4e v0.4s, v22.4s
+	sm4e v0.4s, v23.4s
+	rev64 v0.16b, v0.16b
+	ext v0.16b, v0.16b, v0.16b, #8
+	str q0, [x5, #0]
+	lsr x8, x24, #4
+	cbz x8, 23f
+	ldr x6, [x23, #0]
+	ldr x7, [x5, #0]
+	eor x6, x6, x7
+	str x6, [x23, #0]
+	ldr x6, [x23, #8]
+	ldr x7, [x5, #8]
+	eor x6, x6, x7
+	str x6, [x23, #8]
+	add x23, x23, #16
+	sub x24, x24, #16
+	b 24f
+23:
+	add x9, x5, #0
+25:
+	ldrb w6, [x9, #0]
+	ldrb w7, [x23, #0]
+	eor x7, x7, x6
+	strb w7, [x23, #0]
+	add x9, x9, #1
+	add x23, x23, #1
+	sub x24, x24, #1
+	cbnz x24, 25b
+24:
+	cbnz x24, 22b
+	b 21f
+20:
+21:
+	ldr x6, [x5, #0]
+	str x6, [x19, #0]
+	ldr x6, [x5, #8]
+	str x6, [x19, #8]
+	ldr x19, [x5, #16]
+	ldr x20, [x5, #24]
+	ldr x21, [x5, #32]
+	ldr x22, [x5, #40]
+	ldr x23, [x5, #48]
+	ldr x24, [x5, #56]
+	ldr x25, [x5, #64]
+	ldr x26, [x5, #72]
+	ldr x27, [x5, #80]
+	ldr x28, [x5, #88]
+	movz x17, #0, lsl #0
+	add x16, sp, #0
+	stp x17, x17, [x16, #0]
+	stp x17, x17, [x16, #16]
+	stp x17, x17, [x16, #32]
+	stp x17, x17, [x16, #48]
+	stp x17, x17, [x16, #64]
+	stp x17, x17, [x16, #80]
+	stp x17, x17, [x16, #96]
+	add sp, sp, #112
+	movz x6, #0, lsl #0
+	movz x7, #0, lsl #0
+	movi v0.2d, #0
+	movi v16.2d, #0
+	movi v17.2d, #0
+	movi v18.2d, #0
+	movi v19.2d, #0
+	movi v20.2d, #0
+	movi v21.2d, #0
+	movi v22.2d, #0
+	movi v23.2d, #0
 	ret
 	.p2align 6
 
@@ -1395,9 +1662,10 @@ vg_sm4_ofb_final:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w6, w6, w11
 	ldr w10, [x5, #260]
 	eor w10, w10, w8
@@ -1416,9 +1684,10 @@ vg_sm4_ofb_final:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w7, w7, w11
 	ldr w10, [x5, #264]
 	eor w10, w10, w9
@@ -1437,9 +1706,10 @@ vg_sm4_ofb_final:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w8, w8, w11
 	ldr w10, [x5, #268]
 	eor w10, w10, w6
@@ -1458,9 +1728,10 @@ vg_sm4_ofb_final:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w9, w9, w11
 	ldr w10, [x5, #272]
 	eor w10, w10, w7
@@ -1479,9 +1750,10 @@ vg_sm4_ofb_final:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w6, w6, w11
 	ldr w10, [x5, #276]
 	eor w10, w10, w8
@@ -1500,9 +1772,10 @@ vg_sm4_ofb_final:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w7, w7, w11
 	ldr w10, [x5, #280]
 	eor w10, w10, w9
@@ -1521,9 +1794,10 @@ vg_sm4_ofb_final:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w8, w8, w11
 	ldr w10, [x5, #284]
 	eor w10, w10, w6
@@ -1542,9 +1816,10 @@ vg_sm4_ofb_final:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w9, w9, w11
 	ldr w10, [x5, #288]
 	eor w10, w10, w7
@@ -1563,9 +1838,10 @@ vg_sm4_ofb_final:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w6, w6, w11
 	ldr w10, [x5, #292]
 	eor w10, w10, w8
@@ -1584,9 +1860,10 @@ vg_sm4_ofb_final:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w7, w7, w11
 	ldr w10, [x5, #296]
 	eor w10, w10, w9
@@ -1605,9 +1882,10 @@ vg_sm4_ofb_final:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w8, w8, w11
 	ldr w10, [x5, #300]
 	eor w10, w10, w6
@@ -1626,9 +1904,10 @@ vg_sm4_ofb_final:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w9, w9, w11
 	ldr w10, [x5, #304]
 	eor w10, w10, w7
@@ -1647,9 +1926,10 @@ vg_sm4_ofb_final:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w6, w6, w11
 	ldr w10, [x5, #308]
 	eor w10, w10, w8
@@ -1668,9 +1948,10 @@ vg_sm4_ofb_final:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w7, w7, w11
 	ldr w10, [x5, #312]
 	eor w10, w10, w9
@@ -1689,9 +1970,10 @@ vg_sm4_ofb_final:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w8, w8, w11
 	ldr w10, [x5, #316]
 	eor w10, w10, w6
@@ -1710,9 +1992,10 @@ vg_sm4_ofb_final:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w9, w9, w11
 	ldr w10, [x5, #320]
 	eor w10, w10, w7
@@ -1731,9 +2014,10 @@ vg_sm4_ofb_final:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w6, w6, w11
 	ldr w10, [x5, #324]
 	eor w10, w10, w8
@@ -1752,9 +2036,10 @@ vg_sm4_ofb_final:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w7, w7, w11
 	ldr w10, [x5, #328]
 	eor w10, w10, w9
@@ -1773,9 +2058,10 @@ vg_sm4_ofb_final:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w8, w8, w11
 	ldr w10, [x5, #332]
 	eor w10, w10, w6
@@ -1794,9 +2080,10 @@ vg_sm4_ofb_final:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w9, w9, w11
 	ldr w10, [x5, #336]
 	eor w10, w10, w7
@@ -1815,9 +2102,10 @@ vg_sm4_ofb_final:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w6, w6, w11
 	ldr w10, [x5, #340]
 	eor w10, w10, w8
@@ -1836,9 +2124,10 @@ vg_sm4_ofb_final:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w7, w7, w11
 	ldr w10, [x5, #344]
 	eor w10, w10, w9
@@ -1857,9 +2146,10 @@ vg_sm4_ofb_final:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w8, w8, w11
 	ldr w10, [x5, #348]
 	eor w10, w10, w6
@@ -1878,9 +2168,10 @@ vg_sm4_ofb_final:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w9, w9, w11
 	ldr w10, [x5, #352]
 	eor w10, w10, w7
@@ -1899,9 +2190,10 @@ vg_sm4_ofb_final:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w6, w6, w11
 	ldr w10, [x5, #356]
 	eor w10, w10, w8
@@ -1920,9 +2212,10 @@ vg_sm4_ofb_final:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w7, w7, w11
 	ldr w10, [x5, #360]
 	eor w10, w10, w9
@@ -1941,9 +2234,10 @@ vg_sm4_ofb_final:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w8, w8, w11
 	ldr w10, [x5, #364]
 	eor w10, w10, w6
@@ -1962,9 +2256,10 @@ vg_sm4_ofb_final:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w9, w9, w11
 	ldr w10, [x5, #368]
 	eor w10, w10, w7
@@ -1983,9 +2278,10 @@ vg_sm4_ofb_final:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w6, w6, w11
 	ldr w10, [x5, #372]
 	eor w10, w10, w8
@@ -2004,9 +2300,10 @@ vg_sm4_ofb_final:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w7, w7, w11
 	ldr w10, [x5, #376]
 	eor w10, w10, w9
@@ -2025,9 +2322,10 @@ vg_sm4_ofb_final:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w8, w8, w11
 	ldr w10, [x5, #380]
 	eor w10, w10, w6
@@ -2046,9 +2344,10 @@ vg_sm4_ofb_final:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w9, w9, w11
 	rev w9, w9
 	str w9, [x5, #768]
@@ -2314,5 +2613,32 @@ vg_sm4_ofb_final:
 	stp x17, x17, [x16, #160]
 	stp x17, x17, [x16, #176]
 	add sp, sp, #3264
+	movz x6, #0, lsl #0
+	movz x7, #0, lsl #0
+	movz x9, #0, lsl #0
+	movz x10, #0, lsl #0
+	movz x11, #0, lsl #0
+	movz x12, #0, lsl #0
+	movz x13, #0, lsl #0
+	movi v0.2d, #0
+	movi v1.2d, #0
+	movi v2.2d, #0
+	movi v3.2d, #0
+	movi v16.2d, #0
+	movi v17.2d, #0
+	movi v18.2d, #0
+	movi v19.2d, #0
+	movi v20.2d, #0
+	movi v21.2d, #0
+	movi v22.2d, #0
+	movi v23.2d, #0
+	movi v24.2d, #0
+	movi v25.2d, #0
+	movi v26.2d, #0
+	movi v27.2d, #0
+	movi v28.2d, #0
+	movi v29.2d, #0
+	movi v30.2d, #0
+	movi v31.2d, #0
 	ret
 	.p2align 6

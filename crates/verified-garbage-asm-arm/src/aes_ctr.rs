@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Ctr.aesContract`. Constant time: only the pointers, `rounds`, `n` and the last four bytes of `*ctr` (the 32-bit counter, public in OpenSSL, BoringSSL and AWS-LC, which split the blocks where it wraps) may affect timing, not the key schedule, the rest of the counter block or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 240 bytes.
@@ -38,77 +40,54 @@ mov r10, r12
 cmp r8, #0
 beq 20f
 22:
-mov r12, #0
-str r12, [r10, #2048]
-str r12, [r10, #2052]
-str r12, [r10, #2056]
-str r12, [r10, #2060]
-ldr r12, [r10, #2048]
-ldr lr, [r6, #0]
-eor r12, r12, lr
-str r12, [r10, #2048]
-ldr r12, [r10, #2052]
-ldr lr, [r6, #4]
-eor r12, r12, lr
-str r12, [r10, #2052]
-ldr r12, [r10, #2056]
-ldr lr, [r6, #8]
-eor r12, r12, lr
-str r12, [r10, #2056]
-ldr r12, [r10, #2060]
-ldr lr, [r6, #12]
-eor r12, r12, lr
-str r12, [r10, #2060]
-mov r0, r4
-mov r1, r5
-add r2, r10, #2048
-mov r3, #1
-mov r12, r10
-push {{r12, lr}}
-bl {vg_aes_encrypt_blocks}
-ldr r12, [sp], #8
-ldr r12, [r7, #0]
-ldr lr, [r10, #2048]
-eor r12, r12, lr
-str r12, [r7, #0]
-ldr r12, [r7, #4]
-ldr lr, [r10, #2052]
-eor r12, r12, lr
-str r12, [r7, #4]
-ldr r12, [r7, #8]
-ldr lr, [r10, #2056]
-eor r12, r12, lr
-str r12, [r7, #8]
-ldr r12, [r7, #12]
-ldr lr, [r10, #2060]
-eor r12, r12, lr
-str r12, [r7, #12]
 ldr r0, [r6, #12]
 rev r0, r0
-ldr r1, [r6, #8]
+mvn r0, r0
+sub r1, r8, #1
+subs r2, r1, r0
+mov r2, #0
+adc r2, r2, #0
+mov r3, #0
+sub r2, r3, r2
+eor r3, r1, r0
+and r3, r3, r2
+eor r1, r1, r3
+add r9, r1, #1
+mov r0, r4
+mov r1, r5
+mov r2, r6
+mov r3, r7
+mov r12, r9
+mov lr, r10
+push {{r12, lr}}
+bl {vg_aes_ctr32}
+ldr r12, [sp], #8
+sub r8, r8, r9
+add r7, r7, r9, lsl #4
+ldr r0, [r6, #12]
+cmp r0, #0
+beq 23f
+b 24f
+23:
+ldr r0, [r6, #8]
+rev r0, r0
+ldr r1, [r6, #4]
 rev r1, r1
-ldr r2, [r6, #4]
+ldr r2, [r6, #0]
 rev r2, r2
-ldr r3, [r6, #0]
-rev r3, r3
 adds r0, r0, #1
 mov r12, #0
 adc r12, r12, #0
 adds r1, r1, r12
-mov r12, #0
-adc r12, r12, #0
-adds r2, r2, r12
-adc r3, r3, #0
+adc r2, r2, #0
 rev r0, r0
-str r0, [r6, #12]
+str r0, [r6, #8]
 rev r1, r1
-str r1, [r6, #8]
+str r1, [r6, #4]
 rev r2, r2
-str r2, [r6, #4]
-rev r3, r3
-str r3, [r6, #0]
-add r7, r7, #16
-subs r8, r8, #1
+str r2, [r6, #0]
+24:
+cmp r8, #0
 bne 22b
 b 21f
 20:
@@ -121,14 +100,28 @@ ldr r8, [r10, #2080]
 ldr r9, [r10, #2084]
 ldr lr, [r10, #2092]
 ldr r10, [r10, #2088]
+sub sp, sp, #8
+add r12, sp, #0
+mov r2, #0
+str r2, [r12, #0]
+str r2, [r12, #4]
+add sp, sp, #8
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
-        vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks::vg_aes_encrypt_blocks,
+        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
     )
 }
 
 /// AES-CTR encryption or decryption (NIST SP 800-38A §6.5) of the last piece of a message, of any length, in place: XORs the `len` bytes at `data` with the output blocks `Oⱼ = CIPH_K(Tⱼ)`, where `T₁` is the block at `*ctr` and `Tⱼ₊₁ = Tⱼ + 1 mod 2¹²⁸` (Appendix B.1's standard incrementing function on the whole block, read as a big-endian integer), a partial last block `Pₙ*` of `u` bytes with `MSB_u(Oₙ)`, and replaces `*ctr` with `Tₙ₊₁` (leaving it unchanged if `len = 0`), so that a further call continues the message if `len` is a multiple of 16; after a partial last block the message must end. `CIPH_K` is AES (FIPS 197) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it.
 ///
 /// Contract: `VG.Spec.Ctr.aesFinalContract`. Constant time: only the pointers, `rounds`, `len` and the last four bytes of `*ctr` (the 32-bit counter, public in OpenSSL, BoringSSL and AWS-LC, which split the blocks where it wraps) may affect timing, not the key schedule, the rest of the counter block or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -173,7 +166,7 @@ and r8, r8, #15
 add r7, r3, r12, lsl #4
 mov lr, r10
 push {{r12, lr}}
-bl {vg_aes_ctr}
+bl {vg_aes_ctr_entry}
 ldr r12, [sp], #8
 cmp r8, #0
 beq 20f
@@ -190,7 +183,7 @@ add r3, r12, #40
 mov r12, #1
 mov lr, r10
 push {{r12, lr}}
-bl {vg_aes_ctr}
+bl {vg_aes_ctr_entry}
 ldr r12, [sp], #8
 ldr r12, [sp, #8]
 add r0, r12, #40
@@ -218,8 +211,12 @@ ldr r9, [r12, #20]
 ldr r10, [r12, #24]
 ldr r11, [r12, #28]
 ldr lr, [r12, #32]
-add r12, sp, #16
+add sp, sp, #72
+sub sp, sp, #88
+add r12, sp, #0
 mov r2, #0
+mov r3, #2
+23:
 str r2, [r12, #0]
 str r2, [r12, #4]
 str r2, [r12, #8]
@@ -228,14 +225,27 @@ str r2, [r12, #16]
 str r2, [r12, #20]
 str r2, [r12, #24]
 str r2, [r12, #28]
-str r2, [r12, #32]
-str r2, [r12, #36]
-str r2, [r12, #40]
-str r2, [r12, #44]
-str r2, [r12, #48]
-str r2, [r12, #52]
-add sp, sp, #72
+add r12, r12, #32
+subs r3, r3, #1
+bne 23b
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+add sp, sp, #88
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
-        vg_aes_ctr = sym super::aes_ctr::vg_aes_ctr,
+        vg_aes_ctr_entry = sym super::aes_ctr::vg_aes_ctr_entry::vg_aes_ctr_entry,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_ctr_entry.rs"]
+pub(crate) mod vg_aes_ctr_entry;

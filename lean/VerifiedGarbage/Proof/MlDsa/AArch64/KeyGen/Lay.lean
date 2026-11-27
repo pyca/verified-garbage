@@ -93,15 +93,6 @@ def kgPre (p : Params) (S : Nat) (σ : State) : Prop :=
   (Spec.MlDsa.keyGenContract p AArch64.abi S).pre
     {σ with rd := [⟨σ.gpr .x0, 32⟩]} ∧ ⟨σ.gpr .x0, 32⟩ ∈ σ.rd
 
-theorem kgPre_of_shared {p : Params} {S : Nat} {σ : State}
-    (h : (Spec.MlDsa.keyGenContract p AArch64.abi S).pre σ) : kgPre p S σ := by
-  have hr : σ.rd = [⟨σ.gpr .x0, 32⟩] := by
-    sig_pre [Spec.MlDsa.keyGenContract, Spec.MlDsa.keyGenSig, AArch64.abi, VG.AArch64.argRegs] at h
-    exact h.2.1
-  refine ⟨?_, by rw [hr]; simp⟩
-  have he : ({σ with rd := [⟨σ.gpr .x0, 32⟩]} : State) = σ := by rw [← hr]
-  simpa only [he] using h
-
 theorem kgLay {p : Params} (hF : PFacts p) {S : Nat} {σ s : State}
     (hp : kgPre p S σ) (h : Top σ s) : Lay S kgR (kgW p) s := by
   obtain ⟨hp, hseed⟩ := hp

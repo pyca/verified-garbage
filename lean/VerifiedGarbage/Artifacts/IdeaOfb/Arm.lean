@@ -1,26 +1,25 @@
 module
 
-public import VerifiedGarbage.Proof.Idea.Arm.FbVerified
-import Mathlib.Data.Finset.Attr
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.SetLike
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.Arm.Print
-public import VerifiedGarbage.Proof.Idea.Arm.FbFinalVerified
-public import VerifiedGarbage.Impl.Idea.Arm.FbFinal
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Idea.Ofb
+public import VerifiedGarbage.Spec.Idea.OfbFinal
+import VerifiedGarbage.Proof.Idea.Arm.Scrub
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # IDEA-OFB on ARMv7 -/
 
-@[expose] public section
-
 namespace VG.Artifacts.IdeaOfb.Arm
 
-def artifacts : List Artifact := [
+public def artifacts : List (Artifact Arm.target) := [
   Spec.Idea.ofbApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.Idea.Arm.ofb
-    verified := Proof.Idea.Arm.ofb_framed },
+    code := Impl.Idea.Arm.Fn.ofb
+    verified := Proof.Idea.Arm.Fn.ofb },
   Spec.Idea.ofbFinalApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.Idea.Arm.ofbFinal
-    verified := Proof.Idea.Arm.ofbFinal_framed }]
+    code := Impl.Idea.Arm.Fn.ofbFinal
+    verified := Proof.Idea.Arm.Fn.ofbFinal }]
+
+spec_apis artifacts
 
 end VG.Artifacts.IdeaOfb.Arm

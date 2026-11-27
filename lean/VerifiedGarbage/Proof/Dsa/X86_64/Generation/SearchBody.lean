@@ -2,11 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchEntry
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchControl
-public import Mathlib.Algebra.Group.Nat.Defs
-
+import VerifiedGarbage.Proof.Framework.X86_64.Syms
 import VerifiedGarbage.Proof.Framework.Omega
 import Mathlib.Algebra.GroupWithZero.Nat
-import Mathlib.Algebra.NeZero
 import VerifiedGarbage.Proof.Bignum.Words
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Mem
@@ -14,12 +12,12 @@ import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PConstructTest
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.AttemptEntry
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PPrimalityPlan
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.AttemptStatus
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SourceFrame
 import VerifiedGarbage.Proof.Dsa.Generation.Memory
 import VerifiedGarbage.Proof.Rsa.X86_64.Loops
+
 /-! # The complete p body returns the persistent state needed by its next iteration -/
 
 -- Formerly `VerifiedGarbage/Proof/Dsa/X86_64/Generation/ControllerFrame.lean`, which only this module imported.
@@ -74,7 +72,8 @@ theorem pAttempt_ok {G1 G256 : Impl.Pbkdf2.Md.X86_64.Stream} {p : PPrimalityPlan
     (hframeControl : (⟨p.construct.hash.F, frameBytes⟩ : Region).Disjoint ⟨C, 24⟩)
     (hhashControl : (⟨p.construct.hash.S, oRsa⟩ : Region).Disjoint ⟨C, 24⟩)
     (hpControl : (⟨off (p.construct.hash.W 5) Impl.Dsa.Generation.Layout.p, p.construct.len⟩ : Region).Disjoint ⟨C, 24⟩)
-    (heControl : (⟨off (p.construct.hash.W 5) exponent, p.construct.len⟩ : Region).Disjoint ⟨C, 24⟩) :
+    (heControl : (⟨off (p.construct.hash.W 5) exponent, p.construct.len⟩ : Region).Disjoint ⟨C, 24⟩)
+    (hfn : FnSlots (fnNames G1 G256 T p.construct.hash.len) p.construct.hash.W s) :
     WP isa (Impl.Dsa.X86_64.Generation.pAttempt G1 G256 T.run p.construct.len p.construct.hash.len) s fun t =>
       SearchControl C counter stride t ∧
       ∃ (used' : Nat) (status : BitVec 64) (V : Nat → Byte),
@@ -92,12 +91,13 @@ theorem pAttempt_ok {G1 G256 : Impl.Pbkdf2.Md.X86_64.Stream} {p : PPrimalityPlan
         Frame (⟨C, 24⟩ :: ⟨p.construct.hash.F, frameBytes⟩ :: p.changed) s.mem t.mem ∧
         t.rd = s.rd ∧ t.wr = s.wr := by
   unfold Impl.Dsa.X86_64.Generation.pAttempt
-  refine WP.seq (WP.mono (attemptEntry_ok entry ctrl.rdi (ctrl.scr.ld (by decide))
-    (by rw [ctrl.offset, hoff])) fun u ⟨stateU, fu, ku⟩ => ?_)
+  refine WP.seq (WP.mono_syms (attemptEntry_ok entry ctrl.rdi (ctrl.scr.ld (by decide))
+    (by rw [ctrl.offset, hoff])) fun u ⟨stateU, fu, ku⟩ uy => ?_)
+  have hfu := hfn.congr rfl rfl rfl uy
   have tape := source_of_frame htape fu (by
     intro r hr; rcases List.mem_singleton.mp hr with rfl; exact htapeFrame) p.randMax ku.2.1 ku.2.2
   refine WP.seq (WP.mono (pConstructTest_ok hG hHh hsize T hd stateU hhash hseedsize hused
-    hu tape (hA.congr ku.2.2) (by rw [ku.2.1, ku.2.2]; exact htc)) fun v hv => ?_)
+    hu tape (hA.congr ku.2.2) (by rw [ku.2.1, ku.2.2]; exact htc) ⟨hfu.upd, hfu.fin⟩ hfu.prime) fun v hv => ?_)
   obtain ⟨used', status, V, hvused, Lv, Rv, vp, ve, hexhaust, hres, fv, rdv, wrv⟩ := hv
   have total : Frame (⟨p.construct.hash.F, frameBytes⟩ :: p.changed) s.mem v.mem :=
     (fu.mono (by intro r hr; rcases List.mem_singleton.mp hr with rfl; simp)).trans
@@ -162,7 +162,8 @@ theorem searchBody_ok {G1 G256 : Impl.Pbkdf2.Md.X86_64.Stream} {p : SearchPlan}
     {s : State} {W : Nat → BitVec 64} {counter used : Nat} (h : SearchMemory p W s)
     (ctrl : SearchControl p.C counter (p.attempt.construct.hash.count + 1) s)
     (hc : counter < 32 * p.attempt.construct.len)
-    (hused : W 16 = BitVec.ofNat 64 used) (hu : used ≤ p.attempt.rand.length) :
+    (hused : W 16 = BitVec.ofNat 64 used) (hu : used ≤ p.attempt.rand.length)
+    (hfn : FnSlots (fnNames G1 G256 T p.attempt.construct.hash.len) W s) :
     WP isa (Impl.Dsa.X86_64.Generation.pAttempt G1 G256 T.run
       p.attempt.construct.len p.attempt.construct.hash.len) s fun t =>
       SearchControl p.C counter (p.attempt.construct.hash.count + 1) t ∧
@@ -205,7 +206,13 @@ theorem searchBody_ok {G1 G256 : Impl.Pbkdf2.Md.X86_64.Stream} {p : SearchPlan}
       exact p.tapeSeparate _ (by simp [searchWrites]))
     (by rw [cw5]; exact h.arena) h.tapeCover
     (by rw [changed]; exact p.controlSeparate) p.frameControl p.hashControl
-    (by simpa only [cw5, clen] using p.pControl) (by simpa only [cw5, clen] using p.exponentControl))
+    (by simpa only [cw5, clen] using p.pControl) (by simpa only [cw5, clen] using p.exponentControl)
+    (hfn.congr (by simp [call, SearchMemory.attemptPlan, PPrimalityPlan.reframe, PConstructPlan.reframe,
+        HashPlan.reframe, attemptWords, upd])
+      (by simp [call, SearchMemory.attemptPlan, PPrimalityPlan.reframe, PConstructPlan.reframe,
+        HashPlan.reframe, attemptWords, upd])
+      (by simp [call, SearchMemory.attemptPlan, PPrimalityPlan.reframe, PConstructPlan.reframe,
+        HashPlan.reframe, attemptWords, upd]) rfl))
     fun t ⟨ct, Wused, status, V, bound, Lt, Rt, htstatus, bp, be, he, hr, ft, rdt, wrt⟩ => ?_
   have ff : Frame (searchWrites p.attempt p.C) s.mem t.mem := by
     change Frame (⟨p.C, 24⟩ :: ⟨p.attempt.construct.hash.F, frameBytes⟩ :: p.attempt.changed) s.mem t.mem
@@ -215,7 +222,7 @@ theorem searchBody_ok {G1 G256 : Impl.Pbkdf2.Md.X86_64.Stream} {p : SearchPlan}
     intro k hk
     dsimp only [W', call, SearchMemory.attemptPlan, PPrimalityPlan.reframe, PConstructPlan.reframe, HashPlan.reframe]
     simp only [searchSlots, List.mem_cons, List.not_mem_nil, or_false] at hk
-    rcases hk with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp [upd, attemptWords]) ff rdt wrt
+    rcases hk with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp [upd, attemptWords]) ff rdt wrt
   refine ⟨ct, W', Wused, status, memory, bound, by simp [W', upd], by simp [W', upd], htstatus,
     ?_, ?_, he, hr, ff, rdt, wrt⟩
   · rw [cw5] at bp

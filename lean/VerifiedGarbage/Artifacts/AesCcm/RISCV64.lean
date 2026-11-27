@@ -1,23 +1,24 @@
 module
 
-public import VerifiedGarbage.Proof.AesCcm.RISCV64.Verified
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.RISCV64.Print
+public import VerifiedGarbage.TCB.RISCV64.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Ccm.Contract
+import VerifiedGarbage.Proof.AesCcm.RISCV64.Verified
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # AES-CCM (NIST SP 800-38C) on RISC-V -/
 
-@[expose] public section
-
 namespace VG.Artifacts.AesCcm.RISCV64
 
-open VG.Proof.AesCcm.RISCV64
-
-def artifacts : List Artifact := [
+public def artifacts : List (Artifact RISCV64.target) := [
   Spec.Ccm.sealApi.artifact RISCV64.target {
-    code := Impl.StackScratch.RISCV64.withStackScratchArgs 2592 2 Impl.AesCcm.RISCV64.«seal»
-    verified := Proof.AesCcm.seal_keyed seal_framed },
+    code := Impl.AesCcm.RISCV64.Fn.«seal»
+    verified := Proof.AesCcm.RISCV64.Scrub.seal_scrubbed },
   Spec.Ccm.openApi.artifact RISCV64.target {
-    code := Impl.StackScratch.RISCV64.withStackScratchArgs 2592 2 Impl.AesCcm.RISCV64.«open»
-    verified := Proof.AesCcm.open_keyed open_framed }]
+    code := Impl.AesCcm.RISCV64.Fn.«open»
+    verified := Proof.AesCcm.RISCV64.Scrub.open_scrubbed }]
+
+spec_apis artifacts
 
 end VG.Artifacts.AesCcm.RISCV64

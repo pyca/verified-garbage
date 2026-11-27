@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.PublicBuffers
+public import VerifiedGarbage.Proof.Bignum.Arm.CallStack
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Lit
 
@@ -30,6 +31,10 @@ structure PublicData (base dst ep xp : BitVec 32) (len k eLen : Nat)
   stackExponent : Region.Disjoint ⟨State.addr ep, eLen⟩ ⟨State.addr s.sp, 56⟩
   stackInput : Region.Disjoint ⟨State.addr xp, k⟩ ⟨State.addr s.sp, 56⟩
   stackOutput : Region.Disjoint ⟨State.addr dst, k⟩ ⟨State.addr s.sp, 56⟩
+  /-- The stack a call of the shared Montgomery product writes, below the frame. -/
+  call : CallStack base len s
+  callExponent : Region.Disjoint ⟨State.addr ep, eLen⟩ (FrameStack.belowA s.sp 48)
+  callInput : Region.Disjoint ⟨State.addr xp, k⟩ (FrameStack.belowA s.sp 48)
 
 theorem PublicData.after_frame {base dst ep xp : BitVec 32} {len k eLen : Nat}
     {eb xb : List Byte} {s t : State} {regions : List Region} {rs : List Reg}
@@ -43,7 +48,25 @@ theorem PublicData.after_frame {base dst ep xp : BitVec 32} {len k eLen : Nat}
     h.input.after_frame frame rest xSep, h.outputFit, by rw [rest.wr]; exact h.write,
     h.exponentSeparate, h.inputSeparate, h.outputSeparate,
     by rw [rest.sp]; exact h.stackExponent,
-    by rw [rest.sp]; exact h.stackInput, by rw [rest.sp]; exact h.stackOutput⟩
+    by rw [rest.sp]; exact h.stackInput, by rw [rest.sp]; exact h.stackOutput,
+    h.call.of_rest rest, by rw [rest.sp]; exact h.callExponent, by rw [rest.sp]; exact h.callInput⟩
+
+/-- After a call of the shared Montgomery product, which writes the
+workspace and the 48 bytes below the stack. -/
+theorem PublicData.after_call {base dst ep xp : BitVec 32} {len k eLen : Nat}
+    {eb xb : List Byte} {s t : State} {rs : List Reg}
+    (h : PublicData base dst ep xp len k eLen eb xb s)
+    (frame : Frame [⟨State.addr base, 8 * len⟩, FrameStack.belowA s.sp 48] s.mem t.mem) (rest : Rest rs s t) :
+    PublicData base dst ep xp len k eLen eb xb t :=
+  h.after_frame frame rest
+    (by intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl
+        · exact h.exponentSeparate
+        · exact h.callExponent)
+    (by intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl
+        · exact h.inputSeparate
+        · exact h.callInput)
 
 theorem PublicData.after_workspace {base dst ep xp : BitVec 32} {len k eLen : Nat}
     {eb xb : List Byte} {s t : State} {rs : List Reg}

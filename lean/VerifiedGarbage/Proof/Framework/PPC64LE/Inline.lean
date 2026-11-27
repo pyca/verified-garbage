@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 import VerifiedGarbage.Proof.Framework.PPC64LE.Reduce
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Inlining verified code (PPC64LE)
@@ -72,7 +74,7 @@ def dstOf : Instr → Option Reg
   | .logic _ d .. | .rotr _ d .. | .lsr _ d .. | .lsl d .. | .load _ d .. | .lbz d .. | .loadRev _ d ..
   | .mflr d | .pop d | .addSp d _ | .adrSym d _ | .mfvsrd d _ => some d
   | .store .. | .stb .. | .storeRev .. | .mtlr _ | .push _ | .alloc _ | .free _
-  | .vop .. | .lxvd2x .. | .lxvd2xTbl .. | .stxvd2x .. | .mtvsrd .. | .bctrl => none
+  | .vop .. | .lxvd2x .. | .lxvd2xTbl .. | .stxvd2x .. | .mtvsrd .. | .dcbz .. | .bctrl => none
 
 section
 variable {s s' : State} {rd wr : List Region}
@@ -105,6 +107,10 @@ theorem exec_widen (hc : Covers (s.rd ++ s.wr) (rd ++ wr)) (hw : Covers s.wr wr)
       obtain ⟨a, ha, v, hv, rfl⟩ := h
       exact ⟨a, ha, v, load_widen hc hv, rfl⟩
   | store sz t n off | stb t n off | stxvd2x t n off =>
+    simp only [reduceExec, Option.bind_eq_some_iff] at h ⊢
+    obtain ⟨a, ha, hs⟩ := h
+    exact ⟨a, ha, store_widen hw hs⟩
+  | dcbz a b =>
     simp only [reduceExec, Option.bind_eq_some_iff] at h ⊢
     obtain ⟨a, ha, hs⟩ := h
     exact ⟨a, ha, store_widen hw hs⟩
@@ -142,30 +148,34 @@ theorem exec_regions {i : Instr} (h : exec i s = some s') :
     exact ⟨rfl, rfl, rfl, (Frame.refl _ _).write hr _ hc⟩
   cases i with
   | store sz t n off | stb t n off | stxvd2x t n off =>
-    simp only [exec, Option.bind_eq_some_iff] at h
+    simp only [reduceExec, Option.bind_eq_some_iff] at h
+    obtain ⟨a, -, h⟩ := h
+    exact hst h
+  | dcbz a b =>
+    simp only [reduceExec, Option.bind_eq_some_iff] at h
     obtain ⟨a, -, h⟩ := h
     exact hst h
   | storeRev sz t a b =>
     cases sz <;>
-    · simp only [exec, Option.bind_eq_some_iff] at h
+    · simp only [reduceExec, Option.bind_eq_some_iff] at h
       obtain ⟨a, -, h⟩ := h
       exact hst h
   | load sz t n off | lbz t n off | lxvd2x t n off =>
-    simp only [exec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at h
+    simp only [reduceExec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at h
     obtain ⟨a, -, v, -, rfl⟩ := h
     exact ⟨rfl, rfl, rfl, Frame.refl _ _⟩
   | loadRev sz t a b =>
     cases sz <;>
-    · simp only [exec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at h
+    · simp only [reduceExec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at h
       obtain ⟨a, -, v, -, rfl⟩ := h
       exact ⟨rfl, rfl, rfl, Frame.refl _ _⟩
   | vop op =>
     simp only [reduceExec, Option.map_eq_some_iff] at h
     obtain ⟨⟨d, v⟩, -, rfl⟩ := h
     exact ⟨rfl, rfl, rfl, Frame.refl _ _⟩
-  | push _ | pop _ | alloc _ | free _ | bctrl => simp only [exec, reduceCtorEq] at h
+  | push _ | pop _ | alloc _ | free _ | bctrl => simp only [reduceExec, reduceCtorEq] at h
   | _ =>
-    simp only [exec] at h
+    simp only [reduceExec] at h
     first
     | (simp only [Option.some.injEq] at h; subst h; exact ⟨rfl, rfl, rfl, Frame.refl _ _⟩)
     | (split at h <;> [skip; cases h]
@@ -182,21 +192,25 @@ theorem exec_gpr {i : Instr} {r : Reg} (hi : dstOf i ≠ some r) (h : exec i s =
     split at h <;> cases h; rfl
   cases i with
   | store sz t n off | stb t n off | stxvd2x t n off =>
-    simp only [exec, Option.bind_eq_some_iff] at h
+    simp only [reduceExec, Option.bind_eq_some_iff] at h
+    obtain ⟨a, -, h⟩ := h
+    exact hst h
+  | dcbz a b =>
+    simp only [reduceExec, Option.bind_eq_some_iff] at h
     obtain ⟨a, -, h⟩ := h
     exact hst h
   | storeRev sz t a b =>
     cases sz <;>
-    · simp only [exec, Option.bind_eq_some_iff] at h
+    · simp only [reduceExec, Option.bind_eq_some_iff] at h
       obtain ⟨a, -, h⟩ := h
       exact hst h
   | load sz t n off | lbz t n off =>
-    simp only [exec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at h
+    simp only [reduceExec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at h
     obtain ⟨a, -, v, -, rfl⟩ := h
     exact hw _ _ _ fun e => hi (by simp [dstOf, e])
   | loadRev sz t a b =>
     cases sz <;>
-    · simp only [exec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at h
+    · simp only [reduceExec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at h
       obtain ⟨a, -, v, -, rfl⟩ := h
       exact hw _ _ _ fun e => hi (by simp [dstOf, e])
   | lxvd2x d a b =>
@@ -214,15 +228,15 @@ theorem exec_gpr {i : Instr} {r : Reg} (hi : dstOf i ≠ some r) (h : exec i s =
   | mtvsrd d n =>
     simp only [reduceExec, Option.some.injEq] at h; subst h; rfl
   | mtlr r' =>
-    simp only [exec, Option.some.injEq] at h; subst h; rfl
+    simp only [reduceExec, Option.some.injEq] at h; subst h; rfl
   | adrSym d name =>
-    simp only [exec] at h
+    simp only [reduceExec] at h
     split at h <;> [skip; cases h]
     simp only [Option.some.injEq] at h; subst h
     exact hw s d _ fun e => hi (by simp [dstOf, e])
-  | push _ | pop _ | alloc _ | free _ | bctrl => simp only [exec, reduceCtorEq] at h
+  | push _ | pop _ | alloc _ | free _ | bctrl => simp only [reduceExec, reduceCtorEq] at h
   | _ =>
-    simp only [exec] at h
+    simp only [reduceExec] at h
     first
     | (simp only [Option.some.injEq] at h; subst h
        exact hw _ _ _ fun e => hi (by simp [dstOf, e]))
@@ -573,5 +587,24 @@ theorem Verified.widen {c : Prog isa} {k k' : Contract isa} (h : Verified target
     have : (s₁.withRegions s.rd s.wr).withRegions s.rd (wr s) = s₁ := by
       rw [State.withRegions_withRegions, ← hr, ← hw]; rfl
     exact ⟨ha, hpost s _ hs (by rw [this]; exact hq)⟩
+
+/-- The bytes a frame loses when it is released differ only within the frame. -/
+theorem lose_frame (m : Mem) (a : Addr) (n : Nat) (u : Nat → BitVec 64) :
+    Frame [⟨a, n⟩] m (lose m a n u) := fun x hx => by
+  have h : ¬ (x - a).toNat < n := fun h =>
+    hx ⟨a, n⟩ (List.mem_singleton_self _) (by simp only [Region.Contains]; omega_using [h])
+  simp only [lose, h, ite_false]
+
+/-- A byte of a region apart from a frame is what it was once the frame's
+bytes are lost. -/
+theorem lost_byte {F R : Region} {m m' : Mem} (f : Frame [F] m m') (hd : R.Disjoint F) {i : Nat}
+    (hi : i < R.len) : m' (R.base + BitVec.ofNat 64 i) = m (R.base + BitVec.ofNat 64 i) := by
+  refine f _ fun r hr hc => ?_
+  simp only [List.mem_singleton] at hr; subst hr
+  refine hd _ ?_ hc
+  simp only [Region.Contains]
+  rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat]
+  have := Nat.mod_le i (2 ^ 64)
+  omega_using [hi, this]
 
 end VG.PPC64LE

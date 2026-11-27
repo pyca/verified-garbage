@@ -42,7 +42,7 @@ theorem loadWords_ok (s : State) (v : Nat) :
 theorem constSlot_ok {s : State} {base : Addr} (hs : Scr s base) (i : Index) (v : Spec.X448.Fe)
     (hv : toFe (wv (words7 v.val)) = v) :
     WP isa (.block (constSlot i.val v)) s fun t =>
-      E t.mem base = Function.update (E s.mem base) i v ∧ Outside base (slot i.val) 56 s.mem t.mem ∧
+      E t.mem base = Fun.update (E s.mem base) i v ∧ Outside base (slot i.val) 56 s.mem t.mem ∧
       (∀ r, r ∉ W → t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr := by
   rw [constSlot, WP.block_append_iff]
   refine WP.mono (loadWords_ok s v.val) fun a ⟨va, ka⟩ => ?_
@@ -75,7 +75,7 @@ theorem consts_ok {s : State} {base : Addr} (hs : Scr s base) :
   rw [consts_eq]
   have step : ∀ {x : State} (i : Index) (v : Spec.X448.Fe), toFe (wv (words7 v.val)) = v →
       Scr x base → ∀ {rest : List Instr} {Q : State → Prop},
-      (∀ y, E y.mem base = Function.update (E x.mem base) i v → Outside base 64 1584 x.mem y.mem →
+      (∀ y, E y.mem base = Fun.update (E x.mem base) i v → Outside base 64 1584 x.mem y.mem →
         (∀ r, r ∉ W → y.gpr r = x.gpr r) → y.rd = x.rd → y.wr = x.wr → Scr y base →
         WP isa (.block rest) y Q) →
       WP isa (.block (constSlot i.val v ++ rest)) x Q := by
@@ -97,15 +97,15 @@ theorem consts_ok {s : State} {base : Addr} (hs : Scr s base) :
   refine ⟨?_, ?_, ?_, O, fun r hr => ?_, ?_, ?_, fun i h1 h2 => ?_⟩
   · rw [et, e6, e5, e4, e3, e2, e1]; rfl
   · rw [et, e6, e5, e4, e3, e2, e1]; rfl
-  · simp only [et, Function.update_self]
+  · simp only [et, Fun.update_self]
   · rw [gt r hr, g6 r hr, g5 r hr, g4 r hr, g3 r hr, g2 r hr, g1 r hr]
   · rw [rdt, rd6, rd5, rd4, rd3, rd2, rd1]
   · rw [wrt, wr6, wr5, wr4, wr3, wr2, wr1]
   · have ne : ∀ j : Index, j.val < 3 ∨ (8 ≤ j.val ∧ j.val < 12) → i ≠ j := fun j hj h => by
       subst h; omega_using [h1, h2, hj]
-    rw [et, e6, e5, e4, e3, e2, e1, Function.update_of_ne (ne 11 (by decide)),
-      Function.update_of_ne (ne 10 (by decide)), Function.update_of_ne (ne 9 (by decide)),
-      Function.update_of_ne (ne 8 (by decide)), Function.update_of_ne (ne 2 (by decide)),
-      Function.update_of_ne (ne 1 (by decide)), Function.update_of_ne (ne 0 (by decide))]
+    rw [et, e6, e5, e4, e3, e2, e1, Fun.update_of_ne (ne 11 (by decide)),
+      Fun.update_of_ne (ne 10 (by decide)), Fun.update_of_ne (ne 9 (by decide)),
+      Fun.update_of_ne (ne 8 (by decide)), Fun.update_of_ne (ne 2 (by decide)),
+      Fun.update_of_ne (ne 1 (by decide)), Fun.update_of_ne (ne 0 (by decide))]
 
 end VG.Proof.Ed448.X86_64

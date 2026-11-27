@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafPrep
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.FastNaf
 public import VerifiedGarbage.Proof.Weierstrass.FastNaf
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Bits
@@ -10,6 +9,88 @@ import VerifiedGarbage.Proof.Mont.X86_64.Chain
 import VerifiedGarbage.Proof.Weierstrass.Words
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+public import VerifiedGarbage.Proof.Mont.X86_64.Csub
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafSubtract
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.PlainSimp
+
+/-! ### `Weierstrass.X86_64.NafPrep`, which this module and modules that import it used -/
+
+section
+
+/-! ### `Weierstrass.X86_64.NafChoose`, which this module and modules that import it used -/
+
+section
+
+/-! Selecting a signed width-five digit from the public scalar's low word. -/
+
+@[expose] public section
+
+namespace VG.Proof.Weierstrass.X86_64
+open VG VG.X86_64 VG.Impl.Weierstrass.X86_64
+open VG.Proof.X25519.X86_64
+
+theorem nafParity (x : BitVec 64) : x &&& 1=0 ↔ x.toNat%2=0 := by
+  rw [←BitVec.toNat_inj]
+  change x.toNat &&& 1=0 ↔ x.toNat%2=0
+  rw [Nat.and_one_is_mod]
+
+theorem nafParity_ok (s : State) :
+    WP isa (.block [.mov .rcx (.reg .r8),.alu .and .rcx (.imm 1),.alu .test .rcx (.reg .rcx)]) s
+      fun t => t.gpr .rcx=s.gpr .r8 &&& 1 ∧ t.zf=some (decide (s.gpr .r8 &&& 1=0)) ∧ Keeps [.rcx] s t := by
+  apply WP.of_runBlock
+  simp only [runBlock_cons,runStep_some,runBlock_nil,exec,execAlu,readSrc,
+    Option.map_some,Option.bind_some,RegUpd.gpr_setReg,RegUpd.gpr_arithFlags,
+    RegUpd.zf_arithFlags,BitVec.and_self,ite_true,Option.some.injEq,exists_eq_left']
+  refine ⟨rfl,?_,fun r hr => ?_,rfl,rfl,rfl⟩
+  · rfl
+  · simp only [List.mem_singleton] at hr
+    simp only [RegUpd.gpr_arithFlags,RegUpd.gpr_setReg,hr,ite_false]
+
+end VG.Proof.Weierstrass.X86_64
+
+end
+
+end
+
+/-! The public scalar recoder, its byte stores and bounded 257-step loop. -/
+
+@[expose] public section
+
+namespace VG.Proof.Weierstrass.X86_64
+open VG VG.X86_64 VG.Impl.Weierstrass.X86_64 VG.Impl.Mont.X86_64
+open VG.Proof.Mont.X86_64 VG.Proof.Mont VG.Proof.X25519.X86_64
+
+/-- What recoding a scalar of `n` words clobbers: the scalar's registers too. -/
+def nafPrepClobN (n : Nat) : List Reg := [.rax,.rbx,.rcx,.rdx]++Naf.sregs n
+
+theorem notin_sregs {n : Nat} {r : Reg} (h : r∉[Reg.r8,.r9,.r10,.r11,.r12,.r13,.r14,.r15,.rbp,.rsi]) :
+    r∉Naf.sregs n :=
+  fun hm => h (List.mem_of_mem_take hm)
+
+/-- Clobbering registers outside the scalar's keeps its value. -/
+theorem nafValN_keep {n : Nat} {rs : List Reg} {s t : State} (hk : ∀ r,r∉rs → t.gpr r=s.gpr r)
+    (hd : ∀ r∈[Reg.r8,.r9,.r10,.r11,.r12,.r13,.r14,.r15,.rbp,.rsi],r∉rs) : nafValN n t=nafValN n s :=
+  regsVal_congr fun r hr => hk r (hd r (List.mem_of_mem_take hr))
+
+theorem notin_clobN {n : Nat} {r : Reg} (h₁ : r∉[Reg.rax,.rbx,.rcx,.rdx])
+    (h₂ : r∉[Reg.r8,.r9,.r10,.r11,.r12,.r13,.r14,.r15,.rbp,.rsi]) : r∉nafPrepClobN n := fun h => by
+  rcases List.mem_append.mp h with h|h
+  · exact h₁ h
+  · exact notin_sregs h₂ h
+
+theorem mem_clobN {n : Nat} {r : Reg} {pre : List Reg} (hpre : ∀ q∈pre,q∈[Reg.rax,.rbx,.rcx,.rdx])
+    (h : r∈pre++Naf.sregs n) : r∈nafPrepClobN n := by
+  rcases List.mem_append.mp h with h|h
+  · exact List.mem_append_left _ (hpre r h)
+  · exact List.mem_append_right _ h
+
+end VG.Proof.Weierstrass.X86_64
+
+end
+
+end
 
 /-! Digit stores, public index updates and the prezeroed sparse recoder state. -/
 

@@ -25,7 +25,8 @@ Modelling choices:
   destination general-purpose register."
 * Only CF, ZF, SF and OF are modelled. Each is an `Option Bool`; `none` means
   "undefined" (as the SDM specifies for some instructions). Evaluating a
-  branch on an undefined flag faults, so verified code never depends on one.
+  branch on an undefined flag faults, so verified code never depends on one,
+  and returning with one counts as secret residue (`Residue.lean`).
   PF and AF are not modelled, and no modelled instruction reads them.
 * Memory accesses must lie within the state's permitted regions: loads within
   `rd ++ wr`, stores within `wr`; otherwise the instruction faults.
@@ -414,6 +415,15 @@ inductive Instr
   `zmm2`, unsigned, for `j` from 0 to 31, and its bits 63:32 are zero
   (see `cmpltuMask`). -/
   | vpcmpltuw (dst : Reg) (src1 src2 : XReg)
+  /-- `vpcmpuq k1, ymm1, ymm2, imm8` (`EVEX.256.66.0F3A.W1 1E /r ib`),
+  then `kmovw r32, k1` and `kxorw k1, k1, k1`. The low four bits of
+  the destination give the results of unsigned quadword comparisons, with
+  predicate equal (0) or greater than (6). The other bits and k1 are zero. -/
+  | evCmpUq (gt : Bool) (dst : Reg) (src1 src2 : VReg)
+  /-- `kmovw k1, r32; vpaddq ymm1 {k1}, ymm2, ymm3; kxorw k1, k1, k1`.
+  Add the quadwords selected by bits 3:0 of `mask`. Other quadwords retain
+  their destination value. Bits above the vector length and k1 are zero. -/
+  | evMaskAddQ (mask : Reg) (dst src1 src2 : VReg)
   /-- `stmxcsr DWORD PTR [dst]` (`NP 0F AE /3`) -/
   | stmxcsr (dst : MemOp)
   /-- `ldmxcsr DWORD PTR [src]` (`NP 0F AE /2`) -/
@@ -456,6 +466,11 @@ inductive Instr
   only occurs as the instruction of an indirect call (`Code.icall`): as a
   straight-line instruction it faults. -/
   | callr (r : Reg)
+  /-- `call m64` (`FF /2` with a memory operand): the near, absolute
+  indirect call of the function at the address in the 8 bytes at `m` (see
+  `icall`). As `callr`, it only occurs as the instruction of an indirect
+  call (`Code.icall`): as a straight-line instruction it faults. -/
+  | callm (m : MemOp)
   /-- `push r64` (50+rd) for each `r` of `rs`, in order: the push of a frame
   (see `push`); `rs` must not be empty or contain `rsp` -/
   | push (rs : List Reg)
@@ -615,6 +630,7 @@ def Instr.requires : Instr → List String
   | .kLoad .. | .kStore .. => ["avx512f"]
   | .kLoad8 .. | .kStore8 .. => ["avx512f", "avx512bw"]
   | .vpcmpltuw .. => ["avx512f", "avx512bw"]
+  | .evCmpUq .. | .evMaskAddQ .. => ["avx512f", "avx512vl"]
   | .vop (.vsha512rnds2 ..) | .vop (.vsha512msg1 ..) | .vop (.vsha512msg2 ..) => ["sha512"]
   | .vop (.vpmadd52luq ..) | .vop (.vpmadd52huq ..) | .vpmadd52Load .. =>
     ["avx512ifma", "avx512vl"]
@@ -632,6 +648,22 @@ unsigned integers (see `exec`). -/
 def cmpltuMask (s : State) (a b : XReg) : BitVec 32 :=
   BitVec.ofNat 32 ((List.range 32).foldl
     (fun acc j => if (s.zword a j).toNat < (s.zword b j).toNat then acc + 2 ^ j else acc) 0)
+
+/-- SDM Vol. 2, VPCMPUQ predicates EQ (0) and NLE (6). KMOVW transfers
+the mask to a 32-bit register, and KXORW clears the temporary mask. -/
+def cmpUqMask (gt : Bool) (a b : BitVec 256) : BitVec 32 :=
+  BitVec.ofNat 32 ((List.range 4).foldl (fun acc j =>
+    let x := a.extractLsb' (64 * j) 64
+    let y := b.extractLsb' (64 * j) 64
+    if (if gt then y.toNat < x.toNat else x = y) then acc + 2 ^ j else acc) 0)
+
+/-- SDM Vol. 2, VPADDQ (EVEX.256, merging-masking). The four mask bits
+select modular 64-bit sums, with the old destination in masked-off lanes. -/
+def maskAddQ (mask : BitVec 64) (dst a b : BitVec 256) : BitVec 256 :=
+  let lane := fun j =>
+    if mask.getLsbD j then (a.extractLsb' (64 * j) 64) + (b.extractLsb' (64 * j) 64)
+    else dst.extractLsb' (64 * j) 64
+  lane 3 ++ lane 2 ++ lane 1 ++ lane 0
 
 /-- Semantics of an instruction. The byte forms: SDM Vol. 2, "MOVZX":
 `DEST := ZeroExtend(SRC)` (with a 32-bit destination, zero-extended to 64
@@ -871,6 +903,8 @@ def exec : Instr → State → Option State
   -- k1`): `DEST[31:0] := ZeroExtend(SRC[31:0])`, a 32-bit destination
   -- zero-extended to 64 bits (SDM Vol. 1 §3.4.1.1); "Flags Affected: None".
   | .vpcmpltuw d a b, s => some (s.setReg32 d (cmpltuMask s a b))
+  | .evCmpUq gt d a b, s => some (s.setReg32 d (cmpUqMask gt (s.vy a) (s.vy b)))
+  | .evMaskAddQ k d a b, s => some (s.setVy d (maskAddQ (s.gpr k) (s.vy d) (s.vy a) (s.vy b)))
   -- SDM Vol. 2, "STMXCSR": `m32 := MXCSR`. "LDMXCSR": `MXCSR := m32`, with
   -- #GP(0) "for an attempt to set reserved bits in MXCSR", which are bits
   -- 31:16 (SDM Vol. 1 §10.2.3); on processors without DAZ, bit 6 is
@@ -893,7 +927,7 @@ def exec : Instr → State → Option State
   | .cmov cc d src, s => execCmov cc d src s
   -- Only the push and pop of a frame (`push`, `pop`), and the instruction
   -- of an indirect call (`icall`).
-  | .push _, _ | .pop .., _ | .alloc _, _ | .free _, _ | .callr _, _ => none
+  | .push _, _ | .pop .., _ | .alloc _, _ | .free _, _ | .callr _, _ | .callm _, _ => none
 
 def addrs : Instr → State → List Addr
   | .mov _ src, s => srcAddrs s src
@@ -955,7 +989,7 @@ def addrs : Instr → State → List Addr
   -- instruction makes the same number of observations.
   | .kLoad k _ m, s | .kStore m k _, s => [s.ea m, (s.gpr k).setWidth 8 |>.setWidth 64]
   | .kLoad8 k _ m, s | .kStore8 m k _, s => [s.ea m, s.gpr k]
-  | .vpcmpltuw .., _ => []
+  | .vpcmpltuw .., _ | .evCmpUq .., _ | .evMaskAddQ .., _ => []
   | .stmxcsr m, s => [s.ea m]
   | .ldmxcsr m, s => [s.ea m]
   | .lfence, _ => []
@@ -970,6 +1004,9 @@ def addrs : Instr → State → List Addr
   | .alloc _, _ | .free _, _ => []
   -- The address it calls is observed as the indirect call's (`Code.icall`).
   | .callr _, _ => []
+  -- The 8 bytes it reads the address from; the address it calls is observed
+  -- as the indirect call's.
+  | .callm m, s => [s.ea m]
 
 /-- SDM Vol. 2, "CALL", near call: `RSP := RSP − 8; Memory[RSP] := RIP`
 (`Push(RIP)`, where `RIP` is the address of the next instruction), then the
@@ -1019,9 +1056,10 @@ Address", with a 64-bit operand size and address size: `DEST :=
 EffectiveAddress(SRC)`, the address computed modulo 2⁶⁴; "Flags Affected:
 None". The `bytes` bytes below `rsp` become a writable region, at the head
 of `wr`, which it does not write: they hold what memory held there, as the
-bytes a call or a push stores below `rsp` before it does (and a contract
-says nothing of them: they are in the stack below the caller's stack
-pointer, `Abi.reserved`). Faults unless `0 < bytes < 4096` and `bytes` is a
+bytes a call or a push stores below `rsp` before it does: bytes in the stack
+below the caller's stack pointer, of which a contract says nothing
+(`Abi.reserved`), or those of a frame the function released, which are
+`lose`'s, so a proof cannot know them either. Faults unless `0 < bytes < 4096` and `bytes` is a
 multiple of 8, or if the frame would wrap around the address space. -/
 def push : Instr → State → Option State
   | .alloc bytes, s =>
@@ -1036,6 +1074,33 @@ def push : Instr → State → Option State
     else none
   | _, _ => none
 
+/-- The memory once the `n` bytes at `a`, a released frame, are below the
+stack pointer. The functions are called with the System V convention
+(`extern "sysv64"`, `TCB/X86_64/Target.lean`) on every target, Windows
+included, and what may change the data below the stack pointer is the
+system's. The System V psABI (Draft 0.99.7, §3.2.2, "The Stack Frame") keeps
+only 128 bytes: "The 128-byte area beyond the location pointed to by %rsp
+is considered to be reserved and shall not be modified by signal or
+interrupt handlers." Windows keeps none ("x64 stack usage", Microsoft
+Learn): "All memory beyond the current address of RSP is considered
+volatile: The OS, or a debugger, may overwrite this memory during a user
+debug session, or an interrupt handler." So on Windows any byte of a
+released frame may change, and on System V any byte past the 128 below the
+stack pointer: each byte of the frame either keeps its value (as the red
+zone's do) or takes one the model does not know, as the unknowns say: for the quadword `j` of
+the frame, the bytes of `u (2 * j)` say which of its bytes are replaced
+(those not zero), and the bytes of `u (2 * j + 1)` are what replaces them.
+A byte may keep its value, so what a function leaves in a frame it releases
+may be left there (`NoResidue`, whose two runs share their unknowns, still
+tells apart a frame that holds a secret). -/
+def lose (m : Mem) (a : Addr) (n : Nat) (u : Nat → BitVec 64) : Mem :=
+  fun x =>
+    let d := (x - a).toNat
+    if d < n then
+      if (u (2 * (d / 8))).extractLsb' (8 * (d % 8)) 8 = 0 then m x
+      else (u (2 * (d / 8) + 1)).extractLsb' (8 * (d % 8)) 8
+    else m x
+
 /-- The pop of a frame: `pop r`, `k` times (`popReg`), so that `r` holds the
 last quadword of the frame. Faults if `k = 0` or `r` is `rsp`, and unless
 `rsp` and the writable regions are those the push left (`s₁`), and the
@@ -1043,18 +1108,25 @@ frame, the region at their head, has `8 * k` bytes; it removes the frame.
 
 Or `lea rsp, [rsp + bytes]` (`free`, "LEA" as for `alloc`), with the same
 conditions on `bytes` as `alloc` and on `rsp` and the writable regions as
-`pop`, the frame having `bytes` bytes; it changes neither memory nor any
-other register. -/
+`pop`, the frame having `bytes` bytes; it changes no other register.
+
+The released frame's bytes are then below the stack pointer, and are
+`lose`'s: the next of the state's `unknowns`, two for each quadword of the
+frame, say what each holds. -/
 def pop : Instr → State → State → Option State
   | .free bytes, s₁, s₂ =>
     if 0 < bytes ∧ bytes < 4096 ∧ bytes % 8 = 0 ∧ s₂.gpr .rsp = s₁.gpr .rsp ∧ s₂.wr = s₁.wr ∧
         s₁.wr.head? = some ⟨s₁.gpr .rsp, bytes⟩ then
-      some { s₂.setReg .rsp (s₂.gpr .rsp + BitVec.ofNat 64 bytes) with wr := s₂.wr.tail }
+      some { s₂.setReg .rsp (s₂.gpr .rsp + BitVec.ofNat 64 bytes) with
+        wr := s₂.wr.tail, mem := lose s₂.mem (s₂.gpr .rsp) bytes s₂.unknowns,
+        unknowns := fun n => s₂.unknowns (n + bytes / 4) }
     else none
   | .pop r k, s₁, s₂ =>
     if k ≠ 0 ∧ r ≠ .rsp ∧ s₂.gpr .rsp = s₁.gpr .rsp ∧ s₂.wr = s₁.wr ∧
         s₁.wr.head? = some ⟨s₁.gpr .rsp, 8 * k⟩ then
-      some { popReg s₂ r k with wr := s₂.wr.tail }
+      some { popReg s₂ r k with
+        wr := s₂.wr.tail, mem := lose s₂.mem (s₂.gpr .rsp) (8 * k) s₂.unknowns,
+        unknowns := fun n => s₂.unknowns (n + 2 * k) }
     else none
   | _, _, _ => none
 
@@ -1066,22 +1138,25 @@ def Instr.dst : Instr → Option Reg
   | .rorx32 d .. | .andn32 d .. | .rorx d .. | .andn d .. | .movzx8 d _ | .movzx16 d _ | .bswap d | .shift _ d _
   | .shiftCl _ d | .shiftx _ d .. | .movImm64 d _ | .leaSym d _ | .aluTbl _ d .. | .adcx d _ | .adox d _
   | .cmov _ d _ | .pop d _ | .vpmovmskb _ d _ | .movqR d _ | .imul d _
-  | .imul3 d .. | .shld d .. | .btr d _ | .vpcmpltuw d .. => some d
+  | .imul3 d .. | .shld d .. | .btr d _ | .vpcmpltuw d .. | .evCmpUq _ d .. => some d
   | .store .. | .store32 .. | .store8 .. | .store16 .. | .movdquLoad .. | .movdquStore .. | .movdquTbl .. | .xop _
   | .vop _ | .vmovdquLoad .. | .vmovdquStore .. | .vmovdquTbl .. | .vbroadcasti128 .. | .vbinLoad .. | .zop _
   | .vmovdqu32Load .. | .vmovdqu32Store .. | .vbroadcasti32x4 .. | .vbroadcasti32x4H .. | .zbcst .. | .vpmadd52Load ..
   | .vpbroadcastdZ .. | .zbcstd .. | .eop _ | .evLoad .. | .evStore .. | .evMadd52Load .. | .kLoad .. | .kStore .. | .kLoad8 .. | .kStore8 ..
-  | .e5op _ | .evBroadcastLoad .. | .e5InsertLoad .. | .e5ExtractStore ..
-  | .stmxcsr _ | .ldmxcsr _ | .lfence | .mul _ | .mulx .. | .push _ | .alloc _ | .free _ | .callr _ => none
+  | .e5op _ | .evBroadcastLoad .. | .e5InsertLoad .. | .e5ExtractStore .. | .evMaskAddQ ..
+  | .stmxcsr _ | .ldmxcsr _ | .lfence | .mul _ | .mulx .. | .push _ | .alloc _ | .free _ | .callr _ | .callm _ => none
 
 /-- The address an indirect call instruction calls: SDM Vol. 2, "CALL—Call
 Procedure", `FF /2`, "CALL r/m64": "Call near, absolute indirect, address
 given in r/m64"; for a near absolute call, `tempRIP := DEST; Push(RIP);
 RIP := tempRIP` (in 64-bit mode the operand is 64 bits). `Push(RIP)` and
 the rest of the call are the direct call's (`call`), the return `ret`. No
-flags are affected. -/
+flags are affected. For a memory operand, `DEST` is the 8 bytes at its
+effective address, which the call reads (`load64`, so it faults unless they
+are readable). -/
 def icall : Instr → State → Option Addr
   | .callr r, s => some (s.gpr r)
+  | .callm m, s => s.load64 (s.ea m)
   | _, _ => none
 
 abbrev isa : ISA where
@@ -1106,5 +1181,7 @@ abbrev isa : ISA where
   icall := icall
   -- A function's symbol, as a static's (`leaSym`).
   fnAddr s name := s.syms name
+  ptrEq := withPtrEq
+  ptrEqDec := withPtrEqDecEq withPtrEq (fun _ _ _ _ => rfl)
 
 end VG.X86_64

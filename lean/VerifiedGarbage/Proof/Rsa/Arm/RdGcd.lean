@@ -69,7 +69,7 @@ theorem gcd_vp [InvLaw] {um : Bool} {f : Nat × Nat × Nat → Nat × Nat × Nat
       ⟨by rw [h.1.2.2.r7, h.2.2.2.r7], by rw [h.1.2.2.r8, h.2.2.2.r8], by rw [h.1.2.2.r9, h.2.2.2.r9]⟩ e1 e2,
       trivial⟩) fun σ s ⟨e, h, hw⟩ => ?_) ?_
   · have sz := h.sizes
-    have g : Gk s P.B P.Z P.w P.w nArr := ⟨hw.nowrap, hw.writable, hw.fits, hw.wpos, le_refl _, hw.wle, hw.r7,
+    have g : Gk s P.B P.Z P.w P.w nArr := ⟨hw.nowrap, hw.writable, hw.fits, hw.wpos, Nat.le_refl _, hw.wle, hw.r7,
       hw.r8, hw.r9⟩
     refine WP.mono (InvLaw.gcdK_ok g (by decide) (by decide)
       (by have := sz.sw; have := sz.w6a; simp only [S] at *; omega_arith)) fun t ⟨gt, k, r, v⟩ => ⟨⟨e, ?_, ?_⟩, ?_⟩
@@ -126,7 +126,7 @@ abbrev ProdF (P : RP) (g : Nat × Nat × Nat → Nat × Nat × Nat) : Prop :=
   ∀ y x a, g (y, x, a) = (y / 2, 2 * x % 2 ^ (32 * P.W), (a + if y % 2 = 0 then 0 else x) % 2 ^ (32 * P.W))
 
 /-- `(y, x, a)` after `k` steps of a product. -/
-abbrev pr (g : Nat × Nat × Nat → Nat × Nat × Nat) (y x : Nat) (k : Nat) : Nat × Nat × Nat := g^[k] (y, x, 0)
+abbrev pr (g : Nat × Nat × Nat → Nat × Nat × Nat) (y x : Nat) (k : Nat) : Nat × Nat × Nat := iterN g k (y, x, 0)
 
 end
 

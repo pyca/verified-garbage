@@ -14,7 +14,7 @@ def wordsZero (o : Nat) : List Instr :=
   [.mov .r9 (.imm 0)] ++ (List.range 16).flatMap (sumLimb o) ++ [.cmp .r9 (.imm 0)]
 
 def fieldZero (a : Slot) : Prog isa := .seq (.block (freeze a)) (.block (wordsZero FR))
-def fieldEqual (a b : Slot) : Prog isa := .seq (fieldCode [.sub 21 a b]) (fieldZero 21)
+def fieldEqual (a b : Slot) : Prog isa := .seq (fieldCode false [.sub 21 a b]) (fieldZero 21)
 
 def equalLimb (a b k : Nat) : List Instr :=
   [.ldr .r3 .r0 (a + 4 * k), .ldr .r2 .r0 (b + 4 * k),

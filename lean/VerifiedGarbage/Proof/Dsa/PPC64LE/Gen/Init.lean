@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Ffdh.PPC64LE.InitCommon
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.RelCT
-public import VerifiedGarbage.Spec.Dsa.ParameterSearchContract
+public import VerifiedGarbage.Proof.Dsa.ParameterPublic
 public import VerifiedGarbage.TCB.PPC64LE.Target
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Keep
 meta import VerifiedGarbage.Impl.Dsa.PPC64LE.Generation
@@ -13,7 +13,6 @@ meta import VerifiedGarbage.Proof.Ffdh.PPC64LE.InitCommon
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.RelCT
-meta import VerifiedGarbage.Spec.Dsa.ParameterSearchContract
 meta import VerifiedGarbage.TCB.PPC64LE.Target
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Keep
 import VerifiedGarbage.Proof.Framework.PPC64LE.RunR
@@ -21,6 +20,8 @@ meta import VerifiedGarbage.Proof.Framework.PPC64LE.RunR
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.PPC64LE.Residue
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.Residue
 
 /-! # Starting the DSA parameter search on PPC64LE: correctness, constant time
 
@@ -94,7 +95,7 @@ def initPost (s t : State) : Prop :=
   | none => ((t.gpr .r3).setWidth 32).toNat = 0 ∧ Spec.Rsa.wordsAt t.mem (s.gpr .r3) 4 = List.replicate 4 0
   | some values => ((t.gpr .r3).setWidth 32).toNat = 1 ∧ ∃ first,
       Spec.Rsa.wordsAt t.mem (s.gpr .r3) 4 = (values ++ [first]).map (BitVec.ofNat 64) ∧
-      Spec.Entropy.RequestValid (Spec.Dsa.parameterEntropy (s.gpr .r4).toNat) 0 first
+      Proof.Dsa.Generation.FirstAsked (s.gpr .r4).toNat first
 
 def initPub (s t : State) : Prop := s.sp = t.sp ∧ s.gpr .r3 = t.gpr .r3 ∧ s.gpr .r4 = t.gpr .r4
 
@@ -115,7 +116,7 @@ theorem initWords_post {s u : State} {rs : List Reg} (h : InitWr s) (k : Keep rs
   simp only [initPost, Spec.Dsa.parameterInit, hv, ↓reduceIte]
   refine ⟨by rw [ht]; rfl, 512 * (s.gpr .r4).toNat, ?_, ?_⟩
   · rw [hmt, hm, h3, initWritten_words]; rfl
-  · unfold Spec.Entropy.RequestValid Spec.Dsa.parameterEntropy; omega_using [hp]
+  · exact Proof.Dsa.Generation.firstAsked hp
 
 theorem initZeros_post {s u : State} {rs : List Reg} (h : InitWr s) (k : Keep rs s u) (hr : .r3 ∉ rs)
     (hm : u.mem = s.mem) (hv : Spec.Dsa.generationPLenValid (s.gpr .r4).toNat = false) :
@@ -171,13 +172,18 @@ private def initSat : State where
   rd := []
   wr := [⟨0x1000, 32⟩]
 
-theorem init_verified : Verified target init (Spec.Dsa.parameterInitContract abi) := by
+theorem init_verified : Verified target init (Proof.Dsa.parameterInitAskedContract abi) := by
   refine Verified.of_correct (k := initContract) init_correct ?_ ?_
   · intro s₁ s₂ tr₁ tr₂ t₁ t₂ _ _ hp e₁ e₂
     obtain ⟨hsp, h3, h4⟩ := hp
     exact (init_relCT (s₁.gpr .r3) (s₁.gpr .r4) s₁.sp _ _ _ _ _ _ ⟨⟨rfl, rfl, rfl⟩, ⟨h3.symm, h4.symm, hsp.symm⟩⟩
       e₁ e₂).1
-  · sig_implies [Spec.Dsa.parameterInitContract, Spec.Dsa.parameterInitSig,
+  · sig_implies [Proof.Dsa.parameterInitAskedContract, Spec.Dsa.parameterInitSig,
       initContract, initPre, initPost, initPub, InitWr, abi, argRegs] [initSat] using initSat
+
+/-- `vg_dsa_parameter_search_init` returns without secret residue: it
+reads no memory, so what it leaves is a function of its arguments (`Residue.noResidue_of_blind`). -/
+theorem init_noResidue (k : Contract isa) (r : Nat) : NoResidue init k r :=
+  Residue.noResidue_of_blind (by decide) k r
 
 end VG.Proof.Dsa.PPC64LE.Gen

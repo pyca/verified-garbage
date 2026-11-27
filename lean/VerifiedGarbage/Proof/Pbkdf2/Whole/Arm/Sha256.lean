@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.Hmac.Stream.Arm
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Instances
 public import VerifiedGarbage.Proof.Pbkdf2.Contract
 public import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Sha256
@@ -8,6 +9,7 @@ import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.Framework.TacticTemplate
 import VerifiedGarbage.Proof.Sha1.Arm.Lit
 import VerifiedGarbage.Proof.Sha512.Arm.Lit
+meta import VerifiedGarbage.Impl.Hmac.Stream.Arm
 meta import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Instances
 meta import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Sha256
 meta import VerifiedGarbage.Proof.Sha256.Arm.Lit
@@ -32,7 +34,7 @@ open VG.Arm
 open VG.Impl.Pbkdf2.Whole.Arm (Fns)
 open VG.Proof.Pbkdf2.Stream.Arm (sha256OK)
 
-def sha256F : Fns := fnsOf Spec.Hmac.sha256I Md.Arm.sha256Md
+export VG.Impl.Hmac.Stream.Arm (sha256F)
 
 theorem sha256_checks : Checks sha256F := by
   constructor <;> refine ⟨?_, ?_⟩

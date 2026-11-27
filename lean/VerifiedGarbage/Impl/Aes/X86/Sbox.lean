@@ -4,14 +4,14 @@ public import VerifiedGarbage.Impl.Aes.X86.Alloc
 meta import VerifiedGarbage.Impl.Aes.X86.Alloc
 
 /-!
-# The bitsliced AES S-box on x86 (32-bit)
+# The bitsliced AES S-box on x86 (32-bit), in general registers
 
-The circuit `Circuit.sbox` on the eight words of the bitsliced state
-(slot `j` of the scratch buffer at `edi` holds bit `j` of 32 bytes), in
-place, with `eax`, `ebx`, `ecx`, `edx` and `ebp` and spilling to the slots
-from 8 on: the code that `compile` allocates for it. It is written out (and
-`#guard` checks that it is what `compile` produces) so that the kernel,
-which evaluates the code in the proofs, does not have to run the allocator.
+Short forms of the instructions on registers and slots of the scratch buffer
+at `edi`, and the circuit `Circuit.sbox` on 32-bit slices: slot `j` holds bit
+`j` of 32 bytes, in place, with `eax`, `ebx`, `ecx`, `edx` and `ebp` and
+spilling to slots 8–31. It is the code that `compile` produces, written out
+(`#guard` checks that it is that) so that the kernel does not have to run
+the allocator.
 -/
 
 @[expose] public section
@@ -23,17 +23,17 @@ open VG.X86 VG.Impl.Aes.Circuit
 /-- The scratch buffer's base. -/
 def sb : Reg := .edi
 
-/-- The registers the layers may use. -/
+/-- The registers the S-box and the layers change. -/
 def tmpRegs : List Reg := [.eax, .ebx, .ecx, .edx, .ebp]
 
-/-- The slots the S-box spills to. -/
-def spillSlots : List Nat := List.range' 8 56
+/-- The slots the S-box may spill to. -/
+def spillSlots : List Nat := List.range' 8 24
 
-/-- The circuit's input `xᵢ` and output `sᵢ` are bit `7 - i`, in slot `7 - i`. -/
-def sboxIns : List (Nat × Nat) := (List.range 8).map fun i => (x i, 7 - i)
-def sboxOuts : List (Nat × Nat) := (List.range 8).map fun i => (s i, 7 - i)
+def sboxIns : List (Nat × Nat) := (List.range 8).map fun i => (x i, i)
+def sboxOuts : List (Nat × Nat) := (List.range 8).map fun i => (s i, i)
 
-/-! Short forms of the instructions, on slots of `sb`. -/
+/-! Short forms, on registers and slots of `sb`. -/
+
 def movR (d s : Reg) : Instr := .mov d (.reg s)
 def movS (d : Reg) (k : Nat) : Instr := .mov d (.mem (slotAt sb k))
 def xorR (d s : Reg) : Instr := .alu .xor d (.reg s)
@@ -43,48 +43,40 @@ def andS (d : Reg) (k : Nat) : Instr := .alu .and d (.mem (slotAt sb k))
 def notR (d : Reg) : Instr := .alu .xor d (.imm (BitVec.allOnes 32))
 def st (k : Nat) (r : Reg) : Instr := .store (slotAt sb k) r
 
-/-- The S-box on the state in slots `0 … 7`, in place. -/
+/-- The S-box on the slices in slots `0 … 7`, in place. -/
 def sboxCode : List Instr := [
-  movS .eax 4, xorS .eax 2, movS .ebx 7, xorS .ebx 1, movS .ecx 7, xorS .ecx 4, movS .edx 7,
-  xorS .edx 2, movS .ebp 6, xorS .ebp 5, st 8 .ecx, movR .ecx .ebp, xorS .ecx 0, st 9 .ebp,
-  movR .ebp .ecx, xorS .ebp 4, st 10 .ebp, movR .ebp .ebx, xorR .ebp .eax, st 11 .eax, movR
-  .eax .ecx, xorS .eax 7, st 12 .eax, movR .eax .ecx, xorS .eax 1, st 13 .ecx, movR .ecx .eax,
-  xorR .ecx .edx, st 14 .eax, movS .eax 3, xorR .eax .ebp, st 15 .ecx, movR .ecx .eax, xorS
-  .ecx 2, xorS .eax 6, st 16 .ebp, movR .ebp .ecx, xorS .ebp 0, st 17 .ebp, movR .ebp .ecx,
-  xorS .ebp 9, st 18 .ecx, movR .ecx .eax, xorS .ecx 8, st 19 .eax, movS .eax 0, xorR .eax
-  .ecx, st 20 .eax, movR .eax .ebp, xorR .eax .ecx, st 21 .eax, movR .eax .ebp, xorR .eax .edx,
-  st 22 .eax, movS .eax 9, xorR .eax .ecx, st 9 .ebp, movR .ebp .ebx, xorR .ebp .eax, st 23
-  .ebp, movS .ebp 7, xorR .ebp .eax, st 24 .ebp, movS .ebp 16, andS .ebp 18, st 25 .edx, movS
-  .edx 15, andS .edx 17, xorR .edx .ebp, st 26 .edx, movS .edx 10, andS .edx 0, xorR .edx .ebp,
-  movR .ebp .ebx, andR .ebp .eax, st 27 .ebx, movS .ebx 14, andS .ebx 13, xorR .ebx .ebp, st 28
-  .eax, movS .eax 12, andS .eax 20, xorR .eax .ebp, movS .ebp 8, andR .ebp .ecx, st 29 .ecx,
-  movS .ecx 11, andS .ecx 21, xorR .ecx .ebp, st 30 .eax, movS .eax 25, andS .eax 9, xorR .eax
-  .ebp, movS .ebp 26, xorR .ebp .ecx, xorR .edx .eax, xorR .ebx .ecx, xorS .eax 30, xorS .ebp
-  19, xorS .edx 22, xorS .ebx 23, xorS .eax 24, movR .ecx .ebp, xorR .ecx .edx, andR .ebp .ebx,
-  st 24 .ebx, movR .ebx .eax, xorR .ebx .ebp, st 23 .ebp, movR .ebp .ecx, andR .ebp .ebx, xorR
-  .ebp .edx, st 22 .ecx, movS .ecx 24, xorR .ecx .eax, xorS .edx 23, andR .edx .ecx, xorR .edx
-  .eax, movS .ecx 24, xorR .ecx .edx, st 24 .ebp, movR .ebp .ebx, xorR .ebp .edx, andR .eax
-  .ebp, xorR .ecx .eax, xorR .ebx .eax, andS .ebx 24, xorS .ebx 22, movR .eax .ebx, xorR .eax
-  .ecx, movS .ebp 24, xorR .ebp .edx, st 22 .ebp, movS .ebp 24, xorR .ebp .ebx, st 23 .ebx,
-  movR .ebx .edx, xorR .ebx .ecx, st 19 .ebp, movS .ebp 22, xorR .ebp .eax, st 30 .eax, movR
-  .eax .ebx, andS .eax 18, st 18 .eax, movR .eax .ecx, andS .eax 17, st 17 .eax, movR .eax
-  .edx, andS .eax 0, st 26 .eax, movS .eax 19, andS .eax 28, st 28 .eax, movS .eax 23, andS
-  .eax 13, st 13 .eax, movS .eax 24, andS .eax 20, st 20 .eax, movS .eax 22, andS .eax 29, st
-  29 .eax, movR .eax .ebp, andS .eax 21, st 21 .eax, movS .eax 30, andS .eax 9, andS .ebx 16,
-  andS .ecx 15, andS .edx 10, st 10 .eax, movS .eax 19, andS .eax 27, st 27 .eax, movS .eax 23,
-  andS .eax 14, st 14 .ebx, movS .ebx 24, andS .ebx 12, st 12 .ebx, movS .ebx 22, andS .ebx 8,
-  andS .ebp 11, st 11 .eax, movS .eax 30, andS .eax 25, xorR .ebx .ebp, xorR .edx .ecx, st 25
-  .edx, movS .edx 20, xorS .edx 11, xorS .ecx 14, st 14 .ecx, movS .ecx 26, xorS .ecx 27, st 11
-  .ebx, movS .ebx 26, xorS .ebx 20, st 20 .ebx, movS .ebx 21, xorS .ebx 10, st 10 .ebx, movS
-  .ebx 18, xorS .ebx 28, st 18 .ebx, movS .ebx 29, xorS .ebx 21, xorR .ebp .eax, movS .eax 27,
-  xorR .eax .edx, xorS .ecx 18, st 27 .ebp, movS .ebp 13, xorS .ebp 11, xorS .ebx 28, st 28
-  .edx, movS .edx 11, xorR .edx .ecx, xorS .ecx 12, st 12 .edx, movS .edx 10, xorR .edx .ebp,
-  xorS .ebp 14, st 14 .eax, movS .eax 13, xorR .eax .ebx, xorR .ecx .edx, st 13 .ecx, movS .ecx
-  17, xorR .ecx .ebp, xorR .ebx .ebp, xorS .edx 14, notR .edx, movS .ebp 28, xorS .ebp 12, notR
-  .ebp, st 12 .ebp, movR .ebp .eax, xorS .ebp 13, st 28 .edx, movS .edx 18, xorR .edx .ecx,
-  xorS .ecx 20, st 20 .ecx, movS .ecx 25, xorS .ecx 13, xorR .eax .edx, notR .eax, xorS .ebp
-  27, notR .ebp, st 7 .ebx, st 6 .eax, st 5 .ebp, st 4 .edx, st 2 .ecx, movS .eax 20, st 3
-  .eax, movS .eax 28, st 1 .eax, movS .eax 12, st 0 .eax]
+  movS .eax 5, xorS .eax 2, movR .ebx .eax, xorS .ebx 1, movR .ecx .ebx, xorS .ecx 6, movR .edx .ebx,
+  xorS .edx 0, movR .ebp .ecx, xorS .ebp 3, xorS .ebp 7, st 8 .ebx, movR .ebx .ebp, xorR .ebx .eax, st 9 .eax,
+  movR .eax .ebx, xorR .eax .edx, st 10 .ebp, movR .ebp .eax, xorS .ebp 5, st 11 .ebx, movR .ebx .edx,
+  xorS .ebx 7, st 12 .edx, movR .edx .eax, xorS .edx 4, st 13 .ebx, movR .ebx .eax, xorR .ebx .ecx, st 14 .ebx,
+  movR .ebx .ebp, xorS .ebx 7, st 15 .ebp, movR .ebp .edx, xorR .ebp .ebx, st 16 .ebp, movR .ebp .edx,
+  andR .ebp .eax, st 17 .eax, movS .eax 11, xorS .eax 4, st 18 .ebp, movS .ebp 10, xorS .ebp 4, st 19 .ebp,
+  movR .ebp .edx, xorS .ebp 10, st 10 .edx, movR .edx .ebx, andR .edx .ecx, st 20 .ecx, movR .ecx .eax,
+  andR .ecx .ebp, st 21 .ebp, movR .ebp .eax, xorS .ebp 1, xorR .edx .ecx, st 22 .ebx, movS .ebx 16,
+  andS .ebx 14, xorR .ecx .ebx, movS .ebx 14, xorR .ebx .ebp, st 23 .edx, movR .edx .eax, xorS .edx 15,
+  st 24 .eax, movS .eax 13, andR .eax .ebp, st 25 .ebp, movR .ebp .edx, andR .ebp .ebx, xorR .eax .ecx,
+  xorR .ecx .ebp, movS .ebp 12, andS .ebp 19, st 26 .ebx, movS .ebx 7, andS .ebx 8, xorS .eax 18,
+  xorR .ecx .ebp, xorS .ebx 18, xorS .ebp 23, st 18 .edx, movS .edx 22, xorS .edx 6, xorS .eax 9, xorS .ebx 23,
+  st 23 .eax, movS .eax 15, andS .eax 6, xorR .ebx .edx, xorR .ebp .eax, movS .eax 15, xorS .eax 8,
+  xorR .ebp .eax, xorS .ecx 11, movS .eax 23, xorR .eax .ecx, movR .edx .ebx, andS .edx 23, st 11 .ebx,
+  movR .ebx .ecx, xorR .ebx .edx, xorR .edx .ebp, andR .edx .eax, movS .eax 11, xorR .eax .ebp, xorR .edx .ecx,
+  st 11 .ebp, movS .ebp 23, xorR .ebp .edx, st 23 .eax, movR .eax .edx, andS .eax 7, st 9 .eax, movR .eax .ebx,
+  xorR .eax .edx, andR .ecx .eax, xorR .ebp .ecx, movR .eax .ebp, andS .eax 22, xorR .ecx .ebx, andS .ebx 23,
+  xorS .ebx 11, st 11 .eax, movR .eax .ebp, andS .eax 20, andR .ecx .ebx, xorS .ecx 23, st 23 .eax,
+  movR .eax .ebx, xorR .eax .ecx, st 20 .ebp, movR .ebp .eax, andS .ebp 18, st 18 .ebp, movR .ebp .ebx,
+  xorR .ebp .edx, st 22 .ebx, movR .ebx .ebp, andS .ebx 19, andS .eax 26, st 26 .ebx, movR .ebx .ecx,
+  andS .ebx 16, st 16 .ebx, movR .ebx .ebp, andS .ebx 12, xorS .ebx 18, st 12 .ebx, movR .ebx .ecx,
+  andS .ebx 14, xorS .ecx 20, xorR .ebp .ecx, st 14 .ecx, movS .ecx 9, xorS .ecx 18, st 18 .ecx, movR .ecx .edx,
+  xorS .ecx 20, andS .edx 8, xorR .eax .ebx, st 8 .ebx, movR .ebx .eax, xorS .ebx 26, st 26 .ebx,
+  movR .ebx .ebp, andS .ebx 21, xorR .eax .ebx, xorR .eax .edx, xorS .edx 23, st 23 .ebx, movR .ebx .ecx,
+  andS .ebx 6, andS .ecx 15, xorR .eax .ebx, andS .ebp 24, movS .ebx 22, andS .ebx 25, xorS .ebp 16,
+  xorS .ebx 8, st 8 .eax, movS .eax 14, andS .eax 10, st 10 .ecx, movS .ecx 22, andS .ecx 13, xorR .eax .ebp,
+  xorR .ebx .edx, st 13 .edx, movS .edx 18, xorR .edx .eax, xorR .eax .ecx, notR .eax, st 18 .ecx, movS .ecx 14,
+  andS .ecx 17, xorS .edx 10, st 10 .edx, movS .edx 8, xorR .edx .ecx, xorS .ebp 12, xorR .ebp .ebx, notR .ebp,
+  xorR .ebx .eax, st 12 .ebx, movR .ebx .eax, xorS .ebx 23, notR .ebx, st 23 .edx, movR .edx .ebx, xorS .edx 13,
+  xorS .ebx 10, st 13 .eax, movR .eax .ebp, xorS .eax 18, notR .eax, xorS .eax 11, xorS .ebx 26, notR .ebx,
+  xorR .edx .ecx, xorS .eax 16, xorS .eax 9, st 0 .ebp, st 4 .eax, st 6 .ebx, st 7 .edx, movS .eax 13,
+  st 1 .eax, movS .eax 10, st 2 .eax, movS .eax 23, st 3 .eax, movS .eax 12, st 5 .eax]
 
 #guard sboxCode == compile sb sbox sboxIns sboxOuts tmpRegs spillSlots
 

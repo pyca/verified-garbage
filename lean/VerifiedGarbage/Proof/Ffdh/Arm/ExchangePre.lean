@@ -1,7 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.ExchangeFn
-import VerifiedGarbage.Proof.Ffdh.Arm.Entered
+import VerifiedGarbage.Proof.Ffdh.Arm.EntryStore
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
@@ -10,6 +9,351 @@ import VerifiedGarbage.Proof.Framework.Offset
 public import Init.Data.BitVec.BasicAux
 public import VerifiedGarbage.Spec.Rsa.Contract
 public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Proof.Ffdh.Arm.Frame
+import VerifiedGarbage.Proof.Ffdh.Arm.Block
+public import VerifiedGarbage.Impl.Ffdh.Arm.Domain
+public import VerifiedGarbage.Proof.Ffdh.Arm.IncomingWord
+import VerifiedGarbage.Proof.Bignum.Arm.PcEntry
+import VerifiedGarbage.Proof.Rsa.BytesFrame
+import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.Arm.CheckPublicSpec
+import VerifiedGarbage.Proof.Ffdh.Domain
+import VerifiedGarbage.Proof.Bignum.Math
+public import VerifiedGarbage.Proof.Ffdh.Arm.Context
+public import VerifiedGarbage.Proof.Ffdh.Arm.ExchangeMain
+import VerifiedGarbage.Proof.Ffdh.Arm.Head
+import VerifiedGarbage.Proof.Ffdh.Arm.Branch
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+public import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
+import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.TCB.Arm.Isa
+public import VerifiedGarbage.Proof.Framework.RelCT
+import VerifiedGarbage.Proof.Ffdh.Arm.StackCT
+
+/-! ### `Ffdh.Arm.ExchangeEntryCT`, which the modules that import this one used -/
+
+section
+
+/-! The shared-secret entry uses fixed local and incoming stack slots. -/
+
+@[expose] public section
+namespace VG.Proof.Ffdh.Arm
+open VG VG.Arm
+
+theorem exchangeEntry_ct : RelCT isa (fun s t => s.sp = t.sp)
+    (.block VG.Impl.Ffdh.Arm.Domain.Exchange.entry) (fun _ _ => True) := by
+  have accesses := RelCT.block_append ((storeLocal_ct .r0 4).seq (RelCT.block_append ((storeLocal_ct .r2 24).seq (RelCT.block_append ((storeLocal_ct .r3 28).seq (RelCT.block_append ((loadLocal_ct .r3 128 (by decide)).seq (RelCT.block_append ((storeLocal_ct .r3 32).seq (RelCT.block_append ((loadLocal_ct .r3 132 (by decide)).seq (RelCT.block_append ((storeLocal_ct .r3 40).seq (RelCT.block_append ((loadLocal_ct .r3 136 (by decide)).seq (RelCT.block_append ((storeLocal_ct .r3 44).seq (RelCT.block_append ((loadLocal_ct .r3 140 (by decide)).seq (RelCT.block_append ((storeLocal_ct .r3 36).seq (RelCT.block_append ((loadLocal_ct .r0 148 (by decide)).seq ((storeLocal_ct .r0 0)))))))))))))))))))))))))
+  exact (RelCT.block_append (stackAddr_ct.seq accesses)).mono
+    (fun _ _ h => h) (fun _ _ _ => trivial)
+
+end VG.Proof.Ffdh.Arm
+
+end
+
+end
+
+/-! ### `Ffdh.Arm.ExchangeBody`, which this module and modules that import it used -/
+
+section
+
+/-! The shared-value body is safe for all domain encodings, and specified for valid moduli. -/
+
+@[expose] public section
+namespace VG.Proof.Ffdh.Arm
+open VG VG.Arm VG.Proof.Bignum.Arm
+
+def exchangeResult (p : Inputs) (yb xb : List Byte) (s : State) : Prop :=
+  s.gpr .r0 = (if sharedAccepted p yb xb then 1 else 0) ∧
+    Spec.Rsa.bytesAt s.mem (State.addr p.output) p.k =
+      (if sharedAccepted p yb xb then Spec.Rsa.i2osp (sharedValue p yb xb) p.k else List.replicate p.k 0)
+
+theorem exchangeBody_ok (s : State) {p : Inputs} {slots : List Nat} {yb xb : List Byte}
+    (h : Context p slots s) (stable : stableSlots slots = true)
+    (h0 : 0 ∈ slots) (h4 : 4 ∈ slots) (h24 : 24 ∈ slots) (h32 : 32 ∈ slots)
+    (h36 : 36 ∈ slots) (h40 : 40 ∈ slots) (h44 : 44 ∈ slots)
+    (saved : ∀ d ∈ slots, d + 4 ≤ 64 ∨ 68 ≤ d)
+    (peer : Octets p.base p.publicValue p.len yb s) (peerLength : yb.length = p.k)
+    (scalar : Octets p.base p.privateValue p.len xb s) (positive : 0 < xb.length) (scalarFit : xb.length < 2 ^ 32)
+    (scalarCount : p.slotValue 44 = BitVec.ofNat 32 xb.length)
+    (peerStack : Region.Disjoint ⟨State.addr p.publicValue, yb.length⟩ ⟨State.addr s.sp, 72⟩)
+    (scalarStack : Region.Disjoint ⟨State.addr p.privateValue, xb.length⟩ ⟨State.addr s.sp, 72⟩)
+    (output : OutputBuffer p.output p.k s)
+    (workspaceSep : Region.Disjoint ⟨State.addr p.base, 8 * p.len⟩ ⟨State.addr p.output, p.k⟩)
+    (stackSep : Region.Disjoint ⟨State.addr s.sp, 72⟩ ⟨State.addr p.output, p.k⟩) :
+    WP isa (VG.Impl.Ffdh.Arm.Domain.head VG.Impl.Ffdh.Arm.Domain.Exchange.main) s fun t =>
+      (Spec.Rsa.modulusValid p.P p.k = true → exchangeResult p yb xb t) ∧
+      Frame (exchangeWrites p s) s.mem t.mem := by
+  unfold VG.Impl.Ffdh.Arm.Domain.head
+  apply WP.assoc
+  rw [WP.seq_iff]
+  refine WP.mono (head_ok s h stable h0 h24 h32) ?_
+  rintro u ⟨context, zero, frame, rest⟩
+  have entryFrame : Frame (exchangeWrites p s) s.mem u.mem := frame.mono (by simp [exchangeWrites])
+  by_cases valid : Spec.Rsa.modulusValid p.P p.k = true
+  · refine WP.ite true (by change some u.z = some true; rw [zero, valid]) ?_ (by intro hf; cases hf)
+    intro _
+    have facts := VG.Proof.Bignum.valid_facts valid p.minLength
+    have stable' : stableSlots (60 :: 56 :: slots) = true := by
+      change (true && (true && stableSlots slots)) = true
+      rw [Bool.true_and, Bool.true_and, stable]
+    have sourceFrame {src : BitVec 32} {bs : List Byte}
+        (separate : Region.Disjoint ⟨State.addr src, bs.length⟩ ⟨State.addr s.sp, 72⟩)
+        (r : Region) (hr : r ∈ [⟨State.addr s.sp, 72⟩]) : (⟨State.addr src, bs.length⟩ : Region).Disjoint r := by
+      rw [List.mem_singleton] at hr; subst r; exact separate
+    have saved' : ∀ d ∈ 60 :: 56 :: slots, d + 4 ≤ 64 ∨ 68 ≤ d := by
+      intro d hd
+      simp only [List.mem_cons] at hd
+      rcases hd with rfl | rfl | hd
+      · exact Or.inl (by decide)
+      · exact Or.inl (by decide)
+      · exact saved d hd
+    refine WP.mono (exchangeMain_ok u context stable' (by simp [h0]) (by simp [h4]) (by simp [h24])
+      (by simp [h32]) (by simp [h36]) (by simp [h40]) (by simp [h44]) saved' facts.2.1 facts.1
+      (peer.after_frame frame rest (sourceFrame peerStack)) peerLength
+      (scalar.after_frame frame rest (sourceFrame scalarStack)) positive scalarFit scalarCount
+      (by rw [rest.sp]; exact peerStack) (by rw [rest.sp]; exact scalarStack) (output.after rest)
+      workspaceSep (by rw [rest.sp]; exact stackSep)) ?_
+    rintro t ⟨result, bytes, frameT⟩
+    exact ⟨fun _ => ⟨result, bytes⟩, entryFrame.trans (by simpa only [exchangeWrites, rest.sp] using frameT)⟩
+  · have invalid : Spec.Rsa.modulusValid p.P p.k = false := Bool.eq_false_iff.mpr valid
+    refine WP.ite false (by change some u.z = some false; rw [zero, invalid]) (by intro ht; cases ht) ?_
+    intro _
+    refine WP.mono (ret_ok u 0 (by decide)) ?_
+    rintro t ⟨⟨_, mem⟩, _⟩
+    exact ⟨fun hv => (valid hv).elim, by rw [mem]; exact entryFrame⟩
+
+end VG.Proof.Ffdh.Arm
+
+end
+
+end
+
+/-! ### `Ffdh.Arm.ExchangeSpec`, which the modules that import this one used -/
+
+section
+
+/-! The native fixed-width shared value implements the shared exchange operation. -/
+
+@[expose] public section
+namespace VG.Proof.Ffdh.Arm
+open VG VG.Arm
+
+theorem Inputs.exactWidth (p : Inputs) (valid : Spec.Ffdh.domainValid p.k p.dom = true) :
+    (Spec.RsaKeyGen.bitLength p.P + 7) / 8 = p.k := by
+  have top : 256 ^ (p.k - 1) ≤ p.P := by
+    have h := valid
+    simp only [Spec.Ffdh.domainValid, Bool.and_eq_true, decide_eq_true_eq] at h
+    exact h.2
+  have bound := VG.Proof.Bignum.os2ip_lt (p.dom.take p.k)
+  rw [p.pLength] at bound
+  exact VG.Proof.Ffdh.octets_bitLength (by have := p.minLength; omega_using [this]) top bound
+
+theorem exchangeResult_spec {p : Inputs} {yb xb : List Byte} {t : State}
+    (valid : Spec.Ffdh.domainValid p.k p.dom = true)
+    (peer : Spec.Ffdh.publicValid ⟨Spec.Ffdh.domainOf p.k p.dom, Spec.Rsa.os2ip yb⟩ = true)
+    (result : exchangeResult p yb xb t) :
+    Spec.Rsa.written t.mem (State.addr p.output) p.k (t.gpr .r0)
+      (Spec.Ffdh.exchangeOp (Spec.Ffdh.domainOf p.k p.dom) (Spec.Rsa.os2ip xb) (Spec.Rsa.os2ip yb)) := by
+  have modulus := VG.Proof.Ffdh.domainValid_mod valid
+  rw [p.domainP] at modulus
+  have facts := VG.Proof.Bignum.valid_facts modulus p.minLength
+  have operation := VG.Proof.Ffdh.exchangeOp_eq (k := p.k) (X := Spec.Rsa.os2ip xb) peer (by rw [p.domainP]; omega_using [facts])
+    (by rw [p.domainP]; exact p.exactWidth valid)
+  rw [p.domainP] at operation
+  rw [operation]
+  have result := result
+  unfold exchangeResult sharedAccepted sharedValue at result
+  rw [VG.Proof.Bignum.powMod_eq] at result
+  by_cases accepted : 1 < Spec.Rsa.os2ip yb ^ Spec.Rsa.os2ip xb % p.P ∧
+      Spec.Rsa.os2ip yb ^ Spec.Rsa.os2ip xb % p.P < p.P - 1
+  · rw [ite_eq_left accepted]
+    simp [accepted] at result
+    exact ⟨by rw [result.1] <;> rfl, result.2⟩
+  · rw [ite_eq_right accepted]
+    simp [accepted] at result
+    exact ⟨by rw [result.1] <;> rfl, result.2⟩
+
+end VG.Proof.Ffdh.Arm
+
+end
+
+end
+
+/-! ### `Ffdh.Arm.ExchangeFn`, which this module and modules that import it used -/
+
+section
+
+/-! ### `Ffdh.Arm.ExchangeEntry`, which this module and modules that import it used -/
+
+section
+
+/-! Retain the shared-secret ABI's output, domain, scalar, peer, and workspace arguments. -/
+
+@[expose] public section
+namespace VG.Proof.Ffdh.Arm
+open VG VG.Arm VG.Proof.Bignum.Arm VG.Proof.Mont
+open VG.Proof.X25519.Arm (Rest)
+
+structure ExchangeIncoming (p : Inputs) (s : State) : Prop where
+  modulus : IncomingWord (BitVec.ofNat 32 p.k) 128 s
+  scalar : IncomingWord p.privateValue 132 s
+  scalarCount : IncomingWord (BitVec.ofNat 32 p.privateLength) 136 s
+  peer : IncomingWord p.publicValue 140 s
+  scratch : IncomingWord p.base 148 s
+
+theorem exchangeEntry_ok (s : State) {p : Inputs} (h : ArgumentMemory p [] s)
+    (incoming : ExchangeIncoming p s) (out : s.gpr .r0 = p.output)
+    (domain : s.gpr .r2 = p.domain) (domainLength : s.gpr .r3 = BitVec.ofNat 32 p.dom.length) :
+    WP isa (.block VG.Impl.Ffdh.Arm.Domain.Exchange.entry) s fun t =>
+      Context p [0, 36, 44, 40, 32, 28, 24, 4] t ∧ Frame [⟨State.addr s.sp, 72⟩] s.mem t.mem := by
+  unfold VG.Impl.Ffdh.Arm.Domain.Exchange.entry VG.Impl.Ffdh.Arm.Domain.st
+  refine wp_stackAddr (by decide) fun s0 moved => ?_
+  have rest0 : Rest [.r12] s s0 := moved.rest (by simp)
+  have args0 := h.of_mem moved.mem rest0
+  have frame0 : Frame [⟨State.addr s.sp, 72⟩] s.mem s0.mem := by rw [moved.mem]; exact Frame.refl _ _
+  have stack0 : s0.gpr .r12 = s0.sp := by rw [moved.gpr, moved.sp, BitVec.add_zero]
+  refine wp_store_arg .r0 4 args0 (by decide) (by decide) (by decide)
+    ((rest0.gpr .r0 (by simp)).trans out) stack0 fun s1 args1 stepFrame1 stepRest1 => ?_
+  have rest1 := rest0.trans (stepRest1.mono (by simp))
+  have stack1 := (stepRest1.gpr .r12 (by simp)).trans (stack0.trans stepRest1.sp.symm)
+  rw [rest0.sp] at stepFrame1
+  have frame1 := frame0.trans stepFrame1
+  refine wp_store_arg .r2 24 args1 (by decide) (by decide) (by decide)
+    ((rest1.gpr .r2 (by simp)).trans domain) stack1 fun s2 args2 stepFrame2 stepRest2 => ?_
+  have rest2 := rest1.trans (stepRest2.mono (by simp))
+  have stack2 := (stepRest2.gpr .r12 (by simp)).trans (stack1.trans stepRest2.sp.symm)
+  rw [rest1.sp] at stepFrame2
+  have frame2 := frame1.trans stepFrame2
+  refine wp_store_arg .r3 28 args2 (by decide) (by decide) (by decide)
+    ((rest2.gpr .r3 (by simp)).trans domainLength) stack2 fun s3 args3 stepFrame3 stepRest3 => ?_
+  have rest3 := rest2.trans (stepRest3.mono (by simp))
+  have stack3 := (stepRest3.gpr .r12 (by simp)).trans (stack2.trans stepRest3.sp.symm)
+  rw [rest2.sp] at stepFrame3
+  have frame3 := frame2.trans stepFrame3
+  have allRest3 : Rest roundClobbers s s3 := rest3.mono (by simp [roundClobbers])
+  refine wp_retain_incoming .r3 (by decide) args3 (by decide)
+    (incoming.modulus.after (by decide) frame3 allRest3) (by decide) (by decide) (by decide) stack3
+    fun s4 args4 stepFrame4 stepRest4 value4 stack4 => ?_
+  have allRest4 := allRest3.trans (stepRest4.mono (by simp [roundClobbers]))
+  rw [allRest3.sp] at stepFrame4
+  have frame4 := frame3.trans stepFrame4
+  refine wp_retain_incoming .r3 (by decide) args4 (by decide)
+    (incoming.scalar.after (by decide) frame4 allRest4) (by decide) (by decide) (by decide) stack4
+    fun s5 args5 stepFrame5 stepRest5 value5 stack5 => ?_
+  have allRest5 := allRest4.trans (stepRest5.mono (by simp [roundClobbers]))
+  rw [allRest4.sp] at stepFrame5
+  have frame5 := frame4.trans stepFrame5
+  refine wp_retain_incoming .r3 (by decide) args5 (by decide)
+    (incoming.scalarCount.after (by decide) frame5 allRest5) (by decide) (by decide) (by decide) stack5
+    fun s6 args6 stepFrame6 stepRest6 value6 stack6 => ?_
+  have allRest6 := allRest5.trans (stepRest6.mono (by simp [roundClobbers]))
+  rw [allRest5.sp] at stepFrame6
+  have frame6 := frame5.trans stepFrame6
+  refine wp_retain_incoming .r3 (by decide) args6 (by decide)
+    (incoming.peer.after (by decide) frame6 allRest6) (by decide) (by decide) (by decide) stack6
+    fun s7 args7 stepFrame7 stepRest7 value7 stack7 => ?_
+  have allRest7 := allRest6.trans (stepRest7.mono (by simp [roundClobbers]))
+  rw [allRest6.sp] at stepFrame7
+  have frame7 := frame6.trans stepFrame7
+  refine wp_retain_incoming .r0 (by decide) args7 (by decide)
+    (incoming.scratch.after (by decide) frame7 allRest7) (by decide) (by decide) (by decide) stack7
+    fun s8 args8 stepFrame8 stepRest8 value8 stack8 => WP.block_nil ?_
+  refine ⟨⟨args8, value8⟩, ?_⟩
+  rw [allRest7.sp] at stepFrame8
+  exact frame7.trans stepFrame8
+
+end VG.Proof.Ffdh.Arm
+
+end
+
+end
+
+/-! AAPCS shared-secret computation with native validation and output handling. -/
+
+@[expose] public section
+namespace VG.Proof.Ffdh.Arm
+open VG VG.Arm VG.Proof.Bignum.Arm
+
+theorem exchangeEntered_ok (s : State) {p : Inputs} {yb xb : List Byte}
+    (h : ArgumentMemory p [] s) (incoming : ExchangeIncoming p s)
+    (out : s.gpr .r0 = p.output) (domain : s.gpr .r2 = p.domain)
+    (domainLength : s.gpr .r3 = BitVec.ofNat 32 p.dom.length)
+    (peer : Octets p.base p.publicValue p.len yb s) (peerLength : yb.length = p.k)
+    (scalar : Octets p.base p.privateValue p.len xb s) (positive : 0 < xb.length) (scalarFit : xb.length < 2 ^ 32)
+    (scalarCount : p.slotValue 44 = BitVec.ofNat 32 xb.length)
+    (peerStack : Region.Disjoint ⟨State.addr p.publicValue, yb.length⟩ ⟨State.addr s.sp, 72⟩)
+    (scalarStack : Region.Disjoint ⟨State.addr p.privateValue, xb.length⟩ ⟨State.addr s.sp, 72⟩)
+    (output : OutputBuffer p.output p.k s)
+    (workspaceSep : Region.Disjoint ⟨State.addr p.base, 8 * p.len⟩ ⟨State.addr p.output, p.k⟩)
+    (stackSep : Region.Disjoint ⟨State.addr s.sp, 72⟩ ⟨State.addr p.output, p.k⟩) :
+    WP isa (.seq (.block VG.Impl.Ffdh.Arm.Domain.Exchange.entry)
+      (VG.Impl.Ffdh.Arm.Domain.head VG.Impl.Ffdh.Arm.Domain.Exchange.main)) s fun t =>
+        (Spec.Rsa.modulusValid p.P p.k = true → exchangeResult p yb xb t) ∧
+        Frame (exchangeWrites p s) s.mem t.mem := by
+  rw [WP.seq_iff]
+  refine WP.mono (withAllRest (exchangeEntry_ok s h incoming out domain domainLength)) ?_
+  rintro u ⟨⟨context, frame⟩, rest⟩
+  have sourceSep {src : BitVec 32} {bs : List Byte}
+      (separate : Region.Disjoint ⟨State.addr src, bs.length⟩ ⟨State.addr s.sp, 72⟩)
+      (r : Region) (hr : r ∈ [⟨State.addr s.sp, 72⟩]) : (⟨State.addr src, bs.length⟩ : Region).Disjoint r := by
+    rw [List.mem_singleton] at hr; subst r; exact separate
+  refine WP.mono (exchangeBody_ok u context (by decide) (by decide) (by decide) (by decide) (by decide)
+    (by decide) (by decide) (by decide) (by intro d hd; revert d; decide)
+    (peer.after_frame frame rest (sourceSep peerStack)) peerLength
+    (scalar.after_frame frame rest (sourceSep scalarStack)) positive scalarFit scalarCount
+    (by rw [rest.sp]; exact peerStack) (by rw [rest.sp]; exact scalarStack) (output.after rest)
+    workspaceSep (by rw [rest.sp]; exact stackSep)) ?_
+  rintro t ⟨result, frameT⟩
+  have entryFrame : Frame (exchangeWrites p s) s.mem u.mem := frame.mono (by simp [exchangeWrites])
+  exact ⟨result, entryFrame.trans (by simpa only [exchangeWrites, rest.sp] using frameT)⟩
+
+structure ExchangeFnInput (p : Inputs) (yb xb : List Byte) (s : State) : Prop where
+  stackFits : 128 ≤ s.sp.toNat
+  args : ArgumentMemory p [] (entered s)
+  incoming : ExchangeIncoming p (entered s)
+  out : s.gpr .r0 = p.output
+  domain : s.gpr .r2 = p.domain
+  domainLength : s.gpr .r3 = BitVec.ofNat 32 p.dom.length
+  peer : Octets p.base p.publicValue p.len yb (entered s)
+  peerLength : yb.length = p.k
+  scalar : Octets p.base p.privateValue p.len xb (entered s)
+  positive : 0 < xb.length
+  scalarFit : xb.length < 2 ^ 32
+  scalarCount : p.slotValue 44 = BitVec.ofNat 32 xb.length
+  peerStack : Region.Disjoint ⟨State.addr p.publicValue, yb.length⟩ ⟨State.addr (entered s).sp, 72⟩
+  scalarStack : Region.Disjoint ⟨State.addr p.privateValue, xb.length⟩ ⟨State.addr (entered s).sp, 72⟩
+  output : OutputBuffer p.output p.k (entered s)
+  workspaceSep : Region.Disjoint ⟨State.addr p.base, 8 * p.len⟩ ⟨State.addr p.output, p.k⟩
+  stackSep : Region.Disjoint ⟨State.addr (entered s).sp, 72⟩ ⟨State.addr p.output, p.k⟩
+  saved : ∀ r ∈ exchangeWrites p (entered s), (⟨State.addr (pcPushed s).sp, 56⟩ : Region).Disjoint r
+
+theorem exchangeFn_ok (s : State) {p : Inputs} {yb xb : List Byte} (h : ExchangeFnInput p yb xb s) :
+    WP isa VG.Impl.Ffdh.Arm.Domain.Exchange.code s fun t => abiPreserved s t ∧
+      (Spec.Rsa.modulusValid p.P p.k = true → exchangeResult p yb xb t) := by
+  unfold VG.Impl.Ffdh.Arm.Domain.Exchange.code
+  refine framed_of_separate _ s h.stackFits (exchangeWrites p (entered s))
+    (fun m status => Spec.Rsa.modulusValid p.P p.k = true → status = (if sharedAccepted p yb xb then 1 else 0) ∧
+      Spec.Rsa.bytesAt m (State.addr p.output) p.k =
+        (if sharedAccepted p yb xb then Spec.Rsa.i2osp (sharedValue p yb xb) p.k else List.replicate p.k 0)) h.saved ?_
+    (hQ := fun m₁ m₂ v hf hq hv => by
+      obtain ⟨st, bytes⟩ := hq hv
+      refine ⟨st, Eq.trans (VG.Proof.Rsa.rsa_bytes_frame hf (by have := h.output.fits; omega_using [this])
+        fun r hr => ?_) bytes⟩
+      simp only [released, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact (h.saved _ (by simp [exchangeWrites])).symm
+      · exact h.stackSep.symm)
+  refine WP.mono (exchangeEntered_ok (entered s) h.args h.incoming h.out h.domain h.domainLength
+    h.peer h.peerLength h.scalar h.positive h.scalarFit h.scalarCount h.peerStack h.scalarStack h.output
+    h.workspaceSep h.stackSep) ?_
+  rintro t ⟨result, frame⟩
+  exact ⟨frame, result⟩
+
+end VG.Proof.Ffdh.Arm
+
+end
+
+end
 
 /-! The shared exchange signature supplies its native buffers and incoming argument words. -/
 

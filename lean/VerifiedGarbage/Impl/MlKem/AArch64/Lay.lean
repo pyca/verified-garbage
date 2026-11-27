@@ -47,14 +47,6 @@ structure KemLay where
 def addAt (f g : Nat) : Prog isa :=
   .seq (.block (ptrTo .x0 .x28 f ++ ptrTo .x1 .x28 g)) (.call "vg_mlkem_add" add)
 
-/-- A sum of `n` products into the polynomial at `tp`: the first product
-(`term 0 tp`) into `tp`, and each other (`term j pp`) into `pp` and added
-to `tp`. -/
-def dotSteps (tp pp : Nat) (term : Nat → Nat → List (Prog isa)) : Nat → List (Prog isa)
-  | 0 => []
-  | 1 => term 0 tp
-  | n + 2 => dotSteps tp pp term (n + 1) ++ term (n + 1) pp ++ [addAt tp pp]
-
 namespace KemLay
 
 /-- The length of a ciphertext, `32 (d_u k + d_v)` bytes. -/

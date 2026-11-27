@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.RISCV64.Sign.ExpA
-import VerifiedGarbage.Proof.MlDsa.RISCV64.KeyGen.Seeds
+import VerifiedGarbage.Proof.MlDsa.RISCV64.KeyGen.Samp
 import VerifiedGarbage.Proof.MlKem.KPke
 import VerifiedGarbage.Proof.MlKem.Mem
 import VerifiedGarbage.Proof.MlDsa.PreparedKey.Values

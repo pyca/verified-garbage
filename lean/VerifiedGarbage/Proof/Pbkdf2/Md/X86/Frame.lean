@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Hmac.Scratch
+import VerifiedGarbage.Proof.Hmac.AnyKey
 public import VerifiedGarbage.Proof.Hmac.Contract
 public import VerifiedGarbage.Impl.StackScratch.X86
 public import VerifiedGarbage.Proof.Framework.X86.Call
@@ -37,10 +38,11 @@ def finFrame (I : Spec.Hmac.Instance) : Nat := 8 + 20 + 8 * I.scratch
 
 theorem initFramed {I : Spec.Hmac.Instance} {c : Prog isa}
     (h : Verified X86.target c (Proof.Hmac.Instance.initScratchContract I X86.abi 48))
+    (hR : Hmac.ReprLocal I.S)
     (hsat : ∃ s, (I.initContract X86.abi (48 + initFrame I)).pre s)
     (hsp : c.allInstrs (fun i => !Taint.clobbers i .esp) = true := by lit_decide)
     (hd : stackUse c ≤ 48 := by lit_decide)
-    (hs : 8 * I.scratch < 4072 := by decide) :
+    (hs : 8 * I.scratch < 4072 := by decide) (hS : I.S.stateBytes < 2 ^ 64 := by decide) :
     Verified X86.target (Impl.StackScratch.X86.withStackScratch (initFrame I) 4 c)
       (I.initContract X86.abi (48 + initFrame I)) :=
   X86.Verified.stackScratch (sig := Spec.Hmac.initSig I.S) (nm := "scratch") (e := .u64)
@@ -51,7 +53,32 @@ theorem initFramed {I : Spec.Hmac.Instance} {c : Prog isa}
       refine ⟨?_, by simp only [initFrame]; omega_using [hs], by simp only [initFrame]; omega_using []⟩
       change 8 + 4 * 4 + I.scratch * 8 ≤ initFrame I
       simp only [initFrame]; omega_using [])
-    hsp hd (Hmac.initPre_local I.S _) (Hmac.initPost_local I.S _) hsat
+    hsp hd (Hmac.initPre_local I.S _) (Hmac.initPost_local I.S _)
+    (fun vs m m₁ m₂ r hl _ hb => Hmac.initPostOut_local I.S _ hR hS vs m m₁ m₂ r hl hb) hsat
+
+/-- `finalize`'s `_scratch` form with `n` words of working space, in a frame
+of them: for the `n` its code uses (`HmacFin.verifiedW`), not the working
+space the instance gives every function called with it (`I.scratch`), since
+the function as emitted zeroes the whole frame. -/
+theorem finFramedW {I : Spec.Hmac.Instance} {c : Prog isa} (n : Nat)
+    (h : Verified X86.target c (Proof.Hmac.finalizeScratchContract I.S n X86.abi 48))
+    (hR : Hmac.ReprLocal I.S)
+    (hsat : ∃ s, (I.finalizeContract X86.abi (48 + (8 + 20 + 8 * n))).pre s)
+    (hsp : c.allInstrs (fun i => !Taint.clobbers i .esp) = true := by lit_decide)
+    (hd : stackUse c ≤ 48 := by lit_decide)
+    (hs : 8 * n < 4068 := by decide) (hS : I.S.stateBytes < 2 ^ 64 := by decide) :
+    Verified X86.target (Impl.StackScratch.X86.withStackScratch (8 + 20 + 8 * n) 5 c)
+      (I.finalizeContract X86.abi (48 + (8 + 20 + 8 * n))) :=
+  X86.Verified.stackScratch (sig := Spec.Hmac.finalizeSig I.S) (nm := "scratch") (e := .u64)
+    (n := n) (post := Spec.Hmac.finalizePost I.S X86.abi.ptrBits) (wa := true) (stack := 48)
+    (bytes := 8 + 20 + 8 * n) h
+    (by
+      refine ⟨?_, by omega_using [hs], by omega_using []⟩
+      change 8 + 4 * 5 + n * 8 ≤ 8 + 20 + 8 * n
+      omega_using [])
+    hsp hd (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial)
+    (Hmac.finalizePost_local I.S _ hR hS)
+    (fun vs m m₁ m₂ r hl _ hb => Hmac.finalizePostOut_local I.S _ vs m m₁ m₂ r hl hb) hsat
 
 theorem finFramed {I : Spec.Hmac.Instance} {c : Prog isa}
     (h : Verified X86.target c (Proof.Hmac.Instance.finalizeScratchContract I X86.abi 48))
@@ -62,15 +89,7 @@ theorem finFramed {I : Spec.Hmac.Instance} {c : Prog isa}
     (hs : 8 * I.scratch < 4068 := by decide) (hS : I.S.stateBytes < 2 ^ 64 := by decide) :
     Verified X86.target (Impl.StackScratch.X86.withStackScratch (finFrame I) 5 c)
       (I.finalizeContract X86.abi (48 + finFrame I)) :=
-  X86.Verified.stackScratch (sig := Spec.Hmac.finalizeSig I.S) (nm := "scratch") (e := .u64)
-    (n := I.scratch) (post := Spec.Hmac.finalizePost I.S X86.abi.ptrBits) (wa := true) (stack := 48)
-    (bytes := finFrame I) h
-    (by
-      refine ⟨?_, by simp only [finFrame]; omega_using [hs], by simp only [finFrame]; omega_using []⟩
-      change 8 + 4 * 5 + I.scratch * 8 ≤ finFrame I
-      simp only [finFrame]; omega_using [])
-    hsp hd (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial)
-    (Hmac.finalizePost_local I.S _ hR hS) hsat
+  finFramedW I.scratch h hR hsat hsp hd hs hS
 
 /-- Memory holding the arguments `0x1000, 0x1400, 0x1800, 0` of `init` at
 `0x6004`. -/
@@ -157,34 +176,34 @@ theorem sha1_finFrameSat :
     [finFrameSat, finFrameMem, X86.arg, X86.argAddr, Mem.readW, Mem.read]
     using finFrameSat 84 20
 
-theorem sha224_initFrameSat :
-    ∃ s, (Spec.Hmac.sha224I.initContract X86.abi (48 + initFrame Spec.Hmac.sha224I)).pre s := by
+theorem sha224_initFitSat :
+    ∃ s, (Spec.Hmac.sha224I.initContract X86.abi (48 + (8 + 16 + 8 * 24))).pre s := by
   implies_sat [Spec.Hmac.Instance.initContract, Spec.Hmac.initContract, Spec.Hmac.initSig,
-      Spec.Hmac.initPre, Spec.Hmac.initPost, Spec.Hmac.sha224I, Spec.Hmac.sha224S, Spec.Hmac.sha224, initFrame,
+      Spec.Hmac.initPre, Spec.Hmac.initPost, Spec.Hmac.sha224I, Spec.Hmac.sha224S, Spec.Hmac.sha224,
       X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     [initFrameSat, initFrameMem, X86.arg, X86.argAddr, Mem.readW, Mem.read]
     using initFrameSat 96
 
-theorem sha224_finFrameSat :
-    ∃ s, (Spec.Hmac.sha224I.finalizeContract X86.abi (48 + finFrame Spec.Hmac.sha224I)).pre s := by
+theorem sha224_finFitSat :
+    ∃ s, (Spec.Hmac.sha224I.finalizeContract X86.abi (48 + (8 + 20 + 8 * 32))).pre s := by
   implies_sat [Spec.Hmac.Instance.finalizeContract, Spec.Hmac.finalizeContract, Spec.Hmac.finalizeSig,
-      Spec.Hmac.finalizePost, Spec.Hmac.sha224I, Spec.Hmac.sha224S, Spec.Hmac.sha224, finFrame,
+      Spec.Hmac.finalizePost, Spec.Hmac.sha224I, Spec.Hmac.sha224S, Spec.Hmac.sha224,
       X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     [finFrameSat, finFrameMem, X86.arg, X86.argAddr, Mem.readW, Mem.read]
     using finFrameSat 96 28
 
-theorem sha256_initFrameSat :
-    ∃ s, (Spec.Hmac.sha256I.initContract X86.abi (48 + initFrame Spec.Hmac.sha256I)).pre s := by
+theorem sha256_initFitSat :
+    ∃ s, (Spec.Hmac.sha256I.initContract X86.abi (48 + (8 + 16 + 8 * 24))).pre s := by
   implies_sat [Spec.Hmac.Instance.initContract, Spec.Hmac.initContract, Spec.Hmac.initSig,
-      Spec.Hmac.initPre, Spec.Hmac.initPost, Spec.Hmac.sha256I, Spec.Hmac.sha256S, Spec.Hmac.sha256, initFrame,
+      Spec.Hmac.initPre, Spec.Hmac.initPost, Spec.Hmac.sha256I, Spec.Hmac.sha256S, Spec.Hmac.sha256,
       X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     [initFrameSat, initFrameMem, X86.arg, X86.argAddr, Mem.readW, Mem.read]
     using initFrameSat 96
 
-theorem sha256_finFrameSat :
-    ∃ s, (Spec.Hmac.sha256I.finalizeContract X86.abi (48 + finFrame Spec.Hmac.sha256I)).pre s := by
+theorem sha256_finFitSat :
+    ∃ s, (Spec.Hmac.sha256I.finalizeContract X86.abi (48 + (8 + 20 + 8 * 32))).pre s := by
   implies_sat [Spec.Hmac.Instance.finalizeContract, Spec.Hmac.finalizeContract, Spec.Hmac.finalizeSig,
-      Spec.Hmac.finalizePost, Spec.Hmac.sha256I, Spec.Hmac.sha256S, Spec.Hmac.sha256, finFrame,
+      Spec.Hmac.finalizePost, Spec.Hmac.sha256I, Spec.Hmac.sha256S, Spec.Hmac.sha256,
       X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     [finFrameSat, finFrameMem, X86.arg, X86.argAddr, Mem.readW, Mem.read]
     using finFrameSat 96 32

@@ -53,6 +53,12 @@ vg_sha384_init:
 	movw r12, #18461
 	movt r12, #18357
 	str r12, [r0, #60]
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_sha512_init:
@@ -104,6 +110,12 @@ vg_sha512_init:
 	movw r12, #52505
 	movt r12, #23520
 	str r12, [r0, #60]
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_sha512_224_init:
@@ -155,6 +167,12 @@ vg_sha512_224_init:
 	movw r12, #59053
 	movt r12, #4370
 	str r12, [r0, #60]
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_sha512_256_init:
@@ -206,15 +224,21 @@ vg_sha512_256_init:
 	movw r12, #11740
 	movt r12, #3767
 	str r12, [r0, #60]
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_sha512_update:
-	sub sp, sp, #1392
+	sub sp, sp, #288
 	add r12, sp, #0
 	str lr, [r12, #12]
-	ldr lr, [sp, #1392]
+	ldr lr, [sp, #288]
 	str lr, [r12, #0]
-	ldr lr, [sp, #1396]
+	ldr lr, [sp, #292]
 	str lr, [r12, #4]
 	add lr, sp, #16
 	str lr, [r12, #8]
@@ -340,14 +364,37 @@ vg_sha512_update:
 	ldr r10, [r3, #248]
 	ldr r11, [r3, #252]
 	ldr lr, [r3, #256]
-	add sp, sp, #1392
+	add sp, sp, #288
+	sub sp, sp, #288
+	add r12, sp, #0
+	mov r2, #0
+	mov r3, #9
+223:
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 223b
+	add sp, sp, #288
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_sha512_finalize:
-	sub sp, sp, #1392
+	sub sp, sp, #288
 	add r12, sp, #0
 	str lr, [r12, #8]
-	ldr lr, [sp, #1392]
+	ldr lr, [sp, #288]
 	str lr, [r12, #0]
 	add lr, sp, #12
 	str lr, [r12, #4]
@@ -473,14 +520,37 @@ vg_sha512_finalize:
 	ldr r10, [r3, #248]
 	ldr r11, [r3, #252]
 	ldr lr, [r3, #256]
-	add sp, sp, #1392
+	add sp, sp, #288
+	sub sp, sp, #288
+	add r12, sp, #0
+	mov r2, #0
+	mov r3, #9
+28:
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 28b
+	add sp, sp, #288
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_sha384_finalize:
-	sub sp, sp, #1392
+	sub sp, sp, #288
 	add r12, sp, #0
 	str lr, [r12, #8]
-	ldr lr, [sp, #1392]
+	ldr lr, [sp, #288]
 	str lr, [r12, #0]
 	add lr, sp, #12
 	str lr, [r12, #4]
@@ -594,14 +664,37 @@ vg_sha384_finalize:
 	ldr r10, [r3, #248]
 	ldr r11, [r3, #252]
 	ldr lr, [r3, #256]
-	add sp, sp, #1392
+	add sp, sp, #288
+	sub sp, sp, #288
+	add r12, sp, #0
+	mov r2, #0
+	mov r3, #9
+28:
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 28b
+	add sp, sp, #288
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_sha512_256_finalize:
-	sub sp, sp, #1392
+	sub sp, sp, #288
 	add r12, sp, #0
 	str lr, [r12, #8]
-	ldr lr, [sp, #1392]
+	ldr lr, [sp, #288]
 	str lr, [r12, #0]
 	add lr, sp, #12
 	str lr, [r12, #4]
@@ -703,14 +796,37 @@ vg_sha512_256_finalize:
 	ldr r10, [r3, #248]
 	ldr r11, [r3, #252]
 	ldr lr, [r3, #256]
-	add sp, sp, #1392
+	add sp, sp, #288
+	sub sp, sp, #288
+	add r12, sp, #0
+	mov r2, #0
+	mov r3, #9
+28:
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 28b
+	add sp, sp, #288
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_sha512_224_finalize:
-	sub sp, sp, #1392
+	sub sp, sp, #288
 	add r12, sp, #0
 	str lr, [r12, #8]
-	ldr lr, [sp, #1392]
+	ldr lr, [sp, #288]
 	str lr, [r12, #0]
 	add lr, sp, #12
 	str lr, [r12, #4]
@@ -809,7 +925,30 @@ vg_sha512_224_finalize:
 	ldr r10, [r3, #248]
 	ldr r11, [r3, #252]
 	ldr lr, [r3, #256]
-	add sp, sp, #1392
+	add sp, sp, #288
+	sub sp, sp, #288
+	add r12, sp, #0
+	mov r2, #0
+	mov r3, #9
+28:
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 28b
+	add sp, sp, #288
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_sha384_digest:
@@ -832,7 +971,7 @@ vg_sha384_digest:
 	movw r12, #308
 	add r4, r11, r12
 	mov r0, r4
-	bl {vg_sha384_init}
+	bl {vg_sha384_init_core}
 	mov r0, r4
 	mov r1, r8
 	mov r7, r9
@@ -870,8 +1009,12 @@ vg_sha384_digest:
 	ldr r10, [r11, #296]
 	ldr lr, [r11, #300]
 	ldr r11, [r11, #304]
+	add sp, sp, #568
+	sub sp, sp, #584
 	add r12, sp, #0
 	mov r2, #0
+	mov r3, #18
+21:
 	str r2, [r12, #0]
 	str r2, [r12, #4]
 	str r2, [r12, #8]
@@ -880,141 +1023,18 @@ vg_sha384_digest:
 	str r2, [r12, #20]
 	str r2, [r12, #24]
 	str r2, [r12, #28]
-	str r2, [r12, #32]
-	str r2, [r12, #36]
-	str r2, [r12, #40]
-	str r2, [r12, #44]
-	str r2, [r12, #48]
-	str r2, [r12, #52]
-	str r2, [r12, #56]
-	str r2, [r12, #60]
-	str r2, [r12, #64]
-	str r2, [r12, #68]
-	str r2, [r12, #72]
-	str r2, [r12, #76]
-	str r2, [r12, #80]
-	str r2, [r12, #84]
-	str r2, [r12, #88]
-	str r2, [r12, #92]
-	str r2, [r12, #96]
-	str r2, [r12, #100]
-	str r2, [r12, #104]
-	str r2, [r12, #108]
-	str r2, [r12, #112]
-	str r2, [r12, #116]
-	str r2, [r12, #120]
-	str r2, [r12, #124]
-	str r2, [r12, #128]
-	str r2, [r12, #132]
-	str r2, [r12, #136]
-	str r2, [r12, #140]
-	str r2, [r12, #144]
-	str r2, [r12, #148]
-	str r2, [r12, #152]
-	str r2, [r12, #156]
-	str r2, [r12, #160]
-	str r2, [r12, #164]
-	str r2, [r12, #168]
-	str r2, [r12, #172]
-	str r2, [r12, #176]
-	str r2, [r12, #180]
-	str r2, [r12, #184]
-	str r2, [r12, #188]
-	str r2, [r12, #192]
-	str r2, [r12, #196]
-	str r2, [r12, #200]
-	str r2, [r12, #204]
-	str r2, [r12, #208]
-	str r2, [r12, #212]
-	str r2, [r12, #216]
-	str r2, [r12, #220]
-	str r2, [r12, #224]
-	str r2, [r12, #228]
-	str r2, [r12, #232]
-	str r2, [r12, #236]
-	str r2, [r12, #240]
-	str r2, [r12, #244]
-	str r2, [r12, #248]
-	str r2, [r12, #252]
-	str r2, [r12, #256]
-	str r2, [r12, #260]
-	str r2, [r12, #264]
-	str r2, [r12, #268]
-	str r2, [r12, #272]
-	str r2, [r12, #276]
-	str r2, [r12, #280]
-	str r2, [r12, #284]
-	str r2, [r12, #288]
-	str r2, [r12, #292]
-	str r2, [r12, #296]
-	str r2, [r12, #300]
-	str r2, [r12, #304]
-	str r2, [r12, #308]
-	str r2, [r12, #312]
-	str r2, [r12, #316]
-	str r2, [r12, #320]
-	str r2, [r12, #324]
-	str r2, [r12, #328]
-	str r2, [r12, #332]
-	str r2, [r12, #336]
-	str r2, [r12, #340]
-	str r2, [r12, #344]
-	str r2, [r12, #348]
-	str r2, [r12, #352]
-	str r2, [r12, #356]
-	str r2, [r12, #360]
-	str r2, [r12, #364]
-	str r2, [r12, #368]
-	str r2, [r12, #372]
-	str r2, [r12, #376]
-	str r2, [r12, #380]
-	str r2, [r12, #384]
-	str r2, [r12, #388]
-	str r2, [r12, #392]
-	str r2, [r12, #396]
-	str r2, [r12, #400]
-	str r2, [r12, #404]
-	str r2, [r12, #408]
-	str r2, [r12, #412]
-	str r2, [r12, #416]
-	str r2, [r12, #420]
-	str r2, [r12, #424]
-	str r2, [r12, #428]
-	str r2, [r12, #432]
-	str r2, [r12, #436]
-	str r2, [r12, #440]
-	str r2, [r12, #444]
-	str r2, [r12, #448]
-	str r2, [r12, #452]
-	str r2, [r12, #456]
-	str r2, [r12, #460]
-	str r2, [r12, #464]
-	str r2, [r12, #468]
-	str r2, [r12, #472]
-	str r2, [r12, #476]
-	str r2, [r12, #480]
-	str r2, [r12, #484]
-	str r2, [r12, #488]
-	str r2, [r12, #492]
-	str r2, [r12, #496]
-	str r2, [r12, #500]
-	str r2, [r12, #504]
-	str r2, [r12, #508]
-	str r2, [r12, #512]
-	str r2, [r12, #516]
-	str r2, [r12, #520]
-	str r2, [r12, #524]
-	str r2, [r12, #528]
-	str r2, [r12, #532]
-	str r2, [r12, #536]
-	str r2, [r12, #540]
-	str r2, [r12, #544]
-	str r2, [r12, #548]
-	str r2, [r12, #552]
-	str r2, [r12, #556]
-	str r2, [r12, #560]
-	str r2, [r12, #564]
-	add sp, sp, #568
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 21b
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	add sp, sp, #584
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_sha512_digest:
@@ -1037,7 +1057,7 @@ vg_sha512_digest:
 	movw r12, #308
 	add r4, r11, r12
 	mov r0, r4
-	bl {vg_sha512_init}
+	bl {vg_sha512_init_core}
 	mov r0, r4
 	mov r1, r8
 	mov r7, r9
@@ -1075,8 +1095,12 @@ vg_sha512_digest:
 	ldr r10, [r11, #296]
 	ldr lr, [r11, #300]
 	ldr r11, [r11, #304]
+	add sp, sp, #568
+	sub sp, sp, #584
 	add r12, sp, #0
 	mov r2, #0
+	mov r3, #18
+21:
 	str r2, [r12, #0]
 	str r2, [r12, #4]
 	str r2, [r12, #8]
@@ -1085,141 +1109,18 @@ vg_sha512_digest:
 	str r2, [r12, #20]
 	str r2, [r12, #24]
 	str r2, [r12, #28]
-	str r2, [r12, #32]
-	str r2, [r12, #36]
-	str r2, [r12, #40]
-	str r2, [r12, #44]
-	str r2, [r12, #48]
-	str r2, [r12, #52]
-	str r2, [r12, #56]
-	str r2, [r12, #60]
-	str r2, [r12, #64]
-	str r2, [r12, #68]
-	str r2, [r12, #72]
-	str r2, [r12, #76]
-	str r2, [r12, #80]
-	str r2, [r12, #84]
-	str r2, [r12, #88]
-	str r2, [r12, #92]
-	str r2, [r12, #96]
-	str r2, [r12, #100]
-	str r2, [r12, #104]
-	str r2, [r12, #108]
-	str r2, [r12, #112]
-	str r2, [r12, #116]
-	str r2, [r12, #120]
-	str r2, [r12, #124]
-	str r2, [r12, #128]
-	str r2, [r12, #132]
-	str r2, [r12, #136]
-	str r2, [r12, #140]
-	str r2, [r12, #144]
-	str r2, [r12, #148]
-	str r2, [r12, #152]
-	str r2, [r12, #156]
-	str r2, [r12, #160]
-	str r2, [r12, #164]
-	str r2, [r12, #168]
-	str r2, [r12, #172]
-	str r2, [r12, #176]
-	str r2, [r12, #180]
-	str r2, [r12, #184]
-	str r2, [r12, #188]
-	str r2, [r12, #192]
-	str r2, [r12, #196]
-	str r2, [r12, #200]
-	str r2, [r12, #204]
-	str r2, [r12, #208]
-	str r2, [r12, #212]
-	str r2, [r12, #216]
-	str r2, [r12, #220]
-	str r2, [r12, #224]
-	str r2, [r12, #228]
-	str r2, [r12, #232]
-	str r2, [r12, #236]
-	str r2, [r12, #240]
-	str r2, [r12, #244]
-	str r2, [r12, #248]
-	str r2, [r12, #252]
-	str r2, [r12, #256]
-	str r2, [r12, #260]
-	str r2, [r12, #264]
-	str r2, [r12, #268]
-	str r2, [r12, #272]
-	str r2, [r12, #276]
-	str r2, [r12, #280]
-	str r2, [r12, #284]
-	str r2, [r12, #288]
-	str r2, [r12, #292]
-	str r2, [r12, #296]
-	str r2, [r12, #300]
-	str r2, [r12, #304]
-	str r2, [r12, #308]
-	str r2, [r12, #312]
-	str r2, [r12, #316]
-	str r2, [r12, #320]
-	str r2, [r12, #324]
-	str r2, [r12, #328]
-	str r2, [r12, #332]
-	str r2, [r12, #336]
-	str r2, [r12, #340]
-	str r2, [r12, #344]
-	str r2, [r12, #348]
-	str r2, [r12, #352]
-	str r2, [r12, #356]
-	str r2, [r12, #360]
-	str r2, [r12, #364]
-	str r2, [r12, #368]
-	str r2, [r12, #372]
-	str r2, [r12, #376]
-	str r2, [r12, #380]
-	str r2, [r12, #384]
-	str r2, [r12, #388]
-	str r2, [r12, #392]
-	str r2, [r12, #396]
-	str r2, [r12, #400]
-	str r2, [r12, #404]
-	str r2, [r12, #408]
-	str r2, [r12, #412]
-	str r2, [r12, #416]
-	str r2, [r12, #420]
-	str r2, [r12, #424]
-	str r2, [r12, #428]
-	str r2, [r12, #432]
-	str r2, [r12, #436]
-	str r2, [r12, #440]
-	str r2, [r12, #444]
-	str r2, [r12, #448]
-	str r2, [r12, #452]
-	str r2, [r12, #456]
-	str r2, [r12, #460]
-	str r2, [r12, #464]
-	str r2, [r12, #468]
-	str r2, [r12, #472]
-	str r2, [r12, #476]
-	str r2, [r12, #480]
-	str r2, [r12, #484]
-	str r2, [r12, #488]
-	str r2, [r12, #492]
-	str r2, [r12, #496]
-	str r2, [r12, #500]
-	str r2, [r12, #504]
-	str r2, [r12, #508]
-	str r2, [r12, #512]
-	str r2, [r12, #516]
-	str r2, [r12, #520]
-	str r2, [r12, #524]
-	str r2, [r12, #528]
-	str r2, [r12, #532]
-	str r2, [r12, #536]
-	str r2, [r12, #540]
-	str r2, [r12, #544]
-	str r2, [r12, #548]
-	str r2, [r12, #552]
-	str r2, [r12, #556]
-	str r2, [r12, #560]
-	str r2, [r12, #564]
-	add sp, sp, #568
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 21b
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	add sp, sp, #584
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_sha512_224_digest:
@@ -1242,7 +1143,7 @@ vg_sha512_224_digest:
 	movw r12, #308
 	add r4, r11, r12
 	mov r0, r4
-	bl {vg_sha512_224_init}
+	bl {vg_sha512_224_init_core}
 	mov r0, r4
 	mov r1, r8
 	mov r7, r9
@@ -1280,8 +1181,12 @@ vg_sha512_224_digest:
 	ldr r10, [r11, #296]
 	ldr lr, [r11, #300]
 	ldr r11, [r11, #304]
+	add sp, sp, #568
+	sub sp, sp, #584
 	add r12, sp, #0
 	mov r2, #0
+	mov r3, #18
+21:
 	str r2, [r12, #0]
 	str r2, [r12, #4]
 	str r2, [r12, #8]
@@ -1290,141 +1195,18 @@ vg_sha512_224_digest:
 	str r2, [r12, #20]
 	str r2, [r12, #24]
 	str r2, [r12, #28]
-	str r2, [r12, #32]
-	str r2, [r12, #36]
-	str r2, [r12, #40]
-	str r2, [r12, #44]
-	str r2, [r12, #48]
-	str r2, [r12, #52]
-	str r2, [r12, #56]
-	str r2, [r12, #60]
-	str r2, [r12, #64]
-	str r2, [r12, #68]
-	str r2, [r12, #72]
-	str r2, [r12, #76]
-	str r2, [r12, #80]
-	str r2, [r12, #84]
-	str r2, [r12, #88]
-	str r2, [r12, #92]
-	str r2, [r12, #96]
-	str r2, [r12, #100]
-	str r2, [r12, #104]
-	str r2, [r12, #108]
-	str r2, [r12, #112]
-	str r2, [r12, #116]
-	str r2, [r12, #120]
-	str r2, [r12, #124]
-	str r2, [r12, #128]
-	str r2, [r12, #132]
-	str r2, [r12, #136]
-	str r2, [r12, #140]
-	str r2, [r12, #144]
-	str r2, [r12, #148]
-	str r2, [r12, #152]
-	str r2, [r12, #156]
-	str r2, [r12, #160]
-	str r2, [r12, #164]
-	str r2, [r12, #168]
-	str r2, [r12, #172]
-	str r2, [r12, #176]
-	str r2, [r12, #180]
-	str r2, [r12, #184]
-	str r2, [r12, #188]
-	str r2, [r12, #192]
-	str r2, [r12, #196]
-	str r2, [r12, #200]
-	str r2, [r12, #204]
-	str r2, [r12, #208]
-	str r2, [r12, #212]
-	str r2, [r12, #216]
-	str r2, [r12, #220]
-	str r2, [r12, #224]
-	str r2, [r12, #228]
-	str r2, [r12, #232]
-	str r2, [r12, #236]
-	str r2, [r12, #240]
-	str r2, [r12, #244]
-	str r2, [r12, #248]
-	str r2, [r12, #252]
-	str r2, [r12, #256]
-	str r2, [r12, #260]
-	str r2, [r12, #264]
-	str r2, [r12, #268]
-	str r2, [r12, #272]
-	str r2, [r12, #276]
-	str r2, [r12, #280]
-	str r2, [r12, #284]
-	str r2, [r12, #288]
-	str r2, [r12, #292]
-	str r2, [r12, #296]
-	str r2, [r12, #300]
-	str r2, [r12, #304]
-	str r2, [r12, #308]
-	str r2, [r12, #312]
-	str r2, [r12, #316]
-	str r2, [r12, #320]
-	str r2, [r12, #324]
-	str r2, [r12, #328]
-	str r2, [r12, #332]
-	str r2, [r12, #336]
-	str r2, [r12, #340]
-	str r2, [r12, #344]
-	str r2, [r12, #348]
-	str r2, [r12, #352]
-	str r2, [r12, #356]
-	str r2, [r12, #360]
-	str r2, [r12, #364]
-	str r2, [r12, #368]
-	str r2, [r12, #372]
-	str r2, [r12, #376]
-	str r2, [r12, #380]
-	str r2, [r12, #384]
-	str r2, [r12, #388]
-	str r2, [r12, #392]
-	str r2, [r12, #396]
-	str r2, [r12, #400]
-	str r2, [r12, #404]
-	str r2, [r12, #408]
-	str r2, [r12, #412]
-	str r2, [r12, #416]
-	str r2, [r12, #420]
-	str r2, [r12, #424]
-	str r2, [r12, #428]
-	str r2, [r12, #432]
-	str r2, [r12, #436]
-	str r2, [r12, #440]
-	str r2, [r12, #444]
-	str r2, [r12, #448]
-	str r2, [r12, #452]
-	str r2, [r12, #456]
-	str r2, [r12, #460]
-	str r2, [r12, #464]
-	str r2, [r12, #468]
-	str r2, [r12, #472]
-	str r2, [r12, #476]
-	str r2, [r12, #480]
-	str r2, [r12, #484]
-	str r2, [r12, #488]
-	str r2, [r12, #492]
-	str r2, [r12, #496]
-	str r2, [r12, #500]
-	str r2, [r12, #504]
-	str r2, [r12, #508]
-	str r2, [r12, #512]
-	str r2, [r12, #516]
-	str r2, [r12, #520]
-	str r2, [r12, #524]
-	str r2, [r12, #528]
-	str r2, [r12, #532]
-	str r2, [r12, #536]
-	str r2, [r12, #540]
-	str r2, [r12, #544]
-	str r2, [r12, #548]
-	str r2, [r12, #552]
-	str r2, [r12, #556]
-	str r2, [r12, #560]
-	str r2, [r12, #564]
-	add sp, sp, #568
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 21b
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	add sp, sp, #584
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_sha512_256_digest:
@@ -1447,7 +1229,7 @@ vg_sha512_256_digest:
 	movw r12, #308
 	add r4, r11, r12
 	mov r0, r4
-	bl {vg_sha512_256_init}
+	bl {vg_sha512_256_init_core}
 	mov r0, r4
 	mov r1, r8
 	mov r7, r9
@@ -1485,8 +1267,12 @@ vg_sha512_256_digest:
 	ldr r10, [r11, #296]
 	ldr lr, [r11, #300]
 	ldr r11, [r11, #304]
+	add sp, sp, #568
+	sub sp, sp, #584
 	add r12, sp, #0
 	mov r2, #0
+	mov r3, #18
+21:
 	str r2, [r12, #0]
 	str r2, [r12, #4]
 	str r2, [r12, #8]
@@ -1495,139 +1281,16 @@ vg_sha512_256_digest:
 	str r2, [r12, #20]
 	str r2, [r12, #24]
 	str r2, [r12, #28]
-	str r2, [r12, #32]
-	str r2, [r12, #36]
-	str r2, [r12, #40]
-	str r2, [r12, #44]
-	str r2, [r12, #48]
-	str r2, [r12, #52]
-	str r2, [r12, #56]
-	str r2, [r12, #60]
-	str r2, [r12, #64]
-	str r2, [r12, #68]
-	str r2, [r12, #72]
-	str r2, [r12, #76]
-	str r2, [r12, #80]
-	str r2, [r12, #84]
-	str r2, [r12, #88]
-	str r2, [r12, #92]
-	str r2, [r12, #96]
-	str r2, [r12, #100]
-	str r2, [r12, #104]
-	str r2, [r12, #108]
-	str r2, [r12, #112]
-	str r2, [r12, #116]
-	str r2, [r12, #120]
-	str r2, [r12, #124]
-	str r2, [r12, #128]
-	str r2, [r12, #132]
-	str r2, [r12, #136]
-	str r2, [r12, #140]
-	str r2, [r12, #144]
-	str r2, [r12, #148]
-	str r2, [r12, #152]
-	str r2, [r12, #156]
-	str r2, [r12, #160]
-	str r2, [r12, #164]
-	str r2, [r12, #168]
-	str r2, [r12, #172]
-	str r2, [r12, #176]
-	str r2, [r12, #180]
-	str r2, [r12, #184]
-	str r2, [r12, #188]
-	str r2, [r12, #192]
-	str r2, [r12, #196]
-	str r2, [r12, #200]
-	str r2, [r12, #204]
-	str r2, [r12, #208]
-	str r2, [r12, #212]
-	str r2, [r12, #216]
-	str r2, [r12, #220]
-	str r2, [r12, #224]
-	str r2, [r12, #228]
-	str r2, [r12, #232]
-	str r2, [r12, #236]
-	str r2, [r12, #240]
-	str r2, [r12, #244]
-	str r2, [r12, #248]
-	str r2, [r12, #252]
-	str r2, [r12, #256]
-	str r2, [r12, #260]
-	str r2, [r12, #264]
-	str r2, [r12, #268]
-	str r2, [r12, #272]
-	str r2, [r12, #276]
-	str r2, [r12, #280]
-	str r2, [r12, #284]
-	str r2, [r12, #288]
-	str r2, [r12, #292]
-	str r2, [r12, #296]
-	str r2, [r12, #300]
-	str r2, [r12, #304]
-	str r2, [r12, #308]
-	str r2, [r12, #312]
-	str r2, [r12, #316]
-	str r2, [r12, #320]
-	str r2, [r12, #324]
-	str r2, [r12, #328]
-	str r2, [r12, #332]
-	str r2, [r12, #336]
-	str r2, [r12, #340]
-	str r2, [r12, #344]
-	str r2, [r12, #348]
-	str r2, [r12, #352]
-	str r2, [r12, #356]
-	str r2, [r12, #360]
-	str r2, [r12, #364]
-	str r2, [r12, #368]
-	str r2, [r12, #372]
-	str r2, [r12, #376]
-	str r2, [r12, #380]
-	str r2, [r12, #384]
-	str r2, [r12, #388]
-	str r2, [r12, #392]
-	str r2, [r12, #396]
-	str r2, [r12, #400]
-	str r2, [r12, #404]
-	str r2, [r12, #408]
-	str r2, [r12, #412]
-	str r2, [r12, #416]
-	str r2, [r12, #420]
-	str r2, [r12, #424]
-	str r2, [r12, #428]
-	str r2, [r12, #432]
-	str r2, [r12, #436]
-	str r2, [r12, #440]
-	str r2, [r12, #444]
-	str r2, [r12, #448]
-	str r2, [r12, #452]
-	str r2, [r12, #456]
-	str r2, [r12, #460]
-	str r2, [r12, #464]
-	str r2, [r12, #468]
-	str r2, [r12, #472]
-	str r2, [r12, #476]
-	str r2, [r12, #480]
-	str r2, [r12, #484]
-	str r2, [r12, #488]
-	str r2, [r12, #492]
-	str r2, [r12, #496]
-	str r2, [r12, #500]
-	str r2, [r12, #504]
-	str r2, [r12, #508]
-	str r2, [r12, #512]
-	str r2, [r12, #516]
-	str r2, [r12, #520]
-	str r2, [r12, #524]
-	str r2, [r12, #528]
-	str r2, [r12, #532]
-	str r2, [r12, #536]
-	str r2, [r12, #540]
-	str r2, [r12, #544]
-	str r2, [r12, #548]
-	str r2, [r12, #552]
-	str r2, [r12, #556]
-	str r2, [r12, #560]
-	str r2, [r12, #564]
-	add sp, sp, #568
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 21b
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	add sp, sp, #584
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr

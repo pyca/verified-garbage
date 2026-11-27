@@ -1,11 +1,13 @@
 module
 
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.RandomPublic
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86.RndAccept
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86.RndReject
 import VerifiedGarbage.Proof.RsaPkcs1Sig.BytesAt
+import VerifiedGarbage.Proof.Rsa.BytesFrame
 import VerifiedGarbage.Proof.Rsa.X86.PrivStackSafety
 import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.Wrap
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.Entry
 
 /-!
 # RSAES-PKCS1-v1_5 encryption from a random tape on x86: verified
@@ -50,7 +52,7 @@ theorem body_noSp (encName : String) (c : Ver.PublicImpl) : NoSp (body encName (
 
 theorem spec_sp {s : State} (h : spec.pre s) :
     stackBytes ≤ (s.gpr .esp).toNat ∧ (s.gpr .esp).toNat + 4 ≤ 2 ^ 32 := by
-  sig_pre [Spec.RsaPkcs1Enc.encryptRandomContract, Spec.RsaPkcs1Enc.encryptRandomSig, abi, argSlots,
+  sig_pre [Proof.RsaPkcs1Enc.encryptRandomAskedContract, Spec.RsaPkcs1Enc.encryptRandomSig, abi, argSlots,
     argVal, argBytes, stackBelow] at h
   obtain ⟨hsp, hsa, -⟩ := h
   exact ⟨hsp, by omega_using [hsa]⟩
@@ -67,12 +69,32 @@ theorem code_ok (encName : String) (c : Ver.PublicImpl) {s : State} (h : spec.pr
   have hb := (body_vp (P := ep s) encName c).wp _ _ (entered_state h)
   refine WP.mono (wrap_ok (F := frameBytes) (by decide) (body_noSp encName c) hsp hfit (W := (ep s).lay.W)
     (Q := fun r m => Res (ep s) (entered frameBytes s) m r) (fun r hr => ?_)
-    (WP.mono hb fun u hu => ⟨hu.1.2.frame, hu.2⟩)) fun t ⟨abi, res⟩ => ⟨abi, ?_⟩
+    (WP.mono hb fun u hu => ⟨hu.1.2.frame, hu.2⟩) (fun r m m' fl hres => ?_)) fun t ⟨abi, res⟩ => ⟨abi, ?_⟩
   · have ok := hin.ok
     rw [ep_lay] at ok hr
     rw [save_eq (argv := (ep s).argv) (ro := (ep s).ro) (rw := (ep s).rw) (C := roomC) hsp,
       ret_eq (argv := (ep s).argv) (ro := (ep s).ro) (rw := (ep s).rw) (C := roomC) hsp]
     exact ⟨ok.save_apart r hr, ok.ret_apart r hr⟩
+  · have ok := hin.ok
+    rw [ep_lay] at ok
+    obtain F' := release_frame (argv := (ep s).argv) (ro := (ep s).ro) (rw := (ep s).rw) (C := roomC) fl
+    obtain hO := VG.Proof.Rsa.rsa_bytes_frame F' (src := ((ep s).out.setWidth 64)) (k := (ep s).K)
+      (by show (arg s 4).toNat < 2 ^ 64; have := (arg s 4).isLt; omega_using [this])
+      (fun q hq => by rw [List.mem_singleton.mp hq]; exact (ok.stk (ep s).OUT (by simp [layOf])).symm)
+    obtain hT := VG.Proof.Rsa.wordsAt_frame F' (p := ((ep s).tape.setWidth 64)) (n := 2) (by decide)
+      (fun q hq => by rw [List.mem_singleton.mp hq]; exact (ok.stk (ep s).TAPE (by simp [layOf])).symm)
+    have keyR : ∀ o, Spec.RsaPkcs1Enc.writtenRandom m ((ep s).out.setWidth 64) (ep s).K r o →
+        Spec.RsaPkcs1Enc.writtenRandom m' ((ep s).out.setWidth 64) (ep s).K r o := fun o => by
+      cases o <;> simp only [Spec.RsaPkcs1Enc.writtenRandom] <;> rw [hO] <;> exact id
+    unfold Res at hres ⊢
+    obtain ⟨⟨req, hw, hreq⟩, hm⟩ := hres
+    refine ⟨⟨req, by rw [hT]; exact hw, hreq⟩, ?_⟩
+    revert hm
+    generalize (Spec.RsaPkcs1Enc.padSearch (ep s).pl (rB (ep s) (entered frameBytes s))).outcome = o
+    cases o <;> dsimp only <;> intro hm
+    all_goals first
+      | exact fun h => keyR _ (hm h)
+      | exact ⟨hm.1, by rw [hO]; exact hm.2⟩
   · have ok := hin.ok
     rw [ep_lay] at ok
     have ro := fun {R : Region} (hR : R ∈ (ep s).ro) => entered_ro hsp ok hR
@@ -82,7 +104,7 @@ theorem code_ok (encName : String) (c : Ver.PublicImpl) {s : State} (h : spec.pr
       ro (R := (ep s).MSG) (by simp)
     unfold Res at res
     rw [hR, hM] at res
-    sig_post [Spec.RsaPkcs1Enc.encryptRandomContract, Spec.RsaPkcs1Enc.encryptRandomSig, abi, argSlots,
+    sig_post [Proof.RsaPkcs1Enc.encryptRandomAskedContract, Spec.RsaPkcs1Enc.encryptRandomSig, abi, argSlots,
       argVal, argBytes]
     rw [BitVec.setWidth_append_eq_right]
     exact res
@@ -92,7 +114,7 @@ theorem map_toNat_inj {w : Nat} {a b : List (BitVec w)} (h : a.map (·.toNat) = 
 
 /-- Two entry states with the same public data have the same public parameters. -/
 theorem ep_eq {s₁ s₂ : State} (hp : spec.pub s₁ s₂) : ep s₁ = ep s₂ := by
-  sig_pub [Spec.RsaPkcs1Enc.encryptRandomContract, Spec.RsaPkcs1Enc.encryptRandomSig, abi, argSlots,
+  sig_pub [Proof.RsaPkcs1Enc.encryptRandomAskedContract, Spec.RsaPkcs1Enc.encryptRandomSig, abi, argSlots,
     argVal, argBytes] at hp
   obtain ⟨hsp, hl, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14⟩ := hp
   have l1 : ((Spec.Rsa.bytesAt s₁.mem ((arg s₁ 3).setWidth 64) (arg s₁ 4).toNat ++
@@ -120,7 +142,7 @@ theorem code_ct (encName : String) (c : Ver.PublicImpl) :
   intro s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp e₁ e₂
   have hep := ep_eq hp
   have hsp : s₁.gpr .esp = s₂.gpr .esp := by
-    sig_pub [Spec.RsaPkcs1Enc.encryptRandomContract, Spec.RsaPkcs1Enc.encryptRandomSig, abi, argSlots,
+    sig_pub [Proof.RsaPkcs1Enc.encryptRandomAskedContract, Spec.RsaPkcs1Enc.encryptRandomSig, abi, argSlots,
       argVal, argBytes] at hp
     exact hp.1
   refine (wrap_ct (F := frameBytes) (body_noSp encName c) (P := fun a b => a = s₁ ∧ b = s₂)
@@ -163,7 +185,7 @@ theorem sat : ∃ s, spec.pre s := by
   have a14 : arg satState 14 = 16 := by decide
   have e : argAddr satState 0 = 0x20004 := by decide
   have esp : satState.gpr .esp = 0x20000 := rfl
-  sig_implies_sat [Spec.RsaPkcs1Enc.encryptRandomContract, Spec.RsaPkcs1Enc.encryptRandomSig, abi,
+  sig_implies_sat [Proof.RsaPkcs1Enc.encryptRandomAskedContract, Spec.RsaPkcs1Enc.encryptRandomSig, abi,
     argSlots, argVal, argBytes, stackBelow]
     [a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, e, esp, satState, stackBytes, frameBytes,
       roomC, Spec.Rsa.lenValid, Spec.Rsa.publicScratchWords, Spec.Rsa.scratchWords, Spec.Rsa.precomputedWords,

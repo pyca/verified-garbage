@@ -25,9 +25,8 @@ public there and needs afterwards.
 
 ECDH runs the inversion too, but without the comb's static its check is by
 `taintS`, and the power mod `n` is run by only two of the functions: a
-summary costs more than its analysis in one more check (the kernel builds
-the code here, while the callers' checks read it from their literals), so it
-is analysed in full.
+summary costs more than its analysis in one more check (whose literal the
+kernel has already), so it is analysed in full.
 
 ECDH runs the window method in Jacobian coordinates (`WinCfg.windowJ`), whose
 table of `[1 … 8]P` (seven complete additions), its normalization (an
@@ -56,6 +55,9 @@ def combG : Prog isa := .loop (p521.combCfg p521d).step .ne
 
 /-- The inversion's batches mod `p`. -/
 def invP : Prog isa := .loop p521.invP.batch .ne
+
+materialize_code combG
+materialize_code invP
 
 taint_summary combGSum : (taintSym ["VG_P521_COMB"]) τL combG
 taint_summary invPSum : (taintSym ["VG_P521_COMB"]) τI invP

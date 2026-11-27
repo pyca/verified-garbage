@@ -1,9 +1,8 @@
 module
-public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Blocks
 
+public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Blocks
 import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Ce4
 import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Dword
-import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Narrow
 import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Lane
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
 import VerifiedGarbage.Proof.Framework.Block

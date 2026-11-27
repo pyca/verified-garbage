@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Spec.RsaPkcs1Enc.Random
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.RandomPublic
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.Random
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.RISCV64.EncCorrect
 public import VerifiedGarbage.Impl.RsaPkcs1Enc.RISCV64.Random
@@ -106,10 +106,10 @@ structure RPre (s : State) : Prop where
   als : (stackArg s 3).toNat % 8 = 0
   alp : (stackArg s 5).toNat % 8 = 0
 
-theorem rPre_of {s : State} (h : (Spec.RsaPkcs1Enc.encryptRandomContract abi rndStack).pre s) : RPre s := by
+theorem rPre_of {s : State} (h : (Proof.RsaPkcs1Enc.encryptRandomAskedContract abi rndStack).pre s) : RPre s := by
   have e : rndStack = 4303 + 1 := rfl
   rw [e] at h
-  sig_pre [Spec.RsaPkcs1Enc.encryptRandomContract, Spec.RsaPkcs1Enc.encryptRandomSig, abi, argRegs,
+  sig_pre [Proof.RsaPkcs1Enc.encryptRandomAskedContract, Spec.RsaPkcs1Enc.encryptRandomSig, abi, argRegs,
     stackArgs_seven, List.append_eq, List.range, List.range.loop] at h
   obtain ⟨spal, sp1, sp2, hrd, hwr, ot, on, oe, om, orr, os, op, oa, tn, te, tm, tr, ts, tp, ta, ns, es, ms, rs,
     sp, sa, ko, kt, kn, ke, km, kr, ks, kp, ka, wo, wt, wn, we, wm, wr, ws, wp, ⟨k1, k2⟩, ok, e1, e2, ml, rl, hs,

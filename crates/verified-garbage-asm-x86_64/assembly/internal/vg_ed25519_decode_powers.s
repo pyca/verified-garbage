@@ -32,62 +32,41 @@ vg_ed25519_decode_powers:
 	mov QWORD PTR [rdi+200], r9
 	mov QWORD PTR [rdi+208], r10
 	mov QWORD PTR [rdi+216], r11
-	mov rcx, QWORD PTR [rdi+96]
-	mov ebp, 0
-	mov r9d, 0
-	mov r10d, 0
-	mov r11d, 0
-	mov rax, QWORD PTR [rdi+104]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r9, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+112]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+120]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r12, rbp
 	mov rcx, QWORD PTR [rdi+104]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+112]
+	mov rbp, QWORD PTR [rdi+112]
+	mov r15, QWORD PTR [rdi+120]
+	mov rax, QWORD PTR [rdi+96]
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	mov r9, rax
+	mov r10, rdx
+	xor r11d, r11d
+	xor r12d, r12d
+	xor r13d, r13d
+	mov rax, QWORD PTR [rdi+96]
+	mul rbp
+	add r10, rax
+	adc r11, rdx
+	mov rax, QWORD PTR [rdi+96]
+	mul r15
 	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+120]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r12, rdx
+	adc r13, 0
+	mov rax, QWORD PTR [rdi+104]
+	mul rbp
+	add r11, rax
+	adc r12, rdx
+	adc r13, 0
+	xor r14d, r14d
+	mov rax, QWORD PTR [rdi+104]
+	mul r15
 	add r12, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r13, rbp
-	mov rcx, QWORD PTR [rdi+112]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+120]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r13, rdx
+	adc r14, 0
+	mov rax, QWORD PTR [rdi+112]
+	mul r15
 	add r13, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r14, rbp
-	mov r15d, 0
-	mov r8d, 0
+	adc r14, rdx
+	xor r15d, r15d
 	add r9, r9
 	adc r10, r10
 	adc r11, r11
@@ -95,76 +74,55 @@ vg_ed25519_decode_powers:
 	adc r13, r13
 	adc r14, r14
 	adc r15, r15
-	mov ebp, 0
 	mov rax, QWORD PTR [rdi+96]
 	mul rax
-	add rax, rbp
-	adc rdx, 0
-	add r8, rax
-	adc r9, rdx
-	mov ebp, 0
-	adc rbp, 0
+	mov r8, rax
+	mov rbp, rdx
 	mov rax, QWORD PTR [rdi+104]
 	mul rax
-	add rax, rbp
-	adc rdx, 0
-	add r10, rax
+	add r9, rbp
+	adc r10, rax
 	adc r11, rdx
-	mov ebp, 0
-	adc rbp, 0
+	sbb rcx, rcx
 	mov rax, QWORD PTR [rdi+112]
 	mul rax
-	add rax, rbp
-	adc rdx, 0
-	add r12, rax
+	add rcx, rcx
+	adc r12, rax
 	adc r13, rdx
-	mov ebp, 0
-	adc rbp, 0
+	sbb rcx, rcx
 	mov rax, QWORD PTR [rdi+120]
 	mul rax
-	add rax, rbp
-	adc rdx, 0
-	add r14, rax
+	add rcx, rcx
+	adc r14, rax
 	adc r15, rdx
-	mov ebp, 0
-	adc rbp, 0
 	mov ecx, 38
-	mov ebp, 0
 	mov rax, r12
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
 	add r8, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r9, rdx
+	sbb rbp, rbp
 	mov rax, r13
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r9, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r10, rdx
+	sbb rbp, rbp
 	mov rax, r14
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r11, rdx
+	sbb rbp, rbp
 	mov rax, r15
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r11, rax
 	adc rdx, 0
-	mov rbp, rdx
-	mov rax, rbp
-	mul rcx
+	mov r12, rdx
 	shl r11, 1
-	sbb rbp, rbp
+	adc r12, r12
 	shr r11, 1
-	and rbp, 19
-	add rax, rbp
+	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
 	adc r10, 0
@@ -191,171 +149,121 @@ vg_ed25519_decode_powers:
 	mov QWORD PTR [rdi+264], r9
 	mov QWORD PTR [rdi+272], r10
 	mov QWORD PTR [rdi+280], r11
-	mov r8d, 0
-	mov r9d, 0
-	mov r10d, 0
-	mov r11d, 0
-	mov rcx, QWORD PTR [rdi+576]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+96]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r8, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+104]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	mov r14, QWORD PTR [rdi+96]
+	mov r15, QWORD PTR [rdi+104]
+	mov rcx, QWORD PTR [rdi+112]
+	mov rbp, QWORD PTR [rdi+120]
+	mov rax, QWORD PTR [rdi+576]
+	mul r14
+	mov r8, rax
+	mov r9, rdx
+	xor r10d, r10d
+	xor r11d, r11d
+	mov rax, QWORD PTR [rdi+576]
+	mul r15
 	add r9, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+112]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+120]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r12, rbp
-	mov rcx, QWORD PTR [rdi+584]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+96]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r10, rdx
+	mov rax, QWORD PTR [rdi+584]
+	mul r14
 	add r9, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+104]
+	adc r10, rdx
+	adc r11, 0
+	xor r12d, r12d
+	mov rax, QWORD PTR [rdi+576]
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
 	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+112]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+120]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r12, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r13, rbp
-	mov rcx, QWORD PTR [rdi+592]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+96]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r11, rdx
+	adc r12, 0
+	mov rax, QWORD PTR [rdi+584]
+	mul r15
 	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+104]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r11, rdx
+	adc r12, 0
+	mov rax, QWORD PTR [rdi+592]
+	mul r14
+	add r10, rax
+	adc r11, rdx
+	adc r12, 0
+	xor r13d, r13d
+	mov rax, QWORD PTR [rdi+576]
+	mul rbp
 	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+112]
+	adc r12, rdx
+	adc r13, 0
+	mov rax, QWORD PTR [rdi+584]
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r12, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+120]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r13, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r14, rbp
-	mov rcx, QWORD PTR [rdi+600]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+96]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
 	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+104]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r12, rdx
+	adc r13, 0
+	mov rax, QWORD PTR [rdi+592]
+	mul r15
+	add r11, rax
+	adc r12, rdx
+	adc r13, 0
+	mov rax, QWORD PTR [rdi+600]
+	mul r14
+	add r11, rax
+	adc r12, rdx
+	adc r13, 0
+	xor r14d, r14d
+	mov rax, QWORD PTR [rdi+584]
+	mul rbp
 	add r12, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+112]
+	adc r13, rdx
+	adc r14, 0
+	mov rax, QWORD PTR [rdi+592]
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	add r12, rax
+	adc r13, rdx
+	adc r14, 0
+	mov rax, QWORD PTR [rdi+600]
+	mul r15
+	add r12, rax
+	adc r13, rdx
+	adc r14, 0
+	xor r15d, r15d
+	mov rax, QWORD PTR [rdi+592]
+	mul rbp
 	add r13, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+120]
+	adc r14, rdx
+	adc r15, 0
+	mov rax, QWORD PTR [rdi+600]
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	add r13, rax
+	adc r14, rdx
+	adc r15, 0
+	mov rax, QWORD PTR [rdi+600]
+	mul rbp
 	add r14, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r15, rbp
+	adc r15, rdx
 	mov ecx, 38
-	mov ebp, 0
 	mov rax, r12
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
 	add r8, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r9, rdx
+	sbb rbp, rbp
 	mov rax, r13
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r9, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r10, rdx
+	sbb rbp, rbp
 	mov rax, r14
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r11, rdx
+	sbb rbp, rbp
 	mov rax, r15
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r11, rax
 	adc rdx, 0
-	mov rbp, rdx
-	mov rax, rbp
-	mul rcx
+	mov r12, rdx
 	shl r11, 1
-	sbb rbp, rbp
+	adc r12, r12
 	shr r11, 1
-	and rbp, 19
-	add rax, rbp
+	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
 	adc r10, 0
@@ -364,171 +272,121 @@ vg_ed25519_decode_powers:
 	mov QWORD PTR [rdi+296], r9
 	mov QWORD PTR [rdi+304], r10
 	mov QWORD PTR [rdi+312], r11
-	mov r8d, 0
-	mov r9d, 0
-	mov r10d, 0
-	mov r11d, 0
-	mov rcx, QWORD PTR [rdi+288]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+96]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r8, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+104]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	mov r14, QWORD PTR [rdi+96]
+	mov r15, QWORD PTR [rdi+104]
+	mov rcx, QWORD PTR [rdi+112]
+	mov rbp, QWORD PTR [rdi+120]
+	mov rax, QWORD PTR [rdi+288]
+	mul r14
+	mov r8, rax
+	mov r9, rdx
+	xor r10d, r10d
+	xor r11d, r11d
+	mov rax, QWORD PTR [rdi+288]
+	mul r15
 	add r9, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+112]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+120]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r12, rbp
-	mov rcx, QWORD PTR [rdi+296]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+96]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r10, rdx
+	mov rax, QWORD PTR [rdi+296]
+	mul r14
 	add r9, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+104]
+	adc r10, rdx
+	adc r11, 0
+	xor r12d, r12d
+	mov rax, QWORD PTR [rdi+288]
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
 	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+112]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+120]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r12, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r13, rbp
-	mov rcx, QWORD PTR [rdi+304]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+96]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r11, rdx
+	adc r12, 0
+	mov rax, QWORD PTR [rdi+296]
+	mul r15
 	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+104]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r11, rdx
+	adc r12, 0
+	mov rax, QWORD PTR [rdi+304]
+	mul r14
+	add r10, rax
+	adc r11, rdx
+	adc r12, 0
+	xor r13d, r13d
+	mov rax, QWORD PTR [rdi+288]
+	mul rbp
 	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+112]
+	adc r12, rdx
+	adc r13, 0
+	mov rax, QWORD PTR [rdi+296]
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r12, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+120]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r13, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r14, rbp
-	mov rcx, QWORD PTR [rdi+312]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+96]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
 	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+104]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r12, rdx
+	adc r13, 0
+	mov rax, QWORD PTR [rdi+304]
+	mul r15
+	add r11, rax
+	adc r12, rdx
+	adc r13, 0
+	mov rax, QWORD PTR [rdi+312]
+	mul r14
+	add r11, rax
+	adc r12, rdx
+	adc r13, 0
+	xor r14d, r14d
+	mov rax, QWORD PTR [rdi+296]
+	mul rbp
 	add r12, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+112]
+	adc r13, rdx
+	adc r14, 0
+	mov rax, QWORD PTR [rdi+304]
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	add r12, rax
+	adc r13, rdx
+	adc r14, 0
+	mov rax, QWORD PTR [rdi+312]
+	mul r15
+	add r12, rax
+	adc r13, rdx
+	adc r14, 0
+	xor r15d, r15d
+	mov rax, QWORD PTR [rdi+304]
+	mul rbp
 	add r13, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+120]
+	adc r14, rdx
+	adc r15, 0
+	mov rax, QWORD PTR [rdi+312]
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	add r13, rax
+	adc r14, rdx
+	adc r15, 0
+	mov rax, QWORD PTR [rdi+312]
+	mul rbp
 	add r14, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r15, rbp
+	adc r15, rdx
 	mov ecx, 38
-	mov ebp, 0
 	mov rax, r12
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
 	add r8, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r9, rdx
+	sbb rbp, rbp
 	mov rax, r13
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r9, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r10, rdx
+	sbb rbp, rbp
 	mov rax, r14
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r11, rdx
+	sbb rbp, rbp
 	mov rax, r15
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r11, rax
 	adc rdx, 0
-	mov rbp, rdx
-	mov rax, rbp
-	mul rcx
+	mov r12, rdx
 	shl r11, 1
-	sbb rbp, rbp
+	adc r12, r12
 	shr r11, 1
-	and rbp, 19
-	add rax, rbp
+	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
 	adc r10, 0
@@ -555,62 +413,41 @@ vg_ed25519_decode_powers:
 	mov QWORD PTR [rdi+296], r9
 	mov QWORD PTR [rdi+304], r10
 	mov QWORD PTR [rdi+312], r11
-	mov rcx, QWORD PTR [rdi+288]
-	mov ebp, 0
-	mov r9d, 0
-	mov r10d, 0
-	mov r11d, 0
-	mov rax, QWORD PTR [rdi+296]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r9, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+304]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+312]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r12, rbp
 	mov rcx, QWORD PTR [rdi+296]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+304]
+	mov rbp, QWORD PTR [rdi+304]
+	mov r15, QWORD PTR [rdi+312]
+	mov rax, QWORD PTR [rdi+288]
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	mov r9, rax
+	mov r10, rdx
+	xor r11d, r11d
+	xor r12d, r12d
+	xor r13d, r13d
+	mov rax, QWORD PTR [rdi+288]
+	mul rbp
+	add r10, rax
+	adc r11, rdx
+	mov rax, QWORD PTR [rdi+288]
+	mul r15
 	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+312]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r12, rdx
+	adc r13, 0
+	mov rax, QWORD PTR [rdi+296]
+	mul rbp
+	add r11, rax
+	adc r12, rdx
+	adc r13, 0
+	xor r14d, r14d
+	mov rax, QWORD PTR [rdi+296]
+	mul r15
 	add r12, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r13, rbp
-	mov rcx, QWORD PTR [rdi+304]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+312]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r13, rdx
+	adc r14, 0
+	mov rax, QWORD PTR [rdi+304]
+	mul r15
 	add r13, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r14, rbp
-	mov r15d, 0
-	mov r8d, 0
+	adc r14, rdx
+	xor r15d, r15d
 	add r9, r9
 	adc r10, r10
 	adc r11, r11
@@ -618,76 +455,55 @@ vg_ed25519_decode_powers:
 	adc r13, r13
 	adc r14, r14
 	adc r15, r15
-	mov ebp, 0
 	mov rax, QWORD PTR [rdi+288]
 	mul rax
-	add rax, rbp
-	adc rdx, 0
-	add r8, rax
-	adc r9, rdx
-	mov ebp, 0
-	adc rbp, 0
+	mov r8, rax
+	mov rbp, rdx
 	mov rax, QWORD PTR [rdi+296]
 	mul rax
-	add rax, rbp
-	adc rdx, 0
-	add r10, rax
+	add r9, rbp
+	adc r10, rax
 	adc r11, rdx
-	mov ebp, 0
-	adc rbp, 0
+	sbb rcx, rcx
 	mov rax, QWORD PTR [rdi+304]
 	mul rax
-	add rax, rbp
-	adc rdx, 0
-	add r12, rax
+	add rcx, rcx
+	adc r12, rax
 	adc r13, rdx
-	mov ebp, 0
-	adc rbp, 0
+	sbb rcx, rcx
 	mov rax, QWORD PTR [rdi+312]
 	mul rax
-	add rax, rbp
-	adc rdx, 0
-	add r14, rax
+	add rcx, rcx
+	adc r14, rax
 	adc r15, rdx
-	mov ebp, 0
-	adc rbp, 0
 	mov ecx, 38
-	mov ebp, 0
 	mov rax, r12
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
 	add r8, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r9, rdx
+	sbb rbp, rbp
 	mov rax, r13
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r9, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r10, rdx
+	sbb rbp, rbp
 	mov rax, r14
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r11, rdx
+	sbb rbp, rbp
 	mov rax, r15
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r11, rax
 	adc rdx, 0
-	mov rbp, rdx
-	mov rax, rbp
-	mul rcx
+	mov r12, rdx
 	shl r11, 1
-	sbb rbp, rbp
+	adc r12, r12
 	shr r11, 1
-	and rbp, 19
-	add rax, rbp
+	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
 	adc r10, 0
@@ -696,171 +512,121 @@ vg_ed25519_decode_powers:
 	mov QWORD PTR [rdi+328], r9
 	mov QWORD PTR [rdi+336], r10
 	mov QWORD PTR [rdi+344], r11
-	mov r8d, 0
-	mov r9d, 0
-	mov r10d, 0
-	mov r11d, 0
-	mov rcx, QWORD PTR [rdi+320]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+288]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r8, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+296]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	mov r14, QWORD PTR [rdi+288]
+	mov r15, QWORD PTR [rdi+296]
+	mov rcx, QWORD PTR [rdi+304]
+	mov rbp, QWORD PTR [rdi+312]
+	mov rax, QWORD PTR [rdi+320]
+	mul r14
+	mov r8, rax
+	mov r9, rdx
+	xor r10d, r10d
+	xor r11d, r11d
+	mov rax, QWORD PTR [rdi+320]
+	mul r15
 	add r9, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+304]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+312]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r12, rbp
-	mov rcx, QWORD PTR [rdi+328]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+288]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r10, rdx
+	mov rax, QWORD PTR [rdi+328]
+	mul r14
 	add r9, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+296]
+	adc r10, rdx
+	adc r11, 0
+	xor r12d, r12d
+	mov rax, QWORD PTR [rdi+320]
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
 	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+304]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+312]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r12, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r13, rbp
-	mov rcx, QWORD PTR [rdi+336]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+288]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r11, rdx
+	adc r12, 0
+	mov rax, QWORD PTR [rdi+328]
+	mul r15
 	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+296]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r11, rdx
+	adc r12, 0
+	mov rax, QWORD PTR [rdi+336]
+	mul r14
+	add r10, rax
+	adc r11, rdx
+	adc r12, 0
+	xor r13d, r13d
+	mov rax, QWORD PTR [rdi+320]
+	mul rbp
 	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+304]
+	adc r12, rdx
+	adc r13, 0
+	mov rax, QWORD PTR [rdi+328]
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r12, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+312]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r13, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r14, rbp
-	mov rcx, QWORD PTR [rdi+344]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+288]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
 	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+296]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r12, rdx
+	adc r13, 0
+	mov rax, QWORD PTR [rdi+336]
+	mul r15
+	add r11, rax
+	adc r12, rdx
+	adc r13, 0
+	mov rax, QWORD PTR [rdi+344]
+	mul r14
+	add r11, rax
+	adc r12, rdx
+	adc r13, 0
+	xor r14d, r14d
+	mov rax, QWORD PTR [rdi+328]
+	mul rbp
 	add r12, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+304]
+	adc r13, rdx
+	adc r14, 0
+	mov rax, QWORD PTR [rdi+336]
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	add r12, rax
+	adc r13, rdx
+	adc r14, 0
+	mov rax, QWORD PTR [rdi+344]
+	mul r15
+	add r12, rax
+	adc r13, rdx
+	adc r14, 0
+	xor r15d, r15d
+	mov rax, QWORD PTR [rdi+336]
+	mul rbp
 	add r13, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+312]
+	adc r14, rdx
+	adc r15, 0
+	mov rax, QWORD PTR [rdi+344]
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	add r13, rax
+	adc r14, rdx
+	adc r15, 0
+	mov rax, QWORD PTR [rdi+344]
+	mul rbp
 	add r14, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r15, rbp
+	adc r15, rdx
 	mov ecx, 38
-	mov ebp, 0
 	mov rax, r12
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
 	add r8, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r9, rdx
+	sbb rbp, rbp
 	mov rax, r13
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r9, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r10, rdx
+	sbb rbp, rbp
 	mov rax, r14
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r11, rdx
+	sbb rbp, rbp
 	mov rax, r15
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r11, rax
 	adc rdx, 0
-	mov rbp, rdx
-	mov rax, rbp
-	mul rcx
+	mov r12, rdx
 	shl r11, 1
-	sbb rbp, rbp
+	adc r12, r12
 	shr r11, 1
-	and rbp, 19
-	add rax, rbp
+	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
 	adc r10, 0
@@ -869,62 +635,41 @@ vg_ed25519_decode_powers:
 	mov QWORD PTR [rdi+360], r9
 	mov QWORD PTR [rdi+368], r10
 	mov QWORD PTR [rdi+376], r11
-	mov rcx, QWORD PTR [rdi+352]
-	mov ebp, 0
-	mov r9d, 0
-	mov r10d, 0
-	mov r11d, 0
-	mov rax, QWORD PTR [rdi+360]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r9, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+368]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+376]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r12, rbp
 	mov rcx, QWORD PTR [rdi+360]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+368]
+	mov rbp, QWORD PTR [rdi+368]
+	mov r15, QWORD PTR [rdi+376]
+	mov rax, QWORD PTR [rdi+352]
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	mov r9, rax
+	mov r10, rdx
+	xor r11d, r11d
+	xor r12d, r12d
+	xor r13d, r13d
+	mov rax, QWORD PTR [rdi+352]
+	mul rbp
+	add r10, rax
+	adc r11, rdx
+	mov rax, QWORD PTR [rdi+352]
+	mul r15
 	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+376]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r12, rdx
+	adc r13, 0
+	mov rax, QWORD PTR [rdi+360]
+	mul rbp
+	add r11, rax
+	adc r12, rdx
+	adc r13, 0
+	xor r14d, r14d
+	mov rax, QWORD PTR [rdi+360]
+	mul r15
 	add r12, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r13, rbp
-	mov rcx, QWORD PTR [rdi+368]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+376]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r13, rdx
+	adc r14, 0
+	mov rax, QWORD PTR [rdi+368]
+	mul r15
 	add r13, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r14, rbp
-	mov r15d, 0
-	mov r8d, 0
+	adc r14, rdx
+	xor r15d, r15d
 	add r9, r9
 	adc r10, r10
 	adc r11, r11
@@ -932,76 +677,178 @@ vg_ed25519_decode_powers:
 	adc r13, r13
 	adc r14, r14
 	adc r15, r15
-	mov ebp, 0
 	mov rax, QWORD PTR [rdi+352]
 	mul rax
-	add rax, rbp
-	adc rdx, 0
-	add r8, rax
-	adc r9, rdx
-	mov ebp, 0
-	adc rbp, 0
+	mov r8, rax
+	mov rbp, rdx
 	mov rax, QWORD PTR [rdi+360]
 	mul rax
-	add rax, rbp
-	adc rdx, 0
-	add r10, rax
+	add r9, rbp
+	adc r10, rax
 	adc r11, rdx
-	mov ebp, 0
-	adc rbp, 0
+	sbb rcx, rcx
 	mov rax, QWORD PTR [rdi+368]
 	mul rax
-	add rax, rbp
-	adc rdx, 0
-	add r12, rax
+	add rcx, rcx
+	adc r12, rax
 	adc r13, rdx
-	mov ebp, 0
-	adc rbp, 0
+	sbb rcx, rcx
 	mov rax, QWORD PTR [rdi+376]
 	mul rax
-	add rax, rbp
+	add rcx, rcx
+	adc r14, rax
+	adc r15, rdx
+	mov ecx, 38
+	mov rax, r12
+	mul rcx
+	add r8, rax
+	adc r9, rdx
+	sbb rbp, rbp
+	mov rax, r13
+	mul rcx
+	sub rdx, rbp
+	add r9, rax
+	adc r10, rdx
+	sbb rbp, rbp
+	mov rax, r14
+	mul rcx
+	sub rdx, rbp
+	add r10, rax
+	adc r11, rdx
+	sbb rbp, rbp
+	mov rax, r15
+	mul rcx
+	sub rdx, rbp
+	add r11, rax
 	adc rdx, 0
+	mov r12, rdx
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
+	imul rax, r12, 19
+	add r8, rax
+	adc r9, 0
+	adc r10, 0
+	adc r11, 0
+	mov QWORD PTR [rdi+384], r8
+	mov QWORD PTR [rdi+392], r9
+	mov QWORD PTR [rdi+400], r10
+	mov QWORD PTR [rdi+408], r11
+	mov r14, QWORD PTR [rdi+288]
+	mov r15, QWORD PTR [rdi+296]
+	mov rcx, QWORD PTR [rdi+304]
+	mov rbp, QWORD PTR [rdi+312]
+	mov rax, QWORD PTR [rdi+384]
+	mul r14
+	mov r8, rax
+	mov r9, rdx
+	xor r10d, r10d
+	xor r11d, r11d
+	mov rax, QWORD PTR [rdi+384]
+	mul r15
+	add r9, rax
+	adc r10, rdx
+	mov rax, QWORD PTR [rdi+392]
+	mul r14
+	add r9, rax
+	adc r10, rdx
+	adc r11, 0
+	xor r12d, r12d
+	mov rax, QWORD PTR [rdi+384]
+	mul rcx
+	add r10, rax
+	adc r11, rdx
+	adc r12, 0
+	mov rax, QWORD PTR [rdi+392]
+	mul r15
+	add r10, rax
+	adc r11, rdx
+	adc r12, 0
+	mov rax, QWORD PTR [rdi+400]
+	mul r14
+	add r10, rax
+	adc r11, rdx
+	adc r12, 0
+	xor r13d, r13d
+	mov rax, QWORD PTR [rdi+384]
+	mul rbp
+	add r11, rax
+	adc r12, rdx
+	adc r13, 0
+	mov rax, QWORD PTR [rdi+392]
+	mul rcx
+	add r11, rax
+	adc r12, rdx
+	adc r13, 0
+	mov rax, QWORD PTR [rdi+400]
+	mul r15
+	add r11, rax
+	adc r12, rdx
+	adc r13, 0
+	mov rax, QWORD PTR [rdi+408]
+	mul r14
+	add r11, rax
+	adc r12, rdx
+	adc r13, 0
+	xor r14d, r14d
+	mov rax, QWORD PTR [rdi+392]
+	mul rbp
+	add r12, rax
+	adc r13, rdx
+	adc r14, 0
+	mov rax, QWORD PTR [rdi+400]
+	mul rcx
+	add r12, rax
+	adc r13, rdx
+	adc r14, 0
+	mov rax, QWORD PTR [rdi+408]
+	mul r15
+	add r12, rax
+	adc r13, rdx
+	adc r14, 0
+	xor r15d, r15d
+	mov rax, QWORD PTR [rdi+400]
+	mul rbp
+	add r13, rax
+	adc r14, rdx
+	adc r15, 0
+	mov rax, QWORD PTR [rdi+408]
+	mul rcx
+	add r13, rax
+	adc r14, rdx
+	adc r15, 0
+	mov rax, QWORD PTR [rdi+408]
+	mul rbp
 	add r14, rax
 	adc r15, rdx
-	mov ebp, 0
-	adc rbp, 0
 	mov ecx, 38
-	mov ebp, 0
 	mov rax, r12
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
 	add r8, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r9, rdx
+	sbb rbp, rbp
 	mov rax, r13
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r9, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r10, rdx
+	sbb rbp, rbp
 	mov rax, r14
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r11, rdx
+	sbb rbp, rbp
 	mov rax, r15
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r11, rax
 	adc rdx, 0
-	mov rbp, rdx
-	mov rax, rbp
-	mul rcx
+	mov r12, rdx
 	shl r11, 1
-	sbb rbp, rbp
+	adc r12, r12
 	shr r11, 1
-	and rbp, 19
-	add rax, rbp
+	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
 	adc r10, 0
@@ -1010,344 +857,121 @@ vg_ed25519_decode_powers:
 	mov QWORD PTR [rdi+392], r9
 	mov QWORD PTR [rdi+400], r10
 	mov QWORD PTR [rdi+408], r11
-	mov r8d, 0
-	mov r9d, 0
-	mov r10d, 0
-	mov r11d, 0
-	mov rcx, QWORD PTR [rdi+384]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+288]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r8, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+296]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r9, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+304]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+312]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r12, rbp
-	mov rcx, QWORD PTR [rdi+392]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+288]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r9, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+296]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+304]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+312]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r12, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r13, rbp
+	mov r14, QWORD PTR [rdi+384]
+	mov r15, QWORD PTR [rdi+392]
 	mov rcx, QWORD PTR [rdi+400]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+288]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+296]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+304]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r12, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+312]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r13, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r14, rbp
-	mov rcx, QWORD PTR [rdi+408]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+288]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+296]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r12, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+304]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r13, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+312]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r14, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r15, rbp
-	mov ecx, 38
-	mov ebp, 0
-	mov rax, r12
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r8, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, r13
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	mov rbp, QWORD PTR [rdi+408]
+	mov rax, QWORD PTR [rdi+256]
+	mul r14
+	mov r8, rax
+	mov r9, rdx
+	xor r10d, r10d
+	xor r11d, r11d
+	mov rax, QWORD PTR [rdi+256]
+	mul r15
 	add r9, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, r14
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, r15
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, rbp
-	mul rcx
-	shl r11, 1
-	sbb rbp, rbp
-	shr r11, 1
-	and rbp, 19
-	add rax, rbp
-	add r8, rax
-	adc r9, 0
-	adc r10, 0
+	adc r10, rdx
+	mov rax, QWORD PTR [rdi+264]
+	mul r14
+	add r9, rax
+	adc r10, rdx
 	adc r11, 0
-	mov QWORD PTR [rdi+384], r8
-	mov QWORD PTR [rdi+392], r9
-	mov QWORD PTR [rdi+400], r10
-	mov QWORD PTR [rdi+408], r11
-	mov r8d, 0
-	mov r9d, 0
-	mov r10d, 0
-	mov r11d, 0
-	mov rcx, QWORD PTR [rdi+256]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+384]
+	xor r12d, r12d
+	mov rax, QWORD PTR [rdi+256]
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r8, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+392]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r9, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+400]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
 	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+408]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r12, rbp
-	mov rcx, QWORD PTR [rdi+264]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+384]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r9, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+392]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r11, rdx
+	adc r12, 0
+	mov rax, QWORD PTR [rdi+264]
+	mul r15
 	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+400]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r11, rdx
+	adc r12, 0
+	mov rax, QWORD PTR [rdi+272]
+	mul r14
+	add r10, rax
+	adc r11, rdx
+	adc r12, 0
+	xor r13d, r13d
+	mov rax, QWORD PTR [rdi+256]
+	mul rbp
 	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+408]
+	adc r12, rdx
+	adc r13, 0
+	mov rax, QWORD PTR [rdi+264]
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	add r11, rax
+	adc r12, rdx
+	adc r13, 0
+	mov rax, QWORD PTR [rdi+272]
+	mul r15
+	add r11, rax
+	adc r12, rdx
+	adc r13, 0
+	mov rax, QWORD PTR [rdi+280]
+	mul r14
+	add r11, rax
+	adc r12, rdx
+	adc r13, 0
+	xor r14d, r14d
+	mov rax, QWORD PTR [rdi+264]
+	mul rbp
 	add r12, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r13, rbp
-	mov rcx, QWORD PTR [rdi+272]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+384]
+	adc r13, rdx
+	adc r14, 0
+	mov rax, QWORD PTR [rdi+272]
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+392]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+400]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
 	add r12, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+408]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r13, rdx
+	adc r14, 0
+	mov rax, QWORD PTR [rdi+280]
+	mul r15
+	add r12, rax
+	adc r13, rdx
+	adc r14, 0
+	xor r15d, r15d
+	mov rax, QWORD PTR [rdi+272]
+	mul rbp
 	add r13, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r14, rbp
-	mov rcx, QWORD PTR [rdi+280]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+384]
+	adc r14, rdx
+	adc r15, 0
+	mov rax, QWORD PTR [rdi+280]
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+392]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r12, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+400]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
 	add r13, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+408]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r14, rdx
+	adc r15, 0
+	mov rax, QWORD PTR [rdi+280]
+	mul rbp
 	add r14, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r15, rbp
+	adc r15, rdx
 	mov ecx, 38
-	mov ebp, 0
 	mov rax, r12
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
 	add r8, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r9, rdx
+	sbb rbp, rbp
 	mov rax, r13
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r9, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r10, rdx
+	sbb rbp, rbp
 	mov rax, r14
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r11, rdx
+	sbb rbp, rbp
 	mov rax, r15
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r11, rax
 	adc rdx, 0
-	mov rbp, rdx
-	mov rax, rbp
-	mul rcx
+	mov r12, rdx
 	shl r11, 1
-	sbb rbp, rbp
+	adc r12, r12
 	shr r11, 1
-	and rbp, 19
-	add rax, rbp
+	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
 	adc r10, 0
@@ -1383,62 +1007,41 @@ vg_ed25519_decode_powers:
 	mov QWORD PTR [rdi+200], r9
 	mov QWORD PTR [rdi+208], r10
 	mov QWORD PTR [rdi+216], r11
-	mov rcx, QWORD PTR [rdi+96]
-	mov ebp, 0
-	mov r9d, 0
-	mov r10d, 0
-	mov r11d, 0
-	mov rax, QWORD PTR [rdi+104]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r9, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+112]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+120]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r12, rbp
 	mov rcx, QWORD PTR [rdi+104]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+112]
+	mov rbp, QWORD PTR [rdi+112]
+	mov r15, QWORD PTR [rdi+120]
+	mov rax, QWORD PTR [rdi+96]
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	mov r9, rax
+	mov r10, rdx
+	xor r11d, r11d
+	xor r12d, r12d
+	xor r13d, r13d
+	mov rax, QWORD PTR [rdi+96]
+	mul rbp
+	add r10, rax
+	adc r11, rdx
+	mov rax, QWORD PTR [rdi+96]
+	mul r15
 	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+120]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r12, rdx
+	adc r13, 0
+	mov rax, QWORD PTR [rdi+104]
+	mul rbp
+	add r11, rax
+	adc r12, rdx
+	adc r13, 0
+	xor r14d, r14d
+	mov rax, QWORD PTR [rdi+104]
+	mul r15
 	add r12, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r13, rbp
-	mov rcx, QWORD PTR [rdi+112]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+120]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r13, rdx
+	adc r14, 0
+	mov rax, QWORD PTR [rdi+112]
+	mul r15
 	add r13, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r14, rbp
-	mov r15d, 0
-	mov r8d, 0
+	adc r14, rdx
+	xor r15d, r15d
 	add r9, r9
 	adc r10, r10
 	adc r11, r11
@@ -1446,76 +1049,55 @@ vg_ed25519_decode_powers:
 	adc r13, r13
 	adc r14, r14
 	adc r15, r15
-	mov ebp, 0
 	mov rax, QWORD PTR [rdi+96]
 	mul rax
-	add rax, rbp
-	adc rdx, 0
-	add r8, rax
-	adc r9, rdx
-	mov ebp, 0
-	adc rbp, 0
+	mov r8, rax
+	mov rbp, rdx
 	mov rax, QWORD PTR [rdi+104]
 	mul rax
-	add rax, rbp
-	adc rdx, 0
-	add r10, rax
+	add r9, rbp
+	adc r10, rax
 	adc r11, rdx
-	mov ebp, 0
-	adc rbp, 0
+	sbb rcx, rcx
 	mov rax, QWORD PTR [rdi+112]
 	mul rax
-	add rax, rbp
-	adc rdx, 0
-	add r12, rax
+	add rcx, rcx
+	adc r12, rax
 	adc r13, rdx
-	mov ebp, 0
-	adc rbp, 0
+	sbb rcx, rcx
 	mov rax, QWORD PTR [rdi+120]
 	mul rax
-	add rax, rbp
-	adc rdx, 0
-	add r14, rax
+	add rcx, rcx
+	adc r14, rax
 	adc r15, rdx
-	mov ebp, 0
-	adc rbp, 0
 	mov ecx, 38
-	mov ebp, 0
 	mov rax, r12
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
 	add r8, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r9, rdx
+	sbb rbp, rbp
 	mov rax, r13
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r9, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r10, rdx
+	sbb rbp, rbp
 	mov rax, r14
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r11, rdx
+	sbb rbp, rbp
 	mov rax, r15
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r11, rax
 	adc rdx, 0
-	mov rbp, rdx
-	mov rax, rbp
-	mul rcx
+	mov r12, rdx
 	shl r11, 1
-	sbb rbp, rbp
+	adc r12, r12
 	shr r11, 1
-	and rbp, 19
-	add rax, rbp
+	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
 	adc r10, 0
@@ -1542,171 +1124,121 @@ vg_ed25519_decode_powers:
 	mov QWORD PTR [rdi+264], r9
 	mov QWORD PTR [rdi+272], r10
 	mov QWORD PTR [rdi+280], r11
-	mov r8d, 0
-	mov r9d, 0
-	mov r10d, 0
-	mov r11d, 0
-	mov rcx, QWORD PTR [rdi+576]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+96]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r8, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+104]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	mov r14, QWORD PTR [rdi+96]
+	mov r15, QWORD PTR [rdi+104]
+	mov rcx, QWORD PTR [rdi+112]
+	mov rbp, QWORD PTR [rdi+120]
+	mov rax, QWORD PTR [rdi+576]
+	mul r14
+	mov r8, rax
+	mov r9, rdx
+	xor r10d, r10d
+	xor r11d, r11d
+	mov rax, QWORD PTR [rdi+576]
+	mul r15
 	add r9, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+112]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+120]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r12, rbp
-	mov rcx, QWORD PTR [rdi+584]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+96]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r10, rdx
+	mov rax, QWORD PTR [rdi+584]
+	mul r14
 	add r9, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+104]
+	adc r10, rdx
+	adc r11, 0
+	xor r12d, r12d
+	mov rax, QWORD PTR [rdi+576]
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
 	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+112]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+120]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r12, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r13, rbp
-	mov rcx, QWORD PTR [rdi+592]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+96]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r11, rdx
+	adc r12, 0
+	mov rax, QWORD PTR [rdi+584]
+	mul r15
 	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+104]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r11, rdx
+	adc r12, 0
+	mov rax, QWORD PTR [rdi+592]
+	mul r14
+	add r10, rax
+	adc r11, rdx
+	adc r12, 0
+	xor r13d, r13d
+	mov rax, QWORD PTR [rdi+576]
+	mul rbp
 	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+112]
+	adc r12, rdx
+	adc r13, 0
+	mov rax, QWORD PTR [rdi+584]
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r12, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+120]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r13, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r14, rbp
-	mov rcx, QWORD PTR [rdi+600]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+96]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
 	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+104]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r12, rdx
+	adc r13, 0
+	mov rax, QWORD PTR [rdi+592]
+	mul r15
+	add r11, rax
+	adc r12, rdx
+	adc r13, 0
+	mov rax, QWORD PTR [rdi+600]
+	mul r14
+	add r11, rax
+	adc r12, rdx
+	adc r13, 0
+	xor r14d, r14d
+	mov rax, QWORD PTR [rdi+584]
+	mul rbp
 	add r12, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+112]
+	adc r13, rdx
+	adc r14, 0
+	mov rax, QWORD PTR [rdi+592]
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	add r12, rax
+	adc r13, rdx
+	adc r14, 0
+	mov rax, QWORD PTR [rdi+600]
+	mul r15
+	add r12, rax
+	adc r13, rdx
+	adc r14, 0
+	xor r15d, r15d
+	mov rax, QWORD PTR [rdi+592]
+	mul rbp
 	add r13, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+120]
+	adc r14, rdx
+	adc r15, 0
+	mov rax, QWORD PTR [rdi+600]
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	add r13, rax
+	adc r14, rdx
+	adc r15, 0
+	mov rax, QWORD PTR [rdi+600]
+	mul rbp
 	add r14, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r15, rbp
+	adc r15, rdx
 	mov ecx, 38
-	mov ebp, 0
 	mov rax, r12
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
 	add r8, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r9, rdx
+	sbb rbp, rbp
 	mov rax, r13
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r9, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r10, rdx
+	sbb rbp, rbp
 	mov rax, r14
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r11, rdx
+	sbb rbp, rbp
 	mov rax, r15
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r11, rax
 	adc rdx, 0
-	mov rbp, rdx
-	mov rax, rbp
-	mul rcx
+	mov r12, rdx
 	shl r11, 1
-	sbb rbp, rbp
+	adc r12, r12
 	shr r11, 1
-	and rbp, 19
-	add rax, rbp
+	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
 	adc r10, 0
@@ -1715,171 +1247,121 @@ vg_ed25519_decode_powers:
 	mov QWORD PTR [rdi+296], r9
 	mov QWORD PTR [rdi+304], r10
 	mov QWORD PTR [rdi+312], r11
-	mov r8d, 0
-	mov r9d, 0
-	mov r10d, 0
-	mov r11d, 0
-	mov rcx, QWORD PTR [rdi+288]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+96]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r8, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+104]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	mov r14, QWORD PTR [rdi+96]
+	mov r15, QWORD PTR [rdi+104]
+	mov rcx, QWORD PTR [rdi+112]
+	mov rbp, QWORD PTR [rdi+120]
+	mov rax, QWORD PTR [rdi+288]
+	mul r14
+	mov r8, rax
+	mov r9, rdx
+	xor r10d, r10d
+	xor r11d, r11d
+	mov rax, QWORD PTR [rdi+288]
+	mul r15
 	add r9, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+112]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+120]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r12, rbp
-	mov rcx, QWORD PTR [rdi+296]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+96]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r10, rdx
+	mov rax, QWORD PTR [rdi+296]
+	mul r14
 	add r9, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+104]
+	adc r10, rdx
+	adc r11, 0
+	xor r12d, r12d
+	mov rax, QWORD PTR [rdi+288]
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
 	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+112]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+120]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r12, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r13, rbp
-	mov rcx, QWORD PTR [rdi+304]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+96]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r11, rdx
+	adc r12, 0
+	mov rax, QWORD PTR [rdi+296]
+	mul r15
 	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+104]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r11, rdx
+	adc r12, 0
+	mov rax, QWORD PTR [rdi+304]
+	mul r14
+	add r10, rax
+	adc r11, rdx
+	adc r12, 0
+	xor r13d, r13d
+	mov rax, QWORD PTR [rdi+288]
+	mul rbp
 	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+112]
+	adc r12, rdx
+	adc r13, 0
+	mov rax, QWORD PTR [rdi+296]
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r12, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+120]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r13, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r14, rbp
-	mov rcx, QWORD PTR [rdi+312]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+96]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
 	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+104]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r12, rdx
+	adc r13, 0
+	mov rax, QWORD PTR [rdi+304]
+	mul r15
+	add r11, rax
+	adc r12, rdx
+	adc r13, 0
+	mov rax, QWORD PTR [rdi+312]
+	mul r14
+	add r11, rax
+	adc r12, rdx
+	adc r13, 0
+	xor r14d, r14d
+	mov rax, QWORD PTR [rdi+296]
+	mul rbp
 	add r12, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+112]
+	adc r13, rdx
+	adc r14, 0
+	mov rax, QWORD PTR [rdi+304]
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	add r12, rax
+	adc r13, rdx
+	adc r14, 0
+	mov rax, QWORD PTR [rdi+312]
+	mul r15
+	add r12, rax
+	adc r13, rdx
+	adc r14, 0
+	xor r15d, r15d
+	mov rax, QWORD PTR [rdi+304]
+	mul rbp
 	add r13, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+120]
+	adc r14, rdx
+	adc r15, 0
+	mov rax, QWORD PTR [rdi+312]
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	add r13, rax
+	adc r14, rdx
+	adc r15, 0
+	mov rax, QWORD PTR [rdi+312]
+	mul rbp
 	add r14, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r15, rbp
+	adc r15, rdx
 	mov ecx, 38
-	mov ebp, 0
 	mov rax, r12
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
 	add r8, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r9, rdx
+	sbb rbp, rbp
 	mov rax, r13
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r9, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r10, rdx
+	sbb rbp, rbp
 	mov rax, r14
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r11, rdx
+	sbb rbp, rbp
 	mov rax, r15
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r11, rax
 	adc rdx, 0
-	mov rbp, rdx
-	mov rax, rbp
-	mul rcx
+	mov r12, rdx
 	shl r11, 1
-	sbb rbp, rbp
+	adc r12, r12
 	shr r11, 1
-	and rbp, 19
-	add rax, rbp
+	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
 	adc r10, 0
@@ -1906,62 +1388,41 @@ vg_ed25519_decode_powers:
 	mov QWORD PTR [rdi+296], r9
 	mov QWORD PTR [rdi+304], r10
 	mov QWORD PTR [rdi+312], r11
-	mov rcx, QWORD PTR [rdi+288]
-	mov ebp, 0
-	mov r9d, 0
-	mov r10d, 0
-	mov r11d, 0
-	mov rax, QWORD PTR [rdi+296]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r9, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+304]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+312]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r12, rbp
 	mov rcx, QWORD PTR [rdi+296]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+304]
+	mov rbp, QWORD PTR [rdi+304]
+	mov r15, QWORD PTR [rdi+312]
+	mov rax, QWORD PTR [rdi+288]
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	mov r9, rax
+	mov r10, rdx
+	xor r11d, r11d
+	xor r12d, r12d
+	xor r13d, r13d
+	mov rax, QWORD PTR [rdi+288]
+	mul rbp
+	add r10, rax
+	adc r11, rdx
+	mov rax, QWORD PTR [rdi+288]
+	mul r15
 	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+312]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r12, rdx
+	adc r13, 0
+	mov rax, QWORD PTR [rdi+296]
+	mul rbp
+	add r11, rax
+	adc r12, rdx
+	adc r13, 0
+	xor r14d, r14d
+	mov rax, QWORD PTR [rdi+296]
+	mul r15
 	add r12, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r13, rbp
-	mov rcx, QWORD PTR [rdi+304]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+312]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r13, rdx
+	adc r14, 0
+	mov rax, QWORD PTR [rdi+304]
+	mul r15
 	add r13, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r14, rbp
-	mov r15d, 0
-	mov r8d, 0
+	adc r14, rdx
+	xor r15d, r15d
 	add r9, r9
 	adc r10, r10
 	adc r11, r11
@@ -1969,76 +1430,55 @@ vg_ed25519_decode_powers:
 	adc r13, r13
 	adc r14, r14
 	adc r15, r15
-	mov ebp, 0
 	mov rax, QWORD PTR [rdi+288]
 	mul rax
-	add rax, rbp
-	adc rdx, 0
-	add r8, rax
-	adc r9, rdx
-	mov ebp, 0
-	adc rbp, 0
+	mov r8, rax
+	mov rbp, rdx
 	mov rax, QWORD PTR [rdi+296]
 	mul rax
-	add rax, rbp
-	adc rdx, 0
-	add r10, rax
+	add r9, rbp
+	adc r10, rax
 	adc r11, rdx
-	mov ebp, 0
-	adc rbp, 0
+	sbb rcx, rcx
 	mov rax, QWORD PTR [rdi+304]
 	mul rax
-	add rax, rbp
-	adc rdx, 0
-	add r12, rax
+	add rcx, rcx
+	adc r12, rax
 	adc r13, rdx
-	mov ebp, 0
-	adc rbp, 0
+	sbb rcx, rcx
 	mov rax, QWORD PTR [rdi+312]
 	mul rax
-	add rax, rbp
-	adc rdx, 0
-	add r14, rax
+	add rcx, rcx
+	adc r14, rax
 	adc r15, rdx
-	mov ebp, 0
-	adc rbp, 0
 	mov ecx, 38
-	mov ebp, 0
 	mov rax, r12
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
 	add r8, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r9, rdx
+	sbb rbp, rbp
 	mov rax, r13
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r9, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r10, rdx
+	sbb rbp, rbp
 	mov rax, r14
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r11, rdx
+	sbb rbp, rbp
 	mov rax, r15
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r11, rax
 	adc rdx, 0
-	mov rbp, rdx
-	mov rax, rbp
-	mul rcx
+	mov r12, rdx
 	shl r11, 1
-	sbb rbp, rbp
+	adc r12, r12
 	shr r11, 1
-	and rbp, 19
-	add rax, rbp
+	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
 	adc r10, 0
@@ -2047,171 +1487,121 @@ vg_ed25519_decode_powers:
 	mov QWORD PTR [rdi+328], r9
 	mov QWORD PTR [rdi+336], r10
 	mov QWORD PTR [rdi+344], r11
-	mov r8d, 0
-	mov r9d, 0
-	mov r10d, 0
-	mov r11d, 0
-	mov rcx, QWORD PTR [rdi+320]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+288]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r8, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+296]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	mov r14, QWORD PTR [rdi+288]
+	mov r15, QWORD PTR [rdi+296]
+	mov rcx, QWORD PTR [rdi+304]
+	mov rbp, QWORD PTR [rdi+312]
+	mov rax, QWORD PTR [rdi+320]
+	mul r14
+	mov r8, rax
+	mov r9, rdx
+	xor r10d, r10d
+	xor r11d, r11d
+	mov rax, QWORD PTR [rdi+320]
+	mul r15
 	add r9, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+304]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+312]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r12, rbp
-	mov rcx, QWORD PTR [rdi+328]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+288]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r10, rdx
+	mov rax, QWORD PTR [rdi+328]
+	mul r14
 	add r9, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+296]
+	adc r10, rdx
+	adc r11, 0
+	xor r12d, r12d
+	mov rax, QWORD PTR [rdi+320]
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
 	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+304]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+312]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r12, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r13, rbp
-	mov rcx, QWORD PTR [rdi+336]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+288]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r11, rdx
+	adc r12, 0
+	mov rax, QWORD PTR [rdi+328]
+	mul r15
 	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+296]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r11, rdx
+	adc r12, 0
+	mov rax, QWORD PTR [rdi+336]
+	mul r14
+	add r10, rax
+	adc r11, rdx
+	adc r12, 0
+	xor r13d, r13d
+	mov rax, QWORD PTR [rdi+320]
+	mul rbp
 	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+304]
+	adc r12, rdx
+	adc r13, 0
+	mov rax, QWORD PTR [rdi+328]
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r12, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+312]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r13, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r14, rbp
-	mov rcx, QWORD PTR [rdi+344]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+288]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
 	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+296]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r12, rdx
+	adc r13, 0
+	mov rax, QWORD PTR [rdi+336]
+	mul r15
+	add r11, rax
+	adc r12, rdx
+	adc r13, 0
+	mov rax, QWORD PTR [rdi+344]
+	mul r14
+	add r11, rax
+	adc r12, rdx
+	adc r13, 0
+	xor r14d, r14d
+	mov rax, QWORD PTR [rdi+328]
+	mul rbp
 	add r12, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+304]
+	adc r13, rdx
+	adc r14, 0
+	mov rax, QWORD PTR [rdi+336]
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	add r12, rax
+	adc r13, rdx
+	adc r14, 0
+	mov rax, QWORD PTR [rdi+344]
+	mul r15
+	add r12, rax
+	adc r13, rdx
+	adc r14, 0
+	xor r15d, r15d
+	mov rax, QWORD PTR [rdi+336]
+	mul rbp
 	add r13, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+312]
+	adc r14, rdx
+	adc r15, 0
+	mov rax, QWORD PTR [rdi+344]
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	add r13, rax
+	adc r14, rdx
+	adc r15, 0
+	mov rax, QWORD PTR [rdi+344]
+	mul rbp
 	add r14, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r15, rbp
+	adc r15, rdx
 	mov ecx, 38
-	mov ebp, 0
 	mov rax, r12
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
 	add r8, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r9, rdx
+	sbb rbp, rbp
 	mov rax, r13
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r9, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r10, rdx
+	sbb rbp, rbp
 	mov rax, r14
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r11, rdx
+	sbb rbp, rbp
 	mov rax, r15
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r11, rax
 	adc rdx, 0
-	mov rbp, rdx
-	mov rax, rbp
-	mul rcx
+	mov r12, rdx
 	shl r11, 1
-	sbb rbp, rbp
+	adc r12, r12
 	shr r11, 1
-	and rbp, 19
-	add rax, rbp
+	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
 	adc r10, 0
@@ -2220,62 +1610,41 @@ vg_ed25519_decode_powers:
 	mov QWORD PTR [rdi+360], r9
 	mov QWORD PTR [rdi+368], r10
 	mov QWORD PTR [rdi+376], r11
-	mov rcx, QWORD PTR [rdi+352]
-	mov ebp, 0
-	mov r9d, 0
-	mov r10d, 0
-	mov r11d, 0
-	mov rax, QWORD PTR [rdi+360]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r9, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+368]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+376]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r12, rbp
 	mov rcx, QWORD PTR [rdi+360]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+368]
+	mov rbp, QWORD PTR [rdi+368]
+	mov r15, QWORD PTR [rdi+376]
+	mov rax, QWORD PTR [rdi+352]
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	mov r9, rax
+	mov r10, rdx
+	xor r11d, r11d
+	xor r12d, r12d
+	xor r13d, r13d
+	mov rax, QWORD PTR [rdi+352]
+	mul rbp
+	add r10, rax
+	adc r11, rdx
+	mov rax, QWORD PTR [rdi+352]
+	mul r15
 	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+376]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r12, rdx
+	adc r13, 0
+	mov rax, QWORD PTR [rdi+360]
+	mul rbp
+	add r11, rax
+	adc r12, rdx
+	adc r13, 0
+	xor r14d, r14d
+	mov rax, QWORD PTR [rdi+360]
+	mul r15
 	add r12, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r13, rbp
-	mov rcx, QWORD PTR [rdi+368]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+376]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r13, rdx
+	adc r14, 0
+	mov rax, QWORD PTR [rdi+368]
+	mul r15
 	add r13, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r14, rbp
-	mov r15d, 0
-	mov r8d, 0
+	adc r14, rdx
+	xor r15d, r15d
 	add r9, r9
 	adc r10, r10
 	adc r11, r11
@@ -2283,76 +1652,178 @@ vg_ed25519_decode_powers:
 	adc r13, r13
 	adc r14, r14
 	adc r15, r15
-	mov ebp, 0
 	mov rax, QWORD PTR [rdi+352]
 	mul rax
-	add rax, rbp
-	adc rdx, 0
-	add r8, rax
-	adc r9, rdx
-	mov ebp, 0
-	adc rbp, 0
+	mov r8, rax
+	mov rbp, rdx
 	mov rax, QWORD PTR [rdi+360]
 	mul rax
-	add rax, rbp
-	adc rdx, 0
-	add r10, rax
+	add r9, rbp
+	adc r10, rax
 	adc r11, rdx
-	mov ebp, 0
-	adc rbp, 0
+	sbb rcx, rcx
 	mov rax, QWORD PTR [rdi+368]
 	mul rax
-	add rax, rbp
-	adc rdx, 0
-	add r12, rax
+	add rcx, rcx
+	adc r12, rax
 	adc r13, rdx
-	mov ebp, 0
-	adc rbp, 0
+	sbb rcx, rcx
 	mov rax, QWORD PTR [rdi+376]
 	mul rax
-	add rax, rbp
+	add rcx, rcx
+	adc r14, rax
+	adc r15, rdx
+	mov ecx, 38
+	mov rax, r12
+	mul rcx
+	add r8, rax
+	adc r9, rdx
+	sbb rbp, rbp
+	mov rax, r13
+	mul rcx
+	sub rdx, rbp
+	add r9, rax
+	adc r10, rdx
+	sbb rbp, rbp
+	mov rax, r14
+	mul rcx
+	sub rdx, rbp
+	add r10, rax
+	adc r11, rdx
+	sbb rbp, rbp
+	mov rax, r15
+	mul rcx
+	sub rdx, rbp
+	add r11, rax
 	adc rdx, 0
+	mov r12, rdx
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
+	imul rax, r12, 19
+	add r8, rax
+	adc r9, 0
+	adc r10, 0
+	adc r11, 0
+	mov QWORD PTR [rdi+384], r8
+	mov QWORD PTR [rdi+392], r9
+	mov QWORD PTR [rdi+400], r10
+	mov QWORD PTR [rdi+408], r11
+	mov r14, QWORD PTR [rdi+288]
+	mov r15, QWORD PTR [rdi+296]
+	mov rcx, QWORD PTR [rdi+304]
+	mov rbp, QWORD PTR [rdi+312]
+	mov rax, QWORD PTR [rdi+384]
+	mul r14
+	mov r8, rax
+	mov r9, rdx
+	xor r10d, r10d
+	xor r11d, r11d
+	mov rax, QWORD PTR [rdi+384]
+	mul r15
+	add r9, rax
+	adc r10, rdx
+	mov rax, QWORD PTR [rdi+392]
+	mul r14
+	add r9, rax
+	adc r10, rdx
+	adc r11, 0
+	xor r12d, r12d
+	mov rax, QWORD PTR [rdi+384]
+	mul rcx
+	add r10, rax
+	adc r11, rdx
+	adc r12, 0
+	mov rax, QWORD PTR [rdi+392]
+	mul r15
+	add r10, rax
+	adc r11, rdx
+	adc r12, 0
+	mov rax, QWORD PTR [rdi+400]
+	mul r14
+	add r10, rax
+	adc r11, rdx
+	adc r12, 0
+	xor r13d, r13d
+	mov rax, QWORD PTR [rdi+384]
+	mul rbp
+	add r11, rax
+	adc r12, rdx
+	adc r13, 0
+	mov rax, QWORD PTR [rdi+392]
+	mul rcx
+	add r11, rax
+	adc r12, rdx
+	adc r13, 0
+	mov rax, QWORD PTR [rdi+400]
+	mul r15
+	add r11, rax
+	adc r12, rdx
+	adc r13, 0
+	mov rax, QWORD PTR [rdi+408]
+	mul r14
+	add r11, rax
+	adc r12, rdx
+	adc r13, 0
+	xor r14d, r14d
+	mov rax, QWORD PTR [rdi+392]
+	mul rbp
+	add r12, rax
+	adc r13, rdx
+	adc r14, 0
+	mov rax, QWORD PTR [rdi+400]
+	mul rcx
+	add r12, rax
+	adc r13, rdx
+	adc r14, 0
+	mov rax, QWORD PTR [rdi+408]
+	mul r15
+	add r12, rax
+	adc r13, rdx
+	adc r14, 0
+	xor r15d, r15d
+	mov rax, QWORD PTR [rdi+400]
+	mul rbp
+	add r13, rax
+	adc r14, rdx
+	adc r15, 0
+	mov rax, QWORD PTR [rdi+408]
+	mul rcx
+	add r13, rax
+	adc r14, rdx
+	adc r15, 0
+	mov rax, QWORD PTR [rdi+408]
+	mul rbp
 	add r14, rax
 	adc r15, rdx
-	mov ebp, 0
-	adc rbp, 0
 	mov ecx, 38
-	mov ebp, 0
 	mov rax, r12
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
 	add r8, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r9, rdx
+	sbb rbp, rbp
 	mov rax, r13
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r9, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r10, rdx
+	sbb rbp, rbp
 	mov rax, r14
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r11, rdx
+	sbb rbp, rbp
 	mov rax, r15
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r11, rax
 	adc rdx, 0
-	mov rbp, rdx
-	mov rax, rbp
-	mul rcx
+	mov r12, rdx
 	shl r11, 1
-	sbb rbp, rbp
+	adc r12, r12
 	shr r11, 1
-	and rbp, 19
-	add rax, rbp
+	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
 	adc r10, 0
@@ -2361,344 +1832,121 @@ vg_ed25519_decode_powers:
 	mov QWORD PTR [rdi+392], r9
 	mov QWORD PTR [rdi+400], r10
 	mov QWORD PTR [rdi+408], r11
-	mov r8d, 0
-	mov r9d, 0
-	mov r10d, 0
-	mov r11d, 0
-	mov rcx, QWORD PTR [rdi+384]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+288]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r8, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+296]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r9, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+304]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+312]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r12, rbp
-	mov rcx, QWORD PTR [rdi+392]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+288]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r9, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+296]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+304]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+312]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r12, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r13, rbp
+	mov r14, QWORD PTR [rdi+384]
+	mov r15, QWORD PTR [rdi+392]
 	mov rcx, QWORD PTR [rdi+400]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+288]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+296]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+304]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r12, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+312]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r13, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r14, rbp
-	mov rcx, QWORD PTR [rdi+408]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+288]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+296]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r12, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+304]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r13, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+312]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r14, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r15, rbp
-	mov ecx, 38
-	mov ebp, 0
-	mov rax, r12
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r8, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, r13
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	mov rbp, QWORD PTR [rdi+408]
+	mov rax, QWORD PTR [rdi+256]
+	mul r14
+	mov r8, rax
+	mov r9, rdx
+	xor r10d, r10d
+	xor r11d, r11d
+	mov rax, QWORD PTR [rdi+256]
+	mul r15
 	add r9, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, r14
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, r15
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, rbp
-	mul rcx
-	shl r11, 1
-	sbb rbp, rbp
-	shr r11, 1
-	and rbp, 19
-	add rax, rbp
-	add r8, rax
-	adc r9, 0
-	adc r10, 0
+	adc r10, rdx
+	mov rax, QWORD PTR [rdi+264]
+	mul r14
+	add r9, rax
+	adc r10, rdx
 	adc r11, 0
-	mov QWORD PTR [rdi+384], r8
-	mov QWORD PTR [rdi+392], r9
-	mov QWORD PTR [rdi+400], r10
-	mov QWORD PTR [rdi+408], r11
-	mov r8d, 0
-	mov r9d, 0
-	mov r10d, 0
-	mov r11d, 0
-	mov rcx, QWORD PTR [rdi+256]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+384]
+	xor r12d, r12d
+	mov rax, QWORD PTR [rdi+256]
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r8, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+392]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r9, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+400]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
 	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+408]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r12, rbp
-	mov rcx, QWORD PTR [rdi+264]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+384]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r9, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+392]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r11, rdx
+	adc r12, 0
+	mov rax, QWORD PTR [rdi+264]
+	mul r15
 	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+400]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r11, rdx
+	adc r12, 0
+	mov rax, QWORD PTR [rdi+272]
+	mul r14
+	add r10, rax
+	adc r11, rdx
+	adc r12, 0
+	xor r13d, r13d
+	mov rax, QWORD PTR [rdi+256]
+	mul rbp
 	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+408]
+	adc r12, rdx
+	adc r13, 0
+	mov rax, QWORD PTR [rdi+264]
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	add r11, rax
+	adc r12, rdx
+	adc r13, 0
+	mov rax, QWORD PTR [rdi+272]
+	mul r15
+	add r11, rax
+	adc r12, rdx
+	adc r13, 0
+	mov rax, QWORD PTR [rdi+280]
+	mul r14
+	add r11, rax
+	adc r12, rdx
+	adc r13, 0
+	xor r14d, r14d
+	mov rax, QWORD PTR [rdi+264]
+	mul rbp
 	add r12, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r13, rbp
-	mov rcx, QWORD PTR [rdi+272]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+384]
+	adc r13, rdx
+	adc r14, 0
+	mov rax, QWORD PTR [rdi+272]
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+392]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+400]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
 	add r12, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+408]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r13, rdx
+	adc r14, 0
+	mov rax, QWORD PTR [rdi+280]
+	mul r15
+	add r12, rax
+	adc r13, rdx
+	adc r14, 0
+	xor r15d, r15d
+	mov rax, QWORD PTR [rdi+272]
+	mul rbp
 	add r13, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r14, rbp
-	mov rcx, QWORD PTR [rdi+280]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+384]
+	adc r14, rdx
+	adc r15, 0
+	mov rax, QWORD PTR [rdi+280]
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+392]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r12, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+400]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
 	add r13, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+408]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r14, rdx
+	adc r15, 0
+	mov rax, QWORD PTR [rdi+280]
+	mul rbp
 	add r14, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r15, rbp
+	adc r15, rdx
 	mov ecx, 38
-	mov ebp, 0
 	mov rax, r12
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
 	add r8, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r9, rdx
+	sbb rbp, rbp
 	mov rax, r13
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r9, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r10, rdx
+	sbb rbp, rbp
 	mov rax, r14
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r11, rdx
+	sbb rbp, rbp
 	mov rax, r15
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r11, rax
 	adc rdx, 0
-	mov rbp, rdx
-	mov rax, rbp
-	mul rcx
+	mov r12, rdx
 	shl r11, 1
-	sbb rbp, rbp
+	adc r12, r12
 	shr r11, 1
-	and rbp, 19
-	add rax, rbp
+	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
 	adc r10, 0
@@ -2707,62 +1955,41 @@ vg_ed25519_decode_powers:
 	mov QWORD PTR [rdi+136], r9
 	mov QWORD PTR [rdi+144], r10
 	mov QWORD PTR [rdi+152], r11
-	mov rcx, QWORD PTR [rdi+128]
-	mov ebp, 0
-	mov r9d, 0
-	mov r10d, 0
-	mov r11d, 0
-	mov rax, QWORD PTR [rdi+136]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r9, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+144]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+152]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r12, rbp
 	mov rcx, QWORD PTR [rdi+136]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+144]
+	mov rbp, QWORD PTR [rdi+144]
+	mov r15, QWORD PTR [rdi+152]
+	mov rax, QWORD PTR [rdi+128]
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	mov r9, rax
+	mov r10, rdx
+	xor r11d, r11d
+	xor r12d, r12d
+	xor r13d, r13d
+	mov rax, QWORD PTR [rdi+128]
+	mul rbp
+	add r10, rax
+	adc r11, rdx
+	mov rax, QWORD PTR [rdi+128]
+	mul r15
 	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+152]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r12, rdx
+	adc r13, 0
+	mov rax, QWORD PTR [rdi+136]
+	mul rbp
+	add r11, rax
+	adc r12, rdx
+	adc r13, 0
+	xor r14d, r14d
+	mov rax, QWORD PTR [rdi+136]
+	mul r15
 	add r12, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r13, rbp
-	mov rcx, QWORD PTR [rdi+144]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+152]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r13, rdx
+	adc r14, 0
+	mov rax, QWORD PTR [rdi+144]
+	mul r15
 	add r13, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r14, rbp
-	mov r15d, 0
-	mov r8d, 0
+	adc r14, rdx
+	xor r15d, r15d
 	add r9, r9
 	adc r10, r10
 	adc r11, r11
@@ -2770,76 +1997,55 @@ vg_ed25519_decode_powers:
 	adc r13, r13
 	adc r14, r14
 	adc r15, r15
-	mov ebp, 0
 	mov rax, QWORD PTR [rdi+128]
 	mul rax
-	add rax, rbp
-	adc rdx, 0
-	add r8, rax
-	adc r9, rdx
-	mov ebp, 0
-	adc rbp, 0
+	mov r8, rax
+	mov rbp, rdx
 	mov rax, QWORD PTR [rdi+136]
 	mul rax
-	add rax, rbp
-	adc rdx, 0
-	add r10, rax
+	add r9, rbp
+	adc r10, rax
 	adc r11, rdx
-	mov ebp, 0
-	adc rbp, 0
+	sbb rcx, rcx
 	mov rax, QWORD PTR [rdi+144]
 	mul rax
-	add rax, rbp
-	adc rdx, 0
-	add r12, rax
+	add rcx, rcx
+	adc r12, rax
 	adc r13, rdx
-	mov ebp, 0
-	adc rbp, 0
+	sbb rcx, rcx
 	mov rax, QWORD PTR [rdi+152]
 	mul rax
-	add rax, rbp
-	adc rdx, 0
-	add r14, rax
+	add rcx, rcx
+	adc r14, rax
 	adc r15, rdx
-	mov ebp, 0
-	adc rbp, 0
 	mov ecx, 38
-	mov ebp, 0
 	mov rax, r12
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
 	add r8, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r9, rdx
+	sbb rbp, rbp
 	mov rax, r13
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r9, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r10, rdx
+	sbb rbp, rbp
 	mov rax, r14
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r11, rdx
+	sbb rbp, rbp
 	mov rax, r15
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r11, rax
 	adc rdx, 0
-	mov rbp, rdx
-	mov rax, rbp
-	mul rcx
+	mov r12, rdx
 	shl r11, 1
-	sbb rbp, rbp
+	adc r12, r12
 	shr r11, 1
-	and rbp, 19
-	add rax, rbp
+	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
 	adc r10, 0
@@ -2848,62 +2054,41 @@ vg_ed25519_decode_powers:
 	mov QWORD PTR [rdi+520], r9
 	mov QWORD PTR [rdi+528], r10
 	mov QWORD PTR [rdi+536], r11
-	mov rcx, QWORD PTR [rdi+160]
-	mov ebp, 0
-	mov r9d, 0
-	mov r10d, 0
-	mov r11d, 0
-	mov rax, QWORD PTR [rdi+168]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r9, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+176]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+184]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r12, rbp
 	mov rcx, QWORD PTR [rdi+168]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+176]
+	mov rbp, QWORD PTR [rdi+176]
+	mov r15, QWORD PTR [rdi+184]
+	mov rax, QWORD PTR [rdi+160]
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	mov r9, rax
+	mov r10, rdx
+	xor r11d, r11d
+	xor r12d, r12d
+	xor r13d, r13d
+	mov rax, QWORD PTR [rdi+160]
+	mul rbp
+	add r10, rax
+	adc r11, rdx
+	mov rax, QWORD PTR [rdi+160]
+	mul r15
 	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+184]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r12, rdx
+	adc r13, 0
+	mov rax, QWORD PTR [rdi+168]
+	mul rbp
+	add r11, rax
+	adc r12, rdx
+	adc r13, 0
+	xor r14d, r14d
+	mov rax, QWORD PTR [rdi+168]
+	mul r15
 	add r12, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r13, rbp
-	mov rcx, QWORD PTR [rdi+176]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+184]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r13, rdx
+	adc r14, 0
+	mov rax, QWORD PTR [rdi+176]
+	mul r15
 	add r13, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r14, rbp
-	mov r15d, 0
-	mov r8d, 0
+	adc r14, rdx
+	xor r15d, r15d
 	add r9, r9
 	adc r10, r10
 	adc r11, r11
@@ -2911,76 +2096,55 @@ vg_ed25519_decode_powers:
 	adc r13, r13
 	adc r14, r14
 	adc r15, r15
-	mov ebp, 0
 	mov rax, QWORD PTR [rdi+160]
 	mul rax
-	add rax, rbp
-	adc rdx, 0
-	add r8, rax
-	adc r9, rdx
-	mov ebp, 0
-	adc rbp, 0
+	mov r8, rax
+	mov rbp, rdx
 	mov rax, QWORD PTR [rdi+168]
 	mul rax
-	add rax, rbp
-	adc rdx, 0
-	add r10, rax
+	add r9, rbp
+	adc r10, rax
 	adc r11, rdx
-	mov ebp, 0
-	adc rbp, 0
+	sbb rcx, rcx
 	mov rax, QWORD PTR [rdi+176]
 	mul rax
-	add rax, rbp
-	adc rdx, 0
-	add r12, rax
+	add rcx, rcx
+	adc r12, rax
 	adc r13, rdx
-	mov ebp, 0
-	adc rbp, 0
+	sbb rcx, rcx
 	mov rax, QWORD PTR [rdi+184]
 	mul rax
-	add rax, rbp
-	adc rdx, 0
-	add r14, rax
+	add rcx, rcx
+	adc r14, rax
 	adc r15, rdx
-	mov ebp, 0
-	adc rbp, 0
 	mov ecx, 38
-	mov ebp, 0
 	mov rax, r12
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
 	add r8, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r9, rdx
+	sbb rbp, rbp
 	mov rax, r13
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r9, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r10, rdx
+	sbb rbp, rbp
 	mov rax, r14
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r11, rdx
+	sbb rbp, rbp
 	mov rax, r15
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r11, rax
 	adc rdx, 0
-	mov rbp, rdx
-	mov rax, rbp
-	mul rcx
+	mov r12, rdx
 	shl r11, 1
-	sbb rbp, rbp
+	adc r12, r12
 	shr r11, 1
-	and rbp, 19
-	add rax, rbp
+	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
 	adc r10, 0
@@ -2989,62 +2153,41 @@ vg_ed25519_decode_powers:
 	mov QWORD PTR [rdi+648], r9
 	mov QWORD PTR [rdi+656], r10
 	mov QWORD PTR [rdi+664], r11
-	mov rcx, QWORD PTR [rdi+512]
-	mov ebp, 0
-	mov r9d, 0
-	mov r10d, 0
-	mov r11d, 0
-	mov rax, QWORD PTR [rdi+520]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r9, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+528]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+536]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r12, rbp
 	mov rcx, QWORD PTR [rdi+520]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+528]
+	mov rbp, QWORD PTR [rdi+528]
+	mov r15, QWORD PTR [rdi+536]
+	mov rax, QWORD PTR [rdi+512]
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	mov r9, rax
+	mov r10, rdx
+	xor r11d, r11d
+	xor r12d, r12d
+	xor r13d, r13d
+	mov rax, QWORD PTR [rdi+512]
+	mul rbp
+	add r10, rax
+	adc r11, rdx
+	mov rax, QWORD PTR [rdi+512]
+	mul r15
 	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+536]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r12, rdx
+	adc r13, 0
+	mov rax, QWORD PTR [rdi+520]
+	mul rbp
+	add r11, rax
+	adc r12, rdx
+	adc r13, 0
+	xor r14d, r14d
+	mov rax, QWORD PTR [rdi+520]
+	mul r15
 	add r12, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r13, rbp
-	mov rcx, QWORD PTR [rdi+528]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+536]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r13, rdx
+	adc r14, 0
+	mov rax, QWORD PTR [rdi+528]
+	mul r15
 	add r13, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r14, rbp
-	mov r15d, 0
-	mov r8d, 0
+	adc r14, rdx
+	xor r15d, r15d
 	add r9, r9
 	adc r10, r10
 	adc r11, r11
@@ -3052,76 +2195,55 @@ vg_ed25519_decode_powers:
 	adc r13, r13
 	adc r14, r14
 	adc r15, r15
-	mov ebp, 0
 	mov rax, QWORD PTR [rdi+512]
 	mul rax
-	add rax, rbp
-	adc rdx, 0
-	add r8, rax
-	adc r9, rdx
-	mov ebp, 0
-	adc rbp, 0
+	mov r8, rax
+	mov rbp, rdx
 	mov rax, QWORD PTR [rdi+520]
 	mul rax
-	add rax, rbp
-	adc rdx, 0
-	add r10, rax
+	add r9, rbp
+	adc r10, rax
 	adc r11, rdx
-	mov ebp, 0
-	adc rbp, 0
+	sbb rcx, rcx
 	mov rax, QWORD PTR [rdi+528]
 	mul rax
-	add rax, rbp
-	adc rdx, 0
-	add r12, rax
+	add rcx, rcx
+	adc r12, rax
 	adc r13, rdx
-	mov ebp, 0
-	adc rbp, 0
+	sbb rcx, rcx
 	mov rax, QWORD PTR [rdi+536]
 	mul rax
-	add rax, rbp
-	adc rdx, 0
-	add r14, rax
+	add rcx, rcx
+	adc r14, rax
 	adc r15, rdx
-	mov ebp, 0
-	adc rbp, 0
 	mov ecx, 38
-	mov ebp, 0
 	mov rax, r12
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
 	add r8, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r9, rdx
+	sbb rbp, rbp
 	mov rax, r13
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r9, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r10, rdx
+	sbb rbp, rbp
 	mov rax, r14
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r11, rdx
+	sbb rbp, rbp
 	mov rax, r15
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r11, rax
 	adc rdx, 0
-	mov rbp, rdx
-	mov rax, rbp
-	mul rcx
+	mov r12, rdx
 	shl r11, 1
-	sbb rbp, rbp
+	adc r12, r12
 	shr r11, 1
-	and rbp, 19
-	add rax, rbp
+	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
 	adc r10, 0
@@ -3130,62 +2252,41 @@ vg_ed25519_decode_powers:
 	mov QWORD PTR [rdi+552], r9
 	mov QWORD PTR [rdi+560], r10
 	mov QWORD PTR [rdi+568], r11
-	mov rcx, QWORD PTR [rdi+640]
-	mov ebp, 0
-	mov r9d, 0
-	mov r10d, 0
-	mov r11d, 0
-	mov rax, QWORD PTR [rdi+648]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r9, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+656]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+664]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r12, rbp
 	mov rcx, QWORD PTR [rdi+648]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+656]
+	mov rbp, QWORD PTR [rdi+656]
+	mov r15, QWORD PTR [rdi+664]
+	mov rax, QWORD PTR [rdi+640]
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	mov r9, rax
+	mov r10, rdx
+	xor r11d, r11d
+	xor r12d, r12d
+	xor r13d, r13d
+	mov rax, QWORD PTR [rdi+640]
+	mul rbp
+	add r10, rax
+	adc r11, rdx
+	mov rax, QWORD PTR [rdi+640]
+	mul r15
 	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+664]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r12, rdx
+	adc r13, 0
+	mov rax, QWORD PTR [rdi+648]
+	mul rbp
+	add r11, rax
+	adc r12, rdx
+	adc r13, 0
+	xor r14d, r14d
+	mov rax, QWORD PTR [rdi+648]
+	mul r15
 	add r12, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r13, rbp
-	mov rcx, QWORD PTR [rdi+656]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+664]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r13, rdx
+	adc r14, 0
+	mov rax, QWORD PTR [rdi+656]
+	mul r15
 	add r13, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r14, rbp
-	mov r15d, 0
-	mov r8d, 0
+	adc r14, rdx
+	xor r15d, r15d
 	add r9, r9
 	adc r10, r10
 	adc r11, r11
@@ -3193,76 +2294,55 @@ vg_ed25519_decode_powers:
 	adc r13, r13
 	adc r14, r14
 	adc r15, r15
-	mov ebp, 0
 	mov rax, QWORD PTR [rdi+640]
 	mul rax
-	add rax, rbp
-	adc rdx, 0
-	add r8, rax
-	adc r9, rdx
-	mov ebp, 0
-	adc rbp, 0
+	mov r8, rax
+	mov rbp, rdx
 	mov rax, QWORD PTR [rdi+648]
 	mul rax
-	add rax, rbp
-	adc rdx, 0
-	add r10, rax
+	add r9, rbp
+	adc r10, rax
 	adc r11, rdx
-	mov ebp, 0
-	adc rbp, 0
+	sbb rcx, rcx
 	mov rax, QWORD PTR [rdi+656]
 	mul rax
-	add rax, rbp
-	adc rdx, 0
-	add r12, rax
+	add rcx, rcx
+	adc r12, rax
 	adc r13, rdx
-	mov ebp, 0
-	adc rbp, 0
+	sbb rcx, rcx
 	mov rax, QWORD PTR [rdi+664]
 	mul rax
-	add rax, rbp
-	adc rdx, 0
-	add r14, rax
+	add rcx, rcx
+	adc r14, rax
 	adc r15, rdx
-	mov ebp, 0
-	adc rbp, 0
 	mov ecx, 38
-	mov ebp, 0
 	mov rax, r12
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
 	add r8, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r9, rdx
+	sbb rbp, rbp
 	mov rax, r13
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r9, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r10, rdx
+	sbb rbp, rbp
 	mov rax, r14
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r11, rdx
+	sbb rbp, rbp
 	mov rax, r15
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r11, rax
 	adc rdx, 0
-	mov rbp, rdx
-	mov rax, rbp
-	mul rcx
+	mov r12, rdx
 	shl r11, 1
-	sbb rbp, rbp
+	adc r12, r12
 	shr r11, 1
-	and rbp, 19
-	add rax, rbp
+	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
 	adc r10, 0
@@ -3271,62 +2351,41 @@ vg_ed25519_decode_powers:
 	mov QWORD PTR [rdi+680], r9
 	mov QWORD PTR [rdi+688], r10
 	mov QWORD PTR [rdi+696], r11
-	mov rcx, QWORD PTR [rdi+544]
-	mov ebp, 0
-	mov r9d, 0
-	mov r10d, 0
-	mov r11d, 0
-	mov rax, QWORD PTR [rdi+552]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r9, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+560]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+568]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r12, rbp
 	mov rcx, QWORD PTR [rdi+552]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+560]
+	mov rbp, QWORD PTR [rdi+560]
+	mov r15, QWORD PTR [rdi+568]
+	mov rax, QWORD PTR [rdi+544]
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	mov r9, rax
+	mov r10, rdx
+	xor r11d, r11d
+	xor r12d, r12d
+	xor r13d, r13d
+	mov rax, QWORD PTR [rdi+544]
+	mul rbp
+	add r10, rax
+	adc r11, rdx
+	mov rax, QWORD PTR [rdi+544]
+	mul r15
 	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+568]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r12, rdx
+	adc r13, 0
+	mov rax, QWORD PTR [rdi+552]
+	mul rbp
+	add r11, rax
+	adc r12, rdx
+	adc r13, 0
+	xor r14d, r14d
+	mov rax, QWORD PTR [rdi+552]
+	mul r15
 	add r12, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r13, rbp
-	mov rcx, QWORD PTR [rdi+560]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+568]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r13, rdx
+	adc r14, 0
+	mov rax, QWORD PTR [rdi+560]
+	mul r15
 	add r13, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r14, rbp
-	mov r15d, 0
-	mov r8d, 0
+	adc r14, rdx
+	xor r15d, r15d
 	add r9, r9
 	adc r10, r10
 	adc r11, r11
@@ -3334,76 +2393,55 @@ vg_ed25519_decode_powers:
 	adc r13, r13
 	adc r14, r14
 	adc r15, r15
-	mov ebp, 0
 	mov rax, QWORD PTR [rdi+544]
 	mul rax
-	add rax, rbp
-	adc rdx, 0
-	add r8, rax
-	adc r9, rdx
-	mov ebp, 0
-	adc rbp, 0
+	mov r8, rax
+	mov rbp, rdx
 	mov rax, QWORD PTR [rdi+552]
 	mul rax
-	add rax, rbp
-	adc rdx, 0
-	add r10, rax
+	add r9, rbp
+	adc r10, rax
 	adc r11, rdx
-	mov ebp, 0
-	adc rbp, 0
+	sbb rcx, rcx
 	mov rax, QWORD PTR [rdi+560]
 	mul rax
-	add rax, rbp
-	adc rdx, 0
-	add r12, rax
+	add rcx, rcx
+	adc r12, rax
 	adc r13, rdx
-	mov ebp, 0
-	adc rbp, 0
+	sbb rcx, rcx
 	mov rax, QWORD PTR [rdi+568]
 	mul rax
-	add rax, rbp
-	adc rdx, 0
-	add r14, rax
+	add rcx, rcx
+	adc r14, rax
 	adc r15, rdx
-	mov ebp, 0
-	adc rbp, 0
 	mov ecx, 38
-	mov ebp, 0
 	mov rax, r12
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
 	add r8, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r9, rdx
+	sbb rbp, rbp
 	mov rax, r13
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r9, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r10, rdx
+	sbb rbp, rbp
 	mov rax, r14
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r11, rdx
+	sbb rbp, rbp
 	mov rax, r15
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r11, rax
 	adc rdx, 0
-	mov rbp, rdx
-	mov rax, rbp
-	mul rcx
+	mov r12, rdx
 	shl r11, 1
-	sbb rbp, rbp
+	adc r12, r12
 	shr r11, 1
-	and rbp, 19
-	add rax, rbp
+	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
 	adc r10, 0
@@ -3412,62 +2450,41 @@ vg_ed25519_decode_powers:
 	mov QWORD PTR [rdi+552], r9
 	mov QWORD PTR [rdi+560], r10
 	mov QWORD PTR [rdi+568], r11
-	mov rcx, QWORD PTR [rdi+672]
-	mov ebp, 0
-	mov r9d, 0
-	mov r10d, 0
-	mov r11d, 0
-	mov rax, QWORD PTR [rdi+680]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r9, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+688]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+696]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r12, rbp
 	mov rcx, QWORD PTR [rdi+680]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+688]
+	mov rbp, QWORD PTR [rdi+688]
+	mov r15, QWORD PTR [rdi+696]
+	mov rax, QWORD PTR [rdi+672]
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	mov r9, rax
+	mov r10, rdx
+	xor r11d, r11d
+	xor r12d, r12d
+	xor r13d, r13d
+	mov rax, QWORD PTR [rdi+672]
+	mul rbp
+	add r10, rax
+	adc r11, rdx
+	mov rax, QWORD PTR [rdi+672]
+	mul r15
 	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+696]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r12, rdx
+	adc r13, 0
+	mov rax, QWORD PTR [rdi+680]
+	mul rbp
+	add r11, rax
+	adc r12, rdx
+	adc r13, 0
+	xor r14d, r14d
+	mov rax, QWORD PTR [rdi+680]
+	mul r15
 	add r12, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r13, rbp
-	mov rcx, QWORD PTR [rdi+688]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+696]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r13, rdx
+	adc r14, 0
+	mov rax, QWORD PTR [rdi+688]
+	mul r15
 	add r13, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r14, rbp
-	mov r15d, 0
-	mov r8d, 0
+	adc r14, rdx
+	xor r15d, r15d
 	add r9, r9
 	adc r10, r10
 	adc r11, r11
@@ -3475,76 +2492,55 @@ vg_ed25519_decode_powers:
 	adc r13, r13
 	adc r14, r14
 	adc r15, r15
-	mov ebp, 0
 	mov rax, QWORD PTR [rdi+672]
 	mul rax
-	add rax, rbp
-	adc rdx, 0
-	add r8, rax
-	adc r9, rdx
-	mov ebp, 0
-	adc rbp, 0
+	mov r8, rax
+	mov rbp, rdx
 	mov rax, QWORD PTR [rdi+680]
 	mul rax
-	add rax, rbp
-	adc rdx, 0
-	add r10, rax
+	add r9, rbp
+	adc r10, rax
 	adc r11, rdx
-	mov ebp, 0
-	adc rbp, 0
+	sbb rcx, rcx
 	mov rax, QWORD PTR [rdi+688]
 	mul rax
-	add rax, rbp
-	adc rdx, 0
-	add r12, rax
+	add rcx, rcx
+	adc r12, rax
 	adc r13, rdx
-	mov ebp, 0
-	adc rbp, 0
+	sbb rcx, rcx
 	mov rax, QWORD PTR [rdi+696]
 	mul rax
-	add rax, rbp
-	adc rdx, 0
-	add r14, rax
+	add rcx, rcx
+	adc r14, rax
 	adc r15, rdx
-	mov ebp, 0
-	adc rbp, 0
 	mov ecx, 38
-	mov ebp, 0
 	mov rax, r12
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
 	add r8, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r9, rdx
+	sbb rbp, rbp
 	mov rax, r13
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r9, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r10, rdx
+	sbb rbp, rbp
 	mov rax, r14
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r11, rdx
+	sbb rbp, rbp
 	mov rax, r15
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r11, rax
 	adc rdx, 0
-	mov rbp, rdx
-	mov rax, rbp
-	mul rcx
+	mov r12, rdx
 	shl r11, 1
-	sbb rbp, rbp
+	adc r12, r12
 	shr r11, 1
-	and rbp, 19
-	add rax, rbp
+	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
 	adc r10, 0
@@ -3553,171 +2549,121 @@ vg_ed25519_decode_powers:
 	mov QWORD PTR [rdi+680], r9
 	mov QWORD PTR [rdi+688], r10
 	mov QWORD PTR [rdi+696], r11
-	mov r8d, 0
-	mov r9d, 0
-	mov r10d, 0
-	mov r11d, 0
-	mov rcx, QWORD PTR [rdi+128]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+544]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r8, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+552]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	mov r14, QWORD PTR [rdi+544]
+	mov r15, QWORD PTR [rdi+552]
+	mov rcx, QWORD PTR [rdi+560]
+	mov rbp, QWORD PTR [rdi+568]
+	mov rax, QWORD PTR [rdi+128]
+	mul r14
+	mov r8, rax
+	mov r9, rdx
+	xor r10d, r10d
+	xor r11d, r11d
+	mov rax, QWORD PTR [rdi+128]
+	mul r15
 	add r9, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+560]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+568]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r12, rbp
-	mov rcx, QWORD PTR [rdi+136]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+544]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r10, rdx
+	mov rax, QWORD PTR [rdi+136]
+	mul r14
 	add r9, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+552]
+	adc r10, rdx
+	adc r11, 0
+	xor r12d, r12d
+	mov rax, QWORD PTR [rdi+128]
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
 	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+560]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+568]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r12, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r13, rbp
-	mov rcx, QWORD PTR [rdi+144]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+544]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r11, rdx
+	adc r12, 0
+	mov rax, QWORD PTR [rdi+136]
+	mul r15
 	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+552]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r11, rdx
+	adc r12, 0
+	mov rax, QWORD PTR [rdi+144]
+	mul r14
+	add r10, rax
+	adc r11, rdx
+	adc r12, 0
+	xor r13d, r13d
+	mov rax, QWORD PTR [rdi+128]
+	mul rbp
 	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+560]
+	adc r12, rdx
+	adc r13, 0
+	mov rax, QWORD PTR [rdi+136]
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r12, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+568]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r13, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r14, rbp
-	mov rcx, QWORD PTR [rdi+152]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+544]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
 	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+552]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r12, rdx
+	adc r13, 0
+	mov rax, QWORD PTR [rdi+144]
+	mul r15
+	add r11, rax
+	adc r12, rdx
+	adc r13, 0
+	mov rax, QWORD PTR [rdi+152]
+	mul r14
+	add r11, rax
+	adc r12, rdx
+	adc r13, 0
+	xor r14d, r14d
+	mov rax, QWORD PTR [rdi+136]
+	mul rbp
 	add r12, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+560]
+	adc r13, rdx
+	adc r14, 0
+	mov rax, QWORD PTR [rdi+144]
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	add r12, rax
+	adc r13, rdx
+	adc r14, 0
+	mov rax, QWORD PTR [rdi+152]
+	mul r15
+	add r12, rax
+	adc r13, rdx
+	adc r14, 0
+	xor r15d, r15d
+	mov rax, QWORD PTR [rdi+144]
+	mul rbp
 	add r13, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+568]
+	adc r14, rdx
+	adc r15, 0
+	mov rax, QWORD PTR [rdi+152]
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	add r13, rax
+	adc r14, rdx
+	adc r15, 0
+	mov rax, QWORD PTR [rdi+152]
+	mul rbp
 	add r14, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r15, rbp
+	adc r15, rdx
 	mov ecx, 38
-	mov ebp, 0
 	mov rax, r12
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
 	add r8, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r9, rdx
+	sbb rbp, rbp
 	mov rax, r13
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r9, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r10, rdx
+	sbb rbp, rbp
 	mov rax, r14
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r11, rdx
+	sbb rbp, rbp
 	mov rax, r15
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r11, rax
 	adc rdx, 0
-	mov rbp, rdx
-	mov rax, rbp
-	mul rcx
+	mov r12, rdx
 	shl r11, 1
-	sbb rbp, rbp
+	adc r12, r12
 	shr r11, 1
-	and rbp, 19
-	add rax, rbp
+	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
 	adc r10, 0
@@ -3726,171 +2672,121 @@ vg_ed25519_decode_powers:
 	mov QWORD PTR [rdi+552], r9
 	mov QWORD PTR [rdi+560], r10
 	mov QWORD PTR [rdi+568], r11
-	mov r8d, 0
-	mov r9d, 0
-	mov r10d, 0
-	mov r11d, 0
-	mov rcx, QWORD PTR [rdi+160]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+672]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r8, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+680]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	mov r14, QWORD PTR [rdi+672]
+	mov r15, QWORD PTR [rdi+680]
+	mov rcx, QWORD PTR [rdi+688]
+	mov rbp, QWORD PTR [rdi+696]
+	mov rax, QWORD PTR [rdi+160]
+	mul r14
+	mov r8, rax
+	mov r9, rdx
+	xor r10d, r10d
+	xor r11d, r11d
+	mov rax, QWORD PTR [rdi+160]
+	mul r15
 	add r9, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+688]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+696]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r12, rbp
-	mov rcx, QWORD PTR [rdi+168]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+672]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r10, rdx
+	mov rax, QWORD PTR [rdi+168]
+	mul r14
 	add r9, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+680]
+	adc r10, rdx
+	adc r11, 0
+	xor r12d, r12d
+	mov rax, QWORD PTR [rdi+160]
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
 	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+688]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+696]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r12, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r13, rbp
-	mov rcx, QWORD PTR [rdi+176]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+672]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r11, rdx
+	adc r12, 0
+	mov rax, QWORD PTR [rdi+168]
+	mul r15
 	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+680]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r11, rdx
+	adc r12, 0
+	mov rax, QWORD PTR [rdi+176]
+	mul r14
+	add r10, rax
+	adc r11, rdx
+	adc r12, 0
+	xor r13d, r13d
+	mov rax, QWORD PTR [rdi+160]
+	mul rbp
 	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+688]
+	adc r12, rdx
+	adc r13, 0
+	mov rax, QWORD PTR [rdi+168]
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r12, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+696]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r13, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r14, rbp
-	mov rcx, QWORD PTR [rdi+184]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+672]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
 	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+680]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r12, rdx
+	adc r13, 0
+	mov rax, QWORD PTR [rdi+176]
+	mul r15
+	add r11, rax
+	adc r12, rdx
+	adc r13, 0
+	mov rax, QWORD PTR [rdi+184]
+	mul r14
+	add r11, rax
+	adc r12, rdx
+	adc r13, 0
+	xor r14d, r14d
+	mov rax, QWORD PTR [rdi+168]
+	mul rbp
 	add r12, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+688]
+	adc r13, rdx
+	adc r14, 0
+	mov rax, QWORD PTR [rdi+176]
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	add r12, rax
+	adc r13, rdx
+	adc r14, 0
+	mov rax, QWORD PTR [rdi+184]
+	mul r15
+	add r12, rax
+	adc r13, rdx
+	adc r14, 0
+	xor r15d, r15d
+	mov rax, QWORD PTR [rdi+176]
+	mul rbp
 	add r13, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+696]
+	adc r14, rdx
+	adc r15, 0
+	mov rax, QWORD PTR [rdi+184]
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	add r13, rax
+	adc r14, rdx
+	adc r15, 0
+	mov rax, QWORD PTR [rdi+184]
+	mul rbp
 	add r14, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r15, rbp
+	adc r15, rdx
 	mov ecx, 38
-	mov ebp, 0
 	mov rax, r12
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
 	add r8, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r9, rdx
+	sbb rbp, rbp
 	mov rax, r13
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r9, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r10, rdx
+	sbb rbp, rbp
 	mov rax, r14
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r11, rdx
+	sbb rbp, rbp
 	mov rax, r15
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r11, rax
 	adc rdx, 0
-	mov rbp, rdx
-	mov rax, rbp
-	mul rcx
+	mov r12, rdx
 	shl r11, 1
-	sbb rbp, rbp
+	adc r12, r12
 	shr r11, 1
-	and rbp, 19
-	add rax, rbp
+	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
 	adc r10, 0
@@ -3899,171 +2795,121 @@ vg_ed25519_decode_powers:
 	mov QWORD PTR [rdi+680], r9
 	mov QWORD PTR [rdi+688], r10
 	mov QWORD PTR [rdi+696], r11
-	mov r8d, 0
-	mov r9d, 0
-	mov r10d, 0
-	mov r11d, 0
-	mov rcx, QWORD PTR [rdi+512]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+544]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r8, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+552]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	mov r14, QWORD PTR [rdi+544]
+	mov r15, QWORD PTR [rdi+552]
+	mov rcx, QWORD PTR [rdi+560]
+	mov rbp, QWORD PTR [rdi+568]
+	mov rax, QWORD PTR [rdi+512]
+	mul r14
+	mov r8, rax
+	mov r9, rdx
+	xor r10d, r10d
+	xor r11d, r11d
+	mov rax, QWORD PTR [rdi+512]
+	mul r15
 	add r9, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+560]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+568]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r12, rbp
-	mov rcx, QWORD PTR [rdi+520]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+544]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r10, rdx
+	mov rax, QWORD PTR [rdi+520]
+	mul r14
 	add r9, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+552]
+	adc r10, rdx
+	adc r11, 0
+	xor r12d, r12d
+	mov rax, QWORD PTR [rdi+512]
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
 	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+560]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+568]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r12, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r13, rbp
-	mov rcx, QWORD PTR [rdi+528]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+544]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r11, rdx
+	adc r12, 0
+	mov rax, QWORD PTR [rdi+520]
+	mul r15
 	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+552]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r11, rdx
+	adc r12, 0
+	mov rax, QWORD PTR [rdi+528]
+	mul r14
+	add r10, rax
+	adc r11, rdx
+	adc r12, 0
+	xor r13d, r13d
+	mov rax, QWORD PTR [rdi+512]
+	mul rbp
 	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+560]
+	adc r12, rdx
+	adc r13, 0
+	mov rax, QWORD PTR [rdi+520]
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r12, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+568]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r13, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r14, rbp
-	mov rcx, QWORD PTR [rdi+536]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+544]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
 	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+552]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r12, rdx
+	adc r13, 0
+	mov rax, QWORD PTR [rdi+528]
+	mul r15
+	add r11, rax
+	adc r12, rdx
+	adc r13, 0
+	mov rax, QWORD PTR [rdi+536]
+	mul r14
+	add r11, rax
+	adc r12, rdx
+	adc r13, 0
+	xor r14d, r14d
+	mov rax, QWORD PTR [rdi+520]
+	mul rbp
 	add r12, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+560]
+	adc r13, rdx
+	adc r14, 0
+	mov rax, QWORD PTR [rdi+528]
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	add r12, rax
+	adc r13, rdx
+	adc r14, 0
+	mov rax, QWORD PTR [rdi+536]
+	mul r15
+	add r12, rax
+	adc r13, rdx
+	adc r14, 0
+	xor r15d, r15d
+	mov rax, QWORD PTR [rdi+528]
+	mul rbp
 	add r13, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+568]
+	adc r14, rdx
+	adc r15, 0
+	mov rax, QWORD PTR [rdi+536]
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	add r13, rax
+	adc r14, rdx
+	adc r15, 0
+	mov rax, QWORD PTR [rdi+536]
+	mul rbp
 	add r14, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r15, rbp
+	adc r15, rdx
 	mov ecx, 38
-	mov ebp, 0
 	mov rax, r12
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
 	add r8, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r9, rdx
+	sbb rbp, rbp
 	mov rax, r13
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r9, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r10, rdx
+	sbb rbp, rbp
 	mov rax, r14
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r11, rdx
+	sbb rbp, rbp
 	mov rax, r15
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r11, rax
 	adc rdx, 0
-	mov rbp, rdx
-	mov rax, rbp
-	mul rcx
+	mov r12, rdx
 	shl r11, 1
-	sbb rbp, rbp
+	adc r12, r12
 	shr r11, 1
-	and rbp, 19
-	add rax, rbp
+	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
 	adc r10, 0
@@ -4072,171 +2918,121 @@ vg_ed25519_decode_powers:
 	mov QWORD PTR [rdi+520], r9
 	mov QWORD PTR [rdi+528], r10
 	mov QWORD PTR [rdi+536], r11
-	mov r8d, 0
-	mov r9d, 0
-	mov r10d, 0
-	mov r11d, 0
-	mov rcx, QWORD PTR [rdi+640]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+672]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r8, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+680]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	mov r14, QWORD PTR [rdi+672]
+	mov r15, QWORD PTR [rdi+680]
+	mov rcx, QWORD PTR [rdi+688]
+	mov rbp, QWORD PTR [rdi+696]
+	mov rax, QWORD PTR [rdi+640]
+	mul r14
+	mov r8, rax
+	mov r9, rdx
+	xor r10d, r10d
+	xor r11d, r11d
+	mov rax, QWORD PTR [rdi+640]
+	mul r15
 	add r9, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+688]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+696]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r12, rbp
-	mov rcx, QWORD PTR [rdi+648]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+672]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r10, rdx
+	mov rax, QWORD PTR [rdi+648]
+	mul r14
 	add r9, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+680]
+	adc r10, rdx
+	adc r11, 0
+	xor r12d, r12d
+	mov rax, QWORD PTR [rdi+640]
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
 	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+688]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+696]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r12, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r13, rbp
-	mov rcx, QWORD PTR [rdi+656]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+672]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r11, rdx
+	adc r12, 0
+	mov rax, QWORD PTR [rdi+648]
+	mul r15
 	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+680]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r11, rdx
+	adc r12, 0
+	mov rax, QWORD PTR [rdi+656]
+	mul r14
+	add r10, rax
+	adc r11, rdx
+	adc r12, 0
+	xor r13d, r13d
+	mov rax, QWORD PTR [rdi+640]
+	mul rbp
 	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+688]
+	adc r12, rdx
+	adc r13, 0
+	mov rax, QWORD PTR [rdi+648]
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r12, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+696]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r13, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r14, rbp
-	mov rcx, QWORD PTR [rdi+664]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+672]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
 	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+680]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r12, rdx
+	adc r13, 0
+	mov rax, QWORD PTR [rdi+656]
+	mul r15
+	add r11, rax
+	adc r12, rdx
+	adc r13, 0
+	mov rax, QWORD PTR [rdi+664]
+	mul r14
+	add r11, rax
+	adc r12, rdx
+	adc r13, 0
+	xor r14d, r14d
+	mov rax, QWORD PTR [rdi+648]
+	mul rbp
 	add r12, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+688]
+	adc r13, rdx
+	adc r14, 0
+	mov rax, QWORD PTR [rdi+656]
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	add r12, rax
+	adc r13, rdx
+	adc r14, 0
+	mov rax, QWORD PTR [rdi+664]
+	mul r15
+	add r12, rax
+	adc r13, rdx
+	adc r14, 0
+	xor r15d, r15d
+	mov rax, QWORD PTR [rdi+656]
+	mul rbp
 	add r13, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+696]
+	adc r14, rdx
+	adc r15, 0
+	mov rax, QWORD PTR [rdi+664]
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	add r13, rax
+	adc r14, rdx
+	adc r15, 0
+	mov rax, QWORD PTR [rdi+664]
+	mul rbp
 	add r14, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r15, rbp
+	adc r15, rdx
 	mov ecx, 38
-	mov ebp, 0
 	mov rax, r12
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
 	add r8, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r9, rdx
+	sbb rbp, rbp
 	mov rax, r13
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r9, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r10, rdx
+	sbb rbp, rbp
 	mov rax, r14
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r11, rdx
+	sbb rbp, rbp
 	mov rax, r15
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r11, rax
 	adc rdx, 0
-	mov rbp, rdx
-	mov rax, rbp
-	mul rcx
+	mov r12, rdx
 	shl r11, 1
-	sbb rbp, rbp
+	adc r12, r12
 	shr r11, 1
-	and rbp, 19
-	add rax, rbp
+	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
 	adc r10, 0
@@ -4245,62 +3041,41 @@ vg_ed25519_decode_powers:
 	mov QWORD PTR [rdi+648], r9
 	mov QWORD PTR [rdi+656], r10
 	mov QWORD PTR [rdi+664], r11
-	mov rcx, QWORD PTR [rdi+512]
-	mov ebp, 0
-	mov r9d, 0
-	mov r10d, 0
-	mov r11d, 0
-	mov rax, QWORD PTR [rdi+520]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r9, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+528]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+536]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r12, rbp
 	mov rcx, QWORD PTR [rdi+520]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+528]
+	mov rbp, QWORD PTR [rdi+528]
+	mov r15, QWORD PTR [rdi+536]
+	mov rax, QWORD PTR [rdi+512]
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	mov r9, rax
+	mov r10, rdx
+	xor r11d, r11d
+	xor r12d, r12d
+	xor r13d, r13d
+	mov rax, QWORD PTR [rdi+512]
+	mul rbp
+	add r10, rax
+	adc r11, rdx
+	mov rax, QWORD PTR [rdi+512]
+	mul r15
 	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+536]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r12, rdx
+	adc r13, 0
+	mov rax, QWORD PTR [rdi+520]
+	mul rbp
+	add r11, rax
+	adc r12, rdx
+	adc r13, 0
+	xor r14d, r14d
+	mov rax, QWORD PTR [rdi+520]
+	mul r15
 	add r12, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r13, rbp
-	mov rcx, QWORD PTR [rdi+528]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+536]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r13, rdx
+	adc r14, 0
+	mov rax, QWORD PTR [rdi+528]
+	mul r15
 	add r13, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r14, rbp
-	mov r15d, 0
-	mov r8d, 0
+	adc r14, rdx
+	xor r15d, r15d
 	add r9, r9
 	adc r10, r10
 	adc r11, r11
@@ -4308,76 +3083,55 @@ vg_ed25519_decode_powers:
 	adc r13, r13
 	adc r14, r14
 	adc r15, r15
-	mov ebp, 0
 	mov rax, QWORD PTR [rdi+512]
 	mul rax
-	add rax, rbp
-	adc rdx, 0
-	add r8, rax
-	adc r9, rdx
-	mov ebp, 0
-	adc rbp, 0
+	mov r8, rax
+	mov rbp, rdx
 	mov rax, QWORD PTR [rdi+520]
 	mul rax
-	add rax, rbp
-	adc rdx, 0
-	add r10, rax
+	add r9, rbp
+	adc r10, rax
 	adc r11, rdx
-	mov ebp, 0
-	adc rbp, 0
+	sbb rcx, rcx
 	mov rax, QWORD PTR [rdi+528]
 	mul rax
-	add rax, rbp
-	adc rdx, 0
-	add r12, rax
+	add rcx, rcx
+	adc r12, rax
 	adc r13, rdx
-	mov ebp, 0
-	adc rbp, 0
+	sbb rcx, rcx
 	mov rax, QWORD PTR [rdi+536]
 	mul rax
-	add rax, rbp
-	adc rdx, 0
-	add r14, rax
+	add rcx, rcx
+	adc r14, rax
 	adc r15, rdx
-	mov ebp, 0
-	adc rbp, 0
 	mov ecx, 38
-	mov ebp, 0
 	mov rax, r12
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
 	add r8, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r9, rdx
+	sbb rbp, rbp
 	mov rax, r13
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r9, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r10, rdx
+	sbb rbp, rbp
 	mov rax, r14
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r11, rdx
+	sbb rbp, rbp
 	mov rax, r15
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r11, rax
 	adc rdx, 0
-	mov rbp, rdx
-	mov rax, rbp
-	mul rcx
+	mov r12, rdx
 	shl r11, 1
-	sbb rbp, rbp
+	adc r12, r12
 	shr r11, 1
-	and rbp, 19
-	add rax, rbp
+	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
 	adc r10, 0
@@ -4386,62 +3140,41 @@ vg_ed25519_decode_powers:
 	mov QWORD PTR [rdi+584], r9
 	mov QWORD PTR [rdi+592], r10
 	mov QWORD PTR [rdi+600], r11
-	mov rcx, QWORD PTR [rdi+640]
-	mov ebp, 0
-	mov r9d, 0
-	mov r10d, 0
-	mov r11d, 0
-	mov rax, QWORD PTR [rdi+648]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r9, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+656]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+664]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r12, rbp
 	mov rcx, QWORD PTR [rdi+648]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+656]
+	mov rbp, QWORD PTR [rdi+656]
+	mov r15, QWORD PTR [rdi+664]
+	mov rax, QWORD PTR [rdi+640]
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	mov r9, rax
+	mov r10, rdx
+	xor r11d, r11d
+	xor r12d, r12d
+	xor r13d, r13d
+	mov rax, QWORD PTR [rdi+640]
+	mul rbp
+	add r10, rax
+	adc r11, rdx
+	mov rax, QWORD PTR [rdi+640]
+	mul r15
 	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+664]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r12, rdx
+	adc r13, 0
+	mov rax, QWORD PTR [rdi+648]
+	mul rbp
+	add r11, rax
+	adc r12, rdx
+	adc r13, 0
+	xor r14d, r14d
+	mov rax, QWORD PTR [rdi+648]
+	mul r15
 	add r12, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r13, rbp
-	mov rcx, QWORD PTR [rdi+656]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+664]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r13, rdx
+	adc r14, 0
+	mov rax, QWORD PTR [rdi+656]
+	mul r15
 	add r13, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r14, rbp
-	mov r15d, 0
-	mov r8d, 0
+	adc r14, rdx
+	xor r15d, r15d
 	add r9, r9
 	adc r10, r10
 	adc r11, r11
@@ -4449,76 +3182,55 @@ vg_ed25519_decode_powers:
 	adc r13, r13
 	adc r14, r14
 	adc r15, r15
-	mov ebp, 0
 	mov rax, QWORD PTR [rdi+640]
 	mul rax
-	add rax, rbp
-	adc rdx, 0
-	add r8, rax
-	adc r9, rdx
-	mov ebp, 0
-	adc rbp, 0
+	mov r8, rax
+	mov rbp, rdx
 	mov rax, QWORD PTR [rdi+648]
 	mul rax
-	add rax, rbp
-	adc rdx, 0
-	add r10, rax
+	add r9, rbp
+	adc r10, rax
 	adc r11, rdx
-	mov ebp, 0
-	adc rbp, 0
+	sbb rcx, rcx
 	mov rax, QWORD PTR [rdi+656]
 	mul rax
-	add rax, rbp
-	adc rdx, 0
-	add r12, rax
+	add rcx, rcx
+	adc r12, rax
 	adc r13, rdx
-	mov ebp, 0
-	adc rbp, 0
+	sbb rcx, rcx
 	mov rax, QWORD PTR [rdi+664]
 	mul rax
-	add rax, rbp
-	adc rdx, 0
-	add r14, rax
+	add rcx, rcx
+	adc r14, rax
 	adc r15, rdx
-	mov ebp, 0
-	adc rbp, 0
 	mov ecx, 38
-	mov ebp, 0
 	mov rax, r12
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
 	add r8, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r9, rdx
+	sbb rbp, rbp
 	mov rax, r13
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r9, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r10, rdx
+	sbb rbp, rbp
 	mov rax, r14
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r11, rdx
+	sbb rbp, rbp
 	mov rax, r15
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r11, rax
 	adc rdx, 0
-	mov rbp, rdx
-	mov rax, rbp
-	mul rcx
+	mov r12, rdx
 	shl r11, 1
-	sbb rbp, rbp
+	adc r12, r12
 	shr r11, 1
-	and rbp, 19
-	add rax, rbp
+	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
 	adc r10, 0
@@ -4527,171 +3239,121 @@ vg_ed25519_decode_powers:
 	mov QWORD PTR [rdi+712], r9
 	mov QWORD PTR [rdi+720], r10
 	mov QWORD PTR [rdi+728], r11
-	mov r8d, 0
-	mov r9d, 0
-	mov r10d, 0
-	mov r11d, 0
-	mov rcx, QWORD PTR [rdi+544]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+576]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r8, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+584]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	mov r14, QWORD PTR [rdi+576]
+	mov r15, QWORD PTR [rdi+584]
+	mov rcx, QWORD PTR [rdi+592]
+	mov rbp, QWORD PTR [rdi+600]
+	mov rax, QWORD PTR [rdi+544]
+	mul r14
+	mov r8, rax
+	mov r9, rdx
+	xor r10d, r10d
+	xor r11d, r11d
+	mov rax, QWORD PTR [rdi+544]
+	mul r15
 	add r9, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+592]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+600]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r12, rbp
-	mov rcx, QWORD PTR [rdi+552]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+576]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r10, rdx
+	mov rax, QWORD PTR [rdi+552]
+	mul r14
 	add r9, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+584]
+	adc r10, rdx
+	adc r11, 0
+	xor r12d, r12d
+	mov rax, QWORD PTR [rdi+544]
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
 	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+592]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+600]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r12, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r13, rbp
-	mov rcx, QWORD PTR [rdi+560]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+576]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r11, rdx
+	adc r12, 0
+	mov rax, QWORD PTR [rdi+552]
+	mul r15
 	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+584]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r11, rdx
+	adc r12, 0
+	mov rax, QWORD PTR [rdi+560]
+	mul r14
+	add r10, rax
+	adc r11, rdx
+	adc r12, 0
+	xor r13d, r13d
+	mov rax, QWORD PTR [rdi+544]
+	mul rbp
 	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+592]
+	adc r12, rdx
+	adc r13, 0
+	mov rax, QWORD PTR [rdi+552]
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r12, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+600]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r13, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r14, rbp
-	mov rcx, QWORD PTR [rdi+568]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+576]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
 	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+584]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r12, rdx
+	adc r13, 0
+	mov rax, QWORD PTR [rdi+560]
+	mul r15
+	add r11, rax
+	adc r12, rdx
+	adc r13, 0
+	mov rax, QWORD PTR [rdi+568]
+	mul r14
+	add r11, rax
+	adc r12, rdx
+	adc r13, 0
+	xor r14d, r14d
+	mov rax, QWORD PTR [rdi+552]
+	mul rbp
 	add r12, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+592]
+	adc r13, rdx
+	adc r14, 0
+	mov rax, QWORD PTR [rdi+560]
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	add r12, rax
+	adc r13, rdx
+	adc r14, 0
+	mov rax, QWORD PTR [rdi+568]
+	mul r15
+	add r12, rax
+	adc r13, rdx
+	adc r14, 0
+	xor r15d, r15d
+	mov rax, QWORD PTR [rdi+560]
+	mul rbp
 	add r13, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+600]
+	adc r14, rdx
+	adc r15, 0
+	mov rax, QWORD PTR [rdi+568]
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	add r13, rax
+	adc r14, rdx
+	adc r15, 0
+	mov rax, QWORD PTR [rdi+568]
+	mul rbp
 	add r14, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r15, rbp
+	adc r15, rdx
 	mov ecx, 38
-	mov ebp, 0
 	mov rax, r12
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
 	add r8, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r9, rdx
+	sbb rbp, rbp
 	mov rax, r13
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r9, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r10, rdx
+	sbb rbp, rbp
 	mov rax, r14
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r11, rdx
+	sbb rbp, rbp
 	mov rax, r15
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r11, rax
 	adc rdx, 0
-	mov rbp, rdx
-	mov rax, rbp
-	mul rcx
+	mov r12, rdx
 	shl r11, 1
-	sbb rbp, rbp
+	adc r12, r12
 	shr r11, 1
-	and rbp, 19
-	add rax, rbp
+	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
 	adc r10, 0
@@ -4700,171 +3362,121 @@ vg_ed25519_decode_powers:
 	mov QWORD PTR [rdi+552], r9
 	mov QWORD PTR [rdi+560], r10
 	mov QWORD PTR [rdi+568], r11
-	mov r8d, 0
-	mov r9d, 0
-	mov r10d, 0
-	mov r11d, 0
-	mov rcx, QWORD PTR [rdi+672]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+704]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r8, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+712]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	mov r14, QWORD PTR [rdi+704]
+	mov r15, QWORD PTR [rdi+712]
+	mov rcx, QWORD PTR [rdi+720]
+	mov rbp, QWORD PTR [rdi+728]
+	mov rax, QWORD PTR [rdi+672]
+	mul r14
+	mov r8, rax
+	mov r9, rdx
+	xor r10d, r10d
+	xor r11d, r11d
+	mov rax, QWORD PTR [rdi+672]
+	mul r15
 	add r9, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+720]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+728]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r12, rbp
-	mov rcx, QWORD PTR [rdi+680]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+704]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r10, rdx
+	mov rax, QWORD PTR [rdi+680]
+	mul r14
 	add r9, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+712]
+	adc r10, rdx
+	adc r11, 0
+	xor r12d, r12d
+	mov rax, QWORD PTR [rdi+672]
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
 	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+720]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+728]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r12, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r13, rbp
-	mov rcx, QWORD PTR [rdi+688]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+704]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r11, rdx
+	adc r12, 0
+	mov rax, QWORD PTR [rdi+680]
+	mul r15
 	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+712]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r11, rdx
+	adc r12, 0
+	mov rax, QWORD PTR [rdi+688]
+	mul r14
+	add r10, rax
+	adc r11, rdx
+	adc r12, 0
+	xor r13d, r13d
+	mov rax, QWORD PTR [rdi+672]
+	mul rbp
 	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+720]
+	adc r12, rdx
+	adc r13, 0
+	mov rax, QWORD PTR [rdi+680]
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r12, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+728]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r13, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r14, rbp
-	mov rcx, QWORD PTR [rdi+696]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+704]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
 	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+712]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r12, rdx
+	adc r13, 0
+	mov rax, QWORD PTR [rdi+688]
+	mul r15
+	add r11, rax
+	adc r12, rdx
+	adc r13, 0
+	mov rax, QWORD PTR [rdi+696]
+	mul r14
+	add r11, rax
+	adc r12, rdx
+	adc r13, 0
+	xor r14d, r14d
+	mov rax, QWORD PTR [rdi+680]
+	mul rbp
 	add r12, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+720]
+	adc r13, rdx
+	adc r14, 0
+	mov rax, QWORD PTR [rdi+688]
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	add r12, rax
+	adc r13, rdx
+	adc r14, 0
+	mov rax, QWORD PTR [rdi+696]
+	mul r15
+	add r12, rax
+	adc r13, rdx
+	adc r14, 0
+	xor r15d, r15d
+	mov rax, QWORD PTR [rdi+688]
+	mul rbp
 	add r13, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+728]
+	adc r14, rdx
+	adc r15, 0
+	mov rax, QWORD PTR [rdi+696]
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	add r13, rax
+	adc r14, rdx
+	adc r15, 0
+	mov rax, QWORD PTR [rdi+696]
+	mul rbp
 	add r14, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r15, rbp
+	adc r15, rdx
 	mov ecx, 38
-	mov ebp, 0
 	mov rax, r12
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
 	add r8, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r9, rdx
+	sbb rbp, rbp
 	mov rax, r13
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r9, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r10, rdx
+	sbb rbp, rbp
 	mov rax, r14
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r11, rdx
+	sbb rbp, rbp
 	mov rax, r15
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r11, rax
 	adc rdx, 0
-	mov rbp, rdx
-	mov rax, rbp
-	mul rcx
+	mov r12, rdx
 	shl r11, 1
-	sbb rbp, rbp
+	adc r12, r12
 	shr r11, 1
-	and rbp, 19
-	add rax, rbp
+	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
 	adc r10, 0
@@ -4916,62 +3528,41 @@ vg_ed25519_decode_powers:
 	mov rbx, rsi
 	and rbx, 127
 23:
-	mov rcx, QWORD PTR [rdi+544]
-	mov ebp, 0
-	mov r9d, 0
-	mov r10d, 0
-	mov r11d, 0
-	mov rax, QWORD PTR [rdi+552]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r9, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+560]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+568]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r12, rbp
 	mov rcx, QWORD PTR [rdi+552]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+560]
+	mov rbp, QWORD PTR [rdi+560]
+	mov r15, QWORD PTR [rdi+568]
+	mov rax, QWORD PTR [rdi+544]
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	mov r9, rax
+	mov r10, rdx
+	xor r11d, r11d
+	xor r12d, r12d
+	xor r13d, r13d
+	mov rax, QWORD PTR [rdi+544]
+	mul rbp
+	add r10, rax
+	adc r11, rdx
+	mov rax, QWORD PTR [rdi+544]
+	mul r15
 	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+568]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r12, rdx
+	adc r13, 0
+	mov rax, QWORD PTR [rdi+552]
+	mul rbp
+	add r11, rax
+	adc r12, rdx
+	adc r13, 0
+	xor r14d, r14d
+	mov rax, QWORD PTR [rdi+552]
+	mul r15
 	add r12, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r13, rbp
-	mov rcx, QWORD PTR [rdi+560]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+568]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r13, rdx
+	adc r14, 0
+	mov rax, QWORD PTR [rdi+560]
+	mul r15
 	add r13, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r14, rbp
-	mov r15d, 0
-	mov r8d, 0
+	adc r14, rdx
+	xor r15d, r15d
 	add r9, r9
 	adc r10, r10
 	adc r11, r11
@@ -4979,76 +3570,55 @@ vg_ed25519_decode_powers:
 	adc r13, r13
 	adc r14, r14
 	adc r15, r15
-	mov ebp, 0
 	mov rax, QWORD PTR [rdi+544]
 	mul rax
-	add rax, rbp
-	adc rdx, 0
-	add r8, rax
-	adc r9, rdx
-	mov ebp, 0
-	adc rbp, 0
+	mov r8, rax
+	mov rbp, rdx
 	mov rax, QWORD PTR [rdi+552]
 	mul rax
-	add rax, rbp
-	adc rdx, 0
-	add r10, rax
+	add r9, rbp
+	adc r10, rax
 	adc r11, rdx
-	mov ebp, 0
-	adc rbp, 0
+	sbb rcx, rcx
 	mov rax, QWORD PTR [rdi+560]
 	mul rax
-	add rax, rbp
-	adc rdx, 0
-	add r12, rax
+	add rcx, rcx
+	adc r12, rax
 	adc r13, rdx
-	mov ebp, 0
-	adc rbp, 0
+	sbb rcx, rcx
 	mov rax, QWORD PTR [rdi+568]
 	mul rax
-	add rax, rbp
-	adc rdx, 0
-	add r14, rax
+	add rcx, rcx
+	adc r14, rax
 	adc r15, rdx
-	mov ebp, 0
-	adc rbp, 0
 	mov ecx, 38
-	mov ebp, 0
 	mov rax, r12
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
 	add r8, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r9, rdx
+	sbb rbp, rbp
 	mov rax, r13
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r9, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r10, rdx
+	sbb rbp, rbp
 	mov rax, r14
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r11, rdx
+	sbb rbp, rbp
 	mov rax, r15
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r11, rax
 	adc rdx, 0
-	mov rbp, rdx
-	mov rax, rbp
-	mul rcx
+	mov r12, rdx
 	shl r11, 1
-	sbb rbp, rbp
+	adc r12, r12
 	shr r11, 1
-	and rbp, 19
-	add rax, rbp
+	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
 	adc r10, 0
@@ -5057,62 +3627,41 @@ vg_ed25519_decode_powers:
 	mov QWORD PTR [rdi+552], r9
 	mov QWORD PTR [rdi+560], r10
 	mov QWORD PTR [rdi+568], r11
-	mov rcx, QWORD PTR [rdi+672]
-	mov ebp, 0
-	mov r9d, 0
-	mov r10d, 0
-	mov r11d, 0
-	mov rax, QWORD PTR [rdi+680]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r9, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+688]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+696]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r12, rbp
 	mov rcx, QWORD PTR [rdi+680]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+688]
+	mov rbp, QWORD PTR [rdi+688]
+	mov r15, QWORD PTR [rdi+696]
+	mov rax, QWORD PTR [rdi+672]
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	mov r9, rax
+	mov r10, rdx
+	xor r11d, r11d
+	xor r12d, r12d
+	xor r13d, r13d
+	mov rax, QWORD PTR [rdi+672]
+	mul rbp
+	add r10, rax
+	adc r11, rdx
+	mov rax, QWORD PTR [rdi+672]
+	mul r15
 	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+696]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r12, rdx
+	adc r13, 0
+	mov rax, QWORD PTR [rdi+680]
+	mul rbp
+	add r11, rax
+	adc r12, rdx
+	adc r13, 0
+	xor r14d, r14d
+	mov rax, QWORD PTR [rdi+680]
+	mul r15
 	add r12, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r13, rbp
-	mov rcx, QWORD PTR [rdi+688]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+696]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r13, rdx
+	adc r14, 0
+	mov rax, QWORD PTR [rdi+688]
+	mul r15
 	add r13, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r14, rbp
-	mov r15d, 0
-	mov r8d, 0
+	adc r14, rdx
+	xor r15d, r15d
 	add r9, r9
 	adc r10, r10
 	adc r11, r11
@@ -5120,76 +3669,55 @@ vg_ed25519_decode_powers:
 	adc r13, r13
 	adc r14, r14
 	adc r15, r15
-	mov ebp, 0
 	mov rax, QWORD PTR [rdi+672]
 	mul rax
-	add rax, rbp
-	adc rdx, 0
-	add r8, rax
-	adc r9, rdx
-	mov ebp, 0
-	adc rbp, 0
+	mov r8, rax
+	mov rbp, rdx
 	mov rax, QWORD PTR [rdi+680]
 	mul rax
-	add rax, rbp
-	adc rdx, 0
-	add r10, rax
+	add r9, rbp
+	adc r10, rax
 	adc r11, rdx
-	mov ebp, 0
-	adc rbp, 0
+	sbb rcx, rcx
 	mov rax, QWORD PTR [rdi+688]
 	mul rax
-	add rax, rbp
-	adc rdx, 0
-	add r12, rax
+	add rcx, rcx
+	adc r12, rax
 	adc r13, rdx
-	mov ebp, 0
-	adc rbp, 0
+	sbb rcx, rcx
 	mov rax, QWORD PTR [rdi+696]
 	mul rax
-	add rax, rbp
-	adc rdx, 0
-	add r14, rax
+	add rcx, rcx
+	adc r14, rax
 	adc r15, rdx
-	mov ebp, 0
-	adc rbp, 0
 	mov ecx, 38
-	mov ebp, 0
 	mov rax, r12
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
 	add r8, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r9, rdx
+	sbb rbp, rbp
 	mov rax, r13
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r9, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r10, rdx
+	sbb rbp, rbp
 	mov rax, r14
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r11, rdx
+	sbb rbp, rbp
 	mov rax, r15
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r11, rax
 	adc rdx, 0
-	mov rbp, rdx
-	mov rax, rbp
-	mul rcx
+	mov r12, rdx
 	shl r11, 1
-	sbb rbp, rbp
+	adc r12, r12
 	shr r11, 1
-	and rbp, 19
-	add rax, rbp
+	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
 	adc r10, 0
@@ -5200,171 +3728,121 @@ vg_ed25519_decode_powers:
 	mov QWORD PTR [rdi+696], r11
 	sub rbx, 1
 	jne 23b
-	mov r8d, 0
-	mov r9d, 0
-	mov r10d, 0
-	mov r11d, 0
-	mov rcx, QWORD PTR [rdi+544]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+576]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r8, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+584]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	mov r14, QWORD PTR [rdi+576]
+	mov r15, QWORD PTR [rdi+584]
+	mov rcx, QWORD PTR [rdi+592]
+	mov rbp, QWORD PTR [rdi+600]
+	mov rax, QWORD PTR [rdi+544]
+	mul r14
+	mov r8, rax
+	mov r9, rdx
+	xor r10d, r10d
+	xor r11d, r11d
+	mov rax, QWORD PTR [rdi+544]
+	mul r15
 	add r9, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+592]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+600]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r12, rbp
-	mov rcx, QWORD PTR [rdi+552]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+576]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r10, rdx
+	mov rax, QWORD PTR [rdi+552]
+	mul r14
 	add r9, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+584]
+	adc r10, rdx
+	adc r11, 0
+	xor r12d, r12d
+	mov rax, QWORD PTR [rdi+544]
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
 	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+592]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+600]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r12, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r13, rbp
-	mov rcx, QWORD PTR [rdi+560]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+576]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r11, rdx
+	adc r12, 0
+	mov rax, QWORD PTR [rdi+552]
+	mul r15
 	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+584]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r11, rdx
+	adc r12, 0
+	mov rax, QWORD PTR [rdi+560]
+	mul r14
+	add r10, rax
+	adc r11, rdx
+	adc r12, 0
+	xor r13d, r13d
+	mov rax, QWORD PTR [rdi+544]
+	mul rbp
 	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+592]
+	adc r12, rdx
+	adc r13, 0
+	mov rax, QWORD PTR [rdi+552]
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r12, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+600]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r13, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r14, rbp
-	mov rcx, QWORD PTR [rdi+568]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+576]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
 	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+584]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r12, rdx
+	adc r13, 0
+	mov rax, QWORD PTR [rdi+560]
+	mul r15
+	add r11, rax
+	adc r12, rdx
+	adc r13, 0
+	mov rax, QWORD PTR [rdi+568]
+	mul r14
+	add r11, rax
+	adc r12, rdx
+	adc r13, 0
+	xor r14d, r14d
+	mov rax, QWORD PTR [rdi+552]
+	mul rbp
 	add r12, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+592]
+	adc r13, rdx
+	adc r14, 0
+	mov rax, QWORD PTR [rdi+560]
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	add r12, rax
+	adc r13, rdx
+	adc r14, 0
+	mov rax, QWORD PTR [rdi+568]
+	mul r15
+	add r12, rax
+	adc r13, rdx
+	adc r14, 0
+	xor r15d, r15d
+	mov rax, QWORD PTR [rdi+560]
+	mul rbp
 	add r13, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+600]
+	adc r14, rdx
+	adc r15, 0
+	mov rax, QWORD PTR [rdi+568]
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	add r13, rax
+	adc r14, rdx
+	adc r15, 0
+	mov rax, QWORD PTR [rdi+568]
+	mul rbp
 	add r14, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r15, rbp
+	adc r15, rdx
 	mov ecx, 38
-	mov ebp, 0
 	mov rax, r12
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
 	add r8, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r9, rdx
+	sbb rbp, rbp
 	mov rax, r13
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r9, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r10, rdx
+	sbb rbp, rbp
 	mov rax, r14
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r11, rdx
+	sbb rbp, rbp
 	mov rax, r15
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r11, rax
 	adc rdx, 0
-	mov rbp, rdx
-	mov rax, rbp
-	mul rcx
+	mov r12, rdx
 	shl r11, 1
-	sbb rbp, rbp
+	adc r12, r12
 	shr r11, 1
-	and rbp, 19
-	add rax, rbp
+	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
 	adc r10, 0
@@ -5373,171 +3851,121 @@ vg_ed25519_decode_powers:
 	mov QWORD PTR [rdi+552], r9
 	mov QWORD PTR [rdi+560], r10
 	mov QWORD PTR [rdi+568], r11
-	mov r8d, 0
-	mov r9d, 0
-	mov r10d, 0
-	mov r11d, 0
-	mov rcx, QWORD PTR [rdi+672]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+704]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r8, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+712]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	mov r14, QWORD PTR [rdi+704]
+	mov r15, QWORD PTR [rdi+712]
+	mov rcx, QWORD PTR [rdi+720]
+	mov rbp, QWORD PTR [rdi+728]
+	mov rax, QWORD PTR [rdi+672]
+	mul r14
+	mov r8, rax
+	mov r9, rdx
+	xor r10d, r10d
+	xor r11d, r11d
+	mov rax, QWORD PTR [rdi+672]
+	mul r15
 	add r9, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+720]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+728]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r12, rbp
-	mov rcx, QWORD PTR [rdi+680]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+704]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r10, rdx
+	mov rax, QWORD PTR [rdi+680]
+	mul r14
 	add r9, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+712]
+	adc r10, rdx
+	adc r11, 0
+	xor r12d, r12d
+	mov rax, QWORD PTR [rdi+672]
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
 	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+720]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+728]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r12, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r13, rbp
-	mov rcx, QWORD PTR [rdi+688]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+704]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r11, rdx
+	adc r12, 0
+	mov rax, QWORD PTR [rdi+680]
+	mul r15
 	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+712]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r11, rdx
+	adc r12, 0
+	mov rax, QWORD PTR [rdi+688]
+	mul r14
+	add r10, rax
+	adc r11, rdx
+	adc r12, 0
+	xor r13d, r13d
+	mov rax, QWORD PTR [rdi+672]
+	mul rbp
 	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+720]
+	adc r12, rdx
+	adc r13, 0
+	mov rax, QWORD PTR [rdi+680]
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r12, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+728]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r13, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r14, rbp
-	mov rcx, QWORD PTR [rdi+696]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+704]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
 	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+712]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r12, rdx
+	adc r13, 0
+	mov rax, QWORD PTR [rdi+688]
+	mul r15
+	add r11, rax
+	adc r12, rdx
+	adc r13, 0
+	mov rax, QWORD PTR [rdi+696]
+	mul r14
+	add r11, rax
+	adc r12, rdx
+	adc r13, 0
+	xor r14d, r14d
+	mov rax, QWORD PTR [rdi+680]
+	mul rbp
 	add r12, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+720]
+	adc r13, rdx
+	adc r14, 0
+	mov rax, QWORD PTR [rdi+688]
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	add r12, rax
+	adc r13, rdx
+	adc r14, 0
+	mov rax, QWORD PTR [rdi+696]
+	mul r15
+	add r12, rax
+	adc r13, rdx
+	adc r14, 0
+	xor r15d, r15d
+	mov rax, QWORD PTR [rdi+688]
+	mul rbp
 	add r13, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+728]
+	adc r14, rdx
+	adc r15, 0
+	mov rax, QWORD PTR [rdi+696]
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	add r13, rax
+	adc r14, rdx
+	adc r15, 0
+	mov rax, QWORD PTR [rdi+696]
+	mul rbp
 	add r14, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r15, rbp
+	adc r15, rdx
 	mov ecx, 38
-	mov ebp, 0
 	mov rax, r12
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
 	add r8, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r9, rdx
+	sbb rbp, rbp
 	mov rax, r13
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r9, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r10, rdx
+	sbb rbp, rbp
 	mov rax, r14
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r11, rdx
+	sbb rbp, rbp
 	mov rax, r15
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r11, rax
 	adc rdx, 0
-	mov rbp, rdx
-	mov rax, rbp
-	mul rcx
+	mov r12, rdx
 	shl r11, 1
-	sbb rbp, rbp
+	adc r12, r12
 	shr r11, 1
-	and rbp, 19
-	add rax, rbp
+	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
 	adc r10, 0
@@ -5571,62 +3999,41 @@ vg_ed25519_decode_powers:
 	test rsi, rsi
 	jne 20b
 	mov rsi, QWORD PTR [rdi+512]
-	mov rcx, QWORD PTR [rdi+544]
-	mov ebp, 0
-	mov r9d, 0
-	mov r10d, 0
-	mov r11d, 0
-	mov rax, QWORD PTR [rdi+552]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r9, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+560]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+568]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r12, rbp
 	mov rcx, QWORD PTR [rdi+552]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+560]
+	mov rbp, QWORD PTR [rdi+560]
+	mov r15, QWORD PTR [rdi+568]
+	mov rax, QWORD PTR [rdi+544]
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	mov r9, rax
+	mov r10, rdx
+	xor r11d, r11d
+	xor r12d, r12d
+	xor r13d, r13d
+	mov rax, QWORD PTR [rdi+544]
+	mul rbp
+	add r10, rax
+	adc r11, rdx
+	mov rax, QWORD PTR [rdi+544]
+	mul r15
 	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+568]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r12, rdx
+	adc r13, 0
+	mov rax, QWORD PTR [rdi+552]
+	mul rbp
+	add r11, rax
+	adc r12, rdx
+	adc r13, 0
+	xor r14d, r14d
+	mov rax, QWORD PTR [rdi+552]
+	mul r15
 	add r12, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r13, rbp
-	mov rcx, QWORD PTR [rdi+560]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+568]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r13, rdx
+	adc r14, 0
+	mov rax, QWORD PTR [rdi+560]
+	mul r15
 	add r13, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r14, rbp
-	mov r15d, 0
-	mov r8d, 0
+	adc r14, rdx
+	xor r15d, r15d
 	add r9, r9
 	adc r10, r10
 	adc r11, r11
@@ -5634,76 +4041,55 @@ vg_ed25519_decode_powers:
 	adc r13, r13
 	adc r14, r14
 	adc r15, r15
-	mov ebp, 0
 	mov rax, QWORD PTR [rdi+544]
 	mul rax
-	add rax, rbp
-	adc rdx, 0
-	add r8, rax
-	adc r9, rdx
-	mov ebp, 0
-	adc rbp, 0
+	mov r8, rax
+	mov rbp, rdx
 	mov rax, QWORD PTR [rdi+552]
 	mul rax
-	add rax, rbp
-	adc rdx, 0
-	add r10, rax
+	add r9, rbp
+	adc r10, rax
 	adc r11, rdx
-	mov ebp, 0
-	adc rbp, 0
+	sbb rcx, rcx
 	mov rax, QWORD PTR [rdi+560]
 	mul rax
-	add rax, rbp
-	adc rdx, 0
-	add r12, rax
+	add rcx, rcx
+	adc r12, rax
 	adc r13, rdx
-	mov ebp, 0
-	adc rbp, 0
+	sbb rcx, rcx
 	mov rax, QWORD PTR [rdi+568]
 	mul rax
-	add rax, rbp
-	adc rdx, 0
-	add r14, rax
+	add rcx, rcx
+	adc r14, rax
 	adc r15, rdx
-	mov ebp, 0
-	adc rbp, 0
 	mov ecx, 38
-	mov ebp, 0
 	mov rax, r12
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
 	add r8, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r9, rdx
+	sbb rbp, rbp
 	mov rax, r13
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r9, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r10, rdx
+	sbb rbp, rbp
 	mov rax, r14
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r11, rdx
+	sbb rbp, rbp
 	mov rax, r15
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r11, rax
 	adc rdx, 0
-	mov rbp, rdx
-	mov rax, rbp
-	mul rcx
+	mov r12, rdx
 	shl r11, 1
-	sbb rbp, rbp
+	adc r12, r12
 	shr r11, 1
-	and rbp, 19
-	add rax, rbp
+	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
 	adc r10, 0
@@ -5712,62 +4098,41 @@ vg_ed25519_decode_powers:
 	mov QWORD PTR [rdi+552], r9
 	mov QWORD PTR [rdi+560], r10
 	mov QWORD PTR [rdi+568], r11
-	mov rcx, QWORD PTR [rdi+672]
-	mov ebp, 0
-	mov r9d, 0
-	mov r10d, 0
-	mov r11d, 0
-	mov rax, QWORD PTR [rdi+680]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r9, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+688]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+696]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r12, rbp
 	mov rcx, QWORD PTR [rdi+680]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+688]
+	mov rbp, QWORD PTR [rdi+688]
+	mov r15, QWORD PTR [rdi+696]
+	mov rax, QWORD PTR [rdi+672]
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	mov r9, rax
+	mov r10, rdx
+	xor r11d, r11d
+	xor r12d, r12d
+	xor r13d, r13d
+	mov rax, QWORD PTR [rdi+672]
+	mul rbp
+	add r10, rax
+	adc r11, rdx
+	mov rax, QWORD PTR [rdi+672]
+	mul r15
 	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+696]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r12, rdx
+	adc r13, 0
+	mov rax, QWORD PTR [rdi+680]
+	mul rbp
+	add r11, rax
+	adc r12, rdx
+	adc r13, 0
+	xor r14d, r14d
+	mov rax, QWORD PTR [rdi+680]
+	mul r15
 	add r12, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r13, rbp
-	mov rcx, QWORD PTR [rdi+688]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+696]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r13, rdx
+	adc r14, 0
+	mov rax, QWORD PTR [rdi+688]
+	mul r15
 	add r13, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r14, rbp
-	mov r15d, 0
-	mov r8d, 0
+	adc r14, rdx
+	xor r15d, r15d
 	add r9, r9
 	adc r10, r10
 	adc r11, r11
@@ -5775,76 +4140,55 @@ vg_ed25519_decode_powers:
 	adc r13, r13
 	adc r14, r14
 	adc r15, r15
-	mov ebp, 0
 	mov rax, QWORD PTR [rdi+672]
 	mul rax
-	add rax, rbp
-	adc rdx, 0
-	add r8, rax
-	adc r9, rdx
-	mov ebp, 0
-	adc rbp, 0
+	mov r8, rax
+	mov rbp, rdx
 	mov rax, QWORD PTR [rdi+680]
 	mul rax
-	add rax, rbp
-	adc rdx, 0
-	add r10, rax
+	add r9, rbp
+	adc r10, rax
 	adc r11, rdx
-	mov ebp, 0
-	adc rbp, 0
+	sbb rcx, rcx
 	mov rax, QWORD PTR [rdi+688]
 	mul rax
-	add rax, rbp
-	adc rdx, 0
-	add r12, rax
+	add rcx, rcx
+	adc r12, rax
 	adc r13, rdx
-	mov ebp, 0
-	adc rbp, 0
+	sbb rcx, rcx
 	mov rax, QWORD PTR [rdi+696]
 	mul rax
-	add rax, rbp
-	adc rdx, 0
-	add r14, rax
+	add rcx, rcx
+	adc r14, rax
 	adc r15, rdx
-	mov ebp, 0
-	adc rbp, 0
 	mov ecx, 38
-	mov ebp, 0
 	mov rax, r12
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
 	add r8, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r9, rdx
+	sbb rbp, rbp
 	mov rax, r13
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r9, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r10, rdx
+	sbb rbp, rbp
 	mov rax, r14
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r11, rdx
+	sbb rbp, rbp
 	mov rax, r15
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r11, rax
 	adc rdx, 0
-	mov rbp, rdx
-	mov rax, rbp
-	mul rcx
+	mov r12, rdx
 	shl r11, 1
-	sbb rbp, rbp
+	adc r12, r12
 	shr r11, 1
-	and rbp, 19
-	add rax, rbp
+	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
 	adc r10, 0
@@ -5855,62 +4199,41 @@ vg_ed25519_decode_powers:
 	mov QWORD PTR [rdi+696], r11
 	mov ebx, 1
 26:
-	mov rcx, QWORD PTR [rdi+544]
-	mov ebp, 0
-	mov r9d, 0
-	mov r10d, 0
-	mov r11d, 0
-	mov rax, QWORD PTR [rdi+552]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r9, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+560]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+568]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r12, rbp
 	mov rcx, QWORD PTR [rdi+552]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+560]
+	mov rbp, QWORD PTR [rdi+560]
+	mov r15, QWORD PTR [rdi+568]
+	mov rax, QWORD PTR [rdi+544]
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	mov r9, rax
+	mov r10, rdx
+	xor r11d, r11d
+	xor r12d, r12d
+	xor r13d, r13d
+	mov rax, QWORD PTR [rdi+544]
+	mul rbp
+	add r10, rax
+	adc r11, rdx
+	mov rax, QWORD PTR [rdi+544]
+	mul r15
 	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+568]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r12, rdx
+	adc r13, 0
+	mov rax, QWORD PTR [rdi+552]
+	mul rbp
+	add r11, rax
+	adc r12, rdx
+	adc r13, 0
+	xor r14d, r14d
+	mov rax, QWORD PTR [rdi+552]
+	mul r15
 	add r12, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r13, rbp
-	mov rcx, QWORD PTR [rdi+560]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+568]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r13, rdx
+	adc r14, 0
+	mov rax, QWORD PTR [rdi+560]
+	mul r15
 	add r13, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r14, rbp
-	mov r15d, 0
-	mov r8d, 0
+	adc r14, rdx
+	xor r15d, r15d
 	add r9, r9
 	adc r10, r10
 	adc r11, r11
@@ -5918,76 +4241,55 @@ vg_ed25519_decode_powers:
 	adc r13, r13
 	adc r14, r14
 	adc r15, r15
-	mov ebp, 0
 	mov rax, QWORD PTR [rdi+544]
 	mul rax
-	add rax, rbp
-	adc rdx, 0
-	add r8, rax
-	adc r9, rdx
-	mov ebp, 0
-	adc rbp, 0
+	mov r8, rax
+	mov rbp, rdx
 	mov rax, QWORD PTR [rdi+552]
 	mul rax
-	add rax, rbp
-	adc rdx, 0
-	add r10, rax
+	add r9, rbp
+	adc r10, rax
 	adc r11, rdx
-	mov ebp, 0
-	adc rbp, 0
+	sbb rcx, rcx
 	mov rax, QWORD PTR [rdi+560]
 	mul rax
-	add rax, rbp
-	adc rdx, 0
-	add r12, rax
+	add rcx, rcx
+	adc r12, rax
 	adc r13, rdx
-	mov ebp, 0
-	adc rbp, 0
+	sbb rcx, rcx
 	mov rax, QWORD PTR [rdi+568]
 	mul rax
-	add rax, rbp
-	adc rdx, 0
-	add r14, rax
+	add rcx, rcx
+	adc r14, rax
 	adc r15, rdx
-	mov ebp, 0
-	adc rbp, 0
 	mov ecx, 38
-	mov ebp, 0
 	mov rax, r12
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
 	add r8, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r9, rdx
+	sbb rbp, rbp
 	mov rax, r13
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r9, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r10, rdx
+	sbb rbp, rbp
 	mov rax, r14
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r11, rdx
+	sbb rbp, rbp
 	mov rax, r15
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r11, rax
 	adc rdx, 0
-	mov rbp, rdx
-	mov rax, rbp
-	mul rcx
+	mov r12, rdx
 	shl r11, 1
-	sbb rbp, rbp
+	adc r12, r12
 	shr r11, 1
-	and rbp, 19
-	add rax, rbp
+	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
 	adc r10, 0
@@ -5996,62 +4298,41 @@ vg_ed25519_decode_powers:
 	mov QWORD PTR [rdi+552], r9
 	mov QWORD PTR [rdi+560], r10
 	mov QWORD PTR [rdi+568], r11
-	mov rcx, QWORD PTR [rdi+672]
-	mov ebp, 0
-	mov r9d, 0
-	mov r10d, 0
-	mov r11d, 0
-	mov rax, QWORD PTR [rdi+680]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r9, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+688]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+696]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r12, rbp
 	mov rcx, QWORD PTR [rdi+680]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+688]
+	mov rbp, QWORD PTR [rdi+688]
+	mov r15, QWORD PTR [rdi+696]
+	mov rax, QWORD PTR [rdi+672]
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	mov r9, rax
+	mov r10, rdx
+	xor r11d, r11d
+	xor r12d, r12d
+	xor r13d, r13d
+	mov rax, QWORD PTR [rdi+672]
+	mul rbp
+	add r10, rax
+	adc r11, rdx
+	mov rax, QWORD PTR [rdi+672]
+	mul r15
 	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+696]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r12, rdx
+	adc r13, 0
+	mov rax, QWORD PTR [rdi+680]
+	mul rbp
+	add r11, rax
+	adc r12, rdx
+	adc r13, 0
+	xor r14d, r14d
+	mov rax, QWORD PTR [rdi+680]
+	mul r15
 	add r12, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r13, rbp
-	mov rcx, QWORD PTR [rdi+688]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+696]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r13, rdx
+	adc r14, 0
+	mov rax, QWORD PTR [rdi+688]
+	mul r15
 	add r13, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r14, rbp
-	mov r15d, 0
-	mov r8d, 0
+	adc r14, rdx
+	xor r15d, r15d
 	add r9, r9
 	adc r10, r10
 	adc r11, r11
@@ -6059,76 +4340,55 @@ vg_ed25519_decode_powers:
 	adc r13, r13
 	adc r14, r14
 	adc r15, r15
-	mov ebp, 0
 	mov rax, QWORD PTR [rdi+672]
 	mul rax
-	add rax, rbp
-	adc rdx, 0
-	add r8, rax
-	adc r9, rdx
-	mov ebp, 0
-	adc rbp, 0
+	mov r8, rax
+	mov rbp, rdx
 	mov rax, QWORD PTR [rdi+680]
 	mul rax
-	add rax, rbp
-	adc rdx, 0
-	add r10, rax
+	add r9, rbp
+	adc r10, rax
 	adc r11, rdx
-	mov ebp, 0
-	adc rbp, 0
+	sbb rcx, rcx
 	mov rax, QWORD PTR [rdi+688]
 	mul rax
-	add rax, rbp
-	adc rdx, 0
-	add r12, rax
+	add rcx, rcx
+	adc r12, rax
 	adc r13, rdx
-	mov ebp, 0
-	adc rbp, 0
+	sbb rcx, rcx
 	mov rax, QWORD PTR [rdi+696]
 	mul rax
-	add rax, rbp
-	adc rdx, 0
-	add r14, rax
+	add rcx, rcx
+	adc r14, rax
 	adc r15, rdx
-	mov ebp, 0
-	adc rbp, 0
 	mov ecx, 38
-	mov ebp, 0
 	mov rax, r12
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
 	add r8, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r9, rdx
+	sbb rbp, rbp
 	mov rax, r13
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r9, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r10, rdx
+	sbb rbp, rbp
 	mov rax, r14
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r11, rdx
+	sbb rbp, rbp
 	mov rax, r15
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r11, rax
 	adc rdx, 0
-	mov rbp, rdx
-	mov rax, rbp
-	mul rcx
+	mov r12, rdx
 	shl r11, 1
-	sbb rbp, rbp
+	adc r12, r12
 	shr r11, 1
-	and rbp, 19
-	add rax, rbp
+	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
 	adc r10, 0
@@ -6139,171 +4399,121 @@ vg_ed25519_decode_powers:
 	mov QWORD PTR [rdi+696], r11
 	sub rbx, 1
 	jne 26b
-	mov r8d, 0
-	mov r9d, 0
-	mov r10d, 0
-	mov r11d, 0
-	mov rcx, QWORD PTR [rdi+544]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+128]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r8, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+136]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	mov r14, QWORD PTR [rdi+128]
+	mov r15, QWORD PTR [rdi+136]
+	mov rcx, QWORD PTR [rdi+144]
+	mov rbp, QWORD PTR [rdi+152]
+	mov rax, QWORD PTR [rdi+544]
+	mul r14
+	mov r8, rax
+	mov r9, rdx
+	xor r10d, r10d
+	xor r11d, r11d
+	mov rax, QWORD PTR [rdi+544]
+	mul r15
 	add r9, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+144]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+152]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r12, rbp
-	mov rcx, QWORD PTR [rdi+552]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+128]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r10, rdx
+	mov rax, QWORD PTR [rdi+552]
+	mul r14
 	add r9, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+136]
+	adc r10, rdx
+	adc r11, 0
+	xor r12d, r12d
+	mov rax, QWORD PTR [rdi+544]
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
 	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+144]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+152]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r12, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r13, rbp
-	mov rcx, QWORD PTR [rdi+560]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+128]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r11, rdx
+	adc r12, 0
+	mov rax, QWORD PTR [rdi+552]
+	mul r15
 	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+136]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r11, rdx
+	adc r12, 0
+	mov rax, QWORD PTR [rdi+560]
+	mul r14
+	add r10, rax
+	adc r11, rdx
+	adc r12, 0
+	xor r13d, r13d
+	mov rax, QWORD PTR [rdi+544]
+	mul rbp
 	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+144]
+	adc r12, rdx
+	adc r13, 0
+	mov rax, QWORD PTR [rdi+552]
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r12, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+152]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r13, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r14, rbp
-	mov rcx, QWORD PTR [rdi+568]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+128]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
 	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+136]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r12, rdx
+	adc r13, 0
+	mov rax, QWORD PTR [rdi+560]
+	mul r15
+	add r11, rax
+	adc r12, rdx
+	adc r13, 0
+	mov rax, QWORD PTR [rdi+568]
+	mul r14
+	add r11, rax
+	adc r12, rdx
+	adc r13, 0
+	xor r14d, r14d
+	mov rax, QWORD PTR [rdi+552]
+	mul rbp
 	add r12, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+144]
+	adc r13, rdx
+	adc r14, 0
+	mov rax, QWORD PTR [rdi+560]
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	add r12, rax
+	adc r13, rdx
+	adc r14, 0
+	mov rax, QWORD PTR [rdi+568]
+	mul r15
+	add r12, rax
+	adc r13, rdx
+	adc r14, 0
+	xor r15d, r15d
+	mov rax, QWORD PTR [rdi+560]
+	mul rbp
 	add r13, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+152]
+	adc r14, rdx
+	adc r15, 0
+	mov rax, QWORD PTR [rdi+568]
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	add r13, rax
+	adc r14, rdx
+	adc r15, 0
+	mov rax, QWORD PTR [rdi+568]
+	mul rbp
 	add r14, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r15, rbp
+	adc r15, rdx
 	mov ecx, 38
-	mov ebp, 0
 	mov rax, r12
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
 	add r8, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r9, rdx
+	sbb rbp, rbp
 	mov rax, r13
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r9, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r10, rdx
+	sbb rbp, rbp
 	mov rax, r14
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r11, rdx
+	sbb rbp, rbp
 	mov rax, r15
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r11, rax
 	adc rdx, 0
-	mov rbp, rdx
-	mov rax, rbp
-	mul rcx
+	mov r12, rdx
 	shl r11, 1
-	sbb rbp, rbp
+	adc r12, r12
 	shr r11, 1
-	and rbp, 19
-	add rax, rbp
+	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
 	adc r10, 0
@@ -6312,171 +4522,121 @@ vg_ed25519_decode_powers:
 	mov QWORD PTR [rdi+552], r9
 	mov QWORD PTR [rdi+560], r10
 	mov QWORD PTR [rdi+568], r11
-	mov r8d, 0
-	mov r9d, 0
-	mov r10d, 0
-	mov r11d, 0
-	mov rcx, QWORD PTR [rdi+672]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+160]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r8, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+168]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	mov r14, QWORD PTR [rdi+160]
+	mov r15, QWORD PTR [rdi+168]
+	mov rcx, QWORD PTR [rdi+176]
+	mov rbp, QWORD PTR [rdi+184]
+	mov rax, QWORD PTR [rdi+672]
+	mul r14
+	mov r8, rax
+	mov r9, rdx
+	xor r10d, r10d
+	xor r11d, r11d
+	mov rax, QWORD PTR [rdi+672]
+	mul r15
 	add r9, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+176]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+184]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r12, rbp
-	mov rcx, QWORD PTR [rdi+680]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+160]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r10, rdx
+	mov rax, QWORD PTR [rdi+680]
+	mul r14
 	add r9, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+168]
+	adc r10, rdx
+	adc r11, 0
+	xor r12d, r12d
+	mov rax, QWORD PTR [rdi+672]
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
 	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+176]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+184]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r12, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r13, rbp
-	mov rcx, QWORD PTR [rdi+688]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+160]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r11, rdx
+	adc r12, 0
+	mov rax, QWORD PTR [rdi+680]
+	mul r15
 	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+168]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r11, rdx
+	adc r12, 0
+	mov rax, QWORD PTR [rdi+688]
+	mul r14
+	add r10, rax
+	adc r11, rdx
+	adc r12, 0
+	xor r13d, r13d
+	mov rax, QWORD PTR [rdi+672]
+	mul rbp
 	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+176]
+	adc r12, rdx
+	adc r13, 0
+	mov rax, QWORD PTR [rdi+680]
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r12, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+184]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
-	add r13, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r14, rbp
-	mov rcx, QWORD PTR [rdi+696]
-	mov ebp, 0
-	mov rax, QWORD PTR [rdi+160]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
 	add r11, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+168]
-	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	adc r12, rdx
+	adc r13, 0
+	mov rax, QWORD PTR [rdi+688]
+	mul r15
+	add r11, rax
+	adc r12, rdx
+	adc r13, 0
+	mov rax, QWORD PTR [rdi+696]
+	mul r14
+	add r11, rax
+	adc r12, rdx
+	adc r13, 0
+	xor r14d, r14d
+	mov rax, QWORD PTR [rdi+680]
+	mul rbp
 	add r12, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+176]
+	adc r13, rdx
+	adc r14, 0
+	mov rax, QWORD PTR [rdi+688]
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	add r12, rax
+	adc r13, rdx
+	adc r14, 0
+	mov rax, QWORD PTR [rdi+696]
+	mul r15
+	add r12, rax
+	adc r13, rdx
+	adc r14, 0
+	xor r15d, r15d
+	mov rax, QWORD PTR [rdi+688]
+	mul rbp
 	add r13, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov rax, QWORD PTR [rdi+184]
+	adc r14, rdx
+	adc r15, 0
+	mov rax, QWORD PTR [rdi+696]
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	add r13, rax
+	adc r14, rdx
+	adc r15, 0
+	mov rax, QWORD PTR [rdi+696]
+	mul rbp
 	add r14, rax
-	adc rdx, 0
-	mov rbp, rdx
-	mov r15, rbp
+	adc r15, rdx
 	mov ecx, 38
-	mov ebp, 0
 	mov rax, r12
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
 	add r8, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r9, rdx
+	sbb rbp, rbp
 	mov rax, r13
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r9, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r10, rdx
+	sbb rbp, rbp
 	mov rax, r14
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r10, rax
-	adc rdx, 0
-	mov rbp, rdx
+	adc r11, rdx
+	sbb rbp, rbp
 	mov rax, r15
 	mul rcx
-	add rax, rbp
-	adc rdx, 0
+	sub rdx, rbp
 	add r11, rax
 	adc rdx, 0
-	mov rbp, rdx
-	mov rax, rbp
-	mul rcx
+	mov r12, rdx
 	shl r11, 1
-	sbb rbp, rbp
+	adc r12, r12
 	shr r11, 1
-	and rbp, 19
-	add rax, rbp
+	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
 	adc r10, 0

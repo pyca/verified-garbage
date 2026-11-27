@@ -1,13 +1,17 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubSel
+public import VerifiedGarbage.Impl.Poly1305.X86_64.Fn
+import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
 public import VerifiedGarbage.Spec.Poly1305.Contract
 public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
 public import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
 public import VerifiedGarbage.Proof.Framework.X86_64.ScrubOr
+public import VerifiedGarbage.Proof.Framework.X86_64.ResidueMx
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Init
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Frame
-public import VerifiedGarbage.Proof.Poly1305.X86_64.UpdateVerified
 public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 public import VerifiedGarbage.Proof.Framework.X86_64.Registration
 import VerifiedGarbage.Proof.Poly1305.Scratch
@@ -21,7 +25,6 @@ meta import VerifiedGarbage.Proof.Framework.X86_64.ScrubOr
 meta import VerifiedGarbage.Proof.Framework.Registration
 meta import VerifiedGarbage.Proof.Poly1305.X86_64.Init
 meta import VerifiedGarbage.Proof.Poly1305.X86_64.Frame
-meta import VerifiedGarbage.Proof.Poly1305.X86_64.UpdateVerified
 meta import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 meta import VerifiedGarbage.Proof.Framework.X86_64.Registration
 meta import VerifiedGarbage.Proof.Poly1305.Scratch
@@ -33,8 +36,9 @@ meta import VerifiedGarbage.Proof.Poly1305.X86_64.Lit
 # Poly1305 without secret residue (x86-64)
 
 `init`, `update` (for each implementation of `vg_poly1305_blocks`) and
-`finalize`, each scrubbed where the residue analysis allows it
-(`X86_64.RScrub.autoScrub`). What that needs of their postconditions is that
+`finalize`, each followed by `Impl.Scrub.X86_64.scrubSel`
+(`X86_64.Scrub.verifiedScrubbedSel`), which wipes the granules of its stack
+the residue analysis finds may hold secrets. What that needs of their postconditions is that
 they read the memory on return only within the buffers
 (`X86_64.Scrub.PostOut`): the streaming state is bytes of the state buffer
 (`repr_congr`, `buffered_congr`), the tag bytes of `out`.
@@ -99,47 +103,67 @@ theorem finalizeOut (stack : Nat) : PostOut (finalizeContract X86_64.abi stack) 
 abbrev finalizeCode : Prog isa :=
   Impl.StackScratch.X86_64.withStackScratch 136 .rcx Impl.Poly1305.X86_64.finalize
 
-def initKs : List Nat := keep_for% Spec.Poly1305.initApi.sig 0 Impl.Poly1305.X86_64.init []
-
-theorem initOk : ∃ h : VG.Taint.Hint RTaint.FT,
-    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Poly1305.initApi.sig 0 []) Impl.Poly1305.X86_64.init
-      h).any (RScrub.resOkB · 0 initKs (Impl.Scrub.X86_64.chunks 0)) = true :=
-  RScrub.Analysed.ok_of initKs (by taint_decide)
-
-def finalizeKs : List Nat := keep_for% Spec.Poly1305.finalizeApi.sig 136 finalizeCode []
-
-theorem finalizeOk : ∃ h : VG.Taint.Hint RTaint.FT,
-    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Poly1305.finalizeApi.sig 136 []) finalizeCode
-      h).any (RScrub.resOkB · 136 finalizeKs (Impl.Scrub.X86_64.chunks 136)) = true :=
-  RScrub.Analysed.ok_of finalizeKs (by taint_decide)
-
 open VG.X86_64.RScrub in
-/-- `vg_poly1305_init`. -/
-def initReg : Registration Spec.Poly1305.initApi X86_64.target :=
-  withScrub { code := Impl.Poly1305.X86_64.init, verified := init_verified } (initOut _) [] (pubOk_nil _)
-    (some ⟨initKs, initOk⟩)
+/-- `vg_poly1305_update` over the implementation `v` of `vg_poly1305_blocks`,
+as a registration before its clearing. -/
+def updatePlain (v : BlocksImpl) : Unscrubbed Spec.Poly1305.updateApi X86_64.target where
+  suffix := v.suffix
+  code := updateCode v.name v.code
+  stack := 160
+  verified := update_framed v
+  spSafe := X86_64.withStackScratch_spSafe_of (update_spSafe v)
 
-open VG.X86_64.RScrub in
-/-- `vg_poly1305_finalize`. -/
-def finalizeReg : Registration Spec.Poly1305.finalizeApi X86_64.target :=
-  withScrub {
-    code := finalizeCode
-    stack := 136
-    verified := finalize_framed } (finalizeOut _) [] (pubOk_nil _) (some ⟨finalizeKs, finalizeOk⟩)
+/-! ## The functions as emitted -/
 
-open VG.X86_64.RScrub in
-/-- `vg_poly1305_update` over the implementation `v` of `vg_poly1305_blocks`:
-without secret residue where `v` gives its analysis (`BlocksImpl.update`),
-at the level of the registers its code writes, and without writing MXCSR,
-which none of the implementations loads: the vector ones run under the
-dispatcher's `vg_mcdt_enter` (`RScrub.withScrubM`). -/
-def updateReg (v : BlocksImpl) : Registration Spec.Poly1305.updateApi X86_64.target :=
-  withScrubM {
-    suffix := v.suffix
-    code := updateCode v.name v.code
-    stack := 160
-    verified := update_framed v
-    spSafe := X86_64.withStackScratch_spSafe_of (update_spSafe v)
-    } (updateOut _) [] (pubOk_nil _) v.update
+theorem init_codeSp : (Impl.Poly1305.X86_64.init).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
 
+/-- `Spec.Poly1305.initApi`'s function as emitted (`Impl.Poly1305.X86_64.Fn.init`) meets its contract in
+constant time and returns without secret residue. -/
+theorem init_scrubbed :
+    VerifiedScrubbed target Impl.Poly1305.X86_64.Fn.init (Spec.Poly1305.initApi.contract X86_64.abi 0) 0 :=
+  verifiedScrubbedSel (api := Spec.Poly1305.initApi)
+    { code := Impl.Poly1305.X86_64.init
+      verified := init_verified
+      spSafe := init_codeSp }
+    .sse [] (initOut _) (RScrub.pubOk_nil _) (by taint_decide)
+
+theorem init_spSafe : Impl.Poly1305.X86_64.Fn.init.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe init_codeSp
+
+theorem finalize_codeSp : (Impl.StackScratch.X86_64.withStackScratch 136 .rcx Impl.Poly1305.X86_64.finalize).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
+
+/-- `Spec.Poly1305.finalizeApi`'s function as emitted (`Impl.Poly1305.X86_64.Fn.finalize`) meets its contract in
+constant time and returns without secret residue. -/
+theorem finalize_scrubbed :
+    VerifiedScrubbed target Impl.Poly1305.X86_64.Fn.finalize (Spec.Poly1305.finalizeApi.contract X86_64.abi 136) 0 :=
+  verifiedScrubbedSel (api := Spec.Poly1305.finalizeApi)
+    { code := finalizeCode
+      stack := 136
+      verified := finalize_framed
+      spSafe := finalize_codeSp }
+    .sse [] (finalizeOut _) (RScrub.pubOk_nil _) (by taint_decide)
+
+theorem finalize_spSafe : Impl.Poly1305.X86_64.Fn.finalize.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe finalize_codeSp
+
+/-- `Spec.Poly1305.updateApi`'s function as emitted over the implementation
+`v` of `vg_poly1305_blocks` (`Impl.Poly1305.X86_64.Fn.update`) meets its
+contract in constant time and returns without secret residue: from the
+analysis of `v.upd` (`rtaintMx`, which takes its calls of `vg_mcdt_enter`
+as an operation). Where `v` loads MXCSR (in `vg_mcdt_enter`, on the path of
+many blocks only), two runs along the same path leave the same MXCSR, so
+the cleanup writes none. -/
+theorem update_scrubbed (v : BlocksImpl) :
+    VerifiedScrubbed target (Impl.Poly1305.X86_64.Fn.update v.upd.level v.upd.runs v.name v.code)
+      (Spec.Poly1305.updateApi.contract X86_64.abi 160) 0 :=
+  have ⟨_, hS, hc⟩ := v.upd.ok
+  verifiedScrubbedKs (updatePlain v) v.upd.level _ (updateOut _)
+    (RScrub.resOk_regOpsA (updatePlain v) rfl (RScrub.pubOk_nil _) hS hc (show (Impl.Scrub.X86_64.chunksA 160).sum = 160 by decide)) v.upd.side rfl rfl
+
+theorem updateFn_spSafe (v : BlocksImpl) :
+    (Impl.Poly1305.X86_64.Fn.update v.upd.level v.upd.runs v.name v.code).all
+      (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe (X86_64.withStackScratch_spSafe_of (update_spSafe v))
 end VG.Proof.Poly1305.X86_64

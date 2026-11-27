@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksVerified
-import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks.CT
 public import VerifiedGarbage.Spec.Gcm.Precomputed
 public import VerifiedGarbage.Proof.Gcm.Contract
 public import VerifiedGarbage.Proof.Gcm.OutOfPlaceContract

@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.SeedSearch
 public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.Basic
+import VerifiedGarbage.Proof.Framework.X86_64.Syms
 import VerifiedGarbage.Proof.RsaOaep.X86_64.Mgf
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 
@@ -26,14 +27,14 @@ theorem successStatus_ok {s : State} {F S : Addr} {V : Nat → Byte} {W : Nat �
 theorem onSuccess_ok {s : State} {F S : Addr} {V : Nat → Byte} {W : Nat → BitVec 64}
     {next : Prog isa} {Q : State → Prop}
     (L : Lay s F S) (R : Rep s.mem F S V W)
-    (accepted : ∀ t, t.mem = s.mem → Keep [.rax] s t → W 19 = 1 → WP isa next t Q)
+    (accepted : ∀ t, t.mem = s.mem → Keep [.rax] s t → W 19 = 1 → t.syms = s.syms → WP isa next t Q)
     (rejected : ∀ t, t.mem = s.mem → Keep [.rax] s t → W 19 ≠ 1 → Q t) :
     WP isa (Impl.Dsa.X86_64.Generation.onSuccess next) s Q := by
   unfold Impl.Dsa.X86_64.Generation.onSuccess
-  refine WP.seq (WP.mono (successStatus_ok L R) fun t ⟨hz, hm, hk⟩ => ?_)
+  refine WP.seq (WP.mono_syms (successStatus_ok L R) fun t ⟨hz, hm, hk⟩ hy => ?_)
   by_cases h : W 19 = 1
   · refine WP.ite true (by simp only [eval, hz, h, beq_self_eq_true])
-      (fun _ => accepted t hm hk h) (fun he => Bool.noConfusion he)
+      (fun _ => accepted t hm hk h hy) (fun he => Bool.noConfusion he)
   · refine WP.ite false (by simp only [eval, hz, beq_eq_false_iff_ne.mpr h])
       (fun he => Bool.noConfusion he) (fun _ => WP.block_nil (rejected t hm hk h))
 

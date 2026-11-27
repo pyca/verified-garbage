@@ -1,34 +1,295 @@
 module
+
 public import VerifiedGarbage.Proof.Seed.Scratch
 public import VerifiedGarbage.Impl.StackScratch.X86_64
 public import VerifiedGarbage.Proof.Framework.X86_64.Depth
 public import VerifiedGarbage.Proof.Seed.X86_64.ConstantTime
 public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Impl.Seed.X86_64.ExpandKey
-public import VerifiedGarbage.Proof.Seed.X86_64.Lanes
-import VerifiedGarbage.Proof.Seed.X86_64.Copy
-import VerifiedGarbage.Proof.Seed.X86_64.Round
+public import VerifiedGarbage.Proof.Seed.X86_64.Round
+import VerifiedGarbage.Proof.Seed.X86_64.Ecb
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
-public import VerifiedGarbage.Proof.Seed.X86_64.G16
-public import VerifiedGarbage.Proof.Seed.X86_64.KeyRound
 public import VerifiedGarbage.Proof.Seed.KeySchedule
 import VerifiedGarbage.Proof.Framework.PlainSimp
-import VerifiedGarbage.Proof.Seed.X86_64.Batch
 import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
-import VerifiedGarbage.Proof.Seed.X86_64.Ecb
 import VerifiedGarbage.Proof.Seed.Memory
 import VerifiedGarbage.Proof.Seed.SboxLit
 import VerifiedGarbage.Proof.Framework.X86_64.Reduce
-import VerifiedGarbage.Proof.Seed.X86_64.Setup
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.TaintSum
 import VerifiedGarbage.Proof.Seed.X86_64.Lit
 import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
 import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+
+/-! ### `Seed.X86_64.KeyRound`, which only this module used -/
+
+section
+
+/-!
+# A round of the key schedule on x86-64
+
+`keyRound_ok`: `keyRound j` writes round `j + 1`'s two inputs of `G`, from
+`r10 = Key0 || Key1` and `r11 = Key2 || Key3`, to their lanes, and rotates
+one of the two.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Seed.X86_64
+
+open VG VG.X86_64 VG.X86_64.RegUpd VG.Impl.Seed.X86_64 VG.Impl.Aes.X86_64
+
+-- The steps share one set of rewrites, not all of which each uses.
+set_option linter.unusedSimpArgs false
+
+theorem exec_movR' (s : State) (d r : Reg) : exec (movR d r) s = some (s.setReg d (s.gpr r)) := rfl
+
+theorem exec_shrI (s : State) (d : Reg) {n : Nat} (h1 : 1 ≤ n) (h2 : n ≤ 63) :
+    exec (shrI d n) s = some ((s.setFlags (some ((s.gpr d).getLsbD (n - 1)))
+      (if n = 1 then some (s.gpr d).msb else none) (some (s.gpr d >>> n == 0))
+      (some (s.gpr d >>> n).msb)).setReg d (s.gpr d >>> n)) := by
+  simp only [shrI, exec, execShift, h1, h2, and_self, ite_true]
+
+theorem exec_rorI (s : State) (d : Reg) {n : Nat} (h1 : 1 ≤ n) (h2 : n ≤ 63) :
+    exec (rorI d n) s = some ((s.setFlags (some ((s.gpr d).rotateRight n).msb)
+      (if n = 1 then some (((s.gpr d).rotateRight n).msb ^^ ((s.gpr d).rotateRight n).getMsbD 1) else none)
+      s.zf s.sf).setReg d ((s.gpr d).rotateRight n)) := by
+  simp only [rorI, exec, execShift, h1, h2, and_self, ite_true]
+
+theorem exec_add32_reg (s : State) (d r : Reg) :
+    exec (.alu32 .add d (.reg r)) s =
+      some ((arithFlags s ((s.gpr d).setWidth 32 + (s.gpr r).setWidth 32)
+        (decide (2 ^ 32 ≤ ((s.gpr d).setWidth 32).toNat + ((s.gpr r).setWidth 32).toNat))
+        (addOverflow ((s.gpr d).setWidth 32) ((s.gpr r).setWidth 32)
+          ((s.gpr d).setWidth 32 + (s.gpr r).setWidth 32))).setReg32 d
+        ((s.gpr d).setWidth 32 + (s.gpr r).setWidth 32)) := rfl
+
+theorem exec_sub32_reg (s : State) (d r : Reg) :
+    exec (.alu32 .sub d (.reg r)) s =
+      some ((arithFlags s ((s.gpr d).setWidth 32 - (s.gpr r).setWidth 32)
+        (decide (((s.gpr d).setWidth 32).toNat < ((s.gpr r).setWidth 32).toNat))
+        (subOverflow ((s.gpr d).setWidth 32) ((s.gpr r).setWidth 32)
+          ((s.gpr d).setWidth 32 - (s.gpr r).setWidth 32))).setReg32 d
+        ((s.gpr d).setWidth 32 - (s.gpr r).setWidth 32)) := rfl
+
+theorem exec_add32_imm (s : State) (d : Reg) (v : BitVec 32) :
+    exec (.alu32 .add d (.imm v)) s =
+      some ((arithFlags s ((s.gpr d).setWidth 32 + v)
+        (decide (2 ^ 32 ≤ ((s.gpr d).setWidth 32).toNat + v.toNat))
+        (addOverflow ((s.gpr d).setWidth 32) v ((s.gpr d).setWidth 32 + v))).setReg32 d
+        ((s.gpr d).setWidth 32 + v)) := rfl
+
+theorem exec_sub32_imm (s : State) (d : Reg) (v : BitVec 32) :
+    exec (.alu32 .sub d (.imm v)) s =
+      some ((arithFlags s ((s.gpr d).setWidth 32 - v)
+        (decide (((s.gpr d).setWidth 32).toNat < v.toNat))
+        (subOverflow ((s.gpr d).setWidth 32) v ((s.gpr d).setWidth 32 - v))).setReg32 d
+        ((s.gpr d).setWidth 32 - v)) := rfl
+
+theorem gSlot_mem (i : Nat) : gSlot i ∈ arrays := by
+  unfold gSlot; split <;> decide
+
+/-- `G`'s inputs have distinct lanes. -/
+theorem gIn_apart : ∀ i < 32, ∀ i' < 32, i ≠ i' → gSlot i ≠ gSlot i' ∨ i % 16 ≠ i' % 16 := by decide +kernel
+
+/-- The first input of `G` in round `j + 1`, from `Key0 || Key1` and `Key2 || Key3`. -/
+def gIn0 (x y : BitVec 64) (c : BitVec 32) : BitVec 32 := (x >>> 32).setWidth 32 + (y >>> 32).setWidth 32 - c
+
+/-- The second. -/
+def gIn1 (x y : BitVec 64) (c : BitVec 32) : BitVec 32 := x.setWidth 32 - y.setWidth 32 + c
+
+/-- `t` is `s` with the register `d` set to `v` (and perhaps the flags). -/
+structure Upd (s t : State) (d : Reg) (v : BitVec 64) : Prop where
+  gpr : ∀ x, t.gpr x = if x = d then v else s.gpr x
+  mem : t.mem = s.mem
+  rd : t.rd = s.rd
+  wr : t.wr = s.wr
+
+theorem Upd.self {s t : State} {d : Reg} {v : BitVec 64} (h : Upd s t d v) : t.gpr d = v := by
+  simp [h.gpr]
+
+theorem Upd.other {s t : State} {d : Reg} {v : BitVec 64} (h : Upd s t d v) {x : Reg} (hx : x ≠ d) :
+    t.gpr x = s.gpr x := by
+  rw [h.gpr]; simp [hx]
+
+theorem Upd.lane {s t : State} {d : Reg} {v : BitVec 64} (h : Upd s t d v) (hd : d ≠ .r9) (k b : Nat) :
+    lv t k b = lv s k b := by
+  simp only [lv, laneA, h.mem, h.other (Ne.symm hd)]
+
+theorem upd_of {s t : State} {d : Reg} {v : BitVec 64} (e : t = s.setReg d v) : Upd s t d v :=
+  ⟨fun x => by subst e; rw [gpr_setReg], by subst e; rfl, by subst e; rfl, by subst e; rfl⟩
+
+theorem upd_flags {s t : State} {d : Reg} {v : BitVec 64} (a b c e : Option Bool)
+    (h : t = (s.setFlags a b c e).setReg d v) : Upd s t d v :=
+  ⟨fun x => by subst h; rw [gpr_setReg, gpr_setFlags], by subst h; rfl, by subst h; rfl, by subst h; rfl⟩
+
+theorem upd_arith {s t : State} {d : Reg} {w : Nat} (x : BitVec w) (c o : Bool) (v : BitVec 32)
+    (h : t = (arithFlags s x c o).setReg32 d v) : Upd s t d (v.setWidth 64) :=
+  ⟨fun y => by subst h; rw [State.setReg32, gpr_setReg, gpr_arithFlags], by subst h; rfl, by subst h; rfl,
+    by subst h; rfl⟩
+
+theorem step_movR (s : State) (d r : Reg) : ∃ t, exec (movR d r) s = some t ∧ Upd s t d (s.gpr r) :=
+  ⟨_, exec_movR' s d r, upd_of rfl⟩
+
+theorem step_shrI (s : State) (d : Reg) {n : Nat} (h1 : 1 ≤ n) (h2 : n ≤ 63) :
+    ∃ t, exec (shrI d n) s = some t ∧ Upd s t d (s.gpr d >>> n) :=
+  ⟨_, exec_shrI s d h1 h2, upd_flags _ _ _ _ rfl⟩
+
+theorem step_rorI (s : State) (d : Reg) {n : Nat} (h1 : 1 ≤ n) (h2 : n ≤ 63) :
+    ∃ t, exec (rorI d n) s = some t ∧ Upd s t d ((s.gpr d).rotateRight n) :=
+  ⟨_, exec_rorI s d h1 h2, upd_flags _ _ _ _ rfl⟩
+
+theorem step_add32_reg (s : State) (d r : Reg) :
+    ∃ t, exec (.alu32 .add d (.reg r)) s = some t ∧
+      Upd s t d (((s.gpr d).setWidth 32 + (s.gpr r).setWidth 32).setWidth 64) :=
+  ⟨_, exec_add32_reg s d r, upd_arith _ _ _ _ rfl⟩
+
+theorem step_sub32_reg (s : State) (d r : Reg) :
+    ∃ t, exec (.alu32 .sub d (.reg r)) s = some t ∧
+      Upd s t d (((s.gpr d).setWidth 32 - (s.gpr r).setWidth 32).setWidth 64) :=
+  ⟨_, exec_sub32_reg s d r, upd_arith _ _ _ _ rfl⟩
+
+theorem step_add32_imm (s : State) (d : Reg) (v : BitVec 32) :
+    ∃ t, exec (.alu32 .add d (.imm v)) s = some t ∧ Upd s t d (((s.gpr d).setWidth 32 + v).setWidth 64) :=
+  ⟨_, exec_add32_imm s d v, upd_arith _ _ _ _ rfl⟩
+
+theorem step_sub32_imm (s : State) (d : Reg) (v : BitVec 32) :
+    ∃ t, exec (.alu32 .sub d (.imm v)) s = some t ∧ Upd s t d (((s.gpr d).setWidth 32 - v).setWidth 64) :=
+  ⟨_, exec_sub32_imm s d v, upd_arith _ _ _ _ rfl⟩
+
+/-- A store of `rax`'s low half to a lane. -/
+theorem step_store_lane {s : State} (h : Room s) {k b : Nat} (hk : k ∈ arrays) (hb : b < 16) :
+    ∃ t, exec (.store32 (lane .r9 k b) .rax) s = some t ∧ t.gpr = s.gpr ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
+      t.mem = s.mem.writeW (laneA s k b) ((s.gpr .rax).setWidth 32) :=
+  ⟨_, exec_store32_lane h hk hb .rax, rfl, rfl, rfl, rfl⟩
+
+theorem keyRound_ok {j : Nat} (hj : j < 16) {s : State} (h : Room s) :
+    ∃ s', runBlock isa (keyRound j) s = some s' ∧
+      lv s' (gSlot (2 * j)) (2 * j % 16) = gIn0 (s.gpr .r10) (s.gpr .r11) (kcs.getD j 0) ∧
+      lv s' (gSlot (2 * j + 1)) ((2 * j + 1) % 16) = gIn1 (s.gpr .r10) (s.gpr .r11) (kcs.getD j 0) ∧
+      (∀ k ∈ arrays, ∀ b < 16, (k ≠ gSlot (2 * j) ∨ b ≠ 2 * j % 16) →
+        (k ≠ gSlot (2 * j + 1) ∨ b ≠ (2 * j + 1) % 16) → lv s' k b = lv s k b) ∧
+      s'.gpr .r10 = (if j % 2 = 0 then (s.gpr .r10).rotateRight 8 else s.gpr .r10) ∧
+      s'.gpr .r11 = (if j % 2 = 0 then s.gpr .r11 else (s.gpr .r11).rotateRight 56) ∧
+      (∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .r10 → r ≠ .r11 → s'.gpr r = s.gpr r) ∧
+      s'.rd = s.rd ∧ s'.wr = s.wr ∧ Frame [arraysR s] s.mem s'.mem := by
+  obtain hb0 : 2 * j % 16 < 16 := Nat.mod_lt _ (by decide)
+  obtain hb1 : (2 * j + 1) % 16 < 16 := Nat.mod_lt _ (by decide)
+  obtain hd : gSlot (2 * j + 1) ≠ gSlot (2 * j) ∨ (2 * j + 1) % 16 ≠ 2 * j % 16 :=
+    gIn_apart _ (by omega_using [hj]) _ (by omega_using [hj]) (by omega_using [])
+  let c := kcs.getD j 0
+  obtain ⟨s1, e1, u1⟩ := step_movR s .rax .r10
+  obtain ⟨s2, e2, u2⟩ := step_shrI s1 .rax (n := 32) (by decide) (by decide)
+  obtain ⟨s3, e3, u3⟩ := step_movR s2 .rcx .r11
+  obtain ⟨s4, e4, u4⟩ := step_shrI s3 .rcx (n := 32) (by decide) (by decide)
+  obtain ⟨s5, e5, u5⟩ := step_add32_reg s4 .rax .rcx
+  obtain ⟨s6, e6, u6⟩ := step_sub32_imm s5 .rax c
+  obtain room6 : Room s6 := room_congr h (by rw [u6.other (by decide), u5.other (by decide),
+    u4.other (by decide), u3.other (by decide), u2.other (by decide), u1.other (by decide)])
+    (by rw [u6.wr, u5.wr, u4.wr, u3.wr, u2.wr, u1.wr])
+  obtain ⟨s7, e7, g7, rd7, wr7, m7⟩ := step_store_lane room6 (gSlot_mem (2 * j)) hb0
+  obtain ⟨s8, e8, u8⟩ := step_movR s7 .rax .r10
+  obtain ⟨s9, e9, u9⟩ := step_sub32_reg s8 .rax .r11
+  obtain ⟨s10, e10, u10⟩ := step_add32_imm s9 .rax c
+  obtain room10 : Room s10 := room_congr room6 (by rw [u10.other (by decide), u9.other (by decide),
+    u8.other (by decide), g7]) (by rw [u10.wr, u9.wr, u8.wr, wr7])
+  obtain ⟨s11, e11, g11, rd11, wr11, m11⟩ := step_store_lane room10 (gSlot_mem (2 * j + 1)) hb1
+  obtain r9_6 : s6.gpr .r9 = s.gpr .r9 := by rw [u6.other (by decide), u5.other (by decide),
+    u4.other (by decide), u3.other (by decide), u2.other (by decide), u1.other (by decide)]
+  obtain r9_10 : s10.gpr .r9 = s.gpr .r9 := by
+    rw [u10.other (by decide), u9.other (by decide), u8.other (by decide), g7, r9_6]
+  obtain lA6 : ∀ k b, laneA s6 k b = laneA s k b := fun k b => by simp only [laneA, r9_6]
+  obtain lA10 : ∀ k b, laneA s10 k b = laneA s k b := fun k b => by simp only [laneA, r9_10]
+  -- the values
+  obtain v6 : (s6.gpr .rax).setWidth 32 = gIn0 (s.gpr .r10) (s.gpr .r11) c := by
+    rw [u6.self, setWidth_setWidth_32, u5.self, setWidth_setWidth_32, u4.other (by decide), u4.self,
+      u3.self, u3.other (by decide), u2.self, u2.other (by decide), u1.self, u1.other (by decide)]
+    rfl
+  obtain v10 : (s10.gpr .rax).setWidth 32 = gIn1 (s.gpr .r10) (s.gpr .r11) c := by
+    rw [u10.self, setWidth_setWidth_32, u9.self, setWidth_setWidth_32, u8.self, u8.other (by decide), g7,
+      u6.other (by decide), u5.other (by decide), u4.other (by decide), u3.other (by decide),
+      u2.other (by decide), u1.other (by decide), u6.other (by decide), u5.other (by decide),
+      u4.other (by decide), u3.other (by decide), u2.other (by decide), u1.other (by decide)]
+    rfl
+  obtain mem10 : s10.mem = s7.mem := by rw [u10.mem, u9.mem, u8.mem]
+  obtain mem6 : s6.mem = s.mem := by rw [u6.mem, u5.mem, u4.mem, u3.mem, u2.mem, u1.mem]
+  obtain hrun : runBlock isa ([movR .rax .r10, shrI .rax 32, movR .rcx .r11, shrI .rcx 32,
+      .alu32 .add .rax (.reg .rcx), .alu32 .sub .rax (.imm c), .store32 (gIn (2 * j)) .rax,
+      movR .rax .r10, .alu32 .sub .rax (.reg .r11), .alu32 .add .rax (.imm c),
+      .store32 (gIn (2 * j + 1)) .rax] : List Instr) s = some s11 := by
+    rw [runBlock_cons, e1, runStep_some, runBlock_cons, e2, runStep_some, runBlock_cons, e3, runStep_some,
+      runBlock_cons, e4, runStep_some, runBlock_cons, e5, runStep_some, runBlock_cons, e6, runStep_some,
+      runBlock_cons, gIn, e7, runStep_some, runBlock_cons, e8, runStep_some, runBlock_cons, e9, runStep_some,
+      runBlock_cons, e10, runStep_some, runBlock_cons, gIn, e11, runStep_some, runBlock_nil]
+  -- the lanes after both stores
+  obtain lv11 : ∀ k ∈ arrays, ∀ b < 16, lv s11 k b =
+      ((s.mem.writeW (laneA s (gSlot (2 * j)) (2 * j % 16)) (gIn0 (s.gpr .r10) (s.gpr .r11) c)).writeW
+        (laneA s (gSlot (2 * j + 1)) ((2 * j + 1) % 16)) (gIn1 (s.gpr .r10) (s.gpr .r11) c)).readW
+        (laneA s k b) 32 := by
+    intro k _ b _
+    simp only [lv, laneA, g11, u10.other (show Reg.r9 ≠ .rax by decide), u9.other (show Reg.r9 ≠ .rax by decide),
+      u8.other (show Reg.r9 ≠ .rax by decide), g7]
+    rw [m11, mem10, m7, lA10, lA6, v6, v10, mem6]
+    simp only [laneA, r9_6]
+  obtain lane0 : lv s11 (gSlot (2 * j)) (2 * j % 16) = gIn0 (s.gpr .r10) (s.gpr .r11) c := by
+    rw [lv11 _ (gSlot_mem _) _ hb0, readW_writeW_lane (gSlot_mem _) hb0 (gSlot_mem _) hb1
+      (by rcases hd with h | h; exact Or.inl (Ne.symm h); exact Or.inr (Ne.symm h)), Mem.readW_writeW_self32]
+  obtain lane1 : lv s11 (gSlot (2 * j + 1)) ((2 * j + 1) % 16) = gIn1 (s.gpr .r10) (s.gpr .r11) c := by
+    rw [lv11 _ (gSlot_mem _) _ hb1, Mem.readW_writeW_self32]
+  obtain lanes : ∀ k ∈ arrays, ∀ b < 16, (k ≠ gSlot (2 * j) ∨ b ≠ 2 * j % 16) →
+      (k ≠ gSlot (2 * j + 1) ∨ b ≠ (2 * j + 1) % 16) → lv s11 k b = lv s k b := by
+    intro k hk b hb h0 h1
+    rw [lv11 k hk b hb, readW_writeW_lane hk hb (gSlot_mem _) hb1 h1,
+      readW_writeW_lane hk hb (gSlot_mem _) hb0 h0]
+    rfl
+  obtain frame : Frame [arraysR s] s.mem s11.mem := by
+    rw [m11, mem10, m7, lA10, lA6, mem6]
+    exact ((Frame.refl _ _).writeW List.mem_cons_self _ (lane_inArrays (gSlot_mem _) hb0 s)).writeW
+      List.mem_cons_self _ (lane_inArrays (gSlot_mem _) hb1 s)
+  obtain G11 : ∀ r, r ≠ .rax → r ≠ .rcx → s11.gpr r = s.gpr r := by
+    intro r ha hc
+    rw [g11, u10.other ha, u9.other ha, u8.other ha, g7, u6.other ha, u5.other ha, u4.other hc, u3.other hc,
+      u2.other ha, u1.other ha]
+  obtain rd11' : s11.rd = s.rd := by rw [rd11, u10.rd, u9.rd, u8.rd, rd7, u6.rd, u5.rd, u4.rd, u3.rd, u2.rd, u1.rd]
+  obtain wr11' : s11.wr = s.wr := by rw [wr11, u10.wr, u9.wr, u8.wr, wr7, u6.wr, u5.wr, u4.wr, u3.wr, u2.wr, u1.wr]
+  -- the rotation
+  by_cases hj2 : j % 2 = 0
+  · obtain ⟨s12, e12, u12⟩ := step_rorI s11 .r10 (n := 8) (by decide) (by decide)
+    refine ⟨s12, ?_, by rw [← lane0]; exact u12.lane (by decide) _ _, by rw [← lane1]; exact u12.lane (by decide) _ _,
+      fun k hk b hb h0 h1 => by rw [u12.lane (by decide), lanes k hk b hb h0 h1], ?_, ?_,
+      fun r ha hc h10 _ => by rw [u12.other h10, G11 r ha hc], by rw [u12.rd, rd11'], by rw [u12.wr, wr11'],
+      by rw [u12.mem]; exact frame⟩
+    · have : keyRound j = [movR .rax .r10, shrI .rax 32, movR .rcx .r11, shrI .rcx 32,
+          .alu32 .add .rax (.reg .rcx), .alu32 .sub .rax (.imm c), .store32 (gIn (2 * j)) .rax,
+          movR .rax .r10, .alu32 .sub .rax (.reg .r11), .alu32 .add .rax (.imm c),
+          .store32 (gIn (2 * j + 1)) .rax] ++ [rorI .r10 8] := by simp only [keyRound, hj2, ite_true]; rfl
+      rw [this]
+      exact runBlock_trans hrun (by rw [runBlock_cons, e12, runStep_some, runBlock_nil])
+    · rw [u12.self, G11 _ (by decide) (by decide), ite_eq_left_iff.mpr (fun h => absurd hj2 h)]
+    · rw [u12.other (by decide), G11 _ (by decide) (by decide), ite_eq_left_iff.mpr (fun h => absurd hj2 h)]
+  · obtain ⟨s12, e12, u12⟩ := step_rorI s11 .r11 (n := 56) (by decide) (by decide)
+    refine ⟨s12, ?_, by rw [← lane0]; exact u12.lane (by decide) _ _, by rw [← lane1]; exact u12.lane (by decide) _ _,
+      fun k hk b hb h0 h1 => by rw [u12.lane (by decide), lanes k hk b hb h0 h1], ?_, ?_,
+      fun r ha hc _ h11 => by rw [u12.other h11, G11 r ha hc], by rw [u12.rd, rd11'], by rw [u12.wr, wr11'],
+      by rw [u12.mem]; exact frame⟩
+    · have : keyRound j = [movR .rax .r10, shrI .rax 32, movR .rcx .r11, shrI .rcx 32,
+          .alu32 .add .rax (.reg .rcx), .alu32 .sub .rax (.imm c), .store32 (gIn (2 * j)) .rax,
+          movR .rax .r10, .alu32 .sub .rax (.reg .r11), .alu32 .add .rax (.imm c),
+          .store32 (gIn (2 * j + 1)) .rax] ++ [rorI .r11 56] := by simp only [keyRound, hj2, ite_false]; rfl
+      rw [this]
+      exact runBlock_trans hrun (by rw [runBlock_cons, e12, runStep_some, runBlock_nil])
+    · rw [u12.other (by decide), G11 _ (by decide) (by decide), ite_eq_right_iff.mpr (fun h => absurd h hj2)]
+    · rw [u12.self, G11 _ (by decide) (by decide), ite_eq_right_iff.mpr (fun h => absurd h hj2)]
+
+end VG.Proof.Seed.X86_64
+
+end
+
+end
 
 /-! ### `Seed.X86_64.KeyVerified`, which only this module used -/
 
@@ -78,10 +339,10 @@ theorem keyStore_ok (k : Nat) {s : State} (h : Room s)
   | 0, _ => ⟨s, runBlock_nil, fun w hw => by omega, fun _ _ => rfl, rfl, rfl, Frame.refl _ _⟩
   | n + 1, hn => by
     obtain ⟨t, ht, hv, hg, hrd, hwr, hf⟩ := keyStore_ok k h hw hsep hk n (by omega_using [hn])
-    have r9 : t.gpr .r9 = s.gpr .r9 := hg _ (by decide)
-    have rsi : t.gpr .rsi = s.gpr .rsi := hg _ (by decide)
-    have room : Room t := room_congr h r9 hwr
-    have hlane : lv t (tSlot 0) n = lv s (tSlot 0) n := by
+    obtain r9 : t.gpr .r9 = s.gpr .r9 := hg _ (by decide)
+    obtain rsi : t.gpr .rsi = s.gpr .rsi := hg _ (by decide)
+    obtain room : Room t := room_congr h r9 hwr
+    obtain hlane : lv t (tSlot 0) n = lv s (tSlot 0) n := by
       simp only [lv, laneA, r9]
       refine hf.readW (r := ⟨s.gpr .r9 + BitVec.ofNat 64 (8 * tSlot 0 + 4 * n), 4⟩) (Region.contains_self _ _) ?_
         (by decide)
@@ -91,15 +352,15 @@ theorem keyStore_ok (k : Nat) {s : State} (h : Room s)
       show Region.Sub ⟨s.gpr .r9 + BitVec.ofNat 64 (8 * tSlot 0 + 4 * n), 4⟩ ⟨s.gpr .r9, 8 * scratchSlots⟩
       exact Offset.sub_base _ (by unfold scratchSlots tSlot; omega_using [hn])
     let t1 := t.setReg32 .rax (lv t (tSlot 0) n)
-    have e1 : exec (.mov32 .rax (.mem (lane .r9 (tSlot 0) n))) t = some t1 :=
+    obtain e1 : exec (.mov32 .rax (.mem (lane .r9 (tSlot 0) n))) t = some t1 :=
       exec_mov32_lane room (by decide) (by omega_using [hn]) .rax
-    have hea : t1.ea { base := .rsi, disp := ((4 * (k + n) : Nat) : Int) } =
+    obtain hea : t1.ea { base := .rsi, disp := ((4 * (k + n) : Nat) : Int) } =
         s.gpr .rsi + BitVec.ofNat 64 (4 * (k + n)) := by
       rw [ea_off]; simp only [t1, State.setReg32, gpr_setReg]; simp [rsi]
-    have hw1 : InRegions t1.wr (t1.ea { base := .rsi, disp := ((4 * (k + n) : Nat) : Int) }) 4 := by
+    obtain hw1 : InRegions t1.wr (t1.ea { base := .rsi, disp := ((4 * (k + n) : Nat) : Int) }) 4 := by
       rw [hea]; simp only [t1, State.setReg32, wr_setReg, hwr]; exact hw n (by omega_using [hn])
     let t2 := setMem t1 (t.mem.writeW (s.gpr .rsi + BitVec.ofNat 64 (4 * (k + n))) (lv s (tSlot 0) n))
-    have e2 : exec (.store32 { base := .rsi, disp := ((4 * (k + n) : Nat) : Int) } .rax) t1 = some t2 := by
+    obtain e2 : exec (.store32 { base := .rsi, disp := ((4 * (k + n) : Nat) : Int) } .rax) t1 = some t2 := by
       rw [exec_store32 hw1, hea]
       simp only [t1, t2, State.setReg32, gpr_setReg, ite_true, setWidth_setWidth_32, hlane]
       rfl
@@ -198,7 +459,7 @@ theorem keyRounds_ok (key : Spec.Seed.Block) {s₀ : State} (h : Room s₀)
   | 0, _ => ⟨s₀, runBlock_nil, h10, h11, fun i hi => by omega, fun _ _ _ _ _ => rfl, rfl, rfl, Frame.refl _ _⟩
   | n + 1, hn => by
     obtain ⟨s, hs, inv⟩ := keyRounds_ok key h h10 h11 n (by omega_using [hn])
-    have r9 : s.gpr .r9 = s₀.gpr .r9 := inv.regs _ (by decide) (by decide) (by decide) (by decide)
+    obtain r9 : s.gpr .r9 = s₀.gpr .r9 := inv.regs _ (by decide) (by decide) (by decide) (by decide)
     obtain ⟨s', hs', l0, l1, lk, r10', r11', regs', rd', wr', f'⟩ :=
       keyRound_ok (j := n) (by omega_using [hn]) (room_congr h r9 inv.wr)
     refine ⟨s', ?_, ⟨?_, ?_, fun i hi => ?_, fun r a b c d => ?_, by rw [rd', inv.rd], by rw [wr', inv.wr], ?_⟩⟩
@@ -216,7 +477,7 @@ theorem keyRounds_ok (key : Spec.Seed.Block) {s₀ : State} (h : Room s₀)
       · simp only [ky, ror56]; exact (split64 _).symm
     · have g0 : gInput key (2 * n) = (keyWords key n).1 + (keyWords key n).2.2.1 - Spec.Seed.kc.getD n 0 := by
         simp only [gInput, show 2 * n / 2 = n by omega_using [], show 2 * n % 2 = 0 by omega_using [], ite_true]
-      have g1 : gInput key (2 * n + 1) =
+      obtain g1 : gInput key (2 * n + 1) =
           (keyWords key n).2.1 - (keyWords key n).2.2.2 + Spec.Seed.kc.getD n 0 := by
         simp only [gInput, show (2 * n + 1) / 2 = n by omega_using [], show (2 * n + 1) % 2 = 1 by omega_using []]
         rfl
@@ -294,12 +555,12 @@ theorem keyPre_ok (key : Spec.Seed.Block) {s : State} (h : Room s) (hm : MasksIn
     (addOverflow (s2.gpr .rdx) ((128 : BitVec 32).signExtend 64)
       (s2.gpr .rdx + (128 : BitVec 32).signExtend 64))).setReg .rdx (s2.gpr .rdx + (128 : BitVec 32).signExtend 64)
   have e3 : runBlock isa [movR .rdx .rsi, .alu .add .rdx (.imm 128)] s1 = some s3 := rfl
-  have g3 : ∀ r, r ≠ .rdx → s3.gpr r = s1.gpr r := fun r hr => by
+  obtain g3 : ∀ r, r ≠ .rdx → s3.gpr r = s1.gpr r := fun r hr => by
     simp only [s3, s2, gpr_setReg, hr, ↓reduceIte, gpr_arithFlags]
   have m3 : s3.mem = s1.mem := rfl
-  have r9_1 : s1.gpr .r9 = s.gpr .r9 := inv.regs _ (by decide) (by decide) (by decide) (by decide)
-  have r9_3 : s3.gpr .r9 = s.gpr .r9 := (g3 _ (by decide)).trans r9_1
-  have lv3 : ∀ k b, lv s3 k b = lv s1 k b := fun k b => by simp only [lv, laneA, m3, g3 _ (show Reg.r9 ≠ .rdx by decide)]
+  obtain r9_1 : s1.gpr .r9 = s.gpr .r9 := inv.regs _ (by decide) (by decide) (by decide) (by decide)
+  obtain r9_3 : s3.gpr .r9 = s.gpr .r9 := (g3 _ (by decide)).trans r9_1
+  obtain lv3 : ∀ k b, lv s3 k b = lv s1 k b := fun k b => by simp only [lv, laneA, m3, g3 _ (show Reg.r9 ≠ .rdx by decide)]
   refine ⟨s3, runBlock_trans e1 e3, room_congr h r9_3 inv.wr,
     masks_of_arrays hm r9_3 (by rw [m3]; exact inv.frame), fun w hw => ?_, fun w hw => ?_, ?_, fun r hr => ?_,
     inv.rd, inv.wr, by rw [m3]; exact inv.frame⟩
@@ -335,8 +596,8 @@ theorem addCmp_ok (t : State) :
     (addOverflow (t.gpr .rsi) ((64 : BitVec 32).signExtend 64)
       (t.gpr .rsi + (64 : BitVec 32).signExtend 64))).setReg .rsi (t.gpr .rsi + (64 : BitVec 32).signExtend 64)
   have e1 : runBlock isa [.alu .add .rsi (.imm 64)] t = some t1 := rfl
-  have r1 : t1.gpr .rsi = t.gpr .rsi + BitVec.ofNat 64 64 := by simp only [t1, gpr_setReg_self]; rfl
-  have g1 : ∀ r, r ≠ .rsi → t1.gpr r = t.gpr r := fun r hr => by
+  obtain r1 : t1.gpr .rsi = t.gpr .rsi + BitVec.ofNat 64 64 := by simp only [t1, gpr_setReg_self]; rfl
+  obtain g1 : ∀ r, r ≠ .rsi → t1.gpr r = t.gpr r := fun r hr => by
     simp only [t1, gpr_setReg, hr, ↓reduceIte, gpr_arithFlags]
   obtain ⟨t2, e2, g2, z2, m2, rd2, wr2⟩ := cmp_ok t1
   refine ⟨t2, runBlock_trans e1 e2, by rw [g2, r1], fun r hr => by rw [g2, g1 r hr], ?_, m2, rd2, wr2⟩
@@ -368,15 +629,15 @@ theorem keyHalves_wp (key : Spec.Seed.Block) {s : State} {S : Addr} (hin : (⟨S
   refine WP.loop (M := isa) (fun n t => ∃ c, c < 2 ∧ n = 2 - c ∧ HalfInv key s S c t) (fun n t ht => ?_) 2 s
     ⟨0, by decide, rfl, h0⟩
   obtain ⟨c, hc, rfl, hi⟩ := ht
-  have scrS : ∀ t : State, t.gpr .r9 = s.gpr .r9 → scratchR t = scratchR s := fun t h => by simp only [scratchR, h]
-  have workS : ∀ t : State, t.gpr .r9 = s.gpr .r9 → workR t = workR s := fun t h => by simp only [workR, h]
-  have schedWork : (⟨S, 128⟩ : Region).Disjoint (workR s) :=
+  obtain scrS : ∀ t : State, t.gpr .r9 = s.gpr .r9 → scratchR t = scratchR s := fun t h => by simp only [scratchR, h]
+  obtain workS : ∀ t : State, t.gpr .r9 = s.gpr .r9 → workR t = workR s := fun t h => by simp only [workR, h]
+  obtain schedWork : (⟨S, 128⟩ : Region).Disjoint (workR s) :=
     hsep.sub_right (Region.sub_prefix (by unfold scratchSlots; omega_using []))
   -- `G` of the sixteen
   obtain ⟨t2, e2, g2, keep2, masks2, room2, rd2, wr2, regs2, f2⟩ := g16_lanes hi.room hi.masks
-  have r9_2 : t2.gpr .r9 = s.gpr .r9 := (regs2 _ (by decide)).trans hi.r9
-  have rsi_2 : t2.gpr .rsi = S + BitVec.ofNat 64 (64 * c) := (regs2 _ (by decide)).trans hi.rsi
-  have out2 : (outR t2 0).Disjoint (scratchR t2) := by
+  obtain r9_2 : t2.gpr .r9 = s.gpr .r9 := (regs2 _ (by decide)).trans hi.r9
+  obtain rsi_2 : t2.gpr .rsi = S + BitVec.ofNat 64 (64 * c) := (regs2 _ (by decide)).trans hi.rsi
+  obtain out2 : (outR t2 0).Disjoint (scratchR t2) := by
     rw [scrS t2 r9_2]; simp only [outR, rsi_2, Nat.mul_zero, ofNat_zero_add]
     exact hsep.sub_left (Offset.sub_base _ (by omega_using [hc]))
   -- the copy
@@ -384,23 +645,23 @@ theorem keyHalves_wp (key : Spec.Seed.Block) {s : State} {S : Addr} (hin : (⟨S
     (fun w hw => by
       rw [rsi_2, wr2, hi.wr, Offset.add_add]
       exact ⟨_, hin, Offset.contains_base _ (by omega_using [hc, hw]) (by omega_using [hc, hw])⟩) out2 (by decide) 16 (Nat.le_refl _)
-  have r9_3 : t3.gpr .r9 = s.gpr .r9 := (g3 _ (by decide)).trans r9_2
-  have masks3 : MasksIn t3 := masks_of_frame masks2 (g3 _ (by decide)) f3 out2
+  obtain r9_3 : t3.gpr .r9 = s.gpr .r9 := (g3 _ (by decide)).trans r9_2
+  obtain masks3 : MasksIn t3 := masks_of_frame masks2 (g3 _ (by decide)) f3 out2
   obtain ⟨t4, e4, rsi4, g4, z4, m4, rd4, wr4⟩ := addCmp_ok t3
-  have r9_4 : t4.gpr .r9 = s.gpr .r9 := (g4 _ (by decide)).trans r9_3
-  have rsi_4 : t4.gpr .rsi = S + BitVec.ofNat 64 (64 * (c + 1)) := by
+  obtain r9_4 : t4.gpr .r9 = s.gpr .r9 := (g4 _ (by decide)).trans r9_3
+  obtain rsi_4 : t4.gpr .rsi = S + BitVec.ofNat 64 (64 * (c + 1)) := by
     rw [rsi4, g3 _ (by decide), rsi_2, Offset.add_add]; congr 2
-  have rdx_4 : t4.gpr .rdx = S + BitVec.ofNat 64 128 := by
+  obtain rdx_4 : t4.gpr .rdx = S + BitVec.ofNat 64 128 := by
     rw [g4 _ (by decide), g3 _ (by decide), regs2 _ (by decide), hi.rdx]
-  have zf4 : t4.zf = some (decide (c = 1)) := by
+  obtain zf4 : t4.zf = some (decide (c = 1)) := by
     rw [z4, ← g4 _ (show Reg.rdx ≠ .rsi by decide), ← rsi4, rsi_4, rdx_4, endTest S (c + 1) (by omega_using [hc])]
     congr 1
   -- the schedule's words so far
-  have lvS : ∀ (t t' : State) (rs : List Region), Frame rs t.mem t'.mem →
+  obtain lvS : ∀ (t t' : State) (rs : List Region), Frame rs t.mem t'.mem →
       ∀ i, (∀ r ∈ rs, (⟨S + BitVec.ofNat 64 (4 * i), 4⟩ : Region).Disjoint r) →
       t'.mem.readW (S + BitVec.ofNat 64 (4 * i)) 32 = t.mem.readW (S + BitVec.ofNat 64 (4 * i)) 32 :=
     fun t t' rs hf i hd => hf.readW (Region.contains_self _ _) hd (by decide)
-  have done4 : ∀ i < 16 * (c + 1), t4.mem.readW (S + BitVec.ofNat 64 (4 * i)) 32 = Spec.Seed.g (gInput key i) := by
+  obtain done4 : ∀ i < 16 * (c + 1), t4.mem.readW (S + BitVec.ofNat 64 (4 * i)) 32 = Spec.Seed.g (gInput key i) := by
     intro i hi'
     rw [m4]
     by_cases hlo : i < 16 * c
@@ -414,7 +675,7 @@ theorem keyHalves_wp (key : Spec.Seed.Block) {s : State} {S : Addr} (hin : (⟨S
       have := v3 w (by omega_using [hi'])
       rw [rsi_2, Offset.add_add, show 64 * c + 4 * (0 + w) = 4 * (16 * c + w) by omega_using []] at this
       rw [this, g2 w (by omega_using [hi']), hi.cur w (by omega_using [hi'])]
-  have frame4 : Frame [workR s, ⟨S, 128⟩] s.mem t4.mem := by
+  obtain frame4 : Frame [workR s, ⟨S, 128⟩] s.mem t4.mem := by
     rw [m4]
     refine (hi.frame.trans (f2.sub ?_)).trans (f3.sub ?_)
     · intro r hr; simp only [List.mem_singleton] at hr; subst hr
@@ -423,27 +684,27 @@ theorem keyHalves_wp (key : Spec.Seed.Block) {s : State} {S : Addr} (hin : (⟨S
       refine ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, ?_⟩
       simp only [outR, rsi_2, Nat.mul_zero, ofNat_zero_add]
       exact Offset.sub_base _ (by omega_using [hc])
-  have room4 : Room t4 := room_congr hi.room (r9_4.trans hi.r9.symm) (by rw [wr4, wr3, wr2, hi.wr])
-  have masks4 : MasksIn t4 := fun kv hkv => by
+  obtain room4 : Room t4 := room_congr hi.room (r9_4.trans hi.r9.symm) (by rw [wr4, wr3, wr2, hi.wr])
+  obtain masks4 : MasksIn t4 := fun kv hkv => by
     rw [← masks3 kv hkv]
     show t4.mem.readW (Straight.wordAddr (t4.gpr .r9) kv.1) 64 = t3.mem.readW (Straight.wordAddr (t3.gpr .r9) kv.1) 64
     rw [m4, g4 _ (by decide)]
-  have rsp4 : t4.gpr .rsp = s.gpr .rsp := by
+  obtain rsp4 : t4.gpr .rsp = s.gpr .rsp := by
     rw [g4 _ (by decide), g3 _ (by decide), regs2 _ (by decide), hi.rsp]
   refine WP.seq (WP.of_runBlock ⟨t4, runBlock_trans (runBlock_trans e2 e3) e4, ?_⟩)
   refine WP.ite (!decide (c = 1)) (by rw [eval_ne', zf4]; rfl) (fun hb => ?_) (fun hb => ?_)
   · -- the second sixteen inputs
-    have hc0 : c = 0 := by simp at hb; omega_using [hc, hb]
+    obtain hc0 : c = 0 := by simp at hb; omega_using [hc, hb]
     subst hc0
     obtain ⟨t5, e5, room5, v5, f5, rd5, wr5, g5⟩ := keyMove_ok room4
     obtain ⟨t6, e6, gg6, z6, m6, rd6, wr6⟩ := cmp_ok t5
-    have g6 : ∀ r, r ≠ .rax → r ≠ .rcx → t6.gpr r = t4.gpr r := fun r h1 h2 => by rw [gg6, g5 r h1 h2]
+    obtain g6 : ∀ r, r ≠ .rax → r ≠ .rcx → t6.gpr r = t4.gpr r := fun r h1 h2 => by rw [gg6, g5 r h1 h2]
     refine WP.of_runBlock ⟨t6, runBlock_trans e5 e6, .inr ⟨?_, 1, by omega_using [], 1, by omega_using [], rfl, ?_⟩⟩
     · rw [eval_ne', z6, ← gg6, g6 _ (by decide) (by decide), g6 _ (by decide) (by decide), rsi_4, rdx_4,
         endTest S (0 + 1) (by omega_using [])]
       rfl
-    have r9_6 : t6.gpr .r9 = s.gpr .r9 := (g6 _ (by decide) (by decide)).trans r9_4
-    have workF : Frame [workR s] t4.mem t6.mem := by
+    obtain r9_6 : t6.gpr .r9 = s.gpr .r9 := (g6 _ (by decide) (by decide)).trans r9_4
+    obtain workF : Frame [workR s] t4.mem t6.mem := by
       rw [m6]
       refine f5.sub fun r hr => ?_
       simp only [List.mem_singleton] at hr; subst hr
@@ -464,7 +725,7 @@ theorem keyHalves_wp (key : Spec.Seed.Block) {s : State} {S : Addr} (hin : (⟨S
         exact schedWork.sub_left (Offset.sub_base _ (by omega_using [hi'])))]
       exact done4 i hi'
   · -- the end
-    have hc1 : c = 1 := by simp at hb; omega_using [hb]
+    obtain hc1 : c = 1 := by simp at hb; omega_using [hb]
     subst hc1
     refine WP.block_nil (.inl ⟨by rw [eval_ne', zf4]; rfl, hQ t4 done4 r9_4 rsp4 (by rw [rd4, rd3, rd2, hi.rd])
       (by rw [wr4, wr3, wr2, hi.wr]) frame4⟩)
@@ -523,7 +784,7 @@ theorem keyLoad2_ok {s : State} {d : Reg} (hd : d ≠ .rax) {k : Nat} (hk : k �
     (by rw [ea_off]; exact hr)
   obtain ⟨s2, e2, u2⟩ := step_bswap32 s1 .rax
   obtain ⟨s3, e3, u3⟩ := step_shl s2 .rax (n := 32) (by decide) (by decide)
-  have rdi3 : s3.gpr .rdi = s.gpr .rdi := by
+  obtain rdi3 : s3.gpr .rdi = s.gpr .rdi := by
     rw [u3.other (by decide), u2.other (by decide), u1.other (by decide)]
   obtain ⟨s4, e4, u4⟩ := step_mov32_mem (s := s3) d (m := { base := .rdi, disp := ((k + 4 : Nat) : Int) })
     (by rw [ea_off, rdi3, u3.rd, u3.wr, u2.rd, u2.wr, u1.rd, u1.wr]; exact hr')
@@ -598,60 +859,60 @@ theorem expandKey_ok {s : State} (h : KeyPre s) : WP isa expandKey s (KeyPost s)
   -- `r9 := rdx`
   let s₁ := s.setReg .r9 (s.gpr .rdx)
   have e₁ : runBlock isa [movR .r9 .rdx] s = some s₁ := rfl
-  have r9₁ : s₁.gpr .r9 = s.gpr .rdx := gpr_setReg_self (s := s) _ _
-  have g₁ : ∀ r, r ≠ .r9 → s₁.gpr r = s.gpr r := fun r hr => gpr_setReg_of_ne (s := s) _ hr
-  have scr₁ : scratchR s₁ = ⟨s.gpr .rdx, 8 * scratchSlots⟩ := by simp only [scratchR, r9₁]
-  have room₁ : Room s₁ := ⟨_, Nat.le_refl _, by rw [r9₁]; exact h.scratch⟩
+  obtain r9₁ : s₁.gpr .r9 = s.gpr .rdx := gpr_setReg_self (s := s) _ _
+  obtain g₁ : ∀ r, r ≠ .r9 → s₁.gpr r = s.gpr r := fun r hr => gpr_setReg_of_ne (s := s) _ hr
+  obtain scr₁ : scratchR s₁ = ⟨s.gpr .rdx, 8 * scratchSlots⟩ := by simp only [scratchR, r9₁]
+  obtain room₁ : Room s₁ := ⟨_, Nat.le_refl _, by rw [r9₁]; exact h.scratch⟩
   obtain ⟨s₂, e₂, g₂, rd₂, wr₂, f₂, set₂, keep₂⟩ := stores_ok room₁
     (Impl.Seed.X86_64.savedRegs.map fun p => (p.2, p.1)) (by decide) (by decide)
-  have room₂ : Room s₂ := room_congr room₁ (by rw [g₂]) wr₂
+  obtain room₂ : Room s₂ := room_congr room₁ (by rw [g₂]) wr₂
   obtain ⟨s₃, e₃, g₃, rd₃, wr₃, f₃, set₃, keep₃⟩ := masks_ok room₂ maskSlots (by decide) (by decide)
-  have G₃ : ∀ r, r ≠ .r9 → r ≠ t0 → s₃.gpr r = s.gpr r := fun r a b => by rw [g₃ r b, g₂, g₁ r a]
-  have r9₃ : s₃.gpr .r9 = s.gpr .rdx := by rw [g₃ _ (by decide), g₂, r9₁]
-  have f₃' : Frame [⟨s.gpr .rdx, 8 * scratchSlots⟩] s.mem s₃.mem := by
+  obtain G₃ : ∀ r, r ≠ .r9 → r ≠ t0 → s₃.gpr r = s.gpr r := fun r a b => by rw [g₃ r b, g₂, g₁ r a]
+  obtain r9₃ : s₃.gpr .r9 = s.gpr .rdx := by rw [g₃ _ (by decide), g₂, r9₁]
+  obtain f₃' : Frame [⟨s.gpr .rdx, 8 * scratchSlots⟩] s.mem s₃.mem := by
     rw [← scr₁]
     refine f₂.trans ?_
     have : scratchR s₂ = scratchR s₁ := by simp only [scratchR, g₂]
     rw [← this]; exact f₃
-  have rd₃' : s₃.rd = s.rd := by rw [rd₃, rd₂]; rfl
-  have wr₃' : s₃.wr = s.wr := by rw [wr₃, wr₂]; rfl
-  have room₃ : Room s₃ := ⟨_, Nat.le_refl _, by rw [r9₃, wr₃']; exact h.scratch⟩
+  obtain rd₃' : s₃.rd = s.rd := by rw [rd₃, rd₂]; rfl
+  obtain wr₃' : s₃.wr = s.wr := by rw [wr₃, wr₂]; rfl
+  obtain room₃ : Room s₃ := ⟨_, Nat.le_refl _, by rw [r9₃, wr₃']; exact h.scratch⟩
   -- the key
-  have rdi₃ : s₃.gpr .rdi = s.gpr .rdi := G₃ _ (by decide) (by decide)
-  have hkey : ∀ k, k + 4 ≤ 16 → InRegions (s₃.rd ++ s₃.wr) (s₃.gpr .rdi + BitVec.ofNat 64 k) 4 := fun k hk => by
+  obtain rdi₃ : s₃.gpr .rdi = s.gpr .rdi := G₃ _ (by decide) (by decide)
+  obtain hkey : ∀ k, k + 4 ≤ 16 → InRegions (s₃.rd ++ s₃.wr) (s₃.gpr .rdi + BitVec.ofNat 64 k) 4 := fun k hk => by
     rw [rd₃', wr₃', rdi₃]
     exact ⟨_, List.mem_append_left _ h.keyIn, Offset.contains_base _ (by omega_using [hk]) (by omega_using [hk])⟩
   obtain ⟨s₄, e₄, v₄, g₄, m₄, rd₄, wr₄⟩ := keyLoad2_ok (s := s₃) (d := .r10) (by decide) (k := 0) (by decide)
     (hkey 0 (by decide)) (hkey 4 (by decide))
-  have rdi₄ : s₄.gpr .rdi = s.gpr .rdi := by rw [g₄ _ (by decide) (by decide), rdi₃]
+  obtain rdi₄ : s₄.gpr .rdi = s.gpr .rdi := by rw [g₄ _ (by decide) (by decide), rdi₃]
   obtain ⟨s₅, e₅, v₅, g₅, m₅, rd₅, wr₅⟩ := keyLoad2_ok (s := s₄) (d := .r11) (by decide) (k := 8) (by decide)
     (by rw [rd₄, wr₄, rdi₄, ← rdi₃]; exact hkey 8 (by decide))
     (by rw [rd₄, wr₄, rdi₄, ← rdi₃]; exact hkey 12 (by decide))
-  have key₃ : Spec.Seed.blockAt s₃.mem (s.gpr .rdi) = key := blockAt_frame f₃' fun r hr => by
+  obtain key₃ : Spec.Seed.blockAt s₃.mem (s.gpr .rdi) = key := blockAt_frame f₃' fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact h.keyBuf
-  have G₅ : ∀ r, r ≠ .rax → r ≠ .r10 → r ≠ .r11 → s₅.gpr r = s₃.gpr r := fun r a b c => by
+  obtain G₅ : ∀ r, r ≠ .rax → r ≠ .r10 → r ≠ .r11 → s₅.gpr r = s₃.gpr r := fun r a b c => by
     rw [g₅ r a c, g₄ r a b]
-  have h10 : s₅.gpr .r10 = kx (keyWords key 0) := by
+  obtain h10 : s₅.gpr .r10 = kx (keyWords key 0) := by
     rw [g₅ _ (by decide) (by decide), v₄, rdi₃, key₃]; rfl
-  have h11 : s₅.gpr .r11 = ky (keyWords key 0) := by
+  obtain h11 : s₅.gpr .r11 = ky (keyWords key 0) := by
     rw [v₅, rdi₄, m₄, key₃]; rfl
-  have r9₅ : s₅.gpr .r9 = s.gpr .rdx := by rw [G₅ _ (by decide) (by decide) (by decide), r9₃]
-  have rd₅' : s₅.rd = s.rd := by rw [rd₅, rd₄, rd₃']
-  have wr₅' : s₅.wr = s.wr := by rw [wr₅, wr₄, wr₃']
-  have mem₅ : s₅.mem = s₃.mem := by rw [m₅, m₄]
-  have scr₅ : scratchR s₅ = ⟨s.gpr .rdx, 8 * scratchSlots⟩ := by simp only [scratchR, r9₅]
-  have room₅ : Room s₅ := ⟨_, Nat.le_refl _, by rw [r9₅, wr₅']; exact h.scratch⟩
-  have masks₅ : MasksIn s₅ := fun kv hkv => by
+  obtain r9₅ : s₅.gpr .r9 = s.gpr .rdx := by rw [G₅ _ (by decide) (by decide) (by decide), r9₃]
+  obtain rd₅' : s₅.rd = s.rd := by rw [rd₅, rd₄, rd₃']
+  obtain wr₅' : s₅.wr = s.wr := by rw [wr₅, wr₄, wr₃']
+  obtain mem₅ : s₅.mem = s₃.mem := by rw [m₅, m₄]
+  obtain scr₅ : scratchR s₅ = ⟨s.gpr .rdx, 8 * scratchSlots⟩ := by simp only [scratchR, r9₅]
+  obtain room₅ : Room s₅ := ⟨_, Nat.le_refl _, by rw [r9₅, wr₅']; exact h.scratch⟩
+  obtain masks₅ : MasksIn s₅ := fun kv hkv => by
     rw [← set₃ kv hkv]
     show s₅.mem.readW (Straight.wordAddr (s₅.gpr .r9) kv.1) 64 = s₃.mem.readW (Straight.wordAddr (s₃.gpr .r9) kv.1) 64
     rw [mem₅, r9₅, r9₃]
-  have rsi₅ : s₅.gpr .rsi = s.gpr .rsi := by rw [G₅ _ (by decide) (by decide) (by decide), G₃ _ (by decide) (by decide)]
+  obtain rsi₅ : s₅.gpr .rsi = s.gpr .rsi := by rw [G₅ _ (by decide) (by decide) (by decide), G₃ _ (by decide) (by decide)]
   -- the rounds, and the schedule's end
   obtain ⟨s₆, e₆, room₆, masks₆, cur₆, next₆, rdx₆, g₆, rd₆, wr₆, f₆⟩ := keyPre_ok key room₅ masks₅ h10 h11
-  have r9₆ : s₆.gpr .r9 = s₅.gpr .r9 := g₆ _ (by simp)
-  have rsi₆ : s₆.gpr .rsi = s.gpr .rsi := (g₆ _ (by simp)).trans rsi₅
-  have scr₆ : scratchR s₆ = ⟨s.gpr .rdx, 8 * scratchSlots⟩ := by simp only [scratchR, r9₆, r9₅]
-  have h0 : HalfInv key s₆ (s.gpr .rsi) 0 s₆ :=
+  obtain r9₆ : s₆.gpr .r9 = s₅.gpr .r9 := g₆ _ (by simp)
+  obtain rsi₆ : s₆.gpr .rsi = s.gpr .rsi := (g₆ _ (by simp)).trans rsi₅
+  obtain scr₆ : scratchR s₆ = ⟨s.gpr .rdx, 8 * scratchSlots⟩ := by simp only [scratchR, r9₆, r9₅]
+  obtain h0 : HalfInv key s₆ (s.gpr .rsi) 0 s₆ :=
     ⟨room₆, masks₆, rfl, rfl, by rw [rsi₆]; exact (BitVec.add_zero _).symm, by rw [rdx₆, rsi₅],
       fun w hw => by rw [cur₆ w hw, Nat.mul_zero, Nat.zero_add], fun _ => next₆, fun i hi => by omega, rfl, rfl,
       Frame.refl _ _⟩
@@ -659,18 +920,18 @@ theorem expandKey_ok {s : State} (h : KeyPre s) : WP isa expandKey s (KeyPost s)
     (runBlock_trans e₁ e₂) e₃) (runBlock_trans e₄ e₅)) e₆, WP.seq (keyHalves_wp key
       (by rw [wr₆, wr₅']; exact h.schedIn) (by rw [scr₆]; exact h.schedBuf) h0
       fun s₇ v₇ r9₇ rsp₇ rd₇ wr₇ f₇ => ?_)⟩)
-  have room₇ : Room s₇ := room_congr room₆ r9₇ wr₇
+  obtain room₇ : Room s₇ := room_congr room₆ r9₇ wr₇
   obtain ⟨s', e', m', set', keep'⟩ := loads_ok room₇ Impl.Seed.X86_64.savedRegs
     (fun q hq => ⟨(savedRegs_ok q hq).1, (savedRegs_ok q hq).2.1⟩) (by decide)
   refine WP.of_runBlock ⟨s', by rw [restore_eq]; exact e', ?_⟩
-  have workR₆ : workR s₆ = ⟨s.gpr .rdx, 8 * 125⟩ := by simp only [workR, r9₆, r9₅]
+  obtain workR₆ : workR s₆ = ⟨s.gpr .rdx, 8 * 125⟩ := by simp only [workR, r9₆, r9₅]
   rw [workR₆] at f₇
-  have arr₅ : Region.Sub (arraysR s₅) ⟨s.gpr .rdx, 8 * 125⟩ := by
+  obtain arr₅ : Region.Sub (arraysR s₅) ⟨s.gpr .rdx, 8 * 125⟩ := by
     have := arraysR_sub_work' s₅; simp only [workR, r9₅] at this; exact this
   -- `s₅`'s memory to `s₇`'s
-  have f₅₇ : Frame [⟨s.gpr .rdx, 8 * 125⟩, ⟨s.gpr .rsi, 128⟩] s₅.mem s₇.mem :=
+  obtain f₅₇ : Frame [⟨s.gpr .rdx, 8 * 125⟩, ⟨s.gpr .rsi, 128⟩] s₅.mem s₇.mem :=
     (f₆.sub fun r hr => ⟨_, List.mem_cons_self, by simp at hr; subst hr; exact arr₅⟩).trans f₇
-  have frame : Frame [⟨s.gpr .rdx, 8 * scratchSlots⟩, ⟨s.gpr .rsi, 128⟩] s.mem s'.mem := by
+  obtain frame : Frame [⟨s.gpr .rdx, 8 * scratchSlots⟩, ⟨s.gpr .rsi, 128⟩] s.mem s'.mem := by
     rw [m']
     refine (f₃'.mono (by simp)).trans ?_
     rw [← mem₅]
@@ -682,9 +943,9 @@ theorem expandKey_ok {s : State} (h : KeyPre s) : WP isa expandKey s (KeyPost s)
   refine ⟨⟨fun r hr => ?_, ?_⟩, ?_, frame⟩
   · have saved : ∀ q ∈ Impl.Seed.X86_64.savedRegs, s'.gpr q.1 = s.gpr q.1 := by
       intro q hq
-      have hq' := savedRegs_ok q hq
+      obtain hq' := savedRegs_ok q hq
       rw [set' q hq]
-      have e7 : slotW s₇ q.2 = slotW s₅ q.2 := by
+      obtain e7 : slotW s₇ q.2 = slotW s₅ q.2 := by
         show s₇.mem.readW (Straight.wordAddr (s₇.gpr .r9) q.2) 64 =
           s₅.mem.readW (Straight.wordAddr (s₅.gpr .r9) q.2) 64
         rw [r9₇, r9₆, r9₅]
@@ -694,7 +955,7 @@ theorem expandKey_ok {s : State} (h : KeyPre s) : WP isa expandKey s (KeyPost s)
         rcases hr with rfl | rfl
         · exact Offset.disjoint_base _ (by omega) (by unfold scratchSlots at hq'; omega)
         · exact (h.schedBuf.sub_right (Offset.sub_base _ (by unfold scratchSlots at hq' ⊢; omega))).symm
-      have e5 : slotW s₅ q.2 = slotW s₃ q.2 := by
+      obtain e5 : slotW s₅ q.2 = slotW s₃ q.2 := by
         show s₅.mem.readW (Straight.wordAddr (s₅.gpr .r9) q.2) 64 =
           s₃.mem.readW (Straight.wordAddr (s₃.gpr .r9) q.2) 64
         rw [mem₅, r9₅, r9₃]

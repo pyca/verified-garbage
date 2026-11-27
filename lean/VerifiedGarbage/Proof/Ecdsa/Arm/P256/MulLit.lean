@@ -28,9 +28,14 @@ time, properties of every instruction): the literal of the code
 namespace VG
 
 materialize_code Impl.Ecdsa.Arm.mulP256
+materialize_code Impl.Ecdsa.Arm.mulPubP256
 
 /-- `vg_p256_mul`'s code has no frame, which its calls need. -/
 theorem Impl.Ecdsa.Arm.mulP256_noFrames : Impl.Ecdsa.Arm.p256.mulFn.noFrames = true := by
   show Impl.Ecdsa.Arm.mulP256.noFrames = true; lit_decide
+
+/-- `vg_p256_mul_public`'s, likewise. -/
+theorem Impl.Ecdsa.Arm.mulPubP256_noFrames : Impl.Ecdsa.Arm.p256.pubFn.noFrames = true := by
+  show Impl.Ecdsa.Arm.mulPubP256.noFrames = true; lit_decide
 
 end VG

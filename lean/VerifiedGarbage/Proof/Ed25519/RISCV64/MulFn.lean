@@ -71,7 +71,7 @@ theorem mulFn_ok {s : State} (hrd : s.rd = []) (hwr : s.wr = [⟨s.gpr .a0, 4096
   have hMB : MB = 800 := rfl
   have hMO : MO = 832 := rfl
   have hC : ACC = 864 := rfl
-  have hin : (⟨ws, 4096⟩ : Region) ∈ s.wr := by rw [hwr]; simp
+  obtain hin : (⟨ws, 4096⟩ : Region) ∈ s.wr := by rw [hwr]; simp
   unfold mulFn mulZext mulPtrs mulIn
   simp only [List.cons_append, List.nil_append]
   refine WP.seq ?_
@@ -80,64 +80,64 @@ theorem mulFn_ok {s : State} (hrd : s.rd = []) (hwr : s.wr = [⟨s.gpr .a0, 4096
     WP.block_nil ?_
   refine WP.seq ?_
   refine wp_add fun s7 u7 => wp_add fun s8 u8 => wp_add fun s9 u9 => wp_mv fun s10 u10 => ?_
-  have hr10 : Rest [.a1, .a2, .a3, .t2, .t4, .t5] s s10 :=
+  obtain hr10 : Rest [.a1, .a2, .a3, .t2, .t4, .t5] s s10 :=
     (u1.rest (by decide)).trans ((u2.rest (by decide)).trans ((u3.rest (by decide)).trans
       ((u4.rest (by decide)).trans ((u5.rest (by decide)).trans ((u6.rest (by decide)).trans
       ((u7.rest (by decide)).trans ((u8.rest (by decide)).trans ((u9.rest (by decide)).trans
       (u10.rest (by decide))))))))))
-  have hm10 : s10.mem = s.mem := by
+  obtain hm10 : s10.mem = s.mem := by
     rw [u10.mem, u9.mem, u8.mem, u7.mem, u6.mem, u5.mem, u4.mem, u3.mem, u2.mem, u1.mem]
-  have g0 : ∀ t : State, Rest [.a1, .a2, .a3, .t2, .t4, .t5] s t → t.gpr .a0 = ws := fun t h => by
+  obtain g0 : ∀ t : State, Rest [.a1, .a2, .a3, .t2, .t4, .t5] s t → t.gpr .a0 = ws := fun t h => by
     rw [h.gpr _ (by decide), hws]
-  have e1 : s6.gpr .a1 = BitVec.ofNat 64 O := by
+  obtain e1 : s6.gpr .a1 = BitVec.ofNat 64 O := by
     rw [u6.other _ (by decide), u5.other _ (by decide), u4.other _ (by decide), u3.other _ (by decide),
       u2.gpr, u1.gpr, zext_shifts, hO']
-  have e2 : s6.gpr .a2 = BitVec.ofNat 64 A := by
+  obtain e2 : s6.gpr .a2 = BitVec.ofNat 64 A := by
     rw [u6.other _ (by decide), u5.other _ (by decide), u4.gpr, u3.gpr, u2.other _ (by decide),
       u1.other _ (by decide), zext_shifts, hA']
-  have e3 : s6.gpr .a3 = BitVec.ofNat 64 B := by
+  obtain e3 : s6.gpr .a3 = BitVec.ofNat 64 B := by
     rw [u6.gpr, u5.gpr, u4.other _ (by decide), u3.other _ (by decide), u2.other _ (by decide),
       u1.other _ (by decide), zext_shifts, hB']
-  have e0 : s6.gpr .a0 = ws := by
+  obtain e0 : s6.gpr .a0 = ws := by
     rw [u6.other _ (by decide), u5.other _ (by decide), u4.other _ (by decide), u3.other _ (by decide),
       u2.other _ (by decide), u1.other _ (by decide), hws]
-  have p3 : s10.gpr .t2 = ws + BitVec.ofNat 64 O := by
+  obtain p3 : s10.gpr .t2 = ws + BitVec.ofNat 64 O := by
     rw [u10.other _ (by decide), u9.other _ (by decide), u8.other _ (by decide), u7.gpr, e0, e1]
-  have p4 : s10.gpr .t4 = ws + BitVec.ofNat 64 A := by
+  obtain p4 : s10.gpr .t4 = ws + BitVec.ofNat 64 A := by
     rw [u10.other _ (by decide), u9.other _ (by decide), u8.gpr, u7.other .a0 (by decide), u7.other .a2 (by decide),
       e0, e2]
-  have p5 : s10.gpr .t5 = ws + BitVec.ofNat 64 B := by
+  obtain p5 : s10.gpr .t5 = ws + BitVec.ofNat 64 B := by
     rw [u10.other _ (by decide), u9.gpr, u8.other .a0 (by decide), u8.other .a3 (by decide),
       u7.other .a0 (by decide), u7.other .a3 (by decide), e0, e3]
-  have h9 : Rest [.a1, .a2, .a3, .t2, .t4, .t5] s s9 :=
+  obtain h9 : Rest [.a1, .a2, .a3, .t2, .t4, .t5] s s9 :=
     (u1.rest (by decide)).trans ((u2.rest (by decide)).trans ((u3.rest (by decide)).trans
       ((u4.rest (by decide)).trans ((u5.rest (by decide)).trans ((u6.rest (by decide)).trans
       ((u7.rest (by decide)).trans ((u8.rest (by decide)).trans (u9.rest (by decide)))))))))
-  have e10 : s10.gpr .a3 = ws := by rw [u10.gpr, g0 s9 h9]
-  have hc10 : Ctx ws s10 :=
+  obtain e10 : s10.gpr .a3 = ws := by rw [u10.gpr, g0 s9 h9]
+  obtain hc10 : Ctx ws s10 :=
     ⟨e10, hal, fun d n hd => by rw [hr10.wr]; exact in_base hin (by omega_using [hd]) (by omega_using [hd])⟩
-  have hrd10 : s10.rd ++ s10.wr = s.wr := by rw [hr10.rd, hr10.wr, hrd, List.nil_append]
+  obtain hrd10 : s10.rd ++ s10.wr = s.wr := by rw [hr10.rd, hr10.wr, hrd, List.nil_append]
   -- The operands into the own working space.
   refine WP.append (unpackField_ok hc10 (p := .t4) (by decide) p4 (o := MA) (src := 0) (by omega_using [hMA]) (by decide)
     (by decide) (fun k hk => by rw [hrd10, Offset.add_add]; exact in_base hin (by omega_using [hA, hk]) (by omega_using [hA, hk]))
     (by rw [BitVec.add_zero]; exact Offset.disjoint _ (by omega_using [hA, hMA]) (by omega_using [hA]) (by omega_using [hMA])))
     fun s11 ⟨r11, f11, l11⟩ => ?_
-  have hc11 : Ctx ws s11 := hc10.of_rest r11 (by decide)
+  obtain hc11 : Ctx ws s11 := hc10.of_rest r11 (by decide)
   refine WP.mono (unpackField_ok hc11 (p := .t5) (q := ws + BitVec.ofNat 64 B) (by decide)
     (by rw [r11.gpr _ (by decide), p5])
     (o := MB) (src := 0) (by omega_using [hMB]) (by decide) (by decide)
     (fun k hk => by rw [r11.rd, r11.wr, hrd10, Offset.add_add]; exact in_base hin (by omega_using [hB, hk]) (by omega_using [hB, hk]))
     (by rw [BitVec.add_zero]; exact Offset.disjoint _ (by omega_using [hB, hMB]) (by omega_using [hB]) (by omega_using [hMB])))
     fun s12 ⟨r12, f12, l12⟩ => ?_
-  have hc12 : Ctx ws s12 := hc11.of_rest r12 (by decide)
+  obtain hc12 : Ctx ws s12 := hc11.of_rest r12 (by decide)
   -- The operands' values.
-  have va : V s12.mem ws MA = valAt s.mem ws (offArg s .a2) := by
+  obtain va : V s12.mem ws MA = valAt s.mem ws (offArg s .a2) := by
     rw [V, val32_congr (limb_frame f12 fun r hr k hk => by
         rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (by omega_using [hMA, hMB, hk]) (by omega_using [hMA, hk]) (by omega_using [hMB])),
       val32_congr l11, valAt_eq, ← hA', V, hm10]
     exact val32_congr fun k hk => by rw [limb, Nat.zero_add]
-  have vb : V s12.mem ws MB = valAt s.mem ws (offArg s .a3) := by
-    have hb11 : ∀ k < 8, wd s11.mem (ws + BitVec.ofNat 64 B) (4 * k) = wd s.mem (ws + BitVec.ofNat 64 B) (4 * k) :=
+  obtain vb : V s12.mem ws MB = valAt s.mem ws (offArg s .a3) := by
+    obtain hb11 : ∀ k < 8, wd s11.mem (ws + BitVec.ofNat 64 B) (4 * k) = wd s.mem (ws + BitVec.ofNat 64 B) (4 * k) :=
       fun k hk => by
         rw [wd_shift, wd_shift, wd_frame f11 fun r hr => by
           rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (by omega_using [hB, hMA, hk]) (by omega_using [hB, hk]) (by omega_using [hMA]), hm10]
@@ -146,7 +146,7 @@ theorem mulFn_ok {s : State} (hrd : s.rd = []) (hwr : s.wr = [⟨s.gpr .a0, 4096
   -- The product, and the copy to `o`.
   refine WP.seq (WP.mono (R64.mulAt_ok (acc := ACC) (o := MO) (x := MA) (y := MB) (by omega_using [hC]) (by decide)
     (by omega_using [hMO, hC]) (by omega_using [hMA, hC]) (by omega_using [hMB, hC]) (by decide) (by decide) (by decide) hc12) fun s13 ⟨r13, f13, v13⟩ => ?_)
-  have hc13 : Ctx ws s13 := hc12.of_rest r13 (by decide)
+  obtain hc13 : Ctx ws s13 := hc12.of_rest r13 (by decide)
   refine WP.mono (packField_ok hc13 (p := .t2) (by decide)
     (by rw [r13.gpr _ (by decide), r12.gpr _ (by decide), r11.gpr _ (by decide), p3])
     (a := MO) (dst := 0) (by omega_using [hMO]) (by decide) (by decide)
@@ -156,16 +156,16 @@ theorem mulFn_ok {s : State} (hrd : s.rd = []) (hwr : s.wr = [⟨s.gpr .a0, 4096
   · rw [valAt_eq, ← hO', V, val32_congr (g := limb s13.mem ws MO) fun k hk => by
       rw [limb, ← ht.outs k hk, Nat.zero_add], ← V, v13, va, vb]
   · -- Every write is in the own working space or at `o`.
-    have sub_own : ∀ d n, 768 ≤ d → d + n ≤ 1024 →
+    obtain sub_own : ∀ d n, 768 ≤ d → d + n ≤ 1024 →
         ∀ r ∈ ([⟨ws + BitVec.ofNat 64 d, n⟩] : List Region), ∃ r' ∈ mulW ws O, r.Sub r' :=
       fun d n h1 h2 r hr => ⟨_, List.mem_cons_self .., by
         rw [List.mem_singleton.mp hr]; exact Offset.sub _ (by omega_using [h1]) (by omega_using [h2])⟩
-    have f13' : Frame (mulW ws O) s12.mem s13.mem := f13.sub fun r hr => by
+    obtain f13' : Frame (mulW ws O) s12.mem s13.mem := f13.sub fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact ⟨_, List.mem_cons_self .., Offset.sub _ (by omega_using [hMO]) (by omega_using [hMO])⟩
       · exact ⟨_, List.mem_cons_self .., Offset.sub _ (by omega_using [hC]) (by omega_using [hC])⟩
-    have ft : Frame (mulW ws O) s13.mem t.mem := ht.frame.sub fun r hr => ⟨_, List.mem_cons_of_mem _
+    obtain ft : Frame (mulW ws O) s13.mem t.mem := ht.frame.sub fun r hr => ⟨_, List.mem_cons_of_mem _
       (List.mem_singleton_self _), by rw [List.mem_singleton.mp hr, BitVec.add_zero]; exact Region.sub_prefix (by omega_using [])⟩
     rw [← hm10]
     exact ((f11.sub (sub_own MA 32 (by omega_using [hMA]) (by omega_using [hMA]))).trans (f12.sub (sub_own MB 32 (by omega_using [hMB]) (by omega_using [hMB])))).trans

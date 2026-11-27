@@ -1,8 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Trial
+public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Taint4
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Close
-import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Taint4
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Instr
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.St
 import VerifiedGarbage.Proof.Framework.RelCTAssoc

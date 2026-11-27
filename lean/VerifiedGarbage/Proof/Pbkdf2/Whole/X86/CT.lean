@@ -3,11 +3,10 @@ module
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.Pbkdf2.Contract
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
-import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Loop
+public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Loop
 meta import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Loop
 public import VerifiedGarbage.Proof.Sha256.X86.Lit
 public import VerifiedGarbage.Proof.Framework.X86.RelCT
-public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Block
 meta import VerifiedGarbage.Proof.Sha256.X86.Lit
 import VerifiedGarbage.Proof.Hmac.Common
 meta import VerifiedGarbage.Proof.Hmac.Common
@@ -37,7 +36,7 @@ meta import VerifiedGarbage.Proof.Sha256.X86.Compress
 /-!
 # PBKDF2-HMAC on x86 (32-bit), the whole derivation: constant time
 
-As for `iterate` (`Proof/Pbkdf2/Md/X86/IterateCT.lean`): the pieces of code
+As for `iterate` (`Proof/Pbkdf2/Md/X86/HmacInitCT.lean`): the pieces of code
 between the calls are checked by the taint analysis (`Checks`, which the
 kernel evaluates for each hash function), with the arguments, `esp`, `ebp`
 and, in the loop over the blocks, `ebx` public (`piece`); the calls are
@@ -553,7 +552,7 @@ every backend (`Sha256.lean`, `Sha1.lean`). -/
 between the calls depends on nothing else. -/
 def shapeOf (F : Fns) : Fns :=
   ⟨⟨F.H.B, F.H.S, F.H.D, F.H.F, F.H.W, "", .block [], "", .block [], "", .block []⟩, F.W, "", .block [], "",
-    .block [], "", .block []⟩
+    .block [], "", .block [], ""⟩
 
 theorem checks_of_shape {F : Fns} (h : Checks (shapeOf F)) : Checks F :=
   ⟨h.pro, h.cmp, h.hk1, h.hk3, h.hk5, h.hk7, h.short, h.su1, h.su3, h.su4, h.init, h.b1, h.b2, h.b4, h.b6, h.b7,

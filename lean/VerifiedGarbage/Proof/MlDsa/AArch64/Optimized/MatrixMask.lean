@@ -1,8 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.MatrixMask
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourMaskStep
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourMaskMemory
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourMaskMemory
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Base
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourInitWord
 public import VerifiedGarbage.Proof.MlDsa.Sample.Mem

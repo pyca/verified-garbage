@@ -1,29 +1,28 @@
 module
 
-public import VerifiedGarbage.Proof.Md5.AArch64.Shared
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.AArch64.Print
-public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Variant
-public import VerifiedGarbage.Proof.Variants.MdHash.AArch64
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Md5.Contract
+import VerifiedGarbage.Proof.Md5.AArch64.Shared
+import VerifiedGarbage.Proof.Md5.AArch64.Stream.Init
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # MD5 (RFC 1321) on AArch64 -/
 
-@[expose] public section
-
 namespace VG.Artifacts.Md5.AArch64
 
-def artifacts : List Artifact := [
+public def artifacts : List (Artifact AArch64.target) := [
   Spec.Md5.initApi.artifact AArch64.target {
     code := Impl.Md5.AArch64.Stream.init
-    verified := Proof.Md5.AArch64.Shared.init },
+    verified := Proof.Md5.AArch64.Stream.init_scrubbed },
   Spec.Md5.updateApi.artifact AArch64.target {
-    code := Impl.StackScratch.AArch64.withStackScratch 112 .x4 Impl.Md5.AArch64.Stream.update
-    verified := Proof.Md5.AArch64.Shared.update },
+    code := Impl.Md5.AArch64.Stream.Fn.update
+    verified := Proof.Md5.AArch64.Shared.update_scrubbed },
   Spec.Md5.finalizeApi.artifact AArch64.target {
-    code := Impl.StackScratch.AArch64.withStackScratch 112 .x3 Impl.Md5.AArch64.Stream.finalize
-    verified := Proof.Md5.AArch64.Shared.finalize }] ++
-  (VG.Proof.Variants.MdHash.AArch64.md5Variants.flatMap fun (v : Proof.Pbkdf2.Md.AArch64.MdHash) =>
-    v.stream.map fun f =>
-      f.api.artifact AArch64.target { f.reg with suffix := v.suffix})
+    code := Impl.Md5.AArch64.Stream.Fn.finalize
+    verified := Proof.Md5.AArch64.Shared.finalize_scrubbed }]
+
+spec_apis artifacts
 
 end VG.Artifacts.Md5.AArch64

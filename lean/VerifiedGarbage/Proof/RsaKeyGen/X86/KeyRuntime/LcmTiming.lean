@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.InverseTiming
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.KeyRuntime
-import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Twos
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.OddSecond
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.OddModulus
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Address

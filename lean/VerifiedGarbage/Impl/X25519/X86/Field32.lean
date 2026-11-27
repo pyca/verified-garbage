@@ -4,21 +4,23 @@ public import VerifiedGarbage.Impl.X25519.X86
 public import VerifiedGarbage.Spec.X25519
 
 /-!
-# Powers in curve25519's field on x86 (32-bit), as a function
+# Powers in curve25519's field on x86 (32-bit)
 
-`vg_gf25519_r32_pow250(ws)` (`Proof/X25519/Field32Contract.lean`), cdecl: `ws` at
-`[esp + 4]`. It saves the callee-saved registers in its own working space
-(`SAVE`), loads `ws` into `edi`, copies `a` (byte 128) to `AC`, and runs the
-addition chain of ref10's `fe_invert` up to `a^(2^250 - 1)` with X25519's
-product (`chain`): `a^11` is left at byte 512 (`E0`) and `a^(2^250 - 1)` at
-byte 544 (`E1`), with the temporaries `E2` and `E3`, X25519's 64-byte
-product (`T`, 864) and the counter `esi` of the runs of squarings. Then it
-restores the registers. It uses no stack, every address is `edi` or `esp`
-plus a constant, and the only branches are on the counter: only the pointer
-may affect timing.
-
-The function's own working space is bytes 576 to 1023: `E2`, `E3`, `AC`,
-`T` and `SAVE`.
+`pow250Call` runs the addition chain of ref10's `fe_invert` up to
+`a^(2^250 - 1)` for `a` at byte 128 of the working space (`aAt`), inline in
+its caller: it copies `a` to `AC` and leaves `a^11` at byte 512 (`E0`) and
+`a^(2^250 - 1)` at byte 544 (`E1`), with the temporaries `E2` and `E3`.
+Each of its products is a call of `vg_gf25519_r32_mul` (`mulFn`), and each
+run of squarings a call of `vg_gf25519_r32_sqn` (`sqnFn`), both internal
+functions with the working space in `edi`: the operands copied to `OpA` (and
+`OpB`), the result back from `OpA` (`cmul`, `csqn`). `vg_gf25519_r32_mul` sets
+`OpA = OpA · OpB`, and `vg_gf25519_r32_sqn` squares `OpA` `eax` times, counted by
+`esi` (`eax ≥ 1`). Each saves the callee-saved registers at `SAVE` and
+restores them, and uses no stack; the chain uses the 4 bytes of stack below
+`esp` of a call's return address, and changes `eax`, `ecx`, `edx`, the
+flags and bytes 512 to 1023 of the working space. Every address is `edi`
+plus a constant, and the only branches are on the counters: only the
+pointer may affect timing.
 -/
 
 @[expose] public section
@@ -43,7 +45,11 @@ def E3 : Nat := 608
 /-- The copy of `a`. -/
 def AC : Nat := 640
 
-/-- Where the function saves `ebx`, `esi`, `edi` and `ebp`. -/
+/-- The operands of the calls. -/
+def OpA : Nat := 672
+def OpB : Nat := 704
+
+/-- Where the functions save `ebx`, `esi`, `edi` and `ebp`. -/
 def SAVE : Nat := 928
 
 /-- `[o] = [a]^(2^n)`, for `n ≥ 1`: `a` copied to `o` (unless they are the
@@ -52,38 +58,48 @@ def sqn (o a n : Nat) : Prog isa :=
   .seq (.block ((if o = a then [] else copy o a) ++ [.mov .esi (.imm (BitVec.ofNat 32 n))]))
     (.loop (.block (mul o o o ++ [.alu .sub .esi (.imm 1)])) .ne)
 
-/-- From `a` at `AC`, `a^(2^250 - 1)` in `E1` and `a^11` in `E0`. -/
-def chain : Prog isa :=
-  .seq (.block (mul E0 AC AC)) <|                                             -- a^2
-  .seq (.block (mul E1 E0 E0 ++ mul E1 E1 E1)) <|                           -- a^8
-  .seq (.block (mul E1 AC E1 ++ mul E0 E0 E1 ++ mul E2 E0 E0 ++ mul E1 E1 E2)) <| -- a^(2^5 - 1)
-  .seq (sqn E2 E1 5) <| .seq (.block (mul E1 E2 E1)) <|                    -- a^(2^10 - 1)
-  .seq (sqn E2 E1 10) <| .seq (.block (mul E2 E2 E1)) <|                   -- a^(2^20 - 1)
-  .seq (sqn E3 E2 20) <| .seq (.block (mul E2 E3 E2)) <|                   -- a^(2^40 - 1)
-  .seq (sqn E2 E2 10) <| .seq (.block (mul E1 E2 E1)) <|                   -- a^(2^50 - 1)
-  .seq (sqn E2 E1 50) <| .seq (.block (mul E2 E2 E1)) <|                   -- a^(2^100 - 1)
-  .seq (sqn E3 E2 100) <| .seq (.block (mul E2 E3 E2)) <|                  -- a^(2^200 - 1)
-  .seq (sqn E2 E2 50) (.block (mul E1 E2 E1))                              -- a^(2^250 - 1)
-
-/-- The registers saved at `SAVE` through `eax = ws`, `edi = ws`, and `a`
-copied to `AC`. -/
-def entry : List Instr :=
-  [.mov .eax (.mem (at_ .esp 4)), .store (at_ .eax SAVE) .ebx, .store (at_ .eax (SAVE + 4)) .esi,
-    .store (at_ .eax (SAVE + 8)) .edi, .store (at_ .eax (SAVE + 12)) .ebp, .mov .edi (.reg .eax)] ++
-  copy AC aAt
-
-/-- The registers restored, through `edx = ws`. -/
+/-- The registers restored from `SAVE`, through `edx = ws`. -/
 def exit : List Instr :=
   [.mov .edx (.reg .edi), .mov .ebx (.mem (at_ .edx SAVE)), .mov .esi (.mem (at_ .edx (SAVE + 4))),
     .mov .ebp (.mem (at_ .edx (SAVE + 12))), .mov .edi (.mem (at_ .edx (SAVE + 8)))]
 
-/-- `vg_gf25519_r32_pow250`. -/
-def pow250Fn : Prog isa := .seq (.block entry) (.seq chain (.block exit))
+/-- The callee-saved registers saved at `SAVE`. -/
+def saveRegs : List Instr :=
+  [.store (sc SAVE) .ebx, .store (sc (SAVE + 4)) .esi, .store (sc (SAVE + 8)) .edi, .store (sc (SAVE + 12)) .ebp]
 
-/-- A call of `vg_gf25519_r32_pow250`, `ws = edi` pushed as its argument. The
-call changes `eax`, `ecx`, `edx`, the flags, bytes 512 to 1023 of the
-working space and the 8 bytes below `esp`. -/
-def pow250Call : Prog isa :=
-  .frame (.push [.edi]) (.call "vg_gf25519_r32_pow250" pow250Fn) (.pop .eax 1)
+/-- `vg_gf25519_r32_mul`: `[OpA] = [OpA] · [OpB]`. -/
+def mulFn : Prog isa := .block (saveRegs ++ mul OpA OpA OpB ++ exit)
+
+/-- `vg_gf25519_r32_sqn`: `[OpA] = [OpA]^(2^n)` for `n = eax ≥ 1`, counted by `esi`. -/
+def sqnFn : Prog isa :=
+  .seq (.block (saveRegs ++ [.mov .esi (.reg .eax)]))
+    (.seq (.loop (.block (mul OpA OpA OpA ++ [.alu .sub .esi (.imm 1)])) .ne) (.block exit))
+
+def mulCall : Prog isa := .call "vg_gf25519_r32_mul" mulFn
+def sqnCall : Prog isa := .call "vg_gf25519_r32_sqn" sqnFn
+
+/-- `[o] = [a] · [b]`, by a call of `vg_gf25519_r32_mul`. -/
+def cmul (o a b : Nat) : Prog isa := .seq (.block (copy OpA a ++ copy OpB b)) (.seq mulCall (.block (copy o OpA)))
+
+/-- `[o] = [a]^(2^n)`, by a call of `vg_gf25519_r32_sqn`. -/
+def csqn (o a n : Nat) : Prog isa :=
+  .seq (.block (copy OpA a ++ [.mov .eax (.imm (BitVec.ofNat 32 n))])) (.seq sqnCall (.block (copy o OpA)))
+
+/-- From `a` at `AC`, `a^(2^250 - 1)` in `E1` and `a^11` in `E0`. -/
+def chain : Prog isa :=
+  .seq (csqn E0 AC 1) <| .seq (csqn E1 E0 1) <| .seq (csqn E1 E1 1) <|         -- a^2, a^8
+  .seq (cmul E1 AC E1) <| .seq (cmul E0 E0 E1) <| .seq (csqn E2 E0 1) <| .seq (cmul E1 E1 E2) <| -- a^(2^5 - 1)
+  .seq (csqn E2 E1 5) <| .seq (cmul E1 E2 E1) <|                              -- a^(2^10 - 1)
+  .seq (csqn E2 E1 10) <| .seq (cmul E2 E2 E1) <|                             -- a^(2^20 - 1)
+  .seq (csqn E3 E2 20) <| .seq (cmul E2 E3 E2) <|                             -- a^(2^40 - 1)
+  .seq (csqn E2 E2 10) <| .seq (cmul E1 E2 E1) <|                             -- a^(2^50 - 1)
+  .seq (csqn E2 E1 50) <| .seq (cmul E2 E2 E1) <|                             -- a^(2^100 - 1)
+  .seq (csqn E3 E2 100) <| .seq (cmul E2 E3 E2) <|                            -- a^(2^200 - 1)
+  .seq (csqn E2 E2 50) (cmul E1 E2 E1)                                        -- a^(2^250 - 1)
+
+/-- The chain, inline: `a` copied to `AC`, then `chain`. It changes `eax`,
+`ecx`, `edx`, the flags, bytes 512 to 1023 of the working space and the 4
+bytes below `esp`. -/
+def pow250Call : Prog isa := .seq (.block (copy AC aAt)) chain
 
 end VG.Impl.X25519.X86.Field32

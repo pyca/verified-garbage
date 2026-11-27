@@ -1,41 +1,36 @@
 module
-public import VerifiedGarbage.Proof.Rsa.X86.BatchInstance
 
-public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.TimeTop
-public import VerifiedGarbage.Proof.Bignum.X86.PrecomputeVerified
-public import VerifiedGarbage.Proof.Bignum.X86.PrivPre.Instance
-public import VerifiedGarbage.Proof.Rsa.X86.CvVerified
-public import VerifiedGarbage.Proof.Rsa.X86.KcVerified
-public import VerifiedGarbage.Proof.Rsa.X86.Rd.TimingW
-public import VerifiedGarbage.Proof.Rsa.X86.Rd.GcdDone
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.Proof.Rsa.X86.RtShape
-public import VerifiedGarbage.TCB.X86.Print
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Rsa.RecoverDet
+public import VerifiedGarbage.Spec.Rsa.Contract
+public import VerifiedGarbage.Spec.Rsa.PrivatePrecompute
+import VerifiedGarbage.Proof.Rsa.X86.Scrub
+import VerifiedGarbage.Impl.Rsa.X86.Fn
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # RSA (RFC 8017) on x86 -/
 
-@[expose] public section
 namespace VG.Artifacts.Rsa.X86
 
-def artifacts : List Artifact := [
+public def artifacts : List (Artifact X86.target) := [
   Spec.Rsa.recoverPrimesDetApi.artifact X86.target {
-    code := Impl.Rsa.X86.RecoverDetRt.code
-    verified := Proof.Rsa.X86.Recover.verifiedD
-    spSafe := Proof.Rsa.X86.RtShape.recoverDet_spSafe },
+    code := Impl.Rsa.X86.Fn.recoverPrimesDet
+    verified := Proof.Rsa.X86.Scrub.recoverPrimesDet_scrubbed },
   Spec.Rsa.checkKeyApi.artifact X86.target {
-    code := Impl.Rsa.X86.KeyCheckRt.code true
-    verified := Proof.Rsa.X86.KeyCheck.verified true
-    spSafe := Proof.Rsa.X86.RtShape.check_spSafe true },
+    code := Impl.Rsa.X86.Fn.checkKey
+    verified := Proof.Rsa.X86.Scrub.checkKey_scrubbed },
   Spec.Rsa.crtValuesApi.artifact X86.target {
-    code := Impl.Rsa.X86.CrtValuesRt.code
-    verified := Proof.Rsa.X86.CrtValues.verified
-    spSafe := Proof.Rsa.X86.RtShape.crtValues_spSafe },
+    code := Impl.Rsa.X86.Fn.crtValues
+    verified := Proof.Rsa.X86.Scrub.crtValues_scrubbed },
   Spec.Rsa.publicPrecomputeApi.artifact X86.target {
-    code := Impl.Bignum.X86.PrecomputeFn.code
-    verified := Proof.Bignum.X86.precompute_verified },
+    code := Impl.Rsa.X86.Fn.publicPrecompute
+    verified := Proof.Rsa.X86.Scrub.publicPrecompute_scrubbed },
   Spec.Rsa.privatePrecomputeApi.artifact X86.target {
-    code := Proof.Bignum.X86.PrivPre.ppCode
-    verified := Proof.Bignum.X86.PrivPre.pp_verified
-    spSafe := Proof.Bignum.X86.PrivPre.pp_spSafe }]
+    code := Impl.Rsa.X86.Fn.privatePrecompute
+    verified := Proof.Rsa.X86.Scrub.privatePrecompute_scrubbed }]
+
+spec_apis artifacts
 
 end VG.Artifacts.Rsa.X86

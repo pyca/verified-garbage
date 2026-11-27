@@ -1,19 +1,19 @@
 module
 
 import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Instances
+public import VerifiedGarbage.Impl.Hmac.Stream.Arm
 public import VerifiedGarbage.Proof.Pbkdf2.Stream.Arm.Sha256
 public import VerifiedGarbage.Proof.Pbkdf2.Contract
 public import VerifiedGarbage.Proof.Hmac.Contract
-public import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.HmacFinCT
 public import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.HmacInitCT
-public import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.IterateCT
+public import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Sha512
 import VerifiedGarbage.Proof.Hmac.Generic.Implies
 import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Impl.Hmac.Stream.Arm
 meta import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Instances
 meta import VerifiedGarbage.Proof.Pbkdf2.Stream.Arm.Sha256
-meta import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.HmacFinCT
 meta import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.HmacInitCT
-meta import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.IterateCT
+meta import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Sha512
 meta import VerifiedGarbage.Proof.Hmac.Generic.Implies
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
 import VerifiedGarbage.Proof.Sha256.Arm.Compress
@@ -41,17 +41,7 @@ open VG VG.Arm VG.Proof.MdStream
 open VG.Impl.Pbkdf2.Md.Arm (Hash)
 open VG.Proof.Pbkdf2.Stream.Arm (sha256H sha256OK)
 
-/-- SHA-256: a 32-byte hash value, a big-endian length field and
-`vg_sha256_compress`, with 112 bytes of scratch space. -/
-def sha256Md : Hash where
-  st := sha256H
-  N := 32
-  L := 8
-  be := true
-  so := 112
-  out := Impl.Sha256.Arm.Stream.params.out
-  compN := "vg_sha256_compress"
-  compC := Impl.Sha256.Arm.compress
+export VG.Impl.Hmac.Stream.Arm (sha256Md)
 
 theorem sha256_comp : CompOk Proof.Sha256.md 112 Impl.Sha256.Arm.compress :=
   ⟨Proof.Sha256.Arm.compress_verified.1, Proof.Sha256.Arm.compress_verified.2.1, by lit_decide,

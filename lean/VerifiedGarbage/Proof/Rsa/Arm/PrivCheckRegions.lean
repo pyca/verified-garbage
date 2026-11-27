@@ -1,7 +1,6 @@
 module
-public import VerifiedGarbage.Proof.Rsa.Arm.PrivPcPre
-public import VerifiedGarbage.Proof.Rsa.Arm.PrivPdPre
 
+public import VerifiedGarbage.Proof.Rsa.Arm.PrivPcPre
 import VerifiedGarbage.Proof.Rsa.Arm.PrivRegions
 import VerifiedGarbage.Proof.Framework.Offset
 

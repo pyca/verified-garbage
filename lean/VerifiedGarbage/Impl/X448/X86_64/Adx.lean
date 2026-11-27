@@ -100,10 +100,10 @@ def adx : Field where
 
 def pow223AdxFn : Prog isa := pow223FnWith adx
 
-def x448Adx : Prog isa := x448Of adx (ladder adx)
+def x448Adx : Prog isa := x448Of adx (ladderCall adx ("vg_x448_ladder" ++ "_adx"))
   (invertCallWith adx ("vg_gf448_r64_pow223" ++ "_adx"))
 
-def x448BaseAdx : Prog isa := x448BaseOf adx (ladder adx)
+def x448BaseAdx : Prog isa := x448BaseOf adx (ladderCall adx ("vg_x448_ladder" ++ "_adx"))
   (invertCallWith adx ("vg_gf448_r64_pow223" ++ "_adx"))
 
 end VG.Impl.X448.X86_64

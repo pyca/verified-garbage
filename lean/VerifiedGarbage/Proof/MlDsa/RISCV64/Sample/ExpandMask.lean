@@ -34,7 +34,7 @@ meta import VerifiedGarbage.Proof.Framework.Sig
 /-!
 # ML-DSA on RISC-V: `vg_mldsa_expand_mask_poly`
 
-As on PPC64LE (`Proof/MlDsa/PPC64LE/Sample/ExpandMask.lean`). The function
+As on PPC64LE (`Proof/MlDsa/PPC64LE/Sign/Inst.lean`). The function
 runs in pieces: the prologue (`J0`, with `s7` = `gamma1`), the sponge, whose
 output is `H(ρ′, 640)` (`T`), the branch on the low 32 bits of `γ₁`
 (`Pack.sel`), and the loop of `vg_mldsa_bit_unpack` for

@@ -1,57 +1,71 @@
 module
 
-public import VerifiedGarbage.Proof.Gcm.RISCV64.Law
-public import VerifiedGarbage.Proof.AesGcm.RISCV64.Verified
-public import VerifiedGarbage.Proof.AesGcm.RISCV64.Gather.Verified
-public import VerifiedGarbage.Proof.AesGcm.RISCV64.OpenTo.Verified
-public import VerifiedGarbage.Proof.AesGcm.RoundsTo
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.RISCV64.Print
-
+public import VerifiedGarbage.TCB.RISCV64.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Gcm.Contract
+public import VerifiedGarbage.Spec.Gcm.Bitsliced
+public import VerifiedGarbage.Spec.Gcm.Contiguous
+import VerifiedGarbage.Proof.Gcm.RISCV64.Law
+import VerifiedGarbage.Proof.AesGcm.RISCV64.Bitslice
+import VerifiedGarbage.Proof.AesGcm.RISCV64.StreamBs
+import VerifiedGarbage.Proof.AesGcm.RISCV64.OneBs
+import VerifiedGarbage.Proof.AesGcm.RISCV64.OpenBs
+import VerifiedGarbage.Proof.AesGcm.RISCV64.OpenToBs
+import VerifiedGarbage.Proof.AesGcm.RISCV64.DirectGather.Body
+import VerifiedGarbage.Proof.AesGcm.RISCV64.Contiguous.Verified
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.AesGcm.RISCV64.Contiguous.PreparedLaw
 import VerifiedGarbage.Proof.Aes.RISCV64.CodeLit
 import VerifiedGarbage.Proof.Gcm.RISCV64.Lit
+import VerifiedGarbage.Proof.Framework.SpecApis
+
 
 /-! # AES-GCM (NIST SP 800-38D) on RISC-V -/
 
-@[expose] public section
-
 namespace VG.Artifacts.AesGcm.RISCV64
 
-open VG.Proof.AesGcm.RISCV64
-
-def artifacts : List Artifact := [
+public def artifacts : List (Artifact RISCV64.target) := [
   Spec.Gcm.initApi.artifact RISCV64.target {
-    code := Impl.StackScratch.RISCV64.withStackScratch 2560 .a3 Impl.AesGcm.RISCV64.init
-    verified := init_framed },
+    code := Impl.AesGcm.RISCV64.Fn.init
+    verified := Proof.AesGcm.RISCV64.init_scrubbed },
   Spec.Gcm.streamInitApi.artifact RISCV64.target {
-    code := Impl.StackScratch.RISCV64.withStackScratch 2560 .a4 Impl.AesGcm.RISCV64.streamInit
-    verified := streamInit_framed },
+    code := Impl.AesGcm.RISCV64.Fn.streamInit
+    verified := Proof.AesGcm.RISCV64.streamInit_scrubbed },
   Spec.Gcm.streamAadApi.artifact RISCV64.target {
-    code := Impl.StackScratch.RISCV64.withStackScratch 2560 .a5 Impl.AesGcm.RISCV64.streamAad
-    verified := streamAad_framed },
-  Spec.Gcm.streamEncryptApi.artifact RISCV64.target {
-    code := Impl.StackScratch.RISCV64.withStackScratch 2560 .a7 Impl.AesGcm.RISCV64.streamEncrypt
-    verified := Proof.AesGcm.streamEncrypt_keyed streamEncrypt_framed },
-  Spec.Gcm.streamDecryptApi.artifact RISCV64.target {
-    code := Impl.StackScratch.RISCV64.withStackScratch 2560 .a7 Impl.AesGcm.RISCV64.streamDecrypt
-    verified := Proof.AesGcm.streamDecrypt_keyed streamDecrypt_framed },
-  Spec.Gcm.streamFinishApi.artifact RISCV64.target {
-    code := Impl.StackScratch.RISCV64.withStackScratch 2560 .a6 Impl.AesGcm.RISCV64.streamFinish
-    verified := Proof.AesGcm.streamFinish_keyed streamFinish_framed },
-  Spec.Gcm.streamVerifyApi.artifact RISCV64.target {
-    code := Impl.StackScratch.RISCV64.withStackScratch 2560 .a7 Impl.AesGcm.RISCV64.streamVerify
-    verified := Proof.AesGcm.streamVerify_keyed streamVerify_framed },
-  Spec.Gcm.sealApi.artifact RISCV64.target {
-    code := Impl.StackScratch.RISCV64.withStackScratchArgs 2576 1 Impl.AesGcm.RISCV64.«seal»
-    verified := Proof.AesGcm.seal_keyed seal_framed },
-  Spec.Gcm.openApi.artifact RISCV64.target {
-    code := Impl.StackScratch.RISCV64.withStackScratchArgs 2592 2 Impl.AesGcm.RISCV64.«open»
-    verified := Proof.AesGcm.open_keyed open_framed },
-  Spec.Gcm.sealGatherApi.artifact RISCV64.target {
-    code := Impl.AesGcm.RISCV64.SealGather.sealGather
-    verified := Proof.AesGcm.sealGather_keyed Gather.sealGather_verified },
-  Spec.Gcm.openToApi.artifact RISCV64.target {
-    code := Impl.StackScratch.RISCV64.withStackScratchArgs 2608 4 Impl.AesGcm.RISCV64.OpenTo.openTo
-    verified := Proof.AesGcm.openTo_keyed OpenTo.openTo_framed }]
+    code := Impl.AesGcm.RISCV64.Fn.streamAad
+    verified := Proof.AesGcm.RISCV64.streamAad_scrubbed },
+  Spec.Gcm.bitsliceApi.artifact RISCV64.target {
+    code := Impl.AesGcm.RISCV64.Fn.bitslice
+    verified := Proof.AesGcm.RISCV64.Bitslice.bitslice_scrubbed },
+  Spec.Gcm.streamEncryptBitslicedApi.artifact RISCV64.target {
+    code := Impl.AesGcm.RISCV64.Fn.streamEncryptBs
+    verified := Proof.AesGcm.RISCV64.streamEncryptBs_scrubbed },
+  Spec.Gcm.streamDecryptBitslicedApi.artifact RISCV64.target {
+    code := Impl.AesGcm.RISCV64.Fn.streamDecryptBs
+    verified := Proof.AesGcm.RISCV64.streamDecryptBs_scrubbed },
+  Spec.Gcm.streamFinishBitslicedApi.artifact RISCV64.target {
+    code := Impl.AesGcm.RISCV64.Fn.streamFinishBs
+    verified := Proof.AesGcm.RISCV64.streamFinishBs_scrubbed },
+  Spec.Gcm.streamVerifyBitslicedApi.artifact RISCV64.target {
+    code := Impl.AesGcm.RISCV64.Fn.streamVerifyBs
+    verified := Proof.AesGcm.RISCV64.streamVerifyBs_scrubbed },
+  Spec.Gcm.sealBitslicedApi.artifact RISCV64.target {
+    code := Impl.AesGcm.RISCV64.Fn.sealBs
+    verified := Proof.AesGcm.RISCV64.sealBs_scrubbed },
+  Spec.Gcm.openBitslicedApi.artifact RISCV64.target {
+    code := Impl.AesGcm.RISCV64.Fn.openBs
+    verified := Proof.AesGcm.RISCV64.openBs_scrubbed },
+  Spec.Gcm.openToBitslicedApi.artifact RISCV64.target {
+    code := Impl.AesGcm.RISCV64.Fn.openToBs
+    verified := Proof.AesGcm.RISCV64.openToBs_scrubbed },
+  Spec.Gcm.sealGatherBitslicedApi.artifact RISCV64.target {
+    code := Impl.AesGcm.RISCV64.Fn.sealGatherBs
+    verified := Proof.AesGcm.RISCV64.DirectGather.sealGather_scrubbed },
+  Spec.Gcm.sealContiguousBitslicedApi.artifact RISCV64.target {
+    code := Impl.AesGcm.RISCV64.Contiguous.code
+    verified := Proof.AesGcm.RISCV64.Contiguous.scrubbed
+      Proof.AesGcm.RISCV64.preparedInvocation_wp }]
+
+spec_apis artifacts
 
 end VG.Artifacts.AesGcm.RISCV64

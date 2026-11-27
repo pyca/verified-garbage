@@ -1,0 +1,5 @@
+name = "ECDSA brainpoolP320r1"
+family = "Signatures"
+specs = ["Weierstrass", "BrainpoolP320r1", "EcKey", "Ecdsa", "Ecdsa/Rfc6979", "Ecdsa/Verify"]
+modules = ["src/ec/ecdsa/brainpoolp320r1.rs"]
+asm = ["ec_brainpoolp320r1", "ecdsa_brainpoolp320r1"]

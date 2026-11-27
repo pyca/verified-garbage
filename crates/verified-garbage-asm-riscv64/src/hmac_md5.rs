@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Hmac.Instance.initAnyKeyContract` of `VG.Spec.Hmac.md5I`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `inner` must be valid for reads and writes of 80 bytes.
@@ -22,19 +24,19 @@ pub(crate) unsafe extern "C" fn vg_hmac_md5_init(inner: *mut [u8; 80], outer: *m
 .base64 "dXGKgiOwEgYjtHIHI7iCByO8kgcjsKIJI7SyCaqLFoyujDKNto0T03YAk/P2B5OD8wOT03MAHpM="
 beqz t1, 20f
 .base64 "YoU="
-call {vg_md5_init}
+call {vg_md5_init_core}
 .base64 "YoWBRWqG7oY="
-call {vg_md5_update}
+call {vg_md5_update_core}
 .base64 "YoXuhRMGDAU="
-call {vg_md5_finalize}
+call {vg_md5_finalize_core}
 .base64 "Ew0MBcFN"
 j 21f
 20:
 21:
 .base64 "XoU="
-call {vg_md5_init}
+call {vg_md5_init_core}
 .base64 "ZoU="
-call {vg_md5_init}
+call {vg_md5_init_core}
 .base64 "Ew9gA4FP6oNujg=="
 beqz t3, 22f
 24:
@@ -52,7 +54,7 @@ j 26f
 25:
 26:
 .base64 "XoWBRROGDAGTBgAE"
-call {vg_md5_update}
+call {vg_md5_update_core}
 .base64 "Ew/ABYFP6oNujg=="
 beqz t3, 28f
 210:
@@ -70,18 +72,20 @@ j 212f
 211:
 212:
 .base64 "ZoWBRROGCwGTBgAE"
-call {vg_md5_update}
-.base64 "AUMjMGwAIzRsACM4bAAjPGwAIzBsAiM0bAIjOGwCIzxsAiMwbAQjNGwEIzhsBCM8bASDMAwGgzuMBoM8jAcDPQwIgz2MCAM8DAdJYYKA"
+call {vg_md5_update_core}
+.base64 "AUMjMGwAIzRsACM4bAAjPGwAIzBsAiM0bAIjOGwCIzxsAiMwbAQjNGwEIzhsBCM8bASDMAwGgzuMBoM8jAcDPQwIgz2MCAM8DAdJYYFCLXEKgyMwUwAjNFMAIzhTACM8UwAjMFMCIzRTAiM4UwIjPFMCIzBTBCM0UwQjOFMEIzxTBCMwUwYjNFMGIzhTBiM8UwYjMFMIIzRTCCM4Uw4jPFMOIzBTECM0UxAjOFMQIzxTEBVhgUUBRoFGAUeBRwFIgUiBQgFDgUMBToFOAU+BTwFFgoA="
 .option pop"#,
-        vg_md5_init = sym super::md5::vg_md5_init,
-        vg_md5_update = sym super::md5::vg_md5_update,
-        vg_md5_finalize = sym super::md5::vg_md5_finalize,
+        vg_md5_init_core = sym super::md5::vg_md5_init_core::vg_md5_init_core,
+        vg_md5_update_core = sym super::md5::vg_md5_update_core::vg_md5_update_core,
+        vg_md5_finalize_core = sym super::md5::vg_md5_finalize_core::vg_md5_finalize_core,
     )
 }
 
 /// Finishes an HMAC-MD5 computation: if, for a 64-byte key `K₀` and a text of fewer than 2⁶⁴ − 64 bytes, the MD5 streaming state `*inner` represents `(K₀ ⊕ ipad) ‖ text`, of `count` bytes, and `*outer` represents `K₀ ⊕ opad`, writes the HMAC-MD5 of the text under `K₀` (16 bytes) to `*out`.
 ///
 /// Contract: `VG.Spec.Hmac.Instance.finalizeContract` of `VG.Spec.Hmac.md5I`. Constant time: only the pointers and `count` may affect timing, not the states.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -97,14 +101,22 @@ pub(crate) unsafe extern "C" fn vg_hmac_md5_finalize(inner: *mut [u8; 80], outer
         r#".option push
 .option arch, +m, +c
 .base64 "OXGKgiO4EgAjvHIBI7CCAyO0kgMjuKIDI7yyA6qLFoyujDaNsoUWhg=="
-call {vg_md5_finalize}
+call {vg_md5_finalize_core}
 .base64 "A8MMACOAawADwxwAo4BrAAPDLAAjgWsAA8M8AKOBawADw0wAI4JrAAPDXACjgmsAA8NsACODawADw3wAo4NrAAPDjAAjhGsAA8OcAKOEawADw6wAI4VrAAPDvACjhWsAA8PMACOGawADw9wAo4ZrAAPD7AAjh2sAA8P8AKOHawBehZMFAARihsFG"
-call {vg_md5_update}
+call {vg_md5_update_core}
 .base64 "XoWTBQAFaoY="
-call {vg_md5_finalize}
-.base64 "gzAMAYM7jAGDPIwCAz0MA4M9jAMDPAwCIWGCgA=="
+call {vg_md5_finalize_core}
+.base64 "gzAMAYM7jAGDPIwCAz0MA4M9jAMDPAwCIWGBQlVxCoMjMFMAIzRTACM4UwAjPFMAIzBTAiM0UwIjOFMCIzxTAiMwUwQjNFMEIzhTBCM8UwQjMFMGIzRTBiM4UwYjPFMGIzBTCCM0UwgjOFMIIzxTCCMwUwojNFMKIzhTCiM8UwojMFMMIzRTDGlhAUWBRQFGgUYBR4FHAUiBSIFCAUOBQwFOgU4BT4FPgoA="
 .option pop"#,
-        vg_md5_finalize = sym super::md5::vg_md5_finalize,
-        vg_md5_update = sym super::md5::vg_md5_update,
+        vg_md5_finalize_core = sym super::md5::vg_md5_finalize_core::vg_md5_finalize_core,
+        vg_md5_update_core = sym super::md5::vg_md5_update_core::vg_md5_update_core,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_hmac_md5_finalize_core.rs"]
+pub(crate) mod vg_hmac_md5_finalize_core;
+
+#[rustfmt::skip]
+#[path = "internal/vg_hmac_md5_init_core.rs"]
+pub(crate) mod vg_hmac_md5_init_core;

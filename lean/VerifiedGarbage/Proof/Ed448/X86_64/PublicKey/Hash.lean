@@ -2,9 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ed448.X86_64.PublicKey.Layout
 public import VerifiedGarbage.Proof.Sha3.X86_64.Permute
-import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Absorb
 import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Pad
-import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Squeeze
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.Exec

@@ -1,56 +1,72 @@
 module
 
 public import VerifiedGarbage.Impl.P384.Linear
-public import VerifiedGarbage.Impl.Ecdh.AArch64
+public import VerifiedGarbage.Impl.Ecdh.AArch64.WindowJ
 
 /-!
-# P-384's Jacobian doubling for ECDH's window on AArch64, before allocation
+# P-384's doubling for the windows on AArch64
 
-`raw a b` doubles the point at `a` into the point at `b` (3 products and 5
-squares, `a = -3`) as s2n-bignum's `p384_montjdouble_alt` does, which is the
-window's doubling `dblJ` with its sums fused into three linear combinations
-(`Linear.lin`): `d = 12 xy² - 9 m²`, `x' = 4 xy² - d` and
-`y' = 3 d m - 8 y⁴`, for `m = (x + z²)(x - z²)`; and `z' = (y + z)² - z² - y²`.
-The other operations are `Ops.op`'s.
-The code that runs, `Impl/P384/EcdhAllocatedCode.lean`, is `raw` with its
-registers allocated: it keeps its values in the registers `regs` (`x1`–`x17`
-and `x21`–`x25`, which ECDH saves on entry), stores only `b`'s coordinates,
-and spills to `spillSlots`: the slots of the window's entry `E`, the
-addition's temporaries and `tmp`, which hold nothing the window reads after
-its doublings. It is checked against `raw` by certificates.
+`raw p o` is the doubling `o = 2 p` in Jacobian coordinates for `a = -3`, in a
+straight line of steps. With `d = Z²`, `g = Y²`, `b = X g` and `v = (X - d)(X + d)`, the
+tangent's slope is `3v / 2YZ`, and
+
+    X' = 9v² - 8b,  Y' = 3v(4b - X') - 8g²,  Z' = 2YZ,
+
+four products, four squares and six sums, three of which are fused
+(`Linear.lean`). It uses the registers `x1`–`x17` and `x21`–`x25`, which ECDH and
+ECDSA save on entry.
 -/
 
 @[expose] public section
 
 namespace VG.Impl.P384.EcdhDouble
-open VG VG.AArch64 VG.Impl.Weierstrass VG.Impl.Weierstrass.AArch64
+open VG VG.AArch64 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.AArch64
 
-/-- ECDH's window over P-384. -/
+/-- The window as ECDH and ECDSA over P-384 have it. -/
 def K : WinCfg := Impl.Ecdsa.AArch64.p384.winCfg Impl.Ecdh.AArch64.PX Impl.Ecdh.AArch64.PY
 
-/-- The operations before `d`: `t0 = z²`, `t1 = y²`, `t2 = m`, `b.y = m²`,
-`t3 = x y²` and `b.z = (y + z)²`. -/
-def ops1 (a b : Pt) : List FOp :=
-  [.mul K.S.t0 a.z a.z, .mul K.S.t1 a.y a.y, .add b.x a.x K.S.t0, .sub b.y a.x K.S.t0,
-    .mul K.S.t2 b.x b.y, .add b.x a.y a.z, .mul b.y K.S.t2 K.S.t2, .mul K.S.t3 a.x K.S.t1,
-    .mul b.z b.x b.x]
+/-- A step of the doubling: a field operation or a fused combination. -/
+inductive Step
+  | op (f : FOp)
+  | lin98 (o a b : Nat)
+  | lin41 (o a b : Nat)
+  | lin38 (o a b : Nat)
 
-/-- The operations after `d` (in `b.y`): `b.z = 2 y z`, `t0 = y⁴` and `t1 = d m`. -/
-def ops2 (b : Pt) : List FOp :=
-  [.sub b.z b.z K.S.t0, .mul K.S.t0 K.S.t1 K.S.t1, .sub b.z b.z K.S.t1, .mul K.S.t1 b.y K.S.t2]
+/-- A step's code. -/
+def Step.code : Step → List Instr
+  | .op f => Ops.op f
+  | .lin98 o a b => Linear.lin98 o a b
+  | .lin41 o a b => Linear.lin41 o a b
+  | .lin38 o a b => Linear.lin38 o a b
 
-/-- `b = 2 a` in Jacobian coordinates. -/
-def raw (a b : Pt) : List Instr :=
-  (ops1 a b).flatMap Ops.op ++ Linear.lin b.y K.S.t3 b.y 12 9 ++ (ops2 b).flatMap Ops.op ++
-    Linear.lin b.x K.S.t3 b.y 4 1 ++ Linear.lin b.y K.S.t1 K.S.t0 3 8
+/-- The steps of `o = 2 p`. -/
+def steps (S : RcbSlots) (p o : Pt) : List Step :=
+  [.op (.mul S.t0 p.z p.z), .op (.mul S.t1 p.y p.y), .op (.sub S.t2 p.x S.t0), .op (.add S.t3 p.x S.t0),
+   .op (.mul S.t4 p.x S.t1), .op (.mul S.t2 S.t2 S.t3), .op (.mul o.z p.y p.z), .op (.mul S.t3 S.t2 S.t2),
+   .op (.mul S.t1 S.t1 S.t1), .op (.add o.z o.z o.z), .lin98 o.x S.t3 S.t4, .lin41 S.t4 S.t4 o.x,
+   .op (.mul S.t2 S.t2 S.t4), .lin38 o.y S.t2 S.t1]
 
-/-- The registers the allocated code uses. -/
-def regs : List Reg :=
-  [.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16, .x17,
-   .x21, .x22, .x23, .x24, .x25]
+/-- `o = 2 p`. -/
+def raw (p o : Pt) : List Instr := (steps K.S p o).flatMap Step.code
 
-/-- The slots the allocated code spills to. -/
-def spillSlots : List Nat :=
-  [K.E.x, K.E.y, K.E.z, K.S.t0, K.S.t1, K.S.t2, K.S.t3, K.S.t4, K.S.t5, K.M.tmp]
+/-- The registers it changes. -/
+def regs : List Reg := [.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16, .x17,
+  .x21, .x22, .x23, .x24, .x25]
+
+/-- The window's doublings, of the accumulator `R` into `D` and back. -/
+def doubleRD : List Instr := raw K.R K.D
+def doubleDR : List Instr := raw K.D K.R
+
+/-- The shared straight-line bodies, also used by ECDSA verification. -/
+def doubleRDBody : Prog isa := .block doubleRD
+def doubleDRBody : Prog isa := .block doubleDR
+
+/-- Keep the outer link register in a lane the scalar doubling does not write. -/
+def callDouble (name : String) (body : Prog isa) : Prog isa :=
+  .seq (.block [.vop (.ins .d2 .v31 1 .x30)])
+    (.seq (.call name body) (.block [.umov .x .x30 .v31 1]))
+
+def callRD : Prog isa := callDouble "vg_p384_window_double_rd" doubleRDBody
+def callDR : Prog isa := callDouble "vg_p384_window_double_dr" doubleDRBody
 
 end VG.Impl.P384.EcdhDouble

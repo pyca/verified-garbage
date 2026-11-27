@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Impl.Ffdh.AArch64.Generation.Init
 import VerifiedGarbage.Proof.Ffdh.ControlMemory
 public import VerifiedGarbage.Proof.Bignum.AArch64.Run
-public import VerifiedGarbage.Spec.Ffdh.GenerationContract
+public import VerifiedGarbage.Proof.Ffdh.ParameterPublic
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtGPow
 import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Base
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
@@ -11,12 +11,10 @@ import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.TaintBatch
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.EntropyRequest
 meta import VerifiedGarbage.Impl.Ffdh.AArch64.Generation.Init
 meta import VerifiedGarbage.Proof.Ffdh.ControlMemory
 meta import VerifiedGarbage.Proof.Bignum.AArch64.Run
-meta import VerifiedGarbage.Spec.Ffdh.GenerationContract
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtGPow
 meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Base
 meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
@@ -24,7 +22,8 @@ meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
-meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AArch64.Residue
+meta import VerifiedGarbage.Proof.Framework.AArch64.Residue
 
 /-! # Native FFDH parameter-generation initialization on AArch64: correctness, constant time -/
 
@@ -77,6 +76,13 @@ theorem zext32 (x : BitVec 64) :
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.add_zero, BitVec.toNat_setWidth, BitVec.toNat_ofNat]
 
+/-- The six comparisons of `validate`, combined as its code combines them. -/
+private theorem validate_bits : ∀ a b c d e f : Bool,
+    ((if a = true then 1#64 else 0#64) &&& if b = true then 0#64 else 1#64) &&&
+      (((if c = true then 1#64 else 0#64) &&& if d = true then 0#64 else 1#64) |||
+        (if e = true then 1#64 else 0#64) &&& if f = true then 0#64 else 1#64) =
+    if (a && !b && ((c && !d) || (e && !f))) = true then 1 else 0 := by decide
+
 /-- `validate`: `x13` is 1 exactly for valid parameters. -/
 theorem validate_ok (s : State) :
     WP isa (.block validate) s fun t =>
@@ -98,13 +104,10 @@ theorem validate_ok (s : State) :
     subs_ge (show g < 2 ^ 64 by omega_using [hg]) (show 3 < 2 ^ 64 by decide),
     subs_ge (show g < 2 ^ 64 by omega_using [hg]) (show 5 < 2 ^ 64 by decide),
     subs_ge (show g < 2 ^ 64 by omega_using [hg]) (show 6 < 2 ^ 64 by decide)]
-  by_cases hv : initValid n g
-  · rw [ite_eq_left hv]
-    obtain ⟨h1, h2, h3⟩ := hv
-    split_ifs <;> simp only [decide_eq_true_eq] at * <;> first | rfl | (exfalso; omega_arith)
-  · rw [ite_eq_right hv]
-    simp only [initValid, not_and, not_or] at hv
-    split_ifs <;> simp only [decide_eq_true_eq] at * <;> first | rfl | (exfalso; omega_arith)
+  refine (validate_bits _ _ _ _ _ _).trans (ite_congr (propext ?_) (fun _ => rfl) (fun _ => rfl))
+  simp only [initValid, Bool.and_eq_true, Bool.or_eq_true, Bool.not_eq_true', decide_eq_true_eq,
+    decide_eq_false_iff_not]
+  omega_using []
 
 theorem clear_ok {s : State} {B : Addr} (scr : Scr s B 128) (h0 : s.gpr .x0 = B) :
     WP isa (.block clear) s fun t => t.gpr .x0 = 0 ∧ t.mem = initWritten s.mem B 0 0 0 0 := by
@@ -155,7 +158,7 @@ def initPost (s t : State) : Prop :=
       Spec.Rsa.wordsAt t.mem (s.gpr .x0) 4 = List.replicate 4 0
   | some values => ((t.gpr .x0).setWidth 32).toNat = 1 ∧ ∃ first,
       Spec.Rsa.wordsAt t.mem (s.gpr .x0) 4 = (values ++ [first]).map (BitVec.ofNat 64) ∧
-      Spec.Entropy.RequestValid (Spec.Ffdh.parameterEntropy (s.gpr .x1).toNat) 0 first
+      Proof.Ffdh.FirstAsked (s.gpr .x1).toNat first
 
 def initPub (s t : State) : Prop :=
   s.sp = t.sp ∧ s.gpr .x0 = t.gpr .x0 ∧ s.gpr .x1 = t.gpr .x1 ∧ (s.gpr .x2).setWidth 32 = (t.gpr .x2).setWidth 32
@@ -193,7 +196,7 @@ theorem init_ok {s : State} (scr : Scr s (s.gpr .x0) 128) :
     refine WP.ite false (by rw [VG.Proof.MlKem.AArch64.eval_zero, h13]; rfl) (fun h => by cases h)
       fun _ => WP.mono (initialize_ok scr' h0 hb hv.2.1) fun t ⟨ht, hmt⟩ => ?_
     simp only [initPost, parameterInit_of hv]
-    refine ⟨by rw [ht]; rfl, _, ?_, Proof.Ffdh.first_valid hv.1⟩
+    refine ⟨by rw [ht]; rfl, _, ?_, Proof.Ffdh.firstAsked hv.1⟩
     rw [hmt, hm, initWritten_words]
     rfl
   · rw [ite_eq_right hv] at h13
@@ -254,11 +257,16 @@ private def initSat : State where
   rd := []
   wr := [⟨0x1000, 128⟩]
 
-theorem init_verified : Verified target init (Spec.Ffdh.parameterInitContract abi) := by
+theorem init_verified : Verified target init (Proof.Ffdh.parameterInitAskedContract abi) := by
   refine Verified.of_correct (k := initContract) init_correct ?_ ?_
   · intro s₁ s₂ tr₁ tr₂ t₁ t₂ _ _ hp h₁ h₂
     exact init_constantTime s₁ s₂ tr₁ tr₂ t₁ t₂ trivial trivial hp h₁ h₂
-  · sig_implies [Spec.Ffdh.parameterInitContract, Spec.Ffdh.parameterInitSig,
+  · sig_implies [Proof.Ffdh.parameterInitAskedContract, Spec.Ffdh.parameterInitSig,
       initContract, initPre, initPost, initPub, abi, argRegs] [initSat] using initSat
+
+/-- `vg_ffdh_parameter_generation_init` returns without secret residue: it reads no memory, so what it
+leaves is a function of its arguments (`Residue.noResidue_of_blind`). -/
+theorem init_noResidue (k : Contract isa) (r : Nat) : NoResidue init k r :=
+  Residue.noResidue_of_blind (by decide) k r
 
 end VG.Proof.Ffdh.AArch64.Generation

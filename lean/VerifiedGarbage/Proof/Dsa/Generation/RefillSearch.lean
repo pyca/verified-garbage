@@ -2,9 +2,48 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.Generation.RefillSeed
 public import VerifiedGarbage.Proof.EntropyRequest
-import VerifiedGarbage.Proof.Dsa.Generation.SeedSuffix
 import VerifiedGarbage.Proof.Dsa.Generation.RandomSuffix
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Spec.Dsa
+
+/-! ### `Dsa.Generation.SeedSuffix`, which this module and modules that import it used -/
+
+section
+
+/-! # A seed leaves a suffix of the witness tape it is given -/
+
+@[expose] public section
+namespace VG.Proof.Dsa.Generation
+open VG
+
+theorem primeSearch_suffix {l n q : Nat} (seed : List Byte) :
+    ∀ (counters : List Nat) (rand : List Byte) {p : Option Nat} {rest : List Byte},
+      Spec.Dsa.primeFromSeed.search l n q seed counters rand = some (p, rest) → rest <:+ rand
+  | [], rand, p, rest, h => by
+    simp only [Spec.Dsa.primeFromSeed.search, Option.some.injEq, Prod.mk.injEq] at h
+    obtain ⟨-, rfl⟩ := h; exact List.suffix_refl _
+  | c :: cs, rand, p, rest, h => by
+    unfold Spec.Dsa.primeFromSeed.search at h
+    dsimp only at h
+    split at h
+    · exact primeSearch_suffix seed cs rand h
+    · cases hp : Spec.Dsa.probablePrime (Spec.Dsa.pCandidate l n q seed (1 + c * ((l - 1) / n + 1))) rand with
+      | none => simp [hp] at h
+      | some pair =>
+        rcases pair with ⟨accepted, remain⟩
+        rw [hp] at h
+        have hs := probablePrime_suffix hp
+        cases accepted with
+        | false => exact (primeSearch_suffix seed cs remain h).trans hs
+        | true =>
+          have : remain = rest := by simpa using congrArg (fun z => z.map (·.2)) h
+          exact this ▸ hs
+
+end VG.Proof.Dsa.Generation
+
+end
+
+end
 
 -- separate module: target-independent facts about the spec, for every target's proof of the search
 
@@ -16,8 +55,8 @@ result is the search from `R.drop c`, with those `c` octets consumed before
 it. Each lemma here is one way a step of the controller ends: no seeds left,
 a tape too short for the next seed, or the seed's attempt (`refillAttempt`,
 `RefillSeed.lean`) running out, rejecting the seed or accepting
-parameters. It also states the next tape's length every target's code asks
-for (`parameterRequest`) and why `parameterSearchContract` allows it. -/
+parameters. It also says why `parameterSearchContract` allows the next tape's
+length every target's code asks for (`parameterRequest`). -/
 
 @[expose] public section
 
@@ -56,17 +95,6 @@ theorem consume_consume (r : ParameterSearchResult) (a b : Nat) :
 
 /-! ## The next tape's length -/
 
-/-- The next tape's length the code asks for when `available` octets did not
-hold a whole seed (`Entropy.request`): at first `512 * pLen`, enough for a
-seed, the tests of its `p` candidates and the 128 witnesses of `p`'s, most of
-the time. -/
-def parameterRequest (pLen available : Nat) : Nat :=
-  Entropy.request (256 * pLen) (parameterEntropy pLen) available
-
-/-- The length the code writes after the result `r`. -/
-def requested (pLen : Nat) (r : ParameterSearchResult) : Nat :=
-  Entropy.requested (parameterRequest pLen) r
-
 /-- A search that ran out had fewer octets left than its budget. -/
 theorem parameterSearch_available {pLen : Nat} :
     ∀ (k : Nat) (R : List Byte) {s a : Nat}, (parameterSearch pLen k R).outcome = .entropy s a →
@@ -82,12 +110,11 @@ theorem parameterSearch_available {pLen : Nat} :
     · simp at h
     · exact parameterSearch_available k _ h
 
-/-- The code's request is one `parameterSearchContract` allows. -/
-theorem requested_requests {pLen : Nat} (hp : 0 < pLen) (k : Nat) (R : List Byte) :
-    (parameterSearch pLen k R).Requests (parameterEntropy pLen)
-      (requested pLen (parameterSearch pLen k R)) :=
-  Entropy.requested_requests fun _ _ h =>
-    Entropy.request_valid (by omega_using [hp]) (parameterSearch_available k R h)
+/-- The code's request after any search is `Asked`. -/
+theorem requested_asked {pLen : Nat} (hp : 0 < pLen) (k : Nat) (R : List Byte) :
+    Asked pLen (parameterSearch pLen k R) (requested pLen (parameterSearch pLen k R)) :=
+  ⟨Entropy.requested_requests fun _ _ h =>
+    Entropy.request_valid (by omega_using [hp]) (parameterSearch_available k R h), rfl⟩
 
 /-! ## The search's steps -/
 

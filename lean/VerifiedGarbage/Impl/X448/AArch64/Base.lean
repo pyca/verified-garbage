@@ -8,9 +8,9 @@ public import VerifiedGarbage.Impl.X448.BaseTable
 
 `vg_x448_base(out = x0, scalar = x1, scratch = x2)` computes `X448(k, 5)` as
 the u-coordinate `y² / x²` of `[k] B` on edwards448 (Ed448's curve), `B` its
-base point (RFC 7748 §4.2's 4-isogeny; `Proof/X448/Edwards/Ladder.lean`).
+base point (RFC 7748 §4.2's 4-isogeny; `Proof/X448/BaseAdd.lean`).
 
-`[k] B` is a comb, as Ed25519's (`Impl/Ed25519/AArch64/Comb.lean`): the
+`[k] B` is a comb, as Ed25519's (`Impl/Ed25519/AArch64/FixedBase.lean`): the
 scalar's 112 nibbles `n_i` give `[k] B = Σ d_i [16^i] B + [17 G] B` for the
 digits `d_i = n_i - 8`, from `-8` to `7`, and `G = 8 Σ_{j < 56} 256^j`. Table
 `j` holds `[m · 256^j] B` for `m ≤ 8` (`baseTable`, affine); the 57 tables are

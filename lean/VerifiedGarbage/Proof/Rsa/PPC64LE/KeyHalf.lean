@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.KeyBits
 import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.Bignum.PPC64LE.MontStep
+import VerifiedGarbage.Proof.Bignum.PPC64LE.MontRound
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Rsa.PPC64LE.Shifts
 import VerifiedGarbage.Proof.Rsa.PPC64LE.EvenW

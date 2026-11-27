@@ -53,11 +53,15 @@ sieve's count: p's, for q as well. -/
 def sieveBits : List Instr := [.mov .rax (.mem (hdr sLink)), .mov .rdx (.mem (ws .rax oBits))]
 
 /-- Oddness, then the sieve: ZF means acceptance. -/
-def primeCheck : Prog isa := .seq (.block oddTest) (.ite .e (.seq (.block sieveBits) sieve) (.block []))
+def primeCheckInline : Prog isa := .seq (.block oddTest) (.ite .e (.seq (.block sieveBits) sieve) (.block []))
 
 /-- Oddness, then the table's first words (`sieveFirst`): ZF means neither
 rejects the candidate. -/
-def earlyCheck : Prog isa := .seq (.block oddTest) (.ite .e sieveFirst (.block []))
+def earlyCheckInline : Prog isa := .seq (.block oddTest) (.ite .e sieveFirst (.block []))
+
+/-- Share the whole checks, including their small-prime tables. -/
+def primeCheck : Prog isa := .call "vg_ffdh_prime_check" primeCheckInline
+def earlyCheck : Prog isa := .call "vg_ffdh_early_check" earlyCheckInline
 
 /-- Save the ABI arguments and callee-saved registers in the outer header. -/
 def entry : List Instr :=
@@ -174,7 +178,7 @@ def roundResult : Prog isa := .seq
   (.block [.mov .rax (.mem (hdr kFlag)), .alu .test .rax (.reg .rax)])
   (.ite .e (.block roundFail) (.block roundPass))
 
-variable (mul : Nat → Nat → Nat → Prog isa) (r2 round : Prog isa)
+variable (mul : Nat → Nat → Nat → Prog isa) (preparation round : Prog isa)
 
 def statusTest : List Instr :=
   [.mov .rax (.mem (hdr sLink)), .mov .rcx (.mem (ws .rax oStatus)), .alu .test .rcx (.reg .rcx)]
@@ -196,7 +200,7 @@ def rounds : Prog isa := .seq (.block roundInit)
   (.loop (roundBody mul round) .e)
 
 /-- Shared modulus preparation and uniform witness policy for both phases. -/
-def modulusPolicy : Prog isa := .seq (prepareModulus mul r2) (rounds mul round)
+def modulusPolicy : Prog isa := .seq preparation (rounds mul round)
 
 /-- Return to the outer frame and test whether a modulus passed. -/
 def leaveStatus : Prog isa := .block [leave, .mov .rax (.mem (hdr oStatus)), .alu .cmp .rax (.imm 1)]
@@ -204,24 +208,24 @@ def leaveStatus : Prog isa := .block [leave, .mov .rax (.mem (hdr oStatus)), .al
 /-- One modulus's witnesses: `prep` puts the modulus in the output buffer,
 then its phase's witnesses; `next` runs once they pass. -/
 def phaseTest (prep : Prog isa) (q : Bool) (c : Checks) (next : Prog isa) : Prog isa :=
-  seqs [prep, phaseSetup q c, loadOutput, modulusPolicy mul r2 round, leaveStatus, .ite .e next (.block [])]
+  seqs [prep, phaseSetup q c, loadOutput, modulusPolicy mul preparation round, leaveStatus, .ite .e next (.block [])]
 
 /-- p's other witnesses, last; restore p again for output. -/
-def testP : Prog isa := phaseTest mul r2 round shapeOriginal false .rest shapeOriginal
+def testP : Prog isa := phaseTest mul preparation round shapeOriginal false .rest shapeOriginal
 
 /-- All of q's witnesses, from q made again from p. -/
-def testQ : Prog isa := phaseTest mul r2 round (.seq shapeOriginal halveOutput) true .all (testP mul r2 round)
+def testQ : Prog isa := phaseTest mul preparation round (.seq shapeOriginal halveOutput) true .all (testP mul preparation round)
 
 /-- p's first witness, before q's. -/
-def testFirst : Prog isa := phaseTest mul r2 round shapeOriginal false .first (testQ mul r2 round)
+def testFirst : Prog isa := phaseTest mul preparation round shapeOriginal false .first (testQ mul preparation round)
 
 /-- p's whole trial division, once q has passed its own, then the witnesses. -/
 def sieveP : Prog isa := seqs [shapeOriginal, phaseSetup false .all, loadOutput, primeCheck,
-  .ite .e (.seq (.block [leave]) (testFirst mul r2 round)) (innerStatus 2)]
+  .ite .e (.seq (.block [leave]) (testFirst mul preparation round)) (innerStatus 2)]
 
 /-- q's trial division, at its own width, then p's (`sieveP`). -/
 def sieveQ : Prog isa := seqs [halveOutput, phaseSetup true .all, loadOutput, primeCheck,
-  .ite .e (.seq (.block [leave]) (sieveP mul r2 round)) (innerStatus 2)]
+  .ite .e (.seq (.block [leave]) (sieveP mul preparation round)) (innerStatus 2)]
 
 /-- Apply the requested generator's candidate congruence policy. -/
 def generatorPolicy : Prog isa := .seq
@@ -231,7 +235,7 @@ def generatorPolicy : Prog isa := .seq
 sieve, then p's (`sieveQ`), so that a q with a small factor is rejected
 before p's whole sieve. -/
 def candidateFilter : Prog isa := seqs [phaseSetup false .all, loadOutput, generatorPolicy,
-  .ite .e (.seq earlyCheck (.ite .e (.seq (.block [leave]) (sieveQ mul r2 round)) (innerStatus 2))) (innerStatus 2)]
+  .ite .e (.seq earlyCheck (.ite .e (.seq (.block [leave]) (sieveQ mul preparation round)) (innerStatus 2))) (innerStatus 2)]
 
 /-- One byte of p's octets (at R10) added into RSI. -/
 def sumByte : List Instr :=
@@ -256,7 +260,7 @@ def outerScreen : Prog isa := .seq (.block [.mov .rdx (.mem (hdr oGen)), .alu .c
 /-- Shape p, consume it, and screen it before setting up its workspace: most
 candidates are rejected here (status 2). -/
 def testCandidate : Prog isa := seqs [shapeOriginal, .block consumeCandidate, outerScreen,
-  .ite .e (candidateFilter mul r2 round) (status 2)]
+  .ite .e (candidateFilter mul preparation round) (status 2)]
 
 /-- Clear rejected outputs, write the consumed count (zero on exhaustion),
 and restore the ABI's callee-saved registers. -/
@@ -268,8 +272,8 @@ def finish : Prog isa := seqs [
 
 def body : Prog isa := .seq
   (.block (entry ++ [.mov .rax (.mem (hdr oRandLeft)), .alu .cmp .rax (.mem (hdr oLen))]))
-  (.ite .b (.block []) (testCandidate mul r2 round))
+  (.ite .b (.block []) (testCandidate mul preparation round))
 
-def code : Prog isa := .seq (body mul r2 round) finish
+def code : Prog isa := .seq (body mul preparation round) finish
 
 end VG.Impl.Ffdh.X86_64.ParameterCandidate

@@ -79,17 +79,15 @@ theorem okP_of_pre {tsH ts : List FnTable} {s : State} (h : (specP tsH ts).pre s
   have a11 : arg s 11 = arg s 7 := BitVec.eq_of_toNat_eq dpl
   have a15 : arg s 15 = arg s 7 := BitVec.eq_of_toNat_eq qil
   have a13 : arg s 13 = arg s 9 := BitVec.eq_of_toNat_eq dql
-  rw [olk] at hwr oN oE oP oQ oDP oDQ oQI oD oSl oS oPre oTH oT oA rO kO fO
-  rw [dpl] at hrd oDP dpS dpA rDP kDP fDP
-  rw [qil] at hrd oQI qiS qiA rQI kQI fQI
-  rw [dql] at hrd oDQ dqS dqA rDQ kDQ fDQ
+  simp only [olk] at hwr oN oE oP oQ oDP oDQ oQI oD oSl oS oPre oTH oT oA rO kO fO
+  simp only [dpl] at hrd oDP dpS dpA rDP kDP fDP
+  simp only [qil] at hrd oQI qiS qiA rQI kQI fQI
+  simp only [dql] at hrd oDQ dqS dqA rDQ kDQ fDQ
   rw [ep_layP]
   refine ok_entered_of (S := 3608) rfl (by decide) hsp (by simp) (by simp; omega_arith) ?_ ?_
     ⟨104, by simp, by rw [hwr]; simp⟩ ?_ ?_ ?_ ?_ ?_ ?_
-  · intro r hr
-    rw [hrd]
-    simp only [EP.ro, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp [ep]
+  · rw [hrd]
+    simp [ep]
   · intro r hr
     rw [hwr]
     simp only [EP.rw, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -133,11 +131,18 @@ theorem okP_of_pre {tsH ts : List FnTable} {s : State} (h : (specP tsH ts).pre s
       | (rw [Nat.mod_eq_of_lt (by have := (arg s 20).isLt; omega_arith)]; omega_arith)
   · intro j hj
     have : j < 26 := by simpa using hj
-    rcases (by omega_using [this] : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7 ∨ j = 8 ∨
-        j = 9 ∨ j = 10 ∨ j = 11 ∨ j = 12 ∨ j = 13 ∨ j = 14 ∨ j = 15 ∨ j = 16 ∨ j = 17 ∨ j = 18 ∨ j = 19 ∨
-        j = 20 ∨ j = 21 ∨ j = 22 ∨ j = 23 ∨ j = 24 ∨ j = 25) with
-      rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
-        rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp [ep, a1, a11, a13, a15]
+    -- The arguments' list, evaluated once; its entry `j` is `List.range`'s, with no case split.
+    obtain eA : (ep s hai hac had TH ai au af T).argv (arg s 17).toNat ++
+          [arg s 24, BitVec.ofNat 32 (arg s 25).toNat] =
+        [arg s 0, arg s 1, arg s 2, arg s 3, arg s 4, arg s 5, arg s 6, arg s 7, arg s 8, arg s 9, arg s 10,
+          arg s 11, arg s 12, arg s 13, arg s 14, arg s 15, arg s 16, arg s 17, arg s 18, arg s 19, arg s 20,
+          arg s 21, arg s 22, arg s 23, arg s 24, arg s 25] := by
+      simp [ep, a1, a11, a13, a15]
+    rw [eA, show [arg s 0, arg s 1, arg s 2, arg s 3, arg s 4, arg s 5, arg s 6, arg s 7, arg s 8, arg s 9, arg s 10,
+          arg s 11, arg s 12, arg s 13, arg s 14, arg s 15, arg s 16, arg s 17, arg s 18, arg s 19, arg s 20,
+          arg s 21, arg s 22, arg s 23, arg s 24, arg s 25] = (List.range 26).map (arg s) from rfl,
+      List.getD_eq_getElem?_getD, List.getElem?_map, List.getElem?_range this]
+    rfl
 
 /-- The state the body starts from, and what the precomputed entry adds, from the facts of the
 precondition it needs. -/
@@ -296,7 +301,7 @@ theorem code_okP (hok : OK vs gs) (c : CrtImpl) (cw : CrtPImpl) {s : State} (hs 
   refine WP.mono (wrap_ok (F := frameBytes) (by decide) (body_noSpP (fnsSp vs gs) (hall_of hok) c cw) hsp
     (by omega_using [hfit4]) (W := ((epw vs gs s s w wg).lay w.h.D).W)
     (Q := fun r m => Res w.h wg.g.G (epw vs gs s s w wg) (entered frameBytes s) m r) (fun r hr => ?_)
-    (WP.mono hb fun u hu => ⟨hu.1.1.2.frame, hu.1.2⟩)) fun t ⟨abi, res⟩ => ⟨abi, ?_⟩
+    (WP.mono hb fun u hu => ⟨hu.1.1.2.frame, hu.1.2⟩) (fun r m m' fl hres => ?_)) fun t ⟨abi, res⟩ => ⟨abi, ?_⟩
   · have ok := hin.ok
     rw [← hD, ep_lay] at ok hr
     rw [save_eq (argv := (epw vs gs s s w wg).argv (arg s 17).toNat) (ro := (epw vs gs s s w wg).ro (arg s 17).toNat)
@@ -306,15 +311,19 @@ theorem code_okP (hok : OK vs gs) (c : CrtImpl) (cw : CrtPImpl) {s : State} (hs 
     exact ⟨ok.save_apart r hr, ok.ret_apart r hr⟩
   · have ok := hin.ok
     rw [← hD, ep_lay] at ok
+    obtain F' := release_frame (argv := (epw vs gs s s w wg).argv (arg s 17).toNat) (ro := (epw vs gs s s w wg).ro (arg s 17).toNat) (rw := (epw vs gs s s w wg).rw) (C := 3448) fl
+    unfold Res at hres ⊢
+    exact VG.Proof.Rsa.writtenOutcome_frame F' (by show (arg s 3).toNat < 2 ^ 64; have := (arg s 3).isLt; omega_using [this])
+      (fun q hq => by rw [List.mem_singleton.mp hq]; exact (ok.stk (epw vs gs s s w wg).OUT (by simp [layOf])).symm) hres
+  · have ok := hin.ok
+    rw [← hD, ep_lay] at ok
     have ro := fun {R : Region} (hR : R ∈ (epw vs gs s s w wg).ro (arg s 17).toNat) => entered_ro hsp ok hR
     sig_post [Spec.RsaPss.signPrecomputedMdTableContract, Spec.RsaPss.signPrecomputedMdTableSig,
       Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords,
       Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Abi.withTables, Sig.wordIndex, abi,
       argSlots, argVal, argBytes]
-    intro H G hH hG
-    rw [Proof.MdHashTable.X86.hashAt_tableOf hfitH hidxH, Option.some.injEq] at hH
-    rw [Proof.HashTable.X86.hashAt_tableOf hfit hidx, Option.some.injEq] at hG
-    subst hH hG
+    refine ⟨_, _, Proof.MdHashTable.X86.hashAt_tableOf hfitH hidxH,
+      Proof.HashTable.X86.hashAt_tableOf hfit hidx, ?_⟩
     unfold Res at res
     rw [show pB (epw vs gs s s w wg) (entered frameBytes s) = _ from ro (R := (epw vs gs s s w wg).PP) (by simp),
       show qB (epw vs gs s s w wg) (entered frameBytes s) = _ from ro (R := (epw vs gs s s w wg).QQ) (by simp),

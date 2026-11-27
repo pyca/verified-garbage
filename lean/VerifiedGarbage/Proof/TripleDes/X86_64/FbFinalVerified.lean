@@ -17,7 +17,6 @@ public import VerifiedGarbage.Proof.Framework.X86_64.Taint
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
 import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
-import VerifiedGarbage.Proof.TripleDes.X86_64.CallPatch
 import VerifiedGarbage.Proof.Framework.X86_64.CallInline
 import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
 import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
@@ -40,7 +39,6 @@ meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
 meta import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
-meta import VerifiedGarbage.Proof.TripleDes.X86_64.CallPatch
 meta import VerifiedGarbage.Proof.Framework.X86_64.CallInline
 meta import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified

@@ -9,6 +9,8 @@ import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Bignum.Arm.ByteWords
+public import VerifiedGarbage.Proof.Framework.Arm.CallF
+public import VerifiedGarbage.Proof.Bignum.Arm.CallStack
 
 /-! # The Miller–Rabin round on ARMv7: the public parameters and the stages
 
@@ -18,7 +20,8 @@ the regions narrowed to the frame, the working space (`rS`) and the key
 working space's view of it (`rK`, from `B = ws + 96`). `KS P σ A live V ls s`:
 a stage of the body: what it keeps of `σ` (the stack pointer, the regions,
 and all of memory but the arrays and header words the round may write,
-`wJs` and `wDs`), the arrays `live` (read with `W = 2 w + 2` words) holding
+`wJs` and `wDs`, and the 48 bytes below the frame that its calls write, `rB`:
+`KeepOff`), the arrays `live` (read with `W = 2 w + 2` words) holding
 `A` and the header words `ls` holding `V`. Montgomery multiplication is
 ready at every stage (`KS.ready`), and the numbers of its working space are
 the low `2 w` words of the key arrays (`numAt_val32`).
@@ -48,6 +51,8 @@ abbrev R (P : MP) : Nat := 2 ^ (64 * P.w)
 abbrev rS (P : MP) : Region := ⟨State.addr P.ws, 8 * P.len⟩
 abbrev rK (P : MP) : Region := ⟨State.addr P.B, P.Z⟩
 abbrev rF (P : MP) : Region := ⟨State.addr P.sp, 56⟩
+/-- The 48 bytes below the frame, which the calls of the shared product write. -/
+abbrev rB (P : MP) : Region := FrameStack.belowA P.sp 48
 
 end MP
 
@@ -87,6 +92,45 @@ structure In (P : MP) (σ : State) : Prop where
   low : σ.mem.readW (State.addr P.ws + BitVec.ofNat 64 (arrAt P.w aE + 8 * P.w)) 64 =
     BitVec.twoPow 64 ((Spec.Rsa.splitTwos (cOf P σ.mem - 1)).1 % 64)
   saved : σ.mem.readW (State.addr P.sp) 32 = P.ws
+  spLo : 48 ≤ P.sp.toNat
+  sepB : P.rB.Disjoint P.rS
+
+/-! ## Memory but the bytes below the frame -/
+
+/-- `m'` is `m` but on the arrays `js`, the header words `ds` and the bytes below the frame. -/
+def KeepOff (P : MP) (js ds : List Nat) (m m' : Mem) : Prop :=
+  ∀ x, ¬ P.rB.Contains x 1 → (∀ r ∈ ranges P.W js ds, ofs (State.addr P.B) x < r.1 ∨ r.1 + r.2 ≤ ofs (State.addr P.B) x) →
+    m' x = m x
+
+/-- `m'`, but `m` below the frame. -/
+def patch (P : MP) (m m' : Mem) : Mem := fun x => if P.rB.Contains x 1 then m x else m' x
+
+section
+variable {P : MP} {js ds : List Nat} {m m' m'' : Mem}
+
+theorem Keep.off (h : Keep P.B P.W js ds m m') : KeepOff P js ds m m' := fun x _ hx => h x hx
+
+theorem KeepOff.trans (h₁ : KeepOff P js ds m m') (h₂ : KeepOff P js ds m' m'') : KeepOff P js ds m m'' :=
+  fun x hb hx => (h₂ x hb hx).trans (h₁ x hb hx)
+
+theorem KeepOff.mono {js' ds' : List Nat} (h : KeepOff P js ds m m') (hj : ∀ j ∈ js, j ∈ js' := by simp)
+    (hd : ∀ d ∈ ds, d ∈ ds' := by simp) : KeepOff P js' ds' m m' := by
+  intro x hb hx
+  refine h x hb fun r hr => hx r ?_
+  simp only [ranges, List.mem_append, List.mem_map] at hr ⊢
+  rcases hr with ⟨j, hjm, rfl⟩ | ⟨d, hdm, rfl⟩
+  · exact .inl ⟨j, hj j hjm, rfl⟩
+  · exact .inr ⟨d, hd d hdm, rfl⟩
+
+/-- The same, with `m` below the frame. -/
+theorem KeepOff.patch (h : KeepOff P js ds m m') : Keep P.B P.W js ds m (patch P m m') := by
+  intro x hx
+  unfold VG.Proof.MillerRabin.Arm.patch
+  by_cases hb : P.rB.Contains x 1
+  · simp only [hb, ↓reduceIte]
+  · simp only [hb, ↓reduceIte]; exact h x hb hx
+
+end
 
 /-! ## Sizes -/
 
@@ -159,6 +203,46 @@ theorem In.c_lt (h : In P σ) : cOf P σ.mem < P.R := by
   rw [← h.numAt_val32, show 32 * (2 * P.w) = 64 * P.w by omega_arith] at this
   exact this
 
+/-- The working space is apart from the bytes below the frame. -/
+theorem In.notB_ws (h : In P σ) {x : Addr} (hx : P.rS.Contains x 1) : ¬ P.rB.Contains x 1 :=
+  fun hb => h.sepB x hb hx
+
+/-- So is the key view. -/
+theorem In.notB_key (h : In P σ) {x : Addr} (hx : ofs (State.addr P.B) x < P.Z) : ¬ P.rB.Contains x 1 := by
+  refine h.notB_ws ?_
+  have fit := h.fit
+  have len := h.len
+  have e : x - State.addr P.ws = (x - State.addr P.B) + BitVec.ofNat 64 kOff := by
+    rw [h.addrB]; bv_omega
+  simp only [Region.Contains, ofs, MP.Z, kOff] at hx ⊢
+  rw [e, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show kOff < 2 ^ 64 by decide),
+    Nat.mod_eq_of_lt (by simp only [kOff]; omega_arith)]
+  simp only [kOff]; omega_arith
+
+/-- And the frame. -/
+theorem In.notB_frame (h : In P σ) {x : Addr} (hx : P.rF.Contains x 1) : ¬ P.rB.Contains x 1 := by
+  have lo := h.spLo
+  have hi := h.spFit
+  simp only [Region.Contains] at hx ⊢
+  rw [FrameStack.addr_sub' lo]
+  have e : x - (State.addr P.sp - BitVec.ofNat 64 48) = (x - State.addr P.sp) + BitVec.ofNat 64 48 := by bv_omega
+  rw [e, BitVec.toNat_add, BitVec.toNat_ofNat]
+  omega_arith
+
+/-- `patch` reads as `m'` in the key view. -/
+theorem In.patch_val32 (h : In P σ) {m m' : Mem} {d k : Nat} (hd : d + 4 * k ≤ P.Z) :
+    val32 (patch P m m') (State.addr P.B) d k = val32 m' (State.addr P.B) d k := by
+  have hZ := h.Z_le
+  have o : Outs (State.addr P.B) [(P.Z, 2 ^ 64)] m' (patch P m m') := by
+    intro x hx
+    have hx := hx _ List.mem_cons_self
+    have := (x - State.addr P.B).isLt
+    have lt : ofs (State.addr P.B) x < P.Z := by simp only [ofs] at hx ⊢; omega_arith
+    unfold VG.Proof.MillerRabin.Arm.patch
+    simp only [h.notB_key lt, ↓reduceIte]
+  exact o.val32 (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact .inl hd)
+    (by omega_arith)
+
 end
 
 /-! ## Stages -/
@@ -169,7 +253,7 @@ structure KS (P : MP) (σ : State) (A : Nat → Nat) (live : List Nat) (V : Nat 
   sp : s.sp = σ.sp
   rd : s.rd = σ.rd
   wr : s.wr = σ.wr
-  keep : Keep P.B P.W wJs wDs σ.mem s.mem
+  keep : KeepOff P wJs wDs σ.mem s.mem
   arrs : Arrs s.mem P.B P.W A live
   sl : ∀ d ∈ ls, slot s.mem P.B d = V d
   live_lt : ∀ j ∈ live, j < nArr
@@ -198,28 +282,31 @@ theorem KS.mono (h : KS P σ A live V ls s) {A' : Nat → Nat} {live' : List Nat
     fun d hd => h.ls_ok d (hls d hd).1⟩
 
 /-- Memory past the key view's start, and before it, keeps its value. -/
-theorem KS.mem_out (h : KS P σ A live V ls s) {x : Addr} (hx : P.Z ≤ ofs (State.addr P.B) x) :
-    s.mem x = σ.mem x := by
+theorem KS.mem_out (h : KS P σ A live V ls s) {x : Addr} (hx : P.Z ≤ ofs (State.addr P.B) x)
+    (hb : ¬ P.rB.Contains x 1) : s.mem x = σ.mem x := by
   have pre := h.pre
   have hS := pre.S_eq
   have hZ := pre.fitsK
-  refine h.keep.out (Z := P.Z) (fun j hj => ?_) (fun d hd => ?_) hx
+  refine h.keep x hb fun r hr => ?_
+  simp only [ranges, List.mem_append, List.mem_map] at hr
+  rcases hr with ⟨j, hj, rfl⟩ | ⟨d, hd, rfl⟩
   · have := arr_end (w := P.W) (wJs_lt j hj).2
-    omega_arith
+    dsimp only; omega_arith
   · have := wDs_ok d hd
     have : hdr ≤ arr P.W nArr := Nat.le_add_right _ _
-    simp only [hdr] at this; omega_arith
+    simp only [hdr] at this; dsimp only; omega_arith
 
 /-- The frame's words keep their values. -/
 theorem KS.frameWord (h : KS P σ A live V ls s) {o : Nat} (ho : o + 4 ≤ 56) :
     s.mem.readW (off (State.addr P.sp) o) 32 = σ.mem.readW (off (State.addr P.sp) o) 32 := by
   have pre := h.pre
   have spf := pre.spFit
-  refine Mem.readW_congr fun i hi => h.mem_out ?_
+  refine Mem.readW_congr fun i hi => ?_
   have hin : (P.rF).Contains (off (State.addr P.sp) o + BitVec.ofNat 64 i) 1 := by
     simp only [Region.Contains, off]
     rw [Offset.add_add, Offset.add_sub_cancel_left, BitVec.toNat_ofNat]
     omega_arith
+  refine h.mem_out ?_ (pre.notB_frame hin)
   have hout := pre.sep _ hin
   simp only [Region.Contains] at hout
   have len := pre.len
@@ -233,8 +320,10 @@ theorem KS.c_eq (h : KS P σ A live V ls s) : cOf P s.mem = cOf P σ.mem := by
   have hZ := pre.Z_le
   have hK := pre.fitsK
   have h0 := arr_end (w := P.W) (show 0 < nArr by decide)
-  rw [cOf, cOf, pre.numAt_val32, pre.numAt_val32]
-  refine h.keep.val32 (fun r hr => ?_) (by omega_arith)
+  obtain h1 : arr P.W 0 + 4 * (2 * P.w) ≤ P.Z := by
+    have := arr_end (w := P.W) (show 0 < nArr by decide); have := pre.S_eq; omega_arith
+  rw [cOf, cOf, pre.numAt_val32, pre.numAt_val32, ← pre.patch_val32 (m := σ.mem) h1]
+  refine h.keep.patch.val32 (fun r hr => ?_) (by omega_arith)
   simp only [ranges, List.mem_append, List.mem_map] at hr
   rcases hr with ⟨j, hj, rfl⟩ | ⟨d', hd', rfl⟩
   · have := arr_end (w := P.W) (show 0 < j by have := (wJs_lt j hj).1; omega_arith)
@@ -250,11 +339,15 @@ theorem KS.mem_hdr (h : KS P σ A live V ls s) {d : Nat} (hd : d + 1 ≤ arrAt P
   have hS := pre.S_eq
   have len := pre.len
   have fit := pre.fit
+  have hws : P.rS.Contains (off (State.addr P.ws) d) 1 := by
+    simp only [Region.Contains, off, Offset.add_sub_cancel_left, BitVec.toNat_ofNat]
+    simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at hd; omega_arith
   by_cases hlo : d < kOff
-  · exact h.mem_out (pre.ofsB_lo hlo)
+  · exact h.mem_out (pre.ofsB_lo hlo) (pre.notB_ws hws)
   · obtain ⟨e, rfl⟩ : ∃ e, d = kOff + e := ⟨d - kOff, by omega_arith⟩
-    rw [← pre.off_eq]
-    refine h.keep _ fun r hr => ?_
+    have hb := pre.notB_ws hws
+    rw [← pre.off_eq] at hb ⊢
+    refine h.keep _ hb fun r hr => ?_
     rw [ofs_off0 _ (by simp only [arrAt, Proof.Rsa.Mont.hdrBytes, kOff] at hd; omega_arith)]
     simp only [ranges, List.mem_append, List.mem_map] at hr
     rcases hr with ⟨j, hj, rfl⟩ | ⟨d', hd', rfl⟩
@@ -322,8 +415,22 @@ theorem KS.ready (h : KS P σ A live V ls s) (r0 : s.gpr .r0 = P.ws) : Arithmeti
     simp only [off, BitVec.add_zero] at this
     rw [this, pre.saved]
 
+/-- The 48 bytes below the frame are apart from the working space: a call of the shared
+product may write them. -/
+theorem KS.callStack (h : KS P σ A live V ls s) : CallStack P.ws P.len s :=
+  ⟨by rw [h.sp, h.pre.sp]; exact h.pre.spLo, by rw [h.sp, h.pre.sp]; exact h.pre.sepB⟩
+
 /-- A step that writes the arrays `js` and the header words `ds` of the round's. -/
 theorem KS.core {js ds : List Nat} (h : KS P σ A live V ls s) (k : Keep P.B P.W js ds s.mem t.mem)
+    (hjs : ∀ j ∈ js, j ∈ wJs) (hds : ∀ d ∈ ds, d ∈ wDs) (sp : t.sp = s.sp) (rd : t.rd = s.rd)
+    (wr : t.wr = s.wr) {A' : Nat → Nat} {live' : List Nat} {V' : Nat → Nat} {ls' : List Nat}
+    (ha : Arrs t.mem P.B P.W A' live') (hsl : ∀ d ∈ ls', slot t.mem P.B d = V' d)
+    (hl : ∀ j ∈ live', j < nArr) (hls : ∀ d ∈ ls', d ∈ wDs) :
+    KS P σ A' live' V' ls' t :=
+  ⟨h.pre, sp.trans h.sp, rd.trans h.rd, wr.trans h.wr, h.keep.trans (Keep.off (k.mono hjs hds)), ha, hsl, hl, hls⟩
+
+/-- `core`, for a step that may also write the bytes below the frame (a call). -/
+theorem KS.coreOff {js ds : List Nat} (h : KS P σ A live V ls s) (k : KeepOff P js ds s.mem t.mem)
     (hjs : ∀ j ∈ js, j ∈ wJs) (hds : ∀ d ∈ ds, d ∈ wDs) (sp : t.sp = s.sp) (rd : t.rd = s.rd)
     (wr : t.wr = s.wr) {A' : Nat → Nat} {live' : List Nat} {V' : Nat → Nat} {ls' : List Nat}
     (ha : Arrs t.mem P.B P.W A' live') (hsl : ∀ d ∈ ls', slot t.mem P.B d = V' d)

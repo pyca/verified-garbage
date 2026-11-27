@@ -58,8 +58,8 @@ def mul (n m d dd : BitVec 32) : Bool :=
 
 /-! ## Printing -/
 
-#guard printer.instr (.mul .r0 .r1 .r2) == ["mul r0, r1, r2"]
-#guard printer.instr (.mul .r12 .lr .r7) == ["mul r12, lr, r7"]
+#guard printer.instr (.mul .r0 .r1 .r2) == [.text "mul r0, r1, r2"]
+#guard printer.instr (.mul .r12 .lr .r7) == [.text "mul r12, lr, r7"]
 
 -- In the ARMv7-A baseline.
 #guard isa.requires (.mul .r0 .r1 .r2) == []

@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.TimePre
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.Dsa.X86.ABIResources
-import VerifiedGarbage.Proof.Bignum.X86.CrtResources
+import VerifiedGarbage.Proof.Bignum.X86.CrtInstalled
 
 /-! # `vg_rsa_private_crt_precomputed` on x86 against its contract
 

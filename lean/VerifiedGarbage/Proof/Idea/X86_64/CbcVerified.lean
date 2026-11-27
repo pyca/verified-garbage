@@ -6,7 +6,6 @@ import VerifiedGarbage.Proof.Modes.X86_64.CbcEncChained
 public import VerifiedGarbage.Proof.Idea.CbcScratch
 import VerifiedGarbage.Proof.Idea.X86_64.ModesLit
 import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
-import VerifiedGarbage.Proof.Idea.X86_64.ModeCore
 import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 import VerifiedGarbage.Proof.Framework.TaintSum
 meta import VerifiedGarbage.Proof.Idea.X86_64.FbVerified
@@ -15,7 +14,6 @@ meta import VerifiedGarbage.Proof.Modes.X86_64.CbcEncChained
 meta import VerifiedGarbage.Proof.Idea.CbcScratch
 meta import VerifiedGarbage.Proof.Idea.X86_64.ModesLit
 meta import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
-meta import VerifiedGarbage.Proof.Idea.X86_64.ModeCore
 meta import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 meta import VerifiedGarbage.Proof.Framework.TaintSum
 import VerifiedGarbage.Proof.Idea.ModeBytes

@@ -1,24 +1,28 @@
 module
 
-public import VerifiedGarbage.Proof.Blowfish.PPC64LE.Verified
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.PPC64LE.Print
+public import VerifiedGarbage.TCB.PPC64LE.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Blowfish.Contract
+import VerifiedGarbage.Proof.Blowfish.PPC64LE.Verified
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Blowfish.PPC64LE.Scrub
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # Blowfish on PPC64LE -/
 
-@[expose] public section
-
 namespace VG.Artifacts.Blowfish.PPC64LE
 
-def artifacts : List Artifact := [
+public def artifacts : List (Artifact PPC64LE.target) := [
   Spec.Blowfish.expandKeyApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratchWiped 64 .r6 4 Impl.Blowfish.PPC64LE.expandKey
-    verified := Proof.Blowfish.PPC64LE.expandKey_framed },
+    code := Impl.Blowfish.PPC64LE.Fn.expandKey
+    verified := Proof.Blowfish.PPC64LE.Scrub.expandKey_scrubbed },
   Spec.Blowfish.ecbEncryptApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratchWiped 288 .r6 4 Impl.Blowfish.PPC64LE.encrypt
-    verified := Proof.Blowfish.PPC64LE.ecb_framed Proof.Blowfish.PPC64LE.encrypt_verified },
+    code := Impl.Blowfish.PPC64LE.Fn.ecbEncrypt
+    verified := Proof.Blowfish.PPC64LE.Scrub.ecbEncrypt_scrubbed },
   Spec.Blowfish.ecbDecryptApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratchWiped 288 .r6 4 Impl.Blowfish.PPC64LE.decrypt
-    verified := Proof.Blowfish.PPC64LE.ecb_framed Proof.Blowfish.PPC64LE.decrypt_verified }]
+    code := Impl.Blowfish.PPC64LE.Fn.ecbDecrypt
+    verified := Proof.Blowfish.PPC64LE.Scrub.ecbDecrypt_scrubbed }]
+
+spec_apis artifacts
 
 end VG.Artifacts.Blowfish.PPC64LE

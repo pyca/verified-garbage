@@ -32,7 +32,7 @@ def validate : Prog isa :=
 
 /-- The working spaces for a key known to be valid, as `checkKey` leaves them;
 then `rest`, or `fail` if the sizes are not supported. -/
-def setup (rest fail : Prog isa) : Prog isa := sizes (.seq setupQ (.seq setupP rest)) fail
+def setup (rest fail : Prog isa) : Prog isa := sizes (.seq setupQ (.seq setupPCall rest)) fail
 
 /-- `vg_dsa_verify_prevalidated`. -/
 def verify : Prog isa :=

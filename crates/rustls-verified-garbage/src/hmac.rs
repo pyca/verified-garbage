@@ -1,0 +1,80 @@
+//! HMAC with SHA-2, for TLS 1.2's PRF.
+
+use alloc::boxed::Box;
+
+use rustls::crypto;
+use verified_garbage::hashes::sha256::Sha256;
+use verified_garbage::hashes::sha384::Sha384;
+use verified_garbage::hashes::sha512::Sha512;
+use verified_garbage::hmac::{self, HmacHash};
+
+pub(crate) static HMAC_SHA256: Hmac<Sha256> = Hmac(core::marker::PhantomData);
+pub(crate) static HMAC_SHA384: Hmac<Sha384> = Hmac(core::marker::PhantomData);
+#[allow(dead_code)] // HPKE's HKDF-SHA512 suites and the TLS 1.2 PRF test.
+pub(crate) static HMAC_SHA512: Hmac<Sha512> = Hmac(core::marker::PhantomData);
+
+pub(crate) struct Hmac<H>(core::marker::PhantomData<fn() -> H>);
+
+impl<H: HmacHash + 'static> crypto::hmac::Hmac for Hmac<H>
+where
+    H::State: Send + Sync,
+{
+    fn with_key(&self, key: &[u8]) -> Box<dyn crypto::hmac::Key> {
+        Box::new(Key(hmac::Hmac::<H>::new(key)))
+    }
+
+    fn hash_output_len(&self) -> usize {
+        H::OUTPUT_SIZE
+    }
+}
+
+/// An HMAC computation that has absorbed only the key: each MAC continues
+/// a copy of it, so the key is processed once.
+struct Key<H: HmacHash>(hmac::Hmac<H>);
+
+impl<H: HmacHash> crypto::hmac::Key for Key<H>
+where
+    H::State: Send + Sync,
+{
+    fn sign_concat(&self, first: &[u8], middle: &[&[u8]], last: &[u8]) -> crypto::hmac::Tag {
+        // TLS 1.2's PRF repeatedly authenticates short lists of fragments.
+        // Hold DIT across the updates and finalization of each tag.
+        verified_garbage::dit::scope(|| {
+            let mut h = self.0.clone();
+            if !first.is_empty() {
+                h.update(first);
+            }
+            for m in middle {
+                h.update(m);
+            }
+            if !last.is_empty() {
+                h.update(last);
+            }
+            crypto::hmac::Tag::new(h.finalize().as_ref())
+        })
+    }
+
+    fn tag_len(&self) -> usize {
+        H::OUTPUT_SIZE
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use rustls::crypto::hmac::Hmac;
+
+    use super::{HMAC_SHA256, HMAC_SHA384, HMAC_SHA512};
+
+    /// Each HMAC's output is as long as it says, and as its keys' tags.
+    #[test]
+    fn output_len() {
+        for hmac in [&HMAC_SHA256 as &dyn Hmac, &HMAC_SHA384, &HMAC_SHA512] {
+            let key = hmac.with_key(b"key");
+            assert_eq!(hmac.hash_output_len(), key.tag_len());
+            let expected = key.sign(&[b"message"]);
+            assert_eq!(expected.as_ref().len(), key.tag_len());
+            let split = key.sign_concat(b"me", &[b"", b"ss"], b"age");
+            assert_eq!(split.as_ref(), expected.as_ref());
+        }
+    }
+}

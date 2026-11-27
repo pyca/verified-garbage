@@ -1,12 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.Arm.Shake.CT
-import Mathlib.Logic.Function.Basic
 public import VerifiedGarbage.Impl.Ed448.Arm.SignCached
 public import VerifiedGarbage.Proof.Ed448.Arm.BaseLit
 public import VerifiedGarbage.Proof.Ed448.Arm.ScalarLit
 public import VerifiedGarbage.Proof.Ed448.Arm.SignCached.Layout
-public import VerifiedGarbage.Proof.Ed448.Ref
+public import VerifiedGarbage.Proof.Ed448.CombRef
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Proof.Framework.TaintSum
 public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Wrap
@@ -51,7 +50,9 @@ open VG.Proof.Ed448.Arm.Shake (Kit Args argVal kWr kArgs Two Slots valid_const v
   hdr_len)
 open VG.Proof.Ed448.Arm (scalarReduceLocal scalarReduce_ok scalarReduce_ct scalarBaseLocal scalarBase_ok
   scalarBase_ct scalarMulAddLocal scalarMulAdd_ok scalarMulAdd_ct)
-open VG.Proof.Ed448 (BaseLadderOk)
+open VG.Proof.Ed448 (BaseCombOk)
+
+variable {fv : Bool}
 
 variable {L : Lay} {g₁ g₂ : Reg → BitVec 32} {m₁ m₂ : Mem}
 
@@ -65,9 +66,9 @@ theorem seed_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) :
   have hk := hL.kit
   obtain ⟨cs, ds⟩ := hL.input_data (R := L.SEED) (D := ⟨State.addr L.seed, 57⟩) (by simp [Lay.inputs])
     ⟨0, (BitVec.add_zero _).symm, by simp⟩
-  have e1 : argVal L.E L.value (.caller 1 0) = L.seed := by simp [argVal, Lay.value]
+  obtain e1 : argVal L.E L.value (.caller 1 0) = L.seed := by simp [argVal, Lay.value]
   have e57 : (argVal L.E L.value (.const 57)).toNat = 57 := rfl
-  have a := hk.first_ct (g₁ := g₁) (g₂ := g₂) ha hb (scr_at L) (src := .caller 1 0) (len := .const 57)
+  obtain a := hk.first_ct (g₁ := g₁) (g₂ := g₂) ha hb (scr_at L) (src := .caller 1 0) (len := .const 57)
     ⟨by decide, by decide⟩ (valid_const (by decide)) (by rw [e1, e57]; exact cs) (by rw [e1, e57]; exact ds.kwr)
     (by rw [e1, e57]; exact hL.ne)
   exact (hk.zeroState_ct ha hb (scr_at L)).seq (a.seq ((hk.padStep_ct ha hb (scr_at L) _
@@ -108,7 +109,7 @@ theorem local_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) (P 
     {d k : Nat} (h8 : 8 ≤ d) (hd : d + k ≤ 248) (hk : k < 65536) :
     RelCT isa (T2 L g₁ g₂ m₁ m₂ fun s => s.gpr .r0 = BitVec.ofNat 32 P) (absorb (nextArgs SC (.frame d) (.const k)))
       (T2 L g₁ g₂ m₁ m₂ fun s => s.gpr .r0 = BitVec.ofNat 32 ((P + (argVal L.E L.value (.const k)).toNat) % 136)) := by
-  have hkn : (argVal L.E L.value (.const k)).toNat = k := by
+  obtain hkn : (argVal L.E L.value (.const k)).toNat = k := by
     simp only [argVal, BitVec.toNat_ofNat]; omega_using [hd]
   have hd' : argVal L.E L.value (.frame d) = L.E + BitVec.ofNat 32 d := rfl
   exact hL.kit.next_ct ha hb (scr_at L) P hP (valid_frame (by omega_using [hd])) (valid_const hk)
@@ -130,15 +131,15 @@ theorem nonce_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) :
     RelCT isa (T2 L g₁ g₂ m₁ m₂ fun _ => True) nonceHash (T2 L g₁ g₂ m₁ m₂ fun _ => True) := by
   have hk := hL.kit
   let P1 : Nat := (0 + (argVal L.E L.value (.const 10)).toNat) % 136
-  have x2 := input_ct (g₁ := g₁) (g₂ := g₂) hL ha hb P1 (Nat.mod_lt _ (by decide)) (src := .caller 3 0)
+  obtain x2 := input_ct (g₁ := g₁) (g₂ := g₂) hL ha hb P1 (Nat.mod_lt _ (by decide)) (src := .caller 3 0)
     (len := .caller 4 0) ⟨by decide, by decide⟩ ⟨by decide, by decide⟩ (R := L.CTX) (by simp [Lay.inputs])
     (by simp only [argVal, Lay.value, BitVec.add_zero]; exact ⟨0, (BitVec.add_zero _).symm, by simp⟩)
     (by simp only [argVal, Lay.value, BitVec.add_zero]; exact hL.nx)
   let P2 : Nat := (P1 + (argVal L.E L.value (.caller 4 0)).toNat) % 136
-  have x3 := local_ct (g₁ := g₁) (g₂ := g₂) hL ha hb P2 (Nat.mod_lt _ (by decide)) (d := K) (k := 57)
+  obtain x3 := local_ct (g₁ := g₁) (g₂ := g₂) hL ha hb P2 (Nat.mod_lt _ (by decide)) (d := K) (k := 57)
     (by decide) (by decide) (by decide)
   let P3 : Nat := (P2 + (argVal L.E L.value (.const 57)).toNat) % 136
-  have x4 := input_ct (g₁ := g₁) (g₂ := g₂) hL ha hb P3 (Nat.mod_lt _ (by decide)) (src := .caller 5 0)
+  obtain x4 := input_ct (g₁ := g₁) (g₂ := g₂) hL ha hb P3 (Nat.mod_lt _ (by decide)) (src := .caller 5 0)
     (len := LEN) ⟨by decide, by decide⟩ ⟨by decide, by decide⟩ (R := L.MSG) (by simp [Lay.inputs])
     (by simp only [argVal, Lay.value, LEN, BitVec.add_zero]; exact ⟨0, (BitVec.add_zero _).symm, by simp⟩)
     (by simp only [argVal, Lay.value, LEN, BitVec.add_zero]; exact hL.nm)
@@ -151,24 +152,24 @@ theorem chal_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) :
     RelCT isa (T2 L g₁ g₂ m₁ m₂ fun _ => True) chalHash (T2 L g₁ g₂ m₁ m₂ fun _ => True) := by
   have hk := hL.kit
   let P1 : Nat := (0 + (argVal L.E L.value (.const 10)).toNat) % 136
-  have x2 := input_ct (g₁ := g₁) (g₂ := g₂) hL ha hb P1 (Nat.mod_lt _ (by decide)) (src := .caller 3 0)
+  obtain x2 := input_ct (g₁ := g₁) (g₂ := g₂) hL ha hb P1 (Nat.mod_lt _ (by decide)) (src := .caller 3 0)
     (len := .caller 4 0) ⟨by decide, by decide⟩ ⟨by decide, by decide⟩ (R := L.CTX) (by simp [Lay.inputs])
     (by simp only [argVal, Lay.value, BitVec.add_zero]; exact ⟨0, (BitVec.add_zero _).symm, by simp⟩)
     (by simp only [argVal, Lay.value, BitVec.add_zero]; exact hL.nx)
   let P2 : Nat := (P1 + (argVal L.E L.value (.caller 4 0)).toNat) % 136
-  have e0 : argVal L.E L.value (.caller 0 0) = L.out := by simp [argVal, Lay.value]
+  obtain e0 : argVal L.E L.value (.caller 0 0) = L.out := by simp [argVal, Lay.value]
   have e57 : (argVal L.E L.value (.const 57)).toNat = 57 := rfl
-  have x3 := hk.next_ct (g₁ := g₁) (g₂ := g₂) ha hb (scr_at L) P2 (Nat.mod_lt _ (by decide))
+  obtain x3 := hk.next_ct (g₁ := g₁) (g₂ := g₂) ha hb (scr_at L) P2 (Nat.mod_lt _ (by decide))
     (src := .caller 0 0) (len := .const 57) ⟨by decide, by decide⟩ (valid_const (by decide))
     (by rw [e0, e57]; exact .inr ⟨L.OUT, List.mem_append_right _ (out_in L), r0_within L⟩)
     (by rw [e0, e57]; exact hL.away_r0.kwr) (by rw [e0, e57]; have := hL.no; omega_using [this])
   let P3 : Nat := (P2 + (argVal L.E L.value (.const 57)).toNat) % 136
-  have x4 := input_ct (g₁ := g₁) (g₂ := g₂) hL ha hb P3 (Nat.mod_lt _ (by decide)) (src := .caller 2 0)
+  obtain x4 := input_ct (g₁ := g₁) (g₂ := g₂) hL ha hb P3 (Nat.mod_lt _ (by decide)) (src := .caller 2 0)
     (len := .const 57) ⟨by decide, by decide⟩ (valid_const (by decide)) (R := L.PK) (by simp [Lay.inputs])
     (by simp only [argVal, Lay.value, BitVec.add_zero]; exact ⟨0, (BitVec.add_zero _).symm, by simp⟩)
     (by simp only [argVal, Lay.value, BitVec.add_zero]; have := hL.np; simp; omega_using [this])
   let P4 : Nat := (P3 + (argVal L.E L.value (.const 57)).toNat) % 136
-  have x5 := input_ct (g₁ := g₁) (g₂ := g₂) hL ha hb P4 (Nat.mod_lt _ (by decide)) (src := .caller 5 0)
+  obtain x5 := input_ct (g₁ := g₁) (g₂ := g₂) hL ha hb P4 (Nat.mod_lt _ (by decide)) (src := .caller 5 0)
     (len := LEN) ⟨by decide, by decide⟩ ⟨by decide, by decide⟩ (R := L.MSG) (by simp [Lay.inputs])
     (by simp only [argVal, Lay.value, LEN, BitVec.add_zero]; exact ⟨0, (BitVec.add_zero _).symm, by simp⟩)
     (by simp only [argVal, Lay.value, LEN, BitVec.add_zero]; exact hL.nm)
@@ -189,14 +190,14 @@ theorem reduceR_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) :
       (T2 L g₁ g₂ m₁ m₂ fun _ => True) := by
   have hk := hL.kit
   let args : List (Reg × Value) := [(.r0, .caller 0 57), (.r1, .frame HASH), (.r2, .caller SC 0)]
-  have get : ∀ t, Slots L.E L.value args [] t → ReduceArgs L (L.out + BitVec.ofNat 32 57) (L.E + BitVec.ofNat 32 HASH) t := by
+  obtain get : ∀ t, Slots L.E L.value args [] t → ReduceArgs L (L.out + BitVec.ofNat 32 57) (L.E + BitVec.ofNat 32 HASH) t := by
     intro t hs
-    have h0 := slot_reg hs (r := .r0) (v := .caller 0 57) (by simp [args])
-    have h1 := slot_reg hs (r := .r1) (v := .frame HASH) (by simp [args])
-    have h2 := slot_reg hs (r := .r2) (v := .caller SC 0) (by simp [args])
+    obtain h0 := slot_reg hs (r := .r0) (v := .caller 0 57) (by simp [args])
+    obtain h1 := slot_reg hs (r := .r1) (v := .frame HASH) (by simp [args])
+    obtain h2 := slot_reg hs (r := .r2) (v := .caller SC 0) (by simp [args])
     simp only [argVal, Lay.value, SC, BitVec.add_zero] at h0 h1 h2
     exact ⟨h0, h1, h2⟩
-  have hO : Whole.Within (L.ob 57 57) (Whole.FR L.E) ∨ ∃ R ∈ L.outputs, Whole.Within (L.ob 57 57) R :=
+  obtain hO : Whole.Within (L.ob 57 57) (Whole.FR L.E) ∨ ∃ R ∈ L.outputs, Whole.Within (L.ob 57 57) R :=
     .inr ⟨L.OUT, out_in L, Lay.Ok.ob_within (by decide)⟩
   refine (hk.setup_ct ha hb args [] (by decide)
     (by simp only [args, List.forall_mem_cons]
@@ -221,14 +222,14 @@ theorem reduceK_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) :
       (T2 L g₁ g₂ m₁ m₂ fun _ => True) := by
   have hk := hL.kit
   let args : List (Reg × Value) := [(.r0, .frame K), (.r1, .frame HASH), (.r2, .caller SC 0)]
-  have get : ∀ t, Slots L.E L.value args [] t → ReduceArgs L (L.E + BitVec.ofNat 32 K) (L.E + BitVec.ofNat 32 HASH) t := by
+  obtain get : ∀ t, Slots L.E L.value args [] t → ReduceArgs L (L.E + BitVec.ofNat 32 K) (L.E + BitVec.ofNat 32 HASH) t := by
     intro t hs
-    have h0 := slot_reg hs (r := .r0) (v := .frame K) (by simp [args])
-    have h1 := slot_reg hs (r := .r1) (v := .frame HASH) (by simp [args])
-    have h2 := slot_reg hs (r := .r2) (v := .caller SC 0) (by simp [args])
+    obtain h0 := slot_reg hs (r := .r0) (v := .frame K) (by simp [args])
+    obtain h1 := slot_reg hs (r := .r1) (v := .frame HASH) (by simp [args])
+    obtain h2 := slot_reg hs (r := .r2) (v := .caller SC 0) (by simp [args])
     simp only [argVal, Lay.value, SC, BitVec.add_zero] at h0 h1 h2
     exact ⟨h0, h1, h2⟩
-  have hO : Whole.Within (L.fr K 57) (Whole.FR L.E) ∨ ∃ R ∈ L.outputs, Whole.Within (L.fr K 57) R :=
+  obtain hO : Whole.Within (L.fr K 57) (Whole.FR L.E) ∨ ∃ R ∈ L.outputs, Whole.Within (L.fr K 57) R :=
     .inl (frame_within _ (by decide))
   refine (hk.setup_ct ha hb args [] (by decide)
     (by simp only [args, List.forall_mem_cons]
@@ -248,17 +249,17 @@ theorem reduceK_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) :
       (fr_fr (by decide) (by decide) (by decide)) (hk.stack_scr (by decide)) hO (get t hs))
       fun _ ⟨hu, _⟩ => ⟨hu, trivial⟩
 
-theorem base_ct (hl : BaseLadderOk) (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) :
+theorem base_ct (hl : BaseCombOk) (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) :
     RelCT isa (T2 L g₁ g₂ m₁ m₂ fun _ => True)
-      (callWith baseArgs "vg_ed448_scalar_base" Impl.Ed448.Arm.scalarBase)
+      (callWith baseArgs ("vg_ed448_scalar_base" ++ Impl.X448.Arm.suffix fv) (Impl.Ed448.Arm.scalarBase fv))
       (T2 L g₁ g₂ m₁ m₂ fun _ => True) := by
   have hk := hL.kit
   let args : List (Reg × Value) := [(.r0, .caller 0 0), (.r1, .caller 0 57), (.r2, .caller SC 0)]
-  have get : ∀ t, Slots L.E L.value args [] t → BaseArgs L t := by
+  obtain get : ∀ t, Slots L.E L.value args [] t → BaseArgs L t := by
     intro t hs
-    have h0 := slot_reg hs (r := .r0) (v := .caller 0 0) (by simp [args])
-    have h1 := slot_reg hs (r := .r1) (v := .caller 0 57) (by simp [args])
-    have h2 := slot_reg hs (r := .r2) (v := .caller SC 0) (by simp [args])
+    obtain h0 := slot_reg hs (r := .r0) (v := .caller 0 0) (by simp [args])
+    obtain h1 := slot_reg hs (r := .r1) (v := .caller 0 57) (by simp [args])
+    obtain h2 := slot_reg hs (r := .r2) (v := .caller SC 0) (by simp [args])
     simp only [argVal, Lay.value, SC, BitVec.add_zero] at h0 h1 h2
     exact ⟨h0, h1, h2⟩
   refine (hk.setup_ct ha hb args [] (by decide)
@@ -281,13 +282,13 @@ theorem mulAdd_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) :
       (T2 L g₁ g₂ m₁ m₂ fun _ => True) := by
   have hk := hL.kit
   let args : List (Reg × Value) := [(.r0, .caller 0 57), (.r1, .caller 0 57), (.r2, .frame K), (.r3, .frame S)]
-  have get : ∀ t, Slots L.E L.value args [.caller SC 0] t → MulArgs L t := by
+  obtain get : ∀ t, Slots L.E L.value args [.caller SC 0] t → MulArgs L t := by
     intro t hs
-    have h0 := slot_reg hs (r := .r0) (v := .caller 0 57) (by simp [args])
-    have h1 := slot_reg hs (r := .r1) (v := .caller 0 57) (by simp [args])
-    have h2 := slot_reg hs (r := .r2) (v := .frame K) (by simp [args])
-    have h3 := slot_reg hs (r := .r3) (v := .frame S) (by simp [args])
-    have a0 := hs.2 0 (by simp)
+    obtain h0 := slot_reg hs (r := .r0) (v := .caller 0 57) (by simp [args])
+    obtain h1 := slot_reg hs (r := .r1) (v := .caller 0 57) (by simp [args])
+    obtain h2 := slot_reg hs (r := .r2) (v := .frame K) (by simp [args])
+    obtain h3 := slot_reg hs (r := .r3) (v := .frame S) (by simp [args])
+    obtain a0 := hs.2 0 (by simp)
     simp only [argVal, Lay.value, SC, BitVec.add_zero, List.getElem_cons_zero] at h0 h1 h2 h3 a0
     exact ⟨h0, h1, h2, h3, a0⟩
   refine (hk.setup_ct ha hb args [.caller SC 0] (by decide)
@@ -315,9 +316,9 @@ theorem wipe_ct (hL : L.Ok) : RelCT isa (T2 L g₁ g₂ m₁ m₂ fun _ => True)
 
 /-! ## The body -/
 
-theorem body_ct (hl : BaseLadderOk) (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) :
-    RelCT isa (T2 L g₁ g₂ m₁ m₂ fun _ => True) body (T2 L g₁ g₂ m₁ m₂ fun _ => True) := by
-  have h : RelCT isa (T2 L g₁ g₂ m₁ m₂ fun _ => True) (.block (hdrAt 4 HDR)) (T2 L g₁ g₂ m₁ m₂ fun _ => True) :=
+theorem body_ct (hl : BaseCombOk) (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) :
+    RelCT isa (T2 L g₁ g₂ m₁ m₂ fun _ => True) (body fv) (T2 L g₁ g₂ m₁ m₂ fun _ => True) := by
+  obtain h : RelCT isa (T2 L g₁ g₂ m₁ m₂ fun _ => True) (.block (hdrAt 4 HDR)) (T2 L g₁ g₂ m₁ m₂ fun _ => True) :=
     (hL.kit.hdr_ct (g₁ := g₁) (g₂ := g₂) ha hb (j := 4) (off := HDR) (by decide) hL.cl (by decide)).mono
       (fun _ _ h => h) (fun _ _ h => ⟨⟨h.1.1, trivial⟩, ⟨h.2.1, trivial⟩⟩)
   exact h.seq ((seed_ct hL ha hb).seq ((prune_ct hL).seq ((nonce_ct hL ha hb).seq ((reduceR_ct hL ha hb).seq
@@ -350,7 +351,9 @@ namespace VG.Proof.Ed448.Arm.SignCached
 open VG VG.Arm VG.Impl.Ed448.Arm.SignCached VG.Impl.Ed25519.Arm.Whole
 open VG.Proof.Ed25519.Arm (Whole.Ctx Whole.FR Whole.Within)
 open VG.Proof.Ed448.Arm.Shake (Kit Args argVal kWr kArgs hdrBytes frame_bytes)
-open VG.Proof.Ed448 (BaseLadderOk)
+open VG.Proof.Ed448 (BaseCombOk)
+
+variable {fv : Bool}
 
 variable {L : Lay} {g : Reg → BitVec 32} {m₀ : Mem} {t : State}
 
@@ -379,95 +382,95 @@ theorem keep {D : Region} (h : Away L D) {ex : List Region} (hx : ∀ r ∈ ex, 
     {m m' : Mem} (hf : Frame (W L ex) m m') (hn : D.len ≤ 2 ^ 64) :
     Spec.Ed448.bytesAt m' D.base D.len = Spec.Ed448.bytesAt m D.base D.len := h.bytes hx hf hn
 
-theorem body_ok (hl : BaseLadderOk) (hc : Ctx L g m₀ t) (hL : L.Ok) (ha : Arguments L m₀)
+theorem body_ok (hl : BaseCombOk) (hc : Ctx L g m₀ t) (hL : L.Ok) (ha : Arguments L m₀)
     (hpk : Spec.Ed448.bytesAt m₀ (State.addr L.pk) 57 =
       Spec.Ed448.publicKey (Spec.Ed448.bytesAt m₀ (State.addr L.seed) 57)) :
-    WP isa body t fun u => Ctx L g m₀ u ∧
+    WP isa (body fv) t fun u => Ctx L g m₀ u ∧
       Spec.Ed448.bytesAt u.mem (State.addr L.out) 114 =
         Spec.Ed448.sign (Spec.Ed448.bytesAt m₀ (State.addr L.seed) 57)
           (Spec.Ed448.bytesAt m₀ (State.addr L.ctx) L.ctxLen.toNat)
           (Spec.Ed448.bytesAt m₀ (State.addr L.msg) L.len.toNat) := by
   have hk := hL.kit
-  have n10 : (10 : Nat) ≤ 2 ^ 64 := by decide
-  have n57 : (57 : Nat) ≤ 2 ^ 64 := by decide
+  obtain n10 : (10 : Nat) ≤ 2 ^ 64 := by decide
+  obtain n57 : (57 : Nat) ≤ 2 ^ 64 := by decide
   -- Regions kept, and the disjointness of each from what the steps write.
-  have dHS : (L.fr HDR 10).Disjoint (L.fr S 114) := fr_fr (by decide) (by decide) (by decide)
-  have dHS' : (L.fr HDR 10).Disjoint (L.fr S 57) := fr_fr (by decide) (by decide) (by decide)
-  have dHH : (L.fr HDR 10).Disjoint (L.fr HASH 114) := fr_fr (by decide) (by decide) (by decide)
-  have dHr : (L.fr HDR 10).Disjoint (L.ob 57 57) := (hL.ob_stk (by decide) (by decide)).symm
-  have dHc : (L.fr HDR 10).Disjoint L.SCR := hk.stack_scr (by decide)
-  have dHR : (L.fr HDR 10).Disjoint L.R0 :=
+  obtain dHS : (L.fr HDR 10).Disjoint (L.fr S 114) := fr_fr (by decide) (by decide) (by decide)
+  obtain dHS' : (L.fr HDR 10).Disjoint (L.fr S 57) := fr_fr (by decide) (by decide) (by decide)
+  obtain dHH : (L.fr HDR 10).Disjoint (L.fr HASH 114) := fr_fr (by decide) (by decide) (by decide)
+  obtain dHr : (L.fr HDR 10).Disjoint (L.ob 57 57) := (hL.ob_stk (by decide) (by decide)).symm
+  obtain dHc : (L.fr HDR 10).Disjoint L.SCR := hk.stack_scr (by decide)
+  obtain dHR : (L.fr HDR 10).Disjoint L.R0 :=
     (hL.ko.sub_left (Offset.sub_base _ (by decide : 236 + 10 ≤ 280))).sub_right (r0_sub L)
-  have dKS : (L.fr K 57).Disjoint (L.fr S 57) := fr_fr (by decide) (by decide) (by decide)
-  have dSH : (L.fr S 57).Disjoint (L.fr HASH 114) := fr_fr (by decide) (by decide) (by decide)
-  have dSr : (L.fr S 57).Disjoint (L.ob 57 57) := (hL.ob_stk (by decide) (by decide)).symm
-  have dSc : (L.fr S 57).Disjoint L.SCR := hk.stack_scr (by decide)
-  have dSR : (L.fr S 57).Disjoint L.R0 :=
+  obtain dKS : (L.fr K 57).Disjoint (L.fr S 57) := fr_fr (by decide) (by decide) (by decide)
+  obtain dSH : (L.fr S 57).Disjoint (L.fr HASH 114) := fr_fr (by decide) (by decide) (by decide)
+  obtain dSr : (L.fr S 57).Disjoint (L.ob 57 57) := (hL.ob_stk (by decide) (by decide)).symm
+  obtain dSc : (L.fr S 57).Disjoint L.SCR := hk.stack_scr (by decide)
+  obtain dSR : (L.fr S 57).Disjoint L.R0 :=
     (hL.ko.sub_left (Offset.sub_base _ (by decide : 122 + 57 ≤ 280))).sub_right (r0_sub L)
   have dSK : (L.fr S 57).Disjoint (L.fr K 57) := dKS.symm
-  have drR : (L.ob 57 57).Disjoint L.R0 := Offset.disjoint_base _ (by decide) (by decide)
-  have drc : (L.ob 57 57).Disjoint L.SCR := hL.ob_scr (by decide)
-  have drH : (L.ob 57 57).Disjoint (L.fr HASH 114) := hL.ob_stk (by decide) (by decide)
-  have drK : (L.ob 57 57).Disjoint (L.fr K 57) := hL.ob_stk (by decide) (by decide)
-  have dRH : L.R0.Disjoint (L.fr HASH 114) :=
+  obtain drR : (L.ob 57 57).Disjoint L.R0 := Offset.disjoint_base _ (by decide) (by decide)
+  obtain drc : (L.ob 57 57).Disjoint L.SCR := hL.ob_scr (by decide)
+  obtain drH : (L.ob 57 57).Disjoint (L.fr HASH 114) := hL.ob_stk (by decide) (by decide)
+  obtain drK : (L.ob 57 57).Disjoint (L.fr K 57) := hL.ob_stk (by decide) (by decide)
+  obtain dRH : L.R0.Disjoint (L.fr HASH 114) :=
     ((hL.ko.sub_left (Offset.sub_base _ (by decide : 8 + 114 ≤ 280))).sub_right (r0_sub L)).symm
-  have dRK : L.R0.Disjoint (L.fr K 57) :=
+  obtain dRK : L.R0.Disjoint (L.fr K 57) :=
     ((hL.ko.sub_left (Offset.sub_base _ (by decide : 179 + 57 ≤ 280))).sub_right (r0_sub L)).symm
-  have dRc : L.R0.Disjoint L.SCR := hL.oc.sub_left (r0_sub L)
+  obtain dRc : L.R0.Disjoint L.SCR := hL.oc.sub_left (r0_sub L)
   have dRr : L.R0.Disjoint (L.ob 57 57) := drR.symm
   have aH := hL.away_hdr
   have aS := hL.away_s
-  have ar := hL.away_ob (o := 57) (l := 57) (by decide)
+  obtain ar := hL.away_ob (o := 57) (l := 57) (by decide)
   have aR := hL.away_r0
   -- The header.
   refine WP.seq (WP.mono (hdr_step hc hL ha) fun t1 ⟨hc1, hh1⟩ => ?_)
   -- `SHAKE256(seed)`, pruned.
   refine WP.seq (WP.mono (seed_step hc1 hL ha) fun t2 ⟨hc2, hf2, hb2⟩ => ?_)
-  have hh2 := keep aH (disj1 dHS) hf2 n10
+  obtain hh2 := keep aH (disj1 dHS) hf2 n10
   simp only at hh2
   refine WP.seq (WP.mono (prune_step hc2 hL) fun t3 ⟨hc3, hf3, hs3⟩ => ?_)
-  have hh3 := frame_bytes hf3 (D := L.fr HDR 10) (disj1 dHS') n10
-  have hp3 := frame_bytes hf3 (D := L.fr K 57) (disj1 dKS) n57
+  obtain hh3 := frame_bytes hf3 (D := L.fr HDR 10) (disj1 dHS') n10
+  obtain hp3 := frame_bytes hf3 (D := L.fr K 57) (disj1 dKS) n57
   simp only at hh3 hp3
-  have hpfx : Spec.Ed448.bytesAt t3.mem (State.addr L.E + BitVec.ofNat 64 K) 57 =
+  obtain hpfx : Spec.Ed448.bytesAt t3.mem (State.addr L.E + BitVec.ofNat 64 K) 57 =
       (Spec.Sha3.shake256 (Spec.Ed448.bytesAt m₀ (State.addr L.seed) 57) 114).drop 57 := by
     rw [hp3, ← hb2, drop57, Offset.add_add]; rfl
   rw [hb2] at hs3
   -- The nonce's hash, and `r`.
   refine WP.seq (WP.mono (nonce_step hc3 hL ha (by rw [hh3, hh2, hh1])) fun t4 ⟨hc4, hf4, hb4⟩ => ?_)
-  have hh4 := keep aH (disj1 dHH) hf4 n10
-  have hs4 := keep aS (disj1 dSH) hf4 n57
+  obtain hh4 := keep aH (disj1 dHH) hf4 n10
+  obtain hs4 := keep aS (disj1 dSH) hf4 n57
   simp only at hh4 hs4
   rw [hpfx] at hb4
   refine WP.seq (WP.mono (reduceR_step hc4 hL ha) fun t5 ⟨hc5, hf5, hr5⟩ => ?_)
-  have hh5 := keep aH (disj2 dHr dHc) hf5 n10
-  have hs5 := keep aS (disj2 dSr dSc) hf5 n57
+  obtain hh5 := keep aH (disj2 dHr dHc) hf5 n10
+  obtain hs5 := keep aS (disj2 dSr dSc) hf5 n57
   simp only at hh5 hs5
   rw [hb4] at hr5
   -- `R`.
   refine WP.seq (WP.mono (base_step hl hc5 hL ha) fun t6 ⟨hc6, hf6, hR6⟩ => ?_)
-  have hh6 := keep aH (disj2 dHR dHc) hf6 n10
-  have hs6 := keep aS (disj2 dSR dSc) hf6 n57
-  have hr6 := keep ar (disj2 drR drc) hf6 n57
+  obtain hh6 := keep aH (disj2 dHR dHc) hf6 n10
+  obtain hs6 := keep aS (disj2 dSR dSc) hf6 n57
+  obtain hr6 := keep ar (disj2 drR drc) hf6 n57
   simp only at hh6 hs6 hr6
   rw [hr5] at hR6 hr6
   -- The challenge's hash, and `k`.
   refine WP.seq (WP.mono (chal_step hc6 hL ha (by rw [hh6, hh5, hh4, hh3, hh2, hh1]))
     fun t7 ⟨hc7, hf7, hb7⟩ => ?_)
-  have hs7 := keep aS (disj1 dSH) hf7 n57
-  have hr7 := keep ar (disj1 drH) hf7 n57
-  have hR7 := keep aR (disj1 dRH) hf7 n57
+  obtain hs7 := keep aS (disj1 dSH) hf7 n57
+  obtain hr7 := keep ar (disj1 drH) hf7 n57
+  obtain hR7 := keep aR (disj1 dRH) hf7 n57
   simp only at hs7 hr7 hR7
   rw [hR6] at hb7
   refine WP.seq (WP.mono (reduceK_step hc7 hL ha) fun t8 ⟨hc8, hf8, hk8⟩ => ?_)
-  have hs8 := keep aS (disj2 dSK dSc) hf8 n57
-  have hr8 := keep ar (disj2 drK drc) hf8 n57
-  have hR8 := keep aR (disj2 dRK dRc) hf8 n57
+  obtain hs8 := keep aS (disj2 dSK dSc) hf8 n57
+  obtain hr8 := keep ar (disj2 drK drc) hf8 n57
+  obtain hR8 := keep aR (disj2 dRK dRc) hf8 n57
   simp only at hs8 hr8 hR8
   rw [hb7] at hk8
   -- `S`.
   refine WP.seq (WP.mono (mulAdd_step hc8 hL ha) fun t9 ⟨hc9, hf9, hS9⟩ => ?_)
-  have hR9 := keep aR (disj2 dRr dRc) hf9 n57
+  obtain hR9 := keep aR (disj2 dRr dRc) hf9 n57
   simp only at hR9
   -- The locals, cleared.
   refine WP.mono (wipe_step hc9 hL) fun u ⟨hu, hw⟩ => ⟨hu, ?_⟩
@@ -488,7 +491,7 @@ end
 frame (`Whole.wrap_ok`) around the body; `signCached_ct`, constant time
 (`Whole.wrap_ct`, from `body_ct`); and `signCached_verified`, against
 `Spec.Ed448.signCachedContract Arm.abi 280`, given the reference ladder's
-agreement with the specification (`BaseLadderOk`), which only the
+agreement with the specification (`BaseCombOk`), which only the
 registration file supplies.
 -/
 
@@ -500,7 +503,9 @@ open VG VG.Arm VG.Impl.Ed448.Arm.SignCached VG.Impl.Ed25519.Arm.Whole
 open VG.Proof.Ed25519.Arm (Whole.base Whole.base_addr Whole.base_top Whole.stack Whole.Saved Whole.entered
   Whole.saved_ctx Whole.saved_words Whole.saved_frame Whole.bodyRd Whole.bodyWr Whole.wrap_ok Whole.wrap_ct
   Whole.originalWord Whole.Ctx)
-open VG.Proof.Ed448 (BaseLadderOk)
+open VG.Proof.Ed448 (BaseCombOk)
+
+variable {fv : Bool}
 
 /-- `vg_ed448_sign_cached(out = r0, seed = r1, pk = r2, context = r3,
 ctxlen = [sp], message = [sp, #4], len = [sp, #8], scratch = [sp, #12])`, with
@@ -562,7 +567,7 @@ theorem stack_eq : Whole.stack s = ⟨State.addr s.sp - 280, 280⟩ := by
   rw [Whole.base_addr (entry_below h)]
 
 theorem entry_writes : ∀ r ∈ s.wr, (Whole.stack s).Disjoint r := by
-  have hs := stack_eq h
+  obtain hs := stack_eq h
   obtain ⟨_, hw, _, _, _, _, _, _, _, _, _, _, _, ko, _, _, _, _, kc, _⟩ := h
   intro r hr
   rw [hw] at hr
@@ -573,10 +578,10 @@ theorem entry_writes : ∀ r ∈ s.wr, (Whole.stack s).Disjoint r := by
   · exact kc
 
 theorem lay_ok : (lay s).Ok := by
-  have hb := entry_below h
-  have ht := entry_top h
-  have ho := original_args h
-  have hs : (lay s).STK = ⟨State.addr s.sp - 280, 280⟩ := by
+  obtain hb := entry_below h
+  obtain ht := entry_top h
+  obtain ho := original_args h
+  obtain hs : (lay s).STK = ⟨State.addr s.sp - 280, 280⟩ := by
     unfold Lay.STK; rw [show State.addr (lay s).E = State.addr (Whole.base s) from rfl, Whole.base_addr hb]
   obtain ⟨_, _, oc, eo, ec, po, pc, xo, xc, mo, mc, ao, ac, ko, ke, kp, kx, km, kc, no, ne, np, nx, nm, nc,
     _, _, cl, _⟩ := h
@@ -596,7 +601,7 @@ theorem entry_regions : (lay s).inputs = Whole.bodyRd s ∧ (lay s).outputs = s.
 
 theorem entry_ctx {p : State} (hp : Whole.Saved (Whole.entered s) 6 p) :
     Ctx (lay s) s.gpr p.mem (p.withRegions (Whole.bodyRd s) (Whole.bodyWr s)) := by
-  have hc := Whole.saved_ctx hp
+  obtain hc := Whole.saved_ctx hp
   change Whole.Ctx (Whole.base s) s.gpr p.mem (lay s).inputs (lay s).outputs _
   rw [(entry_regions h).1, (entry_regions h).2]
   exact hc
@@ -604,11 +609,11 @@ theorem entry_ctx {p : State} (hp : Whole.Saved (Whole.entered s) 6 p) :
 /-- The caller's stack argument `j - 6`, at `E + 248 + 4 j`, where the caller put it. -/
 theorem caller_word {p : State} (hp : Whole.Saved (Whole.entered s) 6 p) {j : Nat} (hj : 10 ≤ j) (hj' : j < 12) :
     p.mem.readW (State.addr (Whole.base s) + BitVec.ofNat 64 (248 + 4 * j)) 32 = stackArg s (j - 8) := by
-  have hb := entry_below h
-  have ht := entry_top h
-  have hf := Whole.saved_frame hb hp
-  have hbt := Whole.base_top hb
-  have ea : State.addr (Whole.base s) + BitVec.ofNat 64 (248 + 4 * j) =
+  obtain hb := entry_below h
+  obtain ht := entry_top h
+  obtain hf := Whole.saved_frame hb hp
+  obtain hbt := Whole.base_top hb
+  obtain ea : State.addr (Whole.base s) + BitVec.ofNat 64 (248 + 4 * j) =
       State.addr (s.sp + BitVec.ofNat 32 (4 * (j - 8))) := by
     rw [addr_add (by omega_arith), Whole.base_addr hb, show 248 + 4 * j = 280 + 4 * (j - 8) by omega_arith,
       ← BitVec.ofNat_add_ofNat, ← BitVec.add_assoc, show (280 : Addr) = BitVec.ofNat 64 280 from rfl,
@@ -621,12 +626,12 @@ theorem caller_word {p : State} (hp : Whole.Saved (Whole.entered s) 6 p) {j : Na
   rfl
 
 theorem entry_args {p : State} (hp : Whole.Saved (Whole.entered s) 6 p) : Arguments (lay s) p.mem := by
-  have hb := entry_below h
-  have ht := entry_top h
+  obtain hb := entry_below h
+  obtain ht := entry_top h
   intro j hj
   obtain ⟨hj12, hj | hj⟩ := hj
   · have hw := Whole.saved_words hb (by decide : 6 ≤ 6) (by omega_arith) hp hj
-    have he : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 := by omega_arith
+    obtain he : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 := by omega_arith
     rcases he with rfl | rfl | rfl | rfl | rfl | rfl <;>
       simpa only [Whole.originalWord, Impl.Ed25519.Arm.Whole.argReg, Nat.reduceLT, ite_true, ite_false,
         Nat.reduceSub, Nat.reduceMul, Nat.mul_zero, BitVec.add_zero, Lay.value, lay, stackArg, stackArgAddr] using hw
@@ -637,7 +642,7 @@ theorem entry_args {p : State} (hp : Whole.Saved (Whole.entered s) 6 p) : Argume
 
 theorem entry_read : ∀ j < 6, 4 ≤ j →
     InRegions (s.rd ++ s.wr) (State.addr (s.sp + BitVec.ofNat 32 (4 * (j - 4)))) 4 := by
-  have ht := entry_top h
+  obtain ht := entry_top h
   intro j hj h4
   refine ⟨⟨State.addr s.sp, 16⟩, List.mem_append_left _ (by rw [h.1]; simp), ?_⟩
   rw [addr_add (by have := s.sp.isLt; omega_arith)]
@@ -663,13 +668,13 @@ theorem entry_input {m : Mem} (hf : Frame [Whole.stack s] s.mem m) {r : Region} 
 theorem entry_key {p : State} (hp : Whole.Saved (Whole.entered s) 6 p) :
     Spec.Ed448.bytesAt p.mem (State.addr (lay s).pk) 57 =
       Spec.Ed448.publicKey (Spec.Ed448.bytesAt p.mem (State.addr (lay s).seed) 57) := by
-  have hk : Spec.Ed448.bytesAt s.mem (State.addr (s.gpr .r2)) 57 =
+  obtain hk : Spec.Ed448.bytesAt s.mem (State.addr (s.gpr .r2)) 57 =
       Spec.Ed448.publicKey (Spec.Ed448.bytesAt s.mem (State.addr (s.gpr .r1)) 57) := by
     obtain ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, hk⟩ := h
     exact hk
-  have hf := Whole.saved_frame (entry_below h) hp
-  have hp' := entry_input h hf (r := ⟨State.addr (s.gpr .r2), 57⟩) (by rw [h.1]; simp) (by change 57 ≤ 2 ^ 64; decide)
-  have hs' := entry_input h hf (r := ⟨State.addr (s.gpr .r1), 57⟩) (by rw [h.1]; simp) (by change 57 ≤ 2 ^ 64; decide)
+  obtain hf := Whole.saved_frame (entry_below h) hp
+  obtain hp' := entry_input h hf (r := ⟨State.addr (s.gpr .r2), 57⟩) (by rw [h.1]; simp) (by change 57 ≤ 2 ^ 64; decide)
+  obtain hs' := entry_input h hf (r := ⟨State.addr (s.gpr .r1), 57⟩) (by rw [h.1]; simp) (by change 57 ≤ 2 ^ 64; decide)
   change Spec.Ed448.bytesAt p.mem (State.addr (s.gpr .r2)) 57 =
     Spec.Ed448.publicKey (Spec.Ed448.bytesAt p.mem (State.addr (s.gpr .r1)) 57)
   simp only at hp' hs'
@@ -678,7 +683,7 @@ theorem entry_key {p : State} (hp : Whole.Saved (Whole.entered s) 6 p) :
 
 end
 
-theorem body_noFrames : body.noFrames = true := by
+theorem body_noFrames : (body fv).noFrames = true := by
   simp only [body, seedHash, prune, nonceHash, chalHash, Impl.Ed448.Arm.Shake.zeroState,
     Impl.Ed448.Arm.Shake.absorb, Impl.Ed448.Arm.Shake.pad, Impl.Ed448.Arm.Shake.squeeze, callWith,
     Code.noFrames, Bool.and_self]
@@ -686,9 +691,9 @@ theorem body_noFrames : body.noFrames = true := by
     base_noFrames, mulAdd_noFrames]
   rfl
 
-theorem signCached_ok (hl : BaseLadderOk) {s : State} (h : signLocal.pre s) :
-    WP isa code s fun u => abiPreserved s u ∧ signLocal.post s u := by
-  have hw := Whole.wrap_ok body_noFrames (by decide : 6 ≤ 6) (entry_below h)
+theorem signCached_ok (hl : BaseCombOk) {s : State} (h : signLocal.pre s) :
+    WP isa (code fv) s fun u => abiPreserved s u ∧ signLocal.post s u := by
+  obtain hw := Whole.wrap_ok (body_noFrames (fv := fv)) (by decide : 6 ≤ 6) (entry_below h)
     (by have := entry_top h; omega_arith) (entry_read h) (entry_writes h)
     (P := fun m m' _ => Spec.Ed448.bytesAt m' (State.addr (s.gpr .r0)) 114 = Spec.Ed448.sign
       (Spec.Ed448.bytesAt m (State.addr (s.gpr .r1)) 57)
@@ -699,11 +704,21 @@ theorem signCached_ok (hl : BaseLadderOk) {s : State} (h : signLocal.pre s) :
         change Whole.Ctx (Whole.base s) s.gpr p.mem (lay s).inputs (lay s).outputs u at hu
         rw [(entry_regions h).1, (entry_regions h).2] at hu
         exact hu, ho⟩)
+    (hP := fun _ m₁ m₂ _ hf hp => by
+      have e : Spec.Ed448.bytesAt m₂ (State.addr (s.gpr .r0)) 114 = Spec.Ed448.bytesAt m₁ (State.addr (s.gpr .r0)) 114 := by
+        unfold Spec.Ed448.bytesAt
+        refine List.map_congr_left fun i hi => hf.bytes (R := ⟨State.addr (s.gpr .r0), 114⟩) ?_
+          (by change 114 ≤ 2 ^ 64; decide) (List.mem_range.mp hi)
+        rintro r hr
+        rw [List.mem_singleton.mp hr]
+        exact (entry_writes h _ (by rw [h.2.1]; simp)).symm
+      show Spec.Ed448.bytesAt m₂ _ _ = _
+      rw [e]; exact hp)
   refine WP.mono hw fun u ⟨hu, m, hf, hp⟩ => ⟨hu, ?_⟩
-  have e1 := entry_input h hf (r := ⟨State.addr (s.gpr .r1), 57⟩) (by rw [h.1]; simp) (by change 57 ≤ 2 ^ 64; decide)
-  have e3 := entry_input h hf (r := ⟨State.addr (s.gpr .r3), (stackArg s 0).toNat⟩) (by rw [h.1]; simp)
+  obtain e1 := entry_input h hf (r := ⟨State.addr (s.gpr .r1), 57⟩) (by rw [h.1]; simp) (by change 57 ≤ 2 ^ 64; decide)
+  obtain e3 := entry_input h hf (r := ⟨State.addr (s.gpr .r3), (stackArg s 0).toNat⟩) (by rw [h.1]; simp)
     (by change (stackArg s 0).toNat ≤ 2 ^ 64; have := (stackArg s 0).isLt; omega_arith)
-  have e5 := entry_input h hf (r := ⟨State.addr (stackArg s 1), (stackArg s 2).toNat⟩) (by rw [h.1]; simp)
+  obtain e5 := entry_input h hf (r := ⟨State.addr (stackArg s 1), (stackArg s 2).toNat⟩) (by rw [h.1]; simp)
     (by change (stackArg s 2).toNat ≤ 2 ^ 64; have := (stackArg s 2).isLt; omega_arith)
   change Spec.Ed448.bytesAt u.mem (State.addr (s.gpr .r0)) 114 = _
   simp only at e1 e3 e5
@@ -713,17 +728,17 @@ theorem lay_eq {s t : State} (hp : signLocal.pub s t) : lay s = lay t := by
   obtain ⟨sp, h0, h1, h2, h3, a0, a1, a2, a3⟩ := hp
   simp only [lay, Whole.base, sp, h0, h1, h2, h3, a0, a1, a2, a3]
 
-theorem signCached_ct (hl : BaseLadderOk) : ConstantTime isa signLocal.pre signLocal.pub code := by
+theorem signCached_ct (hl : BaseCombOk) : ConstantTime isa signLocal.pre signLocal.pub (code fv) := by
   refine Whole.wrap_ct (by decide : 6 ≤ 6) (fun _ _ hp => hp.1) (fun _ hs => entry_below hs)
     (fun _ hs => by have := entry_top hs; omega_arith) (fun _ hs => entry_read hs) ?_ ?_
   · intro s hs p hp
     exact WP.mono (body_ok hl (entry_ctx hs hp) (lay_ok hs) (entry_args hs hp) (entry_key hs hp)) fun _ _ => trivial
   · intro s t hs ht hp
     rintro a b ta tb a' b' ⟨p, q, hpa, hqb, rfl, rfl⟩ ea eb
-    have he := lay_eq hp
-    have hq : Ctx (lay s) t.gpr q.mem (q.withRegions (Whole.bodyRd t) (Whole.bodyWr t)) :=
+    obtain he := lay_eq hp
+    obtain hq : Ctx (lay s) t.gpr q.mem (q.withRegions (Whole.bodyRd t) (Whole.bodyWr t)) :=
       he ▸ entry_ctx ht hqb
-    have hqa : Arguments (lay s) q.mem := he ▸ entry_args ht hqb
+    obtain hqa : Arguments (lay s) q.mem := he ▸ entry_args ht hqb
     exact ⟨(body_ct hl (lay_ok hs) (entry_args hs hpa) hqa _ _ _ _ _ _
       ⟨⟨entry_ctx hs hpa, trivial⟩, ⟨hq, trivial⟩⟩ ea eb).1, trivial⟩
 
@@ -745,11 +760,11 @@ theorem sat_seed : Spec.Ed448.bytesAt satMem 0x2000 57 = satSeed := by
   unfold satSeed Spec.Ed448.bytesAt
   apply List.map_congr_left
   intro i hi
-  have hi' := List.mem_range.mp hi
-  have ha : ((0x2000 : Addr) + BitVec.ofNat 64 i).toNat = 0x2000 + i := by
+  obtain hi' := List.mem_range.mp hi
+  obtain ha : ((0x2000 : Addr) + BitVec.ofNat 64 i).toNat = 0x2000 + i := by
     change (0x2000 + i % 2 ^ 64) % 2 ^ 64 = 0x2000 + i
     omega_arith
-  have hne : (0x2000 : Addr) + BitVec.ofNat 64 i ≠ 0x900E := fun h => by
+  obtain hne : (0x2000 : Addr) + BitVec.ofNat 64 i ≠ 0x900E := fun h => by
     have := congrArg BitVec.toNat h; rw [ha] at this; simp at this; omega_arith
   simp only [satMem, hne, ↓reduceIte, ha, show 0x2000 + i < 0x3000 from by omega_arith, true_or]
 
@@ -757,11 +772,11 @@ theorem sat_key : Spec.Ed448.bytesAt satMem 0x3000 57 = satKey := by
   apply List.ext_getElem
   · simp only [Spec.Ed448.bytesAt, List.length_map, List.length_range, satKey_length]
   · intro i hi hj
-    have hi' : i < 57 := by simpa only [Spec.Ed448.bytesAt, List.length_map, List.length_range] using hi
-    have ha : ((0x3000 : Addr) + BitVec.ofNat 64 i).toNat = 0x3000 + i := by
+    obtain hi' : i < 57 := by simpa only [Spec.Ed448.bytesAt, List.length_map, List.length_range] using hi
+    obtain ha : ((0x3000 : Addr) + BitVec.ofNat 64 i).toNat = 0x3000 + i := by
       change (0x3000 + i % 2 ^ 64) % 2 ^ 64 = 0x3000 + i
       omega_arith
-    have hne : (0x3000 : Addr) + BitVec.ofNat 64 i ≠ 0x900E := fun h => by
+    obtain hne : (0x3000 : Addr) + BitVec.ofNat 64 i ≠ 0x900E := fun h => by
       have := congrArg BitVec.toNat h; rw [ha] at this; simp at this; omega_arith
     simp only [Spec.Ed448.bytesAt, List.getElem_map, List.getElem_range, satMem, hne, ↓reduceIte, ha,
       show ¬ (0x3000 + i < 0x3000 ∨ 0x3039 ≤ 0x3000 + i) from by omega_arith, Nat.add_sub_cancel_left,
@@ -816,10 +831,10 @@ theorem sign_implies : signLocal.Implies (Spec.Ed448.signCachedContract Arm.abi 
       Arm.State.addr, Arm.stackArg, Arm.stackArgAddr]
   sat := sat
 
-/-- `vg_ed448_sign_cached` on ARMv7, given the reference ladder's agreement
+/-- `vg_ed448_sign_cached` on ARMv7, given the reference comb's agreement
 with the specification. -/
-theorem signCached_verified (hl : BaseLadderOk) :
-    Verified Arm.target code (Spec.Ed448.signCachedContract Arm.abi 280) :=
+theorem signCached_verified (hl : BaseCombOk) :
+    Verified Arm.target (code fv) (Spec.Ed448.signCachedContract Arm.abi 280) :=
   Verified.of_implies
     (Verified.of_correct (fun _ h => signCached_ok hl h) (signCached_ct hl) (.refl sign_implies.sat_left))
     sign_implies

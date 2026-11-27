@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Aes.X86_64.BlocksVariant
-public import VerifiedGarbage.Proof.Aes.X86_64.BlocksResidue
 
 /-! # The implementations of `AesBlocks` on x86-64 -/
 
@@ -11,29 +10,11 @@ namespace VG.Proof.Variants.AesBlocks.X86_64
 
 open VG.Proof.Aes.X86_64
 
-/-- AES-NI, with the residue analyses of the functions over it. -/
-def aesNi : BlocksImpl :=
-  { BlocksImpl.aesni with
-    cfb8EncRes := some BlocksResidue.encAesni
-    cfb8DecRes := some BlocksResidue.decAesni
-    cfbEncRes := some BlocksResidue.cfbEncAesni
-    cfbDecRes := some BlocksResidue.cfbDecAesni
-    ofbRes := some BlocksResidue.ofbAesni
-    ecbEncRes := some BlocksResidue.ecbAesni
-    ocbInitRes := some BlocksResidue.ocbAesni }
+def aesNi : BlocksImpl := .aesni
 
 def scalar : BlocksImpl := .scalar
 
-/-- VAES, with the residue analyses of the functions over it. -/
-def vaes : BlocksImpl :=
-  { BlocksImpl.vaes with
-    cfb8EncRes := some BlocksResidue.encVaes
-    cfb8DecRes := some BlocksResidue.decVaes
-    cfbEncRes := some BlocksResidue.cfbEncVaes
-    cfbDecRes := some BlocksResidue.cfbDecVaes
-    ofbRes := some BlocksResidue.ofbVaes
-    ecbEncRes := some BlocksResidue.ecbVaes
-    ocbInitRes := some BlocksResidue.ocbVaes }
+def vaes : BlocksImpl := .vaes
 
 /-- Every implementation, best first: each function generic over them is
 emitted with each (the registration files that import this), and its

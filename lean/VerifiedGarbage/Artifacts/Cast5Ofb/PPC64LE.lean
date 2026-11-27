@@ -1,24 +1,29 @@
 module
 
-public import VerifiedGarbage.Proof.Cast5.PPC64LE.ModesFrame
-public import VerifiedGarbage.Proof.Cast5.PPC64LE.FbFinalVerified
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.PPC64LE.Print
+public import VerifiedGarbage.TCB.PPC64LE.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Cast5.Ofb
+public import VerifiedGarbage.Spec.Cast5.OfbFinal
+import VerifiedGarbage.Proof.Cast5.PPC64LE.ModesFrame
+import VerifiedGarbage.Proof.Cast5.PPC64LE.FbFinalVerified
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Cast5.PPC64LE.Scrub
 import VerifiedGarbage.Proof.Cast5.PPC64LE.ModesLit
 import VerifiedGarbage.Proof.Cast5.PPC64LE.FbFinalLit
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # CAST5-OFB on PPC64LE -/
 
-@[expose] public section
-
 namespace VG.Artifacts.Cast5Ofb.PPC64LE
 
-def artifacts : List Artifact := [
+public def artifacts : List (Artifact PPC64LE.target) := [
   Spec.Cast5.ofbApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratchWiped 208 .r8 22 Impl.Cast5.PPC64LE.ofb
-    verified := Proof.Cast5.ofb_keyed Proof.Cast5.PPC64LE.Modes.ofb_framed },
+    code := Impl.Cast5.PPC64LE.Fn.ofb
+    verified := Proof.Cast5.PPC64LE.Scrub.ofb_scrubbed },
   Spec.Cast5.ofbFinalApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratchWiped 208 .r8 22 Impl.Cast5.PPC64LE.ofbFinal
-    verified := Proof.Cast5.ofbFinal_keyed Proof.Cast5.PPC64LE.FbFinal.ofbFinal_framed }]
+    code := Impl.Cast5.PPC64LE.Fn.ofbFinal
+    verified := Proof.Cast5.PPC64LE.Scrub.ofbFinal_scrubbed }]
+
+spec_apis artifacts
 
 end VG.Artifacts.Cast5Ofb.PPC64LE

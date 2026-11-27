@@ -1,11 +1,9 @@
 module
 
 public import VerifiedGarbage.Impl.X448.X86_64.Adx
-public import VerifiedGarbage.Proof.X448.X86_64.Field
-public import VerifiedGarbage.Proof.X448.X86_64.Swap
+public import VerifiedGarbage.Proof.X448.X86_64.AddSub
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.X448.X86_64.AddSub
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 public import Batteries.Data.List.Basic
 import VerifiedGarbage.Proof.Framework.Mem
@@ -221,7 +219,7 @@ theorem wins_snoc (i : Nat) : wins i 8 = wins i 7 ++ [win i 7] := by
   unfold wins; rw [show (8 : Nat) = 7 + 1 from rfl, List.range_succ, List.map_append]; rfl
 
 theorem win_facts : ∀ i < 8, (wins i 8).Nodup ∧ win i 7 ∉ wins i 7 ∧
-    ∀ r ∈ wins i 8, r ∈ clob ∧ r ≠ .rax ∧ r ≠ .rcx ∧ r ≠ .rdx ∧ r ≠ .rbp ∧ r ≠ .rdi := by decide
+    ∀ r ∈ wins i 8, r ∈ clob ∧ r ≠ .rax ∧ r ≠ .rcx ∧ r ≠ .rdx ∧ r ≠ .rbp ∧ r ≠ .rdi := by decide +kernel
 
 theorem wins_facts (i : Nat) : (wins i 8).Nodup ∧ win i 7 ∉ wins i 7 ∧
     ∀ r ∈ wins i 8, r ∈ clob ∧ r ≠ .rax ∧ r ≠ .rcx ∧ r ≠ .rdx ∧ r ≠ .rbp ∧ r ≠ .rdi := by

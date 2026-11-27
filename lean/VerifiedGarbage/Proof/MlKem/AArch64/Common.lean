@@ -126,18 +126,6 @@ theorem CoeffsUpTo.zero {m : Mem} {p : Addr} (G : Nat → BitVec 32) :
     CoeffsUpTo m p 0 G fun i => coeffAt m p i := fun i _ => by
   rw [ite_eq_right (Nat.not_lt_zero i)]
 
-/-- Writing coefficient `t`. -/
-theorem CoeffsUpTo.write {m : Mem} {p : Addr} {t : Nat} {G old : Nat → BitVec 32}
-    (h : CoeffsUpTo m p t G old) (ht : t < 256) {v : BitVec 32} (hv : v = G t) :
-    CoeffsUpTo (m.writeW (coeffAddr p t) v) p (t + 1) G old := fun i hi => by
-  rw [coeffAt_writeW m p (show i < n from hi) (show t < n from ht)]
-  by_cases e : t = i
-  · subst e; rw [ite_eq_left rfl, ite_eq_left (by omega_using []), hv]
-  · rw [ite_eq_right e, h i hi]
-    by_cases hit : i < t
-    · rw [ite_eq_left hit, ite_eq_left (by omega_using [hit])]
-    · rw [ite_eq_right hit, ite_eq_right (by omega_using [e, hit])]
-
 /-- All 256 coefficients written. -/
 theorem CoeffsUpTo.polyIs {m : Mem} {p : Addr} {G old : Nat → BitVec 32}
     (h : CoeffsUpTo m p 256 G old) {f : Poly} (hf : ∀ i < 256, G i = BitVec.ofNat 32 (f[i]!).val) :

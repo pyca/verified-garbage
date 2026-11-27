@@ -1,8 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.MillerRabin.AArch64.CallerResult
-public import VerifiedGarbage.Proof.MillerRabin.AArch64.CallerStages
-public import VerifiedGarbage.Proof.MillerRabin.AArch64.CallerFrame
+public import VerifiedGarbage.Proof.MillerRabin.AArch64.CallerResult
 import VerifiedGarbage.Proof.MillerRabin.AArch64.CT
 import VerifiedGarbage.Proof.Framework.AArch64.RelCT
 import VerifiedGarbage.Proof.MillerRabin.AArch64.Prepared
@@ -11,6 +9,269 @@ import VerifiedGarbage.Proof.MillerRabin.AArch64.Frame
 import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrRound
 import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.MillerRabin.AArch64.Contract
+public import VerifiedGarbage.Proof.Framework.AArch64.Call
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrSq
+public import VerifiedGarbage.Impl.MillerRabin.AArch64.Round
+import VerifiedGarbage.Proof.MillerRabin.AArch64.CallerContext
+import VerifiedGarbage.Proof.MillerRabin.AArch64.CallerCall
+public import VerifiedGarbage.Impl.MillerRabin.AArch64.Caller
+public import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Base
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import Aesop.BuiltinRules
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Impl.MillerRabin.AArch64.Caller
+meta import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
+meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Base
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import Aesop.BuiltinRules
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
+
+/-! ### `MillerRabin.AArch64.CallerBoundaryCT`, which this module and modules that import it used -/
+
+section
+
+/-! # The caller's save and restore addresses are fixed by its workspace -/
+
+@[expose] public section
+
+namespace VG.Proof.MillerRabin.AArch64.Caller
+
+open VG VG.AArch64 VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Proof.Rsa.AArch64
+open VG.Impl.Bignum VG.Impl.Bignum.AArch64 VG.Impl.Bignum.Public
+open VG.Impl.Rsa.AArch64 VG.Impl.Rsa.AArch64.Keys
+open VG.Impl.RsaKeyGen.AArch64.Candidate VG.Impl.MillerRabin.AArch64.Caller
+
+private def Loaded (L : VG.Proof.Bignum.AArch64.Ws) (s : State) : Prop :=
+  s.gpr .x0 = L.B ∧ s.gpr .x2 = off L.B (slot L.w aOne) ∧ s.gpr .x3 = BitVec.ofNat 64 L.w
+
+private theorem load_ok {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64}
+    (h : Good s B Z w mi) (hZ : slot w 8 ≤ Z) :
+    WP isa (.block saveLoad) s (Loaded ⟨B, Z, w⟩) := by
+  have hl : ∀ j < 16, InRegions (s.rd ++ s.wr) (off B (8 * j)) 8 :=
+    fun j hj => h.scr.ld (by have := hdr_lt_slot w 8 (by omega_arith : j < 32); omega_arith)
+  unfold saveLoad Loaded
+  brun [h.x0, hdr_enc (show sArr aOne < 32 by decide), hdr_enc (show sW < 32 by decide),
+    hl (sArr aOne) (by decide), hl sW (by decide), h.hdr.harr aOne (by decide), h.hdr.hw]
+
+theorem save_ct : RelCT isa (Two GoodW) (.block save) fun _ _ => True := by
+  unfold save
+  apply RelCT.block_append
+  refine RelCT.seq (two_post (Ψ := Loaded) ?_ ?_) ?_
+  · exact two_taint [.x0] (fun L s t hs ht r hr => by
+      simp only [List.mem_singleton] at hr
+      subst hr
+      exact hs.choose_spec.1.x0.trans ht.choose_spec.1.x0.symm) (by taint_decide)
+  · intro L s h
+    obtain ⟨mi, hg, hz⟩ := h
+    exact load_ok hg hz
+  · exact two_taint [.x0, .x2, .x3] (fun L s t hs ht r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl
+      · exact hs.1.trans ht.1.symm
+      · exact hs.2.1.trans ht.2.1.symm
+      · exact hs.2.2.trans ht.2.2.symm) (by taint_decide)
+
+def RestorePre (L : VG.Proof.Bignum.AArch64.Ws) (s : State) : Prop :=
+  Scr s L.B L.Z ∧ slot L.w 8 ≤ L.Z ∧ s.gpr .x19 = L.B ∧
+    word s.mem L.B (8 * sW) = BitVec.ofNat 64 L.w ∧
+    word s.mem L.B (8 * sArr aOne) = off L.B (slot L.w aOne)
+
+private theorem restore_head_ok {s : State} {L : VG.Proof.Bignum.AArch64.Ws}
+    (h : RestorePre L s) : WP isa (.block restoreHead) s (Loaded L) := by
+  obtain ⟨hs, hz, h19, hW, hA⟩ := h
+  have hl : ∀ j < 16, InRegions (s.rd ++ s.wr) (off L.B (8 * j)) 8 :=
+    fun j hj => hs.ld (by have := hdr_lt_slot L.w 8 (by omega_arith : j < 32); omega_arith)
+  have ht : InRegions s.wr (off L.B (8 * kFlag)) 8 :=
+    hs.st (by have := hdr_lt_slot L.w 8 (show kFlag < 32 by decide); omega_arith)
+  have hStoreW (v : BitVec 64) :
+      word (s.mem.writeW (off L.B (8 * kFlag)) v) L.B (8 * sW) = BitVec.ofNat 64 L.w :=
+    (hdrStore_hdr s.mem L.B v (by decide) (by decide) (by decide)).trans hW
+  have hStoreA (v : BitVec 64) :
+      word (s.mem.writeW (off L.B (8 * kFlag)) v) L.B (8 * sArr aOne) = off L.B (slot L.w aOne) :=
+    (hdrStore_hdr s.mem L.B v (by decide) (by decide) (by decide)).trans hA
+  unfold restoreHead Loaded
+  brun [VG.Proof.RsaKeyGen.AArch64.exec_addImm_w, BitVec.add_zero, h19,
+    hdr_enc (show kFlag < 32 by decide), hdr_enc (show sW < 32 by decide),
+    hdr_enc (show sArr aOne < 32 by decide), ht, hl sW (by decide),
+    hl (sArr aOne) (by decide), hStoreW, hStoreA]
+
+theorem restore_ct : RelCT isa (Two RestorePre) (.block restore) fun _ _ => True := by
+  unfold restore
+  apply RelCT.block_append
+  refine RelCT.seq (two_post (Ψ := Loaded) ?_ (fun _ _ h => restore_head_ok h)) ?_
+  · exact two_taint [.x19] (fun L s t hs ht r hr => by
+      simp only [List.mem_singleton] at hr
+      subst hr
+      exact hs.2.2.1.trans ht.2.2.1.symm) (by taint_decide)
+  · exact two_taint [.x0, .x2, .x3] (fun L s t hs ht r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl
+      · exact hs.1.trans ht.1.symm
+      · exact hs.2.1.trans ht.2.1.symm
+      · exact hs.2.2.trans ht.2.2.symm) (by taint_decide)
+
+end VG.Proof.MillerRabin.AArch64.Caller
+
+end
+
+end
+
+/-! ### `MillerRabin.AArch64.CallerStages`, which only this module used -/
+
+section
+
+/-! ### `MillerRabin.AArch64.CallerPre`, which only this module used -/
+
+section
+
+/-! # Narrow a larger caller to the prepared round's required workspace -/
+
+@[expose] public section
+
+namespace VG.Proof.MillerRabin.AArch64.Caller
+
+open VG VG.AArch64 VG.Proof.Bignum VG.Proof.Bignum.AArch64
+open VG.Proof.RsaKeyGen.AArch64 VG.Impl.Bignum VG.Impl.Bignum.Public
+open VG.Impl.RsaKeyGen.AArch64.Candidate
+
+def callWords (w : Nat) : Nat := 32 + 28 * (w + 2)
+
+def narrowed (s : State) (B : Addr) (w : Nat) : State :=
+  s.callEntry.withRegions [] [⟨B, 8 * callWords w⟩]
+
+theorem call_size {w Z : Nat} (h : slot w aE + 8 * (w + 2) ≤ Z) : 8 * callWords w ≤ Z := by
+  simp only [slot, hdrBytes, aE, callWords] at h ⊢
+  omega_arith
+
+theorem narrow_pre {s : State} {B : Addr} {Z w c bm : Nat}
+    (hc : MrCtx s B Z w c bm) (he : ECtx s.mem B w c)
+    (h4 : 4 ≤ w) (h128 : w ≤ 128) (hEZ : slot w aE + 8 * (w + 2) ≤ Z)
+    (ho : c % 2 = 1) (h3 : 3 ≤ c) (hx : wv s.mem B (slot w aXm) w < c)
+    (h1 : s.gpr .x1 = BitVec.ofNat 64 (callWords w)) : roundPre (narrowed s B w) := by
+  have hB : (narrowed s B w).gpr .x0 = B := (s.callEntry_gpr (by decide)).trans hc.ws.x0
+  have hN : (narrowed s B w).gpr .x1 = BitVec.ofNat 64 (callWords w) := (s.callEntry_gpr (by decide)).trans h1
+  have hn : callWords w < 2 ^ 64 := by unfold callWords; omega_arith
+  unfold roundPre
+  rw [hB, hN, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hn]
+  refine ⟨rfl, ?_, ?_, ?_, ?_⟩
+  · change ([⟨B, 8 * callWords w⟩] : List Region) = [⟨B, callWords w * 8⟩]
+    rw [Nat.mul_comm]
+  · have := hc.ws.scr.nowrap
+    have := call_size hEZ
+    omega_arith
+  · change Proof.MillerRabin.Round.Layout Proof.MillerRabin.Round.compact s.mem B (callWords w)
+    exact layout_of_ctx hc h4 h128
+  · change Proof.MillerRabin.Round.Prepared Proof.MillerRabin.Round.compact s.mem B
+    exact prepared_of_ctx hc he ho h3 hx
+
+theorem narrow_covers {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z)
+    (hEZ : slot w aE + 8 * (w + 2) ≤ Z) : Covers [⟨B, 8 * callWords w⟩] s.wr := by
+  apply Covers.one
+  have hsize := call_size hEZ
+  have hr := hs.region (d := 0) (n := 8 * callWords w) (by omega_arith) (by unfold callWords; omega_arith)
+  simpa only [InRegions, off, show BitVec.ofNat 64 0 = 0#64 from rfl, BitVec.add_zero] using hr
+
+end VG.Proof.MillerRabin.AArch64.Caller
+
+end
+
+end
+
+
+/-! # Contexts at the three boundaries of a shared-round call -/
+
+@[expose] public section
+
+namespace VG.Proof.MillerRabin.AArch64.Caller
+
+open VG VG.AArch64 VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Proof.Rsa.AArch64
+open VG.Proof.RsaKeyGen.AArch64 VG.Impl.Bignum VG.Impl.Bignum.Public
+open VG.Impl.RsaKeyGen.AArch64.Candidate VG.Impl.MillerRabin.AArch64
+open VG.Impl.MillerRabin.AArch64.Caller
+
+def Before (L : VG.Proof.Bignum.AArch64.Ws) (s : State) : Prop :=
+  4 ≤ L.w ∧ L.w ≤ 128 ∧ slot L.w aE + 8 * (L.w + 2) ≤ L.Z ∧
+    ∃ c bm b : Nat, MrCtx s L.B L.Z L.w c bm ∧ ECtx s.mem L.B L.w c ∧
+      c % 2 = 1 ∧ 3 ≤ c ∧ wv s.mem L.B (slot L.w aXm) L.w = b % c * 2 ^ (64 * L.w) % c
+
+def Ready (L : VG.Proof.Bignum.AArch64.Ws) (s : State) : Prop :=
+  Before L s ∧ s.gpr .x19 = L.B ∧ s.gpr .x1 = BitVec.ofNat 64 (callWords L.w)
+
+theorem before_good {L : VG.Proof.Bignum.AArch64.Ws} {s : State} (h : Before L s) : GoodW L s := by
+  obtain ⟨_, _, _, c, bm, b, hc, _⟩ := h
+  exact ⟨_, hc.good⟩
+
+theorem save_ready {L : VG.Proof.Bignum.AArch64.Ws} {s : State} (h : Before L s) :
+    WP isa (.block save) s (Ready L) := by
+  obtain ⟨h4, h128, hEZ, c, bm, b, hc, he, ho, h3, hx⟩ := h
+  refine WP.mono (save_ok hc.good.1 hc.good.2 h128) ?_
+  rintro t ⟨hm, h19, h1, hk⟩
+  obtain ⟨hct, het⟩ := save_context hc he hEZ hm hk
+  refine ⟨⟨h4, h128, hEZ, c, bm, b, hct, het, ho, h3, ?_⟩, h19, h1⟩
+  rw [hm, (saved_outside s L.B L.w (by
+    have hz : slot L.w 16 ≤ L.Z := hc.ws.hZ
+    have hn := hc.ws.scr.nowrap
+    simp only [pad, slot, hdrBytes, aOne] at hz ⊢
+    omega_arith)).wv (Or.inl (by simp only [pad, slot, hdrBytes, aOne, aXm]; omega_arith))
+      (by
+        have hsX := slot_le (w := L.w) (show aXm < 8 by decide)
+        have hsZ := hc.good.2
+        have hsN := hc.ws.scr.nowrap
+        omega_arith)]
+  exact hx
+
+theorem ready_pre {L : VG.Proof.Bignum.AArch64.Ws} {s : State} (h : Ready L s) :
+    roundPre (narrowed s L.B L.w) := by
+  obtain ⟨⟨h4, h128, hEZ, c, bm, b, hc, he, ho, h3, hx⟩, h19, h1⟩ := h
+  apply narrow_pre hc he h4 h128 hEZ ho h3 ?_ h1
+  rw [hx]
+  exact Nat.mod_lt _ (by omega_arith)
+
+theorem ready_covers {L : VG.Proof.Bignum.AArch64.Ws} {s : State} (h : Ready L s) :
+    Covers [⟨L.B, 8 * callWords L.w⟩] s.wr := by
+  obtain ⟨⟨_, _, hEZ, c, bm, b, hc, _⟩, _⟩ := h
+  exact narrow_covers hc.ws.scr hEZ
+
+theorem call_restore_pre {R : Prog isa} (hR : ∀ s, roundContract.pre s → ∃ tr t, Exec isa R s tr t ∧ abiPreserved s t ∧ roundContract.post s t)
+    (name : String) (hnf : R.noFrames = true)
+    {L : VG.Proof.Bignum.AArch64.Ws} {s : State} (h : Ready L s) :
+    WP isa (.call name R) s (RestorePre L) := by
+  have hp := ready_pre h
+  have hw := ready_covers h
+  obtain ⟨⟨h4, h128, hEZ, c, bm, b, hc, he, ho, h3, hx⟩, h19, h1⟩ := h
+  refine WP.callV hR hp (Covers.right hw) hw ?_ hnf
+  intro t hrd hwr hsp hf hregs hnever hvcs hpost
+  change roundPost (narrowed s L.B L.w) (t.withRegions [] [⟨L.B, 8 * callWords L.w⟩]) at hpost
+  unfold roundPost at hpost
+  have hB : (narrowed s L.B L.w).gpr .x0 = L.B := (s.callEntry_gpr (by decide)).trans hc.ws.x0
+  have hN : (narrowed s L.B L.w).gpr .x1 = BitVec.ofNat 64 (callWords L.w) := (s.callEntry_gpr (by decide)).trans h1
+  rw [hB, hN, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by unfold callWords; omega_arith)] at hpost
+  dsimp only at hpost
+  have hWidth : Proof.Rsa.Mont.wOf (narrowed s L.B L.w).mem L.B = L.w := ctx_width (s := s) hc
+  rw [hWidth] at hpost
+  have hkeep : Proof.MillerRabin.Round.Keeps Proof.MillerRabin.Round.compact L.B (callWords L.w) L.w s.mem t.mem := hpost.2
+  refine ⟨hc.ws.scr.congr hwr, hc.good.2,
+    (hregs .x19 (by simp [preserved]) (by decide)).trans h19, ?_, ?_⟩
+  · exact (kept_header hkeep (by unfold callWords; omega_arith) (by decide) (by decide)).trans hc.ws.hw
+  · exact (kept_header hkeep (by unfold callWords; omega_arith) (by decide) (by decide)).trans (hc.ws.harr aOne (by decide))
+
+end VG.Proof.MillerRabin.AArch64.Caller
+
+end
+
+end
 
 /-! ### `MillerRabin.AArch64.CallerCT`, which only this module used -/
 
@@ -25,17 +286,17 @@ namespace VG.Proof.MillerRabin.AArch64.Caller
 open VG VG.AArch64 VG.Proof.Bignum VG.Proof.Bignum.AArch64
 open VG.Impl.MillerRabin.AArch64 VG.Impl.MillerRabin.AArch64.Caller
 
-private theorem ready_base {L : VG.Proof.Bignum.AArch64.Ws} {s : State} (h : Ready L s) :
+theorem ready_base {L : VG.Proof.Bignum.AArch64.Ws} {s : State} (h : Ready L s) :
     s.gpr .x0 = L.B := by
   obtain ⟨⟨_, _, _, c, bm, b, hc, _⟩, _⟩ := h
   exact hc.ws.x0
 
-private theorem ready_width {L : VG.Proof.Bignum.AArch64.Ws} {s : State} (h : Ready L s) :
+theorem ready_width {L : VG.Proof.Bignum.AArch64.Ws} {s : State} (h : Ready L s) :
     Proof.Rsa.Mont.wOf s.mem L.B = L.w := by
   obtain ⟨⟨_, _, _, c, bm, b, hc, _⟩, _⟩ := h
   exact ctx_width hc
 
-private theorem ready_pub {s t : State} {L : VG.Proof.Bignum.AArch64.Ws}
+theorem ready_pub {s t : State} {L : VG.Proof.Bignum.AArch64.Ws}
     (hs : Ready L s) (ht : Ready L t) (hsp : s.sp = t.sp) :
     roundPub (narrowed s L.B L.w) (narrowed t L.B L.w) := by
   have h0s : (narrowed s L.B L.w).gpr .x0 = L.B := (s.callEntry_gpr (by decide)).trans (ready_base hs)
@@ -66,7 +327,7 @@ theorem call_ct (M : Mont) (name : String) (hnf : (round M.mm).noFrames = true) 
       obtain ⟨L, hs, ht, hsp⟩ := h
       exact ⟨L, before_good hs, before_good ht, hsp⟩) (fun _ _ h => h)
   · exact RelCT.seq (two_post (prepared_call_ct M name)
-      (fun _ _ h => call_restore_pre M name hnf h)) restore_ct
+      (fun _ _ h => call_restore_pre (round_correct M) name hnf h)) restore_ct
 
 end VG.Proof.MillerRabin.AArch64.Caller
 
@@ -103,7 +364,7 @@ structure Kernel where
 def Kernel.called (M : Mont) (name : String) (hnf : (VG.Impl.MillerRabin.AArch64.round M.mm).noFrames = true) : Kernel where
   run := [VG.Impl.MillerRabin.AArch64.Caller.call name (VG.Impl.MillerRabin.AArch64.round M.mm)]
   nonempty := by simp
-  ok := by exact Caller.call_result_ok M name hnf
+  ok := by exact Caller.call_result_ok (round_correct M) name hnf
   ct := by exact Caller.call_ct M name hnf
 
 end VG.Proof.MillerRabin.AArch64

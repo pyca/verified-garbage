@@ -1,41 +1,43 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Sha256
-import VerifiedGarbage.Proof.Sha256.PPC64LE.Lit
-public import VerifiedGarbage.Proof.Sha256.PPC64LE.Shared
-public import VerifiedGarbage.TCB.PPC64LE.Print
 public import VerifiedGarbage.TCB.PPC64LE.Target
-public import VerifiedGarbage.Proof.Sha256.PPC64LE.Sha224
-public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Sha224
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Sha256.Contract
+import VerifiedGarbage.Proof.Sha256.PPC64LE.Scrub
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Sha256
+import VerifiedGarbage.Proof.Sha256.PPC64LE.Lit
+import VerifiedGarbage.Proof.Sha256.PPC64LE.Sha224
+import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Sha224
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # SHA-256 (FIPS 180-4) on PPC64LE -/
 
-@[expose] public section
-
 namespace VG.Artifacts.Sha256.PPC64LE
 
-def artifacts : List Artifact := [
+public def artifacts : List (Artifact PPC64LE.target) := [
   Spec.Sha256.init224Api.artifact PPC64LE.target {
     code := Impl.Sha256.PPC64LE.Stream.init224
-    verified := Proof.Sha256.PPC64LE.Shared.init224 },
+    verified := Proof.Sha256.PPC64LE.init224_scrubbed },
   Spec.Sha256.finalize224Api.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratch 640 .r6 Impl.Sha256.PPC64LE.Stream.finalize224
-    verified := Proof.Sha256.PPC64LE.Shared.finalize224 },
+    code := Impl.Sha256.PPC64LE.Fn.finalize224
+    verified := Proof.Sha256.PPC64LE.finalize224_scrubbed },
   Spec.Sha256.digest224Api.artifact PPC64LE.target {
-    code := Impl.MdStream.PPC64LE.Digest.code Proof.Hmac.Stream.PPC64LE.Sha224.hash
-    verified := Proof.Hmac.Stream.PPC64LE.Sha224.digest },
+    code := Impl.Sha256.PPC64LE.Fn.digest224
+    verified := Proof.Sha256.PPC64LE.digest224_scrubbed },
   Spec.Sha256.initApi.artifact PPC64LE.target {
     code := Impl.Sha256.PPC64LE.Stream.init
-    verified := Proof.Sha256.PPC64LE.Shared.init },
+    verified := Proof.Sha256.PPC64LE.init_scrubbed },
   Spec.Sha256.updateApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratch 640 .r7 Impl.Sha256.PPC64LE.Stream.update
-    verified := Proof.Sha256.PPC64LE.Shared.update },
+    code := Impl.Sha256.PPC64LE.Fn.update
+    verified := Proof.Sha256.PPC64LE.update_scrubbed },
   Spec.Sha256.finalizeApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratch 640 .r6 Impl.Sha256.PPC64LE.Stream.finalize
-    verified := Proof.Sha256.PPC64LE.Shared.finalize },
+    code := Impl.Sha256.PPC64LE.Fn.finalize
+    verified := Proof.Sha256.PPC64LE.finalize_scrubbed },
   Spec.Sha256.digest256Api.artifact PPC64LE.target {
-    code := Impl.MdStream.PPC64LE.Digest.code Proof.Hmac.Stream.PPC64LE.Sha256.hash
-    verified := Proof.Hmac.Stream.PPC64LE.Sha256.digest }]
+    code := Impl.Sha256.PPC64LE.Fn.digest256
+    verified := Proof.Sha256.PPC64LE.digest256_scrubbed }]
+
+spec_apis artifacts
 
 end VG.Artifacts.Sha256.PPC64LE

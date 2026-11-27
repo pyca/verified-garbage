@@ -80,33 +80,25 @@ import Mathlib.Algebra.Group.Nat.Defs
 import Mathlib.Algebra.GroupWithZero.Basic
 import Mathlib.Algebra.GroupWithZero.Nat
 import Mathlib.Algebra.Module.NatInt
-import Mathlib.Algebra.NeZero
 import Mathlib.Algebra.Order.Field.Basic
 import Mathlib.Algebra.Order.Field.Rat
 import Mathlib.Algebra.Order.Group.Abs
 import Mathlib.Algebra.Order.Group.Int
-import Mathlib.Algebra.Order.Group.Nat
 import Mathlib.Algebra.Order.Group.Unbundled.Abs
 import Mathlib.Algebra.Order.Ring.Abs
 import Mathlib.Algebra.Order.Ring.Basic
 import Mathlib.Algebra.Order.Ring.Int
 import Mathlib.Algebra.Order.Ring.Nat
 import Mathlib.Algebra.Order.Ring.Rat
-import Mathlib.Algebra.Order.Sub.Basic
-import Mathlib.Algebra.Polynomial.Div
-import Mathlib.Algebra.Polynomial.Expand
 import Mathlib.Algebra.Ring.Divisibility.Basic
 import Mathlib.Algebra.Ring.Int.Defs
 import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Basic
 import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Formula
 import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Point
 import Mathlib.Basic.IsEmpty.Basic
-import Mathlib.Basic.IsEmpty.Defs
 import Mathlib.Basic.Logic.Basic
 import Mathlib.Data.BitVec
 import Mathlib.Data.Fin.Basic
-import Mathlib.Data.Finset.Attr
-import Mathlib.Data.Finset.Card
 import Mathlib.Data.Fintype.Basic
 import Mathlib.Data.Fintype.Card
 import Mathlib.Data.Fintype.Fin
@@ -115,21 +107,13 @@ import Mathlib.Data.Int.GCD
 import Mathlib.Data.Int.ModEq
 import Mathlib.Data.List.Basic
 import Mathlib.Data.List.Dedup
-import Mathlib.Data.List.Defs
 import Mathlib.Data.List.Forall2
-import Mathlib.Data.List.Induction
-import Mathlib.Data.List.Nodup
 import Mathlib.Data.List.Range
-import Mathlib.Data.Nat.Basic
 import Mathlib.Data.Nat.Cast.Basic
 import Mathlib.Data.Nat.Cast.Order.Basic
 import Mathlib.Data.Nat.Cast.Order.Ring
 import Mathlib.Data.Nat.Find
-import Mathlib.Data.Nat.GCD.Basic
-import Mathlib.Data.Nat.Init
 import Mathlib.Data.Nat.ModEq
-import Mathlib.Data.Nat.Prime.Basic
-import Mathlib.Data.Nat.Prime.Defs
 import Mathlib.Data.Nat.Totient
 import Mathlib.Data.Option.Basic
 import Mathlib.Data.Prod.Basic
@@ -138,20 +122,11 @@ import Mathlib.Data.Sym.Sym2.Init
 import Mathlib.Data.ZMod.Defs
 import Mathlib.FieldTheory.Finite.Basic
 import Mathlib.GroupTheory.Perm.Cycle.Type
-import Mathlib.Logic.Function.Basic
-import Mathlib.Logic.Function.Iterate
-import Mathlib.Logic.Relator
-import Mathlib.Order.Basic
 import Mathlib.Order.Defs.LinearOrder
-import Mathlib.Order.Defs.PartialOrder
-import Mathlib.Order.Defs.Prop
 import Mathlib.Order.Lattice
-import Mathlib.Order.RelClasses
 import Mathlib.RingTheory.AdjoinRoot
 import Mathlib.SetTheory.Cardinal.Finite
 import Mathlib.Tactic.Abel
-import Mathlib.Tactic.Attr.Core
-import Mathlib.Tactic.Basic
 import Mathlib.Tactic.CasesM
 import Mathlib.Tactic.ClearExcept
 import Mathlib.Tactic.ComputeDegree
@@ -161,7 +136,6 @@ import Mathlib.Tactic.Convert
 import Mathlib.Tactic.DefEqTransformations
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.FinCases
-import Mathlib.Tactic.Finiteness.Attr
 import Mathlib.Tactic.GCongr
 import Mathlib.Tactic.IntervalCases
 import Mathlib.Tactic.Linarith
@@ -170,7 +144,6 @@ import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Module
 import Mathlib.Tactic.NormNum
 import Mathlib.Tactic.NormNum.Abs
-import Mathlib.Tactic.NormNum.Core
 import Mathlib.Tactic.NormNum.DivMod
 import Mathlib.Tactic.NormNum.GCD
 import Mathlib.Tactic.NormNum.Ineq
@@ -181,24 +154,19 @@ import Mathlib.Tactic.NormNum.Prime
 import Mathlib.Tactic.Positivity
 import Mathlib.Tactic.Positivity.Core
 import Mathlib.Tactic.Positivity.Finset
-import Mathlib.Tactic.Push
 import Mathlib.Tactic.Ring
 import Mathlib.Tactic.Ring.RingNF
 import Mathlib.Tactic.Set
-import Mathlib.Tactic.SetLike
 import Mathlib.Tactic.SetNotationForOrder
 import Mathlib.Tactic.SplitIfs
 import Mathlib.Tactic.Tauto
-import Mathlib.Tactic.TermCongr
 import Mathlib.Tactic.ToAdditive
-import Mathlib.Tactic.ToDual
 import Mathlib.Tactic.ToExpr
 import Mathlib.Tactic.Widget.Calc
 import Std.Data.DTreeMap.Internal.Balancing
 import Std.Data.DTreeMap.Internal.Operations
 import Std.Do.Triple.SpecLemmas
 import Std.Tactic.BVDecide.Normalize.BitVec
-import Std.Tactic.BVDecide.Normalize.Bool
 import Std.Tactic.BVDecide.Normalize.Prop
 
 /-!
@@ -330,10 +298,13 @@ def expected : Array (String × Array String) := #[
   ("Lean.Widget.instImpl._@.Lean.Widget.Basic.4075166457._hygCtx._hyg.3", #["lcProof"]),
   ("Lean.Widget.instImpl._@.Lean.Widget.InteractiveDiagnostic.72002168._hygCtx._hyg.14", #["lcProof"]),
   ("Lean.Widget.instTypeNameInteractiveMessage.unsafe_1", #["lcProof"]),
+  ("Lean.instImpl._@.Lean.Data.Html.Basic.2686543190._hygCtx._hyg.140", #["lcProof"]),
   ("Lean.instImpl._@.Lean.Message.4238524789._hygCtx._hyg.139", #["lcProof"]),
   ("Lean.profileitIOUnsafe", #["lcProof"]),
   ("Lean.registerPersistentEnvExtensionUnsafe", #["lcProof"]),
   ("Lean.registerScopedEnvExtensionUnsafe", #["lcProof"]),
+  ("Mathlib.VersoRoles.instImpl._@.Mathlib.Util.VersoRoles.1789960934._hygCtx._hyg.8", #["lcProof"]),
+  ("Mathlib.VersoRoles.instImpl._@.Mathlib.Util.VersoRoles.3272643655._hygCtx._hyg.8", #["lcProof"]),
   ("Multiset.instRepr", #["lcProof"]),
   ("Multiset.instToExprOfToLevel", #["lcProof"]),
   ("Part.unwrap", #["lcProof"]),
@@ -397,32 +368,40 @@ def expected : Array (String × Array String) := #[
   ("_private.Lean.Elab.DocString.0.Lean.Doc.instImpl._@.Lean.Elab.DocString.3059754301._hygCtx._hyg.10", #["lcProof"]),
   ("_private.Lean.Elab.DocString.0.Lean.Doc.instImpl._@.Lean.Elab.DocString.316072650._hygCtx._hyg.8", #["lcProof"]),
   ("_private.Lean.Elab.DocString.Builtin.0.Lean.Doc.instImpl._@.Lean.Elab.DocString.Builtin.805460910._hygCtx._hyg.7", #["lcProof"]),
+  ("_private.Lean.Elab.PreDefinition.Eqns.0.Lean.Elab.Eqns.instImpl._@.Lean.Elab.PreDefinition.Eqns.1132255812._hygCtx._hyg.9", #["lcProof"]),
+  ("_private.Lean.Elab.PreDefinition.Eqns.0.Lean.Elab.Eqns.instImpl._@.Lean.Elab.PreDefinition.Eqns.2651471495._hygCtx._hyg.59", #["lcProof"]),
   ("_private.Lean.Environment.0.Lean.EnvExtension.getStateImpl", #["lcProof"]),
   ("_private.Lean.Environment.0.Lean.EnvExtension.getStateUnsafe", #["lcProof"]),
-  ("_private.Lean.Environment.0.Lean.EnvExtension.modifyState.unsafe_1", #["lcProof"]),
-  ("_private.Lean.Environment.0.Lean.EnvExtension.modifyState.unsafe_11", #["lcProof"]),
-  ("_private.Lean.Environment.0.Lean.EnvExtension.modifyState.unsafe_4", #["lcProof"]),
+  ("_private.Lean.Environment.0.Lean.EnvExtension.modifyStateCore.unsafe_11", #["lcProof"]),
+  ("_private.Lean.Environment.0.Lean.EnvExtension.modifyStateCore.unsafe_14", #["lcProof"]),
+  ("_private.Lean.Environment.0.Lean.EnvExtension.modifyStateCore.unsafe_8", #["lcProof"]),
   ("_private.Lean.Environment.0.Lean.EnvExtension.modifyStateImpl", #["lcProof"]),
   ("_private.Lean.Environment.0.Lean.EnvExtension.setStateImpl", #["lcProof"]),
   ("_private.Lean.Environment.0.Lean.Environment.enableRealizationsForConst.unsafe_1", #["lcProof"]),
   ("_private.Lean.Environment.0.Lean.Environment.importEnv?.unsafe_1", #["lcProof"]),
   ("_private.Lean.Environment.0.Lean.Environment.instImpl._@.Lean.Environment.2375967707._hygCtx._hyg.33", #["lcProof"]),
   ("_private.Lean.Environment.0.Lean.Environment.instImpl._@.Lean.Environment.2952203382._hygCtx._hyg.53", #["lcProof"]),
-  ("_private.Lean.Environment.0.Lean.Environment.realizeValue.unsafe_10", #["lcProof"]),
-  ("_private.Lean.Environment.0.Lean.Environment.realizeValue.unsafe_15", #["lcProof"]),
-  ("_private.Lean.Environment.0.Lean.Environment.realizeValue.unsafe_20", #["lcProof"]),
-  ("_private.Lean.Environment.0.Lean.Environment.realizeValue.unsafe_3", #["lcProof"]),
+  ("_private.Lean.Environment.0.Lean.Environment.realizationEnvContains.unsafe_1", #["lcProof"]),
+  ("_private.Lean.Environment.0.Lean.Environment.realizeValue.unsafe_1", #["lcProof"]),
+  ("_private.Lean.Environment.0.Lean.Environment.realizeValue.unsafe_13", #["lcProof"]),
+  ("_private.Lean.Environment.0.Lean.Environment.realizeValue.unsafe_18", #["lcProof"]),
+  ("_private.Lean.Environment.0.Lean.Environment.realizeValue.unsafe_8", #["lcProof"]),
   ("_private.Lean.Environment.0.Lean.Environment.replayConsts.replayKernel.unsafe_1", #["lcProof"]),
   ("_private.Lean.Environment.0.Lean.Environment.setMainModule.unsafe_1", #["lcProof"]),
   ("_private.Lean.Environment.0.Lean.PersistentEnvExtension.getModuleEntries.unsafe_1", #["lcProof"]),
   ("_private.Lean.Environment.0.Lean.PersistentEnvExtension.getModuleIREntries.unsafe_1", #["lcProof"]),
   ("_private.Lean.Environment.0.Lean.finalizeImport.unsafe_11", #["lcProof"]),
   ("_private.Lean.Environment.0.Lean.instImpl._@.Lean.Environment.1385329916._hygCtx._hyg.23", #["lcProof"]),
-  ("_private.Lean.Environment.0.Lean.registerEnvExtension.unsafe_1", #["lcProof"]),
+  ("_private.Lean.Environment.0.Lean.registerEnvExtension.unsafe_4", #["lcProof"]),
   ("_private.Lean.Environment.0.Lean.setImportedEntries.unsafe_1", #["lcProof"]),
   ("_private.Lean.Environment.0.Lean.setImportedEntries.unsafe_4", #["lcProof"]),
+  ("_private.Lean.Environment.0.Lean.setImportedIREntries.unsafe_1", #["lcProof"]),
+  ("_private.Lean.Meta.Basic.0.Lean.Environment.setSynthCache.unsafe_1", #["lcProof"]),
+  ("_private.Lean.Meta.Basic.0.Lean.Environment.synthCache.unsafe_1", #["lcProof"]),
   ("_private.Lean.Meta.Basic.0.Lean.Meta.instImpl._@.Lean.Meta.Basic.373817412._hygCtx._hyg.13", #["lcProof"]),
   ("_private.Lean.Meta.Basic.0.Lean.Meta.instImpl._@.Lean.Meta.Basic.819381015._hygCtx._hyg.12", #["lcProof"]),
+  ("_private.Lean.Meta.Basic.0.Lean.MetavarContext.setSynthNormMemo.unsafe_1", #["lcProof"]),
+  ("_private.Lean.Meta.Basic.0.Lean.MetavarContext.synthNormMemo?.unsafe_1", #["lcProof"]),
   ("_private.Lean.Meta.FunInfo.0.Lean.Meta.instImpl._@.Lean.Meta.FunInfo.117766202._hygCtx._hyg.65", #["lcProof"]),
   ("_private.Lean.Meta.Sym.SymM.0.Lean.Meta.Sym.SymExtension.getStateCoreImpl", #["lcProof"]),
   ("_private.Lean.Meta.Sym.SymM.0.Lean.Meta.Sym.SymExtension.modifyStateImpl", #["lcProof"]),

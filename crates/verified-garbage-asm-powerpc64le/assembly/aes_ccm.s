@@ -5,11 +5,11 @@
 // gives.
 
 vg_aes_ccm_seal:
-	stdu %r1, -2688(%r1)
+	stdu %r1, -576(%r1)
 	addi %r12, %r1, 0
-	ld %r0, 2784(%r12)
+	ld %r0, 672(%r12)
 	std %r0, 96(%r12)
-	ld %r0, 2792(%r12)
+	ld %r0, 680(%r12)
 	std %r0, 104(%r12)
 	addi %r0, %r12, 120
 	std %r0, 112(%r12)
@@ -254,7 +254,6 @@ vg_aes_ccm_seal:
 	or %r3, %r16, %r16
 	or %r4, %r17, %r17
 	addi %r5, %r14, 64
-	addi %r8, %r14, 384
 	addi %r6, %r14, 0
 	li %r7, 1
 	bl {vg_aes_ctr32}
@@ -289,7 +288,6 @@ vg_aes_ccm_seal:
 	or %r3, %r16, %r16
 	or %r4, %r17, %r17
 	addi %r5, %r14, 64
-	addi %r8, %r14, 384
 	or %r6, %r18, %r18
 	or %r7, %r21, %r21
 	bl {vg_aes_ctr32}
@@ -320,7 +318,6 @@ vg_aes_ccm_seal:
 	or %r3, %r16, %r16
 	or %r4, %r17, %r17
 	addi %r5, %r14, 64
-	addi %r8, %r14, 384
 	addi %r6, %r14, 80
 	li %r7, 1
 	bl {vg_aes_ctr32}
@@ -363,15 +360,84 @@ vg_aes_ccm_seal:
 	ld %r22, 192(%r14)
 	ld %r23, 200(%r14)
 	ld %r14, 128(%r14)
-	addi %r1, %r1, 2688
+	addi %r1, %r1, 576
+	li %r0, 0
+	stdu %r1, -576(%r1)
+	addi %r12, %r1, 32
+	std %r0, 0(%r12)
+	std %r0, 8(%r12)
+	std %r0, 16(%r12)
+	std %r0, 24(%r12)
+	std %r0, 32(%r12)
+	std %r0, 40(%r12)
+	std %r0, 48(%r12)
+	std %r0, 56(%r12)
+	std %r0, 64(%r12)
+	std %r0, 72(%r12)
+	std %r0, 80(%r12)
+	std %r0, 88(%r12)
+	std %r0, 96(%r12)
+	std %r0, 104(%r12)
+	std %r0, 112(%r12)
+	std %r0, 120(%r12)
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	std %r0, 0(%r12)
+	std %r0, 8(%r12)
+	std %r0, 16(%r12)
+	std %r0, 24(%r12)
+	std %r0, 32(%r12)
+	std %r0, 40(%r12)
+	std %r0, 48(%r12)
+	std %r0, 56(%r12)
+	std %r0, 64(%r12)
+	std %r0, 72(%r12)
+	std %r0, 80(%r12)
+	std %r0, 88(%r12)
+	std %r0, 96(%r12)
+	std %r0, 104(%r12)
+	std %r0, 112(%r12)
+	std %r0, 120(%r12)
+	std %r0, 128(%r12)
+	std %r0, 136(%r12)
+	std %r0, 144(%r12)
+	std %r0, 152(%r12)
+	addi %r1, %r1, 576
+	li %r3, 0
+	li %r4, 0
+	li %r5, 0
+	li %r6, 0
+	li %r7, 0
+	li %r8, 0
+	li %r9, 0
+	li %r10, 0
+	li %r11, 0
+	li %r12, 0
+	vxor %v0, %v0, %v0
+	vxor %v1, %v1, %v1
+	vxor %v2, %v2, %v2
+	vxor %v3, %v3, %v3
+	vxor %v4, %v4, %v4
+	vxor %v5, %v5, %v5
+	vxor %v6, %v6, %v6
+	vxor %v7, %v7, %v7
+	vxor %v8, %v8, %v8
+	vxor %v9, %v9, %v9
+	vxor %v10, %v10, %v10
+	vxor %v11, %v11, %v11
+	vxor %v19, %v19, %v19
 	blr
 
 vg_aes_ccm_open:
-	stdu %r1, -2688(%r1)
+	stdu %r1, -576(%r1)
 	addi %r12, %r1, 0
-	ld %r0, 2784(%r12)
+	ld %r0, 672(%r12)
 	std %r0, 96(%r12)
-	ld %r0, 2792(%r12)
+	ld %r0, 680(%r12)
 	std %r0, 104(%r12)
 	addi %r0, %r12, 120
 	std %r0, 112(%r12)
@@ -448,7 +514,6 @@ vg_aes_ccm_open:
 	or %r3, %r16, %r16
 	or %r4, %r17, %r17
 	addi %r5, %r14, 64
-	addi %r8, %r14, 384
 	or %r6, %r18, %r18
 	or %r7, %r21, %r21
 	bl {vg_aes_ctr32}
@@ -479,7 +544,6 @@ vg_aes_ccm_open:
 	or %r3, %r16, %r16
 	or %r4, %r17, %r17
 	addi %r5, %r14, 64
-	addi %r8, %r14, 384
 	addi %r6, %r14, 80
 	li %r7, 1
 	bl {vg_aes_ctr32}
@@ -698,7 +762,6 @@ vg_aes_ccm_open:
 	or %r3, %r16, %r16
 	or %r4, %r17, %r17
 	addi %r5, %r14, 64
-	addi %r8, %r14, 384
 	addi %r6, %r14, 96
 	li %r7, 1
 	bl {vg_aes_ctr32}
@@ -774,5 +837,75 @@ vg_aes_ccm_open:
 	ld %r22, 192(%r14)
 	ld %r23, 200(%r14)
 	ld %r14, 128(%r14)
-	addi %r1, %r1, 2688
+	addi %r1, %r1, 576
+	li %r0, 0
+	stdu %r1, -576(%r1)
+	addi %r12, %r1, 32
+	std %r0, 0(%r12)
+	std %r0, 8(%r12)
+	std %r0, 16(%r12)
+	std %r0, 24(%r12)
+	std %r0, 32(%r12)
+	std %r0, 40(%r12)
+	std %r0, 48(%r12)
+	std %r0, 56(%r12)
+	std %r0, 64(%r12)
+	std %r0, 72(%r12)
+	std %r0, 80(%r12)
+	std %r0, 88(%r12)
+	std %r0, 96(%r12)
+	std %r0, 104(%r12)
+	std %r0, 112(%r12)
+	std %r0, 120(%r12)
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	std %r0, 0(%r12)
+	std %r0, 8(%r12)
+	std %r0, 16(%r12)
+	std %r0, 24(%r12)
+	std %r0, 32(%r12)
+	std %r0, 40(%r12)
+	std %r0, 48(%r12)
+	std %r0, 56(%r12)
+	std %r0, 64(%r12)
+	std %r0, 72(%r12)
+	std %r0, 80(%r12)
+	std %r0, 88(%r12)
+	std %r0, 96(%r12)
+	std %r0, 104(%r12)
+	std %r0, 112(%r12)
+	std %r0, 120(%r12)
+	std %r0, 128(%r12)
+	std %r0, 136(%r12)
+	std %r0, 144(%r12)
+	std %r0, 152(%r12)
+	addi %r1, %r1, 576
+	rldicr %r3, %r3, 32, 31
+	rldicl %r3, %r3, 32, 32
+	li %r4, 0
+	li %r5, 0
+	li %r6, 0
+	li %r7, 0
+	li %r8, 0
+	li %r9, 0
+	li %r10, 0
+	li %r11, 0
+	li %r12, 0
+	vxor %v0, %v0, %v0
+	vxor %v1, %v1, %v1
+	vxor %v2, %v2, %v2
+	vxor %v3, %v3, %v3
+	vxor %v4, %v4, %v4
+	vxor %v5, %v5, %v5
+	vxor %v6, %v6, %v6
+	vxor %v7, %v7, %v7
+	vxor %v8, %v8, %v8
+	vxor %v9, %v9, %v9
+	vxor %v10, %v10, %v10
+	vxor %v11, %v11, %v11
+	vxor %v19, %v19, %v19
 	blr

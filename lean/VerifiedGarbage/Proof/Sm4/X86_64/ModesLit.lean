@@ -30,11 +30,11 @@ and `spSafe`) evaluate several times each.
 
 namespace VG.Proof.Sm4.X86_64
 
-materialize_flat_code cbcEncryptChainedCode := Impl.Sm4.X86_64.cbcEncryptChained
-materialize_flat_code cbcDecryptChainedCode := Impl.Sm4.X86_64.cbcDecryptChained
-materialize_flat_code ctrCode := Impl.Sm4.X86_64.ctr
-materialize_flat_code ofbCode := Impl.Sm4.X86_64.ofb
-materialize_flat_code cfbEncryptCode := Impl.Sm4.X86_64.cfbEncrypt
-materialize_flat_code cfbDecryptCode := Impl.Sm4.X86_64.cfbDecrypt
+materialize_code cbcEncryptChainedCode := Impl.Sm4.X86_64.cbcEncryptChained
+materialize_code cbcDecryptChainedCode := Impl.Sm4.X86_64.cbcDecryptChained
+materialize_code ctrCode := Impl.Sm4.X86_64.ctr
+materialize_code ofbCode := Impl.Sm4.X86_64.ofb
+materialize_code cfbEncryptCode := Impl.Sm4.X86_64.cfbEncrypt
+materialize_code cfbDecryptCode := Impl.Sm4.X86_64.cfbDecrypt
 
 end VG.Proof.Sm4.X86_64

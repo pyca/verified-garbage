@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86.ShapeCall
-public import VerifiedGarbage.Proof.Dsa.X86.SignatureTiming
 
 /-! # Public output resources survive shape checking and dispatch -/
 

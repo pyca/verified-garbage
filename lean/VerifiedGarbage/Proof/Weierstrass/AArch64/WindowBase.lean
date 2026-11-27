@@ -9,9 +9,8 @@ public import VerifiedGarbage.Proof.Weierstrass.Jac
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Zero
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 public import VerifiedGarbage.Proof.Framework.Range
-public import VerifiedGarbage.Proof.Mont.AArch64.P256Square.Core
-public import VerifiedGarbage.Proof.Mont.AArch64.P256Square.Words
-public import VerifiedGarbage.Proof.Mont.AArch64.RowInit
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Fprog
+public import VerifiedGarbage.Proof.Mont.AArch64.Rounds
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Loop
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Unch
 public import VerifiedGarbage.Proof.Weierstrass.Pow

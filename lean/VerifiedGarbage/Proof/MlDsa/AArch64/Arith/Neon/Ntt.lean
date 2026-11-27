@@ -1,6 +1,6 @@
 module
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Block
 
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.PackedStep
 import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Pro
 import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Lit
 import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Ntt
@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.MlDsa.Round.Mem
 import VerifiedGarbage.Proof.MlKem.AArch64.Common
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Block
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.PackedStep
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Pro
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Lit
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Ntt

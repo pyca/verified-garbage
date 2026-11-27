@@ -89,8 +89,17 @@ structure Layout (base : State) (n count : Nat) : Prop where
   bound : count≤n
   left : base.gpr .r19=BitVec.ofNat 64 count
   reads : InRegions (base.rd++base.wr) (base.gpr .r17) (16*count)
-  disjoint : ∀ r ∈ Blocks.wrapperFullWrites base n, (sourceRegion base count).Disjoint r
+  buffers : base.gpr .r17 = base.gpr .r7 ∨ ∀ r ∈ Blocks.wrapperFullWrites base n, (sourceRegion base count).Disjoint r
 
+
+theorem Layout.scratchApart {base : State} {n count : Nat} (lay : Layout base n count) :
+    (sourceRegion base count).Disjoint ⟨base.gpr .r9,704⟩ := by
+  rcases lay.buffers with same | apart
+  · change Region.Disjoint ⟨base.gpr .r17,16*count⟩ _
+    rw [same]
+    exact (lay.wrapper.scratch (Blocks.coreData (Blocks.wrapperView base) n) (by simp)).sub_left
+      (Region.sub_prefix (by have := lay.bound; change 16*count≤16*n; omega_arith))
+  · exact apart _ (by simp [Blocks.wrapperFullWrites])
 
 def plain (base : State) (count i : Nat) : Spec.Gcm.Block :=
   if i<count then Spec.Gcm.blockAt base.mem (base.gpr .r17+BitVec.ofNat 64 (16*i))
@@ -125,15 +134,18 @@ theorem Layout.kernel {base : State} {n count : Nat} (lay : Layout base n count)
   refine ⟨(kernel_source base).2.trans lay.left,?_,by have := lay.bound; have := lay.wrapper.core.size; omega_arith,?_,?_⟩
   · simpa only [kernelBase,Blocks.bulkArgsState,Blocks.wrapperEntryState,Blocks.wrapperConfigState,
       RegUpd.rd_write,RegUpd.wr_write,RegUpd.gpr_write,reduceCtorEq,ite_false] using lay.reads
-  · have hd := lay.disjoint ⟨base.gpr .r9,2112⟩ (by simp [Blocks.wrapperFullWrites])
-    have hs : Region.Sub (Blocks.coreWork (kernelBase base)) ⟨base.gpr .r9,2112⟩ := by
-      change Region.Sub ⟨base.gpr .r9+64,2048⟩ ⟨base.gpr .r9,2112⟩
+  · have hd := lay.scratchApart
+    have hs : Region.Sub (Blocks.coreWork (kernelBase base)) ⟨base.gpr .r9,704⟩ := by
+      change Region.Sub ⟨base.gpr .r9+64,640⟩ ⟨base.gpr .r9,704⟩
       exact Offset.sub_base _ (by decide)
     simpa only [sourceRegion,(kernel_source base).1] using hd.sub_right hs
-  · have hd := lay.disjoint (Blocks.coreData (Blocks.wrapperView base) n) (by simp [Blocks.wrapperFullWrites])
+  · rcases lay.buffers with same | apart
+    · exact Or.inl (by simpa only [kernelBase,Blocks.bulkArgsState,Blocks.wrapperEntryState,
+        Blocks.wrapperConfigState,RegUpd.gpr_write,reduceCtorEq,ite_false,ite_true] using same)
+    have hd := apart (Blocks.coreData (Blocks.wrapperView base) n) (by simp [Blocks.wrapperFullWrites])
     have hs : Region.Sub (Blocks.coreData (kernelBase base) (n-n%8))
         (Blocks.coreData (Blocks.wrapperView base) n) := Region.sub_prefix (by change 16*(n-n%8)≤16*n; omega_using [])
-    simpa only [sourceRegion,(kernel_source base).1] using hd.sub_right hs
+    exact Or.inr (by simpa only [sourceRegion,(kernel_source base).1] using hd.sub_right hs)
 
 
 theorem header_source {base : State} {n count i : Nat} (lay : Layout base n count) (hi : i<count) :
@@ -143,7 +155,7 @@ theorem header_source {base : State} {n count i : Nat} (lay : Layout base n coun
   intro r hr
   rw [List.mem_singleton] at hr
   subst r
-  exact ((lay.disjoint ⟨base.gpr .r9,2112⟩ (by simp [Blocks.wrapperFullWrites])).sub_left
+  exact ((lay.scratchApart).sub_left
     (Offset.sub_base _ (d := 16*i) (n := 16) (k := 16*count) (by omega_using [hi]))).sub_right
       (Region.sub_prefix (by decide))
 
@@ -232,19 +244,19 @@ theorem saved_core {base u : State} {n nr count : Nat} {dec : Bool} (lay : Layou
   rcases hr with rfl | rfl | rfl | rfl | rfl
   · change Region.Disjoint ⟨base.gpr .r9+152,16⟩ ⟨base.gpr .r9+64,88⟩
     exact Offset.disjoint _ (by decide) (by decide) (by decide)
-  · change Region.Disjoint ⟨base.gpr .r9+152,16⟩ ⟨base.gpr .r9+64+128,1920⟩
+  · change Region.Disjoint ⟨base.gpr .r9+152,16⟩ ⟨base.gpr .r9+64+128,512⟩
     have h : base.gpr .r9+64+128=base.gpr .r9+BitVec.ofNat 64 192 := by
       change base.gpr .r9+BitVec.ofNat 64 64+BitVec.ofNat 64 128=_
       exact Offset.add_add ..
     rw [h]
     exact Offset.disjoint _ (by decide) (by decide) (by decide)
   · exact ((lay.wrapper.scratch (Blocks.coreData (Blocks.wrapperView base) n) (by simp)).symm.sub_left
-      (Offset.sub_base _ (d := 152) (n := 16) (k := 2112) (by decide))).sub_right
+      (Offset.sub_base _ (d := 152) (n := 16) (k := 704) (by decide))).sub_right
         (Region.sub_prefix (by change 16*(n-n%8)≤16*n; omega_using []))
   · exact (lay.wrapper.scratch (Blocks.coreCounter (Blocks.wrapperView base)) (by simp)).symm.sub_left
-      (Offset.sub_base _ (d := 152) (n := 16) (k := 2112) (by decide))
+      (Offset.sub_base _ (d := 152) (n := 16) (k := 704) (by decide))
   · exact (lay.wrapper.scratch (Blocks.coreY (Blocks.wrapperView base)) (by simp)).symm.sub_left
-      (Offset.sub_base _ (d := 152) (n := 16) (k := 2112) (by decide))
+      (Offset.sub_base _ (d := 152) (n := 16) (k := 704) (by decide))
 
 
 theorem bulk_ok [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw] (dec : Bool)
@@ -301,13 +313,13 @@ theorem bulk_ok [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw] (dec : Bool)
 
 
 
-theorem source_frame {base s : State} {n count i : Nat} (lay : Layout base n count)
+theorem source_frame {base s : State} {n count i : Nat} (apart : ∀ r ∈ Blocks.wrapperFullWrites base n, (sourceRegion base count).Disjoint r)
     (hf : Frame (Blocks.wrapperWrites base n) (Blocks.wrapperHeaderMem base) s.mem) (hi : i<count) :
     Spec.Gcm.blockAt s.mem (base.gpr .r17+BitVec.ofNat 64 (16*i))=
       Spec.Gcm.blockAt base.mem (base.gpr .r17+BitVec.ofNat 64 (16*i)) := by
   apply Blocks.block_frame (Blocks.wrapper_final_frame hf)
   intro r hr
-  exact (lay.disjoint r hr).sub_left (Offset.sub_base _ (d := 16*i) (n := 16) (k := 16*count) (by omega_using [hi]))
+  exact (apart r hr).sub_left (Offset.sub_base _ (d := 16*i) (n := 16) (k := 16*count) (by omega_using [hi]))
 
 
 theorem copy_config {base s : State} {n nr count k : Nat} {dec : Bool} (lay : Layout base n count)
@@ -324,7 +336,15 @@ theorem copy_config {base s : State} {n nr count k : Nat} {dec : Bool} (lay : La
     exact lay.wrapper.core.writes _ _ ⟨Blocks.coreData (Blocks.wrapperView base) n,by simp,
       Offset.contains_base _ (d := 16*k+16*i) (n := 16) (k := 16*n)
         (by have := lay.bound; omega_using [hi, this]) (by have := lay.bound; have := lay.wrapper.core.size; omega_arith)⟩
-  · have hd := lay.disjoint (Blocks.coreData (Blocks.wrapperView base) n) (by simp [Blocks.wrapperFullWrites])
+  · rcases lay.buffers with same | apart
+    · by_cases h : k ≤ count
+      · left; rw [hin.1,hs.ptr,same,Nat.min_eq_left h]
+      · right
+        rw [Nat.sub_eq_zero_of_le (Nat.le_of_not_ge h),Nat.mul_zero]
+        intro a ha _
+        exact Nat.not_lt_zero _ ha
+    right
+    have hd := apart (Blocks.coreData (Blocks.wrapperView base) n) (by simp [Blocks.wrapperFullWrites])
     rw [hs.ptr,hin.1]
     exact (hd.sub_left (Offset.sub_base _ (d := 16*min k count) (n := 16*(count-k)) (k := 16*count)
       (by omega_using []))).sub_right (Offset.sub_base _ (d := 16*k) (n := 16*(n-k)) (k := 16*n)
@@ -383,15 +403,17 @@ theorem copy_pending {base s t : State} {n nr count k : Nat} {dec : Bool} (lay :
   have hb := ht.blockAt (by have := lay.bound; omega_using [this]) hi
   rw [hs.ptr] at hb
   rw [hb]
+  have hp := List.getElem_of_eq hs.pending (i := i)
+    (by simpa only [Spec.Gcm.blocksAt,List.length_map,List.length_range] using hi)
+  simp only [Spec.Gcm.blocksAt,List.getElem_map,List.getElem_range,Offset.add_add] at hp
   by_cases hic : i<count-k
   · rw [ite_eq_left hic,source_addr hic hin]
     simp only [plain,ite_eq_left (show k+i<count by omega_using [hic])]
-    exact source_frame lay hs.frame (by omega_using [hic])
-  · rw [ite_eq_right hic]
-    have hp := List.getElem_of_eq hs.pending (i := i)
-      (by simpa only [Spec.Gcm.blocksAt,List.length_map,List.length_range] using hi)
-    simp only [Spec.Gcm.blocksAt,List.getElem_map,List.getElem_range] at hp
-    rw [hp,plain,ite_eq_right (show ¬k+i<count by omega_using [hic]),Offset.add_add]
+    rcases lay.buffers with same | apart
+    · rw [same, Nat.mul_add]
+      exact hp
+    · exact source_frame apart hs.frame (by omega_using [hic])
+  · rw [ite_eq_right hic, Offset.add_add, hp,plain,ite_eq_right (show ¬k+i<count by omega_using [hic])]
     exact congrArg (fun j => Spec.Gcm.blockAt base.mem (base.gpr .r7+BitVec.ofNat 64 j)) (by omega_using [])
 
 
@@ -463,7 +485,7 @@ theorem copy_saved {base s t : State} {n nr count k : Nat} {dec : Bool} (lay : L
   subst r
   rw [hs.ptr]
   exact ((lay.wrapper.scratch (Blocks.coreData (Blocks.wrapperView base) n) (by simp)).symm.sub_left
-    (Offset.sub_base _ (d := 152) (n := 16) (k := 2112) (by decide))).sub_right
+    (Offset.sub_base _ (d := 152) (n := 16) (k := 704) (by decide))).sub_right
       (Offset.sub_base _ (d := 16*k) (n := 16*(n-k)) (k := 16*n) (by have := hs.bound; omega_using [this]))
 
 
@@ -551,9 +573,9 @@ theorem slot_read {base s : State} {n count : Nat} (lay : Layout base n count)
     ∀ p ∈ extraSaved, InRegions (s.rd++s.wr) (s.gpr .r31+BitVec.ofNat 64 p.2) 8 := by
   intro p hp
   rw [hrd,hwr,hwork]
-  have ho : ∀ p ∈ extraSaved, 64≤p.2 ∧ p.2+8≤2112 := by decide
+  have ho : ∀ p ∈ extraSaved, 64≤p.2 ∧ p.2+8≤704 := by decide
   exact Covers.right lay.wrapper.core.writes _ _ ⟨Blocks.coreWork (Blocks.wrapperView base),by simp,
-    Offset.contains _ (d := p.2) (n := 8) (e := 64) (k := 2048) (ho p hp).1 (ho p hp).2 (by decide)⟩
+    Offset.contains _ (d := p.2) (n := 8) (e := 64) (k := 640) (ho p hp).1 (ho p hp).2 (by decide)⟩
 
 
 theorem body_ok [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw] [VG.Proof.Gcm.PPC64LE.GhashLaw] (dec : Bool)

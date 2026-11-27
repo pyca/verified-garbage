@@ -1,28 +1,28 @@
 module
 
-public import VerifiedGarbage.Proof.CmacTripleDes.Stream.AArch64.Frame
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.AArch64.Print
-import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Contract
-import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Update
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Cmac.TripleDesContract
+import VerifiedGarbage.Impl.CmacTripleDes.Stream.AArch64
+import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Scrub
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # TDEA-CMAC (3DES-CMAC, NIST SP 800-38B) on AArch64 -/
 
-@[expose] public section
-
 namespace VG.Artifacts.CmacTripleDes.AArch64
 
-open VG.Proof.CmacTripleDes.AArch64
-
-def artifacts : List Artifact := [
+public def artifacts : List (Artifact AArch64.target) := [
   Spec.Cmac.tdesStreamInitApi.artifact AArch64.target {
-    code := Impl.StackScratch.AArch64.withStackScratch 640 .x3 Impl.CmacTripleDes.Stream.AArch64.streamInit
-    verified := Proof.CmacTripleDes.Stream.AArch64.init_framed },
+    code := Impl.CmacTripleDes.Stream.AArch64.Fn.init
+    verified := Proof.CmacTripleDes.AArch64.Fn.init },
   Spec.Cmac.tdesAbsorbApi.artifact AArch64.target {
-    code := Impl.StackScratch.AArch64.withStackScratch 688 .x4 Impl.CmacTripleDes.Stream.AArch64.absorb
-    verified := Proof.CmacTripleDes.Stream.AArch64.absorb_framed },
+    code := Impl.CmacTripleDes.Stream.AArch64.Fn.absorb
+    verified := Proof.CmacTripleDes.AArch64.Fn.absorb },
   Spec.Cmac.tdesFinishApi.artifact AArch64.target {
-    code := Impl.StackScratch.AArch64.withStackScratch 640 .x3 Impl.CmacTripleDes.Stream.AArch64.finish
-    verified := Proof.CmacTripleDes.Stream.AArch64.finish_framed }]
+    code := Impl.CmacTripleDes.Stream.AArch64.Fn.finish
+    verified := Proof.CmacTripleDes.AArch64.Fn.finish }]
+
+spec_apis artifacts
 
 end VG.Artifacts.CmacTripleDes.AArch64

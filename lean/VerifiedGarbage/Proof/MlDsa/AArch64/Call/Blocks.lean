@@ -8,6 +8,7 @@ public import VerifiedGarbage.Impl.MlKem.AArch64.KeyGen
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Sha3.AArch64.Sums
 import VerifiedGarbage.Proof.MlKem.Mem
+import VerifiedGarbage.Proof.Framework.AArch64.Reduce
 
 /-!
 # ML-DSA on AArch64: the blocks between calls
@@ -39,7 +40,7 @@ theorem wp_and32 {is : List Instr} {s : State} {Q : State → Prop} {d n m : Reg
       WP isa (.block is) s' Q) :
     WP isa (.block (.logic .and .w d n m :: is)) s Q :=
   VG.Proof.MlKem.AArch64.WP.cons (s' := s.write .w d ((s.gpr n).setWidth 32 &&& (s.gpr m).setWidth 32))
-    (by simp [exec, State.read]) (k _ (only_write32 _ _ _) (write32_gpr _ _ _))
+    (by simp [reduceExec, State.read]) (k _ (only_write32 _ _ _) (write32_gpr _ _ _))
 
 theorem and24_ok (s : State) :
     WP isa (.block and24) s fun s' => Only [.x24] s s' ∧

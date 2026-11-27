@@ -184,7 +184,7 @@ theorem stepKD_nil (h : τ.bases = []) {i : Instr} {τ' : T} (hs : stepKD τ i =
   | movzx16 d m => obtain ⟨-, rfl⟩ := some_cond hs; exact k d
   | aluTbl _ d m _ _ => obtain ⟨-, rfl⟩ := some_cond hs; exact k d
   | vpmovmskb _ d _ => cases hs; exact k d
-  | vpcmpltuw d _ _ => cases hs; exact k d
+  | vpcmpltuw d _ _ | evCmpUq _ d _ _ => cases hs; exact k d
   | movqR d _ => cases hs; exact k d
   | movdquLoad _ m => obtain ⟨-, rfl⟩ := some_cond hs; exact nx
   | movdquStore m _ => exact storeStepKD_nil h hs
@@ -202,7 +202,7 @@ theorem stepKD_nil (h : τ.bases = []) {i : Instr} {τ' : T} (hs : stepKD τ i =
   | zbcst _ _ _ m | vpbroadcastdZ _ m | zbcstd _ _ _ m => obtain ⟨-, rfl⟩ := some_cond hs; exact nx
   | vpmadd52Load _ _ _ m => obtain ⟨-, rfl⟩ := some_cond hs; exact nx
   | vmovdqu32Store m _ => exact storeStepKD_nil h hs
-  | eop _ | e5op _ => cases hs; exact nx
+  | eop _ | e5op _ | evMaskAddQ _ _ _ _ => cases hs; exact nx
   | evLoad _ m => obtain ⟨-, rfl⟩ := some_cond hs; exact nx
   | evMadd52Load _ _ _ m => obtain ⟨-, rfl⟩ := some_cond hs; exact nx
   | evBroadcastLoad _ m => obtain ⟨-, rfl⟩ := some_cond hs; exact nx
@@ -225,7 +225,7 @@ theorem stepKD_nil (h : τ.bases = []) {i : Instr} {τ' : T} (hs : stepKD τ i =
   | adox d s => obtain ⟨-, rfl⟩ := some_cond hs; exact k d
   | cmov _ d s => obtain ⟨-, rfl⟩ := some_cond hs; exact k d
   | push _ => cases hs
-  | callr _ => cases hs
+  | callr _ | callm _ => cases hs
   | pop _ _ => cases hs
   | alloc _ => cases hs
   | free _ => cases hs
@@ -267,8 +267,8 @@ end Taint
 /-- `taint` does not read displacements and immediates, from a taint that
 knows no region bases. -/
 theorem taint_eraseInv : taint.MapInv Instr.erase (fun τ : Taint.T => τ.bases = []) where
-  step i h := Taint.stepKD_erase h i
-  step_P _ h hs := Taint.stepKD_nil h hs
+  step i h := (taint_step _ _).trans ((Taint.stepKD_erase h i).trans (taint_step _ _).symm)
+  step_P _ h hs := Taint.stepKD_nil h ((taint_step _ _).symm.trans hs)
   le_P h hl := Taint.leK_nil h hl
   meet_P h := Taint.meet_nil h
   call_P h hs := Taint.callStep_nil h hs
@@ -279,8 +279,8 @@ theorem taint_eraseInv : taint.MapInv Instr.erase (fun τ : Taint.T => τ.bases 
 /-- `taintS` does not read displacements and immediates, from a taint that
 knows no region bases. -/
 theorem taintS_eraseInv : taintS.MapInv Instr.erase (fun τ : Taint.T => τ.bases = []) where
-  step i h := Taint.stepKD_erase h i
-  step_P _ h hs := Taint.stepKD_nil h hs
+  step i h := (taint_step _ _).trans ((Taint.stepKD_erase h i).trans (taint_step _ _).symm)
+  step_P _ h hs := Taint.stepKD_nil h ((taint_step _ _).symm.trans hs)
   le_P h hl := Taint.leS_nil h hl
   meet_P h := Taint.meet_nil h
   call_P h hs := Taint.callStep_nil h hs
@@ -299,9 +299,9 @@ that knows no region bases. -/
 theorem taintSym_eraseInv (L : List String) :
     (taintSym L).MapInv Instr.erase (fun τ : Taint.T => τ.bases = []) where
   step i h := by
-    show Taint.stepKD _ (i.erase.symMov L) = Taint.stepKD _ (i.symMov L)
-    rw [Instr.symMov_erase]; exact Taint.stepKD_erase h _
-  step_P _ h hs := Taint.stepKD_nil h hs
+    show Taint.stepKeep _ (i.erase.symMov L) = Taint.stepKeep _ (i.symMov L)
+    rw [Instr.symMov_erase, Taint.stepKeep_eq]; exact Taint.stepKD_erase h _
+  step_P _ h hs := Taint.stepKD_nil h ((taint_step _ _).symm.trans hs)
   le_P h hl := Taint.leS_nil h hl
   meet_P h := Taint.meet_nil h
   call_P h hs := Taint.callStep_nil h hs
@@ -320,17 +320,12 @@ theorem run_erase (r : Reg) (is : List Instr) :
   | nil => intro _ _; rfl
   | cons i is ih =>
     intro ok xs
-    show (bif ok then (bif Nat.beq xs 0 then run r (KList.map Instr.erase is) (step r ⟨true, ⟨0⟩⟩ i.erase).ok
-          (step r ⟨true, ⟨0⟩⟩ i.erase).xs.bits
-        else run r (KList.map Instr.erase is) (step r ⟨true, ⟨xs⟩⟩ i.erase).ok (step r ⟨true, ⟨xs⟩⟩ i.erase).xs.bits)
-      else (bif Nat.beq xs 0 then run r (KList.map Instr.erase is) (step r ⟨false, ⟨0⟩⟩ i.erase).ok
-          (step r ⟨false, ⟨0⟩⟩ i.erase).xs.bits
+    show (bif ok then run r (KList.map Instr.erase is) (step r ⟨true, ⟨xs⟩⟩ i.erase).ok
+          (step r ⟨true, ⟨xs⟩⟩ i.erase).xs.bits
         else run r (KList.map Instr.erase is) (step r ⟨false, ⟨xs⟩⟩ i.erase).ok
-          (step r ⟨false, ⟨xs⟩⟩ i.erase).xs.bits)) =
-      (bif ok then (bif Nat.beq xs 0 then run r is (step r ⟨true, ⟨0⟩⟩ i).ok (step r ⟨true, ⟨0⟩⟩ i).xs.bits
-        else run r is (step r ⟨true, ⟨xs⟩⟩ i).ok (step r ⟨true, ⟨xs⟩⟩ i).xs.bits)
-      else (bif Nat.beq xs 0 then run r is (step r ⟨false, ⟨0⟩⟩ i).ok (step r ⟨false, ⟨0⟩⟩ i).xs.bits
-        else run r is (step r ⟨false, ⟨xs⟩⟩ i).ok (step r ⟨false, ⟨xs⟩⟩ i).xs.bits))
+          (step r ⟨false, ⟨xs⟩⟩ i.erase).xs.bits) =
+      (bif ok then run r is (step r ⟨true, ⟨xs⟩⟩ i).ok (step r ⟨true, ⟨xs⟩⟩ i).xs.bits
+        else run r is (step r ⟨false, ⟨xs⟩⟩ i).ok (step r ⟨false, ⟨xs⟩⟩ i).xs.bits)
     simp only [step_erase, ih]
 
 theorem check_erase (r : Reg) (c : Prog isa) : ∀ a, check r (Code.erase c) a = check r c a := by
@@ -402,13 +397,12 @@ theorem runN_eq (r : Reg) (is : List Instr) : ∀ ok xs, runN r is ok xs = run r
         else (bif Nat.beq xs 0 then runN r is (step r ⟨false, ⟨0⟩⟩ i).ok (step r ⟨false, ⟨0⟩⟩ i).xs.bits
           else bif Nat.beq xs 1 then runN r is (step r ⟨false, ⟨1⟩⟩ i).ok (step r ⟨false, ⟨1⟩⟩ i).xs.bits
           else runN r is (step r ⟨false, ⟨xs⟩⟩ i).ok (step r ⟨false, ⟨xs⟩⟩ i).xs.bits)) =
-      (bif ok then (bif Nat.beq xs 0 then run r is (step r ⟨true, ⟨0⟩⟩ i).ok (step r ⟨true, ⟨0⟩⟩ i).xs.bits
-          else run r is (step r ⟨true, ⟨xs⟩⟩ i).ok (step r ⟨true, ⟨xs⟩⟩ i).xs.bits)
-        else (bif Nat.beq xs 0 then run r is (step r ⟨false, ⟨0⟩⟩ i).ok (step r ⟨false, ⟨0⟩⟩ i).xs.bits
-          else run r is (step r ⟨false, ⟨xs⟩⟩ i).ok (step r ⟨false, ⟨xs⟩⟩ i).xs.bits))
+      (bif ok then run r is (step r ⟨true, ⟨xs⟩⟩ i).ok (step r ⟨true, ⟨xs⟩⟩ i).xs.bits
+        else run r is (step r ⟨false, ⟨xs⟩⟩ i).ok (step r ⟨false, ⟨xs⟩⟩ i).xs.bits)
     simp only [ih]
     cases ok <;> cases h₀ : Nat.beq xs 0 <;> cases h₁ : Nat.beq xs 1 <;>
-      simp only [Bool.cond_true, Bool.cond_false] <;> rw [Nat.eq_of_beq_eq_true h₁]
+      simp only [Bool.cond_true, Bool.cond_false] <;>
+      first | rw [Nat.eq_of_beq_eq_true h₀] | rw [Nat.eq_of_beq_eq_true h₁]
 
 /-- `check`, with what is known written out after every block and branch (`Abs.norm`). -/
 def checkN (r : Reg) : Prog isa → Abs → Option Abs

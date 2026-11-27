@@ -13,6 +13,7 @@ meta import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Zeroize.Contract
+public import VerifiedGarbage.TCB.Registration
 meta import VerifiedGarbage.Spec.Zeroize.Contract
 public import VerifiedGarbage.TCB.PPC64LE.Target
 meta import VerifiedGarbage.TCB.PPC64LE.Target
@@ -23,6 +24,8 @@ meta import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 meta import VerifiedGarbage.Proof.Framework.Offset
 import all Init.Data.Nat.Bitwise.Basic
+import VerifiedGarbage.Proof.Framework.PPC64LE.Residue
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.Residue
 
 /-!
 # Zeroization on PPC64LE
@@ -261,5 +264,17 @@ theorem verified : Verified target zeroize (Spec.Zeroize.zeroizeContract abi) :=
     · exact h.2.1
   · sig_implies [Spec.Zeroize.zeroizeContract, Spec.Zeroize.zeroizeSig, contract, abi, argRegs]
       [sat] using sat
+
+/-- `vg_zeroize` returns without secret residue: it reads no memory, only
+stores zeros, so what it leaves is a function of its arguments
+(`Residue.noResidue_of_blind`). -/
+theorem noResidue (k : Contract isa) (r : Nat) : NoResidue zeroize k r :=
+  Residue.noResidue_of_blind (by decide) k r
+
+/-- `vg_zeroize`, as emitted, meets its contract in constant time and returns
+without secret residue: what its registration binds. -/
+theorem zeroize_scrubbed :
+    VerifiedScrubbed target zeroize (Spec.Zeroize.zeroizeContract abi) (Spec.Zeroize.zeroizeApi.sig.retBits 64) :=
+  ⟨verified, noResidue _ _, fun _ _ _ h => by cases h⟩
 
 end VG.Proof.Zeroize.PPC64LE

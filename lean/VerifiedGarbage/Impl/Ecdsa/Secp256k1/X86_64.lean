@@ -17,6 +17,8 @@ def secp256k1 : Cfg where
   windows := false
   mul := some Impl.Weierstrass.Mul.secp256k1
   inverse := some Impl.Weierstrass.Inverse.secp256k1
+  inv4 := true
+  affine := true
   checkPoint := some Impl.Weierstrass.CheckPoint.secp256k1
 
 def signSecp256k1 : Prog isa := secp256k1.sign

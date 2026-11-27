@@ -6,9 +6,6 @@ import VerifiedGarbage.Proof.Rsa.KeyWorkspace
 import VerifiedGarbage.Proof.Framework.Omega
 public import Batteries.Tactic.PermuteGoals
 public import Batteries.Tactic.SeqFocus
-import Mathlib.Logic.Function.Basic
-import Mathlib.Tactic.Set
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.GetElem
 public import VerifiedGarbage.Proof.Framework.Lit

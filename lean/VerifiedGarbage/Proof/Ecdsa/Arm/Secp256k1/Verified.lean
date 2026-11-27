@@ -1,13 +1,13 @@
 module
 
 import VerifiedGarbage.Proof.Ecdsa.Arm.Main
-public import VerifiedGarbage.Proof.Ecdsa.Arm.Secp256k1.Contract
+import VerifiedGarbage.Proof.Ecdsa.Arm.Secp256k1.MulLit
+meta import VerifiedGarbage.Proof.Ecdsa.Arm.Secp256k1.MulLit
 import VerifiedGarbage.Proof.Secp256k1.Point
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
 public import VerifiedGarbage.Proof.Ecdsa.Arm.Layout
 public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Spec.Ecdsa.Secp256k1
-import VerifiedGarbage.Proof.Weierstrass.Arm.MontSecp256k1
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
 import VerifiedGarbage.Proof.Ecdsa.Arm.Secp256k1.Lit
 public import VerifiedGarbage.Impl.Ecdsa.Secp256k1.Arm
@@ -15,14 +15,12 @@ public import VerifiedGarbage.Proof.Ecdsa.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Ecdsa.Arm.Main
-meta import VerifiedGarbage.Proof.Ecdsa.Arm.Secp256k1.Contract
 meta import VerifiedGarbage.Proof.Secp256k1.Point
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Proof.Ecdsa.Arm.Layout
 meta import VerifiedGarbage.Proof.Weierstrass.Law
 meta import VerifiedGarbage.Spec.Ecdsa.Secp256k1
 meta import VerifiedGarbage.Proof.Ecdsa.Contract
-meta import VerifiedGarbage.Proof.Weierstrass.Arm.MontSecp256k1
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.Ecdsa.Arm.Secp256k1.Lit
 meta import VerifiedGarbage.Impl.Ecdsa.Secp256k1.Arm
@@ -33,6 +31,111 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
 import VerifiedGarbage.Proof.Framework.Arm.TaintMono
 meta import VerifiedGarbage.Proof.Framework.Arm.TaintMono
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Spec.Ecdsa.Generic
+public import VerifiedGarbage.Spec.Secp256k1
+public import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.GetElem
+meta import VerifiedGarbage.TCB.Arm.Target
+meta import VerifiedGarbage.Spec.Ecdsa.Generic
+meta import VerifiedGarbage.Spec.Secp256k1
+meta import VerifiedGarbage.Proof.Framework.PowLit
+meta import VerifiedGarbage.Proof.Framework.GetElem
+public import VerifiedGarbage.Proof.Weierstrass.Arm.MontFn
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+meta import VerifiedGarbage.Proof.Framework.Arm.Contract
+public meta import VerifiedGarbage.Proof.Weierstrass.Arm.MontFn
+
+/-! ### `Weierstrass.Arm.MontSecp256k1`, which this module and modules that import it used -/
+
+section
+
+/-!
+# Montgomery arithmetic modulo secp256k1's `p` and `n`, as functions, on 32-bit ARM: verified
+
+secp256k1's moduli, in four 64-bit words, are ones the functions support
+(`ModOk`), so each of their functions meets the contract of its `Api`, as
+the other curves' do (`MontVerified.lean`). Apart from the other curves', so
+that adding them rebuilds none of their proofs.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Weierstrass.Arm.Mont
+
+open VG VG.Arm VG.Impl.Weierstrass.Arm.Mont Impl.Weierstrass.Mont
+
+theorem secp256k1p_ok : ModOk secp256k1p.k secp256k1p.m where
+  n3 := by decide
+  n9 := by decide
+  m_lt := by decide +kernel
+  inv := by decide +kernel
+  red := by decide +kernel
+
+theorem secp256k1n_ok : ModOk secp256k1n.k secp256k1n.m where
+  n3 := by decide
+  n9 := by decide
+  m_lt := by decide +kernel
+  inv := by decide +kernel
+  red := by decide +kernel
+
+end VG.Proof.Weierstrass.Arm.Mont
+
+end
+
+end
+
+/-! ### `Ecdsa.Arm.Secp256k1.Contract`, which this module and modules that import it used -/
+
+section
+
+/-!
+# ECDSA over secp256k1 on 32-bit ARM: the contract the proof is written against
+
+The facts of `Proof.Ecdsa.Instance.signContract Spec.Ecdsa.Secp256k1.inst` for 32-bit ARM, by name:
+`vg_ecdsa_secp256k1_sign(out, d, digest, k, scratch)`, with `out`, `d`, `digest`
+and `k` in `r0`–`r3` and `scratch` on the stack (AAPCS), the result in `r0`
+(the low word of `r1:r0`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Ecdsa.Arm.Secp256k1
+
+open VG VG.Arm Spec.Weierstrass Spec.Ecdsa
+
+/-- The signature of the arguments, as the specification computes it. -/
+abbrev sig (m : Mem) (d digest k : Addr) : Option (Nat × Nat) :=
+  signWith Spec.Secp256k1.curve (ofBytes (bytesAt m d 32)) (hashToInt Spec.Secp256k1.curve (bytesAt m digest 32))
+    (ofBytes (bytesAt m k 32))
+
+def signArm : Contract Arm.isa where
+  pre s :=
+    let out : Region := ⟨State.addr (s.gpr .r0), 64⟩
+    let d : Region := ⟨State.addr (s.gpr .r1), 32⟩
+    let digest : Region := ⟨State.addr (s.gpr .r2), 32⟩
+    let k : Region := ⟨State.addr (s.gpr .r3), 32⟩
+    let scratch : Region := ⟨State.addr (stackArg s 0), 8192⟩
+    let args : Region := ⟨State.addr s.sp, 4⟩
+    s.rd = [d, digest, k, args] ∧ s.wr = [out, scratch] ∧ out.Disjoint scratch ∧
+      d.Disjoint scratch ∧ digest.Disjoint scratch ∧ k.Disjoint scratch ∧
+      out.Disjoint args ∧ scratch.Disjoint args ∧
+      (s.gpr .r0).toNat + 64 ≤ 2 ^ 32 ∧ (s.gpr .r1).toNat + 32 ≤ 2 ^ 32 ∧ (s.gpr .r2).toNat + 32 ≤ 2 ^ 32 ∧
+      (s.gpr .r3).toNat + 32 ≤ 2 ^ 32 ∧ (stackArg s 0).toNat + 8192 ≤ 2 ^ 32 ∧ s.sp.toNat + 4 ≤ 2 ^ 32
+  post s s' :=
+    match sig s.mem (State.addr (s.gpr .r1)) (State.addr (s.gpr .r2)) (State.addr (s.gpr .r3)) with
+    | some rs => BitVec.setWidth 32 (s'.gpr .r1 ++ s'.gpr .r0) = 1 ∧
+      bytesAt s'.mem (State.addr (s.gpr .r0)) 64 = encode Spec.Secp256k1.curve rs
+    | none => BitVec.setWidth 32 (s'.gpr .r1 ++ s'.gpr .r0) = 0 ∧
+      bytesAt s'.mem (State.addr (s.gpr .r0)) 64 = List.replicate 64 0
+  pub s₁ s₂ := s₁.sp = s₂.sp ∧ s₁.gpr .r0 = s₂.gpr .r0 ∧ s₁.gpr .r1 = s₂.gpr .r1 ∧
+    s₁.gpr .r2 = s₂.gpr .r2 ∧ s₁.gpr .r3 = s₂.gpr .r3 ∧ stackArg s₁ 0 = stackArg s₂ 0
+
+end VG.Proof.Ecdsa.Arm.Secp256k1
+
+end
+
+end
 
 /-!
 # ECDSA over secp256k1 on 32-bit ARM: `Verified`
@@ -87,7 +190,8 @@ theorem secp256k1_ok : CfgOk secp256k1 where
   sh := by rw [secp256k1_sh]; decide
   fp := ⟨rfl, rfl, Mont.secp256k1p_ok, rfl⟩
   fn := ⟨rfl, rfl, Mont.secp256k1n_ok, rfl⟩
-  mulNf := fun _ h => nomatch h
+  mulNf := fun _ _ => Impl.Ecdsa.Arm.mulSecp256k1_noFrames
+  pubNf := fun _ _ => Impl.Ecdsa.Arm.mulPubSecp256k1_noFrames
 
 /-- secp256k1 with its field multiplications by `vg_secp256k1_mul_mod_<p|n>_umaal`:
 what `secp256k1_ok` states. -/
@@ -111,37 +215,14 @@ theorem secp256k1u_ok : CfgOk (secp256k1With true) where
   sh := secp256k1_ok.sh
   fp := secp256k1_ok.fp
   fn := secp256k1_ok.fn
-  mulNf := fun _ h => nomatch h
+  mulNf := fun _ _ => Impl.Ecdsa.Arm.mulSecp256k1U_noFrames
+  pubNf := fun _ _ => Impl.Ecdsa.Arm.mulPubSecp256k1U_noFrames
 
 /-- Either configuration. -/
 theorem secp256k1With_ok (u : Bool) : CfgOk (secp256k1With u) := by
   cases u
   · exact secp256k1_ok
   · exact secp256k1u_ok
-
-theorem pre_of {s : State} (h : signArm.pre s) : Pre secp256k1 s := by
-  obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14⟩ := h
-  exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14⟩
-
-theorem sign_arm (hL : Weierstrass.Law Spec.Secp256k1.curve) (s : State) (hs : signArm.pre s) :
-    ∃ t s', Exec isa signSecp256k1 s t s' ∧ abiPreserved s s' ∧ signArm.post s s' := by
-  have hp := pre_of hs
-  obtain ⟨t, s', he, K, hpost⟩ := sign_ok secp256k1_ok hL hp
-  refine ⟨t, s', he, ⟨fun r hr => ?_, K.sp⟩, ?_⟩
-  swap
-  · simp only [signArm, BitVec.setWidth_append_eq_right]
-    exact hpost
-  simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-  · exact K.saved (.r4, 0) (by decide)
-  · exact K.saved (.r5, 4) (by decide)
-  · exact K.saved (.r6, 8) (by decide)
-  · exact K.saved (.r7, 12) (by decide)
-  · exact K.saved (.r8, 16) (by decide)
-  · exact K.saved (.r9, 20) (by decide)
-  · exact K.saved (.r10, 24) (by decide)
-  · exact K.saved (.r11, 28) (by decide)
-  · exact K.saved (.lr, 32) (by decide)
 
 /-- The taint analysis starts with the register arguments public, the stack
 argument too, and that word known to be the base address of `scratch`. -/
@@ -201,9 +282,5 @@ theorem agree₁ {s t : State} (h : VG.Arm.Taint.Agree τ₀ s t) : VG.Arm.Taint
   VG.Arm.Taint.leS_sound (σ := τ₀) ⟨RegSet.subset_refl _, id, .inr ⟨rfl, rfl⟩,
     fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim, .inl rfl,
     fun _ h => (List.not_mem_nil h).elim⟩ h
-
-theorem sign_ct : ConstantTime isa signArm.pre signArm.pub signSecp256k1 := by
-  exact VG.Taint.constantTime (A := taint) τ₁
-    (fun _ _ hs ht pub => agree₁ (agree₀ (pre_of hs) (pre_of ht) pub)) (by native_taint_decide)
 
 end VG.Proof.Ecdsa.Arm.Secp256k1

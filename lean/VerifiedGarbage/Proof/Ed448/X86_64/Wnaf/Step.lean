@@ -1,22 +1,13 @@
 module
+
 public import VerifiedGarbage.Impl.Ed448.Wnaf
 public import VerifiedGarbage.Impl.Ed448.X86_64.Wnaf.Recode
-public import VerifiedGarbage.Proof.X448.X86_64.Reduce
-
+public import VerifiedGarbage.Proof.X448.X86_64.AddSub
 import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Write
 import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Digit
 import VerifiedGarbage.Proof.Ed448.Wnaf.Recoding
 import VerifiedGarbage.Proof.Framework.Block
-import Mathlib.Tactic.NormNum.Prime
-import Mathlib.Data.Nat.Totient
-import Mathlib.Tactic.Positivity.Finset
-import Mathlib.Algebra.Order.Field.Basic
-import Mathlib.Tactic.NormNum.GCD
-import Mathlib.Data.Sym.Sym2.Init
-import Mathlib.Tactic.ContinuousFunctionalCalculus
-public import Mathlib.Algebra.Group.Nat.Defs
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Taint

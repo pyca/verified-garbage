@@ -1,7 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Camellia.AArch64.Serial.CallCore
-import VerifiedGarbage.Proof.Camellia.AArch64.Link
+public import VerifiedGarbage.Proof.Camellia.AArch64.Link
 import VerifiedGarbage.Proof.Modes.AArch64.Fb
 import VerifiedGarbage.Proof.Modes.AArch64.CfbDec.Whole
 import VerifiedGarbage.Proof.Modes.AArch64.Steps
@@ -15,7 +14,7 @@ import VerifiedGarbage.Proof.Camellia.AArch64.FbLit
 public import VerifiedGarbage.Impl.Camellia.AArch64.Fb
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Camellia.AArch64.ModeCore
+meta import VerifiedGarbage.Proof.Camellia.AArch64.Serial.Verified
 meta import VerifiedGarbage.Proof.Camellia.AArch64.Link
 meta import VerifiedGarbage.Proof.Modes.AArch64.Fb
 meta import VerifiedGarbage.Proof.Camellia.FbScratch

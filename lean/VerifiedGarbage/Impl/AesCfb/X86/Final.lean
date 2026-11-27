@@ -2,11 +2,13 @@ module
 
 public import VerifiedGarbage.Impl.AesCfb.X86
 public import VerifiedGarbage.Impl.Modes.X86.SeqFinal
+public import VerifiedGarbage.Impl.Scrub.X86
+public import VerifiedGarbage.Impl.StackScratch.X86
 
 /-!
 # AES-CFB128 of a message's last piece: x86 (32-bit) implementation
 
-`encryptFinal b sfx` and `decryptFinal b sfx` (cdecl: schedule, rounds, iv,
+`encryptFinal whole b sfx` and `decryptFinal whole b sfx` (cdecl: schedule, rounds, iv,
 data, len, scratch, save, every argument on the stack): the code of
 `vg_aes_cfb128_encrypt_final` and `vg_aes_cfb128_decrypt_final`, whose
 registrations frame it with a buffer of their own on the stack, `save`, the
@@ -16,8 +18,10 @@ They are generic over the implementation of the block functions they call
 
 1. our caller's `ebx`, `esi`, `edi` and `ebp` saved in `save`;
 2. a call of the whole-block function of the same direction and
-   implementation (`vg_aes_cfb128_encrypt` and its variants,
-   `Impl/AesCfb/X86.lean`) on the `len / 16` whole blocks, its six
+   implementation (`vg_aes_cfb128_encrypt`'s code,
+   `vg_aes_cfb128_encrypt_core`, and its variants, `Impl/AesCfb/X86.lean`:
+   `whole`, which is `encrypt b` or `decrypt b`, or `encryptChain` or, with
+   AES-NI, `decryptNi`) on the `len / 16` whole blocks, its six
    arguments pushed in a frame of their own, which leaves the last
    ciphertext block `Cₙ₋₁` in `iv`;
 3. if `u = len mod 16` bytes are left, a call of the block function on the
@@ -83,13 +87,51 @@ def final (name : String) (whole : Prog isa) (b : Blocks) : Prog isa :=
   .seq (.block (finalSave ++ wholeArgs)) (.seq (wholeCall name whole)
     (.seq (.block tailTest) (.seq (.ite .e (.block []) (finalTail b)) (.block finalRestore))))
 
-/-- `vg_aes_cfb128_encrypt_final`, calling `vg_aes_cfb128_encrypt` with the
-block function `b`, whose callers' names end in `sfx`. -/
-def encryptFinal (b : Blocks) (sfx : String) : Prog isa :=
-  final ("vg_aes_cfb128_encrypt" ++ sfx) (encrypt b) b
+/-- `vg_aes_cfb128_encrypt_final`, calling `vg_aes_cfb128_encrypt`'s code
+`whole` for the block function `b`, whose callers' names end in `sfx`, as
+an internal function of its own, `vg_aes_cfb128_encrypt<sfx>_core`:
+`vg_aes_cfb128_encrypt` may also clear what it leaves. -/
+def encryptFinal (whole : Prog isa) (b : Blocks) (sfx : String) : Prog isa :=
+  final ("vg_aes_cfb128_encrypt" ++ sfx ++ "_core") whole b
 
-/-- `vg_aes_cfb128_decrypt_final`, calling `vg_aes_cfb128_decrypt`. -/
-def decryptFinal (b : Blocks) (sfx : String) : Prog isa :=
-  final ("vg_aes_cfb128_decrypt" ++ sfx) (decrypt b) b
+/-- `vg_aes_cfb128_decrypt_final`, calling `vg_aes_cfb128_decrypt`'s code
+`whole`, as `vg_aes_cfb128_decrypt<sfx>_core`. -/
+def decryptFinal (whole : Prog isa) (b : Blocks) (sfx : String) : Prog isa :=
+  final ("vg_aes_cfb128_decrypt" ++ sfx ++ "_core") whole b
 
 end VG.Impl.AesCfb.X86
+
+/-! ## The functions as emitted
+
+Each function, then its cleanup (`Impl.Scrub.X86.scrubAll rb W`): the `W`
+bytes of stack below `esp` that it and its callees use zeroed, and the
+registers a callee may change cleared but the `rb` bits of the result, so
+that it returns without secret residue. -/
+
+namespace VG.Impl.AesCfb.X86.Fn
+
+open VG.X86
+open VG.Impl.Aes.X86 (Blocks)
+open Impl.StackScratch.X86 (withStackScratchWiped)
+
+/-- `vg_aes_cfb128_encrypt` with the whole-block code `whole` (`encrypt`
+around a block function, or `encryptChain`), as emitted. -/
+def encrypt (whole : Prog isa) : Prog isa := Impl.Scrub.X86.scrubAll 0 24 whole
+
+/-- `vg_aes_cfb128_decrypt` with the whole-block code `whole` (`decrypt`
+around a block function, or `decryptNi`), which uses `k` bytes of stack, as
+emitted. -/
+def decrypt (whole : Prog isa) (k : Nat) : Prog isa := Impl.Scrub.X86.scrubAll 0 k whole
+
+/-- `vg_aes_cfb128_encrypt_final` with the whole-block code `whole` and the
+block function `b`, of the variant `sfx`, as emitted. -/
+def encryptFinal (whole : Prog isa) (b : Blocks) (sfx : String) : Prog isa :=
+  Impl.Scrub.X86.scrubAll 0 100 (withStackScratchWiped 48 6 4 (Impl.AesCfb.X86.encryptFinal whole b sfx))
+
+/-- `vg_aes_cfb128_decrypt_final` with the whole-block code `whole`, which
+uses `k` bytes of stack, and the block function `b`, of the variant `sfx`, as
+emitted. -/
+def decryptFinal (whole : Prog isa) (b : Blocks) (sfx : String) (k : Nat) : Prog isa :=
+  Impl.Scrub.X86.scrubAll 0 (28 + k + 48) (withStackScratchWiped 48 6 4 (Impl.AesCfb.X86.decryptFinal whole b sfx))
+
+end VG.Impl.AesCfb.X86.Fn

@@ -38,32 +38,32 @@ open VG VG.AArch64 VG.Impl.CmacAes.AArch64
 open VG.Proof.Aes.AArch64 (Ctr32Impl)
 
 /-- What is known between the code before the call and the call. -/
-structure SMid (s₀ : State) (W K S : Addr) (R : Nat) (s : State) : Prop where
-  pre : CallPre s W (S + BitVec.ofNat 64 2048) K S R
+structure SMid (n : Nat) (s₀ : State) (W K S : Addr) (R : Nat) (s : State) : Prop where
+  pre : CallPre s W S K (S + BitVec.ofNat 64 128) R n
   x19 : s.gpr .x19 = K
   x20 : s.gpr .x20 = S
   sp : s.sp = s₀.sp
 
-theorem smid_wp {s₀ : State} {W K S : Addr} {R : Nat} (hp : SPre s₀ W K S R) :
-    WP isa (.block subkeysPre) s₀ (SMid s₀ W K S R) := by
+theorem smid_wp {n : Nat} {s₀ : State} {W K S : Addr} {R : Nat} (hp : SPre n s₀ W K S R) :
+    WP isa (.block subkeysPre) s₀ (SMid n s₀ W K S R) := by
   have sw := hp.scr_wrap
   have kw := hp.k_wrap
-  have inS (d : Nat) (h : d + 8 ≤ 2176) : InRegions s₀.wr (s₀.gpr .x3 + BitVec.ofNat 64 d) 8 := by
-    rw [hp.wr, hp.x3]; exact in_rw (r := ⟨S, 2176⟩) (by simp) (Offset.contains_base _ h (by omega_using [h]))
+  have inS (d : Nat) (h : d + 8 ≤ 128 + n) : InRegions s₀.wr (s₀.gpr .x3 + BitVec.ofNat 64 d) 8 := by
+    rw [hp.wr, hp.x3]; exact in_rw (r := ⟨S, 128 + n⟩) (by simp) (Offset.contains_base _ h (by omega_using [h, sw]))
   have inK (d : Nat) (h : d + 8 ≤ 32) : InRegions s₀.wr (s₀.gpr .x2 + BitVec.ofNat 64 d) 8 := by
     rw [hp.wr, hp.x2]; exact in_rw (r := ⟨K, 32⟩) (by simp) (Offset.contains_base _ h (by omega_using [h]))
   obtain ⟨s₁, run₁, x0₁, x1₁, x2₁, x3₁, x4₁, x5₁, x19₁, x20₁, _, sp₁, mem₁, rd₁, wr₁⟩ :=
-    subkeysPre_ok s₀ (inS _ (by decide)) (inS _ (by decide)) (inS _ (by decide)) (inS _ (by decide))
-      (inS _ (by decide)) (inK _ (by decide)) (inK _ (by decide))
+    subkeysPre_ok s₀ (inS _ (by omega)) (inS _ (by omega)) (inS _ (by omega)) (inS _ (by omega))
+      (inS _ (by omega)) (inK _ (by decide)) (inK _ (by decide))
   exact WP.of_runBlock ⟨s₁, run₁,
     callPre_of hp x0₁ x1₁ x2₁ x3₁ x4₁ x5₁ mem₁ rd₁ wr₁, by rw [x19₁, hp.x2], by rw [x20₁, hp.x3], sp₁⟩
 
-theorem subkeys_rel (v : Ctr32Impl) {s₀ s₀' : State} (h0 : subkeysAArch64.pre s₀)
-    (h0' : subkeysAArch64.pre s₀') (hq : subkeysAArch64.pub s₀ s₀') :
+theorem subkeys_rel (v : Ctr32Impl) {s₀ s₀' : State} (h0 : (subkeysAArch64With v.scratch).pre s₀)
+    (h0' : (subkeysAArch64With v.scratch).pre s₀') (hq : (subkeysAArch64With v.scratch).pub s₀ s₀') :
     RelCT isa (fun a b => a = s₀ ∧ b = s₀') (subkeys v.callee) fun _ _ => True := by
   obtain ⟨q1, q2, q3, q4, q5⟩ := hq
   have hp := SPre.of h0
-  have hp' : SPre s₀' (s₀.gpr .x0) (s₀.gpr .x2) (s₀.gpr .x3) (s₀.gpr .x1).toNat := by
+  have hp' : SPre v.scratch s₀' (s₀.gpr .x0) (s₀.gpr .x2) (s₀.gpr .x3) (s₀.gpr .x1).toNat := by
     rw [q1, q2, q3, q4]; exact SPre.of h0'
   obtain ⟨_, hA⟩ : ∃ h, (taint.check (Taint.ofRegs [.x0, .x1, .x2, .x3]) (.block subkeysPre) h).isSome =
       true := ⟨_, by taint_decide⟩
@@ -75,19 +75,19 @@ theorem subkeys_rel (v : Ctr32Impl) {s₀ s₀' : State} (h0 : subkeysAArch64.pr
       refine agree_of q5 fun r hr => ?_
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl <;> with_reducible assumption) hA).wp
-    (F₁ := SMid s₀ _ _ _ _) (F₂ := SMid s₀' _ _ _ _) fun a b h => by
+    (F₁ := SMid v.scratch s₀ _ _ _ _) (F₂ := SMid v.scratch s₀' _ _ _ _) fun a b h => by
       obtain ⟨rfl, rfl⟩ := h; exact ⟨smid_wp hp, smid_wp hp'⟩
-  have c := (ctr_rel v (P := fun s₁ s₂ =>
-      SMid s₀ (s₀.gpr .x0) (s₀.gpr .x2) (s₀.gpr .x3) (s₀.gpr .x1).toNat s₁ ∧
-      SMid s₀' (s₀.gpr .x0) (s₀.gpr .x2) (s₀.gpr .x3) (s₀.gpr .x1).toNat s₂) fun s₁ s₂ h =>
+  have c := (ctr_relW v (P := fun s₁ s₂ =>
+      SMid v.scratch s₀ (s₀.gpr .x0) (s₀.gpr .x2) (s₀.gpr .x3) (s₀.gpr .x1).toNat s₁ ∧
+      SMid v.scratch s₀' (s₀.gpr .x0) (s₀.gpr .x2) (s₀.gpr .x3) (s₀.gpr .x1).toNat s₂) fun s₁ s₂ h =>
       ⟨h.1.pre, h.2.pre, by rw [h.1.sp, h.2.sp, q5]⟩).wp
     (F₁ := fun (s : State) => s.gpr .x19 = s₀.gpr .x2 ∧ s.gpr .x20 = s₀.gpr .x3 ∧ s.sp = s₀.sp)
     (F₂ := fun (s : State) => s.gpr .x19 = s₀.gpr .x2 ∧ s.gpr .x20 = s₀.gpr .x3 ∧ s.sp = s₀'.sp)
     fun s₁ s₂ h =>
-      ⟨WP.mono (ctr_call v h.1.pre) fun _ hc =>
+      ⟨WP.mono (ctr_callW v h.1.pre) fun _ hc =>
         ⟨by rw [hc.saved .x19 (by simp [preserved]) (by decide), h.1.x19],
           by rw [hc.saved .x20 (by simp [preserved]) (by decide), h.1.x20], by rw [hc.sp, h.1.sp]⟩,
-       WP.mono (ctr_call v h.2.pre) fun _ hc =>
+       WP.mono (ctr_callW v h.2.pre) fun _ hc =>
         ⟨by rw [hc.saved .x19 (by simp [preserved]) (by decide), h.2.x19],
           by rw [hc.saved .x20 (by simp [preserved]) (by decide), h.2.x20], by rw [hc.sp, h.2.sp]⟩⟩
   have b := RelCT.taint (A := taint)
@@ -102,7 +102,7 @@ theorem subkeys_rel (v : Ctr32Impl) {s₀ s₀' : State} (h0 : subkeysAArch64.pr
     ((c.mono (fun _ _ h => h) fun _ _ h => h.2).seq b)
 
 theorem subkeys_ct (v : Ctr32Impl) :
-    ConstantTime isa subkeysAArch64.pre subkeysAArch64.pub (subkeys v.callee) :=
+    ConstantTime isa (subkeysAArch64With v.scratch).pre (subkeysAArch64With v.scratch).pub (subkeys v.callee) :=
   fun _ _ _ _ _ _ h₁ h₂ hq e₁ e₂ => (subkeys_rel v h₁ h₂ hq _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
 
 end VG.Proof.CmacAes.AArch64
@@ -126,35 +126,37 @@ namespace VG.Proof.CmacAes.AArch64
 open VG VG.AArch64 VG.Impl.CmacAes.AArch64
 open VG.Proof.Aes.AArch64 (Ctr32Impl)
 
-theorem finalize_rel (v : Ctr32Impl) {s₀ s₀' : State} (h0 : finalizeAArch64.pre s₀)
-    (h0' : finalizeAArch64.pre s₀') (hq : finalizeAArch64.pub s₀ s₀') :
+theorem finalize_rel (v : Ctr32Impl) {s₀ s₀' : State} (h0 : (finalizeAArch64With v.scratch).pre s₀)
+    (h0' : (finalizeAArch64With v.scratch).pre s₀') (hq : (finalizeAArch64With v.scratch).pub s₀ s₀') :
     RelCT isa (fun a b => a = s₀ ∧ b = s₀') (finalize v.callee) fun _ _ => True := by
   obtain ⟨q1, q2, q3, q4, q5, q6, q7⟩ := hq
   have hp := FPre.of h0
   have hp' : FPre s₀' (s₀.gpr .x0) (s₀.gpr .x2) (s₀.gpr .x3) (s₀.gpr .x5) (s₀.gpr .x4).toNat
-      (s₀.gpr .x1).toNat := by
+      (s₀.gpr .x1).toNat v.scratch := by
     rw [q1, q2, q3, q4, q5, q6]; exact FPre.of h0'
   obtain ⟨_, hA⟩ : ∃ h, (taint.check (Taint.ofRegs [.x0, .x1, .x2, .x3, .x4, .x5]) finPre h).isSome =
       true := ⟨_, by taint_decide⟩
   obtain ⟨_, hB⟩ : ∃ h, (taint.check (Taint.ofRegs [.x19])
-      (.block [.ldr .x .x30 .x19 2072, .ldr .x .x19 .x19 2064]) h).isSome = true := ⟨_, by taint_decide⟩
+      (.block [.ldr .x .x30 .x19 24, .ldr .x .x19 .x19 16]) h).isSome = true := ⟨_, by taint_decide⟩
   have a := (RelCT.taint (A := taint) (P := fun a b => a = s₀ ∧ b = s₀') _
     (fun a b h => by
       obtain ⟨rfl, rfl⟩ := h
       refine agree_of q7 fun r hr => ?_
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption) hA).wp
-    (F₁ := FMid s₀ _ _ _ _ _ _) (F₂ := FMid s₀' _ _ _ _ _ _) fun a b h => by
+    (F₁ := FMid s₀ _ _ _ _ _ _ _) (F₂ := FMid s₀' _ _ _ _ _ _ _) fun a b h => by
       obtain ⟨rfl, rfl⟩ := h; exact ⟨finPre_wp hp, finPre_wp hp'⟩
-  have c := (ctr_rel v (P := fun s₁ s₂ =>
-      FMid s₀ (s₀.gpr .x0) (s₀.gpr .x2) (s₀.gpr .x3) (s₀.gpr .x5) (s₀.gpr .x4).toNat (s₀.gpr .x1).toNat s₁ ∧
-      FMid s₀' (s₀.gpr .x0) (s₀.gpr .x2) (s₀.gpr .x3) (s₀.gpr .x5) (s₀.gpr .x4).toNat (s₀.gpr .x1).toNat s₂)
+  have c := (ctr_relW v (P := fun s₁ s₂ =>
+      FMid s₀ (s₀.gpr .x0) (s₀.gpr .x2) (s₀.gpr .x3) (s₀.gpr .x5) (s₀.gpr .x4).toNat (s₀.gpr .x1).toNat
+        v.scratch s₁ ∧
+      FMid s₀' (s₀.gpr .x0) (s₀.gpr .x2) (s₀.gpr .x3) (s₀.gpr .x5) (s₀.gpr .x4).toNat (s₀.gpr .x1).toNat
+        v.scratch s₂)
     fun s₁ s₂ h => ⟨h.1.pre, h.2.pre, by rw [h.1.sp, h.2.sp, q7]⟩).wp
     (F₁ := fun (s : State) => s.gpr .x19 = s₀.gpr .x5 ∧ s.sp = s₀.sp)
     (F₂ := fun (s : State) => s.gpr .x19 = s₀.gpr .x5 ∧ s.sp = s₀'.sp) fun s₁ s₂ h =>
-      ⟨WP.mono (ctr_call v h.1.pre) fun _ hc =>
+      ⟨WP.mono (ctr_callW v h.1.pre) fun _ hc =>
         ⟨by rw [hc.saved .x19 (by simp [preserved]) (by decide), h.1.x19], by rw [hc.sp, h.1.sp]⟩,
-       WP.mono (ctr_call v h.2.pre) fun _ hc =>
+       WP.mono (ctr_callW v h.2.pre) fun _ hc =>
         ⟨by rw [hc.saved .x19 (by simp [preserved]) (by decide), h.2.x19], by rw [hc.sp, h.2.sp]⟩⟩
   have b := RelCT.taint (A := taint)
     (P := fun s₁ s₂ => (s₁.gpr .x19 = s₀.gpr .x5 ∧ s₁.sp = s₀.sp) ∧ (s₂.gpr .x19 = s₀.gpr .x5 ∧ s₂.sp = s₀'.sp)) _
@@ -165,7 +167,7 @@ theorem finalize_rel (v : Ctr32Impl) {s₀ s₀' : State} (h0 : finalizeAArch64.
     ((c.mono (fun _ _ h => h) fun _ _ h => h.2).seq b)
 
 theorem finalize_ct (v : Ctr32Impl) :
-    ConstantTime isa finalizeAArch64.pre finalizeAArch64.pub (finalize v.callee) :=
+    ConstantTime isa (finalizeAArch64With v.scratch).pre (finalizeAArch64With v.scratch).pub (finalize v.callee) :=
   fun _ _ _ _ _ _ h₁ h₂ hq e₁ e₂ => (finalize_rel v h₁ h₂ hq _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
 
 end VG.Proof.CmacAes.AArch64
@@ -199,12 +201,12 @@ theorem update_correct (v : Ctr32Impl) (s : State) (hs : updateAArch64.pre s) :
     ∃ t s', Exec isa (update v.callee) s t s' ∧ abiPreserved s s' ∧ updateAArch64.post s s' :=
   WP.withPreservedV (update_wp v hs) (update_keepsV v)
 
-theorem subkeys_correct (v : Ctr32Impl) (s : State) (hs : subkeysAArch64.pre s) :
-    ∃ t s', Exec isa (subkeys v.callee) s t s' ∧ abiPreserved s s' ∧ subkeysAArch64.post s s' :=
+theorem subkeys_correct (v : Ctr32Impl) (s : State) (hs : (subkeysAArch64With v.scratch).pre s) :
+    ∃ t s', Exec isa (subkeys v.callee) s t s' ∧ abiPreserved s s' ∧ (subkeysAArch64With v.scratch).post s s' :=
   WP.withPreservedV (subkeys_wp v hs) (subkeys_keepsV v)
 
-theorem finalize_correct (v : Ctr32Impl) (s : State) (hs : finalizeAArch64.pre s) :
-    ∃ t s', Exec isa (finalize v.callee) s t s' ∧ abiPreserved s s' ∧ finalizeAArch64.post s s' :=
+theorem finalize_correct (v : Ctr32Impl) (s : State) (hs : (finalizeAArch64With v.scratch).pre s) :
+    ∃ t s', Exec isa (finalize v.callee) s t s' ∧ abiPreserved s s' ∧ (finalizeAArch64With v.scratch).post s s' :=
   WP.withPreservedV (finalize_wp v hs) (finalize_keepsV v)
 
 end VG.Proof.CmacAes.AArch64

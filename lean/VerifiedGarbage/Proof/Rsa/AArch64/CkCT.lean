@@ -1,7 +1,6 @@
 module
-public import VerifiedGarbage.Proof.Rsa.AArch64.CkState
 
-import VerifiedGarbage.Proof.Rsa.AArch64.CkPhaseCore
+public import VerifiedGarbage.Proof.Rsa.AArch64.CkPhaseCore
 import VerifiedGarbage.Proof.Rsa.AArch64.CkPieces
 import VerifiedGarbage.Proof.Rsa.AArch64.CvCT
 import VerifiedGarbage.Proof.Rsa.AArch64.CTBase
@@ -11,7 +10,6 @@ import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.TaintBatch
-meta import VerifiedGarbage.Proof.Rsa.AArch64.CkState
 meta import VerifiedGarbage.Proof.Rsa.AArch64.CkPhaseCore
 meta import VerifiedGarbage.Proof.Rsa.AArch64.CkPieces
 meta import VerifiedGarbage.Proof.Rsa.AArch64.CvCT

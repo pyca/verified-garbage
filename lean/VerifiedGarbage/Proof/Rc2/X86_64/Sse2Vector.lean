@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.Words
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Sse
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 import VerifiedGarbage.Proof.Framework.Mem
 
 @[expose] public section
@@ -75,7 +76,7 @@ theorem loadConst_ok (s : State) (dst : XReg) (hd : dst ≠ .xmm5) (v : BitVec 1
       s'.xmm dst = v ∧ KeepX [.r10] [dst, .xmm5] s s' := by
   refine ⟨_, by
     simp only [Impl.Rc2.X86_64.Sse2.loadConst, runBlock_cons, runStep_some,
-      runBlock_nil, exec, XOp.exec, gpr_setReg,
+      runBlock_nil, reduceExec, XOp.exec, gpr_setReg,
       gpr_setXmm, xmm_setReg, xmm_setXmm_self, xmm_setXmm_of_ne _ _ hd]
     rfl, ?_⟩
   constructor
@@ -105,7 +106,7 @@ theorem select_ok (s : State) :
       KeepX [] [.xmm3, .xmm1, .xmm2] s s' := by
   refine ⟨_, by
     simp only [reduceCtorEq, not_false_eq_true, Impl.Rc2.X86_64.Sse2.select,
-      runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec,
+      runBlock_cons, runStep_some, runBlock_nil, reduceExec, XOp.exec,
       xmm_setXmm_self, xmm_setXmm_of_ne]
     rfl, ?_⟩
   refine ⟨?_, ?_, ?_⟩
@@ -246,8 +247,8 @@ theorem reduceValue_word (v : BitVec 128) :
   intro j hj
   simp only [reduceValue, getLsbD_word, BitVec.getLsbD_or, BitVec.getLsbD_ushiftRight,
     decide_eq_true hj, Bool.true_and, Nat.mul_zero, Nat.zero_add]
-  simp only [Nat.reduceMul]
-  simp only [Nat.add_assoc, Nat.add_comm, Bool.or_comm, Bool.or_left_comm]
+  simp only [Nat.reduceMul, ← Nat.add_assoc, Nat.reduceAdd]
+  ac_rfl
 
 theorem reduce_acc (f : Nat → BitVec 16) (x n : Nat) :
     word (reduceValue (acc f x n)) 0 = if x < 8 * n then f x else 0#16 := by

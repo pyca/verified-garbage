@@ -1,7 +1,7 @@
 module
 
 import VerifiedGarbage.Proof.Dsa.Arm.GenerateTrace
-import VerifiedGarbage.Proof.Dsa.Arm.GenerateCheck
+public import VerifiedGarbage.Proof.Dsa.Arm.GenerateCheck
 import VerifiedGarbage.Proof.Dsa.Arm.SignCorrect
 import VerifiedGarbage.Proof.Dsa.Arm.ShapeTrace
 import VerifiedGarbage.Proof.Dsa.Arm.Leaves
@@ -9,8 +9,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Dsa.PackedBytes
 public import VerifiedGarbage.Impl.Dsa.Arm.Generate
-public import VerifiedGarbage.Proof.Dsa.Arm.GenerateEntry
-public import VerifiedGarbage.Proof.Dsa.Arm.KeyTrace
+public import VerifiedGarbage.Proof.Dsa.Arm.Body
 
 /-!
 # DSA domain checks on 32-bit ARM: constant time
@@ -28,6 +27,8 @@ open VG VG.Arm VG.Impl.Mont.Arm VG.Impl.Mont.Arm.Dynamic VG.Proof.Mont VG.Proof.
 open VG.Impl.Dsa.Arm VG.Impl.Dsa.Layout
 open VG.Proof.X25519.Arm (Rest eval_eq)
 open VG.Proof.Ecdsa.Arm (mask32)
+
+variable {umaal : Bool}
 
 /-- The domain's operands. -/
 def checkIns (pLen qLen : Nat) : List (Pointer × Nat) := [(.input .p, pLen), (.input .q, qLen), (.input .g, pLen)]
@@ -84,7 +85,7 @@ theorem check_bytes {s₁ s₂ : State} (hl : (checkParams s₁).map (·.toNat) 
   rw [← hr0, ← hr1] at E
   rw [← VG.Proof.Dsa.bytesAt_slice _ _ hol, ← VG.Proof.Dsa.bytesAt_slice _ _ hol, E]
 
-theorem check_constantTime : ConstantTime isa checkArm.pre checkArm.pub Generate.checkParameters := by
+theorem check_constantTime : ConstantTime isa checkArm.pre checkArm.pub (Generate.checkParameters umaal) := by
   refine SameTrace.constantTime fun s₁ s₂ h₁ h₂ pub => ?_
   obtain ⟨hsp, hl, hr0, hr1, hr2, hr3, ha⟩ := pub
   have a0 := ha 0 (by decide)
@@ -112,14 +113,14 @@ theorem check_constantTime : ConstantTime isa checkArm.pre checkArm.pub Generate
       have E := Env.of_installed I (by rw [hz₂]; omega_arith)
       rwa [hb₂, hz₂] at E)
     fun u₁ u₂ E₁ E₂ => ?_
-  refine genDispatch_trace Generate.checkSized _ E₁.ws E₂.ws (by omega_arith) (by omega_arith) (genWidths_mem hv) (by decide)
+  refine genDispatch_trace (Generate.checkSized umaal) _ E₁.ws E₂.ws (by omega_arith) (by omega_arith) (genWidths_mem hv) (by decide)
     (by rw [E₁.field (d := 100) (v := s₁.gpr .r2) (by simp)]) (by rw [E₁.field (d := 104) (v := s₁.gpr .r3) (by simp)])
     (by rw [E₂.field (d := 100) (v := s₂.gpr .r2) (by simp), hr2])
     (by rw [E₂.field (d := 104) (v := s₂.gpr .r3) (by simp), hr3])
     fun t₁ t₂ R₁ M₁ R₂ M₂ => ?_
   have F₁ := E₁.of_mem R₁ (by decide) M₁
   have F₂ := E₂.of_mem R₂ (by decide) M₂
-  have hz : 4960 ≤ (arg s₁ 1).toNat * 8 := by omega_arith
+  have hz : 12016 ≤ (arg s₁ 1).toNat * 8 := by omega_arith
   have C₁ := checkCtx h₁ rfl rfl F₁
   have C₂ := checkCtx h₂ hb₂ hz₂ F₂
   rw [← hr2, ← hr3] at C₂
@@ -177,7 +178,7 @@ theorem check_constantTime : ConstantTime isa checkArm.pre checkArm.pub Generate
     have X : Pair (State.addr (arg s₁ 0)) ((arg s₁ 1).toNat * 8) ((arg s₁ 1).toNat * 8) (s₁.gpr .r2).toNat
         (s₁.gpr .r3).toNat (((s₁.gpr .r2).toNat + 7) / 8) (((s₁.gpr .r3).toNat + 7) / 8)
         (checkIns (s₁.gpr .r2).toNat (s₁.gpr .r3).toNat) (checkVal s₁) (checkVal s₂) v₁ v₂ :=
-      ⟨D₁, D₂, pe G₁ G₂⟩
+      ⟨D₁, D₂, pe G₁ G₂, Vp.symm, Vq.symm⟩
     exact SameTrace.assoc_left (SameTrace.seq (parameters_trace X mp mq mg Dm₁ Dm₂)
       (parameters_ok X.C₁.S (X.C₁.inp mp) (X.C₁.inp mq) (X.C₁.inp mg) Dm₁.hP Dm₁.hPo Dm₁.hQ Dm₁.hQo)
       (parameters_ok X.C₂.S (X.C₂.inp mp) (X.C₂.inp mq) (X.C₂.inp mg) Dm₂.hP Dm₂.hPo Dm₂.hQ Dm₂.hQo)

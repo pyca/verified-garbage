@@ -44,16 +44,37 @@ theorem testBit_tableOfList (bs : List Bool) (c : Nat) :
       congr 1
       cases b <;> simp [Bool.toNat] <;> omega_using []
 
+/-- The table's rows, as the specification writes them: `sbox1Table` is
+their `flatten`, an array built by 256 `push`es, each of which the kernel
+evaluates by rebuilding the list of what was pushed before it. -/
+def sbox1Rows : { r : Vector (Vector Byte 16) 16 // Spec.Camellia.sbox1Table = r.flatten } :=
+  ⟨_, Spec.Camellia.sbox1Table.eq_1⟩
+
+/-- The specification's table as a list (`sbox1L_eq`), from its rows by
+operations on lists, which the kernel evaluates in one pass (and once:
+`materialize_value` below). -/
+def sbox1L : List Byte := (sbox1Rows.1.toList.map Vector.toList).flatten
+
+/-- The list of a vector of rows, by operations on lists. -/
+theorem toList_flatten_rows {α : Type} {n m : Nat} (r : Vector (Vector α n) m) :
+    r.flatten.toList = (r.toList.map Vector.toList).flatten := by
+  simp only [Vector.flatten, Vector.toList, Array.toList_flatten, Array.toList_map, List.map_map,
+    Function.comp_def]
+  rfl
+
+theorem sbox1L_eq : sbox1L = Spec.Camellia.sbox1Table.toList :=
+  (toList_flatten_rows sbox1Rows.1).symm.trans (congrArg Vector.toList sbox1Rows.2).symm
+
 /-- The truth table of bit `j` of `SBOX1`, read from the specification's
 table in one pass: the kernel evaluates it in a fraction of a second, where
 looking up `SBOX1` of each input (`Vector.getD`, which walks the table)
 takes seconds per bit. -/
-def sbox1T (j : Nat) : Nat := tableOfList (Spec.Camellia.sbox1Table.toList.map (·.getLsbD j))
+def sbox1T (j : Nat) : Nat := tableOfList (sbox1L.map (·.getLsbD j))
 
 theorem testBit_sbox1T {j c : Nat} (hc : c < 256) :
     (sbox1T j).testBit c = (Spec.Camellia.sbox1 (BitVec.ofNat 8 c)).getLsbD j := by
   have hl : Spec.Camellia.sbox1Table.toList.length = 256 := Vector.length_toList
-  rw [sbox1T, testBit_tableOfList, Spec.Camellia.sbox1, List.getD_eq_getElem?_getD,
+  rw [sbox1T, sbox1L_eq, testBit_tableOfList, Spec.Camellia.sbox1, List.getD_eq_getElem?_getD,
     List.getElem?_map, List.getElem?_eq_getElem (by omega_using [hc, hl]), Option.map_some, Option.getD_some,
     Vector.getD, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hc] : c < 2 ^ 8), Array.getD,
     dite_eq_left_of_eq_true (eq_true (by simpa using hc))]
@@ -65,6 +86,7 @@ namespace VG
 
 -- The tables, once, which both targets' checks read (`lit_decide`).
 materialize_table Proof.Camellia.inT 8
+materialize_value Proof.Camellia.sbox1L
 materialize_table Proof.Camellia.sbox1T 8
 
 end VG

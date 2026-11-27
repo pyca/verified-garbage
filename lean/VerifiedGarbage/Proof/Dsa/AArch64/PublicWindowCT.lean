@@ -1,11 +1,10 @@
 module
+
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTDefs
 public import VerifiedGarbage.Impl.Dsa.AArch64.PublicPower
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtExp
-
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTExp
 import VerifiedGarbage.Proof.Dsa.AArch64.PublicWindow
-import VerifiedGarbage.Proof.Dsa.AArch64.PublicSelect
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.TaintBatch
@@ -14,7 +13,6 @@ meta import VerifiedGarbage.Impl.Dsa.AArch64.PublicPower
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtExp
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTExp
 meta import VerifiedGarbage.Proof.Dsa.AArch64.PublicWindow
-meta import VerifiedGarbage.Proof.Dsa.AArch64.PublicSelect
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.TaintBatch

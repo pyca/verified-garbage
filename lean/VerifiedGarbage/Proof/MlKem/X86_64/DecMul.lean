@@ -36,7 +36,7 @@ theorem dotP_zero (a b : List Poly) : dotP a b 0 = zero := by simp [dotP]
 
 theorem dotP_succ {a b : List Poly} {j : Nat} (ha : j < a.length) (hb : j < b.length) :
     dotP a b (j + 1) = add (dotP a b j) (multiplyNTTs a[j]! b[j]!) := by
-  have hz : j < (List.zipWith multiplyNTTs a b).length := by simp; omega_using [ha, hb]
+  obtain hz : j < (List.zipWith multiplyNTTs a b).length := by simp; omega_using [ha, hb]
   rw [dotP, dotP, List.take_add_one, List.getElem?_eq_getElem hz, Option.toList_some, List.foldl_append,
     List.foldl_cons, List.foldl_nil, List.getElem_zipWith, getElem!_pos a j ha, getElem!_pos b j hb]
 
@@ -242,10 +242,10 @@ set_option linter.unusedSimpArgs false in
 theorem term_ok {j : Nat} (hj : j < k) {s : State} (hI : DInv k s₀ R T j s) :
     WP isa (KpkeMul.term B) s fun s' => DInv k s₀ R T (j + 1) s' ∧ s'.gpr .r14 = s.gpr .r14 - 1 ∧
       s'.zf = some (s.gpr .r14 - 1 == 0) := by
-  have hsr : s.rd = [vR (sP s₀) k, vR (uP s₀) k] := by rw [hI.rd, hp.1]
-  have hsw : s.wr = [pR (wP s₀), cR (cP s₀)] := by rw [hI.wr, hp.2.1]
-  have hS := s_frame hp hI.frame hj
-  have hU := u_frame hp hI.frame hj
+  obtain hsr : s.rd = [vR (sP s₀) k, vR (uP s₀) k] := by rw [hI.rd, hp.1]
+  obtain hsw : s.wr = [pR (wP s₀), cR (cP s₀)] := by rw [hI.wr, hp.2.1]
+  obtain hS := s_frame hp hI.frame hj
+  obtain hU := u_frame hp hI.frame hj
   unfold KpkeMul.term
   -- `NTT(u'[j])` to `scratch + 1024`
   refine WP.seq (WP.mono (Q := fun (s1 : State) => s1.gpr .rdi = uP s₀ + BitVec.ofNat 64 (1024 * j) ∧
@@ -255,7 +255,7 @@ theorem term_ok {j : Nat} (hj : j < k) {s : State} (hI : DInv k s₀ R T j s) :
         refine ⟨fun r hr => ?_, rfl, rfl⟩
         simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
         simp only [RegUpd.gpr_setReg, RegUpd.gpr_setFlags, hr, ite_false]) fun s1 ⟨h1di, h1si, h1r10, hm1, k1⟩ => ?_)
-  have hsp1 : s1.gpr .rsp = s₀.gpr .rsp := by rw [k1.gpr (by decide), hI.rsp]
+  obtain hsp1 : s1.gpr .rsp = s₀.gpr .rsp := by rw [k1.gpr (by decide), hI.rsp]
   refine WP.seq (WP.inline (k := nttOK) hB.nttO (rd := [pR (uP s₀ + BitVec.ofNat 64 (1024 * j))])
     (wr := [pR (cP s₀ + BitVec.ofNat 64 1024), pR (cP s₀)]) ?_ ?_ ?_
     (fun s2 hrd2 hwr2 habi2 hf2 _ hpost2 => ?_) hB.nc.1)
@@ -269,17 +269,17 @@ theorem term_ok {j : Nat} (hj : j < k) {s : State} (hI : DInv k s₀ R T j s) :
   · rw [k1.2.2, hsw]
     exact (cov_one (by simp) (in_c (by decide))).cons ((cov_one (by simp) (in_c0 _)).cons Covers.nil)
   simp only [nttOK, State.withRegions_gpr, State.withRegions_mem, h1di, h1r10, hm1] at hpost2
-  have cs : ∀ {rs : List Reg}, (∀ r ∈ calleeSaved, r ∉ rs) → ∀ {a b : State}, Keep rs a b → ∀ r ∈ calleeSaved,
+  obtain cs : ∀ {rs : List Reg}, (∀ r ∈ calleeSaved, r ∉ rs) → ∀ {a b : State}, Keep rs a b → ∀ r ∈ calleeSaved,
       b.gpr r = a.gpr r := fun h _ _ kk r hr => kk.gpr (h r hr)
-  have g2 : ∀ r ∈ calleeSaved, s2.gpr r = s.gpr r := fun r hr => by
+  obtain g2 : ∀ r ∈ calleeSaved, s2.gpr r = s.gpr r := fun r hr => by
     rw [habi2.1 r hr, cs (by decide) k1 r hr]
   rw [hm1] at hf2
-  have hf2' : Frame [pR (wP s₀), cR (cP s₀)] s₀.mem s2.mem := hI.frame.trans (by
+  obtain hf2' : Frame [pR (wP s₀), cR (cP s₀)] s₀.mem s2.mem := hI.frame.trans (by
     refine hf2.sub fun r hr => ⟨cR (cP s₀), by simp, ?_⟩
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     exacts [sub_c (by decide), sub_c0 _])
-  have pd := prod_dis (cP s₀)
+  obtain pd := prod_dis (cP s₀)
   -- its product with `ŝ[j]`, added to the accumulator
   refine WP.seq (WP.mono (Q := fun (s3 : State) => s3.gpr .rdi = wP s₀ ∧
       s3.gpr .rsi = sP s₀ + BitVec.ofNat 64 (1024 * j) ∧ s3.gpr .rdx = cP s₀ + BitVec.ofNat 64 1024 ∧
@@ -288,26 +288,26 @@ theorem term_ok {j : Nat} (hj : j < k) {s : State} (hI : DInv k s₀ R T j s) :
         refine ⟨fun r hr => ?_, rfl, rfl⟩
         simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
         simp only [RegUpd.gpr_setReg, RegUpd.gpr_setFlags, hr, ite_false]) fun s3 ⟨h3di, h3si, h3dx, h3cx, hm3, k3⟩ => ?_)
-  have g3 : ∀ r ∈ calleeSaved, s3.gpr r = s.gpr r := fun r hr => by rw [cs (by decide) k3 r hr, g2 r hr]
-  have hsp3 : s3.gpr .rsp = s₀.gpr .rsp := by rw [g3 .rsp (by decide), hI.rsp]
-  have hbx3 : s3.gpr .rbx = cP s₀ := by rw [g3 .rbx (by decide), hI.rbx]
-  have hS3 : PolyIs s3.mem (sP s₀ + BitVec.ofNat 64 (1024 * j)) ((sv k s₀)[j]!) := by
+  obtain g3 : ∀ r ∈ calleeSaved, s3.gpr r = s.gpr r := fun r hr => by rw [cs (by decide) k3 r hr, g2 r hr]
+  obtain hsp3 : s3.gpr .rsp = s₀.gpr .rsp := by rw [g3 .rsp (by decide), hI.rsp]
+  obtain hbx3 : s3.gpr .rbx = cP s₀ := by rw [g3 .rbx (by decide), hI.rbx]
+  obtain hS3 : PolyIs s3.mem (sP s₀ + BitVec.ofNat 64 (1024 * j)) ((sv k s₀)[j]!) := by
     rw [hm3]; exact s_frame hp hf2' hj
-  have hT3 : PolyIs s3.mem (cP s₀ + BitVec.ofNat 64 1024) (ntt (polyAt s₀.mem (uP s₀ + BitVec.ofNat 64 (1024 * j)))) := by
+  obtain hT3 : PolyIs s3.mem (cP s₀ + BitVec.ofNat 64 1024) (ntt (polyAt s₀.mem (uP s₀ + BitVec.ofNat 64 (1024 * j)))) := by
     rw [hm3, ← hU.2]; exact hpost2
-  have hTab3 : T.is s3.mem (cP s₀) := by
+  obtain hTab3 : T.is s3.mem (cP s₀) := by
     rw [hm3]
     refine T.frame hf2 (fun r hr => ?_) hI.tab
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     exacts [Offset.disjoint _ (.inr (by decide)) (by decide) (by decide), pd.2.2.2.1.symm]
-  have hAcc3 : R.is s3.mem (wP s₀) (dotP (sv k s₀) (uv k s₀) j) := by
+  obtain hAcc3 : R.is s3.mem (wP s₀) (dotP (sv k s₀) (uv k s₀) j) := by
     rw [hm3]
     refine R.frame hf2 (fun r hr => ?_) hI.acc
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     exacts [dis_wc hp (by decide), dis_wc0 hp]
-  have hbp3 : s3.gpr .rbp = wP s₀ := by rw [g3 .rbp (by decide), hI.rbp]
+  obtain hbp3 : s3.gpr .rbp = wP s₀ := by rw [g3 .rbp (by decide), hI.rbp]
   refine WP.seq (WP.inline (k := mulAccK R T 0) (hB.mulAcc 0 (by decide))
     (rd := [pR (sP s₀ + BitVec.ofNat 64 (1024 * j)), pR (cP s₀ + BitVec.ofNat 64 1024), tabR (cP s₀)])
     (wr := [pR (wP s₀), pR (cP s₀), tmpR (cP s₀)]) ?_ ?_ ?_
@@ -328,13 +328,13 @@ theorem term_ok {j : Nat} (hj : j < k) {s : State} (hI : DInv k s₀ R T j s) :
       ((cov_one (by simp) (in_c (by decide))).cons Covers.nil))
   simp only [mulAccK, State.withRegions_gpr, State.withRegions_mem, h3di, h3si, h3dx] at hpost4
   rw [hS3.2, hT3.2] at hpost4
-  have hA4 := hpost4 _ hAcc3
-  have g4 : ∀ r ∈ calleeSaved, s4.gpr r = s.gpr r := fun r hr => by rw [habi4.1 r hr, g3 r hr]
+  obtain hA4 := hpost4 _ hAcc3
+  obtain g4 : ∀ r ∈ calleeSaved, s4.gpr r = s.gpr r := fun r hr => by rw [habi4.1 r hr, g3 r hr]
   rw [hm3] at hf4
   -- the next term
   vrunm [g4 .r12 (by decide), g4 .r13 (by decide), g4 .r14 (by decide), sx1024]
-  have hsv : j < (sv k s₀).length := by rw [vecAt_length]; exact hj
-  have huv : j < (uv k s₀).length := by rw [List.length_map, vecAt_length]; exact hj
+  obtain hsv : j < (sv k s₀).length := by rw [vecAt_length]; exact hj
+  obtain huv : j < (uv k s₀).length := by rw [List.length_map, vecAt_length]; exact hj
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · simp only [RegUpd.gpr_setReg, RegUpd.gpr_setFlags, ite_false, reduceCtorEq]
     rw [g4 .rbx (by decide), hI.rbx]
@@ -384,9 +384,9 @@ theorem fin_ok {s : State} (hI : DInv k s₀ R T k s) :
         refine ⟨fun r hr => ?_, rfl, rfl⟩
         simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
         simp only [RegUpd.gpr_setReg, hr, ite_false]) fun s1 ⟨h1di, h1si, hm1, k1⟩ => ?_)
-  have hsp1 : s1.gpr .rsp = s₀.gpr .rsp := by rw [k1.gpr (by decide), hI.rsp]
-  have hsw : s1.wr = [pR (wP s₀), cR (cP s₀)] := by rw [k1.2.2, hI.wr, hp.2.1]
-  have hA1 : R.is s1.mem (wP s₀) (dotP (sv k s₀) (uv k s₀) k) := by rw [hm1]; exact hI.acc
+  obtain hsp1 : s1.gpr .rsp = s₀.gpr .rsp := by rw [k1.gpr (by decide), hI.rsp]
+  obtain hsw : s1.wr = [pR (wP s₀), cR (cP s₀)] := by rw [k1.2.2, hI.wr, hp.2.1]
+  obtain hA1 : R.is s1.mem (wP s₀) (dotP (sv k s₀) (uv k s₀) k) := by rw [hm1]; exact hI.acc
   refine WP.inline (k := invAccK R) hB.inv (rd := []) (wr := [pR (wP s₀), pR (cP s₀)]) ?_ ?_ ?_
     (fun s2 hrd2 hwr2 habi2 hf2 _ hpost2 => ?_) hB.nc.2.1
   · simp only [invAccK, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr, State.withRegions_mem,
@@ -428,7 +428,7 @@ theorem start_ok {s : State} (hbx : s.gpr .rbx = cP s₀) (hbp : s.gpr .rbp = wP
       simp only [List.mem_singleton] at hr
       simp only [RegUpd.gpr_setReg, hr, ite_false]) fun s1 ⟨h1cx, hm1, k1⟩ => ?_
   rw [WP.block_append_iff]
-  have hin : InRegions s1.wr (s1.gpr .rcx + BitVec.ofNat 64 3328) 256 := by
+  obtain hin : InRegions s1.wr (s1.gpr .rcx + BitVec.ofNat 64 3328) 256 := by
     rw [k1.2.2, hwr, hp.2.1, h1cx]; exact ⟨cR (cP s₀), by simp, in_c (by decide)⟩
   refine WP.mono (hB.tab s1 hin) fun s2 ⟨hT2, hf2, k2⟩ => ?_
   rw [h1cx] at hT2 hf2
@@ -437,8 +437,8 @@ theorem start_ok {s : State} (hbx : s.gpr .rbx = cP s₀) (hbp : s.gpr .rbp = wP
       refine ⟨fun r hr => ?_, rfl, rfl⟩
       simp only [List.mem_singleton] at hr
       simp only [RegUpd.gpr_setReg, hr, ite_false]) fun s3 ⟨h3di, hm3, k3⟩ => ?_
-  have k13 := (k1.trans k2).trans k3
-  have hsp3 : s3.gpr .rsp = s₀.gpr .rsp := by rw [k13.gpr (by decide), hsp]
+  obtain k13 := (k1.trans k2).trans k3
+  obtain hsp3 : s3.gpr .rsp = s₀.gpr .rsp := by rw [k13.gpr (by decide), hsp]
   refine WP.inline (k := zeroK R) hB.zero (rd := []) (wr := [pR (wP s₀)]) ?_ ?_ ?_
     (fun s4 hrd4 hwr4 habi4 hf4 _ hpost4 => ?_) hB.nc.2.2.1
   · simp only [zeroK, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr, h3di, hsp3, retR]
@@ -461,7 +461,7 @@ theorem start_ok {s : State} (hbx : s.gpr .rbx = cP s₀) (hbp : s.gpr .rbp = wP
 /-- The whole function. -/
 theorem wp_all (hk0 : 0 < k) :
     WP isa (decryptMul B k) s₀ fun s' => gprPreserved s₀ s' ∧ (decMulK k).post s₀ s' := by
-  have hcw : cR (cP s₀) ∈ s₀.wr := by rw [hp.2.1]; simp
+  obtain hcw : cR (cP s₀) ∈ s₀.wr := by rw [hp.2.1]; simp
   unfold decryptMul
   refine WP.seq ?_
   rw [save_eq]
@@ -481,12 +481,12 @@ theorem wp_all (hk0 : 0 < k) :
   · -- the table and the accumulator of zero, the loop, `NTT⁻¹`
     refine WP.seq (WP.mono (start_ok hp hB (s := s2) (by rw [k2.gpr (by decide), h1bx])
       (by rw [k2.gpr (by decide), h1bp]) (by rw [k2.gpr (by decide), h1sp]) (by rw [k2.2.2, h1wr])) fun s3 ⟨g3, hrd3, hwr3, hf3, hT3, hz⟩ => ?_)
-    have e3 : ∀ r ∈ calleeSaved, s3.gpr r = s1.gpr r := fun r hr => by
+    obtain e3 : ∀ r ∈ calleeSaved, s3.gpr r = s1.gpr r := fun r hr => by
       rw [g3 r hr]; exact k2.gpr (by simp [calleeSaved] at hr ⊢; rcases hr with h | h | h | h | h | h | h <;> simp [h])
     refine WP.seq (wp_countdown (cnt := .r14) (N := k) (by omega_using [hk]) hk0 (DInv k s₀ R T)
       (fun j hj u hI _ => term_ok hp hk hB hj hI) (fun u hI => fin_ok hp hB hI) ?_
       (by rw [e3 .r14 (by decide), h114]))
-    have hsv : Spill.Saved (Spill.saveMem s₀.mem (cP s₀) s₀.gpr KpkeMul.slots) (cP s₀) s₀.gpr KpkeMul.slots :=
+    obtain hsv : Spill.Saved (Spill.saveMem s₀.mem (cP s₀) s₀.gpr KpkeMul.slots) (cP s₀) s₀.gpr KpkeMul.slots :=
       Spill.saveMem_saved _ _ _ _ (by decide)
     rw [← hm1] at hsv
     refine ⟨by rw [e3 .rbx (by decide), h1bx], by rw [e3 .rbp (by decide), h1bp],
@@ -512,12 +512,12 @@ theorem wp_all (hk0 : 0 < k) :
         exacts [(dis_wc hp (o := d) (n := 8) (by omega_using [h8])).symm, slot_dis_tab h3 h8]
   · -- the epilogue
     obtain ⟨h4bx, h4sp, h4rd, h4wr, hf4, hs4, hW4⟩ := hq4
-    have h5bx : s5.gpr .rbx = cP s₀ := by rw [k5.gpr (by decide), h4bx]
-    have hmx : ∀ r ∈ [mxR (cP s₀)], Region.Sub r (cR (cP s₀)) := fun r hr => by
+    obtain h5bx : s5.gpr .rbx = cP s₀ := by rw [k5.gpr (by decide), h4bx]
+    obtain hmx : ∀ r ∈ [mxR (cP s₀)], Region.Sub r (cR (cP s₀)) := fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact sub_c (by decide)
-    have hf : Frame [pR (wP s₀), cR (cP s₀)] s₀.mem s5.mem :=
+    obtain hf : Frame [pR (wP s₀), cR (cP s₀)] s₀.mem s5.mem :=
       hf4.trans (hf5.sub fun r hr => ⟨cR (cP s₀), by simp, hmx r hr⟩)
-    have hs5 : Spill.Saved s5.mem (s5.gpr .rbx) s₀.gpr KpkeMul.slots := by
+    obtain hs5 : Spill.Saved s5.mem (s5.gpr .rbx) s₀.gpr KpkeMul.slots := by
       rw [h5bx]
       refine saved_keep hs4 hf5 fun r hr d h3 h8 => ?_
       simp only [List.mem_singleton] at hr; subst hr

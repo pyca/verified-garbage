@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Proof.Framework.X86.CallWith
 public import VerifiedGarbage.Proof.Framework.X86.RelCT
+public import VerifiedGarbage.Proof.Framework.X86.ScrubSide
 import VerifiedGarbage.Proof.Framework.X86.Call
 
 /-!
@@ -44,6 +45,11 @@ structure XorImpl where
   nosp : NoSp callee.code
   stack : stackUse callee.code = 12
   spSafe : callee.code.all (fun i => !isa.writesSp i) = true
+  /-- Its code, and the code it calls, has no MMX instruction and makes no indirect call (`calleeOk`):
+  what the cleanup of every function that calls it needs of it, with its
+  stack (`X86.Scrub.calleeSide`), so that each proves only its own code,
+  whatever the implementation (`Proof/Framework/X86/ScrubCall.lean`). -/
+  scrub : calleeOk callee.code = true
   /-- What the names of its callers' instances end with (e.g. `_ssse3`;
   nothing for the baseline implementation). -/
   suffix : String
@@ -60,6 +66,7 @@ def sse2 : XorImpl where
   nosp := NoSp.of_all (by lit_decide)
   stack := by lit_decide
   spSafe := Code.all_of_spTest (by lit_decide)
+  scrub := by lit_decide
   suffix := ""
   features := []
 
@@ -71,6 +78,7 @@ def ssse3 : XorImpl where
   nosp := NoSp.of_all (by lit_decide)
   stack := by lit_decide
   spSafe := Code.all_of_spTest (by lit_decide)
+  scrub := by lit_decide
   suffix := "_ssse3"
   features := ["ssse3"]
 
@@ -225,7 +233,12 @@ theorem call_to (v : XorImpl) (h : XorCall s rb rn rx rt E St S D B n) {Q : Stat
   · obtain ⟨a0, a1, a2, -⟩ := h.args
     have hn : (BitVec.ofNat 32 n).toNat = n := by rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt h.n_lt
     simp only [Proof.ChaCha20.xorX86, arg_withRegions, State.withRegions_mem, State.withRegions_gpr, a0, a1, a2,
-      h.esi', hn, m₂] at post
+      h.esi', hn] at post
+    -- The pop loses the arguments' frame, below `esp`, apart from the destination.
+    rw [h.esp] at m₂
+    rw [xor_bytesAt_frame m₂ (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact (h.stk_d.sub_left (below_sub (by simp) hlo)).symm) (by have := h.n_lt; omega_using [this])]
     have ef : Frame [below E 32] s.mem (pushed [rb, rn, rx, rt] s).callEntry.mem :=
       (callEntry_frame h.fit h.regs).sub fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr

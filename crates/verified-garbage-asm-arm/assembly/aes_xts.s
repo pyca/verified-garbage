@@ -83,6 +83,20 @@ vg_aes_xts_encrypt_unit:
 	ldr r9, [r8, #2224]
 	ldr lr, [r8, #2228]
 	ldr r8, [r8, #2232]
+	sub sp, sp, #16
+	add r12, sp, #0
+	mov r2, #0
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	add sp, sp, #16
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_aes_xts_decrypt_unit:
@@ -218,4 +232,18 @@ vg_aes_xts_decrypt_unit:
 	ldr r9, [r8, #2224]
 	ldr lr, [r8, #2228]
 	ldr r8, [r8, #2232]
+	sub sp, sp, #16
+	add r12, sp, #0
+	mov r2, #0
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	add sp, sp, #16
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr

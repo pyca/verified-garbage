@@ -11,6 +11,7 @@ import VerifiedGarbage.Impl.AesOcb.X86_64
 import VerifiedGarbage.Proof.AesCcm.X86_64.Env
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.AesCcm.X86_64.Run
+public import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-!
 # AES-OCB on x86-64: running straight-line blocks
@@ -31,7 +32,7 @@ open VG.Proof.AesCcm.X86_64 (imm_eq offset_nat setWidth_imm)
 
 /-- Runs a block of the instructions the AES-OCB code uses. -/
 tactic_template "orun" "[" ts:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| plain_simp_names (
-                   simp (disch := first | decide | omega) only [imm_eq, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
+                   simp (disch := first | decide | omega) only [imm_eq, runBlock_cons, runStep_some, runBlock_nil, reduceExec, readSrc,
                      execAlu, execShift, State.load64, State.store64, State.load8, State.store8, State.ea,
                      offset_nat, at_, ld, st, mvr, addi, tagO, ofsO, ckO, sumO, ldO, l0O, tblO, tmpO, t2O, ohO, savO,
                      dataO, lenO, tlO, tgO, rndO, aadO, alenO, botO, o0O, nO, nlO, bufO, scrO, List.cons_append,

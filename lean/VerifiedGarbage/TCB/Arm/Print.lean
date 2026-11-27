@@ -65,10 +65,10 @@ def Cond.name : Cond → String
   | .eq => "eq" | .ne => "ne"
 
 def printer : Printer isa where
-  instr := Instr.asm
-  branch c l := [s!"b{c.name} {l}"]
+  instr i := i.asm.map .text
+  branch c l := [.text s!"b{c.name} {l}"]
   jump l := s!"b {l}"
-  ret := ["bx lr"]
+  ret := [.text "bx lr"]
   call := "bl"
   -- `umaal` assembles only for ARMv7-A, -R and ARMv7E-M (not for
   -- `thumbv7m-none-eabi`, the Cortex-M3), and its timing is known not to
@@ -91,8 +91,9 @@ def printer : Printer isa where
 
 /-- What the emitter needs of the target (`Emitter`): its printer, its Rust `cfg`
 and ABI string, and how documentation names its calling convention's
-argument area and reserved memory (`abi`'s `argArea` and `reserved`). -/
-instance : Emitter isa where
+argument area and reserved memory (`abi`'s `argArea` and `reserved`). Every
+artifact of the target is emitted with it (`Emit.driver`). -/
+def emitter : Emitter isa where
   printer := printer
   -- `armeb` targets are big-endian. Apple's 32-bit ARM targets do not use AAPCS:
   -- `armv7s-apple-ios` uses APCS, where a 64-bit argument takes the next two
@@ -111,5 +112,10 @@ instance : Emitter isa where
   argAreaDoc ws := if (classify ws 0 0).2 = 0 then none else
     some ("the arguments on the stack", false)
   reservedDoc n := if n = 0 then none else some s!"the {n} bytes of stack below the stack pointer"
+  callBytes := 0
+  frameBytes
+    | .push rs => 4 * rs.length
+    | .alloc bytes => bytes
+    | _ => 0
 
 end VG.Arm

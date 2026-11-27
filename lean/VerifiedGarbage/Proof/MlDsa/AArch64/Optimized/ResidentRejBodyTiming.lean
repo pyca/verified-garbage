@@ -1,19 +1,163 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejProbePublic
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejChoiceTiming
 public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejProbePublic
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejChoiceTiming
 meta import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejWideStep
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejParsePublic
+import VerifiedGarbage.Proof.Framework.AArch64.Simd
+import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejWideStep
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejParsePublic
+meta import VerifiedGarbage.Proof.Framework.AArch64.Simd
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.AArch64.VectorTaint
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ResidentRejParser
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Proof.Framework.TaintSumGeneric
+import VerifiedGarbage.Proof.Sha3.AArch64.Sums
+meta import VerifiedGarbage.Proof.Framework.AArch64.VectorTaint
+meta import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ResidentRejParser
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Proof.Framework.TaintSumGeneric
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Sums
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.RegSet
+meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Proof.Framework.RegSet
+
+/-! ### `MlDsa.AArch64.Optimized.ResidentRejChoiceTiming`, which only this module used -/
+
+section
+
+@[expose] public section
+
+namespace VG.Proof.MlDsa.AArch64.Optimized.ResidentRej
+open VG VG.AArch64
+open VG.Impl.MlDsa.AArch64.Optimized.ResidentRej
+
+def choicePublic (vs : List VReg) : VectorTaint.T :=
+  (Taint.ofRegs [.x3,.x4,.x6,.x9],RegSet.ofList vs)
+
+theorem fourChoice_ct : ConstantTime isa (fun _ => True)
+    (VectorTaint.Agree (choicePublic [.v1]))
+    (.ite (.zero .x .x6) (.block vectorAccept) (.block vectorReject)) :=
+  VG.Taint.constantTime (A := VectorTaint.taint) (choicePublic [.v1])
+    (fun _ _ _ _ h => h) (by taint_decide)
+
+theorem wideChoice_ct : ConstantTime isa (fun _ => True)
+    (VectorTaint.Agree (choicePublic [.v16,.v17,.v18,.v19]))
+    (.ite (.zero .x .x6) (.block wideAccept) (.block wideReject)) :=
+  VG.Taint.constantTime (A := VectorTaint.taint) (choicePublic [.v16,.v17,.v18,.v19])
+    (fun _ _ _ _ h => h) (by taint_decide)
+
+theorem vectorTry_ct : ConstantTime isa (fun _ => True)
+    (VG.AArch64.Taint.Agree (Taint.ofRegs [.x2])) (.block vectorTry) :=
+  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x2])
+    (fun _ _ _ _ h => h) (by taint_decide)
+
+theorem wideTry_ct : ConstantTime isa (fun _ => True)
+    (VG.AArch64.Taint.Agree (Taint.ofRegs [.x2])) (.block wideTry) :=
+  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x2])
+    (fun _ _ _ _ h => h) (by taint_decide)
+
+end VG.Proof.MlDsa.AArch64.Optimized.ResidentRej
+
+end
+
+end
+
+/-! ### `MlDsa.AArch64.Optimized.ResidentRejProbePublic`, which only this module used -/
+
+section
+
+@[expose] public section
+
+namespace VG.Proof.MlDsa.AArch64.Optimized.ResidentRej
+open VG VG.AArch64
+open VG.Proof.MlKem.AArch64
+open VG.Impl.MlDsa.AArch64.Optimized.ResidentRej
+
+def CandidatesEq (s t : State) (n : Nat) : Prop :=
+  ∀j<n,candidate s.mem (s.gpr .x2+BitVec.ofNat 64 (3*j))=
+    candidate t.mem (t.gpr .x2+BitVec.ofNat 64 (3*j))
+
+theorem vector_eq_of_words {a b : BitVec 128}
+    (h : ∀e<4,vword a e=vword b e) : a=b := by
+  rw [← VG.AArch64.ofVWords_vword a,← VG.AArch64.ofVWords_vword b]
+  rw [h 0 (by decide),h 1 (by decide),h 2 (by decide),h 3 (by decide)]
+
+theorem quarterValues_eq {s t : State} (hs : Constants s) (ht : Constants t)
+    (he : CandidatesEq s t 16) {j : Nat} (hj : j<4) : quarterValues s j=quarterValues t j := by
+  apply vector_eq_of_words
+  intro e he4
+  apply BitVec.eq_of_toNat_eq
+  unfold quarterValues
+  rw [candidates_word _ _ _ he4 (hs.mask e he4),candidates_word _ _ _ he4 (ht.mask e he4),
+    Offset.add_add,Offset.add_add]
+  rw [show 12*j+3*e=3*(4*j+e) by omega_using []]
+  exact he _ (by omega_using [hj, he4])
+
+theorem quarterMask_eq {s t : State} (hs : Constants s) (ht : Constants t)
+    (he : CandidatesEq s t 16) : quarterMask (wideInitial s) 4=quarterMask (wideInitial t) 4 := by
+  apply vector_eq_of_words
+  intro e he4
+  rw [quarterMask_word hs 4 he4,quarterMask_word ht 4 he4]
+  congr 1
+  apply propext
+  have eqc (j : Nat) (hj : j<4) :
+      candidate s.mem (s.gpr .x2+BitVec.ofNat 64 (12*j+3*e))=
+      candidate t.mem (t.gpr .x2+BitVec.ofNat 64 (12*j+3*e)) := by
+    rw [show 12*j+3*e=3*(4*j+e) by omega_using []]
+    exact he _ (by omega_using [he4, hj])
+  exact ⟨fun h j hj => by rw [← eqc j hj]; exact h j hj,
+    fun h j hj => by rw [eqc j hj]; exact h j hj⟩
+
+theorem fourDecoded_eq {s t : State} (hs : Constants s) (ht : Constants t)
+    (he : CandidatesEq s t 4) :
+    candidates (s.mem.read (s.gpr .x2) 16) (s.v .v4)=
+    candidates (t.mem.read (t.gpr .x2) 16) (t.v .v4) := by
+  apply vector_eq_of_words
+  intro e he4
+  apply BitVec.eq_of_toNat_eq
+  rw [candidates_word _ _ _ he4 (hs.mask e he4),candidates_word _ _ _ he4 (ht.mask e he4)]
+  exact he e he4
+
+theorem modulusVector_eq {s t : State} (hs : Constants s) (ht : Constants t) : s.v .v5=t.v .v5 := by
+  apply vector_eq_of_words
+  intro e he
+  rw [hs.modulus e he,ht.modulus e he]
+
+theorem InputEq.candidate {σ τ : State} {b : Addr} {n j : Nat}
+    (h : InputEq σ τ b n) (hj : j<n) :
+    candidate σ.mem (b+BitVec.ofNat 64 (3*j))=candidate τ.mem (b+BitVec.ofNat 64 (3*j)) := by
+  unfold ResidentRej.candidate
+  have h1 : b+BitVec.ofNat 64 (3*j)+1=b+BitVec.ofNat 64 (3*j+1) := by bv_omega_arith
+  have h2 : b+BitVec.ofNat 64 (3*j)+2=b+BitVec.ofNat 64 (3*j+2) := by bv_omega_arith
+  rw [h1,h2,h _ (by omega_using [hj]),h _ (by omega_using [hj]),h _ (by omega_using [hj])]
+
+theorem ParseInv.candidates_eq {σ τ s t : State} {b p : Addr} {n d k : Nat}
+    {L : List VG.Spec.MlDsa.Zq} (hs : StreamLayout σ b p n) (ht : StreamLayout τ b p n)
+    (he : InputEq σ τ b n) (ps : ParseInv σ b p n L d s) (pt : ParseInv τ b p n L d t)
+    (hk : d+k≤n) : CandidatesEq s t k := by
+  intro j hj
+  rw [ps.candidate hs (by omega_using [hk, hj]),pt.candidate ht (by omega_using [hk, hj])]
+  exact he.candidate (by omega_using [hk, hj])
+
+end VG.Proof.MlDsa.AArch64.Optimized.ResidentRej
+
+end
+
+end
 
 /-! ## From `ResidentRejFourTiming.lean` -/
 

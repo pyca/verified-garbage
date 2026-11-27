@@ -1,25 +1,30 @@
 module
 
-public import VerifiedGarbage.Proof.Blake2.X86.Blake2s
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Blake2.Contract
+import VerifiedGarbage.Proof.Blake2.X86.Blake2s
 import VerifiedGarbage.Proof.Blake2.X86.LitS
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.X86.Print
+import VerifiedGarbage.Proof.Blake2.X86.Scrub
+import VerifiedGarbage.Impl.Blake2.X86.Fn
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # BLAKE2s (RFC 7693) on x86 -/
 
-@[expose] public section
-
 namespace VG.Artifacts.Blake2s.X86
 
-def artifacts : List Artifact := [
+public def artifacts : List (Artifact X86.target) := [
   Spec.Blake2.initSApi.artifact X86.target {
-    code := Impl.Blake2.X86.Stream.init Spec.Blake2.s
-    verified := Proof.Blake2.X86.S.init_verified },
+    code := Impl.Blake2.X86.Fn.init Spec.Blake2.s
+    verified := Proof.Blake2.X86.Scrub.initS_scrubbed },
   Spec.Blake2.updateSApi.artifact X86.target {
-    code := Impl.StackScratch.X86.withStackScratch 604 5 (Impl.Blake2.X86.Stream.update 32 "vg_blake2s_compress" Impl.Blake2.X86.CompressS.compress)
-    verified := Proof.Blake2.X86.S.update_framed },
+    code := Impl.Blake2.X86.Fn.updateS
+    verified := Proof.Blake2.X86.Scrub.updateS_scrubbed },
   Spec.Blake2.finalizeSApi.artifact X86.target {
-    code := Impl.StackScratch.X86.withStackScratch 600 4 (Impl.Blake2.X86.Stream.finalize 32 "vg_blake2s_compress" Impl.Blake2.X86.CompressS.compress)
-    verified := Proof.Blake2.X86.S.finalize_framed }]
+    code := Impl.Blake2.X86.Fn.finalizeS
+    verified := Proof.Blake2.X86.Scrub.finalizeS_scrubbed }]
+
+spec_apis artifacts
 
 end VG.Artifacts.Blake2s.X86

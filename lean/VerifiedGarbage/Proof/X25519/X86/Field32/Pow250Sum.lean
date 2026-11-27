@@ -11,13 +11,15 @@ meta import VerifiedGarbage.Proof.X25519.X86.Field32.Lit
 meta import VerifiedGarbage.Impl.X25519.X86.Field32
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
-/-! The summary of `vg_gf25519_r32_pow250` (see `Field32/CallTaint`). -/
+/-! The summaries of `vg_gf25519_r32_mul` and `vg_gf25519_r32_sqn`, which
+`pow250Call` calls (see `Field32/CallTaint`). -/
 
 @[expose] public section
 
 namespace VG.Proof.X25519.X86
 
-taint_summary pow250Sum : VG.X86.taint τCall
-  (.call "vg_gf25519_r32_pow250" Impl.X25519.X86.Field32.pow250Fn)
+taint_summary gfMulSum : VG.X86.taint τField Impl.X25519.X86.Field32.mulCall
+
+taint_summary gfSqnSum : VG.X86.taint τFieldN Impl.X25519.X86.Field32.sqnCall
 
 end VG.Proof.X25519.X86

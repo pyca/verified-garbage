@@ -1,23 +1,25 @@
 module
 
-public import VerifiedGarbage.Proof.Seed.Arm.FbVerified
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.Arm.Print
-public import VerifiedGarbage.Proof.Seed.Arm.FbFinalVerified
-public import VerifiedGarbage.Impl.Seed.Arm.FbFinal
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Seed.Ofb
+public import VerifiedGarbage.Spec.Seed.OfbFinal
+import VerifiedGarbage.Proof.Seed.Arm.Scrub
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # SEED-OFB on ARMv7 -/
 
-@[expose] public section
-
 namespace VG.Artifacts.SeedOfb.Arm
 
-def artifacts : List Artifact := [
+public def artifacts : List (Artifact Arm.target) := [
   Spec.Seed.ofbApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratchWiped 80 0 18 Impl.Seed.Arm.ofb
-    verified := Proof.Seed.Arm.ofb_framed },
+    code := Impl.Seed.Arm.Fn.ofb
+    verified := Proof.Seed.Arm.Fn.ofb },
   Spec.Seed.ofbFinalApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratchWiped 80 0 18 Impl.Seed.Arm.ofbFinal
-    verified := Proof.Seed.Arm.ofbFinal_framed }]
+    code := Impl.Seed.Arm.Fn.ofbFinal
+    verified := Proof.Seed.Arm.Fn.ofbFinal }]
+
+spec_apis artifacts
 
 end VG.Artifacts.SeedOfb.Arm

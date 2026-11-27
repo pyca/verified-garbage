@@ -30,11 +30,11 @@ open VG.Proof.X448 (addPt)
 local notation "EV" => VG.Proof.X448.AArch64.Weak.E
 
 /-- One operation's update of the environment. -/
-def mulS (o a b : Index) (e : Env) : Env := Function.update e o (e a * e b)
-def smallS (o a c : Index) (e : Env) : Env := Function.update e o (e a + Spec.X448.a24 * e c)
-def subS (o a b : Index) (e : Env) : Env := Function.update e o (e a - e b)
+def mulS (o a b : Index) (e : Env) : Env := Fun.update e o (e a * e b)
+def smallS (o a c : Index) (e : Env) : Env := Fun.update e o (e a + Spec.X448.a24 * e c)
+def subS (o a b : Index) (e : Env) : Env := Fun.update e o (e a - e b)
 def addSubS (o₁ o₂ a b : Index) (e : Env) : Env :=
-  Function.update (Function.update e o₁ (e a + e b)) o₂ (e a - e b)
+  Fun.update (Fun.update e o₁ (e a + e b)) o₂ (e a - e b)
 
 /-- The environment after `addOps x1 y1 z1 x2 y2 z2`. -/
 def genEnv (x1 y1 z1 x2 y2 z2 : Index) (e : Env) : Env :=

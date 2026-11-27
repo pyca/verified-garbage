@@ -1,5 +1,8 @@
 module
 
+import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
+import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
 public import VerifiedGarbage.Proof.EcKey.X86_64.Scrub.Out
 public import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
 public import VerifiedGarbage.Proof.Framework.Registration
@@ -10,40 +13,41 @@ meta import VerifiedGarbage.Proof.Framework.Registration
 meta import VerifiedGarbage.Spec.Ecdh.P384
 import VerifiedGarbage.Proof.Ecdh.X86_64.P384.LitAdx
 meta import VerifiedGarbage.Proof.Ecdh.X86_64.P384.LitAdx
-
 import VerifiedGarbage.Proof.Ecdh.X86_64.P384.Verified
 public import VerifiedGarbage.Proof.Ecdh.X86_64.Main
 public import VerifiedGarbage.Proof.Ecdh.X86_64.P384.Contract
 public import VerifiedGarbage.Proof.Ecdh.X86_64.WinJacA
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.VerifiedAdx
-import VerifiedGarbage.Proof.Weierstrass.X86_64.DoubleCms
 import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+import VerifiedGarbage.Proof.Weierstrass.X86_64.DoubleIn
 import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
 import VerifiedGarbage.Proof.Ecdh.X86_64.P384.LitEraseAdx
 public import VerifiedGarbage.Impl.Ecdh.P384.X86_64
 import VerifiedGarbage.Proof.Ecdh.X86_64.P384.LitErase
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.LitEraseAdx
-import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJStep
+import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJLoop
 meta import VerifiedGarbage.Proof.Ecdh.X86_64.P384.Verified
 meta import VerifiedGarbage.Proof.Ecdh.X86_64.Main
 meta import VerifiedGarbage.Proof.Ecdh.X86_64.P384.Contract
 meta import VerifiedGarbage.Proof.Ecdh.X86_64.WinJacA
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.VerifiedAdx
-meta import VerifiedGarbage.Proof.Weierstrass.X86_64.DoubleCms
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 meta import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
 meta import VerifiedGarbage.Proof.Ecdh.X86_64.P384.LitEraseAdx
 meta import VerifiedGarbage.Impl.Ecdh.P384.X86_64
 meta import VerifiedGarbage.Proof.Ecdh.X86_64.P384.LitErase
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.LitEraseAdx
-meta import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJStep
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJLoop
+
+import VerifiedGarbage.Proof.Framework.KernelRfl
+meta import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-!
 # ECDH over P-384 on x86-64 with BMI2 and ADX: `Verified`
 
 As `Verified.lean`, for `p384x` (`p384` multiplying modulo `p` with BMI2 and
-ADX): the same curve, so the same precondition and postcondition, with the
-doubling whose small multiples are fused (`doubleCms_dblOk`, `mulQJP384Cms_ok`).
+ADX): the same curve, so the same precondition and postcondition, and the same
+window method, with the doubling in another order (`mulQJP384T_ok`).
 -/
 
 @[expose] public section
@@ -59,23 +63,24 @@ theorem pre_of_x {s : State} (h : ecdhX86_64.pre s) : EPre p384x s := by
 
 theorem post_of_x {s s' : State} (h : EPost p384x s s') : ecdhX86_64.post s s' := by
   unfold EPost at h
-  show match ex s.mem (s.gpr .rsi) (s.gpr .rdx) with
-    | some z => (s'.gpr .rax).setWidth 32 = 1 ∧ Spec.EcKey.bytesAt s'.mem (s.gpr .rdi) 48 = z
-    | none => (s'.gpr .rax).setWidth 32 = 0 ∧
-        Spec.EcKey.bytesAt s'.mem (s.gpr .rdi) 48 = List.replicate 48 0
+  dsimp only [ecdhX86_64]
   revert h
   generalize hq : ex s.mem (s.gpr .rsi) (s.gpr .rdx) = q
   rw [show Spec.Ecdh.exchange p384x.C (dk p384x s)
       (Spec.Ecdsa.bytesAt s.mem (s.gpr .rdx) (1 + 2 * p384x.C.len)) = ex s.mem (s.gpr .rsi) (s.gpr .rdx) from rfl, hq]
   rcases q with _ | z <;> exact id
 
-/-- The Jacobian window method with an affine table and the doubling
-`doubleCms` computes `[d]P` on P-384, whose field `cms` needs. -/
-theorem mulQJP384Cms_ok {c : Cfg} (hc : CfgOk c) (h6 : c.n = 6) (hcC : c.C = Spec.P384.curve)
-    (hsp : c.MP'.sparse = true) (hL : Weierstrass.Law c.C) (hO : Weierstrass.PrimeOrder c.C) :
-    MulOk c (Impl.Ecdh.X86_64.Cfg.mulQJA c (Impl.Weierstrass.X86_64.doubleCms c.MP' c.rcbSlots)) (mulQJAW c) :=
-  mulQJA_ok hc (Or.inr h6) hL hO (Weierstrass.X86_64.doubleCms_dblOk hsp
-    (Weierstrass.unitMod_pow_two hc.p_odd _) hL hc.am3) (hcC ▸ n_mod32) (hcC ▸ n_ge64)
+/-- `mulQJP384_ok` with the doubling in `dblJMulT`'s order. -/
+theorem mulQJP384T_ok {c : Cfg} (hc : CfgOk c) (h6 : c.n = 6) (hcC : c.C = Spec.P384.curve)
+    (hL : Weierstrass.Law c.C) (hO : Weierstrass.PrimeOrder c.C) :
+    MulOk c (Impl.Ecdh.X86_64.Cfg.mulQJA c (Impl.Weierstrass.X86_64.doubleInT c.MH c.rcbSlots)) (mulQJAW c) :=
+  mulQJA_ok hc (Or.inr h6) hL hO (Weierstrass.X86_64.doubleInT_dblOk_inl
+    (Weierstrass.unitMod_pow_two hc.p_odd _) hL hc.am3 c.hot) (hcC ▸ n_mod32) (hcC ▸ n_ge64)
+
+/-- The shared leaf's inlining is the original in-place doubling. -/
+theorem exchangeP384Adx_inline : exchangeP384Adx.inline =
+    (Impl.Ecdh.X86_64.Cfg.exchangeJA p384x
+      (Impl.Weierstrass.X86_64.doubleInT p384x.MH p384x.rcbSlots)).inline := by kernel_rfl
 
 theorem ecdh_inlineOk_adx : exchangeP384Adx.InlineOk = true := by lit_decide
 
@@ -84,7 +89,9 @@ theorem ecdh_x86_adx (hL : Weierstrass.Law Spec.P384.curve) (hI : Weierstrass.X8
     ∃ t s', Exec isa exchangeP384Adx.inline s t s' ∧ abiPreserved s s' ∧ ecdhX86_64.post s s' := by
   obtain ⟨t, s', he, hsv, hpost⟩ := 
     exchangeWith_ok (p384x_ok hI) hL
-    (mulQJP384Cms_ok (p384x_ok hI) rfl rfl (by decide +kernel) hL hO) (mulQJA_w (p384x_ok hI)) (pre_of_x hs)
+    (mulQJP384T_ok (p384x_ok hI) rfl rfl hL hO) (mulQJA_w (p384x_ok hI)) (pre_of_x hs)
+  have he : Exec isa exchangeP384Adx.inline s t s' := by
+    rw [exchangeP384Adx_inline]; exact he
   have hsp := Code.clobbers_rsp_of_inlineOk ecdh_inlineOk_adx
   have F := (Exec.regions he (Code.noCalls_inline ecdh_inlineOk_adx)).2.2
   obtain ⟨-, hwr, -, -, -, -, -, hro, hrs, -, -⟩ := hs
@@ -127,26 +134,22 @@ theorem ecdh_verified_adx (hL : Weierstrass.Law Spec.P384.curve) (hI : Weierstra
 
 /-! ## Without secret residue -/
 
-/-- The granules of its stack that `vg_ecdh_p384_adx` must wipe on return, from the
-residue analysis (`X86_64.RScrub.keepFor`). -/
-def scrubKsAdx : List Nat := keep_for% Spec.Ecdh.P384.exchangeApi.sig 8 exchangeP384Adx []
+theorem exchangeAdx_codeSp : exchangeP384Adx.all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
 
-theorem scrubOkAdx : ∃ h : VG.Taint.Hint RTaint.FT,
-    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Ecdh.P384.exchangeApi.sig 8 []) exchangeP384Adx h).any
-      (RScrub.resOkB · 8 scrubKsAdx (Impl.Scrub.X86_64.chunks 8)) = true :=
-  RScrub.Analysed.ok_of _ (by taint_decide)
-
-/-- `vg_ecdh_p384_adx`, followed by `Impl.Scrub.X86_64.scrubTail`
-(`X86_64.RScrub.withScrub`): it returns without secret residue. -/
-def scrubRegAdx (hL : Weierstrass.Law Spec.P384.curve) (hI : Weierstrass.X86_64.InvSounds)
+/-- `vg_ecdh_p384_adx` as emitted (`Impl.Ecdh.X86_64.Fn.exchangeP384Adx`), its cleanup included,
+meets its contract in constant time and returns without secret residue. -/
+theorem exchangeAdx_scrubbed (hL : Weierstrass.Law Spec.P384.curve) (hI : Weierstrass.X86_64.InvSounds)
     (hO : Weierstrass.PrimeOrder Spec.P384.curve) :
-    Registration Spec.Ecdh.P384.exchangeApi X86_64.target :=
-  RScrub.withScrub {
-    suffix := "_adx"
-    code := exchangeP384Adx
-    stack := 8
-    verified := ecdh_verified_adx hL hI hO }
-    (VG.Proof.EcKey.X86_64.Scrub.exchangeOut _ _) [] (RScrub.pubOk_nil _)
-    (some ⟨scrubKsAdx, scrubOkAdx⟩)
+    VerifiedScrubbed X86_64.target Impl.Ecdh.X86_64.Fn.exchangeP384Adx (Spec.Ecdh.P384.exchangeApi.contract X86_64.abi 8) 32 :=
+  X86_64.Scrub.verifiedScrubbedAll (api := Spec.Ecdh.P384.exchangeApi)
+    { code := exchangeP384Adx
+      stack := 8
+      verified := ecdh_verified_adx hL hI hO
+      spSafe := exchangeAdx_codeSp } .avx (VG.Proof.EcKey.X86_64.Scrub.exchangeOut _ _)
+
+theorem exchangeAdx_spSafe :
+    Impl.Ecdh.X86_64.Fn.exchangeP384Adx.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  X86_64.Scrub.scrubKs_spSafe exchangeAdx_codeSp
 
 end VG.Proof.Ecdh.X86_64.P384

@@ -1,11 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.RsaPss.PPC64LE.CTMain
+public import VerifiedGarbage.Impl.Hmac.Stream.PPC64LE.Fn
+meta import VerifiedGarbage.Impl.Hmac.Stream.PPC64LE.Fn
+public import VerifiedGarbage.Proof.RsaPss.PPC64LE.Sg.CTBase
 public import VerifiedGarbage.Proof.MdHashTable.PPC64LE.Tables
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.RsaPss.PPC64LE.Entry
-public import VerifiedGarbage.Proof.Md5.PPC64LE.Stream.Md
+public import VerifiedGarbage.Proof.Md5.PPC64LE.Stream.Init
 public import VerifiedGarbage.Proof.Sha1.PPC64LE.Stream.Md
 public import VerifiedGarbage.Proof.Sha256.PPC64LE.Md
 public import VerifiedGarbage.Proof.Sha512.PPC64LE.Md
@@ -14,7 +16,7 @@ import VerifiedGarbage.Proof.Sha1.PPC64LE.Compress
 import VerifiedGarbage.Proof.Sha256.PPC64LE.Compress
 import VerifiedGarbage.Proof.Sha512.PPC64LE.Compress
 meta import VerifiedGarbage.Proof.MdHashTable.PPC64LE.Tables
-meta import VerifiedGarbage.Proof.Md5.PPC64LE.Stream.Md
+meta import VerifiedGarbage.Proof.Md5.PPC64LE.Stream.Init
 meta import VerifiedGarbage.Proof.Sha1.PPC64LE.Stream.Md
 meta import VerifiedGarbage.Proof.Sha256.PPC64LE.Md
 meta import VerifiedGarbage.Proof.Sha512.PPC64LE.Md
@@ -29,26 +31,16 @@ public import VerifiedGarbage.Proof.Sha1.Md
 public import VerifiedGarbage.Proof.Sha256.Md
 public import VerifiedGarbage.Proof.Sha256.Digest
 public import VerifiedGarbage.Proof.Sha512.Md
-public import VerifiedGarbage.Proof.RsaPss.PPC64LE.Sg.CTBase
-public import VerifiedGarbage.Proof.RsaPss.PPC64LE.Sg.PrivCall
-import VerifiedGarbage.Proof.RsaPss.PPC64LE.Sg.CTBlocks
+public import VerifiedGarbage.Proof.RsaPss.PPC64LE.Sg.Correct
 import VerifiedGarbage.Proof.Rsa.PPC64LE.PrivCT
-import VerifiedGarbage.Proof.Rsa.PPC64LE.PrivPre
+import VerifiedGarbage.Proof.Rsa.PPC64LE.PrivCorrect
 import VerifiedGarbage.Proof.Framework.PPC64LE.RelCT
 import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Entry
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.PPC64LE.Two
-public import VerifiedGarbage.Proof.RsaPss.PPC64LE.Sg.Correct
-public import VerifiedGarbage.Proof.RsaOaep.PPC64LE.CTMgfT
 public import VerifiedGarbage.Proof.RsaPss.PPC64LE.CTTab
 import VerifiedGarbage.Proof.RsaOaep.PPC64LE.MgfT
 import VerifiedGarbage.Proof.Framework.PPC64LE.Syms
 import VerifiedGarbage.Proof.Framework.RelSplit
-import VerifiedGarbage.Proof.RsaPss.PPC64LE.ByIdx
-import VerifiedGarbage.Proof.RsaPss.PPC64LE.CTBlocks
-import VerifiedGarbage.Proof.RsaPss.PPC64LE.Sg.Em
-import VerifiedGarbage.Proof.RsaPss.PPC64LE.Sg.Blocks
-import VerifiedGarbage.Proof.RsaPss.PPC64LE.CTFixed
-import VerifiedGarbage.Proof.RsaPss.PPC64LE.Fixed
 import VerifiedGarbage.Proof.RsaOaep.PPC64LE.CTBlocks
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.PreCore
 public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Hash
@@ -57,6 +49,116 @@ public import VerifiedGarbage.Proof.Rsa.PrivCheck
 public import VerifiedGarbage.Proof.RsaPss.PPC64LE.Sg.Checks
 public import VerifiedGarbage.Proof.RsaPss.PPC64LE.Sg.Pre
 import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Impl.RsaPss.PPC64LE.Sign
+public import VerifiedGarbage.Proof.Framework.RelCT
+meta import VerifiedGarbage.Proof.RsaPkcs1Sig.PPC64LE.Two
+meta import VerifiedGarbage.Proof.RsaOaep.PPC64LE.CTBlocks
+meta import VerifiedGarbage.Impl.RsaPss.PPC64LE.Sign
+
+/-! ### `RsaPss.PPC64LE.Sg.CTBlocks`, which only this module used -/
+
+section
+
+/-!
+# RSASSA-PSS signing on PPC64LE: the taint checks
+
+Untrusted: everything here is checked by Lean. The code between the calls,
+checked by the taint analysis from the stack pointer and the registers that
+hold public values (`two_taint`): `r5` (`n`, on entry), `r14` (`scratch`),
+`r15` (`k`), `r19` (`salt_len`), `r20` (`n`) and `r23` (`lo`); the blocks that
+use a hash function's length on their copy for one hash function (`Hd`),
+with the same code without its immediates (`zImm`). Every address and branch
+depends only on the pointers, the lengths and `n₀`: the digest, the salt,
+`H` and `EM` are only loaded, stored and masked.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.RsaPss.PPC64LE.Sg
+
+variable {pc : Bool}
+
+open VG VG.PPC64LE VG.Impl.RsaPss.PPC64LE.Sign VG.Proof.RsaPkcs1Sig.PPC64LE
+open VG.Impl.RsaOaep.PPC64LE (save)
+open VG.Impl.Hmac.Stream.PPC64LE (Hash)
+open VG.Proof.RsaOaep.PPC64LE (Hd zImm isSome_check_of_zImm)
+
+section
+variable {α : Type} {Φ : α → State → Prop} (H : Hash)
+
+theorem entry_taint (h : Pins Φ [.r5]) : RelCT isa (Two Φ) (.block (save ++ prologue)) fun _ _ => True :=
+  two_taint [.r5] h (by taint_decide)
+
+theorem chkEm_taint (h : Pins Φ []) : RelCT isa (Two Φ) (.block (chkEm H)) fun _ _ => True :=
+  two_taint [] h (isSome_check_of_zImm (τ := VG.PPC64LE.Taint.ofRegs [])
+    (c := .block (chkEm H)) (c' := .block (chkEm Hd)) (by rfl) (by taint_decide))
+
+theorem chkSalt_taint (h : Pins Φ []) : RelCT isa (Two Φ) (.block (chkSalt H)) fun _ _ => True :=
+  two_taint [] h (isSome_check_of_zImm (τ := VG.PPC64LE.Taint.ofRegs [])
+    (c := .block (chkSalt H)) (c' := .block (chkSalt Hd)) (by rfl) (by taint_decide))
+
+theorem zeros8_taint (h : Pins Φ [.r14]) : RelCT isa (Two Φ)
+    (.seq (.block [.addi .r4 .r14 Impl.RsaPss.PPC64LE.oY, .li .r5 8, .li .r6 0]) Impl.RsaOaep.PPC64LE.zeroLoop)
+    fun _ _ => True :=
+  two_taint [.r14] h (by taint_decide)
+
+theorem digArgs_taint (h : Pins Φ []) : RelCT isa (Two Φ)
+    (.block (ldArg .r4 8 ++ ([.addi .r5 .r14 (Impl.RsaPss.PPC64LE.oY + 8), .li .r6 H.D] : List Instr))) fun _ _ => True :=
+  two_taint [] h (isSome_check_of_zImm (τ := VG.PPC64LE.Taint.ofRegs [])
+    (c := .block (ldArg .r4 8 ++ [.addi .r5 .r14 (Impl.RsaPss.PPC64LE.oY + 8), .li .r6 H.D]))
+    (c' := .block (ldArg .r4 8 ++ [.addi .r5 .r14 0, .li .r6 0])) (by rfl) (by taint_decide))
+
+theorem copy_taint (h : Pins Φ [.r4, .r5, .r6]) : RelCT isa (Two Φ) Impl.RsaOaep.PPC64LE.copyLoop fun _ _ => True :=
+  two_taint [.r4, .r5, .r6] h (by taint_decide)
+
+theorem saltDst_taint (h : Pins Φ []) : RelCT isa (Two Φ)
+    (.block [.addi .r5 .r14 (Impl.RsaPss.PPC64LE.oY + 8 + H.D)]) fun _ _ => True :=
+  two_taint [] h (isSome_check_of_zImm (τ := VG.PPC64LE.Taint.ofRegs [])
+    (c := .block [.addi .r5 .r14 (Impl.RsaPss.PPC64LE.oY + 8 + H.D)]) (c' := .block [.addi .r5 .r14 0])
+    (by rfl) (by taint_decide))
+
+theorem saltArgs_taint (h : Pins Φ []) : RelCT isa (Two Φ)
+    (.block (ldArg .r4 10 ++ [Impl.AesGcm.PPC64LE.mov .r6 .r19])) fun _ _ => True :=
+  two_taint [] h (by taint_decide)
+
+theorem skip_taint (h : Pins Φ []) : RelCT isa (Two Φ) (.block []) fun _ _ => True :=
+  two_taint [] h (by taint_decide)
+
+theorem clearEm_taint (h : Pins Φ [.r14, .r15]) : RelCT isa (Two Φ) clearEm fun _ _ => True :=
+  two_taint [.r14, .r15] h (by taint_decide)
+
+theorem putSaltHead_taint (h : Pins Φ [.r14, .r15, .r19]) : RelCT isa (Two Φ)
+    (.block [.addi .r4 .r14 Impl.RsaOaep.PPC64LE.oEm, .add .r4 .r4 .r15, .sub .r4 .r4 .r19, .subi .r4 .r4 (H.D + 2),
+      .li .r5 1, .stb .r5 .r4 0, .addi .r5 .r4 1]) fun _ _ => True :=
+  two_taint [.r14, .r15, .r19] h (isSome_check_of_zImm (τ := VG.PPC64LE.Taint.ofRegs [.r14, .r15, .r19])
+    (c := .block [.addi .r4 .r14 Impl.RsaOaep.PPC64LE.oEm, .add .r4 .r4 .r15, .sub .r4 .r4 .r19,
+      .subi .r4 .r4 (H.D + 2), .li .r5 1, .stb .r5 .r4 0, .addi .r5 .r4 1])
+    (c' := .block [.addi .r4 .r14 0, .add .r4 .r4 .r15, .sub .r4 .r4 .r19, .subi .r4 .r4 0, .li .r5 0,
+      .stb .r5 .r4 0, .addi .r5 .r4 0]) (by rfl) (by taint_decide))
+
+theorem putH_taint (h : Pins Φ [.r14, .r15]) : RelCT isa (Two Φ) (putH H) fun _ _ => True :=
+  two_taint [.r14, .r15] h (isSome_check_of_zImm (τ := VG.PPC64LE.Taint.ofRegs [.r14, .r15])
+    (c := putH H) (c' := putH Hd) (by rfl) (by taint_decide))
+
+theorem dbArgs_taint (h : Pins Φ []) : RelCT isa (Two Φ) (.block (dbArgs H)) fun _ _ => True :=
+  two_taint [] h (isSome_check_of_zImm (τ := VG.PPC64LE.Taint.ofRegs [])
+    (c := .block (dbArgs H)) (c' := .block (dbArgs Hd)) (by rfl) (by taint_decide))
+
+theorem clearTop_taint (h : Pins Φ [.r14, .r20, .r23]) : RelCT isa (Two Φ) (.block clearTop) fun _ _ => True :=
+  two_taint [.r14, .r20, .r23] h (by taint_decide)
+
+theorem privArgs_taint (pc : Bool) (h : Pins Φ []) : RelCT isa (Two Φ) (.block (privArgs pc)) fun _ _ => True := by
+  cases pc
+  · exact two_taint [] h (by taint_decide)
+  · exact two_taint [] h (by taint_decide)
+
+end
+
+end VG.Proof.RsaPss.PPC64LE.Sg
+
+end
+
+end
 
 /-! ### `RsaPss.PPC64LE.Sg.CTMain`, which only this module used -/
 
@@ -89,14 +191,22 @@ open VG.Proof.RsaPkcs1Sig.PPC64LE (Two two_alloc)
 
 theorem psa_pub {a s : State} (p : PubS pc a s) {i : Nat} (hi : i < nP pc) : psa s i = psa a i := by
   by_cases h12 : i < 12
-  · rcases (by omega_using [h12] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨ i = 10 ∨
+  · -- The facts once, not elaborated again in each of the twelve cases.
+    have g9 := p.g .r9 (by decide)
+    have g10 := p.g .r10 (by decide)
+    have a0 := p.args _ (by decide : (0 : Nat) < 16)
+    have a1 := p.args _ (by decide : (1 : Nat) < 16)
+    have a2 := p.args _ (by decide : (2 : Nat) < 16)
+    have a3 := p.args _ (by decide : (3 : Nat) < 16)
+    have a4 := p.args _ (by decide : (4 : Nat) < 16)
+    have a5 := p.args _ (by decide : (5 : Nat) < 16)
+    have a6 := p.args _ (by decide : (6 : Nat) < 16)
+    have a7 := p.args _ (by decide : (7 : Nat) < 16)
+    have a12 := p.args _ (by decide : (12 : Nat) < 16)
+    have a13 := p.args _ (by decide : (13 : Nat) < 16)
+    rcases (by omega_using [h12] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨ i = 10 ∨
         i = 11) with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-      simp only [psa, Ss, p.g .r9 (by decide), p.g .r10 (by decide), p.args _ (by decide : (0 : Nat) < 16),
-        p.args _ (by decide : (1 : Nat) < 16), p.args _ (by decide : (2 : Nat) < 16),
-        p.args _ (by decide : (3 : Nat) < 16), p.args _ (by decide : (4 : Nat) < 16),
-        p.args _ (by decide : (5 : Nat) < 16), p.args _ (by decide : (6 : Nat) < 16),
-        p.args _ (by decide : (7 : Nat) < 16), p.args _ (by decide : (12 : Nat) < 16),
-        p.args _ (by decide : (13 : Nat) < 16)]
+      simp only [psa, Ss, g9, g10, a0, a1, a2, a3, a4, a5, a6, a7, a12, a13]
   · cases pc with
     | false => exact absurd hi (by simp only [nP, Bool.false_eq_true, ↓reduceIte]; omega_using [h12])
     | true =>
@@ -166,7 +276,7 @@ theorem priv_pub {D : Nat} {a u₁ u₂ : State} (h₁ : APriv pc D a u₁) (h�
         rw [X.pl]; unfold Spec.Rsa.privatePrecomputedWords; omega_using []
       simp only [Spec.Rsa.privatePrecomputedLeak, callE_stackArg A (i := 12) (by decide), psa,
         callE_gpr s u (r := .r6), A.r6]
-      congr 1
+      refine congrArg (List.map _) ?_
       have subPre : Region.Sub ⟨stackArg s 16, 8 * Spec.Rsa.precomputedWords (s.gpr .r6).toNat⟩ (preR s) :=
         fun _ hx => by simp only [Region.Contains] at hx ⊢; omega_using [pwl, hx]
       exact VG.Proof.Rsa.PPC64LE.Priv.words_of_frame A.mem (fun r hr => by
@@ -652,11 +762,7 @@ theorem code_correct (hc : MdHashTable.PPC64LE.Coh vs) (hc' : MdHashTable.PPC64L
   rw [e]
   sig_post [Spec.RsaPss.verifyPrecomputedMdTableContract, Spec.RsaPss.verifyPrecomputedMdTableSig,
     Spec.MdHashTable.param, Spec.MdHashTable.param, Abi.withTables, abi, argRegs, stackArgs_eight, List.append_eq]
-  intro H' G' hH' hG' hc
-  rw [hH] at hH'
-  rw [hG] at hG'
-  cases hH'
-  cases hG'
+  refine ⟨_, _, hH, hG, fun hc => ?_⟩
   rw [hr hc]
   unfold vOut
   split <;> rfl
@@ -806,7 +912,7 @@ def sha512F : Fam where
   hdc := by exact digest_ct ⟨_, by taint_decide⟩
 
 def md5M : MVar where
-  H := Md5.hash
+  H := Impl.Hmac.Stream.PPC64LE.md5Hash
   l := Proof.RsaOaep.PPC64LE.md5L
   idx := rfl
   F := md5F
@@ -821,7 +927,7 @@ def md5M : MVar where
   sh := ⟨by decide, rfl, rfl⟩
 
 def sha1M : MVar where
-  H := Sha1.hash
+  H := Impl.Hmac.Stream.PPC64LE.sha1Hash
   l := Proof.RsaOaep.PPC64LE.sha1L
   idx := rfl
   F := sha1F
@@ -836,7 +942,7 @@ def sha1M : MVar where
   sh := ⟨by decide, rfl, rfl⟩
 
 def sha224M : MVar where
-  H := Sha224.hash
+  H := Impl.Hmac.Stream.PPC64LE.sha224Hash
   l := Proof.RsaOaep.PPC64LE.sha224L
   idx := rfl
   F := sha256F
@@ -847,7 +953,7 @@ def sha224M : MVar where
   sh := ⟨by decide, rfl, rfl⟩
 
 def sha256M : MVar where
-  H := Sha256.hash
+  H := Impl.Hmac.Stream.PPC64LE.sha256Hash
   l := Proof.RsaOaep.PPC64LE.sha256L
   idx := rfl
   F := sha256F
@@ -862,7 +968,7 @@ def sha256M : MVar where
   sh := ⟨by decide, rfl, rfl⟩
 
 def sha384M : MVar where
-  H := Sha384.hash
+  H := Impl.Hmac.Stream.PPC64LE.sha384Hash
   l := Proof.RsaOaep.PPC64LE.sha384L
   idx := rfl
   F := sha512F
@@ -873,7 +979,7 @@ def sha384M : MVar where
   sh := ⟨by decide, rfl, rfl⟩
 
 def sha512M : MVar where
-  H := Sha512.hash
+  H := Impl.Hmac.Stream.PPC64LE.sha512Hash
   l := Proof.RsaOaep.PPC64LE.sha512L
   idx := rfl
   F := sha512F
@@ -885,7 +991,7 @@ def sha512M : MVar where
   sh := ⟨by decide, rfl, rfl⟩
 
 def sha512_224M : MVar where
-  H := Sha512_224.hash
+  H := Impl.Hmac.Stream.PPC64LE.sha512_224Hash
   l := Proof.RsaOaep.PPC64LE.sha512_224L
   idx := rfl
   F := sha512F
@@ -896,7 +1002,7 @@ def sha512_224M : MVar where
   sh := ⟨by decide, rfl, rfl⟩
 
 def sha512_256M : MVar where
-  H := Sha512_256.hash
+  H := Impl.Hmac.Stream.PPC64LE.sha512_256Hash
   l := Proof.RsaOaep.PPC64LE.sha512_256L
   idx := rfl
   F := sha512F
@@ -989,12 +1095,7 @@ theorem code_correct (hc : MdHashTable.PPC64LE.Coh vs) (hc' : MdHashTable.PPC64L
   rw [e]
   sig_post [Spec.RsaPss.signMdTableContract, Spec.RsaPss.signMdTableSig, Spec.MdHashTable.param, Spec.MdHashTable.param,
     Abi.withTables, abi, argRegs, stackArgs_sixteen, List.append_eq]
-  intro H' G' hH' hG'
-  rw [hH] at hH'
-  rw [hG] at hG'
-  cases hH'
-  cases hG'
-  exact hr (fun h => nomatch h)
+  exact ⟨_, _, hH, hG, hr (fun h => nomatch h)⟩
 
 /-- Constant time, for `vg_rsa_pss_sign` and its variant, from what their
 contracts give: the tables of the first run, which the public data makes the

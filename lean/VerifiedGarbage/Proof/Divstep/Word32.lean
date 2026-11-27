@@ -1,12 +1,13 @@
 module
 
+import Mathlib.Data.BitVec
+import VerifiedGarbage.Proof.Divstep.Batch
+public import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Proof.Divstep.BatchBasic
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.NormNum
 import Mathlib.Tactic.Ring
-import VerifiedGarbage.Proof.Divstep.Word32Bits
-import Mathlib.Data.BitVec
-public import VerifiedGarbage.Proof.Divstep.Word32Def
+public import VerifiedGarbage.Proof.Divstep.Word32Bits
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-!

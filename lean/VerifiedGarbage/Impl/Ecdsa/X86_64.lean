@@ -182,6 +182,11 @@ structure Cfg where
   and `k^(n-2)` (`invFn`), which every function calls (`pPow`, `nPow`);
   else they run them inline. -/
   inverse : Option Impl.Weierstrass.Inverse.Curve := none
+  /-- With `inverse`, for four words: whether the inversions are calls of the
+  functions that every such curve shares, `vg_inv4_mod_p` and `vg_inv4_mod_n`
+  (`InvCfg.seed`), which read their modulus's constants where the call stores
+  them (`invConsts`), rather than of the curve's own. -/
+  inv4 : Bool := false
   /-- The curve whose function `vg_<curve>_check_point`
   (`Proof/Weierstrass/CheckPointContract.lean`) checks the public point and selects
   the point ECDH and verification multiply (`Ecdh.X86_64.Cfg.check`); else
@@ -193,6 +198,25 @@ structure Cfg where
   the window method (`Impl.Ecdh.X86_64.Cfg.maskK`); a `d` it changes is out
   of range, and its result is discarded. -/
   nbits : Nat := 8 * C.len
+  /-- For a curve with `vg_<curve>_mul` (`mul`), whether its ladder's
+  additions are calls of `vg_<curve>_add_complete` (`addCompleteFn`), the
+  complete addition its comb and windows call, and its callers run it inline
+  (`mulRun`) rather than calling it, so that it calls only that function. -/
+  mulAdd : Bool := false
+  /-- Whether ECDH's odd window method builds its table of odd multiples by a
+  call of `vg_<curve>_ecdh_table` (with `fnSuffix`, `Ecdh.X86_64.Cfg.tableFn`),
+  which the curve's ECDH functions with the same layout share. -/
+  ecdhTable : Bool := false
+  /-- Whether the parts of joint verification (`Verify.X86_64.Cfg.jointVerifyWith`) that
+  call nothing and are the same for every way of computing the points are calls of
+  functions, `vg_ecdsa_<curve>_verify_<part>` (with `fnSuffix`, `Verify.X86_64.Cfg.shareV`),
+  which the curve's verification functions with the same configuration share. -/
+  verifyShared : Bool := false
+  /-- Whether `x = X Z⁻¹` out of Montgomery form, the first two products of
+  the public key's, ECDH's and the signature's tails, is a call of one
+  function, `vg_<curve>_affine_x` (`affineX`, named after `inverse`'s curve),
+  which they share: for a curve whose products are inline (`affineOn`). -/
+  affine : Bool := false
 
 /-- The bits of `e < 2^k`: the least `j ≤ k` with `e < 2^j`. -/
 def bitLen (e : Nat) : Nat → Nat
@@ -228,6 +252,10 @@ def sl (i : Nat) : Nat :=
 def MP' : Mod :=
   { n := c.n, mo := c.sl MP, tmp := c.sl TMP, minv := BitVec.ofNat 64 (minv c.C.p), red := Red.ofModulus c.n c.C.p,
     adx := c.adx, sparse := sparseOk c.n c.C.p }
+/-- `MP'` for the inversion by divsteps: for nine words (P-521) its last
+product is without BMI2 and ADX, the one place their code differs, so that
+both configurations call one function (`pSuffix`). -/
+def MPI : Mod := { c.MP' with adx := c.adx && c.n != 9 }
 /-- `MP'`, but written out in the loops that run the most products (`hot`). -/
 def MH : Mod := { c.MP' with inl := c.hot }
 def MN' : Mod :=
@@ -323,8 +351,21 @@ def powP : PowCfg := ⟨c.MP', c.sl ACC, c.sl PT, c.sl RZ, c.sl ONEP, bitsAt c.n
 def powN : PowCfg := ⟨c.MN', c.sl ACC, c.sl PT, c.sl KM, c.sl ONEN, bitsAt c.n 2, bitLen (c.C.n - 2) (64 * c.n)⟩
 
 /-- The inversions by divsteps, their working area past the tables of bits. -/
-def invP : InvCfg := .ofMod c.MP' (c.sl ACC) (c.sl RZ) (bitsAt c.n 3) c.C.p
+def invP : InvCfg := .ofMod c.MPI (c.sl ACC) (c.sl RZ) (bitsAt c.n 3) c.C.p
 def invN : InvCfg := .ofMod c.MN' (c.sl ACC) (c.sl KM) (bitsAt c.n 3) c.C.n
+
+/-- The inversions that four-word curves share (`inv4`): their constants, the
+seed and `-m⁻¹ mod 2⁶⁴`, in `PT`'s and `TMP`'s slots, which they do not
+otherwise use. -/
+def invPS : InvCfg := .ofModS c.MP' (c.sl ACC) (c.sl RZ) (bitsAt c.n 3) c.C.p (c.sl PT) (c.sl TMP)
+def invNS : InvCfg := .ofModS c.MN' (c.sl ACC) (c.sl KM) (bitsAt c.n 3) c.C.n (c.sl PT) (c.sl TMP)
+
+/-- The stores of a shared inversion's constants: `-m⁻¹ mod 2⁶⁴` of `M` in
+`TMP`'s slot and the `n` words of `seed` in `PT`'s, through `rax`. -/
+def invConsts (M : Mod) (seed : Nat) : List Instr :=
+  [.movImm64 .rax M.minv, .store (sc (c.sl TMP)) .rax] ++
+  (List.range c.n).flatMap fun i =>
+    [.movImm64 .rax (BitVec.ofNat 64 (seed >>> (64 * i))), .store (sc (c.sl PT + 8 * i)) .rax]
 
 /-- The window method's digits, for scalars below `2^nbits` (ECDH's `d`
 reduced by `maskK`, or verification's `v < n`): `⌈(nbits + 2) / 4⌉`, enough
@@ -402,15 +443,26 @@ words, whose products modulo `n` use neither BMI2 nor ADX (`Mont.X86_64.mul`),
 so that both configurations call the one function. -/
 def nSuffix : String := if c.n = 9 then "" else c.fnSuffix
 
+/-- The suffix of `vg_<curve>_inv_mod_p`'s name: `fnSuffix`, but none for nine
+words, whose inversion multiplies without BMI2 and ADX (`MPI`), so that both
+configurations call the one function. -/
+def pSuffix : String := if c.n = 9 then "" else c.fnSuffix
+
 /-- `Z^(p-2)` and `k^(n-2)` into `ACC`: calls of `vg_<curve>_inv_mod_p` and
 `_n` (`invFn`), else inline (`pPowI`, `nPowI`). -/
 def pPow : Prog isa :=
   match c.inverse with
-  | some C => .call (s!"vg_{C.curve}_inv_mod_p" ++ c.fnSuffix) (c.invFn c.pPowI)
+  | some C =>
+    if c.inv4 then
+      .seq (.block (c.invConsts c.MP' (c.invPS.seedOf c.C.p))) (.call "vg_inv4_mod_p" (c.invFn (InvCfg.inv c.invPS)))
+    else .call (s!"vg_{C.curve}_inv_mod_p" ++ c.pSuffix) (c.invFn c.pPowI)
   | none => c.pPowI
 def nPow : Prog isa :=
   match c.inverse with
-  | some C => .call (s!"vg_{C.curve}_inv_mod_n" ++ c.nSuffix) (c.invFn c.nPowI)
+  | some C =>
+    if c.inv4 then
+      .seq (.block (c.invConsts c.MN' (c.invNS.seedOf c.C.n))) (.call "vg_inv4_mod_n" (c.invFn (InvCfg.inv c.invNS)))
+    else .call (s!"vg_{C.curve}_inv_mod_n" ++ c.nSuffix) (c.invFn c.nPowI)
   | none => c.nPowI
 
 /-- The constants, and `R = (0 : 1 : 0)`: slots and values. -/
@@ -471,8 +523,28 @@ signature and public key measured slower with the calls. -/
 def mulPF (o a b : Nat) : Prog isa :=
   if c.n = 9 then .block (Mont.X86_64.mul c.MP' o a b) else opProg c.MP' (.mul o a b)
 
-/-- `x = X Z⁻¹`, `r = x mod n`, `k R mod n`, and the checks of `d`, `k`, `r`. -/
+/-- Whether `affineX` is a call: `affine`, for a curve with `inverse` (whose
+name the function takes) and products inline (`Mont.callOf`), so that the
+function calls nothing. -/
+def affineOn : Bool := c.affine && c.inverse.isSome && c.n != 9 && (Mont.callOf c.MP').isNone
+
+/-- `vg_<curve>_affine_x`'s name. -/
+def affineName : String := s!"vg_{(c.inverse.map (·.curve)).getD ""}_affine_x"
+
+/-- `x = X Z⁻¹` out of Montgomery form, with `Z⁻¹ R` in `ACC`: `XM = X · ACC`
+and `X = XM · 1`, a call of `vg_<curve>_affine_x` (`affineOn`). -/
+def affineX : Prog isa :=
+  .call c.affineName (.seq (c.mulPF (c.sl XM) (c.sl RX) (c.sl ACC)) (c.mulPF (c.sl X) (c.sl XM) (c.sl ONE)))
+
+/-- `x = X Z⁻¹` (a call of `vg_<curve>_affine_x` if `affineOn`), `r = x mod n`,
+`k R mod n`, and the checks of `d`, `k`, `r`. -/
 def middle : Prog isa :=
+  if c.affineOn then
+    progs [c.affineX,
+      .block (Mont.X86_64.add c.MN' (c.sl RR) (c.sl X) (c.sl ZERO)),
+      opProg c.MN' (.mul (c.sl KM) (c.sl K) (c.sl R2N)),
+      .block (c.checkRange (c.sl D) ++ c.checkRange (c.sl K) ++ c.checkNonzero (c.sl RR))]
+  else
   progs [c.mulPF (c.sl XM) (c.sl RX) (c.sl ACC),
     c.mulPF (c.sl X) (c.sl XM) (c.sl ONE),
     .block (Mont.X86_64.add c.MN' (c.sl RR) (c.sl X) (c.sl ZERO)),
@@ -537,6 +609,52 @@ def mulBody : Prog isa :=
 copying the callee-saved registers to `xmm0`–`xmm5` and back (`invFnX`). -/
 def mulFn : Prog isa := Cfg.invFnX c.mulBody
 
+/-- The name of the complete addition's function, `vg_<curve>_add_complete`:
+`D = R + T` by `rcb` with `a R mod p` at `AP` and `3 b R mod p` at `PT`
+(`rcbSlots` but for `b3`), which the comb, the windows (`Cfg.gMulG`,
+`Cfg.mulVA`) and the ladder of `mulAdd` (`ladderBodyA`) call. -/
+def addCompleteFn : String :=
+  match c.mul with
+  | some C => s!"vg_{C.curve}_add_complete"
+  | none => "vg_add_complete"
+
+/-- The complete addition's code: `D = R + T`, `3 b R mod p` at `PT`. -/
+def addComplete : Prog isa := fprogB c.MP' (rcb { c.rcbSlots with b3 := c.sl PT } (c.pt RX RY RZ) (c.pt TX TY TZ) (c.pt DX DY DZ))
+
+/-- The ladder of `mulAdd`: `mulLadder`, but `3 b R mod p` at `PT` (where
+`addComplete` reads it) and so `G`'s `y` at `EM`. -/
+def mulLadderA : LadderCfg := { c.ladderCfg with S := { c.rcbSlots with b3 := c.sl PT }, G := c.pt ACC EM ONEP }
+
+/-- An iteration of `mulLadderA`, for the bit `t = rbx - 1`: `T = R` and
+`D = R + T` (a call of `addComplete`), then `R = D`, `T = G` and `D = R + T`
+(another), and `R = D` if bit `t` is set (else it stays the double). -/
+def ladderBodyA : Prog isa :=
+  let L := c.mulLadderA
+  .seq (.block ([.alu .sub .rbx (.imm 1)] ++ copyPt L.M.n L.T L.R)) <|
+  .seq (.call c.addCompleteFn c.addComplete) <|
+  .seq (.block (copyPt L.M.n L.R L.D ++ copyPt L.M.n L.T L.G)) <|
+  .seq (.call c.addCompleteFn c.addComplete) <|
+  .block (bitMask L.bits ++ selPt L.M.n L.R L.R L.D ++ [.alu .test .rbx (.reg .rbx)])
+
+/-- `vg_<curve>_mul`'s body for `mulAdd`: as `mulBody`, but `Q`'s `y` to `EM`,
+`3 b R mod p` to `PT`, and the ladder by `ladderBodyA`. -/
+def mulBodyA : Prog isa :=
+  .seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) <|
+  .seq (.block (copy c.n (c.sl ACC) (c.sl RX) ++ copy c.n (c.sl EM) (c.sl RY) ++
+    copy c.n (c.sl RX) (c.sl ZERO) ++ copy c.n (c.sl RY) (c.sl ONEP) ++ copy c.n (c.sl RZ) (c.sl ZERO) ++
+    setConst c.n (c.sl PT) (c.mont (3 * c.C.b)) ++ [.mov32 .rbx (.imm (BitVec.ofNat 32 (64 * c.n)))]))
+    (.loop c.ladderBodyA .ne)
+
+/-- `mulBodyA` between copying the callee-saved registers to `xmm0`–`xmm5`
+and back, as `mulFn`. -/
+def mulFnA : Prog isa := Cfg.invFnX c.mulBodyA
+
+/-- `R = [k]Q` for `k` at `K` and `Q` in `R`'s first two slots, as the callers
+of `vg_<curve>_mul` run it: a call of it, or, for `mulAdd`, its code
+(`mulFnA`) inline. -/
+def mulRun (C : Impl.Weierstrass.Mul.Curve) : Prog isa :=
+  if c.mulAdd then c.mulFnA else .call s!"vg_{C.curve}_mul" c.mulFn
+
 /-- The signature and the public key call a function that makes the table of
 `k`'s bits: `vg_<curve>_mul_base` or `vg_<curve>_mul`. -/
 def callsMul : Bool := c.mulBase.isSome || c.mul.isSome
@@ -557,7 +675,7 @@ def gMulKC : Prog isa :=
   match c.mulBase, c.mul with
   | some C, _ => .call (s!"vg_{C.curve}_mul_base" ++ if c.adx then "_adx" else "") c.mulBaseFn
   | none, some C => .seq (.block (copy c.n (c.sl RX) (c.sl GX) ++ copy c.n (c.sl RY) (c.sl GY)))
-      (.call s!"vg_{C.curve}_mul" c.mulFn)
+      (c.mulRun C)
   | none, none => c.gMulK
 
 /-- `vg_ecdsa_<curve>_sign`. -/

@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Cfb.aesEncryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule, the chaining value or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 240 bytes.
@@ -37,6 +39,10 @@ ldr r8, [sp, #0]
 mov r10, r12
 cmp r8, #0
 beq 20f
+mov r0, r4
+mov r1, r5
+mov r2, r10
+bl {vg_aes_blocks_keys}
 22:
 mov r0, r4
 mov r1, r5
@@ -44,7 +50,7 @@ mov r2, r6
 mov r3, #1
 mov r12, r10
 push {{r12, lr}}
-bl {vg_aes_encrypt_blocks}
+bl {vg_aes_encrypt_blocks_keyed}
 ldr r12, [sp], #8
 ldr r12, [r7, #0]
 ldr lr, [r6, #0]
@@ -97,14 +103,29 @@ ldr r8, [r10, #2080]
 ldr r9, [r10, #2084]
 ldr lr, [r10, #2092]
 ldr r10, [r10, #2088]
+sub sp, sp, #8
+add r12, sp, #0
+mov r2, #0
+str r2, [r12, #0]
+str r2, [r12, #4]
+add sp, sp, #8
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
-        vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks::vg_aes_encrypt_blocks,
+        vg_aes_blocks_keys = sym super::aes::vg_aes_blocks_keys::vg_aes_blocks_keys,
+        vg_aes_encrypt_blocks_keyed = sym super::aes::vg_aes_encrypt_blocks_keyed::vg_aes_encrypt_blocks_keyed,
     )
 }
 
 /// AES-CFB128 decryption (NIST SP 800-38A §6.3, with 128-bit segments) of whole blocks, in place: replaces the `n` 16-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = Cⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ`, the last block at `data` on entry (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH_K` is AES (FIPS 197) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it.
 ///
 /// Contract: `VG.Spec.Cfb.aesDecryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule, the chaining value or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -135,8 +156,313 @@ mov r7, r3
 ldr r8, [sp, #0]
 mov r10, r12
 cmp r8, #0
+lsr r12, r8, #2
+cmp r12, #0
 beq 20f
 22:
+mov r12, #0
+str r12, [r10, #2096]
+str r12, [r10, #2100]
+str r12, [r10, #2104]
+str r12, [r10, #2108]
+ldr r12, [r10, #2096]
+ldr lr, [r6, #0]
+eor r12, r12, lr
+str r12, [r10, #2096]
+ldr r12, [r10, #2100]
+ldr lr, [r6, #4]
+eor r12, r12, lr
+str r12, [r10, #2100]
+ldr r12, [r10, #2104]
+ldr lr, [r6, #8]
+eor r12, r12, lr
+str r12, [r10, #2104]
+ldr r12, [r10, #2108]
+ldr lr, [r6, #12]
+eor r12, r12, lr
+str r12, [r10, #2108]
+mov r12, #0
+str r12, [r10, #2112]
+str r12, [r10, #2116]
+str r12, [r10, #2120]
+str r12, [r10, #2124]
+ldr r12, [r10, #2112]
+ldr lr, [r7, #0]
+eor r12, r12, lr
+str r12, [r10, #2112]
+ldr r12, [r10, #2116]
+ldr lr, [r7, #4]
+eor r12, r12, lr
+str r12, [r10, #2116]
+ldr r12, [r10, #2120]
+ldr lr, [r7, #8]
+eor r12, r12, lr
+str r12, [r10, #2120]
+ldr r12, [r10, #2124]
+ldr lr, [r7, #12]
+eor r12, r12, lr
+str r12, [r10, #2124]
+mov r12, #0
+str r12, [r10, #2128]
+str r12, [r10, #2132]
+str r12, [r10, #2136]
+str r12, [r10, #2140]
+ldr r12, [r10, #2128]
+ldr lr, [r7, #16]
+eor r12, r12, lr
+str r12, [r10, #2128]
+ldr r12, [r10, #2132]
+ldr lr, [r7, #20]
+eor r12, r12, lr
+str r12, [r10, #2132]
+ldr r12, [r10, #2136]
+ldr lr, [r7, #24]
+eor r12, r12, lr
+str r12, [r10, #2136]
+ldr r12, [r10, #2140]
+ldr lr, [r7, #28]
+eor r12, r12, lr
+str r12, [r10, #2140]
+mov r12, #0
+str r12, [r10, #2144]
+str r12, [r10, #2148]
+str r12, [r10, #2152]
+str r12, [r10, #2156]
+ldr r12, [r10, #2144]
+ldr lr, [r7, #32]
+eor r12, r12, lr
+str r12, [r10, #2144]
+ldr r12, [r10, #2148]
+ldr lr, [r7, #36]
+eor r12, r12, lr
+str r12, [r10, #2148]
+ldr r12, [r10, #2152]
+ldr lr, [r7, #40]
+eor r12, r12, lr
+str r12, [r10, #2152]
+ldr r12, [r10, #2156]
+ldr lr, [r7, #44]
+eor r12, r12, lr
+str r12, [r10, #2156]
+mov r12, #0
+str r12, [r6, #0]
+str r12, [r6, #4]
+str r12, [r6, #8]
+str r12, [r6, #12]
+ldr r12, [r6, #0]
+ldr lr, [r7, #48]
+eor r12, r12, lr
+str r12, [r6, #0]
+ldr r12, [r6, #4]
+ldr lr, [r7, #52]
+eor r12, r12, lr
+str r12, [r6, #4]
+ldr r12, [r6, #8]
+ldr lr, [r7, #56]
+eor r12, r12, lr
+str r12, [r6, #8]
+ldr r12, [r6, #12]
+ldr lr, [r7, #60]
+eor r12, r12, lr
+str r12, [r6, #12]
+mov r0, r4
+mov r1, r5
+add r2, r10, #2096
+mov r3, #4
+mov r12, r10
+push {{r12, lr}}
+bl {vg_aes_encrypt_blocks}
+ldr r12, [sp], #8
+ldr r12, [r7, #0]
+ldr lr, [r10, #2096]
+eor r12, r12, lr
+str r12, [r7, #0]
+ldr r12, [r7, #4]
+ldr lr, [r10, #2100]
+eor r12, r12, lr
+str r12, [r7, #4]
+ldr r12, [r7, #8]
+ldr lr, [r10, #2104]
+eor r12, r12, lr
+str r12, [r7, #8]
+ldr r12, [r7, #12]
+ldr lr, [r10, #2108]
+eor r12, r12, lr
+str r12, [r7, #12]
+ldr r12, [r7, #16]
+ldr lr, [r10, #2112]
+eor r12, r12, lr
+str r12, [r7, #16]
+ldr r12, [r7, #20]
+ldr lr, [r10, #2116]
+eor r12, r12, lr
+str r12, [r7, #20]
+ldr r12, [r7, #24]
+ldr lr, [r10, #2120]
+eor r12, r12, lr
+str r12, [r7, #24]
+ldr r12, [r7, #28]
+ldr lr, [r10, #2124]
+eor r12, r12, lr
+str r12, [r7, #28]
+ldr r12, [r7, #32]
+ldr lr, [r10, #2128]
+eor r12, r12, lr
+str r12, [r7, #32]
+ldr r12, [r7, #36]
+ldr lr, [r10, #2132]
+eor r12, r12, lr
+str r12, [r7, #36]
+ldr r12, [r7, #40]
+ldr lr, [r10, #2136]
+eor r12, r12, lr
+str r12, [r7, #40]
+ldr r12, [r7, #44]
+ldr lr, [r10, #2140]
+eor r12, r12, lr
+str r12, [r7, #44]
+ldr r12, [r7, #48]
+ldr lr, [r10, #2144]
+eor r12, r12, lr
+str r12, [r7, #48]
+ldr r12, [r7, #52]
+ldr lr, [r10, #2148]
+eor r12, r12, lr
+str r12, [r7, #52]
+ldr r12, [r7, #56]
+ldr lr, [r10, #2152]
+eor r12, r12, lr
+str r12, [r7, #56]
+ldr r12, [r7, #60]
+ldr lr, [r10, #2156]
+eor r12, r12, lr
+str r12, [r7, #60]
+add r7, r7, #64
+sub r8, r8, #4
+lsr r12, r8, #2
+cmp r12, #0
+bne 22b
+b 21f
+20:
+21:
+lsr r12, r8, #1
+cmp r12, #0
+beq 23f
+25:
+mov r12, #0
+str r12, [r10, #2096]
+str r12, [r10, #2100]
+str r12, [r10, #2104]
+str r12, [r10, #2108]
+ldr r12, [r10, #2096]
+ldr lr, [r6, #0]
+eor r12, r12, lr
+str r12, [r10, #2096]
+ldr r12, [r10, #2100]
+ldr lr, [r6, #4]
+eor r12, r12, lr
+str r12, [r10, #2100]
+ldr r12, [r10, #2104]
+ldr lr, [r6, #8]
+eor r12, r12, lr
+str r12, [r10, #2104]
+ldr r12, [r10, #2108]
+ldr lr, [r6, #12]
+eor r12, r12, lr
+str r12, [r10, #2108]
+mov r12, #0
+str r12, [r10, #2112]
+str r12, [r10, #2116]
+str r12, [r10, #2120]
+str r12, [r10, #2124]
+ldr r12, [r10, #2112]
+ldr lr, [r7, #0]
+eor r12, r12, lr
+str r12, [r10, #2112]
+ldr r12, [r10, #2116]
+ldr lr, [r7, #4]
+eor r12, r12, lr
+str r12, [r10, #2116]
+ldr r12, [r10, #2120]
+ldr lr, [r7, #8]
+eor r12, r12, lr
+str r12, [r10, #2120]
+ldr r12, [r10, #2124]
+ldr lr, [r7, #12]
+eor r12, r12, lr
+str r12, [r10, #2124]
+mov r12, #0
+str r12, [r6, #0]
+str r12, [r6, #4]
+str r12, [r6, #8]
+str r12, [r6, #12]
+ldr r12, [r6, #0]
+ldr lr, [r7, #16]
+eor r12, r12, lr
+str r12, [r6, #0]
+ldr r12, [r6, #4]
+ldr lr, [r7, #20]
+eor r12, r12, lr
+str r12, [r6, #4]
+ldr r12, [r6, #8]
+ldr lr, [r7, #24]
+eor r12, r12, lr
+str r12, [r6, #8]
+ldr r12, [r6, #12]
+ldr lr, [r7, #28]
+eor r12, r12, lr
+str r12, [r6, #12]
+mov r0, r4
+mov r1, r5
+add r2, r10, #2096
+mov r3, #2
+mov r12, r10
+push {{r12, lr}}
+bl {vg_aes_encrypt_blocks}
+ldr r12, [sp], #8
+ldr r12, [r7, #0]
+ldr lr, [r10, #2096]
+eor r12, r12, lr
+str r12, [r7, #0]
+ldr r12, [r7, #4]
+ldr lr, [r10, #2100]
+eor r12, r12, lr
+str r12, [r7, #4]
+ldr r12, [r7, #8]
+ldr lr, [r10, #2104]
+eor r12, r12, lr
+str r12, [r7, #8]
+ldr r12, [r7, #12]
+ldr lr, [r10, #2108]
+eor r12, r12, lr
+str r12, [r7, #12]
+ldr r12, [r7, #16]
+ldr lr, [r10, #2112]
+eor r12, r12, lr
+str r12, [r7, #16]
+ldr r12, [r7, #20]
+ldr lr, [r10, #2116]
+eor r12, r12, lr
+str r12, [r7, #20]
+ldr r12, [r7, #24]
+ldr lr, [r10, #2120]
+eor r12, r12, lr
+str r12, [r7, #24]
+ldr r12, [r7, #28]
+ldr lr, [r10, #2124]
+eor r12, r12, lr
+str r12, [r7, #28]
+add r7, r7, #32
+sub r8, r8, #2
+lsr r12, r8, #1
+cmp r12, #0
+bne 25b
+b 24f
+23:
+24:
+cmp r8, #0
+beq 26f
+28:
 mov r0, r4
 mov r1, r5
 mov r2, r6
@@ -179,10 +505,10 @@ eor r12, r12, lr
 str r12, [r6, #12]
 add r7, r7, #16
 subs r8, r8, #1
-bne 22b
-b 21f
-20:
-21:
+bne 28b
+b 27f
+26:
+27:
 ldr r4, [r10, #2064]
 ldr r5, [r10, #2068]
 ldr r6, [r10, #2072]
@@ -191,6 +517,18 @@ ldr r8, [r10, #2080]
 ldr r9, [r10, #2084]
 ldr lr, [r10, #2092]
 ldr r10, [r10, #2088]
+sub sp, sp, #8
+add r12, sp, #0
+mov r2, #0
+str r2, [r12, #0]
+str r2, [r12, #4]
+add sp, sp, #8
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
         vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks::vg_aes_encrypt_blocks,
     )
@@ -199,6 +537,8 @@ bx lr",
 /// AES-CFB128 encryption (NIST SP 800-38A §6.3, with 128-bit segments) of the last piece of a message, of any length, in place: replaces its whole 16-byte blocks `P₁ … Pₙ₋₁` at `data` with `Cⱼ = Pⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and a partial last segment `Pₙ*` of `u` bytes with `Cₙ* = Pₙ* ⊕ MSB_u(Oₙ)`, `Oₙ = CIPH_K(Cₙ₋₁)` (an extension of SP 800-38A, which defines CFB only for whole segments, by the rule of §6.4 and §6.5). Replaces `*iv` with the last ciphertext block, so that a further call continues the message, if `len` is a multiple of 16 (leaving it unchanged if `len = 0`), and otherwise with `Oₙ`: keystream, to be wiped, after which the message must end. `CIPH_K` is AES (FIPS 197) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it.
 ///
 /// Contract: `VG.Spec.Cfb.aesEncryptFinalContract`. Constant time: only the pointers, `rounds` and `len` may affect timing, not the key schedule, the chaining value or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -243,7 +583,7 @@ and r8, r8, #15
 add r7, r3, r12, lsl #4
 mov lr, r10
 push {{r12, lr}}
-bl {vg_aes_cfb128_encrypt}
+bl {vg_aes_cfb128_encrypt_entry}
 ldr r12, [sp], #8
 cmp r8, #0
 beq 20f
@@ -280,8 +620,12 @@ ldr r9, [r12, #20]
 ldr r10, [r12, #24]
 ldr r11, [r12, #28]
 ldr lr, [r12, #32]
-add r12, sp, #16
+add sp, sp, #56
+sub sp, sp, #72
+add r12, sp, #0
 mov r2, #0
+mov r3, #2
+23:
 str r2, [r12, #0]
 str r2, [r12, #4]
 str r2, [r12, #8]
@@ -290,11 +634,20 @@ str r2, [r12, #16]
 str r2, [r12, #20]
 str r2, [r12, #24]
 str r2, [r12, #28]
-str r2, [r12, #32]
-str r2, [r12, #36]
-add sp, sp, #56
+add r12, r12, #32
+subs r3, r3, #1
+bne 23b
+str r2, [r12, #0]
+str r2, [r12, #4]
+add sp, sp, #72
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
-        vg_aes_cfb128_encrypt = sym super::aes_cfb::vg_aes_cfb128_encrypt,
+        vg_aes_cfb128_encrypt_entry = sym super::aes::vg_aes_cfb128_encrypt_entry::vg_aes_cfb128_encrypt_entry,
         vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks::vg_aes_encrypt_blocks,
     )
 }
@@ -302,6 +655,8 @@ bx lr",
 /// AES-CFB128 decryption (NIST SP 800-38A §6.3, with 128-bit segments) of the last piece of a message, of any length, in place: replaces its whole 16-byte blocks `C₁ … Cₙ₋₁` at `data` with `Pⱼ = Cⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and a partial last segment `Cₙ*` of `u` bytes with `Pₙ* = Cₙ* ⊕ MSB_u(Oₙ)`, `Oₙ = CIPH_K(Cₙ₋₁)` (an extension of SP 800-38A, which defines CFB only for whole segments, by the rule of §6.4 and §6.5). Replaces `*iv` with the last ciphertext block, the last whole block at `data` on entry, so that a further call continues the message, if `len` is a multiple of 16 (leaving it unchanged if `len = 0`), and otherwise with `Oₙ`: keystream, to be wiped, after which the message must end. `CIPH_K` is AES (FIPS 197) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it.
 ///
 /// Contract: `VG.Spec.Cfb.aesDecryptFinalContract`. Constant time: only the pointers, `rounds` and `len` may affect timing, not the key schedule, the chaining value or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -346,7 +701,7 @@ and r8, r8, #15
 add r7, r3, r12, lsl #4
 mov lr, r10
 push {{r12, lr}}
-bl {vg_aes_cfb128_decrypt}
+bl {vg_aes_cfb128_decrypt_entry}
 ldr r12, [sp], #8
 cmp r8, #0
 beq 20f
@@ -383,8 +738,12 @@ ldr r9, [r12, #20]
 ldr r10, [r12, #24]
 ldr r11, [r12, #28]
 ldr lr, [r12, #32]
-add r12, sp, #16
+add sp, sp, #56
+sub sp, sp, #72
+add r12, sp, #0
 mov r2, #0
+mov r3, #2
+23:
 str r2, [r12, #0]
 str r2, [r12, #4]
 str r2, [r12, #8]
@@ -393,11 +752,20 @@ str r2, [r12, #16]
 str r2, [r12, #20]
 str r2, [r12, #24]
 str r2, [r12, #28]
-str r2, [r12, #32]
-str r2, [r12, #36]
-add sp, sp, #56
+add r12, r12, #32
+subs r3, r3, #1
+bne 23b
+str r2, [r12, #0]
+str r2, [r12, #4]
+add sp, sp, #72
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
-        vg_aes_cfb128_decrypt = sym super::aes_cfb::vg_aes_cfb128_decrypt,
+        vg_aes_cfb128_decrypt_entry = sym super::aes::vg_aes_cfb128_decrypt_entry::vg_aes_cfb128_decrypt_entry,
         vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks::vg_aes_encrypt_blocks,
     )
 }

@@ -43,12 +43,12 @@ structure XVals (t : State) (B : Addr) (o wx : Nat) (minv : BitVec 64) (X : Nat)
 theorem XVals.of_frm {s t : State} {B : Addr} {o wx : Nat} {minv : BitVec 64} {X : Nat}
     (h : XVals s B o wx minv X) (hn : (off B o).toNat + slot wx 8 ≤ 2 ^ 64) (_hw : 1 ≤ wx)
     (hf : Frm (off B o) (redcRanges wx) s.mem t.mem) : XVals t B o wx minv X := by
-  have rN := redcRanges_arr wx (j := Public.aN) (by decide) (by decide) (by decide) (by decide) (by decide)
+  obtain rN := redcRanges_arr wx (j := Public.aN) (by decide) (by decide) (by decide) (by decide) (by decide)
     (by decide)
-  have rO := redcRanges_arr wx (j := Public.aOne) (by decide) (by decide) (by decide) (by decide) (by decide)
+  obtain rO := redcRanges_arr wx (j := Public.aOne) (by decide) (by decide) (by decide) (by decide) (by decide)
     (by decide)
-  have lN := slot_le (w := wx) (show Public.aN < 8 by decide)
-  have lO := slot_le (w := wx) (show Public.aOne < 8 by decide)
+  obtain lN := slot_le (w := wx) (show Public.aN < 8 by decide)
+  obtain lO := slot_le (w := wx) (show Public.aOne < 8 by decide)
   exact ⟨by rw [hf.wv_eq (fun r hr => by have := rN r hr; omega_using [this]) (by omega_using [hn, lN])]; exact h.n,
     by rw [hf.word_eq (fun r hr => by have := rN r hr; omega_using [this]) (by omega_using [hn, lN])]; exact h.inv,
     by rw [hf.wv_eq (fun r hr => by have := rO r hr; omega_using [this]) (by omega_using [hn, lO])]; exact h.one⟩
@@ -70,15 +70,15 @@ theorem redcHead_ok {s : State} {B : Addr} {Z o w wx : Nat} {minv : BitVec 64}
   have hn := hc.scr.nowrap
   have hi := hc.hi
   have hlo := hc.lo
-  have rok := redcRanges_ok wx
+  obtain rok := redcRanges_ok wx
   refine WP.seq (WP.mono (zeroArr_ok hg (Nat.le_refl _) (by omega_using [hwx, hw30]) (show aXc < 8 by decide))
     fun s₁ ⟨hz₁, ho₁, k₁⟩ => ?_)
-  have f₁ : Frm (off B o) (redcRanges wx) s.mem s₁.mem := Frm.of_outside ho₁ (by simp [redcRanges])
-  have hc₁ := hc.of_frm f₁ rok k₁.wr (k₁.gpr .x0 (by decide))
-  have hA : wv s₁.mem (off B o) (slot wx aXc) wx = 0 :=
+  obtain f₁ : Frm (off B o) (redcRanges wx) s.mem s₁.mem := Frm.of_outside ho₁ (by simp [redcRanges])
+  obtain hc₁ := hc.of_frm f₁ rok k₁.wr (k₁.gpr .x0 (by decide))
+  obtain hA : wv s₁.mem (off B o) (slot wx aXc) wx = 0 :=
     (wv_eq_zero_iff _ _ _ _).mpr fun q hq => (wv_eq_zero_iff _ _ _ _).mp hz₁ q (by omega_using [hq])
-  have o1 := writeW_outside s₁.mem (off B o) (d := 8 * sSrc) (off B (slot w j)) (by decide)
-  have hW : (s₁.mem.writeW (off B (o + 8 * sSrc)) (off B (slot w j))).readW (off B (8 * sW)) 64 =
+  obtain o1 := writeW_outside s₁.mem (off B o) (d := 8 * sSrc) (off B (slot w j)) (by decide)
+  obtain hW : (s₁.mem.writeW (off B (o + 8 * sSrc)) (off B (slot w j))).readW (off B (8 * sW)) 64 =
       BitVec.ofNat 64 w := by
     rw [store_off]
     exact ((Frm.of_outside (rs := [(8 * sSrc, 8)]) o1 (by simp)).word_below (L := slot wx 8)
@@ -92,12 +92,12 @@ theorem redcHead_ok {s : State} {B : Addr} {Z o w wx : Nat} {minv : BitVec 64}
       hc₁.link', hc₁.ldn (sArr_lt hj), hc₁.narr j hj, hc₁.st' (show sSrc < 32 by decide),
       hc₁.ldn (show sW < 32 by decide), hW, hc₁.st' (show sRem < 32 by decide)]) rfl rfl rfl)
     fun t ⟨hm, k₂⟩ => ?_
-  have o2 := writeW_outside (s₁.mem.writeW (off (off B o) (8 * sSrc)) (off B (slot w j))) (off B o)
+  obtain o2 := writeW_outside (s₁.mem.writeW (off (off B o) (8 * sSrc)) (off B (slot w j))) (off B o)
     (d := 8 * sRem) (BitVec.ofNat 64 w) (by decide)
   rw [← hm] at o2
-  have f₂ : Frm (off B o) (redcRanges wx) s₁.mem t.mem :=
+  obtain f₂ : Frm (off B o) (redcRanges wx) s₁.mem t.mem :=
     (Frm.of_outside o1 (by simp [redcRanges])).trans (Frm.of_outside o2 (by simp [redcRanges]))
-  have hc₂ := hc₁.of_frm f₂ rok k₂.wr (k₂.gpr .x0 (by decide))
+  obtain hc₂ := hc₁.of_frm f₂ rok k₂.wr (k₂.gpr .x0 (by decide))
   refine ⟨hc₂, ?_, ?_, ?_, f₁.trans f₂, (k₁.trans k₂).mono (by decide)⟩
   · have := hdr_lt_slot wx aXc (show 31 < 32 by decide)
     have := slot_le (w := wx) (show aXc < 8 by decide)
@@ -131,7 +131,7 @@ theorem redc_eq (mul : Nat → Nat → Nat → Prog isa) (j : Nat) :
 theorem csel_min {r c : Nat} (hr : r < 2 ^ 64) (hc : c < 2 ^ 64) :
     (if decide (2 ^ 64 ≤ (BitVec.ofNat 64 r).toNat + (~~~BitVec.ofNat 64 c).toNat + (true).toNat) = true
       then BitVec.ofNat 64 c else BitVec.ofNat 64 r) = BitVec.ofNat 64 (min r c) := by
-  have e : (~~~BitVec.ofNat 64 c).toNat = 2 ^ 64 - 1 - c := by
+  obtain e : (~~~BitVec.ofNat 64 c).toNat = 2 ^ 64 - 1 - c := by
     rw [BitVec.toNat_not, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hc]
   rw [e, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hr, Bool.toNat_true]
   split <;> rename_i h <;> simp only [decide_eq_true_eq] at h <;> congr 1 <;> omega_using [hc, h]
@@ -153,18 +153,18 @@ theorem redcLoad_ok {t : State} {B : Addr} {Z o w wx j : Nat} {minv : BitVec 64}
   have hn := hc.scr.nowrap
   have hi := hc.hi
   have hlo := hc.lo
-  have hsl := slot_le (w := w) hj
-  have rok := redcRanges_ok wx
-  have hC := slot_le (w := wx) (show aChunk < 8 by decide)
-  have hC0 := hdr_lt_slot wx aChunk (show 31 < 32 by decide)
+  obtain hsl := slot_le (w := w) hj
+  obtain rok := redcRanges_ok wx
+  obtain hC := slot_le (w := wx) (show aChunk < 8 by decide)
+  obtain hC0 := hdr_lt_slot wx aChunk (show 31 < 32 by decide)
   simp only [redcLoad, seqs]
   refine WP.seq (WP.mono (zeroArr_ok hc.good (Nat.le_refl _) (by omega_using [hwx, hw30]) (show aChunk < 8 by decide))
     fun t₁ ⟨hz₁, ho₁, k₁⟩ => ?_)
-  have f₁ : Frm (off B o) (redcRanges wx) t.mem t₁.mem := Frm.of_outside ho₁ (by simp [redcRanges])
-  have hc₁ := hc.of_frm f₁ rok k₁.wr (k₁.gpr .x0 (by decide))
-  have hrem₁ : word t₁.mem B (o + 8 * sRem) = BitVec.ofNat 64 r := by
+  obtain f₁ : Frm (off B o) (redcRanges wx) t.mem t₁.mem := Frm.of_outside ho₁ (by simp [redcRanges])
+  obtain hc₁ := hc.of_frm f₁ rok k₁.wr (k₁.gpr .x0 (by decide))
+  obtain hrem₁ : word t₁.mem B (o + 8 * sRem) = BitVec.ofNat 64 r := by
     rw [← word_off, ho₁.word (by unfold sRem sFn; omega_using [hC0]) (by unfold sRem sFn; omega_using [])]; exact hrem
-  have hsrc₁ : word t₁.mem B (o + 8 * sSrc) = off B e := by
+  obtain hsrc₁ : word t₁.mem B (o + 8 * sSrc) = off B e := by
     rw [← word_off, ho₁.word (by unfold sSrc sFn; omega_using [hC0]) (by unfold sSrc sFn; omega_using [])]; exact hsrc
   -- `x12 := min r w_X`, and the pointers.
   refine WP.seq (WP.mono (WP.keep [.x3, .x4, .x12, .x16, .x17] (Q := fun t₂ =>
@@ -177,14 +177,14 @@ theorem redcLoad_ok {t : State} {B : Addr} {Z o w wx j : Nat} {minv : BitVec 64}
       csel_min (show r < 2 ^ 64 by omega_using [hre, hn, hi, hlo, hsl]) (show wx < 2 ^ 64 by omega_using [hn, hi, hC]), Nat.min_comm wx r, off_off])
     (by decide) (by decide) (by decide +kernel))
     fun t₄ ⟨⟨h12₄, hsi₄, hbx₄, hm₄⟩, k₄⟩ => ?_)
-  have hcnt : 1 ≤ min r wx := by omega_using [hw2, hr1]
-  have hcnt' : min r wx ≤ wx := Nat.min_le_right _ _
-  have hcr : min r wx ≤ r := Nat.min_le_left _ _
-  have hs₄ := hc₁.scr.congr k₄.wr
-  have hgs₄ := hc₁.good.scr.congr k₄.wr
-  have hL : o + slot wx 8 ≤ 2 ^ 64 := by omega_using [hn, hi]
-  have h256 : 256 ≤ slot wx 8 := by unfold slot hdrBytes; omega_using []
-  have ho64 : o < 2 ^ 64 := by omega_using [hL, h256]
+  obtain hcnt : 1 ≤ min r wx := by omega_using [hw2, hr1]
+  obtain hcnt' : min r wx ≤ wx := Nat.min_le_right _ _
+  obtain hcr : min r wx ≤ r := Nat.min_le_left _ _
+  obtain hs₄ := hc₁.scr.congr k₄.wr
+  obtain hgs₄ := hc₁.good.scr.congr k₄.wr
+  obtain hL : o + slot wx 8 ≤ 2 ^ 64 := by omega_using [hn, hi]
+  obtain h256 : 256 ≤ slot wx 8 := by unfold slot hdrBytes; omega_using []
+  obtain ho64 : o < 2 ^ 64 := by omega_using [hL, h256]
   refine WP.mono (copyWords_ok (S := B) (eS := e) (D := off B o) (eD := slot wx aChunk) (w := min r wx) hsi₄ hbx₄
     h12₄ hcnt (by omega_using [hw30, hj0, hre]) (by omega_using [hC, hL])
     (fun i hi' => hs₄.ld (by omega_using [hre, hi, hlo, hsl, hi'])) (fun i hi' => hgs₄.st (by omega_using [hC, hi']))
@@ -192,10 +192,10 @@ theorem redcLoad_ok {t : State} {B : Addr} {Z o w wx j : Nat} {minv : BitVec 64}
       rcases ofs_rebase B (off B (e + 8 * i) + BitVec.ofNat 64 b) ho64 with ⟨h1, _⟩ | ⟨_, h2⟩
       · rw [ofs_off B (by omega_using [hre, hlo, hsl, ho64, hi', hb])] at h1; omega_using [hre, hlo, hsl, hi', hb, h1]
       · omega_using [hC, hL, h2]))) fun t₅ ⟨hv₅, _, ho₅, h16₅, _, k₅⟩ => ?_
-  have f₅ : Frm (off B o) (redcRanges wx) t₁.mem t₅.mem := by
+  obtain f₅ : Frm (off B o) (redcRanges wx) t₁.mem t₅.mem := by
     rw [← hm₄]; exact Frm.of_outside (ho₅.mono (o' := slot wx aChunk) (n' := 8 * (wx + 2)) (Nat.le_refl _) (by omega_using []))
       (by simp [redcRanges])
-  have hc₅ := hc₁.of_frm f₅ rok (by rw [k₅.wr, k₄.wr]) ((k₄.trans k₅).gpr .x0 (by decide))
+  obtain hc₅ := hc₁.of_frm f₅ rok (by rw [k₅.wr, k₄.wr]) ((k₄.trans k₅).gpr .x0 (by decide))
   refine ⟨hc₅, (k₅.gpr .x12 (by decide)).trans h12₄, h16₅, ?_, ?_, ?_, ?_, f₁.trans f₅,
     ((k₁.trans k₄).trans k₅).mono (by decide)⟩
   · have hz : wv t₅.mem (off B o) (slot wx aChunk + 8 * min r wx) (wx - min r wx) = 0 :=
@@ -226,7 +226,7 @@ theorem mmOne_ok (M : Mont) {t : State} {B : Addr} {Z o w wx : Nat} {minv : BitV
     (by rw [hv.one, hv.n]; exact hX1) d5 (by decide)) fun t' ⟨_, hlt, hm, har, k⟩ => ?_
   rw [hv.n] at hlt hm
   rw [hv.one, Nat.mul_one] at hm
-  have hf : Frm (off B o) (redcRanges wx) t.mem t'.mem := Frm.of_arrays har fun j hj => by
+  obtain hf : Frm (off B o) (redcRanges wx) t.mem t'.mem := Frm.of_arrays har fun j hj => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
     rcases hj with rfl | rfl | rfl
     · simp [redcRanges]
@@ -252,8 +252,8 @@ theorem redcAcc_ok (M : Mont) {t : State} {B : Addr} {Z o w wx : Nat} {minv : Bi
       Frm (off B o) (redcRanges wx) t.mem t'.mem ∧ Keep mmRegs t t' := by
   have hn := hc.good.scr.nowrap
   have hi := hc.hi
-  have rok := redcRanges_ok wx
-  have hX : ∀ v : BitVec 64, (t.mem.writeW (off B (o + 8 * sSrc)) v).readW (off B (o + 8 * sRem)) 64 =
+  obtain rok := redcRanges_ok wx
+  obtain hX : ∀ v : BitVec 64, (t.mem.writeW (off B (o + 8 * sSrc)) v).readW (off B (o + 8 * sRem)) 64 =
       BitVec.ofNat 64 r := fun v => by
     rw [store_off, ← off_off]
     exact (hdrStore_hdr t.mem (off B o) v (by decide) (by decide) (by decide)).trans hrem
@@ -265,23 +265,23 @@ theorem redcAcc_ok (M : Mont) {t : State} {B : Addr} {Z o w wx : Nat} {minv : Bi
       hc.st' (show sSrc < 32 by decide), hc.ld' (show sRem < 32 by decide), hc.st' (show sRem < 32 by decide), hX,
       VG.Offset.ofNat_sub_ofNat hcr, off_off]) (by decide) (by decide) (by decide +kernel))
     fun t₁ ⟨hm₁, k₁⟩ => ?_)
-  have o1 := writeW_outside t.mem (off B o) (d := 8 * sSrc) (off B (e + 8 * c)) (by decide)
-  have o2 := writeW_outside (t.mem.writeW (off (off B o) (8 * sSrc)) (off B (e + 8 * c))) (off B o)
+  obtain o1 := writeW_outside t.mem (off B o) (d := 8 * sSrc) (off B (e + 8 * c)) (by decide)
+  obtain o2 := writeW_outside (t.mem.writeW (off (off B o) (8 * sSrc)) (off B (e + 8 * c))) (off B o)
     (d := 8 * sRem) (BitVec.ofNat 64 (r - c)) (by decide)
   rw [← hm₁] at o2
-  have f₁ : Frm (off B o) (redcRanges wx) t.mem t₁.mem :=
+  obtain f₁ : Frm (off B o) (redcRanges wx) t.mem t₁.mem :=
     (Frm.of_outside o1 (by simp [redcRanges])).trans (Frm.of_outside o2 (by simp [redcRanges]))
-  have hc₁ := hc.of_frm f₁ rok k₁.wr (k₁.gpr .x0 (by decide))
-  have hv₁ := hv.of_frm (by omega_using [hn]) (by omega_using [hw2]) f₁
-  have hrem₁ : word t₁.mem (off B o) (8 * sRem) = BitVec.ofNat 64 (r - c) := by
+  obtain hc₁ := hc.of_frm f₁ rok k₁.wr (k₁.gpr .x0 (by decide))
+  obtain hv₁ := hv.of_frm (by omega_using [hn]) (by omega_using [hw2]) f₁
+  obtain hrem₁ : word t₁.mem (off B o) (8 * sRem) = BitVec.ofNat 64 (r - c) := by
     rw [hm₁]; exact word_writeW_self _ _ _ _
-  have hsrc₁ : word t₁.mem (off B o) (8 * sSrc) = off B (e + 8 * c) := by
+  obtain hsrc₁ : word t₁.mem (off B o) (8 * sSrc) = off B (e + 8 * c) := by
     rw [o2.word (by unfold sSrc sRem sFn; omega_using []) (by unfold sSrc sFn; omega_using [])]; exact word_writeW_self _ _ _ _
-  have hXc₁ : wv t₁.mem (off B o) (slot wx aXc) wx = wv t.mem (off B o) (slot wx aXc) wx := by
+  obtain hXc₁ : wv t₁.mem (off B o) (slot wx aXc) wx = wv t.mem (off B o) (slot wx aXc) wx := by
     have := hdr_lt_slot wx aXc (show 31 < 32 by decide)
     have := slot_le (w := wx) (show aXc < 8 by decide)
     rw [o2.wv (by unfold sRem sFn; omega_arith) (by omega_arith), o1.wv (by unfold sSrc sFn; omega_arith) (by omega_arith)]
-  have hCh₁ : wv t₁.mem (off B o) (slot wx aChunk) wx = wv t.mem (off B o) (slot wx aChunk) wx := by
+  obtain hCh₁ : wv t₁.mem (off B o) (slot wx aChunk) wx = wv t.mem (off B o) (slot wx aChunk) wx := by
     have := hdr_lt_slot wx aChunk (show 31 < 32 by decide)
     have := slot_le (w := wx) (show aChunk < 8 by decide)
     rw [o2.wv (by unfold sRem sFn; omega_arith) (by omega_arith), o1.wv (by unfold sSrc sFn; omega_arith) (by omega_arith)]
@@ -293,29 +293,29 @@ theorem redcAcc_ok (M : Mont) {t : State} {B : Addr} {Z o w wx : Nat} {minv : Bi
     (by decide) (by decide) (by decide) (by decide) (by simp [redcRanges]))
     fun t₃ ⟨hc₃, hv₃, hlt₃, hm₃, ha₃, f₃, k₃⟩ => ?_)
   have hn₁ : (off B o).toNat + slot wx 8 ≤ 2 ^ 64 := hn
-  have hXc₃ : wv t₃.mem (off B o) (slot wx aXc) wx = wv t₂.mem (off B o) (slot wx aXc) wx :=
+  obtain hXc₃ : wv t₃.mem (off B o) (slot wx aXc) wx = wv t₂.mem (off B o) (slot wx aXc) wx :=
     ha₃.wv_of_not_mem (by decide) (by decide) hn₁
-  have hCh₂ : wv t₂.mem (off B o) (slot wx aChunk) wx = wv t₁.mem (off B o) (slot wx aChunk) wx :=
+  obtain hCh₂ : wv t₂.mem (off B o) (slot wx aChunk) wx = wv t₁.mem (off B o) (slot wx aChunk) wx :=
     ha₂.wv_of_not_mem (by decide) (by decide) hn₁
   refine WP.seq (WP.mono (addMod_ok hc₃.good.scr hc₃.x0 hc₃.hdr (Nat.le_refl _) hw2 (by omega_using [hwx, hw30])
     (o := aXc) (a := aXc) (b := aT) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by rw [hv₃.n, hXc₃]; exact hlt₂) (by rw [hv₃.n]; exact hlt₃))
     fun t₄ ⟨hval₄, ha₄, k₄⟩ => ?_)
   rw [hv₃.n] at hval₄
-  have f₄ : Frm (off B o) (redcRanges wx) t₃.mem t₄.mem := Frm.of_arrays ha₄ fun j hj => by
+  obtain f₄ : Frm (off B o) (redcRanges wx) t₃.mem t₄.mem := Frm.of_arrays ha₄ fun j hj => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
     rcases hj with rfl | rfl | rfl <;> simp [redcRanges]
-  have hc₄ := hc₃.of_frm f₄ rok k₄.wr (k₄.gpr .x0 (by decide))
-  have hv₄ := hv₃.of_frm (by omega_using [hn₁]) (by omega_using [hw2]) f₄
-  have hrem₄ : word t₄.mem (off B o) (8 * sRem) = BitVec.ofNat 64 (r - c) := by
+  obtain hc₄ := hc₃.of_frm f₄ rok k₄.wr (k₄.gpr .x0 (by decide))
+  obtain hv₄ := hv₃.of_frm (by omega_using [hn₁]) (by omega_using [hw2]) f₄
+  obtain hrem₄ : word t₄.mem (off B o) (8 * sRem) = BitVec.ofNat 64 (r - c) := by
     rw [ha₄.hslot (by decide), ha₃.hslot (by decide), ha₂.hslot (by decide)]; exact hrem₁
-  have hsrc₄ : word t₄.mem (off B o) (8 * sSrc) = off B (e + 8 * c) := by
+  obtain hsrc₄ : word t₄.mem (off B o) (8 * sSrc) = off B (e + 8 * c) := by
     rw [ha₄.hslot (by decide), ha₃.hslot (by decide), ha₂.hslot (by decide)]; exact hsrc₁
-  have hrem₄' : word t₄.mem B (o + 8 * sRem) = BitVec.ofNat 64 (r - c) := by rw [← word_off]; exact hrem₄
+  obtain hrem₄' : word t₄.mem B (o + 8 * sRem) = BitVec.ofNat 64 (r - c) := by rw [← word_off]; exact hrem₄
   refine WP.mono (WP.keep [.x3] (Q := fun t' => t'.gpr .x3 = BitVec.ofNat 64 (r - c) ∧ t'.mem = t₄.mem)
     (by brun [hc₄.x0, hdr_enc (show sRem < 32 by decide), hc₄.ld' (show sRem < 32 by decide), hrem₄'])
     (by decide) (by decide) (by decide +kernel)) fun t' ⟨⟨h3, hm'⟩, k'⟩ => ?_
-  have f' : Frm (off B o) (redcRanges wx) t₄.mem t'.mem := by rw [hm']; exact Frm.refl _ _ _
+  obtain f' : Frm (off B o) (redcRanges wx) t₄.mem t'.mem := by rw [hm']; exact Frm.refl _ _ _
   refine ⟨hc₄.of_frm f' rok k'.wr (k'.gpr .x0 (by decide)), hv₄.of_frm (by omega_using [hn₁]) (by omega_using [hw2]) f',
     by rw [hm']; exact hrem₄, by rw [hm']; exact hsrc₄, h3, ?_,
     ⟨wv t₂.mem (off B o) (slot wx aXc) wx, wv t₃.mem (off B o) (slot wx aT) wx, ?_, ?_, by rw [hm', hval₄, hXc₃]⟩,
@@ -340,17 +340,17 @@ theorem redcStep_ok (M : Mont) {s t : State} {B : Addr} {Z o w wx j : Nat} {minv
     (hk : k < (w + wx - 1) / wx) (hI : RInv s B Z o w wx j minv X k t) :
     WP isa (seqs (redcLoad ++ redcAcc M.mm)) t fun t' =>
       RInv s B Z o w wx j minv X (k + 1) t' ∧ ((t'.gpr .x3).toNat ≠ 0 ↔ k + 1 ≠ (w + wx - 1) / wx) := by
-  have hkw : k * wx < w := (lt_chunks (by omega_using [hw2])).mp hk
-  have hk1 : k + 1 = (w + wx - 1) / wx ↔ w ≤ (k + 1) * wx := by
+  obtain hkw : k * wx < w := (lt_chunks (by omega_using [hw2])).mp hk
+  obtain hk1 : k + 1 = (w + wx - 1) / wx ↔ w ≤ (k + 1) * wx := by
     have := (lt_chunks (k := k + 1) (w := w) (wx := wx) (by omega_using [hw2])); omega_using [hk, this]
-  have hlw : lowW w wx k = k * wx := Nat.min_eq_right (by omega_using [hkw])
-  have hlw1 : lowW w wx (k + 1) = k * wx + min (w - k * wx) wx := by
+  obtain hlw : lowW w wx k = k * wx := Nat.min_eq_right (by omega_using [hkw])
+  obtain hlw1 : lowW w wx (k + 1) = k * wx + min (w - k * wx) wx := by
     unfold lowW; rw [Nat.add_mul, Nat.one_mul]; omega_using [hkw]
   have hn := hI.ctx.scr.nowrap
   have hi := hI.ctx.hi
   have hlo := hI.ctx.lo
-  have hsl := slot_le (w := w) hj
-  have h256 : 256 ≤ slot wx 8 := by unfold slot hdrBytes; omega_using []
+  obtain hsl := slot_le (w := w) hj
+  obtain h256 : 256 ≤ slot wx 8 := by unfold slot hdrBytes; omega_using []
   have hrem0 := hI.rem
   have hsrc0 := hI.src
   have hval0 := hI.val
@@ -358,17 +358,17 @@ theorem redcStep_ok (M : Mont) {s t : State} {B : Addr} {Z o w wx j : Nat} {minv
   refine wp_seqs_append (by simp [redcLoad]) (by simp [redcAcc])
     (WP.mono (redcLoad_ok hI.ctx hw2 hwx hw30 hj (r := w - k * wx) (e := slot w j + 8 * (k * wx)) (by omega_using [hkw])
       (by omega_using []) (by omega_using [hkw]) hrem0 hsrc0) fun t₁ ⟨hc₁, h12₁, h16₁, hch₁, hrem₁, hsrc₁, hXc₁, f₁, k₁⟩ => ?_)
-  have hv₁ := hI.xv.of_frm (by have := hc₁.good.scr.nowrap; omega_using [this]) (by omega_using [hw2]) f₁
+  obtain hv₁ := hI.xv.of_frm (by have := hc₁.good.scr.nowrap; omega_using [this]) (by omega_using [hw2]) f₁
   refine WP.mono (redcAcc_ok M hc₁ hv₁ hw2 hwx hw30 hX1 (Nat.min_le_left _ _) h12₁ h16₁ hrem₁)
     fun t' ⟨hc', hv', hrem', hsrc', h3', hlt', ⟨A', T, hA', hT, hval'⟩, f', k'⟩ => ⟨?_, ?_⟩
   · have hL : o + slot wx 8 ≤ 2 ^ 64 := by omega_using [hn, hi]
-    have hsrcv : wv t.mem B (slot w j + 8 * (k * wx)) (min (w - k * wx) wx) =
+    obtain hsrcv : wv t.mem B (slot w j + 8 * (k * wx)) (min (w - k * wx) wx) =
         wv s.mem B (slot w j + 8 * (k * wx)) (min (w - k * wx) wx) :=
       hI.frm.wv_below (fun r hr => (redcRanges_ok wx r hr).2) hL (by omega_using [h256, hL]) (by omega_using [hkw, hlo, hsl])
     refine ⟨hc', hv', by rw [hrem', hlw1]; congr 1; omega_using [], by rw [hsrc', hlw1]; congr 1; omega_using [], hlt', ?_,
       hI.frm.trans (f₁.trans f'), ((hI.keep.trans k₁).trans k').mono (by decide)⟩
     rw [hval', hlw1, wv_split _ _ _ rfl]
-    have hpow : (2 ^ (64 * wx)) ^ k = 2 ^ (64 * (k * wx)) := by
+    obtain hpow : (2 ^ (64 * wx)) ^ k = 2 ^ (64 * (k * wx)) := by
       rw [← Nat.pow_mul, Nat.mul_assoc, Nat.mul_comm wx k]
     have := VG.Proof.Bignum.redc_step (k := k) (L := wv s.mem B (slot w j) (k * wx)) hA' hT
       (by rw [hXc₁]; exact hval0)
@@ -390,14 +390,14 @@ theorem redc_ok (M : Mont) {s : State} {B : Addr} {Z o w wx : Nat} {minv : BitVe
   refine WP.assoc (WP.seq (WP.mono (redcHead_ok hc hw2 hwx hw30 hj)
     fun t₁ ⟨hc₁, hz₁, hsrc₁, hrem₁, f₁, k₁⟩ => ?_))
   have hn := hc.good.scr.nowrap
-  have hK : 0 < (w + wx - 1) / wx := (lt_chunks (k := 0) (by omega_using [hw2])).mpr (by omega_using [hw2, hwx])
-  have hl0 : lowW w wx 0 = 0 := by simp [lowW]
+  obtain hK : 0 < (w + wx - 1) / wx := (lt_chunks (k := 0) (by omega_using [hw2])).mpr (by omega_using [hw2, hwx])
+  obtain hl0 : lowW w wx 0 = 0 := by simp [lowW]
   refine WP.mono (count_loop (cr := .x3) hK (RInv s B Z o w wx j minv X)
     (fun k hk t hI => redcStep_ok M hw2 hwx hw30 hX1 hj hk hI)
     ⟨hc₁, hv.of_frm hn (by omega_using [hw2]) f₁, by rw [hl0, Nat.sub_zero]; exact hrem₁,
       by rw [hl0, Nat.mul_zero, Nat.add_zero]; exact hsrc₁, by rw [hz₁]; omega_using [hX1],
       by rw [hz₁, hl0]; rfl, f₁, k₁⟩) fun t hI => ?_
-  have hlK : lowW w wx ((w + wx - 1) / wx) = w := by
+  obtain hlK : lowW w wx ((w + wx - 1) / wx) = w := by
     unfold lowW
     have := (not_congr (lt_chunks (k := (w + wx - 1) / wx) (w := w) (wx := wx) (by omega_using [hw2]))).mp (Nat.lt_irrefl _)
     omega_using [this]

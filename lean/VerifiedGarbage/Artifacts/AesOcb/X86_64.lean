@@ -1,85 +1,110 @@
 module
 
-public import VerifiedGarbage.Proof.AesOcb.X86_64.Frame
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
-public import VerifiedGarbage.Proof.Framework.X86_64.Registration
-public import VerifiedGarbage.Impl.AesCcm.X86_64
-public import VerifiedGarbage.Impl.CmacAes.Stream.X86_64
-public import VerifiedGarbage.Impl.Gcm.X86_64
-public import VerifiedGarbage.Impl.Gcm.X86_64.Pclmul
-public import VerifiedGarbage.Proof.Aes.X86_64.AesNi.ExpandKey
-public import VerifiedGarbage.Proof.Aes.X86_64.Decrypt
-public import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Rounds
-public import VerifiedGarbage.Proof.Aes.X86_64.VaesBlocks.Dec
-public import VerifiedGarbage.Proof.AesCcm.Ctr
-public import VerifiedGarbage.Proof.AesCcm.Mac
-public import VerifiedGarbage.Proof.AesCcm.X86_64.Bytes
-public import VerifiedGarbage.Proof.AesCcm.X86_64.Callee
-public import VerifiedGarbage.Proof.AesCcm.X86_64.Contract
-public import VerifiedGarbage.Proof.AesCcm.X86_64.Run
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Loops
-public import VerifiedGarbage.Proof.AesOcb.X86_64.Hash
-public import VerifiedGarbage.Proof.AesOcb.X86_64.HashFill
-public import VerifiedGarbage.Proof.AesOcb.X86_64.InitCT
-public import VerifiedGarbage.Proof.AesOcb.X86_64.NonceBlock
-public import VerifiedGarbage.Proof.AesOcb.X86_64.Offset0
-public import VerifiedGarbage.Proof.AesOcb.X86_64.PadTo
-public import VerifiedGarbage.Proof.AesOcb.X86_64.Run
-public import VerifiedGarbage.Proof.AesOcb.X86_64.Seal
-public import VerifiedGarbage.Proof.Cmac.Dbl32
-public import VerifiedGarbage.Proof.Cmac.Frame
-public import VerifiedGarbage.Proof.Cmac.Spec
-public import VerifiedGarbage.Proof.Cmac.Stream
-public import VerifiedGarbage.Proof.CmacAes.X86_64.Dbl
-public import VerifiedGarbage.Proof.CmacAes.X86_64.Finalize
-public import VerifiedGarbage.Proof.CmacAes.X86_64.FinalizeCorrect
-public import VerifiedGarbage.Proof.CmacAes.X86_64.UpdateCorrect
-public import VerifiedGarbage.Proof.Framework.AddrArith
-public import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.Framework.OffsetBelow
-public import VerifiedGarbage.Proof.Framework.Range
-public import VerifiedGarbage.Proof.Framework.RegSetOrder
-public import VerifiedGarbage.Proof.Framework.RegionsSub
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
-public import VerifiedGarbage.Proof.Framework.X86_64.Avx
-public import VerifiedGarbage.Proof.Framework.X86_64.Bswap
-public import VerifiedGarbage.Proof.Framework.X86_64.Exec
-public import VerifiedGarbage.Proof.Framework.X86_64.Frame
-public import VerifiedGarbage.Proof.Framework.X86_64.Lit
-public import VerifiedGarbage.Proof.Framework.X86_64.Masked
-public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-public import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-public import VerifiedGarbage.Proof.Framework.X86_64.Sse
-public import VerifiedGarbage.Proof.Gcm.Bits
-public import VerifiedGarbage.Proof.Gcm.Spec
-public import VerifiedGarbage.Proof.Gcm.Stream
-public import VerifiedGarbage.Proof.Gcm.X86_64.Bits
-public import VerifiedGarbage.Spec.Ccm.Contract
-public import VerifiedGarbage.TCB.X86_64.Print
-public import VerifiedGarbage.Proof.Variants.AesBlocks.X86_64
-public import VerifiedGarbage.Proof.AesOcb.X86_64.Scrub
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Ocb.Contract
+import VerifiedGarbage.Impl.AesOcb.X86_64.Fn
+import VerifiedGarbage.Proof.AesOcb.X86_64.Frame
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
+import VerifiedGarbage.Proof.Framework.X86_64.Registration
+import VerifiedGarbage.Impl.AesCcm.X86_64
+import VerifiedGarbage.Impl.CmacAes.Stream.X86_64
+import VerifiedGarbage.Impl.Gcm.X86_64
+import VerifiedGarbage.Impl.Gcm.X86_64.Pclmul
+import VerifiedGarbage.Proof.Aes.X86_64.AesNi.ExpandKey
+import VerifiedGarbage.Proof.Aes.X86_64.Blocks
+import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Rounds
+import VerifiedGarbage.Proof.Aes.X86_64.VaesBlocks.Dec
+import VerifiedGarbage.Proof.AesCcm.Ctr
+import VerifiedGarbage.Proof.AesCcm.Mac
+import VerifiedGarbage.Proof.AesCcm.X86_64.Bytes
+import VerifiedGarbage.Proof.AesCcm.X86_64.Callee
+import VerifiedGarbage.Proof.AesCcm.X86_64.Contract
+import VerifiedGarbage.Proof.AesCcm.X86_64.Run
+import VerifiedGarbage.Proof.AesGcm.X86_64.Loops
+import VerifiedGarbage.Proof.AesOcb.X86_64.Hash
+import VerifiedGarbage.Proof.AesOcb.X86_64.HashFill
+import VerifiedGarbage.Proof.AesOcb.X86_64.InitCT
+import VerifiedGarbage.Proof.AesOcb.X86_64.NonceBlock
+import VerifiedGarbage.Proof.AesOcb.X86_64.Offset0
+import VerifiedGarbage.Proof.AesOcb.X86_64.PadTo
+import VerifiedGarbage.Proof.AesOcb.X86_64.Run
+import VerifiedGarbage.Proof.AesOcb.X86_64.Seal
+import VerifiedGarbage.Proof.Cmac.Dbl32
+import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Cmac.Stream
+import VerifiedGarbage.Proof.CmacAes.X86_64.Dbl
+import VerifiedGarbage.Proof.CmacAes.X86_64.Finalize
+import VerifiedGarbage.Proof.CmacAes.X86_64.FinalizeCorrect
+import VerifiedGarbage.Proof.CmacAes.X86_64.UpdateCorrect
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.OffsetBelow
+import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.RegSetOrder
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Framework.X86_64.Bswap
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.Frame
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.Masked
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+import VerifiedGarbage.Proof.Framework.X86_64.Sse
+import VerifiedGarbage.Proof.Gcm.Bits
+import VerifiedGarbage.Proof.Gcm.Spec
+import VerifiedGarbage.Proof.Gcm.Stream
+import VerifiedGarbage.Proof.Gcm.X86_64.Bits
+import VerifiedGarbage.Spec.Ccm.Contract
+import VerifiedGarbage.Proof.Variants.AesBlocks.X86_64
+import VerifiedGarbage.Proof.AesOcb.X86_64.Scrub
+import VerifiedGarbage.Proof.AesOcb.X86_64.AesNi.Verified
+import VerifiedGarbage.Proof.Variants.AesOcb.X86_64
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # AES-OCB (RFC 7253) on x86-64 -/
-
-@[expose] public section
 
 namespace VG.Artifacts.AesOcb.X86_64
 
 open VG.Proof.AesOcb.X86_64
 
-def artifacts : List Artifact :=
-  VG.Proof.Variants.AesBlocks.X86_64.variants.flatMap fun (v : Proof.Aes.X86_64.BlocksImpl) => [
-    Spec.Ocb.initApi.artifact X86_64.target (Proof.AesOcb.X86_64.Scrub.ocbInitReg v),
-    Spec.Ocb.sealApi.artifact X86_64.target {
+public def artifacts : List (Artifact X86_64.target) :=
+  VG.Proof.Variants.AesBlocks.X86_64.variants.map (fun (v : Proof.Aes.X86_64.BlocksImpl) =>
+    Spec.Ocb.initApi.artifact X86_64.target {
       suffix := v.suffix
-      code := Impl.StackScratch.X86_64.withStackArgScratch 3632 4 (Impl.AesOcb.X86_64.seal (callees v))
-      verified := Proof.AesOcb.seal_keyed (seal_framed v)
-      spSafe := X86_64.withStackArgScratch_spSafe (seal_spSafe v) },
-    Spec.Ocb.openApi.artifact X86_64.target {
-      suffix := v.suffix
-      code := Impl.StackScratch.X86_64.withStackArgScratch 3632 4 (Impl.AesOcb.X86_64.open (callees v))
-      verified := Proof.AesOcb.open_keyed (open_framed v)
-      spSafe := X86_64.withStackArgScratch_spSafe (open_spSafe v) }]
+      code := Impl.AesOcb.X86_64.Fn.init v.level v.free.isSome (Proof.AesOcb.X86_64.callees v)
+      verified := Proof.AesOcb.X86_64.Scrub.ocbInit_scrubbed v
+      spSafe := Proof.AesOcb.X86_64.Scrub.ocbInit_spSafeFn v }) ++
+  VG.Proof.Variants.AesOcb.X86_64.variants.flatMap fun (o : Proof.AesOcb.X86_64.OcbImpl) => [
+    Spec.Ocb.sealApi.artifact X86_64.target
+      (match o with
+      | .onePass =>
+        { suffix := "_aesni"
+          code := Impl.AesOcb.X86_64.Fn.sealOnePass .sse
+          verified := Proof.AesOcb.X86_64.AesNi.seal_scrubbed
+          spSafe := Proof.AesOcb.X86_64.AesNi.seal_spSafeFn }
+      | .blocks v =>
+        { suffix := v.suffix
+          code := Impl.AesOcb.X86_64.Fn.«seal» v.level (Proof.AesOcb.X86_64.callees v)
+          verified := Proof.AesOcb.X86_64.Scrub.seal_scrubbed v
+          spSafe := Proof.AesOcb.X86_64.Scrub.seal_spSafeFn v }),
+    Spec.Ocb.openApi.artifact X86_64.target
+      (match o with
+      | .onePass =>
+        { suffix := "_aesni"
+          code := Impl.AesOcb.X86_64.Fn.openOnePass .sse
+          verified := Proof.AesOcb.X86_64.AesNi.open_scrubbed
+          spSafe := Proof.AesOcb.X86_64.AesNi.open_spSafeFn }
+      | .blocks v =>
+        { suffix := v.suffix
+          code := Impl.AesOcb.X86_64.Fn.«open» v.level (Proof.AesOcb.X86_64.callees v)
+          verified := Proof.AesOcb.X86_64.Scrub.open_scrubbed v
+          spSafe := Proof.AesOcb.X86_64.Scrub.open_spSafeFn v })]
+
+spec_apis artifacts
 
 end VG.Artifacts.AesOcb.X86_64

@@ -1,30 +1,33 @@
 module
 
-public import VerifiedGarbage.Proof.AesCfb.PPC64LE.Verified
-public import VerifiedGarbage.Proof.AesCfb.PPC64LE.Final
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.PPC64LE.Print
+public import VerifiedGarbage.TCB.PPC64LE.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Cfb.Contract
+public import VerifiedGarbage.Spec.Cfb.Final
+import VerifiedGarbage.Proof.AesCfb.PPC64LE.Verified
+import VerifiedGarbage.Proof.AesCfb.PPC64LE.Final
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Aes.PPC64LE.Scrub
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # AES-CFB128 (NIST SP 800-38A §6.3) on PPC64LE -/
 
-@[expose] public section
-
 namespace VG.Artifacts.AesCfb.PPC64LE
 
-open VG.Proof.AesCfb.PPC64LE
-
-def artifacts : List Artifact := [
+public def artifacts : List (Artifact PPC64LE.target) := [
   Spec.Cfb.aesEncryptApi.artifact PPC64LE.target {
-    code := Impl.AesCfb.PPC64LE.encrypt
-    verified := Proof.AesCfb.encrypt_keyed encrypt_verified },
+    code := Impl.Aes.PPC64LE.Fn.cfbEncrypt
+    verified := Proof.Aes.PPC64LE.Scrub.cfbEncrypt_scrubbed },
   Spec.Cfb.aesDecryptApi.artifact PPC64LE.target {
-    code := Impl.AesCfb.PPC64LE.decrypt
-    verified := Proof.AesCfb.decrypt_keyed decrypt_verified },
+    code := Impl.Aes.PPC64LE.Fn.cfbDecrypt
+    verified := Proof.Aes.PPC64LE.Scrub.cfbDecrypt_scrubbed },
   Spec.Cfb.aesEncryptFinalApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratchWiped 96 .r9 8 Impl.AesCfb.PPC64LE.encryptFinal
-    verified := Proof.AesCfb.encryptFinal_keyed Final.encryptFinal_framed },
+    code := Impl.Aes.PPC64LE.Fn.cfbEncryptFinal
+    verified := Proof.Aes.PPC64LE.Scrub.cfbEncryptFinal_scrubbed },
   Spec.Cfb.aesDecryptFinalApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratchWiped 96 .r9 8 Impl.AesCfb.PPC64LE.decryptFinal
-    verified := Proof.AesCfb.decryptFinal_keyed Final.decryptFinal_framed }]
+    code := Impl.Aes.PPC64LE.Fn.cfbDecryptFinal
+    verified := Proof.Aes.PPC64LE.Scrub.cfbDecryptFinal_scrubbed }]
+
+spec_apis artifacts
 
 end VG.Artifacts.AesCfb.PPC64LE

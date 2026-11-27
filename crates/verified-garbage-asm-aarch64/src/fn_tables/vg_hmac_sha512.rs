@@ -2,8 +2,8 @@
 //! The table of functions `VG_HMAC_SHA512` of the verified functions for `aarch64` (`Artifact.tables`).
 #![allow(dead_code)]
 
-/// The table of functions `VG_HMAC_SHA512` of the interface `Hmac`: `vg_hmac_sha512_init_scratch`, `vg_sha512_update_scratch`, `vg_hmac_sha512_finalize_scratch`, then the data 5, 64, 128.
+/// The table of functions `VG_HMAC_SHA512` of the interface `Hmac`: `vg_hmac_sha512_init_any_scratch`, `vg_sha512_update_scratch`, `vg_hmac_sha512_finalize_scratch`, then the data 5, 64, 128.
 pub static VG_HMAC_SHA512: super::Hmac = super::Hmac {
-    fns: [crate::hmac_sha512::vg_hmac_sha512_init_scratch::vg_hmac_sha512_init_scratch as *const (), crate::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch as *const (), crate::hmac_sha512::vg_hmac_sha512_finalize_scratch::vg_hmac_sha512_finalize_scratch as *const ()],
+    fns: [crate::hmac_sha512::vg_hmac_sha512_init_any_scratch::vg_hmac_sha512_init_any_scratch as *const (), crate::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch as *const (), crate::hmac_sha512::vg_hmac_sha512_finalize_scratch::vg_hmac_sha512_finalize_scratch as *const ()],
     data: [5, 64, 128],
 };

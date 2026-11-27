@@ -1,6 +1,5 @@
 module
 
-import VerifiedGarbage.Proof.MlDsa.RISCV64.Round.Bits
 import VerifiedGarbage.Proof.MlDsa.RISCV64.Round.HighLow
 public import VerifiedGarbage.Proof.MlDsa.Round.Ones
 import VerifiedGarbage.Proof.MlDsa.RISCV64.Arith.Common
@@ -11,7 +10,6 @@ import VerifiedGarbage.Proof.Framework.RISCV64.RegUpd
 import all Init.Data.Nat.Bitwise.Basic
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.MlDsa.RISCV64.Round.Bits
 meta import VerifiedGarbage.Proof.MlDsa.RISCV64.Round.HighLow
 meta import VerifiedGarbage.Proof.MlDsa.Round.Ones
 meta import VerifiedGarbage.Proof.MlKem.RISCV64.Add
@@ -35,7 +33,7 @@ public import VerifiedGarbage.TCB.RISCV64.Target
 /-!
 # ML-DSA on RISC-V: `vg_mldsa_make_hint`
 
-As PPC64LE's (`Proof/MlDsa/PPC64LE/Round/MakeHint.lean`), with the count in `t4`.
+As PPC64LE's (`Proof/MlDsa/PPC64LE/Sign/Inst.lean`), with the count in `t4`.
 
 The selection of `γ₂` (`sel_ok'`), then the loop for it: one symbolic
 execution of its body for any pointers (`body_ok`), which stores `r₁` of

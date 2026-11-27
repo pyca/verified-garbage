@@ -1,5 +1,7 @@
 module
 
+import VerifiedGarbage.Proof.MlDsa.Pack.Bits
+import VerifiedGarbage.TCB.Axioms
 public import VerifiedGarbage.Proof.MlDsa.Sign.Bounds
 public meta import VerifiedGarbage.Proof.MlDsa.Sign.Bounds
 public import Lean.Data.Json
@@ -8,6 +10,7 @@ public import VerifiedGarbageTest.Sha256
 public meta import VerifiedGarbageTest.Sha256
 public import VerifiedGarbage.Spec.MlDsa.Contract
 public meta import VerifiedGarbage.Spec.MlDsa.Contract
+public import VerifiedGarbage.Spec.MlDsa.PreparedKey
 
 /-!
 # Known-answer tests for the ML-DSA specification: the checks
@@ -39,6 +42,53 @@ the implementation on every vector.)
 namespace VG.Test.MlDsa
 
 open Lean Elab Command Spec.MlDsa
+
+/-- The signed packing proof must establish the full round trip stated in the spec. -/
+theorem signedPackingRoundTrip : BitPackRoundTrip := VG.Proof.MlDsa.Pack.bitUnpack_bitPack
+
+#assert_standard_axioms signedPackingRoundTrip
+
+/-! ## A context string that is too long (#6396)
+
+Of the contracts alone, whatever the implementations: a call rejected for its
+context string leaves the signature's buffer as it was, so nothing it computed
+is there. -/
+
+theorem formatMessage_too_long {ctx M : List Byte} (h : 255 < ctx.length) : formatMessage ctx M = none := by
+  simp only [formatMessage, h, ite_true]
+
+#guard (formatMessage (List.replicate 255 0) []).isSome
+#guard (formatMessage (List.replicate 256 0) []).isNone
+
+theorem signMessage_rejects (p : Params) {M : ISA} (A : Abi M) (stack : Nat) {s s' : M.State}
+    {vals : M.State → List (BitVec 64)} {sk msg ml ctx cl rnd sig scr : BitVec 64}
+    (ha : A.args (((signMessageSig p).words A.ptrBits).map (·.bits A.ptrBits)) = some vals)
+    (hv : vals s = [sk, msg, ml, ctx, cl, rnd, sig, scr]) (h : 255 < (cl.setWidth A.ptrBits).toNat)
+    (hq : (signMessageContract p A stack).post s s') :
+    Spec.Sha3.bytesAt (A.mem s') sig p.sigLen = Spec.Sha3.bytesAt (A.mem s) sig p.sigLen := by
+  simp only [signMessageContract, Sig.contract] at hq
+  rw [ha] at hq
+  dsimp only at hq
+  rw [hv] at hq
+  change (match formatMessage (Spec.Sha3.bytesAt (A.mem s) ctx (cl.setWidth A.ptrBits).toNat) _ with
+    | none => _ ∧ _ | some _ => _) at hq
+  rw [formatMessage_too_long (by simpa only [Spec.Sha3.bytesAt, List.length_map, List.length_range] using h)] at hq
+  exact hq.2
+
+theorem preparedSignMessage_rejects (p : Params) {M : ISA} (A : Abi M) (stack : Nat) {s s' : M.State}
+    {vals : M.State → List (BitVec 64)} {sk msg ml ctx cl rnd sig scr : BitVec 64}
+    (ha : A.args (((preparedSignMessageSig p).words A.ptrBits).map (·.bits A.ptrBits)) = some vals)
+    (hv : vals s = [sk, msg, ml, ctx, cl, rnd, sig, scr]) (h : 255 < (cl.setWidth A.ptrBits).toNat)
+    (hq : (preparedSignMessageContract p A stack).post s s') :
+    Spec.Sha3.bytesAt (A.mem s') sig p.sigLen = Spec.Sha3.bytesAt (A.mem s) sig p.sigLen := by
+  simp only [preparedSignMessageContract, Sig.contract] at hq
+  rw [ha] at hq
+  dsimp only at hq
+  rw [hv] at hq
+  change (match formatMessage (Spec.Sha3.bytesAt (A.mem s) ctx (cl.setWidth A.ptrBits).toNat) _ with
+    | none => _ ∧ _ | some _ => _) at hq
+  rw [formatMessage_too_long (by simpa only [Spec.Sha3.bytesAt, List.length_map, List.length_range] using h)] at hq
+  exact hq.2
 
 /-- A successful iteration returns the commitment it computed. -/
 theorem iteration_commit (p : Params) (b : Bounds) (a : List (List Poly))

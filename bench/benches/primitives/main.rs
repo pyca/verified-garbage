@@ -57,6 +57,7 @@ mod dsa;
 mod dsa_parameters;
 mod ec_compressed;
 mod ec_compressed_brainpoolp256r1;
+mod ec_compressed_brainpoolp320r1;
 mod ec_compressed_brainpoolp384r1;
 mod ec_compressed_brainpoolp512r1;
 mod ec_compressed_p192;
@@ -66,6 +67,7 @@ mod ec_compressed_p384;
 mod ec_compressed_p521;
 mod ec_compressed_secp256k1;
 mod ecdh_brainpoolp256r1;
+mod ecdh_brainpoolp320r1;
 mod ecdh_brainpoolp384r1;
 mod ecdh_brainpoolp512r1;
 mod ecdh_p192;
@@ -75,6 +77,7 @@ mod ecdh_p384;
 mod ecdh_p521;
 mod ecdh_secp256k1;
 mod ecdsa_brainpoolp256r1;
+mod ecdsa_brainpoolp320r1;
 mod ecdsa_brainpoolp384r1;
 mod ecdsa_brainpoolp512r1;
 mod ecdsa_p192;
@@ -86,6 +89,8 @@ mod ecdsa_secp256k1;
 mod ed25519;
 mod ed448;
 mod ffdh;
+mod ffdh_parameters;
+mod hkdf;
 mod hmac_md5;
 mod hmac_sha1;
 mod hmac_sha224;
@@ -647,6 +652,7 @@ benches! {
     (cmac_aes::USES, cmac_aes::bench),
     (cmac_triple_des::USES, cmac_triple_des::bench),
     (dit::USES, dit::bench),
+    (hkdf::USES, hkdf::bench),
     (hmac_md5::USES, hmac_md5::bench),
     (hmac_sha1::USES, hmac_sha1::bench),
     (hmac_sha224::USES, hmac_sha224::bench),
@@ -679,6 +685,7 @@ benches! {
     (rc4::USES, rc4::bench),
     (rsa::USES, rsa::bench),
     (ffdh::USES, ffdh::bench),
+    (ffdh_parameters::USES, ffdh_parameters::bench),
     (rsa_keygen::USES, rsa_keygen::bench),
     (rsa_oaep::USES, rsa_oaep::bench),
     (rsa_pkcs1_enc::USES, rsa_pkcs1_enc::bench),
@@ -722,12 +729,14 @@ benches! {
     (ec_compressed_p521::USES, ec_compressed_p521::bench),
     (ec_compressed_secp256k1::USES, ec_compressed_secp256k1::bench),
     (ec_compressed_brainpoolp256r1::USES, ec_compressed_brainpoolp256r1::bench),
+    (ec_compressed_brainpoolp320r1::USES, ec_compressed_brainpoolp320r1::bench),
     (ec_compressed_brainpoolp384r1::USES, ec_compressed_brainpoolp384r1::bench),
     (ec_compressed_brainpoolp512r1::USES, ec_compressed_brainpoolp512r1::bench),
         (ecdsa_p192::USES, ecdsa_p192::bench),
     (ecdsa_p224::USES, ecdsa_p224::bench),
     (ecdsa_secp256k1::USES, ecdsa_secp256k1::bench),
     (ecdsa_brainpoolp256r1::USES, ecdsa_brainpoolp256r1::bench),
+    (ecdsa_brainpoolp320r1::USES, ecdsa_brainpoolp320r1::bench),
     (ecdsa_brainpoolp384r1::USES, ecdsa_brainpoolp384r1::bench),
     (ecdsa_brainpoolp512r1::USES, ecdsa_brainpoolp512r1::bench),
     (dsa::USES, dsa::bench),
@@ -739,6 +748,7 @@ benches! {
     (ecdh_p224::USES, ecdh_p224::bench),
     (ecdh_secp256k1::USES, ecdh_secp256k1::bench),
     (ecdh_brainpoolp256r1::USES, ecdh_brainpoolp256r1::bench),
+    (ecdh_brainpoolp320r1::USES, ecdh_brainpoolp320r1::bench),
     (ecdh_brainpoolp384r1::USES, ecdh_brainpoolp384r1::bench),
     (ecdh_brainpoolp512r1::USES, ecdh_brainpoolp512r1::bench),
     (ecdh_p256::USES, ecdh_p256::bench),

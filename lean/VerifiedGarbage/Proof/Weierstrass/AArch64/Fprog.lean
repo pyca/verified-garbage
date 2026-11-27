@@ -1,14 +1,31 @@
 module
 
+import VerifiedGarbage.Proof.Weierstrass.AArch64.LadderFieldLit
+import VerifiedGarbage.Proof.Framework.AArch64.LaneSave
+import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+
 public import VerifiedGarbage.Proof.Weierstrass.Env
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.MontFnG
-import VerifiedGarbage.Proof.Mont.AArch64.P256Square.Core
-import VerifiedGarbage.Proof.Mont.AArch64.P521Linear
-import VerifiedGarbage.Proof.Weierstrass.AArch64.MontCall521
 import VerifiedGarbage.Proof.Weierstrass.AArch64.MontCall
+import VerifiedGarbage.Proof.Weierstrass.AArch64.P521Call
+import VerifiedGarbage.Proof.Mont.AArch64.P521
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.Taint
+public import VerifiedGarbage.Proof.Mont.AArch64.P256Square
+public import VerifiedGarbage.Impl.Mont.AArch64.P256Square
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Step
+public import VerifiedGarbage.Proof.Ed25519.Word64
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import VerifiedGarbage.Proof.Mont.AArch64.Ops
+import VerifiedGarbage.Proof.Mont.AArch64.Chain
+import VerifiedGarbage.Proof.Mont.AArch64.Csub
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # Field programs on AArch64
@@ -126,7 +143,7 @@ theorem Inv.update {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat �
     {V : List Nat} {E : Nat → Fin m} {s s' : State} (hI : Inv M base size m Sl V E s) {o : Nat}
     (ho : Sl o) (hk : OpKeep M base o s s') (hr : wordsVal s'.mem base o M.n < m) {v : Fin m}
     (hv : toM m (2 ^ (64 * M.n)) (wordsVal s'.mem base o M.n) = v) :
-    Inv M base size m Sl (o :: V) (Function.update E o v) s' := by
+    Inv M base size m Sl (o :: V) (Fun.update E o v) s' := by
   have hn := hI.scr.nowrap
   have hlo := hL.le o ho
   have hmo := hL.mo o ho
@@ -155,9 +172,9 @@ theorem Inv.update {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat �
       exact hI.lt x (List.mem_of_ne_of_mem hxo hx)
   · intro x hx
     by_cases hxo : x = o
-    · subst hxo; rw [Function.update_self]; exact hv
+    · subst hxo; rw [Fun.update_self]; exact hv
     · have hx' := List.mem_of_ne_of_mem hxo hx
-      rw [heq x (hI.sl x hx') hxo, Function.update_of_ne hxo]
+      rw [heq x (hI.sl x hx') hxo, Fun.update_of_ne hxo]
       exact hI.val x hx'
 
 /-- Multiplication dispatches squaring only for validated P-256 coefficients. -/
@@ -178,30 +195,39 @@ theorem mulOp_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {
     refine WP.mono (Mont.AArch64.P256Square.square_ok hs hn hM hA
       (by simpa only [hn] using ho) (by simpa only [hn] using hb) ho8 hb8
       (by simpa only [hn] using hB)) fun s' ⟨hk,hlt,he⟩ => ?_
-    exact ⟨hk.toOpKeep hn, by simpa only [hn] using hlt, by simpa only [hn] using he⟩
+    exact ⟨hk.toOpKeep hn, by simpa only [hn] using hlt, by rw [hn]; exact he⟩
   · exact mul_ok hs hM hA ho ha hb ho8 ha8 hb8 hB
 
-private theorem linearKeep {M : Mod} {base : Addr} {o : Nat} {s t : State}
-    (hn : M.n = 9) (k : KeepRegs (clob 9) s t) (O : Outside base o 72 s.mem t.mem) :
-    OpKeep M base o s t :=
-  ⟨fun r hr => k.gpr r (by simpa only [hn] using hr),k.rd,k.wr,k.sp,
-    fun x hx _ => O x (by simpa only [hn] using hx)⟩
+/-- The modulus P-521's operations are for. -/
+theorem P521.supported_mod {M : Mod} {m : Nat} (h : P521.supported M = true) (hr : M.ok m = true) :
+    M.n = 9 ∧ m = Impl.Mont.AArch64.P521.prime := by
+  simp only [P521.supported, Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at h
+  refine ⟨h.1, ?_⟩
+  have hk := Mod.ok_red hr
+  rw [h.1, h.2, show Red.ofModulus 9 Impl.Mont.AArch64.P521.prime =
+    .friendly [.zero, .zero, .zero, .zero, .zero, .zero, .zero, .pow2 9, .zero] by decide +kernel] at hk
+  simp only [Red.ok, Bool.and_eq_true, beq_iff_eq] at hk
+  have hv := hk.1.2
+  rw [show mwVal [.zero, .zero, .zero, .zero, .zero, .zero, .zero, .pow2 9, .zero] = 2 ^ 457 by decide +kernel] at hv
+  have hp : Impl.Mont.AArch64.P521.prime = 2 ^ 64 * 2 ^ 457 - 1 := by decide +kernel
+  have hm := hk.1.1.2
+  rw [hp, hv]
+  omega_using [hm]
 
 theorem addOp_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod} {m : Nat}
     (hM : ModOkA M size m s.mem base) (hA : ModA M) {o a b : Nat}
     (ho : o+8*M.n ≤ size) (ha : a+8*M.n ≤ size) (hb : b+8*M.n ≤ size)
     (ho8 : o%8 = 0) (ha8 : a%8 = 0) (hb8 : b%8 = 0)
-    (hAB : wordsVal s.mem base a M.n+wordsVal s.mem base b M.n < 2*m) :
+    (hAlt : wordsVal s.mem base a M.n < m) (hBlt : wordsVal s.mem base b M.n < m) :
     WP isa (.block (opCode M (.add o a b))) s fun t => OpKeep M base o s t ∧
       wordsVal t.mem base o M.n = (wordsVal s.mem base a M.n+wordsVal s.mem base b M.n)%m := by
   rw [opCode]
   split
   · rename_i h
-    obtain ⟨hn,hm⟩ := P521Linear.supported_mod h hM.red
-    simp only [hn] at ho ha hb hAB ⊢
-    refine WP.mono (P521Linear.add_ok hs ho ha hb ho8 ha8 hb8 hm hAB)
-      fun t ⟨he,_,hk,O⟩ => ⟨linearKeep hn hk O,he⟩
-  · exact add_ok hs hM hA ho ha hb ho8 ha8 hb8 hAB
+    obtain ⟨hn,hm⟩ := P521.supported_mod h hM.red
+    simp only [hn, hm] at ho ha hb hAlt hBlt ⊢
+    exact WP.mono (Mont.AArch64.P521.add_ok hs ho ha hb ho8 ha8 hb8 hAlt hBlt) fun t ⟨hk,he⟩ => ⟨Mont.AArch64.P521.toOpKeep hn hk,he⟩
+  · exact add_ok hs hM hA ho ha hb ho8 ha8 hb8 (by omega_arith)
 
 theorem subOp_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod} {m : Nat}
     (hM : ModOkA M size m s.mem base) (hMA : ModA M) {o a b : Nat}
@@ -213,10 +239,9 @@ theorem subOp_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {
   rw [opCode]
   split
   · rename_i h
-    obtain ⟨hn,hm⟩ := P521Linear.supported_mod h hM.red
-    simp only [hn] at ho ha hb hA hB ⊢
-    refine WP.mono (P521Linear.sub_ok hs ho ha hb ho8 ha8 hb8 hm hA hB)
-      fun t ⟨he,_,hk,O⟩ => ⟨linearKeep hn hk O,he⟩
+    obtain ⟨hn,hm⟩ := P521.supported_mod h hM.red
+    simp only [hn, hm] at ho ha hb hA hB ⊢
+    exact WP.mono (Mont.AArch64.P521.sub_ok hs ho ha hb ho8 ha8 hb8 hA hB) fun t ⟨hk,he⟩ => ⟨Mont.AArch64.P521.toOpKeep hn hk,he⟩
   · exact sub_ok hs hM hMA ho ha hb ho8 ha8 hb8 hA hB
 
 /-- Hand-composed negation blocks use the general subtraction directly. -/
@@ -257,7 +282,7 @@ theorem fop_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → P
     have hA := hI.lt a hR.1
     have hB := hI.lt b hR.2
     refine WP.mono (addOp_ok hI.scr hI.mod hAl.mod (hL.le o hS.1) (hL.le a hS.2.1) (hL.le b hS.2.2)
-      (hAl.sl o hS.1) (hAl.sl a hS.2.1) (hAl.sl b hS.2.2) (by omega_arith)) fun s' ⟨hk, heq⟩ => ⟨hk, hI.update hL hS.1 hk ?_ ?_⟩
+      (hAl.sl o hS.1) (hAl.sl a hS.2.1) (hAl.sl b hS.2.2) hA hB) fun s' ⟨hk, heq⟩ => ⟨hk, hI.update hL hS.1 hk ?_ ?_⟩
     · rw [heq]; exact Nat.mod_lt _ (by omega_arith)
     · rw [heq, toM_add, hI.val a hR.1, hI.val b hR.2]
   | sub o a b =>
@@ -297,21 +322,21 @@ theorem fprog_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat →
 set_option exponentiation.threshold 1024 in
 /-- One operation, a call for a product modulo a modulus whose products are
 calls. -/
-theorem opProg_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → Prop} (hL : Lay M size Sl)
+theorem opProgRaw_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → Prop} (hL : Lay M size Sl)
     (hAl : Aligned M Sl) (hm : UnitMod m (2 ^ (64 * M.n))) {V : List Nat} {E : Nat → Fin m} {s : State}
     (hI : Inv M base size m Sl V E s) {op : FOp} (hS : ∀ x ∈ op.out :: op.ins, Sl x)
     (hLow : Low M (op.out :: op.ins)) (hR : ∀ x ∈ op.ins, x ∈ V) :
-    WP isa (opProg M op) s fun s' =>
+    WP isa (opProgRaw M op) s fun s' =>
       OpKeep M base op.out s s' ∧ Inv M base size m Sl (op.out :: V) (op.run E) s' := by
   cases op with
   | mul o a b =>
     cases hc : Mont.callOf M with
     | none =>
-      simp only [opProg, hc]
+      simp only [opProgRaw, hc]
       exact fop_ok hL hAl hm hI hS hR
     | some c =>
       obtain ⟨f, m'⟩ := c
-      simp only [opProg, hc]
+      simp only [opProgRaw, hc]
       have hH := hAl.call f m' hc
       have hown : ∀ x ∈ FOp.out (.mul o a b) :: FOp.ins (.mul o a b), x + 8 * M.n ≤ Mont.own M.n :=
         hLow.resolve_left (by rw [hc]; simp)
@@ -335,31 +360,130 @@ theorem opProg_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat �
         rw [toM_mul hm heq, hI.val a hR.1]
       · simp only [Bool.not_eq_true] at hsq
         simp only [hsq, Bool.false_eq_true, ↓reduceIte]
-        by_cases hsq521 : (a == b && sqr521Ok M.n m') = true
-        · simp only [Bool.and_eq_true, beq_iff_eq] at hsq521
-          obtain ⟨rfl, hsp⟩ := hsq521
-          obtain ⟨hn9, hm'⟩ := Mont.sqr521Ok_eq hsp
-          subst hm'
-          simp only [hsp, beq_self_eq_true, Bool.and_self, ↓reduceIte]
-          refine WP.mono (Mont.sqrCall521_ok hI.scr hI.mod hn9 ht hown.1 hown.2.1 (hI.lt a hR.1))
+        by_cases hf : P521.isField M.n m' = true
+        · simp only [hf, ↓reduceIte]
+          refine WP.mono (Mont.fieldCall521_ok hI.scr hI.mod hf ht hown.1 hown.2.1 hown.2.2 (hI.lt a hR.1) (hI.lt b hR.2))
             fun s' ⟨hk, hlt, heq⟩ => ⟨hk, hI.update hL hS.1 hk hlt ?_⟩
-          rw [toM_mul hm heq, hI.val a hR.1]
-        · simp only [Bool.not_eq_true] at hsq521
-          simp only [hsq521, Bool.false_eq_true, ↓reduceIte]
+          rw [toM_mul hm heq, hI.val a hR.1, hI.val b hR.2]
+        · simp only [Bool.not_eq_true] at hf
+          simp only [hf, Bool.false_eq_true, ↓reduceIte]
           refine WP.mono (Mont.mulCall_ok hI.scr hI.mod hH ht hown.1 hown.2.1 hown.2.2
             (hI.lt b hR.2)) fun s' ⟨hk, hlt, heq⟩ => ⟨hk, hI.update hL hS.1 hk hlt ?_⟩
           rw [toM_mul hm heq, hI.val a hR.1, hI.val b hR.2]
   | add o a b => exact fop_ok hL hAl hm hI hS hR
   | sub o a b => exact fop_ok hL hAl hm hI hS hR
 
+/-- A match selects exactly the closed layout and operation of its kernel. -/
+private theorem ladderField_eq {M : Mod} {op : FOp} {p i : Nat}
+    (h : ladderField? M op = some (p, i)) :
+    M = ladderFieldMod p ∧ op = ladderFieldOp p i ∧ p < 4 ∧ i < 7 := by
+  unfold ladderField? at h
+  cases hp : ladderProfile? M with
+  | none => simp [hp] at h
+  | some q =>
+    cases hi : (List.range 7).find? (sameLadderField op q) with
+    | none => simp [hp, hi] at h
+    | some j =>
+      simp only [hp, hi, Option.some.injEq, Prod.mk.injEq] at h
+      rcases h with ⟨rfl, rfl⟩
+      exact ⟨LadderFieldLit.layout_eq (List.find?_some (p := ladderFieldLayout M) hp),
+        LadderFieldLit.same_eq (List.find?_some (p := sameLadderField op q) hi),
+        List.mem_range.mp (List.mem_of_find?_eq_some hp),
+        List.mem_range.mp (List.mem_of_find?_eq_some hi)⟩
+
+private theorem ladderField_vec {p i : Nat} (hp : p < 4) (hi : i < 7) :
+    ∀ ins ∈ instrs (ladderFieldBody p i), vdstOf ins ≠ some .v31 := by
+  have h : [0, 1, 2, 3].all (fun q => [0, 1, 2, 3, 4, 5, 6].all (fun j =>
+      (ladderFieldBody q j).allInstrs (fun ins => vdstOf ins != some .v31))) = true := by
+    simp only [List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+    repeat' apply And.intro
+    all_goals lit_decide
+  have pm : p ∈ [0, 1, 2, 3] := by
+    simp only [List.mem_cons, List.not_mem_nil, or_false]
+    omega
+  have im : i ∈ [0, 1, 2, 3, 4, 5, 6] := by
+    simp only [List.mem_cons, List.not_mem_nil, or_false]
+    omega
+  have hv := List.all_eq_true.mp (List.all_eq_true.mp h p pm) i im
+  rw [Code.allInstrs_eq] at hv
+  intro ins hin
+  simpa using List.all_eq_true.mp hv ins hin
+
+private theorem Inv.of_same_mem {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
+    {Sl : Nat → Prop} {V : List Nat} {E : Nat → Fin m} {s t : State}
+    (h : Inv M base size m Sl V E s) (hs : Scr t base size) (hm : t.mem = s.mem) :
+    Inv M base size m Sl V E t :=
+  ⟨hs, hm ▸ h.mod, h.sl, fun x hx => hm ▸ h.lt x hx, fun x hx => hm ▸ h.val x hx⟩
+
+/-- A shared inline product has the same field postcondition and register frame. -/
+private theorem ladderFieldCall_ok {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → Prop} {p : Nat}
+    (hL : Lay (ladderFieldMod p) size Sl) (hAl : Aligned (ladderFieldMod p) Sl)
+    (hm : UnitMod m (2 ^ (64 * (ladderFieldMod p).n))) {V : List Nat} {E : Nat → Fin m} {s : State}
+    {i : Nat} (hp : p < 4) (hi : i < 7) (hI : Inv (ladderFieldMod p) base size m Sl V E s)
+    (hS : ∀ x ∈ (ladderFieldOp p i).out :: (ladderFieldOp p i).ins, Sl x)
+    (hR : ∀ x ∈ (ladderFieldOp p i).ins, x ∈ V) :
+    WP isa (ladderFieldCall p i) s fun t => OpKeep (ladderFieldMod p) base (ladderFieldOp p i).out s t ∧
+      Inv (ladderFieldMod p) base size m Sl ((ladderFieldOp p i).out :: V) ((ladderFieldOp p i).run E) t := by
+  have h30 : Reg.x30 ∉ clob (ladderFieldMod p).n := fun h => absurd (mem_clobAll h) (by decide)
+  have links : ∀ r, r ≠ .x30 → r ∉ clob (ladderFieldMod p).n → r ∉ linkRegs := by
+    intro r hr hc
+    simp only [linkRegs, List.mem_cons, List.not_mem_nil, or_false, not_or]
+    exact ⟨fun h => hc (h ▸ (by simp [clob])), fun h => hc (h ▸ (by simp [clob])), hr⟩
+  unfold ladderFieldCall
+  refine WP.seq (WP.mono (insOf_ok [(.x30, .v31, 1)] s (by simp) (by decide))
+    fun a ⟨ag, am, ard, awr, asp, alane, _⟩ => ?_)
+  have kas : KeepRegs [] s a := ⟨fun r _ => congrFun ag r, ard, awr, asp⟩
+  have ia := hI.of_same_mem (hI.scr.of_keepRegs kas (by decide)) am
+  have kc : KeepRegs linkRegs a a.callEntry := ⟨fun r hr => State.callEntry_gpr a hr, rfl, rfl, rfl⟩
+  have ic := ia.of_same_mem (ia.scr.of_keepRegs kc (by decide)) rfl
+  obtain ⟨tr, t, et, kt, it⟩ := fop_ok hL hAl hm ic hS hR
+  have keep31 := Exec.vec (ladderField_vec hp hi) et
+  have ret : isa.ret a.callEntry t = some t := by
+    simp only [isa, VG.AArch64.ret, kt.gpr _ h30, ite_true]
+  refine WP.seq (show WP isa (.call (ladderFieldName p i) (ladderFieldBody p i)) a _ from
+    ⟨_, t, Exec.call (call_callEntry a) et ret, ?_⟩)
+  refine WP.mono (umovOf_ok [(.x30, .v31, 1)] t (by simp) (by decide))
+    fun z ⟨zm, zrd, zwr, zsp, zl, zg⟩ => ?_
+  have kz : OpKeep (ladderFieldMod p) base (ladderFieldOp p i).out s z := by
+    refine ⟨fun r hr => ?_, zrd.trans (kt.rd.trans ard), zwr.trans (kt.wr.trans awr),
+      zsp.trans (kt.sp.trans asp), fun x hx ht => ?_⟩
+    · by_cases heq : r = .x30
+      · subst r
+        rw [zl (.x30, .v31, 1) (by simp)]
+        change laneOf t .v31 1 = _
+        rw [laneOf, keep31]
+        exact alane (.x30, .v31, 1) (by simp)
+      · rw [zg r (by simpa using heq), kt.gpr r hr, State.callEntry_gpr a (links r heq hr), ag]
+    · rw [zm, kt.mem x hx ht, State.callEntry_mem, am]
+  refine ⟨kz, it.of_same_mem ?_ zm⟩
+  exact it.scr.of_keepRegs (rs := [.x30])
+    ⟨fun r hr => zg r (by simpa using hr), zrd, zwr, zsp⟩ (by decide)
+
+/-- One field operation, using the closed shared kernel where selected. -/
+theorem opProg_ok {M : Mod} {share : Bool} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → Prop} (hL : Lay M size Sl)
+    (hAl : Aligned M Sl) (hm : UnitMod m (2 ^ (64 * M.n))) {V : List Nat} {E : Nat → Fin m} {s : State}
+    (hI : Inv M base size m Sl V E s) {op : FOp} (hS : ∀ x ∈ op.out :: op.ins, Sl x)
+    (hLow : Low M (op.out :: op.ins)) (hR : ∀ x ∈ op.ins, x ∈ V) :
+    WP isa (opProg M op share) s fun s' =>
+      OpKeep M base op.out s s' ∧ Inv M base size m Sl (op.out :: V) (op.run E) s' := by
+  cases share with
+  | false => exact opProgRaw_ok hL hAl hm hI hS hLow hR
+  | true =>
+    cases h : ladderField? M op with
+    | none => simpa only [opProg, Bool.true_eq, ↓reduceIte, h] using opProgRaw_ok hL hAl hm hI hS hLow hR
+    | some pi =>
+      rcases pi with ⟨p, i⟩
+      obtain ⟨rfl, rfl, hp, hi⟩ := ladderField_eq h
+      simpa only [opProg, Bool.true_eq, ↓reduceIte, h] using ladderFieldCall_ok hL hAl hm hp hi hI hS hR
+
 /-- A field program, a call for each product modulo a modulus whose products
 are calls. -/
-theorem fprogB_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → Prop} (hL : Lay M size Sl)
+theorem fprogB_ok {M : Mod} {share : Bool} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → Prop} (hL : Lay M size Sl)
     (hAl : Aligned M Sl) (hm : UnitMod m (2 ^ (64 * M.n))) :
     ∀ (ops : List FOp) {V : List Nat} {E : Nat → Fin m} {s : State},
       Inv M base size m Sl V E s → (∀ op ∈ ops, ∀ x ∈ op.out :: op.ins, Sl x) →
       (∀ op ∈ ops, Low M (op.out :: op.ins)) → readsOk ops V = true →
-      WP isa (fprogB M ops) s fun s' => ProgKeep M base (ops.map FOp.out) s s' ∧
+      WP isa (fprogB M ops share) s fun s' => ProgKeep M base (ops.map FOp.out) s s' ∧
         Inv M base size m Sl (validAfter ops V) (runOps ops E) s'
   | [], _, _, s, hI, _, _, _ => WP.block_nil ⟨ProgKeep.refl _ _ _ s, hI⟩
   | [op], V, E, s, hI, hS, hLo, hR => by
@@ -370,7 +494,7 @@ theorem fprogB_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat �
   | op :: op' :: ops, V, E, s, hI, hS, hLo, hR => by
     rw [readsOk, Bool.and_eq_true, List.all_eq_true] at hR
     simp only [decide_eq_true_eq] at hR
-    show WP isa (.seq (opProg M op) (fprogB M (op' :: ops))) s _
+    show WP isa (.seq (opProg M op share) (fprogB M (op' :: ops) share)) s _
     refine WP.seq (WP.mono (opProg_ok hL hAl hm hI (hS op (List.mem_cons_self ..)) (hLo op (List.mem_cons_self ..))
       hR.1) fun s₁ ⟨k₁, I₁⟩ => ?_)
     refine WP.mono (fprogB_ok (ops := op' :: ops) hL hAl hm I₁ (fun op'' h => hS op'' (List.mem_cons_of_mem _ h))
@@ -387,11 +511,11 @@ theorem fprogB_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat �
 be `q`), from a state holding `E`, in particular `p`, `q`, `a` and `3b`
 (`rcbR`): `o` holds `rcbAdd` of their values, and the slots but those `rcb`
 writes (`rcbW`) keep theirs. -/
-theorem rcb_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → Prop} (hL : Lay M size Sl)
+theorem rcb_ok {M : Mod} {share : Bool} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → Prop} (hL : Lay M size Sl)
     (hAl : Aligned M Sl) (hm : UnitMod m (2 ^ (64 * M.n))) {S : RcbSlots} {p q o : Pt} (hA : RcbApart S p q o)
     (hSl : ∀ x ∈ rcbW S o ++ rcbR S p q, Sl x) (hLow : Low M (rcbW S o ++ rcbR S p q)) {V : List Nat}
     {E : Nat → Fin m} {s : State} (hI : Inv M base size m Sl V E s) (hV : ∀ x ∈ rcbR S p q, x ∈ V) :
-    WP isa (fprogB M (rcb S p q o)) s fun s' => ProgKeep M base (rcbW S o) s s' ∧
+    WP isa (fprogB M (rcb S p q o) share) s fun s' => ProgKeep M base (rcbW S o) s s' ∧
       Inv M base size m Sl (rcbW S o ++ V) (runOps (rcb S p q o) E) s' ∧
       (runOps (rcb S p q o) E o.x, runOps (rcb S p q o) E o.y, runOps (rcb S p q o) E o.z) =
         VG.Proof.Weierstrass.rcbAdd (E S.a) (E S.b3) (E p.x) (E p.y) (E p.z) (E q.x) (E q.y)
@@ -413,12 +537,12 @@ theorem rcb_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → P
 
 /-- A formula on numbered slots, renamed to `p`, `q` and `o`: it writes only
 `rcbW S o`, and its result is what the numbered formula computes. -/
-theorem ofN_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → Prop} (hL : Lay M size Sl)
+theorem ofN_ok {M : Mod} {share : Bool} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → Prop} (hL : Lay M size Sl)
     (hAl : Aligned M Sl) (hm : UnitMod m (2 ^ (64 * M.n))) {N : List FOp} (hN : NumOk N) {S : RcbSlots}
     {p q o : Pt} (hA : RcbApart S p q o) (hSl : ∀ x ∈ rcbW S o ++ rcbR S p q, Sl x)
     (hLow : Low M (rcbW S o ++ rcbR S p q)) {V : List Nat}
     {E : Nat → Fin m} {s : State} (hI : Inv M base size m Sl V E s) (hV : ∀ x ∈ rcbR S p q, x ∈ V) :
-    WP isa (fprogB M (ofN N S p q o)) s fun s' => ProgKeep M base (rcbW S o) s s' ∧
+    WP isa (fprogB M (ofN N S p q o) share) s fun s' => ProgKeep M base (rcbW S o) s s' ∧
       Inv M base size m Sl ([o.x, o.y, o.z] ++ V) (runOps (ofN N S p q o) E) s' ∧
       (runOps (ofN N S p q o) E o.x, runOps (ofN N S p q o) E o.y, runOps (ofN N S p q o) E o.z) =
         (runOps N (fun y => E (rcbσ S p q o y)) 6, runOps N (fun y => E (rcbσ S p q o y)) 7,
@@ -433,15 +557,16 @@ theorem ofN_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → P
     rcases List.mem_append.mp hx with hx | hx
     · exact Or.inr (ofN_out_mem hN hx)
     · exact Or.inl hx
-  · exact congrArg₂ Prod.mk (ofN_run hN hA E 6) (congrArg₂ Prod.mk (ofN_run hN hA E 7) (ofN_run hN hA E 8))
+  · exact congr (congrArg Prod.mk (ofN_run hN hA E 6))
+      (congr (congrArg Prod.mk (ofN_run hN hA E 7)) (ofN_run hN hA E 8))
 
 /-- `o = p + q` by Algorithm 4 (`a = -3`, with `b` in `S.b3`). -/
-theorem rcb3_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → Prop} (hL : Lay M size Sl)
+theorem rcb3_ok {M : Mod} {share : Bool} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → Prop} (hL : Lay M size Sl)
     (hAl : Aligned M Sl) (hm : UnitMod m (2 ^ (64 * M.n))) {S : RcbSlots} {p q o : Pt}
     (hA : RcbApart S p q o) (hSl : ∀ x ∈ rcbW S o ++ rcbR S p q, Sl x) (hLow : Low M (rcbW S o ++ rcbR S p q))
     {V : List Nat} {E : Nat → Fin m}
     {s : State} (hI : Inv M base size m Sl V E s) (hV : ∀ x ∈ rcbR S p q, x ∈ V) :
-    WP isa (fprogB M (rcb3 S p q o)) s fun s' => ProgKeep M base (rcbW S o) s s' ∧
+    WP isa (fprogB M (rcb3 S p q o) share) s fun s' => ProgKeep M base (rcbW S o) s s' ∧
       Inv M base size m Sl ([o.x, o.y, o.z] ++ V) (runOps (rcb3 S p q o) E) s' ∧
       (runOps (rcb3 S p q o) E o.x, runOps (rcb3 S p q o) E o.y, runOps (rcb3 S p q o) E o.z) =
         VG.Proof.Weierstrass.rcbAdd3 (E S.b3) (E p.x) (E p.y) (E p.z) (E q.x) (E q.y) (E q.z) := by

@@ -30,7 +30,7 @@ open VG VG.X86_64 VG.Impl.AesGcm.X86_64
 their contract: no write of `mxcsr` or `rsp`, no calls, and constant time,
 from the registers it keeps public (the output in `r10`; with `full`, for
 loops that take all the blocks). -/
-structure PieceTo (code : Prog isa) (aligned : Bool := false) (full : Bool := false) : Prop where
+structure PieceTo (code : Prog isa) (aligned : Bool := false) (full : Bool := false) (minimum : Nat := 16) : Prop where
   mxcsr : code.allInstrs (fun i => !loadsMxcsr i) = true
   spSafe : code.all (fun i => !X86_64.isa.writesSp i) = true
   nosp : code.allInstrs (fun i => !Taint.clobbers i .rsp) = true
@@ -38,7 +38,7 @@ structure PieceTo (code : Prog isa) (aligned : Bool := false) (full : Bool := fa
   /-- It uses no stack. -/
   xdepth : code.x86_64Depth = 0
   ct : ∃ hc, ((taint.check (Taint.ofRegs [.r10, .r11, .rdi, .rsi, .rdx, .rcx, .r8, .r9, .rsp])
-    (BlocksTo.stitchPart code aligned full) hc).map fun τ' => (RegSet.ofList [Reg.rsp]).subset τ'.regs &&
+    (BlocksTo.stitchPart code aligned full minimum) hc).map fun τ' => (RegSet.ofList [Reg.rsp]).subset τ'.regs &&
       (!false || τ'.flags)) = some true
 
 open Gcm.X86_64.Stitch (CtxMode StitchToOkM) in

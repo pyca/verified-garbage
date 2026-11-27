@@ -1,5 +1,7 @@
 module
 
+import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
 public import VerifiedGarbage.Proof.EcKey.X86_64.Scrub.Out
 public import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
 public import VerifiedGarbage.Proof.Framework.Registration
@@ -61,11 +63,7 @@ theorem pre_of {s : State} (h : pkX86_64.pre s) : PkPre brainpoolp512r1 s := by
 
 theorem post_of {s s' : State} (h : PkPost brainpoolp512r1 s s') : pkX86_64.post s s' := by
   unfold PkPost at h
-  show match pk s.mem (s.gpr .rsi) with
-    | some (.affine x y) => (s'.gpr .rax).setWidth 32 = 1 ∧
-        Spec.EcKey.bytesAt s'.mem (s.gpr .rdi) 129 = Spec.EcKey.encodePoint (.affine x y)
-    | _ => (s'.gpr .rax).setWidth 32 = 0 ∧
-        Spec.EcKey.bytesAt s'.mem (s.gpr .rdi) 129 = List.replicate 129 0
+  dsimp only [pkX86_64]
   revert h
   generalize hq : pk s.mem (s.gpr .rsi) = q
   rw [show Spec.EcKey.publicKey brainpoolp512r1.C (dk brainpoolp512r1 s) = pk s.mem (s.gpr .rsi) from rfl, hq]
@@ -146,23 +144,23 @@ theorem pk_verified (hL : Weierstrass.Law Spec.BrainpoolP512r1.curve) (hI : Weie
 
 /-! ## Without secret residue -/
 
-/-- The granules of its stack that `vg_ec_brainpoolp512r1_public_key` must wipe on
-return, from the residue analysis (`X86_64.RScrub.keepFor`). -/
-def scrubKs : List Nat := keep_for% Spec.EcKey.BrainpoolP512r1.publicKeyApi.sig 8 publicKeyBrainpoolP512r1 []
 
-theorem scrubOk : ∃ h : VG.Taint.Hint RTaint.FT,
-    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.EcKey.BrainpoolP512r1.publicKeyApi.sig 8 []) publicKeyBrainpoolP512r1 h).any
-      (RScrub.resOkB · 8 scrubKs (Impl.Scrub.X86_64.chunks 8)) = true :=
-  RScrub.Analysed.ok_of _ (by taint_decide)
 
-/-- `vg_ec_brainpoolp512r1_public_key`, followed by `Impl.Scrub.X86_64.scrubTail`
-(`X86_64.RScrub.withScrub`): it returns without secret residue. -/
-def scrubReg (hL : Weierstrass.Law Spec.BrainpoolP512r1.curve) (hI : Weierstrass.X86_64.InvSounds) :
-    Registration Spec.EcKey.BrainpoolP512r1.publicKeyApi X86_64.target :=
-  RScrub.withScrub {
-    code := publicKeyBrainpoolP512r1
-    stack := 8
-    verified := pk_verified hL hI }
-    (EcKey.X86_64.Scrub.publicKeyOut _ _) [] (RScrub.pubOk_nil _) (some ⟨scrubKs, scrubOk⟩)
+theorem publicKey_codeSp : (publicKeyBrainpoolP512r1).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
+
+/-- `vg_ec_brainpoolp512r1_public_key` as emitted (`Impl.EcKey.X86_64.Fn.publicKeyBrainpoolP512r1`), its cleanup included, meets its contract in
+constant time and returns without secret residue. -/
+theorem publicKey_scrubbed (hL : Weierstrass.Law Spec.BrainpoolP512r1.curve) (hI : Weierstrass.X86_64.InvSounds) :
+    VerifiedScrubbed X86_64.target Impl.EcKey.X86_64.Fn.publicKeyBrainpoolP512r1
+      (Spec.EcKey.BrainpoolP512r1.publicKeyApi.contract X86_64.abi 8) 32 :=
+  X86_64.Scrub.verifiedScrubbedAll (api := Spec.EcKey.BrainpoolP512r1.publicKeyApi)
+    { code := publicKeyBrainpoolP512r1
+      stack := 8
+      verified := pk_verified hL hI
+      spSafe := publicKey_codeSp } .sse (EcKey.X86_64.Scrub.publicKeyOut _ _)
+
+theorem publicKey_spSafe : Impl.EcKey.X86_64.Fn.publicKeyBrainpoolP512r1.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  X86_64.Scrub.scrubKs_spSafe publicKey_codeSp
 
 end VG.Proof.EcKey.X86_64.BrainpoolP512r1

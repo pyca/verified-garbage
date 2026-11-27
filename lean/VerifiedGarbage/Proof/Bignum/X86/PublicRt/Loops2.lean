@@ -34,26 +34,26 @@ theorem doubleLoop_ok {t₀ : State} {W : Addr} {L : Nat} (hw : Ws t₀ W L) {x 
     ⟨Keeps.refl _ _, by simpa using hebx, by simpa using hebp, by simpa using hedx, Outside.refl _ _ _ _,
       false, hecx, by simp [val32]⟩) fun u ⟨K, _, ebp, _, O, V⟩ => ⟨O, ebp, V, K⟩
   rintro j t hj ⟨Kt, ebx, ebp, edx, O, c, ec, V⟩
-  have ht := hw.of_keeps Kt
-  have xw : w32 t.mem W (x + 4 * j) = w32 t₀.mem W (x + 4 * j) :=
+  obtain ht := hw.of_keeps Kt
+  obtain xw : w32 t.mem W (x + 4 * j) = w32 t₀.mem W (x + 4 * j) :=
     O.w32 (by omega_using [hxa, hj]) (by omega_using [hx, hj, hn])
   refine wp_movS (readSrc_ptr ht ebx (d := 0) (by omega_using [hx, hj])) fun s₁ u₁ _ => ?_
   refine wp_carry (by rw [u₁.other _ (by decide), ec]) fun s₂ u₂ c₂ => ?_
   refine wp_adcS rfl c₂ fun s₃ u₃ c₃ => ?_
-  have K₃ : Keeps [.eax, .ecx] t s₃ := ((u₁.keeps.mono (by decide)).widen u₂.keeps).widen u₃.keeps
-  have ht₃ := ht.of_keeps K₃
-  have ebp₃ : PtrAt s₃ W .ebp (a + 4 * j) := by rw [PtrAt, K₃.1 _ (by decide)]; exact ebp
+  obtain K₃ : Keeps [.eax, .ecx] t s₃ := ((u₁.keeps.mono (by decide)).widen u₂.keeps).widen u₃.keeps
+  obtain ht₃ := ht.of_keeps K₃
+  obtain ebp₃ : PtrAt s₃ W .ebp (a + 4 * j) := by rw [PtrAt, K₃.1 _ (by decide)]; exact ebp
   refine wp_storeS (ea_ptr ht₃ ebp₃ (d := 0) (by omega_using [ha, hj]))
     (ws_write ht₃ (y := a + 4 * j + 0) (n := 4) (by omega_using [ha, hj])) fun s₄ m₄ => ?_
   refine wp_sbb_self (by rw [m₄.cf]; exact c₃) fun s₅ u₅ => ?_
   refine wp_addS rfl fun s₆ u₆ _ => wp_addS rfl fun s₇ u₇ _ => wp_subZ rfl fun s₈ u₈ z₈ => WP.block_nil ?_
   obtain ⟨c₁, c₂'⟩ := count_zf edx hj
-  have K₅ : Keeps [.eax, .ecx] t s₅ := (K₃.widen (m₄.keeps [])).widen u₅.keeps
-  have r₅ : ∀ r, r = .ebx ∨ r = .ebp ∨ r = .edx → s₅.gpr r = t.gpr r := by
+  obtain K₅ : Keeps [.eax, .ecx] t s₅ := (K₃.widen (m₄.keeps [])).widen u₅.keeps
+  obtain r₅ : ∀ r, r = .ebx ∨ r = .ebp ∨ r = .edx → s₅.gpr r = t.gpr r := by
     intro r hr; apply K₅.1; rcases hr with rfl | rfl | rfl <;> decide
-  have eax₂ : s₂.gpr .eax = t.mem.readW (off W (x + 4 * j)) 32 := by
+  obtain eax₂ : s₂.gpr .eax = t.mem.readW (off W (x + 4 * j)) 32 := by
     rw [u₂.other _ (by decide), u₁.gpr, Nat.add_zero]
-  have m₃ : s₃.mem = t.mem := by rw [u₃.mem, u₂.mem, u₁.mem]
+  obtain m₃ : s₃.mem = t.mem := by rw [u₃.mem, u₂.mem, u₁.mem]
   have xw' : (t.mem.readW (off W (x + 4 * j)) 32).toNat = w32 t₀.mem W (x + 4 * j) := xw
   refine ⟨⟨Kt.trans ((((K₅.mono (by decide)).widen u₆.keeps).widen u₇.keeps).widen u₈.keeps), ?_, ?_, ?_, ?_,
     decide (2 ^ 32 ≤ (s₂.gpr .eax).toNat + (s₂.gpr .eax).toNat + c.toNat), ?_, ?_⟩, ?_⟩
@@ -66,7 +66,7 @@ theorem doubleLoop_ok {t₀ : State} {W : Addr} {L : Nat} (hw : Ws t₀ W L) {x 
   · rw [u₈.other _ (by decide), u₇.other _ (by decide), u₆.other _ (by decide), u₅.gpr]
   · rw [u₈.mem, u₇.mem, u₆.mem, u₅.mem, m₄.mem, m₃, Nat.add_zero, val32_store hn (by omega_using [ha, hj]),
       val32_succ t₀.mem W x, pow32_succ, u₃.gpr]
-    have h := adc_rel (s₂.gpr .eax) (s₂.gpr .eax) c
+    obtain h := adc_rel (s₂.gpr .eax) (s₂.gpr .eax) c
     rw [eax₂, xw'] at h ⊢
     exact chain_add_step V h
   · rw [z₈, u₇.other _ (by decide), u₆.other _ (by decide), r₅ _ (.inr (.inr rfl)), c₂']
@@ -94,33 +94,33 @@ theorem reduceLoop_ok {t₀ : State} {W : Addr} {L : Nat} (hw : Ws t₀ W L) {a 
     ⟨Keeps.refl _ _, by simpa using hebp, by simpa using hebx, by simpa using hedi, by simpa using hedx,
       Outside.refl _ _ _ _, false, hecx, by simp [val32]⟩) fun u ⟨K, ebp, _, _, _, O, V⟩ => ⟨O, ebp, V, K⟩
   rintro j t hj ⟨Kt, ebp, ebx, edi, edx, O, c, ec, V⟩
-  have ht := hw.of_keeps Kt
-  have aw : w32 t.mem W (a + 4 * j) = w32 t₀.mem W (a + 4 * j) :=
+  obtain ht := hw.of_keeps Kt
+  obtain aw : w32 t.mem W (a + 4 * j) = w32 t₀.mem W (a + 4 * j) :=
     O.w32 (by omega_using [hda, hj]) (by omega_using [ha, hj, hn])
-  have mw : w32 t.mem W (m + 4 * j) = w32 t₀.mem W (m + 4 * j) :=
+  obtain mw : w32 t.mem W (m + 4 * j) = w32 t₀.mem W (m + 4 * j) :=
     O.w32 (by omega_using [hdm, hj]) (by omega_using [hm, hj, hn])
   refine wp_movS (readSrc_ptr ht ebp (d := 0) (by omega_using [ha, hj])) fun s₁ u₁ _ => ?_
   refine wp_carry (by rw [u₁.other _ (by decide), ec]) fun s₂ u₂ c₂ => ?_
-  have K₂ : Keeps [.eax, .ecx] t s₂ := (u₁.keeps.mono (by decide)).widen u₂.keeps
-  have ht₂ := ht.of_keeps K₂
-  have ebx₂ : PtrAt s₂ W .ebx (m + 4 * j) := by rw [PtrAt, K₂.1 _ (by decide)]; exact ebx
+  obtain K₂ : Keeps [.eax, .ecx] t s₂ := (u₁.keeps.mono (by decide)).widen u₂.keeps
+  obtain ht₂ := ht.of_keeps K₂
+  obtain ebx₂ : PtrAt s₂ W .ebx (m + 4 * j) := by rw [PtrAt, K₂.1 _ (by decide)]; exact ebx
   refine wp_sbbS (readSrc_ptr ht₂ ebx₂ (d := 0) (by omega_using [hm, hj])) c₂ fun s₃ u₃ c₃ => ?_
-  have K₃ : Keeps [.eax, .ecx] t s₃ := K₂.widen u₃.keeps
-  have ht₃ := ht.of_keeps K₃
-  have edi₃ : PtrAt s₃ W .edi (d + 4 * j) := by rw [PtrAt, K₃.1 _ (by decide)]; exact edi
+  obtain K₃ : Keeps [.eax, .ecx] t s₃ := K₂.widen u₃.keeps
+  obtain ht₃ := ht.of_keeps K₃
+  obtain edi₃ : PtrAt s₃ W .edi (d + 4 * j) := by rw [PtrAt, K₃.1 _ (by decide)]; exact edi
   refine wp_storeS (ea_ptr ht₃ edi₃ (d := 0) (by omega_using [hd, hj]))
     (ws_write ht₃ (y := d + 4 * j + 0) (n := 4) (by omega_using [hd, hj])) fun s₄ m₄ => ?_
   refine wp_sbb_self (by rw [m₄.cf]; exact c₃) fun s₅ u₅ => ?_
   refine wp_addS rfl fun s₆ u₆ _ => wp_addS rfl fun s₇ u₇ _ => wp_addS rfl fun s₈ u₈ _ => ?_
   refine wp_subZ rfl fun s₉ u₉ z₉ => WP.block_nil ?_
   obtain ⟨c₁, c₂'⟩ := count_zf edx hj
-  have K₅ : Keeps [.eax, .ecx] t s₅ := (K₃.widen (m₄.keeps [])).widen u₅.keeps
-  have r₅ : ∀ r, r = .ebp ∨ r = .ebx ∨ r = .edi ∨ r = .edx → s₅.gpr r = t.gpr r := by
+  obtain K₅ : Keeps [.eax, .ecx] t s₅ := (K₃.widen (m₄.keeps [])).widen u₅.keeps
+  obtain r₅ : ∀ r, r = .ebp ∨ r = .ebx ∨ r = .edi ∨ r = .edx → s₅.gpr r = t.gpr r := by
     intro r hr; apply K₅.1; rcases hr with rfl | rfl | rfl | rfl <;> decide
-  have m₂ : s₂.mem = t.mem := by rw [u₂.mem, u₁.mem]
-  have eax₂ : (s₂.gpr .eax).toNat = w32 t₀.mem W (a + 4 * j) := by
+  obtain m₂ : s₂.mem = t.mem := by rw [u₂.mem, u₁.mem]
+  obtain eax₂ : (s₂.gpr .eax).toNat = w32 t₀.mem W (a + 4 * j) := by
     rw [u₂.other _ (by decide), u₁.gpr, Nat.add_zero, ← aw]
-  have src₂ : (s₂.mem.readW (off W (m + 4 * j + 0)) 32).toNat = w32 t₀.mem W (m + 4 * j) := by
+  obtain src₂ : (s₂.mem.readW (off W (m + 4 * j + 0)) 32).toNat = w32 t₀.mem W (m + 4 * j) := by
     rw [m₂, Nat.add_zero, ← mw]
   refine ⟨⟨Kt.trans ((((K₅.mono (by decide)).widen u₆.keeps).widen u₇.keeps |>.widen u₈.keeps).widen u₉.keeps),
     ?_, ?_, ?_, ?_, ?_, decide ((s₂.gpr .eax).toNat < (s₂.mem.readW (off W (m + 4 * j + 0)) 32).toNat + c.toNat),
@@ -139,7 +139,7 @@ theorem reduceLoop_ok {t₀ : State} {W : Addr} {L : Nat} (hw : Ws t₀ W L) {a 
   · rw [u₉.other _ (by decide), u₈.other _ (by decide), u₇.other _ (by decide), u₆.other _ (by decide), u₅.gpr]
   · rw [u₉.mem, u₈.mem, u₇.mem, u₆.mem, u₅.mem, m₄.mem, u₃.mem, m₂, Nat.add_zero,
       val32_store hn (by omega_using [hd, hj]), val32_succ t₀.mem W m, val32_succ t₀.mem W a, pow32_succ, u₃.gpr]
-    have h := sbb_rel (s₂.gpr .eax) (s₂.mem.readW (off W (m + 4 * j + 0)) 32) c
+    obtain h := sbb_rel (s₂.gpr .eax) (s₂.mem.readW (off W (m + 4 * j + 0)) 32) c
     rw [eax₂, src₂] at h
     rw [eax₂, show (t.mem.readW (off W (m + 4 * j + 0)) 32).toNat = w32 t₀.mem W (m + 4 * j) by
       rw [← m₂]; exact src₂]
@@ -168,33 +168,33 @@ theorem selectLoop_ok {t₀ : State} {W : Addr} {L : Nat} (hw : Ws t₀ W L) {x 
     ⟨Keeps.refl _ _, by simpa using hebp, by simpa using hebx, by simpa using hedi, Outside.refl _ _ _ _,
       by cases k <;> rfl⟩) fun u ⟨K, _, P, _, O, V⟩ => ⟨O, V, P, K⟩
   rintro j t hj ⟨Kt, ebp, ebx, edi, O, V⟩
-  have ht := hw.of_keeps Kt
-  have ecx : t.gpr .ecx = cmask k := by rw [Kt.1 _ (by decide)]; exact hecx
-  have xw : w32 t.mem W (x + 4 * j) = w32 t₀.mem W (x + 4 * j) :=
+  obtain ht := hw.of_keeps Kt
+  obtain ecx : t.gpr .ecx = cmask k := by rw [Kt.1 _ (by decide)]; exact hecx
+  obtain xw : w32 t.mem W (x + 4 * j) = w32 t₀.mem W (x + 4 * j) :=
     O.w32 (by omega_using [hdx, hj]) (by omega_using [hx, hj, hn])
-  have dw : w32 t.mem W (d + 4 * j) = w32 t₀.mem W (d + 4 * j) :=
+  obtain dw : w32 t.mem W (d + 4 * j) = w32 t₀.mem W (d + 4 * j) :=
     O.w32 (by omega_using []) (by omega_using [hd, hj, hn])
   refine wp_movS (readSrc_ptr ht ebx (d := 0) (by omega_using [hd, hj])) fun s₁ u₁ _ => ?_
-  have ht₁ := ht.of_keeps u₁.keeps
-  have ebp₁ : PtrAt s₁ W .ebp (x + 4 * j) := by rw [PtrAt, u₁.other _ (by decide)]; exact ebp
+  obtain ht₁ := ht.of_keeps u₁.keeps
+  obtain ebp₁ : PtrAt s₁ W .ebp (x + 4 * j) := by rw [PtrAt, u₁.other _ (by decide)]; exact ebp
   refine wp_movS (readSrc_ptr ht₁ ebp₁ (d := 0) (by omega_using [hx, hj])) fun s₂ u₂ _ => ?_
   refine wp_logicS (.inr rfl) rfl fun s₃ u₃ => ?_
   refine wp_logicS (.inl rfl) rfl fun s₄ u₄ => ?_
   refine wp_logicS (.inr rfl) rfl fun s₅ u₅ => ?_
-  have K₅ : Keeps [.eax, .edx] t s₅ :=
+  obtain K₅ : Keeps [.eax, .edx] t s₅ :=
     (((u₁.keeps.mono (by decide)).widen u₂.keeps).widen u₃.keeps |>.widen u₄.keeps).widen u₅.keeps
-  have ht₅ := ht.of_keeps K₅
-  have ebx₅ : PtrAt s₅ W .ebx (d + 4 * j) := by rw [PtrAt, K₅.1 _ (by decide)]; exact ebx
+  obtain ht₅ := ht.of_keeps K₅
+  obtain ebx₅ : PtrAt s₅ W .ebx (d + 4 * j) := by rw [PtrAt, K₅.1 _ (by decide)]; exact ebx
   refine wp_storeS (ea_ptr ht₅ ebx₅ (d := 0) (by omega_using [hd, hj]))
     (ws_write ht₅ (y := d + 4 * j + 0) (n := 4) (by omega_using [hd, hj])) fun s₆ m₆ => ?_
   refine wp_addS rfl fun s₇ u₇ _ => wp_addS rfl fun s₈ u₈ _ => wp_subZ rfl fun s₉ u₉ z₉ => WP.block_nil ?_
   obtain ⟨c₁, c₂⟩ := count_zf edi hj
-  have r₆ : ∀ r, r = .ebp ∨ r = .ebx ∨ r = .edi → s₆.gpr r = t.gpr r := by
+  obtain r₆ : ∀ r, r = .ebp ∨ r = .ebx ∨ r = .edi → s₆.gpr r = t.gpr r := by
     intro r hr; rw [m₆.gpr]; apply K₅.1; rcases hr with rfl | rfl | rfl <;> decide
-  have mem₅ : s₅.mem = t.mem := by rw [u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem]
-  have ecx₃ : s₃.gpr .ecx = t.gpr .ecx := by
+  obtain mem₅ : s₅.mem = t.mem := by rw [u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem]
+  obtain ecx₃ : s₃.gpr .ecx = t.gpr .ecx := by
     rw [u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide)]
-  have eax₅ : s₅.gpr .eax = t.mem.readW (off W (d + 4 * j)) 32 ^^^
+  obtain eax₅ : s₅.gpr .eax = t.mem.readW (off W (d + 4 * j)) 32 ^^^
       ((t.mem.readW (off W (x + 4 * j)) 32 ^^^ t.mem.readW (off W (d + 4 * j)) 32) &&&
         (if k then BitVec.allOnes 32 else 0)) := by
     rw [u₅.gpr, u₄.other _ (by decide), u₄.gpr, ecx₃, ecx, u₃.other _ (by decide), u₃.gpr,

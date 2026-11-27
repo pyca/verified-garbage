@@ -1,42 +1,44 @@
 module
 
-public import VerifiedGarbage.Proof.EcKey.Arm.BrainpoolP256r1.Comb -- shake: keep (proof binding in exposed artifacts)
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.Arm.Print
-public import VerifiedGarbage.Proof.BrainpoolP256r1.Arm.Law
-public import VerifiedGarbage.Proof.EcKey.Compressed.Arm.BrainpoolP256r1
-public import VerifiedGarbage.Proof.EcKey.Compressed.Arm.BrainpoolP256r1Decompress
-public import VerifiedGarbage.Proof.Weierstrass.Law
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.EcKey.BrainpoolP256r1
+public import VerifiedGarbage.Spec.EcKey.Compressed.Contract
+import VerifiedGarbage.Impl.EcKey.BrainpoolP256r1.ArmFn
+import VerifiedGarbage.Proof.EcKey.Arm.BrainpoolP256r1.Scrub
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.BrainpoolP256r1.Arm.Law
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # brainpoolP256r1 public keys (FIPS 186-5 §A.2) on ARMv7 -/
-
-@[expose] public section
 
 namespace VG.Artifacts.EcBrainpoolP256r1.Arm
 
 open VG.Proof.BrainpoolP256r1.Arm (hasLaw)
 
-def artifacts : List Artifact := [
+public def artifacts : List (Artifact Arm.target) := [
   Spec.EcKey.BrainpoolP256r1.publicKeyApi.artifact Arm.target {
-    code := Impl.Ecdsa.Arm.publicKeyBrainpoolP256r1Comb
-    verified := Proof.EcKey.Arm.BrainpoolP256r1.combPk_verified hasLaw.law },
+    code := Impl.EcKey.Arm.Fn.publicKeyBrainpoolP256r1
+    verified := Proof.EcKey.Arm.Fn.publicKeyBrainpoolP256r1 hasLaw.law },
   Spec.EcKey.BrainpoolP256r1.publicKeyApi.artifact Arm.target {
     suffix := "_umaal"
-    code := Impl.Ecdsa.Arm.publicKeyBrainpoolP256r1CombU
-    verified := Proof.EcKey.Arm.BrainpoolP256r1.combPkU_verified hasLaw.law },
+    code := Impl.EcKey.Arm.Fn.publicKeyBrainpoolP256r1U
+    verified := Proof.EcKey.Arm.Fn.publicKeyBrainpoolP256r1U hasLaw.law },
   Spec.EcKey.BrainpoolP256r1.inst.compressPublicKeyApi.artifact Arm.target {
-    code := Proof.EcKey.Compressed.Arm.BrainpoolP256r1.code
-    verified := Proof.EcKey.Compressed.Arm.BrainpoolP256r1.verified },
+    code := Impl.EcKey.Arm.Fn.compressBrainpoolP256r1
+    verified := Proof.EcKey.Arm.Fn.compressBrainpoolP256r1 },
   Spec.EcKey.BrainpoolP256r1.inst.decompressPublicKeyApi.artifact Arm.target {
-    code := Proof.EcKey.Compressed.Arm.BrainpoolP256r1Decompress.code
-    verified := Proof.EcKey.Compressed.Arm.BrainpoolP256r1Decompress.verified hasLaw.law },
+    code := Impl.EcKey.Arm.Fn.decompressBrainpoolP256r1
+    verified := Proof.EcKey.Arm.Fn.decompressBrainpoolP256r1 hasLaw.law },
   Spec.EcKey.BrainpoolP256r1.inst.compressPublicKeyApi.artifact Arm.target {
     suffix := "_umaal"
-    code := Proof.EcKey.Compressed.Arm.BrainpoolP256r1.codeU
-    verified := Proof.EcKey.Compressed.Arm.BrainpoolP256r1.verifiedU },
+    code := Impl.EcKey.Arm.Fn.compressBrainpoolP256r1U
+    verified := Proof.EcKey.Arm.Fn.compressBrainpoolP256r1U },
   Spec.EcKey.BrainpoolP256r1.inst.decompressPublicKeyApi.artifact Arm.target {
     suffix := "_umaal"
-    code := Proof.EcKey.Compressed.Arm.BrainpoolP256r1Decompress.codeU
-    verified := Proof.EcKey.Compressed.Arm.BrainpoolP256r1Decompress.verifiedU hasLaw.law }]
+    code := Impl.EcKey.Arm.Fn.decompressBrainpoolP256r1U
+    verified := Proof.EcKey.Arm.Fn.decompressBrainpoolP256r1U hasLaw.law }]
+
+spec_apis artifacts
 
 end VG.Artifacts.EcBrainpoolP256r1.Arm

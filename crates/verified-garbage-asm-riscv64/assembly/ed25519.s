@@ -16,7 +16,7 @@ vg_ed25519_key_pair:
 	addi a0, a2, 0
 	addi a2, a1, 0
 	addi a1, zero, 32
-	call {vg_sha512_digest}
+	call {vg_sha512_digest_core}
 	addi t0, sp, 0
 	ld a0, 8(t0)
 	ld a1, 16(t0)
@@ -25,6 +25,85 @@ vg_ed25519_key_pair:
 	addi t0, sp, 0
 	ld ra, 0(t0)
 	addi sp, sp, 32
+	addi t0, zero, 0
+	addi sp, sp, -480
+	addi t1, sp, 0
+	sd t0, 0(t1)
+	sd t0, 8(t1)
+	sd t0, 16(t1)
+	sd t0, 24(t1)
+	sd t0, 32(t1)
+	sd t0, 40(t1)
+	sd t0, 48(t1)
+	sd t0, 56(t1)
+	sd t0, 64(t1)
+	sd t0, 72(t1)
+	sd t0, 80(t1)
+	sd t0, 88(t1)
+	sd t0, 96(t1)
+	sd t0, 104(t1)
+	sd t0, 112(t1)
+	sd t0, 120(t1)
+	sd t0, 128(t1)
+	sd t0, 136(t1)
+	sd t0, 144(t1)
+	sd t0, 152(t1)
+	sd t0, 160(t1)
+	sd t0, 168(t1)
+	sd t0, 176(t1)
+	sd t0, 184(t1)
+	sd t0, 192(t1)
+	sd t0, 200(t1)
+	sd t0, 208(t1)
+	sd t0, 216(t1)
+	sd t0, 224(t1)
+	sd t0, 232(t1)
+	sd t0, 240(t1)
+	sd t0, 248(t1)
+	sd t0, 256(t1)
+	sd t0, 264(t1)
+	sd t0, 272(t1)
+	sd t0, 280(t1)
+	sd t0, 288(t1)
+	sd t0, 296(t1)
+	sd t0, 304(t1)
+	sd t0, 312(t1)
+	sd t0, 320(t1)
+	sd t0, 328(t1)
+	sd t0, 336(t1)
+	sd t0, 344(t1)
+	sd t0, 352(t1)
+	sd t0, 360(t1)
+	sd t0, 368(t1)
+	sd t0, 376(t1)
+	sd t0, 384(t1)
+	sd t0, 392(t1)
+	sd t0, 400(t1)
+	sd t0, 408(t1)
+	sd t0, 416(t1)
+	sd t0, 424(t1)
+	sd t0, 432(t1)
+	sd t0, 440(t1)
+	sd t0, 448(t1)
+	sd t0, 456(t1)
+	sd t0, 464(t1)
+	sd t0, 472(t1)
+	addi sp, sp, 480
+	addi a0, zero, 0
+	addi a1, zero, 0
+	addi a2, zero, 0
+	addi a3, zero, 0
+	addi a4, zero, 0
+	addi a5, zero, 0
+	addi a6, zero, 0
+	addi a7, zero, 0
+	addi t0, zero, 0
+	addi t1, zero, 0
+	addi t2, zero, 0
+	addi t3, zero, 0
+	addi t4, zero, 0
+	addi t5, zero, 0
+	addi t6, zero, 0
 	ret
 	.option pop
 
@@ -262,21 +341,21 @@ vg_ed25519_sign_expanded:
 	ld a5, 184(s11)
 	sd a5, 56(s11)
 	addi a0, s10, 0
-	call {vg_sha512_init}
+	call {vg_sha512_init_core}
 	addi a0, s10, 0
 	addi a1, zero, 0
 	addi a2, s11, 32
 	addi a3, zero, 32
-	call {vg_sha512_update}
+	call {vg_sha512_update_core}
 	addi a0, s10, 0
 	addi a1, zero, 32
 	addi a2, s8, 0
 	addi a3, s9, 0
-	call {vg_sha512_update}
+	call {vg_sha512_update_core}
 	addi a0, s10, 0
 	addi a1, s9, 32
 	addi a2, s11, 128
-	call {vg_sha512_finalize}
+	call {vg_sha512_finalize_core}
 	addi a0, s11, 64
 	addi a1, s11, 128
 	addi a2, s10, 0
@@ -286,26 +365,26 @@ vg_ed25519_sign_expanded:
 	addi a2, s10, 0
 	call {vg_ed25519_scalar_base}
 	addi a0, s10, 0
-	call {vg_sha512_init}
+	call {vg_sha512_init_core}
 	addi a0, s10, 0
 	addi a1, zero, 0
 	addi a2, s7, 0
 	addi a3, zero, 32
-	call {vg_sha512_update}
+	call {vg_sha512_update_core}
 	addi a0, s10, 0
 	addi a1, zero, 32
 	addi a2, s11, 192
 	addi a3, zero, 32
-	call {vg_sha512_update}
+	call {vg_sha512_update_core}
 	addi a0, s10, 0
 	addi a1, zero, 64
 	addi a2, s8, 0
 	addi a3, s9, 0
-	call {vg_sha512_update}
+	call {vg_sha512_update_core}
 	addi a0, s10, 0
 	addi a1, s9, 64
 	addi a2, s11, 128
-	call {vg_sha512_finalize}
+	call {vg_sha512_finalize_core}
 	addi a0, s11, 96
 	addi a1, s11, 128
 	addi a2, s10, 0
@@ -354,6 +433,87 @@ vg_ed25519_sign_expanded:
 	sd t6, 208(t5)
 	sd t6, 216(t5)
 	addi sp, sp, 288
+	addi t0, zero, 0
+	addi sp, sp, -496
+	addi t1, sp, 0
+	sd t0, 0(t1)
+	sd t0, 8(t1)
+	sd t0, 16(t1)
+	sd t0, 24(t1)
+	sd t0, 32(t1)
+	sd t0, 40(t1)
+	sd t0, 48(t1)
+	sd t0, 56(t1)
+	sd t0, 64(t1)
+	sd t0, 72(t1)
+	sd t0, 80(t1)
+	sd t0, 88(t1)
+	sd t0, 96(t1)
+	sd t0, 104(t1)
+	sd t0, 112(t1)
+	sd t0, 120(t1)
+	sd t0, 128(t1)
+	sd t0, 136(t1)
+	sd t0, 144(t1)
+	sd t0, 152(t1)
+	sd t0, 160(t1)
+	sd t0, 168(t1)
+	sd t0, 176(t1)
+	sd t0, 184(t1)
+	sd t0, 192(t1)
+	sd t0, 200(t1)
+	sd t0, 208(t1)
+	sd t0, 216(t1)
+	sd t0, 224(t1)
+	sd t0, 232(t1)
+	sd t0, 240(t1)
+	sd t0, 248(t1)
+	sd t0, 256(t1)
+	sd t0, 264(t1)
+	sd t0, 272(t1)
+	sd t0, 280(t1)
+	sd t0, 288(t1)
+	sd t0, 296(t1)
+	sd t0, 304(t1)
+	sd t0, 312(t1)
+	sd t0, 320(t1)
+	sd t0, 328(t1)
+	sd t0, 336(t1)
+	sd t0, 344(t1)
+	sd t0, 352(t1)
+	sd t0, 360(t1)
+	sd t0, 368(t1)
+	sd t0, 376(t1)
+	sd t0, 384(t1)
+	sd t0, 392(t1)
+	sd t0, 400(t1)
+	sd t0, 408(t1)
+	sd t0, 416(t1)
+	sd t0, 424(t1)
+	sd t0, 432(t1)
+	sd t0, 440(t1)
+	sd t0, 448(t1)
+	sd t0, 456(t1)
+	sd t0, 464(t1)
+	sd t0, 472(t1)
+	sd t0, 480(t1)
+	sd t0, 488(t1)
+	addi sp, sp, 496
+	addi a0, zero, 0
+	addi a1, zero, 0
+	addi a2, zero, 0
+	addi a3, zero, 0
+	addi a4, zero, 0
+	addi a5, zero, 0
+	addi a6, zero, 0
+	addi a7, zero, 0
+	addi t0, zero, 0
+	addi t1, zero, 0
+	addi t2, zero, 0
+	addi t3, zero, 0
+	addi t4, zero, 0
+	addi t5, zero, 0
+	addi t6, zero, 0
 	ret
 	.option pop
 
@@ -564,26 +724,26 @@ vg_ed25519_verify:
 	lbu a5, 31(a0)
 	sb a5, 223(s10)
 	addi a0, s9, 0
-	call {vg_sha512_init}
+	call {vg_sha512_init_core}
 	addi a0, s9, 0
 	addi a1, zero, 0
 	addi a2, s10, 128
 	addi a3, zero, 32
-	call {vg_sha512_update}
+	call {vg_sha512_update_core}
 	addi a0, s9, 0
 	addi a1, zero, 32
 	addi a2, s10, 192
 	addi a3, zero, 32
-	call {vg_sha512_update}
+	call {vg_sha512_update_core}
 	addi a0, s9, 0
 	addi a1, zero, 64
 	addi a2, s7, 0
 	addi a3, s8, 0
-	call {vg_sha512_update}
+	call {vg_sha512_update_core}
 	addi a0, s9, 0
 	addi a1, s8, 64
 	addi a2, s10, 64
-	call {vg_sha512_finalize}
+	call {vg_sha512_finalize_core}
 	addi a0, s10, 0
 	addi a1, s10, 64
 	addi a2, s9, 0
@@ -604,5 +764,84 @@ vg_ed25519_verify:
 	ld s9, 240(s10)
 	ld s10, 248(s10)
 	addi sp, sp, 272
+	addi t0, zero, 0
+	addi sp, sp, -480
+	addi t1, sp, 0
+	sd t0, 0(t1)
+	sd t0, 8(t1)
+	sd t0, 16(t1)
+	sd t0, 24(t1)
+	sd t0, 32(t1)
+	sd t0, 40(t1)
+	sd t0, 48(t1)
+	sd t0, 56(t1)
+	sd t0, 64(t1)
+	sd t0, 72(t1)
+	sd t0, 80(t1)
+	sd t0, 88(t1)
+	sd t0, 96(t1)
+	sd t0, 104(t1)
+	sd t0, 112(t1)
+	sd t0, 120(t1)
+	sd t0, 128(t1)
+	sd t0, 136(t1)
+	sd t0, 144(t1)
+	sd t0, 152(t1)
+	sd t0, 160(t1)
+	sd t0, 168(t1)
+	sd t0, 176(t1)
+	sd t0, 184(t1)
+	sd t0, 192(t1)
+	sd t0, 200(t1)
+	sd t0, 208(t1)
+	sd t0, 216(t1)
+	sd t0, 224(t1)
+	sd t0, 232(t1)
+	sd t0, 240(t1)
+	sd t0, 248(t1)
+	sd t0, 256(t1)
+	sd t0, 264(t1)
+	sd t0, 272(t1)
+	sd t0, 280(t1)
+	sd t0, 288(t1)
+	sd t0, 296(t1)
+	sd t0, 304(t1)
+	sd t0, 312(t1)
+	sd t0, 320(t1)
+	sd t0, 328(t1)
+	sd t0, 336(t1)
+	sd t0, 344(t1)
+	sd t0, 352(t1)
+	sd t0, 360(t1)
+	sd t0, 368(t1)
+	sd t0, 376(t1)
+	sd t0, 384(t1)
+	sd t0, 392(t1)
+	sd t0, 400(t1)
+	sd t0, 408(t1)
+	sd t0, 416(t1)
+	sd t0, 424(t1)
+	sd t0, 432(t1)
+	sd t0, 440(t1)
+	sd t0, 448(t1)
+	sd t0, 456(t1)
+	sd t0, 464(t1)
+	sd t0, 472(t1)
+	addi sp, sp, 480
+	addiw a0, a0, 0
+	addi a1, zero, 0
+	addi a2, zero, 0
+	addi a3, zero, 0
+	addi a4, zero, 0
+	addi a5, zero, 0
+	addi a6, zero, 0
+	addi a7, zero, 0
+	addi t0, zero, 0
+	addi t1, zero, 0
+	addi t2, zero, 0
+	addi t3, zero, 0
+	addi t4, zero, 0
+	addi t5, zero, 0
+	addi t6, zero, 0
 	ret
 	.option pop

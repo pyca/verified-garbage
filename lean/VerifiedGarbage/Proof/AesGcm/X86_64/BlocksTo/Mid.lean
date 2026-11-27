@@ -46,20 +46,22 @@ abbrev C : Addr := s.gpr .rdx
 abbrev Y : Addr := s.gpr .rcx
 abbrev Src : Addr := s.gpr .r8
 abbrev n : Nat := (s.gpr .r9).toNat
-abbrev Dst : Addr := stackArg s 0
-abbrev S : Addr := stackArg s 2
+abbrev Dst (compact : Bool := false) : Addr := if compact then s.gpr .r10 else stackArg s 0
+abbrev S (compact : Bool := false) : Addr := stackArg s (if compact then 0 else 2)
 abbrev SP : Addr := s.gpr .rsp
 abbrev cR : Region := ⟨C s, 16⟩
 abbrev yR : Region := ⟨Y s, 16⟩
 abbrev srcR : Region := ⟨Src s, n s * 16⟩
-abbrev dR : Region := ⟨Dst s, n s * 16⟩
-abbrev sR : Region := ⟨S s, 2112⟩
+abbrev dR (compact : Bool := false) : Region := ⟨Dst s compact, n s * 16⟩
+abbrev sR (compact : Bool := false) : Region := ⟨S s compact, 2112⟩
 /-- The stack arguments `dst`, `dst_n` and `scratch`. -/
-abbrev aR : Region := ⟨SP s + BitVec.ofNat 64 8, 24⟩
+abbrev argCount (compact : Bool) : Nat := if compact then 1 else 3
+abbrev aR (compact : Bool := false) : Region := ⟨SP s + BitVec.ofNat 64 8, 8 * argCount compact⟩
 /-- What the code writes: the counter, `Y`, the output and `scratch`. -/
-abbrev wR : List Region := [cR s, yR s, dR s, sR s]
+abbrev wR (compact : Bool := false) : List Region := [cR s, yR s, dR s compact, sR s compact]
 /-- The stack the calls use. -/
-abbrev tR : Region := below (SP s) 24
+abbrev callBytes (compact : Bool) : Nat := if compact then 8 else 24
+abbrev tR (compact : Bool := false) : Region := below (SP s) (callBytes compact)
 
 end
 
@@ -68,53 +70,62 @@ abbrev kR (M : CtxMode) (s : State) : Region := ⟨K s, M.len⟩
 
 /-- `blocksToPreM M`, by name (with the output's length `dst_n` replaced by
 `n`, which it equals). -/
-structure BT (M : CtxMode) (s : State) : Prop where
-  rd : s.rd = [kR M s, srcR s, aR s]
-  wr : s.wr = wR s
-  dn : stackArg s 1 = s.gpr .r9
+structure BT (M : CtxMode) (s : State) (aliasOK : Bool := false) (compact : Bool := false) : Prop where
+  rd : s.rd = [kR M s, srcR s, aR s compact]
+  wr : s.wr = wR s compact
+  dn : if compact then True else stackArg s 1 = s.gpr .r9
   k_c : (kR M s).Disjoint (cR s)
   k_y : (kR M s).Disjoint (yR s)
-  k_d : (kR M s).Disjoint (dR s)
-  k_s : (kR M s).Disjoint (sR s)
+  k_d : (kR M s).Disjoint (dR s compact)
+  k_s : (kR M s).Disjoint (sR s compact)
   c_y : (cR s).Disjoint (yR s)
   c_r : (cR s).Disjoint (srcR s)
-  c_d : (cR s).Disjoint (dR s)
-  c_s : (cR s).Disjoint (sR s)
-  c_a : (cR s).Disjoint (aR s)
+  c_d : (cR s).Disjoint (dR s compact)
+  c_s : (cR s).Disjoint (sR s compact)
+  c_a : (cR s).Disjoint (aR s compact)
   y_r : (yR s).Disjoint (srcR s)
-  y_d : (yR s).Disjoint (dR s)
-  y_s : (yR s).Disjoint (sR s)
-  y_a : (yR s).Disjoint (aR s)
-  r_d : (srcR s).Disjoint (dR s)
-  r_s : (srcR s).Disjoint (sR s)
-  d_s : (dR s).Disjoint (sR s)
-  d_a : (dR s).Disjoint (aR s)
-  s_a : (sR s).Disjoint (aR s)
+  y_d : (yR s).Disjoint (dR s compact)
+  y_s : (yR s).Disjoint (sR s compact)
+  y_a : (yR s).Disjoint (aR s compact)
+  r_d : if aliasOK then Src s = Dst s compact ∨ (srcR s).Disjoint (dR s compact) else (srcR s).Disjoint (dR s compact)
+  r_s : (srcR s).Disjoint (sR s compact)
+  d_s : (dR s compact).Disjoint (sR s compact)
+  d_a : (dR s compact).Disjoint (aR s compact)
+  s_a : (sR s compact).Disjoint (aR s compact)
   t_c : (⟨SP s, 8⟩ : Region).Disjoint (cR s)
   t_y : (⟨SP s, 8⟩ : Region).Disjoint (yR s)
-  t_d : (⟨SP s, 8⟩ : Region).Disjoint (dR s)
-  t_s : (⟨SP s, 8⟩ : Region).Disjoint (sR s)
-  b_k : (tR s).Disjoint (kR M s)
-  b_c : (tR s).Disjoint (cR s)
-  b_y : (tR s).Disjoint (yR s)
-  b_r : (tR s).Disjoint (srcR s)
-  b_d : (tR s).Disjoint (dR s)
-  b_s : (tR s).Disjoint (sR s)
+  t_d : (⟨SP s, 8⟩ : Region).Disjoint (dR s compact)
+  t_s : (⟨SP s, 8⟩ : Region).Disjoint (sR s compact)
+  b_k : (tR s compact).Disjoint (kR M s)
+  b_c : (tR s compact).Disjoint (cR s)
+  b_y : (tR s compact).Disjoint (yR s)
+  b_r : (tR s compact).Disjoint (srcR s)
+  b_d : (tR s compact).Disjoint (dR s compact)
+  b_s : (tR s compact).Disjoint (sR s compact)
   w_k : (K s).toNat + M.len ≤ 2 ^ 64
   w_c : (C s).toNat + 16 ≤ 2 ^ 64
   w_y : (Y s).toNat + 16 ≤ 2 ^ 64
   w_r : (Src s).toNat + n s * 16 ≤ 2 ^ 64
-  w_d : (Dst s).toNat + n s * 16 ≤ 2 ^ 64
-  w_s : (S s).toNat + 2112 ≤ 2 ^ 64
-  w_t : 24 ≤ (SP s).toNat
-  w_sp : (SP s).toNat + 32 ≤ 2 ^ 64
+  w_d : (Dst s compact).toNat + n s * 16 ≤ 2 ^ 64
+  w_s : (S s compact).toNat + 2112 ≤ 2 ^ 64
+  w_t : if compact then True else 24 ≤ (SP s).toNat
+  w_sp : (SP s).toNat + 8 * (argCount compact + 1) ≤ 2 ^ 64
   rounds : (s.gpr .rsi).toNat = 10 ∨ (s.gpr .rsi).toNat = 12 ∨ (s.gpr .rsi).toNat = 14
   ok : M.ok s.mem (K s)
+
+theorem BT.layout {M : CtxMode} {s : State} {aliasOK compact : Bool} (hp : BT M s aliasOK compact) :
+    Src s = Dst s compact ∨ (srcR s).Disjoint (dR s compact) := by
+  cases aliasOK
+  · exact Or.inr hp.r_d
+  · exact hp.r_d
+
+theorem BT.buffers {M : CtxMode} {s : State} (hp : BT M s) : BT M s true :=
+  { hp with r_d := hp.layout }
 
 theorem BT.ofM {M : CtxMode} {s : State} (h : Proof.AesGcm.blocksToPreM M s) : BT M s := by
   simp only [Proof.AesGcm.blocksToPreM, Proof.AesGcm.args, Proof.AesGcm.arg, Proof.AesGcm.ret,
     Proof.AesGcm.stk24, Proof.AesGcm.rounds] at h
-  have hA : stackArgAddr s 0 = s.gpr .rsp + BitVec.ofNat 64 8 := by simp [stackArgAddr]
+  obtain hA : stackArgAddr s 0 = s.gpr .rsp + BitVec.ofNat 64 8 := by simp [stackArgAddr]
   sig_split h
   rename_i a₁ a₂ a₃ a₄ a₅ a₆ a₇ a₈ a₉ a₁₀ a₁₁ a₁₂ a₁₃ a₁₄ a₁₅ a₁₆ a₁₇ a₁₈ a₁₉ a₂₀ a₂₁ a₂₂ a₂₃ a₂₄ a₂₅ a₂₆ a₂₇
     a₂₈ a₂₉ a₃₀ a₃₁ a₃₂ a₃₃ a₃₄ a₃₅ a₃₆ a₃₇ a₃₈ a₃₉ a₄₀
@@ -129,42 +140,42 @@ theorem BT.ofM {M : CtxMode} {s : State} (h : Proof.AesGcm.blocksToPreM M s) : B
 
 /-- The arguments kept in `scratch` at `S`: the plaintext, the number of
 blocks and the output of what is left after `q` blocks. -/
-structure Kept (s : State) (q : Nat) (m : Mem) : Prop where
-  ctx : m.readW (S s) 64 = K s
-  rounds : m.readW (S s + BitVec.ofNat 64 8) 64 = s.gpr .rsi
-  ctr : m.readW (S s + BitVec.ofNat 64 16) 64 = C s
-  y : m.readW (S s + BitVec.ofNat 64 24) 64 = Y s
-  src : m.readW (S s + BitVec.ofNat 64 32) 64 = Src s + BitVec.ofNat 64 (16 * q)
-  n : m.readW (S s + BitVec.ofNat 64 40) 64 = BitVec.ofNat 64 (n s - q)
-  dst : m.readW (S s + BitVec.ofNat 64 48) 64 = Dst s + BitVec.ofNat 64 (16 * q)
+structure Kept (s : State) (q : Nat) (m : Mem) (compact : Bool := false) : Prop where
+  ctx : m.readW (S s compact) 64 = K s
+  rounds : m.readW (S s compact + BitVec.ofNat 64 8) 64 = s.gpr .rsi
+  ctr : m.readW (S s compact + BitVec.ofNat 64 16) 64 = C s
+  y : m.readW (S s compact + BitVec.ofNat 64 24) 64 = Y s
+  src : m.readW (S s compact + BitVec.ofNat 64 32) 64 = Src s + BitVec.ofNat 64 (16 * q)
+  n : m.readW (S s compact + BitVec.ofNat 64 40) 64 = BitVec.ofNat 64 (n s - q)
+  dst : m.readW (S s compact + BitVec.ofNat 64 48) 64 = Dst s compact + BitVec.ofNat 64 (16 * q)
 
 /-- The slots of the arguments kept. -/
-abbrev kR' (s : State) : Region := ⟨S s, 56⟩
+abbrev kR' (s : State) (compact : Bool := false) : Region := ⟨S s compact, 56⟩
 
 section
-variable {M : CtxMode} {s : State} (hp : BT M s)
+variable {M : CtxMode} {s : State} {aliasOK compact : Bool} (hp : BT M s aliasOK compact)
 include hp
 
-theorem s_in {d k : Nat} (h : d + k ≤ 2112) : InRegions s.wr (S s + BitVec.ofNat 64 d) k :=
+theorem s_in {d k : Nat} (h : d + k ≤ 2112) : InRegions s.wr (S s compact + BitVec.ofNat 64 d) k :=
   in_off (rs := s.wr) (by rw [hp.wr]; exact covers_of_mem (by simp)) h (by decide)
 
-theorem s_in' {d k : Nat} (h : d + k ≤ 2112) : InRegions (s.rd ++ s.wr) (S s + BitVec.ofNat 64 d) k :=
+theorem s_in' {d k : Nat} (h : d + k ≤ 2112) : InRegions (s.rd ++ s.wr) (S s compact + BitVec.ofNat 64 d) k :=
   in_left (s_in hp h)
 
 /-- The stack argument `i` (of three) is readable. -/
-theorem a_in {i : Nat} (hi : i < 3) : InRegions (s.rd ++ s.wr) (SP s + BitVec.ofNat 64 (8 * (i + 1))) 8 :=
-  ⟨aR s, by rw [hp.rd]; simp, Offset.contains _ (by omega_using []) (by omega_using [hi]) (by have := hp.w_sp; omega_using [])⟩
+theorem a_in {i : Nat} (hi : i < argCount compact) : InRegions (s.rd ++ s.wr) (SP s + BitVec.ofNat 64 (8 * (i + 1))) 8 :=
+  ⟨aR s compact, by rw [hp.rd]; simp, Offset.contains _ (by omega_using []) (by omega_using [hi]) (by have := hp.w_sp; cases compact <;> simp_all only [argCount, Bool.false_eq_true, ↓reduceIte] <;> omega_arith)⟩
 
 omit hp in
 /-- The slots of the arguments are in `scratch`, apart from the powers. -/
-theorem kR'_sub : (kR' s).Sub (sR s) := Region.sub_prefix (by decide)
+theorem kR'_sub : (kR' s compact).Sub (sR s compact) := Region.sub_prefix (by decide)
 
 /-- What a frame of the regions written keeps: the stack arguments. -/
-theorem keep_a {m m' : Mem} (hf : Frame (wR s) m m') {i : Nat} (hi : i < 3) :
+theorem keep_a {m m' : Mem} (hf : Frame (wR s compact) m m') {i : Nat} (hi : i < argCount compact) :
     m'.readW (SP s + BitVec.ofNat 64 (8 * (i + 1))) 64 = m.readW (SP s + BitVec.ofNat 64 (8 * (i + 1))) 64 :=
   hf.readW (r := ⟨SP s + BitVec.ofNat 64 (8 * (i + 1)), 8⟩) (Region.contains_self _ _) (fun r hr => by
-    have hs : Region.Sub ⟨SP s + BitVec.ofNat 64 (8 * (i + 1)), 8⟩ (aR s) := by
-      have e : SP s + BitVec.ofNat 64 (8 * (i + 1)) = SP s + BitVec.ofNat 64 8 + BitVec.ofNat 64 (8 * i) := by
+    obtain hs : Region.Sub ⟨SP s + BitVec.ofNat 64 (8 * (i + 1)), 8⟩ (aR s compact) := by
+      obtain e : SP s + BitVec.ofNat 64 (8 * (i + 1)) = SP s + BitVec.ofNat 64 8 + BitVec.ofNat 64 (8 * i) := by
         rw [BitVec.add_assoc, ← BitVec.ofNat_add]; congr 2; omega_using []
       rw [e]; exact Offset.sub_base _ (by omega_using [hi])
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -175,7 +186,7 @@ theorem keep_a {m m' : Mem} (hf : Frame (wR s) m m') {i : Nat} (hi : i < 3) :
     · exact hp.s_a.symm.sub_left hs) (by decide)
 
 /-- The return address, through a frame of the regions written. -/
-theorem keep_r {m m' : Mem} (hf : Frame (wR s) m m') : m'.readW (SP s) 64 = m.readW (SP s) 64 :=
+theorem keep_r {m m' : Mem} (hf : Frame (wR s compact) m m') : m'.readW (SP s) 64 = m.readW (SP s) 64 :=
   hf.readW (r := ⟨SP s, 8⟩) (Region.contains_self _ _) (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
@@ -184,10 +195,37 @@ theorem keep_r {m m' : Mem} (hf : Frame (wR s) m m') : m'.readW (SP s) 64 = m.re
     · exact hp.t_d
     · exact hp.t_s) (by decide)
 
+end
+
+section
+variable {M : CtxMode} {s : State} {aliasOK compact : Bool} (hp : BT M s aliasOK compact)
+include hp
+
+theorem pointers_ok : WP isa (.block (pointers compact)) s fun t =>
+    t.gpr .r11 = S s compact ∧ t.gpr .r10 = Dst s compact ∧
+    (∀ r, r ≠ .r11 → r ≠ .r10 → t.gpr r = s.gpr r) ∧
+    t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr := by
+  cases compact
+  ·
+    have src := a_in hp (i := 2) (by decide)
+    have dst := a_in hp (i := 0) (by decide)
+    apply WP.of_runBlock
+    refine ⟨(s.setReg .r11 (S s false)).setReg .r10 (Dst s false), by xrun [pointers, src, dst], ?_, ?_, ?_, rfl, rfl, rfl⟩
+    · simp [S, stackArg, stackArgAddr, gpr_setReg]
+    · simp [Dst, stackArg, stackArgAddr, gpr_setReg]
+    · intro r a b; simp [gpr_setReg, a, b]
+
+  · have scr := a_in hp (i := 0) (by decide)
+    apply WP.of_runBlock
+    refine ⟨s.setReg .r11 (S s true), by xrun [pointers, scr], ?_, ?_, ?_, rfl, rfl, rfl⟩
+    · simp [S, stackArg, stackArgAddr, gpr_setReg]
+    · simp [Dst, gpr_setReg]
+    · intro r hr _; simp [gpr_setReg, hr]
+
 /-- The entry: the arguments kept, with `scratch` in `r11` and `dst` in `r10`. -/
-theorem entry_ok : WP isa (.block entry) s fun s₁ => s₁.gpr .r11 = S s ∧
-    s₁.gpr .r10 = Dst s ∧ (∀ r, r ≠ .r11 → r ≠ .r10 → s₁.gpr r = s.gpr r) ∧
-    Kept s 0 s₁.mem ∧ Frame [kR' s] s.mem s₁.mem ∧ s₁.rd = s.rd ∧ s₁.wr = s.wr := by
+theorem entry_ok : WP isa (.block (entry compact)) s fun s₁ => s₁.gpr .r11 = S s compact ∧
+    s₁.gpr .r10 = Dst s compact ∧ (∀ r, r ≠ .r11 → r ≠ .r10 → s₁.gpr r = s.gpr r) ∧
+    Kept s 0 s₁.mem compact ∧ Frame [kR' s compact] s.mem s₁.mem ∧ s₁.rd = s.rd ∧ s₁.wr = s.wr := by
   have w₁ := s_in hp (show 0 + 8 ≤ 2112 by decide)
   have w₂ := s_in hp (show 8 + 8 ≤ 2112 by decide)
   have w₃ := s_in hp (show 16 + 8 ≤ 2112 by decide)
@@ -195,12 +233,8 @@ theorem entry_ok : WP isa (.block entry) s fun s₁ => s₁.gpr .r11 = S s ∧
   have w₅ := s_in hp (show 32 + 8 ≤ 2112 by decide)
   have w₆ := s_in hp (show 40 + 8 ≤ 2112 by decide)
   have w₇ := s_in hp (show 48 + 8 ≤ 2112 by decide)
-  have a₀ : InRegions (s.rd ++ s.wr) (s.gpr .rsp + BitVec.ofNat 64 8) 8 := a_in hp (i := 0) (by decide)
-  have a₂ : InRegions (s.rd ++ s.wr) (s.gpr .rsp + BitVec.ofNat 64 24) 8 := a_in hp (i := 2) (by decide)
-  have e₀ : s.mem.readW (s.gpr .rsp + BitVec.ofNat 64 8) 64 = Dst s := rfl
-  have e₂ : s.mem.readW (s.gpr .rsp + BitVec.ofNat 64 24) 64 = S s := rfl
   have sep : ∀ a d : Nat, a + 8 ≤ d ∨ d + 8 ≤ a → a + 8 ≤ 2112 → d + 8 ≤ 2112 →
-      Mem.Sep (S s + BitVec.ofNat 64 a) (64 / 8) (S s + BitVec.ofNat 64 d) (64 / 8) :=
+      Mem.Sep (S s compact + BitVec.ofNat 64 a) (64 / 8) (S s compact + BitVec.ofNat 64 d) (64 / 8) :=
     fun a d h ha hd => Offset.sep _ h (by omega_using [ha]) (by omega_using [hd])
   have s₁₂ := sep 0 8 (by decide) (by decide) (by decide)
   have s₁₃ := sep 0 16 (by decide) (by decide) (by decide)
@@ -225,19 +259,28 @@ theorem entry_ok : WP isa (.block entry) s fun s₁ => s₁.gpr .r11 = S s ∧
   have s₅₇ := sep 32 48 (by decide) (by decide) (by decide)
   have s₆₇ := sep 40 48 (by decide) (by decide) (by decide)
   have hn : BitVec.ofNat 64 (n s - 0) = s.gpr .r9 := by simp
+  unfold entry
+  rw [WP.block_append_iff]
+  refine WP.mono (pointers_ok hp) fun t ⟨scr, dst, regs, mem, rd, wr⟩ => ?_
+  have ctx := regs .rdi (by decide) (by decide)
+  have rounds := regs .rsi (by decide) (by decide)
+  have ctr := regs .rdx (by decide) (by decide)
+  have y := regs .rcx (by decide) (by decide)
+  have src := regs .r8 (by decide) (by decide)
+  have count := regs .r9 (by decide) (by decide)
   apply WP.of_runBlock
   refine ⟨_, by
-    simp only [entry, argCtx, argRounds, argCtr, argY, argSrc, argN, argDst]
-    xrun [a₀, a₂, e₀, e₂, w₁, w₂, w₃, w₄, w₅, w₆, w₇],
+    simp only [argCtx, argRounds, argCtr, argY, argSrc, argN, argDst]
+    xrun [scr, dst, wr, w₁, w₂, w₃, w₄, w₅, w₆, w₇],
     ?_, ?_, ?_, ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_, ?_, ?_⟩
-  · simp [gpr_setReg]
-  · simp [gpr_setReg]
-  · intro r hr hr'; simp [gpr_setReg, hr, hr']
+  · exact scr
+  · exact dst
+  · exact regs
   all_goals try simp (disch := first | decide | with_reducible assumption) only [gpr_setReg, ite_true, reduceCtorEq, ↓reduceIte,
-    Mem.readW_writeW_self64, Mem.readW_writeW_sep, Nat.mul_zero, BitVec.add_zero, hn]
-  · have c : ∀ d, d + 8 ≤ 56 → (kR' s).Contains (S s + BitVec.ofNat 64 d) (64 / 8) :=
+    Mem.readW_writeW_self64, Mem.readW_writeW_sep, Nat.mul_zero, BitVec.add_zero, hn, mem, ctx, rounds, ctr, y, src, count, scr, dst]
+  · have c : ∀ d, d + 8 ≤ 56 → (kR' s compact).Contains (S s compact + BitVec.ofNat 64 d) (64 / 8) :=
       fun d h₂ => Offset.contains_base _ h₂ (by omega_using [h₂])
-    have c0 : (kR' s).Contains (S s) (64 / 8) := by simpa using c 0 (by decide)
+    have c0 : (kR' s compact).Contains (S s compact) (64 / 8) := by simpa using c 0 (by decide)
     exact (((((((Frame.refl _ _).writeW (List.mem_singleton_self _) _ c0).writeW
       (List.mem_singleton_self _) _ (c 8 (by decide))).writeW
       (List.mem_singleton_self _) _ (c 16 (by decide))).writeW
@@ -245,6 +288,7 @@ theorem entry_ok : WP isa (.block entry) s fun s₁ => s₁.gpr .r11 = S s ∧
       (List.mem_singleton_self _) _ (c 32 (by decide))).writeW
       (List.mem_singleton_self _) _ (c 40 (by decide))).writeW
       (List.mem_singleton_self _) _ (c 48 (by decide))
+  · exact rd
 
 end
 
@@ -295,44 +339,47 @@ end
 
 /-- The first `q` blocks encrypted into the output and hashed, the arguments
 kept for what is left after `k` blocks. -/
-structure Mid (s : State) (q k : Nat) (st : State) : Prop where
+structure Mid (s : State) (q k : Nat) (st : State) (compact : Bool := false) : Prop where
   q_le : q ≤ n s
   rsp : st.gpr .rsp = SP s
   saved : ∀ r ∈ calleeSaved, st.gpr r = s.gpr r
   rd : st.rd = s.rd
   wr : st.wr = s.wr
-  kept : Kept s k st.mem
-  frame : Frame (wR s) s.mem st.mem
-  data : blocksAt st.mem (Dst s) q = ct s q
+  kept : Kept s k st.mem compact
+  frame : Frame (wR s compact) s.mem st.mem
+  /-- Before the first ciphertext store the short CTR path can still read all its input. -/
+  src0 : q = 0 → blocksAt st.mem (Src s) (n s) = blocksAt s.mem (Src s) (n s)
+  data : blocksAt st.mem (Dst s compact) q = ct s q
   ctr : blockAt st.mem (C s) = Nat.repeat inc32 q (cb s)
   y : blockAt st.mem (Y s) = ghashFrom (hk s) (y₀ s) (ct s q)
 
 section
-variable {M : CtxMode} {s : State} (hp : BT M s)
+variable {M : CtxMode} {s : State} {aliasOK compact : Bool} (hp : BT M s aliasOK compact)
 include hp
 
 /-- The slots of the arguments are apart from the other regions written. -/
-theorem kR'_disj : ∀ r ∈ [cR s, yR s, dR s], (kR' s).Disjoint r := by
+theorem kR'_disj : ∀ r ∈ [cR s, yR s, dR s compact], (kR' s compact).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
-  · exact (hp.c_s.sub_right (kR'_sub (s := s))).symm
-  · exact (hp.y_s.sub_right (kR'_sub (s := s))).symm
-  · exact (hp.d_s.sub_right (kR'_sub (s := s))).symm
+  · exact (hp.c_s.sub_right (kR'_sub (s := s) (compact := compact))).symm
+  · exact (hp.y_s.sub_right (kR'_sub (s := s) (compact := compact))).symm
+  · exact (hp.d_s.sub_right (kR'_sub (s := s) (compact := compact))).symm
 
-/-- The plaintext is apart from everything written. -/
-theorem src_wR : ∀ r ∈ wR s, (srcR s).Disjoint r := by
+omit hp in
+/-- The plaintext is apart from everything written for disjoint buffers. -/
+theorem src_wR (hp : BT M s false compact) : ∀ r ∈ wR s compact, (srcR s).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
   exacts [hp.c_r.symm, hp.y_r.symm, hp.r_d, hp.r_s]
 
 /-- The key schedule, through a frame of the regions written. -/
-theorem keep_sch {m m' : Mem} (hf : Frame (wR s) m m') :
+theorem keep_sch {m m' : Mem} (hf : Frame (wR s compact) m m') :
     Spec.Aes.bytesAt m' (K s) (16 * (R s + 1)) = Spec.Aes.bytesAt m (K s) (16 * (R s + 1)) := by
-  have hRb : 16 * (R s + 1) ≤ 256 := by rcases hp.rounds with h | h | h <;> simp only [R, h] <;> decide
+  obtain hRb : 16 * (R s + 1) ≤ 256 := by rcases hp.rounds with h | h | h <;> simp only [R, h] <;> decide
   exact bytesAt_frame hf (fun r hr => by
-    have hs : Region.Sub ⟨K s, 16 * (R s + 1)⟩ (kR M s) := Region.sub_prefix (Nat.le_trans hRb M.ge)
+    obtain hs : Region.Sub ⟨K s, 16 * (R s + 1)⟩ (kR M s) := Region.sub_prefix (Nat.le_trans hRb M.ge)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
     · exact hp.k_c.sub_left hs
@@ -341,10 +388,10 @@ theorem keep_sch {m m' : Mem} (hf : Frame (wR s) m m') :
     · exact hp.k_s.sub_left hs) (by have := hp.w_k; have := M.ge; omega_arith)
 
 /-- The hash subkey, through a frame of the regions written. -/
-theorem keep_h {m m' : Mem} (hf : Frame (wR s) m m') :
+theorem keep_h {m m' : Mem} (hf : Frame (wR s compact) m m') :
     blockAt m' (K s + BitVec.ofNat 64 240) = blockAt m (K s + BitVec.ofNat 64 240) :=
   blockAt_frame hf (fun r hr => by
-    have hs : Region.Sub ⟨K s + BitVec.ofNat 64 240, 16⟩ (kR M s) := Offset.sub_base _ (by have := M.ge; omega_arith)
+    obtain hs : Region.Sub ⟨K s + BitVec.ofNat 64 240, 16⟩ (kR M s) := Offset.sub_base _ (by have := M.ge; omega_arith)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
     · exact hp.k_c.sub_left hs
@@ -353,11 +400,11 @@ theorem keep_h {m m' : Mem} (hf : Frame (wR s) m m') :
     · exact hp.k_s.sub_left hs)
 
 omit hp in
-theorem Kept.frame {k : Nat} {m m' : Mem} (h : Kept s k m) {rs : List Region} (hf : Frame rs m m')
-    (hd : ∀ r ∈ rs, (kR' s).Disjoint r) : Kept s k m' := by
-  have e : ∀ d, d + 8 ≤ 56 → m'.readW (S s + BitVec.ofNat 64 d) 64 = m.readW (S s + BitVec.ofNat 64 d) 64 :=
+theorem Kept.frame {k : Nat} {m m' : Mem} (h : Kept s k m compact) {rs : List Region} (hf : Frame rs m m')
+    (hd : ∀ r ∈ rs, (kR' s compact).Disjoint r) : Kept s k m' compact := by
+  obtain e : ∀ d, d + 8 ≤ 56 → m'.readW (S s compact + BitVec.ofNat 64 d) 64 = m.readW (S s compact + BitVec.ofNat 64 d) 64 :=
     fun d h₁ => hf.readW (Offset.contains_base _ h₁ (by omega_arith)) hd (by decide)
-  have e0 : m'.readW (S s) 64 = m.readW (S s) 64 := by simpa using e 0 (by decide)
+  obtain e0 : m'.readW (S s compact) 64 = m.readW (S s compact) 64 := by simpa using e 0 (by decide)
   exact ⟨by rw [e0]; exact h.ctx, by rw [e 8 (by decide)]; exact h.rounds,
     by rw [e 16 (by decide)]; exact h.ctr, by rw [e 24 (by decide)]; exact h.y,
     by rw [e 32 (by decide)]; exact h.src, by rw [e 40 (by decide)]; exact h.n,
@@ -365,36 +412,48 @@ theorem Kept.frame {k : Nat} {m m' : Mem} (h : Kept s k m) {rs : List Region} (h
 
 omit hp in
 /-- A frame of `scratch`'s slots keeps a block apart from them. -/
-theorem block_kR' {m m' : Mem} (hf : Frame [kR' s] m m') {p : Addr} (hd : (⟨p, 16⟩ : Region).Disjoint (kR' s)) :
+theorem block_kR' {m m' : Mem} (hf : Frame [kR' s compact] m m') {p : Addr} (hd : (⟨p, 16⟩ : Region).Disjoint (kR' s compact)) :
     blockAt m' p = blockAt m p :=
   blockAt_frame hf fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hd
 
 omit hp in
-theorem frame_kR' {m m' : Mem} (hf : Frame [kR' s] m m') : Frame (wR s) m m' :=
-  hf.sub fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact ⟨sR s, by simp, kR'_sub⟩
+theorem frame_kR' {m m' : Mem} (hf : Frame [kR' s compact] m m') : Frame (wR s compact) m m' :=
+  hf.sub fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact ⟨sR s compact, by simp, kR'_sub⟩
+
+theorem source_kept {m m' : Mem} (hf : Frame [kR' s compact] m m') :
+    blocksAt m' (Src s) (n s) = blocksAt m (Src s) (n s) :=
+  blocksAt_frame hf (fun r hr => by
+    simp only [List.mem_singleton] at hr; subst hr
+    rw [Nat.mul_comm]; exact hp.r_s.sub_right kR'_sub) (by have := hp.w_r; omega_arith)
 
 theorem mid_entry {s₁ : State} (hsp : s₁.gpr .rsp = s.gpr .rsp)
     (hcs : ∀ r ∈ calleeSaved, s₁.gpr r = s.gpr r)
-    (hk : Kept s 0 s₁.mem) (hf : Frame [kR' s] s.mem s₁.mem) (hrd : s₁.rd = s.rd) (hwr : s₁.wr = s.wr) :
-    Mid s 0 0 s₁ :=
-  ⟨Nat.zero_le _, hsp, hcs, hrd, hwr, hk, frame_kR' hf, rfl,
+    (hk : Kept s 0 s₁.mem compact) (hf : Frame [kR' s compact] s.mem s₁.mem) (hrd : s₁.rd = s.rd) (hwr : s₁.wr = s.wr) :
+    Mid s 0 0 s₁ compact :=
+  ⟨Nat.zero_le _, hsp, hcs, hrd, hwr, hk, frame_kR' hf, fun _ => source_kept hp hf, rfl,
     block_kR' hf (kR'_disj hp _ (by simp)).symm, block_kR' hf (kR'_disj hp _ (by simp)).symm⟩
 
 /-- `Mid` through a frame of `scratch`'s slots that keeps the stack pointer
 and the callee-saved registers. -/
-theorem Mid.slots {q k k' : Nat} {st st' : State} (h : Mid s q k st)
-    (hsp : st'.gpr .rsp = st.gpr .rsp) (hcs : ∀ r ∈ calleeSaved, st'.gpr r = st.gpr r) (hk : Kept s k' st'.mem)
-    (hf : Frame [kR' s] st.mem st'.mem) (hrd : st'.rd = st.rd) (hwr : st'.wr = st.wr) : Mid s q k' st' := by
+theorem Mid.slots {q k k' : Nat} {st st' : State} (h : Mid s q k st compact)
+    (hsp : st'.gpr .rsp = st.gpr .rsp) (hcs : ∀ r ∈ calleeSaved, st'.gpr r = st.gpr r) (hk : Kept s k' st'.mem compact)
+    (hf : Frame [kR' s compact] st.mem st'.mem) (hrd : st'.rd = st.rd) (hwr : st'.wr = st.wr) : Mid s q k' st' compact := by
   refine ⟨h.q_le, by rw [hsp, h.rsp], fun r hr => by rw [hcs r hr, h.saved r hr], hrd.trans h.rd,
-    hwr.trans h.wr, hk, h.frame.trans (frame_kR' hf), ?_, ?_, ?_⟩
+    hwr.trans h.wr, hk, h.frame.trans (frame_kR' hf), fun e => (source_kept hp hf).trans (h.src0 e), ?_, ?_, ?_⟩
   · rw [← h.data]
     exact blocksAt_frame hf (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       rw [Nat.mul_comm]
-      exact (kR'_disj hp (dR s) (by simp)).symm.sub_left (Region.sub_prefix (by have := h.q_le; omega_arith)))
+      exact (kR'_disj hp (dR s compact) (by simp)).symm.sub_left (Region.sub_prefix (by have := h.q_le; omega_arith)))
       (by have := hp.w_d; have := h.q_le; omega_arith)
   · rw [← h.ctr]; exact block_kR' hf (kR'_disj hp _ (by simp)).symm
   · rw [← h.y]; exact block_kR' hf (kR'_disj hp _ (by simp)).symm
+
+end
+
+section
+variable {M : CtxMode} {s : State} {aliasOK : Bool} (hp : BT M s aliasOK)
+include hp
 
 /-- `rest`: the arguments of the `n mod 16` blocks after the first
 `16 ⌊n / 16⌋`. -/

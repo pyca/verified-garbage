@@ -8,6 +8,8 @@
 ///
 /// It runs `vg_mlkem768_keygen`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `seed` must be valid for reads of 64 bytes.
@@ -30,6 +32,8 @@ pub unsafe fn vg_mlkem768_keygen_auto(_dit: verified_garbage_cpu::Dit<'_>, seed:
 /// Contract: `VG.Spec.MlKem.encapsContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (the last 32 bytes of `*ek`), but not on anything else of the key, on the randomness or on the outputs.
 ///
 /// It runs `vg_mlkem768_encaps`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -55,6 +59,8 @@ pub unsafe fn vg_mlkem768_encaps_auto(_dit: verified_garbage_cpu::Dit<'_>, ek: *
 /// Contract: `VG.Spec.MlKem.encapsHContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (the last 32 bytes of `*ek`), but not on anything else of the key, on its hash, on the randomness or on the outputs.
 ///
 /// It runs `vg_mlkem768_encaps_h`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -83,6 +89,8 @@ pub unsafe fn vg_mlkem768_encaps_h_auto(_dit: verified_garbage_cpu::Dit<'_>, ek:
 ///
 /// It runs `vg_mlkem768_decaps`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `dk` must be valid for reads of 2400 bytes.
@@ -105,6 +113,8 @@ pub unsafe fn vg_mlkem768_decaps_auto(_dit: verified_garbage_cpu::Dit<'_>, dk: *
 /// Contract: `VG.Spec.MlKem.checkEkContract`. Constant time: only the pointer may affect timing.
 ///
 /// It runs `vg_mlkem768_check_ek`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///

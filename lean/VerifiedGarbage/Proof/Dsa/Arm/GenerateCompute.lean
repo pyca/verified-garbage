@@ -22,6 +22,8 @@ open VG VG.Arm VG.Impl.Mont.Arm VG.Impl.Mont.Arm.Dynamic VG.Proof.Mont VG.Proof.
 open VG.Impl.Dsa.Arm
 open VG.Proof.Ecdsa.Arm (mask32 mask32_and)
 
+variable {umaal : Bool}
+
 /-- The checks of a domain beyond its shape. -/
 abbrev domainChecks (P Q G : Nat) : Prop := ((1 < G ∧ G < P) ∧ (P - 1) % Q = 0) ∧ G ^ Q % P = 1
 
@@ -53,7 +55,7 @@ theorem domain_gen_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q G : Na
     (by omega_arith) (by decide) (by decide) (by simp only [Impl.Dsa.Layout.t]; omega_arith) (by decide))
     fun v₃ ⟨B₃, St₃⟩ => ?_)
   have S₃ := S₁.stage St₃
-  have ho₃ : 4960 ≤ Impl.Dsa.Layout.t ∧ Impl.Dsa.Layout.t + pLen ≤ 15712 := by
+  have ho₃ : 12016 ≤ Impl.Dsa.Layout.t ∧ Impl.Dsa.Layout.t + pLen ≤ 15712 := by
     simp only [Impl.Dsa.Layout.t]; omega_arith
   have Iq₃ := Iq₁.next S₁ St₃ (.inr ho₃)
   have L₃ : localVal base v₃ Impl.Dsa.Layout.t pLen = P - 1 := localVal_of_bytes B₃ (by
@@ -65,7 +67,7 @@ theorem domain_gen_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q G : Na
     Iq₃.value hQ hQo (by decide) (by simp only [Impl.Dsa.Layout.u]; omega_arith) (by decide)) fun v₄ ⟨B₄, St₄⟩ => ?_)
   rw [countValue, local_operand S₃.ws (by simp only [Impl.Dsa.Layout.t]; omega_arith), L₃] at B₄
   have S₄ := S₃.stage St₄
-  have ho₄ : 4960 ≤ Impl.Dsa.Layout.u ∧ Impl.Dsa.Layout.u + qLen ≤ 15712 := by
+  have ho₄ : 12016 ≤ Impl.Dsa.Layout.u ∧ Impl.Dsa.Layout.u + qLen ≤ 15712 := by
     simp only [Impl.Dsa.Layout.u]; omega_arith
   have L₄ : localVal base v₄ Impl.Dsa.Layout.u qLen = (P - 1) % Q :=
     localVal_of_bytes B₄ (Nat.lt_of_lt_of_le (Nat.mod_lt _ (by omega_arith)) (Nat.le_of_lt Qlt))
@@ -83,12 +85,12 @@ theorem subgroup_gen_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q G : 
     (S : Sched s base size pLen qLen nP nQ)
     (Ip : Input s base size (.input .p) pLen P) (Iq : Input s base size (.input .q) qLen Q)
     (Ig : Input s base size (.input .g) pLen G) (hP : 1 < P) (hPo : P % 2 = 1) :
-    WP isa (Generate.subgroup pLen qLen) s fun t =>
+    WP isa (Generate.subgroup umaal pLen qLen) s fun t =>
       maskW base t = maskW base s &&& mask32 (G ^ Q % P = 1) ∧ Run base s t := by
   obtain ⟨q4, qp, p384, q32, pw, qw⟩ := S.lens
   have big := S.big
   have Plt := operand_lt_of Ip
-  have ho : 4960 ≤ Impl.Dsa.Layout.t ∧ Impl.Dsa.Layout.t + pLen ≤ 15712 := by
+  have ho : 12016 ≤ Impl.Dsa.Layout.t ∧ Impl.Dsa.Layout.t + pLen ≤ 15712 := by
     simp only [Impl.Dsa.Layout.t]; omega_arith
   have ht : Impl.Dsa.Layout.t + pLen < size := by omega_arith
   unfold Generate.subgroup
@@ -106,7 +108,7 @@ theorem parameters_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q G : Na
     (Ip : Input s base size (.input .p) pLen P) (Iq : Input s base size (.input .q) qLen Q)
     (Ig : Input s base size (.input .g) pLen G)
     (hP : 1 < P) (hPo : P % 2 = 1) (hQ : 255 < Q) (hQo : Q % 2 = 1) :
-    WP isa (Generate.parameters pLen qLen) s fun t =>
+    WP isa (Generate.parameters umaal pLen qLen) s fun t =>
       maskW base t = maskW base s &&& mask32 (domainChecks P Q G) ∧ Run base s t := by
   have big := S.big
   have fits := S.fits
@@ -122,7 +124,7 @@ theorem keyCompute_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q G X : 
     (Ip : Input s base size (.input .p) pLen P) (Iq : Input s base size (.input .q) qLen Q)
     (Ig : Input s base size (.input .g) pLen G) (Ix : Input s base size (.input .nonce) qLen X)
     (hP : 1 < P) (hPo : P % 2 = 1) :
-    WP isa (Generate.keyCompute pLen qLen) s fun t =>
+    WP isa (Generate.keyCompute umaal pLen qLen) s fun t =>
       maskW base t = maskW base s &&& mask32 (keyChecks P Q G X) ∧
       Spec.Rsa.bytesAt t.mem (off base Impl.Dsa.Layout.t2) pLen = Spec.Dsa.encodeBE pLen (G ^ X % P) ∧
       Run base s t := by
@@ -130,7 +132,7 @@ theorem keyCompute_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q G X : 
   have big := S.big
   have fits := S.fits
   have Plt := operand_lt_of Ip
-  have ho : 4960 ≤ Impl.Dsa.Layout.t2 ∧ Impl.Dsa.Layout.t2 + pLen ≤ 15712 := by
+  have ho : 12016 ≤ Impl.Dsa.Layout.t2 ∧ Impl.Dsa.Layout.t2 + pLen ≤ 15712 := by
     simp only [Impl.Dsa.Layout.t2]; omega_arith
   have ht : Impl.Dsa.Layout.t2 + pLen < size := by omega_arith
   simp only [Generate.keyCompute, Core.sequence, List.foldr]
@@ -183,7 +185,7 @@ theorem deriveCompute_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q G X
     (Ip : Input s base size (.input .p) pLen P) (Iq : Input s base size (.input .q) qLen Q)
     (Ig : Input s base size (.input .g) pLen G) (Ix : Input s base size (.input .nonce) qLen X)
     (hP : 1 < P) (hPo : P % 2 = 1) (hQ : 255 < Q) (hQo : Q % 2 = 1) :
-    WP isa (Generate.deriveCompute pLen qLen) s fun t =>
+    WP isa (Generate.deriveCompute umaal pLen qLen) s fun t =>
       maskW base t = maskW base s &&& mask32 (deriveChecks P Q G X) ∧
       Spec.Rsa.bytesAt t.mem (off base Impl.Dsa.Layout.t2) pLen = Spec.Dsa.encodeBE pLen (G ^ X % P) ∧
       Run base s t := by
@@ -197,10 +199,10 @@ theorem deriveCompute_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q G X
     ⟨?_, Y, R₁.trans R⟩
   rw [F, F₁, BitVec.and_assoc, mask32_and]
 
-theorem keyCompute_computeOk : ComputeOk Generate.keyCompute keyChecks :=
+theorem keyCompute_computeOk : ComputeOk (Generate.keyCompute umaal) keyChecks :=
   fun S Ip Iq Ig Ix hP hPo _ _ => keyCompute_ok S Ip Iq Ig Ix hP hPo
 
-theorem deriveCompute_computeOk : ComputeOk Generate.deriveCompute deriveChecks :=
+theorem deriveCompute_computeOk : ComputeOk (Generate.deriveCompute umaal) deriveChecks :=
   fun S Ip Iq Ig Ix hP hPo hQ hQo => deriveCompute_ok S Ip Iq Ig Ix hP hPo hQ hQo
 
 end VG.Proof.Dsa.Arm

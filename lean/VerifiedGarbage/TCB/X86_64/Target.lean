@@ -27,15 +27,25 @@ callee-saved (preserved across calls), while the status bits are
 caller-saved (not preserved)" (System V AMD64 psABI §3.4.1, "Special
 Registers").
 
-The mode (`Abi.mode`) is MXCSR, as a number: `vg_mcdt_enter`'s contract
-makes it public (`Spec/Mcdt.lean`), so that the function may skip loading
-MXCSR when it already holds `0x1FBF`; every other contract leaves it out of
-what two runs agree on (`Abi.withMode false`).
+MXCSR is public (`abi.pub`): every contract assumes that two runs start
+with the same MXCSR. The verified code loads it only with `0x1FBF` and
+values it saved, but its status flags also record the floating-point
+exceptions the program's own code raised (see `Spec/Mcdt.lean` for what a
+function whose time depends on MXCSR may then reveal).
 
 Not modelled: the direction flag (no modelled instruction changes it; it is
-clear on entry and exit), the x87 control word (never modified), and the
-red zone: a contract that grants write access below `rsp` must keep it within
-the 128-byte red zone.
+clear on entry and exit) and the x87 control word (never modified).
+
+No red zone: the code may access only its regions, and no contract grants a
+region below `rsp` (`Sig.contract`'s regions are the buffers and the argument
+area, apart from the stack below `rsp`, `reserved`), so no proof relies on
+memory below `rsp` keeping its value. The System V psABI keeps the 128 bytes
+below `rsp`, but the functions also run on Windows, which keeps none: "All
+memory beyond the current address of RSP is considered volatile: The OS, or
+a debugger, may overwrite this memory during a user debug session, or an
+interrupt handler." ("x64 stack usage", Microsoft Learn). A frame is
+accessible only while it is at or above `rsp` (`TCB/Code.lean`, "Stack
+frames").
 -/
 
 @[expose] public section
@@ -99,15 +109,22 @@ def abi : Abi isa where
       | 0 => True
       | n => n ≤ (s.gpr .rsp).toNat) ∧
       (s.gpr .rsp).toNat + 8 * (ws.length - argRegs.length + 1) ≤ 2 ^ 64
-  pub s₁ s₂ := s₁.gpr .rsp = s₂.gpr .rsp
+  pub s₁ s₂ := s₁.gpr .rsp = s₂.gpr .rsp ∧ s₁.mxcsr = s₂.mxcsr
+  -- MXCSR.
+  mode s := s.mxcsr.setWidth 64
   mem s := s.mem
   rd s := s.rd
   wr s := s.wr
   ret s := s.gpr .rax
+  -- System V AMD64 psABI §3.2.3 ("Returning of Values"): an INTEGER-class
+  -- result is returned in `rax`, and the only extension the classification
+  -- states is `_Bool`'s ("Other bits are left unspecified"): a `u32`
+  -- leaves the upper half of `rax` unspecified.
+  retExt
+    | .u32 => none
+    | .u64 => none
+    | .usize => none
   sym := some fun s name => s.syms name
-  -- MXCSR, which a contract makes public only under `Abi.withMode true`:
-  -- `vg_mcdt_enter`'s alone (`Spec/Mcdt.lean`).
-  mode s := s.mxcsr.toNat
 
 /-- Reducible, as an `abbrev` would be, but not inlined: an `abbrev` is compiled into
 every module that names it, which then builds a target of its own, so the emitter

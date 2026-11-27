@@ -5,6 +5,310 @@ public import VerifiedGarbage.Proof.Framework.X86_64.Taint
 public import VerifiedGarbage.Proof.MlDsa.Round.Mem
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+public import VerifiedGarbage.Impl.MlDsa.X86_64.Round.Round
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+public import VerifiedGarbage.Proof.MlDsa.Round.Decompose
+import VerifiedGarbage.Proof.Framework.Omega
+
+/-! ### `MlDsa.X86_64.Round.Arith`, which the modules that import this one used -/
+
+section
+
+/-!
+# ML-DSA on x86-64: what the rounding code computes
+
+The values the code of `Impl/MlDsa/X86_64/Round/Round.lean` leaves in its
+registers, as the symbolic execution of a block writes them (`condAddV`,
+`hbRawV`, `hbV`), and what they are as natural numbers (`condAddV_toNat`,
+`hbRawV_toNat`, `hbV_toNat`), from the target-independent lemmas of
+`Proof/MlDsa/Round/Decompose.lean`.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.MlDsa.X86_64.Round
+
+open VG VG.X86_64 VG.Impl.MlDsa.X86_64.Round
+open VG.Spec.MlDsa (q)
+open VG.Proof.MlDsa (gamma2s)
+open VG.Proof.MlDsa.Round (hbF q_eq mem_gamma2s hbF_le hbF_eq)
+
+/-- A 32-bit immediate below `2³¹`, sign-extended. -/
+theorem sx_toNat {k : BitVec 32} (h : k.toNat < 2 ^ 31) : (BitVec.signExtend 64 k).toNat = k.toNat := by
+  have : k.msb = false := by rw [BitVec.msb_eq_decide]; simp only [decide_eq_false_iff_not]; omega_using [h]
+  rw [BitVec.toNat_signExtend, this, BitVec.toNat_setWidth]
+  simp only [Bool.false_eq_true, ↓reduceIte, Nat.add_zero]
+  omega_using []
+
+theorem sx_ofNat_toNat {k : Nat} (h : k < 2 ^ 31) : (BitVec.signExtend 64 (BitVec.ofNat 32 k)).toNat = k := by
+  rw [sx_toNat (by rw [BitVec.toNat_ofNat]; omega_using [h]), BitVec.toNat_ofNat]; omega_using [h]
+
+theorem setWidth64_toNat (x : BitVec 32) : (BitVec.setWidth 64 x).toNat = x.toNat := by
+  rw [BitVec.toNat_setWidth]; have := x.isLt; omega_using []
+
+/-! ## Conditional addition -/
+
+/-- What `condAdd r x m k` leaves in `r`: `r - x`, plus `k` if it borrows. -/
+def condAddV (r x : BitVec 64) (k : BitVec 32) : BitVec 64 :=
+  r - x + (0#64 - BitVec.setWidth 64 (BitVec.ofBool (decide (r.toNat < x.toNat))) &&& BitVec.signExtend 64 k)
+
+theorem condAddV_toNat {r x : BitVec 64} {k : BitVec 32} (hk : k.toNat < 2 ^ 31) (hx : x.toNat ≤ r.toNat + k.toNat) :
+    (condAddV r x k).toNat = if r.toNat < x.toNat then r.toNat + k.toNat - x.toNat else r.toNat - x.toNat := by
+  have hs := sx_toNat hk
+  have hr := r.isLt
+  have hx' := x.isLt
+  unfold condAddV
+  by_cases h : r.toNat < x.toNat
+  · rw [decide_eq_true h, ite_eq_left_of_eq_true _ _ (eq_true h)]
+    have e : (0#64 - BitVec.setWidth 64 (BitVec.ofBool true)) = BitVec.allOnes 64 := by decide
+    rw [e, BitVec.allOnes_and, BitVec.toNat_add, BitVec.toNat_sub, hs]
+    omega_using [hx, h]
+  · rw [decide_eq_false h, ite_eq_right_of_eq_false _ _ (eq_false h)]
+    have e : (0#64 - BitVec.setWidth 64 (BitVec.ofBool false)) = 0#64 := by decide
+    rw [e, BitVec.zero_and, BitVec.add_zero, BitVec.toNat_sub]
+    omega_using [h]
+
+/-- `condAdd` of an immediate `k` and mask `k`: the conditional subtraction of `k`. -/
+theorem condAddV_imm_toNat {r : BitVec 64} {k : Nat} (hk : k < 2 ^ 31) (hr : r.toNat < 2 * k) :
+    (condAddV r (BitVec.signExtend 64 (BitVec.ofNat 32 k)) (BitVec.ofNat 32 k)).toNat = r.toNat % k := by
+  have e := sx_ofNat_toNat hk
+  have e' : (BitVec.ofNat 32 k).toNat = k := by rw [BitVec.toNat_ofNat]; omega_using [hk]
+  rw [condAddV_toNat (by omega_using [hk, e']) (by omega_using [e, e']), e, e']
+  split
+  · rw [Nat.mod_eq_of_lt (by omega_arith)]; omega_using []
+  · rw [Nat.mod_eq_sub_mod (by omega_arith), Nat.mod_eq_of_lt (by omega_using [hr])]
+
+/-! ## `Decompose` -/
+
+/-- What `hbRaw g` leaves in `rax` from `a`. -/
+def hbRawV (g : Nat) (a : BitVec 64) : BitVec 64 :=
+  (BitVec.ofNat 64 (((a + BitVec.signExtend 64 (127 : BitVec 32)) >>> 7).toNat *
+      (BitVec.setWidth 64 (BitVec.ofNat 32 (dMul g))).toNat) +
+    BitVec.signExtend 64 (BitVec.ofNat 32 (dAdd g))) >>> dShift g
+
+theorem dMod_eq {g : Nat} (h : g ∈ gamma2s) : dMod g = Proof.MlDsa.Round.hbM g := by
+  rcases mem_gamma2s h with rfl | rfl <;> rfl
+
+theorem hbRawV_toNat {g : Nat} (h : g ∈ gamma2s) {a : BitVec 64} (ha : a.toNat < q) :
+    (hbRawV g a).toNat = hbF g a.toNat := by
+  rw [q_eq] at ha
+  have hM : dMul g ≤ 11275 := by unfold dMul; split <;> decide
+  have hA : dAdd g ≤ 2 ^ 23 := by unfold dAdd; split <;> decide
+  have e1 : (a + BitVec.signExtend 64 (127 : BitVec 32)).toNat = a.toNat + 127 := by
+    rw [BitVec.toNat_add, show (BitVec.signExtend 64 (127 : BitVec 32)).toNat = 127 by decide]; omega_using [ha]
+  have e2 : ((a + BitVec.signExtend 64 (127 : BitVec 32)) >>> 7).toNat = (a.toNat + 127) / 128 := by
+    rw [BitVec.toNat_ushiftRight, e1, Nat.shiftRight_eq_div_pow]
+  have e3 : (BitVec.setWidth 64 (BitVec.ofNat 32 (dMul g))).toNat = dMul g := by
+    rw [setWidth64_toNat, BitVec.toNat_ofNat]; omega_using [hM]
+  have hp : (a.toNat + 127) / 128 * dMul g ≤ 65473 * 11275 :=
+    Nat.mul_le_mul (by omega_using [ha]) hM
+  have e4 : (BitVec.ofNat 64 (((a + BitVec.signExtend 64 (127 : BitVec 32)) >>> 7).toNat *
+      (BitVec.setWidth 64 (BitVec.ofNat 32 (dMul g))).toNat) +
+      BitVec.signExtend 64 (BitVec.ofNat 32 (dAdd g))).toNat = (a.toNat + 127) / 128 * dMul g + dAdd g := by
+    rw [BitVec.toNat_add, BitVec.toNat_ofNat, e2, e3, sx_ofNat_toNat (by omega_using [hA])]
+    omega_using [hA, hp]
+  unfold hbRawV
+  rw [BitVec.toNat_ushiftRight (BitVec.ofNat 64 _ + _), e4, Nat.shiftRight_eq_div_pow, hbF_eq h (by rw [q_eq]; exact ha)]
+  rfl
+
+/-- What `hb g` leaves in `rax` from `a`. -/
+def hbV (g : Nat) (a : BitVec 64) : BitVec 64 :=
+  condAddV (hbRawV g a) (BitVec.signExtend 64 (BitVec.ofNat 32 (dMod g))) (BitVec.ofNat 32 (dMod g))
+
+theorem hbV_toNat {g : Nat} (h : g ∈ gamma2s) {a : BitVec 64} (ha : a.toNat < q) :
+    (hbV g a).toNat = hbF g a.toNat % Proof.MlDsa.Round.hbM g := by
+  have hM : dMod g ≤ 44 ∧ 16 ≤ dMod g := by unfold dMod; split <;> decide
+  have hf := hbF_le h ha
+  rw [← dMod_eq h] at hf ⊢
+  rw [hbV, condAddV_imm_toNat (by omega_using [hM]) (by rw [hbRawV_toNat h ha]; omega_using [hM, hf]), hbRawV_toNat h ha]
+
+end VG.Proof.MlDsa.X86_64.Round
+
+end
+
+end
+
+/-! ### `MlDsa.X86_64.Round.Loop`, which the modules that import this one used -/
+
+section
+
+/-!
+# ML-DSA on x86-64: the loop over the coefficients
+
+`mapLoop body` runs `body` for `rcx` = 256 down to 1, and iteration `i` (from 0)
+handles coefficient `255 - i` at `[p + 4·rcx - 4]` (`cfAddr`) of each
+polynomial `p`. `loop_ok` proves it once for every function: from a body that
+writes, to coefficient `255 - i` of each output polynomial (in a register of
+`outs`), the value `V o (255 - i)` and keeps an invariant `J` of its other
+registers, the loop writes every coefficient of each output. The inputs
+(registers `ins`) are never written, so the body reads the coefficients of the
+initial memory (`Inv.read`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.MlDsa.X86_64.Round
+
+open VG VG.X86_64 VG.Impl.MlDsa.X86_64.Round VG.Proof.MlDsa.Round
+open VG.Proof.MlDsa (coeffAt)
+open VG.Proof.MlKem.X86_64 (Keep Keep.gpr WP.keep wp_countdown setReg_gpr setReg_mem ofNat64_pred)
+
+/-! ## Addresses -/
+
+/-- `p + 4c - 4`, the address of `cf p` when `rcx = c`. -/
+def cfAddr (p c : Addr) : Addr := p + c * BitVec.ofNat 64 4 + BitVec.ofInt 64 (-4)
+
+theorem ea_cf (s : State) (p : Reg) : s.ea (cf p) = cfAddr (s.gpr p) (s.gpr .rcx) := rfl
+
+theorem cfAddr_eq (p : Addr) (j : Nat) :
+    cfAddr p (BitVec.ofNat 64 (j + 1)) = coeffAddr p j := by
+  unfold cfAddr coeffAddr
+  rw [BitVec.add_assoc]
+  refine congrArg (p + ·) ?_
+  have e : BitVec.ofInt 64 (-4) = -BitVec.ofNat 64 4 := by decide
+  rw [e, ← BitVec.sub_eq_add_neg]
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.toNat_sub, BitVec.toNat_mul, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
+  omega_using []
+
+/-! ## The writes of an iteration -/
+
+/-- Stores of `v` at `a` for each `(a, v)`, in order. -/
+def writes (m : Mem) (ps : List (Addr × BitVec 32)) : Mem := ps.foldl (fun m p => m.writeW p.1 p.2) m
+
+theorem writes_cons (m : Mem) (p : Addr × BitVec 32) (ps : List (Addr × BitVec 32)) :
+    writes m (p :: ps) = writes (m.writeW p.1 p.2) ps := rfl
+
+section
+variable (P : Reg → Addr)
+
+/-- Writes to coefficient `j` of polynomials disjoint from that at `p` leave it unchanged. -/
+theorem coeffAt_writes_disjoint (m : Mem) (outs : List Reg) (j : Nat) (hj : j < 256) (V : Reg → BitVec 32)
+    {p : Addr} (hd : ∀ o ∈ outs, (pR p).Disjoint (pR (P o))) {k : Nat} (hk : k < 256) :
+    coeffAt (writes m (outs.map fun o => (coeffAddr (P o) j, V o))) p k = coeffAt m p k := by
+  induction outs generalizing m with
+  | nil => rfl
+  | cons o os ih =>
+    rw [List.map_cons, writes_cons]
+    rw [ih _ fun o' h => hd o' (List.mem_cons_of_mem _ h),
+      coeffAt_writeW_disjoint m (hd o List.mem_cons_self) (coeff_contains _ hj) hk]
+
+theorem coeffAt_writes (m : Mem) (outs : List Reg) (j : Nat) (hj : j < 256) (V : Reg → BitVec 32)
+    (hpw : outs.Pairwise fun a b => (pR (P a)).Disjoint (pR (P b))) {o : Reg} (ho : o ∈ outs) {k : Nat}
+    (hk : k < 256) :
+    coeffAt (writes m (outs.map fun o => (coeffAddr (P o) j, V o))) (P o) k =
+      if j = k then V o else coeffAt m (P o) k := by
+  induction outs generalizing m with
+  | nil => cases ho
+  | cons o' os ih =>
+    rw [List.map_cons, writes_cons]
+    rw [List.pairwise_cons] at hpw
+    by_cases hr : o ∈ os
+    · rw [ih _ hpw.2 hr]
+      have hd : (pR (P o)).Disjoint (pR (P o')) := (hpw.1 o hr).symm
+      rw [coeffAt_writeW_disjoint m hd (coeff_contains _ hj) hk]
+    · obtain rfl : o = o' := by simpa [hr] using ho
+      rw [coeffAt_writes_disjoint P _ os j hj V (fun o' h => hpw.1 o' h) hk, coeffAt_writeW m _ hk hj]
+
+theorem frame_writes {rs : List Region} {m₀ m : Mem} (hf : Frame rs m₀ m) (outs : List Reg) (j : Nat)
+    (hj : j < 256) (V : Reg → BitVec 32) (hin : ∀ o ∈ outs, pR (P o) ∈ rs) :
+    Frame rs m₀ (writes m (outs.map fun o => (coeffAddr (P o) j, V o))) := by
+  induction outs generalizing m with
+  | nil => exact hf
+  | cons o os ih =>
+    rw [List.map_cons, writes_cons]
+    exact ih (hf.writeW (hin o List.mem_cons_self) _ (coeff_contains _ hj)) fun o' h =>
+      hin o' (List.mem_cons_of_mem _ h)
+
+end
+
+/-! ## The loop -/
+
+/-- Where the loop's polynomials are: inputs readable, outputs writable,
+the outputs pairwise disjoint and disjoint from the inputs. -/
+structure Layout (s₀ : State) (ins outs : List Reg) : Prop where
+  rd : ∀ p ∈ ins, pR (s₀.gpr p) ∈ s₀.rd ++ s₀.wr
+  wr : ∀ o ∈ outs, pR (s₀.gpr o) ∈ s₀.wr
+  dis : ∀ p ∈ ins, ∀ o ∈ outs, (pR (s₀.gpr p)).Disjoint (pR (s₀.gpr o))
+  pw : outs.Pairwise fun a b => (pR (s₀.gpr a)).Disjoint (pR (s₀.gpr b))
+
+/-- After `i` iterations: the registers `fixed` are unchanged, the outputs
+hold their values from coefficient `256 - i` on, and `J i`. -/
+structure Inv (s₀ : State) (fixed outs : List Reg) (V : Reg → Nat → BitVec 32) (J : Nat → State → Prop)
+    (i : Nat) (s : State) : Prop where
+  fixed : ∀ r ∈ fixed, s.gpr r = s₀.gpr r
+  rd : s.rd = s₀.rd
+  wr : s.wr = s₀.wr
+  frame : Frame (outs.map fun o => pR (s₀.gpr o)) s₀.mem s.mem
+  done : ∀ o ∈ outs, ∀ k, 256 - i ≤ k → k < 256 → coeffAt s.mem (s₀.gpr o) k = V o k
+  j : J i s
+
+section
+variable {s₀ : State} {ins outs fixed : List Reg} {V : Reg → Nat → BitVec 32} {J : Nat → State → Prop}
+  {i : Nat} {s : State}
+
+/-- The address of the coefficient that iteration `i` handles. -/
+theorem Inv.addr (hI : Inv s₀ fixed outs V J i s) (hc : s.gpr .rcx = BitVec.ofNat 64 (256 - i)) (hi : i < 256)
+    {p : Reg} (hp : p ∈ fixed) : cfAddr (s.gpr p) (s.gpr .rcx) = coeffAddr (s₀.gpr p) (255 - i) := by
+  rw [hI.fixed p hp, hc, show 256 - i = 255 - i + 1 by omega_using [hi]]
+  exact cfAddr_eq _ _
+
+theorem Inv.inR (hL : Layout s₀ ins outs) (hI : Inv s₀ fixed outs V J i s) {p : Reg} (hp : p ∈ ins) {k : Nat}
+    (hk : k < 256) : InRegions (s.rd ++ s.wr) (coeffAddr (s₀.gpr p) k) 4 := by
+  rw [hI.rd, hI.wr]
+  exact ⟨_, hL.rd p hp, coeff_contains _ hk⟩
+
+theorem Inv.inW (hL : Layout s₀ ins outs) (hI : Inv s₀ fixed outs V J i s) {o : Reg} (ho : o ∈ outs) {k : Nat}
+    (hk : k < 256) : InRegions s.wr (coeffAddr (s₀.gpr o) k) 4 := by
+  rw [hI.wr]
+  exact ⟨_, hL.wr o ho, coeff_contains _ hk⟩
+
+/-- The inputs are those of the initial memory. -/
+theorem Inv.read (hL : Layout s₀ ins outs) (hI : Inv s₀ fixed outs V J i s) {p : Reg} (hp : p ∈ ins) {k : Nat}
+    (hk : k < 256) : s.mem.readW (coeffAddr (s₀.gpr p) k) 32 = coeffAt s₀.mem (s₀.gpr p) k :=
+  coeffAt_frame hI.frame (fun _ hr => by
+    obtain ⟨o, ho, rfl⟩ := List.mem_map.mp hr
+    exact hL.dis p hp o ho) hk
+
+end
+
+/-- The loop, from a body that writes `V o (255 - i)` to coefficient `255 - i` of each output. -/
+theorem loop_ok {s₀ : State} {ins outs fixed clob : List Reg} {body : List Instr} {V : Reg → Nat → BitVec 32}
+    {J : Nat → State → Prop} (hL : Layout s₀ ins outs) (hfix : ∀ r ∈ fixed, r ∉ clob) (hcx : .rcx ∈ clob)
+    (hJ : ∀ s, s.gpr .rcx = BitVec.ofNat 64 256 → s.mem = s₀.mem → Keep [.rcx] s₀ s → J 0 s)
+    (hbody : ∀ i < 256, ∀ s, Inv s₀ fixed outs V J i s → s.gpr .rcx = BitVec.ofNat 64 (256 - i) →
+      WP isa (.block (body ++ ([.alu .sub .rcx (.imm 1)] : List Instr))) s fun s' =>
+        (s'.mem = writes s.mem (outs.map fun o => (coeffAddr (s₀.gpr o) (255 - i), V o (255 - i))) ∧
+          s'.gpr .rcx = s.gpr .rcx - 1 ∧ s'.zf = some (s.gpr .rcx - 1 == 0) ∧ J (i + 1) s') ∧
+        Keep clob s s') :
+    WP isa (mapLoop body) s₀ (Inv s₀ fixed outs V J 256) := by
+  refine WP.seq (WP.mono (WP.keep [.rcx] (Q := fun s => s.mem = s₀.mem ∧ s.gpr .rcx = BitVec.ofNat 64 256)
+    (by apply WP.of_runBlock; simp [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc32, State.setReg32,
+      setReg_gpr, setReg_mem]) (by decide)) fun s₁ ⟨⟨hm, hc⟩, hk⟩ => ?_)
+  have h0 : Inv s₀ fixed outs V J 0 s₁ := by
+    refine ⟨fun r hr => hk.gpr fun h => ?_, hk.2.1, hk.2.2, ?_, fun _ _ k h₁ h₂ => absurd h₂ (by omega_using [h₁]),
+      hJ s₁ hc hm hk⟩
+    · simp only [List.mem_singleton] at h
+      subst h
+      exact hfix _ hr hcx
+    · rw [hm]; exact Frame.refl _ _
+  refine wp_countdown (cnt := .rcx) (N := 256) (by decide) (by decide) (Inv s₀ fixed outs V J)
+    (fun i hi s hI hc => ?_) (fun _ h => h) h0 hc
+  · refine WP.mono (hbody i hi s hI hc) fun s' ⟨⟨hm', hc', hz', hJ'⟩, hk'⟩ => ⟨?_, hc', hz'⟩
+    refine ⟨fun r hr => (hk'.gpr (hfix r hr)).trans (hI.fixed r hr), hk'.2.1.trans hI.rd, hk'.2.2.trans hI.wr,
+      ?_, fun o ho k h₁ h₂ => ?_, hJ'⟩
+    · rw [hm']
+      exact frame_writes _ hI.frame outs _ (by omega_using []) _ fun o ho => List.mem_map_of_mem ho
+    · rw [hm', coeffAt_writes _ _ outs _ (by omega_using []) _ hL.pw ho h₂]
+      split
+      · subst k; rfl
+      · exact hI.done o ho k (by omega_arith) h₂
+
+end VG.Proof.MlDsa.X86_64.Round
+
+end
+
+end
 
 /-!
 # ML-DSA on x86-64: the contracts the rounding proofs are written against

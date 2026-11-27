@@ -1,20 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Prevalidated.Contract
-public import VerifiedGarbage.Proof.Dsa.PPC64LE.CT.Key
-public import VerifiedGarbage.Proof.Dsa.PPC64LE.CT.Entry
+public import VerifiedGarbage.Proof.Dsa.PPC64LE.VerifyCT
 public import VerifiedGarbage.Impl.Dsa.PPC64LE.Prevalidated
-import VerifiedGarbage.Proof.Dsa.PPC64LE.VerifyCT
-import VerifiedGarbage.Proof.Dsa.PPC64LE.CT.SizesRest
 import VerifiedGarbage.Proof.Dsa.PPC64LE.Validate.Spec
 import VerifiedGarbage.Proof.Dsa.PPC64LE.Elem
 import VerifiedGarbage.Proof.Dsa.SizeBounds
 meta import VerifiedGarbage.Proof.Dsa.PPC64LE.Prevalidated.Contract
-meta import VerifiedGarbage.Proof.Dsa.PPC64LE.CT.Key
-meta import VerifiedGarbage.Proof.Dsa.PPC64LE.CT.Entry
-meta import VerifiedGarbage.Impl.Dsa.PPC64LE.Prevalidated
 meta import VerifiedGarbage.Proof.Dsa.PPC64LE.VerifyCT
-meta import VerifiedGarbage.Proof.Dsa.PPC64LE.CT.SizesRest
+meta import VerifiedGarbage.Impl.Dsa.PPC64LE.Prevalidated
 
 /-!
 # DSA prevalidated verification on PPC64LE: constant time
@@ -86,7 +80,7 @@ theorem w_LQ {v : VD} {s : State} (h : S5 v s) : WP isa setupQ s (LQ v) := by
     ⟨B.step k (qb.body B.ok), ?_, fixL_nil _, by rw [q0, B.q]; rfl, qtop⟩
   rw [k.gpr .r2 (by decide), r2]
 
-theorem w_PV {v : VD} {s : State} (h : LQ v s ∧ KV v) : WP isa setupP s fun t => PP KM v t ∧ KV v := by
+theorem w_PV {v : VD} {s : State} (h : LQ v s ∧ KV v) : WP isa setupPCall s fun t => PP KM v t ∧ KV v := by
   obtain ⟨⟨B, r2, -, qf⟩, kv⟩ := h
   exact (w_setupP (K := KM) (fun _ h => h.1) B r2 qf (B.pk kv).1.1).mono fun _ ht => ⟨ht, kv⟩
 
@@ -95,7 +89,7 @@ theorem setupV_rel :
   unfold Prevalidated.setup
   refine sizes_rel ?_ fun _ h => fail_rel fun v s h' => (h v s h').1
   refine RelCT.seq (two_postG (rel_pins pins_S5' tQ) fun _ _ h => w_LQ h)
-    (RelCT.seq (two_post (setupP_rel (pins_and pins_LQ)
+    (RelCT.seq (two_post (setupPCall_rel (pins_and pins_LQ)
       fun _ _ ⟨⟨B, r2, _, _⟩, kv⟩ => ⟨B, r2, (B.pk kv).1.1.1.2.1⟩) fun _ _ h => w_PV h) ?_)
   exact body_rel.mono (fun _ _ => two_mono fun _ s ⟨⟨B, r2, _, pf, _⟩, kv⟩ =>
     ⟨B, r2, fixL_nil s, pf, B.pk kv⟩) fun _ _ h => h

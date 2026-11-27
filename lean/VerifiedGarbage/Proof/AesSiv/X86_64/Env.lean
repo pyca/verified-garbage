@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.AesSiv.X86_64
 public import VerifiedGarbage.Proof.CmacAes.Stream.X86_64.Call
+public import VerifiedGarbage.Proof.AesSiv.X86_64.Call
 public import VerifiedGarbage.Proof.CmacAes.X86_64.Finalize
 public import VerifiedGarbage.Spec.Siv
 import VerifiedGarbage.Proof.CmacAes.Stream.X86_64.Common
@@ -18,12 +19,15 @@ import VerifiedGarbage.Proof.Framework.Contract
 
 The three functions have the same arguments: the key context `C`, the
 rounds `R`, `D` (16 bytes), the data `P` (`L` bytes) and the working space
-`W` (2560 bytes). They call `vg_cmac_aes_update` and `vg_cmac_aes_finalize`
-with the context as the key, a CMAC state in the working space, the data or
-the working space as the message, and the working space at `W + 256` as
-theirs (`Env.uargs`, `Env.fargs`); and `vg_aes_ctr32` with `K2`'s schedule
-and blocks of the working space (`Env.cargs`). `Env` names what their
-contracts say about the regions, whichever of them are writable.
+`W`, in one of its two layouts (`Lay`: `g.n` bytes, 2560 or 272). They call
+`vg_cmac_aes_update` and `vg_cmac_aes_finalize` with the context as the key, a
+CMAC state in the working space, the data or the working space as the
+message, and the `g.xn` bytes of the working space at `W + 256` as what they
+may write of it (`Env.uargs`, `Env.fargs`); and `vg_aes_ctr32` with `K2`'s
+schedule and blocks of the working space (`Env.cargs`). `Env` names what
+their contracts say about the regions, whichever of them are writable. The
+code's own part of the working space is its first 256 bytes in both layouts
+(`Env.sW`, `Env.inW`); the rest is the calls' (`Env.sX`).
 -/
 
 @[expose] public section
@@ -31,36 +35,37 @@ contracts say about the regions, whichever of them are writable.
 namespace VG.Proof.AesSiv.X86_64
 
 open VG VG.X86_64
-open VG.Proof.CmacAes.Stream.X86_64 (UArgs FArgs toNat_add_lt)
-open VG.Proof.CmacAes.X86_64 (CallPre offset_nat zero2)
+open VG.Proof.CmacAes.Stream.X86_64 (toNat_add_lt)
+open VG.Proof.CmacAes.X86_64 (offset_nat zero2)
 open VG.Impl.CmacAes.X86_64 (at_)
 open VG.X86_64.RegUpd
 open VG.Impl.AesSiv.X86_64 (zero16)
 
-/-- The regions of the arguments. -/
-structure Env (s₀ : State) (C D P W : Addr) (R L : Nat) : Prop where
+/-- The regions of the arguments, with the working space in the layout `g`. -/
+structure Env (g : Lay) (s₀ : State) (C D P W : Addr) (R L : Nat) : Prop where
+  lay : g.Ok
   sp : 16 ≤ (s₀.gpr .rsp).toNat
   rounds : R = 10 ∨ R = 12 ∨ R = 14
   ctxIn : (⟨C, 512⟩ : Region) ∈ s₀.rd ++ s₀.wr
   dIn : (⟨D, 16⟩ : Region) ∈ s₀.rd ++ s₀.wr
   dataIn : (⟨P, L⟩ : Region) ∈ s₀.rd ++ s₀.wr
-  workIn : (⟨W, 2560⟩ : Region) ∈ s₀.wr
-  c_w : (⟨C, 512⟩ : Region).Disjoint ⟨W, 2560⟩
+  workIn : (⟨W, g.n⟩ : Region) ∈ s₀.wr
+  c_w : (⟨C, 512⟩ : Region).Disjoint ⟨W, g.n⟩
   d_p : (⟨D, 16⟩ : Region).Disjoint ⟨P, L⟩
-  d_w : (⟨D, 16⟩ : Region).Disjoint ⟨W, 2560⟩
-  p_w : (⟨P, L⟩ : Region).Disjoint ⟨W, 2560⟩
+  d_w : (⟨D, 16⟩ : Region).Disjoint ⟨W, g.n⟩
+  p_w : (⟨P, L⟩ : Region).Disjoint ⟨W, g.n⟩
   ret_c : (⟨s₀.gpr .rsp, 8⟩ : Region).Disjoint ⟨C, 512⟩
   ret_d : (⟨s₀.gpr .rsp, 8⟩ : Region).Disjoint ⟨D, 16⟩
   ret_p : (⟨s₀.gpr .rsp, 8⟩ : Region).Disjoint ⟨P, L⟩
-  ret_w : (⟨s₀.gpr .rsp, 8⟩ : Region).Disjoint ⟨W, 2560⟩
+  ret_w : (⟨s₀.gpr .rsp, 8⟩ : Region).Disjoint ⟨W, g.n⟩
   stk_c : (below (s₀.gpr .rsp) 16).Disjoint ⟨C, 512⟩
   stk_d : (below (s₀.gpr .rsp) 16).Disjoint ⟨D, 16⟩
   stk_p : (below (s₀.gpr .rsp) 16).Disjoint ⟨P, L⟩
-  stk_w : (below (s₀.gpr .rsp) 16).Disjoint ⟨W, 2560⟩
+  stk_w : (below (s₀.gpr .rsp) 16).Disjoint ⟨W, g.n⟩
   wC : C.toNat + 512 ≤ 2 ^ 64
   wD : D.toNat + 16 ≤ 2 ^ 64
   wP : P.toNat + L ≤ 2 ^ 64
-  wW : W.toNat + 2560 ≤ 2 ^ 64
+  wW : W.toNat + g.n ≤ 2 ^ 64
   lt : L < 2 ^ 64
 
 /-- The registers that hold the arguments while the code runs: the context
@@ -130,56 +135,92 @@ theorem regs_agree {s₀ s₀' a b : State} {C D P W : Addr} {R L : Nat} (hq : s
 
 namespace Env
 
-variable {s₀ : State} {C D P W : Addr} {R L : Nat}
+variable {g : Lay} {s₀ : State} {C D P W : Addr} {R L : Nat}
 
-theorem sW (_h : Env s₀ C D P W R L) {d n : Nat} (hd : d + n ≤ 2560) :
-    Region.Sub ⟨W + BitVec.ofNat 64 d, n⟩ ⟨W, 2560⟩ :=
-  Offset.sub_base W hd
+/-- The code's own part of the working space, its first 256 bytes. -/
+theorem sW (h : Env g s₀ C D P W R L) {d n : Nat} (hd : d + n ≤ 256) :
+    Region.Sub ⟨W + BitVec.ofNat 64 d, n⟩ ⟨W, g.n⟩ :=
+  Offset.sub_base W (by have := h.lay.le; omega_using [hd, this])
 
-theorem sC (_h : Env s₀ C D P W R L) {d n : Nat} (hd : d + n ≤ 512) :
+/-- What the calls may write of the working space. -/
+theorem sX (h : Env g s₀ C D P W R L) : Region.Sub ⟨W + BitVec.ofNat 64 256, g.xn⟩ ⟨W, g.n⟩ :=
+  Offset.sub_base W h.lay.le
+
+/-- The working space past its first 16 bytes. -/
+theorem sR (h : Env g s₀ C D P W R L) : Region.Sub ⟨W + BitVec.ofNat 64 16, g.n - 16⟩ ⟨W, g.n⟩ :=
+  Offset.sub_base W (by have := h.lay.lt; omega_using [this])
+
+/-- The first 16 bytes of the working space, the IV. -/
+theorem s16 (h : Env g s₀ C D P W R L) : Region.Sub ⟨W, 16⟩ ⟨W, g.n⟩ :=
+  Region.sub_prefix (by have := h.lay.lt; omega_using [this])
+
+/-- The end of what the calls may write. -/
+theorem xle (h : Env g s₀ C D P W R L) : 256 + g.xn ≤ 2560 := Nat.le_trans h.lay.le h.lay.n_le
+
+theorem sC (_h : Env g s₀ C D P W R L) {d n : Nat} (hd : d + n ≤ 512) :
     Region.Sub ⟨C + BitVec.ofNat 64 d, n⟩ ⟨C, 512⟩ :=
   Offset.sub_base C hd
 
-theorem sP (_h : Env s₀ C D P W R L) {d n : Nat} (hd : d + n ≤ L) :
+theorem sP (_h : Env g s₀ C D P W R L) {d n : Nat} (hd : d + n ≤ L) :
     Region.Sub ⟨P + BitVec.ofNat 64 d, n⟩ ⟨P, L⟩ :=
   Offset.sub_base P hd
 
-theorem inW (h : Env s₀ C D P W R L) {s : State} (hwr : s.wr = s₀.wr) {d n : Nat} (hd : d + n ≤ 2560) :
+theorem inW (h : Env g s₀ C D P W R L) {s : State} (hwr : s.wr = s₀.wr) {d n : Nat} (hd : d + n ≤ 256) :
     InRegions s.wr (W + BitVec.ofNat 64 d) n := by
-  rw [hwr]; exact ⟨_, h.workIn, Offset.contains_base W hd (by have := h.wW; omega_using [hd])⟩
+  rw [hwr]
+  exact ⟨_, h.workIn, Offset.contains_base W (by have := h.lay.le; omega_using [hd, this]) (by omega_using [hd])⟩
 
-theorem inRW (h : Env s₀ C D P W R L) {s : State} (hrd : s.rd = s₀.rd) (hwr : s.wr = s₀.wr) {d n : Nat}
-    (hd : d + n ≤ 2560) : InRegions (s.rd ++ s.wr) (W + BitVec.ofNat 64 d) n := by
+theorem inRW (h : Env g s₀ C D P W R L) {s : State} (hrd : s.rd = s₀.rd) (hwr : s.wr = s₀.wr) {d n : Nat}
+    (hd : d + n ≤ 256) : InRegions (s.rd ++ s.wr) (W + BitVec.ofNat 64 d) n := by
   rw [hrd, hwr]
   obtain ⟨r, hr, hc⟩ := h.inW (s := s₀) rfl hd
   exact ⟨r, List.mem_append_right _ hr, hc⟩
 
-theorem inRP (h : Env s₀ C D P W R L) {s : State} (hrd : s.rd = s₀.rd) (hwr : s.wr = s₀.wr) {d n : Nat}
+theorem inRP (h : Env g s₀ C D P W R L) {s : State} (hrd : s.rd = s₀.rd) (hwr : s.wr = s₀.wr) {d n : Nat}
     (hd : d + n ≤ L) : InRegions (s.rd ++ s.wr) (P + BitVec.ofNat 64 d) n := by
   rw [hrd, hwr]; exact ⟨_, h.dataIn, Offset.contains_base P hd (by have := h.wP; have := h.lt; omega_using [hd, this])⟩
 
-theorem inWP (h : Env s₀ C D P W R L) (hPw : (⟨P, L⟩ : Region) ∈ s₀.wr) {s : State} (hwr : s.wr = s₀.wr)
+theorem inWP (h : Env g s₀ C D P W R L) (hPw : (⟨P, L⟩ : Region) ∈ s₀.wr) {s : State} (hwr : s.wr = s₀.wr)
     {d n : Nat} (hd : d + n ≤ L) : InRegions s.wr (P + BitVec.ofNat 64 d) n := by
   rw [hwr]; exact ⟨_, hPw, Offset.contains_base P hd (by have := h.wP; have := h.lt; omega_using [hd, this])⟩
 
-theorem inRD (h : Env s₀ C D P W R L) {s : State} (hrd : s.rd = s₀.rd) (hwr : s.wr = s₀.wr) {d n : Nat}
+theorem inRD (h : Env g s₀ C D P W R L) {s : State} (hrd : s.rd = s₀.rd) (hwr : s.wr = s₀.wr) {d n : Nat}
     (hd : d + n ≤ 16) : InRegions (s.rd ++ s.wr) (D + BitVec.ofNat 64 d) n := by
   rw [hrd, hwr]; exact ⟨_, h.dIn, Offset.contains_base D hd (by have := h.wD; omega_using [hd])⟩
 
+/-- A block of the code's own part of the working space is writable. -/
+theorem covW (h : Env g s₀ C D P W R L) {d n : Nat} (hd : d + n ≤ 256) :
+    Covers [⟨W + BitVec.ofNat 64 d, n⟩] s₀.wr :=
+  cov_off h.workIn (by have := h.lay.le; show d + n ≤ g.n; omega_using [hd, this])
+
+/-- What the calls may write of the working space is writable. -/
+theorem covX (h : Env g s₀ C D P W R L) : Covers [⟨W + BitVec.ofNat 64 256, g.xn⟩] s₀.wr :=
+  cov_off h.workIn h.lay.le
+
+/-- A block of the code's own part of the working space misses what the
+calls may write of it. -/
+theorem dX (h : Env g s₀ C D P W R L) {d n : Nat} (hd : d + n ≤ 256) :
+    (⟨W + BitVec.ofNat 64 d, n⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 256, g.xn⟩ :=
+  Offset.disjoint W (Or.inl hd) (by omega_using [hd]) (by have := h.xle; omega_using [this])
+
+theorem wrapX (h : Env g s₀ C D P W R L) : (W + BitVec.ofNat 64 256).toNat + g.xn ≤ 2 ^ 64 := by
+  rw [toNat_add_lt W h.wW h.lay.lt]; omega_using [h.lay.le, h.wW]
+
 /-- A message for the CMAC functions: `n` bytes at `Q`, which miss the state at
-`W + o`, the working space of the functions called and the stack. -/
-structure Src (s₀ : State) (W : Addr) (o : Nat) (Q : Addr) (n : Nat) : Prop where
+`W + o`, what the functions called may write of the working space and the
+stack. -/
+structure Src (g : Lay) (s₀ : State) (W : Addr) (o : Nat) (Q : Addr) (n : Nat) : Prop where
   qo : (⟨Q, n⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 o, 16⟩
-  qs : (⟨Q, n⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 256, 2176⟩
+  qs : (⟨Q, n⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 256, g.xn⟩
   stk : (below (s₀.gpr .rsp) 16).Disjoint ⟨Q, n⟩
   wrap : Q.toNat + n ≤ 2 ^ 64
   cov : Covers [⟨Q, n⟩] (s₀.rd ++ s₀.wr)
 
 /-- Data bytes as the message. -/
-theorem srcData (h : Env s₀ C D P W R L) {o a n : Nat} (ho : o + 16 ≤ 2560) (ha : a + n ≤ L) :
-    Src s₀ W o (P + BitVec.ofNat 64 a) n where
+theorem srcData (h : Env g s₀ C D P W R L) {o a n : Nat} (ho : o + 16 ≤ 256) (ha : a + n ≤ L) :
+    Src g s₀ W o (P + BitVec.ofNat 64 a) n where
   qo := (h.p_w.sub_left (h.sP ha)).sub_right (h.sW ho)
-  qs := (h.p_w.sub_left (h.sP ha)).sub_right (h.sW (by decide))
+  qs := (h.p_w.sub_left (h.sP ha)).sub_right h.sX
   stk := h.stk_p.sub_right (h.sP ha)
   wrap := by
     have := h.wP
@@ -188,28 +229,33 @@ theorem srcData (h : Env s₀ C D P W R L) {o a n : Nat} (ho : o + 16 ≤ 2560) 
     · rw [toNat_add_lt P this (by omega_using [ha, hn])]; omega_using [ha, this]
   cov := cov_off h.dataIn ha
 
-theorem srcData₀ (h : Env s₀ C D P W R L) {o n : Nat} (ho : o + 16 ≤ 2560) (hn : n ≤ L) :
-    Src s₀ W o P n := by
+theorem srcData₀ (h : Env g s₀ C D P W R L) {o n : Nat} (ho : o + 16 ≤ 256) (hn : n ≤ L) :
+    Src g s₀ W o P n := by
   have := h.srcData (o := o) (a := 0) (n := n) ho (by omega_using [hn])
   rwa [Proof.CmacAes.X86_64.k0] at this
 
 /-- Bytes of the working space below `W + 256`, apart from the state, as the message. -/
-theorem srcWork (h : Env s₀ C D P W R L) {o t n : Nat} (ho : o + 16 ≤ 256) (ht : t + n ≤ 256)
-    (hs : t + n ≤ o ∨ o + 16 ≤ t) : Src s₀ W o (W + BitVec.ofNat 64 t) n where
+theorem srcWork (h : Env g s₀ C D P W R L) {o t n : Nat} (ho : o + 16 ≤ 256) (ht : t + n ≤ 256)
+    (hs : t + n ≤ o ∨ o + 16 ≤ t) : Src g s₀ W o (W + BitVec.ofNat 64 t) n where
   qo := Offset.disjoint W hs (by omega_using [ht]) (by omega_using [ho])
-  qs := Offset.disjoint W (by omega_using [ht]) (by omega_using [ht]) (by omega_using [])
-  stk := h.stk_w.sub_right (h.sW (by omega_using [ht]))
-  wrap := by rw [toNat_add_lt W h.wW (by omega_using [ht])]; have := h.wW; omega_using [ht, this]
-  cov := Covers.right (cov_off h.workIn (by simp; omega_using [ht]))
+  qs := h.dX ht
+  stk := h.stk_w.sub_right (h.sW ht)
+  wrap := by
+    have := h.lay.le
+    have := h.wW
+    rcases Nat.eq_zero_or_pos n with rfl | hn
+    · have := (W + BitVec.ofNat 64 t).isLt; omega_using []
+    · rw [toNat_add_lt W h.wW (by omega_using [ht, hn, h.lay.le])]; omega_using [ht, h.wW, h.lay.le]
+  cov := Covers.right (h.covW ht)
 
 /-- The arguments of `vg_cmac_aes_finalize`: the context as the key, the
-state at `W + o`, the message at `Q`, and the working space at `W + 256`. -/
-theorem fargs (h : Env s₀ C D P W R L) {s : State} (hrd : s.rd = s₀.rd) (hwr : s.wr = s₀.wr)
+state at `W + o`, the message at `Q`, and the layout's scratch pointer. -/
+theorem fargs (h : Env g s₀ C D P W R L) {s : State} (hrd : s.rd = s₀.rd) (hwr : s.wr = s₀.wr)
     (hsp : s.gpr .rsp = s₀.gpr .rsp) {o : Nat} (ho : o + 16 ≤ 256) {Q : Addr} {n : Nat}
-    (hq : Src s₀ W o Q n) (hn : n ≤ 16)
+    (hq : Src g s₀ W o Q n) (hn : n ≤ 16)
     (rdi : s.gpr .rdi = C) (rsi : s.gpr .rsi = BitVec.ofNat 64 R) (rdx : s.gpr .rdx = W + BitVec.ofNat 64 o)
-    (rcx : s.gpr .rcx = Q) (r8 : s.gpr .r8 = BitVec.ofNat 64 n) (r9 : s.gpr .r9 = W + BitVec.ofNat 64 256) :
-    FArgs s C (W + BitVec.ofNat 64 o) Q (W + BitVec.ofNat 64 256) n R where
+    (rcx : s.gpr .rcx = Q) (r8 : s.gpr .r8 = BitVec.ofNat 64 n) (r9 : s.gpr .r9 = W + BitVec.signExtend 64 g.x) :
+    FA g s C (W + BitVec.ofNat 64 o) Q W n R where
   rdi := rdi
   rsi := rsi
   rdx := rdx
@@ -218,36 +264,36 @@ theorem fargs (h : Env s₀ C D P W R L) {s : State} (hrd : s.rd = s₀.rd) (hwr
   r9 := r9
   rounds := h.rounds
   len := hn
-  kst := (h.c_w.sub_left (Region.sub_prefix (by decide))).sub_right (h.sW (by omega_using [ho]))
-  ks := (h.c_w.sub_left (Region.sub_prefix (by decide))).sub_right (h.sW (by decide))
+  kst := (h.c_w.sub_left (Region.sub_prefix (by decide))).sub_right (h.sW ho)
+  ks := (h.c_w.sub_left (Region.sub_prefix (by decide))).sub_right h.sX
   pst := hq.qo
   ps := hq.qs
-  sts := Offset.disjoint W (by omega_using [ho]) (by omega_using [ho]) (by omega_using [])
+  sts := h.dX ho
   stkK := by rw [hsp]; exact h.stk_c.sub_right (Region.sub_prefix (by decide))
   stkP := by rw [hsp]; exact hq.stk
-  stkSt := by rw [hsp]; exact h.stk_w.sub_right (h.sW (by omega_using [ho]))
-  stkS := by rw [hsp]; exact h.stk_w.sub_right (h.sW (by decide))
+  stkSt := by rw [hsp]; exact h.stk_w.sub_right (h.sW ho)
+  stkS := by rw [hsp]; exact h.stk_w.sub_right h.sX
   wrapK := by have := h.wC; omega_using [this]
-  wrapSt := by rw [toNat_add_lt W h.wW (by omega_using [ho])]; have := h.wW; omega_using [ho, this]
+  wrapSt := by
+    rw [toNat_add_lt W h.wW (by omega_using [ho, h.lay.le])]; omega_using [ho, h.wW, h.lay.le]
   wrapP := hq.wrap
-  wrapS := by rw [toNat_add_lt W h.wW (by omega_using [])]; have := h.wW; omega_using [this]
+  wrapS := h.wrapX
   reads := by
     rw [hrd, hwr]
     refine Covers.append_left (Covers.cons (cov_base h.ctxIn (by simp)) (Covers.cons hq.cov Covers.nil))
-      (Covers.cons (Covers.right (cov_off h.workIn (by simp; omega_using [ho])))
-        (Covers.cons (Covers.right (cov_off h.workIn (by simp))) Covers.nil))
+      (Covers.cons (Covers.right (h.covW ho)) (Covers.cons (Covers.right h.covX) Covers.nil))
   writes := by
     rw [hwr]
-    exact Covers.cons (cov_off h.workIn (by simp; omega_using [ho])) (Covers.cons (cov_off h.workIn (by simp)) Covers.nil)
+    exact Covers.cons (h.covW ho) (Covers.cons h.covX Covers.nil)
 
 /-- The arguments of `vg_cmac_aes_update`: `K1`'s schedule, the state at
-`W + o`, `n` blocks at `Q`, and the working space at `W + 256`. -/
-theorem uargs (h : Env s₀ C D P W R L) {s : State} (hrd : s.rd = s₀.rd) (hwr : s.wr = s₀.wr)
+`W + o`, `n` blocks at `Q`, and the layout's scratch pointer. -/
+theorem uargs (h : Env g s₀ C D P W R L) {s : State} (hrd : s.rd = s₀.rd) (hwr : s.wr = s₀.wr)
     (hsp : s.gpr .rsp = s₀.gpr .rsp) {o : Nat} (ho : o + 16 ≤ 256) {Q : Addr} {n : Nat}
-    (hq : Src s₀ W o Q (16 * n)) (hn : 16 * n < 2 ^ 64)
+    (hq : Src g s₀ W o Q (16 * n)) (hn : 16 * n < 2 ^ 64)
     (rdi : s.gpr .rdi = C) (rsi : s.gpr .rsi = BitVec.ofNat 64 R) (rdx : s.gpr .rdx = W + BitVec.ofNat 64 o)
-    (rcx : s.gpr .rcx = Q) (r8 : s.gpr .r8 = BitVec.ofNat 64 n) (r9 : s.gpr .r9 = W + BitVec.ofNat 64 256) :
-    UArgs s C (W + BitVec.ofNat 64 o) Q (W + BitVec.ofNat 64 256) R n where
+    (rcx : s.gpr .rcx = Q) (r8 : s.gpr .r8 = BitVec.ofNat 64 n) (r9 : s.gpr .r9 = W + BitVec.signExtend 64 g.x) :
+    UA g s C (W + BitVec.ofNat 64 o) Q W R n where
   rdi := rdi
   rsi := rsi
   rdx := rdx
@@ -256,29 +302,29 @@ theorem uargs (h : Env s₀ C D P W R L) {s : State} (hrd : s.rd = s₀.rd) (hwr
   r9 := r9
   rounds := h.rounds
   hn := hn
-  wc := (h.c_w.sub_left (Region.sub_prefix (by decide))).sub_right (h.sW (by omega_using [ho]))
-  ws := (h.c_w.sub_left (Region.sub_prefix (by decide))).sub_right (h.sW (by decide))
+  wc := (h.c_w.sub_left (Region.sub_prefix (by decide))).sub_right (h.sW ho)
+  ws := (h.c_w.sub_left (Region.sub_prefix (by decide))).sub_right h.sX
   dc := hq.qo
   ds := hq.qs
-  cs := Offset.disjoint W (by omega_using [ho]) (by omega_using [ho]) (by omega_using [])
+  cs := h.dX ho
   stkW := by rw [hsp]; exact h.stk_c.sub_right (Region.sub_prefix (by decide))
   stkD := by rw [hsp]; exact hq.stk
-  stkC := by rw [hsp]; exact h.stk_w.sub_right (h.sW (by omega_using [ho]))
-  stkS := by rw [hsp]; exact h.stk_w.sub_right (h.sW (by decide))
-  wrapC := by rw [toNat_add_lt W h.wW (by omega_using [ho])]; have := h.wW; omega_using [ho, this]
+  stkC := by rw [hsp]; exact h.stk_w.sub_right (h.sW ho)
+  stkS := by rw [hsp]; exact h.stk_w.sub_right h.sX
+  wrapC := by
+    rw [toNat_add_lt W h.wW (by omega_using [ho, h.lay.le])]; omega_using [ho, h.wW, h.lay.le]
   wrapD := hq.wrap
-  wrapS := by rw [toNat_add_lt W h.wW (by omega_using [])]; have := h.wW; omega_using [this]
+  wrapS := h.wrapX
   reads := by
     rw [hrd, hwr]
     refine Covers.append_left (Covers.cons (cov_base h.ctxIn (by simp)) (Covers.cons hq.cov Covers.nil))
-      (Covers.cons (Covers.right (cov_off h.workIn (by simp; omega_using [ho])))
-        (Covers.cons (Covers.right (cov_off h.workIn (by simp))) Covers.nil))
+      (Covers.cons (Covers.right (h.covW ho)) (Covers.cons (Covers.right h.covX) Covers.nil))
   writes := by
     rw [hwr]
-    exact Covers.cons (cov_off h.workIn (by simp; omega_using [ho])) (Covers.cons (cov_off h.workIn (by simp)) Covers.nil)
+    exact Covers.cons (h.covW ho) (Covers.cons h.covX Covers.nil)
 
-theorem zero16_ok (h : Env s₀ C D P W R L) {s : State} (h15 : s.gpr .r15 = W) (hwr : s.wr = s₀.wr) {d : Nat}
-    (hd : d + 16 ≤ 2560) :
+theorem zero16_ok (h : Env g s₀ C D P W R L) {s : State} (h15 : s.gpr .r15 = W) (hwr : s.wr = s₀.wr) {d : Nat}
+    (hd : d + 16 ≤ 256) :
     ∃ s', runBlock isa (zero16 .r15 d) s = some s' ∧ s'.mem = zero2 s.mem (W + BitVec.ofNat 64 d) ∧
       (∀ r, r ≠ .rax → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   have w₀ := h.inW hwr (d := d) (n := 8) (by omega_using [hd])
@@ -294,16 +340,15 @@ theorem zero16_ok (h : Env s₀ C D P W R L) {s : State} (h15 : s.gpr .r15 = W) 
 
 
 /-- The arguments of `vg_aes_ctr32` on one block: `K2`'s schedule, the counter
-block at `W + 96`, the keystream block at `W + 80` (zero), and the working
-space at `W + 256`. -/
-theorem cargs (h : Env s₀ C D P W R L) {s : State} (hrd : s.rd = s₀.rd) (hwr : s.wr = s₀.wr)
+block at `W + 96`, the keystream block at `W + 80` (zero), and the layout's
+scratch pointer. -/
+theorem cargs (h : Env g s₀ C D P W R L) {s : State} (hrd : s.rd = s₀.rd) (hwr : s.wr = s₀.wr)
     (hsp : s.gpr .rsp = s₀.gpr .rsp)
     (rdi : s.gpr .rdi = C + BitVec.ofNat 64 272) (rsi : s.gpr .rsi = BitVec.ofNat 64 R)
     (rdx : s.gpr .rdx = W + BitVec.ofNat 64 96) (rcx : s.gpr .rcx = W + BitVec.ofNat 64 80) (r8 : s.gpr .r8 = 1)
-    (r9 : s.gpr .r9 = W + BitVec.ofNat 64 256)
+    (r9 : s.gpr .r9 = W + BitVec.signExtend 64 g.x)
     (hz : Spec.Aes.bytesAt s.mem (W + BitVec.ofNat 64 80) 16 = Spec.Cmac.zeros 16) :
-    CallPre s (C + BitVec.ofNat 64 272) (W + BitVec.ofNat 64 96) (W + BitVec.ofNat 64 80) (W + BitVec.ofNat 64 256)
-      R where
+    CA g s (C + BitVec.ofNat 64 272) (W + BitVec.ofNat 64 96) (W + BitVec.ofNat 64 80) W R where
   rdi := rdi
   rsi := rsi
   rdx := rdx
@@ -313,29 +358,30 @@ theorem cargs (h : Env s₀ C D P W R L) {s : State} (hrd : s.rd = s₀.rd) (hwr
   rounds := h.rounds
   wc := (h.c_w.sub_left (h.sC (by decide))).sub_right (h.sW (by decide))
   wd := (h.c_w.sub_left (h.sC (by decide))).sub_right (h.sW (by decide))
-  ws := (h.c_w.sub_left (h.sC (by decide))).sub_right (h.sW (by decide))
-  cd := Offset.disjoint W (by omega_using []) (by have := h.wW; omega_using []) (by have := h.wW; omega_using [])
-  cs := Offset.disjoint W (by omega_using []) (by have := h.wW; omega_using []) (by have := h.wW; omega_using [])
-  ds := Offset.disjoint W (by omega_using []) (by have := h.wW; omega_using []) (by have := h.wW; omega_using [])
+  ws := (h.c_w.sub_left (h.sC (by decide))).sub_right h.sX
+  cd := Offset.disjoint W (by omega_using []) (by omega_using []) (by omega_using [])
+  cs := h.dX (by decide)
+  ds := h.dX (by decide)
   stkW := by rw [hsp]; exact (h.stk_c.sub_right (h.sC (by decide))).sub_left (Offset.sub_below _ (by decide) (by
     have := h.sp; omega_using []))
   stkC := by rw [hsp]; exact (h.stk_w.sub_right (h.sW (by decide))).sub_left (Offset.sub_below _ (by decide) (by
     have := h.sp; omega_using []))
   stkD := by rw [hsp]; exact (h.stk_w.sub_right (h.sW (by decide))).sub_left (Offset.sub_below _ (by decide) (by
     have := h.sp; omega_using []))
-  stkS := by rw [hsp]; exact (h.stk_w.sub_right (h.sW (by decide))).sub_left (Offset.sub_below _ (by decide) (by
+  stkS := by rw [hsp]; exact (h.stk_w.sub_right h.sX).sub_left (Offset.sub_below _ (by decide) (by
     have := h.sp; omega_using []))
-  wrap := by rw [toNat_add_lt W h.wW (show 80 < 2560 by decide)]; have := h.wW; omega_using [this]
+  wrap := by
+    rw [toNat_add_lt W h.wW (by omega_using [h.lay.le])]; omega_using [h.wW, h.lay.le]
   reads := by
     rw [hrd, hwr]
     refine Covers.append_left (Covers.cons (cov_off h.ctxIn (by simp)) Covers.nil)
-      (Covers.cons (Covers.right (cov_off h.workIn (by simp)))
-        (Covers.cons (Covers.right (cov_off h.workIn (by simp)))
-          (Covers.cons (Covers.right (cov_off h.workIn (by simp))) Covers.nil)))
+      (Covers.cons (Covers.right (h.covW (by decide)))
+        (Covers.cons (Covers.right (h.covW (by decide)))
+          (Covers.cons (Covers.right h.covX) Covers.nil)))
   writes := by
     rw [hwr]
-    exact Covers.cons (cov_off h.workIn (by simp)) (Covers.cons (cov_off h.workIn (by simp))
-      (Covers.cons (cov_off h.workIn (by simp)) Covers.nil))
+    exact Covers.cons (h.covW (by decide)) (Covers.cons (h.covW (by decide))
+      (Covers.cons h.covX Covers.nil))
   zero := hz
 
 end Env

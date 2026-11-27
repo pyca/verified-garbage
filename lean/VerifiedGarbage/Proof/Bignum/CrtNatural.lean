@@ -1,11 +1,6 @@
 module
 
 import VerifiedGarbage.Proof.Bignum.CrtMath
-import Mathlib.Order.RelClasses
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Attr.Core
-import Mathlib.Tactic.ToDual
-import Mathlib.Tactic.ToAdditive
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Natural-number CRT recombination agrees with the signed RFC coefficient -/

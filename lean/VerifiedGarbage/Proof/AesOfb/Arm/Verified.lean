@@ -28,7 +28,7 @@ open VG VG.Arm VG.Impl.AesOfb.Arm
 open VG.Proof.AesCbc.Arm
 
 theorem crypt_verified : Verified Arm.target crypt (Proof.AesOfb.roundsContract Arm.abi 8) :=
-  Verified.of_correct (fun _ hs => whole_wp body_ok hs) (whole_ct body_ok body_ct)
+  Verified.of_correct (fun _ hs => wholeK_wp body_ok hs) (wholeK_ct body_ok body_ct)
     { pre := by sig_implies_pre [Proof.AesOfb.roundsContract, Spec.Ofb.aesSig, Spec.Cbc.aesSig, modeArm, Arm.abi,
         Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
       -- `ofbMode.chain` counts the blocks, which are `n`.

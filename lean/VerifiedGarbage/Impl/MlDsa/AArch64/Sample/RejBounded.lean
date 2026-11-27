@@ -3,26 +3,21 @@ module
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.Common
 
 /-!
-# ML-DSA on AArch64: `vg_mldsa_rej_bounded_poly`
+# ML-DSA on AArch64: an iteration of `RejBoundedPoly`'s loop
 
-`rejBoundedWith c (seed = x0, eta = w1, a = x2, scratch = x3) -> w0` (see
-`Common.lean` for the layout) squeezes 544 bytes of SHAKE256 of the 66 bytes
-of the seed (4 blocks; the least bound of FIPS 204 Appendix C is 481 bytes,
-the contract's largest 1088), which the 544 iterations of
-`RejBoundedPoly`'s loop take a byte at a time. The loop (`rbLoop η`, one for
-each `η`, chosen by a branch on the public `η`) runs 544 times, with `x2` at
-the byte of the iteration, `x3` at coefficient `j` of `a`, `x4` = `256 - j`
-and `x5` counting down: while `j < 256`, each half-byte `b` of the byte (low
-first, in `x7`) is tried: the coefficient `η - (b mod 5)` or `η - b` modulo
-`q` is stored as coefficient `j`, and `j` is incremented if
-`CoeffFromHalfByte` accepts `b` (`b < 15` for `η = 2`, `b < 9` for `η = 4`);
-the high half-byte only if `j < 256` still. It returns 1 if `j = 256`, and 0
-otherwise.
+One iteration of `RejBoundedPoly`'s loop on a byte of SHAKE256 output
+(`rbBody η`, one for each `η`), which `Optimized/BoundedFour.lean` runs on
+the bytes its vector steps leave: with `x2` at the byte, `x3` at coefficient
+`j` of `a`, `x4` = `256 - j` and `x5` counting down, while `j < 256`, each
+half-byte `b` of the byte (low first, in `x7`) is tried: the coefficient
+`η - (b mod 5)` or `η - b` modulo `q` is stored as coefficient `j`, and `j`
+is incremented if `CoeffFromHalfByte` accepts `b` (`b < 15` for `η = 2`,
+`b < 9` for `η = 4`); the high half-byte only if `j < 256` still.
 
 A try has no branch and no table (`rbTry`): `b mod 5` is computed by
 subtracting 10 and then 5, and adding them back where the result is
 negative (its sign bit, times the constant, by `madd`), and `q` is added to
-`η - (b mod 5)` where that is negative. So the loop's branches and the
+`η - (b mod 5)` where that is negative. So the iteration's branches and the
 addresses of its stores depend only on `j`, which counts the half-bytes
 accepted, which the contract lets it leak, not on the coefficients.
 -/
@@ -63,19 +58,5 @@ def rbBody (η : Nat) : Prog isa :=
     (.ite (.zero .x .x4) (.block [])
       (.seq (.block (rbTry η ++ ([.lsr .x .x7 .x6 4] : List Instr)))
         (.ite (.zero .x .x4) (.block []) (.block (rbTry η)))))
-
-/-- The loop's registers. -/
-def rbSetup (η : Nat) : List Instr :=
-  ([.addImm .x .x2 .x25 840, mov .x3 .x26, .movz .x .x4 256 0, .movz .x .x5 544 0] : List Instr) ++ movQ .x9 ++
-    [mov .x10 .x27, .movz .x .x11 15 0, .movz .x .x15 (BitVec.ofNat 16 (rbBound η)) 0,
-      .movz .x .x16 10 0, .movz .x .x17 5 0]
-
-def rbLoop (η : Nat) : Prog isa := .seq (.block (rbSetup η)) (.loop (rbBody η) (.nonzero .x .x5))
-
-def rejBoundedWith (c : Impl.Sha3.AArch64.Callee) : Prog isa :=
-  .seq (.block (pro .x3 .x2 (.addImm .w .x27 .x1 0) (.movz .x .x4 66 0)))
-    (.seq (spongeWith c 136 544)
-      (.seq (.seq (.block [.subImm .x .x9 .x27 2]) (.ite (.zero .x .x9) (rbLoop 2) (rbLoop 4)))
-        (.block (retZ ++ epi))))
 
 end VG.Impl.MlDsa.AArch64.Sample

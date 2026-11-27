@@ -15,7 +15,7 @@ initialization before a successful pass.
 namespace VG.Proof.MlKem.AArch64.Rej8.Scalar
 open VG VG.AArch64 VG.Impl.MlKem.AArch64 VG.Proof.MlKem.AArch64
 open VG.Spec.MlKem VG.Proof.MlKem
-open VG.Proof.MlKem.AArch64.Sample (cvW cvW_append cvW_last lt_q_arith sampleStepCap_eq)
+open VG.Proof.MlKem.AArch64.Sample (cvW cvW_append cvW_last lt_q_arith)
 variable {initial : List Zq}
 
 /-- The coefficients are stored 32 bits apart, or with `w16` 16 bits apart; the names

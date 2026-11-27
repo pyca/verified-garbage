@@ -1,30 +1,34 @@
 module
 
-public import VerifiedGarbage.Proof.Sm4.RISCV64.ModesVerified
-public import VerifiedGarbage.Proof.Sm4.RISCV64.FbFinalVerified
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.RISCV64.Print
+public import VerifiedGarbage.TCB.RISCV64.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Sm4.Cfb
+public import VerifiedGarbage.Spec.Sm4.CfbFinal
+import VerifiedGarbage.Proof.Sm4.RISCV64.Scrub
+import VerifiedGarbage.Impl.Sm4.RISCV64.Fn
+import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.Sm4.RISCV64.ModesLit
 import VerifiedGarbage.Proof.Sm4.RISCV64.FbFinalLit
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # SM4-CFB128 on RISC-V -/
 
-@[expose] public section
-
 namespace VG.Artifacts.Sm4Cfb.RISCV64
 
-def artifacts : List Artifact := [
+public def artifacts : List (Artifact RISCV64.target) := [
   Spec.Sm4.cfbEncryptApi.artifact RISCV64.target {
-    code := Impl.Sm4.RISCV64.cfbEncrypt
-    verified := Proof.Sm4.RISCV64.Modes.cfbEncrypt_verified },
+    code := Impl.Sm4.RISCV64.Fn.cfbEncrypt
+    verified := Proof.Sm4.RISCV64.Scrub.cfbEncrypt_scrubbed },
   Spec.Sm4.cfbDecryptApi.artifact RISCV64.target {
-    code := Impl.Sm4.RISCV64.cfbDecrypt
-    verified := Proof.Sm4.RISCV64.Modes.cfbDecrypt_verified },
+    code := Impl.Sm4.RISCV64.Fn.cfbDecrypt
+    verified := Proof.Sm4.RISCV64.Scrub.cfbDecrypt_scrubbed },
   Spec.Sm4.cfbEncryptFinalApi.artifact RISCV64.target {
-    code := Impl.Sm4.RISCV64.cfbEncryptFinal
-    verified := Proof.Sm4.RISCV64.Modes.cfbEncryptFinal_verified },
+    code := Impl.Sm4.RISCV64.Fn.cfbEncryptFinal
+    verified := Proof.Sm4.RISCV64.Scrub.cfbEncryptFinal_scrubbed },
   Spec.Sm4.cfbDecryptFinalApi.artifact RISCV64.target {
-    code := Impl.Sm4.RISCV64.cfbDecryptFinal
-    verified := Proof.Sm4.RISCV64.Modes.cfbDecryptFinal_verified }]
+    code := Impl.Sm4.RISCV64.Fn.cfbDecryptFinal
+    verified := Proof.Sm4.RISCV64.Scrub.cfbDecryptFinal_scrubbed }]
+
+spec_apis artifacts
 
 end VG.Artifacts.Sm4Cfb.RISCV64

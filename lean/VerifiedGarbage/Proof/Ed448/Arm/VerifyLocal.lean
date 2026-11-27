@@ -11,7 +11,9 @@ import VerifiedGarbage.Proof.Framework.GetElem
 
 `verifyEquationLocal`, the contract of `vg_ed448_verify_equation` the proof is
 written against, stated for ARMv7, in a module of their own: callers proven for any code meeting them
-need not import the proof.
+need not import the proof. The signature and the challenge are public, as
+a verification's inputs are (`Spec.Ed448.verifyContract`'s `leak`): the code
+branches on the bits of `S` and of the challenge.
 -/
 
 @[expose] public section
@@ -35,6 +37,10 @@ def verifyEquationLocal : Contract Arm.isa where
     (Spec.Ed448.bytesAt s.mem (State.addr (s.gpr .r1)) 114)
     (Spec.Ed448.bytesAt s.mem (State.addr (s.gpr .r2)) 57) then 1 else 0
   pub s t := s.gpr .r0 = t.gpr .r0 ∧ s.gpr .r1 = t.gpr .r1 ∧ s.gpr .r2 = t.gpr .r2 ∧
-    s.gpr .r3 = t.gpr .r3 ∧ s.sp = t.sp
+    s.gpr .r3 = t.gpr .r3 ∧ s.sp = t.sp ∧
+    Spec.Ed448.bytesAt s.mem (State.addr (s.gpr .r1)) 114 =
+      Spec.Ed448.bytesAt t.mem (State.addr (t.gpr .r1)) 114 ∧
+    Spec.Ed448.bytesAt s.mem (State.addr (s.gpr .r2)) 57 =
+      Spec.Ed448.bytesAt t.mem (State.addr (t.gpr .r2)) 57
 
 end VG.Proof.Ed448.Arm

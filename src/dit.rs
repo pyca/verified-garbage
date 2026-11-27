@@ -278,22 +278,20 @@ mod aarch64 {
     /// then.
     #[inline]
     pub(super) fn enter() -> bool {
-        enter_if(
-            verified_garbage_cpu::detect::dit(),
-            Enter::choose(
-                verified_garbage_cpu::detected(),
-                cfg!(target_vendor = "apple"),
-            ),
-        )
+        enter_if(verified_garbage_cpu::detect::dit())
     }
 
-    /// `enter`, given whether the CPU has FEAT_DIT and the implementation
-    /// chosen for it, so that the tests run the case without it on any CPU.
+    /// `enter`, given the CPU's features if it has FEAT_DIT and `None` if
+    /// not, so that the tests run the case without it on any CPU. The
+    /// implementation is chosen only where the CPU has it: every operation
+    /// on secret data comes through here, and on a CPU without it this is
+    /// one load and two tests.
     #[inline(always)]
-    pub(super) fn enter_if(has: bool, enter: Enter) -> bool {
-        if !has {
+    pub(super) fn enter_if(features: Option<Features>) -> bool {
+        let Some(features) = features else {
             return false;
-        }
+        };
+        let enter = Enter::choose(features, cfg!(target_vendor = "apple"));
         // SAFETY: the CPU has FEAT_DIT, and `Enter::choose` chose SB only
         // where it has FEAT_SB too.
         unsafe { enter.run() == 0 }
@@ -350,7 +348,7 @@ mod tests {
     /// Whether the CPU has FEAT_DIT.
     #[cfg(target_arch = "aarch64")]
     fn has() -> bool {
-        verified_garbage_cpu::detect::dit()
+        verified_garbage_cpu::detect::dit().is_some()
     }
 
     /// `vg_dit_enter` (and `vg_dit_clear`) need FEAT_DIT alone, which is
@@ -406,10 +404,7 @@ mod tests {
     #[cfg(target_arch = "aarch64")]
     #[test]
     fn enter_without_dit() {
-        assert!(!super::aarch64::enter_if(
-            false,
-            super::aarch64::Enter::Plain
-        ));
+        assert!(!super::aarch64::enter_if(None));
     }
 
     /// The implementation chosen: a barrier on Apple's targets alone, SB

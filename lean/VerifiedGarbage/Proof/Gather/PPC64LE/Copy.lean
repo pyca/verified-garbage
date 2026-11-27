@@ -70,7 +70,7 @@ theorem covers_off {p : Addr} {k d n : Nat} {rs : List Region} (h : Covers [⟨p
   simp only [List.mem_singleton] at hr; subst hr
   refine h a m ⟨_, List.mem_singleton_self _, ?_⟩
   simp only [Region.Contains] at hc ⊢
-  have e : a - p = (a - (p + BitVec.ofNat 64 d)) + BitVec.ofNat 64 d := by
+  obtain e : a - p = (a - (p + BitVec.ofNat 64 d)) + BitVec.ofNat 64 d := by
     rw [Offset.sub_add_eq]; exact (BitVec.sub_add_cancel _ _).symm
   rw [e, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by omega_arith),
     Nat.mod_eq_of_lt (by omega_arith)]
@@ -169,7 +169,7 @@ theorem copyWords_wp (s : State) {S D : Addr} {k : Nat} (h : WordsPre s S D k) :
     ⟨0, rfl, h.pos, by rw [h.r3]; exact (BitVec.add_zero _).symm, by rw [h.r9]; exact (BitVec.add_zero _).symm,
       by rw [h.r5, Nat.sub_zero], by simp [bytesAt, writeBytes_nil], rfl, Keeps.refl s⟩
   rintro w t ⟨i, rfl, hi, r3, r9, r5, mem, r4, kp⟩
-  have hin : 8 * i + 8 ≤ 8 * k := by omega_arith
+  obtain hin : 8 * i + 8 ≤ 8 * k := by omega_arith
   refine wp_ld (a := S + BitVec.ofNat 64 (8 * i)) (by decide) (by decide)
     (by rw [r3]; exact BitVec.add_zero _) (by rw [kp.rd, kp.wr]; exact in_off h.rd hin (by omega_arith))
     fun t₁ u₁ => ?_
@@ -178,23 +178,23 @@ theorem copyWords_wp (s : State) {S D : Addr} {k : Nat} (h : WordsPre s S D k) :
     (by rw [u₁.wr, kp.wr]; exact in_off h.wr hin (by omega_arith)) fun t₂ u₂ => ?_
   refine wp_addi (by decide) (by decide) fun t₃ u₃ => wp_addi (by decide) (by decide) fun t₄ u₄ =>
     wp_subi (by decide) (by decide) fun t₅ u₅ => WP.block_nil ?_
-  have kp₅ : Keeps s t₅ := kp.trans ((kU u₁).trans ((kM u₂).trans ((kU u₃).trans ((kU u₄).trans (kU u₅)))))
-  have hmem : t₅.mem = writeBytes s.mem D (bytesAt s.mem S (8 * (i + 1))) := by
+  obtain kp₅ : Keeps s t₅ := kp.trans ((kU u₁).trans ((kM u₂).trans ((kU u₃).trans ((kU u₄).trans (kU u₅)))))
+  obtain hmem : t₅.mem = writeBytes s.mem D (bytesAt s.mem S (8 * (i + 1))) := by
     rw [u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.gpr, u₁.mem, mem, readW_kept h.disj hin (by omega_arith),
       writeW_readW, show 8 * (i + 1) = 8 * i + 8 by omega_arith, Proof.Cmac.Stream.bytesAt_append,
       ← writeBytes_append _ _ _ _ (by simp [Proof.Cmac.bytesAt_length]; omega_arith), Proof.Cmac.bytesAt_length]
   have hstep (P : Addr) : P + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 8 = P + BitVec.ofNat 64 (8 * (i + 1)) := by
     rw [BitVec.add_assoc, ← BitVec.ofNat_add, Nat.mul_succ]
-  have r3' : t₅.gpr .r3 = S + BitVec.ofNat 64 (8 * (i + 1)) := by
+  obtain r3' : t₅.gpr .r3 = S + BitVec.ofNat 64 (8 * (i + 1)) := by
     rw [u₅.other _ (by decide), u₄.other _ (by decide), u₃.gpr, u₂.gpr, u₁.other _ (by decide), r3, hstep]
-  have r9' : t₅.gpr .r9 = D + BitVec.ofNat 64 (8 * (i + 1)) := by
+  obtain r9' : t₅.gpr .r9 = D + BitVec.ofNat 64 (8 * (i + 1)) := by
     rw [u₅.other _ (by decide), u₄.gpr, u₃.other _ (by decide), u₂.gpr, u₁.other _ (by decide), r9, hstep]
-  have r5' : t₅.gpr .r5 = BitVec.ofNat 64 (k - (i + 1)) := by
+  obtain r5' : t₅.gpr .r5 = BitVec.ofNat 64 (k - (i + 1)) := by
     rw [u₅.gpr, u₄.other _ (by decide), u₃.other _ (by decide), u₂.gpr, u₁.other _ (by decide), r5,
       ofNat_sub_one (by omega_arith), Nat.sub_sub]
-  have r4' : t₅.gpr .r4 = s.gpr .r4 := by
+  obtain r4' : t₅.gpr .r4 = s.gpr .r4 := by
     rw [u₅.other _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide), u₂.gpr, u₁.other _ (by decide), r4]
-  have ev := eval_nonzero (r := .r5) (a := k - (i + 1)) r5' (by omega_arith)
+  obtain ev := eval_nonzero (r := .r5) (a := k - (i + 1)) r5' (by omega_arith)
   by_cases he : i + 1 = k
   · left
     refine ⟨by rw [ev]; simp [he], by rw [hmem, he], by rw [r3', he], by rw [r9', he], r4', kp₅⟩
@@ -225,7 +225,7 @@ theorem copyBytes_wp (s : State) {S D : Addr} {n : Nat} (h : BytesPre s S D n) :
     ⟨0, rfl, h.pos, by rw [h.r3]; exact (BitVec.add_zero _).symm, by rw [h.r9]; exact (BitVec.add_zero _).symm,
       by rw [h.r4, Nat.sub_zero], by simp [bytesAt, writeBytes_nil], Keeps.refl s⟩
   rintro w t ⟨i, rfl, hi, r3, r9, r4, mem, kp⟩
-  have hin : i + 1 ≤ n := by omega_arith
+  obtain hin : i + 1 ≤ n := by omega_arith
   refine wp_lbz (a := S + BitVec.ofNat 64 i) (by decide) (by decide)
     (by rw [r3]; exact BitVec.add_zero _) (by rw [kp.rd, kp.wr]; exact in_off h.rd hin (by omega_arith))
     fun t₁ u₁ => ?_
@@ -234,25 +234,25 @@ theorem copyBytes_wp (s : State) {S D : Addr} {n : Nat} (h : BytesPre s S D n) :
     (by rw [u₁.wr, kp.wr]; exact in_off h.wr hin (by omega_arith)) fun t₂ u₂ => ?_
   refine wp_addi (by decide) (by decide) fun t₃ u₃ => wp_addi (by decide) (by decide) fun t₄ u₄ =>
     wp_subi (by decide) (by decide) fun t₅ u₅ => WP.block_nil ?_
-  have kp₅ : Keeps s t₅ := kp.trans ((kU u₁).trans ((kM u₂).trans ((kU u₃).trans ((kU u₄).trans (kU u₅)))))
-  have hb : t.mem (S + BitVec.ofNat 64 i) = s.mem (S + BitVec.ofNat 64 i) := by
+  obtain kp₅ : Keeps s t₅ := kp.trans ((kU u₁).trans ((kM u₂).trans ((kU u₃).trans ((kU u₄).trans (kU u₅)))))
+  obtain hb : t.mem (S + BitVec.ofNat 64 i) = s.mem (S + BitVec.ofNat 64 i) := by
     rw [mem]
     have := byte_kept (m := s.mem) (j := i) (n := 1) (i := 0) h.disj hin (by omega_arith) (by decide)
     rwa [BitVec.add_zero] at this
-  have hmem : t₅.mem = writeBytes s.mem D (bytesAt s.mem S (i + 1)) := by
+  obtain hmem : t₅.mem = writeBytes s.mem D (bytesAt s.mem S (i + 1)) := by
     rw [u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.gpr, u₁.mem, byte_rt, hb, mem, Proof.Cmac.Stream.bytesAt_append,
       bytesAt_one, writeBytes_snoc _ _ _ _ (by rw [Proof.Cmac.bytesAt_length]; omega_arith),
       Proof.Cmac.bytesAt_length]
   have hstep (P : Addr) : P + BitVec.ofNat 64 i + BitVec.ofNat 64 1 = P + BitVec.ofNat 64 (i + 1) := by
     rw [BitVec.add_assoc, ← BitVec.ofNat_add]
-  have r3' : t₅.gpr .r3 = S + BitVec.ofNat 64 (i + 1) := by
+  obtain r3' : t₅.gpr .r3 = S + BitVec.ofNat 64 (i + 1) := by
     rw [u₅.other _ (by decide), u₄.other _ (by decide), u₃.gpr, u₂.gpr, u₁.other _ (by decide), r3, hstep]
-  have r9' : t₅.gpr .r9 = D + BitVec.ofNat 64 (i + 1) := by
+  obtain r9' : t₅.gpr .r9 = D + BitVec.ofNat 64 (i + 1) := by
     rw [u₅.other _ (by decide), u₄.gpr, u₃.other _ (by decide), u₂.gpr, u₁.other _ (by decide), r9, hstep]
-  have r4' : t₅.gpr .r4 = BitVec.ofNat 64 (n - (i + 1)) := by
+  obtain r4' : t₅.gpr .r4 = BitVec.ofNat 64 (n - (i + 1)) := by
     rw [u₅.gpr, u₄.other _ (by decide), u₃.other _ (by decide), u₂.gpr, u₁.other _ (by decide), r4,
       ofNat_sub_one (by omega_arith), Nat.sub_sub]
-  have ev := eval_nonzero (r := .r4) (a := n - (i + 1)) r4' (by omega_arith)
+  obtain ev := eval_nonzero (r := .r4) (a := n - (i + 1)) r4' (by omega_arith)
   by_cases he : i + 1 = n
   · left
     exact ⟨by rw [ev]; simp [he], by rw [hmem, he], by rw [r9', he], kp₅⟩
@@ -296,13 +296,13 @@ theorem copySlice_wp (s : State) {S D : Addr} {n : Nat} (h : SlicePre s S D n) :
     WP isa copySlice s fun s' => s'.mem = writeBytes s.mem D (bytesAt s.mem S n) ∧
       s'.gpr .r9 = D + BitVec.ofNat 64 n ∧ Keeps s s' := by
   have hn := h.lt
-  have hqr : 8 * (n / 8) + n % 8 = n := Nat.div_add_mod n 8
+  obtain hqr : 8 * (n / 8) + n % 8 = n := Nat.div_add_mod n 8
   unfold copySlice wordsArg bytesArg
   refine WP.seq (wp_lsr (by decide) fun s₁ u₁ => WP.block_nil ?_)
-  have r5₁ : s₁.gpr .r5 = BitVec.ofNat 64 (n / 8) := by rw [u₁.gpr, h.r4, ofNat_lsr3 hn]
-  have kp₁ := (kU u₁)
+  obtain r5₁ : s₁.gpr .r5 = BitVec.ofNat 64 (n / 8) := by rw [u₁.gpr, h.r4, ofNat_lsr3 hn]
+  obtain kp₁ := (kU u₁)
   -- The whole doublewords.
-  have hblk : WP isa (.ite (.zero .d .r5) (.block []) copyWords) s₁ fun s₂ =>
+  obtain hblk : WP isa (.ite (.zero .d .r5) (.block []) copyWords) s₁ fun s₂ =>
       s₂.mem = writeBytes s.mem D (bytesAt s.mem S (8 * (n / 8))) ∧
       s₂.gpr .r3 = S + BitVec.ofNat 64 (8 * (n / 8)) ∧ s₂.gpr .r9 = D + BitVec.ofNat 64 (8 * (n / 8)) ∧
       s₂.gpr .r4 = BitVec.ofNat 64 n ∧ Keeps s s₂ := by
@@ -314,7 +314,7 @@ theorem copySlice_wp (s : State) {S D : Addr} {n : Nat} (h : SlicePre s S D n) :
       · rw [u₁.other _ (by decide), h.r9, h0]; exact (BitVec.add_zero _).symm
       · rw [u₁.other _ (by decide), h.r4]
     · have h0 : n / 8 ≠ 0 := by simpa using hf
-      have hb : WordsPre s₁ S D (n / 8) :=
+      obtain hb : WordsPre s₁ S D (n / 8) :=
         ⟨by rw [u₁.other _ (by decide), h.r3], by rw [u₁.other _ (by decide), h.r9], r5₁, by omega_arith, by omega_arith,
           by rw [u₁.rd, u₁.wr]; exact covers_prefix h.rd (by omega_arith),
           by rw [u₁.wr]; exact covers_prefix h.wr (by omega_arith),
@@ -325,26 +325,26 @@ theorem copySlice_wp (s : State) {S D : Addr} {n : Nat} (h : SlicePre s S D n) :
   refine WP.seq (WP.mono hblk fun s₂ ⟨m₂, r3₂, r9₂, r4₂, kp₂⟩ => ?_)
   -- The last `n mod 8` bytes.
   refine WP.seq (wp_li (by decide) fun s₃ u₃ => wp_and fun s₄ u₄ => WP.block_nil ?_)
-  have r4₄ : s₄.gpr .r4 = BitVec.ofNat 64 (n % 8) := by
+  obtain r4₄ : s₄.gpr .r4 = BitVec.ofNat 64 (n % 8) := by
     rw [u₄.gpr, u₃.other _ (by decide), u₃.gpr, r4₂, ofNat_and7 hn]
-  have kp₄ : Keeps s s₄ := kp₂.trans ((kU u₃).trans (kU u₄))
-  have m₄ : s₄.mem = s₂.mem := by rw [u₄.mem, u₃.mem]
-  have hS : (⟨S + BitVec.ofNat 64 (8 * (n / 8)), n % 8⟩ : Region).Sub ⟨S, n⟩ := Offset.sub_base _ (by omega_arith)
-  have hD : (⟨D + BitVec.ofNat 64 (8 * (n / 8)), n % 8⟩ : Region).Sub ⟨D, n⟩ := Offset.sub_base _ (by omega_arith)
-  have hlen : (bytesAt s.mem S (8 * (n / 8))).length = 8 * (n / 8) := Proof.Cmac.bytesAt_length _ _ _
+  obtain kp₄ : Keeps s s₄ := kp₂.trans ((kU u₃).trans (kU u₄))
+  obtain m₄ : s₄.mem = s₂.mem := by rw [u₄.mem, u₃.mem]
+  obtain hS : (⟨S + BitVec.ofNat 64 (8 * (n / 8)), n % 8⟩ : Region).Sub ⟨S, n⟩ := Offset.sub_base _ (by omega_arith)
+  obtain hD : (⟨D + BitVec.ofNat 64 (8 * (n / 8)), n % 8⟩ : Region).Sub ⟨D, n⟩ := Offset.sub_base _ (by omega_arith)
+  obtain hlen : (bytesAt s.mem S (8 * (n / 8))).length = 8 * (n / 8) := Proof.Cmac.bytesAt_length _ _ _
   -- The bytes still to copy are what they were.
-  have hrest : bytesAt s₄.mem (S + BitVec.ofNat 64 (8 * (n / 8))) (n % 8) =
+  obtain hrest : bytesAt s₄.mem (S + BitVec.ofNat 64 (8 * (n / 8))) (n % 8) =
       bytesAt s.mem (S + BitVec.ofNat 64 (8 * (n / 8))) (n % 8) := by
     rw [m₄, m₂]
     refine bytesAt_frame (writeBytes_frame s.mem D _ (R := ⟨D, 8 * (n / 8)⟩)
       (by rw [hlen]; exact Region.contains_self _ _)) (fun r hr => ?_) (by omega_arith)
     simp only [List.mem_singleton] at hr; subst hr
     exact (h.disj.sub_left hS).sub_right (Region.sub_prefix (by omega_arith))
-  have hend : D + BitVec.ofNat 64 (8 * (n / 8)) + BitVec.ofNat 64 (n % 8) = D + BitVec.ofNat 64 n := by
+  obtain hend : D + BitVec.ofNat 64 (8 * (n / 8)) + BitVec.ofNat 64 (n % 8) = D + BitVec.ofNat 64 n := by
     rw [BitVec.add_assoc, ← BitVec.ofNat_add, hqr]
-  have hall : writeBytes (writeBytes s.mem D (bytesAt s.mem S (8 * (n / 8)))) (D + BitVec.ofNat 64 (8 * (n / 8)))
+  obtain hall : writeBytes (writeBytes s.mem D (bytesAt s.mem S (8 * (n / 8)))) (D + BitVec.ofNat 64 (8 * (n / 8)))
       (bytesAt s.mem (S + BitVec.ofNat 64 (8 * (n / 8))) (n % 8)) = writeBytes s.mem D (bytesAt s.mem S n) := by
-    have e := writeBytes_append s.mem D (bytesAt s.mem S (8 * (n / 8)))
+    obtain e := writeBytes_append s.mem D (bytesAt s.mem S (8 * (n / 8)))
       (bytesAt s.mem (S + BitVec.ofNat 64 (8 * (n / 8))) (n % 8))
       (by rw [hlen, Proof.Cmac.bytesAt_length]; omega_arith)
     rw [hlen] at e
@@ -355,7 +355,7 @@ theorem copySlice_wp (s : State) {S D : Addr} {n : Nat} (h : SlicePre s S D n) :
     · rw [m₄, m₂, ← hall, h0]; simp [bytesAt, writeBytes_nil]
     · rw [u₄.other _ (by decide), u₃.other _ (by decide), r9₂, ← hend, h0]; exact (BitVec.add_zero _).symm
   · have h0 : n % 8 ≠ 0 := by simpa using hf
-    have bp : BytesPre s₄ (S + BitVec.ofNat 64 (8 * (n / 8))) (D + BitVec.ofNat 64 (8 * (n / 8))) (n % 8) :=
+    obtain bp : BytesPre s₄ (S + BitVec.ofNat 64 (8 * (n / 8))) (D + BitVec.ofNat 64 (8 * (n / 8))) (n % 8) :=
       ⟨by rw [u₄.other _ (by decide), u₃.other _ (by decide), r3₂],
         by rw [u₄.other _ (by decide), u₃.other _ (by decide), r9₂], r4₄, by omega_arith, by omega_arith,
         by rw [kp₄.rd, kp₄.wr]; exact covers_off h.rd (by omega_arith) hn,

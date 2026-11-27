@@ -1,9 +1,8 @@
 module
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Concrete
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.OptimizeK
 
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ForwardOk
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.OptimizeK
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.FoldOk
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ForwardOk
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.PlainSimp
 

@@ -1,10 +1,12 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubSide
 public import VerifiedGarbage.Proof.Sha512.AArch64.Stream.Md
 public import VerifiedGarbage.Proof.Sha512.AArch64.Compress
 public import VerifiedGarbage.Proof.MdStream.AArch64.OneShot
 public import VerifiedGarbage.Proof.Framework.AArch64.Inline
 public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+public import VerifiedGarbage.Proof.Framework.AArch64.Syms
 public import VerifiedGarbage.Impl.Sha512.AArch64.Stream
 import VerifiedGarbage.Proof.Sha512.Stream
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
@@ -133,14 +135,11 @@ open VG.Impl.Sha512.AArch64.Stream (compressName updateWith finalizeWith finaliz
 
 /-- What a backend's `finalizeDigestWith` with the digest code `o` (SHA-384's,
 SHA-512/256's or SHA-512/224's `finalize`, writing a `D`-byte digest) needs
-checked for its code, as `finalizeCT`, `finalizeKeeps` and `finalizeDepth`
-for `finalize`. -/
+checked for its code, as `finalizeCT` and `finalizeDepth` for `finalize`. -/
 structure DigestOk (o : List Instr) (D : Nat) (suffix : String) (code : Prog isa) : Prop where
   ct : ConstantTime isa (finKD (P := { Stream.params with out := o }) md D).pre
     (finKD (P := { Stream.params with out := o }) md D).pub
     (finalizeDigestWith { Stream.params with out := o } suffix code)
-  keeps : ((instrs (finalizeMain { Stream.params with out := o } (compressName suffix) code)).all fun i =>
-    untouched.all fun r => !clobbers i r) = true
   depth : (finalizeMain { Stream.params with out := o } (compressName suffix) code).aarch64Depth = 0
 
 /-- The one-shot digest with the digest code `o`, from the initial hash value
@@ -163,16 +162,18 @@ structure Compress where
   noFrames : code.noFrames = true
   /-- Current streaming wrappers require untouched callee-saved SIMD registers. -/
   keepsV : code.allInstrs keepsV = true
+  /-- It never writes PSTATE.DIT, so its callers' runs keep it (`DitDet.of_noWrite`). -/
+  noDit : code.all (fun i => !i.writesDit) = true
+  /-- No instruction of it writes PSTATE.DIT, and it calls nothing indirectly:
+  what the cleanup of the functions that call it needs of its code
+  (`Scrub.verifiedScrubbedOf`). -/
+  side : Scrub.sideAll (fun i => !i.writesDit) code = true
   suffix : String
   features : List String
   updateCT : ConstantTime isa (updK (P := Stream.params) md).pre
     (updK (P := Stream.params) md).pub (updateWith suffix code)
   finalizeCT : ConstantTime isa (finK (P := Stream.params) md).pre
     (finK (P := Stream.params) md).pub (finalizeWith suffix code)
-  updateKeeps : ((instrs (updateMain Stream.params (compressName suffix) code)).all fun i =>
-    untouched.all fun r => !clobbers i r) = true
-  finalizeKeeps : ((instrs (finalizeMain Stream.params (compressName suffix) code)).all fun i =>
-    untouched.all fun r => !clobbers i r) = true
   updateDepth : (updateMain Stream.params (compressName suffix) code).aarch64Depth = 0
   finalizeDepth : (finalizeMain Stream.params (compressName suffix) code).aarch64Depth = 0
   /-- SHA-384's, SHA-512/256's and SHA-512/224's `finalize`. -/
@@ -185,6 +186,14 @@ structure Compress where
   oneShot512_256 : OneShotCT (out64 4) 32 Spec.Sha512.H0_512_256 suffix code
   oneShot512_224 : OneShotCT (out64 3 ++ Impl.Sha512.AArch64.Stream.outHi 3) 28 Spec.Sha512.H0_512_224
     suffix code
+  /-- The registers `code` writes, of those the calling convention does not
+  preserve: what the cleanup of a function that calls it clears for it
+  (`Scrub.scrubSide_union`). -/
+  clear : Impl.Scrub.AArch64.Clear
+  scrub : AArch64.Scrub.calleeSide code clear = true
+
+/-- The implementation, as the code of a function that hashes takes it. -/
+def Compress.impl (v : Compress) : Impl.Sha512.AArch64.Stream.Compress := ⟨v.code, v.suffix, v.clear⟩
 
 /-! ## The one-shot digests' common facts -/
 
@@ -264,14 +273,14 @@ def finalize : Prog isa := finalizeWith v.suffix v.code
 theorem callee : CalleeOk (P := Stream.params) md v.code := ⟨v.verified.1, v.noFrames, v.keepsV⟩
 
 theorem update_verified : Verified AArch64.target v.update Proof.Sha512.updateAArch64 := by
-  have h := MdStream.AArch64.Update.verified Stream.dims v.callee v.updateCT v.updateKeeps
+  have h := MdStream.AArch64.Update.verified Stream.dims v.callee v.updateCT
     (by rw [v.updateDepth]; decide)
   exact h.of_implies ⟨fun _ h => h, fun _ _ _ h iv m hr hc => h iv m hr hc,
     fun _ _ _ _ h => h, h.2.2⟩
 
 theorem finalize_verified : Verified AArch64.target v.finalize Proof.Sha512.finalizeAArch64 := by
   have h := MdStream.AArch64.Finalize.verified Stream.dims Stream.shape v.callee v.finalizeCT
-    v.finalizeKeeps (by rw [v.finalizeDepth]; decide)
+    (by rw [v.finalizeDepth]; decide)
   exact h.of_implies ⟨fun _ h => h, fun _ _ _ h iv m hr hl hc => h iv m hr hl hc,
     fun _ _ _ _ h => h, h.2.2⟩
 
@@ -283,7 +292,7 @@ theorem finalizeDigest_verified {o : List Instr} {D : Nat}
       (finKD (P := { Stream.params with out := o }) md D) :=
   MdStream.AArch64.Finalize.verifiedD (P := { Stream.params with out := o })
     ⟨Stream.dims.1, Stream.dims.2, Stream.dims.3, Stream.dims.4⟩ hs
-    (v.callee.withOut o) dk.ct dk.keeps (by rw [dk.depth]; decide)
+    (v.callee.withOut o) dk.ct (by rw [dk.depth]; decide)
 
 theorem update_keepsV : v.update.allInstrs VG.AArch64.keepsV = true := MdStream.AArch64.update_keepsV v.keepsV
 

@@ -21,6 +21,8 @@ namespace VG.Proof.X448.Arm
 
 open VG VG.Arm VG.Impl.X448.Arm
 
+variable {fv : Bool}
+
 structure IKeep (base : Addr) (s t : State) : Prop where
   regs : Keeps (.r11 :: workRegs) s t
   mem : Outside2 base 64 2816 ACC 512 s.mem t.mem
@@ -50,24 +52,24 @@ theorem ISpec.seq {base : Addr} {c₁ c₂ : Prog isa} {f g : Env → Env}
     WP.mono (h₂ t (tk.scr hs) tb) fun u ⟨uk, ub, ue⟩ => ⟨tk.trans uk, ub, by rw [ue, te]⟩)
 
 theorem opsI (base : Addr) (xs : List FieldOp) :
-    ISpec base (ops (xs.map FieldOp.impl)) (applyOps xs) := fun _ hs hb =>
+    ISpec base (ops fv (xs.map FieldOp.impl)) (applyOps xs) := fun _ hs hb =>
   WP.mono (ops_ok hs hb xs) fun _ ⟨tk, tb, te⟩ => ⟨tk.ikeep, tb, te⟩
 
-def opSqn (o : Index) (n : Nat) (e : Env) : Env := Function.update e o (Proof.X448.sqn (e o) n)
+def opSqn (o : Index) (n : Nat) (e : Env) : Env := Fun.update e o (Proof.X448.sqn (e o) n)
 
 theorem opMul_update (o : Index) (e : Env) (v : Spec.X448.Fe) :
-    opMul o o o (Function.update e o v) = Function.update e o (v * v) := by
-  simp only [opMul, Function.update_self, Function.update_idem]
+    opMul o o o (Fun.update e o v) = Fun.update e o (v * v) := by
+  simp only [opMul, Fun.update_self, Fun.update_idem]
 
 theorem sqnI (base : Addr) (o : Index) {n : Nat} (hn : 1 ≤ n) (hn' : n < 2 ^ 16) :
-    ISpec base (Impl.X448.Arm.sqn (slot o.val) n) (opSqn o n) := by
+    ISpec base (Impl.X448.Arm.sqn fv (slot o.val) n) (opSqn o n) := by
   intro s hs hb
   rw [Impl.X448.Arm.sqn, WP.seq_iff]
   refine WP.mono (setCounter_ok s n hn') fun t ⟨tc, tg, tm, tr, tw⟩ => ?_
   have kt : IKeep base s t := counter_keep tg tm tr tw
   let inv := fun m (u : State) => 1 ≤ m ∧ m ≤ n ∧ IKeep base s u ∧ BoundedEnv u.mem base ∧
     u.gpr .r11 = BitVec.ofNat 32 m ∧
-    E u.mem base = Function.update (E s.mem base) o (Proof.X448.sqn (E s.mem base o) (n - m))
+    E u.mem base = Fun.update (E s.mem base) o (Proof.X448.sqn (E s.mem base o) (n - m))
   refine WP.loop (M := isa) inv ?_ n t ?_
   · intro m u ⟨hm, hm', ku, bu, cu, eu⟩
     obtain ⟨m, rfl⟩ : ∃ k, m = k + 1 := ⟨m - 1, by omega_using [hm]⟩
@@ -77,7 +79,7 @@ theorem sqnI (base : Addr) (o : Index) {n : Nat} (hn : 1 ≤ n) (hn' : n < 2 ^ 1
     refine WP.mono (decCounter_ok (by omega_using [hn', hm']) cv) fun w ⟨cw, wg, wm, wr, ww, wz⟩ => ?_
     have kw : IKeep base s w := ku.trans (kv.ikeep.trans (counter_keep wg wm wr ww))
     have bw : BoundedEnv w.mem base := wm ▸ bv
-    have ew : E w.mem base = Function.update (E s.mem base) o (Proof.X448.sqn (E s.mem base o) (n - m)) := by
+    have ew : E w.mem base = Fun.update (E s.mem base) o (Proof.X448.sqn (E s.mem base o) (n - m)) := by
       rw [wm, ev, eu, opMul_update, ← Proof.X448.sqn]
       rw [show (n - (m + 1)).succ = n - m by omega_using [hm']]
     simp only [eval, wz]
@@ -86,6 +88,6 @@ theorem sqnI (base : Addr) (o : Index) {n : Nat} (hn : 1 ≤ n) (hn' : n < 2 ^ 1
     · refine Or.inr ⟨?_, m, by omega_using [], hm, by omega_using [hm'], kw, bw, cw, ew⟩
       rw [decide_eq_false (by omega_using [hm] : ¬m = 0)]; rfl
   · refine ⟨hn, by omega_using [], kt, tm ▸ hb, tc, ?_⟩
-    rw [tm, Nat.sub_self, Proof.X448.sqn, Function.update_eq_self]
+    rw [tm, Nat.sub_self, Proof.X448.sqn, Fun.update_eq_self]
 
 end VG.Proof.X448.Arm

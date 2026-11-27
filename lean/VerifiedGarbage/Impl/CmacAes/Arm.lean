@@ -1,24 +1,31 @@
 module
 
-public import VerifiedGarbage.Impl.Aes.Arm.Ctr32
+public import VerifiedGarbage.Impl.Aes.Arm.Blocks
 
 /-!
 # AES-CMAC: 32-bit ARM implementation
 
 `vg_cmac_aes_subkeys(schedule = r0, rounds = r1, subkeys = r2, scratch = r3)`,
 `vg_cmac_aes_update(schedule = r0, rounds = r1, state = r2, data = r3, n = [sp], scratch = [sp + 4])`
-and `vg_cmac_aes_finalize(key = r0, rounds = r1, state = r2, last = r3, last_len = [sp], scratch = [sp + 4])`, composed of calls of
-the verified `vg_aes_ctr32`, one block at a time: with a counter block `X`
-and a zero data block, it leaves `CIPH_K(X)` in the data block.
+and `vg_cmac_aes_finalize(key = r0, rounds = r1, state = r2, last = r3, last_len = [sp], scratch = [sp + 4])`.
+`subkeys` and `finalize` are composed of a call of the verified
+`vg_aes_ctr32` on one block: with a counter block `X` and a zero data block,
+it leaves `CIPH_K(X)` in the data block. `update`, whose every block needs
+the one before, bitslices the round keys once (`vg_aes_blocks_keys`) and
+enciphers each block in place by a call of the verified
+`vg_aes_encrypt_blocks_keyed` (`Impl/Aes/Arm/Blocks.lean`).
 
 `vg_aes_ctr32(schedule, rounds, counter, data, n, scratch)` takes `n` and
 `scratch` on the stack: a frame pushes them (`push {rA, rB}`, `n = 1` in
-`rA` at `[sp]`) around each call, and its pop loads `rA` back. So the
+`rA` at `[sp]`) around each call, and its pop loads `rA` back;
+`vg_aes_encrypt_blocks_keyed` takes `scratch` there (`keyedFrame`). So the
 functions use 8 bytes of stack.
 
-The scratch buffer (2176 bytes): `[0, 2048)` is the working space of
-`vg_aes_ctr32`, `[2048, 2064)` the counter block, and `[2064, 2096)` our
-caller's callee-saved registers and our return address `lr`.
+The scratch buffer (2176 bytes): `[0, 2048)` is the working space of the
+AES functions called, where `update` has the round keys bitsliced,
+`[2048, 2064)` the counter block of `subkeys` and `finalize`, and
+`[2064, 2096)` our caller's callee-saved registers and our return address
+`lr`.
 
 * `subkeys` computes `L = CIPH_K(0)` into the first block of `subkeys`, and
   doubles it there (`K1`) and into the second block (`K2`): the block as a
@@ -27,8 +34,8 @@ caller's callee-saved registers and our return address `lr`.
   `r5` the scratch buffer across the call.
 * `update` keeps its arguments in `r4` (schedule), `r5` (rounds), `r6`
   (state), `r7` (data), `r8` (blocks left) and `r10` (scratch) across the
-  calls; each block, the counter block is `C ⊕ Mᵢ` and the state, zeroed,
-  receives `CIPH_K(C ⊕ Mᵢ)`.
+  calls; each block, the state becomes `C ⊕ Mᵢ`, a word at a time, and is
+  enciphered in place, to `CIPH_K(C ⊕ Mᵢ)`.
 * `finalize` forms `Mₙ` in the counter block: `Mₙ* ⊕ K1` for a complete
   block, else `Mₙ*` copied a byte at a time onto zeros, `0x80` after it, and
   XORed with `K2`. It XORs in the chaining value and calls `vg_aes_ctr32`
@@ -45,6 +52,7 @@ through advancing pointers, counting down with `subs`. Only the pointers,
 namespace VG.Impl.CmacAes.Arm
 
 open VG.Arm
+open VG.Impl.Aes.Arm (keyedFrame keysCall)
 
 /-- `mov d, n`. -/
 def mov (d n : Reg) : Instr := .mov d (.reg n)
@@ -107,37 +115,35 @@ def restore : List Instr := saved.map fun (r, d) => .ldr r .r10 d
 def setup : List Instr :=
   [mov .r4 .r0, mov .r5 .r1, mov .r6 .r2, mov .r7 .r3, .ldrSp .r8 0, mov .r10 .r12, .cmp .r8 (.imm 0)]
 
-/-- The counter block `C ⊕ Mᵢ` (the state at `r6`, the block at `r7`), and
-the state zeroed. -/
-def chainIn : List Instr :=
-  [.ldr .r0 .r6 0, .ldr .r1 .r7 0, .dp .eor .r0 .r0 (.reg .r1), .str .r0 .r10 cOff,
-   .ldr .r0 .r6 4, .ldr .r1 .r7 4, .dp .eor .r0 .r0 (.reg .r1), .str .r0 .r10 (cOff + 4),
-   .ldr .r0 .r6 8, .ldr .r1 .r7 8, .dp .eor .r0 .r0 (.reg .r1), .str .r0 .r10 (cOff + 8),
-   .ldr .r0 .r6 12, .ldr .r1 .r7 12, .dp .eor .r0 .r0 (.reg .r1), .str .r0 .r10 (cOff + 12),
-   .mov .r0 (.imm 0), .str .r0 .r6 0, .str .r0 .r6 4, .str .r0 .r6 8, .str .r0 .r6 12]
-
-/-- The arguments of `vg_aes_ctr32` for the block. -/
-def updArgs : List Instr :=
-  [mov .r0 .r4, mov .r1 .r5, .dp .add .r2 .r10 (.imm (BitVec.ofNat 32 cOff)), mov .r3 .r6, .mov .r9 (.imm 1)]
-
-/-- On to the next block (Z is set when none are left). -/
-def advance : List Instr := [.dp .add .r7 .r7 (.imm 16), .subs .r8 .r8 (.imm 1)]
-
-/-- One block. -/
-def body : Prog isa :=
-  .seq (.block (chainIn ++ updArgs)) (.seq (ctrCall .r9 .r10) (.block advance))
-
-def update : Prog isa :=
-  .seq (.block (save ++ setup)) (.seq (.ite .eq (.block []) (.loop body .ne)) (.block restore))
-
-/-! ## `vg_cmac_aes_finalize` -/
-
 /-- The four words at `pb + pd` and `qb + qd` XORed into `cb + cd`, with
 `r12` and `lr`. -/
 def xor4 (pb qb cb : Reg) (pd qd cd : Nat) : List Instr :=
   (List.range 4).flatMap fun i =>
     [.ldr .r12 pb (pd + 4 * i), .ldr .lr qb (qd + 4 * i), .dp .eor .r12 .r12 (.reg .lr),
      .str .r12 cb (cd + 4 * i)]
+
+/-- `C ⊕ Mᵢ` in place: the block at `r7` XORed into the state at `r6`. -/
+def chainIn : List Instr := xor4 .r6 .r7 .r6 0 0 0
+
+/-- The arguments of `vg_aes_encrypt_blocks_keyed` for the state: the
+schedule, the rounds, the block, `n = 1`, and the working space. -/
+def updArgs : List Instr := [mov .r0 .r4, mov .r1 .r5, mov .r2 .r6, .mov .r3 (.imm 1), mov .r12 .r10]
+
+/-- On to the next block (Z is set when none are left). -/
+def advance : List Instr := [.dp .add .r7 .r7 (.imm 16), .subs .r8 .r8 (.imm 1)]
+
+/-- One block. -/
+def body : Prog isa :=
+  .seq (.block (chainIn ++ updArgs)) (.seq keyedFrame (.block advance))
+
+/-- The registers saved and the arguments set up; if there are blocks, the
+round keys bitsliced into the working space, once, and `body` run for each
+block; and the registers restored. -/
+def update : Prog isa :=
+  .seq (.block (save ++ setup))
+    (.seq (.ite .eq (.block []) (.seq keysCall (.loop body .ne))) (.block restore))
+
+/-! ## `vg_cmac_aes_finalize` -/
 
 /-- Saves `r4`, `r5` and `lr`, keeps the scratch buffer in `r5` and `last_len`
 in `r4`; Z is set if `last_len` is 16. -/

@@ -1,13 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.X448.X86.Env
-import VerifiedGarbage.Proof.X448.X86.Fill
+import VerifiedGarbage.Proof.X448.X86.FnVerified
 import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # X448 on x86 (32-bit): initial field values
 
-Every slot starts with bounded limbs. The decoded coordinates are retained,
+The decoded coordinates are retained,
 and the ladder starts with X2 = 1, Z2 = 0, Z3 = 1, and a zero swap bit.
 -/
 
@@ -16,6 +16,7 @@ and the ladder starts with X2 = 1, Z2 = 0, Z3 = 1, and a zero swap bit.
 namespace VG.Proof.X448.X86
 
 open VG VG.X86 VG.Impl.X448.X86 VG.Proof.X448.Radix16
+open VG.Proof.X25519.X86 (num num_congr)
 
 theorem zeroSlotsHead_ok (s : State) :
     WP isa (.block [.alu .xor .eax (.reg .eax)]) s fun t =>
@@ -30,7 +31,7 @@ def zeroSlots : List Instr :=
 
 theorem zeroSlots_ok {s : State} {base : Addr} (hs : Scr s base) :
     WP isa (.block zeroSlots) s fun t =>
-      (∀ i : Index, ∀ j < 28, limbs t.mem base (slot i.val) j =
+      (∀ i : Index, ∀ j < 14, limbs t.mem base (slot i.val) j =
         if i = 0 ∨ i = 3 then limbs s.mem base (slot i.val) j else 0) ∧
       t.gpr .eax = 0 ∧ Outside base X2 2688 s.mem t.mem ∧ Keeps [.eax] s t := by
   rw [zeroSlots, List.append_assoc, WP.block_append_iff]
@@ -93,7 +94,7 @@ theorem initialStores_ok {s : State} {base : Addr} (hs : Scr s base) (hz : s.gpr
     rfl
   · exact (h1.rest _).trans ((h2.rest (by decide)).trans ((h3.rest _).trans (h4.rest _)))
 
-theorem initialMem_limb (m : Mem) (base : Addr) (i : Index) {j : Nat} (hj : j < 28) :
+theorem initialMem_limb (m : Mem) (base : Addr) (i : Index) {j : Nat} (hj : j < 14) :
     limbs (initialMem m base) base (slot i.val) j =
       if (i = 1 ∨ i = 4) ∧ j = 0 then 1 else limbs m base (slot i.val) j := by
   have il := i.isLt
@@ -126,10 +127,9 @@ theorem initialMem_outside (m : Mem) (base : Addr) : Outside base 32 2848 m (ini
     writeW_outside _ _ _ (by decide : X2 + 4 ≤ 8192) p (by simp only [X2, slot]; omega_using [hp]),
     writeW_outside _ _ _ (by decide : SWAP + 4 ≤ 8192) p (by simp only [SWAP]; omega_using [hp])]
 
-theorem initSlots_ok {s : State} {base : Addr} (hs : Scr s base)
-    (h0 : Bounded s.mem base X1) (h3 : Bounded s.mem base X3) :
+theorem initSlots_ok {s : State} {base : Addr} (hs : Scr s base) :
     WP isa (.block initSlots) s fun t =>
-      BoundedEnv t.mem base ∧ E t.mem base 0 = E s.mem base 0 ∧ E t.mem base 1 = 1 ∧
+      E t.mem base 0 = E s.mem base 0 ∧ E t.mem base 1 = 1 ∧
       E t.mem base 2 = 0 ∧ E t.mem base 3 = E s.mem base 3 ∧ E t.mem base 4 = 1 ∧
       word t.mem base SWAP = 0 ∧ Outside base 32 2848 s.mem t.mem ∧ Keeps [.eax] s t := by
   change WP isa (.block (zeroSlots ++ [st .eax SWAP, .mov .eax (.imm 1),
@@ -137,57 +137,47 @@ theorem initSlots_ok {s : State} {base : Addr} (hs : Scr s base)
   rw [WP.block_append_iff]
   refine WP.mono (zeroSlots_ok hs) fun t ⟨tf, tz, tm, tk⟩ => ?_
   refine WP.mono (initialStores_ok (hs.of_keeps tk (by decide)) tz) fun u ⟨um, uk⟩ => ?_
-  have lf : ∀ i : Index, ∀ j < 28, limbs u.mem base (slot i.val) j =
+  have lf : ∀ i : Index, ∀ j < 14, limbs u.mem base (slot i.val) j =
       if (i = 1 ∨ i = 4) ∧ j = 0 then 1 else
         if i = 0 ∨ i = 3 then limbs s.mem base (slot i.val) j else 0 := by
     intro i j hj
     rw [um, initialMem_limb _ _ i hj, tf i j hj]
-  have zval : valN (fun _ => 0) 28 = 0 := by decide
-  have oval : valN (fun j => if j = 0 then 1 else 0) 28 = 1 := by decide +kernel
-  have l0 : ∀ j < 28, limbs u.mem base X1 j = limbs s.mem base X1 j := by
+  have zval : num (fun _ => 0) 14 = 0 := by decide
+  have oval : num (fun j => if j = 0 then 1 else 0) 14 = 1 := by decide +kernel
+  have l0 : ∀ j < 14, limbs u.mem base X1 j = limbs s.mem base X1 j := by
     intro j hj
     have h := lf (⟨0, by decide⟩ : Index) j hj
     dsimp only [X1]
     simpa (config := {decide := true}) only [false_or, false_and, ite_true, ite_false] using h
-  have l1 : ∀ j < 28, limbs u.mem base X2 j = if j = 0 then 1 else 0 := by
+  have l1 : ∀ j < 14, limbs u.mem base X2 j = if j = 0 then 1 else 0 := by
     intro j hj
     have h := lf (⟨1, by decide⟩ : Index) j hj
     dsimp only [X2]
     simpa (config := {decide := true}) only [true_or, true_and, ite_false] using h
-  have l2 : ∀ j < 28, limbs u.mem base Z2 j = 0 := by
+  have l2 : ∀ j < 14, limbs u.mem base Z2 j = 0 := by
     intro j hj
     have h := lf (⟨2, by decide⟩ : Index) j hj
     dsimp only [Z2]
     simpa (config := {decide := true}) only [false_or, false_and, ite_false] using h
-  have l3 : ∀ j < 28, limbs u.mem base X3 j = limbs s.mem base X3 j := by
+  have l3 : ∀ j < 14, limbs u.mem base X3 j = limbs s.mem base X3 j := by
     intro j hj
     have h := lf (⟨3, by decide⟩ : Index) j hj
     dsimp only [X3]
     simpa (config := {decide := true}) only [false_or, false_and, ite_true, ite_false] using h
-  have l4 : ∀ j < 28, limbs u.mem base Z3 j = if j = 0 then 1 else 0 := by
+  have l4 : ∀ j < 14, limbs u.mem base Z3 j = if j = 0 then 1 else 0 := by
     intro j hj
     have h := lf (⟨4, by decide⟩ : Index) j hj
     dsimp only [Z3]
     simpa (config := {decide := true}) only [or_true, true_and, ite_false] using h
-  refine ⟨?_, congrArg toFe (valN_congr l0), ?_, ?_, congrArg toFe (valN_congr l3), ?_, ?_, ?_, tk.trans uk⟩
-  · intro i j hj
-    rw [lf i j hj]
-    split
-    · decide
-    · split
-      · rename_i h
-        rcases h with rfl | rfl
-        · exact h0 j hj
-        · exact h3 j hj
-      · decide
+  refine ⟨congrArg toFe (num_congr l0), ?_, ?_, congrArg toFe (num_congr l3), ?_, ?_, ?_, tk.trans uk⟩
   · change toFe (fe u.mem base X2) = 1
-    rw [show fe u.mem base X2 = valN (fun j => if j = 0 then 1 else 0) 28 from valN_congr l1, oval]
+    rw [show fe u.mem base X2 = num (fun j => if j = 0 then 1 else 0) 14 from num_congr l1, oval]
     exact toFe_one
   · change toFe (fe u.mem base Z2) = 0
-    rw [show fe u.mem base Z2 = valN (fun _ => 0) 28 from valN_congr l2, zval]
+    rw [show fe u.mem base Z2 = num (fun _ => 0) 14 from num_congr l2, zval]
     exact toFe_zero
   · change toFe (fe u.mem base Z3) = 1
-    rw [show fe u.mem base Z3 = valN (fun j => if j = 0 then 1 else 0) 28 from valN_congr l4, oval]
+    rw [show fe u.mem base Z3 = num (fun j => if j = 0 then 1 else 0) 14 from num_congr l4, oval]
     exact toFe_one
   · rw [um, initialMem,
       word_write_aligned _ base (by decide) (by decide) (by decide) (by decide), ite_eq_right (by decide),

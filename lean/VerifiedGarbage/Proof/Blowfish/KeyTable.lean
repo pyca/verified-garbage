@@ -1,13 +1,136 @@
 module
 
-import VerifiedGarbage.Proof.Blowfish.Table
-public import VerifiedGarbage.Proof.Blowfish.KeySched
 public import VerifiedGarbage.Impl.Blowfish.Table
 public import VerifiedGarbage.Proof.Blowfish.Schedule
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.InstancePriority
 import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Spec.Blowfish
+import VerifiedGarbage.Proof.Blowfish.Blocks
+
+/-! ### `Blowfish.Table`, which this module and modules that import it used -/
+
+section
+
+/-!
+# The table of the initial schedule
+
+`initWord_byte`: byte `b` of word `i` of the table is byte `8 i + b` of the
+initial schedule's image; `initByte_entry`: byte `b` of entry `i` of that
+image is byte `b` of `initial[i]`; `scheduleAt_of_bytes`: memory holding the
+bytes of each entry of a schedule holds the schedule.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Blowfish
+
+open VG VG.Spec.Blowfish VG.Impl.Blowfish
+
+/-- Byte `b` of a word with a byte XORed in at byte `a`. -/
+theorem byte_or_shl (w : BitVec 64) (x : Byte) (a : Nat) {b : Nat} (hb : b < 8) :
+    (w ||| x.zeroExtend 64 <<< (8 * a)).extractLsb' (8 * b) 8 =
+      if a = b then w.extractLsb' (8 * b) 8 ||| x else w.extractLsb' (8 * b) 8 := by
+  apply BitVec.eq_of_getLsbD_eq; intro j hj
+  simp only [BitVec.getLsbD_extractLsb', hj, decide_true, Bool.true_and, BitVec.getLsbD_or,
+    BitVec.getLsbD_shiftLeft, BitVec.truncate_eq_setWidth, BitVec.getLsbD_setWidth, show 8 * b + j < 64 by omega_using [hb, hj]]
+  by_cases h : a = b
+  · subst h
+    simp only [ite_true, BitVec.getLsbD_or, BitVec.getLsbD_extractLsb', hj, decide_true, Bool.true_and,
+      Nat.not_lt.mpr (Nat.le_add_right (8 * a) j), decide_false, Bool.not_false, Nat.add_sub_cancel_left,
+      show j < 64 by omega_using [hj]]
+  · rw [ite_eq_right_of_eq_false _ _ (eq_false h), BitVec.getLsbD_extractLsb']
+    simp only [hj, decide_true, Bool.true_and]
+    rcases Nat.lt_or_gt_of_ne h with h | h
+    · rw [BitVec.getLsbD_of_ge x _ (by omega_using [h]), Bool.and_false, Bool.and_false, Bool.or_false]
+    · rw [decide_eq_true (show 8 * b + j < 8 * a by omega_using [h, hj]), Bool.not_true, Bool.false_and, Bool.or_false]
+
+theorem initWord_byte (i : Nat) {b : Nat} (hb : b < 8) :
+    (initWord i).extractLsb' (8 * b) 8 = initByte (8 * i + b) := by
+  simp only [initWord, List.range, List.range.loop, List.foldl_cons, List.foldl_nil, byte_or_shl _ _ _ hb]
+  rcases (by omega_using [hb] : b = 0 ∨ b = 1 ∨ b = 2 ∨ b = 3 ∨ b = 4 ∨ b = 5 ∨ b = 6 ∨ b = 7) with
+    rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
+    simp only [Nat.reduceEqDiff, ite_true, ite_false] <;> exact BitVec.zero_or
+
+theorem initByte_entry {i b : Nat} (hi : i < 1042) (hb : b < 4) :
+    initByte (entryOff i b) = (initial.getD i 0).extractLsb' (8 * b) 8 := by
+  unfold initByte entryOff
+  by_cases h : i < 18
+  · rw [ite_eq_left_of_eq_true _ _ (eq_true h), ite_eq_right_of_eq_false _ _ (eq_false (by omega_using [])), shr_setWidth, show (4096 + 4 * i + b - 4096) / 4 = i by omega_using [hb],
+      show (4096 + 4 * i + b - 4096) % 4 = b by omega_using [hb]]
+  · rw [ite_eq_right_of_eq_false _ _ (eq_false h), ite_eq_left_of_eq_true _ _ (eq_true (by omega_using [hi, hb])), shr_setWidth,
+      show 18 + 256 * ((1024 * ((i - 18) / 256) + 256 * b + (i - 18) % 256) / 1024) +
+        (1024 * ((i - 18) / 256) + 256 * b + (i - 18) % 256) % 256 = i by omega_using [hb, h],
+      show (1024 * ((i - 18) / 256) + 256 * b + (i - 18) % 256) % 1024 / 256 = b by omega_using [hb]]
+
+theorem scheduleAt_of_bytes {m : Mem} {p : Addr} {V : Schedule}
+    (h : ∀ i < 1042, ∀ b < 4, m (p + BitVec.ofNat 64 (entryOff i b)) = (V.getD i 0).extractLsb' (8 * b) 8) :
+    scheduleAt m p = V := by
+  apply Vector.ext; intro i hi
+  rw [scheduleAt_get _ _ hi, h i hi 0 (by decide), h i hi 1 (by decide), h i hi 2 (by decide),
+    h i hi 3 (by decide), show V.getD i 0 = V[i] by simp [Vector.getD, Array.getD, hi]]
+  refine word_ext fun b hb => ?_
+  rw [byte_of_le4 _ _ _ _ hb]
+  rcases (by omega_using [hb] : b = 0 ∨ b = 1 ∨ b = 2 ∨ b = 3) with rfl | rfl | rfl | rfl <;> rfl
+
+end VG.Proof.Blowfish
+
+end
+
+end
+
+/-! ### `Blowfish.KeySched`, which this module and modules that import it used -/
+
+section
+
+/-!
+# The key schedule, one encryption at a time
+
+`ksIter key j`: the schedule and the last output after `j` of the 521
+encryptions; `ksIter_succ` is one more, and `expandKey key = (ksIter key
+521).1`.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Blowfish
+
+open VG VG.Spec.Blowfish
+
+/-- The initial P-array XORed with the key, and the initial S-boxes. -/
+def keyed (key : List Byte) : Schedule :=
+  Vector.ofFn fun i =>
+    if i.val < 18 then initial.getD i.val 0 ^^^ keyWord key i.val else initial.getD i.val 0
+
+def ksStep (st : Schedule × Word × Word) (j : Nat) : Schedule × Word × Word :=
+  let out := encryptWords st.1 st.2.1 st.2.2
+  ((st.1.set! (2 * j) out.1).set! (2 * j + 1) out.2, out.1, out.2)
+
+def ksIter (key : List Byte) (j : Nat) : Schedule × Word × Word :=
+  (List.range j).foldl ksStep (keyed key, 0, 0)
+
+theorem ksIter_succ (key : List Byte) (j : Nat) : ksIter key (j + 1) = ksStep (ksIter key j) j := by
+  simp only [ksIter, List.range_succ, List.foldl_append, List.foldl_cons, List.foldl_nil]
+
+/-- The step of `expandKey`'s fold is `ksStep`. -/
+theorem expandKey_step : (fun ((k : Schedule), xL, xR) j =>
+    let (xL, xR) := encryptWords k xL xR
+    ((k.set! (2 * j) xL).set! (2 * j + 1) xR, xL, xR)) = ksStep := by
+  funext ⟨k, xL, xR⟩ j; rfl
+
+theorem expandKey_eq (key : List Byte) : expandKey key = (ksIter key 521).1 := by
+  rewrite [expandKey, ksIter, ← expandKey_step, ← keyed]
+  -- Of any state: the kernel would evaluate the 521 steps to take this one apart.
+  generalize List.foldl _ _ _ = st
+  obtain ⟨_, _, _⟩ := st
+  rfl
+
+end VG.Proof.Blowfish
+
+end
+
+end
 
 /-!
 # Key expansion's facts about memory, on every target

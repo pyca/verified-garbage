@@ -3,32 +3,29 @@ module
 public import VerifiedGarbage.Impl.Sm4.X86.Layers
 
 /-!
-# SM4 ECB, bitsliced, on x86 (32-bit)
+# SM4 ECB, bitsliced, on x86 (32-bit): the pieces
 
-`ecb dir(schedule, data, n, scratch)`, cdecl (the arguments at
-`[esp + 4]` … `[esp + 16]`): `vg_sm4_ecb_encrypt` and `vg_sm4_ecb_decrypt`
-with their working space in the scratch buffer (`Layers.lean` has its
-layout), which the artifact allocates on the stack.
+The table of round keys (`keys`), the bitsliced core (`crypt8`), which the
+functions of `Prepared.lean` are, and the copies of a group of blocks to the
+tail buffer and back, of which `vg_sm4_ecb_encrypt` and `vg_sm4_ecb_decrypt`
+(`ecb dir`, `Prepared.lean`) are built:
 
-* The callee-saved registers are saved in the scratch buffer, whose address
-  moves to `edi`.
 * The round keys are bitsliced into the table at slot 96, in the order the
   rounds use them: `rk₀ … rk₃₁` for encryption, `rk₃₁ … rk₀` for decryption
   (§7.2), counting in `ebp`, the schedule's pointer in `ecx`. Decryption
   then runs the same rounds as encryption.
-* The data pointer and `n` go to their slots. Each group of up to eight
-  blocks is copied to the tail buffer, bitsliced, run through the 32 rounds
-  (eight times four, the state's words taking the new words in turn), and
-  copied back. The rounds use every register, so the data pointer and the
-  blocks left wait in their slots, stored again after each copy (the
-  analysis of constant time forgets what the buffer holds after a store
-  through another pointer than `edi`).
+* Each group of up to eight blocks is copied to the tail buffer, bitsliced,
+  run through the 32 rounds (eight times four, the state's words taking the
+  new words in turn), and copied back. The rounds use every register, so the
+  data pointer and the blocks left wait in their slots after the core's
+  (`modeDSlot`, `modeNSlot`, where the modes keep theirs), stored again
+  after each copy (the analysis of constant time forgets what the buffer
+  holds after a store through another pointer than `edi`).
 
 Only the pointers, `n`, and what is computed from them (the copies'
 pointers and counts, `kp`, the loop tests, and the slots holding them) are
 public; no address and no branch depends on anything else.
 -/
-
 @[expose] public section
 
 namespace VG.Impl.Sm4.X86
@@ -75,6 +72,11 @@ def crypt8 : Prog isa := .seq (.block toBs) (.seq (rounds .enc) (.block fromBs))
 
 /-! ## The groups -/
 
+/-- The data pointer and the steps left, after the core's slots, where the
+modes keep theirs (`Impl/Modes/X86/Seq.lean`'s `dSlot` and `nSlot`). -/
+def modeDSlot : Nat := slots + 4
+def modeNSlot : Nat := slots + 5
+
 /-- Copy `ecx` blocks from `edx` to `ebx` (through `eax`). -/
 def copyBlocks : Prog isa :=
   .loop (.block [.mov .eax (.mem (at_ .edx 0)), .store (at_ .ebx 0) .eax, .mov .eax (.mem (at_ .edx 4)),
@@ -87,7 +89,7 @@ def countR : Prog isa :=
 
 /-- The data pointer and the blocks left from their slots to `esi` and `ebp`,
 and the blocks of this group to `ecx`. -/
-def groupCount : Prog isa := .seq (.block [movS .esi dSlot, movS .ebp nSlot]) countR
+def groupCount : Prog isa := .seq (.block [movS .esi modeDSlot, movS .ebp modeNSlot]) countR
 
 /-- `r := ` the tail buffer's address. -/
 def tailAddr (r : Reg) : List Instr := [movR r .edi, addI r (BitVec.ofNat 32 (4 * tailSlot))]
@@ -96,7 +98,7 @@ def tailAddr (r : Reg) : List Instr := [movR r .edi, addI r (BitVec.ofNat 32 (4 
 blocks left back to their slots. -/
 def copyIn : Prog isa :=
   .seq groupCount (.seq (.block ([movR .edx .esi] ++ tailAddr .ebx))
-    (.seq copyBlocks (.block [st dSlot .esi, st nSlot .ebp])))
+    (.seq copyBlocks (.block [st modeDSlot .esi, st modeNSlot .ebp])))
 
 /-- The tail buffer back to the group's blocks. -/
 def copyOut : Prog isa := .seq groupCount (.seq (.block (tailAddr .edx ++ [movR .ebx .esi])) copyBlocks)
@@ -104,17 +106,6 @@ def copyOut : Prog isa := .seq groupCount (.seq (.block (tailAddr .edx ++ [movR 
 /-- On to the next group, the data pointer and the blocks left (still in
 `esi` and `ebp`) back to their slots (Z set when none are left). -/
 def advance : Prog isa :=
-  .seq countR (.block [addI .esi 128, subR .ebp .ecx, st dSlot .esi, st nSlot .ebp])
-
-/-- Eight blocks, or the last one to seven. -/
-def group : Prog isa := .seq copyIn (.seq crypt8 (.seq copyOut advance))
-
-/-- The whole function: the table, then the groups. -/
-def ecb (dir : Dir) : Prog isa :=
-  .seq (.block (saveRegs 3))
-    (.seq (keys dir)
-      (.seq (.block [.mov .eax (.mem (argOp 1)), st dSlot .eax, .mov .eax (.mem (argOp 2)), st nSlot .eax,
-          .alu .test .eax (.reg .eax)])
-        (.seq (.ite .e (.block []) (.loop group .ne)) (.block restoreRegs))))
+  .seq countR (.block [addI .esi 128, subR .ebp .ecx, st modeDSlot .esi, st modeNSlot .ebp])
 
 end VG.Impl.Sm4.X86

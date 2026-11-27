@@ -1,8 +1,7 @@
 module
 
-import VerifiedGarbage.Proof.Idea.AArch64.ModeCore
-import VerifiedGarbage.Proof.Modes.AArch64.FbFinal
 public import VerifiedGarbage.Proof.Idea.AArch64.FbVerified
+import VerifiedGarbage.Proof.Modes.AArch64.FbFinal
 import VerifiedGarbage.Proof.Idea.AArch64.FbFinalLit
 import VerifiedGarbage.Proof.Idea.AArch64.ModesLit
 public import VerifiedGarbage.Impl.Idea.AArch64.FbFinal
@@ -14,9 +13,8 @@ public import VerifiedGarbage.Proof.Framework.Scratch
 public import VerifiedGarbage.Impl.StackScratch.AArch64
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
-meta import VerifiedGarbage.Proof.Idea.AArch64.ModeCore
-meta import VerifiedGarbage.Proof.Modes.AArch64.FbFinal
 meta import VerifiedGarbage.Proof.Idea.AArch64.FbVerified
+meta import VerifiedGarbage.Proof.Modes.AArch64.FbFinal
 meta import VerifiedGarbage.Proof.Idea.AArch64.FbFinalLit
 meta import VerifiedGarbage.Proof.Idea.AArch64.ModesLit
 meta import VerifiedGarbage.Impl.Idea.AArch64.FbFinal

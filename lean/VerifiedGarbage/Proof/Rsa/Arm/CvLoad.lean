@@ -1,21 +1,143 @@
 module
-public import VerifiedGarbage.Proof.Rsa.Arm.CvState
+
+import Batteries.Tactic.Alias
+public import VerifiedGarbage.Proof.Rsa.Arm.CvFail
 import VerifiedGarbage.Proof.Framework.Arm.Spill
 import VerifiedGarbage.Proof.Bignum.Arm.ModulusCheck
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Bignum.Arm.LoadBE
-import VerifiedGarbage.Proof.Rsa.Arm.KeyDiv
-import VerifiedGarbage.Proof.Rsa.Arm.CvFail
 import VerifiedGarbage.Proof.Rsa.KeyWorkspace
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Block
-import Mathlib.Order.RelClasses
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Push
-import Mathlib.Tactic.Attr.Core
 import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Rsa.Arm.KeyWs
+public import VerifiedGarbage.Proof.Rsa.Arm.DivReduce
+import VerifiedGarbage.Proof.Rsa.Arm.DivLoop
+public import Aesop.BuiltinRules
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Rsa.KeyMath
+
+/-! ### `Rsa.Arm.KeyDiv`, which this module and modules that import it used -/
+
+section
+
+/-! # The division of `Impl/Rsa/Arm/Div.lean` on arrays of the key working space
+
+With the division's header (bytes 0–19) naming the arrays `q`, `r`, `d`
+and `t` and the count `w`, and the word after `[d]` zero, `div_ok`:
+`[q] := [q] / [d]` and `[r] := [q] mod [d]` for `[d] > 0`.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Rsa.Arm.Keys
+open VG VG.Arm VG.Proof.Mont VG.Impl.Rsa.Arm.Keys VG.Proof.Rsa.Arm.Div
+open VG.Proof.X25519.Arm
+
+/-- The division's geometry on arrays `q`, `r`, `d`, `t`. -/
+def divGeom (B : BitVec 32) (Z w q r d t : Nat) : Geometry where
+  base := B
+  size := Z
+  offsets i := match i.val with | 0 => arr w q | 1 => arr w r | 2 => arr w d | _ => arr w t
+  n := w
+
+theorem divGeom_o0 {B : BitVec 32} {Z w q r d t : Nat} : (divGeom B Z w q r d t).offsets 0 = arr w q := rfl
+theorem divGeom_o1 {B : BitVec 32} {Z w q r d t : Nat} : (divGeom B Z w q r d t).offsets 1 = arr w r := rfl
+theorem divGeom_o3 {B : BitVec 32} {Z w q r d t : Nat} : (divGeom B Z w q r d t).offsets 3 = arr w t := rfl
+theorem divGeom_base {B : BitVec 32} {Z w q r d t : Nat} : (divGeom B Z w q r d t).base = B := rfl
+theorem divGeom_n {B : BitVec 32} {Z w q r d t : Nat} : (divGeom B Z w q r d t).n = w := rfl
+
+/-- The division's header in memory. -/
+structure DivHdr (m : Mem) (B : BitVec 32) (w q r d t : Nat) : Prop where
+  q : m.readW (off (State.addr B) 0) 32 = B + BitVec.ofNat 32 (arr w q)
+  r : m.readW (off (State.addr B) 4) 32 = B + BitVec.ofNat 32 (arr w r)
+  d : m.readW (off (State.addr B) 8) 32 = B + BitVec.ofNat 32 (arr w d)
+  t : m.readW (off (State.addr B) 12) 32 = B + BitVec.ofNat 32 (arr w t)
+  n : m.readW (off (State.addr B) 16) 32 = BitVec.ofNat 32 w
+
+theorem divGeom_ctx {s : State} {B : BitVec 32} {Z w N q r d t : Nat} (h : Ws s B Z w N)
+    (hq : q < N) (hr : r < N) (hd : d < N) (ht : t < N)
+    (hqr : q ≠ r) (hqd : q ≠ d) (hqt : q ≠ t) (hrd : r ≠ d) (hrt : r ≠ t) (hdt : d ≠ t)
+    (hh : DivHdr s.mem B w q r d t) : Context (divGeom B Z w q r d t) s := by
+  have fq := h.arr_fit hq
+  have fr := h.arr_fit hr
+  have fd := h.arr_fit hd
+  have ft := h.arr_fit ht
+  have hS : S w = 4 * (w + 2) := rfl
+  have hw := h.wle
+  have hf : 20 ≤ Z := by have := h.hdr_le; simp only [hdr] at this; omega_arith
+  refine ⟨⟨h.nowrap, h.writable⟩, h.wpos, by rw [divGeom_n]; omega_arith, hf, ?_, ?_, ?_, h.r8, ?_, hh.n⟩
+  · intro i; rcases i with ⟨_ | _ | _ | _ | i, hi⟩ <;> simp only [divGeom, Geometry.words] <;>
+      (try split) <;> first | omega_arith | (simp at hi; omega_arith) | (simp at *)
+  · intro i
+    have e : ∀ x, 20 ≤ arr w x := fun x => Nat.le_trans (by decide : 20 ≤ hdr) (Nat.le_add_right _ _)
+    rcases i with ⟨_ | _ | _ | _ | i, hi⟩ <;> simp only [divGeom] <;> first | exact e _ | (simp at hi)
+  · intro i j hij
+    -- Keep the arithmetic solver independent of the workspace and memory facts.
+    have qr := arr_disj (w := w) hqr; have qd := arr_disj (w := w) hqd; have qt := arr_disj (w := w) hqt
+    have rd := arr_disj (w := w) hrd; have rt := arr_disj (w := w) hrt; have dt := arr_disj (w := w) hdt
+    rcases i with ⟨_ | _ | _ | _ | i, hi⟩ <;> rcases j with ⟨_ | _ | _ | _ | j, hj⟩ <;>
+      simp only [divGeom, Geometry.words, Fin.mk.injEq, ne_eq, not_true_eq_false] at hij ⊢ <;>
+      (try split) <;> (try split) <;>
+      first | omega_using [qr, qd, qt, rd, rt, dt, hij, hi, hj, hS] | (exact absurd rfl hij) | (simp at hi) | (simp at hj)
+  · intro i; rcases i with ⟨_ | _ | _ | _ | i, hi⟩
+    · exact hh.q
+    · exact hh.r
+    · exact hh.d
+    · exact hh.t
+    · omega_arith
+
+theorem val32_top {m : Mem} {base : Addr} {d w : Nat} (h : w32 m base (d + 4 * w) = 0) :
+    val32 m base d (w + 1) = val32 m base d w := by
+  rw [val32_succ, h, Nat.mul_zero, Nat.add_zero]
+
+theorem val32_low {m : Mem} {base : Addr} {d w : Nat} (h : val32 m base d (w + 1) < 2 ^ (32 * w)) :
+    val32 m base d w = val32 m base d (w + 1) := by
+  rw [val32_succ] at h ⊢
+  have := val32_lt m base d w
+  rcases Nat.eq_zero_or_pos (w32 m base (d + 4 * w)) with e | e
+  · rw [e, Nat.mul_zero, Nat.add_zero]
+  · exfalso
+    have : 2 ^ (32 * w) ≤ 2 ^ (32 * w) * w32 m base (d + 4 * w) := Nat.le_mul_of_pos_right _ e
+    omega_arith
+
+theorem div_ok {s : State} {B : BitVec 32} {Z w N q r d t : Nat} (h : Ws s B Z w N)
+    (hq : q < N) (hr : r < N) (hd : d < N) (ht : t < N)
+    (hqr : q ≠ r) (hqd : q ≠ d) (hqt : q ≠ t) (hrd : r ≠ d) (hrt : r ≠ t) (hdt : d ≠ t)
+    (hh : DivHdr s.mem B w q r d t) (top : w32 s.mem (State.addr B) (arr w d + 4 * w) = 0) :
+    WP isa Impl.Rsa.Arm.Div.code s fun u => Keep B w [q, r, t] [] s.mem u.mem ∧
+      Rest (.r6 :: clobbers) s u ∧
+      (0 < num s.mem B w d → num u.mem B w r = num s.mem B w q % num s.mem B w d ∧
+        num u.mem B w q = num s.mem B w q / num s.mem B w d) := by
+  have c := divGeom_ctx h hq hr hd ht hqr hqd hqt hrd hrt hdt hh
+  refine WP.mono (code_ok c) fun u ⟨_, fr, rest, v⟩ => ⟨?_, rest, fun pos => ?_⟩
+  · intro x hx
+    refine fr x fun rg hrg => ?_
+    simp only [Geometry.ranges, divGeom_o0, divGeom_o1, divGeom_o3, divGeom_n, List.mem_cons,
+      List.not_mem_nil, or_false] at hrg
+    have hS : S w = 4 * (w + 2) := rfl
+    rw [divGeom_base]
+    rcases hrg with rfl | rfl | rfl
+    · have := hx (arr w q, S w) (by simp [ranges]); dsimp only; omega_arith
+    · have := hx (arr w r, S w) (by simp [ranges]); dsimp only; omega_arith
+    · have := hx (arr w t, S w) (by simp [ranges]); dsimp only; omega_arith
+  · have eD : (divGeom B Z w q r d t).value s.mem 2 = num s.mem B w d := val32_top top
+    have lt := val32_lt s.mem (State.addr B) (arr w d) w
+    have v' := v (by rw [eD]; exact pos) (by rw [eD]; exact lt)
+    rw [eD] at v'
+    obtain ⟨vr, vq⟩ := v'
+    refine ⟨?_, vq⟩
+    have : (divGeom B Z w q r d t).value u.mem 1 < 2 ^ (32 * w) := by
+      rw [vr]; exact Nat.lt_of_lt_of_le (Nat.mod_lt _ pos) (Nat.le_of_lt lt)
+    exact (val32_low this).trans vr
+
+end VG.Proof.Rsa.Arm.Keys
+
+end
+
+end
 
 /-! ### `Rsa.Arm.CvEntry`, which only this module used -/
 
@@ -56,14 +178,14 @@ theorem entry_ok {s0 : State} (h : CvPre s0) :
   have fits := h.fits
   have kb := h.kb
   rw [entry_eq]
-  have hrd : rA s0 ∈ s0.rd := by rw [h.rd]; simp
+  obtain hrd : rA s0 ∈ s0.rd := by rw [h.rd]; simp
   refine wp_ldrSp hrd h.sp48 (by decide) fun s1 u1 => ?_
-  have hz : 64 ≤ cvZ s0 := Nat.le_trans (by simp only [arr, hdr, nArr, S]; omega_using []) fits
+  obtain hz : 64 ≤ cvZ s0 := Nat.le_trans (by simp only [arr, hdr, nArr, S]; omega_using []) fits
   refine save_slots_ok (lo := 20) (hi := 64) (by decide) (by rw [u1.gpr]; simp only [cvZ] at hz; omega_using [fS, hz])
     (fun d h1 h2 => ⟨rS s0, by rw [u1.wr, h.wr]; simp, by
       rw [u1.gpr]; exact Offset.contains_base _ (by simp only [cvZ] at hz; omega_using [hz, h2]) (by omega_using [h2])⟩) ?_
   -- The state after the stores.
-  have b2 : Base s0 { s1 with mem := saveMem s1.mem (State.addr (s1.gpr .r12)) s1.gpr saveL } := by
+  obtain b2 : Base s0 { s1 with mem := saveMem s1.mem (State.addr (s1.gpr .r12)) s1.gpr saveL } := by
     refine ⟨h, u1.sp, u1.rd, u1.wr, ?_, fun i hi => ?_⟩
     · rw [u1.gpr]
       refine Frame.sub (rs := [⟨State.addr (stackArg s0 10), 64⟩]) ?_ fun r hr => ⟨rS s0, by simp, ?_⟩
@@ -84,19 +206,19 @@ theorem entry_ok {s0 : State} (h : CvPre s0) :
       rw [u1.other _ this]
   refine wp_mov (op2_reg _ _) fun s3 u3 => ?_
   refine wp_mov (op2_reg _ _) fun s4 u4 => ?_
-  have b4 := (b2.of_rest (u3.rest (ws := [.r8, .r3]) (by simp)) u3.mem).of_rest (u4.rest (ws := [.r3]) (by simp)) u4.mem
-  have sp4 : s4.sp.toNat + 48 ≤ 2 ^ 32 := by rw [b4.sp]; exact h.sp48
+  obtain b4 := (b2.of_rest (u3.rest (ws := [.r8, .r3]) (by simp)) u3.mem).of_rest (u4.rest (ws := [.r3]) (by simp)) u4.mem
+  obtain sp4 : s4.sp.toNat + 48 ≤ 2 ^ 32 := by rw [b4.sp]; exact h.sp48
   refine wp_ldrSp b4.rA_mem sp4 (by decide) fun s5 u5 => ?_
-  have b5 := b4.of_rest (u5.rest (ws := [.r4]) (by simp)) u5.mem
+  obtain b5 := b4.of_rest (u5.rest (ws := [.r4]) (by simp)) u5.mem
   refine wp_ldrSp b5.rA_mem (by rw [b5.sp]; exact h.sp48) (by decide) fun s6 u6 => ?_
-  have b6 := b5.of_rest (u6.rest (ws := [.r6]) (by simp)) u6.mem
+  obtain b6 := b5.of_rest (u6.rest (ws := [.r6]) (by simp)) u6.mem
   have nfit := h.fN
   refine WP.mono (modulusCheck_ok s6 (src := stackArg s0 2) (k := cvK s0) kb.1 kb.2 (by simp only [cvK]; omega_using [nfit])
     ?_ (by rw [u6.other _ (by decide), u5.gpr, b4.arg (by decide)])
     (by rw [u6.gpr, b5.arg (by decide)]; simp only [cvK, BitVec.ofNat_toNat, BitVec.setWidth_eq])) ?_
   · refine ⟨rN s0, List.mem_append_left _ (by rw [b6.rd, h.rd]; simp), Region.contains_self _ _⟩
   · rintro t ⟨z, m, r⟩
-    have bt := b6.of_rest r m
+    obtain bt := b6.of_rest r m
     refine ⟨bt, ?_, ?_, ?_, ?_, ?_⟩
     · rw [r.gpr _ (by decide), u6.other _ (by decide), u5.other _ (by decide), u4.other _ (by decide), u3.gpr,
         u1.gpr]
@@ -141,7 +263,7 @@ alias val32_zero_part := VG.Proof.Rsa.KeyWorkspace.val32_zero_part
 
 theorem val32_low2 {m : Mem} {base : Addr} {d w : Nat} (h : val32 m base d (w + 2) < 2 ^ (32 * w)) :
     val32 m base d w = val32 m base d (w + 2) := by
-  have h1 : val32 m base d (w + 1) = val32 m base d (w + 2) :=
+  obtain h1 : val32 m base d (w + 1) = val32 m base d (w + 2) :=
     val32_low (Nat.lt_of_lt_of_le h (Nat.pow_le_pow_right (by decide) (by omega_using [])))
   rw [← h1] at h ⊢
   exact val32_low h
@@ -177,25 +299,25 @@ theorem load_ok {s0 s : State} (h : Base s0 s) (hw : Ws s (cvB s0) (cvZ s0) (cvW
         Spec.Rsa.os2ip (Spec.Rsa.bytesAt s0.mem (State.addr src) k) ∧
       Rest [.r0, .r1, .r2, .r3, .r5, .lr] s t := by
   have pre := h.pre
-  have fit := hw.arr_fit hj
+  obtain fit := hw.arr_fit hj
   have nw := hw.nowrap
   have w16 := pre.w16
   have kb := pre.kb
   have hS : S (cvW s0) = 4 * (cvW s0 + 2) := rfl
-  have hkw : k ≤ 4 * cvW s0 := by have := hi.le; simp only [cvW] at *; omega_using [this]
+  obtain hkw : k ≤ 4 * cvW s0 := by have := hi.le; simp only [cvW] at *; omega_using [this]
   rw [load, WP.seq_iff]
   refine ptr_ok hw (by decide) (by simp only [nArr] at hj; omega_using [hj]) fun s1 p1 r1 m1 h1 => ?_
   refine wp_mov (op2_reg _ _) fun s2 u2 => ?_
   refine wp_dp (op2_imm (by decide)) fun s3 u3 => ?_
   refine wp_mov (op2_imm (by decide)) fun u u4 => WP.block_nil ?_
-  have rest : Rest [.r0, .r3, .r5, .lr] s u :=
+  obtain rest : Rest [.r0, .r3, .r5, .lr] s u :=
     (r1.mono (by simp)).trans ((u2.rest (by simp)).trans ((u3.rest (by simp)).trans (u4.rest (by simp))))
-  have mu : u.mem = s.mem := by rw [u4.mem, u3.mem, u2.mem, m1]
-  have bu := h.of_rest rest mu
-  have hu := hw.rest rest
-  have ad : State.addr (cvB s0 + BitVec.ofNat 32 (arr (cvW s0) j)) = off (State.addr (cvB s0)) (arr (cvW s0) j) :=
+  obtain mu : u.mem = s.mem := by rw [u4.mem, u3.mem, u2.mem, m1]
+  obtain bu := h.of_rest rest mu
+  obtain hu := hw.rest rest
+  obtain ad : State.addr (cvB s0 + BitVec.ofNat 32 (arr (cvW s0) j)) = off (State.addr (cvB s0)) (arr (cvW s0) j) :=
     hw.addr (by omega_using [fit, hS])
-  have p0 : u.gpr .r0 = cvB s0 + BitVec.ofNat 32 (arr (cvW s0) j) := by
+  obtain p0 : u.gpr .r0 = cvB s0 + BitVec.ofNat 32 (arr (cvW s0) j) := by
     rw [u4.other _ (by decide), u3.other _ (by decide), u2.other _ (by decide), p1]
   refine WP.mono (loadBE_ok u (src := src) (dst := cvB s0 + BitVec.ofNat 32 (arr (cvW s0) j)) (n := cvW s0 + 2)
     hi.pos (by omega_using [hkw]) (by have := hi.fit; omega_using [w16, hkw]) hi.fit
@@ -214,7 +336,7 @@ theorem load_ok {s0 s : State} (h : Base s0 s) (hw : Ws s (cvB s0) (cvZ s0) (cvW
     (by rw [u4.gpr])) ?_
   rintro t ⟨v, f, r⟩
   rw [ad] at f v
-  have k : Keep (cvB s0) (cvW s0) [j] [] u.mem t.mem := Keep.of_frame_arr f (by omega_using [fit, nw])
+  obtain k : Keep (cvB s0) (cvW s0) [j] [] u.mem t.mem := Keep.of_frame_arr f (by omega_using [fit, nw])
   refine ⟨bu.keep k (by simpa using hj) (by simp) (by simp) r.sp r.rd r.wr, hu.rest r, mu ▸ k, ?_,
     (rest.mono (by simp)).trans (r.mono (by simp))⟩
   rw [val32_off, Nat.add_zero] at v

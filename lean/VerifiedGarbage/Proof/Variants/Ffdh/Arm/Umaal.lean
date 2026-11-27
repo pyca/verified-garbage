@@ -12,12 +12,8 @@ namespace VG.Proof.Variants.Ffdh.Arm.Umaal
 open VG.Impl.Bignum.Arm VG.Proof.Bignum.Arm
 
 def variant : VG.Proof.Ffdh.Arm.Backend where
-  checkDomain := umaalArithmetic Base.variant.checkDomain
-  checkDomain_verified := umaalArithmetic_verified Base.variant.checkDomain_verified
   checkPublic := umaalArithmetic Base.variant.checkPublic
   checkPublic_verified := umaalArithmetic_verified Base.variant.checkPublic_verified
-  checkPrivate := umaalArithmetic Base.variant.checkPrivate
-  checkPrivate_verified := umaalArithmetic_verified Base.variant.checkPrivate_verified
   exchange := umaalArithmetic Base.variant.exchange
   exchange_verified := umaalArithmetic_verified Base.variant.exchange_verified
   suffix := "_umaal"

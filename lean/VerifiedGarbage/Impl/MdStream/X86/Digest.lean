@@ -74,6 +74,15 @@ def digestMain : Prog isa :=
   (.seq (copy .ebp (dgO H) .esi 0 H.D)
     (.block H.restore))))))))
 
+/-- The doublewords of the `48 + dframe H` bytes below `esp` on entry that
+the residue analysis finds the digest may leave different in two runs, with
+any streaming functions: the 48 bytes below its frame that the frames and
+stacks of the functions it calls take, and its frame's header (the word for
+the return address, the copies of the arguments, the address of `scratch`),
+which `withStackScratchWiped` does not zero. The cleanup
+(`Impl.Scrub.X86.scrubSel`) zeroes them. -/
+def selWords : List Nat := List.range 17
+
 /-- `vg_<hash>_digest`: `digestMain` with `scratch` in a frame of its own,
 zeroed after it. -/
 def digest : Prog isa :=

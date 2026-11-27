@@ -3,11 +3,11 @@ module
 public import VerifiedGarbage.Impl.Ffdh.Arm.CombPrecompute
 public import VerifiedGarbage.Proof.Ffdh.Arm.VettedBoundInstance
 public import VerifiedGarbage.Proof.Bignum.Arm.MontBackend
+public import VerifiedGarbage.Proof.Bignum.Arm.DoubleBackend
 public import VerifiedGarbage.Spec.Ffdh.CachedKeyGenerationContract
 public import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeMainCT
-import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeSat
-import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeTableState
+public import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeMainCT
+import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeStoreMemory
 import VerifiedGarbage.Proof.Ffdh.GenerationPrecompute
 import VerifiedGarbage.Proof.Bignum.ExportEncoding
 import VerifiedGarbage.Proof.Bignum.Octets
@@ -17,38 +17,414 @@ import VerifiedGarbage.Proof.Framework.GetElem
 import Mathlib.Tactic.Ring
 import VerifiedGarbage.Proof.Bignum.Arm.LayoutPreserved
 import VerifiedGarbage.Spec.Rsa.Contract
-public import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeInput
-import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputePrefix
-import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeMontgomeryOut
+import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeMontgomeryOutCT
 public import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeCore
-import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeBasis
-import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeInitialStore
-import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeTableInit
+import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeInitialCT
 import VerifiedGarbage.Proof.Rsa.FixedBaseCombTable
 import VerifiedGarbage.Proof.Framework.Block
-public import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeProductState
-import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeBasisStore
 import VerifiedGarbage.Proof.Ffdh.Arm.CachedSamplePolicy
 import VerifiedGarbage.Proof.Ffdh.Arm.Branch
 import VerifiedGarbage.Proof.Ffdh.Domain
-import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputePre
-import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeEnvironment
 import VerifiedGarbage.Proof.Framework.Arm.StackScratchConsts
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Proof.Ffdh.Arm.Context
 import Init.Core
-import VerifiedGarbage.Impl.Ffdh.Arm.VettedGroups
-import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeCTState
-import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeEntryCT
+public import VerifiedGarbage.Impl.Ffdh.Arm.VettedGroups
 import VerifiedGarbage.Proof.Ffdh.Arm.FrameCT
-import VerifiedGarbage.Proof.Ffdh.Arm.Entered
+import VerifiedGarbage.Proof.Ffdh.Arm.EntryStore
 import VerifiedGarbage.Proof.Ffdh.Arm.Block
 import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 import VerifiedGarbage.Proof.Framework.Arm.Syms
-import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeEntry
 import VerifiedGarbage.Proof.Ffdh.Arm.VettedGroupsConsts
-import VerifiedGarbage.Proof.Ffdh.Arm.VettedGroupsEnvironment
+public import VerifiedGarbage.Proof.Ffdh.Arm.VettedGroupsEnvironment
+import VerifiedGarbage.Proof.Ffdh.Arm.VettedGroupsBytes
+import VerifiedGarbage.Proof.Framework.OffsetBelow
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Rsa.BytesFrame
+public import VerifiedGarbage.Proof.Ffdh.Arm.Frame
+import VerifiedGarbage.Proof.Framework.ConstMem
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
+import Batteries.Logic
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Proof.Framework.RelCT
+import VerifiedGarbage.Proof.Ffdh.Arm.StackCT
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Impl.Ffdh.Arm.CombPrecompute
+meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+
+/-! ### `Ffdh.Arm.CombPrecomputeEntryCT`, which only this module used -/
+
+section
+
+/-! The precomputation entry only retains arguments at fixed public stack offsets. -/
+
+@[expose] public section
+namespace VG.Proof.Ffdh.Arm
+open VG VG.Arm
+
+private theorem combEntryArgs_ct : RelCT isa (fun s t => s.sp=t.sp)
+    (.block VG.Impl.Ffdh.Arm.CombPrecompute.entryArgs) LocalAddress := by
+  change RelCT isa _ (.block ([.addSp .r12 0] ++ [.str .r0 .r12 4,.str .r2 .r12 24,
+    .str .r3 .r12 28,.ldrSp .r3 128,.str .r3 .r12 32,.ldrSp .r0 132,.str .r0 .r12 0])) _
+  have tail := RelCT.block_append ((loadLocal_ct .r0 132 (by decide)).seq (storeLocal_ct .r0 0))
+  have tail := RelCT.block_append ((storeLocal_ct .r3 32).seq tail)
+  have tail := RelCT.block_append ((loadLocal_ct .r3 128 (by decide)).seq tail)
+  have tail := RelCT.block_append ((storeLocal_ct .r3 28).seq tail)
+  have tail := RelCT.block_append ((storeLocal_ct .r2 24).seq tail)
+  have tail := RelCT.block_append ((storeLocal_ct .r0 4).seq tail)
+  exact RelCT.block_append (stackAddr_ct.seq tail)
+
+private theorem combPrepareArgs_ct : RelCT isa LocalAddress
+    (.block (VG.Impl.Ffdh.Arm.Domain.prepareArgs 24)) LocalAddress := by
+  change RelCT isa _ (.block ([.ldrSp .r4 24] ++ [.ldrSp .r6 32,.addSp .r12 0,
+    .str .r4 .r12 8,.str .r6 .r12 12])) _
+  exact RelCT.block_append ((loadLocal_ct .r4 24 (by decide)).seq
+    (RelCT.block_append ((loadLocal_ct .r6 32 (by decide)).seq
+    (RelCT.block_append ((stackAddr_ct.mono (fun _ _ h => h.2) (fun _ _ h => h)).seq
+    (RelCT.block_append ((storeLocal_ct .r4 8).seq (storeLocal_ct .r6 12))))))))
+
+theorem combEntry_ct : RelCT isa (fun s t => s.sp=t.sp)
+    (.block VG.Impl.Ffdh.Arm.CombPrecompute.entry) (fun _ _ => True) := by
+  have pointers : RelCT isa LocalAddress (.block VG.Impl.Ffdh.Arm.Domain.domainPointers) (fun _ _ => True) := by
+    apply RelCT.taint (A:=VG.Arm.taint) (Taint.ofRegs [.r12]) _ (by taint_decide)
+    intro s t h
+    apply Taint.agree_ofRegs
+    intro r hr
+    simp only [List.mem_singleton] at hr
+    subst r
+    exact h.1
+  unfold VG.Impl.Ffdh.Arm.CombPrecompute.entry
+  exact RelCT.block_append ((RelCT.block_append (combEntryArgs_ct.seq combPrepareArgs_ct)).seq pointers)
+
+end VG.Proof.Ffdh.Arm
+
+end
+
+end
+
+/-! ### `Ffdh.Arm.CombPrecomputeSat`, which only this module used -/
+
+section
+
+/-! The reviewed attempt contract has a concrete caller with its shared table. -/
+
+@[expose] public section
+namespace VG.Proof.Ffdh.Arm
+open VG VG.Arm
+open VG.Impl.Ffdh.Arm.VettedGroups
+
+private def attemptBase : State where
+  gpr r := match r with | .r0 => 0x1000 | .r1 => 275 | .r2 => 0x3000 | .r3 => 128 | _ => 0
+  sp := 0x8000
+  n := false
+  z := false
+  c := false
+  v := false
+  mem a := if a = 0x8000 then 64 else if a = 0x8005 then 0x90 else
+    if a = 0x8008 then 0x20 else if a = 0x8009 then 4 else
+    if a = 0x3000 then 0x80 else if a = 0x303f then 1 else if a = 0x307f then 2 else 0
+  rd := [⟨0x3000,128⟩,⟨0x8000,12⟩]
+  wr := [⟨0x1000,2200⟩,⟨0x9000,8448⟩]
+
+@[irreducible] private def attemptMem (W : List (BitVec 64)) : Mem := fun a =>
+  if (a - 0x100000).toNat < 17744 then constMem 0x100000 W a else attemptBase.mem a
+
+private def attemptSat (W : List (BitVec 64)) : State :=
+  { attemptBase with
+    mem := attemptMem W
+    rd := attemptBase.rd ++ [⟨0x100000, 17744⟩]
+    syms := fun _ => 0x100000 }
+
+private theorem attemptMem_held (W : List (BitVec 64)) (length : W.length = 2218) (i : Nat) (hi : i < W.length) :
+    (attemptMem W).readW (0x100000 + BitVec.ofNat 64 (8 * i)) 64 = W.getD i 0 := by
+  rw [← constMem_held 0x100000 W (by rw [length]; decide) i hi]
+  apply Mem.readW_congr
+  intro j hj
+  unfold attemptMem
+  refine ite_eq_left ?_
+  rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat, Offset.add_sub_cancel_left, BitVec.toNat_ofNat]
+  rw [length] at hi
+  omega_using [hi, hj]
+
+private theorem attemptSat_arg (W : List (BitVec 64)) {i : Nat} (hi : i < 3) : stackArg (attemptSat W) i = stackArg attemptBase i := by
+  apply Mem.readW_congr
+  intro j hj
+  change attemptMem W _ = attemptBase.mem _
+  unfold attemptMem
+  apply ite_eq_right
+  have small : ∀ i < 3, ∀ j < 4,
+      ¬ (stackArgAddr attemptBase i + BitVec.ofNat 64 j - 0x100000).toNat < 17744 := by decide
+  exact small i hi j hj
+
+private theorem attemptSat_domain (W : List (BitVec 64)) :
+    Spec.Rsa.bytesAt (attemptMem W) 0x3000 128 = Spec.Rsa.bytesAt attemptBase.mem 0x3000 128 := by
+  unfold Spec.Rsa.bytesAt
+  apply List.map_congr_left
+  intro i hi
+  unfold attemptMem
+  apply ite_eq_right
+  have small : ∀ i < 128, ¬ ((0x3000 : Addr) + BitVec.ofNat 64 i - 0x100000).toNat < 17744 := by decide
+  exact small i (List.mem_range.mp hi)
+
+private theorem satAux (W : List (BitVec 64)) (length : W.length = 2218) :
+    ∃ s, (Spec.Ffdh.generationPrecomputeContract (abi.withConsts [(tableSym, W)]) 176).pre s := by
+  refine ⟨attemptSat W, pre_consts.mpr ⟨?_, ?_⟩⟩
+  · have args (i : Nat) (hi : i < 3) := attemptSat_arg W hi
+    sig_pre [Spec.Ffdh.generationPrecomputeContract, Spec.Ffdh.generationPrecomputeSig, Spec.Ffdh.pLenValid, Spec.Ffdh.domainLenValid, Spec.Ffdh.generationPrecomputedWords, Spec.Rsa.FixedBaseComb.precomputedWords, Spec.Rsa.modulusWords, Spec.Rsa.scratchWords, abi,
+      argRegs, reduceClassify, Loc.val, State.addr]
+    simp only [show ∀ (K : List (String × List (BitVec 64))) (s : State) (i : Nat), stackArg (stripConsts K s) i = stackArg s i by intros; rfl]
+    simp only [args 0 (by decide), args 1 (by decide), args 2 (by decide)]
+    dsimp only [stackArgAddr, stripConsts, State.withRegions, attemptSat, attemptBase]
+    repeat' apply And.intro
+    all_goals first
+      | rfl
+      | decide +kernel
+      | (apply Region.disjoint_of_sep; decide +kernel)
+      | (change Spec.Ffdh.domainValid 64 (Spec.Rsa.bytesAt (attemptMem W) 0x3000 128) = true
+         rw [attemptSat_domain W]
+         decide +kernel)
+  · refine ⟨?_, ?_, ?_, fun r hr => by
+      simp only [constRegs, Abi.constRegions, List.mem_map, List.mem_singleton] at hr
+      obtain ⟨c, rfl, rfl⟩ := hr
+      dsimp only [symAddr, attemptSat]
+      decide⟩
+    · simp only [attemptSat, attemptBase, constRegs, Abi.constRegions, symAddr, List.map_cons, List.map_nil, length]
+      rfl
+    · intro c hc i hi
+      simp only [List.mem_singleton] at hc
+      subst c
+      exact attemptMem_held W length i hi
+    · intro r hr
+      simp only [constRegs, Abi.constRegions, List.mem_map, List.mem_singleton] at hr
+      obtain ⟨c, rfl, rfl⟩ := hr
+      rw [length]
+      dsimp only [symAddr, attemptSat]
+      refine ⟨by decide, ?_, ?_⟩
+      · intro q hq
+        change q ∈ ([⟨0x1000,2200⟩,⟨0x9000,8448⟩] : List Region) at hq
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
+        rcases hq with rfl | rfl
+        all_goals first | (apply Region.disjoint_of_sep; decide)
+      · intro q hq
+        simp only [abi, stackBelow, List.mem_singleton] at hq
+        subst q
+        exact Region.disjoint_of_sep (by decide)
+
+theorem combPrecompute_sat :
+    ∃ s, (Spec.Ffdh.generationPrecomputeContract (abi.withConsts tableConsts) 176).pre s :=
+  satAux tableWords VettedGroups.tableWords_length
+
+end VG.Proof.Ffdh.Arm
+
+end
+
+end
+
+/-! ### `Ffdh.Arm.CombPrecomputeEnvironment`, which only this module used -/
+
+section
+
+/-! The shared public recognition table survives the precomputation frame. -/
+
+@[expose] public section
+namespace VG.Proof.Ffdh.Arm
+open VG VG.Arm VG.Proof.Bignum.Arm VG.Proof.Mont
+open VG.Impl.Ffdh.Arm.VettedGroups
+open VettedGroups
+
+theorem combPrecompute_environment (s : State)
+    (pre : (Spec.Ffdh.generationPrecomputeContract (abi.withConsts tableConsts) 176).pre s)
+    {p : Inputs} (base : stackArg s 1 = p.base) (output : s.gpr .r0 = p.output)
+    (capacity : (stackArg s 2).toNat = p.len) (count : (stackArg s 0).toNat = p.k)
+    (privateAlias : p.privateValue = p.output) (publicAlias : p.publicValue = p.output) :
+    VettedGroups.environment.holds p (entered s) := by
+  obtain ⟨plain,hc⟩ := pre_consts.mp pre
+  sig_pre [Spec.Ffdh.generationPrecomputeContract,Spec.Ffdh.generationPrecomputeSig,
+    abi,argRegs,reduceClassify,Loc.val,State.addr] at plain
+  obtain ⟨stackFit,_,_,wr,_,_,_,_,_,_,_,_,_,_,_,_,_,_,ctxLen,_,_⟩ := plain
+  change s.wr = [⟨State.addr (s.gpr .r0),(s.gpr .r1).toNat*8⟩,
+    ⟨State.addr (stackArg s 1),(stackArg s 2).toNat*8⟩] at wr
+  change (s.gpr .r1).toNat = Spec.Ffdh.generationPrecomputedWords (stackArg s 0).toNat at ctxLen
+  have small : p.k ≤ (s.gpr .r1).toNat*8 := by
+    rw [ctxLen,count]
+    have hw := p.width.2.2.2.1
+    change p.k ≤ 8*p.w at hw
+    simp only [Spec.Ffdh.generationPrecomputedWords,Spec.Rsa.FixedBaseComb.precomputedWords,
+      Spec.Rsa.precomputedWords,Spec.Rsa.FixedBaseComb.entries]
+    change p.k ≤ (3+(2*p.w+32*p.w))*8
+    omega_using [hw]
+  have geometry := consts_singleton_regions (name := tableSym) (words := tableWords) hc
+  have span : 8*tableWords.length = tableBytes.length := by rw [tableWords_length,tableBytes_length]
+  have fit := hc.fit (name := tableSym) (ws := tableWords) List.mem_cons_self
+  rw [span] at fit
+  have reserved : (⟨State.addr (s.syms tableSym),tableBytes.length⟩ : Region).Disjoint (FrameStack.belowA s.sp 176) := by
+    rw [←span]
+    apply geometry.2.2
+    rw [FrameStack.belowA,FrameStack.addr_sub' stackFit]
+    simp only [abi,stackBelow]
+    exact List.mem_cons_self
+  have localSub : (⟨State.addr (entered s).sp,72⟩ : Region).Sub (FrameStack.belowA s.sp 176) :=
+    fun a h => FrameStack.belowA_sub (by decide) stackFit a (locals_sub_reserved s (by omega_using [stackFit]) a h)
+  have savedSub : (⟨State.addr (pcPushed s).sp,56⟩ : Region).Sub (FrameStack.belowA s.sp 176) :=
+    fun a h => FrameStack.belowA_sub (by decide) stackFit a (saved_sub_reserved s (by omega_using [stackFit]) a h)
+  have writable (r : Region) (member : r ∈ (entered s).wr) :
+      (⟨State.addr (s.syms tableSym),tableBytes.length⟩ : Region).Disjoint r := by
+    change r ∈ (⟨State.addr (entered s).sp,72⟩ : Region)::⟨State.addr (pcPushed s).sp,56⟩::s.wr at member
+    rcases List.mem_cons.mp member with rfl | member
+    · exact reserved.sub_right localSub
+    rcases List.mem_cons.mp member with rfl | member
+    · exact reserved.sub_right savedSub
+    · rw [←span]; exact geometry.2.1 r member
+  apply VettedGroups.tableOfBytes (entered s) ((entered s).syms tableSym) groups fit (entered_read (consts_table_read hc))
+  · rw [VG.Proof.Rsa.rsa_bytes_frame (entered_frame s (by omega_using [stackFit])) (by change tableBytes.length < 2^64; rw [tableBytes_length]; decide) (by
+      intro r hr
+      have eq := List.mem_singleton.mp hr
+      subst r
+      exact reserved.sub_right savedSub)]
+    exact consts_table_bytes hc
+  · intro g hg
+    simp only [groups,List.mem_cons,List.not_mem_nil,or_false] at hg
+    rcases hg with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
+  · intro r hr
+    simp only [keyCallWrites,keyWrites,List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at hr
+    rcases hr with (rfl | rfl | rfl | rfl) | rfl
+    · apply writable
+      change _ ∈ _::_::s.wr
+      apply List.mem_cons_of_mem; apply List.mem_cons_of_mem
+      rw [wr,base,capacity,Nat.mul_comm p.len 8]
+      exact List.mem_cons_of_mem _ List.mem_cons_self
+    · exact reserved.sub_right localSub
+    · rw [privateAlias,←output]
+      apply (writable ⟨State.addr (s.gpr .r0),(s.gpr .r1).toNat*8⟩ (by
+        apply List.mem_cons_of_mem; apply List.mem_cons_of_mem; rw [wr]; exact List.mem_cons_self)).sub_right
+      simpa only [off,BitVec.add_zero] using (Offset.sub_base (State.addr (s.gpr .r0)) (d:=0) (n:=p.k) (by omega_using [small]))
+    · rw [publicAlias,←output]
+      apply (writable ⟨State.addr (s.gpr .r0),(s.gpr .r1).toNat*8⟩ (by
+        apply List.mem_cons_of_mem; apply List.mem_cons_of_mem; rw [wr]; exact List.mem_cons_self)).sub_right
+      simpa only [off,BitVec.add_zero] using (Offset.sub_base (State.addr (s.gpr .r0)) (d:=0) (n:=p.k) (by omega_using [small]))
+    · rw [entered_sp]
+      exact reserved.sub_right (FrameStack.belowA_inner (a:=48) (k:=128) (by decide) stackFit)
+
+end VG.Proof.Ffdh.Arm
+
+end
+
+end
+
+/-! ### `Ffdh.Arm.CombPrecomputePre`, which only this module used -/
+
+section
+
+/-! The reviewed precomputation signature supplies native buffers and frames. -/
+
+@[expose] public section
+namespace VG.Proof.Ffdh.Arm
+open VG VG.Arm VG.Arm.FrameStack VG.Proof.Bignum.Arm VG.Proof.Mont
+
+theorem combPrecompute_input (s : State)
+    (pre : (Spec.Ffdh.generationPrecomputeContract (abi.withConsts VG.Impl.Ffdh.Arm.VettedGroups.tableConsts) 176).pre s)
+    {p : Inputs}
+    (base : stackArg s 1 = p.base) (output : s.gpr .r0 = p.output)
+    (domain : s.gpr .r2 = p.domain) (count : (stackArg s 0).toNat = p.k)
+    (capacity : (stackArg s 2).toNat = p.len)
+    (domainBytes : Spec.Rsa.bytesAt s.mem (State.addr p.domain) (s.gpr .r3).toNat = p.dom)
+    (privateAlias : p.privateValue = p.output) (publicAlias : p.publicValue = p.output)
+    (entropyAlias : p.entropy = p.output)
+    (environment : VettedGroups.environment.holds p (entered s)) :
+    CombPrecomputeFnInput p s := by
+  obtain ⟨pre,hc⟩ := pre_consts.mp pre
+  sig_pre [Spec.Ffdh.generationPrecomputeContract, Spec.Ffdh.generationPrecomputeSig,
+    abi, argRegs, reduceClassify, Loc.val, State.addr] at pre
+  simp only [show ∀ (K : List (String × List (BitVec 64))) (s : State) (i : Nat), stackArg (stripConsts K s) i = stackArg s i by intros; rfl] at pre
+  simp only [show ∀ (K : List (String × List (BitVec 64))) (s : State) (i : Nat), stackArgAddr (stripConsts K s) i = stackArgAddr s i by intros; rfl] at pre
+  obtain ⟨stackFit,argFit,rd,wr,outDom,outWs,outArgs,domWs,wsArgs,
+    stackOut,stackDom,stackWs,stackArgs,outFit,domFit,wsFit,_,_,ctxLen,_,valid⟩ := pre
+  have rdFull : s.rd = [⟨BitVec.setWidth 64 (s.gpr .r2),(s.gpr .r3).toNat⟩,⟨stackArgAddr s 0,12⟩] ++ constRegs VG.Impl.Ffdh.Arm.VettedGroups.tableConsts s := by
+    have drop : s.rd.drop (s.rd.length - 1) = constRegs VG.Impl.Ffdh.Arm.VettedGroups.tableConsts s := hc.1
+    rw [←List.take_append_drop (s.rd.length - 1) s.rd,drop]
+    exact congrArg (· ++ constRegs VG.Impl.Ffdh.Arm.VettedGroups.tableConsts s) rd
+  clear rd
+  have rd := rdFull
+  have domLen : (s.gpr .r3).toNat = p.dom.length := by
+    have eq := congrArg List.length domainBytes
+    simpa only [VG.Proof.Bignum.bytesAt_length] using eq
+  rw [count] at ctxLen valid
+  simp only [output,ctxLen,domain,domLen,base,capacity,Nat.mul_comm p.len 8] at rd wr outDom outWs outArgs domWs wsArgs stackOut stackDom stackWs outFit domFit wsFit
+  rw [domain] at valid
+  change Spec.Ffdh.domainValid p.k (Spec.Rsa.bytesAt s.mem (State.addr p.domain) (s.gpr .r3).toNat) = true at valid
+  rw [domainBytes] at valid
+  have bytes : Spec.Ffdh.generationPrecomputedWords p.k * 8 = CombBuilder.bytes p := by simp [CombBuilder.bytes,Nat.mul_comm]
+  rw [bytes] at wr outDom outWs outArgs stackOut outFit
+  have reserved : (⟨State.addr s.sp - BitVec.ofNat 64 176,176⟩ : Region) = belowA s.sp 176 := by
+    rw [belowA,addr_sub' stackFit]
+  simp only [State.addr] at reserved
+  rw [reserved] at stackOut stackDom stackWs stackArgs
+  have inner : (belowA s.sp 128).Sub (belowA s.sp 176) := belowA_sub (by decide) stackFit
+  have fit128 : 128 ≤ s.sp.toNat := by omega_using [stackFit]
+  have ws : Workspace s p.base (8*p.len) := ⟨wsFit,by rw [wr]; simp [State.addr]⟩
+  have domRead : InRegions (s.rd ++ s.wr) (State.addr p.domain) p.dom.length :=
+    ⟨_,List.mem_append_left _ (by rw [rd]; simp [State.addr]),Region.contains_self _ _⟩
+  have domOctets : Octets p.base p.domain p.len p.dom s :=
+    ⟨domFit,domRead,domWs,by rw [←domLen]; exact domainBytes⟩
+  have args : ArgumentMemory p [] (entered s) :=
+    ⟨entered_workspace ws,entered_locals s fit128 (stackWs.sub_left inner),
+      entered_octets domOctets fit128 (stackDom.sub_left inner),
+      stackDom.symm.sub_right (fun a h => inner a (locals_sub_reserved s fit128 a h)),by simp⟩
+  have outSize : p.k ≤ CombBuilder.bytes p := by
+    have small := p.width.2.2.2.1
+    change p.k ≤ 8 * p.w at small
+    simp only [CombBuilder.bytes,Spec.Ffdh.generationPrecomputedWords,Spec.Rsa.FixedBaseComb.precomputedWords,Spec.Rsa.precomputedWords,Spec.Rsa.FixedBaseComb.entries]
+    change p.k ≤ 8 * (3 + (2*p.w + 32*p.w))
+    omega_using [small]
+  have outSub : (⟨State.addr p.output,p.k⟩ : Region).Sub ⟨State.addr p.output,CombBuilder.bytes p⟩ := by
+    simpa only [off,BitVec.add_zero] using
+      (Offset.sub_base (State.addr p.output) (d := 0) (n := p.k) (k := CombBuilder.bytes p) (by omega_using [outSize]))
+  have callSep : (⟨State.addr p.output,CombBuilder.bytes p⟩ : Region).Disjoint (belowA (entered s).sp 48) := by
+    rw [entered_sp]
+    exact stackOut.symm.sub_right (belowA_inner (a := 48) (k := 128) (by decide) stackFit)
+  have calls : KeyCallMemory p (entered s) := KeyCallMemory.of_outer stackFit (entered_sp s) stackWs stackDom.symm
+    (by rw [privateAlias]; exact (stackOut.symm.sub_left outSub))
+    (by rw [publicAlias]; exact (stackOut.symm.sub_left outSub))
+    (by rw [entropyAlias]; exact (stackOut.symm.sub_left outSub))
+    (by rw [privateAlias]; omega_using [outFit, outSize])
+  have incoming (i : Nat) (hi : i < 3) : IncomingWord (stackArg s i) (128+4*i) (entered s) := by
+    have start : stackArgAddr s 0 = State.addr s.sp := by simp [stackArgAddr]
+    have addr : stackArgAddr s i = off (State.addr s.sp) (4*i) := addr_add (by omega_using [argFit, hi])
+    have sub : (⟨stackArgAddr s i,4⟩ : Region).Sub ⟨stackArgAddr s 0,12⟩ := by
+      rw [start,addr]; exact Offset.sub_base _ (by omega_using [hi])
+    refine enteredIncoming s fit128 (by omega_using [argFit, hi]) ?_ (stackArgs.sub_left inner |>.sub_right sub) rfl
+    refine ⟨⟨stackArgAddr s 0,12⟩,List.mem_append_left _ (by rw [rd]; simp),?_⟩
+    rw [start,addr]; exact Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])
+  refine ⟨stackFit,args,?_,?_,output,domain,?_,calls,?_,outWs.symm,outDom.symm,?_,callSep,valid,environment,?_⟩
+  · have h := incoming 0 (by decide)
+    have eq : stackArg s 0 = BitVec.ofNat 32 p.k := by rw [←count,BitVec.ofNat_toNat,BitVec.setWidth_eq]
+    simpa only [Nat.mul_zero,Nat.add_zero,eq] using h
+  · simpa only [Nat.mul_one,base] using incoming 1 (by decide)
+  · rw [←domLen,BitVec.ofNat_toNat,BitVec.setWidth_eq]
+  · refine ⟨outFit,?_⟩
+    exact ⟨_,List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (by rw [wr]; simp [State.addr])),Region.contains_self _ _⟩
+  · exact stackOut.sub_left (fun a h => inner a (locals_sub_reserved s fit128 a h))
+  · intro r hr
+    simp only [combPrecomputeWrites,List.mem_cons,List.not_mem_nil,or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl
+    · exact stackWs.sub_left (fun a h => inner a (saved_sub_reserved s fit128 a h))
+    · exact stackOut.sub_left (fun a h => inner a (saved_sub_reserved s fit128 a h))
+    · exact saved_separate_locals s fit128
+    · have shifted : (pcPushed s).sp = (entered s).sp + BitVec.ofNat 32 72 := (BitVec.sub_add_cancel _ _).symm
+      have fit : (entered s).sp.toNat + 72 < 2^32 := by rw [entered_nat s fit128]; have := s.sp.isLt; omega_using []
+      rw [shifted,VG.Arm.addr_add fit,belowA,addr_sub' calls.stack.fit]
+      exact (Offset.disjoint_below_above _ (m:=48) (a:=72) (l:=56) (by decide)).symm
+
+
+end VG.Proof.Ffdh.Arm
+
+end
+
+end
 
 /-! ### `Ffdh.Arm.CombPrecomputeTable`, which only this module used -/
 
@@ -395,7 +771,7 @@ theorem combPrecomputeEntered_ok (backend : MontBackend) (s : State) {p : Inputs
     (h : CombPrecomputeFnInput p s) :
     WP isa (.seq (.block VG.Impl.Ffdh.Arm.CombPrecompute.entry)
       (VG.Impl.Ffdh.Arm.CombPrecompute.main
-        (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul) VG.Proof.Ffdh.Arm.VettedBound.code))
+        (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul) backend.dbl VG.Proof.Ffdh.Arm.VettedBound.code))
       (entered s) fun t =>
       Frame (combPrecomputeWrites p (entered s)) (entered s).mem t.mem ∧ t.gpr .r0=1 ∧
       Spec.Ffdh.generationPrecompute p.k p.dom=
@@ -471,14 +847,23 @@ theorem combPrecomputeEntered_ok (backend : MontBackend) (s : State) {p : Inputs
 theorem combPrecomputeFn_ok (backend : MontBackend) (s : State) {p : Inputs}
     (h : CombPrecomputeFnInput p s) :
     WP isa (VG.Impl.Ffdh.Arm.CombPrecompute.code
-      (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul) VG.Proof.Ffdh.Arm.VettedBound.code) s fun t =>
+      (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul) backend.dbl VG.Proof.Ffdh.Arm.VettedBound.code) s fun t =>
       abiPreserved s t ∧ t.gpr .r0=1 ∧ Spec.Ffdh.generationPrecompute p.k p.dom=
         some (Spec.Rsa.wordsAt t.mem (State.addr p.output) (Spec.Ffdh.generationPrecomputedWords p.k)) := by
   unfold VG.Impl.Ffdh.Arm.CombPrecompute.code
   refine framed_of_separate _ s (by have := h.stackFits;omega) (combPrecomputeWrites p (entered s))
     (fun mem status => status=1 ∧ Spec.Ffdh.generationPrecompute p.k p.dom=
-      some (Spec.Rsa.wordsAt mem (State.addr p.output) (Spec.Ffdh.generationPrecomputedWords p.k))) h.saved ?_
-  exact combPrecomputeEntered_ok backend s h
+      some (Spec.Rsa.wordsAt mem (State.addr p.output) (Spec.Ffdh.generationPrecomputedWords p.k))) h.saved ?_ ?_
+  · exact combPrecomputeEntered_ok backend s h
+  · intro m₁ m₂ v hf ⟨hv, he⟩
+    refine ⟨hv, ?_⟩
+    rw [VG.Proof.Rsa.wordsAt_frame hf (by have := h.output.fits; change bytes p < 2 ^ 64; omega_using [this]) ?_]
+    · exact he
+    · intro r hr
+      simp only [released, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact (h.saved _ (List.mem_cons_of_mem _ List.mem_cons_self)).symm
+      · exact h.localSeparate.symm
 
 end VG.Proof.Ffdh.Arm
 end
@@ -498,7 +883,7 @@ open VG.Impl.Ffdh.Arm.VettedGroups (tableConsts)
 theorem combPrecompute_correct (backend : MontBackend) (s : State)
     (pre : (Spec.Ffdh.generationPrecomputeContract (abi.withConsts tableConsts) 176).pre s) :
     ∃ tr t, Exec isa (VG.Impl.Ffdh.Arm.CombPrecompute.code
-      (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul) VettedBound.code) s tr t ∧
+      (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul) backend.dbl VettedBound.code) s tr t ∧
       abiPreserved s t ∧
       (Spec.Ffdh.generationPrecomputeContract (abi.withConsts tableConsts) 176).post s t := by
   obtain ⟨p,_base,output,domain,count,_capacity,domainBytes,ctxLen,_private,_public,_entropy,input⟩ :=
@@ -526,11 +911,11 @@ theorem combPrecomputeFn_ct (backend : MontBackend) {p : Inputs}
       RelCT isa (fun s t=>CombBuilder.EnterInput p sp s ∧ CombBuilder.EnterInput p sp t ∧
         VettedGroups.environment.publicRel s t ∧ s.sp=t.sp)
         (VG.Impl.Ffdh.Arm.CombPrecompute.main
-          (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul) VettedBound.code) (fun _ _=>True)) :
+          (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul) backend.dbl VettedBound.code) (fun _ _=>True)) :
     RelCT isa (fun s t => CombPrecomputeFnInput p s ∧ CombPrecomputeFnInput p t ∧
       VettedGroups.environment.publicRel s t ∧ s.sp=t.sp)
       (VG.Impl.Ffdh.Arm.CombPrecompute.code
-        (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul) VettedBound.code) (fun _ _=>True) := by
+        (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul) backend.dbl VettedBound.code) (fun _ _=>True) := by
   let P := fun a : State => ∃s,CombPrecomputeFnInput p s ∧ a=entered s
   let Q := fun a : State => ∃sp,CombBuilder.EnterInput p sp a
   have wp (a : State) (h : P a) : WP isa (.block VG.Impl.Ffdh.Arm.CombPrecompute.entry) a Q := by
@@ -558,7 +943,7 @@ theorem combPrecomputeFn_ct (backend : MontBackend) {p : Inputs}
   have body : RelCT isa (fun s t=>P s ∧ P t ∧ VettedGroups.environment.publicRel s t ∧ s.sp=t.sp)
       (.seq (.block VG.Impl.Ffdh.Arm.CombPrecompute.entry)
         (VG.Impl.Ffdh.Arm.CombPrecompute.main
-          (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul) VettedBound.code)) (fun _ _=>True) := by
+          (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul) backend.dbl VettedBound.code)) (fun _ _=>True) := by
     refine (entry.wp (fun s t h=>⟨wp s h.1,wp t h.2.1⟩)).seq ?_
     intro s t tr1 tr2 u v ⟨⟨pubEq,sp⟩,⟨sp1,h1⟩,⟨sp2,h2⟩⟩ e1 e2
     have eq : sp1=sp2 := h1.fixed.symm.trans (sp.trans h2.fixed)
@@ -592,11 +977,11 @@ theorem combPrecompute_contract_ct (backend : MontBackend)
       RelCT isa (fun s t=>CombBuilder.EnterInput p sp s ∧ CombBuilder.EnterInput p sp t ∧
         VettedGroups.environment.publicRel s t ∧ s.sp=t.sp)
         (VG.Impl.Ffdh.Arm.CombPrecompute.main
-          (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul) VettedBound.code) (fun _ _=>True)) :
+          (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul) backend.dbl VettedBound.code) (fun _ _=>True)) :
     ConstantTime isa (Spec.Ffdh.generationPrecomputeContract (abi.withConsts tableConsts) 176).pre
       (Spec.Ffdh.generationPrecomputeContract (abi.withConsts tableConsts) 176).pub
       (VG.Impl.Ffdh.Arm.CombPrecompute.code
-        (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul) VettedBound.code) := by
+        (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul) backend.dbl VettedBound.code) := by
   intro s t tr1 tr2 u v hs ht hp e1 e2
   obtain ⟨p,base,output,domain,count,capacity,domainBytes,_words,privateAlias,publicAlias,entropyAlias,inputS⟩ :=
     combPrecompute_data s hs
@@ -631,7 +1016,7 @@ open VG.Impl.Ffdh.Arm.VettedGroups (tableConsts)
 
 theorem combPrecompute_verified (backend : MontBackend) :
     Verified target (VG.Impl.Ffdh.Arm.CombPrecompute.code
-      (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul) VettedBound.code)
+      (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul) backend.dbl VettedBound.code)
       (Spec.Ffdh.generationPrecomputeContract (abi.withConsts tableConsts) 176) :=
   ⟨combPrecompute_correct backend,
     combPrecompute_contract_ct backend (CombBuilder.main_ct backend),combPrecompute_sat⟩
@@ -639,7 +1024,7 @@ theorem combPrecompute_verified (backend : MontBackend) :
 /-- The caller transform is part of the registered initializer. -/
 def combPrecomputeCalledCode (backend : MontBackend) : Prog isa :=
   backend.caller.code (VG.Impl.Ffdh.Arm.CombPrecompute.code
-    (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul) VettedBound.code)
+    (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul) backend.dbl VettedBound.code)
 
 theorem combPrecomputeCalled_verified (backend : MontBackend) :
     Verified target (combPrecomputeCalledCode backend)

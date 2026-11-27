@@ -2,14 +2,15 @@ module
 
 public import VerifiedGarbage.Spec.Rsa.Contract
 public import VerifiedGarbage.Spec.Rsa.RecoverDet
-public import VerifiedGarbage.Spec.RsaKeyGen.KeySearchContract
+public import VerifiedGarbage.Proof.RsaKeyGen.KeySearchPublic
 public import VerifiedGarbage.Spec.RsaOaep.MdTables
-public import VerifiedGarbage.Spec.RsaPkcs1Enc.Random
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.RandomPublic
 public import VerifiedGarbage.Spec.RsaPkcs1Sig.Precomputed
 public import VerifiedGarbage.Spec.RsaPss.MdTable
 public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
 import VerifiedGarbage.Proof.Ffdh.X86_64.Scrub
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.ForallLength
 
 /-!
 # RSA's public-key, key-checking and key-generation functions on x86-64, without secret residue
@@ -21,7 +22,7 @@ at all, the others the octets at `out` (or the key's buffer, or `p` and
 `q`, or `dp`, `dq` and `qinv`), the words at `pre`, and the words of `tape`,
 `used` and `state` (`Ffdh.X86_64.Scrub.bytesAt_of`, `wordsAt_of`). Each
 implementation returns with its whole stack wiped
-(`X86_64.Scrub.withScrubAll` and the routes built on it).
+(`Impl.Scrub.X86_64.scrubAll` and the routes built on it).
 -/
 
 @[expose] public section
@@ -85,8 +86,9 @@ theorem publicPrecomputeOut (stack : Nat) :
 
 theorem crtValuesOut (stack : Nat) :
     PostOut (Spec.Rsa.crtValuesContract abi stack) (Spec.Rsa.crtValuesSig.retBits 64) :=
-  postOut_of_local_pre (leak := some _) ScrubAbi.plain fun
-    | [dp, dpLen, dq, dqLen, qinv, qinvLen, _, _, _, pLen, _, qLen, _, _, _, _], m, m₁, m₂, r, _, hp, hb, h => by
+  postOut_of_local_pre (leak := some _) ScrubAbi.plain fun vs m m₁ m₂ r hl => by
+      revert vs; refine forall_length (n := 16) ?_
+      intro dp dpLen dq dqLen qinv qinvLen _ _ _ pLen _ qLen _ _ _ _ hp hb h
       simp only [Spec.Rsa.crtValuesSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
         forall_eq_or_imp, forall_eq, Elem.size] at hb
       change @Curry.apply (Mem → Prop) [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _] _ _ m at hp
@@ -111,8 +113,9 @@ theorem crtValuesOut (stack : Nat) :
 
 theorem checkKeyOut (stack : Nat) :
     PostOut (Spec.Rsa.checkKeyContract abi stack) (Spec.Rsa.checkKeySig.retBits 64) :=
-  postOut_of_local (leak := some _) ScrubAbi.plain fun
-    | [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _], _, _, _, _, _, _, h => h
+  postOut_of_local (leak := some _) ScrubAbi.plain fun vs _ _ _ _ hl => by
+      revert vs; refine forall_length (n := 18) ?_
+      intro _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ h; exact h
 
 theorem recoverPrimesDetOut (stack : Nat) :
     PostOut (Spec.Rsa.recoverPrimesDetContract abi stack) (Spec.Rsa.recoverPrimesDetSig.retBits 64) :=
@@ -151,7 +154,7 @@ theorem bytesAt48_of {m₁ m₂ : Mem} {o : Addr}
   exact (h _ (contains_of (by omega))).symm
 
 theorem keySearchOut (stack : Nat) :
-    PostOut (Spec.RsaKeyGen.keySearchContract abi stack) (Spec.RsaKeyGen.keySearchSig.retBits 64) :=
+    PostOut (Proof.RsaKeyGen.keySearchAskedContract abi stack) (Spec.RsaKeyGen.keySearchSig.retBits 64) :=
   postOut_of_local_pre (leak := some _) ScrubAbi.plain fun
     | [key, keyLen, used, _, _, _, _, state], m, m₁, m₂, r, _, hp, hb, h => by
       simp only [Spec.RsaKeyGen.keySearchSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
@@ -172,8 +175,9 @@ theorem oaepEncryptOut (ts : List FnTable) (stack : Nat) :
     PostOut (Spec.RsaOaep.encryptMdTablesContract
         (abi.withTables Spec.RsaOaep.encryptMdTablesSig [("hash", ts), ("mgf1", ts)]) stack)
       (Spec.RsaOaep.encryptMdTablesSig.retBits 64) :=
-  postOut_of_local_pre_len (leak := some _) (ScrubAbi.plain.tables _ _) 18 rfl fun
-    | [out, outLen, _, nLen, _, _, _, _, _, _, _, _, _, _, _, _, _, _], m, m₁, m₂, r, _, hp, hb, h => by
+  postOut_of_local_pre_len (leak := some _) (ScrubAbi.plain.tables _ _) 18 rfl fun vs m m₁ m₂ r hl => by
+      revert vs; refine forall_length (n := 18) ?_
+      intro out outLen _ nLen _ _ _ _ _ _ _ _ _ _ _ _ _ _ hp hb h
       simp only [Spec.RsaOaep.encryptMdTablesSig, Sig.bufs, List.mem_cons, forall_eq_or_imp, Elem.size] at hb
       change @Curry.apply (Mem → Prop) [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _] _ _ m at hp
       change @Curry.apply (Mem → Mem → BitVec _ → Prop) [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _] _ _ _ m₁ r at h
@@ -192,9 +196,10 @@ theorem writtenRandom_of {m₁ m₂ : Mem} {o : Addr} {n : Nat} {r : BitVec 32} 
   cases v <;> simpa only [Spec.RsaPkcs1Enc.writtenRandom, e] using h
 
 theorem pkcs1EncryptRandomOut (stack : Nat) :
-    PostOut (Spec.RsaPkcs1Enc.encryptRandomContract abi stack) (Spec.RsaPkcs1Enc.encryptRandomSig.retBits 64) :=
-  postOut_of_local_pre (leak := some _) ScrubAbi.plain fun
-    | [out, outLen, tape, _, _, _, _, _, _, _, _, _, _, _, _], m, m₁, m₂, r, _, hp, hb, h => by
+    PostOut (Proof.RsaPkcs1Enc.encryptRandomAskedContract abi stack) (Spec.RsaPkcs1Enc.encryptRandomSig.retBits 64) :=
+  postOut_of_local_pre (leak := some _) ScrubAbi.plain fun vs m m₁ m₂ r hl => by
+      revert vs; refine forall_length (n := 15) ?_
+      intro out outLen tape _ _ _ _ _ _ _ _ _ _ _ _ hp hb h
       simp only [Spec.RsaPkcs1Enc.encryptRandomSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
         forall_eq_or_imp, forall_eq, Elem.size] at hb
       change @Curry.apply (Mem → Prop) [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _] _ _ m at hp
@@ -239,7 +244,8 @@ theorem pssVerifyOut (tsH tsG : List FnTable) (stack : Nat) :
     PostOut (Spec.RsaPss.verifyPrecomputedMdTableContract
         (abi.withTables Spec.RsaPss.verifyPrecomputedMdTableSig [("hash", tsH), ("mgf1", tsG)]) stack)
       (Spec.RsaPss.verifyPrecomputedMdTableSig.retBits 64) :=
-  postOut_of_local_len (leak := some _) (ScrubAbi.plain.tables _ _) 16 rfl fun
-    | [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _], _, _, _, _, _, _, h => h
+  postOut_of_local_len (leak := some _) (ScrubAbi.plain.tables _ _) 16 rfl fun vs _ _ _ _ hl => by
+      revert vs; refine forall_length (n := 16) ?_
+      intro _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ h; exact h
 
 end VG.Proof.Rsa.X86_64.Scrub

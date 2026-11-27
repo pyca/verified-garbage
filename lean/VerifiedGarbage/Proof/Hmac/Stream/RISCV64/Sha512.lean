@@ -9,9 +9,7 @@ meta import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Sha512Family
 public import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Shared
 meta import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Shared
 meta import VerifiedGarbage.Proof.Sha512.RISCV64.Stream.Finalize
-meta import VerifiedGarbage.Proof.Sha512.RISCV64.Stream.Init
 public import VerifiedGarbage.Proof.Sha512.RISCV64.Stream.Finalize
-public import VerifiedGarbage.Proof.Sha512.RISCV64.Stream.Init
 public import VerifiedGarbage.Proof.MdStream.RISCV64.Digest
 meta import VerifiedGarbage.Proof.MdStream.RISCV64.Digest
 
@@ -32,9 +30,7 @@ open VG.RISCV64
 open VG.Impl.Hmac.Stream.RISCV64 (Hash)
 
 /-- SHA-512's streaming functions. -/
-def hash : Hash :=
-  Sha512Family.hash Spec.Sha512.H0_512 64 Spec.Sha512.init512Api.name Spec.Sha512.finalizeApi.name
-    Impl.Sha512.RISCV64.Stream.finalize
+abbrev hash : Hash := Impl.Sha512.RISCV64.Fn.hash512
 
 theorem finSd : sdepth Impl.Sha512.RISCV64.Stream.finalize ≤ 208 := by decide +kernel
 

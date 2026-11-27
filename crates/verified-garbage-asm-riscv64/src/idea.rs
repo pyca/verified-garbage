@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Idea.expandKeyContract`. Constant time: only pointers may affect timing, not the key.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `key` must be valid for reads of 16 bytes.
@@ -18,7 +20,7 @@ pub(crate) unsafe extern "C" fn vg_idea_expand_key(key: *const [u8; 16], schedul
     core::arch::naked_asm!(
         r#".option push
 .option arch, +m, +c
-.base64 "A0YFACIGg0IVADNmVgAiBoNCJQAzZlYAIgaDQjUAM2ZWACIGg0JFADNmVgAiBoNCVQAzZlYAIgaDQmUAM2ZWACIGg0J1ADNmVgCDRoUAogaDQpUAs+ZWAKIGg0KlALPmVgCiBoNCtQCz5lYAogaDQsUAs+ZWAKIGg0LVALPmVgCiBoNC5QCz5lYAogaDQvUAs+ZWAJNSBgMjgFUAk9KCAKOAVQCTUgYCI4FVAJPSggCjgVUAk1IGASOCVQCT0oIAo4JVAJNSBgAjg1UAk9KCAKODVQCT0gYDI4RVAJPSggCjhFUAk9IGAiOFVQCT0oIAo4VVAJPSBgEjhlUAk9KCAKOGVQCT0gYAI4dVAJPSggCjh1UAk1J2AhPTdgJmBuYGM2ZmALPmVgCTUgYDI4hVAJPSggCjiFUAk1IGAiOJVQCT0oIAo4lVAJNSBgEjilUAk9KCAKOKVQCTUgYAI4tVAJPSggCji1UAk9IGAyOMVQCT0oIAo4xVAJPSBgIjjVUAk9KCAKONVQCT0gYBI45VAJPSggCjjlUAk9IGACOPVQCT0oIAo49VAJNSdgIT03YCZgbmBjNmZgCz5lYAk1IGAyOAVQKT0oIAo4BVApNSBgIjgVUCk9KCAKOBVQKTUgYBI4JVApPSggCjglUCk1IGACODVQKT0oIAo4NVApPSBgMjhFUCk9KCAKOEVQKT0gYCI4VVApPSggCjhVUCk9IGASOGVQKT0oIAo4ZVApPSBgAjh1UCk9KCAKOHVQKTUnYCE9N2AmYG5gYzZmYAs+ZWAJNSBgMjiFUCk9KCAKOIVQKTUgYCI4lVApPSggCjiVUCk1IGASOKVQKT0oIAo4pVApNSBgAji1UCk9KCAKOLVQKT0gYDI4xVApPSggCjjFUCk9IGAiONVQKT0oIAo41VApPSBgEjjlUCk9KCAKOOVQKT0gYAI49VApPSggCjj1UCk1J2AhPTdgJmBuYGM2ZmALPmVgCTUgYDI4BVBJPSggCjgFUEk1IGAiOBVQST0oIAo4FVBJNSBgEjglUEk9KCAKOCVQSTUgYAI4NVBJPSggCjg1UEk9IGAyOEVQST0oIAo4RVBJPSBgIjhVUEk9KCAKOFVQST0gYBI4ZVBJPSggCjhlUEk9IGACOHVQST0oIAo4dVBJNSdgIT03YCZgbmBjNmZgCz5lYAk1IGAyOIVQST0oIAo4hVBJNSBgIjiVUEk9KCAKOJVQSTUgYBI4pVBJPSggCjilUEk1IGACOLVQST0oIAo4tVBJPSBgMjjFUEk9KCAKOMVQST0gYCI41VBJPSggCjjVUEk9IGASOOVQST0oIAo45VBJPSBgAjj1UEk9KCAKOPVQSTUnYCE9N2AmYG5gYzZmYAs+ZWAJNSBgMjgFUGk9KCAKOAVQaTUgYCI4FVBpPSggCjgVUGk1IGASOCVQaT0oIAo4JVBpNSBgAjg1UGk9KCAKODVQaCgA=="
+.base64 "A0YFACIGg0IVADNmVgAiBoNCJQAzZlYAIgaDQjUAM2ZWACIGg0JFADNmVgAiBoNCVQAzZlYAIgaDQmUAM2ZWACIGg0J1ADNmVgCDRoUAogaDQpUAs+ZWAKIGg0KlALPmVgCiBoNCtQCz5lYAogaDQsUAs+ZWAKIGg0LVALPmVgCiBoNC5QCz5lYAogaDQvUAs+ZWAJNSBgMjgFUAk9KCAKOAVQCTUgYCI4FVAJPSggCjgVUAk1IGASOCVQCT0oIAo4JVAJNSBgAjg1UAk9KCAKODVQCT0gYDI4RVAJPSggCjhFUAk9IGAiOFVQCT0oIAo4VVAJPSBgEjhlUAk9KCAKOGVQCT0gYAI4dVAJPSggCjh1UAk1J2AhPTdgJmBuYGM2ZmALPmVgCTUgYDI4hVAJPSggCjiFUAk1IGAiOJVQCT0oIAo4lVAJNSBgEjilUAk9KCAKOKVQCTUgYAI4tVAJPSggCji1UAk9IGAyOMVQCT0oIAo4xVAJPSBgIjjVUAk9KCAKONVQCT0gYBI45VAJPSggCjjlUAk9IGACOPVQCT0oIAo49VAJNSdgIT03YCZgbmBjNmZgCz5lYAk1IGAyOAVQKT0oIAo4BVApNSBgIjgVUCk9KCAKOBVQKTUgYBI4JVApPSggCjglUCk1IGACODVQKT0oIAo4NVApPSBgMjhFUCk9KCAKOEVQKT0gYCI4VVApPSggCjhVUCk9IGASOGVQKT0oIAo4ZVApPSBgAjh1UCk9KCAKOHVQKTUnYCE9N2AmYG5gYzZmYAs+ZWAJNSBgMjiFUCk9KCAKOIVQKTUgYCI4lVApPSggCjiVUCk1IGASOKVQKT0oIAo4pVApNSBgAji1UCk9KCAKOLVQKT0gYDI4xVApPSggCjjFUCk9IGAiONVQKT0oIAo41VApPSBgEjjlUCk9KCAKOOVQKT0gYAI49VApPSggCjj1UCk1J2AhPTdgJmBuYGM2ZmALPmVgCTUgYDI4BVBJPSggCjgFUEk1IGAiOBVQST0oIAo4FVBJNSBgEjglUEk9KCAKOCVQSTUgYAI4NVBJPSggCjg1UEk9IGAyOEVQST0oIAo4RVBJPSBgIjhVUEk9KCAKOFVQST0gYBI4ZVBJPSggCjhlUEk9IGACOHVQST0oIAo4dVBJNSdgIT03YCZgbmBjNmZgCz5lYAk1IGAyOIVQST0oIAo4hVBJNSBgIjiVUEk9KCAKOJVQSTUgYBI4pVBJPSggCjilUEk1IGACOLVQST0oIAo4tVBJPSBgMjjFUEk9KCAKOMVQST0gYCI41VBJPSggCjjVUEk9IGASOOVQST0oIAo45VBJPSBgAjj1UEk9KCAKOPVQSTUnYCE9N2AmYG5gYzZmYAs+ZWAJNSBgMjgFUGk9KCAKOAVQaTUgYCI4FVBpPSggCjgVUGk1IGASOCVQaT0oIAo4JVBpNSBgAjg1UGk9KCAKODVQaBQgFFgUUBRoFGAUeBRwFIgUiBQgFDgUMBToFOAU+BT4KA"
 .option pop"#,
     )
 }
@@ -26,6 +28,8 @@ pub(crate) unsafe extern "C" fn vg_idea_expand_key(key: *const [u8; 16], schedul
 /// IDEA decryption key schedule (Lai, 1992, §3.3): writes to `*inverse` the 52 decryption subkeys of the 52 encryption subkeys at `schedule` (both as little-endian 16-bit words, as `vg_idea_expand_key` writes them): the multiplicative inverses modulo 2^16 + 1 (with 0 standing for 2^16), additive inverses modulo 2^16 and copies of the encryption subkeys, in reverse round order.
 ///
 /// Contract: `VG.Spec.Idea.invertKeyContract`. Constant time: only pointers may affect timing, not the subkeys, including those that are 0 or 1.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -110,7 +114,7 @@ bnez a2, 216b
 217:
 .base64 "uoI6g/0Ss/JyAIUCfRMzc3MABQOzgmICM/NyAJPSAgEzA1NAk1LzAxaTwgIWkzNzcwCagjaD/RKz8nIAhQJ9EzNzcwAFA7OCYgIz83IAk9ICATMDU0CTUvMDFpPCAhaTM3NzABqHfRY="
 bnez a2, 217b
-.base64 "OoMjg2UGE1ODAKODZQaCgA=="
+.base64 "OoMjg2UGE1ODAKODZQaBQgFFgUUBRoFGAUeBRwFIgUiBQgFDgUMBToFOAU+BT4KA"
 .option pop"#,
     )
 }
@@ -118,6 +122,8 @@ bnez a2, 217b
 /// IDEA in ECB mode (Lai, 1992, §3.3; SP 800-38A §6.1) on `n` complete 8-byte blocks at `data`, in place, under the 52 subkeys at `schedule`: encryption under the subkeys `vg_idea_expand_key` writes, decryption under those `vg_idea_invert_key` writes. No padding is added or removed. For `n = 0`, no data is transformed.
 ///
 /// Contract: `VG.Spec.Idea.ecbContract`. Constant time: only pointers and `n` may affect timing, not the subkeys or data, including words or subkeys that are 0.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -138,7 +144,7 @@ bnez a2, 22b
 j 21f
 20:
 21:
-.base64 "goA="
+.base64 "gUIBRYFFAUaBRgFHgUcBSIFIgUIBQ4FDAU6BTgFPgU+CgA=="
 .option pop"#,
     )
 }

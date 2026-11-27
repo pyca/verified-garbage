@@ -83,7 +83,7 @@ namespace VG.Impl.AesCcm.X86_64
 
 open VG.X86_64
 open VG.Impl.Aes.X86_64 (Ctr32)
-open VG.Impl.AesGcm.X86_64 (at_ imm ptr copyLoop xorLoop minLen recv cmp maskTail)
+open VG.Impl.AesGcm.X86_64 (at_ imm ptr copyLoop copyTag xorLoop minLen recv cmp maskTail)
 
 /-! ## The working space -/
 
@@ -277,7 +277,7 @@ def entry : List Instr :=
 /-- The first `tag_len` bytes of the tag at `W` copied to `tag`, whose
 address is at `[rsp + 24]`. -/
 def tagOut : Prog isa :=
-  .seq (.block [.mov .rdi (.mem (at_ .rsp 24)), .mov .rsi (.reg .r15), .mov .rcx (.mem (at_ .r15 tlO))]) copyLoop
+  .seq (.block [.mov .rdi (.mem (at_ .rsp 24)), .mov .rsi (.reg .r15), .mov .rcx (.mem (at_ .r15 tlO))]) copyTag
 
 /-- `seal` after its entry, up to the tag: `Ctr₀`, the MAC and the tag at
 `W`, and the payload encrypted. -/

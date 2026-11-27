@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.EcKey.Instance.compressPublicKeyContract`. The input is public: timing may depend on the pointers and the contents of `public`.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety
@@ -38,7 +40,7 @@ call {vg_p256_add_mod_p}
 call {vg_p256_add_mod_p}
 .base64 "WFhYWLiABQAAueAEAAC6YAUAAFBRUlc="
 call {vg_p256_sub_mod_p}
-.base64 "WFhYWIuXYAUAAAuXZAUAAAuXaAUAAAuXbAUAAAuXcAUAAAuXdAUAAAuXeAUAAAuXfAUAALkAAAAAKdEZ0oPy/4uHwAUAACHQiYfABQAAi4/ABQAAi4dAAQAAi5eABAAAMcIhyjHQiYcABQAAi4dEAQAAi5eEBAAAMcIhyjHQiYcEBQAAi4dIAQAAi5eIBAAAMcIhyjHQiYcIBQAAi4dMAQAAi5eMBAAAMcIhyjHQiYcMBQAAi4dQAQAAi5eQBAAAMcIhyjHQiYcQBQAAi4dUAQAAi5eUBAAAMcIhyjHQiYcUBQAAi4dYAQAAi5eYBAAAMcIhyjHQiYcYBQAAi4dcAQAAi5ecBAAAMcIhyjHQiYccBQAAi4dgAQAAi5egBAAAMcIhyjHQiYegBQAAi4dkAQAAi5ekBAAAMcIhyjHQiYekBQAAi4doAQAAi5eoBAAAMcIhyjHQiYeoBQAAi4dsAQAAi5esBAAAMcIhyjHQiYesBQAAi4dwAQAAi5ewBAAAMcIhyjHQiYewBQAAi4d0AQAAi5e0BAAAMcIhyjHQiYe0BQAAi4d4AQAAi5e4BAAAMcIhyjHQiYe4BQAAi4d8AQAAi5e8BAAAMcIhyjHQiYe8BQAAi4/ABQAAi1wkBIuHwAQAAIPgAYPIAiHIiAOLh2AEAAAhyA/IiUMdi4dkBAAAIcgPyIlDGYuHaAQAACHID8iJQxWLh2wEAAAhyA/IiUMRi4dwBAAAIcgPyIlDDYuHdAQAACHID8iJQwmLh3gEAAAhyA/IiUMFi4d8BAAAIcgPyIlDAYnIg+ABifqLGotyBItqDIt6CMM="
+.base64 "WFhYWIuXYAUAAAuXZAUAAAuXaAUAAAuXbAUAAAuXcAUAAAuXdAUAAAuXeAUAAAuXfAUAALkAAAAAKdEZ0oPy/4uHwAUAACHQiYfABQAAi4/ABQAAi4dAAQAAi5eABAAAMcIhyjHQiYcABQAAi4dEAQAAi5eEBAAAMcIhyjHQiYcEBQAAi4dIAQAAi5eIBAAAMcIhyjHQiYcIBQAAi4dMAQAAi5eMBAAAMcIhyjHQiYcMBQAAi4dQAQAAi5eQBAAAMcIhyjHQiYcQBQAAi4dUAQAAi5eUBAAAMcIhyjHQiYcUBQAAi4dYAQAAi5eYBAAAMcIhyjHQiYcYBQAAi4dcAQAAi5ecBAAAMcIhyjHQiYccBQAAi4dgAQAAi5egBAAAMcIhyjHQiYegBQAAi4dkAQAAi5ekBAAAMcIhyjHQiYekBQAAi4doAQAAi5eoBAAAMcIhyjHQiYeoBQAAi4dsAQAAi5esBAAAMcIhyjHQiYesBQAAi4dwAQAAi5ewBAAAMcIhyjHQiYewBQAAi4d0AQAAi5e0BAAAMcIhyjHQiYe0BQAAi4d4AQAAi5e4BAAAMcIhyjHQiYe4BQAAi4d8AQAAi5e8BAAAMcIhyjHQiYe8BQAAi4/ABQAAi1wkBIuHwAQAAIPgAYPIAiHIiAOLh2AEAAAhyA/IiUMdi4dkBAAAIcgPyIlDGYuHaAQAACHID8iJQxWLh2wEAAAhyA/IiUMRi4dwBAAAIcgPyIlDDYuHdAQAACHID8iJQwmLh3gEAAAhyA/IiUMFi4d8BAAAIcgPyIlDAYnIg+ABifqLGotyBItqDIt6CGYP78C5AAAAAI1kJOTzD38EJIlMJBCJTCQUiUwkGI1kJBy6AAAAADHJZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7//D"
 .p2align 6"#,
         vg_p256_mul_mod_p = sym super::ec_p256::vg_p256_mul_mod_p::vg_p256_mul_mod_p,
         vg_p256_add_mod_p = sym super::ec_p256::vg_p256_add_mod_p::vg_p256_add_mod_p,
@@ -49,6 +51,8 @@ call {vg_p256_sub_mod_p}
 /// Validate and decompress a P-256 public key (SEC 1 §2.3.4, SP 800-56A §5.6.2.3.3): reads `02` or `03` followed by `x` in 32 bytes, most significant first; checks `x` below the field prime and recovers a coordinate `y` satisfying the curve equation with even parity for `02`, odd for `03`. Writes `04` followed by `x` and `y` in 32 bytes each and returns 1. If no such finite point exists, writes 65 zero bytes and returns 0. Rejects infinity and hybrid encodings. The curve has cofactor one, so no subgroup multiplication is required.
 ///
 /// Contract: `VG.Spec.EcKey.Instance.decompressPublicKeyContract`. The input is public: timing may depend on the pointers and the contents of `public`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -75,18 +79,104 @@ call {vg_p256_mul_mod_p}
 call {vg_p256_add_mod_p}
 .base64 "WFhYWLhABQAAuQAFAAC6gAUAAFBRUlc="
 call {vg_p256_add_mod_p}
-.base64 "WFhYWLgAAAAAiYfAAQAAuAAAAACJh8QBAAC4AAAAQImHyAEAALgAAAAAiYfMAQAAuAAAAACJh9ABAAC4AAAAQImH1AEAALgAAADAiYfYAQAAuP///z+Jh9wBAAC+IAAAAA=="
+.base64 "WFhYWIuHgAUAAImH4AMAAIuHhAUAAImH5AMAAIuHiAUAAImH6AMAAIuHjAUAAImH7AMAAIuHkAUAAImH8AMAAIuHlAUAAImH9AMAAIuHmAUAAImH+AMAAIuHnAUAAImH/AMAAIuHgAUAAImHAAQAAIuHhAUAAImHBAQAAIuHiAUAAImHCAQAAIuHjAUAAImHDAQAAIuHkAUAAImHEAQAAIuHlAUAAImHFAQAAIuHmAUAAImHGAQAAIuHnAUAAImHHAQAAIuH4AMAAImHwAEAAIuH5AMAAImHxAEAAIuH6AMAAImHyAEAAIuH7AMAAImHzAEAAIuH8AMAAImH0AEAAIuH9AMAAImH1AEAAIuH+AMAAImH2AEAAIuH/AMAAImH3AEAAL4BAAAA"
 20:
-.base64 "g+4BifgB8A+2gMABAACJ8wHbAdsB2wH7icKD4gGIkwgSAACJwtHqg+IBiJMJEgAAicLB6gKD4gGIkwoSAACJwsHqA4PiAYiTCxIAAInCweoEg+IBiJMMEgAAicLB6gWD4gGIkw0SAACJwsHqBoPiAYiTDhIAAInCweoHg+IBiJMPEgAAhfY="
+.base64 "g+4BuOADAAC54AMAALrgAwAAUFFSVw=="
+call {vg_p256_mul_mod_p}
+.base64 "WFhYWIX2"
 jne 20b
-.base64 "i4fgAAAAiYfgAwAAi4fkAAAAiYfkAwAAi4foAAAAiYfoAwAAi4fsAAAAiYfsAwAAi4fwAAAAiYfwAwAAi4f0AAAAiYf0AwAAi4f4AAAAiYf4AwAAi4f8AAAAiYf8AwAAvgABAAA="
+.base64 "i4fgAwAAiYfgBAAAi4fkAwAAiYfkBAAAi4foAwAAiYfoBAAAi4fsAwAAiYfsBAAAi4fwAwAAiYfwBAAAi4f0AwAAiYf0BAAAi4f4AwAAiYf4BAAAi4f8AwAAiYf8BAAAuMABAAC54AMAALrgAwAAUFFSVw=="
+call {vg_p256_mul_mod_p}
+.base64 "WFhYWIuH4AMAAImH4AEAAIuH5AMAAImH5AEAAIuH6AMAAImH6AEAAIuH7AMAAImH7AEAAIuH8AMAAImH8AEAAIuH9AMAAImH9AEAAIuH+AMAAImH+AEAAIuH/AMAAImH/AEAALjgBAAAueADAAC64AMAAFBRUlc="
+call {vg_p256_mul_mod_p}
+.base64 "WFhYWIuH4AMAAImHIAMAAIuH5AMAAImHJAMAAIuH6AMAAImHKAMAAIuH7AMAAImHLAMAAIuH8AMAAImHMAMAAIuH9AMAAImHNAMAAIuH+AMAAImHOAMAAIuH/AMAAImHPAMAALjgBAAAueADAAC64AMAAFBRUlc="
+call {vg_p256_mul_mod_p}
+.base64 "WFhYWIuH4AMAAImHQAMAAIuH5AMAAImHRAMAAIuH6AMAAImHSAMAAIuH7AMAAImHTAMAAIuH8AMAAImHUAMAAIuH9AMAAImHVAMAAIuH+AMAAImHWAMAAIuH/AMAAImHXAMAALjgBAAAueADAAC64AMAAFBRUlc="
+call {vg_p256_mul_mod_p}
+.base64 "WFhYWIuH4AMAAImHYAMAAIuH5AMAAImHZAMAAIuH6AMAAImHaAMAAIuH7AMAAImHbAMAAIuH8AMAAImHcAMAAIuH9AMAAImHdAMAAIuH+AMAAImHeAMAAIuH/AMAAImHfAMAALjgBAAAueADAAC64AMAAFBRUlc="
+call {vg_p256_mul_mod_p}
+.base64 "WFhYWIuH4AMAAImHgAMAAIuH5AMAAImHhAMAAIuH6AMAAImHiAMAAIuH7AMAAImHjAMAAIuH8AMAAImHkAMAAIuH9AMAAImHlAMAAIuH+AMAAImHmAMAAIuH/AMAAImHnAMAALjgBAAAueADAAC64AMAAFBRUlc="
+call {vg_p256_mul_mod_p}
+.base64 "WFhYWIuH4AMAAImHoAMAAIuH5AMAAImHpAMAAIuH6AMAAImHqAMAAIuH7AMAAImHrAMAAIuH8AMAAImHsAMAAIuH9AMAAImHtAMAAIuH+AMAAImHuAMAAIuH/AMAAImHvAMAALjgBAAAueADAAC64AMAAFBRUlc="
+call {vg_p256_mul_mod_p}
+.base64 "WFhYWIuH4AMAAImHwAMAAIuH5AMAAImHxAMAAIuH6AMAAImHyAMAAIuH7AMAAImHzAMAAIuH8AMAAImH0AMAAIuH9AMAAImH1AMAAIuH+AMAAImH2AMAAIuH/AMAAImH3AMAAIuHwAMAAImH4AMAAIuHxAMAAImH5AMAAIuHyAMAAImH6AMAAIuHzAMAAImH7AMAAIuH0AMAAImH8AMAAIuH1AMAAImH9AMAAIuH2AMAAImH+AMAAIuH3AMAAImH/AMAAL4EAAAA"
 21:
 .base64 "g+4BuOADAAC54AMAALrgAwAAUFFSVw=="
 call {vg_p256_mul_mod_p}
-.base64 "WFhYWLiABQAAueADAAC6AAQAAFBRUlc="
-call {vg_p256_mul_mod_p}
-.base64 "WFhYWIn4AfAPtoAIEgAAuQAAAAApwYuH4AMAAIuXAAQAADHCIcox0ImH4AMAAIuH5AMAAIuXBAQAADHCIcox0ImH5AMAAIuH6AMAAIuXCAQAADHCIcox0ImH6AMAAIuH7AMAAIuXDAQAADHCIcox0ImH7AMAAIuH8AMAAIuXEAQAADHCIcox0ImH8AMAAIuH9AMAAIuXFAQAADHCIcox0ImH9AMAAIuH+AMAAIuXGAQAADHCIcox0ImH+AMAAIuH/AMAAIuXHAQAADHCIcox0ImH/AMAAIX2"
+.base64 "WFhYWIX2"
 jne 21b
+.base64 "uMADAAC54AMAALrgAwAAUFFSVw=="
+call {vg_p256_mul_mod_p}
+.base64 "WFhYWL4EAAAA"
+22:
+.base64 "g+4BuOADAAC54AMAALrgAwAAUFFSVw=="
+call {vg_p256_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 22b
+.base64 "uMADAAC54AMAALrgAwAAUFFSVw=="
+call {vg_p256_mul_mod_p}
+.base64 "WFhYWL4EAAAA"
+23:
+.base64 "g+4BuOADAAC54AMAALrgAwAAUFFSVw=="
+call {vg_p256_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 23b
+.base64 "uMADAAC54AMAALrgAwAAUFFSVw=="
+call {vg_p256_mul_mod_p}
+.base64 "WFhYWL4EAAAA"
+24:
+.base64 "g+4BuOADAAC54AMAALrgAwAAUFFSVw=="
+call {vg_p256_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 24b
+.base64 "uMADAAC54AMAALrgAwAAUFFSVw=="
+call {vg_p256_mul_mod_p}
+.base64 "WFhYWL4EAAAA"
+25:
+.base64 "g+4BuOADAAC54AMAALrgAwAAUFFSVw=="
+call {vg_p256_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 25b
+.base64 "uMADAAC54AMAALrgAwAAUFFSVw=="
+call {vg_p256_mul_mod_p}
+.base64 "WFhYWL4EAAAA"
+26:
+.base64 "g+4BuOADAAC54AMAALrgAwAAUFFSVw=="
+call {vg_p256_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 26b
+.base64 "uMADAAC54AMAALrgAwAAUFFSVw=="
+call {vg_p256_mul_mod_p}
+.base64 "WFhYWL4EAAAA"
+27:
+.base64 "g+4BuOADAAC54AMAALrgAwAAUFFSVw=="
+call {vg_p256_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 27b
+.base64 "uMADAAC54AMAALrgAwAAUFFSVw=="
+call {vg_p256_mul_mod_p}
+.base64 "WFhYWL4gAAAA"
+28:
+.base64 "g+4BuOADAAC54AMAALrgAwAAUFFSVw=="
+call {vg_p256_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 28b
+.base64 "uMABAAC54AMAALrgAwAAUFFSVw=="
+call {vg_p256_mul_mod_p}
+.base64 "WFhYWL5gAAAA"
+29:
+.base64 "g+4BuOADAAC54AMAALrgAwAAUFFSVw=="
+call {vg_p256_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 29b
+.base64 "uMABAAC54AMAALrgAwAAUFFSVw=="
+call {vg_p256_mul_mod_p}
+.base64 "WFhYWL5eAAAA"
+210:
+.base64 "g+4BuOADAAC54AMAALrgAwAAUFFSVw=="
+call {vg_p256_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 210b
 .base64 "uMAAAAC54AMAALrABAAAUFFSVw=="
 call {vg_p256_mul_mod_p}
 .base64 "WFhYWLjABAAAuaAAAAC64AQAAFBRUlc="
@@ -97,7 +187,7 @@ call {vg_p256_mul_mod_p}
 call {vg_p256_mul_mod_p}
 .base64 "WFhYWLiABQAAuWAFAAC6AAUAAFBRUlc="
 call {vg_p256_sub_mod_p}
-.base64 "WFhYWIuXAAUAAAuXBAUAAAuXCAUAAAuXDAUAAAuXEAUAAAuXFAUAAAuXGAUAAAuXHAUAALkAAAAAKdEZ0oPy/4uHwAUAACHQiYfABQAAi4fABAAAi49ABAAAMcGD4QG6AAAAACnKidGJyoPCAbgAAAAAKdCJwouHwAUAACHQiYfABQAAi4/ABQAAi1wkBLgEAAAAIciIA4uHYAQAACHID8iJQx2Lh2QEAAAhyA/IiUMZi4doBAAAIcgPyIlDFYuHbAQAACHID8iJQxGLh3AEAAAhyA/IiUMNi4d0BAAAIcgPyIlDCYuHeAQAACHID8iJQwWLh3wEAAAhyA/IiUMBi4fABAAAIcgPyIlDPYuHxAQAACHID8iJQzmLh8gEAAAhyA/IiUM1i4fMBAAAIcgPyIlDMYuH0AQAACHID8iJQy2Lh9QEAAAhyA/IiUMpi4fYBAAAIcgPyIlDJYuH3AQAACHID8iJQyGJyIPgAYn6ixqLcgSLagyLegjD"
+.base64 "WFhYWIuXAAUAAAuXBAUAAAuXCAUAAAuXDAUAAAuXEAUAAAuXFAUAAAuXGAUAAAuXHAUAALkAAAAAKdEZ0oPy/4uHwAUAACHQiYfABQAAi4fABAAAi49ABAAAMcGD4QG6AAAAACnKidGJyoPCAbgAAAAAKdCJwouHwAUAACHQiYfABQAAi4/ABQAAi1wkBLgEAAAAIciIA4uHYAQAACHID8iJQx2Lh2QEAAAhyA/IiUMZi4doBAAAIcgPyIlDFYuHbAQAACHID8iJQxGLh3AEAAAhyA/IiUMNi4d0BAAAIcgPyIlDCYuHeAQAACHID8iJQwWLh3wEAAAhyA/IiUMBi4fABAAAIcgPyIlDPYuHxAQAACHID8iJQzmLh8gEAAAhyA/IiUM1i4fMBAAAIcgPyIlDMYuH0AQAACHID8iJQy2Lh9QEAAAhyA/IiUMpi4fYBAAAIcgPyIlDJYuH3AQAACHID8iJQyGJyIPgAYn6ixqLcgSLagyLeghmD+/AuQAAAACNZCTk8w9/BCSJTCQQiUwkFIlMJBiNZCQcugAAAAAxyWYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ww=="
 .p2align 6"#,
         vg_p256_mul_mod_p = sym super::ec_p256::vg_p256_mul_mod_p::vg_p256_mul_mod_p,
         vg_p256_add_mod_p = sym super::ec_p256::vg_p256_add_mod_p::vg_p256_add_mod_p,

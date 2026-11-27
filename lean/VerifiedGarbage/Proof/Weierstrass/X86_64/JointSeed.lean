@@ -1,8 +1,7 @@
 module
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointLoop
 
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointLoop
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
-import VerifiedGarbage.Proof.Weierstrass.X86_64.JointLoopTiming
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JacState
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.X86_64.Syms

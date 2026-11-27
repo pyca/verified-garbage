@@ -193,8 +193,8 @@ def step (τ : T) : Instr → Option T
   | .mul r => some (mulStep τ r)
   -- A frame's push and pop are analysed by the `push` and `pop` hooks
   -- (`pushStep`, `popStep`), not here; the SSE instructions are not analysed.
-  | .symPush .. | .push _ | .pop .. | .alloc _ | .free _ | .callr _ | .movdquLoad .. | .movdquStore .. | .movqLoad .. | .movqStore .. | .xop _ | .mop _ | .mmxStore .. | .mmxEnter | .emms
-  | .pmuludq .. | .mcdtEnter _ | .mcdtLeave => none
+  | .symPush .. | .push _ | .pop .. | .alloc _ | .free _ | .callr _ | .movdquLoad .. | .movdquStore .. | .movqLoad .. | .movqStore .. | .movdquTbl .. | .movqTbl .. | .xop _ | .mop _ | .mmxStore .. | .mmxEnter | .emms
+  | .pmuludq .. | .pmullw .. | .pmulhw .. | .mcdtEnter _ | .mcdtLeave => none
 
 def meet (τ₁ τ₂ : T) : T where
   regs := τ₁.regs.inter τ₂.regs
@@ -278,12 +278,25 @@ def pushed (τ : T) (rs : List Reg) : T :=
     wbases := pushWbases τ rs n ++ τ.wbases.map fun p => (p.1 + 1, p.2.1, p.2.2 + 1)
     argBases := τ.argBases.map fun p => (p.1, p.2 + 1) }
 
+/-- Forget a register's region-base identity and flags; set its publicity. -/
+def changed (τ : T) (d : Reg) (p : Bool) : T :=
+  { τ with regs := set τ d p, flags := false, bases := kill τ d }
+
 /-- A frame's push stores its registers below `esp`, within the bytes that the
 stack may use, which become a new writable region. -/
 def pushStep (τ : T) : Instr → Option T
   | .push rs =>
     if pub τ .esp && τ.lens != [] && decide (depth τ.stk + 4 * rs.length ≤ τ.room) then
       some (pushed τ rs)
+    else none
+  -- The push of a static's address frame: the push of a secret word (the
+  -- saved instruction pointer) and a secret register, with secret flags
+  -- (the ADD's). The address is the same in two runs only where a contract
+  -- says so (`taintSym`, `Proof/Framework/X86/TaintSym.lean`).
+  | .symPush d _ =>
+    if d != .esp && (pub (changed τ d false) .esp && (changed τ d false).lens != [] &&
+        decide (depth (changed τ d false).stk + 4 * [d].length ≤ (changed τ d false).room)) then
+      some (changed (pushed (changed τ d false) [d]) d false)
     else none
   | _ => none
 
@@ -296,6 +309,19 @@ def stepHint (τ : T) : Instr → Option T
   | .store m r => storeHint τ m 4 (pub τ r) (regBases τ r)
   | .store8 m r => storeHint τ m 1 (pub τ r.reg) []
   | i => step τ i
+
+/-- `SseTaint.step` (`Proof/Framework/X86/SseTaint.lean`): SIMD values are
+secret, and their memory operands' addresses public. -/
+def sseStepHint (τ : T) : Instr → Option T
+  | .movdquLoad _ m | .movqLoad _ m => if memPub τ m then some τ else none
+  | .movdquStore m _ => storeHint τ m 16 false []
+  | .movqStore m _ | .mmxStore m _ => storeHint τ m 8 false []
+  | .xop _ | .pmuludq .. | .pmullw .. | .pmulhw .. | .movdquTbl .. | .movqTbl .. => some τ
+  | .mop op =>
+    match op with
+    | .bin _ _ (.mem m) | .movq _ (.mem m) => if memPub τ m then some τ else none
+    | _ => some τ
+  | i => stepHint τ i
 
 def hintOps : VG.NativeHintOps isa where
   T := T
@@ -322,7 +348,21 @@ def frameOps : VG.NativeFrameOps isa where
   join m Φ := { m with regs := ⟨Nat.lor m.regs.bits Φ.regs.bits⟩, flags := m.flags || Φ.flags }
   frameOf τ F := { regs := τ.regs.inter F.regs, flags := τ.flags && F.flags }
 
+/-- The operations of the SIMD analysis `X86.sseTaint`, which shares
+`X86.taint`'s domain and every rule but the step. -/
+def sseHintOps : VG.NativeHintOps isa := { hintOps with step := sseStepHint }
+
+/-- Its frames, `X86.taint`'s (`instance : Taint.Frame X86.sseTaint`). -/
+def sseFrameOps : VG.NativeFrameOps isa := { frameOps with step := sseStepHint }
+
 end VG.NativeHints.X86
+
+namespace VG.NativeHints.X86.sseProvider
+/-- `provider`'s searches, for `X86.sseTaint`. -/
+def hintOfSize := VG.NativeHintOps.hintOfSize VG.NativeHints.X86.sseHintOps
+def hintWeakOfSize := VG.NativeHintOps.hintWeakOfSize VG.NativeHints.X86.sseHintOps
+def hintReport := VG.NativeFrameOps.hintReport VG.NativeHints.X86.sseFrameOps
+end VG.NativeHints.X86.sseProvider
 
 namespace VG.NativeHints.X86.provider
 /-- An untrusted native hint; `Taint.check` still checks every interval. -/

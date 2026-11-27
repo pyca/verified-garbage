@@ -72,7 +72,7 @@ def genPost (s t : State) : Prop :=
       BitVec.ofNat 64 (if (genResult s).progress.phase = .p then 0 else 1),
       BitVec.ofNat 64 (genResult s).progress.left] ∧
       bytesAt t.mem (stackArg s 1 + 48) 8 = genE s ∧
-      (genResult s).Requests (primeEntropy (genLen s)) requested
+      Asked (genLen s) (genResult s) requested
 
 /-- What timing may depend on: the arguments, the state's words, and the
 result's status, consumption, octets left and trace. -/

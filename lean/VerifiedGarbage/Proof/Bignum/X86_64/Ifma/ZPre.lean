@@ -62,10 +62,10 @@ theorem litLane_ok (hl : AmmOk l) {s : State} {B : Addr} {c j : Nat} {v : BitVec
       ([.movImm64 .rax v, .store (at_ .rbx (c + l.off j)) .rax] : List Instr))) s fun s' =>
       (∀ q < l.L, word s'.mem B (c + l.off q) = if q = j then v else 0) ∧ Outside B c l.NB s.mem s'.mem ∧
       (∀ r, r ≠ .rax → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.mxcsr = s.mxcsr := by
-  have hF' : ∀ q < l.L, c + l.off q + 8 ≤ c + l.NB := fun q hq => by have := off_ltN hl hq; omega_using [this]
+  obtain hF' : ∀ q < l.L, c + l.off q + 8 ≤ c + l.NB := fun q hq => by have := off_ltN hl hq; omega_using [this]
   rw [List.append_assoc, List.singleton_append, WP.block_cons_iff]
   refine ⟨s.setReg32 .rax 0, rfl, ?_⟩
-  have g₀ : ∀ r, r ≠ .rax → (s.setReg32 .rax 0).gpr r = s.gpr r := fun r hr => by
+  obtain g₀ : ∀ r, r ≠ .rax → (s.setReg32 .rax 0).gpr r = s.gpr r := fun r hr => by
     rw [State.setReg32, RegUpd.gpr_setReg_of_ne _ _ hr]
   rw [WP.block_append_iff, show ((List.range l.L).map fun q => Instr.store (at_ .rbx (c + l.off q)) .rax) =
     ((List.range l.L).map fun q => c + l.off q).map (fun d => .store (at_ .rbx d) .rax) by
@@ -79,15 +79,15 @@ theorem litLane_ok (hl : AmmOk l) {s : State} {B : Addr} {c j : Nat} {v : BitVec
   refine ⟨_, rfl, ?_⟩
   generalize hS₁ : ({ (s.setReg32 .rax 0) with
       mem := stMem (s.setReg32 .rax 0).mem B 0 ((List.range l.L).map fun q => c + l.off q) } : State).setReg .rax v = S₁
-  have bx₁ : S₁.gpr .rbx = B := by rw [← hS₁, RegUpd.gpr_setReg_of_ne _ _ (by decide)]; exact (g₀ _ (by decide)).trans hB
-  have ax₁ : S₁.gpr .rax = v := by rw [← hS₁, RegUpd.gpr_setReg_self]
-  have g₁ : ∀ r, r ≠ .rax → S₁.gpr r = s.gpr r := fun r hr => by
+  obtain bx₁ : S₁.gpr .rbx = B := by rw [← hS₁, RegUpd.gpr_setReg_of_ne _ _ (by decide)]; exact (g₀ _ (by decide)).trans hB
+  obtain ax₁ : S₁.gpr .rax = v := by rw [← hS₁, RegUpd.gpr_setReg_self]
+  obtain g₁ : ∀ r, r ≠ .rax → S₁.gpr r = s.gpr r := fun r hr => by
     rw [← hS₁, RegUpd.gpr_setReg_of_ne _ _ hr]; exact g₀ r hr
-  have m₁ : S₁.mem = stMem s.mem B 0 ((List.range l.L).map fun q => c + l.off q) := by rw [← hS₁]; rfl
-  have wr₁ : S₁.wr = s.wr := by rw [← hS₁]; rfl
-  have rd₁ : S₁.rd = s.rd := by rw [← hS₁]; rfl
-  have x₁ : S₁.mxcsr = s.mxcsr := by rw [← hS₁]; rfl
-  have hw₁ : InRegions S₁.wr (B + BitVec.ofNat 64 (c + l.off j)) 8 := by rw [wr₁]; exact hwr j hj
+  obtain m₁ : S₁.mem = stMem s.mem B 0 ((List.range l.L).map fun q => c + l.off q) := by rw [← hS₁]; rfl
+  obtain wr₁ : S₁.wr = s.wr := by rw [← hS₁]; rfl
+  obtain rd₁ : S₁.rd = s.rd := by rw [← hS₁]; rfl
+  obtain x₁ : S₁.mxcsr = s.mxcsr := by rw [← hS₁]; rfl
+  obtain hw₁ : InRegions S₁.wr (B + BitVec.ofNat 64 (c + l.off j)) 8 := by rw [wr₁]; exact hwr j hj
   rw [WP.block_cons_iff]
   refine ⟨{ S₁ with mem := S₁.mem.writeW (off B (c + l.off j)) v }, ?_, WP.block_nil ?_⟩
   · simp only [exec, eaG', bx₁, ax₁, State.store64, hw₁, ite_true, off]
@@ -123,8 +123,8 @@ theorem litN_ok (hz : ZOk l) {s : State} {B : Addr} {o j : Nat} {v : BitVec 64} 
       s'.mxcsr = s.mxcsr := by
   have hl := hz.amm
   obtain ⟨hNB, -, -, -, -, -, -, -, -, -, -, -, hD, hL, hnl⟩ := hz.slots
-  have hF' : ∀ q < l.L, l.off q + 8 ≤ l.NB := fun q hq => off_ltN hl hq
-  have hwr : ∀ (t : State), t.wr = s.wr → ∀ p < 2, ∀ q < l.L,
+  obtain hF' : ∀ q < l.L, l.off q + 8 ≤ l.NB := fun q hq => off_ltN hl hq
+  obtain hwr : ∀ (t : State), t.wr = s.wr → ∀ p < 2, ∀ q < l.L,
       InRegions t.wr (B + BitVec.ofNat 64 (l.D * p + o + l.off q)) 8 := fun t ht p hp q hq => by
     rw [ht]
     have := hF' q hq
@@ -140,7 +140,7 @@ theorem litN_ok (hz : ZOk l) {s : State} {B : Addr} {o j : Nat} {v : BitVec 64} 
     (hwr s₁ wr₁ 1 (by decide)) hj) fun s₂ ⟨w₂, f₂, g₂, rd₂, wr₂, x₂⟩ => ?_
   refine ⟨fun p hp q hq => ?_, (Out2.of_outside (by omega_using [hnl]) f₁).trans (Out2.of_outside (by omega_using [hnl]) f₂),
     fun r hr => (g₂ r hr).trans (g₁ r hr), rd₂.trans rd₁, wr₂.trans wr₁, x₂.trans x₁⟩
-  have key : word s₂.mem B (l.D * p + o + l.off q) = if q = j then v else 0 := by
+  obtain key : word s₂.mem B (l.D * p + o + l.off q) = if q = j then v else 0 := by
     rcases (by omega_using [hp] : p = 0 ∨ p = 1) with rfl | rfl
     · have := hF' q hq
       rw [f₂.word (.inl (by omega_using [ho, this])) (by omega_using [ho, hD, this])]; exact w₁ q hq
@@ -199,7 +199,7 @@ theorem up_cong {V' V c lit W T R P : Nat} (hR : Nat.Coprime R P) (h : V' * R % 
 theorem top2_zero {f : Nat → Nat} {n : Nat} (h : lval f (n + 2) < 2 ^ (52 * n)) : f n = 0 ∧ f (n + 1) = 0 := by
   rw [show n + 2 = n + 1 + 1 from rfl, VG.Proof.Bignum.Amm52.lval_succ, VG.Proof.Bignum.Amm52.lval_succ,
     show 52 * (n + 1) = 52 * n + 52 by omega_using [], Nat.pow_add] at h
-  have hp : 0 < 2 ^ (52 * n) := Nat.two_pow_pos _
+  obtain hp : 0 < 2 ^ (52 * n) := Nat.two_pow_pos _
   generalize 2 ^ (52 * n) = T at h hp
   constructor
   · rcases Nat.eq_zero_or_pos (f n) with h0 | h0
@@ -208,7 +208,7 @@ theorem top2_zero {f : Nat → Nat} {n : Nat} (h : lval f (n + 2) < 2 ^ (52 * n)
   · rcases Nat.eq_zero_or_pos (f (n + 1)) with h0 | h0
     · exact h0
     · have h1 := Nat.le_mul_of_pos_left (T * 2 ^ 52) h0
-      have h2 : T ≤ T * 2 ^ 52 := Nat.le_mul_of_pos_right T (by decide)
+      obtain h2 : T ≤ T * 2 ^ 52 := Nat.le_mul_of_pos_right T (by decide)
       omega_using [h, h1]
 
 /-- The sizes of the numbers before the exponentiations. -/
@@ -246,10 +246,10 @@ theorem zMh_ok (hz : ZOk l) {s : State} {B : Addr} {M k : Nat → Nat} (hB : s.g
   obtain ⟨hNB, eK0, eY, eX, eS, eK1, eXK, eSK, eV, eMs, eF2, eD, hD, hL, hnl⟩ := hz.slots
   obtain ⟨n1, n2, n3, n4, n5, n6, -⟩ := hz.nums
   refine WP.seq (WP.mono (litN_ok hz hB hs (by omega_using [hNB, eS, hD]) n1) fun s₁ ⟨lim₁, f₁, g₁, rd₁, wr₁, x₁⟩ => ?_)
-  have ar₁ : Ar0 l s₁.mem B M k := ar.of_out2 hl f₁ (by omega_using [eY, eS]) (by omega_using [hNB, eS, hD])
-  have hlt : ∀ p < l.nl, ∀ j < l.L, limb l s₁.mem B (l.D * p + l.oS) j < 2 ^ 52 := fun p hp j hj => by
+  obtain ar₁ : Ar0 l s₁.mem B M k := ar.of_out2 hl f₁ (by omega_using [eY, eS]) (by omega_using [hNB, eS, hD])
+  obtain hlt : ∀ p < l.nl, ∀ j < l.L, limb l s₁.mem B (l.D * p + l.oS) j < 2 ^ 52 := fun p hp j hj => by
     rw [lim₁ p hp j hj]; split <;> decide
-  have hval : ∀ p < l.nl, val52 l s₁.mem B (l.D * p + l.oS) = 1 * 2 ^ (52 * l.zE) := fun p hp =>
+  obtain hval : ∀ p < l.nl, val52 l s₁.mem B (l.D * p + l.oS) = 1 * 2 ^ (52 * l.zE) := fun p hp =>
     val_single n1 (lim₁ p hp)
   refine WP.mono (ammP_ok hl ((g₁ _ (by decide)).trans hB) (hs.congr wr₁) ar₁ (by omega_using [hNB, eMs, eD]) (by omega_using [hNB, eS, hD]) (by omega_using [hNB, eS, hD])
     fun p hp j hj => ⟨hlt p hp j hj, hlt p hp j hj⟩) fun s₂ ⟨hv, f₂, g₂, rd₂, wr₂, x₂⟩ =>
@@ -257,7 +257,7 @@ theorem zMh_ok (hz : ZOk l) {s : State} {B : Addr} {M k : Nat → Nat} (hB : s.g
       fun r r1 r2 r3 r4 r5 r6 r7 r8 r9 => (g₂ r r1 r2 r3 r4 r5 r6 r7 r8 r9).trans (g₁ r r1),
       rd₂.trans rd₁, wr₂.trans wr₁, x₂.trans x₁⟩
   all_goals
-    have hMp := hMw p hp
+    obtain hMp := hMw p hp
     obtain ⟨U, hU, he⟩ := (hv p hp).2 (by rw [hval p hp]; exact n6) (by
       rw [hval p hp]
       exact zfit' (H := 1) (by rw [Nat.mul_one, ← n2]; omega_using [n2, n6]) (by omega_using [n5, hMp]))
@@ -288,20 +288,20 @@ theorem zUp_ok (hz : ZOk l) {s : State} {B : Addr} {M : Nat → Nat} {c : Nat} (
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.mxcsr = s.mxcsr := by
   obtain ⟨hNB, eK0, eY, eX, eS, eK1, eXK, eSK, eV, eMs, eF2, eD, hD, hL, hnl⟩ := hz.slots
   obtain ⟨-, -, -, -, -, -, n7, n8, n9, n10, n11, -⟩ := hz.nums
-  have hvS : ∀ p < l.nl, val52 l s.mem B (l.D * p + l.oS) = 2 ^ (52 * l.L - 1) := fun p hp => by
+  obtain hvS : ∀ p < l.nl, val52 l s.mem B (l.D * p + l.oS) = 2 ^ (52 * l.L - 1) := fun p hp => by
     rw [val_single (by omega_using [hL]) (hlit p hp), n7]
   refine WP.mono (ammZ_ok hz hB hs az hc (by omega_using [hNB, eS, hD]) hc fun p hp j hj =>
     ⟨by rw [hlit p hp j hj]; split <;> decide, (g p hp).lt j hj⟩) fun s' ⟨hv, rest⟩ => ⟨fun p hp => ?_, rest⟩
-  have hMp := hMw p hp
-  have hgv := (g p hp).v
-  have hX := az.bnd p hp
-  have hpos := az.pos p hp
-  have hAB : 2 ^ (52 * l.L - 1) * val52 l s.mem B (l.D * p + c) <
+  obtain hMp := hMw p hp
+  obtain hgv := (g p hp).v
+  obtain hX := az.bnd p hp
+  obtain hpos := az.pos p hp
+  obtain hAB : 2 ^ (52 * l.L - 1) * val52 l s.mem B (l.D * p + c) <
       2 ^ (52 * l.S) * 2 ^ (52 * l.L + 64 * l.W - 52 * l.S) :=
     Nat.lt_of_lt_of_le (Nat.mul_lt_mul_of_pos_left (by omega_using [hMp, hgv]) (Nat.two_pow_pos _)) n8
   obtain ⟨Q, hQ, he⟩ := (hv p hp).2 (by omega_using [n10, hMp, hgv]) (by rw [hvS p hp]; exact zfit' hAB (by omega_using [n9, n11, hX]))
   rw [hvS p hp] at he
-  have hb := zbound' he hQ hAB
+  obtain hb := zbound' he hQ hAB
   refine ⟨⟨(hv p hp).1, by rw [gbz hz]; omega_using [n9, hX, hb]⟩, ?_⟩
   obtain ⟨d, hd⟩ := az.dvd p hp
   rw [he, hd, Nat.mul_assoc, Nat.add_mul_mod_self_left]
@@ -323,19 +323,19 @@ theorem zPost_ok (hz : ZOk l) {s : State} {B : Addr} {M k : Nat → Nat} (hB : s
   obtain ⟨-, -, -, -, -, -, -, -, -, -, n11, n12, -⟩ := hz.nums
   refine WP.mono (ammP_ok hl hB hs ar (by omega_using [hNB, eY, eD]) (by omega_using [hNB, eY, eD]) (by omega_using [hNB, eF2, eD]) fun p hp j hj =>
     ⟨(gy p hp).lt j hj, (gf p hp).lt j hj⟩) fun s' ⟨hv, rest⟩ => ⟨fun p hp => ?_, rest⟩
-  have hM4 := ar.bnd p hp
-  have hA := (gy p hp).v
-  have hBv := (gf p hp).v
+  obtain hM4 := ar.bnd p hp
+  obtain hA := (gy p hp).v
+  obtain hBv := (gf p hp).v
   rw [gbz hz] at hA
-  have hAB : val52 l s.mem B (l.D * p + l.oY) * val52 l s.mem B (l.D * p + l.oF2) < 2 ^ (52 * l.S) * M p := by
-    have h1 := Nat.mul_lt_mul'' hA hBv
-    have h2 : 2 ^ (52 * l.S - 14) * (2 * M p) ≤ 2 ^ (52 * l.S) * M p := by
+  obtain hAB : val52 l s.mem B (l.D * p + l.oY) * val52 l s.mem B (l.D * p + l.oF2) < 2 ^ (52 * l.S) * M p := by
+    obtain h1 := Nat.mul_lt_mul'' hA hBv
+    obtain h2 : 2 ^ (52 * l.S - 14) * (2 * M p) ≤ 2 ^ (52 * l.S) * M p := by
       rw [← Nat.mul_assoc, Nat.mul_comm _ 2]; exact Nat.mul_le_mul_right _ n12
     omega_using [h1, h2]
   obtain ⟨U, hU, he⟩ := (hv p hp).2 (by omega_using [hM4, hBv]) (zfit' hAB (by
     have : 2 ^ (52 * l.S) ≤ 2 ^ (52 * l.L) := Nat.pow_le_pow_right (by decide) (by rw [hz.S, hL]; decide)
     omega_using [hM4, this]))
-  have hb := zbound' he hU hAB
+  obtain hb := zbound' he hU hAB
   exact ⟨⟨(hv p hp).1, by omega_using [hb]⟩, by rw [he, Nat.add_mul_mod_self_left]⟩
 
 /-! ## Before the exponentiations -/
@@ -401,7 +401,7 @@ theorem zPre_ok (hz : ZOk l) {s : State} {B : Addr} {M k x : Nat → Nat} {Q : P
   obtain ⟨hNB, eK0, eY, eX, eS, eK1, eXK, eSK, eV, eMs, eF2, eD, hD, hL, hnl⟩ := hz.slots
   have eE := hz.oE
   obtain ⟨x1, x2, x3⟩ := hz.exps
-  have hR : ∀ p < l.nl, Nat.Coprime (2 ^ (52 * l.S)) (M p) := fun p hp => cop2 (hodd p hp) _
+  obtain hR : ∀ p < l.nl, Nat.Coprime (2 ^ (52 * l.S)) (M p) := fun p hp => cop2 (hodd p hp) _
   rw [show VG.Impl.Bignum.X86_64.seqs (zPre l) = .seq (.block (litN l l.oS l.zE 1)) (.seq (ammP l l.oMs l.oS l.oS)
     (.seq (.block (litN l l.oS (l.L - 1) (BitVec.ofNat 64 (2 ^ 51)))) (.seq (amm l l.oK1 l.oS l.oK1)
     (.seq (amm l l.oY l.oS l.oY) (.seq (amm l l.oX l.oS l.oX) (.seq (.block (copyN l l.oF2 l.oFin))
@@ -411,29 +411,29 @@ theorem zPre_ok (hz : ZOk l) {s : State} {B : Addr} {M k x : Nat → Nat} {Q : P
     fun s₂ ⟨az₂, ⟨m₁, f₁, f₂⟩, g₂, rd₂, wr₂, x₂⟩ => ?_))
   have gp₂ : ∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .rdx → r ≠ .rsi → r ≠ .r8 → r ≠ .r9 → r ≠ .r10 → r ≠ .r11 → r ≠ .r12 →
       s₂.gpr r = s.gpr r := g₂
-  have hB₂ : s₂.gpr .rbx = B := by
+  obtain hB₂ : s₂.gpr .rbx = B := by
     rw [g₂ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
       (by decide)]; exact hB
-  have ar₂ : Ar0 l s₂.mem B M k := (ar.of_out2 hl f₁ (by omega_using [eY, eS]) (by omega_using [hNB, eS, hD])).of_out2 hl f₂ (by omega_using [eY, eV, eMs]) (by omega_using [hNB, eMs, eD])
+  obtain ar₂ : Ar0 l s₂.mem B M k := (ar.of_out2 hl f₁ (by omega_using [eY, eS]) (by omega_using [hNB, eS, hD])).of_out2 hl f₂ (by omega_using [eY, eV, eMs]) (by omega_using [hNB, eMs, eD])
   -- a slot the first two writes miss
-  have k₂ : ∀ c, c + l.NB ≤ l.oS ∨ l.oS + l.NB ≤ c → c + l.NB ≤ l.oMs → ∀ p < l.nl,
+  obtain k₂ : ∀ c, c + l.NB ≤ l.oS ∨ l.oS + l.NB ≤ c → c + l.NB ≤ l.oMs → ∀ p < l.nl,
       (GoodS l s.mem B M c p → GoodS l s₂.mem B M c p) ∧
       val52 l s₂.mem B (l.D * p + c) = val52 l s.mem B (l.D * p + c) := fun c h1 h2 p hp =>
     ⟨fun g => (g.of_out2 hl hp f₁ h1 (by omega_using [hNB, eX, eS, eK1, eXK, eSK, eV, eMs, eD, hD, eE, h1, h2]) (by omega_using [hNB, eS, hD])).of_out2 hl hp f₂ (.inl h2) (by omega_using [hNB, eX, eS, eK1, eXK, eSK, eV, eMs, eD, hD, eE, h1, h2]) (by omega_using [hNB, eMs, eD]),
       (f₂.val hl hp (.inl h2) (by omega_using [hNB, eX, eS, eK1, eXK, eSK, eV, eMs, eD, hD, eE, h1, h2]) (by omega_using [hNB, eMs, eD])).trans (f₁.val hl hp h1 (by omega_using [hNB, eX, eS, eK1, eXK, eSK, eV, eMs, eD, hD, eE, h1, h2]) (by omega_using [hNB, eS, hD]))⟩
-  have dg₂ : ∀ p < l.nl, ∀ i < l.ND, dig l s₂.mem B p i = dig l s.mem B p i := fun p hp i hi =>
+  obtain dg₂ : ∀ p < l.nl, ∀ i < l.ND, dig l s₂.mem B p i = dig l s.mem B p i := fun p hp i hi =>
     (f₂.dig hz (.inr (by omega_using [eK1, eV, eMs])) (by omega_using [hNB, eMs, eD]) hp hi).trans (f₁.dig hz (.inl eE) (by omega_using [hNB, eS, hD]) hp hi)
-  have O₂ : Outside B 0 (l.nl * l.D) s.mem s₂.mem :=
+  obtain O₂ : Outside B 0 (l.nl * l.D) s.mem s₂.mem :=
     (f₁.toOutside hl (by omega_using [hNB, eS, hD])).trans (f₂.toOutside hl (by omega_using [hNB, eMs, eD]))
   -- `2^(52 L - 1)`
   refine WP.seq (WP.mono (litN_ok hz hB₂ (hs.congr wr₂) (by omega_using [hNB, eS, hD]) (by omega_using [hL])) fun s₃ ⟨lim₃, f₃, g₃, rd₃, wr₃, x₃⟩ => ?_)
-  have hlit₃ : ∀ p < l.nl, ∀ q < l.L, limb l s₃.mem B (l.D * p + l.oS) q = if q = l.L - 1 then 2 ^ 51 else 0 :=
+  obtain hlit₃ : ∀ p < l.nl, ∀ q < l.L, limb l s₃.mem B (l.D * p + l.oS) q = if q = l.L - 1 then 2 ^ 51 else 0 :=
     fun p hp q hq => lim₃ p hp q hq
-  have hB₃ : s₃.gpr .rbx = B := (g₃ _ (by decide)).trans hB₂
-  have hs₃ : Scr s₃ B (l.nl * l.D) := hs.congr (wr₃.trans wr₂)
-  have az₃ : ArZ l s₃.mem B M := az₂.of_out2 hz f₃ (.inr (by omega_using [eX, eS, eK1, eXK, eV, eMs])) (by omega_using [hNB, eS, hD])
-  have ar₃ : Ar0 l s₃.mem B M k := ar₂.of_out2 hl f₃ (by omega_using [eY, eS]) (by omega_using [hNB, eS, hD])
-  have k₃ : ∀ c, c + l.NB ≤ l.oS ∨ l.oS + l.NB ≤ c → c + l.NB ≤ l.oMs → ∀ p < l.nl,
+  obtain hB₃ : s₃.gpr .rbx = B := (g₃ _ (by decide)).trans hB₂
+  obtain hs₃ : Scr s₃ B (l.nl * l.D) := hs.congr (wr₃.trans wr₂)
+  obtain az₃ : ArZ l s₃.mem B M := az₂.of_out2 hz f₃ (.inr (by omega_using [eX, eS, eK1, eXK, eV, eMs])) (by omega_using [hNB, eS, hD])
+  obtain ar₃ : Ar0 l s₃.mem B M k := ar₂.of_out2 hl f₃ (by omega_using [eY, eS]) (by omega_using [hNB, eS, hD])
+  obtain k₃ : ∀ c, c + l.NB ≤ l.oS ∨ l.oS + l.NB ≤ c → c + l.NB ≤ l.oMs → ∀ p < l.nl,
       (GoodS l s.mem B M c p → GoodS l s₃.mem B M c p) ∧
       val52 l s₃.mem B (l.D * p + c) = val52 l s.mem B (l.D * p + c) := fun c h1 h2 p hp =>
     ⟨fun g => ((k₂ c h1 h2 p hp).1 g).of_out2 hl hp f₃ h1 (by omega_using [hNB, eX, eS, eK1, eXK, eSK, eV, eMs, eD, hD, eE, h1, h2]) (by omega_using [hNB, eS, hD]),
@@ -442,62 +442,62 @@ theorem zPre_ok (hz : ZOk l) {s : State} {B : Addr} {M k x : Nat → Nat} {Q : P
   refine WP.seq (WP.mono (zUp_ok hz hB₃ hs₃ az₃ (c := l.oK1) (by omega_using [eK1, eV, eD]) hlit₃
     (fun p hp => (k₃ l.oK1 (.inr (by omega_using [eSK])) (by omega_using [eK1, eV, eMs]) p hp).1 (gk p hp)) hMw)
     fun s₄ ⟨v₄, f₄, g₄, rd₄, wr₄, x₄⟩ => ?_)
-  have hB₄ : s₄.gpr .rbx = B := by
+  obtain hB₄ : s₄.gpr .rbx = B := by
     rw [g₄ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
       (by decide)]; exact hB₃
-  have hs₄ : Scr s₄ B (l.nl * l.D) := hs₃.congr wr₄
-  have hlit₄ : ∀ p < l.nl, ∀ q < l.L, limb l s₄.mem B (l.D * p + l.oS) q = if q = l.L - 1 then 2 ^ 51 else 0 :=
+  obtain hs₄ : Scr s₄ B (l.nl * l.D) := hs₃.congr wr₄
+  obtain hlit₄ : ∀ p < l.nl, ∀ q < l.L, limb l s₄.mem B (l.D * p + l.oS) q = if q = l.L - 1 then 2 ^ 51 else 0 :=
     fun p hp q hq => (f₄.limb hl hp (.inl (by omega_using [eSK])) (by omega_using [hNB, eS, hD]) (by omega_using [eK1, eV, eD]) hq).trans (hlit₃ p hp q hq)
-  have az₄ : ArZ l s₄.mem B M := az₃.of_out2 hz f₄ (.inr (by omega_using [eK1, eV, eMs])) (by omega_using [eK1, eV, eD])
+  obtain az₄ : ArZ l s₄.mem B M := az₃.of_out2 hz f₄ (.inr (by omega_using [eK1, eV, eMs])) (by omega_using [eK1, eV, eD])
   -- `Y`
   refine WP.seq (WP.mono (zUp_ok hz hB₄ hs₄ az₄ (c := l.oY) (by omega_using [hNB, eY, eD]) hlit₄
     (fun p hp => ((k₃ l.oY (.inl (by omega_using [hNB, eY, eS])) (by omega_using [eY, eK1, eV, eMs]) p hp).1 (gy p hp)).of_out2 hl hp f₄ (.inl (by omega_using [eY, eX, eXK]))
       (by omega_using [hNB, eY, eD]) (by omega_using [eK1, eV, eD])) hMw) fun s₅ ⟨v₅, f₅, g₅, rd₅, wr₅, x₅⟩ => ?_)
-  have hB₅ : s₅.gpr .rbx = B := by
+  obtain hB₅ : s₅.gpr .rbx = B := by
     rw [g₅ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
       (by decide)]; exact hB₄
-  have hs₅ : Scr s₅ B (l.nl * l.D) := hs₄.congr wr₅
-  have hlit₅ : ∀ p < l.nl, ∀ q < l.L, limb l s₅.mem B (l.D * p + l.oS) q = if q = l.L - 1 then 2 ^ 51 else 0 :=
+  obtain hs₅ : Scr s₅ B (l.nl * l.D) := hs₄.congr wr₅
+  obtain hlit₅ : ∀ p < l.nl, ∀ q < l.L, limb l s₅.mem B (l.D * p + l.oS) q = if q = l.L - 1 then 2 ^ 51 else 0 :=
     fun p hp q hq => (f₅.limb hl hp (.inr (by omega_using [hNB, eY, eS])) (by omega_using [hNB, eS, hD]) (by omega_using [hNB, eY, eD]) hq).trans (hlit₄ p hp q hq)
-  have az₅ : ArZ l s₅.mem B M := az₄.of_out2 hz f₅ (.inr (by omega_using [eY, eK1, eV, eMs])) (by omega_using [hNB, eY, eD])
+  obtain az₅ : ArZ l s₅.mem B M := az₄.of_out2 hz f₅ (.inr (by omega_using [eY, eK1, eV, eMs])) (by omega_using [hNB, eY, eD])
   -- the base
   refine WP.seq (WP.mono (zUp_ok hz hB₅ hs₅ az₅ (c := l.oX) (by omega_using [hNB, eX, hD]) hlit₅
     (fun p hp => (((k₃ l.oX (.inl (by omega_using [hNB, eX, eS])) (by omega_using [eK1, eXK, eV, eMs]) p hp).1 (gx p hp)).of_out2 hl hp f₄ (.inl (by omega_using [eXK]))
       (by omega_using [hNB, eX, hD]) (by omega_using [eK1, eV, eD])).of_out2 hl hp f₅ (.inr (by omega_using [hNB, eY, eX])) (by omega_using [hNB, eX, hD]) (by omega_using [hNB, eY, eD])) hMw)
     fun s₆ ⟨v₆, f₆, g₆, rd₆, wr₆, x₆⟩ => ?_)
-  have hB₆ : s₆.gpr .rbx = B := by
+  obtain hB₆ : s₆.gpr .rbx = B := by
     rw [g₆ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
       (by decide)]; exact hB₅
-  have hs₆ : Scr s₆ B (l.nl * l.D) := hs₅.congr wr₆
-  have az₆ : ArZ l s₆.mem B M := az₅.of_out2 hz f₆ (.inr (by omega_using [eK1, eXK, eV, eMs])) (by omega_using [hNB, eX, hD])
-  have ar₆ : Ar0 l s₆.mem B M k :=
+  obtain hs₆ : Scr s₆ B (l.nl * l.D) := hs₅.congr wr₆
+  obtain az₆ : ArZ l s₆.mem B M := az₅.of_out2 hz f₆ (.inr (by omega_using [eK1, eXK, eV, eMs])) (by omega_using [hNB, eX, hD])
+  obtain ar₆ : Ar0 l s₆.mem B M k :=
     ((ar₃.of_out2 hl f₄ (by omega_using [eY, eX, eXK]) (by omega_using [eK1, eV, eD])).of_out2 hl f₅ (by omega_using []) (by omega_using [hNB, eY, eD])).of_out2 hl f₆ (by omega_using [eY, eX]) (by omega_using [hNB, eX, hD])
   -- the last multiplier, kept
   refine WP.seq (WP.mono (copyN_ok hl hB₆ hs₆ (o := l.oF2) (a := l.oFin) (by omega_using [hNB, eF2, eD]) (by omega_using [hNB, eD]) (.inl (by omega_using [hNB, eF2])))
     fun s₇ ⟨l₇, f₇, g₇, rd₇, wr₇, x₇⟩ => ?_)
-  have hB₇ : s₇.gpr .rbx = B := by rw [g₇]; exact hB₆
-  have hs₇ : Scr s₇ B (l.nl * l.D) := hs₆.congr wr₇
-  have ar₇ : Ar l s₇.mem B M k := ⟨ar₆.of_out2 hl f₇ (by omega_using [eY, eF2]) (by omega_using [hNB, eF2, eD]),
+  obtain hB₇ : s₇.gpr .rbx = B := by rw [g₇]; exact hB₆
+  obtain hs₇ : Scr s₇ B (l.nl * l.D) := hs₆.congr wr₇
+  obtain ar₇ : Ar l s₇.mem B M k := ⟨ar₆.of_out2 hl f₇ (by omega_using [eY, eF2]) (by omega_using [hNB, eF2, eD]),
     fun _ => az₆.of_out2 hz f₇ (.inl (by omega_using [hNB, eMs, eF2])) (by omega_using [hNB, eF2, eD])⟩
   -- the numbers so far, where the last multiplication starts
-  have GK₇ : ∀ p < l.nl, Good l s₇.mem B M l.oK1 p := fun p hp =>
+  obtain GK₇ : ∀ p < l.nl, Good l s₇.mem B M l.oK1 p := fun p hp =>
     (((v₄ p hp).1.of_out2 hl hp f₅ (.inr (by omega_using [eY, eX, eXK])) (by omega_using [eK1, eV, eD]) (by omega_using [hNB, eY, eD])).of_out2 hl hp f₆ (.inr (by omega_using [eXK]))
       (by omega_using [eK1, eV, eD]) (by omega_using [hNB, eX, hD])).of_out2 hl hp f₇ (.inl (by omega_using [eK1, eV, eF2])) (by omega_using [eK1, eV, eD]) (by omega_using [hNB, eF2, eD])
-  have GY₇ : ∀ p < l.nl, Good l s₇.mem B M l.oY p := fun p hp =>
+  obtain GY₇ : ∀ p < l.nl, Good l s₇.mem B M l.oY p := fun p hp =>
     ((v₅ p hp).1.of_out2 hl hp f₆ (.inl (by omega_using [hNB, eY, eX])) (by omega_using [hNB, eY, eD]) (by omega_using [hNB, eX, hD])).of_out2 hl hp f₇ (.inl (by omega_using [hNB, eY, eV, eF2]))
       (by omega_using [hNB, eY, eD]) (by omega_using [hNB, eF2, eD])
-  have GX₇ : ∀ p < l.nl, Good l s₇.mem B M l.oX p := fun p hp =>
+  obtain GX₇ : ∀ p < l.nl, Good l s₇.mem B M l.oX p := fun p hp =>
     (v₆ p hp).1.of_out2 hl hp f₇ (.inl (by omega_using [eX, eK1, eV, eF2])) (by omega_using [hNB, eX, hD]) (by omega_using [hNB, eF2, eD])
-  have eK₇ : ∀ p < l.nl, val52 l s₇.mem B (l.D * p + l.oK1) = val52 l s₄.mem B (l.D * p + l.oK1) := fun p hp =>
+  obtain eK₇ : ∀ p < l.nl, val52 l s₇.mem B (l.D * p + l.oK1) = val52 l s₄.mem B (l.D * p + l.oK1) := fun p hp =>
     (f₇.val hl hp (.inl (by omega_using [eK1, eV, eF2])) (by omega_using [eK1, eV, eD]) (by omega_using [hNB, eF2, eD])).trans
       ((f₆.val hl hp (.inr (by omega_using [eXK])) (by omega_using [eK1, eV, eD]) (by omega_using [hNB, eX, hD])).trans
         (f₅.val hl hp (.inr (by omega_using [eY, eX, eXK])) (by omega_using [eK1, eV, eD]) (by omega_using [hNB, eY, eD])))
-  have eY₇ : ∀ p < l.nl, val52 l s₇.mem B (l.D * p + l.oY) = val52 l s₅.mem B (l.D * p + l.oY) := fun p hp =>
+  obtain eY₇ : ∀ p < l.nl, val52 l s₇.mem B (l.D * p + l.oY) = val52 l s₅.mem B (l.D * p + l.oY) := fun p hp =>
     (f₇.val hl hp (.inl (by omega_using [hNB, eY, eV, eF2])) (by omega_using [hNB, eY, eD]) (by omega_using [hNB, eF2, eD])).trans (f₆.val hl hp (.inl (by omega_using [hNB, eY, eX])) (by omega_using [hNB, eY, eD]) (by omega_using [hNB, eX, hD]))
-  have eX₇ : ∀ p < l.nl, val52 l s₇.mem B (l.D * p + l.oX) = val52 l s₆.mem B (l.D * p + l.oX) := fun p hp =>
+  obtain eX₇ : ∀ p < l.nl, val52 l s₇.mem B (l.D * p + l.oX) = val52 l s₆.mem B (l.D * p + l.oX) := fun p hp =>
     f₇.val hl hp (.inl (by omega_using [eX, eK1, eV, eF2])) (by omega_using [hNB, eX, hD]) (by omega_using [hNB, eF2, eD])
   -- the last multiplier, as the region left it
-  have eF₆ : ∀ p < l.nl, (GoodS l s₆.mem B M l.oFin p) ∧
+  obtain eF₆ : ∀ p < l.nl, (GoodS l s₆.mem B M l.oFin p) ∧
       val52 l s₆.mem B (l.D * p + l.oFin) = val52 l s.mem B (l.D * p + l.oFin) := fun p hp =>
     ⟨((((k₃ l.oFin (.inr (by omega_using [eK1, eSK, eV])) (by omega_using [hNB, eMs]) p hp).1 (gf p hp)).of_out2 hl hp f₄ (.inr (by omega_using [eK1, eV])) (by omega_using [hNB, eD])
         (by omega_using [eK1, eV, eD])).of_out2 hl hp f₅ (.inr (by omega_using [hNB, eY, eK1, eXK, eV])) (by omega_using [hNB, eD]) (by omega_using [hNB, eY, eD])).of_out2 hl hp f₆ (.inr (by omega_using [eK1, eXK, eV]))
@@ -506,7 +506,7 @@ theorem zPre_ok (hz : ZOk l) {s : State} {B : Addr} {M k x : Nat → Nat} {Q : P
         ((f₅.val hl hp (.inr (by omega_using [hNB, eY, eK1, eXK, eV])) (by omega_using [hNB, eD]) (by omega_using [hNB, eY, eD])).trans
           ((f₄.val hl hp (.inr (by omega_using [eK1, eV])) (by omega_using [hNB, eD]) (by omega_using [eK1, eV, eD])).trans
             (k₃ l.oFin (.inr (by omega_using [eK1, eSK, eV])) (by omega_using [hNB, eMs]) p hp).2))⟩
-  have F2₇ : ∀ p < l.nl, GoodS l s₇.mem B M l.oF2 p ∧
+  obtain F2₇ : ∀ p < l.nl, GoodS l s₇.mem B M l.oF2 p ∧
       val52 l s₇.mem B (l.D * p + l.oF2) = val52 l s.mem B (l.D * p + l.oFin) := fun p hp =>
     ⟨⟨fun j hj => by rw [l₇ p hp j hj]; exact (eF₆ p hp).1.lt j hj,
       by rw [val52_of_limbs (l₇ p hp)]; exact (eF₆ p hp).1.v⟩,
@@ -515,21 +515,21 @@ theorem zPre_ok (hz : ZOk l) {s : State} {B : Addr} {M k x : Nat → Nat} {Q : P
   refine WP.mono (amm2_ok hl hB₇ hs₇ ar₇ (o := l.oFin) (a := l.oY) (b := l.oK1) (by omega_using [hNB, eY, eK1, eV]) (Nat.le_refl _)
     (by omega_using [hNB, eY, eD]) (by omega_using [eK1, eV, eD]) GY₇ GK₇) fun s₈ ⟨v₈, f₈, ar₈, g₈, rd₈, wr₈, x₈⟩ => ?_
   -- the congruences
-  have cK : Q → ∀ p < l.nl, val52 l s₄.mem B (l.D * p + l.oK1) % M p = 2 ^ (104 * l.S - l.cv) % M p :=
+  obtain cK : Q → ∀ p < l.nl, val52 l s₄.mem B (l.D * p + l.oK1) % M p = 2 ^ (104 * l.S - l.cv) % M p :=
     fun q p hp => by
       rw [← x2]
       refine up_cong (hR p hp) (v₄ p hp).2 ?_ x1
       rw [(k₃ l.oK1 (.inr (by omega_using [eSK])) (by omega_using [eK1, eV, eMs]) p hp).2]; exact vk q p hp
-  have cY : Q → ∀ p < l.nl, val52 l s₅.mem B (l.D * p + l.oY) % M p = 1 * 2 ^ l.cv % M p := fun q p hp => by
+  obtain cY : Q → ∀ p < l.nl, val52 l s₅.mem B (l.D * p + l.oY) % M p = 1 * 2 ^ l.cv % M p := fun q p hp => by
     refine up_cong (hR p hp) (v₅ p hp).2 ?_ x1
     rw [f₄.val hl hp (.inl (by omega_using [eY, eX, eXK])) (by omega_using [hNB, eY, eD]) (by omega_using [eK1, eV, eD]), (k₃ l.oY (.inl (by omega_using [hNB, eY, eS])) (by omega_using [eY, eK1, eV, eMs]) p hp).2]
     exact vy q p hp
-  have cX : Q → ∀ p < l.nl, val52 l s₆.mem B (l.D * p + l.oX) % M p = x p * 2 ^ l.cv % M p := fun q p hp => by
+  obtain cX : Q → ∀ p < l.nl, val52 l s₆.mem B (l.D * p + l.oX) % M p = x p * 2 ^ l.cv % M p := fun q p hp => by
     refine up_cong (hR p hp) (v₆ p hp).2 ?_ x1
     rw [f₅.val hl hp (.inr (by omega_using [hNB, eY, eX])) (by omega_using [hNB, eX, hD]) (by omega_using [hNB, eY, eD]), f₄.val hl hp (.inl (by omega_using [eXK])) (by omega_using [hNB, eX, hD]) (by omega_using [eK1, eV, eD]),
       (k₃ l.oX (.inl (by omega_using [hNB, eX, eS])) (by omega_using [eK1, eXK, eV, eMs]) p hp).2]
     exact vx q p hp
-  have k₈ : ∀ c, c + l.NB ≤ l.oFin ∨ l.oFin + l.NB ≤ c → c + l.NB ≤ l.D → ∀ p < l.nl,
+  obtain k₈ : ∀ c, c + l.NB ≤ l.oFin ∨ l.oFin + l.NB ≤ c → c + l.NB ≤ l.D → ∀ p < l.nl,
       val52 l s₈.mem B (l.D * p + c) = val52 l s₇.mem B (l.D * p + c) := fun c h1 h2 p hp =>
     f₈.val hl hp h1 h2 (by omega_using [hNB, eD])
   refine ⟨ar₈, fun p hp => (GX₇ p hp).of_out2 hl hp f₈ (.inl (by omega_using [eK1, eXK, eV])) (by omega_using [hNB, eX, hD]) (by omega_using [hNB, eD]),
@@ -591,26 +591,26 @@ theorem zBody_ok (hz : ZOk l) {s : State} {B : Addr} {M k x : Nat → Nat} {Q : 
   have hl := hz.amm
   obtain ⟨hNB, eK0, eY, eX, eS, eK1, eXK, eSK, eV, eMs, eF2, eD, hD, hL, hnl⟩ := hz.slots
   obtain ⟨o1, o2, o3, o4, o5, o6, o7, o8, o9, o10⟩ := lay_offs l
-  have hTK : l.oTab + l.T * l.NB ≤ l.oK1 := by omega_using [o5, o7]
-  have hR : ∀ p < l.nl, Nat.Coprime (2 ^ (52 * l.S)) (M p) := fun p hp => cop2 (hodd p hp) _
+  obtain hTK : l.oTab + l.T * l.NB ≤ l.oK1 := by omega_using [o5, o7]
+  obtain hR : ∀ p < l.nl, Nat.Coprime (2 ^ (52 * l.S)) (M p) := fun p hp => cop2 (hodd p hp) _
   refine WP.seq (WP.mono (zPre_ok hz (x := x) hB hs ar hodd hMw gx gy gk gf vx vy vk) fun s₁ zs => ?_)
-  have hB₁ : s₁.gpr .rbx = B := by
+  obtain hB₁ : s₁.gpr .rbx = B := by
     rw [zs.gpr _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
       (by decide)]; exact hB
-  have hs₁ : Scr s₁ B (l.nl * l.D) := hs.congr zs.wr
+  obtain hs₁ : Scr s₁ B (l.nl * l.D) := hs.congr zs.wr
   refine WP.seq (WP.mono (expLoop_ok hl ⟨hB₁, hs₁, zs.ar, hR, zs.gx, zs.gy, zs.gk, zs.vx, zs.vy, zs.vk⟩ zs.gf he
     (fun p hp i hi => by rw [zs.dg p hp i hi]; exact hd p hp i hi)) fun s₂ ⟨v₂, f₂, g₂, rd₂, wr₂, x₂⟩ => ?_)
-  have hB₂ : s₂.gpr .rbx = B := by
+  obtain hB₂ : s₂.gpr .rbx = B := by
     rw [g₂ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
       (by decide) (by decide) (by decide)]; exact hB₁
   -- the prime and the last multiplier, which the exponentiations leave
-  have lM : ∀ p < l.nl, ∀ j < l.L, limb l s₂.mem B (l.D * p + oM) j = limb l s₁.mem B (l.D * p + oM) j :=
+  obtain lM : ∀ p < l.nl, ∀ j < l.L, limb l s₂.mem B (l.D * p + oM) j = limb l s₁.mem B (l.D * p + oM) j :=
     fun p hp => f₂.limbs hl hp (.inl (by simp only [oM]; omega_using [hNB, eY])) (.inl (by simp only [oM]; omega_using [hNB, eS]))
       (.inl (by simp only [oM]; omega_using [eK1])) (.inl (by simp only [oM]; omega_using [o5])) (by simp only [oM]; omega_using [hNB, eD])
-  have lF : ∀ p < l.nl, ∀ j < l.L, limb l s₂.mem B (l.D * p + l.oF2) j = limb l s₁.mem B (l.D * p + l.oF2) j :=
+  obtain lF : ∀ p < l.nl, ∀ j < l.L, limb l s₂.mem B (l.D * p + l.oF2) j = limb l s₁.mem B (l.D * p + l.oF2) j :=
     fun p hp => f₂.limbs hl hp (.inr (by omega_using [hNB, eY, eX, eS, eK1, eXK, eSK, eV, eF2, o2, o3, o4, o5, o7, o8, o9, hTK])) (.inr (by omega_using [hNB, eX, eS, eK1, eXK, eSK, eV, eF2, o3, o4, o5, o7, o8, o9, hTK])) (.inr (by omega_using [eV, eF2])) (.inr (by omega_using [hNB, eX, eS, eK1, eXK, eSK, eV, eF2, o3, o4, o5, o7, o8, o9, hTK])) (by omega_using [hNB, eF2, eD])
   have ar₁ := zs.ar.toAr0
-  have ar₂ : Ar0 l s₂.mem B M k := by
+  obtain ar₂ : Ar0 l s₂.mem B M k := by
     refine ⟨fun p hp j hj => ?_, fun p hp => ?_, fun p hp t ht => ?_, ar₁.klt, fun p hp => ?_, ar₁.bnd⟩
     · rw [lM p hp j hj]; exact ar₁.mlt p hp j hj
     · rw [val52_of_limbs (lM p hp)]; exact ar₁.mv p hp
@@ -618,7 +618,7 @@ theorem zBody_ok (hz : ZOk l) {s : State} {B : Addr} {M k x : Nat → Nat} {Q : 
         (by omega_using [eK0, eD, ht]) hl.D_bounds.2, ← Nat.add_assoc]
       exact ar₁.kw p hp t ht
     · rw [lM p hp 0 (by omega_using [hL])]; exact ar₁.k0 p hp
-  have gF₂ : ∀ p < l.nl, GoodS l s₂.mem B M l.oF2 p := fun p hp =>
+  obtain gF₂ : ∀ p < l.nl, GoodS l s₂.mem B M l.oF2 p := fun p hp =>
     ⟨fun j hj => by rw [lF p hp j hj]; exact (zs.f2 p hp).1.lt j hj,
       by rw [val52_of_limbs (lF p hp)]; exact (zs.f2 p hp).1.v⟩
   refine WP.mono (zPost_ok hz hB₂ (hs₁.congr wr₂) ar₂ (fun p hp => (v₂ p hp).1) gF₂)

@@ -65,10 +65,10 @@ theorem keyPair_ok {s : State} {L : Lay} {key sig dig : Addr} {p : Nat} (hL : L.
   have hnw := hL.nowrap
   have hql := hL.ql
   have hbe := hL.buf_end
-  have hqZ : L.qOff + 1600 ≤ L.Z := by simp only [Lay.bOff] at hbe; omega_arith
-  have e0 := Lay.slot_eq L.wp 0; have e1 := Lay.slot_eq L.wp 1; have e4 := Lay.slot_eq L.wp 4
-  have e5 := Lay.slot_eq L.wp 5
-  have e8 := Lay.slot_eq L.wp 8; have e24 := Lay.slot_eq L.wp 24; have e28 := Lay.slot_eq L.wp 28
+  obtain hqZ : L.qOff + 1600 ≤ L.Z := by simp only [Lay.bOff] at hbe; omega_arith
+  obtain e0 := Lay.slot_eq L.wp 0; have e1 := Lay.slot_eq L.wp 1; have e4 := Lay.slot_eq L.wp 4
+  obtain e5 := Lay.slot_eq L.wp 5
+  obtain e8 := Lay.slot_eq L.wp 8; have e24 := Lay.slot_eq L.wp 24; have e28 := Lay.slot_eq L.wp 28
   have hq28 : L.qOff = slot L.wp 28 := rfl
   unfold keyPair
   -- The pointers: x's octets into `r24`, g's into `r12`.
@@ -78,8 +78,8 @@ theorem keyPair_ok {s : State} {L : Lay} {key sig dig : Addr} {p : Nat} (hL : L.
   refine WP.mono (WP.keep [.r24] (Q := fun u => u.gpr .r24 = off key (3 * L.pl + L.ql) ∧ u.mem = s₁.mem)
     (by prun [a12, BitVec.add_zero]) (by decide)) fun s₂ ⟨⟨a24, m2⟩, k2⟩ => ?_
   refine WP.mono (ptrG_ok ((hr.keep k1).keep k2)) fun s₃ ⟨⟨b12, b6, m3⟩, k3⟩ => ?_
-  have k13 := (k1.trans k2).trans k3
-  have hm3 : s₃.mem = s.mem := by rw [m3, m2, m1]
+  obtain k13 := (k1.trans k2).trans k3
+  obtain hm3 : s₃.mem = s.mem := by rw [m3, m2, m1]
   -- `g^x mod p` into array 4.
   refine WP.seq (WP.mono (powSrc_ok (N := off key (L.pl + L.ql)) (E := off key (3 * L.pl + L.ql)) (p := p) hL
       (hr.keep k13) (hin.keep k13 (by decide))
@@ -90,34 +90,34 @@ theorem keyPair_ok {s : State} {L : Lay} {key sig dig : Addr} {p : Nat} (hL : L.
   rw [hm3] at v4 o4
   -- y into array 5.
   refine WP.seq (WP.mono (ptrY_ok ((hr.keep k13).keep k4)) fun s₅ ⟨⟨c12, c6, m5⟩, k5⟩ => ?_)
-  have k15 := (k13.trans k4).trans k5
+  obtain k15 := (k13.trans k4).trans k5
   refine WP.seq (WP.mono (loadArr_ok (in4.env.keep k5 (by decide)) (j := 5) (by decide) c12 c6 (by omega_arith) (by omega_arith)
       (fun i hi => by rw [k15.rd, k15.wr]; exact (hk.sub (o := 2 * L.pl + L.ql) (k := L.pl) (by omega_arith)).rd i hi)
       (fun i hi x hx => (hk.sub (o := 2 * L.pl + L.ql) (k := L.pl) (by omega_arith)).sep i hi x (by omega_arith)))
     fun s₆ ⟨⟨v5, _, o6, a10⟩, k6⟩ => ?_)
   rw [m5] at v5 o6
-  have en6 := env_keep10 (in4.env.keep k5 (by decide)) k6 (by decide) a10
+  obtain en6 := env_keep10 (in4.env.keep k5 (by decide)) k6 (by decide) a10
   -- The comparison, and the mask to the header.
   refine WP.seq (WP.mono (eqMask_ok en6 .r3 (a := 4) (b := 5) (by decide) (by decide))
     fun s₇ ⟨⟨c3, m7⟩, k7⟩ => ?_)
-  have k17 := (k15.trans k6).trans k7
-  have h21 : s₇.gpr .r21 = L.S := (k17.gpr .r21 (by decide)).trans hr.r21
-  have hst : InRegions s₇.wr (L.S + BitVec.ofNat 64 hMask) 8 := (hs.congr k17.wr).st (by simp only [hMask]; omega_arith)
-  have he : exec (.store .d .r3 .r21 hMask) s₇ =
+  obtain k17 := (k15.trans k6).trans k7
+  obtain h21 : s₇.gpr .r21 = L.S := (k17.gpr .r21 (by decide)).trans hr.r21
+  obtain hst : InRegions s₇.wr (L.S + BitVec.ofNat 64 hMask) 8 := (hs.congr k17.wr).st (by simp only [hMask]; omega_arith)
+  obtain he : exec (.store .d .r3 .r21 hMask) s₇ =
       some { s₇ with mem := s₇.mem.writeW (L.S + BitVec.ofNat 64 hMask) (s₇.gpr .r3) } := by
     rw [exec_std (by decide) (by rw [h21]; exact hst), h21]
   refine WP.mono (WP.keep [] (Q := fun u => u.mem = s₇.mem.writeW (L.S + BitVec.ofNat 64 hMask) (s₇.gpr .r3))
     (by prun [he]) (by decide)) fun t ⟨mt, kt⟩ => ?_
-  have wo : Outside L.S 0 8 s₆.mem t.mem := by
+  obtain wo : Outside L.S 0 8 s₆.mem t.mem := by
     rw [mt, m7]; exact writeW_outside s₆.mem L.S (d := 0) _ (by omega_arith)
   have o6' : Outside L.S (slot L.wp 5) (8 * (L.wp + 1)) s₄.mem s₆.mem := o6
-  have x4 : val32 s₆.mem L.S (slot L.wp 4) (2 * L.wp) = arrP s₄.mem L 4 :=
+  obtain x4 : val32 s₆.mem L.S (slot L.wp 4) (2 * L.wp) = arrP s₄.mem L 4 :=
     Outside.val32 o6' (by omega_arith) (by omega_arith)
-  have y5 : Spec.Rsa.bytesAt s₄.mem (off key (2 * L.pl + L.ql)) L.pl =
+  obtain y5 : Spec.Rsa.bytesAt s₄.mem (off key (2 * L.pl + L.ql)) L.pl =
       Spec.Rsa.bytesAt s.mem (off key (2 * L.pl + L.ql)) L.pl :=
     (hk.sub (o := 2 * L.pl + L.ql) (k := L.pl) (by omega_arith)).bytes (Body.ofP hL o4 (by omega_arith) (by omega_arith)) hZ
   rw [x4, v4, v5, y5] at c3
-  have kall := k17.trans kt
+  obtain kall := k17.trans kt
   refine ⟨⟨?_, ⟨en6.keep (k7.trans kt) (by decide), (kall.gpr .r21 (by decide)).trans hin.h21,
       (kall.gpr .r23 (by decide)).trans hin.h23⟩, ?_, ?_, ?_, fun i hi => ?_, ?_⟩, kall.mono (by decide)⟩
   · rw [mt]
@@ -148,22 +148,22 @@ theorem markValid_ok {s : State} {L : Lay} {key sig dig : Addr} (hL : L.Ok) (hs 
   have hZ := hL.z256
   have hnw := hL.nowrap
   have hw := hL.wp_ge
-  have e0 := Lay.slot_eq L.wp 0; have e8 := Lay.slot_eq L.wp 8; have e24 := Lay.slot_eq L.wp 24
+  obtain e0 := Lay.slot_eq L.wp 0; have e8 := Lay.slot_eq L.wp 8; have e24 := Lay.slot_eq L.wp 24
   unfold markValid
   rw [show ([.li .r3 0, .subi .r3 .r3 1, .store .d .r3 .r21 hMask] : List Instr) =
     [.li .r3 0, .subi .r3 .r3 1] ++ [.store .d .r3 .r21 hMask] from rfl, WP.block_append_iff]
   refine WP.mono (WP.keep [.r3] (Q := fun u => u.gpr .r3 = mask true ∧ u.mem = s.mem)
     (by prun; rfl) (by decide)) fun s₁ ⟨⟨a3, m1⟩, k1⟩ => ?_
-  have h21 : s₁.gpr .r21 = L.S := (k1.gpr .r21 (by decide)).trans hr.r21
-  have hst : InRegions s₁.wr (L.S + BitVec.ofNat 64 hMask) 8 := (hs.congr k1.wr).st (by simp only [hMask]; omega_arith)
-  have he : exec (.store .d .r3 .r21 hMask) s₁ =
+  obtain h21 : s₁.gpr .r21 = L.S := (k1.gpr .r21 (by decide)).trans hr.r21
+  obtain hst : InRegions s₁.wr (L.S + BitVec.ofNat 64 hMask) 8 := (hs.congr k1.wr).st (by simp only [hMask]; omega_arith)
+  obtain he : exec (.store .d .r3 .r21 hMask) s₁ =
       some { s₁ with mem := s₁.mem.writeW (L.S + BitVec.ofNat 64 hMask) (s₁.gpr .r3) } := by
     rw [exec_std (by decide) (by rw [h21]; exact hst), h21]
   refine WP.mono (WP.keep [] (Q := fun u => u.mem = s₁.mem.writeW (L.S + BitVec.ofNat 64 hMask) (s₁.gpr .r3))
     (by prun [he]) (by decide)) fun t ⟨mt, kt⟩ => ?_
-  have wo : Outside L.S 0 8 s.mem t.mem := by
+  obtain wo : Outside L.S 0 8 s.mem t.mem := by
     rw [mt, m1]; exact writeW_outside s.mem L.S (d := 0) _ (by omega_arith)
-  have kall := k1.trans kt
+  obtain kall := k1.trans kt
   refine ⟨⟨?_, ⟨hin.env.keep kall (by decide), (kall.gpr .r21 (by decide)).trans hin.h21,
       (kall.gpr .r23 (by decide)).trans hin.h23⟩, wo.mono (Nat.zero_le _) (by omega_arith), ?_,
       fun i hi => ?_, ?_⟩, kall.mono (by decide)⟩

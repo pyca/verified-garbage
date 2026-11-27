@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Weierstrass.Env
+public meta import Lean.Elab.Tactic.ElabTerm
 public import VerifiedGarbage.Proof.Mont.Words
 
 /-!

@@ -16,6 +16,8 @@ accumulate the mask; the key is copied out under it.
 namespace VG.Impl.Dsa.Arm.Generate
 open VG VG.Arm VG.Impl.Mont.Arm VG.Impl.Mont.Arm.Dynamic VG.Impl.Dsa.Layout
 
+variable (umaal : Bool)
+
 /-- `1 < g < p` and `q ∣ p - 1`. -/
 def domain (pLen qLen : Nat) : Prog isa := Core.sequence [
   Validate.range pLen .p (.input .g) true,
@@ -25,9 +27,9 @@ def domain (pLen qLen : Nat) : Prog isa := Core.sequence [
 
 /-- `g^q = 1 mod p`. -/
 def subgroup (pLen qLen : Nat) : Prog isa :=
-  .seq (Core.power pLen qLen .p (.input .g) (.input .q) t) (Validate.isOne pLen (.local t))
+  .seq (Core.power umaal pLen qLen .p (.input .g) (.input .q) t) (Validate.isOne pLen (.local t))
 
-def parameters (pLen qLen : Nat) : Prog isa := .seq (domain pLen qLen) (subgroup pLen qLen)
+def parameters (pLen qLen : Nat) : Prog isa := .seq (domain pLen qLen) (subgroup umaal pLen qLen)
 
 /-- Try the supported widths in turn; the last continuation is unreachable
 for lengths the contracts accept. -/
@@ -50,10 +52,10 @@ def checkEntry : List Instr :=
 
 def checkSized (pLen qLen : Nat) : Prog isa :=
   .seq (Shape.check pLen qLen)
-    (.ite .eq (.block [.mov .r0 (.imm 0)]) (.seq (parameters pLen qLen) (.block SignVerify.result)))
+    (.ite .eq (.block [.mov .r0 (.imm 0)]) (.seq (parameters umaal pLen qLen) (.block SignVerify.result)))
 
 def checkParameters : Prog isa := Core.sequence [
-  .block checkEntry, dispatch checkSized widths, .block Entry.restore]
+  .block checkEntry, dispatch (checkSized umaal) widths, .block Entry.restore]
 
 /-- The supplied x is kept at the signer's nonce field. -/
 def deriveArguments : List (Entry.Arg × Field) :=
@@ -68,11 +70,11 @@ def deriveEntry : List Instr :=
 /-- x's range, y = g^x mod p and y's range. -/
 def keyCompute (pLen qLen : Nat) : Prog isa := Core.sequence [
   Validate.range qLen .q (.input .nonce),
-  Core.power pLen qLen .p (.input .g) (.input .nonce) t2,
+  Core.power umaal pLen qLen .p (.input .g) (.input .nonce) t2,
   Validate.range pLen .p (.local t2) true]
 
 /-- The domain's checks, then `keyCompute`. -/
-def deriveCompute (pLen qLen : Nat) : Prog isa := .seq (parameters pLen qLen) (keyCompute pLen qLen)
+def deriveCompute (pLen qLen : Nat) : Prog isa := .seq (parameters umaal pLen qLen) (keyCompute umaal pLen qLen)
 
 def copyStep : List Instr :=
   [.ldrb .r0 .r1 0, .dp .and .r0 .r0 (.reg .r3), .strb .r0 .r10 0,
@@ -106,12 +108,17 @@ def deriveSized (compute : Nat → Nat → Prog isa) (pLen qLen : Nat) : Prog is
 def deriveWith (compute : Nat → Nat → Prog isa) : Prog isa := Core.sequence [
   .block deriveEntry, dispatch (deriveSized compute) widths, .block Entry.restore]
 
-def deriveKey : Prog isa := deriveWith deriveCompute
+def deriveKey : Prog isa := deriveWith (deriveCompute umaal)
 
 /-- Key derivation for a domain whose check (`checkParameters`) has
 succeeded: `deriveKey` without the domain's checks, which include the
 exponentiation `g^q mod p = 1`; x's and y's ranges remain. Key generation
 calls it once the domain check has passed. -/
-def deriveChecked : Prog isa := deriveWith keyCompute
+def deriveChecked : Prog isa := deriveWith (keyCompute umaal)
+
+/-- The names of the check and the derivation, as functions key generation calls. -/
+def checkName : String := "vg_dsa_check_parameters" ++ suffix umaal
+
+def deriveName : String := "vg_dsa_derive_key_checked" ++ suffix umaal
 
 end VG.Impl.Dsa.Arm.Generate

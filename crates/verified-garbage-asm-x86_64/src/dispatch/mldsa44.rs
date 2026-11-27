@@ -214,7 +214,7 @@ pub unsafe fn vg_mldsa44_prepare_signing_key_auto(_dit: verified_garbage_cpu::Di
 /// * `rnd` must be fresh random bytes (FIPS 204 §3.6.1), or 32 zero bytes for deterministic signing.
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
 /// * `sig` and `scratch` must not overlap each other, `sk`, `mu` or `rnd` (distinct Rust objects never do).
-/// * None of `sk`, `mu`, `rnd`, `sig` and `scratch` may overlap the return address on the stack or the 40 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `sk`, `mu`, `rnd`, `sig` and `scratch` may overlap the return address on the stack or the 152 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_mldsa44_sign_auto(_dit: verified_garbage_cpu::Dit<'_>, sk: *const [u8; 2560], mu: *const [u8; 64], rnd: *const [u8; 32], sig: *mut [u8; 2420], scratch: *mut [u64; 9728]) -> u32 {
@@ -278,7 +278,7 @@ pub unsafe fn vg_mldsa44_sign_auto(_dit: verified_garbage_cpu::Dit<'_>, sk: *con
 /// * `rnd` must be fresh random bytes (FIPS 204 §3.6.1), or 32 zero bytes for deterministic signing.
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
 /// * `sig` and `scratch` must not overlap each other, `sk`, `mu` or `rnd` (distinct Rust objects never do).
-/// * None of `sk`, `mu`, `rnd`, `sig` and `scratch` may overlap the return address on the stack or the 40 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `sk`, `mu`, `rnd`, `sig` and `scratch` may overlap the return address on the stack or the 152 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_mldsa44_sign_prepared_auto(_dit: verified_garbage_cpu::Dit<'_>, sk: *const [u8; 14848], mu: *const [u8; 64], rnd: *const [u8; 32], sig: *mut [u8; 2420], scratch: *mut [u64; 9728]) -> u32 {
@@ -322,7 +322,7 @@ pub unsafe fn vg_mldsa44_sign_prepared_auto(_dit: verified_garbage_cpu::Dit<'_>,
     unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(sk, mu, rnd, sig, scratch) }
 }
 
-/// ML-DSA-44 signing, `ML-DSA.Sign(sk, M, ctx)` (FIPS 204 Algorithm 2) on the randomness `*rnd` (line 5): with the private key `*sk`, the `msg_len` bytes of the message at `msg` and the `ctx_len` bytes of the context string at `ctx`, writes the signature of the formatted message `M′ = 0 ‖ ctx_len ‖ ctx ‖ M` (line 10), `ML-DSA.Sign_internal(sk, M′, rnd)` (Algorithm 7), to `*sig`. Returns 1 on success. Returns 0 if a loop reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed. Returns 2 if `ctx_len` is greater than 255 (FIPS 204 returns the error indication `⊥`): `*sig` is then unspecified.
+/// ML-DSA-44 signing, `ML-DSA.Sign(sk, M, ctx)` (FIPS 204 Algorithm 2) on the randomness `*rnd` (line 5): with the private key `*sk`, the `msg_len` bytes of the message at `msg` and the `ctx_len` bytes of the context string at `ctx`, writes the signature of the formatted message `M′ = 0 ‖ ctx_len ‖ ctx ‖ M` (line 10), `ML-DSA.Sign_internal(sk, M′, rnd)` (Algorithm 7), to `*sig`. Returns 1 on success. Returns 0 if a loop reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed. Returns 2 if `ctx_len` is greater than 255 (FIPS 204 returns the error indication `⊥`): `*sig` is then unchanged.
 ///
 /// Contract: `VG.Spec.MlDsa.signMessageContract`. Constant time but for `ρ` and the rejection sampling: timing may depend on the pointers, on `msg_len` and `ctx_len`, on `ρ` (the first 32 bytes of `*sk`), on the number of iterations of the signing loop, the commitment hash of each and which validity check rejected it, and on the hint of the signature (`signMessageLeak`), but not on anything else of the key, the message, the context string or the randomness.
 ///
@@ -342,7 +342,7 @@ pub unsafe fn vg_mldsa44_sign_prepared_auto(_dit: verified_garbage_cpu::Dit<'_>,
 /// * `rnd` must be fresh random bytes (FIPS 204 §3.6.1), or 32 zero bytes for deterministic signing.
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
 /// * `sig` and `scratch` must not overlap each other, `sk`, `msg`, `ctx`, `rnd` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `sk`, `msg`, `ctx`, `rnd`, `sig` and `scratch` may overlap the return address on the stack or the 112 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `sk`, `msg`, `ctx`, `rnd`, `sig` and `scratch` may overlap the return address on the stack or the 224 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_mldsa44_sign_message_auto(_dit: verified_garbage_cpu::Dit<'_>, sk: *const [u8; 2560], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, rnd: *const [u8; 32], sig: *mut [u8; 2420], scratch: *mut [u64; 9856]) -> u32 {
@@ -407,7 +407,7 @@ pub unsafe fn vg_mldsa44_sign_message_auto(_dit: verified_garbage_cpu::Dit<'_>, 
 /// * `rnd` must be fresh random bytes (FIPS 204 §3.6.1), or 32 zero bytes for deterministic signing.
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
 /// * `sig` and `scratch` must not overlap each other, `sk`, `msg`, `ctx`, `rnd` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `sk`, `msg`, `ctx`, `rnd`, `sig` and `scratch` may overlap the return address on the stack or the 112 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `sk`, `msg`, `ctx`, `rnd`, `sig` and `scratch` may overlap the return address on the stack or the 224 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_mldsa44_sign_message_prepared_auto(_dit: verified_garbage_cpu::Dit<'_>, sk: *const [u8; 14848], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, rnd: *const [u8; 32], sig: *mut [u8; 2420], scratch: *mut [u64; 9856]) -> u32 {
@@ -591,7 +591,7 @@ pub unsafe fn vg_mldsa44_verify_prepared_auto(_dit: verified_garbage_cpu::Dit<'_
 /// * `*tr` must equal SHAKE256(`*pk`, 64 bytes).
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
 /// * `scratch` must not overlap `pk`, `msg`, `ctx`, `sig`, `tr` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `pk`, `msg`, `ctx`, `sig`, `scratch` and `tr` may overlap the return address on the stack or the 112 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `pk`, `msg`, `ctx`, `sig`, `scratch` and `tr` may overlap the return address on the stack or the 224 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_mldsa44_verify_message_cached_auto(_dit: verified_garbage_cpu::Dit<'_>, pk: *const [u8; 1312], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 2420], scratch: *mut [u64; 9856], tr: *const [u8; 64]) -> u32 {
@@ -655,7 +655,7 @@ pub unsafe fn vg_mldsa44_verify_message_cached_auto(_dit: verified_garbage_cpu::
 /// * `*tr` must equal SHAKE256 of the public key that `*pk` begins with, 64 bytes.
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
 /// * `scratch` must not overlap `pk`, `msg`, `ctx`, `sig`, `tr` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `pk`, `msg`, `ctx`, `sig`, `scratch` and `tr` may overlap the return address on the stack or the 112 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `pk`, `msg`, `ctx`, `sig`, `scratch` and `tr` may overlap the return address on the stack or the 224 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_mldsa44_verify_message_prepared_auto(_dit: verified_garbage_cpu::Dit<'_>, pk: *const [u8; 5408], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 2420], scratch: *mut [u64; 9856], tr: *const [u8; 64]) -> u32 {

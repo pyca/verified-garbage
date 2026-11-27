@@ -14,6 +14,6 @@ open VG.PPC64LE
 
 /-- `vg_ecdh_p384`: `[d]P` by four-bit windows, with `b R mod p` at `BP`. -/
 def exchangeP384 : Prog isa :=
-  Cfg.exchangeWith Impl.Ecdsa.PPC64LE.p384 (Impl.Ecdsa.PPC64LE.Window.Cfg.mul Impl.Ecdsa.PPC64LE.p384 PX PY BP)
+  Cfg.exchangeWith Impl.Ecdsa.PPC64LE.p384 (Impl.Ecdsa.PPC64LE.Cfg.winCall Impl.Ecdsa.PPC64LE.p384 <| Impl.Ecdsa.PPC64LE.Window.Cfg.mul Impl.Ecdsa.PPC64LE.p384 PX PY BP)
 
 end VG.Impl.Ecdh.PPC64LE

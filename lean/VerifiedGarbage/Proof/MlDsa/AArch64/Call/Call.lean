@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Base
-import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+public import VerifiedGarbage.Proof.Framework.AArch64.RelCT
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Sha3.AArch64.Sums
@@ -19,7 +19,10 @@ leak the same (`callAt_tr`).
 A callee (`CalleeOk S`) is correct and constant time under its contract
 with a stack of `S` bytes, and its frames use at most those `S` bytes; one
 verified against its contract with any stack up to `S` is
-(`CalleeOk.of_verified`, from `pre_stack`).
+(`CalleeOk.of_verified`, from `pre_stack`). Its constant time is against
+its public data without the mode (PSTATE.DIT, `Contract.ditFree`): a callee
+that never touches the mode leaks the same from any (`Contract.ct_ditFree`),
+so its callers need not track it.
 -/
 
 @[expose] public section
@@ -79,14 +82,48 @@ theorem glue_nomem : ∀ (as : List (Reg × Arg)), ∀ i ∈ glue as, ∀ s, isa
       | imm v => exact movV_nomem d v i h s
     · exact glue_nomem as i h s
 
+/-! ## Glue that never touches PSTATE.DIT -/
+
+theorem movV_noDit (d : Reg) (v : Nat) : (movV d v).all (fun i => !i.touchesDit) = true := by
+  rw [List.all_eq_true]
+  intro i hi
+  unfold movV Impl.MlKem.AArch64.movImm at hi
+  split at hi <;> simp only [List.mem_cons, List.not_mem_nil, or_false] at hi <;>
+    rcases hi with rfl | rfl | rfl | rfl <;> rfl
+
+theorem lea_noDit (d b : Reg) (off : Nat) : (lea d b off).all (fun i => !i.touchesDit) = true := by
+  unfold lea
+  split
+  · rfl
+  · rw [List.all_append, movV_noDit]; rfl
+
+theorem glue_noDit : ∀ (as : List (Reg × Arg)), (glue as).all (fun i => !i.touchesDit) = true
+  | [] => rfl
+  | (d, a) :: as => by
+    simp only [glue, List.all_append, glue_noDit as, Bool.and_true]
+    cases a with
+    | ptr p => exact lea_noDit d p.1 p.2
+    | imm v => exact movV_noDit d v
+
 /-! ## Callees -/
 
 /-- A callee: correct and constant time under the contract `k` (a shared
 contract with `S` bytes of stack), whose frames use at most those `S` bytes. -/
 structure CalleeOk (S : Nat) (c : Prog isa) (k : Contract isa) : Prop where
   correct : ∀ s, k.pre s → ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ k.post s s'
-  ct : ConstantTime isa k.pre k.pub c
+  ct : ConstantTime isa k.pre k.ditFree.pub c
   fd : 16 * c.aarch64Depth ≤ S
+  /-- It never touches PSTATE.DIT, whence `ct` (`Contract.ct_ditFree`); its
+  callers' code is then free of it too (`Message.DLe`). -/
+  nd : c.all (fun i => !i.touchesDit) = true
+
+/-- A callee from its correctness and constant time under its contract, for
+code that never touches the mode (`Contract.ct_ditFree`). -/
+theorem CalleeOk.of_ct {S : Nat} {c : Prog isa} {k : Contract isa}
+    (hv : ∀ s, k.pre s → ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ k.post s s')
+    (hct : ConstantTime isa k.pre k.pub c) (hnd : c.all (fun i => !i.touchesDit) = true)
+    (hpre : ∀ s d, k.pre s → k.pre (s.withDit d)) (hfd : 16 * c.aarch64Depth ≤ S) : CalleeOk S c k :=
+  ⟨hv, Contract.ct_ditFree hnd hct hpre, hfd, hnd⟩
 
 theorem stackBelow_sub (sp : Addr) {n S : Nat} (hn : n ≤ S) (hS : S < 2 ^ 64) :
     ∀ r ∈ stackBelow sp n, Region.Sub r (below sp S) := by
@@ -133,17 +170,55 @@ theorem pre_stack {sig : Sig} {pre : Curry (sig.words AArch64.abi.ptrBits) (Mem 
         · omega
       · exact (hres _ (List.mem_singleton_self _) a ha).sub_left (stackBelow_sub _ hn hS r hr)
 
+/-- A shared contract's precondition does not read the mode. -/
+theorem pre_withDit {sig : Sig} {pre : Curry (sig.words AArch64.abi.ptrBits) (Mem → Prop)}
+    {post : sig.Post AArch64.abi.ptrBits} {wa : Bool} {stack : Nat}
+    {leak : Option (Curry (sig.words AArch64.abi.ptrBits) (Mem → List Nat))} {s : State} (d : Bool)
+    (h : (sig.contract AArch64.abi pre post wa stack leak).pre s) :
+    (sig.contract AArch64.abi pre post wa stack leak).pre (s.withDit d) := by
+  unfold Sig.contract at h ⊢
+  simp only [AArch64.abi] at h ⊢
+  generalize List.map (fun x => VG.ArgWord.bits 64 x) (sig.words 64) = ws at h ⊢
+  by_cases h1 : ws.length ≤ VG.AArch64.argRegs.length
+  · simp only [h1, ↓reduceIte] at h ⊢; exact h
+  by_cases h2 : ((List.drop VG.AArch64.argRegs.length ws).all fun x => decide (x = 64)) = true
+  · simp only [h1, h2, ↓reduceIte] at h ⊢; exact h
+  by_cases h3 : VG.AArch64.pairedNarrowStack (List.drop VG.AArch64.argRegs.length ws) = true
+  · simp only [h1, h2, h3, ↓reduceIte] at h ⊢; exact h
+  · simp only [h1, h2, h3, Bool.false_eq_true, ↓reduceIte] at h
+
+/-- A shared contract's precondition, with constant tables, does not read the mode. -/
+theorem pre_withDitC {cs : List (String × List (BitVec 64))} {sig : Sig}
+    {pre : Curry (sig.words (AArch64.abi.withConsts cs).ptrBits) (Mem → Prop)}
+    {post : sig.Post (AArch64.abi.withConsts cs).ptrBits} {wa : Bool} {stack : Nat}
+    {leak : Option (Curry (sig.words (AArch64.abi.withConsts cs).ptrBits) (Mem → List Nat))} {s : State}
+    (d : Bool) (h : (sig.contract (AArch64.abi.withConsts cs) pre post wa stack leak).pre s) :
+    (sig.contract (AArch64.abi.withConsts cs) pre post wa stack leak).pre (s.withDit d) := by
+  cases cs with
+  | nil => exact pre_withDit d h
+  | cons c cs =>
+  unfold Sig.contract at h ⊢
+  simp only [Abi.withConsts, AArch64.abi] at h ⊢
+  generalize List.map (fun x => VG.ArgWord.bits 64 x) (sig.words 64) = ws at h ⊢
+  by_cases h1 : ws.length ≤ VG.AArch64.argRegs.length
+  · simp only [h1, ↓reduceIte] at h ⊢; exact h
+  by_cases h2 : ((List.drop VG.AArch64.argRegs.length ws).all fun x => decide (x = 64)) = true
+  · simp only [h1, h2, ↓reduceIte] at h ⊢; exact h
+  by_cases h3 : VG.AArch64.pairedNarrowStack (List.drop VG.AArch64.argRegs.length ws) = true
+  · simp only [h1, h2, h3, ↓reduceIte] at h ⊢; exact h
+  · simp only [h1, h2, h3, Bool.false_eq_true, ↓reduceIte] at h
+
 /-- A callee verified against its shared contract with at most `S` bytes of
 stack, whose frames use at most `S` bytes. -/
 theorem CalleeOk.of_verified {S : Nat} (hS : S < 2 ^ 64) {c : Prog isa} {sig : Sig}
     {pre : Curry (sig.words AArch64.abi.ptrBits) (Mem → Prop)} {post : sig.Post AArch64.abi.ptrBits} {wa : Bool}
     {leak : Option (Curry (sig.words AArch64.abi.ptrBits) (Mem → List Nat))} {n : Nat}
     (h : Verified AArch64.target c (sig.contract AArch64.abi pre post wa n leak)) (hn : n ≤ S)
-    (hfd : 16 * c.aarch64Depth ≤ S) :
+    (hfd : 16 * c.aarch64Depth ≤ S) (hnd : c.all (fun i => !i.touchesDit) = true) :
     CalleeOk S c (sig.contract AArch64.abi pre post wa S leak) :=
   ⟨fun s hs => h.1 s (pre_stack hn hS hs),
-    fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp e₁ e₂ =>
-      h.2.1 s₁ s₂ t₁ t₂ s₁' s₂' (pre_stack hn hS h₁) (pre_stack hn hS h₂) hp e₁ e₂, hfd⟩
+    Contract.ct_ditFree hnd (fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp e₁ e₂ =>
+      h.2.1 s₁ s₂ t₁ t₂ s₁' s₂' (pre_stack hn hS h₁) (pre_stack hn hS h₂) hp e₁ e₂) (fun _ d h => pre_withDit d h), hfd, hnd⟩
 
 /-- `k` with the fact `X` of each run added to its postcondition. -/
 def withPost (k : Contract isa) (X : State → State → Prop) : Contract isa :=
@@ -152,7 +227,7 @@ def withPost (k : Contract isa) (X : State → State → Prop) : Contract isa :=
 theorem CalleeOk.withPost {S : Nat} {c : Prog isa} {k : Contract isa} (C : CalleeOk S c k)
     {X : State → State → Prop} (hx : ∀ s t s', k.pre s → Exec isa c s t s' → X s s') :
     CalleeOk S c (withPost k X) :=
-  ⟨fun s hs => let ⟨t, s', e, a, p⟩ := C.correct s hs; ⟨t, s', e, a, p, hx s t s' hs e⟩, C.ct, C.fd⟩
+  ⟨fun s hs => let ⟨t, s', e, a, p⟩ := C.correct s hs; ⟨t, s', e, a, p, hx s t s' hs e⟩, C.ct, C.fd, C.nd⟩
 
 /-! ## Calls -/
 
@@ -179,7 +254,7 @@ theorem callAt_tr {S : Nat} {n : String} {c : Prog isa} {k : Contract isa} (C : 
     {P : State → State → Prop}
     (hP : ∀ x y x1 y1, P x y → Args as x x1 → Args as y y1 → ∃ rd wr : List Region,
       k.pre (x1.callEntry.withRegions rd wr) ∧ k.pre (y1.callEntry.withRegions rd wr) ∧
-      k.pub (x1.callEntry.withRegions rd wr) (y1.callEntry.withRegions rd wr) ∧
+      k.ditFree.pub (x1.callEntry.withRegions rd wr) (y1.callEntry.withRegions rd wr) ∧
       Covers (rd ++ wr) (x.rd ++ x.wr) ∧ Covers wr x.wr ∧
       Covers (rd ++ wr) (y.rd ++ y.wr) ∧ Covers wr y.wr) :
     RelCT isa P (callAt n c as) fun _ _ => True :=
@@ -188,10 +263,10 @@ theorem callAt_tr {S : Nat} {n : String} {c : Prog isa} {k : Contract isa} (C : 
       fun x y _ _ hp h1 h2 => ⟨x, y, hp, h1, h2⟩)
     (RelCT.mono (RelCT.exists_ (P := fun (a : List Region × List Region) (x1 y1 : State) =>
         k.pre (x1.callEntry.withRegions a.1 a.2) ∧ k.pre (y1.callEntry.withRegions a.1 a.2) ∧
-        k.pub (x1.callEntry.withRegions a.1 a.2) (y1.callEntry.withRegions a.1 a.2) ∧
+        k.ditFree.pub (x1.callEntry.withRegions a.1 a.2) (y1.callEntry.withRegions a.1 a.2) ∧
         Covers (a.1 ++ a.2) (x1.rd ++ x1.wr) ∧ Covers a.2 x1.wr ∧
         Covers (a.1 ++ a.2) (y1.rd ++ y1.wr) ∧ Covers a.2 y1.wr)
-      fun a => RelCT.call C.correct C.ct a.1 a.2 fun _ _ h => h)
+      fun a => RelCT.call (k := k.ditFree) C.correct C.ct a.1 a.2 fun _ _ h => h)
       (fun x1 y1 ⟨x, y, hp, h1, h2⟩ => by
         obtain ⟨rd, wr, p₁, p₂, pub, c₁, w₁, c₂, w₂⟩ := hP x y x1 y1 hp h1 h2
         exact ⟨(rd, wr), p₁, p₂, pub, by rw [h1.2.rd, h1.2.wr]; exact c₁, by rw [h1.2.wr]; exact w₁,

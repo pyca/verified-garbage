@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.Framework.X86.RelCT
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.RsaKeyGen.X86.Inverse.Verified
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.Inverse.Entry
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.Inverse.ConstantTime
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyInverseLoad
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Workspace
 public import VerifiedGarbage.Proof.RsaKeyGen.Contract
@@ -86,7 +86,11 @@ theorem wf_keep {u t : State} (W : VG.X86.Taint.Wf runtimeTaint u) (sp : t.gpr .
   argBases _ h := by cases h
   stk := by rw [sp]; exact W.stk
   frames _ h := by cases h
-  room h := by cases h
+  room h := by
+    rw [sp, wr]
+    have := W.room h
+    simp only [VG.X86.Taint.argByte, sp] at this ⊢
+    exact this
 
 /-- A call that keeps the callee-saved registers and writes only the workspace and the stack
 below `esp` keeps what `runtimeTaint` says is public. -/

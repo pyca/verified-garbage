@@ -28,9 +28,11 @@ depends on the key or the data.
 The block's words (big-endian, `lwbrx`) are in `wordReg 0 … 3`
 (`r4`, `r6`, `r7`, `r8`), the round's word in `r9`, the round keys are read
 from the schedule at `r3`, and the tables are in `v12`–`v15`, loaded from the
-static `tableSym` (`lxvd2xTbl`, its address in `r10`). The core writes
-only `r0`, `r4`, `r6`–`r12`, `v0`, `v1` and `v12`–`v15`, and the link
-register (`adrSym`), which the modes restore.
+static `tableSym` (`lxvd2xTbl`, its address in `r10`). The core is a
+call of one function for each direction (`vg_sm4_serial_encrypt`,
+`vg_sm4_serial_decrypt`), shared by every mode, which writes only `r0`,
+`r4`, `r6`–`r12`, `v0`, `v1` and `v12`–`v15`, and keeps the link register
+in `r0` around `adrSym`.
 
 Its slots are the bitsliced core's (`Modes.lean`), its buffer that core's
 first block (`tailSlot`), so that the modes over either take the same
@@ -70,9 +72,13 @@ def tableSym : String := "VG_SM4_PPC64LE_AFFINE"
 /-- The vector register of table `k`: `inLo`, `inHi`, `outLo`, `outHi`. -/
 def treg (k : Nat) : VReg := [VReg.v12, .v13, .v14, .v15].getD k .v12
 
-/-- The tables to `v12`–`v15`, and the mask `0x0f0f0f0f` to `r12`. -/
+/-- The tables' address into `r10`: `adrSym` writes the link register, which
+waits in `r0`. -/
+def tableAddr : List Instr := [.mflr .r0, .adrSym .r10 tableSym, .mtlr .r0]
+
+/-- The tables (at `r10`) to `v12`–`v15`, and the mask `0x0f0f0f0f` to `r12`. -/
 def loadTables : List Instr :=
-  .adrSym .r10 tableSym :: (List.range 4).flatMap (fun k =>
+  (List.range 4).flatMap (fun k =>
     [.li .r11 (16 * k), .lxvd2xTbl (treg k) .r10 .r11 tableSym tableWords]) ++
   [.lis .r12 0x0f0f, .ori .r12 .r12 0x0f0f]
 
@@ -126,10 +132,19 @@ def storeBlock : List Instr :=
 /-- The 32 rounds. -/
 def rounds (d : Dir) : List Instr := (List.range 32).flatMap (round d)
 
+/-- The code of the single-block core in the direction `d`, which keeps the
+link register. -/
+def body (d : Dir) : Prog isa := .seq (.block tableAddr) (.block (loadTables ++ loadBlock ++ rounds d ++ storeBlock))
+
+/-- The call of the single-block core in the direction `d`. -/
+def cryptCall : Dir → Prog isa
+  | .encrypt => .call "vg_sm4_serial_encrypt" (body .encrypt)
+  | .decrypt => .call "vg_sm4_serial_decrypt" (body .decrypt)
+
 /-- The single-block core in the direction `d`. -/
 def core (d : Dir) : Modes.PPC64LE.Core where
   prepare := .block []
-  crypt := .block (loadTables ++ loadBlock ++ rounds d ++ storeBlock)
+  crypt := cryptCall d
   slots := slots
   total := slots + 6
   buf := tailSlot

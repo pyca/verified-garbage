@@ -39,8 +39,9 @@ namespace VG.Proof.AesCbc.X86
 open VG VG.X86
 open VG.Spec.Aes (bytesAt)
 
-/-- `vg_aes_cbc_encrypt` (`enc`) or `vg_aes_cbc_decrypt` `(schedule, rounds, iv, data, n, scratch)`. -/
-def modeX86 (M : Mode) : Contract isa where
+/-- `vg_aes_cbc_encrypt` (`enc`) or `vg_aes_cbc_decrypt` `(schedule, rounds, iv, data, n, scratch)`,
+with `k` bytes of stack. -/
+def modeX86K (M : Mode) (k : Nat) : Contract isa where
   pre s :=
     let sched : Region := ⟨(arg s 0).setWidth 64, 240⟩
     let iv : Region := ⟨(arg s 2).setWidth 64, 16⟩
@@ -48,7 +49,7 @@ def modeX86 (M : Mode) : Contract isa where
     let scr : Region := ⟨(arg s 5).setWidth 64, 2176⟩
     let args : Region := ⟨argAddr s 0, 24⟩
     let ret : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
-    let stack : Region := ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 24, 24⟩
+    let stack : Region := ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 k, k⟩
     s.rd = [sched, args] ∧ s.wr = [iv, data, scr] ∧
       sched.Disjoint iv ∧ sched.Disjoint data ∧ sched.Disjoint scr ∧ iv.Disjoint data ∧ iv.Disjoint scr ∧
       data.Disjoint scr ∧ args.Disjoint iv ∧ args.Disjoint data ∧ args.Disjoint scr ∧
@@ -56,7 +57,7 @@ def modeX86 (M : Mode) : Contract isa where
       stack.Disjoint sched ∧ stack.Disjoint iv ∧ stack.Disjoint data ∧ stack.Disjoint scr ∧
       (arg s 0).toNat + 240 ≤ 2 ^ 32 ∧ (arg s 2).toNat + 16 ≤ 2 ^ 32 ∧
       (arg s 3).toNat + 16 * (arg s 4).toNat ≤ 2 ^ 32 ∧ (arg s 5).toNat + 2176 ≤ 2 ^ 32 ∧
-      24 ≤ (s.gpr .esp).toNat ∧ (s.gpr .esp).toNat + 28 ≤ 2 ^ 32 ∧
+      k ≤ (s.gpr .esp).toNat ∧ (s.gpr .esp).toNat + 28 ≤ 2 ^ 32 ∧
       ((arg s 1).toNat = 10 ∨ (arg s 1).toNat = 12 ∨ (arg s 1).toNat = 14)
   post s s' :=
     let w := bytesAt s.mem ((arg s 0).setWidth 64) (16 * ((arg s 1).toNat + 1))
@@ -65,6 +66,9 @@ def modeX86 (M : Mode) : Contract isa where
     Spec.Cbc.blocksAt s'.mem ((arg s 3).setWidth 64) (arg s 4).toNat = M.out (arg s 1).toNat w iv xs ∧
       bytesAt s'.mem ((arg s 2).setWidth 64) 16 = M.chain (arg s 1).toNat w iv xs
   pub s₁ s₂ := s₁.gpr .esp = s₂.gpr .esp ∧ ∀ i < 6, arg s₁ i = arg s₂ i
+
+/-- `modeX86K` with the 24 bytes of stack of a call of a block function. -/
+abbrev modeX86 (M : Mode) : Contract isa := modeX86K M 24
 
 /-- `vg_aes_cbc_encrypt` (`enc`) or `vg_aes_cbc_decrypt`. -/
 abbrev cbcX86 (enc : Bool) : Contract isa := modeX86 (cbcMode enc)
@@ -186,11 +190,18 @@ theorem blk_call {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State} {
     fun hd hk hn => Proof.Cmac.bytesAt_frame fE (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact (hd.sub_right (Region.sub_prefix hk)).symm) (by omega_using [hk, hn])
+  -- The pop loses the arguments' frame, below `esp`, apart from the buffers.
+  have lost : ∀ {p : BitVec 32} {n k : Nat}, (below (s.gpr .esp) 24).Disjoint ⟨p.setWidth 64, n⟩ → k ≤ n →
+      n ≤ 240 → bytesAt s'.mem (p.setWidth 64) k = bytesAt s₂.mem (p.setWidth 64) k :=
+    fun hd hk hn => Proof.Cmac.bytesAt_frame m₂ (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact ((hd.sub_left (below_sub (by decide) h.esp)).sub_right (Region.sub_prefix hk)).symm)
+      (by omega_using [hk, hn])
   simp only [Proof.Aes.blocksX86, arg_withRegions, State.withRegions_mem, a0, a1, a2, a3, hR,
-    show (1 : BitVec 32).toNat = 1 from rfl, m₂] at post
+    show (1 : BitVec 32).toNat = 1 from rfl] at post
   refine ⟨rd', wr', cs', ?_, ?_⟩
   · exact f'.mono fun r hr => by simp only [List.cons_append, List.nil_append] at hr; simpa using hr
-  · rw [bytesAt_of_statesAt post, keep h.bw hR' (Nat.le_refl _), ← ofFn_bytesAt,
+  · rw [lost h.bd (Nat.le_refl _) (by decide), bytesAt_of_statesAt post, keep h.bw hR' (Nat.le_refl _), ← ofFn_bytesAt,
       keep h.bd (Nat.le_refl _) (by decide), ofFn_bytesAt]
 
 /-- The block functions' contract, with the bytes of the working space at
@@ -231,13 +242,20 @@ theorem blk_call_tail {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.Sta
     fun hd hk hn => Proof.Cmac.bytesAt_frame fE (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact (hd.sub_right (Region.sub_prefix hk)).symm) (by omega_using [hk, hn])
+  -- The pop loses the arguments' frame, below `esp`, apart from the buffers.
+  have lost : ∀ {p : BitVec 32} {n k : Nat}, (below (s.gpr .esp) 24).Disjoint ⟨p.setWidth 64, n⟩ → k ≤ n →
+      n ≤ 240 → bytesAt s'.mem (p.setWidth 64) k = bytesAt s₂.mem (p.setWidth 64) k :=
+    fun hd hk hn => Proof.Cmac.bytesAt_frame m₂ (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact ((hd.sub_left (below_sub (by decide) h.esp)).sub_right (Region.sub_prefix hk)).symm)
+      (by omega_using [hk, hn])
   simp only [Proof.Aes.blocksX86, arg_withRegions, State.withRegions_mem, a0, a1, a2, a3, hR,
-    show (1 : BitVec 32).toNat = 1 from rfl, m₂] at post
-  simp only [arg_withRegions, State.withRegions_mem, a4, m₂] at tail
+    show (1 : BitVec 32).toNat = 1 from rfl] at post
+  simp only [arg_withRegions, State.withRegions_mem, a4] at tail
   have hS := h.hS
   refine ⟨⟨rd', wr', cs', ?_, ?_⟩, fun x hx => ?_⟩
   · exact f'.mono fun r hr => by simp only [List.cons_append, List.nil_append] at hr; simpa using hr
-  · rw [bytesAt_of_statesAt post, keep h.bw hR' (Nat.le_refl _), ← ofFn_bytesAt,
+  · rw [lost h.bd (Nat.le_refl _) (by decide), bytesAt_of_statesAt post, keep h.bw hR' (Nat.le_refl _), ← ofFn_bytesAt,
       keep h.bd (Nat.le_refl _) (by decide), ofFn_bytesAt]
   · by_cases hc : (⟨S.setWidth 64, 2048⟩ : Region).Contains x 1
     · have hi : (x - S.setWidth 64).toNat < 2048 := by simp only [Region.Contains] at hc; omega_using [hc]
@@ -249,7 +267,9 @@ theorem blk_call_tail {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.Sta
         omega_using [this]
       have t := tail _ hw hi
       rw [ex] at t
-      rw [t]
+      rw [m₂ x fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr
+        exact fun hb => h.bs x (below_sub (by decide) h.esp x hb) hc, t]
       exact fE x fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
         exact fun hb => h.bs x hb hc

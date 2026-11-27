@@ -1,8 +1,7 @@
 module
-public import VerifiedGarbage.Proof.Camellia.Bytes
-public import VerifiedGarbage.Proof.Framework.Bitslice.Table
 
-import VerifiedGarbage.Proof.Camellia.Bitsliced
+public import VerifiedGarbage.Proof.Camellia.Bitsliced
+public import VerifiedGarbage.Proof.Framework.Bitslice.Table
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-!

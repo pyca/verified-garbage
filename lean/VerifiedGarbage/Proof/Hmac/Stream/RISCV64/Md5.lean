@@ -41,11 +41,11 @@ def hash : Hash where
   N := 16
   D := 16
   F := 144
-  initN := Spec.Md5.initApi.name
+  initN := Spec.Md5.initApi.name ++ "_core"
   initC := Impl.Md5.RISCV64.Stream.init
-  updN := Spec.Md5.updateApi.name
+  updN := Spec.Md5.updateApi.name ++ "_core"
   updC := Impl.Md5.RISCV64.Stream.update
-  finN := Spec.Md5.finalizeApi.name
+  finN := Spec.Md5.finalizeApi.name ++ "_core"
   finC := Impl.Md5.RISCV64.Stream.finalize
 
 theorem initSd : sdepth Impl.Md5.RISCV64.Stream.init ≤ 144 := by decide +kernel

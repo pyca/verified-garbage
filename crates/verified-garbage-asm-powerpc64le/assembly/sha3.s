@@ -5,6 +5,8 @@
 // gives.
 
 vg_sha3_224_update:
+	stdu %r1, -672(%r1)
+	addi %r7, %r1, 32
 	addi %r8, %r7, 0
 	addi %r7, %r6, 0
 	addi %r6, %r5, 0
@@ -82,6 +84,66 @@ vg_sha3_224_update:
 	ld %r0, 32(%r1)
 	addi %r1, %r1, 48
 	mtlr %r0
+	addi %r1, %r1, 672
+	li %r0, 0
+	stdu %r1, -720(%r1)
+	addi %r12, %r1, 32
+	std %r0, 0(%r12)
+	std %r0, 8(%r12)
+	std %r0, 16(%r12)
+	std %r0, 24(%r12)
+	std %r0, 32(%r12)
+	std %r0, 40(%r12)
+	std %r0, 48(%r12)
+	std %r0, 56(%r12)
+	std %r0, 64(%r12)
+	std %r0, 72(%r12)
+	std %r0, 80(%r12)
+	std %r0, 88(%r12)
+	std %r0, 96(%r12)
+	std %r0, 104(%r12)
+	std %r0, 112(%r12)
+	std %r0, 120(%r12)
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	std %r0, 0(%r12)
+	std %r0, 8(%r12)
+	std %r0, 16(%r12)
+	std %r0, 24(%r12)
+	std %r0, 32(%r12)
+	std %r0, 40(%r12)
+	std %r0, 48(%r12)
+	std %r0, 56(%r12)
+	std %r0, 64(%r12)
+	std %r0, 72(%r12)
+	std %r0, 80(%r12)
+	std %r0, 88(%r12)
+	std %r0, 96(%r12)
+	std %r0, 104(%r12)
+	std %r0, 112(%r12)
+	std %r0, 120(%r12)
+	std %r0, 128(%r12)
+	std %r0, 136(%r12)
+	std %r0, 144(%r12)
+	std %r0, 152(%r12)
+	std %r0, 160(%r12)
+	std %r0, 168(%r12)
+	addi %r1, %r1, 720
+	li %r4, 0
+	li %r5, 0
+	li %r6, 0
+	li %r7, 0
+	li %r8, 0
+	li %r9, 0
+	li %r10, 0
+	li %r11, 0
+	li %r12, 0
 	blr
 
 vg_sha3_224_finalize:
@@ -113,9 +175,75 @@ vg_sha3_224_finalize:
 	ld %r30, 648(%r31)
 	ld %r31, 656(%r31)
 	addi %r1, %r1, 704
+	li %r0, 0
+	stdu %r1, -752(%r1)
+	addi %r12, %r1, 32
+	std %r0, 0(%r12)
+	std %r0, 8(%r12)
+	std %r0, 16(%r12)
+	std %r0, 24(%r12)
+	std %r0, 32(%r12)
+	std %r0, 40(%r12)
+	std %r0, 48(%r12)
+	std %r0, 56(%r12)
+	std %r0, 64(%r12)
+	std %r0, 72(%r12)
+	std %r0, 80(%r12)
+	std %r0, 88(%r12)
+	std %r0, 96(%r12)
+	std %r0, 104(%r12)
+	std %r0, 112(%r12)
+	std %r0, 120(%r12)
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	std %r0, 0(%r12)
+	std %r0, 8(%r12)
+	std %r0, 16(%r12)
+	std %r0, 24(%r12)
+	std %r0, 32(%r12)
+	std %r0, 40(%r12)
+	std %r0, 48(%r12)
+	std %r0, 56(%r12)
+	std %r0, 64(%r12)
+	std %r0, 72(%r12)
+	std %r0, 80(%r12)
+	std %r0, 88(%r12)
+	std %r0, 96(%r12)
+	std %r0, 104(%r12)
+	std %r0, 112(%r12)
+	std %r0, 120(%r12)
+	std %r0, 128(%r12)
+	std %r0, 136(%r12)
+	std %r0, 144(%r12)
+	std %r0, 152(%r12)
+	std %r0, 160(%r12)
+	std %r0, 168(%r12)
+	std %r0, 176(%r12)
+	std %r0, 184(%r12)
+	std %r0, 192(%r12)
+	std %r0, 200(%r12)
+	addi %r1, %r1, 752
+	li %r3, 0
+	li %r4, 0
+	li %r5, 0
+	li %r6, 0
+	li %r7, 0
+	li %r8, 0
+	li %r9, 0
+	li %r10, 0
+	li %r11, 0
+	li %r12, 0
 	blr
 
 vg_sha3_256_update:
+	stdu %r1, -672(%r1)
+	addi %r7, %r1, 32
 	addi %r8, %r7, 0
 	addi %r7, %r6, 0
 	addi %r6, %r5, 0
@@ -193,6 +321,66 @@ vg_sha3_256_update:
 	ld %r0, 32(%r1)
 	addi %r1, %r1, 48
 	mtlr %r0
+	addi %r1, %r1, 672
+	li %r0, 0
+	stdu %r1, -720(%r1)
+	addi %r12, %r1, 32
+	std %r0, 0(%r12)
+	std %r0, 8(%r12)
+	std %r0, 16(%r12)
+	std %r0, 24(%r12)
+	std %r0, 32(%r12)
+	std %r0, 40(%r12)
+	std %r0, 48(%r12)
+	std %r0, 56(%r12)
+	std %r0, 64(%r12)
+	std %r0, 72(%r12)
+	std %r0, 80(%r12)
+	std %r0, 88(%r12)
+	std %r0, 96(%r12)
+	std %r0, 104(%r12)
+	std %r0, 112(%r12)
+	std %r0, 120(%r12)
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	std %r0, 0(%r12)
+	std %r0, 8(%r12)
+	std %r0, 16(%r12)
+	std %r0, 24(%r12)
+	std %r0, 32(%r12)
+	std %r0, 40(%r12)
+	std %r0, 48(%r12)
+	std %r0, 56(%r12)
+	std %r0, 64(%r12)
+	std %r0, 72(%r12)
+	std %r0, 80(%r12)
+	std %r0, 88(%r12)
+	std %r0, 96(%r12)
+	std %r0, 104(%r12)
+	std %r0, 112(%r12)
+	std %r0, 120(%r12)
+	std %r0, 128(%r12)
+	std %r0, 136(%r12)
+	std %r0, 144(%r12)
+	std %r0, 152(%r12)
+	std %r0, 160(%r12)
+	std %r0, 168(%r12)
+	addi %r1, %r1, 720
+	li %r4, 0
+	li %r5, 0
+	li %r6, 0
+	li %r7, 0
+	li %r8, 0
+	li %r9, 0
+	li %r10, 0
+	li %r11, 0
+	li %r12, 0
 	blr
 
 vg_sha3_256_finalize:
@@ -224,9 +412,75 @@ vg_sha3_256_finalize:
 	ld %r30, 648(%r31)
 	ld %r31, 656(%r31)
 	addi %r1, %r1, 704
+	li %r0, 0
+	stdu %r1, -752(%r1)
+	addi %r12, %r1, 32
+	std %r0, 0(%r12)
+	std %r0, 8(%r12)
+	std %r0, 16(%r12)
+	std %r0, 24(%r12)
+	std %r0, 32(%r12)
+	std %r0, 40(%r12)
+	std %r0, 48(%r12)
+	std %r0, 56(%r12)
+	std %r0, 64(%r12)
+	std %r0, 72(%r12)
+	std %r0, 80(%r12)
+	std %r0, 88(%r12)
+	std %r0, 96(%r12)
+	std %r0, 104(%r12)
+	std %r0, 112(%r12)
+	std %r0, 120(%r12)
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	std %r0, 0(%r12)
+	std %r0, 8(%r12)
+	std %r0, 16(%r12)
+	std %r0, 24(%r12)
+	std %r0, 32(%r12)
+	std %r0, 40(%r12)
+	std %r0, 48(%r12)
+	std %r0, 56(%r12)
+	std %r0, 64(%r12)
+	std %r0, 72(%r12)
+	std %r0, 80(%r12)
+	std %r0, 88(%r12)
+	std %r0, 96(%r12)
+	std %r0, 104(%r12)
+	std %r0, 112(%r12)
+	std %r0, 120(%r12)
+	std %r0, 128(%r12)
+	std %r0, 136(%r12)
+	std %r0, 144(%r12)
+	std %r0, 152(%r12)
+	std %r0, 160(%r12)
+	std %r0, 168(%r12)
+	std %r0, 176(%r12)
+	std %r0, 184(%r12)
+	std %r0, 192(%r12)
+	std %r0, 200(%r12)
+	addi %r1, %r1, 752
+	li %r3, 0
+	li %r4, 0
+	li %r5, 0
+	li %r6, 0
+	li %r7, 0
+	li %r8, 0
+	li %r9, 0
+	li %r10, 0
+	li %r11, 0
+	li %r12, 0
 	blr
 
 vg_sha3_384_update:
+	stdu %r1, -672(%r1)
+	addi %r7, %r1, 32
 	addi %r8, %r7, 0
 	addi %r7, %r6, 0
 	addi %r6, %r5, 0
@@ -304,6 +558,66 @@ vg_sha3_384_update:
 	ld %r0, 32(%r1)
 	addi %r1, %r1, 48
 	mtlr %r0
+	addi %r1, %r1, 672
+	li %r0, 0
+	stdu %r1, -720(%r1)
+	addi %r12, %r1, 32
+	std %r0, 0(%r12)
+	std %r0, 8(%r12)
+	std %r0, 16(%r12)
+	std %r0, 24(%r12)
+	std %r0, 32(%r12)
+	std %r0, 40(%r12)
+	std %r0, 48(%r12)
+	std %r0, 56(%r12)
+	std %r0, 64(%r12)
+	std %r0, 72(%r12)
+	std %r0, 80(%r12)
+	std %r0, 88(%r12)
+	std %r0, 96(%r12)
+	std %r0, 104(%r12)
+	std %r0, 112(%r12)
+	std %r0, 120(%r12)
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	std %r0, 0(%r12)
+	std %r0, 8(%r12)
+	std %r0, 16(%r12)
+	std %r0, 24(%r12)
+	std %r0, 32(%r12)
+	std %r0, 40(%r12)
+	std %r0, 48(%r12)
+	std %r0, 56(%r12)
+	std %r0, 64(%r12)
+	std %r0, 72(%r12)
+	std %r0, 80(%r12)
+	std %r0, 88(%r12)
+	std %r0, 96(%r12)
+	std %r0, 104(%r12)
+	std %r0, 112(%r12)
+	std %r0, 120(%r12)
+	std %r0, 128(%r12)
+	std %r0, 136(%r12)
+	std %r0, 144(%r12)
+	std %r0, 152(%r12)
+	std %r0, 160(%r12)
+	std %r0, 168(%r12)
+	addi %r1, %r1, 720
+	li %r4, 0
+	li %r5, 0
+	li %r6, 0
+	li %r7, 0
+	li %r8, 0
+	li %r9, 0
+	li %r10, 0
+	li %r11, 0
+	li %r12, 0
 	blr
 
 vg_sha3_384_finalize:
@@ -335,9 +649,75 @@ vg_sha3_384_finalize:
 	ld %r30, 648(%r31)
 	ld %r31, 656(%r31)
 	addi %r1, %r1, 704
+	li %r0, 0
+	stdu %r1, -752(%r1)
+	addi %r12, %r1, 32
+	std %r0, 0(%r12)
+	std %r0, 8(%r12)
+	std %r0, 16(%r12)
+	std %r0, 24(%r12)
+	std %r0, 32(%r12)
+	std %r0, 40(%r12)
+	std %r0, 48(%r12)
+	std %r0, 56(%r12)
+	std %r0, 64(%r12)
+	std %r0, 72(%r12)
+	std %r0, 80(%r12)
+	std %r0, 88(%r12)
+	std %r0, 96(%r12)
+	std %r0, 104(%r12)
+	std %r0, 112(%r12)
+	std %r0, 120(%r12)
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	std %r0, 0(%r12)
+	std %r0, 8(%r12)
+	std %r0, 16(%r12)
+	std %r0, 24(%r12)
+	std %r0, 32(%r12)
+	std %r0, 40(%r12)
+	std %r0, 48(%r12)
+	std %r0, 56(%r12)
+	std %r0, 64(%r12)
+	std %r0, 72(%r12)
+	std %r0, 80(%r12)
+	std %r0, 88(%r12)
+	std %r0, 96(%r12)
+	std %r0, 104(%r12)
+	std %r0, 112(%r12)
+	std %r0, 120(%r12)
+	std %r0, 128(%r12)
+	std %r0, 136(%r12)
+	std %r0, 144(%r12)
+	std %r0, 152(%r12)
+	std %r0, 160(%r12)
+	std %r0, 168(%r12)
+	std %r0, 176(%r12)
+	std %r0, 184(%r12)
+	std %r0, 192(%r12)
+	std %r0, 200(%r12)
+	addi %r1, %r1, 752
+	li %r3, 0
+	li %r4, 0
+	li %r5, 0
+	li %r6, 0
+	li %r7, 0
+	li %r8, 0
+	li %r9, 0
+	li %r10, 0
+	li %r11, 0
+	li %r12, 0
 	blr
 
 vg_sha3_512_update:
+	stdu %r1, -672(%r1)
+	addi %r7, %r1, 32
 	addi %r8, %r7, 0
 	addi %r7, %r6, 0
 	addi %r6, %r5, 0
@@ -415,6 +795,66 @@ vg_sha3_512_update:
 	ld %r0, 32(%r1)
 	addi %r1, %r1, 48
 	mtlr %r0
+	addi %r1, %r1, 672
+	li %r0, 0
+	stdu %r1, -720(%r1)
+	addi %r12, %r1, 32
+	std %r0, 0(%r12)
+	std %r0, 8(%r12)
+	std %r0, 16(%r12)
+	std %r0, 24(%r12)
+	std %r0, 32(%r12)
+	std %r0, 40(%r12)
+	std %r0, 48(%r12)
+	std %r0, 56(%r12)
+	std %r0, 64(%r12)
+	std %r0, 72(%r12)
+	std %r0, 80(%r12)
+	std %r0, 88(%r12)
+	std %r0, 96(%r12)
+	std %r0, 104(%r12)
+	std %r0, 112(%r12)
+	std %r0, 120(%r12)
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	std %r0, 0(%r12)
+	std %r0, 8(%r12)
+	std %r0, 16(%r12)
+	std %r0, 24(%r12)
+	std %r0, 32(%r12)
+	std %r0, 40(%r12)
+	std %r0, 48(%r12)
+	std %r0, 56(%r12)
+	std %r0, 64(%r12)
+	std %r0, 72(%r12)
+	std %r0, 80(%r12)
+	std %r0, 88(%r12)
+	std %r0, 96(%r12)
+	std %r0, 104(%r12)
+	std %r0, 112(%r12)
+	std %r0, 120(%r12)
+	std %r0, 128(%r12)
+	std %r0, 136(%r12)
+	std %r0, 144(%r12)
+	std %r0, 152(%r12)
+	std %r0, 160(%r12)
+	std %r0, 168(%r12)
+	addi %r1, %r1, 720
+	li %r4, 0
+	li %r5, 0
+	li %r6, 0
+	li %r7, 0
+	li %r8, 0
+	li %r9, 0
+	li %r10, 0
+	li %r11, 0
+	li %r12, 0
 	blr
 
 vg_sha3_512_finalize:
@@ -446,9 +886,75 @@ vg_sha3_512_finalize:
 	ld %r30, 648(%r31)
 	ld %r31, 656(%r31)
 	addi %r1, %r1, 704
+	li %r0, 0
+	stdu %r1, -752(%r1)
+	addi %r12, %r1, 32
+	std %r0, 0(%r12)
+	std %r0, 8(%r12)
+	std %r0, 16(%r12)
+	std %r0, 24(%r12)
+	std %r0, 32(%r12)
+	std %r0, 40(%r12)
+	std %r0, 48(%r12)
+	std %r0, 56(%r12)
+	std %r0, 64(%r12)
+	std %r0, 72(%r12)
+	std %r0, 80(%r12)
+	std %r0, 88(%r12)
+	std %r0, 96(%r12)
+	std %r0, 104(%r12)
+	std %r0, 112(%r12)
+	std %r0, 120(%r12)
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	std %r0, 0(%r12)
+	std %r0, 8(%r12)
+	std %r0, 16(%r12)
+	std %r0, 24(%r12)
+	std %r0, 32(%r12)
+	std %r0, 40(%r12)
+	std %r0, 48(%r12)
+	std %r0, 56(%r12)
+	std %r0, 64(%r12)
+	std %r0, 72(%r12)
+	std %r0, 80(%r12)
+	std %r0, 88(%r12)
+	std %r0, 96(%r12)
+	std %r0, 104(%r12)
+	std %r0, 112(%r12)
+	std %r0, 120(%r12)
+	std %r0, 128(%r12)
+	std %r0, 136(%r12)
+	std %r0, 144(%r12)
+	std %r0, 152(%r12)
+	std %r0, 160(%r12)
+	std %r0, 168(%r12)
+	std %r0, 176(%r12)
+	std %r0, 184(%r12)
+	std %r0, 192(%r12)
+	std %r0, 200(%r12)
+	addi %r1, %r1, 752
+	li %r3, 0
+	li %r4, 0
+	li %r5, 0
+	li %r6, 0
+	li %r7, 0
+	li %r8, 0
+	li %r9, 0
+	li %r10, 0
+	li %r11, 0
+	li %r12, 0
 	blr
 
 vg_shake128_update:
+	stdu %r1, -672(%r1)
+	addi %r7, %r1, 32
 	addi %r8, %r7, 0
 	addi %r7, %r6, 0
 	addi %r6, %r5, 0
@@ -526,6 +1032,66 @@ vg_shake128_update:
 	ld %r0, 32(%r1)
 	addi %r1, %r1, 48
 	mtlr %r0
+	addi %r1, %r1, 672
+	li %r0, 0
+	stdu %r1, -720(%r1)
+	addi %r12, %r1, 32
+	std %r0, 0(%r12)
+	std %r0, 8(%r12)
+	std %r0, 16(%r12)
+	std %r0, 24(%r12)
+	std %r0, 32(%r12)
+	std %r0, 40(%r12)
+	std %r0, 48(%r12)
+	std %r0, 56(%r12)
+	std %r0, 64(%r12)
+	std %r0, 72(%r12)
+	std %r0, 80(%r12)
+	std %r0, 88(%r12)
+	std %r0, 96(%r12)
+	std %r0, 104(%r12)
+	std %r0, 112(%r12)
+	std %r0, 120(%r12)
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	std %r0, 0(%r12)
+	std %r0, 8(%r12)
+	std %r0, 16(%r12)
+	std %r0, 24(%r12)
+	std %r0, 32(%r12)
+	std %r0, 40(%r12)
+	std %r0, 48(%r12)
+	std %r0, 56(%r12)
+	std %r0, 64(%r12)
+	std %r0, 72(%r12)
+	std %r0, 80(%r12)
+	std %r0, 88(%r12)
+	std %r0, 96(%r12)
+	std %r0, 104(%r12)
+	std %r0, 112(%r12)
+	std %r0, 120(%r12)
+	std %r0, 128(%r12)
+	std %r0, 136(%r12)
+	std %r0, 144(%r12)
+	std %r0, 152(%r12)
+	std %r0, 160(%r12)
+	std %r0, 168(%r12)
+	addi %r1, %r1, 720
+	li %r4, 0
+	li %r5, 0
+	li %r6, 0
+	li %r7, 0
+	li %r8, 0
+	li %r9, 0
+	li %r10, 0
+	li %r11, 0
+	li %r12, 0
 	blr
 
 vg_shake128_finalize:
@@ -554,6 +1120,65 @@ vg_shake128_finalize:
 	addi %r1, %r1, 48
 	mtlr %r0
 	addi %r1, %r1, 672
+	li %r0, 0
+	stdu %r1, -720(%r1)
+	addi %r12, %r1, 32
+	std %r0, 0(%r12)
+	std %r0, 8(%r12)
+	std %r0, 16(%r12)
+	std %r0, 24(%r12)
+	std %r0, 32(%r12)
+	std %r0, 40(%r12)
+	std %r0, 48(%r12)
+	std %r0, 56(%r12)
+	std %r0, 64(%r12)
+	std %r0, 72(%r12)
+	std %r0, 80(%r12)
+	std %r0, 88(%r12)
+	std %r0, 96(%r12)
+	std %r0, 104(%r12)
+	std %r0, 112(%r12)
+	std %r0, 120(%r12)
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	std %r0, 0(%r12)
+	std %r0, 8(%r12)
+	std %r0, 16(%r12)
+	std %r0, 24(%r12)
+	std %r0, 32(%r12)
+	std %r0, 40(%r12)
+	std %r0, 48(%r12)
+	std %r0, 56(%r12)
+	std %r0, 64(%r12)
+	std %r0, 72(%r12)
+	std %r0, 80(%r12)
+	std %r0, 88(%r12)
+	std %r0, 96(%r12)
+	std %r0, 104(%r12)
+	std %r0, 112(%r12)
+	std %r0, 120(%r12)
+	std %r0, 128(%r12)
+	std %r0, 136(%r12)
+	std %r0, 144(%r12)
+	std %r0, 152(%r12)
+	std %r0, 160(%r12)
+	std %r0, 168(%r12)
+	addi %r1, %r1, 720
+	li %r4, 0
+	li %r5, 0
+	li %r6, 0
+	li %r7, 0
+	li %r8, 0
+	li %r9, 0
+	li %r10, 0
+	li %r11, 0
+	li %r12, 0
 	blr
 
 vg_shake128_squeeze:
@@ -632,6 +1257,65 @@ vg_shake128_squeeze:
 	addi %r1, %r1, 48
 	mtlr %r0
 	addi %r1, %r1, 672
+	li %r0, 0
+	stdu %r1, -720(%r1)
+	addi %r12, %r1, 32
+	std %r0, 0(%r12)
+	std %r0, 8(%r12)
+	std %r0, 16(%r12)
+	std %r0, 24(%r12)
+	std %r0, 32(%r12)
+	std %r0, 40(%r12)
+	std %r0, 48(%r12)
+	std %r0, 56(%r12)
+	std %r0, 64(%r12)
+	std %r0, 72(%r12)
+	std %r0, 80(%r12)
+	std %r0, 88(%r12)
+	std %r0, 96(%r12)
+	std %r0, 104(%r12)
+	std %r0, 112(%r12)
+	std %r0, 120(%r12)
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	std %r0, 0(%r12)
+	std %r0, 8(%r12)
+	std %r0, 16(%r12)
+	std %r0, 24(%r12)
+	std %r0, 32(%r12)
+	std %r0, 40(%r12)
+	std %r0, 48(%r12)
+	std %r0, 56(%r12)
+	std %r0, 64(%r12)
+	std %r0, 72(%r12)
+	std %r0, 80(%r12)
+	std %r0, 88(%r12)
+	std %r0, 96(%r12)
+	std %r0, 104(%r12)
+	std %r0, 112(%r12)
+	std %r0, 120(%r12)
+	std %r0, 128(%r12)
+	std %r0, 136(%r12)
+	std %r0, 144(%r12)
+	std %r0, 152(%r12)
+	std %r0, 160(%r12)
+	std %r0, 168(%r12)
+	addi %r1, %r1, 720
+	li %r4, 0
+	li %r5, 0
+	li %r6, 0
+	li %r7, 0
+	li %r8, 0
+	li %r9, 0
+	li %r10, 0
+	li %r11, 0
+	li %r12, 0
 	blr
 
 vg_shake256_finalize:
@@ -660,6 +1344,65 @@ vg_shake256_finalize:
 	addi %r1, %r1, 48
 	mtlr %r0
 	addi %r1, %r1, 672
+	li %r0, 0
+	stdu %r1, -720(%r1)
+	addi %r12, %r1, 32
+	std %r0, 0(%r12)
+	std %r0, 8(%r12)
+	std %r0, 16(%r12)
+	std %r0, 24(%r12)
+	std %r0, 32(%r12)
+	std %r0, 40(%r12)
+	std %r0, 48(%r12)
+	std %r0, 56(%r12)
+	std %r0, 64(%r12)
+	std %r0, 72(%r12)
+	std %r0, 80(%r12)
+	std %r0, 88(%r12)
+	std %r0, 96(%r12)
+	std %r0, 104(%r12)
+	std %r0, 112(%r12)
+	std %r0, 120(%r12)
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	std %r0, 0(%r12)
+	std %r0, 8(%r12)
+	std %r0, 16(%r12)
+	std %r0, 24(%r12)
+	std %r0, 32(%r12)
+	std %r0, 40(%r12)
+	std %r0, 48(%r12)
+	std %r0, 56(%r12)
+	std %r0, 64(%r12)
+	std %r0, 72(%r12)
+	std %r0, 80(%r12)
+	std %r0, 88(%r12)
+	std %r0, 96(%r12)
+	std %r0, 104(%r12)
+	std %r0, 112(%r12)
+	std %r0, 120(%r12)
+	std %r0, 128(%r12)
+	std %r0, 136(%r12)
+	std %r0, 144(%r12)
+	std %r0, 152(%r12)
+	std %r0, 160(%r12)
+	std %r0, 168(%r12)
+	addi %r1, %r1, 720
+	li %r4, 0
+	li %r5, 0
+	li %r6, 0
+	li %r7, 0
+	li %r8, 0
+	li %r9, 0
+	li %r10, 0
+	li %r11, 0
+	li %r12, 0
 	blr
 
 vg_shake256_squeeze:
@@ -738,4 +1481,63 @@ vg_shake256_squeeze:
 	addi %r1, %r1, 48
 	mtlr %r0
 	addi %r1, %r1, 672
+	li %r0, 0
+	stdu %r1, -720(%r1)
+	addi %r12, %r1, 32
+	std %r0, 0(%r12)
+	std %r0, 8(%r12)
+	std %r0, 16(%r12)
+	std %r0, 24(%r12)
+	std %r0, 32(%r12)
+	std %r0, 40(%r12)
+	std %r0, 48(%r12)
+	std %r0, 56(%r12)
+	std %r0, 64(%r12)
+	std %r0, 72(%r12)
+	std %r0, 80(%r12)
+	std %r0, 88(%r12)
+	std %r0, 96(%r12)
+	std %r0, 104(%r12)
+	std %r0, 112(%r12)
+	std %r0, 120(%r12)
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	std %r0, 0(%r12)
+	std %r0, 8(%r12)
+	std %r0, 16(%r12)
+	std %r0, 24(%r12)
+	std %r0, 32(%r12)
+	std %r0, 40(%r12)
+	std %r0, 48(%r12)
+	std %r0, 56(%r12)
+	std %r0, 64(%r12)
+	std %r0, 72(%r12)
+	std %r0, 80(%r12)
+	std %r0, 88(%r12)
+	std %r0, 96(%r12)
+	std %r0, 104(%r12)
+	std %r0, 112(%r12)
+	std %r0, 120(%r12)
+	std %r0, 128(%r12)
+	std %r0, 136(%r12)
+	std %r0, 144(%r12)
+	std %r0, 152(%r12)
+	std %r0, 160(%r12)
+	std %r0, 168(%r12)
+	addi %r1, %r1, 720
+	li %r4, 0
+	li %r5, 0
+	li %r6, 0
+	li %r7, 0
+	li %r8, 0
+	li %r9, 0
+	li %r10, 0
+	li %r11, 0
+	li %r12, 0
 	blr

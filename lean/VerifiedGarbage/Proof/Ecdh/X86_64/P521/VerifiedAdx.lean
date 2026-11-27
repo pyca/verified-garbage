@@ -1,5 +1,8 @@
 module
 
+import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
+import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
 public import VerifiedGarbage.Proof.EcKey.X86_64.Scrub.Out
 public import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
 public import VerifiedGarbage.Proof.Framework.Registration
@@ -15,8 +18,6 @@ public import VerifiedGarbage.Proof.Framework.X86_64.Abi
 public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.VerifiedAdx
 import VerifiedGarbage.Proof.Ecdh.X86_64.MulJ4
-import VerifiedGarbage.Proof.Ecdh.X86_64.P521.MulF
-import VerifiedGarbage.Proof.Ecdh.X86_64.P521.FastAdx
 import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
 import VerifiedGarbage.Proof.Ecdh.X86_64.P521.LitAdx
@@ -24,7 +25,7 @@ import VerifiedGarbage.Proof.P521.X86_64.TaintSumsWinAdx
 public import VerifiedGarbage.Impl.Ecdh.P521.X86_64
 import VerifiedGarbage.Proof.Ecdh.X86_64.P521.Lit
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.LitAdx
-import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJStep
+import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJLoop
 meta import VerifiedGarbage.Proof.Ecdh.X86_64.P521.Verified
 meta import VerifiedGarbage.Proof.Ecdh.X86_64.Main
 meta import VerifiedGarbage.Proof.Ecdh.X86_64.P521.Contract
@@ -32,8 +33,6 @@ meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
 meta import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.VerifiedAdx
 meta import VerifiedGarbage.Proof.Ecdh.X86_64.MulJ4
-meta import VerifiedGarbage.Proof.Ecdh.X86_64.P521.MulF
-meta import VerifiedGarbage.Proof.Ecdh.X86_64.P521.FastAdx
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 meta import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
 meta import VerifiedGarbage.Proof.Ecdh.X86_64.P521.LitAdx
@@ -41,15 +40,15 @@ meta import VerifiedGarbage.Proof.P521.X86_64.TaintSumsWinAdx
 meta import VerifiedGarbage.Impl.Ecdh.P521.X86_64
 meta import VerifiedGarbage.Proof.Ecdh.X86_64.P521.Lit
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.LitAdx
-meta import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJStep
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJLoop
 public import VerifiedGarbage.Proof.P521.X86_64.TaintSumsWin
 
 /-!
 # ECDH over P-521 on x86-64 with BMI2 and ADX: `Verified`
 
 As `Verified.lean`, for `p521x` (`p521` multiplying modulo `p` with BMI2 and
-ADX): the same curve, so the same precondition and postcondition, its window
-loop by the fast steps (`Cfg.mulQJ4F`, `mulQJ4F_ok`).
+ADX): the same curve, so the same precondition and postcondition, and the
+same window method (`mulQJ4_ok`).
 -/
 
 @[expose] public section
@@ -65,10 +64,7 @@ theorem pre_of_x {s : State} (h : ecdhX86_64.pre s) : EPre p521x s := by
 
 theorem post_of_x {s s' : State} (h : EPost p521x s s') : ecdhX86_64.post s s' := by
   unfold EPost at h
-  show match ex s.mem (s.gpr .rsi) (s.gpr .rdx) with
-    | some z => (s'.gpr .rax).setWidth 32 = 1 ∧ Spec.EcKey.bytesAt s'.mem (s.gpr .rdi) 66 = z
-    | none => (s'.gpr .rax).setWidth 32 = 0 ∧
-        Spec.EcKey.bytesAt s'.mem (s.gpr .rdi) 66 = List.replicate 66 0
+  dsimp only [ecdhX86_64]
   revert h
   generalize hq : ex s.mem (s.gpr .rsi) (s.gpr .rdx) = q
   rw [show Spec.Ecdh.exchange p521x.C (dk p521x s)
@@ -90,7 +86,7 @@ theorem ecdh_x86_adx (hL : Weierstrass.Law Spec.P521.curve) (hI : Weierstrass.X8
     (hO : Weierstrass.PrimeOrder Spec.P521.curve) (s : State) (hs : ecdhX86_64.pre s) :
     ∃ t s', Exec isa exchangeP521Adx.inline s t s' ∧ abiPreserved s s' ∧ ecdhX86_64.post s s' := by
   obtain ⟨t, s', he, hsv, hpost⟩ := exchangeWith_ok (c := p521x) (p521x_ok hI).toBaseCfgOk hL
-    (mulQJ4F_ok (p521x_ok hI) (fastCfg_p521x (p521x_ok hI)) (by decide) hL hO (by decide +kernel))
+    (mulQJ4_ok (p521x_ok hI) (by decide) hL hO (by decide +kernel))
     (mulQJ4_w (p521x_ok hI)) (pre_of_x hs)
   have hsp := Code.clobbers_rsp_of_inlineOk ecdh_inlineOk_adx
   have F := (Exec.regions he ecdh_noCalls_adx).2.2
@@ -115,7 +111,7 @@ theorem ecdh_x86_adx (hL : Weierstrass.Law Spec.P521.curve) (hI : Weierstrass.X8
 theorem ecdh_ct_adx : ConstantTime isa ecdhX86_64.pre ecdhX86_64.pub exchangeP521Adx := by
   obtain ⟨_, hc⟩ : ∃ h, (taintS.check (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx, .rsp]) exchangeP521Adx h).isSome = true := by
     taint_decide_sum [Proof.P521.X86_64.winBuildJXSum, Proof.P521.X86_64.winNormJXSum,
-      Proof.P521.X86_64.winLoopFXSum, Proof.P521.X86_64.winLastJXSum]
+      Proof.P521.X86_64.winLoopJXSum, Proof.P521.X86_64.winLastJXSum]
   refine VG.Taint.constantTime (A := taintS) (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx, .rsp]) ?_ hc
   intro s₁ s₂ _ _ ⟨h0, h1, h2, h3, h4⟩
   refine Taint.agree_ofRegs fun r hr => ?_
@@ -135,26 +131,22 @@ theorem ecdh_verified_adx (hL : Weierstrass.Law Spec.P521.curve) (hI : Weierstra
 
 /-! ## Without secret residue -/
 
-/-- The granules of its stack that `vg_ecdh_p521_adx` must wipe on return, from the
-residue analysis (`X86_64.RScrub.keepFor`). -/
-def scrubKsAdx : List Nat := keep_for% Spec.Ecdh.P521.exchangeApi.sig 8 exchangeP521Adx []
+theorem exchangeAdx_codeSp : exchangeP521Adx.all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
 
-theorem scrubOkAdx : ∃ h : VG.Taint.Hint RTaint.FT,
-    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Ecdh.P521.exchangeApi.sig 8 []) exchangeP521Adx h).any
-      (RScrub.resOkB · 8 scrubKsAdx (Impl.Scrub.X86_64.chunks 8)) = true :=
-  RScrub.Analysed.ok_of _ (by taint_decide)
-
-/-- `vg_ecdh_p521_adx`, followed by `Impl.Scrub.X86_64.scrubTail`
-(`X86_64.RScrub.withScrub`): it returns without secret residue. -/
-def scrubRegAdx (hL : Weierstrass.Law Spec.P521.curve) (hI : Weierstrass.X86_64.InvSounds)
+/-- `vg_ecdh_p521_adx` as emitted (`Impl.Ecdh.X86_64.Fn.exchangeP521Adx`), its cleanup included,
+meets its contract in constant time and returns without secret residue. -/
+theorem exchangeAdx_scrubbed (hL : Weierstrass.Law Spec.P521.curve) (hI : Weierstrass.X86_64.InvSounds)
     (hO : Weierstrass.PrimeOrder Spec.P521.curve) :
-    Registration Spec.Ecdh.P521.exchangeApi X86_64.target :=
-  RScrub.withScrub {
-    suffix := "_adx"
-    code := exchangeP521Adx
-    stack := 8
-    verified := ecdh_verified_adx hL hI hO }
-    (VG.Proof.EcKey.X86_64.Scrub.exchangeOut _ _) [] (RScrub.pubOk_nil _)
-    (some ⟨scrubKsAdx, scrubOkAdx⟩)
+    VerifiedScrubbed X86_64.target Impl.Ecdh.X86_64.Fn.exchangeP521Adx (Spec.Ecdh.P521.exchangeApi.contract X86_64.abi 8) 32 :=
+  X86_64.Scrub.verifiedScrubbedAll (api := Spec.Ecdh.P521.exchangeApi)
+    { code := exchangeP521Adx
+      stack := 8
+      verified := ecdh_verified_adx hL hI hO
+      spSafe := exchangeAdx_codeSp } .sse (VG.Proof.EcKey.X86_64.Scrub.exchangeOut _ _)
+
+theorem exchangeAdx_spSafe :
+    Impl.Ecdh.X86_64.Fn.exchangeP521Adx.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  X86_64.Scrub.scrubKs_spSafe exchangeAdx_codeSp
 
 end VG.Proof.Ecdh.X86_64.P521

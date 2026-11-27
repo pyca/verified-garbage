@@ -56,48 +56,48 @@ theorem rowX0_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {
       Keeps [.r8, .r9, .r10, .r11, .r12, .rax, .rdx, .rbp] s s' := by
   rw [rowX0_eq, WP.block_append_iff]
   refine WP.mono (movRdx_ok s (readSrc_sc hs hb)) fun s1 ⟨d1, _, _, k1⟩ => ?_
-  have hs1 := hs.of_keeps k1 (by decide)
+  obtain hs1 := hs.of_keeps k1 (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (clear_ok s1) fun s2 ⟨z2, c2, _, k2⟩ => ?_
-  have hs2 := hs1.of_keeps k2 (by decide)
+  obtain hs2 := hs1.of_keeps k2 (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (mulx_ok s2 (readSrc_sc hs2 (by omega_using [ha])) (noImm_mem _) (by decide))
     fun s3 ⟨e3, c3, _, k3⟩ => ?_
-  have hs3 := hs2.of_keeps k3 (by decide)
+  obtain hs3 := hs2.of_keeps k3 (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (mulAcc_ok s3 (readSrc_sc hs3 (by omega_using [ha])) (noImm_mem _) (c3.trans c2)
     (by decide) (by decide) (by decide)) fun s4 ⟨c4, hc4, _, e4, k4⟩ => ?_
-  have hs4 := hs3.of_keeps k4 (by decide)
+  obtain hs4 := hs3.of_keeps k4 (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (mulAcc_ok s4 (readSrc_sc hs4 (by omega_using [ha])) (noImm_mem _) hc4
     (by decide) (by decide) (by decide)) fun s5 ⟨c5, hc5, _, e5, k5⟩ => ?_
-  have hs5 := hs4.of_keeps k5 (by decide)
+  obtain hs5 := hs4.of_keeps k5 (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (mulAcc_ok s5 (readSrc_sc hs5 (by omega_using [ha])) (noImm_mem _) hc5
     (by decide) (by decide) (by decide)) fun s6 ⟨c6, hc6, _, e6, k6⟩ => ?_
-  have z6 : s6.gpr .rbp = 0 := by
+  obtain z6 : s6.gpr .rbp = 0 := by
     rw [k6.1 _ (by decide), k5.1 _ (by decide), k4.1 _ (by decide), k3.1 _ (by decide), z2]
   refine WP.mono (carryC_ok s6 hc6 z6) fun s7 ⟨c7, _, _, e7, k7⟩ => ?_
-  have K : Keeps [.r8, .r9, .r10, .r11, .r12, .rax, .rdx, .rbp] s s7 :=
+  obtain K : Keeps [.r8, .r9, .r10, .r11, .r12, .rax, .rdx, .rbp] s s7 :=
     ((((((k1.mono (by decide)).trans (k2.mono (by decide))).trans (k3.mono (by decide))).trans
       (k4.mono (by decide))).trans (k5.mono (by decide))).trans (k6.mono (by decide))).trans
       (k7.mono (by decide))
   -- `rdx` and the memory along the way.
-  have D2 : s2.gpr .rdx = word s.mem base b := (k2.1 _ (by decide)).trans d1
-  have D3 : s3.gpr .rdx = word s.mem base b := (k3.1 _ (by decide)).trans D2
-  have D4 : s4.gpr .rdx = word s.mem base b := (k4.1 _ (by decide)).trans D3
-  have D5 : s5.gpr .rdx = word s.mem base b := (k5.1 _ (by decide)).trans D4
-  have M2 : s2.mem = s.mem := k2.2.1.trans k1.2.1
-  have M3 : s3.mem = s.mem := k3.2.1.trans M2
-  have M4 : s4.mem = s.mem := k4.2.1.trans M3
-  have M5 : s5.mem = s.mem := k5.2.1.trans M4
+  obtain D2 : s2.gpr .rdx = word s.mem base b := (k2.1 _ (by decide)).trans d1
+  obtain D3 : s3.gpr .rdx = word s.mem base b := (k3.1 _ (by decide)).trans D2
+  obtain D4 : s4.gpr .rdx = word s.mem base b := (k4.1 _ (by decide)).trans D3
+  obtain D5 : s5.gpr .rdx = word s.mem base b := (k5.1 _ (by decide)).trans D4
+  obtain M2 : s2.mem = s.mem := k2.2.1.trans k1.2.1
+  obtain M3 : s3.mem = s.mem := k3.2.1.trans M2
+  obtain M4 : s4.mem = s.mem := k4.2.1.trans M3
+  obtain M5 : s5.mem = s.mem := k5.2.1.trans M4
   refine ⟨?_, by rw [k7.1 _ (by decide), k6.1 _ (by decide), D5], by rw [k7.1 _ (by decide), z6],
     K⟩
   rw [D2, M2] at e3
   rw [D3, M3] at e4
   rw [D4, M4] at e5
   rw [D5, M5] at e6
-  have b1 := word_mul_lt (word s.mem base b) _ (fe_lt s.mem base a)
+  obtain b1 := word_mul_lt (word s.mem base b) _ (fe_lt s.mem base a)
   simp only [X86_64.fe, val4, mul_val4] at b1 ⊢
   rw [k7.1 .r8 (by decide), k6.1 .r8 (by decide), k5.1 .r8 (by decide), k4.1 .r8 (by decide),
     k7.1 .r9 (by decide), k6.1 .r9 (by decide), k5.1 .r9 (by decide), k7.1 .r10 (by decide),
@@ -142,42 +142,42 @@ theorem maddRow_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
     ⟨h4a, h4c, h4d, h4b, h4i⟩, -⟩ := hd
   rw [maddRow, WP.block_append_iff]
   refine WP.mono (clear_ok s) fun s2 ⟨z2, c2, o2, k2⟩ => ?_
-  have hs2 := hs.of_keeps k2 (by decide)
+  obtain hs2 := hs.of_keeps k2 (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (madd_ok s2 (readSrc_sc hs2 (by omega_using [ha])) (noImm_mem _) c2 o2
     (by nm) (by nm) (by nm) (by nm) (by nm)) fun s3 ⟨c3, o3, hc3, ho3, e3, k3⟩ => ?_
-  have hs3 := hs2.of_keeps k3 (by nm)
+  obtain hs3 := hs2.of_keeps k3 (by nm)
   rw [WP.block_append_iff]
   refine WP.mono (madd_ok s3 (readSrc_sc hs3 (by omega_using [ha])) (noImm_mem _) hc3 ho3
     (by nm) (by nm) (by nm) (by nm) (by nm)) fun s4 ⟨c4, o4, hc4, ho4, e4, k4⟩ => ?_
-  have hs4 := hs3.of_keeps k4 (by nm)
+  obtain hs4 := hs3.of_keeps k4 (by nm)
   rw [WP.block_append_iff]
   refine WP.mono (madd_ok s4 (readSrc_sc hs4 (by omega_using [ha])) (noImm_mem _) hc4 ho4
     (by nm) (by nm) (by nm) (by nm) (by nm)) fun s5 ⟨c5, o5, hc5, ho5, e5, k5⟩ => ?_
-  have hs5 := hs4.of_keeps k5 (by nm)
-  have z5 : s5.gpr .rbp = 0 := by
+  obtain hs5 := hs4.of_keeps k5 (by nm)
+  obtain z5 : s5.gpr .rbp = 0 := by
     rw [k5.1 _ (by nm), k4.1 _ (by nm), k3.1 _ (by nm), z2]
   refine WP.mono (maddLast_ok s5 (readSrc_sc hs5 (by omega_using [ha])) (noImm_mem _) hc5 ho5 z5
     (by nm) (by nm) (by nm) (by nm) (by nm)) fun s6 ⟨c6, o6, _, _, e6, k6⟩ => ?_
-  have K : Keeps [r0, r1, r2, r3, r4, .rax, .rcx, .rbp] s s6 :=
+  obtain K : Keeps [r0, r1, r2, r3, r4, .rax, .rcx, .rbp] s s6 :=
     ((((k2.mono (by simp)).trans (k3.mono (by simp))).trans
       (k4.mono (by simp))).trans (k5.mono (by simp))).trans (k6.mono (by simp))
   refine ⟨?_, K⟩
   -- `rdx`, the memory and the registers along the way.
-  have D2 : s2.gpr .rdx = s.gpr .rdx := k2.1 _ (by nm)
-  have D3 : s3.gpr .rdx = s.gpr .rdx := (k3.1 _ (by nm)).trans D2
-  have D4 : s4.gpr .rdx = s.gpr .rdx := (k4.1 _ (by nm)).trans D3
-  have D5 : s5.gpr .rdx = s.gpr .rdx := (k5.1 _ (by nm)).trans D4
+  obtain D2 : s2.gpr .rdx = s.gpr .rdx := k2.1 _ (by nm)
+  obtain D3 : s3.gpr .rdx = s.gpr .rdx := (k3.1 _ (by nm)).trans D2
+  obtain D4 : s4.gpr .rdx = s.gpr .rdx := (k4.1 _ (by nm)).trans D3
+  obtain D5 : s5.gpr .rdx = s.gpr .rdx := (k5.1 _ (by nm)).trans D4
   have M2 : s2.mem = s.mem := k2.2.1
-  have M3 : s3.mem = s.mem := k3.2.1.trans M2
-  have M4 : s4.mem = s.mem := k4.2.1.trans M3
-  have M5 : s5.mem = s.mem := k5.2.1.trans M4
+  obtain M3 : s3.mem = s.mem := k3.2.1.trans M2
+  obtain M4 : s4.mem = s.mem := k4.2.1.trans M3
+  obtain M5 : s5.mem = s.mem := k5.2.1.trans M4
   rw [D2, M2, k2.1 r0 (by nm), k2.1 r1 (by nm)] at e3
   rw [D3, M3, k3.1 r2 (by nm), k2.1 r2 (by nm)] at e4
   rw [D4, M4, k4.1 r3 (by nm), k3.1 r3 (by nm), k2.1 r3 (by nm)] at e5
   rw [D5, M5] at e6
-  have b1 := word_mul_lt (s.gpr .rdx) _ (fe_lt s.mem base a)
-  have b2 : val4 (s.gpr r0) (s.gpr r1) (s.gpr r2) (s.gpr r3) < 2 ^ 256 := by
+  obtain b1 := word_mul_lt (s.gpr .rdx) _ (fe_lt s.mem base a)
+  obtain b2 : val4 (s.gpr r0) (s.gpr r1) (s.gpr r2) (s.gpr r3) < 2 ^ 256 := by
     simp only [val4]
     have := (s.gpr r0).isLt; have := (s.gpr r1).isLt; have := (s.gpr r2).isLt
     have := (s.gpr r3).isLt
@@ -202,7 +202,7 @@ theorem rowR'_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {
   simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hd'
   rw [rowR', WP.block_append_iff]
   refine WP.mono (movRdx_ok s (readSrc_sc hs hb)) fun s1 ⟨d1, _, _, k1⟩ => ?_
-  have hs1 := hs.of_keeps k1 (by decide)
+  obtain hs1 := hs.of_keeps k1 (by decide)
   refine WP.mono (maddRow_ok hs1 ha hd) fun s2 ⟨e2, k2⟩ => ⟨?_, (k1.mono (by simp)).trans (k2.mono (by simp))⟩
   rw [e2, d1, k1.2.1, k1.1 r0 (fun h => by simp at h; exact hd'.1.2.2.2.2.2.2.1 h),
     k1.1 r1 (fun h => by simp at h; exact hd'.2.1.2.2.2.2.2.1 h),
@@ -222,13 +222,13 @@ theorem mul4_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {a
       Keeps [.r8, .r9, .r10, .r11, .r12, .r13, .r14, .r15, .rax, .rcx, .rdx, .rbp] s s' := by
   rw [WP.block_append_iff]
   refine WP.mono (rowX0_ok hs ha (by omega_using [hb])) fun s₁ ⟨e1, _, _, k1⟩ => ?_
-  have hs₁ := hs.of_keeps k1 (by decide)
+  obtain hs₁ := hs.of_keeps k1 (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (rowR'_ok hs₁ ha (by omega_using [hb]) (by decide)) fun s₂ ⟨e2, k2⟩ => ?_
-  have hs₂ := hs₁.of_keeps k2 (by decide)
+  obtain hs₂ := hs₁.of_keeps k2 (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (rowR'_ok hs₂ ha (by omega_using [hb]) (by decide)) fun s₃ ⟨e3, k3⟩ => ?_
-  have hs₃ := hs₂.of_keeps k3 (by decide)
+  obtain hs₃ := hs₂.of_keeps k3 (by decide)
   refine WP.mono (rowR'_ok hs₃ ha (by omega_using [hb]) (by decide)) fun s₄ ⟨e4, k4⟩ =>
     ⟨?_, (((k1.mono (by decide)).trans (k2.mono (by decide))).trans (k3.mono (by decide))).trans
       (k4.mono (by decide))⟩
@@ -236,9 +236,9 @@ theorem mul4_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {a
   rw [k1.2.1] at e2
   rw [k2.2.1, k1.2.1] at e3
   rw [k3.2.1, k2.2.1, k1.2.1] at e4
-  have r1 := k2.1 .r8 (by decide); have r2 := k3.1 .r8 (by decide)
-  have r3 := k4.1 .r8 (by decide); have q2 := k3.1 .r9 (by decide)
-  have q3 := k4.1 .r9 (by decide); have q4 := k4.1 .r10 (by decide)
+  obtain r1 := k2.1 .r8 (by decide); have r2 := k3.1 .r8 (by decide)
+  obtain r3 := k4.1 .r8 (by decide); have q2 := k3.1 .r9 (by decide)
+  obtain q3 := k4.1 .r9 (by decide); have q4 := k4.1 .r10 (by decide)
   have hb' : fe s.mem base b = val4 (word s.mem base b) (word s.mem base (b + 8))
       (word s.mem base (b + 16)) (word s.mem base (b + 24)) := rfl
   rw [hb']

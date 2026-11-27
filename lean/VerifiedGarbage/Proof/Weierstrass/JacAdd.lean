@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Weierstrass.JacAdd
 public import VerifiedGarbage.Proof.Weierstrass.Jac
+import Batteries.Tactic.Init
 import VerifiedGarbage.Proof.Framework.Omega
 
 @[expose] public section
@@ -27,18 +28,13 @@ def jacAddF (X1 Y1 Z1 X2 Y2 Z2 : F) : F × F × F :=
   let y := r*(v-x)-s1*hhh
   (x,y,Z1*Z2*h)
 
-/-- The Jacobian and complete projective formulas give proportional coordinates. -/
-theorem jacAddF_cross (b X1 Y1 Z1 X2 Y2 Z2 : F)
-    (h1 : Y1*Y1 = X1*X1*X1-3*X1*Z1*Z1*Z1*Z1+b*Z1*Z1*Z1*Z1*Z1*Z1)
-    (h2 : Y2*Y2 = X2*X2*X2-3*X2*Z2*Z2*Z2*Z2+b*Z2*Z2*Z2*Z2*Z2*Z2) :
-    let j := jacAddF X1 Y1 Z1 X2 Y2 Z2
-    let p := rcbAdd3 b (X1*Z1) Y1 (Z1*Z1*Z1) (X2*Z2) Y2 (Z2*Z2*Z2)
-    (j.1*j.2.2)*p.2.2 = p.1*(j.2.2*j.2.2*j.2.2) ∧
-      j.2.1*p.2.2 = p.2.1*(j.2.2*j.2.2*j.2.2) := by
-  dsimp only [jacAddF,rcbAdd3]
-  constructor <;> grind
+/-- The first of `jacAddF_cross'`'s equations, from the equation without the
+factor `z` the two sides share, whose terms are of a lower degree. -/
+theorem cross_of_mul {x z p₁ p₃ : F} (h : x * p₃ = p₁ * (z * z)) : x * z * p₃ = p₁ * (z * z * z) := by
+  grind
 
-/-- `jacAddF_cross` for any `a`: against Algorithm 1, with `b3 = 3b`. -/
+/-- The Jacobian and complete projective formulas give proportional
+coordinates, for any `a`: against Algorithm 1, with `b3 = 3b`. -/
 theorem jacAddF_cross' (a b b3 X1 Y1 Z1 X2 Y2 Z2 : F) (hb : b3 = 3*b)
     (h1 : Y1*Y1 = X1*X1*X1+a*X1*Z1*Z1*Z1*Z1+b*Z1*Z1*Z1*Z1*Z1*Z1)
     (h2 : Y2*Y2 = X2*X2*X2+a*X2*Z2*Z2*Z2*Z2+b*Z2*Z2*Z2*Z2*Z2*Z2) :
@@ -48,7 +44,21 @@ theorem jacAddF_cross' (a b b3 X1 Y1 Z1 X2 Y2 Z2 : F) (hb : b3 = 3*b)
       j.2.1*p.2.2 = p.2.1*(j.2.2*j.2.2*j.2.2) := by
   subst hb
   dsimp only [jacAddF,rcbAdd]
-  constructor <;> grind
+  constructor
+  · exact cross_of_mul (by grind)
+  · grind
+
+/-- `jacAddF_cross'` for `a = -3`, against Algorithm 4: the kernel checks one
+of the two, whose certificates are polynomials of thousands of terms. -/
+theorem jacAddF_cross (b X1 Y1 Z1 X2 Y2 Z2 : F)
+    (h1 : Y1*Y1 = X1*X1*X1-3*X1*Z1*Z1*Z1*Z1+b*Z1*Z1*Z1*Z1*Z1*Z1)
+    (h2 : Y2*Y2 = X2*X2*X2-3*X2*Z2*Z2*Z2*Z2+b*Z2*Z2*Z2*Z2*Z2*Z2) :
+    let j := jacAddF X1 Y1 Z1 X2 Y2 Z2
+    let p := rcbAdd3 b (X1*Z1) Y1 (Z1*Z1*Z1) (X2*Z2) Y2 (Z2*Z2*Z2)
+    (j.1*j.2.2)*p.2.2 = p.1*(j.2.2*j.2.2*j.2.2) ∧
+      j.2.1*p.2.2 = p.2.1*(j.2.2*j.2.2*j.2.2) := by
+  rw [rcbAdd3_eq]
+  exact jacAddF_cross' (-3) b (3*b) X1 Y1 Z1 X2 Y2 Z2 rfl (by grind) (by grind)
 
 end
 
@@ -232,7 +242,7 @@ def jacMixedTailN : List FOp := jacMixedTail ⟨9,10,0,1,2,3,4,5⟩ ⟨11,12,13�
 
 /-- Copying to the two header temporaries, as the machine's copy blocks do. -/
 def jacMixedEnv {F : Type _} (e : Nat → F) : Nat → F :=
-  Function.update (Function.update e 2 (e 11)) 4 (e 12)
+  Fun.update (Fun.update e 2 (e 11)) 4 (e 12)
 
 theorem jacMixedN_run {F : Type _} [Lean.Grind.CommRing F] (e : Nat → F) :
     let r := runOps (jacMixedHeadN ++ jacMixedTailN) (jacMixedEnv e)
@@ -242,18 +252,18 @@ theorem jacMixedN_run {F : Type _} [Lean.Grind.CommRing F] (e : Nat → F) :
 
 /-- The mixed header's two initial copies. -/
 def jacMixedInit {F : Type _} (S : RcbSlots) (p : Pt) (E : Nat → F) : Nat → F :=
-  let E1 := Function.update E S.t2 (E p.x)
-  Function.update E1 S.t4 (E1 p.y)
+  let E1 := Fun.update E S.t2 (E p.x)
+  Fun.update E1 S.t4 (E1 p.y)
 
 theorem update_rcbσ {F : Type _} {S : RcbSlots} {p q o : Pt}
     (hA : RcbApart S p q o) (E : Nat → F) (v : F) {w : Nat} (hw : w < 9) :
-    (fun i => Function.update E (rcbσ S p q o w) v (rcbσ S p q o i)) =
-      Function.update (fun i => E (rcbσ S p q o i)) w v := by
+    (fun i => Fun.update E (rcbσ S p q o w) v (rcbσ S p q o i)) =
+      Fun.update (fun i => E (rcbσ S p q o i)) w v := by
   funext i
   by_cases hi : i = w
-  · subst hi; simp only [Function.update_self]
+  · subst hi; simp only [Fun.update_self]
   · have hn : rcbσ S p q o i ≠ rcbσ S p q o w := fun he => hi (hA.inj hw i he)
-    rw [Function.update_of_ne hn,Function.update_of_ne hi]
+    rw [Fun.update_of_ne hn,Fun.update_of_ne hi]
 
 theorem jacMixedInit_rename {F : Type _} {S : RcbSlots} {p q o : Pt}
     (hA : RcbApart S p q o) (E : Nat → F) :
@@ -263,8 +273,8 @@ theorem jacMixedInit_rename {F : Type _} {S : RcbSlots} {p q o : Pt}
     have hh := hA.inj (w := 2) (by decide) 12 he
     omega_using [hh]
   unfold jacMixedInit
-  rw [Function.update_of_ne hy]
-  change (fun i => Function.update (Function.update E (rcbσ S p q o 2) (E p.x))
+  rw [Fun.update_of_ne hy]
+  change (fun i => Fun.update (Fun.update E (rcbσ S p q o 2) (E p.x))
     (rcbσ S p q o 4) (E p.y) (rcbσ S p q o i)) = _
   rw [update_rcbσ hA _ _ (by decide),update_rcbσ hA _ _ (by decide)]
   rfl
@@ -278,5 +288,43 @@ theorem jacMixedTail_eq (S : RcbSlots) (p q o : Pt) :
 theorem jacMixedHeadN_run {F : Type _} [Lean.Grind.CommRing F] (e : Nat → F) :
     let r := runOps jacMixedHeadN (jacMixedEnv e)
     r 3 = e 14*(e 13*e 13)-e 11 ∧ r 5 = e 15*e 13*(e 13*e 13)-e 12 := ⟨rfl,rfl⟩
+
+/-! ### The additions' shared end
+
+`jacEndTail`, the end both x86-64 additions call, reads `Z` from `o.z`: the
+mixed addition copies `Z1` there with `X1` and `Y1` (`jacMixedInitZ`). -/
+
+def jacEndTailN : List FOp := jacEndTail ⟨9,10,0,1,2,3,4,5⟩ ⟨11,12,13⟩ ⟨14,15,16⟩ ⟨6,7,8⟩
+
+theorem jacEndTail_eq (S : RcbSlots) (p q o : Pt) :
+    jacEndTail S p q o = ofN jacEndTailN S p q o := rfl
+
+/-- The mixed header's three initial copies, `Z1` to `o.z` too. -/
+def jacMixedEnvZ {F : Type _} (e : Nat → F) : Nat → F :=
+  Fun.update (jacMixedEnv e) 8 (jacMixedEnv e 13)
+
+theorem jacMixedZN_run {F : Type _} [Lean.Grind.CommRing F] (e : Nat → F) :
+    let r := runOps (jacMixedHeadN ++ jacEndTailN) (jacMixedEnvZ e)
+    (r 6,r 7,r 8) = jacAddF (e 11) (e 12) (e 13) (e 14) (e 15) 1 := by
+  simp only [jacAddF, Lean.Grind.Semiring.mul_one]
+  rfl
+
+theorem jacMixedHeadZN_run {F : Type _} [Lean.Grind.CommRing F] (e : Nat → F) :
+    let r := runOps jacMixedHeadN (jacMixedEnvZ e)
+    r 3 = e 14*(e 13*e 13)-e 11 ∧ r 5 = e 15*e 13*(e 13*e 13)-e 12 := ⟨rfl,rfl⟩
+
+/-- `jacMixedInit`, and `p.z` copied to `o.z`. -/
+def jacMixedInitZ {F : Type _} (S : RcbSlots) (p o : Pt) (E : Nat → F) : Nat → F :=
+  Fun.update (jacMixedInit S p E) o.z (jacMixedInit S p E p.z)
+
+theorem jacMixedInitZ_rename {F : Type _} {S : RcbSlots} {p q o : Pt}
+    (hA : RcbApart S p q o) (E : Nat → F) :
+    (fun i => jacMixedInitZ S p o E (rcbσ S p q o i)) = jacMixedEnvZ (fun i => E (rcbσ S p q o i)) := by
+  unfold jacMixedInitZ jacMixedEnvZ
+  change (fun i => Fun.update (jacMixedInit S p E) (rcbσ S p q o 8)
+    (jacMixedInit S p E (rcbσ S p q o 13)) (rcbσ S p q o i)) = _
+  have h13 : jacMixedInit S p E (rcbσ S p q o 13) = jacMixedEnv (fun i => E (rcbσ S p q o i)) 13 :=
+    congrFun (jacMixedInit_rename hA E) 13
+  rw [update_rcbσ hA _ _ (by decide), jacMixedInit_rename hA, h13]
 
 end VG.Proof.Weierstrass

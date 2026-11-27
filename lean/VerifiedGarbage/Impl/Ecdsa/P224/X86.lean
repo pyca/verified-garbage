@@ -18,7 +18,4 @@ def p224 : Cfg where
   SN := Impl.Weierstrass.Mont.p224n
   mul := some Impl.Weierstrass.Mul.p224
 
-/-- `vg_ecdsa_p224_sign`. -/
-def signP224 : Prog isa := p224.sign
-
 end VG.Impl.Ecdsa.X86

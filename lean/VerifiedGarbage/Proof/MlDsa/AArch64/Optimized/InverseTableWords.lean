@@ -1,7 +1,6 @@
 module
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTableLayout
 
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTableConstants
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTableConstants
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TableWords
 import VerifiedGarbage.Proof.Framework.Omega
 

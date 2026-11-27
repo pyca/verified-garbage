@@ -7,13 +7,11 @@ import Std.Data.DTreeMap.Internal.Operations
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.TaintSumGeneric
 import VerifiedGarbage.Proof.Sha3.AArch64.Sums
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Rotate
 
 @[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Sample.Rej4
 open VG VG.AArch64
-open VG.Proof.Sha3.AArch64.Neon
 open VG.Impl.MlDsa.AArch64.Sample.Rej4 (oSave)
 
 theorem Env.frameStep {σ s t : State} (he : Env σ s) {rs : List Region}

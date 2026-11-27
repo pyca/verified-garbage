@@ -3,13 +3,11 @@ module
 public import VerifiedGarbage.Proof.Rsa.X86.Rd.Frame
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Rsa.X86.WordRt.Prep
-import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Ops
+import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Scalar
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Chain
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Half
-import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Word
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Zero
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Div
-import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Scalar
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Compare
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.PlainSimp

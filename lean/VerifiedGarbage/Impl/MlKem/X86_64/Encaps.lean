@@ -37,8 +37,8 @@ def nb : Nat := (L.ekLen / 136 + 1) / 3
 
 /-- The fragment `b` on the four seeds at `scratch` and the polynomials from
 `a`, with the working space `scr`, and `r15 ← r15 ∧ result`. -/
-def sampleHAt (b : Prog isa) (a scr : Ptr) : Prog isa :=
-  .seq (.block (lea .rdi (sc 0) ++ lea .rsi a ++ lea .rdx scr)) (.seq b (.block [.alu32 .and .r15 (.reg .rax)]))
+def sampleHAt (b : Prog isa) (a scr : Ptr) (callName : Option String := none) : Prog isa :=
+  .seq (.block (lea .rdi (sc 0) ++ lea .rsi a ++ lea .rdx scr)) (.seq (match callName with | none => b | some n => .call n b) (.block [.alu32 .and .r15 (.reg .rax)]))
 
 end Encaps
 

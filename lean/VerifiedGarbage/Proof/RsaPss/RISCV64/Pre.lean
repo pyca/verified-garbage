@@ -137,7 +137,7 @@ theorem preP_of {H : Spec.Mgf1.Hash} {tsH tsG : List FnTable} {s : State} (h : (
   ver_pre at h
   obtain ⟨spal, sp1, sp2, -, -, -, hrd, hwr, ns, es, ds, gs, sp, sth, stg, sa, kn, ke, kd, kg, ksc, kp, kth, ktg,
     ka, wn, we, wd, wg, wsc, wp, wth, wtg, k1, k2, e1, e2, gk, hs, hp, hl, al2, al4, al6, al7⟩ := h
-  have hl := hl H hH
+  obtain hl := hl H hH
   rw [hl] at hrd ds kd wd
   exact ⟨spal, sp1, sp2, hrd, hwr, ns, es, ds, gs, sp, sth, stg, sa, kn, ke, kd, kg, ksc, kp, kth, ktg, ka, wn, we,
     wd, wg, wsc, wp, wth, wtg, k1, k2, e1, e2, gk, hs, hp, al2, al4, al6, al7⟩
@@ -263,8 +263,8 @@ theorem cm_eq : cm s = (if (s.mem (s.gpr .a0)).toNat = 1 then (0xFF : Byte) else
   split
   · rfl
   · have h8 := Proof.RsaPss.log2_lt8 (s.mem (s.gpr .a0))
-    have hp : 2 ^ Nat.log2 (s.mem (s.gpr .a0)).toNat ≤ 2 ^ 7 := Nat.pow_le_pow_right (by decide) (by omega_using [h8])
-    have hp1 := Nat.one_le_two_pow (n := Nat.log2 (s.mem (s.gpr .a0)).toNat)
+    obtain hp : 2 ^ Nat.log2 (s.mem (s.gpr .a0)).toNat ≤ 2 ^ 7 := Nat.pow_le_pow_right (by decide) (by omega_using [h8])
+    obtain hp1 := Nat.one_le_two_pow (n := Nat.log2 (s.mem (s.gpr .a0)).toNat)
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
     rw [Nat.mod_eq_of_lt (by omega_using [hp]), Nat.mod_eq_of_lt (by omega_using []), Nat.mod_eq_of_lt (by omega_using [hp])]
@@ -292,13 +292,13 @@ theorem shV_in (V : Nat → Byte) (b n a : Nat) (hz : ∀ x, n ≤ x → x < n +
     ∀ j ≤ 10, ∀ i < n, shV V b n a j (b + i) = if i + a % 2 ^ j < n then V (b + (i + a % 2 ^ j)) else 0
   | 0, _, i, hi => by simp only [shV, Nat.pow_zero, Nat.mod_one, Nat.add_zero]; rw [ifp hi]
   | j + 1, hj, i, hi => by
-    have ih := shV_in V b n a hz j (by omega_using [hj])
+    obtain ih := shV_in V b n a hz j (by omega_using [hj])
     have hm : a % 2 ^ (j + 1) = a % 2 ^ j + 2 ^ j * (a / 2 ^ j % 2) := Nat.mod_pow_succ
-    have h2 := Nat.mod_lt (a / 2 ^ j) (show 0 < 2 by decide)
-    have hp : 2 ^ j ≤ 2 ^ 9 := Nat.pow_le_pow_right (by decide) (by omega_using [hj])
+    obtain h2 := Nat.mod_lt (a / 2 ^ j) (show 0 < 2 by decide)
+    obtain hp : 2 ^ j ≤ 2 ^ 9 := Nat.pow_le_pow_right (by decide) (by omega_using [hj])
     have hp10 : (2 : Nat) ^ 10 = 1024 := rfl
     have hp9 : (2 : Nat) ^ 9 = 512 := rfl
-    have hmj := Nat.mod_lt a (Nat.two_pow_pos j)
+    obtain hmj := Nat.mod_lt a (Nat.two_pow_pos j)
     rw [shV, passV, ifp ⟨by omega_using [], by omega_using [hi]⟩]
     by_cases hb : a / 2 ^ j % 2 = 1
     · rw [ifp (decide_eq_true hb), show b + i + 2 ^ j = b + (i + 2 ^ j) by omega_using []]
@@ -339,7 +339,7 @@ include P
 
 theorem arg_al {j : Nat} (hj : j < 8) : (stackArgAddr s j).toNat % 8 = 0 := by
   have := P.spal; have := P.sp2
-  have e : (stackArgAddr s j).toNat = s.sp.toNat + 8 * j := by
+  obtain e : (stackArgAddr s j).toNat = s.sp.toNat + 8 * j := by
     simp only [stackArgAddr, BitVec.toNat_add, BitVec.toNat_ofNat]; omega_using [hj, this]
   rw [e]; omega_arith
 
@@ -367,12 +367,12 @@ theorem entry_ok {H : Impl.Hmac.Stream.RISCV64.Hash} (hD : H.D = D) (hD64 : D �
     fun v kv h0 hm hsv => ?_
   have hrd : v.rd = s.rd := kv.rd
   have hsp : v.sp = fb s := kv.sp
-  have hm2 : Frame [kR s, SC Sp s] s.mem v.mem := hm.mono fun r hr => by rw [List.mem_singleton.mp hr]; simp
-  have gs : ∀ r ∈ [Reg.a0, .a1, .a2, .a3, .a4, .a6], v.gpr r = s.gpr r := fun r hr => by
+  obtain hm2 : Frame [kR s, SC Sp s] s.mem v.mem := hm.mono fun r hr => by rw [List.mem_singleton.mp hr]; simp
+  obtain gs : ∀ r ∈ [Reg.a0, .a1, .a2, .a3, .a4, .a6], v.gpr r = s.gpr r := fun r hr => by
     rw [kv.gpr r (by revert r; decide)]; rfl
   simp only [Impl.RsaPss.RISCV64.prologue, Impl.RsaOaep.RISCV64.argBase]
   refine wp_addSp fun v₁ o₁ e₁ => ?_
-  have g6 : v₁.gpr .t6 = s.sp := by rw [e₁, hsp, BitVec.sub_add_cancel]
+  obtain g6 : v₁.gpr .t6 = s.sp := by rw [e₁, hsp, BitVec.sub_add_cancel]
   refine wp_arg P (j := 1) (by decide) g6 (o₁.rd.trans hrd) (by rw [o₁.mem]; exact hm2) fun v₂ o₂ e₂ => ?_
   refine wp_sll fun v₃ o₃ e₃ => wp_srl fun v₄ o₄ e₄ => ?_
   refine wp_arg P (j := 2) (by decide) (by rw [o₄.get .t6, o₃.get .t6, o₂.get .t6, g6])
@@ -384,11 +384,11 @@ theorem entry_ok {H : Impl.Hmac.Stream.RISCV64.Hash} (hD : H.D = D) (hD64 : D �
     (by rw [o₇.rd, o₆.rd, o₅.rd, o₄.rd, o₃.rd, o₂.rd, o₁.rd, hrd])
     (by rw [o₇.mem, o₆.mem, o₅.mem, o₄.mem, o₃.mem, o₂.mem, o₁.mem]; exact hm2) fun v₈ o₈ e₈ => ?_
   refine wp_mov fun v₉ o₉ e₉ => wp_mov fun v₁₀ o₁₀ e₁₀ => wp_mov fun v₁₁ o₁₁ e₁₁ => ?_
-  have k₁₁ : Only [.t6, .s7, .s0, .s1, .s2, .s6, .s8, .s9, .s10] v v₁₁ :=
+  obtain k₁₁ : Only [.t6, .s7, .s0, .s1, .s2, .s6, .s8, .s9, .s10] v v₁₁ :=
     (o₁.trans (o₂.trans (o₃.trans (o₄.trans (o₅.trans (o₆.trans (o₇.trans (o₈.trans (o₉.trans (o₁₀.trans
       o₁₁)))))))))).mono
-  have hn : nR s ∈ s.rd := by rw [P.hrd]; simp
-  have hc : (nR s).Contains (s.gpr .a0) 1 := by
+  obtain hn : nR s ∈ s.rd := by rw [P.hrd]; simp
+  obtain hc : (nR s).Contains (s.gpr .a0) 1 := by
     have := Offset.contains_base (s.gpr .a0) (d := 0) (n := 1) (k := (s.gpr .a1).toNat) (by have := P.k1; omega_using [this])
       (by have := P.wn; omega_using [])
     simpa only [BitVec.add_zero] using this
@@ -400,53 +400,53 @@ theorem entry_ok {H : Impl.Hmac.Stream.RISCV64.Hash} (hD : H.D = D) (hD64 : D �
     wp_sub fun v₂₃ o₂₃ e₂₃ => wp_li (imm := 255) (by decide) fun v₂₄ o₂₄ e₂₄ => wp_and fun v₂₅ o₂₅ e₂₅ =>
     wp_or fun v₂₆ o₂₆ e₂₆ => wp_sub fun v₂₇ o₂₇ e₂₇ => wp_subi (imm := H.D + 1) (h := by omega_using [hD, hD64])
     fun w ow ew => wp_nil ?_
-  have kw : Only [.t1, .t2, .t3, .s3, .t4, .s5, .s4] v₁₁ w :=
+  obtain kw : Only [.t1, .t2, .t3, .s3, .t4, .s5, .s4] v₁₁ w :=
     (o₁₂.trans (o₁₃.trans (o₁₄.trans (o₁₅.trans (o₁₆.trans (o₁₇.trans (o₁₈.trans (o₁₉.trans (o₂₀.trans (o₂₁.trans
       (o₂₂.trans (o₂₃.trans (o₂₄.trans (o₂₅.trans (o₂₆.trans (o₂₇.trans ow)))))))))))))))).mono
   -- The byte, and what it gives.
-  have hb : v₁₂.gpr .t1 = n0 s := by
+  obtain hb : v₁₂.gpr .t1 = n0 s := by
     rw [e₁₂, k₁₁.mem]
     show (v.mem (s.gpr .a0)).setWidth 64 = (s.mem (s.gpr .a0)).setWidth 64
     rw [hm _ fun r hr hx => by
       rw [List.mem_singleton.mp hr] at hx; exact P.kn _ hx hc]
   -- The registers at `v₁₁`.
-  have a11 : ∀ r ∈ [Reg.a0, .a1, .a2, .a3, .a4, .a6], v₁₁.gpr r = s.gpr r := fun r hr => by
+  obtain a11 : ∀ r ∈ [Reg.a0, .a1, .a2, .a3, .a4, .a6], v₁₁.gpr r = s.gpr r := fun r hr => by
     rw [k₁₁.gpr r (by revert r; decide), gs r hr]
-  have g0 : v₁₁.gpr .s0 = Sp s := by
+  obtain g0 : v₁₁.gpr .s0 = Sp s := by
     rw [o₁₁.get .s0, o₁₀.get .s0, o₉.get .s0, o₈.get .s0, o₇.get .s0, o₆.get .s0, e₅]
-  have g1 : v₁₁.gpr .s1 = s.gpr .a1 := by
+  obtain g1 : v₁₁.gpr .s1 = s.gpr .a1 := by
     rw [o₁₁.get .s1, o₁₀.get .s1, o₉.get .s1, o₈.get .s1, o₇.get .s1, e₆, ← a11 .a1 (by decide), o₁₁.get .a1,
       o₁₀.get .a1, o₉.get .a1, o₈.get .a1, o₇.get .a1, o₆.get .a1]
-  have g2 : v₁₁.gpr .s2 = s.gpr .a4 := by
+  obtain g2 : v₁₁.gpr .s2 = s.gpr .a4 := by
     rw [o₁₁.get .s2, o₁₀.get .s2, o₉.get .s2, o₈.get .s2, e₇, ← a11 .a4 (by decide), o₁₁.get .a4,
       o₁₀.get .a4, o₉.get .a4, o₈.get .a4, o₇.get .a4]
-  have g6 : v₁₁.gpr .s6 = stackArg s 0 := by
+  obtain g6 : v₁₁.gpr .s6 = stackArg s 0 := by
     rw [o₁₁.get .s6, o₁₀.get .s6, o₉.get .s6, e₈]
-  have g8 : v₁₁.gpr .s8 = s.gpr .a2 := by
+  obtain g8 : v₁₁.gpr .s8 = s.gpr .a2 := by
     rw [o₁₁.get .s8, o₁₀.get .s8, e₉, ← a11 .a2 (by decide), o₁₁.get .a2, o₁₀.get .a2, o₉.get .a2]
-  have g9 : v₁₁.gpr .s9 = s.gpr .a3 := by
+  obtain g9 : v₁₁.gpr .s9 = s.gpr .a3 := by
     rw [o₁₁.get .s9, e₁₀, ← a11 .a3 (by decide), o₁₁.get .a3, o₁₀.get .a3]
-  have g10 : v₁₁.gpr .s10 = s.gpr .a6 := by rw [e₁₁, ← a11 .a6 (by decide), o₁₁.get .a6]
-  have g7 : v₁₁.gpr .s7 = anyL s := by
+  obtain g10 : v₁₁.gpr .s10 = s.gpr .a6 := by rw [e₁₁, ← a11 .a6 (by decide), o₁₁.get .a6]
+  obtain g7 : v₁₁.gpr .s7 = anyL s := by
     rw [o₁₁.get .s7, o₁₀.get .s7, o₉.get .s7, o₈.get .s7, o₇.get .s7, o₆.get .s7, o₅.get .s7, e₄, e₃, e₂]; rfl
   -- The parameters.
-  have m19 : v₁₉.gpr .t2 = smear s := by
+  obtain m19 : v₁₉.gpr .t2 = smear s := by
     rw [e₁₉, o₁₈.get .t2, e₁₈, e₁₇, o₁₆.get .t2, e₁₆, e₁₅, o₁₄.get .t2, e₁₄, e₁₃, hb]; rfl
-  have m21 : v₂₁.gpr .s3 = lo s := by rw [e₂₁, e₂₀, m19]; rfl
-  have k1925 : Only [.t3, .s3, .t4] v₁₉ v₂₅ := (o₂₀.trans (o₂₁.trans (o₂₂.trans (o₂₃.trans (o₂₄.trans
+  obtain m21 : v₂₁.gpr .s3 = lo s := by rw [e₂₁, e₂₀, m19]; rfl
+  obtain k1925 : Only [.t3, .s3, .t4] v₁₉ v₂₅ := (o₂₀.trans (o₂₁.trans (o₂₂.trans (o₂₃.trans (o₂₄.trans
     o₂₅))))).mono
-  have m26 : v₂₆.gpr .s5 = cm s := by
+  obtain m26 : v₂₆.gpr .s5 = cm s := by
     rw [e₂₆, e₂₅, k1925.get .t2, m19, o₂₄.get .t3, e₂₄, e₂₃, e₂₂, o₂₂.get .s3, m21]; rfl
-  have k2126 : Only [.t3, .t4, .s5] v₂₁ v₂₆ := (o₂₂.trans (o₂₃.trans (o₂₄.trans (o₂₅.trans o₂₆)))).mono
-  have k1121 : Only [.t1, .t2, .t3, .s3] v₁₁ v₂₁ := (o₁₂.trans (o₁₃.trans (o₁₄.trans (o₁₅.trans (o₁₆.trans
+  obtain k2126 : Only [.t3, .t4, .s5] v₂₁ v₂₆ := (o₂₂.trans (o₂₃.trans (o₂₄.trans (o₂₅.trans o₂₆)))).mono
+  obtain k1121 : Only [.t1, .t2, .t3, .s3] v₁₁ v₂₁ := (o₁₂.trans (o₁₃.trans (o₁₄.trans (o₁₅.trans (o₁₆.trans
     (o₁₇.trans (o₁₈.trans (o₁₉.trans (o₂₀.trans o₂₁))))))))).mono
-  have m27 : w.gpr .s4 = dbLen D s := by
+  obtain m27 : w.gpr .s4 = dbLen D s := by
     rw [ew, e₂₇, k2126.get .s1, k1121.get .s1, g1, k2126.get .s3, m21, hD]; rfl
-  have k2127 : Only [.t3, .t4, .s5, .s4] v₂₁ w := (k2126.trans (o₂₇.trans ow)).mono
-  have k1219 : Only [.t2, .t3, .s3, .t4, .s5, .s4] v₁₂ w :=
+  obtain k2127 : Only [.t3, .t4, .s5, .s4] v₂₁ w := (k2126.trans (o₂₇.trans ow)).mono
+  obtain k1219 : Only [.t2, .t3, .s3, .t4, .s5, .s4] v₁₂ w :=
     (o₁₃.trans (o₁₄.trans (o₁₅.trans (o₁₆.trans (o₁₇.trans (o₁₈.trans (o₁₉.trans (o₂₀.trans (o₂₁.trans
       (o₂₂.trans (o₂₃.trans (o₂₄.trans (o₂₅.trans (o₂₆.trans (o₂₇.trans ow))))))))))))))).mono
-  have sv : Saves s w := ⟨by rw [kw.sp, k₁₁.sp, hsp], by rw [kw.wr, k₁₁.wr, kv.wr]; rfl,
+  obtain sv : Saves s w := ⟨by rw [kw.sp, k₁₁.sp, hsp], by rw [kw.wr, k₁₁.wr, kv.wr]; rfl,
     by rw [kw.mem, k₁₁.mem]; exact hsv⟩
   refine ⟨⟨sv, by rw [kw.rd, k₁₁.rd, hrd], by rw [kw.get .s0, g0], fun r hr => ?_, ?_⟩,
     ⟨by rw [o₂₇.get .s5 |> fun _ => (o₂₇.trans ow).get .s5, m26], by rw [kw.get .s6, g6], by rw [kw.get .s7, g7]⟩,

@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Framework.X86_64.Taint
 public import VerifiedGarbage.TCB.X86_64.Target
 import VerifiedGarbage.Proof.Framework.X86_64.Masked
 import VerifiedGarbage.Proof.Framework.X86_64.Reduce
+import VerifiedGarbage.Proof.Framework.X86_64.Syms
 
 /-!
 # Inlining verified code (x86-64)
@@ -25,6 +26,7 @@ def State.withRegions (s : State) (rd wr : List Region) : State := { s with rd :
 
 @[simp] theorem State.withRegions_gpr (s : State) (rd wr) : (s.withRegions rd wr).gpr = s.gpr := rfl
 @[simp] theorem State.withRegions_mem (s : State) (rd wr) : (s.withRegions rd wr).mem = s.mem := rfl
+@[simp] theorem State.withRegions_mxcsr (s : State) (rd wr) : (s.withRegions rd wr).mxcsr = s.mxcsr := rfl
 @[simp] theorem State.withRegions_rd (s : State) (rd wr) : (s.withRegions rd wr).rd = rd := rfl
 @[simp] theorem State.withRegions_wr (s : State) (rd wr) : (s.withRegions rd wr).wr = wr := rfl
 @[simp] theorem State.withRegions_self (s : State) : s.withRegions s.rd s.wr = s := rfl
@@ -249,7 +251,7 @@ theorem exec_widen (hc : Covers (s.rd ++ s.wr) (rd ++ wr)) (hw : Covers s.wr wr)
     simp only [e₁, e₂, e₃]
     exact ite_eq_left_of_eq_true _ _ (eq_true hc') |>.trans rfl
   | vpmovmskb len d r => simp only [reduceExec, Option.some.injEq] at h ⊢; subst h; rfl
-  | vpcmpltuw d a b => simp only [reduceExec, Option.some.injEq] at h ⊢; subst h; rfl
+  | vpcmpltuw d a b | evCmpUq _ d a b => simp only [reduceExec, Option.some.injEq] at h ⊢; subst h; rfl
   | movqR d r => simp only [reduceExec, Option.some.injEq] at h ⊢; subst h; rfl
   | movdquLoad d m =>
     simp only [reduceExec, Option.map_eq_some_iff] at h
@@ -292,6 +294,9 @@ theorem exec_widen (hc : Covers (s.rd ++ s.wr) (rd ++ wr)) (hw : Covers s.wr wr)
     · exact store256_widen hw h
   | zop op =>
     simp only [reduceExec, Option.some.injEq] at h ⊢; subst h; cases op <;> rfl
+  | evMaskAddQ _ d _ _ =>
+    simp only [reduceExec, Option.some.injEq] at h ⊢; subst h
+    exact setVy_withRegions _ _ _ _ _
   | eop op =>
     simp only [reduceExec, Option.some.injEq] at h ⊢; subst h
     cases op <;> exact setVy_withRegions _ _ _ _ _
@@ -437,76 +442,13 @@ theorem exec_widen (hc : Covers (s.rd ++ s.wr) (rd ++ wr)) (hw : Covers s.wr wr)
     · simp only [Option.bind_eq_some_iff, Option.map_eq_some_iff] at h ⊢
       obtain ⟨b, hb, c, hc', rfl⟩ := h
       exact ⟨b, readSrc_widen hc hb, c, by cases cc <;> exact hc', by cases c <;> rfl⟩
-  | push | pop | alloc | free | callr => simp only [reduceExec, reduceCtorEq] at h
+  | push | pop | alloc | free | callr | callm => simp only [reduceExec, reduceCtorEq] at h
 
 theorem addrs_withRegions (i : Instr) (s : State) (rd wr : List Region) :
     addrs i (s.withRegions rd wr) = addrs i s := by
   cases i <;> rfl
 
-theorem exec_regions {i : Instr} (h : exec i s = some s') : s'.rd = s.rd ∧ s'.wr = s.wr := by
-  cases i with
-  | store m r =>
-    simp only [reduceExec, State.store64] at h; split at h <;> cases h; exact ⟨rfl, rfl⟩
-  | store32 m r =>
-    simp only [reduceExec, State.store32] at h; split at h <;> cases h; exact ⟨rfl, rfl⟩
-  | store8 m r =>
-    simp only [reduceExec, State.store8] at h; split at h <;> cases h; exact ⟨rfl, rfl⟩
-  | store16 m r =>
-    simp only [reduceExec, State.store16] at h; split at h <;> cases h; exact ⟨rfl, rfl⟩
-  | movdquStore m r =>
-    simp only [reduceExec, State.store128] at h; split at h <;> cases h; exact ⟨rfl, rfl⟩
-  | movdquLoad d m =>
-    simp only [reduceExec, Option.map_eq_some_iff] at h; obtain ⟨_, _, rfl⟩ := h; exact ⟨rfl, rfl⟩
-  | xop op => simp only [reduceExec, Option.some.injEq] at h; subst h; cases op <;> exact ⟨rfl, rfl⟩
-  | vop op =>
-    simp only [reduceExec, Option.some.injEq] at h; subst h; rw [Taint.VOp.exec_eq op s]; exact ⟨rfl, rfl⟩
-  | vmovdquLoad len d m | vbinLoad _ len d _ m =>
-    cases len <;> simp only [reduceExec, Option.map_eq_some_iff] at h <;> obtain ⟨_, _, rfl⟩ := h <;>
-      exact ⟨rfl, rfl⟩
-  | vmovdquTbl d m n ws | movdquTbl d m n ws => simp only [reduceExec] at h; split at h <;> cases h; exact ⟨rfl, rfl⟩
-  | vbroadcasti128 d m =>
-    simp only [reduceExec, Option.map_eq_some_iff] at h; obtain ⟨_, _, rfl⟩ := h; exact ⟨rfl, rfl⟩
-  | vmovdquStore len m r =>
-    cases len
-    · simp only [reduceExec, State.store128] at h; split at h <;> cases h; exact ⟨rfl, rfl⟩
-    · simp only [reduceExec, State.store256] at h; split at h <;> cases h; exact ⟨rfl, rfl⟩
-  | zop op =>
-    simp only [reduceExec, Option.some.injEq] at h; subst h; rw [Taint.ZOp.exec_eq op s]; exact ⟨rfl, rfl⟩
-  | eop op =>
-    simp only [reduceExec, Option.some.injEq] at h; subst h; rw [Taint.EOp.exec_eq op s]; exact ⟨rfl, rfl⟩
-  | e5op op =>
-    simp only [reduceExec, Option.some.injEq] at h; subst h; rw [Taint.E5Op.exec_eq op s]; exact ⟨rfl, rfl⟩
-  | evLoad d m | evMadd52Load _ d _ m | evBroadcastLoad d m | e5InsertLoad d _ m _ =>
-    simp only [reduceExec, Option.map_eq_some_iff] at h; obtain ⟨_, _, rfl⟩ := h; cases d <;> exact ⟨rfl, rfl⟩
-  | evStore m r | e5ExtractStore m r _ =>
-    simp only [reduceExec, State.store256] at h; split at h <;> cases h; exact ⟨rfl, rfl⟩
-  | kLoad k d m | kLoad8 k d m =>
-    simp only [reduceExec, Option.map_eq_some_iff] at h; obtain ⟨_, _, rfl⟩ := h; exact ⟨rfl, rfl⟩
-  | kStore m k r => obtain ⟨_, rfl⟩ := State.storeMasked512_eq h; exact ⟨rfl, rfl⟩
-  | kStore8 m k r => obtain ⟨_, rfl⟩ := State.storeMasked512B_eq h; exact ⟨rfl, rfl⟩
-  | vmovdqu32Load d m | vbroadcasti32x4 d m | zbcst _ d _ m | vpbroadcastdZ d m | zbcstd _ d _ m | vpmadd52Load _ d _ m =>
-    simp only [reduceExec, Option.map_eq_some_iff] at h; obtain ⟨_, _, rfl⟩ := h; exact ⟨rfl, rfl⟩
-  | vbroadcasti32x4H d m =>
-    simp only [reduceExec, Option.map_eq_some_iff] at h; obtain ⟨_, _, rfl⟩ := h; exact ⟨rfl, rfl⟩
-  | vmovdqu32Store m r =>
-    simp only [reduceExec, State.store512] at h; split at h <;> cases h; exact ⟨rfl, rfl⟩
-  | stmxcsr m =>
-    simp only [reduceExec, State.store32] at h; split at h <;> cases h; exact ⟨rfl, rfl⟩
-  | ldmxcsr m =>
-    simp only [reduceExec, Option.bind_eq_some_iff] at h; obtain ⟨_, _, h⟩ := h
-    split at h <;> cases h; exact ⟨rfl, rfl⟩
-  | lfence => simp only [reduceExec, Option.some.injEq] at h; subst h; exact ⟨rfl, rfl⟩
-  | mul r => simp only [reduceExec, Option.some.injEq] at h; subst h; exact ⟨rfl, rfl⟩
-  | imul d r => simp only [reduceExec, Option.some.injEq] at h; subst h; exact ⟨rfl, rfl⟩
-  | imul3 d r v => simp only [reduceExec, Option.some.injEq] at h; subst h; exact ⟨rfl, rfl⟩
-  | shld d r n => simp only [reduceExec, execShld] at h; split at h <;> cases h; exact ⟨rfl, rfl⟩
-  | btr d n => simp only [reduceExec, execBtr] at h; split at h <;> cases h; exact ⟨rfl, rfl⟩
-  | mulx hi lo src =>
-    simp only [reduceExec, execMulx] at h; split at h
-    · cases h
-    · simp only [Option.map_eq_some_iff] at h; obtain ⟨_, _, rfl⟩ := h; exact ⟨rfl, rfl⟩
-  | push | pop | alloc | free | callr => simp only [reduceExec, reduceCtorEq] at h
-  | _ => exact ⟨(Taint.exec_nonstore rfl h).1, (Taint.exec_nonstore rfl h).2.1⟩
+theorem exec_regions {i : Instr} (h : exec i s = some s') : s'.rd = s.rd ∧ s'.wr = s.wr := (exec_ctx h).2.2
 
 theorem exec_frame {i : Instr} (h : exec i s = some s') : Frame s.wr s.mem s'.mem := by
   cases i with
@@ -545,6 +487,8 @@ theorem exec_frame {i : Instr} (h : exec i s = some s') : Frame s.wr s.mem s'.me
       rename_i hi; obtain ⟨r, hr, hc⟩ := hi; exact (Frame.refl _ _).writeW hr _ hc
   | zop op =>
     simp only [reduceExec, Option.some.injEq] at h; subst h; rw [Taint.ZOp.exec_eq op s]; exact Frame.refl _ _
+  | evMaskAddQ _ d _ _ =>
+    simp only [reduceExec, Option.some.injEq] at h; subst h; cases d <;> exact Frame.refl _ _
   | eop op =>
     simp only [reduceExec, Option.some.injEq] at h; subst h; rw [Taint.EOp.exec_eq op s]; exact Frame.refl _ _
   | e5op op =>
@@ -581,7 +525,7 @@ theorem exec_frame {i : Instr} (h : exec i s = some s') : Frame s.wr s.mem s'.me
     simp only [reduceExec, execMulx] at h; split at h
     · cases h
     · simp only [Option.map_eq_some_iff] at h; obtain ⟨_, _, rfl⟩ := h; exact Frame.refl _ _
-  | push | pop | alloc | free | callr => simp only [reduceExec, reduceCtorEq] at h
+  | push | pop | alloc | free | callr | callm => simp only [reduceExec, reduceCtorEq] at h
   | _ => rw [(Taint.exec_nonstore rfl h).2.2.1]; exact Frame.refl _ _
 
 theorem eval_withRegions (c : Cond) (s : State) (rd wr : List Region) :
@@ -784,6 +728,8 @@ theorem exec_gpr {i : Instr} {r : Reg} (hi : Taint.clobbers i r = false) {s s' :
     · obtain ⟨_, rfl⟩ := State.storeMasked512_eq h; rfl
     · simp only [reduceExec, Option.map_eq_some_iff] at h; obtain ⟨_, _, rfl⟩ := h; rfl
     · obtain ⟨_, rfl⟩ := State.storeMasked512B_eq h; rfl
+    · rename_i _ d _ _
+      simp only [reduceExec, Option.some.injEq] at h; subst h; cases d <;> rfl
     · simp only [reduceExec, State.store32] at h; split at h <;> cases h; rfl
     · simp only [reduceExec, Option.bind_eq_some_iff] at h; obtain ⟨_, _, h⟩ := h
       split at h <;> cases h; rfl
@@ -798,6 +744,7 @@ theorem exec_gpr {i : Instr} {r : Reg} (hi : Taint.clobbers i r = false) {s s' :
       · cases h
       · simp only [Option.map_eq_some_iff] at h; obtain ⟨_, _, rfl⟩ := h
         exact Taint.mulx_gpr s _ _ hi.1 hi.2
+    · simp only [reduceExec, reduceCtorEq] at h
     · simp only [reduceExec, reduceCtorEq] at h
     · simp only [reduceExec, reduceCtorEq] at h
     · simp only [reduceExec, reduceCtorEq] at h
@@ -855,7 +802,10 @@ def regionModel : RegionModel isa where
     exact ⟨rfl, rfl, fun _ _ => (ite_eq_left hc).trans rfl⟩
   push_widen := push_widen
   pop_widen h := ⟨(pop_eq h).1, (pop_eq h).2.1, (pop_eq h).2.2.1, fun _ _ hw => pop_widen h _ hw⟩
-  icall_with i _ _ _ := by cases i <;> rfl
+  icall_widen {i} _ _ _ _ hc h := by
+    cases i with
+    | callm m => exact load64_widen hc h
+    | _ => exact h
 
 theorem execBlock_regions {is : List Instr} {s s' : State} {t : List Leak}
     (h : execBlock isa is s = some (s', t)) : s'.rd = s.rd ∧ s'.wr = s.wr ∧ Frame s.wr s.mem s'.mem :=

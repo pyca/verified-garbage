@@ -12,15 +12,15 @@
 pub(crate) unsafe extern "C" fn vg_blake2b_update_scratch() {
     core::arch::naked_asm!(
         r"ldr r12, [sp, #8]
-str r4, [r12, #512]
-str r5, [r12, #516]
-str r6, [r12, #520]
-str r7, [r12, #524]
-str r8, [r12, #528]
-str r9, [r12, #532]
-str r10, [r12, #536]
-str r11, [r12, #540]
-str lr, [r12, #544]
+str r4, [r12, #200]
+str r5, [r12, #204]
+str r6, [r12, #208]
+str r7, [r12, #212]
+str r8, [r12, #216]
+str r9, [r12, #220]
+str r10, [r12, #224]
+str r11, [r12, #228]
+str lr, [r12, #232]
 mov r4, r0
 mov r5, r12
 ldr r6, [sp, #0]
@@ -144,15 +144,15 @@ b 218f
 217:
 218:
 mov r3, r5
-ldr r4, [r3, #512]
-ldr r5, [r3, #516]
-ldr r6, [r3, #520]
-ldr r7, [r3, #524]
-ldr r8, [r3, #528]
-ldr r9, [r3, #532]
-ldr r10, [r3, #536]
-ldr r11, [r3, #540]
-ldr lr, [r3, #544]
+ldr r4, [r3, #200]
+ldr r5, [r3, #204]
+ldr r6, [r3, #208]
+ldr r7, [r3, #212]
+ldr r8, [r3, #216]
+ldr r9, [r3, #220]
+ldr r10, [r3, #224]
+ldr r11, [r3, #228]
+ldr lr, [r3, #232]
 bx lr",
         vg_blake2b_compress = sym crate::blake2b::vg_blake2b_compress::vg_blake2b_compress,
     )

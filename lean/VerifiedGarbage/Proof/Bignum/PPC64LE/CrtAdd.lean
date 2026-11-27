@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Bignum.PPC64LE.Run
 public import VerifiedGarbage.Impl.Bignum.PPC64LE.Crt
 public import VerifiedGarbage.Proof.Mont.Words32
 import VerifiedGarbage.Proof.Bignum.PPC64LE.MontRound
-import VerifiedGarbage.Proof.Bignum.PPC64LE.MontStep
 import VerifiedGarbage.Proof.Framework.Offset
 
 /-!

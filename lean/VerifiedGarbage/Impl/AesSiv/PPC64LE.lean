@@ -22,11 +22,11 @@ CMAC subkeys (240–271) and `K2`'s schedule (272–511), so bytes 0–271 are
 
 ## The working spaces
 
-`init`'s (`scratch`, 2560 bytes): `[0, 2176)` the working space of the
-functions called, `[2176, 2216)` our caller's `r14`–`r17` and our return
-address.
+`init`'s (`scratch`, 112 bytes): `[0, 64)` the working space of
+`vg_cmac_aes_subkeys` (`vg_aes_expand_key_scratch` needs none), `[64, 104)`
+our caller's `r14`–`r17` and our return address.
 
-`encrypt`'s and `decrypt`'s (`work`, `W`, 2576 bytes): `[0, 16)` the
+`encrypt`'s and `decrypt`'s (`work`, `W`, 448 bytes): `[0, 16)` the
 synthetic IV (`encrypt` copies it to `siv` at the end, `decrypt` copies the
 received one from `siv` at the start), `[16, 32)` a zero block, `[32, 64)`
 the last bytes of S2V's last string (`tail`), `[64, 80)` the counter
@@ -34,7 +34,8 @@ the last bytes of S2V's last string (`tail`), `[64, 80)` the counter
 `[96, 112)` the counter block passed to `vg_aes_ctr32`, `[112, 128)` the IV
 `decrypt` computes, `[128, 232)` our caller's `r14`–`r25` and our return
 address, `[240, 256)` a CMAC state, `[256, 272)` `dbl(D)`, `[272, 288)` S2V's
-state `D`, and `[384, 2560)` the working space of the functions called.
+state `D`, and `[384, 448)` the working space of the CMAC functions
+called (`vg_aes_ctr32` needs none).
 
 ## Registers
 
@@ -132,7 +133,7 @@ def macArgs (st : Nat) : List Instr := [mov .r3 .r15, mov .r4 .r16, .addi .r5 .r
 
 /-- Our caller's registers and the return address (in `r0`), and where `init`
 saves them (`r17`, the base of the restore, last). -/
-def initSaved : List (Reg × Nat) := [(.r0, 2208), (.r14, 2176), (.r15, 2184), (.r16, 2192), (.r17, 2200)]
+def initSaved : List (Reg × Nat) := [(.r0, 96), (.r14, 64), (.r15, 72), (.r16, 80), (.r17, 88)]
 
 /-- Saves the registers and keeps the key in `r14`, the half length
 (`key_len / 2`) in `r15`, the context in `r16` and the scratch buffer in
@@ -148,7 +149,7 @@ the rounds `key_len / 8 + 6`. -/
 def initMid₁ : List Instr := [mov .r3 .r16, .lsr .d .r4 .r15 2, .addi .r4 .r4 6, .addi .r5 .r16 240, mov .r6 .r17]
 
 /-- The arguments of `vg_aes_expand_key_scratch` for `K2`. -/
-def initMid₂ : List Instr := [.add .r3 .r14 .r15, mov .r4 .r15, .addi .r5 .r16 272, mov .r6 .r17]
+def initMid₂ : List Instr := [.add .r3 .r14 .r15, mov .r4 .r15, .addi .r5 .r16 272]
 
 /-- The return address and the registers restored. -/
 def initPost : List Instr := initSaved.map (fun (r, d) => .load .d r .r17 d) ++ [.mtlr .r0]
@@ -275,10 +276,10 @@ def counter (src : Nat) : List Instr :=
     .lsl .r11 .r10 32, .logic .or .r10 .r10 .r11, .logic .or .r9 .r9 .r10, .logic .xor .r9 .r9 .r10,
     .store .d .r9 .r14 (cntO + 8)]
 
-/-- The arguments of `vg_aes_ctr32(schedule = r3, rounds = r4, counter = r5, data = r6, n = r7, scratch = r8)`
-but the data and the number of blocks: `K2`'s schedule, the rounds, the
-counter block at `W + 96` and the working space. -/
-def ctrArgs : List Instr := [.addi .r3 .r15 272, mov .r4 .r16, .addi .r5 .r14 cbO, .addi .r8 .r14 scrO]
+/-- The arguments of `vg_aes_ctr32(schedule = r3, rounds = r4, counter = r5, data = r6, n = r7)`
+but the data and the number of blocks: `K2`'s schedule, the rounds and the
+counter block at `W + 96`. -/
+def ctrArgs : List Instr := [.addi .r3 .r15 272, mov .r4 .r16, .addi .r5 .r14 cbO]
 
 /-- `k = ⌊left / 16⌋ mod 2³¹` in `d`: the whole blocks `ctrWhole` does. -/
 def wholeCount (d : Reg) : List Instr := [.lsr .d d .r20 4, .lsl d d 33, .lsr .d d d 33]

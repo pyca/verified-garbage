@@ -17,8 +17,8 @@ the verified `vg_aes_expand_key_scratch`, `vg_cmac_aes_subkeys`,
 The state (`VG.Spec.Cmac.Repr`) is the key schedule (bytes 0–239), the
 subkeys (240–271), the chaining value (272–287) and the bytes held back
 (288–303), so bytes 0–271 are `vg_cmac_aes_finalize`'s `key`. The scratch
-buffer (2304 bytes): `[0, 2176)` is the working space of the functions
-called, and `[2176, 2232)` our caller's nonvolatile registers and our
+buffer (128 bytes): `[0, 64)` is the working space of the functions
+called, and `[64, 120)` our caller's nonvolatile registers and our
 return address (a call replaces the link register). A call (`bl`) stores
 nothing in memory, so no stack is used.
 
@@ -71,7 +71,7 @@ def finCall : Prog isa := .call "vg_cmac_aes_finalize" Impl.CmacAes.PPC64LE.fina
 
 /-- The registers saved in the scratch buffer, and where (`r15`, the base of
 the restore, last). -/
-def initSaved : List (Reg × Nat) := [(.r0, 2200), (.r14, 2176), (.r16, 2192), (.r15, 2184)]
+def initSaved : List (Reg × Nat) := [(.r0, 88), (.r14, 64), (.r16, 80), (.r15, 72)]
 
 /-- Saves the registers and the return address, keeps the state in `r14`,
 the scratch buffer in `r15` and the rounds (`key_len / 4 + 6`) in `r16`, and
@@ -103,7 +103,7 @@ def copy : Prog isa := .ite (.zero .d .r12) (.block []) Impl.CmacAes.PPC64LE.cop
 /-- The registers saved in the scratch buffer, and where (`r19`, the base of
 the restore, last). -/
 def saved : List (Reg × Nat) :=
-  [(.r0, 2176), (.r14, 2184), (.r15, 2192), (.r16, 2200), (.r17, 2208), (.r18, 2216), (.r19, 2224)]
+  [(.r0, 64), (.r14, 72), (.r15, 80), (.r16, 88), (.r17, 96), (.r18, 104), (.r19, 112)]
 
 /-- Saves the registers and the return address and keeps the arguments in them. -/
 def save : List Instr :=
@@ -168,7 +168,7 @@ def absorb : Prog isa := .seq absorbPre (.seq updCall (.seq chain2 (.seq updCall
 
 /-- The registers `finish` saves in the scratch buffer, and where (`r14`,
 the base of the restore, last). -/
-def finSaved : List (Reg × Nat) := [(.r0, 2184), (.r14, 2176)]
+def finSaved : List (Reg × Nat) := [(.r0, 72), (.r14, 64)]
 
 /-- The chaining value copied to `out`, `r14` and the return address saved
 and the scratch buffer kept in `r14`, and the arguments of

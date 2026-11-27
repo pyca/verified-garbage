@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.Camellia.X86.Ctr
+public import VerifiedGarbage.Impl.Modes.X86.SeqFinal
 public import VerifiedGarbage.Impl.AesCtr.X86.Final
 public import VerifiedGarbage.Impl.StackScratch.X86
 
@@ -12,9 +12,12 @@ on the stack): the code of `vg_camellia_ctr_final`, whose registration frames
 it with a buffer of its own on the stack, `save`, the sixth argument, of 32
 bytes: the caller's callee-saved registers, then a block of the code's own.
 It is AES-CTR's final function's (`Impl/AesCtr/X86/Final.lean`) with
-Camellia's arguments, around calls of `vg_camellia_ctr`, framed by its own
-working space on the stack (`ctrFramed`), its five arguments pushed in a
-frame of their own (`ctrCall`):
+Camellia's arguments, around calls of an implementation of
+`vg_camellia_ctr`'s code, an internal function `name` with the code `core`
+(the baseline's: `vg_camellia_ctr_core`, `Sse.ctrFramed`, `vg_camellia_ctr`'s
+framed by its own working space on the stack, without the cleanup of the
+registers and the stack that `vg_camellia_ctr` ends with), its five arguments
+pushed in a frame of their own (`ctrCall`):
 
 1. our caller's `ebx`, `esi`, `edi` and `ebp` saved in `save`;
 2. a call of `vg_camellia_ctr` on the `len / 16` whole blocks, which leaves
@@ -41,9 +44,6 @@ open VG.Impl.AesCfb.X86 (finalSaved tailTest)
 open VG.Impl.AesCtr.X86 (zeroSlots)
 open VG.Impl.Modes.X86 (tailByte)
 
-/-- `vg_camellia_ctr`, with its working space on the stack. -/
-def ctrFramed : Prog isa := Impl.StackScratch.X86.withStackScratchWiped 2756 5 682 ctr
-
 /-- `save` (our stack argument 5) to `eax`, and the registers saved there. -/
 def ctrFinalSave : List Instr := .mov .eax (argOp 5) :: finalSaved.map fun p => .store (at_ .eax p.2) p.1
 
@@ -53,9 +53,11 @@ def ctrFinalArgs : List Instr :=
   [.mov .eax (argOp 0), .mov .ecx (argOp 1), .mov .edx (argOp 2), .mov .ebx (argOp 3), .mov .esi (argOp 4),
    .shift .shr .esi 4]
 
-/-- The call of `vg_camellia_ctr(eax, ecx, edx, ebx, esi)`, its arguments
-pushed last to first. -/
-def ctrCall : Prog isa := .frame (.push [.esi, .ebx, .edx, .ecx, .eax]) (.call "vg_camellia_ctr" ctrFramed) (.pop .eax 5)
+/-- The call of `vg_camellia_ctr(eax, ecx, edx, ebx, esi)`'s code, as the
+internal function `name` with the code `core`, its arguments pushed last to
+first. -/
+def ctrCall (name : String) (core : Prog isa) : Prog isa :=
+  .frame (.push [.esi, .ebx, .edx, .ecx, .eax]) (.call name core) (.pop .eax 5)
 
 /-- The block after the registers in `save` zeroed, and the arguments of
 `vg_camellia_ctr` on it: the schedule, the rounds, the counter block, the
@@ -76,12 +78,14 @@ def ctrFinalRestore : List Instr := .mov .eax (argOp 5) :: finalSaved.map fun p 
 
 /-- The partial last block: the output block `CIPH_K(Tₙ₊₁)` in the block of
 `save`, and its first `u` bytes XORed into the data. -/
-def ctrFinalTail : Prog isa :=
-  .seq (.block ctrFinalTailArgs) (.seq ctrCall (.seq (.block ctrFinalXorArgs) (.loop (.block tailByte) .ne)))
+def ctrFinalTail (name : String) (core : Prog isa) : Prog isa :=
+  .seq (.block ctrFinalTailArgs)
+    (.seq (ctrCall name core) (.seq (.block ctrFinalXorArgs) (.loop (.block tailByte) .ne)))
 
-/-- `vg_camellia_ctr_final`. -/
-def ctrFinal : Prog isa :=
-  .seq (.block (ctrFinalSave ++ ctrFinalArgs)) (.seq ctrCall
-    (.seq (.block tailTest) (.seq (.ite .e (.block []) ctrFinalTail) (.block ctrFinalRestore))))
+/-- `vg_camellia_ctr_final`, calling `core` as `name`. -/
+def ctrFinal (name : String) (core : Prog isa) : Prog isa :=
+  .seq (.block (ctrFinalSave ++ ctrFinalArgs)) (.seq (ctrCall name core)
+    (.seq (.block tailTest)
+      (.seq (.ite .e (.block []) (ctrFinalTail name core)) (.block ctrFinalRestore))))
 
 end VG.Impl.Camellia.X86

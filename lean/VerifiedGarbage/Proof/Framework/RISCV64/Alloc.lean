@@ -8,9 +8,10 @@ public import VerifiedGarbage.Proof.Framework.RISCV64.Inline
 Untrusted: everything here is checked by Lean. A frame `alloc n` … `free n`
 (`addi sp, sp, -n` … `addi sp, sp, n`) runs its body from `allocd n s`, with
 the stack pointer moved down by `n` and the `n` bytes below the old one a
-writable region at the head of `wr`, and ends in `freed n s₂` (`WP.allocLe`,
-and `WP.alloc` for a frame below 2048 bytes), as `WP.frame` (`Call.lean`)
-does for a frame saving a register.
+writable region at the head of `wr`, and ends in `freed n s₂` with the
+frame's bytes holding anything (`WP.allocLe`, and `WP.alloc` for a frame
+below 2048 bytes), as `WP.frame` (`Call.lean`) does for a frame saving a
+register.
 -/
 
 @[expose] public section
@@ -26,10 +27,15 @@ def freed (n : Nat) (s : State) : State :=
   { s with sp := s.sp + BitVec.ofNat 64 n, wr := s.wr.tail }
 
 /-- A frame allocating `n` bytes: its body runs from `allocd n s`, and the
-`free` leads to `freed n s₂`. -/
+`free` leads to `freed n s₂`, of which the postcondition may rely on nothing
+the frame's bytes hold, nor on the unknowns: it holds whatever memory `m`
+that differs from the body's only in the frame, and whatever unknowns `u`,
+the state then has. (A frame's bytes are below the stack pointer once it is
+released, where a signal handler may overwrite them.) -/
 theorem WP.allocLe {n : Nat} {body : Prog isa} {s : State} {Q : State → Prop}
     (hn : 0 < n ∧ n ≤ 4064 ∧ n % 16 = 0) (hsp : n ≤ s.sp.toNat)
-    (hb : WP isa body (allocd n s) fun s₂ => Q (freed n s₂)) :
+    (hb : WP isa body (allocd n s) fun s₂ => ∀ m u,
+      Frame [⟨s.sp - BitVec.ofNat 64 n, n⟩] s₂.mem m → Q { freed n s₂ with mem := m, unknowns := u }) :
     WP isa (.frame (.alloc n) body (.free n)) s Q := by
   obtain ⟨t, s₂, he, hq⟩ := hb
   obtain ⟨-, hw, hp⟩ := Exec.rdwr he
@@ -37,16 +43,20 @@ theorem WP.allocLe {n : Nat} {body : Prog isa} {s : State} {Q : State → Prop}
     show push (.alloc n) s = some (allocd n s)
     unfold push
     exact ite_eq_left_of_eq_true _ _ (eq_true ⟨hn.1, hn.2.1, hn.2.2, hsp⟩) |>.trans rfl
-  have hpop : isa.pop (.free n) (allocd n s) s₂ = some (freed n s₂) := by
-    show pop (.free n) (allocd n s) s₂ = some (freed n s₂)
+  have hpop : isa.pop (.free n) (allocd n s) s₂ = some { freed n s₂ with
+      mem := lose s₂.mem s₂.sp n s₂.unknowns, unknowns := fun k => s₂.unknowns (k + n / 4) } := by
+    show pop (.free n) (allocd n s) s₂ = _
     unfold pop
     exact ite_eq_left_of_eq_true _ _ (eq_true ⟨hn.1, hn.2.1, hn.2.2, hp, hw, rfl⟩) |>.trans rfl
-  exact ⟨_, _, Exec.frame hpush he hpop, hq⟩
+  have hl : Frame [⟨s.sp - BitVec.ofNat 64 n, n⟩] s₂.mem (lose s₂.mem s₂.sp n s₂.unknowns) := by
+    rw [show s.sp - BitVec.ofNat 64 n = s₂.sp from hp.symm]; exact lose_frame _ _ _ _
+  exact ⟨_, _, Exec.frame hpush he hpop, hq _ _ hl⟩
 
 /-- `WP.allocLe`, for a frame below 2048 bytes (one `addi`). -/
 theorem WP.alloc {n : Nat} {body : Prog isa} {s : State} {Q : State → Prop}
     (hn : 0 < n ∧ n < 2048 ∧ n % 16 = 0) (hsp : n ≤ s.sp.toNat)
-    (hb : WP isa body (allocd n s) fun s₂ => Q (freed n s₂)) :
+    (hb : WP isa body (allocd n s) fun s₂ => ∀ m u,
+      Frame [⟨s.sp - BitVec.ofNat 64 n, n⟩] s₂.mem m → Q { freed n s₂ with mem := m, unknowns := u }) :
     WP isa (.frame (.alloc n) body (.free n)) s Q :=
   WP.allocLe ⟨hn.1, by omega_using [hn], hn.2.2⟩ hsp hb
 

@@ -30,33 +30,60 @@
 ))]
 
 use crate::arch::dispatch::gcm::{
-    vg_aes_gcm_init_auto, vg_aes_gcm_stream_aad_auto, vg_aes_gcm_stream_finish_auto,
-    vg_aes_gcm_stream_init_auto, vg_aes_gcm_stream_verify_auto,
+    vg_aes_gcm_init_auto, vg_aes_gcm_stream_aad_auto, vg_aes_gcm_stream_init_auto,
 };
 // On AArch64 and x86-64, a key computes the powers of its hash subkey when
 // it is created, which the functions below read; elsewhere the functions
 // read the key context alone.
 use crate::align::CacheAligned;
-#[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
+#[cfg(not(any(
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "riscv64"
+)))]
+use crate::arch::dispatch::gcm::vg_aes_gcm_open_auto;
+#[cfg(not(any(
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "riscv64"
+)))]
 use crate::arch::dispatch::gcm::vg_aes_gcm_open_to_auto;
-#[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
-use crate::arch::dispatch::gcm::{
-    vg_aes_gcm_open_auto, vg_aes_gcm_seal_auto, vg_aes_gcm_seal_gather_auto,
-};
+#[cfg(any(
+    target_arch = "x86",
+    target_arch = "arm",
+    all(target_arch = "powerpc64", target_endian = "little")
+))]
+use crate::arch::dispatch::gcm::vg_aes_gcm_seal_contiguous_auto as seal_contiguous_kernel;
+#[cfg(not(any(target_arch = "x86_64", target_arch = "riscv64")))]
+use crate::arch::dispatch::gcm::vg_aes_gcm_seal_gather_auto;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::dispatch::gcm::{
     vg_aes_gcm_open_prepared_auto, vg_aes_gcm_open_to_prepared_auto, vg_aes_gcm_prepare_auto,
-    vg_aes_gcm_seal_gather_prepared_auto, vg_aes_gcm_seal_prepared_auto,
-    vg_aes_gcm_stream_decrypt_prepared_auto, vg_aes_gcm_stream_encrypt_prepared_auto,
-    vg_aes_gcm_wipe_prepared_auto,
+    vg_aes_gcm_seal_contiguous_prepared_auto as seal_contiguous_kernel,
+    vg_aes_gcm_seal_gather_prepared_auto, vg_aes_gcm_stream_decrypt_prepared_auto,
+    vg_aes_gcm_stream_encrypt_prepared_auto, vg_aes_gcm_wipe_prepared_auto,
 };
 #[cfg(target_arch = "aarch64")]
 use crate::arch::dispatch::gcm::{
     vg_aes_gcm_open_to_with_powers_auto, vg_aes_gcm_open_with_powers_auto,
-    vg_aes_gcm_seal_with_powers_auto, vg_aes_gcm_store_powers_auto,
+    vg_aes_gcm_seal_contiguous_with_powers_auto as seal_contiguous_kernel,
+    vg_aes_gcm_store_powers_auto,
 };
-#[cfg(not(target_arch = "x86_64"))]
+#[cfg(not(any(target_arch = "x86_64", target_arch = "riscv64")))]
 use crate::arch::dispatch::gcm::{vg_aes_gcm_stream_decrypt_auto, vg_aes_gcm_stream_encrypt_auto};
+#[cfg(not(target_arch = "riscv64"))]
+use crate::arch::dispatch::gcm::{vg_aes_gcm_stream_finish_auto, vg_aes_gcm_stream_verify_auto};
+// On RISC-V, a key computes the bitsliced form of its key context when it is
+// created, which the streaming functions, `seal`, `seal_gather`, `open` and
+// `open_to` read instead of computing it at every call.
+#[cfg(target_arch = "riscv64")]
+use crate::arch::dispatch::gcm::{
+    vg_aes_gcm_bitslice_auto, vg_aes_gcm_open_bitsliced_auto, vg_aes_gcm_open_to_bitsliced_auto,
+    vg_aes_gcm_seal_contiguous_bitsliced_auto as seal_contiguous_kernel,
+    vg_aes_gcm_seal_gather_bitsliced_auto, vg_aes_gcm_stream_decrypt_bitsliced_auto,
+    vg_aes_gcm_stream_encrypt_bitsliced_auto, vg_aes_gcm_stream_finish_bitsliced_auto,
+    vg_aes_gcm_stream_verify_bitsliced_auto,
+};
 use crate::error::InvalidKeyLength;
 #[cfg(not(target_arch = "x86_64"))]
 use crate::zeroize::zeroize;
@@ -79,6 +106,11 @@ type KeyCtx = [u64; 32];
 /// functions read next to the key context (`VG.Spec.Gcm.Powers8Repr`).
 #[cfg(target_arch = "aarch64")]
 type Powers = [u64; 16];
+
+/// On RISC-V, the bitsliced form of the key context that the `_bitsliced`
+/// functions read next to it (`VG.Spec.Gcm.CtxSlicedRepr`).
+#[cfg(target_arch = "riscv64")]
+type Bitsliced = [u64; 156];
 
 /// The largest plaintext (and ciphertext), in bytes: `2^39 − 256` bits
 /// (SP 800-38D §5.2.1.1).
@@ -178,6 +210,10 @@ pub struct AesGcm {
     /// (`VG.Spec.Gcm.Powers8Repr`).
     #[cfg(target_arch = "aarch64")]
     powers: CacheAligned<Powers>,
+    /// On RISC-V, the bitsliced form of the key context that `new` stores
+    /// (`VG.Spec.Gcm.CtxSlicedRepr`).
+    #[cfg(target_arch = "riscv64")]
+    bk: CacheAligned<Bitsliced>,
 }
 
 impl Drop for AesGcm {
@@ -198,6 +234,8 @@ impl Drop for AesGcm {
         zeroize(core::slice::from_mut(&mut self.ctx));
         #[cfg(target_arch = "aarch64")]
         zeroize(&mut self.powers.0);
+        #[cfg(target_arch = "riscv64")]
+        zeroize(&mut self.bk.0);
     }
 }
 
@@ -217,6 +255,8 @@ impl AesGcm {
             rounds: key.len() / 4 + 6,
             #[cfg(target_arch = "aarch64")]
             powers: CacheAligned([0; size_of::<Powers>() / 8]),
+            #[cfg(target_arch = "riscv64")]
+            bk: CacheAligned([0; size_of::<Bitsliced>() / 8]),
         };
         // Only the key context of `vg_aes_gcm_init` is cleared first (`init`
         // reads it); on x86-64 `prepare` writes the rest.
@@ -246,6 +286,16 @@ impl AesGcm {
         unsafe {
             vg_aes_gcm_store_powers_auto(dit, k.ctx.0.as_ptr().cast(), &mut k.powers.0)
         };
+        // SAFETY: the key context, valid for reads of 256 bytes (written
+        // above), and `k.bk`, for writes of 1248, are distinct fields, so they
+        // do not overlap each other or anything on the stack, or wrap around
+        // the end of the address space. `vg_aes_gcm_bitslice` writes the
+        // bitsliced form of the context (`CtxSlicedRepr`), which the
+        // `_bitsliced` functions require.
+        #[cfg(target_arch = "riscv64")]
+        unsafe {
+            vg_aes_gcm_bitslice_auto(dit, k.ctx.0.as_ptr().cast(), &mut k.bk.0)
+        };
         Ok(k)
     }
 
@@ -264,6 +314,7 @@ impl AesGcm {
     ///
     /// The nonce may have any nonzero length; 12 bytes is the recommended
     /// (and fastest) one. A nonce must never be used twice with the same key.
+    #[cfg_attr(target_arch = "x86_64", inline)]
     pub fn encrypt_in_place(
         &self,
         nonce: &[u8],
@@ -278,63 +329,54 @@ impl AesGcm {
         Ok(self.seal(dit, nonce, aad, data))
     }
 
-    /// `vg_aes_gcm_seal` (on x86-64, `vg_aes_gcm_seal_prepared`; on
-    /// AArch64, `vg_aes_gcm_seal_with_powers`) of `data` in place, whose
-    /// lengths the caller checked.
     #[inline(always)]
     fn seal(&self, dit: crate::dit::Dit<'_>, nonce: &[u8], aad: &[u8], data: &mut [u8]) -> Block {
-        let mut tag: Block = [0; 16];
-        // SAFETY: `self.ctx` is the key context `vg_aes_gcm_init` wrote for
-        // `self.rounds` (10, 12 or 14) rounds, valid for reads of 256 bytes,
-        // followed on x86-64 by the powers `vg_aes_gcm_prepare` wrote for the
-        // same key (`AesGcm::new`), valid for reads of 1032 bytes in all,
-        // and on AArch64 next to the powers `vg_aes_gcm_store_powers` wrote
-        // (`self.powers`, 128 bytes); `nonce` and `aad` are valid for reads
-        // and `data` for reads and writes of their lengths, and `tag` (a
-        // local) for reads and writes of 16 bytes. They are distinct objects
-        // (`data` a unique borrow), so the writable ones overlap nothing
-        // else, nor anything on the stack, and none wraps around the end of
-        // the address space.
+        let len = data.len();
+        let dst = data.as_mut_ptr();
+        // SAFETY: both pointers refer to the same exclusive, initialized slice.
+        unsafe { self.seal_contiguous(dit, nonce, aad, dst.cast_const(), dst, len) }
+    }
+
+    /// Seal a contiguous plaintext at `src` into `dst` and return its detached tag.
+    ///
+    /// # Safety
+    /// The caller checked the record lengths. The source is readable and the
+    /// destination writable for `len` bytes. They are identical or disjoint.
+    /// The writable range is exclusive and disjoint from the context, nonce and AAD.
+    #[inline(always)]
+    unsafe fn seal_contiguous(
+        &self,
+        dit: crate::dit::Dit<'_>,
+        nonce: &[u8],
+        aad: &[u8],
+        src: *const u8,
+        dst: *mut u8,
+        len: usize,
+    ) -> Block {
+        let mut tag = [0; 16];
+        // SAFETY: the caller supplies the input and output. The constructor
+        // initialized the AES context and any target-specific prepared key data.
+        // The tag is a separate writable local.
         unsafe {
-            #[cfg(target_arch = "x86_64")]
-            vg_aes_gcm_seal_prepared_auto(
+            seal_contiguous_kernel(
                 dit,
+                #[cfg(target_arch = "x86_64")]
                 self.ctx.0.as_ptr(),
-                self.rounds,
-                nonce.as_ptr(),
-                nonce.len(),
-                aad.as_ptr(),
-                aad.len(),
-                data.as_mut_ptr(),
-                data.len(),
-                &mut tag,
-            );
-            #[cfg(target_arch = "aarch64")]
-            vg_aes_gcm_seal_with_powers_auto(
-                dit,
+                #[cfg(not(target_arch = "x86_64"))]
                 self.key(),
                 self.rounds,
                 nonce.as_ptr(),
                 nonce.len(),
                 aad.as_ptr(),
                 aad.len(),
-                data.as_mut_ptr(),
-                data.len(),
+                src,
+                dst,
+                len,
                 &mut tag,
+                #[cfg(target_arch = "aarch64")]
                 &self.powers.0,
-            );
-            #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
-            vg_aes_gcm_seal_auto(
-                dit,
-                self.key(),
-                self.rounds,
-                nonce.as_ptr(),
-                nonce.len(),
-                aad.as_ptr(),
-                aad.len(),
-                data.as_mut_ptr(),
-                data.len(),
-                &mut tag,
+                #[cfg(target_arch = "riscv64")]
+                &self.bk.0,
             );
         }
         tag
@@ -433,7 +475,26 @@ impl AesGcm {
                 tag.len(),
                 &self.powers.0,
             );
-            #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
+            #[cfg(target_arch = "riscv64")]
+            let ok = vg_aes_gcm_open_bitsliced_auto(
+                dit,
+                self.key(),
+                self.rounds,
+                nonce.as_ptr(),
+                nonce.len(),
+                aad.as_ptr(),
+                aad.len(),
+                data.as_mut_ptr(),
+                data.len(),
+                tag.as_ptr(),
+                tag.len(),
+                &self.bk.0,
+            );
+            #[cfg(not(any(
+                target_arch = "x86_64",
+                target_arch = "aarch64",
+                target_arch = "riscv64"
+            )))]
             let ok = vg_aes_gcm_open_auto(
                 dit,
                 self.key(),
@@ -533,7 +594,28 @@ impl AesGcm {
                 tag.len(),
                 &self.powers.0,
             );
-            #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
+            #[cfg(target_arch = "riscv64")]
+            let ok = vg_aes_gcm_open_to_bitsliced_auto(
+                dit,
+                self.key(),
+                self.rounds,
+                nonce.as_ptr(),
+                nonce.len(),
+                aad.as_ptr(),
+                aad.len(),
+                ciphertext.as_ptr(),
+                ciphertext.len(),
+                out.as_mut_ptr(),
+                out.len(),
+                tag.as_ptr(),
+                tag.len(),
+                &self.bk.0,
+            );
+            #[cfg(not(any(
+                target_arch = "x86_64",
+                target_arch = "aarch64",
+                target_arch = "riscv64"
+            )))]
             let ok = vg_aes_gcm_open_to_auto(
                 dit,
                 self.key(),
@@ -569,6 +651,7 @@ impl AesGcm {
     /// one piece (`&[buf]`); there may be at most
     /// [`MAX_PIECES`](Self::MAX_PIECES). The nonce is as for
     /// [`encrypt_in_place`](Self::encrypt_in_place).
+    #[cfg_attr(target_arch = "x86_64", inline)]
     pub fn encrypt(
         &self,
         nonce: &[u8],
@@ -576,49 +659,85 @@ impl AesGcm {
         plaintext: &[&[u8]],
         out: &mut [u8],
     ) -> Result<Block, Error> {
+        // SAFETY: MaybeUninit<u8> has the layout of u8. encrypt_uninit
+        // writes only initialized bytes and leaves the slice alone on error.
+        let dst = unsafe { core::slice::from_raw_parts_mut(out.as_mut_ptr().cast(), out.len()) };
+        #[cfg(target_arch = "x86_64")]
+        {
+            self.encrypt_checked(nonce, aad, plaintext, dst, |_, tag| tag)
+        }
+        #[cfg(not(target_arch = "x86_64"))]
+        {
+            self.encrypt_uninit(nonce, aad, plaintext, dst)
+                .map(|(_, tag)| tag)
+        }
+    }
+
+    /// Like [`encrypt`](Self::encrypt), with output storage that may be
+    /// uninitialized. Its length must equal the combined plaintext length.
+    /// Returns the initialized ciphertext in that storage and its tag.
+    /// On error, the output is untouched.
+    #[cfg_attr(target_arch = "x86_64", inline)]
+    pub fn encrypt_uninit<'out>(
+        &self,
+        nonce: &[u8],
+        aad: &[u8],
+        plaintext: &[&[u8]],
+        out: &'out mut [MaybeUninit<u8>],
+    ) -> Result<(&'out mut [u8], Block), Error> {
+        #[cfg(target_arch = "x86_64")]
+        {
+            let tag = self.encrypt_checked(nonce, aad, plaintext, out, |_, tag| tag)?;
+            // SAFETY: both seal contracts initialize the entire destination on success.
+            Ok((unsafe { out.assume_init_mut() }, tag))
+        }
+        #[cfg(not(target_arch = "x86_64"))]
+        {
+            self.encrypt_checked(nonce, aad, plaintext, out, |out, tag| {
+                // SAFETY: both seal contracts initialize the entire destination on success.
+                (unsafe { out.assume_init_mut() }, tag)
+            })
+        }
+    }
+
+    // On x86-64, return the tag in the caller's slot. Other targets build the
+    // ciphertext/tag pair directly for encrypt_uninit's out-of-line entry.
+    #[inline(always)]
+    fn encrypt_checked<'out, T>(
+        &self,
+        nonce: &[u8],
+        aad: &[u8],
+        plaintext: &[&[u8]],
+        out: &'out mut [MaybeUninit<u8>],
+        finish: impl FnOnce(&'out mut [MaybeUninit<u8>], Block) -> T,
+    ) -> Result<T, Error> {
         crate::dit::enter!(dit);
         if plaintext.len() > Self::MAX_PIECES {
             return Err(Error::TooManyPieces);
         }
         check_nonce(nonce)?;
-        let mut len = 0;
-        for p in plaintext {
-            len = add_len(len, p.len(), MAX_TEXT).map_err(|()| Error::InvalidTextLength)?;
-        }
+        let len = match plaintext {
+            // TLS 1.3 supplies its record and content type as two pieces.
+            #[cfg(target_arch = "x86_64")]
+            [first, second] => add_len(first.len() as u64, second.len(), MAX_TEXT)
+                .map_err(|()| Error::InvalidTextLength)?,
+            _ => {
+                let mut len = 0;
+                for p in plaintext {
+                    len = add_len(len, p.len(), MAX_TEXT).map_err(|()| Error::InvalidTextLength)?;
+                }
+                len
+            }
+        };
         if len != out.len() as u64 {
             return Err(Error::InvalidOutputLength);
         }
         add_len(0, aad.len(), MAX_AAD).map_err(|()| Error::InvalidAadLength)?;
-        Ok(self.seal_pieces(dit, nonce, aad, plaintext, out))
+        let tag = self.seal_pieces(dit, nonce, aad, plaintext, out);
+        Ok(finish(out, tag))
     }
 
-    /// `encrypt` on AArch64, where no `_with_powers` function gathers the
-    /// pieces: copies the pieces `plaintext` to `out`, one after the other
-    /// (as `vg_aes_gcm_seal_gather` does), and seals them there. Which bytes
-    /// it copies where depends only on the pieces' lengths (whose sum
-    /// `encrypt` checked is `out.len()`).
-    #[cfg(target_arch = "aarch64")]
-    #[inline(never)]
-    fn seal_pieces(
-        &self,
-        dit: crate::dit::Dit<'_>,
-        nonce: &[u8],
-        aad: &[u8],
-        plaintext: &[&[u8]],
-        out: &mut [u8],
-    ) -> Block {
-        let mut rest = &mut *out;
-        for piece in plaintext {
-            let (dst, tail) = rest.split_at_mut(piece.len());
-            dst.copy_from_slice(piece);
-            rest = tail;
-        }
-        self.seal(dit, nonce, aad, out)
-    }
-
-    /// `encrypt` elsewhere, by `vg_aes_gcm_seal_gather` (on x86-64,
-    /// `vg_aes_gcm_seal_gather_prepared`).
-    #[cfg(not(target_arch = "aarch64"))]
+    /// Seal the caller's checked plaintext pieces into their exact-size destination.
     #[inline(always)]
     fn seal_pieces(
         &self,
@@ -626,7 +745,39 @@ impl AesGcm {
         nonce: &[u8],
         aad: &[u8],
         plaintext: &[&[u8]],
-        out: &mut [u8],
+        out: &mut [MaybeUninit<u8>],
+    ) -> Block {
+        if let [input] = plaintext {
+            let dst = out.as_mut_ptr().cast();
+            let len = out.len();
+            // SAFETY: the checked length equals input.len(). The exclusive
+            // destination is disjoint from the borrowed input and metadata.
+            return unsafe { self.seal_contiguous(dit, nonce, aad, input.as_ptr(), dst, len) };
+        }
+        #[cfg(target_arch = "x86_64")]
+        if let [first, second] = plaintext {
+            let pair = [
+                [first.as_ptr() as usize, first.len()],
+                [second.as_ptr() as usize, second.len()],
+            ];
+            // SAFETY: each descriptor describes its borrowed plaintext slice.
+            return unsafe {
+                self.seal_descriptors(dit, nonce, aad, pair.as_ptr(), pair.len(), out)
+            };
+        }
+        self.seal_descriptor_list(dit, nonce, aad, plaintext, out)
+    }
+
+    // Keep the maximum-size descriptor array out of the two-fragment caller's frame.
+    #[cfg_attr(target_arch = "x86_64", inline(never))]
+    #[cfg_attr(not(target_arch = "x86_64"), inline(always))]
+    fn seal_descriptor_list(
+        &self,
+        dit: crate::dit::Dit<'_>,
+        nonce: &[u8],
+        aad: &[u8],
+        plaintext: &[&[u8]],
+        out: &mut [MaybeUninit<u8>],
     ) -> Block {
         // The descriptors of the pieces, as `vg_aes_gcm_seal_gather` takes
         // them: each its address and its length. Only the first
@@ -635,15 +786,33 @@ impl AesGcm {
         for (d, p) in descs.iter_mut().zip(plaintext) {
             d.write([p.as_ptr() as usize, p.len()]);
         }
-        let src: *const [usize; 2] = descs.as_ptr().cast();
+        // SAFETY: the checked count fits in descs, and each initialized
+        // entry describes the corresponding borrowed plaintext slice.
+        unsafe {
+            self.seal_descriptors(dit, nonce, aad, descs.as_ptr().cast(), plaintext.len(), out)
+        }
+    }
+
+    /// Seal checked plaintext from `count` live, initialized descriptors at
+    /// `src`. Their address/length pairs must describe readable slices whose
+    /// combined length equals `out.len()`. Neither the data nor the descriptors
+    /// may overlap the exclusive destination.
+    #[inline(always)]
+    unsafe fn seal_descriptors(
+        &self,
+        dit: crate::dit::Dit<'_>,
+        nonce: &[u8],
+        aad: &[u8],
+        src: *const [usize; 2],
+        count: usize,
+        out: &mut [MaybeUninit<u8>],
+    ) -> Block {
+        let dst = out.as_mut_ptr().cast();
+        let len = out.len();
         let mut tag: Block = [0; 16];
-        // SAFETY: as in `seal`, with `out` valid for reads and writes of
-        // `out.len()` bytes; `src` points to `plaintext.len()` initialized
-        // descriptors (in `descs`, a local), each the address and the length
-        // of a piece valid for reads, which are `out.len()` bytes in all.
-        // The pieces and the descriptors are read only, and overlap neither
-        // `out` (a unique borrow) nor `tag`, nor anything on the stack the
-        // function uses.
+        // SAFETY: the caller checked the inputs and supplies the descriptors
+        // above. `out` is writable for `len` bytes, `tag` is a disjoint local,
+        // and the key context and other borrowed inputs remain readable.
         unsafe {
             #[cfg(target_arch = "x86_64")]
             vg_aes_gcm_seal_gather_prepared_auto(
@@ -655,12 +824,28 @@ impl AesGcm {
                 aad.as_ptr(),
                 aad.len(),
                 src,
-                plaintext.len(),
-                out.as_mut_ptr(),
-                out.len(),
+                count,
+                dst,
+                len,
                 &mut tag,
             );
-            #[cfg(not(target_arch = "x86_64"))]
+            #[cfg(target_arch = "riscv64")]
+            vg_aes_gcm_seal_gather_bitsliced_auto(
+                dit,
+                self.key(),
+                self.rounds,
+                nonce.as_ptr(),
+                nonce.len(),
+                aad.as_ptr(),
+                aad.len(),
+                src,
+                count,
+                dst,
+                len,
+                &mut tag,
+                &self.bk.0,
+            );
+            #[cfg(not(any(target_arch = "x86_64", target_arch = "riscv64")))]
             vg_aes_gcm_seal_gather_auto(
                 dit,
                 self.key(),
@@ -670,9 +855,9 @@ impl AesGcm {
                 aad.as_ptr(),
                 aad.len(),
                 src,
-                plaintext.len(),
-                out.as_mut_ptr(),
-                out.len(),
+                count,
+                dst,
+                len,
                 &mut tag,
             );
         }
@@ -780,17 +965,39 @@ impl<'a, const DECRYPT: bool> Stream<'a, DECRYPT> {
             vg_aes_gcm_stream_encrypt_prepared_auto,
             vg_aes_gcm_stream_decrypt_prepared_auto,
         );
-        #[cfg(not(target_arch = "x86_64"))]
+        #[cfg(not(any(target_arch = "x86_64", target_arch = "riscv64")))]
         let (ctx, encrypt, decrypt) = (
             self.key.key(),
             vg_aes_gcm_stream_encrypt_auto,
             vg_aes_gcm_stream_decrypt_auto,
         );
+        // SAFETY: as below, with `self.key.bk` the bitsliced form of the key
+        // context (`new`), valid for reads of 1248 bytes, which nothing
+        // writable overlaps.
+        #[cfg(target_arch = "riscv64")]
+        unsafe {
+            (if DECRYPT {
+                vg_aes_gcm_stream_decrypt_bitsliced_auto
+            } else {
+                vg_aes_gcm_stream_encrypt_bitsliced_auto
+            })(
+                dit,
+                self.key.key(),
+                self.key.rounds,
+                &mut self.state.0,
+                self.aad_len,
+                self.text_len,
+                data.as_mut_ptr(),
+                data.len(),
+                &self.key.bk.0,
+            )
+        };
         // SAFETY: as in `new`, with the key context as in `AesGcm::seal` and
         // `data` valid for reads and writes of `data.len()` bytes (a unique
         // borrow, so it overlaps nothing else); `self.state` represents a
         // message with `self.aad_len` bytes of additional data and
         // `self.text_len` of text.
+        #[cfg(not(target_arch = "riscv64"))]
         unsafe {
             (if DECRYPT { decrypt } else { encrypt })(
                 dit,
@@ -815,6 +1022,7 @@ impl Stream<'_, false> {
         // SAFETY: as in `update`, with `tag` (a local) valid for reads and
         // writes of 16 bytes. `update_aad` and `update` checked the lengths
         // (§5.2.1.1).
+        #[cfg(not(target_arch = "riscv64"))]
         unsafe {
             vg_aes_gcm_stream_finish_auto(
                 dit,
@@ -824,6 +1032,20 @@ impl Stream<'_, false> {
                 self.aad_len,
                 self.text_len,
                 &mut tag,
+            )
+        };
+        // SAFETY: as above, with `self.key.bk` as in `update`.
+        #[cfg(target_arch = "riscv64")]
+        unsafe {
+            vg_aes_gcm_stream_finish_bitsliced_auto(
+                dit,
+                self.key.key(),
+                self.key.rounds,
+                &mut self.state.0,
+                self.aad_len,
+                self.text_len,
+                &mut tag,
+                &self.key.bk.0,
             )
         };
         tag
@@ -836,6 +1058,7 @@ impl Stream<'_, true> {
     fn verify(mut self, dit: crate::dit::Dit<'_>, tag: &[u8]) -> Result<(), Error> {
         // SAFETY: as in `finish`, with the received tag `tag` valid for
         // reads of its length.
+        #[cfg(not(target_arch = "riscv64"))]
         let ok = unsafe {
             vg_aes_gcm_stream_verify_auto(
                 dit,
@@ -846,6 +1069,21 @@ impl Stream<'_, true> {
                 self.text_len,
                 tag.as_ptr(),
                 tag.len(),
+            )
+        };
+        // SAFETY: as above, with `self.key.bk` as in `update`.
+        #[cfg(target_arch = "riscv64")]
+        let ok = unsafe {
+            vg_aes_gcm_stream_verify_bitsliced_auto(
+                dit,
+                self.key.key(),
+                self.key.rounds,
+                &mut self.state.0,
+                self.aad_len,
+                self.text_len,
+                tag.as_ptr(),
+                tag.len(),
+                &self.key.bk.0,
             )
         };
         if ok == 1 {
@@ -1038,9 +1276,8 @@ mod tests {
         let aad = [9u8; 17];
         let lens = (1024..=1040)
             .chain((256..=656).step_by(16).flat_map(|l| [l, l + 5]))
-            .chain([
-                0, 1, 15, 16, 17, 100, 255, 300, 511, 512, 513, 767, 768, 769,
-            ])
+            .chain(0..=17)
+            .chain([95, 96, 97, 100, 255, 300, 511, 512, 513, 767, 768, 769])
             .chain([
                 1300, 1535, 1536, 2048, 2303, 2304, 2305, 3071, 3072, 3073, 3100,
             ]);
@@ -1388,6 +1625,38 @@ mod tests {
         truncated_boundaries::<11>();
     }
 
+    /// A whole-block fragment on either side of the fused-loop threshold,
+    /// optionally followed by a TLS content-type byte in a separate fragment.
+    #[test]
+    fn seal_short_whole_blocks() {
+        let input: [u8; 17 * 16 + 1] = core::array::from_fn(|i| (i as u8).wrapping_mul(29));
+        for key_len in [16, 24, 32] {
+            let key = AesGcm::new(&[0x42; 32][..key_len]).unwrap();
+            for blocks in 1..=17 {
+                let bytes = blocks * 16;
+                for extra in 0..=1 {
+                    let len = bytes + extra;
+                    let nonce = [len as u8; 12];
+                    let aad = [0x17, 3, 3, 0, 0];
+                    let mut reference = input;
+                    let tag = key
+                        .encrypt_in_place(&nonce, &aad, &mut reference[..len])
+                        .unwrap();
+                    let first = &input[..bytes];
+                    let two = [first, &input[bytes..len]];
+                    let pieces = if extra == 0 { &two[..1] } else { &two[..] };
+                    let mut out = [0x55; 17 * 16 + 3];
+                    let got = key
+                        .encrypt(&nonce, &aad, pieces, &mut out[1..1 + len])
+                        .unwrap();
+                    assert_eq!(&out[1..1 + len], &reference[..len]);
+                    assert_eq!(got, tag);
+                    assert_eq!((out[0], out[1 + len]), (0x55, 0x55));
+                }
+            }
+        }
+    }
+
     /// Out-of-place encryption of a plaintext in pieces matches in-place
     /// encryption, after additional data of whole blocks, of a partial block
     /// and of none, for pieces split on and off block boundaries (empty ones
@@ -1400,15 +1669,17 @@ mod tests {
         let msg: [u8; 300] = core::array::from_fn(|i| (i as u8).wrapping_mul(29));
         for aad_len in [0, 5, 16, 20] {
             let aad = &msg[..aad_len];
-            for len in [0, 1, 16, 17, 300] {
+            for len in [0, 1, 16, 17, 95, 96, 97, 128, 192, 223, 224, 225, 300] {
                 let mut want = msg;
                 let want_tag = k.encrypt_in_place(&nonce, aad, &mut want[..len]).unwrap();
                 let m = &msg[..len];
                 let (h, q) = (len / 2, (len / 2 + 16).min(len));
                 let one: [&[u8]; 1] = [m];
                 let two: [&[u8]; 2] = [&m[..h], &m[h..]];
+                let empty_first: [&[u8]; 2] = [&[], m];
+                let empty_last: [&[u8]; 2] = [m, &[]];
                 let five: [&[u8]; 5] = [&[], &m[..h], &m[h..h], &m[h..q], &m[q..]];
-                for pieces in [&one[..], &two, &five] {
+                for pieces in [&one[..], &two, &empty_first, &empty_last, &five] {
                     let mut out = [0u8; 300];
                     let tag = k.encrypt(&nonce, aad, pieces, &mut out[..len]);
                     assert_eq!((&out[..len], tag), (&want[..len], Ok(want_tag)));
@@ -1423,6 +1694,21 @@ mod tests {
         let tag = k.encrypt(&nonce, &[], &bytes, &mut out);
         assert_eq!((&out[..], tag), (&want[..n], Ok(want_tag)));
         let empty = [&msg[..0]; AesGcm::MAX_PIECES + 1];
+        let mut untouched = [core::mem::MaybeUninit::new(0x5a)];
+        assert_eq!(
+            k.encrypt_uninit(&nonce, &[], &empty, &mut untouched),
+            Err(Error::TooManyPieces)
+        );
+        assert_eq!(
+            k.encrypt_uninit(&[], &[], &bytes, &mut untouched),
+            Err(Error::InvalidNonceLength)
+        );
+        assert_eq!(
+            k.encrypt_uninit(&nonce, &[], &[], &mut untouched),
+            Err(Error::InvalidOutputLength)
+        );
+        // SAFETY: the byte started initialized, and errors leave it untouched.
+        assert_eq!(unsafe { untouched[0].assume_init() }, 0x5a);
         let tag = k.encrypt(&nonce, &[], &empty, &mut []);
         assert_eq!(tag, Err(Error::TooManyPieces));
         assert_eq!(
@@ -1446,6 +1732,44 @@ mod tests {
             k.encrypt(&[], &[], &[&msg[..4]], &mut out),
             Err(Error::InvalidNonceLength)
         );
+    }
+
+    #[test]
+    fn gather_across_fused_batches() {
+        let message: [u8; 896] = core::array::from_fn(|i| (i as u8).wrapping_mul(29));
+        let nonce = [7u8; 12];
+        for key_len in [16, 24, 32] {
+            let key_bytes = [3u8; 32];
+            let key = AesGcm::new(&key_bytes[..key_len]).unwrap();
+            for len in [768, 769, 787, 896] {
+                let mut expected = message;
+                let tag = key
+                    .encrypt_in_place(&nonce, b"aad", &mut expected[..len])
+                    .unwrap();
+                let mut out = [0u8; 896];
+                let single = [&message[..len]];
+                assert_eq!(
+                    key.encrypt(&nonce, b"aad", &single, &mut out[..len]),
+                    Ok(tag)
+                );
+                assert_eq!(&out[..len], &expected[..len]);
+                for split in [511, 512, 513, 639, 640, 641] {
+                    let pieces: [&[u8]; 5] = [
+                        &[],
+                        &message[..split],
+                        &message[split..split + 1],
+                        &[],
+                        &message[split + 1..len],
+                    ];
+                    out[..len].fill(0);
+                    assert_eq!(
+                        key.encrypt(&nonce, b"aad", &pieces, &mut out[..len]),
+                        Ok(tag)
+                    );
+                    assert_eq!(&out[..len], &expected[..len]);
+                }
+            }
+        }
     }
 
     #[test]

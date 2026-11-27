@@ -1128,5 +1128,23 @@ vg_ec_p192_public_key:
 	ldr x30, [x0, #56]
 	movz x1, #1, lsl #0
 	and x0, x3, x1
+	movz x1, #0, lsl #0
+	movz x2, #0, lsl #0
+	movz x3, #0, lsl #0
+	movz x4, #0, lsl #0
+	movz x5, #0, lsl #0
+	movz x6, #0, lsl #0
+	movz x7, #0, lsl #0
+	movz x8, #0, lsl #0
+	movz x9, #0, lsl #0
+	movz x10, #0, lsl #0
+	movz x11, #0, lsl #0
+	movz x12, #0, lsl #0
+	movz x13, #0, lsl #0
+	movz x16, #0, lsl #0
+	movz x17, #0, lsl #0
+	movi v29.2d, #0
+	tst x1, x1
+	add w0, w0, #0
 	ret
 	.p2align 6

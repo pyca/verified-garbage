@@ -68,8 +68,8 @@ theorem fieldCodeWide_frame {s : State} {base : Addr} (hs : Scratch s base) (ops
 
 theorem constFieldWide_ok {s : State} {base : Addr} (hs : Scratch s base) (o : Slot) (v : Spec.X25519.Fe) :
     WP isa (.block (constField o v)) s fun t =>
-      Keep base s t ∧ env t.mem base = Function.update (env s.mem base) o v :=
-  field_lift hs (constField o v) (fun e => Function.update e o v) (fun _ h => by
+      Keep base s t ∧ env t.mem base = Fun.update (env s.mem base) o v :=
+  field_lift hs (constField o v) (fun e => Fun.update e o v) (fun _ h => by
     refine WP.mono (constField_op h o v) fun t ⟨hk, hv, _⟩ => ?_
     exact ⟨op_keep hk, by rw [env_update o hk.mem, hv]⟩)
 

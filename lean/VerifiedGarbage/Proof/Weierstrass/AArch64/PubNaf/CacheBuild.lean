@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Cache
-import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.CoZField
 import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.TableCoZ
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Copy
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Unch
@@ -113,10 +112,10 @@ theorem cacheOne_ok {K : WinCfg} {C : Curve} {base : Addr} {size : Nat} (hL : Na
   obtain ⟨v1, l1⟩ := written_val I₂ (ve 3 (by simp))
   rw [e₂ 2] at v0
   rw [e₂ 3] at v1
-  obtain ⟨r0, r1⟩ := cubeN_run (fun j => Function.update (tmv C K.M.n base u) K.S.t2
+  obtain ⟨r0, r1⟩ := cubeN_run (fun j => Fun.update (tmv C K.M.n base u) K.S.t2
     (tmv C K.M.n base u (K.tblPt a).z) (coZσ K j))
   have c4 : coZσ K 4 = K.S.t2 := rfl
-  simp only [c4, Function.update_self] at r0 r1
+  simp only [c4, Fun.update_self] at r0 r1
   rw [r0] at v0
   rw [r1] at v1
   change tmv C K.M.n base u₂ K.S.t0 = _ at v0

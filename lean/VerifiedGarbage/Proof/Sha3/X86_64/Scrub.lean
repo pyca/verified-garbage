@@ -1,5 +1,10 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubSel
+public import VerifiedGarbage.Impl.Sha3.X86_64.Fn
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubChunks
+meta import VerifiedGarbage.Proof.Framework.X86_64.ScrubChunks
+
 public import VerifiedGarbage.Spec.Sha3.Instances
 public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
 public import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
@@ -16,20 +21,23 @@ meta import VerifiedGarbage.Proof.Sha3.X86_64.Instances
 meta import VerifiedGarbage.Proof.Sha3.Stream
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.CalleeLit
+import VerifiedGarbage.Proof.Sha3.PostOut
+meta import VerifiedGarbage.Proof.Sha3.PostOut
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubSelAll
+public meta import VerifiedGarbage.Proof.Framework.X86_64.ScrubSelAll
 
 /-!
 # SHA-3 and SHAKE's functions on x86-64, without secret residue
 
-Each instance's `update`, and SHAKE's `finalize` and `squeeze`, followed by
-`Impl.Scrub.X86_64.scrubTail` (`X86_64.Scrub.withScrub`), which clears the
-registers and the granules of its stack that the residue analysis
+Each instance's `absorb`, and SHAKE's `finalize` and `squeeze`, followed by
+`Impl.Scrub.X86_64.scrubSel` (`X86_64.Scrub.verifiedScrubbedSel`), which clears every
+caller-saved register and the granules of its stack that the residue analysis
 (`X86_64.RTaint`) finds may hold secrets. Their postconditions read the
-memory on return only within the buffers (`X86_64.Scrub.PostOut`): the state
-(`Proof.Sha3.stateAt_congr`) and the output (`bytesAt_congr`).
+memory on return only within the buffers (`X86_64.Scrub.PostOut`,
+`Proof/Sha3/PostOut.lean`).
 
-SHA-3's `finalize` is not here: the analysis loses that `r12` points into
-its frame across its call of `squeeze` (whose stores to `out` it cannot
-bound), so it cannot follow `finRestore`'s loads through it.
+SHA-3's fixed digest copy avoids generic squeezing. Its finalizer clears
+the 680-byte stack with aligned stores after writing the digest.
 -/
 
 @[expose] public section
@@ -38,215 +46,318 @@ namespace VG.Proof.Sha3.X86_64.Scrub
 
 open VG.Spec.Sha3 VG.X86_64 VG.X86_64.Scrub
 
-theorem agreeBuf {m₁ m₂ : Mem} {p : Addr} {n : Nat} (hn : n < 2 ^ 64)
-    (h : ∀ a, Region.Contains ⟨p, n⟩ a 1 → m₁ a = m₂ a) :
-    ∀ i < n, m₂ (p + BitVec.ofNat 64 i) = m₁ (p + BitVec.ofNat 64 i) := fun i hi =>
-  (h _ (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hn, hi]))).symm
-
-theorem bytesAt_congr {m₁ m₂ : Mem} {p : Addr} {n : Nat}
-    (h : ∀ i < n, m₂ (p + BitVec.ofNat 64 i) = m₁ (p + BitVec.ofNat 64 i)) :
-    bytesAt m₂ p n = bytesAt m₁ p n :=
-  List.map_congr_left fun i hi => h i (List.mem_range.mp hi)
-
-theorem stateAgree {m₁ m₂ : Mem} {p : Addr}
-    (h : ∀ a, Region.Contains ⟨p, 25 * Elem.size .u64⟩ a 1 → m₁ a = m₂ a) :
-    stateAt m₂ p = stateAt m₁ p :=
-  Proof.Sha3.stateAt_congr fun i hi =>
-    agreeBuf (n := 25 * Elem.size .u64) (by decide) h i (by simp only [Elem.size]; omega_using [hi])
-
-theorem updateOut (rate stack : Nat) :
-    PostOut (updateContract X86_64.abi rate stack) (updateSig.retBits 64) :=
-  postOut_of_local (leak := none) ScrubAbi.plain fun vs m m₁ m₂ r hlen hb h => by
-    obtain ⟨st, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 4) hlen
-    replace hlen := Nat.succ.inj hlen
-    obtain ⟨ps, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-    replace hlen := Nat.succ.inj hlen
-    obtain ⟨dt, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-    replace hlen := Nat.succ.inj hlen
-    obtain ⟨ln, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-    replace hlen := Nat.succ.inj hlen
-    obtain ⟨sc, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-    obtain rfl := List.eq_nil_of_length_eq_zero (Nat.succ.inj hlen)
-    simp only [updateSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
-      forall_eq] at hb
-    refine ⟨fun msg hr hc => ?_, h.2⟩
-    show stateAt m₂ st = _
-    rw [stateAgree hb.1]
-    exact h.1 msg hr hc
+/-- A fixed digest's postcondition reads only its output buffer. -/
+theorem finalizeOut (H : HashFn) (stack : Nat) (hlen : H.len < 2 ^ 64) :
+    PostOut (finalizeContract X86_64.abi H stack) ((finalizeSig H.len).retBits 64) :=
+  postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sha3.PostOut.finalizePost_out H 64 hlen)
 
 theorem xofFinalizeOut (X : Xof) (stack : Nat) :
     PostOut (xofFinalizeContract X86_64.abi X stack) (xofFinalizeSig.retBits 64) :=
-  postOut_of_local (leak := none) ScrubAbi.plain fun vs m m₁ m₂ r hlen hb h => by
-    obtain ⟨st, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 1) hlen
-    replace hlen := Nat.succ.inj hlen
-    obtain ⟨ps, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-    obtain rfl := List.eq_nil_of_length_eq_zero (Nat.succ.inj hlen)
-    simp only [xofFinalizeSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq] at hb
-    intro msg hr hc d
-    show squeezeFrom X.rate (stateAt m₂ st) 0 d = _
-    rw [stateAgree hb]
-    exact h msg hr hc d
+  postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sha3.PostOut.xofFinalizePost_out X 64)
 
 theorem xofSqueezeOut (X : Xof) (stack : Nat) :
     PostOut (xofSqueezeContract X86_64.abi X stack) (xofSqueezeSig.retBits 64) :=
-  postOut_of_local (leak := none) ScrubAbi.plain fun vs m m₁ m₂ r hlen hb h => by
-    obtain ⟨st, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 3) hlen
-    replace hlen := Nat.succ.inj hlen
-    obtain ⟨ps, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-    replace hlen := Nat.succ.inj hlen
-    obtain ⟨ot, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-    replace hlen := Nat.succ.inj hlen
-    obtain ⟨ol, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-    obtain rfl := List.eq_nil_of_length_eq_zero (Nat.succ.inj hlen)
-    simp only [xofSqueezeSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
-      forall_eq_or_imp, forall_eq] at hb
-    refine ⟨fun msg n hx => ?_, h.2⟩
-    obtain ⟨h1, h2⟩ := h.1 msg n hx
-    refine ⟨?_, fun d => ?_⟩
-    · show bytesAt m₂ ot ol.toNat = _
-      rw [bytesAt_congr fun i hi => agreeBuf (n := ol.toNat * Elem.size .u8)
-        (by simp only [Elem.size]; have := ol.isLt; omega_using []) hb.2 i
-        (by simp only [Elem.size]; omega_using [hi])]
-      exact h1
-    · show squeezeFrom X.rate (stateAt m₂ st) _ d = _
-      rw [stateAgree hb.1]
-      exact h2 d
+  postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sha3.PostOut.xofSqueezePost_out X)
+
+/-! ## `absorb`: `update` with its working space on the stack -/
+
+theorem absorbOut (rate stack : Nat) :
+    PostOut (updateContract X86_64.abi rate stack) (updateSig.retBits 64) :=
+  postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sha3.PostOut.updatePost_out rate 64)
+
+/-- A state satisfying `updateContract`'s precondition (with no data), with
+656 bytes of stack. -/
+def absorbSat : X86_64.State := { Proof.Sha3.X86_64.Instances.updateSat with wr := [⟨0x1000, 200⟩] }
+
+theorem absorbSat_pre {rate : Nat} (h0 : 0 < rate) :
+    ∃ s, (updateContract X86_64.abi rate 656).pre s := by
+  refine ⟨absorbSat, ?_⟩
+  sig_pre [updateContract, updateSig, updatePre, updatePost, X86_64.abi, X86_64.argRegs, absorbSat,
+    Proof.Sha3.X86_64.Instances.updateSat, Proof.Sha3.X86_64.Stream.Absorb.sat]
+  sig_and_intros
+  all_goals first
+    | rfl
+    | decide
+    | exact Region.disjoint_of_sep (by decide)
+    | exact h0
+
+/-- `vg_<f>_update`: `update`, with its working space `scratch` in a frame of
+648 bytes on the stack (`withStackScratch`), which `update`'s contract with
+`scratch` (`Sig.scratchContract`, by `rfl` `updateScratchContract`) proves
+(`Verified.stackScratch`). -/
+theorem absorb_verified {rate : Nat} (hr : rate ∈ rates)
+    (hsp : (Impl.Sha3.X86_64.Instances.update rate).all (fun i => !X86_64.isa.writesSp i) = true)
+    (hd : (Impl.Sha3.X86_64.Instances.update rate).x86_64Depth ≤ 8) :
+    Verified X86_64.target (Impl.Sha3.X86_64.Instances.absorb rate) (updateContract X86_64.abi rate 656) :=
+  X86_64.Verified.stackScratch (sig := updateSig) (nm := "scratch") (e := .u64) (n := 80)
+    (pre := updatePre rate X86_64.abi.ptrBits) (post := updatePost rate X86_64.abi.ptrBits)
+    (wa := true) (stack := 8) (bytes := 648)
+    (Proof.Sha3.X86_64.Instances.update_verified hr) (by decide) (by decide) (by decide) hsp hd
+    (Proof.Sha3.PostOut.updatePost_out rate _)
+    (absorbSat_pre (by simp [rates] at hr; omega_using [hr]))
+
+theorem absorb_sha3_224 :
+    Verified X86_64.target (Impl.Sha3.X86_64.Instances.absorb Spec.Sha3.hashSha3_224.rate)
+      (updateContract X86_64.abi Spec.Sha3.hashSha3_224.rate 656) :=
+  absorb_verified (by decide)
+    (by lit_decide) (by lit_decide)
+
+theorem absorb_sha3_256 :
+    Verified X86_64.target (Impl.Sha3.X86_64.Instances.absorb Spec.Sha3.hashSha3_256.rate)
+      (updateContract X86_64.abi Spec.Sha3.hashSha3_256.rate 656) :=
+  absorb_verified (by decide)
+    (by lit_decide) (by lit_decide)
+
+theorem absorb_sha3_384 :
+    Verified X86_64.target (Impl.Sha3.X86_64.Instances.absorb Spec.Sha3.hashSha3_384.rate)
+      (updateContract X86_64.abi Spec.Sha3.hashSha3_384.rate 656) :=
+  absorb_verified (by decide)
+    (by lit_decide) (by lit_decide)
+
+theorem absorb_sha3_512 :
+    Verified X86_64.target (Impl.Sha3.X86_64.Instances.absorb Spec.Sha3.hashSha3_512.rate)
+      (updateContract X86_64.abi Spec.Sha3.hashSha3_512.rate 656) :=
+  absorb_verified (by decide)
+    (by lit_decide) (by lit_decide)
+
+theorem absorb_shake128 :
+    Verified X86_64.target (Impl.Sha3.X86_64.Instances.absorb Spec.Sha3.xofShake128.rate)
+      (updateContract X86_64.abi Spec.Sha3.xofShake128.rate 656) :=
+  absorb_verified (by decide)
+    (by lit_decide) (by lit_decide)
 
 /-! ## The registrations -/
-def updateSha3_224Ks : List Nat := keep_for% Spec.Sha3.updateSha3_224Api.sig 8 (Impl.Sha3.X86_64.Instances.update Spec.Sha3.hashSha3_224.rate) []
 
-theorem updateSha3_224Ok : ∃ h : VG.Taint.Hint RTaint.FT,
-    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Sha3.updateSha3_224Api.sig 8 []) (Impl.Sha3.X86_64.Instances.update Spec.Sha3.hashSha3_224.rate)
-      h).any (RScrub.resOkB · 8 updateSha3_224Ks (Impl.Scrub.X86_64.chunks 8)) = true :=
-  RScrub.Analysed.ok_of updateSha3_224Ks (by taint_decide)
+/-! ## The functions as emitted -/
 
-open VG.X86_64.RScrub in
-/-- `updateSha3_224Api`'s function. -/
-def updateSha3_224Reg : Registration Spec.Sha3.updateSha3_224Api X86_64.target :=
-  withScrub {
-    code := Impl.Sha3.X86_64.Instances.update Spec.Sha3.hashSha3_224.rate
-    stack := 8
-    verified := Proof.Sha3.X86_64.Instances.update_sha3_224 } (updateOut _ _) [] (pubOk_nil _)
-    (some ⟨updateSha3_224Ks, updateSha3_224Ok⟩)
-def updateSha3_256Ks : List Nat := keep_for% Spec.Sha3.updateSha3_256Api.sig 8 (Impl.Sha3.X86_64.Instances.update Spec.Sha3.hashSha3_256.rate) []
+theorem finalizeShake128_codeSp : (Impl.Sha3.X86_64.Instances.xofFinalize Spec.Sha3.xofShake128.rate).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
 
-theorem updateSha3_256Ok : ∃ h : VG.Taint.Hint RTaint.FT,
-    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Sha3.updateSha3_256Api.sig 8 []) (Impl.Sha3.X86_64.Instances.update Spec.Sha3.hashSha3_256.rate)
-      h).any (RScrub.resOkB · 8 updateSha3_256Ks (Impl.Scrub.X86_64.chunks 8)) = true :=
-  RScrub.Analysed.ok_of updateSha3_256Ks (by taint_decide)
+/-- The residue analyses of the functions' code, in one kernel evaluation
+(`taint_decide_sels`), which analyses the code they share once. -/
+theorem residue :
+    SelResidue Spec.Sha3.finalizeShake128Api.sig 656 [] [(8, 13), (456, 13)] (Impl.Sha3.X86_64.Instances.xofFinalize Spec.Sha3.xofShake128.rate) ∧
+    SelResidue Spec.Sha3.squeezeShake128Api.sig 656 [] [(8, 41)] (Impl.Sha3.X86_64.Instances.xofSqueeze Spec.Sha3.xofShake128.rate) ∧
+    SelResidue Spec.Sha3.finalizeShake256Api.sig 656 [] [(8, 13), (456, 13)] (Impl.Sha3.X86_64.Instances.xofFinalize Spec.Sha3.xofShake256.rate) ∧
+    SelResidue Spec.Sha3.squeezeShake256Api.sig 656 [] [(8, 41)] (Impl.Sha3.X86_64.Instances.xofSqueeze Spec.Sha3.xofShake256.rate) ∧
+    SelResidue Spec.Sha3.updateSha3_224Api.sig 656 [] [(8, 41)] (Impl.Sha3.X86_64.Instances.absorb Spec.Sha3.hashSha3_224.rate) ∧
+    SelResidue Spec.Sha3.updateSha3_256Api.sig 656 [] [(8, 41)] (Impl.Sha3.X86_64.Instances.absorb Spec.Sha3.hashSha3_256.rate) ∧
+    SelResidue Spec.Sha3.updateSha3_384Api.sig 656 [] [(8, 41)] (Impl.Sha3.X86_64.Instances.absorb Spec.Sha3.hashSha3_384.rate) ∧
+    SelResidue Spec.Sha3.updateSha3_512Api.sig 656 [] [(8, 41)] (Impl.Sha3.X86_64.Instances.absorb Spec.Sha3.hashSha3_512.rate) ∧
+    SelResidue Spec.Sha3.updateShake128Api.sig 656 [] [(8, 41)] (Impl.Sha3.X86_64.Instances.absorb Spec.Sha3.xofShake128.rate) := by
+  taint_decide_sels
 
-open VG.X86_64.RScrub in
-/-- `updateSha3_256Api`'s function. -/
-def updateSha3_256Reg : Registration Spec.Sha3.updateSha3_256Api X86_64.target :=
-  withScrub {
-    code := Impl.Sha3.X86_64.Instances.update Spec.Sha3.hashSha3_256.rate
-    stack := 8
-    verified := Proof.Sha3.X86_64.Instances.update_sha3_256 } (updateOut _ _) [] (pubOk_nil _)
-    (some ⟨updateSha3_256Ks, updateSha3_256Ok⟩)
-def updateSha3_384Ks : List Nat := keep_for% Spec.Sha3.updateSha3_384Api.sig 8 (Impl.Sha3.X86_64.Instances.update Spec.Sha3.hashSha3_384.rate) []
+/-- `Spec.Sha3.finalizeShake128Api`'s function as emitted (`Impl.Sha3.X86_64.Fn.finalizeShake128`) meets its contract in
+constant time and returns without secret residue. -/
+theorem finalizeShake128_scrubbed :
+    VerifiedScrubbed target Impl.Sha3.X86_64.Fn.finalizeShake128 (Spec.Sha3.finalizeShake128Api.contract X86_64.abi 656) 0 :=
+  verifiedScrubbedSel (api := Spec.Sha3.finalizeShake128Api)
+    { code := Impl.Sha3.X86_64.Instances.xofFinalize Spec.Sha3.xofShake128.rate
+      stack := 656
+      verified := Proof.Sha3.X86_64.Instances.finalize_shake128
+      spSafe := finalizeShake128_codeSp }
+    .sse [(8, 13), (456, 13)] (xofFinalizeOut _ _) (RScrub.pubOk_nil _) residue.1.choose_spec
 
-theorem updateSha3_384Ok : ∃ h : VG.Taint.Hint RTaint.FT,
-    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Sha3.updateSha3_384Api.sig 8 []) (Impl.Sha3.X86_64.Instances.update Spec.Sha3.hashSha3_384.rate)
-      h).any (RScrub.resOkB · 8 updateSha3_384Ks (Impl.Scrub.X86_64.chunks 8)) = true :=
-  RScrub.Analysed.ok_of updateSha3_384Ks (by taint_decide)
+theorem finalizeShake128_spSafe : Impl.Sha3.X86_64.Fn.finalizeShake128.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe finalizeShake128_codeSp
 
-open VG.X86_64.RScrub in
-/-- `updateSha3_384Api`'s function. -/
-def updateSha3_384Reg : Registration Spec.Sha3.updateSha3_384Api X86_64.target :=
-  withScrub {
-    code := Impl.Sha3.X86_64.Instances.update Spec.Sha3.hashSha3_384.rate
-    stack := 8
-    verified := Proof.Sha3.X86_64.Instances.update_sha3_384 } (updateOut _ _) [] (pubOk_nil _)
-    (some ⟨updateSha3_384Ks, updateSha3_384Ok⟩)
-def updateSha3_512Ks : List Nat := keep_for% Spec.Sha3.updateSha3_512Api.sig 8 (Impl.Sha3.X86_64.Instances.update Spec.Sha3.hashSha3_512.rate) []
+theorem squeezeShake128_codeSp : (Impl.Sha3.X86_64.Instances.xofSqueeze Spec.Sha3.xofShake128.rate).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
 
-theorem updateSha3_512Ok : ∃ h : VG.Taint.Hint RTaint.FT,
-    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Sha3.updateSha3_512Api.sig 8 []) (Impl.Sha3.X86_64.Instances.update Spec.Sha3.hashSha3_512.rate)
-      h).any (RScrub.resOkB · 8 updateSha3_512Ks (Impl.Scrub.X86_64.chunks 8)) = true :=
-  RScrub.Analysed.ok_of updateSha3_512Ks (by taint_decide)
+/-- `Spec.Sha3.squeezeShake128Api`'s function as emitted (`Impl.Sha3.X86_64.Fn.squeezeShake128`) meets its contract in
+constant time and returns without secret residue. -/
+theorem squeezeShake128_scrubbed :
+    VerifiedScrubbed target Impl.Sha3.X86_64.Fn.squeezeShake128 (Spec.Sha3.squeezeShake128Api.contract X86_64.abi 656) 64 :=
+  verifiedScrubbedSel (api := Spec.Sha3.squeezeShake128Api)
+    { code := Impl.Sha3.X86_64.Instances.xofSqueeze Spec.Sha3.xofShake128.rate
+      stack := 656
+      verified := Proof.Sha3.X86_64.Instances.squeeze_shake128
+      spSafe := squeezeShake128_codeSp }
+    .sse [(8, 41)] (xofSqueezeOut _ _) (RScrub.pubOk_nil _) residue.2.1.choose_spec
 
-open VG.X86_64.RScrub in
-/-- `updateSha3_512Api`'s function. -/
-def updateSha3_512Reg : Registration Spec.Sha3.updateSha3_512Api X86_64.target :=
-  withScrub {
-    code := Impl.Sha3.X86_64.Instances.update Spec.Sha3.hashSha3_512.rate
-    stack := 8
-    verified := Proof.Sha3.X86_64.Instances.update_sha3_512 } (updateOut _ _) [] (pubOk_nil _)
-    (some ⟨updateSha3_512Ks, updateSha3_512Ok⟩)
-def updateShake128Ks : List Nat := keep_for% Spec.Sha3.updateShake128Api.sig 8 (Impl.Sha3.X86_64.Instances.update Spec.Sha3.xofShake128.rate) []
+theorem squeezeShake128_spSafe : Impl.Sha3.X86_64.Fn.squeezeShake128.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe squeezeShake128_codeSp
 
-theorem updateShake128Ok : ∃ h : VG.Taint.Hint RTaint.FT,
-    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Sha3.updateShake128Api.sig 8 []) (Impl.Sha3.X86_64.Instances.update Spec.Sha3.xofShake128.rate)
-      h).any (RScrub.resOkB · 8 updateShake128Ks (Impl.Scrub.X86_64.chunks 8)) = true :=
-  RScrub.Analysed.ok_of updateShake128Ks (by taint_decide)
+theorem finalizeShake256_codeSp : (Impl.Sha3.X86_64.Instances.xofFinalize Spec.Sha3.xofShake256.rate).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
 
-open VG.X86_64.RScrub in
-/-- `updateShake128Api`'s function. -/
-def updateShake128Reg : Registration Spec.Sha3.updateShake128Api X86_64.target :=
-  withScrub {
-    code := Impl.Sha3.X86_64.Instances.update Spec.Sha3.xofShake128.rate
-    stack := 8
-    verified := Proof.Sha3.X86_64.Instances.update_shake128 } (updateOut _ _) [] (pubOk_nil _)
-    (some ⟨updateShake128Ks, updateShake128Ok⟩)
-def finalizeShake128Ks : List Nat := keep_for% Spec.Sha3.finalizeShake128Api.sig 656 (Impl.Sha3.X86_64.Instances.xofFinalize Spec.Sha3.xofShake128.rate) []
+/-- `Spec.Sha3.finalizeShake256Api`'s function as emitted (`Impl.Sha3.X86_64.Fn.finalizeShake256`) meets its contract in
+constant time and returns without secret residue. -/
+theorem finalizeShake256_scrubbed :
+    VerifiedScrubbed target Impl.Sha3.X86_64.Fn.finalizeShake256 (Spec.Sha3.finalizeShake256Api.contract X86_64.abi 656) 0 :=
+  verifiedScrubbedSel (api := Spec.Sha3.finalizeShake256Api)
+    { code := Impl.Sha3.X86_64.Instances.xofFinalize Spec.Sha3.xofShake256.rate
+      stack := 656
+      verified := Proof.Sha3.X86_64.Instances.finalize_shake256
+      spSafe := finalizeShake256_codeSp }
+    .sse [(8, 13), (456, 13)] (xofFinalizeOut _ _) (RScrub.pubOk_nil _) residue.2.2.1.choose_spec
 
-theorem finalizeShake128Ok : ∃ h : VG.Taint.Hint RTaint.FT,
-    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Sha3.finalizeShake128Api.sig 656 []) (Impl.Sha3.X86_64.Instances.xofFinalize Spec.Sha3.xofShake128.rate)
-      h).any (RScrub.resOkB · 656 finalizeShake128Ks (Impl.Scrub.X86_64.chunks 656)) = true :=
-  RScrub.Analysed.ok_of finalizeShake128Ks (by taint_decide)
+theorem finalizeShake256_spSafe : Impl.Sha3.X86_64.Fn.finalizeShake256.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe finalizeShake256_codeSp
 
-open VG.X86_64.RScrub in
-/-- `finalizeShake128Api`'s function. -/
-def finalizeShake128Reg : Registration Spec.Sha3.finalizeShake128Api X86_64.target :=
-  withScrub {
-    code := Impl.Sha3.X86_64.Instances.xofFinalize Spec.Sha3.xofShake128.rate
-    stack := 656
-    verified := Proof.Sha3.X86_64.Instances.finalize_shake128 } (xofFinalizeOut _ _) [] (pubOk_nil _)
-    (some ⟨finalizeShake128Ks, finalizeShake128Ok⟩)
-def squeezeShake128Ks : List Nat := keep_for% Spec.Sha3.squeezeShake128Api.sig 656 (Impl.Sha3.X86_64.Instances.xofSqueeze Spec.Sha3.xofShake128.rate) []
+theorem squeezeShake256_codeSp : (Impl.Sha3.X86_64.Instances.xofSqueeze Spec.Sha3.xofShake256.rate).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
 
-theorem squeezeShake128Ok : ∃ h : VG.Taint.Hint RTaint.FT,
-    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Sha3.squeezeShake128Api.sig 656 []) (Impl.Sha3.X86_64.Instances.xofSqueeze Spec.Sha3.xofShake128.rate)
-      h).any (RScrub.resOkB · 656 squeezeShake128Ks (Impl.Scrub.X86_64.chunks 656)) = true :=
-  RScrub.Analysed.ok_of squeezeShake128Ks (by taint_decide)
+/-- `Spec.Sha3.squeezeShake256Api`'s function as emitted (`Impl.Sha3.X86_64.Fn.squeezeShake256`) meets its contract in
+constant time and returns without secret residue. -/
+theorem squeezeShake256_scrubbed :
+    VerifiedScrubbed target Impl.Sha3.X86_64.Fn.squeezeShake256 (Spec.Sha3.squeezeShake256Api.contract X86_64.abi 656) 64 :=
+  verifiedScrubbedSel (api := Spec.Sha3.squeezeShake256Api)
+    { code := Impl.Sha3.X86_64.Instances.xofSqueeze Spec.Sha3.xofShake256.rate
+      stack := 656
+      verified := Proof.Sha3.X86_64.Instances.squeeze_shake256
+      spSafe := squeezeShake256_codeSp }
+    .sse [(8, 41)] (xofSqueezeOut _ _) (RScrub.pubOk_nil _) residue.2.2.2.1.choose_spec
 
-open VG.X86_64.RScrub in
-/-- `squeezeShake128Api`'s function. -/
-def squeezeShake128Reg : Registration Spec.Sha3.squeezeShake128Api X86_64.target :=
-  withScrub {
-    code := Impl.Sha3.X86_64.Instances.xofSqueeze Spec.Sha3.xofShake128.rate
-    stack := 656
-    verified := Proof.Sha3.X86_64.Instances.squeeze_shake128 } (xofSqueezeOut _ _) [] (pubOk_nil _)
-    (some ⟨squeezeShake128Ks, squeezeShake128Ok⟩)
-def finalizeShake256Ks : List Nat := keep_for% Spec.Sha3.finalizeShake256Api.sig 656 (Impl.Sha3.X86_64.Instances.xofFinalize Spec.Sha3.xofShake256.rate) []
+theorem squeezeShake256_spSafe : Impl.Sha3.X86_64.Fn.squeezeShake256.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe squeezeShake256_codeSp
 
-theorem finalizeShake256Ok : ∃ h : VG.Taint.Hint RTaint.FT,
-    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Sha3.finalizeShake256Api.sig 656 []) (Impl.Sha3.X86_64.Instances.xofFinalize Spec.Sha3.xofShake256.rate)
-      h).any (RScrub.resOkB · 656 finalizeShake256Ks (Impl.Scrub.X86_64.chunks 656)) = true :=
-  RScrub.Analysed.ok_of finalizeShake256Ks (by taint_decide)
+theorem finalizeSha3_224_codeSp : (Impl.Sha3.X86_64.Instances.finalize Spec.Sha3.hashSha3_224.rate Spec.Sha3.hashSha3_224.len).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
 
-open VG.X86_64.RScrub in
-/-- `finalizeShake256Api`'s function. -/
-def finalizeShake256Reg : Registration Spec.Sha3.finalizeShake256Api X86_64.target :=
-  withScrub {
-    code := Impl.Sha3.X86_64.Instances.xofFinalize Spec.Sha3.xofShake256.rate
-    stack := 656
-    verified := Proof.Sha3.X86_64.Instances.finalize_shake256 } (xofFinalizeOut _ _) [] (pubOk_nil _)
-    (some ⟨finalizeShake256Ks, finalizeShake256Ok⟩)
-def squeezeShake256Ks : List Nat := keep_for% Spec.Sha3.squeezeShake256Api.sig 656 (Impl.Sha3.X86_64.Instances.xofSqueeze Spec.Sha3.xofShake256.rate) []
+/-- `Spec.Sha3.finalizeSha3_224Api`'s function as emitted (`Impl.Sha3.X86_64.Fn.finalizeSha3_224`) meets its contract in
+constant time and returns without secret residue. -/
+theorem finalizeSha3_224_scrubbed :
+    VerifiedScrubbed target Impl.Sha3.X86_64.Fn.finalizeSha3_224 (Spec.Sha3.finalizeSha3_224Api.contract X86_64.abi 680) 0 :=
+  verifiedScrubbedAll (api := Spec.Sha3.finalizeSha3_224Api)
+    { code := Impl.Sha3.X86_64.Instances.finalize Spec.Sha3.hashSha3_224.rate Spec.Sha3.hashSha3_224.len
+      verified := Proof.Sha3.X86_64.Instances.finalize_sha3_224
+      spSafe := finalizeSha3_224_codeSp }
+    .sse (finalizeOut _ _ (by decide))
 
-theorem squeezeShake256Ok : ∃ h : VG.Taint.Hint RTaint.FT,
-    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Sha3.squeezeShake256Api.sig 656 []) (Impl.Sha3.X86_64.Instances.xofSqueeze Spec.Sha3.xofShake256.rate)
-      h).any (RScrub.resOkB · 656 squeezeShake256Ks (Impl.Scrub.X86_64.chunks 656)) = true :=
-  RScrub.Analysed.ok_of squeezeShake256Ks (by taint_decide)
+theorem finalizeSha3_224_spSafe : Impl.Sha3.X86_64.Fn.finalizeSha3_224.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe finalizeSha3_224_codeSp
 
-open VG.X86_64.RScrub in
-/-- `squeezeShake256Api`'s function. -/
-def squeezeShake256Reg : Registration Spec.Sha3.squeezeShake256Api X86_64.target :=
-  withScrub {
-    code := Impl.Sha3.X86_64.Instances.xofSqueeze Spec.Sha3.xofShake256.rate
-    stack := 656
-    verified := Proof.Sha3.X86_64.Instances.squeeze_shake256 } (xofSqueezeOut _ _) [] (pubOk_nil _)
-    (some ⟨squeezeShake256Ks, squeezeShake256Ok⟩)
+theorem finalizeSha3_256_codeSp : (Impl.Sha3.X86_64.Instances.finalize Spec.Sha3.hashSha3_256.rate Spec.Sha3.hashSha3_256.len).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
 
+/-- `Spec.Sha3.finalizeSha3_256Api`'s function as emitted (`Impl.Sha3.X86_64.Fn.finalizeSha3_256`) meets its contract in
+constant time and returns without secret residue. -/
+theorem finalizeSha3_256_scrubbed :
+    VerifiedScrubbed target Impl.Sha3.X86_64.Fn.finalizeSha3_256 (Spec.Sha3.finalizeSha3_256Api.contract X86_64.abi 680) 0 :=
+  verifiedScrubbedAll (api := Spec.Sha3.finalizeSha3_256Api)
+    { code := Impl.Sha3.X86_64.Instances.finalize Spec.Sha3.hashSha3_256.rate Spec.Sha3.hashSha3_256.len
+      verified := Proof.Sha3.X86_64.Instances.finalize_sha3_256
+      spSafe := finalizeSha3_256_codeSp }
+    .sse (finalizeOut _ _ (by decide))
+
+theorem finalizeSha3_256_spSafe : Impl.Sha3.X86_64.Fn.finalizeSha3_256.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe finalizeSha3_256_codeSp
+
+theorem finalizeSha3_384_codeSp : (Impl.Sha3.X86_64.Instances.finalize Spec.Sha3.hashSha3_384.rate Spec.Sha3.hashSha3_384.len).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
+
+/-- `Spec.Sha3.finalizeSha3_384Api`'s function as emitted (`Impl.Sha3.X86_64.Fn.finalizeSha3_384`) meets its contract in
+constant time and returns without secret residue. -/
+theorem finalizeSha3_384_scrubbed :
+    VerifiedScrubbed target Impl.Sha3.X86_64.Fn.finalizeSha3_384 (Spec.Sha3.finalizeSha3_384Api.contract X86_64.abi 680) 0 :=
+  verifiedScrubbedAll (api := Spec.Sha3.finalizeSha3_384Api)
+    { code := Impl.Sha3.X86_64.Instances.finalize Spec.Sha3.hashSha3_384.rate Spec.Sha3.hashSha3_384.len
+      verified := Proof.Sha3.X86_64.Instances.finalize_sha3_384
+      spSafe := finalizeSha3_384_codeSp }
+    .sse (finalizeOut _ _ (by decide))
+
+theorem finalizeSha3_384_spSafe : Impl.Sha3.X86_64.Fn.finalizeSha3_384.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe finalizeSha3_384_codeSp
+
+theorem finalizeSha3_512_codeSp : (Impl.Sha3.X86_64.Instances.finalize Spec.Sha3.hashSha3_512.rate Spec.Sha3.hashSha3_512.len).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
+
+/-- `Spec.Sha3.finalizeSha3_512Api`'s function as emitted (`Impl.Sha3.X86_64.Fn.finalizeSha3_512`) meets its contract in
+constant time and returns without secret residue. -/
+theorem finalizeSha3_512_scrubbed :
+    VerifiedScrubbed target Impl.Sha3.X86_64.Fn.finalizeSha3_512 (Spec.Sha3.finalizeSha3_512Api.contract X86_64.abi 680) 0 :=
+  verifiedScrubbedAll (api := Spec.Sha3.finalizeSha3_512Api)
+    { code := Impl.Sha3.X86_64.Instances.finalize Spec.Sha3.hashSha3_512.rate Spec.Sha3.hashSha3_512.len
+      verified := Proof.Sha3.X86_64.Instances.finalize_sha3_512
+      spSafe := finalizeSha3_512_codeSp }
+    .sse (finalizeOut _ _ (by decide))
+
+theorem finalizeSha3_512_spSafe : Impl.Sha3.X86_64.Fn.finalizeSha3_512.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe finalizeSha3_512_codeSp
+
+theorem absorbSha3_224_codeSp : (Impl.Sha3.X86_64.Instances.absorb Spec.Sha3.hashSha3_224.rate).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
+
+/-- `Spec.Sha3.updateSha3_224Api`'s function as emitted (`Impl.Sha3.X86_64.Fn.absorbSha3_224`) meets its contract in
+constant time and returns without secret residue. -/
+theorem absorbSha3_224_scrubbed :
+    VerifiedScrubbed target Impl.Sha3.X86_64.Fn.absorbSha3_224 (Spec.Sha3.updateSha3_224Api.contract X86_64.abi 656) 64 :=
+  verifiedScrubbedSel (api := Spec.Sha3.updateSha3_224Api)
+    { code := Impl.Sha3.X86_64.Instances.absorb Spec.Sha3.hashSha3_224.rate
+      stack := 656
+      verified := absorb_sha3_224
+      spSafe := absorbSha3_224_codeSp }
+    .sse [(8, 41)] (absorbOut _ _) (RScrub.pubOk_nil _) residue.2.2.2.2.1.choose_spec
+
+theorem absorbSha3_224_spSafe : Impl.Sha3.X86_64.Fn.absorbSha3_224.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe absorbSha3_224_codeSp
+
+theorem absorbSha3_256_codeSp : (Impl.Sha3.X86_64.Instances.absorb Spec.Sha3.hashSha3_256.rate).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
+
+/-- `Spec.Sha3.updateSha3_256Api`'s function as emitted (`Impl.Sha3.X86_64.Fn.absorbSha3_256`) meets its contract in
+constant time and returns without secret residue. -/
+theorem absorbSha3_256_scrubbed :
+    VerifiedScrubbed target Impl.Sha3.X86_64.Fn.absorbSha3_256 (Spec.Sha3.updateSha3_256Api.contract X86_64.abi 656) 64 :=
+  verifiedScrubbedSel (api := Spec.Sha3.updateSha3_256Api)
+    { code := Impl.Sha3.X86_64.Instances.absorb Spec.Sha3.hashSha3_256.rate
+      stack := 656
+      verified := absorb_sha3_256
+      spSafe := absorbSha3_256_codeSp }
+    .sse [(8, 41)] (absorbOut _ _) (RScrub.pubOk_nil _) residue.2.2.2.2.2.1.choose_spec
+
+theorem absorbSha3_256_spSafe : Impl.Sha3.X86_64.Fn.absorbSha3_256.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe absorbSha3_256_codeSp
+
+theorem absorbSha3_384_codeSp : (Impl.Sha3.X86_64.Instances.absorb Spec.Sha3.hashSha3_384.rate).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
+
+/-- `Spec.Sha3.updateSha3_384Api`'s function as emitted (`Impl.Sha3.X86_64.Fn.absorbSha3_384`) meets its contract in
+constant time and returns without secret residue. -/
+theorem absorbSha3_384_scrubbed :
+    VerifiedScrubbed target Impl.Sha3.X86_64.Fn.absorbSha3_384 (Spec.Sha3.updateSha3_384Api.contract X86_64.abi 656) 64 :=
+  verifiedScrubbedSel (api := Spec.Sha3.updateSha3_384Api)
+    { code := Impl.Sha3.X86_64.Instances.absorb Spec.Sha3.hashSha3_384.rate
+      stack := 656
+      verified := absorb_sha3_384
+      spSafe := absorbSha3_384_codeSp }
+    .sse [(8, 41)] (absorbOut _ _) (RScrub.pubOk_nil _) residue.2.2.2.2.2.2.1.choose_spec
+
+theorem absorbSha3_384_spSafe : Impl.Sha3.X86_64.Fn.absorbSha3_384.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe absorbSha3_384_codeSp
+
+theorem absorbSha3_512_codeSp : (Impl.Sha3.X86_64.Instances.absorb Spec.Sha3.hashSha3_512.rate).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
+
+/-- `Spec.Sha3.updateSha3_512Api`'s function as emitted (`Impl.Sha3.X86_64.Fn.absorbSha3_512`) meets its contract in
+constant time and returns without secret residue. -/
+theorem absorbSha3_512_scrubbed :
+    VerifiedScrubbed target Impl.Sha3.X86_64.Fn.absorbSha3_512 (Spec.Sha3.updateSha3_512Api.contract X86_64.abi 656) 64 :=
+  verifiedScrubbedSel (api := Spec.Sha3.updateSha3_512Api)
+    { code := Impl.Sha3.X86_64.Instances.absorb Spec.Sha3.hashSha3_512.rate
+      stack := 656
+      verified := absorb_sha3_512
+      spSafe := absorbSha3_512_codeSp }
+    .sse [(8, 41)] (absorbOut _ _) (RScrub.pubOk_nil _) residue.2.2.2.2.2.2.2.1.choose_spec
+
+theorem absorbSha3_512_spSafe : Impl.Sha3.X86_64.Fn.absorbSha3_512.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe absorbSha3_512_codeSp
+
+theorem absorbShake128_codeSp : (Impl.Sha3.X86_64.Instances.absorb Spec.Sha3.xofShake128.rate).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
+
+/-- `Spec.Sha3.updateShake128Api`'s function as emitted (`Impl.Sha3.X86_64.Fn.absorbShake128`) meets its contract in
+constant time and returns without secret residue. -/
+theorem absorbShake128_scrubbed :
+    VerifiedScrubbed target Impl.Sha3.X86_64.Fn.absorbShake128 (Spec.Sha3.updateShake128Api.contract X86_64.abi 656) 64 :=
+  verifiedScrubbedSel (api := Spec.Sha3.updateShake128Api)
+    { code := Impl.Sha3.X86_64.Instances.absorb Spec.Sha3.xofShake128.rate
+      stack := 656
+      verified := absorb_shake128
+      spSafe := absorbShake128_codeSp }
+    .sse [(8, 41)] (absorbOut _ _) (RScrub.pubOk_nil _) residue.2.2.2.2.2.2.2.2.choose_spec
+
+theorem absorbShake128_spSafe : Impl.Sha3.X86_64.Fn.absorbShake128.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe absorbShake128_codeSp
 end VG.Proof.Sha3.X86_64.Scrub

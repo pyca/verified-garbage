@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Md5.initContract`. The streaming state is the MD buffer followed by a buffered partial block (`VG.Spec.Md5.Repr`).
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 80 bytes.
@@ -15,7 +17,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_md5_init(state: *mut [u8; 80]) {
     core::arch::naked_asm!(
-        r#".base64 "i0QkBLkBI0VniQi5iavN74lIBLn+3LqYiUgIuXZUMhCJSAzD"
+        r#".base64 "i0QkBLkBI0VniQi5iavN74lIBLn+3LqYiUgIuXZUMhCJSAy4AAAAALoAAAAAMclmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/8M="
 .p2align 6"#,
     )
 }
@@ -23,6 +25,8 @@ pub(crate) unsafe extern "C" fn vg_md5_init(state: *mut [u8; 80]) {
 /// Absorbs data into an MD5 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), it then represents that message followed by the `len` bytes at `data`.
 ///
 /// Contract: `VG.Spec.Md5.updateContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -97,7 +101,7 @@ call {vg_md5_compress}
 .base64 "WFhYWLkBAAAAhck="
 220:
 jne 20b
-.base64 "i0QkGItYQItwRIt4SItoTI2kJIwAAADD"
+.base64 "i0QkGItYQItwRIt4SItoTI2kJIwAAABmD+/AjaQkYP////MPfwQk8w9/RCQQ8w9/RCQg8w9/RCQw8w9/RCRA8w9/RCRQ8w9/RCRg8w9/RCRw8w9/hCSAAAAA8w9/hCSQAAAAjaQkoAAAALgAAAAAugAAAAAxyWYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ww=="
 .p2align 6"#,
         vg_md5_compress = sym super::md5::vg_md5_compress::vg_md5_compress,
     )
@@ -106,6 +110,8 @@ jne 20b
 /// Finishes an MD5 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), writes the MD5 digest of that message to `*out`.
 ///
 /// Contract: `VG.Spec.Md5.finalizeContract`. Constant time: only the pointers and `count` may affect timing, not the state.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -150,7 +156,7 @@ jmp 29f
 call {vg_md5_compress}
 .base64 "WFhYWL8AAAAAg+4B"
 je 22b
-.base64 "i0VYiwuJCItLBIlIBItLCIlICItLDIlIDItdQIt1RIt9SIttTI2kJIgAAADD"
+.base64 "i0VYiwuJCItLBIlIBItLCIlICItLDIlIDItdQIt1RIt9SIttTI2kJIgAAABmD+/AuQAAAACNpCRk////8w9/BCTzD39EJBDzD39EJCDzD39EJDDzD39EJEDzD39EJFDzD39EJGDzD39EJHDzD3+EJIAAAACJjCSQAAAAiYwklAAAAImMJJgAAACNpCScAAAAuAAAAAC6AAAAADHJZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7//D"
 .p2align 6"#,
         vg_md5_compress = sym super::md5::vg_md5_compress::vg_md5_compress,
     )
@@ -163,6 +169,10 @@ pub(crate) mod vg_md5_compress;
 #[rustfmt::skip]
 #[path = "internal/vg_md5_finalize_scratch.rs"]
 pub(crate) mod vg_md5_finalize_scratch;
+
+#[rustfmt::skip]
+#[path = "internal/vg_md5_init_core.rs"]
+pub(crate) mod vg_md5_init_core;
 
 #[rustfmt::skip]
 #[path = "internal/vg_md5_state_digest.rs"]

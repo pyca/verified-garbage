@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.CmacAes.Stream.AArch64
+public import VerifiedGarbage.Impl.Scrub.AArch64.Union
+public import VerifiedGarbage.Impl.StackScratch.AArch64
 
 /-!
 # AES-SIV: AArch64 implementation
@@ -21,17 +23,19 @@ the suffix `sfx`).
 
 The key context (`VG.Spec.Siv.KeyRepr`) is `K1`'s schedule (bytes 0–239), its
 CMAC subkeys (240–271) and `K2`'s schedule (272–511), so bytes 0–271 are
-`vg_cmac_aes_finalize`'s `key`. `init`'s working space (`scratch`, 2560
-bytes): `[0, 2176)` the working space of the functions called, `[2176, 2216)`
-our caller's callee-saved registers and our return address. `encrypt`'s
+`vg_cmac_aes_finalize`'s `key`. `init`'s working space (`scratch`):
+`[0, 40)` our caller's callee-saved registers and our return address, and
+from `initWOff` the working space of the functions called. `encrypt`'s
 and `decrypt`'s (`work`, 2576 bytes): `[0, 16)` the synthetic IV, `[16, 32)` a
 zero block, `[32, 64)` the last bytes of S2V's last string (`tail`),
 `[64, 80)` the counter `Q + i`, `[80, 96)` a keystream block, `[96, 112)` the
 counter block passed to `vg_aes_ctr32`, `[112, 128)` the IV `decrypt`
 computes, `[128, 144)` a CMAC state, `[144, 160)` `dbl(D)`, `[160, 248)` our
 caller's callee-saved registers and our return address, `[248, 256)` the
-address of `siv`, `[256, 2432)` the
-working space of the functions called, and `[2560, 2576)` S2V's state `D`.
+address of `siv`, `[256, 272)` S2V's state `D`, and from `csOff` the
+working space of the functions called. The working spaces are as large as
+the implementations called need (`Ctr32Impl.scratch`,
+`UpdateImpl.scratch`), so the code does not depend on their size.
 A call (`bl`) stores nothing in memory, so no stack is used but `init`'s
 frame.
 
@@ -96,7 +100,7 @@ open VG.Impl.CmacAes.AArch64 (mov)
 /-! ## The working space -/
 
 /-- The offset of the working space of the functions called. -/
-abbrev csOff : Nat := 256
+abbrev csOff : Nat := 272
 abbrev zOff : Nat := 16
 abbrev tailOff : Nat := 32
 abbrev cntOff : Nat := 64
@@ -105,7 +109,7 @@ abbrev cbOff : Nat := 96
 abbrev tOff : Nat := 112
 abbrev stOff : Nat := 128
 abbrev dbOff : Nat := 144
-abbrev dOff : Nat := 2560
+abbrev dOff : Nat := 256
 
 /-- The calls of the CMAC functions made with `c`. -/
 abbrev callUpdate (u : Impl.CmacAes.AArch64.Update) : Prog isa := .call u.name u.code
@@ -130,11 +134,14 @@ def zero16 (d : Nat) : List Instr := [.movz .x .x9 0 0, .str .x .x9 .x19 d, .str
 
 /-- The registers saved in the scratch buffer, and where. -/
 def initSaved : List (Reg × Nat) :=
-  [(.x19, 2176), (.x20, 2184), (.x21, 2192), (.x22, 2200), (.x30, 2208)]
+  [(.x19, 0), (.x20, 8), (.x21, 16), (.x22, 24), (.x30, 32)]
+
+/-- The offset of the working space of the functions `init` calls. -/
+abbrev initWOff : Nat := 48
 
 /-- `initSaved` with `x22`, the base, last. -/
 def initRestored : List (Reg × Nat) :=
-  [(.x19, 2176), (.x20, 2184), (.x21, 2192), (.x30, 2208), (.x22, 2200)]
+  [(.x19, 0), (.x20, 8), (.x21, 16), (.x30, 32), (.x22, 24)]
 
 /-- Saves the registers and keeps the key in `x19`, the half length
 (`key_len / 2`) in `x20`, the context in `x21` and the scratch buffer in
@@ -143,16 +150,16 @@ def initRestored : List (Reg × Nat) :=
 `K1` are then those but the length. -/
 def initPre : List Instr :=
   initSaved.map (fun (r, d) => .str .x r .x3 d) ++
-  [mov .x19 .x0, .lsr .x .x20 .x1 1, mov .x21 .x2, mov .x22 .x3, mov .x1 .x20]
+  [mov .x19 .x0, .lsr .x .x20 .x1 1, mov .x21 .x2, mov .x22 .x3, mov .x1 .x20, .addImm .x .x3 .x3 initWOff]
 
 /-- The arguments of `vg_cmac_aes_subkeys(schedule = x0, rounds = x1, subkeys = x2, scratch = x3)`,
 the rounds `key_len / 8 + 6`. -/
 def initMid₁ : List Instr :=
-  [mov .x0 .x21, .lsr .x .x1 .x20 2, .addImm .x .x1 .x1 6, .addImm .x .x2 .x21 240, mov .x3 .x22]
+  [mov .x0 .x21, .lsr .x .x1 .x20 2, .addImm .x .x1 .x1 6, .addImm .x .x2 .x21 240, .addImm .x .x3 .x22 initWOff]
 
 /-- The arguments of `vg_aes_expand_key_scratch` for `K2`. -/
 def initMid₂ : List Instr :=
-  [.add .x .x0 .x19 .x20, mov .x1 .x20, .addImm .x .x2 .x21 272, mov .x3 .x22]
+  [.add .x .x0 .x19 .x20, mov .x1 .x20, .addImm .x .x2 .x21 272, .addImm .x .x3 .x22 initWOff]
 
 /-- The registers restored, with `x22` (restored last) the scratch buffer. -/
 def initPost : List Instr := initRestored.map fun (r, d) => .ldr .x r .x22 d
@@ -298,7 +305,7 @@ def shortMac (c : Ctr32) (sfx : String) (out : Nat) : Prog isa :=
   .seq (.block (shortArgs out)) (callFinalize c sfx)
 
 /-- S2V finished with the string at `x22` (`x23` bytes) from `D` at
-`x19 + 2560`, into the 16 bytes at `x19 + out`. -/
+`x19 + dOff`, into the 16 bytes at `x19 + out`. -/
 def finish (u : Impl.CmacAes.AArch64.Update) (c : Ctr32) (sfx : String) (out : Nat) : Prog isa :=
   .seq (.block [.lsr .x .x9 .x23 4])
     (.ite (.zero .x .x9) (.seq shortTail (shortMac c sfx out)) (.seq longTail (longMac u c sfx out)))
@@ -459,5 +466,57 @@ def openTail (u : Impl.CmacAes.AArch64.Update) (c : Ctr32) (sfx : String) : Prog
 
 def decrypt (u : Impl.CmacAes.AArch64.Update) (c : Ctr32) (sfx : String) : Prog isa :=
   .seq (encS2v u c sfx) (.seq (.block sivIn) (openTail u c sfx))
+
+/-! ## The functions, as emitted
+
+Each function is its code with its working space in a frame on the stack,
+sized to what the functions it calls need, then its cleanup
+(`Impl.Scrub.AArch64.scrubAll`): the registers it writes that the calling
+convention does not preserve are cleared, but the bits of its result, and
+that stack is zeroed, so that it returns without secret residue. The
+registers are those its own instructions write, stated here, and those the
+functions it calls write (`ecl`, `ccl`, `ucl`). -/
+
+namespace Fn
+
+open VG.Impl.Scrub.AArch64 (Clear scrubAll)
+
+/-- The registers `vg_aes_siv_init`'s own instructions write. -/
+def initOwn : Clear := ⟨[.x1, .x2, .x3, .x4, .x5, .x9, .x10, .x11, .x12, .x16, .x17], [], []⟩
+
+/-- The working space of `vg_aes_siv_init` over an implementation that needs
+`scratch` bytes: the 512 bytes of the key expansion, or what
+`vg_cmac_aes_subkeys` needs (`128 + scratch`), if more. -/
+def initWork (scratch : Nat) : Nat := if scratch = 0 then 512 else 2176
+
+/-- `vg_aes_siv_init`. -/
+def init (e : ExpandKey) (c : Ctr32) (sfx : String) : Prog isa :=
+  scrubAll (48 + initWork c.scratch) 0 ((initOwn.union e.clear).union c.clear)
+    (Impl.StackScratch.AArch64.withStackScratch (48 + initWork c.scratch) .x3 (AesSiv.AArch64.init e c sfx))
+
+/-- The registers the own instructions of `vg_aes_siv_encrypt` and of
+`vg_aes_siv_decrypt` write. -/
+def cryptOwn : Clear :=
+  ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x16, .x17], [], []⟩
+
+/-- The working space of the functions `vg_aes_siv_encrypt` and
+`vg_aes_siv_decrypt` call, over implementations that need `uScratch` and
+`cScratch` bytes: `vg_cmac_aes_finalize`'s 128 bytes if neither needs any,
+else 2176. -/
+def cryptWork (uScratch cScratch : Nat) : Nat := if uScratch = 0 ∧ cScratch = 0 then 128 else 2176
+
+/-- `vg_aes_siv_encrypt`. -/
+def encrypt (u : Impl.CmacAes.AArch64.Update) (c : Ctr32) (sfx : String) : Prog isa :=
+  scrubAll (272 + cryptWork u.scratch c.scratch) 0 ((cryptOwn.union u.clear).union c.clear)
+    (Impl.StackScratch.AArch64.withStackScratch (272 + cryptWork u.scratch c.scratch) .x7
+      (AesSiv.AArch64.encrypt u c sfx))
+
+/-- `vg_aes_siv_decrypt`; its result is 32 bits. -/
+def decrypt (u : Impl.CmacAes.AArch64.Update) (c : Ctr32) (sfx : String) : Prog isa :=
+  scrubAll (272 + cryptWork u.scratch c.scratch) 32 ((cryptOwn.union u.clear).union c.clear)
+    (Impl.StackScratch.AArch64.withStackScratch (272 + cryptWork u.scratch c.scratch) .x7
+      (AesSiv.AArch64.decrypt u c sfx))
+
+end Fn
 
 end VG.Impl.AesSiv.AArch64

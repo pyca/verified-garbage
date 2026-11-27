@@ -37,31 +37,6 @@ def up : Prog isa → Bool → Bool
   | .frame _ b _, a => up b a
   | .icall _ _ b n, a => up b a && up n a
 
-/-- `up c a`, given calls with `up`'s answer for them (`k`: a call's
-function, code, start and answer), with those calls and the calls of `c`:
-`up` follows the code of a function once per call of it, through every
-function that calls it, and this once per start (`Code.memoCall`). -/
-def upFrom : Prog isa → Bool → List (String × Prog isa × Bool × Bool) →
-    Bool × List (String × Prog isa × Bool × Bool)
-  | .block is, a, k => (is.foldl stepI a, k)
-  | .seq x y, a, k =>
-    let r := upFrom x a k
-    upFrom y r.1 r.2
-  | .ite _ t e, a, k =>
-    let r := upFrom t a k
-    let q := upFrom e a r.2
-    (r.1 && q.1, q.2)
-  | .loop b _, a, k => upFrom b a k
-  | .call n b, a, k => Code.memoCall n b a k fun _ => upFrom b a k
-  | .frame _ b _, a, k => upFrom b a k
-  | .icall _ n b nx, a, k =>
-    let r := Code.memoCall n b a k fun _ => upFrom b a k
-    let q := upFrom nx a r.2
-    (r.1 && q.1, q.2)
-
-/-- `up c a`, following the code of each function `c` calls once per start. -/
-def upOnce (c : Prog isa) (a : Bool) : Bool := (upFrom c a []).1
-
 /-- The functions `c` may call indirectly. -/
 def inames : Prog isa → List String
   | .block _ => []
@@ -158,45 +133,6 @@ def mx : Prog isa → List F → Option (List F)
   | .call _ b, fs => (mx b (regs fs)).map regs
   | .frame _ b j, fs => (mx b (regs fs)).map fun g => regs (g.filter (keep j))
   | .icall .., _ => none
-
-/-- `mx c fs`, given calls with `mx`'s answer for them (`k`: a call's
-function, code, the facts before it and the answer), with those calls and
-the calls of `c`: `mx` follows the code of a function once per call of it,
-through every function that calls it, and this once for the same facts
-(`Code.memoCall`). -/
-def mxFrom : Prog isa → List F → List (String × Prog isa × List F × Option (List F)) →
-    Option (List F) × List (String × Prog isa × List F × Option (List F))
-  | .block is, fs, k => (blk fs is, k)
-  | .seq x y, fs, k =>
-    let r := mxFrom x fs k
-    match r.1 with
-    | some g => mxFrom y g r.2
-    | none => (none, k)
-  | .ite _ t e, fs, k =>
-    let r := mxFrom t fs k
-    match r.1 with
-    | some a =>
-      let q := mxFrom e fs r.2
-      (match q.1 with
-      | some b => (some (a.filter b.contains), q.2)
-      | none => (none, k))
-    | none => (none, k)
-  | .loop b _, fs, k =>
-    let r := mxFrom b (fs.filter (kept · b)) k
-    match r.1 with
-    | some g => (if (fs.filter (kept · b)).all g.contains then some g else none, r.2)
-    | none => (none, k)
-  | .call n b, fs, k =>
-    let r := Code.memoCall n b (regs fs) k fun _ => mxFrom b (regs fs) k
-    (r.1.map regs, r.2)
-  | .frame _ b j, fs, k =>
-    let r := mxFrom b (regs fs) k
-    (r.1.map fun g => regs (g.filter (keep j)), r.2)
-  | .icall .., _, k => (none, k)
-
-/-- `mx c fs`, following the code of each function `c` calls once for the
-same facts. -/
-def mxOnce (c : Prog isa) (fs : List F) : Option (List F) := (mxFrom c fs []).1
 
 end RScrub.Mx
 

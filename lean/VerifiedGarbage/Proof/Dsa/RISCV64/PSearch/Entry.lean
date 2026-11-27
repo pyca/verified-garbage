@@ -8,7 +8,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # DSA parameter search on RISC-V: entry and exit
 
-As on PPC64LE (`Proof/Dsa/PPC64LE/Gen/Entry.lean`). `entry_ok`: from the
+As on PPC64LE (`Proof/Dsa/PPC64LE/Gen/Verified.lean`). `entry_ok`: from the
 contract's precondition, `entry` saves our caller's callee-saved registers
 and our return address in `scratch`'s header, with the arguments, the seeds
 left and 0 for the octets consumed: a state of the search (`GI`).

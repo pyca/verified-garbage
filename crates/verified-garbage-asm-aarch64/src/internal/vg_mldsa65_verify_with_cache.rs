@@ -206,33 +206,25 @@ bl {vg_mldsa_sample_in_ball}
 221:
 .inst 0xb9400029,0x0a080129,0xb9000029,0x91001021,0xd1000442
 cbnz x2, 221b
-.inst 0xd2948000,0x8b000380,0x91200381
-bl {vg_mldsa_ntt}
-.inst 0xd2950000,0x8b000380,0x91200381
-bl {vg_mldsa_ntt}
-.inst 0xd2958000,0x8b000380,0x91200381
-bl {vg_mldsa_ntt}
-.inst 0xd2960000,0x8b000380,0x91200381
-bl {vg_mldsa_ntt}
-.inst 0xd2968000,0x8b000380,0x91200381
-bl {vg_mldsa_ntt}
-.inst 0xd2970000,0x8b000380,0x91200381
-bl {vg_mldsa_ntt}
+.inst 0xd2948000,0x8b000380
+bl {vg_mldsa_ntt_positive}
+.inst 0xd2950000,0x8b000380
+bl {vg_mldsa_ntt_positive}
+.inst 0xd2958000,0x8b000380
+bl {vg_mldsa_ntt_positive}
+.inst 0xd2960000,0x8b000380
+bl {vg_mldsa_ntt_positive}
+.inst 0xd2968000,0x8b000380
+bl {vg_mldsa_ntt_positive}
+.inst 0xd2970000,0x8b000380
+bl {vg_mldsa_ntt_positive}
 .inst 0xd2988000,0x8b000380,0xd2820001,0x8b010381,0xd2948002,0x8b020382
-bl {vg_mldsa_multiply_ntt}
-.inst 0xd2988000,0x8b000380,0xd2828001,0x8b010381,0xd2950002,0x8b020382
-bl {vg_mldsa_multiply_add_ntt}
-.inst 0xd2988000,0x8b000380,0xd2830001,0x8b010381,0xd2958002,0x8b020382
-bl {vg_mldsa_multiply_add_ntt}
-.inst 0xd2988000,0x8b000380,0xd2838001,0x8b010381,0xd2960002,0x8b020382
-bl {vg_mldsa_multiply_add_ntt}
-.inst 0xd2988000,0x8b000380,0xd2840001,0x8b010381,0xd2968002,0x8b020382
-bl {vg_mldsa_multiply_add_ntt}
+bl {vg_mldsa_montgomery_dot5}
 cbnz x22, 222f
 .inst 0x91008320,0xd2978001,0x8b010381
 bl {vg_mldsa_unpack_t1}
-.inst 0xd2978000,0x8b000380,0x91200381
-bl {vg_mldsa_ntt}
+.inst 0xd2978000,0x8b000380
+bl {vg_mldsa_ntt_positive}
 b 223f
 222:
 .inst 0xd2978000,0x8b000380,0x910002a1,0xd2800802
@@ -241,31 +233,21 @@ b 223f
 cbnz x2, 224b
 223:
 .inst 0xd2980000,0x8b000380,0xd2970001,0x8b010381,0xd2978002,0x8b020382
-bl {vg_mldsa_multiply_ntt}
+bl {vg_mldsa_montgomery_product}
 .inst 0xd2988000,0x8b000380,0xd2980001,0x8b010381
 bl {vg_mldsa_sub}
-.inst 0xd2988000,0x8b000380,0x91200381
-bl {vg_mldsa_inv_ntt}
-.inst 0xd2918000,0x8b000380,0xd2988001,0x8b010381,0xd29fe002,0xf2a00062,0xf2c00002,0xf2e00002
-.inst 0xd2990003,0x8b030383
-bl {vg_mldsa_use_hint}
-.inst 0xd2990000,0x8b000380,0xd28001e1,0xd2910002,0x8b020382,0xd2801003
-bl {vg_mldsa_simple_bit_pack}
+.inst 0xd2988000,0x8b000380
+bl {vg_mldsa_montgomery_inv_ntt}
+.inst 0xd2910000,0x8b000380,0xd2918001,0x8b010381,0xd2988002,0x8b020382,0xd29fe003,0xf2a00063
+.inst 0xf2c00003,0xf2e00003
+bl {vg_mldsa_usehint_pack4}
 .inst 0xd2988000,0x8b000380,0xd2848001,0x8b010381,0xd2948002,0x8b020382
-bl {vg_mldsa_multiply_ntt}
-.inst 0xd2988000,0x8b000380,0xd2850001,0x8b010381,0xd2950002,0x8b020382
-bl {vg_mldsa_multiply_add_ntt}
-.inst 0xd2988000,0x8b000380,0xd2858001,0x8b010381,0xd2958002,0x8b020382
-bl {vg_mldsa_multiply_add_ntt}
-.inst 0xd2988000,0x8b000380,0xd2860001,0x8b010381,0xd2960002,0x8b020382
-bl {vg_mldsa_multiply_add_ntt}
-.inst 0xd2988000,0x8b000380,0xd2868001,0x8b010381,0xd2968002,0x8b020382
-bl {vg_mldsa_multiply_add_ntt}
+bl {vg_mldsa_montgomery_dot5}
 cbnz x22, 225f
 .inst 0x91058320,0xd2978001,0x8b010381
 bl {vg_mldsa_unpack_t1}
-.inst 0xd2978000,0x8b000380,0x91200381
-bl {vg_mldsa_ntt}
+.inst 0xd2978000,0x8b000380
+bl {vg_mldsa_ntt_positive}
 b 226f
 225:
 .inst 0xd2978000,0x8b000380,0x911002a1,0xd2800802
@@ -274,31 +256,21 @@ b 226f
 cbnz x2, 227b
 226:
 .inst 0xd2980000,0x8b000380,0xd2970001,0x8b010381,0xd2978002,0x8b020382
-bl {vg_mldsa_multiply_ntt}
+bl {vg_mldsa_montgomery_product}
 .inst 0xd2988000,0x8b000380,0xd2980001,0x8b010381
 bl {vg_mldsa_sub}
-.inst 0xd2988000,0x8b000380,0x91200381
-bl {vg_mldsa_inv_ntt}
-.inst 0xd2920000,0x8b000380,0xd2988001,0x8b010381,0xd29fe002,0xf2a00062,0xf2c00002,0xf2e00002
-.inst 0xd2990003,0x8b030383
-bl {vg_mldsa_use_hint}
-.inst 0xd2990000,0x8b000380,0xd28001e1,0xd2911002,0x8b020382,0xd2801003
-bl {vg_mldsa_simple_bit_pack}
+.inst 0xd2988000,0x8b000380
+bl {vg_mldsa_montgomery_inv_ntt}
+.inst 0xd2911000,0x8b000380,0xd2920001,0x8b010381,0xd2988002,0x8b020382,0xd29fe003,0xf2a00063
+.inst 0xf2c00003,0xf2e00003
+bl {vg_mldsa_usehint_pack4}
 .inst 0xd2988000,0x8b000380,0xd2870001,0x8b010381,0xd2948002,0x8b020382
-bl {vg_mldsa_multiply_ntt}
-.inst 0xd2988000,0x8b000380,0xd2878001,0x8b010381,0xd2950002,0x8b020382
-bl {vg_mldsa_multiply_add_ntt}
-.inst 0xd2988000,0x8b000380,0xd2880001,0x8b010381,0xd2958002,0x8b020382
-bl {vg_mldsa_multiply_add_ntt}
-.inst 0xd2988000,0x8b000380,0xd2888001,0x8b010381,0xd2960002,0x8b020382
-bl {vg_mldsa_multiply_add_ntt}
-.inst 0xd2988000,0x8b000380,0xd2890001,0x8b010381,0xd2968002,0x8b020382
-bl {vg_mldsa_multiply_add_ntt}
+bl {vg_mldsa_montgomery_dot5}
 cbnz x22, 228f
 .inst 0x910a8320,0xd2978001,0x8b010381
 bl {vg_mldsa_unpack_t1}
-.inst 0xd2978000,0x8b000380,0x91200381
-bl {vg_mldsa_ntt}
+.inst 0xd2978000,0x8b000380
+bl {vg_mldsa_ntt_positive}
 b 229f
 228:
 .inst 0xd2978000,0x8b000380,0x912002a1,0xd2800802
@@ -307,31 +279,21 @@ b 229f
 cbnz x2, 230b
 229:
 .inst 0xd2980000,0x8b000380,0xd2970001,0x8b010381,0xd2978002,0x8b020382
-bl {vg_mldsa_multiply_ntt}
+bl {vg_mldsa_montgomery_product}
 .inst 0xd2988000,0x8b000380,0xd2980001,0x8b010381
 bl {vg_mldsa_sub}
-.inst 0xd2988000,0x8b000380,0x91200381
-bl {vg_mldsa_inv_ntt}
-.inst 0xd2928000,0x8b000380,0xd2988001,0x8b010381,0xd29fe002,0xf2a00062,0xf2c00002,0xf2e00002
-.inst 0xd2990003,0x8b030383
-bl {vg_mldsa_use_hint}
-.inst 0xd2990000,0x8b000380,0xd28001e1,0xd2912002,0x8b020382,0xd2801003
-bl {vg_mldsa_simple_bit_pack}
+.inst 0xd2988000,0x8b000380
+bl {vg_mldsa_montgomery_inv_ntt}
+.inst 0xd2912000,0x8b000380,0xd2928001,0x8b010381,0xd2988002,0x8b020382,0xd29fe003,0xf2a00063
+.inst 0xf2c00003,0xf2e00003
+bl {vg_mldsa_usehint_pack4}
 .inst 0xd2988000,0x8b000380,0xd2898001,0x8b010381,0xd2948002,0x8b020382
-bl {vg_mldsa_multiply_ntt}
-.inst 0xd2988000,0x8b000380,0xd28a0001,0x8b010381,0xd2950002,0x8b020382
-bl {vg_mldsa_multiply_add_ntt}
-.inst 0xd2988000,0x8b000380,0xd28a8001,0x8b010381,0xd2958002,0x8b020382
-bl {vg_mldsa_multiply_add_ntt}
-.inst 0xd2988000,0x8b000380,0xd28b0001,0x8b010381,0xd2960002,0x8b020382
-bl {vg_mldsa_multiply_add_ntt}
-.inst 0xd2988000,0x8b000380,0xd28b8001,0x8b010381,0xd2968002,0x8b020382
-bl {vg_mldsa_multiply_add_ntt}
+bl {vg_mldsa_montgomery_dot5}
 cbnz x22, 231f
 .inst 0x910f8320,0xd2978001,0x8b010381
 bl {vg_mldsa_unpack_t1}
-.inst 0xd2978000,0x8b000380,0x91200381
-bl {vg_mldsa_ntt}
+.inst 0xd2978000,0x8b000380
+bl {vg_mldsa_ntt_positive}
 b 232f
 231:
 .inst 0xd2978000,0x8b000380,0x913002a1,0xd2800802
@@ -340,31 +302,21 @@ b 232f
 cbnz x2, 233b
 232:
 .inst 0xd2980000,0x8b000380,0xd2970001,0x8b010381,0xd2978002,0x8b020382
-bl {vg_mldsa_multiply_ntt}
+bl {vg_mldsa_montgomery_product}
 .inst 0xd2988000,0x8b000380,0xd2980001,0x8b010381
 bl {vg_mldsa_sub}
-.inst 0xd2988000,0x8b000380,0x91200381
-bl {vg_mldsa_inv_ntt}
-.inst 0xd2930000,0x8b000380,0xd2988001,0x8b010381,0xd29fe002,0xf2a00062,0xf2c00002,0xf2e00002
-.inst 0xd2990003,0x8b030383
-bl {vg_mldsa_use_hint}
-.inst 0xd2990000,0x8b000380,0xd28001e1,0xd2913002,0x8b020382,0xd2801003
-bl {vg_mldsa_simple_bit_pack}
+.inst 0xd2988000,0x8b000380
+bl {vg_mldsa_montgomery_inv_ntt}
+.inst 0xd2913000,0x8b000380,0xd2930001,0x8b010381,0xd2988002,0x8b020382,0xd29fe003,0xf2a00063
+.inst 0xf2c00003,0xf2e00003
+bl {vg_mldsa_usehint_pack4}
 .inst 0xd2988000,0x8b000380,0xd28c0001,0x8b010381,0xd2948002,0x8b020382
-bl {vg_mldsa_multiply_ntt}
-.inst 0xd2988000,0x8b000380,0xd28c8001,0x8b010381,0xd2950002,0x8b020382
-bl {vg_mldsa_multiply_add_ntt}
-.inst 0xd2988000,0x8b000380,0xd28d0001,0x8b010381,0xd2958002,0x8b020382
-bl {vg_mldsa_multiply_add_ntt}
-.inst 0xd2988000,0x8b000380,0xd28d8001,0x8b010381,0xd2960002,0x8b020382
-bl {vg_mldsa_multiply_add_ntt}
-.inst 0xd2988000,0x8b000380,0xd28e0001,0x8b010381,0xd2968002,0x8b020382
-bl {vg_mldsa_multiply_add_ntt}
+bl {vg_mldsa_montgomery_dot5}
 cbnz x22, 234f
 .inst 0x91148320,0xd2978001,0x8b010381
 bl {vg_mldsa_unpack_t1}
-.inst 0xd2978000,0x8b000380,0x91200381
-bl {vg_mldsa_ntt}
+.inst 0xd2978000,0x8b000380
+bl {vg_mldsa_ntt_positive}
 b 235f
 234:
 .inst 0xd2978000,0x8b000380,0xd2820001,0x8b0102a1,0xd2800802
@@ -373,31 +325,21 @@ b 235f
 cbnz x2, 236b
 235:
 .inst 0xd2980000,0x8b000380,0xd2970001,0x8b010381,0xd2978002,0x8b020382
-bl {vg_mldsa_multiply_ntt}
+bl {vg_mldsa_montgomery_product}
 .inst 0xd2988000,0x8b000380,0xd2980001,0x8b010381
 bl {vg_mldsa_sub}
-.inst 0xd2988000,0x8b000380,0x91200381
-bl {vg_mldsa_inv_ntt}
-.inst 0xd2938000,0x8b000380,0xd2988001,0x8b010381,0xd29fe002,0xf2a00062,0xf2c00002,0xf2e00002
-.inst 0xd2990003,0x8b030383
-bl {vg_mldsa_use_hint}
-.inst 0xd2990000,0x8b000380,0xd28001e1,0xd2914002,0x8b020382,0xd2801003
-bl {vg_mldsa_simple_bit_pack}
+.inst 0xd2988000,0x8b000380
+bl {vg_mldsa_montgomery_inv_ntt}
+.inst 0xd2914000,0x8b000380,0xd2938001,0x8b010381,0xd2988002,0x8b020382,0xd29fe003,0xf2a00063
+.inst 0xf2c00003,0xf2e00003
+bl {vg_mldsa_usehint_pack4}
 .inst 0xd2988000,0x8b000380,0xd28e8001,0x8b010381,0xd2948002,0x8b020382
-bl {vg_mldsa_multiply_ntt}
-.inst 0xd2988000,0x8b000380,0xd28f0001,0x8b010381,0xd2950002,0x8b020382
-bl {vg_mldsa_multiply_add_ntt}
-.inst 0xd2988000,0x8b000380,0xd28f8001,0x8b010381,0xd2958002,0x8b020382
-bl {vg_mldsa_multiply_add_ntt}
-.inst 0xd2988000,0x8b000380,0xd2900001,0x8b010381,0xd2960002,0x8b020382
-bl {vg_mldsa_multiply_add_ntt}
-.inst 0xd2988000,0x8b000380,0xd2908001,0x8b010381,0xd2968002,0x8b020382
-bl {vg_mldsa_multiply_add_ntt}
+bl {vg_mldsa_montgomery_dot5}
 cbnz x22, 237f
 .inst 0x91198320,0xd2978001,0x8b010381
 bl {vg_mldsa_unpack_t1}
-.inst 0xd2978000,0x8b000380,0x91200381
-bl {vg_mldsa_ntt}
+.inst 0xd2978000,0x8b000380
+bl {vg_mldsa_ntt_positive}
 b 238f
 237:
 .inst 0xd2978000,0x8b000380,0xd2828001,0x8b0102a1,0xd2800802
@@ -406,16 +348,14 @@ b 238f
 cbnz x2, 239b
 238:
 .inst 0xd2980000,0x8b000380,0xd2970001,0x8b010381,0xd2978002,0x8b020382
-bl {vg_mldsa_multiply_ntt}
+bl {vg_mldsa_montgomery_product}
 .inst 0xd2988000,0x8b000380,0xd2980001,0x8b010381
 bl {vg_mldsa_sub}
-.inst 0xd2988000,0x8b000380,0x91200381
-bl {vg_mldsa_inv_ntt}
-.inst 0xd2940000,0x8b000380,0xd2988001,0x8b010381,0xd29fe002,0xf2a00062,0xf2c00002,0xf2e00002
-.inst 0xd2990003,0x8b030383
-bl {vg_mldsa_use_hint}
-.inst 0xd2990000,0x8b000380,0xd28001e1,0xd2915002,0x8b020382,0xd2801003
-bl {vg_mldsa_simple_bit_pack}
+.inst 0xd2988000,0x8b000380
+bl {vg_mldsa_montgomery_inv_ntt}
+.inst 0xd2915000,0x8b000380,0xd2940001,0x8b010381,0xd2988002,0x8b020382,0xd29fe003,0xf2a00063
+.inst 0xf2c00003,0xf2e00003
+bl {vg_mldsa_usehint_pack4}
 .inst 0x91000380,0xd2800009,0xf9000009,0xf9000409,0xf9000809,0xf9000c09,0xf9001009,0xf9001409
 .inst 0xf9001809,0xf9001c09,0xf9002009,0xf9002409,0xf9002809,0xf9002c09,0xf9003009,0xf9003409
 .inst 0xf9003809,0xf9003c09,0xf9004009,0xf9004409,0xf9004809,0xf9004c09,0xf9005009,0xf9005409
@@ -446,13 +386,12 @@ cbnz x2, 240b
         vg_keccak_pad_scratch = sym crate::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym crate::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
         vg_mldsa_sample_in_ball = sym crate::mldsa44::vg_mldsa_sample_in_ball::vg_mldsa_sample_in_ball,
-        vg_mldsa_ntt = sym crate::mldsa44::vg_mldsa_ntt::vg_mldsa_ntt,
-        vg_mldsa_multiply_ntt = sym crate::mldsa44::vg_mldsa_multiply_ntt::vg_mldsa_multiply_ntt,
-        vg_mldsa_multiply_add_ntt = sym crate::mldsa44::vg_mldsa_multiply_add_ntt::vg_mldsa_multiply_add_ntt,
+        vg_mldsa_ntt_positive = sym crate::mldsa44::vg_mldsa_ntt_positive::vg_mldsa_ntt_positive,
+        vg_mldsa_montgomery_dot5 = sym crate::mldsa65::vg_mldsa_montgomery_dot5::vg_mldsa_montgomery_dot5,
         vg_mldsa_unpack_t1 = sym crate::mldsa44::vg_mldsa_unpack_t1::vg_mldsa_unpack_t1,
+        vg_mldsa_montgomery_product = sym crate::mldsa44::vg_mldsa_montgomery_product::vg_mldsa_montgomery_product,
         vg_mldsa_sub = sym crate::mldsa44::vg_mldsa_sub::vg_mldsa_sub,
-        vg_mldsa_inv_ntt = sym crate::mldsa44::vg_mldsa_inv_ntt::vg_mldsa_inv_ntt,
-        vg_mldsa_use_hint = sym crate::mldsa44::vg_mldsa_use_hint::vg_mldsa_use_hint,
-        vg_mldsa_simple_bit_pack = sym crate::mldsa44::vg_mldsa_simple_bit_pack::vg_mldsa_simple_bit_pack,
+        vg_mldsa_montgomery_inv_ntt = sym crate::mldsa44::vg_mldsa_montgomery_inv_ntt::vg_mldsa_montgomery_inv_ntt,
+        vg_mldsa_usehint_pack4 = sym crate::mldsa65::vg_mldsa_usehint_pack4::vg_mldsa_usehint_pack4,
     )
 }

@@ -24,7 +24,8 @@ vg_aes_gcm_encrypt_blocks:
 	mov r8, QWORD PTR [r11+40]
 	mov r9, r11
 	add r9, 64
-	call {vg_aes_ctr32}
+	mov r11, rcx
+	call {vg_aes_ctr32_to}
 	mov r11, QWORD PTR [rsp+8]
 	mov rdi, QWORD PTR [r11]
 	add rdi, 240

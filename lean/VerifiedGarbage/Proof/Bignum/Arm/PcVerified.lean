@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.Arm.PublicPrecomputeKernel
+public import VerifiedGarbage.Proof.Bignum.Arm.PcValid
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Proof.Bignum.Arm.PcInput
 import VerifiedGarbage.Proof.Bignum.Words
@@ -9,12 +9,12 @@ import VerifiedGarbage.Proof.Bignum.Arm.PcEntryReady
 import VerifiedGarbage.Proof.Bignum.Arm.PcBody
 import VerifiedGarbage.Proof.Bignum.Arm.PcDimensions
 import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.Bignum.Arm.PcPrepare
-import VerifiedGarbage.Proof.Bignum.Arm.ExportState
-import VerifiedGarbage.Proof.Bignum.Arm.PcPrepareCT
+import VerifiedGarbage.Proof.Framework.Arm.Frame
+import VerifiedGarbage.Proof.Framework.Arm.Inline
+import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Bignum.Arm.PcPrepare
 import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeOutCT
 import VerifiedGarbage.Proof.Bignum.Arm.StackCT
-import VerifiedGarbage.Proof.Bignum.Arm.PcFailCT
 import VerifiedGarbage.Proof.Bignum.Arm.ModulusCheckCT
 import VerifiedGarbage.Proof.Bignum.Arm.ModulusCheck
 import VerifiedGarbage.Proof.Bignum.Arm.PcEntryCT
@@ -27,6 +27,125 @@ public import VerifiedGarbage.TCB.Arm.Target
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Spec.Rsa.Contract
 meta import VerifiedGarbage.TCB.Arm.Target
+import VerifiedGarbage.Proof.Bignum.Arm.SetupCT
+import VerifiedGarbage.Proof.Bignum.Arm.PcHead
+import VerifiedGarbage.Proof.Framework.Arm.Taint
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Bignum.Arm.PcPrepare
+meta import VerifiedGarbage.Proof.Bignum.Arm.SetupCT
+meta import VerifiedGarbage.Proof.Bignum.Arm.StackCT
+meta import VerifiedGarbage.Proof.Bignum.Arm.PcHead
+meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Bignum.Arm.PcStack
+public import VerifiedGarbage.Proof.Framework.RelCT
+import VerifiedGarbage.Proof.Bignum.Arm.PcFailArgs
+import VerifiedGarbage.Proof.Bignum.Arm.ZeroCT
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Bignum.Arm.PcStack
+meta import VerifiedGarbage.Proof.Framework.RelCT
+meta import VerifiedGarbage.Proof.Bignum.Arm.PcFailArgs
+meta import VerifiedGarbage.Proof.Bignum.Arm.ZeroCT
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+
+/-! ### `Bignum.Arm.PcFailCT`, which only this module used -/
+
+section
+
+/-! # RSA rejection zeroing depends only on public buffer dimensions -/
+
+@[expose] public section
+
+namespace VG.Proof.Bignum.Arm
+open VG VG.Arm VG.Impl.Bignum.Arm
+
+theorem pcFail_ct {base dst src : BitVec 32} {len k : Nat} (hk : k ≤ 1024) :
+    RelCT isa (fun s t => PcStack base dst src len k s ∧ PcStack base dst src len k t ∧
+      s.gpr .r6 = BitVec.ofNat 32 k ∧ t.gpr .r6 = BitVec.ofNat 32 k ∧ s.sp = t.sp)
+      PcFn.fail (fun _ _ => True) := by
+  let P := fun (s t : State) => PcStack base dst src len k s ∧ PcStack base dst src len k t ∧
+    s.gpr .r6 = BitVec.ofNat 32 k ∧ t.gpr .r6 = BitVec.ofNat 32 k ∧ s.sp = t.sp
+  have arithmetic : RelCT isa (fun s t => s.sp = t.sp)
+      (.block [.dp .add .lr .r6 (.imm 7), .mov .lr (.shifted .lr .lsr 3),
+        .mov .lr (.shifted .lr .lsl 2)]) (fun s t => s.sp = t.sp) := by
+    apply relCT_keep_sp (sp := fun _ _ h => h)
+    apply RelCT.taint (A := taint) (Taint.ofRegs []) _ (by taint_decide)
+    intro s t _
+    exact Taint.agree_ofRegs (by simp)
+  have last : RelCT isa (fun s t => s.sp = t.sp) (.block [.mov .r3 (.imm 0)]) (fun _ _ => True) := by
+    apply RelCT.taint (A := taint) (Taint.ofRegs []) _ (by taint_decide)
+    intro s t _
+    exact Taint.agree_ofRegs (by simp)
+  have args : RelCT isa P (.block PcFn.failArgs) (fun _ _ => True) :=
+    (RelCT.block_append (arithmetic.seq (RelCT.block_append ((loadStack_ct .r0 4).seq last)))).mono
+      (fun _ _ h => h.2.2.2.2) (fun _ _ h => h)
+  let Q := fun t : State => t.gpr .r0 = dst ∧ t.gpr .lr = BitVec.ofNat 32 (4 * Spec.Rsa.modulusWords k)
+  have wp (s : State) (stack : PcStack base dst src len k s) (count : s.gpr .r6 = BitVec.ofNat 32 k) :
+      WP isa (.block PcFn.failArgs) s Q :=
+    WP.mono (pcFailArgs_ok s stack hk count) (fun _ h => ⟨h.1, h.2.1⟩)
+  have ready := args.wp (fun s t h => ⟨wp s h.1 h.2.2.1, wp t h.2.1 h.2.2.2.1⟩)
+  have zeroing : RelCT isa (fun s t => s.gpr .r0 = dst ∧ t.gpr .r0 = dst ∧
+      s.gpr .lr = BitVec.ofNat 32 (4 * Spec.Rsa.modulusWords k) ∧
+      t.gpr .lr = BitVec.ofNat 32 (4 * Spec.Rsa.modulusWords k)) zero (fun _ _ => True) := by
+    intro s t tr1 tr2 u v h e1 e2
+    exact ⟨zero_ct s t tr1 tr2 u v trivial trivial
+      ⟨h.1.trans h.2.1.symm, h.2.2.1.trans h.2.2.2.symm⟩ e1 e2, trivial⟩
+  have finish : RelCT isa (fun _ _ => True) (.block [.mov .r0 (.imm 0)]) (fun _ _ => True) := by
+    apply RelCT.taint (A := taint) (Taint.ofRegs []) _ (by taint_decide)
+    intro s t _
+    exact Taint.agree_ofRegs (by simp)
+  exact (ready.mono (fun _ _ h => h) (fun _ _ h =>
+    ⟨h.2.1.1, h.2.2.1, h.2.1.2, h.2.2.2⟩)).seq (zeroing.seq finish)
+
+end VG.Proof.Bignum.Arm
+
+end
+
+end
+
+/-! ### `Bignum.Arm.PcPrepareCT`, which only this module used -/
+
+section
+
+/-! # Workspace preparation has a public trace -/
+
+@[expose] public section
+
+namespace VG.Proof.Bignum.Arm
+open VG VG.Arm VG.Impl.Bignum.Arm
+
+theorem pcPrepare_ct {base dst src : BitVec 32} {len k : Nat} :
+    RelCT isa (fun s t => PcValidInput base dst src len k s ∧ PcValidInput base dst src len k t ∧ s.sp = t.sp)
+      (.seq (.block PcFn.head) (.seq setup (.block PcFn.inputs)))
+      (fun s t => PcPrepared base dst src len k s ∧ PcPrepared base dst src len k t ∧ s.sp = t.sp) := by
+  let P := fun (s t : State) => PcValidInput base dst src len k s ∧ PcValidInput base dst src len k t ∧ s.sp = t.sp
+  have head : RelCT isa P (.block PcFn.head) (fun _ _ => True) := by
+    apply RelCT.taint (A := taint) (Taint.ofRegs []) _ (by taint_decide)
+    intro s t _
+    exact Taint.agree_ofRegs (by simp)
+  have wp (s : State) (h : PcValidInput base dst src len k s) :
+      WP isa (.block PcFn.head) s (fun t => t.gpr .r0 = base) :=
+    WP.mono (pcHead_ok s h.maxLength h.count) (fun _ j => (j.2.2.2.gpr .r0 (by simp)).trans h.ptr)
+  have headReady := (relCT_keep_sp head (fun _ _ h => h.2.2)).wp
+    (fun s t h => ⟨wp s h.1, wp t h.2.1⟩)
+  have setupTrace : RelCT isa (fun s t => s.sp = t.sp ∧ s.gpr .r0 = base ∧ t.gpr .r0 = base)
+      setup (fun s t => s.sp = t.sp) := by
+    apply relCT_keep_sp (sp := fun _ _ h => h.1)
+    intro s t tr1 tr2 u v h e1 e2
+    exact ⟨setup_ct s t tr1 tr2 u v trivial trivial (h.2.1.trans h.2.2.symm) e1 e2, trivial⟩
+  have inputs : RelCT isa (fun s t => s.sp = t.sp) (.block PcFn.inputs) (fun s t => s.sp = t.sp) :=
+    stackLoads_ct [(.r4, 8), (.r6, 12)]
+  have trace := headReady.seq (setupTrace.seq inputs)
+  exact (trace.wp (fun s t h => ⟨pcPrepare_ready s h.1, pcPrepare_ready t h.2.1⟩)).mono
+    (fun _ _ h => h) (fun _ _ h => ⟨h.2.1, h.2.2, h.1⟩)
+
+end VG.Proof.Bignum.Arm
+
+end
+
+end
 
 /-! ### `Bignum.Arm.PcContract`, which only this module used -/
 
@@ -59,7 +178,7 @@ theorem pcFn_ok (s : State) {base dst src : BitVec 32} {len k : Nat}
   rw [WP.seq_iff]
   refine WP.mono (pcBody_ok (kernel := kernel) u ready.workspace ready.stack ready.minLength ready.maxLength ready.space
     ready.sourceFits ready.readable ready.sourceSeparate ready.outputFits ready.writable ready.outputSeparate
-    ready.ptr ready.source ready.count) ?_
+    ready.ptr ready.source ready.count (h.callStack restU.sp)) ?_
   rintro v ⟨result, frameV, restV⟩
   have bytes := rsa_bytes_frame frameU (by have := h.maxLength; omega : k < 2 ^ 64)
     (by intro r hr; simp only [List.mem_singleton] at hr; subst r; exact h.stackInput.symm)
@@ -74,9 +193,12 @@ theorem pcFn_ok (s : State) {base dst src : BitVec 32} {len k : Nat}
     rw [restU.sp]
     simp only [BitVec.add_zero, Nat.sub_zero]
     change (⟨State.addr (s.sp - BitVec.ofNat 32 56), 56⟩ : Region).Disjoint r
-    rcases hr with rfl | rfl
+    rcases hr with rfl | rfl | rfl
     · simpa only [FrameStack.belowA, BitVec.add_zero, Nat.sub_zero] using h.stackWorkspace
     · simpa only [FrameStack.belowA, BitVec.add_zero, Nat.sub_zero] using h.stackOutput
+    · have fit := (h.callStack (u := u) restU.sp).fit
+      rw [restU.sp] at fit ⊢
+      exact below48_apart (n := 56) fit (by decide)
   have fit : v.sp.toNat + 56 ≤ 2 ^ 32 := by
     rw [spV, FrameStack.sub_toNat' h.stackFit]
     have := s.sp.isLt
@@ -86,8 +208,17 @@ theorem pcFn_ok (s : State) {base dst src : BitVec 32} {len k : Nat}
     rw [wrV, spV]
     exact List.mem_cons_self
   refine WP.mono (pc_restore_ok v s.gpr fit read saved) ?_
-  rintro t ⟨restored, memT, restT⟩
+  rintro t ⟨restored, memT, restT⟩ ml ul hfl
   have ret : t.gpr .r0 = v.gpr .r0 := restT.gpr .r0 (by decide)
+  have outEq : Spec.Rsa.wordsAt ml (State.addr dst) (2 * Spec.Rsa.modulusWords k) =
+      Spec.Rsa.wordsAt t.mem (State.addr dst) (2 * Spec.Rsa.modulusWords k) := by
+    simp only [Spec.Rsa.wordsAt]
+    refine List.map_congr_left fun i hi => ?_
+    have hi := List.mem_range.mp hi
+    refine Mem.readW_congr fun j hj => ?_
+    rw [Offset.add_add]
+    exact lost_byte hfl (R := ⟨State.addr dst, 16 * Spec.Rsa.modulusWords k⟩) h.stackOutput.symm
+      (by change 8 * i + j < 16 * Spec.Rsa.modulusWords k; omega_using [hi, hj])
   refine ⟨⟨?_, ?_⟩, ?_⟩
   · intro r hr
     have ne : r ≠ .r12 := by intro he; subst r; simp [preserved] at hr
@@ -105,7 +236,8 @@ theorem pcFn_ok (s : State) {base dst src : BitVec 32} {len k : Nat}
     · exact restored (.lr, 52) (by decide)
   · rw [popped_sp, restT.sp, spV]
     exact BitVec.sub_add_cancel _ _
-  · simp only [popped_gpr (by decide : Reg.r0 ≠ .r12), popped_mem, memT, ret]
+  · dsimp only
+    simp only [popped_gpr (by decide : Reg.r0 ≠ .r12), outEq, memT, ret]
     exact result
 
 end VG.Proof.Bignum.Arm
@@ -137,9 +269,13 @@ theorem pcComputed_ready (s : State) {base dst src : BitVec 32} {len k : Nat}
   have countFit := (pc_dimensions h.buffers.minLength h.buffers.maxLength h.buffers.space).2.2.2.2
   refine WP.mono (kernel.correct s h.input.workspace h.input.layout h.input.width h.input.positive
     h.input.fits h.input.sourceFits h.input.readable h.input.separate h.input.ptr h.input.source h.input.count
-    h.input.stackRead h.input.stackSep h.input.saved h.input.large h.input.odd countFit) ?_
+    h.input.stackRead h.input.stackSep h.input.saved h.input.large h.input.odd countFit h.call) ?_
   rintro t ⟨ready, _, _, frame, rest⟩
-  exact ⟨h.buffers.congr rest, h.stack.after_workspace frame rest, ready.layout, ready.width, ready.ptr⟩
+  exact ⟨h.buffers.congr rest, h.stack.after_frame frame (fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact h.stack.separate
+    · exact PcStack.below48 h.call.fit) rest, ready.layout, ready.width, ready.ptr⟩
 
 theorem pcExport_ready (s : State) {base dst src : BitVec 32} {len k : Nat}
     (h : PcComputed base dst src len k s) :
@@ -174,17 +310,23 @@ theorem pcValid_ct {base dst src : BitVec 32} {len k : Nat} {nb : List Byte} (hk
       (PcFn.validWith kernel.code) (fun _ _ => True) := by
   have countFit : 128 * Spec.Rsa.modulusWords k < 2 ^ 32 := by
     simp only [Spec.Rsa.modulusWords]; omega
+  by_cases fitM : Proof.Rsa.Mont.arrAt (Spec.Rsa.modulusWords k) 3 + 32 ≤ 8 * len
+  swap
+  · intro s _ _ _ _ _ h
+    have := (pc_dimensions h.1.1.minLength h.1.1.maxLength h.1.1.space).2.2.1
+    simp only [Proof.Rsa.Mont.arrAt] at this fitM
+    omega
   have prepared := (relCT_keep_sp ((pcPrepare_ct (base := base) (dst := dst) (src := src) (len := len) (k := k)).mono
     (P' := fun (s t : State) =>
       (PcValidInput base dst src len k s ∧ Spec.Rsa.bytesAt s.mem (State.addr src) k = nb) ∧
       (PcValidInput base dst src len k t ∧ Spec.Rsa.bytesAt t.mem (State.addr src) k = nb) ∧ s.sp = t.sp)
     (fun _ _ h => ⟨h.1.1, h.2.1.1, h.2.2⟩) (fun _ _ _ => True.intro)) (fun _ _ h => h.2.2)).wp
     (fun s t h => ⟨pcPrepare_public_ready s h.1.1 h.1.2, pcPrepare_public_ready t h.2.1.1 h.2.1.2⟩)
-  have arithmetic := (relCT_keep_sp ((kernel.ct (nb := nb) countFit).mono
+  have arithmetic := (relCT_keep_sp ((kernel.ct (nb := nb) countFit fitM).mono
     (P' := fun (s t : State) => s.sp = t.sp ∧
       (PcPrepared base dst src len k s ∧ Spec.Rsa.bytesAt s.mem (State.addr src) k = nb) ∧
       (PcPrepared base dst src len k t ∧ Spec.Rsa.bytesAt t.mem (State.addr src) k = nb))
-    (fun _ _ h => ⟨⟨h.2.1.1.input, h.2.1.2⟩, ⟨h.2.2.1.input, h.2.2.2⟩, h.1⟩)
+    (fun _ _ h => ⟨⟨⟨h.2.1.1.input, h.2.1.2⟩, h.2.1.1.call⟩, ⟨⟨h.2.2.1.input, h.2.2.2⟩, h.2.2.1.call⟩, h.1⟩)
     (fun _ _ h => h)) (fun _ _ h => h.1)).wp
     (fun s t h => ⟨pcComputed_ready s h.2.1.1 (kernel := kernel),
       pcComputed_ready t h.2.2.1 (kernel := kernel)⟩)
@@ -239,7 +381,8 @@ theorem pcChecked_ready (s : State) {base dst src : BitVec 32} {len k : Nat} {nb
   have frame : Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem := by rw [mem]; exact Frame.refl _ _
   exact ⟨⟨h.toPcBuffers.congr rest, h.stack.after_workspace frame rest,
     (rest.gpr .r0 (by simp)).trans h.ptr, (rest.gpr .r4 (by simp)).trans h.source,
-    (rest.gpr .r6 (by simp)).trans h.count⟩, by rw [mem]; exact bytes, by rw [bytes] at flag; exact flag⟩
+    (rest.gpr .r6 (by simp)).trans h.count, h.call.of_rest rest⟩, by rw [mem]; exact bytes,
+    by rw [bytes] at flag; exact flag⟩
 
 theorem pcBody_ct {base dst src : BitVec 32} {len k : Nat} {nb : List Byte} (hk : k ≤ 1024)
     (kernel : PublicPrecomputeKernel := baselinePublicPrecomputeKernel) : RelCT isa (fun s t =>
@@ -334,7 +477,7 @@ end
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm
 
-theorem pc_contract_pre (s : State) (h : (Spec.Rsa.publicPrecomputeContract abi 56).pre s) :
+theorem pc_contract_pre (s : State) (h : (Spec.Rsa.publicPrecomputeContract abi 104).pre s) :
     PcFnInput (stackArg s 0) (s.gpr .r0) (s.gpr .r2) (stackArg s 1).toNat (s.gpr .r3).toNat s := by
   sig_pre [Spec.Rsa.publicPrecomputeContract, Spec.Rsa.publicPrecomputeSig, abi, argRegs, reduceClassify, Loc.val, State.addr] at h
   have argAddr : stackArgAddr s 0 = State.addr s.sp := by simp [stackArgAddr]
@@ -344,11 +487,18 @@ theorem pc_contract_pre (s : State) (h : (Spec.Rsa.publicPrecomputeContract abi 
   have outBytes : (s.gpr .r1).toNat * 8 = 16 * Spec.Rsa.modulusWords (s.gpr .r3).toNat := by
     rw [outLen]; simp only [Spec.Rsa.precomputedWords]; omega_using []
   rw [outBytes] at wr outWs stackOut outFit
+  have fit56 : 56 ≤ s.sp.toNat := by omega_arith
   have frame : FrameStack.belowA s.sp 56 = ⟨State.addr s.sp - BitVec.ofNat 64 56, 56⟩ := by
     unfold FrameStack.belowA
+    rw [FrameStack.addr_sub' fit56]
+  have frame104 : FrameStack.belowA s.sp 104 = ⟨State.addr s.sp - BitVec.ofNat 64 104, 104⟩ := by
+    unfold FrameStack.belowA
     rw [FrameStack.addr_sub' stackFit]
+  have sub : Region.Sub ⟨State.addr s.sp - BitVec.ofNat 64 56, 56⟩ ⟨State.addr s.sp - BitVec.ofNat 64 104, 104⟩ := by
+    rw [← frame, ← frame104]; exact FrameStack.belowA_sub (by decide) stackFit
+  simp only [State.addr] at sub
   refine ⟨⟨⟨?_, ?_⟩, valid.1, valid.2, space, srcFit, ?_, ?_, outFit, ?_, ?_⟩,
-    rfl, rfl, ?_, stackFit, argFit, ?_, ?_, ?_, ?_, ?_, ?_⟩
+    rfl, rfl, ?_, fit56, argFit, ?_, ?_, ?_, ?_, ?_, ?_, stackFit, ?_⟩
   · simpa only [Nat.mul_comm] using wsFit
   · rw [wr]; simp [State.addr, Nat.mul_comm]
   · exact ⟨_, List.mem_append_left _ (by rw [rd]; exact List.mem_cons_self), Region.contains_self _ _⟩
@@ -358,14 +508,15 @@ theorem pc_contract_pre (s : State) (h : (Spec.Rsa.publicPrecomputeContract abi 
   · simp
   · exact ⟨_, List.mem_append_left _ (by rw [rd]; simp), Region.contains_self _ _⟩
   · simp only [stackArg, argAddr]
-  · rw [frame]; simpa only [State.addr, Nat.mul_comm] using stackWs
-  · rw [frame]; exact stackSrc
-  · rw [frame]; exact stackOut
-  · rw [frame]; exact stackArgs
+  · rw [frame]; simpa only [State.addr, Nat.mul_comm] using stackWs.sub_left sub
+  · rw [frame]; simpa only [State.addr] using stackSrc.sub_left sub
+  · rw [frame]; simpa only [State.addr] using stackOut.sub_left sub
+  · rw [frame]; simpa only [State.addr] using stackArgs.sub_left sub
+  · rw [frame104]; simpa only [State.addr, Nat.mul_comm] using stackWs
 
-theorem pc_contract_correct (s : State) (h : (Spec.Rsa.publicPrecomputeContract abi 56).pre s)
+theorem pc_contract_correct (s : State) (h : (Spec.Rsa.publicPrecomputeContract abi 104).pre s)
     (kernel : PublicPrecomputeKernel := baselinePublicPrecomputeKernel) : ∃ tr t, Exec isa (PcFn.codeWith kernel.code) s tr t ∧ abiPreserved s t ∧
-      (Spec.Rsa.publicPrecomputeContract abi 56).post s t := by
+      (Spec.Rsa.publicPrecomputeContract abi 104).post s t := by
   obtain ⟨tr, t, run, preserved, post⟩ := pcFn_ok (kernel := kernel) s (pc_contract_pre s h)
   refine ⟨tr, t, run, preserved, ?_⟩
   sig_post [Spec.Rsa.publicPrecomputeContract, Spec.Rsa.publicPrecomputeSig, abi, argRegs, reduceClassify, Loc.val, State.addr]
@@ -376,8 +527,8 @@ theorem pc_contract_correct (s : State) (h : (Spec.Rsa.publicPrecomputeContract 
   exact post
 
 theorem pc_contract_ct
-    (kernel : PublicPrecomputeKernel := baselinePublicPrecomputeKernel) : ConstantTime isa (Spec.Rsa.publicPrecomputeContract abi 56).pre
-    (Spec.Rsa.publicPrecomputeContract abi 56).pub (PcFn.codeWith kernel.code) := by
+    (kernel : PublicPrecomputeKernel := baselinePublicPrecomputeKernel) : ConstantTime isa (Spec.Rsa.publicPrecomputeContract abi 104).pre
+    (Spec.Rsa.publicPrecomputeContract abi 104).pub (PcFn.codeWith kernel.code) := by
   intro s t tr1 tr2 u v hs ht hp e1 e2
   have is := pc_contract_pre s hs
   have it := pc_contract_pre t ht
@@ -416,13 +567,13 @@ def pcSatState : State where
   rd := [⟨0x2000, 64⟩, ⟨0x8000, 8⟩]
   wr := [⟨0x1000, 128⟩, ⟨0x4000, 8448⟩]
 
-theorem pc_contract_sat : ∃ s, (Spec.Rsa.publicPrecomputeContract abi 56).pre s := by
+theorem pc_contract_sat : ∃ s, (Spec.Rsa.publicPrecomputeContract abi 104).pre s := by
   sig_implies_sat [Spec.Rsa.publicPrecomputeContract, Spec.Rsa.publicPrecomputeSig, abi, argRegs, reduceClassify, Loc.val, State.addr]
     [pcSatState, stackArg, stackArgAddr, Mem.readW, Mem.read, Spec.Rsa.lenValid,
       Spec.Rsa.precomputedWords, Spec.Rsa.modulusWords, Spec.Rsa.scratchWords] using pcSatState
 
 theorem precompute_verified
-    (kernel : PublicPrecomputeKernel := baselinePublicPrecomputeKernel) : Verified target (PcFn.codeWith kernel.code) (Spec.Rsa.publicPrecomputeContract abi 56) :=
+    (kernel : PublicPrecomputeKernel := baselinePublicPrecomputeKernel) : Verified target (PcFn.codeWith kernel.code) (Spec.Rsa.publicPrecomputeContract abi 104) :=
   ⟨pc_contract_correct (kernel := kernel), pc_contract_ct (kernel := kernel), pc_contract_sat⟩
 
 end VG.Proof.Bignum.Arm

@@ -1,23 +1,26 @@
 module
-import VerifiedGarbage.Proof.Aes.X86.AesNi.Lit
-public import VerifiedGarbage.Proof.Aes.X86.Frame
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.X86.Print
 
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Aes.Contract
+import VerifiedGarbage.Impl.Aes.X86.Fn
+import VerifiedGarbage.Proof.Aes.X86.Scrub
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # AES (FIPS 197) on x86 -/
 
-@[expose] public section
-
 namespace VG.Artifacts.Aes.X86
 
-def artifacts : List Artifact := [
+public def artifacts : List (Artifact X86.target) := [
   Spec.Aes.expandKeyApi.artifact X86.target {
-    code := Impl.StackScratch.X86.withStackScratchWiped 532 3 128 Impl.Aes.X86.expandKey
-    verified := Proof.Aes.X86.scalar_expandKey_framed },
+    code := Impl.Aes.X86.Fn.expandKey
+    verified := Proof.Aes.X86.Scrub.scalar_scrubbed },
   Spec.Aes.expandKeyApi.artifact X86.target {
     suffix := "_aesni"
-    code := Impl.StackScratch.X86.withStackScratchWiped 532 3 128 Impl.Aes.X86.AesNi.expandKey
-    verified := Proof.Aes.X86.aesni_expandKey_framed }]
+    code := Impl.Aes.X86.Fn.expandKeyAesni
+    verified := Proof.Aes.X86.Scrub.aesni_scrubbed }]
+
+spec_apis artifacts
 
 end VG.Artifacts.Aes.X86

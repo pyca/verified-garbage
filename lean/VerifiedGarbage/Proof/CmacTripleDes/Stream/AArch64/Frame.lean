@@ -1,8 +1,7 @@
 module
+
 public import VerifiedGarbage.Impl.CmacTripleDes.Stream.AArch64
-public import VerifiedGarbage.Proof.CmacTripleDes.Stream.AArch64.Implies
 public import VerifiedGarbage.Impl.StackScratch.AArch64
-import VerifiedGarbage.Proof.CmacTripleDes.Stream.AArch64.Common
 public import VerifiedGarbage.Proof.CmacTripleDes.Stream.AArch64.Contract
 public import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.TCB.AArch64.Target
@@ -14,7 +13,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.CmacTripleDes.AArch64.RoundLit
-import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.CmacTripleDes.Stream
 public import VerifiedGarbage.Proof.Framework.AArch64.Spill
 import VerifiedGarbage.Proof.Framework.AddrArith
@@ -30,6 +29,228 @@ import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Lit
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
+public import VerifiedGarbage.Proof.Framework.Semantics
+import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Finalize
+import VerifiedGarbage.Proof.Cmac.Block
+
+/-! ### `CmacTripleDes.Stream.AArch64.Common`, which only this module used -/
+
+section
+
+/-!
+# Streaming TDEA-CMAC on AArch64: arithmetic, branches, memory and copying bytes
+
+The number of bytes held back, as the code computes it from `count`
+(`held_bv`); the conditions of `cbz` and `cbnz` on a known register; the
+bytes `writeBytes` leaves; and `copy`, which copies the `x8` bytes at `x7`
+to `x6`, a byte at a time (none if `x8` is 0), changing only `x6`–`x9`.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.CmacTripleDes.Stream.AArch64
+
+open VG VG.AArch64 VG.AArch64.RegUpd VG.WriteBytes
+open VG.Impl.CmacTripleDes.Stream.AArch64 (copy)
+open VG.Proof.CmacTripleDes.Stream (held held_pos)
+open VG.Proof.CmacTripleDes.AArch64 (copyStep_ok succ_ofNat ofNat_ne_zero)
+
+/-! ## Arithmetic -/
+
+theorem mz0 : BitVec.setWidth 64 (0 : BitVec 16) <<< (16 * 0) = 0 := by decide
+theorem mz1 : BitVec.setWidth 64 (1 : BitVec 16) <<< (16 * 0) = 1 := by decide
+theorem mz7 : BitVec.setWidth 64 (7 : BitVec 16) <<< (16 * 0) = 7 := by decide
+theorem mz8 : BitVec.setWidth 64 (8 : BitVec 16) <<< (16 * 0) = BitVec.ofNat 64 8 := by decide
+
+theorem and7 (x : BitVec 64) : (x &&& 7).toNat = x.toNat % 8 := by
+  rw [BitVec.toNat_and, show (7 : BitVec 64).toNat = 2 ^ 3 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod]
+
+/-- The number of bytes held back for a nonzero `count`, as `sub 1; and 7; add 1` computes it. -/
+theorem held_bv (c : BitVec 64) (h : c ≠ 0) :
+    ((c - BitVec.ofNat 64 1) &&& 7) + BitVec.ofNat 64 1 = BitVec.ofNat 64 (held c.toNat) := by
+  have hc : c.toNat ≠ 0 := fun e => h (BitVec.eq_of_toNat_eq (by simpa using e))
+  rw [held_pos (by omega_using [hc])]
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.toNat_add, and7, BitVec.toNat_sub]
+  simp only [BitVec.toNat_ofNat]
+  have := c.isLt
+  omega_using [hc]
+
+theorem toNat_add_lt (p : Addr) {d k : Nat} (h : p.toNat + k ≤ 2 ^ 64) (hd : d < k) :
+    (p + BitVec.ofNat 64 d).toNat = p.toNat + d := by
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [h, hd] : d < 2 ^ 64)]
+  exact Nat.mod_eq_of_lt (by omega_using [h, hd])
+
+theorem ofNat_toNat_eq {x : BitVec 64} {n : Nat} (h : x.toNat = n) : x = BitVec.ofNat 64 n :=
+  BitVec.eq_of_toNat_eq (by rw [h, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (h ▸ x.isLt)])
+
+/-! ## Branch conditions -/
+
+theorem eval_zero {s : State} {r : Reg} {x : Nat} (hx : x < 2 ^ 64) (h : s.gpr r = BitVec.ofNat 64 x) :
+    isa.eval (.zero .x r) s = some (decide (x = 0)) := by
+  show some (s.read .x r == 0) = _
+  rw [State.read, h, BitVec.setWidth_eq]
+  have := ofNat_ne_zero hx
+  rw [bne] at this
+  cases hb : (BitVec.ofNat 64 x == 0) <;> rw [hb] at this <;> cases hd : decide (x = 0) <;> simp_all
+
+theorem eval_nonzero {s : State} {r : Reg} {x : Nat} (hx : x < 2 ^ 64) (h : s.gpr r = BitVec.ofNat 64 x) :
+    isa.eval (.nonzero .x r) s = some !decide (x = 0) := by
+  show some (s.read .x r != 0) = _
+  rw [State.read, h, BitVec.setWidth_eq, ofNat_ne_zero hx]
+
+/-! ## Bytes written -/
+
+theorem writeBytes_at (m : Mem) (q : Addr) (xs : List Byte) {i : Nat} (hi : i < 2 ^ 64) :
+    writeBytes m q xs (q + BitVec.ofNat 64 i) =
+      if i < xs.length then xs.getD i 0 else m (q + BitVec.ofNat 64 i) := by
+  simp only [writeBytes, Mem.sub_ofNat_toNat q hi]
+
+theorem bytesAt_writeBytes_self (m : Mem) (q : Addr) {xs : List Byte} (h : xs.length < 2 ^ 64) :
+    Spec.Aes.bytesAt (writeBytes m q xs) q xs.length = xs := by
+  apply List.ext_getElem (by simp [Spec.Aes.bytesAt])
+  intro i h1 _
+  simp only [Spec.Aes.bytesAt, List.length_map, List.length_range] at h1
+  simp only [Spec.Aes.bytesAt, List.getElem_map, List.getElem_range, writeBytes_at m q xs (by omega_arith : i < 2 ^ 64),
+    h1, ↓reduceIte, List.getD_eq_getElem?_getD, List.getElem?_eq_getElem h1, Option.getD_some]
+
+/-- Bytes `[0, r)` from `p` stay, and the bytes `xs` follow them. -/
+theorem bytesAt_writeBytes (m : Mem) (p : Addr) (r : Nat) (xs : List Byte) (h : r + xs.length < 2 ^ 64) :
+    Spec.Aes.bytesAt (writeBytes m (p + BitVec.ofNat 64 r) xs) p (r + xs.length) =
+      Spec.Aes.bytesAt m p r ++ xs := by
+  rw [Proof.Cmac.Stream.bytesAt_append, bytesAt_writeBytes_self _ _ (by omega_using [h])]
+  refine congrArg (· ++ xs) ?_
+  simp only [Spec.Aes.bytesAt]
+  apply List.map_congr_left
+  intro i hi
+  exact writeBytes_before m p xs (List.mem_range.mp hi) (by omega_using [h])
+
+/-! ## Copying bytes -/
+
+/-- What `copy` leaves. -/
+structure Copied (s : State) (C : Addr) (xs : List Byte) (s' : State) : Prop where
+  mem : s'.mem = writeBytes s.mem C xs
+  other : ∀ r, r ≠ .x6 → r ≠ .x7 → r ≠ .x8 → r ≠ .x9 → s'.gpr r = s.gpr r
+  sp : s'.sp = s.sp
+  rd : s'.rd = s.rd
+  wr : s'.wr = s.wr
+
+theorem copy_ok (s : State) {P C : Addr} {L : Nat} (hL : L < 2 ^ 64) (h7 : s.gpr .x7 = P)
+    (h6 : s.gpr .x6 = C) (h8 : s.gpr .x8 = BitVec.ofNat 64 L)
+    (hr : ∀ i < L, InRegions (s.rd ++ s.wr) (P + BitVec.ofNat 64 i) 1)
+    (hw : ∀ i < L, InRegions s.wr (C + BitVec.ofNat 64 i) 1)
+    (hdis : (⟨P, L⟩ : Region).Disjoint ⟨C, L⟩) :
+    WP isa copy s (Copied s C (Spec.Aes.bytesAt s.mem P L)) := by
+  by_cases hL0 : L = 0
+  · subst hL0
+    refine WP.ite true (by rw [eval_zero hL h8]; rfl) (fun _ => WP.block_nil ?_) (fun h => by cases h)
+    exact ⟨by simp [Spec.Aes.bytesAt, writeBytes_nil], fun _ _ _ _ _ => rfl, rfl, rfl, rfl⟩
+  refine WP.ite false (by rw [eval_zero hL h8]; simp [hL0]) (fun h => by cases h) fun _ => ?_
+  refine WP.loop (M := isa) (body := .block Proof.CmacTripleDes.AArch64.copyBody) (c := .nonzero .x .x8)
+    (fun (n : Nat) (t : State) => ∃ i, n = L - i ∧ i < L ∧ t.gpr .x7 = P + BitVec.ofNat 64 i ∧
+      t.gpr .x6 = C + BitVec.ofNat 64 i ∧ t.gpr .x8 = BitVec.ofNat 64 (L - i) ∧
+      t.mem = writeBytes s.mem C (Spec.Aes.bytesAt s.mem P i) ∧
+      (∀ r, r ≠ .x6 → r ≠ .x7 → r ≠ .x8 → r ≠ .x9 → t.gpr r = s.gpr r) ∧
+      t.sp = s.sp ∧ t.rd = s.rd ∧ t.wr = s.wr) ?_ (L - 0) _
+    ⟨0, rfl, by omega_using [hL0], by rw [h7]; simp, by rw [h6]; simp, by rw [h8, Nat.sub_zero],
+      by simp [Spec.Aes.bytesAt, writeBytes_nil], fun _ _ _ _ _ => rfl, rfl, rfl, rfl⟩
+  rintro n t ⟨i, rfl, hi, x7, x6, x8, mem, g, sp, rd, wr⟩
+  obtain ⟨t', run', mem', x7', x6', x8', g', sp', rd', wr'⟩ := copyStep_ok t
+    (A := P + BitVec.ofNat 64 i) (B := C + BitVec.ofNat 64 i) (by rw [x7, BitVec.add_zero])
+    (by rw [x6, BitVec.add_zero]) (by rw [rd, wr]; exact hr i hi) (by rw [wr]; exact hw i hi)
+  refine WP.of_runBlock ⟨t', run', ?_⟩
+  have hlen : (Spec.Aes.bytesAt s.mem P i).length = i := by simp [Spec.Aes.bytesAt]
+  have hx : writeBytes s.mem C (Spec.Aes.bytesAt s.mem P i) (P + BitVec.ofNat 64 i) =
+      s.mem (P + BitVec.ofNat 64 i) :=
+    (writeBytes_frame s.mem C _ (R := ⟨C, i⟩) (by rw [hlen]; exact Region.contains_self _ _)) _
+      fun r hr hcon => by
+        simp only [List.mem_singleton] at hr; subst hr
+        exact hdis _ (Offset.contains_base P (by omega_using [hi]) (by omega_using [hL, hi])) (Region.sub_prefix (by omega_using [hi]) _ hcon)
+  have hmem : t'.mem = writeBytes s.mem C (Spec.Aes.bytesAt s.mem P (i + 1)) := by
+    rw [mem', mem, hx, Proof.Cmac.bytesAt_succ,
+      writeBytes_snoc s.mem C (Spec.Aes.bytesAt s.mem P i) (s.mem (P + BitVec.ofNat 64 i)) (by rw [hlen]; omega_using [hL, hi]),
+      hlen]
+  have x8'' : t'.gpr .x8 = BitVec.ofNat 64 (L - (i + 1)) := by
+    rw [x8', x8, show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl, Offset.ofNat_sub_ofNat (by omega_using [hi])]; rfl
+  have ev := eval_nonzero (s := t') (x := L - (i + 1)) (by omega_using [hL]) x8''
+  have gg : ∀ r, r ≠ .x6 → r ≠ .x7 → r ≠ .x8 → r ≠ .x9 → t'.gpr r = s.gpr r := fun r h₁ h₂ h₃ h₄ => by
+    rw [g' r h₁ h₂ h₃ h₄, g r h₁ h₂ h₃ h₄]
+  by_cases he : i + 1 = L
+  · left
+    refine ⟨by rw [ev]; simp [he], ⟨by rw [hmem, he], gg, by rw [sp', sp], by rw [rd', rd], by rw [wr', wr]⟩⟩
+  · right
+    refine ⟨by rw [ev]; simp; omega_using [hi, he], L - (i + 1), by omega_using [hi], i + 1, rfl, by omega_using [hi, he],
+      by rw [x7', x7, BitVec.add_assoc, succ_ofNat], by rw [x6', x6, BitVec.add_assoc, succ_ofNat], x8'', hmem,
+      gg, by rw [sp', sp], by rw [rd', rd], by rw [wr', wr]⟩
+
+end VG.Proof.CmacTripleDes.Stream.AArch64
+
+end
+
+end
+
+/-! ### `CmacTripleDes.Stream.AArch64.Implies`, which only this module used -/
+
+section
+
+/-!
+# Streaming TDEA-CMAC on AArch64: the shared contracts imply ours
+
+The shared contracts with the working space as an argument
+(`Proof/CmacTripleDes/StreamScratch.lean`), which `Frame.lean` moves to the
+shared contracts of `Spec/Cmac/TripleDesContract.lean`.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.CmacTripleDes.Stream.AArch64
+
+open VG VG.AArch64
+
+/-- A state satisfying `vg_cmac_triple_des_stream_init`'s precondition. -/
+def initSat : State where
+  gpr r := match r with
+    | .x0 => 0x1000 | .x1 => 0x3000 | .x2 => 16 | .x3 => 0x4000 | _ => 0
+  sp := 0x8000
+  mem _ := 0
+  rd := [⟨0x3000, 16⟩]
+  wr := [⟨0x1000, 416⟩, ⟨0x4000, 640⟩]
+
+theorem init_implies : initAArch64.Implies (streamInitScratchContract AArch64.abi 0) := by
+  sig_implies [streamInitScratchContract, streamInitScratchSig, Spec.Cmac.tdesStreamInitPre,
+    Spec.Cmac.tdesStreamInitPost, initAArch64, AArch64.abi, AArch64.argRegs] [initSat] using initSat
+
+/-- A state satisfying `vg_cmac_triple_des_absorb`'s precondition (with no data). -/
+def absorbSat : State where
+  gpr r := match r with
+    | .x0 => 0x1000 | .x2 => 0x3000 | .x4 => 0x4000 | _ => 0
+  sp := 0x8000
+  mem _ := 0
+  rd := [⟨0x3000, 0⟩]
+  wr := [⟨0x1000, 416⟩, ⟨0x4000, 688⟩]
+
+theorem absorb_implies : absorbAArch64.Implies (absorbScratchContract AArch64.abi 0) := by
+  sig_implies [absorbScratchContract, absorbScratchSig, Spec.Cmac.tdesAbsorbPost, absorbAArch64,
+    AArch64.abi, AArch64.argRegs] [absorbSat] using absorbSat
+
+/-- A state satisfying `vg_cmac_triple_des_finish`'s precondition. -/
+def finishSat : State where
+  gpr r := match r with
+    | .x0 => 0x1000 | .x2 => 0x2000 | .x3 => 0x4000 | _ => 0
+  sp := 0x8000
+  mem _ := 0
+  rd := []
+  wr := [⟨0x1000, 416⟩, ⟨0x2000, 8⟩, ⟨0x4000, 640⟩]
+
+theorem finish_implies : finishAArch64.Implies (finishScratchContract AArch64.abi 0) := by
+  sig_implies [finishScratchContract, finishScratchSig, Spec.Cmac.tdesFinishPost, finishAArch64,
+    AArch64.abi, AArch64.argRegs] [finishSat] using finishSat
+
+end VG.Proof.CmacTripleDes.Stream.AArch64
+
+end
+
+end
 
 /-! ### `CmacTripleDes.Stream.AArch64.Verified`, which only this module used -/
 
@@ -90,8 +311,8 @@ theorem initPre_ok {s₀ : State} {St Kp S : Addr} {KL : Nat} (hp : IPre s₀ St
     ∃ s₁, runBlock isa initPre s₀ = some s₁ ∧ s₁.gpr .x0 = Kp ∧ s₁.gpr .x1 = BitVec.ofNat 64 KL ∧
       s₁.gpr .x2 = St ∧ s₁.gpr .x3 = S ∧ (∀ r ∈ preserved, s₁.gpr r = s₀.gpr r) ∧ s₁.sp = s₀.sp ∧
       s₁.mem = zeroCv s₀.mem St ∧ s₁.rd = s₀.rd ∧ s₁.wr = s₀.wr := by
-  have hKL : s₀.gpr .x2 = BitVec.ofNat 64 KL := ofNat_toNat_eq hp.x2
-  have w : InRegions s₀.wr (s₀.gpr .x0 + BitVec.ofNat 64 400) 8 := by
+  obtain hKL : s₀.gpr .x2 = BitVec.ofNat 64 KL := ofNat_toNat_eq hp.x2
+  obtain w : InRegions s₀.wr (s₀.gpr .x0 + BitVec.ofNat 64 400) 8 := by
     rw [hp.wr, hp.x0]; exact ⟨⟨St, 416⟩, by simp, Offset.contains_base _ (by decide) (by have := hp.wSt; omega_using [])⟩
   refine ⟨_, by
     simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLT, Nat.reduceMul, Nat.reduceMod, and_self, initPre, mov,
@@ -107,7 +328,7 @@ theorem initPre_ok {s₀ : State} {St Kp S : Addr} {KL : Nat} (hp : IPre s₀ St
 theorem init_wp {s₀ : State} (h0 : initAArch64.pre s₀) :
     WP isa streamInit s₀ fun s' => (∀ r ∈ preserved, s'.gpr r = s₀.gpr r) ∧ s'.sp = s₀.sp ∧
       initAArch64.post s₀ s' := by
-  have hp := IPre.of h0
+  obtain hp := IPre.of h0
   generalize s₀.gpr .x0 = St at hp
   generalize s₀.gpr .x1 = Kp at hp
   generalize s₀.gpr .x3 = S at hp
@@ -115,8 +336,8 @@ theorem init_wp {s₀ : State} (h0 : initAArch64.pre s₀) :
   have hw := hp.wSt
   obtain ⟨s₁, run₁, x0₁, x1₁, x2₁, x3₁, sv₁, sp₁, m₁, rd₁, wr₁⟩ := initPre_ok hp
   refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
-  have oSt : Region.Sub ⟨St, 400⟩ ⟨St, 416⟩ := Region.sub_prefix (by decide)
-  have args : IArgs s₁ Kp St S KL :=
+  obtain oSt : Region.Sub ⟨St, 400⟩ ⟨St, 416⟩ := Region.sub_prefix (by decide)
+  obtain args : IArgs s₁ Kp St S KL :=
     { x0 := x0₁, x1 := x1₁, x2 := x2₁, x3 := x3₁, klen := hp.klen
       ko := (hp.st_k.sub_left oSt).symm
       ks := hp.k_s
@@ -140,18 +361,18 @@ theorem init_wp {s₀ : State} (h0 : initAArch64.pre s₀) :
         · exact ⟨⟨St, 416⟩, by simp, 0, by simp, by simp⟩
         · exact ⟨⟨S, 640⟩, by simp, 0, by simp, by simp⟩ }
   refine WP.mono (init_inline_wp args) fun s₂ h₂ => ?_
-  have f₁ : Frame [⟨St + BitVec.ofNat 64 400, 8⟩] s₀.mem s₁.mem := by rw [m₁]; exact zeroCv_frame _ _
+  obtain f₁ : Frame [⟨St + BitVec.ofNat 64 400, 8⟩] s₀.mem s₁.mem := by rw [m₁]; exact zeroCv_frame _ _
   refine ⟨fun r hr => by rw [h₂.saved r hr, sv₁ r hr], by rw [h₂.sp, sp₁], ?_⟩
   show Spec.Cmac.tdesRepr s₂.mem (s₀.gpr .x0) (Spec.TripleDes.bytesAt s₀.mem (s₀.gpr .x1) (s₀.gpr .x2).toNat) []
   rw [hp.x0, hp.x1, hp.x2, Proof.CmacTripleDes.Stream.repr_iff]
-  have hkey : Spec.TripleDes.bytesAt s₁.mem Kp KL = Spec.TripleDes.bytesAt s₀.mem Kp KL := by
+  obtain hkey : Spec.TripleDes.bytesAt s₁.mem Kp KL = Spec.TripleDes.bytesAt s₀.mem Kp KL := by
     simp only [Spec.TripleDes.bytesAt]
     refine List.map_congr_left fun i hi => ?_
     exact f₁.bytes (R := ⟨Kp, KL⟩) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact hp.st_k.symm.sub_right (Offset.sub_base St (by decide)))
       (by show KL ≤ 2 ^ 64; have := hp.wK; omega_using [this]) (List.mem_range.mp hi)
-  have hlen : (Spec.TripleDes.bytesAt s₀.mem Kp KL).length = KL := by simp [Spec.TripleDes.bytesAt]
+  obtain hlen : (Spec.TripleDes.bytesAt s₀.mem Kp KL).length = KL := by simp [Spec.TripleDes.bytesAt]
   obtain ⟨hs, hk⟩ := h₂.out
   rw [hkey] at hs hk
   refine ⟨⟨by rw [hlen]; exact hp.klen, hs, hk⟩, ?_, by
@@ -226,9 +447,9 @@ theorem finishPre_ok {s₀ : State} {St O S : Addr} (hp : HPre s₀ St O S) :
       (∀ r ∈ preserved, s₁.gpr r = s₀.gpr r) ∧
       s₁.sp = s₀.sp ∧ s₁.mem = copyCv s₀.mem O St ∧ s₁.rd = s₀.rd ∧ s₁.wr = s₀.wr := by
   have hw := hp.wSt
-  have r₁ : InRegions (s₀.rd ++ s₀.wr) (s₀.gpr .x0 + BitVec.ofNat 64 400) 8 := by
+  obtain r₁ : InRegions (s₀.rd ++ s₀.wr) (s₀.gpr .x0 + BitVec.ofNat 64 400) 8 := by
     rw [hp.rd, hp.wr, hp.x0]; exact ⟨⟨St, 416⟩, by simp, Offset.contains_base _ (by decide) (by omega_using [])⟩
-  have w₁ : InRegions s₀.wr (s₀.gpr .x2 + BitVec.ofNat 64 0) 8 := by
+  obtain w₁ : InRegions s₀.wr (s₀.gpr .x2 + BitVec.ofNat 64 0) 8 := by
     rw [hp.wr, hp.x2, BitVec.add_zero]; exact ⟨⟨O, 8⟩, by simp, Region.contains_self _ _⟩
   refine ⟨_, by
     simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLT, Nat.reduceMul, Nat.reduceMod, and_self, finishPre, mov,
@@ -255,7 +476,7 @@ theorem HPre.fargs {s₀ s : State} {St O S : Addr} {L : Nat} (hp : HPre s₀ St
     (x3 : s.gpr .x3 = BitVec.ofNat 64 L) (x4 : s.gpr .x4 = S) (rd : s.rd = s₀.rd) (wr : s.wr = s₀.wr) :
     FArgs s St O (St + BitVec.ofNat 64 408) S L := by
   have hw := hp.wSt
-  have pSt : Region.Sub ⟨St + BitVec.ofNat 64 408, L⟩ ⟨St, 416⟩ := Offset.sub_base St (by omega_using [hL])
+  obtain pSt : Region.Sub ⟨St + BitVec.ofNat 64 408, L⟩ ⟨St, 416⟩ := Offset.sub_base St (by omega_using [hL])
   exact
   { x0 := x0, x1 := x1, x2 := x2, x3 := x3, x4 := x4, len := hL
     kst := hp.st_o.sub_left (Region.sub_prefix (by decide))
@@ -301,8 +522,8 @@ theorem finPre_wp {s₀ : State} {St O S : Addr} (hp : HPre s₀ St O S) :
     WP isa finPre s₀ (HMid s₀ St O S) := by
   obtain ⟨s₁, run₁, x0₁, x1₁, x2₁, x3₁, x4₁, sv₁, sp₁, m₁, rd₁, wr₁⟩ := finishPre_ok hp
   refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
-  have hc := (s₀.gpr .x1).isLt
-  have h1 : s₀.gpr .x1 = BitVec.ofNat 64 (s₀.gpr .x1).toNat := ofNat_toNat_eq rfl
+  obtain hc := (s₀.gpr .x1).isLt
+  obtain h1 : s₀.gpr .x1 = BitVec.ofNat 64 (s₀.gpr .x1).toNat := ofNat_toNat_eq rfl
   by_cases h0 : (s₀.gpr .x1).toNat = 0
   · refine WP.ite true (by rw [eval_zero hc (by rw [x3₁]; exact h1), h0]; rfl)
       (fun _ => WP.block_nil ?_) (fun h => by cases h)
@@ -310,10 +531,10 @@ theorem finPre_wp {s₀ : State} {St O S : Addr} (hp : HPre s₀ St O S) :
     rw [x3₁, h1, h0]; rfl
   · refine WP.ite false (by rw [eval_zero hc (by rw [x3₁]; exact h1)]; simp [h0])
       (fun h => by cases h) fun _ => ?_
-    have hne : s₀.gpr .x1 ≠ 0 := fun e => h0 (by rw [e]; rfl)
+    obtain hne : s₀.gpr .x1 ≠ 0 := fun e => h0 (by rw [e]; rfl)
     obtain ⟨s₂, run₂, x3₂, g₂, sp₂, m₂, rd₂, wr₂⟩ := lastLen_ok s₁ x3₁ hne
     refine WP.of_runBlock ⟨s₂, run₂, ?_⟩
-    have hc : ∀ r ∈ preserved, r ≠ .x3 ∧ r ≠ .x9 := by decide
+    obtain hc : ∀ r ∈ preserved, r ≠ .x3 ∧ r ≠ .x9 := by decide
     refine ⟨hp.fargs (held_le _) (by rw [g₂ _ (by decide) (by decide), x0₁])
       (by rw [g₂ _ (by decide) (by decide), x1₁]) (by rw [g₂ _ (by decide) (by decide), x2₁])
       x3₂ (by rw [g₂ _ (by decide) (by decide), x4₁]) (by rw [rd₂, rd₁]) (by rw [wr₂, wr₁]), by rw [m₂, m₁],
@@ -322,33 +543,33 @@ theorem finPre_wp {s₀ : State} {St O S : Addr} (hp : HPre s₀ St O S) :
 theorem finish_wp {s₀ : State} (h0 : finishAArch64.pre s₀) :
     WP isa finish s₀ fun s' => (∀ r ∈ preserved, s'.gpr r = s₀.gpr r) ∧ s'.sp = s₀.sp ∧
       finishAArch64.post s₀ s' := by
-  have hp := HPre.of h0
+  obtain hp := HPre.of h0
   generalize s₀.gpr .x0 = St at hp
   generalize s₀.gpr .x2 = O at hp
   generalize s₀.gpr .x3 = S at hp
   have hw := hp.wSt
   refine WP.seq (WP.mono (finPre_wp hp) fun s₁ h₁ => ?_)
   refine WP.mono (fin_wp h₁.args) fun s₂ h₂ => ?_
-  have f₁ : Frame [⟨O, 8⟩] s₀.mem s₁.mem := by rw [h₁.mem]; exact copyCv_frame _ _ _
+  obtain f₁ : Frame [⟨O, 8⟩] s₀.mem s₁.mem := by rw [h₁.mem]; exact copyCv_frame _ _ _
   refine ⟨fun r hr => by rw [h₂.saved r hr, h₁.saved r hr], by rw [h₂.sp, h₁.sp], ?_⟩
   intro key msg hr hc hlen
   rw [hp.x0] at hr
   rw [hp.x2]
-  have hr₁ : Spec.Cmac.tdesRepr s₁.mem St key msg :=
+  obtain hr₁ : Spec.Cmac.tdesRepr s₁.mem St key msg :=
     Proof.CmacTripleDes.Stream.repr_congr_416 (fun i hi => f₁.bytes (R := ⟨St, 416⟩) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact hp.st_o) (by show 416 ≤ 2 ^ 64; decide) hi) hr
   obtain ⟨hm, hne, hst, happ⟩ := Proof.CmacTripleDes.Stream.repr_finish hr₁
   rw [Proof.CmacTripleDes.Stream.repr_iff] at hr₁
   obtain ⟨⟨_, hks, hsk⟩, -, -⟩ := hr₁
-  have hn : (s₀.gpr .x1).toNat = msg.length := by rw [hc, toNat_ofNat hlen]
-  have hciph : Proof.CmacTripleDes.AArch64.ciphAt s₁.mem St = Spec.Cmac.tdes key := by
+  obtain hn : (s₀.gpr .x1).toNat = msg.length := by rw [hc, toNat_ofNat hlen]
+  obtain hciph : Proof.CmacTripleDes.AArch64.ciphAt s₁.mem St = Spec.Cmac.tdes key := by
     simp only [Proof.CmacTripleDes.AArch64.ciphAt, hks, Spec.Cmac.tdes]
-  have e₂ : Spec.Aes.bytesAt s₁.mem O 8 = Spec.Aes.bytesAt s₁.mem (St + 400) 8 := by
+  obtain e₂ : Spec.Aes.bytesAt s₁.mem O 8 = Spec.Aes.bytesAt s₁.mem (St + 400) 8 := by
     rw [h₁.mem, copyCv_bytes, show St + 400 = St + BitVec.ofNat 64 400 from rfl]
     exact (Proof.Cmac.bytesAt_frame (copyCv_frame _ _ _) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact hp.st_o.sub_left (Offset.sub_base St (d := 400) (n := 8) (by decide))) (by decide)).symm
-  have out := h₂.out (by rw [hciph]; exact hsk) _ hm (by rw [hn]; exact hne)
+  obtain out := h₂.out (by rw [hciph]; exact hsk) _ hm (by rw [hn]; exact hne)
     (by rw [hciph, e₂]; exact hst)
   rw [out, hciph, hn, show St + BitVec.ofNat 64 408 = St + 408 from rfl, happ,
     Proof.CmacTripleDes.Stream.tdesCmac_eq]
@@ -431,7 +652,7 @@ theorem nb8_bv {x : Nat} (hx : 0 < x) (hx' : x < 2 ^ 64) :
     BitVec.ofNat 64 x - BitVec.ofNat 64 1 - ((BitVec.ofNat 64 x - BitVec.ofNat 64 1) &&& 7) =
       BitVec.ofNat 64 (8 * ((x - 1) / 8)) := by
   apply BitVec.eq_of_toNat_eq
-  have e : (BitVec.ofNat 64 x - BitVec.ofNat 64 1).toNat = x - 1 := by
+  obtain e : (BitVec.ofNat 64 x - BitVec.ofNat 64 1).toNat = x - 1 := by
     rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat]; omega_using [hx, hx']
   rw [BitVec.toNat_sub, and7, e, BitVec.toNat_ofNat]
   omega_using []
@@ -518,7 +739,7 @@ theorem clamp_wp {s : State} {L : Nat} (hL : L < 2 ^ 64) (h22 : s.gpr .x22 = Bit
     refine ⟨_, rfl, by simp [gpr_write, State.read, h22, shr_ofNat hL], ?_⟩
     simp only [State.read, h22, BitVec.setWidth_eq, shr_ofNat hL]
   refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
-  have ev := eval_zero (s := s₁) (x := L / 8) (by omega_using [hL]) x10₁
+  obtain ev := eval_zero (s := s₁) (x := L / 8) (by omega_using [hL]) x10₁
   subst g₁
   by_cases hl : L < 8
   · refine WP.ite true (by rw [ev]; simp; omega_using [hl]) (fun _ => ?_) (fun h => by cases h)
@@ -538,9 +759,9 @@ theorem fill_wp {s : State} {St D : Addr} {c L : Nat} (hL : L < 2 ^ 64)
       s'.gpr .x7 = D ∧
       (∀ r, r ≠ .x6 → r ≠ .x7 → r ≠ .x8 → r ≠ .x10 → r ≠ .x11 → s'.gpr r = s.gpr r) ∧
       s'.sp = s.sp ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
-  have hh := held_le c
+  obtain hh := held_le c
   refine WP.seq (WP.mono (clamp_wp hL h22) fun s₁ ⟨x10₁, g₁, sp₁, m₁, rd₁, wr₁⟩ => ?_)
-  have x9₁ : s₁.gpr .x9 = BitVec.ofNat 64 (held c) := by rw [g₁ _ (by decide), h9]
+  obtain x9₁ : s₁.gpr .x9 = BitVec.ofNat 64 (held c) := by rw [g₁ _ (by decide), h9]
   obtain ⟨s₂, run₂, x8₂, x10₂, x11₂, g₂, sp₂, m₂, rd₂, wr₂⟩ : ∃ s₂, runBlock isa [.movz .x .x8 8 0,
       .sub .x .x8 .x8 .x9, .sub .x .x11 .x10 .x8, .lsr .x .x11 .x11 63] s₁ = some s₂ ∧
       s₂.gpr .x8 = BitVec.ofNat 64 (8 - held c) ∧ s₂.gpr .x10 = BitVec.ofNat 64 (min L 8) ∧
@@ -555,7 +776,7 @@ theorem fill_wp {s : State} {St D : Addr} {c L : Nat} (hL : L < 2 ^ 64)
         Offset.ofNat_sub_ofNat hh]
       exact lsr63 (by omega_using []) (by omega_using [])
   refine WP.seq (WP.of_runBlock ⟨s₂, run₂, ?_⟩)
-  have hf : fOf c L = min (min L 8) (8 - held c) := by unfold fOf; omega_using []
+  obtain hf : fOf c L = min (min L 8) (8 - held c) := by unfold fOf; omega_using []
   refine WP.seq (WP.mono (Q := fun (s₃ : State) => s₃.gpr .x8 = BitVec.ofNat 64 (fOf c L) ∧
     (∀ r, r ≠ .x8 → s₃.gpr r = s₂.gpr r) ∧ s₃.sp = s₂.sp ∧ s₃.mem = s₂.mem ∧ s₃.rd = s₂.rd ∧
       s₃.wr = s₂.wr) ?_ fun s₃ h₃ => ?_)
@@ -690,7 +911,7 @@ theorem rest_ok {s : State} {D : Addr} {a x n : Nat} (hn : 8 * n ≤ x)
       s'.gpr .x7 = D + BitVec.ofNat 64 (a + 8 * n) ∧ s'.gpr .x8 = BitVec.ofNat 64 (x - 8 * n) ∧
       (∀ r ∈ preserved, r ≠ .x21 → r ≠ .x22 → s'.gpr r = s.gpr r) ∧
       s'.sp = s.sp ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
-  have e : D + BitVec.ofNat 64 a + BitVec.ofNat 64 (8 * n) = D + BitVec.ofNat 64 (a + 8 * n) :=
+  obtain e : D + BitVec.ofNat 64 a + BitVec.ofNat 64 (8 * n) = D + BitVec.ofNat 64 (a + 8 * n) :=
     Offset.add_add _ _ _
   refine ⟨_, rfl, ?_, ?_, ?_, ?_, ?_, fun r hr a b => ?_, rfl, rfl, rfl, rfl⟩
   · simp only [State.read, gpr_write, ↓reduceIte, reduceCtorEq, BitVec.setWidth_eq, h21, h20, e]
@@ -779,8 +1000,8 @@ theorem APre.uargs {s : State} {Dd : Addr} {n : Nat} (hx0 : s.gpr .x0 = St)
       off + 8 * n ≤ r'.len) :
     UArgs s St (St + BitVec.ofNat 64 400) Dd S n := by
   have hw := hp.wSt
-  have c400 : Region.Sub ⟨St + BitVec.ofNat 64 400, 8⟩ ⟨St, 416⟩ := Offset.sub_base St (by decide)
-  have s640 : Region.Sub ⟨S, 640⟩ ⟨S, 688⟩ := Region.sub_prefix (by decide)
+  obtain c400 : Region.Sub ⟨St + BitVec.ofNat 64 400, 8⟩ ⟨St, 416⟩ := Offset.sub_base St (by decide)
+  obtain s640 : Region.Sub ⟨S, 640⟩ ⟨S, 688⟩ := Region.sub_prefix (by decide)
   exact
   { x0 := hx0, x1 := hx1, x2 := hx2, x3 := hx3, x4 := hx4, hn := hn
     wc := Offset.base_disjoint St (by decide) (by omega_using [])
@@ -830,12 +1051,12 @@ structure AMid₁ (s₀ : State) (St D S : Addr) (L : Nat) (s : State) : Prop wh
 theorem absorbPre_wp {s₀ : State} {St D S : Addr} {L : Nat} (hp : APre s₀ St D S L) :
     WP isa absorbPre s₀ (AMid₁ s₀ St D S L) := by
   generalize hc : (s₀.gpr .x1).toNat = c
-  have hcl : c < 2 ^ 64 := by rw [← hc]; exact BitVec.isLt _
-  have hdx : s₀.gpr .x1 = BitVec.ofNat 64 c := ofNat_toNat_eq hc
+  obtain hcl : c < 2 ^ 64 := by rw [← hc]; exact BitVec.isLt _
+  obtain hdx : s₀.gpr .x1 = BitVec.ofNat 64 c := ofNat_toNat_eq hc
   have hL := hp.lt
   have hw := hp.wSt
   have ⟨hfL, hfh⟩ := f_le c L
-  have hh := held_le c
+  obtain hh := held_le c
   obtain ⟨s₁, run₁, x19₁, x21₁, x22₁, x23₁, g₁, sp₁, m₁, rd₁, wr₁⟩ :=
     save_ok s₀ hp.x4 fun d _ h => hp.inS (by omega_using [h])
   refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
@@ -844,7 +1065,7 @@ theorem absorbPre_wp {s₀ : State} {St D S : Addr} {L : Nat} (hp : APre s₀ St
   refine WP.seq (WP.mono (fill_wp (St := St) (D := D) hL x9₂ (by rw [g₂ _ (by decide) (by decide), x22₁, hp.x3'])
     (by rw [g₂ _ (by decide) (by decide), x19₁, hp.x0]) (by rw [g₂ _ (by decide) (by decide), x21₁, hp.x2]))
     fun s₃ ⟨x8₃, x10₃, x6₃, x7₃, g₃, sp₃, m₃, rd₃, wr₃⟩ => ?_)
-  have dCp : Region.Sub ⟨St + BitVec.ofNat 64 (408 + held c), fOf c L⟩ ⟨St, 416⟩ :=
+  obtain dCp : Region.Sub ⟨St + BitVec.ofNat 64 (408 + held c), fOf c L⟩ ⟨St, 416⟩ :=
     Offset.sub_base St (by omega_using [hfh])
   refine WP.seq (WP.mono (copy_ok s₃ (P := D) (C := St + BitVec.ofNat 64 (408 + held c)) (L := fOf c L)
     (by omega_using [hfh]) x7₃ x6₃ x8₃
@@ -864,15 +1085,15 @@ theorem absorbPre_wp {s₀ : State} {St D S : Addr} {L : Nat} (hp : APre s₀ St
     fun s₅ h₅ => ?_
   obtain ⟨x21₅, x22₅, x3₅, x0₅, x1₅, x2₅, x4₅, sv₅, sp₅, m₅, rd₅, wr₅⟩ := h₅
   have k (r : Reg) (hr : r ∈ preserved) (a : r ≠ .x21) (b : r ≠ .x22) : s₅.gpr r = s₁.gpr r := by
-    have hcc : ∀ r ∈ preserved, r ≠ .x6 ∧ r ≠ .x7 ∧ r ≠ .x8 ∧ r ≠ .x9 ∧ r ≠ .x10 ∧ r ≠ .x11 := by decide
-    have hc := hcc r hr
+    obtain hcc : ∀ r ∈ preserved, r ≠ .x6 ∧ r ≠ .x7 ∧ r ≠ .x8 ∧ r ≠ .x9 ∧ r ≠ .x10 ∧ r ≠ .x11 := by decide
+    obtain hc := hcc r hr
     rw [sv₅ r hr a b, g r hc.1 hc.2.1 hc.2.2.1 hc.2.2.2.1 hc.2.2.2.2.1 hc.2.2.2.2.2]
-  have hrd : s₅.rd = s₀.rd := by rw [rd₅, h₄.rd, rd₃, rd₂, rd₁]
-  have hwr : s₅.wr = s₀.wr := by rw [wr₅, h₄.wr, wr₃, wr₂, wr₁]
-  have hb1 : 8 * b1Of c L ≤ 8 := by unfold b1Of; split <;> omega_using []
-  have c408 : Region.Sub ⟨St + BitVec.ofNat 64 408, 8 * b1Of c L⟩ ⟨St, 416⟩ :=
+  obtain hrd : s₅.rd = s₀.rd := by rw [rd₅, h₄.rd, rd₃, rd₂, rd₁]
+  obtain hwr : s₅.wr = s₀.wr := by rw [wr₅, h₄.wr, wr₃, wr₂, wr₁]
+  obtain hb1 : 8 * b1Of c L ≤ 8 := by unfold b1Of; split <;> omega_using []
+  obtain c408 : Region.Sub ⟨St + BitVec.ofNat 64 408, 8 * b1Of c L⟩ ⟨St, 416⟩ :=
     Offset.sub_base St (by omega_using [hb1])
-  have m₀ : s₅.mem = m4 s₀ St D S c L := by rw [m₅, h₄.mem, m₃, m₂, m₁, m4]
+  obtain m₀ : s₅.mem = m4 s₀ St D S c L := by rw [m₅, h₄.mem, m₃, m₂, m₁, m4]
   subst hc
   refine ⟨hp.uargs x0₅ x1₅ x2₅ (by rw [x3₅, b1Of, leftOf]) x4₅ hrd hwr (by omega_using [hb1])
       (Offset.disjoint St (by omega_using []) (by omega_using [hb1]) (by omega_using []))
@@ -949,17 +1170,17 @@ theorem absorb₂_after {s₀ s : State} {St D S : Addr} {L : Nat} (hp : APre s�
     (h : AAfter₁ s₀ St D S L s) : WP isa absorb₂ s (AAfter₂ s₀ St D S L) := by
   obtain ⟨c, hc⟩ : ∃ c, (s₀.gpr .x1).toNat = c := ⟨_, rfl⟩
   have hL := hp.lt
-  have hsum := nb_le c L
+  obtain hsum := nb_le c L
   obtain ⟨x19₆, x21₆, x22₆, x23₆, sp₆, rd₆, wr₆⟩ := h
   rw [hc] at x21₆ x22₆
   refine WP.seq (WP.mono (chain2_wp (x := leftOf c L) (by unfold leftOf; omega_using [hL]) x22₆) fun s₇ h₇ => ?_)
   obtain ⟨x20₇, x3₇, x0₇, x1₇, x2₇, x4₇, sv₇, sp₇, m₇, rd₇, wr₇⟩ := h₇
   have hnb : (if leftOf c L = 0 then 0 else (leftOf c L - 1) / 8) = nbOf c L := rfl
   rw [hnb] at x20₇ x3₇
-  have dD : Region.Sub ⟨D + BitVec.ofNat 64 (fOf c L), 8 * nbOf c L⟩ ⟨D, L⟩ :=
+  obtain dD : Region.Sub ⟨D + BitVec.ofNat 64 (fOf c L), 8 * nbOf c L⟩ ⟨D, L⟩ :=
     Offset.sub_base D (by omega_using [hsum])
-  have c400 : Region.Sub ⟨St + BitVec.ofNat 64 400, 8⟩ ⟨St, 416⟩ := Offset.sub_base St (by decide)
-  have args₇ := hp.uargs (s := s₇) (Dd := D + BitVec.ofNat 64 (fOf c L)) (n := nbOf c L)
+  obtain c400 : Region.Sub ⟨St + BitVec.ofNat 64 400, 8⟩ ⟨St, 416⟩ := Offset.sub_base St (by decide)
+  obtain args₇ := hp.uargs (s := s₇) (Dd := D + BitVec.ofNat 64 (fOf c L)) (n := nbOf c L)
     (by rw [x0₇, x19₆]) (by rw [x1₇, x19₆]) (by rw [x2₇, x21₆]) x3₇ (by rw [x4₇, x23₆])
     (by rw [rd₇, rd₆]) (by rw [wr₇, wr₆]) (by omega_using [hL, hsum]) ((hp.st_d.sub_left c400).symm.sub_left dD)
     ((hp.d_s.sub_left dD).sub_right (Region.sub_prefix (by decide)))
@@ -980,7 +1201,7 @@ theorem absorb₂_after {s₀ s : State} {St D S : Addr} {L : Nat} (hp : APre s�
 theorem absorb_wp {s₀ : State} (h0 : absorbAArch64.pre s₀) :
     WP isa absorb s₀ fun s' => ((∀ r ∈ preserved, s'.gpr r = s₀.gpr r) ∧ s'.sp = s₀.sp) ∧
       absorbAArch64.post s₀ s' := by
-  have hp := APre.of h0
+  obtain hp := APre.of h0
   generalize s₀.gpr .x0 = St at hp
   generalize s₀.gpr .x2 = D at hp
   generalize s₀.gpr .x4 = S at hp
@@ -990,8 +1211,8 @@ theorem absorb_wp {s₀ : State} (h0 : absorbAArch64.pre s₀) :
   have hw := hp.wSt
   have hsw := hp.wS
   have ⟨hfL, hfh⟩ := f_le c L
-  have hsum := nb_le c L
-  have hh := held_le c
+  obtain hsum := nb_le c L
+  obtain hh := held_le c
   refine WP.seq (WP.seq (WP.mono (absorbPre_wp hp) fun s₅ h₅ => ?_))
   obtain ⟨args₅, x19₅, x21₅, x22₅, x23₅, o₅, sp₅, m₅, rd₅, wr₅⟩ := h₅
   rw [hc] at args₅ x21₅ x22₅ m₅
@@ -1004,10 +1225,10 @@ theorem absorb_wp {s₀ : State} (h0 : absorbAArch64.pre s₀) :
   rw [hnb] at x20₇ x3₇
   have k₇ (r : Reg) (hr : r ∈ preserved) (a : r ≠ .x20) : s₇.gpr r = s₅.gpr r := by
     rw [sv₇ r hr a, k₆ r hr]
-  have dD : Region.Sub ⟨D + BitVec.ofNat 64 (fOf c L), 8 * nbOf c L⟩ ⟨D, L⟩ :=
+  obtain dD : Region.Sub ⟨D + BitVec.ofNat 64 (fOf c L), 8 * nbOf c L⟩ ⟨D, L⟩ :=
     Offset.sub_base D (by omega_using [hsum])
-  have c400 : Region.Sub ⟨St + BitVec.ofNat 64 400, 8⟩ ⟨St, 416⟩ := Offset.sub_base St (by decide)
-  have args₇ := hp.uargs (s := s₇) (Dd := D + BitVec.ofNat 64 (fOf c L)) (n := nbOf c L)
+  obtain c400 : Region.Sub ⟨St + BitVec.ofNat 64 400, 8⟩ ⟨St, 416⟩ := Offset.sub_base St (by decide)
+  obtain args₇ := hp.uargs (s := s₇) (Dd := D + BitVec.ofNat 64 (fOf c L)) (n := nbOf c L)
     (by rw [x0₇, k₆ .x19 (by simp [preserved]), x19₅])
     (by rw [x1₇, k₆ .x19 (by simp [preserved]), x19₅])
     (by rw [x2₇, k₆ .x21 (by simp [preserved]), x21₅]) x3₇
@@ -1027,12 +1248,12 @@ theorem absorb_wp {s₀ : State} (h0 : absorbAArch64.pre s₀) :
     (by rw [k₈ .x20 (by simp [preserved]), x20₇])
     (by rw [k₈ .x22 (by simp [preserved]), k₇ .x22 (by simp [preserved]) (by decide), x22₅])
   refine WP.seq (WP.of_runBlock ⟨s₉, run₉, ?_⟩)
-  have rd₉' : s₉.rd = s₀.rd := by rw [rd₉, h₈.rd, rd₇, h₆.rd, rd₅]
-  have wr₉' : s₉.wr = s₀.wr := by rw [wr₉, h₈.wr, wr₇, h₆.wr, wr₅]
-  have dR : Region.Sub ⟨D + BitVec.ofNat 64 (fOf c L + 8 * nbOf c L), restOf c L⟩ ⟨D, L⟩ :=
+  obtain rd₉' : s₉.rd = s₀.rd := by rw [rd₉, h₈.rd, rd₇, h₆.rd, rd₅]
+  obtain wr₉' : s₉.wr = s₀.wr := by rw [wr₉, h₈.wr, wr₇, h₆.wr, wr₅]
+  obtain dR : Region.Sub ⟨D + BitVec.ofNat 64 (fOf c L + 8 * nbOf c L), restOf c L⟩ ⟨D, L⟩ :=
     Offset.sub_base D (by omega_using [hsum])
-  have hrr : restOf c L ≤ 8 := by unfold restOf nbOf leftOf; split <;> omega_arith
-  have sR : Region.Sub ⟨St + BitVec.ofNat 64 408, restOf c L⟩ ⟨St, 416⟩ :=
+  obtain hrr : restOf c L ≤ 8 := by unfold restOf nbOf leftOf; split <;> omega_arith
+  obtain sR : Region.Sub ⟨St + BitVec.ofNat 64 408, restOf c L⟩ ⟨St, 416⟩ :=
     Offset.sub_base St (by omega_using [hrr])
   refine WP.seq (WP.mono (copy_ok s₉ (P := D + BitVec.ofNat 64 (fOf c L + 8 * nbOf c L))
     (C := St + BitVec.ofNat 64 408) (L := restOf c L) (by omega_using [hrr]) x7₉
@@ -1040,7 +1261,7 @@ theorem absorb_wp {s₀ : State} (h0 : absorbAArch64.pre s₀) :
     (fun i hi => by rw [rd₉', wr₉', Offset.add_add]; exact hp.inD (by omega_using [hsum, hi]))
     (fun i hi => by rw [wr₉', Offset.add_add]; exact hp.inSt (by omega_using [hrr, hi]))
     ((hp.st_d.sub_left sR).symm.sub_left dR)) fun s₁₀ h₁₀ => ?_)
-  have x23₁₀ : s₁₀.gpr .x23 = S := by
+  obtain x23₁₀ : s₁₀.gpr .x23 = S := by
     rw [h₁₀.other _ (by decide) (by decide) (by decide) (by decide),
       sv₉ _ (by simp [preserved]) (by decide) (by decide),
       k₈ .x23 (by simp [preserved]), k₇ .x23 (by simp [preserved]) (by decide), x23₅]
@@ -1051,27 +1272,27 @@ theorem absorb_wp {s₀ : State} (h0 : absorbAArch64.pre s₀) :
       exact ⟨r, List.mem_append_right _ hr, hc⟩)
   refine WP.of_runBlock ⟨s₁₁, run₁₁, ?_⟩
   -- The frames.
-  have hlf : (Spec.Aes.bytesAt (absSavedMem s₀ S) D (fOf c L)).length = fOf c L :=
+  obtain hlf : (Spec.Aes.bytesAt (absSavedMem s₀ S) D (fOf c L)).length = fOf c L :=
     Proof.Cmac.bytesAt_length _ _ _
-  have hlr : (Spec.Aes.bytesAt s₉.mem (D + BitVec.ofNat 64 (fOf c L + 8 * nbOf c L)) (restOf c L)).length =
+  obtain hlr : (Spec.Aes.bytesAt s₉.mem (D + BitVec.ofNat 64 (fOf c L + 8 * nbOf c L)) (restOf c L)).length =
     restOf c L := Proof.Cmac.bytesAt_length _ _ _
-  have fS : Frame [⟨S + BitVec.ofNat 64 640, 40⟩] s₀.mem (absSavedMem s₀ S) := absSavedMem_frame _ _
-  have fC1 : Frame [⟨St + BitVec.ofNat 64 (408 + held c), fOf c L⟩] (absSavedMem s₀ S) s₅.mem := by
+  obtain fS : Frame [⟨S + BitVec.ofNat 64 640, 40⟩] s₀.mem (absSavedMem s₀ S) := absSavedMem_frame _ _
+  obtain fC1 : Frame [⟨St + BitVec.ofNat 64 (408 + held c), fOf c L⟩] (absSavedMem s₀ S) s₅.mem := by
     rw [m₅, m4]; exact writeBytes_frame _ _ _ (by rw [hlf]; exact Region.contains_self _ _)
   have f6 : Frame [⟨St + BitVec.ofNat 64 400, 8⟩, ⟨S, 640⟩] s₅.mem s₆.mem := h₆.frame
-  have f8 : Frame [⟨St + BitVec.ofNat 64 400, 8⟩, ⟨S, 640⟩] s₆.mem s₈.mem := by
+  obtain f8 : Frame [⟨St + BitVec.ofNat 64 400, 8⟩, ⟨S, 640⟩] s₆.mem s₈.mem := by
     rw [← m₇]; exact h₈.frame
-  have fC2 : Frame [⟨St + BitVec.ofNat 64 408, restOf c L⟩] s₈.mem s₁₁.mem := by
+  obtain fC2 : Frame [⟨St + BitVec.ofNat 64 408, restOf c L⟩] s₈.mem s₁₁.mem := by
     rw [m₁₁, h₁₀.mem, m₉]
     exact writeBytes_frame _ _ _ (by rw [← m₉, hlr]; exact Region.contains_self _ _)
   let K : List Region := [⟨S + BitVec.ofNat 64 640, 40⟩, ⟨St + BitVec.ofNat 64 (408 + held c), fOf c L⟩,
     ⟨St + BitVec.ofNat 64 400, 8⟩, ⟨S, 640⟩, ⟨St + BitVec.ofNat 64 408, restOf c L⟩]
-  have F5 : Frame K s₀.mem s₅.mem := (fS.mono (by simp [K])).trans (fC1.mono (by simp [K]))
-  have F6 : Frame K s₀.mem s₆.mem := F5.trans (f6.mono (by simp [K]))
-  have F8 : Frame K s₀.mem s₈.mem := F6.trans (f8.mono (by simp [K]))
-  have F11 : Frame K s₀.mem s₁₁.mem := F8.trans (fC2.mono (by simp [K]))
+  obtain F5 : Frame K s₀.mem s₅.mem := (fS.mono (by simp [K])).trans (fC1.mono (by simp [K]))
+  obtain F6 : Frame K s₀.mem s₆.mem := F5.trans (f6.mono (by simp [K]))
+  obtain F8 : Frame K s₀.mem s₈.mem := F6.trans (f8.mono (by simp [K]))
+  obtain F11 : Frame K s₀.mem s₁₁.mem := F8.trans (fC2.mono (by simp [K]))
   -- The key and the data are in none of these.
-  have dK : ∀ r ∈ K, (⟨St, 400⟩ : Region).Disjoint r := by
+  obtain dK : ∀ r ∈ K, (⟨St, 400⟩ : Region).Disjoint r := by
     intro r hr
     simp only [K, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl
@@ -1080,7 +1301,7 @@ theorem absorb_wp {s₀ : State} (h0 : absorbAArch64.pre s₀) :
     · exact Offset.base_disjoint St (by omega_using []) (by omega_using [])
     · exact (hp.st_s.sub_left (Region.sub_prefix (by decide))).sub_right (Region.sub_prefix (by decide))
     · exact Offset.base_disjoint St (by omega_using []) (by omega_using [hrr])
-  have dDat : ∀ r ∈ K, (⟨D, L⟩ : Region).Disjoint r := by
+  obtain dDat : ∀ r ∈ K, (⟨D, L⟩ : Region).Disjoint r := by
     intro r hr
     simp only [K, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl
@@ -1089,16 +1310,16 @@ theorem absorb_wp {s₀ : State} (h0 : absorbAArch64.pre s₀) :
     · exact hp.st_d.symm.sub_right (Offset.sub_base St (by decide))
     · exact hp.d_s.sub_right (Region.sub_prefix (by decide))
     · exact hp.st_d.symm.sub_right (Offset.sub_base St (by omega_using [hrr]))
-  have k0 : ∀ p : Addr, p + BitVec.ofNat 64 0 = p := fun p => BitVec.add_zero p
+  obtain k0 : ∀ p : Addr, p + BitVec.ofNat 64 0 = p := fun p => BitVec.add_zero p
   refine ⟨⟨fun r hr => ?_, by rw [sp₁₁, h₁₀.sp, sp₉, h₈.sp, sp₇, h₆.sp, sp₅]⟩, ?_⟩
   · -- The registers, restored from their slots.
-    have Fp : Frame K.tail (absSavedMem s₀ S) s₁₁.mem :=
+    obtain Fp : Frame K.tail (absSavedMem s₀ S) s₁₁.mem :=
       ((fC1.mono (by simp [K])).trans (f6.mono (by simp [K]))).trans
         ((f8.mono (by simp [K])).trans (fC2.mono (by simp [K])))
     have slot (d : Nat) (h₁ : 640 ≤ d) (h₂ : d + 8 ≤ 680) :
         s₁₀.mem.readW (S + BitVec.ofNat 64 d) 64 = (absSavedMem s₀ S).readW (S + BitVec.ofNat 64 d) 64 := by
       rw [← m₁₁]
-      have sub : Region.Sub ⟨S + BitVec.ofNat 64 d, 8⟩ ⟨S, 688⟩ := Offset.sub_base S (by omega_using [h₂])
+      obtain sub : Region.Sub ⟨S + BitVec.ofNat 64 d, 8⟩ ⟨S, 688⟩ := Offset.sub_base S (by omega_using [h₂])
       refine Fp.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide)
       simp only [K, List.tail_cons, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl
@@ -1107,11 +1328,11 @@ theorem absorb_wp {s₀ : State} (h0 : absorbAArch64.pre s₀) :
       · exact Offset.disjoint_base S (by omega_using [h₁]) (by omega_using [h₂])
       · exact (hp.st_s.sub_left (Offset.sub_base St (by omega_using [hrr]))).symm.sub_left sub
     have sl {r : Reg} {d : Nat} (h : (r, d) ∈ saved) : s₁₁.gpr r = s₀.gpr r := by
-      have hd : 640 ≤ d ∧ d + 8 ≤ 680 := by
+      obtain hd : 640 ≤ d ∧ d + 8 ≤ 680 := by
         simp only [saved, List.mem_cons, List.not_mem_nil, or_false, Prod.mk.injEq] at h
         omega
       rw [slot₁₁ r d h, slot d hd.1 hd.2, absSaved_slot s₀ S h]
-    have hc' : ∀ r ∈ preserved, r ≠ .x19 → r ≠ .x20 → r ≠ .x21 → r ≠ .x22 → r ≠ .x23 →
+    obtain hc' : ∀ r ∈ preserved, r ≠ .x19 → r ≠ .x20 → r ≠ .x21 → r ≠ .x22 → r ≠ .x23 →
         r ≠ .x6 ∧ r ≠ .x7 ∧ r ≠ .x8 ∧ r ≠ .x9 := by decide
     have oth (r : Reg) (hr : r ∈ preserved) (a : r ≠ .x19) (b : r ≠ .x20) (c : r ≠ .x21) (d : r ≠ .x22)
         (e : r ≠ .x23) : s₁₁.gpr r = s₀.gpr r := by
@@ -1130,22 +1351,22 @@ theorem absorb_wp {s₀ : State} (h0 : absorbAArch64.pre s₀) :
     rw [hp.x0] at hr ⊢
     rw [hp.x2, hp.x3]
     rw [hp.x3] at hlen
-    have hcm : c = msg.length := by rw [← hc, hcnt, toNat_ofNat (by omega_using [hlen])]
+    obtain hcm : c = msg.length := by rw [← hc, hcnt, toNat_ofNat (by omega_using [hlen])]
     subst hcm
-    have hsch := ((Proof.CmacTripleDes.Stream.repr_iff _ _ _ _).mp hr).1.2.1
-    have ciph : ∀ m : Mem, Frame K s₀.mem m →
+    obtain hsch := ((Proof.CmacTripleDes.Stream.repr_iff _ _ _ _).mp hr).1.2.1
+    obtain ciph : ∀ m : Mem, Frame K s₀.mem m →
         Proof.CmacTripleDes.AArch64.ciphAt m St = Spec.Cmac.tdes key := fun m hf => by
       simp only [Proof.CmacTripleDes.AArch64.ciphAt, Spec.Cmac.tdes]
       rw [Proof.CmacTripleDes.scheduleAt_congr fun i hi => frame_at hf dK (by omega_using [hw]) (by omega_using [hi]),
         hsch]
     -- The data, wherever it is read.
-    have dat : ∀ m : Mem, Frame K s₀.mem m → ∀ a b : Nat, a + b ≤ L →
+    obtain dat : ∀ m : Mem, Frame K s₀.mem m → ∀ a b : Nat, a + b ≤ L →
         Spec.Aes.bytesAt m (D + BitVec.ofNat 64 a) b =
           ((Spec.Aes.bytesAt s₀.mem D L).drop a).take b := fun m hf a b hab => by
       rw [Proof.Cmac.Stream.bytesAt_offset m D hab, bytesAt_frame hf dDat (by omega_using [hlen])]
-    have fS' : Frame K s₀.mem (absSavedMem s₀ S) := fS.mono (by simp [K])
+    obtain fS' : Frame K s₀.mem (absSavedMem s₀ S) := fS.mono (by simp [K])
     -- The chaining value.
-    have cv5 : Spec.Aes.bytesAt s₅.mem (St + BitVec.ofNat 64 400) 8 =
+    obtain cv5 : Spec.Aes.bytesAt s₅.mem (St + BitVec.ofNat 64 400) 8 =
         Spec.Aes.bytesAt s₀.mem (St + BitVec.ofNat 64 400) 8 := by
       rw [bytesAt_frame fC1 (fun r hr => by
           simp only [List.mem_singleton] at hr; subst hr
@@ -1155,7 +1376,7 @@ theorem absorb_wp {s₀ : State} (h0 : absorbAArch64.pre s₀) :
           simp only [List.mem_singleton] at hr; subst hr
           exact (hp.st_s.sub_left (Offset.sub_base St (by decide))).sub_right (Offset.sub_base S (by decide)))
           (by decide)]
-    have cv11 : Spec.Aes.bytesAt s₁₁.mem (St + BitVec.ofNat 64 400) 8 =
+    obtain cv11 : Spec.Aes.bytesAt s₁₁.mem (St + BitVec.ofNat 64 400) 8 =
         Spec.Aes.bytesAt s₈.mem (St + BitVec.ofNat 64 400) 8 :=
       bytesAt_frame fC2 (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
@@ -1165,14 +1386,14 @@ theorem absorb_wp {s₀ : State} (h0 : absorbAArch64.pre s₀) :
     rw [ciph _ F5] at out6
     have out8 := h₈.out
     rw [m₇, ciph _ F6] at out8
-    have hk : ∀ i < 400, s₁₁.mem (St + BitVec.ofNat 64 i) = s₀.mem (St + BitVec.ofNat 64 i) :=
+    obtain hk : ∀ i < 400, s₁₁.mem (St + BitVec.ofNat 64 i) = s₀.mem (St + BitVec.ofNat 64 i) :=
       fun i hi => frame_at F11 dK (by omega_using [hw]) hi
-    have hdl : (Spec.Aes.bytesAt s₀.mem D L).length = L := Proof.Cmac.bytesAt_length _ _ _
+    obtain hdl : (Spec.Aes.bytesAt s₀.mem D L).length = L := Proof.Cmac.bytesAt_length _ _ _
     -- The bytes held back so far, and the first `f` bytes of data after them.
-    have hb5 : Spec.Aes.bytesAt s₅.mem (St + BitVec.ofNat 64 408) (held msg.length + fOf msg.length L) =
+    obtain hb5 : Spec.Aes.bytesAt s₅.mem (St + BitVec.ofNat 64 408) (held msg.length + fOf msg.length L) =
         Spec.Aes.bytesAt s₀.mem (St + BitVec.ofNat 64 408) (held msg.length) ++
           (Spec.Aes.bytesAt s₀.mem D L).take (fOf msg.length L) := by
-      have e := bytesAt_writeBytes (absSavedMem s₀ S) (St + BitVec.ofNat 64 408) (held msg.length)
+      obtain e := bytesAt_writeBytes (absSavedMem s₀ S) (St + BitVec.ofNat 64 408) (held msg.length)
         (Spec.Aes.bytesAt (absSavedMem s₀ S) D (fOf msg.length L)) (by rw [hlf]; omega_using [hfh])
       rw [hlf] at e
       rw [m₅, m4, ← Offset.add_add, e,
@@ -1187,11 +1408,11 @@ theorem absorb_wp {s₀ : State} (h0 : absorbAArch64.pre s₀) :
     generalize hd : Spec.Aes.bytesAt s₀.mem D L = d at hdl hb5 dat ⊢
     by_cases hx : leftOf msg.length L = 0
     · -- Everything fits in the block held back.
-      have hfL' : fOf msg.length L = L := by unfold leftOf at hx; omega_using [hsum, hx]
-      have hb : b1Of msg.length L = 0 := by simp [b1Of, hx]
-      have hn : nbOf msg.length L = 0 := by simp [nbOf, hx]
-      have hr0 : restOf msg.length L = 0 := by simp [restOf, hn, hx]
-      have m118 : s₁₁.mem = s₈.mem := by
+      obtain hfL' : fOf msg.length L = L := by unfold leftOf at hx; omega_using [hsum, hx]
+      obtain hb : b1Of msg.length L = 0 := by simp [b1Of, hx]
+      obtain hn : nbOf msg.length L = 0 := by simp [nbOf, hx]
+      obtain hr0 : restOf msg.length L = 0 := by simp [restOf, hn, hx]
+      obtain m118 : s₁₁.mem = s₈.mem := by
         rw [m₁₁, h₁₀.mem, m₉, hr0, show Spec.Aes.bytesAt s₈.mem
           (D + BitVec.ofNat 64 (fOf msg.length L + 8 * nbOf msg.length L)) 0 = [] from rfl, writeBytes_nil]
       refine Proof.CmacTripleDes.Stream.repr_fill hr hk
@@ -1200,9 +1421,9 @@ theorem absorb_wp {s₀ : State} (h0 : absorbAArch64.pre s₀) :
         rw [cv11, out8, hn, blocksAt_zero, out6, hb, blocksAt_zero]
         exact cv5
       · show Spec.Aes.bytesAt _ (St + BitVec.ofNat 64 408) _ = Spec.Aes.bytesAt _ (St + BitVec.ofNat 64 408) _ ++ _
-        have sub : Region.Sub ⟨St + BitVec.ofNat 64 408, held msg.length + L⟩ ⟨St, 416⟩ :=
+        obtain sub : Region.Sub ⟨St + BitVec.ofNat 64 408, held msg.length + L⟩ ⟨St, 416⟩ :=
           Offset.sub_base St (by omega_using [hfh, hfL'])
-        have dj : ∀ r ∈ [⟨St + BitVec.ofNat 64 400, 8⟩, ⟨S, 640⟩],
+        obtain dj : ∀ r ∈ [⟨St + BitVec.ofNat 64 400, 8⟩, ⟨S, 640⟩],
             (⟨St + BitVec.ofNat 64 408, held msg.length + L⟩ : Region).Disjoint r := by
           intro r hr
           simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -1214,10 +1435,10 @@ theorem absorb_wp {s₀ : State} (h0 : absorbAArch64.pre s₀) :
         rw [m118, hdl, bytesAt_frame f8 dj (by omega_using [hfh, hfL']),
           bytesAt_frame f6 dj (by omega_using [hfh, hfL']), hb5']
     · -- The block held back is complete, and more blocks may follow.
-      have hlt : 8 - held msg.length < L := by unfold leftOf fOf at hx; omega_using [hx]
-      have hf' : fOf msg.length L = 8 - held msg.length := by unfold fOf; omega_using [hlt]
-      have hb : b1Of msg.length L = 1 := by simp [b1Of, hx]
-      have hn : nbOf msg.length L = Proof.CmacTripleDes.Stream.nblocks msg.length L := by
+      obtain hlt : 8 - held msg.length < L := by unfold leftOf fOf at hx; omega_using [hx]
+      obtain hf' : fOf msg.length L = 8 - held msg.length := by unfold fOf; omega_using [hlt]
+      obtain hb : b1Of msg.length L = 1 := by simp [b1Of, hx]
+      obtain hn : nbOf msg.length L = Proof.CmacTripleDes.Stream.nblocks msg.length L := by
         simp only [nbOf, hx, ↓reduceIte]
         unfold leftOf Proof.CmacTripleDes.Stream.nblocks
         rw [hf']
@@ -1230,11 +1451,11 @@ theorem absorb_wp {s₀ : State} (h0 : absorbAArch64.pre s₀) :
         rw [cv11, out8, out6, hb, blocksAt_one, cv5, Proof.Cmac.chain_append,
           Proof.CmacTripleDes.Stream.blocksAt_eq, dat _ F6 _ _ (by omega_using [hsum]), hb5', hdl, hf', hn]
       · show Spec.Aes.bytesAt _ (St + BitVec.ofNat 64 408) _ = _
-        have e := bytesAt_writeBytes_self s₈.mem (St + BitVec.ofNat 64 408)
+        obtain e := bytesAt_writeBytes_self s₈.mem (St + BitVec.ofNat 64 408)
           (xs := Spec.Aes.bytesAt s₈.mem (D + BitVec.ofNat 64 (fOf msg.length L + 8 * nbOf msg.length L))
             (restOf msg.length L)) (by rw [Proof.Cmac.bytesAt_length]; omega_using [hrr])
         rw [Proof.Cmac.bytesAt_length] at e
-        have hr' : d.length - (8 - held msg.length) - 8 * Proof.CmacTripleDes.Stream.nblocks msg.length d.length =
+        obtain hr' : d.length - (8 - held msg.length) - 8 * Proof.CmacTripleDes.Stream.nblocks msg.length d.length =
             restOf msg.length L := by
           rw [hdl, ← hn, ← hf']; rfl
         rw [hr', m₁₁, h₁₀.mem, m₉, e, dat _ F8 _ _ (by omega_using [hsum]),
@@ -1277,8 +1498,8 @@ theorem absorb_rel {s₀ s₀' : State} (h0 : absorbAArch64.pre s₀) (h0' : abs
     (hq : absorbAArch64.pub s₀ s₀') :
     RelCT isa (fun a b => a = s₀ ∧ b = s₀') absorb fun _ _ => True := by
   obtain ⟨q0, q1, q2, q3, q4, q5⟩ := hq
-  have hp := APre.of h0
-  have hp' : APre s₀' (s₀.gpr .x0) (s₀.gpr .x2) (s₀.gpr .x4) (s₀.gpr .x3).toNat := by
+  obtain hp := APre.of h0
+  obtain hp' : APre s₀' (s₀.gpr .x0) (s₀.gpr .x2) (s₀.gpr .x4) (s₀.gpr .x3).toNat := by
     rw [q0, q2, q3, q4]; exact APre.of h0'
   generalize s₀.gpr .x0 = St at hp hp'
   generalize s₀.gpr .x2 = D at hp hp'
@@ -1287,7 +1508,7 @@ theorem absorb_rel {s₀ s₀' : State} (h0 : absorbAArch64.pre s₀) (h0' : abs
   obtain ⟨_, hA⟩ := absorb₁_taint
   obtain ⟨_, hB⟩ := absorb₂_taint
   obtain ⟨_, hC⟩ := absorb₃_taint
-  have a := (RelCT.taint (A := taint) (P := fun a b => a = s₀ ∧ b = s₀') _
+  obtain a := (RelCT.taint (A := taint) (P := fun a b => a = s₀ ∧ b = s₀') _
     (fun a b h => by
       obtain ⟨rfl, rfl⟩ := h
       refine agree_of q5 fun r hr => ?_
@@ -1296,7 +1517,7 @@ theorem absorb_rel {s₀ s₀' : State} (h0 : absorbAArch64.pre s₀) (h0' : abs
       exacts [q0, q1, q2, q3, q4]) hA).wp
     (F₁ := AAfter₁ s₀ St D S L) (F₂ := AAfter₁ s₀' St D S L) fun a b h => by
       obtain ⟨rfl, rfl⟩ := h; exact ⟨absorb₁_after hp, absorb₁_after hp'⟩
-  have m := (RelCT.taint (A := taint) (P := fun a b => AAfter₁ s₀ St D S L a ∧ AAfter₁ s₀' St D S L b) _
+  obtain m := (RelCT.taint (A := taint) (P := fun a b => AAfter₁ s₀ St D S L a ∧ AAfter₁ s₀' St D S L b) _
     (fun a b h => by
       refine agree_of (by rw [h.1.sp, h.2.sp, q5]) fun r hr => ?_
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -1307,7 +1528,7 @@ theorem absorb_rel {s₀ s₀' : State} (h0 : absorbAArch64.pre s₀) (h0' : abs
       · rw [h.1.x23, h.2.x23]) hB).wp
     (F₁ := AAfter₂ s₀ St D S L) (F₂ := AAfter₂ s₀' St D S L) fun a b h =>
       ⟨absorb₂_after hp h.1, absorb₂_after hp' h.2⟩
-  have p := RelCT.taint (A := taint) (P := fun a b => AAfter₂ s₀ St D S L a ∧ AAfter₂ s₀' St D S L b) _
+  obtain p := RelCT.taint (A := taint) (P := fun a b => AAfter₂ s₀ St D S L a ∧ AAfter₂ s₀' St D S L b) _
     (fun a b h => by
       refine agree_of (by rw [h.1.sp, h.2.sp, q5]) fun r hr => ?_
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -1398,20 +1619,23 @@ theorem init_framed :
   AArch64.Verified.stackScratch (sig := Spec.Cmac.tdesStreamInitSig) (nm := "scratch") (e := .u64) (n := 80)
     (pre := Spec.Cmac.tdesStreamInitPre AArch64.abi.ptrBits)
     (post := Spec.Cmac.tdesStreamInitPost AArch64.abi.ptrBits)
-    (wa := false) (stack := 0) (bytes := 640) init_verified (by decide) (by decide) initFrameSat_pre
+    (wa := false) (stack := 0) (bytes := 640) init_verified (by decide) (by decide)
+    (fun vs m m₁ m₂ r hl _ => Proof.CmacTripleDes.Stream.streamInitPostOut_local _ vs m m₁ m₂ r hl) initFrameSat_pre
 
 theorem absorb_framed :
     Verified AArch64.target (Impl.StackScratch.AArch64.withStackScratch 688 .x4 absorb)
       (Spec.Cmac.tdesAbsorbContract AArch64.abi 688) :=
   AArch64.Verified.stackScratch (sig := Spec.Cmac.tdesAbsorbSig) (nm := "scratch") (e := .u64) (n := 86)
     (post := Spec.Cmac.tdesAbsorbPost AArch64.abi.ptrBits)
-    (wa := false) (stack := 0) (bytes := 688) absorb_verified (by decide) (by decide) absorbFrameSat_pre
+    (wa := false) (stack := 0) (bytes := 688) absorb_verified (by decide) (by decide)
+    (fun vs m m₁ m₂ r hl _ => Proof.CmacTripleDes.Stream.absorbPostOut_local _ vs m m₁ m₂ r hl) absorbFrameSat_pre
 
 theorem finish_framed :
     Verified AArch64.target (Impl.StackScratch.AArch64.withStackScratch 640 .x3 finish)
       (Spec.Cmac.tdesFinishContract AArch64.abi 640) :=
   AArch64.Verified.stackScratch (sig := Spec.Cmac.tdesFinishSig) (nm := "scratch") (e := .u64) (n := 80)
     (post := Spec.Cmac.tdesFinishPost AArch64.abi.ptrBits)
-    (wa := false) (stack := 0) (bytes := 640) finish_verified (by decide) (by decide) finishFrameSat_pre
+    (wa := false) (stack := 0) (bytes := 640) finish_verified (by decide) (by decide)
+    (fun vs m m₁ m₂ r hl _ => Proof.CmacTripleDes.Stream.finishPostOut_local _ vs m m₁ m₂ r hl) finishFrameSat_pre
 
 end VG.Proof.CmacTripleDes.Stream.AArch64

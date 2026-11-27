@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Sm3.initContract`. The streaming state is the hash value followed by a buffered partial block (`VG.Spec.Sm3.Repr`).
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 96 bytes.
@@ -15,7 +17,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sm3_init(state: *mut [u8; 96]) {
     core::arch::naked_asm!(
-        r#".base64 "i0QkBLlvFoBziQi5ubIUSYlIBLnXQiQXiUgIuQAGitqJSAy5vDBvqYlIELmqODEWiUgUuU3ujeOJSBi5Tg77sIlIHMM="
+        r#".base64 "i0QkBLlvFoBziQi5ubIUSYlIBLnXQiQXiUgIuQAGitqJSAy5vDBvqYlIELmqODEWiUgUuU3ujeOJSBi5Tg77sIlIHLgAAAAAugAAAAAxyWYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ww=="
 .p2align 6"#,
     )
 }
@@ -23,6 +25,8 @@ pub(crate) unsafe extern "C" fn vg_sm3_init(state: *mut [u8; 96]) {
 /// Absorbs data into an SM3 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), it then represents that message followed by the `len` bytes at `data`.
 ///
 /// Contract: `VG.Spec.Sm3.updateContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -97,7 +101,7 @@ call {vg_sm3_compress}
 .base64 "WFhYWLkBAAAAhck="
 220:
 jne 20b
-.base64 "i0QkGItYcItwdIt4eItofI2kJLwAAADD"
+.base64 "i0QkGItYcItwdIt4eItofI2kJLwAAABmD+/AjaQkMP////MPfwQk8w9/RCQQ8w9/RCQg8w9/RCQw8w9/RCRA8w9/RCRQ8w9/RCRg8w9/RCRw8w9/hCSAAAAA8w9/hCSQAAAA8w9/hCSgAAAA8w9/hCSwAAAA8w9/hCTAAAAAjaQk0AAAALgAAAAAugAAAAAxyWYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ww=="
 .p2align 6"#,
         vg_sm3_compress = sym super::sm3::vg_sm3_compress::vg_sm3_compress,
     )
@@ -106,6 +110,8 @@ jne 20b
 /// Finishes an SM3 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), writes the SM3 hash value of that message (32 bytes) to `*out`.
 ///
 /// Contract: `VG.Spec.Sm3.finalizeContract`. Constant time: only the pointers and `count` may affect timing, not the state.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -150,7 +156,7 @@ jmp 29f
 call {vg_sm3_compress}
 .base64 "WFhYWL8AAAAAg+4B"
 je 22b
-.base64 "i4WIAAAAiwsPyYkIi0sED8mJSASLSwgPyYlICItLDA/JiUgMi0sQD8mJSBCLSxQPyYlIFItLGA/JiUgYi0scD8mJSByLXXCLdXSLfXiLbXyNpCS4AAAAww=="
+.base64 "i4WIAAAAiwsPyYkIi0sED8mJSASLSwgPyYlICItLDA/JiUgMi0sQD8mJSBCLSxQPyYlIFItLGA/JiUgYi0scD8mJSByLXXCLdXSLfXiLbXyNpCS4AAAAZg/vwLkAAAAAjaQkNP////MPfwQk8w9/RCQQ8w9/RCQg8w9/RCQw8w9/RCRA8w9/RCRQ8w9/RCRg8w9/RCRw8w9/hCSAAAAA8w9/hCSQAAAA8w9/hCSgAAAA8w9/hCSwAAAAiYwkwAAAAImMJMQAAACJjCTIAAAAjaQkzAAAALgAAAAAugAAAAAxyWYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ww=="
 .p2align 6"#,
         vg_sm3_compress = sym super::sm3::vg_sm3_compress::vg_sm3_compress,
     )

@@ -5,23 +5,29 @@ public import VerifiedGarbage.TCB.Arm.Isa
 /-!
 # RC4 on ARMv7
 
-As on x86 (`Impl/Rc4/X86.lean`), the 256-byte table at `r12` is visited as
-64 words at fixed addresses: a secret-indexed lookup keeps, with masks, the
-word that holds the byte and then the byte of it; a secret-indexed
-replacement stores every word back, XORed with a masked difference that is
-nonzero only in the selected byte. A mask is all ones or zero by a
-comparison (`cmp`, which sets the carry flag unless the difference
-borrows) and `adc` of all ones (`r10`) and zero: `-1 + C`. Only the word
-addresses, the PRGA index `i`, the key offset, the pointers and the lengths
-are public.
+The 256-byte table at `r12` is visited as 64 words at fixed addresses, 32
+rows of two. The row of a secret index, its high five bits, is a one-hot
+word in `r10` (`oneHot`), and each row has a selector from its bit, 1 for the
+index's row and 0 for the others (`rowSel`). A lookup adds each word times
+its row's selector to the register of its column, `r7` or `r8`, and chooses
+between the two by the index's bit 2 (`gatherWord`), then takes the index's
+byte of that word by two conditional shifts (`pickByte`); a conditional step
+is a multiplication by a bit of the index and an addition (`mla`). A
+replacement makes the difference between the word with its byte replaced and
+the word (`deltaWord`), and adds to each word of the table, stored back, its
+row's selector times that difference, or times zero in the other column
+(`splitDelta`, `scatterRow`). Only the word addresses, the PRGA index `i`,
+the key offset, the pointers and the lengths are public.
 
-Registers: the table at `r12`, all ones in `r10`, the public index `i` in
-`r4`, `j` in `r5`, the secret index of a lookup or replacement in `r6`, its
-result in `r7`; `r8`, `r9` and `r11` are scratch. Initialization keeps the
-key at `r0`, its length in `r1` and the key offset in `r2`; the stream
-function the count of bytes done in `r0`, the data at `r1` and its length in
-`r2`. `scratch` stays in `r3`: our caller's `r4`–`r11` are saved in its first
-32 bytes and restored from there at the end. No stack is used.
+Registers: the table at `r12`, all ones in `r10` between lookups (for the
+key offset's mask; a lookup keeps its one-hot word there and sets it back),
+the public index `i` in `r4`, `j` in `r5`, the secret index of a lookup or
+replacement in `r6`, its result in `r7`; `r8`, `r9` and `r11` are scratch.
+Initialization keeps the key at `r0`, its length in `r1` and the key offset
+in `r2`; the stream function the count of bytes done in `r0`, the data at
+`r1` and its length in `r2`. `scratch` stays in `r3`: our caller's
+`r4`–`r11` are saved in its first 32 bytes and restored from there at the
+end. No stack is used.
 -/
 
 @[expose] public section
@@ -33,57 +39,84 @@ open VG.Arm
 /-- An immediate. -/
 def imm (n : Nat) : Op2 := .imm (BitVec.ofNat 32 n)
 
-/-- `r9` := all ones if `r6 XOR 4k < 4` (byte `r6` is in word `k`), else 0. -/
-def rowMask (k : Nat) : List Instr :=
-  [.dp .eor .r9 .r6 (imm (4 * k)), .cmp .r9 (imm 4), .adc .r9 .r10 (imm 0)]
+/-- `r10` := all ones. -/
+def ones : List Instr := [.movw .r10 0xFFFF, .movt .r10 0xFFFF]
 
-/-- `r9` := all ones if `r6 AND 3 = j`, else 0. -/
-def laneMask (j : Nat) : List Instr :=
-  [.dp .and .r9 .r6 (imm 3), .dp .eor .r9 .r9 (imm j), .cmp .r9 (imm 1), .adc .r9 .r10 (imm 0)]
+/-- `d` := bit `k` (below 31) of `src`: 0 or 1. -/
+def bit (d src : Reg) (k : Nat) : List Instr :=
+  [.mov d (.shifted src .lsl (31 - k)), .mov d (.shifted d .lsr 31)]
 
-/-- Keep word `k` in `r8` if it holds byte `r6`. -/
-def gatherStep (k : Nat) : List Instr :=
-  rowMask k ++ ([.ldr .r11 .r12 (4 * k), .dp .and .r9 .r9 (.reg .r11), .dp .orr .r8 .r8 (.reg .r9)] :
-    List Instr)
+/-- A step of the one-hot word: `r10` shifted left by `2 ^ b` if bit `3 + b`
+of the index `r6` is set. -/
+def ohStep (b : Nat) : List Instr :=
+  bit .r11 .r6 (3 + b) ++ ([.mov .r9 (.shifted .r10 .lsl (2 ^ b)), .dp .sub .r9 .r9 (.reg .r10),
+    .mla .r10 .r9 .r11 .r10] : List Instr)
 
-/-- Keep byte `j` of the word in `r8` (shifted down by `8j` so far) in `r7` if
-it is byte `r6`. -/
-def pickStep (j : Nat) : List Instr :=
-  laneMask j ++ ([.dp .and .r9 .r9 (.reg .r8), .dp .orr .r7 .r7 (.reg .r9),
-    .mov .r8 (.shifted .r8 .lsr 8)] : List Instr)
+/-- `r10` := the one-hot word of the row of the index `r6` (below 256):
+bit `r6 >> 3`. Clobbers `r9` and `r11`. -/
+def oneHot : List Instr :=
+  bit .r11 .r6 3 ++ ([.dp .add .r10 .r11 (imm 1)] : List Instr) ++ ohStep 1 ++ ohStep 2 ++ ohStep 3 ++ ohStep 4
+
+/-- `d` := the selector of row `r`: bit `r` of the one-hot word `r10`. -/
+def rowSel (d : Reg) (r : Nat) : List Instr :=
+  if r = 31 then [.mov d (.shifted .r10 .lsr 31)] else bit d .r10 r
+
+/-- Row `r` of a lookup: its two words, times its selector, added to `r7`
+and `r8`. -/
+def gatherRow (r : Nat) : List Instr :=
+  rowSel .r11 r ++ ([.ldr .r9 .r12 (8 * r), .mla .r7 .r9 .r11 .r7, .ldr .r9 .r12 (8 * r + 4),
+    .mla .r8 .r9 .r11 .r8] : List Instr)
+
+/-- `r7` := the word of the table that holds the byte at the index `r6`.
+Leaves the index's one-hot word in `r10`; clobbers `r8`, `r9` and `r11`. -/
+def gatherWord : List Instr :=
+  oneHot ++ ([.mov .r7 (imm 0), .mov .r8 (imm 0)] : List Instr) ++ (List.range 32).flatMap gatherRow ++
+    bit .r11 .r6 2 ++ ([.dp .sub .r8 .r8 (.reg .r7), .mla .r7 .r8 .r11 .r7] : List Instr)
+
+/-- `r7` := byte `r6 & 3` of the word in `r7`: shifted right by 8 if bit 0
+of `r6` is set, by 16 if bit 1 is. Clobbers `r9` and `r11`. -/
+def pickByte : List Instr :=
+  bit .r11 .r6 0 ++ ([.mov .r9 (.shifted .r7 .lsr 8), .dp .sub .r9 .r9 (.reg .r7), .mla .r7 .r9 .r11 .r7] :
+    List Instr) ++ bit .r11 .r6 1 ++
+    ([.mov .r9 (.shifted .r7 .lsr 16), .dp .sub .r9 .r9 (.reg .r7), .mla .r7 .r9 .r11 .r7,
+      .dp .and .r7 .r7 (imm 255)] : List Instr)
 
 /-- The byte of the table at `r12` indexed by the low byte `r6`, into `r7`.
-Clobbers `r8`, `r9`, `r11` and the flags. -/
-def lookup : List Instr :=
-  ([.mov .r8 (imm 0)] : List Instr) ++ (List.range 64).flatMap gatherStep ++
-    ([.mov .r7 (imm 0)] : List Instr) ++ (List.range 4).flatMap pickStep ++
-    ([.dp .and .r7 .r7 (imm 255)] : List Instr)
-
-/-- Shift the difference in `r8` up a byte and add the byte in `r7` if `j` is
-the lane of `r6`. -/
-def spreadStep (j : Nat) : List Instr :=
-  laneMask j ++ ([.dp .and .r9 .r9 (.reg .r7), .mov .r8 (.shifted .r8 .ror 24),
-    .dp .orr .r8 .r8 (.reg .r9)] : List Instr)
-
-/-- XOR word `k` with the difference in `r8` if it holds byte `r6`, and store
-it back. -/
-def scatterStep (k : Nat) : List Instr :=
-  rowMask k ++ ([.dp .and .r9 .r9 (.reg .r8), .ldr .r11 .r12 (4 * k), .dp .eor .r9 .r9 (.reg .r11),
-    .str .r9 .r12 (4 * k)] : List Instr)
-
-/-- The lanes 3 down to 0. -/
-def lanesDown : List Nat := [3, 2, 1, 0]
+Clobbers `r8`, `r9` and `r11`; `r10` is all ones again afterwards. -/
+def lookup : List Instr := gatherWord ++ pickByte ++ ones
 
 /-- `r11` := the byte at the public index `r4` of the table. -/
 def loadI : List Instr := [.dp .add .r9 .r12 (.reg .r4), .ldrb .r11 .r9 0]
 
+/-- With the word of the index `r6` in `r7`: `r8` := the difference between
+that word with its byte `r6 & 3` replaced by the byte at the public index
+`r4`, and the word. `2 ^ (8 L)` for `L = r6 & 3` is made in `r8`, the byte
+times it and 255 times it in `r11` and `r9`. -/
+def deltaWord : List Instr :=
+  bit .r11 .r6 0 ++ ([.mov .r8 (.shifted .r11 .lsl 8), .dp .sub .r8 .r8 (.reg .r11), .dp .add .r8 .r8 (imm 1)] :
+    List Instr) ++ bit .r11 .r6 1 ++
+    ([.mov .r9 (.shifted .r11 .lsl 16), .dp .sub .r9 .r9 (.reg .r11), .dp .add .r9 .r9 (imm 1),
+      .mul .r8 .r8 .r9] : List Instr) ++ loadI ++
+    ([.mul .r11 .r11 .r8, .mov .r9 (.shifted .r8 .lsl 8), .dp .sub .r9 .r9 (.reg .r8),
+      .dp .bic .r8 .r7 (.reg .r9), .dp .orr .r8 .r8 (.reg .r11), .dp .sub .r8 .r8 (.reg .r7)] : List Instr)
+
+/-- The difference `r8` to the index's column: `r11` := it if bit 2 of `r6`
+is set, else 0, and `r8` the rest. -/
+def splitDelta : List Instr :=
+  bit .r9 .r6 2 ++ ([.mul .r11 .r8 .r9, .dp .sub .r8 .r8 (.reg .r11)] : List Instr)
+
+/-- Row `r` of a replacement: its two words, each plus its column's
+difference times the row's selector, stored back. -/
+def scatterRow (r : Nat) : List Instr :=
+  rowSel .r9 r ++ ([.ldr .r6 .r12 (8 * r), .mla .r6 .r8 .r9 .r6, .str .r6 .r12 (8 * r),
+    .ldr .r6 .r12 (8 * r + 4), .mla .r6 .r11 .r9 .r6, .str .r6 .r12 (8 * r + 4)] : List Instr)
+
 /-- Replace the byte of the table at `r12` indexed by the low byte of `r6`
 with the byte at the public index `r4`, returning its original value in
-`r7`. Clobbers `r8`, `r9`, `r11` and the flags. -/
+`r7`. Clobbers `r6`, `r8`, `r9` and `r11`; `r10` is all ones again
+afterwards. -/
 def replace : List Instr :=
-  lookup ++ loadI ++ ([.dp .eor .r7 .r7 (.reg .r11), .mov .r8 (imm 0)] : List Instr) ++
-    lanesDown.flatMap spreadStep ++ ([.dp .eor .r7 .r7 (.reg .r11)] : List Instr) ++
-    (List.range 64).flatMap scatterStep
+  gatherWord ++ deltaWord ++ pickByte ++ splitDelta ++ (List.range 32).flatMap scatterRow ++ ones
 
 /-! ## Our caller's registers -/
 
@@ -96,9 +129,6 @@ def save : List Instr := saved.map fun p => .str p.1 .r3 p.2
 
 /-- Restore them, through `r3`. -/
 def restore : List Instr := saved.map fun p => .ldr p.1 .r3 p.2
-
-/-- `r10` := all ones. -/
-def ones : List Instr := [.movw .r10 0xFFFF, .movt .r10 0xFFFF]
 
 /-! ## Initialization: `vg_rc4_init(key = r0, key_len = r1, ctx = r2, scratch = r3)` -/
 

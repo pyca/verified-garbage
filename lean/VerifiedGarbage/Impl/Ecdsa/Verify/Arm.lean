@@ -20,22 +20,25 @@ x86 (`Impl/Ecdsa/Verify/X86.lean`):
 2. ECDH's checks of the key (`peerAt .r0`, `validate`): its `x` into the
    hash's slot, its first byte, `x < p`, `y < p` and the curve's equation,
    into the flag, and the key's point, or `G` if the flag is clear, to the
-   slots of ECDH's ladder;
+   slots of ECDH's multiplication;
 3. the masks of `r` and `s` in `[1, n-1]` into the flag, and
    `w = s^(n-2)`, in Montgomery form modulo `n`;
 4. `u = e w` and `v = r w` modulo `n`, out of Montgomery's form;
-5. `[u]G` by the signature's ladder (from the table of `u`'s bits), saved
-   to `U`, and `R` reset to `O`; then `[v]Q` by ECDH's ladder (from the
-   table of `v`'s bits) and `[u]G + [v]Q` by the complete addition, into
-   `R`;
+5. `[u]G` by the generator's multiplication (the signature's, or a curve's
+   comb), saved to `U`, and `R` reset to `O`; then `[v]Q` by the
+   multiplication for a public number and point (`Cfg.qMulPub`: a call of
+   `vg_<curve>_mul_public`, by `v`'s sliding digits, for a curve that has
+   `vg_<curve>_mul`; else ECDH's ladder) and `[u]G + [v]Q` by the complete
+   addition, into `R`;
 6. `Z^(p-2)` by the signature's power, `x = X Z^(p-2)` out of Montgomery's
    form, and the masks of `Z ≠ 0` and `x R ≡ r R` modulo `n` into the
    flag, which is returned as 0 or 1.
 
 The setup and the tables leave `r0`–`r3`, so `sig` and `public` are read
-through `r2` and `r0` after them. Everything is computed whatever the flag,
-and only the pointers affect timing, although the contract would let every
-input affect it.
+through `r2` and `r0` after them. Everything is computed whatever the flag.
+The pointers affect timing, and so do `v` and `Q`, which the signature and
+the public key determine, in `vg_<curve>_mul_public`: the contract lets
+every input affect it.
 -/
 
 @[expose] public section
@@ -79,7 +82,7 @@ variable (c : Impl.Ecdsa.Arm.Cfg)
 
 /-- The signature's setup, with verification's arguments, and tables of bits. -/
 def prefix' : Prog isa :=
-  .seq (.block (c.setupWith Args.verify)) <|
+  .seq (c.setupWith Args.verify) <|
   .seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) <|
   .seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n)) <|
   .seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) (.block [])
@@ -124,7 +127,7 @@ def final : Prog isa :=
   progs [Mont.mulCall c.SP (c.sl XM) (c.sl RX) (c.sl ACC) c.umaal,
     Mont.mulCall c.SP (c.sl X) (c.sl XM) (c.sl ONE) c.umaal,
     Mont.mulCall c.SN (c.sl XN) (c.sl X) (c.sl R2N) c.umaal,
-    Mont.subCall c.SN (c.sl W) (c.sl XN) (c.sl RM'),
+    Mont.subCall c.SN (c.sl W) (c.sl XN) (c.sl RM') c.umaal,
     .block (c.checkNonzero (c.sl RZ) ++ Impl.Ecdh.Arm.Cfg.checkZero c (c.sl W) ++ finish c)]
 
 /-- The scalar at slot `i` to where the multiplications read it: `K`'s slot,
@@ -139,7 +142,7 @@ def scalarAt (i : Nat) : Prog isa :=
 def pointsWith (generator : Prog isa) : Prog isa :=
   .seq (scalarAt c U) <| .seq generator <|
   .seq (.block (save c)) <| .seq (scalarAt c V) <|
-  .seq (c.qMul Impl.Ecdh.Arm.PX Impl.Ecdh.Arm.PY) (sum c)
+  .seq (c.qMulPub Impl.Ecdh.Arm.PX Impl.Ecdh.Arm.PY) (sum c)
 
 /-- Everything after the checks of the key. -/
 def backWith (generator : Prog isa) : Prog isa :=

@@ -1,9 +1,8 @@
 module
-public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Mr1
 
+public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Taint7
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Mr2
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Taint7
 import VerifiedGarbage.Proof.Rsa.Octets
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.CallLay
@@ -41,7 +40,7 @@ theorem xw_lt (P : CP) (σ : State) (k : Nat) : xw P σ k < 2 ^ (8 * P.L) := by
   have := VG.Proof.Rsa.lt_of_os2ip (VG.Proof.RsaKeyGen.seg (rB P σ) (P.L * (k + 1)) P.L)
   rw [show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul] at this
   have hl : (VG.Proof.RsaKeyGen.seg (rB P σ) (P.L * (k + 1)) P.L).length ≤ P.L := by
-    simp [VG.Proof.RsaKeyGen.seg]
+    rw [VG.Proof.RsaKeyGen.seg, List.length_take]; exact Nat.min_le_left ..
   exact Nat.lt_of_lt_of_le this (Nat.pow_le_pow_right (by decide) (by omega_using [hl]))
 
 /-- The witness's octets. -/

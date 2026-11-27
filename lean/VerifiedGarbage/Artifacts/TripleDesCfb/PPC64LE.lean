@@ -1,32 +1,37 @@
 module
 
-public import VerifiedGarbage.Proof.TripleDes.PPC64LE.ModesVerified
-public import VerifiedGarbage.Proof.TripleDes.PPC64LE.ModesFrame
-public import VerifiedGarbage.Proof.TripleDes.PPC64LE.FbFinalVerified
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.PPC64LE.Print
+public import VerifiedGarbage.TCB.PPC64LE.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.TripleDes.Cfb
+public import VerifiedGarbage.Spec.TripleDes.CfbFinal
+import VerifiedGarbage.Proof.TripleDes.PPC64LE.ModesVerified
+import VerifiedGarbage.Proof.TripleDes.PPC64LE.ModesFrame
+import VerifiedGarbage.Proof.TripleDes.PPC64LE.FbFinalVerified
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.TripleDes.PPC64LE.Scrub
 import VerifiedGarbage.Proof.TripleDes.PPC64LE.ModesLit
 import VerifiedGarbage.Proof.TripleDes.PPC64LE.FunctionsLit
 import VerifiedGarbage.Proof.TripleDes.PPC64LE.FbFinalLit
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # Triple DES-CFB64 on PPC64LE -/
 
-@[expose] public section
-
 namespace VG.Artifacts.TripleDesCfb.PPC64LE
 
-def artifacts : List Artifact := [
+public def artifacts : List (Artifact PPC64LE.target) := [
   Spec.TripleDes.cfbEncryptApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratchWiped 608 .r7 72 Impl.TripleDes.PPC64LE.cfbEncrypt
-    verified := Proof.TripleDes.PPC64LE.cfbEnc_framed Proof.TripleDes.PPC64LE.Modes.cfbEncrypt_verified },
+    code := Impl.TripleDes.PPC64LE.Fn.cfbEncrypt
+    verified := Proof.TripleDes.PPC64LE.Scrub.cfbEncrypt_scrubbed },
   Spec.TripleDes.cfbDecryptApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratchWiped 1632 .r7 200 Impl.TripleDes.PPC64LE.cfbDecrypt
-    verified := Proof.TripleDes.PPC64LE.cfbDec_framed Proof.TripleDes.PPC64LE.Modes.cfbDecrypt_verified },
+    code := Impl.TripleDes.PPC64LE.Fn.cfbDecrypt
+    verified := Proof.TripleDes.PPC64LE.Scrub.cfbDecrypt_scrubbed },
   Spec.TripleDes.cfbEncryptFinalApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratchWiped 608 .r7 72 Impl.TripleDes.PPC64LE.cfbEncryptFinal
-    verified := Proof.TripleDes.PPC64LE.FbFinal.cfbEncryptFinal_framed },
+    code := Impl.TripleDes.PPC64LE.Fn.cfbEncryptFinal
+    verified := Proof.TripleDes.PPC64LE.Scrub.cfbEncryptFinal_scrubbed },
   Spec.TripleDes.cfbDecryptFinalApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratchWiped 608 .r7 72 Impl.TripleDes.PPC64LE.cfbDecryptFinal
-    verified := Proof.TripleDes.PPC64LE.FbFinal.cfbDecryptFinal_framed }]
+    code := Impl.TripleDes.PPC64LE.Fn.cfbDecryptFinal
+    verified := Proof.TripleDes.PPC64LE.Scrub.cfbDecryptFinal_scrubbed }]
+
+spec_apis artifacts
 
 end VG.Artifacts.TripleDesCfb.PPC64LE

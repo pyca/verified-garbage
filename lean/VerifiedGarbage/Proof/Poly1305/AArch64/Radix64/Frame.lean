@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Update
 public import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Finalize
 public import VerifiedGarbage.Impl.StackScratch.AArch64
 import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
+import VerifiedGarbage.Proof.Poly1305.Scratch
 
 /-!
 # Streaming Poly1305 on AArch64, with its working space on the stack
@@ -33,7 +34,8 @@ theorem update_framed :
       (Spec.Poly1305.updateContract AArch64.abi 128) :=
   AArch64.Verified.stackScratch (sig := Spec.Poly1305.updateSig) (nm := "scratch") (e := .u64)
     (n := 16) (post := Spec.Poly1305.updatePost AArch64.abi.ptrBits) (wa := false) (stack := 0)
-    (bytes := 128) update_verified (by decide) (by decide) updateFrameSat_pre
+    (bytes := 128) update_verified (by decide) (by decide)
+    (fun vs m m₁ m₂ r hl _ => Proof.Poly1305.updatePostOut_local _ vs m m₁ m₂ r hl) updateFrameSat_pre
 
 /-- A state satisfying `vg_poly1305_finalize`'s precondition, without the
 working space. -/
@@ -50,6 +52,7 @@ theorem finalize_framed :
       (Spec.Poly1305.finalizeContract AArch64.abi 128) :=
   AArch64.Verified.stackScratch (sig := Spec.Poly1305.finalizeSig) (nm := "scratch") (e := .u64)
     (n := 16) (post := Spec.Poly1305.finalizePost AArch64.abi.ptrBits) (wa := false) (stack := 0)
-    (bytes := 128) finalize_verified (by decide) (by decide) finalizeFrameSat_pre
+    (bytes := 128) finalize_verified (by decide) (by decide)
+    (fun vs m m₁ m₂ r hl _ => Proof.Poly1305.finalizePostOut_local _ vs m m₁ m₂ r hl) finalizeFrameSat_pre
 
 end VG.Proof.Poly1305.AArch64.Radix64

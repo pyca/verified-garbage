@@ -152,7 +152,7 @@ theorem Wr.strb (h : Wr s0 dst src k L n t) (hin : EncIn s0 dst src id k dl) (hn
     (kk : ∀ t', Wr s0 dst src k L (n + 1) t' → t'.gpr = t.gpr → WP isa (.block is) t' Q) :
     WP isa (.block (.strb .r2 .r0 off :: is)) t Q := by
   have hk := hin.k1024
-  have ha : State.addr (dst + BitVec.ofNat 32 n) = State.addr dst + BitVec.ofNat 64 n :=
+  obtain ha : State.addr (dst + BitVec.ofNat 32 n) = State.addr dst + BitVec.ofNat 64 n :=
     addr_add (by have := hin.dstFit; omega_arith)
   refine wp_strb hoff (a := State.addr dst + BitVec.ofNat 64 n) (by rw [hr0, ha]) ?_ fun t' u => kk t' ?_ u.gpr
   · rw [h.rest.wr]
@@ -187,7 +187,7 @@ theorem putBytes_ok (hin : EncIn s0 dst src id k dl) {b0 : Nat} :
     simp only [putBytes, List.cons_append]
     refine wp_mov (op2_imm (encodable_of_lt (by rw [BitVec.toNat_setWidth]; have := b.isLt; omega_arith)))
       fun t1 u1 => ?_
-    have h1 := h.upd u1 (by simp)
+    obtain h1 := h.upd u1 (by simp)
     refine h1.strb hin (by simp at hk; omega_arith) (by rw [u1.gpr, setWidth_byte]; exact (hL 0 (by simp)).symm)
       (by simp at ho; omega_arith) (by rw [u1.other _ (by decide), r0, BitVec.add_assoc, BitVec.ofNat_add_ofNat, hn])
       fun t2 h2 g2 => ?_
@@ -209,13 +209,13 @@ theorem write_ok {h : Hash} (hin : EncIn s0 dst src id k dl) (hD : dl = h.len) (
       Bytes t.mem (State.addr dst) (encList h (Spec.Rsa.bytesAt s0.mem (State.addr src) dl) k) k ∧
       t.gpr .r3 = 1 := by
   have hk1 := hin.k1024
-  have hpl := prefix_le h
-  have hhl := len_le h
-  have hhp := len_pos h
+  obtain hpl := prefix_le h
+  obtain hhl := len_le h
+  obtain hhp := len_pos h
   have htl : tLen h = h.prefix.length + h.len := rfl
   generalize hDdef : Spec.Rsa.bytesAt s0.mem (State.addr src) dl = D
-  have hDl : D.length = h.len := by rw [← hDdef, bytesAt_length, hD]
-  have h0 : Wr s0 dst src k (encList h D k) 0 s0 := Wr.start hin
+  obtain hDl : D.length = h.len := by rw [← hDdef, bytesAt_length, hD]
+  obtain h0 : Wr s0 dst src k (encList h D k) 0 s0 := Wr.start hin
   unfold write
   rw [WP.seq_iff]
   -- `0x00 0x01`, and `PS`'s registers.
@@ -228,20 +228,20 @@ theorem write_ok {h : Hash} (hin : EncIn s0 dst src id k dl) (hD : dl = h.len) (
   refine wp_dp (op2_imm (by decide)) fun t5 u5 => ?_
   refine wp_dp (op2_imm (encodable_of_lt (by rw [BitVec.toNat_ofNat]; omega_arith))) fun t6 u6 => ?_
   refine wp_mov (op2_imm (by decide)) fun t7 u7 => WP.block_nil ?_
-  have h7 := ((h4.upd u5 (by simp)).upd u6 (by simp)).upd u7 (by simp)
-  have r0_7 : t7.gpr .r0 = dst + BitVec.ofNat 32 2 := by
+  obtain h7 := ((h4.upd u5 (by simp)).upd u6 (by simp)).upd u7 (by simp)
+  obtain r0_7 : t7.gpr .r0 = dst + BitVec.ofNat 32 2 := by
     rw [u7.other _ (by decide), u6.other _ (by decide), u5.gpr, dpVal, g4, u3.other _ (by decide), g2,
       u1.other _ (by decide), hin.r0]; rfl
-  have r3_7 : t7.gpr .r3 = BitVec.ofNat 32 (k - tLen h - 3) := by
+  obtain r3_7 : t7.gpr .r3 = BitVec.ofNat 32 (k - tLen h - 3) := by
     rw [u7.other _ (by decide), u6.gpr, dpVal, u5.other _ (by decide), g4, u3.other _ (by decide), g2,
       u1.other _ (by decide), hin.r3]
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
     omega_arith
   have r2_7 : t7.gpr .r2 = 0xff := u7.gpr
-  have hps : 8 ≤ k - tLen h - 3 := by omega_arith
+  obtain hps : 8 ≤ k - tLen h - 3 := by omega_arith
   -- `PS`.
-  have fill_ok : WP isa fill t7 fun t => Wr s0 dst src k (encList h D k) (2 + (k - tLen h - 3)) t ∧
+  obtain fill_ok : WP isa fill t7 fun t => Wr s0 dst src k (encList h D k) (2 + (k - tLen h - 3)) t ∧
       t.gpr .r0 = dst + BitVec.ofNat 32 (2 + (k - tLen h - 3)) := by
     refine WP.loop (M := isa) (fun (q : Nat) (t : State) => q + 1 ≤ k - tLen h - 3 ∧
         Wr s0 dst src k (encList h D k) (2 + (k - tLen h - 3 - (q + 1))) t ∧
@@ -255,12 +255,12 @@ theorem write_ok {h : Hash} (hin : EncIn s0 dst src id k dl) (hD : dl = h.len) (
       (by rw [r0, BitVec.add_zero]) fun t1 h1 g1 => ?_
     refine wp_dp (op2_imm (by decide)) fun t2 u2 => ?_
     refine wp_subs (op2_imm (by decide)) fun t3 u3 z3 => WP.block_nil ?_
-    have h3 := (h1.upd u2 (by simp)).upd u3 (by simp)
-    have r3' : t3.gpr .r3 - 0 = BitVec.ofNat 32 q := by
+    obtain h3 := (h1.upd u2 (by simp)).upd u3 (by simp)
+    obtain r3' : t3.gpr .r3 - 0 = BitVec.ofNat 32 q := by
       rw [u3.gpr, u2.other _ (by decide), g1, r3, sub_one_ofNat (by omega_arith)]; simp
-    have r0' : t3.gpr .r0 = dst + BitVec.ofNat 32 (2 + (k - tLen h - 3 - (q + 1)) + 1) := by
+    obtain r0' : t3.gpr .r0 = dst + BitVec.ofNat 32 (2 + (k - tLen h - 3 - (q + 1)) + 1) := by
       rw [u3.other _ (by decide), u2.gpr, dpVal, g1, r0, Offset.add_ofNat_add_one]
-    have ev : isa.eval .ne t3 = some (decide (0 < q)) := by
+    obtain ev : isa.eval .ne t3 = some (decide (0 < q)) := by
       rw [eval_ne, z3, u2.other _ (by decide), g1, r3, ne_counter (by omega_arith)]
     rcases Nat.eq_zero_or_pos q with hq0 | hq0
     · subst hq0
@@ -281,26 +281,26 @@ theorem write_ok {h : Hash} (hin : EncIn s0 dst src id k dl) (hD : dl = h.len) (
     (by simp; omega_arith) (fun i hi => encList_mid (by simpa using hi)) (by simp; omega_arith) fun t9 h9 g9 => ?_
   refine wp_dp (op2_imm (encodable_of_lt (by rw [BitVec.toNat_ofNat]; omega_arith))) fun t10 u10 => ?_
   refine wp_mov (op2_imm (encodable_of_lt (by rw [BitVec.toNat_ofNat]; omega_arith))) fun t11 u11 => WP.block_nil ?_
-  have h11 := (h9.upd u10 (by simp)).upd u11 (by simp)
-  have hn : 2 + (k - tLen h - 3) + (0 :: h.prefix).length = 2 + (k - tLen h - 3) + (h.prefix.length + 1) := by simp
+  obtain h11 := (h9.upd u10 (by simp)).upd u11 (by simp)
+  obtain hn : 2 + (k - tLen h - 3) + (0 :: h.prefix).length = 2 + (k - tLen h - 3) + (h.prefix.length + 1) := by simp
   rw [hn] at h11
   -- The hash value.
-  have dfit : (dst + BitVec.ofNat 32 (2 + (k - tLen h - 3) + (h.prefix.length + 1))).toNat + h.len ≤ 2 ^ 32 := by
+  obtain dfit : (dst + BitVec.ofNat 32 (2 + (k - tLen h - 3) + (h.prefix.length + 1))).toNat + h.len ≤ 2 ^ 32 := by
     have := hin.dstFit
     rw [Proof.X25519.Arm.toNat_add_lt (by rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]; omega_arith),
       BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]
     omega_arith
-  have hk32 : k < 2 ^ 32 := by omega_arith
-  have dA : ∀ j < k, State.addr (dst + BitVec.ofNat 32 j) = State.addr dst + BitVec.ofNat 64 j := fun j hj =>
+  obtain hk32 : k < 2 ^ 32 := by omega_arith
+  obtain dA : ∀ j < k, State.addr (dst + BitVec.ofNat 32 j) = State.addr dst + BitVec.ofNat 64 j := fun j hj =>
     addr_add (by have := hin.dstFit; omega_arith)
-  have r0_11 : t11.gpr .r0 = dst + BitVec.ofNat 32 (2 + (k - tLen h - 3) + (h.prefix.length + 1)) := by
+  obtain r0_11 : t11.gpr .r0 = dst + BitVec.ofNat 32 (2 + (k - tLen h - 3) + (h.prefix.length + 1)) := by
     rw [u11.other _ (by decide), u10.gpr, dpVal, g9 _ (by decide), r0_8, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
-  have hdst' : State.addr (dst + BitVec.ofNat 32 (2 + (k - tLen h - 3) + (h.prefix.length + 1))) =
+  obtain hdst' : State.addr (dst + BitVec.ofNat 32 (2 + (k - tLen h - 3) + (h.prefix.length + 1))) =
       State.addr dst + BitVec.ofNat 64 (2 + (k - tLen h - 3) + (h.prefix.length + 1)) := dA _ (by omega_arith)
-  have sub : Region.Sub ⟨State.addr (dst + BitVec.ofNat 32 (2 + (k - tLen h - 3) + (h.prefix.length + 1))), h.len⟩
+  obtain sub : Region.Sub ⟨State.addr (dst + BitVec.ofNat 32 (2 + (k - tLen h - 3) + (h.prefix.length + 1))), h.len⟩
       ⟨State.addr dst, k⟩ := by
     rw [hdst']; exact Offset.sub_base _ (by omega_arith)
-  have ctx := Bignum.Arm.copyCtx_of_regions t11 src (dst + BitVec.ofNat 32 (2 + (k - tLen h - 3) + (h.prefix.length + 1)))
+  obtain ctx := Bignum.Arm.copyCtx_of_regions t11 src (dst + BitVec.ofNat 32 (2 + (k - tLen h - 3) + (h.prefix.length + 1)))
     (n := h.len) (by omega_arith) (by rw [← hD]; exact hin.srcFit) dfit
     (by rw [h11.rest.rd, h11.rest.wr, ← hD]; exact hin.read)
     (by rw [h11.rest.wr, hdst']
@@ -323,11 +323,11 @@ theorem write_ok {h : Hash} (hin : EncIn s0 dst src id k dl) (hD : dl = h.len) (
       · rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat, dA _ (by omega_arith)] at e
         exact Offset.add_ofNat_ne _ (by omega_arith) (by omega_arith) (by omega_arith) e
     · obtain ⟨j, rfl⟩ : ∃ j, i = 2 + (k - tLen h - 3) + (h.prefix.length + 1) + j := ⟨_, (Nat.add_sub_cancel' hi').symm⟩
-      have hj : j < h.len := by omega_arith
-      have e1 := h12.copied j hj
+      obtain hj : j < h.len := by omega_arith
+      obtain e1 := h12.copied j hj
       rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat, dA _ (by omega_arith)] at e1
       rw [e1, encList_D, ← hDdef, bytesAt_getD (by omega_arith), addr_add (by have := hin.srcFit; omega_arith)]
-      have sep : Region.Disjoint ⟨State.addr src + BitVec.ofNat 64 j, 1⟩ ⟨State.addr dst, k⟩ :=
+      obtain sep : Region.Disjoint ⟨State.addr src + BitVec.ofNat 64 j, 1⟩ ⟨State.addr dst, k⟩ :=
         hin.sep.sub_left (Offset.sub_base _ (by omega_arith))
       exact h11.frame.byte1 fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact sep
 
@@ -369,9 +369,9 @@ theorem fail_post {s : State}
 theorem encodeH_ok {h : Hash} {s : State} (hin : EncIn s dst src id k dl) (hh : Hash.ofId id.toNat = some h) :
     WP isa (encodeH h) s (EncPost s dst src id k dl) := by
   have hk1 := hin.k1024
-  have hhl := len_le h
-  have hpl := prefix_le h
-  have he : encOut id.toNat (Spec.Rsa.bytesAt s.mem (State.addr src) dl) k =
+  obtain hhl := len_le h
+  obtain hpl := prefix_le h
+  obtain he : encOut id.toNat (Spec.Rsa.bytesAt s.mem (State.addr src) dl) k =
       Spec.RsaPkcs1Sig.encode h (Spec.Rsa.bytesAt s.mem (State.addr src) dl) k := by simp only [encOut, hh]
   unfold encodeH
   rw [WP.seq_iff]
@@ -387,7 +387,7 @@ theorem encodeH_ok {h : Hash} {s : State} (hin : EncIn s dst src id k dl) (hh : 
     refine wp_dp (op2_imm (encodable_of_lt (by rw [BitVec.toNat_ofNat]; simp only [tLen]; omega_arith))) fun t2 u2 => ?_
     refine wp_mov (op2_lsr (by decide)) fun t3 u3 => ?_
     refine wp_cmp (op2_imm (by decide)) fun t4 u4 z4 => WP.block_nil ?_
-    have r2 : t3.gpr .r2 = if k < tLen h + 11 then 1 else 0 := by
+    obtain r2 : t3.gpr .r2 = if k < tLen h + 11 then 1 else 0 := by
       rw [u3.gpr, u2.gpr, dpVal, u1.gpr, hin.r3]
       exact top_sub (by omega_arith) (by simp only [tLen]; omega_arith)
     refine WP.ite _ (by rw [eval_ne]) (fun hb' => ?_) (fun hb' => ?_)
@@ -398,9 +398,9 @@ theorem encodeH_ok {h : Hash} {s : State} (hin : EncIn s dst src id k dl) (hh : 
       rw [he, encode_eq]; simp; omega_arith
     · have hge : tLen h + 11 ≤ k := by
         rw [z4, r2] at hb'; by_contra hc; simp [show k < tLen h + 11 by omega_arith] at hb'
-      have rest := (((u1.rest (ws := [.r2]) ).trans (u2.rest (by simp))).trans (u3.rest (by simp))).trans (u4.rest _)
-      have mm : t4.mem = s.mem := by rw [u4.mem, u3.mem, u2.mem, u1.mem]
-      have hin4 : EncIn t4 dst src (t4.gpr .r2) k dl :=
+      obtain rest := (((u1.rest (ws := [.r2]) ).trans (u2.rest (by simp))).trans (u3.rest (by simp))).trans (u4.rest _)
+      obtain mm : t4.mem = s.mem := by rw [u4.mem, u3.mem, u2.mem, u1.mem]
+      obtain hin4 : EncIn t4 dst src (t4.gpr .r2) k dl :=
         ⟨by rw [rest.gpr _ (by decide), hin.r0], by rw [rest.gpr _ (by decide), hin.r1],
           rfl, by rw [rest.gpr _ (by decide), hin.r3], by rw [rest.gpr _ (by decide), hin.lr], hin.k64,
           hin.k1024, hin.dl32, hin.dstFit, hin.srcFit, by rw [rest.wr]; exact hin.write,
@@ -411,7 +411,7 @@ theorem encodeH_ok {h : Hash} {s : State} (hin : EncIn s dst src id k dl) (hh : 
       simp only [heq, hge, and_self, ↓reduceIte]
       refine ⟨r3, ?_⟩
       rw [mm] at hby
-      have hl := encList_length (h := h) (D := Spec.Rsa.bytesAt s.mem (State.addr src) dl) (k := k)
+      obtain hl := encList_length (h := h) (D := Spec.Rsa.bytesAt s.mem (State.addr src) dl) (k := k)
         (by rw [bytesAt_length, heq]) hge
       have := bytesAt_eq (m := t.mem) (p := State.addr dst) fun i hi => by rw [hl] at hi; exact hby i hi
       rw [hl] at this
@@ -438,16 +438,16 @@ theorem dispatch_ok {s : State} (hin : EncIn s dst src id k dl) :
     ∀ (hs : List Hash) (i : Nat), hashes.drop i = hs → i ≤ id.toNat →
       WP isa (dispatch hs i) s (EncPost s dst src id k dl)
   | [], i, hd, hi => by
-    have h12 : 12 ≤ i := by
+    obtain h12 : 12 ≤ i := by
       have := congrArg List.length hd
       simp only [List.length_drop, List.length_nil] at this
       exact Nat.le_of_sub_eq_zero this
-    have hn : Hash.ofId id.toNat = none := by
+    obtain hn : Hash.ofId id.toNat = none := by
       rw [show id.toNat = (id.toNat - 12) + 12 by omega_arith]; exact ofId_ge _
     unfold dispatch
     exact WP.mono fail_ok fun t ht => fail_post (by simp only [encOut, hn]) ht
   | h :: hs, i, hd, hi => by
-    have h12 : i < 12 := by
+    obtain h12 : i < 12 := by
       have := congrArg List.length hd
       simp only [List.length_drop, List.length_cons] at this
       have : hashes.length = 12 := rfl
@@ -455,12 +455,12 @@ theorem dispatch_ok {s : State} (hin : EncIn s dst src id k dl) :
     unfold dispatch
     rw [WP.seq_iff]
     refine wp_cmp (op2_imm (encodable_of_lt (by rw [BitVec.toNat_ofNat]; omega_arith))) fun t1 u1 z1 => WP.block_nil ?_
-    have hin1 := hin.fupd u1
-    have hid : id = BitVec.ofNat 32 id.toNat := by simp
+    obtain hin1 := hin.fupd u1
+    obtain hid : id = BitVec.ofNat 32 id.toNat := by simp
     refine WP.ite _ (eval_eq _) (fun hb => ?_) (fun hb => ?_)
     · have he : id.toNat = i := by
         rw [z1, hin.r2, hid, cmp_eq id.isLt (by omega_arith)] at hb; simpa using hb
-      have hh : Hash.ofId id.toNat = some h := by
+      obtain hh : Hash.ofId id.toNat = some h := by
         rw [he, ofId_hashes i h12, ← Nat.add_zero i, ← List.getElem?_drop, hd]; rfl
       exact WP.mono (encodeH_ok hin1 hh) fun t ht => ht.fupd u1
     · have he : id.toNat ≠ i := by

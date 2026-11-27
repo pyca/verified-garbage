@@ -1,17 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.KeyReady
+public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.KeyFrame
 public import VerifiedGarbage.Proof.Rsa.Arm.KeyOps
 public import VerifiedGarbage.Impl.Ffdh.Arm.ParameterCandidate
-
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.KeyMemory
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.KeyOps
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.KeyFrame
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.Arm.Workspace
 import VerifiedGarbage.Proof.Ffdh.Arm.Block
+
 /-! One native exponent halving with its bounded countdown. -/
 
 -- Formerly `VerifiedGarbage/Proof/Ffdh/Arm/ParameterCandidate/ExponentTail.lean`, which only this module imported.

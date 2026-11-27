@@ -34,13 +34,14 @@ open VG.Spec.Gcm (Block blockAt ghashFrom ghash blocks ghashInput StreamRepr ofB
 open VG.Proof.Gcm (Absorbed lensBlock padded)
 
 /-- After the entry, with `work` in `w`: the lengths. -/
-theorem finEntry_ok {s : State} {Ctx St W : Addr} {w : Reg} (hCtx : s.gpr .x0 = Ctx) (hSt : s.gpr .x2 = St)
-    (hW : s.gpr w = W) (hperm : Perm Ctx St W s) :
-    WP isa (.block (finEntry w)) s fun s' => Env Ctx St W s.sp s' ∧ Kept s'.gpr s' ∧
+theorem finEntry_ok {Wn : Nat} {s : State} {Ctx St W : Addr} {w : Reg} (hCtx : s.gpr .x0 = Ctx) (hSt : s.gpr .x2 = St)
+    (hW : s.gpr w = W) (hperm : Perm Wn Ctx St W s) :
+    WP isa (.block (finEntry w)) s fun s' => Env Wn Ctx St W s.sp s' ∧ Kept s'.gpr s' ∧
       s'.gpr .x22 = BitVec.ofNat 64 (s.gpr .x1).toNat ∧ s'.gpr .x26 = s.gpr .x3 ∧ s'.gpr .x27 = s.gpr .x4 ∧
       s'.gpr .x5 = s.gpr .x5 ∧ s'.gpr .x6 = s.gpr .x6 ∧ s'.mem = savedMem s.mem W s.gpr ∧ s'.rd = s.rd ∧
       s'.wr = s.wr := by
-  obtain ⟨s₁, run₁, g₁, sp₁, rd₁, wr₁, m₁⟩ := save_ok s w hW hperm.w
+  obtain hWn := hperm.hWn
+  obtain ⟨s₁, run₁, g₁, sp₁, rd₁, wr₁, m₁⟩ := save_ok s w hW hperm.w (by have := hperm.hWn; omega)
   obtain ⟨s₂, run₂, x19₂, x20₂, x21₂, x22₂, x26₂, x27₂, x5₂, x6₂, sp₂, m₂, rd₂, wr₂⟩ : ∃ s₂, runBlock isa
       [mov .x19 w, mov .x20 .x2, mov .x21 .x0, mov .x22 .x1, mov .x26 .x3, mov .x27 .x4] s₁ = some s₂ ∧
       s₂.gpr .x19 = W ∧ s₂.gpr .x20 = St ∧ s₂.gpr .x21 = Ctx ∧
@@ -54,11 +55,12 @@ theorem finEntry_ok {s : State} {Ctx St W : Addr} {w : Reg} (hCtx : s.gpr .x0 = 
     fun _ _ => rfl, x22₂, x26₂, x27₂, x5₂, x6₂, by rw [m₂, m₁], by rw [rd₂, rd₁], by rw [wr₂, wr₁]⟩
 
 /-- The entry of `finish`: `tag` in `x28`. -/
-theorem finishEntry_ok {s : State} {Ctx St W : Addr} (hCtx : s.gpr .x0 = Ctx) (hSt : s.gpr .x2 = St)
-    (hW : s.gpr .x6 = W) (hperm : Perm Ctx St W s) :
-    WP isa (.block (finEntry .x6 ++ [mov .x28 .x5])) s fun s' => Env Ctx St W s.sp s' ∧ Kept s'.gpr s' ∧
+theorem finishEntry_ok {Wn : Nat} {s : State} {Ctx St W : Addr} (hCtx : s.gpr .x0 = Ctx) (hSt : s.gpr .x2 = St)
+    (hW : s.gpr .x6 = W) (hperm : Perm Wn Ctx St W s) :
+    WP isa (.block (finEntry .x6 ++ [mov .x28 .x5])) s fun s' => Env Wn Ctx St W s.sp s' ∧ Kept s'.gpr s' ∧
       s'.gpr .x22 = BitVec.ofNat 64 (s.gpr .x1).toNat ∧ s'.gpr .x26 = s.gpr .x3 ∧ s'.gpr .x27 = s.gpr .x4 ∧
       s'.gpr .x28 = s.gpr .x5 ∧ s'.mem = savedMem s.mem W s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+  obtain hWn := hperm.hWn
   refine WP.block_append (WP.mono (finEntry_ok hCtx hSt hW hperm)
     fun s₁ ⟨he₁, _, x22₁, x26₁, x27₁, x5₁, _, m₁, rd₁, wr₁⟩ => ?_)
   refine WP.run ⟨_, by arun [], rfl⟩ fun s' hs' => ?_
@@ -70,19 +72,20 @@ theorem finishEntry_ok {s : State} {Ctx St W : Addr} (hCtx : s.gpr .x0 = Ctx) (h
     by rw [r.mem, m₁], by rw [r.rd, rd₁], by rw [r.wr, wr₁]⟩
 
 /-- What `finPre` gives. -/
-theorem lay_of_fin {s : State} (hs : finPre s) :
-    Lay (s.gpr .x0) (s.gpr .x2) (s.gpr .x6) ∧ Perm (s.gpr .x0) (s.gpr .x2) (s.gpr .x6) s ∧
+theorem lay_of_fin {Wn : Nat} {s : State} (hs : finPre (Wn := Wn) s)
+    (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) :
+    Lay Wn (s.gpr .x0) (s.gpr .x2) (s.gpr .x6) ∧ Perm Wn (s.gpr .x0) (s.gpr .x2) (s.gpr .x6) s ∧
       rounds (s.gpr .x1) ∧ Covers [⟨s.gpr .x5, 16⟩] s.wr ∧
-      (⟨s.gpr .x5, 16⟩ : Region).Disjoint ⟨s.gpr .x6, 2560⟩ := by
+      (⟨s.gpr .x5, 16⟩ : Region).Disjoint ⟨s.gpr .x6, Wn⟩ := by
   simp only [finPre] at hs
   obtain ⟨hrd, hwr, dcs, -, dcw, -, dsw, dtw, wc, ws, -, ww, hR⟩ := hs
-  exact ⟨Lay.of wc ws ww dcs dcw dsw,
-    ⟨covers_mem (by rw [hrd, hwr]; simp), covers_of_mem (by rw [hwr]; simp), covers_of_mem (by rw [hwr]; simp)⟩, hR,
+  exact ⟨Lay.of wc ws ww dcs dcw dsw hWn,
+    ⟨covers_mem (by rw [hrd, hwr]; simp), covers_of_mem (by rw [hwr]; simp), covers_of_mem (by rw [hwr]; simp), hWn⟩, hR,
     covers_of_mem (by rw [hwr]; simp), dtw⟩
 
 /-- What writes to the parts `rs` of `W` keep, outside the state. -/
-theorem fin_inv {Ctx St W : Addr} (L : Lay Ctx St W) {rs : List Region}
-    (hrs : ∀ r ∈ rs, (⟨St, 80⟩ : Region).Disjoint r ∧ Region.Sub r ⟨W, 2560⟩) {m₀ m : Mem} (hf : Frame rs m₀ m)
+theorem fin_inv {Wn : Nat} {Ctx St W : Addr} (L : Lay Wn Ctx St W) {rs : List Region}
+    (hrs : ∀ r ∈ rs, (⟨St, 80⟩ : Region).Disjoint r ∧ Region.Sub r ⟨W, Wn⟩) {m₀ m : Mem} (hf : Frame rs m₀ m)
     {R : Nat} (hR : R = 10 ∨ R = 12 ∨ R = 14) {x : List Byte} :
     ciphOf m Ctx R = ciphOf m₀ Ctx R ∧ blockAt m St = blockAt m₀ St ∧
       blockAt m (Ctx + BitVec.ofNat 64 240) = ctxH m₀ Ctx ∧
@@ -94,16 +97,17 @@ theorem fin_inv {Ctx St W : Addr} (L : Lay Ctx St W) {rs : List Region}
     fun ha => Absorbed.frame hf (fun r hr => (hrs r hr).1.sub_left (Lay.stSub (by decide))) ha⟩
 
 /-- The saved registers' slots are parts of `W` outside the state. -/
-theorem savedR_inv {Ctx St W : Addr} (L : Lay Ctx St W) :
-    ∀ r ∈ [savedR W], (⟨St, 80⟩ : Region).Disjoint r ∧ Region.Sub r ⟨W, 2560⟩ := by
+theorem savedR_inv {Wn : Nat} {Ctx St W : Addr} (L : Lay Wn Ctx St W) :
+    ∀ r ∈ [savedR W], (⟨St, 80⟩ : Region).Disjoint r ∧ Region.Sub r ⟨W, Wn⟩ := by
+  obtain hWn := L.hWn
   intro r hr
   simp only [List.mem_singleton] at hr; subst hr
-  exact ⟨L.sb.sub_right (Lay.bSub (by decide) (by decide)), Lay.wSub (by decide)⟩
+  exact ⟨L.sb.sub_right (Lay.bSub (by decide) (by have := L.hWn; omega)), Lay.wSub (by have := L.hWn; omega)⟩
 
 /-- One run of `stream_finish`, for a message `a`, `c` of those lengths. -/
-theorem fin_run (v : GcmImpl) {s : State} (hs : streamFinishAArch64.pre s) {a c : List Byte}
+theorem fin_run {Wn : Nat} (v : GcmImpl) {s : State} (hs : (streamFinishAArch64 Wn).pre s) {a c : List Byte}
     (h3 : s.gpr .x3 = BitVec.ofNat 64 a.length) (h4 : s.gpr .x4 = BitVec.ofNat 64 c.length)
-    (hc : c.length < 2 ^ 64) :
+    (hc : c.length < 2 ^ 64) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) (hv : v.ctr.scratch ≤ Wn - 512 := by first | with_reducible assumption | exact v.ctr.scratch_le) :
     WP isa (streamFinish v.callees) s fun s' => GprAbi s s' ∧
       (Absorbed s.mem (s.gpr .x2 + BitVec.ofNat 64 16) (s.gpr .x2 + BitVec.ofNat 64 32)
           (ctxH s.mem (s.gpr .x0)) (ghashInput a c) →
@@ -111,7 +115,7 @@ theorem fin_run (v : GcmImpl) {s : State} (hs : streamFinishAArch64.pre s) {a c 
           toBytes (ghashFrom (ctxH s.mem (s.gpr .x0)) (ghash (ctxH s.mem (s.gpr .x0)) (blocks (padded a c)))
             [ofBytes (lensBlock a.length c.length)] ^^^
             ciphOf s.mem (s.gpr .x0) (s.gpr .x1).toNat (blockAt s.mem (s.gpr .x2)))) := by
-  have hs' : finPre s := hs
+  have hs' : finPre (Wn := Wn) s := hs
   obtain ⟨L, perm, hR, tW, dtw⟩ := lay_of_fin hs'
   refine WP.seq (WP.mono (finishEntry_ok rfl rfl rfl perm)
     fun s₁ ⟨he₁, hk₁, x22₁, x26₁, x27₁, x28₁, m₁, rd₁, wr₁⟩ => ?_)
@@ -125,13 +129,13 @@ theorem fin_run (v : GcmImpl) {s : State} (hs : streamFinishAArch64.pre s) {a c 
     exact this.frame f₂ (saved_finFrame L (.inl rfl))
   have x28₂ : s₂.gpr .x28 = s.gpr .x5 := by rw [hk₂ .x28 (by decide), x28₁]
   refine WP.seq (WP.mono (tagOut_ok he₂.x19 x28₂ (covers_left he₂.perm.w) (by rw [wr₂, wr₁]; exact tW)
-    (dtw.sub_right (Region.sub_prefix (by decide)))) fun s₃ ⟨out₃, f₃, og₃, sp₃, rd₃, wr₃⟩ => ?_)
-  have he₃ : Env (s.gpr .x0) (s.gpr .x2) (s.gpr .x6) s.sp s₃ := he₂.keep (fun r hr => og₃ r (by
+    (dtw.sub_right (Region.sub_prefix (by omega)))) fun s₃ ⟨out₃, f₃, og₃, sp₃, rd₃, wr₃⟩ => ?_)
+  have he₃ : Env Wn (s.gpr .x0) (s.gpr .x2) (s.gpr .x6) s.sp s₃ := he₂.keep (fun r hr => og₃ r (by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;> decide)) sp₃ rd₃ wr₃
   have hsv₃ : SavedAt s₃.mem (s.gpr .x6) s := hsv.frame f₃ fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
-    exact (dtw.sub_right (Lay.wSub (by decide))).symm
+    exact (dtw.sub_right (Lay.wSub (by omega))).symm
   refine WP.mono (exit_ok he₃.x19 he₃.sp (covers_left he₃.perm.w) hsv₃) fun s' ⟨ga, hm, _⟩ =>
     ⟨ga, fun ha => ?_⟩
   rw [hm, out₃, ← hc₁, ← hj₁]
@@ -139,8 +143,8 @@ theorem fin_run (v : GcmImpl) {s : State} (hs : streamFinishAArch64.pre s) {a c 
   rw [add_ofNat_zero] at this
   exact this
 
-theorem streamFinish_wp (v : GcmImpl) {s : State} (hs : streamFinishAArch64.pre s) :
-    WP isa (streamFinish v.callees) s fun s' => GprAbi s s' ∧ streamFinishAArch64.post s s' := by
+theorem streamFinish_wp {Wn : Nat} (v : GcmImpl) {s : State} (hs : (streamFinishAArch64 Wn).pre s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) (hv : v.ctr.scratch ≤ Wn - 512 := by first | with_reducible assumption | exact v.ctr.scratch_le) :
+    WP isa (streamFinish v.callees) s fun s' => GprAbi s s' ∧ (streamFinishAArch64 Wn).post s s' := by
   have h3 : s.gpr .x3 = BitVec.ofNat 64 (Spec.Gcm.zeros (s.gpr .x3).toNat).length := by
     rw [Proof.Gcm.length_zeros, BitVec.ofNat_toNat, BitVec.setWidth_eq]
   have h4 : s.gpr .x4 = BitVec.ofNat 64 (Spec.Gcm.zeros (s.gpr .x4).toNat).length := by

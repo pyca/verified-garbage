@@ -122,16 +122,16 @@ theorem loadArgs_ok {P : Nat} {X : List Region} {al : Nat} {s : State} (hL : (la
   have := hL.al64
   have := hL.al32
   have := hL.nQa
-  have ha : ∀ j, j < 4 → InRegions ((entered s).rd ++ (entered s).wr)
+  obtain ha : ∀ j, j < 4 → InRegions ((entered s).rd ++ (entered s).wr)
       ((lay P s X al).Q + BitVec.ofNat 64 (1088 + 8 * j)) 8 :=
     fun j hj => ⟨(lay P s X al).ARGS, by rw [entered_rd, hrd]; simp,
       Offset.contains _ (by omega_arith) (by omega_arith) (by omega_arith)⟩
-  have a2 : InRegions ((entered s).rd ++ (entered s).wr) ((lay P s X al).Q + BitVec.ofNat 64 1104) 8 := ha 2 (by decide)
-  have a3 : InRegions ((entered s).rd ++ (entered s).wr) ((lay P s X al).Q + BitVec.ofNat 64 1112) 8 := ha 3 (by decide)
-  have m2 : (entered s).mem.readW ((lay P s X al).Q + BitVec.ofNat 64 1104) 64 = stackArg s 2 := by
+  obtain a2 : InRegions ((entered s).rd ++ (entered s).wr) ((lay P s X al).Q + BitVec.ofNat 64 1104) 8 := ha 2 (by decide)
+  obtain a3 : InRegions ((entered s).rd ++ (entered s).wr) ((lay P s X al).Q + BitVec.ofNat 64 1112) 8 := ha 3 (by decide)
+  obtain m2 : (entered s).mem.readW ((lay P s X al).Q + BitVec.ofNat 64 1104) 64 = stackArg s 2 := by
     rw [entered_mem P s X al, Mem.readW_writeW_sep (Offset.sep _ (by omega_arith) (by omega_arith) (by omega_arith)) (by decide)]
     exact arg_mem (j := 2)
-  have m3 : (entered s).mem.readW ((lay P s X al).Q + BitVec.ofNat 64 1112) 64 = stackArg s 3 := by
+  obtain m3 : (entered s).mem.readW ((lay P s X al).Q + BitVec.ofNat 64 1112) 64 = stackArg s 3 := by
     rw [entered_mem P s X al, Mem.readW_writeW_sep (Offset.sep _ (by omega_arith) (by omega_arith) (by omega_arith)) (by decide)]
     exact arg_mem (j := 3)
   apply WP.of_runBlock
@@ -196,19 +196,19 @@ theorem entry_okX {P : Nat} {X : List Region} {al : Nat} {s : State} (hL : (lay 
   have := hL.al32
   have := hL.nQa
   have olk := hL.olk
-  have hfr : ∀ (u : State) d n, u.wr = (entered s).wr → d + n ≤ frameBytes → InRegions u.wr ((lay P s X al).Q + BitVec.ofNat 64 d) n :=
+  obtain hfr : ∀ (u : State) d n, u.wr = (entered s).wr → d + n ≤ frameBytes → InRegions u.wr ((lay P s X al).Q + BitVec.ofNat 64 d) n :=
     fun u d n hu hd => ⟨(lay P s X al).FR, by rw [hu, entered_wr P s X al]; simp, Offset.contains_base _ hd (by unfold frameBytes at hd; omega_arith)⟩
-  have harg : ∀ (u : State) d, u.rd = s.rd → 1088 ≤ d → d + 8 ≤ 1120 → InRegions (u.rd ++ u.wr) ((lay P s X al).Q + BitVec.ofNat 64 d) 8 :=
+  obtain harg : ∀ (u : State) d, u.rd = s.rd → 1088 ≤ d → d + 8 ≤ 1120 → InRegions (u.rd ++ u.wr) ((lay P s X al).Q + BitVec.ofNat 64 d) 8 :=
     fun u d hu h₁ h₂ => ⟨(lay P s X al).ARGS, by rw [hu, hrd]; simp, Offset.contains _ h₁ (by omega_arith) (by omega_arith)⟩
   -- The memory on entry to the frames' body.
-  have eLr : (entered s).mem.readW ((lay P s X al).Q + BitVec.ofNat 64 1072) 64 = s.gpr .x30 := by
+  obtain eLr : (entered s).mem.readW ((lay P s X al).Q + BitVec.ofNat 64 1072) 64 = s.gpr .x30 := by
     rw [entered_mem P s X al, Mem.readW_writeW_self64]
-  have eArg : ∀ j, j < 4 → (entered s).mem.readW ((lay P s X al).Q + BitVec.ofNat 64 (1088 + 8 * j)) 64 = stackArg s j := by
+  obtain eArg : ∀ j, j < 4 → (entered s).mem.readW ((lay P s X al).Q + BitVec.ofNat 64 (1088 + 8 * j)) 64 = stackArg s j := by
     intro j hj
     rw [entered_mem P s X al, Mem.readW_writeW_sep (Offset.sep _ (by omega_arith) (by omega_arith) (by omega_arith)) (by decide)]
     exact arg_mem
   have hpQ : P ≤ (lay P s X al).Q.toNat := hL.pQ
-  have eFr : Frame [(lay P s X al).STK] s.mem (entered s).mem := by
+  obtain eFr : Frame [(lay P s X al).STK] s.mem (entered s).mem := by
     rw [entered_mem P s X al]
     refine (Frame.refl _ _).writeW (List.mem_singleton_self _) _ ?_
     show (⟨(lay P s X al).Q - BitVec.ofNat 64 P, P + 1088⟩ : Region).Contains
@@ -218,60 +218,60 @@ theorem entry_okX {P : Nat} {X : List Region} {al : Nat} {s : State} (hL : (lay 
   rw [setup, WP.block_append_iff]
   refine WP.mono (loadArgs_ok hL hrd) fun t ht => ?_
   rw [WP.block_append_iff, saves_eq]
-  have h9 : t.gpr .x9 = (lay P s X al).Q := ht.x9.trans (entered_sp P s X al)
+  obtain h9 : t.gpr .x9 = (lay P s X al).Q := ht.x9.trans (entered_sp P s X al)
   refine WP.mono (Spill.save_wp (by decide) (fun p hp => ?_)) fun t₂ hs => ?_
   · rw [h9]
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hp
     rcases hp with rfl | rfl | rfl | rfl <;> exact hfr t _ _ ht.wr (by decide)
-  have hsp₂ : t₂.sp = (lay P s X al).Q := hs.sp.trans (ht.sp.trans (entered_sp P s X al))
-  have M2 : t₂.mem = Spill.saveMem t.mem (lay P s X al).Q t.gpr [(.x10, 0), (.x11, 8), (.x0, oOut), (.x3, oK)] := by
+  obtain hsp₂ : t₂.sp = (lay P s X al).Q := hs.sp.trans (ht.sp.trans (entered_sp P s X al))
+  obtain M2 : t₂.mem = Spill.saveMem t.mem (lay P s X al).Q t.gpr [(.x10, 0), (.x11, 8), (.x0, oOut), (.x3, oK)] := by
     rw [hs.mem, h9]
-  have F2 : Frame [⟨(lay P s X al).Q, 32⟩] t.mem t₂.mem := by
+  obtain F2 : Frame [⟨(lay P s X al).Q, 32⟩] t.mem t₂.mem := by
     rw [M2]
     exact Spill.saveMem_frame_base (fun p hp => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hp
       rcases hp with rfl | rfl | rfl | rfl <;> decide) (by decide) _ _ _
-  have S2 : Spill.Saved (lay P s X al).Q t.gpr [(.x10, 0), (.x11, 8), (.x0, oOut), (.x3, oK)] t₂.mem := by
+  obtain S2 : Spill.Saved (lay P s X al).Q t.gpr [(.x10, 0), (.x11, 8), (.x0, oOut), (.x3, oK)] t₂.mem := by
     rw [M2]; exact Spill.saveMem_saved (by decide) _ _ _
-  have keepHigh : ∀ d, 32 ≤ d → d + 8 ≤ 1120 → t₂.mem.readW ((lay P s X al).Q + BitVec.ofNat 64 d) 64 =
+  obtain keepHigh : ∀ d, 32 ≤ d → d + 8 ≤ 1120 → t₂.mem.readW ((lay P s X al).Q + BitVec.ofNat 64 d) 64 =
       (entered s).mem.readW ((lay P s X al).Q + BitVec.ofNat 64 d) 64 := fun d h₁ h₂ => by
     rw [F2.readW (Region.contains_self _ _) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact Offset.disjoint_base _ (by omega_arith) (by omega_arith)) (by decide), ht.mem]
-  have m0 : t₂.mem.readW (t₂.sp + BitVec.ofNat 64 1088) 64 = stackArg s 0 := by
+  obtain m0 : t₂.mem.readW (t₂.sp + BitVec.ofNat 64 1088) 64 = stackArg s 0 := by
     rw [hsp₂, keepHigh 1088 (by omega_arith) (by omega_arith)]; exact eArg 0 (by decide)
-  have m1 : t₂.mem.readW (t₂.sp + BitVec.ofNat 64 1096) 64 = stackArg s 1 := by
+  obtain m1 : t₂.mem.readW (t₂.sp + BitVec.ofNat 64 1096) 64 = stackArg s 1 := by
     rw [hsp₂, keepHigh 1096 (by omega_arith) (by omega_arith)]; exact eArg 1 (by decide)
-  have hrd₂ : t₂.rd = s.rd := hs.rd.trans ht.rd
-  have hwr₂ : t₂.wr = (entered s).wr := hs.wr.trans ht.wr
+  obtain hrd₂ : t₂.rd = s.rd := hs.rd.trans ht.rd
+  obtain hwr₂ : t₂.wr = (entered s).wr := hs.wr.trans ht.wr
   refine WP.mono (emStart_ok (s := s) (by rw [hs.gpr, h9, hsp₂]) (by rw [hsp₂]; exact hfr t₂ _ _ hwr₂ (by decide))
     (by rw [hsp₂]; exact hfr t₂ _ _ hwr₂ (by decide)) (by rw [hsp₂]; exact harg t₂ _ hrd₂ (by omega_arith) (by omega_arith))
     (by rw [hsp₂]; exact harg t₂ _ hrd₂ (by omega_arith) (by omega_arith)) m0 m1) fun u hu => ?_
-  have hx40 : (lay P s X al).Q + BitVec.ofNat 64 oEM ≠ (lay P s X al).Q + BitVec.ofNat 64 (oEM + 1) :=
+  obtain hx40 : (lay P s X al).Q + BitVec.ofNat 64 oEM ≠ (lay P s X al).Q + BitVec.ofNat 64 (oEM + 1) :=
     Offset.add_ofNat_ne _ (by decide) (by decide) (by decide)
-  have F3 : Frame [⟨(lay P s X al).Q + BitVec.ofNat 64 oEM, 2⟩] t₂.mem u.mem := by
+  obtain F3 : Frame [⟨(lay P s X al).Q + BitVec.ofNat 64 oEM, 2⟩] t₂.mem u.mem := by
     rw [hu.mem, hsp₂]
     refine ((Frame.refl _ _).write (List.mem_singleton_self _) _ ?_).write (List.mem_singleton_self _) _ ?_
     · exact Offset.contains _ (by decide) (by decide) (by unfold oEM; omega_arith)
     · exact Offset.contains _ (by decide) (by decide) (by unfold oEM; omega_arith)
   -- Everything the body has written so far is in `⟨Q, 42⟩`.
-  have F : Frame [⟨(lay P s X al).Q, 42⟩] (entered s).mem u.mem := by
+  obtain F : Frame [⟨(lay P s X al).Q, 42⟩] (entered s).mem u.mem := by
     refine Frame.trans (F2.sub fun r hr => ?_) (F3.sub fun r hr => ?_) |> fun f => ht.mem ▸ f
     · simp only [List.mem_singleton] at hr; subst hr
       exact ⟨_, List.mem_singleton_self _, Region.sub_prefix (by omega_arith)⟩
     · simp only [List.mem_singleton] at hr; subst hr
       exact ⟨_, List.mem_singleton_self _, Offset.sub_base _ (by decide)⟩
-  have hi : ∀ d, 42 ≤ d → d + 8 ≤ 1120 → u.mem.readW ((lay P s X al).Q + BitVec.ofNat 64 d) 64 =
+  obtain hi : ∀ d, 42 ≤ d → d + 8 ≤ 1120 → u.mem.readW ((lay P s X al).Q + BitVec.ofNat 64 d) 64 =
       (entered s).mem.readW ((lay P s X al).Q + BitVec.ofNat 64 d) 64 := fun d h₁ h₂ =>
     F.readW (Region.contains_self _ _) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact Offset.disjoint_base _ (by omega_arith) (by omega_arith)) (by decide)
-  have S3 := S2.frame F3 fun p hp r hr => by
+  obtain S3 := S2.frame F3 fun p hp r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hp hr
     subst hr
     rcases hp with rfl | rfl | rfl | rfl <;>
       exact Offset.disjoint _ (by decide) (by decide) (by decide)
-  have sv : ∀ r d, (r, d) ∈ [(Reg.x10, 0), (Reg.x11, 8), (Reg.x0, oOut), (Reg.x3, oK)] →
+  obtain sv : ∀ r d, (r, d) ∈ [(Reg.x10, 0), (Reg.x11, 8), (Reg.x0, oOut), (Reg.x3, oK)] →
       u.mem.readW ((lay P s X al).Q + BitVec.ofNat 64 d) 64 = t.gpr r := fun r d hrd => S3 (r, d) hrd
   have g₂ : t₂.gpr = t.gpr := hs.gpr
   refine ⟨⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_⟩
@@ -300,7 +300,7 @@ theorem entry_okX {P : Nat} {X : List Region} {al : Nat} {s : State} (hL : (lay 
       List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_singleton_self _))
     refine Frame.trans (eFr.mono fun r hr => by rw [List.mem_singleton.mp hr]; exact hk) (F.sub fun r hr => ?_)
     rw [List.mem_singleton.mp hr]
-    have h42 := Lay.Ok.sub_stk (L := lay P s X al) (d := 0) (n := 42) (by omega_arith)
+    obtain h42 := Lay.Ok.sub_stk (L := lay P s X al) (d := 0) (n := 42) (by omega_arith)
     rw [show (lay P s X al).Q + BitVec.ofNat 64 0 = (lay P s X al).Q from BitVec.add_zero _] at h42
     exact ⟨(lay P s X al).STK, hk, h42⟩
   · have go : ∀ r, r ≠ .x9 → r ≠ .x10 → r ≠ .x11 → r ≠ .x12 → r ≠ .x13 → r ≠ .x14 → r ≠ .x15 →

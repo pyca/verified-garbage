@@ -13,8 +13,10 @@ scratch = r7, hmac = r8) -> r3` (`sign`), for a curve of `Q`-byte scalars in
 `w` words, as on x86-64 (`Impl/Ecdsa/Rfc6979/X86_64.lean`): RFC 6979 §3.2
 with HMAC over the hash function of the table `hmac` of the interface
 `Hmac` (`Spec/HmacTable.lean`), whose functions it calls indirectly
-(`tcall`: the table's word into `r12`, then `bctrl`): HMAC's `init` (word
-0), which keys the inner and outer streaming states, the streaming `update`
+(`tcall`: the table's word into `r12`, then `bctrl`): HMAC's `init` for a
+key of any length (word 0, `init_any_scratch`), which keys the inner and
+outer streaming states (with `K`, at most a block, which it gives HMAC's
+`init` for such a key alone), the streaming `update`
 (word 1), on the inner state, and HMAC's `finalize` (word 2), which writes
 the MAC; and each candidate tried by calling `core`, the signature with a
 given `k` (`vg_ecdsa_<curve>_sign_k`), which reads `Q` bytes of the digest
@@ -60,7 +62,8 @@ number of candidates left, the pointers `scratch`, `digest`, `d` and `out`,
 `D`, `B` and the table's address; then `h` (72 bytes, unless `big`), `X`,
 `core`'s digest if `big` (72 bytes each), and `T` (136 bytes). The calls use
 only `scratch`, which `core` overwrites entirely, and the 96 bytes of stack
-below the frame; `K`, `V` and everything above the table's address are
+below the frame (word 0 of the table would use 144 for a key longer than a
+block, which it is never given, and the contract reserves them); `K`, `V` and everything above the table's address are
 cleared before the frame is freed. In `scratch`: HMAC's inner and outer
 streaming states (192 bytes each), the working space of the table's
 functions, the message, the words of a shift, and the copy of the states

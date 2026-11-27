@@ -1,7 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.Ed448.AArch64.Point56.AsFn
-public import VerifiedGarbage.Proof.Ed448.AArch64.Window.Dbl
+public import VerifiedGarbage.Proof.Ed448.AArch64.Point56.AsFn
 public import VerifiedGarbage.Proof.Ed448.AArch64.Point56.MulSlots
 public import VerifiedGarbage.Proof.Ed448.Root
 public import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Lit
@@ -16,6 +15,8 @@ public import VerifiedGarbage.Impl.X448.AArch64.Field56
 public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 public import VerifiedGarbage.Proof.Framework.AArch64.StoreFrame
 public import VerifiedGarbage.Proof.X448.AArch64.Fast.Env
+import VerifiedGarbage.Proof.X448.AArch64.Fast.Lit
+meta import VerifiedGarbage.Proof.X448.AArch64.Fast.Lit
 
 /-! ### `Ed448.AArch64.VerifyRoot`, which only this module used -/
 
@@ -114,7 +115,7 @@ theorem root_spec (base : Addr) : PSpec base (root 12) rootEnv := by
 
 theorem rootEnv_eval (e : Env) : rootEnv e 21 = rootPow (e 12) := by
   simp only [↓reduceIte, rootEnv, applyOps, FieldOp.apply, opMul, opCopy, opSqn,
-    Function.update_apply]
+    Fun.update_apply]
   rfl
 
 theorem rootEnv_keep (e : Env) (i : Fin 22) (hi : i.val < 14) : rootEnv e i = e i := by
@@ -126,9 +127,9 @@ theorem rootEnv_keep (e : Env) (i : Fin 22) (hi : i.val < 14) : rootEnv e i = e 
   have h6 : i ≠ 19 := fun h => absurd hi (by rw [h]; decide)
   have h7 : i ≠ 20 := fun h => absurd hi (by rw [h]; decide)
   have h8 : i ≠ 21 := fun h => absurd hi (by rw [h]; decide)
-  simp only [rootEnv, applyOps, FieldOp.apply, opMul, opCopy, opSqn, Function.update_of_ne h1,
-    Function.update_of_ne h2, Function.update_of_ne h3, Function.update_of_ne h4, Function.update_of_ne h5,
-    Function.update_of_ne h6, Function.update_of_ne h7, Function.update_of_ne h8]
+  simp only [rootEnv, applyOps, FieldOp.apply, opMul, opCopy, opSqn, Fun.update_of_ne h1,
+    Fun.update_of_ne h2, Fun.update_of_ne h3, Fun.update_of_ne h4, Fun.update_of_ne h5,
+    Fun.update_of_ne h6, Fun.update_of_ne h7, Fun.update_of_ne h8]
 
 end VG.Proof.Ed448.AArch64
 

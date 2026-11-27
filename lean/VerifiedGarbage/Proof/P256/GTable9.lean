@@ -1,9 +1,8 @@
 module
 
 import VerifiedGarbage.Proof.P256.Point
-import VerifiedGarbage.Proof.Weierstrass.CombCheckFast
+public import VerifiedGarbage.Proof.Weierstrass.CombCheckFast
 public import VerifiedGarbage.Impl.P256.GTable9
-public import VerifiedGarbage.Proof.Weierstrass.CombCheckW
 public import VerifiedGarbage.Spec.P256
 
 /-!

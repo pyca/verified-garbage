@@ -234,6 +234,16 @@ mod tests {
         );
     }
 
+    /// `dit` says whether the CPU has FEAT_DIT, whatever `VG_CPU_FEATURES`
+    /// says, and where it has, what `detected` reports.
+    #[cfg(target_arch = "aarch64")]
+    #[test]
+    fn dit_is_runtime_and_detected() {
+        let dit = verified_garbage_cpu::detect::dit();
+        assert_eq!(dit.is_some(), runtime() & feature::DIT != 0);
+        assert!(dit.is_none_or(|features| features == detected()));
+    }
+
     /// The microarchitectures are no instruction set feature: the
     /// compilation target enables none.
     #[test]
@@ -396,6 +406,7 @@ mod tests {
         assert_eq!(parse("umaal"), Some(1 << 20));
         assert_eq!(parse("avx512fp16"), Some(1 << 23));
         assert_eq!(parse("zen5"), Some(1 << 24));
+        assert_eq!(parse("sm4"), Some(1 << 25));
         for bad in ["avx512vbmi", "aes,", "aes,none", " aes", "AES"] {
             assert_eq!(parse(bad), None, "{bad}");
         }

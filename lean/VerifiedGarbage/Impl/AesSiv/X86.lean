@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.AesGcm.X86
 public import VerifiedGarbage.Impl.CmacAes.Stream.X86
 public import VerifiedGarbage.Impl.StackScratch.X86
+public import VerifiedGarbage.Impl.Scrub.X86
 
 /-!
 # AES-SIV: x86 (32-bit) implementation
@@ -103,7 +104,7 @@ them, and so are the numbers of calls, bytes copied and blocks chained.
 namespace VG.Impl.AesSiv.X86
 
 open VG.X86
-open VG.Impl.AesGcm.X86 (at_ imm slot argOp keep entry saveAt restore zero4 copyLoop xorLoop)
+open VG.Impl.AesGcm.X86 (at_ imm slot argOp keep entry saveAt restore zero4 copyLoop xorLoop maskWords)
 
 /-! ## `vg_aes_siv_init` -/
 
@@ -369,13 +370,17 @@ def compare : List Instr :=
    .mov .ecx (slot 12), .alu .xor .ecx (slot (tOff + 12)), .alu .or .eax (.reg .ecx),
    .alu .cmp .eax (imm 1), .mov .eax (imm 0), .alu .adc .eax (imm 0), .store (at_ .ebp okO) .eax]
 
-/-- Every byte of the data ANDed with `0 − ok`. -/
+/-- Every byte of the data ANDed with `0 − ok`: 16 at a time, then four at
+a time (`maskWords`), then one at a time. -/
 def mask : Prog isa :=
   .seq (.block [.mov .ecx (slot lenO), .alu .test .ecx (.reg .ecx)])
     (.ite .e (.block [])
       (.seq (.block [.mov .ebx (imm 0), .alu .sub .ebx (slot okO), .mov .edi (slot dataO)])
-        (.loop (.block [.movzx8 .edx (at_ .edi 0), .alu .and .edx (.reg .ebx), .store8 (at_ .edi 0) .dl,
-          .alu .add .edi (imm 1), .alu .sub .ecx (imm 1)]) .ne)))
+        (.seq maskWords
+          (.seq (.block [.alu .test .ecx (.reg .ecx)])
+            (.ite .e (.block [])
+              (.loop (.block [.movzx8 .edx (at_ .edi 0), .alu .and .edx (.reg .ebx), .store8 (at_ .edi 0) .dl,
+                .alu .add .edi (imm 1), .alu .sub .ecx (imm 1)]) .ne))))))
 
 /-! ## `vg_aes_siv_encrypt` and `vg_aes_siv_decrypt` -/
 
@@ -425,3 +430,30 @@ def decrypt : Prog isa :=
 end
 
 end VG.Impl.AesSiv.X86
+
+/-! ## The functions as emitted
+
+Each function, then its cleanup (`Impl.Scrub.X86.scrubAll rb W`): the `W`
+bytes of stack below `esp` that it and its callees use zeroed, and the
+registers a callee may change cleared but the `rb` bits of the result, so
+that it returns without secret residue. -/
+
+namespace VG.Impl.AesSiv.X86.Fn
+
+open VG.X86
+open Impl.StackScratch.X86 (withStackScratch)
+
+/-- `vg_aes_siv_init` over the key expansion `e` and counter-mode function
+`c`, of the variant `sfx`, as emitted. -/
+def init (e : Impl.Aes.X86.ExpandKey) (c : Impl.Aes.X86.Ctr32) (sfx : String) : Prog isa :=
+  Impl.Scrub.X86.scrubAll 0 2632 (withStackScratch 2580 3 (Impl.AesSiv.X86.initCore e c sfx))
+
+/-- `vg_aes_siv_encrypt` over `c`, of the variant `sfx`, as emitted. -/
+def encrypt (c : Impl.Aes.X86.Ctr32) (sfx : String) : Prog isa :=
+  Impl.Scrub.X86.scrubAll 0 2672 (withStackScratch 2612 7 (Impl.AesSiv.X86.encrypt c sfx))
+
+/-- `vg_aes_siv_decrypt` over `c`, of the variant `sfx`, as emitted. -/
+def decrypt (c : Impl.Aes.X86.Ctr32) (sfx : String) : Prog isa :=
+  Impl.Scrub.X86.scrubAll 32 2672 (withStackScratch 2612 7 (Impl.AesSiv.X86.decrypt c sfx))
+
+end VG.Impl.AesSiv.X86.Fn

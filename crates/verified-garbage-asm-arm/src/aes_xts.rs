@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Xts.aesEncryptUnitContract`. Constant time: only the pointers, `rounds` and `len` may affect timing, not the key schedules, the tweak value or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 240 bytes.
@@ -100,6 +102,20 @@ ldr r7, [r8, #2220]
 ldr r9, [r8, #2224]
 ldr lr, [r8, #2228]
 ldr r8, [r8, #2232]
+sub sp, sp, #16
+add r12, sp, #0
+mov r2, #0
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+add sp, sp, #16
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
         vg_aes_xts_encrypt = sym super::aes_xts::vg_aes_xts_encrypt::vg_aes_xts_encrypt,
     )
@@ -108,6 +124,8 @@ bx lr",
 /// XTS-AES decryption (IEEE Std 1619-2007 §5.4.2, NIST SP 800-38E) of a whole data unit, in place: replaces the `len` bytes at `data`, at least 16 and at most 2²⁰ blocks, with their decryption under the key `Key1 ‖ Key2` with the tweak value `*i`. With `m` whole blocks `C₀ … Cₘ₋₁` and `b` bytes `Cₘ` after them, each `Cⱼ` for `j < m` (`j < m - 1` if `b > 0`) becomes `Pⱼ = AES-dec(Key1, Cⱼ ⊕ Tⱼ) ⊕ Tⱼ`, where `Tⱼ = T ⊗ αʲ` (§5.2) and `T = AES-enc(Key2, i)`. If `b > 0`, ciphertext stealing makes `Pₘ` the first `b` bytes of `PP`, the decryption of `Cₘ₋₁` with `Tₘ`, and `Pₘ₋₁` the decryption with `Tₘ₋₁` of `Cₘ` followed by the other `16 - b` bytes of `PP`. `AES-dec(Key1, ·)` is the AES inverse cipher (FIPS 197 §5.3) and `AES-enc(Key2, ·)` AES, with `rounds` rounds and the key schedules in the first `16 * (rounds + 1)` bytes of `*schedule` and `*tweak_schedule`, as `vg_aes_expand_key` writes them.
 ///
 /// Contract: `VG.Spec.Xts.aesDecryptUnitContract`. Constant time: only the pointers, `rounds` and `len` may affect timing, not the key schedules, the tweak value or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -256,6 +274,20 @@ ldr r7, [r8, #2220]
 ldr r9, [r8, #2224]
 ldr lr, [r8, #2228]
 ldr r8, [r8, #2232]
+sub sp, sp, #16
+add r12, sp, #0
+mov r2, #0
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+add sp, sp, #16
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
         vg_aes_xts_encrypt = sym super::aes_xts::vg_aes_xts_encrypt::vg_aes_xts_encrypt,
         vg_aes_xts_decrypt = sym super::aes_xts::vg_aes_xts_decrypt::vg_aes_xts_decrypt,

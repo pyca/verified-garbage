@@ -210,9 +210,11 @@ def shr59 (dst src L : Nat) : List Instr :=
   [.mov .rdx (.mem (sc (src + 8 * (L - 1))))] ++ maskOf .r8 .rdx ++ [.mov .rax (.reg .rdx)] ++
     shrTail (dst + 8 * (L - 1))
 
-/-- `rcx = k = t₀ m mod 2^64`, through `rax` and `rdx`. -/
-def kOf (M : Mod) (t : Nat) : List Instr :=
-  [.mov .rax (.mem (sc t)), .movImm64 .rcx M.minv, .mul .rcx, .mov .rcx (.reg .rax)]
+/-- `rcx = k = t₀ m mod 2^64`, through `rax` and `rdx`; `m` in `r15` if `r`
+(a shared inversion's, which reads it from memory), else an immediate. -/
+def kOf (M : Mod) (t : Nat) (r : Bool := false) : List Instr :=
+  if r then [.mov .rax (.mem (sc t)), .mul .r15, .mov .rcx (.reg .rax)]
+  else [.mov .rax (.mem (sc t)), .movImm64 .rcx M.minv, .mul .rcx, .mov .rcx (.reg .rax)]
 
 /-- Word `n + 1` of `[t]`: the mask of word `n`'s sign. -/
 def sextTop (M : Mod) (t : Nat) : List Instr :=
@@ -239,8 +241,8 @@ def subP (M : Mod) (t U : Nat) : List Instr :=
 /-- `[dst] = mredRaw [t]` (`n + 1` words, signed; `[t]` of `n + 1` words, signed,
 with room for one more): `[t] += k p` for `k = t₀ m mod 2^64` (`[t]`
 sign-extended to `n + 2` words), then its words `1 … n + 1`. -/
-def mredS (M : Mod) (dst t : Nat) : List Instr :=
-  kOf M t ++ sextTop M t ++ memRow M.n t M.mo ++ carry2 (t + 8 * M.n) ++ copy (M.n + 1) dst (t + 8)
+def mredS (M : Mod) (dst t : Nat) (r : Bool := false) : List Instr :=
+  kOf M t r ++ sextTop M t ++ memRow M.n t M.mo ++ carry2 (t + 8 * M.n) ++ copy (M.n + 1) dst (t + 8)
 
 /-- `[t + 8]` (`n + 1` words, signed, in `(-p, 2p)`) brought into `[0, p)`:
 plus `p` if negative, less `p`, and plus `p` if that is negative, `p` (with
@@ -251,7 +253,10 @@ def normC (M : Mod) (t U : Nat) : List Instr :=
 /-! ## The configuration -/
 
 /-- Inversion's configuration: the field, the result and input slots, the
-working area of `8 n + 8` words, the number of batches, and the final constant. -/
+working area of `8 n + 8` words, the number of batches, and the final constant;
+for an inversion that several curves share (`seed`), where the caller has
+stored the constants it needs: the seed `2^(5 B) R² mod m` (`n` words) and
+`-m⁻¹ mod 2⁶⁴`, whose code names no constant of the modulus. -/
 structure InvCfg where
   M : Mod
   acc : Nat
@@ -260,6 +265,7 @@ structure InvCfg where
   B : Nat
   C : Nat
   Cn : Nat
+  seed : Option (Nat × Nat) := none
 
 namespace InvCfg
 
@@ -284,9 +290,15 @@ def sC : Nat := P.sNF
 /-- `d = rbx = 1`, the count `r14 = B`; `f = p`, `g = x` (a zero word on top),
 `a = 0`, `b = 1`. -/
 def init : List Instr :=
-  [.mov32 .rbx (.imm 1), .mov32 .r14 (.imm (BitVec.ofNat 32 P.B))] ++
-  copy P.M.n P.sF P.M.mo ++ zeroTop P.sF P.M.n ++ copy P.M.n P.sG P.base ++ zeroTop P.sG P.M.n ++
-  zeroWords P.L P.sA ++ zeroWords P.L P.sB ++ [.mov32 .r8 (.imm 1), .store (sc P.sB) .r8]
+  match P.seed with
+  | none =>
+    [.mov32 .rbx (.imm 1), .mov32 .r14 (.imm (BitVec.ofNat 32 P.B))] ++
+    copy P.M.n P.sF P.M.mo ++ zeroTop P.sF P.M.n ++ copy P.M.n P.sG P.base ++ zeroTop P.sG P.M.n ++
+    zeroWords P.L P.sA ++ zeroWords P.L P.sB ++ [.mov32 .r8 (.imm 1), .store (sc P.sB) .r8]
+  | some (sd, md) =>
+    [.mov .r15 (.mem (sc md)), .mov32 .rbx (.imm 1), .mov32 .r14 (.imm (BitVec.ofNat 32 P.B))] ++
+    copy P.M.n P.sF P.M.mo ++ zeroTop P.sF P.M.n ++ copy P.M.n P.sG P.base ++ zeroTop P.sG P.M.n ++
+    zeroWords P.L P.sA ++ copy P.M.n P.sB sd ++ zeroTop P.sB P.M.n
 
 /-- A batch's start: the low words of `f`, `g` into `[sT]`, `[sT + 8]`, and `rbx = ~d`. -/
 def batchStart : List Instr :=
@@ -307,8 +319,8 @@ def fgUpdate : List Instr :=
 /-- `(a, b) := (u a + v b, q a + r b) / 2^64`, congruent modulo `p`, in `(-p, 2p)`;
 `a` staged in `f'`. -/
 def abUpdate : List Instr :=
-  linR .r9 .r10 P.sT P.sA P.sB P.sU P.L P.L ++ mredS P.M P.sNF P.sT ++
-  linR .r11 .r12 P.sT P.sA P.sB P.sU P.L P.L ++ mredS P.M P.sB P.sT ++
+  linR .r9 .r10 P.sT P.sA P.sB P.sU P.L P.L ++ mredS P.M P.sNF P.sT P.seed.isSome ++
+  linR .r11 .r12 P.sT P.sA P.sB P.sU P.L P.L ++ mredS P.M P.sB P.sT P.seed.isSome ++
   copy P.L P.sA P.sNF
 
 /-- The count of batches less one, its zero flag for the loop. -/
@@ -318,8 +330,16 @@ def batchEnd : List Instr := [.alu .sub .r14 (.imm 1)]
 def batch : Prog isa := .block (P.words ++ P.fgUpdate ++ P.abUpdate ++ batchEnd)
 
 /-- The end: `a` into `[0, p)` (`g'` the masked operand); `f = ±1`; `[C] = C` if
-`f > 0`, else `Cn = p - C`, and `acc = a [C] / R`. -/
+`f > 0`, else `Cn = p - C`, and `acc = a [C] / R`. A seeded inversion's `a`
+is already the result up to the sign of `f`: `acc = p - a`, then `a` selected
+instead if `f ≥ 0`, its sign read from its top word (`f = p` for `x = 0`,
+whose low word may look negative). -/
 def finish : List Instr :=
+  match P.seed with
+  | some _ =>
+    normC P.M (P.sA - 8) P.sNG ++ [.mov .rdx (.mem (sc (P.sF + 8 * P.M.n)))] ++ maskOf .rcx .rdx ++
+    chainW .sub .sbb P.M.n P.acc P.M.mo P.sA ++ [.mov .rax (.reg .rcx)] ++ selectsW P.M.n P.sA P.acc
+  | none =>
   normC P.M (P.sA - 8) P.sNG ++ [.mov .rdx (.mem (sc P.sF))] ++ maskOf .rcx .rdx ++
   ((List.range P.M.n).flatMap fun i =>
     [.movImm64 .rax (BitVec.ofNat 64 (P.C >>> (64 * i))), .movImm64 .rdx (BitVec.ofNat 64 (P.Cn >>> (64 * i))),
@@ -334,6 +354,15 @@ def ofMod (M : Mod) (acc base tbl m : Nat) : InvCfg :=
   let B := if M.n ≤ 4 then 10 else if M.n ≤ 6 then 15 else 23
   let C := 2 ^ (5 * B) * (2 ^ (64 * M.n)) ^ 3 % m
   { M, acc, base, tbl, B, C, Cn := m - C }
+
+/-- The seed of a shared inversion modulo `m`: `2^(5 B) R² mod m`, the factor
+`b` starts at so that `a` ends as the result (`finish`'s `C / R`). -/
+def seedOf (m : Nat) : Nat := 2 ^ (5 * P.B) * (2 ^ (64 * P.M.n)) ^ 2 % m
+
+/-- `ofMod`, for an inversion that several curves share: the constants it
+reads at `sd` (the seed, `n` words) and `md` (`-m⁻¹ mod 2⁶⁴`). -/
+def ofModS (M : Mod) (acc base tbl m sd md : Nat) : InvCfg :=
+  { ofMod M acc base tbl m with seed := some (sd, md) }
 
 /-- `[acc] = [base]^(p - 2)`. -/
 def inv : Prog isa :=

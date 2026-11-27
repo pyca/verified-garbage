@@ -38,7 +38,7 @@ call {vg_scrypt_romix_sse2}
 jne 20b
 .base64 "SIt8JBhIi3QkIEiLVCQwSItMJEBIwck5TItMJGhIi0QkcEyLRCRYSIkEJEyJRCQIQbgBAAAA"
 call {vg_pbkdf2_hmac_sha256_scratch_shani}
-.base64 "WFhYWFhYWGYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ZkUP78BmRQ/vyWZFD+/SZkUP79tmRQ/v5GZFD+/tZkUP7/ZmRQ/v/0Ux20iNZCSo8w9/RCRI8w9/RCQ48w9/RCQo8w9/RCQY8w9/RCQITIkcJEiNZCRYMcAxyTHSMfYx/0UxwEUxyUUx0sM="
+.base64 "WFhYWFhYWGYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ZkUP78BmRQ/vyWZFD+/SZkUP79tmRQ/v5GZFD+/tZkUP7/ZmRQ/v/0Ux20iNZCT4TIkcJEiNZCSw8w9/RCRA8w9/RCQw8w9/RCQg8w9/RCQQ8w9/BCRIjWQkUEiNZCQIMcAxyTHSMfYx/0UxwEUxyUUx0sM="
 .p2align 6"#,
         vg_pbkdf2_hmac_sha256_scratch_shani = sym super::scrypt::vg_pbkdf2_hmac_sha256_scratch_shani::vg_pbkdf2_hmac_sha256_scratch_shani,
         vg_scrypt_romix_sse2 = sym super::scrypt::vg_scrypt_romix_sse2::vg_scrypt_romix_sse2,
@@ -80,7 +80,7 @@ call {vg_scrypt_romix_sse2}
 jne 20b
 .base64 "SIt8JBhIi3QkIEiLVCQwSItMJEBIwck5TItMJGhIi0QkcEyLRCRYSIkEJEyJRCQIQbgBAAAA"
 call {vg_pbkdf2_hmac_sha256_scratch_avx2}
-.base64 "WFhYWFhYWMX578DF8e/Jxenv0sXh79vF2e/kxdHv7cXJ7/bFwe//xEE578DEQTHvycRBKe/SxEEh79vEQRnv5MRBEe/txEEJ7/bEQQHv/0Ux20iNZCSoxf5/RCQ4xf5/RCQY8w9/RCQITIkcJEiNZCRYMcAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
+.base64 "WFhYWFhYWMX578DF8e/Jxenv0sXh79vF2e/kxdHv7cXJ7/bFwe//xEE578DEQTHvycRBKe/SxEEh79vEQRnv5MRBEe/txEEJ7/bEQQHv/0Ux20iNZCT4TIkcJEiNZCSwxf5/RCQwxf5/RCQQ8w9/BCRIjWQkUEiNZCQIMcAxyTHSMfYx/0UxwEUxyUUx0sM="
 .p2align 6"#,
         vg_pbkdf2_hmac_sha256_scratch_avx2 = sym super::scrypt::vg_pbkdf2_hmac_sha256_scratch_avx2::vg_pbkdf2_hmac_sha256_scratch_avx2,
         vg_scrypt_romix_sse2 = sym super::scrypt::vg_scrypt_romix_sse2::vg_scrypt_romix_sse2,
@@ -118,7 +118,7 @@ call {vg_scrypt_romix_sse2}
 jne 20b
 .base64 "SIt8JBhIi3QkIEiLVCQwSItMJEBIwck5TItMJGhIi0QkcEyLRCRYSIkEJEyJRCQIQbgBAAAA"
 call {vg_pbkdf2_hmac_sha256_scratch}
-.base64 "WFhYWFhYWGYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ZkUP78BmRQ/vyWZFD+/SZkUP79tmRQ/v5GZFD+/tZkUP7/ZmRQ/v/0Ux20iNZCSo8w9/RCRI8w9/RCQ48w9/RCQo8w9/RCQY8w9/RCQITIkcJEiNZCRYMcAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
+.base64 "WFhYWFhYWGYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ZkUP78BmRQ/vyWZFD+/SZkUP79tmRQ/v5GZFD+/tZkUP7/ZmRQ/v/0Ux20iNZCT4TIkcJEiNZCSw8w9/RCRA8w9/RCQw8w9/RCQg8w9/RCQQ8w9/BCRIjWQkUEiNZCQIMcAxyTHSMfYx/0UxwEUxyUUx0sM="
 .p2align 6"#,
         vg_pbkdf2_hmac_sha256_scratch = sym super::scrypt::vg_pbkdf2_hmac_sha256_scratch::vg_pbkdf2_hmac_sha256_scratch,
         vg_scrypt_romix_sse2 = sym super::scrypt::vg_scrypt_romix_sse2::vg_scrypt_romix_sse2,
@@ -160,7 +160,7 @@ call {vg_scrypt_romix}
 jne 20b
 .base64 "SIt8JBhIi3QkIEiLVCQwSItMJEBIwck5TItMJGhIi0QkcEyLRCRYSIkEJEyJRCQIQbgBAAAA"
 call {vg_pbkdf2_hmac_sha256_scratch_shani}
-.base64 "WFhYWFhYWGYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ZkUP78BmRQ/vyWZFD+/SZkUP79tmRQ/v5GZFD+/tZkUP7/ZmRQ/v/0Ux20iNZCSo8w9/RCRI8w9/RCQ48w9/RCQo8w9/RCQY8w9/RCQITIkcJEiNZCRYMcAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
+.base64 "WFhYWFhYWGYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ZkUP78BmRQ/vyWZFD+/SZkUP79tmRQ/v5GZFD+/tZkUP7/ZmRQ/v/0Ux20iNZCT4TIkcJEiNZCSw8w9/RCRA8w9/RCQw8w9/RCQg8w9/RCQQ8w9/BCRIjWQkUEiNZCQIMcAxyTHSMfYx/0UxwEUxyUUx0sM="
 .p2align 6"#,
         vg_pbkdf2_hmac_sha256_scratch_shani = sym super::scrypt::vg_pbkdf2_hmac_sha256_scratch_shani::vg_pbkdf2_hmac_sha256_scratch_shani,
         vg_scrypt_romix = sym super::scrypt::vg_scrypt_romix::vg_scrypt_romix,
@@ -202,7 +202,7 @@ call {vg_scrypt_romix}
 jne 20b
 .base64 "SIt8JBhIi3QkIEiLVCQwSItMJEBIwck5TItMJGhIi0QkcEyLRCRYSIkEJEyJRCQIQbgBAAAA"
 call {vg_pbkdf2_hmac_sha256_scratch_avx2}
-.base64 "WFhYWFhYWMX578DF8e/Jxenv0sXh79vF2e/kxdHv7cXJ7/bFwe//xEE578DEQTHvycRBKe/SxEEh79vEQRnv5MRBEe/txEEJ7/bEQQHv/0Ux20iNZCSoxf5/RCQ4xf5/RCQY8w9/RCQITIkcJEiNZCRYMcAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
+.base64 "WFhYWFhYWMX578DF8e/Jxenv0sXh79vF2e/kxdHv7cXJ7/bFwe//xEE578DEQTHvycRBKe/SxEEh79vEQRnv5MRBEe/txEEJ7/bEQQHv/0Ux20iNZCT4TIkcJEiNZCSwxf5/RCQwxf5/RCQQ8w9/BCRIjWQkUEiNZCQIMcAxyTHSMfYx/0UxwEUxyUUx0sM="
 .p2align 6"#,
         vg_pbkdf2_hmac_sha256_scratch_avx2 = sym super::scrypt::vg_pbkdf2_hmac_sha256_scratch_avx2::vg_pbkdf2_hmac_sha256_scratch_avx2,
         vg_scrypt_romix = sym super::scrypt::vg_scrypt_romix::vg_scrypt_romix,
@@ -240,7 +240,7 @@ call {vg_scrypt_romix}
 jne 20b
 .base64 "SIt8JBhIi3QkIEiLVCQwSItMJEBIwck5TItMJGhIi0QkcEyLRCRYSIkEJEyJRCQIQbgBAAAA"
 call {vg_pbkdf2_hmac_sha256_scratch}
-.base64 "WFhYWFhYWGYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ZkUP78BmRQ/vyWZFD+/SZkUP79tmRQ/v5GZFD+/tZkUP7/ZmRQ/v/0Ux20iNZCSo8w9/RCRI8w9/RCQ48w9/RCQo8w9/RCQY8w9/RCQITIkcJEiNZCRYMcAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
+.base64 "WFhYWFhYWGYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ZkUP78BmRQ/vyWZFD+/SZkUP79tmRQ/v5GZFD+/tZkUP7/ZmRQ/v/0Ux20iNZCT4TIkcJEiNZCSw8w9/RCRA8w9/RCQw8w9/RCQg8w9/RCQQ8w9/BCRIjWQkUEiNZCQIMcAxyTHSMfYx/0UxwEUxyUUx0sM="
 .p2align 6"#,
         vg_pbkdf2_hmac_sha256_scratch = sym super::scrypt::vg_pbkdf2_hmac_sha256_scratch::vg_pbkdf2_hmac_sha256_scratch,
         vg_scrypt_romix = sym super::scrypt::vg_scrypt_romix::vg_scrypt_romix,

@@ -8,6 +8,8 @@
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_chacha20_poly1305_seal_ifma` if the CPU supports its features (`VG_CHACHA20_POLY1305_SEAL_IFMA_FEATURES`); `vg_chacha20_poly1305_seal_avx512vl` if the CPU supports its features (`VG_CHACHA20_POLY1305_SEAL_AVX512VL_FEATURES`); `vg_chacha20_poly1305_seal_avx512` if the CPU supports its features (`VG_CHACHA20_POLY1305_SEAL_AVX512_FEATURES`); `vg_chacha20_poly1305_seal_avx2` if the CPU supports its features (`VG_CHACHA20_POLY1305_SEAL_AVX2_FEATURES`); `vg_chacha20_poly1305_seal_ssse3` if the CPU supports its features (`VG_CHACHA20_POLY1305_SEAL_SSSE3_FEATURES`); or else `vg_chacha20_poly1305_seal`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `key` must be valid for reads of 32 bytes.
@@ -20,8 +22,6 @@
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_chacha20_poly1305_seal_auto(_dit: verified_garbage_cpu::Dit<'_>, key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
-    // SAFETY: it takes no argument and writes no memory but its stack.
-    verified_garbage_cpu::mcdt_entered(unsafe { crate::mcdt::vg_mcdt_enter() });
     /// The type of the implementations.
     type Impl = unsafe extern "sysv64" fn(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]);
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
@@ -81,6 +81,8 @@ pub unsafe fn vg_chacha20_poly1305_seal_auto(_dit: verified_garbage_cpu::Dit<'_>
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_chacha20_poly1305_open_ifma` if the CPU supports its features (`VG_CHACHA20_POLY1305_OPEN_IFMA_FEATURES`); `vg_chacha20_poly1305_open_avx512vl` if the CPU supports its features (`VG_CHACHA20_POLY1305_OPEN_AVX512VL_FEATURES`); `vg_chacha20_poly1305_open_avx512` if the CPU supports its features (`VG_CHACHA20_POLY1305_OPEN_AVX512_FEATURES`); `vg_chacha20_poly1305_open_avx2` if the CPU supports its features (`VG_CHACHA20_POLY1305_OPEN_AVX2_FEATURES`); `vg_chacha20_poly1305_open_ssse3` if the CPU supports its features (`VG_CHACHA20_POLY1305_OPEN_SSSE3_FEATURES`); or else `vg_chacha20_poly1305_open`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `key` must be valid for reads of 32 bytes.
@@ -93,8 +95,6 @@ pub unsafe fn vg_chacha20_poly1305_seal_auto(_dit: verified_garbage_cpu::Dit<'_>
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_chacha20_poly1305_open_auto(_dit: verified_garbage_cpu::Dit<'_>, key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
-    // SAFETY: it takes no argument and writes no memory but its stack.
-    verified_garbage_cpu::mcdt_entered(unsafe { crate::mcdt::vg_mcdt_enter() });
     /// The type of the implementations.
     type Impl = unsafe extern "sysv64" fn(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32;
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
@@ -154,6 +154,8 @@ pub unsafe fn vg_chacha20_poly1305_open_auto(_dit: verified_garbage_cpu::Dit<'_>
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_chacha20_poly1305_open_to_ifma` if the CPU supports its features (`VG_CHACHA20_POLY1305_OPEN_TO_IFMA_FEATURES`); `vg_chacha20_poly1305_open_to_avx512vl` if the CPU supports its features (`VG_CHACHA20_POLY1305_OPEN_TO_AVX512VL_FEATURES`); `vg_chacha20_poly1305_open_to_avx512` if the CPU supports its features (`VG_CHACHA20_POLY1305_OPEN_TO_AVX512_FEATURES`); `vg_chacha20_poly1305_open_to_avx2` if the CPU supports its features (`VG_CHACHA20_POLY1305_OPEN_TO_AVX2_FEATURES`); `vg_chacha20_poly1305_open_to_ssse3` if the CPU supports its features (`VG_CHACHA20_POLY1305_OPEN_TO_SSSE3_FEATURES`); or else `vg_chacha20_poly1305_open_to`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `key` must be valid for reads of 32 bytes.
@@ -169,8 +171,6 @@ pub unsafe fn vg_chacha20_poly1305_open_auto(_dit: verified_garbage_cpu::Dit<'_>
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_chacha20_poly1305_open_to_auto(_dit: verified_garbage_cpu::Dit<'_>, key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const [u8; 16]) -> u32 {
-    // SAFETY: it takes no argument and writes no memory but its stack.
-    verified_garbage_cpu::mcdt_entered(unsafe { crate::mcdt::vg_mcdt_enter() });
     /// The type of the implementations.
     type Impl = unsafe extern "sysv64" fn(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const [u8; 16]) -> u32;
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
@@ -230,6 +230,8 @@ pub unsafe fn vg_chacha20_poly1305_open_to_auto(_dit: verified_garbage_cpu::Dit<
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_chacha20_poly1305_seal_gather_ifma` if the CPU supports its features (`VG_CHACHA20_POLY1305_SEAL_GATHER_IFMA_FEATURES`); `vg_chacha20_poly1305_seal_gather_avx512vl` if the CPU supports its features (`VG_CHACHA20_POLY1305_SEAL_GATHER_AVX512VL_FEATURES`); `vg_chacha20_poly1305_seal_gather_avx512` if the CPU supports its features (`VG_CHACHA20_POLY1305_SEAL_GATHER_AVX512_FEATURES`); `vg_chacha20_poly1305_seal_gather_avx2` if the CPU supports its features (`VG_CHACHA20_POLY1305_SEAL_GATHER_AVX2_FEATURES`); `vg_chacha20_poly1305_seal_gather_ssse3` if the CPU supports its features (`VG_CHACHA20_POLY1305_SEAL_GATHER_SSSE3_FEATURES`); or else `vg_chacha20_poly1305_seal_gather`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `key` must be valid for reads of 32 bytes.
@@ -245,8 +247,6 @@ pub unsafe fn vg_chacha20_poly1305_open_to_auto(_dit: verified_garbage_cpu::Dit<
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_chacha20_poly1305_seal_gather_auto(_dit: verified_garbage_cpu::Dit<'_>, key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
-    // SAFETY: it takes no argument and writes no memory but its stack.
-    verified_garbage_cpu::mcdt_entered(unsafe { crate::mcdt::vg_mcdt_enter() });
     /// The type of the implementations.
     type Impl = unsafe extern "sysv64" fn(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]);
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only

@@ -4,7 +4,6 @@ import VerifiedGarbage.Proof.Ed25519.X86.FreezeField
 import VerifiedGarbage.Proof.Ed25519.X86.PrepareAdd
 public import VerifiedGarbage.Impl.Ed25519.X86.RecoverSign
 public import VerifiedGarbage.Proof.Ed25519.X86.Field
-import VerifiedGarbage.Proof.Ed25519.X86.PointEncodeSign
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.Offset
@@ -101,11 +100,13 @@ theorem fieldEqual_ok {x : BitVec 32} {s : State} (hc : Ctx x s) (a b : Slot) :
   refine ⟨ku.trans kt, ?_, ?_⟩
   · intro i hi
     rw [et, eu]
-    exact Function.update_of_ne hi _ _
+    exact Fun.update_of_ne hi _ _
   · rw [zt, eu]
     change some (decide (env s.mem x a - env s.mem x b = 0)) = _
     simp only [show ∀ u v : VG.Spec.X25519.Fe, u - v = 0 ↔ u = v from
-      fun _ _ => ⟨fun _ => by grind, fun _ => by grind⟩]
+      -- `-lia`: Lean 4.36's `grind` builds a proof the kernel rejects from `lia`
+      -- over `Fin` of a non-literal modulus (lean4#15857, fixed in 4.37).
+      fun _ _ => ⟨fun _ => by grind -lia, fun _ => by grind -lia⟩]
 
 end VG.Proof.Ed25519.X86
 end

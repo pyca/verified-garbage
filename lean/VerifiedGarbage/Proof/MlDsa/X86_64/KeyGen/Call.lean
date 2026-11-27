@@ -6,12 +6,9 @@ public import VerifiedGarbage.Proof.MlDsa.FusedInverseContract
 import VerifiedGarbage.Proof.MlDsa.Arith.DotSum
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
-import VerifiedGarbage.Proof.Sha3.X86_64.X4.Wp
-import VerifiedGarbage.Proof.MlDsa.Arith.Representation
-import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Base
-import VerifiedGarbage.Proof.MlKem.X86_64.FragL
+public import VerifiedGarbage.Proof.Sha3.X86_64.X4.Wp
 public import VerifiedGarbage.Proof.MlDsa.Arith.Representation
-public import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Base
+public import VerifiedGarbage.Proof.MlKem.X86_64.FragC
 public import VerifiedGarbage.Proof.Framework.Bitslice.Lanes
 public import VerifiedGarbage.Proof.Framework.CallLay
 public import VerifiedGarbage.Proof.Framework.Range
@@ -27,61 +24,178 @@ public import VerifiedGarbage.Proof.MlKem.X86_64.Decode12Avx2
 public import VerifiedGarbage.Proof.MlKem.X86_64.DecodeDecompress
 public import VerifiedGarbage.Proof.MlKem.X86_64.EncMulV
 public import VerifiedGarbage.Proof.MlKem.X86_64.Encode12
-public import VerifiedGarbage.Proof.MlKem.X86_64.FragC
-public import VerifiedGarbage.Proof.MlKem.X86_64.FragL
-public import VerifiedGarbage.Proof.MlKem.X86_64.FragS
 public import VerifiedGarbage.Proof.MlKem.X86_64.KgMulV
 public import VerifiedGarbage.Proof.MlKem.X86_64.MulAvx2
-public import VerifiedGarbage.Proof.MlKem.X86_64.NttInv
-public import VerifiedGarbage.Proof.MlKem.X86_64.NttLazy
+public import VerifiedGarbage.Proof.MlKem.X86_64.KpkeAcc
+public import VerifiedGarbage.Proof.MlKem.X86_64.NttR.Top
 public import VerifiedGarbage.Proof.MlKem.X86_64.SampleCT
 public import VerifiedGarbage.Proof.MlKem.X86_64.VLay42
 public import VerifiedGarbage.Proof.MlKem.X86_64.VMxcsr
 public import VerifiedGarbage.Proof.MlKem.X86_64.VPack
 public import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
-public import VerifiedGarbage.Proof.MlKem.X86_64.YAddSub
+public import VerifiedGarbage.Proof.MlKem.X86_64.FinY
 public import VerifiedGarbage.Proof.MlKem.X86_64.YNttPack
 public import VerifiedGarbage.Proof.MlKem.X86_64.Zero
 public import VerifiedGarbage.Proof.Sha3.Arith
-public import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Absorb
 public import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Pad
-public import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Squeeze
-public import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Word
-public import VerifiedGarbage.Proof.Sha3.X86_64.X4.Wp
-import VerifiedGarbage.Proof.Framework.Bitslice.Lanes
-import VerifiedGarbage.Proof.Framework.CallLay
-import VerifiedGarbage.Proof.Framework.Range
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-import VerifiedGarbage.Proof.MlDsa.Arith.Zq
-import VerifiedGarbage.Proof.MlKem.PolyW
-import VerifiedGarbage.Proof.MlKem.X86_64.Cbd16Avx2
-import VerifiedGarbage.Proof.MlKem.X86_64.CompressEncode
-import VerifiedGarbage.Proof.MlKem.X86_64.DecMulV
-import VerifiedGarbage.Proof.MlKem.X86_64.Decode12
-import VerifiedGarbage.Proof.MlKem.X86_64.Decode12Avx2
-import VerifiedGarbage.Proof.MlKem.X86_64.DecodeDecompress
-import VerifiedGarbage.Proof.MlKem.X86_64.EncMulV
-import VerifiedGarbage.Proof.MlKem.X86_64.Encode12
-import VerifiedGarbage.Proof.MlKem.X86_64.FragC
-import VerifiedGarbage.Proof.MlKem.X86_64.FragS
-import VerifiedGarbage.Proof.MlKem.X86_64.KgMulV
-import VerifiedGarbage.Proof.MlKem.X86_64.MulAvx2
-import VerifiedGarbage.Proof.MlKem.X86_64.NttInv
-import VerifiedGarbage.Proof.MlKem.X86_64.NttLazy
-import VerifiedGarbage.Proof.MlKem.X86_64.SampleCT
-import VerifiedGarbage.Proof.MlKem.X86_64.VLay42
-import VerifiedGarbage.Proof.MlKem.X86_64.VMxcsr
-import VerifiedGarbage.Proof.MlKem.X86_64.VPack
-import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
-import VerifiedGarbage.Proof.MlKem.X86_64.YAddSub
-import VerifiedGarbage.Proof.MlKem.X86_64.YNttPack
-import VerifiedGarbage.Proof.MlKem.X86_64.Zero
-import VerifiedGarbage.Proof.Sha3.Arith
-import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Absorb
-import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Pad
-import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Squeeze
-import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Word
+public import VerifiedGarbage.Proof.MlKem.X86_64.FragCall
+public import VerifiedGarbage.Proof.Framework.X86_64.ModeSim
+public import VerifiedGarbage.Impl.MlDsa.X86_64.KeyGen.Prims
+import VerifiedGarbage.Proof.MlKem.X86_64.ArithOk
+
+/-! ### `MlDsa.X86_64.KeyGen.Base`, which this module and modules that import it used -/
+
+section
+
+/-!
+# ML-DSA key generation on x86-64: the primitives, and calling them
+
+Key generation is proven for any implementations of the primitives it calls
+(`Prims`) that are verified against their contracts, with at most 16 bytes of
+stack, and that change the stack pointer only by calls nested at most twice
+(`Callee`, `PrimsOk`): as ML-KEM's top-level functions on x86-64
+(`Proof/MlKem/X86_64/`), whose framework (layouts of buffers, calls, the
+sponge) the proofs use.
+
+A primitive may load MXCSR (as the MXCSR prologue of Intel's MCDT does), so
+MXCSR's control bits (`MX`) are carried from its `abiPreserved`
+(`WP.callMx`, `glueCallMx_ok`), and from code that never loads MXCSR
+(`WP.mx`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.MlDsa.X86_64.KeyGen
+
+open VG VG.X86_64 VG.Proof.MlKem.X86_64
+open VG.Impl.MlDsa.X86_64.KeyGen (Prims)
+
+/-! ## The primitives -/
+
+/-- Code `c` verified against the contract `k stk` of some stack `stk ≤ 16`,
+that never writes `rsp` but by calls nested at most twice. -/
+structure Callee (c : Prog isa) (k : Nat → Contract isa) : Prop where
+  verified : ∃ stk, stk ≤ 16 ∧ Verified X86_64.target c (k stk)
+  nosp : NoSp c
+  mx : c.allInstrs (fun i => !touchesMxcsr i) = true
+  depth : c.depth ≤ 2
+
+/-- `vg_mldsa_rej_ntt_poly4`: verified with 24 bytes of stack, never writing `rsp` but by calls nested at
+most three deep. -/
+structure Callee4 (c : Prog isa) : Prop where
+  verified : Verified X86_64.target c (Proof.MlDsa.rejNTT4Contract X86_64.abi 24)
+  nosp : NoSp c
+  mx : c.allInstrs (fun i => !touchesMxcsr i) = true
+  depth : c.depth ≤ 3
+
+/-- Verified implementations of the primitives key generation calls. -/
+structure PrimsOk (P : Prims) : Prop where
+  ntt : Callee P.ntt (fun stk => Proof.MlDsa.nttContract X86_64.abi stk)
+  add : Callee P.add (fun stk => Proof.MlDsa.addContract X86_64.abi stk)
+  rejNtt : Callee P.rejNtt (fun stk => Proof.MlDsa.rejNTTContract X86_64.abi stk)
+  rejBounded : Callee P.rejBounded (fun stk => Proof.MlDsa.rejBoundedContract X86_64.abi stk)
+  power2Round : Callee P.power2Round (fun stk => Proof.MlDsa.power2RoundContract X86_64.abi stk)
+  simpleBitPack : Callee P.simpleBitPack (fun stk => Proof.MlDsa.simpleBitPackContract X86_64.abi stk)
+  bitPack : Callee P.bitPack (fun stk => Proof.MlDsa.bitPackContract X86_64.abi stk)
+  rej4 : Callee4 P.rej4
+  dotInv : ∀ c, c = 4 ∨ c = 5 ∨ c = 7 → Callee (P.dotInv c) (fun stk => Proof.MlDsa.dotInverseContract c X86_64.abi stk)
+
+/-! ## MXCSR -/
+
+/-- The control bits of MXCSR, which `abiPreserved` keeps. -/
+abbrev MX (s : State) : BitVec 10 := s.mxcsr.extractLsb' 6 10
+
+/-- Code that never loads MXCSR keeps it. -/
+theorem WP.mx {c : Prog isa} (hc : ∀ i ∈ instrs c, loadsMxcsr i = false) {s : State} {Q : State → Prop}
+    (h : WP isa c s Q) : WP isa c s fun s' => Q s' ∧ MX s' = MX s := by
+  obtain ⟨t, s', he, hq⟩ := h
+  exact ⟨t, s', he, hq, by rw [MX, MX, Exec.mxcsr hc he]⟩
+
+/-- Whether no instruction of `c` loads MXCSR. -/
+noncomputable def noLd (c : Prog isa) : Bool := c.allInstrs fun i => !loadsMxcsr i
+
+theorem noLd_spec {c : Prog isa} (h : noLd c = true) : ∀ i ∈ instrs c, loadsMxcsr i = false := by
+  unfold noLd at h
+  rw [Code.allInstrs_eq, List.all_eq_true] at h
+  exact fun i hi => by simpa using h i hi
+
+/-- `WP.call`, which also keeps MXCSR's control bits, from the callee's `abiPreserved`. -/
+theorem WP.callMx {n : String} {c : Prog isa} {k : Contract isa}
+    (hv : ∀ s, k.pre s → ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ k.post s s')
+    (hsp : NoSp c) (hd : 8 * c.depth + 16 < 2 ^ 64)
+    {s : State} {rd wr : List Region} (hpre : k.pre (s.callEntry.withRegions rd wr))
+    (hc : Covers (rd ++ wr) (s.rd ++ s.wr)) (hw : Covers wr s.wr) {Q : State → Prop}
+    (hQ : ∀ s', s'.rd = s.rd → s'.wr = s.wr → (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) →
+      Frame (wr ++ [below (s.gpr .rsp) (8 * (c.depth + 1))]) s.mem s'.mem → MX s' = MX s →
+      (∃ s₂ : State, s₂.mem = s'.mem ∧ (∀ r, r ≠ .rsp → s₂.gpr r = s'.gpr r) ∧
+        k.post (s.callEntry.withRegions rd wr) s₂) → Q s') :
+    WP isa (.call n c) s Q := by
+  obtain ⟨t, s₁, he, habi, hpost⟩ := hv _ hpre
+  have hf := Exec.frameSp he hsp (by omega_using [hd])
+  simp only [State.withRegions_wr, State.withRegions_gpr, State.withRegions_mem,
+    State.callEntry_rsp] at hf
+  have he' := Exec.widen he (rd := s.rd) (wr := s.wr) (by simpa using hc) (by simpa using hw)
+  simp only [State.withRegions_withRegions] at he'
+  rw [show s.callEntry.withRegions s.rd s.wr = s.callEntry from rfl] at he'
+  let s₂ := s₁.withRegions s.rd s.wr
+  have hs₂ : s₂ = s₁.withRegions s.rd s.wr := rfl
+  have hsp₂ : s₂.gpr .rsp = s.gpr .rsp - 8 := by
+    rw [hs₂, State.withRegions_gpr, habi.1 .rsp (by simp [calleeSaved])]; simp
+  have hret : isa.ret s.callEntry s₂ = some (s₂.setReg .rsp (s₂.gpr .rsp + 8)) := by
+    simp only [isa, ret]
+    refine ite_eq_left ⟨by rw [hsp₂, State.callEntry_rsp], ?_⟩
+    have := habi.2.1
+    simp only [State.withRegions_gpr, State.withRegions_mem, State.callEntry_rsp] at this
+    rw [hsp₂, State.callEntry_rsp]; exact this
+  have hrsp : (s₂.setReg .rsp (s₂.gpr .rsp + 8)).gpr .rsp = s.gpr .rsp := by
+    simp only [State.setReg, ite_true, hsp₂]; exact BitVec.sub_add_cancel _ _
+  have hkeep : ∀ r, r ≠ .rsp → (s₂.setReg .rsp (s₂.gpr .rsp + 8)).gpr r = s₂.gpr r :=
+    fun r h => by simp [State.setReg, h]
+  refine ⟨_, _, .call (call_callEntry s) he' hret, hQ _ rfl rfl (fun r hr' => ?_) ?_ habi.2.2
+    ⟨s₁, rfl, fun r h => (hkeep r h).symm, hpost⟩⟩
+  · by_cases h : r = .rsp
+    · subst h; exact hrsp
+    · rw [hkeep r h, hs₂, State.withRegions_gpr, habi.1 r hr', State.withRegions_gpr,
+        State.callEntry_gpr _ h]
+  · have f₀ : Frame (wr ++ [below (s.gpr .rsp) (8 * (c.depth + 1))]) s.mem s.callEntry.mem :=
+      Frame.writeW (Frame.refl _ _) (List.mem_append_right _ (List.mem_singleton_self _)) _
+        (below_call _ (by omega_using []) (by omega_using [hd]))
+    have f₁ : Frame (wr ++ [below (s.gpr .rsp) (8 * (c.depth + 1))]) s.callEntry.mem s₁.mem :=
+      Frame.sub hf fun r hr => by
+        rcases List.mem_append.mp hr with hr | hr
+        · exact ⟨r, List.mem_append_left _ hr, fun _ h => h⟩
+        · simp only [List.mem_singleton] at hr; subst hr
+          refine ⟨_, List.mem_append_right _ (List.mem_singleton_self _), ?_⟩
+          rw [show 8 * (c.depth + 1) = 8 * c.depth + 8 by omega_using []]
+          exact below_callee _ _
+    exact Frame.trans f₀ f₁
+
+/-- `glueCall_ok`, keeping MXCSR's control bits. -/
+theorem glueCallMx_ok {glue : List Instr} {n : String} {c : Prog isa} {k : Contract isa}
+    (hv : ∀ s, k.pre s → ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ k.post s s')
+    (hsp : NoSp c) (hd : c.depth ≤ 3) (hgl : ∀ i ∈ glue, loadsMxcsr i = false) {s : State}
+    {V : State → Prop}
+    (hg : WP isa (.block glue) s fun s1 => (V s1 ∧ s1.mem = s.mem) ∧ Keep MlKem.X86_64.argRegs s s1)
+    {rd wr : List Region} (hpre : ∀ s1, V s1 → s1.mem = s.mem → Keep MlKem.X86_64.argRegs s s1 →
+      k.pre (s1.callEntry.withRegions rd wr))
+    (hc : Covers (rd ++ wr) (s.rd ++ s.wr)) (hw : Covers wr s.wr) :
+    WP isa (.seq (.block glue) (.call n c)) s fun s' => Post s s' wr ∧ MX s' = MX s ∧
+      ∃ s1, V s1 ∧ s1.mem = s.mem ∧ Keep MlKem.X86_64.argRegs s s1 ∧ ∃ s₂ : State, s₂.mem = s'.mem ∧
+        (∀ r, r ≠ .rsp → s₂.gpr r = s'.gpr r) ∧ k.post (s1.callEntry.withRegions rd wr) s₂ := by
+  refine WP.seq (WP.mono (WP.mx (c := .block glue) (by simpa [instrs] using hgl) hg)
+    fun s1 ⟨⟨⟨hV, hm⟩, k1⟩, hx1⟩ => ?_)
+  refine WP.callMx hv hsp (by omega_using [hd]) (hpre s1 hV hm k1) (by rw [k1.2.1, k1.2.2]; exact hc)
+    (by rw [k1.2.2]; exact hw) fun s' hrd hwr hcs hf hx hpost => ⟨⟨hrd.trans k1.2.1, hwr.trans k1.2.2,
+      fun r hr => by rw [hcs r hr, k1.gpr (argRegs_cs r hr)], ?_⟩, hx.trans hx1, s1, hV, hm, k1, hpost⟩
+  have hsp1 : s1.gpr .rsp = s.gpr .rsp := k1.gpr (by decide)
+  rw [hm, hsp1] at hf
+  exact Frame.below_mono hf (by omega_using [hd]) (by omega_using [])
+
+end VG.Proof.MlDsa.X86_64.KeyGen
+
+end
+
+end
 
 /-!
 # ML-DSA key generation on x86-64: calling the primitives
@@ -205,12 +319,14 @@ theorem primTr {c : Prog isa} {kk : Nat → Contract isa} (hc : Callee c kk) {gl
     (hg : ∀ x y, P x y → WP isa (.block glue) x (V x) ∧ WP isa (.block glue) y (V y))
     (hP : ∀ stk ≤ 16, ∀ x y x1 y1, P x y → V x x1 → V y y1 → ∃ rd₁ wr₁ rd₂ wr₂ : List Region,
       (kk stk).pre (x1.callEntry.withRegions rd₁ wr₁) ∧ (kk stk).pre (y1.callEntry.withRegions rd₂ wr₂) ∧
-      (kk stk).pub (x1.callEntry.withRegions rd₁ wr₁) (y1.callEntry.withRegions rd₂ wr₂) ∧
+      (kk stk).mxFree.pub (x1.callEntry.withRegions rd₁ wr₁) (y1.callEntry.withRegions rd₂ wr₂) ∧
       Covers (rd₁ ++ wr₁) (x1.rd ++ x1.wr) ∧ Covers wr₁ x1.wr ∧
-      Covers (rd₂ ++ wr₂) (y1.rd ++ y1.wr) ∧ Covers wr₂ y1.wr ∧ x1.gpr .rsp = y1.gpr .rsp) :
+      Covers (rd₂ ++ wr₂) (y1.rd ++ y1.wr) ∧ Covers wr₂ y1.wr ∧ x1.gpr .rsp = y1.gpr .rsp)
+    (hpm : ∀ stk s m, (kk stk).pre s → (kk stk).pre (s.withMx m) := by intro _ _ _ h; exact h) :
     RelCT isa P (.seq (.block glue) (.call n c)) fun _ _ => True := by
   obtain ⟨stk, hs, hver⟩ := hc.verified
-  exact glueCall_tr hver.1 hver.2.1 (moves_tr hnm) hg (hP stk hs)
+  exact glueCall_tr (k := (kk stk).mxFree) hver.1 (Contract.ct_mxFree hc.mx hver.2.1 (hpm stk)) (moves_tr hnm) hg
+    (hP stk hs)
 
 /-! ## The moves of the arguments -/
 
@@ -376,7 +492,7 @@ theorem ipAt_tr {t : Spec.MlDsa.Poly → Spec.MlDsa.Poly} {c : Prog isa} {n : St
         by rw [k1.2.2]; exact covers2 T.sx.lay w1 w2,
         by rw [k2.2.1, k2.2.2]; exact covers_nil_wr (covers2 T.sy.lay w1 w2),
         by rw [k2.2.2]; exact covers2 T.sy.lay w1 w2, by rw [keep_rsp k1, keep_rsp k2, T.rsp]⟩
-  sig_pub [Proof.MlDsa.inPlaceContract, Proof.MlDsa.inPlaceSig, X86_64.abi, VG.X86_64.argRegs]
+  sig_pub [Contract.mxFree, Proof.MlDsa.inPlaceContract, Proof.MlDsa.inPlaceSig, X86_64.abi, VG.X86_64.argRegs]
   simp only [hv1.1, hv1.2, hv2.1, hv2.2, keep_rsp k1, keep_rsp k2, T.rsp, T.pa hb, T.pa (q := sc oSS) (by decide),
     and_self]
 
@@ -446,7 +562,7 @@ theorem addAt_tr {sfx : String} {c : Prog isa} (hc : Callee c fun stk => Proof.M
         by rw [k1.2.2]; exact Covers.cons (T.sx.lay.cW w1) Covers.nil,
         by rw [k2.2.1, k2.2.2]; exact covers_rw T.sy.lay i2 w1,
         by rw [k2.2.2]; exact Covers.cons (T.sy.lay.cW w1) Covers.nil, by rw [keep_rsp k1, keep_rsp k2, T.rsp]⟩
-  sig_pub [Proof.MlDsa.addContract, Proof.MlDsa.accSig, X86_64.abi, VG.X86_64.argRegs]
+  sig_pub [Contract.mxFree, Proof.MlDsa.addContract, Proof.MlDsa.accSig, X86_64.abi, VG.X86_64.argRegs]
   simp only [hv1.1, hv1.2, hv2.1, hv2.2, keep_rsp k1, keep_rsp k2, T.rsp, T.pa hbf, T.pa hbg, and_self]
 
 end
@@ -582,7 +698,7 @@ theorem dotInvAt_tr {sfx : String} {cd : Prog isa}
         by rw [k2.2.1, k2.2.2]; exact cov T.sy.lay,
         by rw [k2.2.2]; exact Covers.cons (T.sy.lay.cW w1) (Covers.cons (T.sy.lay.cW w2) Covers.nil),
         by rw [keep_rsp k1, keep_rsp k2, T.rsp]⟩
-  sig_pub [Proof.MlDsa.dotInverseContract, Proof.MlDsa.dotInverseSig, X86_64.abi, VG.X86_64.argRegs]
+  sig_pub [Contract.mxFree, Proof.MlDsa.dotInverseContract, Proof.MlDsa.dotInverseSig, X86_64.abi, VG.X86_64.argRegs]
   simp only [hv1.1, hv1.2.1, hv1.2.2.1, hv1.2.2.2, hv2.1, hv2.2.1, hv2.2.2.1, hv2.2.2.2, keep_rsp k1, keep_rsp k2,
     T.rsp, T.pa hbh, T.pa hbf, T.pa hbg, T.pa (q := sc oSS) (by decide), and_self]
 
@@ -659,7 +775,7 @@ theorem p2rAt_tr {c : Prog isa} (hc : Callee c fun stk => Proof.MlDsa.power2Roun
         by rw [k1.2.1, k1.2.2]; exact covers_rww T.sx.lay i1 w1 w2, by rw [k1.2.2]; exact covers2 T.sx.lay w1 w2,
         by rw [k2.2.1, k2.2.2]; exact covers_rww T.sy.lay i1 w1 w2, by rw [k2.2.2]; exact covers2 T.sy.lay w1 w2,
         by rw [keep_rsp k1, keep_rsp k2, T.rsp]⟩
-  sig_pub [Proof.MlDsa.power2RoundContract, Proof.MlDsa.power2RoundSig, X86_64.abi, VG.X86_64.argRegs]
+  sig_pub [Contract.mxFree, Proof.MlDsa.power2RoundContract, Proof.MlDsa.power2RoundSig, X86_64.abi, VG.X86_64.argRegs]
   simp only [hv1.1, hv1.2.1, hv1.2.2, hv2.1, hv2.2.1, hv2.2.2, keep_rsp k1, keep_rsp k2, T.rsp, T.pa hbt, T.pa hb1,
     T.pa hb0, and_self]
 
@@ -727,7 +843,7 @@ theorem rejNttAt_tr {c : Prog isa} (hc : Callee c fun stk => Proof.MlDsa.rejNTTC
         by rw [k1.2.1, k1.2.2]; exact covers_rww T.sx.lay i1 w1 w2, by rw [k1.2.2]; exact covers2 T.sx.lay w1 w2,
         by rw [k2.2.1, k2.2.2]; exact covers_rww T.sy.lay i1 w1 w2, by rw [k2.2.2]; exact covers2 T.sy.lay w1 w2,
         by rw [keep_rsp k1, keep_rsp k2, T.rsp]⟩
-  sig_pub [Proof.MlDsa.rejNTTContract, Proof.MlDsa.rejNTTSig, X86_64.abi, VG.X86_64.argRegs]
+  sig_pub [Contract.mxFree, Proof.MlDsa.rejNTTContract, Proof.MlDsa.rejNTTSig, X86_64.abi, VG.X86_64.argRegs]
   simp only [hv1.1, hv1.2.1, hv1.2.2, hv2.1, hv2.2.1, hv2.2.2, T.pa hbs, T.pa hba, T.pa (q := sc oSS) (by decide),
     and_true]
   refine ⟨by rw [keep_rsp k1, keep_rsp k2, T.rsp], ?_⟩
@@ -799,7 +915,8 @@ theorem rej4At_tr {c : Prog isa} {sfx : String} (hc : Callee4 c) (hba : a.1 ∈ 
       (rej4At c sfx a w) fun _ _ => True := by
   obtain ⟨i1, _, _⟩ := sepB_spec h1
   have g := fun x => glue3_ok (sc_ok oSA4 (by decide)) ha hw x
-  refine glueCall_tr hc.verified.1 hc.verified.2.1
+  refine glueCall_tr (k := (Proof.MlDsa.rejNTT4Contract X86_64.abi 24).mxFree) hc.verified.1
+    (Contract.ct_mxFree hc.mx hc.verified.2.1 fun _ _ h => h)
     (moves_tr (nomem_append (nomem_append (lea_nomem _ _) (lea_nomem _ _)) (lea_nomem _ _)))
     (fun x y _ => ⟨g x, g y⟩)
     fun x y x1 y1 ⟨T, e⟩ ⟨⟨hv1, hm1⟩, k1⟩ ⟨⟨hv2, hm2⟩, k2⟩ =>
@@ -807,7 +924,7 @@ theorem rej4At_tr {c : Prog isa} {sfx : String} (hc : Callee4 c) (hba : a.1 ∈ 
         by rw [k1.2.1, k1.2.2]; exact covers_rww T.sx.lay i1 w1 w2, by rw [k1.2.2]; exact covers2 T.sx.lay w1 w2,
         by rw [k2.2.1, k2.2.2]; exact covers_rww T.sy.lay i1 w1 w2, by rw [k2.2.2]; exact covers2 T.sy.lay w1 w2,
         by rw [keep_rsp k1, keep_rsp k2, T.rsp]⟩
-  sig_pub [Proof.MlDsa.rejNTT4Contract, Proof.MlDsa.rejNTT4Sig, X86_64.abi, VG.X86_64.argRegs]
+  sig_pub [Contract.mxFree, Proof.MlDsa.rejNTT4Contract, Proof.MlDsa.rejNTT4Sig, X86_64.abi, VG.X86_64.argRegs]
   simp only [hv1.1, hv1.2.1, hv1.2.2, hv2.1, hv2.2.1, hv2.2.2, T.pa hba, T.pa hbw,
     T.pa (q := sc oSA4) (by decide), and_true]
   refine ⟨by rw [keep_rsp k1, keep_rsp k2, T.rsp], ?_⟩
@@ -922,7 +1039,7 @@ theorem rejBAt_tr {c : Prog isa} (hc : Callee c fun stk => Proof.MlDsa.rejBounde
         by rw [k1.2.1, k1.2.2]; exact covers_rww T.sx.lay i1 w1 w2, by rw [k1.2.2]; exact covers2 T.sx.lay w1 w2,
         by rw [k2.2.1, k2.2.2]; exact covers_rww T.sy.lay i1 w1 w2, by rw [k2.2.2]; exact covers2 T.sy.lay w1 w2,
         by rw [keep_rsp k1, keep_rsp k2, T.rsp]⟩
-  sig_pub [Proof.MlDsa.rejBoundedContract, Proof.MlDsa.rejBoundedSig, X86_64.abi, VG.X86_64.argRegs]
+  sig_pub [Contract.mxFree, Proof.MlDsa.rejBoundedContract, Proof.MlDsa.rejBoundedSig, X86_64.abi, VG.X86_64.argRegs]
   simp only [hv1.1, hv1.2.1, hv1.2.2.1, hv1.2.2.2, hv2.1, hv2.2.1, hv2.2.2.1, hv2.2.2.2, T.pa hbs, T.pa hba,
     T.pa (q := sc oSS) (by decide), w32_toNat (eta_lt heta), and_true]
   refine ⟨by rw [keep_rsp k1, keep_rsp k2, T.rsp], ?_⟩
@@ -1008,7 +1125,7 @@ theorem sbpAt_tr {c : Prog isa} (hc : Callee c fun stk => Proof.MlDsa.simpleBitP
         by rw [k1.2.2]; exact Covers.cons (T.sx.lay.cW w1) Covers.nil,
         by rw [k2.2.1, k2.2.2]; exact covers_rw T.sy.lay i1 w1,
         by rw [k2.2.2]; exact Covers.cons (T.sy.lay.cW w1) Covers.nil, by rw [keep_rsp k1, keep_rsp k2, T.rsp]⟩
-  sig_pub [Proof.MlDsa.simpleBitPackContract, Proof.MlDsa.simpleBitPackSig, X86_64.abi, VG.X86_64.argRegs]
+  sig_pub [Contract.mxFree, Proof.MlDsa.simpleBitPackContract, Proof.MlDsa.simpleBitPackSig, X86_64.abi, VG.X86_64.argRegs]
   simp only [hv1.1, hv1.2.1, hv1.2.2.1, hv1.2.2.2, hv2.1, hv2.2.1, hv2.2.2.1, hv2.2.2.2, keep_rsp k1, keep_rsp k2,
     T.rsp, T.pa hbf, T.pa hbo, and_self]
 
@@ -1102,7 +1219,7 @@ theorem bpAt_tr {c : Prog isa} (hc : Callee c fun stk => Proof.MlDsa.bitPackCont
         by rw [k1.2.2]; exact Covers.cons (T.sx.lay.cW w1) Covers.nil,
         by rw [k2.2.1, k2.2.2]; exact covers_rw T.sy.lay i1 w1,
         by rw [k2.2.2]; exact Covers.cons (T.sy.lay.cW w1) Covers.nil, by rw [keep_rsp k1, keep_rsp k2, T.rsp]⟩
-  sig_pub [Proof.MlDsa.bitPackContract, Proof.MlDsa.bitPackSig, X86_64.abi, VG.X86_64.argRegs]
+  sig_pub [Contract.mxFree, Proof.MlDsa.bitPackContract, Proof.MlDsa.bitPackSig, X86_64.abi, VG.X86_64.argRegs]
   simp only [hv1.1, hv1.2.1, hv1.2.2.1, hv1.2.2.2.1, hv1.2.2.2.2, hv2.1, hv2.2.1, hv2.2.2.1, hv2.2.2.2.1, hv2.2.2.2.2,
     keep_rsp k1, keep_rsp k2, T.rsp, T.pa hbf, T.pa hbo, and_self]
 

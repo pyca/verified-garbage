@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Sha3.RISCV64.Stream
 public import VerifiedGarbage.Impl.StackScratch.RISCV64
+public import VerifiedGarbage.Impl.Scrub.RISCV64
 public import VerifiedGarbage.Spec.Sha3.Contract
 
 /-!
@@ -14,7 +15,9 @@ constants. `pad` and `squeeze` keep their working space in a frame of their
 own.
 
 * `update rate (state = a0, pos = a1, data = a2, len = a3, scratch = a4)`
-  runs `absorbWs(state, rate, pos, data, len, scratch)`.
+  runs `absorb(state, rate, pos, data, len)`, which keeps its working space
+  in frames on the stack: it never writes `scratch`, which it leaves in
+  `a5`.
 * `xofFinalize rate (state = a0, pos = a1)` runs `pad(state, rate, pos,
   0x1f)` (SHAKE's suffix).
 * `xofSqueeze rate (state = a0, pos = a1, out = a2, outlen = a3)` runs
@@ -38,7 +41,16 @@ open VG.Impl.Sha3.RISCV64.Stream (mov)
 def updateArgs (rate : Nat) : List Instr :=
   [mov .a5 .a4, mov .a4 .a3, mov .a3 .a2, mov .a2 .a1, .li .a1 rate]
 
-def update (rate : Nat) : Prog isa := .seq (.block (updateArgs rate)) Stream.absorbWs
+def update (rate : Nat) : Prog isa := .seq (.block (updateArgs rate)) Stream.absorb
+
+/-- `absorb`'s arguments, moved up a register, and `rate` in `a1`. -/
+def absorbArgs (rate : Nat) : List Instr :=
+  [mov .a4 .a3, mov .a3 .a2, mov .a2 .a1, .li .a1 rate]
+
+/-- `absorb rate (state = a0, pos = a1, data = a2, len = a3)` runs
+`absorb(state, rate, pos, data, len)`, which keeps its working space in
+frames on the stack: `update` without `scratch`. -/
+def absorb (rate : Nat) : Prog isa := .seq (.block (absorbArgs rate)) Stream.absorb
 
 /-- SHAKE's `finalize`'s arguments, moved to `pad`'s: `pos` to `a2`, `rate`
 into `a1` and SHAKE's suffix into `a3`. -/
@@ -77,3 +89,36 @@ def finalize (rate len : Nat) : Prog isa :=
   StackScratch.RISCV64.withStackScratch 32 .a3 (finBody rate len)
 
 end VG.Impl.Sha3.RISCV64.Instances
+
+/-! ## The functions as emitted
+
+Each instance's function, then its cleanup
+(`Impl.Scrub.RISCV64.scrubSel rb fs`): the caller-saved registers cleared
+but the `rb` bits of the result, and, of the stack its frames used, only
+the runs of doublewords `fs` states, those the residue analysis
+(`RISCV64.rtaint`) finds may differ between two runs (the permutation's two
+copies of the state, bytes 192 to 591 of its frame, and the frames still
+allocated where a function stores through a pointer the analysis cannot
+place), so that it returns without secret residue. -/
+
+namespace VG.Impl.Sha3.RISCV64.Fn
+
+open VG.RISCV64
+open VG.Impl.Scrub.RISCV64 (scrubSel)
+
+/-- `vg_<f>_update` at rate `rate`, as emitted. -/
+def update (rate : Nat) : Prog isa := scrubSel 64 [(1168, [(24, 50), (140, 6)])] (Instances.absorb rate)
+
+/-- SHA-3's `vg_<f>_finalize` at rate `rate`, of `len` bytes, as emitted. -/
+def finalize (rate len : Nat) : Prog isa :=
+  scrubSel 0 [(1200, [(24, 54), (140, 10)])] (Instances.finalize rate len)
+
+/-- SHAKE's `vg_<f>_finalize` at rate `rate`, as emitted. -/
+def xofFinalize (rate : Nat) : Prog isa :=
+  scrubSel 0 [(1136, [(24, 50), (140, 2)])] (Instances.xofFinalize rate)
+
+/-- SHAKE's `vg_<f>_squeeze` at rate `rate`, as emitted. -/
+def xofSqueeze (rate : Nat) : Prog isa :=
+  scrubSel 64 [(1168, [(24, 50), (140, 6)])] (Instances.xofSqueeze rate)
+
+end VG.Impl.Sha3.RISCV64.Fn

@@ -1,10 +1,9 @@
 module
 
 public import VerifiedGarbage.Impl.BrainpoolP256r1.CombTable7
-public import VerifiedGarbage.Proof.Weierstrass.CombCheckW
+public import VerifiedGarbage.Proof.Weierstrass.CombCheckFast
 public import VerifiedGarbage.Spec.BrainpoolP256r1
 import VerifiedGarbage.Proof.BrainpoolP256r1.Point
-import VerifiedGarbage.Proof.Weierstrass.CombCheckFast
 
 /-! # brainpoolP256r1: kernel-checked fixed-base comb table certificate -/
 

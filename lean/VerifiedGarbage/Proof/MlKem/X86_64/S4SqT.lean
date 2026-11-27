@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.S4Squeeze
 import VerifiedGarbage.Proof.Framework.Range
-import VerifiedGarbage.Proof.Sha3.X86_64.X4R.Loop
 import VerifiedGarbage.Proof.Framework.X86_64.Avx
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith

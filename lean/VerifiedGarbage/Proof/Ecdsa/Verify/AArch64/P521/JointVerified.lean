@@ -1,4 +1,5 @@
 module
+
 public import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.Lit
@@ -11,9 +12,7 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
 public import VerifiedGarbage.Proof.Weierstrass.CombW
 public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
-
 import VerifiedGarbage.Proof.Ecdsa.AArch64.P521.Verified
-
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointContract
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointTiming
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointContract
@@ -25,7 +24,6 @@ public import VerifiedGarbage.Proof.Framework.AArch64.Taint
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Hash
 meta import VerifiedGarbage.Impl.Ecdsa.AArch64.VerifyHash
 meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.Contract
 
 @[expose] public section
 

@@ -24,7 +24,7 @@ vg_sha1_digest_shani:
 	mov edi, ebp
 	add edi, 176
 	push edi
-	call {vg_sha1_init}
+	call {vg_sha1_init_core}
 	pop eax
 	mov eax, 0
 	mov esi, 0
@@ -75,7 +75,35 @@ vg_sha1_digest_shani:
 	mov esi, DWORD PTR [eax+164]
 	mov edi, DWORD PTR [eax+168]
 	mov ebp, DWORD PTR [eax+172]
+	pxor xmm0, xmm0
 	mov ecx, 0
+	movdqu XMMWORD PTR [esp+20], xmm0
+	movdqu XMMWORD PTR [esp+36], xmm0
+	movdqu XMMWORD PTR [esp+52], xmm0
+	movdqu XMMWORD PTR [esp+68], xmm0
+	movdqu XMMWORD PTR [esp+84], xmm0
+	movdqu XMMWORD PTR [esp+100], xmm0
+	movdqu XMMWORD PTR [esp+116], xmm0
+	movdqu XMMWORD PTR [esp+132], xmm0
+	movdqu XMMWORD PTR [esp+148], xmm0
+	movdqu XMMWORD PTR [esp+164], xmm0
+	movdqu XMMWORD PTR [esp+180], xmm0
+	movdqu XMMWORD PTR [esp+196], xmm0
+	movdqu XMMWORD PTR [esp+212], xmm0
+	movdqu XMMWORD PTR [esp+228], xmm0
+	movdqu XMMWORD PTR [esp+244], xmm0
+	movdqu XMMWORD PTR [esp+260], xmm0
+	movdqu XMMWORD PTR [esp+276], xmm0
+	mov DWORD PTR [esp+292], ecx
+	mov DWORD PTR [esp+296], ecx
+	lea esp, [esp+300]
+	lea esp, [esp-348]
+	mov ecx, 0
+	mov DWORD PTR [esp], ecx
+	mov DWORD PTR [esp+4], ecx
+	mov DWORD PTR [esp+8], ecx
+	mov DWORD PTR [esp+12], ecx
+	mov DWORD PTR [esp+16], ecx
 	mov DWORD PTR [esp+20], ecx
 	mov DWORD PTR [esp+24], ecx
 	mov DWORD PTR [esp+28], ecx
@@ -88,65 +116,18 @@ vg_sha1_digest_shani:
 	mov DWORD PTR [esp+56], ecx
 	mov DWORD PTR [esp+60], ecx
 	mov DWORD PTR [esp+64], ecx
-	mov DWORD PTR [esp+68], ecx
-	mov DWORD PTR [esp+72], ecx
-	mov DWORD PTR [esp+76], ecx
-	mov DWORD PTR [esp+80], ecx
-	mov DWORD PTR [esp+84], ecx
-	mov DWORD PTR [esp+88], ecx
-	mov DWORD PTR [esp+92], ecx
-	mov DWORD PTR [esp+96], ecx
-	mov DWORD PTR [esp+100], ecx
-	mov DWORD PTR [esp+104], ecx
-	mov DWORD PTR [esp+108], ecx
-	mov DWORD PTR [esp+112], ecx
-	mov DWORD PTR [esp+116], ecx
-	mov DWORD PTR [esp+120], ecx
-	mov DWORD PTR [esp+124], ecx
-	mov DWORD PTR [esp+128], ecx
-	mov DWORD PTR [esp+132], ecx
-	mov DWORD PTR [esp+136], ecx
-	mov DWORD PTR [esp+140], ecx
-	mov DWORD PTR [esp+144], ecx
-	mov DWORD PTR [esp+148], ecx
-	mov DWORD PTR [esp+152], ecx
-	mov DWORD PTR [esp+156], ecx
-	mov DWORD PTR [esp+160], ecx
-	mov DWORD PTR [esp+164], ecx
-	mov DWORD PTR [esp+168], ecx
-	mov DWORD PTR [esp+172], ecx
-	mov DWORD PTR [esp+176], ecx
-	mov DWORD PTR [esp+180], ecx
-	mov DWORD PTR [esp+184], ecx
-	mov DWORD PTR [esp+188], ecx
-	mov DWORD PTR [esp+192], ecx
-	mov DWORD PTR [esp+196], ecx
-	mov DWORD PTR [esp+200], ecx
-	mov DWORD PTR [esp+204], ecx
-	mov DWORD PTR [esp+208], ecx
-	mov DWORD PTR [esp+212], ecx
-	mov DWORD PTR [esp+216], ecx
-	mov DWORD PTR [esp+220], ecx
-	mov DWORD PTR [esp+224], ecx
-	mov DWORD PTR [esp+228], ecx
-	mov DWORD PTR [esp+232], ecx
-	mov DWORD PTR [esp+236], ecx
-	mov DWORD PTR [esp+240], ecx
-	mov DWORD PTR [esp+244], ecx
-	mov DWORD PTR [esp+248], ecx
-	mov DWORD PTR [esp+252], ecx
-	mov DWORD PTR [esp+256], ecx
-	mov DWORD PTR [esp+260], ecx
-	mov DWORD PTR [esp+264], ecx
-	mov DWORD PTR [esp+268], ecx
-	mov DWORD PTR [esp+272], ecx
-	mov DWORD PTR [esp+276], ecx
-	mov DWORD PTR [esp+280], ecx
-	mov DWORD PTR [esp+284], ecx
-	mov DWORD PTR [esp+288], ecx
-	mov DWORD PTR [esp+292], ecx
-	mov DWORD PTR [esp+296], ecx
-	lea esp, [esp+300]
+	lea esp, [esp+348]
+	mov eax, 0
+	mov edx, 0
+	xor ecx, ecx
+	pxor xmm0, xmm0
+	pxor xmm1, xmm1
+	pxor xmm2, xmm2
+	pxor xmm3, xmm3
+	pxor xmm4, xmm4
+	pxor xmm5, xmm5
+	pxor xmm6, xmm6
+	pxor xmm7, xmm7
 	ret
 	.p2align 6
 
@@ -170,7 +151,7 @@ vg_sha1_digest:
 	mov edi, ebp
 	add edi, 176
 	push edi
-	call {vg_sha1_init}
+	call {vg_sha1_init_core}
 	pop eax
 	mov eax, 0
 	mov esi, 0
@@ -221,7 +202,35 @@ vg_sha1_digest:
 	mov esi, DWORD PTR [eax+164]
 	mov edi, DWORD PTR [eax+168]
 	mov ebp, DWORD PTR [eax+172]
+	pxor xmm0, xmm0
 	mov ecx, 0
+	movdqu XMMWORD PTR [esp+20], xmm0
+	movdqu XMMWORD PTR [esp+36], xmm0
+	movdqu XMMWORD PTR [esp+52], xmm0
+	movdqu XMMWORD PTR [esp+68], xmm0
+	movdqu XMMWORD PTR [esp+84], xmm0
+	movdqu XMMWORD PTR [esp+100], xmm0
+	movdqu XMMWORD PTR [esp+116], xmm0
+	movdqu XMMWORD PTR [esp+132], xmm0
+	movdqu XMMWORD PTR [esp+148], xmm0
+	movdqu XMMWORD PTR [esp+164], xmm0
+	movdqu XMMWORD PTR [esp+180], xmm0
+	movdqu XMMWORD PTR [esp+196], xmm0
+	movdqu XMMWORD PTR [esp+212], xmm0
+	movdqu XMMWORD PTR [esp+228], xmm0
+	movdqu XMMWORD PTR [esp+244], xmm0
+	movdqu XMMWORD PTR [esp+260], xmm0
+	movdqu XMMWORD PTR [esp+276], xmm0
+	mov DWORD PTR [esp+292], ecx
+	mov DWORD PTR [esp+296], ecx
+	lea esp, [esp+300]
+	lea esp, [esp-348]
+	mov ecx, 0
+	mov DWORD PTR [esp], ecx
+	mov DWORD PTR [esp+4], ecx
+	mov DWORD PTR [esp+8], ecx
+	mov DWORD PTR [esp+12], ecx
+	mov DWORD PTR [esp+16], ecx
 	mov DWORD PTR [esp+20], ecx
 	mov DWORD PTR [esp+24], ecx
 	mov DWORD PTR [esp+28], ecx
@@ -234,65 +243,18 @@ vg_sha1_digest:
 	mov DWORD PTR [esp+56], ecx
 	mov DWORD PTR [esp+60], ecx
 	mov DWORD PTR [esp+64], ecx
-	mov DWORD PTR [esp+68], ecx
-	mov DWORD PTR [esp+72], ecx
-	mov DWORD PTR [esp+76], ecx
-	mov DWORD PTR [esp+80], ecx
-	mov DWORD PTR [esp+84], ecx
-	mov DWORD PTR [esp+88], ecx
-	mov DWORD PTR [esp+92], ecx
-	mov DWORD PTR [esp+96], ecx
-	mov DWORD PTR [esp+100], ecx
-	mov DWORD PTR [esp+104], ecx
-	mov DWORD PTR [esp+108], ecx
-	mov DWORD PTR [esp+112], ecx
-	mov DWORD PTR [esp+116], ecx
-	mov DWORD PTR [esp+120], ecx
-	mov DWORD PTR [esp+124], ecx
-	mov DWORD PTR [esp+128], ecx
-	mov DWORD PTR [esp+132], ecx
-	mov DWORD PTR [esp+136], ecx
-	mov DWORD PTR [esp+140], ecx
-	mov DWORD PTR [esp+144], ecx
-	mov DWORD PTR [esp+148], ecx
-	mov DWORD PTR [esp+152], ecx
-	mov DWORD PTR [esp+156], ecx
-	mov DWORD PTR [esp+160], ecx
-	mov DWORD PTR [esp+164], ecx
-	mov DWORD PTR [esp+168], ecx
-	mov DWORD PTR [esp+172], ecx
-	mov DWORD PTR [esp+176], ecx
-	mov DWORD PTR [esp+180], ecx
-	mov DWORD PTR [esp+184], ecx
-	mov DWORD PTR [esp+188], ecx
-	mov DWORD PTR [esp+192], ecx
-	mov DWORD PTR [esp+196], ecx
-	mov DWORD PTR [esp+200], ecx
-	mov DWORD PTR [esp+204], ecx
-	mov DWORD PTR [esp+208], ecx
-	mov DWORD PTR [esp+212], ecx
-	mov DWORD PTR [esp+216], ecx
-	mov DWORD PTR [esp+220], ecx
-	mov DWORD PTR [esp+224], ecx
-	mov DWORD PTR [esp+228], ecx
-	mov DWORD PTR [esp+232], ecx
-	mov DWORD PTR [esp+236], ecx
-	mov DWORD PTR [esp+240], ecx
-	mov DWORD PTR [esp+244], ecx
-	mov DWORD PTR [esp+248], ecx
-	mov DWORD PTR [esp+252], ecx
-	mov DWORD PTR [esp+256], ecx
-	mov DWORD PTR [esp+260], ecx
-	mov DWORD PTR [esp+264], ecx
-	mov DWORD PTR [esp+268], ecx
-	mov DWORD PTR [esp+272], ecx
-	mov DWORD PTR [esp+276], ecx
-	mov DWORD PTR [esp+280], ecx
-	mov DWORD PTR [esp+284], ecx
-	mov DWORD PTR [esp+288], ecx
-	mov DWORD PTR [esp+292], ecx
-	mov DWORD PTR [esp+296], ecx
-	lea esp, [esp+300]
+	lea esp, [esp+348]
+	mov eax, 0
+	mov edx, 0
+	xor ecx, ecx
+	pxor xmm0, xmm0
+	pxor xmm1, xmm1
+	pxor xmm2, xmm2
+	pxor xmm3, xmm3
+	pxor xmm4, xmm4
+	pxor xmm5, xmm5
+	pxor xmm6, xmm6
+	pxor xmm7, xmm7
 	ret
 	.p2align 6
 
@@ -308,6 +270,17 @@ vg_sha1_init:
 	mov DWORD PTR [eax+12], ecx
 	mov ecx, -1009589776
 	mov DWORD PTR [eax+16], ecx
+	mov eax, 0
+	mov edx, 0
+	xor ecx, ecx
+	pxor xmm0, xmm0
+	pxor xmm1, xmm1
+	pxor xmm2, xmm2
+	pxor xmm3, xmm3
+	pxor xmm4, xmm4
+	pxor xmm5, xmm5
+	pxor xmm6, xmm6
+	pxor xmm7, xmm7
 	ret
 	.p2align 6
 
@@ -446,6 +419,33 @@ vg_sha1_update_shani:
 	mov edi, DWORD PTR [eax+120]
 	mov ebp, DWORD PTR [eax+124]
 	lea esp, [esp+188]
+	pxor xmm0, xmm0
+	lea esp, [esp-208]
+	movdqu XMMWORD PTR [esp], xmm0
+	movdqu XMMWORD PTR [esp+16], xmm0
+	movdqu XMMWORD PTR [esp+32], xmm0
+	movdqu XMMWORD PTR [esp+48], xmm0
+	movdqu XMMWORD PTR [esp+64], xmm0
+	movdqu XMMWORD PTR [esp+80], xmm0
+	movdqu XMMWORD PTR [esp+96], xmm0
+	movdqu XMMWORD PTR [esp+112], xmm0
+	movdqu XMMWORD PTR [esp+128], xmm0
+	movdqu XMMWORD PTR [esp+144], xmm0
+	movdqu XMMWORD PTR [esp+160], xmm0
+	movdqu XMMWORD PTR [esp+176], xmm0
+	movdqu XMMWORD PTR [esp+192], xmm0
+	lea esp, [esp+208]
+	mov eax, 0
+	mov edx, 0
+	xor ecx, ecx
+	pxor xmm0, xmm0
+	pxor xmm1, xmm1
+	pxor xmm2, xmm2
+	pxor xmm3, xmm3
+	pxor xmm4, xmm4
+	pxor xmm5, xmm5
+	pxor xmm6, xmm6
+	pxor xmm7, xmm7
 	ret
 	.p2align 6
 
@@ -566,6 +566,36 @@ vg_sha1_finalize_shani:
 	mov edi, DWORD PTR [ebp+120]
 	mov ebp, DWORD PTR [ebp+124]
 	lea esp, [esp+184]
+	pxor xmm0, xmm0
+	mov ecx, 0
+	lea esp, [esp-204]
+	movdqu XMMWORD PTR [esp], xmm0
+	movdqu XMMWORD PTR [esp+16], xmm0
+	movdqu XMMWORD PTR [esp+32], xmm0
+	movdqu XMMWORD PTR [esp+48], xmm0
+	movdqu XMMWORD PTR [esp+64], xmm0
+	movdqu XMMWORD PTR [esp+80], xmm0
+	movdqu XMMWORD PTR [esp+96], xmm0
+	movdqu XMMWORD PTR [esp+112], xmm0
+	movdqu XMMWORD PTR [esp+128], xmm0
+	movdqu XMMWORD PTR [esp+144], xmm0
+	movdqu XMMWORD PTR [esp+160], xmm0
+	movdqu XMMWORD PTR [esp+176], xmm0
+	mov DWORD PTR [esp+192], ecx
+	mov DWORD PTR [esp+196], ecx
+	mov DWORD PTR [esp+200], ecx
+	lea esp, [esp+204]
+	mov eax, 0
+	mov edx, 0
+	xor ecx, ecx
+	pxor xmm0, xmm0
+	pxor xmm1, xmm1
+	pxor xmm2, xmm2
+	pxor xmm3, xmm3
+	pxor xmm4, xmm4
+	pxor xmm5, xmm5
+	pxor xmm6, xmm6
+	pxor xmm7, xmm7
 	ret
 	.p2align 6
 
@@ -704,6 +734,33 @@ vg_sha1_update:
 	mov edi, DWORD PTR [eax+120]
 	mov ebp, DWORD PTR [eax+124]
 	lea esp, [esp+188]
+	pxor xmm0, xmm0
+	lea esp, [esp-208]
+	movdqu XMMWORD PTR [esp], xmm0
+	movdqu XMMWORD PTR [esp+16], xmm0
+	movdqu XMMWORD PTR [esp+32], xmm0
+	movdqu XMMWORD PTR [esp+48], xmm0
+	movdqu XMMWORD PTR [esp+64], xmm0
+	movdqu XMMWORD PTR [esp+80], xmm0
+	movdqu XMMWORD PTR [esp+96], xmm0
+	movdqu XMMWORD PTR [esp+112], xmm0
+	movdqu XMMWORD PTR [esp+128], xmm0
+	movdqu XMMWORD PTR [esp+144], xmm0
+	movdqu XMMWORD PTR [esp+160], xmm0
+	movdqu XMMWORD PTR [esp+176], xmm0
+	movdqu XMMWORD PTR [esp+192], xmm0
+	lea esp, [esp+208]
+	mov eax, 0
+	mov edx, 0
+	xor ecx, ecx
+	pxor xmm0, xmm0
+	pxor xmm1, xmm1
+	pxor xmm2, xmm2
+	pxor xmm3, xmm3
+	pxor xmm4, xmm4
+	pxor xmm5, xmm5
+	pxor xmm6, xmm6
+	pxor xmm7, xmm7
 	ret
 	.p2align 6
 
@@ -824,5 +881,35 @@ vg_sha1_finalize:
 	mov edi, DWORD PTR [ebp+120]
 	mov ebp, DWORD PTR [ebp+124]
 	lea esp, [esp+184]
+	pxor xmm0, xmm0
+	mov ecx, 0
+	lea esp, [esp-204]
+	movdqu XMMWORD PTR [esp], xmm0
+	movdqu XMMWORD PTR [esp+16], xmm0
+	movdqu XMMWORD PTR [esp+32], xmm0
+	movdqu XMMWORD PTR [esp+48], xmm0
+	movdqu XMMWORD PTR [esp+64], xmm0
+	movdqu XMMWORD PTR [esp+80], xmm0
+	movdqu XMMWORD PTR [esp+96], xmm0
+	movdqu XMMWORD PTR [esp+112], xmm0
+	movdqu XMMWORD PTR [esp+128], xmm0
+	movdqu XMMWORD PTR [esp+144], xmm0
+	movdqu XMMWORD PTR [esp+160], xmm0
+	movdqu XMMWORD PTR [esp+176], xmm0
+	mov DWORD PTR [esp+192], ecx
+	mov DWORD PTR [esp+196], ecx
+	mov DWORD PTR [esp+200], ecx
+	lea esp, [esp+204]
+	mov eax, 0
+	mov edx, 0
+	xor ecx, ecx
+	pxor xmm0, xmm0
+	pxor xmm1, xmm1
+	pxor xmm2, xmm2
+	pxor xmm3, xmm3
+	pxor xmm4, xmm4
+	pxor xmm5, xmm5
+	pxor xmm6, xmm6
+	pxor xmm7, xmm7
 	ret
 	.p2align 6

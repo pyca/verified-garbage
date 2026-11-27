@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.RsaPkcs1Sig.BytesAt
 # RSAES-PKCS1-v1_5 encryption from a random tape on x86: its callee
 
 `vg_rsa_pkcs1_encrypt_precomputed`'s contract with the stack of its x86
-implementation (`Proof/RsaPkcs1Enc/X86/PcBase.lean`, 1188 bytes), at a call
+implementation (`Proof/RsaPkcs1Enc/X86/PcVerified.lean`, 1188 bytes), at a call
 with given arguments (`enc_pre`, `enc_pub`, `enc_post`), as
 `Proof/RsaPkcs1Sig/X86/PubCall.lean` does for
 `vg_rsa_public_precomputed_checked`: the caller stores its fourteen arguments
@@ -122,13 +122,18 @@ theorem enc_pre (h : EncArgs s out n e msg ps scr pre K el ml pl sl rl)
     rw [← Taint.sub_setWidth (by omega_using [hsp, e4])]
     exact below_inner (by decide) h.sp
   repeat' apply And.intro
+  -- The alternatives that fail at once come first. On a goal it does not close, `trivial` tries
+  -- `contradiction` and `assumption` among every hypothesis; an `exact` of a fact about other regions unfolds
+  -- them unless reducible; and `wr` fits every pair of regions, so that it fails only when `simp` has not
+  -- found them in the lists.
   all_goals first
-    | omega | rfl | trivial | exact h.kv | exact h.el1 | exact h.elK | exact h.slK | exact h.rlK
-    | exact h.mlK | exact h.plK
-    | exact oS | exact oA | exact sA
-    | (refine wr ?_ ?_ <;> simp <;> fail) | (refine (wr ?_ ?_).symm <;> simp <;> fail)
-    | (refine (lo ?_).sub_left ret; simp <;> fail) | (refine (lo ?_).sub_left low; simp <;> fail)
+    | rfl | exact True.intro | exact h.kv | exact h.el1 | exact h.elK | exact h.slK | exact h.rlK
+    | exact h.mlK | exact h.plK | omega
+    | with_reducible exact oS | with_reducible exact oA | with_reducible exact sA
+    | (with_reducible refine (lo ?_).sub_left ret; simp <;> fail)
+    | (with_reducible refine (lo ?_).sub_left low; simp <;> fail)
     | (refine fi' _ _ ?_; simp <;> fail)
+    | (refine wr ?_ ?_ <;> simp <;> fail) | (refine (wr ?_ ?_).symm <;> simp <;> fail)
     | exact h.kv.1 | exact h.kv.2
 
 theorem enc_pub {s₁ s₂ : State} (h₁ : EncArgs s₁ out n e msg ps scr pre K el ml pl sl rl)

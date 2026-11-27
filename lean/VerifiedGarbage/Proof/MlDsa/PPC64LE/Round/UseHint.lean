@@ -1,6 +1,5 @@
 module
 
-import VerifiedGarbage.Proof.MlDsa.PPC64LE.Round.Bits
 import VerifiedGarbage.Proof.MlDsa.PPC64LE.Round.HighLow
 import VerifiedGarbage.Proof.MlDsa.PPC64LE.Arith.Common
 import VerifiedGarbage.Proof.Framework.PPC64LE.Run
@@ -9,7 +8,6 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 import all Init.Data.Nat.Bitwise.Basic
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.MlDsa.PPC64LE.Round.Bits
 meta import VerifiedGarbage.Proof.MlDsa.PPC64LE.Round.HighLow
 meta import VerifiedGarbage.Proof.MlDsa.Round.Ones
 meta import VerifiedGarbage.Proof.MlKem.PPC64LE.Add
@@ -129,10 +127,10 @@ theorem uh_val {g : Nat} (hg : g ∈ gamma2s) {a w : BitVec 64} (ha : a.toNat < 
   by_cases hw0 : w.toNat = 0 <;> by_cases hs : P.toNat < a.toNat <;>
     simp only [hw0, hs, ite_true, ite_false, decide_true, decide_false, ne_eq, not_true_eq_false,
       not_false_eq_true, Bool.false_eq_true]
-  · exact fixk2_mod m64 m1 (by omega_using [hF]) (Or.inl (by bv_omega))
-  · exact fixk2_mod m64 m1 (by omega_using [hF]) (Or.inl (by bv_omega))
-  · exact fixk2_mod m64 m1 (by omega_using [hF]) (Or.inl (by bv_omega))
-  · exact fixk2_mod m64 m1 (by omega_using [hF]) (by bv_omega)
+  · exact fixk2_mod m64 m1 (by omega_using [hF]) (Or.inl (by bv_omega_using [hF44, m1]))
+  · exact fixk2_mod m64 m1 (by omega_using [hF]) (Or.inl (by bv_omega_using [hF44, m1]))
+  · exact fixk2_mod m64 m1 (by omega_using [hF]) (Or.inl (by bv_omega_using [hF44, m1]))
+  · exact fixk2_mod m64 m1 (by omega_using [hF]) (by bv_omega_using [hF44, m1])
 
 /-! ## The loop body -/
 

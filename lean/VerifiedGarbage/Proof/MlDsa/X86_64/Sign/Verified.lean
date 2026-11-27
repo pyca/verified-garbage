@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Inst
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Same
 import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Lit
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Correct
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseOCT
 import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.SignCT
 public import VerifiedGarbage.Impl.MlDsa.X86_64.Sign.Sign
 public import VerifiedGarbage.Proof.MlDsa.Sign.Leak
@@ -45,45 +45,53 @@ theorem sign_same {m mc : Prog isa → Bool} (hm : Comp m mc) {B : Backend} (h1 
     (h2 : mc B.invNtt = true) (h3 : mc B.mul = true) (h5 : mc B.add = true)
     (h6 : mc B.sub = true) (h7 : mc B.rej4 = true) (h8 : mc B.expandMask4 = true) (h9 : mc B.highBits = true)
     (h10 : mc B.lowBits = true) (h11 : mc B.normLt = true) (h12 : mc B.makeHint = true)
-    (h13 : mc B.dotInv4 = true) (h14 : mc B.dotInv5 = true) (h15 : mc B.dotInv7 = true) (p : Params) :
-    Same m (Impl.MlDsa.X86_64.Sign.sign (primsWith B) p) (Impl.MlDsa.X86_64.Sign.sign (primsWith .empty) p) := by
-  have hd : mc ((primsWith B).dotInv p.ℓ) = true := by
+    (h13 : mc B.dotInv4 = true) (h14 : mc B.dotInv5 = true) (h15 : mc B.dotInv7 = true) (p : Params)
+    (vs : Bool := false) :
+    Same m (Impl.MlDsa.X86_64.Sign.sign (primsWith B vs) p) (Impl.MlDsa.X86_64.Sign.sign (primsWith .empty vs) p) := by
+  have hd : mc ((primsWith B vs).dotInv p.ℓ) = true := by
     unfold Prims.dotInv; split
     · exact h13
     · split
       · exact h14
       · exact h15
-  have he : (primsWith Backend.empty).dotInv p.ℓ = .block [] := by
+  have he : (primsWith Backend.empty vs).dotInv p.ℓ = .block [] := by
     unfold Prims.dotInv; split
     · rfl
     · split <;> rfl
   unfold Impl.MlDsa.X86_64.Sign.sign
   same_tac hm
-  all_goals rw [he]; exact Same.call hm hd _ _
+  all_goals exact Same.callV' hm hd he _ _ _ _ _
 
-theorem sign0_ctlC {p : Params} (h3 : Ok3 p) : ctlC (Impl.MlDsa.X86_64.Sign.sign (primsWith .empty) p) = true := by
-  rcases h3 with rfl | rfl | rfl
+theorem sign0_ctlC {p : Params} (h3 : Ok3 p) (vs : Bool := false) :
+    ctlC (Impl.MlDsa.X86_64.Sign.sign (primsWith .empty vs) p) = true := by
+  rcases h3 with rfl | rfl | rfl <;> cases vs
   · exact (by lit_decide : ctlC sign44 = true)
+  · exact (by lit_decide : ctlC sign44V = true)
   · exact (by lit_decide : ctlC sign65 = true)
+  · exact (by lit_decide : ctlC sign65V = true)
   · exact (by lit_decide : ctlC sign87 = true)
+  · exact (by lit_decide : ctlC sign87V = true)
 
-theorem sign0_sp {p : Params} (h3 : Ok3 p) :
-    (Impl.MlDsa.X86_64.Sign.sign (primsWith .empty) p).allInstrs (fun i => !isa.writesSp i) = true := by
-  rcases h3 with rfl | rfl | rfl
+theorem sign0_sp {p : Params} (h3 : Ok3 p) (vs : Bool := false) :
+    (Impl.MlDsa.X86_64.Sign.sign (primsWith .empty vs) p).allInstrs (fun i => !isa.writesSp i) = true := by
+  rcases h3 with rfl | rfl | rfl <;> cases vs
   · exact (by lit_decide : sign44.allInstrs (fun i => !isa.writesSp i) = true)
+  · exact (by lit_decide : sign44V.allInstrs (fun i => !isa.writesSp i) = true)
   · exact (by lit_decide : sign65.allInstrs (fun i => !isa.writesSp i) = true)
+  · exact (by lit_decide : sign65V.allInstrs (fun i => !isa.writesSp i) = true)
   · exact (by lit_decide : sign87.allInstrs (fun i => !isa.writesSp i) = true)
+  · exact (by lit_decide : sign87V.allInstrs (fun i => !isa.writesSp i) = true)
 
-variable (v : ArithImpl) {p : Params} (h3 : Ok3 p)
+variable (v : ArithImpl) {p : Params} (h3 : Ok3 p) (vs : Bool := false)
 include h3
 
-theorem sign_ctl : ctlOk (Impl.MlDsa.X86_64.Sign.sign (primsWith v.code) p) = true :=
+theorem sign_ctl : ctlOk (Impl.MlDsa.X86_64.Sign.sign (primsWith v.code vs) p) = true :=
   ctlOk_of_ctlC (Same.ok (sign_same Comp.ctlC v.ok.ntt.ctl v.ok.invNtt.ctl v.ok.mul.ctl
     v.ok.add.ctl v.ok.sub.ctl v.ok.rej4.ctl v.ok.expandMask4.ctl v.ok.highBits.ctl v.ok.lowBits.ctl
     v.ok.normLt.ctl v.ok.makeHint.ctl (v.ok.dotInv 4 (.inl rfl)).ctl (v.ok.dotInv 5 (.inr (.inl rfl))).ctl
-    (v.ok.dotInv 7 (.inr (.inr rfl))).ctl p) (sign0_ctlC h3))
+    (v.ok.dotInv 7 (.inr (.inr rfl))).ctl p vs) (sign0_ctlC h3 vs))
 
-theorem sign_spSafe : (Impl.MlDsa.X86_64.Sign.sign (primsWith v.code) p).all (fun i => !isa.writesSp i) = true :=
+theorem sign_spSafe : (Impl.MlDsa.X86_64.Sign.sign (primsWith v.code vs) p).all (fun i => !isa.writesSp i) = true :=
   Code.all_of_allInstrs (Same.ok (sign_same (Comp.all _) (Code.allInstrs_of_all v.ok.ntt.sp)
     (Code.allInstrs_of_all v.ok.invNtt.sp) (Code.allInstrs_of_all v.ok.mul.sp)
     (Code.allInstrs_of_all v.ok.add.sp)
@@ -92,6 +100,6 @@ theorem sign_spSafe : (Impl.MlDsa.X86_64.Sign.sign (primsWith v.code) p).all (fu
     (Code.allInstrs_of_all v.ok.highBits.sp) (Code.allInstrs_of_all v.ok.lowBits.sp)
     (Code.allInstrs_of_all v.ok.normLt.sp) (Code.allInstrs_of_all v.ok.makeHint.sp)
     (Code.allInstrs_of_all (v.ok.dotInv 4 (.inl rfl)).sp) (Code.allInstrs_of_all (v.ok.dotInv 5 (.inr (.inl rfl))).sp)
-    (Code.allInstrs_of_all (v.ok.dotInv 7 (.inr (.inr rfl))).sp) p) (sign0_sp h3))
+    (Code.allInstrs_of_all (v.ok.dotInv 7 (.inr (.inr rfl))).sp) p vs) (sign0_sp h3 vs))
 
 end VG.Proof.MlDsa.X86_64.Sign

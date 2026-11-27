@@ -28,7 +28,7 @@ scratch)`, with `t` (64 bits), `last` and `scratch` the stack arguments 0–1,
 on the stack): updates the state at `state` with the `n` blocks at `blocks`,
 block `i` with the counter `t + bb · i` and the final block flag if
 `last ≠ 0`. It reads the blocks and the 16 bytes of stack arguments, and
-reads and writes the state and 512 bytes of scratch space; the writable
+reads and writes the state and 200 bytes of scratch space; the writable
 buffers overlap nothing else, and nothing wraps around the end of the
 (32-bit) address space. `sp`, the pointers, `n`, `t` and `last` are
 public. -/
@@ -36,14 +36,14 @@ def compressArm {w : Nat} (P : Params w) : Contract Arm.isa where
   pre s :=
     let state : Region := ⟨State.addr (s.gpr .r0), 8 * (w / 8)⟩
     let blocks : Region := ⟨State.addr (s.gpr .r1), blockBytes w * (s.gpr .r2).toNat⟩
-    let scratch : Region := ⟨State.addr (stackArg s 3), 512⟩
+    let scratch : Region := ⟨State.addr (stackArg s 3), 200⟩
     let args : Region := ⟨stackArgAddr s 0, 16⟩
     s.rd = [blocks, args] ∧ s.wr = [state, scratch] ∧
     state.Disjoint scratch ∧ blocks.Disjoint state ∧ blocks.Disjoint scratch ∧
     args.Disjoint state ∧ args.Disjoint scratch ∧
     (s.gpr .r0).toNat + 8 * (w / 8) ≤ 2 ^ 32 ∧
     (s.gpr .r1).toNat + blockBytes w * (s.gpr .r2).toNat ≤ 2 ^ 32 ∧
-    (stackArg s 3).toNat + 512 ≤ 2 ^ 32 ∧ s.sp.toNat + 16 ≤ 2 ^ 32
+    (stackArg s 3).toNat + 200 ≤ 2 ^ 32 ∧ s.sp.toNat + 16 ≤ 2 ^ 32
   post s s' := stateAt w s'.mem (State.addr (s.gpr .r0)) =
     compressBlocks P (stateAt w s.mem (State.addr (s.gpr .r0))) s.mem (State.addr (s.gpr .r1))
       (s.gpr .r2).toNat (tArm s).toNat (stackArg s 2 != 0)

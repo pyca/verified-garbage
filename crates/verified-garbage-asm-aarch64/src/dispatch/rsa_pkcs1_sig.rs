@@ -8,6 +8,8 @@
 ///
 /// It runs `vg_rsa_pkcs1_sign_precomputed`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of `out_len` bytes.
@@ -49,6 +51,8 @@ pub unsafe fn vg_rsa_pkcs1_sign_precomputed_auto(_dit: verified_garbage_cpu::Dit
 ///
 /// It runs `vg_rsa_pkcs1_verify_precomputed`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `n` must be valid for reads of `n_len` bytes.
@@ -81,6 +85,8 @@ pub unsafe fn vg_rsa_pkcs1_verify_precomputed_auto(_dit: verified_garbage_cpu::D
 /// Contract: `VG.Spec.RsaPkcs1Sig.recoverPrecomputedContract`.
 ///
 /// It runs `vg_rsa_pkcs1_recover_precomputed`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///

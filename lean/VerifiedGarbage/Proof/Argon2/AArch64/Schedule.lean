@@ -147,12 +147,39 @@ theorem good_scheduled : ∀ op ∈ scheduledOps, Good op := by
   have h : scheduledOps.all (fun op => decide (Good op)) = true := by decide +kernel
   simpa only [List.all_eq_true, decide_eq_true_eq] using h
 
+/-- Whether two expressions are the same, as a `Bool`. (`DecidableEq`'s answer for two
+applications carries a cast along the equation of their arguments, which the kernel reduces by
+comparing the arguments as the terms they are.) -/
+private def Expr.same : Expr → Expr → Bool
+  | .reg r, .reg q => decide (r = q)
+  | .add a b, .add c d => a.same c && b.same d
+  | .rotate d a n, .rotate e c m => decide (n = m) && (d.same e && a.same c)
+  | _, _ => false
+
+private theorem Expr.eq_of_same {a b : Expr} (h : a.same b = true) : a = b := by
+  induction a generalizing b with
+  | reg r => cases b <;> simp_all [Expr.same]
+  | add a₁ a₂ h₁ h₂ =>
+    cases b <;> simp only [Expr.same, Bool.and_eq_true, Bool.false_eq_true] at h
+    rw [h₁ h.1, h₂ h.2]
+  | rotate d a n h₁ h₂ =>
+    cases b <;> simp only [Expr.same, Bool.and_eq_true, Bool.false_eq_true, decide_eq_true_eq] at h
+    rw [h₁ h.2.1, h₂ h.2.2, h.1]
+
 /-- Each half-round is checked separately, keeping the expression trees
-small and the proof independent of the numeric values of the lanes. -/
+small and the proof independent of the numeric values of the lanes. The registers of both
+half-rounds are one kernel evaluation, which runs each schedule once. -/
 theorem same_group_expressions (diagonal : Bool) : ∀ r : Reg,
     let qs := if diagonal then diagonals else columns
     symRun (groupOps qs) Expr.reg r = symRun (qs.flatMap gbOps) Expr.reg r := by
-  cases diagonal <;> intro r <;> cases r <;> decide +kernel
+  have h : ∀ diagonal : Bool, ∀ i < 29,
+      (symRun (groupOps (if diagonal then diagonals else columns)) Expr.reg (Reg.ofNat i)).same
+        (symRun ((if diagonal then diagonals else columns).flatMap gbOps) Expr.reg (Reg.ofNat i)) =
+          true := by decide +kernel
+  intro r
+  have hr := h diagonal r.ctorIdx (by cases r <;> decide)
+  rw [Reg.ofNat_ctorIdx] at hr
+  exact Expr.eq_of_same hr
 
 theorem same_group_values (diagonal : Bool) (f : Reg → BitVec 64) (r : Reg) :
     let qs := if diagonal then diagonals else columns

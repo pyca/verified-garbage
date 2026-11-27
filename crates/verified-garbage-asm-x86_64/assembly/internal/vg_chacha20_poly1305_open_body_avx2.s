@@ -9973,7 +9973,7 @@ vg_chacha20_poly1305_open_body_avx2:
 	sub r15, 128
 	cmp r13, 449
 	jb 2102f
-	mov edx, 192
+	mov edx, 512
 	jmp 2103f
 2102:
 	mov rdx, r13

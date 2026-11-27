@@ -1,38 +1,25 @@
 module
 
-public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Variant
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.Proof.Framework.AArch64.Exec
-public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-public import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-public import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
-public import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
-public import VerifiedGarbage.Proof.Framework.AArch64.Syms
-public import VerifiedGarbage.Proof.Framework.Cold
-public import VerifiedGarbage.Proof.Framework.EntryBranch
-public import VerifiedGarbage.Proof.Framework.KernelRfl
-public import VerifiedGarbage.Proof.Hmac.AnyKey
-public import VerifiedGarbage.Proof.Hmac.Generic.Implies
-public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.AnyKeyEntry
-public import VerifiedGarbage.Proof.Sha256.AArch64.Compress
-public import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Digest
-public import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Init
-public import VerifiedGarbage.Proof.Sha512.AArch64.Stream.Digest
-public import VerifiedGarbage.Proof.Sha512.AArch64.Stream.Init
-public import VerifiedGarbage.TCB.AArch64.Print
-public import VerifiedGarbage.Proof.Variants.MdHash.AArch64
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Pbkdf2.Generic
+public import VerifiedGarbage.Spec.Hmac.Generic
+import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Variant
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Variants.MdHash.AArch64
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # PBKDF2-HMAC-SHA-384 (RFC 8018) on AArch64 -/
 
-@[expose] public section
-
 namespace VG.Artifacts.Pbkdf2Sha384.AArch64
 
-def artifacts : List Artifact :=
+public def artifacts : List (Artifact AArch64.target) :=
   VG.Proof.Variants.MdHash.AArch64.sha384Variants.flatMap fun (v : Proof.Pbkdf2.Md.AArch64.MdHash) => [
     v.I.pbkdf2Api.artifact AArch64.target {
       suffix := v.suffix
-      code := Impl.StackScratch.AArch64.withStackScratch (Proof.Pbkdf2.Md.AArch64.pbkdf2Frame v.I) .x7 v.H.pbkdf2
-      verified := v.pbkdf2F }]
+      code := Impl.Pbkdf2.Md.AArch64.Fn.pbkdf2 v.H
+      verified := Proof.Pbkdf2.Md.AArch64.MdHash.pbkdf2_scrubbed v }]
+
+spec_apis artifacts
 
 end VG.Artifacts.Pbkdf2Sha384.AArch64

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Pbkdf2.Md.AnyKey.X86_64
-public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Pbkdf2
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.PbkLoop
 import VerifiedGarbage.Proof.Hmac.Generic.Common
 import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Words
 public import VerifiedGarbage.Proof.Hmac.Contract
@@ -18,12 +18,16 @@ public import VerifiedGarbage.Proof.Sha256.X86_64.Stream.Md
 public import VerifiedGarbage.Proof.Framework.X86_64.Depth
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.OffsetBelow
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.TCB.Registration
 import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
 import VerifiedGarbage.Proof.Pbkdf2.Scratch
 public import VerifiedGarbage.Impl.StackScratch.X86_64
 public import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubSel
+public import VerifiedGarbage.Proof.Framework.X86_64.CalleeSide
 public import VerifiedGarbage.Proof.Hmac.Scratch
 import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Lit
 import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit
@@ -940,6 +944,7 @@ structure AnyOK (C : Hash) : Prop where
   mx : C.hmacInitAny.allInstrs (fun i => !loadsMxcsr i) = true
   sp : C.hmacInitAny.allInstrs (fun i => !isa.writesSp i) = true
   xd : C.hmacInitAny.x86_64Depth ≤ 24
+  ns : C.hmacInitAny.allInstrs (fun i => !Taint.clobbers i .rsp) = true
 
 section
 variable {p : Instr → Bool} (hc : H.compC.allInstrs p = true) (hi : H.initC.allInstrs p = true)
@@ -966,6 +971,22 @@ theorem core_hmacInitAny_xdepth (hc : H.compC.x86_64Depth = 0) (hi : H.initC.x86
     Impl.MdStream.X86_64.finalize, Impl.MdStream.X86_64.finalizeBody,
     core, coreBoth, Code.x86_64Depth, hc, hi, hb] at h ⊢
   exact h
+
+/-- `initAny` calls two deep: HMAC's `init`, and the streaming functions,
+each of which calls the compression function. -/
+theorem hmacInitAny_depth (hc : H.compC.depth = 0) (hi : H.initC.depth = 0) (hb : H.compBoth.depth = 1) :
+    H.hmacInitAny.depth ≤ 2 := by
+  simp only [Hash.hmacInitAny, Hash.key, Hash.hashKey, Hash.hmacInit, Hash.initKeys, Hash.updC, Hash.finC,
+    Hash.stream, Impl.Pbkdf2.Md.X86_64.Stream.callInit,
+    Impl.MdStream.X86_64.update, Impl.MdStream.X86_64.updateBody, Impl.MdStream.X86_64.updateTail,
+    Impl.MdStream.X86_64.compressN, Impl.MdStream.X86_64.compressAt, Impl.MdStream.X86_64.compressWith,
+    Impl.MdStream.X86_64.finalize, Impl.MdStream.X86_64.finalizeBody, Impl.MdStream.X86_64.updateHead,
+    Impl.MdStream.X86_64.fill, Impl.MdStream.X86_64.finalizeStart, Impl.MdStream.X86_64.finalizePad,
+    Impl.MdStream.X86_64.vecPad, Impl.MdStream.X86_64.bytePad, Impl.MdStream.X86_64.copy,
+    Impl.MdStream.X86_64.copyLoop, Impl.MdStream.X86_64.zero, Impl.MdStream.X86_64.zeroLoop,
+    Impl.MdStream.X86_64.updateStart, Impl.MdStream.X86_64.copyWords, Impl.MdStream.X86_64.chunks,
+    Impl.MdStream.X86_64.zeroWords, Hash.keyLoop, Hash.keyLoop16, Code.depth, hc, hi, hb]
+  decide
 
 section
 variable {H : Hash} (hH : HashOK H) (C : CoreOK (core H)) (A : AnyOK (core H)) (K : Callees H)
@@ -1021,6 +1042,100 @@ theorem hmacInitAny_verified
 
 end
 
+/-! ## Calling `initAny`
+
+A call of HMAC's `init` for a key of any length, verified against `anyG`
+with `W + S` words of working space (as a table of `Hmac` holds it): what
+the caller's state needs (`AnyArgs`: the 32 bytes below its `rsp` apart
+from the buffers, as `anyG` takes 24 below its own), what holds when it
+returns (`any_call`), and that two runs with the same arguments leak the
+same trace (`any_rel`). -/
+
+section
+variable {H : Hash} (hH : HashOK H)
+
+theorem ret32 (s : State) : Region.Sub ⟨s.callEntry.gpr .rsp, 8⟩ (below (s.gpr .rsp) 32) := by
+  rw [State.callEntry_rsp]; exact Offset.sub_below _ (a := 8) (by omega_using []) (by omega_using [])
+
+theorem stk32 (s : State) : Region.Sub ⟨s.callEntry.gpr .rsp - 24, 24⟩ (below (s.gpr .rsp) 32) := by
+  rw [State.callEntry_rsp, show s.gpr .rsp - 8 - 24 = s.gpr .rsp - BitVec.ofNat 64 32 from
+    Offset.sub_sub_ofNat _ 8 24]
+  exact Offset.sub_below _ (a := 32) (by omega_using []) (by omega_using [])
+
+theorem b24_32 (s : State) : Region.Sub (below (s.gpr .rsp) 24) (below (s.gpr .rsp) 32) :=
+  below_sub (by omega_using []) (by omega_using [])
+
+/-- The regions of a call of `initAny`. -/
+structure AnyArgs (s : State) (inn out k sc : Addr) (kl : Nat) : Prop where
+  rdi : s.gpr .rdi = inn
+  rsi : s.gpr .rsi = out
+  rdx : s.gpr .rdx = k
+  rcx : (s.gpr .rcx).toNat = kl
+  r8 : s.gpr .r8 = sc
+  cr : Covers [⟨k, kl⟩] (s.rd ++ s.wr)
+  cw : Covers [⟨inn, H.S⟩, ⟨out, H.S⟩, ⟨sc, 8 * (H.W + H.S)⟩] s.wr
+  i_o : Region.Disjoint ⟨inn, H.S⟩ ⟨out, H.S⟩
+  i_s : Region.Disjoint ⟨inn, H.S⟩ ⟨sc, 8 * (H.W + H.S)⟩
+  o_s : Region.Disjoint ⟨out, H.S⟩ ⟨sc, 8 * (H.W + H.S)⟩
+  k_i : Region.Disjoint ⟨k, kl⟩ ⟨inn, H.S⟩
+  k_o : Region.Disjoint ⟨k, kl⟩ ⟨out, H.S⟩
+  k_s : Region.Disjoint ⟨k, kl⟩ ⟨sc, 8 * (H.W + H.S)⟩
+  stk_i : (below (s.gpr .rsp) 32).Disjoint ⟨inn, H.S⟩
+  stk_o : (below (s.gpr .rsp) 32).Disjoint ⟨out, H.S⟩
+  stk_k : (below (s.gpr .rsp) 32).Disjoint ⟨k, kl⟩
+  stk_s : (below (s.gpr .rsp) 32).Disjoint ⟨sc, 8 * (H.W + H.S)⟩
+  scnw : sc.toNat + 8 * (H.W + H.S) ≤ 2 ^ 64
+
+theorem AnyArgs.pre {s : State} {inn out k sc : Addr} {kl : Nat} (a : AnyArgs (H := H) s inn out k sc kl) :
+    (anyG hH.SH (H.W + H.S)).pre
+      (s.callEntry.withRegions [⟨k, kl⟩] [⟨inn, H.S⟩, ⟨out, H.S⟩, ⟨sc, 8 * (H.W + H.S)⟩]) := by
+  have hS := hH.hS
+  simp only [anyG, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr,
+    Calls.ne_rsp (by decide : Reg.rdi ≠ .rsp), Calls.ne_rsp (by decide : Reg.rsi ≠ .rsp),
+    Calls.ne_rsp (by decide : Reg.rdx ≠ .rsp), Calls.ne_rsp (by decide : Reg.rcx ≠ .rsp),
+    Calls.ne_rsp (by decide : Reg.r8 ≠ .rsp), a.rdi, a.rsi, a.rdx, a.rcx, a.r8, hS]
+  exact ⟨trivial, trivial, a.i_o, a.i_s, a.o_s, a.k_i, a.k_o, a.k_s,
+    a.stk_i.sub_left (ret32 s), a.stk_o.sub_left (ret32 s), a.stk_s.sub_left (ret32 s),
+    a.stk_i.sub_left (stk32 s), a.stk_o.sub_left (stk32 s), a.stk_k.sub_left (stk32 s),
+    a.stk_s.sub_left (stk32 s), a.scnw⟩
+
+/-- A call of `initAny`: its states represent the padded key, and it wrote
+only the buffers and the 24 bytes below `rsp`. -/
+theorem any_call (hv : Verified X86_64.target H.hmacInitAny (anyG hH.SH (H.W + H.S))) (hsp : NoSp H.hmacInitAny)
+    (hd : H.hmacInitAny.depth ≤ 2) {n : String} {s : State} {inn out k sc : Addr} {kl : Nat}
+    (a : AnyArgs (H := H) s inn out k sc kl) (hkl : kl < 2 ^ 64) {Q : State → Prop}
+    (hQ : ∀ s', s'.rd = s.rd → s'.wr = s.wr → (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) →
+      Frame ([⟨inn, H.S⟩, ⟨out, H.S⟩, ⟨sc, 8 * (H.W + H.S)⟩] ++ [below (s.gpr .rsp) 24]) s.mem s'.mem →
+      hH.SH.Repr s'.mem inn (Spec.Hmac.xorPad (Spec.Hmac.blockKey hH.SH.H (bytesAt s.mem k kl)) Spec.Hmac.ipad) →
+      hH.SH.Repr s'.mem out (Spec.Hmac.xorPad (Spec.Hmac.blockKey hH.SH.H (bytesAt s.mem k kl)) Spec.Hmac.opad) → Q s') :
+    WP isa (.call n H.hmacInitAny) s Q := by
+  refine WP.call hv.1 hsp (by omega_using [hd]) (a.pre hH) (Pbk.covers_app a.cr a.cw) a.cw ?_
+  intro s' h₁ h₂ h₃ h₄ _ ⟨s₂, hm, _, hpost⟩
+  have e : bytesAt s.callEntry.mem k kl = bytesAt s.mem k kl :=
+    Pbk.entry_bytes s (a.stk_k.sub_left (b24_32 s)) (Nat.le_of_lt hkl)
+  simp only [anyG, State.withRegions_gpr, State.withRegions_mem, Calls.ne_rsp (by decide : Reg.rdi ≠ .rsp),
+    Calls.ne_rsp (by decide : Reg.rsi ≠ .rsp), Calls.ne_rsp (by decide : Reg.rdx ≠ .rsp),
+    Calls.ne_rsp (by decide : Reg.rcx ≠ .rsp), a.rdi, a.rsi, a.rdx, a.rcx, hm, e] at hpost
+  exact hQ s' h₁ h₂ h₃ (Frame.below_mono h₄ (by omega_using [hd]) (by omega_using [])) hpost.1 hpost.2
+
+/-- Two calls of `initAny` with the same arguments leak the same trace. -/
+theorem any_rel (hv : Verified X86_64.target H.hmacInitAny (anyG hH.SH (H.W + H.S))) {n : String}
+    {P : State → State → Prop} {inn out k sc : Addr} {kl : Nat}
+    (h : ∀ s s', P s s' → AnyArgs (H := H) s inn out k sc kl ∧ AnyArgs (H := H) s' inn out k sc kl ∧
+      s.gpr .rsp = s'.gpr .rsp) :
+    RelCT isa P (.call n H.hmacInitAny) fun _ _ => True := by
+  refine VG.X86_64.RelCT.call hv.1 hv.2.1 [⟨k, kl⟩] [⟨inn, H.S⟩, ⟨out, H.S⟩, ⟨sc, 8 * (H.W + H.S)⟩] fun s s' hp => ?_
+  obtain ⟨a, a', sp⟩ := h s s' hp
+  have cx : s.gpr .rcx = s'.gpr .rcx := BitVec.eq_of_toNat_eq (by rw [a.rcx, a'.rcx])
+  refine ⟨a.pre hH, a'.pre hH, ?_, Pbk.covers_app a.cr a.cw, a.cw, Pbk.covers_app a'.cr a'.cw, a'.cw, sp⟩
+  simp only [anyG, State.withRegions_gpr, State.callEntry_rsp, Calls.ne_rsp (by decide : Reg.rdi ≠ .rsp),
+    Calls.ne_rsp (by decide : Reg.rsi ≠ .rsp), Calls.ne_rsp (by decide : Reg.rdx ≠ .rsp),
+    Calls.ne_rsp (by decide : Reg.rcx ≠ .rsp), Calls.ne_rsp (by decide : Reg.r8 ≠ .rsp), a.rdi, a'.rdi, a.rsi,
+    a'.rsi, a.rdx, a'.rdx, a.r8, a'.r8, cx, sp]
+  exact ⟨trivial, trivial, trivial, trivial, trivial, trivial⟩
+
+end
+
 end VG.Proof.Pbkdf2.Md.X86_64.Any
 
 end
@@ -1065,6 +1180,11 @@ structure Compress where
   /-- It uses no stack, so that the streaming functions calling it can keep
   their working space in a frame of their own (`Verified.stackScratch`). -/
   noStack : callee.code.x86_64Depth = 0 := by lit_decide
+  /-- The level of its vector instructions. -/
+  level : Impl.Scrub.X86_64.VecLevel
+  /-- What the cleanup of a function that calls it needs of its code, at
+  that level (`X86_64.Scrub.calleeSide`), evaluated here, once. -/
+  side : X86_64.Scrub.calleeSide callee.code level.level 0 = true
   /-- What the names of its callers' instances end with (e.g. `_shani`;
   nothing for the baseline implementation). -/
   suffix : String
@@ -1127,15 +1247,13 @@ structure StreamFn where
   stack : Nat := 0
   verified : Verified X86_64.target code contract
   ofSig : ∃ pre post leak,
-      contract = api.sig.contract (X86_64.target.abi.withMode api.pubMode) pre post api.writeArgs stack leak := by
+      contract = api.sig.contract (X86_64.target.abi) pre post api.writeArgs stack leak := by
     exact ⟨_, _, _, rfl⟩
   ofApi : contract = api.contract X86_64.target.abi stack := by exact rfl
   spSafe : code.all (fun i => !X86_64.target.isa.writesSp i) = true
-  /-- `Artifact.residue`. -/
-  residue : Option (PLift (X86_64.NoResidue code contract (api.sig.retBits 64))) := none
 
-/-- `f` as a registration of its `Api` (`Api.artifact`). -/
-def StreamFn.reg (f : StreamFn) : Registration f.api X86_64.target where
+/-- `f` as what a form that scrubs it takes. -/
+def StreamFn.unscrubbed (f : StreamFn) : Unscrubbed f.api X86_64.target where
   consts := []
   tables := []
   code := f.code
@@ -1145,7 +1263,54 @@ def StreamFn.reg (f : StreamFn) : Registration f.api X86_64.target where
   ofApi := f.ofApi
   ofSig := f.ofSig
   spSafe := f.spSafe
-  residue := f.residue
+
+/-- The bits of the result of `f`'s function. -/
+abbrev StreamFn.retBits (f : StreamFn) : Nat :=
+  f.api.sig.retBits ((X86_64.abi.withConsts f.unscrubbed.consts).withTables f.api.sig f.unscrubbed.tables).ptrBits
+
+/-- A streaming function `f` of `api` with what its cleanup
+(`Impl.Scrub.X86_64.scrubSel`) needs of it: that its postcondition reads the
+memory on return only within the buffers (`post`), and of its code, the
+level of its vector registers, the runs of granules of its stack that may
+hold secrets, the residue analysis and the cleanup's other conditions
+(`sel`), which the variant evaluates once, where it is defined. -/
+structure StreamFnS (api : Api) where
+  f : StreamFn
+  post : X86_64.Scrub.PostOut f.contract f.retBits
+  sel : X86_64.Scrub.SelScrub f.api.sig f.stack f.retBits f.code
+  api_eq : f.api = api := by exact rfl
+
+/-- `s`'s code as emitted, its code and then its cleanup, meets `api`'s
+contract in constant time and returns without secret residue. -/
+theorem StreamFnS.scrubbed {api : Api} (s : StreamFnS api) :
+    VerifiedScrubbed X86_64.target
+      (Impl.Scrub.X86_64.scrubSel s.sel.level s.f.retBits s.f.stack s.sel.runs s.f.code)
+      (api.contract X86_64.abi s.f.stack) (api.sig.retBits 64) := by
+  obtain ⟨f, post, sel, rfl⟩ := s
+  exact f.ofApi ▸ X86_64.Scrub.SelScrub.scrubbed f.unscrubbed sel post
+
+/-- No instruction of `s`'s code as emitted writes `rsp`. -/
+theorem StreamFnS.spSafeFn {api : Api} (s : StreamFnS api) :
+    (Impl.Scrub.X86_64.scrubSel s.sel.level s.f.retBits s.f.stack s.sel.runs s.f.code).all
+      (fun i => !X86_64.target.isa.writesSp i) = true :=
+  X86_64.Scrub.scrubKs_spSafe s.f.spSafe
+
+/-- A variant's streaming `update` and `finalize` and its one-shot `digest`,
+each with its cleanup, for a hash function whose functions' `Api`s are `u`,
+`f` and `d`, and what the names of the functions emitted for it end with. -/
+structure StreamFns (u f d : Api) where
+  suffix : String
+  update : StreamFnS u
+  finalize : StreamFnS f
+  digest : StreamFnS d
+
+/-- The same for a hash function that shares another's `update` (SHA-224,
+SHA-384, SHA-512/224 and SHA-512/256): its `finalize` and one-shot
+`digest`. -/
+structure StreamFns2 (f d : Api) where
+  suffix : String
+  finalize : StreamFnS f
+  digest : StreamFnS d
 
 /-- The bytes of the frame in which HMAC's `finalize` keeps the working space
 of its `_scratch` form (`H.W` words, the hash function's functions' with the
@@ -1237,7 +1402,7 @@ structure MdHash where
   hmacInitF : Verified X86_64.target (initCode H I) (I.initAnyKeyContract X86_64.abi (24 + anyFrame H))
   hmacInitFSp : (initCode H I).all (fun i => !isa.writesSp i) = true
   /-- The two branches of `initCode`, each verified against its contract:
-  what `hmacInitF` is made of, for `MdHash.initScrubbed`, which clears after
+  what `hmacInitF` is made of, for `MdHash.initSel`, which clears after
   each. -/
   hmacShortF : Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratch (initFrame H) .r8 H.hmacInit)
     (I.initContract X86_64.abi (16 + initFrame H))
@@ -1248,6 +1413,14 @@ structure MdHash where
     (I.initAnyKeyContract X86_64.abi (24 + anyFrame H))
   hmacAnyFSp : (Impl.StackScratch.X86_64.withStackScratchWiped (anyFrame H) .r8 (anyWords H)
     H.hmacInitAny).all (fun i => !isa.writesSp i) = true
+  /-- HMAC's `init` for a key of any length with its working space as an
+  argument (`anyWords` words), which the tables of `Hmac` hold
+  (`Proof/Ecdsa/Rfc6979/X86_64/Reduce.lean`'s `HmacTable.X86_64.tableOf`). -/
+  hmacAny : Verified X86_64.target H.hmacInitAny (Any.anyG ok.SH (anyWords H))
+  hmacAnySp : H.hmacInitAny.all (fun i => !isa.writesSp i) = true
+  hmacAnyNs : NoSp H.hmacInitAny
+  hmacAnyD : H.hmacInitAny.depth ≤ 2
+  hmacAnyMx : H.hmacInitAny.allInstrs (fun i => !loadsMxcsr i) = true
   /-- The streaming states represent a message by their bytes alone, and a
   block's size is small. -/
   reprLocal : Proof.Hmac.ReprLocal I.S
@@ -1264,7 +1437,7 @@ structure MdHash where
   function's (`CoreOK`), and that the instance's streaming hash function is
   the code's: what a function generic over the variant that calls HMAC's
   `_scratch` functions needs (deterministic ECDSA's, through a table of
-  `Hmac`, `Proof/HmacTable/X86_64.lean`). -/
+  `Hmac`, `Proof/Ecdsa/Rfc6979/X86_64/Reduce.lean`). -/
   C : CoreOK (core H)
   hSH : ok.SH = I.S
   /-- What the names of the functions emitted for it end with (e.g.
@@ -1273,15 +1446,6 @@ structure MdHash where
   /-- The CPU features its compression function requires, which the
   functions built on it require too. -/
   features : List String
-  /-- The streaming `update` and `finalize` made with this implementation of
-  the compression function, when no other variant shares them (otherwise
-  they are in the hash function's registration file). -/
-  stream : List StreamFn
-  /-- The residue analysis of HMAC's `finalize` (`hmacFinF`), if the analysis
-  handles it: that function then returns without secret residue
-  (`MdHash.hmacFinReg`). -/
-  hmacFinRes : Option (RScrub.Analysed I.finalizeApi.sig (16 + hmacFrame H) []
-    (Impl.StackScratch.X86_64.withStackScratch (hmacFrame H) .r8 H.hmacFin)) := none
 
 /-- The hash function's code made with the working space of its slowest
 implementation's compression function (`MdHash.soU`). -/
@@ -1338,6 +1502,15 @@ theorem hmacInitAny_of (A : Any.AnyOK (core H))
   rw [← hSH] at hsI hs ⊢
   exact Any.hmacInitAny_verified hH C A K hsI hs
 
+/-- `initAny`, verified against `anyG`, the contract its callers through a
+table of `Hmac` call it with. -/
+theorem hmacAnyG_of (A : Any.AnyOK (core H))
+    (hsI : ∃ s, (Proof.Hmac.initScratchContract I.S H.W X86_64.abi 16).pre s)
+    (hs : ∃ s, (Any.anyScratchContract I.S (anyWords H)).pre s) :
+    Verified X86_64.target H.hmacInitAny (Any.anyG hH.SH (anyWords H)) := by
+  rw [← hSH] at hsI hs
+  exact Any.hmacInitAny_ok hH C A K hsI (Any.anyImp _ _ hs).sat_left
+
 omit hH C hSH in
 theorem hmacInitAnySp_of (A : Any.AnyOK (core H)) :
     (Impl.StackScratch.X86_64.withStackScratchWiped (anyFrame H) .r8 (anyWords H)
@@ -1364,11 +1537,15 @@ theorem hmacInitAnyF_of (A : Any.AnyOK (core H))
       show H.P.N + H.P.B < 2 ^ 64; omega_arith)) hsat rfl
 
 theorem hmacShortF_of (hsI : ∃ s, (Proof.Hmac.initScratchContract I.S (initWords H) X86_64.abi 16).pre s)
-    (hsat : ∃ s, (I.initContract X86_64.abi (16 + initFrame H)).pre s) :
+    (hsat : ∃ s, (I.initContract X86_64.abi (16 + initFrame H)).pre s)
+    (hR : Proof.Hmac.ReprLocal I.S) :
     Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratch (initFrame H) .r8 H.hmacInit)
       (I.initContract X86_64.abi (16 + initFrame H)) :=
   have : initWords H < 263 := by rw [initWords_eq]; have := hH.hso; omega_using [this]
   X86_64.Verified.stackScratch (sig := Spec.Hmac.initSig I.S) (nm := "scratch") (e := .u64)
+    (hpostOut := Proof.Hmac.initPostOut_local I.S _ hR (by
+      rw [← hSH, hH.hS]; have := hH.N_le; have := hH.B_le
+      show H.P.N + H.P.B < 2 ^ 64; omega_arith))
     (n := initWords H) (pre := Spec.Hmac.initPre I.S X86_64.abi.ptrBits)
     (post := Spec.Hmac.initPost I.S X86_64.abi.ptrBits) (wa := true) (stack := 16)
     (bytes := initFrame H) (hmacInitW_of hH C K hSH hsI) (by exact (by decide : 4 < 6))
@@ -1387,7 +1564,7 @@ theorem hmacInitF_of (A : Any.AnyOK (core H))
     have h := C.fitI
     change 8 * ((H.P.so + 48) / 8) + 48 ≤ 8 * H.W at h
     rw [initWords_eq]; omega_using [h]
-  initEntry_verified (hmacShortF_of hH C K hSH hsW hsIF)
+  initEntry_verified (hmacShortF_of hH C K hSH hsW hsIF hR)
     (hmacInitAnyF_of hH C K hSH A hsI hsA ha hR hsat) (by omega_arith)
     (by simp only [initFrame, anyFrame, anyWords]; omega_arith) hB hsat
 
@@ -1409,6 +1586,7 @@ theorem hmacFinF_of (hsF : ∃ s, (Proof.Hmac.finalizeScratchContract I.S H.W X8
     Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratch (hmacFrame H) .r8 H.hmacFin)
       (I.finalizeContract X86_64.abi (16 + hmacFrame H)) :=
   X86_64.Verified.stackScratch (sig := Spec.Hmac.finalizeSig I.S) (nm := "scratch") (e := .u64)
+    (hpostOut := Proof.Hmac.finalizePostOut_local I.S _)
     (n := H.W) (post := Spec.Hmac.finalizePost I.S X86_64.abi.ptrBits) (wa := true) (stack := 16)
     (bytes := hmacFrame H) (hmacFin_of hH C K hSH hsF) (by exact (by decide : 4 < 6))
     (by simp only [hmacFrame, Elem.size]; omega_arith) (by simp only [hmacFrame]; omega_arith) (hmacFin_sp C K)
@@ -1423,6 +1601,7 @@ theorem pbkdf2F_of (hsI : ∃ s, (Proof.Hmac.initScratchContract I.S H.W X86_64.
     Verified X86_64.target (Impl.StackScratch.X86_64.withStackArgScratch (pbkdf2Frame H) 1 H.pbkdf2)
       (I.pbkdf2Contract X86_64.abi (24 + pbkdf2Frame H)) :=
   X86_64.Verified.stackArgScratch (sig := Spec.Pbkdf2.pbkdf2Sig) (nm := "scratch") (e := .u64)
+    (hpostOut := Proof.Pbkdf2.pbkdf2PostOut_local I.S _)
     (n := H.W + H.S) (pre := Spec.Pbkdf2.pbkdf2Pre I.S X86_64.abi.ptrBits)
     (post := Spec.Pbkdf2.pbkdf2Post I.S X86_64.abi.ptrBits) (wa := true) (stack := 24)
     (bytes := pbkdf2Frame H) (pbkdf2_of hH C K hSH hsI hsF hsT hsP) (by decide)
@@ -1455,7 +1634,7 @@ def MdHash.of {H : Hash} {I : Spec.Hmac.Instance} (hH : HashOK H) (C : CoreOK (c
     (hsFF : ∃ s, (I.finalizeContract X86_64.abi (16 + hmacFrame H)).pre s)
     (hp : H.W + H.S < 509)
     (hsPF : ∃ s, (I.pbkdf2Contract X86_64.abi (24 + pbkdf2Frame H)).pre s)
-    (suffix : String) (features : List String) (stream : List StreamFn) : MdHash where
+    (suffix : String) (features : List String) : MdHash where
   H := H
   I := I
   ok := hH
@@ -1474,10 +1653,15 @@ def MdHash.of {H : Hash} {I : Spec.Hmac.Instance} (hH : HashOK H) (C : CoreOK (c
   pbkdf2Sp := pbkdf2_sp C K
   hmacInitF := MdHash.hmacInitF_of hH C K hSH A hsI hsW hsIF hsA ha hR hB hsAF
   hmacInitFSp := MdHash.hmacInitFSp_of C K A
-  hmacShortF := MdHash.hmacShortF_of hH C K hSH hsW hsIF
+  hmacShortF := MdHash.hmacShortF_of hH C K hSH hsW hsIF hR
   hmacShortFSp := MdHash.hmacShortFSp_of C K
   hmacAnyF := MdHash.hmacInitAnyF_of hH C K hSH A hsI hsA ha hR hsAF
   hmacAnyFSp := MdHash.hmacInitAnySp_of K A
+  hmacAny := MdHash.hmacAnyG_of hH C K hSH A hsI hsA
+  hmacAnySp := Any.hmacInitAny_sp A K
+  hmacAnyNs := nosp_of (Any.core_hmacInitAny K.cNs K.iNs K.b.bNs A.ns)
+  hmacAnyD := Any.hmacInitAny_depth K.cD K.iD K.b.bD
+  hmacAnyMx := Any.core_hmacInitAny K.cMx K.iMx K.b.bMx A.mx
   reprLocal := hR
   hBlock := hB
   hmacFinF := MdHash.hmacFinF_of hH C K hSH hsF hs hsFF
@@ -1486,6 +1670,5 @@ def MdHash.of {H : Hash} {I : Spec.Hmac.Instance} (hH : HashOK H) (C : CoreOK (c
   hSH := hSH
   suffix := suffix
   features := features
-  stream := stream
 
 end VG.Proof.Pbkdf2.Md.X86_64

@@ -1,9 +1,9 @@
 module
+
 public import VerifiedGarbage.Impl.ChaCha20.AArch64.Mixed8
-public import VerifiedGarbage.Proof.ChaCha20.AArch64.XorContract
+public import VerifiedGarbage.Proof.ChaCha20.AArch64.Xor
 public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 public import VerifiedGarbage.Spec.ChaCha20.Contract
-
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Tail
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Lit
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.Xor
@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.ChaCha20.AArch64.Small.Lit
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Save
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Check
 meta import VerifiedGarbage.Impl.ChaCha20.AArch64.Mixed8
-meta import VerifiedGarbage.Proof.ChaCha20.AArch64.XorContract
+meta import VerifiedGarbage.Proof.ChaCha20.AArch64.Xor
 meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 meta import VerifiedGarbage.Spec.ChaCha20.Contract
 meta import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Tail

@@ -31,8 +31,9 @@ meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
 `vg_mldsa*_prepare_verifying_key` and `vg_mldsa*_prepare_signing_key`, over
 each implementation of the polynomial arithmetic but the samplers
 (`Proof/Variants/MlDsaArith/X86_64.lean`), each followed by
-`Impl.Scrub.X86_64.scrubTail` (`X86_64.Scrub.withScrub`), which clears the
-registers that the residue analysis (`X86_64.RTaint`) finds may hold secrets.
+`Impl.Scrub.X86_64.scrubSel` (`X86_64.Scrub.verifiedScrubbedSel`), which
+clears every caller-saved register and the granules of its stack that the
+residue analysis (`X86_64.RTaint`) finds may hold secrets.
 Their NTTs run between Intel's MCDT prologue and epilogue, so they load
 MXCSR; every path through them ends with its epilogue, which loads back the
 caller's (`X86_64.mxClass`). Their postconditions read the memory on return
@@ -148,28 +149,6 @@ structure PrepImpl where
   sec65 : Option (SecRes arith mlDsa65) := none
   pub87 : Option (PubRes arith mlDsa87) := none
   sec87 : Option (SecRes arith mlDsa87) := none
-
-open VG.X86_64.RScrub in
-/-- `vg_<module>_prepare_verifying_key` over `v`, without secret residue given its analysis. -/
-def pubReg (v : ArithImpl) (p : Params) (module name : String) (hp : p ∈ params) (a : Option (PubRes v p)) :
-    Registration (preparePublicKeyApi p module name) X86_64.target :=
-  withScrub {
-    suffix := v.code.sfx
-    code := Impl.MlDsa.X86_64.PreparedKey.preparePublic (primsWith v.code) p
-    stack := 32
-    verified := preparePublic_verified (prims_okWith v) hp
-    spSafe := preparePublic_spSafe (prims_okWith v) hp } (pubOut hp) [] (pubOk_nil _) a
-
-open VG.X86_64.RScrub in
-/-- `vg_<module>_prepare_signing_key` over `v`, without secret residue given its analysis. -/
-def secReg (v : ArithImpl) (p : Params) (module name : String) (hp : p ∈ params) (a : Option (SecRes v p)) :
-    Registration (prepareSecretKeyApi p module name) X86_64.target :=
-  withScrub {
-    suffix := v.code.sfx
-    code := Impl.MlDsa.X86_64.PreparedKey.prepareSecret (primsWith v.code) p
-    stack := 32
-    verified := prepareSecret_verified (prims_okWith v) hp
-    spSafe := prepareSecret_spSafe (prims_okWith v) hp } (secOut hp) [] (pubOk_nil _) a
 
 /-! ## The analyses -/
 

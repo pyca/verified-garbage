@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.Inline
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Step
+import VerifiedGarbage.Proof.X25519.X86_64.Divstep.FRow
 
 /-!
 # The comb's sign: the exchange in `xmm`, and the negation in one correction

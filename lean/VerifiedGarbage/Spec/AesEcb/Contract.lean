@@ -12,8 +12,10 @@ public import VerifiedGarbage.TCB.Artifact
 target's calling convention. They are those of `vg_aes_encrypt_blocks` and
 `vg_aes_decrypt_blocks` (`Spec/Aes/Contract.lean`), with the same signature
 (`Aes.blocksSig`), and leave nothing they computed in `scratch`: each of its
-bytes on return is unchanged or zero (`Zeroize.scrubbed`). ECB (NIST
-SP 800-38A §6.1) is the block cipher applied to each block.
+bytes on return is unchanged or zero (`Zeroize.scrubbed`), and which of them
+are zero reveals nothing: two runs that agree on what is public, and on the
+bytes of `scratch` on entry, leave the same bytes there (`scratchOut`). ECB
+(NIST SP 800-38A §6.1) is the block cipher applied to each block.
 
 The blocks functions themselves leave `scratch` unspecified, so that the
 verified code that calls them with working space of its own pays for no
@@ -59,12 +61,21 @@ def decryptContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
       Zeroize.scrubbed m m' scratch 2048)
     (stack := stack)
 
+/-- What `vg_aes_ecb_encrypt` and `vg_aes_ecb_decrypt` leave that is public: the
+bytes of `scratch`, in two runs that agree on them on entry (`Zeroize.left`). The
+contracts say that each is unchanged or zero; this, that which are zero depends
+on nothing secret. -/
+def scratchOut : PublicOut blocksSig where
+  given _ := fun _schedule _rounds _data _n scratch m => Zeroize.left m scratch 2048
+  out _ := fun _schedule _rounds _data _n scratch _m m' _ => Zeroize.left m' scratch 2048
+
 /-- `vg_aes_ecb_encrypt` on every target. -/
 def encryptApi : Api where
   module := "aes_ecb"
   name := "vg_aes_ecb_encrypt"
   sig := blocksSig
   contracts := some fun A stack => encryptContract A stack
+  publicOut := some scratchOut
   summary := "AES-ECB encryption (NIST SP 800-38A §6.1) of whole blocks, in place: replaces \
     each of the `n` 16-byte blocks at `data` with its encryption by AES (FIPS 197 §5.1, \
     `CIPHER`) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes \
@@ -80,6 +91,7 @@ def decryptApi : Api where
   name := "vg_aes_ecb_decrypt"
   sig := blocksSig
   contracts := some fun A stack => decryptContract A stack
+  publicOut := some scratchOut
   summary := "AES-ECB decryption (NIST SP 800-38A §6.1) of whole blocks, in place: replaces \
     each of the `n` 16-byte blocks at `data` with its decryption by AES (FIPS 197 §5.3, \
     `INVCIPHER`) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` \

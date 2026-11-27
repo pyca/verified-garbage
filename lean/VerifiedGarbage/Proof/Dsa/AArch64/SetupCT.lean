@@ -12,7 +12,6 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Setup
-meta import VerifiedGarbage.Proof.Dsa.AArch64.ProductCT
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CTR2
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd

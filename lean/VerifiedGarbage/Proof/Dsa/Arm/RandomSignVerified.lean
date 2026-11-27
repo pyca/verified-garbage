@@ -2,28 +2,24 @@ module
 
 public import VerifiedGarbage.Impl.Dsa.Arm.Entry
 public import VerifiedGarbage.Impl.Dsa.Arm.RandomSign
-public import VerifiedGarbage.Proof.Dsa.Arm.RandomTwo
-public import VerifiedGarbage.Proof.Dsa.Arm.RandomCall
+public import VerifiedGarbage.Proof.Dsa.Arm.RandomBodyCT
+public import VerifiedGarbage.Proof.Dsa.Arm.RandomAttempt
 public import VerifiedGarbage.Proof.Framework.Arm.Call
 public import VerifiedGarbage.Proof.Dsa.SignContractWith
-import VerifiedGarbage.Proof.Dsa.Arm.RandomBodyCT
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Arm.CallF
+import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
-import Mathlib.Logic.Function.Basic
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Spec.Dsa.RandomSign
 public import VerifiedGarbage.Proof.Weierstrass.PointContract
 public import VerifiedGarbage.TCB.Arm.Target
-public import VerifiedGarbage.Proof.Dsa.Arm.RandomFinish
-import VerifiedGarbage.Proof.Dsa.Arm.RandomBody
 public import VerifiedGarbage.Impl.Dsa.Arm.PrevalidatedSign
 public import VerifiedGarbage.Spec.Dsa.PrevalidatedSign
 public import VerifiedGarbage.Proof.Dsa.PrivateKeyWitness
 public import VerifiedGarbage.Proof.Dsa.Arm.SignCorrect
 public import VerifiedGarbage.Proof.Dsa.Arm.SignCT
-public import VerifiedGarbage.Proof.Dsa.Arm.PrevalidatedSign
 public import VerifiedGarbage.Proof.Dsa.Arm.PrevalidatedSignCT
 import VerifiedGarbage.Proof.Dsa.Arm.PrevalidatedVerified
 
@@ -136,9 +132,11 @@ open VG VG.Arm VG.Proof.Mont VG.Impl.Dsa.Arm VG.Impl.Dsa.Arm.Random VG.Impl.Dsa.
 open VG.Proof.X25519.Arm (toNat_imm)
 
 theorem code_ok (S : Signer) (name : String) {s₀ : State} (A : RandomABI s₀) (V : RValid S s₀) :
-    WP isa (code name S.code) s₀ fun s' => ∃ u, Finished s₀ u ∧ s' = freed frameBytes u :=
+    WP isa (code name S.code) s₀ fun s' =>
+      ∃ u m un, Finished s₀ u ∧ Frame [⟨State.addr (s₀.sp - BitVec.ofNat 32 frameBytes), frameBytes⟩] u.mem m ∧
+        s' = { freed frameBytes u with mem := m, unknowns := un } :=
   WP.alloc ⟨by decide, by decide, by decide, by decide⟩ (by have := A.stackLow; unfold frameBytes; omega_using [this])
-    (WP.mono (body_ok S name A V) fun u hu => ⟨u, hu, rfl⟩)
+    (WP.mono (body_ok S name A V) fun u hu m un hfl => ⟨u, m, un, hu, hfl, rfl⟩)
 
 /-- `vg_dsa_sign_random` meets its contract. -/
 theorem randomSign_correct (S : Signer) (name : String) (s : State)
@@ -146,7 +144,18 @@ theorem randomSign_correct (S : Signer) (name : String) (s : State)
     ∃ t s', Exec isa (code name S.code) s t s' ∧ abiPreserved s s' ∧
       (randomSignCheckedContract Arm.abi 144).post s s' := by
   have A := randomABI_of hpre
-  obtain ⟨t, s', he, u, hF, rfl⟩ := code_ok S name A V
+  obtain ⟨t, s', he, u, m, un, hF, hfl, rfl⟩ := code_ok S name A V
+  have fsub : Region.Sub ⟨State.addr (s.sp - BitVec.ofNat 32 frameBytes), frameBytes⟩ (rStack s) := by
+    have := A.stackLow
+    rw [FrameStack.addr_sub' (by unfold frameBytes; omega_using [this])]
+    exact Offset.sub_below _ (by unfold frameBytes; omega_using []) (by unfold frameBytes; omega_using [])
+  have dU : ∀ r ∈ [(⟨State.addr (s.sp - BitVec.ofNat 32 frameBytes), frameBytes⟩ : Region)], (rUsed s).Disjoint r := by
+    intro r hr; obtain rfl := List.mem_singleton.mp hr; exact A.stackUsed.symm.sub_right fsub
+  have out : Spec.Rsa.bytesAt m (State.addr (s.gpr .r0)) (s.gpr .r1).toNat =
+      (rResult s).signature.getD (List.replicate (s.gpr .r1).toNat 0) := by
+    rw [rBytes_frame hfl (fun r hr => by obtain rfl := List.mem_singleton.mp hr; exact A.stackOut.symm.sub_right fsub)
+      (by have := (s.gpr .r1).isLt; omega_using [])]
+    exact hF.out
   refine ⟨t, _, he, ⟨fun r hr => hF.regs r hr, by
     show u.sp + BitVec.ofNat 32 frameBytes = s.sp
     rw [hF.sp, BitVec.sub_add_cancel]⟩, ?_⟩
@@ -157,19 +166,21 @@ theorem randomSign_correct (S : Signer) (name : String) (s : State)
     have := rResult_used_le (s₀ := s)
     have : (rInput s).rand.length < 2 ^ 32 := by simp only [rInput, rBytes_length]; exact BitVec.isLt _
     omega_arith
-  refine ⟨?_, hF.out, ?_⟩
+  refine ⟨?_, out, ?_⟩
   · rw [BitVec.setWidth_append_eq_right]
     show (u.gpr .r0).toNat = (rResult s).status
     rw [hF.r0, toNat_imm (by omega_using [hle])]
-  · show Spec.Rsa.wordsAt u.mem (State.addr (s.gpr .r2)) 1 = [BitVec.ofNat 64 (rResult s).used]
+  · show Spec.Rsa.wordsAt m (State.addr (s.gpr .r2)) 1 = [BitVec.ofNat 64 (rResult s).used]
     simp only [Spec.Rsa.wordsAt, List.range_one, List.map_cons, List.map_nil, Nat.mul_zero]
     refine congrArg (· :: []) (BitVec.eq_of_toNat_eq ?_)
-    have := word_eq_w32 u.mem (State.addr (s.gpr .r2)) 0
+    have := word_eq_w32 m (State.addr (s.gpr .r2)) 0
     simp only [Mont.word, w32, off] at this
-    show (u.mem.readW (State.addr (s.gpr .r2) + BitVec.ofNat 64 0) 64).toNat = _
+    show (m.readW (State.addr (s.gpr .r2) + BitVec.ofNat 64 0) 64).toNat = _
     rw [this, show (0 + 4 : Nat) = 4 from rfl]
-    have lo : (u.mem.readW (State.addr (s.gpr .r2) + BitVec.ofNat 64 0) 32) = _ := hF.usedLo
-    have hi : (u.mem.readW (State.addr (s.gpr .r2) + BitVec.ofNat 64 4) 32) = _ := hF.usedHi
+    have lo : (m.readW (State.addr (s.gpr .r2) + BitVec.ofNat 64 0) 32) = _ :=
+      (hfl.readW (r := rUsed s) (Offset.contains_base _ (by decide) (by decide)) dU (by decide)).trans hF.usedLo
+    have hi : (m.readW (State.addr (s.gpr .r2) + BitVec.ofNat 64 4) 32) = _ :=
+      (hfl.readW (r := rUsed s) (Offset.contains_base _ (by decide) (by decide)) dU (by decide)).trans hF.usedHi
     rw [lo, hi, toNat_imm hul, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hul])]
     rfl
 
@@ -192,6 +203,8 @@ namespace VG.Proof.Dsa.Arm
 
 open VG VG.Arm VG.Impl.Dsa.Arm VG.Impl.Dsa.Arm.RandomSign
 
+variable {umaal : Bool}
+
 /-- A 1024/160 call with an empty tape: the output at `0x1000`, `used` at
 `0x7000`, the key at `0x2000` and the working space at `0x8000`. -/
 def randomSignSat : State where
@@ -213,34 +226,35 @@ theorem randomSign_satisfiable : ∃ s, (randomSignCheckedContract Arm.abi 144).
     [randomSignSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using randomSignSat
 
 /-- The fully checked signer, which accepts every key. -/
-def checkedSigner : Signer where
-  code := Entry.operation true
+def checkedSigner (umaal : Bool) : Signer where
+  code := Entry.operation umaal true
   valid := fun _ _ _ => true
   correct := fun _ hs => let ⟨t, s', e, ha, hp⟩ := sign_correct hs.1; ⟨t, s', e, ha, hp⟩
   constantTime := fun _ _ _ _ _ _ h₁ h₂ hp e₁ e₂ => sign_constantTime _ _ _ _ _ _ h₁.1 h₂.1 hp e₁ e₂
   stack := sign_armStack
 
 /-- The signer for a validated private key. -/
-def prevalidatedSigner : Signer where
-  code := PrevalidatedSign.sign
+def prevalidatedSigner (umaal : Bool) : Signer where
+  code := PrevalidatedSign.sign umaal
   valid := Spec.Dsa.validatePrivateKeyBytes
   correct := fun _ hs => let ⟨t, s', e, ha, hp⟩ := prevSign_correct hs; ⟨t, s', e, ha, hp⟩
   constantTime := prevSign_constantTime
-  stack := by decide +kernel
+  stack := by cases umaal <;> decide +kernel
 
 theorem randomSign_verified (name : String) :
-    Verified Arm.target (code name (Entry.operation true)) (randomSignCheckedContract Arm.abi 144) :=
-  ⟨fun s h => randomSign_correct checkedSigner name s h rfl,
-    fun s₁ s₂ t₁ t₂ u₁ u₂ h₁ h₂ => randomSign_constantTime checkedSigner name s₁ s₂ t₁ t₂ u₁ u₂ ⟨h₁, rfl⟩ ⟨h₂, rfl⟩,
+    Verified Arm.target (code name (Entry.operation umaal true)) (randomSignCheckedContract Arm.abi 144) :=
+  ⟨fun s h => randomSign_correct (checkedSigner umaal) name s h rfl,
+    fun s₁ s₂ t₁ t₂ u₁ u₂ h₁ h₂ => randomSign_constantTime (checkedSigner umaal) name s₁ s₂ t₁ t₂ u₁ u₂ ⟨h₁, rfl⟩ ⟨h₂, rfl⟩,
     randomSign_satisfiable⟩
 
 /-- The randomized signer, calling the registered `vg_dsa_sign`. -/
-theorem randomSigning_verified : Verified Arm.target (code "vg_dsa_sign" (Entry.operation true))
-    (randomSignCheckedContract Arm.abi 144) :=
+theorem randomSigning_verified :
+    Verified Arm.target (code ("vg_dsa_sign" ++ Impl.Mont.Arm.Dynamic.suffix umaal) (Entry.operation umaal true))
+      (randomSignCheckedContract Arm.abi 144) :=
   randomSign_verified _
 
 theorem randomPrevalidated_pre {s : State} (h : (Spec.Dsa.randomSignPrevalidatedContract Arm.abi 144).pre s) :
-    (randomSignCheckedContract Arm.abi 144).pre s ∧ RValid prevalidatedSigner s := by
+    (randomSignCheckedContract Arm.abi 144).pre s ∧ RValid (prevalidatedSigner umaal) s := by
   sig_pre [Spec.Dsa.randomSignPrevalidatedContract, Spec.Dsa.randomSignSig, Arm.abi, Arm.argRegs,
     Arm.reduceClassify, Arm.Loc.val, Arm.State.addr, Arm.stackArgAddr, BitVec.add_zero] at h
   sig_split h
@@ -272,25 +286,29 @@ theorem randomPrev_satisfiable : ∃ s, (Spec.Dsa.randomSignPrevalidatedContract
   sig_pre [Spec.Dsa.randomSignPrevalidatedContract, Spec.Dsa.randomSignSig, Arm.abi, Arm.argRegs,
     Arm.reduceClassify, Arm.Loc.val, Arm.State.addr, Arm.stackArgAddr, BitVec.add_zero]
   sig_and_intros
+  -- The key's validity, the last goal, by the witness's own proof: `decide +kernel` would have
+  -- the kernel validate the key again, read byte by byte from the state's memory.
+  on_goal -1 =>
+    change Spec.Dsa.validatePrivateKeyBytes 128 20 (Spec.Rsa.bytesAt randomPrevSat.mem 0x2000 424) = true
+    rw [randomPrevSat_key]
+    exact VG.Proof.Dsa.validPrivateKeyWitness_valid
   all_goals first
     | decide +kernel
     | exact Region.disjoint_of_sep (by decide +kernel)
-    | (change Spec.Dsa.validatePrivateKeyBytes 128 20 (Spec.Rsa.bytesAt randomPrevSat.mem 0x2000 424) = true
-       rw [randomPrevSat_key]
-       exact VG.Proof.Dsa.validPrivateKeyWitness_valid)
 
 theorem randomSignPrevalidated_verified (name : String) :
-    Verified Arm.target (code name PrevalidatedSign.sign)
+    Verified Arm.target (code name (PrevalidatedSign.sign umaal))
       (Spec.Dsa.randomSignPrevalidatedContract Arm.abi 144) :=
-  ⟨fun s h => randomSign_correct prevalidatedSigner name s (randomPrevalidated_pre h).1 (randomPrevalidated_pre h).2,
-    fun s₁ s₂ t₁ t₂ u₁ u₂ h₁ h₂ => randomSign_constantTime prevalidatedSigner name s₁ s₂ t₁ t₂ u₁ u₂
+  ⟨fun s h => randomSign_correct (prevalidatedSigner umaal) name s
+      (randomPrevalidated_pre (umaal := umaal) h).1 (randomPrevalidated_pre h).2,
+    fun s₁ s₂ t₁ t₂ u₁ u₂ h₁ h₂ => randomSign_constantTime (prevalidatedSigner umaal) name s₁ s₂ t₁ t₂ u₁ u₂
       (randomPrevalidated_pre h₁) (randomPrevalidated_pre h₂),
     randomPrev_satisfiable⟩
 
 /-- The randomized signer for a validated key, calling the registered
 `vg_dsa_sign_prevalidated`. -/
 theorem randomSigningPrevalidated_verified :
-    Verified Arm.target (code "vg_dsa_sign_prevalidated" PrevalidatedSign.sign)
+    Verified Arm.target (code (PrevalidatedSign.signerName umaal) (PrevalidatedSign.sign umaal))
       (Spec.Dsa.randomSignPrevalidatedContract Arm.abi 144) :=
   randomSignPrevalidated_verified _
 

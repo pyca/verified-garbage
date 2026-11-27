@@ -1,19 +1,15 @@
 module
-import Mathlib.Data.Nat.GCD.Basic
-import Mathlib.Tactic.Set
+
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 public import VerifiedGarbage.Proof.MillerRabin.X86_64.Contract
 public import VerifiedGarbage.Proof.RsaKeyGen.Table
 public import VerifiedGarbage.Impl.MillerRabin.X86_64.Round
 public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
-
 import VerifiedGarbage.Proof.MillerRabin.X86_64.Context
 import VerifiedGarbage.Proof.MillerRabin.X86_64.FramedCall
 import VerifiedGarbage.Proof.MillerRabin.X86_64.CallStack
 import VerifiedGarbage.Proof.MillerRabin.X86_64.EntrySaved
-import VerifiedGarbage.Proof.MillerRabin.X86_64.StackPrepared
-import VerifiedGarbage.Proof.MillerRabin.X86_64.StageContext
 import VerifiedGarbage.Proof.MillerRabin.Representation
 import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.Bignum.X86_64.MontFnVerified
@@ -27,7 +23,7 @@ import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 /-!
 # Correctness of the round with Montgomery calls
 
-`round_math_ok` and `round_correct` for a body `code` that calls the
+`round_call_math_ok` and `round_call_correct`: the round's correctness for a body `code` that calls the
 Montgomery multiplication where `body M.mm` runs it inline
 (`code.inline = body M.mm`): the calls' return address is 120 bytes below
 `rsp`, under the frames' 112, which the precondition keeps from the
@@ -128,7 +124,7 @@ theorem round_call_correct (M : Mont) {code : Prog isa} (hi : code.InlineOk = tr
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · have ha : s.gpr .rsp = (s.gpr .rsp - 120#64) + 120#64 := by bv_omega
-        conv_lhs => rw [ha]
+        conv => lhs; rw [ha]
         exact Offset.disjoint_base (s.gpr .rsp - 120#64) (by decide : 120 ≤ 120) (by decide : 120 + 8 ≤ 2 ^ 64)
       · exact h.2.2.2.2.1
     · decide

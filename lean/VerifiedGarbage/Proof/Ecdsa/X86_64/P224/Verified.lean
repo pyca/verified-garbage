@@ -1,8 +1,7 @@
 module
 
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Main
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.MulBase
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.P224.Contract
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.MulFn
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P224.Lit
 import VerifiedGarbage.Proof.P224.Point
 import VerifiedGarbage.Proof.P224.Prime
@@ -14,8 +13,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
 import VerifiedGarbage.Proof.Framework.LitShare
 import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.Main
-meta import VerifiedGarbage.Proof.Ecdsa.X86_64.MulBase
-meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P224.Contract
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.MulFn
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P224.Lit
 meta import VerifiedGarbage.Proof.P224.Point
 meta import VerifiedGarbage.Proof.P224.Prime
@@ -29,6 +27,148 @@ import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.X86_64.Lit
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
+public import VerifiedGarbage.Spec.Ecdsa.P224
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Spec.Ecdsa.P224
+meta import VerifiedGarbage.TCB.X86_64.Target
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Ecdsa.Contract
+public import VerifiedGarbage.Impl.Ecdsa.P224.X86_64
+public import VerifiedGarbage.Proof.Framework.ConstMem
+public import VerifiedGarbage.TCB.Sig
+import VerifiedGarbage.Proof.Weierstrass.TCombWords
+import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Impl.Ecdsa.P224.X86_64
+meta import VerifiedGarbage.Proof.Framework.ConstMem
+meta import VerifiedGarbage.TCB.Sig
+meta import VerifiedGarbage.Proof.Weierstrass.TCombWords
+meta import VerifiedGarbage.Proof.Framework.Omega
+
+/-! ### `Ecdsa.X86_64.P224.Tables`, which this module and modules that import it used -/
+
+section
+
+/-!
+# ECDSA over P-224 on x86-64: the comb's tables in a static
+
+What the contracts of the functions that run the comb say of its tables
+(`TblHeld`): held at the address of the static `VG_P224_COMB`, not wrapping
+around, and apart from the writable regions and the return address; their
+length (`p224W_length`, from the tables' shape alone); and a memory holding
+them, for the contracts' witnesses (`satMem`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Ecdsa.X86_64.P224
+
+open VG VG.X86_64
+open VG.Impl.Ecdsa.X86_64 (p224 CombData)
+
+/-- P-224's comb. -/
+abbrev p224d : CombData := ⟨7, Impl.P224.p224Comb7, Impl.P224.p224Comb7Start, "VG_P224_COMB", false, false⟩
+
+/-- The words of P-224's tables. -/
+abbrev p224W : List (BitVec 64) := p224.combWords p224d
+
+theorem p224_combConsts : p224.combConsts = [("VG_P224_COMB", p224W)] := rfl
+
+/-- The comb's tables at the static `VG_P224_COMB`, held, not wrapping around,
+and apart from the regions `wr`. -/
+def TblHeld (s : State) (wr : List Region) : Prop :=
+  (∀ i < p224W.length, s.mem.readW (s.syms "VG_P224_COMB" + BitVec.ofNat 64 (8 * i)) 64 = p224W.getD i 0) ∧
+  (s.syms "VG_P224_COMB").toNat + 8 * p224W.length ≤ 2 ^ 64 ∧
+  ∀ r ∈ wr, Region.Disjoint ⟨s.syms "VG_P224_COMB", 8 * p224W.length⟩ r
+
+theorem p224_tbl_len : Impl.P224.p224Comb7.length = 37 := by decide
+
+theorem p224_tbl_lenH : ∀ j < 37, (Impl.P224.p224Comb7.getD j []).length = 64 := by decide +kernel
+
+/-- `p224W` has `37 · 64 · 8` words. -/
+theorem p224W_length : p224W.length = 18944 :=
+  (Proof.Weierstrass.tcombWords_length (n := p224.n) (R := p224.R) (p := p224.C.p)
+    (H := 64) (tbl := Impl.P224.p224Comb7) p224_tbl_len p224_tbl_lenH).trans rfl
+
+theorem constRegions_single (f : String → BitVec 64) (n : String) (w : List (BitVec 64)) :
+    Abi.constRegions f [(n, w)] = [⟨f n, 8 * w.length⟩] := rfl
+
+/-- The tables' region, `8 · 18944` bytes at the static's address. The proofs
+rewrite with this rather than unfold `Abi.constRegions`: the kernel evaluates
+closed arithmetic such as `8 * p224W.length` when it compares two forms of
+it, which would build the tables' 18944 words. -/
+theorem p224_constRegions (f : String → BitVec 64) :
+    Abi.constRegions f [("VG_P224_COMB", p224W)] = [⟨f "VG_P224_COMB", 151552⟩] := by
+  rw [constRegions_single, p224W_length]
+
+/-- The memory of the contracts' witnesses: the tables at `0x100000`
+(irreducible: unfolding it in a definitional check would evaluate the
+tables). -/
+@[irreducible] def satMem : Mem := constMem 0x100000 p224W
+
+theorem satMem_held : ∀ i < p224W.length,
+    satMem.readW (0x100000 + BitVec.ofNat 64 (8 * i)) 64 = p224W.getD i 0 := by
+  unfold satMem
+  exact constMem_held _ _ (by rw [p224W_length]; omega_using [])
+
+end VG.Proof.Ecdsa.X86_64.P224
+
+end
+
+end
+
+/-! ### `Ecdsa.X86_64.P224.Contract`, which only this module used -/
+
+section
+
+/-!
+# ECDSA over P-224 on x86-64: the contract the proof is written against
+
+The facts of `Proof.Ecdsa.Instance.signContract Spec.Ecdsa.P224.inst` for x86-64, under the
+calling convention with the comb's tables (`Abi.withConsts p224.combConsts`),
+by name: `vg_ecdsa_p224_sign(out = rdi, d = rsi, digest = rdx, k = rcx,
+scratch = r8)`, the result in `eax`, and the tables at the address of the
+static `VG_P224_COMB`.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Ecdsa.X86_64.P224
+
+open VG VG.X86_64 Spec.Weierstrass Spec.Ecdsa
+open VG.Impl.Ecdsa.X86_64 (p224)
+
+/-- The signature of the arguments, as the specification computes it. -/
+abbrev sig (m : Mem) (d digest k : Addr) : Option (Nat × Nat) :=
+  signWith Spec.P224.curve (ofBytes (bytesAt m d 28)) (hashToInt Spec.P224.curve (bytesAt m digest 28))
+    (ofBytes (bytesAt m k 28))
+
+def signX86_64 : Contract X86_64.isa where
+  pre s :=
+    let out : Region := ⟨s.gpr .rdi, 56⟩
+    let d : Region := ⟨s.gpr .rsi, 28⟩
+    let digest : Region := ⟨s.gpr .rdx, 28⟩
+    let k : Region := ⟨s.gpr .rcx, 28⟩
+    let scratch : Region := ⟨s.gpr .r8, 8192⟩
+    let ret : Region := ⟨s.gpr .rsp, 8⟩
+    s.rd = [d, digest, k, ⟨s.syms "VG_P224_COMB", 8 * p224W.length⟩] ∧ s.wr = [out, scratch] ∧
+      out.Disjoint scratch ∧ out.Disjoint d ∧ out.Disjoint digest ∧ out.Disjoint k ∧
+      d.Disjoint scratch ∧ digest.Disjoint scratch ∧ k.Disjoint scratch ∧
+      ret.Disjoint out ∧ ret.Disjoint scratch ∧
+      (s.gpr .rdi).toNat + 56 ≤ 2 ^ 64 ∧ (s.gpr .r8).toNat + 8192 ≤ 2 ^ 64 ∧ TblHeld s [out, scratch, ret]
+  post s s' :=
+    match sig s.mem (s.gpr .rsi) (s.gpr .rdx) (s.gpr .rcx) with
+    | some rs => (s'.gpr .rax).setWidth 32 = 1 ∧ bytesAt s'.mem (s.gpr .rdi) 56 = encode Spec.P224.curve rs
+    | none => (s'.gpr .rax).setWidth 32 = 0 ∧ bytesAt s'.mem (s.gpr .rdi) 56 = List.replicate 56 0
+  pub s₁ s₂ := s₁.gpr .rsp = s₂.gpr .rsp ∧ s₁.gpr .rdi = s₂.gpr .rdi ∧ s₁.gpr .rsi = s₂.gpr .rsi ∧
+    s₁.gpr .rdx = s₂.gpr .rdx ∧ s₁.gpr .rcx = s₂.gpr .rcx ∧ s₁.gpr .r8 = s₂.gpr .r8 ∧
+    s₁.syms "VG_P224_COMB" = s₂.syms "VG_P224_COMB"
+
+end VG.Proof.Ecdsa.X86_64.P224
+
+end
+
+end
 
 /-!
 # ECDSA over P-224 on x86-64: `Verified`
@@ -91,7 +231,7 @@ theorem p224_ok (hI : InvSounds) : CfgOk p224 where
   sh := by rw [p224_sh]; decide
   comb d h := by cases h; exact ⟨by decide, by decide, by decide⟩
   inv _ := ⟨by decide, @hI _ _ (by
-    show Nat.Prime Spec.P224.curve.p
+    show IsPrime Spec.P224.curve.p
     rw [show Spec.P224.curve.p = 26959946667150639794667015087019630673557916260026308143510066298881 by decide +kernel]
     exact Proof.P224.prime_26959946667150639794667015087019630673557916260026308143510066298881),
     InvOk.ofMod (by decide +kernel) (by decide)⟩

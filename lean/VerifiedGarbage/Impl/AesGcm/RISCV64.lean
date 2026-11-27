@@ -17,6 +17,13 @@ PPC64LE (`Impl/AesGcm/PPC64LE.lean`), piece for piece. A call (`call`)
 stores nothing in memory; `vg_ghash` uses 2048 bytes of stack below the
 stack pointer for its table, the other callees none.
 
+Of the functions that encrypt or decrypt, only the forms that read the key
+context's bitsliced form (`Spec/Gcm/Bitsliced.lean`) are emitted on RISC-V:
+`stream_encrypt`, `stream_decrypt`, `stream_finish`, `stream_verify`,
+`seal`, `open`, `open_to` and `seal_gather`, each with `_bitsliced` (`bs`):
+the code below, calling `vg_aes_ctr32_bs` on that buffer where the others
+call `vg_aes_ctr32`. `init`, `stream_init` and `stream_aad` call neither.
+
 ## The working space
 
 Every function has a buffer `W` of 2560 bytes (`scratch`):
@@ -101,9 +108,15 @@ def restore : List Instr :=
 
 def ctrCall : Prog isa := Impl.AesCtr.RISCV64.ctrCall
 
-/-- `vg_aes_ctr32` in place, or `vg_aes_ctr32_to` out of place. -/
-def ctrCallWith (o : Bool) : Prog isa :=
-  if o then .call "vg_aes_ctr32_to" Impl.Aes.RISCV64.ctr32To else ctrCall
+/-- With the round keys bitsliced (`bs`, `_bitsliced`), `vg_aes_ctr32_bs`. -/
+def ctrCallB (bs : Bool) : Prog isa :=
+  if bs then .call "vg_aes_ctr32_bs" Impl.Aes.RISCV64.ctr32Bs else ctrCall
+
+/-- The whole-block payload kernel, with source in a6 and destination in a3.
+Both layouts use the same symbol for a given key representation. -/
+def ctrCallWithB (bs : Bool) : Prog isa :=
+  if bs then .call "vg_aes_ctr32_bs_to" Impl.Aes.RISCV64.ctr32BsTo
+  else .call "vg_aes_ctr32_to" Impl.Aes.RISCV64.ctr32To
 
 def ghCall : Prog isa := .call "vg_ghash" Impl.Gcm.RISCV64.ghash
 
@@ -141,9 +154,11 @@ def minLen : Prog isa :=
 /-! ## GHASH -/
 
 /-- `vg_ghash` of the block at `b + o` into the accumulator at `s1 + yo`. -/
-def ghash1 (yo : Nat) (b : Reg) (o : Nat) : Prog isa :=
+def ghash1With (call : Prog isa) (yo : Nat) (b : Reg) (o : Nat) : Prog isa :=
   .seq (.block [.addi .a0 .s2 240, .addi .a1 .s1 yo, .addi .a2 b o, .li .a3 1, .addi .a4 .s0 scrO])
-    ghCall
+    call
+
+def ghash1 (yo : Nat) (b : Reg) (o : Nat) : Prog isa := ghash1With ghCall yo b o
 
 /-- Before the buffer is absorbed: the buffer filled from `s4` (`a2`
 bytes), the arguments advanced, and `a3` zero if the buffer is full. -/
@@ -154,8 +169,10 @@ def headPre : Prog isa :=
   (.seq copyLoop (.block [.addi .a3 .s6 (-16)])))
 
 /-- The buffer filled from `s4`, and absorbed if full. -/
-def absorbHead (yo : Nat) : Prog isa :=
-  .seq headPre (.ite (.zero .a3) (ghash1 yo .s1 32) (.block []))
+def absorbHeadWith (invoke : Prog isa) (yo : Nat) : Prog isa :=
+  .seq headPre (.ite (.zero .a3) (ghash1With invoke yo .s1 32) (.block []))
+
+def absorbHead (yo : Nat) : Prog isa := absorbHeadWith ghCall yo
 
 /-- The whole blocks at `s4` split off: their address in `a2` and number in
 `a3`, `s4` and `s5` the rest. -/
@@ -164,10 +181,12 @@ def splitWhole : List Instr :=
    .add .s4 .s4 .a6, mov .s5 .a5]
 
 /-- The whole blocks at `s4` absorbed. -/
-def absorbWhole (yo : Nat) : Prog isa :=
+def absorbWholeWith (call : Prog isa) (yo : Nat) : Prog isa :=
   .seq (.block splitWhole)
     (.ite (.zero .a3) (.block [])
-      (.seq (.block [.addi .a0 .s2 240, .addi .a1 .s1 yo, .addi .a4 .s0 scrO]) ghCall))
+      (.seq (.block [.addi .a0 .s2 240, .addi .a1 .s1 yo, .addi .a4 .s0 scrO]) call))
+
+def absorbWhole (yo : Nat) : Prog isa := absorbWholeWith ghCall yo
 
 /-- The last `s5` bytes at `s4` buffered. -/
 def absorbTail : Prog isa :=
@@ -175,11 +194,15 @@ def absorbTail : Prog isa :=
     (.seq (.block [mov .a0 .s4, .addi .a1 .s1 32, mov .a2 .s5]) copyLoop)
 
 /-- The buffer filled first, if it holds bytes. -/
-def absorbFill (yo : Nat) : Prog isa :=
-  .ite (.zero .s6) (.block []) (absorbHead yo)
+def absorbFillWith (invoke : Prog isa) (yo : Nat) : Prog isa :=
+  .ite (.zero .s6) (.block []) (absorbHeadWith invoke yo)
 
-def absorb (yo : Nat) : Prog isa :=
-  .ite (.zero .s5) (.block []) (.seq (absorbFill yo) (.seq (absorbWhole yo) absorbTail))
+def absorbFill (yo : Nat) : Prog isa := absorbFillWith ghCall yo
+
+def absorbWith (invoke : Prog isa) (yo : Nat) : Prog isa :=
+  .ite (.zero .s5) (.block []) (.seq (absorbFillWith invoke yo) (.seq (absorbWholeWith invoke yo) absorbTail))
+
+def absorb (yo : Nat) : Prog isa := absorbWith ghCall yo
 
 /-- `T` zeroed, and the arguments of the copy of the `s6` buffered bytes to it. -/
 def flushPre : List Instr :=
@@ -187,8 +210,10 @@ def flushPre : List Instr :=
    .addi .a1 .s0 tO, mov .a2 .s6]
 
 /-- The `s6` buffered bytes, padded with zeros in `T`, absorbed. -/
-def flush (yo : Nat) : Prog isa :=
-  .ite (.zero .s6) (.block []) (.seq (.seq (.block flushPre) copyLoop) (ghash1 yo .s0 tO))
+def flushWith (invoke : Prog isa) (yo : Nat) : Prog isa :=
+  .ite (.zero .s6) (.block []) (.seq (.seq (.block flushPre) copyLoop) (ghash1With invoke yo .s0 tO))
+
+def flush (yo : Nat) : Prog isa := flushWith ghCall yo
 
 /-- The lengths block of `s4` and `s6` bytes (in bits, big-endian), in `T`. -/
 def lensBlock : List Instr :=
@@ -196,8 +221,10 @@ def lensBlock : List Instr :=
     storeBE 8 .a0 .t0 .s0 tO ++ storeBE 8 .a1 .t0 .s0 (tO + 8)
 
 /-- The lengths block of `s4` and `s6` bytes, absorbed. -/
-def lens (yo : Nat) : Prog isa :=
-  .seq (.block lensBlock) (ghash1 yo .s0 tO)
+def lensWith (invoke : Prog isa) (yo : Nat) : Prog isa :=
+  .seq (.block lensBlock) (ghash1With invoke yo .s0 tO)
+
+def lens (yo : Nat) : Prog isa := lensWith ghCall yo
 
 /-! ## Counter mode
 
@@ -229,39 +256,40 @@ def splitCtr : List Instr :=
   [mov .a3 .s4, .shift .srl .d .a4 .s5 4, .logicImm .and .a5 .s5 15, .sub .a6 .s5 .a5,
    .add .s4 .s4 .a6, mov .s5 .a5]
 
-/-- `splitCtr`, or out of place the destination's address in `a3` and the
-source's in `a6`. -/
+/-- Split off the whole blocks, placing the destination in `a3` and the source
+in `a6` for either layout. -/
 def splitCtrWith (o : Bool) : List Instr :=
   if o then
     toDst o .a3 ++ [mov .a6 .s4, .shift .srl .d .a4 .s5 4, .logicImm .and .a5 .s5 15, .sub .a7 .s5 .a5,
       .add .s4 .s4 .a7, mov .s5 .a5]
-  else splitCtr
+  else splitCtr ++ [mov .a6 .a3]
 
-/-- The arguments of `vg_aes_ctr32` but the data and their number: the key
-schedule, the rounds, the counter block (at `s1 + c`) and the working
-space. -/
-def ctrArgs (c : Nat) : List Instr :=
-  [mov .a0 .s2, mov .a1 .s3, .addi .a2 .s1 c, .addi .a5 .s0 scrO]
+/-- Where the round keys of the counter-mode calls are: the key schedule in
+the context (`s2`), or with the round keys bitsliced (`bs`) the buffer of
+`vg_aes_gcm_bitslice`, which the `_bitsliced` functions keep in `s7`. -/
+def keyReg (bs : Bool) : Reg := if bs then .s7 else .s2
 
-/-- Whole blocks at `s4`, by `vg_aes_ctr32` (or out of place, by `vg_aes_ctr32_to`). -/
-def cryptWholeWith (o : Bool) : Prog isa :=
+/-- The arguments of `vg_aes_ctr32` (or `vg_aes_ctr32_bs`) but the data and
+their number: the round keys, the rounds, the counter block (at `s1 + c`)
+and the working space. -/
+def ctrArgsB (bs : Bool) (c : Nat) : List Instr :=
+  [mov .a0 (keyReg bs), mov .a1 .s3, .addi .a2 .s1 c, .addi .a5 .s0 scrO]
+
+/-- Encrypt whole payload blocks using the two-pointer CTR kernel. -/
+def cryptWholeB (bs o : Bool) : Prog isa :=
   .seq (.block (splitCtrWith o))
-    (.ite (.zero .a4) (.block []) (.seq (.block (ctrArgs 48)) (ctrCallWith o)))
-
-def cryptWhole : Prog isa := cryptWholeWith false
+    (.ite (.zero .a4) (.block []) (.seq (.block (ctrArgsB bs 48)) (ctrCallWithB bs)))
 
 /-- The keystream block zeroed, and the arguments of `vg_aes_ctr32` on it. -/
-def tailArgs : List Instr :=
+def tailArgsB (bs : Bool) : List Instr :=
   ([.li .t0 0, .store .d .t0 .s1 64, .store .d .t0 .s1 72, .addi .a3 .s1 64, .li .a4 1] :
-    List Instr) ++ ctrArgs 48
+    List Instr) ++ ctrArgsB bs 48
 
 /-- The last `s5` bytes at `s4` (or out of place), with a new keystream block. -/
-def cryptTailWith (o : Bool) : Prog isa :=
+def cryptTailB (bs o : Bool) : Prog isa :=
   .ite (.zero .s5) (.block [])
-    (.seq (.seq (.block tailArgs) ctrCall)
+    (.seq (.seq (.block (tailArgsB bs)) (ctrCallB bs))
       (.seq (.block ([.addi .a0 .s1 64, mov .a1 .s4] ++ toDst o .a4 ++ [mov .a2 .s5])) (xorLoopWith o)))
-
-def cryptTail : Prog isa := cryptTailWith false
 
 /-- The rest of the keystream block first, if the text so far ends within a block. -/
 def cryptFillWith (o : Bool) : Prog isa :=
@@ -269,32 +297,34 @@ def cryptFillWith (o : Bool) : Prog isa :=
 
 def cryptFill : Prog isa := cryptFillWith false
 
-/-- In place, or (`o`) out of place. -/
-def cryptWith (o : Bool) : Prog isa :=
-  .ite (.zero .s5) (.block []) (.seq (cryptFillWith o) (.seq (cryptWholeWith o) (cryptTailWith o)))
-
-def crypt : Prog isa := cryptWith false
+/-- In place, or (`o`) out of place; with the round keys bitsliced (`bs`). -/
+def cryptB (bs o : Bool) : Prog isa :=
+  .ite (.zero .s5) (.block []) (.seq (cryptFillWith o) (.seq (cryptWholeB bs o) (cryptTailB bs o)))
 
 /-! ## The tag -/
 
 /-- The accumulator copied to `W + o`, and the arguments of `vg_aes_ctr32` on
 it with the counter block `J₀` at the state. -/
-def tagArgs (o : Nat) : List Instr :=
+def tagArgsB (bs : Bool) (o : Nat) : List Instr :=
   [.load .d .t0 .s1 16, .store .d .t0 .s0 o, .load .d .t0 .s1 24, .store .d .t0 .s0 (o + 8),
-   mov .a0 .s2, mov .a1 .s3, mov .a2 .s1, .addi .a3 .s0 o, .li .a4 1, .addi .a5 .s0 scrO]
+   mov .a0 (keyReg bs), mov .a1 .s3, mov .a2 .s1, .addi .a3 .s0 o, .li .a4 1, .addi .a5 .s0 scrO]
+
+def tagArgs (o : Nat) : List Instr := tagArgsB false o
 
 /-- The tag into `W + o`, after the lengths block of `s4` and `s6` bytes. -/
-def tag (o : Nat) : Prog isa :=
-  .seq (lens 16) (.seq (.block (tagArgs o)) ctrCall)
+def tagBWith (invoke : Prog isa) (bs : Bool) (o : Nat) : Prog isa :=
+  .seq (lensWith invoke 16) (.seq (.block (tagArgsB bs o)) (ctrCallB bs))
+
+def tagB (bs : Bool) (o : Nat) : Prog isa := tagBWith ghCall bs o
 
 /-- The buffered bytes padded and absorbed, and the tag into `W + o`, for
 `aad_len` (`s10`) bytes of additional data and `text_len` (`s11`) of text. -/
-def finTag (o : Nat) : Prog isa :=
+def finTagB (bs : Bool) (o : Nat) : Prog isa :=
   .seq (.ite (.zero .s11) (.block [.logicImm .and .s6 .s10 15])
       (.block [.logicImm .and .s6 .s11 15]))
   (.seq (flush 16)
   (.seq (.block [mov .s4 .s10, mov .s6 .s11])
-    (tag o)))
+    (tagB bs o)))
 
 /-! ## Comparing tags -/
 
@@ -333,13 +363,15 @@ def j012 : List Instr := copyBytes .t0 .s4 .s1 0 0 12 ++ storeBytes .t0 .s1 12 [
 
 /-- `J₀` of any other nonce: GHASH of the nonce padded, then of the lengths
 block of no additional data and the nonce, from a zero block at the state. -/
-def j0hash : Prog isa :=
+def j0hashWith (invoke : Prog isa) : Prog isa :=
   .seq (.block [.li .t0 0, .store .d .t0 .s1 0, .store .d .t0 .s1 8, .li .s6 0])
-  (.seq (absorb 0)
+  (.seq (absorbWith invoke 0)
   (.seq (.block [.logicImm .and .s6 .s7 15])
-  (.seq (flush 0)
+  (.seq (flushWith invoke 0)
   (.seq (.block [.li .s4 0, mov .s6 .s7])
-    (lens 0)))))
+    (lensWith invoke 0)))))
+
+def j0hash : Prog isa := j0hashWith ghCall
 
 /-- The first counter block `inc₃₂(J₀)`, and the accumulator zeroed. -/
 def initState : List Instr :=
@@ -349,8 +381,10 @@ def initState : List Instr :=
     ([.li .t0 0, .store .d .t0 .s1 16, .store .d .t0 .s1 24] : List Instr)
 
 /-- The streaming state for the `s5`-byte nonce at `s4`. -/
-def j0 : Prog isa :=
-  .seq (.block [.addi .a2 .s5 (-12)]) (.seq (.ite (.zero .a2) (.block j012) j0hash) (.block initState))
+def j0With (invoke : Prog isa) : Prog isa :=
+  .seq (.block [.addi .a2 .s5 (-12)]) (.seq (.ite (.zero .a2) (.block j012) (j0hashWith invoke)) (.block initState))
+
+def j0 : Prog isa := j0With ghCall
 
 /-! ## The functions -/
 
@@ -408,13 +442,36 @@ def textAbsorb : Prog isa :=
     (.seq (.ite (.zero .s11) firstFlush (.block []))
       (.seq (.block textArgs) (absorb 16)))
 
-/-- `vg_aes_gcm_stream_encrypt`. -/
-def streamEncrypt : Prog isa :=
-  .seq (.block (cryptEntry ++ textArgs)) (.seq crypt (.seq textAbsorb (.block restore)))
+/-! ## Streaming, with the round keys bitsliced
 
-/-- `vg_aes_gcm_stream_decrypt`. -/
-def streamDecrypt : Prog isa :=
-  .seq (.block cryptEntry) (.seq textAbsorb (.seq (.block textArgs) (.seq crypt (.block restore))))
+`vg_aes_gcm_stream_{encrypt,decrypt,finish,verify}_bitsliced` take one more
+argument, `bk`, the buffer of `vg_aes_gcm_bitslice`, which they keep in `s7`
+(no piece but `j0` uses it) and pass to `vg_aes_ctr32_bs` (`cryptB true`,
+`finTagB true`). `encrypt`, `decrypt` and `verify` then have nine arguments, so
+their scratch buffer is the first on the stack: a prelude (`bsPre`) moves `bk`
+to `t2` and loads the buffer's address into `a7`, where the entry of the
+plain functions takes it, and the entry ends with `s7 := t2`
+(`cryptEntryB`). -/
+
+/-- `t2 := bk` (`a7`), `a7 :=` the scratch buffer (`[sp]`). -/
+def bsPre : List Instr := [mov .t2 .a7, .addSp .a7 0, .load .d .a7 .a7 0]
+
+/-- `cryptEntry`, and with the round keys bitsliced, `s7 := bk` (`t2`). -/
+def cryptEntryB (bs : Bool) : List Instr := if bs then cryptEntry ++ [mov .s7 .t2] else cryptEntry
+
+/-- `streamEncrypt`, with the round keys bitsliced if `bs`. -/
+def streamEncryptB (bs : Bool) : Prog isa :=
+  .seq (.block (cryptEntryB bs ++ textArgs)) (.seq (cryptB bs false) (.seq textAbsorb (.block restore)))
+
+/-- `streamDecrypt`, with the round keys bitsliced if `bs`. -/
+def streamDecryptB (bs : Bool) : Prog isa :=
+  .seq (.block (cryptEntryB bs)) (.seq textAbsorb (.seq (.block textArgs) (.seq (cryptB bs false) (.block restore))))
+
+/-- `vg_aes_gcm_stream_encrypt_bitsliced`, with `bk = a7` and `scratch = [sp]`. -/
+def streamEncryptBs : Prog isa := .seq (.block bsPre) (streamEncryptB true)
+
+/-- `vg_aes_gcm_stream_decrypt_bitsliced`, with `bk = a7` and `scratch = [sp]`. -/
+def streamDecryptBs : Prog isa := .seq (.block bsPre) (streamDecryptB true)
 
 /-- The entry of `finish`: `(ctx = a0, rounds = a1, state = a2, aad_len = a3,
 text_len = a4, tag = a5, scratch = a6)`, kept in `s2`, `s3`, `s1`, `s10`,
@@ -426,9 +483,16 @@ def finEntry : List Instr :=
 /-- The tag at `W` copied to `tag` (`s9`). -/
 def tagOut : List Instr := copyBytes .t0 .s0 .s9 0 0 16
 
-/-- `vg_aes_gcm_stream_finish`. -/
-def streamFinish : Prog isa :=
-  .seq (.block finEntry) (.seq (finTag 0) (.seq (.block tagOut) (.block restore)))
+/-- `finEntry`, and with the round keys bitsliced, `s7 := bk` (`t2`). -/
+def finEntryB (bs : Bool) : List Instr := if bs then finEntry ++ [mov .s7 .t2] else finEntry
+
+/-- `streamFinish`, with the round keys bitsliced if `bs`. -/
+def streamFinishB (bs : Bool) : Prog isa :=
+  .seq (.block (finEntryB bs)) (.seq (finTagB bs 0) (.seq (.block tagOut) (.block restore)))
+
+/-- `vg_aes_gcm_stream_finish_bitsliced`, with `bk = a6` and `scratch = a7`:
+`t2 := bk`, `a6 := scratch`, where `finEntry` takes it. -/
+def streamFinishBs : Prog isa := .seq (.block [mov .t2 .a6, mov .a6 .a7]) (streamFinishB true)
 
 /-- The entry of `verify`: `(ctx = a0, rounds = a1, state = a2, aad_len = a3,
 text_len = a4, tag = a5, tag_len = a6, scratch = a7)`, kept in `s2`, `s3`,
@@ -437,13 +501,19 @@ def verEntry : List Instr :=
   save .a7 ++ ([mov .s1 .a2, mov .s2 .a0, mov .s3 .a1, mov .s10 .a3, mov .s11 .a4, mov .s9 .a5,
     mov .s8 .a6] : List Instr)
 
-/-- `vg_aes_gcm_stream_verify`. -/
-def streamVerify : Prog isa :=
-  .seq (.block verEntry)
+/-- `verEntry`, and with the round keys bitsliced, `s7 := bk` (`t2`). -/
+def verEntryB (bs : Bool) : List Instr := if bs then verEntry ++ [mov .s7 .t2] else verEntry
+
+/-- `streamVerify`, with the round keys bitsliced if `bs`. -/
+def streamVerifyB (bs : Bool) : Prog isa :=
+  .seq (.block (verEntryB bs))
   (.seq tagLenOk
   (.seq (.ite (.zero .s5) (.block [.li .a0 0])
-      (.seq recv (.seq (finTag 0) (cmp 0))))
+      (.seq recv (.seq (finTagB bs 0) (cmp 0))))
     (.block restore)))
+
+/-- `vg_aes_gcm_stream_verify_bitsliced`, with `bk = a7` and `scratch = [sp]`. -/
+def streamVerifyBs : Prog isa := .seq (.block bsPre) (streamVerifyB true)
 
 /-! ## One shot -/
 
@@ -461,35 +531,44 @@ def oneEntryAt (off tagO : Nat) : List Instr :=
 def oneEntry (off : Nat) : List Instr := oneEntryAt off 0
 
 /-- `J₀`, then the additional data absorbed and padded. -/
-def oneAad : Prog isa :=
-  .seq j0
+def oneAadWith (invoke : Prog isa) : Prog isa :=
+  .seq (j0With invoke)
   (.seq (.block [.load .d .s4 .s0 aadO, mov .s5 .s10, .li .s6 0])
-  (.seq (absorb 16)
+  (.seq (absorbWith invoke 16)
   (.seq (.block [.logicImm .and .s6 .s10 15])
-    (flush 16))))
+    (flushWith invoke 16))))
+
+def oneAad : Prog isa := oneAadWith ghCall
 
 /-- The arguments of `crypt` or `absorb` for the data, from its start. -/
 def dataArgs : List Instr := [.load .d .s4 .s0 dataO, mov .s5 .s11, .li .s6 0]
 
 /-- The data encrypted or decrypted, from the first counter block, in place
 or (`o`, with the distance to the destination in `s9`) to the destination. -/
-def oneCryptWith (o : Bool) : Prog isa := .seq (.block dataArgs) (cryptWith o)
-
-def oneCrypt : Prog isa := oneCryptWith false
+def oneCryptB (bs o : Bool) : Prog isa := .seq (.block dataArgs) (cryptB bs o)
 
 /-- The data (as ciphertext) absorbed and padded, and the tag into `W + o`. -/
-def oneTag (o : Nat) : Prog isa :=
+def oneTagBWith (invoke : Prog isa) (bs : Bool) (o : Nat) : Prog isa :=
   .seq (.block dataArgs)
-  (.seq (absorb 16)
+  (.seq (absorbWith invoke 16)
   (.seq (.block [.logicImm .and .s6 .s11 15])
-  (.seq (flush 16)
+  (.seq (flushWith invoke 16)
   (.seq (.block [mov .s4 .s10, mov .s6 .s11])
-    (tag o)))))
+    (tagBWith invoke bs o)))))
 
-/-- `vg_aes_gcm_seal`, with `tag = [sp]` and `scratch = [sp + 8]`. -/
-def «seal» : Prog isa :=
-  .seq (.block (oneEntry 8))
-    (.seq oneAad (.seq oneCrypt (.seq (oneTag 0) (.seq (.block tagOut) (.block restore)))))
+def oneTagB (bs : Bool) (o : Nat) : Prog isa := oneTagBWith ghCall bs o
+
+/-- `s7 := [sp + off]`, the buffer of the bitsliced round keys, a stack
+argument, once `J₀` (which reads the nonce's length in `s7`) is done. -/
+def bkLoad (off : Nat) : List Instr := [.addSp .t2 0, .load .d .s7 .t2 off]
+
+/-- `vg_aes_gcm_seal_bitsliced`, with `tag = [sp]`, `bk = [sp + 8]` and
+`scratch = [sp + 16]`: `seal`, with `vg_aes_ctr32_bs` on the buffer at `bk`
+(`s7`, once `oneAad` is done). -/
+def sealBs : Prog isa :=
+  .seq (.block (oneEntry 16))
+    (.seq oneAad (.seq (.block (bkLoad 8)) (.seq (oneCryptB true false) (.seq (oneTagB true 0)
+      (.seq (.block tagOut) (.block restore))))))
 
 /-- The entry of `open`, with `tag_len = [sp + 8]` in `s8` and
 `scratch = [sp + 16]`. -/
@@ -497,12 +576,20 @@ def openEntry : List Instr := oneEntry 16 ++ ([.load .d .s8 .t1 8] : List Instr)
 
 /-- `openEntry`, or out of place (`vg_aes_gcm_open_to`, `o`) with the source
 in `a6`, `dst = [sp]` (`dst - src` kept at `W + dstO`), `tag = [sp + 16]`,
-`tag_len = [sp + 24]` in `s8` and `scratch = [sp + 32]`. -/
-def openEntryWith (o : Bool) : List Instr :=
+`tag_len = [sp + 24]` in `s8` and `scratch = [sp + 32]`; with the round keys
+bitsliced (`bs`), `bk` before `scratch`, which is 8 bytes further. -/
+def openEntryWithB (bs o : Bool) : List Instr :=
   if o then
-    oneEntryAt 32 16 ++
+    oneEntryAt (if bs then 40 else 32) 16 ++
       ([.load .d .s8 .t1 24, .load .d .t2 .t1 0, .sub .t2 .t2 .a6, .store .d .t2 .s0 dstO] : List Instr)
-  else openEntry
+  else if bs then oneEntry 24 ++ ([.load .d .s8 .t1 8] : List Instr) else openEntry
+
+/-- Where `bk` is: `[sp + 32]` out of place (`o`), `[sp + 16]` in place. -/
+def bkOff (o : Bool) : Nat := if o then 32 else 16
+
+/-- With the round keys bitsliced (`bs`), `bkLoad`, then `c`. -/
+def bkThen (bs o : Bool) (c : Prog isa) : Prog isa :=
+  if bs then .seq (.block (bkLoad (bkOff o))) c else c
 
 /-- Out of place, the distance from the source to the destination into `s9`
 (the tag's address, no longer needed), for `cryptWith`. -/
@@ -511,15 +598,16 @@ def deltaArg (o : Bool) : List Instr := if o then [.load .d .s9 .s0 dstO] else [
 /-- `open` once the tag length is allowed: the nonce's length back in `s5`,
 the tag of the ciphertext at `W + 112`, compared with the received one, the
 result (`a0`) kept in `s8`, and the data decrypted only if they are equal. -/
-def openGoodWith (o : Bool) : Prog isa :=
+def openGoodWithB (bs o : Bool) : Prog isa :=
   .seq (.block [mov .s5 .s7])
   (.seq oneAad
-  (.seq (oneTag 112)
+  (bkThen bs o
+  (.seq (oneTagB bs 112)
   (.seq recv
   (.seq (cmp 112)
   (.seq (.block ([mov .s8 .a0] ++ deltaArg o))
-  (.seq (.ite (.zero .s8) (.block []) (oneCryptWith o))
-    (.block [mov .a0 .s8])))))))
+  (.seq (.ite (.zero .s8) (.block []) (oneCryptB bs o))
+    (.block [mov .a0 .s8]))))))))
 
 /-- The `len` (`s11`) bytes at the destination (the source at `W + dataO`
 plus the distance at `W + dstO`) zeroed, a byte at a time, through `t1`
@@ -536,14 +624,15 @@ def openFin (o : Bool) : Prog isa :=
 
 /-- `vg_aes_gcm_open`'s body, in place, or (`o`) `vg_aes_gcm_open_to`'s, from
 the source to the destination. -/
-def openWith (o : Bool) : Prog isa :=
-  .seq (.block (openEntryWith o))
+def openWithB (bs o : Bool) : Prog isa :=
+  .seq (.block (openEntryWithB bs o))
   (.seq tagLenOk
-  (.seq (.ite (.zero .s5) (.block [.li .a0 0]) (openGoodWith o))
+  (.seq (.ite (.zero .s5) (.block [.li .a0 0]) (openGoodWithB bs o))
     (openFin o)))
 
-/-- `vg_aes_gcm_open`, with `tag = [sp]`, `tag_len = [sp + 8]` and
-`scratch = [sp + 16]`. -/
-def «open» : Prog isa := openWith false
+/-- `vg_aes_gcm_open_bitsliced`, with `tag = [sp]`, `tag_len = [sp + 8]`,
+`bk = [sp + 16]` and `scratch = [sp + 24]`: `open`, with `vg_aes_ctr32_bs`
+on the buffer at `bk` (`s7`, once `oneAad` is done). -/
+def openBs : Prog isa := openWithB true false
 
 end VG.Impl.AesGcm.RISCV64

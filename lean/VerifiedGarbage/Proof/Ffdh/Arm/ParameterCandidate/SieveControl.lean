@@ -6,7 +6,6 @@ import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.SaveWord
 import VerifiedGarbage.Proof.Ffdh.Arm.Block
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.SievePolicy
 
 /-! The sieve's local flag and bounded loop controls. -/
 

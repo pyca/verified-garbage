@@ -34,7 +34,7 @@ jmp 21f
 20:
 .base64 "SMfAAQAAAA=="
 21:
-.base64 "icAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
+.base64 "Zg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//icAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
     )
 }
@@ -63,7 +63,7 @@ jne 22b
 jmp 21f
 20:
 21:
-.base64 "McAxyTHSMfZFMcBFMclFMdJFMdvD"
+.base64 "Zg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//McAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
     )
 }

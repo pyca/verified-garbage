@@ -15,6 +15,7 @@ import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Sm4.Arm.LayersLit
 import VerifiedGarbage.Proof.Sm4.Arm.Lit
+import VerifiedGarbage.Proof.Framework.Arm.Frame
 meta import VerifiedGarbage.Proof.Sm4.Arm.EcbAny
 meta import VerifiedGarbage.Impl.Sm4.Arm.Cbc
 meta import VerifiedGarbage.Proof.Framework.Arm.CallF
@@ -187,7 +188,10 @@ theorem ecbCall_correct (d : Dir) (s₀ : State) (hs : (ecbCallArm d).pre s₀) 
             (by rw [sp8]; have := ecbAnyCode_stack; unfold ecbAnyCode at this; omega_arith)]
           exact Offset.base_disjoint_below _ (by
             have := ecbAnyCode_stack; unfold ecbAnyCode at this; omega_arith)
-    refine ⟨⟨fun r hr => ?_, ?_⟩, ?_⟩
+    intro ml ul hfl
+    have hfl' : Frame [Argon2.Arm.stkR s₀.sp 8] σ₄.mem ml := by
+      rw [show 4 * [Reg.r4, Reg.lr].length = 8 from rfl, FrameStack.addr_sub' hsp8] at hfl; exact hfl
+    refine ⟨⟨fun r hr => ?_, ?_⟩, ?_⟩ <;> dsimp only
     · by_cases h4 : r = .r4
       · subst h4
         show (σ₄.setReg .r4 (σ₄.mem.readW (State.addr σ₄.sp) 32)).gpr .r4 = _
@@ -205,8 +209,12 @@ theorem ecbCall_correct (d : Dir) (s₀ : State) (hs : (ecbCallArm d).pre s₀) 
         r3₃, hd', mem₃] at post'
       simp only [State.addr] at hsch hblk
       rw [hsch, hblk] at post'
-      show Spec.Sm4.blocksAt σ₄.mem _ _ = _
-      rw [u₄.mem]; exact post'
+      show Spec.Sm4.blocksAt ml _ _ = _
+      rw [Proof.Sm4.blocksAt_frame hfl' (fun r hr => by
+          rw [List.mem_singleton] at hr; subst hr
+          simpa [State.addr] using (sD.sub_left frSub).symm) (by omega_arith),
+        u₄.mem]
+      exact post'
 
 /-- Nothing public: the moves around the call leak nothing. -/
 def τ0 : VG.Arm.Taint.T := { regs := .ofList [], flags := false }

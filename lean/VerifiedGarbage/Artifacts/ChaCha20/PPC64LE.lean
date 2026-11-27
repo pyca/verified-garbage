@@ -1,39 +1,27 @@
 module
 
 public import VerifiedGarbage.TCB.PPC64LE.Target
-public import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Xor
-public import VerifiedGarbage.Impl.ChaCha20.PPC64LE.Xor
-public import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Stream.ApplyCT
-public import VerifiedGarbage.TCB.PPC64LE.Print
 public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.ChaCha20.Contract
+import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Scrub
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # ChaCha20 (RFC 8439) on PPC64LE -/
 
-@[expose] public section
-
 namespace VG.Artifacts.ChaCha20.PPC64LE
 
-def artifacts : List Artifact := [
-  { Spec.ChaCha20.initApi with
-    target := .of PPC64LE.target
-    doc := Spec.ChaCha20.initApi.doc
-    code := Impl.ChaCha20.PPC64LE.Stream.init
-    contract := Spec.ChaCha20.initContract PPC64LE.abi
-    verified := Proof.ChaCha20.PPC64LE.Stream.init_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.ChaCha20.setNonceApi with
-    target := .of PPC64LE.target
-    doc := Spec.ChaCha20.setNonceApi.doc
-    code := Impl.ChaCha20.PPC64LE.Stream.setNonce
-    contract := Spec.ChaCha20.setNonceContract PPC64LE.abi
-    verified := Proof.ChaCha20.PPC64LE.Stream.setNonce_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.ChaCha20.applyApi with
-    target := .of PPC64LE.target
-    doc := Spec.ChaCha20.applyApi.doc
-    code := Impl.ChaCha20.PPC64LE.Stream.apply
-    contract := Spec.ChaCha20.applyContract PPC64LE.abi 0
-    verified := Proof.ChaCha20.PPC64LE.Stream.apply_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+public def artifacts : List (Artifact PPC64LE.target) := [
+  Spec.ChaCha20.initApi.artifact PPC64LE.target {
+    code := Impl.ChaCha20.PPC64LE.Fn.init
+    verified := Proof.ChaCha20.PPC64LE.Scrub.init_scrubbed },
+  Spec.ChaCha20.setNonceApi.artifact PPC64LE.target {
+    code := Impl.ChaCha20.PPC64LE.Fn.setNonce
+    verified := Proof.ChaCha20.PPC64LE.Scrub.setNonce_scrubbed },
+  Spec.ChaCha20.applyApi.artifact PPC64LE.target {
+    code := Impl.ChaCha20.PPC64LE.Fn.apply
+    verified := Proof.ChaCha20.PPC64LE.Scrub.apply_scrubbed }]
+
+spec_apis artifacts
 
 end VG.Artifacts.ChaCha20.PPC64LE

@@ -1,8 +1,7 @@
 module
-public import VerifiedGarbage.Proof.Ed448.X86_64.SignCached.Calls
 
+public import VerifiedGarbage.Proof.Ed448.X86_64.SignCached.Correct
 import VerifiedGarbage.Proof.Ed448.X86_64.SignCached.CT
-import VerifiedGarbage.Proof.Ed448.X86_64.SignCached.Correct
 import VerifiedGarbage.Proof.Ed448.X86_64.BaseLit
 import VerifiedGarbage.Proof.Ed448.X86_64.ScalarLit
 import VerifiedGarbage.Proof.Ed448.X86_64.VariantLit

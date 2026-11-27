@@ -25,8 +25,8 @@ namespace VG.Proof.AesOcb.PPC64LE
 open VG VG.PPC64LE
 
 theorem init_framed :
-    Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratch 2592 .r6 Impl.AesGcm.PPC64LE.init)
-      (Spec.Ocb.initContract PPC64LE.abi 2592) :=
+    Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratch 320 .r6 Impl.AesGcm.PPC64LE.init)
+      (Spec.Ocb.initContract PPC64LE.abi 320) :=
   Proof.AesGcm.PPC64LE.init_framed.of_implies
     ⟨fun _ h => h, fun _ _ _ h => h, fun _ _ _ _ h => h, Proof.AesGcm.PPC64LE.initFrameSat_pre⟩
 

@@ -1,24 +1,25 @@
 module
 
-public import VerifiedGarbage.Proof.AesCtr.Arm.Verified
-public import VerifiedGarbage.Proof.AesCtr.Arm.Final
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.Arm.Print
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Ctr.Contract
+public import VerifiedGarbage.Spec.Ctr.Final
+import VerifiedGarbage.Proof.Aes.Arm.Scrub
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # AES-CTR (NIST SP 800-38A §6.5) on ARMv7 -/
 
-@[expose] public section
-
 namespace VG.Artifacts.AesCtr.Arm
 
-open VG.Proof.AesCtr.Arm
-
-def artifacts : List Artifact := [
+public def artifacts : List (Artifact Arm.target) := [
   Spec.Ctr.aesApi.artifact Arm.target {
-    code := Impl.AesCtr.Arm.crypt
-    verified := Proof.AesCtr.keyed crypt_verified },
+    code := Impl.Aes.Arm.Fn.ctr
+    verified := Proof.Aes.Arm.Fn.ctr },
   Spec.Ctr.aesFinalApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratchWiped 72 2 14 Impl.AesCtr.Arm.cryptFinal
-    verified := Proof.AesCtr.final_keyed cryptFinal_framed }]
+    code := Impl.Aes.Arm.Fn.ctrFinal
+    verified := Proof.Aes.Arm.Fn.ctrFinal }]
+
+spec_apis artifacts
 
 end VG.Artifacts.AesCtr.Arm

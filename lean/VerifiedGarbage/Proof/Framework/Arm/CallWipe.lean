@@ -11,6 +11,7 @@ import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.Proof.Framework.Arm.Frame
 
 /-!
 # A call that wipes part of a buffer afterwards (ARMv7)
@@ -659,11 +660,20 @@ theorem cw_wp {name zname : String} {body zcode : Prog isa} {zst : Nat}
     refine ⟨_, List.mem_append_right _ (by rw [hwrg]; exact List.mem_cons_self ..), ?_⟩
     rw [hspg, frame_addr h16 (by omega_using [hk'])]; exact frame_contains _ hk'
   refine WP.block ⟨_, restoreRet_run hin, ?_⟩
-  show abiPreserved s (cwFinal g) ∧ (sig.contract abi pre post wa (stack + 16) leak).post s (cwFinal g) ∧
-    Spec.Zeroize.bytesAt (cwFinal g).mem ((s.gpr r).setWidth 64) n = Spec.Zeroize.zeros n
+  -- The pop loses the frame's bytes, which lie apart from the buffers.
+  intro ml ul hfl
+  have f' : Frame [belowA s.sp 16] g.mem ml := hfl
+  have hfr : ∀ b ∈ Sig.bufs sig.params (armArgs sig s), ∀ x, b.1.Contains x 1 → ml x = g.mem x :=
+    fun b hb x hx => f' x fun R hR hc => by
+      simp only [List.mem_singleton] at hR; subst hR
+      exact (hres b hb).sub_left (belowA_sub (by omega_using []) hsb) x hc hx
+  show abiPreserved s { cwFinal g with mem := ml, unknowns := ul } ∧
+    (sig.contract abi pre post wa (stack + 16) leak).post s { cwFinal g with mem := ml, unknowns := ul } ∧
+    Spec.Zeroize.bytesAt ml ((s.gpr r).setWidth 64) n = Spec.Zeroize.zeros n
   obtain ⟨f0, f1, f4, f5, f6, flr⟩ := cwFinal_regs g
-  refine ⟨⟨fun q hq => ?_, by rw [cwFinal_sp, hspg, BitVec.sub_add_cancel]⟩, ?_, ?_⟩
+  refine ⟨⟨fun q hq => ?_, by dsimp only; rw [cwFinal_sp, hspg, BitVec.sub_add_cancel]⟩, ?_, ?_⟩
   · -- The callee-saved registers.
+    dsimp only
     obtain ⟨h0, h1, -⟩ := preserved_ne q hq
     by_cases hq4 : q = .r4
     · subst hq4; rw [f4, hspg, hrd0, r4s]
@@ -675,14 +685,21 @@ theorem cw_wp {name zname : String} {body zcode : Prog isa} {zst : Nat}
     · subst hqlr; rw [flr, hspg, frame_addr h16 (by decide), hrd (by decide), lrs]
     · rw [cwFinal_gpr g h0 h1 hq4 hq5 hq6 hqlr, hcsg q hq hqlr hq4 hq5 hq6]
   · -- The postcondition, which reads the memory on return only within the buffers apart from the array.
-    rw [post_arm, f0, f1, h5g, h6g, cwFinal_mem]
+    rw [post_arm]
+    dsimp only
+    rw [f0, f1, h5g, h6g]
     refine hout c'.mem _ _ (fun b hb hbA x hx => ?_) hc'.2.2.2.2.2.2
-    refine (hfc x fun R hR hc => ?_).symm
+    refine ((hfr b hb x hx).trans (hfc x fun R hR hc => ?_)).symm
     rcases List.mem_cons.mp hR with rfl | hR
     · exact hbA x hx (Region.sub_prefix hn x hc)
     · simp only [List.mem_singleton] at hR; subst hR
       exact hres b hb x (belowA_inner (by omega_using []) hsb x hc) hx
-  · rw [cwFinal_mem]; exact hz0
+  · -- The array, a buffer, is zero.
+    refine Eq.trans ?_ hz0
+    simp only [Spec.Zeroize.bytesAt]
+    refine List.map_congr_left fun i hi => ?_
+    exact hfr _ harr _ (Offset.contains_base _ (by omega_using [hn, List.mem_range.mp hi])
+      (by omega_using [hn32, List.mem_range.mp hi]))
 
 end
 

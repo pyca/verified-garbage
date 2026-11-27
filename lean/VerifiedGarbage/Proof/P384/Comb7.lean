@@ -1,15 +1,14 @@
 module
 
 import VerifiedGarbage.Proof.P384.Point
-import VerifiedGarbage.Proof.Weierstrass.CombCheckFast
+public import VerifiedGarbage.Proof.Weierstrass.CombCheckFast
 public import VerifiedGarbage.Impl.P384.CombTable7
-public import VerifiedGarbage.Proof.Weierstrass.CombCheckW
 public import VerifiedGarbage.Spec.P384
 
 /-!
 # P-384: the 7-bit fixed-base comb's tables are right
 
-`combChecksW` (`Proof/Weierstrass/CombCheckW.lean`) checks every entry of
+`combChecksW` (`Proof/Weierstrass/CombCheckFast.lean`) checks every entry of
 `p384Comb7` against the specification's group law, without inverses, and the
 start `p384Comb7Start` through the partial sums below; the kernel evaluates
 it once (`combChecks7_p384`, by walking the lists: `combChecksF`), which gives

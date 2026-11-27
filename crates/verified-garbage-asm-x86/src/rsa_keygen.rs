@@ -5,7 +5,9 @@
 
 /// Start generating an RSA key, as BoringSSL's `RSA_generate_key_ex` (FIPS 186-5 Appendix A.1.3), with a modulus of `bits` bits rounded down to a multiple of 128, and the public exponent `e` (`e_len` octets, most significant first, with any number of leading zeros). Returns 0 if `e` is not odd from 3 to `2^32 - 1`, or 2 if `bits` is above 8192 or, rounded down, below 512, and writes zeros to `state`. Otherwise returns 1 and writes the search's seven public words to `state`: the rejected candidates the first prime's search allows, the primes' length in octets (`nlen / 16`), the entropy budget, the length of the first random tape to give `vg_rsa_generate`, the phase (0), the generations allowed (4), and the exponent's eight octets, most significant first.
 ///
-/// Contract: `VG.Spec.RsaKeyGen.keyInitContract`. Timing may depend on `bits` and `e`.
+/// Contract: `VG.Spec.RsaKeyGen.keyInitContract`. Timing, and the length of the first tape (`VG.Spec.RsaKeyGen.keyInitOut`), may depend on `bits` and `e`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -24,14 +26,16 @@ jne 22b
 jmp 21f
 20:
 21:
-.base64 "i0Mkg/gBGcmD8f+LUyCJ0IPgAYP4ARnACcGD+gMZwAnBiUsoidCD8AOD+AEZwIlDJItEJAg9AAIAABnJPQEgAAAZ0oPy/wnRiciD4AGDwAGLUyiD8v8h0IlDLAtLKIPx/4lLKItMJAjB6QcByQHJAckjSyiJSwi4AAAAAIlDBIlDDIlDFIlDHIlDMLgBgAAA9+GJQxCJyAHAAcABwAHAAcCJQxiJyAHAAcABwInCAcAB0CNDJIlDJLgoAAAA9+EDQySJwYtDICNDKA/IiUM0uAQAAAAjQyiJQyi4AAAAAIlDIIlDJItDLLoAAAAAiVMsi1QkBIsaiQrD"
+.base64 "i0Mkg/gBGcmD8f+LUyCJ0IPgAYP4ARnACcGD+gMZwAnBiUsoidCD8AOD+AEZwIlDJItEJAg9AAIAABnJPQEgAAAZ0oPy/wnRiciD4AGDwAGLUyiD8v8h0IlDLAtLKIPx/4lLKItMJAjB6QcByQHJAckjSyiJSwi4AAAAAIlDBIlDDIlDFIlDHIlDMLgBgAAA9+GJQxCJyAHAAcABwAHAAcCJQxiJyAHAAcABwInCAcAB0CNDJIlDJLgoAAAA9+EDQySJwYtDICNDKA/IiUM0uAQAAAAjQyiJQyi4AAAAAIlDIIlDJItDLLoAAAAAiVMsi1QkBIsaiQq6AAAAADHJZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7//D"
 .p2align 6"#,
     )
 }
 
 /// Generate an RSA key, as BoringSSL's `RSA_generate_key_ex` (FIPS 186-5 Appendix A.1.3), over the random tape `rand`, from the state `state` that `vg_rsa_generate_init` started: the search for `p`, then for `q` not too close to `p`, each over candidates of `p_len` octets with their top two bits and bottom bit set, rejected by trial division, a common factor of `p − 1` and `e` or Miller–Rabin, up to BoringSSL's limit of rejected candidates; then the key, `d = e⁻¹ mod lcm(p − 1, q − 1)`, `dP`, `dQ` and `qInv`, with `p` the larger prime, checked as BoringSSL's `RSA_check_key` checks it, drawing both primes again if `d` is too small; a generation whose prime's search is exhausted is started again, up to four in all. Returns 1 and writes the key to `key` (`key_len` is `9 p_len`, for the primes' length `p_len = state[1]`): `n` and `d` (`2 p_len` octets each), then `p`, `q`, `dP`, `dQ` and `qInv` (`p_len` each), all most significant first; 2 if the key failed a check; 3 if every generation was exhausted; or 0 if the tape ran out inside a candidate. Writes the octets of `rand` it consumed to `used`, and the state for the next call to `state`, whose fourth word is, for 0, the length of the next tape, more than the octets of `rand` after the first `used` and at most the entropy budget: keep those octets, in order, and append fresh random octets up to that length. For 0, `key` holds the search's `p` once it is found, which the next call reads: pass it back unchanged. `key` is otherwise zeros but for 1.
 ///
-/// Contract: `VG.Spec.RsaKeyGen.keySearchContract`. Timing may depend on the pointers, the lengths, `state`, the status and consumption it returns, and, for each prime's search, its rejected candidates and the octets its accepted candidate's tests read, and each key's status. Not on the primes or the key.
+/// Contract: `VG.Spec.RsaKeyGen.keySearchContract`. Timing, and the length of the next tape (`VG.Spec.RsaKeyGen.keySearchOut`), may depend on the pointers, the lengths, `state`, the status and consumption it returns, and, for each prime's search, its rejected candidates and the octets its accepted candidate's tests read, and each key's status. Not on the primes or the key.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -122,7 +126,7 @@ jmp 24f
 24:
 .base64 "g/sE"
 je 22b
-.base64 "i1QkHIkyuQAAAACJSgSJ2Is8JIt0JASLbCQIW1tbW8M="
+.base64 "i1QkHIkyuQAAAACJSgSJ2Is8JIt0JASLbCQIW1tbW2YP78C5AAAAAI2kJOT+///zD38EJPMPf0QkEPMPf0QkIPMPf0QkMPMPf0QkQPMPf0QkUPMPf0QkYPMPf0QkcPMPf4QkgAAAAPMPf4QkkAAAAPMPf4QkoAAAAPMPf4QksAAAAPMPf4QkwAAAAPMPf4Qk0AAAAPMPf4Qk4AAAAPMPf4Qk8AAAAPMPf4QkAAEAAImMJBABAACJjCQUAQAAiYwkGAEAAI2kJBwBAAC6AAAAADHJZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7//D"
 .p2align 6"#,
         vg_rsa_prime_search = sym super::rsa::vg_rsa_prime_search::vg_rsa_prime_search,
         vg_rsa_keygen_key = sym super::rsa_keygen::vg_rsa_keygen_key::vg_rsa_keygen_key,
@@ -132,6 +136,10 @@ je 22b
 #[rustfmt::skip]
 #[path = "internal/vg_rsa_keygen_candidate.rs"]
 pub(crate) mod vg_rsa_keygen_candidate;
+
+#[rustfmt::skip]
+#[path = "internal/vg_rsa_keygen_div.rs"]
+pub(crate) mod vg_rsa_keygen_div;
 
 #[rustfmt::skip]
 #[path = "internal/vg_rsa_keygen_inverse.rs"]

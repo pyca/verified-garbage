@@ -30,6 +30,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 import VerifiedGarbage.Proof.Framework.AArch64.Taint
 import VerifiedGarbage.Proof.Framework.AArch64.Lit
 import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
+import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Impl.Camellia.AArch64.CtrFinal
@@ -63,6 +64,7 @@ meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
 meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 meta import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
+meta import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.AddrArith
 
@@ -131,16 +133,18 @@ def ctrF : Contract isa where
           (bytesAt s.mem (s.gpr .x2) 16) (Spec.Cbc.blocksAt s.mem (s.gpr .x3) (s.gpr .x4).toNat) ∧
       bytesAt s'.mem (s.gpr .x2) 16 = Spec.Ctr.next (bytesAt s.mem (s.gpr .x2) 16) (s.gpr .x4).toNat
   pub s₁ s₂ :=
-    s₁.sp = s₂.sp ∧ s₁.gpr .x0 = s₂.gpr .x0 ∧ s₁.gpr .x1 = s₂.gpr .x1 ∧ s₁.gpr .x2 = s₂.gpr .x2 ∧
+    s₁.sp = s₂.sp ∧ s₁.dit = s₂.dit ∧ s₁.gpr .x0 = s₂.gpr .x0 ∧ s₁.gpr .x1 = s₂.gpr .x1 ∧ s₁.gpr .x2 = s₂.gpr .x2 ∧
       s₁.gpr .x3 = s₂.gpr .x3 ∧ s₁.gpr .x4 = s₂.gpr .x4
 
 /-- `vg_camellia_ctr` meets its contract on the subkeys. -/
 theorem ctrFramed_sk : Verified AArch64.target ctrFramed (Proof.Camellia.ctrContractSk AArch64.abi 3344) :=
-  AArch64.Verified.stackScratchWiped (sig := Spec.Camellia.ctrSig) (nm := "scratch") (e := .u64)
+  AArch64.Verified.stackScratch (sig := Spec.Camellia.ctrSig) (nm := "scratch") (e := .u64)
     (n := 418) (pre := Spec.Camellia.ctrPre AArch64.abi.ptrBits)
     (post := Proof.Camellia.ctrPostSk AArch64.abi.ptrBits) (wa := true) (stack := 0)
     (bytes := 3344) (by rw [← Proof.Camellia.ctrScratchContract_eq]; exact Camellia.AArch64.ctr_verified)
-    (by decide) (by decide) (by decide) (Proof.Camellia.ctrPostOut_local _) Camellia.AArch64.ctrFrameSat_pre
+    (by decide) (by decide)
+    (fun vs m m₁ m₂ r hl _ hb h => Proof.Camellia.ctrPostOut_local _ vs m m₁ m₂ r hl hb h)
+    Camellia.AArch64.ctrFrameSat_pre
 
 theorem ctrF_implies : (Proof.Camellia.ctrContractSk AArch64.abi 3344).Implies ctrF where
   pre s hs := by
@@ -155,12 +159,14 @@ theorem ctrF_implies : (Proof.Camellia.ctrContractSk AArch64.abi 3344).Implies c
     exact h hs.2.2.2.2.2.2.2.2.2.2.2.2
   pub s₁ s₂ _ _ h := by
     sig_reduce [Proof.Camellia.ctrContractSk, Spec.Camellia.ctrSig, AArch64.abi, AArch64.argRegs]
-    obtain ⟨hsp, h0, h1, h2, h3, h4⟩ := h
-    exact ⟨hsp, fun _ _ => by rw [h0, h1, h2, h3, h4], fun _ hr => absurd hr List.not_mem_nil⟩
+    obtain ⟨hsp, hd, h0, h1, h2, h3, h4⟩ := h
+    exact ⟨⟨hsp, hd⟩, fun _ _ => by rw [h0, h1, h2, h3, h4], fun _ hr => absurd hr List.not_mem_nil⟩
   sat := ⟨Camellia.AArch64.ctrFrameSat, by
     refine ⟨by decide, rfl, rfl, Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide),
       Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide),
       Region.disjoint_of_sep (by decide), by decide, by decide, by decide, by decide⟩⟩
+
+theorem ctr_noDit : ctrFramed.all (fun i => !i.writesDit) = true := by lit_decide
 
 theorem ctr_depth : 16 * ctrFramed.aarch64Depth ≤ 3344 := by lit_decide
 
@@ -195,7 +201,7 @@ def ctrFinalAArch64 : Contract isa where
       s.mem s'.mem (s.gpr .x2) (s.gpr .x3) (s.gpr .x4).toNat
   pub s₁ s₂ :=
     s₁.gpr .x0 = s₂.gpr .x0 ∧ s₁.gpr .x1 = s₂.gpr .x1 ∧ s₁.gpr .x2 = s₂.gpr .x2 ∧
-      s₁.gpr .x3 = s₂.gpr .x3 ∧ s₁.gpr .x4 = s₂.gpr .x4 ∧ s₁.gpr .x5 = s₂.gpr .x5 ∧ s₁.sp = s₂.sp
+      s₁.gpr .x3 = s₂.gpr .x3 ∧ s₁.gpr .x4 = s₂.gpr .x4 ∧ s₁.gpr .x5 = s₂.gpr .x5 ∧ s₁.sp = s₂.sp ∧ s₁.dit = s₂.dit
 
 /-- The contract the frame needs: the shared one on the subkeys, with `save`,
 80 bytes, as a sixth argument, and 3344 bytes of stack (`vg_camellia_ctr`'s
@@ -385,8 +391,10 @@ structure KSetup (s₀ s : State) : Prop where
   mem : s.mem = kSvMem s₀
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
+  dit : s.dit = s₀.dit
 
 theorem setup_wp {s₀ : State} (hp : KPre s₀) : WP isa (.block ctrFinalSetup) s₀ (KSetup s₀) := by
+  refine WP.of_dit (by decide) ?_
   have hw : ∀ p ∈ finalSaved, InRegions s₀.wr (s₀.gpr .x5 + BitVec.ofNat 64 p.2) 8 := by
     intro p hp'
     rw [hp.wr]
@@ -399,7 +407,7 @@ theorem setup_wp {s₀ : State} (hp : KPre s₀) : WP isa (.block ctrFinalSetup)
   have k (r : Reg) (h₁ : r ≠ .x19) (h₂ : r ≠ .x20) (h₃ : r ≠ .x21) (h₄ : r ≠ .x22) (h₅ : r ≠ .x23)
       (h₆ : r ≠ .x25) (h₇ : r ≠ .x4) (h₈ : r ≠ .x9) (h₉ : r ≠ .x10) :
       s'.gpr r = s₀.gpr r := keep r h₁ h₂ h₃ h₄ h₅ h₆ h₇ h₈ h₉
-  exact ⟨x19, x20, x21, by rw [x22, shr4_shl4], by rw [x23, shr4_shl4, sub_shl4], x25,
+  exact fun hd => ⟨x19, x20, x21, by rw [x22, shr4_shl4], by rw [x23, shr4_shl4, sub_shl4], x25,
     k .x0 (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
       (by decide),
     k .x1 (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
@@ -413,7 +421,7 @@ theorem setup_wp {s₀ : State} (hp : KPre s₀) : WP isa (.block ctrFinalSetup)
       rcases hr with rfl | rfl | rfl <;>
         exact k _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
           (by decide) (by decide),
-    sp, mem, rd, wr⟩
+    sp, mem, rd, wr, hd⟩
 
 /-! ## The whole blocks -/
 
@@ -468,6 +476,7 @@ structure KWhole (s₀ s : State) : Prop where
   frame : Frame (kW1 s₀) (kSvMem s₀) s.mem
   blocks : Spec.Cbc.blocksAt s.mem (fD s₀) (fN s₀) = Spec.Ctr.crypt (kCiph s₀) (fIv0 s₀) (fBlks s₀)
   ctr : bytesAt s.mem (fIv s₀) 16 = Spec.Ctr.next (fIv0 s₀) (fN s₀)
+  dit : s.dit = s₀.dit
 
 /-- A call's frame, within the regions it was given and the stack. -/
 theorem call_frame {s₀ s s' : State} (hsp : s.sp = s₀.sp) {wr : List Region}
@@ -480,7 +489,8 @@ theorem call_frame {s₀ s s' : State} (hsp : s.sp = s₀.sp) {wr : List Region}
       exact ⟨kStk s₀, by simp, by rw [hsp]; exact stk_sub s₀⟩
 
 theorem whole_wp {s₀ : State} (hp : KPre s₀) {s : State} (h : KSetup s₀ s) :
-    WP isa (.call "vg_camellia_ctr" ctrFramed) s (KWhole s₀) := by
+    WP isa (.call "vg_camellia_ctr_core" ctrFramed) s (KWhole s₀) := by
+  refine WP.of_dit (c := .call _ ctrFramed) ctr_noDit ?_
   obtain ⟨eK, eIv, eB⟩ := sv_bytes hp
   obtain ⟨hpre, hc, hw⟩ := whole_pre hp h
   refine WP.callF (k := ctrF) ctr_ok (rd := [kSch s₀]) (wr := [kIv s₀, fBlk s₀]) hpre hc hw ?_
@@ -494,7 +504,7 @@ theorem whole_wp {s₀ : State} (hp : KPre s₀) {s : State} (h : KSetup s₀ s)
     toNat_n, h.mem] at post₂
   have hR : (s₀.gpr .x1).toNat = fR s₀ := rfl
   rw [hR, eK, eIv, eB] at post₂
-  exact ⟨by rw [cs_of cs' .x19 (by simp), h.x19], by rw [cs_of cs' .x20 (by simp), h.x20],
+  exact fun hd => ⟨by rw [cs_of cs' .x19 (by simp), h.x19], by rw [cs_of cs' .x20 (by simp), h.x20],
     by rw [cs_of cs' .x21 (by simp), h.x21], by rw [cs_of cs' .x22 (by simp), h.x22],
     by rw [cs_of cs' .x23 (by simp), h.x23], by rw [cs_of cs' .x25 (by simp), h.x25],
     fun r hr => by rw [cs_of cs' r (by rcases hr with rfl | rfl | rfl <;> simp), h.kept r hr],
@@ -502,7 +512,7 @@ theorem whole_wp {s₀ : State} (hp : KPre s₀) {s : State} (h : KSetup s₀ s)
     fr.mono fun r hr => by
       simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
       rcases hr with h | h | h <;> simp [h],
-    post₂.1, post₂.2⟩
+    post₂.1, post₂.2, hd.trans h.dit⟩
 
 /-! ## The partial last block -/
 
@@ -540,6 +550,7 @@ structure KArgs (s₀ s : State) : Prop where
   blocks : Spec.Cbc.blocksAt s.mem (fD s₀) (fN s₀) = Spec.Ctr.crypt (kCiph s₀) (fIv0 s₀) (fBlks s₀)
   ctr : bytesAt s.mem (fIv s₀) 16 = Spec.Ctr.next (fIv0 s₀) (fN s₀)
   zero : bytesAt s.mem (kBk s₀) 16 = List.replicate 16 0
+  dit : s.dit = s₀.dit
 
 theorem zero_frame (s₀ : State) (m : Mem) (g : Reg → BitVec 64) :
     Frame [kBlk s₀] m (Spill.saveMem m (kV s₀) g zeroSlots) :=
@@ -549,6 +560,7 @@ theorem zero_frame (s₀ : State) (m : Mem) (g : Reg → BitVec 64) :
 
 theorem tail_args_wp {s₀ : State} (hp : KPre s₀) {s : State} (h : KWhole s₀ s) :
     WP isa (.block ctrFinalTailArgs) s (KArgs s₀) := by
+  refine WP.of_dit (by decide) ?_
   obtain ⟨s₁, r₁, z₁, k₁, sp₁, m₁, rd₁, wr₁⟩ := zero_ok s
   show WP isa (.block ([.movz .x .x9 0 0] ++ (Spill.saveCode .x25 zeroSlots ++ ctrFinalTailMoves))) _ _
   refine WP.block_append_iff.mpr (WP.of_runBlock ⟨s₁, r₁, ?_⟩)
@@ -575,13 +587,14 @@ theorem tail_args_wp {s₀ : State} (hp : KPre s₀) {s : State} (h : KWhole s�
   have blkZ : ∀ r ∈ [kBlk s₀], (fBlk s₀).Disjoint r := by
     intro r hr; simp only [List.mem_singleton] at hr; subst hr
     exact (hp.data_sv.sub_left (blk_sub s₀)).sub_right (blk_sv_sub s₀)
+  intro hdt
   refine ⟨by rw [x0]; exact (k₁ _ (by decide)).trans h.x19, by rw [x1]; exact (k₁ _ (by decide)).trans h.x20,
     by rw [x2]; exact (k₁ _ (by decide)).trans h.x21, by rw [x3, h25], x4,
     by rw [c .x22 (by simp), h.x22], by rw [c .x23 (by simp), h.x23], by rw [c .x25 (by simp), h.x25],
     fun r hr => by rw [c r (by rcases hr with rfl | rfl | rfl <;> simp), h.kept r hr],
     by rw [sp, show ({ s₁ with mem := _ } : State).sp = s₁.sp from rfl, sp₁, h.sp],
     by rw [rd, show ({ s₁ with mem := _ } : State).rd = s₁.rd from rfl, rd₁, h.rd],
-    by rw [wr, show ({ s₁ with mem := _ } : State).wr = s₁.wr from rfl, wr₁, h.wr], ?_, ?_, ?_, ?_⟩
+    by rw [wr, show ({ s₁ with mem := _ } : State).wr = s₁.wr from rfl, wr₁, h.wr], ?_, ?_, ?_, ?_, hdt.trans h.dit⟩
   · exact h.frame.trans (fz.mono fun r hr => by simp only [List.mem_singleton] at hr; simp [hr])
   · rw [blocksAt_frame' fz blkZ]; exact h.blocks
   · rw [Proof.Cmac.bytesAt_frame fz ivZ (by decide), h.ctr]
@@ -634,7 +647,7 @@ theorem cipher_length (sk : Spec.Camellia.Subkeys) (b : List Byte) : (Spec.Camel
   simp [Spec.Camellia.cipher]
 
 theorem tail_call_wp {s₀ : State} (hp : KPre s₀) {s : State} (h : KArgs s₀ s) :
-    WP isa (.call "vg_camellia_ctr" ctrFramed) s (KCall s₀) := by
+    WP isa (.call "vg_camellia_ctr_core" ctrFramed) s (KCall s₀) := by
   obtain ⟨hpre, hc, hw⟩ := tail_pre hp h
   have big := big_of (kW1_kW h.frame)
   have eK := subkeys_of hp big hp.sch_big
@@ -843,7 +856,7 @@ theorem final_rel {s₀ s₀' : State} (h0 : ctrFinalAArch64.pre s₀) (h0' : ct
     RelCT isa (fun a b => a = s₀ ∧ b = s₀') ctrFinal fun _ _ => True := by
   have hp := KPre.of h0
   have hp' := KPre.of h0'
-  obtain ⟨qW, qR, qIv, qD, qL, qV, qSp⟩ := hq
+  obtain ⟨qW, qR, qIv, qD, qL, qV, qSp, qDt⟩ := hq
   have qU : fU s₀ = fU s₀' := by simp only [fU, fL, qL]
   have qN : fN s₀ = fN s₀' := by simp only [fN, fL, qL]
   have qT : fT s₀ = fT s₀' := by simp only [fT, fD, qD, qN]
@@ -857,7 +870,7 @@ theorem final_rel {s₀ s₀' : State} (h0 : ctrFinalAArch64.pre s₀) (h0' : ct
       rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption)
     fun a b h => by obtain ⟨rfl, rfl⟩ := h; exact ⟨setup_wp hp, setup_wp hp'⟩
   -- The whole blocks.
-  have r₂ := (RelCT.callEx (k := ctrF) (n := "vg_camellia_ctr") ctr_ok ctr_ct
+  have r₂ := (RelCT.callEx (k := ctrF) (n := "vg_camellia_ctr_core") ctr_ok ctr_ct
     (P := fun a b => KSetup s₀ a ∧ KSetup s₀' b) fun a b ⟨ha, hb⟩ => by
       obtain ⟨pa, ca, wa⟩ := whole_pre hp ha
       obtain ⟨pb, cb, wb⟩ := whole_pre hp' hb
@@ -865,7 +878,8 @@ theorem final_rel {s₀ s₀' : State} (h0 : ctrFinalAArch64.pre s₀) (h0' : ct
       simp only [ctrF, State.withRegions_gpr, State.withRegions_sp, State.callEntry_sp,
         AesCbc.AArch64.callEntry_x0, AesCbc.AArch64.callEntry_x1, AesCbc.AArch64.callEntry_x2,
         AesCbc.AArch64.callEntry_x3, AesCbc.AArch64.callEntry_x4,
-        ha.x0, ha.x1, ha.x2, ha.x3, ha.x4, ha.sp, hb.x0, hb.x1, hb.x2, hb.x3, hb.x4, hb.sp]
+        ha.x0, ha.x1, ha.x2, ha.x3, ha.x4, ha.sp, hb.x0, hb.x1, hb.x2, hb.x3, hb.x4, hb.sp,
+        State.withRegions_dit, State.callEntry_dit, ha.dit, hb.dit, qDt]
       rw [fW, fW, fIv, fIv, fD, fD, qW, qR, qIv, qD, qSp, qN]
       refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩ <;> first | rfl | trivial).wp
     (F₁ := KWhole s₀) (F₂ := KWhole s₀') fun a b h => ⟨whole_wp hp h.1, whole_wp hp' h.2⟩
@@ -884,7 +898,7 @@ theorem final_rel {s₀ s₀' : State} (h0 : ctrFinalAArch64.pre s₀) (h0' : ct
         · rw [h.1.x21, h.2.x21, fIv, fIv, qIv]
         · rw [h.1.x25, h.2.x25, kV, kV, qV])
       fun a b h => ⟨tail_args_wp hp h.1, tail_args_wp hp' h.2⟩
-    have a₂ := (RelCT.callEx (k := ctrF) (n := "vg_camellia_ctr") ctr_ok ctr_ct
+    have a₂ := (RelCT.callEx (k := ctrF) (n := "vg_camellia_ctr_core") ctr_ok ctr_ct
       (P := fun a b => KArgs s₀ a ∧ KArgs s₀' b) fun a b ⟨ha, hb⟩ => by
         obtain ⟨pa, ca, wa⟩ := tail_pre hp ha
         obtain ⟨pb, cb, wb⟩ := tail_pre hp' hb
@@ -892,7 +906,8 @@ theorem final_rel {s₀ s₀' : State} (h0 : ctrFinalAArch64.pre s₀) (h0' : ct
         simp only [ctrF, State.withRegions_gpr, State.withRegions_sp, State.callEntry_sp,
           AesCbc.AArch64.callEntry_x0, AesCbc.AArch64.callEntry_x1, AesCbc.AArch64.callEntry_x2,
           AesCbc.AArch64.callEntry_x3, AesCbc.AArch64.callEntry_x4,
-          ha.x0, ha.x1, ha.x2, ha.x3, ha.x4, ha.sp, hb.x0, hb.x1, hb.x2, hb.x3, hb.x4, hb.sp]
+          ha.x0, ha.x1, ha.x2, ha.x3, ha.x4, ha.sp, hb.x0, hb.x1, hb.x2, hb.x3, hb.x4, hb.sp,
+        State.withRegions_dit, State.callEntry_dit, ha.dit, hb.dit, qDt]
         rw [fW, fW, fIv, fIv, kBk, kBk, kV, kV, qW, qR, qIv, qV, qSp]
         refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩ <;> first | rfl | trivial).wp
       (F₁ := KCall s₀) (F₂ := KCall s₀') fun a b h => ⟨tail_call_wp hp h.1, tail_call_wp hp' h.2⟩

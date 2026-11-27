@@ -1,14 +1,11 @@
 module
 
-import VerifiedGarbage.Proof.Ed448.Arm.PublicKey.Hash
-import VerifiedGarbage.Proof.Ed448.Arm.PublicKey.Prune
-public import VerifiedGarbage.Proof.Ed448.Arm.BaseVerified
+public import VerifiedGarbage.Proof.Ed448.Arm.PublicKey.Hash
 import VerifiedGarbage.Proof.Ed448.Arm.BaseLit
 import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Wipe
 public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Wrap
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Impl.Ed448.Arm.PublicKey
-public import VerifiedGarbage.Proof.Ed448.Arm.PublicKey.Layout
 import VerifiedGarbage.Proof.Ed448.PruneBytes
 import VerifiedGarbage.Proof.X448.Arm.BitWrite
 import VerifiedGarbage.Proof.Ed448.Scalar
@@ -28,7 +25,7 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Sha256.Stream
 import VerifiedGarbage.Proof.Sha3.Arm.Stream.Pad
 import VerifiedGarbage.Proof.X25519.Arm.Pass
-import VerifiedGarbage.Proof.X448.Arm.BitStep
+import VerifiedGarbage.Proof.X448.Arm.Iter
 import VerifiedGarbage.Proof.X448.Arm.Carry
 import VerifiedGarbage.Proof.X448.Arm.Copy
 import VerifiedGarbage.Proof.X448.Arm.Counters
@@ -37,18 +34,216 @@ import VerifiedGarbage.Proof.X448.Arm.DecodeAll
 import VerifiedGarbage.Proof.X448.Arm.Fill
 import VerifiedGarbage.Proof.X448.Arm.Finish
 import VerifiedGarbage.Proof.X448.Arm.Initial
-import VerifiedGarbage.Proof.X448.Arm.Iter
 import VerifiedGarbage.Proof.X448.Arm.Normalize
 import VerifiedGarbage.Proof.X448.Arm.Setup
 import VerifiedGarbage.Proof.X448.Arm.Step
 import VerifiedGarbage.Proof.X448.Bytes
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Spec.Ed448.Contract
+import VerifiedGarbage.Proof.X25519.Arm.Instr
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Layout
+public import VerifiedGarbage.Proof.Ed448.Arm.BaseMain
+import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
+import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Ed448.Arm.BaseMain
+meta import VerifiedGarbage.Proof.Framework.Arm.Exec
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
+meta import VerifiedGarbage.Proof.Ed448.Arm.BaseLit
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
+
+/-! ### `Ed448.Arm.BaseVerified`, which this module and modules that import it used -/
+
+section
+
+/-!
+# Ed448 base-point multiplication on ARMv7: `Verified`
+
+Constant time (by taint tracking: the only branches are on the loop counters,
+and every address is an argument plus a constant or a counter; with `umaal`,
+by `taintU`, on the code itself), satisfiability,
+and the shared contract of `Spec/`, given that the comb the code computes
+encodes as `[k]B` (`Proof.Ed448.BaseCombOk`, proven with the group law in
+`Proof/Ed448/CombFacts.lean`, which only the registration file imports).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Ed448.Arm
+
+open VG VG.Arm VG.Impl.Ed448.Arm
+open VG.Proof.Ed448 (BaseCombOk decodeLE_below)
+
+variable {fv : Bool}
+
+/-- `vg_ed448_scalar_base(out = r0, scalar = r1, scratch = r2)`. -/
+def scalarBaseLocal : Contract Arm.isa where
+  pre s :=
+    let out : Region := ⟨State.addr (s.gpr .r0), 57⟩
+    let scalar : Region := ⟨State.addr (s.gpr .r1), 57⟩
+    let ws : Region := ⟨State.addr (s.gpr .r2), 8192⟩
+    s.rd = [scalar] ∧ s.wr = [out, ws] ∧ out.Disjoint ws ∧ scalar.Disjoint ws ∧
+      (s.gpr .r0).toNat + 57 ≤ 2 ^ 32 ∧ (s.gpr .r1).toNat + 57 ≤ 2 ^ 32 ∧
+      (s.gpr .r2).toNat + 8192 ≤ 2 ^ 32
+  post s t := Spec.Ed448.bytesAt t.mem (State.addr (s.gpr .r0)) 57 =
+    Spec.Ed448.scalarBase (Spec.Ed448.bytesAt s.mem (State.addr (s.gpr .r1)) 57)
+  pub s t := s.gpr .r0 = t.gpr .r0 ∧ s.gpr .r1 = t.gpr .r1 ∧ s.gpr .r2 = t.gpr .r2 ∧ s.sp = t.sp
+
+theorem BasePre.of {s : State} (h : scalarBaseLocal.pre s) : BasePre s :=
+  ⟨h.1, h.2.1, h.2.2.1, h.2.2.2.1, h.2.2.2.2.1, h.2.2.2.2.2.1, h.2.2.2.2.2.2⟩
+
+theorem scalarBase_ok (hl : BaseCombOk) (s : State) (hs : scalarBaseLocal.pre s) :
+    ∃ t s', Exec isa (scalarBase fv) s t s' ∧ abiPreserved s s' ∧ scalarBaseLocal.post s s' := by
+  obtain ⟨t, s', he, h⟩ := scalarBase_comb (BasePre.of hs)
+  refine ⟨t, s', he, ⟨h.1, Exec.sp he⟩, ?_⟩
+  change Spec.Ed448.bytesAt s'.mem (State.addr (s.gpr .r0)) 57 =
+    Spec.Ed448.encodePoint (Spec.Ed448.pointMul _ Spec.Ed448.basePoint)
+  rw [h.2, hl _ (decodeLE_below (by simp [Spec.Ed448.bytesAt]))]
+
+theorem scalarBase_ct : ConstantTime isa scalarBaseLocal.pre scalarBaseLocal.pub (scalarBase fv) := by
+  obtain ha : ∀ s₁ s₂, scalarBaseLocal.pre s₁ → scalarBaseLocal.pre s₂ → scalarBaseLocal.pub s₁ s₂ →
+      VG.Arm.Taint.Agree (Taint.ofRegs [.r0, .r1, .r2]) s₁ s₂ := by
+    intro s₁ s₂ _ _ ⟨h1, h2, h3, _⟩
+    apply Taint.agree_ofRegs
+    intro r hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    · exact h1
+    · exact h2
+    · exact h3
+  cases fv
+  · exact Taint.constantTime_eraseOff_of_eq (Taint.ofRegs [.r0, .r1, .r2]) (Taint.noBase_ofRegs _) ha
+      (c' := scalarBaseErased) rfl (by native_taint_decide)
+  · exact VG.Taint.constantTime (A := taintU) (Taint.ofRegs [.r0, .r1, .r2]) ha (by native_taint_decide)
+
+end VG.Proof.Ed448.Arm
+
+end
+
+end
+
+/-! ### `Ed448.Arm.PublicKey.Prune`, which this module and modules that import it used -/
+
+section
+
+/-!
+# Ed448 public-key derivation on ARMv7: pruning the hash in place
+
+`pruneOps` clears bits 0–1 of byte 0 of the hash, sets bit 7 of byte 55 and
+clears byte 56, from `r12`; the 57 bytes are then `Spec.Ed448.prune` of the
+hash (`prune_step`, by `Proof.Ed448.prune_bytes`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Ed448.Arm.PublicKey
+
+open VG VG.Arm VG.Impl.Ed448.Arm.PublicKey VG.Impl.Ed25519.Arm.Whole
+open VG.Proof.X25519.Arm (wp_ldrb wp_strb wp_dp wp_movw op2_imm)
+open VG.Proof.X448.Arm (writeW8_apply)
+open VG.Proof.Ed25519.Arm (Whole.FR)
+
+variable {fv : Bool}
+
+/-! ## The bytes -/
+
+theorem bytesAt_split (m : Mem) (q : Addr) :
+    Spec.Ed448.bytesAt m q 57 = m q :: (Spec.Ed448.bytesAt m (q + BitVec.ofNat 64 1) 54 ++
+      [m (q + BitVec.ofNat 64 55), m (q + BitVec.ofNat 64 56)]) := by
+  have b1 : Spec.X25519.bytesAt m q 1 = [m q] := by
+    simp [Spec.X25519.bytesAt]
+  have b2 : ∀ p : Addr, Spec.X25519.bytesAt m p 2 = [m p, m (p + BitVec.ofNat 64 1)] := fun p => by
+    simp [Spec.X25519.bytesAt, List.range_succ]
+  rw [Proof.Ed448.bytesAt_eq, show 57 = 1 + (54 + 2) from rfl, VG.Proof.X25519.bytesAt_add,
+    VG.Proof.X25519.bytesAt_add, b1, b2, Offset.add_add, Offset.add_add]
+  rfl
+
+theorem decodeLE_split (m : Mem) (q : Addr) :
+    Spec.Ed448.decodeLE (Spec.Ed448.bytesAt m q 57) = (m q).toNat + 256 *
+      (Spec.Ed448.decodeLE (Spec.Ed448.bytesAt m (q + BitVec.ofNat 64 1) 54) + 2 ^ 432 *
+        ((m (q + BitVec.ofNat 64 55)).toNat + 256 * (m (q + BitVec.ofNat 64 56)).toNat)) := by
+  rw [bytesAt_split, Spec.Ed448.decodeLE, Proof.Ed448.decodeLE_append]
+  have hl : (Spec.Ed448.bytesAt m (q + BitVec.ofNat 64 1) 54).length = 54 := by simp [Spec.Ed448.bytesAt]
+  rw [hl, show (256 : Nat) ^ 54 = 2 ^ 432 by decide +kernel]
+  simp only [Spec.Ed448.decodeLE, Nat.mul_zero, Nat.add_zero]
+
+/-! ## The instructions -/
+
+theorem and_fc : ∀ x : BitVec 8, (x.setWidth 32 &&& 0xfc#32).setWidth 8 = BitVec.ofNat 8 (x.toNat &&& 252) := by
+  decide
+
+theorem or_80 : ∀ x : BitVec 8, (x.setWidth 32 ||| 0x80#32).setWidth 8 = BitVec.ofNat 8 (x.toNat ||| 128) := by
+  decide
+
+theorem pruneOps_ok {s : State} {q : Addr} (hq : State.addr (s.gpr .r12) = q)
+    (hfit : (s.gpr .r12).toNat + 57 ≤ 2 ^ 32) (hw : ∀ j < 57, InRegions s.wr (q + BitVec.ofNat 64 j) 1) :
+    WP isa (.block pruneOps) s fun t =>
+      t.mem = ((s.mem.writeW q (BitVec.ofNat 8 ((s.mem q).toNat &&& 252))).writeW
+        (q + BitVec.ofNat 64 55) (BitVec.ofNat 8 ((s.mem (q + BitVec.ofNat 64 55)).toNat ||| 128))).writeW
+          (q + BitVec.ofNat 64 56) (0 : BitVec 8) ∧
+      t.sp = s.sp ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ ∀ r, r ≠ .r0 → t.gpr r = s.gpr r := by
+  have hr : ∀ j < 57, InRegions (s.rd ++ s.wr) (q + BitVec.ofNat 64 j) 1 := fun j hj => by
+    obtain ⟨R, hR, hc⟩ := hw j hj
+    exact ⟨R, List.mem_append_right _ hR, hc⟩
+  have ea : ∀ j < 57, State.addr (s.gpr .r12 + BitVec.ofNat 32 j) = q + BitVec.ofNat 64 j := fun j hj => by
+    rw [addr_add (by omega_using [hfit, hj]), hq]
+  have e0 : q + BitVec.ofNat 64 0 = q := BitVec.add_zero q
+  have ne55 : q + BitVec.ofNat 64 55 ≠ q := by
+    intro h
+    have := congrArg (fun x => (x - q).toNat) h
+    simp only [BitVec.sub_self, Offset.add_sub_cancel_left] at this
+    exact absurd this (by decide)
+  unfold pruneOps
+  refine wp_ldrb (a := q) (by decide) (by rw [ea 0 (by decide), e0]) (by rw [← e0]; exact hr 0 (by decide))
+    fun s1 v1 => ?_
+  refine wp_dp (op2_imm (by decide)) fun s2 v2 => ?_
+  refine wp_strb (a := q) (by decide)
+    (by rw [v2.other _ (by decide), v1.other _ (by decide), ea 0 (by decide), e0])
+    (by rw [v2.wr, v1.wr, ← e0]; exact hw 0 (by decide)) fun s3 v3 => ?_
+  refine wp_ldrb (a := q + BitVec.ofNat 64 55) (by decide)
+    (by rw [v3.gpr, v2.other _ (by decide), v1.other _ (by decide), ea 55 (by decide)])
+    (by rw [v3.rd, v3.wr, v2.rd, v2.wr, v1.rd, v1.wr]; exact hr 55 (by decide)) fun s4 v4 => ?_
+  refine wp_dp (op2_imm (by decide)) fun s5 v5 => ?_
+  refine wp_strb (a := q + BitVec.ofNat 64 55) (by decide)
+    (by rw [v5.other _ (by decide), v4.other _ (by decide), v3.gpr, v2.other _ (by decide),
+      v1.other _ (by decide), ea 55 (by decide)])
+    (by rw [v5.wr, v4.wr, v3.wr, v2.wr, v1.wr]; exact hw 55 (by decide)) fun s6 v6 => ?_
+  refine wp_movw fun s7 v7 => ?_
+  refine wp_strb (a := q + BitVec.ofNat 64 56) (by decide)
+    (by rw [v7.other _ (by decide), v6.gpr, v5.other _ (by decide), v4.other _ (by decide), v3.gpr,
+      v2.other _ (by decide), v1.other _ (by decide), ea 56 (by decide)])
+    (by rw [v7.wr, v6.wr, v5.wr, v4.wr, v3.wr, v2.wr, v1.wr]; exact hw 56 (by decide)) fun t vt =>
+      WP.block_nil ⟨?_, ?_, ?_, ?_, fun r hr => ?_⟩
+  · have r2 : s2.gpr .r0 = (s.mem q).setWidth 32 &&& 0xfc#32 := by
+      rw [v2.gpr]; change s1.gpr .r0 &&& _ = _; rw [v1.gpr]; rfl
+    have m3 : s3.mem = s.mem.writeW q ((s2.gpr .r0).setWidth 8) := by rw [v3.mem, v2.mem, v1.mem]
+    have r5 : s5.gpr .r0 = (s.mem (q + BitVec.ofNat 64 55)).setWidth 32 ||| 0x80#32 := by
+      rw [v5.gpr]; change s4.gpr .r0 ||| _ = _
+      rw [v4.gpr, m3, writeW8_apply, ite_eq_right ne55]; rfl
+    rw [vt.mem, v7.mem, v6.mem, v5.mem, v4.mem, m3, v7.gpr, r5, r2, and_fc, or_80]
+    rfl
+  · rw [vt.sp, v7.sp, v6.sp, v5.sp, v4.sp, v3.sp, v2.sp, v1.sp]
+  · rw [vt.rd, v7.rd, v6.rd, v5.rd, v4.rd, v3.rd, v2.rd, v1.rd]
+  · rw [vt.wr, v7.wr, v6.wr, v5.wr, v4.wr, v3.wr, v2.wr, v1.wr]
+  · rw [vt.gpr, v7.other r hr, v6.gpr, v5.other r hr, v4.other r hr, v3.gpr, v2.other r hr, v1.other r hr]
+
+end VG.Proof.Ed448.Arm.PublicKey
+
+end
+
+end
 
 /-!
 # Ed448 public-key derivation on ARMv7: the pruning, the scalar's call, and the whole
 
 `prune_step`: the hash's first 57 bytes pruned in place (`Spec.Ed448.prune`);
 `base_step`: `vg_ed448_scalar_base` called on them, given the reference
-ladder's agreement with the specification (`BaseLadderOk`, a hypothesis);
+comb's agreement with the specification (`BaseCombOk`, a hypothesis);
 `wipe_step`: the frame cleared. `publicKey_ok`: the whole function, in
 Ed25519's frame on this target (`Whole.wrap_ok`).
 -/
@@ -62,7 +257,9 @@ open VG.Proof.Ed25519.Arm (Whole.Within Whole.FR Whole.valid Whole.call_ok Whole
   Whole.base Whole.base_addr Whole.base_top Whole.stack Whole.Saved Whole.entered Whole.saved_ctx
   Whole.saved_words Whole.bodyRd Whole.bodyWr Whole.wrap_ok)
 open VG.Proof.X448.Arm (writeW8_apply off_eq_iff)
-open VG.Proof.Ed448 (BaseLadderOk)
+open VG.Proof.Ed448 (BaseCombOk)
+
+variable {fv : Bool}
 
 variable {L : Lay} {g : Reg → BitVec 32} {m₀ : Mem} {t : State}
 
@@ -160,7 +357,7 @@ theorem prune_step (hc : Ctx L g m₀ t) (hL : L.Ok) :
 
 /-! ## `vg_ed448_scalar_base` -/
 
-theorem base_noFrames : Impl.Ed448.Arm.scalarBase.noFrames = true := by lit_decide
+theorem base_noFrames : (Impl.Ed448.Arm.scalarBase fv).noFrames = true := by cases fv <;> lit_decide
 
 def BaseArgs (L : Lay) (t : State) : Prop :=
   t.gpr .r0 = L.out ∧ t.gpr .r1 = L.E + BitVec.ofNat 32 HASH ∧ t.gpr .r2 = L.scr
@@ -195,8 +392,9 @@ theorem base_writes (L : Lay) : ∀ r ∈ L.outputs,
 
 def baseValues : List (Reg × Value) := [(.r0, .caller 0 0), (.r1, .frame HASH), (.r2, .caller 2 0)]
 
-theorem base_step (hl : BaseLadderOk) (hc : Ctx L g m₀ t) (hL : L.Ok) (ha : Arguments L m₀) :
-    WP isa (callWith baseArgs "vg_ed448_scalar_base" Impl.Ed448.Arm.scalarBase) t fun u =>
+theorem base_step (hl : BaseCombOk) (hc : Ctx L g m₀ t) (hL : L.Ok) (ha : Arguments L m₀) :
+    WP isa (callWith baseArgs ("vg_ed448_scalar_base" ++ Impl.X448.Arm.suffix fv)
+        (Impl.Ed448.Arm.scalarBase fv)) t fun u =>
       Ctx L g m₀ u ∧ Spec.Ed448.bytesAt u.mem (State.addr L.out) 57 =
         Spec.Ed448.scalarBase (Spec.Ed448.bytesAt t.mem (hq L) 57) := by
   refine WP.seq (WP.mono (setup_ok hc hL ha (args := baseValues) (stk := [])
@@ -237,8 +435,8 @@ theorem wipe_step (hc : Ctx L g m₀ t) (hL : L.Ok) :
 
 /-! ## The body -/
 
-theorem body_ok (hl : BaseLadderOk) (hc : Ctx L g m₀ t) (hL : L.Ok) (ha : Arguments L m₀) :
-    WP isa body t fun u => Ctx L g m₀ u ∧
+theorem body_ok (hl : BaseCombOk) (hc : Ctx L g m₀ t) (hL : L.Ok) (ha : Arguments L m₀) :
+    WP isa (body fv) t fun u => Ctx L g m₀ u ∧
       Spec.Ed448.bytesAt u.mem (State.addr L.out) 57 =
         Spec.Ed448.publicKey (Spec.Ed448.bytesAt m₀ (State.addr L.seed) 57) := by
   refine WP.seq (WP.mono (hash_ok hc hL ha) fun u ⟨hu, hh⟩ => ?_)
@@ -248,7 +446,7 @@ theorem body_ok (hl : BaseLadderOk) (hc : Ctx L g m₀ t) (hL : L.Ok) (ha : Argu
   rw [hm, hp, Spec.Ed448.scalarBase, hs, hh]
   rfl
 
-theorem body_noFrames : body.noFrames = true := by
+theorem body_noFrames : (body fv).noFrames = true := by
   simp only [body, Impl.Ed448.Arm.PublicKey.hash, zeroState, prune, callWith, Code.noFrames, Bool.and_self]
   rw [absorb_noFrames, pad_noFrames, squeeze_noFrames, base_noFrames]
   rfl
@@ -311,9 +509,9 @@ theorem entry_args {s p : State} (hs : 280 ≤ s.sp.toNat) (hp : Whole.Saved (Wh
   have he : j = 0 ∨ j = 1 ∨ j = 2 := by omega_using [hj]
   rcases he with rfl | rfl | rfl <;> exact hw
 
-theorem publicKey_ok (hl : BaseLadderOk) {s : State} (h : pkLocal.pre s) :
-    WP isa code s fun u => abiPreserved s u ∧ pkLocal.post s u := by
-  have hw := Whole.wrap_ok body_noFrames (by decide : 3 ≤ 6) (entry_below h)
+theorem publicKey_ok (hl : BaseCombOk) {s : State} (h : pkLocal.pre s) :
+    WP isa (code fv) s fun u => abiPreserved s u ∧ pkLocal.post s u := by
+  have hw := Whole.wrap_ok (body_noFrames (fv := fv)) (by decide : 3 ≤ 6) (entry_below h)
     (by simp only [Nat.reduceSub, Nat.mul_zero, Nat.add_zero]; exact Nat.le_of_lt s.sp.isLt)
     (by intro j hj h4; omega) (entry_writes h)
     (P := fun m m' _ => Spec.Ed448.bytesAt m' (State.addr (s.gpr .r0)) 57 =
@@ -322,6 +520,16 @@ theorem publicKey_ok (hl : BaseLadderOk) {s : State} (h : pkLocal.pre s) :
       fun u ⟨hu, ho⟩ => ⟨by
         simpa only [Whole.bodyRd, h.1, Ctx, Lay.inputs, Lay.outputs, Lay.SEED, Lay.OUT,
           Lay.SCR, Lay.ARGS, lay, h.2.1, List.cons_append, List.nil_append] using hu, ho⟩)
+    (hP := fun _ m₁ m₂ _ hf hp => by
+      have e : Spec.Ed448.bytesAt m₂ (State.addr (s.gpr .r0)) 57 = Spec.Ed448.bytesAt m₁ (State.addr (s.gpr .r0)) 57 := by
+        unfold Spec.Ed448.bytesAt
+        refine List.map_congr_left fun i hi => hf.bytes (R := ⟨State.addr (s.gpr .r0), 57⟩) ?_
+          (by change 57 ≤ 2 ^ 64; decide) (List.mem_range.mp hi)
+        rintro r hr
+        rw [List.mem_singleton.mp hr]
+        exact (entry_writes h _ (by rw [h.2.1]; simp)).symm
+      show Spec.Ed448.bytesAt m₂ _ _ = _
+      rw [e]; exact hp)
   refine WP.mono hw fun u ⟨hu, m, hf, hp⟩ => ⟨hu, ?_⟩
   have hs : Spec.Ed448.bytesAt m (State.addr (s.gpr .r1)) 57 =
       Spec.Ed448.bytesAt s.mem (State.addr (s.gpr .r1)) 57 := by

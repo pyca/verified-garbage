@@ -13,7 +13,9 @@ whose algorithm and pieces these follow.
 ## The working space
 
 Every function has a buffer `W` of 2560 bytes (`scratch` or `work`, its
-last argument):
+last argument), but `seal`, `open` and `seal_gather` over an implementation
+of `vg_aes_ctr32_to` that uses 256 bytes of its own or fewer, whose `W` is
+of 768 bytes (`Fn.seal`, `Fn.open`, `Fn.sealGather`):
 
 * `[0, 16)`: the tag `finish`, `verify` and `seal` compute;
 * `[16, 96)`: the streaming state of `seal` and `open`;
@@ -28,7 +30,7 @@ last argument):
   values before it);
 * `[212, 216)`: the pointer `tag`, copied from the arguments on entry;
 * `[272, 288)`: the arguments of the piece running (`dO`, `nO`, `bO`);
-* `[512, 2560)`: the working space of the functions called.
+* `[512, 2560)`, or `[512, 768)`: the working space of the functions called.
 
 ## Registers
 
@@ -166,6 +168,32 @@ def copyLoop : Prog isa :=
   .loop (.block [.movzx8 .eax (at_ .edi 0), .store8 (at_ .edx 0) .al, .alu .add .edi (imm 1),
     .alu .add .edx (imm 1), .alu .sub .ecx (imm 1)]) .ne
 
+/-- The 4 bytes at `edi` ANDed with `ebx`, and on to the next 4 of the `ecx`;
+CF is set when fewer than 4 are left. -/
+def maskWord : List Instr :=
+  [.mov .edx (.mem (at_ .edi 0)), .alu .and .edx (.reg .ebx), .store (at_ .edi 0) .edx, .alu .add .edi (imm 4),
+   .alu .sub .ecx (imm 4), .alu .cmp .ecx (imm 4)]
+
+/-- The 16 bytes at `edi` ANDed with `xmm0`, and on to the next 16 of the
+`ecx`; CF is set when fewer than 16 are left. -/
+def maskBlock : List Instr :=
+  [.movdquLoad .xmm1 (at_ .edi 0), .xop (.bin .pand .xmm1 .xmm0), .movdquStore (at_ .edi 0) .xmm1,
+   .alu .add .edi (imm 16), .alu .sub .ecx (imm 16), .alu .cmp .ecx (imm 16)]
+
+/-- ANDs the `ecx` bytes at `edi` with `ebx`, 16 at a time while 16 are left,
+advancing `edi`; `ecx` is then the number of bytes left, at most 15. -/
+def maskBlocks : Prog isa :=
+  .seq (.block [.alu .cmp .ecx (imm 16)])
+    (.ite .b (.block [])
+      (.seq (.block [.xop (.movd .xmm0 .ebx), .xop (.pshufd .xmm0 .xmm0 0)])
+        (.seq (.loop (.block maskBlock) .ae) (.block [.xop (.bin .pxor .xmm1 .xmm1)]))))
+
+/-- ANDs the `ecx` bytes at `edi` with `ebx`, 16 at a time while 16 are left,
+then 4 at a time while 4 are left, advancing `edi`; `ecx` is then the number
+of bytes left, at most 3. -/
+def maskWords : Prog isa :=
+  .seq maskBlocks (.seq (.block [.alu .cmp .ecx (imm 4)]) (.ite .b (.block []) (.loop (.block maskWord) .ae)))
+
 /-- The register holding the bytes XORed with the keystream: the destination
 `edi` in place, `esi` out of place. -/
 def xorSrc (to : Bool) : Reg := if to then .esi else .edi
@@ -176,6 +204,19 @@ def xorLoopG (to : Bool) : Prog isa :=
   .loop (.block ([.movzx8 .eax (at_ .edx 0), .movzx8 .ebx (at_ (xorSrc to) 0), .alu .xor .eax (.reg .ebx),
     .store8 (at_ .edi 0) .al, .alu .add .edi (imm 1)] ++ (if to then [.alu .add .esi (imm 1)] else []) ++
     [.alu .add .edx (imm 1), .alu .sub .ecx (imm 1)])) .ne
+
+def xorWordStep : List Instr :=
+  [.mov .eax (.mem (at_ .edx 0)), .alu .xor .eax (.mem (at_ .esi 0)), .store (at_ .edi 0) .eax,
+   .alu .add .edx (imm 4), .alu .add .esi (imm 4), .alu .add .edi (imm 4),
+   .alu .sub .ecx (imm 4), .alu .cmp .ecx (imm 4)]
+
+/-- Consume four bytes per iteration, then any remaining bytes. -/
+def wordXor : Prog isa :=
+  .seq (.block [.alu .cmp .ecx (imm 4)]) (.seq
+    (.ite .b (.block []) (.loop (.block xorWordStep) .ae))
+    (.seq (.block [.alu .test .ecx (.reg .ecx)]) (.ite .e (.block []) (xorLoopG true))))
+
+def xorTailCode (words : Bool) : Prog isa := if words then wordXor else xorLoopG true
 
 /-- XORs the `ecx` (at least 1) bytes at `edx` into those at `edi`, advancing both. -/
 abbrev xorLoop : Prog isa := xorLoopG false
@@ -565,10 +606,10 @@ variable (c : Callees)
 blocks by `vg_aes_ctr32_to`, and the last bytes, if any, XORed from the data
 into `dst` with a keystream block (`xorLoopG`, as `cryptTail` does in place);
 `esi` is then the state again. -/
-def decTo (f : Fn) : Prog isa :=
+def decTo (f : Fn) (words : Bool := false) : Prog isa :=
   .seq (wholeTo f) (.seq (.block tailLen) (.ite .e (.block [])
     (.seq (.seq (.block ksArgs) (.seq (ctrCall c) (.block unscr))) (.seq (.block tailRegs)
-      (.seq (xorLoopG true) (.block [.mov .esi (.reg .ebp), .alu .add .esi (imm stO)]))))))
+      (.seq (xorTailCode words) (.block [.mov .esi (.reg .ebp), .alu .add .esi (imm stO)]))))))
 
 /-- `dst` (the word at `esp`) in `edx`, `len` in `ecx`, and zero in `eax`. -/
 def wipeArgs : List Instr := [.mov .edx (.mem (at_ .esp 0)), .mov .ecx (slot lenO), .mov .eax (imm 0)]

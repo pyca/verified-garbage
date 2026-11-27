@@ -13,6 +13,8 @@ secret-dependent validation never short-circuits the arithmetic schedule.
 namespace VG.Impl.Dsa.Arm.SignVerify
 open VG VG.Arm VG.Impl.Mont.Arm VG.Impl.Mont.Arm.Dynamic VG.Impl.Dsa.Layout
 
+variable (umaal : Bool)
+
 def outputPointer (qLen : Nat) (second : Bool) : List Instr :=
   Core.pointer (.input .out) ++
     (if second then [.movw .r4 (BitVec.ofNat 16 qLen), .dp .add .r11 .r11 (.reg .r4)] else [])
@@ -26,22 +28,22 @@ def writeScalar (qLen input : Nat) (second : Bool) : Prog isa :=
 def result : List Instr := [.ldr .r0 .r12 (Layout.field .mask), .dp .and .r0 .r0 (.imm 1)]
 
 def signCompute (pLen qLen : Nat) : Prog isa := Core.sequence [
-  Validate.signingKey pLen qLen,
-  Validate.privateKey pLen qLen,
-  Core.sign pLen qLen,
+  Validate.signingKey umaal pLen qLen,
+  Validate.privateKey umaal pLen qLen,
+  Core.sign umaal pLen qLen,
   .seq (Validate.zero qLen (.local r) true) (Validate.zero qLen (.local s) true)]
 
 def signBody (pLen qLen : Nat) : Prog isa :=
-  .seq (signCompute pLen qLen)
+  .seq (signCompute umaal pLen qLen)
     (.seq (writeScalar qLen r false) (.seq (writeScalar qLen s true) (.block result)))
 
 def verifyCompute (pLen qLen : Nat) : Prog isa := Core.sequence [
-  PublicValidation.call pLen qLen,
+  PublicValidation.call umaal pLen qLen,
   .seq (Validate.range qLen .q (.input .signature)) (Validate.range qLen .q .signatureS),
-  Core.verify pLen qLen,
+  Core.verify umaal pLen qLen,
   Validate.equalValues qLen (.local u) (.input .signature)]
 
 def verifyBody (pLen qLen : Nat) : Prog isa :=
-  .seq (verifyCompute pLen qLen) (.block result)
+  .seq (verifyCompute umaal pLen qLen) (.block result)
 
 end VG.Impl.Dsa.Arm.SignVerify

@@ -8,6 +8,8 @@
 ///
 /// It runs `vg_x25519_exchange`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of 32 bytes.
@@ -32,6 +34,8 @@ pub const VG_X25519_BASE_AUTO_SCRATCH_WRITTEN: usize = 1024;
 /// Contract: `VG.Spec.X25519.x25519BaseContract`. Constant time: only the pointers may affect timing, not the scalar.
 ///
 /// It runs `vg_x25519_base`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// It writes at most the first 1024 bytes of `scratch` (`VG_X25519_BASE_AUTO_SCRATCH_WRITTEN`): no byte of `scratch` beyond them changes.
 ///

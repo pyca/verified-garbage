@@ -1,9 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeCore
-public import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeTableState
+public import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeStoreMemory
 public import VerifiedGarbage.Impl.Ffdh.Arm.CombPrecompute
-import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeStoreMemory
 import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeMem
 import VerifiedGarbage.Proof.Ffdh.Arm.Block
 import VerifiedGarbage.Proof.Framework.Arm.Exec

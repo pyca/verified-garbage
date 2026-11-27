@@ -71,8 +71,8 @@ theorem subNeg_eval (xo : Fin 22) (h : xo ≠ 12) (e : (Fin 22 → Spec.X448.Fe)
   have h12 : idx 12 = 12 := rfl
   simp only [evalOps, List.foldl, evalOp, idx_val, h12]
   refine ⟨?_, fun i hi => ?_⟩
-  · rw [Function.update_self, Function.update_self, Function.update_of_ne h]
-  · rw [Function.update_of_ne hi, Function.update_of_ne hi]
+  · rw [Fun.update_self, Fun.update_self, Fun.update_of_ne h]
+  · rw [Fun.update_of_ne hi, Fun.update_of_ne hi]
 
 theorem decodeUV_dest : ∀ xo yo : Nat, (xo = 6 ∧ yo = 7) ∨ (xo = 8 ∧ yo = 9) →
     ∀ op ∈ decodeUV yo xo, fopDest op % 22 = 3 ∨ fopDest op % 22 = 4 ∨ fopDest op % 22 = 5 ∨

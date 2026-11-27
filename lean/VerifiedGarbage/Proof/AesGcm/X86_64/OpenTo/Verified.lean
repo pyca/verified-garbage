@@ -104,11 +104,11 @@ theorem toPost_prepared16 {s s' : State} (h : toPost s s') :
 
 theorem toPub_prepared {s₁ s₂ : State} (hp : (Proof.AesGcm.openToPreparedRoundsContract X86_64.abi 2728).pub s₁ s₂) :
     toPub s₁ s₂ := by
-  sig_pub [Proof.AesGcm.openToPreparedRoundsContract, Proof.Gcm.openToPrecomputedSig, Proof.Gcm.openToPrecomputedSig, Spec.Gcm.openToLeak, X86_64.abi, X86_64.argRegs,
+  sig_pub_keep [Proof.AesGcm.openToPreparedRoundsContract, Proof.Gcm.openToPrecomputedSig, Proof.Gcm.openToPrecomputedSig, Spec.Gcm.openToLeak, X86_64.abi, X86_64.argRegs,
     stackArgs_six, List.append_eq] at hp
   simp only [List.getD_cons_succ, List.getD_cons_zero, Sig.descRegion] at hp
-  obtain ⟨q₇, hl, q₁, q₂, q₃, q₄, q₅, q₆, a₀, a₁, a₂, a₃, a₄, a₅⟩ := hp
-  refine ⟨q₁, q₂, q₃, q₄, q₅, q₆, q₇, fun i hi => ?_, hl⟩
+  obtain ⟨q₇, hm, hl, q₁, q₂, q₃, q₄, q₅, q₆, a₀, a₁, a₂, a₃, a₄, a₅⟩ := hp
+  refine ⟨q₁, q₂, q₃, q₄, q₅, q₆, q₇, fun i hi => ?_, hl, hm⟩
   match i, hi with
   | 0, _ => exact a₀
   | 1, _ => exact a₁
@@ -120,11 +120,11 @@ theorem toPub_prepared {s₁ s₂ : State} (hp : (Proof.AesGcm.openToPreparedRou
 
 theorem toPub_prepared16 {s₁ s₂ : State} (hp : (Proof.AesGcm.openToPrepared16RoundsContract X86_64.abi 2728).pub s₁ s₂) :
     toPub s₁ s₂ := by
-  sig_pub [Proof.AesGcm.openToPrepared16RoundsContract, Proof.Gcm.openToPrecomputedSig, Proof.Gcm.openToPrecomputedSig, Spec.Gcm.openToLeak, X86_64.abi, X86_64.argRegs,
+  sig_pub_keep [Proof.AesGcm.openToPrepared16RoundsContract, Proof.Gcm.openToPrecomputedSig, Proof.Gcm.openToPrecomputedSig, Spec.Gcm.openToLeak, X86_64.abi, X86_64.argRegs,
     stackArgs_six, List.append_eq] at hp
   simp only [List.getD_cons_succ, List.getD_cons_zero, Sig.descRegion] at hp
-  obtain ⟨q₇, hl, q₁, q₂, q₃, q₄, q₅, q₆, a₀, a₁, a₂, a₃, a₄, a₅⟩ := hp
-  refine ⟨q₁, q₂, q₃, q₄, q₅, q₆, q₇, fun i hi => ?_, hl⟩
+  obtain ⟨q₇, hm, hl, q₁, q₂, q₃, q₄, q₅, q₆, a₀, a₁, a₂, a₃, a₄, a₅⟩ := hp
+  refine ⟨q₁, q₂, q₃, q₄, q₅, q₆, q₇, fun i hi => ?_, hl, hm⟩
   match i, hi with
   | 0, _ => exact a₀
   | 1, _ => exact a₁
@@ -234,11 +234,11 @@ theorem toPost_flagged {t : Nat} {s s' : State} (h : toPost s s') :
 
 theorem toPub_flagged {t : Nat} {s₁ s₂ : State} (hp : (Proof.AesGcm.Flag.openToFlaggedRoundsContract t X86_64.abi 2728).pub s₁ s₂) :
     toPub s₁ s₂ := by
-  sig_pub [Proof.AesGcm.Flag.openToFlaggedRoundsContract, Spec.Gcm.openToPreparedSig, Spec.Gcm.openToPreparedSig, Spec.Gcm.openToLeak, X86_64.abi, X86_64.argRegs,
+  sig_pub_keep [Proof.AesGcm.Flag.openToFlaggedRoundsContract, Spec.Gcm.openToPreparedSig, Spec.Gcm.openToPreparedSig, Spec.Gcm.openToLeak, X86_64.abi, X86_64.argRegs,
     stackArgs_six, List.append_eq] at hp
   simp only [List.getD_cons_succ, List.getD_cons_zero, Sig.descRegion] at hp
-  obtain ⟨q₇, hl, q₁, q₂, q₃, q₄, q₅, q₆, a₀, a₁, a₂, a₃, a₄, a₅⟩ := hp
-  refine ⟨q₁, q₂, q₃, q₄, q₅, q₆, q₇, fun i hi => ?_, hl⟩
+  obtain ⟨q₇, hm, hl, q₁, q₂, q₃, q₄, q₅, q₆, a₀, a₁, a₂, a₃, a₄, a₅⟩ := hp
+  refine ⟨q₁, q₂, q₃, q₄, q₅, q₆, q₇, fun i hi => ?_, hl, hm⟩
   match i, hi with
   | 0, _ => exact a₀
   | 1, _ => exact a₁

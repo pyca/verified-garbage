@@ -4,12 +4,14 @@ public import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Montgomery
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Sha3.RcLit
 import VerifiedGarbage.Proof.Framework.Taint
 import VerifiedGarbage.Proof.MlDsa.X86_64.CalleeLit
 meta import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Montgomery
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.Mem
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Sha3.RcLit
 meta import VerifiedGarbage.Proof.Framework.Taint
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.CalleeLit
 import VerifiedGarbage.Proof.Framework.X86_64.Lit

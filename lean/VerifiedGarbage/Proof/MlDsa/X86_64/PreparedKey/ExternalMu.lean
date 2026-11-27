@@ -4,6 +4,9 @@ public import VerifiedGarbage.Proof.MlDsa.X86_64.Message.SignFn
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Message.VerifyFn
 public import VerifiedGarbage.Proof.MlDsa.X86_64.PreparedKey.Sat
 import VerifiedGarbage.Proof.MlDsa.X86_64.Message.SignCall
+import VerifiedGarbage.Proof.Framework.X86_64.CallFrame
+import VerifiedGarbage.Proof.Framework.X86_64.Depth
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Verified
 import VerifiedGarbage.Proof.MlDsa.X86_64.Message.VerifyCall
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Covers
@@ -62,8 +65,12 @@ def signKP (p : Params) (D : Nat) : Contract isa where
       signLeak p (bytesAt s₂.mem (s₂.gpr .rdi) p.skLen) (bytesAt s₂.mem (s₂.gpr .rsi) 64)
         (bytesAt s₂.mem (s₂.gpr .rdx) 32)
 
+/-- `signKP`, with the addresses of the functions `N` public too (`Abi.withFns`). -/
+def signKPN (p : Params) (D : Nat) (N : List String) : Contract isa :=
+  { signKP p D with pub := fun s₁ s₂ => (signKP p D).pub s₁ s₂ ∧ ∀ f ∈ N, s₁.syms f = s₂.syms f }
+
 section
-variable {p : Params} {σ s : State} (hp : (signKP p 40).pre σ) (hs : Moved .r9 1 σ s)
+variable {p : Params} {S : Nat} {σ s : State} (hp : (signKP p (S + 8)).pre σ) (hs : Moved .r9 1 σ s)
 include hp hs
 
 omit hp in
@@ -76,16 +83,16 @@ theorem ce_rsp : s.callEntry.gpr .rsp = σ.gpr .rsp - 8 := by
 
 omit hp in
 /-- The return address of the call is below `rsp`, apart from the buffers. -/
-theorem ce_bytes {a : Addr} {len : Nat} (hd : (below (σ.gpr .rsp) 40).Disjoint ⟨a, len⟩) (hl : len ≤ 2 ^ 64) :
-    bytesAt s.callEntry.mem a len = bytesAt σ.mem a len := by
+theorem ce_bytes (hS : S < 2 ^ 32) {a : Addr} {len : Nat} (hd : (below (σ.gpr .rsp) (S + 8)).Disjoint ⟨a, len⟩)
+    (hl : len ≤ 2 ^ 64) : bytesAt s.callEntry.mem a len = bytesAt σ.mem a len := by
   have hf : Frame [below (σ.gpr .rsp) 8] σ.mem s.callEntry.mem := by
     rw [State.callEntry_mem, hs.mem, hs.gpr .rsp (by decide)]
     exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
   refine VG.Proof.MlKem.bytesAt_frame hf (fun r hr => ?_) hl
   rw [List.mem_singleton] at hr; subst hr
-  exact (hd.sub_left (below_sub (by omega_using []) (by omega_using []))).symm
+  exact (hd.sub_left (below_sub (by omega_using []) (by omega_using [hS]))).symm
 
-theorem kpreP : (signK p 32).pre s.callEntry := by
+theorem kpreP (hS : S < 2 ^ 32) : (signK p S).pre s.callEntry := by
   have hp' := hp
   obtain ⟨hrd, hwr, d1, d2, d3, d4, d5, d6, d7, r1, r2, r3, r4, r5, k1, k2, k3, k4, k5, n1, n2, n3, n4, n5, hsp, hprep⟩ := hp'
   have h9 : s.callEntry.gpr .r9 = 1 := by rw [State.callEntry_gpr _ (by decide), hs.r9]
@@ -96,11 +103,11 @@ theorem kpreP : (signK p 32).pre s.callEntry := by
   have e4 := ce_gpr hs (r := .rcx) (by decide) (by decide)
   have e5 := ce_gpr hs (r := .r8) (by decide) (by decide)
   have er := ce_rsp hs
-  have hret : Region.Sub (retR s.callEntry) (below (σ.gpr .rsp) 40) := by
-    rw [retR, er]; exact below_sub (sp := σ.gpr .rsp) (a := 8) (by omega_using []) (by omega_using [])
-  have hbel : Region.Sub (below (s.callEntry.gpr .rsp) 32) (below (σ.gpr .rsp) 40) := by
-    rw [er]; exact below_callee _ 32
-  have hsp' : 32 ≤ (s.callEntry.gpr .rsp).toNat := by
+  have hret : Region.Sub (retR s.callEntry) (below (σ.gpr .rsp) (S + 8)) := by
+    rw [retR, er]; exact below_sub (sp := σ.gpr .rsp) (a := 8) (by omega_using []) (by omega_using [hS])
+  have hbel : Region.Sub (below (s.callEntry.gpr .rsp) S) (below (σ.gpr .rsp) (S + 8)) := by
+    rw [er]; exact below_callee _ S
+  have hsp' : S ≤ (s.callEntry.gpr .rsp).toNat := by
     rw [er, BitVec.toNat_sub]; have := (σ.gpr .rsp).isLt
     simp only [show (8 : BitVec 64).toNat = 8 from rfl]; omega_using [hsp]
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, hsp', ?_⟩
@@ -130,34 +137,37 @@ theorem kpreP : (signK p 32).pre s.callEntry := by
   · exact n4
   · exact n5
   · intro _
-    exact Message.prepared_congr (ce_bytes hs k1 (by omega_using [n1])) hprep
+    exact Sign.prepared_congr (ce_bytes hs hS k1 (by omega_using [n1])) hprep
 
-theorem kpostP {s' s₂ : State} (hm : s₂.mem = s'.mem) (hax : s₂.gpr .rax = s'.gpr .rax)
-    (h : (signK p 32).post s.callEntry s₂) : (signKP p 40).post σ s' := by
+theorem kpostP (hS : S < 2 ^ 32) {s' s₂ : State} (hm : s₂.mem = s'.mem) (hax : s₂.gpr .rax = s'.gpr .rax)
+    (h : (signK p S).post s.callEntry s₂) : (signKP p (S + 8)).post σ s' := by
   have hp' := hp
   obtain ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, _, k1, k2, k3, _, _, n1, n2, n3, _, _, _⟩ := hp'
   show Outcome _ _ _
   have h' : Outcome _ _ _ := h
   rw [ce_gpr hs (r := .rdi) (by decide) (by decide), ce_gpr hs (r := .rsi) (by decide) (by decide),
     ce_gpr hs (r := .rdx) (by decide) (by decide), ce_gpr hs (r := .rcx) (by decide) (by decide),
-    ce_bytes hs (k1.sub_right (Region.sub_prefix (by simp only [preparedSecretKeyBytes]; omega_using []))) (by simp only [preparedSecretKeyBytes] at n1; omega_using [n1]), ce_bytes hs k2 (by omega_using []), ce_bytes hs k3 (by omega_using []), hm, hax] at h'
+    ce_bytes hs hS (k1.sub_right (Region.sub_prefix (by simp only [preparedSecretKeyBytes]; omega_using [])))
+      (by simp only [preparedSecretKeyBytes] at n1; omega_using [n1]), ce_bytes hs hS k2 (by omega_using []),
+    ce_bytes hs hS k3 (by omega_using []), hm, hax] at h'
   exact h'
 
 end
 
-theorem entryP_correct {p : Params} {n : String} {c : Prog isa} (hK : KernelFn p c) (σ : State)
-    (hpre : (signKP p 40).pre σ) :
-    ∃ t s', Exec isa (entry n c 1) σ t s' ∧ abiPreserved σ s' ∧ (signKP p 40).post σ s' := by
+theorem entryP_correct {p : Params} {S : Nat} {N : List String} {n : String} {c : Prog isa} (hK : KernelFn p S N c)
+    (σ : State) (hpre : (signKPN p (S + 8) N).pre σ) :
+    ∃ t s', Exec isa (entry n c 1) σ t s' ∧ abiPreserved σ s' ∧ (signKPN p (S + 8) N).post σ s' := by
   have hp' := hpre
   obtain ⟨_, hwr, _, _, _, _, _, _, _, _, _, _, r4, r5, _, _, _, _, _, _, _, _, _, _, hsp, _⟩ := hp'
   have hdep := hK.depth
-  have main : WP isa (entry n c 1) σ fun s' => abiPreserved σ s' ∧ (signKP p 40).post σ s' := by
+  have hS := hK.hS
+  have main : WP isa (entry n c 1) σ fun s' => abiPreserved σ s' ∧ (signKP p (S + 8)).post σ s' := by
     unfold entry
     refine WP.seq (WP.mono (flag_ok .r9 1 σ) fun s hs => ?_)
     have hs' : Moved .r9 1 σ s := hs
-    refine WP.call_mx hK.ok hK.nosp (by omega_using [hdep]) (rd := s.rd) (wr := s.wr)
-      (by rw [show s.callEntry.withRegions s.rd s.wr = s.callEntry from rfl]; exact kpreP hpre hs')
-      (fun _ _ h => h) (fun _ _ h => h) fun s' _ _ hcs hf _ hpost hmx => ⟨⟨fun r hr => ?_, ?_, ?_⟩, ?_⟩
+    refine WP.callF hK.ok hK.sp (by omega_using [hdep, hS]) (rd := s.rd) (wr := s.wr)
+      (by rw [show s.callEntry.withRegions s.rd s.wr = s.callEntry from rfl]; exact kpreP hpre hs' hS)
+      (fun _ _ h => h) (fun _ _ h => h) fun s' _ _ hcs hf hpost hmx => ⟨⟨fun r hr => ?_, ?_, ?_⟩, ?_⟩
     · rw [hcs r hr, hs'.gpr r (by
         simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide)]
@@ -169,22 +179,26 @@ theorem entryP_correct {p : Params} {n : String} {c : Prog isa} (hK : KernelFn p
         rcases hr with rfl | rfl
         exacts [r4, r5]
       · rw [List.mem_singleton] at hr; subst hr
-        exact Offset.base_disjoint_below _ (by omega_using [hdep])
+        exact Offset.base_disjoint_below _ (by omega_using [hdep, hS])
     · rw [hmx, hs'.mx]
     · obtain ⟨s₂, hm₂, hg₂, hq⟩ := hpost
-      exact kpostP hpre hs' hm₂ (hg₂ _ (by decide)) hq
+      exact kpostP hpre hs' hS hm₂ (hg₂ _ (by decide)) hq
   obtain ⟨t, s', he, ha, hq⟩ := main
   exact ⟨t, s', he, ha, hq⟩
 
-theorem entryP_ct {p : Params} {n : String} {c : Prog isa} (hK : KernelFn p c) :
-    ConstantTime isa (signKP p 40).pre (signKP p 40).pub (entry n c 1) := by
+theorem entryP_ct {p : Params} {S : Nat} {N : List String} {n : String} {c : Prog isa} (hK : KernelFn p S N c) :
+    ConstantTime isa (signKPN p (S + 8) N).pre (signKPN p (S + 8) N).pub (entry n c 1) := by
+  have hS := hK.hS
   refine relStart (Q := fun _ _ => True) ?_
   unfold entry
   refine RelCT.seq (relInv (I' := fun σ s => Moved .r9 1 σ s) (fun σ s _ (hs : s = σ) => by rw [hs]; exact flag_ok .r9 1 σ)
     (block_tr (rs := []) rfl fun _ _ _ r hr => absurd hr (List.not_mem_nil))) ?_
-  refine RelCT.callEx hK.ok hK.ct fun x y ⟨σ₁, σ₂, p₁, p₂, hpub, h₁, h₂⟩ => ?_
-  refine ⟨x.rd, x.wr, y.rd, y.wr, kpreP p₁ h₁, kpreP p₂ h₂, ?_, fun _ _ h => h, fun _ _ h => h,
+  refine RelCT.callEx (k := signKN p S N) hK.ok hK.ct fun x y ⟨σ₁, σ₂, p₁, p₂, ⟨hpub, hN⟩, h₁, h₂⟩ => ?_
+  refine ⟨x.rd, x.wr, y.rd, y.wr, kpreP p₁ h₁ hS, kpreP p₂ h₂ hS, ⟨?_, fun f hf => ?_⟩, fun _ _ h => h, fun _ _ h => h,
     fun _ _ h => h, fun _ _ h => h, by rw [h₁.gpr .rsp (by decide), h₂.gpr .rsp (by decide), hpub.2.2.2.2.2.1]⟩
+  rotate_left
+  · show x.syms f = y.syms f
+    rw [h₁.sy, h₂.sy]; exact hN f hf
   obtain ⟨e1, e2, e3, e4, e5, e6, e7⟩ := hpub
   have q₁ := p₁; have q₂ := p₂
   obtain ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, _, k1, k2, k3, _, _, n1, n2, n3, _, _, _⟩ := q₁
@@ -197,13 +211,17 @@ theorem entryP_ct {p : Params} {n : String} {c : Prog isa} (hK : KernelFn p c) :
     ce_gpr h₂ (r := .rdi) (by decide) (by decide), ce_gpr h₂ (r := .rsi) (by decide) (by decide),
     ce_gpr h₂ (r := .rdx) (by decide) (by decide), ce_gpr h₂ (r := .rcx) (by decide) (by decide),
     ce_gpr h₂ (r := .r8) (by decide) (by decide), ce_rsp h₂,
-    ce_bytes h₁ (k1.sub_right (Region.sub_prefix (by simp only [preparedSecretKeyBytes]; omega_using []))) (by simp only [preparedSecretKeyBytes] at n1; omega_using [n1]), ce_bytes h₁ k2 (by omega_using []), ce_bytes h₁ k3 (by omega_using []),
-    ce_bytes h₂ (l1.sub_right (Region.sub_prefix (by simp only [preparedSecretKeyBytes]; omega_using []))) (by simp only [preparedSecretKeyBytes] at m1; omega_using [m1]), ce_bytes h₂ l2 (by omega_using []), ce_bytes h₂ l3 (by omega_using []),
+    ce_bytes h₁ hS (k1.sub_right (Region.sub_prefix (by simp only [preparedSecretKeyBytes]; omega_using [])))
+      (by simp only [preparedSecretKeyBytes] at n1; omega_using [n1]), ce_bytes h₁ hS k2 (by omega_using []),
+    ce_bytes h₁ hS k3 (by omega_using []),
+    ce_bytes h₂ hS (l1.sub_right (Region.sub_prefix (by simp only [preparedSecretKeyBytes]; omega_using [])))
+      (by simp only [preparedSecretKeyBytes] at m1; omega_using [m1]), ce_bytes h₂ hS l2 (by omega_using []),
+    ce_bytes h₂ hS l3 (by omega_using []),
     State.callEntry_gpr _ (by decide), State.callEntry_gpr _ (by decide), h₁.r9, h₂.r9]
   exact ⟨e1, e2, e3, e4, e5, by rw [e6], e7, rfl⟩
 
-theorem implies {p : Params} (hsat : ∃ s, (preparedSignContract p X86_64.abi 40).pre s) :
-    (signKP p 40).Implies (preparedSignContract p X86_64.abi 40) where
+theorem implies {p : Params} (hsat : ∃ s, (preparedSignContract p X86_64.abi 152).pre s) :
+    (signKP p 152).Implies (preparedSignContract p X86_64.abi 152) where
   pre := by sig_implies_pre [preparedSignContract, preparedSignSig, signKP, X86_64.abi, X86_64.argRegs]
   post := by sig_implies_post [preparedSignContract, preparedSignSig, signKP, X86_64.abi, X86_64.argRegs]
   pub := by
@@ -226,7 +244,7 @@ def externalSat (p : Params) (m : Mem) : State where
   wr := [⟨0xB000, p.sigLen⟩, ⟨0x10000, 8 * scratchWords p⟩]
 
 theorem sat {P : Impl.MlDsa.X86_64.Verify.Prims} (C : Verify.PrimsOk P) {p : Params}
-    (hp : p ∈ Verify.params) : ∃ s, (preparedSignContract p X86_64.abi 40).pre s := by
+    (hp : p ∈ Verify.params) : ∃ s, (preparedSignContract p X86_64.abi 152).pre s := by
   have hsz : p.skLen < 0x10000 ∧ preparedSecretKeyBytes p < 0x7000 := by
     simp only [Verify.params, List.mem_cons, List.not_mem_nil, or_false] at hp
     rcases hp with rfl | rfl | rfl <;> decide
@@ -462,15 +480,20 @@ namespace VG.Proof.MlDsa.X86_64.Message
 open VG VG.X86_64 VG.Spec.MlDsa
 open VG.Proof.MlDsa.X86_64
 
-theorem signPreparedEntry_verified (v : ArithImpl) {p : Params} (hp : p ∈ params) (n : String) :
+/-- `vg_mldsa*_sign_prepared` of a variant that calls the body shared by
+every variant, `b`. -/
+theorem signPreparedEntryV_verified (v : ArithImpl) {p : Params} (hp : p ∈ params) (n b : String) :
     Verified X86_64.target (Impl.MlDsa.X86_64.Sign.entry n
-      (Impl.MlDsa.X86_64.Sign.sign (Sign.primsWith v.code) p) 1)
-      (preparedSignContract p X86_64.abi 40) :=
-  have hS := signFn v hp
-  have hK : Sign.KernelFn p (Impl.MlDsa.X86_64.Sign.sign (Sign.primsWith v.code) p) :=
-    ⟨hS.ok, hS.ct, hS.nosp, hS.depth⟩
-  Verified.of_correct (Sign.Prepared.entryP_correct hK) (Sign.Prepared.entryP_ct hK)
-    (Sign.Prepared.implies (Sign.Prepared.sat (Verify.prims_okWith v) hp))
+      (Impl.MlDsa.X86_64.Sign.signVia (viaNames v p) b (Impl.MlDsa.X86_64.Sign.sign (Sign.primsWith v.code true) p)) 1)
+      (preparedSignContract p (X86_64.abi.withFns (viaNames v p)) 152) :=
+  have hK := kernelVia v hp b
+  have I := Sign.Prepared.implies (Sign.Prepared.sat (Verify.prims_okWith v) hp)
+  VG.X86_64.Scrub.verified_withFns
+    (fun s h => let ⟨t, s', he, ha, hq⟩ := Sign.Prepared.entryP_correct (n := n) hK s (I.pre s h)
+      ⟨t, s', he, ha, I.post s s' h hq⟩)
+    (fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hpub e₁ e₂ => Sign.Prepared.entryP_ct (n := n) hK s₁ s₂ t₁ t₂ s₁' s₂'
+      (I.pre _ h₁) (I.pre _ h₂) ⟨I.pub _ _ h₁ h₂ hpub.1, hpub.2⟩ e₁ e₂)
+    I.sat
 
 theorem verifyPreparedEntry_verified (v : ArithImpl) {p : Params} (hp : p ∈ params) (n : String) :
     Verified X86_64.target (Impl.MlDsa.X86_64.Verify.entry n

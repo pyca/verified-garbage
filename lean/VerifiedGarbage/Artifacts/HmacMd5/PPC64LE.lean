@@ -1,23 +1,25 @@
 module
 
 public import VerifiedGarbage.TCB.PPC64LE.Target
-public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Md5
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.PPC64LE.Print
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Hmac.Generic
+import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Scrub
+import VerifiedGarbage.Impl.Hmac.Stream.PPC64LE.Fn
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # HMAC-MD5 (RFC 2104) on PPC64LE -/
 
-@[expose] public section
-
 namespace VG.Artifacts.HmacMd5.PPC64LE
 
-def artifacts : List Artifact := [
+public def artifacts : List (Artifact PPC64LE.target) := [
   Spec.Hmac.md5I.initAnyKeyApi.artifact PPC64LE.target {
-    code := Proof.Hmac.Stream.PPC64LE.initCode Proof.Hmac.Stream.PPC64LE.Md5.hash Spec.Hmac.md5I 6
-    verified := Proof.Hmac.Stream.PPC64LE.Md5.initAny },
+    code := Impl.Hmac.Stream.PPC64LE.Fn.initMd5
+    verified := Proof.Hmac.Stream.PPC64LE.Scrub.md5_init_scrubbed },
   Spec.Hmac.md5I.finalizeApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratch (Proof.Hmac.Stream.PPC64LE.hmacFrame Spec.Hmac.md5I) .r7
-      Proof.Hmac.Stream.PPC64LE.Md5.hash.finalize
-    verified := Proof.Hmac.Stream.PPC64LE.Md5.finalize }]
+    code := Impl.Hmac.Stream.PPC64LE.Fn.finalizeMd5
+    verified := Proof.Hmac.Stream.PPC64LE.Scrub.md5_finalize_scrubbed }]
+
+spec_apis artifacts
 
 end VG.Artifacts.HmacMd5.PPC64LE

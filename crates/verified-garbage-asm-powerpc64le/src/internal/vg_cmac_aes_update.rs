@@ -11,17 +11,17 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_cmac_aes_update() {
     core::arch::naked_asm!(
-        r#".base64 "pgIIfEAICPgQCMj5GAjo+SAICPooCCj6MAhI+jgIaPp4G258eCOPfHgrsHx4M9F8eDvyfHhDE30AADIo"
+        r#".base64 "pgIIfDAACPgAAMj5CADo+RAACPoYACj6IABI+igAaPp4G258eCOPfHgrsHx4M9F8eDvyfHhDE30AADIo"
 beq %cr0, 20f
 22:
-.base64 "AAAw6QAAUel4Uil9AAAw+QgAMOkIAFHpeFIpfQgAMPl4c8N9eHvkfXiDBX4BAMA4eJtnfg=="
+.base64 "AAAw6QAAUel4Uil9AAAw+QgAMOkIAFHpeFIpfQgAMPl4c8N9eHvkfXiDBX4BAMA4"
 bl {vg_aes_encrypt_blocks}
 .base64 "EAAxOv//UjoAADIo"
 bne %cr0, 22b
 b 21f
 20:
 21:
-.base64 "QAgT6BAI0+kYCPPpIAgT6igIM+owCFPqOAhz6qYDCHwgAIBO""#,
+.base64 "MAAT6AAA0+kIAPPpEAAT6hgAM+ogAFPqKABz6qYDCHwgAIBO""#,
         vg_aes_encrypt_blocks = sym crate::aes::vg_aes_encrypt_blocks::vg_aes_encrypt_blocks,
     )
 }

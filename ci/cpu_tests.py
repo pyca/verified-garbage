@@ -60,7 +60,7 @@ def runs_in(runner, test):
 
 GROUPS = {
     "aes_cbc": {
-        "lib": [],
+        "lib": ["cipher::aes::cbc"],
         "tests": ["cavp::aes_cbc", "wycheproof::aes_cbc"],
     },
     "aes_ccm": {
@@ -88,11 +88,11 @@ GROUPS = {
         "tests": ["cavp::aes_ofb"],
     },
     "aes_cfb": {
-        "lib": [],
+        "lib": ["cipher::aes::cfb"],
         "tests": ["cavp::aes_cfb"],
     },
     "aes_cfb8": {
-        "lib": [],
+        "lib": ["cipher::aes::cfb8"],
         "tests": ["cavp::aes_cfb8"],
     },
     "aes_ctr": {
@@ -115,6 +115,22 @@ GROUPS = {
         "lib": ["hashes::blake2"],
         "tests": ["blake2_kat::blake2b", "blake2_kat::blake2s", "rfc7693::blake2b", "rfc7693::blake2s"],
     },
+    "blowfish_cbc": {
+        "lib": [],
+        "tests": ["cavp::blowfish_cbc"],
+    },
+    "blowfish_cfb": {
+        "lib": [],
+        "tests": ["cavp::blowfish_cfb"],
+    },
+    "blowfish_ecb": {
+        "lib": [],
+        "tests": ["schneier_blowfish"],
+    },
+    "blowfish_ofb": {
+        "lib": [],
+        "tests": ["cavp::blowfish_ofb"],
+    },
     "brainpoolp256r1": {
         "lib": ["ec::validate::tests::brainpoolp256r1", "ec::compressed::tests::brainpoolp256r1"],
         "tests": [
@@ -123,6 +139,14 @@ GROUPS = {
             "wycheproof::ec_compressed::brainpoolp256r1",
             "wycheproof::ecdh_brainpoolp256r1",
             "wycheproof::ecdsa_brainpoolp256r1",
+        ],
+    },
+    "brainpoolp320r1": {
+        "lib": ["ec::validate::tests::brainpoolp320r1", "ec::compressed::tests::brainpoolp320r1"],
+        "tests": [
+            "wycheproof::ec_compressed::brainpoolp320r1",
+            "wycheproof::ecdh_brainpoolp320r1",
+            "wycheproof::ecdsa_brainpoolp320r1",
         ],
     },
     "brainpoolp384r1": {
@@ -144,6 +168,42 @@ GROUPS = {
             "wycheproof::ecdh_brainpoolp512r1",
             "wycheproof::ecdsa_brainpoolp512r1",
         ],
+    },
+    "camellia_cbc": {
+        "lib": [],
+        "tests": ["cavp::camellia_cbc"],
+    },
+    "camellia_cfb": {
+        "lib": [],
+        "tests": ["cavp::camellia_cfb"],
+    },
+    "camellia_ctr": {
+        "lib": [],
+        "tests": ["rfc5528"],
+    },
+    "camellia_ecb": {
+        "lib": [],
+        "tests": ["cavp::camellia_ecb"],
+    },
+    "camellia_ofb": {
+        "lib": [],
+        "tests": ["cavp::camellia_ofb"],
+    },
+    "cast5_cbc": {
+        "lib": [],
+        "tests": ["cryptography_cast5::cast5_cbc"],
+    },
+    "cast5_cfb": {
+        "lib": [],
+        "tests": ["cryptography_cast5::cast5_cfb"],
+    },
+    "cast5_ecb": {
+        "lib": [],
+        "tests": ["rfc2144"],
+    },
+    "cast5_ofb": {
+        "lib": [],
+        "tests": ["cryptography_cast5::cast5_ofb"],
     },
     "chacha20": {
         "lib": ["cipher::chacha20", "aead::chacha20poly1305"],
@@ -202,6 +262,7 @@ GROUPS = {
             "wycheproof::ecdsa_secp256k1",
             "wycheproof::ecdsa_p192",
             "wycheproof::ecdsa_brainpoolp256r1",
+            "wycheproof::ecdsa_brainpoolp320r1",
             "wycheproof::ecdsa_brainpoolp384r1",
             "wycheproof::ecdsa_brainpoolp512r1",
         ],
@@ -239,6 +300,15 @@ GROUPS = {
     "mlkem": {
         "lib": [],
         "tests": ["acvp::mlkem1024", "acvp::mlkem768", "wycheproof::mlkem1024", "wycheproof::mlkem768"],
+    },
+    "p192": {
+        "lib": ["ec::validate::tests::p192", "ec::compressed::tests::p192"],
+        "tests": [
+            "cavp::ecdh_p192",
+            "rfc6979::p192",
+            "wycheproof::ec_compressed::p192",
+            "wycheproof::ecdsa_p192",
+        ],
     },
     "p224": {
         "lib": ["ec::validate::tests::p224", "ec::compressed::tests::p224"],
@@ -299,6 +369,14 @@ GROUPS = {
             "wycheproof::chacha20::chacha20_poly1305_ciphertexts",
             "wycheproof::chacha20poly1305",
         ],
+    },
+    "rc2_cbc": {
+        "lib": [],
+        "tests": ["cavp::rc2_cbc"],
+    },
+    "rc4": {
+        "lib": [],
+        "tests": ["rfc6229"],
     },
     "rfc9106": {
         "lib": [],
@@ -391,6 +469,22 @@ GROUPS = {
             "wycheproof::ecdsa_secp256k1",
         ],
     },
+    "seed_cbc": {
+        "lib": [],
+        "tests": ["cavp::seed_cbc"],
+    },
+    "seed_cfb": {
+        "lib": [],
+        "tests": ["cavp::seed_cfb"],
+    },
+    "seed_ecb": {
+        "lib": [],
+        "tests": ["cavp::seed_ecb"],
+    },
+    "seed_ofb": {
+        "lib": [],
+        "tests": ["cavp::seed_ofb"],
+    },
     "sha1": {
         "lib": ["hashes::sha1", "hmac::sha1", "kdf::pbkdf2_hmac::sha1"],
         "tests": ["cavp::sha1", "wycheproof::hmac_sha1", "wycheproof::pbkdf2_sha1"],
@@ -433,6 +527,7 @@ GROUPS = {
             "rfc6979::p256::p256_sha384",
             "rfc6979::p384::p384_sha384",
             "rfc7027::brainpoolp384r1_ecdsa::ecdsa_and_invalid_keys",
+            "wycheproof::ecdsa_brainpoolp320r1",
             "wycheproof::ecdsa_brainpoolp384r1",
             "wycheproof::ecdsa_p384::ecdsa_secp384r1_sha384_p1363_test",
             "wycheproof::hmac_sha384",
@@ -447,6 +542,7 @@ GROUPS = {
             "rfc6979::p256::p256_sha384",
             "rfc6979::p384::p384_sha384",
             "rfc7027::brainpoolp384r1_ecdsa::ecdsa_and_invalid_keys",
+            "wycheproof::ecdsa_brainpoolp320r1",
             "wycheproof::ecdsa_brainpoolp384r1",
             "wycheproof::ecdsa_p384::ecdsa_secp384r1_sha384_p1363_test",
             "wycheproof::hmac_sha384",
@@ -498,9 +594,33 @@ GROUPS = {
             "rfc8032::signing_with_aliased_read_only_inputs",
         ],
     },
+    "sm3": {
+        "lib": ["hashes::sm3"],
+        "tests": ["sm3"],
+    },
+    "sm4_cbc": {
+        "lib": [],
+        "tests": ["draft_ribose_sm4::sm4_cbc"],
+    },
+    "sm4_cfb": {
+        "lib": [],
+        "tests": ["draft_ribose_sm4::sm4_cfb"],
+    },
+    "sm4_ctr": {
+        "lib": [],
+        "tests": ["draft_ribose_sm4::sm4_ctr"],
+    },
+    "sm4_ecb": {
+        "lib": ["cipher::sm4::ecb"],
+        "tests": ["draft_ribose_sm4::sm4_ecb"],
+    },
     "sm4_gcm": {
         "lib": ["aead::sm4_gcm"],
         "tests": ["rfc8998::sm4_gcm", "wycheproof::sm4_gcm"],
+    },
+    "sm4_ofb": {
+        "lib": [],
+        "tests": ["draft_ribose_sm4::sm4_ofb"],
     },
     "triple_des_cbc": {
         "lib": [],
@@ -510,9 +630,17 @@ GROUPS = {
         "lib": [],
         "tests": ["cavp::triple_des_cfb"],
     },
+    "triple_des_cfb8": {
+        "lib": [],
+        "tests": ["cavp::triple_des_cfb8"],
+    },
     "triple_des_ecb": {
         "lib": [],
         "tests": ["cavp::triple_des_ecb"],
+    },
+    "triple_des_ofb": {
+        "lib": [],
+        "tests": ["cavp::triple_des_ofb"],
     },
     "x25519": {
         "lib": ["x25519"],

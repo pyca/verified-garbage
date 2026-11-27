@@ -23,12 +23,13 @@ theorem GenerationMemory.congr {p : GenerationContext} {W : Nat → BitVec 64} {
 
 theorem onSuccess_generation_ok {p : GenerationContext} {W : Nat → BitVec 64} {s : State}
     {next : Prog isa} {Q : State → Prop} (h : GenerationMemory p W s)
-    (accepted : ∀ t, GenerationMemory p W t → t.mem = s.mem → Keep [.rax] s t → W 19 = 1 → WP isa next t Q)
+    (accepted : ∀ t, GenerationMemory p W t → t.mem = s.mem → Keep [.rax] s t → W 19 = 1 →
+      t.syms = s.syms → WP isa next t Q)
     (rejected : ∀ t, GenerationMemory p W t → t.mem = s.mem → Keep [.rax] s t → W 19 ≠ 1 → Q t) :
     WP isa (Impl.Dsa.X86_64.Generation.onSuccess next) s Q := by
   obtain ⟨V, R⟩ := h.rep
   exact onSuccess_ok h.layout R
-    (fun t hm hk hs => accepted t (h.congr hm hk) hm hk hs)
+    (fun t hm hk hs hy => accepted t (h.congr hm hk) hm hk hs hy)
     (fun t hm hk hs => rejected t (h.congr hm hk) hm hk hs)
 
 end VG.Proof.Dsa.X86_64.Generation

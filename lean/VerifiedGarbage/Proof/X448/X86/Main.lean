@@ -1,12 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.X448.Contract
-import VerifiedGarbage.Proof.X448.X86.BitsInput
-import VerifiedGarbage.Proof.X448.X86.Finish
-import VerifiedGarbage.Proof.X448.X86.Ladder
-import VerifiedGarbage.Proof.X448.X86.FinalSwap
+public import VerifiedGarbage.Proof.X448.X86.FinalSwap
 public import VerifiedGarbage.Proof.X448.X86.Inv
-public import VerifiedGarbage.Proof.X448.X86.Setup
 public import VerifiedGarbage.Proof.X448.X86.Frame
 public import VerifiedGarbage.Proof.X448.X86.Iter
 import VerifiedGarbage.Proof.X448.X86.FnLit
@@ -54,7 +50,7 @@ theorem far_output {base p : Addr} (hd : (⟨p, 56⟩ : Region).Disjoint ⟨base
   omega_using [h]
 
 theorem E_outside {base : Addr} {o n : Nat} {m m' : Mem} (h : Outside base o n m m') (i : Index)
-    (hi : slot i.val + 112 ≤ o ∨ o + n ≤ slot i.val) : E m' base i = E m base i := by
+    (hi : slot i.val + 56 ≤ o ∨ o + n ≤ slot i.val) : E m' base i = E m base i := by
   simp only [E, F]
   rw [h.fe hi (by have := i.isLt; simp only [slot]; omega_using [])]
 
@@ -70,13 +66,13 @@ end
 
 /-- After `setup`, from the entry state `σ`. -/
 def S1 (σ s : State) : Prop :=
-  Scr s (bs σ) ∧ BoundedEnv s.mem (bs σ) ∧ Keeps setupRegs σ s ∧
+  Scr s (bs σ) ∧ Keeps setupRegs σ s ∧
     Outside (bs σ) 0 8192 σ.mem s.mem ∧ Saved (bs σ) σ.gpr s.mem ∧
     E s.mem (bs σ) 0 = uOf σ ∧ E s.mem (bs σ) 1 = 1 ∧ E s.mem (bs σ) 2 = 0 ∧
     E s.mem (bs σ) 3 = E s.mem (bs σ) 0 ∧ E s.mem (bs σ) 4 = 1 ∧ word s.mem (bs σ) SWAP = 0
 
 theorem setup_stage {σ : State} (hp : Pre σ) : WP isa (.block setup) σ (S1 σ) := by
-  have hr : ∀ j < 56, InRegions (σ.rd ++ σ.wr) (off ((arg σ 2).setWidth 64) j) 1 := fun j hj =>
+  have hr : ∀ k < 14, InRegions (σ.rd ++ σ.wr) (off ((arg σ 2).setWidth 64) (4 * k)) 4 := fun j hj =>
     ⟨pointR σ, by rw [hp.rd]; simp, Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj])⟩
   exact setup_ok hp rfl rfl hr fun j hj => far hp.point_sc hj (by decide)
 
@@ -93,7 +89,7 @@ structure Mid (σ s : State) : Prop where
     s'.mem = s.mem → s'.rd = s.rd → s'.wr = s.wr → LInv (bs σ) (kOf σ) (uOf σ) s s' 448
 
 theorem bits_stage {σ s₁ : State} (hp : Pre σ) (h : S1 σ s₁) : WP isa bits s₁ (Mid σ) := by
-  obtain ⟨hs₁, b₁, k₁, o₁, sv₁, x1₁, x2₁, z2₁, x3₁, z3₁, sw₁⟩ := h
+  obtain ⟨hs₁, k₁, o₁, sv₁, x1₁, x2₁, z2₁, x3₁, z3₁, sw₁⟩ := h
   have kd : ∀ j < 56, 8192 ≤ ofs (bs σ) (off ((arg σ 1).setWidth 64) j) :=
     fun j hj => far hp.scalar_sc hj (by decide)
   refine WP.mono (bits_ok hp (k₁.1 _ (by decide)) k₁.2.1 k₁.2.2 rfl o₁ hs₁ kd)
@@ -102,11 +98,6 @@ theorem bits_stage {σ s₁ : State} (hp : Pre σ) (h : S1 σ s₁) : WP isa bit
   have hs₂ := hs₁.of_keeps k₂ (by decide)
   have e₂ : ∀ i : Index, E s₂.mem (bs σ) i = E s₁.mem (bs σ) i := by
     intro i; exact E_outside o₂ i (Or.inl (by have := i.isLt; simp only [slot, BITS]; omega_using []))
-  have b₂ : BoundedEnv s₂.mem (bs σ) := by
-    intro i j hj
-    rw [o₂.limbs (d := slot i.val) (Or.inl (by have := i.isLt; simp only [slot, BITS]; omega_using []))
-      (by have := i.isLt; simp only [slot]; omega_using []) hj]
-    exact b₁ i j hj
   have kb := bytesAt_outside o₁ kd
   have sp₂ : s₂.gpr .esp = σ.gpr .esp := k02.1 _ (by decide)
   have stk₂ : callStk s₂ = stkR σ := by
@@ -116,7 +107,7 @@ theorem bits_stage {σ s₁ : State} (hp : Pre σ) (h : S1 σ s₁) : WP isa bit
   refine ⟨hp, sp₂, k02.2.1, k02.2.2, sv₁.outside o₂ (by decide), o₁.trans (o₂.mono (by decide) (by decide)),
     fun t ht => by rw [bits₂ t ht, kb], fun s' hb hg hm hr hw => ⟨
       ⟨by rw [hg _ (by decide)]; exact hs₂.edi, hw ▸ hs₂.wr,
-        by rw [hg _ (by decide)]; exact hs₂.nowrap⟩, hc₂.keep (hg _ (by decide)), hm ▸ b₂,
+        by rw [hg _ (by decide)]; exact hs₂.nowrap⟩, hc₂.keep (hg _ (by decide)),
       ⟨fun r h => hg r (fun e => h (by subst r; exact List.mem_cons_self)), hr, hw⟩,
       hb, hm ▸ WsOut2.refl _ _ _ _ _ _,
       by rw [hm, e₂ 0, x1₁], by rw [hm, e₂ 1, x2₁]; rfl,
@@ -161,16 +152,16 @@ abbrev swOf (σ : State) : Bool := decide ((ladderAfter (kOf σ) (uOf σ) 0).swa
 
 /-- After the last swap, from the end `s₄` of the ladder. -/
 def Sw (σ s₂ s₄ s : State) : Prop :=
-  Lad σ s₂ s₄ 0 ∧ Keep (bs σ) s₄ s ∧ BoundedEnv s.mem (bs σ) ∧
+  Lad σ s₂ s₄ 0 ∧ Keep (bs σ) s₄ s ∧
     E s.mem (bs σ) = opSwap 2 4 (swOf σ) (opSwap 1 3 (swOf σ) (E s₄.mem (bs σ))) ∧ XFrame σ s.mem
 
 theorem lastSwap_stage {σ s₂ s : State} (h : Lad σ s₂ s 0) : WP isa (.block lastSwap) s (Sw σ s₂ s) := by
   obtain ⟨m, L, f⟩ := h
   refine WP.mono (xframe m.pre (c := .block lastSwap) (NoSp.of_all (by lit_decide)) (Nat.zero_le 20)
     (Lad.sp ⟨m, L, f⟩) (Lad.wr ⟨m, L, f⟩) f
-    (lastSwap_ok L.scr L.bounded
+    (lastSwap_ok L.scr
     (by have := ladderAfter_swap_le (kOf σ) (uOf σ) (n := 0) (by decide); omega_using [this]) L.swap))
-    fun t ⟨⟨k, b, e⟩, f'⟩ => ⟨⟨m, L, f⟩, k, b, e, f'⟩
+    fun t ⟨⟨k, e⟩, f'⟩ => ⟨⟨m, L, f⟩, k, e, f'⟩
 
 theorem Sw.fin {σ s₂ s₄ s : State} (h : Sw σ s₂ s₄ s) :
     Scr s (bs σ) ∧ CallCtx s (bs σ) ∧ s.gpr .esp = σ.gpr .esp ∧ s.wr = σ.wr := by
@@ -179,14 +170,14 @@ theorem Sw.fin {σ s₂ s₄ s : State} (h : Sw σ s₂ s₄ s) :
 
 /-- After the inversion, from its start `s₅`. -/
 def Iv (σ s₂ s₄ s₅ s : State) : Prop :=
-  Sw σ s₂ s₄ s₅ ∧ IKeep (bs σ) s₅ s ∧ BoundedEnv s.mem (bs σ) ∧
+  Sw σ s₂ s₄ s₅ ∧ IKeep (bs σ) s₅ s ∧
     E s.mem (bs σ) = invEnv (E s₅.mem (bs σ)) ∧ XFrame σ s.mem
 
 theorem invert_stage {σ s₂ s₄ s : State} (h : Sw σ s₂ s₄ s) :
     WP isa Impl.X448.X86.invert s (Iv σ s₂ s₄ s) := by
   obtain ⟨hs, hc, sp, wr⟩ := h.fin
-  refine WP.mono (xframe h.1.1.pre (NoSp.of_all (by lit_decide)) (by lit_decide) sp wr h.2.2.2.2
-    (invert_ok hs hc h.2.2.1)) fun t ⟨⟨k, b', e⟩, f'⟩ => ⟨h, k, b', e, f'⟩
+  refine WP.mono (xframe h.1.1.pre (NoSp.of_all (by lit_decide)) (by lit_decide) sp wr h.2.2.2
+    (invert_ok hs hc)) fun t ⟨⟨k, e⟩, f'⟩ => ⟨h, k, e, f'⟩
 
 theorem correct {s₀ : State} (hp : Pre s₀) :
     WP isa x448 s₀ fun s' => abiPreserved s₀ s' ∧ Proof.X448.x448X86.post s₀ s' := by
@@ -196,16 +187,16 @@ theorem correct {s₀ : State} (hp : Pre s₀) :
   refine WP.seq (WP.mono (ladder_stage m) fun s₄ l => ?_)
   refine WP.seq (WP.mono (lastSwap_stage l) fun s₅ w => ?_)
   refine WP.seq (WP.mono (invert_stage w) fun s₆ v => ?_)
-  obtain ⟨_, k₆, b₆, e₆, o₆⟩ := v
+  obtain ⟨_, k₆, e₆, o₆⟩ := v
   obtain ⟨hs₅, hc₅, sp₅, wr₅⟩ := w.fin
-  obtain ⟨⟨m', L, -⟩, k₅, -, e₅, -⟩ := w
+  obtain ⟨⟨m', L, -⟩, k₅, e₅, -⟩ := w
   have sv₆ := ((m'.saved.wsout2 L.mem (by decide) (by decide)).wsout2 k₅.mem (by decide)
     (by decide)).wsout2 k₆.mem (by decide) (by decide)
   have sp₆ : s₆.gpr .esp = s₀.gpr .esp := (k₆.regs.1 _ (by decide)).trans sp₅
   have rd₆ : s₆.rd = s₀.rd :=
     k₆.regs.2.1.trans (k₅.regs.2.1.trans (L.regs.2.1.trans m'.rd))
   have wr₆ : s₆.wr = s₀.wr := k₆.regs.2.2.trans wr₅
-  refine WP.mono (finish_ok hp sp₆ rd₆ wr₆ rfl o₆ (k₆.scr hs₅) (k₆.ctx hc₅) b₆
+  refine WP.mono (finish_ok hp sp₆ rd₆ wr₆ rfl o₆ (k₆.scr hs₅) (k₆.ctx hc₅)
     (fun j hj => far_output hp.out_sc hj) sv₆) fun s' ⟨restored, kf, fm, result⟩ => ?_
   refine ⟨?_, ?_⟩
   · refine ⟨?_, ?_⟩
@@ -240,7 +231,7 @@ theorem correct {s₀ : State} (hp : Pre s₀) :
     rw [result, x448_eq]
     apply congrArg Spec.X448.encodeUCoordinate
     rw [e₆, invEnv_x2, invEnv_eval, e₅]
-    simp (config := {decide := true}) only [opSwap, Function.update_apply, ite_true, ite_false]
+    simp (config := {decide := true}) only [opSwap, Fun.update_apply, ite_true, ite_false]
     rw [L.x2, L.x3, L.z2, L.z3, cswap_fst, cswap_fst]
 
 end VG.Proof.X448.X86

@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Hmac.Instance.initAnyKeyContract` of `VG.Spec.Hmac.md5I`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `inner` must be valid for reads and writes of 80 bytes.
@@ -61,7 +63,7 @@ b 212f
 bl {vg_md5_update_scratch}
 .base64 "cACV6oAA1eqIAPXqkAAV65gANet4ALXqIAAB6DAAITimAwh8oAEhOA=="
 21:
-.base64 "IACATg=="
+.base64 "AAAAOAH+IfggAIE5AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhAAAz4SAAM+FAADPhYAAz4YAAM+GgADPhwAAz4eAAM+IAADPiIAAz4kAAM+JgADPigAAz4qAAM+LAADPi4AAz4wAAM+MgADPjQAAz42AAM+OAADPjoAAz48AAM+PgADPgAAQz4CAEM+BABDPgYAQz4IAEM+CgBDPgwAQz4OAEM+EABDPhIAQz4UAEM+FgBDPhgAQz4aAEM+HABDPh4AQz4gAEM+IgBDPiQAQz4mAEM+KABDPioAQz4sAEM+LgBDPjAAQz4yAEM+NABDPjYAQz4AAIhOAAAYDgAAIA4AACgOAAAwDgAAOA4AAAAOQAAIDkAAEA5AABgOQAAgDkgAIBO"
 20:
 .base64 "kf4h+CAA4TimAgh80f8h+CAAAfgAAYf6CAGn+hABx/oYAef6IAEH+ygBJ/sAAKc6AADDOgAA5DoAAAY7AAAlO6AAhzoAAHQ4"
 bl {vg_md5_init}
@@ -71,7 +73,7 @@ bl {vg_md5_update_scratch}
 bl {vg_md5_finalize_scratch}
 .base64 "AAB2OAAAlzjwALU4EADAOAAA9TgAAZXqEAHV6hgB9eogARXrKAE16wgBteo="
 bl {vg_hmac_md5_init_scratch}
-.base64 "IAAB6DAAITimAwh8IACBOQAAYDkAAGz5CABs+RAAbPkYAGz5IABs+SgAbPkwAGz5OABs+UAAbPlIAGz5UABs+VgAbPlgAGz5aABs+XAAbPl4AGz5gABs+YgAbPmQAGz5mABs+aAAbPmoAGz5sABs+bgAbPnAAGz5yABs+dAAbPnYAGz54ABs+egAbPnwAGz5+ABs+QABbPkIAWz5EAFs+RgBbPkgAWz5KAFs+XABITg="
+.base64 "IAAB6DAAITimAwh8IACBOQAAADgAAAz4CAAM+BAADPgYAAz4IAAM+CgADPgwAAz4OAAM+EAADPhIAAz4UAAM+FgADPhgAAz4aAAM+HAADPh4AAz4gAAM+IgADPiQAAz4mAAM+KAADPioAAz4sAAM+LgADPjAAAz4yAAM+NAADPjYAAz44AAM+OgADPjwAAz4+AAM+AABDPgIAQz4EAEM+BgBDPggAQz4KAEM+HABITg="
 b 21b"#,
         vg_md5_init = sym super::md5::vg_md5_init,
         vg_md5_update_scratch = sym super::md5::vg_md5_update_scratch::vg_md5_update_scratch,
@@ -83,6 +85,8 @@ b 21b"#,
 /// Finishes an HMAC-MD5 computation: if, for a 64-byte key `K₀` and a text of fewer than 2⁶⁴ − 64 bytes, the MD5 streaming state `*inner` represents `(K₀ ⊕ ipad) ‖ text`, of `count` bytes, and `*outer` represents `K₀ ⊕ opad`, writes the HMAC-MD5 of the text under `K₀` (16 bytes) to `*out`.
 ///
 /// Contract: `VG.Spec.Hmac.Instance.finalizeContract` of `VG.Spec.Hmac.md5I`. Constant time: only the pointers and `count` may affect timing, not the states.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -101,7 +105,7 @@ bl {vg_md5_finalize_scratch}
 bl {vg_md5_update_scratch}
 .base64 "AAB0OFAAgDigALU4AADVOA=="
 bl {vg_md5_finalize_scratch}
-.base64 "oAAVgQAAF5GkABWBBAAXkagAFYEIABeRrAAVgQwAF5FwAJXqgADV6ogA9eqQABXrmAA163gAteogAAHoMAAhOKYDCHygASE4IACATg==""#,
+.base64 "oAAVgQAAF5GkABWBBAAXkagAFYEIABeRrAAVgQwAF5FwAJXqgADV6ogA9eqQABXrmAA163gAteogAAHoMAAhOKYDCHygASE4AAAAOAH+IfggAIE5AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhAAAz4SAAM+FAADPhYAAz4YAAM+GgADPhwAAz4eAAM+IAADPiIAAz4kAAM+JgADPigAAz4qAAM+LAADPi4AAz4wAAM+MgADPjQAAz42AAM+OAADPjoAAz48AAM+PgADPgAAQz4CAEM+BABDPgYAQz4IAEM+CgBDPgwAQz4OAEM+EABDPhIAQz4UAEM+FgBDPhgAQz4aAEM+HABDPh4AQz4gAEM+IgBDPiQAQz4mAEM+KABDPioAQz4sAEM+LgBDPjAAQz4yAEM+NABDPjYAQz4AAIhOAAAYDgAAIA4AACgOAAAwDgAAOA4AAAAOQAAIDkAAEA5AABgOQAAgDkgAIBO""#,
         vg_md5_finalize_scratch = sym super::md5::vg_md5_finalize_scratch::vg_md5_finalize_scratch,
         vg_md5_update_scratch = sym super::md5::vg_md5_update_scratch::vg_md5_update_scratch,
     )
@@ -110,6 +114,14 @@ bl {vg_md5_finalize_scratch}
 #[rustfmt::skip]
 #[path = "internal/vg_hmac_md5_finalize_scratch.rs"]
 pub(crate) mod vg_hmac_md5_finalize_scratch;
+
+#[rustfmt::skip]
+#[path = "internal/vg_hmac_md5_init_any_scratch.rs"]
+pub(crate) mod vg_hmac_md5_init_any_scratch;
+
+#[rustfmt::skip]
+#[path = "internal/vg_hmac_md5_init_core.rs"]
+pub(crate) mod vg_hmac_md5_init_core;
 
 #[rustfmt::skip]
 #[path = "internal/vg_hmac_md5_init_scratch.rs"]

@@ -7,9 +7,8 @@ import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Framework.TacticTemplate
 import VerifiedGarbage.Proof.Framework.Taint
-import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcMath
-import VerifiedGarbage.TCB.AArch64.Simd
 import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcWord
+import VerifiedGarbage.TCB.AArch64.Simd
 import VerifiedGarbage.Proof.Bignum.AArch64.Run
 
 @[expose] public section

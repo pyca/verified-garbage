@@ -12,7 +12,6 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Impl.X448.RISCV64
 public import VerifiedGarbage.Proof.X25519.RISCV64.Field
-import VerifiedGarbage.Proof.X25519.RISCV64.Pass
 
 /-!
 # Ed448 on RISCV64: the bits of the scalar

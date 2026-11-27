@@ -55,8 +55,10 @@ RUN printf '%s\n' \
 # * in the 32-bit image, the runner's (64-bit) libc and libstdc++, so that
 #   the Node binary GitHub Actions injects into the container for JS actions
 #   can run;
-# * in armv7-cross, the armhf cross-compiler, libc and OpenSSL, and qemu-arm
-#   (see ci/arm32-run);
+# * in armv7-cross, the armhf cross-compiler, libc and OpenSSL, with its
+#   legacy provider (a package of its own, which only the native `openssl`
+#   depends on: the benchmarks of Blowfish, CAST5, IDEA, RC2, RC4 and SEED
+#   load it), and qemu-arm (see ci/arm32-run);
 # * in lint, the cross-compiler, libc and OpenSSL of each other Linux
 #   target's architecture;
 # * gcc and libc6-dev, rustc's linker and the benchmarks' C build scripts
@@ -70,7 +72,7 @@ RUN printf '%s\n' \
 #   (rust-openssl).
 RUN case "$(dpkg --print-architecture)" in \
         i386) foreign=amd64; packages="libc6:amd64 libstdc++6:amd64" ;; \
-        arm64) foreign=armhf; packages="gcc-arm-linux-gnueabihf libc6-dev:armhf libssl-dev:armhf qemu-user" ;; \
+        arm64) foreign=armhf; packages="gcc-arm-linux-gnueabihf libc6-dev:armhf libssl-dev:armhf openssl-provider-legacy:armhf qemu-user" ;; \
         ppc64el) foreign=; packages= ;; \
         amd64) foreign="i386 arm64 armhf ppc64el riscv64"; \
             packages="gcc-i686-linux-gnu gcc-aarch64-linux-gnu gcc-arm-linux-gnueabihf gcc-powerpc64le-linux-gnu gcc-riscv64-linux-gnu"; \

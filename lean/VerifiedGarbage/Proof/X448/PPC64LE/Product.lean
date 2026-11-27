@@ -60,8 +60,8 @@ theorem accW_add (acc : Nat) (m : Mem) (b : Addr) (i : Nat) :
 
 /-- An element's fourteen limbs are its seven doublewords. -/
 theorem V_eq_cols (m : Mem) (b : Addr) (o : Nat) : V m b o = colsV (ew m b o) 7 := by
-  have h := accW_val32 o m b 7
-  have e : ∀ k, accW o m b k = colsV (ew m b o) k := by
+  obtain h := accW_val32 o m b 7
+  obtain e : ∀ k, accW o m b k = colsV (ew m b o) k := by
     intro k; induction k with
     | zero => rfl
     | succ k ih => rw [accW, colsV, ih]
@@ -137,35 +137,35 @@ theorem termR_ok {s0 : State} {k : Nat} {p : Nat × Nat} (hk : k < 13)
   obtain ⟨p04, p05, -, p0c⟩ := pw_facts k (by omega_using [hk])
   obtain ⟨p14, p15, -, p1c⟩ := pw_facts (k + 1) (by omega_using [hk])
   obtain ⟨p24, p25, -, p2c⟩ := pw_facts (k + 2) (by omega_using [hk])
-  have h01 : pw k ≠ pw (k + 1) := fun e => by have := pw_inj _ (by omega_using [hk]) _ (by omega_using [hk]) e; omega_using [this]
-  have h02 : pw k ≠ pw (k + 2) := fun e => by have := pw_inj _ (by omega_using [hk]) _ (by omega_using [hk]) e; omega_using [this]
-  have h12 : pw (k + 1) ≠ pw (k + 2) := fun e => by have := pw_inj _ (by omega_using [hk]) _ (by omega_using [hk]) e; omega_using [this]
+  obtain h01 : pw k ≠ pw (k + 1) := fun e => by have := pw_inj _ (by omega_using [hk]) _ (by omega_using [hk]) e; omega_using [this]
+  obtain h02 : pw k ≠ pw (k + 2) := fun e => by have := pw_inj _ (by omega_using [hk]) _ (by omega_using [hk]) e; omega_using [this]
+  obtain h12 : pw (k + 1) ≠ pw (k + 2) := fun e => by have := pw_inj _ (by omega_using [hk]) _ (by omega_using [hk]) e; omega_using [this]
   obtain ⟨a4, a5, -, -⟩ := op_facts p.1 hi
   obtain ⟨-, -, b4, b5⟩ := op_facts p.2 hj
-  have ka : s.gpr (opA p.1) = s0.gpr (opA p.1) := h.keep _ a0 a1 a2 a4 a5
-  have kb : s.gpr (opB p.2) = s0.gpr (opB p.2) := h.keep _ b0 b1 b2 b4 b5
+  obtain ka : s.gpr (opA p.1) = s0.gpr (opA p.1) := h.keep _ a0 a1 a2 a4 a5
+  obtain kb : s.gpr (opB p.2) = s0.gpr (opB p.2) := h.keep _ b0 b1 b2 b4 b5
   simp only [termR]
   refine wp_mul fun s1 u1 => wp_mulhu fun s2 u2 => ?_
   refine acc3_ok h01 h02 h12 p05 fun s3 hv3 hg3 hm3 hrd3 hwr3 hsp3 => WP.block_nil ?_
-  have hA := (s.gpr (opA p.1)).isLt
-  have hB := (s.gpr (opB p.2)).isLt
-  have g1a : s1.gpr (opA p.1) = s.gpr (opA p.1) := u1.other _ a4
-  have g1b : s1.gpr (opB p.2) = s.gpr (opB p.2) := u1.other _ b4
-  have elo : (s2.gpr .r4).toNat = opProd s0 p % 2 ^ 64 := by
+  obtain hA := (s.gpr (opA p.1)).isLt
+  obtain hB := (s.gpr (opB p.2)).isLt
+  obtain g1a : s1.gpr (opA p.1) = s.gpr (opA p.1) := u1.other _ a4
+  obtain g1b : s1.gpr (opB p.2) = s.gpr (opB p.2) := u1.other _ b4
+  obtain elo : (s2.gpr .r4).toNat = opProd s0 p % 2 ^ 64 := by
     rw [u2.other _ (by decide), u1.gpr, BitVec.toNat_mul, ka, kb]; rfl
-  have ehi : (s2.gpr .r5).toNat = opProd s0 p / 2 ^ 64 := by
+  obtain ehi : (s2.gpr .r5).toNat = opProd s0 p / 2 ^ 64 := by
     rw [u2.gpr, g1a, g1b, ka, kb, BitVec.toNat_ofNat, Nat.mod_eq_of_lt]
     · rfl
     · rw [← ka, ← kb]; exact Nat.div_lt_of_lt_mul (Nat.mul_lt_mul_of_lt_of_lt hA hB)
-  have e : (s2.gpr .r4).toNat + 2 ^ 64 * (s2.gpr .r5).toNat = opProd s0 p := by
+  obtain e : (s2.gpr .r4).toNat + 2 ^ 64 * (s2.gpr .r5).toNat = opProd s0 p := by
     rw [elo, ehi]; exact Nat.mod_add_div _ _
-  have hv2 : v3 s2 (pw k) (pw (k + 1)) (pw (k + 2)) = v3 s (pw k) (pw (k + 1)) (pw (k + 2)) := by
+  obtain hv2 : v3 s2 (pw k) (pw (k + 1)) (pw (k + 2)) = v3 s (pw k) (pw (k + 1)) (pw (k + 2)) := by
     simp only [v3, u2.other _ p05, u2.other _ p15, u2.other _ p25, u1.other _ p04, u1.other _ p14,
       u1.other _ p24]
-  have hr2 : Rest clobR s s2 := (u1.rest (by decide)).trans (u2.rest (by decide))
-  have hr3 : Rest clobR s2 s3 := ⟨fun r hr' => hg3 r (fun e => hr' (e ▸ p0c)) (fun e => hr' (e ▸ p1c))
+  obtain hr2 : Rest clobR s s2 := (u1.rest (by decide)).trans (u2.rest (by decide))
+  obtain hr3 : Rest clobR s2 s3 := ⟨fun r hr' => hg3 r (fun e => hr' (e ▸ p0c)) (fun e => hr' (e ▸ p1c))
     (fun e => hr' (e ▸ p2c)), hrd3, hwr3, hsp3⟩
-  have hm : s3.mem = s.mem := by rw [hm3, u2.mem, u1.mem]
+  obtain hm : s3.mem = s.mem := by rw [hm3, u2.mem, u1.mem]
   refine ⟨⟨h.ctx.of_rest (hr2.trans hr3) (by decide), h.rest.trans (hr2.trans hr3), hm.trans h.mem,
     fun r n0 n1 n2 n4 n5 => ?_⟩, fun hb => ?_⟩
   · rw [hg3 r n0 n1 n2, u2.other _ n5, u1.other _ n4]; exact h.keep r n0 n1 n2 n4 n5
@@ -185,7 +185,7 @@ theorem termsR_ok {s0 : State} {k : Nat} (hk : k < 13) :
     rw [List.flatMap_cons]
     rw [tsum_cons] at hb
     refine WP.append (termR_ok hk (hps p List.mem_cons_self) h) fun s1 ⟨h1, hv1⟩ => ?_
-    have hv1 := hv1 (by omega_using [hb])
+    obtain hv1 := hv1 (by omega_using [hb])
     refine WP.mono (termsR_ok hk ps (fun q hq => hps q (List.mem_cons_of_mem _ hq)) s1 h1 (by omega_arith))
       fun s2 ⟨h2, hv2⟩ => ⟨h2, ?_⟩
     rw [hv2, hv1, tsum_cons]; omega_using []
@@ -217,75 +217,75 @@ theorem colR_ok {s0 : State} {k : Nat} (hk : k < 13) {s : State} (h : ColS (b :=
   obtain ⟨p04, p05, -, p0c⟩ := pw_facts k (by omega_using [hk])
   obtain ⟨p14, p15, -, p1c⟩ := pw_facts (k + 1) (by omega_using [hk])
   obtain ⟨p24, p25, -, p2c⟩ := pw_facts (k + 2) (by omega_using [hk])
-  have h01 : pw k ≠ pw (k + 1) := fun e => by have := pw_inj _ (by omega_using [hk]) _ (by omega_using [hk]) e; omega_using [this]
-  have h02 : pw k ≠ pw (k + 2) := fun e => by have := pw_inj _ (by omega_using [hk]) _ (by omega_using [hk]) e; omega_using [this]
-  have h12 : pw (k + 1) ≠ pw (k + 2) := fun e => by have := pw_inj _ (by omega_using [hk]) _ (by omega_using [hk]) e; omega_using [this]
-  have hcons := pairs_cons k hk
+  obtain h01 : pw k ≠ pw (k + 1) := fun e => by have := pw_inj _ (by omega_using [hk]) _ (by omega_using [hk]) e; omega_using [this]
+  obtain h02 : pw k ≠ pw (k + 2) := fun e => by have := pw_inj _ (by omega_using [hk]) _ (by omega_using [hk]) e; omega_using [this]
+  obtain h12 : pw (k + 1) ≠ pw (k + 2) := fun e => by have := pw_inj _ (by omega_using [hk]) _ (by omega_using [hk]) e; omega_using [this]
+  obtain hcons := pairs_cons k hk
   generalize hp0 : (pairs k).headD (0, 0) = p0 at hcons
-  have hmem : p0 ∈ pairs k := by rw [hcons]; exact List.mem_cons_self
+  obtain hmem : p0 ∈ pairs k := by rw [hcons]; exact List.mem_cons_self
   obtain ⟨i0, j0, li0, lj0⟩ := pairs_ok k hk p0 hmem
   obtain ⟨ak, ak1, bk, bk1⟩ := head_facts k hk
   rw [hp0] at ak ak1 bk bk1
   obtain ⟨a4, a5, -, -⟩ := op_facts p0.1 i0
   obtain ⟨-, -, b4, b5⟩ := op_facts p0.2 j0
-  have ka : s.gpr (opA p0.1) = s0.gpr (opA p0.1) := (h.ops _ i0 li0).1
-  have kb : s.gpr (opB p0.2) = s0.gpr (opB p0.2) := (h.ops _ j0 lj0).2
+  obtain ka : s.gpr (opA p0.1) = s0.gpr (opA p0.1) := (h.ops _ i0 li0).1
+  obtain kb : s.gpr (opB p0.2) = s0.gpr (opB p0.2) := (h.ops _ j0 lj0).2
   unfold colR firstR
   rw [hp0]
   simp only [List.cons_append]
   -- The first term's product, then `pw (k + 2)` cleared, then the sum.
   refine wp_mul fun s1 u1 => wp_mulhu fun s2 u2 => wp_li (by decide) fun s3 u3 => ?_
   refine acc3_ok h01 h02 h12 p05 fun s4 hv4 hg4 hm4 hrd4 hwr4 hsp4 => ?_
-  have hA := (s.gpr (opA p0.1)).isLt
-  have hB := (s.gpr (opB p0.2)).isLt
-  have e : (s3.gpr .r4).toNat + 2 ^ 64 * (s3.gpr .r5).toNat = opProd s0 p0 := by
+  obtain hA := (s.gpr (opA p0.1)).isLt
+  obtain hB := (s.gpr (opB p0.2)).isLt
+  obtain e : (s3.gpr .r4).toNat + 2 ^ 64 * (s3.gpr .r5).toNat = opProd s0 p0 := by
     rw [u3.other _ (Ne.symm p24), u3.other _ (Ne.symm p25), u2.other _ (by decide), u1.gpr, u2.gpr,
       u1.other _ a4, u1.other _ b4, BitVec.toNat_mul, BitVec.toNat_ofNat,
       Nat.mod_eq_of_lt (Nat.div_lt_of_lt_mul (Nat.mul_lt_mul_of_lt_of_lt hA hB)), ka, kb]
     exact Nat.mod_add_div _ _
-  have hv3 : v3 s3 (pw k) (pw (k + 1)) (pw (k + 2)) =
+  obtain hv3 : v3 s3 (pw k) (pw (k + 1)) (pw (k + 2)) =
       (s.gpr (pw k)).toNat + 2 ^ 64 * (s.gpr (pw (k + 1))).toNat := by
     simp only [v3, u3.gpr, u3.other _ h02, u3.other _ h12, u2.other _ p05, u2.other _ p15,
       u1.other _ p04, u1.other _ p14]
     rfl
-  have hl := (s.gpr (pw k)).isLt
-  have hh := (s.gpr (pw (k + 1))).isLt
-  have hP : opProd s0 p0 < 2 ^ 128 := by
+  obtain hl := (s.gpr (pw k)).isLt
+  obtain hh := (s.gpr (pw (k + 1))).isLt
+  obtain hP : opProd s0 p0 < 2 ^ 128 := by
     rw [← e]; have := (s3.gpr .r4).isLt; have := (s3.gpr .r5).isLt; omega_arith
-  have hv4' := hv4 (by rw [hv3, Nat.add_assoc, e]; omega_arith)
+  obtain hv4' := hv4 (by rw [hv3, Nat.add_assoc, e]; omega_arith)
   rw [hv3, Nat.add_assoc, e] at hv4'
-  have hr3 : Rest clobR s s3 := (u1.rest (by decide)).trans ((u2.rest (by decide)).trans (u3.rest p2c))
-  have hr4 : Rest clobR s3 s4 := ⟨fun r hr' => hg4 r (fun e => hr' (e ▸ p0c)) (fun e => hr' (e ▸ p1c))
+  obtain hr3 : Rest clobR s s3 := (u1.rest (by decide)).trans ((u2.rest (by decide)).trans (u3.rest p2c))
+  obtain hr4 : Rest clobR s3 s4 := ⟨fun r hr' => hg4 r (fun e => hr' (e ▸ p0c)) (fun e => hr' (e ▸ p1c))
     (fun e => hr' (e ▸ p2c)), hrd4, hwr4, hsp4⟩
-  have hm4' : s4.mem = s.mem := by rw [hm4, u3.mem, u2.mem, u1.mem]
+  obtain hm4' : s4.mem = s.mem := by rw [hm4, u3.mem, u2.mem, u1.mem]
   -- Through `s4`, a register outside the accumulator and `r4`, `r5` is as it was.
-  have keep4 : ∀ r, r ≠ pw k → r ≠ pw (k + 1) → r ≠ pw (k + 2) → r ≠ .r4 → r ≠ .r5 → s4.gpr r = s.gpr r :=
+  obtain keep4 : ∀ r, r ≠ pw k → r ≠ pw (k + 1) → r ≠ pw (k + 2) → r ≠ .r4 → r ≠ .r5 → s4.gpr r = s.gpr r :=
     fun r n0 n1 n2 n4 n5 => by rw [hg4 r n0 n1 n2, u3.other _ n2, u2.other _ n5, u1.other _ n4]
-  have hRT : TermS (b := b) s4 k s4 := ⟨h.ctx.of_rest (hr3.trans hr4) (by decide), Rest.refl _ _, rfl,
+  obtain hRT : TermS (b := b) s4 k s4 := ⟨h.ctx.of_rest (hr3.trans hr4) (by decide), Rest.refl _ _, rfl,
     fun _ _ _ _ _ _ => rfl⟩
-  have htl := tail_facts k hk
-  have hF : ∀ p ∈ (pairs k).tail, opProd s4 p = opProd s0 p := fun p hp => by
+  obtain htl := tail_facts k hk
+  obtain hF : ∀ p ∈ (pairs k).tail, opProd s4 p = opProd s0 p := fun p hp => by
     obtain ⟨hi, hj, ⟨a0, a1, a2⟩, ⟨b0, b1, b2⟩⟩ := htl p hp
-    have hp' : p ∈ pairs k := by rw [hcons]; exact List.mem_cons_of_mem _ hp
+    obtain hp' : p ∈ pairs k := by rw [hcons]; exact List.mem_cons_of_mem _ hp
     obtain ⟨-, -, li, lj⟩ := pairs_ok k hk p hp'
     obtain ⟨c4, c5, -, -⟩ := op_facts p.1 hi
     obtain ⟨-, -, d4, d5⟩ := op_facts p.2 hj
     simp only [opProd, keep4 _ a0 a1 a2 c4 c5, keep4 _ b0 b1 b2 d4 d5, (h.ops _ hi li).1, (h.ops _ hj lj).2]
-  have hts : tsum (opProd s4) (pairs k).tail = tsum (opProd s0) (pairs k).tail := by
+  obtain hts : tsum (opProd s4) (pairs k).tail = tsum (opProd s0) (pairs k).tail := by
     unfold tsum; congr 1; exact List.map_congr_left hF
-  have hlt : tsum (opProd s4) (pairs k).tail < 7 * 2 ^ 128 :=
+  obtain hlt : tsum (opProd s4) (pairs k).tail < 7 * 2 ^ 128 :=
     tsum_lt7 (fun p => Nat.mul_le_mul (by have := (s4.gpr (opA p.1)).isLt; omega_using [])
       (by have := (s4.gpr (opB p.2)).isLt; omega_using [])) (by
         have := pairs_len k hk; rw [hcons] at this; simp only [List.length_cons] at this; omega_using [this])
   refine WP.mono (termsR_ok hk (pairs k).tail (fun p hp => htl p hp) s4 hRT
     (by rw [hv4']; omega_arith)) fun s5 ⟨h5, hv5⟩ => ?_
   rw [hv4', hts] at hv5
-  have htot : tsum (opProd s0) (pairs k) = opProd s0 p0 + tsum (opProd s0) (pairs k).tail := by
+  obtain htot : tsum (opProd s0) (pairs k) = opProd s0 p0 + tsum (opProd s0) (pairs k).tail := by
     rw [hcons, tsum_cons]; rfl
-  have hlow : ∀ j < k, s5.gpr (pw j) = s.gpr (pw j) := fun j hj => by
-    have n0 : pw j ≠ pw k := fun e => by have := pw_inj _ (by omega_using [hk, hj]) _ (by omega_using [hk]) e; omega_arith
-    have n1 : pw j ≠ pw (k + 1) := fun e => by have := pw_inj _ (by omega_using [hk, hj]) _ (by omega_using [hk]) e; omega_arith
-    have n2 : pw j ≠ pw (k + 2) := fun e => by have := pw_inj _ (by omega_using [hk, hj]) _ (by omega_using [hk]) e; omega_arith
+  obtain hlow : ∀ j < k, s5.gpr (pw j) = s.gpr (pw j) := fun j hj => by
+    obtain n0 : pw j ≠ pw k := fun e => by have := pw_inj _ (by omega_using [hk, hj]) _ (by omega_using [hk]) e; omega_arith
+    obtain n1 : pw j ≠ pw (k + 1) := fun e => by have := pw_inj _ (by omega_using [hk, hj]) _ (by omega_using [hk]) e; omega_arith
+    obtain n2 : pw j ≠ pw (k + 2) := fun e => by have := pw_inj _ (by omega_using [hk, hj]) _ (by omega_using [hk]) e; omega_arith
     obtain ⟨j4, j5, -, -⟩ := pw_facts j (by omega_using [hk, hj])
     rw [h5.keep _ n0 n1 n2 j4 j5, keep4 _ n0 n1 n2 j4 j5]
   refine ⟨h5.ctx, h.rest.trans (hr3.trans (hr4.trans h5.rest)), h5.mem.trans (hm4'.trans h.mem),
@@ -356,21 +356,21 @@ theorem columns_ok {s0 : State} (hc : Ctx b s0) (h0 : s0.gpr (pw 0) = 0) (h1 : s
     WP isa (.block ((List.range 13).flatMap colR)) s0 fun s' => Ctx b s' ∧ Rest clobR s0 s' ∧
       s'.mem = s0.mem ∧
       pwSum s' 14 = colsV (fun i => (s0.gpr (opA i)).toNat) 7 * colsV (fun j => (s0.gpr (opB j)).toNat) 7 := by
-  have hinit : ColS (b := b) s0 0 s0 := ⟨hc, Rest.refl _ _, rfl, fun _ _ _ => ⟨rfl, rfl⟩, by
+  obtain hinit : ColS (b := b) s0 0 s0 := ⟨hc, Rest.refl _ _, rfl, fun _ _ _ => ⟨rfl, rfl⟩, by
     simp only [pwSum, colsV, Nat.pow_zero, Nat.one_mul, Nat.zero_add, h0, h1]; rfl⟩
   refine WP.mono (colsR_ok 13 (Nat.le_refl _) s0 hinit) fun s4 h4 => ⟨h4.ctx, h4.rest, h4.mem, ?_⟩
   have hv := h4.val
   have e : (fun c => tsum (opProd s0) (pairs c)) =
       (fun c => tsum (fun p => (s0.gpr (opA p.1)).toNat * (s0.gpr (opB p.2)).toNat) (pairs c)) := rfl
   rw [e, cols_mul (fun i => (s0.gpr (opA i)).toNat) (fun j => (s0.gpr (opB j)).toNat)] at hv
-  have hlt : colsV (fun i => (s0.gpr (opA i)).toNat) 7 * colsV (fun j => (s0.gpr (opB j)).toNat) 7 <
+  obtain hlt : colsV (fun i => (s0.gpr (opA i)).toNat) 7 * colsV (fun j => (s0.gpr (opB j)).toNat) 7 <
       (2 ^ 64) ^ 14 := by
     have := colsV_lt (f := fun i => (s0.gpr (opA i)).toNat) (fun i => (s0.gpr (opA i)).isLt) 7
     have := colsV_lt (f := fun j => (s0.gpr (opB j)).toNat) (fun j => (s0.gpr (opB j)).isLt) 7
     exact Nat.lt_of_lt_of_le (Nat.mul_lt_mul_of_lt_of_lt (by assumption) (by assumption)) (by
       rw [← Nat.pow_add])
-  have h14 := (s4.gpr (pw 14)).isLt
-  have hp13 : pwSum s4 13 < (2 ^ 64) ^ 13 := colsV_lt (fun j => (s4.gpr (pw j)).isLt) 13
+  obtain h14 := (s4.gpr (pw 14)).isLt
+  obtain hp13 : pwSum s4 13 < (2 ^ 64) ^ 13 := colsV_lt (fun j => (s4.gpr (pw j)).isLt) 13
   rw [show pwSum s4 14 = pwSum s4 13 + (2 ^ 64) ^ 13 * (s4.gpr (pw 13)).toNat from rfl]
   rw [show (13 : Nat) + 1 = 14 from rfl] at hv
   generalize pwSum s4 13 = S at *

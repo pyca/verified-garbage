@@ -228,7 +228,7 @@ def prologueA (fold pass w : Nat) : Prog isa :=
 /-- After the call of `vg_chacha20_xor`: the Poly1305 state for the one-time
 key, the first 32 bytes of `ctx[672, 1696)`, by `vg_poly1305_init`'s code,
 called as `vg_poly1305_init_core`: the function exported under that name also
-clears what it leaves (`Proof.Poly1305.X86_64.initReg`), which this caller,
+clears what it leaves (`Proof.Poly1305.X86_64.init_scrubbed`), which this caller,
 which clears its own, does not need. -/
 def prologueB : Prog isa :=
   .seq (.block (anchor .rsi 128 ++ ptr .rdi .r15 448 ++ ptr .rsi .r15 672))

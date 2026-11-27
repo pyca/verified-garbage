@@ -1,16 +1,14 @@
 module
-public import VerifiedGarbage.Proof.AesCcm.X86_64.Chunk
-public import VerifiedGarbage.Proof.AesCcm.X86_64.CTBase
 
-import VerifiedGarbage.Proof.AesCcm.X86_64.Crypt
+public import VerifiedGarbage.Proof.AesCcm.X86_64.Crypt
+public import VerifiedGarbage.Proof.AesCcm.X86_64.CTBase
 import VerifiedGarbage.Proof.AesCcm.X86_64.Args
 import VerifiedGarbage.Proof.AesCcm.X86_64.Run
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.AesCcm.X86_64.Chunk
-meta import VerifiedGarbage.Proof.AesCcm.X86_64.CTBase
 meta import VerifiedGarbage.Proof.AesCcm.X86_64.Crypt
+meta import VerifiedGarbage.Proof.AesCcm.X86_64.CTBase
 meta import VerifiedGarbage.Proof.AesCcm.X86_64.Args
 meta import VerifiedGarbage.Proof.AesCcm.X86_64.Run
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc

@@ -15,6 +15,9 @@ meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Secp256k1.Lit
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Secp256k1.Lit
 public import VerifiedGarbage.Impl.Ecdsa.Verify.Secp256k1.X86_64
+public import VerifiedGarbage.Proof.Framework.X86_64.CallInlineN
+import VerifiedGarbage.Proof.Framework.KernelRfl
+meta import VerifiedGarbage.Proof.Framework.KernelRfl
 meta import VerifiedGarbage.Impl.Ecdsa.Verify.Secp256k1.X86_64
 
 /-!
@@ -37,8 +40,18 @@ def verifySecp256k1Erased : Prog isa := Code.erase verifySecp256k1
 
 materialize_shared verifySecp256k1Erased
 
-theorem verify_inlineOk : verifySecp256k1.InlineOk = true :=
-  Code.inlineOk_of_erase (show verifySecp256k1Erased.InlineOk = true by lit_decide)
+/-- `InlineOkN`, calls nested two deep (the additions call the end of the
+addition, `vg_secp256k1_jac_add_tail`). -/
+theorem verify_inlineOk : verifySecp256k1.InlineOkN 2 = true :=
+  Code.inlineOkN_of_erase (show verifySecp256k1Erased.InlineOkN 2 = true by lit_decide)
+
+/-- The code the proofs run: `verifySecp256k1` with the additions' end inline
+(`publicJointF`), which is `verifySecp256k1` inlined at every depth. -/
+abbrev verifySecp256k1F : Prog isa :=
+  Cfg.jointVerify Impl.Secp256k1.X86_64.secp256k1v Impl.Secp256k1.X86_64.publicJointF
+    (Impl.Secp256k1.X86_64.jointDouble Impl.Secp256k1.X86_64.publicJointF.K)
+
+theorem verify_inlineAll : verifySecp256k1.inlineAll = verifySecp256k1F.inline := by kernel_rfl
 
 theorem verify_rspMxcsr :
     verifySecp256k1.allInstrs (fun i => !Taint.clobbers i .rsp && !loadsMxcsr i) = true :=

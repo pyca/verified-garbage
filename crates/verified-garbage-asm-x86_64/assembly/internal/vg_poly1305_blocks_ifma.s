@@ -7,6 +7,11 @@
 vg_poly1305_blocks_ifma:
 	cmp rdx, 32
 	jb 20f
+	mov r9, rdx
+	call {vg_mcdt_enter}
+	test eax, eax
+	je 22f
+	mov rdx, r9
 	movabs rax, 1152921487695413247
 	mov r10, QWORD PTR [rdi+24]
 	and r10, rax
@@ -241,7 +246,7 @@ vg_poly1305_blocks_ifma:
 	mov rcx, rdx
 	shr rcx, 3
 	sub rcx, 1
-22:
+24:
 	vmovdqu32 zmm14, ZMMWORD PTR [rsi]
 	vmovdqu32 zmm15, ZMMWORD PTR [rsi+64]
 	vpunpcklqdq zmm8, zmm14, zmm15
@@ -305,7 +310,7 @@ vg_poly1305_blocks_ifma:
 	vpaddq zmm1, zmm1, zmm14
 	add rsi, 128
 	sub rcx, 1
-	jne 22b
+	jne 24b
 	vmovdqu32 zmm14, ZMMWORD PTR [rsi]
 	vmovdqu32 zmm15, ZMMWORD PTR [rsi+64]
 	vpunpcklqdq zmm8, zmm14, zmm15
@@ -683,14 +688,19 @@ vg_poly1305_blocks_ifma:
 	add rsi, 128
 	and rdx, 7
 	test rdx, rdx
-	je 23f
+	je 25f
 	call {vg_poly1305_blocks}
-	jmp 24f
+	jmp 26f
+25:
+26:
+	jmp 23f
+22:
+	mov rdx, r9
+	call {vg_poly1305_blocks}
 23:
-24:
 	jmp 21f
 20:
-	call {vg_poly1305_blocks_avx2}
+	call {vg_poly1305_blocks}
 21:
 	ret
 	.p2align 6

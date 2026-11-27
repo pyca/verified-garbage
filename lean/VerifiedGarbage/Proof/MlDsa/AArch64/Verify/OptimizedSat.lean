@@ -1,8 +1,45 @@
 module
 
-import VerifiedGarbage.Proof.MlDsa.AArch64.Message.OptimizedVerifyRoots
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedSat
 public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Lay
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.OptimizedPre
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTableWords
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TableWords
+
+/-! ### `MlDsa.AArch64.Message.OptimizedVerifyRoots`, which this module and modules that import it used -/
+
+section
+
+@[expose] public section
+
+namespace VG.Proof.MlDsa.AArch64.Message.OptimizedVerify
+open VG VG.AArch64 VG.Spec.MlDsa
+open VG.Proof.MlDsa.AArch64.Sign (StaticRoots signRootConsts)
+open VG.Proof.MlDsa.AArch64.Optimized
+open VG.Impl.MlDsa.AArch64.Message
+open Message.Optimized (rootRegions)
+
+theorem verify_pre_extend {p : Params} {s : State}
+    (h : (verifyContract p abi 16).pre (s.withRegions
+      [⟨s.gpr .x0,p.pkLen⟩,⟨s.gpr .x1,64⟩,⟨s.gpr .x2,p.sigLen⟩] s.wr))
+    (hr : StaticRoots 16 s)
+    (hd : s.rd=[⟨s.gpr .x0,p.pkLen⟩,⟨s.gpr .x1,64⟩,⟨s.gpr .x2,p.sigLen⟩]++rootRegions s) :
+    (verifyContract p (abi.withConsts signRootConsts) 16).pre s := by
+  sig_pre [verifyContract,verifySig,abi,argRegs,List.range,List.range.loop] at h
+  sig_pre [verifyContract,verifySig,abi,argRegs,Abi.withConsts,
+    VG.Proof.MlDsa.AArch64.Sign.signRootConsts_eq,Abi.constRegions,Abi.constsHeld,
+    TableConstants.staticNttWords_length,InverseTable.expandedWords_length,stackBelow,
+    List.range,List.range.loop]
+  obtain ⟨sp,wr,d1,d2,d3,k1,k2,k3,k4,n1,n2,n3,n4⟩ := h
+  exact ⟨sp,by rw [hd]; rfl,hr.forward.held,hr.inverse.held,hr.forward.fit,hr.forward.writable,
+    hr.forward.stack,hr.inverse.fit,hr.inverse.writable,hr.inverse.stack,hr.forward.aligned,hr.inverse.aligned,by rw [hd]; rfl,
+    wr,d1,d2,d3,k1,k2,k3,k4,n1,n2,n3,n4⟩
+
+end VG.Proof.MlDsa.AArch64.Message.OptimizedVerify
+
+end
+
+end
 
 @[expose] public section
 
@@ -32,8 +69,12 @@ theorem verifySatWith_roots (p : Params) (hp : Ok3 p) (m : Mem)
     (hi : ∀j<488,m.readW (1052480+BitVec.ofNat 64 (8*j)) 64=
       Impl.MlDsa.AArch64.Optimized.Inverse.expandedWords.getD j 0) :
     StaticRoots 16 (verifySatWith p m) := by
-  refine ⟨⟨hf,by dsimp [verifySatWith]; decide,?_,?_,?_,by dsimp [verifySatWith]; try decide⟩,
-    ⟨hi,by dsimp [verifySatWith]; decide,?_,?_,?_,by dsimp [verifySatWith]; try decide⟩⟩
+  -- The tables' addresses as numerals first: in a term that holds `p` and `m` the kernel adds
+  -- 3904 to an address, and takes its remainder by 64, in unary.
+  have ef : (verifySatWith p m).syms "VG_MLDSA_NTT_EXPANDED" = 1048576 := rfl
+  have ei : (verifySatWith p m).syms "VG_MLDSA_INV_FOLDED" = 1052480 := rfl
+  refine ⟨⟨hf,by rw [ef]; decide,?_,?_,?_,by rw [ef]; decide⟩,
+    ⟨hi,by rw [ei]; decide,?_,?_,?_,by rw [ei]; decide⟩⟩
   · apply Covers.one
     exact ⟨⟨1048576,3904⟩,by simp [verifySatWith],Region.contains_self _ _⟩
   · rcases hp with rfl|rfl|rfl

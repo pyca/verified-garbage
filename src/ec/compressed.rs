@@ -102,6 +102,21 @@ codec!(
     vg_ec_brainpoolp256r1_compress_public_key_auto,
     vg_ec_brainpoolp256r1_decompress_public_key_auto
 );
+#[cfg(any(
+    target_arch = "x86",
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "arm",
+    target_arch = "powerpc64",
+    target_arch = "riscv64"
+))]
+codec!(
+    BrainpoolP320r1,
+    40,
+    ec_brainpoolp320r1_compressed,
+    vg_ec_brainpoolp320r1_compress_public_key_auto,
+    vg_ec_brainpoolp320r1_decompress_public_key_auto
+);
 codec!(
     BrainpoolP384r1,
     48,
@@ -119,6 +134,15 @@ codec!(
 
 #[cfg(test)]
 mod tests {
+    #[cfg(any(
+        target_arch = "x86",
+        target_arch = "x86_64",
+        target_arch = "aarch64",
+        target_arch = "arm",
+        target_arch = "powerpc64",
+        target_arch = "riscv64"
+    ))]
+    use crate::ec::BrainpoolP320r1;
     use crate::ec::P521;
     use crate::ec::PrivateKey;
     use crate::ec::{
@@ -180,6 +204,15 @@ mod tests {
     cases!(p521, P521, 66);
     cases!(secp256k1, Secp256k1, 32);
     cases!(brainpoolp256r1, BrainpoolP256r1, 32);
+    #[cfg(any(
+        target_arch = "x86",
+        target_arch = "x86_64",
+        target_arch = "aarch64",
+        target_arch = "arm",
+        target_arch = "powerpc64",
+        target_arch = "riscv64"
+    ))]
+    cases!(brainpoolp320r1, BrainpoolP320r1, 40);
     cases!(brainpoolp384r1, BrainpoolP384r1, 48);
     cases!(brainpoolp512r1, BrainpoolP512r1, 64);
 }

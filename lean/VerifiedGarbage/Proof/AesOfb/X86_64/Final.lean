@@ -167,7 +167,7 @@ theorem cryptFinal_framed (v : BlocksImpl) :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackArgScratch 64 0 (cryptFinal v.enc v.suffix))
       (finalRoundsContract X86_64.abi 80) :=
-  X86_64.Verified.stackArgScratch (sig := Spec.Ofb.aesFinalSig) (nm := "save") (e := .u64) (n := 6)
+  X86_64.Verified.stackArgScratch (hpostOut := finalPost_localOut _) (sig := Spec.Ofb.aesFinalSig) (nm := "save") (e := .u64) (n := 6)
     (pre := finalPre X86_64.abi.ptrBits) (post := finalPost X86_64.abi.ptrBits) (wa := false)
     (stack := 16) (bytes := 64) (cryptFinal_verified v) (by decide) (by decide) (by decide)
     (cryptFinal_spSafe v) (cryptFinal_xdepth v) (finalPre_local _) (finalPost_local _) frameSat_pre

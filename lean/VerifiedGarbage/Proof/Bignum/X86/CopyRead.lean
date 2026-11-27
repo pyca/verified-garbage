@@ -1,7 +1,6 @@
 module
-public import VerifiedGarbage.Proof.Bignum.X86.CopyBytes
 
-import VerifiedGarbage.Proof.Bignum.X86.CopyRegion
+public import VerifiedGarbage.Proof.Bignum.X86.CopyRegion
 import VerifiedGarbage.Proof.Bignum.X86.ReverseRegion
 import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.Framework.Mem

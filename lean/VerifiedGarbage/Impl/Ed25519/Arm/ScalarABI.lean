@@ -18,11 +18,14 @@ def scalarSave (base : Reg) : List Instr :=
 def scalarRestore : List Instr :=
   (List.range 8).flatMap fun i => [.ldr (scalarSavedReg i) .r0 (4 * i)]
 
+/-- `out` is kept in `r8`, which the reduction leaves alone: the rows of its
+products store through `r7`, an address the taint analysis does not track,
+so it would not know a word of the working space to be `out` afterwards. -/
 def scalarReduceSetup : List Instr :=
-  scalarSave .r2 ++ [.str .r0 .r2 32, .mov .r0 (.reg .r2), .mov .r12 (.reg .r1)]
+  scalarSave .r2 ++ [.mov .r8 (.reg .r0), .mov .r0 (.reg .r2), .mov .r12 (.reg .r1)]
 
 def scalarFinish : List Instr :=
-  [.ldr .r12 .r0 32] ++ packField SR 0 ++ scalarRestore
+  [.mov .r12 (.reg .r8)] ++ packField SR 0 ++ scalarRestore
 
 def scalarReduce : Prog isa :=
   .seq (.block scalarReduceSetup) (.seq scalarReduceEngine (.block scalarFinish))

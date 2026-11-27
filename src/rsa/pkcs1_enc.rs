@@ -240,8 +240,9 @@ impl PrivateKey {
         match r {
             1 => {
                 // The function returns at most `n_len - 11` bytes.
-                let l = len[0] as usize;
-                out.drain(..k - l);
+                // NO-SECRET-RESIDUE: the bytes after the message are zeros
+                // (`RsaPkcs1Enc.writtenMsg`).
+                out.truncate(len[0] as usize);
                 Ok(out)
             }
             2 => Err(Error::Fault),

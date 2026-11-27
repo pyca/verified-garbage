@@ -2,11 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightRows
 public import VerifiedGarbage.Proof.Bignum.AArch64.MontMul
-public import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightSave
+public import VerifiedGarbage.Proof.Bignum.AArch64.WideZero
 import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightSetup
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareLayout
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareRaw
-import VerifiedGarbage.Proof.Bignum.AArch64.WideZero
 
 @[expose] public section
 namespace VG.Proof.Bignum.AArch64.ProductEight

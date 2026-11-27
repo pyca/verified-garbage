@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Context
 public import VerifiedGarbage.Proof.Gcm.PreparedContract
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
 import all Init.Data.Nat.Bitwise.Basic
-import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks.CT
+import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksVerified
 public import VerifiedGarbage.Spec.Gcm.Precomputed
 public import VerifiedGarbage.Proof.Gcm.Contract
 public import VerifiedGarbage.Proof.Gcm.OutOfPlaceContract

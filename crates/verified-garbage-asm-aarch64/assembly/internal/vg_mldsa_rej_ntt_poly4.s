@@ -178,7 +178,7 @@ vg_mldsa_rej_ntt_poly4:
 	str x30, [x1, #128]
 	add x0, x22, #0
 	bl {vg_keccak_f1600_x2}
-	ldr x30, [x1, #128]
+	ldr x30, [x19, #5008]
 	ldr x6, [x22, #0]
 	ldr x7, [x22, #8]
 	str x6, [x24, #0]
@@ -268,7 +268,7 @@ vg_mldsa_rej_ntt_poly4:
 	str x30, [x1, #128]
 	add x0, x23, #0
 	bl {vg_keccak_f1600_x2}
-	ldr x30, [x1, #128]
+	ldr x30, [x19, #5008]
 	ldr x6, [x23, #0]
 	ldr x7, [x23, #8]
 	str x6, [x26, #0]

@@ -1,11 +1,9 @@
 module
 
 -- separate module: its proofs (about 5 s, the doubling's stages) are not checked again when `AddOk` changes
-
 public import VerifiedGarbage.Proof.P256.X86_64.Ifma.Step
 public import VerifiedGarbage.Proof.Weierstrass.Jac
 public import VerifiedGarbage.Proof.Weierstrass.Env
-public import VerifiedGarbage.Proof.P256.X86_64.Ifma.Glue
 
 /-! ### `P256.X86_64.Ifma.StageFacts`, which only this module used -/
 
@@ -29,363 +27,330 @@ open VG VG.X86_64 VG.Impl.P256.X86_64.Ifma
 /-- The lanes of stage 0 of `dbl` that are known to be carried by their number. -/
 def dblOv0 : List (Nat × Nat) := [(0, 0), (0, 1), (0, 3)]
 
-theorem dbl_chk0 : chkSeg (dblPieces.getD 0 []) stT (dbl1 tops) (dblLocs.getD 0 []) = true := by
-  decide +kernel
+theorem dbl_chk0 : chkSeg (dblPieces.getD 0 []) stT (dbl1 tops) (dblLocs.getD 0 []) := by seg_rfl
 
-theorem dbl_iv0 : ivWithin stB (segT (dbl1 tops) stT) dblIV0 = true := by
-  decide +kernel
+theorem dbl_iv0 : ivWithin stB (segT (dbl1 tops) stT) dblIV0 = true :=
+  ivWithin_of (by decide +kernel)
 
 theorem dbl_ov0 : ovOk dblBT0 dblIV0 dblOv0 = true := by decide +kernel
 
 /-- The lanes of stage 1 of `dbl` that are known to be carried by their number. -/
 def dblOv1 : List (Nat × Nat) := []
 
-theorem dbl_chk1 : chkSeg (dblPieces.getD 1 []) (leaves (dblLocs.getD 0 [])) (dbl2 tops) (dblLocs.getD 1 []) = true := by
-  decide +kernel
+theorem dbl_chk1 : chkSeg (dblPieces.getD 1 []) (leaves (dblLocs.getD 0 [])) (dbl2 tops) (dblLocs.getD 1 []) := by seg_rfl
 
-theorem dbl_iv1 : ivWithin (bndsOf (dblLocs.getD 0 []) dblBT0) (segT (dbl2 tops) (leaves (dblLocs.getD 0 []))) dblIV1 = true := by
-  decide +kernel
+theorem dbl_iv1 : ivWithin (bndsOf (dblLocs.getD 0 []) dblBT0) (segT (dbl2 tops) (leaves (dblLocs.getD 0 []))) dblIV1 = true :=
+  ivWithin_of (by decide +kernel)
 
 theorem dbl_ov1 : ovOk dblBT1 dblIV1 dblOv1 = true := by decide +kernel
 
 /-- The lanes of stage 2 of `dbl` that are known to be carried by their number. -/
 def dblOv2 : List (Nat × Nat) := [(0, 0), (0, 1), (0, 2)]
 
-theorem dbl_chk2 : chkSeg (dblPieces.getD 2 []) (leaves (dblLocs.getD 1 [])) (dbl3 tops) (dblLocs.getD 2 []) = true := by
-  decide +kernel
+theorem dbl_chk2 : chkSeg (dblPieces.getD 2 []) (leaves (dblLocs.getD 1 [])) (dbl3 tops) (dblLocs.getD 2 []) := by seg_rfl
 
-theorem dbl_iv2 : ivWithin (bndsOf (dblLocs.getD 1 []) dblBT1) (segT (dbl3 tops) (leaves (dblLocs.getD 1 []))) dblIV2 = true := by
-  decide +kernel
+theorem dbl_iv2 : ivWithin (bndsOf (dblLocs.getD 1 []) dblBT1) (segT (dbl3 tops) (leaves (dblLocs.getD 1 []))) dblIV2 = true :=
+  ivWithin_of (by decide +kernel)
 
 theorem dbl_ov2 : ovOk dblBT2 dblIV2 dblOv2 = true := by decide +kernel
 
 /-- The lanes of stage 3 of `dbl` that are known to be carried by their number. -/
 def dblOv3 : List (Nat × Nat) := []
 
-theorem dbl_chk3 : chkSeg (dblPieces.getD 3 []) (leaves (dblLocs.getD 2 [])) (dbl4 tops) (dblLocs.getD 3 []) = true := by
-  decide +kernel
+theorem dbl_chk3 : chkSeg (dblPieces.getD 3 []) (leaves (dblLocs.getD 2 [])) (dbl4 tops) (dblLocs.getD 3 []) := by seg_rfl
 
-theorem dbl_iv3 : ivWithin (bndsOf (dblLocs.getD 2 []) dblBT2) (segT (dbl4 tops) (leaves (dblLocs.getD 2 []))) dblIV3 = true := by
-  decide +kernel
+theorem dbl_iv3 : ivWithin (bndsOf (dblLocs.getD 2 []) dblBT2) (segT (dbl4 tops) (leaves (dblLocs.getD 2 []))) dblIV3 = true :=
+  ivWithin_of (by decide +kernel)
 
 theorem dbl_ov3 : ovOk dblBT3 dblIV3 dblOv3 = true := by decide +kernel
 
 /-- The lanes of stage 4 of `dbl` that are known to be carried by their number. -/
 def dblOv4 : List (Nat × Nat) := [(0, 0), (0, 1), (0, 2), (0, 3)]
 
-theorem dbl_chk4 : chkSeg (dblPieces.getD 4 []) (leaves (dblLocs.getD 3 [])) (dbl5 tops) (dblLocs.getD 4 []) = true := by
-  decide +kernel
+theorem dbl_chk4 : chkSeg (dblPieces.getD 4 []) (leaves (dblLocs.getD 3 [])) (dbl5 tops) (dblLocs.getD 4 []) := by seg_rfl
 
-theorem dbl_iv4 : ivWithin (bndsOf (dblLocs.getD 3 []) dblBT3) (segT (dbl5 tops) (leaves (dblLocs.getD 3 []))) dblIV4 = true := by
-  decide +kernel
+theorem dbl_iv4 : ivWithin (bndsOf (dblLocs.getD 3 []) dblBT3) (segT (dbl5 tops) (leaves (dblLocs.getD 3 []))) dblIV4 = true :=
+  ivWithin_of (by decide +kernel)
 
 theorem dbl_ov4 : ovOk dblBT4 dblIV4 dblOv4 = true := by decide +kernel
 
 /-- The lanes of stage 5 of `dbl` that are known to be carried by their number. -/
 def dblOv5 : List (Nat × Nat) := []
 
-theorem dbl_chk5 : chkSeg (dblPieces.getD 5 []) (leaves (dblLocs.getD 4 [])) (dbl6 tops) regs20 = true := by
-  decide +kernel
+theorem dbl_chk5 : chkSeg (dblPieces.getD 5 []) (leaves (dblLocs.getD 4 [])) (dbl6 tops) regs20 := by seg_rfl
 
-theorem dbl_iv5 : ivWithin (bndsOf (dblLocs.getD 4 []) dblBT4) (segT (dbl6 tops) (leaves (dblLocs.getD 4 []))) dblIV5 = true := by
-  decide +kernel
+theorem dbl_iv5 : ivWithin (bndsOf (dblLocs.getD 4 []) dblBT4) (segT (dbl6 tops) (leaves (dblLocs.getD 4 []))) dblIV5 = true :=
+  ivWithin_of (by decide +kernel)
 
 theorem dbl_ov5 : ovOk stBT dblIV5 dblOv5 = true := by decide +kernel
 
 /-- The lanes of stage 0 of `add` that are known to be carried by their number. -/
 def addOv0 : List (Nat × Nat) := []
 
-theorem add_chk0 : chkSeg (addPieces.getD 0 []) addT (add1 tops) (addLocs.getD 0 []) = true := by
-  decide +kernel
+theorem add_chk0 : chkSeg (addPieces.getD 0 []) addT (add1 tops) (addLocs.getD 0 []) := by seg_rfl
 
-theorem add_iv0 : ivWithin addB (segT (add1 tops) addT) addIV0 = true := by
-  decide +kernel
+theorem add_iv0 : ivWithin addB (segT (add1 tops) addT) addIV0 = true :=
+  ivWithin_of (by decide +kernel)
 
 theorem add_ov0 : ovOk addBT0 addIV0 addOv0 = true := by decide +kernel
 
 /-- The lanes of stage 1 of `add` that are known to be carried by their number. -/
 def addOv1 : List (Nat × Nat) := [(0, 0), (0, 1), (0, 2), (0, 3)]
 
-theorem add_chk1 : chkSeg (addPieces.getD 1 []) (leaves (addLocs.getD 0 [])) (add2 tops) (addLocs.getD 1 []) = true := by
-  decide +kernel
+theorem add_chk1 : chkSeg (addPieces.getD 1 []) (leaves (addLocs.getD 0 [])) (add2 tops) (addLocs.getD 1 []) := by seg_rfl
 
-theorem add_iv1 : ivWithin (bndsOf (addLocs.getD 0 []) addBT0) (segT (add2 tops) (leaves (addLocs.getD 0 []))) addIV1 = true := by
-  decide +kernel
+theorem add_iv1 : ivWithin (bndsOf (addLocs.getD 0 []) addBT0) (segT (add2 tops) (leaves (addLocs.getD 0 []))) addIV1 = true :=
+  ivWithin_of (by decide +kernel)
 
 theorem add_ov1 : ovOk addBT1 addIV1 addOv1 = true := by decide +kernel
 
 /-- The lanes of stage 2 of `add` that are known to be carried by their number. -/
 def addOv2 : List (Nat × Nat) := []
 
-theorem add_chk2 : chkSeg (addPieces.getD 2 []) (leaves (addLocs.getD 1 [])) (add3 tops) (addLocs.getD 2 []) = true := by
-  decide +kernel
+theorem add_chk2 : chkSeg (addPieces.getD 2 []) (leaves (addLocs.getD 1 [])) (add3 tops) (addLocs.getD 2 []) := by seg_rfl
 
-theorem add_iv2 : ivWithin (bndsOf (addLocs.getD 1 []) addBT1) (segT (add3 tops) (leaves (addLocs.getD 1 []))) addIV2 = true := by
-  decide +kernel
+theorem add_iv2 : ivWithin (bndsOf (addLocs.getD 1 []) addBT1) (segT (add3 tops) (leaves (addLocs.getD 1 []))) addIV2 = true :=
+  ivWithin_of (by decide +kernel)
 
 theorem add_ov2 : ovOk addBT2 addIV2 addOv2 = true := by decide +kernel
 
 /-- The lanes of stage 3 of `add` that are known to be carried by their number. -/
 def addOv3 : List (Nat × Nat) := [(0, 0), (0, 1), (0, 2), (0, 3), (1, 0), (1, 1), (1, 2), (1, 3)]
 
-theorem add_chk3 : chkSeg (addPieces.getD 3 []) (leaves (addLocs.getD 2 [])) (add4 tops) (addLocs.getD 3 []) = true := by
-  decide +kernel
+theorem add_chk3 : chkSeg (addPieces.getD 3 []) (leaves (addLocs.getD 2 [])) (add4 tops) (addLocs.getD 3 []) := by seg_rfl
 
-theorem add_iv3 : ivWithin (bndsOf (addLocs.getD 2 []) addBT2) (segT (add4 tops) (leaves (addLocs.getD 2 []))) addIV3 = true := by
-  decide +kernel
+theorem add_iv3 : ivWithin (bndsOf (addLocs.getD 2 []) addBT2) (segT (add4 tops) (leaves (addLocs.getD 2 []))) addIV3 = true :=
+  ivWithin_of (by decide +kernel)
 
 theorem add_ov3 : ovOk addBT3 addIV3 addOv3 = true := by decide +kernel
 
 /-- The lanes of stage 4 of `add` that are known to be carried by their number. -/
 def addOv4 : List (Nat × Nat) := []
 
-theorem add_chk4 : chkSeg (addPieces.getD 4 []) (leaves (addLocs.getD 3 [])) (add5 tops) (addLocs.getD 4 []) = true := by
-  decide +kernel
+theorem add_chk4 : chkSeg (addPieces.getD 4 []) (leaves (addLocs.getD 3 [])) (add5 tops) (addLocs.getD 4 []) := by seg_rfl
 
-theorem add_iv4 : ivWithin (bndsOf (addLocs.getD 3 []) addBT3) (segT (add5 tops) (leaves (addLocs.getD 3 []))) addIV4 = true := by
-  decide +kernel
+theorem add_iv4 : ivWithin (bndsOf (addLocs.getD 3 []) addBT3) (segT (add5 tops) (leaves (addLocs.getD 3 []))) addIV4 = true :=
+  ivWithin_of (by decide +kernel)
 
 theorem add_ov4 : ovOk addBT4 addIV4 addOv4 = true := by decide +kernel
 
 /-- The lanes of stage 5 of `add` that are known to be carried by their number. -/
 def addOv5 : List (Nat × Nat) := [(0, 0), (0, 1), (0, 2), (0, 3)]
 
-theorem add_chk5 : chkSeg (addPieces.getD 5 []) (leaves (addLocs.getD 4 [])) (add6 tops) (addLocs.getD 5 []) = true := by
-  decide +kernel
+theorem add_chk5 : chkSeg (addPieces.getD 5 []) (leaves (addLocs.getD 4 [])) (add6 tops) (addLocs.getD 5 []) := by seg_rfl
 
-theorem add_iv5 : ivWithin (bndsOf (addLocs.getD 4 []) addBT4) (segT (add6 tops) (leaves (addLocs.getD 4 []))) addIV5 = true := by
-  decide +kernel
+theorem add_iv5 : ivWithin (bndsOf (addLocs.getD 4 []) addBT4) (segT (add6 tops) (leaves (addLocs.getD 4 []))) addIV5 = true :=
+  ivWithin_of (by decide +kernel)
 
 theorem add_ov5 : ovOk addBT5 addIV5 addOv5 = true := by decide +kernel
 
 /-- The lanes of stage 6 of `add` that are known to be carried by their number. -/
 def addOv6 : List (Nat × Nat) := []
 
-theorem add_chk6 : chkSeg (addPieces.getD 6 []) (leaves (addLocs.getD 5 [])) (add7 tops) regs20 = true := by
-  decide +kernel
+theorem add_chk6 : chkSeg (addPieces.getD 6 []) (leaves (addLocs.getD 5 [])) (add7 tops) regs20 := by seg_rfl
 
-theorem add_iv6 : ivWithin (bndsOf (addLocs.getD 5 []) addBT5) (segT (add7 tops) (leaves (addLocs.getD 5 []))) addIV6 = true := by
-  decide +kernel
+theorem add_iv6 : ivWithin (bndsOf (addLocs.getD 5 []) addBT5) (segT (add7 tops) (leaves (addLocs.getD 5 []))) addIV6 = true :=
+  ivWithin_of (by decide +kernel)
 
 theorem add_ov6 : ovOk stBT addIV6 addOv6 = true := by decide +kernel
 
 /-- The lanes of stage 0 of `set` that are known to be carried by their number. -/
 def setOv0 : List (Nat × Nat) := [(1, 0), (1, 1), (1, 2), (1, 3), (2, 0), (2, 1), (2, 2), (2, 3)]
 
-theorem set_chk0 : chkSeg (setPieces.getD 0 []) setT (set1 tops) (setLocs.getD 0 []) = true := by
-  decide +kernel
+theorem set_chk0 : chkSeg (setPieces.getD 0 []) setT (set1 tops) (setLocs.getD 0 []) := by seg_rfl
 
-theorem set_iv0 : ivWithin setB (segT (set1 tops) setT) setIV0 = true := by
-  decide +kernel
+theorem set_iv0 : ivWithin setB (segT (set1 tops) setT) setIV0 = true :=
+  ivWithin_of (by decide +kernel)
 
 theorem set_ov0 : ovOk setBT0 setIV0 setOv0 = true := by decide +kernel
 
 /-- The lanes of stage 1 of `set` that are known to be carried by their number. -/
 def setOv1 : List (Nat × Nat) := []
 
-theorem set_chk1 : chkSeg (setPieces.getD 1 []) (leaves (setLocs.getD 0 [])) (set2 tops) regs20 = true := by
-  decide +kernel
+theorem set_chk1 : chkSeg (setPieces.getD 1 []) (leaves (setLocs.getD 0 [])) (set2 tops) regs20 := by seg_rfl
 
-theorem set_iv1 : ivWithin (bndsOf (setLocs.getD 0 []) setBT0) (segT (set2 tops) (leaves (setLocs.getD 0 []))) setIV1 = true := by
-  decide +kernel
+theorem set_iv1 : ivWithin (bndsOf (setLocs.getD 0 []) setBT0) (segT (set2 tops) (leaves (setLocs.getD 0 []))) setIV1 = true :=
+  ivWithin_of (by decide +kernel)
 
 theorem set_ov1 : ovOk stBT setIV1 setOv1 = true := by decide +kernel
 
 /-- The lanes of stage 0 of `out` that are known to be carried by their number. -/
 def outOv0 : List (Nat × Nat) := [(0, 0), (0, 1), (0, 3)]
 
-theorem out_chk0 : chkSeg (outPieces.getD 0 []) stT (out1 tops) (outLocs.getD 0 []) = true := by
-  decide +kernel
+theorem out_chk0 : chkSeg (outPieces.getD 0 []) stT (out1 tops) (outLocs.getD 0 []) := by seg_rfl
 
-theorem out_iv0 : ivWithin stB (segT (out1 tops) stT) outIV0 = true := by
-  decide +kernel
+theorem out_iv0 : ivWithin stB (segT (out1 tops) stT) outIV0 = true :=
+  ivWithin_of (by decide +kernel)
 
 theorem out_ov0 : ovOk outBT0 outIV0 outOv0 = true := by decide +kernel
 
 /-- The lanes of stage 1 of `out` that are known to be carried by their number. -/
 def outOv1 : List (Nat × Nat) := []
 
-theorem out_chk1 : chkSeg (outPieces.getD 1 []) (leaves (outLocs.getD 0 [])) (out2 tops) (outLocs.getD 1 []) = true := by
-  decide +kernel
+theorem out_chk1 : chkSeg (outPieces.getD 1 []) (leaves (outLocs.getD 0 [])) (out2 tops) (outLocs.getD 1 []) := by seg_rfl
 
-theorem out_iv1 : ivWithin (bndsOf (outLocs.getD 0 []) outBT0) (segT (out2 tops) (leaves (outLocs.getD 0 []))) outIV1 = true := by
-  decide +kernel
+theorem out_iv1 : ivWithin (bndsOf (outLocs.getD 0 []) outBT0) (segT (out2 tops) (leaves (outLocs.getD 0 []))) outIV1 = true :=
+  ivWithin_of (by decide +kernel)
 
 theorem out_ov1 : ovOk outBT1 outIV1 outOv1 = true := by decide +kernel
 
 /-- The lanes of stage 2 of `out` that are known to be carried by their number. -/
 def outOv2 : List (Nat × Nat) := [(0, 0), (0, 1), (0, 3)]
 
-theorem out_chk2 : chkSeg (outPieces.getD 2 []) (leaves (outLocs.getD 1 [])) (out3 tops) regs5 = true := by
-  decide +kernel
+theorem out_chk2 : chkSeg (outPieces.getD 2 []) (leaves (outLocs.getD 1 [])) (out3 tops) regs5 := by seg_rfl
 
-theorem out_iv2 : ivWithin (bndsOf (outLocs.getD 1 []) outBT1) (segT (out3 tops) (leaves (outLocs.getD 1 []))) outIV2 = true := by
-  decide +kernel
+theorem out_iv2 : ivWithin (bndsOf (outLocs.getD 1 []) outBT1) (segT (out3 tops) (leaves (outLocs.getD 1 []))) outIV2 = true :=
+  ivWithin_of (by decide +kernel)
 
 theorem out_ov2 : ovOk outBT2 outIV2 outOv2 = true := by decide +kernel
 
 /-- The lanes of stage 0 of `convQ` that are known to be carried by their number. -/
 def convQOv0 : List (Nat × Nat) := [(4, 0), (4, 1), (4, 2), (4, 3)]
 
-theorem convQ_chk0 : chkSeg (convQPieces.getD 0 []) convQT (convQ tops) regs30 = true := by
-  decide +kernel
+theorem convQ_chk0 : chkSeg (convQPieces.getD 0 []) convQT (convQ tops) regs30 := by seg_rfl
 
-theorem convQ_iv0 : ivWithin stB (segT (convQ tops) convQT) convQIV0 = true := by
-  decide +kernel
+theorem convQ_iv0 : ivWithin stB (segT (convQ tops) convQT) convQIV0 = true :=
+  ivWithin_of (by decide +kernel)
 
 theorem convQ_ov0 : ovOk (stBT ++ entBT) convQIV0 convQOv0 = true := by decide +kernel
 
 /-- The lanes of stage 0 of `convG` that are known to be carried by their number. -/
 def convGOv0 : List (Nat × Nat) := []
 
-theorem convG_chk0 : chkSeg (convGPieces.getD 0 []) convGT (convG tops) regs30 = true := by
-  decide +kernel
+theorem convG_chk0 : chkSeg (convGPieces.getD 0 []) convGT (convG tops) regs30 := by seg_rfl
 
-theorem convG_iv0 : ivWithin stB (segT (convG tops) convGT) convGIV0 = true := by
-  decide +kernel
+theorem convG_iv0 : ivWithin stB (segT (convG tops) convGT) convGIV0 = true :=
+  ivWithin_of (by decide +kernel)
 
 theorem convG_ov0 : ovOk (stBT ++ entBT) convGIV0 convGOv0 = true := by decide +kernel
 
 /-- The lanes of stage 0 of `tabG` that are known to be carried by their number. -/
 def tabGOv0 : List (Nat × Nat) := []
 
-theorem tabG_chk0 : chkSeg (tabGPieces.getD 0 []) [rawPT] (tabG tops) regs10 = true := by
-  decide +kernel
+theorem tabG_chk0 : chkSeg (tabGPieces.getD 0 []) [rawPT] (tabG tops) regs10 := by seg_rfl
 
-theorem tabG_iv0 : ivWithin stB (segT (tabG tops) [rawPT]) tabGIV0 = true := by
-  decide +kernel
+theorem tabG_iv0 : ivWithin stB (segT (tabG tops) [rawPT]) tabGIV0 = true :=
+  ivWithin_of (by decide +kernel)
 
 theorem tabG_ov0 : ovOk entBT tabGIV0 tabGOv0 = true := by decide +kernel
 
 /-- The lanes of stage 0 of `dblu` that are known to be carried by their number. -/
 def dbluOv0 : List (Nat × Nat) := []
 
-theorem dblu_chk0 : chkSeg (dbluPieces.getD 0 []) [t5 0, t5 5] (dblu1 tops) (dbluLocs.getD 0 []) = true := by
-  decide +kernel
+theorem dblu_chk0 : chkSeg (dbluPieces.getD 0 []) [t5 0, t5 5] (dblu1 tops) (dbluLocs.getD 0 []) := by seg_rfl
 
-theorem dblu_iv0 : ivWithin (bndsOf regs10 entBT) (segT (dblu1 tops) [t5 0, t5 5]) dbluIV0 = true := by
-  decide +kernel
+theorem dblu_iv0 : ivWithin (bndsOf regs10 entBT) (segT (dblu1 tops) [t5 0, t5 5]) dbluIV0 = true :=
+  ivWithin_of (by decide +kernel)
 
 theorem dblu_ov0 : ovOk dbluBT0 dbluIV0 dbluOv0 = true := by decide +kernel
 
 /-- The lanes of stage 1 of `dblu` that are known to be carried by their number. -/
 def dbluOv1 : List (Nat × Nat) := [(0, 0), (0, 1), (0, 2), (0, 3)]
 
-theorem dblu_chk1 : chkSeg (dbluPieces.getD 1 []) (leaves (dbluLocs.getD 0 [])) (dblu2 tops) (dbluLocs.getD 1 []) = true := by
-  decide +kernel
+theorem dblu_chk1 : chkSeg (dbluPieces.getD 1 []) (leaves (dbluLocs.getD 0 [])) (dblu2 tops) (dbluLocs.getD 1 []) := by seg_rfl
 
-theorem dblu_iv1 : ivWithin (bndsOf (dbluLocs.getD 0 []) dbluBT0) (segT (dblu2 tops) (leaves (dbluLocs.getD 0 []))) dbluIV1 = true := by
-  decide +kernel
+theorem dblu_iv1 : ivWithin (bndsOf (dbluLocs.getD 0 []) dbluBT0) (segT (dblu2 tops) (leaves (dbluLocs.getD 0 []))) dbluIV1 = true :=
+  ivWithin_of (by decide +kernel)
 
 theorem dblu_ov1 : ovOk dbluBT1 dbluIV1 dbluOv1 = true := by decide +kernel
 
 /-- The lanes of stage 2 of `dblu` that are known to be carried by their number. -/
 def dbluOv2 : List (Nat × Nat) := []
 
-theorem dblu_chk2 : chkSeg (dbluPieces.getD 2 []) (leaves (dbluLocs.getD 1 [])) (dblu3 tops) (dbluLocs.getD 2 []) = true := by
-  decide +kernel
+theorem dblu_chk2 : chkSeg (dbluPieces.getD 2 []) (leaves (dbluLocs.getD 1 [])) (dblu3 tops) (dbluLocs.getD 2 []) := by seg_rfl
 
-theorem dblu_iv2 : ivWithin (bndsOf (dbluLocs.getD 1 []) dbluBT1) (segT (dblu3 tops) (leaves (dbluLocs.getD 1 []))) dbluIV2 = true := by
-  decide +kernel
+theorem dblu_iv2 : ivWithin (bndsOf (dbluLocs.getD 1 []) dbluBT1) (segT (dblu3 tops) (leaves (dbluLocs.getD 1 []))) dbluIV2 = true :=
+  ivWithin_of (by decide +kernel)
 
 theorem dblu_ov2 : ovOk dbluBT2 dbluIV2 dbluOv2 = true := by decide +kernel
 
 /-- The lanes of stage 3 of `dblu` that are known to be carried by their number. -/
 def dbluOv3 : List (Nat × Nat) := [(0, 0), (0, 1)]
 
-theorem dblu_chk3 : chkSeg (dbluPieces.getD 3 []) (leaves (dbluLocs.getD 2 [])) (dblu4 tops) (dbluLocs.getD 3 []) = true := by
-  decide +kernel
+theorem dblu_chk3 : chkSeg (dbluPieces.getD 3 []) (leaves (dbluLocs.getD 2 [])) (dblu4 tops) (dbluLocs.getD 3 []) := by seg_rfl
 
-theorem dblu_iv3 : ivWithin (bndsOf (dbluLocs.getD 2 []) dbluBT2) (segT (dblu4 tops) (leaves (dbluLocs.getD 2 []))) dbluIV3 = true := by
-  decide +kernel
+theorem dblu_iv3 : ivWithin (bndsOf (dbluLocs.getD 2 []) dbluBT2) (segT (dblu4 tops) (leaves (dbluLocs.getD 2 []))) dbluIV3 = true :=
+  ivWithin_of (by decide +kernel)
 
 theorem dblu_ov3 : ovOk dbluBT3 dbluIV3 dbluOv3 = true := by decide +kernel
 
 /-- The lanes of stage 4 of `dblu` that are known to be carried by their number. -/
 def dbluOv4 : List (Nat × Nat) := []
 
-theorem dblu_chk4 : chkSeg (dbluPieces.getD 4 []) (leaves (dbluLocs.getD 3 [])) (dblu5 tops) regs20 = true := by
-  decide +kernel
+theorem dblu_chk4 : chkSeg (dbluPieces.getD 4 []) (leaves (dbluLocs.getD 3 [])) (dblu5 tops) regs20 := by seg_rfl
 
-theorem dblu_iv4 : ivWithin (bndsOf (dbluLocs.getD 3 []) dbluBT3) (segT (dblu5 tops) (leaves (dbluLocs.getD 3 []))) dbluIV4 = true := by
-  decide +kernel
+theorem dblu_iv4 : ivWithin (bndsOf (dbluLocs.getD 3 []) dbluBT3) (segT (dblu5 tops) (leaves (dbluLocs.getD 3 []))) dbluIV4 = true :=
+  ivWithin_of (by decide +kernel)
 
 theorem dblu_ov4 : ovOk tabBT dbluIV4 dbluOv4 = true := by decide +kernel
 
 /-- The lanes of stage 0 of `zaddu` that are known to be carried by their number. -/
 def zadduOv0 : List (Nat × Nat) := [(0, 0), (0, 1), (0, 2), (0, 3)]
 
-theorem zaddu_chk0 : chkSeg (zadduPieces.getD 0 []) tabT (zaddu1 tops) (zadduLocs.getD 0 []) = true := by
-  decide +kernel
+theorem zaddu_chk0 : chkSeg (zadduPieces.getD 0 []) tabT (zaddu1 tops) (zadduLocs.getD 0 []) := by seg_rfl
 
-theorem zaddu_iv0 : ivWithin (bndsOf regs20 tabBT) (segT (zaddu1 tops) tabT) zadduIV0 = true := by
-  decide +kernel
+theorem zaddu_iv0 : ivWithin (bndsOf regs20 tabBT) (segT (zaddu1 tops) tabT) zadduIV0 = true :=
+  ivWithin_of (by decide +kernel)
 
 theorem zaddu_ov0 : ovOk zadduBT0 zadduIV0 zadduOv0 = true := by decide +kernel
 
 /-- The lanes of stage 1 of `zaddu` that are known to be carried by their number. -/
 def zadduOv1 : List (Nat × Nat) := []
 
-theorem zaddu_chk1 : chkSeg (zadduPieces.getD 1 []) (leaves (zadduLocs.getD 0 [])) (zaddu2 tops) (zadduLocs.getD 1 []) = true := by
-  decide +kernel
+theorem zaddu_chk1 : chkSeg (zadduPieces.getD 1 []) (leaves (zadduLocs.getD 0 [])) (zaddu2 tops) (zadduLocs.getD 1 []) := by seg_rfl
 
-theorem zaddu_iv1 : ivWithin (bndsOf (zadduLocs.getD 0 []) zadduBT0) (segT (zaddu2 tops) (leaves (zadduLocs.getD 0 []))) zadduIV1 = true := by
-  decide +kernel
+theorem zaddu_iv1 : ivWithin (bndsOf (zadduLocs.getD 0 []) zadduBT0) (segT (zaddu2 tops) (leaves (zadduLocs.getD 0 []))) zadduIV1 = true :=
+  ivWithin_of (by decide +kernel)
 
 theorem zaddu_ov1 : ovOk zadduBT1 zadduIV1 zadduOv1 = true := by decide +kernel
 
 /-- The lanes of stage 2 of `zaddu` that are known to be carried by their number. -/
 def zadduOv2 : List (Nat × Nat) := [(0, 0), (0, 1), (0, 2), (0, 3)]
 
-theorem zaddu_chk2 : chkSeg (zadduPieces.getD 2 []) (leaves (zadduLocs.getD 1 [])) (zaddu3 tops) (zadduLocs.getD 2 []) = true := by
-  decide +kernel
+theorem zaddu_chk2 : chkSeg (zadduPieces.getD 2 []) (leaves (zadduLocs.getD 1 [])) (zaddu3 tops) (zadduLocs.getD 2 []) := by seg_rfl
 
-theorem zaddu_iv2 : ivWithin (bndsOf (zadduLocs.getD 1 []) zadduBT1) (segT (zaddu3 tops) (leaves (zadduLocs.getD 1 []))) zadduIV2 = true := by
-  decide +kernel
+theorem zaddu_iv2 : ivWithin (bndsOf (zadduLocs.getD 1 []) zadduBT1) (segT (zaddu3 tops) (leaves (zadduLocs.getD 1 []))) zadduIV2 = true :=
+  ivWithin_of (by decide +kernel)
 
 theorem zaddu_ov2 : ovOk zadduBT2 zadduIV2 zadduOv2 = true := by decide +kernel
 
 /-- The lanes of stage 3 of `zaddu` that are known to be carried by their number. -/
 def zadduOv3 : List (Nat × Nat) := []
 
-theorem zaddu_chk3 : chkSeg (zadduPieces.getD 3 []) (leaves (zadduLocs.getD 2 [])) (zaddu4 tops) (zadduLocs.getD 3 []) = true := by
-  decide +kernel
+theorem zaddu_chk3 : chkSeg (zadduPieces.getD 3 []) (leaves (zadduLocs.getD 2 [])) (zaddu4 tops) (zadduLocs.getD 3 []) := by seg_rfl
 
-theorem zaddu_iv3 : ivWithin (bndsOf (zadduLocs.getD 2 []) zadduBT2) (segT (zaddu4 tops) (leaves (zadduLocs.getD 2 []))) zadduIV3 = true := by
-  decide +kernel
+theorem zaddu_iv3 : ivWithin (bndsOf (zadduLocs.getD 2 []) zadduBT2) (segT (zaddu4 tops) (leaves (zadduLocs.getD 2 []))) zadduIV3 = true :=
+  ivWithin_of (by decide +kernel)
 
 theorem zaddu_ov3 : ovOk zadduBT3 zadduIV3 zadduOv3 = true := by decide +kernel
 
 /-- The lanes of stage 4 of `zaddu` that are known to be carried by their number. -/
 def zadduOv4 : List (Nat × Nat) := [(0, 0), (0, 1), (0, 2), (0, 3)]
 
-theorem zaddu_chk4 : chkSeg (zadduPieces.getD 4 []) (leaves (zadduLocs.getD 3 [])) (zaddu5 tops) (zadduLocs.getD 4 []) = true := by
-  decide +kernel
+theorem zaddu_chk4 : chkSeg (zadduPieces.getD 4 []) (leaves (zadduLocs.getD 3 [])) (zaddu5 tops) (zadduLocs.getD 4 []) := by seg_rfl
 
-theorem zaddu_iv4 : ivWithin (bndsOf (zadduLocs.getD 3 []) zadduBT3) (segT (zaddu5 tops) (leaves (zadduLocs.getD 3 []))) zadduIV4 = true := by
-  decide +kernel
+theorem zaddu_iv4 : ivWithin (bndsOf (zadduLocs.getD 3 []) zadduBT3) (segT (zaddu5 tops) (leaves (zadduLocs.getD 3 []))) zadduIV4 = true :=
+  ivWithin_of (by decide +kernel)
 
 theorem zaddu_ov4 : ovOk zadduBT4 zadduIV4 zadduOv4 = true := by decide +kernel
 
 /-- The lanes of stage 5 of `zaddu` that are known to be carried by their number. -/
 def zadduOv5 : List (Nat × Nat) := []
 
-theorem zaddu_chk5 : chkSeg (zadduPieces.getD 5 []) (leaves (zadduLocs.getD 4 [])) (zaddu6 tops) (zadduLocs.getD 5 []) = true := by
-  decide +kernel
+theorem zaddu_chk5 : chkSeg (zadduPieces.getD 5 []) (leaves (zadduLocs.getD 4 [])) (zaddu6 tops) (zadduLocs.getD 5 []) := by seg_rfl
 
-theorem zaddu_iv5 : ivWithin (bndsOf (zadduLocs.getD 4 []) zadduBT4) (segT (zaddu6 tops) (leaves (zadduLocs.getD 4 []))) zadduIV5 = true := by
-  decide +kernel
+theorem zaddu_iv5 : ivWithin (bndsOf (zadduLocs.getD 4 []) zadduBT4) (segT (zaddu6 tops) (leaves (zadduLocs.getD 4 []))) zadduIV5 = true :=
+  ivWithin_of (by decide +kernel)
 
 theorem zaddu_ov5 : ovOk zadduBT5 zadduIV5 zadduOv5 = true := by decide +kernel
 
 /-- The lanes of stage 6 of `zaddu` that are known to be carried by their number. -/
 def zadduOv6 : List (Nat × Nat) := [(0, 3), (1, 0)]
 
-theorem zaddu_chk6 : chkSeg (zadduPieces.getD 6 []) (leaves (zadduLocs.getD 5 [])) (zaddu7 tops) regs20 = true := by
-  decide +kernel
+theorem zaddu_chk6 : chkSeg (zadduPieces.getD 6 []) (leaves (zadduLocs.getD 5 [])) (zaddu7 tops) regs20 := by seg_rfl
 
-theorem zaddu_iv6 : ivWithin (bndsOf (zadduLocs.getD 5 []) zadduBT5) (segT (zaddu7 tops) (leaves (zadduLocs.getD 5 []))) zadduIV6 = true := by
-  decide +kernel
+theorem zaddu_iv6 : ivWithin (bndsOf (zadduLocs.getD 5 []) zadduBT5) (segT (zaddu7 tops) (leaves (zadduLocs.getD 5 []))) zadduIV6 = true :=
+  ivWithin_of (by decide +kernel)
 
 theorem zaddu_ov6 : ovOk tabBT zadduIV6 zadduOv6 = true := by decide +kernel
 
@@ -394,7 +359,6 @@ end VG.Proof.P256.X86_64.Ifma
 end
 
 end
-
 
 /-!
 # P-256 on x86-64 with AVX512_IFMA: the doubling
@@ -429,15 +393,9 @@ variable {m : Nat} [NeZero m]
 def res (m : Nat) (v : Int) : Nat := (v % (m : Int)).toNat
 
 theorem res_cast (v : Int) : (res m v : Int) = v % (m : Int) := by
-  have hm : (0 : Int) < m := Int.natCast_pos.2 (Nat.pos_of_ne_zero (NeZero.ne m))
+  obtain hm : (0 : Int) < m := Int.natCast_pos.2 (Nat.pos_of_ne_zero (NeZero.ne m))
   have := Int.emod_nonneg v (Int.ne_of_gt hm)
   unfold res; omega_using [this]
-
-theorem res_lt (v : Int) : res m v < m := by
-  have hm : (0 : Int) < m := Int.natCast_pos.2 (Nat.pos_of_ne_zero (NeZero.ne m))
-  have h1 := Int.emod_lt_of_pos v hm
-  have := res_cast (m := m) v
-  omega_using [h1, this]
 
 theorem res_add (a b : Int) : res m (a + b) = (res m a + res m b) % m := by
   apply Int.ofNat.inj
@@ -500,10 +458,10 @@ theorem dec_nat_mul (n : Nat) (a : Int) : dec m ((n : Int) * a) = Fin.ofNat m n 
 /-- A Montgomery product. -/
 theorem dec_mont (hR : UnitMod m (2 ^ 260)) {o a b M : Int} (h : o * 2 ^ 260 = a * b + M * (m : Int)) :
     dec m o = dec m a * dec m b := by
-  have h1 := congrArg (ofI m) h
+  obtain h1 := congrArg (ofI m) h
   rw [ofI_add_mul, ofI_mul, ofI_mul, show ((2 : Int) ^ 260) = ((2 ^ 260 : Nat) : Int) from (Int.natCast_pow 2 260).symm,
     ofI_natCast] at h1
-  have hu := mul_rinv hR
+  obtain hu := mul_rinv hR
   unfold dec
   grind
 
@@ -647,7 +605,7 @@ theorem mul_fact {E : Env} {k : Nat} {a b : F5 T} (ha : Carried E k a) (hb : Car
   obtain ⟨M, h0, h1, h2⟩ := mulCore_val a b E k ha hb
   have a0 := ha.nonneg
   have b0 := hb.nonneg
-  have hp : vI E k a * vI E k b ≤ A * B := Int.mul_le_mul (Int.le_of_lt hA) (Int.le_of_lt hB) b0 (by omega_using [hA, a0])
+  obtain hp : vI E k a * vI E k b ≤ A * B := Int.mul_le_mul (Int.le_of_lt hA) (Int.le_of_lt hB) b0 (by omega_using [hA, a0])
   refine ⟨?_, ?_, ?_⟩
   · have := Int.mul_nonneg a0 b0
     simp only [pI] at h2
@@ -663,7 +621,7 @@ theorem sqr_fact {E : Env} {k : Nat} {a : F5 T} (ha : Carried E k a) (hA : vI E 
       D (vI E k (Id.run (sqrCore tops a))) = D (vI E k a) * D (vI E k a) := by
   obtain ⟨M, h0, h1, h2⟩ := sqrCore_val a E k ha
   have a0 := ha.nonneg
-  have hp : vI E k a * vI E k a ≤ Nb * Nb := Int.mul_le_mul (Int.le_of_lt hA) (Int.le_of_lt hA) a0 (by decide)
+  obtain hp : vI E k a * vI E k a ≤ Nb * Nb := Int.mul_le_mul (Int.le_of_lt hA) (Int.le_of_lt hA) a0 (by decide)
   refine ⟨?_, ?_, ?_⟩
   · have := Int.mul_nonneg a0 a0
     simp only [pI] at h2
@@ -758,19 +716,19 @@ theorem Lim.perm {bd : Int} {E : Env} {k k' : Nat} {a : F5 T} {x : Fin pN} (i0 i
     (hk : sel4 (i0 + 4 * i1 + 16 * i2 + 64 * i3) k = k') (h : Lim bd E k' a x) :
     Lim bd E k (Id.run (fperm tops a i0 i1 i2 i3)) x := by
   subst hk
-  have e := vI_fperm a i0 i1 i2 i3 E k
+  obtain e := vI_fperm a i0 i1 i2 i3 E k
   exact ⟨Carried.perm _ _ _ _ h.c, by rw [Id.run, e]; exact h.hi, by rw [Id.run, e]; exact h.d⟩
 
 theorem Lim.blendL {bd : Int} {E : Env} {k : Nat} {a b : F5 T} {m : Nat} {x : Fin pN} (hm : m < 16)
     (hk : m.testBit k = false) (h : Lim bd E k a x) : Lim bd E k (Id.run (fblend tops a b m)) x := by
-  have e := vI_fblend a b hm E k
+  obtain e := vI_fblend a b hm E k
   simp only [hk, Bool.false_eq_true, ↓reduceIte] at e
   exact ⟨Carried.blend hm (by simp only [hk, Bool.false_eq_true, ↓reduceIte]; exact h.c), by rw [Id.run, e]; exact h.hi,
     by rw [Id.run, e]; exact h.d⟩
 
 theorem Lim.blendR {bd : Int} {E : Env} {k : Nat} {a b : F5 T} {m : Nat} {x : Fin pN} (hm : m < 16)
     (hk : m.testBit k = true) (h : Lim bd E k b x) : Lim bd E k (Id.run (fblend tops a b m)) x := by
-  have e := vI_fblend a b hm E k
+  obtain e := vI_fblend a b hm E k
   simp only [hk, ↓reduceIte] at e
   exact ⟨Carried.blend hm (by simp only [hk, ↓reduceIte]; exact h.c), by rw [Id.run, e]; exact h.hi,
     by rw [Id.run, e]; exact h.d⟩
@@ -779,7 +737,7 @@ theorem Val.perm {bd : Int} {E : Env} {k k' : Nat} {a : F5 T} {x : Fin pN} (i0 i
     (hk : sel4 (i0 + 4 * i1 + 16 * i2 + 64 * i3) k = k') (h : Val bd E k' a x) :
     Val bd E k (Id.run (fperm tops a i0 i1 i2 i3)) x := by
   subst hk
-  have e := vI_fperm a i0 i1 i2 i3 E k
+  obtain e := vI_fperm a i0 i1 i2 i3 E k
   exact ⟨by rw [Id.run, e]; exact h.lo, by rw [Id.run, e]; exact h.hi, by rw [Id.run, e]; exact h.d⟩
 
 /-- The bounds of the top limb of a stage's carried vector, its first result. -/
@@ -798,14 +756,14 @@ theorem Same.car {iv : BT} {E' E : Env} {ys xs : List (F5 T)} (h : Same iv E' ys
     (hk : k < 4) (hb : iv.get j k = some b) {v : F5 T} (hv : xs.getD j zero5 = v) {bd : Int} {x : Fin pN}
     (hc : Lim bd E k v x) : Lim bd E' k (ys.getD j zero5) x := by
   subst hv
-  have e := h.vI hk hb
+  obtain e := h.vI hk hb
   exact ⟨h.carried hk hb hc.c, by rw [e]; exact hc.hi, by rw [e]; exact hc.d⟩
 
 theorem Same.raw {iv : BT} {E' E : Env} {ys xs : List (F5 T)} (h : Same iv E' ys E xs) (j k : Nat) {b : Int × Int}
     (hk : k < 4) (hb : iv.get j k = some b) {v : F5 T} (hv : xs.getD j zero5 = v) {bd : Int} {x : Fin pN}
     (hc : Val bd E k v x) : Val bd E' k (ys.getD j zero5) x := by
   subst hv
-  have e := h.vI hk hb
+  obtain e := h.vI hk hb
   exact ⟨by rw [e]; exact hc.lo, by rw [e]; exact hc.hi, by rw [e]; exact hc.d⟩
 
 /-- A limb of a lane. -/
@@ -852,7 +810,7 @@ theorem KeptW.of {w : Nat} {σ : VSym} {s₀ s : State} (h : SRel par σ s₀ s)
 
 /-- `cut_step`, with what the next piece needs of the state. -/
 theorem cut_step' {w : Nat} {c : List Instr} {ins : List (F5 T)} {seg : Seg Id T} {outs : List Loc}
-    (h : chkSegW w c ins seg outs = true) {s₀ : State} (hc : Ctx par s₀) {B : Bnds} (hB : EnvOK s₀ B)
+    (h : chkSegW w c ins seg outs) {s₀ : State} (hc : Ctx par s₀) {B : Bnds} (hB : EnvOK s₀ B)
     {iv bt : BT} {ovs : List (Nat × Nat)} (hiv : ivWithin B (segT seg ins) iv = true) (hov : ovOk bt iv ovs = true)
     {rs : List (F5 T)} (hrs : Id.run (seg ins) = rs)
     (hlen : outs.length = 5 * rs.length) (hrows : iv.length ≤ rs.length)
@@ -881,7 +839,6 @@ theorem list5 {α : Type} (l : List α) (d : α) (h : l.length = 5) :
 macro "rng" : tactic => `(tactic| (simp only [Nb, Pb, Wd, pI] at *; omega))
 
 end
-
 
 open VG VG.X86_64 VG.Impl.P256.X86_64.Ifma
 
@@ -979,22 +936,22 @@ theorem dbl_s0 {s₀ : State} (hc : Ctx par s₀) (hB : EnvOK s₀ stB) {xn un z
     WP isa (.block (dblPieces.getD 0 [])) s₀ fun s =>
       Ctx par s ∧ Kept s₀ s ∧ EnvOK s (bndsOf (dblLocs.getD 0 []) dblBT0) ∧
         DblCut1 (envOf s) ((dL 0).getD 0 zero5) ((dL 0).getD 1 zero5) ((dL 0).getD 2 zero5) xn un z := by
-  have v0 := dbl1g_v0 (t5 0) (t5 5) (t5 15) (envOf s₀)
-  have v1 := dbl1g_v1 (t5 0) (t5 5) (t5 15) (envOf s₀)
-  have v3 := dbl1g_v3 (t5 0) (t5 5) (t5 15) (envOf s₀)
+  obtain v0 := dbl1g_v0 (t5 0) (t5 5) (t5 15) (envOf s₀)
+  obtain v1 := dbl1g_v1 (t5 0) (t5 5) (t5 15) (envOf s₀)
+  obtain v3 := dbl1g_v3 (t5 0) (t5 5) (t5 15) (envOf s₀)
   obtain ⟨ul, uh, du, zn, a, x, aa, xx⟩ := h
-  have zl := zn.lo; have zh := zn.hi; have aal := aa.lo; have aah := aa.hi; have xxl := xx.lo; have xxh := xx.hi
+  obtain zl := zn.lo; have zh := zn.hi; have aal := aa.lo; have aah := aa.hi; have xxl := xx.lo; have xxh := xx.hi
   obtain ⟨i0, hi0⟩ := norm_iv dbl_iv0 (t := (Id.run (norm tops (Id.run (dbl1g tops (t5 0) (t5 5) (t5 15))))).l4) rfl 0
     (by decide) (b := _) rfl
   obtain ⟨i1, hi1⟩ := norm_iv dbl_iv0 (t := (Id.run (norm tops (Id.run (dbl1g tops (t5 0) (t5 5) (t5 15))))).l4) rfl 1
     (by decide) (b := _) rfl
   obtain ⟨i3, hi3⟩ := norm_iv dbl_iv0 (t := (Id.run (norm tops (Id.run (dbl1g tops (t5 0) (t5 5) (t5 15))))).l4) rfl 3
     (by decide) (b := _) rfl
-  have c0 : Car (envOf s₀) 0 _ (4 * un) := Car.norm hB _ (by decide) hi0 (by rw [v0]; rng) (by rw [v0]; rng)
+  obtain c0 : Car (envOf s₀) 0 _ (4 * un) := Car.norm hB _ (by decide) hi0 (by rw [v0]; rng) (by rw [v0]; rng)
     (by rw [v0]; d_ring [du])
-  have c1 : Car (envOf s₀) 1 _ (4 * un + 2 * z) := Car.norm hB _ (by decide) hi1 (by rw [v1]; rng) (by rw [v1]; rng)
+  obtain c1 : Car (envOf s₀) 1 _ (4 * un + 2 * z) := Car.norm hB _ (by decide) hi1 (by rw [v1]; rng) (by rw [v1]; rng)
     (by rw [v1]; d_ring [du, zn.d])
-  have c3 : Car (envOf s₀) 3 _ (fD xn z) := Car.norm hB _ (by decide) hi3 (by rw [v3]; rng) (by rw [v3]; rng)
+  obtain c3 : Car (envOf s₀) 3 _ (fD xn z) := Car.norm hB _ (by decide) hi3 (by rw [v3]; rng) (by rw [v3]; rng)
     (by rw [v3]; d_ring [aa.d, xx.d])
   refine WP.mono (cut_step' dbl_chk0 hc hB dbl_iv0 dbl_ov0
     (rs := [Id.run (norm tops (Id.run (dbl1g tops (t5 0) (t5 5) (t5 15)))), t5 15, t5 10]) rfl rfl (by decide) ?_)
@@ -1014,8 +971,8 @@ theorem dbl_s1 {s₀ : State} (hc : Ctx par s₀) (hB : EnvOK s₀ (bndsOf (dblL
       Ctx par s ∧ Kept s₀ s ∧ EnvOK s (bndsOf (dblLocs.getD 1 []) dblBT1) ∧
         DblCut2 (envOf s) ((dL 1).getD 0 zero5) ((dL 1).getD 1 zero5) ((dL 1).getD 2 zero5) ((dL 1).getD 3 zero5)
           xn un z := by
-  have hchk := dbl_chk1; have hiv := dbl_iv1
-  have hL := list3 (dL 0) zero5 (by decide +kernel)
+  obtain hchk := dbl_chk1; have hiv := dbl_iv1
+  obtain hL := list3 (dL 0) zero5 (by decide +kernel)
   simp only [dL] at h hL
   generalize leaves (dblLocs.getD 0 []) = L at h hchk hiv hL
   generalize L.getD 0 zero5 = o1, L.getD 1 zero5 = q3, L.getD 2 zero5 = n3 at h hL
@@ -1034,29 +991,29 @@ theorem dbl_s2 {s₀ : State} (hc : Ctx par s₀) (hB : EnvOK s₀ (bndsOf (dblL
       Ctx par s ∧ Kept s₀ s ∧ EnvOK s (bndsOf (dblLocs.getD 2 []) dblBT2) ∧
         DblCut3 (envOf s) ((dL 2).getD 0 zero5) ((dL 2).getD 1 zero5) ((dL 2).getD 2 zero5) ((dL 2).getD 3 zero5)
           xn un z := by
-  have hchk := dbl_chk2; have hiv := dbl_iv2
-  have hL := list4 (dL 1) zero5 (by decide +kernel)
+  obtain hchk := dbl_chk2; have hiv := dbl_iv2
+  obtain hL := list4 (dL 1) zero5 (by decide +kernel)
   simp only [dL] at h hL
   generalize leaves (dblLocs.getD 1 []) = L at h hchk hiv hL
   generalize L.getD 0 zero5 = q1, L.getD 1 zero5 = o1, L.getD 2 zero5 = q3, L.getD 3 zero5 = n3 at h hL
   subst hL
   obtain ⟨b, s, dd, d, a, x, xx⟩ := h
-  have v0 := dbl3g_v0 q1 n3 (envOf s₀)
-  have v1 := dbl3g_v1 q1 n3 (envOf s₀)
-  have v2 := dbl3g_v2 q1 n3 (envOf s₀)
-  have bl := b.lo; have bh := b.hi; have sl := s.lo; have sh := s.hi
-  have al := a.lo; have ah := a.hi; have xl := x.lo; have xh := x.hi
+  obtain v0 := dbl3g_v0 q1 n3 (envOf s₀)
+  obtain v1 := dbl3g_v1 q1 n3 (envOf s₀)
+  obtain v2 := dbl3g_v2 q1 n3 (envOf s₀)
+  obtain bl := b.lo; have bh := b.hi; have sl := s.lo; have sh := s.hi
+  obtain al := a.lo; have ah := a.hi; have xl := x.lo; have xh := x.hi
   obtain ⟨i0, hi0⟩ := norm_iv hiv (t := (Id.run (norm tops (Id.run (dbl3g tops q1 n3)))).l4) rfl 0 (by decide)
     (b := _) rfl
   obtain ⟨i1, hi1⟩ := norm_iv hiv (t := (Id.run (norm tops (Id.run (dbl3g tops q1 n3)))).l4) rfl 1 (by decide)
     (b := _) rfl
   obtain ⟨i2, hi2⟩ := norm_iv hiv (t := (Id.run (norm tops (Id.run (dbl3g tops q1 n3)))).l4) rfl 2 (by decide)
     (b := _) rfl
-  have c0 : Car (envOf s₀) 0 _ (fB un) := Car.norm hB _ (by decide) hi0 (by rw [v0]; rng) (by rw [v0]; rng)
+  obtain c0 : Car (envOf s₀) 0 _ (fB un) := Car.norm hB _ (by decide) hi0 (by rw [v0]; rng) (by rw [v0]; rng)
     (by rw [v0]; exact b.d)
-  have c1 : Car (envOf s₀) 1 _ (fZ3 un z) := Car.norm hB _ (by decide) hi1 (by rw [v1]; rng) (by rw [v1]; rng)
+  obtain c1 : Car (envOf s₀) 1 _ (fZ3 un z) := Car.norm hB _ (by decide) hi1 (by rw [v1]; rng) (by rw [v1]; rng)
     (by rw [v1]; d_ring [b.d, s.d, a.d])
-  have c2 : Car (envOf s₀) 2 _ (fXB xn un) := Car.norm hB _ (by decide) hi2 (by rw [v2]; rng) (by rw [v2]; rng)
+  obtain c2 : Car (envOf s₀) 2 _ (fXB xn un) := Car.norm hB _ (by decide) hi2 (by rw [v2]; rng) (by rw [v2]; rng)
     (by rw [v2]; d_ring [b.d, x.d])
   refine WP.mono (cut_step' hchk hc hB hiv dbl_ov2
     (rs := [Id.run (norm tops (Id.run (dbl3g tops q1 n3))), q1, o1, q3]) rfl rfl (Nat.le_of_eq rfl) ?_)
@@ -1077,8 +1034,8 @@ theorem dbl_s3 {s₀ : State} (hc : Ctx par s₀) (hB : EnvOK s₀ (bndsOf (dblL
       Ctx par s ∧ Kept s₀ s ∧ EnvOK s (bndsOf (dblLocs.getD 3 []) dblBT3) ∧
         DblCut4 (envOf s) ((dL 3).getD 0 zero5) ((dL 3).getD 1 zero5) ((dL 3).getD 2 zero5) ((dL 3).getD 3 zero5)
           ((dL 3).getD 4 zero5) xn un z := by
-  have hchk := dbl_chk3; have hiv := dbl_iv3
-  have hL := list4 (dL 2) zero5 (by decide +kernel)
+  obtain hchk := dbl_chk3; have hiv := dbl_iv3
+  obtain hL := list4 (dL 2) zero5 (by decide +kernel)
   simp only [dL] at h hL
   generalize leaves (dblLocs.getD 2 []) = L at h hchk hiv hL
   generalize L.getD 0 zero5 = o2, L.getD 1 zero5 = q1, L.getD 2 zero5 = o1, L.getD 3 zero5 = q3 at h hL
@@ -1097,22 +1054,22 @@ theorem dbl_s4 {s₀ : State} (hc : Ctx par s₀) (hB : EnvOK s₀ (bndsOf (dblL
       Ctx par s ∧ Kept s₀ s ∧ EnvOK s (bndsOf (dblLocs.getD 4 []) dblBT4) ∧
         DblCut5 (envOf s) ((dL 4).getD 0 zero5) ((dL 4).getD 1 zero5) ((dL 4).getD 2 zero5) ((dL 4).getD 3 zero5)
           xn un z := by
-  have hchk := dbl_chk4; have hiv := dbl_iv4
-  have hL := list5 (dL 3) zero5 (by decide +kernel)
+  obtain hchk := dbl_chk4; have hiv := dbl_iv4
+  obtain hL := list5 (dL 3) zero5 (by decide +kernel)
   simp only [dL] at h hL
   generalize leaves (dblLocs.getD 3 []) = L at h hchk hiv hL
   generalize L.getD 0 zero5 = q2, L.getD 1 zero5 = o2, L.getD 2 zero5 = q1, L.getD 3 zero5 = o1,
     L.getD 4 zero5 = q3 at h hL
   subst hL
   obtain ⟨bb, a3, xb2, z3, dd, d, xx⟩ := h
-  have v0 := dbl5g_v0 q2 q1 o1 q3 (envOf s₀)
-  have v1 := dbl5g_v1 q2 q1 o1 q3 (envOf s₀)
-  have v2 := dbl5g_v2 q2 q1 o1 q3 (envOf s₀)
-  have v3 := dbl5g_v3 q2 q1 o1 q3 (envOf s₀)
-  have vd := dbl5g_dd q2 q1 o1 q3 (envOf s₀)
-  have vb := dbl5g_bb q2 q1 o1 q3 (envOf s₀)
-  have bbl := bb.lo; have bbh := bb.hi; have a3l := a3.lo; have a3h := a3.hi; have xbl := xb2.lo; have xbh := xb2.hi
-  have ddl := dd.lo; have ddh := dd.hi; have dl := d.lo; have dh := d.hi; have xxl := xx.lo; have xxh := xx.hi
+  obtain v0 := dbl5g_v0 q2 q1 o1 q3 (envOf s₀)
+  obtain v1 := dbl5g_v1 q2 q1 o1 q3 (envOf s₀)
+  obtain v2 := dbl5g_v2 q2 q1 o1 q3 (envOf s₀)
+  obtain v3 := dbl5g_v3 q2 q1 o1 q3 (envOf s₀)
+  obtain vd := dbl5g_dd q2 q1 o1 q3 (envOf s₀)
+  obtain vb := dbl5g_bb q2 q1 o1 q3 (envOf s₀)
+  obtain bbl := bb.lo; have bbh := bb.hi; have a3l := a3.lo; have a3h := a3.hi; have xbl := xb2.lo; have xbh := xb2.hi
+  obtain ddl := dd.lo; have ddh := dd.hi; have dl := d.lo; have dh := d.hi; have xxl := xx.lo; have xxh := xx.hi
   obtain ⟨i0, hi0⟩ := norm_iv hiv (t := (Id.run (norm tops (Id.run (dbl5g tops q2 q1 o1 q3)).1)).l4) rfl 0
     (by decide) (b := _) rfl
   obtain ⟨i1, hi1⟩ := norm_iv hiv (t := (Id.run (norm tops (Id.run (dbl5g tops q2 q1 o1 q3)).1)).l4) rfl 1
@@ -1121,20 +1078,20 @@ theorem dbl_s4 {s₀ : State} (hc : Ctx par s₀) (hB : EnvOK s₀ (bndsOf (dblL
     (by decide) (b := _) rfl
   obtain ⟨i3, hi3⟩ := norm_iv hiv (t := (Id.run (norm tops (Id.run (dbl5g tops q2 q1 o1 q3)).1)).l4) rfl 3
     (by decide) (b := _) rfl
-  have c0 : Car (envOf s₀) 0 _ (fE xn un z) := Car.norm hB _ (by decide) hi0
+  obtain c0 : Car (envOf s₀) 0 _ (fE xn un z) := Car.norm hB _ (by decide) hi0
     (by rw [v0]; simp only [dblW]; rng) (by rw [v0]; simp only [dblW]; rng)
     (by rw [v0]; simp only [dblW]; d_ring [bb.d, xb2.d, dd.d, xx.d])
-  have c1 : Car (envOf s₀) 1 _ (fZ3 un z * fZ3 un z) := Car.norm hB _ (by decide) hi1 (by rw [v1]; rng)
+  obtain c1 : Car (envOf s₀) 1 _ (fZ3 un z * fZ3 un z) := Car.norm hB _ (by decide) hi1 (by rw [v1]; rng)
     (by rw [v1]; rng) (by rw [v1]; exact a3.d)
-  have c2 : Car (envOf s₀) 2 _ (fE xn un z + fD xn z) := Car.norm hB _ (by decide) hi2
+  obtain c2 : Car (envOf s₀) 2 _ (fE xn un z + fD xn z) := Car.norm hB _ (by decide) hi2
     (by rw [v2]; simp only [dblW]; rng) (by rw [v2]; simp only [dblW]; rng)
     (by rw [v2]; simp only [dblW]; d_ring [bb.d, xb2.d, dd.d, xx.d, d.d])
-  have c3 : Car (envOf s₀) 3 _ (fX3 xn un z) := Car.norm hB _ (by decide) hi3
+  obtain c3 : Car (envOf s₀) 3 _ (fX3 xn un z) := Car.norm hB _ (by decide) hi3
     (by rw [v3]; simp only [dblW]; rng) (by rw [v3]; simp only [dblW]; rng)
     (by rw [v3]; simp only [dblW]; d_ring [bb.d, xb2.d, dd.d, xx.d])
-  have pd : Raw (envOf s₀) 0 (Id.run (dbl5g tops q2 q1 o1 q3)).2.1 (fD xn z * fD xn z) :=
+  obtain pd : Raw (envOf s₀) 0 (Id.run (dbl5g tops q2 q1 o1 q3)).2.1 (fD xn z * fD xn z) :=
     ⟨by rw [vd]; exact dd.lo, by rw [vd]; exact dd.hi, by rw [vd]; exact dd.d⟩
-  have pb : Raw (envOf s₀) 0 (Id.run (dbl5g tops q2 q1 o1 q3)).2.2 (fB un * fB un) :=
+  obtain pb : Raw (envOf s₀) 0 (Id.run (dbl5g tops q2 q1 o1 q3)).2.2 (fB un * fB un) :=
     ⟨by rw [vb]; exact bb.lo, by rw [vb]; exact bb.hi, by rw [vb]; exact bb.d⟩
   refine WP.mono (cut_step' hchk hc hB hiv dbl_ov4
     (rs := [Id.run (norm tops (Id.run (dbl5g tops q2 q1 o1 q3)).1), o2, (Id.run (dbl5g tops q2 q1 o1 q3)).2.1,
@@ -1157,21 +1114,21 @@ theorem dbl_s5 {s₀ : State} (hc : Ctx par s₀) (hB : EnvOK s₀ (bndsOf (dblL
     WP isa (.block (dblPieces.getD 5 [])) s₀ fun s =>
       Ctx par s ∧ Kept s₀ s ∧ EnvOK s stB ∧
         AccOk (envOf s) (t5 0) (t5 5) (t5 10) (t5 15) (fX3 xn un z) (fU xn un z) (fZ3 un z) := by
-  have hchk := dbl_chk5; have hiv := dbl_iv5
-  have hL := list4 (dL 4) zero5 (by decide +kernel)
+  obtain hchk := dbl_chk5; have hiv := dbl_iv5
+  obtain hL := list4 (dL 4) zero5 (by decide +kernel)
   simp only [dL] at h hL
   generalize leaves (dblLocs.getD 4 []) = L at h hchk hiv hL
   generalize L.getD 0 zero5 = o3, L.getD 1 zero5 = o2, L.getD 2 zero5 = pdd, L.getD 3 zero5 = pbb at h hL
   subst hL
   obtain ⟨e, a3, de, x3, z3, dd, bb⟩ := h
-  have vu := dbl6u_v0 (Id.run (sqrCore tops o3)) pdd pbb (envOf s₀)
-  have ee := Raw.sqr e; have de2 := Raw.sqr de
-  have eel := ee.lo; have eeh := ee.hi; have del := de2.lo; have deh := de2.hi
-  have ddl := dd.lo; have ddh := dd.hi; have bbl := bb.lo; have bbh := bb.hi
+  obtain vu := dbl6u_v0 (Id.run (sqrCore tops o3)) pdd pbb (envOf s₀)
+  obtain ee := Raw.sqr e; have de2 := Raw.sqr de
+  obtain eel := ee.lo; have eeh := ee.hi; have del := de2.lo; have deh := de2.hi
+  obtain ddl := dd.lo; have ddh := dd.hi; have bbl := bb.lo; have bbh := bb.hi
   refine WP.mono (cut_step' hchk hc hB hiv dbl_ov5
     (rs := [Id.run (dbl6u tops (Id.run (sqrCore tops o3)) pdd pbb), o2, o3, Id.run (sqrCore tops o3)]) rfl rfl
     (Nat.le_of_eq rfl) (fun j k hm => absurd hm List.not_mem_nil)) fun s ⟨hc', hk, hE, hS⟩ => ⟨hc', hk, hE, ?_⟩
-  have w : vI (envOf s) 0 (t5 0) = vI (envOf s₀) 0 (Id.run (dbl6u tops (Id.run (sqrCore tops o3)) pdd pbb)) :=
+  obtain w : vI (envOf s) 0 (t5 0) = vI (envOf s₀) 0 (Id.run (dbl6u tops (Id.run (sqrCore tops o3)) pdd pbb)) :=
     hS.val 0 0 (by decide) rfl rfl
   exact ⟨by rw [w, vu]; rng, by rw [w, vu]; rng, by rw [w, vu]; d_ring [ee.d, de2.d, dd.d, bb.d],
     hS.car 1 1 (by decide) rfl rfl z3, hS.car 2 1 (by decide) rfl rfl a3, hS.car 2 3 (by decide) rfl rfl x3,
@@ -1179,7 +1136,7 @@ theorem dbl_s5 {s₀ : State} (hc : Ctx par s₀) (hB : EnvOK s₀ (bndsOf (dblL
 
 theorem dblPieces_flat : dblPieces.flatten = dblPieces.getD 0 [] ++ (dblPieces.getD 1 [] ++ (dblPieces.getD 2 [] ++
     (dblPieces.getD 3 [] ++ (dblPieces.getD 4 [] ++ dblPieces.getD 5 [])))) := by
-  decide +kernel
+  kernel_rfl
 
 /-- The doubling: the accumulator's vectors stand for the doubled triple's. -/
 theorem dbl_ok {s₀ : State} (hc : Ctx par s₀) (hB : EnvOK s₀ stB) {xn un z : Fin pN}

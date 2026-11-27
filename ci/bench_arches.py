@@ -176,7 +176,7 @@ PLATFORMS = {
         "image": "ghcr.io/pyca/verified-garbage-runner:armv7-cross",
     },
     "powerpc64": {
-        "os": "ubuntu-24.04-ppc64le",
+        "os": "ubuntu-24.04-ppc64le-p10",
         "image": "ghcr.io/pyca/verified-garbage-runner:ppc64le",
     },
     "riscv64": {"os": "ubuntu-24.04-riscv", "rust": "host"},
@@ -238,7 +238,8 @@ MANUAL_PLATFORMS = {
 # RSAES-PKCS1-v1_5
 # decryption with SHA-256's SHA extensions and RSA's baseline code, which a
 # runner with ADX never chooses; on AArch64,
-# ChaCha20's `_neon` instances, which the SVE2 runner never chooses; no
+# ChaCha20's `_neon` instances, which the SVE2 runner never chooses, and
+# AES's, which a runner with the AES extension never chooses; no
 # runner has the SHA512 extension, whose variants only ci.yml tests, under
 # SDE).
 CPU_FEATURES = {

@@ -24,6 +24,8 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Sm3.AArch64.Lit
 import VerifiedGarbage.Proof.Sm3.AArch64.Compress
 meta import VerifiedGarbage.Proof.Sm3.AArch64.Compress
+import VerifiedGarbage.Proof.Framework.AArch64.Residue
+meta import VerifiedGarbage.Proof.Framework.AArch64.Residue
 
 /-!
 # Streaming SM3 on AArch64: `init`
@@ -141,5 +143,10 @@ theorem init_verified : Verified AArch64.target init Proof.Sm3.initAArch64 := by
     refine ⟨h.2, fun r hr => ?_⟩
     simp only [VG.AArch64.Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
     subst hr; exact h.1
+
+/-- `vg_sm3_init` returns without secret residue: it reads no memory, so what it
+leaves is a function of its arguments (`Residue.noResidue_of_blind`). -/
+theorem init_noResidue (k : Contract isa) (r : Nat) : NoResidue init k r :=
+  Residue.noResidue_of_blind (by decide) k r
 
 end VG.Proof.Sm3.AArch64.Stream

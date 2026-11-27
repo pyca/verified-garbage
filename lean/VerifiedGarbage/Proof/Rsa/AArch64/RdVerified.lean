@@ -1,10 +1,9 @@
 module
 
-import VerifiedGarbage.Proof.Rsa.AArch64.RdCT6
+public import VerifiedGarbage.Proof.Rsa.AArch64.RdCT6
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Impl.Rsa.AArch64.RecoverDet
 public import VerifiedGarbage.Spec.Rsa.RecoverDet
-public import VerifiedGarbage.Proof.Rsa.AArch64.RdCode
 import VerifiedGarbage.Proof.Bignum.Octets
 
 /-!

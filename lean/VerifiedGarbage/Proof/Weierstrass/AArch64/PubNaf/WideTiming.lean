@@ -2,8 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.PrepTiming
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.PubNafWide
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.WideLoop
-import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.WideInit
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.WideInit
 import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!

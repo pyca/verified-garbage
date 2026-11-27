@@ -40,13 +40,13 @@ theorem shrWord_ok {s : State} {W : Addr} {Z sp dp d : Nat} (hw : Ws s W Z)
     (d := d + 4) (by omega_using [hs])) fun s₂ U₂ _ => ?_
   refine VG.Proof.Bignum.X86.PublicRt.wp_shr (by decide) fun s₃ U₃ => ?_
   refine wp_addS rfl fun s₄ U₄ _ => wp_addS rfl fun s₅ U₅ _ => wp_addS rfl fun s₆ U₆ _ => ?_
-  have K : Keeps [.eax, .ebx] s s₆ :=
+  obtain K : Keeps [.eax, .ebx] s s₆ :=
     (((((U₁.keeps.mono (by decide)).trans (U₂.keeps.mono (by decide))).trans (U₃.keeps.mono (by decide))).trans
       (U₄.keeps.mono (by decide))).trans (U₅.keeps.mono (by decide))).trans (U₆.keeps.mono (by decide))
-  have hw₆ := hw.of_keeps K
-  have pd₆ : PtrAt s₆ W .edi dp := by rw [PtrAt, K.1 _ (by decide)]; exact pd
+  obtain hw₆ := hw.of_keeps K
+  obtain pd₆ : PtrAt s₆ W .edi dp := by rw [PtrAt, K.1 _ (by decide)]; exact pd
   refine wp_storeS (by simpa using ea_ptr hw₆ pd₆ (d := d) (by omega_using [hd])) (ws_write hw₆ hd) fun u M => ?_
-  have m₆ : s₆.mem = s.mem := by rw [U₆.mem, U₅.mem, U₄.mem, U₃.mem, U₂.mem, U₁.mem]
+  obtain m₆ : s₆.mem = s.mem := by rw [U₆.mem, U₅.mem, U₄.mem, U₃.mem, U₂.mem, U₁.mem]
   refine k u ?_ (K.trans (M.keeps _)) (by rw [M.mem, m₆]; exact writeW32_outside _ _ _ (by omega_using [hd, hn]))
   rw [M.mem, w32_write_self, U₆.gpr, U₅.other _ (by decide), U₄.other _ (by decide), U₃.gpr, U₅.gpr, U₄.gpr,
     U₃.other _ (by decide), U₂.gpr, U₂.other _ (by decide), U₁.gpr, U₁.mem]
@@ -149,25 +149,25 @@ theorem shrTop_ok {s : State} {W : Addr} {Z sp dp : Nat} (hw : Ws s W Z)
   refine wp_movS (readSrc_ptr hw ps (d := 0) (by omega_using [hs])) fun s₁ U₁ _ => ?_
   refine VG.Proof.Bignum.X86.PublicRt.wp_shr (by decide) fun s₂ U₂ => ?_
   refine wp_movS rfl fun s₃ U₃ _ => wp_subS rfl fun s₄ U₄ _ => ?_
-  have K₄ : Keeps [.eax, .ecx] s s₄ :=
+  obtain K₄ : Keeps [.eax, .ecx] s s₄ :=
     (((U₁.keeps.mono (by decide)).trans (U₂.keeps.mono (by decide))).trans (U₃.keeps.mono (by decide))).trans
       (U₄.keeps.mono (by decide))
-  have m₄ : s₄.mem = s.mem := by rw [U₄.mem, U₃.mem, U₂.mem, U₁.mem]
-  have mask : s₄.gpr .ecx = (if 2 ^ 31 ≤ w32 s.mem W sp then BitVec.allOnes 32 else 0) := by
+  obtain m₄ : s₄.mem = s.mem := by rw [U₄.mem, U₃.mem, U₂.mem, U₁.mem]
+  obtain mask : s₄.gpr .ecx = (if 2 ^ 31 ≤ w32 s.mem W sp then BitVec.allOnes 32 else 0) := by
     rw [U₄.gpr, U₃.gpr, U₃.other _ (by decide), U₂.gpr, U₁.gpr, Nat.add_zero]
     exact VG.Proof.Weierstrass.X86.Inv.signMask_eq _
-  have ps₄ : PtrAt s₄ W .ebp sp := by rw [PtrAt, K₄.1 _ (by decide)]; exact ps
+  obtain ps₄ : PtrAt s₄ W .ebp sp := by rw [PtrAt, K₄.1 _ (by decide)]; exact ps
   refine wp_movS (readSrc_ptr (hw.of_keeps K₄) ps₄ (d := 0) (by omega_using [hs])) fun s₅ U₅ _ => ?_
   refine wp_movS rfl fun s₆ U₆ _ => VG.Proof.Bignum.X86.PublicRt.wp_shr (by decide) fun s₇ U₇ => ?_
   refine wp_addS rfl fun s₈ U₈ _ => wp_addS rfl fun s₉ U₉ _ => wp_addS rfl fun s₁₀ U₁₀ _ => ?_
-  have K : Keeps [.eax, .ebx, .ecx] s s₁₀ :=
+  obtain K : Keeps [.eax, .ebx, .ecx] s s₁₀ :=
     ((K₄.mono (by decide)).trans ((((((U₅.keeps.mono (by decide)).trans (U₆.keeps.mono (by decide))).trans
       (U₇.keeps.mono (by decide))).trans (U₈.keeps.mono (by decide))).trans (U₉.keeps.mono (by decide))).trans
       (U₁₀.keeps.mono (by decide))))
-  have hw₁₀ := hw.of_keeps K
-  have pd₁₀ : PtrAt s₁₀ W .edi dp := by rw [PtrAt, K.1 _ (by decide)]; exact pd
+  obtain hw₁₀ := hw.of_keeps K
+  obtain pd₁₀ : PtrAt s₁₀ W .edi dp := by rw [PtrAt, K.1 _ (by decide)]; exact pd
   refine wp_storeS (by simpa using ea_ptr hw₁₀ pd₁₀ (d := 0) (by omega_using [hd])) (ws_write hw₁₀ hd) fun u M => ?_
-  have m₁₀ : s₁₀.mem = s.mem := by rw [U₁₀.mem, U₉.mem, U₈.mem, U₇.mem, U₆.mem, U₅.mem, m₄]
+  obtain m₁₀ : s₁₀.mem = s.mem := by rw [U₁₀.mem, U₉.mem, U₈.mem, U₇.mem, U₆.mem, U₅.mem, m₄]
   refine k u ?_ (K.trans (M.keeps _)) (by rw [M.mem, m₁₀]; exact writeW32_outside _ _ _ (by omega_using [hd, hn]))
   rw [M.mem, w32_write_self, U₁₀.gpr, U₉.other _ (by decide), U₈.other _ (by decide), U₇.gpr, U₉.gpr, U₈.gpr,
     U₇.other _ (by decide), U₆.gpr, U₆.other _ (by decide), U₅.gpr, U₅.other _ (by decide), mask, m₄,
@@ -189,46 +189,46 @@ theorem shr30_ok {s : State} (h : Bx L s B Z len N) {dst src : Ref} (hdh : dst.h
         2 ^ (32 * (nw len + 1)) ∧
       Keeps wordClob s u ∧ Outside B (rv (kw len) dst) (4 * (nw len + 1)) s.mem u.mem := by
   have hn := h.nowrap
-  have hw := kw_bound h.ws.lenLe
+  obtain hw := kw_bound h.ws.lenLe
   have hpos := h.ws.kw_pos
-  have ke := kw_eq len
+  obtain ke := kw_eq len
   have hZ := h.halfZ
-  have rd := rv_ge (kw len) dst
+  obtain rd := rv_ge (kw len) dst
   unfold shr30
   rw [show ptr L .edi dst .edx = ptr L .edi dst .edx ++ [] from (List.append_nil _).symm]
   simp only [List.append_assoc]
   refine WP.seq (ptr_ok h.ws h.slots hZ (by decide) (by decide) (by decide) (by decide) (by intro e; cases e)
     (by omega_using [hsz, hn]) fun u₁ K₁ m₁ p₁ => ?_)
-  have h₁ : Bx L u₁ B Z len N := h.keep K₁ (by decide) (by decide) (by rw [m₁]; exact Outside.refl _ _ _ _) rd hdz
+  obtain h₁ : Bx L u₁ B Z len N := h.keep K₁ (by decide) (by decide) (by rw [m₁]; exact Outside.refl _ _ _ _) rd hdz
   refine nBytes_ok h₁.ws.ws.workspace h₁.slots hZ (by omega_using [hw]) (e := 0) (by decide) fun u₂ K₂ m₂ c₂ => ?_
-  have h₂ : Bx L u₂ B Z len N := h₁.keep K₂ (by decide) (by decide) (by rw [m₂]; exact Outside.refl _ _ _ _) rd hdz
+  obtain h₂ : Bx L u₂ B Z len N := h₁.keep K₂ (by decide) (by decide) (by rw [m₂]; exact Outside.refl _ _ _ _) rd hdz
   refine ptr_ok h₂.ws h₂.slots hZ (by decide) (by decide) (by decide) (by decide) (fun _ => hdh)
     (by omega_using [hdz, hn]) fun u K₃ m₃ p₃ => WP.block_nil ?_
-  have K : Keeps [.ebx, .edx, .ebp, .edi, .esi] s u :=
+  obtain K : Keeps [.ebx, .edx, .ebp, .edi, .esi] s u :=
     ((K₁.mono (by decide)).trans (K₂.mono (by decide))).trans (K₃.mono (by decide))
-  have m : u.mem = s.mem := by rw [m₃, m₂, m₁]
-  have hwu := h.ws.rt.of_keeps K
+  obtain m : u.mem = s.mem := by rw [m₃, m₂, m₁]
+  obtain hwu := h.ws.rt.of_keeps K
   refine WP.seq (WP.mono (shrPairs_ok hwu (n := nw len) (by omega) hev hsz hdz sep
     (by rw [PtrAt, K₃.1 _ (by decide), K₂.1 _ (by decide)]; exact p₁) p₃
     (by rw [K₃.1 _ (by decide), c₂]; omega_using [ke])) fun t ⟨Kt, pe, pi, _, Ot, Vt⟩ => ?_)
   rw [show 2 * (nw len / 2) = nw len by omega_using [hev], show 8 * (nw len / 2) = 4 * nw len by omega_using [hev]] at *
-  have ht := hwu.of_keeps Kt
+  obtain ht := hwu.of_keeps Kt
   refine shrTop_ok ht pe pi (by omega_using [hsz]) (by omega_using [hdz]) fun v Wv Kv Ov => ?_
   -- `edi` back.
-  have KK : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi, .edi] s v :=
+  obtain KK : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi, .edi] s v :=
     ((K.mono (by decide)).trans (Kt.mono (by decide))).trans (Kv.mono (by decide))
-  have Ofull : Outside B (rv (kw len) dst) (4 * (nw len + 1)) s.mem v.mem := by
+  obtain Ofull : Outside B (rv (kw len) dst) (4 * (nw len + 1)) s.mem v.mem := by
     rw [← m]; exact (Ot.mono (Nat.le_refl _) (by omega_using [])).trans (Ov.mono (by omega_using []) (by omega_using []))
-  have O0 : Outside B 0 Z s.mem v.mem := Ofull.mono (Nat.zero_le _) (by omega_using [hdz])
+  obtain O0 : Outside B 0 Z s.mem v.mem := Ofull.mono (Nat.zero_le _) (by omega_using [hdz])
   unfold restoreEdi
   refine wp_movS (h.ws.wsArg.keep KK (by decide) O0).readSrc fun t₁ U _ => WP.block_nil ?_
-  have K' : Keeps wordClob s t₁ :=
+  obtain K' : Keeps wordClob s t₁ :=
     VG.Proof.Bignum.X86.PublicRt.Keeps.drop_edi (rs := wordClob)
       ((KK.mono (by decide)).trans (U.keeps.mono (by decide))) (U.gpr.trans (RtWs.edi_eq h.ws).symm)
   refine ⟨h.keep K' (by decide) (by decide) (by rw [U.mem]; exact Ofull) rd hdz, ?_, K', by rw [U.mem]; exact Ofull⟩
   -- The value: the pairs' `n` words, then the top word.
   rw [U.mem, val32_succ, Ov.val32 (.inl (by omega_using [])) (by omega_using [hdz, hn]), Vt, Wv, m]
-  have top : w32 t.mem B (rv (kw len) src + 4 * nw len) = w32 s.mem B (rv (kw len) src + 4 * nw len) := by
+  obtain top : w32 t.mem B (rv (kw len) src + 4 * nw len) = w32 s.mem B (rv (kw len) src + 4 * nw len) := by
     rw [Ot.w32 (by omega_using [sep]) (by omega_using [hsz, hn]), m]
   rw [top]
   simp only [sext32, Nat.add_sub_cancel]

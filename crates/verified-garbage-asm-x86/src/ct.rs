@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Ct.eqContract`. Constant time: only the pointers, `a_len` and `b_len` may affect timing, not the bytes compared; only the result depends on them.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `a` must be valid for reads of `a_len` bytes.
@@ -30,7 +32,7 @@ jmp 23f
 23:
 .base64 "idiD6AHB6B8="
 21:
-.base64 "W8M="
+.base64 "W2YP78C5AAAAAI1kJPyJDCSNZCQEugAAAAAxyWYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ww=="
 .p2align 6"#,
     )
 }

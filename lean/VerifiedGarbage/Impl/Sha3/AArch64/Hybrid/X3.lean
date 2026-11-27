@@ -1,64 +1,125 @@
 module
 
-public import VerifiedGarbage.Impl.Sha3.AArch64.Hybrid.Round
-public import VerifiedGarbage.Impl.Sha3.AArch64.Neon.Pair
-public import VerifiedGarbage.Impl.Sha3.AArch64.Scalar.Boundary
+public import VerifiedGarbage.Impl.Sha3.AArch64.Neon.X2
+public import VerifiedGarbage.Impl.AArch64Weave
 
 /-!
-# Keccak-f[1600] on three states, as a function (AArch64, SHA-3)
+# Keccak-f[1600] on three states
 
-`vg_keccak_f1600_x3_sha3(states, state, scratch)` (`Proof/Sha3/X2Contract.lean`;
-AAPCS64: `states` in `x0`, `state` in `x1`, `scratch` in `x2`) opens a frame
-of 128 bytes, in which it keeps the callee-saved general registers
-(`[sp, #16]`–`[sp, #104)`), the three pointers (`[sp, #104]`–`[sp, #128)`)
-and the scalar round's two temporary lanes (`[sp, #0]`, `[sp, #8]`); keeps
-`q8`–`q15` in `scratch`; loads the two interleaved states into `v0`–`v24`
-and the third into the general registers (`Scalar.laneReg`); runs the 24
-woven rounds (`Hybrid.rounds 0`); and stores the states and restores the
-registers.
+`vg_keccak_f1600_x3(states = x0, state = x1, scratch = x2)`: on the two
+interleaved at `states`, and on the one at `state`. Without FEAT_SHA3, one
+after another in general registers.
+
+With it, the two in vector registers (as `Neon/X2.lean`) and the third in
+general registers, whose rounds then run on units the first two leave idle.
+They do ρ's rotations (`Conf.lazy := false`) rather than leave them pending:
+it is more instructions, but vector code sets the pace, and some cores run
+XORs of rotated operands at half the rate. The instructions of two vector
+rounds and of two general rounds are interleaved (`AArch64Weave.weave`); the
+loop's 12 iterations do 24 of each.
+
+`x30` points to a window of the memory of the two states, which are in
+registers: 24 bytes for the lanes the general rounds spill, and, 32 bytes on,
+the iteration's two round constants. It advances by 16 bytes: the table ends
+224 bytes in. The frame holds the callee-saved registers, the pointers and the
+count of iterations.
 -/
 
 @[expose] public section
 
 namespace VG.Impl.Sha3.AArch64.Hybrid.X3
-open VG VG.AArch64
 
-/-- The frame's size. -/
+open VG.AArch64
+open VG.Impl.AArch64Schedule (schedule)
+open VG.Impl.AArch64Weave (weave)
+open VG.Impl.Sha3.AArch64.Sha3.Vector (vreg)
+open VG.Impl.Sha3.AArch64.RoundConstants (rcs sym)
+open VG.Impl.Sha3.AArch64.Scalar (Conf lreg savedReg)
+
+/-- ι of vector round `r` of the loop's body. -/
+def vecIota (r : Nat) : List Instr :=
+  [.ldrq .v31 .x30 32, .vop (.perm (if r = 0 then .trn1 else .trn2) .d2 .v31 .v31 .v31), .vop (.logic .eor .v0 .v0 .v31)]
+
+/-- Two vector rounds, in the order written. -/
+def vecPlain : List Instr := Sha3.Vector.round 2 8 0 ++ vecIota 0 ++ Sha3.Vector.round 2 8 1 ++ vecIota 1
+
+/-- The order their instructions run in. -/
+def order : List Nat :=
+  [4, 11, 0, 8, 3, 5, 0, 6, 2, 4, 0, 2, 1, 0, 0, 0, 0, 2, 0, 0, 14, 13, 13, 15, 2, 12, 2, 12, 4, 10, 0, 0,
+    8, 5, 7, 3, 6, 1, 4, 4, 1, 3, 5, 1, 2, 2, 6, 1, 3, 0, 0, 3, 1, 1, 1, 0, 0, 27, 0, 1, 0, 0, 0, 0, 21, 1,
+    0, 0, 0, 1, 0, 0, 14, 0, 0, 1, 0, 0, 0, 8, 0, 0, 10, 8, 6, 0, 6, 6, 0, 4, 4, 0, 3, 6, 6, 0, 5, 9, 0, 4,
+    8, 0, 3, 4, 0, 0, 0, 7, 6, 6, 8, 6, 3, 7, 4, 5, 1, 4, 1, 3, 1, 1, 0, 0, 0, 2, 0, 0, 0, 3, 1, 3, 0, 0, 0,
+    0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0]
+
+def vecBody : List Instr := schedule order vecPlain
+
+/-- The general rounds: lanes spilled to memory at `x30`. -/
+def conf : Conf where
+  temps := [.x28, .x16, .x17]
+  lazy := false
+  sp := ⟨fun k r => .str .x r .x30 (8 * k), fun k r => .ldr .x r .x30 (8 * k)⟩
+
+/-- ι of general round `r` of the loop's body. -/
+def genIota (r : Nat) : List Instr := [.ldr .x .x16 .x30 (32 + 8 * r), .logic .eor .x .x0 .x0 .x16]
+
+/-- Two general rounds. -/
+def genBody : List Instr := conf.round 0 ++ genIota 0 ++ conf.round 1 ++ genIota 1
+
+/-- Two rounds of all three states. -/
+def rounds : List Instr := weave vecBody genBody
+
 def frameBytes : Nat := 128
 
-/-- The callee-saved general registers, kept at `[sp, #16 + 8 i]`. -/
-def savedReg (i : Nat) : Reg := Scalar.Boundary.savedReg i
+/-- The frame: the callee-saved registers, then the pointers, then the count. -/
+def saveG : List Instr := (List.range 11).map fun i => .strSp (savedReg i) (8 * i)
+def restoreG : List Instr := (List.range 11).map fun i => .ldrSp (savedReg i) (8 * i)
+def ptrs : List Instr := [.strSp .x0 88, .strSp .x1 96, .strSp .x2 104]
 
-/-- Save the callee-saved registers and the pointers in the frame, and `q8`–`q15` in `scratch`. -/
-def save : List Instr :=
-  (List.range 11).map (fun i => .strSp (savedReg i) (16 + 8 * i)) ++
-    ([.strSp .x0 104, .strSp .x1 112, .strSp .x2 120] : List Instr) ++
-    (List.range 8).map (fun i => .strq (Sha3.Vector.vreg (8 + i)) .x2 (16 * i))
+/-- The table of round constants, 32 bytes into the window's memory. -/
+def rcStore : List Instr :=
+  ([.adrSym .x16 sym] : List Instr) ++
+  (List.range 12).flatMap fun k => [.ldrqTbl .v31 .x16 (16 * k) sym rcs, .strq .v31 .x0 (32 + 16 * k)]
 
-/-- Load the interleaved states into `v0`–`v24` and the third into the general registers. -/
-def load : List Instr :=
-  Neon.Pair.load .x0 ++ ([.addImm .x .x30 .x1 0] : List Instr) ++
-    (List.range 25).map (fun i => .ldr .x (Scalar.laneReg i) .x30 (8 * i))
+/-- Load the third state: lane 1's register is its pointer's, so it is last. -/
+def loadThird : List Instr :=
+  ((List.range 25).filter (· != 1)).map (fun i => .ldr .x (lreg i) .x1 (8 * i)) ++ ([.ldr .x .x1 .x1 8] : List Instr)
 
-/-- Store the states, from the pointers kept in the frame. -/
-def store : List Instr :=
-  ([.ldrSp .x30 112] : List Instr) ++
-    (List.range 25).map (fun i => .str .x (Scalar.laneReg i) .x30 (8 * i)) ++
-    ([.ldrSp .x0 104] : List Instr) ++ Neon.Pair.store .x0
+def storeThird : List Instr :=
+  ([.ldrSp .x16 96] : List Instr) ++ (List.range 25).map fun i => .str .x (lreg i) .x16 (8 * i)
 
-/-- Restore `q8`–`q15` and the callee-saved registers. -/
-def restore : List Instr :=
-  ([.ldrSp .x2 120] : List Instr) ++
-    (List.range 8).map (fun i => .ldrq (Sha3.Vector.vreg (8 + i)) .x2 (16 * i)) ++
-    (List.range 11).map (fun i => .ldrSp (savedReg i) (16 + 8 * i))
+/-- What follows the rounds in an iteration. -/
+def next : List Instr :=
+  [.addImm .x .x30 .x30 16, .ldrSp .x16 112, .subImm .x .x16 .x16 1, .strSp .x16 112]
 
-/-- The function's body, in its frame. -/
-def body : List Instr := save ++ load ++ rounds 0 ++ store ++ restore
+def enter : List Instr :=
+  Sha3.Vector.save .x2 0 ++ saveG ++ ptrs ++ Neon.Pair.load .x0 ++ rcStore ++
+  ([.movz .x .x16 12 0, .strSp .x16 112, .addImm .x .x30 .x0 0] : List Instr) ++ loadThird
 
-/-- The function's code. -/
-def code : Prog isa := .frame (.alloc frameBytes) (.block body) (.free frameBytes)
+def leave : List Instr :=
+  storeThird ++ ([.ldrSp .x0 88] : List Instr) ++ Neon.Pair.store .x0 ++
+  ([.ldrSp .x2 104] : List Instr) ++ Sha3.Vector.restore .x2 0 ++ restoreG
 
-/-- `vg_keccak_f1600_x3_sha3`. -/
-def name : String := "vg_keccak_f1600_x3_sha3"
+def vector : Prog isa :=
+  .frame (.alloc frameBytes)
+    (.seq (.block enter) (.seq (.loop (.seq (.block rounds) (.block next)) (.nonzero .x .x16)) (.block leave)))
+    (.free frameBytes)
+
+open VG.Impl.Sha3.AArch64.Scalar (save restore load store callCore)
+
+/-- One state after another: `v29`, `v30` and `v31` hold `states`, `scratch` and `state`. -/
+def scalar : Prog isa :=
+  .seq (.block (save ++ [.vop (.dup .d2 .v29 .x0), .vop (.dup .d2 .v30 .x2), .vop (.dup .d2 .v31 .x1),
+    .umov .x .x16 .v29 0] ++ load .x16 16 0 ++ ([.umov .x .x28 .v30 0] : List Instr)))
+  (.seq callCore
+  (.seq (.block (([.umov .x .x16 .v29 0] : List Instr) ++ store .x16 16 0 ++ load .x16 16 8 ++
+    ([.umov .x .x28 .v30 0] : List Instr)))
+  (.seq callCore
+  (.seq (.block (([.umov .x .x16 .v29 0] : List Instr) ++ store .x16 16 8 ++ ([.umov .x .x16 .v31 0] : List Instr) ++
+    load .x16 8 0 ++ ([.umov .x .x28 .v30 0] : List Instr)))
+  (.seq callCore (.block (([.umov .x .x16 .v31 0] : List Instr) ++ store .x16 8 0 ++ restore)))))))
+
+def code (sha3 : Bool) : Prog isa := if sha3 then vector else scalar
+
+def name (sha3 : Bool) : String := if sha3 then "vg_keccak_f1600_x3_sha3" else "vg_keccak_f1600_x3"
 
 end VG.Impl.Sha3.AArch64.Hybrid.X3

@@ -6,7 +6,6 @@ import VerifiedGarbage.Proof.P256.Curve
 import VerifiedGarbage.Proof.P256.PrimeOrder
 import VerifiedGarbage.Proof.Weierstrass.AArch64.InvMain
 import VerifiedGarbage.Proof.Weierstrass.InvArith
-import Mathlib.Data.BitVec
 import VerifiedGarbage.Proof.P256.Prime
 import VerifiedGarbage.Proof.Divstep.Bound
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
@@ -18,24 +17,6 @@ import VerifiedGarbage.Proof.Ed25519.AArch64.SqrRows
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Framework.BitByte
 import VerifiedGarbage.Proof.Framework.Pratt
-import VerifiedGarbage.Proof.Mont.AArch64.P384Mul.Product
-import VerifiedGarbage.Proof.Mont.AArch64.P384Mul.Reduce
-import VerifiedGarbage.Proof.Mont.AArch64.P384Sqr.Square
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Function
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Product
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductCross0
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductCross1
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductCross2
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductCross3
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductDiag
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductDouble
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductLow
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductTop
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Reduction
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionArithmetic
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionBits
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionCorrect
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Rotate
 import VerifiedGarbage.Proof.P256.Point
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Bits
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Blocks
@@ -47,13 +28,12 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.InvStep
 import VerifiedGarbage.Proof.Weierstrass.AArch64.InvWords
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Loop
 import VerifiedGarbage.Proof.Weierstrass.AArch64.MontCall
-import VerifiedGarbage.Proof.Weierstrass.AArch64.MontCall521
 import VerifiedGarbage.Proof.Weierstrass.AArch64.MontFn384
 import VerifiedGarbage.Proof.Weierstrass.AArch64.SetConst
 import VerifiedGarbage.Proof.Weierstrass.Cubic
 import VerifiedGarbage.Proof.Weierstrass.GroupOrder
 import VerifiedGarbage.Proof.Weierstrass.Law3
-import VerifiedGarbage.Proof.Weierstrass.RcbIdent
+import VerifiedGarbage.Proof.Weierstrass.Complete
 import VerifiedGarbage.Proof.Weierstrass.Words
 import VerifiedGarbage.Proof.Divstep.Incl
 

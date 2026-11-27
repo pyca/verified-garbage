@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.Reduce
 /-!
 # EMSA-PKCS1-v1_5 encoding on AArch64: correctness
 
-As on x86-64 (`Proof/RsaPkcs1Sig/X86_64/Encode.lean`). `encode_ok`: from a
+As on x86-64 (`Proof/RsaPkcs1Sig/X86_64/Compare.lean`). `encode_ok`: from a
 state whose `x8` points to `k` writable bytes, `x11` to the hash value,
 which does not overlap them, `encode` returns 1 and writes the encoding of
 the value (`Spec.RsaPkcs1Sig.encode`) to the buffer if it exists, and

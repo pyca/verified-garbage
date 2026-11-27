@@ -1,20 +1,18 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedLowRun
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedSaved
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Paired
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackInit
-
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedLowLoop
 import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseInit
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import Mathlib.Algebra.Group.Nat.Defs
-import Mathlib.Basic.IsEmpty.Defs
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Lit
+
 /-! ## From `PairedHintConstants.lean` -/
 
 -- Formerly `VerifiedGarbage/Proof/MlDsa/AArch64/Optimized/PairedConstants.lean`, which only this module imported.

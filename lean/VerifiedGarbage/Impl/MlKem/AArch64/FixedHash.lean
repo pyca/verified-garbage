@@ -1,5 +1,6 @@
 module
 public import VerifiedGarbage.Impl.MlKem.AArch64.Top
+public import VerifiedGarbage.Impl.Sha3.AArch64.ViaD8
 
 /-! Fixed-length word/byte absorb and single-block squeeze, matching the
 measured ML-KEM specialization. Callers must establish encodable offsets,
@@ -10,7 +11,7 @@ open VG.AArch64
 
 def code (c : Impl.Sha3.AArch64.Callee) (sc : Reg) (st wk rate sfx : Nat) (ins outs : List Piece) : Prog isa := Id.run do
  let mut blocks : List (Prog isa) := [.block (zeroState sc st ++ [.str .x .x30 sc (wk+600)])]
- let perm := .seq (.block (ptrTo .x0 sc st ++ ptrTo .x1 sc wk)) (.call c.name c.code)
+ let perm := .seq (.block (ptrTo .x0 sc st ++ ptrTo .x1 sc wk)) c.viaD8
  let mut pos := 0
  let mut code : List Instr := []
  for p in ins do

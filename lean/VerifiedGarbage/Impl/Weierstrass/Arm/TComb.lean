@@ -22,14 +22,18 @@ structure TCombCfg where
  one : Nat
  zero : Nat
  neg : Nat
- /-- Whether the point functions called are the `_umaal` variants. -/
+ /-- Whether the point functions and the subtraction called are the `_umaal` variants. -/
  u : Bool := false
+ /-- Where the entry is selected to: the point functions' `Q`, for curves
+ whose coordinates fit them, else three slots of the inlined addition
+ (`Impl/Weierstrass/Arm/TCombI.lean`). -/
+ qBase : Nat := Impl.Weierstrass.Point.qAt L.M.n
 
 namespace TCombCfg
 variable (K : TCombCfg)
 def H : Nat := 2^(K.w-1)
 def P : Pt := ptAt K.L.M.n (Impl.Weierstrass.Point.pAt K.L.M.n)
-def Q : Pt := ptAt K.L.M.n (Impl.Weierstrass.Point.qAt K.L.M.n)
+def Q : Pt := ptAt K.L.M.n K.qBase
 def O : Pt := ptAt K.L.M.n (Impl.Weierstrass.Point.oAt K.L.M.n)
 /-- The same Horner decoding used by the other comb backends. -/
 def hornerAt : Nat → Nat → List Instr
@@ -92,7 +96,7 @@ def signMask : Prog isa :=
 /-- A selected signed table entry; arithmetic is shared with the ladder. -/
 def entry : Prog isa :=
  .seq K.digit <| .seq K.select <|
- .seq (Mont.subCall K.F K.neg K.zero K.Q.y) <|
+ .seq (Mont.subCall K.F K.neg K.zero K.Q.y K.u) <|
  .seq K.signMask (.block (sel (2*K.L.M.n) K.Q.y K.Q.y K.neg))
 
 /-- Add the selected entry through the existing point function. -/

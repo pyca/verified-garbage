@@ -8,11 +8,13 @@
 ///
 /// It runs `vg_ct_eq`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `a` must be valid for reads of `a_len` bytes.
 /// * `b` must be valid for reads of `b_len` bytes.
-/// * Neither `a` nor `b` may overlap the 4 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * Neither `a` nor `b` may overlap the 8 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_ct_eq_auto(_dit: verified_garbage_cpu::Dit<'_>, a: *const u8, a_len: usize, b: *const u8, b_len: usize) -> u32 {

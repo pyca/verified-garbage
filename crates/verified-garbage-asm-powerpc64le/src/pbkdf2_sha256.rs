@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Hmac.Instance.pbkdf2Contract` of `VG.Spec.Hmac.sha256I`. Constant time: only the pointers, the lengths and `c` may affect timing, not the password, the salt or the key.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `password` must be valid for reads of `password_len` bytes.
@@ -19,7 +21,7 @@
 pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha256(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
         r#".base64 "ofkh+CAAQTmmAgh80f8h+CAAAfgAAIr6CACq+hAAyvoYAOr6IAAK+ygAKvsAAKo6AACGOgAAxzoAAOg6AAAJOwAAJTsAAKM4AADEOHADdTjQA5U4"
-bl {vg_hmac_sha256_init}
+bl {vg_hmac_sha256_init_core}
 .base64 "AQCAOdAEYDksXZV9AAA4KA=="
 beq %cr0, 20f
 22:
@@ -46,8 +48,8 @@ bne %cr0, 22b
 b 21f
 20:
 21:
-.base64 "AACV6hAA1eoYAPXqIAAV6ygANesIALXqIAAB6DAAITimAwh8YAYhOCAAgE4=""#,
-        vg_hmac_sha256_init = sym super::hmac_sha256::vg_hmac_sha256_init,
+.base64 "AACV6hAA1eoYAPXqIAAV6ygANesIALXqIAAB6DAAITimAwh8YAYhOAAAADix9SH4IACBOQAADPgIAAz4EAAM+BgADPggAAz4KAAM+DAADPg4AAz4QAAM+EgADPhQAAz4WAAM+GAADPhoAAz4cAAM+HgADPiAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfAAADPgIAAz4EAAM+BgADPggAAz4KAAM+DAADPg4AAz4QAAM+EgADPhQAAz4WAAM+GAADPhoAAz4cAAM+HgADPiAAAz4iAAM+JAADPiYAAz4oAAM+KgADPhQCiE4AABgOAAAgDgAAKA4AADAOAAA4DgAAAA5AAAgOQAAQDkAAGA5AACAOcQEABDEDCEQxBRCEMQcYxDEJIQQxCylEMQ0xhDEPOcQxEQIEcRMKRHEVEoRxFxrEcRkjBHEbK0RxHTOEcR87xHEhBASxIwxEsSUUhLEnHMSIACATg==""#,
+        vg_hmac_sha256_init_core = sym super::hmac_sha256::vg_hmac_sha256_init_core::vg_hmac_sha256_init_core,
         vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch::vg_sha256_update_scratch,
         vg_hmac_sha256_finalize_scratch = sym super::hmac_sha256::vg_hmac_sha256_finalize_scratch::vg_hmac_sha256_finalize_scratch,
         vg_pbkdf2_hmac_sha256_iterate = sym super::pbkdf2_sha256::vg_pbkdf2_hmac_sha256_iterate::vg_pbkdf2_hmac_sha256_iterate,

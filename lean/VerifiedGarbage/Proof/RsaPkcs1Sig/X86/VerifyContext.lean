@@ -1,7 +1,6 @@
 module
 
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyRegions
-public import VerifiedGarbage.Proof.Rsa.X86.PrivBytes
 public import VerifiedGarbage.Proof.Rsa.X86.PrivWorkspace
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyGeometry
 import VerifiedGarbage.Proof.Framework.Offset

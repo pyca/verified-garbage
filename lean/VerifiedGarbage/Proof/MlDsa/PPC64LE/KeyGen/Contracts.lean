@@ -8,7 +8,7 @@ import VerifiedGarbage.Proof.Framework.Contract
 /-!
 # ML-DSA on PPC64LE: the contracts of the primitives, evaluated
 
-As on 32-bit ARM (`Proof/MlDsa/Arm/KeyGen/Contracts.lean`): for each
+As on 32-bit ARM (`Proof/MlDsa/Arm/KeyGen/Call.lean`): for each
 primitive the top-level functions call, its contract's precondition
 (`ip_pre`, …), from plain facts about the state `x` the callee starts from:
 the arguments in their registers, the regions it is given, their

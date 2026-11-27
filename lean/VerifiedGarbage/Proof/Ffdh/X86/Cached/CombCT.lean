@@ -3,14 +3,12 @@ module
 public import VerifiedGarbage.Proof.Ffdh.X86.Cached.Comb
 public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.TimeWindow
 import VerifiedGarbage.Proof.Bignum.X86.CrtRt.TimePower
-import VerifiedGarbage.Proof.Ffdh.X86.Cached.Digit
 import VerifiedGarbage.Proof.Ffdh.X86.Cached.Select
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Ffdh.X86.StagesCT
 meta import VerifiedGarbage.Proof.Ffdh.X86.Cached.Comb
 meta import VerifiedGarbage.Proof.Bignum.X86.CrtRt.TimeWindow
 meta import VerifiedGarbage.Proof.Bignum.X86.CrtRt.TimePower
-meta import VerifiedGarbage.Proof.Ffdh.X86.Cached.Digit
 meta import VerifiedGarbage.Proof.Ffdh.X86.Cached.Select
 meta import VerifiedGarbage.Proof.Framework.Omega
 
@@ -45,12 +43,13 @@ abbrev toothTail (j : Nat) : List Instr :=
   [.alu .and .eax (.imm 1)] ++ List.replicate j (.alu .add .eax (.reg .eax)) ++
     [.alu .or .eax (.mem (sc winOff)), .store (sc winOff) .eax]
 
-theorem tooth_eq (j : Nat) : tooth j = .seq (.block (toothHead j)) (.seq bit (.block (toothTail j))) := rfl
+theorem tooth_eq (j : Nat) :
+    tooth j = .seq (.block (toothHead j)) (.seq VG.Impl.Ffdh.X86.scalarBit (.block (toothTail j))) := rfl
 
 /-- The bit, with its index public. -/
 abbrev SCheck (p : Prog isa) : Prop := (VG.Taint.check taint τAs p (VG.Taint.hintOf taint τAs p)).isSome = true
 
-theorem bit_check : SCheck Generate.bit := by dsimp only [SCheck]; taint_decide
+theorem bit_check : SCheck VG.Impl.Ffdh.X86.scalarBit := by dsimp only [SCheck]; taint_decide
 
 theorem toothHead_check : ∀ j < 5, ACheck (.block (toothHead j)) := by
   intro j hj
@@ -70,8 +69,11 @@ theorem select_check : ACheck Generate.select := by dsimp only [ACheck]; taint_d
 theorem dec_check : ACheck (.block [.mov .eax (.mem (sc iOff)), .alu .sub .eax (.imm 1), .store (sc iOff) .eax]) := by
   dsimp only [ACheck]; taint_decide
 
-theorem init_check : ACheck (.block [.mov .ecx (.mem (VG.Impl.Bignum.X86.PublicRt.argAt 0 ctxArg)),
-    .mov .eax (.mem (at_ .ecx 16)), .store (sc rowsOff) .eax, .store (sc iOff) .eax]) := by
+theorem headBase_check : XCheck (prepBasePre .wide) := by dsimp only [XCheck]; taint_decide
+
+theorem headLoad_check : ACheck (.seq (loadRow (rowImm 2) 6)
+    (.block [.mov .ecx (.mem (VG.Impl.Bignum.X86.PublicRt.argAt 0 ctxArg)),
+      .mov .eax (.mem (at_ .ecx 16)), .store (sc rowsOff) .eax, .store (sc iOff) .eax])) := by
   dsimp only [ACheck]; taint_decide
 
 theorem nil_check : ACheck (.block []) := by dsimp only [ACheck]; taint_decide
@@ -255,13 +257,17 @@ def CS (Ex : List Region → List Region → Prop) (base : Addr) (bytes len : Na
     ArgsOk u ∧ u.gpr .esp = sp
 
 theorem combHead_trace :
-    RelCT isa (Both (Run Ex base bytes len args sp)) Generate.combHead fun _ _ => True := by
-  have hc := winChecks .wide
+    RelCT isa (Both fun s => Run Ex base bytes len args sp s ∧ RoomF sp base bytes) Generate.combHead
+      fun _ _ => True := by
   unfold Generate.combHead
-  refine VG.RelCT.seq VG.Proof.Ffdh.X86.ctxP_relCT ?_
-  refine VG.RelCT.seq (mul_wst_relCT0 (o := 6) (a := 4) (b := 3) (by decide) (by decide) (by decide) (by decide)
-    (by decide) (by decide) hc.m643 (ks' := [3, 4, 6]) (by decide) (by decide) (by decide)) ?_
-  exact VG.RelCT.taint (A := taint) τA (fun _ _ h => h.1.run.agree h.2.run) init_check
+  refine VG.RelCT.seq (R := Both (Run Ex base bytes len args sp))
+    (taint_both (fun _ _ R₁ R₂ => R₁.1.agree R₂.1) _ VG.Proof.Ffdh.X86.ctxP_check fun _ R =>
+      copyDown_run (j := 9) (d := 0) (by decide) (by decide) (by decide) R.1) ?_
+  refine VG.RelCT.seq (R := Both (Run Ex base bytes len args sp))
+    (relCT_both (VG.RelCT.taint (A := sseTaint) τA (fun _ _ h => h.1.agree h.2) headBase_check) fun _ R =>
+      WP.mono (prepBasePre_ok R.1 .wide) fun _ ⟨hu, _, _, _, _, K⟩ =>
+        ⟨hu, R.2.1.keep K, (K.1 _ (by decide)).trans R.2.2⟩) ?_
+  exact VG.RelCT.taint (A := taint) τA (fun _ _ h => h.1.agree h.2) headLoad_check
 
 /-- The comb's runs with the same public width `bits` and modulus `P` leak the same traces. -/
 theorem comb_trace (hR0 : 0 < Spec.Rsa.FixedBaseComb.rows bits) (hR : Spec.Rsa.FixedBaseComb.rows bits ≤ 1639) :
@@ -271,8 +277,8 @@ theorem comb_trace (hR0 : 0 < Spec.Rsa.FixedBaseComb.rows bits) (hR : Spec.Rsa.F
   refine VG.RelCT.seq (relCT_both (F := CI Ex base bytes len args sp P bits (Spec.Rsa.FixedBaseComb.rows bits))
     ((combHead_trace (Ex := Ex) (base := base) (bytes := bytes) (len := len) (args := args) (sp := sp)).mono
       (fun _ _ h => ?_) fun _ _ h => h) fun u C => ?_) ?_
-  · obtain ⟨⟨_, _, _, h₁, _, _, _, A₁, e₁⟩, ⟨_, _, _, h₂, _, _, _, A₂, e₂⟩⟩ := h
-    exact ⟨⟨h₁, A₁, e₁⟩, ⟨h₂, A₂, e₂⟩⟩
+  · obtain ⟨⟨_, _, _, h₁, E₁, _, _, A₁, e₁⟩, ⟨_, _, _, h₂, E₂, _, _, A₂, e₂⟩⟩ := h
+    exact ⟨⟨⟨h₁, A₁, e₁⟩, e₁ ▸ E₁.room⟩, ⟨⟨h₂, A₂, e₂⟩, e₂ ▸ E₂.room⟩⟩
   · obtain ⟨G, x, _, h, E, hP, hrows, A, e⟩ := C
     exact WP.mono (combHead_ok h E hP hR0 hrows) fun t S => ⟨u, G, x, _, h, E, S, A, e⟩
   refine VG.RelCT.seq (loop_trace hR0 hR) ?_

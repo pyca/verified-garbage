@@ -21,7 +21,6 @@ vg_seed_cfb128_encrypt:
 	add x25, x1, #0
 	add x23, x2, #0
 	add x24, x3, #0
-	dup v31.2d, x25
 	ldr x6, [x0, #0]
 	str x6, [x5, #1232]
 	ldr x6, [x0, #8]
@@ -54,28 +53,15 @@ vg_seed_cfb128_encrypt:
 	str x6, [x5, #1344]
 	ldr x6, [x0, #120]
 	str x6, [x5, #1352]
-	umov x25, v31.d[0]
 	ldr x6, [x25, #0]
 	str x6, [x5, #976]
 	ldr x6, [x25, #8]
 	str x6, [x5, #984]
 	cbz x24, 20f
 22:
-	dup v31.2d, x25
-	dup v28.2d, x30
-	dup v27.2d, x5
-	dup v29.2d, x23
-	dup v30.2d, x24
-	add x0, x5, #1232
-	add x1, x5, #976
-	movz x2, #16, lsl #0
-	add x3, x5, #0
-	bl {vg_seed_encrypt_blocks}
-	umov x5, v27.d[0]
-	umov x30, v28.d[0]
-	umov x23, v29.d[0]
-	umov x24, v30.d[0]
-	umov x25, v31.d[0]
+	add x19, x30, #0
+	bl {vg_seed_serial_encrypt}
+	add x30, x19, #0
 	ldr x6, [x23, #0]
 	ldr x7, [x5, #976]
 	eor x6, x6, x7
@@ -204,12 +190,30 @@ vg_seed_cfb128_encrypt:
 	stp x17, x17, [x16, #400]
 	stp x17, x17, [x16, #416]
 	add sp, sp, #1456
+	movz x1, #0, lsl #0
+	movz x2, #0, lsl #0
+	movz x3, #0, lsl #0
+	movz x6, #0, lsl #0
+	movz x7, #0, lsl #0
+	movz x8, #0, lsl #0
+	movz x9, #0, lsl #0
+	movz x10, #0, lsl #0
+	movz x11, #0, lsl #0
+	movz x12, #0, lsl #0
+	movz x13, #0, lsl #0
+	movi v0.2d, #0
+	movi v1.2d, #0
+	movi v3.2d, #0
+	movz x0, #0, lsl #0
 	ret
 	.p2align 6
 
 vg_seed_cfb128_decrypt:
 	sub sp, sp, #1456
 	add x4, sp, #0
+	add x13, x3, #2
+	lsr x13, x13, #3
+	cbz x13, 20f
 	add x5, x4, #0
 	str x19, [x5, #1360]
 	str x20, [x5, #1368]
@@ -225,7 +229,7 @@ vg_seed_cfb128_decrypt:
 	str x6, [x5, #1440]
 	ldr x6, [x1, #8]
 	str x6, [x5, #1448]
-	cbz x3, 20f
+	cbz x3, 22f
 	sub x7, x3, #1
 	lsl x7, x7, #4
 	add x7, x7, x2
@@ -233,9 +237,9 @@ vg_seed_cfb128_decrypt:
 	str x6, [x1, #0]
 	ldr x6, [x7, #8]
 	str x6, [x1, #8]
-	b 21f
-20:
-21:
+	b 23f
+22:
+23:
 	add x23, x2, #0
 	add x24, x3, #0
 	ldr x6, [x0, #0]
@@ -270,15 +274,15 @@ vg_seed_cfb128_decrypt:
 	str x6, [x5, #1344]
 	ldr x6, [x0, #120]
 	str x6, [x5, #1352]
-	cbz x24, 22f
-24:
-	lsr x13, x24, #4
-	cbnz x13, 25f
-	add x16, x24, #0
-	b 26f
-25:
-	movz x16, #16, lsl #0
+	cbz x24, 24f
 26:
+	lsr x13, x24, #4
+	cbnz x13, 27f
+	add x16, x24, #0
+	b 28f
+27:
+	movz x16, #16, lsl #0
+28:
 	ldr x8, [x5, #1440]
 	str x8, [x5, #976]
 	ldr x8, [x5, #1448]
@@ -287,8 +291,8 @@ vg_seed_cfb128_decrypt:
 	add x14, x14, #16
 	add x15, x23, #0
 	sub x17, x16, #1
-	cbz x17, 27f
-29:
+	cbz x17, 29f
+211:
 	ldr x8, [x15, #0]
 	str x8, [x14, #0]
 	ldr x8, [x15, #8]
@@ -296,10 +300,10 @@ vg_seed_cfb128_decrypt:
 	add x14, x14, #16
 	add x15, x15, #16
 	sub x17, x17, #1
-	cbnz x17, 29b
-	b 28f
-27:
-28:
+	cbnz x17, 211b
+	b 210f
+29:
+210:
 	ldr x8, [x15, #0]
 	str x8, [x5, #1440]
 	ldr x8, [x15, #8]
@@ -318,17 +322,17 @@ vg_seed_cfb128_decrypt:
 	umov x23, v29.d[0]
 	umov x24, v30.d[0]
 	lsr x13, x24, #4
-	cbnz x13, 210f
+	cbnz x13, 212f
 	add x16, x24, #0
-	b 211f
-210:
+	b 213f
+212:
 	movz x16, #16, lsl #0
-211:
+213:
 	add x14, x5, #0
 	add x14, x14, #976
 	add x15, x23, #0
 	add x17, x16, #0
-212:
+214:
 	ldr x8, [x14, #0]
 	ldr x9, [x15, #0]
 	eor x8, x8, x9
@@ -340,13 +344,13 @@ vg_seed_cfb128_decrypt:
 	add x14, x14, #16
 	add x15, x15, #16
 	sub x17, x17, #1
-	cbnz x17, 212b
+	cbnz x17, 214b
 	add x23, x15, #0
 	sub x24, x24, x16
-	cbnz x24, 24b
-	b 23f
-22:
-23:
+	cbnz x24, 26b
+	b 25f
+24:
+25:
 	ldr x19, [x5, #1360]
 	ldr x20, [x5, #1368]
 	ldr x21, [x5, #1376]
@@ -357,6 +361,100 @@ vg_seed_cfb128_decrypt:
 	ldr x26, [x5, #1416]
 	ldr x27, [x5, #1424]
 	ldr x28, [x5, #1432]
+	b 21f
+20:
+	add x5, x4, #0
+	str x19, [x5, #1360]
+	str x20, [x5, #1368]
+	str x21, [x5, #1376]
+	str x22, [x5, #1384]
+	str x23, [x5, #1392]
+	str x24, [x5, #1400]
+	str x25, [x5, #1408]
+	str x26, [x5, #1416]
+	str x27, [x5, #1424]
+	str x28, [x5, #1432]
+	add x25, x1, #0
+	add x23, x2, #0
+	add x24, x3, #0
+	ldr x6, [x0, #0]
+	str x6, [x5, #1232]
+	ldr x6, [x0, #8]
+	str x6, [x5, #1240]
+	ldr x6, [x0, #16]
+	str x6, [x5, #1248]
+	ldr x6, [x0, #24]
+	str x6, [x5, #1256]
+	ldr x6, [x0, #32]
+	str x6, [x5, #1264]
+	ldr x6, [x0, #40]
+	str x6, [x5, #1272]
+	ldr x6, [x0, #48]
+	str x6, [x5, #1280]
+	ldr x6, [x0, #56]
+	str x6, [x5, #1288]
+	ldr x6, [x0, #64]
+	str x6, [x5, #1296]
+	ldr x6, [x0, #72]
+	str x6, [x5, #1304]
+	ldr x6, [x0, #80]
+	str x6, [x5, #1312]
+	ldr x6, [x0, #88]
+	str x6, [x5, #1320]
+	ldr x6, [x0, #96]
+	str x6, [x5, #1328]
+	ldr x6, [x0, #104]
+	str x6, [x5, #1336]
+	ldr x6, [x0, #112]
+	str x6, [x5, #1344]
+	ldr x6, [x0, #120]
+	str x6, [x5, #1352]
+	ldr x6, [x25, #0]
+	str x6, [x5, #976]
+	ldr x6, [x25, #8]
+	str x6, [x5, #984]
+	cbz x24, 215f
+217:
+	add x19, x30, #0
+	bl {vg_seed_serial_encrypt}
+	add x30, x19, #0
+	ldr x6, [x23, #0]
+	ldr x7, [x5, #976]
+	eor x6, x6, x7
+	str x6, [x23, #0]
+	ldr x6, [x23, #8]
+	ldr x7, [x5, #984]
+	eor x6, x6, x7
+	str x6, [x23, #8]
+	ldr x6, [x5, #976]
+	ldr x7, [x23, #0]
+	eor x6, x6, x7
+	str x6, [x5, #976]
+	ldr x6, [x5, #984]
+	ldr x7, [x23, #8]
+	eor x6, x6, x7
+	str x6, [x5, #984]
+	add x23, x23, #16
+	sub x24, x24, #1
+	cbnz x24, 217b
+	b 216f
+215:
+216:
+	ldr x6, [x5, #976]
+	str x6, [x25, #0]
+	ldr x6, [x5, #984]
+	str x6, [x25, #8]
+	ldr x19, [x5, #1360]
+	ldr x20, [x5, #1368]
+	ldr x21, [x5, #1376]
+	ldr x22, [x5, #1384]
+	ldr x23, [x5, #1392]
+	ldr x24, [x5, #1400]
+	ldr x25, [x5, #1408]
+	ldr x26, [x5, #1416]
+	ldr x27, [x5, #1424]
+	ldr x28, [x5, #1432]
+21:
 	movz x17, #0, lsl #0
 	add x16, sp, #0
 	stp x17, x17, [x16, #0]
@@ -453,6 +551,25 @@ vg_seed_cfb128_decrypt:
 	stp x17, x17, [x16, #400]
 	stp x17, x17, [x16, #416]
 	add sp, sp, #1456
+	movz x1, #0, lsl #0
+	movz x2, #0, lsl #0
+	movz x3, #0, lsl #0
+	movz x6, #0, lsl #0
+	movz x7, #0, lsl #0
+	movz x8, #0, lsl #0
+	movz x9, #0, lsl #0
+	movz x10, #0, lsl #0
+	movz x11, #0, lsl #0
+	movz x12, #0, lsl #0
+	movz x13, #0, lsl #0
+	movi v0.2d, #0
+	movi v1.2d, #0
+	movi v3.2d, #0
+	movi v27.2d, #0
+	movi v28.2d, #0
+	movi v29.2d, #0
+	movi v30.2d, #0
+	movz x0, #0, lsl #0
 	ret
 	.p2align 6
 
@@ -473,7 +590,6 @@ vg_seed_cfb128_encrypt_final:
 	add x25, x1, #0
 	add x23, x2, #0
 	add x24, x3, #0
-	dup v31.2d, x25
 	ldr x6, [x0, #0]
 	str x6, [x5, #1232]
 	ldr x6, [x0, #8]
@@ -506,28 +622,15 @@ vg_seed_cfb128_encrypt_final:
 	str x6, [x5, #1344]
 	ldr x6, [x0, #120]
 	str x6, [x5, #1352]
-	umov x25, v31.d[0]
 	ldr x6, [x25, #0]
 	str x6, [x5, #976]
 	ldr x6, [x25, #8]
 	str x6, [x5, #984]
 	cbz x24, 20f
 22:
-	dup v31.2d, x25
-	dup v28.2d, x30
-	dup v27.2d, x5
-	dup v29.2d, x23
-	dup v30.2d, x24
-	add x0, x5, #1232
-	add x1, x5, #976
-	movz x2, #16, lsl #0
-	add x3, x5, #0
-	bl {vg_seed_encrypt_blocks}
-	umov x5, v27.d[0]
-	umov x30, v28.d[0]
-	umov x23, v29.d[0]
-	umov x24, v30.d[0]
-	umov x25, v31.d[0]
+	add x19, x30, #0
+	bl {vg_seed_serial_encrypt}
+	add x30, x19, #0
 	lsr x8, x24, #4
 	cbz x8, 23f
 	ldr x6, [x23, #0]
@@ -671,6 +774,20 @@ vg_seed_cfb128_encrypt_final:
 	stp x17, x17, [x16, #400]
 	stp x17, x17, [x16, #416]
 	add sp, sp, #1456
+	movz x1, #0, lsl #0
+	movz x2, #0, lsl #0
+	movz x3, #0, lsl #0
+	movz x6, #0, lsl #0
+	movz x7, #0, lsl #0
+	movz x9, #0, lsl #0
+	movz x10, #0, lsl #0
+	movz x11, #0, lsl #0
+	movz x12, #0, lsl #0
+	movz x13, #0, lsl #0
+	movi v0.2d, #0
+	movi v1.2d, #0
+	movi v3.2d, #0
+	movz x0, #0, lsl #0
 	ret
 	.p2align 6
 
@@ -691,7 +808,6 @@ vg_seed_cfb128_decrypt_final:
 	add x25, x1, #0
 	add x23, x2, #0
 	add x24, x3, #0
-	dup v31.2d, x25
 	ldr x6, [x0, #0]
 	str x6, [x5, #1232]
 	ldr x6, [x0, #8]
@@ -724,28 +840,15 @@ vg_seed_cfb128_decrypt_final:
 	str x6, [x5, #1344]
 	ldr x6, [x0, #120]
 	str x6, [x5, #1352]
-	umov x25, v31.d[0]
 	ldr x6, [x25, #0]
 	str x6, [x5, #976]
 	ldr x6, [x25, #8]
 	str x6, [x5, #984]
 	cbz x24, 20f
 22:
-	dup v31.2d, x25
-	dup v28.2d, x30
-	dup v27.2d, x5
-	dup v29.2d, x23
-	dup v30.2d, x24
-	add x0, x5, #1232
-	add x1, x5, #976
-	movz x2, #16, lsl #0
-	add x3, x5, #0
-	bl {vg_seed_encrypt_blocks}
-	umov x5, v27.d[0]
-	umov x30, v28.d[0]
-	umov x23, v29.d[0]
-	umov x24, v30.d[0]
-	umov x25, v31.d[0]
+	add x19, x30, #0
+	bl {vg_seed_serial_encrypt}
+	add x30, x19, #0
 	lsr x8, x24, #4
 	cbz x8, 23f
 	ldr x6, [x23, #0]
@@ -893,5 +996,19 @@ vg_seed_cfb128_decrypt_final:
 	stp x17, x17, [x16, #400]
 	stp x17, x17, [x16, #416]
 	add sp, sp, #1456
+	movz x1, #0, lsl #0
+	movz x2, #0, lsl #0
+	movz x3, #0, lsl #0
+	movz x6, #0, lsl #0
+	movz x7, #0, lsl #0
+	movz x9, #0, lsl #0
+	movz x10, #0, lsl #0
+	movz x11, #0, lsl #0
+	movz x12, #0, lsl #0
+	movz x13, #0, lsl #0
+	movi v0.2d, #0
+	movi v1.2d, #0
+	movi v3.2d, #0
+	movz x0, #0, lsl #0
 	ret
 	.p2align 6

@@ -1,13 +1,12 @@
 module
 
+public import VerifiedGarbage.Proof.RsaKeyGen.KeySearchPublic
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Generate.Correct
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Generate.Implies
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Search.Verified
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Verified
-public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Search.CT
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTFrames
 public import VerifiedGarbage.Proof.Framework.Arm.RelCT
-import VerifiedGarbage.Proof.RsaKeyGen.Arm.Search.CTLeaf
 import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Ffdh.Arm.Block
@@ -17,12 +16,11 @@ import VerifiedGarbage.Proof.Framework.Arm.Frame
 import VerifiedGarbage.Proof.Framework.TaintBatch
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Search.Loop
-import VerifiedGarbage.Proof.RsaKeyGen.Arm.Search.CTStep
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.EntropyRequest
 import VerifiedGarbage.Spec.RsaKeyGen.GenerationAgrees
-meta import VerifiedGarbage.Proof.RsaKeyGen.Arm.Search.CTLeaf
+meta import VerifiedGarbage.Proof.RsaKeyGen.Arm.Search.Verified
 meta import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Ffdh.Arm.Block
@@ -32,13 +30,11 @@ meta import VerifiedGarbage.Proof.Framework.Arm.Frame
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.RsaKeyGen.Arm.Search.Loop
-meta import VerifiedGarbage.Proof.RsaKeyGen.Arm.Search.CTStep
 meta import VerifiedGarbage.Proof.Framework.Sig
 meta import VerifiedGarbage.Proof.Framework.Arm.Contract
 meta import VerifiedGarbage.Spec.RsaKeyGen.Contract
 meta import VerifiedGarbage.Proof.RsaKeyGen.Contract
 meta import VerifiedGarbage.TCB.Arm.Target
-meta import VerifiedGarbage.Proof.RsaKeyGen.Arm.Search.CT
 meta import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTFrames
 meta import VerifiedGarbage.Proof.Framework.Arm.RelCT
 meta import VerifiedGarbage.Proof.EntropyRequest
@@ -55,7 +51,7 @@ whole controller's, and `Verified`.
 
 /-! ## Where two runs of the loop are (ARMv7)
 
-As on AArch64 (`Proof/RsaKeyGen/AArch64/Generate/CTPoint.lean`): two runs at
+As on AArch64 (`Proof/RsaKeyGen/AArch64/Generate/Verified.lean`): two runs at
 the same point (`GenCTL`) agree on the public data, the octets consumed, the
 progress' public words (the generations left, the phase's word and the
 counted candidates left), the state's request word and the trace still to
@@ -330,6 +326,19 @@ theorem callS_words {p : GenPublic} {o s u : State} {used : Nat} {st : KeyProgre
   simp only [off] at h0 h1 h2
   rw [h0, h1, h2]
 
+/-- A word that one of the stores writes is the same over any word: stated once, since `rfl` on
+`slotValue l j x = slotValue l j y` first compares `x` and `y`, the words of two states' memories. -/
+private theorem slotValue_any {values : List (Nat × BitVec 32)} {j : Nat} (h : j ∈ values.map Prod.fst)
+    (x y : BitVec 32) : slotValue values j x = slotValue values j y := by
+  induction values generalizing x y with
+  | nil => exact absurd h List.not_mem_nil
+  | cons e t ih =>
+    show slotValue t j (if j = e.1 then e.2 else x) = slotValue t j (if j = e.1 then e.2 else y)
+    by_cases hj : j = e.1
+    · simp only [hj, ↓reduceIte]
+    · simp only [hj, ↓reduceIte]
+      exact ih ((List.mem_cons.mp h).resolve_left hj) _ _
+
 theorem search_call_ct (name : String) (c : Search.Cand) :
     RelCT isa (Two CallSCT) (.call name (Impl.RsaKeyGen.Arm.Search.code c.call)) (fun _ _ => True) := by
   intro u₁ u₂ t₁ t₂ v₁ v₂ ⟨q, h₁, h₂, hsp⟩ e₁ e₂
@@ -368,15 +377,8 @@ theorem search_call_ct (name : String) (c : Search.Cand) :
     · rw [g₁.stArg r₁ hj, g₂.stArg r₂ hj]
       unfold callArgs
       rw [plenOf_ph p₁₂]
-      match j, hj with
-      | 0, _ => rfl
-      | 1, _ => rfl
-      | 2, _ => rfl
-      | 3, _ => rfl
-      | 4, _ => rfl
-      | 5, _ => rfl
-      | 6, _ => rfl
-      | 7, _ => rfl
+      exact slotValue_any (show j ∈ ([0, 3, 4, 5, 6, 7, 1, 2] : List Nat) from
+        (by decide : ∀ j < 8, j ∈ ([0, 3, 4, 5, 6, 7, 1, 2] : List Nat)) j hj) _ _
     · rw [callS_words g₁ r₁, callS_words g₂ r₂, a₁.2.2.1, a₂.2.2.1, w₁, w₂]
     · rw [hres₁, hres₂, a₁.status, a₂.status]
     · rw [hres₁, hres₂, a₁.cand, a₂.cand]
@@ -517,22 +519,7 @@ theorem key_call_ct (name : String) {kc : Prog isa}
     have st₂ := k₂.status
     have arg (j : Nat) (hj : j < 14) : stackArg (callK q.inputs a) j = stackArg (callK q.inputs b) j := by
       rw [g₁.kArg r₁ hj, g₂.kArg r₂ hj]
-      unfold keyVals keyVals1 keyVals2 keyVals3
-      match j, hj with
-      | 0, _ => rfl
-      | 1, _ => rfl
-      | 2, _ => rfl
-      | 3, _ => rfl
-      | 4, _ => rfl
-      | 5, _ => rfl
-      | 6, _ => rfl
-      | 7, _ => rfl
-      | 8, _ => rfl
-      | 9, _ => rfl
-      | 10, _ => rfl
-      | 11, _ => rfl
-      | 12, _ => rfl
-      | 13, _ => rfl
+      exact slotValue_any (show j ∈ List.range 14 from List.mem_range.mpr hj) _ _
     refine ⟨sp, ?_, by rw [r₁.r0, r₂.r0], by rw [r₁.r1, r₂.r1], by rw [r₁.r2, r₂.r2], by rw [r₁.r3, r₂.r3], ?_⟩
     · rw [l₁, e₁, p₁, q₁, l₂, e₂, p₂, q₂]
       simp only [keyOf] at st₁ st₂
@@ -870,7 +857,7 @@ theorem entry_ct : RelCT isa (Two StartCT) (.block entry) (Two EnteredCT) := by
 /-- The key's buffer's `p` on entry is the progress' `p`. -/
 theorem entry_other {p : GenPublic} {o s : State} (hi : GenInput p o) (hm : s.mem = (pushed pushRegs o).mem) :
     ∀ pB, (genProgress o).phase = .q pB → Spec.Rsa.bytesAt s.mem (p.slot 4) p.L = pB := by
-  have room : 256 ≤ o.sp.toNat := hi.1.1
+  have room : 304 ≤ o.sp.toNat := hi.1.1
   have hroom : 40 ≤ o.sp.toNat := by omega_using [room]
   have cf := hi.cfacts
   have f := hi.facts
@@ -901,7 +888,7 @@ theorem clear_ct : RelCT isa (Two EnteredCT) clearAround (Two GenCTL) := by
     have hp : q.inputs = genOfState o := hi.2.symm
     simp only [startOf, tailOf, List.drop_zero, hp]
     rfl
-  · have room : 256 ≤ o.sp.toNat := hi.1.1
+  · have room : 304 ≤ o.sp.toNat := hi.1.1
     have hroom : 40 ≤ o.sp.toNat := by omega_using [room]
     have cf := hi.cfacts
     have hst := cf.stack
@@ -1054,12 +1041,12 @@ theorem code_ct (sname : String) (c : Search.Cand) (name : String) {kc : Prog is
     (hv : Verified target kc (Proof.RsaKeyGen.keyContract abi 56)) (hks : FrameStack.armStack kc ≤ 56) :
     RelCT isa (fun s t => genPre s ∧ genPre t ∧ genPub s t)
       (code (.call sname (Impl.RsaKeyGen.Arm.Search.code c.call)) (.call name kc)) (fun _ _ => True) := by
-  unfold code
+  unfold Impl.RsaKeyGen.Arm.Generate.code
   rw [show pushBytes = 4 * pushRegs.length from rfl]
   refine RelCT.frame (fun _ _ h => h.2.2.1) ?_
   rintro a b ta tb u v ⟨s, t, ⟨hs, ht, hp⟩, ea, eb⟩ e1 e2
-  have rs : 256 ≤ s.sp.toNat := hs.1
-  have rt : 256 ≤ t.sp.toNat := ht.1
+  have rs : 304 ≤ s.sp.toNat := hs.1
+  have rt : 304 ≤ t.sp.toNat := ht.1
   rw [push_pushed (by decide) (by simp only [List.length_cons, List.length_nil]; omega_arith)] at ea eb
   cases ea
   cases eb
@@ -1101,7 +1088,7 @@ theorem gen_correct [VG.Proof.Rsa.Arm.Keys.InvLaw] (v : RoundImpl) (s : State) (
 /-- The controller, given the inverse's law (`InvLaw`, whose instance the
 registration file imports). -/
 theorem gen_verified [VG.Proof.Rsa.Arm.Keys.InvLaw] (v : RoundImpl) :
-    Verified target (genCode v) (Spec.RsaKeyGen.keySearchContract abi stackUse) :=
+    Verified target (genCode v) (Proof.RsaKeyGen.keySearchAskedContract abi stackUse) :=
   Verified.of_correct (gen_correct v)
     (gen_constantTime _ (Search.Cand.ofRound v) _ Key.key_verified key_stack) gen_implies
 

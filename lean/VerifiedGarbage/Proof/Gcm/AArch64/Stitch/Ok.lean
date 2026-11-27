@@ -1,11 +1,10 @@
 module
-public import VerifiedGarbage.Proof.Gcm.AArch64.Stitch.Base
 
+public import VerifiedGarbage.Proof.Gcm.AArch64.Stitch.Steps
 import VerifiedGarbage.Proof.Gcm.AArch64.Stitch.Loop
 import VerifiedGarbage.Proof.Gcm.Spec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.CallLay
-import VerifiedGarbage.Proof.Gcm.AArch64.Stitch.Steps
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Aes.AArch64.CodeLit
@@ -113,93 +112,6 @@ theorem setup_ok {s₀ : State} {to : Bool} (hp : KPreM s₀ to) (hb : Nat → B
     rfl
 
 /-! ## The loops -/
-
-/-- `seal`'s loop: the first batch encrypted, then each next one while the one before is hashed, then the last hashed. -/
-theorem encLoop_ok {s₀ : State} (hp : KPreM s₀ false) (gh : Gh8Ok) {s : State}
-    (hI : LInv s₀ false (blockC s₀) 0 0 s) :
-    WP isa (encLoop (rounds s₀)) s (LInv s₀ false (blockC s₀) (nb s₀) (nb s₀)) := by
-  have hn := hp.n16
-  have h1 := hp.nb1
-  -- The batch at `x9 + 16 (8 h + j)`, once encrypted.
-  have hct : ∀ {c h : Nat} {s : State}, LInv s₀ false (blockC s₀) c h s → h < c →
-      ∀ j < 8, blockAt s.mem (dp s₀ + BitVec.ofNat 64 (16 * (8 * h + j))) = blockC s₀ (8 * h + j) :=
-    fun hI hhc j hj => blockAt_of_dataInv (dataInvM_self.mp hI.data) (by omega_arith) (by have := hI.le; omega_arith)
-  unfold encLoop
-  refine WP.seq ?_
-  -- The first batch.
-  rw [WP.block_append_iff, WP.block_append_iff]
-  refine WP.mono (aesStep hp hI (by omega_arith) (show 128 * 0 + 0 = 128 * 0 by rfl) (by decide) (by decide))
-    fun t ⟨hv, x10t, frt⟩ => ?_
-  have gt : ∀ r, r ≠ .x10 → r ≠ .x12 → t.gpr r = s.gpr r := fun r h1 h2 => frt.gpr r (by simp [h1, h2])
-  refine WP.mono (stores_ok hp (c := 0) (by omega_arith) (by decide) (by decide) t .x9
-    (by rw [gt _ (by decide) (by decide), hI.x9, BitVec.add_zero, op_false]) (by rw [frt.mem]; exact hI.data)
-    (by rw [frt.wr, hI.wr]) hv) fun u ⟨d₁, f₁, g₁, v₁, sp₁, rd₁, wr₁⟩ => ?_
-  rw [WP.block_cons_iff]
-  refine ⟨_, exec_subImm_x (imm := 1) (by decide), WP.block_nil ?_⟩
-  have hI₁ : LInv s₀ false (blockC s₀) 1 0 (u.write .x .x11 (u.read .x .x11 - BitVec.ofNat 64 1)) := {
-    le := h1
-    x9 := by rw [gpr_write_of_ne _ _ _ (by decide), g₁, gt _ (by decide) (by decide), hI.x9]
-    x10 := by
-      simp only [State.read] at x10t ⊢
-      rw [gpr_write_of_ne _ _ _ (by decide), g₁]; exact x10t
-    x11 := by
-      simp only [gpr_write_self, State.read, BitVec.setWidth_eq]
-      rw [g₁, gt .x11 (by decide) (by decide), hI.x11, Nat.sub_zero, Offset.ofNat_sub_ofNat (by omega_arith)]
-    xo := nofun
-    gpr := fun r hr => by
-      simp only [kRegsT, cond, kRegs, List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-      rw [gpr_write_of_ne _ _ _ hr.2.2.1, g₁, gt r hr.2.1 hr.2.2.2.1, hI.gpr r (by simp [kRegsT, cond, kRegs, hr.1, hr.2.1,
-        hr.2.2.1, hr.2.2.2.1, hr.2.2.2.2.1, hr.2.2.2.2.2])]
-    y := by rw [v_write, v₁, frt.v _ (by decide), hI.y]
-    cr := by rw [v_write, v₁, frt.v _ (by decide), hI.cr]
-    data := by rw [mem_write]; exact d₁
-    frame := by rw [mem_write]; exact hI.frame.trans (frt.mem ▸ f₁)
-    sp := by rw [sp_write, sp₁, frt.sp, hI.sp]
-    rd := by rw [rd_write, rd₁, frt.rd, hI.rd]
-    wr := by rw [wr_write, wr₁, frt.wr, hI.wr] }
-  -- The loop, then the last batch hashed.
-  refine WP.seq (WP.mono (Q := LInv s₀ false (blockC s₀) (nb s₀) (nb s₀ - 1)) ?_ fun s₂ hI₂ => ?_)
-  · refine WP.ite (decide (nb s₀ - 1 = 0)) (eval_zero hI₁.x11 (by omega_arith)) (fun h => ?_) (fun h => ?_)
-    · have : nb s₀ = 1 := by simp at h; omega_arith
-      exact WP.block_nil (by rw [this]; exact hI₁)
-    · let I : Nat → State → Prop := fun m s => ∃ h, m = nb s₀ - (h + 1) ∧ h + 1 < nb s₀ ∧
-          LInv s₀ false (blockC s₀) (h + 1) h s
-      have hstep : ∀ m s, I m s → WP isa (.block (encBody (rounds s₀))) s (fun s' =>
-          (AArch64.eval (.nonzero .x .x11) s' = some false ∧ LInv s₀ false (blockC s₀) (nb s₀) (nb s₀ - 1) s') ∨
-          (AArch64.eval (.nonzero .x .x11) s' = some true ∧ ∃ m' < m, I m' s')) := by
-        rintro m s ⟨h, rfl, hh, hI⟩
-        refine WP.mono (body_ok hp gh (by omega_arith) (by omega_arith) (by omega_arith) (.inr rfl) nofun hI (hct hI (by omega_arith)))
-          fun s' hI' => ?_
-        rw [eval_nonzero hI'.x11 (by omega_arith)]
-        by_cases hl : nb s₀ - (h + 1 + 1) = 0
-        · have e : h + 1 + 1 = nb s₀ := by omega_arith
-          exact .inl ⟨by simp [hl], by rw [← e, show h + 1 + 1 - 1 = h + 1 by omega_arith]; exact hI'⟩
-        · exact .inr ⟨by simp [hl], nb s₀ - (h + 1 + 1), by omega_arith, h + 1, rfl, by omega_arith, hI'⟩
-      exact WP.loop (M := isa) I hstep _ _ ⟨0, rfl, by simp at h; omega_arith, hI₁⟩
-  · rw [WP.block_append_iff]
-    refine WP.mono (ghStep hp gh (hb := blockC s₀) (h := nb s₀ - 1) hI₂.y hI₂.cr hI₂.x9 (by omega_arith)
-      (hI₂.gpr _ (notMem_kRegsT _ (by decide))) (by rw [hI₂.rd, hI₂.wr]) hI₂.frame (hct hI₂ (by omega_arith))) fun u ⟨hy, ou⟩ => ?_
-    rw [WP.block_cons_iff]
-    refine ⟨_, exec_addImm_x (imm := 128) (by decide), WP.block_nil ?_⟩
-    have e : nb s₀ - 1 + 1 = nb s₀ := by omega_arith
-    exact {
-      le := Nat.le_refl _
-      x9 := by
-        simp only [gpr_write_self, State.read, BitVec.setWidth_eq, ou.gpr, hI₂.x9]
-        rw [Offset.add_add_eq _ (show 128 * (nb s₀ - 1) + 128 = 128 * nb s₀ by omega_arith)]
-      x10 := by
-        simp only [State.read, gpr_write_of_ne _ _ _ (show Reg.x10 ≠ Reg.x9 by decide), ou.gpr]; exact hI₂.x10
-      x11 := by rw [gpr_write_of_ne _ _ _ (by decide), ou.gpr, hI₂.x11]
-      xo := nofun
-      gpr := fun r hr => by
-        rw [gpr_write_of_ne _ _ _ (fun h => hr (by simp [h, kRegsT, cond, kRegs])), ou.gpr, hI₂.gpr r hr]
-      y := by rw [v_write, hy, e]
-      cr := by rw [v_write, ou.v C (by decide), hI₂.cr]
-      data := by rw [mem_write, ou.mem]; exact hI₂.data
-      frame := by rw [mem_write, ou.mem]; exact hI₂.frame
-      sp := by rw [sp_write, ou.sp, hI₂.sp]
-      rd := by rw [rd_write, ou.rd, hI₂.rd]
-      wr := by rw [wr_write, ou.wr, hI₂.wr] }
 
 /-- `open`'s loop: each batch decrypted while it is hashed, the plaintext
 stored over it or, out of place, to the destination. -/

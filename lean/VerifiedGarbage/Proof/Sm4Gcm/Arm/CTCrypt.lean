@@ -1,21 +1,18 @@
 module
-public import VerifiedGarbage.Proof.Sm4Gcm.Arm.CTBase
-public import VerifiedGarbage.Proof.Sm4Gcm.Arm.Crypt
 
+public import VerifiedGarbage.Proof.Sm4Gcm.Arm.CTBase
+public import VerifiedGarbage.Proof.Sm4Gcm.Arm.Fn
 import VerifiedGarbage.Proof.Sm4Gcm.Arm.CTAbsorb
 meta import VerifiedGarbage.Proof.Sm4Gcm.Arm.CTAbsorb
-import VerifiedGarbage.Proof.Sm4Gcm.Arm.Tag
-meta import VerifiedGarbage.Proof.Sm4Gcm.Arm.Tag
-import VerifiedGarbage.Proof.Sm4Gcm.Arm.CryptOk
-meta import VerifiedGarbage.Proof.Sm4Gcm.Arm.CryptOk
+meta import VerifiedGarbage.Proof.Sm4Gcm.Arm.Fn
+import VerifiedGarbage.Proof.Sm4Gcm.Arm.StreamFinish
+meta import VerifiedGarbage.Proof.Sm4Gcm.Arm.StreamFinish
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Sha256.Stream
-meta import VerifiedGarbage.Proof.Sm4Gcm.Arm.Entry
-meta import VerifiedGarbage.Proof.Sm4Gcm.Arm.Ghash1
-meta import VerifiedGarbage.Proof.Sm4Gcm.Arm.Loops
+meta import VerifiedGarbage.Proof.Sm4Gcm.Arm.Args
+meta import VerifiedGarbage.Proof.Sm4Gcm.Arm.Flush
 meta import VerifiedGarbage.Proof.Sm4Gcm.Arm.Open
-meta import VerifiedGarbage.Proof.Sm4Gcm.Arm.Seal
 meta import VerifiedGarbage.Proof.Cmac.Frame
 meta import VerifiedGarbage.Proof.Cmac.Mem
 meta import VerifiedGarbage.Proof.Cmac.Spec
@@ -168,7 +165,7 @@ theorem crypt_ct {k8 : BitVec 32} {D : BitVec 32} {n q : Nat} :
       ⟨k7, icb, P, m₀, hP, by rw [hj] at hm; exact hm⟩) (cryptTail_ct L)
 
 /-- `tag o`. -/
-theorem tag_ct {o : Nat} (ho : o = 0 ∨ o = 112) {k8 : BitVec 32} :
+theorem tag_ct [VG.Proof.Gcm.Arm.GhashLaw] {o : Nat} (ho : o = 0 ∨ o = 112) {k8 : BitVec 32} :
     CT (fun s => ∃ k7, Env c st w sp k7 k8 s) (tag o) := by
   refine CT.seq (J := fun s => ∃ k7, Env c st w sp k7 k8 s)
     ((lens_ct L (yo := 16) (.inr rfl)).mono fun s ⟨k7, he⟩ => ⟨k7, _, he⟩)

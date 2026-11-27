@@ -1,57 +1,35 @@
 module
 
 public import VerifiedGarbage.Proof.MillerRabin.X86.Backend
-public import VerifiedGarbage.Proof.MillerRabin.X86.Baseline
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.MillerRabin.Contract
 public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Impl.MillerRabin.X86.Round
-public import VerifiedGarbage.Proof.MillerRabin.X86.Entry
-public import VerifiedGarbage.Proof.MillerRabin.X86.TimingBlocks
+public import VerifiedGarbage.Proof.MillerRabin.X86.TimingSequences
+public import VerifiedGarbage.Proof.MillerRabin.X86.TimingBase
 public import VerifiedGarbage.Proof.Framework.RelCT
-public import VerifiedGarbage.Proof.MillerRabin.X86.EntryValues
 public import VerifiedGarbage.Proof.MillerRabin.X86.TimingCoreState
-import VerifiedGarbage.Proof.MillerRabin.X86.EntryArgs
-import VerifiedGarbage.Proof.MillerRabin.X86.EntryMarker
-import VerifiedGarbage.Proof.MillerRabin.X86.TimingStage
 public import VerifiedGarbage.Proof.MillerRabin.X86.TableMath
 import VerifiedGarbage.Proof.MillerRabin.X86.TimingCopy
-import VerifiedGarbage.Proof.MillerRabin.X86.TimingAttach
-public import VerifiedGarbage.Proof.MillerRabin.X86.TimingPrivate
-import VerifiedGarbage.Proof.MillerRabin.X86.TimingSequences
-import VerifiedGarbage.Proof.MillerRabin.X86.TableInit
-import VerifiedGarbage.Proof.MillerRabin.X86.TableStep
-public import VerifiedGarbage.Proof.MillerRabin.X86.Stage
+public import VerifiedGarbage.Proof.MillerRabin.X86.TimingSquares
+public import VerifiedGarbage.Proof.MillerRabin.X86.StageSlots
 import VerifiedGarbage.Proof.MillerRabin.X86.TimingPointers
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-public import VerifiedGarbage.Proof.MillerRabin.X86.TimingBase
 import VerifiedGarbage.Proof.Framework.KernelRfl
-import VerifiedGarbage.Proof.MillerRabin.X86.TimingSquareLoop
-import VerifiedGarbage.Proof.MillerRabin.X86.MontInstance
 import VerifiedGarbage.Proof.Mont.X86.Sse2.PreparedVerified
 import VerifiedGarbage.Proof.Framework.X86.RelCT
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.MillerRabin.X86.RoundFrame
 public import VerifiedGarbage.Proof.MillerRabin.X86.Caller
-public import VerifiedGarbage.Proof.MillerRabin.X86.EntryMemory
 import VerifiedGarbage.Proof.Mont.X86.Compact.Arithmetic
 import VerifiedGarbage.Proof.Mont.X86.Compact.EntryArgs
 import VerifiedGarbage.Proof.MillerRabin.Word32
 import VerifiedGarbage.Proof.MillerRabin.ExponentWords32
-public import VerifiedGarbage.Proof.MillerRabin.X86.ExponentState
-public import VerifiedGarbage.Proof.MillerRabin.X86.RunView
-public import VerifiedGarbage.Proof.MillerRabin.X86.SquareState
+public import VerifiedGarbage.Proof.MillerRabin.X86.StageLoadWord
 public import VerifiedGarbage.Proof.Framework.X86.Call
-import VerifiedGarbage.Proof.MillerRabin.X86.PrepareRun
-import VerifiedGarbage.Proof.MillerRabin.X86.WordLoop
-import VerifiedGarbage.Proof.MillerRabin.X86.StageLastSquares
-import VerifiedGarbage.Proof.MillerRabin.X86.SquareLoop
-import VerifiedGarbage.Proof.MillerRabin.X86.RoundMarker
-import VerifiedGarbage.Proof.MillerRabin.X86.Scalar
-import VerifiedGarbage.Proof.MillerRabin.X86.Sequences
-import VerifiedGarbage.Proof.Mont.X86.Compact.Restore
+import VerifiedGarbage.Proof.Mont.X86.Compact.Frame
 import VerifiedGarbage.Proof.Framework.X86.CallWith
 
 /-! ### `MillerRabin.X86.Verified`, which only this module used -/
@@ -912,11 +890,26 @@ theorem Result.keep {s t u : State} (R : Result s t)
   rw [eax, mem]
   exact R
 
+/-- The result, whatever the bytes of the push are and the unknowns. -/
+theorem Result.frame {s t : State} (E : Entry s) (R : Result s t) {m : Mem} {u : Nat → BitVec 32}
+    (fl : Frame [below (s.gpr .esp) 16] t.mem m) : Result s { t with mem := m, unknowns := u } := by
+  have fit : 16 ≤ (s.gpr .esp).toNat := by have := E.stackFit; omega_using [this]
+  have far : (below (s.gpr .esp) 16).Disjoint ⟨wsOf s, lenOf s⟩ := by
+    unfold below
+    rw [Taint.sub_setWidth fit]
+    exact E.stackSeparate.sub_left (Offset.sub_below _ (by decide) (by decide))
+  have wk : WorkspaceFrame (geometry s) [] t.mem m := fun i index _ =>
+    fl.bytes (R := ⟨wsOf s, lenOf s⟩) (fun r hr => by obtain rfl := List.mem_singleton.mp hr; exact far.symm)
+      (by change lenOf s ≤ 2 ^ 64; have := E.bound; omega_using [this]) index
+  exact ⟨R.1, R.2.trans (wk.mono fun _ mem => nomatch mem)⟩
+
 theorem Entry.framed {s : State} (E : Entry s) :
     WP isa (code montName montCode) s fun t => abiPreserved s t ∧ Result s t := by
   unfold code
-  refine WP.frame (rs := Compact.savedRegisters) (by decide) (by decide) (by decide)
-    (by change 16 ≤ _; have := E.stackFit; omega_using [this]) inner_noSp ?_
+  have fit16 : 16 ≤ (s.gpr .esp).toNat := by have := E.stackFit; omega_using [this]
+  refine WP.frameLocal (rs := Compact.savedRegisters) (by decide) (by decide) (by decide)
+    (by change 16 ≤ _; have := E.stackFit; omega_using [this]) inner_noSp
+    (fun t m _ ⟨abi, R⟩ fl => ⟨Compact.abi_frame fit16 abi fl, R.frame E fl⟩) ?_
   refine WP.seq (WP.mono E.body fun t ⟨R, K, F⟩ => ?_)
   have sp : t.gpr .esp = (entered s).gpr .esp := K.1 .esp (by decide)
   have fit : ((entered s).gpr .esp).toNat + 16 ≤ 2 ^ 32 := by
@@ -1035,6 +1028,7 @@ def variant : RoundImpl where
   noSp := code_noSp
   spSafe := by decide +kernel
   stack := code_stack
+  scrub := by lit_decide
   suffix := ""
   features := []
 

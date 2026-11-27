@@ -55,11 +55,11 @@ theorem gatherPostPrepared_of {s s' : State} (h : Proof.AesGcm.sealGatherPostG s
 theorem gatherPubPrepared_of {s₁ s₂ : State}
     (hp : (Proof.AesGcm.sealGatherPreparedScratchContract X86_64.abi 4888).pub s₁ s₂) :
     Proof.AesGcm.sealGatherPub s₁ s₂ := by
-  sig_pub [Proof.AesGcm.sealGatherPreparedScratchContract, Proof.AesGcm.sealGatherPreparedScratchSig, Proof.AesGcm.sealGatherPrecomputedScratchSig,
+  sig_pub_keep [Proof.AesGcm.sealGatherPreparedScratchContract, Proof.AesGcm.sealGatherPreparedScratchSig, Proof.AesGcm.sealGatherPrecomputedScratchSig,
     Proof.Gcm.sealGatherPowersPre, X86_64.abi, X86_64.argRegs, stackArgs_six, List.append_eq] at hp
   simp only [List.getD_cons_succ, List.getD_cons_zero, Sig.descRegion] at hp
-  obtain ⟨q₇, q₁, q₂, q₃, q₄, q₅, q₆, a₀, a₁, a₂, a₃, a₄, a₅, hd⟩ := hp
-  exact ⟨q₁, q₂, q₃, q₄, q₅, q₆, q₇, a₀, a₁, a₂, a₃, a₄, a₅, fun i hi => hd i (by simpa using hi)⟩
+  obtain ⟨q₇, qMd, q₁, q₂, q₃, q₄, q₅, q₆, a₀, a₁, a₂, a₃, a₄, a₅, hd⟩ := hp
+  exact ⟨q₁, q₂, q₃, q₄, q₅, q₆, q₇, a₀, a₁, a₂, a₃, a₄, a₅, fun i hi => hd i (by simpa using hi), qMd⟩
 
 theorem gatherSatPrepared_pre : ∃ s, (Proof.AesGcm.sealGatherPreparedScratchContract X86_64.abi 4888).pre s := by
   refine ⟨gatherSatP, ?_⟩
@@ -105,7 +105,7 @@ theorem sealGatherPrepared_framed (Sh : ShortFn CtxMode.prepared) (I : InitFn)
       (Impl.StackScratch.X86_64.withStackArgScratch 240 5
         (withFront long Sp.fn (sealGather Sh.quick Sh.fast Sh.test Sh.code I.fn A.fn T.fn F.fn)))
       (Proof.AesGcm.sealGatherPreparedRoundsContract X86_64.abi 5128) :=
-  X86_64.Verified.stackArgScratchL (sig := Proof.Gcm.sealGatherPrecomputedSig) (nm := "scratch") (e := .u64)
+  X86_64.Verified.stackArgScratchL (hpostOut := fun vs m m₁ m₂ r hl _ hb _ => (Proof.AesGcm.sealGatherPrecomputedPostOut_local _) vs m m₁ m₂ r hl hb) (sig := Proof.Gcm.sealGatherPrecomputedSig) (nm := "scratch") (e := .u64)
     (n := 23) (pre := Proof.Gcm.sealGatherPowersPre X86_64.abi.ptrBits)
     (post := Proof.AesGcm.sealGatherRoundsPost X86_64.abi.ptrBits) (wa := true) (stack := 4888) (bytes := 240)
     (sealGatherPrepared_core Sh I A T F Sp long) (by decide) (by decide) (by decide)

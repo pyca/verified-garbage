@@ -2,9 +2,8 @@ module
 
 public import VerifiedGarbage.Impl.MlDsa.X86.PkTr
 public import VerifiedGarbage.Spec.MlDsa.PkTr
-public import VerifiedGarbage.Proof.MlKem.X86.TopHash
+public import VerifiedGarbage.Proof.MlKem.X86.TopLocal
 public import VerifiedGarbage.Proof.MlKem.X86.TopKeep
-import VerifiedGarbage.Proof.MlKem.X86.TopLocal
 import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.NoSp
 import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Seeds
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
@@ -14,9 +13,8 @@ import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Sha3.X86.Lit
 meta import VerifiedGarbage.Impl.MlDsa.X86.PkTr
 meta import VerifiedGarbage.Spec.MlDsa.PkTr
-meta import VerifiedGarbage.Proof.MlKem.X86.TopHash
-meta import VerifiedGarbage.Proof.MlKem.X86.TopKeep
 meta import VerifiedGarbage.Proof.MlKem.X86.TopLocal
+meta import VerifiedGarbage.Proof.MlKem.X86.TopKeep
 meta import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Seeds
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.Framework.KernelRfl
@@ -153,7 +151,7 @@ theorem pkTr_verified (p : Params) (hp : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlD
   · obtain ⟨habi, -, -, s, hd, hm, -⟩ := hq
     refine ⟨habi, ?_⟩
     sig_post [Spec.MlDsa.pkTrContract, Spec.MlDsa.pkTrSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
-    rw [hm]
+    rw [argKeep (pre_of h₀) hm (k := 1) (l := 64) (by rcases hp with rfl | rfl | rfl <;> decide)]
     have r : Done p s₀ s := hd
     simp only [Done, addr0] at r
     exact r

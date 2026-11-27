@@ -1,68 +1,372 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.X86.TCombSelect
 public import VerifiedGarbage.Proof.Weierstrass.X86.Ladder
-public import VerifiedGarbage.Proof.Weierstrass.X86.TCombLay
 public import VerifiedGarbage.Proof.Weierstrass.X86.Rcb3
 public import VerifiedGarbage.Proof.Weierstrass.CombW
 public import VerifiedGarbage.Proof.Weierstrass.Law3
-import VerifiedGarbage.Proof.Framework.X86.Sse
+public import VerifiedGarbage.Proof.Framework.X86.Sse
 import VerifiedGarbage.Proof.X25519.X86.Column
 public import VerifiedGarbage.Proof.Framework.CallLay
 public import VerifiedGarbage.Proof.Framework.X86.SseDword
 public import VerifiedGarbage.Proof.Weierstrass.Pow
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Mont.X86.Instr
-import VerifiedGarbage.Proof.Weierstrass.X86.Copy
-import VerifiedGarbage.Spec.X25519
 public import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Mont.X86.Instr
+public import VerifiedGarbage.Proof.Weierstrass.X86.Copy
+import VerifiedGarbage.Spec.X25519
 public import VerifiedGarbage.Proof.Framework.BitByte
 public import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Proof.Framework.X86.CallWith
 public import VerifiedGarbage.Proof.Framework.X86.Mmx
 public import VerifiedGarbage.Proof.Framework.X86.RegUpd
-public import VerifiedGarbage.Proof.Framework.X86.Sse
 public import VerifiedGarbage.Proof.Mont.Words128
 public import VerifiedGarbage.Proof.Mont.X86.Chain
 public import VerifiedGarbage.Proof.Mont.X86.Csub
-public import VerifiedGarbage.Proof.Mont.X86.Instr
-public import VerifiedGarbage.Proof.Mont.X86.RedRow
 public import VerifiedGarbage.Proof.Mont.X86.Row
 public import VerifiedGarbage.Proof.Mont.X86.Step
 public import VerifiedGarbage.Proof.Rc2.Memory32
 public import VerifiedGarbage.Proof.Weierstrass.TCombWords
-public import VerifiedGarbage.Proof.Weierstrass.X86.Copy
 public import VerifiedGarbage.Proof.Weierstrass.X86.Loop
 public import VerifiedGarbage.Proof.Weierstrass.X86.MontRed
-public import VerifiedGarbage.Proof.Weierstrass.X86.MontSquareArithmetic
-public import VerifiedGarbage.Proof.Weierstrass.X86.MontSquareRed
 public import VerifiedGarbage.Proof.Weierstrass.X86.TCombOne
 public import VerifiedGarbage.Proof.X25519.Field
 public import VerifiedGarbage.Proof.X25519.X86.Arith
 public import VerifiedGarbage.Proof.X25519.X86.Fold
-import VerifiedGarbage.Proof.Framework.BitByte
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86.CallWith
-import VerifiedGarbage.Proof.Framework.X86.Mmx
-import VerifiedGarbage.Proof.Framework.X86.RegUpd
-import VerifiedGarbage.Proof.Mont.Words128
-import VerifiedGarbage.Proof.Mont.X86.Chain
-import VerifiedGarbage.Proof.Mont.X86.Csub
-import VerifiedGarbage.Proof.Mont.X86.RedRow
-import VerifiedGarbage.Proof.Mont.X86.Row
-import VerifiedGarbage.Proof.Mont.X86.Step
-import VerifiedGarbage.Proof.Rc2.Memory32
-import VerifiedGarbage.Proof.Weierstrass.TCombWords
-import VerifiedGarbage.Proof.Weierstrass.X86.Loop
-import VerifiedGarbage.Proof.Weierstrass.X86.MontRed
-import VerifiedGarbage.Proof.Weierstrass.X86.MontSquareArithmetic
-import VerifiedGarbage.Proof.Weierstrass.X86.MontSquareRed
-import VerifiedGarbage.Proof.Weierstrass.X86.TCombOne
-import VerifiedGarbage.Proof.X25519.Field
-import VerifiedGarbage.Proof.X25519.X86.Arith
-import VerifiedGarbage.Proof.X25519.X86.Fold
+public import VerifiedGarbage.Impl.Weierstrass.TCombWords
+public import VerifiedGarbage.Proof.Weierstrass.Unch
+public import VerifiedGarbage.Proof.Weierstrass.CombLay
+public import VerifiedGarbage.Impl.Weierstrass.X86.TComb
+public import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
+public import VerifiedGarbage.Proof.Weierstrass.Comb
+import VerifiedGarbage.Proof.Framework.Contract
+
+/-! ### `Weierstrass.X86.TCombLay`, which this module and modules that import it used -/
+
+section
+
+/-!
+# The fixed-base comb from tables in memory on x86 (32-bit): where it keeps its numbers
+
+As on AArch64 (`Proof/Weierstrass/TCombLay.lean`): `TCombCfg.toComb` is the
+comb of the same slots with no tables, whose layout (`CombLay`) the comb's
+(`TCombLay`) contains, so the addition's facts are the comb's; the table of
+bits is `w J` bytes, those past the scalar's `kbytes` cleared in words by the
+comb. The tables are at `T` (`TblMem`): readable, word `i` at `T + 8 i`, and
+they survive a change of the working space only (`TblMem.of_unch`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Weierstrass.X86
+
+open VG VG.X86 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.X86 VG.Proof.Mont
+open VG.Proof.Weierstrass VG.Proof.Mont.X86
+
+/-- Where the field arithmetic's functions keep their own working space. -/
+abbrev _root_.VG.Impl.Weierstrass.X86.TCombCfg.wk (K : TCombCfg) : Nat := Mont.own K.M.n
+
+/-- The comb of the same slots, with `J` empty tables. Its table of bits is
+the comb's (`TCombLay`'s `bits`, past byte 4096 here), not `CombLay`'s:
+that one is the functions' own working space, which no step of the comb
+reads, as a placeholder below byte 4096. -/
+def _root_.VG.Impl.Weierstrass.X86.TCombCfg.toComb (K : TCombCfg) : CombCfg where
+  M := K.M
+  S := K.S
+  A := K.A
+  E := K.E
+  D := K.D
+  neg := K.neg
+  zero := K.zero
+  bits := K.wk
+  tbl := List.replicate K.J []
+  start := K.start
+  one := K.one
+
+theorem _root_.VG.Impl.Weierstrass.X86.TCombCfg.toComb_J (K : TCombCfg) : K.toComb.J = K.J := by
+  simp [CombCfg.J, TCombCfg.toComb]
+
+/-- What the comb writes: the comb's, the functions' own working space and
+memory past the working space (the calls'); and the cleared words of the
+table of bits. -/
+def combWx (K : TCombCfg) : List (Nat × Nat) := combW K.toComb ++ [(K.wk, 64 * K.M.n), Mont.outW]
+
+def tcombW (K : TCombCfg) : List (Nat × Nat) :=
+  combWx K ++ [(K.bits + K.kbytes, 4 * K.zw)]
+
+/-- The comb's layout (`CombLay` of `toComb`); the table of bits of `w J`
+bytes (and its cleared words) in the working space, apart from what the loop
+writes and its cleared words apart from the slots and the modulus; `E`'s `y`
+right after its `x`; and the digits' width and number, the field's words and
+the tables' size in range. -/
+structure TCombLay (K : TCombCfg) (size : Nat) : Prop where
+  comb : CombLay K.toComb size
+  sz : size = 8192
+  wsl : ∀ x, x ∈ combSlots K.toComb → x + 8 * K.M.n ≤ K.wk
+  wmo : K.M.mo + 8 * K.M.n ≤ K.wk
+  wtmp : K.M.tmp + 8 * K.M.n ≤ K.wk
+  wk_bits : K.bits + K.kbytes + 4 * K.zw ≤ K.wk ∨ K.wk + 64 * K.M.n ≤ K.bits
+  ptr_le : K.ptr + 4 ≤ size
+  ptr_sl : ∀ x ∈ K.M.mo :: K.M.tmp :: combSlots K.toComb,
+    K.ptr + 4 ≤ x ∨ x + 8 * K.M.n ≤ K.ptr
+  ptr_wk : K.ptr + 4 ≤ K.wk
+  ptr_bits : K.ptr + 4 ≤ K.bits ∨ K.bits + K.kbytes + 4 * K.zw ≤ K.ptr
+  w : 1 ≤ K.w ∧ K.w < 9
+  kbytes : K.kbytes ≤ K.w * K.J
+  bits : K.bits + K.kbytes + 4 * K.zw ≤ size
+  bits4 : (K.bits + K.kbytes) % 4 = 0
+  bits_w : ∀ w ∈ combW K.toComb, K.bits + K.kbytes + 4 * K.zw ≤ w.1 ∨ w.1 + w.2 ≤ K.bits
+  bits_sl : ∀ x ∈ K.M.mo :: combSlots K.toComb,
+    K.bits + K.kbytes + 4 * K.zw ≤ x ∨ x + 8 * K.M.n ≤ K.bits + K.kbytes
+  n : 1 ≤ K.M.n ∧ K.M.n ≤ 12
+  exy : K.E.y = K.E.x + 8 * K.M.n
+  tbl : K.tblBytes < 2 ^ 31
+
+/-- The comb's slots, below the functions' own working space, as the field
+programs need them. -/
+theorem TCombLay.wkOk {K : TCombCfg} {size m : Nat} (hL : TCombLay K size)
+    (hF : K.F.k = K.M.n ∧ K.F.m = m ∧ Mont.FnOk K.F) : WkOk K.F K.M m size K.wk (· ∈ combSlots K.toComb) where
+  fn := hF.2.2
+  k := hF.1
+  fm := hF.2.1
+  size := hL.sz
+  own := rfl
+  sl := hL.wsl
+  mo := hL.wmo
+  tmp := hL.wtmp
+
+/-- The words `ws` at `T`, readable (in one region). -/
+structure TblMem (s : State) (T : Addr) (ws : List (BitVec 64)) : Prop where
+  nowrap : T.toNat + 8 * ws.length ≤ 2 ^ 32
+  rd : InRegions (s.rd ++ s.wr) T (8 * ws.length)
+  val : ∀ i < ws.length, s.mem.readW (T + BitVec.ofNat 64 (8 * i)) 64 = ws.getD i 0
+
+/-- The tables survive a change of the memory that keeps their bytes and the
+regions. -/
+theorem TblMem.unch {s s' : State} {T : Addr} {ws : List (BitVec 64)} (h : TblMem s T ws)
+    (hrd : s'.rd ++ s'.wr = s.rd ++ s.wr)
+    (hm : ∀ i < ws.length, ∀ b < 8,
+      s'.mem (T + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 b) =
+        s.mem (T + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 b)) :
+    TblMem s' T ws :=
+  ⟨h.nowrap, hrd ▸ h.rd, fun i hi => by
+    rw [← h.val i hi]; exact Mem.readW_congr fun b hb => hm i hi b (by omega_using [hb])⟩
+
+/-- The tables survive a change of the working space, which they are past. -/
+theorem TblMem.of_unch {s s' : State} {T : Addr} {ws : List (BitVec 64)} {base : Addr} {size : Nat}
+    {W : List (Nat × Nat)} (h : TblMem s T ws) (hrd : s'.rd ++ s'.wr = s.rd ++ s.wr)
+    (hU : Unch base W s.mem s'.mem) (hW : ∀ w ∈ W, w.1 + w.2 ≤ size)
+    (hout : ∀ i < ws.length, ∀ b < 8, size ≤ ofs base (T + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 b)) :
+    TblMem s' T ws :=
+  h.unch hrd fun i hi b hb => hU _ fun w hw => Or.inr (by have := hW w hw; have := hout i hi b hb; omega_arith)
+
+/-- The tables survive code that changes memory only in the regions `L`,
+which they are apart from. -/
+theorem TblMem.of_frame {s s' : State} {T : Addr} {ws : List (BitVec 64)} {L : List Region}
+    (h : TblMem s T ws) (hrd : s'.rd ++ s'.wr = s.rd ++ s.wr) (hf : Frame L s.mem s'.mem)
+    (hd : ∀ r ∈ L, Region.Disjoint ⟨T, 8 * ws.length⟩ r) : TblMem s' T ws :=
+  h.unch hrd fun i hi b hb => by
+    rw [Offset.add_add]
+    exact hf.bytes (R := ⟨T, 8 * ws.length⟩) hd (by have := h.nowrap; dsimp only; omega_using [this])
+      (by dsimp only; omega_using [hi, hb])
+
+/-- The `x` and `y` of entry `m` of table `j`, in Montgomery form, at
+`16 n m` and `16 n m + 8 n` bytes into the table, at `T + 16 n H j`. -/
+theorem tbl_entry {s : State} {T : Addr} {n R p H J : Nat} {tbl : List (List (Nat × Nat))}
+    (hT : TblMem s T (tcombWords n R p tbl)) (hJ : tbl.length = J)
+    (hH : ∀ j < J, (tbl.getD j []).length = H) {j m : Nat} (hj : j < J) (hm : m < H)
+    (hx : (combAt tbl j m).1 * R % p < 2 ^ (64 * n)) (hy : (combAt tbl j m).2 * R % p < 2 ^ (64 * n)) :
+    wordsVal s.mem (T + BitVec.ofNat 64 (j * (16 * n * H))) (16 * n * m) n = (combAt tbl j m).1 * R % p ∧
+    wordsVal s.mem (T + BitVec.ofNat 64 (j * (16 * n * H))) (16 * n * m + 8 * n) n =
+      (combAt tbl j m).2 * R % p :=
+  tcombWords_entry hT.val hJ hH hj hm hx hy
+
+/-- A table past the working space: so is each of its bytes, by its table `i` (of `tb` bytes) and
+its offset there. -/
+theorem tbl_out_at {base T : Addr} {size L tb i J : Nat}
+    (hout : ∀ q < L, ∀ b < 8, size ≤ ofs base (T + BitVec.ofNat 64 (8 * q) + BitVec.ofNat 64 b))
+    (hL : 8 * L = J * tb) (hi : i < J) :
+    ∀ d < tb, size ≤ ofs base (T + BitVec.ofNat 64 (i * tb) + BitVec.ofNat 64 d) := by
+  intro d hd
+  have h2 := Nat.mul_le_mul_right tb (show i + 1 ≤ J from hi)
+  rw [Nat.succ_mul] at h2
+  have := hout ((i * tb + d) / 8) (by omega_using [h2, hL, hd]) ((i * tb + d) % 8) (Nat.mod_lt _ (by decide))
+  rw [Offset.add_add, Nat.div_add_mod] at this
+  rwa [Offset.add_add]
+
+end VG.Proof.Weierstrass.X86
+
+end
+
+end
+
+/-! ### `Weierstrass.X86.TCombSelect`, which this module and modules that import it used -/
+
+section
+
+/-! # Constant-time table selection for the x86 comb -/
+
+@[expose] public section
+
+namespace VG.Proof.Weierstrass.X86
+open VG VG.X86 VG.Impl.Mont.X86 VG.Impl.Mont VG.Impl.Weierstrass.X86 VG.Impl.Weierstrass
+  VG.Proof.Mont.X86 VG.Proof.Mont
+
+/-- The words the selection stores: those of entry `a` of the table at `X`
+if `1 ≤ a ≤ H`, else zero. -/
+theorem accVal_word {mem mem' : Mem} {base X : Addr} {n a H o : Nat}
+    (h : ∀ c < n, mem'.readW (off base (o + 16 * c)) 128 = accVal mem X n a H c) :
+    ∀ i < 2 * n, word mem' base (o + 8 * i) =
+      if 1 ≤ a ∧ a ≤ H then word mem X (16 * n * (a - 1) + 8 * i) else 0 := by
+  intro i hi
+  obtain ⟨c, q, hq, rfl⟩ : ∃ c q, q < 2 ∧ i = 2 * c + q := ⟨i / 2, i % 2, Nat.mod_lt _ (by decide), by omega_using []⟩
+  have e := readW_extract mem' (off base (o + 16 * c)) (w := 128) (k := 8 * q) (n := 8) (by omega_using [hq])
+  rw [show 8 * 8 = 64 from rfl, off, Offset.add_add, show o + 16 * c + 8 * q = o + 8 * (2 * c + q) by omega_using []] at e
+  rw [Mont.word, off, ← e, h c (by omega_using [hi]), accVal]
+  split
+  · have e2 := readW_extract mem (X + BitVec.ofNat 64 (16 * n * (a - 1) + 16 * c)) (w := 128)
+      (k := 8 * q) (n := 8) (by omega_using [hq])
+    rw [show 8 * 8 = 64 from rfl, Offset.add_add] at e2
+    rw [e2, Mont.word, off]
+    rw [show 16 * n * (a - 1) + 16 * c + 8 * q = 16 * n * (a - 1) + 8 * (2 * c + q) by omega_using []]
+  · simp
+
+/-- Numbers with the same words. -/
+theorem wordsVal_congr₂ {m m' : Mem} {b b' : Addr} : ∀ (o o' k : Nat),
+    (∀ i < k, word m' b' (o' + 8 * i) = word m b (o + 8 * i)) → wordsVal m' b' o' k = wordsVal m b o k
+  | _, _, 0, _ => rfl
+  | o, o', k + 1, h => by
+    have h0 := h 0 (by omega_using [])
+    simp only [Nat.mul_zero, Nat.add_zero] at h0
+    rw [wordsVal, wordsVal, h0, wordsVal_congr₂ (o + 8) (o' + 8) k fun i hi => by
+      rw [show o + 8 + 8 * i = o + 8 * (i + 1) by omega_using [], show o' + 8 + 8 * i = o' + 8 * (i + 1) by omega_using []]
+      exact h (i + 1) (by omega_using [hi])]
+
+theorem Unch.split {base : Addr} {o k : Nat} {m m' : Mem} (h : Unch base [(o, 2 * k)] m m') :
+    Unch base [(o, k), (o + k, k)] m m' := fun x hx => h x fun w hw => by
+  simp only [List.mem_singleton] at hw; subst hw
+  have h1 := hx _ (List.mem_cons_self ..)
+  have h2 := hx _ (List.mem_cons_of_mem _ (List.mem_singleton_self _))
+  dsimp only at h1 h2 ⊢; omega_using [h1, h2]
+
+/-- What the selection leaves: in `E`, entry `a`'s `x` and `y` (of the table
+at `X`) and `R` if `a ≥ 1`, else `(0, R, 0)`. -/
+structure SelPost (K : TCombCfg) (base : Addr) (s : State) (a : Nat) (X : Addr) (t : State) : Prop where
+  x : wordsVal t.mem base K.E.x K.M.n = if 1 ≤ a then wordsVal s.mem X (16 * K.M.n * (a - 1)) K.M.n else 0
+  y : wordsVal t.mem base K.E.y K.M.n =
+    if 1 ≤ a then wordsVal s.mem X (16 * K.M.n * (a - 1) + 8 * K.M.n) K.M.n else K.one
+  z : wordsVal t.mem base K.E.z K.M.n = if 1 ≤ a then K.one else 0
+  keep : Keeps [.eax, .ecx, .edx] s t
+  unch : Unch base [(K.E.x, 8 * K.M.n), (K.E.y, 8 * K.M.n), (K.E.z, 8 * K.M.n)] s.mem t.mem
+
+/-- Zero words. -/
+theorem wordsVal_zeros {m : Mem} {b : Addr} {o k : Nat} (h : ∀ i < k, word m b (o + 8 * i) = 0) :
+    wordsVal m b o k = 0 :=
+  wordsVal_of_shifts m b o k 0 (Nat.two_pow_pos _) fun i hi => by rw [h i hi, Nat.zero_shiftRight]; rfl
+
+/-- Load the retained public table pointer and add the window offset. -/
+theorem selSetup_ok (K : TCombCfg) {s : State} {base : Addr} {size j : Nat} {T : BitVec 32}
+    (hs : Scr s base size) (hptr : K.ptr + 4 ≤ size)
+    (hb : s.gpr .esi = BitVec.ofNat 32 j) (hT : s.mem.readW (off base K.ptr) 32 = T)
+    (htb : K.tblBytes < 2 ^ 32) :
+    WP isa (.block K.selSetup) s fun t => t.gpr .edx = T + BitVec.ofNat 32 (j * K.tblBytes) ∧
+      CKeeps [.eax, .ecx, .edx] s t := by
+  have hea : (s.gpr .edi + BitVec.ofNat 32 K.ptr).setWidth 64 = off base K.ptr :=
+    hs.ea (d := K.ptr) (by omega_using [hptr])
+  have hread := hs.read hptr
+  apply WP.of_runBlock
+  simp only [TCombCfg.selSetup, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
+    execAlu, execMul, State.load32, State.ea, sc, at_, hb, RegUpd.gpr_setReg, RegUpd.gpr_arithFlags,
+    RegUpd.gpr_setFlags, RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.mem_setReg,
+    RegUpd.rd_setFlags, RegUpd.wr_setFlags, RegUpd.mem_setFlags, hea, hread, hT,
+    Option.map_some, Option.bind_some, ite_true, ite_false, reduceCtorEq,
+    Option.some.injEq, exists_eq_left']
+  refine ⟨?_, fun r hr => ?_, rfl, rfl, rfl⟩
+  · congr 1
+    apply BitVec.eq_of_toNat_eq
+    simp only [BitVec.toNat_ofNat]
+    rw [Nat.mod_eq_of_lt htb, Nat.mod_mul_mod]
+  · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+    simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, RegUpd.gpr_setFlags, hr.1, hr.2.1, hr.2.2,
+      ite_false]
+
+/-- The retained table pointer addresses every entry; the scalar magnitude
+only controls masks. The selected point is neutral when its magnitude is zero. -/
+theorem select_ok (K : TCombCfg) {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
+    (hn : 1 ≤ K.M.n ∧ K.M.n ≤ 12) (hH : K.H < 2 ^ 31) (htb : K.tblBytes < 2 ^ 32)
+    (hptr : K.ptr + 4 ≤ size) (hexy : K.E.y = K.E.x + 8 * K.M.n)
+    (hy : K.E.y + 8 * K.M.n ≤ size) (hz : K.E.z + 8 * K.M.n ≤ size)
+    (hxz : K.E.x + 16 * K.M.n ≤ K.E.z ∨ K.E.z + 8 * K.M.n ≤ K.E.x)
+    (hzero : K.zero + 8 * K.M.n ≤ size)
+    (h0xy : K.zero + 8 * K.M.n ≤ K.E.x ∨ K.E.x + 16 * K.M.n ≤ K.zero)
+    (h0z : K.zero + 8 * K.M.n ≤ K.E.z ∨ K.E.z + 8 * K.M.n ≤ K.zero)
+    (hone : K.one < 2 ^ (64 * K.M.n)) (h0 : wordsVal s.mem base K.zero K.M.n = 0)
+    {j a : Nat} {T : BitVec 32} (hb : s.gpr .esi = BitVec.ofNat 32 j)
+    (h8 : s.gpr .ebx = BitVec.ofNat 32 a) (ha : a ≤ K.H)
+    (hT : s.mem.readW (off base K.ptr) 32 = T)
+    (hreg : InRegions (s.rd ++ s.wr) ((T + BitVec.ofNat 32 (j * K.tblBytes)).setWidth 64) K.tblBytes)
+    (hX : ((T + BitVec.ofNat 32 (j * K.tblBytes)).setWidth 64).toNat + K.tblBytes ≤ 2 ^ 32)
+    (hout : ∀ d < K.tblBytes, size ≤ ofs base ((T + BitVec.ofNat 32 (j * K.tblBytes)).setWidth 64 + BitVec.ofNat 64 d)) :
+    WP isa (.block K.select) s
+      (SelPost K base s a ((T + BitVec.ofNat 32 (j * K.tblBytes)).setWidth 64)) := by
+  have hnw := hs.nowrap
+  have htbe : K.tblBytes = 16 * K.M.n * K.H := rfl
+  rw [TCombCfg.select, WP.block_append_iff, WP.block_append_iff]
+  refine WP.mono (selSetup_ok K hs hptr hb hT htb) fun s₁ ⟨x₁, k₁⟩ => ?_
+  have hs₁ := hs.of_keeps k₁.keeps (by decide)
+  have h8₁ : s₁.gpr .ebx = BitVec.ofNat 32 a := by rw [k₁.1 _ (by decide), h8]
+  have hr : ∀ e < K.H, ∀ c < K.M.n, InRegions (s₁.rd ++ s₁.wr)
+      ((T + BitVec.ofNat 32 (j * K.tblBytes)).setWidth 64 +
+        BitVec.ofNat 64 (16 * K.M.n * e + 16 * c)) 16 := by
+    intro e he c hc
+    rw [k₁.2.2.1, k₁.2.2.2]
+    refine VG.CallLay.inRegions_sub hreg ?_ (by omega_using [htb])
+    have := Nat.mul_le_mul_left (16 * K.M.n) (show e + 1 ≤ K.H by omega_using [he])
+    rw [Nat.mul_add, Nat.mul_one] at this; omega_using [hn, htb, hy, hz, hxz, hzero, h0xy, h0z, hX, htbe, he, hc, this]
+  refine WP.mono (selPass_ok K hs₁ hn.2 hH (by omega_using [hH, ha]) h8₁ (congrArg (BitVec.setWidth 64) x₁)
+    hr hX (by omega_using [hexy, hy]) (fun _ => hout)) fun s₂ ⟨a₂, O₂, k₂⟩ => ?_
+  have hs₂ := hs₁.of_keeps k₂ (by decide)
+  have h8₂ : s₂.gpr .ebx = BitVec.ofNat 32 a := by rw [k₂.1 _ (by decide), h8₁]
+  have h0₂ : wordsVal s₂.mem base K.zero K.M.n = 0 := by
+    rw [O₂.wordsVal h0xy (by omega_using [hzero, hnw]), k₁.2.1, h0]
+  refine WP.mono (selOne_ok K hs₂ (by omega_using [hH, ha]) h8₂ hy hz hzero (by omega_using [hexy, hxz]) (by omega_using [hexy, h0xy]) h0z hone h0₂)
+    fun t ⟨ey, ez, k₃, U₃⟩ => ?_
+  have W := accVal_word a₂
+  rw [k₁.2.1] at W
+  have hxw : ∀ i < K.M.n, word t.mem base (K.E.x + 8 * i) = word s₂.mem base (K.E.x + 8 * i) := fun i hi =>
+    U₃.word (fun w hw => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
+      rcases hw with rfl | rfl <;> dsimp only <;> omega_arith) (by omega_using [hexy, hy, hnw, hi])
+  refine ⟨?_, ?_, ?_, ?_, ?_⟩
+  · by_cases h1 : 1 ≤ a
+    · rw [ite_eq_left h1]
+      exact wordsVal_congr₂ _ _ _ fun i hi => by
+        rw [hxw i hi, W i (by omega_using [hi]), ite_eq_left ⟨h1, ha⟩]
+    · rw [ite_eq_right h1]
+      exact wordsVal_zeros fun i hi => by
+        rw [hxw i hi, W i (by omega_using [hi]), ite_eq_right (by omega_using [h1])]
+  · by_cases h1 : 1 ≤ a
+    · rw [ite_eq_left h1, ey, ite_eq_right (by omega_using [h1])]
+      exact wordsVal_congr₂ _ _ _ fun i hi => by
+        rw [hexy, show K.E.x + 8 * K.M.n + 8 * i = K.E.x + 8 * (K.M.n + i) by omega_using [],
+          W _ (by omega_using [hi]), ite_eq_left ⟨h1, ha⟩]
+        rw [show 16 * K.M.n * (a - 1) + 8 * (K.M.n + i) =
+          16 * K.M.n * (a - 1) + 8 * K.M.n + 8 * i by omega_using []]
+    · rw [ite_eq_right h1, ey, ite_eq_left (by omega_using [h1])]
+  · rw [ez]; split <;> split <;> omega
+  · exact (k₁.keeps.trans (k₂.mono (by decide))).trans k₃
+  · have U₂ : Unch base [(K.E.x, 8 * K.M.n), (K.E.x + 8 * K.M.n, 8 * K.M.n)] s.mem s₂.mem := by
+      rw [← k₁.2.1]
+      exact Unch.split (by rw [show 2 * (8 * K.M.n) = 16 * K.M.n by omega_using []]; exact O₂.unch)
+    rw [← hexy] at U₂
+    exact (U₂.trans U₃).mono fun w hw => by
+      simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hw ⊢
+      rcases hw with h | h | h | h <;> simp [h]
+
+end VG.Proof.Weierstrass.X86
+
+end
+
+end
 
 /-! ## `TCombEntry` -/
 
@@ -136,7 +440,6 @@ open Spec.Weierstrass
 structure TCombFixed (K : TCombCfg) (C : Curve) (base : Addr) (size : Nat) (s₀ : State) (k : Nat)
     (T : Addr) (ws : List (BitVec 64)) : Prop where
   a : tmv C K.M.n base s₀ K.S.a = Fin.ofNat C.p C.a
-  b : tmv C K.M.n base s₀ K.S.b3 = Fin.ofNat C.p C.b
   ro_lt : ∀ x ∈ combRo K.toComb, wordsVal s₀.mem base x K.M.n < C.p
   zero : wordsVal s₀.mem base K.zero K.M.n = 0
   bits : ∀ t < K.kbytes, s₀.mem (off base (K.bits + t)) = if k.testBit t then 1 else 0

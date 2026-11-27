@@ -16,6 +16,8 @@ namespace VG.Impl.Dsa.Arm.Core
 open VG VG.Arm VG.Impl.Mont.Arm VG.Impl.Mont.Arm.Dynamic
 open VG.Impl.Dsa.Layout
 
+variable (umaal : Bool)
+
 def sequence (ps : List (Prog isa)) : Prog isa := ps.foldr .seq (.block [])
 
 /-- `r11` = the operand's address. -/
@@ -43,17 +45,27 @@ def power (len expLen : Nat) (modulus : Field) (a e : Pointer) (output : Nat) : 
   let n := (len + 7) / 8
   .seq (load n len (modS n) (.input modulus))
   (.seq (.seq (load n len (baseS n) a) (load n expLen (expS n) e))
-  (.seq (Pow.call n ((expLen + 3) / 4)) (store len output)))
+  (.seq (Pow.call umaal n ((expLen + 3) / 4)) (store len output)))
+
+/-- The product of two powers, `a^e · a2^e2`, in one pass over both exponents
+(`exponentiate2`): the second base and exponent, the modulus and the first
+base and exponent, then the context, set up here, and the product. -/
+def power2 (len expLen : Nat) (modulus : Field) (a e a2 e2 : Pointer) (output : Nat) : Prog isa :=
+  let n := (len + 7) / 8
+  .seq (load n len (base2S n) a2) <| .seq (load n expLen (exp2S n) e2) <|
+  .seq (load n len (modS n) (.input modulus))
+  (.seq (.seq (load n len (baseS n) a) (load n expLen (expS n) e))
+  (.seq (.seq (Context.call umaal n) (exponentiate2 umaal n ((expLen + 3) / 4))) (store len output)))
 
 /-- As `power`, calling `vg_dsa_mulmod_{n}` (`Arith.lean`). -/
 def productMod (len : Nat) (modulus : Field) (a b : Pointer) (output : Nat) : Prog isa :=
   let n := (len + 7) / 8
   .seq (load n len (modS n) (.input modulus))
   (.seq (.seq (load n len (baseS n) a) (load n len (expS n) b))
-  (.seq (Arith.mulCall n) (store len output)))
+  (.seq (Arith.mulCall umaal n) (store len output)))
 
 def product (len : Nat) (a b : Pointer) (output : Nat) : Prog isa :=
-  productMod len .q a b output
+  productMod umaal len .q a b output
 
 def sum (len : Nat) (a b : Pointer) (output : Nat) : Prog isa :=
   let n := (len + 7) / 8
@@ -84,33 +96,32 @@ def digestPrefix : Count := .field .digestPrefixLen
 
 /-- Compute r and s, retaining all range/key checks in the caller's mask. -/
 def signStart (pLen qLen : Nat) : Prog isa := sequence [
-  power pLen qLen .p (.input .g) (.input .nonce) t,
+  power umaal pLen qLen .p (.input .g) (.input .nonce) t,
   reduce qLen (.imm pLen) (.local t) r,
-  power qLen qLen .q (.input .nonce) (.local qMinusTwo) inverse]
+  power umaal qLen qLen .q (.input .nonce) (.local qMinusTwo) inverse]
 
 def signFinish (qLen : Nat) : Prog isa := sequence [
-  product qLen (.input .x) (.local r) u,
+  product umaal qLen (.input .x) (.local r) u,
   reduce qLen digestPrefix (.input .digest) z,
   sum qLen (.local z) (.local u) v,
-  product qLen (.local inverse) (.local v) s]
+  product umaal qLen (.local inverse) (.local v) s]
 
 def sign (pLen qLen : Nat) : Prog isa :=
-  .seq (signStart pLen qLen) (signFinish qLen)
+  .seq (signStart umaal pLen qLen) (signFinish umaal qLen)
 
-/-- Verification uses two fixed-iteration powers and a product modulo p. -/
+/-- Verification's scalars, modulo q. -/
 def verifyScalars (qLen : Nat) : Prog isa := sequence [
-  power qLen qLen .q .signatureS (.local qMinusTwo) inverse,
+  power umaal qLen qLen .q .signatureS (.local qMinusTwo) inverse,
   reduce qLen digestPrefix (.input .digest) z,
-  product qLen (.local z) (.local inverse) u,
-  product qLen (.input .signature) (.local inverse) v]
+  product umaal qLen (.local z) (.local inverse) u,
+  product umaal qLen (.input .signature) (.local inverse) v]
 
+/-- `g^u₁ y^u₂ mod p`, as one product of two powers, then modulo q. -/
 def verifyPowers (pLen qLen : Nat) : Prog isa := sequence [
-  power pLen qLen .p (.input .g) (.local u) t,
-  power pLen qLen .p (.input .y) (.local v) t2,
-  productMod pLen .p (.local t) (.local t2) t,
+  power2 umaal pLen qLen .p (.input .g) (.local u) (.input .y) (.local v) t,
   reduce qLen (.imm pLen) (.local t) u]
 
 def verify (pLen qLen : Nat) : Prog isa :=
-  .seq (verifyScalars qLen) (verifyPowers pLen qLen)
+  .seq (verifyScalars umaal qLen) (verifyPowers umaal pLen qLen)
 
 end VG.Impl.Dsa.Arm.Core

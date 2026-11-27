@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 /-! # Saved-register initialization and the first three matrix blocks -/
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Paired
+variable {sha3 : Bool}
 open VG VG.AArch64
 open VG.Proof.Sha3.AArch64.Neon
 open VG.Proof.Sha3 (iterF)
@@ -22,7 +23,7 @@ theorem start_ok {s : State} {p seed : Addr} {sb ss a b k : Nat}
     (hin : ∀j<4, InRegions (s.rd++s.wr) (seed+BitVec.ofNat 64 (8*j)) 8)
     (hc : Covers [⟨p,2048⟩] s.wr)
     (hsep : (Region.mk seed 32).Disjoint ⟨p,2048⟩) :
-    WP isa (.seq (.block (Impl.MlKem.AArch64.Paired.init sb ss a b k)) Impl.MlKem.AArch64.Paired.squeeze) s fun t =>
+    WP isa (.seq (.block (Impl.MlKem.AArch64.Paired.init sb ss a b k)) (Impl.MlKem.AArch64.Paired.squeeze sha3)) s fun t =>
       Keep startRegs s t ∧ Frame [⟨p,2048⟩] s.mem t.mem ∧ Noise.Saved p s t.mem ∧
       t.gpr .x19=p ∧ t.gpr .x22=0 ∧
       PairAt t.mem p (iterF 3 (seedState s.mem seed a k)) (iterF 3 (seedState s.mem seed b k)) ∧
@@ -34,7 +35,7 @@ theorem start_ok {s : State} {p seed : Addr} {sb ss a b k : Nat}
     (hsep.sub_right (Offset.sub_base p (by decide)))
     (hsep.sub_right (Region.sub_prefix (by decide : 400≤2048)))
     (Offset.disjoint_base p (by decide) (by decide))) fun u ⟨ku,fu,sv,h19,h20,h21,h22,pair⟩ => ?_)
-  refine WP.mono (squeeze_ok h19 h20 h21 (by rw [h22]; rfl) pair
+  refine WP.mono (squeeze_ok (sha3 := sha3) h19 h20 h21 (by rw [h22]; rfl) pair
     (fun i hi => by
       rw [ku.rd,ku.wr]
       obtain ⟨r,hr,hh⟩ := iw (by omega_using [hi] : 16*i+16≤2048)

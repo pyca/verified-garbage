@@ -7,6 +7,49 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.AArch64.Row
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.LaneSave
+public import VerifiedGarbage.Impl.Bignum.AArch64.ProductEight
+public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
+public import VerifiedGarbage.Proof.Framework.AArch64.LaneRestore
+import VerifiedGarbage.Proof.Bignum.AArch64.Run
+import VerifiedGarbage.Proof.Framework.PlainSimp
+
+/-! ### `Bignum.AArch64.ProductEightSave`, which the modules that import this one used -/
+
+section
+
+@[expose] public section
+namespace VG.Proof.Bignum.AArch64.ProductEight
+open VG VG.AArch64 VG.Impl.Bignum.AArch64 VG.Proof.Bignum
+open VG.Proof.Bignum.AArch64
+open VG.Proof.MlKem.AArch64 (Keep)
+
+abbrev savedLanes : List (Reg × VReg × Nat) :=
+  (VG.Impl.Bignum.AArch64.ProductEight.regs.zip VG.Impl.Bignum.AArch64.ProductEight.vecs).map
+    fun (r, v) => (r, v, 0)
+
+theorem saves_ok (s : State) :
+    WP isa (.block VG.Impl.Bignum.AArch64.ProductEight.saves) s fun t =>
+      (t.mem = s.mem ∧ ∀ k ∈ savedLanes, laneOf t k.2.1 k.2.2 = s.gpr k.1) ∧ Keep [] s t := by
+  refine WP.keep [] ?_ rfl rfl (by decide +kernel)
+  change WP isa (.block (insOf savedLanes)) s _
+  exact WP.mono (insOf_ok savedLanes s (by decide) (by decide))
+    fun _ ⟨_, hm, _, _, _, hl, _⟩ => ⟨hm, hl⟩
+
+theorem restores_ok (s : State) :
+    WP isa (.block VG.Impl.Bignum.AArch64.ProductEight.restores) s fun t =>
+      (t.mem = s.mem ∧ ∀ k ∈ savedLanes, t.gpr k.1 = laneOf s k.2.1 k.2.2) ∧
+        Keep VG.Impl.Bignum.AArch64.ProductEight.regs s t := by
+  refine WP.keep VG.Impl.Bignum.AArch64.ProductEight.regs ?_ rfl rfl (by decide +kernel)
+  change WP isa (.block (umovOf savedLanes)) s _
+  exact WP.mono (umovOf_ok savedLanes s (by decide) (by decide))
+    fun _ ⟨hm, _, _, _, hl, _⟩ => ⟨hm, hl⟩
+
+end VG.Proof.Bignum.AArch64.ProductEight
+
+end
+
+end
 
 @[expose] public section
 namespace VG.Proof.Bignum.AArch64.WideLoops

@@ -13,7 +13,7 @@ open VG.Proof.RsaOaep.X86_64 VG.Impl.RsaOaep.X86_64
 
 theorem SearchMemory.stable {p : SearchPlan} {W : Nat → BitVec 64} :
     SearchPayload p.C (SearchMemory p W) := by
-  intro s t h hf hk
+  intro s t h hf hk _
   have ff : Frame [⟨p.C, 24⟩] s.mem t.mem := by
     intro a ha
     apply hf a

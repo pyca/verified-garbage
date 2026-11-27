@@ -1,6 +1,5 @@
 module
 
-import VerifiedGarbage.Proof.AesGcm.Arm.Words
 public import VerifiedGarbage.Proof.Cmac.Mem32
 public import VerifiedGarbage.Proof.Gcm.Compose
 public import VerifiedGarbage.Proof.AesGcm.Arm.Env
@@ -16,6 +15,77 @@ import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.TCB.Arm.Isa
+public import VerifiedGarbage.Spec.Gcm
+import VerifiedGarbage.Proof.Gcm.Spec
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.PlainSimp
+
+/-! ### `AesGcm.Arm.Words`, which this module and modules that import it used -/
+
+section
+
+/-!
+# AES-GCM on ARMv7: words and the lengths block
+
+Untrusted: everything here is checked by Lean. `rev` is `byteRev32`; the
+bytes of a block of two 64-bit values are their big-endian bytes
+(`toBytes_append64`); and `8 x` of a 64-bit `x = hi:lo`, as the code computes
+it with shifts (`shl3_words`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.AesGcm.Arm
+
+open VG
+open VG.Spec.Gcm (be64 toBytes)
+
+theorem rev_eq : VG.Arm.rev = byteRev32 := rfl
+
+theorem toBytes_append64 (a c : BitVec 64) : toBytes (a ++ c) = be64 a.toNat ++ be64 c.toNat := by
+  have ha := a.isLt; have hc := c.isLt
+  have e : (a ++ c).toNat = a.toNat * 2 ^ 64 + c.toNat := Proof.Gcm.toNat_append a c
+  simp only [toBytes, be64, List.range_succ, List.range_zero, List.nil_append, List.map_cons, List.map_nil,
+    List.cons_append, List.cons.injEq, and_true]
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
+  · apply BitVec.eq_of_toNat_eq
+    rw [BitVec.extractLsb'_toNat, Nat.shiftRight_eq_div_pow, BitVec.toNat_ofNat, e]
+    omega_using []
+
+/-- `8 x`, of `x = hi:lo`, in two words, as `lsl #3` and `orr` with `lsr #29`. -/
+theorem shl3_words (hi lo : BitVec 32) :
+    (((hi <<< 3) ||| (lo >>> 29)) ++ (lo <<< 3) : BitVec 64) = (hi ++ lo) <<< 3 := by
+  apply BitVec.eq_of_toNat_eq
+  have h₁ := hi.isLt; have h₂ := lo.isLt
+  simp only [Proof.Gcm.toNat_append, BitVec.toNat_shiftLeft, BitVec.toNat_or, BitVec.toNat_ushiftRight,
+    Nat.shiftLeft_eq, Nat.shiftRight_eq_div_pow]
+  have hor : (hi.toNat * 2 ^ 3 % 2 ^ 32) ||| (lo.toNat / 2 ^ 29) = hi.toNat * 2 ^ 3 % 2 ^ 32 + lo.toNat / 2 ^ 29 := by
+    have : lo.toNat / 2 ^ 29 < 2 ^ 3 := by omega_using []
+    rw [show hi.toNat * 2 ^ 3 % 2 ^ 32 = 2 ^ 3 * (hi.toNat % 2 ^ 29) by omega_using [], Nat.mul_comm,
+      ← Nat.shiftLeft_eq, Nat.shiftLeft_add_eq_or_of_lt this]
+  rw [hor]
+  omega_using []
+
+/-- `8 x` modulo 2⁶⁴, as a number. -/
+theorem shl3_toNat (x : BitVec 64) : (x <<< 3).toNat = 8 * x.toNat % 2 ^ 64 := by
+  rw [BitVec.toNat_shiftLeft, Nat.shiftLeft_eq]; congr 1; omega_using []
+
+theorem toBytes_append4 (a b c d : BitVec 32) :
+    toBytes (a ++ b ++ c ++ d) = be64 (a ++ b).toNat ++ be64 (c ++ d).toNat := by
+  have e : a ++ b ++ c ++ d = (a ++ b) ++ (c ++ d) := by
+    apply BitVec.eq_of_toNat_eq
+    have := c.isLt; have := d.isLt
+    simp only [Proof.Gcm.toNat_append]
+    omega_using []
+  rw [e, toBytes_append64]
+
+end VG.Proof.AesGcm.Arm
+
+end
+
+end
 
 /-!
 # AES-GCM on ARMv7: padding the buffer (`flush`) and the lengths block (`lens`)
@@ -140,7 +210,7 @@ theorem flushCopy_ok {H : Block} {o : Nat} {s : State} (h : FlIn c st w sp k7 k8
   · rw [blockAt_frame f₃ fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact L.ctx_w (by decide) (by decide), h.hH]
   · rw [hm₃, bytesAt_writeBytes_prefix _ _ _ (by rw [hlen]; omega_arith) (by decide), hlen, hB₂]
-    congr 1
+    refine congrArg (HAppend.hAppend _) ?_
     have := store4_zero_bytes s.mem (State.addr w + BitVec.ofNat 64 96)
     rw [← hm₂, show (16 : Nat) = o + (16 - o) by omega_arith, bytesAt_add] at this
     have e := congrArg (List.drop o) this
@@ -151,7 +221,7 @@ theorem flushCopy_ok {H : Block} {o : Nat} {s : State} (h : FlIn c st w sp k7 k8
       simp only [List.mem_singleton] at hr; subst hr; exact L.st_w (by omega_arith) (.inr ⟨by decide, by decide⟩)
 
 /-- The padded buffer absorbed. -/
-theorem flushGh_ok {H : Block} {x : List Byte} {m₀ : Mem} {s : State}
+theorem flushGh_ok [VG.Proof.Gcm.Arm.GhashLaw] {H : Block} {x : List Byte} {m₀ : Mem} {s : State}
     (h : FlMid c st w sp k7 k8 yo H (x.length % 16) m₀ s) (h0 : x.length % 16 ≠ 0) :
     WP isa (ghash1 yo .r11 tO) s (FlOut c st w sp k7 k8 yo H x (x ++ zeros (padLen x.length)) m₀) := by
   have he := h.env
@@ -177,7 +247,7 @@ theorem flushGh_ok {H : Block} {x : List Byte} {m₀ : Mem} {s : State}
     exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), fun _ h => h⟩
 
 /-- `flush yo`. -/
-theorem flush_ok {H : Block} {x : List Byte} {s : State} (h : FlIn c st w sp k7 k8 H s)
+theorem flush_ok [VG.Proof.Gcm.Arm.GhashLaw] {H : Block} {x : List Byte} {s : State} (h : FlIn c st w sp k7 k8 H s)
     (h6 : s.gpr .r6 = BitVec.ofNat 32 (x.length % 16)) :
     WP isa (flush yo) s (FlOut c st w sp k7 k8 yo H x (x ++ zeros (padLen x.length)) s.mem) := by
   have he := h.env
@@ -247,7 +317,7 @@ variable {c st w sp k7 k8 : BitVec 32} (L : Lay c st w sp) {yo : Nat} (hyo : yo 
 include L hyo
 
 /-- The lengths block of `r5:r4` and `r7:r6` bytes, absorbed. -/
-theorem lens_ok {H : Block} {s : State} (he : Env c st w sp k7 k8 s)
+theorem lens_ok [VG.Proof.Gcm.Arm.GhashLaw] {H : Block} {s : State} (he : Env c st w sp k7 k8 s)
     (hH : blockAt s.mem (State.addr c + BitVec.ofNat 64 240) = H) :
     WP isa (lens yo) s fun s' => Env c st w sp k7 k8 s' ∧
       blockAt s'.mem (State.addr c + BitVec.ofNat 64 240) = H ∧

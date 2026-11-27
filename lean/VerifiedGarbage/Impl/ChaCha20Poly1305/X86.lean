@@ -11,9 +11,11 @@ and `vg_chacha20_poly1305_open` (the same arguments, returning `eax`), cdecl:
 the arguments are at `[esp + 4]`, …, `[esp + 32]`; and
 `vg_chacha20_poly1305_open_to(key, nonce, aad, aad_len, src, len, dst,
 dst_len, tag, work)`, at `[esp + 4]`, …, `[esp + 40]`. They are composed of
-calls of the verified ChaCha20 and Poly1305 functions, as on x86-64. `work` is
+calls of the verified ChaCha20 and Poly1305 functions, as on x86-64 (`vg_poly1305_init`'s
+code as the internal `vg_poly1305_init_core`, since the exported one clears its registers). `work` is
 the working space, which the artifact's frame allocates on the stack
-(`withStackScratchWiped`).
+(`withStackScratch`) and its cleanup zeroes with the rest of its stack
+(`Impl.ChaCha20Poly1305.X86.Fn`).
 
 One body serves in place and out of place: it reads the data from `src`
 (`[esp + 20]`) and writes the result to the destination at `[esp + 32]`
@@ -24,7 +26,7 @@ written): `seal` and `open` in place, the data into `work`'s slot
 (`inPlace`); `open_to` its `tag` and `dst` into the slots of `dst` and
 `dst_len` (`toEntry`), and runs `open`'s body (`openTo`).
 
-The working space (704 bytes, called the context below):
+The working space (848 bytes, called the context below):
 
 * `[0, 16)`: our caller's `ebx, esi, edi, ebp`;
 * `[16, 32)`: the tag computed by `open`;
@@ -34,7 +36,18 @@ The working space (704 bytes, called the context below):
 * `[128, 448)`: the working space of `vg_chacha20_xor` (the first 32 bytes of
   the block with counter 0 are the one-time Poly1305 key);
 * `[448, 576)`: the Poly1305 state;
-* `[576, 704)`: the working space of `vg_poly1305_finalize_scratch`.
+* `[576, 704)`: the working space of `vg_poly1305_finalize_scratch`, which
+  does not use it;
+* `[576, 832)`: before that call, the keystream of the block counters 0 to 3,
+  for data of 1 to 192 bytes (`[832, 848)` is not written: the last bytes of
+  that keystream are read a word at a time).
+
+For data of 1 to 192 bytes (`isShort`), one call of `vg_chacha20_xor` on
+256 zero bytes in the context, from block counter 0, computes the one-time
+Poly1305 key (the first 32 bytes of block 0) and the data's keystream
+(blocks 1 to 3) together (`shortKey`), and the data is then XORed with it
+(`shortCrypt`, with `vg_chacha20_xor`'s own loop `xorWide`), rather than
+one block for the key (`longKey`) and a call for the data (`crypt`).
 
 `edi` holds the context throughout: the callees are cdecl, so they preserve
 it. `vg_chacha20_xor` also takes its destination in `esi`, which is the data
@@ -44,9 +57,11 @@ when it is needed (the body never writes the stack arguments): `seal` passes `ta
 with it. Each call pushes its
 arguments in a frame of its own (`callWith`), popped into `eax` when it
 returns: with its return address, a call uses at most 24 bytes below `esp`
-(`vg_poly1305_finalize_scratch`, with five words of arguments), and
-`vg_chacha20_xor` 20, and 12 more below its own return address, so the
-functions use 32 bytes of stack below their return address.
+(`vg_poly1305_finalize_scratch`, with five words of arguments),
+`vg_chacha20_xor` 20, and 12 more below its own return address, and
+`vg_poly1305_blocks` 16, and 524 more below its own return address (the
+frames of its pairs of blocks, `Impl/Poly1305/X86.lean`), so the functions
+use 540 bytes of stack below their return address.
 
 Only the pointers and the lengths can affect timing: the branches are on the
 lengths, and the tags are compared without a branch; but `open` then branches
@@ -109,14 +124,39 @@ def toEntry : List Instr :=
   [.mov .ecx (.mem (at_ .esp 28)), .mov .edx (.mem (at_ .esp 36)), .mov .eax (.mem (at_ .esp 40)),
    .store (at_ .esp 28) .edx, .store (at_ .esp 32) .ecx]
 
-/-- With `work` in `eax`: saves the registers, and computes the ChaCha20
-state for counter 0, the one-time key and the Poly1305 state for it. -/
-def prologue : Prog isa :=
-  .seq (.block (save ++ ([.mov .edi (.reg .eax)] : List Instr) ++ keyNonce))
-  (.seq (.block (initState ++ ptr .ecx .edi 64 ++ ptr .edx .edi 128))
-  (.seq (callWith [.edx, .ecx] "vg_chacha20_block" Impl.ChaCha20.X86.block)
+/-- Whether `len` is from 1 to 192 (three blocks), in `CF`: `len - 1 < 192`. -/
+def isShort : List Instr :=
+  [.mov .eax (.mem (at_ .esp 24)), .alu .sub .eax (.imm 1), .alu .cmp .eax (.imm 192)]
+
+/-- `ctx[576, 832)` zeroed, 16 bytes at a time from `xmm0`. -/
+def zeroKs : List Instr :=
+  .xop (.bin .pxor .xmm0 .xmm0) :: (List.range 16).map fun j => .movdquStore (at_ .edi (576 + 16 * j)) .xmm0
+
+/-- For data of at most three blocks: the keystream of the block counters 0
+to 3 into `ctx[576, 832)` (`vg_chacha20_xor` on 256 zero bytes there, in
+place, the state's counter being 0), and the Poly1305 state for the one-time
+key, its first 32 bytes. -/
+def shortKey (v : Impl.ChaCha20.X86.Callee) : Prog isa :=
+  .seq (.block (zeroKs ++ ptr .eax .edi 64 ++ ptr .ecx .edi 576 ++ ([.mov .edx (.imm 256)] : List Instr) ++
+    ptr .ebx .edi 128 ++ ([.mov .esi (.reg .ecx)] : List Instr)))
+  (.seq (callWith [.ebx, .edx, .ecx, .eax] v.name v.code)
+  (.seq (.block (ptr .ecx .edi 576 ++ ptr .edx .edi 448))
+    (callWith [.ecx, .edx] "vg_poly1305_init_core" Impl.Poly1305.X86.init)))
+
+/-- Otherwise: block 0 into `ctx[128, 192)` (the state in `ecx`, there in
+`edx`), and the Poly1305 state for the one-time key, its first 32 bytes. -/
+def longKey : Prog isa :=
+  .seq (callWith [.edx, .ecx] "vg_chacha20_block" Impl.ChaCha20.X86.block)
   (.seq (.block (ptr .ecx .edi 128 ++ ptr .edx .edi 448))
-    (callWith [.ecx, .edx] "vg_poly1305_init" Impl.Poly1305.X86.init))))
+    (callWith [.ecx, .edx] "vg_poly1305_init_core" Impl.Poly1305.X86.init))
+
+/-- With `work` in `eax`: saves the registers, and computes the ChaCha20
+state for counter 0, the one-time key and the Poly1305 state for it; for
+data of 1 to 192 bytes, with the data's keystream (`shortKey`). -/
+def prologue (v : Impl.ChaCha20.X86.Callee) : Prog isa :=
+  .seq (.block (save ++ ([.mov .edi (.reg .eax)] : List Instr) ++ keyNonce))
+  (.seq (.block (initState ++ ptr .ecx .edi 64 ++ ptr .edx .edi 128 ++ isShort))
+    (.ite .b (shortKey v) longKey))
 
 /-- The 16 bytes at `edi + k` absorbed as one block. -/
 def absorbOne (k : Nat) : Prog isa :=
@@ -157,6 +197,19 @@ def crypt (v : Impl.ChaCha20.X86.Callee) : Prog isa :=
     ([.mov .esi (.mem (at_ .esp 32))] : List Instr)))
     (callWith [.ebx, .edx, .ecx, .eax] v.name v.code)
 
+/-- The data (1 to 192 bytes, at `esi`) XORed with the keystream that
+`shortKey` left at `ctx + 640` (block 1 on; at `ebp`) into the destination
+(`edx`), by `vg_chacha20_xor`'s loop. -/
+def shortCrypt : Prog isa :=
+  .seq (.block (([.mov .esi (.mem (at_ .esp 20)), .mov .edx (.mem (at_ .esp 32)),
+    .mov .ecx (.mem (at_ .esp 24))] : List Instr) ++ ptr .ebp .edi 640))
+    Impl.ChaCha20.X86.Xor.xorWide
+
+/-- The data encrypted or decrypted to the destination: with `shortKey`'s
+keystream if it is of 1 to 192 bytes, else by `crypt`. -/
+def cryptAny (v : Impl.ChaCha20.X86.Callee) : Prog isa :=
+  .seq (.block isShort) (.ite .b shortCrypt (crypt v))
+
 /-- The tag written to `out`, which `out` puts in `ecx`: the message is whole
 blocks, so its length (`count`, both of whose words are `eax`) is 0 modulo
 16, and nothing is buffered. -/
@@ -172,10 +225,10 @@ def finalizeTo (out : Nat) : Prog isa := finalizeWith (ptr .ecx .edi out)
 
 /-- `seal` after its entry. -/
 def sealBody (v : Impl.ChaCha20.X86.Callee) : Prog isa :=
-  .seq prologue
+  .seq (prologue v)
   (.seq (macPad 12 16)
   (.seq (.block lengths)
-  (.seq (crypt v)
+  (.seq (cryptAny v)
   (.seq (macPad 20 24)
   (.seq (absorbOne 32)
   (.seq finalizeTag
@@ -219,12 +272,12 @@ def openTail : Prog isa := .seq (.ite .e zeroData (.block [])) (.block restore)
 /-- Up to the tags compared without a branch: `eax` is 1 if they are
 equal and 0 if not, and `ZF` says which. -/
 def openMain (v : Impl.ChaCha20.X86.Callee) : Prog isa :=
-  .seq prologue
+  .seq (prologue v)
   (.seq (macPad 12 16)
   (.seq (macPad 20 24)
   (.seq (.block lengths)
   (.seq (absorbOne 32)
-  (.seq (crypt v)
+  (.seq (cryptAny v)
   (.seq (finalizeTo 16)
   (.seq (.block loadTag)
     (.block (compare ++ [.alu .cmp .eax (.imm 0)])))))))))

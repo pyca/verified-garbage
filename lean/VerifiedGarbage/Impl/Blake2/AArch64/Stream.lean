@@ -1,6 +1,9 @@
 module
 
 public import VerifiedGarbage.Impl.Blake2.AArch64
+public import VerifiedGarbage.Impl.Scrub.AArch64
+public import VerifiedGarbage.Impl.Scrub.AArch64.Scrub
+public import VerifiedGarbage.Impl.StackScratch.AArch64
 
 /-!
 # Streaming BLAKE2: AArch64 implementation
@@ -27,7 +30,7 @@ with `scratch` as its scratch space; it never writes `x19`–`x24`, so our own
 variables live there (`x19` = `state`, `x20` = `scratch`, `x21` = `data` or
 `out`, `x22` = bytes of `data` left, `x23` = bytes in the buffer, `x24` =
 the byte count), and our caller's values of those registers are saved in
-`scratch[512..560)`. Our return address (`x30`), which each call replaces, is
+`scratch[56..104)`. Our return address (`x30`), which each call replaces, is
 saved in a stack frame around the whole function.
 
 The model has no register-offset addressing, so byte `r` of the buffer is
@@ -60,15 +63,15 @@ end
 
 /-- The callee-saved registers we use, and where they are saved in `scratch`. -/
 def saved : List (Reg × Nat) :=
-  [(.x19, 512), (.x20, 520), (.x21, 528), (.x22, 536), (.x23, 544), (.x24, 552)]
+  [(.x19, 56), (.x20, 64), (.x21, 72), (.x22, 80), (.x23, 88), (.x24, 96)]
 
 /-- Save them, with `scratch` in `b`. -/
 def save (b : Reg) : List Instr := saved.map fun (r, d) => .str .x r b d
 
 /-- Restore them from `scratch` in `x20` (`x20`, the base, last). -/
 def restore : List Instr :=
-  [.ldr .x .x19 .x20 512, .ldr .x .x21 .x20 528, .ldr .x .x22 .x20 536,
-    .ldr .x .x23 .x20 544, .ldr .x .x24 .x20 552, .ldr .x .x20 .x20 520]
+  [.ldr .x .x19 .x20 56, .ldr .x .x21 .x20 72, .ldr .x .x22 .x20 80,
+    .ldr .x .x23 .x20 88, .ldr .x .x24 .x20 96, .ldr .x .x20 .x20 64]
 
 section
 variable {w : Nat} (P : Spec.Blake2.Params w)
@@ -203,3 +206,40 @@ def init : Prog isa :=
 end
 
 end VG.Impl.Blake2.AArch64.Stream
+
+/-! ## The functions as emitted -/
+
+namespace VG.Impl.Blake2.AArch64.Fn
+
+open VG.AArch64
+
+variable {w : Nat} (P : Spec.Blake2.Params w)
+
+/-- `init` as emitted: its code, then `x9`, the one register it writes that
+the calling convention does not preserve, cleared
+(`Impl.Scrub.AArch64.withClears`), so that it returns without secret
+residue. -/
+def init : Prog isa :=
+  VG.Impl.Scrub.AArch64.withClears [.x9] [] none (Stream.init P)
+
+/-- `update` as emitted: its code with its scratch space on the stack
+(`Impl.StackScratch.AArch64.withStackScratch`), then the registers it writes
+that the calling convention does not preserve cleared and its 128 bytes of
+stack zeroed (`Impl.Scrub.AArch64.scrubAll`), so that it returns without
+secret residue. -/
+def update : Prog isa :=
+  VG.Impl.Scrub.AArch64.scrubAll 128 0
+    ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16, .x17],
+     [],
+     []⟩
+    (VG.Impl.StackScratch.AArch64.withStackScratch 112 .x4 (Stream.update P))
+
+/-- `finalize` as emitted, as `update`. -/
+def finalize : Prog isa :=
+  VG.Impl.Scrub.AArch64.scrubAll 128 0
+    ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16, .x17],
+     [],
+     []⟩
+    (VG.Impl.StackScratch.AArch64.withStackScratch 112 .x3 (Stream.finalize P))
+
+end VG.Impl.Blake2.AArch64.Fn

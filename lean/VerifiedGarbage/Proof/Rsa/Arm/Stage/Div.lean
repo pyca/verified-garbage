@@ -12,7 +12,7 @@ public import VerifiedGarbage.Proof.Rsa.Arm.Stage.Taint2
 public import VerifiedGarbage.Proof.Rsa.Arm.Stage.VP
 public import VerifiedGarbage.Proof.Rsa.BoolNat
 public import VerifiedGarbage.Proof.Rsa.Arm.InvLaw
-public import VerifiedGarbage.Proof.Rsa.Arm.KeyDiv
+public import VerifiedGarbage.Proof.Rsa.Arm.CvLoad
 import VerifiedGarbage.Proof.Rsa.Arm.CvDivN
 import VerifiedGarbage.Proof.Rsa.Arm.DivCT
 import VerifiedGarbage.Proof.Rsa.Arm.Stage.Taint4

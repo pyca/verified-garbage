@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.CmacTripleDes.X86
+public import VerifiedGarbage.Impl.StackScratch.X86
+public import VerifiedGarbage.Impl.Scrub.X86
 
 /-!
 # Streaming TDEA-CMAC: x86 (32-bit) implementation
@@ -38,6 +40,10 @@ subkeys (384–399), the chaining value (400–407) and the bytes held back
 * `finish` copies the chaining value to `out`, and runs `finalize` with the
   state as its key, `out` as its state and the `h` bytes held back as the
   last bytes.
+
+`absorb` and `finish` are `absorbWith` and `finishWith` of those runs in
+their frames (`updFrame`, `finFrame`): the code around the runs, for any
+code that does a run's work from the same registers.
 
 Only the pointers, the key length, `count` and `len` can affect timing: the
 branches are on them, and so are the number of bytes copied and of blocks
@@ -155,8 +161,14 @@ def absorbPre : Prog isa := .seq (.block absSave) (.seq (countHeld .eax) (.seq f
 /-- Everything after the second. -/
 def absorbPost : Prog isa := .seq (.block rest) (.seq copy (.block (restore 5)))
 
-def absorb : Prog isa :=
-  .seq absorbPre (.seq updFrame (.seq chain2 (.seq updFrame absorbPost)))
+/-- `absorb` over the code `u` of a run of `update` on registers: the key
+schedule in `eax`, the chaining value's address in `edx`, the blocks' in
+`ebx`, their number in `esi` and the working space in `edi`; `u` keeps the
+callee-saved registers. -/
+def absorbWith (u : Prog isa) : Prog isa :=
+  .seq absorbPre (.seq u (.seq chain2 (.seq u absorbPost)))
+
+def absorb : Prog isa := absorbWith updFrame
 
 /-! ## `vg_cmac_triple_des_finish` -/
 
@@ -181,6 +193,38 @@ return address's place). -/
 def finFrame : Prog isa :=
   .frame (.push [.edi, .esi, .ebx, .edx, .eax, .ecx]) Impl.CmacTripleDes.X86.finalize (.pop .eax 6)
 
-def finish : Prog isa := .seq finPre (.seq finFrame (.block (restore 4)))
+/-- `finish` over the code `f` of a run of `finalize` on registers: the key
+schedule and the subkeys in `eax`, the chaining value's address (`out`) in
+`edx`, the last bytes' in `ebx`, their number in `esi` and the working
+space in `edi`; `f` keeps the callee-saved registers. -/
+def finishWith (f : Prog isa) : Prog isa := .seq finPre (.seq f (.block (restore 4)))
+
+def finish : Prog isa := finishWith finFrame
 
 end VG.Impl.CmacTripleDes.Stream.X86
+
+/-! ## The functions as emitted
+
+Each function, then its cleanup (`Impl.Scrub.X86.scrubAll rb W`, or
+`Impl.Scrub.X86.scrub rb` for code without a frame or calls): the `W` bytes
+of stack below `esp` that its contract reserves zeroed, and the registers
+a callee may change cleared but the `rb` bits of the result, so that it
+returns without secret residue. -/
+
+namespace VG.Impl.CmacTripleDes.Stream.X86.Fn
+
+open VG.X86
+
+/-- `Spec.Cmac.tdesStreamInitApi`'s function as emitted. -/
+def init : Prog isa :=
+  Impl.Scrub.X86.scrubAll 0 680 (Impl.StackScratch.X86.withStackScratch 660 3 Impl.CmacTripleDes.Stream.X86.streamInit)
+
+/-- `Spec.Cmac.tdesAbsorbApi`'s function as emitted. -/
+def absorb : Prog isa :=
+  Impl.Scrub.X86.scrubAll 0 740 (Impl.StackScratch.X86.withStackScratch 716 5 Impl.CmacTripleDes.Stream.X86.absorb)
+
+/-- `Spec.Cmac.tdesFinishApi`'s function as emitted. -/
+def finish : Prog isa :=
+  Impl.Scrub.X86.scrubAll 0 736 (Impl.StackScratch.X86.withStackScratch 712 4 Impl.CmacTripleDes.Stream.X86.finish)
+
+end VG.Impl.CmacTripleDes.Stream.X86.Fn

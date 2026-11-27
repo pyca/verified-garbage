@@ -15,640 +15,620 @@ pub(crate) unsafe extern "C" fn vg_md5_compress() {
 str r5, [r3, #4]
 str r6, [r3, #8]
 str r7, [r3, #12]
-str r8, [r3, #16]
-str r9, [r3, #20]
 cmp r2, #0
 beq 20f
-22:
 ldr r4, [r0, #0]
 ldr r5, [r0, #4]
 ldr r6, [r0, #8]
 ldr r7, [r0, #12]
-movw r8, #65535
-movt r8, #65535
+22:
+ldr r12, [r1, #0]
+add r4, r4, r12
+movw r12, #42104
+movt r12, #55146
+add r4, r4, r12
 eor r12, r6, r7
 and r12, r12, r5
 eor r12, r12, r7
 add r4, r4, r12
-ldr r9, [r1, #0]
-add r4, r4, r9
-movw r9, #42104
-movt r9, #55146
-add r4, r4, r9
 add r4, r5, r4, ror #25
+ldr r12, [r1, #4]
+add r7, r7, r12
+movw r12, #46934
+movt r12, #59591
+add r7, r7, r12
 eor r12, r5, r6
 and r12, r12, r4
 eor r12, r12, r6
 add r7, r7, r12
-ldr r9, [r1, #4]
-add r7, r7, r9
-movw r9, #46934
-movt r9, #59591
-add r7, r7, r9
 add r7, r4, r7, ror #20
+ldr r12, [r1, #8]
+add r6, r6, r12
+movw r12, #28891
+movt r12, #9248
+add r6, r6, r12
 eor r12, r4, r5
 and r12, r12, r7
 eor r12, r12, r5
 add r6, r6, r12
-ldr r9, [r1, #8]
-add r6, r6, r9
-movw r9, #28891
-movt r9, #9248
-add r6, r6, r9
 add r6, r7, r6, ror #15
+ldr r12, [r1, #12]
+add r5, r5, r12
+movw r12, #52974
+movt r12, #49597
+add r5, r5, r12
 eor r12, r7, r4
 and r12, r12, r6
 eor r12, r12, r4
 add r5, r5, r12
-ldr r9, [r1, #12]
-add r5, r5, r9
-movw r9, #52974
-movt r9, #49597
-add r5, r5, r9
 add r5, r6, r5, ror #10
+ldr r12, [r1, #16]
+add r4, r4, r12
+movw r12, #4015
+movt r12, #62844
+add r4, r4, r12
 eor r12, r6, r7
 and r12, r12, r5
 eor r12, r12, r7
 add r4, r4, r12
-ldr r9, [r1, #16]
-add r4, r4, r9
-movw r9, #4015
-movt r9, #62844
-add r4, r4, r9
 add r4, r5, r4, ror #25
+ldr r12, [r1, #20]
+add r7, r7, r12
+movw r12, #50730
+movt r12, #18311
+add r7, r7, r12
 eor r12, r5, r6
 and r12, r12, r4
 eor r12, r12, r6
 add r7, r7, r12
-ldr r9, [r1, #20]
-add r7, r7, r9
-movw r9, #50730
-movt r9, #18311
-add r7, r7, r9
 add r7, r4, r7, ror #20
+ldr r12, [r1, #24]
+add r6, r6, r12
+movw r12, #17939
+movt r12, #43056
+add r6, r6, r12
 eor r12, r4, r5
 and r12, r12, r7
 eor r12, r12, r5
 add r6, r6, r12
-ldr r9, [r1, #24]
-add r6, r6, r9
-movw r9, #17939
-movt r9, #43056
-add r6, r6, r9
 add r6, r7, r6, ror #15
+ldr r12, [r1, #28]
+add r5, r5, r12
+movw r12, #38145
+movt r12, #64838
+add r5, r5, r12
 eor r12, r7, r4
 and r12, r12, r6
 eor r12, r12, r4
 add r5, r5, r12
-ldr r9, [r1, #28]
-add r5, r5, r9
-movw r9, #38145
-movt r9, #64838
-add r5, r5, r9
 add r5, r6, r5, ror #10
+ldr r12, [r1, #32]
+add r4, r4, r12
+movw r12, #39128
+movt r12, #27008
+add r4, r4, r12
 eor r12, r6, r7
 and r12, r12, r5
 eor r12, r12, r7
 add r4, r4, r12
-ldr r9, [r1, #32]
-add r4, r4, r9
-movw r9, #39128
-movt r9, #27008
-add r4, r4, r9
 add r4, r5, r4, ror #25
+ldr r12, [r1, #36]
+add r7, r7, r12
+movw r12, #63407
+movt r12, #35652
+add r7, r7, r12
 eor r12, r5, r6
 and r12, r12, r4
 eor r12, r12, r6
 add r7, r7, r12
-ldr r9, [r1, #36]
-add r7, r7, r9
-movw r9, #63407
-movt r9, #35652
-add r7, r7, r9
 add r7, r4, r7, ror #20
+ldr r12, [r1, #40]
+add r6, r6, r12
+movw r12, #23473
+movt r12, #65535
+add r6, r6, r12
 eor r12, r4, r5
 and r12, r12, r7
 eor r12, r12, r5
 add r6, r6, r12
-ldr r9, [r1, #40]
-add r6, r6, r9
-movw r9, #23473
-movt r9, #65535
-add r6, r6, r9
 add r6, r7, r6, ror #15
+ldr r12, [r1, #44]
+add r5, r5, r12
+movw r12, #55230
+movt r12, #35164
+add r5, r5, r12
 eor r12, r7, r4
 and r12, r12, r6
 eor r12, r12, r4
 add r5, r5, r12
-ldr r9, [r1, #44]
-add r5, r5, r9
-movw r9, #55230
-movt r9, #35164
-add r5, r5, r9
 add r5, r6, r5, ror #10
+ldr r12, [r1, #48]
+add r4, r4, r12
+movw r12, #4386
+movt r12, #27536
+add r4, r4, r12
 eor r12, r6, r7
 and r12, r12, r5
 eor r12, r12, r7
 add r4, r4, r12
-ldr r9, [r1, #48]
-add r4, r4, r9
-movw r9, #4386
-movt r9, #27536
-add r4, r4, r9
 add r4, r5, r4, ror #25
+ldr r12, [r1, #52]
+add r7, r7, r12
+movw r12, #29075
+movt r12, #64920
+add r7, r7, r12
 eor r12, r5, r6
 and r12, r12, r4
 eor r12, r12, r6
 add r7, r7, r12
-ldr r9, [r1, #52]
-add r7, r7, r9
-movw r9, #29075
-movt r9, #64920
-add r7, r7, r9
 add r7, r4, r7, ror #20
+ldr r12, [r1, #56]
+add r6, r6, r12
+movw r12, #17294
+movt r12, #42617
+add r6, r6, r12
 eor r12, r4, r5
 and r12, r12, r7
 eor r12, r12, r5
 add r6, r6, r12
-ldr r9, [r1, #56]
-add r6, r6, r9
-movw r9, #17294
-movt r9, #42617
-add r6, r6, r9
 add r6, r7, r6, ror #15
+ldr r12, [r1, #60]
+add r5, r5, r12
+movw r12, #2081
+movt r12, #18868
+add r5, r5, r12
 eor r12, r7, r4
 and r12, r12, r6
 eor r12, r12, r4
 add r5, r5, r12
-ldr r9, [r1, #60]
-add r5, r5, r9
-movw r9, #2081
-movt r9, #18868
-add r5, r5, r9
 add r5, r6, r5, ror #10
-eor r12, r5, r6
-and r12, r12, r7
-eor r12, r12, r6
+ldr r12, [r1, #4]
 add r4, r4, r12
-ldr r9, [r1, #4]
-add r4, r4, r9
-movw r9, #9570
-movt r9, #63006
-add r4, r4, r9
+movw r12, #9570
+movt r12, #63006
+add r4, r4, r12
+bic r12, r6, r7
+add r4, r4, r12
+and r12, r5, r7
+add r4, r4, r12
 add r4, r5, r4, ror #27
-eor r12, r4, r5
-and r12, r12, r6
-eor r12, r12, r5
+ldr r12, [r1, #24]
 add r7, r7, r12
-ldr r9, [r1, #24]
-add r7, r7, r9
-movw r9, #45888
-movt r9, #49216
-add r7, r7, r9
+movw r12, #45888
+movt r12, #49216
+add r7, r7, r12
+bic r12, r5, r6
+add r7, r7, r12
+and r12, r4, r6
+add r7, r7, r12
 add r7, r4, r7, ror #23
-eor r12, r7, r4
-and r12, r12, r5
-eor r12, r12, r4
+ldr r12, [r1, #44]
 add r6, r6, r12
-ldr r9, [r1, #44]
-add r6, r6, r9
-movw r9, #23121
-movt r9, #9822
-add r6, r6, r9
+movw r12, #23121
+movt r12, #9822
+add r6, r6, r12
+bic r12, r4, r5
+add r6, r6, r12
+and r12, r7, r5
+add r6, r6, r12
 add r6, r7, r6, ror #18
-eor r12, r6, r7
-and r12, r12, r4
-eor r12, r12, r7
+ldr r12, [r1, #0]
 add r5, r5, r12
-ldr r9, [r1, #0]
-add r5, r5, r9
-movw r9, #51114
-movt r9, #59830
-add r5, r5, r9
+movw r12, #51114
+movt r12, #59830
+add r5, r5, r12
+bic r12, r7, r4
+add r5, r5, r12
+and r12, r6, r4
+add r5, r5, r12
 add r5, r6, r5, ror #12
-eor r12, r5, r6
-and r12, r12, r7
-eor r12, r12, r6
+ldr r12, [r1, #20]
 add r4, r4, r12
-ldr r9, [r1, #20]
-add r4, r4, r9
-movw r9, #4189
-movt r9, #54831
-add r4, r4, r9
+movw r12, #4189
+movt r12, #54831
+add r4, r4, r12
+bic r12, r6, r7
+add r4, r4, r12
+and r12, r5, r7
+add r4, r4, r12
 add r4, r5, r4, ror #27
-eor r12, r4, r5
-and r12, r12, r6
-eor r12, r12, r5
+ldr r12, [r1, #40]
 add r7, r7, r12
-ldr r9, [r1, #40]
-add r7, r7, r9
-movw r9, #5203
-movt r9, #580
-add r7, r7, r9
+movw r12, #5203
+movt r12, #580
+add r7, r7, r12
+bic r12, r5, r6
+add r7, r7, r12
+and r12, r4, r6
+add r7, r7, r12
 add r7, r4, r7, ror #23
-eor r12, r7, r4
-and r12, r12, r5
-eor r12, r12, r4
+ldr r12, [r1, #60]
 add r6, r6, r12
-ldr r9, [r1, #60]
-add r6, r6, r9
-movw r9, #59009
-movt r9, #55457
-add r6, r6, r9
+movw r12, #59009
+movt r12, #55457
+add r6, r6, r12
+bic r12, r4, r5
+add r6, r6, r12
+and r12, r7, r5
+add r6, r6, r12
 add r6, r7, r6, ror #18
-eor r12, r6, r7
-and r12, r12, r4
-eor r12, r12, r7
+ldr r12, [r1, #16]
 add r5, r5, r12
-ldr r9, [r1, #16]
-add r5, r5, r9
-movw r9, #64456
-movt r9, #59347
-add r5, r5, r9
+movw r12, #64456
+movt r12, #59347
+add r5, r5, r12
+bic r12, r7, r4
+add r5, r5, r12
+and r12, r6, r4
+add r5, r5, r12
 add r5, r6, r5, ror #12
-eor r12, r5, r6
-and r12, r12, r7
-eor r12, r12, r6
+ldr r12, [r1, #36]
 add r4, r4, r12
-ldr r9, [r1, #36]
-add r4, r4, r9
-movw r9, #52710
-movt r9, #8673
-add r4, r4, r9
+movw r12, #52710
+movt r12, #8673
+add r4, r4, r12
+bic r12, r6, r7
+add r4, r4, r12
+and r12, r5, r7
+add r4, r4, r12
 add r4, r5, r4, ror #27
-eor r12, r4, r5
-and r12, r12, r6
-eor r12, r12, r5
+ldr r12, [r1, #56]
 add r7, r7, r12
-ldr r9, [r1, #56]
-add r7, r7, r9
-movw r9, #2006
-movt r9, #49975
-add r7, r7, r9
+movw r12, #2006
+movt r12, #49975
+add r7, r7, r12
+bic r12, r5, r6
+add r7, r7, r12
+and r12, r4, r6
+add r7, r7, r12
 add r7, r4, r7, ror #23
-eor r12, r7, r4
-and r12, r12, r5
-eor r12, r12, r4
+ldr r12, [r1, #12]
 add r6, r6, r12
-ldr r9, [r1, #12]
-add r6, r6, r9
-movw r9, #3463
-movt r9, #62677
-add r6, r6, r9
+movw r12, #3463
+movt r12, #62677
+add r6, r6, r12
+bic r12, r4, r5
+add r6, r6, r12
+and r12, r7, r5
+add r6, r6, r12
 add r6, r7, r6, ror #18
-eor r12, r6, r7
-and r12, r12, r4
-eor r12, r12, r7
+ldr r12, [r1, #32]
 add r5, r5, r12
-ldr r9, [r1, #32]
-add r5, r5, r9
-movw r9, #5357
-movt r9, #17754
-add r5, r5, r9
+movw r12, #5357
+movt r12, #17754
+add r5, r5, r12
+bic r12, r7, r4
+add r5, r5, r12
+and r12, r6, r4
+add r5, r5, r12
 add r5, r6, r5, ror #12
-eor r12, r5, r6
-and r12, r12, r7
-eor r12, r12, r6
+ldr r12, [r1, #52]
 add r4, r4, r12
-ldr r9, [r1, #52]
-add r4, r4, r9
-movw r9, #59653
-movt r9, #43491
-add r4, r4, r9
+movw r12, #59653
+movt r12, #43491
+add r4, r4, r12
+bic r12, r6, r7
+add r4, r4, r12
+and r12, r5, r7
+add r4, r4, r12
 add r4, r5, r4, ror #27
-eor r12, r4, r5
-and r12, r12, r6
-eor r12, r12, r5
+ldr r12, [r1, #8]
 add r7, r7, r12
-ldr r9, [r1, #8]
-add r7, r7, r9
-movw r9, #41976
-movt r9, #64751
-add r7, r7, r9
+movw r12, #41976
+movt r12, #64751
+add r7, r7, r12
+bic r12, r5, r6
+add r7, r7, r12
+and r12, r4, r6
+add r7, r7, r12
 add r7, r4, r7, ror #23
-eor r12, r7, r4
-and r12, r12, r5
-eor r12, r12, r4
+ldr r12, [r1, #28]
 add r6, r6, r12
-ldr r9, [r1, #28]
-add r6, r6, r9
-movw r9, #729
-movt r9, #26479
-add r6, r6, r9
+movw r12, #729
+movt r12, #26479
+add r6, r6, r12
+bic r12, r4, r5
+add r6, r6, r12
+and r12, r7, r5
+add r6, r6, r12
 add r6, r7, r6, ror #18
-eor r12, r6, r7
-and r12, r12, r4
-eor r12, r12, r7
+ldr r12, [r1, #48]
 add r5, r5, r12
-ldr r9, [r1, #48]
-add r5, r5, r9
-movw r9, #19594
-movt r9, #36138
-add r5, r5, r9
+movw r12, #19594
+movt r12, #36138
+add r5, r5, r12
+bic r12, r7, r4
+add r5, r5, r12
+and r12, r6, r4
+add r5, r5, r12
 add r5, r6, r5, ror #12
-eor r12, r5, r6
-eor r12, r12, r7
+ldr r12, [r1, #20]
 add r4, r4, r12
-ldr r9, [r1, #20]
-add r4, r4, r9
-movw r9, #14658
-movt r9, #65530
-add r4, r4, r9
-add r4, r5, r4, ror #28
-eor r12, r4, r5
-eor r12, r12, r6
-add r7, r7, r12
-ldr r9, [r1, #32]
-add r7, r7, r9
-movw r9, #63105
-movt r9, #34673
-add r7, r7, r9
-add r7, r4, r7, ror #21
-eor r12, r7, r4
-eor r12, r12, r5
-add r6, r6, r12
-ldr r9, [r1, #44]
-add r6, r6, r9
-movw r9, #24866
-movt r9, #28061
-add r6, r6, r9
-add r6, r7, r6, ror #16
+movw r12, #14658
+movt r12, #65530
+add r4, r4, r12
 eor r12, r6, r7
-eor r12, r12, r4
-add r5, r5, r12
-ldr r9, [r1, #56]
-add r5, r5, r9
-movw r9, #14348
-movt r9, #64997
-add r5, r5, r9
-add r5, r6, r5, ror #9
-eor r12, r5, r6
-eor r12, r12, r7
-add r4, r4, r12
-ldr r9, [r1, #4]
-add r4, r4, r9
-movw r9, #59972
-movt r9, #42174
-add r4, r4, r9
-add r4, r5, r4, ror #28
-eor r12, r4, r5
-eor r12, r12, r6
-add r7, r7, r12
-ldr r9, [r1, #16]
-add r7, r7, r9
-movw r9, #53161
-movt r9, #19422
-add r7, r7, r9
-add r7, r4, r7, ror #21
-eor r12, r7, r4
 eor r12, r12, r5
-add r6, r6, r12
-ldr r9, [r1, #28]
-add r6, r6, r9
-movw r9, #19296
-movt r9, #63163
-add r6, r6, r9
-add r6, r7, r6, ror #16
-eor r12, r6, r7
-eor r12, r12, r4
-add r5, r5, r12
-ldr r9, [r1, #40]
-add r5, r5, r9
-movw r9, #48240
-movt r9, #48831
-add r5, r5, r9
-add r5, r6, r5, ror #9
-eor r12, r5, r6
-eor r12, r12, r7
 add r4, r4, r12
-ldr r9, [r1, #52]
-add r4, r4, r9
-movw r9, #32454
-movt r9, #10395
-add r4, r4, r9
 add r4, r5, r4, ror #28
-eor r12, r4, r5
-eor r12, r12, r6
+ldr r12, [r1, #32]
 add r7, r7, r12
-ldr r9, [r1, #0]
-add r7, r7, r9
-movw r9, #10234
-movt r9, #60065
-add r7, r7, r9
-add r7, r4, r7, ror #21
-eor r12, r7, r4
-eor r12, r12, r5
-add r6, r6, r12
-ldr r9, [r1, #12]
-add r6, r6, r9
-movw r9, #12421
-movt r9, #54511
-add r6, r6, r9
-add r6, r7, r6, ror #16
-eor r12, r6, r7
-eor r12, r12, r4
-add r5, r5, r12
-ldr r9, [r1, #24]
-add r5, r5, r9
-movw r9, #7429
-movt r9, #1160
-add r5, r5, r9
-add r5, r6, r5, ror #9
+movw r12, #63105
+movt r12, #34673
+add r7, r7, r12
 eor r12, r5, r6
-eor r12, r12, r7
-add r4, r4, r12
-ldr r9, [r1, #36]
-add r4, r4, r9
-movw r9, #53305
-movt r9, #55764
-add r4, r4, r9
-add r4, r5, r4, ror #28
-eor r12, r4, r5
-eor r12, r12, r6
-add r7, r7, r12
-ldr r9, [r1, #48]
-add r7, r7, r9
-movw r9, #39397
-movt r9, #59099
-add r7, r7, r9
-add r7, r4, r7, ror #21
-eor r12, r7, r4
-eor r12, r12, r5
-add r6, r6, r12
-ldr r9, [r1, #60]
-add r6, r6, r9
-movw r9, #31992
-movt r9, #8098
-add r6, r6, r9
-add r6, r7, r6, ror #16
-eor r12, r6, r7
 eor r12, r12, r4
+add r7, r7, r12
+add r7, r4, r7, ror #21
+ldr r12, [r1, #44]
+add r6, r6, r12
+movw r12, #24866
+movt r12, #28061
+add r6, r6, r12
+eor r12, r4, r5
+eor r12, r12, r7
+add r6, r6, r12
+add r6, r7, r6, ror #16
+ldr r12, [r1, #56]
 add r5, r5, r12
-ldr r9, [r1, #8]
-add r5, r5, r9
-movw r9, #22117
-movt r9, #50348
-add r5, r5, r9
-add r5, r6, r5, ror #9
-eor r12, r7, r8
-orr r12, r12, r5
+movw r12, #14348
+movt r12, #64997
+add r5, r5, r12
+eor r12, r7, r4
 eor r12, r12, r6
+add r5, r5, r12
+add r5, r6, r5, ror #9
+ldr r12, [r1, #4]
 add r4, r4, r12
-ldr r9, [r1, #0]
-add r4, r4, r9
-movw r9, #8772
-movt r9, #62505
-add r4, r4, r9
+movw r12, #59972
+movt r12, #42174
+add r4, r4, r12
+eor r12, r6, r7
+eor r12, r12, r5
+add r4, r4, r12
+add r4, r5, r4, ror #28
+ldr r12, [r1, #16]
+add r7, r7, r12
+movw r12, #53161
+movt r12, #19422
+add r7, r7, r12
+eor r12, r5, r6
+eor r12, r12, r4
+add r7, r7, r12
+add r7, r4, r7, ror #21
+ldr r12, [r1, #28]
+add r6, r6, r12
+movw r12, #19296
+movt r12, #63163
+add r6, r6, r12
+eor r12, r4, r5
+eor r12, r12, r7
+add r6, r6, r12
+add r6, r7, r6, ror #16
+ldr r12, [r1, #40]
+add r5, r5, r12
+movw r12, #48240
+movt r12, #48831
+add r5, r5, r12
+eor r12, r7, r4
+eor r12, r12, r6
+add r5, r5, r12
+add r5, r6, r5, ror #9
+ldr r12, [r1, #52]
+add r4, r4, r12
+movw r12, #32454
+movt r12, #10395
+add r4, r4, r12
+eor r12, r6, r7
+eor r12, r12, r5
+add r4, r4, r12
+add r4, r5, r4, ror #28
+ldr r12, [r1, #0]
+add r7, r7, r12
+movw r12, #10234
+movt r12, #60065
+add r7, r7, r12
+eor r12, r5, r6
+eor r12, r12, r4
+add r7, r7, r12
+add r7, r4, r7, ror #21
+ldr r12, [r1, #12]
+add r6, r6, r12
+movw r12, #12421
+movt r12, #54511
+add r6, r6, r12
+eor r12, r4, r5
+eor r12, r12, r7
+add r6, r6, r12
+add r6, r7, r6, ror #16
+ldr r12, [r1, #24]
+add r5, r5, r12
+movw r12, #7429
+movt r12, #1160
+add r5, r5, r12
+eor r12, r7, r4
+eor r12, r12, r6
+add r5, r5, r12
+add r5, r6, r5, ror #9
+ldr r12, [r1, #36]
+add r4, r4, r12
+movw r12, #53305
+movt r12, #55764
+add r4, r4, r12
+eor r12, r6, r7
+eor r12, r12, r5
+add r4, r4, r12
+add r4, r5, r4, ror #28
+ldr r12, [r1, #48]
+add r7, r7, r12
+movw r12, #39397
+movt r12, #59099
+add r7, r7, r12
+eor r12, r5, r6
+eor r12, r12, r4
+add r7, r7, r12
+add r7, r4, r7, ror #21
+ldr r12, [r1, #60]
+add r6, r6, r12
+movw r12, #31992
+movt r12, #8098
+add r6, r6, r12
+eor r12, r4, r5
+eor r12, r12, r7
+add r6, r6, r12
+add r6, r7, r6, ror #16
+ldr r12, [r1, #8]
+add r5, r5, r12
+movw r12, #22117
+movt r12, #50348
+add r5, r5, r12
+eor r12, r7, r4
+eor r12, r12, r6
+add r5, r5, r12
+add r5, r6, r5, ror #9
+ldr r12, [r1, #0]
+add r4, r4, r12
+movw r12, #8771
+movt r12, #62505
+add r4, r4, r12
+bic r12, r7, r5
+eor r12, r12, r6
+sub r4, r4, r12
 add r4, r5, r4, ror #26
-eor r12, r6, r8
-orr r12, r12, r4
-eor r12, r12, r5
+ldr r12, [r1, #28]
 add r7, r7, r12
-ldr r9, [r1, #28]
-add r7, r7, r9
-movw r9, #65431
-movt r9, #17194
-add r7, r7, r9
+movw r12, #65430
+movt r12, #17194
+add r7, r7, r12
+bic r12, r6, r4
+eor r12, r12, r5
+sub r7, r7, r12
 add r7, r4, r7, ror #22
-eor r12, r5, r8
-orr r12, r12, r7
-eor r12, r12, r4
+ldr r12, [r1, #56]
 add r6, r6, r12
-ldr r9, [r1, #56]
-add r6, r6, r9
-movw r9, #9127
-movt r9, #43924
-add r6, r6, r9
+movw r12, #9126
+movt r12, #43924
+add r6, r6, r12
+bic r12, r5, r7
+eor r12, r12, r4
+sub r6, r6, r12
 add r6, r7, r6, ror #17
-eor r12, r4, r8
-orr r12, r12, r6
-eor r12, r12, r7
+ldr r12, [r1, #20]
 add r5, r5, r12
-ldr r9, [r1, #20]
-add r5, r5, r9
-movw r9, #41017
-movt r9, #64659
-add r5, r5, r9
+movw r12, #41016
+movt r12, #64659
+add r5, r5, r12
+bic r12, r4, r6
+eor r12, r12, r7
+sub r5, r5, r12
 add r5, r6, r5, ror #11
-eor r12, r7, r8
-orr r12, r12, r5
-eor r12, r12, r6
+ldr r12, [r1, #48]
 add r4, r4, r12
-ldr r9, [r1, #48]
-add r4, r4, r9
-movw r9, #22979
-movt r9, #25947
-add r4, r4, r9
+movw r12, #22978
+movt r12, #25947
+add r4, r4, r12
+bic r12, r7, r5
+eor r12, r12, r6
+sub r4, r4, r12
 add r4, r5, r4, ror #26
-eor r12, r6, r8
-orr r12, r12, r4
-eor r12, r12, r5
+ldr r12, [r1, #12]
 add r7, r7, r12
-ldr r9, [r1, #12]
-add r7, r7, r9
-movw r9, #52370
-movt r9, #36620
-add r7, r7, r9
+movw r12, #52369
+movt r12, #36620
+add r7, r7, r12
+bic r12, r6, r4
+eor r12, r12, r5
+sub r7, r7, r12
 add r7, r4, r7, ror #22
-eor r12, r5, r8
-orr r12, r12, r7
-eor r12, r12, r4
+ldr r12, [r1, #40]
 add r6, r6, r12
-ldr r9, [r1, #40]
-add r6, r6, r9
-movw r9, #62589
-movt r9, #65519
-add r6, r6, r9
+movw r12, #62588
+movt r12, #65519
+add r6, r6, r12
+bic r12, r5, r7
+eor r12, r12, r4
+sub r6, r6, r12
 add r6, r7, r6, ror #17
-eor r12, r4, r8
-orr r12, r12, r6
-eor r12, r12, r7
+ldr r12, [r1, #4]
 add r5, r5, r12
-ldr r9, [r1, #4]
-add r5, r5, r9
-movw r9, #24017
-movt r9, #34180
-add r5, r5, r9
+movw r12, #24016
+movt r12, #34180
+add r5, r5, r12
+bic r12, r4, r6
+eor r12, r12, r7
+sub r5, r5, r12
 add r5, r6, r5, ror #11
-eor r12, r7, r8
-orr r12, r12, r5
-eor r12, r12, r6
+ldr r12, [r1, #32]
 add r4, r4, r12
-ldr r9, [r1, #32]
-add r4, r4, r9
-movw r9, #32335
-movt r9, #28584
-add r4, r4, r9
+movw r12, #32334
+movt r12, #28584
+add r4, r4, r12
+bic r12, r7, r5
+eor r12, r12, r6
+sub r4, r4, r12
 add r4, r5, r4, ror #26
-eor r12, r6, r8
-orr r12, r12, r4
-eor r12, r12, r5
+ldr r12, [r1, #60]
 add r7, r7, r12
-ldr r9, [r1, #60]
-add r7, r7, r9
-movw r9, #59104
-movt r9, #65068
-add r7, r7, r9
+movw r12, #59103
+movt r12, #65068
+add r7, r7, r12
+bic r12, r6, r4
+eor r12, r12, r5
+sub r7, r7, r12
 add r7, r4, r7, ror #22
-eor r12, r5, r8
-orr r12, r12, r7
-eor r12, r12, r4
+ldr r12, [r1, #24]
 add r6, r6, r12
-ldr r9, [r1, #24]
-add r6, r6, r9
-movw r9, #17172
-movt r9, #41729
-add r6, r6, r9
+movw r12, #17171
+movt r12, #41729
+add r6, r6, r12
+bic r12, r5, r7
+eor r12, r12, r4
+sub r6, r6, r12
 add r6, r7, r6, ror #17
-eor r12, r4, r8
-orr r12, r12, r6
-eor r12, r12, r7
+ldr r12, [r1, #52]
 add r5, r5, r12
-ldr r9, [r1, #52]
-add r5, r5, r9
-movw r9, #4513
-movt r9, #19976
-add r5, r5, r9
+movw r12, #4512
+movt r12, #19976
+add r5, r5, r12
+bic r12, r4, r6
+eor r12, r12, r7
+sub r5, r5, r12
 add r5, r6, r5, ror #11
-eor r12, r7, r8
-orr r12, r12, r5
-eor r12, r12, r6
+ldr r12, [r1, #16]
 add r4, r4, r12
-ldr r9, [r1, #16]
-add r4, r4, r9
-movw r9, #32386
-movt r9, #63315
-add r4, r4, r9
+movw r12, #32385
+movt r12, #63315
+add r4, r4, r12
+bic r12, r7, r5
+eor r12, r12, r6
+sub r4, r4, r12
 add r4, r5, r4, ror #26
-eor r12, r6, r8
-orr r12, r12, r4
-eor r12, r12, r5
+ldr r12, [r1, #44]
 add r7, r7, r12
-ldr r9, [r1, #44]
-add r7, r7, r9
-movw r9, #62005
-movt r9, #48442
-add r7, r7, r9
+movw r12, #62004
+movt r12, #48442
+add r7, r7, r12
+bic r12, r6, r4
+eor r12, r12, r5
+sub r7, r7, r12
 add r7, r4, r7, ror #22
-eor r12, r5, r8
-orr r12, r12, r7
-eor r12, r12, r4
+ldr r12, [r1, #8]
 add r6, r6, r12
-ldr r9, [r1, #8]
-add r6, r6, r9
-movw r9, #53947
-movt r9, #10967
-add r6, r6, r9
+movw r12, #53946
+movt r12, #10967
+add r6, r6, r12
+bic r12, r5, r7
+eor r12, r12, r4
+sub r6, r6, r12
 add r6, r7, r6, ror #17
-eor r12, r4, r8
-orr r12, r12, r6
-eor r12, r12, r7
+ldr r12, [r1, #36]
 add r5, r5, r12
-ldr r9, [r1, #36]
-add r5, r5, r9
-movw r9, #54161
-movt r9, #60294
-add r5, r5, r9
+movw r12, #54160
+movt r12, #60294
+add r5, r5, r12
+bic r12, r4, r6
+eor r12, r12, r7
+sub r5, r5, r12
 add r5, r6, r5, ror #11
 ldr r12, [r0, #0]
 add r4, r4, r12
@@ -672,8 +652,6 @@ ldr r4, [r3, #0]
 ldr r5, [r3, #4]
 ldr r6, [r3, #8]
 ldr r7, [r3, #12]
-ldr r8, [r3, #16]
-ldr r9, [r3, #20]
 bx lr",
     )
 }

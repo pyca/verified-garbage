@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.AArch64.Reduce
 
 /-!
 # A scratch buffer on the stack, wiped after use (AArch64)
@@ -68,7 +69,7 @@ theorem wipePairStores_run (R : Region) (u : State) (hR : R ∈ u.wr) : ∀ pair
       (u.gpr .x16 + BitVec.ofNat 64 (16 * w) + 8) 8 ((u.read .x .x17).setWidth 64), ?_,
       (hf.write (List.mem_singleton_self _) _ hc₁).write (List.mem_singleton_self _) _ hc₂⟩
     rw [wipePairStores_succ, execBlock_append, he]
-    simp only [Option.bind_some, execBlock, isa, exec, hoff, and_self, ↓reduceIte,
+    simp only [Option.bind_some, execBlock, isa, reduceExec, hoff, and_self, ↓reduceIte,
       State.store, hin₁, hin₂, Option.map_some, addrs, List.map_cons, List.map_nil, List.append_nil,
       pairTrace, List.range_succ, List.flatMap_append, List.flatMap_cons, List.flatMap_nil,
       State.read, Size.bits]
@@ -87,7 +88,7 @@ theorem wipePairChunk_run (R : Region) (u : State) (hR : R ∈ u.wr) (o j pairs 
   obtain ⟨m', he, hf⟩ := wipePairStores_run R (u.write .x .x16 (u.sp + BitVec.ofNat 64 (o + 512 * j)))
     (by simpa [State.write]) pairs hp (by rw [h16]; exact hc)
   refine ⟨m', ?_, by simpa [State.write] using hf⟩
-  simp only [wipePairChunk, execBlock, isa, exec, hj, ↓reduceIte]
+  simp only [wipePairChunk, execBlock, isa, reduceExec, hj, ↓reduceIte]
   rw [he, h16]
   simp [addrs]
 
@@ -171,7 +172,7 @@ theorem wipeAt_run (R : Region) (u : State) (o words : Nat) (hR : R ∈ u.wr) (h
     (by omega_using [hwb]) (by simpa [State.write] using fun i hi => hc i (by omega_using [hi]))
   by_cases h0 : words % 2 = 0
   · refine ⟨_, ?_, ⟨g, m', rfl, fun q h₁ h₂ => ?_⟩, hf⟩
-    · simp only [wipeAt, h0, ↓reduceIte, List.append_nil, execBlock, isa, exec,
+    · simp only [wipeAt, h0, ↓reduceIte, List.append_nil, execBlock, isa, reduceExec,
         show 16 * 0 < Size.bits .x by decide]
       rw [he]
       simp [addrs, State.write, wipeTraceAt, h0]
@@ -183,7 +184,7 @@ theorem wipeAt_run (R : Region) (u : State) (o words : Nat) (hR : R ∈ u.wr) (h
     refine ⟨_, ?_, ⟨g, m'.write (u.sp + BitVec.ofNat 64 (o + 8 * (words - 1))) 8 ((g .x17).setWidth 64), rfl,
       fun q h₁ h₂ => ?_⟩, hf.write (List.mem_singleton_self _) _ hk⟩
     · have hm : isa.exec (.movz .x .x17 0 0) u = some (u.write .x .x17 ((0 : BitVec 16).setWidth 64 <<< (16 * 0))) := by
-        simp [isa, exec]
+        simp [isa, reduceExec]
       rw [show wipeAt o words = .movz .x .x17 0 0 ::
           (wipePairChunks o (words / 2) ++ ([.strSp .x17 (o + 8 * (words - 1))] : List Instr)) by
             simp [wipeAt, h0],
@@ -191,7 +192,7 @@ theorem wipeAt_run (R : Region) (u : State) (o words : Nat) (hR : R ∈ u.wr) (h
       simp only []
       rw [execBlock_append, he]
       simp only [Option.bind_some, execBlock]
-      simp [exec, addrs, State.write, State.store, State.read, wipeTraceAt, h0, hoff, hin]
+      simp [reduceExec, addrs, State.write, State.store, State.read, wipeTraceAt, h0, hoff, hin]
     · rw [hg q h₁ h₂]; simp [State.write, h₂]
 
 /-- `wipe words` from `u`, with the `words` doublewords at `sp` in `R`
@@ -246,6 +247,17 @@ theorem Verified.stackScratchWiped {c : Prog isa}
     have hscrSub : Region.Sub ⟨s.sp - BitVec.ofNat 64 bytes, n * e.size⟩ (below s.sp (stack + bytes)) :=
       Offset.sub_below _ (by omega_using []) (by omega_using [hb])
     exact (Region.Disjoint.symm (hres _ hbelow b (List.mem_append_left _ hb'))).sub_right hscrSub
+  -- So is the whole frame, whose bytes the `free` loses.
+  have hdisjF : ∀ s, (sig.contract abi pre post wa (stack + bytes) leak).pre s →
+      ∀ b ∈ Sig.bufs sig.params (regArgs sig s),
+        b.1.Disjoint ⟨s.sp - BitVec.ofNat 64 bytes, bytes⟩ := by
+    intro s hs b hb'
+    rw [pre_regs (by omega_using [hk])] at hs
+    obtain ⟨-, -, -, -, hres, -, -⟩ := hs
+    have hbelow : below s.sp (stack + bytes) ∈ stackBelow s.sp (stack + bytes) := by
+      rw [stackBelow_pos _ (by omega_using [hb])]; simp
+    exact (Region.Disjoint.symm (hres _ hbelow b (List.mem_append_left _ hb'))).sub_right
+      (frame_sub (stack := stack) s)
   -- Every run is the code's run from `narrow`, then the wipe.
   have hrun : ∀ s, (sig.contract abi pre post wa (stack + bytes) leak).pre s → ∃ t s₃ s₄,
       Exec isa c (narrow sig e n bytes s) t s₃ ∧
@@ -254,7 +266,8 @@ theorem Verified.stackScratchWiped {c : Prog isa}
       s₃.sp = s.sp - BitVec.ofNat 64 bytes ∧
       Exec isa (withStackScratchWiped bytes (argRegs.getD (sig.words abi.ptrBits).length .x0) words c) s
         (t ++ wipeTrace s₃.sp words) (popState bytes s s₄) ∧
-      abiPreserved s (popState bytes s s₄) ∧ (popState bytes s s₄).mem = s₄.mem ∧
+      abiPreserved s (popState bytes s s₄) ∧
+      Frame [⟨s.sp - BitVec.ofNat 64 bytes, bytes⟩] s₄.mem (popState bytes s s₄).mem ∧
       (popState bytes s s₄).gpr .x0 = s₃.gpr .x0 := by
     intro s hs
     obtain ⟨t, s₃, he, ha, hq⟩ := hcor _ (narrow_pre hk hb hs)
@@ -283,17 +296,21 @@ theorem Verified.stackScratchWiped {c : Prog isa}
       (post := Curry.withScratch abi.ptrBits nm e n sig.params post)
       (by rw [Sig.words_withScratch, List.length_append, List.length_singleton]; omega_using [hk])).mp hq
     rw [narrow_regArgs hk] at hq'
-    rw [hm, hx0]
+    rw [hx0]
     have h₃ := Eq.mp (congrFun (congrFun (congrFun (Curry.apply_withScratch abi.ptrBits nm e n sig.params
       post _ _ (hlen s (by omega_using [hk]))) s.mem) s₃.mem) _) hq'
+    -- The memory on return: after the wipe, which writes only the buffer,
+    -- and the `free`, which loses only the frame.
     refine hpost _ _ _ _ _ (hlen s (by omega_using [hk])) (fun b hb' a ha' => ?_) h₃
-    exact (hfr a fun r hr => by
+    exact ((hm a fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact hdisj s hs b hb' a ha').symm
+      exact hdisjF s hs b hb' a ha').trans (hfr a fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact hdisj s hs b hb' a ha')).symm
   · obtain ⟨u₁, _, _, f₁, _, _, p₁, x₁, _⟩ := hrun s₁ h₁
     obtain ⟨u₂, _, _, f₂, _, _, p₂, x₂, _⟩ := hrun s₂ h₂
     rw [(Exec.det e₁ x₁).1, (Exec.det e₂ x₂).1, p₁, p₂]
-    have hsp₁₂ : s₁.sp = s₂.sp := ((pub_regs (by omega_using [hk])).mp hp).1.1
+    have hsp₁₂ : s₁.sp = s₂.sp := ((pub_regs (by omega_using [hk])).mp hp).1.1.1
     rw [hct _ _ _ _ _ _ (narrow_pre hk hb h₁) (narrow_pre hk hb h₂) (narrow_pub hk hp) f₁ f₂,
       hsp₁₂]
 

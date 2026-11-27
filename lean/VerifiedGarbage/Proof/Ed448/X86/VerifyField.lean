@@ -37,40 +37,40 @@ theorem slot_idx {n : Nat} (h : n < 22) : slot n = slot (idx n).val := by
   simp only [idx, Nat.mod_eq_of_lt h]
 
 theorem fop_ok {s : State} {base : Addr} (hs : Scr s base) (hc : CallCtx s base)
-    (hb : BoundedEnv s.mem base) (op : FOp)
+    (op : FOp)
     (hv : fopValid op) :
     WP isa (toOp op).code s fun t =>
-      Keep base s t ∧ BoundedEnv t.mem base ∧ E t.mem base = evalOp op (E s.mem base) := by
+      Keep base s t ∧ E t.mem base = evalOp op (E s.mem base) := by
   cases op with
   | mul o a b =>
     obtain ⟨h1, h2, h3⟩ := hv
     simp only [toOp, Impl.X448.X86.Op.code, slot_idx h1, slot_idx h2, slot_idx h3]
-    exact mulE hs hc hb _ _ _
+    exact mulE hs hc _ _ _
   | sqr o a =>
     obtain ⟨h1, h2⟩ := hv
     simp only [toOp, Impl.X448.X86.Op.code, slot_idx h1, slot_idx h2]
-    exact mulE hs hc hb _ _ _
+    exact mulE hs hc _ _ _
   | add o a b =>
     obtain ⟨h1, h2, h3⟩ := hv
     simp only [toOp, Impl.X448.X86.Op.code, slot_idx h1, slot_idx h2, slot_idx h3]
-    exact addE hs hc hb _ _ _
+    exact addE hs hc _ _ _
   | sub o a b =>
     obtain ⟨h1, h2, h3⟩ := hv
     simp only [toOp, Impl.X448.X86.Op.code, slot_idx h1, slot_idx h2, slot_idx h3]
-    exact subE hs hc hb _ _ _
+    exact subE hs hc _ _ _
 
 theorem field_ok (l : List FOp) (hv : ∀ op ∈ l, fopValid op) {s : State} {base : Addr}
-    (hs : Scr s base) (hc : CallCtx s base) (hb : BoundedEnv s.mem base) :
+    (hs : Scr s base) (hc : CallCtx s base) :
     WP isa (field l) s fun t =>
-      Keep base s t ∧ BoundedEnv t.mem base ∧ E t.mem base = evalOps l (E s.mem base) := by
+      Keep base s t ∧ E t.mem base = evalOps l (E s.mem base) := by
   induction l generalizing s with
-  | nil => exact WP.block_nil ⟨Keep.refl _ _, hb, rfl⟩
+  | nil => exact WP.block_nil ⟨Keep.refl _ _, rfl⟩
   | cons op l ih =>
     change WP isa (.seq (toOp op).code (field l)) s _
     rw [WP.seq_iff]
-    refine WP.mono (fop_ok hs hc hb op (hv op List.mem_cons_self)) fun t ⟨tk, tb, te⟩ => ?_
-    refine WP.mono (ih (fun o h => hv o (List.mem_cons_of_mem _ h)) (tk.scr hs) (tk.ctx hc) tb)
-      fun u ⟨uk, ub, ue⟩ => ⟨tk.trans uk, ub, by rw [ue, te]; rfl⟩
+    refine WP.mono (fop_ok hs hc op (hv op List.mem_cons_self)) fun t ⟨tk, te⟩ => ?_
+    refine WP.mono (ih (fun o h => hv o (List.mem_cons_of_mem _ h)) (tk.scr hs) (tk.ctx hc))
+      fun u ⟨uk, ue⟩ => ⟨tk.trans uk, by rw [ue, te]; rfl⟩
 
 /-- A field operation of a program as one of X448's. -/
 def toField : FOp → FieldOp
@@ -102,12 +102,12 @@ theorem field_ops (l : List FOp) (hv : ∀ op ∈ l, fopValid op) :
 
 /-- A field program, then more code. -/
 theorem field_seq (l : List FOp) (hv : ∀ op ∈ l, fopValid op) {s : State} {base : Addr}
-    (hs : Scr s base) (hc : CallCtx s base) (hb : BoundedEnv s.mem base) {c : Prog isa}
+    (hs : Scr s base) (hc : CallCtx s base) {c : Prog isa}
     {Q : State → Prop}
-    (k : ∀ t, Keep base s t → BoundedEnv t.mem base → E t.mem base = evalOps l (E s.mem base) →
+    (k : ∀ t, Keep base s t → E t.mem base = evalOps l (E s.mem base) →
       WP isa c t Q) :
     WP isa (.seq (field l) c) s Q :=
-  WP.seq (WP.mono (field_ok l hv hs hc hb) fun t ⟨kt, bt, et⟩ => k t kt bt et)
+  WP.seq (WP.mono (field_ok l hv hs hc) fun t ⟨kt, et⟩ => k t kt et)
 
 /-! ## The frame -/
 
@@ -135,7 +135,7 @@ theorem IKeep.toV {base : Addr} {s t : State} (h : IKeep base s t) : VKeep base 
 
 theorem Keep.toV {base : Addr} {s t : State} (h : Keep base s t) : VKeep base s t := IKeep.toV h.ikeep
 
-theorem slot_range (i : Index) : 64 ≤ slot i.val ∧ slot i.val + 112 ≤ 2880 := by
+theorem slot_range (i : Index) : 64 ≤ slot i.val ∧ slot i.val + 56 ≤ 2880 := by
   have := i.isLt
   simp only [slot]
   omega_using []
@@ -144,7 +144,7 @@ theorem outV {base : Addr} {o n : Nat} {m m' : Mem} (h : Outside base o n m m') 
     (h2 : o + n ≤ 2880) : WsOut2 base 16 2864 ACC 512 m m' := fun p _ hp _ => h p (by omega_using [h1, h2, hp])
 
 theorem fmV {base : Addr} {o : Nat} {m m' : Mem} (h : FieldMem base o m m') (h1 : 16 ≤ o)
-    (h2 : o + 112 ≤ 2880) : WsOut2 base 16 2864 ACC 512 m m' := fun p _ hp hq => h p (by omega_using [h1, h2, hp]) hq
+    (h2 : o + 56 ≤ 2880) : WsOut2 base 16 2864 ACC 512 m m' := fun p _ hp hq => h p (by omega_using [h1, h2, hp]) hq
 
 /-- The point in slots `i`, `j`, `k`, from equal slots. -/
 theorem pt_congr' {e e' : Env} {a b c : Index} (ha : e' a = e a) (hb : e' b = e b) (hc : e' c = e c) :

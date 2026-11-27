@@ -1,7 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.CheckPublicFn
-import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.CheckPublicCT
+public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.CheckPublicCT
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 

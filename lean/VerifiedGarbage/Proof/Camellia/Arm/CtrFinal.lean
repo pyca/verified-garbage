@@ -10,19 +10,20 @@ public import VerifiedGarbage.Proof.Framework.Arm.Spill
 public import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
 public import VerifiedGarbage.Proof.Framework.Arm.CallF
 public import VerifiedGarbage.Proof.CmacAes.Arm.Words
-public import VerifiedGarbage.Proof.AesGcm.Arm.Callee
+public import VerifiedGarbage.Proof.AesGcm.Arm.Env
 import VerifiedGarbage.Proof.AesCfb.Arm.Final
 import VerifiedGarbage.Proof.Modes.CtrFinal
 import VerifiedGarbage.Proof.Cmac.Block32
 import VerifiedGarbage.Proof.AesCbc.Mem32
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
+import VerifiedGarbage.Proof.Framework.Arm.StackScratch
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Arm.Inline
 import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.Framework.Arm.RelCT
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.Frame
 meta import VerifiedGarbage.Impl.Camellia.Arm.CtrFinal
 meta import VerifiedGarbage.Proof.Camellia.CtrFinal
 meta import VerifiedGarbage.Proof.Camellia.CtrScratch
@@ -33,14 +34,14 @@ meta import VerifiedGarbage.Proof.Framework.Arm.Spill
 meta import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
 meta import VerifiedGarbage.Proof.Framework.Arm.CallF
 meta import VerifiedGarbage.Proof.CmacAes.Arm.Words
-meta import VerifiedGarbage.Proof.AesGcm.Arm.Callee
+meta import VerifiedGarbage.Proof.AesGcm.Arm.Env
 meta import VerifiedGarbage.Proof.AesCfb.Arm.Final
 meta import VerifiedGarbage.Proof.Modes.CtrFinal
 meta import VerifiedGarbage.Proof.Cmac.Block32
 meta import VerifiedGarbage.Proof.AesCbc.Mem32
 meta import VerifiedGarbage.Proof.Framework.Arm.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
+meta import VerifiedGarbage.Proof.Framework.Arm.StackScratch
 meta import VerifiedGarbage.Proof.Framework.Arm.Exec
 meta import VerifiedGarbage.Proof.Framework.Arm.Inline
 meta import VerifiedGarbage.Proof.Cmac.Frame
@@ -106,8 +107,8 @@ def ctrFinalArm : Contract isa where
     let data : Region := ⟨State.addr (s.gpr .r3), (stackArg s 0).toNat⟩
     let sv : Region := ⟨State.addr (stackArg s 1), 56⟩
     let args : Region := ⟨stackArgAddr s 0, 8⟩
-    let stk : Region := ⟨State.addr s.sp - BitVec.ofNat 64 2912, 2912⟩
-    2912 ≤ s.sp.toNat ∧ s.sp.toNat + 8 ≤ 2 ^ 32 ∧
+    let stk : Region := ⟨State.addr s.sp - BitVec.ofNat 64 3040, 3040⟩
+    3040 ≤ s.sp.toNat ∧ s.sp.toNat + 8 ≤ 2 ^ 32 ∧
       s.rd = [sched, args] ∧ s.wr = [ctr, data, sv] ∧
       sched.Disjoint ctr ∧ sched.Disjoint data ∧ sched.Disjoint sv ∧
       ctr.Disjoint data ∧ ctr.Disjoint sv ∧ ctr.Disjoint args ∧
@@ -124,11 +125,11 @@ def ctrFinalArm : Contract isa where
       s₁.gpr .r3 = s₂.gpr .r3 ∧ stackArg s₁ 0 = stackArg s₂ 0 ∧ stackArg s₁ 1 = stackArg s₂ 1
 
 /-- The contract the frame needs: the shared one on the subkeys, with
-`save`, 56 bytes, as a sixth argument, and 2912 bytes of stack (the frame
+`save`, 56 bytes, as a sixth argument, and 3040 bytes of stack (the frame
 pushing `vg_camellia_ctr`'s stack argument, and its frame and calls). -/
 abbrev ctrFinalScratchContract : Contract isa :=
   Sig.scratchContract Arm.abi Spec.Camellia.ctrFinalSig "save" .u64 7 (Spec.Camellia.ctrFinalPre Arm.abi.ptrBits)
-    (Proof.Camellia.ctrFinalPostSk Arm.abi.ptrBits) true 2912
+    (Proof.Camellia.ctrFinalPostSk Arm.abi.ptrBits) true 3040
 
 /-- A state satisfying the precondition: the schedule at `0x1000`, 18
 rounds, the counter block at `0x2000`, no data at `0x3000` and `save` at
@@ -154,30 +155,30 @@ theorem ctrFinal_implies : ctrFinalArm.Implies ctrFinalScratchContract := by
 /-! ## The callee -/
 
 /-- `vg_camellia_ctr` meets its contract on the subkeys. -/
-theorem ctrFramed_sk : Verified Arm.target ctrFramed (Proof.Camellia.ctrContractSk Arm.abi 2904) :=
-  Arm.Verified.stackScratchWiped (sig := Spec.Camellia.ctrSig) (nm := "scratch") (e := .u64) (n := 9)
+theorem ctrFramed_sk : Verified Arm.target ctrFramed (Proof.Camellia.ctrContractSk Arm.abi 3032) :=
+  Arm.Verified.stackScratch (sig := Spec.Camellia.ctrSig) (nm := "scratch") (e := .u64) (n := 9)
     (pre := Spec.Camellia.ctrPre Arm.abi.ptrBits) (post := Proof.Camellia.ctrPostSk Arm.abi.ptrBits)
-    (wa := true) (stack := 2816) (m := 1) (bytes := 88)
-    Proof.Camellia.Arm.ctr_verified (by decide) (by decide) (by decide) (by decide) (by decide)
-    (Proof.Camellia.ctrPre_local _) (Proof.Camellia.ctrPost_local _) (Proof.Camellia.ctrPostOut_local _)
+    (wa := true) (stack := 2944) (m := 1) (bytes := 88)
+    Proof.Camellia.Arm.ctr_verified (by decide) (by decide) (by decide) (by decide)
+    (Proof.Camellia.ctrPre_local _) (Proof.Camellia.ctrPost_local _) (fun vs mm m₁ m₂ r hl _ => Proof.Camellia.ctrPostOut_local _ vs mm m₁ m₂ r hl)
     Proof.Camellia.Arm.ctrFrameSat
 
-theorem ctr_stack : armStack ctrFramed ≤ 2904 := by decide +kernel
+theorem ctr_stack : armStack ctrFramed ≤ 3032 := by decide +kernel
 
-/-- The 2912 bytes below the stack pointer `sp`, which a call uses: the 8
-its frame pushes, and the 2904 of `vg_camellia_ctr` below them. -/
-abbrev stk (sp : BitVec 32) : Region := ⟨State.addr sp - BitVec.ofNat 64 2912, 2912⟩
+/-- The 3040 bytes below the stack pointer `sp`, which a call uses: the 8
+its frame pushes, and the 3032 of `vg_camellia_ctr` below them. -/
+abbrev stk (sp : BitVec 32) : Region := ⟨State.addr sp - BitVec.ofNat 64 3040, 3040⟩
 
 theorem below_stk (sp : BitVec 32) : Region.Sub (below sp) (stk sp) :=
   Offset.sub_below _ (by decide) (by decide)
 
-theorem belowA_stk {sp : BitVec 32} {n : Nat} (hn : n ≤ 2904) (hsp : 2912 ≤ sp.toNat) :
+theorem belowA_stk {sp : BitVec 32} {n : Nat} (hn : n ≤ 3032) (hsp : 3040 ≤ sp.toNat) :
     Region.Sub (belowA (sp - 8) n) (stk sp) := by
   show Region.Sub ⟨State.addr (sp - 8 - BitVec.ofNat 32 n), n⟩ _
   rw [BitVec.sub_sub, show (8 : BitVec 32) + BitVec.ofNat 32 n = BitVec.ofNat 32 (8 + n) by
     rw [BitVec.ofNat_add]; rfl, FrameStack.addr_sub' (by omega_using [hn, hsp])]
-  have e : State.addr sp - BitVec.ofNat 64 (8 + n) =
-      State.addr sp - BitVec.ofNat 64 2912 + BitVec.ofNat 64 (2904 - n) := by
+  obtain e : State.addr sp - BitVec.ofNat 64 (8 + n) =
+      State.addr sp - BitVec.ofNat 64 3040 + BitVec.ofNat 64 (3032 - n) := by
     have := sp.isLt
     apply BitVec.eq_of_toNat_eq
     simp only [State.addr, BitVec.toNat_add, BitVec.toNat_sub, BitVec.toNat_setWidth, BitVec.toNat_ofNat]
@@ -186,13 +187,13 @@ theorem belowA_stk {sp : BitVec 32} {n : Nat} (hn : n ≤ 2904) (hsp : 2912 ≤ 
   exact Offset.sub_base _ (by omega_using [hn])
 
 theorem res_stk (sp : BitVec 32) :
-    Region.Sub ⟨State.addr sp - BitVec.ofNat 64 8 - BitVec.ofNat 64 2904, 2904⟩ (stk sp) := by
+    Region.Sub ⟨State.addr sp - BitVec.ofNat 64 8 - BitVec.ofNat 64 3032, 3032⟩ (stk sp) := by
   rw [BitVec.sub_sub, BitVec.ofNat_add_ofNat]
   exact Region.sub_prefix (by decide)
 
 /-- What a call of `vg_camellia_ctr` needs: the subkeys at `W` for `R`
 rounds, the counter block at `C` and `n` blocks at `D`, in `r0`–`r3`, `n` in
-`r12` to push, and the 2912 bytes below the stack pointer. -/
+`r12` to push, and the 3040 bytes below the stack pointer. -/
 structure WCall (s : State) (W R C D : BitVec 32) (n : Nat) : Prop where
   r0 : s.gpr .r0 = W
   r1 : s.gpr .r1 = R
@@ -200,7 +201,7 @@ structure WCall (s : State) (W R C D : BitVec 32) (n : Nat) : Prop where
   r3 : s.gpr .r3 = D
   r12 : s.gpr .r12 = BitVec.ofNat 32 n
   rounds : R.toNat = 18 ∨ R.toNat = 24
-  hsp : 2912 ≤ s.sp.toNat
+  hsp : 3040 ≤ s.sp.toNat
   fitW : W.toNat + 272 ≤ 2 ^ 32
   fitC : C.toNat + 16 ≤ 2 ^ 32
   fitD : D.toNat + 16 * n ≤ 2 ^ 32
@@ -239,21 +240,21 @@ theorem hsp8 : 8 ≤ s.sp.toNat := by have := h.hsp; omega_using [this]
 
 theorem n_lt : n < 2 ^ 32 := by have := h.fitD; omega_using [this]
 
-theorem pre : (Proof.Camellia.ctrContractSk Arm.abi 2904).pre
+theorem pre : (Proof.Camellia.ctrContractSk Arm.abi 3032).pre
     ((pushed [.r12, .lr] s).callEntry.withRegions (wRd s.sp W) (wWr C D n)) := by
-  have hn := toNat_ofNat32 h.n_lt
+  obtain hn := toNat_ofNat32 h.n_lt
   have hs8 := h.hsp8
   sig_pre [Proof.Camellia.ctrContractSk, Spec.Camellia.ctrSig, Spec.Camellia.ctrPre, Arm.abi, Arm.argRegs,
     Arm.reduceClassify, Arm.Loc.val]
   simp only [stackArgAddr_withRegions, stackArg_withRegions, stackArg_callEntry, stackArgAddr_callEntry,
     arg0 hs8, argAddr0 hs8, h.r0, h.r1, h.r2, h.r3, h.r12, hn, FrameStack.sub_toNat' (sp := s.sp) (k := 8) hs8,
     FrameStack.addr_sub' (x := s.sp) (k := 8) hs8, Nat.mul_comm n 16]
-  have b4 : Region.Sub ⟨State.addr s.sp - 8, 4⟩ (stk s.sp) := fun a ha =>
+  obtain b4 : Region.Sub ⟨State.addr s.sp - 8, 4⟩ (stk s.sp) := fun a ha =>
     below_stk s.sp a (Region.sub_prefix (by decide) a ha)
-  have rs := res_stk s.sp
+  obtain rs := res_stk s.sp
   refine ⟨by have := h.hsp; omega_using [this], by have := s.sp.isLt; omega_using [], rfl, by rw [wWr, Nat.mul_comm]; rfl, h.wc, h.wd,
     h.cd, (h.bc.sub_left b4).symm, (h.bd.sub_left b4).symm, h.bw.sub_left rs, h.bc.sub_left rs, h.bd.sub_left rs,
-    (Offset.base_disjoint_below (State.addr s.sp - BitVec.ofNat 64 8) (n := 2904) (k := 4) (by decide)).symm,
+    (Offset.base_disjoint_below (State.addr s.sp - BitVec.ofNat 64 8) (n := 3032) (k := 4) (by decide)).symm,
     h.fitW, h.fitC, h.fitD, h.rounds⟩
 
 theorem cov : Covers (wRd s.sp W ++ wWr C D n) ((pushed [.r12, .lr] s).rd ++ (pushed [.r12, .lr] s).wr) := by
@@ -273,22 +274,23 @@ theorem w_call {s : State} {W R C D : BitVec 32} {n : Nat} (h : WCall s W R C D 
     WP isa ctrCall s (WPost s W R C D n) := by
   have hs8 := h.hsp8
   refine WP.frame (rs := [.r12, .lr]) (r := .r12) rfl (by simpa using hs8) (by simp) ?_
-  refine FrameStack.WP.callF (k := Proof.Camellia.ctrContractSk Arm.abi 2904) ctrFramed_sk.1 (rd := wRd s.sp W)
+  refine FrameStack.WP.callF (k := Proof.Camellia.ctrContractSk Arm.abi 3032) ctrFramed_sk.1 (rd := wRd s.sp W)
     (wr := wWr C D n) h.pre h.cov h.covW
     (by rw [pushed_sp8, hspA hs8]; have := h.hsp; have := ctr_stack; omega_arith) ?_
-  intro s₂ hrd₂ hwr₂ hsp₂ hf hcs hpost
-  have hn := toNat_ofNat32 h.n_lt
-  have fA' := fA (s := s) hs8
-  have b8 := below_stk s.sp
-  have eW : Spec.Camellia.subkeysAt (pushed [.r12, .lr] s).mem (State.addr W) R.toNat =
+  intro s₂ hrd₂ hwr₂ hsp₂ hf hcs hpost ml ul hfl
+  obtain hfl' : Frame [below s.sp] s₂.mem ml := by rw [Proof.AesGcm.Arm.e8, hA hs8] at hfl; exact hfl
+  obtain hn := toNat_ofNat32 h.n_lt
+  obtain fA' := fA (s := s) hs8
+  obtain b8 := below_stk s.sp
+  obtain eW : Spec.Camellia.subkeysAt (pushed [.r12, .lr] s).mem (State.addr W) R.toNat =
       Spec.Camellia.subkeysAt s.mem (State.addr W) R.toNat :=
     Proof.Camellia.subkeysAt_congr (by rcases h.rounds with h' | h' <;> rw [h'] <;> decide)
       fun i hi => fA'.bytes (R := ⟨State.addr W, 272⟩) (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact (h.bw.sub_left b8).symm) (by show 272 ≤ 2 ^ 64; decide) hi
-  have bytesC : bytesAt (pushed [.r12, .lr] s).mem (State.addr C) 16 = bytesAt s.mem (State.addr C) 16 :=
+  obtain bytesC : bytesAt (pushed [.r12, .lr] s).mem (State.addr C) 16 = bytesAt s.mem (State.addr C) 16 :=
     Proof.Cmac.bytesAt_frame fA' (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact (h.bc.sub_left b8).symm) (by decide)
-  have blocksD : Spec.Cbc.blocksAt (pushed [.r12, .lr] s).mem (State.addr D) n =
+  obtain blocksD : Spec.Cbc.blocksAt (pushed [.r12, .lr] s).mem (State.addr D) n =
       Spec.Cbc.blocksAt s.mem (State.addr D) n :=
     blocksAt_frame' fA' (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact (h.bd.sub_left b8).symm)
@@ -308,13 +310,12 @@ theorem w_call {s : State} {W R C D : BitVec 32} {n : Nat} (h : WCall s W R C D 
   have fB : Frame (wWr C D n ++ [belowA (pushed [.r12, .lr] s).sp (armStack ctrFramed)])
       (pushed [.r12, .lr] s).mem s₂.mem := hf
   rw [pushed_sp8] at fB
-  refine ⟨?_, ?_, ?_, fun r hr hlr => ?_, ?_, ?_, ?_⟩
+  refine ⟨?_, ?_, ?_, fun r hr hlr => ?_, ?_, ?_, ?_⟩ <;> dsimp only
   · rw [popped_rd, hrd₂, pushed_rd]
   · rw [popped_wr, hwr₂, pushed_wr]; rfl
   · rw [popped_sp, hsp₂, pushed_sp8]; exact BitVec.sub_add_cancel _ _
   · rw [popped_gpr (by rintro rfl; simp [preserved] at hr), hcs r hr hlr, pushed_gpr]
-  · rw [popped_mem]
-    refine (fA'.sub fun r hr => ?_).trans (fB.sub fun r hr => ?_)
+  · refine ((fA'.sub fun r hr => ?_).trans (fB.sub fun r hr => ?_)).trans (hfl'.sub fun r hr => ?_)
     · simp only [List.mem_singleton] at hr; subst hr
       exact ⟨stk s.sp, by simp, b8⟩
     · simp only [wWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -322,8 +323,14 @@ theorem w_call {s : State} {W R C D : BitVec 32} {n : Nat} (h : WCall s W R C D 
       · exact ⟨_, by simp, fun _ h => h⟩
       · exact ⟨⟨State.addr D, 16 * n⟩, by simp, fun _ hx => by rwa [Nat.mul_comm] at hx⟩
       · exact ⟨stk s.sp, by simp, belowA_stk ctr_stack h.hsp⟩
-  · rw [popped_mem]; exact hdata'
-  · rw [popped_mem]; exact hctr'
+    · simp only [List.mem_singleton] at hr; subst hr
+      exact ⟨stk s.sp, by simp, b8⟩
+  · rw [blocksAt_frame' hfl' fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact (h.bd.sub_left b8).symm]
+    exact hdata'
+  · rw [Proof.Cmac.bytesAt_frame hfl' (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact (h.bc.sub_left b8).symm) (by decide)]
+    exact hctr'
 
 /-- Calls of `vg_camellia_ctr` with the same arguments and stack pointer in
 both runs are constant time. -/
@@ -337,8 +344,8 @@ theorem w_rel {P : State → State → Prop}
   rw [push_pushed (rs := [.r12, .lr]) rfl (by simpa using h₁.hsp8), Option.some.injEq] at pa
   rw [push_pushed (rs := [.r12, .lr]) rfl (by simpa using h₂.hsp8), Option.some.injEq] at pb
   subst pa pb
-  have hn := toNat_ofNat32 h₁.n_lt
-  refine RelCT.call (k := Proof.Camellia.ctrContractSk Arm.abi 2904) ctrFramed_sk.1 ctrFramed_sk.2.1
+  obtain hn := toNat_ofNat32 h₁.n_lt
+  refine RelCT.call (k := Proof.Camellia.ctrContractSk Arm.abi 3032) ctrFramed_sk.1 ctrFramed_sk.2.1
     (wRd s₁.sp W) (wWr C D n) (P := fun x y => x = pushed [.r12, .lr] s₁ ∧ y = pushed [.r12, .lr] s₂)
     (fun x y ⟨ex, ey⟩ => ?_) _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂
   subst ex ey
@@ -401,7 +408,7 @@ end
 
 /-- The precondition, by name. -/
 structure KPre (s₀ : State) : Prop where
-  sp_lo : 2912 ≤ s₀.sp.toNat
+  sp_lo : 3040 ≤ s₀.sp.toNat
   sp_hi : s₀.sp.toNat + 8 ≤ 2 ^ 32
   rd : s₀.rd = [fSch s₀, fArg s₀]
   wr : s₀.wr = [fCR s₀, fData s₀, cSv s₀]
@@ -574,31 +581,31 @@ theorem setup_wp {s₀ : State} (hp : KPre s₀) : WP isa (.block ctrFinalSetup)
   refine Spill.save_slots_ok (lo := 0) (hi := 36) (by decide) (by rw [r12₁]; omega_using [sv]) (fun d _ hd => ?_) ?_
   · rw [u₁.wr, hp.wr, r12₁]
     exact ⟨cSv s₀, by simp, Offset.contains_base _ (by omega_using [hd]) (by omega_using [hd])⟩
-  have m₂ : Spill.saveMem s₁.mem (State.addr (s₁.gpr .r12)) s₁.gpr finalSaved = svMem s₀ := by
+  obtain m₂ : Spill.saveMem s₁.mem (State.addr (s₁.gpr .r12)) s₁.gpr finalSaved = svMem s₀ := by
     rw [u₁.mem, r12₁]
     exact Spill.saveMem_congr _ _ _ fun p hp' => u₁.other _ (by
       simp only [finalSaved, List.mem_cons, List.not_mem_nil, or_false] at hp'
       rcases hp' with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide)
   generalize hs₂ : ({ s₁ with mem := Spill.saveMem s₁.mem (State.addr (s₁.gpr .r12)) s₁.gpr finalSaved } : State) = s₂
-  have g₂ : s₂.gpr = s₁.gpr := by rw [← hs₂]
-  have mem₂ : s₂.mem = svMem s₀ := by rw [← hs₂, m₂]
-  have rd₂ : s₂.rd = s₀.rd := by rw [← hs₂, u₁.rd]
-  have wr₂ : s₂.wr = s₀.wr := by rw [← hs₂, u₁.wr]
-  have sp₂ : s₂.sp = s₀.sp := by rw [← hs₂, u₁.sp]
-  have keep₂ : ∀ r, r ≠ .r12 → s₂.gpr r = s₀.gpr r := fun r h => by rw [g₂, u₁.other _ h]
+  obtain g₂ : s₂.gpr = s₁.gpr := by rw [← hs₂]
+  obtain mem₂ : s₂.mem = svMem s₀ := by rw [← hs₂, m₂]
+  obtain rd₂ : s₂.rd = s₀.rd := by rw [← hs₂, u₁.rd]
+  obtain wr₂ : s₂.wr = s₀.wr := by rw [← hs₂, u₁.wr]
+  obtain sp₂ : s₂.sp = s₀.sp := by rw [← hs₂, u₁.sp]
+  obtain keep₂ : ∀ r, r ≠ .r12 → s₂.gpr r = s₀.gpr r := fun r h => by rw [g₂, u₁.other _ h]
   rw [moves_eq]
   refine wp_mov (op2_reg _ _) fun s₃ u₃ => wp_mov (op2_reg _ _) fun s₄ u₄ => wp_mov (op2_reg _ _) fun s₅ u₅ => ?_
   refine wp_ldrSp (a := stackArgAddr s₀ 0) (by decide) (by rw [u₅.sp, u₄.sp, u₃.sp, sp₂]; rfl) (by
       rw [u₅.rd, u₄.rd, u₃.rd, u₅.wr, u₄.wr, u₃.wr, rd₂, wr₂]; exact hp.arg_in (by decide)) fun s₆ u₆ => ?_
-  have mem₅ : s₅.mem = svMem s₀ := by rw [u₅.mem, u₄.mem, u₃.mem, mem₂]
-  have r8₆ : s₆.gpr .r8 = stackArg s₀ 0 := by rw [u₆.gpr, mem₅, hp.svArg (by decide)]
+  obtain mem₅ : s₅.mem = svMem s₀ := by rw [u₅.mem, u₄.mem, u₃.mem, mem₂]
+  obtain r8₆ : s₆.gpr .r8 = stackArg s₀ 0 := by rw [u₆.gpr, mem₅, hp.svArg (by decide)]
   refine wp_mov (op2_lsr (by decide)) fun s₇ u₇ => wp_and (op2_imm (by decide)) fun s₈ u₈ => ?_
   refine wp_add (op2_lsl (by decide)) fun s₉ u₉ => WP.block_nil ?_
-  have hN : 16 * fN s₀ < 2 ^ 32 := by have := fL_lt s₀; rw [fN_eq]; omega_using [this]
-  have r12₇ : s₇.gpr .r12 = BitVec.ofNat 32 (fN s₀) := by rw [u₇.gpr, r8₆, shr4]
-  have k₅ : ∀ r, r ≠ .r4 → r ≠ .r5 → r ≠ .r6 → r ≠ .r12 → s₅.gpr r = s₀.gpr r := fun r h4 h5 h6 h12 => by
+  obtain hN : 16 * fN s₀ < 2 ^ 32 := by have := fL_lt s₀; rw [fN_eq]; omega_using [this]
+  obtain r12₇ : s₇.gpr .r12 = BitVec.ofNat 32 (fN s₀) := by rw [u₇.gpr, r8₆, shr4]
+  obtain k₅ : ∀ r, r ≠ .r4 → r ≠ .r5 → r ≠ .r6 → r ≠ .r12 → s₅.gpr r = s₀.gpr r := fun r h4 h5 h6 h12 => by
     rw [u₅.other _ h6, u₄.other _ h5, u₃.other _ h4, keep₂ _ h12]
-  have k₉ : ∀ r, r ≠ .r4 → r ≠ .r5 → r ≠ .r6 → r ≠ .r12 → r ≠ .r8 → r ≠ .r7 → s₉.gpr r = s₀.gpr r :=
+  obtain k₉ : ∀ r, r ≠ .r4 → r ≠ .r5 → r ≠ .r6 → r ≠ .r12 → r ≠ .r8 → r ≠ .r7 → s₉.gpr r = s₀.gpr r :=
     fun r h4 h5 h6 h12 h8 h7 => by
       rw [u₉.other _ h7, u₈.other _ h8, u₇.other _ h12, u₆.other _ h8, k₅ _ h4 h5 h6 h12]
   exact {
@@ -645,7 +652,7 @@ structure Whole (s₀ s : State) : Prop where
 
 theorem setup_call {s₀ : State} (hp : KPre s₀) {s : State} (h : Setup s₀ s) :
     WCall s (fW s₀) (s₀.gpr .r1) (fC s₀) (fD s₀) (fN s₀) := by
-  have hst : stk s.sp = fStk s₀ := by rw [h.sp]
+  obtain hst : stk s.sp = fStk s₀ := by rw [h.sp]
   refine ⟨h.r0, h.r1, h.r2, h.r3, h.r12, hp.rounds, by rw [h.sp]; exact hp.sp_lo, hp.sch_fit, hp.c_fit,
     hp.blk_fit, hp.sch_c, hp.sch_data.sub_right (blk_sub s₀), hp.c_data.sub_right (blk_sub s₀),
     by rw [hst]; exact hp.stk_sch, by rw [hst]; exact hp.stk_c, by rw [hst]; exact hp.stk_data.sub_right (blk_sub s₀),
@@ -664,14 +671,14 @@ theorem setup_call {s₀ : State} (hp : KPre s₀) {s : State} (h : Setup s₀ s
 theorem whole_wp {s₀ : State} (hp : KPre s₀) {s : State} (h : Setup s₀ s) : WP isa ctrCall s (Whole s₀) := by
   refine WP.mono (w_call (setup_call hp h)) fun s' w => ?_
   have keep : ∀ r ∈ preserved, r ≠ .lr → s'.gpr r = s.gpr r := w.saved
-  have eW : wCiph s.mem (fW s₀) (s₀.gpr .r1) = cCiph s₀ := by rw [h.mem]; exact hp.ciph hp.svFrame
-  have eC : bytesAt s.mem (State.addr (fC s₀)) 16 = fT0 s₀ := by
+  obtain eW : wCiph s.mem (fW s₀) (s₀.gpr .r1) = cCiph s₀ := by rw [h.mem]; exact hp.ciph hp.svFrame
+  obtain eC : bytesAt s.mem (State.addr (fC s₀)) 16 = fT0 s₀ := by
     rw [h.mem]; exact Proof.Cmac.bytesAt_frame (svMem_frame s₀) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact hp.c_sv) (by decide)
-  have eB : Spec.Cbc.blocksAt s.mem (State.addr (fD s₀)) (fN s₀) = fBlks s₀ := by
+  obtain eB : Spec.Cbc.blocksAt s.mem (State.addr (fD s₀)) (fN s₀) = fBlks s₀ := by
     rw [h.mem]; exact blocksAt_frame' (svMem_frame s₀) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact hp.data_sv.sub_left (blk_sub s₀))
-  have hst : stk s.sp = fStk s₀ := by rw [h.sp]
+  obtain hst : stk s.sp = fStk s₀ := by rw [h.sp]
   refine ⟨by rw [keep .r4 (by simp [preserved]) (by decide), h.r4],
     by rw [keep .r5 (by simp [preserved]) (by decide), h.r5],
     by rw [keep .r6 (by simp [preserved]) (by decide), h.r6],
@@ -738,15 +745,15 @@ theorem tailArgs_eq : ctrTailArgs = .ldrSp .r12 4 :: .mov .r0 (.imm 0) :: (Proof
 theorem tail_args_wp {s₀ : State} (hp : KPre s₀) {s : State} (h : Whole s₀ s) :
     WP isa (.block ctrTailArgs) s (TArgs s₀) := by
   rw [tailArgs_eq]
-  have f1 := whole_cW1 h
-  have big := big_frame (cW1_cW f1)
+  obtain f1 := whole_cW1 h
+  obtain big := big_frame (cW1_cW f1)
   refine wp_ldrSp (a := stackArgAddr s₀ 1) (by decide) (by rw [h.sp]; rfl)
     (by rw [h.rd, h.wr]; exact hp.arg_in (by decide)) fun s₁ u₁ => ?_
-  have r12₁ : s₁.gpr .r12 = fV s₀ := by rw [u₁.gpr]; exact hp.argMem big (by decide)
+  obtain r12₁ : s₁.gpr .r12 = fV s₀ := by rw [u₁.gpr]; exact hp.argMem big (by decide)
   refine wp_mov (op2_imm (by decide)) fun s₂ u₂ => ?_
   have sv := hp.sv_fit
-  have r12₂ : s₂.gpr .r12 = fV s₀ := by rw [u₂.other _ (by decide), r12₁]
-  have bA : State.addr (s₂.gpr .r12) + BitVec.ofNat 64 40 = cBk s₀ := by rw [r12₂]
+  obtain r12₂ : s₂.gpr .r12 = fV s₀ := by rw [u₂.other _ (by decide), r12₁]
+  obtain bA : State.addr (s₂.gpr .r12) + BitVec.ofNat 64 40 = cBk s₀ := by rw [r12₂]
   refine Proof.CmacAes.Arm.zeroBlk_ok u₂.gpr (by decide) (by rw [r12₂]; omega_using [sv]) ?_
     fun s₃ g₃ m₃ rd₃ wr₃ sp₃ => ?_
   · rw [bA, u₂.wr, u₁.wr, h.wr, hp.wr]
@@ -756,15 +763,15 @@ theorem tail_args_wp {s₀ : State} (hp : KPre s₀) {s : State} (h : Whole s₀
   rw [bA] at m₃
   refine wp_mov (op2_reg _ _) fun s₄ u₄ => wp_mov (op2_reg _ _) fun s₅ u₅ => wp_mov (op2_reg _ _) fun s₆ u₆ =>
     wp_add (op2_imm (by decide)) fun s₇ u₇ => wp_mov (op2_imm (by decide)) fun s₈ u₈ => WP.block_nil ?_
-  have g₂ : ∀ r, r ≠ .r0 → r ≠ .r12 → s₃.gpr r = s.gpr r := fun r h0 h12 => by
+  obtain g₂ : ∀ r, r ≠ .r0 → r ≠ .r12 → s₃.gpr r = s.gpr r := fun r h0 h12 => by
     rw [g₃, u₂.other _ h0, u₁.other _ h12]
-  have mem₈ : s₈.mem = Proof.Cmac.zero4 s.mem (cBk s₀) := by
+  obtain mem₈ : s₈.mem = Proof.Cmac.zero4 s.mem (cBk s₀) := by
     rw [u₈.mem, u₇.mem, u₆.mem, u₅.mem, u₄.mem, m₃, u₂.mem, u₁.mem]
-  have sp₈ : s₈.sp = s₀.sp := by rw [u₈.sp, u₇.sp, u₆.sp, u₅.sp, u₄.sp, sp₃, u₂.sp, u₁.sp, h.sp]
-  have rd₈ : s₈.rd = s₀.rd := by rw [u₈.rd, u₇.rd, u₆.rd, u₅.rd, u₄.rd, rd₃, u₂.rd, u₁.rd, h.rd]
-  have wr₈ : s₈.wr = s₀.wr := by rw [u₈.wr, u₇.wr, u₆.wr, u₅.wr, u₄.wr, wr₃, u₂.wr, u₁.wr, h.wr]
-  have zf : Frame [cBlk s₀] s.mem (Proof.Cmac.zero4 s.mem (cBk s₀)) := AesCbc.zero4_frame _ _
-  have hst : stk s₈.sp = fStk s₀ := by rw [sp₈]
+  obtain sp₈ : s₈.sp = s₀.sp := by rw [u₈.sp, u₇.sp, u₆.sp, u₅.sp, u₄.sp, sp₃, u₂.sp, u₁.sp, h.sp]
+  obtain rd₈ : s₈.rd = s₀.rd := by rw [u₈.rd, u₇.rd, u₆.rd, u₅.rd, u₄.rd, rd₃, u₂.rd, u₁.rd, h.rd]
+  obtain wr₈ : s₈.wr = s₀.wr := by rw [u₈.wr, u₇.wr, u₆.wr, u₅.wr, u₄.wr, wr₃, u₂.wr, u₁.wr, h.wr]
+  obtain zf : Frame [cBlk s₀] s.mem (Proof.Cmac.zero4 s.mem (cBk s₀)) := AesCbc.zero4_frame _ _
+  obtain hst : stk s₈.sp = fStk s₀ := by rw [sp₈]
   have bkA := hp.bkA
   have hbk := hp.bk_toNat
   refine ⟨⟨?_, ?_, ?_, ?_, by rw [u₈.gpr]; rfl, hp.rounds, by rw [sp₈]; exact hp.sp_lo, hp.sch_fit, hp.c_fit,
@@ -804,7 +811,7 @@ theorem tail_args_wp {s₀ : State} (hp : KPre s₀) {s : State} (h : Whole s₀
       simp only [List.mem_singleton] at hr; subst hr; exact hp.c_blk) (by decide), h.ctr]
   · rw [mem₈, Proof.Cmac.zero4_bytes]; rfl
   · rw [mem₈]
-    have hlen : (fTail s₀).len ≤ 2 ^ 64 := by show fU s₀ ≤ 2 ^ 64; have := fU_lt s₀; omega_using [this]
+    obtain hlen : (fTail s₀).len ≤ 2 ^ 64 := by show fU s₀ ≤ 2 ^ 64; have := fU_lt s₀; omega_using [this]
     rw [zf.bytes (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
         exact (hp.data_sv.sub_left (tail_sub s₀)).sub_right (blk_sv_sub s₀)) hlen hq,
@@ -831,15 +838,15 @@ structure TCall (s₀ s : State) : Prop where
 theorem tail_call {s₀ : State} (hp : KPre s₀) {s s' : State} (h : TArgs s₀ s)
     (w : WPost s (fW s₀) (s₀.gpr .r1) (fC s₀) (cBk32 s₀) 1 s') : TCall s₀ s' := by
   have keep : ∀ r ∈ preserved, r ≠ .lr → s'.gpr r = s.gpr r := w.saved
-  have hst : stk s.sp = fStk s₀ := by rw [h.sp]
-  have fw : Frame [fCR s₀, cBlk s₀, fStk s₀] s.mem s'.mem := by
-    have f := w.frame; rw [hst, hp.bkA, Nat.mul_one] at f; exact f
-  have big := big_frame (cW1_cW h.frame)
-  have eW : wCiph s.mem (fW s₀) (s₀.gpr .r1) = cCiph s₀ := hp.ciph big
+  obtain hst : stk s.sp = fStk s₀ := by rw [h.sp]
+  obtain fw : Frame [fCR s₀, cBlk s₀, fStk s₀] s.mem s'.mem := by
+    obtain f := w.frame; rw [hst, hp.bkA, Nat.mul_one] at f; exact f
+  obtain big := big_frame (cW1_cW h.frame)
+  obtain eW : wCiph s.mem (fW s₀) (s₀.gpr .r1) = cCiph s₀ := hp.ciph big
   have hout := w.out
   rw [hp.bkA, eW, h.ctr] at hout
-  have hkey := Proof.Modes.CtrFinal.bytesAt_of_blocksAt_one (cipher_length _) h.zero hout
-  have hlen : (fTail s₀).len ≤ 2 ^ 64 := by show fU s₀ ≤ 2 ^ 64; have := fU_lt s₀; omega_using [this]
+  obtain hkey := Proof.Modes.CtrFinal.bytesAt_of_blocksAt_one (cipher_length _) h.zero hout
+  obtain hlen : (fTail s₀).len ≤ 2 ^ 64 := by show fU s₀ ≤ 2 ^ 64; have := fU_lt s₀; omega_using [this]
   refine ⟨by rw [keep .r7 (by simp [preserved]) (by decide), h.r7],
     by rw [keep .r8 (by simp [preserved]) (by decide), h.r8], by rw [w.sp, h.sp], by rw [w.rd, h.rd],
     by rw [w.wr, h.wr], h.frame.trans (fw.sub fun r hr => ?_), ?_, ?_, hkey, fun q hq => ?_⟩
@@ -876,35 +883,35 @@ theorem xorArgs_eq : ctrXorArgs = [.ldrSp .r12 4, .dp .add .r0 .r12 (.imm 40), .
 
 theorem tail_xor_wp {s₀ : State} (hp : KPre s₀) {s : State} (h : TCall s₀ s) (hu : fU s₀ ≠ 0) :
     WP isa (.seq (.block ctrXorArgs) (.loop (.block Impl.Modes.Arm.xorByte) .ne)) s (Done s₀) := by
-  have big := big_frame (cW1_cW h.frame)
+  obtain big := big_frame (cW1_cW h.frame)
   rw [xorArgs_eq]
   refine WP.seq (wp_ldrSp (a := stackArgAddr s₀ 1) (by decide) (by rw [h.sp]; rfl)
     (by rw [h.rd, h.wr]; exact hp.arg_in (by decide)) fun s₁ u₁ => ?_)
-  have r12₁ : s₁.gpr .r12 = fV s₀ := by rw [u₁.gpr]; exact hp.argMem big (by decide)
+  obtain r12₁ : s₁.gpr .r12 = fV s₀ := by rw [u₁.gpr]; exact hp.argMem big (by decide)
   refine wp_add (op2_imm (by decide)) fun s₂ u₂ => wp_mov (op2_reg _ _) fun s₃ u₃ =>
     wp_mov (op2_reg _ _) fun s₄ u₄ => WP.block_nil ?_
-  have hU := fU_lt s₀
-  have hL := Nat.div_add_mod (fL s₀) 16
+  obtain hU := fU_lt s₀
+  obtain hL := Nat.div_add_mod (fL s₀) 16
   have hDw := hp.data_fit
-  have eN := fN_eq s₀
-  have eU := fU_eq s₀
-  have hT := hp.tail_toNat hu
-  have aT := hp.tailA hu
+  obtain eN := fN_eq s₀
+  obtain eU := fU_eq s₀
+  obtain hT := hp.tail_toNat hu
+  obtain aT := hp.tailA hu
   have bkA := hp.bkA
   have hbk := hp.bk_toNat
   have sv := hp.sv_fit
-  have r0₄ : s₄.gpr .r0 = cBk32 s₀ := by
+  obtain r0₄ : s₄.gpr .r0 = cBk32 s₀ := by
     rw [u₄.other _ (by decide), u₃.other _ (by decide), u₂.gpr, r12₁]
-  have r6₄ : s₄.gpr .r6 = fT s₀ := by
+  obtain r6₄ : s₄.gpr .r6 = fT s₀ := by
     rw [u₄.other _ (by decide), u₃.gpr, u₂.other _ (by decide), u₁.other _ (by decide), h.r7]
-  have r7₄ : s₄.gpr .r7 = BitVec.ofNat 32 (fU s₀) := by
+  obtain r7₄ : s₄.gpr .r7 = BitVec.ofNat 32 (fU s₀) := by
     rw [u₄.gpr, u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide), h.r8]
-  have mem₄ : s₄.mem = s.mem := by rw [u₄.mem, u₃.mem, u₂.mem, u₁.mem]
-  have rd₄ : s₄.rd = s₀.rd := by rw [u₄.rd, u₃.rd, u₂.rd, u₁.rd, h.rd]
-  have wr₄ : s₄.wr = s₀.wr := by rw [u₄.wr, u₃.wr, u₂.wr, u₁.wr, h.wr]
-  have sp₄ : s₄.sp = s₀.sp := by rw [u₄.sp, u₃.sp, u₂.sp, u₁.sp, h.sp]
-  have blkT : (cBlk s₀).Disjoint (fTail s₀) := ((hp.data_sv.sub_left (tail_sub s₀)).sub_right (blk_sv_sub s₀)).symm
-  have xp : XPre s₄ (cBk32 s₀) (fT s₀) (fU s₀) := {
+  obtain mem₄ : s₄.mem = s.mem := by rw [u₄.mem, u₃.mem, u₂.mem, u₁.mem]
+  obtain rd₄ : s₄.rd = s₀.rd := by rw [u₄.rd, u₃.rd, u₂.rd, u₁.rd, h.rd]
+  obtain wr₄ : s₄.wr = s₀.wr := by rw [u₄.wr, u₃.wr, u₂.wr, u₁.wr, h.wr]
+  obtain sp₄ : s₄.sp = s₀.sp := by rw [u₄.sp, u₃.sp, u₂.sp, u₁.sp, h.sp]
+  obtain blkT : (cBlk s₀).Disjoint (fTail s₀) := ((hp.data_sv.sub_left (tail_sub s₀)).sub_right (blk_sv_sub s₀)).symm
+  obtain xp : XPre s₄ (cBk32 s₀) (fT s₀) (fU s₀) := {
     fK := by rw [hbk]; omega_using [hU, sv]
     fR := by rw [hT]; omega_using [hDw, eN, eU]
     disj := by rw [aT, bkA]; exact blkT.sub_left (Region.sub_prefix (by omega_using [hU]))
@@ -918,11 +925,11 @@ theorem tail_xor_wp {s₀ : State} (hp : KPre s₀) {s : State} (h : TCall s₀ 
       exact Covers.of_sub fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
         exact ⟨fData s₀, by simp, 16 * fN s₀, rfl, by simp only; omega_using [eN, eU]⟩ }
-  have x0 : XInv s₄ (cBk32 s₀) (fT s₀) (fU s₀) 0 s₄ :=
+  obtain x0 : XInv s₄ (cBk32 s₀) (fT s₀) (fU s₀) 0 s₄ :=
     ⟨by rw [add0_32, r0₄], by rw [add0_32, r6₄], by rw [Nat.sub_zero, r7₄], by omega_using [hu],
       (Proof.Modes.over_zero _ _ _).symm, rfl, rfl, rfl, fun _ _ _ _ _ _ => rfl⟩
   refine WP.mono (xorLoop_wp xp x0) fun s' d => ?_
-  have fo : Frame [fTail s₀] s₄.mem s'.mem := by rw [d.mem, aT]; exact Proof.Modes.over_frame _ _ _ _
+  obtain fo : Frame [fTail s₀] s₄.mem s'.mem := by rw [d.mem, aT]; exact Proof.Modes.over_frame _ _ _ _
   refine ⟨by rw [d.sp, sp₄], by rw [d.rd, rd₄], by rw [d.wr, wr₄], ?_, ?_, fun q hq => ?_, ?_⟩
   · exact (cW1_cW h.frame).trans (by
       rw [← mem₄]
@@ -940,7 +947,7 @@ theorem tail_xor_wp {s₀ : State} (hp : KPre s₀) {s : State} (h : TCall s₀ 
 
 theorem mid_wp {s₀ : State} (hp : KPre s₀) {s : State} (h : Whole s₀ s) (hz : s.z = decide (fU s₀ = 0)) :
     WP isa (.ite .eq (.block []) ctrFinalTail) s (Done s₀) := by
-  have ev : isa.eval .eq s = some (decide (fU s₀ = 0)) := by
+  obtain ev : isa.eval .eq s = some (decide (fU s₀ = 0)) := by
     show VG.Arm.eval .eq s = _; rw [VG.Proof.MdStream.Arm.eval_eq, hz]
   by_cases hu : fU s₀ = 0
   · exact WP.ite true (by rw [ev, decide_eq_true hu]) (fun _ => WP.block_nil (done_of_zero h hu))
@@ -956,14 +963,14 @@ theorem end_wp {s₀ : State} (hp : KPre s₀) {s : State} (h : Done s₀ s) :
   show WP isa (.block (.ldrSp .r12 4 :: finalRestore)) s _
   refine wp_ldrSp (a := stackArgAddr s₀ 1) (by decide) (by rw [h.sp]; rfl)
     (by rw [h.rd, h.wr]; exact hp.arg_in (by decide)) fun s₁ u₁ => ?_
-  have big := big_frame h.frame
-  have r12 : s₁.gpr .r12 = fV s₀ := by rw [u₁.gpr]; exact hp.argMem big (by decide)
+  obtain big := big_frame h.frame
+  obtain r12 : s₁.gpr .r12 = fV s₀ := by rw [u₁.gpr]; exact hp.argMem big (by decide)
   have sv := hp.sv_fit
-  have hs : Spill.Saved s₁.mem (State.addr (s₁.gpr .r12)) s₀.gpr finalSaved := by
+  obtain hs : Spill.Saved s₁.mem (State.addr (s₁.gpr .r12)) s₀.gpr finalSaved := by
     rw [u₁.mem, r12]
     refine (Spill.saveMem_saved (lo := 0) (hi := 36) _ _ _ _ (by decide)).frame (lo := 0) (hi := 36) (by decide)
       h.frame fun r hr => ?_
-    have hsub : Region.Sub ⟨State.addr (fV s₀) + BitVec.ofNat 64 0, 36 - 0⟩ (cSv s₀) :=
+    obtain hsub : Region.Sub ⟨State.addr (fV s₀) + BitVec.ofNat 64 0, 36 - 0⟩ (cSv s₀) :=
       Offset.sub_base _ (by decide)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
@@ -1020,7 +1027,7 @@ end
 /-- The arguments' area, apart from what may be written. -/
 theorem KPre.argsWf {s₀ : State} (hp : KPre s₀) :
     s₀.sp.toNat + 8 ≤ 2 ^ 32 ∧ ∀ r ∈ s₀.wr, Region.Disjoint ⟨State.addr s₀.sp, 8⟩ r := by
-  have e : (⟨State.addr s₀.sp, 8⟩ : Region) = fArg s₀ := by simp [stackArgAddr]
+  obtain e : (⟨State.addr s₀.sp, 8⟩ : Region) = fArg s₀ := by simp [stackArgAddr]
   refine ⟨hp.sp_hi, ?_⟩
   rw [e, hp.wr]
   simp only [List.mem_cons, List.not_mem_nil, or_false]
@@ -1035,7 +1042,7 @@ theorem agreeAt {s₀ s₀' : State} (hp : KPre s₀) (hp' : KPre s₀') (hq : c
     (sa : a.sp = s₀.sp) (sb : b.sp = s₀'.sp) (wa : a.wr = s₀.wr) (wb : b.wr = s₀'.wr)
     (ma : Frame (cBig s₀) s₀.mem a.mem) (mb : Frame (cBig s₀') s₀'.mem b.mem) {rs : List Reg}
     (hr : ∀ r ∈ rs, a.gpr r = b.gpr r) : VG.Arm.Taint.Agree (argTaint rs 8) a b := by
-  have arg : ∀ {σ s : State}, KPre σ → s.sp = σ.sp → Frame (cBig σ) σ.mem s.mem →
+  obtain arg : ∀ {σ s : State}, KPre σ → s.sp = σ.sp → Frame (cBig σ) σ.mem s.mem →
       ∀ k < 2, stackArg s k = stackArg σ k :=
     fun {σ s} hσ hs hm k hk => by
       rw [stackArg, show stackArgAddr s k = stackArgAddr σ k by simp only [stackArgAddr, hs]]
@@ -1069,10 +1076,10 @@ theorem end_taint : ∃ h, (taint.check (argTaint [] 8) (.block (ctrSave ++ fina
 theorem final_rel {s₀ s₀' : State} (h0 : ctrFinalArm.pre s₀) (h0' : ctrFinalArm.pre s₀')
     (hq : ctrFinalArm.pub s₀ s₀') :
     RelCT isa (fun a b => a = s₀ ∧ b = s₀') ctrFinal fun _ _ => True := by
-  have hp := KPre.of h0
-  have hp' := KPre.of h0'
+  obtain hp := KPre.of h0
+  obtain hp' := KPre.of h0'
   -- The registers saved and the arguments set up.
-  have r₁ := rel_agree (F := fun s => s = s₀) (F' := fun s => s = s₀') (G := Setup s₀) (G' := Setup s₀')
+  obtain r₁ := rel_agree (F := fun s => s = s₀) (F' := fun s => s = s₀') (G := Setup s₀) (G' := Setup s₀')
     (argTaint [.r0, .r1, .r2, .r3] 8)
     (fun s s' e e' => by
       subst e e'
@@ -1085,13 +1092,13 @@ theorem final_rel {s₀ s₀' : State} (h0 : ctrFinalArm.pre s₀) (h0' : ctrFin
       · exact pub_D hq) setup_taint
     (fun s e => by rw [e]; exact setup_wp hp) (fun s e => by rw [e]; exact setup_wp hp')
   -- The whole blocks.
-  have r₂ := rel_wp (F := Setup s₀) (F' := Setup s₀') (G := Whole s₀) (G' := Whole s₀')
+  obtain r₂ := rel_wp (F := Setup s₀) (F' := Setup s₀') (G := Whole s₀) (G' := Whole s₀')
     (w_rel fun a b ⟨ha, hb⟩ => ⟨_, _, _, _, _, setup_call hp ha, by
       rw [pub_W hq, pub_r1 hq, pub_C hq, pub_D hq, pub_N hq]; exact setup_call hp' hb,
       by rw [ha.sp, hb.sp, pub_sp hq]⟩)
     (fun _ h => whole_wp hp h) (fun _ h => whole_wp hp' h)
   -- The test.
-  have r₃ := rel_agree (F := Whole s₀) (F' := Whole s₀')
+  obtain r₃ := rel_agree (F := Whole s₀) (F' := Whole s₀')
     (G := fun s => Whole s₀ s ∧ s.z = decide (fU s₀ = 0)) (G' := fun s => Whole s₀' s ∧ s.z = decide (fU s₀' = 0))
     (Taint.ofRegs [.r8]) (fun a b ha hb => Taint.agree_ofRegs fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; rw [ha.r8, hb.r8, pub_U hq]) test_taint
@@ -1099,8 +1106,8 @@ theorem final_rel {s₀ s₀' : State} (h0 : ctrFinalArm.pre s₀) (h0' : ctrFin
   -- The partial last block.
   have tail (hu : fU s₀ ≠ 0) : RelCT isa (fun a b => Whole s₀ a ∧ Whole s₀' b) ctrFinalTail
       fun a b => Done s₀ a ∧ Done s₀' b := by
-    have hu' : fU s₀' ≠ 0 := pub_U hq ▸ hu
-    have a₁ := rel_agree (F := Whole s₀) (F' := Whole s₀') (G := TArgs s₀) (G' := TArgs s₀')
+    obtain hu' : fU s₀' ≠ 0 := pub_U hq ▸ hu
+    obtain a₁ := rel_agree (F := Whole s₀) (F' := Whole s₀') (G := TArgs s₀) (G' := TArgs s₀')
       (argTaint [.r4, .r5, .r6] 8) (fun a b ha hb => by
         refine agreeAt hp hp' hq ha.sp hb.sp ha.wr hb.wr (big_frame (cW1_cW (whole_cW1 ha)))
           (big_frame (cW1_cW (whole_cW1 hb))) fun r hr => ?_
@@ -1110,12 +1117,12 @@ theorem final_rel {s₀ s₀' : State} (h0 : ctrFinalArm.pre s₀) (h0' : ctrFin
         · rw [ha.r5, hb.r5, pub_r1 hq]
         · rw [ha.r6, hb.r6, pub_C hq]) tailArgs_taint
       (fun _ h => tail_args_wp hp h) (fun _ h => tail_args_wp hp' h)
-    have a₂ := rel_wp (F := TArgs s₀) (F' := TArgs s₀') (G := TCall s₀) (G' := TCall s₀')
+    obtain a₂ := rel_wp (F := TArgs s₀) (F' := TArgs s₀') (G := TCall s₀) (G' := TCall s₀')
       (w_rel fun a b ⟨ha, hb⟩ => ⟨_, _, _, _, _, ha.call, by
         rw [pub_W hq, pub_r1 hq, pub_C hq, cBk32, pub_V hq]; exact hb.call, by rw [ha.sp, hb.sp, pub_sp hq]⟩)
       (fun _ h => WP.mono (w_call h.call) fun _ c => tail_call hp h c)
       (fun _ h => WP.mono (w_call h.call) fun _ c => tail_call hp' h c)
-    have a₃ := rel_agree (F := TCall s₀) (F' := TCall s₀') (G := Done s₀) (G' := Done s₀')
+    obtain a₃ := rel_agree (F := TCall s₀) (F' := TCall s₀') (G := Done s₀) (G' := Done s₀')
       (argTaint [.r7, .r8] 8) (fun a b ha hb => by
         refine agreeAt hp hp' hq ha.sp hb.sp ha.wr hb.wr (big_frame (cW1_cW ha.frame))
           (big_frame (cW1_cW hb.frame)) fun r hr => ?_
@@ -1127,7 +1134,7 @@ theorem final_rel {s₀ s₀' : State} (h0 : ctrFinalArm.pre s₀) (h0' : ctrFin
     exact a₁.seq (a₂.seq a₃)
   have ev {s : State} {u : Nat} (h : s.z = decide (u = 0)) : isa.eval .eq s = some (decide (u = 0)) := by
     show VG.Arm.eval .eq s = _; rw [VG.Proof.MdStream.Arm.eval_eq, h]
-  have r₄ : RelCT isa (fun a b => (Whole s₀ a ∧ a.z = decide (fU s₀ = 0)) ∧
+  obtain r₄ : RelCT isa (fun a b => (Whole s₀ a ∧ a.z = decide (fU s₀ = 0)) ∧
       (Whole s₀' b ∧ b.z = decide (fU s₀' = 0)))
       (.ite .eq (.block []) ctrFinalTail) (fun a b => Done s₀ a ∧ Done s₀' b) := by
     obtain ⟨_, hnil⟩ := nil_taint
@@ -1135,14 +1142,14 @@ theorem final_rel {s₀ s₀' : State} (h0 : ctrFinalArm.pre s₀) (h0' : ctrFin
     · refine ((RelCT.taint (A := taint) (Taint.ofRegs [])
         (fun _ _ _ => Taint.agree_ofRegs fun r hr => by simp at hr) hnil).wp
         (F₁ := Done s₀) (F₂ := Done s₀') fun a b h => ?_).mono (fun _ _ h => h) fun _ _ h => h.2
-      have h0 : fU s₀ = 0 := by
+      obtain h0 : fU s₀ = 0 := by
         have := h.2; rw [ev h.1.1.2] at this; simpa using this
       exact ⟨WP.block_nil (done_of_zero h.1.1.1 h0), WP.block_nil (done_of_zero h.1.2.1 (pub_U hq ▸ h0))⟩
     · refine (RelCT.exists_ fun (hu : fU s₀ ≠ 0) => tail hu).mono
         (fun a b h => ⟨?_, h.1.1.1, h.1.2.1⟩) fun _ _ h => h
       have := h.2; rw [ev h.1.1.2] at this; simpa using this
   -- `save` reloaded, and the registers restored.
-  have r₅ := rel_agree (F := Done s₀) (F' := Done s₀') (G := fun _ => True) (G' := fun _ => True)
+  obtain r₅ := rel_agree (F := Done s₀) (F' := Done s₀') (G := fun _ => True) (G' := fun _ => True)
     (argTaint [] 8)
     (fun a b ha hb => agreeAt hp hp' hq ha.sp hb.sp ha.wr hb.wr (big_frame ha.frame) (big_frame hb.frame)
       fun r hr => by simp at hr) end_taint
@@ -1161,29 +1168,29 @@ theorem ctrFinal_verified : Verified Arm.target ctrFinal ctrFinalScratchContract
 /-! ## With `save` on the stack
 
 The final function has one stack argument, so `save` is its second: it runs
-its code in a frame of 72 bytes (`withStackScratchWiped`): the copy of the
+its code in a frame of 72 bytes (`withStackScratch`): the copy of the
 stack argument, `save`'s address, the word holding `lr`, and `save`'s 56
-bytes, the block included, which it zeroes before returning (and 4 bytes of
-padding). The code's calls use 2912 bytes below it, so 2984 in all. -/
+bytes, the block included, which the function's cleanup zeroes (and 4 bytes
+of padding). The code's calls use 3040 bytes below it, so 3112 in all. -/
 
 /-- A state satisfying the precondition, without `save`. -/
 def ctrFinalFrameSat : State :=
   { ctrFinalSat with rd := [⟨0x1000, 272⟩, ⟨0x8000, 4⟩], wr := [⟨0x2000, 16⟩, ⟨0x3000, 0⟩] }
 
-theorem ctrFinalFrameSat_pre : ∃ s, (Proof.Camellia.ctrFinalContractSk Arm.abi 2984).pre s := by
+theorem ctrFinalFrameSat_pre : ∃ s, (Proof.Camellia.ctrFinalContractSk Arm.abi 3112).pre s := by
   implies_sat [Proof.Camellia.ctrFinalContractSk, Spec.Camellia.ctrFinalSig, Spec.Camellia.ctrFinalPre,
     Proof.Camellia.ctrFinalPostSk, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
     [ctrFinalFrameSat, ctrFinalSat] using ctrFinalFrameSat
 
-/-- `ctrFinal`, with `save` on the stack (zeroed on return). -/
+/-- `ctrFinal`, with `save` on the stack (which its function's cleanup zeroes). -/
 theorem ctrFinal_framed :
-    Verified Arm.target (Impl.StackScratch.Arm.withStackScratchWiped 72 1 14 ctrFinal)
-      (Spec.Camellia.ctrFinalContract Arm.abi 2984) :=
+    Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 72 1 ctrFinal)
+      (Spec.Camellia.ctrFinalContract Arm.abi 3112) :=
   Proof.Camellia.ctrFinal_of_sk <|
-  Arm.Verified.stackScratchWiped (sig := Spec.Camellia.ctrFinalSig) (nm := "save") (e := .u64) (n := 7)
+  Arm.Verified.stackScratch (sig := Spec.Camellia.ctrFinalSig) (nm := "save") (e := .u64) (n := 7)
     (pre := Spec.Camellia.ctrFinalPre Arm.abi.ptrBits) (post := Proof.Camellia.ctrFinalPostSk Arm.abi.ptrBits)
-    (wa := true) (stack := 2912) (m := 1) (bytes := 72)
-    ctrFinal_verified (by decide) (by decide) (by decide) (by decide) (by decide)
-    (ctrFinalPre_local _) (ctrFinalPost_local _) (Proof.Camellia.ctrFinalPostOut_local _) ctrFinalFrameSat_pre
+    (wa := true) (stack := 3040) (m := 1) (bytes := 72)
+    ctrFinal_verified (by decide) (by decide) (by decide) (by decide)
+    (ctrFinalPre_local _) (ctrFinalPost_local _) (fun vs mm m₁ m₂ r hl _ => Proof.Camellia.ctrFinalPostOut_local _ vs mm m₁ m₂ r hl) ctrFinalFrameSat_pre
 
 end VG.Proof.Camellia.Arm.CtrFinal

@@ -81,6 +81,13 @@ validate!(
 );
 
 validate!(
+    BrainpoolP320r1,
+    40,
+    ec_brainpoolp320r1_validate,
+    vg_ec_brainpoolp320r1_validate_public_key_auto
+);
+
+validate!(
     BrainpoolP384r1,
     48,
     ec_brainpoolp384r1_validate,
@@ -98,8 +105,8 @@ validate!(
 mod tests {
     use crate::ec::PrivateKey;
     use crate::ec::{
-        BrainpoolP256r1, BrainpoolP384r1, BrainpoolP512r1, P192, P224, P256, P384, P521, PublicKey,
-        Secp256k1,
+        BrainpoolP256r1, BrainpoolP320r1, BrainpoolP384r1, BrainpoolP512r1, P192, P224, P256, P384,
+        P521, PublicKey, Secp256k1,
     };
 
     macro_rules! cases {
@@ -158,6 +165,7 @@ mod tests {
     cases!(p521, P521, 66);
     cases!(secp256k1, Secp256k1, 32);
     cases!(brainpoolp256r1, BrainpoolP256r1, 32);
+    cases!(brainpoolp320r1, BrainpoolP320r1, 40);
     cases!(brainpoolp384r1, BrainpoolP384r1, 48);
     cases!(brainpoolp512r1, BrainpoolP512r1, 64);
 }

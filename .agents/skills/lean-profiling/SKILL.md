@@ -111,12 +111,12 @@ supplies the same options and imports as Lake (`lake setup-file` builds the
 module's imports, not the module, and prints it; the build cache keeps none):
 
 ```sh
-lake setup-file --log-level=warning VerifiedGarbage/Proof/MlKem/Arm/Mul.lean > .lake/setup.json
+lake setup-file --log-level=warning VerifiedGarbage/Proof/MlKem/Arm/SampleCT.lean > .lake/setup.json
 lake env lean --setup .lake/setup.json \
   -j1 -DElab.async=false -Dtrace.profiler=true \
   -Dtrace.profiler.useHeartbeats=true -Dtrace.profiler.threshold=1000000000 \
   -Dtrace.Elab.command=true -Dtrace.Kernel=true \
-  VerifiedGarbage/Proof/MlKem/Arm/Mul.lean
+  VerifiedGarbage/Proof/MlKem/Arm/SampleCT.lean
 ```
 
 Traces are inclusive: report the command and kernel counts separately, not

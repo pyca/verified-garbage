@@ -177,60 +177,179 @@ vg_aes_encrypt_blocks_aesni:
 	mov ecx, edx
 	sub ecx, eax
 	shr ecx, 4
-	add ecx, 0
+	add ecx, 2
 	mov eax, DWORD PTR [esp+16]
 	cmp ecx, eax
 	mov ecx, DWORD PTR [esp+8]
 	mov eax, DWORD PTR [esp+4]
 	jae 27f
-29:
 	movdqu xmm0, XMMWORD PTR [edx]
+	movdqu xmm1, XMMWORD PTR [edx+16]
+	movdqu xmm2, XMMWORD PTR [edx+32]
 	movdqu xmm6, XMMWORD PTR [eax]
 	pxor xmm0, xmm6
+	pxor xmm1, xmm6
+	pxor xmm2, xmm6
 	movdqu xmm6, XMMWORD PTR [eax+16]
 	aesenc xmm0, xmm6
+	aesenc xmm1, xmm6
+	aesenc xmm2, xmm6
 	movdqu xmm6, XMMWORD PTR [eax+32]
 	aesenc xmm0, xmm6
+	aesenc xmm1, xmm6
+	aesenc xmm2, xmm6
 	movdqu xmm6, XMMWORD PTR [eax+48]
 	aesenc xmm0, xmm6
+	aesenc xmm1, xmm6
+	aesenc xmm2, xmm6
 	movdqu xmm6, XMMWORD PTR [eax+64]
 	aesenc xmm0, xmm6
+	aesenc xmm1, xmm6
+	aesenc xmm2, xmm6
 	movdqu xmm6, XMMWORD PTR [eax+80]
 	aesenc xmm0, xmm6
+	aesenc xmm1, xmm6
+	aesenc xmm2, xmm6
 	movdqu xmm6, XMMWORD PTR [eax+96]
 	aesenc xmm0, xmm6
+	aesenc xmm1, xmm6
+	aesenc xmm2, xmm6
 	movdqu xmm6, XMMWORD PTR [eax+112]
 	aesenc xmm0, xmm6
+	aesenc xmm1, xmm6
+	aesenc xmm2, xmm6
 	movdqu xmm6, XMMWORD PTR [eax+128]
 	aesenc xmm0, xmm6
+	aesenc xmm1, xmm6
+	aesenc xmm2, xmm6
 	movdqu xmm6, XMMWORD PTR [eax+144]
 	aesenc xmm0, xmm6
+	aesenc xmm1, xmm6
+	aesenc xmm2, xmm6
 	cmp ecx, 10
-	je 210f
+	je 29f
 	movdqu xmm6, XMMWORD PTR [eax+160]
 	aesenc xmm0, xmm6
+	aesenc xmm1, xmm6
+	aesenc xmm2, xmm6
 	movdqu xmm6, XMMWORD PTR [eax+176]
 	aesenc xmm0, xmm6
+	aesenc xmm1, xmm6
+	aesenc xmm2, xmm6
 	cmp ecx, 12
-	je 212f
+	je 211f
 	movdqu xmm6, XMMWORD PTR [eax+192]
 	aesenc xmm0, xmm6
+	aesenc xmm1, xmm6
+	aesenc xmm2, xmm6
 	movdqu xmm6, XMMWORD PTR [eax+208]
 	aesenc xmm0, xmm6
+	aesenc xmm1, xmm6
+	aesenc xmm2, xmm6
 	movdqu xmm6, XMMWORD PTR [eax+224]
 	aesenclast xmm0, xmm6
-	jmp 213f
-212:
+	aesenclast xmm1, xmm6
+	aesenclast xmm2, xmm6
+	jmp 212f
+211:
 	movdqu xmm6, XMMWORD PTR [eax+192]
 	aesenclast xmm0, xmm6
-213:
-	jmp 211f
-210:
+	aesenclast xmm1, xmm6
+	aesenclast xmm2, xmm6
+212:
+	jmp 210f
+29:
 	movdqu xmm6, XMMWORD PTR [eax+160]
 	aesenclast xmm0, xmm6
-211:
+	aesenclast xmm1, xmm6
+	aesenclast xmm2, xmm6
+210:
 	movdqu XMMWORD PTR [edx], xmm0
-	add edx, 16
+	movdqu XMMWORD PTR [edx+16], xmm1
+	movdqu XMMWORD PTR [edx+32], xmm2
+	add edx, 48
+	jmp 28f
+27:
+28:
+	mov eax, DWORD PTR [esp+12]
+	mov ecx, edx
+	sub ecx, eax
+	shr ecx, 4
+	add ecx, 1
+	mov eax, DWORD PTR [esp+16]
+	cmp ecx, eax
+	mov ecx, DWORD PTR [esp+8]
+	mov eax, DWORD PTR [esp+4]
+	jae 213f
+	movdqu xmm3, XMMWORD PTR [edx]
+	movdqu xmm4, XMMWORD PTR [edx+16]
+	movdqu xmm6, XMMWORD PTR [eax]
+	pxor xmm3, xmm6
+	pxor xmm4, xmm6
+	movdqu xmm6, XMMWORD PTR [eax+16]
+	aesenc xmm3, xmm6
+	aesenc xmm4, xmm6
+	movdqu xmm6, XMMWORD PTR [eax+32]
+	aesenc xmm3, xmm6
+	aesenc xmm4, xmm6
+	movdqu xmm6, XMMWORD PTR [eax+48]
+	aesenc xmm3, xmm6
+	aesenc xmm4, xmm6
+	movdqu xmm6, XMMWORD PTR [eax+64]
+	aesenc xmm3, xmm6
+	aesenc xmm4, xmm6
+	movdqu xmm6, XMMWORD PTR [eax+80]
+	aesenc xmm3, xmm6
+	aesenc xmm4, xmm6
+	movdqu xmm6, XMMWORD PTR [eax+96]
+	aesenc xmm3, xmm6
+	aesenc xmm4, xmm6
+	movdqu xmm6, XMMWORD PTR [eax+112]
+	aesenc xmm3, xmm6
+	aesenc xmm4, xmm6
+	movdqu xmm6, XMMWORD PTR [eax+128]
+	aesenc xmm3, xmm6
+	aesenc xmm4, xmm6
+	movdqu xmm6, XMMWORD PTR [eax+144]
+	aesenc xmm3, xmm6
+	aesenc xmm4, xmm6
+	cmp ecx, 10
+	je 215f
+	movdqu xmm6, XMMWORD PTR [eax+160]
+	aesenc xmm3, xmm6
+	aesenc xmm4, xmm6
+	movdqu xmm6, XMMWORD PTR [eax+176]
+	aesenc xmm3, xmm6
+	aesenc xmm4, xmm6
+	cmp ecx, 12
+	je 217f
+	movdqu xmm6, XMMWORD PTR [eax+192]
+	aesenc xmm3, xmm6
+	aesenc xmm4, xmm6
+	movdqu xmm6, XMMWORD PTR [eax+208]
+	aesenc xmm3, xmm6
+	aesenc xmm4, xmm6
+	movdqu xmm6, XMMWORD PTR [eax+224]
+	aesenclast xmm3, xmm6
+	aesenclast xmm4, xmm6
+	jmp 218f
+217:
+	movdqu xmm6, XMMWORD PTR [eax+192]
+	aesenclast xmm3, xmm6
+	aesenclast xmm4, xmm6
+218:
+	jmp 216f
+215:
+	movdqu xmm6, XMMWORD PTR [eax+160]
+	aesenclast xmm3, xmm6
+	aesenclast xmm4, xmm6
+216:
+	movdqu XMMWORD PTR [edx], xmm3
+	movdqu XMMWORD PTR [edx+16], xmm4
+	add edx, 32
+	jmp 214f
+213:
+214:
 	mov eax, DWORD PTR [esp+12]
 	mov ecx, edx
 	sub ecx, eax
@@ -240,9 +359,56 @@ vg_aes_encrypt_blocks_aesni:
 	cmp ecx, eax
 	mov ecx, DWORD PTR [esp+8]
 	mov eax, DWORD PTR [esp+4]
-	jb 29b
-	jmp 28f
-27:
-28:
+	jae 219f
+	movdqu xmm5, XMMWORD PTR [edx]
+	movdqu xmm6, XMMWORD PTR [eax]
+	pxor xmm5, xmm6
+	movdqu xmm6, XMMWORD PTR [eax+16]
+	aesenc xmm5, xmm6
+	movdqu xmm6, XMMWORD PTR [eax+32]
+	aesenc xmm5, xmm6
+	movdqu xmm6, XMMWORD PTR [eax+48]
+	aesenc xmm5, xmm6
+	movdqu xmm6, XMMWORD PTR [eax+64]
+	aesenc xmm5, xmm6
+	movdqu xmm6, XMMWORD PTR [eax+80]
+	aesenc xmm5, xmm6
+	movdqu xmm6, XMMWORD PTR [eax+96]
+	aesenc xmm5, xmm6
+	movdqu xmm6, XMMWORD PTR [eax+112]
+	aesenc xmm5, xmm6
+	movdqu xmm6, XMMWORD PTR [eax+128]
+	aesenc xmm5, xmm6
+	movdqu xmm6, XMMWORD PTR [eax+144]
+	aesenc xmm5, xmm6
+	cmp ecx, 10
+	je 221f
+	movdqu xmm6, XMMWORD PTR [eax+160]
+	aesenc xmm5, xmm6
+	movdqu xmm6, XMMWORD PTR [eax+176]
+	aesenc xmm5, xmm6
+	cmp ecx, 12
+	je 223f
+	movdqu xmm6, XMMWORD PTR [eax+192]
+	aesenc xmm5, xmm6
+	movdqu xmm6, XMMWORD PTR [eax+208]
+	aesenc xmm5, xmm6
+	movdqu xmm6, XMMWORD PTR [eax+224]
+	aesenclast xmm5, xmm6
+	jmp 224f
+223:
+	movdqu xmm6, XMMWORD PTR [eax+192]
+	aesenclast xmm5, xmm6
+224:
+	jmp 222f
+221:
+	movdqu xmm6, XMMWORD PTR [eax+160]
+	aesenclast xmm5, xmm6
+222:
+	movdqu XMMWORD PTR [edx], xmm5
+	add edx, 16
+	jmp 220f
+219:
+220:
 	ret
 	.p2align 6

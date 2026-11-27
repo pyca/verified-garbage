@@ -14,6 +14,9 @@ scalars) and `n = 57` (Ed448's 456-bit ones). All are literals, generated outsid
 
 @[expose] public section
 
+-- The interpreter looks up each constant extracted from a table at every evaluation of it.
+set_option compiler.extract_closed false
+
 namespace VG.Impl.X448
 
 open VG.Spec.X448 (Fe)

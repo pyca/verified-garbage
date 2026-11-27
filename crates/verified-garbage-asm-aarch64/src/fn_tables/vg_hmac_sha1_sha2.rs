@@ -5,8 +5,8 @@
 /// The CPU features `VG_HMAC_SHA1_SHA2` requires (`VG.FnTable`).
 pub const VG_HMAC_SHA1_SHA2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA2);
 
-/// The table of functions `VG_HMAC_SHA1_SHA2` of the interface `Hmac`: `vg_hmac_sha1_init_scratch_sha2`, `vg_sha1_update_scratch_sha2`, `vg_hmac_sha1_finalize_scratch_sha2`, then the data 1, 20, 64.
+/// The table of functions `VG_HMAC_SHA1_SHA2` of the interface `Hmac`: `vg_hmac_sha1_init_any_scratch_sha2`, `vg_sha1_update_scratch_sha2`, `vg_hmac_sha1_finalize_scratch_sha2`, then the data 1, 20, 64.
 pub static VG_HMAC_SHA1_SHA2: super::Hmac = super::Hmac {
-    fns: [crate::hmac_sha1::vg_hmac_sha1_init_scratch_sha2::vg_hmac_sha1_init_scratch_sha2 as *const (), crate::sha1::vg_sha1_update_scratch_sha2::vg_sha1_update_scratch_sha2 as *const (), crate::hmac_sha1::vg_hmac_sha1_finalize_scratch_sha2::vg_hmac_sha1_finalize_scratch_sha2 as *const ()],
+    fns: [crate::hmac_sha1::vg_hmac_sha1_init_any_scratch_sha2::vg_hmac_sha1_init_any_scratch_sha2 as *const (), crate::sha1::vg_sha1_update_scratch_sha2::vg_sha1_update_scratch_sha2 as *const (), crate::hmac_sha1::vg_hmac_sha1_finalize_scratch_sha2::vg_hmac_sha1_finalize_scratch_sha2 as *const ()],
     data: [1, 20, 64],
 };

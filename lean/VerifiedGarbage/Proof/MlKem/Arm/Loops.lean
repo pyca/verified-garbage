@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.Arm.Calls
-import VerifiedGarbage.Proof.MlKem.Arm.HashTop
+import VerifiedGarbage.Proof.MlKem.Arm.SampleCT
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
 

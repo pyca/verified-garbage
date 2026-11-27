@@ -136,7 +136,7 @@ def cbcEncryptChained : Prog isa := (dirCore true).seq (Modes.Mode.cbcEncChained
 
 /-- `vg_blowfish_cbc_decrypt_chained`: two blocks a step, then one. -/
 def cbcDecryptChained : Prog isa :=
-  (dirCore2 false).seq2 (Modes.Mode.cbcDecWide 2 2) (Modes.Mode.cbcDecChained 2) 1
+  (dirCore2 false).seq2 (Modes.Mode.cbcDecChained 2) 1
 
 /-- `vg_blowfish_ofb`. -/
 def ofb : Prog isa := (dirCore true).seq (Modes.Mode.ofb 2)
@@ -146,6 +146,6 @@ def cfbEncrypt : Prog isa := (dirCore true).seq (Modes.Mode.cfbEnc 2)
 
 /-- `vg_blowfish_cfb64_decrypt`: two blocks a step, then one. -/
 def cfbDecrypt : Prog isa :=
-  (dirCore2 true).seq2 (Modes.Mode.cfbDecWide 2 2) (Modes.Mode.cfbDecEarly 2) 1
+  (dirCore2 true).seq2 (Modes.Mode.cfbDecEarly 2) 1
 
 end VG.Impl.Blowfish.RISCV64

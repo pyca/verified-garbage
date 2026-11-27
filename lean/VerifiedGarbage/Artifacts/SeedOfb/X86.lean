@@ -1,24 +1,38 @@
 module
 
-public import VerifiedGarbage.Proof.Seed.X86.FbVerified
-public import VerifiedGarbage.Proof.Seed.X86.FbFinalVerified
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.X86.Print
-import VerifiedGarbage.Proof.Seed.X86.FbLit
-import VerifiedGarbage.Proof.Seed.X86.FbFinalLit
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Seed.Ofb
+public import VerifiedGarbage.Spec.Seed.OfbFinal
+import VerifiedGarbage.Proof.Seed.X86.SseScrub
+import VerifiedGarbage.Impl.Seed.X86.SseFn
+import VerifiedGarbage.Proof.Seed.X86.AesNiScrub
+import VerifiedGarbage.Impl.Seed.X86.AesNiFn
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Seed.X86.SseLit
+import VerifiedGarbage.Proof.Seed.X86.AesNiLit
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # SEED-OFB on x86 -/
 
-@[expose] public section
-
 namespace VG.Artifacts.SeedOfb.X86
 
-def artifacts : List Artifact := [
+public def artifacts : List (Artifact X86.target) := [
   Spec.Seed.ofbApi.artifact X86.target {
-    code := Impl.StackScratch.X86.withStackScratchWiped 1168 4 286 Impl.Seed.X86.ofb
-    verified := Proof.Seed.X86.Fb.ofb_framed },
+    suffix := "_aesni"
+    code := Impl.Seed.X86.AesNi.Fn.ofb
+    verified := Proof.Seed.X86.AesNi.Scrub.ofb_scrubbed },
+  Spec.Seed.ofbApi.artifact X86.target {
+    code := Impl.Seed.X86.Sse.Fn.ofb
+    verified := Proof.Seed.X86.Sse.Scrub.ofb_scrubbed },
   Spec.Seed.ofbFinalApi.artifact X86.target {
-    code := Impl.StackScratch.X86.withStackScratchWiped 1168 4 286 Impl.Seed.X86.ofbFinal
-    verified := Proof.Seed.X86.FbFinal.ofbFinal_framed }]
+    suffix := "_aesni"
+    code := Impl.Seed.X86.AesNi.Fn.ofbFinal
+    verified := Proof.Seed.X86.AesNi.Scrub.ofbFinal_scrubbed },
+  Spec.Seed.ofbFinalApi.artifact X86.target {
+    code := Impl.Seed.X86.Sse.Fn.ofbFinal
+    verified := Proof.Seed.X86.Sse.Scrub.ofbFinal_scrubbed }]
+
+spec_apis artifacts
 
 end VG.Artifacts.SeedOfb.X86

@@ -4,11 +4,6 @@ public import VerifiedGarbage.Proof.Rsa.Ranges
 public import VerifiedGarbage.Proof.Rsa.X86_64.CvHead
 public import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
 public import VerifiedGarbage.Impl.Rsa.X86_64.RecoverDet
-import Mathlib.Order.RelClasses
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Push
-import Mathlib.Data.Nat.Basic
-import Mathlib.Tactic.Attr.Core
 
 /-!
 # `vg_rsa_recover_primes_det` on x86-64: the arguments

@@ -21,10 +21,10 @@ VerifiedGarbage/
     Artifact.lean   Target, Contract, `Verified`: what "verified" means;
                     `Sig.contract`: the contract obligations a signature implies
                     (no printer: every proof imports it)
-    Registration.lean  `Artifact`, emitted for an `EmitTarget` (a target with its
-                    ISA's printer and Rust `cfg`, `Emitter`); `Api.artifact`: an `Artifact`
-                    made from an `Api` and only what its implementation chooses
-                    (`Registration`)
+    Registration.lean  `Artifact T`, a verified function of the target `T`, emitted
+                    for an `EmitTarget` (`T` with its printer and Rust `cfg`, `Emitter`);
+                    `Api.artifact`: an `Artifact` made from an `Api` and only what its
+                    implementation chooses (`Registration`)
     Rust.lean       rendering artifacts as Rust naked functions; checks that every
                     call is of the function whose code the model runs for it (an
                     artifact, or an internal function the emitter writes from that
@@ -35,8 +35,9 @@ VerifiedGarbage/
                     returns the best of its tables
     Axioms.lean     `#assert_standard_axioms`
     Audit.lean      `#assert_no_compiler_overrides` (the compiled code the emitter
-                    runs is what the kernel checked) and `#assert_spec_origin`
-                    (`VG.Spec` definitions are declared in `Spec/`)
+                    runs is what the kernel checked), `#assert_spec_origin`
+                    (`VG.Spec` definitions are declared in `Spec/`) and
+                    `#assert_spec_apis` (so is every artifact's `Api`)
     Emit.lean       what is emitted (every registration file under
                     `Artifacts/`, each function's implementations from one of
                     them), and writing or checking the generated crates
@@ -89,21 +90,27 @@ never import proofs.
    chooses (`Api.artifact`, `TCB/Registration.lean`): the target, the code
    and its proof, and the suffix of its name; the stack its calls and frames
    use (`stack`) is the one the proof's contract is for. An artifact
-   made from an `Api` takes the contract from it with the name and signature
-   (`Api.contracts`), and must be proven against exactly that contract on its
-   target (`Artifact.ofApi`), so a registration file, or a proof building
-   artifacts for a generic caller, cannot pair a function's name with another
-   function's contract; the emitter refuses an artifact that is not made from
-   an `Api` with a contract. An `Artifact` cannot be built
+   carries its `Api` (`Artifact.api`), which gives its contract with its name
+   and signature (`Api.contracts`), and must be proven against exactly that
+   contract on its target (`Artifact.ofApi`), so a registration file, or a proof
+   building artifacts for a generic caller, cannot pair a function's name with
+   another function's contract. Nor can it make an `Api` of its own: the emitter's
+   `#assert_spec_apis` has the kernel check that each artifact's is one that
+   `Spec/` declares, whatever a registration calls it, and the emitter refuses an
+   `Api` with no contract. Nor can it choose the target model the proof is
+   on, or how the code is printed: the emitter's driver (`Emit.driver`) takes
+   the list of `Artifacts/<Alg>/<T>.lean` as a `List (Artifact VG.<T>.target)`,
+   of the target `TCB/<T>/Target.lean` defines, and prints it with
+   `VG.<T>.emitter` (`TCB/<T>/Print.lean`). An `Artifact` cannot be built
    without the proof, and the emitter's `#assert_standard_axioms` rejects
    `sorry`, `native_decide` and any non-standard axiom anywhere in them. The
    emitter runs compiled code, so it also rejects anything that makes the
    compiler run other code than the definitions the kernel checked, in what
    it runs (`implemented_by`, `extern`, `export`) or anywhere in the project
    (`csimp`, `initialize`), and any `VG.Spec` definition declared outside
-   `Spec/`. Each audit reads the records every module writes when it is
-   built (`TCB/AuditRecords.lean`), not the proofs, which a module does not
-   see in what it imports.
+   `Spec/`. The axiom, override and `VG.Spec` audits read the records every
+   module writes when it is built (`TCB/AuditRecords.lean`), not the proofs,
+   which a module does not see in what it imports.
 5. **Emit** — `Emit.lean` renders the registry into `crates/verified-garbage-asm-<target>/src/<module>.rs`,
    adding to each function's `# Safety` section what its contract requires of
    the memory each buffer is valid for (`Sig.validDoc`) and of where its
@@ -184,6 +191,38 @@ To keep review of the trusted parts focused, new specs, additions to the TCB,
 and new implementations are never combined in one PR: an implementation is
 only proven against a spec and TCB that were reviewed and merged beforehand.
 
+### What enforces what
+
+| Property | Enforced by |
+| --- | --- |
+| Terminates, never faults, accesses only the memory it may | `TCB/` (`Verified`) |
+| Keeps callee-saved registers, the stack pointer and the return address | `TCB/` (`Verified`, `Artifact.spSafe`) |
+| Takes no more stack than its contract and documentation say | `TCB/` (the emitter, `Rust.checkStack`) |
+| Branches and addresses depend only on public data and the contract's `leak` | `TCB/` (`ConstantTime`) |
+| Leaves no secrets in registers, flags or its stack | `TCB/` (`NoResidue`) |
+| Outputs its `Api` declares public reveal nothing else (`Api.publicOut`) | `TCB/` (`Artifact.publicOutOk`) |
+| What it returns and writes to its buffers | **The contract's postcondition only** |
+| Instructions take the same time whatever their operands | [Assumed](../README.md#what-the-constant-time-guarantee-assumes) |
+| The Rust code around it | [Tests](../README.md#what-is-not-verified) |
+
+`TCB/` enforces its rows for every function called with its precondition met.
+For the postcondition's row, review the contract: a writable byte it does not
+mention may end up holding anything, and nothing checks that it mentions them
+all.
+
+### Memory nobody has written
+
+Functions may read stack or `MaybeUninit` memory that nobody has written. The
+proofs hold whatever it contains, so it cannot affect:
+
+* branches, addresses or faults, unless the contract's precondition or `leak`
+  mentions it;
+* any output that the postcondition makes a function of the inputs.
+
+Valgrind may report such reads
+([#6435](https://github.com/pyca/verified-garbage/issues/6435)). That is a bug
+only if an output really depends on the value.
+
 ## Building
 
 ```sh
@@ -194,18 +233,22 @@ lake env lean --run Emit.lean --check
 lake env lean --run EmitOne.lean [--check] Rc2.AArch64   # one registration file
 ```
 
-Each emitter's driver is a module, which `Emit.lean` and `EmitOne.lean` run
-with the setup Lake gives it (`lake setup-file`), as `lake build` would build
-it: it loads what it imports without their private parts (`.olean.private`),
-and its audits read the records every module of this project writes when it
-is built (`TCB/AuditRecords.lean`; the `lean-modules` skill), so they run on
-a build restored without those parts ([Without the private
-parts](#without-the-private-parts)).
+Each emitter's driver is a module, run with a setup file (`lean --setup`), as
+`lake build` would build it: it loads what it imports without their private
+parts (`.olean.private`), and its audits read the records every module of
+this project writes when it is built (`TCB/AuditRecords.lean`; the
+`lean-modules` skill), so they run on a build restored without those parts
+([Without the private parts](#without-the-private-parts)). `EmitOne.lean`
+asks Lake for its driver's setup (`lake setup-file`), which builds what the
+registration file imports. `Emit.lean` writes one setup for its four drivers
+itself, by the project's sources: it reads the build as it is and does
+not check that it is current, so run it after `lake build`, as above and as
+CI does.
 
 On Linux, each of `Emit.lean`'s drivers maps every `.olean` it imports, and
 a process may map at most `vm.max_map_count` regions of memory (65,530 by
 default on many distributions). The largest driver needs well under that
-(about 38,000), but CI raises the limit to 262,144 so that it never depends on
+(about 21,000), but CI raises the limit to 262,144 so that it never depends on
 the margin. If a driver ever passes the limit, Lean fails with
 `failed to read file '….olean'`: raise it with
 `sudo sysctl -w vm.max_map_count=262144`.

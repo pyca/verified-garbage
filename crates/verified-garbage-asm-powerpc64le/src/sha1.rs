@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Sha1.initContract`. The streaming state is the hash value followed by a buffered partial block (`VG.Spec.Sha1.Repr`).
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 84 bytes.
@@ -21,6 +23,8 @@ pub(crate) unsafe extern "C" fn vg_sha1_init(state: *mut [u8; 84]) {
 /// Absorbs data into a SHA-1 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), it then represents that message followed by the `len` bytes at `data`.
 ///
 /// Contract: `VG.Spec.Sha1.updateContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -123,7 +127,7 @@ bne %cr0, 22b
 b 21f
 20:
 21:
-.base64 "cABb64AAm+uIALvrkADb65gA++t4AHvrIAAB6DAAITimAwh8wAAhOCAAgE4=""#,
+.base64 "cABb64AAm+uIALvrkADb65gA++t4AHvrIAAB6DAAITimAwh8wAAhOAAAADgR/yH4IACBOQAADPgIAAz4EAAM+BgADPggAAz4KAAM+DAADPg4AAz4QAAM+EgADPhQAAz4WAAM+GAADPhoAAz4cAAM+HgADPiAAAz4iAAM+JAADPiYAAz4oAAM+KgADPiwAAz4uAAM+MAADPjIAAz48AAhOAAAYDgAAIA4AACgOAAAwDgAAOA4AAAAOQAAIDkAAEA5AABgOQAAgDkgAIBO""#,
         vg_sha1_compress = sym super::sha1::vg_sha1_compress::vg_sha1_compress,
     )
 }
@@ -131,6 +135,8 @@ b 21f
 /// Finishes a SHA-1 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), writes the SHA-1 digest of that message to `*out`.
 ///
 /// Contract: `VG.Spec.Sha1.finalizeContract`. Constant time: only the pointers and `count` may affect timing, not the state.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -176,7 +182,7 @@ b 210f
 bl {vg_sha1_compress}
 .base64 "AADAO////zsAAD8o"
 beq %cr0, 20b
-.base64 "AAAagQAAYDksXRx9BAAagQQAYDksXRx9CAAagQgAYDksXRx9DAAagQwAYDksXRx9EAAagRAAYDksXRx9cABb64AAm+uIALvrkADb65gA++t4AHvrIAAB6DAAITimAwh8wAAhOCAAgE4=""#,
+.base64 "AAAagQAAYDksXRx9BAAagQQAYDksXRx9CAAagQgAYDksXRx9DAAagQwAYDksXRx9EAAagRAAYDksXRx9cABb64AAm+uIALvrkADb65gA++t4AHvrIAAB6DAAITimAwh8wAAhOAAAADgR/yH4IACBOQAADPgIAAz4EAAM+BgADPggAAz4KAAM+DAADPg4AAz4QAAM+EgADPhQAAz4WAAM+GAADPhoAAz4cAAM+HgADPiAAAz4iAAM+JAADPiYAAz4oAAM+KgADPiwAAz4uAAM+MAADPjIAAz48AAhOAAAYDgAAIA4AACgOAAAwDgAAOA4AAAAOQAAIDkAAEA5AABgOQAAgDkgAIBO""#,
         vg_sha1_compress = sym super::sha1::vg_sha1_compress::vg_sha1_compress,
     )
 }
@@ -184,6 +190,8 @@ beq %cr0, 20b
 /// Computes the SHA-1 digest of the `len` bytes at `data` (20 bytes, `VG.Spec.Sha1.hash`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-1 computation with that message.
 ///
 /// Contract: `VG.Spec.Sha1.digestContract`. Constant time: only the pointers and `len` may affect timing, not the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -200,7 +208,7 @@ bl {vg_sha1_init}
 bl {vg_sha1_update_scratch}
 .base64 "AAB0OAAAmDgkAbU4AADVOA=="
 bl {vg_sha1_finalize_scratch}
-.base64 "JAEVgQAAFpEoARWBBAAWkSwBFYEIABaRMAEVgQwAFpE0ARWBEAAWkTgBlepIAdXqUAH16lgBFetgATXrQAG16iAAAegwACE4pgMIfCAAgTkAAGA5AABs+QgAbPkQAGz5GABs+SAAbPkoAGz5MABs+TgAbPlAAGz5SABs+VAAbPlYAGz5YABs+WgAbPlwAGz5eABs+YAAbPmIAGz5kABs+ZgAbPmgAGz5qABs+bAAbPm4AGz5wABs+cgAbPnQAGz52ABs+eAAbPnoAGz58ABs+fgAbPkAAWz5CAFs+RABbPkYAWz5IAFs+SgBbPkwAWz5OAFs+UABbPlIAWz5UAFs+VgBbPlgAWz5kAEhOCAAgE4=""#,
+.base64 "JAEVgQAAFpEoARWBBAAWkSwBFYEIABaRMAEVgQwAFpE0ARWBEAAWkTgBlepIAdXqUAH16lgBFetgATXrQAG16iAAAegwACE4pgMIfCAAgTkAAAA4AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhAAAz4SAAM+FAADPhYAAz4YAAM+GgADPhwAAz4eAAM+IAADPiIAAz4kAAM+JgADPigAAz4qAAM+LAADPi4AAz4wAAM+MgADPjQAAz42AAM+OAADPjoAAz48AAM+PgADPgAAQz4CAEM+BABDPgYAQz4IAEM+CgBDPgwAQz4OAEM+EABDPhIAQz4UAEM+FgBDPhgAQz4kAEhOAAAADgR/iH4IACBOQAADPgIAAz4EAAM+BgADPggAAz4KAAM+DAADPg4AAz4QAAM+EgADPhQAAz4WAAM+GAADPhoAAz4cAAM+HgADPiAAAz4iAAM+JAADPiYAAz4oAAM+KgADPiwAAz4uAAM+MAADPjIAAz40AAM+NgADPjgAAz46AAM+PAADPj4AAz4AAEM+AgBDPgQAQz4GAEM+CABDPgoAQz4MAEM+DgBDPhAAQz4SAEM+FABDPhYAQz4YAEM+GgBDPhwAQz4eAEM+IABDPiIAQz4kAEM+JgBDPigAQz4qAEM+LABDPi4AQz4wAEM+MgBDPjwASE4AABgOAAAgDgAAKA4AADAOAAA4DgAAAA5AAAgOQAAQDkAAGA5AACAOSAAgE4=""#,
         vg_sha1_init = sym super::sha1::vg_sha1_init,
         vg_sha1_update_scratch = sym super::sha1::vg_sha1_update_scratch::vg_sha1_update_scratch,
         vg_sha1_finalize_scratch = sym super::sha1::vg_sha1_finalize_scratch::vg_sha1_finalize_scratch,

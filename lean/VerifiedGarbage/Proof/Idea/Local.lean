@@ -13,8 +13,8 @@ import VerifiedGarbage.Proof.Framework.GetElem
 What a frame around the code needs of the postconditions (`Verified.stackScratch`,
 `Verified.stackScratchWiped`): that `invertKeyPost` and `ecbPost` read the
 memory on entry only within the functions' buffers (`invertKeyPost_local`,
-`ecbPost_local`), and `ecbPost` the memory on return only within the data
-(`ecbPostOut_local`).
+`ecbPost_local`), and on return only within the output
+(`invertKeyPostOut_local`, `ecbPostOut_local`).
 -/
 
 @[expose] public section
@@ -63,6 +63,26 @@ theorem invertKeyPost_local : ∀ vs m₁ m₂ m' r, vs.length = (invertKeySig.w
   have hs := agree_of hb.1
   change Curry.apply [ArgWord.addr, ArgWord.addr] (invertKeyPost pb) _ m₁ m' r at h
   change Curry.apply [ArgWord.addr, ArgWord.addr] (invertKeyPost pb) _ m₂ m' r
+  dsimp only [Curry.apply, invertKeyPost, ArgWord.ofRaw] at h ⊢
+  rw [scheduleAt_congr hs]
+  exact h
+
+/-- `invertKeyPost` reads the memory on return only within the inverse. -/
+theorem invertKeyPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (invertKeySig.words pb).length →
+    (∀ b ∈ Sig.bufs invertKeySig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (invertKeySig.words pb) (invertKeyPost pb) vs m m₁ r →
+      Curry.apply (invertKeySig.words pb) (invertKeyPost pb) vs m m₂ r := by
+  intro vs m m₁ m₂ r hlen hb h
+  obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 1) hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero hlen
+  simp only [invertKeySig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+    forall_eq, Elem.size, Nat.mul_one] at hb
+  have hs := agree_of hb.2
+  change Curry.apply [ArgWord.addr, ArgWord.addr] (invertKeyPost pb) _ m m₁ r at h
+  change Curry.apply [ArgWord.addr, ArgWord.addr] (invertKeyPost pb) _ m m₂ r
   dsimp only [Curry.apply, invertKeyPost, ArgWord.ofRaw] at h ⊢
   rw [scheduleAt_congr hs]
   exact h

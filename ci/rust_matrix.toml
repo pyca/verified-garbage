@@ -46,7 +46,7 @@ container = { image = "ghcr.io/pyca/verified-garbage-runner:armv7-cross" }
 # names for the sparse checkout (`arch` is the `target_arch`).
 [[rust]]
 name = "Linux, PPC64LE"
-os = "ubuntu-24.04-ppc64le"
+os = "ubuntu-24.04-ppc64le-p10"
 arch = "powerpc64"
 asm = "powerpc64le"
 rust = "stable"
@@ -227,8 +227,10 @@ adx,avx,avx2,bmi1,bmi2,sha,ssse3 | rsa_oaep_pairs cpu
 # x86 feature dispatch, natively in a 32-bit userspace: the baseline
 # implementations of every group whose implementation the runner's
 # features choose; and AES-GCM's and AES-GCM-SIV's instances for AES's or
-# GHASH's extension alone, and SM4-GCM's with PCLMULQDQ's GHASH. The
-# container's options are `rust`'s x86 entry's.
+# GHASH's extension alone (AES then by vector permutations, which AES's
+# modes also run with SSSE3 alone), and SM4-GCM's with PCLMULQDQ's GHASH and
+# the bitsliced cipher, and with the cipher through the AES S-box and the
+# baseline GHASH. The container's options are `rust`'s x86 entry's.
 # The `rust` job's x86 entry runs every test, in this container, with the
 # runner's features (ChaCha20's and ChaCha20-Poly1305's SSSE3 instances,
 # RSAES-PKCS1-v1_5 decryption, RSASSA-PSS and RSAES-OAEP with SHA-1's and
@@ -236,7 +238,7 @@ adx,avx,avx2,bmi1,bmi2,sha,ssse3 | rsa_oaep_pairs cpu
 # detected with CPUID, which needs no `std`, so no line here is
 # unrestricted (and the lines name only features every runner has); and
 # what has one implementation on x86 (RSA's arithmetic,
-# RSA key generation, FFDH, Blowfish, CAST5, the curves, …) is the same
+# RSA key generation, FFDH, the curves, …) is the same
 # code there, so the lines run only the small RSA groups that reach each
 # hash's implementation.
 [[cpu]]
@@ -244,9 +246,10 @@ chip = "native"
 arch = "x86"
 container = { image = "ghcr.io/pyca/verified-garbage-runner:i686", options = "--platform linux/386 --security-opt seccomp=unconfined" }
 runs = """
-none | sha1 sha224 sha256 sha384 sha512 aes_ccm aes_gcm aes_gcm_siv aes_ocb aes_ecb aes_cbc aes_ofb aes_cfb aes_cfb8 aes_ctr aes_xts aes_siv cmac chacha20 mlkem scrypt x25519 ed25519 ecdsa p256_sha rsa_pkcs1_hashes rsa_pss_hashes rsa_oaep_pairs dsa_parameters sm4_gcm cpu
-aes,ssse3 | aes_gcm aes_gcm_siv cpu
+none | sha1 sha224 sha256 sha384 sha512 aes_ccm aes_gcm aes_gcm_siv aes_ocb aes_ecb aes_cbc aes_ofb aes_cfb aes_cfb8 aes_ctr aes_xts aes_siv blowfish_cbc blowfish_cfb blowfish_ecb blowfish_ofb camellia_cbc camellia_cfb camellia_ctr camellia_ecb camellia_ofb cast5_cbc cast5_cfb cast5_ecb cast5_ofb cmac chacha20 triple_des_cbc triple_des_cfb triple_des_cfb8 triple_des_ofb mlkem rc2_cbc rc4 scrypt x25519 ed25519 ecdsa p256_sha rsa_pkcs1_hashes rsa_pss_hashes rsa_oaep_pairs dsa_parameters seed_ecb seed_cbc seed_cfb seed_ofb sm4_ecb sm4_ctr sm4_cbc sm4_cfb sm4_ofb sm4_gcm cpu
+aes,ssse3 | aes_gcm aes_gcm_siv sm4_gcm cpu
 pclmulqdq,ssse3 | aes_gcm aes_gcm_siv sm4_gcm cpu
+ssse3 | aes_ccm aes_gcm aes_gcm_siv aes_ocb aes_ecb aes_cbc aes_ofb aes_cfb aes_cfb8 aes_ctr aes_xts aes_siv cmac cpu
 """
 
 # AVX-512F and AVX512VL (with Argon2's vg_argon2_compress_avx512
@@ -396,18 +399,22 @@ avx,avx2,avx512f,bmi1,bmi2,adx,avx512ifma,avx512vl,avx512fp16 | rsa_pkcs1_hashes
 # `_aes_sha3` and `_aes` instances (AES-GCM, AES-GCM-SIV and AES-CBC
 # decryption with FEAT_SHA3 too), SHA-1's and SHA-256's `_sha2` and SHA-512's
 # `_sha512` (and every caller of them: HMAC, PBKDF2, scrypt, DSA, ECDSA,
-# Ed25519, RSA), ML-DSA's and ML-KEM's `_sha3`, and DIT; and the baseline
+# Ed25519, RSA), ML-DSA's and ML-KEM's `_sha3`, SM3's `_sm3` and SM4's `_sm4` (SM4's key schedule, ECB and every mode, and SM4-GCM's
+# `_ctr32_sm4_ghash_aes`), and DIT; and the baseline
 # SHA-3, Ed448 and Poly1305, whose FEAT_SHA3 and NEON variants are chosen
 # off Apple's cores only when `VG_CPU_FEATURES` names them. So no line here
 # is unrestricted, and each runs only what its features choose differently:
-# `neon` ChaCha20's and Poly1305's NEON instances; `aes` AES-GCM's,
-# AES-GCM-SIV's and AES-CBC's `_aes` ones; `sha3` the SHA-3 prototype (and
+# `neon` ChaCha20's and Poly1305's NEON instances, and the `_neon` ones of
+# every mode of AES and of CMAC, and SM4-GCM's (its GHASH with the `pmull`
+# of bytes, which AES-GCM's `_neon` instances call too); `aes` AES-GCM's,
+# AES-GCM-SIV's and AES-CBC's `_aes` ones, and SM4-GCM's bitsliced counter
+# mode with PMULL's GHASH; `sm4` SM4-GCM's `_ctr32_sm4` with the scalar GHASH; `sha3` the SHA-3 prototype (and
 # the ML-KEM and Ed448 instances calling it, and ML-DSA's hash of a public
 # key, whose verification tests import one), and RSAES-OAEP with SHA-512's
 # `_sha512` and SHA-1's scalar MGF1; `sha2` RSAES-OAEP with SHA-1's and
 # SHA-256's `_sha2` and SHA-512's scalar code; and `none` the scalar
 # instances of everything the runner's features accelerate: AES and every
-# mode of it, CMAC and SM4-GCM's GHASH, ChaCha20, SHA-1, SHA-224, SHA-256,
+# mode of it, CMAC, SM3, SM4 (ECB, CTR, CBC, CFB, OFB and SM4-GCM), ChaCha20, SHA-1, SHA-224, SHA-256,
 # SHA-384 and SHA-512 (with HMAC, PBKDF2, scrypt and the hashes' tables), DSA,
 # ECDSA's hashes, Ed25519, ML-KEM and ML-DSA, RSAES-PKCS1-v1_5 decryption and
 # RSAES-OAEP with the scalar hashes, and code without DIT. AArch64's RSA
@@ -419,23 +426,25 @@ chip = "native"
 arch = "aarch64"
 os = "ubuntu-26.04-arm"
 runs = """
-neon | chacha20 poly1305
-aes | aes_gcm aes_gcm_siv aes_cbc
+neon | chacha20 poly1305 aes_gcm aes_siv aes_ccm aes_ocb aes_ecb aes_cbc aes_ofb aes_cfb aes_cfb8 aes_ctr aes_xts cmac sm4_gcm
+aes | aes_gcm aes_gcm_siv aes_cbc sm4_gcm
 sha3 | sha3 shake mlkem ed448 mldsa_public_key rsa_oaep_pairs
 sha2 | rsa_oaep_pairs
-none | aes_gcm aes_siv aes_ccm aes_ocb aes_ecb aes_cbc aes_ofb aes_cfb aes_cfb8 aes_ctr aes_xts cmac sm4_gcm chacha20 sha1 sha224 sha256 sha384 sha512 scrypt dsa ecdsa p224_sha p256_sha p384_sha ed25519 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs mlkem mldsa rsa_pkcs1_hashes rsa_oaep_pairs dit cpu
+sm4 | sm4_gcm
+none | aes_gcm aes_siv aes_ccm aes_ocb aes_ecb aes_cbc aes_ofb aes_cfb aes_cfb8 aes_ctr aes_xts cmac sm3 sm4_ecb sm4_ctr sm4_cbc sm4_cfb sm4_ofb sm4_gcm chacha20 sha1 sha224 sha256 sha384 sha512 scrypt dsa ecdsa p224_sha p256_sha p384_sha ed25519 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs mlkem mldsa rsa_pkcs1_hashes rsa_oaep_pairs dit cpu
 """
 
 # ARMv7, in the `rust` job's container (cross-compiled, run as that job
-# runs them): `none` takes RSA, FFDH, DSA parameter generation's, X25519's,
-# P-224's, P-256's, P-384's, secp256k1's and the brainpool curves' baseline
-# code, which a CPU with `umaal` (every runner's) never chooses.
+# runs them): `none` takes RSA, FFDH, DSA's, X25519's, X448's, Ed25519's,
+# Ed448's, P-192's, P-224's, P-256's, P-384's, P-521's, secp256k1's and the
+# brainpool curves', Poly1305's and ChaCha20-Poly1305's baseline code, which
+# a CPU with `umaal` (every runner's) never chooses.
 [[cpu]]
 chip = "native"
 arch = "arm"
 os = "ubuntu-26.04-arm"
 container = { image = "ghcr.io/pyca/verified-garbage-runner:armv7-cross" }
 runs = """
-none | rsa ffdh dsa_parameters x25519 p224 p256 p384 secp256k1 brainpoolp256r1 brainpoolp384r1 brainpoolp512r1 cpu
+none | rsa ffdh dsa x25519 x448 ed25519 ed448 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs p192 p224 p256 p384 p521 secp256k1 brainpoolp256r1 brainpoolp320r1 brainpoolp384r1 brainpoolp512r1 poly1305 cpu
 """
 

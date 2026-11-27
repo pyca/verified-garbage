@@ -40,6 +40,8 @@ def stackUse : Prog isa → Nat
   | .frame i b _ => stackUse b + frameBytes i
   | .icall _ _ b nx => max (stackUse b + 4) (stackUse nx)
 
+kernel_fn stackUse
+
 /-- The `n` bytes below `sp`. -/
 abbrev below (sp : BitVec 32) (n : Nat) : Region := ⟨(sp - BitVec.ofNat 32 n).setWidth 64, n⟩
 
@@ -108,12 +110,43 @@ theorem push_pushed {rs : List Reg} {s : State} (hne : rs ≠ []) (hrs : .esp �
   simp only [isa, push, ne_eq, hne, not_false_eq_true, hrs, hn, and_self, ite_true]
   rfl
 
-theorem pop_mem {j : Instr} {s₁ s₂ s' : State} (h : isa.pop j s₁ s₂ = some s') : s'.mem = s₂.mem := by
+/-- The pop of a frame changes memory only within the bytes it releases at
+`esp`: the frame at the head of the writable regions, or the 12 bytes of an
+MCDT frame, whose region has 9. -/
+theorem pop_mem {j : Instr} {s₁ s₂ s' : State} (h : isa.pop j s₁ s₂ = some s') :
+    ∃ n, Frame [⟨(s₁.gpr .esp).setWidth 64, n⟩] s₂.mem s'.mem ∧
+      (s₁.wr.head? = some ⟨(s₁.gpr .esp).setWidth 64, n⟩ ∨
+        n = 12 ∧ s₁.wr.head? = some ⟨(s₁.gpr .esp).setWidth 64, 9⟩) := by
   cases j <;> simp only [isa, pop, reduceCtorEq] at h
-  case pop => split at h <;> cases h; exact (popReg_rest _ _ _).1
-  case free => split at h <;> cases h; rfl
-  case emms => split at h <;> cases h; rfl
-  case mcdtLeave => split at h <;> cases h; rfl
+  case pop => split at h <;> cases h; rename_i hc
+              exact ⟨_, by rw [← hc.2.2.1]; exact lose_frame _ _ _ _, .inl hc.2.2.2.2⟩
+  case free => split at h <;> cases h; rename_i hc
+               exact ⟨_, by rw [← hc.2.2.2.1]; exact lose_frame _ _ _ _, .inl hc.2.2.2.2.2⟩
+  case emms => split at h <;> cases h; rename_i hc; exact ⟨0, Frame.refl _ _, .inl hc.2.2.2⟩
+  case mcdtLeave => split at h <;> cases h; rename_i hc
+                    exact ⟨12, by rw [← hc.2.1]; exact lose_frame _ _ _ _, .inr ⟨rfl, hc.2.2.2.1⟩⟩
+
+/-- A push whose frame's region has 9 bytes is an MCDT frame's, of 12. -/
+theorem push_head9 {i : Instr} {s s₁ : State} (h : isa.push i s = some s₁)
+    (hh : s₁.wr.head? = some ⟨(s₁.gpr .esp).setWidth 64, 9⟩) : frameBytes i = 12 := by
+  cases i <;> simp only [isa, push, reduceCtorEq] at h
+  case push rs =>
+    obtain ⟨-, -, -, rfl⟩ := push_some (rs := rs) (by simpa only [isa, push] using h)
+    simp only [pushed, List.head?_cons, Option.some.injEq, Region.mk.injEq] at hh
+    omega_using [hh.2]
+  case alloc bytes =>
+    split at h <;> cases h; rename_i hc
+    simp only [List.head?_cons, Option.some.injEq, Region.mk.injEq] at hh
+    omega_using [hh.2, hc.2.2.1]
+  case mmxEnter =>
+    split at h <;> cases h
+    simp only [List.head?_cons, Option.some.injEq, Region.mk.injEq] at hh
+    omega_using [hh.2]
+  case mcdtEnter => rfl
+  case symPush =>
+    split at h <;> cases h
+    simp only [List.head?_cons, Option.some.injEq, Region.mk.injEq] at hh
+    omega_using [hh.2]
 
 @[simp] theorem pushed_rd (rs : List Reg) (s : State) : (pushed rs s).rd = s.rd :=
   (pushRegs_eq s rs).1
@@ -293,11 +326,21 @@ theorem Exec.frameSp {c : Prog isa} {s s' : State} {t : List Leak} (h : Exec isa
   | @frame i _ b s₀ s₁ s₂ _ _ hp _ hq ih =>
     obtain ⟨e₁, ⟨f, w₁, hf⟩, hn, f₀⟩ := push_frame hp
     simp only [stackUse] at hd ⊢
-    rw [pop_mem hq]
+    obtain ⟨nl, f₂, hl⟩ := pop_mem hq
+    have hsub : Region.Sub ⟨(s₁.gpr .esp).setWidth 64, nl⟩ (below (s₀.gpr .esp) (frameBytes i)) := by
+      rcases hl with hl | ⟨rfl, hl⟩
+      · rw [w₁, List.head?_cons, Option.some.injEq] at hl; rw [← hl]; exact hf
+      · have e12 := push_head9 hp hl
+        rw [e₁, e12]; exact fun _ h => h
     have hc' : NoSp b := fun i hi => hc i (by simp [instrs, hi])
     have f₁ := ih hc' (by rw [e₁, sub_toNat hn]; omega_using [hd])
     rw [w₁, e₁] at f₁
-    refine Frame.trans (fun x hx => f₀ x fun r hr => ?_) (Frame.sub f₁ fun r hr => ?_)
+    refine Frame.trans (Frame.trans (fun x hx => f₀ x fun r hr => ?_) (Frame.sub f₁ fun r hr => ?_))
+      (Frame.sub f₂ fun r hr => ?_)
+    rotate_left 2
+    · simp only [List.mem_singleton] at hr; subst hr
+      exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _),
+        fun a h => below_sub (by omega_using []) hd a (hsub a h)⟩
     · simp only [List.mem_singleton] at hr; subst hr
       exact fun hc => hx _ (List.mem_append_right _ (List.mem_singleton_self _))
         (below_sub (by omega_using []) hd _ hc)
@@ -374,19 +417,40 @@ theorem WP.call {n : String} {c : Prog isa} {k : Contract isa}
     · rw [hkeep r hrs, Exec.gpr h he', State.callEntry_gpr _ hrs]
 
 /-- A frame: its body, which never writes `esp`, runs from `pushed rs s`,
-and the pop of the `rs.length` words leads to `popped r rs.length s₂`. -/
+and the pop of the `rs.length` words leads to `popped r rs.length s₂`, of
+which the postcondition may rely on nothing the frame's bytes hold, nor on
+the unknowns: it holds whatever memory `m` that differs from the body's only
+in the frame, and whatever unknowns `u`, the state then has. (A frame's
+bytes are below `esp` once it is released, where a signal handler may
+overwrite them.) -/
 theorem WP.frame {rs : List Reg} {r : Reg} {body : Prog isa} {s : State} {Q : State → Prop}
     (hne : rs ≠ []) (hrs : .esp ∉ rs) (hr : r ≠ .esp) (hn : 4 * rs.length ≤ (s.gpr .esp).toNat)
-    (hsp : NoSp body) (hb : WP isa body (pushed rs s) fun s₂ => Q (popped r rs.length s₂)) :
+    (hsp : NoSp body) (hb : WP isa body (pushed rs s) fun s₂ => ∀ m u,
+      Frame [below (s.gpr .esp) (4 * rs.length)] s₂.mem m →
+        Q { popped r rs.length s₂ with mem := m, unknowns := u }) :
     WP isa (.frame (.push rs) body (.pop r rs.length)) s Q := by
   obtain ⟨t, s₂, he, hq⟩ := hb
   obtain ⟨-, hw⟩ := Exec.rdwr he
   have hp := Exec.gpr hsp he
-  have hpop : isa.pop (.pop r rs.length) (pushed rs s) s₂ = some (popped r rs.length s₂) := by
+  have hpop : isa.pop (.pop r rs.length) (pushed rs s) s₂ = some { popped r rs.length s₂ with
+      mem := lose s₂.mem ((s₂.gpr .esp).setWidth 64) (4 * rs.length) s₂.unknowns
+      unknowns := fun n => s₂.unknowns (n + 2 * rs.length) } := by
     simp only [isa, pop]
     refine ite_eq_left ⟨by simpa using hne, hr, hp, hw, ?_⟩
     rw [pushed_wr, pushed_esp]; rfl
-  exact ⟨_, _, Exec.frame (push_pushed hne hrs hn) he hpop, hq⟩
+  exact ⟨_, _, Exec.frame (push_pushed hne hrs hn) he hpop,
+    hq _ _ (by rw [hp, pushed_esp]; exact lose_frame _ _ _ _)⟩
+
+/-- `WP.frame` for a postcondition that holds whatever the frame's bytes
+below `esp` and the unknowns are once it holds for the popped state. -/
+theorem WP.frameLocal {rs : List Reg} {r : Reg} {body : Prog isa} {s : State} {Q : State → Prop}
+    (hne : rs ≠ []) (hrs : .esp ∉ rs) (hr : r ≠ .esp) (hn : 4 * rs.length ≤ (s.gpr .esp).toNat)
+    (hsp : NoSp body)
+    (hQ : ∀ t m u, Q t → Frame [below (s.gpr .esp) (4 * rs.length)] t.mem m → Q { t with mem := m, unknowns := u })
+    (hb : WP isa body (pushed rs s) fun s₂ => Q (popped r rs.length s₂)) :
+    WP isa (.frame (.push rs) body (.pop r rs.length)) s Q :=
+  WP.frame hne hrs hr hn hsp (WP.mono hb fun s₂ q m u fl =>
+    hQ _ m u q (by show Frame _ (popReg s₂ r rs.length).mem m; rw [(popReg_rest s₂ r rs.length).1]; exact fl))
 
 /-- `WP.narrow` for code that never writes `esp` but may call functions and
 push frames: from `s`, it terminates in a state that differs from `s` in

@@ -12,6 +12,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Arm.Frame
 
 /-!
 # PBKDF2-HMAC on 32-bit ARM, the whole derivation: the calls of HMAC's functions and of `iterate`
@@ -20,7 +21,7 @@ As on x86 (`Proof/Pbkdf2/Whole/X86/Calls.lean`): `pbkdf2` calls HMAC's `init`
 and `finalize` and PBKDF2's `iterate`, each verified against its shared
 contract with 16 bytes of stack; what a caller uses of such a proof is
 `Sound`. Each call is in a frame of two words, its stack arguments
-(`frame2_ok`, with `WP.callF`, as the callees have frames of their own):
+(`frame2_ok`, with `WP.frame` and `WP.callF`, as the callees have frames of their own):
 `hi_frame`, `hf_frame` and `it_frame` run one, from the state before its push,
 given the registers (`HiArgs`, `HfArgs`, `ItArgs`), which give the callee's
 precondition (evaluated with `sig_pre`); `hi_rel`, `hf_rel` and `it_rel`
@@ -147,7 +148,9 @@ end Frame2
 
 /-- A frame of two words, popped into `t`, around a call of verified code
 that uses at most 16 bytes of stack: the callee runs from the state after
-the push, and the frame leaves `After`. -/
+the push, and the frame leaves `After`, whatever memory `m` that differs from
+the callee's only in `stk s` (where the released frame is), and whatever
+unknowns `u`, the pop leaves. -/
 theorem frame2_ok {ra rb t : Reg} (hrs : regList [ra, rb] = true) (ht : t ∉ preserved)
     {n : String} {c : Prog isa} {k : Contract isa}
     (hv : ∀ s, k.pre s → ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ k.post s s')
@@ -155,22 +158,28 @@ theorem frame2_ok {ra rb t : Reg} (hrs : regList [ra, rb] = true) (ht : t ∉ pr
     (hpre : k.pre ((pushed [ra, rb] s).callEntry.withRegions rd wr))
     (hc : Covers (rd ++ wr) ((pushed [ra, rb] s).rd ++ (pushed [ra, rb] s).wr))
     (hw : Covers wr (pushed [ra, rb] s).wr) {Q : State → Prop}
-    (hQ : ∀ s₂ : State, After s wr (popped t 8 s₂) →
-      k.post ((pushed [ra, rb] s).callEntry.withRegions rd wr) (s₂.withRegions rd wr) → Q (popped t 8 s₂)) :
+    (hQ : ∀ (s₂ : State) (m : Mem) (u : Nat → BitVec 32), Frame [stk s] s₂.mem m →
+      After s wr { popped t 8 s₂ with mem := m, unknowns := u } →
+      k.post ((pushed [ra, rb] s).callEntry.withRegions rd wr) (s₂.withRegions rd wr) →
+        Q { popped t 8 s₂ with mem := m, unknowns := u }) :
     WP isa (.frame (.push [ra, rb]) (.call n c) (.pop t 8)) s Q := by
   have h8 : (s.sp - BitVec.ofNat 32 8).toNat = s.sp.toNat - 8 := sub_toNat' (by omega_using [h24])
   refine WP.frame (rs := [ra, rb]) (r := t) hrs (by simp only [List.length_cons, List.length_nil]; omega_using [h24])
     (by simp only [List.length_cons, List.length_nil]; omega_using []) ?_
-  refine WP.callF hv hpre hc hw (by rw [p2_sp, h8]; omega_using [hst, h24]) fun s₂ hrd hwr hsp hf hcs hpost => ?_
-  refine hQ s₂ ⟨?_, ?_, ?_, fun r hr hl => ?_, ?_⟩ hpost
-  · rw [popped_rd, hrd, pushed_rd]
-  · rw [popped_wr, hwr, pushed_wr]; rfl
-  · rw [popped_sp, hsp, p2_sp]; exact BitVec.sub_add_cancel _ _
+  refine WP.callF hv hpre hc hw (by rw [p2_sp, h8]; omega_using [hst, h24])
+    fun s₂ hrd hwr hsp hf hcs hpost mL uL hfl => ?_
+  have hflS : Frame [stk s] s₂.mem mL := hfl.sub fun r hr =>
+    ⟨stk s, List.mem_singleton_self _, by rw [List.mem_singleton.mp hr]; exact p2_sub h24⟩
+  refine hQ s₂ mL uL hflS ⟨?_, ?_, ?_, fun r hr hl => ?_, ?_⟩ hpost
+  · dsimp only; rw [popped_rd, hrd, pushed_rd]
+  · dsimp only; rw [popped_wr, hwr, pushed_wr]; rfl
+  · dsimp only; rw [popped_sp, hsp, p2_sp]; exact BitVec.sub_add_cancel _ _
   · have : r ≠ t := fun e => ht (e ▸ hr)
-    rw [popped_gpr this, hcs r hr hl, pushed_gpr]
-  · rw [popped_mem]
+    dsimp only; rw [popped_gpr this, hcs r hr hl, pushed_gpr]
+  · dsimp only
     have f₀ := pushed_frameA (rs := [ra, rb]) (s := s) (by simp only [List.length_cons, List.length_nil]; omega_using [h24])
-    refine Frame.trans (Frame.sub f₀ fun r hr => ?_) (Frame.sub hf fun r hr => ?_)
+    refine Frame.trans (Frame.trans (Frame.sub f₀ fun r hr => ?_) (Frame.sub hf fun r hr => ?_))
+      (Frame.sub hflS fun r hr => ⟨r, List.mem_append_right _ hr, fun _ h => h⟩)
     · simp only [List.mem_singleton] at hr; subst hr
       exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _), p2_sub h24⟩
     · rcases List.mem_append.mp hr with hr | hr
@@ -220,6 +229,20 @@ theorem p2_repr {S : StreamingHash} (hR : ReprOK S) (hS : S.stateBytes ≤ 2 ^ 6
     (h24 : 24 ≤ s.sp.toNat) {p : Addr} (hd : (stk s).Disjoint ⟨p, S.stateBytes⟩) {msg : List Byte}
     (h : S.Repr s.mem p msg) : S.Repr (pushed [ra, rb] s).mem p msg :=
   hR _ _ _ _ _ (fun i hi => (p2_frame h24).bytes (R := ⟨p, S.stateBytes⟩)
+    (by simp only [List.mem_singleton]; rintro q rfl; exact hd.symm) hS hi) h
+
+/-- Bytes apart from `stk s` are as they were, whatever `stk s` now holds. -/
+theorem stk_bytes {s : State} {m m' : Mem} (hf : Frame [stk s] m m') {p : Addr} {k : Nat}
+    (hd : (stk s).Disjoint ⟨p, k⟩) (hk : k ≤ 2 ^ 64) : bytesAt m' p k = bytesAt m p k := by
+  simp only [bytesAt]
+  exact List.map_congr_left fun i hi => hf.bytes (R := ⟨p, k⟩)
+    (by simp only [List.mem_singleton]; rintro q rfl; exact hd.symm) hk (List.mem_range.mp hi)
+
+/-- A streaming state apart from `stk s` is as it was, whatever `stk s` now holds. -/
+theorem stk_repr {S : StreamingHash} (hR : ReprOK S) (hS : S.stateBytes ≤ 2 ^ 64) {s : State} {m m' : Mem}
+    (hf : Frame [stk s] m m') {p : Addr} (hd : (stk s).Disjoint ⟨p, S.stateBytes⟩) {msg : List Byte}
+    (h : S.Repr m p msg) : S.Repr m' p msg :=
+  hR _ _ _ _ _ (fun i hi => hf.bytes (R := ⟨p, S.stateBytes⟩)
     (by simp only [List.mem_singleton]; rintro q rfl; exact hd.symm) hS hi) h
 
 /-! ## HMAC's `init`, in a frame of `scratch` -/
@@ -310,14 +333,14 @@ theorem covW : Covers (HiArgs.wr S Wi inn out sc) (pushed fr1 s).wr := by
 
 end HiArgs
 
-theorem hi_frame {S : StreamingHash} {Wi : Nat} {n : String} {c : Prog isa}
-    (hv : Sound c (Proof.Hmac.initScratchContract S Wi Arm.abi 16)) (hst : armStack c ≤ 16)
+theorem hi_frame {S : StreamingHash} {Wi : Nat} {n : String} {c : Prog isa} (hR : ReprOK S)
+    (hSn : S.stateBytes ≤ 2 ^ 64) (hv : Sound c (Proof.Hmac.initScratchContract S Wi Arm.abi 16)) (hst : armStack c ≤ 16)
     {s : State} {inn out k sc : BitVec 32} {kl : Nat} (h : HiArgs S Wi s inn out k sc kl) {Q : State → Prop}
     (hQ : ∀ s', After s (HiArgs.wr S Wi inn out sc) s' →
       S.Repr s'.mem (State.addr inn) (xorPad (blockKey S.H (bytesAt s.mem (State.addr k) kl)) ipad) →
       S.Repr s'.mem (State.addr out) (xorPad (blockKey S.H (bytesAt s.mem (State.addr k) kl)) opad) → Q s') :
     WP isa (.frame (.push fr1) (.call n c) (.pop .r12 8)) s Q := by
-  refine frame2_ok rfl (by decide) hv.ok hst h.sp h.pre h.cov h.covW fun s₂ a post => ?_
+  refine frame2_ok rfl (by decide) hv.ok hst h.sp h.pre h.cov h.covW fun s₂ mL uL hfl a post => ?_
   sig_post [Proof.Hmac.initScratchContract, Proof.Hmac.initScratchSig, Spec.Hmac.initPre, Spec.Hmac.initPost, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val] at post
   simp only [
     h.r0, h.r1, h.r2, h.r3, BitVec.toNat_ofNat, Nat.mod_eq_of_lt h.kl32] at post
@@ -325,7 +348,7 @@ theorem hi_frame {S : StreamingHash} {Wi : Nat} {n : String} {c : Prog isa}
       bytesAt s.mem (State.addr k) kl :=
     p2_bytes (ra := .r12) (rb := .lr) h.sp h.b_k (by have := h.kl32; omega_using [this])
   rw [ek] at post
-  exact hQ _ a (by rw [popped_mem]; exact post.1) (by rw [popped_mem]; exact post.2)
+  exact hQ _ a (stk_repr hR hSn hfl h.b_i post.1) (stk_repr hR hSn hfl h.b_o post.2)
 
 theorem hi_rel {S : StreamingHash} {Wi : Nat} {n : String} {c : Prog isa}
     (hv : Sound c (Proof.Hmac.initScratchContract S Wi Arm.abi 16)) {P : State → State → Prop}
@@ -435,12 +458,13 @@ theorem hf_frame {S : StreamingHash} {Wf : Nat} {n : String} {c : Prog isa} (hR 
         S.Repr s.mem (State.addr ou) (xorPad k0 opad) →
         bytesAt s'.mem (State.addr o) S.digestBytes = hmacBlockKey S.H k0 text) → Q s') :
     WP isa (.frame (.push fr2) (.call n c) (.pop .r12 8)) s Q := by
-  refine frame2_ok rfl (by decide) hv.ok hst h.sp h.pre h.cov h.covW fun s₂ a post => ?_
+  refine frame2_ok rfl (by decide) hv.ok hst h.sp h.pre h.cov h.covW fun s₂ mL uL hfl a post => ?_
   sig_post [Proof.Hmac.finalizeScratchContract, Proof.Hmac.finalizeScratchSig, Spec.Hmac.finalizePost, Arm.abi, Arm.argRegs, Arm.reduceClassify,
     Arm.Loc.val] at post
   simp only [h.r0, h.r1, p2_arg0 (s := s) (by have := h.sp; omega_using [this])] at post
   refine hQ _ a fun k0 text hk hl hi hc ho => ?_
-  rw [popped_mem, ← h.r10]
+  dsimp only
+  rw [stk_bytes hfl h.b_o (by omega_using [h.no]), ← h.r10]
   exact post k0 text hk hl (p2_repr (ra := .r10) (rb := .r12) hR hSn h.sp h.b_i hi) hc
     (p2_repr (ra := .r10) (rb := .r12) hR hSn h.sp h.b_u ho)
 
@@ -557,12 +581,13 @@ theorem it_frame {S : StreamingHash} {Wt : Nat} {nm : String} {c : Prog isa} (hR
           Spec.Pbkdf2.iterate (hmacBlockKey S.H k0) n.toNat (bytesAt s.mem (State.addr u) S.digestBytes)
             (bytesAt s.mem (State.addr tt) S.digestBytes)) → Q s') :
     WP isa (.frame (.push fr1) (.call nm c) (.pop .r12 8)) s Q := by
-  refine frame2_ok rfl (by decide) hv.ok hst h.sp h.pre h.cov h.covW fun s₂ a post => ?_
+  refine frame2_ok rfl (by decide) hv.ok hst h.sp h.pre h.cov h.covW fun s₂ mL uL hfl a post => ?_
   sig_post [Proof.Pbkdf2.iterateContract, Proof.Pbkdf2.iterateSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
     Arm.Loc.val] at post
   simp only [h.r0, h.r1, h.r2, h.r3] at post
   refine hQ _ a fun k0 hk hi ho => ?_
-  rw [popped_mem]
+  dsimp only
+  rw [stk_bytes hfl h.b_t (by omega_using [hDn])]
   have := post k0 hk
     (p2_repr (ra := .r12) (rb := .lr) (p := State.addr key) hR (by omega_using [hSn]) h.sp
       (h.b_k.sub_right (Region.sub_prefix (by omega_using []))) hi)

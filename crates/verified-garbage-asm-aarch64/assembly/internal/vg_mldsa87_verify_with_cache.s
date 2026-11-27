@@ -1299,57 +1299,49 @@ vg_mldsa87_verify_with_cache:
 	movk x0, #0, lsl #32
 	movk x0, #0, lsl #48
 	add x0, x28, x0
-	add x1, x28, #2048
-	bl {vg_mldsa_ntt}
+	bl {vg_mldsa_ntt_positive}
 	movz x0, #6144, lsl #0
 	movk x0, #1, lsl #16
 	movk x0, #0, lsl #32
 	movk x0, #0, lsl #48
 	add x0, x28, x0
-	add x1, x28, #2048
-	bl {vg_mldsa_ntt}
+	bl {vg_mldsa_ntt_positive}
 	movz x0, #7168, lsl #0
 	movk x0, #1, lsl #16
 	movk x0, #0, lsl #32
 	movk x0, #0, lsl #48
 	add x0, x28, x0
-	add x1, x28, #2048
-	bl {vg_mldsa_ntt}
+	bl {vg_mldsa_ntt_positive}
 	movz x0, #8192, lsl #0
 	movk x0, #1, lsl #16
 	movk x0, #0, lsl #32
 	movk x0, #0, lsl #48
 	add x0, x28, x0
-	add x1, x28, #2048
-	bl {vg_mldsa_ntt}
+	bl {vg_mldsa_ntt_positive}
 	movz x0, #9216, lsl #0
 	movk x0, #1, lsl #16
 	movk x0, #0, lsl #32
 	movk x0, #0, lsl #48
 	add x0, x28, x0
-	add x1, x28, #2048
-	bl {vg_mldsa_ntt}
+	bl {vg_mldsa_ntt_positive}
 	movz x0, #10240, lsl #0
 	movk x0, #1, lsl #16
 	movk x0, #0, lsl #32
 	movk x0, #0, lsl #48
 	add x0, x28, x0
-	add x1, x28, #2048
-	bl {vg_mldsa_ntt}
+	bl {vg_mldsa_ntt_positive}
 	movz x0, #11264, lsl #0
 	movk x0, #1, lsl #16
 	movk x0, #0, lsl #32
 	movk x0, #0, lsl #48
 	add x0, x28, x0
-	add x1, x28, #2048
-	bl {vg_mldsa_ntt}
+	bl {vg_mldsa_ntt_positive}
 	movz x0, #12288, lsl #0
 	movk x0, #1, lsl #16
 	movk x0, #0, lsl #32
 	movk x0, #0, lsl #48
 	add x0, x28, x0
-	add x1, x28, #2048
-	bl {vg_mldsa_ntt}
+	bl {vg_mldsa_ntt_positive}
 	movz x0, #15360, lsl #0
 	movk x0, #1, lsl #16
 	movk x0, #0, lsl #32
@@ -1362,85 +1354,7 @@ vg_mldsa87_verify_with_cache:
 	movk x2, #0, lsl #32
 	movk x2, #0, lsl #48
 	add x2, x28, x2
-	bl {vg_mldsa_multiply_ntt}
-	movz x0, #15360, lsl #0
-	movk x0, #1, lsl #16
-	movk x0, #0, lsl #32
-	movk x0, #0, lsl #48
-	add x0, x28, x0
-	movz x1, #5120, lsl #0
-	add x1, x28, x1
-	movz x2, #6144, lsl #0
-	movk x2, #1, lsl #16
-	movk x2, #0, lsl #32
-	movk x2, #0, lsl #48
-	add x2, x28, x2
-	bl {vg_mldsa_multiply_add_ntt}
-	movz x0, #15360, lsl #0
-	movk x0, #1, lsl #16
-	movk x0, #0, lsl #32
-	movk x0, #0, lsl #48
-	add x0, x28, x0
-	movz x1, #6144, lsl #0
-	add x1, x28, x1
-	movz x2, #7168, lsl #0
-	movk x2, #1, lsl #16
-	movk x2, #0, lsl #32
-	movk x2, #0, lsl #48
-	add x2, x28, x2
-	bl {vg_mldsa_multiply_add_ntt}
-	movz x0, #15360, lsl #0
-	movk x0, #1, lsl #16
-	movk x0, #0, lsl #32
-	movk x0, #0, lsl #48
-	add x0, x28, x0
-	movz x1, #7168, lsl #0
-	add x1, x28, x1
-	movz x2, #8192, lsl #0
-	movk x2, #1, lsl #16
-	movk x2, #0, lsl #32
-	movk x2, #0, lsl #48
-	add x2, x28, x2
-	bl {vg_mldsa_multiply_add_ntt}
-	movz x0, #15360, lsl #0
-	movk x0, #1, lsl #16
-	movk x0, #0, lsl #32
-	movk x0, #0, lsl #48
-	add x0, x28, x0
-	movz x1, #8192, lsl #0
-	add x1, x28, x1
-	movz x2, #9216, lsl #0
-	movk x2, #1, lsl #16
-	movk x2, #0, lsl #32
-	movk x2, #0, lsl #48
-	add x2, x28, x2
-	bl {vg_mldsa_multiply_add_ntt}
-	movz x0, #15360, lsl #0
-	movk x0, #1, lsl #16
-	movk x0, #0, lsl #32
-	movk x0, #0, lsl #48
-	add x0, x28, x0
-	movz x1, #9216, lsl #0
-	add x1, x28, x1
-	movz x2, #10240, lsl #0
-	movk x2, #1, lsl #16
-	movk x2, #0, lsl #32
-	movk x2, #0, lsl #48
-	add x2, x28, x2
-	bl {vg_mldsa_multiply_add_ntt}
-	movz x0, #15360, lsl #0
-	movk x0, #1, lsl #16
-	movk x0, #0, lsl #32
-	movk x0, #0, lsl #48
-	add x0, x28, x0
-	movz x1, #10240, lsl #0
-	add x1, x28, x1
-	movz x2, #11264, lsl #0
-	movk x2, #1, lsl #16
-	movk x2, #0, lsl #32
-	movk x2, #0, lsl #48
-	add x2, x28, x2
-	bl {vg_mldsa_multiply_add_ntt}
+	bl {vg_mldsa_montgomery_dot7}
 	cbnz x22, 219f
 	add x0, x25, #32
 	movz x1, #13312, lsl #0
@@ -1454,8 +1368,7 @@ vg_mldsa87_verify_with_cache:
 	movk x0, #0, lsl #32
 	movk x0, #0, lsl #48
 	add x0, x28, x0
-	add x1, x28, #2048
-	bl {vg_mldsa_ntt}
+	bl {vg_mldsa_ntt_positive}
 	b 220f
 219:
 	movz x0, #13312, lsl #0
@@ -1488,7 +1401,7 @@ vg_mldsa87_verify_with_cache:
 	movk x2, #0, lsl #32
 	movk x2, #0, lsl #48
 	add x2, x28, x2
-	bl {vg_mldsa_multiply_ntt}
+	bl {vg_mldsa_montgomery_product}
 	movz x0, #15360, lsl #0
 	movk x0, #1, lsl #16
 	movk x0, #0, lsl #32
@@ -1505,35 +1418,21 @@ vg_mldsa87_verify_with_cache:
 	movk x0, #0, lsl #32
 	movk x0, #0, lsl #48
 	add x0, x28, x0
-	add x1, x28, #2048
-	bl {vg_mldsa_inv_ntt}
-	movz x0, #62464, lsl #0
+	bl {vg_mldsa_montgomery_inv_ntt}
+	movz x0, #61440, lsl #0
 	add x0, x28, x0
-	movz x1, #15360, lsl #0
-	movk x1, #1, lsl #16
-	movk x1, #0, lsl #32
-	movk x1, #0, lsl #48
+	movz x1, #62464, lsl #0
 	add x1, x28, x1
-	movz x2, #65280, lsl #0
-	movk x2, #3, lsl #16
+	movz x2, #15360, lsl #0
+	movk x2, #1, lsl #16
 	movk x2, #0, lsl #32
 	movk x2, #0, lsl #48
-	movz x3, #16384, lsl #0
-	movk x3, #1, lsl #16
+	add x2, x28, x2
+	movz x3, #65280, lsl #0
+	movk x3, #3, lsl #16
 	movk x3, #0, lsl #32
 	movk x3, #0, lsl #48
-	add x3, x28, x3
-	bl {vg_mldsa_use_hint}
-	movz x0, #16384, lsl #0
-	movk x0, #1, lsl #16
-	movk x0, #0, lsl #32
-	movk x0, #0, lsl #48
-	add x0, x28, x0
-	movz x1, #15, lsl #0
-	movz x2, #61440, lsl #0
-	add x2, x28, x2
-	movz x3, #128, lsl #0
-	bl {vg_mldsa_simple_bit_pack}
+	bl {vg_mldsa_usehint_pack4}
 	movz x0, #15360, lsl #0
 	movk x0, #1, lsl #16
 	movk x0, #0, lsl #32
@@ -1546,85 +1445,7 @@ vg_mldsa87_verify_with_cache:
 	movk x2, #0, lsl #32
 	movk x2, #0, lsl #48
 	add x2, x28, x2
-	bl {vg_mldsa_multiply_ntt}
-	movz x0, #15360, lsl #0
-	movk x0, #1, lsl #16
-	movk x0, #0, lsl #32
-	movk x0, #0, lsl #48
-	add x0, x28, x0
-	movz x1, #12288, lsl #0
-	add x1, x28, x1
-	movz x2, #6144, lsl #0
-	movk x2, #1, lsl #16
-	movk x2, #0, lsl #32
-	movk x2, #0, lsl #48
-	add x2, x28, x2
-	bl {vg_mldsa_multiply_add_ntt}
-	movz x0, #15360, lsl #0
-	movk x0, #1, lsl #16
-	movk x0, #0, lsl #32
-	movk x0, #0, lsl #48
-	add x0, x28, x0
-	movz x1, #13312, lsl #0
-	add x1, x28, x1
-	movz x2, #7168, lsl #0
-	movk x2, #1, lsl #16
-	movk x2, #0, lsl #32
-	movk x2, #0, lsl #48
-	add x2, x28, x2
-	bl {vg_mldsa_multiply_add_ntt}
-	movz x0, #15360, lsl #0
-	movk x0, #1, lsl #16
-	movk x0, #0, lsl #32
-	movk x0, #0, lsl #48
-	add x0, x28, x0
-	movz x1, #14336, lsl #0
-	add x1, x28, x1
-	movz x2, #8192, lsl #0
-	movk x2, #1, lsl #16
-	movk x2, #0, lsl #32
-	movk x2, #0, lsl #48
-	add x2, x28, x2
-	bl {vg_mldsa_multiply_add_ntt}
-	movz x0, #15360, lsl #0
-	movk x0, #1, lsl #16
-	movk x0, #0, lsl #32
-	movk x0, #0, lsl #48
-	add x0, x28, x0
-	movz x1, #15360, lsl #0
-	add x1, x28, x1
-	movz x2, #9216, lsl #0
-	movk x2, #1, lsl #16
-	movk x2, #0, lsl #32
-	movk x2, #0, lsl #48
-	add x2, x28, x2
-	bl {vg_mldsa_multiply_add_ntt}
-	movz x0, #15360, lsl #0
-	movk x0, #1, lsl #16
-	movk x0, #0, lsl #32
-	movk x0, #0, lsl #48
-	add x0, x28, x0
-	movz x1, #16384, lsl #0
-	add x1, x28, x1
-	movz x2, #10240, lsl #0
-	movk x2, #1, lsl #16
-	movk x2, #0, lsl #32
-	movk x2, #0, lsl #48
-	add x2, x28, x2
-	bl {vg_mldsa_multiply_add_ntt}
-	movz x0, #15360, lsl #0
-	movk x0, #1, lsl #16
-	movk x0, #0, lsl #32
-	movk x0, #0, lsl #48
-	add x0, x28, x0
-	movz x1, #17408, lsl #0
-	add x1, x28, x1
-	movz x2, #11264, lsl #0
-	movk x2, #1, lsl #16
-	movk x2, #0, lsl #32
-	movk x2, #0, lsl #48
-	add x2, x28, x2
-	bl {vg_mldsa_multiply_add_ntt}
+	bl {vg_mldsa_montgomery_dot7}
 	cbnz x22, 222f
 	add x0, x25, #352
 	movz x1, #13312, lsl #0
@@ -1638,8 +1459,7 @@ vg_mldsa87_verify_with_cache:
 	movk x0, #0, lsl #32
 	movk x0, #0, lsl #48
 	add x0, x28, x0
-	add x1, x28, #2048
-	bl {vg_mldsa_ntt}
+	bl {vg_mldsa_ntt_positive}
 	b 223f
 222:
 	movz x0, #13312, lsl #0
@@ -1672,7 +1492,7 @@ vg_mldsa87_verify_with_cache:
 	movk x2, #0, lsl #32
 	movk x2, #0, lsl #48
 	add x2, x28, x2
-	bl {vg_mldsa_multiply_ntt}
+	bl {vg_mldsa_montgomery_product}
 	movz x0, #15360, lsl #0
 	movk x0, #1, lsl #16
 	movk x0, #0, lsl #32
@@ -1689,35 +1509,21 @@ vg_mldsa87_verify_with_cache:
 	movk x0, #0, lsl #32
 	movk x0, #0, lsl #48
 	add x0, x28, x0
-	add x1, x28, #2048
-	bl {vg_mldsa_inv_ntt}
-	movz x0, #63488, lsl #0
+	bl {vg_mldsa_montgomery_inv_ntt}
+	movz x0, #61568, lsl #0
 	add x0, x28, x0
-	movz x1, #15360, lsl #0
-	movk x1, #1, lsl #16
-	movk x1, #0, lsl #32
-	movk x1, #0, lsl #48
+	movz x1, #63488, lsl #0
 	add x1, x28, x1
-	movz x2, #65280, lsl #0
-	movk x2, #3, lsl #16
+	movz x2, #15360, lsl #0
+	movk x2, #1, lsl #16
 	movk x2, #0, lsl #32
 	movk x2, #0, lsl #48
-	movz x3, #16384, lsl #0
-	movk x3, #1, lsl #16
+	add x2, x28, x2
+	movz x3, #65280, lsl #0
+	movk x3, #3, lsl #16
 	movk x3, #0, lsl #32
 	movk x3, #0, lsl #48
-	add x3, x28, x3
-	bl {vg_mldsa_use_hint}
-	movz x0, #16384, lsl #0
-	movk x0, #1, lsl #16
-	movk x0, #0, lsl #32
-	movk x0, #0, lsl #48
-	add x0, x28, x0
-	movz x1, #15, lsl #0
-	movz x2, #61568, lsl #0
-	add x2, x28, x2
-	movz x3, #128, lsl #0
-	bl {vg_mldsa_simple_bit_pack}
+	bl {vg_mldsa_usehint_pack4}
 	movz x0, #15360, lsl #0
 	movk x0, #1, lsl #16
 	movk x0, #0, lsl #32
@@ -1730,85 +1536,7 @@ vg_mldsa87_verify_with_cache:
 	movk x2, #0, lsl #32
 	movk x2, #0, lsl #48
 	add x2, x28, x2
-	bl {vg_mldsa_multiply_ntt}
-	movz x0, #15360, lsl #0
-	movk x0, #1, lsl #16
-	movk x0, #0, lsl #32
-	movk x0, #0, lsl #48
-	add x0, x28, x0
-	movz x1, #19456, lsl #0
-	add x1, x28, x1
-	movz x2, #6144, lsl #0
-	movk x2, #1, lsl #16
-	movk x2, #0, lsl #32
-	movk x2, #0, lsl #48
-	add x2, x28, x2
-	bl {vg_mldsa_multiply_add_ntt}
-	movz x0, #15360, lsl #0
-	movk x0, #1, lsl #16
-	movk x0, #0, lsl #32
-	movk x0, #0, lsl #48
-	add x0, x28, x0
-	movz x1, #20480, lsl #0
-	add x1, x28, x1
-	movz x2, #7168, lsl #0
-	movk x2, #1, lsl #16
-	movk x2, #0, lsl #32
-	movk x2, #0, lsl #48
-	add x2, x28, x2
-	bl {vg_mldsa_multiply_add_ntt}
-	movz x0, #15360, lsl #0
-	movk x0, #1, lsl #16
-	movk x0, #0, lsl #32
-	movk x0, #0, lsl #48
-	add x0, x28, x0
-	movz x1, #21504, lsl #0
-	add x1, x28, x1
-	movz x2, #8192, lsl #0
-	movk x2, #1, lsl #16
-	movk x2, #0, lsl #32
-	movk x2, #0, lsl #48
-	add x2, x28, x2
-	bl {vg_mldsa_multiply_add_ntt}
-	movz x0, #15360, lsl #0
-	movk x0, #1, lsl #16
-	movk x0, #0, lsl #32
-	movk x0, #0, lsl #48
-	add x0, x28, x0
-	movz x1, #22528, lsl #0
-	add x1, x28, x1
-	movz x2, #9216, lsl #0
-	movk x2, #1, lsl #16
-	movk x2, #0, lsl #32
-	movk x2, #0, lsl #48
-	add x2, x28, x2
-	bl {vg_mldsa_multiply_add_ntt}
-	movz x0, #15360, lsl #0
-	movk x0, #1, lsl #16
-	movk x0, #0, lsl #32
-	movk x0, #0, lsl #48
-	add x0, x28, x0
-	movz x1, #23552, lsl #0
-	add x1, x28, x1
-	movz x2, #10240, lsl #0
-	movk x2, #1, lsl #16
-	movk x2, #0, lsl #32
-	movk x2, #0, lsl #48
-	add x2, x28, x2
-	bl {vg_mldsa_multiply_add_ntt}
-	movz x0, #15360, lsl #0
-	movk x0, #1, lsl #16
-	movk x0, #0, lsl #32
-	movk x0, #0, lsl #48
-	add x0, x28, x0
-	movz x1, #24576, lsl #0
-	add x1, x28, x1
-	movz x2, #11264, lsl #0
-	movk x2, #1, lsl #16
-	movk x2, #0, lsl #32
-	movk x2, #0, lsl #48
-	add x2, x28, x2
-	bl {vg_mldsa_multiply_add_ntt}
+	bl {vg_mldsa_montgomery_dot7}
 	cbnz x22, 225f
 	add x0, x25, #672
 	movz x1, #13312, lsl #0
@@ -1822,8 +1550,7 @@ vg_mldsa87_verify_with_cache:
 	movk x0, #0, lsl #32
 	movk x0, #0, lsl #48
 	add x0, x28, x0
-	add x1, x28, #2048
-	bl {vg_mldsa_ntt}
+	bl {vg_mldsa_ntt_positive}
 	b 226f
 225:
 	movz x0, #13312, lsl #0
@@ -1856,7 +1583,7 @@ vg_mldsa87_verify_with_cache:
 	movk x2, #0, lsl #32
 	movk x2, #0, lsl #48
 	add x2, x28, x2
-	bl {vg_mldsa_multiply_ntt}
+	bl {vg_mldsa_montgomery_product}
 	movz x0, #15360, lsl #0
 	movk x0, #1, lsl #16
 	movk x0, #0, lsl #32
@@ -1873,35 +1600,21 @@ vg_mldsa87_verify_with_cache:
 	movk x0, #0, lsl #32
 	movk x0, #0, lsl #48
 	add x0, x28, x0
-	add x1, x28, #2048
-	bl {vg_mldsa_inv_ntt}
-	movz x0, #64512, lsl #0
+	bl {vg_mldsa_montgomery_inv_ntt}
+	movz x0, #61696, lsl #0
 	add x0, x28, x0
-	movz x1, #15360, lsl #0
-	movk x1, #1, lsl #16
-	movk x1, #0, lsl #32
-	movk x1, #0, lsl #48
+	movz x1, #64512, lsl #0
 	add x1, x28, x1
-	movz x2, #65280, lsl #0
-	movk x2, #3, lsl #16
+	movz x2, #15360, lsl #0
+	movk x2, #1, lsl #16
 	movk x2, #0, lsl #32
 	movk x2, #0, lsl #48
-	movz x3, #16384, lsl #0
-	movk x3, #1, lsl #16
+	add x2, x28, x2
+	movz x3, #65280, lsl #0
+	movk x3, #3, lsl #16
 	movk x3, #0, lsl #32
 	movk x3, #0, lsl #48
-	add x3, x28, x3
-	bl {vg_mldsa_use_hint}
-	movz x0, #16384, lsl #0
-	movk x0, #1, lsl #16
-	movk x0, #0, lsl #32
-	movk x0, #0, lsl #48
-	add x0, x28, x0
-	movz x1, #15, lsl #0
-	movz x2, #61696, lsl #0
-	add x2, x28, x2
-	movz x3, #128, lsl #0
-	bl {vg_mldsa_simple_bit_pack}
+	bl {vg_mldsa_usehint_pack4}
 	movz x0, #15360, lsl #0
 	movk x0, #1, lsl #16
 	movk x0, #0, lsl #32
@@ -1914,85 +1627,7 @@ vg_mldsa87_verify_with_cache:
 	movk x2, #0, lsl #32
 	movk x2, #0, lsl #48
 	add x2, x28, x2
-	bl {vg_mldsa_multiply_ntt}
-	movz x0, #15360, lsl #0
-	movk x0, #1, lsl #16
-	movk x0, #0, lsl #32
-	movk x0, #0, lsl #48
-	add x0, x28, x0
-	movz x1, #26624, lsl #0
-	add x1, x28, x1
-	movz x2, #6144, lsl #0
-	movk x2, #1, lsl #16
-	movk x2, #0, lsl #32
-	movk x2, #0, lsl #48
-	add x2, x28, x2
-	bl {vg_mldsa_multiply_add_ntt}
-	movz x0, #15360, lsl #0
-	movk x0, #1, lsl #16
-	movk x0, #0, lsl #32
-	movk x0, #0, lsl #48
-	add x0, x28, x0
-	movz x1, #27648, lsl #0
-	add x1, x28, x1
-	movz x2, #7168, lsl #0
-	movk x2, #1, lsl #16
-	movk x2, #0, lsl #32
-	movk x2, #0, lsl #48
-	add x2, x28, x2
-	bl {vg_mldsa_multiply_add_ntt}
-	movz x0, #15360, lsl #0
-	movk x0, #1, lsl #16
-	movk x0, #0, lsl #32
-	movk x0, #0, lsl #48
-	add x0, x28, x0
-	movz x1, #28672, lsl #0
-	add x1, x28, x1
-	movz x2, #8192, lsl #0
-	movk x2, #1, lsl #16
-	movk x2, #0, lsl #32
-	movk x2, #0, lsl #48
-	add x2, x28, x2
-	bl {vg_mldsa_multiply_add_ntt}
-	movz x0, #15360, lsl #0
-	movk x0, #1, lsl #16
-	movk x0, #0, lsl #32
-	movk x0, #0, lsl #48
-	add x0, x28, x0
-	movz x1, #29696, lsl #0
-	add x1, x28, x1
-	movz x2, #9216, lsl #0
-	movk x2, #1, lsl #16
-	movk x2, #0, lsl #32
-	movk x2, #0, lsl #48
-	add x2, x28, x2
-	bl {vg_mldsa_multiply_add_ntt}
-	movz x0, #15360, lsl #0
-	movk x0, #1, lsl #16
-	movk x0, #0, lsl #32
-	movk x0, #0, lsl #48
-	add x0, x28, x0
-	movz x1, #30720, lsl #0
-	add x1, x28, x1
-	movz x2, #10240, lsl #0
-	movk x2, #1, lsl #16
-	movk x2, #0, lsl #32
-	movk x2, #0, lsl #48
-	add x2, x28, x2
-	bl {vg_mldsa_multiply_add_ntt}
-	movz x0, #15360, lsl #0
-	movk x0, #1, lsl #16
-	movk x0, #0, lsl #32
-	movk x0, #0, lsl #48
-	add x0, x28, x0
-	movz x1, #31744, lsl #0
-	add x1, x28, x1
-	movz x2, #11264, lsl #0
-	movk x2, #1, lsl #16
-	movk x2, #0, lsl #32
-	movk x2, #0, lsl #48
-	add x2, x28, x2
-	bl {vg_mldsa_multiply_add_ntt}
+	bl {vg_mldsa_montgomery_dot7}
 	cbnz x22, 228f
 	add x0, x25, #992
 	movz x1, #13312, lsl #0
@@ -2006,8 +1641,7 @@ vg_mldsa87_verify_with_cache:
 	movk x0, #0, lsl #32
 	movk x0, #0, lsl #48
 	add x0, x28, x0
-	add x1, x28, #2048
-	bl {vg_mldsa_ntt}
+	bl {vg_mldsa_ntt_positive}
 	b 229f
 228:
 	movz x0, #13312, lsl #0
@@ -2040,7 +1674,7 @@ vg_mldsa87_verify_with_cache:
 	movk x2, #0, lsl #32
 	movk x2, #0, lsl #48
 	add x2, x28, x2
-	bl {vg_mldsa_multiply_ntt}
+	bl {vg_mldsa_montgomery_product}
 	movz x0, #15360, lsl #0
 	movk x0, #1, lsl #16
 	movk x0, #0, lsl #32
@@ -2057,38 +1691,24 @@ vg_mldsa87_verify_with_cache:
 	movk x0, #0, lsl #32
 	movk x0, #0, lsl #48
 	add x0, x28, x0
-	add x1, x28, #2048
-	bl {vg_mldsa_inv_ntt}
-	movz x0, #0, lsl #0
-	movk x0, #1, lsl #16
-	movk x0, #0, lsl #32
-	movk x0, #0, lsl #48
+	bl {vg_mldsa_montgomery_inv_ntt}
+	movz x0, #61824, lsl #0
 	add x0, x28, x0
-	movz x1, #15360, lsl #0
+	movz x1, #0, lsl #0
 	movk x1, #1, lsl #16
 	movk x1, #0, lsl #32
 	movk x1, #0, lsl #48
 	add x1, x28, x1
-	movz x2, #65280, lsl #0
-	movk x2, #3, lsl #16
+	movz x2, #15360, lsl #0
+	movk x2, #1, lsl #16
 	movk x2, #0, lsl #32
 	movk x2, #0, lsl #48
-	movz x3, #16384, lsl #0
-	movk x3, #1, lsl #16
+	add x2, x28, x2
+	movz x3, #65280, lsl #0
+	movk x3, #3, lsl #16
 	movk x3, #0, lsl #32
 	movk x3, #0, lsl #48
-	add x3, x28, x3
-	bl {vg_mldsa_use_hint}
-	movz x0, #16384, lsl #0
-	movk x0, #1, lsl #16
-	movk x0, #0, lsl #32
-	movk x0, #0, lsl #48
-	add x0, x28, x0
-	movz x1, #15, lsl #0
-	movz x2, #61824, lsl #0
-	add x2, x28, x2
-	movz x3, #128, lsl #0
-	bl {vg_mldsa_simple_bit_pack}
+	bl {vg_mldsa_usehint_pack4}
 	movz x0, #15360, lsl #0
 	movk x0, #1, lsl #16
 	movk x0, #0, lsl #32
@@ -2101,85 +1721,7 @@ vg_mldsa87_verify_with_cache:
 	movk x2, #0, lsl #32
 	movk x2, #0, lsl #48
 	add x2, x28, x2
-	bl {vg_mldsa_multiply_ntt}
-	movz x0, #15360, lsl #0
-	movk x0, #1, lsl #16
-	movk x0, #0, lsl #32
-	movk x0, #0, lsl #48
-	add x0, x28, x0
-	movz x1, #33792, lsl #0
-	add x1, x28, x1
-	movz x2, #6144, lsl #0
-	movk x2, #1, lsl #16
-	movk x2, #0, lsl #32
-	movk x2, #0, lsl #48
-	add x2, x28, x2
-	bl {vg_mldsa_multiply_add_ntt}
-	movz x0, #15360, lsl #0
-	movk x0, #1, lsl #16
-	movk x0, #0, lsl #32
-	movk x0, #0, lsl #48
-	add x0, x28, x0
-	movz x1, #34816, lsl #0
-	add x1, x28, x1
-	movz x2, #7168, lsl #0
-	movk x2, #1, lsl #16
-	movk x2, #0, lsl #32
-	movk x2, #0, lsl #48
-	add x2, x28, x2
-	bl {vg_mldsa_multiply_add_ntt}
-	movz x0, #15360, lsl #0
-	movk x0, #1, lsl #16
-	movk x0, #0, lsl #32
-	movk x0, #0, lsl #48
-	add x0, x28, x0
-	movz x1, #35840, lsl #0
-	add x1, x28, x1
-	movz x2, #8192, lsl #0
-	movk x2, #1, lsl #16
-	movk x2, #0, lsl #32
-	movk x2, #0, lsl #48
-	add x2, x28, x2
-	bl {vg_mldsa_multiply_add_ntt}
-	movz x0, #15360, lsl #0
-	movk x0, #1, lsl #16
-	movk x0, #0, lsl #32
-	movk x0, #0, lsl #48
-	add x0, x28, x0
-	movz x1, #36864, lsl #0
-	add x1, x28, x1
-	movz x2, #9216, lsl #0
-	movk x2, #1, lsl #16
-	movk x2, #0, lsl #32
-	movk x2, #0, lsl #48
-	add x2, x28, x2
-	bl {vg_mldsa_multiply_add_ntt}
-	movz x0, #15360, lsl #0
-	movk x0, #1, lsl #16
-	movk x0, #0, lsl #32
-	movk x0, #0, lsl #48
-	add x0, x28, x0
-	movz x1, #37888, lsl #0
-	add x1, x28, x1
-	movz x2, #10240, lsl #0
-	movk x2, #1, lsl #16
-	movk x2, #0, lsl #32
-	movk x2, #0, lsl #48
-	add x2, x28, x2
-	bl {vg_mldsa_multiply_add_ntt}
-	movz x0, #15360, lsl #0
-	movk x0, #1, lsl #16
-	movk x0, #0, lsl #32
-	movk x0, #0, lsl #48
-	add x0, x28, x0
-	movz x1, #38912, lsl #0
-	add x1, x28, x1
-	movz x2, #11264, lsl #0
-	movk x2, #1, lsl #16
-	movk x2, #0, lsl #32
-	movk x2, #0, lsl #48
-	add x2, x28, x2
-	bl {vg_mldsa_multiply_add_ntt}
+	bl {vg_mldsa_montgomery_dot7}
 	cbnz x22, 231f
 	add x0, x25, #1312
 	movz x1, #13312, lsl #0
@@ -2193,8 +1735,7 @@ vg_mldsa87_verify_with_cache:
 	movk x0, #0, lsl #32
 	movk x0, #0, lsl #48
 	add x0, x28, x0
-	add x1, x28, #2048
-	bl {vg_mldsa_ntt}
+	bl {vg_mldsa_ntt_positive}
 	b 232f
 231:
 	movz x0, #13312, lsl #0
@@ -2228,7 +1769,7 @@ vg_mldsa87_verify_with_cache:
 	movk x2, #0, lsl #32
 	movk x2, #0, lsl #48
 	add x2, x28, x2
-	bl {vg_mldsa_multiply_ntt}
+	bl {vg_mldsa_montgomery_product}
 	movz x0, #15360, lsl #0
 	movk x0, #1, lsl #16
 	movk x0, #0, lsl #32
@@ -2245,38 +1786,24 @@ vg_mldsa87_verify_with_cache:
 	movk x0, #0, lsl #32
 	movk x0, #0, lsl #48
 	add x0, x28, x0
-	add x1, x28, #2048
-	bl {vg_mldsa_inv_ntt}
-	movz x0, #1024, lsl #0
-	movk x0, #1, lsl #16
-	movk x0, #0, lsl #32
-	movk x0, #0, lsl #48
+	bl {vg_mldsa_montgomery_inv_ntt}
+	movz x0, #61952, lsl #0
 	add x0, x28, x0
-	movz x1, #15360, lsl #0
+	movz x1, #1024, lsl #0
 	movk x1, #1, lsl #16
 	movk x1, #0, lsl #32
 	movk x1, #0, lsl #48
 	add x1, x28, x1
-	movz x2, #65280, lsl #0
-	movk x2, #3, lsl #16
+	movz x2, #15360, lsl #0
+	movk x2, #1, lsl #16
 	movk x2, #0, lsl #32
 	movk x2, #0, lsl #48
-	movz x3, #16384, lsl #0
-	movk x3, #1, lsl #16
+	add x2, x28, x2
+	movz x3, #65280, lsl #0
+	movk x3, #3, lsl #16
 	movk x3, #0, lsl #32
 	movk x3, #0, lsl #48
-	add x3, x28, x3
-	bl {vg_mldsa_use_hint}
-	movz x0, #16384, lsl #0
-	movk x0, #1, lsl #16
-	movk x0, #0, lsl #32
-	movk x0, #0, lsl #48
-	add x0, x28, x0
-	movz x1, #15, lsl #0
-	movz x2, #61952, lsl #0
-	add x2, x28, x2
-	movz x3, #128, lsl #0
-	bl {vg_mldsa_simple_bit_pack}
+	bl {vg_mldsa_usehint_pack4}
 	movz x0, #15360, lsl #0
 	movk x0, #1, lsl #16
 	movk x0, #0, lsl #32
@@ -2289,85 +1816,7 @@ vg_mldsa87_verify_with_cache:
 	movk x2, #0, lsl #32
 	movk x2, #0, lsl #48
 	add x2, x28, x2
-	bl {vg_mldsa_multiply_ntt}
-	movz x0, #15360, lsl #0
-	movk x0, #1, lsl #16
-	movk x0, #0, lsl #32
-	movk x0, #0, lsl #48
-	add x0, x28, x0
-	movz x1, #40960, lsl #0
-	add x1, x28, x1
-	movz x2, #6144, lsl #0
-	movk x2, #1, lsl #16
-	movk x2, #0, lsl #32
-	movk x2, #0, lsl #48
-	add x2, x28, x2
-	bl {vg_mldsa_multiply_add_ntt}
-	movz x0, #15360, lsl #0
-	movk x0, #1, lsl #16
-	movk x0, #0, lsl #32
-	movk x0, #0, lsl #48
-	add x0, x28, x0
-	movz x1, #41984, lsl #0
-	add x1, x28, x1
-	movz x2, #7168, lsl #0
-	movk x2, #1, lsl #16
-	movk x2, #0, lsl #32
-	movk x2, #0, lsl #48
-	add x2, x28, x2
-	bl {vg_mldsa_multiply_add_ntt}
-	movz x0, #15360, lsl #0
-	movk x0, #1, lsl #16
-	movk x0, #0, lsl #32
-	movk x0, #0, lsl #48
-	add x0, x28, x0
-	movz x1, #43008, lsl #0
-	add x1, x28, x1
-	movz x2, #8192, lsl #0
-	movk x2, #1, lsl #16
-	movk x2, #0, lsl #32
-	movk x2, #0, lsl #48
-	add x2, x28, x2
-	bl {vg_mldsa_multiply_add_ntt}
-	movz x0, #15360, lsl #0
-	movk x0, #1, lsl #16
-	movk x0, #0, lsl #32
-	movk x0, #0, lsl #48
-	add x0, x28, x0
-	movz x1, #44032, lsl #0
-	add x1, x28, x1
-	movz x2, #9216, lsl #0
-	movk x2, #1, lsl #16
-	movk x2, #0, lsl #32
-	movk x2, #0, lsl #48
-	add x2, x28, x2
-	bl {vg_mldsa_multiply_add_ntt}
-	movz x0, #15360, lsl #0
-	movk x0, #1, lsl #16
-	movk x0, #0, lsl #32
-	movk x0, #0, lsl #48
-	add x0, x28, x0
-	movz x1, #45056, lsl #0
-	add x1, x28, x1
-	movz x2, #10240, lsl #0
-	movk x2, #1, lsl #16
-	movk x2, #0, lsl #32
-	movk x2, #0, lsl #48
-	add x2, x28, x2
-	bl {vg_mldsa_multiply_add_ntt}
-	movz x0, #15360, lsl #0
-	movk x0, #1, lsl #16
-	movk x0, #0, lsl #32
-	movk x0, #0, lsl #48
-	add x0, x28, x0
-	movz x1, #46080, lsl #0
-	add x1, x28, x1
-	movz x2, #11264, lsl #0
-	movk x2, #1, lsl #16
-	movk x2, #0, lsl #32
-	movk x2, #0, lsl #48
-	add x2, x28, x2
-	bl {vg_mldsa_multiply_add_ntt}
+	bl {vg_mldsa_montgomery_dot7}
 	cbnz x22, 234f
 	add x0, x25, #1632
 	movz x1, #13312, lsl #0
@@ -2381,8 +1830,7 @@ vg_mldsa87_verify_with_cache:
 	movk x0, #0, lsl #32
 	movk x0, #0, lsl #48
 	add x0, x28, x0
-	add x1, x28, #2048
-	bl {vg_mldsa_ntt}
+	bl {vg_mldsa_ntt_positive}
 	b 235f
 234:
 	movz x0, #13312, lsl #0
@@ -2416,7 +1864,7 @@ vg_mldsa87_verify_with_cache:
 	movk x2, #0, lsl #32
 	movk x2, #0, lsl #48
 	add x2, x28, x2
-	bl {vg_mldsa_multiply_ntt}
+	bl {vg_mldsa_montgomery_product}
 	movz x0, #15360, lsl #0
 	movk x0, #1, lsl #16
 	movk x0, #0, lsl #32
@@ -2433,38 +1881,24 @@ vg_mldsa87_verify_with_cache:
 	movk x0, #0, lsl #32
 	movk x0, #0, lsl #48
 	add x0, x28, x0
-	add x1, x28, #2048
-	bl {vg_mldsa_inv_ntt}
-	movz x0, #2048, lsl #0
-	movk x0, #1, lsl #16
-	movk x0, #0, lsl #32
-	movk x0, #0, lsl #48
+	bl {vg_mldsa_montgomery_inv_ntt}
+	movz x0, #62080, lsl #0
 	add x0, x28, x0
-	movz x1, #15360, lsl #0
+	movz x1, #2048, lsl #0
 	movk x1, #1, lsl #16
 	movk x1, #0, lsl #32
 	movk x1, #0, lsl #48
 	add x1, x28, x1
-	movz x2, #65280, lsl #0
-	movk x2, #3, lsl #16
+	movz x2, #15360, lsl #0
+	movk x2, #1, lsl #16
 	movk x2, #0, lsl #32
 	movk x2, #0, lsl #48
-	movz x3, #16384, lsl #0
-	movk x3, #1, lsl #16
+	add x2, x28, x2
+	movz x3, #65280, lsl #0
+	movk x3, #3, lsl #16
 	movk x3, #0, lsl #32
 	movk x3, #0, lsl #48
-	add x3, x28, x3
-	bl {vg_mldsa_use_hint}
-	movz x0, #16384, lsl #0
-	movk x0, #1, lsl #16
-	movk x0, #0, lsl #32
-	movk x0, #0, lsl #48
-	add x0, x28, x0
-	movz x1, #15, lsl #0
-	movz x2, #62080, lsl #0
-	add x2, x28, x2
-	movz x3, #128, lsl #0
-	bl {vg_mldsa_simple_bit_pack}
+	bl {vg_mldsa_usehint_pack4}
 	movz x0, #15360, lsl #0
 	movk x0, #1, lsl #16
 	movk x0, #0, lsl #32
@@ -2477,85 +1911,7 @@ vg_mldsa87_verify_with_cache:
 	movk x2, #0, lsl #32
 	movk x2, #0, lsl #48
 	add x2, x28, x2
-	bl {vg_mldsa_multiply_ntt}
-	movz x0, #15360, lsl #0
-	movk x0, #1, lsl #16
-	movk x0, #0, lsl #32
-	movk x0, #0, lsl #48
-	add x0, x28, x0
-	movz x1, #48128, lsl #0
-	add x1, x28, x1
-	movz x2, #6144, lsl #0
-	movk x2, #1, lsl #16
-	movk x2, #0, lsl #32
-	movk x2, #0, lsl #48
-	add x2, x28, x2
-	bl {vg_mldsa_multiply_add_ntt}
-	movz x0, #15360, lsl #0
-	movk x0, #1, lsl #16
-	movk x0, #0, lsl #32
-	movk x0, #0, lsl #48
-	add x0, x28, x0
-	movz x1, #49152, lsl #0
-	add x1, x28, x1
-	movz x2, #7168, lsl #0
-	movk x2, #1, lsl #16
-	movk x2, #0, lsl #32
-	movk x2, #0, lsl #48
-	add x2, x28, x2
-	bl {vg_mldsa_multiply_add_ntt}
-	movz x0, #15360, lsl #0
-	movk x0, #1, lsl #16
-	movk x0, #0, lsl #32
-	movk x0, #0, lsl #48
-	add x0, x28, x0
-	movz x1, #50176, lsl #0
-	add x1, x28, x1
-	movz x2, #8192, lsl #0
-	movk x2, #1, lsl #16
-	movk x2, #0, lsl #32
-	movk x2, #0, lsl #48
-	add x2, x28, x2
-	bl {vg_mldsa_multiply_add_ntt}
-	movz x0, #15360, lsl #0
-	movk x0, #1, lsl #16
-	movk x0, #0, lsl #32
-	movk x0, #0, lsl #48
-	add x0, x28, x0
-	movz x1, #51200, lsl #0
-	add x1, x28, x1
-	movz x2, #9216, lsl #0
-	movk x2, #1, lsl #16
-	movk x2, #0, lsl #32
-	movk x2, #0, lsl #48
-	add x2, x28, x2
-	bl {vg_mldsa_multiply_add_ntt}
-	movz x0, #15360, lsl #0
-	movk x0, #1, lsl #16
-	movk x0, #0, lsl #32
-	movk x0, #0, lsl #48
-	add x0, x28, x0
-	movz x1, #52224, lsl #0
-	add x1, x28, x1
-	movz x2, #10240, lsl #0
-	movk x2, #1, lsl #16
-	movk x2, #0, lsl #32
-	movk x2, #0, lsl #48
-	add x2, x28, x2
-	bl {vg_mldsa_multiply_add_ntt}
-	movz x0, #15360, lsl #0
-	movk x0, #1, lsl #16
-	movk x0, #0, lsl #32
-	movk x0, #0, lsl #48
-	add x0, x28, x0
-	movz x1, #53248, lsl #0
-	add x1, x28, x1
-	movz x2, #11264, lsl #0
-	movk x2, #1, lsl #16
-	movk x2, #0, lsl #32
-	movk x2, #0, lsl #48
-	add x2, x28, x2
-	bl {vg_mldsa_multiply_add_ntt}
+	bl {vg_mldsa_montgomery_dot7}
 	cbnz x22, 237f
 	add x0, x25, #1952
 	movz x1, #13312, lsl #0
@@ -2569,8 +1925,7 @@ vg_mldsa87_verify_with_cache:
 	movk x0, #0, lsl #32
 	movk x0, #0, lsl #48
 	add x0, x28, x0
-	add x1, x28, #2048
-	bl {vg_mldsa_ntt}
+	bl {vg_mldsa_ntt_positive}
 	b 238f
 237:
 	movz x0, #13312, lsl #0
@@ -2604,7 +1959,7 @@ vg_mldsa87_verify_with_cache:
 	movk x2, #0, lsl #32
 	movk x2, #0, lsl #48
 	add x2, x28, x2
-	bl {vg_mldsa_multiply_ntt}
+	bl {vg_mldsa_montgomery_product}
 	movz x0, #15360, lsl #0
 	movk x0, #1, lsl #16
 	movk x0, #0, lsl #32
@@ -2621,38 +1976,24 @@ vg_mldsa87_verify_with_cache:
 	movk x0, #0, lsl #32
 	movk x0, #0, lsl #48
 	add x0, x28, x0
-	add x1, x28, #2048
-	bl {vg_mldsa_inv_ntt}
-	movz x0, #3072, lsl #0
-	movk x0, #1, lsl #16
-	movk x0, #0, lsl #32
-	movk x0, #0, lsl #48
+	bl {vg_mldsa_montgomery_inv_ntt}
+	movz x0, #62208, lsl #0
 	add x0, x28, x0
-	movz x1, #15360, lsl #0
+	movz x1, #3072, lsl #0
 	movk x1, #1, lsl #16
 	movk x1, #0, lsl #32
 	movk x1, #0, lsl #48
 	add x1, x28, x1
-	movz x2, #65280, lsl #0
-	movk x2, #3, lsl #16
+	movz x2, #15360, lsl #0
+	movk x2, #1, lsl #16
 	movk x2, #0, lsl #32
 	movk x2, #0, lsl #48
-	movz x3, #16384, lsl #0
-	movk x3, #1, lsl #16
+	add x2, x28, x2
+	movz x3, #65280, lsl #0
+	movk x3, #3, lsl #16
 	movk x3, #0, lsl #32
 	movk x3, #0, lsl #48
-	add x3, x28, x3
-	bl {vg_mldsa_use_hint}
-	movz x0, #16384, lsl #0
-	movk x0, #1, lsl #16
-	movk x0, #0, lsl #32
-	movk x0, #0, lsl #48
-	add x0, x28, x0
-	movz x1, #15, lsl #0
-	movz x2, #62208, lsl #0
-	add x2, x28, x2
-	movz x3, #128, lsl #0
-	bl {vg_mldsa_simple_bit_pack}
+	bl {vg_mldsa_usehint_pack4}
 	movz x0, #15360, lsl #0
 	movk x0, #1, lsl #16
 	movk x0, #0, lsl #32
@@ -2665,85 +2006,7 @@ vg_mldsa87_verify_with_cache:
 	movk x2, #0, lsl #32
 	movk x2, #0, lsl #48
 	add x2, x28, x2
-	bl {vg_mldsa_multiply_ntt}
-	movz x0, #15360, lsl #0
-	movk x0, #1, lsl #16
-	movk x0, #0, lsl #32
-	movk x0, #0, lsl #48
-	add x0, x28, x0
-	movz x1, #55296, lsl #0
-	add x1, x28, x1
-	movz x2, #6144, lsl #0
-	movk x2, #1, lsl #16
-	movk x2, #0, lsl #32
-	movk x2, #0, lsl #48
-	add x2, x28, x2
-	bl {vg_mldsa_multiply_add_ntt}
-	movz x0, #15360, lsl #0
-	movk x0, #1, lsl #16
-	movk x0, #0, lsl #32
-	movk x0, #0, lsl #48
-	add x0, x28, x0
-	movz x1, #56320, lsl #0
-	add x1, x28, x1
-	movz x2, #7168, lsl #0
-	movk x2, #1, lsl #16
-	movk x2, #0, lsl #32
-	movk x2, #0, lsl #48
-	add x2, x28, x2
-	bl {vg_mldsa_multiply_add_ntt}
-	movz x0, #15360, lsl #0
-	movk x0, #1, lsl #16
-	movk x0, #0, lsl #32
-	movk x0, #0, lsl #48
-	add x0, x28, x0
-	movz x1, #57344, lsl #0
-	add x1, x28, x1
-	movz x2, #8192, lsl #0
-	movk x2, #1, lsl #16
-	movk x2, #0, lsl #32
-	movk x2, #0, lsl #48
-	add x2, x28, x2
-	bl {vg_mldsa_multiply_add_ntt}
-	movz x0, #15360, lsl #0
-	movk x0, #1, lsl #16
-	movk x0, #0, lsl #32
-	movk x0, #0, lsl #48
-	add x0, x28, x0
-	movz x1, #58368, lsl #0
-	add x1, x28, x1
-	movz x2, #9216, lsl #0
-	movk x2, #1, lsl #16
-	movk x2, #0, lsl #32
-	movk x2, #0, lsl #48
-	add x2, x28, x2
-	bl {vg_mldsa_multiply_add_ntt}
-	movz x0, #15360, lsl #0
-	movk x0, #1, lsl #16
-	movk x0, #0, lsl #32
-	movk x0, #0, lsl #48
-	add x0, x28, x0
-	movz x1, #59392, lsl #0
-	add x1, x28, x1
-	movz x2, #10240, lsl #0
-	movk x2, #1, lsl #16
-	movk x2, #0, lsl #32
-	movk x2, #0, lsl #48
-	add x2, x28, x2
-	bl {vg_mldsa_multiply_add_ntt}
-	movz x0, #15360, lsl #0
-	movk x0, #1, lsl #16
-	movk x0, #0, lsl #32
-	movk x0, #0, lsl #48
-	add x0, x28, x0
-	movz x1, #60416, lsl #0
-	add x1, x28, x1
-	movz x2, #11264, lsl #0
-	movk x2, #1, lsl #16
-	movk x2, #0, lsl #32
-	movk x2, #0, lsl #48
-	add x2, x28, x2
-	bl {vg_mldsa_multiply_add_ntt}
+	bl {vg_mldsa_montgomery_dot7}
 	cbnz x22, 240f
 	add x0, x25, #2272
 	movz x1, #13312, lsl #0
@@ -2757,8 +2020,7 @@ vg_mldsa87_verify_with_cache:
 	movk x0, #0, lsl #32
 	movk x0, #0, lsl #48
 	add x0, x28, x0
-	add x1, x28, #2048
-	bl {vg_mldsa_ntt}
+	bl {vg_mldsa_ntt_positive}
 	b 241f
 240:
 	movz x0, #13312, lsl #0
@@ -2792,7 +2054,7 @@ vg_mldsa87_verify_with_cache:
 	movk x2, #0, lsl #32
 	movk x2, #0, lsl #48
 	add x2, x28, x2
-	bl {vg_mldsa_multiply_ntt}
+	bl {vg_mldsa_montgomery_product}
 	movz x0, #15360, lsl #0
 	movk x0, #1, lsl #16
 	movk x0, #0, lsl #32
@@ -2809,38 +2071,24 @@ vg_mldsa87_verify_with_cache:
 	movk x0, #0, lsl #32
 	movk x0, #0, lsl #48
 	add x0, x28, x0
-	add x1, x28, #2048
-	bl {vg_mldsa_inv_ntt}
-	movz x0, #4096, lsl #0
-	movk x0, #1, lsl #16
-	movk x0, #0, lsl #32
-	movk x0, #0, lsl #48
+	bl {vg_mldsa_montgomery_inv_ntt}
+	movz x0, #62336, lsl #0
 	add x0, x28, x0
-	movz x1, #15360, lsl #0
+	movz x1, #4096, lsl #0
 	movk x1, #1, lsl #16
 	movk x1, #0, lsl #32
 	movk x1, #0, lsl #48
 	add x1, x28, x1
-	movz x2, #65280, lsl #0
-	movk x2, #3, lsl #16
+	movz x2, #15360, lsl #0
+	movk x2, #1, lsl #16
 	movk x2, #0, lsl #32
 	movk x2, #0, lsl #48
-	movz x3, #16384, lsl #0
-	movk x3, #1, lsl #16
+	add x2, x28, x2
+	movz x3, #65280, lsl #0
+	movk x3, #3, lsl #16
 	movk x3, #0, lsl #32
 	movk x3, #0, lsl #48
-	add x3, x28, x3
-	bl {vg_mldsa_use_hint}
-	movz x0, #16384, lsl #0
-	movk x0, #1, lsl #16
-	movk x0, #0, lsl #32
-	movk x0, #0, lsl #48
-	add x0, x28, x0
-	movz x1, #15, lsl #0
-	movz x2, #62336, lsl #0
-	add x2, x28, x2
-	movz x3, #128, lsl #0
-	bl {vg_mldsa_simple_bit_pack}
+	bl {vg_mldsa_usehint_pack4}
 	add x0, x28, #0
 	movz x9, #0, lsl #0
 	str x9, [x0, #0]

@@ -11,7 +11,7 @@ recoded regularly into `J` odd digits `d_j = 2 e_j - 31 ∈ [-31, 31]`, where
 `k + 32^J - 1` read from its bit 1 (the table of bits at `bits`, one past
 that of `k + 32^J - 1`). With no zero digit, and the operands of every
 addition neither equal nor opposite nor `O` for `1 ≤ k < n` and
-`n mod 64 < 33` (`Proof/Weierstrass/OddWin.lean`), the loop needs none of
+`n mod 64 < 33` (`Proof/Weierstrass/X86_64/WinJacOddState.lean`), the loop needs none of
 `WinJac`'s masks.
 
 The table holds the odd multiples `[2m - 1]P` for `m = 1 … 16`, entry `m` at
@@ -83,10 +83,16 @@ def stepO (dbl : Pt → Prog isa) : Prog isa :=
 /-- `rbx = J - 1` and `R = P`, the top digit's point. -/
 def firstO : List Instr := [.mov32 .rbx (.imm (BitVec.ofNat 32 (K.J - 1)))] ++ copyPt K.M.n K.R K.P
 
+/-- `buildO`, as a call of `buildFn` if the configuration names one. -/
+def buildOC : Prog isa :=
+  match K.buildFn with
+  | some n => .call n K.buildO
+  | none => K.buildO
+
 /-- `[k]P` into `R`, in projective coordinates, for the table of the bits of
 `k + 32^J - 1` at `K.bits - 1`. -/
 def windowO (dbl : Pt → Prog isa) : Prog isa :=
-  .seq K.buildO <| .seq (.block K.firstO) <| .seq (.loop (K.stepO dbl) .ne) <|
+  .seq K.buildOC <| .seq (.block K.firstO) <| .seq (.loop (K.stepO dbl) .ne) <|
   .seq (.block K.tc.outFix) (ForwardField.programB K.M K.tc.outOps)
 
 end JacWinCfg

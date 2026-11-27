@@ -1,26 +1,22 @@
 module
 
-public import VerifiedGarbage.Impl.Aes.X86.Ctr32
 public import VerifiedGarbage.Proof.Framework.X86.Taint
 public import VerifiedGarbage.Proof.Aes.X86.Common
 public import VerifiedGarbage.Spec.Gcm
 import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Impl.Aes.X86.Ctr32
 meta import VerifiedGarbage.Proof.Framework.X86.Taint
 meta import VerifiedGarbage.Proof.Aes.X86.Common
 meta import VerifiedGarbage.Spec.Gcm
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
-# AES counter mode on x86 (32-bit): the contract, and constant time
+# AES counter mode on x86 (32-bit): the contract, and where constant time starts
 
-The contract the proof is written against, and the constant-time half of
-the proof: the taint analysis (`VG.X86.Taint`) starts with `esp` public
-and knows where the arguments are and which of them are the base addresses
-of the counter block, the data and the scratch buffer. The data pointer
-and the count round-trip through public slots of the scratch buffer; the
-stores of the keystream through the data pointer forget them, and the code
-stores them again from the registers.
+The contract the proofs of the implementations are written against, and
+where their constant-time halves start: the taint analysis (`VG.X86.Taint`)
+starts with `esp` public and knows where the arguments are and which of them
+are the base addresses of the counter block, the data and the scratch
+buffer.
 -/
 
 @[expose] public section
@@ -42,13 +38,17 @@ the return address), and read and write `counter` (16 bytes), `data`
 unspecified). The writable buffers may not overlap each other, `schedule`,
 the arguments or the return address; nothing may wrap around the end of the
 (32-bit) address space. `rounds` is 10, 12 or 14. `esp` and the arguments
-are public; the key schedule, the counter block and the data are secret. -/
-def ctr32X86 : Contract X86.isa where
+are public; the key schedule, the counter block and the data are secret.
+
+`ctr32X86N B` is the same contract with a scratch buffer of `B` bytes, for an
+implementation that uses no more (`Ctr32Impl.scr`): `ctr32X86` is
+`ctr32X86N 2048`. -/
+def ctr32X86N (B : Nat) : Contract X86.isa where
   pre s :=
     let sched : Region := ⟨(arg s 0).setWidth 64, 240⟩
     let counter : Region := ⟨(arg s 2).setWidth 64, 16⟩
     let data : Region := ⟨(arg s 3).setWidth 64, 16 * (arg s 4).toNat⟩
-    let scratch : Region := ⟨(arg s 5).setWidth 64, 2048⟩
+    let scratch : Region := ⟨(arg s 5).setWidth 64, B⟩
     let args : Region := ⟨argAddr s 0, 28⟩
     let ret : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
     s.rd = [sched, args] ∧ s.wr = [counter, data, scratch] ∧
@@ -57,7 +57,7 @@ def ctr32X86 : Contract X86.isa where
     args.Disjoint counter ∧ args.Disjoint data ∧ args.Disjoint scratch ∧
     ret.Disjoint counter ∧ ret.Disjoint data ∧ ret.Disjoint scratch ∧
     (arg s 0).toNat + 240 ≤ 2 ^ 32 ∧ (arg s 2).toNat + 16 ≤ 2 ^ 32 ∧
-    (arg s 3).toNat + 16 * (arg s 4).toNat ≤ 2 ^ 32 ∧ (arg s 5).toNat + 2048 ≤ 2 ^ 32 ∧
+    (arg s 3).toNat + 16 * (arg s 4).toNat ≤ 2 ^ 32 ∧ (arg s 5).toNat + B ≤ 2 ^ 32 ∧
     (s.gpr .esp).toNat + 32 ≤ 2 ^ 32 ∧
     ((arg s 1).toNat = 10 ∨ (arg s 1).toNat = 12 ∨ (arg s 1).toNat = 14) ∧
     arg s 6 = arg s 3
@@ -72,33 +72,39 @@ def ctr32X86 : Contract X86.isa where
   pub s₁ s₂ := s₁.gpr .esp = s₂.gpr .esp ∧ ∀ i < 7, arg s₁ i = arg s₂ i
 
 open _root_.VG.X86 in
+/-- `ctr32X86N` with the scratch buffer of 2048 bytes every implementation is given. -/
+def ctr32X86 : Contract X86.isa := ctr32X86N 2048
+
+open _root_.VG.X86 in
 /-- X86 (32-bit) contract for `vg_aes_ctr32_to(schedule: *const [u8; 240],
 rounds: usize, counter: *mut [u8; 16], src: *const [u8; 16], n: usize,
-scratch: *mut [u64; 256], dst: *mut [u8; 16])`: `ctr32X86` out of place, the
-`n` blocks at `src` XORed with the keystream and written to `dst`, a buffer
-apart from every other; `src` is only read. The arguments are 28 bytes above
+scratch: *mut [u64; 256], dst: *mut [u8; 16])`: the original `n` blocks at
+`src` are XORed with the keystream and written to `dst`. The two pointers
+may be identical. A distinct source is read-only and disjoint from the
+destination. The arguments are 28 bytes above
 the return address, all public, in two regions: the first six, which a
-caller pushes, and `dst`, which it may store in a frame of its own. -/
-def ctr32ToX86 : Contract X86.isa where
+caller pushes, and `dst`, which it may store in a frame of its own.
+`ctr32ToX86N B` has a scratch buffer of `B` bytes, as `ctr32X86N B`. -/
+def ctr32ToX86N (B : Nat) : Contract X86.isa where
   pre s :=
     let sched : Region := ⟨(arg s 0).setWidth 64, 240⟩
     let counter : Region := ⟨(arg s 2).setWidth 64, 16⟩
     let src : Region := ⟨(arg s 3).setWidth 64, 16 * (arg s 4).toNat⟩
     let dst : Region := ⟨(arg s 6).setWidth 64, 16 * (arg s 4).toNat⟩
-    let scratch : Region := ⟨(arg s 5).setWidth 64, 2048⟩
+    let scratch : Region := ⟨(arg s 5).setWidth 64, B⟩
     let args : Region := ⟨argAddr s 0, 24⟩
     let last : Region := ⟨argAddr s 6, 4⟩
     let ret : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
     s.rd = [sched, args, last, src] ∧ s.wr = [counter, dst, scratch] ∧
     sched.Disjoint counter ∧ sched.Disjoint dst ∧ sched.Disjoint scratch ∧
     counter.Disjoint dst ∧ counter.Disjoint scratch ∧ dst.Disjoint scratch ∧
-    src.Disjoint counter ∧ src.Disjoint dst ∧ src.Disjoint scratch ∧
+    src.Disjoint counter ∧ ((arg s 3) = (arg s 6) ∨ src.Disjoint dst) ∧ src.Disjoint scratch ∧
     args.Disjoint counter ∧ args.Disjoint dst ∧ args.Disjoint scratch ∧
     last.Disjoint counter ∧ last.Disjoint dst ∧ last.Disjoint scratch ∧
     ret.Disjoint counter ∧ ret.Disjoint dst ∧ ret.Disjoint scratch ∧
     (arg s 0).toNat + 240 ≤ 2 ^ 32 ∧ (arg s 2).toNat + 16 ≤ 2 ^ 32 ∧
     (arg s 3).toNat + 16 * (arg s 4).toNat ≤ 2 ^ 32 ∧ (arg s 6).toNat + 16 * (arg s 4).toNat ≤ 2 ^ 32 ∧
-    (arg s 5).toNat + 2048 ≤ 2 ^ 32 ∧ (s.gpr .esp).toNat + 32 ≤ 2 ^ 32 ∧
+    (arg s 5).toNat + B ≤ 2 ^ 32 ∧ (s.gpr .esp).toNat + 32 ≤ 2 ^ 32 ∧
     ((arg s 1).toNat = 10 ∨ (arg s 1).toNat = 12 ∨ (arg s 1).toNat = 14)
   post s s' :=
     let ciph := aesWith (arg s 1).toNat
@@ -109,6 +115,11 @@ def ctr32ToX86 : Contract X86.isa where
       blockAt s'.mem ((arg s 2).setWidth 64) =
         Nat.repeat inc32 (arg s 4).toNat (blockAt s.mem ((arg s 2).setWidth 64))
   pub s₁ s₂ := s₁.gpr .esp = s₂.gpr .esp ∧ ∀ i < 7, arg s₁ i = arg s₂ i
+
+
+open _root_.VG.X86 in
+/-- `ctr32ToX86N` with the scratch buffer of 2048 bytes. -/
+def ctr32ToX86 : Contract X86.isa := ctr32ToX86N 2048
 
 end VG.Proof.Aes
 
@@ -130,39 +141,43 @@ abbrev scrP : BitVec 32 := arg s 5
 abbrev schR : Region := reg32 (schP s) 240
 abbrev ctrR : Region := reg32 (ctrP s) 16
 abbrev datR : Region := reg32 (datP s) (16 * nBlk s)
-abbrev scrR : Region := reg32 (scrP s) 2048
+/-- The scratch buffer, of `B` bytes (2048, but for an implementation that
+uses fewer, `Ctr32Impl.scr`). -/
+abbrev scrR (B : Nat := 2048) : Region := reg32 (scrP s) B
 abbrev argR : Region := ⟨argAddr s 0, 28⟩
 abbrev retR : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
 
 end
 
-/-- `ctr32X86.pre`, by name. -/
-structure CPre (s : State) : Prop where
+/-- `(ctr32X86N B).pre`, by name. -/
+structure CPre (s : State) (B : Nat := 2048) : Prop where
   rd : s.rd = [schR s, argR s]
-  wr : s.wr = [ctrR s, datR s, scrR s]
+  wr : s.wr = [ctrR s, datR s, scrR s B]
   dSC : (schR s).Disjoint (ctrR s)
   dSD : (schR s).Disjoint (datR s)
-  dSB : (schR s).Disjoint (scrR s)
+  dSB : (schR s).Disjoint (scrR s B)
   dCD : (ctrR s).Disjoint (datR s)
-  dCB : (ctrR s).Disjoint (scrR s)
-  dDB : (datR s).Disjoint (scrR s)
+  dCB : (ctrR s).Disjoint (scrR s B)
+  dDB : (datR s).Disjoint (scrR s B)
   aC : (argR s).Disjoint (ctrR s)
   aD : (argR s).Disjoint (datR s)
-  aB : (argR s).Disjoint (scrR s)
+  aB : (argR s).Disjoint (scrR s B)
   rC : (retR s).Disjoint (ctrR s)
   rD : (retR s).Disjoint (datR s)
-  rB : (retR s).Disjoint (scrR s)
+  rB : (retR s).Disjoint (scrR s B)
   fS : (schP s).toNat + 240 ≤ 2 ^ 32
   fC : (ctrP s).toNat + 16 ≤ 2 ^ 32
   fD : (datP s).toNat + 16 * nBlk s ≤ 2 ^ 32
-  fB : (scrP s).toNat + 2048 ≤ 2 ^ 32
+  fB : (scrP s).toNat + B ≤ 2 ^ 32
   fSp : (s.gpr .esp).toNat + 32 ≤ 2 ^ 32
   rounds : nRounds s = 10 ∨ nRounds s = 12 ∨ nRounds s = 14
   same : arg s 6 = arg s 3
 
-theorem CPre.of {s : State} (h : Proof.Aes.ctr32X86.pre s) : CPre s := by
+theorem CPre.ofN {s : State} {B : Nat} (h : (Proof.Aes.ctr32X86N B).pre s) : CPre s B := by
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17, h18, h19, h20, h21⟩ := h
   exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17, h18, h19, h20, h21⟩
+
+theorem CPre.of {s : State} (h : Proof.Aes.ctr32X86.pre s) : CPre s := CPre.ofN h
 
 /-! ## In place or out of place -/
 
@@ -182,35 +197,38 @@ end
 /-- What `ctr32X86.pre` and `ctr32ToX86.pre` give, by name: the data at
 `src`, read, and the result written to `dst` (the same bytes in place, or
 apart). -/
-structure GPre (to : Bool) (s : State) : Prop where
+structure GPre (to : Bool) (s : State) (B : Nat := 2048) : Prop where
   rS : schR s ∈ s.rd
   rA : ∀ i, i < 6 ∨ (to = true ∧ i = 6) → InRegions s.rd (addr (s.gpr .esp) (4 + 4 * i)) 4
   wC : ctrR s ∈ s.wr
   wD : dstR to s ∈ s.wr
-  wB : scrR s ∈ s.wr
+  wB : scrR s B ∈ s.wr
   rSrc : srcR s ∈ s.rd ++ s.wr
   dSC : (schR s).Disjoint (ctrR s)
-  dSB : (schR s).Disjoint (scrR s)
+  dSB : (schR s).Disjoint (scrR s B)
   dSD : (schR s).Disjoint (dstR to s)
   dCD : (ctrR s).Disjoint (dstR to s)
   dCS : (ctrR s).Disjoint (srcR s)
-  dCB : (ctrR s).Disjoint (scrR s)
-  dDB : (dstR to s).Disjoint (scrR s)
-  dSrcB : (srcR s).Disjoint (scrR s)
+  dCB : (ctrR s).Disjoint (scrR s B)
+  dDB : (dstR to s).Disjoint (scrR s B)
+  dSrcB : (srcR s).Disjoint (scrR s B)
   sd : SrcDst ((datP s).setWidth 64) ((dstP to s).setWidth 64) (nBlk s)
   aC : (argRg to s).Disjoint (ctrR s)
   aD : (argRg to s).Disjoint (dstR to s)
-  aB : (argRg to s).Disjoint (scrR s)
+  aB : (argRg to s).Disjoint (scrR s B)
   rC : (retR s).Disjoint (ctrR s)
   rD : (retR s).Disjoint (dstR to s)
-  rB : (retR s).Disjoint (scrR s)
+  rB : (retR s).Disjoint (scrR s B)
   fS : (schP s).toNat + 240 ≤ 2 ^ 32
   fC : (ctrP s).toNat + 16 ≤ 2 ^ 32
   fSrc : (datP s).toNat + 16 * nBlk s ≤ 2 ^ 32
   fD : (dstP to s).toNat + 16 * nBlk s ≤ 2 ^ 32
-  fB : (scrP s).toNat + 2048 ≤ 2 ^ 32
+  fB : (scrP s).toNat + B ≤ 2 ^ 32
   fSp : (s.gpr .esp).toNat + argN to ≤ 2 ^ 32
   rounds : nRounds s = 10 ∨ nRounds s = 12 ∨ nRounds s = 14
+  /-- The scratch buffer holds what every implementation keeps there: the
+  saved registers and a block. -/
+  hB : 32 ≤ B
 
 /-- The argument `i` is within the arguments. -/
 theorem argRg_contains {to : Bool} {s : State} (hsp : (s.gpr .esp).toNat + argN to ≤ 2 ^ 32) {i : Nat}
@@ -222,15 +240,15 @@ theorem argRg_contains {to : Bool} {s : State} (hsp : (s.gpr .esp).toNat + argN 
   · simp only [argRg, argN, ↓reduceIte] at this ⊢
     exact part_contains this (by omega_using []) (by omega_using []) (by omega_using []) (by decide)
 
-theorem GPre.argC {to : Bool} {s : State} (hp : GPre to s) {i : Nat} (hi : i < 6 ∨ (to = true ∧ i = 6)) :
+theorem GPre.argC {to : Bool} {s : State} {B : Nat} (hp : GPre to s B) {i : Nat} (hi : i < 6 ∨ (to = true ∧ i = 6)) :
     (argRg to s).Contains (addr (s.gpr .esp) (4 + 4 * i)) 4 :=
   argRg_contains hp.fSp hi
 
 /-- In place, the destination is the data. -/
-theorem CPre.dstR_eq {s : State} (hp : CPre s) : dstR true s = datR s := by
+theorem CPre.dstR_eq {s : State} {B : Nat} (hp : CPre s B) : dstR true s = datR s := by
   simp only [dstR, dstP, ↓reduceIte, hp.same]
 
-theorem CPre.gpre {s : State} (hp : CPre s) : GPre true s :=
+theorem CPre.gpre {s : State} {B : Nat} (hp : CPre s B) (hB : 32 ≤ B := by decide) : GPre true s B :=
   have e := hp.dstR_eq
   { rS := by rw [hp.rd]; exact List.mem_cons_self ..
     rA := fun i hi => ⟨_, by rw [hp.rd]; exact List.mem_cons_of_mem _ (List.mem_singleton_self _),
@@ -243,7 +261,7 @@ theorem CPre.gpre {s : State} (hp : CPre s) : GPre true s :=
     dDB := e ▸ hp.dDB, dSrcB := hp.dDB, sd := .inl (by simp only [dstP, ↓reduceIte, hp.same]),
     aC := hp.aC, aD := e ▸ hp.aD, aB := hp.aB, rC := hp.rC, rD := e ▸ hp.rD, rB := hp.rB, fS := hp.fS,
     fC := hp.fC, fSrc := hp.fD, fD := by simp only [dstP, ↓reduceIte, hp.same]; exact hp.fD, fB := hp.fB,
-    fSp := hp.fSp, rounds := hp.rounds }
+    fSp := hp.fSp, rounds := hp.rounds, hB := hB }
 
 /-- Two regions, one after the other, apart from a third: the one they make
 up is. -/
@@ -264,7 +282,8 @@ theorem argAddr6 {s : State} (h : (s.gpr .esp).toNat + 32 ≤ 2 ^ 32) :
   simp only [BitVec.toNat_setWidth, BitVec.toNat_add, BitVec.toNat_ofNat]
   omega_using [h]
 
-theorem GPre.ofTo {s : State} (h : Proof.Aes.ctr32ToX86.pre s) : GPre true s := by
+theorem GPre.ofToN {s : State} {B : Nat} (h : (Proof.Aes.ctr32ToX86N B).pre s) (hB : 32 ≤ B := by decide) :
+    GPre true s B := by
   obtain ⟨hrd, hwr, dSC, dSD, dSB, dCD, dCB, dDB, dSrcC, dSrcD, dSrcB, aC, aD, aB, lC, lD, lB, rC, rD, rB, fS, fC,
     fSrc, fD, fB, fSp, hR⟩ := h
   have e6 := argAddr6 (s := s) fSp
@@ -284,10 +303,12 @@ theorem GPre.ofTo {s : State} (h : Proof.Aes.ctr32ToX86.pre s) : GPre true s := 
     rSrc := by rw [hrd]; exact List.mem_append_left _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _
       (List.mem_cons_of_mem _ (List.mem_singleton_self _))))
     dSC := dSC, dSB := dSB, dSD := dSD, dCD := dCD, dCS := dSrcC.symm, dCB := dCB, dDB := dDB, dSrcB := dSrcB,
-    sd := .inr dSrcD, aC := disj_join aC lC, aD := disj_join aD lD, aB := disj_join aB lB, rC := rC, rD := rD, rB := rB, fS := fS, fC := fC,
-    fSrc := fSrc, fD := fD, fB := fB, fSp := fSp, rounds := hR }
+    sd := dSrcD.imp (congrArg (BitVec.setWidth 64)) id, aC := disj_join aC lC, aD := disj_join aD lD, aB := disj_join aB lB, rC := rC, rD := rD, rB := rB, fS := fS, fC := fC,
+    fSrc := fSrc, fD := fD, fB := fB, fSp := fSp, rounds := hR, hB := hB }
 
-theorem GPre.argSub {to : Bool} {s : State} (hp : GPre to s) {i : Nat} (hi : i < 6 ∨ (to = true ∧ i = 6)) :
+theorem GPre.ofTo {s : State} (h : Proof.Aes.ctr32ToX86.pre s) : GPre true s := GPre.ofToN h
+
+theorem GPre.argSub {to : Bool} {s : State} {B : Nat} (hp : GPre to s B) {i : Nat} (hi : i < 6 ∨ (to = true ∧ i = 6)) :
     Region.Sub ⟨addr (s.gpr .esp) (4 + 4 * i), 4⟩ (argRg to s) := by
   have := hp.fSp
   rcases hi with hi | ⟨rfl, rfl⟩
@@ -300,11 +321,15 @@ theorem GPre.argSub {to : Bool} {s : State} (hp : GPre to s) {i : Nat} (hi : i <
 
 /-- Out of place: the arguments 28 bytes above the return address, and the
 word holding `dst` (at 28) the base address of the writable region it gives. -/
-def ctrToτ₀ : VG.X86.Taint.T :=
-  { regs := .ofList [.esp], flags := false, lens := [16, 0, 2048], argLen := 32,
+def ctrToτN (B : Nat) : VG.X86.Taint.T :=
+  { regs := .ofList [.esp], flags := false, lens := [16, 0, B], argLen := 32,
     argBases := [(12, 0), (28, 1), (24, 2)] }
 
-theorem ctrTo_wf₀ {s : State} (hp : Proof.Aes.ctr32ToX86.pre s) : VG.X86.Taint.Wf ctrToτ₀ s := by
+/-- `ctrToτN` for the scratch buffer of 2048 bytes. -/
+def ctrToτ₀ : VG.X86.Taint.T := ctrToτN 2048
+
+theorem ctrTo_wfN {s : State} {B : Nat} (hp : (Proof.Aes.ctr32ToX86N B).pre s) :
+    VG.X86.Taint.Wf (ctrToτN B) s := by
   obtain ⟨-, hwr, -, -, -, dCD, dCB, dDB, -, -, -, aC, aD, aB, lC, lD, lB, rC, rD, rB, -, fC, -, fD, fB, fSp, -⟩ := hp
   have e6 := argAddr6 (s := s) fSp
   rw [e6] at lC lD lB
@@ -313,7 +338,7 @@ theorem ctrTo_wf₀ {s : State} (hp : Proof.Aes.ctr32ToX86.pre s) : VG.X86.Taint
   replace aB := disj_join aB lB
   refine VG.X86.Taint.Wf.entry rfl rfl ⟨fun _ => ⟨?_, ?_, ?_⟩,
     fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim,
-    fun _ => ⟨by simp only [ctrToτ₀]; omega_using [fSp], ?_⟩, ?_⟩
+    fun _ => ⟨by simp only [ctrToτN]; omega_using [fSp], ?_⟩, ?_⟩
   · rw [hwr]
     exact .cons (Nat.le_refl _) (.cons (Nat.zero_le _) (.cons (Nat.le_refl _) .nil))
   · simp only [hwr, List.pairwise_cons, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
@@ -327,40 +352,41 @@ theorem ctrTo_wf₀ {s : State} (hp : Proof.Aes.ctr32ToX86.pre s) : VG.X86.Taint
     · exact VG.X86.Taint.frame_disjoint (n := 28) (by omega_using [fSp]) rD aD
     · exact VG.X86.Taint.frame_disjoint (n := 28) (by omega_using [fSp]) rB aB
   · intro p hp'
-    simp only [ctrToτ₀, List.mem_cons, List.not_mem_nil, or_false] at hp'
-    rcases hp' with rfl | rfl | rfl <;> refine ⟨by decide, ?_⟩ <;>
+    simp only [ctrToτN, List.mem_cons, List.not_mem_nil, or_false] at hp'
+    rcases hp' with rfl | rfl | rfl <;> refine ⟨Nat.le_of_ble_eq_true rfl, ?_⟩ <;>
       simp [VG.X86.Taint.region, hwr, addr, arg, argAddr]
 
-theorem ctrTo_agree₀ {s₁ s₂ : State} (h₁ : Proof.Aes.ctr32ToX86.pre s₁) (h₂ : Proof.Aes.ctr32ToX86.pre s₂)
-    (hpub : Proof.Aes.ctr32ToX86.pub s₁ s₂) : VG.X86.Taint.Agree ctrToτ₀ s₁ s₂ := by
+theorem ctrTo_wf₀ {s : State} (hp : Proof.Aes.ctr32ToX86.pre s) : VG.X86.Taint.Wf ctrToτ₀ s := ctrTo_wfN hp
+
+theorem ctrTo_agreeN {s₁ s₂ : State} {B : Nat} (h₁ : (Proof.Aes.ctr32ToX86N B).pre s₁)
+    (h₂ : (Proof.Aes.ctr32ToX86N B).pre s₂) (hpub : (Proof.Aes.ctr32ToX86N B).pub s₁ s₂) (hB : 32 ≤ B := by decide) :
+    VG.X86.Taint.Agree (ctrToτN B) s₁ s₂ := by
   obtain ⟨hesp, ha⟩ := hpub
-  have fSp₁ : (s₁.gpr .esp).toNat + 32 ≤ 2 ^ 32 := (GPre.ofTo h₁).fSp
-  have fSp₂ : (s₂.gpr .esp).toNat + 32 ≤ 2 ^ 32 := (GPre.ofTo h₂).fSp
-  refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun _ => ?_, ctrTo_wf₀ h₁, ctrTo_wf₀ h₂,
+  have fSp₁ : (s₁.gpr .esp).toNat + 32 ≤ 2 ^ 32 := (GPre.ofToN h₁ hB).fSp
+  have fSp₂ : (s₂.gpr .esp).toNat + 32 ≤ 2 ^ 32 := (GPre.ofToN h₂ hB).fSp
+  refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun _ => ?_, ctrTo_wfN h₁, ctrTo_wfN h₂,
     VG.X86.Taint.slotsOk_empty, VG.X86.Taint.slotsAgree_empty, fun _ => hesp,
     fun k h4 hk => ?_⟩
-  · simp only [ctrToτ₀, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
+  · simp only [ctrToτN, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
     subst hr; exact hesp
   · rw [h₁.2.1, h₂.2.1]
     simp only [ha 2 (by omega_using []), ha 4 (by omega_using []), ha 5 (by omega_using []), ha 6 (by omega_using [])]
-  · simp only [ctrToτ₀] at hk
-    rw [show VG.X86.Taint.depth ctrToτ₀.stk = 0 from rfl, Nat.zero_add]
+  · simp only [ctrToτN] at hk
+    rw [show VG.X86.Taint.depth (ctrToτN B).stk = 0 from rfl, Nat.zero_add]
     rw [VG.X86.Taint.argByte_eq (n := 32) fSp₁ h4 hk, VG.X86.Taint.argByte_eq (n := 32) fSp₂ h4 hk,
       Mem.readW_byte s₁.mem _ (Nat.mod_lt _ (by omega_using [])), Mem.readW_byte s₂.mem _ (Nat.mod_lt _ (by omega_using []))]
     exact congrArg _ (ha _ (by omega_using [hk]))
 
-theorem ctr32To_ct :
-    ConstantTime isa Proof.Aes.ctr32ToX86.pre Proof.Aes.ctr32ToX86.pub Impl.Aes.X86.ctr32To :=
-  VG.Taint.constantTime (A := VG.X86.taint) ctrToτ₀ (fun _ _ h₁ h₂ hp => ctrTo_agree₀ h₁ h₂ hp)
-    (by taint_decide)
+theorem ctrTo_agree₀ {s₁ s₂ : State} (h₁ : Proof.Aes.ctr32ToX86.pre s₁) (h₂ : Proof.Aes.ctr32ToX86.pre s₂)
+    (hpub : Proof.Aes.ctr32ToX86.pub s₁ s₂) : VG.X86.Taint.Agree ctrToτ₀ s₁ s₂ := ctrTo_agreeN h₁ h₂ hpub
 
 /-- In place, the analysis is that of `ctrToτ₀`: the word holding `dst`
 holds the data's base address. -/
-theorem ctr_wf₀ {s : State} (hp : CPre s) : VG.X86.Taint.Wf ctrToτ₀ s := by
+theorem ctr_wfN {s : State} {B : Nat} (hp : CPre s B) : VG.X86.Taint.Wf (ctrToτN B) s := by
   have hC := hp.fC; have hD := hp.fD; have hB := hp.fB; have hs := hp.fSp
   refine VG.X86.Taint.Wf.entry rfl rfl ⟨fun _ => ⟨?_, ?_, ?_⟩,
     fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim,
-    fun _ => ⟨by simp only [ctrToτ₀]; omega_using [hs], ?_⟩, ?_⟩
+    fun _ => ⟨by simp only [ctrToτN]; omega_using [hs], ?_⟩, ?_⟩
   · rw [hp.wr]
     exact .cons (Nat.le_refl _) (.cons (Nat.zero_le _) (.cons (Nat.le_refl _) .nil))
   · simp only [hp.wr, List.pairwise_cons, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
@@ -376,31 +402,30 @@ theorem ctr_wf₀ {s : State} (hp : CPre s) : VG.X86.Taint.Wf ctrToτ₀ s := by
   · have e6 : arg s 6 = arg s 3 := hp.same
     simp only [arg, argAddr] at e6
     intro p hp'
-    simp only [ctrToτ₀, List.mem_cons, List.not_mem_nil, or_false] at hp'
-    rcases hp' with rfl | rfl | rfl <;> refine ⟨by decide, ?_⟩ <;>
+    simp only [ctrToτN, List.mem_cons, List.not_mem_nil, or_false] at hp'
+    rcases hp' with rfl | rfl | rfl <;> refine ⟨Nat.le_of_ble_eq_true rfl, ?_⟩ <;>
       simp [VG.X86.Taint.region, hp.wr, addr, arg, argAddr, e6]
 
-theorem ctr_agree₀ {s₁ s₂ : State} (h₁ : Proof.Aes.ctr32X86.pre s₁) (h₂ : Proof.Aes.ctr32X86.pre s₂)
-    (hpub : Proof.Aes.ctr32X86.pub s₁ s₂) : VG.X86.Taint.Agree ctrToτ₀ s₁ s₂ := by
+theorem ctr_agreeN {s₁ s₂ : State} {B : Nat} (h₁ : (Proof.Aes.ctr32X86N B).pre s₁)
+    (h₂ : (Proof.Aes.ctr32X86N B).pre s₂) (hpub : (Proof.Aes.ctr32X86N B).pub s₁ s₂) :
+    VG.X86.Taint.Agree (ctrToτN B) s₁ s₂ := by
   obtain ⟨hesp, ha⟩ := hpub
-  have hp₁ := CPre.of h₁; have hp₂ := CPre.of h₂
-  refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun _ => ?_, ctr_wf₀ hp₁, ctr_wf₀ hp₂,
+  have hp₁ := CPre.ofN h₁; have hp₂ := CPre.ofN h₂
+  refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun _ => ?_, ctr_wfN hp₁, ctr_wfN hp₂,
     VG.X86.Taint.slotsOk_empty, VG.X86.Taint.slotsAgree_empty, fun _ => hesp,
     fun k h4 hk => ?_⟩
-  · simp only [ctrToτ₀, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
+  · simp only [ctrToτN, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
     subst hr; exact hesp
   · rw [hp₁.wr, hp₂.wr]
     simp only [ctrR, datR, scrR, ctrP, datP, nBlk, scrP, ha 2 (by omega_using []), ha 3 (by omega_using []),
       ha 4 (by omega_using []), ha 5 (by omega_using [])]
-  · simp only [ctrToτ₀] at hk
-    rw [show VG.X86.Taint.depth ctrToτ₀.stk = 0 from rfl, Nat.zero_add]
+  · simp only [ctrToτN] at hk
+    rw [show VG.X86.Taint.depth (ctrToτN B).stk = 0 from rfl, Nat.zero_add]
     rw [VG.X86.Taint.argByte_eq (n := 32) hp₁.fSp h4 hk, VG.X86.Taint.argByte_eq (n := 32) hp₂.fSp h4 hk,
       Mem.readW_byte s₁.mem _ (Nat.mod_lt _ (by omega_using [])), Mem.readW_byte s₂.mem _ (Nat.mod_lt _ (by omega_using []))]
     exact congrArg _ (ha _ (by omega_using [hk]))
 
-/-- `vg_aes_ctr32_to` in place. -/
-theorem ctr32_ct : ConstantTime isa Proof.Aes.ctr32X86.pre Proof.Aes.ctr32X86.pub Impl.Aes.X86.ctr32To :=
-  VG.Taint.constantTime (A := VG.X86.taint) ctrToτ₀ (fun _ _ h₁ h₂ hp => ctr_agree₀ h₁ h₂ hp)
-    (by taint_decide)
+theorem ctr_agree₀ {s₁ s₂ : State} (h₁ : Proof.Aes.ctr32X86.pre s₁) (h₂ : Proof.Aes.ctr32X86.pre s₂)
+    (hpub : Proof.Aes.ctr32X86.pub s₁ s₂) : VG.X86.Taint.Agree ctrToτ₀ s₁ s₂ := ctr_agreeN h₁ h₂ hpub
 
 end VG.Proof.Aes.X86

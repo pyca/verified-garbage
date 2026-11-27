@@ -26,7 +26,7 @@ open VG.Impl.Pbkdf2.AArch64 (Params)
 
 /-- A hash function with the parameters `P` and the digest size `D`, and no
 functions to call. -/
-def ckH (P : Params) (D : Nat) : Hash := ⟨P, D, 0, "", .block [], "", .block [], "", .block [], "", .block [], "", "", ""⟩
+def ckH (P : Params) (D : Nat) : Hash := ⟨P, D, 0, "", .block [], "", .block [], "", .block [], "", .block [], "", "", "", ""⟩
 
 /-- The taint check of the hash function's code in `ctHashWith`: its length
 field from `ℓ` (secret). -/

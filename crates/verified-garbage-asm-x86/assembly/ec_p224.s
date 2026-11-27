@@ -5,6 +5,14 @@
 // gives.
 
 vg_ec_p224_public_key:
+	call 2f
+2:
+	mov eax, DWORD PTR [esp]
+	.byte 0x81, 192
+	.long {VG_P224_COMB}
+	pop ecx
+	mov edx, DWORD PTR [esp+12]
+	mov DWORD PTR [edx+60], eax
 	mov eax, DWORD PTR [esp+12]
 	mov DWORD PTR [eax], ebx
 	mov DWORD PTR [eax+4], esi
@@ -473,42 +481,7 @@ vg_ec_p224_public_key:
 	mov BYTE PTR [ebx+4623], dl
 	test esi, esi
 	jne 22b
-	mov eax, DWORD PTR [edi+320]
-	mov DWORD PTR [edi+512], eax
-	mov eax, DWORD PTR [edi+324]
-	mov DWORD PTR [edi+516], eax
-	mov eax, DWORD PTR [edi+328]
-	mov DWORD PTR [edi+520], eax
-	mov eax, DWORD PTR [edi+332]
-	mov DWORD PTR [edi+524], eax
-	mov eax, DWORD PTR [edi+336]
-	mov DWORD PTR [edi+528], eax
-	mov eax, DWORD PTR [edi+340]
-	mov DWORD PTR [edi+532], eax
-	mov eax, DWORD PTR [edi+344]
-	mov DWORD PTR [edi+536], eax
-	mov eax, DWORD PTR [edi+348]
-	mov DWORD PTR [edi+540], eax
-	mov eax, DWORD PTR [edi+352]
-	mov DWORD PTR [edi+544], eax
-	mov eax, DWORD PTR [edi+356]
-	mov DWORD PTR [edi+548], eax
-	mov eax, DWORD PTR [edi+360]
-	mov DWORD PTR [edi+552], eax
-	mov eax, DWORD PTR [edi+364]
-	mov DWORD PTR [edi+556], eax
-	mov eax, DWORD PTR [edi+368]
-	mov DWORD PTR [edi+560], eax
-	mov eax, DWORD PTR [edi+372]
-	mov DWORD PTR [edi+564], eax
-	mov eax, DWORD PTR [edi+376]
-	mov DWORD PTR [edi+568], eax
-	mov eax, DWORD PTR [edi+380]
-	mov DWORD PTR [edi+572], eax
-	push edi
-	call {vg_p224_mul}
-	pop eax
-	mov edi, DWORD PTR [esp+12]
+	call {vg_p224_comb}
 	mov eax, DWORD PTR [edi+224]
 	mov DWORD PTR [edi+992], eax
 	mov eax, DWORD PTR [edi+228]
@@ -770,5 +743,22 @@ vg_ec_p224_public_key:
 	mov esi, DWORD PTR [edx+4]
 	mov ebp, DWORD PTR [edx+12]
 	mov edi, DWORD PTR [edx+8]
+	pxor xmm0, xmm0
+	mov ecx, 0
+	lea esp, [esp-24]
+	movdqu XMMWORD PTR [esp], xmm0
+	mov DWORD PTR [esp+16], ecx
+	mov DWORD PTR [esp+20], ecx
+	lea esp, [esp+24]
+	mov edx, 0
+	xor ecx, ecx
+	pxor xmm0, xmm0
+	pxor xmm1, xmm1
+	pxor xmm2, xmm2
+	pxor xmm3, xmm3
+	pxor xmm4, xmm4
+	pxor xmm5, xmm5
+	pxor xmm6, xmm6
+	pxor xmm7, xmm7
 	ret
 	.p2align 6

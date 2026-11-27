@@ -1,23 +1,25 @@
 module
 
-public import VerifiedGarbage.Proof.Blowfish.Arm.FbVerified
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.Arm.Print
-public import VerifiedGarbage.Proof.Blowfish.Arm.FbFinalVerified
-public import VerifiedGarbage.Impl.Blowfish.Arm.FbFinal
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Blowfish.Ofb
+public import VerifiedGarbage.Spec.Blowfish.OfbFinal
+import VerifiedGarbage.Proof.Blowfish.Arm.Scrub
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # Blowfish-OFB on ARMv7 -/
 
-@[expose] public section
-
 namespace VG.Artifacts.BlowfishOfb.Arm
 
-def artifacts : List Artifact := [
+public def artifacts : List (Artifact Arm.target) := [
   Spec.Blowfish.ofbApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.Blowfish.Arm.ofb
-    verified := Proof.Blowfish.Arm.ofb_framed },
+    code := Impl.Blowfish.Arm.Fn.ofb
+    verified := Proof.Blowfish.Arm.Fn.ofb },
   Spec.Blowfish.ofbFinalApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.Blowfish.Arm.ofbFinal
-    verified := Proof.Blowfish.Arm.ofbFinal_framed }]
+    code := Impl.Blowfish.Arm.Fn.ofbFinal
+    verified := Proof.Blowfish.Arm.Fn.ofbFinal }]
+
+spec_apis artifacts
 
 end VG.Artifacts.BlowfishOfb.Arm

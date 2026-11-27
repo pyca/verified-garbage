@@ -1,0 +1,148 @@
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.TableSat
+public import VerifiedGarbage.Spec.Ecdsa.Verify.Generic
+public import VerifiedGarbage.Proof.HmacTable.X86.Up
+public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
+public import VerifiedGarbage.Impl.Ecdsa.X86.VerifyHash
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86.Hash
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Frame
+
+/-!
+# ECDSA on x86 (32-bit), without secret residue
+
+For every curve, the postconditions of `vg_ecdsa_<curve>_verify` and of
+`vg_ecdsa_<curve>_sign` (generic over the HMAC implementations its table
+holds) read the memory on return only within `out` (`X86.Scrub.PostOut`),
+as on RISC-V (`Proof/EcKey/RISCV64/Scrub.lean`,
+`Proof/Ecdsa/Rfc6979/RISCV64/Scrub.lean`): what
+`X86.Scrub.verifiedScrubbedAll` needs of each implementation followed by its
+cleanup, the zeroing of the stack its frames and calls use and
+`Impl.Scrub.X86.tail`. The registrations are each curve's `Scrub` module
+(`Proof/Ecdsa/X86/<Curve>/Scrub.lean`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Ecdsa.X86.Scrub
+
+open VG.X86 VG.X86.Scrub
+open VG.Proof.HmacTable.X86 (HVar)
+
+/-- The `n` bytes at `q` read the memory only within a region at `q` of at
+least `n` bytes. -/
+theorem bytesAt_of {m₁ m₂ : Mem} {q : Addr} {N n : Nat} (hn : n ≤ N)
+    (h : ∀ a, Region.Contains ⟨q, N⟩ a 1 → m₁ a = m₂ a) :
+    Spec.Sha3.bytesAt m₂ q n = Spec.Sha3.bytesAt m₁ q n := by
+  simp only [Spec.Sha3.bytesAt]
+  refine List.map_congr_left fun i hi => (h _ ?_).symm
+  have hi := List.mem_range.mp hi
+  simp only [Region.Contains, Offset.add_sub_cancel_left, BitVec.toNat_ofNat]
+  have := Nat.mod_le i (2 ^ 64)
+  omega_using [hn, hi]
+
+/-- The postcondition of `vg_ecdsa_<curve>_verify` reads no memory on
+return. -/
+theorem verifyHashOut (J : Spec.Ecdsa.Instance) (cs : List (String × List (BitVec 64))) (stack : Nat) :
+    PostOut (J.verifyHashContract (X86.abi.withConsts cs) stack) (J.verifyHashSig.retBits 32) :=
+  postOut_of_local (ScrubAbi.consts cs) fun vs m m₁ m₂ r hlen _ h => by
+    obtain ⟨pk, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 4) hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨dg, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨dl, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨sg, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨sc, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    obtain rfl := List.eq_nil_of_length_eq_zero (Nat.succ.inj hlen)
+    exact h
+
+/-- The postcondition of `vg_ecdsa_<curve>_sign` reads the memory on return
+only within `out`. -/
+theorem signOut (T : Spec.Ecdsa.Rfc6979.TableInstance) (cs : List (String × List (BitVec 64)))
+    (vs : List HVar) :
+    PostOut (Rfc6979.X86.specK T cs vs) (T.signSig.retBits 32) :=
+  postOut_of_local ((ScrubAbi.consts cs).tables _ _) fun vs m m₁ m₂ r hlen hb h => by
+    match vs, hlen with
+    | [out, d, dg, dl, sc, hm], _ =>
+      simp only [Spec.Ecdsa.Rfc6979.TableInstance.signSig, Sig.bufs, List.mem_cons,
+        forall_eq_or_imp, Elem.size, Nat.mul_one] at hb
+      have e := bytesAt_of (n := 2 * T.ecdsa.curve.len) (Nat.le_refl _) hb.1
+      intro H F h1 h2
+      have h' := h H F h1 h2
+      revert h'
+      split
+      · exact fun h' => ⟨h'.1, e.trans h'.2⟩
+      · exact fun h' => ⟨h'.1, e.trans h'.2⟩
+
+/-- `Rfc6979.X86.cfgT` of a curve given by the fields its code reads, which
+mention none of the curve's proofs: what each curve's `signSide` evaluates. -/
+def cfgOf (E : Impl.Ecdsa.X86.Cfg) (big : Bool) (sh : Nat) (coreN : String) (coreC : Prog isa)
+    (tries : Nat) (vs : List HVar) : Impl.Ecdsa.Rfc6979.X86.Cfg where
+  f := HmacTable.X86.fnsOf vs
+  w := 2 * E.n - (if E.C.len = 28 then 1 else 0)
+  len := E.C.len
+  big := big
+  sh := sh
+  n := E.C.n
+  tries := tries
+  coreN := coreN
+  coreC := coreC
+
+/-- `cfgOf`, over stubs of the table's functions. -/
+def cfgS (E : Impl.Ecdsa.X86.Cfg) (big : Bool) (sh : Nat) (coreN : String) (coreC : Prog isa) (tries : Nat) :
+    Impl.Ecdsa.Rfc6979.X86.Cfg :=
+  { cfgOf E big sh coreN coreC tries [] with f := HmacTable.X86.stubFns }
+
+theorem sign_tfill {vs : List HVar} (hv : ∀ w ∈ vs, HmacTable.X86.HmacUp w) (E : Impl.Ecdsa.X86.Cfg) (big : Bool)
+    (sh : Nat) (coreN : String) (coreC : Prog isa) (tries : Nat) (hk : inames coreC = []) :
+    TFill (HmacTable.X86.names vs) (Impl.Ecdsa.Rfc6979.X86.signCode (cfgS E big sh coreN coreC tries))
+      (Impl.Ecdsa.Rfc6979.X86.signCode (cfgOf E big sh coreN coreC tries vs)) := by
+  obtain ⟨hI, hU, hF⟩ := HmacTable.X86.fnsOf_up hv
+  tfill_calls
+
+/-- `scrubFSide` of `vg_ecdsa_<curve>_sign`'s code with the registrations'
+HMAC implementations in its table, from what is evaluated of its code over
+stubs of them. -/
+theorem signSide_of_stub {E : Impl.Ecdsa.X86.Cfg} {big : Bool} {sh : Nat} {coreN : String} {coreC : Prog isa}
+    {tries W : Nat}
+    (h : (CodeWalk.namesIn [] coreC &&
+      stubSide (Impl.Ecdsa.Rfc6979.X86.signCode (cfgS E big sh coreN coreC tries)) W) = true) :
+    scrubFSide (Impl.Ecdsa.Rfc6979.X86.signCode (cfgOf E big sh coreN coreC tries HmacTable.X86.vs))
+      [("hmac", HmacTable.X86.tables HmacTable.X86.vs)] W = true := by
+  rw [Bool.and_eq_true] at h
+  exact (sign_tfill HmacTable.X86.vs_up E big sh coreN coreC tries (inames_of_namesIn h.1)).ok
+    (fun _ h => HmacTable.X86.mem_tableFns h) h.2
+
+/-- `scrubFSide` of `vg_ecdsa_<curve>_sign`'s code from that of the code of
+`cfgOf`, which the kernel evaluates without the curve's proofs. -/
+theorem signSide_of {R : Rfc6979.X86.RfcCurve} {tries : Nat} {vs : List HVar}
+    {ts : List (String × List FnTable)} {W : Nat}
+    (h : scrubFSide (Impl.Ecdsa.Rfc6979.X86.signCode (cfgOf R.E R.big R.sh R.coreN R.coreC tries vs)) ts W = true) :
+    scrubFSide (Rfc6979.X86.signCodeT R tries vs) ts W = true := h
+
+open Rfc6979.X86 in
+/-- `vg_ecdsa_<curve>_sign` writes `esp` only in its frames and calls, if the
+core it calls does not. -/
+theorem signCode_all {E : Impl.Ecdsa.X86.Cfg} {big : Bool} {sh : Nat} {coreN : String} {coreC : Prog isa}
+    {tries : Nat} {vs : List HVar} (hT : RfcT (cfgC E big sh)) (h : NoSp coreC) :
+    (Impl.Ecdsa.Rfc6979.X86.signCode (cfgOf E big sh coreN coreC tries vs)).all
+      (fun i => !isa.writesSp i) = true := by
+  refine Code.all_of_allInstrs ?_
+  have h := body_okP (c := cfgOf E big sh coreN coreC tries vs) hT (fnsOk_of vs) (okP_of_noSp h)
+  simp only [OkP, Proof.Pbkdf2.Whole.X86.clobbers_esp] at h
+  simp only [Impl.Ecdsa.Rfc6979.X86.signCode, Impl.Ecdsa.Rfc6979.X86.Cfg.sign, Code.allInstrs, h]
+  rfl
+
+/-- `vg_ecdsa_<curve>_verify` writes `esp` only in its frames and calls, if the
+verification it runs does not. -/
+theorem verifyHash_all {len : Nat} {wide : Bool} {core : Prog isa} (h : NoSp core) :
+    (Impl.Ecdsa.X86.VerifyHash.verifyHash len wide core).all (fun i => !isa.writesSp i) = true := by
+  have h₁ := writesSp_of_noSp (Ecdsa.Verify.X86.Hash.hashed_noSp (len := len) (wide := wide) h)
+  simp only [Impl.Ecdsa.X86.VerifyHash.verifyHash, Impl.StackScratch.X86.withStackScratch, Code.all, h₁,
+    Bool.and_true]
+  decide
+
+end VG.Proof.Ecdsa.X86.Scrub

@@ -1,13 +1,267 @@
 module
-public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Batch
+
 public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Scalar
 import VerifiedGarbage.Proof.MlKem.AArch64.Coeff16
 import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 import VerifiedGarbage.Proof.MlKem.Arith
-import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Parse
+public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Probe
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Spec.MlKem
+public import VerifiedGarbage.Proof.MlKem.CoeffW
+import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
+public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Table
+import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Halves
+
+/-! ### `MlKem.AArch64.Rej8Advance`, which this module and modules that import it used -/
+
+section
+
+/-! ### `MlKem.AArch64.Rej8Store`, which the modules that import this one used -/
+
+section
+
+/-! # Stable compaction and widening stores of an eight-candidate batch -/
+
+@[expose] public section
+
+namespace VG.Proof.MlKem.AArch64.Rej8
+open VG VG.AArch64 VG.Proof.MlKem.AArch64 VG.Proof.MlKem.AArch64.Ntt16
+
+def wideLo (x z : BitVec 128) : BitVec 128 := VPermOp.eval .zip1 .h8 x z
+def wideHi (x z : BitVec 128) : BitVec 128 := VPermOp.eval .zip2 .h8 x z
+
+def storeCode (w16 : Bool := false) : List Instr :=
+ [.ldrq .v2 .x7 0,.vop (.tbl .v0 .v0 .v2)] ++
+ (if w16 then [.strq .v0 .x3 0] else [.vop (.perm .zip1 .h8 .v1 .v0 .v21),
+ .vop (.perm .zip2 .h8 .v2 .v0 .v21),.strq .v1 .x3 0,.strq .v2 .x3 16])
+
+/-- With 16-bit coefficients, the compacted halfwords themselves. -/
+structure StorePost16 (s t : State) (mask : Nat) : Prop where
+  keep : Keep [] s t
+  gpr : t.gpr=s.gpr
+  other : ∀ r, r ∉ [.v0,.v1,.v2] → t.v r=s.v r
+  mem : t.mem = s.mem.write (s.gpr .x3) 16 (compactValue (s.v .v0) mask)
+
+theorem store16_ok (s : State) (mask : Nat)
+    (hr : InRegions (s.rd++s.wr) (s.gpr .x7) 16)
+    (table : s.mem.read (s.gpr .x7) 16 = tableVec mask)
+    (hw0 : InRegions s.wr (s.gpr .x3) 16) :
+    WP isa (.block (storeCode true)) s (fun t => StorePost16 s t mask) := by
+  refine wp_ldrq (a := s.gpr .x7) (by decide) (ptr_zero _) hr fun a ha =>
+    wp_vop (d := .v0) rfl fun b hb => ?_
+  have hv0 : b.v .v0 = compactValue (s.v .v0) mask := by
+    rw [hb.v,ha.v,table,ha.get .v0]
+    rfl
+  refine wp_strq (a := s.gpr .x3) (by decide) (by rw [hb.gpr,ha.gpr]; exact ptr_zero _)
+    (by rw [hb.wr,ha.wr]; exact hw0) fun t ht => wp_nil ?_
+  have hc0 := (ha.chg.trans hb.chg).mono (rs' := [.v0,.v1,.v2]) (by decide)
+  refine ⟨hc0.keep.trans ht.keep, ht.gpr.trans (hb.gpr.trans ha.gpr), ?_, ?_⟩
+  · intro r hr
+    rw [ht.v,hc0.v r hr]
+  · rw [ht.mem,hv0,hb.mem,ha.mem]
+
+structure StorePost (s t : State) (mask : Nat) : Prop where
+  keep : Keep [] s t
+  gpr : t.gpr=s.gpr
+  other : ∀ r, r ∉ [.v0,.v1,.v2] → t.v r=s.v r
+  mem : t.mem = (s.mem.write (s.gpr .x3) 16
+      (wideLo (compactValue (s.v .v0) mask) (s.v .v21))).write (s.gpr .x3+16) 16
+      (wideHi (compactValue (s.v .v0) mask) (s.v .v21))
+
+theorem store_ok (s : State) (mask : Nat)
+    (hr : InRegions (s.rd++s.wr) (s.gpr .x7) 16)
+    (table : s.mem.read (s.gpr .x7) 16 = tableVec mask)
+    (hw0 : InRegions s.wr (s.gpr .x3) 16)
+    (hw1 : InRegions s.wr (s.gpr .x3+16) 16) :
+    WP isa (.block storeCode) s (fun t => StorePost s t mask) := by
+  refine wp_ldrq (a := s.gpr .x7) (by decide) (ptr_zero _) hr fun a ha =>
+    wp_vop (d := .v0) rfl fun b hb =>
+    wp_vop (d := .v1) rfl fun c hc =>
+    wp_vop (d := .v2) rfl fun d hd => ?_
+  have hv0 : d.v .v1 = wideLo (compactValue (s.v .v0) mask) (s.v .v21) := by
+    rw [hd.get .v1,hc.v,hb.v,ha.v,table,ha.get .v0,hb.get .v21,ha.get .v21]
+    rfl
+  have hv1 : d.v .v2 = wideHi (compactValue (s.v .v0) mask) (s.v .v21) := by
+    rw [hd.v,hc.get .v0,hb.v,ha.v,table,ha.get .v0,hc.get .v21,hb.get .v21,ha.get .v21]
+    rfl
+  have hg : d.gpr=s.gpr := hd.gpr.trans (hc.gpr.trans (hb.gpr.trans ha.gpr))
+  have hw : d.wr=s.wr := hd.wr.trans (hc.wr.trans (hb.wr.trans ha.wr))
+  refine wp_strq (a := s.gpr .x3) (by decide) (by rw [hg]; exact ptr_zero _)
+    (by rw [hw]; exact hw0) fun e he =>
+    wp_strq (a := s.gpr .x3+16) (by decide) (by rw [he.gpr,hg]; rfl)
+    (by rw [he.wr,hw]; exact hw1) fun t ht => wp_nil ?_
+  have hc0 := (((ha.chg.trans hb.chg).trans hc.chg).trans hd.chg).mono
+    (rs' := [.v0,.v1,.v2]) (by decide)
+  refine ⟨(hc0.keep.trans he.keep).trans ht.keep,
+    ht.gpr.trans (he.gpr.trans hg), ?_, ?_⟩
+  · intro r hr
+    rw [ht.v,he.v,hc0.v r hr]
+  · rw [ht.mem,he.mem,he.v,hv0,hv1,hd.mem,hc.mem,hb.mem,ha.mem]
+
+theorem widened_coeffs (x z : BitVec 128) {mask : Nat} (hm : mask<256)
+    (hz : ∀ i<8,vhalf z i=0) {i : Nat} (hi : i<4) :
+    (vword (wideLo (compactValue x mask) z) i).toNat =
+      (if i < (Impl.MlKem.AArch64.Rej8.acceptedLanes mask).length then
+        vhalf x ((Impl.MlKem.AArch64.Rej8.acceptedLanes mask).getD i 0) else 0).toNat ∧
+    (vword (wideHi (compactValue x mask) z) i).toNat =
+      (if 4+i < (Impl.MlKem.AArch64.Rej8.acceptedLanes mask).length then
+        vhalf x ((Impl.MlKem.AArch64.Rej8.acceptedLanes mask).getD (4+i) 0) else 0).toNat := by
+  have h := vword_zip_zero (x := compactValue x mask) hz hi
+  rw [compact_half x hm (by omega_using [hi]),compact_half x hm (by omega_using [hi])] at h
+  exact h
+
+end VG.Proof.MlKem.AArch64.Rej8
+
+end
+
+end
+
+/-! # Output and input advancement after stable vector compaction -/
+
+@[expose] public section
+
+namespace VG.Proof.MlKem.AArch64.Rej8
+open VG VG.AArch64 VG.Proof.MlKem.AArch64
+
+def advanceCode (w16 : Bool := false) : List Instr :=
+ [.lsr .x .x6 .x6 8,.movz .x .x7 15 0,.logic .and .x .x6 .x6 .x7,
+ .sub .x .x4 .x4 .x6,.lsl .x .x6 .x6 (if w16 then 1 else 2),.add .x .x3 .x3 .x6,
+ .addImm .x .x2 .x2 12,.subImm .x .x5 .x5 4]
+
+structure AdvancePost (w16 : Bool) (s t : State) (n : Nat) : Prop where
+  only : Only [.x2,.x3,.x4,.x5,.x6,.x7] s t
+  output : t.gpr .x3 = s.gpr .x3 + BitVec.ofNat 64 (VG.Proof.MlKem.cs w16*n)
+  remain : (t.gpr .x4).toNat = (s.gpr .x4).toNat - n
+  input : t.gpr .x2 = s.gpr .x2 + 12
+  chunks : (t.gpr .x5).toNat = (s.gpr .x5).toNat - 4
+
+theorem advance_ok (w16 : Bool) (s : State) {n : Nat} (hn : n≤8)
+    (h4 : 8 ≤ (s.gpr .x4).toNat) (h5 : 4 ≤ (s.gpr .x5).toNat)
+    (hc : ((s.gpr .x6 >>> 8) &&& 15).toNat = n) :
+    WP isa (.block (advanceCode w16)) s (fun t => AdvancePost w16 s t n) := by
+  refine wp_lsr (by decide) fun a ha ea => wp_movz fun b hb eb =>
+    wp_and fun c hc0 ec => wp_sub fun d hd ed => wp_lsl (by cases w16 <;> decide) fun e he ee =>
+    wp_add fun f hf ef => wp_addImm (by decide) fun g hg eg =>
+    wp_subImm (by decide) fun t ht et => wp_nil ?_
+  have cn : (c.gpr .x6).toNat=n := by
+    rw [ec,hb.get .x6,ea,eb]
+    exact hc
+  have dn : (d.gpr .x6).toNat=n := by rw [hd.get .x6,cn]
+  have en : e.gpr .x6=BitVec.ofNat 64 (VG.Proof.MlKem.cs w16*n) := by
+    apply BitVec.eq_of_toNat_eq
+    cases w16 <;>
+    · rw [ee,toNat_lsl_n (by rw [dn]; simp only [Bool.false_eq_true, ite_false, ite_true]; omega_using [hn]),dn,
+        BitVec.toNat_ofNat]
+      simp only [VG.Proof.MlKem.cs_eq, Bool.false_eq_true, ite_false, ite_true]; omega_using [hn]
+  refine ⟨(((((((ha.trans hb).trans hc0).trans hd).trans he).trans hf).trans hg).trans ht).mono
+    (by decide),?_,?_,?_,?_⟩
+  · rw [ht.get .x3,hg.get .x3,ef,en,he.get .x3,hd.get .x3,hc0.get .x3,hb.get .x3,ha.get .x3]
+  · rw [ht.get .x4,hg.get .x4,hf.get .x4,he.get .x4,ed,
+      hc0.get .x4,hb.get .x4,ha.get .x4,BitVec.toNat_sub,cn]
+    have := (s.gpr .x4).isLt
+    omega_using [hn, h4]
+  · rw [ht.get .x2,eg,hf.get .x2,he.get .x2,hd.get .x2,hc0.get .x2,hb.get .x2,ha.get .x2]
+    rfl
+  · rw [et,hg.get .x5,hf.get .x5,he.get .x5,hd.get .x5,hc0.get .x5,hb.get .x5,ha.get .x5,
+      BitVec.toNat_sub]
+    have hb4 : (BitVec.ofNat 64 4).toNat=4 := rfl
+    have := (s.gpr .x5).isLt
+    simp only [hb4]
+    omega_using [h5]
+
+end VG.Proof.MlKem.AArch64.Rej8
+
+end
+
+end
+
+/-! ### `MlKem.AArch64.Rej8Batch`, which only this module used -/
+
+section
+
+/-! # One complete eight-candidate rejection batch -/
+
+@[expose] public section
+
+namespace VG.Proof.MlKem.AArch64.Rej8
+open VG VG.AArch64 VG.Proof.MlKem.AArch64
+
+def acceptedCount (s : State) : Nat :=
+  (Impl.MlKem.AArch64.Rej8.acceptedLanes (maskAt s)).length
+
+/-- The memory after the stores: with 32-bit coefficients the compacted halfwords widened to
+words, with 16-bit ones the compacted halfwords. -/
+def updatedMem (s : State) (w16 : Bool := false) : Mem :=
+  if w16 then s.mem.write (s.gpr .x3) 16 (compactValue (candidatesAt s) (maskAt s))
+  else (s.mem.write (s.gpr .x3) 16
+    (wideLo (compactValue (candidatesAt s) (maskAt s)) (s.v .v21))).write (s.gpr .x3+16) 16
+    (wideHi (compactValue (candidatesAt s) (maskAt s)) (s.v .v21))
+
+structure BatchPostW (w16 : Bool) (s t : State) : Prop where
+  keep : Keep [.x2,.x3,.x4,.x5,.x6,.x7] s t
+  other : ∀ r, r ∉ [.v0,.v1,.v2] → t.v r=s.v r
+  mem : t.mem=updatedMem s w16
+  output : t.gpr .x3=s.gpr .x3+BitVec.ofNat 64 (VG.Proof.MlKem.cs w16*acceptedCount s)
+  remain : (t.gpr .x4).toNat=(s.gpr .x4).toNat-acceptedCount s
+  input : t.gpr .x2=s.gpr .x2+12
+  chunks : (t.gpr .x5).toNat=(s.gpr .x5).toNat-4
+
+theorem batch_ok (w16 : Bool) (s : State) (hc : Constants s)
+    (hr : InRegions (s.rd++s.wr) (s.gpr .x2) 16)
+    (h4 : 8≤(s.gpr .x4).toNat) (h5 : 4≤(s.gpr .x5).toNat)
+    (hw0 : InRegions s.wr (s.gpr .x3) 16)
+    (hw1 : w16 = false → InRegions s.wr (s.gpr .x3+16) 16)
+    (hread : ∀ mask<256, InRegions (s.rd++s.wr) (s.gpr .x16+BitVec.ofNat 64 (16*mask)) 16)
+    (htbl : ∀ mask<256, s.mem.read (s.gpr .x16+BitVec.ofNat 64 (16*mask)) 16=tableVec mask) :
+    WP isa (.block (Impl.MlKem.AArch64.Rej8.rejEight w16)) s (fun t => BatchPostW w16 s t) := by
+  rw [show Impl.MlKem.AArch64.Rej8.rejEight w16=probeCode++storeCode w16++advanceCode w16 by
+      cases w16 <;> rfl,
+    WP.block_append_iff,WP.block_append_iff]
+  refine WP.mono (probe_ok s hc hr) fun a ha => ?_
+  have hm : maskAt s<256 := acceptanceMask_bound _
+  have adv : ∀ b : State, b.gpr = a.gpr → WP isa (.block (advanceCode w16)) b
+      (fun t => AdvancePost w16 b t (acceptedCount s) ∧ t.v = b.v) := fun b hg =>
+    WP.keepV (by cases w16 <;> rfl) (advance_ok w16 b (accepted_length _)
+      (by rw [hg,ha.keep.get .x4]; exact h4)
+      (by rw [hg,ha.keep.get .x5]; exact h5) (by rw [hg]; exact ha.count))
+  cases w16
+  · refine WP.mono (store_ok a (maskAt s)
+      (by rw [ha.keep.rd,ha.keep.wr,ha.index]; exact hread _ hm)
+      (by rw [ha.mem,ha.index]; exact htbl _ hm)
+      (by rw [ha.keep.wr,ha.keep.get .x3]; exact hw0)
+      (by rw [ha.keep.wr,ha.keep.get .x3]; exact hw1 rfl)) fun b hb => ?_
+    refine WP.mono (adv b hb.gpr) fun t ⟨ht,htv⟩ => ?_
+    refine ⟨((ha.keep.trans hb.keep).trans ht.only.keep).mono (by decide),?_,?_,?_,?_,?_,?_⟩
+    · intro r hr0
+      rw [htv,hb.other r hr0,ha.other r hr0]
+    · rw [ht.only.mem,hb.mem,ha.mem,ha.keep.get .x3,ha.values,ha.other .v21 (by decide)]
+      rfl
+    · rw [ht.output,hb.gpr,ha.keep.get .x3]
+    · rw [ht.remain,hb.gpr,ha.keep.get .x4]
+    · rw [ht.input,hb.gpr,ha.keep.get .x2]
+    · rw [ht.chunks,hb.gpr,ha.keep.get .x5]
+  · refine WP.mono (store16_ok a (maskAt s)
+      (by rw [ha.keep.rd,ha.keep.wr,ha.index]; exact hread _ hm)
+      (by rw [ha.mem,ha.index]; exact htbl _ hm)
+      (by rw [ha.keep.wr,ha.keep.get .x3]; exact hw0)) fun b hb => ?_
+    refine WP.mono (adv b hb.gpr) fun t ⟨ht,htv⟩ => ?_
+    refine ⟨((ha.keep.trans hb.keep).trans ht.only.keep).mono (by decide),?_,?_,?_,?_,?_,?_⟩
+    · intro r hr0
+      rw [htv,hb.other r hr0,ha.other r hr0]
+    · rw [ht.only.mem,hb.mem,ha.mem,ha.keep.get .x3,ha.values]
+      rfl
+    · rw [ht.output,hb.gpr,ha.keep.get .x3]
+    · rw [ht.remain,hb.gpr,ha.keep.get .x4]
+    · rw [ht.input,hb.gpr,ha.keep.get .x2]
+    · rw [ht.chunks,hb.gpr,ha.keep.get .x5]
+
+end VG.Proof.MlKem.AArch64.Rej8
+
+end
+
+end
 
 /-! ### `MlKem.AArch64.Rej8Steps`, which only this module used -/
 
@@ -132,7 +386,6 @@ end
 namespace VG.Proof.MlKem.AArch64.Rej8
 open VG VG.AArch64 VG.Proof.MlKem.AArch64 VG.Spec.MlKem
 open VG.Impl.MlKem.AArch64.Rej8
-open VG.Proof.MlKem.AArch64.Sample (cv)
 
 def acceptedValues (s : State) : List Zq :=
   (acceptedLanes (maskAt s)).map fun i => ofNat (vhalf (candidatesAt s) i).toNat

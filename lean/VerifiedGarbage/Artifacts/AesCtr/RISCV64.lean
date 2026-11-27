@@ -1,23 +1,27 @@
 module
 
-public import VerifiedGarbage.Proof.AesCtr.RISCV64.Verified
-public import VerifiedGarbage.Proof.AesCtr.RISCV64.Final
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.RISCV64.Print
+public import VerifiedGarbage.TCB.RISCV64.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Ctr.Contract
+public import VerifiedGarbage.Spec.Ctr.Final
+import VerifiedGarbage.Proof.Aes.RISCV64.Scrub
+import VerifiedGarbage.Impl.Aes.RISCV64.Fn
+import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.AesCtr.RISCV64.Lit
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # AES-CTR (NIST SP 800-38A §6.5) on RISC-V -/
 
-@[expose] public section
-
 namespace VG.Artifacts.AesCtr.RISCV64
 
-def artifacts : List Artifact := [
+public def artifacts : List (Artifact RISCV64.target) := [
   Spec.Ctr.aesApi.artifact RISCV64.target {
-    code := Impl.AesCtr.RISCV64.crypt
-    verified := Proof.AesCtr.keyed Proof.AesCtr.RISCV64.crypt_verified },
+    code := Impl.Aes.RISCV64.Fn.ctr
+    verified := Proof.Aes.RISCV64.Scrub.ctr_scrubbed },
   Spec.Ctr.aesFinalApi.artifact RISCV64.target {
-    code := Impl.StackScratch.RISCV64.withStackScratchWiped 80 .a6 10 Impl.AesCtr.RISCV64.cryptFinal
-    verified := Proof.AesCtr.final_keyed Proof.AesCtr.RISCV64.Final.cryptFinal_framed }]
+    code := Impl.Aes.RISCV64.Fn.ctrFinal
+    verified := Proof.Aes.RISCV64.Scrub.ctrFinal_scrubbed }]
+
+spec_apis artifacts
 
 end VG.Artifacts.AesCtr.RISCV64

@@ -10,7 +10,7 @@ public import VerifiedGarbage.Proof.Framework.Scratch
 import VerifiedGarbage.Proof.Modes.Arm.OfbCfb
 import VerifiedGarbage.Proof.Modes.Arm.Cbc
 import VerifiedGarbage.Proof.TripleDes.CbcBlocks
-import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
+import VerifiedGarbage.Proof.Framework.Arm.StackScratch
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.TripleDes.Arm.FbVerified
@@ -23,7 +23,7 @@ meta import VerifiedGarbage.Proof.Framework.Scratch
 meta import VerifiedGarbage.Proof.Modes.Arm.OfbCfb
 meta import VerifiedGarbage.Proof.Modes.Arm.Cbc
 meta import VerifiedGarbage.Proof.TripleDes.CbcBlocks
-meta import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
+meta import VerifiedGarbage.Proof.Framework.Arm.StackScratch
 meta import VerifiedGarbage.Proof.Framework.Arm.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 
@@ -35,8 +35,8 @@ over Triple DES's ECB function (`ecbSpec .encrypt`) meet the contracts with a sc
 buffer of 7 words, as the whole-block functions do (`FbVerified.lean`), with
 the specification's results (`Proof.Modes.Arm.cfbEncFinal_post`, …,
 `Proof.Modes.Arm.ofbFinal_post`); the
-`_framed` theorems keep the buffer on the stack, zeroed on return: 64 bytes
-more.
+`_framed` theorems keep the buffer on the stack, 64 bytes more, which the
+functions' cleanup zeroes.
 -/
 
 @[expose] public section
@@ -90,7 +90,7 @@ theorem cfbEncryptFinal_verified : Verified Arm.target cfbEncryptFinal
     cfbEncryptFinal_implies
 
 theorem cfbDecryptFinalTaint : FinalTaint (ecbCore .encrypt) cfbDecF :=
-  ⟨cfbDecryptTaint.pro, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, cfbDecryptTaint.epi⟩
+  ⟨cfbEncryptTaint.pro, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
 
 theorem cfbDecryptFinal_implies : (seqFinalArm (ecbCore .encrypt) (ecbSpec .encrypt) cfbDecF).Implies
     (Sig.scratchContract Arm.abi finalSig "scratch" .u64 7 (Curry.const (fun _ => True) _)
@@ -126,29 +126,29 @@ theorem cfbEncryptFinalFrameSat : ∃ s, (Spec.TripleDes.cfbEncryptFinalContract
   implies_sat [Spec.TripleDes.cfbEncryptFinalContract, Spec.TripleDes.cfbFinalSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
     Arm.Loc.val, Arm.State.addr] [fbFrameSat, fbSat] using fbFrameSat 1
 
-/-- `cfbEncryptFinal`, with its scratch buffer on the stack (zeroed on return). -/
+/-- `cfbEncryptFinal`, with its scratch buffer on the stack (which its function's cleanup zeroes). -/
 theorem cfbEncryptFinal_framed :
-    Verified Arm.target (Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 cfbEncryptFinal)
+    Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 64 0 cfbEncryptFinal)
       (Spec.TripleDes.cfbEncryptFinalContract Arm.abi 1088) :=
-  Arm.Verified.stackScratchWiped (sig := Spec.TripleDes.cfbFinalSig) (nm := "scratch") (e := .u64) (n := 7)
+  Arm.Verified.stackScratch (sig := Spec.TripleDes.cfbFinalSig) (nm := "scratch") (e := .u64) (n := 7)
     (post := Proof.Modes.encFinalPost ciphAt 8 Arm.abi.ptrBits) (wa := true) (stack := 1024) (m := 0) (bytes := 64)
-    cfbEncryptFinal_verified (by decide) (by decide) (by decide) (by decide) (by decide)
+    cfbEncryptFinal_verified (by decide) (by decide) (by decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Modes.encFinalPostIn_local _ ciphAt_congr)
-    (Proof.Modes.encFinalPost_local _) cfbEncryptFinalFrameSat
+    (fun vs mm m₁ m₂ r hl _ => Proof.Modes.encFinalPost_local _ vs mm m₁ m₂ r hl) cfbEncryptFinalFrameSat
 
 theorem cfbDecryptFinalFrameSat : ∃ s, (Spec.TripleDes.cfbDecryptFinalContract Arm.abi 1088).pre s := by
   implies_sat [Spec.TripleDes.cfbDecryptFinalContract, Spec.TripleDes.cfbFinalSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
     Arm.Loc.val, Arm.State.addr] [fbFrameSat, fbSat] using fbFrameSat 1
 
-/-- `cfbDecryptFinal`, with its scratch buffer on the stack (zeroed on return). -/
+/-- `cfbDecryptFinal`, with its scratch buffer on the stack (which its function's cleanup zeroes). -/
 theorem cfbDecryptFinal_framed :
-    Verified Arm.target (Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 cfbDecryptFinal)
+    Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 64 0 cfbDecryptFinal)
       (Spec.TripleDes.cfbDecryptFinalContract Arm.abi 1088) :=
-  Arm.Verified.stackScratchWiped (sig := Spec.TripleDes.cfbFinalSig) (nm := "scratch") (e := .u64) (n := 7)
+  Arm.Verified.stackScratch (sig := Spec.TripleDes.cfbFinalSig) (nm := "scratch") (e := .u64) (n := 7)
     (post := Proof.Modes.decFinalPost ciphAt 8 Arm.abi.ptrBits) (wa := true) (stack := 1024) (m := 0) (bytes := 64)
-    cfbDecryptFinal_verified (by decide) (by decide) (by decide) (by decide) (by decide)
+    cfbDecryptFinal_verified (by decide) (by decide) (by decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Modes.decFinalPostIn_local _ ciphAt_congr)
-    (Proof.Modes.decFinalPost_local _) cfbDecryptFinalFrameSat
+    (fun vs mm m₁ m₂ r hl _ => Proof.Modes.decFinalPost_local _ vs mm m₁ m₂ r hl) cfbDecryptFinalFrameSat
 
 /-! ## OFB of a message's last piece -/
 
@@ -191,14 +191,14 @@ theorem ofbFinalFrameSat : ∃ s, (Spec.TripleDes.ofbFinalContract Arm.abi 1088)
   implies_sat [Spec.TripleDes.ofbFinalContract, Spec.TripleDes.ofbFinalSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
     Arm.Loc.val, Arm.State.addr] [fbFrameSat, fbSat] using fbFrameSat 1
 
-/-- `ofbFinal`, with its scratch buffer on the stack (zeroed on return). -/
+/-- `ofbFinal`, with its scratch buffer on the stack (which its function's cleanup zeroes). -/
 theorem ofbFinal_framed :
-    Verified Arm.target (Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 ofbFinal)
+    Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 64 0 ofbFinal)
       (Spec.TripleDes.ofbFinalContract Arm.abi 1088) :=
-  Arm.Verified.stackScratchWiped (sig := Spec.TripleDes.ofbFinalSig) (nm := "scratch") (e := .u64) (n := 7)
+  Arm.Verified.stackScratch (sig := Spec.TripleDes.ofbFinalSig) (nm := "scratch") (e := .u64) (n := 7)
     (post := Proof.Modes.ofbFinalPost ciphAt 8 Arm.abi.ptrBits) (wa := true) (stack := 1024) (m := 0) (bytes := 64)
-    ofbFinal_verified (by decide) (by decide) (by decide) (by decide) (by decide)
+    ofbFinal_verified (by decide) (by decide) (by decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Modes.ofbFinalPostIn_local _ ciphAt_congr)
-    (Proof.Modes.ofbFinalPost_local _) ofbFinalFrameSat
+    (fun vs mm m₁ m₂ r hl _ => Proof.Modes.ofbFinalPost_local _ vs mm m₁ m₂ r hl) ofbFinalFrameSat
 
 end VG.Proof.TripleDes.Arm

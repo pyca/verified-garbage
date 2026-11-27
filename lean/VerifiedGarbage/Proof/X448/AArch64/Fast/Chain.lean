@@ -95,7 +95,7 @@ theorem sqnI (base : Addr) (o : Index) {n : Nat} (hn : 1 ≤ n) (hn' : n < 2 ^ 1
   have kt : IKeep base s t := counter_keep tg tm tr tw
   let inv := fun m (u : State) => 1 ≤ m ∧ m ≤ n ∧ IKeep base s u ∧ BEnv u.mem base ∧
     u.gpr .x19 = BitVec.ofNat 64 m ∧
-    EV u.mem base = Function.update (EV s.mem base) o (Proof.X448.sqn (EV s.mem base o) (n - m))
+    EV u.mem base = Fun.update (EV s.mem base) o (Proof.X448.sqn (EV s.mem base o) (n - m))
   refine WP.loop (M := isa) inv ?_ n t ?_
   · intro m u ⟨hm, hm', ku, bu, cu, eu⟩
     obtain ⟨m, rfl⟩ : ∃ k, m = k + 1 := ⟨m - 1, by omega_using [hm]⟩
@@ -109,9 +109,9 @@ theorem sqnI (base : Addr) (o : Index) {n : Nat} (hn : 1 ≤ n) (hn' : n < 2 ^ 1
     refine WP.mono (decCounter_ok (by omega_using [hn', hm']) cv) fun w ⟨cw, wg, wm, wr, ww, wz⟩ => ?_
     have kw : IKeep base s w := ku.trans (kv.ikeep.trans (counter_keep wg wm wr ww))
     have bw : BEnv w.mem base := wm ▸ bv
-    have ew : EV w.mem base = Function.update (EV s.mem base) o (Proof.X448.sqn (EV s.mem base o) (n - m)) := by
+    have ew : EV w.mem base = Fun.update (EV s.mem base) o (Proof.X448.sqn (EV s.mem base o) (n - m)) := by
       rw [wm, ev, eu]
-      simp only [VG.Proof.X448.AArch64.opMul, Function.update_self, Function.update_idem]
+      simp only [VG.Proof.X448.AArch64.opMul, Fun.update_self, Fun.update_idem]
       rw [← Proof.X448.sqn]
       rw [show (n - (m + 1)).succ = n - m by omega_using [hm']]
     simp only [eval, State.read, BitVec.setWidth_eq, bne, wz]
@@ -120,7 +120,7 @@ theorem sqnI (base : Addr) (o : Index) {n : Nat} (hn : 1 ≤ n) (hn' : n < 2 ^ 1
     · refine Or.inr ⟨?_, m, by omega_using [], hm, by omega_using [hm'], kw, bw, cw, ew⟩
       rw [decide_eq_false (by omega_using [hm] : ¬m = 0)]; rfl
   · refine ⟨hn, by omega_using [], kt, tm ▸ hb, tc, ?_⟩
-    rw [tm, Nat.sub_self, Proof.X448.sqn, Function.update_eq_self]
+    rw [tm, Nat.sub_self, Proof.X448.sqn, Fun.update_eq_self]
 
 theorem cswapE {s : State} {base : Addr} (hs : Scr s base) (hb : BEnv s.mem base)
     (x y : Index) (hxy : x ≠ y) {sw : Bool} (hm : s.gpr .x6 = mask sw) :
@@ -162,11 +162,11 @@ theorem cswapE {s : State} {base : Addr} (hs : Scr s base) (hb : BEnv s.mem base
       · exact sm.bnd (by simp [hix, hiy]) (hb i)
   · funext i
     by_cases hiy : i = y
-    · subst i; rw [opSwap, Function.update_self]; exact fy
-    · rw [opSwap, Function.update_of_ne hiy]
+    · subst i; rw [opSwap, Fun.update_self]; exact fy
+    · rw [opSwap, Fun.update_of_ne hiy]
       by_cases hix : i = x
-      · subst i; rw [Function.update_self]; exact fx
-      · rw [Function.update_of_ne hix]
+      · subst i; rw [Fun.update_self]; exact fx
+      · rw [Fun.update_of_ne hix]
         exact sm.env (by simp [hix, hiy])
 
 end VG.Proof.X448.AArch64.Fast

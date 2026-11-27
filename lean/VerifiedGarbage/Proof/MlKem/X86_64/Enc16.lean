@@ -2,11 +2,8 @@ module
 
 public import VerifiedGarbage.Impl.MlKem.X86_64.Kem16
 public import VerifiedGarbage.Proof.MlKem.X86_64.FragKpke
-public import VerifiedGarbage.Proof.MlKem.X86_64.Kg16Tail
-public import VerifiedGarbage.Proof.MlKem.X86_64.KgA16
-import VerifiedGarbage.Proof.MlKem.X86_64.KgTop
+public import VerifiedGarbage.Proof.MlKem.X86_64.Kg16
 import VerifiedGarbage.Proof.MlKem.X86_64.EncTop
-import VerifiedGarbage.Proof.MlKem.X86_64.Kg16
 
 /-! ### `MlKem.X86_64.Enc16Tail`, which only this module used -/
 

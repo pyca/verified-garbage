@@ -1,31 +1,36 @@
 module
 
-public import VerifiedGarbage.Proof.Idea.PPC64LE.ModesVerified
-public import VerifiedGarbage.Proof.Idea.PPC64LE.ModesFrame
-public import VerifiedGarbage.Proof.Idea.PPC64LE.FbFinalVerified
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.PPC64LE.Print
+public import VerifiedGarbage.TCB.PPC64LE.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Idea.Cfb
+public import VerifiedGarbage.Spec.Idea.CfbFinal
+import VerifiedGarbage.Proof.Idea.PPC64LE.ModesVerified
+import VerifiedGarbage.Proof.Idea.PPC64LE.ModesFrame
+import VerifiedGarbage.Proof.Idea.PPC64LE.FbFinalVerified
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Idea.PPC64LE.Scrub
 import VerifiedGarbage.Proof.Idea.PPC64LE.ModesLit
 import VerifiedGarbage.Proof.Idea.PPC64LE.FbFinalLit
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # IDEA-CFB64 on PPC64LE -/
 
-@[expose] public section
-
 namespace VG.Artifacts.IdeaCfb.PPC64LE
 
-def artifacts : List Artifact := [
+public def artifacts : List (Artifact PPC64LE.target) := [
   Spec.Idea.cfbEncryptApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratchWiped 96 .r7 8 Impl.Idea.PPC64LE.cfbEncrypt
-    verified := Proof.Idea.PPC64LE.cfbEnc_framed Proof.Idea.PPC64LE.Modes.cfbEncrypt_verified },
+    code := Impl.Idea.PPC64LE.Fn.cfbEncrypt
+    verified := Proof.Idea.PPC64LE.Scrub.cfbEncrypt_scrubbed },
   Spec.Idea.cfbDecryptApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratchWiped 96 .r7 8 Impl.Idea.PPC64LE.cfbDecrypt
-    verified := Proof.Idea.PPC64LE.cfbDec_framed Proof.Idea.PPC64LE.Modes.cfbDecrypt_verified },
+    code := Impl.Idea.PPC64LE.Fn.cfbDecrypt
+    verified := Proof.Idea.PPC64LE.Scrub.cfbDecrypt_scrubbed },
   Spec.Idea.cfbEncryptFinalApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratchWiped 96 .r7 8 Impl.Idea.PPC64LE.cfbEncryptFinal
-    verified := Proof.Idea.PPC64LE.FbFinal.cfbEncryptFinal_framed },
+    code := Impl.Idea.PPC64LE.Fn.cfbEncryptFinal
+    verified := Proof.Idea.PPC64LE.Scrub.cfbEncryptFinal_scrubbed },
   Spec.Idea.cfbDecryptFinalApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratchWiped 96 .r7 8 Impl.Idea.PPC64LE.cfbDecryptFinal
-    verified := Proof.Idea.PPC64LE.FbFinal.cfbDecryptFinal_framed }]
+    code := Impl.Idea.PPC64LE.Fn.cfbDecryptFinal
+    verified := Proof.Idea.PPC64LE.Scrub.cfbDecryptFinal_scrubbed }]
+
+spec_apis artifacts
 
 end VG.Artifacts.IdeaCfb.PPC64LE

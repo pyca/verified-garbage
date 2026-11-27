@@ -124,19 +124,19 @@ theorem restore_ok (s : State) {W : Addr} {N : Nat} (h15 : s.gpr .r15 = W)
     (hr₀ : Covers [⟨W, N⟩] (s.rd ++ s.wr)) {s₀ : State} (hs : SavedAt s.mem W s₀) (hN : 176 ≤ N := by decide) :
     ∃ s', runBlock isa restore s = some s' ∧ (∀ p ∈ saved, s'.gpr p.1 = s₀.gpr p.1) ∧
       (∀ r, r ∉ saved.map (·.1) → s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
-  have hr := covers_prefix hr₀ hN
-  have r₁ := in_off hr (show 128 + 8 ≤ 176 by decide) (by decide)
-  have r₂ := in_off hr (show 136 + 8 ≤ 176 by decide) (by decide)
-  have r₃ := in_off hr (show 144 + 8 ≤ 176 by decide) (by decide)
-  have r₄ := in_off hr (show 152 + 8 ≤ 176 by decide) (by decide)
-  have r₅ := in_off hr (show 160 + 8 ≤ 176 by decide) (by decide)
-  have r₆ := in_off hr (show 168 + 8 ≤ 176 by decide) (by decide)
-  have e₁ := hs (.rbx, 128) (by simp [saved])
-  have e₂ := hs (.rbp, 136) (by simp [saved])
-  have e₃ := hs (.r12, 144) (by simp [saved])
-  have e₄ := hs (.r13, 152) (by simp [saved])
-  have e₅ := hs (.r14, 160) (by simp [saved])
-  have e₆ := hs (.r15, 168) (by simp [saved])
+  obtain hr := covers_prefix hr₀ hN
+  obtain r₁ := in_off hr (show 128 + 8 ≤ 176 by decide) (by decide)
+  obtain r₂ := in_off hr (show 136 + 8 ≤ 176 by decide) (by decide)
+  obtain r₃ := in_off hr (show 144 + 8 ≤ 176 by decide) (by decide)
+  obtain r₄ := in_off hr (show 152 + 8 ≤ 176 by decide) (by decide)
+  obtain r₅ := in_off hr (show 160 + 8 ≤ 176 by decide) (by decide)
+  obtain r₆ := in_off hr (show 168 + 8 ≤ 176 by decide) (by decide)
+  obtain e₁ := hs (.rbx, 128) (by simp [saved])
+  obtain e₂ := hs (.rbp, 136) (by simp [saved])
+  obtain e₃ := hs (.r12, 144) (by simp [saved])
+  obtain e₄ := hs (.r13, 152) (by simp [saved])
+  obtain e₅ := hs (.r14, 160) (by simp [saved])
+  obtain e₆ := hs (.r15, 168) (by simp [saved])
   simp only at e₁ e₂ e₃ e₄ e₅ e₆
   refine ⟨_, by simp only [restore, saved, List.map]; xrun [h15, r₁, r₂, r₃, r₄, r₅, r₆], ?_, ?_, ?_, ?_, ?_⟩
   · intro p hp
@@ -154,7 +154,7 @@ theorem SavedAt.frame {m m' : Mem} {W : Addr} {s₀ : State} (h : SavedAt m W s�
   intro p hp
   have hp' := hp
   simp only [saved, List.mem_cons, List.not_mem_nil, or_false] at hp'
-  have hs : Region.Sub ⟨W + BitVec.ofNat 64 p.2, 8⟩ (savedR W) := by
+  obtain hs : Region.Sub ⟨W + BitVec.ofNat 64 p.2, 8⟩ (savedR W) := by
     rcases hp' with rfl | rfl | rfl | rfl | rfl | rfl <;> exact Offset.sub _ (by decide) (by decide)
   rw [hf.readW (r := ⟨W + BitVec.ofNat 64 p.2, 8⟩) (Region.contains_self _ _)
     (fun r hr => (hd r hr).sub_left hs) (by decide), h p hp]

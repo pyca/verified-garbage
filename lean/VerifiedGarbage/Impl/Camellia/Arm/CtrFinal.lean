@@ -43,8 +43,9 @@ open VG.Impl.CmacAes.Arm (mov)
 open VG.Impl.AesCfb.Arm (finalSave finalRestore)
 open VG.Impl.Modes.Arm (xorByte)
 
-/-- `vg_camellia_ctr`, with its working space on the stack. -/
-def ctrFramed : Prog isa := Impl.StackScratch.Arm.withStackScratchWiped 88 1 18 ctr
+/-- `vg_camellia_ctr`, with its working space on the stack, which the
+cleanup of the functions that run it zeroes. -/
+def ctrFramed : Prog isa := Impl.StackScratch.Arm.withStackScratch 88 1 ctr
 
 /-- `save`, the second stack argument, to `r12`. -/
 def ctrSave : List Instr := [.ldrSp .r12 4]
@@ -59,9 +60,12 @@ def ctrFinalMoves : List Instr :=
 /-- The registers saved; the arguments to their registers. -/
 def ctrFinalSetup : List Instr := ctrSave ++ finalSave ++ ctrFinalMoves
 
-/-- The call of `vg_camellia_ctr`, with the number of blocks in `r12`
-pushed as its stack argument. -/
-def ctrCall : Prog isa := .frame (.push [.r12, .lr]) (.call "vg_camellia_ctr" ctrFramed) (.pop .r12 8)
+/-- The call of `vg_camellia_ctr`'s code, with the number of blocks in
+`r12` pushed as its stack argument: its code as it is verified, under a name
+of its own (`vg_camellia_ctr_entry`), which the emitter writes as an
+internal function, since the artifact `vg_camellia_ctr` is that code
+scrubbed (`Proof/Camellia/Arm/Scrub.lean`). -/
+def ctrCall : Prog isa := .frame (.push [.r12, .lr]) (.call "vg_camellia_ctr_entry" ctrFramed) (.pop .r12 8)
 
 /-- The block at `save + 40` zeroed, through `r0`, and the arguments of
 `vg_camellia_ctr` on it: the schedule, the rounds, the counter block, the

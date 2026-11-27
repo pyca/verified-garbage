@@ -4,7 +4,10 @@ public import VerifiedGarbage.Proof.Blake2.AArch64.Stream.Verified
 public import VerifiedGarbage.Impl.Argon2.AArch64.HPrime
 public import VerifiedGarbage.Proof.Blake2.AArch64.Stream.CT
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Framework.AArch64.Clears
 public import VerifiedGarbage.Proof.Blake2.Contract
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubSide
+import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-! Merged from `Proof.Argon2.AArch64.HPrime.Hash`. -/
 
@@ -60,28 +63,40 @@ structure Backend where
   finalizeCorrect : ∀ s, (Proof.Blake2.finalizeAArch64 Spec.Blake2.b).pre s →
     ∃ tr t, Exec isa hash.finalize s tr t ∧ abiPreserved s t ∧
       (Proof.Blake2.finalizeAArch64 Spec.Blake2.b).post s t
+  /-- The three functions write, of the registers the calling convention
+  does not preserve, only those `hash.clear` states: what the cleanup of a
+  function that calls them needs of them (`Scrub.scrubSide_union`). -/
+  initScrub : AArch64.Scrub.calleeSide hash.init hash.clear = true
+  updateScrub : AArch64.Scrub.calleeSide hash.update hash.clear = true
+  finalizeScrub : AArch64.Scrub.calleeSide hash.finalize hash.clear = true
 
 def scalar : Backend where
   suffix := ""
   features := []
   hash := {
     initName := Spec.Blake2.initBApi.name
-    init := Impl.Blake2.AArch64.Stream.init Spec.Blake2.b
+    init := Impl.Scrub.AArch64.withClears [.x9] [] none (Impl.Blake2.AArch64.Stream.init Spec.Blake2.b)
     updateName := "vg_blake2b_update_scratch"
     update := Impl.Blake2.AArch64.Stream.update Spec.Blake2.b
     finalizeName := "vg_blake2b_finalize_scratch"
-    finalize := Impl.Blake2.AArch64.Stream.finalize Spec.Blake2.b }
-  ok := ⟨Proof.Blake2.AArch64.Stream.initB_verified,
+    finalize := Impl.Blake2.AArch64.Stream.finalize Spec.Blake2.b
+    clear := ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16, .x17],
+      [], []⟩ }
+  ok := ⟨Proof.Blake2.AArch64.Stream.initBCleared_verified,
     Proof.Blake2.AArch64.Stream.updateB_verified, Proof.Blake2.AArch64.Stream.finalizeB_verified,
     by decide +kernel, by decide +kernel, by decide +kernel, by decide +kernel⟩
-  initCT := Proof.Blake2.AArch64.Stream.initB_ct
+  initCT := VG.AArch64.Clears.ct_withClears Proof.Blake2.AArch64.Stream.initB_ct (by decide)
   updateCT := Proof.Blake2.AArch64.Stream.updateB_ct
   finalizeCT := Proof.Blake2.AArch64.Stream.finalizeB_ct
   initV := by decide +kernel
   updateV := by decide +kernel
   finalizeV := by decide +kernel
-  initCorrect := Proof.Blake2.AArch64.Stream.initB_correct
+  initCorrect := VG.AArch64.Clears.correct_withClears Proof.Blake2.AArch64.Stream.initB_correct
+    Proof.Blake2.AArch64.Stream.initB_post (by decide)
   updateCorrect := Proof.Blake2.AArch64.Stream.updateB_correct
   finalizeCorrect := Proof.Blake2.AArch64.Stream.finalizeB_correct
+  initScrub := by kernel_rfl
+  updateScrub := by kernel_rfl
+  finalizeScrub := by kernel_rfl
 
 end VG.Proof.Argon2.AArch64.HPrime

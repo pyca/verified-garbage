@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Rc2.cbcInitContract`. Constant time: only the pointers, `key_len`, `effective_bits` and `iv_len` may affect timing, not the key or the IV.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `key` must be valid for reads of `key_len` bytes.
@@ -44,7 +46,7 @@ bl {vg_rc2_expand_key}
 b 27f
 26:
 27:
-.base64 "IACBOQAAYDkAAGz5CABs+RAAbPkYAGz5IABs+SgAbPkwAGz5OABs+UAAbPlIAGz5UABs+VgAbPlgAGz5aABs+XAAbPl4AGz5gABs+YgAbPmQAGz5mABs+aAAbPmoAGz5sABs+bgAbPnAAGz5yABs+dAAbPnYAGz54ABs+egAbPnwAGz5+ABs+QABbPkIAWz5EAFs+RgBbPkgAWz5KAFs+TABbPk4AWz5QAFs+UgBbPlQAWz5WAFs+WABbPloAWz5cAFs+XgBbPmAAWz5iAFs+ZABbPmYAWz5oAFs+agBbPmwAWz5uAFs+cABbPnIAWz50AFs+dgBbPngAWz56AFs+fABbPn4AWz5AAJs+QgCbPkQAmz5GAJs+SACbPkoAmz5MAJs+TgCbPlgAiE4IACATg==""#,
+.base64 "IACBOQAAADgAAAz4CAAM+BAADPgYAAz4IAAM+CgADPgwAAz4OAAM+EAADPhIAAz4UAAM+FgADPhgAAz4aAAM+HAADPh4AAz4gACMOewHDHyAAIw57AcMfIAAjDnsBwx8AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhAAAz4SAAM+FAADPhYAAz4YAAM+GgADPhwAAz4eAAM+IAADPiIAAz4kAAM+JgADPigAAz4qAAM+LAADPi4AAz4YAIhOAAAADih/SH4IACBOQAADPgIAAz4EAAM+BgADPggAAz4KAAM+DAADPg4AAz4QAAM+EgADPhQAAz4WAAM+GAADPhoAAz4cAAM+HgADPiAAIw57AcMfIAAjDnsBwx8gACMOewHDHwAAAz4CAAM+BAADPgYAAz4IAAM+CgADPgwAAz4OAAM+EAADPhIAAz4UAAM+FgADPhgAAz4aAAM+HAADPh4AAz4gAAM+IgADPiQAAz4mAAM+KAADPioAAz4sAAM+LgADPhgAiE4xgdjeCIAY3gAAMA4AADgOAAAADkAACA5AABAOQAAYDkAAIA5xAQAEMQMIRDEFEIQxBxjEMQkhBDELKUQxDTGEMQ85xDERAgRxEwpEcRUShHEXGsRxGSMEcRsrREgAIBO""#,
         vg_rc2_expand_key = sym super::rc2::vg_rc2_expand_key::vg_rc2_expand_key,
     )
 }

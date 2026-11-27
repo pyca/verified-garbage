@@ -1,7 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.RISCV64.CTBase
-public import VerifiedGarbage.Proof.Dsa.RISCV64.CTKey
 public import VerifiedGarbage.Proof.Dsa.RISCV64.CTParams
 public import VerifiedGarbage.Proof.Dsa.RISCV64.ParamsFront
 public import VerifiedGarbage.Proof.Framework.RelCT
@@ -10,8 +8,6 @@ public meta import VerifiedGarbage.Proof.Bignum.RISCV64.Run
 import VerifiedGarbage.Proof.Dsa.RISCV64.ParamsFn
 import VerifiedGarbage.Proof.Framework.Flat
 import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.Dsa.RISCV64.CTBase
-meta import VerifiedGarbage.Proof.Dsa.RISCV64.CTKey
 meta import VerifiedGarbage.Proof.Dsa.RISCV64.CTParams
 meta import VerifiedGarbage.Proof.Dsa.RISCV64.ParamsFront
 meta import VerifiedGarbage.Proof.Framework.RelCT
@@ -93,7 +89,7 @@ theorem pfront_P0 {s : State} (hL : (playOf s).Ok) (hrd : s.rd = [⟨s.gpr .a0, 
   have hK : Src t (playOf s) (s.gpr .a0) (s.gpr .a1).toNat := psrc_of hrd dPS (Nat.le_refl _) k.2.1 k.2.2
   exact ⟨⟨hL, F.regs, F.scr, hK, src_nil rfl, src_nil (Nat.zero_min _),
     hK.bytes F.out (by simp only [playOf] at hZ ⊢; omega_using [hZ]), (by simp only [vdP, playOf]; omega_using [hkn]),
-    (fun h => nomatch h), fun _ h => nomatch h⟩, F.lens.trans (congrArg _ (Nat.zero_min _).symm)⟩
+    (fun h => nomatch h), fun _ h => (nomatch h), F.sigw⟩, F.lens.trans (congrArg _ (Nat.zero_min _).symm)⟩
 
 /-- Runs that agree on `a0` to `a5` and on the octets at `a0` have the same public data `vdP`. -/
 theorem vdP_eq {s t : State} (e0 : s.gpr .a0 = t.gpr .a0) (e1 : s.gpr .a1 = t.gpr .a1)
@@ -230,7 +226,7 @@ theorem pinsTc6 : Pins (At C0c FTc 6) [.s6] :=
     obtain ⟨_, _, u₁, -, e₁, e₂⟩ := exec_seqL_append.mp e
     have h₁ : u₁.gpr .s6 = v.L.S := (at_sem (Φ := C0c) (F := FTc) (n := 1) (M := P0)
       (fun _ _ h => WP.of_flat (c := .block Params.entry) rfl (frontC _ _ h)) ⟨s₀, _, h₀, e₁⟩).1.regs.s6
-    exact ⟨(Exec.gpr_callFree s6_keptc e₂ rfl).trans h₁, trivial⟩
+    exact ⟨(Exec.gpr s6_keptc e₂).trans h₁, trivial⟩
 
 theorem check_rel : RelCT isa (Two C0c) Params.checkParameters fun _ _ => True := by
   refine chain_start (chain_cons runTc (m := 1) (by decide)

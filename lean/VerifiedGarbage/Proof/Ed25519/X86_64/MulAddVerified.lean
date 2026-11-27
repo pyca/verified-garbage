@@ -83,20 +83,20 @@ theorem mulAddArgs_ok (s : State) :
 
 theorem mulAddSetup_ok {s : State} (hs : MulAddPre s) :
     WP isa (.block mulAddSetup) s (MulAddReady s) := by
-  have hw : (⟨s.gpr .r8, 8192⟩ : Region) ∈ s.wr := by rw [hs.wr]; simp
+  obtain hw : (⟨s.gpr .r8, 8192⟩ : Region) ∈ s.wr := by rw [hs.wr]; simp
   rw [show mulAddSetup = mulAddSave ++ (([.mov .rbx (.reg .rdi), .mov .rdi (.reg .r8)] :
     List Instr) ++ (copyScalar .rdx 64 ++ (copyScalar .rcx 96 ++ loadScalar))) by
     simp only [mulAddSetup, List.append_assoc], WP.block_append_iff]
   refine WP.mono (mulAddSave_ok rfl hw) fun s₁ ⟨g₁, rd₁, wr₁, o₁, sv₁⟩ => ?_
   rw [WP.block_append_iff]
   refine WP.mono (mulAddArgs_ok s₁) fun s₂ ⟨out₂, base₂, k₂⟩ => ?_
-  have hp₂ : s₂.gpr .rdi = s.gpr .r8 := base₂.trans (congrFun g₁ _)
-  have hw₂ : (⟨s.gpr .r8, 8192⟩ : Region) ∈ s₂.wr := by rw [k₂.2.2.2, wr₁]; exact hw
-  have g₂ : ∀ r, r ∉ [Reg.rbx, .rdi] → s₂.gpr r = s.gpr r :=
+  obtain hp₂ : s₂.gpr .rdi = s.gpr .r8 := base₂.trans (congrFun g₁ _)
+  obtain hw₂ : (⟨s.gpr .r8, 8192⟩ : Region) ∈ s₂.wr := by rw [k₂.2.2.2, wr₁]; exact hw
+  obtain g₂ : ∀ r, r ∉ [Reg.rbx, .rdi] → s₂.gpr r = s.gpr r :=
     fun r h => (k₂.1 r h).trans (congrFun g₁ r)
-  have fm₂ : Frame [⟨s.gpr .r8, 8192⟩] s.mem s₂.mem := by
+  obtain fm₂ : Frame [⟨s.gpr .r8, 8192⟩] s.mem s₂.mem := by
     rw [k₂.2.1]; exact scratchFrame o₁ (by decide)
-  have hr₂ : ∀ d, d + 8 ≤ 32 → InRegions (s₂.rd ++ s₂.wr) (off (s₂.gpr .rdx) d) 8 := by
+  obtain hr₂ : ∀ d, d + 8 ≤ 32 → InRegions (s₂.rd ++ s₂.wr) (off (s₂.gpr .rdx) d) 8 := by
     intro d hd
     refine ⟨⟨s.gpr .rdx, 32⟩, ?_, ?_⟩
     · rw [k₂.2.2.1, rd₁, hs.rd]; simp
@@ -104,11 +104,11 @@ theorem mulAddSetup_ok {s : State} (hs : MulAddPre s) :
   rw [WP.block_append_iff]
   refine WP.mono (copyScalar_ok hp₂ hw₂ .rdx (by decide) hr₂ 64 (by decide))
     fun s₃ ⟨v₃, g₃, rd₃, wr₃, o₃⟩ => ?_
-  have hp₃ : s₃.gpr .rdi = s.gpr .r8 := (g₃ _ (by decide)).trans hp₂
-  have hw₃ : (⟨s.gpr .r8, 8192⟩ : Region) ∈ s₃.wr := wr₃ ▸ hw₂
-  have fm₃ := fm₂.trans (scratchFrame o₃ (by decide))
-  have rcx₃ : s₃.gpr .rcx = s.gpr .rcx := (g₃ _ (by decide)).trans (g₂ _ (by decide))
-  have hr₃ : ∀ d, d + 8 ≤ 32 → InRegions (s₃.rd ++ s₃.wr) (off (s₃.gpr .rcx) d) 8 := by
+  obtain hp₃ : s₃.gpr .rdi = s.gpr .r8 := (g₃ _ (by decide)).trans hp₂
+  obtain hw₃ : (⟨s.gpr .r8, 8192⟩ : Region) ∈ s₃.wr := wr₃ ▸ hw₂
+  obtain fm₃ := fm₂.trans (scratchFrame o₃ (by decide))
+  obtain rcx₃ : s₃.gpr .rcx = s.gpr .rcx := (g₃ _ (by decide)).trans (g₂ _ (by decide))
+  obtain hr₃ : ∀ d, d + 8 ≤ 32 → InRegions (s₃.rd ++ s₃.wr) (off (s₃.gpr .rcx) d) 8 := by
     intro d hd
     refine ⟨⟨s.gpr .rcx, 32⟩, ?_, ?_⟩
     · rw [rd₃, k₂.2.2.1, rd₁, hs.rd]; simp
@@ -116,10 +116,10 @@ theorem mulAddSetup_ok {s : State} (hs : MulAddPre s) :
   rw [WP.block_append_iff]
   refine WP.mono (copyScalar_ok hp₃ hw₃ .rcx (by decide) hr₃ 96 (by decide))
     fun s₄ ⟨v₄, g₄, rd₄, wr₄, o₄⟩ => ?_
-  have fm₄ := fm₃.trans (scratchFrame o₄ (by decide))
-  have rsi₄ : s₄.gpr .rsi = s.gpr .rsi :=
+  obtain fm₄ := fm₃.trans (scratchFrame o₄ (by decide))
+  obtain rsi₄ : s₄.gpr .rsi = s.gpr .rsi :=
     (g₄ _ (by decide)).trans ((g₃ _ (by decide)).trans (g₂ _ (by decide)))
-  have hr₄ : ∀ d, d + 8 ≤ 32 → InRegions (s₄.rd ++ s₄.wr) (off (s₄.gpr .rsi) d) 8 := by
+  obtain hr₄ : ∀ d, d + 8 ≤ 32 → InRegions (s₄.rd ++ s₄.wr) (off (s₄.gpr .rsi) d) 8 := by
     intro d hd
     refine ⟨⟨s.gpr .rsi, 32⟩, ?_, ?_⟩
     · rw [rd₄, rd₃, k₂.2.2.1, rd₁, hs.rd]; simp
@@ -172,59 +172,59 @@ theorem MulAddPre.of {s : State} (h : scalarMulAddLocal.pre s) : MulAddPre s :=
 
 theorem scalarMulAdd_correct {s : State} (hs : MulAddPre s) :
     WP isa scalarMulAdd s fun t => gprPreserved s t ∧ scalarMulAddLocal.post s t := by
-  have hw : (⟨s.gpr .r8, 8192⟩ : Region) ∈ s.wr := by rw [hs.wr]; simp
+  obtain hw : (⟨s.gpr .r8, 8192⟩ : Region) ∈ s.wr := by rw [hs.wr]; simp
   rw [scalarMulAdd]
   refine WP.seq (WP.mono (mulAddSetup_ok hs) fun s₁ h₁ => ?_)
   refine WP.seq (WP.mono (wideAccumulate8192_ok h₁.base (h₁.wr ▸ hw) hs.nowrap
     (by decide) (by decide)) fun s₂ ⟨v₂, k₂⟩ => ?_)
-  have prod₂ : wideValue s₂ = fe s.mem (s.gpr .rsi) 0 +
+  obtain prod₂ : wideValue s₂ = fe s.mem (s.gpr .rsi) 0 +
       fe s.mem (s.gpr .rdx) 0 * fe s.mem (s.gpr .rcx) 0 := by
     rw [v₂, h₁.value, h₁.left, h₁.right]
-  have base₂ : s₂.gpr .rdi = s.gpr .r8 := (k₂.1 _ (by decide)).trans h₁.base
-  have wr₂ : s₂.wr = s.wr := k₂.2.2.2.trans h₁.wr
+  obtain base₂ : s₂.gpr .rdi = s.gpr .r8 := (k₂.1 _ (by decide)).trans h₁.base
+  obtain wr₂ : s₂.wr = s.wr := k₂.2.2.2.trans h₁.wr
   apply WP.seq
   rw [List.append_assoc, List.append_assoc, WP.block_append_iff]
   refine WP.mono (storeWide_ok base₂ (wr₂ ▸ hw)) fun s₃ ⟨v₃, g₃, rd₃, wr₃, o₃⟩ => ?_
-  have rdi₃ : s₃.gpr .rdi = s.gpr .r8 := (congrFun g₃ _).trans base₂
+  obtain rdi₃ : s₃.gpr .rdi = s.gpr .r8 := (congrFun g₃ _).trans base₂
   rw [WP.block_append_iff]
   refine WP.mono (reduceArgs_ok rdi₃ (by rw [wr₃, wr₂]; exact hw))
     fun s₄ ⟨rsi₄, m₄, g₄, rd₄, wr₄⟩ => ?_
   refine WP.mono (scalarInit_ok s₄) fun s₅ ⟨b₅, v₅, k₅⟩ => ?_
-  have rsi₅ : s₅.gpr .rsi = off (s.gpr .r8) 128 := by rw [k₅.1 _ (by decide), rsi₄]
-  have rdi₅ : s₅.gpr .rdi = s.gpr .r8 := by rw [k₅.1 _ (by decide), g₄ _ (by decide), rdi₃]
-  have mem₅ : s₅.mem = s₃.mem.writeW (off (s.gpr .r8) 48) (s₃.gpr .rbx) := by rw [k₅.2.1, m₄]
-  have o₅ : Outside (s.gpr .r8) 48 8 s₃.mem s₅.mem := by
+  obtain rsi₅ : s₅.gpr .rsi = off (s.gpr .r8) 128 := by rw [k₅.1 _ (by decide), rsi₄]
+  obtain rdi₅ : s₅.gpr .rdi = s.gpr .r8 := by rw [k₅.1 _ (by decide), g₄ _ (by decide), rdi₃]
+  obtain mem₅ : s₅.mem = s₃.mem.writeW (off (s.gpr .r8) 48) (s₃.gpr .rbx) := by rw [k₅.2.1, m₄]
+  obtain o₅ : Outside (s.gpr .r8) 48 8 s₃.mem s₅.mem := by
     rw [mem₅]; exact writeW_outside _ _ _ (by omega_using [])
-  have wr₅ : s₅.wr = s.wr := by rw [k₅.2.2.2, wr₄, wr₃, wr₂]
-  have read₅ : ∀ k < 8, InRegions (s₅.rd ++ s₅.wr) (s₅.gpr .rsi + BitVec.ofNat 64 (8 * k)) 8 := by
+  obtain wr₅ : s₅.wr = s.wr := by rw [k₅.2.2.2, wr₄, wr₃, wr₂]
+  obtain read₅ : ∀ k < 8, InRegions (s₅.rd ++ s₅.wr) (s₅.gpr .rsi + BitVec.ofNat 64 (8 * k)) 8 := by
     intro k hk
     refine ⟨⟨s.gpr .r8, 8192⟩, List.mem_append_right _ (wr₅ ▸ hw), ?_⟩
     rw [rsi₅, Offset.add_add]; exact Offset.contains_base _ (by omega_using [hk]) (by omega_using [hk])
-  have fm₅ : Frame [⟨s.gpr .r8, 8192⟩] s.mem s₅.mem := by
-    have fm₂ : Frame [⟨s.gpr .r8, 8192⟩] s.mem s₂.mem := by rw [k₂.2.1]; exact h₁.frame
+  obtain fm₅ : Frame [⟨s.gpr .r8, 8192⟩] s.mem s₅.mem := by
+    obtain fm₂ : Frame [⟨s.gpr .r8, 8192⟩] s.mem s₂.mem := by rw [k₂.2.1]; exact h₁.frame
     exact (fm₂.trans (scratchFrame o₃ (by decide))).trans (scratchFrame o₅ (by decide))
-  have sv₅ : Saved (s.gpr .r8) s.gpr s₅.mem := by
-    have sv₂ : Saved (s.gpr .r8) s.gpr s₂.mem := by rw [k₂.2.1]; exact h₁.saved
+  obtain sv₅ : Saved (s.gpr .r8) s.gpr s₅.mem := by
+    obtain sv₂ : Saved (s.gpr .r8) s.gpr s₂.mem := by rw [k₂.2.1]; exact h₁.saved
     exact (sv₂.outside o₃ (by decide)).outside o₅ (by decide)
-  have wide₅ : decodeLE (bytesAt s₅.mem (off (s.gpr .r8) 128) 64) = wideValue s₂ := by
+  obtain wide₅ : decodeLE (bytesAt s₅.mem (off (s.gpr .r8) 128) 64) = wideValue s₂ := by
     rw [decodeLE_wide, o₅.fe (by decide) (by decide), o₅.fe (by decide) (by decide), ← decodeLE_wide, v₃]
   apply WP.seq
   refine WP.mono (scalarLoop_ok s₅ b₅ v₅ read₅) fun s₆ ⟨v₆, k₆⟩ => ?_
-  have wr₆ : s₆.wr = s.wr := k₆.2.2.2.trans wr₅
-  have val₆ : scalarValue s₆ = (fe s.mem (s.gpr .rsi) 0 +
+  obtain wr₆ : s₆.wr = s.wr := k₆.2.2.2.trans wr₅
+  obtain val₆ : scalarValue s₆ = (fe s.mem (s.gpr .rsi) 0 +
       fe s.mem (s.gpr .rdx) 0 * fe s.mem (s.gpr .rcx) 0) % Spec.Ed25519.L := by
     rw [v₆, rsi₅, wide₅, prod₂]
   rw [WP.block_append_iff, WP.block_append_iff]
   refine WP.mono (finishArgs_ok ((k₆.1 _ (by decide)).trans rdi₅) (wr₆ ▸ hw))
     fun s₇ ⟨dx₇, di₇, g₇', m₇', rd₇', wr₇'⟩ => ?_
-  have out₇ : s₇.gpr .rdi = s.gpr .rdi := by
+  obtain out₇ : s₇.gpr .rdi = s.gpr .rdi := by
     rw [di₇, k₆.2.1, mem₅, Mem.readW_writeW_self64, g₃, k₂.1 _ (by decide), h₁.out]
   refine WP.mono (scalarRestore_ok (g := s.gpr) dx₇ (by rw [wr₇', wr₆]; exact hw)
     (by rw [m₇', k₆.2.1]; exact sv₅)) fun s₈ ⟨rest₈, g₈, m₈, _, wr₈⟩ => ?_
-  have rdi₈ : s₈.gpr .rdi = s.gpr .rdi := (g₈ _ (by decide)).trans out₇
-  have hwo : (⟨s.gpr .rdi, 32⟩ : Region) ∈ s₈.wr := by rw [wr₈, wr₇', wr₆, hs.wr]; simp
+  obtain rdi₈ : s₈.gpr .rdi = s.gpr .rdi := (g₈ _ (by decide)).trans out₇
+  obtain hwo : (⟨s.gpr .rdi, 32⟩ : Region) ∈ s₈.wr := by rw [wr₈, wr₇', wr₆, hs.wr]; simp
   refine WP.mono (scalarOut_ok rdi₈ hwo) fun t ⟨mt, gt, _, _⟩ => ?_
-  have fm₈ : Frame [⟨s.gpr .r8, 8192⟩] s.mem s₈.mem := by
+  obtain fm₈ : Frame [⟨s.gpr .r8, 8192⟩] s.mem s₈.mem := by
     rw [m₈, m₇', k₆.2.1]; exact fm₅
   refine ⟨⟨fun r hr => ?_, ?_⟩, ?_⟩
   · rw [gt]
@@ -240,9 +240,9 @@ theorem scalarMulAdd_correct {s : State} (hs : MulAddPre s) :
     · exact rest₈ (.r15, 40) (by decide)
   · have ft : Frame [⟨s.gpr .r8, 8192⟩, ⟨s.gpr .rdi, 32⟩] s.mem t.mem := by
       rw [mt]
-      have c : ∀ d, d + 8 ≤ 32 → (⟨s.gpr .rdi, 32⟩ : Region).Contains (off (s.gpr .rdi) d) (64 / 8) :=
+      obtain c : ∀ d, d + 8 ≤ 32 → (⟨s.gpr .rdi, 32⟩ : Region).Contains (off (s.gpr .rdi) d) (64 / 8) :=
         fun d hd => Offset.contains_base _ hd (by omega_using [hd])
-      have hm : (⟨s.gpr .rdi, 32⟩ : Region) ∈ [⟨s.gpr .r8, 8192⟩, ⟨s.gpr .rdi, 32⟩] := by simp
+      obtain hm : (⟨s.gpr .rdi, 32⟩ : Region) ∈ [⟨s.gpr .r8, 8192⟩, ⟨s.gpr .rdi, 32⟩] := by simp
       exact ((((fm₈.mono (by simp)).writeW hm _ (c 0 (by decide))).writeW hm _
         (c 8 (by decide))).writeW hm _ (c 16 (by decide))).writeW hm _ (c 24 (by decide))
     exact ft.readW (r := ⟨s.gpr .rsp, 8⟩) (Region.contains_self _ _) (by
@@ -255,14 +255,14 @@ theorem scalarMulAdd_correct {s : State} (hs : MulAddPre s) :
     change Spec.X25519.bytesAt (st4 _ _ _ _ _ _ _) _ 32 = _
     rw [bytesAt_st4, Spec.Ed25519.scalarMulAdd, encodeLE_eq]
     apply congrArg (Proof.X25519.leBytes 32)
-    have v₈ : scalarValue s₈ = scalarValue s₆ := by
+    obtain v₈ : scalarValue s₈ = scalarValue s₆ := by
       simp only [scalarValue, g₈ .r8 (by decide), g₈ .r9 (by decide), g₈ .r10 (by decide),
         g₈ .r11 (by decide), g₇' .r8 (by decide) (by decide), g₇' .r9 (by decide) (by decide),
         g₇' .r10 (by decide) (by decide), g₇' .r11 (by decide) (by decide)]
     change scalarValue s₈ = _
     rw [v₈, val₆]
     have hd (p : Addr) : decodeLE (bytesAt s.mem p 32) = fe s.mem p 0 := by
-      have h := decodeLE_words s.mem p 0
+      obtain h := decodeLE_words s.mem p 0
       rw [show off p 0 = p from BitVec.add_zero p] at h
       exact h
     rw [hd, hd, hd]
@@ -302,7 +302,7 @@ theorem scalarMulAdd_agree {s₁ s₂ : State} (h₁ : scalarMulAddLocal.pre s�
     (h₂ : scalarMulAddLocal.pre s₂) (hpub : scalarMulAddLocal.pub s₁ s₂) :
     X86_64.Taint.Agree scalarMulAddτ s₁ s₂ := by
   obtain ⟨-, p1, p2, p3, p4, p5⟩ := hpub
-  have wf : ∀ s, scalarMulAddLocal.pre s → X86_64.Taint.Wf scalarMulAddτ s := by
+  obtain wf : ∀ s, scalarMulAddLocal.pre s → X86_64.Taint.Wf scalarMulAddτ s := by
     intro s hs
     obtain ⟨-, hw, -, -, -, -, -, -, d⟩ := hs
     refine ⟨fun _ => ⟨by simp [hw, scalarMulAddτ], by simp [hw, d], by simp [hw]⟩, fun p hp => ?_⟩

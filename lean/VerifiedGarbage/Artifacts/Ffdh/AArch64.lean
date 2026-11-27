@@ -1,70 +1,61 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.Instances
-public import VerifiedGarbage.Proof.Ffdh.AArch64.CheckPublic.Verified
-public import VerifiedGarbage.Proof.Ffdh.AArch64.VettedValidation.Verified
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Exchange.Verified
-public import VerifiedGarbage.Proof.Ffdh.AArch64.CheckPrivate.Verified
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Derive.Verified
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowBase
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorGuard
-public import VerifiedGarbage.Proof.Bignum.AArch64.Mont
-public import VerifiedGarbage.Proof.Ffdh.AArch64.KeyGeneration.Init
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Generation.Init
-import Mathlib.Tactic.Finiteness.Attr
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.AArch64.Print
-import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.CTCode
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Generation.Search.Verified
-public import VerifiedGarbage.Proof.Variants.MillerRabin.AArch64
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Ffdh.CachedKeyGenerationContract
+public import VerifiedGarbage.Spec.Ffdh.Contract
+public import VerifiedGarbage.Spec.Ffdh.DerivePublicContract
+public import VerifiedGarbage.Spec.Ffdh.GenerationContract
+public import VerifiedGarbage.Spec.Ffdh.KeyGenerationContract
+public import VerifiedGarbage.Spec.Ffdh.SievedContract
+import VerifiedGarbage.Proof.Ffdh.AArch64.ScrubSides
+import VerifiedGarbage.Proof.Variants.MillerRabin.AArch64
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # Finite-field Diffie–Hellman (SP 800-56A) on AArch64 -/
-
-@[expose] public section
 
 namespace VG.Artifacts.Ffdh.AArch64
 open VG.AArch64
 
-def direct : List Artifact := [
+def direct : List (Artifact AArch64.target) := [
   Spec.Ffdh.generationPrecomputeApi.artifact target {
-    code := Impl.Ffdh.AArch64.Cached.Precompute.code Proof.Bignum.AArch64.Mont.productEight.mm
-    verified := Proof.Ffdh.AArch64.Cached.precompute_verified _ },
+    code := Impl.Ffdh.AArch64.Fn.precompute
+    verified := Proof.Ffdh.AArch64.Scrub.precompute_scrubbed },
   Spec.Ffdh.cachedKeySearchApi.artifact target {
-    code := Proof.Ffdh.AArch64.Cached.cachedSearch
-    verified := Proof.Ffdh.AArch64.Cached.cachedSearch_verified },
+    code := Impl.Ffdh.AArch64.Fn.cachedKeySearch
+    verified := Proof.Ffdh.AArch64.Scrub.cachedKeySearch_scrubbed },
   Spec.Ffdh.checkPublicApi.artifact target {
-    code := Impl.Ffdh.AArch64.Domain.CheckPublic.code Proof.Bignum.AArch64.WindowFive.called.code
-      Proof.Bignum.AArch64.WindowVector.selector.code Proof.Bignum.AArch64.Mont.base.mm
-    verified := Proof.Ffdh.AArch64.CheckPublic.cp_verified _ _ _ },
+    code := Impl.Ffdh.AArch64.Fn.checkPublic
+    verified := Proof.Ffdh.AArch64.Scrub.checkPublic_scrubbed },
   Spec.Ffdh.checkDomainApi.artifact target {
-    code := Impl.Ffdh.AArch64.VettedValidation.code Proof.Bignum.AArch64.WindowFive.called.code
-      Proof.Bignum.AArch64.WindowVector.selector.code Proof.Bignum.AArch64.Mont.base.mm
-    verified := Proof.Ffdh.AArch64.VettedValidation.verified _ _ _ },
+    code := Impl.Ffdh.AArch64.Fn.checkDomain
+    verified := Proof.Ffdh.AArch64.Scrub.checkDomain_scrubbed },
   Spec.Ffdh.exchangeApi.artifact target {
-    code := Impl.Ffdh.AArch64.Domain.Exchange.code Proof.Bignum.AArch64.WindowFive.called.code
-      Proof.Bignum.AArch64.WindowVector.selector.code Proof.Bignum.AArch64.Mont.base.mm
-    verified := Proof.Ffdh.AArch64.Exchange.ex_verified _ _ _ },
+    code := Impl.Ffdh.AArch64.Fn.exchange
+    verified := Proof.Ffdh.AArch64.Scrub.exchange_scrubbed },
   Spec.Ffdh.checkPrivateApi.artifact target {
-    code := Impl.Ffdh.AArch64.Domain.CheckPrivate.code Proof.Bignum.AArch64.WindowFive.called.code
-      Proof.Bignum.AArch64.WindowVector.selector.code Proof.Bignum.AArch64.Mont.base.mm
-    verified := Proof.Ffdh.AArch64.CheckPrivate.kp_verified _ _ _ },
+    code := Impl.Ffdh.AArch64.Fn.checkPrivate
+    verified := Proof.Ffdh.AArch64.Scrub.checkPrivate_scrubbed },
   Spec.Ffdh.derivePublicApi.artifact target {
-    code := Impl.Ffdh.AArch64.Domain.DerivePublic.code Proof.Bignum.AArch64.WindowFive.called.code
-      Proof.Bignum.AArch64.WindowVector.selector.code Proof.Bignum.AArch64.Mont.base.mm
-    verified := Proof.Ffdh.AArch64.Derive.dv_verified _ _ _ },
+    code := Impl.Ffdh.AArch64.Fn.derivePublic
+    verified := Proof.Ffdh.AArch64.Scrub.derivePublic_scrubbed },
   Spec.Ffdh.parameterInitApi.artifact target {
     code := Impl.Ffdh.AArch64.Generation.init
-    verified := Proof.Ffdh.AArch64.Generation.init_verified },
+    verified := Proof.Ffdh.AArch64.Scrub.parameterInit_scrubbed
+    publicOutOk := Proof.Ffdh.AArch64.Scrub.parameterInit_public },
   Spec.Ffdh.keyInitApi.artifact target {
     code := Impl.Ffdh.AArch64.KeyGeneration.init
-    verified := Proof.Ffdh.AArch64.KeyGeneration.init_verified }]
+    verified := Proof.Ffdh.AArch64.Scrub.keyInit_scrubbed }]
 
-def artifacts : List Artifact :=
+public def artifacts : List (Artifact AArch64.target) :=
   direct ++
   (VG.Proof.Variants.MillerRabin.AArch64.variants.flatMap fun (v : Proof.MillerRabin.AArch64.RoundImpl) => [
     Spec.Ffdh.sievedParameterSearchApi.artifact AArch64.target {
       suffix := v.suffix
-      code := Proof.Ffdh.AArch64.Generation.searchCode v
-      verified := Proof.Ffdh.AArch64.Generation.search_verified v }])
+      code := Impl.Ffdh.AArch64.Fn.parameterSearch v.suffix v.mont.mm v.roundMont.mm
+      verified := Proof.Ffdh.AArch64.Generation.parameterSearch_scrubbed v
+      publicOutOk := Proof.Ffdh.AArch64.Generation.parameterSearch_public v }])
+
+spec_apis artifacts
 
 end VG.Artifacts.Ffdh.AArch64

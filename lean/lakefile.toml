@@ -3,7 +3,8 @@ name = "VerifiedGarbage"
 # Lake can first assign one of these modules to VerifiedGarbage, then try to
 # load a native library (which includes that same module) while compiling it.
 defaultTargets = ["NativeAuditRecords", "NativeTCB", "NativeTCBX86_64", "NativeTCBX86", "NativeTCBAArch64", "NativeTCBArm",
-  "NativeTCBPPC64LE", "NativeTCBRISCV64", "NativeSpec", "NativeForward", "NativeHintSearch", "NativeScrubX86_64",
+  "NativeTCBPPC64LE", "NativeTCBRISCV64", "NativeSpec", "NativeForward", "NativeHintSearch", "NativeCodeOnce",
+  "NativeScrubX86_64", "NativeScrubAArch64",
   "VerifiedGarbage", "VerifiedGarbageTest", "AuditBase"]
 # Lake already checks several files concurrently. Limit each compiler to
 # two threads so declaration tasks do not contend across all of those files.
@@ -60,6 +61,10 @@ weak.linter.fast_instance_existing = false
 weak.linter.trailingWhitespace = false
 weak.linter.unicodeLinter = false
 weak.linter.whitespaceBeforeSemicolon = false
+# Mathlib's `concreteInstances` (new in v4.36), which rejects an instance
+# argument with no free variables, such as `[DivstepInv]`: here a deliberate
+# assumption, a `Prop` class proven in a module the proof does not import.
+weak.linter.concreteInstances = false
 # Batteries' `unreachableTactic` and `unnecessarySeqFocus` linters, on in
 # every module that imports them (through Mathlib), also run in the
 # interpreter: summed over the CI build cache's `.trace` files, about 200 s of
@@ -71,7 +76,7 @@ weak.linter.unnecessarySeqFocus = false
 [[require]]
 name = "mathlib"
 git = "https://github.com/leanprover-community/mathlib4"
-rev = "v4.35.0"
+rev = "v4.36.0"
 
 [[lean_lib]]
 name = "VerifiedGarbage"
@@ -141,7 +146,7 @@ precompileModules = true
 # The project's tactics, which run in most modules: the evaluator of
 # `sig_eval` (`Proof/Framework/SigEval.lean`), run on every contract, the
 # literal tactics (`materialize_code`, `rw_lit`, `Lit.lean`), run by every
-# `taint_decide` and `lit_decide`, the `omega` helpers, and the elaborator of
+# `taint_decide` (`TaintTactic.lean`) and `lit_decide`, the `omega` helpers, and the elaborator of
 # the comb tables (`nat_pairs%`, `Impl/NatPairs.lean`): compiled to a shared
 # library like `NativeSpec`, since the interpreter runs them an order of
 # magnitude slower. They import only Lean core and `NativeTCB`
@@ -152,17 +157,22 @@ name = "NativeTactics"
 plugins = ["NativeAuditRecords:shared"]
 roots = []
 globs = ["VerifiedGarbage.Proof.Framework.SigEval", "VerifiedGarbage.Proof.Framework.Lit",
-  "VerifiedGarbage.Proof.Framework.LitShare", "VerifiedGarbage.Proof.Framework.LitAlias",
+  "VerifiedGarbage.Proof.Framework.LitShare", "VerifiedGarbage.Proof.Framework.LitHidden",
+  "VerifiedGarbage.Proof.Framework.TaintTactic", "VerifiedGarbage.Proof.Framework.LitAlias",
   "VerifiedGarbage.Proof.Framework.Omega", "VerifiedGarbage.Proof.Framework.OmegaAll",
   "VerifiedGarbage.Proof.Framework.OmegaLit",
-  "VerifiedGarbage.Proof.Framework.KernelRfl", "VerifiedGarbage.Proof.Framework.Sig",
+  "VerifiedGarbage.Proof.Framework.KernelRfl", "VerifiedGarbage.Proof.Framework.SpecApis",
+  "VerifiedGarbage.Proof.Framework.FastDecide", "VerifiedGarbage.Proof.Framework.FastElab",
+  "VerifiedGarbage.Proof.Framework.Sig",
+  "VerifiedGarbage.Proof.Framework.InlineMatch", "VerifiedGarbage.Proof.Framework.FillCode",
   "VerifiedGarbage.Proof.Framework.RegionsSub",
   "VerifiedGarbage.Proof.Framework.PlainSimp", "VerifiedGarbage.Proof.Framework.TacticTemplate",
   "VerifiedGarbage.Proof.Framework.UnfoldStep", "VerifiedGarbage.Proof.Framework.X86_64.Reduce",
   "VerifiedGarbage.Proof.Framework.X86.Reduce", "VerifiedGarbage.Proof.Framework.AArch64.Reduce",
   "VerifiedGarbage.Proof.Framework.Arm.Reduce", "VerifiedGarbage.Proof.Framework.PPC64LE.Reduce",
   "VerifiedGarbage.Proof.MlDsa.DecideAt", "VerifiedGarbage.Impl.NatPairs",
-  "VerifiedGarbage.Impl.AArch64Instrs"]
+  "VerifiedGarbage.Impl.AArch64Instrs", "VerifiedGarbage.Proof.Framework.FastNames",
+  "VerifiedGarbage.Proof.Framework.FastOps"]
 precompileModules = true
 
 # The trusted base, which imports only Lean core: the code the emitter
@@ -294,6 +304,17 @@ roots = []
 globs = ["VerifiedGarbage.Proof.Framework.RegSet", "VerifiedGarbage.Proof.Framework.Slots", "VerifiedGarbage.Proof.Framework.NativeHintOps", "VerifiedGarbage.Proof.Framework.X86.NativeHintData", "VerifiedGarbage.Proof.Framework.Arm.NativeHintData"]
 precompileModules = true
 
+# The check that follows the code of each function once (`Code.allOnce`),
+# which the cleanups of both libraries below are written with, as compiled
+# code.
+[[lean_lib]]
+name = "NativeCodeOnce"
+# Writes the audit records of each module (`NativeAuditRecords`).
+plugins = ["NativeAuditRecords:shared"]
+roots = []
+globs = ["VerifiedGarbage.Impl.Scrub.CodeOnce"]
+precompileModules = true
+
 # The checks of the x86-64 scrub, which the emitter evaluates on the code of
 # every function it scrubs, run as compiled code: an order of magnitude
 # faster than in the interpreter. Their proofs are in modules that import
@@ -305,6 +326,18 @@ plugins = ["NativeAuditRecords:shared"]
 roots = []
 globs = ["VerifiedGarbage.Proof.Framework.CodeOnce", "VerifiedGarbage.Impl.Scrub.X86_64",
   "VerifiedGarbage.Proof.Framework.X86_64.ScrubChecks", "VerifiedGarbage.Proof.Framework.X86_64.ScrubPaths"]
+precompileModules = true
+
+# What the AArch64 cleanup reads off the code of a function that states no
+# registers (`Clear.of`), which the emitter evaluates for every such function
+# with the code of every function it calls, runs as compiled code too.
+[[lean_lib]]
+name = "NativeScrubAArch64"
+# Writes the audit records of each module (`NativeAuditRecords`).
+plugins = ["NativeAuditRecords:shared"]
+roots = []
+globs = ["VerifiedGarbage.Impl.Scrub.AArch64.Scrub", "VerifiedGarbage.Impl.Scrub.AArch64.Writes",
+  "VerifiedGarbage.Impl.Scrub.AArch64.WritesL"]
 precompileModules = true
 
 # The check of `VerifiedGarbage/TCB/AuditBase.lean`, which `ci/audit_base.py`

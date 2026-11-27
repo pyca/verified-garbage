@@ -1,14 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Sm4.X86.FbVerified
-import VerifiedGarbage.Proof.Modes.X86.Ctr32
+import VerifiedGarbage.Proof.Modes.X86.Wide
 public import VerifiedGarbage.Proof.Sm4.Ctr32Scratch
 import VerifiedGarbage.Proof.Modes.Ctr32
 import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
 import VerifiedGarbage.Proof.Sm4.X86.Ctr32Lit
 public import VerifiedGarbage.Impl.Sm4.X86.Ctr32
 meta import VerifiedGarbage.Proof.Sm4.X86.FbVerified
-meta import VerifiedGarbage.Proof.Modes.X86.Ctr32
+meta import VerifiedGarbage.Proof.Modes.X86.Wide
 meta import VerifiedGarbage.Proof.Sm4.Ctr32Scratch
 meta import VerifiedGarbage.Proof.Modes.Ctr32
 meta import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
@@ -20,7 +20,8 @@ public import VerifiedGarbage.Proof.Sm4.Contract
 # SM4's counter mode with `inc₃₂` on x86 meets its contracts
 
 `ctr32_wp_x86`: the modes' counter mode with `inc₃₂`
-(`Proof.Modes.X86.ctr32_wp`) over SM4's core in the encryption direction,
+(`Proof.Modes.X86.ctr32Levels_wp`, the blocks in groups) over SM4's core in the
+encryption direction,
 as `vg_sm4_ctr`'s (`CtrVerified.lean`), with the data and the counter block
 as GCM's blocks (`Spec.Gcm.blocksAt`, `blockAt`). The rest is CTR's: the
 working space as a fifth argument (`fbX86`), the taint analysis with the
@@ -46,7 +47,8 @@ def ctr32Post (s s' : State) : Prop :=
 
 theorem ctr32_wp_x86 {s₀ : State} (hp : (fbX86 ctr32Post).pre s₀) :
     WP isa ctr32 s₀ fun s' => abiPreserved s₀ s' ∧ (fbX86 ctr32Post).post s₀ s' :=
-  WP.mono (Modes.X86.ctr32_wp (dirCoreSpec .encrypt) rfl (Fb.seqPre_of .encrypt rfl hp) (Fb.keyArgs_of .encrypt hp))
+  WP.mono (Modes.X86.ctr32Levels_wp (dirCoreSpec .encrypt) rfl (by decide) (Fb.seqPre_of .encrypt rfl hp)
+    (Fb.keyArgs_of .encrypt hp))
     fun _ ⟨h1, h2, h3⟩ => by
       simp only [Proof.Modes.X86.blocks0, Proof.Modes.X86.iv0, Proof.Modes.X86.Dp, Proof.Modes.X86.P,
         Proof.Modes.X86.N, dirCore_ka, Nat.reduceAdd, data_eq, iv_eq, cipher_eq] at h2 h3

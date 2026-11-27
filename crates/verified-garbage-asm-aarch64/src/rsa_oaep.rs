@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.RsaOaep.decryptPrecomputedMdTablesContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, the contents of `n` and `e`, the first `2 * ⌈n_len / 8⌉` words of `pre` (the modulus' values), and which tables `hash` and `mgf1` are, not on the private key, the rest of `pre`, the label, the ciphertext, whether its decoding is valid or the message's length.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of `out_len` bytes.
@@ -581,7 +583,17 @@ cbnz x12, 293b
 .inst 0x8a0c0140
 281:
 21:
-.inst 0x910443ff,0xf84107fe,0xd65f03c0
+.inst 0x910443ff,0xf84107fe,0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005,0xd2800006
+.inst 0xd2800007,0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d,0xd280000e
+.inst 0xd280000f,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404
+.inst 0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414
+.inst 0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c
+.inst 0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f,0x11000000,0xd13743ff,0x6f00e41f,0x910003e9
+.inst 0xd28006ea
+294:
+.inst 0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x91010129,0xd100054a
+cbnz x10, 294b
+.inst 0x3d80013f,0x913743ff,0xd65f03c0
 .p2align 6",
         vg_rsa_private_checked_precomputed = sym super::rsa::vg_rsa_private_checked_precomputed::vg_rsa_private_checked_precomputed,
     )
@@ -590,6 +602,8 @@ cbnz x12, 293b
 /// RSAES-OAEP encryption (RFC 8017 §7.1.1) with the hash function of the table `hash` and MGF1 with that of the table `mgf1`. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero), the public exponent `e` (`e_len` bytes, most significant first) and `pre`, the `pre_len` words written by `vg_rsa_public_precompute` for `n` (returning 1), writes the encryption of the message `msg` with the label `label` and the `seed_len`-byte seed `seed` (`n_len` bytes, most significant first) to `out` and returns 1; or writes zeros and returns 0 if `n` is not such a modulus or the message is longer than `n_len - 2 seed_len - 2` bytes. The seed must be fresh random bytes for each encryption. If `pre` does not hold those values, what it writes and returns is unspecified; memory safety and the timing guarantee still apply.
 ///
 /// Contract: `VG.Spec.RsaOaep.encryptMdTablesContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, the contents of `n`, `e` and `pre`, and which tables `hash` and `mgf1` are, not on the message, the label or the seed.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1146,7 +1160,17 @@ cbnz x12, 2105b
 .inst 0xd2800000
 291:
 21:
-.inst 0x910443ff,0xf84107fe,0xd65f03c0
+.inst 0x910443ff,0xf84107fe,0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005,0xd2800006
+.inst 0xd2800007,0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d,0xd280000e
+.inst 0xd280000f,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404
+.inst 0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414
+.inst 0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c
+.inst 0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f,0x11000000,0xd104c3ff,0x6f00e41f,0x910003e9
+.inst 0xd280008a
+2106:
+.inst 0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x91010129,0xd100054a
+cbnz x10, 2106b
+.inst 0x3d80013f,0x3d80053f,0x3d80093f,0x9104c3ff,0xd65f03c0
 .p2align 6",
         vg_rsa_public_precomputed_checked = sym super::rsa::vg_rsa_public_precomputed_checked::vg_rsa_public_precomputed_checked,
     )

@@ -5,9 +5,9 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 import VerifiedGarbage.Proof.P256.Prime
 import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
 import VerifiedGarbage.Proof.Ecdsa.X86_64.LitAdx
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.Contract
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.Verified
 import VerifiedGarbage.Proof.Framework.LitShare
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.MulBase
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.MulFn
 import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
 meta import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
@@ -15,22 +15,20 @@ meta import VerifiedGarbage.Proof.P256.Prime
 meta import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.LitAdx
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.Verified
-meta import VerifiedGarbage.Proof.Ecdsa.X86_64.Contract
 meta import VerifiedGarbage.Proof.Framework.LitShare
-meta import VerifiedGarbage.Proof.Ecdsa.X86_64.MulBase
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.MulFn
 meta import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.X86_64.Lit
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.Verified
 public import VerifiedGarbage.Proof.Ecdsa.Contract
 
 /-!
 # ECDSA over P-256 on x86-64 with BMI2 and ADX: `Verified`
 
 `p256x` is `p256` multiplying with BMI2 and ADX (`Mod.adx`), which the proof
-of `sign_ok` covers as it covers any multiplication (`Proof/Mont/X86_64/Adx.lean`):
+of `sign_ok` covers as it covers any multiplication (`Proof/Mont/X86_64/Rounds.lean`):
 the same curve, so the same facts (`p256x_ok`, from `p256_ok` but for the
 inversions' constants, decided again) and the same precondition.
 -/

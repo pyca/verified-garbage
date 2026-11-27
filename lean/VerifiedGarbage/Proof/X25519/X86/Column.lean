@@ -61,8 +61,7 @@ theorem tval_congr {m m' : Mem} {x : BitVec 32} {t : Term} (h : ∀ d ∈ treads
 theorem colv_congr {m m' : Mem} {x : BitVec 32} {ts : List Term}
     (h : ∀ t ∈ ts, ∀ d ∈ treads t, wd m' x d = wd m x d) : colv m' x ts = colv m x ts := by
   simp only [colv]
-  congr 1
-  exact List.map_congr_left fun t ht => tval_congr (h t ht)
+  exact congrArg List.sum (List.map_congr_left fun t ht => tval_congr (h t ht))
 
 /-! ## Arithmetic -/
 
@@ -307,17 +306,17 @@ theorem digit_step (P x : Nat) : P * (x % 2 ^ 32) + P * 2 ^ 32 * (x / 2 ^ 32) = 
 /-- `n` columns at `[x + o]`: their words and the carry are the sum of the
 columns' values (with the accumulator's value on entry), as long as each
 column reads no word an earlier one stored. -/
-theorem cols_ok {x : BitVec 32} {s : State} (hc : Ctx W x s c) {o : Nat} (ts : Nat → List Term) :
+theorem cols_ok70 {x : BitVec 32} {s : State} (hc : Ctx W x s c) {o : Nat} (ts : Nat → List Term) :
     ∀ n, o + 4 * n ≤ 4096 →
     (∀ k < n, ∀ t ∈ ts k, ∀ d ∈ treads t, d + 4 ≤ 4096 ∧ (d + 4 ≤ o ∨ o + 4 * k ≤ d)) →
-    (∀ k < n, colv s.mem x (ts k) < 2 ^ 68) → acc s < 2 ^ 40 →
+    (∀ k < n, colv s.mem x (ts k) < 2 ^ 70) → acc s < 2 ^ 40 →
     WP isa (.block (cols o n ts)) s fun s' => Keep s s' ∧ Frame [sub x o (4 * n)] s.mem s'.mem ∧
       num (fun k => wv s'.mem x (o + 4 * k)) n + (2 ^ 32) ^ n * acc s' =
         acc s + num (fun k => colv s.mem x (ts k)) n ∧ acc s' < 2 ^ 40
   | 0, _, _, _, ha => WP.block_nil ⟨Keep.refl _, Frame.refl _ _, by simp [num], ha⟩
   | n + 1, ho, hr, hb, ha => by
     rw [cols_succ]
-    refine WP.block_append (WP.mono (cols_ok hc ts n (by omega_using [ho])
+    refine WP.block_append (WP.mono (cols_ok70 hc ts n (by omega_using [ho])
       (fun k hk => hr k (by omega_using [hk])) (fun k hk => hb k (by omega_using [hk])) ha)
       fun s₁ ⟨k₁, f₁, e₁, a₁⟩ => ?_)
     have hfit := hc.fit4
@@ -337,5 +336,15 @@ theorem cols_ok {x : BitVec 32} {s : State} (hc : Ctx W x s c) {o : Nat} (ts : N
       rw [num_succ, num_succ, hw, w₂, a₂, hV, Nat.add_assoc, Nat.pow_succ (2 ^ 32) n,
         digit_step, Nat.mul_add, ← Nat.add_assoc, e₁, Nat.add_assoc]
     · rw [a₂, hV]; omega_using [a₁, hb']
+
+/-- `cols_ok70` for columns below `2⁶⁸`. -/
+theorem cols_ok {x : BitVec 32} {s : State} (hc : Ctx W x s c) {o : Nat} (ts : Nat → List Term)
+    (n : Nat) (ho : o + 4 * n ≤ 4096)
+    (hr : ∀ k < n, ∀ t ∈ ts k, ∀ d ∈ treads t, d + 4 ≤ 4096 ∧ (d + 4 ≤ o ∨ o + 4 * k ≤ d))
+    (hb : ∀ k < n, colv s.mem x (ts k) < 2 ^ 68) (ha : acc s < 2 ^ 40) :
+    WP isa (.block (cols o n ts)) s fun s' => Keep s s' ∧ Frame [sub x o (4 * n)] s.mem s'.mem ∧
+      num (fun k => wv s'.mem x (o + 4 * k)) n + (2 ^ 32) ^ n * acc s' =
+        acc s + num (fun k => colv s.mem x (ts k)) n ∧ acc s' < 2 ^ 40 :=
+  cols_ok70 hc ts n ho hr (fun k hk => Nat.lt_trans (hb k hk) (by decide)) ha
 
 end VG.Proof.X25519.X86

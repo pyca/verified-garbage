@@ -1,27 +1,29 @@
 module
 
-public import VerifiedGarbage.Proof.Camellia.PPC64LE.Verified
-public import VerifiedGarbage.Proof.Camellia.PPC64LE.KeyVerified
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.PPC64LE.Print
+public import VerifiedGarbage.TCB.PPC64LE.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Camellia.Contract
+import VerifiedGarbage.Proof.Camellia.PPC64LE.Verified
+import VerifiedGarbage.Proof.Camellia.PPC64LE.KeyVerified
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Camellia.PPC64LE.Scrub
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # Camellia on PPC64LE -/
 
-@[expose] public section
-
 namespace VG.Artifacts.Camellia.PPC64LE
 
-def artifacts : List Artifact := [
+public def artifacts : List (Artifact PPC64LE.target) := [
   Spec.Camellia.expandKeyApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratchWiped 3344 .r6 414 Impl.Camellia.PPC64LE.expandKey
-    verified := Proof.Camellia.PPC64LE.expandKey_framed },
+    code := Impl.Camellia.PPC64LE.Fn.expandKey
+    verified := Proof.Camellia.PPC64LE.Scrub.expandKey_scrubbed },
   Spec.Camellia.ecbEncryptApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratchWiped 3344 .r7 414
-      (Impl.Camellia.PPC64LE.ecb .encrypt)
-    verified := Proof.Camellia.PPC64LE.ecb_framed .encrypt },
+    code := Impl.Camellia.PPC64LE.Fn.ecbEnc
+    verified := Proof.Camellia.PPC64LE.Scrub.ecbEnc_scrubbed },
   Spec.Camellia.ecbDecryptApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratchWiped 3344 .r7 414
-      (Impl.Camellia.PPC64LE.ecb .decrypt)
-    verified := Proof.Camellia.PPC64LE.ecb_framed .decrypt }]
+    code := Impl.Camellia.PPC64LE.Fn.ecbDec
+    verified := Proof.Camellia.PPC64LE.Scrub.ecbDec_scrubbed }]
+
+spec_apis artifacts
 
 end VG.Artifacts.Camellia.PPC64LE

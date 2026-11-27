@@ -17,7 +17,4 @@ def p192 : Cfg where
   SP := Impl.Weierstrass.Mont.p192p
   SN := Impl.Weierstrass.Mont.p192n
 
-/-- `vg_ecdsa_p192_sign`. -/
-def signP192 : Prog isa := p192.sign
-
 end VG.Impl.Ecdsa.X86

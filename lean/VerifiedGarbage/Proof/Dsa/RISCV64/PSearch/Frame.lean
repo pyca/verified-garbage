@@ -10,7 +10,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # DSA parameter search on RISC-V: a state of the search
 
-As on PPC64LE (`Proof/Dsa/PPC64LE/Gen/Frame.lean`). `GI G STK σ V LS s`: a
+As on PPC64LE (`Proof/Dsa/PPC64LE/Gen/Test.lean`). `GI G STK σ V LS s`: a
 state of the search for the call from `σ` (with the parameters `G`, and
 `STK` bytes of stack for the functions we call): `s6` holds `scratch`, whose
 header holds our caller's callee-saved registers, our return address, the

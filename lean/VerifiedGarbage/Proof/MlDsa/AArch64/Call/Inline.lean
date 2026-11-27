@@ -36,7 +36,7 @@ theorem inlineAt_ok {S : Nat} (hS : S<2^64) {c : Prog isa} {k : Contract isa}
 theorem inlineBody_tr {S : Nat} {c : Prog isa} {k : Contract isa} (C : CalleeOk S c k)
     {P : State → State → Prop} (rd wr : List Region)
     (hP : ∀x y,P x y → k.pre (x.withRegions rd wr) ∧ k.pre (y.withRegions rd wr) ∧
-      k.pub (x.withRegions rd wr) (y.withRegions rd wr) ∧
+      k.ditFree.pub (x.withRegions rd wr) (y.withRegions rd wr) ∧
       Covers (rd++wr) (x.rd++x.wr) ∧ Covers wr x.wr ∧
       Covers (rd++wr) (y.rd++y.wr) ∧ Covers wr y.wr) :
     RelCT isa P c fun _ _=>True := by
@@ -51,7 +51,7 @@ theorem inlineAt_tr {S : Nat} {c : Prog isa} {k : Contract isa} (C : CalleeOk S 
     {P : State → State → Prop}
     (hP : ∀x y x1 y1,P x y → Args as x x1 → Args as y y1 → ∃rd wr : List Region,
       k.pre (x1.withRegions rd wr) ∧ k.pre (y1.withRegions rd wr) ∧
-      k.pub (x1.withRegions rd wr) (y1.withRegions rd wr) ∧
+      k.ditFree.pub (x1.withRegions rd wr) (y1.withRegions rd wr) ∧
       Covers (rd++wr) (x.rd++x.wr) ∧ Covers wr x.wr ∧
       Covers (rd++wr) (y.rd++y.wr) ∧ Covers wr y.wr) :
     RelCT isa P (.seq (.block (glue as)) c) fun _ _=>True :=
@@ -60,7 +60,7 @@ theorem inlineAt_tr {S : Nat} {c : Prog isa} {k : Contract isa} (C : CalleeOk S 
     fun x y _ _ hp h1 h2=>⟨x,y,hp,h1,h2⟩)
     (RelCT.mono (RelCT.exists_ (P:=fun (a : List Region × List Region) (x1 y1 : State)=>
       k.pre (x1.withRegions a.1 a.2) ∧ k.pre (y1.withRegions a.1 a.2) ∧
-      k.pub (x1.withRegions a.1 a.2) (y1.withRegions a.1 a.2) ∧
+      k.ditFree.pub (x1.withRegions a.1 a.2) (y1.withRegions a.1 a.2) ∧
       Covers (a.1++a.2) (x1.rd++x1.wr) ∧ Covers a.2 x1.wr ∧
       Covers (a.1++a.2) (y1.rd++y1.wr) ∧ Covers a.2 y1.wr)
       fun a=>inlineBody_tr C a.1 a.2 fun _ _ h=>h)

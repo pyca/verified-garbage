@@ -1,9 +1,8 @@
 module
 
-import VerifiedGarbage.Proof.Weierstrass.X86_64.NafTableFields
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafTableFields
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.RegFieldTiming
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.Naf
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.PointTransfer
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
 import VerifiedGarbage.Proof.Weierstrass.PointContract
 

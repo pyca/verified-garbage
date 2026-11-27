@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Bignum.Arm.CrtSharedState
 import VerifiedGarbage.Proof.Bignum.Arm.CrtSharedWorkspace
 import VerifiedGarbage.Proof.Bignum.Arm.CrtStorage
 import VerifiedGarbage.Proof.Bignum.Arm.CrtLayout
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # The narrow CRT workspace: its width, and the shared state around it
 
@@ -129,5 +130,31 @@ theorem CrtShared.eq_of_frame {s : State} {g : CrtGeometry} {bs : Fin 7 → List
   · exact (h.stack.separate.symm.sub_right (Region.sub_prefix (by decide))).sub_left
       (crt_region_sub_workspace h.buffers.workspace h.buffers.storageFits member)
   · exact sep r hr
+
+
+/-- `CrtShared.after_narrow`, with writes below the stack too. -/
+theorem CrtShared.after_narrowB {s t : State} {g : CrtGeometry} {bs : Fin 7 → List Byte} {rs : List Reg}
+    (h : CrtShared g bs s)
+    (frame : Frame [⟨State.addr (crtN g.base g.words), 8 * workspaceWords g.words⟩,
+      ⟨off (State.addr s.sp) 48, 4⟩, FrameStack.belowA s.sp 48] s.mem t.mem) (rest : Rest rs s t) :
+    CrtShared g bs t := by
+  have eqOf (other : BitVec 32) (ws : Workspace s other (8 * workspaceWords g.words))
+      (member : (⟨State.addr other, 8 * workspaceWords g.words⟩ : Region) ∈ crtRegions g.base (workspaceWords g.words) g.words)
+      (separate : Region.Disjoint ⟨State.addr other, 8 * workspaceWords g.words⟩
+        ⟨State.addr (crtN g.base g.words), 8 * workspaceWords g.words⟩) :
+      WorkspaceEq (State.addr other) (8 * workspaceWords g.words) s.mem t.mem := by
+    apply WorkspaceEq.of_frame (by have := ws.nowrap; omega_using [this]) frame
+    intro r hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    · exact separate
+    · exact (h.stack.separate.symm.sub_right (Offset.sub_base _ (by decide))).sub_left
+        (crt_region_sub_workspace h.buffers.workspace h.buffers.storageFits member)
+    · exact h.stack.below.symm.sub_left (crt_region_sub_workspace h.buffers.workspace h.buffers.storageFits member)
+  have mainEq := eqOf _ h.buffers.context.main (by simp [crtRegions]) h.buffers.context.sepMN
+  have pEq := eqOf _ h.buffers.context.p (by simp [crtRegions]) h.buffers.context.sepPN
+  have qEq := eqOf _ h.buffers.context.q (by simp [crtRegions]) h.buffers.context.sepQN
+  exact h.after_frame (crt_workspace_frameB h.buffers.workspace h.buffers.storageFits h.narrow_member frame) rest
+    (h.main.congr mainEq) (h.p.congr pEq) (h.q.congr qEq) (mainEq.number h.buffers.context.arraysFit (by decide))
 
 end VG.Proof.Bignum.Arm

@@ -17,15 +17,15 @@ structure CandidateStart (p : CandidateParams) (s : State) : Prop where
   usedWrite : InRegions s.wr (State.addr p.usedPtr) 8
   tapeRead : InRegions (s.rd ++ s.wr) (State.addr p.tape) p.bytes.length
   tapeBytes : Spec.Rsa.bytesAt s.mem (State.addr p.tape) p.bytes.length = p.bytes
-  stackBelow : 56 ≤ s.sp.toNat
+  stackBelow : 104 ≤ s.sp.toNat
   stackOutput : (⟨State.addr s.sp, 72⟩ : Region).Disjoint ⟨State.addr p.out, p.length⟩
   stackUsed : (⟨State.addr s.sp, 72⟩ : Region).Disjoint ⟨State.addr p.usedPtr, 8⟩
   stackScratch : (⟨State.addr s.sp, 72⟩ : Region).Disjoint ⟨State.addr p.base, 8 * p.capacity⟩
   stackTape : (⟨State.addr s.sp, 72⟩ : Region).Disjoint ⟨State.addr p.tape, p.bytes.length⟩
-  belowOutput : (FrameStack.belowA s.sp 56).Disjoint ⟨State.addr p.out, p.length⟩
-  belowUsed : (FrameStack.belowA s.sp 56).Disjoint ⟨State.addr p.usedPtr, 8⟩
-  belowScratch : (FrameStack.belowA s.sp 56).Disjoint ⟨State.addr p.base, 8 * p.capacity⟩
-  belowTape : (FrameStack.belowA s.sp 56).Disjoint ⟨State.addr p.tape, p.bytes.length⟩
+  belowOutput : (FrameStack.belowA s.sp 104).Disjoint ⟨State.addr p.out, p.length⟩
+  belowUsed : (FrameStack.belowA s.sp 104).Disjoint ⟨State.addr p.usedPtr, 8⟩
+  belowScratch : (FrameStack.belowA s.sp 104).Disjoint ⟨State.addr p.base, 8 * p.capacity⟩
+  belowTape : (FrameStack.belowA s.sp 104).Disjoint ⟨State.addr p.tape, p.bytes.length⟩
 
 theorem CandidateStart.after_entry {s t : State} {p : CandidateParams} {rs : List Reg}
     (h : CandidateStart p s) (saved : SavedFrame (candidateValues p 0) candidateSlots t)

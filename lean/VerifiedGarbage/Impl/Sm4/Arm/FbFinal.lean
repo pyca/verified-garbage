@@ -18,11 +18,14 @@ namespace VG.Impl.Sm4.Arm
 
 open VG.Arm VG.Impl.Modes.Arm
 
-/-- SM4's ECB function in the direction `dir`, as the modes call it. -/
+/-- SM4's ECB function in the direction `dir`, as the modes call it: its code
+as it is verified, without its cleanup, under a name of its own
+(`vg_sm4_ecb_encrypt_core`, which the emitter writes as an internal
+function), whose caller's cleanup covers the frames of the call. -/
 def ecbCore (dir : Dir) : Core where
   name := match dir with
-    | .encrypt => Spec.Sm4.ecbEncryptApi.name
-    | .decrypt => Spec.Sm4.ecbDecryptApi.name
+    | .encrypt => Spec.Sm4.ecbEncryptApi.name ++ "_core"
+    | .decrypt => Spec.Sm4.ecbDecryptApi.name ++ "_core"
   code := ecbCall dir
   bw := 4
 

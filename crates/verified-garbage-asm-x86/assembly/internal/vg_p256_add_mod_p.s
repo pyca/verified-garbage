@@ -12,6 +12,7 @@ vg_p256_add_mod_p:
 	add ecx, ebp
 	mov edx, DWORD PTR [esp+16]
 	add edx, ebp
+	mov DWORD PTR [ebp+3940], ebx
 	mov eax, DWORD PTR [ecx]
 	add eax, DWORD PTR [edx]
 	mov DWORD PTR [ebp+3840], eax
@@ -41,74 +42,53 @@ vg_p256_add_mod_p:
 	mov DWORD PTR [ebp+3872], eax
 	mov eax, DWORD PTR [ebp+3840]
 	sub eax, -1
-	mov DWORD PTR [ebp+3908], eax
 	mov eax, DWORD PTR [ebp+3844]
 	sbb eax, -1
-	mov DWORD PTR [ebp+3912], eax
 	mov eax, DWORD PTR [ebp+3848]
 	sbb eax, -1
-	mov DWORD PTR [ebp+3916], eax
 	mov eax, DWORD PTR [ebp+3852]
 	sbb eax, 0
-	mov DWORD PTR [ebp+3920], eax
 	mov eax, DWORD PTR [ebp+3856]
 	sbb eax, 0
-	mov DWORD PTR [ebp+3924], eax
 	mov eax, DWORD PTR [ebp+3860]
 	sbb eax, 0
-	mov DWORD PTR [ebp+3928], eax
 	mov eax, DWORD PTR [ebp+3864]
 	sbb eax, 1
-	mov DWORD PTR [ebp+3932], eax
 	mov eax, DWORD PTR [ebp+3868]
 	sbb eax, -1
-	mov DWORD PTR [ebp+3936], eax
 	mov eax, DWORD PTR [ebp+3872]
 	sbb eax, 0
 	sbb eax, eax
 	xor eax, -1
 	mov ecx, DWORD PTR [esp+8]
 	add ecx, ebp
+	mov ebx, eax
+	and ebx, 1
 	mov edx, DWORD PTR [ebp+3840]
-	xor edx, DWORD PTR [ebp+3908]
-	and edx, eax
-	xor edx, DWORD PTR [ebp+3840]
+	sub edx, eax
 	mov DWORD PTR [ecx], edx
 	mov edx, DWORD PTR [ebp+3844]
-	xor edx, DWORD PTR [ebp+3912]
-	and edx, eax
-	xor edx, DWORD PTR [ebp+3844]
+	sbb edx, eax
 	mov DWORD PTR [ecx+4], edx
 	mov edx, DWORD PTR [ebp+3848]
-	xor edx, DWORD PTR [ebp+3916]
-	and edx, eax
-	xor edx, DWORD PTR [ebp+3848]
+	sbb edx, eax
 	mov DWORD PTR [ecx+8], edx
 	mov edx, DWORD PTR [ebp+3852]
-	xor edx, DWORD PTR [ebp+3920]
-	and edx, eax
-	xor edx, DWORD PTR [ebp+3852]
+	sbb edx, 0
 	mov DWORD PTR [ecx+12], edx
 	mov edx, DWORD PTR [ebp+3856]
-	xor edx, DWORD PTR [ebp+3924]
-	and edx, eax
-	xor edx, DWORD PTR [ebp+3856]
+	sbb edx, 0
 	mov DWORD PTR [ecx+16], edx
 	mov edx, DWORD PTR [ebp+3860]
-	xor edx, DWORD PTR [ebp+3928]
-	and edx, eax
-	xor edx, DWORD PTR [ebp+3860]
+	sbb edx, 0
 	mov DWORD PTR [ecx+20], edx
 	mov edx, DWORD PTR [ebp+3864]
-	xor edx, DWORD PTR [ebp+3932]
-	and edx, eax
-	xor edx, DWORD PTR [ebp+3864]
+	sbb edx, ebx
 	mov DWORD PTR [ecx+24], edx
 	mov edx, DWORD PTR [ebp+3868]
-	xor edx, DWORD PTR [ebp+3936]
-	and edx, eax
-	xor edx, DWORD PTR [ebp+3868]
+	sbb edx, eax
 	mov DWORD PTR [ecx+28], edx
+	mov ebx, DWORD PTR [ebp+3940]
 	mov ebp, DWORD PTR [ebp+3952]
 	ret
 	.p2align 6

@@ -32,13 +32,15 @@ def Instr.eraseOff : Instr → Instr
   | i => i
 
 /-- The code with the offsets of its loads and stores from registers, and
-the immediates of its `movw`, zeroed. -/
+the immediates of its `movw`, zeroed, and the names of the functions it calls
+emptied (which the analysis does not read), so that code that calls a
+function of each size erases to the same code. -/
 def Code.eraseOff : Prog isa → Prog isa
   | .block is => .block (is.map Instr.eraseOff)
   | .seq a b => .seq (eraseOff a) (eraseOff b)
   | .ite c t e => .ite c (eraseOff t) (eraseOff e)
   | .loop b c => .loop (eraseOff b) c
-  | .call n b => .call n (eraseOff b)
+  | .call _ b => .call "" (eraseOff b)
   | .frame p b q => .frame p (eraseOff b) q
   | .icall i n b nx => .icall i n b nx
 
@@ -98,7 +100,8 @@ theorem checkBlock_noBase {τ τ' : T} (h : NoBase τ) {is : List Instr}
   induction is generalizing τ with
   | nil => cases hc; exact h
   | cons i is ih =>
-    have hc : (stepKM τ i).bind (taint.checkBlock · is) = some τ' := hc
+    have hc : (taint.step τ i).bind (taint.checkBlock · is) = some τ' := (VG.Taint.checkBlock_cons (A := taint) τ i is).symm.trans hc
+    rw [taint_step] at hc
     obtain ⟨σ, hσ, hc⟩ := Option.bind_eq_some_iff.mp hc
     exact ih (step_noBase h hσ) hc
 
@@ -107,8 +110,8 @@ theorem checkBlock_eraseOff {τ : T} (h : NoBase τ) (is : List Instr) :
   induction is generalizing τ with
   | nil => rfl
   | cons i is ih =>
-    show (stepKM τ i.eraseOff).bind (taint.checkBlock · _) = (stepKM τ i).bind (taint.checkBlock · _)
-    rw [step_eraseOff h]
+    refine (VG.Taint.checkBlock_cons (A := taint) τ _ _).trans (Eq.trans ?_ (VG.Taint.checkBlock_cons (A := taint) τ i is).symm)
+    rw [taint_step, taint_step, step_eraseOff h]
     exact bind_congr fun σ hσ => ih (step_noBase h hσ)
 
 theorem checkChunks_noBase {chunkSize : Nat} {τ τ' : T} (h : NoBase τ) {is : List Instr} {ms : List T}

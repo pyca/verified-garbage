@@ -2,7 +2,6 @@ module
 
 import VerifiedGarbage.Proof.Framework.PPC64LE.TaintMono
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.TaintMono
-public import VerifiedGarbage.Proof.MdStream.PPC64LE.Update
 public import VerifiedGarbage.Proof.MdStream.PPC64LE.Finalize
 import VerifiedGarbage.Proof.MdStream.PPC64LE.Words
 public import VerifiedGarbage.Proof.Sha1.Md
@@ -11,7 +10,6 @@ public import VerifiedGarbage.Impl.Sha1.PPC64LE.Stream
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.MdStream.PPC64LE.Update
 meta import VerifiedGarbage.Proof.MdStream.PPC64LE.Finalize
 meta import VerifiedGarbage.Proof.MdStream.PPC64LE.Words
 meta import VerifiedGarbage.Proof.Sha1.Md

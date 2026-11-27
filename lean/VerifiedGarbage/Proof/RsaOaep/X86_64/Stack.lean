@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Framework.X86_64.Depth
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
-import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-!
 # RSAES-OAEP on x86-64: the stack its pieces use
@@ -38,7 +37,8 @@ theorem xdepth_le : ∀ {c : Prog isa}, NoSp c → c.x86_64Depth ≤ 8 * c.depth
   | .frame i b j, h => by
     have hi := h i (List.mem_cons_self ..)
     have hb := xdepth_le (c := b) (fun x hx => h x (List.mem_cons_of_mem _ (List.mem_append_left _ hx)))
-    have h0 : i.frameBytes = 0 := by cases i <;> simp_all [Taint.clobbers, Taint.dstOf, Instr.frameBytes]
+    have h0 : i.frameBytes = 0 := by
+      cases i <;> first | rfl | simp_all [Taint.clobbers]
     simp only [Code.x86_64Depth, Code.depth, h0]; omega_using [hb]
   | .icall _ _ b n, h => by
     have hb := xdepth_le (c := b) (fun x hx => h x (List.mem_append_left _ (List.mem_cons_of_mem _ hx)))
@@ -48,7 +48,7 @@ theorem xdepth_le : ∀ {c : Prog isa}, NoSp c → c.x86_64Depth ≤ 8 * c.depth
 /-- Code that never writes `rsp` writes it only in its (no) frames. -/
 theorem SpSafe.of_noSp {c : Prog isa} (h : NoSp c) : SpSafe c := fun i hi => by
   have := h i hi
-  cases i <;> simp_all [Taint.clobbers, Taint.dstOf, isa, reduceInstrDst]
+  cases i <;> first | exact this | simp_all [Taint.clobbers, isa]
   all_goals (constructor <;> intro e <;> subst e <;> simp_all)
 
 /-! ## Pieces that keep `rsp`, MXCSR and the stack shallow -/

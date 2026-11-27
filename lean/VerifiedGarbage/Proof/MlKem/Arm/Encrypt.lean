@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.MlKem.Arm.CallsCT
 public import VerifiedGarbage.Proof.MlKem.Arm.RowSum
 import VerifiedGarbage.Proof.MlKem.Arm.Loops
-import VerifiedGarbage.Proof.MlKem.Arm.HashTop
+import VerifiedGarbage.Proof.MlKem.Arm.SampleCT
 import Batteries.Logic
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract

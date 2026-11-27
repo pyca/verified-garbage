@@ -66,6 +66,9 @@ The register a frame's pop loads is secret.
 
 @[expose] public section
 
+/-- `isa`, for the compiler to leave by name (`Taint.compiled`). -/
+@[noinline] def VG.X86.isaC : VG.ISA := VG.X86.isa
+
 namespace VG.X86.Taint
 
 deriving instance Lean.ToExpr for Reg
@@ -97,7 +100,19 @@ structure T where
   /-- The `room` bytes below the stack pointer on entry lie outside every writable region
   but the frames of `stk`. -/
   room : Nat := 0
-  deriving DecidableEq, Lean.ToExpr
+  deriving DecidableEq
+
+/-- A taint as a term, for the hints of a check: its set of registers with a
+numeral for its bits as the kernel's evaluation leaves it (`forceT`), so that
+a taint of a hint and the same taint as a step gives it are the same term,
+and the kernel finds again after a hint the steps it made before it. -/
+instance : Lean.ToExpr T where
+  toExpr t :=
+    Lean.mkAppN (.const ``T.mk []) #[
+      Lean.mkApp2 (.const ``RegSet.mk []) (Lean.toTypeExpr Reg) (Lean.mkRawNatLit t.regs.bits),
+      Lean.toExpr t.flags, Lean.toExpr t.lens, Lean.toExpr t.bases, Lean.toExpr t.slots, Lean.toExpr t.wbases,
+      Lean.toExpr t.argLen, Lean.toExpr t.argBases, Lean.toExpr t.stk, Lean.toExpr t.room]
+  toTypeExpr := .const ``T []
 
 def pub (τ : T) (r : Reg) : Bool := τ.regs.mem r
 
@@ -357,8 +372,8 @@ def step (τ : T) : Instr → Option T
   | .mul r => some (mulStep τ r)
   -- A frame's push and pop are analysed by the `push` and `pop` hooks
   -- (`pushStep`, `popStep`), not here; the SSE instructions are not analysed.
-  | .symPush .. | .push _ | .pop .. | .alloc _ | .free _ | .callr _ | .movdquLoad .. | .movdquStore .. | .movqLoad .. | .movqStore .. | .xop _ | .mop _ | .mmxStore .. | .mmxEnter | .emms
-  | .pmuludq .. | .mcdtEnter _ | .mcdtLeave => none
+  | .symPush .. | .push _ | .pop .. | .alloc _ | .free _ | .callr _ | .movdquLoad .. | .movdquStore .. | .movqLoad .. | .movqStore .. | .movdquTbl .. | .movqTbl .. | .xop _ | .mop _ | .mmxStore .. | .mmxEnter | .emms
+  | .pmuludq .. | .pmullw .. | .pmulhw .. | .mcdtEnter _ | .mcdtLeave => none
 
 def meet (τ₁ τ₂ : T) : T where
   regs := τ₁.regs.inter τ₂.regs
@@ -896,8 +911,8 @@ stores, and for `mul`, which writes two). -/
 def dst : Instr → Option Reg
   | .symPush d _ | .mov d _ | .alu _ d _ | .shift _ d _ | .bswap d | .movzx8 d _ | .pop d _
   | .mcdtEnter d => some d
-  | .store .. | .store8 .. | .push _ | .mul _ | .movdquLoad .. | .movdquStore .. | .movqLoad .. | .movqStore .. | .xop _ | .mop _ | .mmxStore .. | .mmxEnter | .emms
-  | .alloc _ | .free _ | .pmuludq .. | .mcdtLeave | .callr _ => none
+  | .store .. | .store8 .. | .push _ | .mul _ | .movdquLoad .. | .movdquStore .. | .movqLoad .. | .movqStore .. | .movdquTbl .. | .movqTbl .. | .xop _ | .mop _ | .mmxStore .. | .mmxEnter | .emms
+  | .alloc _ | .free _ | .pmuludq .. | .pmullw .. | .pmulhw .. | .mcdtLeave | .callr _ => none
 
 /-- Whether an instruction leaves `esp` as it is: `!isa.writesSp i`
 (`keepsSp_eq`), in one match and a comparison of the registers' indices, for
@@ -906,6 +921,8 @@ def keepsSp : Instr → Bool
   | .symPush d _ | .mcdtEnter d | .mov d _ | .alu _ d _ | .shift _ d _ | .bswap d | .movzx8 d _
   | .pop d _ => !Nat.beq d.ctorIdx Reg.esp.ctorIdx
   | _ => true
+
+kernel_fn @Code.allInstrs isa.Instr isa.Cond keepsSp
 
 theorem ctorIdx_beq (a b : Reg) : Nat.beq a.ctorIdx b.ctorIdx = (a == b) := by
   cases a <;> cases b <;> rfl
@@ -957,8 +974,8 @@ theorem exec_dst {i : Instr} {d : Reg} (hd : dst i = some d) {s s' : State}
     exact ⟨rfl, rfl, fun r h => setReg_ne h⟩
   | store m r => simp [dst] at hd
   | store8 m r => simp [dst] at hd
-  | mul r | movdquLoad | movdquStore | movqLoad | movqStore | xop | mop | mmxStore | mmxEnter | emms
-  | pmuludq | mcdtLeave => simp [dst] at hd
+  | mul r | movdquLoad | movdquStore | movqLoad | movqStore | movdquTbl | movqTbl | xop | mop | mmxStore | mmxEnter | emms
+  | pmuludq | pmullw | pmulhw | mcdtLeave => simp [dst] at hd
 
 theorem Agree.write {τ τ' : T} {i : Instr} {d : Reg} (hd : dst i = some d) (hesp : d ≠ .esp)
     {s₁ s₂ s₁' s₂' : State}
@@ -1085,8 +1102,8 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     (hs : step τ i = some τ') (e₁ : exec i s₁ = some s₁') (e₂ : exec i s₂ = some s₂') :
     addrs i s₁ = addrs i s₂ ∧ Agree τ' s₁' s₂' := by
   cases i with
-  | symPush | push | pop | alloc | free | callr | movdquLoad | movdquStore | movqLoad | movqStore | xop | mop | mmxStore | mmxEnter | emms
-  | pmuludq | mcdtEnter | mcdtLeave => simp only [step, reduceCtorEq] at hs
+  | symPush | push | pop | alloc | free | callr | movdquLoad | movdquStore | movqLoad | movqStore | movdquTbl | movqTbl | xop | mop | mmxStore | mmxEnter | emms
+  | pmuludq | pmullw | pmulhw | mcdtEnter | mcdtLeave => simp only [step, reduceCtorEq] at hs
   | mov d src =>
     simp only [step] at hs
     split at hs <;> [skip; cases hs]
@@ -1854,12 +1871,39 @@ def popStep (τ : T) : Instr → Option T
     | _ => none
   | _ => none
 
+/-- A byte of a region other than the first, which a pop releases, is outside it. -/
+theorem not_in_region0 {τ : T} {s : State} (hw : Wf τ s) {j k : Nat} (hk : k < τ.lens.getD j 0)
+    (hj : j ≠ 0) (h0 : 0 < s.wr.length) : ¬ (region s 0).Contains (byteAddr s j k) 1 := by
+  have hne := lens_ne (τ := τ) (i := j) (n := k + 1) (by omega_using []) (by omega_using [hk])
+  obtain ⟨-, hdisj, -⟩ := hw.lens hne
+  obtain ⟨hj', hrj⟩ := region_mem hw hne (i := j) (by omega_using [hk])
+  have hlj := region_len hw hne j
+  have hbj := region_bound hw (i := j) (by omega_using [hk])
+  have hX : (region s j).Contains (byteAddr s j k) 1 := by
+    simp only [Region.Contains, byteAddr]
+    rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hk, hbj])]
+    omega_using [hk, hlj]
+  have hr0 : region s 0 = s.wr[0] := by
+    simp only [region, List.getD_eq_getElem?_getD, List.getElem?_eq_getElem h0, Option.getD_some]
+  rw [List.pairwise_iff_getElem] at hdisj
+  intro h
+  exact hdisj 0 j h0 hj' (Nat.pos_of_ne_zero hj) _ (hr0 ▸ h) (hrj ▸ hX)
+
+/-- A byte `d + i ≥ n` above `x` is outside the `n` bytes at `x`. -/
+theorem not_in_frame {x : BitVec 32} {n d i : Nat} (hn : n ≤ d) (hd : x.toNat + d + i < 2 ^ 32) :
+    ¬ (⟨addr x 0, n⟩ : Region).Contains (addr x d + BitVec.ofNat 64 i) 1 := by
+  rw [addr_eq (k := d) (by omega_using [hd]), addr_eq (k := 0) (by omega_using [hd])]
+  simp only [Region.Contains, BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_setWidth, BitVec.toNat_ofNat]
+  have := x.isLt
+  omega_using [hn, hd, this]
+
 theorem region_tail (s s' : State) (h : s'.wr = s.wr.tail) (i : Nat) :
     region s' i = region s (i + 1) := by
   simp only [region, h, List.getD_eq_getElem?_getD, List.getElem?_tail]
 
 theorem Wf.pop {τ : T} {n : Nat} {stk : List (Option Nat)} (hstk : τ.stk = some n :: stk) {r : Reg}
-    {s s' : State} (hw : Wf τ s) (hwr : s'.wr = s.wr.tail) (hm : s'.mem = s.mem)
+    {s s' : State} (hw : Wf τ s) (hwr : s'.wr = s.wr.tail)
+    (hm : ∀ x, ¬ (region s 0).Contains x 1 → s'.mem x = s.mem x)
     (hsp : (s'.gpr .esp).toNat = (s.gpr .esp).toNat + n)
     (hg : ∀ q, q ≠ .esp → q ≠ r → s'.gpr q = s.gpr q) :
     Wf { τ with
@@ -1875,6 +1919,14 @@ theorem Wf.pop {τ : T} {n : Nat} {stk : List (Option Nat)} (hstk : τ.stk = som
   have hE : (s'.gpr .esp).toNat + depth stk = (s.gpr .esp).toNat + depth τ.stk := by
     rw [hsp, hstk, depth, itemSize]; omega_using []
   have hrt := region_tail s s' hwr
+  have hf0 := hw.frames (0, 0, n) (by rw [hstk]; exact List.mem_cons_self ..)
+  simp only at hf0
+  obtain h0 : 0 < s.wr.length := by
+    rcases Nat.eq_zero_or_pos s.wr.length with e | e
+    · rw [List.getElem?_eq_none (by omega_using [e])] at hf0; cases hf0
+    · exact e
+  obtain hr0 : region s 0 = ⟨addr (s.gpr .esp) 0, n⟩ := by
+    simp only [region, List.getD_eq_getElem?_getD, hf0, Option.getD_some]
   have hframes : ∀ p ∈ frameList stk 0 0, s'.wr[p.1]? = some ⟨addr (s'.gpr .esp) p.2.1, p.2.2⟩ := by
     intro p hp
     have : (p.1 + 1, p.2.1 + n, p.2.2) ∈ frameList τ.stk 0 0 := by
@@ -1908,8 +1960,14 @@ theorem Wf.pop {τ : T} {n : Nat} {stk : List (Option Nat)} (hstk : τ.stk = som
       simp only [List.getD_eq_getElem?_getD, List.getElem?_tail] at hb ⊢
       rw [Nat.sub_add_cancel (by omega_using [h₁])]; exact hb
     refine ⟨hb', ?_⟩
-    simp only [byteAddr, hrt, hm, Nat.sub_add_cancel (Nat.pos_of_ne_zero h₁),
+    obtain hR : s'.mem.readW (byteAddr s q.1 q.2.1) 32 = s.mem.readW (byteAddr s q.1 q.2.1) 32 :=
+      Mem.readW_congr fun i hi => by
+        rw [byteAddr_add]
+        exact hm _ (not_in_region0 hw (k := q.2.1 + i) (by omega_using [hb, hi]) h₁ h0)
+    simp only [byteAddr] at hR
+    simp only [byteAddr, hrt, Nat.sub_add_cancel (Nat.pos_of_ne_zero h₁),
       Nat.sub_add_cancel (Nat.pos_of_ne_zero h₂)]
+    rw [hR]
     exact hv
   · obtain ⟨h₁, h₂⟩ := hw.args hpos
     refine ⟨by simp only; omega_using [hE, h₁], fun q hq => ?_⟩
@@ -1922,7 +1980,13 @@ theorem Wf.pop {τ : T} {n : Nat} {stk : List (Option Nat)} (hstk : τ.stk = som
     obtain ⟨hb, hv⟩ := hw.argBases q hq
     refine ⟨hb, ?_⟩
     simp only
-    rw [addr_move hE, hm, hrt, Nat.sub_add_cancel (Nat.pos_of_ne_zero h₁)]
+    obtain ⟨hA, -⟩ := hw.args (by omega_using [hb])
+    obtain hR : s'.mem.readW (addr (s.gpr .esp) (depth τ.stk + q.1)) 32 =
+        s.mem.readW (addr (s.gpr .esp) (depth τ.stk + q.1)) 32 :=
+      Mem.readW_congr fun i hi => hm _ (by
+        rw [hr0]
+        exact not_in_frame (by rw [hstk, depth, itemSize]; omega_using []) (by omega_using [hA, hb, hi]))
+    rw [addr_move hE, hR, hrt, Nat.sub_add_cancel (Nat.pos_of_ne_zero h₁)]
     exact hv
   · simp only; rw [hE]; exact hw.stk
   · obtain ⟨h₁, h₂⟩ := hw.room hpos
@@ -1932,6 +1996,13 @@ theorem Wf.pop {τ : T} {n : Nat} {stk : List (Option Nat)} (hstk : τ.stk = som
     refine h₂ q ?_
     rw [hstk, nframes, ← List.drop_tail, ← hwr]
     exact hq
+
+/-- The state after `pop r k` from `b`, the frame's bytes lost. -/
+def popLost (b : State) (r : Reg) (k : Nat) : State :=
+  { popReg b r k with
+    wr := b.wr.tail
+    mem := lose b.mem ((b.gpr .esp).setWidth 64) (4 * k) b.unknowns
+    unknowns := fun n => b.unknowns (n + 2 * k) }
 
 theorem pop_sound {τ τ' : T} {j : Instr} {a₁ a₂ b₁ b₂ c₁ c₂ : State} (ha : Agree τ b₁ b₂)
     (hs : popStep τ j = some τ') (e₁ : isa.pop j a₁ b₁ = some c₁) (e₂ : isa.pop j a₂ b₂ = some c₂) :
@@ -1955,6 +2026,22 @@ theorem pop_sound {τ τ' : T} {j : Instr} {a₁ a₂ b₁ b₂ c₁ c₂ : Stat
     simp only [Option.some.injEq, Region.mk.injEq] at h
     exact h.2.symm
   have hn₁ := hn ha.wf₁ hc₁
+  -- The frame is region 0 of the state before the pop.
+  have hR0 : ∀ {a b : State}, (k ≠ 0 ∧ r ≠ .esp ∧ b.gpr .esp = a.gpr .esp ∧ b.wr = a.wr ∧
+      a.wr.head? = some ⟨(a.gpr .esp).setWidth 64, 4 * k⟩) →
+      region b 0 = ⟨(b.gpr .esp).setWidth 64, 4 * k⟩ := by
+    intro a b hc
+    simp only [region, hc.2.2.2.1, List.getD_eq_getElem?_getD, ← List.head?_eq_getElem?, hc.2.2.2.2,
+      Option.getD_some, hc.2.2.1]
+  have hl0 : ∀ {a b : State}, (k ≠ 0 ∧ r ≠ .esp ∧ b.gpr .esp = a.gpr .esp ∧ b.wr = a.wr ∧
+      a.wr.head? = some ⟨(a.gpr .esp).setWidth 64, 4 * k⟩) → 0 < b.wr.length := by
+    intro a b hc
+    rw [hc.2.2.2.1]
+    have h := hc.2.2.2.2
+    rcases e : a.wr with _ | ⟨x, xs⟩
+    · rw [e] at h; cases h
+    · simp
+  change _ ∧ Agree _ (popLost b₁ r k) (popLost b₂ r k)
   have hsp' : ∀ {a b : State}, Wf τ b → (k ≠ 0 ∧ r ≠ .esp ∧ b.gpr .esp = a.gpr .esp ∧ b.wr = a.wr ∧
       a.wr.head? = some ⟨(a.gpr .esp).setWidth 64, 4 * k⟩) →
       ((popReg b r k).gpr .esp).toNat = (b.gpr .esp).toNat + n := by
@@ -1964,13 +2051,15 @@ theorem pop_sound {τ τ' : T} {j : Instr} {a₁ a₂ b₁ b₂ c₁ c₂ : Stat
     rw [(popReg_eq b r k).2.2.1, Offset.toNat_add_ofNat]
     omega_using [hn₁, this]
   have hg : ∀ {b : State} (q : Reg), q ≠ .esp → q ≠ r →
-      ({ popReg b r k with wr := b.wr.tail } : State).gpr q = b.gpr q :=
+      (popLost b r k).gpr q = b.gpr q :=
     fun q h₁ h₂ => (popReg_eq _ r k).2.2.2 q h₁ h₂
-  have w₁ := ha.wf₁.pop hstk (s' := { popReg b₁ r k with wr := b₁.wr.tail }) rfl (popReg_rest b₁ r k).1
+  have w₁ := ha.wf₁.pop hstk (s' := popLost b₁ r k) rfl
+    (fun _ hx => lose_out (by rw [hR0 hc₁] at hx; exact hx))
     (hsp' ha.wf₁ hc₁) hg
-  have w₂ := ha.wf₂.pop hstk (s' := { popReg b₂ r k with wr := b₂.wr.tail }) rfl (popReg_rest b₂ r k).1
+  have w₂ := ha.wf₂.pop hstk (s' := popLost b₂ r k) rfl
+    (fun _ hx => lose_out (by rw [hR0 hc₂] at hx; exact hx))
     (hsp' ha.wf₂ hc₂) hg
-  have hE : ∀ {b : State}, (({ popReg b r k with wr := b.wr.tail } : State).gpr .esp) =
+  have hE : ∀ {b : State}, ((popLost b r k).gpr .esp) =
       b.gpr .esp + BitVec.ofNat 32 (4 * k) := (popReg_eq _ r k).2.2.1
   refine ⟨by simp [addrs, hsp], ⟨⟨fun q hq => ?_, fun hf => ?_⟩, fun hne => ?_, w₁, w₂, fun i t hsl => ?_,
     fun i t hsl => ?_, fun _ => by rw [hE, hE, hsp], fun t h4 ht => ?_⟩⟩
@@ -1992,19 +2081,31 @@ theorem pop_sound {τ τ' : T} {j : Instr} {a₁ a₂ b₁ b₂ c₁ c₂ : Stat
     exact this
   · rw [Slots.has_pop] at hsl
     have e : ∀ b : State,
-        byteAddr ({ popReg b r k with wr := b.wr.tail } : State) i t = byteAddr b (i + 1) t :=
+        byteAddr (popLost b r k) i t = byteAddr b (i + 1) t :=
       fun b => by simp only [byteAddr]; rw [region_tail b _ rfl]
-    show (popReg b₁ r k).mem (byteAddr _ i t) = (popReg b₂ r k).mem (byteAddr _ i t)
-    rw [e, e, (popReg_rest _ r k).1, (popReg_rest _ r k).1]
+    show lose b₁.mem ((b₁.gpr .esp).setWidth 64) (4 * k) b₁.unknowns (byteAddr _ i t) =
+      lose b₂.mem ((b₂.gpr .esp).setWidth 64) (4 * k) b₂.unknowns (byteAddr _ i t)
+    have hok := ha.ok (i + 1) t hsl
+    rw [e, e, lose_out (by rw [← hR0 hc₁]; exact not_in_region0 ha.wf₁ hok (by omega_using []) (hl0 hc₁)),
+      lose_out (by rw [← hR0 hc₂]; exact not_in_region0 ha.wf₂ hok (by omega_using []) (hl0 hc₂))]
     exact ha.slots (i + 1) t hsl
-  · have e₁ : ((({ popReg b₁ r k with wr := b₁.wr.tail } : State).gpr .esp)).toNat + depth stk =
+  · have e₁ : (((popLost b₁ r k).gpr .esp)).toNat + depth stk =
         (b₁.gpr .esp).toNat + depth τ.stk := by
+      show ((popReg b₁ r k).gpr .esp).toNat + depth stk = _
       rw [hsp' ha.wf₁ hc₁, hstk, depth, itemSize]; omega_using []
-    have e₂ : ((({ popReg b₂ r k with wr := b₂.wr.tail } : State).gpr .esp)).toNat + depth stk =
+    have e₂ : (((popLost b₂ r k).gpr .esp)).toNat + depth stk =
         (b₂.gpr .esp).toNat + depth τ.stk := by
+      show ((popReg b₂ r k).gpr .esp).toNat + depth stk = _
       rw [hsp' ha.wf₂ hc₂, hstk, depth, itemSize]; omega_using []
     simp only at ht ⊢
-    rw [argByte_move e₁, argByte_move e₂, (popReg_rest _ r k).1, (popReg_rest _ r k).1]
+    rw [argByte_move e₁, argByte_move e₂]
+    obtain ⟨hA₁, -⟩ := ha.wf₁.args (by omega_using [ht])
+    obtain ⟨hA₂, -⟩ := ha.wf₂.args (by omega_using [ht])
+    obtain hd : 4 * k ≤ depth τ.stk + t := by rw [hstk, depth, itemSize]; omega_using [hn₁]
+    show lose b₁.mem ((b₁.gpr .esp).setWidth 64) (4 * k) b₁.unknowns (argByte b₁ _) =
+      lose b₂.mem ((b₂.gpr .esp).setWidth 64) (4 * k) b₂.unknowns (argByte b₂ _)
+    rw [lose_out (x := argByte b₁ _) (not_contains_above hd (by omega_using [hA₁, ht])),
+      lose_out (x := argByte b₂ _) (not_contains_above hd (by omega_using [hA₂, ht]))]
     exact ha.argMem t h4 ht
 
 /-- The public slots of a frame's push `push rs`, the first register at `o - 4`. -/
@@ -2030,12 +2131,46 @@ def pushed (τ : T) (rs : List Reg) : T :=
     wbases := pushWbases τ rs n ++ τ.wbases.map fun p => (p.1 + 1, p.2.1, p.2.2 + 1)
     argBases := τ.argBases.map fun p => (p.1, p.2 + 1) }
 
+/-- Forget a register's region-base identity and flags; set its publicity. -/
+def changed (τ : T) (d : Reg) (p : Bool) : T :=
+  { τ with regs := set τ d p, flags := false, bases := kill τ d }
+
+/-- Changing one non-stack register, flags, and untracked state. -/
+theorem Agree.changed {τ : T} {s₁ s₂ t₁ t₂ : State} (h : Agree τ s₁ s₂)
+    {d : Reg} (hd : d ≠ .esp) {p : Bool} (hv : p = true → t₁.gpr d = t₂.gpr d)
+    (g₁ : ∀ r, r ≠ d → t₁.gpr r = s₁.gpr r)
+    (g₂ : ∀ r, r ≠ d → t₂.gpr r = s₂.gpr r)
+    (m₁ : t₁.mem = s₁.mem) (m₂ : t₂.mem = s₂.mem)
+    (w₁ : t₁.wr = s₁.wr) (w₂ : t₂.wr = s₂.wr) : Agree (changed τ d p) t₁ t₂ := by
+  refine h.keep ⟨?_, fun hf => by cases hf⟩ rfl rfl rfl rfl rfl w₁ w₂ m₁ m₂
+    (g₁ _ hd.symm) (g₂ _ hd.symm) (kill_bases h.wf₁ w₁ g₁) (kill_bases h.wf₂ w₂ g₂)
+  intro r hr
+  change r ∈ set τ d p at hr
+  by_cases hp : p = true
+  · simp only [set, hp, ↓reduceIte, RegSet.mem_insert] at hr
+    rcases hr with rfl | hr
+    · exact hv hp
+    · by_cases he : r = d
+      · subst he; exact hv hp
+      · rw [g₁ r he, g₂ r he]; exact h.rf.1 r hr
+  · simp only [set, hp, Bool.false_eq_true, ↓reduceIte, RegSet.mem_erase] at hr
+    rw [g₁ r hr.1, g₂ r hr.1]; exact h.rf.1 r hr.2
+
 /-- A frame's push stores its registers below `esp`, within the bytes that the
 stack may use, which become a new writable region. -/
 def pushStep (τ : T) : Instr → Option T
   | .push rs =>
     if pub τ .esp && τ.lens != [] && decide (depth τ.stk + 4 * rs.length ≤ τ.room) then
       some (pushed τ rs)
+    else none
+  -- The push of a static's address frame: the push of a secret word (the
+  -- saved instruction pointer) and a secret register, with secret flags
+  -- (the ADD's). The address is the same in two runs only where a contract
+  -- says so (`taintSym`, `Proof/Framework/X86/TaintSym.lean`).
+  | .symPush d _ =>
+    if d != .esp && (pub (changed τ d false) .esp && (changed τ d false).lens != [] &&
+        decide (depth (changed τ d false).stk + 4 * [d].length ≤ (changed τ d false).room)) then
+      some (changed (pushed (changed τ d false) [d]) d false)
     else none
   | _ => none
 
@@ -2216,11 +2351,11 @@ theorem Wf.push (hl : τ.lens ≠ []) : Wf (pushed τ rs) (pushState s rs) := by
 
 end push
 
-theorem push_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha : Agree τ s₁ s₂)
-    (hs : pushStep τ i = some τ') (e₁ : isa.push i s₁ = some s₁') (e₂ : isa.push i s₂ = some s₂') :
-    isa.addrs i s₁ = isa.addrs i s₂ ∧ Agree τ' s₁' s₂' := by
-  cases i <;> simp only [pushStep, reduceCtorEq] at hs
-  rename_i rs
+theorem pushRegs_sound {τ τ' : T} {rs : List Reg} {s₁ s₂ s₁' s₂' : State} (ha : Agree τ s₁ s₂)
+    (hs : pushStep τ (.push rs) = some τ') (e₁ : isa.push (.push rs) s₁ = some s₁')
+    (e₂ : isa.push (.push rs) s₂ = some s₂') :
+    isa.addrs (.push rs) s₁ = isa.addrs (.push rs) s₂ ∧ Agree τ' s₁' s₂' := by
+  simp only [pushStep] at hs
   split at hs <;> [rename_i hc; cases hs]
   cases hs
   simp only [Bool.and_eq_true, bne_iff_ne, ne_eq, decide_eq_true_eq] at hc
@@ -2290,6 +2425,58 @@ with the functions of `VG.KList`, which the kernel evaluates several times
 faster. -/
 
 open VG.KList (any all filter find? map append)
+
+theorem push_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha : Agree τ s₁ s₂)
+    (hs : pushStep τ i = some τ') (e₁ : isa.push i s₁ = some s₁') (e₂ : isa.push i s₂ = some s₂') :
+    isa.addrs i s₁ = isa.addrs i s₂ ∧ Agree τ' s₁' s₂' := by
+  cases i with
+  | push rs => exact pushRegs_sound ha hs e₁ e₂
+  | symPush d name =>
+    -- A push of the register, holding a secret, and a secret written to it.
+    simp only [pushStep] at hs
+    split at hs <;> [rename_i hc; cases hs]
+    cases hs
+    obtain ⟨hd, hok⟩ := Bool.and_eq_true_iff.mp hc
+    have hd : d ≠ .esp := by simpa using hd
+    have ht : pushStep (changed τ d false) (.push [d]) = some (pushed (changed τ d false) [d]) := by
+      simp only [pushStep, hok, ↓reduceIte]
+    let a₁ := s₁.setReg d (s₁.unknowns 0)
+    let a₂ := s₂.setReg d (s₂.unknowns 0)
+    have ha' : Agree (changed τ d false) a₁ a₂ :=
+      ha.changed hd (fun h => by cases h) (fun _ h => setReg_ne h) (fun _ h => setReg_ne h)
+        rfl rfl rfl rfl
+    have ea₁ : a₁.gpr .esp = s₁.gpr .esp := setReg_ne hd.symm
+    have ea₂ : a₂.gpr .esp = s₂.gpr .esp := setReg_ne hd.symm
+    simp only [isa, X86.push] at e₁ e₂
+    split at e₁ <;> [rename_i hc₁; cases e₁]
+    split at e₂ <;> [rename_i hc₂; cases e₂]
+    cases e₁; cases e₂
+    have ep₁ : isa.push (.push [d]) a₁ = some (pushState a₁ [d]) := by
+      simp only [isa, X86.push, List.length_singleton, Nat.mul_one, ea₁]
+      rw [ite_eq_left (by simpa using And.intro hd.symm hc₁.2)]
+      simp only [pushState, belowSp, ea₁, List.length_singleton, Nat.mul_one]
+    have ep₂ : isa.push (.push [d]) a₂ = some (pushState a₂ [d]) := by
+      simp only [isa, X86.push, List.length_singleton, Nat.mul_one, ea₂]
+      rw [ite_eq_left (by simpa using And.intro hd.symm hc₂.2)]
+      simp only [pushState, belowSp, ea₂, List.length_singleton, Nat.mul_one]
+    obtain ⟨_, hp⟩ := pushRegs_sound ha' ht ep₁ ep₂
+    have hsp : s₁.gpr .esp = s₂.gpr .esp := by
+      simp only [Bool.and_eq_true] at hok
+      exact ea₁.symm.trans ((ha'.reg hok.1.1).trans ea₂)
+    refine ⟨by simp only [addrs, hsp], ?_⟩
+    apply hp.changed hd
+    · intro h; cases h
+    · intro r hr
+      simp only [pushRegs, a₁, RegUpd.gpr_setReg,
+        RegUpd.gpr_arithFlags, hr, hd.symm, ↓reduceIte]
+    · intro r hr
+      simp only [pushRegs, a₂, RegUpd.gpr_setReg,
+        RegUpd.gpr_arithFlags, hr, hd.symm, ↓reduceIte]
+    · simp only [pushRegs, a₁, State.setReg, hd.symm, ↓reduceIte]
+    · simp only [pushRegs, a₂, State.setReg, hd.symm, ↓reduceIte]
+    · simp only [List.length_singleton, Nat.mul_one, belowSp, ea₁]; rfl
+    · simp only [List.length_singleton, Nat.mul_one, belowSp, ea₂]; rfl
+  | _ => simp only [pushStep, reduceCtorEq] at hs
 
 /-- `a == b`, by the registers' indices. -/
 def regEq (a b : Reg) : Bool := Nat.beq a.ctorIdx b.ctorIdx
@@ -2380,8 +2567,8 @@ def stepK (τ : T) : Instr → Option T
     else none
   | .store8 m r => storeStepK τ m 1 (pub τ r.reg) []
   | .mul r => some (mulStep τ r)
-  | .symPush .. | .push _ | .pop .. | .alloc _ | .free _ | .callr _ | .movdquLoad .. | .movdquStore .. | .movqLoad .. | .movqStore .. | .xop _ | .mop _ | .mmxStore .. | .mmxEnter | .emms
-  | .pmuludq .. | .mcdtEnter _ | .mcdtLeave => none
+  | .symPush .. | .push _ | .pop .. | .alloc _ | .free _ | .callr _ | .movdquLoad .. | .movdquStore .. | .movqLoad .. | .movqStore .. | .movdquTbl .. | .movqTbl .. | .xop _ | .mop _ | .mmxStore .. | .mmxEnter | .emms
+  | .pmuludq .. | .pmullw .. | .pmulhw .. | .mcdtEnter _ | .mcdtLeave => none
 
 /-- `l.contains a`, for a known base address. -/
 def memB (a : Reg × Nat × Nat) (l : List (Reg × Nat × Nat)) : Bool :=
@@ -2584,8 +2771,8 @@ def stepKDFn : Instr → Step
     else none⟩
   | .store8 m r => ⟨fun τ => storeStepKD τ m 1 (pub τ r.reg) []⟩
   | .mul r => ⟨fun τ => some (mulStepKD τ r)⟩
-  | .symPush .. | .push _ | .pop .. | .alloc _ | .free _ | .callr _ | .movdquLoad .. | .movdquStore .. | .movqLoad .. | .movqStore .. | .xop _ | .mop _ | .mmxStore .. | .mmxEnter | .emms
-  | .pmuludq .. | .mcdtEnter _ | .mcdtLeave => ⟨fun _ => none⟩
+  | .symPush .. | .push _ | .pop .. | .alloc _ | .free _ | .callr _ | .movdquLoad .. | .movdquStore .. | .movqLoad .. | .movqStore .. | .movdquTbl .. | .movqTbl .. | .xop _ | .mop _ | .mmxStore .. | .mmxEnter | .emms
+  | .pmuludq .. | .pmullw .. | .pmulhw .. | .mcdtEnter _ | .mcdtLeave => ⟨fun _ => none⟩
 
 /-- Apply the preclassified instruction to the incoming taint. -/
 def stepKD (τ : T) (i : Instr) : Option T := (stepKDFn i).run τ
@@ -2612,17 +2799,21 @@ theorem Sim.agree {a b : T} {s₁ s₂ : State} (h : Sim a b) (hb : Agree b s₁
     (.inr ⟨h.argLen, h.stk⟩) (fun _ hp => ⟨h.argBases ▸ hp, h.argLen, h.stk⟩)
     (.inl ⟨h.stk, Nat.le_of_eq h.room⟩)
 
+theorem storeStepKD_spec (τ : T) (m : MemOp) (w : Nat) (p : Bool) (nb : List Nat) :
+    (storeStepKD τ m w p nb = none ∧ storeStep τ m w p nb = none) ∨
+      ∃ a b, storeStepKD τ m w p nb = some a ∧ storeStep τ m w p nb = some b ∧ Sim a b := by
+  rw [← storeStepK_eq]
+  unfold storeStepKD storeStepK
+  cases pub τ m.base
+  · exact .inl ⟨rfl, rfl⟩
+  · exact .inr ⟨_, _, rfl, rfl, ⟨rfl, rfl, rfl, rfl, has_storeSlotsKD τ m w p,
+      congrFun (congrFun (congrFun (congrFun storeWbasesKD_eq τ) m) w) nb, rfl, rfl, rfl, rfl⟩⟩
+
 theorem stepKD_spec (τ : T) (i : Instr) :
     (stepKD τ i = none ∧ step τ i = none) ∨ ∃ a b, stepKD τ i = some a ∧ step τ i = some b ∧ Sim a b := by
   have st : ∀ m w p nb, (storeStepKD τ m w p nb = none ∧ storeStep τ m w p nb = none) ∨
-      ∃ a b, storeStepKD τ m w p nb = some a ∧ storeStep τ m w p nb = some b ∧ Sim a b := by
-    intro m w p nb
-    rw [← storeStepK_eq]
-    unfold storeStepKD storeStepK
-    cases pub τ m.base
-    · exact .inl ⟨rfl, rfl⟩
-    · exact .inr ⟨_, _, rfl, rfl, ⟨rfl, rfl, rfl, rfl, has_storeSlotsKD τ m w p,
-        congrFun (congrFun (congrFun (congrFun storeWbasesKD_eq τ) m) w) nb, rfl, rfl, rfl, rfl⟩⟩
+      ∃ a b, storeStepKD τ m w p nb = some a ∧ storeStep τ m w p nb = some b ∧ Sim a b :=
+    storeStepKD_spec τ
   have other : ∀ {i}, stepKD τ i = stepK τ i →
       (stepKD τ i = none ∧ step τ i = none) ∨ ∃ a b, stepKD τ i = some a ∧ step τ i = some b ∧ Sim a b := by
     intro i e
@@ -2639,6 +2830,289 @@ theorem stepKD_spec (τ : T) (i : Instr) :
   case mul r => exact other (by rw [stepKD, stepKDFn, stepK, mulStepKD_eq])
   all_goals exact other rfl
 
+/-! ### Steps the kernel finds again
+
+The kernel evaluates a taint's fields when they are read, and remembers the
+value of every term it has evaluated. `stepKDFn` gives taints whose fields are
+terms yet to be evaluated, written in terms of the taint before: no two are
+the same term, and the kernel evaluates every instruction of the code it
+checks. `stepKeep` gives taints that are evaluated (`forceT`), and whose
+fields the instruction does not change are the terms they were: an
+instruction the kernel has evaluated from a taint is then found again
+wherever the code repeats it from the same taint.
+
+Most instructions write a register that holds no known address, and the
+bases after them are the bases before them. `stepKDFn` filters them
+(`killK`) at every instruction: a list the kernel builds cell by cell out of
+the one the instruction before built. `stepKeepFn` decides first whether the
+bases change (`noBase`, which the kernel evaluates once for the bases `b` and
+the register `d`), and gives the taint the bases it was given when they do
+not. A store decides so for the slots and for the base-address words
+(`storeKeep`): `storeStepKD` gives a taint whose slots are a term that
+evaluates to the old ones' term.
+
+The lists an instruction does change are left as terms in the taint before
+(`movBasesK τ d src`, `Slots.addK`). Evaluating the bases and the
+base-address words a step changes made no check faster. The slots must not
+be evaluated: their masks have a bit for each byte of a region, and the
+kernel's hash of a numeral is of its low 64 bits, so taints that differ only
+in which bytes above the first 64 of a region are public would all have the
+same hash, and the kernel compares a term it looks up with every term of the
+same hash it has evaluated. (With the masks evaluated, the check of a
+function with a working space of 8192 bytes took three times as long.) -/
+
+/-- `k t`, with the set of registers and the flags of `t` evaluated. -/
+def forceT {α : Type} (t : T) (k : T → α) : α :=
+  match t with
+  | ⟨rg, f, l, b, s, w, al, ab, st, ro⟩ =>
+    rg.force fun rg =>
+      Bool.casesOn (motive := fun _ => α) f (k ⟨rg, false, l, b, s, w, al, ab, st, ro⟩)
+        (k ⟨rg, true, l, b, s, w, al, ab, st, ro⟩)
+
+theorem forceT_eq {α : Type} (t : T) (k : T → α) : forceT t k = k t := by
+  obtain ⟨rg, f, l, b, s, w, al, ab, st, ro⟩ := t
+  cases f <;> rfl
+
+/-- The list is empty. -/
+def isNil {β : Type} (l : List β) : Bool := List.casesOn (motive := fun _ => Bool) l true fun _ _ => false
+
+theorem eq_nil_of_isNil {β : Type} {l : List β} (h : isNil l = true) : l = [] := by
+  cases l with
+  | nil => rfl
+  | cons => cases h
+
+/-- No base in `b` is of the register `d`. -/
+def noBase (b : List (Reg × Nat × Nat)) (d : Reg) : Bool := all b fun p => !regEq p.1 d
+
+/-- `mov d, src` leaves the bases `b` of `τ` as they are: none is of `d`, and
+the source is no base to copy. -/
+def movSame (τ : T) (b : List (Reg × Nat × Nat)) (d : Reg) : Src → Bool
+  | .reg r => noBase b d && noBase b r
+  | .mem m => noBase b d && isNil (loadBasesK τ m)
+  | .imm _ => noBase b d
+
+/-- The taint `k` gives of the bases after an instruction: `b`, those before
+it, if `same`, and `slow` otherwise. -/
+def keepBases (same : Bool) (b slow : List (Reg × Nat × Nat)) (k : List (Reg × Nat × Nat) → T) : Option T :=
+  bif same then some (k b) else some (k slow)
+
+/-- `keepBases`, for an instruction that only forgets the base of the register `d` it writes. -/
+def keepKill (τ : T) (b : List (Reg × Nat × Nat)) (d : Reg) (k : List (Reg × Nat × Nat) → T) : Option T :=
+  keepBases (noBase b d) b (killK τ d) k
+
+/-- What `k` gives of the slots after a store: `s`, those before it, if
+`same`, and `slow` otherwise. -/
+def keepSlots (same : Bool) (s slow : Slots) (k : Slots → Option T) : Option T :=
+  bif same then k s else k slow
+
+/-- What `k` gives of the base-address words after a store: `wb`, those
+before it, if `same`, and `slow` otherwise. -/
+def keepWbases (same : Bool) (wb slow : List (Nat × Nat × Nat)) (k : List (Nat × Nat × Nat) → Option T) :
+    Option T :=
+  bif same then k wb else k slow
+
+/-- The base-address words a store of `[d, d + w)` of region `j` leaves. -/
+def wbKept (j d w : Nat) (p : Nat × Nat × Nat) : Bool :=
+  !Nat.beq p.1 j || Nat.ble (d + w) p.2.1 || Nat.ble (p.2.1 + 4) d
+
+/-- `storeStepKD` (`storeKeep_eq`), deciding what becomes of the slots and of
+the base-address words before it builds the taint: a store that leaves them
+as they are (of a secret over bytes that already are, of a public value into
+bytes that already are, of no base address over no base-address word) gives
+the taint the terms it was given. -/
+def storeKeep (τ : T) (m : MemOp) (w : Nat) (p : Bool) (nb : List Nat) : Option T :=
+  match τ with
+  | ⟨rg, f, l, b, s, wb, al, ab, st, ro⟩ =>
+    bif pub τ m.base then
+      match addrOfK τ m with
+      | some (i, d) =>
+        bif Nat.ble (d + w) (l.getD i 0) then
+          keepSlots (bif p then s.coversK i d w else !s.touchesK i d w) s
+              (bif p then s.addK i d w else s.removeK i d w) fun s' =>
+            keepWbases (all wb (wbKept i d w) && isNil nb) wb
+                (append (VG.Taint.filterKeep (wbKept i d w) wb) (map (fun k => (i, d, k)) nb)) fun wb' =>
+              some ⟨rg, f, l, b, s', wb', al, ab, st, ro⟩
+        else keepSlots p s ⟨[]⟩ fun s' => some ⟨rg, f, l, b, s', [], al, ab, st, ro⟩
+      | none => keepSlots p s ⟨[]⟩ fun s' => some ⟨rg, f, l, b, s', [], al, ab, st, ro⟩
+    else none
+
+/-- `stepKDFn`, giving the bases, the slots and the base-address words it was
+given when the instruction does not change them (`stepKeepFn_eq`). -/
+def stepKeepFn : Instr → Step
+  | .mov d src => ⟨fun τ =>
+    match τ with
+    | ⟨_, f, l, b, s, w, al, ab, st, ro⟩ =>
+      bif !regEq d .esp && srcOkK τ src then
+        keepBases (movSame τ b d src) b (movBasesK τ d src) fun b' =>
+          ⟨setK τ d (srcPub τ src || loadPubK τ src), f, l, b', s, w, al, ab, st, ro⟩
+      else none⟩
+  | .store m r => ⟨fun τ => storeKeep τ m 4 (pub τ r) (regBasesK τ r)⟩
+  | .alu op d src => ⟨fun τ =>
+    match τ with
+    | ⟨rg, f, l, b, s, w, al, ab, st, ro⟩ =>
+      bif !regEq d .esp && srcOkK τ src then
+        let p := pub τ d && srcPub τ src && (!usesCarry op || f)
+        keepKill τ b d fun b' => ⟨bif writes op then setK τ d p else rg, p, l, b', s, w, al, ab, st, ro⟩
+      else none⟩
+  | .shift _ d _ => ⟨fun τ =>
+    match τ with
+    | ⟨rg, f, l, b, s, w, al, ab, st, ro⟩ =>
+      bif !regEq d .esp then keepKill τ b d fun b' => ⟨rg, f && pub τ d, l, b', s, w, al, ab, st, ro⟩
+      else none⟩
+  | .bswap d => ⟨fun τ =>
+    match τ with
+    | ⟨rg, f, l, b, s, w, al, ab, st, ro⟩ =>
+      bif !regEq d .esp then keepKill τ b d fun b' => ⟨rg, f, l, b', s, w, al, ab, st, ro⟩ else none⟩
+  | .movzx8 d m => ⟨fun τ =>
+    match τ with
+    | ⟨_, f, l, b, s, w, al, ab, st, ro⟩ =>
+      bif !regEq d .esp && pub τ m.base then
+        keepKill τ b d fun b' => ⟨setK τ d false, f, l, b', s, w, al, ab, st, ro⟩
+      else none⟩
+  | .store8 m r => ⟨fun τ => storeKeep τ m 1 (pub τ r.reg) []⟩
+  | .mul r => ⟨fun τ =>
+    match τ with
+    | ⟨rg, _, l, b, s, w, al, ab, st, ro⟩ =>
+      let p := pub τ .eax && pub τ r
+      keepBases (noBase b .eax && noBase b .edx) b (filter (fun q => !regEq q.1 .edx) (killK τ .eax)) fun b' =>
+        ⟨bif p then (rg.insert .eax).insert .edx else (rg.erase .eax).erase .edx, p, l, b', s, w, al, ab, st, ro⟩⟩
+  | i => stepKDFn i
+
+theorem keepBases_eq {same : Bool} {b slow : List (Reg × Nat × Nat)} (k : List (Reg × Nat × Nat) → T)
+    (h : same = true → slow = b) : keepBases same b slow k = some (k slow) := by
+  cases same
+  · rfl
+  · rw [h rfl]; rfl
+
+theorem keepSlots_eq (same : Bool) (s slow : Slots) (k : Slots → Option T) :
+    keepSlots same s slow k = k (bif same then s else slow) := by
+  cases same <;> rfl
+
+theorem keepWbases_eq (same : Bool) (wb slow : List (Nat × Nat × Nat)) (k : List (Nat × Nat × Nat) → Option T) :
+    keepWbases same wb slow k = k (bif same then wb else slow) := by
+  cases same <;> rfl
+
+theorem filter_noBase {b : List (Reg × Nat × Nat)} {d : Reg} (h : noBase b d = true) :
+    filter (fun p => !regEq p.1 d) b = b := by
+  rw [noBase, KList.all_eq, List.all_eq_true] at h
+  rw [KList.filter_eq]
+  exact List.filter_eq_self.mpr h
+
+theorem select_noBase {b : List (Reg × Nat × Nat)} {d : Reg} (h : noBase b d = true) :
+    filter (fun p => regEq p.1 d) b = [] := by
+  rw [noBase, KList.all_eq, List.all_eq_true] at h
+  rw [KList.filter_eq, List.filter_eq_nil_iff]
+  intro a ha
+  have := h a ha
+  cases hr : regEq a.1 d
+  · simp
+  · rw [hr] at this; cases this
+
+theorem killK_noBase {τ : T} {d : Reg} (h : noBase τ.bases d = true) : killK τ d = τ.bases :=
+  filter_noBase h
+
+theorem movBasesK_same {τ : T} {d : Reg} {src : Src} (h : movSame τ τ.bases d src = true) :
+    movBasesK τ d src = τ.bases := by
+  cases src with
+  | reg r =>
+    rw [movSame, Bool.and_eq_true] at h
+    simp only [movBasesK, killK_noBase h.1, select_noBase h.2, KList.map_eq, KList.append_eq, List.map_nil,
+      List.append_nil]
+  | mem m =>
+    rw [movSame, Bool.and_eq_true] at h
+    simp only [movBasesK, killK_noBase h.1, eq_nil_of_isNil h.2, KList.map_eq, KList.append_eq, List.map_nil,
+      List.append_nil]
+  | imm _ => exact killK_noBase h
+
+theorem wbases_same {wb : List (Nat × Nat × Nat)} {q : Nat × Nat × Nat → Bool} {nb : List Nat}
+    (g : Nat → Nat × Nat × Nat) (h : (all wb q && isNil nb) = true) :
+    append (VG.Taint.filterKeep q wb) (map g nb) = wb := by
+  rw [Bool.and_eq_true] at h
+  rw [eq_nil_of_isNil h.2, VG.Taint.filterKeep, h.1, KList.append_eq, KList.map_eq]
+  exact List.append_nil wb
+
+theorem storeKeep_eq (τ : T) (m : MemOp) (w : Nat) (p : Bool) (nb : List Nat) :
+    storeKeep τ m w p nb = storeStepKD τ m w p nb := by
+  obtain ⟨rg, f, l, b, s, wb, al, ab, st, ro⟩ := τ
+  simp only [storeKeep, storeStepKD, storeSlotsKD, storeWbasesKD, keepSlots_eq, keepWbases_eq]
+  cases pub _ m.base <;> simp only [Bool.cond_true, Bool.cond_false]
+  rcases addrOfK _ m with _ | ⟨i, d⟩ <;> simp only
+  · cases p <;> rfl
+  · cases Nat.ble (d + w) (l.getD i 0) <;> simp only [Bool.cond_true, Bool.cond_false]
+    · cases p <;> rfl
+    · have hw : (bif all wb (wbKept i d w) && isNil nb then wb
+          else append (VG.Taint.filterKeep (wbKept i d w) wb) (map (fun k => (i, d, k)) nb)) =
+          append (VG.Taint.filterKeep (wbKept i d w) wb) (map (fun k => (i, d, k)) nb) := by
+        cases h : all wb (wbKept i d w) && isNil nb
+        · rfl
+        · exact (wbases_same _ h).symm
+      rw [hw]
+      cases p <;> simp only [Bool.cond_true, Bool.cond_false]
+      · cases s.touchesK i d w <;> rfl
+      · cases s.coversK i d w <;> rfl
+
+theorem stepKeepFn_run (i : Instr) (τ : T) : (stepKeepFn i).run τ = (stepKDFn i).run τ := by
+  obtain ⟨rg, f, l, b, s, w, al, ab, st, ro⟩ := τ
+  have hk : ∀ {d : Reg}, noBase b d = true → killK ⟨rg, f, l, b, s, w, al, ab, st, ro⟩ d = b := fun h =>
+    killK_noBase (τ := ⟨rg, f, l, b, s, w, al, ab, st, ro⟩) h
+  have hm : ∀ {d : Reg} {src : Src}, movSame ⟨rg, f, l, b, s, w, al, ab, st, ro⟩ b d src = true →
+      movBasesK ⟨rg, f, l, b, s, w, al, ab, st, ro⟩ d src = b := fun h =>
+    movBasesK_same (τ := ⟨rg, f, l, b, s, w, al, ab, st, ro⟩) h
+  have h2 : ∀ {a c : Reg}, (noBase b a && noBase b c) = true →
+      filter (fun p => !regEq p.1 c) (killK ⟨rg, f, l, b, s, w, al, ab, st, ro⟩ a) = b := fun h => by
+    rw [Bool.and_eq_true] at h
+    rw [hk h.1]; exact filter_noBase h.2
+  cases i <;> try rfl
+  case mov d src =>
+    simp only [stepKeepFn, stepKDFn]
+    cases (!regEq d .esp && srcOkK _ src) <;> simp only [Bool.cond_true, Bool.cond_false]
+    exact keepBases_eq _ hm
+  case store m r => exact storeKeep_eq _ m 4 _ _
+  case store8 m r => exact storeKeep_eq _ m 1 _ _
+  case alu op d src =>
+    simp only [stepKeepFn, stepKDFn, keepKill]
+    cases (!regEq d .esp && srcOkK _ src) <;> simp only [Bool.cond_true, Bool.cond_false]
+    exact keepBases_eq _ hk
+  case shift _ d _ | bswap d =>
+    simp only [stepKeepFn, stepKDFn, keepKill]
+    cases (!regEq d .esp) <;> simp only [Bool.cond_true, Bool.cond_false]
+    exact keepBases_eq _ hk
+  case movzx8 d m =>
+    simp only [stepKeepFn, stepKDFn, keepKill]
+    cases (!regEq d .esp && pub _ m.base) <;> simp only [Bool.cond_true, Bool.cond_false]
+    exact keepBases_eq _ hk
+  case mul r =>
+    simp only [stepKeepFn, stepKDFn, mulStepKD]
+    exact keepBases_eq _ h2
+
+theorem stepKeepFn_eq (i : Instr) : stepKeepFn i = stepKDFn i := by
+  have h := funext (stepKeepFn_run i)
+  cases h₁ : stepKeepFn i; cases h₂ : stepKDFn i
+  rw [h₁, h₂] at h
+  exact congrArg Step.mk h
+
+/-- `stepKeepFn`, with its cases closed (`inline_match%`). -/
+def stepKeepFnK : Instr → Step := inline_match% stepKeepFn stepKDFn
+
+theorem stepKeepFnK_eq (i : Instr) : stepKeepFnK i = stepKeepFn i := by
+  cases i <;> rfl
+
+/-- `stepKD`, giving a taint that is evaluated, and whose bases, slots and
+base-address words are those it was given when the instruction does not
+change them. -/
+def stepKeep (τ : T) (i : Instr) : Option T :=
+  match (stepKeepFnK i).run τ with
+  | some τ' => forceT τ' some
+  | none => none
+
+theorem stepKeep_eq : stepKeep = stepKD := by
+  funext τ i
+  unfold stepKeep stepKD
+  rw [stepKeepFnK_eq, stepKeepFn_eq]
+  cases (stepKDFn i).run τ with
+  | none => rfl
+  | some τ' => exact forceT_eq τ' some
+
 end VG.X86.Taint
 
 namespace VG.X86
@@ -2647,8 +3121,9 @@ namespace VG.X86
 def taint : VG.Taint isa where
   T := Taint.T
   Agree := Taint.Agree
-  step := Taint.stepKD
+  step := Taint.stepKeep
   step_sound {τ τ' i s₁ s₂ s₁' s₂'} ha hs e₁ e₂ := by
+    rw [Taint.stepKeep_eq] at hs
     rcases Taint.stepKD_spec τ i with ⟨h, -⟩ | ⟨a, b, h₁, h₂, hab⟩
     · rw [h] at hs; cases hs
     · rw [h₁] at hs; cases hs
@@ -2669,5 +3144,11 @@ def taint : VG.Taint isa where
   push_sound := Taint.push_sound
   pop := Taint.popStep
   pop_sound := Taint.pop_sound
+
+kernel_fn VG.Taint.check taint
+
+/-- `taint`'s step is `stepKD`'s (`stepKeep_eq`). -/
+theorem taint_step (τ : Taint.T) (i : Instr) : taint.step τ i = Taint.stepKD τ i :=
+  congrFun (congrFun Taint.stepKeep_eq τ) i
 
 end VG.X86

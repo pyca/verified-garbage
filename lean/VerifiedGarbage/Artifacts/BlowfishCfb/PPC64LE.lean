@@ -1,31 +1,36 @@
 module
 
-public import VerifiedGarbage.Proof.Blowfish.PPC64LE.ModesVerified
-public import VerifiedGarbage.Proof.Blowfish.PPC64LE.ModesFrame
-public import VerifiedGarbage.Proof.Blowfish.PPC64LE.FbFinalVerified
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.PPC64LE.Print
+public import VerifiedGarbage.TCB.PPC64LE.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Blowfish.Cfb
+public import VerifiedGarbage.Spec.Blowfish.CfbFinal
+import VerifiedGarbage.Proof.Blowfish.PPC64LE.ModesVerified
+import VerifiedGarbage.Proof.Blowfish.PPC64LE.ModesFrame
+import VerifiedGarbage.Proof.Blowfish.PPC64LE.FbFinalVerified
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Blowfish.PPC64LE.Scrub
 import VerifiedGarbage.Proof.Blowfish.PPC64LE.ModesLit
 import VerifiedGarbage.Proof.Blowfish.PPC64LE.FbFinalLit
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # Blowfish-CFB64 on PPC64LE -/
 
-@[expose] public section
-
 namespace VG.Artifacts.BlowfishCfb.PPC64LE
 
-def artifacts : List Artifact := [
+public def artifacts : List (Artifact PPC64LE.target) := [
   Spec.Blowfish.cfbEncryptApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratchWiped 128 .r7 12 Impl.Blowfish.PPC64LE.cfbEncrypt
-    verified := Proof.Blowfish.PPC64LE.cfbEnc_framed Proof.Blowfish.PPC64LE.Modes.cfbEncrypt_verified },
+    code := Impl.Blowfish.PPC64LE.Fn.cfbEncrypt
+    verified := Proof.Blowfish.PPC64LE.Scrub.cfbEncrypt_scrubbed },
   Spec.Blowfish.cfbDecryptApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratchWiped 128 .r7 12 Impl.Blowfish.PPC64LE.cfbDecrypt
-    verified := Proof.Blowfish.PPC64LE.cfbDec_framed Proof.Blowfish.PPC64LE.Modes.cfbDecrypt_verified },
+    code := Impl.Blowfish.PPC64LE.Fn.cfbDecrypt
+    verified := Proof.Blowfish.PPC64LE.Scrub.cfbDecrypt_scrubbed },
   Spec.Blowfish.cfbEncryptFinalApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratchWiped 128 .r7 12 Impl.Blowfish.PPC64LE.cfbEncryptFinal
-    verified := Proof.Blowfish.PPC64LE.FbFinal.cfbEncryptFinal_framed },
+    code := Impl.Blowfish.PPC64LE.Fn.cfbEncryptFinal
+    verified := Proof.Blowfish.PPC64LE.Scrub.cfbEncryptFinal_scrubbed },
   Spec.Blowfish.cfbDecryptFinalApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratchWiped 128 .r7 12 Impl.Blowfish.PPC64LE.cfbDecryptFinal
-    verified := Proof.Blowfish.PPC64LE.FbFinal.cfbDecryptFinal_framed }]
+    code := Impl.Blowfish.PPC64LE.Fn.cfbDecryptFinal
+    verified := Proof.Blowfish.PPC64LE.Scrub.cfbDecryptFinal_scrubbed }]
+
+spec_apis artifacts
 
 end VG.Artifacts.BlowfishCfb.PPC64LE

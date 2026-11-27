@@ -28,7 +28,7 @@ vg_argon2_hprime:
 	push ecx
 	push edx
 	push ebx
-	call {vg_blake2b_init}
+	call {vg_blake2b_init_core}
 	pop eax
 	pop eax
 	pop eax
@@ -120,7 +120,7 @@ vg_argon2_hprime:
 	push ecx
 	push edx
 	push ebx
-	call {vg_blake2b_init}
+	call {vg_blake2b_init_core}
 	pop eax
 	pop eax
 	pop eax
@@ -190,7 +190,7 @@ vg_argon2_hprime:
 	push ecx
 	push edx
 	push ebx
-	call {vg_blake2b_init}
+	call {vg_blake2b_init_core}
 	pop eax
 	pop eax
 	pop eax

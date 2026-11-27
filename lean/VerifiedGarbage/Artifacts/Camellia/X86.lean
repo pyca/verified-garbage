@@ -1,26 +1,50 @@
 module
 
-public import VerifiedGarbage.Proof.Camellia.X86.KeyVerified
-public import VerifiedGarbage.Proof.Camellia.X86.Verified
-import VerifiedGarbage.Proof.Camellia.X86.Lit
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.X86.Print
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Camellia.Contract
+import VerifiedGarbage.Proof.Camellia.X86.SseExpandKey
+import VerifiedGarbage.Impl.Camellia.X86.SseExpandKey
+import VerifiedGarbage.Proof.Camellia.X86.SseEcb
+import VerifiedGarbage.Impl.Camellia.X86.SseFn
+import VerifiedGarbage.Proof.Camellia.X86.AesNiExpandKey
+import VerifiedGarbage.Impl.Camellia.X86.AesNiExpandKey
+import VerifiedGarbage.Proof.Camellia.X86.AesNiWideEcb
+import VerifiedGarbage.Impl.Camellia.X86.AesNiWideEcb
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Camellia.X86.SseKeyLit
+import VerifiedGarbage.Proof.Camellia.X86.SseLit
+import VerifiedGarbage.Proof.Camellia.X86.AesNiKeyLit
+import VerifiedGarbage.Proof.Camellia.X86.AesNiWideLit
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # Camellia on x86 -/
 
-@[expose] public section
-
 namespace VG.Artifacts.Camellia.X86
 
-def artifacts : List Artifact := [
+public def artifacts : List (Artifact X86.target) := [
   Spec.Camellia.expandKeyApi.artifact X86.target {
-    code := Impl.StackScratch.X86.withStackScratchWiped 2708 3 672 Impl.Camellia.X86.expandKey
-    verified := Proof.Camellia.X86.expandKey_framed },
+    suffix := "_aesni"
+    code := Impl.Camellia.X86.AesNiKey.Fn.expandKey
+    verified := Proof.Camellia.X86.AesNiKey.expandKey_scrubbed },
+  Spec.Camellia.expandKeyApi.artifact X86.target {
+    code := Impl.Camellia.X86.SseKey.Fn.expandKey
+    verified := Proof.Camellia.X86.SseKey.expandKey_scrubbed },
   Spec.Camellia.ecbEncryptApi.artifact X86.target {
-    code := Impl.StackScratch.X86.withStackScratchWiped 2712 4 672 (Impl.Camellia.X86.ecb .encrypt)
-    verified := Proof.Camellia.X86.ecb_framed .encrypt },
+    suffix := "_aesni"
+    code := Impl.Camellia.X86.AesNiWide.Fn.ecbEncrypt
+    verified := Proof.Camellia.X86.AesNiWide.Ecb.ecbEncrypt_scrubbed },
+  Spec.Camellia.ecbEncryptApi.artifact X86.target {
+    code := Impl.Camellia.X86.Sse.Fn.ecbEncrypt
+    verified := Proof.Camellia.X86.Sse.Ecb.ecbEncrypt_scrubbed },
   Spec.Camellia.ecbDecryptApi.artifact X86.target {
-    code := Impl.StackScratch.X86.withStackScratchWiped 2712 4 672 (Impl.Camellia.X86.ecb .decrypt)
-    verified := Proof.Camellia.X86.ecb_framed .decrypt }]
+    suffix := "_aesni"
+    code := Impl.Camellia.X86.AesNiWide.Fn.ecbDecrypt
+    verified := Proof.Camellia.X86.AesNiWide.Ecb.ecbDecrypt_scrubbed },
+  Spec.Camellia.ecbDecryptApi.artifact X86.target {
+    code := Impl.Camellia.X86.Sse.Fn.ecbDecrypt
+    verified := Proof.Camellia.X86.Sse.Ecb.ecbDecrypt_scrubbed }]
+
+spec_apis artifacts
 
 end VG.Artifacts.Camellia.X86

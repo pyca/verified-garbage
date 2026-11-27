@@ -5,7 +5,9 @@
 
 /// Start generating an RSA key, as BoringSSL's `RSA_generate_key_ex` (FIPS 186-5 Appendix A.1.3), with a modulus of `bits` bits rounded down to a multiple of 128, and the public exponent `e` (`e_len` octets, most significant first, with any number of leading zeros). Returns 0 if `e` is not odd from 3 to `2^32 - 1`, or 2 if `bits` is above 8192 or, rounded down, below 512, and writes zeros to `state`. Otherwise returns 1 and writes the search's seven public words to `state`: the rejected candidates the first prime's search allows, the primes' length in octets (`nlen / 16`), the entropy budget, the length of the first random tape to give `vg_rsa_generate`, the phase (0), the generations allowed (4), and the exponent's eight octets, most significant first.
 ///
-/// Contract: `VG.Spec.RsaKeyGen.keyInitContract`. Timing may depend on `bits` and `e`.
+/// Contract: `VG.Spec.RsaKeyGen.keyInitContract`. Timing, and the length of the first tape (`VG.Spec.RsaKeyGen.keyInitOut`), may depend on `bits` and `e`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -97,6 +99,11 @@ mov r2, #0
 str r2, [r0, #12]
 str r2, [r0, #20]
 mov r0, r1
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
     )
 }
@@ -107,7 +114,9 @@ pub const VG_RSA_GENERATE_UMAAL_FEATURES: verified_garbage_cpu::Features = verif
 
 /// Generate an RSA key, as BoringSSL's `RSA_generate_key_ex` (FIPS 186-5 Appendix A.1.3), over the random tape `rand`, from the state `state` that `vg_rsa_generate_init` started: the search for `p`, then for `q` not too close to `p`, each over candidates of `p_len` octets with their top two bits and bottom bit set, rejected by trial division, a common factor of `p − 1` and `e` or Miller–Rabin, up to BoringSSL's limit of rejected candidates; then the key, `d = e⁻¹ mod lcm(p − 1, q − 1)`, `dP`, `dQ` and `qInv`, with `p` the larger prime, checked as BoringSSL's `RSA_check_key` checks it, drawing both primes again if `d` is too small; a generation whose prime's search is exhausted is started again, up to four in all. Returns 1 and writes the key to `key` (`key_len` is `9 p_len`, for the primes' length `p_len = state[1]`): `n` and `d` (`2 p_len` octets each), then `p`, `q`, `dP`, `dQ` and `qInv` (`p_len` each), all most significant first; 2 if the key failed a check; 3 if every generation was exhausted; or 0 if the tape ran out inside a candidate. Writes the octets of `rand` it consumed to `used`, and the state for the next call to `state`, whose fourth word is, for 0, the length of the next tape, more than the octets of `rand` after the first `used` and at most the entropy budget: keep those octets, in order, and append fresh random octets up to that length. For 0, `key` holds the search's `p` once it is found, which the next call reads: pass it back unchanged. `key` is otherwise zeros but for 1.
 ///
-/// Contract: `VG.Spec.RsaKeyGen.keySearchContract`. Timing may depend on the pointers, the lengths, `state`, the status and consumption it returns, and, for each prime's search, its rejected candidates and the octets its accepted candidate's tests read, and each key's status. Not on the primes or the key.
+/// Contract: `VG.Spec.RsaKeyGen.keySearchContract`. Timing, and the length of the next tape (`VG.Spec.RsaKeyGen.keySearchOut`), may depend on the pointers, the lengths, `state`, the status and consumption it returns, and, for each prime's search, its rejected candidates and the octets its accepted candidate's tests read, and each key's status. Not on the primes or the key.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -122,7 +131,7 @@ pub const VG_RSA_GENERATE_UMAAL_FEATURES: verified_garbage_cpu::Features = verif
 /// * `scratch_len` must be at least `32 * state[1] + 32`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets, and `rand` and `key` hold secrets; the caller must destroy them after use.
 /// * `key`, `used`, `scratch` and `state` must not overlap each other, `rand` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `key`, `used`, `rand`, `scratch` and `state` may overlap the 256 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `key`, `used`, `rand`, `scratch` and `state` may overlap the 304 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `umaal` target feature.
 #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
 #[unsafe(naked)]
@@ -369,6 +378,32 @@ ldr r10, [sp, #24]
 ldr r11, [sp, #28]
 ldr lr, [sp, #36]
 ldr r4, [sp], #40
+sub sp, sp, #304
+add r12, sp, #0
+mov r2, #0
+mov r3, #9
+220:
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+add r12, r12, #32
+subs r3, r3, #1
+bne 220b
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+add sp, sp, #304
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
         vg_rsa_prime_search_umaal = sym super::rsa::vg_rsa_prime_search_umaal::vg_rsa_prime_search_umaal,
         vg_rsa_keygen_key = sym super::rsa_keygen::vg_rsa_keygen_key::vg_rsa_keygen_key,
@@ -377,7 +412,9 @@ bx lr",
 
 /// Generate an RSA key, as BoringSSL's `RSA_generate_key_ex` (FIPS 186-5 Appendix A.1.3), over the random tape `rand`, from the state `state` that `vg_rsa_generate_init` started: the search for `p`, then for `q` not too close to `p`, each over candidates of `p_len` octets with their top two bits and bottom bit set, rejected by trial division, a common factor of `p − 1` and `e` or Miller–Rabin, up to BoringSSL's limit of rejected candidates; then the key, `d = e⁻¹ mod lcm(p − 1, q − 1)`, `dP`, `dQ` and `qInv`, with `p` the larger prime, checked as BoringSSL's `RSA_check_key` checks it, drawing both primes again if `d` is too small; a generation whose prime's search is exhausted is started again, up to four in all. Returns 1 and writes the key to `key` (`key_len` is `9 p_len`, for the primes' length `p_len = state[1]`): `n` and `d` (`2 p_len` octets each), then `p`, `q`, `dP`, `dQ` and `qInv` (`p_len` each), all most significant first; 2 if the key failed a check; 3 if every generation was exhausted; or 0 if the tape ran out inside a candidate. Writes the octets of `rand` it consumed to `used`, and the state for the next call to `state`, whose fourth word is, for 0, the length of the next tape, more than the octets of `rand` after the first `used` and at most the entropy budget: keep those octets, in order, and append fresh random octets up to that length. For 0, `key` holds the search's `p` once it is found, which the next call reads: pass it back unchanged. `key` is otherwise zeros but for 1.
 ///
-/// Contract: `VG.Spec.RsaKeyGen.keySearchContract`. Timing may depend on the pointers, the lengths, `state`, the status and consumption it returns, and, for each prime's search, its rejected candidates and the octets its accepted candidate's tests read, and each key's status. Not on the primes or the key.
+/// Contract: `VG.Spec.RsaKeyGen.keySearchContract`. Timing, and the length of the next tape (`VG.Spec.RsaKeyGen.keySearchOut`), may depend on the pointers, the lengths, `state`, the status and consumption it returns, and, for each prime's search, its rejected candidates and the octets its accepted candidate's tests read, and each key's status. Not on the primes or the key.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -392,7 +429,7 @@ bx lr",
 /// * `scratch_len` must be at least `32 * state[1] + 32`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets, and `rand` and `key` hold secrets; the caller must destroy them after use.
 /// * `key`, `used`, `scratch` and `state` must not overlap each other, `rand` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `key`, `used`, `rand`, `scratch` and `state` may overlap the 256 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `key`, `used`, `rand`, `scratch` and `state` may overlap the 304 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_rsa_generate(key: *mut u8, key_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 7]) -> u32 {
     core::arch::naked_asm!(
@@ -637,6 +674,32 @@ ldr r10, [sp, #24]
 ldr r11, [sp, #28]
 ldr lr, [sp, #36]
 ldr r4, [sp], #40
+sub sp, sp, #304
+add r12, sp, #0
+mov r2, #0
+mov r3, #9
+220:
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+add r12, r12, #32
+subs r3, r3, #1
+bne 220b
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+add sp, sp, #304
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
         vg_rsa_prime_search = sym super::rsa::vg_rsa_prime_search::vg_rsa_prime_search,
         vg_rsa_keygen_key = sym super::rsa_keygen::vg_rsa_keygen_key::vg_rsa_keygen_key,

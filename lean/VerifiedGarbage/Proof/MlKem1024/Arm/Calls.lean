@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.MlKem.Arm.KemLay
 public import VerifiedGarbage.Proof.MlKem1024.Arm.CompressEncode
 public import VerifiedGarbage.Proof.MlKem1024.Arm.Decompress
 public import VerifiedGarbage.Impl.MlKem1024.Arm.Top
-import VerifiedGarbage.Proof.MlKem.Arm.HashTop
+import VerifiedGarbage.Proof.MlKem.Arm.SampleCT
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
@@ -15,7 +15,7 @@ meta import VerifiedGarbage.Proof.MlKem.Arm.KemLay
 meta import VerifiedGarbage.Proof.MlKem1024.Arm.CompressEncode
 meta import VerifiedGarbage.Proof.MlKem1024.Arm.Decompress
 meta import VerifiedGarbage.Impl.MlKem1024.Arm.Top
-meta import VerifiedGarbage.Proof.MlKem.Arm.HashTop
+meta import VerifiedGarbage.Proof.MlKem.Arm.SampleCT
 meta import VerifiedGarbage.Proof.Framework.Arm.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset

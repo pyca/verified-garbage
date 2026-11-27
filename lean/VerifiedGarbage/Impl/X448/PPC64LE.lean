@@ -19,7 +19,7 @@ from its base, which stays in `r6` (`out` stays in `r3`):
   (`X1`, …);
 * the 28 limbs of a product of Ed448's scalar arithmetic (`ACC`, 112 bytes),
   the bits of the scalar (`BITS`, byte `t` is bit `t` of the clamped
-  scalar), and the caller's `r15`–`r31` (`NV`).
+  scalar), and the caller's `r15`–`r31` and return address (`NV`).
 
 The arithmetic (registers `r4`, `r5`, `r7`–`r11`), with `2⁴⁴⁸ ≡ 2²²⁴ + 1`:
 
@@ -57,8 +57,12 @@ The inversion `z2^(p-2)` is an addition chain (446 squarings and 15
 multiplications, in the ladder's temporaries), its runs of squarings counted
 by `r12` (`invertW`, of any multiplication; `invert`, of `mul`).
 
-`vg_x448` saves `r15`–`r31`, which `mul` uses, at `NV` before the ladder,
-and restores them before the final reduction. The only branches are on the loop
+The inversion's products are calls of one function, `vg_x448_mul_core`
+(`mulC`, `invertCall`), which Ed448's base-point encoding's inversion calls
+too: the caller passes its `r12` and `r0` in `r4` and `r5`, which the core
+moves back, so the chain's counter survives. `vg_x448` saves `r15`–`r31`,
+which `mul` uses, and its return address, which the call changes, at `NV`
+before the ladder, and restores them before the final reduction. The only branches are on the loop
 counters, and every address is a pointer plus a constant or a counter, so
 only the pointers can affect timing.
 -/
@@ -275,12 +279,25 @@ def mulX (o a b : Nat) : List Instr :=
 /-- `[o] = [a] · [b]` (`o` may be `a` or `b`): `mulX`, as a program. -/
 def mul (o a b : Nat) : Prog isa := .block (mulX o a b)
 
+/-- `mulX`'s product and reduction, in registers: `vg_x448_mul_core`'s code.
+A call changes `r0` and `r12`, which it does not write, so its caller passes
+them in `r5` and `r4` (which it writes only after), and it moves them back
+first. -/
+def mulCore : List Instr :=
+  [.addi .r12 .r4 0, .addi .r0 .r5 0, .li (pw 0) 0, .li (pw 1) 0] ++ (List.range 13).flatMap colR ++ reduceR
+
+/-- `mul`, with the product a call of `vg_x448_mul_core`: the operands' words
+loaded, `r12` and `r0` into `r4` and `r5` (`mr`), the call, and the result stored. -/
+def mulC (o a b : Nat) : Prog isa :=
+  .seq (.block (ldsAt a (slotsOf opA 7) ++ ldsAt b (slotsOf opB 7) ++ [.addi .r4 .r12 0, .logic .or .r5 .r0 .r0]))
+    (.seq (.call "vg_x448_mul_core" (.block mulCore)) (.block (stdsAt o (slotsOf pw 7))))
+
 /-- The nonvolatile registers `r15`–`r31`, which `mulX` uses. -/
 def nvR (i : Nat) : Reg :=
   [.r15, .r16, .r17, .r18, .r19, .r20, .r21, .r22, .r23, .r24, .r25, .r26, .r27, .r28, .r29, .r30,
     .r31].getD i .r15
 
-/-- Where `vg_x448` saves `r15`–`r31`: after `BITS`. -/
+/-- Where `vg_x448` saves `r15`–`r31` and its return address: after `BITS`. -/
 def NV : Nat := 1512
 
 /-- Swaps limb `k` of `[x]` and `[y]` if the mask `r11` is all ones (and not
@@ -381,6 +398,11 @@ abbrev chain223 (z : Nat) : Prog isa := chain223W mul z
 abbrev invTail : Prog isa := invTailW mul
 abbrev invert : Prog isa := invertW mul
 
+/-- The inversion as `vg_x448` and Ed448's base-point encoding run it: its
+products calls of `vg_x448_mul_core` (`mulC`), around which they keep their
+link registers already. -/
+def invertCall : Prog isa := invertW mulC
+
 /-! ## Encoding and decoding -/
 
 /-- Limb `k` of `[X2]`, or of `[Y]` if the mask `r11` is all ones, as word
@@ -408,15 +430,6 @@ def consts : List Instr :=
 /-- The u-coordinate into `X1` and `X3`, and the constants. -/
 def setup : List Instr := (List.range 14).flatMap decodeStep ++ consts
 
-/-- The base point's u-coordinate, 5, into `X1` and `X3`. -/
-def five : List Instr :=
-  [.li .r7 5, .li .r8 0, .store .w .r7 .r6 X1, .store .w .r7 .r6 X3] ++ storeN .r8 (X1 + 4) 13 ++
-    storeN .r8 (X3 + 4) 13
-
-/-- `setup` for the base point: its u-coordinate, 5, into `X1` and `X3`, and
-the constants. -/
-def setupBase : List Instr := five ++ consts
-
 /-- The bits of the byte at `r4` into `BITS` at `r9`, advancing both. -/
 def bitsBody : List Instr :=
   [.lbz .r7 .r4 0] ++
@@ -430,17 +443,38 @@ def bits : Prog isa :=
     (.seq (.loop (.block bitsBody) (.nonzero .d .r11))
       (.block [.li .r7 0, .stb .r7 .r6 BITS, .stb .r7 .r6 (BITS + 1), .li .r7 1, .stb .r7 .r6 (BITS + 447)]))
 
+/-- What `vg_x448` saves at `NV`: `r15`–`r31`, then the link register, which
+waits in `r0` (the call of the inversion changes it). -/
+def nvSlots : List (Reg × Nat) := slotsOf nvR 17 ++ [(.r0, 136)]
+
 /-- What follows the setup. -/
 def afterSetup : Prog isa :=
-  .seq (.block (stdsAt NV (slotsOf nvR 17))) <|
-  .seq bits <| .seq ladder <| .seq (.block lastSwap) <| .seq invert <|
-  .seq (mul X2 X2 R) (.block (ldsAt NV (slotsOf nvR 17) ++ freeze))
+  .seq (.block (.mflr .r0 :: stdsAt NV nvSlots)) <|
+  .seq bits <| .seq ladder <| .seq (.block lastSwap) <| .seq invertCall <|
+  .seq (mul X2 X2 R) (.block (ldsAt NV nvSlots ++ .mtlr .r0 :: freeze))
 
 def x448 : Prog isa := .seq (.block setup) afterSetup
 
-/-- `vg_x448_base(out = r3, scalar = r4, scratch = r5)`: the working space into
-`r6`, as `vg_x448` has it, and `vg_x448` with the base point's u-coordinate, 5,
-written instead of read (`setupBase`). -/
-def x448Base : Prog isa := .seq (.block ([.addi .r6 .r5 0] ++ setupBase)) afterSetup
+/-! ## `vg_x448_base`
+
+`vg_x448_base(out = r3, scalar = r4, scratch = r5)` calls `vg_x448` with
+the base point's u-coordinate, 5, as its point. A frame of 96 bytes holds,
+in its 64 bytes of local variables (at `r1 + 32`, which `r12` points to
+before each access, since the call may change `r12`), the link register and
+then the point's 56 bytes (`5` and six zero doublewords). -/
+
+/-- The link register saved, the point written, and `vg_x448`'s arguments:
+`point` (`r5`) the frame's copy, `scratch` (`r6`) the caller's. -/
+def baseEnter : List Instr :=
+  [.mflr .r0, .addSp .r12 32, .store .d .r0 .r12 0, .li .r7 5, .store .d .r7 .r12 8, .li .r7 0,
+    .store .d .r7 .r12 16, .store .d .r7 .r12 24, .store .d .r7 .r12 32, .store .d .r7 .r12 40,
+    .store .d .r7 .r12 48, .store .d .r7 .r12 56, .addi .r6 .r5 0, .addi .r5 .r12 8]
+
+/-- The link register restored. -/
+def baseLeave : List Instr := [.addSp .r12 32, .load .d .r0 .r12 0, .mtlr .r0]
+
+/-- `vg_x448_base`: `vg_x448` of the scalar and the base point. -/
+def x448Base : Prog isa :=
+  .frame (.alloc 96) (.seq (.block baseEnter) (.seq (.call "vg_x448" x448) (.block baseLeave))) (.free 96)
 
 end VG.Impl.X448.PPC64LE

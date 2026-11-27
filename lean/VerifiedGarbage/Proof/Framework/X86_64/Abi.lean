@@ -65,12 +65,14 @@ theorem exec_mxcsr {i : Instr} (hi : loadsMxcsr i = false) {s s' : State} (h : e
   | zop op => simp only [reduceExec, Option.some.injEq] at h; subst h; rw [Taint.ZOp.exec_eq op s]
   | eop op => simp only [reduceExec, Option.some.injEq] at h; subst h; rw [Taint.EOp.exec_eq op s]
   | e5op op => simp only [reduceExec, Option.some.injEq] at h; subst h; rw [Taint.E5Op.exec_eq op s]
+  | evMaskAddQ _ d =>
+    simp only [reduceExec, Option.some.injEq] at h; subst h; cases d <;> rfl
   | evLoad d | evMadd52Load _ d | evBroadcastLoad d | e5InsertLoad d =>
     simp only [reduceExec, Option.map_eq_some_iff] at h; obtain ⟨_, _, rfl⟩ := h; cases d <;> rfl
   | mov | mov32 | movzx8 | movzx16 | movdquLoad | vbroadcasti128 | vmovdqu32Load | vbroadcasti32x4 | vbroadcasti32x4H | zbcst | vpbroadcastdZ | zbcstd
   | vpmadd52Load | kLoad | kLoad8 =>
     simp only [reduceExec, Option.map_eq_some_iff] at h; obtain ⟨_, _, rfl⟩ := h; rfl
-  | bswap32 | bswap | movImm64 | leaSym | lfence | mul | imul | imul3 | andn32 | andn | vpmovmskb | vpcmpltuw
+  | bswap32 | bswap | movImm64 | leaSym | lfence | mul | imul | imul3 | andn32 | andn | vpmovmskb | vpcmpltuw | evCmpUq
   | movqR | shiftCl | shiftx =>
     simp only [reduceExec, Option.some.injEq] at h; subst h; rfl
   | rorx32 => simp only [reduceExec, execRorx32] at h; split at h <;> cases h; rfl
@@ -93,7 +95,7 @@ theorem exec_mxcsr {i : Instr} (hi : loadsMxcsr i = false) {s s' : State} (h : e
       obtain ⟨_, _, _, _, rfl⟩ := h; rfl
   | cmov =>
     obtain ⟨_, c, -, -, rfl⟩ := Taint.execCmov_some h; cases c <;> rfl
-  | push | pop | alloc | free | callr => simp only [reduceExec, reduceCtorEq] at h
+  | push | pop | alloc | free | callr | callm => simp only [reduceExec, reduceCtorEq] at h
 
 theorem pushRegs_mxcsr (s : State) (rs : List Reg) : (pushRegs s rs).mxcsr = s.mxcsr := by
   induction rs generalizing s with
@@ -160,6 +162,35 @@ theorem Exec.mxcsr {c : Prog isa} (hc : ∀ i ∈ instrs c, loadsMxcsr i = false
     subst hc₁
     exact ih fun i hi => hc i (List.mem_cons_of_mem _ (List.mem_append_left _ hi))
   | icallNext _ _ _ ih => exact ih fun i hi => hc i (List.mem_cons_of_mem _ (List.mem_append_right _ hi))
+
+/-- Two runs of `c` along the same trace from the same MXCSR leave the same
+MXCSR: what a caller needs of a callee to relate the MXCSR of its two runs
+after the call, now that MXCSR is public (`abi.pub`). -/
+def MxDet (c : Prog isa) : Prop :=
+  ∀ s₁ s₂ t s₁' s₂', Exec isa c s₁ t s₁' → Exec isa c s₂ t s₂' → s₁.mxcsr = s₂.mxcsr →
+    s₁'.mxcsr = s₂'.mxcsr
+
+/-- Code that never loads MXCSR keeps it, so leaves the same in two runs from
+the same (the kernel checks `hc` by evaluating the code). -/
+theorem MxDet.of_noLoad {c : Prog isa} (hc : c.allInstrs (fun i => !loadsMxcsr i) = true) : MxDet c := by
+  rw [Code.allInstrs_eq, List.all_eq_true] at hc
+  intro _ _ _ _ _ e₁ e₂ hm
+  rw [Exec.mxcsr (fun i hi => by simpa using hc i hi) e₁, Exec.mxcsr (fun i hi => by simpa using hc i hi) e₂,
+    hm]
+
+/-- `Q`, from `Q` given the entry's MXCSR, for code that never loads MXCSR. -/
+theorem WP.of_mx {c : Prog isa} (hc : c.allInstrs (fun i => !loadsMxcsr i) = true) {s : State}
+    {Q : State → Prop} (h : WP isa c s fun t => t.mxcsr = s.mxcsr → Q t) : WP isa c s Q := by
+  rw [Code.allInstrs_eq, List.all_eq_true] at hc
+  obtain ⟨t, s', e, q⟩ := h
+  exact ⟨t, s', e, q (Exec.mxcsr (fun i hi => by simpa using hc i hi) e)⟩
+
+/-- Code that never loads MXCSR ends with its entry's. -/
+theorem WP.mxcsr {c : Prog isa} (hc : c.allInstrs (fun i => !loadsMxcsr i) = true) {s : State}
+    {Q : State → Prop} (h : WP isa c s Q) : WP isa c s fun t => Q t ∧ t.mxcsr = s.mxcsr := by
+  rw [Code.allInstrs_eq, List.all_eq_true] at hc
+  obtain ⟨t, s', e, q⟩ := h
+  exact ⟨t, s', e, q, Exec.mxcsr (fun i hi => by simpa using hc i hi) e⟩
 
 /-- The calling-convention obligations other than MXCSR's: the callee-saved
 registers and the return address. -/

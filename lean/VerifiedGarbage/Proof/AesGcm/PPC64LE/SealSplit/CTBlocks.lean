@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.SealSplit.Whole
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.SealFusedCT
-public import VerifiedGarbage.Proof.Gcm.SplitBlocksContract
+public import VerifiedGarbage.Proof.AesGcm.PPC64LE.SplitBlocks.Contract
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.SplitBlocks.CT
 import VerifiedGarbage.Proof.Framework.PPC64LE.RelCT
 import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd

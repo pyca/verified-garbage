@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Mul
+public import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Sqr
 public import VerifiedGarbage.Proof.Framework.AArch64.LaneRestore
 public import VerifiedGarbage.Impl.X448.AArch64.Field56
 import VerifiedGarbage.Proof.Framework.AArch64.LaneSave
@@ -26,7 +26,7 @@ Untrusted: everything here is checked by Lean. `mulFn_ok`: from the arguments of
 `vg_gf448_r56_mul` (`ws` in `x0`, the byte offsets `o`, `a`, `b` in `x1`–`x3`), the function
 sets the operands' pointers (`ws + a` in `x10`, `ws + b` in `x30`, `ws + o` in `x1`), `ws` in
 `x3` and the mask in `x12`, and runs `vg_x448`'s product with its operands addressed by the
-pointers (`mulAt_ok`, `Proof/Curve448/AArch64/Fast/Mul.lean`): the result's limbs, and only the
+pointers (`mulAt_ok`, `Proof/Curve448/AArch64/Fast/Sqr.lean`): the result's limbs, and only the
 result's 64 bytes and the operand sums' (`KA`) written. The callee-saved registers it changes
 (and the return address, which holds the second operand's pointer while it runs) are kept in
 lanes of `v21`–`v25` (`insOf_ok`, `umovOf_ok`), which the product does not write.
@@ -349,7 +349,7 @@ theorem mulCallE {s : State} {base : Addr} (hs : Scr s base) (hb : BEnv s.mem ba
     Nat.lt_of_lt_of_le (bo i hi) VG.Proof.Curve448.AArch64.Fast.Mb_le_Ib), bo, fieldMem_same fm, ?_⟩
   rw [VG.Proof.X448.AArch64.Weak.E_update fm]
   simp only [opMul]
-  refine congrArg (Function.update _ o) ?_
+  refine congrArg (Fun.update _ o) ?_
   change VG.Proof.X448.toFe _ = VG.Proof.X448.toFe _ * VG.Proof.X448.toFe _
   rw [VG.Proof.X448.Wide.valN_congr tv]
   exact VG.Proof.Curve448.AArch64.Fast.prod_val _ _
@@ -427,7 +427,7 @@ theorem mulCallKE {s : State} {base : Addr} (hs : Scr s base) (hb : BEnv s.mem b
     Nat.lt_of_lt_of_le (bo i hi) VG.Proof.Curve448.AArch64.Fast.Mb_le_Ib), bo, fieldMem_same fm, ?_⟩
   rw [VG.Proof.X448.AArch64.Weak.E_update fm]
   simp only [VG.Proof.X448.AArch64.opMul]
-  refine congrArg (Function.update _ o) ?_
+  refine congrArg (Fun.update _ o) ?_
   change VG.Proof.X448.toFe _ = VG.Proof.X448.toFe _ * VG.Proof.X448.toFe _
   rw [VG.Proof.X448.Wide.valN_congr tv]
   exact VG.Proof.Curve448.AArch64.Fast.prod_val _ _
@@ -449,7 +449,7 @@ theorem mulOpK {s : State} {base : Addr} (hs : Scr s base) (hb : BEnv s.mem base
     {rest : List Impl.X448.AArch64.Fast.Op} {Q : State → Prop}
     (h : ∀ t, FKeep base s t → BEnv t.mem base → Bnd Mb t.mem base (slot o.val) →
       Same base [o] s.mem t.mem →
-      EV t.mem base = Function.update (EV s.mem base) o (EV s.mem base a * EV s.mem base b) →
+      EV t.mem base = Fun.update (EV s.mem base) o (EV s.mem base a * EV s.mem base b) →
       WP isa (opsK rest) t Q) :
     WP isa (opsK (.mul (slot o.val) (slot a.val) (slot b.val) :: rest)) s Q := by
   simp only [opsK, Impl.X448.AArch64.Fast.Op.progK]
@@ -466,7 +466,7 @@ theorem subOpK {s : State} {base : Addr} (hs : Scr s base) (hb : BEnv s.mem base
     (ha : Bnd Mb s.mem base (slot a.val)) (hb' : Bnd Mb s.mem base (slot b.val)) (hoa : o ≠ a)
     (hob : o ≠ b) {rest : List Impl.X448.AArch64.Fast.Op} {Q : State → Prop}
     (h : ∀ t, FKeep base s t → BEnv t.mem base → Same base [o] s.mem t.mem →
-      EV t.mem base = Function.update (EV s.mem base) o (EV s.mem base a - EV s.mem base b) →
+      EV t.mem base = Fun.update (EV s.mem base) o (EV s.mem base a - EV s.mem base b) →
       WP isa (opsK rest) t Q) :
     WP isa (opsK (.sub (slot o.val) (slot a.val) (slot b.val) :: rest)) s Q :=
   WP.seq (WP.mono (VG.Proof.X448.AArch64.Fast.subE hs hb ha hb' hoa hob) fun t ⟨tk, tb, ts, te⟩ =>

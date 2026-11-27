@@ -1,27 +1,278 @@
 module
 
-public import VerifiedGarbage.Proof.X25519.AArch64.Base.Main
 public import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseVerified
-public import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseCTEngine
 import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarMemory
-import VerifiedGarbage.Proof.X25519.AArch64.Base.Engine
-import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseEngine
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.X25519.AArch64.Ladder
-meta import VerifiedGarbage.Proof.X25519.AArch64.Base.Main
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseVerified
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseCTEngine
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarMemory
-meta import VerifiedGarbage.Proof.X25519.AArch64.Base.Engine
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseEngine
 meta import VerifiedGarbage.Proof.Framework.AArch64.Syms
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Block
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.X25519.AArch64.Ladder
+public import VerifiedGarbage.Proof.Ed25519.AArch64.FixedBaseMain
+public import VerifiedGarbage.Spec.X25519.Contract
+public import VerifiedGarbage.Impl.X25519.AArch64.Base
+import VerifiedGarbage.Proof.Ed25519.AArch64.Codec
+import VerifiedGarbage.Proof.Ed25519.AArch64.MulAddCodec
+import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.X25519.AArch64.Base.Lit
+meta import VerifiedGarbage.Proof.X25519.AArch64.Base.Lit
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Framework.AArch64.Taint
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Divstep
+import VerifiedGarbage.Proof.Ed25519.AArch64.Bits
+import VerifiedGarbage.Proof.X25519.Edwards.Base
+public import VerifiedGarbage.Proof.Ed25519.AArch64.PointEncode
+public import VerifiedGarbage.Proof.Ed25519.AArch64.PointPowers
+public import VerifiedGarbage.Spec.Ed25519.Contract
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Spec.Weierstrass
+import Mathlib.Tactic.Ring.RingNF
+import Mathlib.Tactic.FieldSimp
+import Mathlib.Tactic.Ring
+import VerifiedGarbage.Proof.X25519.Edwards.Ladder
+import VerifiedGarbage.Proof.X25519.AArch64.Ops
+import VerifiedGarbage.Proof.X25519.AArch64.Top
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.FixedBaseMain
+meta import VerifiedGarbage.Spec.X25519.Contract
+meta import VerifiedGarbage.Impl.X25519.AArch64.Base
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.Codec
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.MulAddCodec
+meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+meta import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Framework.Taint
+meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.Divstep
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.Bits
+meta import VerifiedGarbage.Proof.X25519.Edwards.Base
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.PointEncode
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.PointPowers
+meta import VerifiedGarbage.Spec.Ed25519.Contract
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Spec.Weierstrass
+meta import Mathlib.Tactic.Ring.RingNF
+meta import Mathlib.Tactic.FieldSimp
+meta import Mathlib.Tactic.Ring
+meta import VerifiedGarbage.Proof.X25519.Edwards.Ladder
+meta import VerifiedGarbage.Proof.X25519.AArch64.Ops
+
+/-! ### `X25519.AArch64.Base.Main`, which only this module used -/
+
+section
+
+/-! ### `X25519.AArch64.Base.Engine`, which this module and modules that import it used -/
+
+section
+
+/-!
+# X25519 of the base point on AArch64: the engine
+
+The scalar's nibbles, clamped (`clampNibbles_ok`), are those of
+`decodeScalar25519` (`nib_clamped`); the comb computes `[k] B` from them
+(`combMultiply_ok`), and `uEncode` its u-coordinate `(Z + Y) / (Z - Y)`, which
+`Proof/X25519/Edwards/Ladder.lean` shows is `X25519(k, 9)` (`engine_ok`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.X25519.AArch64.Base
+
+open VG VG.AArch64 VG.Impl.Ed25519.AArch64 VG.Impl.X25519.AArch64.Base
+open VG.Proof.Ed25519.AArch64
+open VG.Proof.Ed25519 (Rep dZ baseAff toZ_add toZ_sub toZ_mul toZ_pow)
+open VG.Spec.X25519 (Fe P decodeScalar25519)
+open VG.Proof.X25519.Edwards (clamped_bit u_rep)
+open VG.Proof.Ed25519.Word64 (val4)
+
+/-! ## The clamped nibbles -/
+
+private theorem bits_clamped : ∀ b0 < 2, ∀ b1 < 2, ∀ b2 < 2, ∀ b3 < 2,
+    ((b3 * 2 + 0) * 2 + 0) * 2 + 0 = (((b3 * 2 + b2) * 2 + b1) * 2 + b0) &&& 8 ∧
+    ((0 * 2 + 1) * 2 + b1) * 2 + b0 = ((((b3 * 2 + b2) * 2 + b1) * 2 + b0) &&& 3) ||| 4 := by decide
+
+open VG.Proof.Ed25519 (nib nib_bits nib_lt) in
+/-- The nibbles of the decoded scalar are the bytes', clamped. -/
+theorem nib_clamped {kb : List Byte} (hk : kb.length = 32) {i : Nat} (hi : i < 64) :
+    nib (decodeScalar25519 kb) i =
+      if i = 0 then nib (Spec.Ed25519.decodeLE kb) 0 &&& 8
+      else if i = 63 then (nib (Spec.Ed25519.decodeLE kb) 63 &&& 3) ||| 4
+      else nib (Spec.Ed25519.decodeLE kb) i := by
+  have lt : ∀ q, (Spec.Ed25519.decodeLE kb / 2 ^ q) % 2 < 2 := fun q => Nat.mod_lt _ (by decide)
+  rw [nib_bits, nib_bits, nib_bits, nib_bits, clamped_bit hk (by omega_using [hi]), clamped_bit hk (by omega_using [hi]),
+    clamped_bit hk (by omega_using [hi]), clamped_bit hk (by omega_using [hi])]
+  by_cases h0 : i = 0
+  · subst h0
+    simp only [Nat.mul_zero, Nat.zero_add, ↓reduceIte, Nat.reduceLT, Nat.reduceEqDiff, or_false, or_self]
+    exact (bits_clamped _ (lt 0) _ (lt 1) _ (lt 2) _ (lt 3)).1
+  · by_cases h63 : i = 63
+    · subst h63
+      simp only [Nat.reduceMul, Nat.reduceAdd, ↓reduceIte, Nat.reduceLT, Nat.reduceEqDiff, or_true, or_self]
+      exact (bits_clamped _ (lt 252) _ (lt 253) _ (lt 254) _ (lt 255)).2
+    · rw [ite_eq_right h0, ite_eq_right h63, ite_eq_right (by omega_using [h0, h63, hi]),
+        ite_eq_right (by omega_using [h0, h63, hi]), ite_eq_right (by omega_using [h0, h63, hi]),
+        ite_eq_right (by omega_using [h0, h63, hi]), ite_eq_right (by omega_using [h0, h63, hi]),
+        ite_eq_right (by omega_using [h0, h63, hi]), ite_eq_right (by omega_using [h0, h63, hi]),
+        ite_eq_right (by omega_using [h0, h63, hi])]
+
+private theorem clamp_byte : ∀ n < 16,
+    ((((BitVec.ofNat 8 n).setWidth 64 &&& (BitVec.setWidth 64 (BitVec.setWidth 32 (8 : BitVec 16) <<< (16 * 0)))).setWidth
+      32).setWidth 8 : BitVec 8) = BitVec.ofNat 8 (n &&& 8) ∧
+    ((((BitVec.ofNat 8 n).setWidth 64 &&& (BitVec.setWidth 64 (BitVec.setWidth 32 (3 : BitVec 16) <<< (16 * 0)))) |||
+      (BitVec.setWidth 64 (BitVec.setWidth 32 (4 : BitVec 16) <<< (16 * 0)))).setWidth 32).setWidth 8 =
+        BitVec.ofNat 8 ((n &&& 3) ||| 4) := by decide
+
+/-- A byte store at `base + d`, read at `base + e`. -/
+theorem write1_off (m : Mem) (base : Addr) {d e : Nat} (hd : d < 2 ^ 64) (he : e < 2 ^ 64) (v : BitVec 8) :
+    (m.write (off base d) 1 v) (off base e) = if e = d then v else m (off base e) := by
+  rw [VG.Proof.X25519.AArch64.write1_apply]
+  by_cases h : e = d
+  · subst h; rw [ite_eq_left rfl, ite_eq_left rfl]
+  · rw [ite_eq_right fun h' => h ((off_eq_iff base he hd).mp h'), ite_eq_right h]
+
+/-- A byte store at `base + d` leaves the other bytes. -/
+theorem write1_outside (m : Mem) (base : Addr) {d : Nat} (hd : d < 2 ^ 64) {x : Addr}
+    (hx : ofs base x ≠ d) (v : BitVec 8) : (m.write (off base d) 1 v) x = m x := by
+  rw [VG.Proof.X25519.AArch64.write1_apply, ite_eq_right fun h => hx (by rw [h]; exact ofs_off' base hd)]
+
+open VG.Proof.Ed25519 (nib nib_lt) in
+theorem clampNibbles_ok {s : State} {base : Addr} (hs : Scr s base) {S : Nat} (hb : NibAt s.mem base 64 S) :
+    WP isa (.block clampNibbles) s fun t => CK base s t ∧
+      ∀ i < 64, t.mem (off base (NIB + i)) = BitVec.ofNat 8
+        (if i = 0 then nib S 0 &&& 8 else if i = 63 then (nib S 63 &&& 3) ||| 4 else nib S i) := by
+  have hN : NIB = 768 := rfl
+  have hw : ∀ d < 8192, InRegions s.wr (off base d) 1 := fun d hd =>
+    ⟨_, hs.wr, Offset.contains_base _ hd (by omega_using [hd])⟩
+  have hr : ∀ d < 8192, InRegions (s.rd ++ s.wr) (off base d) 1 := fun d hd =>
+    ⟨_, List.mem_append_right _ hs.wr, Offset.contains_base _ hd (by omega_using [hd])⟩
+  have e0 : base + BitVec.ofNat 64 NIB = off base NIB := rfl
+  have e1 : base + BitVec.ofNat 64 (NIB + 63) = off base (NIB + 63) := rfl
+  have b0 : s.mem (off base NIB) = BitVec.ofNat 8 (nib S 0) := hb 0 (by decide)
+  have b1 : ∀ v : BitVec 8, (s.mem.write (off base NIB) 1 v) (off base (NIB + 63)) = BitVec.ofNat 8 (nib S 63) := fun v => by
+    rw [write1_off _ _ (by decide) (by decide), ite_eq_right (by decide)]; exact hb 63 (by decide)
+  have c0 := (clamp_byte (nib S 0) (nib_lt S 0)).1
+  have c1 := (clamp_byte (nib S 63) (nib_lt S 63)).2
+  have rb : ∀ (m : Mem) (a : Addr), ((m.read a 1).setWidth 32).setWidth 64 = (m a).setWidth 64 :=
+    VG.Proof.X25519.AArch64.read1_toNat
+  apply WP.of_runBlock
+  simp only [clampNibbles, runBlock_cons, runStep_some, runBlock_nil, exec, addr, State.load, State.store, State.read,
+    RegUpd.gpr_write, RegUpd.mem_write, RegUpd.rd_write, RegUpd.wr_write, Nat.mod_one, and_self, Size.bits,
+    show NIB < 4096 * 1 from by decide, show NIB + 63 < 4096 * 1 from by decide, show 16 * 0 < 32 from by decide,
+    BitVec.setWidth_eq, ite_true, ite_false, reduceCtorEq, hs.x0, e0, e1, hr NIB (by decide), hr (NIB + 63) (by decide),
+    hw NIB (by decide), hw (NIB + 63) (by decide), rb, b0, b1, c0, c1,
+    Option.map_some, Option.bind_some, Option.some.injEq, exists_eq_left']
+  refine ⟨⟨fun r _ _ hc => ?_, rfl, rfl, rfl, fun x hx hy => ?_⟩, fun i hi => ?_⟩
+  · have h8 : r ≠ .x8 := fun h => hc (by subst h; decide)
+    have h9 : r ≠ .x9 := fun h => hc (by subst h; decide)
+    simp only [RegUpd.gpr_write, h8, h9, ite_false]
+  · dsimp only [RegUpd.mem_write]
+    rw [write1_outside _ _ (by decide) (by omega_using [hy, hN]), write1_outside _ _ (by decide) (by omega_using [hy, hN])]
+  · rw [write1_off _ _ (by decide) (by omega_using [hi, hN]), write1_off _ _ (by decide) (by omega_using [hi, hN])]
+    by_cases h0 : i = 0
+    · subst h0
+      rw [ite_eq_right (by decide), ite_eq_left (by decide), ite_eq_left rfl]
+    · by_cases h63 : i = 63
+      · subst h63
+        rw [ite_eq_left rfl, ite_eq_right h0, ite_eq_left rfl]
+      · rw [ite_eq_right (by omega_using [h63]), ite_eq_right (by omega_using [h0]), ite_eq_right h0, ite_eq_right h63]
+        exact hb i hi
+
+/-! ## The u-coordinate -/
+
+theorem uOps_eval (e : Env) :
+    evalOps uOps e 0 = e 2 + e 1 ∧ evalOps uOps e 2 = e 2 - e 1 := by
+  simp [uOps, evalOps, evalOp, Fun.update]
+
+theorem uEncode_ok [VG.Proof.Ed25519.AArch64.Divstep.Sound] {s : State} {base : Addr} (hs : Scr s base) :
+    WP isa uEncode s fun t => CounterKeep base s t ∧
+      val4 (t.gpr .x4) (t.gpr .x5) (t.gpr .x6) (t.gpr .x7) =
+        ((env s.mem base 2 + env s.mem base 1) *
+          Spec.X25519.pow (env s.mem base 2 - env s.mem base 1) (P - 2)).val := by
+  rw [uEncode]
+  refine WP.seq (WP.mono (fieldCode_ok uOps hs) fun a ⟨ka, va⟩ => ?_)
+  obtain kac : CounterKeep base s a := ⟨fun r hr _ => ka.gpr r hr, ka.rd, ka.wr, ka.sp, ka.mem⟩
+  refine WP.seq (WP.mono (pointAffine_ok (kac.scr hs)) fun b ⟨kb, bx, _⟩ => ?_)
+  refine WP.mono (freezeField_ok ((kb.scr (kac.scr hs))) 0) fun t ⟨tv, kt⟩ => ?_
+  refine ⟨(kac.trans kb).trans (CounterKeep.of_keeps kt (by decide)), ?_⟩
+  rw [tv, bx, va, (uOps_eval _).1, (uOps_eval _).2]
+
+/-! ## The engine -/
+
+theorem engine_ok [VG.Proof.Ed25519.AArch64.Divstep.Sound] : EngineOk engine fun kb =>
+    Spec.X25519.x25519 kb Spec.X25519.basePoint := by
+  intro s base k T hs hp hr hd htb hT
+  obtain hk : (Spec.Ed25519.bytesAt s.mem k 32).length = 32 := by simp [Spec.Ed25519.bytesAt]
+  obtain ⟨kb, ekb⟩ : ∃ kb, Spec.Ed25519.bytesAt s.mem k 32 = kb := ⟨_, rfl⟩
+  rw [ekb] at hk ⊢
+  rw [engine]
+  refine WP.seq (WP.mono_syms (scalarNibbles_ok hs hp hr hd) fun b ⟨kab, bn⟩ syb => ?_)
+  rw [ekb] at bn
+  obtain hsb := kab.scratch hs
+  refine WP.seq (WP.mono_syms (clampNibbles_ok hsb bn) fun c ⟨kbc, cn⟩ syc => ?_)
+  obtain hsc := kbc.scratch hsb
+  obtain kac := kab.trans kbc
+  obtain hS : decodeScalar25519 kb < 2 ^ 256 := by
+    obtain h := Edwards.decodeScalar25519_shift hk
+    rw [Nat.shiftRight_eq_div_pow] at h
+    have := (Nat.div_eq_zero_iff_lt (by positivity)).mp h
+    omega_using [h]
+  obtain htc : TblAt c base T := htb.of_far (by rw [kac.rd, kac.wr])
+    (fun x hx => ck_outside kac x (Or.inr (by omega_using [hx])))
+  refine WP.seq (WP.mono (combMultiply_ok hsc htc (by rw [syc, syb]; exact hT) hS
+    (fun i hi => by rw [cn i hi, nib_clamped hk hi])) fun d ⟨dp, kd⟩ => ?_)
+  refine WP.mono (uEncode_ok (kd.scratch hsc)) fun t ⟨kt, tv⟩ => ⟨(kac.trans kd).trans kt.ck, ?_⟩
+  rw [tv]
+  change _ = Spec.X25519.x25519 kb Spec.X25519.basePoint
+  rw [VG.Proof.X25519.Edwards.x25519_basePoint hk _ (u_rep dp), Proof.X25519.encodeUCoordinate_eq]
+  simp only [point]
+
+end VG.Proof.X25519.AArch64.Base
+
+end
+
+end
+
+/-!
+# X25519 of the base point on AArch64: memory and ABI obligations
+
+As Ed25519's `scalarBase` (`Proof/Ed25519/AArch64/FixedBaseMain.lean`), with
+the engine of `Engine.lean` and its result read as a u-coordinate.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.X25519.AArch64.Base
+
+open VG VG.AArch64 VG.Impl.Ed25519.AArch64 VG.Impl.X25519.AArch64.Base
+open VG.Proof.Ed25519.AArch64
+open VG.Proof.Ed25519.Word64 (val4)
+open VG.Spec.Ed25519 (bytesAt)
+
+/-- `vg_x25519_base(out = x0, scalar = x1, scratch = x2)`, with the comb's tables at the
+static's address. -/
+def baseLocal : Contract isa where
+  pre s := s.rd = [⟨s.gpr .x1, 32⟩, tblRegion s] ∧ s.wr = [⟨s.gpr .x0, 32⟩, ⟨s.gpr .x2, 8192⟩] ∧
+    (⟨s.gpr .x1, 32⟩ : Region).Disjoint ⟨s.gpr .x2, 8192⟩ ∧
+    (s.gpr .x2).toNat + 8192 ≤ 2 ^ 64 ∧ CombHeld s [⟨s.gpr .x0, 32⟩, ⟨s.gpr .x2, 8192⟩]
+  post s t := Spec.X25519.bytesAt t.mem (s.gpr .x0) 32 =
+    Spec.X25519.x25519 (Spec.X25519.bytesAt s.mem (s.gpr .x1) 32) Spec.X25519.basePoint
+  pub s t := s.sp = t.sp ∧ s.gpr .x0 = t.gpr .x0 ∧
+    s.gpr .x1 = t.gpr .x1 ∧ s.gpr .x2 = t.gpr .x2 ∧ s.syms combSym = t.syms combSym
+
+theorem x25519Base_correct [VG.Proof.Ed25519.AArch64.Divstep.Sound] {s : State} (hs : baseLocal.pre s) :
+    WP isa x25519Base s fun t => abiPreserved s t ∧ baseLocal.post s t ∧
+      (Region.Disjoint ⟨s.gpr .x0, 32⟩ ⟨s.gpr .x2, 8192⟩ → ScratchTail (s.gpr .x2) s.mem t.mem) :=
+  baseWrap_ok (e := engine) (R := fun kb => Spec.X25519.x25519 kb Spec.X25519.basePoint)
+    (fun h1 h2 h3 h4 h5 h6 => engine_ok h1 h2 h3 h4 h5 h6) (by lit_decide) hs
+
+end VG.Proof.X25519.AArch64.Base
+
+end
+
+end
 
 /-!
 # X25519 of the base point on AArch64: constant time and the contract
@@ -39,21 +290,34 @@ namespace VG.Proof.X25519.AArch64.Base
 open VG VG.AArch64 VG.Impl.Ed25519.AArch64 VG.Impl.X25519.AArch64.Base
 open VG.Proof.Ed25519.AArch64
 
-/-- The engine: Ed25519's preparation and comb (`scalarBasePrepare_ct`, `combMultiplyClamped_ct`), with
-the clamping and the encoding of `u` between and after them. -/
+/-- The engine: Ed25519's nibbles and comb (`scalarNibbles_ct`, `combMultiply_ct`), with the clamping
+and the encoding of `u` between and after them. -/
 theorem engine_ct (base k T : Addr) :
     CT (fun x y => BaseEnginePre base k T x ∧ BaseEnginePre base k T y) engine (fun _ _ => True) := by
   have hw : ∀ s, (Scr s base ∧ s.syms combSym = T) →
-      WP isa (.block clampBits) s (fun t => Scr t base ∧ t.syms combSym = T) := fun s h =>
-    WP.mono_syms (clampBits_ok h.1) fun _ ⟨kt, _⟩ syt => ⟨kt.scratch h.1, by rw [syt]; exact h.2⟩
+      WP isa (.block clampNibbles) s (fun t => Scr t base ∧ t.syms combSym = T) := fun s ⟨hs, hT⟩ => by
+    have hwr : ∀ d < 8192, InRegions s.wr (off base d) 1 := fun d hd =>
+      ⟨_, hs.wr, Offset.contains_base _ hd (by omega_using [hd])⟩
+    have hrd : ∀ d < 8192, InRegions (s.rd ++ s.wr) (off base d) 1 := fun d hd =>
+      ⟨_, List.mem_append_right _ hs.wr, Offset.contains_base _ hd (by omega_using [hd])⟩
+    have e0 : base + BitVec.ofNat 64 NIB = off base NIB := rfl
+    have e1 : base + BitVec.ofNat 64 (NIB + 63) = off base (NIB + 63) := rfl
+    apply WP.of_runBlock
+    simp only [clampNibbles, runBlock_cons, runStep_some, runBlock_nil, exec, addr, State.load, State.store,
+      State.read, RegUpd.gpr_write, RegUpd.mem_write, RegUpd.rd_write, RegUpd.wr_write, Nat.mod_one, and_self, Size.bits,
+      show NIB < 4096 * 1 from by decide, show NIB + 63 < 4096 * 1 from by decide, show 16 * 0 < 32 from by decide,
+      BitVec.setWidth_eq, ite_true, ite_false, reduceCtorEq, hs.x0, e0, e1, hrd NIB (by decide),
+      hrd (NIB + 63) (by decide), hwr NIB (by decide), hwr (NIB + 63) (by decide),
+      Option.map_some, Option.bind_some, Option.some.injEq, exists_eq_left']
+    exact ⟨⟨hs.x0, hs.wr, hs.nowrap⟩, hT⟩
   have hc : CT (fun x y => (Scr x base ∧ x.syms combSym = T) ∧ (Scr y base ∧ y.syms combSym = T))
-      (.block clampBits) (fun _ _ => True) :=
+      (.block clampNibbles) (fun _ _ => True) :=
     CT.taint (Taint.ofRegs [.x0]) (fun _ _ h => agree_ofRegs fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       subst hr; exact h.1.1.x0.trans h.2.1.x0.symm) (by taint_decide)
   rw [engine]
-  refine CT.seq (scalarBasePrepare_ct base k T) (CT.seq ((hc.wp fun x y h => ⟨hw x h.1, hw y h.2⟩).mono
-    (fun _ _ h => h) fun _ _ h => h.2) (CT.seq (combMultiplyClamped_ct base T) ?_))
+  refine CT.seq (scalarNibbles_ct base k T) (CT.seq ((hc.wp fun x y h => ⟨hw x h.1, hw y h.2⟩).mono
+    (fun _ _ h => h) fun _ _ h => h.2) (CT.seq (combMultiply_ct base T) ?_))
   exact CT.taint (Taint.ofRegs [.x0]) (fun _ _ h => agree_ofRegs h) (by taint_decide)
 
 private def BaseStart (base k out T : Addr) (s : State) : Prop :=
@@ -109,7 +373,7 @@ private theorem engine_ready [VG.Proof.Ed25519.AArch64.Divstep.Sound] {base k ou
     WP isa engine s (BaseReady base out) := by
   obtain ⟨⟨h1, h2, h3, h4, h5, h6⟩, ho⟩ := hs
   refine WP.mono (engine_ok h1 h2 h3 h4 h5 h6) fun t ⟨kt, _⟩ => ?_
-  exact ⟨kt.scratch h1, ((powersKeep_outside kt).word
+  exact ⟨kt.scratch h1, ((ck_outside kt).word
     (d := 48) (Or.inl (by decide)) (by decide)).trans ho⟩
 
 private theorem engine_ct' [VG.Proof.Ed25519.AArch64.Divstep.Sound] (base k out T : Addr) :

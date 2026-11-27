@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Sha256.StateMem
 public import VerifiedGarbage.TCB.AArch64.Target
 
 import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+import VerifiedGarbage.Proof.Framework.AArch64.Clears
 import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Sha256.Stream
@@ -19,6 +20,7 @@ meta import VerifiedGarbage.Proof.Sha256.AArch64.Contract
 meta import VerifiedGarbage.Proof.Sha256.StateMem
 meta import VerifiedGarbage.TCB.AArch64.Target
 meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+meta import VerifiedGarbage.Proof.Framework.AArch64.Clears
 meta import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
 meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 meta import VerifiedGarbage.Proof.Sha256.Stream
@@ -126,10 +128,17 @@ theorem initQ_verified {hc} (hct : (taint.check (Taint.ofRegs [.x0]) (initQ iv) 
     simp only [VG.AArch64.Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
     subst hr; exact h.1
 
+/-- The postcondition looks at the final state only through its memory. -/
+theorem init_post {iv : Spec.Sha256.HashValue} {s u u' : State} (h : (Proof.Sha256.initAArch64 iv).post s u)
+    (hm : u'.mem = u.mem) (_ : u'.gpr .x0 = u.gpr .x0) : (Proof.Sha256.initAArch64 iv).post s u' := by
+  show Spec.Sha256.ReprFrom iv u'.mem (s.gpr .x0) []
+  rw [hm]
+  exact h
+
 theorem init_verified : Verified AArch64.target init (Proof.Sha256.initAArch64 H0) :=
-  initQ_verified _ (hct := by taint_decide)
+  Clears.Verified.withClears_of (initQ_verified _ (hct := by taint_decide)) init_post (by decide)
 
 theorem init224_verified : Verified AArch64.target init224 (Proof.Sha256.initAArch64 Spec.Sha256.H0_224) :=
-  initQ_verified _ (hct := by taint_decide)
+  Clears.Verified.withClears_of (initQ_verified _ (hct := by taint_decide)) init_post (by decide)
 
 end VG.Proof.Sha256.AArch64.Stream

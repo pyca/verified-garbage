@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.TCB.AArch64.Isa
 public import VerifiedGarbage.TCB.Artifact
+public import VerifiedGarbage.TCB.AArch64.Residue
 
 /-!
 # The AArch64 target (AAPCS64)
@@ -32,6 +33,10 @@ to and return from a public interface (AAPCS64 §6.1.1). N, Z and V are not
 observable by modelled instructions. FPCR and FPSR are not modelled (no
 modelled instruction reads or writes them), nor is memory below `sp`
 (never granted to a function).
+
+PSTATE.DIT is public (`abi.pub`): every contract assumes that two runs start
+with the same PSTATE.DIT. The Rust code sets it for an operation whatever
+data the operation is given (`src/dit.rs`), so it depends on nothing secret.
 -/
 
 @[expose] public section
@@ -124,13 +129,23 @@ def abi : Abi isa where
       (match n with
       | 0 => True
       | n => n ≤ s.sp.toNat) ∧ s.sp.toNat + 8 * (ws.length - argRegs.length) ≤ 2 ^ 64
-  pub s₁ s₂ := s₁.sp = s₂.sp
+  pub s₁ s₂ := s₁.sp = s₂.sp ∧ s₁.dit = s₂.dit
+  -- PSTATE.DIT.
+  mode s := if s.dit then 1 else 0
   mem s := s.mem
   rd s := s.rd
   wr s := s.wr
   ret s := s.gpr .x0
+  -- AAPCS64 "Result return": a result is returned "in the same registers as
+  -- would be used for such an argument", and C.16 puts an integer of at most
+  -- 8 bytes in "the least significant bits of a 64-bit register and the
+  -- remaining bits filled with unspecified values". Apple's differences
+  -- concern only types narrower than 32 bits, which no `IntTy` is.
+  retExt
+    | .u32 => none
+    | .u64 => none
+    | .usize => none
   sym := some fun s name => s.syms name
-  mode s := if s.dit then 1 else 0
 
 /-- Reducible, as an `abbrev` would be, but not inlined: an `abbrev` is compiled into
 every module that names it, which then builds a target of its own, so the emitter
@@ -140,5 +155,6 @@ would see one per registration module rather than this one (`Rust.printsAs`). -/
   isa := isa
   abiPreserved := abiPreserved
   abi := abi
+  noResidue := some NoResidue
 
 end VG.AArch64

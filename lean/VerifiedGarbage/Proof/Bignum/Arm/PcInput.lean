@@ -3,6 +3,7 @@ public import VerifiedGarbage.Proof.Bignum.Arm.PcStack
 public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
 public import VerifiedGarbage.Proof.Framework.Arm.CallF
 public import VerifiedGarbage.Spec.Rsa.Contract
+public import VerifiedGarbage.Proof.Bignum.Arm.CallStack
 import VerifiedGarbage.Proof.Framework.PlainSimp
 
 
@@ -31,6 +32,8 @@ structure PcBodyInput (base dst src : BitVec 32) (len k : Nat) (s : State) : Pro
   ptr : s.gpr .r0 = base
   source : s.gpr .r4 = src
   count : s.gpr .r6 = BitVec.ofNat 32 k
+  /-- The stack a call of the shared product needs. -/
+  call : CallStack base len s
 
 structure PcFnInput (base dst src : BitVec 32) (len k : Nat) (s : State) : Prop extends
     PcBuffers base dst src len k s where
@@ -45,5 +48,14 @@ structure PcFnInput (base dst src : BitVec 32) (len k : Nat) (s : State) : Prop 
   stackInput : (FrameStack.belowA s.sp 56).Disjoint ⟨State.addr src, k⟩
   stackOutput : (FrameStack.belowA s.sp 56).Disjoint ⟨State.addr dst, 16 * Spec.Rsa.modulusWords k⟩
   stackArgs : (FrameStack.belowA s.sp 56).Disjoint ⟨State.addr s.sp, 8⟩
+  /-- The stack a call of the shared product needs below the frame. -/
+  callFit : 104 ≤ s.sp.toNat
+  callSeparate : (FrameStack.belowA s.sp 104).Disjoint ⟨State.addr base, 8 * len⟩
+
+/-- The stack a call of the shared product needs, below the 56-byte frame. -/
+theorem PcFnInput.callStack {base dst src : BitVec 32} {len k : Nat} {s u : State}
+    (h : PcFnInput base dst src len k s) (sp : u.sp = s.sp - BitVec.ofNat 32 56) : CallStack base len u :=
+  ⟨by rw [sp, FrameStack.sub_toNat' h.stackFit]; have := h.callFit; omega,
+    by rw [sp]; exact h.callSeparate.sub_left (FrameStack.belowA_inner (k := 56) (by decide) h.callFit)⟩
 
 end VG.Proof.Bignum.Arm

@@ -4,14 +4,6 @@ public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.ArrayDivision
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyStageFrame
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyStageCover
 import VerifiedGarbage.Proof.Rsa.WordRanges
-import Mathlib.Data.Nat.Init
-import Mathlib.Logic.Function.Basic
-import Mathlib.Order.Defs.Prop
-import Mathlib.Tactic.Attr.Core
-import Mathlib.Tactic.Basic
-import Mathlib.Tactic.Set
-import Mathlib.Tactic.SplitIfs
-import Mathlib.Tactic.ToAdditive
 
 /-! # Runtime division preserves the key's persistent values and header -/
 
@@ -45,6 +37,25 @@ theorem arrayDivision_preserves_slot {m m' : Mem} {B : Addr} {n q r d : Nat}
     slot m' B d = slot m B d := by
   have value : val32 m' B d 1 = val32 m B d 1 := by
     apply O.val32 _ (by omega_using [bound])
+    intro region mem
+    simp only [arrayDivisionRanges, List.mem_cons, List.not_mem_nil, or_false] at mem
+    rcases mem with rfl | rfl | rfl | rfl | rfl
+    all_goals simp only [arr, hdr] <;> omega_using [bound]
+  simpa only [val32, Nat.mul_zero, Nat.add_zero] using value
+
+/-- A persistent array keeps its value through a division, called. -/
+theorem Ws.div_num {s : VG.X86.State} {B : Addr} {Z n N q r j : Nat} {m m' : Mem} (W : Ws s B Z n N) (hj : j < N)
+    (persistent : 4 ≤ j) (jq : j ≠ q) (jr : j ≠ r) (fit : arr n j + S n ≤ 2 ^ 64)
+    (O : OutsS B (s.gpr .esp) (arrayDivisionRanges n q r) m m') : num m' B n j = num m B n j :=
+  W.read_num hj O fun O' => arrayDivision_preserves_num persistent jq jr fit O'
+
+/-- A header word keeps its value through a division, called. -/
+theorem Ws.div_slot {s : VG.X86.State} {B : Addr} {Z n N q r d : Nat} {m m' : Mem} (W : Ws s B Z n N)
+    (bound : d + 4 ≤ 128) (O : OutsS B (s.gpr .esp) (arrayDivisionRanges n q r) m m') :
+    slot m' B d = slot m B d := by
+  have value : val32 m' B d 1 = val32 m B d 1 := by
+    refine W.read_val32 (by simp only [hdr]; omega_using [bound]) O fun O' => ?_
+    apply O'.val32 _ (by omega_using [bound])
     intro region mem
     simp only [arrayDivisionRanges, List.mem_cons, List.not_mem_nil, or_false] at mem
     rcases mem with rfl | rfl | rfl | rfl | rfl

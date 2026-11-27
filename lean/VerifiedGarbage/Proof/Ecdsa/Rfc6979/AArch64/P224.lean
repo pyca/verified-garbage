@@ -1,17 +1,30 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Curve
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Hash
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.TableSat
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Scrub
 public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
 import VerifiedGarbage.Proof.Ecdsa.AArch64.P224.Tables
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.P224.Verified
 import VerifiedGarbage.Proof.Ecdsa.AArch64.P224.Lit
 import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
-meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Curve
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Hash
 meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.TableSat
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.P224.Verified
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.P224.Lit
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
+public import VerifiedGarbage.Impl.Ecdsa.AArch64.VerifyHash
+public import VerifiedGarbage.Impl.Ecdsa.Verify.P224.AArch64
+public import VerifiedGarbage.Spec.Ecdsa.Verify.P224
+public import VerifiedGarbage.Impl.Ecdsa.P224.AArch64
+public import VerifiedGarbage.Impl.Ecdh.P224.AArch64
+public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Jacobian
+public import VerifiedGarbage.Proof.Variants.MdHash.AArch64
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubProved
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P224.Verified
+public import VerifiedGarbage.Proof.EcKey.AArch64.Scrub
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-!
 # Deterministic ECDSA on AArch64: P-224
@@ -61,5 +74,50 @@ theorem p224T_verified (hL : Weierstrass.Law Spec.P224.curve) (hI : Weierstrass.
   have hsat := sat_one (T := Spec.Ecdsa.Rfc6979.Curves.p224) h.1 Proof.Ecdsa.AArch64.P224.satMem h.2
     (by rw [Proof.Ecdsa.AArch64.P224.p224_combWords_length]; decide) Proof.Ecdsa.AArch64.P224.satMem_held (by decide) rfl
   exact signT_verified ⟨rfl, by decide, by decide⟩ rfl rfl h.1 hsat
+
+/-! ## What the scrubbed functions clear
+
+The registers the tails of `vg_ecdsa_p224_sign` and `vg_ecdsa_p224_verify`
+clear, and what `Scrub.verifiedScrubbedAll` needs of their code
+(`Scrub.scrubSide`): evaluated here, by the kernel, so that the emitter
+works out nothing. -/
+
+/-- No instruction of `vg_ecdsa_p224_sign_k` writes PSTATE.DIT, and it calls
+nothing indirectly. -/
+theorem p224_core_side :
+    AArch64.Scrub.sideAll (fun i => !i.writesDit)
+      Impl.Ecdsa.AArch64.signP224 = true := by
+  lit_decide
+
+/-- `vg_ecdsa_p224_sign` as emitted, cleanup included
+(`Impl.Ecdsa.Rfc6979.AArch64.Fn.p224`), with the tables of every hash
+function: it meets its contract in constant time and returns without secret
+residue. What the cleanup needs of the code is evaluated here, once, with
+nothing in the place of `vg_ecdsa_p224_sign_k`, whose own is evaluated
+apart. -/
+theorem p224Sign_scrubbed (hL : Weierstrass.Law Spec.P224.curve) (hI : Weierstrass.AArch64.InvSounds) (hT : Weierstrass.CombOkW Spec.P224.curve 7 37 Impl.P224.p224Comb7 Impl.P224.p224Comb7Start) :
+    VerifiedScrubbed AArch64.target
+      (Impl.Ecdsa.Rfc6979.AArch64.Fn.p224 Proof.Variants.MdHash.AArch64.hashes)
+      (specK Spec.Ecdsa.Rfc6979.Curves.p224 Impl.Ecdsa.AArch64.p224.combConsts
+        Proof.Variants.MdHash.AArch64.variants)
+      32 :=
+  Scrub.sign_scrubbed (R := p224 hL hI hT)
+    (p224T_verified hL hI hT _ ⟨Scrub.variants_ok, of_decide_eq_true (by kernel_rfl)⟩)
+    rfl p224_core_side
+    (by kernel_rfl) (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
+
+/-- `vg_ecdsa_p224_verify` as emitted, cleanup included
+(`Impl.Ecdsa.Verify.AArch64.Fn.verifyHashP224`): it meets its contract in
+constant time and returns without secret residue. What the cleanup needs of
+the code (`Scrub.scrubSide`) is evaluated here, by the kernel. -/
+theorem p224Verify (hL : Weierstrass.Law Spec.P224.curve) (hI : Weierstrass.AArch64.InvSounds)
+    (hT : Weierstrass.CombOkW Spec.P224.curve 7 37 Impl.P224.p224Comb7 Impl.P224.p224Comb7Start) :
+    VerifiedScrubbed AArch64.target Impl.Ecdsa.Verify.AArch64.Fn.verifyHashP224
+      (Spec.Ecdsa.P224.inst.verifyHashContract (AArch64.abi.withConsts Impl.Ecdsa.AArch64.p224.combConsts) 80) 32 :=
+  AArch64.Scrub.verifiedScrubbedAll (api := Spec.Ecdsa.P224.verifyHashApi)
+    { code := Impl.Ecdsa.AArch64.VerifyHash.verifyHash Spec.Ecdsa.P224.inst.curve.len false
+        Impl.Ecdsa.Verify.AArch64.verifyP224
+      verified := Proof.Ecdsa.Verify.AArch64.P224.verifyHash_verified hL hI hT } _
+    (Proof.EcKey.AArch64.Scrub.verifyHashOk_consts _ _ _) (by dsimp only; lit_decide)
 
 end VG.Proof.Ecdsa.Rfc6979.AArch64

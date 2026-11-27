@@ -23,7 +23,7 @@ while it runs: `adjUp`, `adjDn`), and its constants at `EKB`.
 
 Nothing here branches on the scalar: the additions are those of distinct
 points for every scalar the window method takes
-(`Proof/Weierstrass/OddWin.lean`).
+(`Proof/Weierstrass/X86_64/WinJacOddState.lean`).
 -/
 
 @[expose] public section
@@ -77,7 +77,7 @@ def vloopO (K : JacWinCfg) : Prog isa :=
 
 /-- `[k]P` into `R`, in projective coordinates, as `windowO`, with the loop in vectors. -/
 def vwindowO (K : JacWinCfg) : Prog isa :=
-  .seq K.buildO <| .seq (vloopO K) <|
+  .seq K.buildOC <| .seq (vloopO K) <|
   .seq (.block (packLaneAt (SL + EO) K.M 3 K.R.x ++ (packLaneAt (SL + EO) K.M 0 K.R.y ++
     packLaneAt (SL + EO) K.M 1 K.R.z))) <|
   .seq (.block K.tc.outFix) (ForwardField.programB K.M K.tc.outOps)

@@ -9,8 +9,6 @@ import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Bignum.Math
-import Mathlib.Order.RelClasses
-import Mathlib.Tactic.Finiteness.Attr
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.TaintBatch
@@ -23,8 +21,6 @@ meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
 meta import VerifiedGarbage.Proof.Bignum.Math
-meta import Mathlib.Order.RelClasses
-meta import Mathlib.Tactic.Finiteness.Attr
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
@@ -72,16 +68,6 @@ def GB2 (q : GPub × Nat) (t : State) : Prop :=
   (Good t q.1.B q.1.Z q.1.w q.1.minv ∧ slot q.1.w 8 ≤ q.1.Z) ∧ 2 ≤ q.1.w ∧ q.1.w < 2 ^ 30 ∧
     wv t.mem q.1.B (slot q.1.w Public.aY) q.1.w < wv t.mem q.1.B (slot q.1.w Public.aN) q.1.w ∧
     t.gpr .x3 = BitVec.ofNat 64 (gD q.1.w q.1.wx) &&& BitVec.ofNat 64 (2 ^ ((gD q.1.w q.1.wx).log2 - q.2))
-
-/-- A count-down loop's condition after iteration `j` of `n`. -/
-theorem eval_nz_count {t : State} {r : Reg} {j n : Nat} (hj : j < n) (h : (t.gpr r).toNat ≠ 0 ↔ j + 1 ≠ n) :
-    isa.eval (.nonzero .x r) t = some (decide (j + 1 < n)) := by
-  rw [eval_nonzero]
-  congr 1
-  have e : (t.gpr r != 0) = true ↔ (t.gpr r).toNat ≠ 0 := by
-    rw [bne_iff_ne, ne_eq, ne_eq, ← BitVec.toNat_inj]; exact Iff.rfl
-  rw [Bool.eq_iff_iff, e, h, decide_eq_true_iff]
-  omega_arith
 
 /-- One bit of `D`: the squaring, the test and the doubling. -/
 theorem gBody_ct (M : Mont) : RelCT isa (Two fun (q : GPub × Nat) s => q.2 < (gD q.1.w q.1.wx).log2 + 1 ∧

@@ -8,7 +8,7 @@ public import VerifiedGarbage.Impl.Blake2.RISCV64.Stream
 `vg_argon2_hprime(input = a0, input_len = a1, out = a2, out_len = a3,
 scratch = a4)`: the PPC64LE implementation (`Impl/Argon2/PPC64LE/HPrime.lean`)
 with its registers renamed, calling the RISC-V BLAKE2b streaming functions
-(`vg_blake2b_init`, `_update_scratch`, `_finalize_scratch`). Its caller's
+(`vg_blake2b_init_core`, `_update_scratch`, `_finalize_scratch`). Its caller's
 scratch is 8-byte aligned (an array of `u64`), and holds the 192-byte hash state at offset 0, 576
 bytes of BLAKE2b scratch at 192, the digest at 768, the four-byte length
 prefix at 832, and the saved `s0`–`s4` and return address at 840–887. `s0`
@@ -28,7 +28,7 @@ open VG.RISCV64
 /-- `mv d, n` (`addi d, n, 0`). -/
 def mov (d n : Reg) : Instr := .addi d n 0
 
-def initName : String := "vg_blake2b_init"
+def initName : String := "vg_blake2b_init_core"
 def updateName : String := "vg_blake2b_update_scratch"
 def finalizeName : String := "vg_blake2b_finalize_scratch"
 

@@ -6,13 +6,7 @@ public import VerifiedGarbage.Proof.Mont.AArch64.Words
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Loop
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import Mathlib.Data.Finset.Attr
-import Mathlib.Tactic.SetLike
-public import Mathlib.Algebra.Group.Nat.Defs
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! Loading a divstep batch's input words and its register invariant. -/

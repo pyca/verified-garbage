@@ -1,10 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.Unch
-public import VerifiedGarbage.Proof.Weierstrass.X86.InvState
+public import VerifiedGarbage.Proof.Weierstrass.X86.InvFinishPrep
 public import VerifiedGarbage.Proof.Weierstrass.Law
-public import Mathlib.Data.Nat.Prime.Defs
-import VerifiedGarbage.Proof.Weierstrass.X86.InvFinishPrep
+public import VerifiedGarbage.Proof.Framework.IsPrime
 public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
 public import VerifiedGarbage.Proof.Weierstrass.X86.MontCall
 public import VerifiedGarbage.Proof.Weierstrass.Env
@@ -44,7 +43,7 @@ def InvSound (p : Nat) [NeZero p] : Prop :=
         Keeps invClob s z ∧ Unch base (invW P) s.mem z.mem ∧ val32 z.mem base P.out 8 < p ∧
         toM p (2 ^ 256) (val32 z.mem base P.out 8) = toM p (2 ^ 256) (val32 s.mem base P.base 8) ^ (p - 2)
 
-def InvSounds : Prop := ∀ {p : Nat} [NeZero p], p.Prime → InvSound p
+def InvSounds : Prop := ∀ {p : Nat} [NeZero p], IsPrime p → InvSound p
 
 structure HasLawInv (C : Spec.Weierstrass.Curve) : Type where
   law : Law C

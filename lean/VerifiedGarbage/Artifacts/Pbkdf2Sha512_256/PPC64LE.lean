@@ -1,20 +1,23 @@
 module
 
 public import VerifiedGarbage.TCB.PPC64LE.Target
-public import VerifiedGarbage.Proof.Pbkdf2.Whole.PPC64LE.Sha512_256
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.PPC64LE.Print
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Pbkdf2.Generic
+public import VerifiedGarbage.Spec.Hmac.Generic
+import VerifiedGarbage.Proof.Pbkdf2.Whole.PPC64LE.Scrub
+import VerifiedGarbage.Impl.Hmac.Stream.PPC64LE.Fn
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # PBKDF2-HMAC-SHA-512/256 (RFC 8018) on PPC64LE -/
 
-@[expose] public section
-
 namespace VG.Artifacts.Pbkdf2Sha512_256.PPC64LE
 
-def artifacts : List Artifact := [
+public def artifacts : List (Artifact PPC64LE.target) := [
   Spec.Hmac.sha512_256I.pbkdf2Api.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratch (Proof.Pbkdf2.Whole.PPC64LE.pbkFrame Spec.Hmac.sha512_256I) .r10
-      Proof.Pbkdf2.Whole.PPC64LE.Sha512_256.F.pbkdf2
-    verified := Proof.Pbkdf2.Whole.PPC64LE.Sha512_256.pbkdf2 }]
+    code := Impl.Pbkdf2.Whole.PPC64LE.Fn.sha512_256
+    verified := Proof.Pbkdf2.Whole.PPC64LE.Scrub.sha512_256_scrubbed }]
+
+spec_apis artifacts
 
 end VG.Artifacts.Pbkdf2Sha512_256.PPC64LE

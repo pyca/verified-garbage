@@ -2,6 +2,8 @@ module
 
 import VerifiedGarbage.TCB.Rust
 meta import VerifiedGarbage.TCB.Rust
+import VerifiedGarbageTest.RenderOnly
+meta import VerifiedGarbageTest.RenderOnly
 import VerifiedGarbage.TCB.AArch64.Target
 meta import VerifiedGarbage.TCB.AArch64.Target
 import VerifiedGarbage.TCB.AArch64.Print
@@ -24,6 +26,11 @@ beyond (`writtenOk`), and the emitter exports the bound as a constant and
 documents it. The checks (`Rust.checkWritten`) refuse a bound larger than
 the buffer, on a parameter that is not a writable array or not a parameter,
 and two bounds on one parameter.
+
+The same artifact, renamed, is a test of `Rust.checkName`: a registration's
+suffix (`Registration.suffix`) that is not letters, digits and underscores,
+such as one that ends the function and starts another before its proven
+code, is refused.
 -/
 
 namespace VG.Test.Written
@@ -76,15 +83,13 @@ theorem verified : Verified target code contract := by
     exact ⟨Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide),
       Region.disjoint_of_sep (by decide), by decide, by decide, by decide⟩
 
-def artifact (w : List (String × Nat)) : Artifact where
-  target := .of target
-  module := "test"
-  name := "vg_test_written"
-  sig := sig
-  doc := "Writes nothing.\n\n# Safety\n\n* None."
+def artifact (w : List (String × Nat)) : EmitArtifact where
+  target := .of (renderOnly target) emitter
+  api := { module := "test", name := "vg_test_written", sig := sig, safety := ["None."]
+           summary := "Writes nothing." }
   code := code
   contract := contract
-  verified := verified
+  verified := renderOnly_verified verified
   written := w
   writtenOk := written_ok w
 
@@ -94,6 +99,8 @@ def expected : String := "/// The bytes of `buf` that `vg_test_written` may writ
 pub const VG_TEST_WRITTEN_BUF_WRITTEN: usize = 8;
 
 /// Writes nothing.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// It writes at most the first 8 bytes of `buf` (`VG_TEST_WRITTEN_BUF_WRITTEN`): no byte of `buf` beyond them changes.
 ///
@@ -134,4 +141,26 @@ pub unsafe extern \"C\" fn vg_test_written(buf: *mut [u64; 4], other: *mut [u8; 
 
 #guard Rust.writtenName "vg_x25519_base" "scratch" == "VG_X25519_BASE_SCRATCH_WRITTEN"
 
+/-- The artifact, of the suffix `suffix`, its `Api`'s module `module` and name `name`. -/
+def named (suffix : String) (module : String := "test") (name : String := "vg_test_written") :
+    EmitArtifact :=
+  { artifact [] with suffix := suffix, api := { (artifact []).api with module := module, name := name } }
+
+#guard (Rust.checkName (artifact [])).isOk
+#guard (Rust.checkName (named "_avx2")).isOk
+#guard (Rust.checkName (named "" "aes_gcm2")).isOk
+-- A suffix that ends the function and starts another, which the proven code
+-- would then follow.
+#guard !(Rust.checkName (named "() { core::arch::naked_asm!(\"ret\") }\n\
+  pub unsafe extern \"C\" fn vg_test_written_verified")).isOk
+#guard !(Rust.checkName (named ";")).isOk
+#guard !(Rust.checkName (named "_AVX2")).isOk
+#guard !(Rust.checkName (named " ")).isOk
+-- Its `Api`'s name is not that of a function of the crate.
+#guard !(Rust.checkName (named "" (name := "test"))).isOk
+-- Its module is not a Rust module's name.
+#guard !(Rust.checkName (named "" "")).isOk
+#guard !(Rust.checkName (named "" "../test")).isOk
+#guard !(Rust.checkName (named "" "Test")).isOk
+#guard !(Rust.checkName (named "" "1test")).isOk
 end VG.Test.Written

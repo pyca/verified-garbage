@@ -42,14 +42,14 @@ open VG.Proof.Gcm (Absorbed lensBlock)
 
 /-- The regions `flush` and `lens` write. -/
 abbrev tFrame (st w : Addr) (yo : Nat) : List Region :=
-  [⟨st + BitVec.ofNat 64 yo, 16⟩, ⟨w + BitVec.ofNat 64 96, 16⟩, ⟨w + BitVec.ofNat 64 512, 256⟩]
+  [⟨st + BitVec.ofNat 64 yo, 16⟩, ⟨w + BitVec.ofNat 64 96, 16⟩]
 
 theorem gh_tFrame {st w : Addr} {yo : Nat} {m m' : Mem}
-    (h : Frame [⟨st + BitVec.ofNat 64 yo, 16⟩, ⟨w + BitVec.ofNat 64 512, 256⟩] m m') :
+    (h : Frame [⟨st + BitVec.ofNat 64 yo, 16⟩] m m') :
     Frame (tFrame st w yo) m m' :=
   h.mono fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl <;> simp
+    subst hr; simp
 
 theorem tFrame_T {st w : Addr} {yo : Nat} {m m' : Mem} (h : Frame [⟨w + BitVec.ofNat 64 96, 16⟩] m m') :
     Frame (tFrame st w yo) m m' :=
@@ -102,8 +102,8 @@ theorem zeroT_ok {s : State} (he : Env V sp s) :
         (V .r31 + BitVec.ofNat 64 96 + BitVec.ofNat 64 8) (0 : BitVec 64) ∧
       (∀ r, r ≠ .r0 → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧ s'.lr = s.lr := by
   have h31 := he.r31
-  have w₀ := he.perm.wW (show 96 + 8 ≤ 2560 by decide)
-  have w₁ := he.perm.wW (show 104 + 8 ≤ 2560 by decide)
+  have w₀ := he.perm.wW (show 96 + 8 ≤ 288 by decide)
+  have w₁ := he.perm.wW (show 104 + 8 ≤ 288 by decide)
   crun [tO, h31, w₀, w₁, write_8]
   exact ⟨by rw [add_ofNat_assoc], fun r a => by simp [a]⟩
 
@@ -171,8 +171,7 @@ theorem flushGh_ok [VG.Proof.Gcm.PPC64LE.GhashLaw] {H : Block} {x : List Byte} {
     WP isa (ghash1 yo .r31 tO) s (FlOut V sp yo H x (x ++ zeros (padLen x.length)) m₀) := by
   have he := h.env
   refine WP.mono (ghash1_ok L hyo he .r31 96 (.inr rfl) (by decide) (P := V .r31 + BitVec.ofNat 64 96)
-    (by rw [he.r31]) (L.st_w (by omega_arith) (.inr ⟨by decide, by decide⟩))
-    (Lay.w_w (.inl (by decide)) (by decide) (by decide)) (covers_left (he.perm.wC (by decide))))
+    (by rw [he.r31]) (L.st_w (by omega_arith) (.inr ⟨by decide, by decide⟩)) (covers_left (he.perm.wC (by decide))))
     fun s₄ g => ?_
   refine ⟨g.env he, ?_, ?_, ?_⟩
   · rw [blockAt_frame g.frame (ctx_ghFrame L hyo), h.hH]
@@ -214,8 +213,8 @@ theorem lensStore_ok {V : Reg → BitVec 64} {sp : Addr} {s : State} (he : Env V
         (V .r31 + BitVec.ofNat 64 96 + BitVec.ofNat 64 8) (VG.PPC64LE.rev64 (s.gpr .r26 <<< 3)) ∧
       (∀ r, r ≠ .r3 → r ≠ .r4 → r ≠ .r5 → r ≠ .r6 → s'.gpr r = s.gpr r) ∧ Keeps' s s' := by
   have h31 := he.r31
-  have w₀ := he.perm.wW (show 96 + 8 ≤ 2560 by decide)
-  have w₁ := he.perm.wW (show 104 + 8 ≤ 2560 by decide)
+  have w₀ := he.perm.wW (show 96 + 8 ≤ 288 by decide)
+  have w₁ := he.perm.wW (show 104 + 8 ≤ 288 by decide)
   have w₁' : InRegions s.wr (V .r31 + BitVec.ofNat 64 96 + BitVec.ofNat 64 8) 8 := by
     rw [add_ofNat_assoc]; exact w₁
   crun [Impl.AesGcm.PPC64LE.lensBlock, tO, h31, w₀, w₁', write_8, addrX]
@@ -250,8 +249,7 @@ theorem lens_ok [VG.Proof.Gcm.PPC64LE.GhashLaw] {H : Block} {s : State} (he : En
     rw [blockAt_frame fT fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact L.ctx_w (by decide) (by decide), hH]
   refine WP.mono (ghash1_ok L hyo he₂ .r31 96 (.inr rfl) (by decide) (P := V .r31 + BitVec.ofNat 64 96)
-    (by rw [he₂.r31]) (L.st_w (by omega_arith) (.inr ⟨by decide, by decide⟩))
-    (Lay.w_w (.inl (by decide)) (by decide) (by decide)) (covers_left (he₂.perm.wC (by decide))))
+    (by rw [he₂.r31]) (L.st_w (by omega_arith) (.inr ⟨by decide, by decide⟩)) (covers_left (he₂.perm.wC (by decide))))
     fun s₃ g => ?_
   refine ⟨g.env he₂, ?_, ?_, fun r hr => by
       rw [g.saved r hr]; exact hg₂ r (by revert r; decide) (by revert r; decide) (by revert r; decide)

@@ -1,7 +1,7 @@
 module
 
 import VerifiedGarbage.Proof.Seed.G16
-public import VerifiedGarbage.Proof.Aes.Ct32.Bitsliced
+public import VerifiedGarbage.Proof.Aes.Bitsliced
 public import VerifiedGarbage.Impl.Seed.W32
 public import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
 public import VerifiedGarbage.Proof.Seed.G
@@ -33,7 +33,7 @@ namespace VG.Proof.Seed
 
 open VG VG.Bitslice VG.Impl.Seed VG.Proof.Aes
 open VG.Impl.Seed.W32 (gConst32)
-open VG.Proof.Aes.Ct32 (bsByte)
+open VG.Proof.Aes (bsByte)
 
 /-- Byte `n`'s position in the planes: byte `a` of word `i` is at `8a + i`. -/
 def laneOf8 (n : Nat) : Nat := 8 * (n % 4) + n / 4
@@ -97,7 +97,7 @@ theorem xorBits_planesW (S : Nat → BitVec 32) {p : Nat} (hp : p < 32) {l : Lis
   | cons j l ih =>
     have hj := hl j List.mem_cons_self
     simp only [List.map_cons, xorBits_cons, xorOf_cons, ih fun b h => hl b (List.mem_cons_of_mem _ h),
-      Ct32.getLsbD_bsByte _ _ hj]
+      getLsbD_bsByte _ _ hj]
     congr 1
     simp only [bitOf]
     rw [show (32 * j + p) / 32 = j by omega_using [hp], show (32 * j + p) % 32 = p by omega_using [hp]]
@@ -126,11 +126,11 @@ theorem g8_words {In Pl S Out : Nat → BitVec 32}
   have hPl : ∀ p < 32, bsByte Pl p = linB mRows (byteW In (byteOf8 p)) := by
     intro p hp
     refine byte_ext fun j hj => ?_
-    rw [Ct32.getLsbD_bsByte _ _ hj, h1 j hj p hp, getLsbD_linB _ _ hj, l1w,
+    rw [getLsbD_bsByte _ _ hj, h1 j hj p hp, getLsbD_linB _ _ hj, l1w,
       xorBits_byteW _ (rows_getD_lt (rows_lt mRows (by simp)) j)]
   have hSb : ∀ p < 32, bsByte S p = Spec.Aes.sbox (bsByte Pl p) := by
     intro p hp
-    exact byte_ext fun j hj => by rw [Ct32.getLsbD_bsByte _ _ hj, hS j hj p hp]
+    exact byte_ext fun j hj => by rw [getLsbD_bsByte _ _ hj, hS j hj p hp]
   intro w hw
   apply BitVec.eq_of_getLsbD_eq
   intro t' ht'

@@ -1,6 +1,8 @@
 module
 
-
+import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
+import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
 meta import VerifiedGarbage.Spec.EcKey.P192
 public import VerifiedGarbage.Proof.EcKey.X86_64.Scrub.Out
 public import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
@@ -8,7 +10,7 @@ public import VerifiedGarbage.Proof.Framework.Registration
 meta import VerifiedGarbage.Proof.EcKey.X86_64.Scrub.Out
 meta import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
 meta import VerifiedGarbage.Proof.Framework.Registration
-import VerifiedGarbage.Proof.EcKey.Validate.X86_64.Main
+public import VerifiedGarbage.Proof.EcKey.Validate.X86_64.Main
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.P192.InverseVerified
 public import VerifiedGarbage.Spec.EcKey.P192
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P192.InverseLit
@@ -22,8 +24,7 @@ meta import VerifiedGarbage.Impl.EcKey.Validate.X86_64
 meta import VerifiedGarbage.Impl.Ecdsa.P192.X86_64
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P192.InverseVerified
 public import VerifiedGarbage.Impl.EcKey.Validate.X86_64
-public import VerifiedGarbage.Proof.EcKey.Validate.X86_64.Contract
-meta import VerifiedGarbage.Proof.EcKey.Validate.X86_64.Contract
+meta import VerifiedGarbage.Proof.EcKey.Validate.X86_64.Main
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
 meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
 public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
@@ -82,24 +83,21 @@ theorem verified (hI : InvSounds) (adx : Bool) :
 
 /-! ## Without secret residue -/
 
-/-- The granules of its stack that `vg_ec_p192_validate_public_key` must wipe on
-return, from the residue analysis (`X86_64.RScrub.keepFor`). -/
-def scrubKs : List Nat :=
-  keep_for% Spec.EcKey.P192.inst.validatePublicKeyApi.sig 8 (code false) []
+theorem codeSp : (code false).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
 
-theorem scrubOk : ∃ h : VG.Taint.Hint X86_64.RTaint.FT,
-    (VG.Taint.check X86_64.RTaint.rtaint (X86_64.RScrub.init Spec.EcKey.P192.inst.validatePublicKeyApi.sig 8 [])
-      (code false) h).any (X86_64.RScrub.resOkB · 8 scrubKs (Impl.Scrub.X86_64.chunks 8)) = true :=
-  X86_64.RScrub.Analysed.ok_of _ (by taint_decide)
+/-- `vg_ec_p192_validate_public_key` as emitted (`Impl.EcKey.Validate.X86_64.Fn.validate`), its cleanup included, meets its
+contract in constant time and returns without secret residue. -/
+theorem scrubbed (hI : InvSounds) :
+    VerifiedScrubbed target (Impl.EcKey.Validate.X86_64.Fn.validate (Inverse.cfg false))
+      (Spec.EcKey.P192.inst.validatePublicKeyApi.contract abi 8) 32 :=
+  X86_64.Scrub.verifiedScrubbedAll (api := Spec.EcKey.P192.inst.validatePublicKeyApi)
+    { code := code false
+      verified := verified hI false
+      stack := 8
+      spSafe := codeSp } .sse (EcKey.X86_64.Scrub.validateOut _ _)
 
-/-- `vg_ec_p192_validate_public_key`, followed by `Impl.Scrub.X86_64.scrubTail`
-(`X86_64.RScrub.withScrub`): it returns without secret residue. -/
-def scrubReg (hI : InvSounds) :
-    Registration Spec.EcKey.P192.inst.validatePublicKeyApi target :=
-  X86_64.RScrub.withScrub {
-    code := code false
-    verified := verified hI false
-    stack := 8 }
-    (EcKey.X86_64.Scrub.validateOut _ _) [] (X86_64.RScrub.pubOk_nil _) (some ⟨scrubKs, scrubOk⟩)
+theorem spSafe : (Impl.EcKey.Validate.X86_64.Fn.validate (Inverse.cfg false)).all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  X86_64.Scrub.scrubKs_spSafe codeSp
 
 end VG.Proof.EcKey.Validate.X86_64.P192

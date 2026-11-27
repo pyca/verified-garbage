@@ -8,6 +8,7 @@ public import VerifiedGarbage.Proof.Framework.PowLit
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.GetElem
 public import VerifiedGarbage.Proof.Rsa.Contract
+public import VerifiedGarbage.Proof.Framework.AArch64.ModeSim
 
 /-!
 # RSAES-PKCS1-v1_5 decryption on AArch64: the private-key operation, as a callee
@@ -41,6 +42,7 @@ structure PrivImpl where
   pos : 16 ≤ stack
   depth : 16 * code.aarch64Depth ≤ stack
   spSafe : code.all (fun i => !isa.writesSp i) = true
+  noDit : code.all (fun i => !i.touchesDit) = true
 
 /-- `vg_rsa_private_checked(out = x0, out_len = x1, n = x2, n_len = x3,
 e = x4, e_len = x5, input = x6, input_len = x7, p, p_len, q, q_len, dp,
@@ -116,12 +118,12 @@ theorem priv_post {S : Nat} {s s' : State}
     _root_.List.range, _root_.List.range.loop, List.append_eq] at h
   exact h
 
-theorem priv_pub {S : Nat} {s₁ s₂ : State} (h : (privK S).pub s₁ s₂) :
+theorem priv_pub {S : Nat} {s₁ s₂ : State} (h : (privK S).pub s₁ s₂) (hd : s₁.dit = s₂.dit) :
     (Proof.Rsa.privateCheckedContract AArch64.abi (S + 1)).pub s₁ s₂ := by
   sig_pub [Proof.Rsa.privateCheckedContract, Proof.Rsa.privateCheckedSig, AArch64.abi, AArch64.argRegs,
     _root_.List.range, _root_.List.range.loop, List.append_eq]
   obtain ⟨hsp, h0, h1, h2, h3, h4, h5, h6, h7, ha, hn, he⟩ := h
-  exact ⟨hsp, by rw [List.map_append, List.map_append, hn, he], h0, h1, h2, h3, h4, h5, h6, h7,
+  exact ⟨hsp, hd, by rw [List.map_append, List.map_append, hn, he], h0, h1, h2, h3, h4, h5, h6, h7,
     ha 0 (by decide), ha 1 (by decide), ha 2 (by decide), ha 3 (by decide), ha 4 (by decide), ha 5 (by decide),
     ha 6 (by decide), ha 7 (by decide), ha 8 (by decide), ha 9 (by decide), ha 10 (by decide), ha 11 (by decide)⟩
 
@@ -143,8 +145,9 @@ theorem correct (s : State) (h : (privK v.S).pre s) :
   exact ⟨t, s', he, ha, priv_post hp⟩
 
 theorem ct : ConstantTime isa (privK v.S).pre (privK v.S).pub v.code :=
-  fun _ _ _ _ _ _ h₁ h₂ hp e₁ e₂ =>
-    v.verified'.2.1 _ _ _ _ _ _ (priv_pre h₁) (priv_pre h₂) (priv_pub hp) e₁ e₂
+  ConstantTime.dropDit v.noDit (fun _ _ _ _ _ _ h₁ h₂ hp e₁ e₂ =>
+    v.verified'.2.1 _ _ _ _ _ _ (priv_pre h₁) (priv_pre h₂) (priv_pub hp.1 hp.2) e₁ e₂) (fun _ _ h => h)
+    fun _ _ h => h
 
 theorem depth' : 16 * v.code.aarch64Depth ≤ v.S + 1 := v.stack_eq ▸ v.depth
 

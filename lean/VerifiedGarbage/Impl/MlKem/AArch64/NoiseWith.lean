@@ -13,13 +13,10 @@ def noiseOutWith (nttAt : Nat→Nat→Prog isa) (L : KemLay) (kg : Bool) (n buf 
  seqs [.block (([.addImm .x .x0 .x19 buf] : List Instr)++ptrTo .x1 .x28 off),
    cbdCall,if kg || n<L.k then nttAt off ns else .block []]
 
-def noisePairWith (nttAt : Nat→Nat→Prog isa) (L : KemLay) (kg : Bool) (n : Nat) :
+def noisePairWith (sha3 : Bool) (nttAt : Nat→Nat→Prog isa) (L : KemLay) (kg : Bool) (n : Nat) :
     Prog isa :=
- seqs [.block (noiseInit L kg n),squeezePair,noiseOutWith nttAt L kg n 400,
+ seqs [.block (noiseInit L kg n),squeezePair sha3,noiseOutWith nttAt L kg n 400,
    noiseOutWith nttAt L kg (n+1) 528,
    .block (Paired.saved.zipIdx.reverse.map fun (r,i)=>.ldr .x r .x19 (1800+8*i))]
-
-def noiseAllWith (nttAt : Nat→Nat→Prog isa) (L : KemLay) (kg : Bool) : Prog isa :=
- seqs ((List.range L.k).map fun i=>noisePairWith nttAt L kg (2*i))
 
 end VG.Impl.MlKem.AArch64.Noise

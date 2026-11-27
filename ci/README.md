@@ -18,14 +18,16 @@ CI runs each of these, and fails if it does:
 | `check_lean_imports.py` | The import discipline between `TCB/`, `Spec/`, `Impl/` and `Proof/` |
 | `check_lean_modules.py` | Every file under `lean/VerifiedGarbage/` is a Lean module |
 | `check_lean_single_importer.py` | No new proof module has only one importer without saying why |
+| `lean_unique_decls.lean` | Every module of the build can be imported with every other (as `lake check` does) |
 | `check_lean_speed.py` | The rules of "Keeping proofs fast" that need no build (allowances in `lean_speed_allowed.py`) |
 | `check_mcdt.py` | Intel's MCDT instructions run only inside the MXCSR prologue and epilogue |
 | `check_registrations.py` | Registration and variant files only bind |
+| `check_secret_residue.py` | Every move, shortening or growth of a buffer in `src/` says why it leaves no secret behind |
 | `check_skills.py` | The skills' frontmatter and links, and CLAUDE.md's list of them |
 | `check_vectors.py` | `vectors/sources/` describes the files under `vectors/` |
 | `cpu_tests.py lint` | `rust_matrix.toml`'s CPU-feature lines |
 | `merge_rust_coverage.py` | 100% line coverage, per architecture and merged (from `export_rust_coverage.py`'s files) |
-| `rust_lint.py` | rustfmt, Clippy and a release build for every target |
+| `rust_lint.py` | rustfmt, Clippy, a release build and the documentation for every target |
 
 `check_lean_public_imports.py` is a check that CI does not run, since it
 needs the edited modules built: run it before pushing, as CLAUDE.md says.
@@ -42,6 +44,7 @@ needs the edited modules built: run it before pushing, as CLAUDE.md says.
 | `export_rust_coverage.py` | Exports an instrumented test run's coverage as lcov |
 | `rust_test_timing.sh`, `rustdoc_timing.sh`, `rustdoc_timing.cmd` | Turn on libtest's `--report-time` for the timing metrics |
 | `bench_arches.py`, `bench_compare.py`, `bench_cache_key.sh` | The Benchmarks workflow (the `benchmarking` skill) |
+| `bench_report.py`, `bench_report.html` | Benchmark results files, and the page that charts them (the workflow's `benchmarks.html`) |
 | `ci_metrics.py`, `ci_metrics_bundle.py` | Record each run's metrics, and fetch and share them (the `ci-metrics` skill) |
 | `runner.Dockerfile`, `arm32-run` | The runner images of the 32-bit, PPC64LE, RISC-V and lint jobs |
 | `requirements-coverage.txt` | Python dependencies of the coverage merge |

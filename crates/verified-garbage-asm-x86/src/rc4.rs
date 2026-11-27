@@ -3,9 +3,56 @@
 //! `assembly/rc4.s`.
 #![allow(dead_code)]
 
+/// The CPU features `vg_rc4_init_ssse3` requires (`Artifact.features`).
+pub const VG_RC4_INIT_SSSE3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3);
+
 /// Starts raw RC4 (ARCFOUR draft §§3.1–3.2): for `key_len` in 1..=256, schedules the bytes at `key`, writes the permutation and two zero PRGA indices to `*ctx` (`VG.Spec.Rc4.contextAt`), and returns 0. Otherwise returns 1. No initial stream bytes are discarded.
 ///
 /// Contract: `VG.Spec.Rc4.initContract`. Constant time: only pointers and `key_len` may affect timing, not the key or key-dependent table indices.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// The function may overwrite the arguments on the stack, as the calling convention lets it.
+///
+/// # Safety
+///
+/// * `key` must be valid for reads of `key_len` bytes.
+/// * `ctx` must be valid for reads and writes of 258 bytes.
+/// * On failure, the contents of `ctx` on return are unspecified.
+/// * `ctx` must not overlap `key` (distinct Rust objects never do).
+/// * Neither `key` nor `ctx` may overlap the arguments on the stack, overlap the return address on the stack or the 92 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `ssse3` target feature.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_rc4_init_ssse3(key: *const u8, key_len: usize, ctx: *mut [u8; 258]) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "jWQkqItEJFyJRCQEi0QkYIlEJAiLRCRkiUQkDIngg8AUiUQkEItEJAiD6AE9AAEAAA=="
+jae 20f
+.base64 "i0wkEIkZiXEEiXkIiWkMi3wkDA=="
+call 2f
+2:
+mov eax, DWORD PTR [esp]
+.byte 0x81, 192
+.long {VG_RC4_SSSE3} - 2b
+.base64 "WYtMJBCJQRyJwvMPb4IAAQAA8w9/B/MPb4IQAQAA8w9/RxDzD2+CIAEAAPMPf0cg8w9vgjABAADzD39HMPMPb4JAAQAA8w9/R0DzD2+CUAEAAPMPf0dQ8w9vgmABAADzD39HYPMPb4JwAQAA8w9/R3DzD2+CgAEAAPMPf4eAAAAA8w9vgpABAADzD3+HkAAAAPMPb4KgAQAA8w9/h6AAAADzD2+CsAEAAPMPf4ewAAAA8w9vgsABAADzD3+HwAAAAPMPb4LQAQAA8w9/h9AAAADzD2+C4AEAAPMPf4fgAAAA8w9vgvABAADzD3+H8AAAAL4AAAAAuwAAAAC9AAAAAA=="
+22:
+.base64 "ifgB8A+2CItEJBCJSBiLUBwBzYtEJAQB2A+2AAHFgeX/AAAAieiD4A9mD27AZg/vyWYPOADB8w9vigABAABmD+/IZg9u6WYPOADp8w9vogACAACJ6MHoBGYPbsBmD+vgZg84AOHzD28CZg84AMTzD28PZg/vzWYP28jzD28HZg/vwfMPfwfzD29SEGYPOADU8w9vdxBmD+/1Zg/b8vMPb1cQZg/v1vMPf1cQZg/r8WYPb97zD29CIGYPOADE8w9vTyBmD+/NZg/byPMPb0cgZg/vwfMPf0cg8w9vUjBmDzgA1PMPb3cwZg/v9WYP2/LzD29XMGYP79bzD39XMGYP6/FmD+ve8w9vQkBmDzgAxPMPb09AZg/vzWYP28jzD29HQGYP78HzD39HQPMPb1JQZg84ANTzD293UGYP7/VmD9vy8w9vV1BmD+/W8w9/V1BmD+vxZg/r3vMPb0JgZg84AMTzD29PYGYP781mD9vI8w9vR2BmD+/B8w9/R2DzD29ScGYPOADU8w9vd3BmD+/1Zg/b8vMPb1dwZg/v1vMPf1dwZg/r8WYP697zD2+CgAAAAGYPOADE8w9vj4AAAABmD+/NZg/byPMPb4eAAAAAZg/vwfMPf4eAAAAA8w9vkpAAAABmDzgA1PMPb7eQAAAAZg/v9WYP2/LzD2+XkAAAAGYP79bzD3+XkAAAAGYP6/FmD+ve8w9vgqAAAABmDzgAxPMPb4+gAAAAZg/vzWYP28jzD2+HoAAAAGYP78HzD3+HoAAAAPMPb5KwAAAAZg84ANTzD2+3sAAAAGYP7/VmD9vy8w9vl7AAAABmD+/W8w9/l7AAAABmD+vxZg/r3vMPb4LAAAAAZg84AMTzD2+PwAAAAGYP781mD9vI8w9vh8AAAABmD+/B8w9/h8AAAADzD2+S0AAAAGYPOADU8w9vt9AAAABmD+/1Zg/b8vMPb5fQAAAAZg/v1vMPf5fQAAAAZg/r8WYP697zD2+C4AAAAGYPOADE8w9vj+AAAABmD+/NZg/byPMPb4fgAAAAZg/vwfMPf4fgAAAA8w9vkvAAAABmDzgA1PMPb7fwAAAAZg/v9WYP2/LzD2+X8AAAAGYP79bzD3+X8AAAAGYP6/FmD+veieiD4A9mD274Zg84AN+LVCQQZg/WWhAPtkIQM0IYg8MBi1QkCDnTugAAAAAZ0iHTifoB8ogCg8YBgf4AAQAA"
+jne 22b
+.base64 "uAAAAACIhwABAACIhwEBAACLTCQQixmLcQSLeQiLaQw="
+jmp 21f
+20:
+.base64 "uAEAAAA="
+21:
+.base64 "jWQkWGYP78C5AAAAAI1kJKTzD38EJPMPf0QkEPMPf0QkIPMPf0QkMPMPf0QkQIlMJFCJTCRUiUwkWI1kJFy6AAAAADHJZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7//D"
+.p2align 6"#,
+        VG_RC4_SSSE3 = sym super::consts::VG_RC4_SSSE3,
+    )
+}
+
+/// Starts raw RC4 (ARCFOUR draft §§3.1–3.2): for `key_len` in 1..=256, schedules the bytes at `key`, writes the permutation and two zero PRGA indices to `*ctx` (`VG.Spec.Rc4.contextAt`), and returns 0. Otherwise returns 1. No initial stream bytes are discarded.
+///
+/// Contract: `VG.Spec.Rc4.initContract`. Constant time: only pointers and `key_len` may affect timing, not the key or key-dependent table indices.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -34,14 +81,59 @@ jmp 21f
 20:
 .base64 "uAEAAAA="
 21:
-.base64 "uQAAAACJTCQUiUwkGIlMJByJTCQgiUwkJIlMJCiJTCQsiUwkMIlMJDSJTCQ4iUwkPIlMJECJTCREiUwkSIlMJEyJTCRQjWQkVMM="
+.base64 "jWQkVGYP78C5AAAAAI1kJKzzD38EJPMPf0QkEPMPf0QkIPMPf0QkMPMPf0QkQIlMJFCNZCRUugAAAAAxyWYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ww=="
 .p2align 6"#,
+    )
+}
+
+/// The CPU features `vg_rc4_apply_ssse3` requires (`Artifact.features`).
+pub const VG_RC4_APPLY_SSSE3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3);
+
+/// Continues raw RC4 encryption or decryption: XORs the next `len` stream bytes into `data` in place and preserves the next stream position in `*ctx` (`VG.Spec.Rc4.contextAt`). Empty input leaves the context unchanged. There is no nonce, padding, authentication, automatic discard or final output.
+///
+/// Contract: `VG.Spec.Rc4.applyContract`. Constant time: only pointers, `len` and the initial PRGA index `i` (the public byte count modulo 256 for an initialized context) may affect timing. Key bytes, the permutation, `j`, keystream lookup indices and data remain secret. The function may leak `i`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// The function may overwrite the arguments on the stack, as the calling convention lets it.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads and writes of 258 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `ctx` and `data` must not overlap each other (distinct Rust objects never do).
+/// * Neither `ctx` nor `data` may overlap the arguments on the stack, overlap the return address on the stack or the 92 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `ssse3` target feature.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_rc4_apply_ssse3(ctx: *mut [u8; 258], data: *mut u8, len: usize) {
+    core::arch::naked_asm!(
+        r#".base64 "jWQkqItEJFyJRCQEi0QkYIlEJAiLRCRkiUQkDIngg8AUiUQkEItUJAQPtoIAAQAAi0wkDIXJ"
+je 20f
+.base64 "i0wkEIkZiXEEiXkIiWkMicaLfCQED7avAQEAALsAAAAA"
+call 2f
+2:
+mov eax, DWORD PTR [esp]
+.byte 0x81, 192
+.long {VG_RC4_SSSE3} - 2b
+.base64 "WYtMJBCJQRyJwoPGAYHm/wAAAIn4AfAPtgiLRCQQiUgYi1AcAc2B5f8AAACLVCQQuAAAAACJQiiJ6YPhD8HJGIPgDwnIZg9u+PMPbwdmDzgAx2YPOg/CAvMPb08QZg84AM9mDzoPyALzD29XIGYPOADXZg86D9EC8w9vRzBmDzgAx2YPOg/CAvMPb09AZg84AM9mDzoPyALzD29XUGYPOADXZg86D9EC8w9vR2BmDzgAx2YPOg/CAvMPb09wZg84AM9mDzoPyALzD2+fgAAAAGYPOADfZg86D9wC8w9vt5AAAABmDzgA92YPOg/zAvMPb6egAAAAZg84AOdmDzoP5gLzD2+fsAAAAGYPOADfZg86D9wC8w9vt8AAAABmDzgA92YPOg/zAvMPb6fQAAAAZg84AOdmDzoP5gLzD2+f4AAAAGYPOADfZg86D9wC8w9vt/AAAABmDzgA92YPOg/zAotCKInBwekDg+EOJYAAAAAJyIlCKInoicHB6QOD4Q4lgAAAAAnIg8gBwcgYC0IoZg9u+GYPOADPidCLUBzzD2+qEAIAAGYP7/1mDzgA92YP685mD9ZIEA+2SBGJSCAPtkAQ"
+22:
+.base64 "ifGDwQGB4f8AAACJ+AHID7YAMemD6QEZyYtUJBCJQiQzQhghyDNCJIlCJItKIDNKGItSHGYPbvmJ8IPgD2YPbsBmD+/JZg84AMHzD2+KAAEAAGYP78hmDzgA+YnwJfAAAAAB+PMPbxhmD+/f8w9/GInog+APZg9uwGYP78lmDzgAwfMPb4oAAQAAZg/vyGYPbulmDzgA6fMPb6IAAgAAiejB6ARmD27AZg/r4GYPOADh8w9vAmYPOADEZg/bxfMPbw9mD+/I8w9/D/MPb1IQZg84ANRmD9vV8w9vdxBmD+/y8w9/dxDzD29aIGYPOADcZg/b3fMPb38gZg/v+/MPf38g8w9vQjBmDzgAxGYP28XzD29PMGYP78jzD39PMPMPb1JAZg84ANRmD9vV8w9vd0BmD+/y8w9/d0DzD29aUGYPOADcZg/b3fMPb39QZg/v+/MPf39Q8w9vQmBmDzgAxGYP28XzD29PYGYP78jzD39PYPMPb1JwZg84ANRmD9vV8w9vd3BmD+/y8w9/d3DzD2+agAAAAGYPOADcZg/b3fMPb7+AAAAAZg/v+/MPf7+AAAAA8w9vgpAAAABmDzgAxGYP28XzD2+PkAAAAGYP78jzD3+PkAAAAPMPb5KgAAAAZg84ANRmD9vV8w9vt6AAAABmD+/y8w9/t6AAAADzD2+asAAAAGYPOADcZg/b3fMPb7+wAAAAZg/v+/MPf7+wAAAA8w9vgsAAAABmDzgAxGYP28XzD2+PwAAAAGYP78jzD3+PwAAAAPMPb5LQAAAAZg84ANRmD9vV8w9vt9AAAABmD+/y8w9/t9AAAADzD2+a4AAAAGYPOADcZg/b3fMPb7/gAAAAZg/v+/MPf7/gAAAA8w9vgvAAAABmDzgAxGYP28XzD2+P8AAAAGYP78jzD3+P8AAAAItUJBCLQiADQhgl/wAAAIPGAYHm/wAAAItKJIlKGAHNgeX/AAAAiUIoiemD4Q/ByRiD4A8JyGYPbvjzD28HZg84AMdmDzoPwgLzD29PEGYPOADPZg86D8gC8w9vVyBmDzgA12YPOg/RAvMPb0cwZg84AMdmDzoPwgLzD29PQGYPOADPZg86D8gC8w9vV1BmDzgA12YPOg/RAvMPb0dgZg84AMdmDzoPwgLzD29PcGYPOADPZg86D8gC8w9vn4AAAABmDzgA32YPOg/cAvMPb7eQAAAAZg84APdmDzoP8wLzD2+noAAAAGYPOADnZg86D+YC8w9vn7AAAABmDzgA32YPOg/cAvMPb7fAAAAAZg84APdmDzoP8wLzD2+n0AAAAGYPOADnZg86D+YC8w9vn+AAAABmDzgA32YPOg/cAvMPb7fwAAAAZg84APdmDzoP8wKLQiiJwcHpA4PhDiWAAAAACciJQiiJ6InBwekDg+EOJYAAAAAJyIPIAcHIGAtCKGYPbvhmDzgAz4nQi1Ac8w9vqhACAABmD+/9Zg84APdmD+vOZg/WSBAPtkgRiUggD7ZAEItMJAgB2Q+2ETHCiBGDwwGLVCQMOdM="
+jne 22b
+.base64 "g+4Bgeb/AAAAi1QkECtqGIHl/wAAAInwiIcAAQAAieiIhwEBAACLTCQQixmLcQSLeQiLaQw="
+jmp 21f
+20:
+21:
+.base64 "jWQkWGYP78C5AAAAAI1kJKTzD38EJPMPf0QkEPMPf0QkIPMPf0QkMPMPf0QkQIlMJFCJTCRUiUwkWI1kJFy4AAAAALoAAAAAMclmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/8M="
+.p2align 6"#,
+        VG_RC4_SSSE3 = sym super::consts::VG_RC4_SSSE3,
     )
 }
 
 /// Continues raw RC4 encryption or decryption: XORs the next `len` stream bytes into `data` in place and preserves the next stream position in `*ctx` (`VG.Spec.Rc4.contextAt`). Empty input leaves the context unchanged. There is no nonce, padding, authentication, automatic discard or final output.
 ///
 /// Contract: `VG.Spec.Rc4.applyContract`. Constant time: only pointers, `len` and the initial PRGA index `i` (the public byte count modulo 256 for an initialized context) may affect timing. Key bytes, the permutation, `j`, keystream lookup indices and data remain secret. The function may leak `i`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -64,7 +156,7 @@ jne 22b
 jmp 21f
 20:
 21:
-.base64 "uQAAAACJTCQUiUwkGIlMJByJTCQgiUwkJIlMJCiJTCQsiUwkMIlMJDSJTCQ4iUwkPIlMJECJTCREiUwkSIlMJEyJTCRQjWQkVMM="
+.base64 "jWQkVGYP78C5AAAAAI1kJKzzD38EJPMPf0QkEPMPf0QkIPMPf0QkMPMPf0QkQIlMJFCNZCRUuAAAAAC6AAAAADHJZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7//D"
 .p2align 6"#,
     )
 }

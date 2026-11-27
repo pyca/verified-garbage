@@ -102,9 +102,9 @@ theorem chainIn_ok (s : State) {P Q : Addr} (hp : s.gpr .x1 = P) (hq : s.gpr .x2
       s'.gpr .x5 = byteRev64 (s.mem.readW P 64 ^^^ s.mem.readW Q 64) ∧
       (∀ r, r ≠ .x5 → r ≠ .x6 → s'.gpr r = s.gpr r) ∧
       s'.sp = s.sp ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
-  have rp' : InRegions (s.rd ++ s.wr) (s.gpr .x1 + BitVec.ofNat 64 0) 8 := by rw [add_ofNat_zero, hp]; exact rp
+  obtain rp' : InRegions (s.rd ++ s.wr) (s.gpr .x1 + BitVec.ofNat 64 0) 8 := by rw [add_ofNat_zero, hp]; exact rp
   let s₁ := s.write .x .x5 (s.mem.readW (s.gpr .x1 + BitVec.ofNat 64 0) 64)
-  have rq' : InRegions (s₁.rd ++ s₁.wr) (s₁.gpr .x2 + BitVec.ofNat 64 0) 8 := by
+  obtain rq' : InRegions (s₁.rd ++ s₁.wr) (s₁.gpr .x2 + BitVec.ofNat 64 0) 8 := by
     rw [add_ofNat_zero, gpr_write_of_ne _ _ _ (by decide), hq]; exact rq
   refine ⟨_, by
     rw [chainIn, runBlock_cons, exec_ldr_x (by decide) rp', runStep_some, runBlock_cons, exec_ldr_x (by decide) rq',
@@ -122,7 +122,7 @@ theorem chainOut_ok (s : State) {P : Addr} (hp : s.gpr .x1 = P) (wp : InRegions 
       s'.mem = s.mem.writeW P (byteRev64 (s.gpr .x5)) ∧
       s'.sp = s.sp ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   let s₁ := s.write .x .x5 (rev64 (s.read .x .x5))
-  have wp' : InRegions s₁.wr (s₁.gpr .x1 + BitVec.ofNat 64 0) 8 := by
+  obtain wp' : InRegions s₁.wr (s₁.gpr .x1 + BitVec.ofNat 64 0) 8 := by
     rw [add_ofNat_zero, gpr_write_of_ne _ _ _ (by decide), hp]; exact wp
   refine ⟨_, by
     rw [chainOut, runBlock_cons, exec_rev, runStep_some, runBlock_cons, exec_str_x (by decide) wp',
@@ -195,39 +195,39 @@ theorem take_succ_blks (s₀ : State) {k : Nat} (hk : k < N s₀) :
 
 theorem body_ok {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k < N s₀) {s : State} (h : LInv s₀ k s) :
     WP isa updBody s (LInv s₀ (k + 1)) := by
-  have hN : N s₀ < 2 ^ 64 := (s₀.gpr .x3).isLt
+  obtain hN : N s₀ < 2 ^ 64 := (s₀.gpr .x3).isLt
   have hdw := hp.data_wrap
   have sw := hp.scr_wrap
-  have rdwr : s.rd ++ s.wr = [schR s₀, dataR s₀, stR s₀, scrR s₀] := by rw [h.rd, h.wr, hp.rd, hp.wr]; rfl
+  obtain rdwr : s.rd ++ s.wr = [schR s₀, dataR s₀, stR s₀, scrR s₀] := by rw [h.rd, h.wr, hp.rd, hp.wr]; rfl
   obtain ⟨s₁, h₁, ax₁, k₁, sp₁, m₁, rd₁, wr₁⟩ := chainIn_ok s (P := St s₀)
     (Q := Dp s₀ + BitVec.ofNat 64 (8 * k)) h.x1 h.x2
     (by rw [rdwr]; exact in_rw (r := stR s₀) (by simp) (Region.contains_self _ _))
     (by rw [rdwr]; exact in_rw (r := dataR s₀) (by simp) (Offset.contains_base _ (by omega_using [hk]) (by omega_using [hk, hdw])))
-  have v₁ : s₁.v = s.v := VG.AArch64.Tbl.runBlock_v chainIn_v h₁
+  obtain v₁ : s₁.v = s.v := VG.AArch64.Tbl.runBlock_v chainIn_v h₁
   refine WP.seq (WP.of_runBlock ⟨s₁, h₁, ?_⟩)
-  have x14₁ : s₁.gpr .x14 = W s₀ := by rw [k₁ _ (by decide) (by decide), h.x14]
-  have x15₁ : s₁.gpr .x15 = S s₀ := by rw [k₁ _ (by decide) (by decide), h.x15]
-  have bp : BlockPre s₁ := UPre.block (hp := hp) x14₁ x15₁ (by rw [rd₁, h.rd]) (by rw [wr₁, h.wr])
-  have hS : sch s₁ = Spec.TripleDes.scheduleAt s₀.mem (W s₀) := by
+  obtain x14₁ : s₁.gpr .x14 = W s₀ := by rw [k₁ _ (by decide) (by decide), h.x14]
+  obtain x15₁ : s₁.gpr .x15 = S s₀ := by rw [k₁ _ (by decide) (by decide), h.x15]
+  obtain bp : BlockPre s₁ := UPre.block (hp := hp) x14₁ x15₁ (by rw [rd₁, h.rd]) (by rw [wr₁, h.wr])
+  obtain hS : sch s₁ = Spec.TripleDes.scheduleAt s₀.mem (W s₀) := by
     rw [sch, x14₁, m₁]; exact UPre.sched (hp := hp) h.frame
-  have t₁ : TInv s₁ s₁ := ⟨Same.refl _, rfl, rfl, h.consts.congr fun w _ _ _ _ => by rw [v₁],
+  obtain t₁ : TInv s₁ s₁ := ⟨Same.refl _, rfl, rfl, h.consts.congr fun w _ _ _ _ => by rw [v₁],
     h.masks.congr fun p hp' => by
       obtain ⟨n5, -, -, -, -, n6, -⟩ := maskRegs_ne p hp'
       exact k₁ _ n5 n6,
     fun i hi => by rw [x15₁, hS, m₁]; exact h.keys i hi⟩
   refine WP.seq (WP.mono (enc_ok bp t₁) fun s₂ ⟨same₂, x14₂, ax₂, c₂, mk₂, ks₂⟩ => ?_)
-  have f₂ : Frame [⟨S s₀, 384⟩] s.mem s₂.mem := by rw [← m₁, ← x15₁]; exact same₂.frame
-  have wr₂ : s₂.wr = [stR s₀, scrR s₀] := by rw [same₂.wr, wr₁, h.wr, hp.wr]
-  have x1₂ : s₂.gpr .x1 = St s₀ := by
+  obtain f₂ : Frame [⟨S s₀, 384⟩] s.mem s₂.mem := by rw [← m₁, ← x15₁]; exact same₂.frame
+  obtain wr₂ : s₂.wr = [stR s₀, scrR s₀] := by rw [same₂.wr, wr₁, h.wr, hp.wr]
+  obtain x1₂ : s₂.gpr .x1 = St s₀ := by
     rw [same₂.keep .x1 (by simp [outer]), k₁ _ (by decide) (by decide), h.x1]
   obtain ⟨s₃, h₃, x2₃, x3₃, k₃, m₃, sp₃, rd₃, wr₃⟩ := chainOut_ok s₂ (P := St s₀) x1₂
     (by rw [wr₂]; exact in_rw (r := stR s₀) (by simp) (Region.contains_self _ _))
-  have v₃ : s₃.v = s₂.v := VG.AArch64.Tbl.runBlock_v chainOut_v h₃
-  have hD := UPre.data (hp := hp) h.frame hk
-  have fs : Frame [stR s₀] s₂.mem s₃.mem := by
+  obtain v₃ : s₃.v = s₂.v := VG.AArch64.Tbl.runBlock_v chainOut_v h₃
+  obtain hD := UPre.data (hp := hp) h.frame hk
+  obtain fs : Frame [stR s₀] s₂.mem s₃.mem := by
     rw [m₃]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _
       (by simpa using Region.contains_self (St s₀) 8)
-  have stD : ∀ {d n : Nat}, d + n ≤ 640 → ∀ r ∈ [stR s₀],
+  obtain stD : ∀ {d n : Nat}, d + n ≤ 640 → ∀ r ∈ [stR s₀],
       (⟨S s₀ + BitVec.ofNat 64 d, n⟩ : Region).Disjoint r := fun hdn r hr => by
     simp only [List.mem_singleton] at hr; subst hr
     exact (hp.st_scr.sub_right (UPre.scr_sub hdn)).symm
@@ -270,8 +270,8 @@ theorem loop_ok {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k < N s₀) {s :
     ⟨k, rfl, hk, h⟩
   rintro n s ⟨k, rfl, hk, h⟩
   refine WP.mono (body_ok hp hk h) fun s' h' => ?_
-  have hN : N s₀ < 2 ^ 64 := (s₀.gpr .x3).isLt
-  have ev := eval_nonzero (r := .x3) (x := N s₀ - (k + 1)) (by omega_using [hN]) h'.x3
+  obtain hN : N s₀ < 2 ^ 64 := (s₀.gpr .x3).isLt
+  obtain ev := eval_nonzero (r := .x3) (x := N s₀ - (k + 1)) (by omega_using [hN]) h'.x3
   by_cases hz : N s₀ - (k + 1) = 0
   · left
     refine ⟨by rw [ev]; simp [hz], ?_⟩
@@ -287,18 +287,18 @@ theorem x3_ofNat (s₀ : State) : s₀.gpr .x3 = BitVec.ofNat 64 (N s₀) := by
 theorem update_wp {s₀ : State} (h0 : updateAArch64.pre s₀) :
     WP isa update s₀ fun s' =>
       updateAArch64.post s₀ s' ∧ ∀ i < 9, s'.gpr (savedReg i) = s₀.gpr (savedReg i) := by
-  have hp := UPre.of h0
-  have hN : N s₀ < 2 ^ 64 := (s₀.gpr .x3).isLt
+  obtain hp := UPre.of h0
+  obtain hN : N s₀ < 2 ^ 64 := (s₀.gpr .x3).isLt
   have sw := hp.scr_wrap
   let s₁ := (s₀.write .x .x14 (s₀.gpr .x0)).write .x .x15 ((s₀.write .x .x14 (s₀.gpr .x0)).gpr .x4)
-  have g₁ : ∀ r, r ≠ .x14 → r ≠ .x15 → s₁.gpr r = s₀.gpr r := fun r h14 h15 => by
+  obtain g₁ : ∀ r, r ≠ .x14 → r ≠ .x15 → s₁.gpr r = s₀.gpr r := fun r h14 h15 => by
     simp only [s₁, gpr_write_of_ne _ _ _ h15, gpr_write_of_ne _ _ _ h14]
-  have x14₁ : s₁.gpr .x14 = W s₀ := by simp [s₁, gpr_write]
-  have x15₁ : s₁.gpr .x15 = S s₀ := by simp [s₁, gpr_write]
+  obtain x14₁ : s₁.gpr .x14 = W s₀ := by simp [s₁, gpr_write]
+  obtain x15₁ : s₁.gpr .x15 = S s₀ := by simp [s₁, gpr_write]
   refine WP.seq (WP.of_runBlock ⟨s₁, by
     rw [runBlock_cons, exec_mov, runStep_some, runBlock_cons, exec_mov, runStep_some, runBlock_nil], ?_⟩)
-  have ev := eval_zero (r := .x3) (x := N s₀) hN (by rw [g₁ _ (by decide) (by decide), x3_ofNat])
-  have savedNe : ∀ i < 9, savedReg i ≠ .x14 ∧ savedReg i ≠ .x15 := by decide
+  obtain ev := eval_zero (r := .x3) (x := N s₀) hN (by rw [g₁ _ (by decide) (by decide), x3_ofNat])
+  obtain savedNe : ∀ i < 9, savedReg i ≠ .x14 ∧ savedReg i ≠ .x15 := by decide
   by_cases hn : N s₀ = 0
   · refine WP.ite true (by rw [ev, hn]; rfl) (fun _ => WP.block_nil ⟨?_, fun i hi => ?_⟩)
       (fun h => by cases h)
@@ -308,17 +308,17 @@ theorem update_wp {s₀ : State} (h0 : updateAArch64.pre s₀) :
       rfl
     · exact g₁ _ (savedNe i hi).1 (savedNe i hi).2
   refine WP.ite false (by rw [ev]; simp [hn]) (fun h => by cases h) fun _ => ?_
-  have bp : BlockPre s₁ := UPre.block (hp := hp) x14₁ x15₁ rfl rfl
+  obtain bp : BlockPre s₁ := UPre.block (hp := hp) x14₁ x15₁ rfl rfl
   apply WP.seq
   refine WP.mono (prep_ok bp) fun s₂ h₂ => ?_
   have m₁ : s₁.mem = s₀.mem := rfl
-  have inv₂ : LInv s₀ 0 s₂ := by
-    have hS : sch s₁ = Spec.TripleDes.scheduleAt s₀.mem (W s₀) := by rw [sch, x14₁]; rfl
-    have outer₂ : ∀ r ∈ outer, s₂.gpr r = s₀.gpr r := fun r hr => by
+  obtain inv₂ : LInv s₀ 0 s₂ := by
+    obtain hS : sch s₁ = Spec.TripleDes.scheduleAt s₀.mem (W s₀) := by rw [sch, x14₁]; rfl
+    obtain outer₂ : ∀ r ∈ outer, s₂.gpr r = s₀.gpr r := fun r hr => by
       rw [h₂.same.keep r hr]
       simp only [outer, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl <;> exact g₁ _ (by decide) (by decide)
-    have fr₂ : Frame (chg s₀) s₀.mem s₂.mem := by
+    obtain fr₂ : Frame (chg s₀) s₀.mem s₂.mem := by
       rw [← m₁]
       exact h₂.same.frame.sub fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr

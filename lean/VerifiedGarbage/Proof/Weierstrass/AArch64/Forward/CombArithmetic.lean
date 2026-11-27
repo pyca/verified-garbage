@@ -48,7 +48,7 @@ theorem field_ok (certs : Cases) {M : Mod} {base : Addr} {size m : Nat} [NeZero 
     WP isa (program M ops) s fun t =>
       ProgKeep M base (ops.map FOp.out) s t ∧
       Inv M base size m Sl (validAfter ops V) (runOps ops E) t := by
-  have hb := fprogB_ok hL hAl hm ops hI hSl hLo hV
+  have hb := fprogB_ok (share := false) hL hAl hm ops hI hSl hLo hV
   by_cases sel : selected M ops
   · exact WP.mono (refinement certs sel hI.scr hsize hb)
       fun _ ⟨_,⟨hk,hi⟩,he,kt⟩ => transfer_post he kt hk hi

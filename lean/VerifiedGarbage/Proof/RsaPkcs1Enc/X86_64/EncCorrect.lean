@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncTail
+import VerifiedGarbage.Proof.Framework.X86_64.FrameAlloc
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
 
@@ -24,20 +25,15 @@ def freed (bytes : Nat) (s₂ : State) : State :=
   { s₂.setReg .rsp (s₂.gpr .rsp + BitVec.ofNat 64 bytes) with wr := s₂.wr.tail }
 
 /-- A frame of `bytes` bytes: its body runs from `allocState bytes s` and
-ends with `rsp` and the writable regions as the push left them. -/
+ends with `rsp` and the writable regions as the push left them; its bytes
+then hold whatever they hold once released (`alloc_frame_ok`). -/
 theorem wp_alloc {bytes : Nat} {body : Prog isa} {s : State} {Q : State → Prop} (h0 : 0 < bytes)
     (h1 : bytes < 4096) (h8 : bytes % 8 = 0) (hsp : bytes ≤ (s.gpr .rsp).toNat)
     (hb : WP isa body (allocState bytes s) fun s₂ => s₂.gpr .rsp = s.gpr .rsp - BitVec.ofNat 64 bytes ∧
-      s₂.wr = (allocState bytes s).wr ∧ Q (freed bytes s₂)) :
-    WP isa (.frame (.alloc bytes) body (.free bytes)) s Q := by
-  obtain ⟨t, s₂, he, hsp₂, hw, hq⟩ := hb
-  have ha : isa.push (.alloc bytes) s = some (allocState bytes s) := by
-    simp only [isa, push, allocState]
-    exact ite_eq_left ⟨h0, h1, h8, hsp⟩
-  have hf : isa.pop (.free bytes) (allocState bytes s) s₂ = some (freed bytes s₂) := by
-    simp only [isa, pop]
-    exact ite_eq_left ⟨h0, h1, h8, hsp₂, hw, rfl⟩
-  exact ⟨_, _, Exec.frame ha he hf, hq⟩
+      s₂.wr = (allocState bytes s).wr ∧ ∀ m u, Frame [⟨s.gpr .rsp - BitVec.ofNat 64 bytes, bytes⟩] s₂.mem m →
+        Q { freed bytes s₂ with mem := m, unknowns := u }) :
+    WP isa (.frame (.alloc bytes) body (.free bytes)) s Q :=
+  alloc_frame_ok ⟨h0, h1, h8⟩ hsp hb
 
 /-- Four pieces, then the rest. -/
 theorem wp_seq4 {a b c d rest : Prog isa} {s : State} {P Q : State → Prop}

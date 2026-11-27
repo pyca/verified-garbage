@@ -2,30 +2,29 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.BrainpoolP512r1Literals
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.BrainpoolP512r1Literals
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Curve
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Hash
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.TableSat
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Scrub
 public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
-import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP512r1.Comb.Tables
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP512r1.Comb.Verified
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP512r1.Config
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP512r1.Comb.Contract
-import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP512r1.Comb.Verified
 import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP512r1.Comb.Lit
-import Mathlib.Data.Finset.Attr
-import Mathlib.Tactic.SetLike
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Order.RelClasses
 import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
-meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Curve
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Hash
 meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.TableSat
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP512r1.Config
-meta import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP512r1.Comb.Contract
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP512r1.Comb.Verified
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP512r1.Comb.Lit
-meta import Mathlib.Data.Finset.Attr
-meta import Mathlib.Tactic.SetLike
-meta import Mathlib.Tactic.Finiteness.Attr
-meta import Mathlib.Order.RelClasses
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
+public import VerifiedGarbage.Impl.Ecdsa.AArch64.VerifyHash
+public import VerifiedGarbage.Impl.Ecdsa.Verify.BrainpoolP512r1.AArch64.Joint
+public import VerifiedGarbage.Spec.Ecdsa.Verify.BrainpoolP512r1
+public import VerifiedGarbage.Proof.Variants.MdHash.AArch64
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubProved
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.BrainpoolP512r1.Joint.Verified
+public import VerifiedGarbage.Proof.EcKey.AArch64.Scrub
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-!
 # Deterministic ECDSA on AArch64: brainpoolP512r1
@@ -54,7 +53,7 @@ def brainpoolp512r1 (hL : Weierstrass.Law Spec.BrainpoolP512r1.curve) (hI : Weie
   inst := Spec.Ecdsa.BrainpoolP512r1.inst
   curve := rfl
   big := false
-  sizes := ⟨.inr (.inr rfl), .inl rfl, Proof.Ecdsa.AArch64.BrainpoolP512r1.brainpoolp512r1_nBits, by decide +kernel⟩
+  sizes := ⟨.inr (.inr (.inr rfl)), .inl rfl, Proof.Ecdsa.AArch64.BrainpoolP512r1.brainpoolp512r1_nBits, by decide +kernel⟩
   n_lt := by decide +kernel
   sh := 0
   sh_eq := by
@@ -78,5 +77,49 @@ theorem brainpoolp512r1T_verified (hL : Weierstrass.Law Spec.BrainpoolP512r1.cur
   have hsat := sat_one (T := Spec.Ecdsa.Rfc6979.Curves.brainpoolp512r1) h.1 Proof.Ecdsa.AArch64.BrainpoolP512r1.Comb.satMem h.2
     (by rw [Proof.Ecdsa.AArch64.BrainpoolP512r1.Comb.combCfg_combWords_length]; decide) Proof.Ecdsa.AArch64.BrainpoolP512r1.Comb.satMem_held (by decide) rfl
   exact signT_verified ⟨rfl, by decide, by decide⟩ rfl rfl h.1 hsat
+
+/-! ## What the scrubbed functions clear
+
+The registers the tails of `vg_ecdsa_brainpoolp512r1_sign` and `vg_ecdsa_brainpoolp512r1_verify`
+clear, and what `Scrub.verifiedScrubbedAll` needs of their code
+(`Scrub.scrubSide`): evaluated here, by the kernel, so that the emitter
+works out nothing. -/
+
+/-- No instruction of `vg_ecdsa_brainpoolp512r1_sign_k` writes PSTATE.DIT, and it calls
+nothing indirectly. -/
+theorem brainpoolp512r1_core_side :
+    AArch64.Scrub.sideAll (fun i => !i.writesDit)
+      Impl.Ecdsa.AArch64.BrainpoolP512r1.signComb = true := by
+  lit_decide
+
+/-- `vg_ecdsa_brainpoolp512r1_sign` as emitted, cleanup included
+(`Impl.Ecdsa.Rfc6979.AArch64.Fn.brainpoolp512r1`), with the tables of every hash
+function: it meets its contract in constant time and returns without secret
+residue. What the cleanup needs of the code is evaluated here, once, with
+nothing in the place of `vg_ecdsa_brainpoolp512r1_sign_k`, whose own is evaluated
+apart. -/
+theorem brainpoolp512r1Sign_scrubbed (hL : Weierstrass.Law Spec.BrainpoolP512r1.curve) (hI : Weierstrass.AArch64.InvSounds) :
+    VerifiedScrubbed AArch64.target
+      (Impl.Ecdsa.Rfc6979.AArch64.Fn.brainpoolp512r1 Proof.Variants.MdHash.AArch64.hashes)
+      (specK Spec.Ecdsa.Rfc6979.Curves.brainpoolp512r1 Impl.Ecdsa.AArch64.BrainpoolP512r1.combCfg.combConsts
+        Proof.Variants.MdHash.AArch64.variants)
+      32 :=
+  Scrub.sign_scrubbed (R := brainpoolp512r1 hL hI) (n := 128)
+    (brainpoolp512r1T_verified hL hI _ ⟨Scrub.variants_ok, of_decide_eq_true (by kernel_rfl)⟩)
+    rfl brainpoolp512r1_core_side
+    (by kernel_rfl) (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
+
+/-- `vg_ecdsa_brainpoolp512r1_verify` as emitted, cleanup included
+(`Impl.Ecdsa.Verify.AArch64.BrainpoolP512r1.Joint.Fn.verifyHash`): it meets its contract in
+constant time and returns without secret residue. What the cleanup needs of
+the code (`Scrub.scrubSide`) is evaluated here, by the kernel. -/
+theorem brainpoolp512r1Verify (hL : Weierstrass.Law Spec.BrainpoolP512r1.curve) (hI : Weierstrass.AArch64.InvSounds) :
+    VerifiedScrubbed AArch64.target Impl.Ecdsa.Verify.AArch64.BrainpoolP512r1.Joint.Fn.verifyHash
+      (Spec.Ecdsa.BrainpoolP512r1.inst.verifyHashContract AArch64.abi 80) 32 :=
+  AArch64.Scrub.verifiedScrubbedAll (api := Spec.Ecdsa.BrainpoolP512r1.verifyHashApi)
+    { code := Impl.Ecdsa.AArch64.VerifyHash.verifyHash Spec.Ecdsa.BrainpoolP512r1.inst.curve.len false
+        Impl.Ecdsa.Verify.AArch64.BrainpoolP512r1.Joint.verify
+      verified := Proof.Ecdsa.Verify.AArch64.BrainpoolP512r1.Joint.verifyHash_verified hL hI } _
+    (Proof.EcKey.AArch64.Scrub.verifyHashOk _) (by dsimp only; lit_decide)
 
 end VG.Proof.Ecdsa.Rfc6979.AArch64

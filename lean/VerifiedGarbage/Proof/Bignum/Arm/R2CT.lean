@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.R2
 public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Proof.Framework.Arm.Taint
 import VerifiedGarbage.Proof.Bignum.Arm.SmallConstCT
 import VerifiedGarbage.Proof.Bignum.Arm.DoubleLoopCT
 import VerifiedGarbage.Proof.Bignum.Arm.SquareOpCT
@@ -13,6 +14,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Bignum.Arm.R2
 meta import VerifiedGarbage.Proof.Framework.RelCT
+meta import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Proof.Bignum.Arm.SmallConstCT
 meta import VerifiedGarbage.Proof.Bignum.Arm.DoubleLoopCT
 meta import VerifiedGarbage.Proof.Bignum.Arm.SquareOpCT
@@ -81,11 +83,85 @@ theorem r2Square_ct {base : BitVec 32} {len w k : Nat} :
   exact (ct.wp (fun s t h => ⟨post s h.1, post t h.2.1⟩)).mono (fun _ _ h => h)
     (fun _ _ h => ⟨h.2.1, h.2.2, h.1⟩)
 
+/-- The squarings' loop states, each for its own modulus, with the same count. -/
+def SqCRel (base : BitVec 32) (len w : Nat) (P : Prop) (k c : Nat) (s t : State) : Prop :=
+  (∃ m, SqC base len w m P k c s) ∧ (∃ m, SqC base len w m P k c t) ∧ s.sp = t.sp
+
+theorem sqC_square_ct {base : BitVec 32} {len w k c : Nat} {P : Prop} :
+    RelCT isa (SqCRel base len w P k c) (squareOp 4 4) (SqCRel base len w P (2 * k) c) := by
+  have op4 : Operand 4 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
+  have ct := relCT_keep_sp ((squareOp_ct (base := base) (len := len) (w := w) op4 op4).mono
+    (P' := SqCRel base len w P k c)
+    (fun _ _ h => by
+      obtain ⟨⟨m1, h1⟩, ⟨m2, h2⟩, sp⟩ := h
+      exact ⟨⟨h1.ready, by rw [h1.modulus]; exact h1.operand⟩,
+        ⟨h2.ready, by rw [h2.modulus]; exact h2.operand⟩, sp⟩)
+    (fun _ _ _ => trivial)) (fun _ _ h => h.2.2)
+  have post (s : State) (h : ∃ m, SqC base len w m P k c s) :
+      WP isa (squareOp 4 4) s fun t => ∃ m, SqC base len w m P (2 * k) c t := by
+    obtain ⟨m, hm⟩ := h
+    exact WP.mono (sqC_square_ok s hm) fun t ht => ⟨m, ht.1⟩
+  exact (ct.wp (fun s t h => ⟨post s h.1, post t h.2.1⟩)).mono (fun _ _ h => h)
+    (fun _ _ h => ⟨h.2.1, h.2.2, h.1⟩)
+
+/-- A block that reads only the workspace's base, `r0`, which both runs share. -/
+theorem sqC_block_ct {base : BitVec 32} {len w k c : Nat} {P : Prop} {l : List Instr}
+    {hc : Taint.Hint _} (h : (taint.check (Taint.ofRegs [.r0]) (.block l) hc).isSome = true) :
+    RelCT isa (SqCRel base len w P k c) (.block l) (fun _ _ => True) :=
+  RelCT.taint (A := taint) (Taint.ofRegs [.r0]) (fun s t hp => Taint.agree_ofRegs (by
+    obtain ⟨⟨_, hs⟩, ⟨_, ht⟩, _⟩ := hp
+    simpa using hs.ready.ptr.trans ht.ready.ptr.symm)) h
+
+theorem sqC_step_ct {base : BitVec 32} {len w k c : Nat} {P : Prop} :
+    RelCT isa (SqCRel base len w P k c) r2SquareStep (fun _ _ => True) := by
+  rw [r2SquareStep]
+  exact sqC_square_ct.seq (sqC_block_ct (k := 2 * k) (c := c) (by taint_decide))
+
+theorem sqC_loop_ct {base : BitVec 32} {len w k c : Nat} {P : Prop} (hc : 0 < c) (hc' : c < 2 ^ 32) :
+    RelCT isa (SqCRel base len w P k c) (.loop r2SquareStep .ne) (fun _ _ => True) := by
+  let I := fun j (s t : State) => 0 < j ∧ j < 2 ^ 32 ∧ ∃ i, SqCRel base len w P i j s t
+  have step : ∀ j, RelCT isa (I j) r2SquareStep fun s t => isa.eval .ne s = isa.eval .ne t ∧
+      (isa.eval .ne s = some false → True) ∧
+      (isa.eval .ne s = some true → ∃ j' < j, I j' s t) := by
+    intro j s t tr1 tr2 u v h e1 e2
+    obtain ⟨hj, hj', i, ⟨m1, hs⟩, ⟨m2, ht⟩, sp⟩ := h
+    obtain ⟨trace, _⟩ := sqC_step_ct (k := i) (c := j) s t tr1 tr2 u v ⟨⟨m1, hs⟩, ⟨m2, ht⟩, sp⟩ e1 e2
+    obtain ⟨_, u', eu, hu, zu, _, ru⟩ := sqC_step_ok s hs hj hj'
+    obtain ⟨_, v', ev, hv, zv, _, rv⟩ := sqC_step_ok t ht hj hj'
+    obtain ⟨-, rfl⟩ := Exec.det e1 eu
+    obtain ⟨-, rfl⟩ := Exec.det e2 ev
+    refine ⟨trace, ?_, fun _ => trivial, ?_⟩
+    · change some (!u.z) = some (!v.z)
+      rw [zu, zv]
+    · intro branch
+      have ne : j ≠ 1 := by
+        intro eq
+        change some (!u.z) = some true at branch
+        simp only [zu, eq, decide_true, Bool.not_true] at branch
+        cases branch
+      exact ⟨j - 1, by omega_using [hj], by omega_using [hj, ne], by omega_using [hj'],
+        2 * i, ⟨m1, hu⟩, ⟨m2, hv⟩, ru.sp.trans (sp.trans rv.sp.symm)⟩
+  exact (RelCT.loop I step c).mono (fun _ _ h => ⟨hc, hc', k, h⟩) (fun _ _ h => h)
+
+/-- The six squarings, from the count zero. -/
+theorem sqC_squares_ct {base : BitVec 32} {len w k : Nat} {P : Prop} :
+    RelCT isa (SqCRel base len w P k 0) r2Squares (fun _ _ => True) := by
+  have count := (relCT_keep_sp (sqC_block_ct (base := base) (len := len) (w := w) (P := P) (k := k) (c := 0)
+    (l := r2SquareCount) (by taint_decide)) (fun _ _ h => h.2.2)).wp
+    (F₁ := fun t => ∃ m, SqC base len w m P k 6 t) (F₂ := fun t => ∃ m, SqC base len w m P k 6 t)
+    (fun s t h => by
+      obtain ⟨⟨m1, hs⟩, ⟨m2, ht⟩, _⟩ := h
+      exact ⟨WP.mono (r2SquareCount_ok s hs) fun _ x => ⟨m1, x.1⟩,
+        WP.mono (r2SquareCount_ok t ht) fun _ x => ⟨m2, x.1⟩⟩)
+  rw [r2Squares]
+  exact (count.mono (fun _ _ h => h) (fun _ _ h => ⟨h.2.1, h.2.2, h.1⟩)).seq
+    (sqC_loop_ct (by decide) (by decide))
+
 theorem r2Squares_ct {base : BitVec 32} {len w : Nat} :
-    RelCT isa (R2SqRel base len w w) r2Squares (fun _ _ => True) := by
-  unfold r2Squares
-  exact r2Square_ct.seq (r2Square_ct.seq (r2Square_ct.seq (r2Square_ct.seq (r2Square_ct.seq
-    (r2Square_ct.mono (fun _ _ h => h) (fun _ _ _ => trivial))))))
+    RelCT isa (R2SqRel base len w w) r2Squares (fun _ _ => True) :=
+  (sqC_squares_ct (P := True)).mono
+    (fun _ _ h => ⟨h.1.elim fun m hm => ⟨m, hm.toC⟩, h.2.1.elim fun m hm => ⟨m, hm.toC⟩, h.2.2⟩)
+    (fun _ _ _ => trivial)
 
 /-- The doublings' states, from one. -/
 def R2LoopReady (base : BitVec 32) (len w : Nat) (s : State) : Prop :=

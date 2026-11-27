@@ -345,8 +345,8 @@ theorem Sig.alignedBufs_slice {m : Bool} {e : Elem} {len : String} :
       if 1 < e.align then (p, e.align) :: Sig.alignedBufs ps vs else Sig.alignedBufs ps vs := rfl
 theorem Sig.alignedBufs_slices {e : Elem} {c : String} :
     Sig.alignedBufs ((n, .slices e c) :: ps) (p :: l :: vs) = Sig.alignedBufs ps vs := rfl
-theorem Sig.alignedBufs_table {k : Nat} :
-    Sig.alignedBufs ((n, .table k) :: ps) (p :: vs) = (p, 8) :: Sig.alignedBufs ps vs := rfl
+theorem Sig.alignedBufs_table {I : TableIface} :
+    Sig.alignedBufs ((n, .table I) :: ps) (p :: vs) = (p, 8) :: Sig.alignedBufs ps vs := rfl
 
 theorem Sig.lists_nil {pb : Nat} {m : Mem} : Sig.lists pb m [] vs = [] := rfl
 theorem Sig.lists_int {pb : Nat} {m : Mem} {t : IntTy} {b : Bool} :
@@ -460,13 +460,48 @@ syntax "sig_post " "[" Lean.Parser.Tactic.simpLemma,* "]" (Lean.Parser.Tactic.lo
 macro_rules
   | `(tactic| sig_post [$ls,*] $[$loc]?) => `(tactic| sig_eval [$ls,*] $[$loc]?)
 
+/-- Forgets, in a flattened public data, the agreement of a field `f` of the
+states second (the mode: x86-64's MXCSR, AArch64's PSTATE.DIT, which the
+calling convention makes public after the stack pointer). -/
+theorem Sig.pub_drop_mid {σ β : Type} (f : σ → β) {s t : σ} {a b : Prop} (h : a ∧ f s = f t ∧ b) : a ∧ b :=
+  ⟨h.1, h.2.2⟩
+
+theorem Sig.pub_drop_last {σ β : Type} (f : σ → β) {s t : σ} {a : Prop} (h : a ∧ f s = f t) : a := h.1
+
 /-- Evaluates the public data of a contract built with `Sig.contract` into
 equalities. -/
 syntax "sig_pub " "[" Lean.Parser.Tactic.simpLemma,* "]" (Lean.Parser.Tactic.location)? : tactic
+/-- `sig_pub … at h`, then forgets in `h` the agreement of the mode (x86-64's
+MXCSR, AArch64's PSTATE.DIT), which the calling convention makes public
+(`abi.pub`) and which a contract proven of code without it does not need:
+`h` keeps the stack pointer's agreement first and the arguments' after it,
+as before the mode was public. `sig_pub_keep` keeps it. -/
+syntax "sig_pub_keep " "[" Lean.Parser.Tactic.simpLemma,* "]" (Lean.Parser.Tactic.location)? : tactic
 macro_rules
-  | `(tactic| sig_pub [$ls,*] $[$loc]?) => `(tactic| (
+  | `(tactic| sig_pub_keep [$ls,*] $[$loc]?) => `(tactic| (
       sig_eval [$ls,*] $[$loc]?
       try sig_simp_only [BitVec.setWidth_eq, BitVec.setWidth_32_64_32, BitVec.setWidth_32_64_inj,
         BitVec.append_32_iff, and_assoc, and_true, true_and] $[$loc]?))
+
+macro_rules
+  | `(tactic| sig_pub [$ls,*] $[$loc]?) => do
+    let base ← `(tactic| sig_pub_keep [$ls,*] $[$loc]?)
+    match loc with
+    | some l =>
+      match l with
+      | `(Lean.Parser.Tactic.location| at $h:ident) =>
+        -- The fields by name, unhygienically: only the modules of their target
+        -- know them, and in the others each alternative fails.
+        let mx := Lean.mkIdent `VG.X86_64.State.mxcsr
+        let dit := Lean.mkIdent `VG.AArch64.State.dit
+        `(tactic| (
+          $base:tactic
+          try first
+            | replace $h := VG.Sig.pub_drop_mid $mx $h
+            | replace $h := VG.Sig.pub_drop_last $mx $h
+            | replace $h := VG.Sig.pub_drop_mid $dit $h
+            | replace $h := VG.Sig.pub_drop_last $dit $h))
+      | _ => pure base
+    | none => pure base
 
 end VG

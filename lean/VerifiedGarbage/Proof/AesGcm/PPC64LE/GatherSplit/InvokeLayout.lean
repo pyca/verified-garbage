@@ -14,21 +14,21 @@ open VG.Proof.AesGcm.PPC64LE.Gather
 
 
 theorem callee_stack_sub {s : State} (h : Layout s) :
-    Region.Sub (below (Pf s) 2800) (below s.sp 2960) := by
+    Region.Sub (below (Pf s) 1392) (below s.sp 1552) := by
   rw [← h.base.pf_eq]
-  exact below_body' s.sp 160 2800
+  exact below_body' s.sp 160 1392
 
 
 theorem outgoing_sub (s : State) : Region.Sub (outgoingRegion s) (stkR s) := by
-  change Region.Sub ⟨Pf s+BitVec.ofNat 64 96,24⟩ ⟨Bs s,2832⟩
+  change Region.Sub ⟨Pf s+BitVec.ofNat 64 96,24⟩ ⟨Bs s,1424⟩
   rw [pf_off]
   exact stk_sub s _ _ (by decide)
 
 
-theorem callee_outgoing (s : State) : (below (Pf s) 2800).Disjoint (outgoingRegion s) := by
-  have ha : Pf s+BitVec.ofNat 64 96=(Pf s-BitVec.ofNat 64 2800)+BitVec.ofNat 64 2896 := by
-    rw [show 2896=2800+96 by decide,← Offset.add_ofNat_add_ofNat,BitVec.sub_add_cancel]
-  change Region.Disjoint ⟨Pf s-BitVec.ofNat 64 2800,2800⟩ ⟨Pf s+BitVec.ofNat 64 96,24⟩
+theorem callee_outgoing (s : State) : (below (Pf s) 1392).Disjoint (outgoingRegion s) := by
+  have ha : Pf s+BitVec.ofNat 64 96=(Pf s-BitVec.ofNat 64 1392)+BitVec.ofNat 64 1488 := by
+    rw [show 1488=1392+96 by decide,← Offset.add_ofNat_add_ofNat,BitVec.sub_add_cancel]
+  change Region.Disjoint ⟨Pf s-BitVec.ofNat 64 1392,1392⟩ ⟨Pf s+BitVec.ofNat 64 96,24⟩
   rw [ha]
   exact (Offset.disjoint_base _ (by decide) (by decide)).symm
 
@@ -52,7 +52,7 @@ theorem prepared_layout {s e c : State} (h : Layout s) (he : Gather.Entered s e)
   have hsource := source_listed h.base he hc
   have apart {r : Region}
       (hr : r∈[cR s,nR s,aR s,dsR s]++lsR s++[dR s,tgR s,argR s]) :
-      (below (Pf s) 2800).Disjoint r := (h.stack r hr).sub_left (callee_stack_sub h)
+      (below (Pf s) 1392).Disjoint r := (h.stack r hr).sub_left (callee_stack_sub h)
   refine ⟨?_,?_,?_,?_,?_,?_,?_,?_,?_,?_,?_⟩
   · rw [hsp]
     omega_using [hsn, hspace]

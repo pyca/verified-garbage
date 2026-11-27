@@ -70,7 +70,7 @@ abbrev rR (P : CP) : Region := ⟨State.addr P.nP, P.rl⟩
 /-- The frame alone, with the stack arguments, and the round's frame below it. -/
 abbrev rFr (P : CP) : Region := ⟨State.addr P.sp, 56⟩
 abbrev rF (P : CP) : Region := ⟨State.addr P.sp, 84⟩
-abbrev rC (P : CP) : Region := ⟨State.addr (P.sp - BitVec.ofNat 32 56), 56⟩
+abbrev rC (P : CP) : Region := ⟨State.addr (P.sp - BitVec.ofNat 32 104), 104⟩
 /-- Frame word 0. -/
 abbrev rW0 (P : CP) : Region := ⟨State.addr P.sp, 4⟩
 
@@ -94,7 +94,7 @@ abbrev res (P : CP) (σ : State) : Option (Spec.RsaKeyGen.Candidate × Spec.RsaK
 
 structure In (P : CP) (σ : State) : Prop where
   sp : σ.sp = P.sp
-  spLo : 56 ≤ P.sp.toNat
+  spLo : 104 ≤ P.sp.toNat
   spFit : P.sp.toNat + 84 ≤ 2 ^ 32
   wr : σ.wr = [P.rFr, P.rO, P.rU, P.rS, P.rM]
   rdE : InRegions (σ.rd ++ σ.wr) (State.addr P.eP) P.el

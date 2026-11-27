@@ -1,6 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Curve
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.X86_64.InstrBits
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Scrub
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Reduce
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.TableSat
 public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.P192.Verified
@@ -10,7 +14,7 @@ import VerifiedGarbage.Proof.Framework.LitShare
 import VerifiedGarbage.Proof.Framework.OmegaLit
 meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.TableSat
 meta import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
-meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Curve
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Reduce
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P192.Verified
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P192.Lit
 meta import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
@@ -44,6 +48,11 @@ theorem coreK_p192 : coreK Impl.Ecdsa.X86_64.p192 = Proof.Ecdsa.X86_64.P192.sign
 theorem p192_blk : RfcT (cfgC Impl.Ecdsa.X86_64.p192 false 0) := by rfcT_decide
 
 
+/-- The tests of the instructions of `signP192`: one walk of it, and one
+match for each instruction (`Proof/Framework/X86_64/InstrBits.lean`). -/
+theorem p192_bits : Impl.Ecdsa.X86_64.signP192.allInstrs (hasBits (bMx + bSp + bNs)) = true := by
+  lit_decide
+
 /-- p192, with the group law `hL` and the inversions'
 soundness `hI`. -/
 def p192 (hL : Weierstrass.Law Spec.P192.curve)
@@ -58,11 +67,11 @@ def p192 (hL : Weierstrass.Law Spec.P192.curve)
   sh_eq := Proof.Ecdsa.X86_64.P192.p192_sh
   coreN := "vg_ecdsa_p192_sign_k"
   coreC := Impl.Ecdsa.X86_64.signP192
-  coreX := by rw [coreK_p192]; exact Proof.Ecdsa.X86_64.P192.sign_call_x86 hL hI
+  coreX := by rw [coreK_p192]; exact fun s h hc => Proof.Ecdsa.X86_64.P192.sign_call_x86 hL hI s h hc.hole_of_holeN2
   coreCT := by rw [coreK_p192]; exact Proof.Ecdsa.X86_64.P192.sign_ct
-  coreNs := by lit_decide
-  coreSp := by lit_decide
-  coreMx := by lit_decide
+  coreNs := Code.noRsp_of_bits rfl p192_bits
+  coreSp := Code.sp_of_bits rfl p192_bits
+  coreMx := Code.noMx_of_bits rfl p192_bits
   coreD := by lit_decide
   blk := p192_blk
 
@@ -75,5 +84,29 @@ theorem p192T_verified (hL : Weierstrass.Law Spec.P192.curve)
       (specK Spec.Ecdsa.Rfc6979.Curves.p192 Impl.Ecdsa.X86_64.p192.combConsts vs) := by
   have hsat := sat_nil (T := Spec.Ecdsa.Rfc6979.Curves.p192) h (by decide) rfl
   exact signT_verified ⟨rfl, by decide, by decide⟩ rfl h hsat
+
+
+/-! ## The function as emitted -/
+
+theorem p192_stub (hL : Weierstrass.Law Spec.P192.curve) (hI : Weierstrass.X86_64.InvSounds) : SignStub (p192 hL hI) Spec.Ecdsa.Rfc6979.Curves.p192.tries := by
+  dsimp only [SignStub, cfgS, cfgT, p192]; exact ⟨by lit_decide, by lit_decide⟩
+
+/-- `vg_ecdsa_p192_sign`, with the tables of `vs`, as emitted (`Impl.Ecdsa.Rfc6979.X86_64.Fn.sign`), its
+cleanup included, meets its contract in constant time and returns without secret residue. -/
+theorem p192T_scrubbed (hL : Weierstrass.Law Spec.P192.curve) (hI : Weierstrass.X86_64.InvSounds) (vs : List Proof.Pbkdf2.Md.X86_64.MdHash) (h : OK vs)
+    (hu : ∀ w ∈ vs, Proof.HmacTable.X86_64.HmacUp w) :
+    VerifiedScrubbed X86_64.target (Impl.Ecdsa.Rfc6979.X86_64.Fn.sign (cfgT (p192 hL hI) Spec.Ecdsa.Rfc6979.Curves.p192.tries vs))
+      (specK Spec.Ecdsa.Rfc6979.Curves.p192 Impl.Ecdsa.X86_64.p192.combConsts vs) 32 :=
+  sign_scrubbed (api := Spec.Ecdsa.Rfc6979.Curves.p192SignApi)
+    { tables := [("hmac", Proof.HmacTable.X86_64.tables vs)]
+      code := signCodeT (p192 hL hI) Spec.Ecdsa.Rfc6979.Curves.p192.tries vs
+      verified := p192T_verified hL hI vs h
+      spSafe := signCode_sp _ _ _ }
+    (signOut _ Impl.Ecdsa.X86_64.p192.combConsts _ _) rfl rfl hu (p192_stub hL hI)
+
+theorem p192T_spSafe (hL : Weierstrass.Law Spec.P192.curve) (hI : Weierstrass.X86_64.InvSounds) (vs : List Proof.Pbkdf2.Md.X86_64.MdHash) :
+    (Impl.Ecdsa.Rfc6979.X86_64.Fn.sign (cfgT (p192 hL hI) Spec.Ecdsa.Rfc6979.Curves.p192.tries vs)).all
+      (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  X86_64.Scrub.scrubKs_spSafe (signCode_sp _ _ _)
 
 end VG.Proof.Ecdsa.Rfc6979.X86_64

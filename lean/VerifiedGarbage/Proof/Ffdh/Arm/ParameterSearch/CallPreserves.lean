@@ -15,7 +15,7 @@ open VG.Proof.Ffdh.Arm.KeySearch (lowWord)
 
 def callChanges (p : SearchParams) (sp : BitVec 32) : List Region :=
   [⟨State.addr p.c.out, p.c.length⟩, ⟨State.addr p.c.base, 8 * p.c.capacity⟩,
-    ⟨State.addr (p.control + 112#32), 8⟩, FrameStack.belowA sp 208]
+    ⟨State.addr (p.control + 112#32), 8⟩, FrameStack.belowA sp 256]
 
 theorem callChanges_sub (p : SearchParams) (sp : BitVec 32) {m m' : Mem}
     (frame : Frame (callChanges p sp) m m') : Frame (searchRegions p sp) m m' := by

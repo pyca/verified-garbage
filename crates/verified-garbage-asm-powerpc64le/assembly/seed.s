@@ -224,93 +224,93 @@ vg_seed_expand_key:
 	ld %r19, 424(%r8)
 	ld %r20, 432(%r8)
 	ld %r21, 440(%r8)
-	lis %r27, 21845
-	ori %r27, %r27, 21845
-	rldicr %r27, %r27, 32, 31
-	oris %r27, %r27, 21845
-	ori %r27, %r27, 21845
-	lis %r28, 13107
-	ori %r28, %r28, 13107
-	rldicr %r28, %r28, 32, 31
-	oris %r28, %r28, 13107
-	ori %r28, %r28, 13107
-	lis %r29, 3855
-	ori %r29, %r29, 3855
+	lis %r29, 21845
+	ori %r29, %r29, 21845
 	rldicr %r29, %r29, 32, 31
-	oris %r29, %r29, 3855
-	ori %r29, %r29, 3855
-	rldicl %r22, %r14, 63, 1
-	xor %r22, %r22, %r15
-	and %r22, %r22, %r27
-	xor %r15, %r15, %r22
-	rldicl %r22, %r22, 1, 0
-	xor %r14, %r14, %r22
-	rldicl %r22, %r16, 63, 1
-	xor %r22, %r22, %r17
-	and %r22, %r22, %r27
-	xor %r17, %r17, %r22
-	rldicl %r22, %r22, 1, 0
-	xor %r16, %r16, %r22
-	rldicl %r22, %r18, 63, 1
-	xor %r22, %r22, %r19
-	and %r22, %r22, %r27
-	xor %r19, %r19, %r22
-	rldicl %r22, %r22, 1, 0
-	xor %r18, %r18, %r22
-	rldicl %r22, %r20, 63, 1
-	xor %r22, %r22, %r21
-	and %r22, %r22, %r27
-	xor %r21, %r21, %r22
-	rldicl %r22, %r22, 1, 0
-	xor %r20, %r20, %r22
-	rldicl %r22, %r14, 62, 2
-	xor %r22, %r22, %r16
-	and %r22, %r22, %r28
-	xor %r16, %r16, %r22
-	rldicl %r22, %r22, 2, 0
-	xor %r14, %r14, %r22
-	rldicl %r22, %r15, 62, 2
-	xor %r22, %r22, %r17
-	and %r22, %r22, %r28
-	xor %r17, %r17, %r22
-	rldicl %r22, %r22, 2, 0
-	xor %r15, %r15, %r22
-	rldicl %r22, %r18, 62, 2
-	xor %r22, %r22, %r20
-	and %r22, %r22, %r28
-	xor %r20, %r20, %r22
-	rldicl %r22, %r22, 2, 0
-	xor %r18, %r18, %r22
-	rldicl %r22, %r19, 62, 2
-	xor %r22, %r22, %r21
-	and %r22, %r22, %r28
-	xor %r21, %r21, %r22
-	rldicl %r22, %r22, 2, 0
-	xor %r19, %r19, %r22
-	rldicl %r22, %r14, 60, 4
+	oris %r29, %r29, 21845
+	ori %r29, %r29, 21845
+	lis %r30, 13107
+	ori %r30, %r30, 13107
+	rldicr %r30, %r30, 32, 31
+	oris %r30, %r30, 13107
+	ori %r30, %r30, 13107
+	lis %r31, 3855
+	ori %r31, %r31, 3855
+	rldicr %r31, %r31, 32, 31
+	oris %r31, %r31, 3855
+	ori %r31, %r31, 3855
+	rldicl %r22, %r14, 60, 0
 	xor %r22, %r22, %r18
-	and %r22, %r22, %r29
+	and %r22, %r22, %r31
 	xor %r18, %r18, %r22
 	rldicl %r22, %r22, 4, 0
 	xor %r14, %r14, %r22
-	rldicl %r22, %r15, 60, 4
+	rldicl %r22, %r15, 60, 0
 	xor %r22, %r22, %r19
-	and %r22, %r22, %r29
+	and %r22, %r22, %r31
 	xor %r19, %r19, %r22
 	rldicl %r22, %r22, 4, 0
 	xor %r15, %r15, %r22
-	rldicl %r22, %r16, 60, 4
+	rldicl %r22, %r16, 60, 0
 	xor %r22, %r22, %r20
-	and %r22, %r22, %r29
+	and %r22, %r22, %r31
 	xor %r20, %r20, %r22
 	rldicl %r22, %r22, 4, 0
 	xor %r16, %r16, %r22
-	rldicl %r22, %r17, 60, 4
+	rldicl %r22, %r17, 60, 0
 	xor %r22, %r22, %r21
-	and %r22, %r22, %r29
+	and %r22, %r22, %r31
 	xor %r21, %r21, %r22
 	rldicl %r22, %r22, 4, 0
 	xor %r17, %r17, %r22
+	rldicl %r22, %r14, 62, 0
+	xor %r22, %r22, %r16
+	and %r22, %r22, %r30
+	xor %r16, %r16, %r22
+	rldicl %r22, %r22, 2, 0
+	xor %r14, %r14, %r22
+	rldicl %r22, %r15, 62, 0
+	xor %r22, %r22, %r17
+	and %r22, %r22, %r30
+	xor %r17, %r17, %r22
+	rldicl %r22, %r22, 2, 0
+	xor %r15, %r15, %r22
+	rldicl %r22, %r18, 62, 0
+	xor %r22, %r22, %r20
+	and %r22, %r22, %r30
+	xor %r20, %r20, %r22
+	rldicl %r22, %r22, 2, 0
+	xor %r18, %r18, %r22
+	rldicl %r22, %r19, 62, 0
+	xor %r22, %r22, %r21
+	and %r22, %r22, %r30
+	xor %r21, %r21, %r22
+	rldicl %r22, %r22, 2, 0
+	xor %r19, %r19, %r22
+	rldicl %r22, %r14, 63, 0
+	xor %r22, %r22, %r15
+	and %r22, %r22, %r29
+	xor %r15, %r15, %r22
+	rldicl %r22, %r22, 1, 0
+	xor %r14, %r14, %r22
+	rldicl %r22, %r16, 63, 0
+	xor %r22, %r22, %r17
+	and %r22, %r22, %r29
+	xor %r17, %r17, %r22
+	rldicl %r22, %r22, 1, 0
+	xor %r16, %r16, %r22
+	rldicl %r22, %r18, 63, 0
+	xor %r22, %r22, %r19
+	and %r22, %r22, %r29
+	xor %r19, %r19, %r22
+	rldicl %r22, %r22, 1, 0
+	xor %r18, %r18, %r22
+	rldicl %r22, %r20, 63, 0
+	xor %r22, %r22, %r21
+	and %r22, %r22, %r29
+	xor %r21, %r21, %r22
+	rldicl %r22, %r22, 1, 0
+	xor %r20, %r20, %r22
 	or %r24, %r14, %r14
 	or %r25, %r15, %r15
 	or %r26, %r16, %r16
@@ -347,156 +347,141 @@ vg_seed_expand_key:
 	xor %r21, %r21, %r30
 	li %r31, 0
 	addi %r31, %r31, -1
-	xor %r22, %r18, %r16
-	xor %r23, %r21, %r15
-	xor %r24, %r21, %r18
-	xor %r25, %r21, %r16
-	xor %r19, %r20, %r19
-	xor %r26, %r19, %r14
-	xor %r18, %r26, %r18
-	xor %r27, %r23, %r22
-	xor %r28, %r26, %r21
-	xor %r15, %r26, %r15
-	xor %r29, %r15, %r25
-	xor %r17, %r17, %r27
-	xor %r16, %r17, %r16
-	xor %r17, %r17, %r20
-	xor %r20, %r16, %r14
-	xor %r30, %r16, %r19
-	xor %r0, %r17, %r24
-	xor %r9, %r14, %r0
-	std %r31, 0(%r8)
-	xor %r31, %r30, %r0
-	std %r17, 8(%r8)
-	xor %r17, %r30, %r25
-	xor %r19, %r19, %r0
-	std %r17, 16(%r8)
-	xor %r17, %r23, %r19
-	xor %r21, %r21, %r19
-	std %r21, 24(%r8)
-	and %r21, %r27, %r16
-	std %r27, 32(%r8)
-	and %r27, %r29, %r20
-	xor %r27, %r27, %r21
-	std %r29, 40(%r8)
-	and %r29, %r18, %r14
-	xor %r29, %r29, %r21
-	and %r21, %r23, %r19
-	std %r23, 48(%r8)
-	and %r23, %r15, %r26
-	xor %r23, %r23, %r21
-	std %r15, 56(%r8)
-	and %r15, %r28, %r9
-	xor %r15, %r15, %r21
-	and %r21, %r24, %r0
-	std %r24, 64(%r8)
-	and %r24, %r22, %r31
-	xor %r24, %r24, %r21
-	std %r22, 72(%r8)
-	and %r22, %r25, %r30
-	xor %r22, %r22, %r21
-	xor %r27, %r27, %r24
-	xor %r29, %r29, %r22
-	xor %r23, %r23, %r24
-	xor %r15, %r15, %r22
-	ld %r22, 8(%r8)
-	xor %r27, %r27, %r22
-	ld %r22, 16(%r8)
-	xor %r29, %r29, %r22
-	xor %r23, %r23, %r17
-	ld %r17, 24(%r8)
-	xor %r15, %r15, %r17
-	xor %r17, %r27, %r29
-	and %r27, %r27, %r23
-	xor %r22, %r15, %r27
-	and %r24, %r17, %r22
-	xor %r24, %r24, %r29
-	xor %r21, %r23, %r15
-	xor %r29, %r29, %r27
-	and %r29, %r29, %r21
-	xor %r29, %r29, %r15
-	xor %r23, %r23, %r29
-	xor %r21, %r22, %r29
-	and %r15, %r15, %r21
-	xor %r23, %r15, %r23
-	xor %r22, %r22, %r15
-	and %r22, %r24, %r22
-	xor %r17, %r17, %r22
-	xor %r22, %r17, %r23
-	xor %r15, %r24, %r29
-	xor %r21, %r24, %r17
-	xor %r27, %r29, %r23
-	std %r25, 24(%r8)
-	xor %r25, %r15, %r22
-	and %r16, %r27, %r16
-	and %r20, %r23, %r20
-	and %r14, %r29, %r14
-	and %r19, %r21, %r19
-	and %r26, %r17, %r26
-	and %r9, %r24, %r9
-	and %r0, %r15, %r0
-	and %r31, %r25, %r31
-	and %r30, %r22, %r30
-	std %r20, 16(%r8)
+	xor %r16, %r19, %r16
+	xor %r22, %r16, %r15
+	xor %r23, %r22, %r20
+	xor %r14, %r22, %r14
+	xor %r17, %r23, %r17
+	xor %r17, %r17, %r21
+	xor %r24, %r17, %r16
+	xor %r25, %r24, %r14
+	xor %r19, %r25, %r19
+	xor %r26, %r14, %r21
+	xor %r27, %r25, %r18
+	xor %r28, %r25, %r23
+	xor %r29, %r19, %r21
+	xor %r30, %r27, %r29
+	and %r0, %r27, %r25
+	xor %r9, %r24, %r18
+	xor %r18, %r17, %r18
+	xor %r17, %r27, %r17
+	std %r25, 0(%r8)
+	and %r25, %r29, %r23
+	std %r31, 8(%r8)
+	and %r31, %r9, %r17
+	xor %r15, %r9, %r15
+	xor %r25, %r31, %r25
+	std %r27, 16(%r8)
+	and %r27, %r30, %r28
+	xor %r31, %r31, %r27
+	xor %r27, %r28, %r15
+	std %r17, 24(%r8)
+	xor %r17, %r9, %r19
+	std %r9, 32(%r8)
+	and %r9, %r26, %r15
+	std %r26, 40(%r8)
+	and %r26, %r17, %r27
+	xor %r9, %r31, %r9
+	xor %r31, %r31, %r26
+	and %r26, %r14, %r18
+	std %r15, 48(%r8)
+	and %r15, %r21, %r22
+	xor %r9, %r9, %r0
+	xor %r31, %r31, %r26
+	xor %r0, %r0, %r15
+	xor %r26, %r25, %r26
+	xor %r15, %r29, %r20
+	xor %r9, %r9, %r16
+	xor %r0, %r0, %r25
+	and %r25, %r19, %r20
+	xor %r0, %r0, %r15
+	xor %r26, %r26, %r25
+	xor %r25, %r19, %r22
+	xor %r26, %r26, %r25
+	xor %r31, %r31, %r24
+	xor %r24, %r9, %r31
+	and %r25, %r0, %r9
+	xor %r15, %r31, %r25
+	xor %r25, %r26, %r25
+	and %r25, %r25, %r24
+	xor %r0, %r0, %r26
+	xor %r25, %r31, %r25
+	xor %r9, %r9, %r25
+	and %r21, %r25, %r21
+	xor %r24, %r15, %r25
+	and %r31, %r31, %r24
+	xor %r9, %r31, %r9
+	and %r29, %r9, %r29
+	xor %r31, %r15, %r31
+	and %r15, %r0, %r15
+	xor %r26, %r26, %r15
+	and %r23, %r9, %r23
+	and %r31, %r26, %r31
+	xor %r31, %r31, %r0
+	xor %r0, %r26, %r31
+	and %r17, %r0, %r17
+	xor %r15, %r26, %r25
+	and %r18, %r15, %r18
+	and %r0, %r0, %r27
+	and %r30, %r31, %r30
+	and %r14, %r15, %r14
+	xor %r14, %r14, %r17
+	and %r28, %r31, %r28
+	xor %r31, %r31, %r9
+	xor %r15, %r15, %r31
+	xor %r17, %r21, %r17
+	xor %r9, %r25, %r9
+	and %r25, %r25, %r22
+	xor %r0, %r0, %r28
+	xor %r18, %r0, %r18
+	ld %r22, 24(%r8)
+	and %r22, %r15, %r22
+	xor %r0, %r0, %r22
+	xor %r0, %r0, %r25
+	xor %r23, %r23, %r25
+	and %r20, %r9, %r20
+	and %r9, %r9, %r19
+	xor %r0, %r0, %r20
 	ld %r20, 32(%r8)
-	and %r27, %r27, %r20
-	ld %r20, 40(%r8)
-	and %r23, %r23, %r20
-	and %r29, %r29, %r18
-	ld %r18, 48(%r8)
-	and %r21, %r21, %r18
-	ld %r18, 56(%r8)
-	and %r17, %r17, %r18
-	and %r24, %r24, %r28
-	ld %r28, 64(%r8)
-	and %r15, %r15, %r28
-	ld %r28, 72(%r8)
-	and %r25, %r25, %r28
-	ld %r28, 24(%r8)
-	and %r22, %r22, %r28
-	xor %r15, %r15, %r25
-	xor %r29, %r23, %r29
-	xor %r17, %r9, %r17
-	xor %r27, %r27, %r23
-	xor %r23, %r14, %r21
-	xor %r14, %r14, %r9
-	xor %r30, %r31, %r30
-	xor %r16, %r16, %r19
-	xor %r0, %r0, %r31
-	xor %r25, %r25, %r22
-	xor %r21, %r21, %r17
-	xor %r23, %r23, %r16
-	xor %r22, %r26, %r15
-	xor %r19, %r19, %r0
-	xor %r15, %r15, %r23
-	xor %r24, %r24, %r23
-	xor %r30, %r30, %r22
-	xor %r27, %r27, %r22
+	and %r15, %r15, %r20
+	ld %r20, 48(%r8)
+	and %r20, %r26, %r20
+	xor %r15, %r15, %r30
+	xor %r28, %r28, %r20
+	ld %r20, 16(%r8)
+	and %r20, %r31, %r20
+	ld %r19, 40(%r8)
+	and %r26, %r26, %r19
+	xor %r20, %r15, %r20
+	xor %r28, %r28, %r23
+	xor %r17, %r17, %r20
+	xor %r20, %r20, %r26
+	ld %r19, 8(%r8)
+	xor %r20, %r20, %r19
+	ld %r25, 0(%r8)
+	and %r31, %r31, %r25
+	xor %r16, %r17, %r9
+	xor %r17, %r0, %r31
+	xor %r14, %r14, %r15
+	xor %r14, %r14, %r28
+	xor %r14, %r14, %r19
+	xor %r28, %r28, %r20
+	xor %r22, %r20, %r22
+	xor %r22, %r22, %r19
+	xor %r23, %r22, %r23
+	xor %r22, %r22, %r16
+	xor %r26, %r14, %r26
 	xor %r26, %r26, %r19
-	xor %r24, %r24, %r30
-	ld %r22, 16(%r8)
-	xor %r22, %r22, %r27
-	xor %r19, %r19, %r27
-	xor %r21, %r21, %r30
-	ld %r30, 0(%r8)
-	xor %r21, %r21, %r30
-	xor %r17, %r17, %r15
-	xor %r17, %r17, %r30
-	xor %r15, %r26, %r24
-	xor %r18, %r16, %r22
-	xor %r14, %r14, %r22
-	xor %r16, %r29, %r24
-	xor %r26, %r26, %r18
-	xor %r20, %r26, %r30
-	xor %r25, %r25, %r15
-	xor %r25, %r25, %r30
-	std %r21, 0(%r8)
-	or %r21, %r19, %r19
-	or %r19, %r25, %r25
-	std %r17, 16(%r8)
-	or %r17, %r14, %r14
-	ld %r15, 0(%r8)
-	ld %r14, 16(%r8)
+	xor %r26, %r26, %r29
+	xor %r22, %r22, %r18
+	xor %r22, %r22, %r19
+	xor %r23, %r23, %r31
+	xor %r26, %r26, %r30
+	xor %r18, %r26, %r21
+	or %r15, %r20, %r20
+	or %r19, %r28, %r28
+	or %r20, %r22, %r22
+	or %r21, %r23, %r23
 	or %r24, %r14, %r14
 	or %r25, %r15, %r15
 	or %r26, %r16, %r16
@@ -590,93 +575,93 @@ vg_seed_expand_key:
 	xor %r21, %r21, %r22
 	and %r22, %r31, %r9
 	xor %r21, %r21, %r22
-	lis %r27, 21845
-	ori %r27, %r27, 21845
-	rldicr %r27, %r27, 32, 31
-	oris %r27, %r27, 21845
-	ori %r27, %r27, 21845
-	lis %r28, 13107
-	ori %r28, %r28, 13107
-	rldicr %r28, %r28, 32, 31
-	oris %r28, %r28, 13107
-	ori %r28, %r28, 13107
-	lis %r29, 3855
-	ori %r29, %r29, 3855
+	lis %r29, 21845
+	ori %r29, %r29, 21845
 	rldicr %r29, %r29, 32, 31
-	oris %r29, %r29, 3855
-	ori %r29, %r29, 3855
-	rldicl %r22, %r14, 63, 1
-	xor %r22, %r22, %r15
-	and %r22, %r22, %r27
-	xor %r15, %r15, %r22
-	rldicl %r22, %r22, 1, 0
-	xor %r14, %r14, %r22
-	rldicl %r22, %r16, 63, 1
-	xor %r22, %r22, %r17
-	and %r22, %r22, %r27
-	xor %r17, %r17, %r22
-	rldicl %r22, %r22, 1, 0
-	xor %r16, %r16, %r22
-	rldicl %r22, %r18, 63, 1
-	xor %r22, %r22, %r19
-	and %r22, %r22, %r27
-	xor %r19, %r19, %r22
-	rldicl %r22, %r22, 1, 0
-	xor %r18, %r18, %r22
-	rldicl %r22, %r20, 63, 1
-	xor %r22, %r22, %r21
-	and %r22, %r22, %r27
-	xor %r21, %r21, %r22
-	rldicl %r22, %r22, 1, 0
-	xor %r20, %r20, %r22
-	rldicl %r22, %r14, 62, 2
-	xor %r22, %r22, %r16
-	and %r22, %r22, %r28
-	xor %r16, %r16, %r22
-	rldicl %r22, %r22, 2, 0
-	xor %r14, %r14, %r22
-	rldicl %r22, %r15, 62, 2
-	xor %r22, %r22, %r17
-	and %r22, %r22, %r28
-	xor %r17, %r17, %r22
-	rldicl %r22, %r22, 2, 0
-	xor %r15, %r15, %r22
-	rldicl %r22, %r18, 62, 2
-	xor %r22, %r22, %r20
-	and %r22, %r22, %r28
-	xor %r20, %r20, %r22
-	rldicl %r22, %r22, 2, 0
-	xor %r18, %r18, %r22
-	rldicl %r22, %r19, 62, 2
-	xor %r22, %r22, %r21
-	and %r22, %r22, %r28
-	xor %r21, %r21, %r22
-	rldicl %r22, %r22, 2, 0
-	xor %r19, %r19, %r22
-	rldicl %r22, %r14, 60, 4
+	oris %r29, %r29, 21845
+	ori %r29, %r29, 21845
+	lis %r30, 13107
+	ori %r30, %r30, 13107
+	rldicr %r30, %r30, 32, 31
+	oris %r30, %r30, 13107
+	ori %r30, %r30, 13107
+	lis %r31, 3855
+	ori %r31, %r31, 3855
+	rldicr %r31, %r31, 32, 31
+	oris %r31, %r31, 3855
+	ori %r31, %r31, 3855
+	rldicl %r22, %r14, 60, 0
 	xor %r22, %r22, %r18
-	and %r22, %r22, %r29
+	and %r22, %r22, %r31
 	xor %r18, %r18, %r22
 	rldicl %r22, %r22, 4, 0
 	xor %r14, %r14, %r22
-	rldicl %r22, %r15, 60, 4
+	rldicl %r22, %r15, 60, 0
 	xor %r22, %r22, %r19
-	and %r22, %r22, %r29
+	and %r22, %r22, %r31
 	xor %r19, %r19, %r22
 	rldicl %r22, %r22, 4, 0
 	xor %r15, %r15, %r22
-	rldicl %r22, %r16, 60, 4
+	rldicl %r22, %r16, 60, 0
 	xor %r22, %r22, %r20
-	and %r22, %r22, %r29
+	and %r22, %r22, %r31
 	xor %r20, %r20, %r22
 	rldicl %r22, %r22, 4, 0
 	xor %r16, %r16, %r22
-	rldicl %r22, %r17, 60, 4
+	rldicl %r22, %r17, 60, 0
 	xor %r22, %r22, %r21
-	and %r22, %r22, %r29
+	and %r22, %r22, %r31
 	xor %r21, %r21, %r22
 	rldicl %r22, %r22, 4, 0
 	xor %r17, %r17, %r22
+	rldicl %r22, %r14, 62, 0
+	xor %r22, %r22, %r16
+	and %r22, %r22, %r30
+	xor %r16, %r16, %r22
+	rldicl %r22, %r22, 2, 0
+	xor %r14, %r14, %r22
+	rldicl %r22, %r15, 62, 0
+	xor %r22, %r22, %r17
+	and %r22, %r22, %r30
+	xor %r17, %r17, %r22
+	rldicl %r22, %r22, 2, 0
+	xor %r15, %r15, %r22
+	rldicl %r22, %r18, 62, 0
+	xor %r22, %r22, %r20
+	and %r22, %r22, %r30
+	xor %r20, %r20, %r22
+	rldicl %r22, %r22, 2, 0
+	xor %r18, %r18, %r22
+	rldicl %r22, %r19, 62, 0
+	xor %r22, %r22, %r21
+	and %r22, %r22, %r30
+	xor %r21, %r21, %r22
+	rldicl %r22, %r22, 2, 0
+	xor %r19, %r19, %r22
+	rldicl %r22, %r14, 63, 0
+	xor %r22, %r22, %r15
+	and %r22, %r22, %r29
+	xor %r15, %r15, %r22
+	rldicl %r22, %r22, 1, 0
+	xor %r14, %r14, %r22
+	rldicl %r22, %r16, 63, 0
+	xor %r22, %r22, %r17
+	and %r22, %r22, %r29
+	xor %r17, %r17, %r22
+	rldicl %r22, %r22, 1, 0
+	xor %r16, %r16, %r22
+	rldicl %r22, %r18, 63, 0
+	xor %r22, %r22, %r19
+	and %r22, %r22, %r29
+	xor %r19, %r19, %r22
+	rldicl %r22, %r22, 1, 0
+	xor %r18, %r18, %r22
+	rldicl %r22, %r20, 63, 0
+	xor %r22, %r22, %r21
+	and %r22, %r22, %r29
+	xor %r21, %r21, %r22
+	rldicl %r22, %r22, 1, 0
+	xor %r20, %r20, %r22
 	lis %r24, -12292
 	ori %r24, %r24, 53244
 	rldicr %r24, %r24, 32, 31
@@ -977,138 +962,66 @@ vg_seed_expand_key:
 	ld %r30, 1024(%r8)
 	ld %r31, 1032(%r8)
 	addi %r12, %r1, 32
-	li %r11, 0
-	std %r11, 0(%r12)
-	std %r11, 8(%r12)
-	std %r11, 16(%r12)
-	std %r11, 24(%r12)
-	std %r11, 32(%r12)
-	std %r11, 40(%r12)
-	std %r11, 48(%r12)
-	std %r11, 56(%r12)
-	std %r11, 64(%r12)
-	std %r11, 72(%r12)
-	std %r11, 80(%r12)
-	std %r11, 88(%r12)
-	std %r11, 96(%r12)
-	std %r11, 104(%r12)
-	std %r11, 112(%r12)
-	std %r11, 120(%r12)
-	std %r11, 128(%r12)
-	std %r11, 136(%r12)
-	std %r11, 144(%r12)
-	std %r11, 152(%r12)
-	std %r11, 160(%r12)
-	std %r11, 168(%r12)
-	std %r11, 176(%r12)
-	std %r11, 184(%r12)
-	std %r11, 192(%r12)
-	std %r11, 200(%r12)
-	std %r11, 208(%r12)
-	std %r11, 216(%r12)
-	std %r11, 224(%r12)
-	std %r11, 232(%r12)
-	std %r11, 240(%r12)
-	std %r11, 248(%r12)
-	std %r11, 256(%r12)
-	std %r11, 264(%r12)
-	std %r11, 272(%r12)
-	std %r11, 280(%r12)
-	std %r11, 288(%r12)
-	std %r11, 296(%r12)
-	std %r11, 304(%r12)
-	std %r11, 312(%r12)
-	std %r11, 320(%r12)
-	std %r11, 328(%r12)
-	std %r11, 336(%r12)
-	std %r11, 344(%r12)
-	std %r11, 352(%r12)
-	std %r11, 360(%r12)
-	std %r11, 368(%r12)
-	std %r11, 376(%r12)
-	std %r11, 384(%r12)
-	std %r11, 392(%r12)
-	std %r11, 400(%r12)
-	std %r11, 408(%r12)
-	std %r11, 416(%r12)
-	std %r11, 424(%r12)
-	std %r11, 432(%r12)
-	std %r11, 440(%r12)
-	std %r11, 448(%r12)
-	std %r11, 456(%r12)
-	std %r11, 464(%r12)
-	std %r11, 472(%r12)
-	std %r11, 480(%r12)
-	std %r11, 488(%r12)
-	std %r11, 496(%r12)
-	std %r11, 504(%r12)
-	std %r11, 512(%r12)
-	std %r11, 520(%r12)
-	std %r11, 528(%r12)
-	std %r11, 536(%r12)
-	std %r11, 544(%r12)
-	std %r11, 552(%r12)
-	std %r11, 560(%r12)
-	std %r11, 568(%r12)
-	std %r11, 576(%r12)
-	std %r11, 584(%r12)
-	std %r11, 592(%r12)
-	std %r11, 600(%r12)
-	std %r11, 608(%r12)
-	std %r11, 616(%r12)
-	std %r11, 624(%r12)
-	std %r11, 632(%r12)
-	std %r11, 640(%r12)
-	std %r11, 648(%r12)
-	std %r11, 656(%r12)
-	std %r11, 664(%r12)
-	std %r11, 672(%r12)
-	std %r11, 680(%r12)
-	std %r11, 688(%r12)
-	std %r11, 696(%r12)
-	std %r11, 704(%r12)
-	std %r11, 712(%r12)
-	std %r11, 720(%r12)
-	std %r11, 728(%r12)
-	std %r11, 736(%r12)
-	std %r11, 744(%r12)
-	std %r11, 752(%r12)
-	std %r11, 760(%r12)
-	std %r11, 768(%r12)
-	std %r11, 776(%r12)
-	std %r11, 784(%r12)
-	std %r11, 792(%r12)
-	std %r11, 800(%r12)
-	std %r11, 808(%r12)
-	std %r11, 816(%r12)
-	std %r11, 824(%r12)
-	std %r11, 832(%r12)
-	std %r11, 840(%r12)
-	std %r11, 848(%r12)
-	std %r11, 856(%r12)
-	std %r11, 864(%r12)
-	std %r11, 872(%r12)
-	std %r11, 880(%r12)
-	std %r11, 888(%r12)
-	std %r11, 896(%r12)
-	std %r11, 904(%r12)
-	std %r11, 912(%r12)
-	std %r11, 920(%r12)
-	std %r11, 928(%r12)
-	std %r11, 936(%r12)
-	std %r11, 944(%r12)
-	std %r11, 952(%r12)
-	std %r11, 960(%r12)
-	std %r11, 968(%r12)
-	std %r11, 976(%r12)
-	std %r11, 984(%r12)
-	std %r11, 992(%r12)
-	std %r11, 1000(%r12)
-	std %r11, 1008(%r12)
-	std %r11, 1016(%r12)
-	std %r11, 1024(%r12)
-	std %r11, 1032(%r12)
+	li %r0, 0
+	std %r0, 0(%r12)
+	std %r0, 8(%r12)
+	std %r0, 16(%r12)
+	std %r0, 24(%r12)
+	std %r0, 32(%r12)
+	std %r0, 40(%r12)
+	std %r0, 48(%r12)
+	std %r0, 56(%r12)
+	std %r0, 64(%r12)
+	std %r0, 72(%r12)
+	std %r0, 80(%r12)
+	std %r0, 88(%r12)
+	std %r0, 96(%r12)
+	std %r0, 104(%r12)
+	std %r0, 112(%r12)
+	std %r0, 120(%r12)
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	std %r0, 0(%r12)
+	std %r0, 8(%r12)
+	std %r0, 16(%r12)
+	std %r0, 24(%r12)
+	std %r0, 32(%r12)
+	std %r0, 40(%r12)
+	std %r0, 48(%r12)
+	std %r0, 56(%r12)
+	std %r0, 64(%r12)
+	std %r0, 72(%r12)
+	std %r0, 80(%r12)
+	std %r0, 88(%r12)
+	std %r0, 96(%r12)
+	std %r0, 104(%r12)
+	std %r0, 112(%r12)
+	std %r0, 120(%r12)
+	std %r0, 128(%r12)
+	std %r0, 136(%r12)
 	addi %r1, %r1, 1072
+	li %r0, 0
+	li %r4, 0
+	li %r5, 0
+	li %r6, 0
+	li %r7, 0
+	li %r8, 0
+	li %r9, 0
+	li %r10, 0
+	li %r11, 0
+	li %r12, 0
 	blr
 
 vg_seed_ecb_encrypt:
@@ -1122,144 +1035,136 @@ vg_seed_ecb_encrypt:
 	addi %r1, %r1, 48
 	mtlr %r0
 	addi %r12, %r1, 32
-	li %r11, 0
-	std %r11, 0(%r12)
-	std %r11, 8(%r12)
-	std %r11, 16(%r12)
-	std %r11, 24(%r12)
-	std %r11, 32(%r12)
-	std %r11, 40(%r12)
-	std %r11, 48(%r12)
-	std %r11, 56(%r12)
-	std %r11, 64(%r12)
-	std %r11, 72(%r12)
-	std %r11, 80(%r12)
-	std %r11, 88(%r12)
-	std %r11, 96(%r12)
-	std %r11, 104(%r12)
-	std %r11, 112(%r12)
-	std %r11, 120(%r12)
-	std %r11, 128(%r12)
-	std %r11, 136(%r12)
-	std %r11, 144(%r12)
-	std %r11, 152(%r12)
-	std %r11, 160(%r12)
-	std %r11, 168(%r12)
-	std %r11, 176(%r12)
-	std %r11, 184(%r12)
-	std %r11, 192(%r12)
-	std %r11, 200(%r12)
-	std %r11, 208(%r12)
-	std %r11, 216(%r12)
-	std %r11, 224(%r12)
-	std %r11, 232(%r12)
-	std %r11, 240(%r12)
-	std %r11, 248(%r12)
-	std %r11, 256(%r12)
-	std %r11, 264(%r12)
-	std %r11, 272(%r12)
-	std %r11, 280(%r12)
-	std %r11, 288(%r12)
-	std %r11, 296(%r12)
-	std %r11, 304(%r12)
-	std %r11, 312(%r12)
-	std %r11, 320(%r12)
-	std %r11, 328(%r12)
-	std %r11, 336(%r12)
-	std %r11, 344(%r12)
-	std %r11, 352(%r12)
-	std %r11, 360(%r12)
-	std %r11, 368(%r12)
-	std %r11, 376(%r12)
-	std %r11, 384(%r12)
-	std %r11, 392(%r12)
-	std %r11, 400(%r12)
-	std %r11, 408(%r12)
-	std %r11, 416(%r12)
-	std %r11, 424(%r12)
-	std %r11, 432(%r12)
-	std %r11, 440(%r12)
-	std %r11, 448(%r12)
-	std %r11, 456(%r12)
-	std %r11, 464(%r12)
-	std %r11, 472(%r12)
-	std %r11, 480(%r12)
-	std %r11, 488(%r12)
-	std %r11, 496(%r12)
-	std %r11, 504(%r12)
-	std %r11, 512(%r12)
-	std %r11, 520(%r12)
-	std %r11, 528(%r12)
-	std %r11, 536(%r12)
-	std %r11, 544(%r12)
-	std %r11, 552(%r12)
-	std %r11, 560(%r12)
-	std %r11, 568(%r12)
-	std %r11, 576(%r12)
-	std %r11, 584(%r12)
-	std %r11, 592(%r12)
-	std %r11, 600(%r12)
-	std %r11, 608(%r12)
-	std %r11, 616(%r12)
-	std %r11, 624(%r12)
-	std %r11, 632(%r12)
-	std %r11, 640(%r12)
-	std %r11, 648(%r12)
-	std %r11, 656(%r12)
-	std %r11, 664(%r12)
-	std %r11, 672(%r12)
-	std %r11, 680(%r12)
-	std %r11, 688(%r12)
-	std %r11, 696(%r12)
-	std %r11, 704(%r12)
-	std %r11, 712(%r12)
-	std %r11, 720(%r12)
-	std %r11, 728(%r12)
-	std %r11, 736(%r12)
-	std %r11, 744(%r12)
-	std %r11, 752(%r12)
-	std %r11, 760(%r12)
-	std %r11, 768(%r12)
-	std %r11, 776(%r12)
-	std %r11, 784(%r12)
-	std %r11, 792(%r12)
-	std %r11, 800(%r12)
-	std %r11, 808(%r12)
-	std %r11, 816(%r12)
-	std %r11, 824(%r12)
-	std %r11, 832(%r12)
-	std %r11, 840(%r12)
-	std %r11, 848(%r12)
-	std %r11, 856(%r12)
-	std %r11, 864(%r12)
-	std %r11, 872(%r12)
-	std %r11, 880(%r12)
-	std %r11, 888(%r12)
-	std %r11, 896(%r12)
-	std %r11, 904(%r12)
-	std %r11, 912(%r12)
-	std %r11, 920(%r12)
-	std %r11, 928(%r12)
-	std %r11, 936(%r12)
-	std %r11, 944(%r12)
-	std %r11, 952(%r12)
-	std %r11, 960(%r12)
-	std %r11, 968(%r12)
-	std %r11, 976(%r12)
-	std %r11, 984(%r12)
-	std %r11, 992(%r12)
-	std %r11, 1000(%r12)
-	std %r11, 1008(%r12)
-	std %r11, 1016(%r12)
-	std %r11, 1024(%r12)
-	std %r11, 1032(%r12)
-	std %r11, 1040(%r12)
-	std %r11, 1048(%r12)
-	std %r11, 1056(%r12)
-	std %r11, 1064(%r12)
-	std %r11, 1072(%r12)
-	std %r11, 1080(%r12)
+	li %r0, 0
+	std %r0, 0(%r12)
+	std %r0, 8(%r12)
+	std %r0, 16(%r12)
+	std %r0, 24(%r12)
+	std %r0, 32(%r12)
+	std %r0, 40(%r12)
+	std %r0, 48(%r12)
+	std %r0, 56(%r12)
+	std %r0, 64(%r12)
+	std %r0, 72(%r12)
+	std %r0, 80(%r12)
+	std %r0, 88(%r12)
+	std %r0, 96(%r12)
+	std %r0, 104(%r12)
+	std %r0, 112(%r12)
+	std %r0, 120(%r12)
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	std %r0, 0(%r12)
+	std %r0, 8(%r12)
+	std %r0, 16(%r12)
+	std %r0, 24(%r12)
+	std %r0, 32(%r12)
+	std %r0, 40(%r12)
+	std %r0, 48(%r12)
+	std %r0, 56(%r12)
+	std %r0, 64(%r12)
+	std %r0, 72(%r12)
+	std %r0, 80(%r12)
+	std %r0, 88(%r12)
+	std %r0, 96(%r12)
+	std %r0, 104(%r12)
+	std %r0, 112(%r12)
+	std %r0, 120(%r12)
+	std %r0, 128(%r12)
+	std %r0, 136(%r12)
+	std %r0, 144(%r12)
+	std %r0, 152(%r12)
+	std %r0, 160(%r12)
+	std %r0, 168(%r12)
+	std %r0, 176(%r12)
+	std %r0, 184(%r12)
 	addi %r1, %r1, 1120
+	li %r0, 0
+	stdu %r1, -1168(%r1)
+	addi %r12, %r1, 32
+	std %r0, 0(%r12)
+	std %r0, 8(%r12)
+	std %r0, 16(%r12)
+	std %r0, 24(%r12)
+	std %r0, 32(%r12)
+	std %r0, 40(%r12)
+	std %r0, 48(%r12)
+	std %r0, 56(%r12)
+	std %r0, 64(%r12)
+	std %r0, 72(%r12)
+	std %r0, 80(%r12)
+	std %r0, 88(%r12)
+	std %r0, 96(%r12)
+	std %r0, 104(%r12)
+	std %r0, 112(%r12)
+	std %r0, 120(%r12)
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	std %r0, 0(%r12)
+	std %r0, 8(%r12)
+	std %r0, 16(%r12)
+	std %r0, 24(%r12)
+	std %r0, 32(%r12)
+	std %r0, 40(%r12)
+	std %r0, 48(%r12)
+	std %r0, 56(%r12)
+	std %r0, 64(%r12)
+	std %r0, 72(%r12)
+	std %r0, 80(%r12)
+	std %r0, 88(%r12)
+	std %r0, 96(%r12)
+	std %r0, 104(%r12)
+	std %r0, 112(%r12)
+	std %r0, 120(%r12)
+	std %r0, 128(%r12)
+	std %r0, 136(%r12)
+	std %r0, 144(%r12)
+	std %r0, 152(%r12)
+	std %r0, 160(%r12)
+	std %r0, 168(%r12)
+	std %r0, 176(%r12)
+	std %r0, 184(%r12)
+	std %r0, 192(%r12)
+	std %r0, 200(%r12)
+	std %r0, 208(%r12)
+	std %r0, 216(%r12)
+	std %r0, 224(%r12)
+	std %r0, 232(%r12)
+	addi %r1, %r1, 1168
+	li %r3, 0
+	li %r4, 0
+	li %r5, 0
+	li %r6, 0
+	li %r7, 0
+	li %r8, 0
+	li %r9, 0
+	li %r10, 0
+	li %r11, 0
+	li %r12, 0
 	blr
 
 vg_seed_ecb_decrypt:
@@ -1273,142 +1178,134 @@ vg_seed_ecb_decrypt:
 	addi %r1, %r1, 48
 	mtlr %r0
 	addi %r12, %r1, 32
-	li %r11, 0
-	std %r11, 0(%r12)
-	std %r11, 8(%r12)
-	std %r11, 16(%r12)
-	std %r11, 24(%r12)
-	std %r11, 32(%r12)
-	std %r11, 40(%r12)
-	std %r11, 48(%r12)
-	std %r11, 56(%r12)
-	std %r11, 64(%r12)
-	std %r11, 72(%r12)
-	std %r11, 80(%r12)
-	std %r11, 88(%r12)
-	std %r11, 96(%r12)
-	std %r11, 104(%r12)
-	std %r11, 112(%r12)
-	std %r11, 120(%r12)
-	std %r11, 128(%r12)
-	std %r11, 136(%r12)
-	std %r11, 144(%r12)
-	std %r11, 152(%r12)
-	std %r11, 160(%r12)
-	std %r11, 168(%r12)
-	std %r11, 176(%r12)
-	std %r11, 184(%r12)
-	std %r11, 192(%r12)
-	std %r11, 200(%r12)
-	std %r11, 208(%r12)
-	std %r11, 216(%r12)
-	std %r11, 224(%r12)
-	std %r11, 232(%r12)
-	std %r11, 240(%r12)
-	std %r11, 248(%r12)
-	std %r11, 256(%r12)
-	std %r11, 264(%r12)
-	std %r11, 272(%r12)
-	std %r11, 280(%r12)
-	std %r11, 288(%r12)
-	std %r11, 296(%r12)
-	std %r11, 304(%r12)
-	std %r11, 312(%r12)
-	std %r11, 320(%r12)
-	std %r11, 328(%r12)
-	std %r11, 336(%r12)
-	std %r11, 344(%r12)
-	std %r11, 352(%r12)
-	std %r11, 360(%r12)
-	std %r11, 368(%r12)
-	std %r11, 376(%r12)
-	std %r11, 384(%r12)
-	std %r11, 392(%r12)
-	std %r11, 400(%r12)
-	std %r11, 408(%r12)
-	std %r11, 416(%r12)
-	std %r11, 424(%r12)
-	std %r11, 432(%r12)
-	std %r11, 440(%r12)
-	std %r11, 448(%r12)
-	std %r11, 456(%r12)
-	std %r11, 464(%r12)
-	std %r11, 472(%r12)
-	std %r11, 480(%r12)
-	std %r11, 488(%r12)
-	std %r11, 496(%r12)
-	std %r11, 504(%r12)
-	std %r11, 512(%r12)
-	std %r11, 520(%r12)
-	std %r11, 528(%r12)
-	std %r11, 536(%r12)
-	std %r11, 544(%r12)
-	std %r11, 552(%r12)
-	std %r11, 560(%r12)
-	std %r11, 568(%r12)
-	std %r11, 576(%r12)
-	std %r11, 584(%r12)
-	std %r11, 592(%r12)
-	std %r11, 600(%r12)
-	std %r11, 608(%r12)
-	std %r11, 616(%r12)
-	std %r11, 624(%r12)
-	std %r11, 632(%r12)
-	std %r11, 640(%r12)
-	std %r11, 648(%r12)
-	std %r11, 656(%r12)
-	std %r11, 664(%r12)
-	std %r11, 672(%r12)
-	std %r11, 680(%r12)
-	std %r11, 688(%r12)
-	std %r11, 696(%r12)
-	std %r11, 704(%r12)
-	std %r11, 712(%r12)
-	std %r11, 720(%r12)
-	std %r11, 728(%r12)
-	std %r11, 736(%r12)
-	std %r11, 744(%r12)
-	std %r11, 752(%r12)
-	std %r11, 760(%r12)
-	std %r11, 768(%r12)
-	std %r11, 776(%r12)
-	std %r11, 784(%r12)
-	std %r11, 792(%r12)
-	std %r11, 800(%r12)
-	std %r11, 808(%r12)
-	std %r11, 816(%r12)
-	std %r11, 824(%r12)
-	std %r11, 832(%r12)
-	std %r11, 840(%r12)
-	std %r11, 848(%r12)
-	std %r11, 856(%r12)
-	std %r11, 864(%r12)
-	std %r11, 872(%r12)
-	std %r11, 880(%r12)
-	std %r11, 888(%r12)
-	std %r11, 896(%r12)
-	std %r11, 904(%r12)
-	std %r11, 912(%r12)
-	std %r11, 920(%r12)
-	std %r11, 928(%r12)
-	std %r11, 936(%r12)
-	std %r11, 944(%r12)
-	std %r11, 952(%r12)
-	std %r11, 960(%r12)
-	std %r11, 968(%r12)
-	std %r11, 976(%r12)
-	std %r11, 984(%r12)
-	std %r11, 992(%r12)
-	std %r11, 1000(%r12)
-	std %r11, 1008(%r12)
-	std %r11, 1016(%r12)
-	std %r11, 1024(%r12)
-	std %r11, 1032(%r12)
-	std %r11, 1040(%r12)
-	std %r11, 1048(%r12)
-	std %r11, 1056(%r12)
-	std %r11, 1064(%r12)
-	std %r11, 1072(%r12)
-	std %r11, 1080(%r12)
+	li %r0, 0
+	std %r0, 0(%r12)
+	std %r0, 8(%r12)
+	std %r0, 16(%r12)
+	std %r0, 24(%r12)
+	std %r0, 32(%r12)
+	std %r0, 40(%r12)
+	std %r0, 48(%r12)
+	std %r0, 56(%r12)
+	std %r0, 64(%r12)
+	std %r0, 72(%r12)
+	std %r0, 80(%r12)
+	std %r0, 88(%r12)
+	std %r0, 96(%r12)
+	std %r0, 104(%r12)
+	std %r0, 112(%r12)
+	std %r0, 120(%r12)
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	std %r0, 0(%r12)
+	std %r0, 8(%r12)
+	std %r0, 16(%r12)
+	std %r0, 24(%r12)
+	std %r0, 32(%r12)
+	std %r0, 40(%r12)
+	std %r0, 48(%r12)
+	std %r0, 56(%r12)
+	std %r0, 64(%r12)
+	std %r0, 72(%r12)
+	std %r0, 80(%r12)
+	std %r0, 88(%r12)
+	std %r0, 96(%r12)
+	std %r0, 104(%r12)
+	std %r0, 112(%r12)
+	std %r0, 120(%r12)
+	std %r0, 128(%r12)
+	std %r0, 136(%r12)
+	std %r0, 144(%r12)
+	std %r0, 152(%r12)
+	std %r0, 160(%r12)
+	std %r0, 168(%r12)
+	std %r0, 176(%r12)
+	std %r0, 184(%r12)
 	addi %r1, %r1, 1120
+	li %r0, 0
+	stdu %r1, -1168(%r1)
+	addi %r12, %r1, 32
+	std %r0, 0(%r12)
+	std %r0, 8(%r12)
+	std %r0, 16(%r12)
+	std %r0, 24(%r12)
+	std %r0, 32(%r12)
+	std %r0, 40(%r12)
+	std %r0, 48(%r12)
+	std %r0, 56(%r12)
+	std %r0, 64(%r12)
+	std %r0, 72(%r12)
+	std %r0, 80(%r12)
+	std %r0, 88(%r12)
+	std %r0, 96(%r12)
+	std %r0, 104(%r12)
+	std %r0, 112(%r12)
+	std %r0, 120(%r12)
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	std %r0, 0(%r12)
+	std %r0, 8(%r12)
+	std %r0, 16(%r12)
+	std %r0, 24(%r12)
+	std %r0, 32(%r12)
+	std %r0, 40(%r12)
+	std %r0, 48(%r12)
+	std %r0, 56(%r12)
+	std %r0, 64(%r12)
+	std %r0, 72(%r12)
+	std %r0, 80(%r12)
+	std %r0, 88(%r12)
+	std %r0, 96(%r12)
+	std %r0, 104(%r12)
+	std %r0, 112(%r12)
+	std %r0, 120(%r12)
+	std %r0, 128(%r12)
+	std %r0, 136(%r12)
+	std %r0, 144(%r12)
+	std %r0, 152(%r12)
+	std %r0, 160(%r12)
+	std %r0, 168(%r12)
+	std %r0, 176(%r12)
+	std %r0, 184(%r12)
+	std %r0, 192(%r12)
+	std %r0, 200(%r12)
+	std %r0, 208(%r12)
+	std %r0, 216(%r12)
+	std %r0, 224(%r12)
+	std %r0, 232(%r12)
+	addi %r1, %r1, 1168
+	li %r3, 0
+	li %r4, 0
+	li %r5, 0
+	li %r6, 0
+	li %r7, 0
+	li %r8, 0
+	li %r9, 0
+	li %r10, 0
+	li %r11, 0
+	li %r12, 0
 	blr

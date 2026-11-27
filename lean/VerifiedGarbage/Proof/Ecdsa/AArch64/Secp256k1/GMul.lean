@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.Taint
 import VerifiedGarbage.Proof.Weierstrass.CombLay
+import VerifiedGarbage.Proof.Framework.Apart
 
 /-! # secp256k1 multiplication by the base point, by a call of `vg_secp256k1_mul` -/
 
@@ -24,7 +25,7 @@ theorem ladLayM : LadLay secp256k1.mulLadder size := by
   constructor
   · refine ⟨by decide +kernel, ?_, by decide +kernel, by decide +kernel⟩
     have h : ∀ x ∈ ladSlots secp256k1.mulLadder, ∀ y ∈ ladSlots secp256k1.mulLadder,
-        x ≠ y → x + 32 ≤ y ∨ y + 32 ≤ x := by decide +kernel
+        x ≠ y → x + 32 ≤ y ∨ y + 32 ≤ x := apart_of (by decide +kernel)
     exact fun x y hx hy => h x hx y hy
   · constructor <;> decide +kernel
   · constructor <;> decide +kernel
@@ -41,7 +42,7 @@ theorem ladAM : LadA secp256k1.mulLadder where
   bits := by decide
   call := by intro f m h; cases h
 
-theorem mulFn_v : secp256k1.mulFn.allInstrs (fun i => (vdstOf i).isNone) = true := by lit_decide
+theorem mulFn_v : secp256k1.mulFn.allInstrs (fun i => (vdstOf i != some .v29) && keepsV i) = true := by lit_decide
 
 theorem mulFn_nf : secp256k1.mulFn.noFrames = true := by lit_decide
 

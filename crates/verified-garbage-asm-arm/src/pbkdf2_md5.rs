@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Hmac.Instance.pbkdf2Contract` of `VG.Spec.Hmac.md5I`. Constant time: only the pointers, the lengths and `c` may affect timing, not the password, the salt or the key.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `password` must be valid for reads of `password_len` bytes.
@@ -14,7 +16,7 @@
 /// * `out` must be valid for reads and writes of `out_len` bytes.
 /// * `c` must be positive, and `out_len` at most `(2^32 - 1) * 16`.
 /// * `out` must not overlap `password`, `salt` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `password`, `salt` and `out` may overlap the 1080 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `password`, `salt` and `out` may overlap the 1088 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_md5(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
@@ -53,7 +55,7 @@ beq 20f
 movw r12, #660
 add r4, r11, r12
 mov r0, r4
-bl {vg_md5_init}
+bl {vg_md5_init_core}
 mov r0, r4
 mov r1, r8
 mov r7, r9
@@ -215,8 +217,31 @@ ldr r10, [r11, #408]
 ldr lr, [r11, #412]
 ldr r11, [r11, #416]
 add sp, sp, #1056
+sub sp, sp, #1088
+add r12, sp, #0
+mov r2, #0
+mov r3, #34
+211:
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+add r12, r12, #32
+subs r3, r3, #1
+bne 211b
+add sp, sp, #1088
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
-        vg_md5_init = sym super::md5::vg_md5_init,
+        vg_md5_init_core = sym super::md5::vg_md5_init_core::vg_md5_init_core,
         vg_md5_update_scratch = sym super::md5::vg_md5_update_scratch::vg_md5_update_scratch,
         vg_md5_finalize_scratch = sym super::md5::vg_md5_finalize_scratch::vg_md5_finalize_scratch,
         vg_hmac_md5_init_scratch = sym super::hmac_md5::vg_hmac_md5_init_scratch::vg_hmac_md5_init_scratch,

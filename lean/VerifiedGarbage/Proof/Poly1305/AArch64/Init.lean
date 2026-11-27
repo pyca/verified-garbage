@@ -7,6 +7,9 @@ import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.AArch64.ResidueTaint
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+public import VerifiedGarbage.TCB.AArch64.Residue
 meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 meta import VerifiedGarbage.Proof.Poly1305.AArch64.Blocks
 meta import VerifiedGarbage.Proof.Poly1305.AArch64.Lit
@@ -14,6 +17,9 @@ meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.AArch64.ResidueTaint
+meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.TCB.AArch64.Residue
 
 /-!
 # Poly1305 on AArch64: `init`
@@ -129,5 +135,10 @@ theorem init_verified :
     sig_implies [Spec.Poly1305.initContract, Spec.Poly1305.initSig, Proof.Poly1305.initAArch64,
       AArch64.abi, AArch64.argRegs] [Proof.Poly1305.AArch64.initSat] using
       Proof.Poly1305.AArch64.initSat)
+
+/-- `init` returns without secret residue: it clears the registers that held
+the key (`RTaint.noResidue_of_check`). -/
+theorem init_noResidue (k : Contract isa) : NoResidue Impl.Poly1305.AArch64.init k 0 :=
+  RTaint.noResidue_of_check ⟨_, by taint_decide⟩ k
 
 end VG.Proof.Poly1305.AArch64

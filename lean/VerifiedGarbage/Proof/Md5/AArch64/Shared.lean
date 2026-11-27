@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.TCB.Registration
 public import VerifiedGarbage.Proof.Md5.Contract
 import VerifiedGarbage.Proof.Md5.AArch64.Stream.Init
 import VerifiedGarbage.Proof.Md5.AArch64.Stream.Md
@@ -7,7 +8,11 @@ public import VerifiedGarbage.Spec.Md5.Contract
 public import VerifiedGarbage.Impl.StackScratch.AArch64
 public import VerifiedGarbage.Impl.Md5.AArch64.Stream
 public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubProved
+import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Md5.PostOut
 import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
+import VerifiedGarbage.Proof.Md5.Scratch
 
 /-!
 # Md5 on AArch64: the shared contracts
@@ -20,6 +25,11 @@ contracts of `Spec/Md5/Contract.lean`, which the artifacts are emitted with.
 they are `updateScratch` and `finalizeScratch` (the shared contracts with
 the working space as an argument, which HMAC's and PBKDF2's code calls) run
 in a frame that allocates it (`Verified.stackScratch`).
+
+`update_scrubbed` and `finalize_scrubbed` are about the functions as emitted,
+with their cleanup (`Impl.Md5.AArch64.Stream.Fn`): their postconditions read
+the memory on return only within their buffers (`Proof/Md5/PostOut.lean`), so
+they return with the registers they may write cleared and their stack zeroed.
 -/
 
 @[expose] public section
@@ -54,6 +64,7 @@ theorem update : Verified AArch64.target
     (Spec.Md5.updateContract AArch64.abi (16 + 112)) :=
   AArch64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 14) (stack := 16) (bytes := 112)
     updateScratch (by decide) (by decide)
+    (fun vs m m₁ m₂ r hl _ => Proof.Md5.updatePostOut_local _ vs m m₁ m₂ r hl)
     (AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
 theorem finalize : Verified AArch64.target
@@ -61,6 +72,48 @@ theorem finalize : Verified AArch64.target
     (Spec.Md5.finalizeContract AArch64.abi (16 + 112)) :=
   AArch64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 14) (stack := 16) (bytes := 112)
     finalizeScratch (by decide) (by decide)
+    (fun vs m m₁ m₂ r hl _ => Proof.Md5.finalizePostOut_local _ vs m m₁ m₂ r hl)
     (AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
+
+
+/-- `update`'s postcondition reads the memory on return only within its buffers. -/
+theorem updateOk : AArch64.Scrub.ScrubAllOk (Spec.Md5.updateContract AArch64.abi (16 + 112)) (16 + 112)
+    (Spec.Md5.updateSig.retBits AArch64.abi.ptrBits) :=
+  AArch64.Scrub.scrubAllOk_regs (sig := Spec.Md5.updateSig) (by decide) (by decide) (Nat.le_refl _)
+    (Proof.Md5.updatePost_out _)
+
+/-- `vg_md5_update` as emitted, cleanup included
+(`Impl.Md5.AArch64.Stream.Fn.update`): it meets its contract in constant time
+and returns without secret residue. What the cleanup needs of the code
+(`Scrub.scrubSide`) is evaluated here, by the kernel. -/
+theorem update_scrubbed :
+    VerifiedScrubbed AArch64.target Impl.Md5.AArch64.Stream.Fn.update
+      (Spec.Md5.updateContract AArch64.abi (16 + 112)) 0 :=
+  AArch64.Scrub.verifiedScrubbedAll (api := Spec.Md5.updateApi)
+    { code := Impl.StackScratch.AArch64.withStackScratch 112 .x4 Impl.Md5.AArch64.Stream.update
+      verified := update } _ updateOk (by dsimp only; lit_decide)
+
+/-- `finalize`'s postcondition reads the memory on return only within its buffers. -/
+theorem finalizeOk : AArch64.Scrub.ScrubAllOk (Spec.Md5.finalizeContract AArch64.abi (16 + 112)) (16 + 112)
+    (Spec.Md5.finalizeSig.retBits AArch64.abi.ptrBits) :=
+  AArch64.Scrub.scrubAllOk_regs (sig := Spec.Md5.finalizeSig) (by decide) (by decide) (Nat.le_refl _)
+    (Proof.Md5.finalizePost_out _)
+
+/-- `vg_md5_finalize` as emitted, cleanup included
+(`Impl.Md5.AArch64.Stream.Fn.finalize`), as `update_scrubbed`. -/
+theorem finalize_scrubbed :
+    VerifiedScrubbed AArch64.target Impl.Md5.AArch64.Stream.Fn.finalize
+      (Spec.Md5.finalizeContract AArch64.abi (16 + 112)) 0 :=
+  AArch64.Scrub.verifiedScrubbedAll (api := Spec.Md5.finalizeApi)
+    { code := Impl.StackScratch.AArch64.withStackScratch 112 .x3 Impl.Md5.AArch64.Stream.finalize
+      verified := finalize } _ finalizeOk (by dsimp only; lit_decide)
+
+/-- The function as its registration binds it: it meets its contract in constant time and returns
+without secret residue. -/
+theorem _root_.VG.Proof.Md5.AArch64.Stream.init_scrubbed :
+    VerifiedScrubbed _root_.VG.AArch64.target Impl.Md5.AArch64.Stream.init
+      (Spec.Md5.initContract AArch64.abi) 0 :=
+  ⟨Proof.Md5.AArch64.Shared.init,
+    Proof.Md5.AArch64.Stream.init_noResidue _ _, fun ty _ h => by cases ty <;> cases h⟩
 
 end VG.Proof.Md5.AArch64.Shared

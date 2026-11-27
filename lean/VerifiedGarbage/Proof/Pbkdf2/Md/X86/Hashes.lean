@@ -49,10 +49,10 @@ def sha512M (D : Nat) (initN : String) (iv : Spec.Sha512.HashValue) : Hash :=
   ⟨sha512H D initN iv, 64, 16, true, 224, "vg_sha512_compress", Impl.Sha512.X86.compress,
     Impl.Sha512.X86.Stream.params.out⟩
 
-def sha384M : Hash := sha512M 48 "vg_sha384_init" Spec.Sha512.H0_384
-def sha512M' : Hash := sha512M 64 "vg_sha512_init" Spec.Sha512.H0_512
-def sha512_224M : Hash := sha512M 28 "vg_sha512_224_init" Spec.Sha512.H0_512_224
-def sha512_256M : Hash := sha512M 32 "vg_sha512_256_init" Spec.Sha512.H0_512_256
+def sha384M : Hash := sha512M 48 "vg_sha384_init_core" Spec.Sha512.H0_384
+def sha512M' : Hash := sha512M 64 "vg_sha512_init_core" Spec.Sha512.H0_512
+def sha512_224M : Hash := sha512M 28 "vg_sha512_224_init_core" Spec.Sha512.H0_512_224
+def sha512_256M : Hash := sha512M 32 "vg_sha512_256_init_core" Spec.Sha512.H0_512_256
 
 /-! ## What the proofs know of them -/
 

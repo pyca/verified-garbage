@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.X25519.exchangeContract`. Constant time: only the pointers may affect timing, not the scalar or the u-coordinate; the return value depends on both.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of 32 bytes.
@@ -21,7 +23,7 @@ pub(crate) unsafe extern "C" fn vg_x25519_exchange(out: *mut [u8; 32], scalar: *
     core::arch::naked_asm!(
         r#".base64 "pgIIfNH/IfggAAH4AACBOSgAbPg="
 bl {vg_x25519}
-.base64 "AACBOSgAjOkAAGA5AABMiXhTa30BAEyJeFNrfQIATIl4U2t9AwBMiXhTa30EAEyJeFNrfQUATIl4U2t9BgBMiXhTa30HAEyJeFNrfQgATIl4U2t9CQBMiXhTa30KAEyJeFNrfQsATIl4U2t9DABMiXhTa30NAEyJeFNrfQ4ATIl4U2t9DwBMiXhTa30QAEyJeFNrfREATIl4U2t9EgBMiXhTa30TAEyJeFNrfRQATIl4U2t9FQBMiXhTa30WAEyJeFNrfRcATIl4U2t9GABMiXhTa30ZAEyJeFNrfRoATIl4U2t9GwBMiXhTa30cAEyJeFNrfR0ATIl4U2t9HgBMiXhTa30fAEyJeFNrff//azngD2N5AQBAOXhSY3wgAAHoMAAhOKYDCHwgAIBO""#,
+.base64 "AACBOSgAjOkAAGA5AABMiXhTa30BAEyJeFNrfQIATIl4U2t9AwBMiXhTa30EAEyJeFNrfQUATIl4U2t9BgBMiXhTa30HAEyJeFNrfQgATIl4U2t9CQBMiXhTa30KAEyJeFNrfQsATIl4U2t9DABMiXhTa30NAEyJeFNrfQ4ATIl4U2t9DwBMiXhTa30QAEyJeFNrfREATIl4U2t9EgBMiXhTa30TAEyJeFNrfRQATIl4U2t9FQBMiXhTa30WAEyJeFNrfRcATIl4U2t9GABMiXhTa30ZAEyJeFNrfRoATIl4U2t9GwBMiXhTa30cAEyJeFNrfR0ATIl4U2t9HgBMiXhTa30fAEyJeFNrff//azngD2N5AQBAOXhSY3wgAAHoMAAhOKYDCHwAAAA40f8h+CAAgTkAAAz4CAAM+DAAITjGB2N4IgBjeAAAgDgAAKA4AADgOAAAADkAACA5AABAOQAAYDkAAIA5FAAAfCAAgE4=""#,
         vg_x25519 = sym super::x25519::vg_x25519::vg_x25519,
     )
 }
@@ -29,6 +31,8 @@ bl {vg_x25519}
 /// Computes an X25519 public key (RFC 7748 §6.1): writes `X25519(k, 9)`, the X25519 function of the 32-byte scalar `k` at `scalar` and the base point's u-coordinate 9, to `*out`. The scalar is decoded (clamped).
 ///
 /// Contract: `VG.Spec.X25519.x25519BaseContract`. Constant time: only the pointers may affect timing, not the scalar.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -62,7 +66,7 @@ bl {vg_gf25519_r32_mul}
 bl {vg_gf25519_r32_mul}
 .base64 "AADDOAAAZjhgAIA4YACgOCACwDg="
 bl {vg_gf25519_r32_mul}
-.base64 "AADDOEAA5oBgA+aQRADmgGQD5pBIAOaAaAPmkEwA5oBsA+aQUADmgHAD5pBUAOaAdAPmkFgA5oB4A+aQXADmgHwD5pB8A+aAwg/oeIYP53hg+Od4fAPmkBMAoDjSKQh9YAPmgBRC53xgA+aQIgDoeGQD5oAUQud8ZAPmkCIA6HhoA+aAFELnfGgD5pAiAOh4bAPmgBRC53xsA+aQIgDoeHAD5oAUQud8cAPmkCIA6Hh0A+aAFELnfHQD5pAiAOh4eAPmgBRC53x4A+aQIgDoeHwD5oAUQud8fAPmkCIA6HgTAAA5YAPmgBRC53yAA+aQIgDoeGQD5oAUQud8hAPmkCIA6HhoA+aAFELnfIgD5pAiAOh4bAPmgBRC53yMA+aQIgDoeHAD5oAUQud8kAPmkCIA6Hh0A+aAFELnfJQD5pAiAOh4eAPmgBRC53yYA+aQIgDoeHwD5oAUQud8nAPmkCIA6HicA+aAwg/reAAAgDhQIGt9hg/neGD453icA+aQYAPmgIADpoB4OqV8OFilfHgq53xgA+aQZAPmgIQDpoB4OqV8OFilfHgq53xkA+aQaAPmgIgDpoB4OqV8OFilfHgq53xoA+aQbAPmgIwDpoB4OqV8OFilfHgq53xsA+aQcAPmgJADpoB4OqV8OFilfHgq53xwA+aQdAPmgJQDpoB4OqV8OFilfHgq53x0A+aQeAPmgJgDpoB4OqV8OFilfHgq53x4A+aQfAPmgJwDpoB4OqV8OFilfHgq53x8A+aQYATm6KYD6HwAANs5YAPmgAAA7pBkA+aABADukGgD5oAIAO6QbAPmgAwA7pBwA+aAEADukHQD5oAUAO6QeAPmgBgA7pB8A+aAHADukAAExukIBObpEAQG6hgEJuogBEbqKARm6jAERus4BGbrQASG60gEputQBMbrWATm6yAAgE4=""#,
+.base64 "AADDOEAA5oBgA+aQRADmgGQD5pBIAOaAaAPmkEwA5oBsA+aQUADmgHAD5pBUAOaAdAPmkFgA5oB4A+aQXADmgHwD5pB8A+aAwg/oeIYP53hg+Od4fAPmkBMAoDjSKQh9YAPmgBRC53xgA+aQIgDoeGQD5oAUQud8ZAPmkCIA6HhoA+aAFELnfGgD5pAiAOh4bAPmgBRC53xsA+aQIgDoeHAD5oAUQud8cAPmkCIA6Hh0A+aAFELnfHQD5pAiAOh4eAPmgBRC53x4A+aQIgDoeHwD5oAUQud8fAPmkCIA6HgTAAA5YAPmgBRC53yAA+aQIgDoeGQD5oAUQud8hAPmkCIA6HhoA+aAFELnfIgD5pAiAOh4bAPmgBRC53yMA+aQIgDoeHAD5oAUQud8kAPmkCIA6Hh0A+aAFELnfJQD5pAiAOh4eAPmgBRC53yYA+aQIgDoeHwD5oAUQud8nAPmkCIA6HicA+aAwg/reAAAgDhQIGt9hg/neGD453icA+aQYAPmgIADpoB4OqV8OFilfHgq53xgA+aQZAPmgIQDpoB4OqV8OFilfHgq53xkA+aQaAPmgIgDpoB4OqV8OFilfHgq53xoA+aQbAPmgIwDpoB4OqV8OFilfHgq53xsA+aQcAPmgJADpoB4OqV8OFilfHgq53xwA+aQdAPmgJQDpoB4OqV8OFilfHgq53x0A+aQeAPmgJgDpoB4OqV8OFilfHgq53x4A+aQfAPmgJwDpoB4OqV8OFilfHgq53x8A+aQYATm6KYD6HwAANs5YAPmgAAA7pBkA+aABADukGgD5oAIAO6QbAPmgAwA7pBwA+aAEADukHQD5oAUAO6QeAPmgBgA7pB8A+aAHADukAAExukIBObpEAQG6hgEJuogBEbqKARm6jAERus4BGbrQASG60gEputQBMbrWATm6wAAADgAAGA4AACAOAAAoDgAAMA4AADgOAAAADkAACA5AABAOQAAYDkAAIA5FAAAfCAAgE4=""#,
         vg_gf25519_r32_pow250 = sym super::ed25519::vg_gf25519_r32_pow250::vg_gf25519_r32_pow250,
         vg_gf25519_r32_mul = sym super::ed25519::vg_gf25519_r32_mul::vg_gf25519_r32_mul,
         VG_ED25519_COMB = sym super::consts::VG_ED25519_COMB,

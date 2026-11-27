@@ -17,7 +17,7 @@ frame): `base s` is `esp` after the push, the caller's `n` argument words
 280 bytes below its return address (`stack_eq`). `push_ctx`: after the push,
 `Whole.Ctx` holds of the regions the operation reads and writes; `kit`: the
 layout facts the calls need (`Kit`), from its precondition's;
-`pop_abi`: after the pop, the callee-saved registers and the return address
+`pop_abi`: after the pop, whatever the frame's bytes, the callee-saved registers and the return address
 are as they were.
 -/
 
@@ -107,15 +107,24 @@ theorem push_ctx {ins outs : List Region} (hrd : s.rd = ins) (hwr : s.wr = outs)
 /-- After the pop, the callee-saved registers and the return address. -/
 theorem pop_abi {ins outs : List Region} {u : State} {q : Reg} (hq : q ∉ calleeSaved)
     (hb : 280 ≤ (s.gpr .esp).toNat)
-    (hu : Whole.Ctx (base s) s.gpr s.mem ins outs u) (hret : ∀ R ∈ outs, (RET s).Disjoint R) :
-    abiPreserved s (popped q (List.replicate 64 Reg.eax).length u) := by
+    (hu : Whole.Ctx (base s) s.gpr s.mem ins outs u) (hret : ∀ R ∈ outs, (RET s).Disjoint R)
+    {m : Mem} (fl : Frame [below (s.gpr .esp) (4 * (List.replicate 64 Reg.eax).length)] u.mem m)
+    (v : Nat → BitVec 32) :
+    abiPreserved s { popped q (List.replicate 64 Reg.eax).length u with mem := m, unknowns := v } := by
   refine ⟨fun r hr => ?_, ?_⟩
-  · by_cases he : r = .esp
+  · show (popped q (List.replicate 64 Reg.eax).length u).gpr r = s.gpr r
+    by_cases he : r = .esp
     · subst r
       rw [popped_esp, hu.esp, List.length_replicate]
       exact BitVec.sub_add_cancel _ _
     · rw [popped_gpr _ _ _ he (by intro e; subst r; exact hq hr), hu.cs r hr he]
-  · rw [popped_mem]
+  · show m.readW _ 32 = _
+    rw [fl.readW (r := RET s) (Region.contains_self _ _) (fun r hr => by
+      rw [List.mem_singleton.mp hr]
+      change Region.Disjoint ⟨(s.gpr .esp).setWidth 64, 4⟩
+        ⟨(s.gpr .esp - BitVec.ofNat 32 256).setWidth 64, 256⟩
+      rw [Taint.sub_setWidth (by omega_using [hb] : 256 ≤ (s.gpr .esp).toNat)]
+      exact (Offset.below_disjoint _ (by decide)).symm) (by decide)]
     refine hu.frame.readW (r := RET s) (Region.contains_self _ _) ?_ (by decide)
     intro R hR
     rcases List.mem_append.mp hR with hR | hR

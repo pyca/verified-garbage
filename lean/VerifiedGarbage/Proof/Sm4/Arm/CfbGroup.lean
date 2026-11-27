@@ -2,16 +2,14 @@ module
 
 import VerifiedGarbage.Proof.Sm4.Arm.CfbFill
 public import VerifiedGarbage.Proof.Sm4.Arm.BatchGroup
-import VerifiedGarbage.Proof.Sm4.Arm.BatchCalls
-public import VerifiedGarbage.Proof.Sm4.Arm.PreparedBody
-import VerifiedGarbage.Proof.Sm4.Arm.Core
+public import VerifiedGarbage.Proof.Sm4.Arm.PreparedVerified
+import VerifiedGarbage.Proof.Sm4.Arm.Group
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.MdStream.Arm.Common
 public import VerifiedGarbage.Impl.Sm4.Arm.BatchCfb
-public import VerifiedGarbage.Proof.Sm4.Arm.BatchXor
 public import VerifiedGarbage.Proof.Sm4.Prepared
 
 /-! # One eight-block CFB decryption batch on ARMv7 -/

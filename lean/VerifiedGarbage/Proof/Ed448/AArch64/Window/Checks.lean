@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Ed448.AArch64.VerifyChecks
 import VerifiedGarbage.Proof.Curve448.AArch64.Legacy
 public import VerifiedGarbage.Proof.Framework.AArch64.Inline
 import VerifiedGarbage.Proof.X448.AArch64.Freeze
-import VerifiedGarbage.Proof.Curve448.AArch64.Copy
+import VerifiedGarbage.Proof.Curve448.AArch64.Stage
 import VerifiedGarbage.Proof.X448.AArch64.Copy
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AddrArith

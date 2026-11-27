@@ -1,11 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.X86_64.FragS
+public import VerifiedGarbage.Proof.MlKem.X86_64.FragC
 public import VerifiedGarbage.Proof.MlKem.X86_64.Sample4Impl
 import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.KernelRfl
-meta import VerifiedGarbage.Proof.MlKem.X86_64.FragS
+meta import VerifiedGarbage.Proof.MlKem.X86_64.FragC
 meta import VerifiedGarbage.Proof.MlKem.X86_64.Sample4Impl
 meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 meta import VerifiedGarbage.Proof.Framework.Offset

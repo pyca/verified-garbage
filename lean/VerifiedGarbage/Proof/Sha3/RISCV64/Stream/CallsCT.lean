@@ -3,12 +3,11 @@ module
 public import VerifiedGarbage.Proof.Sha3.RISCV64.Stream.Calls
 public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Framework.RISCV64.RelCT
-import VerifiedGarbage.Proof.Sha3.RISCV64.Stream.Verified
 
 /-!
 # The SHA-3 sponge on RISC-V: its calls in constant time
 
-As PPC64LE's (`Proof/Ed448/PPC64LE/Whole/HashCT.lean`): two runs that call
+As PPC64LE's (`Proof/Ed448/PPC64LE/Whole/SignNonce.lean`): two runs that call
 `vg_keccak_absorb`, `vg_keccak_pad` or `vg_keccak_squeeze` on the same
 arguments leak the same trace (`absorbCall_ct`, `padCall_ct`,
 `squeezeCall_ct`), by the callee's own constant-time proof (`RelCT.call`).

@@ -27,11 +27,16 @@ the records of what it imports (`problems`), without walking any imported proof.
 
 Records are read from the entries of the imported `.olean` files, as Lean's own
 `collectAxioms` reads its data: code running in a module that changed the
-extension's state could forge them, as it could overwrite `.olean` files. A constant of Lean or a dependency (not of this project),
-which writes no records, contributes the axioms `TCB/AuditBase.lean` lists for it, or
-none but itself if it is one of the three standard axioms: that list is checked
-against their private data (`lean/VerifiedGarbageAuditBase.lean`) whenever they
-change.
+extension's state could forge them, as it could overwrite `.olean` files. A
+module's records are read whatever its name: a module that wrote any is audited by
+them (`Ctx.origin`, `importedModuleRecord`), as a module of this project
+(`isProjectModule`) is, which fails the audit without them. Only a module that
+neither wrote records nor is named as one of this project's is taken for one of
+Lean or a dependency (`ci/check_lean_imports.py` checks that every library of
+this project loads the plugin that writes them): a constant of one contributes
+the axioms `TCB/AuditBase.lean` lists for it, or none but itself if it is one of
+the three standard axioms: that list is checked against their private data
+(`lean/VerifiedGarbageAuditBase.lean`) whenever they change.
 -/
 
 public meta section
@@ -40,8 +45,11 @@ namespace VG.AuditRecords
 
 open Lean Elab Command
 
-/-- Whether `m` is a module of this project. -/
-def isProjectModule (m : Name) : Bool := (`VerifiedGarbage).isPrefixOf m
+/-- Whether `m` is a module of this project's libraries (`lakefile.toml`), which must
+have records: `VerifiedGarbage` and the tests. A module that wrote records is
+audited by them whatever its name (`Ctx.origin`, `importedModuleRecord`). -/
+def isProjectModule (m : Name) : Bool :=
+  (`VerifiedGarbage).isPrefixOf m || (`VerifiedGarbageTest).isPrefixOf m
 
 /-- A constant's record: its name, the axioms it depends on, and the constants of this
 project its compiled code may run that carry `implemented_by`, `extern` or
@@ -106,9 +114,12 @@ def Ctx.find? (ctx : Ctx) (i : ModuleIdx) (c : Name) : Option ConstRec :=
 inductive Origin where
   /-- Declared in the environment being elaborated or written: walk its value. -/
   | own
-  /-- Declared in an imported module of this project: use its record. -/
+  /-- Declared in an imported module that wrote records, or of this project: use its
+  record. -/
   | project (i : ModuleIdx)
-  /-- Declared in Lean or a dependency: its compiled code is trusted, and its axioms are `TCB/AuditBase.lean`'s (`axiomsOfBase`). -/
+  /-- Declared in a module that wrote no records and is not of this project, Lean's or
+  a dependency's: its compiled code is trusted, and its axioms are
+  `TCB/AuditBase.lean`'s (`axiomsOfBase`). -/
   | other
 
 def Ctx.origin (ctx : Ctx) (c : Name) : Origin :=
@@ -117,7 +128,9 @@ def Ctx.origin (ctx : Ctx) (c : Name) : Origin :=
   | none => if ctx.ownModule.isNone then .own else .other
   | some i =>
     if ctx.ownModule == some i then .own
-    else if isProjectModule ctx.names[i.toNat]! then .project i else .other
+    -- A module that declares `c` and wrote records has `c`'s among them.
+    else if !(ctx.records i).isEmpty || isProjectModule ctx.names[i.toNat]! then .project i
+    else .other
 
 /-- The declaration of `c` in the environment being walked. `Environment.find?` misses
 some constants the kernel checked: a declaration realized on another environment
@@ -128,9 +141,38 @@ on when it writes the module's constants from it. -/
 def Ctx.findConst? (ctx : Ctx) (c : Name) : Option ConstantInfo :=
   ctx.env.find? c <|> ctx.env.toKernelEnv.find? c
 
-/-- Whether code may run something other than what the kernel checked for `c`. -/
-def overridden (env : Environment) (c : Name) : Bool :=
+/-- Whether `c` carries `implemented_by`, `extern` or `export`. -/
+def carriesOverride (env : Environment) (c : Name) : Bool :=
   (Compiler.getImplementedBy? env c).isSome || isExtern env c || (getExportNameFor? env c).isSome
+
+/-- Whether `c` is the `ctorIdx` of an inductive `I` (its constructor's index, by
+`I.casesOn`) whose compiled code is the one Lean generates for it (since 4.36,
+`Lean.Meta.Constructions.CtorIdx`): `implemented_by` the `I.ctorIdx._impl` it
+generates, which reads the index from the value's constructor tag
+(`getObjTagNat`) and carries no override of its own. Lean's compiler is trusted
+to give each constructor its index as its tag, as it is trusted to compile
+`I.casesOn` by it. -/
+def isCoreCtorIdx (env : Environment) (c : Name) : Bool := Id.run do
+  let .str ind "ctorIdx" := c | return false
+  unless env.find? ind matches some (.inductInfo _) do return false
+  let impl := Name.str c "_impl"
+  unless Compiler.getImplementedBy? env c == some impl do return false
+  if isExtern env c || (getExportNameFor? env c).isSome || carriesOverride env impl then
+    return false
+  let some (.defnInfo v) := env.find? impl | return false
+  -- `fun … x => getObjTagNat x`
+  let rec body : Expr → Expr
+    | .lam _ _ b _ => body b
+    | e => e
+  return match body v.value with
+    | .app (.app (.const ``getObjTagNat _) _) (.bvar 0) => true
+    | _ => false
+
+/-- Whether code may run something other than what the kernel checked for `c`: it
+carries `implemented_by`, `extern` or `export`, but for Lean's own compiled code of
+an inductive's `ctorIdx` (`isCoreCtorIdx`). -/
+def overridden (env : Environment) (c : Name) : Bool :=
+  carriesOverride env c && !isCoreCtorIdx env c
 
 /-- The sentinel axiom a constant depends on when its record is missing: no standard
 axiom, so the audit fails, naming it. -/
@@ -222,18 +264,19 @@ def moduleRecordOf (env : Environment) (m : Name) (own : Array (Name × Constant
     if Compiler.hasCSimpAttribute env n then some n else none
   (sortDedup specs, sortDedup inits, sortDedup csimps, #[])
 
-/-- The union of the records of the modules of this project `env` loaded the data of,
-given their entries (`entries i`): with the modules among them that have none. -/
+/-- The union of the records of the modules `env` loaded the data of that wrote any,
+given their entries (`entries i`): with the modules of this project among them that
+have none. -/
 def importedModuleRecord (env : Environment) (entries : ModuleIdx → Array ModuleRec) : ModuleRec := Id.run do
   let names := env.header.moduleNames
   let mut acc : ModuleRec := (#[], #[], #[], #[])
   for h : i in [:names.size] do
     let m := names[i]
-    unless isProjectModule m && !unrecorded.contains m do continue
     unless env.header.modules[i]!.hasData do continue
     match (entries i)[0]? with
     | some r => acc := acc.union r
-    | none => acc := acc.union (#[], #[], #[], #[m])
+    | none =>
+      if isProjectModule m && !unrecorded.contains m then acc := acc.union (#[], #[], #[], #[m])
   return acc
 
 /-- This environment's module record: its own, and its imports'. -/

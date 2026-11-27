@@ -16,12 +16,18 @@
 // the password KDFs' working memory (scrypt's and Argon2's) and the key their
 // `verify` functions derive, once compared.
 //
-// What is not: the symmetric algorithms' `scratch`; the verified functions'
+// What is not: the verified functions'
 // stack, which their contracts do not promise to wipe (but RC4's); copies of
 // states the Rust code makes on the stack when it moves them (e.g. each
 // ChaCha20-Poly1305 call's context, PBKDF2's and scrypt's blocks), which later
 // calls overwrite; and what is returned to the caller (a MAC, a derived key or
 // a shared secret).
+//
+// What is never left: a copy of a secret outside the buffer that holds it.
+// The Rust code does not move secret bytes within a buffer or grow one that
+// holds them, which would leave a copy the caller cannot reach to wipe; every
+// call that moves, shortens or grows a buffer says why it does not
+// (`// NO-SECRET-RESIDUE:`, `ci/check_secret_residue.py`).
 
 mod sealed {
     pub trait Sealed {}

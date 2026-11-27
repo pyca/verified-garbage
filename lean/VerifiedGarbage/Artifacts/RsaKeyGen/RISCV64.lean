@@ -1,33 +1,36 @@
 module
 
-public import VerifiedGarbage.Proof.RsaKeyGen.RISCV64.KeyInit
+public import VerifiedGarbage.TCB.RISCV64.Target
+public import VerifiedGarbage.TCB.Registration
 public import VerifiedGarbage.Spec.RsaKeyGen.KeySearchContract
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.RISCV64.Print
-public import VerifiedGarbage.Proof.MillerRabin.RISCV64.Backend
-public import VerifiedGarbage.Impl.RsaKeyGen.TrialTable32
-public import VerifiedGarbage.Proof.RsaKeyGen.RISCV64.Generate.Verified
-public import VerifiedGarbage.Proof.Rsa.RISCV64.IbInverse
-public import VerifiedGarbage.Proof.Divstep.TcSBounds
-public import VerifiedGarbage.Proof.Variants.MillerRabin.RISCV64
+import VerifiedGarbage.Proof.RsaKeyGen.RISCV64.Fn
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.MillerRabin.RISCV64.Backend
+import VerifiedGarbage.Impl.RsaKeyGen.RISCV64.Fn
+import VerifiedGarbage.Proof.Variants.MillerRabin.RISCV64
+import VerifiedGarbage.Impl.RsaKeyGen.TrialTable32
+import VerifiedGarbage.Proof.Rsa.RISCV64.IbInverse
+import VerifiedGarbage.Proof.Divstep.TcSBounds
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # RSA key generation (FIPS 186-5 A.1.3) on RISC-V -/
 
-@[expose] public section
-
 namespace VG.Artifacts.RsaKeyGen.RISCV64
 
-def direct : List Artifact := [
+def direct : List (Artifact RISCV64.target) := [
   Spec.RsaKeyGen.keyInitApi.artifact RISCV64.target {
-    code := Impl.RsaKeyGen.RISCV64.KeyInit.init
-    verified := Proof.RsaKeyGen.RISCV64.KeyInit.init_verified }]
+    code := Impl.RsaKeyGen.RISCV64.KeyInit.Fn.init
+    verified := Proof.RsaKeyGen.RISCV64.Fn.init_scrubbed
+    publicOutOk := Proof.RsaKeyGen.RISCV64.Fn.init_public }]
 
-def artifacts : List Artifact :=
-  direct ++
-  (VG.Proof.Variants.MillerRabin.RISCV64.variants.flatMap fun (v : Proof.MillerRabin.RISCV64.RoundImpl) => [
+public def artifacts : List (Artifact RISCV64.target) :=
+  direct ++ Proof.Variants.MillerRabin.RISCV64.variants.map fun (v : Proof.MillerRabin.RISCV64.RoundImpl) =>
     Spec.RsaKeyGen.keySearchApi.artifact RISCV64.target {
       suffix := v.suffix
-      code := Proof.RsaKeyGen.RISCV64.Generate.genCode v
-      verified := Proof.RsaKeyGen.RISCV64.Generate.gen_verified v }])
+      code := Impl.RsaKeyGen.RISCV64.Fn.keySearch v.suffix v.code
+      verified := Proof.RsaKeyGen.RISCV64.Fn.keySearch_scrubbed v
+      publicOutOk := Proof.RsaKeyGen.RISCV64.Fn.keySearch_public v }
+
+spec_apis artifacts
 
 end VG.Artifacts.RsaKeyGen.RISCV64

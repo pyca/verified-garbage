@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.MlKem.checkEkContract`. Constant time: only the pointer may affect timing.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `ek` must be valid for reads of 1184 bytes.
@@ -20,7 +22,8 @@ pub(crate) unsafe extern "C" fn vg_mlkem768_check_ek(ek: *const [u8; 1184]) -> u
 .inst 0xf9400009,0xb940080a,0x4e080d20,0x4e181d40,0x4e100001,0x4e311c22,0x6f340423,0x6eb23c42
 .inst 0x6eb23c63,0x4ea21e73,0x4ea31e73,0x91003000,0xd100056b
 cbnz x11, 20b
-.inst 0x6eb03a74,0x4e083e89,0xd1000520,0xd37ffc00,0xd65f03c0
+.inst 0x6eb03a74,0x4e083e89,0xd1000520,0xd37ffc00,0xd2800009,0xd280000a,0x6f00e400,0x6f00e401
+.inst 0x6f00e402,0x6f00e403,0x6f00e410,0x6f00e413,0x6f00e414,0xd65f03c0
 .p2align 6",
     )
 }
@@ -32,6 +35,8 @@ pub const VG_MLKEM768_KEYGEN_X2_SHA3_KECCAK_SHA3_FEATURES: verified_garbage_cpu:
 ///
 /// Contract: `VG.Spec.MlKem.keyGenContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (the last 32 bytes of the encapsulation key), but not on anything else of the seed or the keys.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `seed` must be valid for reads of 64 bytes.
@@ -41,7 +46,7 @@ pub const VG_MLKEM768_KEYGEN_X2_SHA3_KECCAK_SHA3_FEATURES: verified_garbage_cpu:
 /// * `seed` must be random bytes from an approved RBG (FIPS 203 §3.3), or a seed so generated before.
 /// * `scratch` is working space: on return each of its bytes is unchanged or zero.
 /// * `ek`, `dk` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
-/// * None of `seed`, `ek`, `dk` and `scratch` may overlap the 160 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `seed`, `ek`, `dk` and `scratch` may overlap the 176 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha3` target feature.
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mlkem768_keygen_x2_sha3_keccak_sha3(seed: *const [u8; 64], ek: *mut [u8; 1184], dk: *mut [u8; 2400], scratch: *mut [u64; 4096]) -> u32 {
@@ -50,7 +55,15 @@ pub(crate) unsafe extern "C" fn vg_mlkem768_keygen_x2_sha3_keccak_sha3(seed: *co
 bl {vg_mlkem768_keygen_body_x2_sha3_keccak_sha3}
 .inst 0xf9000be0,0xf94007e0,0xd2900001
 bl {vg_zeroize}
-.inst 0xf9400be0,0xf94003fe,0x910083ff,0xd65f03c0
+.inst 0xf9400be0,0xf94003fe,0x910083ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005
+.inst 0xd2800006,0xd2800007,0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d
+.inst 0xd280000e,0xd280000f,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403
+.inst 0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413
+.inst 0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b
+.inst 0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f,0x4e181c28,0x4e181c29,0x4e181c2a
+.inst 0x4e181c2b,0x4e181c2c,0x4e181c2d,0x4e181c2e,0x4e181c2f,0x11000000,0xd102c3ff,0x6f00e41f
+.inst 0x910003e9,0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x3d80113f,0x3d80153f,0x3d80193f
+.inst 0x3d801d3f,0x3d80213f,0x3d80253f,0x3d80293f,0x9102c3ff,0xd65f03c0
 .p2align 6",
         vg_mlkem768_keygen_body_x2_sha3_keccak_sha3 = sym super::mlkem768::vg_mlkem768_keygen_body_x2_sha3_keccak_sha3::vg_mlkem768_keygen_body_x2_sha3_keccak_sha3,
         vg_zeroize = sym super::zeroize::vg_zeroize,
@@ -64,6 +77,8 @@ pub const VG_MLKEM768_ENCAPS_X2_SHA3_KECCAK_SHA3_FEATURES: verified_garbage_cpu:
 ///
 /// Contract: `VG.Spec.MlKem.encapsContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (the last 32 bytes of `*ek`), but not on anything else of the key, on the randomness or on the outputs.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `ek` must be valid for reads of 1184 bytes.
@@ -75,7 +90,7 @@ pub const VG_MLKEM768_ENCAPS_X2_SHA3_KECCAK_SHA3_FEATURES: verified_garbage_cpu:
 /// * `m` must be fresh random bytes from an approved RBG (FIPS 203 §3.3).
 /// * `scratch` is working space: on return each of its bytes is unchanged or zero.
 /// * `key`, `ct` and `scratch` must not overlap each other, `ek` or `m` (distinct Rust objects never do).
-/// * None of `ek`, `m`, `key`, `ct` and `scratch` may overlap the 160 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `ek`, `m`, `key`, `ct` and `scratch` may overlap the 176 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha3` target feature.
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mlkem768_encaps_x2_sha3_keccak_sha3(ek: *const [u8; 1184], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1088], scratch: *mut [u64; 4096]) -> u32 {
@@ -84,7 +99,15 @@ pub(crate) unsafe extern "C" fn vg_mlkem768_encaps_x2_sha3_keccak_sha3(ek: *cons
 bl {vg_mlkem768_encaps_body_x2_sha3_keccak_sha3}
 .inst 0xf9000be0,0xf94007e0,0xd2900001
 bl {vg_zeroize}
-.inst 0xf9400be0,0xf94003fe,0x910083ff,0xd65f03c0
+.inst 0xf9400be0,0xf94003fe,0x910083ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005
+.inst 0xd2800006,0xd2800007,0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d
+.inst 0xd280000e,0xd280000f,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403
+.inst 0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413
+.inst 0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b
+.inst 0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f,0x4e181c28,0x4e181c29,0x4e181c2a
+.inst 0x4e181c2b,0x4e181c2c,0x4e181c2d,0x4e181c2e,0x4e181c2f,0x11000000,0xd102c3ff,0x6f00e41f
+.inst 0x910003e9,0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x3d80113f,0x3d80153f,0x3d80193f
+.inst 0x3d801d3f,0x3d80213f,0x3d80253f,0x3d80293f,0x9102c3ff,0xd65f03c0
 .p2align 6",
         vg_mlkem768_encaps_body_x2_sha3_keccak_sha3 = sym super::mlkem768::vg_mlkem768_encaps_body_x2_sha3_keccak_sha3::vg_mlkem768_encaps_body_x2_sha3_keccak_sha3,
         vg_zeroize = sym super::zeroize::vg_zeroize,
@@ -98,6 +121,8 @@ pub const VG_MLKEM768_ENCAPS_H_X2_SHA3_KECCAK_SHA3_FEATURES: verified_garbage_cp
 ///
 /// Contract: `VG.Spec.MlKem.encapsHContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (the last 32 bytes of `*ek`), but not on anything else of the key, on its hash, on the randomness or on the outputs.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `ek` must be valid for reads of 1184 bytes.
@@ -111,7 +136,7 @@ pub const VG_MLKEM768_ENCAPS_H_X2_SHA3_KECCAK_SHA3_FEATURES: verified_garbage_cp
 /// * `m` must be fresh random bytes from an approved RBG (FIPS 203 §3.3).
 /// * `scratch` is working space: on return each of its bytes is unchanged or zero.
 /// * `key`, `ct` and `scratch` must not overlap each other, `ek`, `h` or `m` (distinct Rust objects never do).
-/// * None of `ek`, `h`, `m`, `key`, `ct` and `scratch` may overlap the 160 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `ek`, `h`, `m`, `key`, `ct` and `scratch` may overlap the 176 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha3` target feature.
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mlkem768_encaps_h_x2_sha3_keccak_sha3(ek: *const [u8; 1184], h: *const [u8; 32], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1088], scratch: *mut [u64; 4096]) -> u32 {
@@ -120,7 +145,15 @@ pub(crate) unsafe extern "C" fn vg_mlkem768_encaps_h_x2_sha3_keccak_sha3(ek: *co
 bl {vg_mlkem768_encaps_h_body_x2_sha3_keccak_sha3}
 .inst 0xf9000be0,0xf94007e0,0xd2900001
 bl {vg_zeroize}
-.inst 0xf9400be0,0xf94003fe,0x910083ff,0xd65f03c0
+.inst 0xf9400be0,0xf94003fe,0x910083ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005
+.inst 0xd2800006,0xd2800007,0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d
+.inst 0xd280000e,0xd280000f,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403
+.inst 0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413
+.inst 0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b
+.inst 0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f,0x4e181c28,0x4e181c29,0x4e181c2a
+.inst 0x4e181c2b,0x4e181c2c,0x4e181c2d,0x4e181c2e,0x4e181c2f,0x11000000,0xd102c3ff,0x6f00e41f
+.inst 0x910003e9,0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x3d80113f,0x3d80153f,0x3d80193f
+.inst 0x3d801d3f,0x3d80213f,0x3d80253f,0x3d80293f,0x9102c3ff,0xd65f03c0
 .p2align 6",
         vg_mlkem768_encaps_h_body_x2_sha3_keccak_sha3 = sym super::mlkem768::vg_mlkem768_encaps_h_body_x2_sha3_keccak_sha3::vg_mlkem768_encaps_h_body_x2_sha3_keccak_sha3,
         vg_zeroize = sym super::zeroize::vg_zeroize,
@@ -134,6 +167,8 @@ pub const VG_MLKEM768_DECAPS_X2_SHA3_KECCAK_SHA3_FEATURES: verified_garbage_cpu:
 ///
 /// Contract: `VG.Spec.MlKem.decapsContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (bytes 2304–2335 of `*dk`), but not on anything else of the key, on the ciphertext, or on whether it was rejected.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `dk` must be valid for reads of 2400 bytes.
@@ -143,7 +178,7 @@ pub const VG_MLKEM768_DECAPS_X2_SHA3_KECCAK_SHA3_FEATURES: verified_garbage_cpu:
 /// * `dk` must have been written by `vg_mlkem768_keygen` (so that it passes the checks of FIPS 203 §7.3).
 /// * `scratch` is working space: on return each of its bytes is unchanged or zero.
 /// * `key` and `scratch` must not overlap each other, `dk` or `ct` (distinct Rust objects never do).
-/// * None of `dk`, `ct`, `key` and `scratch` may overlap the 160 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `dk`, `ct`, `key` and `scratch` may overlap the 176 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha3` target feature.
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mlkem768_decaps_x2_sha3_keccak_sha3(dk: *const [u8; 2400], ct: *const [u8; 1088], key: *mut [u8; 32], scratch: *mut [u64; 4096]) -> u32 {
@@ -152,7 +187,15 @@ pub(crate) unsafe extern "C" fn vg_mlkem768_decaps_x2_sha3_keccak_sha3(dk: *cons
 bl {vg_mlkem768_decaps_body_x2_sha3_keccak_sha3}
 .inst 0xf9000be0,0xf94007e0,0xd2900001
 bl {vg_zeroize}
-.inst 0xf9400be0,0xf94003fe,0x910083ff,0xd65f03c0
+.inst 0xf9400be0,0xf94003fe,0x910083ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005
+.inst 0xd2800006,0xd2800007,0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d
+.inst 0xd280000e,0xd280000f,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403
+.inst 0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413
+.inst 0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b
+.inst 0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f,0x4e181c28,0x4e181c29,0x4e181c2a
+.inst 0x4e181c2b,0x4e181c2c,0x4e181c2d,0x4e181c2e,0x4e181c2f,0x11000000,0xd102c3ff,0x6f00e41f
+.inst 0x910003e9,0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x3d80113f,0x3d80153f,0x3d80193f
+.inst 0x3d801d3f,0x3d80213f,0x3d80253f,0x3d80293f,0x9102c3ff,0xd65f03c0
 .p2align 6",
         vg_mlkem768_decaps_body_x2_sha3_keccak_sha3 = sym super::mlkem768::vg_mlkem768_decaps_body_x2_sha3_keccak_sha3::vg_mlkem768_decaps_body_x2_sha3_keccak_sha3,
         vg_zeroize = sym super::zeroize::vg_zeroize,
@@ -166,6 +209,8 @@ pub const VG_MLKEM768_KEYGEN_X2_SHA3_FEATURES: verified_garbage_cpu::Features = 
 ///
 /// Contract: `VG.Spec.MlKem.keyGenContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (the last 32 bytes of the encapsulation key), but not on anything else of the seed or the keys.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `seed` must be valid for reads of 64 bytes.
@@ -175,7 +220,7 @@ pub const VG_MLKEM768_KEYGEN_X2_SHA3_FEATURES: verified_garbage_cpu::Features = 
 /// * `seed` must be random bytes from an approved RBG (FIPS 203 §3.3), or a seed so generated before.
 /// * `scratch` is working space: on return each of its bytes is unchanged or zero.
 /// * `ek`, `dk` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
-/// * None of `seed`, `ek`, `dk` and `scratch` may overlap the 160 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `seed`, `ek`, `dk` and `scratch` may overlap the 176 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha3` target feature.
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mlkem768_keygen_x2_sha3(seed: *const [u8; 64], ek: *mut [u8; 1184], dk: *mut [u8; 2400], scratch: *mut [u64; 4096]) -> u32 {
@@ -184,7 +229,15 @@ pub(crate) unsafe extern "C" fn vg_mlkem768_keygen_x2_sha3(seed: *const [u8; 64]
 bl {vg_mlkem768_keygen_body_x2_sha3}
 .inst 0xf9000be0,0xf94007e0,0xd2900001
 bl {vg_zeroize}
-.inst 0xf9400be0,0xf94003fe,0x910083ff,0xd65f03c0
+.inst 0xf9400be0,0xf94003fe,0x910083ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005
+.inst 0xd2800006,0xd2800007,0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d
+.inst 0xd280000e,0xd280000f,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403
+.inst 0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413
+.inst 0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b
+.inst 0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f,0x4e181c28,0x4e181c29,0x4e181c2a
+.inst 0x4e181c2b,0x4e181c2c,0x4e181c2d,0x4e181c2e,0x4e181c2f,0x11000000,0xd102c3ff,0x6f00e41f
+.inst 0x910003e9,0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x3d80113f,0x3d80153f,0x3d80193f
+.inst 0x3d801d3f,0x3d80213f,0x3d80253f,0x3d80293f,0x9102c3ff,0xd65f03c0
 .p2align 6",
         vg_mlkem768_keygen_body_x2_sha3 = sym super::mlkem768::vg_mlkem768_keygen_body_x2_sha3::vg_mlkem768_keygen_body_x2_sha3,
         vg_zeroize = sym super::zeroize::vg_zeroize,
@@ -198,6 +251,8 @@ pub const VG_MLKEM768_ENCAPS_X2_SHA3_FEATURES: verified_garbage_cpu::Features = 
 ///
 /// Contract: `VG.Spec.MlKem.encapsContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (the last 32 bytes of `*ek`), but not on anything else of the key, on the randomness or on the outputs.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `ek` must be valid for reads of 1184 bytes.
@@ -209,7 +264,7 @@ pub const VG_MLKEM768_ENCAPS_X2_SHA3_FEATURES: verified_garbage_cpu::Features = 
 /// * `m` must be fresh random bytes from an approved RBG (FIPS 203 §3.3).
 /// * `scratch` is working space: on return each of its bytes is unchanged or zero.
 /// * `key`, `ct` and `scratch` must not overlap each other, `ek` or `m` (distinct Rust objects never do).
-/// * None of `ek`, `m`, `key`, `ct` and `scratch` may overlap the 160 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `ek`, `m`, `key`, `ct` and `scratch` may overlap the 176 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha3` target feature.
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mlkem768_encaps_x2_sha3(ek: *const [u8; 1184], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1088], scratch: *mut [u64; 4096]) -> u32 {
@@ -218,7 +273,15 @@ pub(crate) unsafe extern "C" fn vg_mlkem768_encaps_x2_sha3(ek: *const [u8; 1184]
 bl {vg_mlkem768_encaps_body_x2_sha3}
 .inst 0xf9000be0,0xf94007e0,0xd2900001
 bl {vg_zeroize}
-.inst 0xf9400be0,0xf94003fe,0x910083ff,0xd65f03c0
+.inst 0xf9400be0,0xf94003fe,0x910083ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005
+.inst 0xd2800006,0xd2800007,0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d
+.inst 0xd280000e,0xd280000f,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403
+.inst 0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413
+.inst 0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b
+.inst 0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f,0x4e181c28,0x4e181c29,0x4e181c2a
+.inst 0x4e181c2b,0x4e181c2c,0x4e181c2d,0x4e181c2e,0x4e181c2f,0x11000000,0xd102c3ff,0x6f00e41f
+.inst 0x910003e9,0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x3d80113f,0x3d80153f,0x3d80193f
+.inst 0x3d801d3f,0x3d80213f,0x3d80253f,0x3d80293f,0x9102c3ff,0xd65f03c0
 .p2align 6",
         vg_mlkem768_encaps_body_x2_sha3 = sym super::mlkem768::vg_mlkem768_encaps_body_x2_sha3::vg_mlkem768_encaps_body_x2_sha3,
         vg_zeroize = sym super::zeroize::vg_zeroize,
@@ -232,6 +295,8 @@ pub const VG_MLKEM768_ENCAPS_H_X2_SHA3_FEATURES: verified_garbage_cpu::Features 
 ///
 /// Contract: `VG.Spec.MlKem.encapsHContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (the last 32 bytes of `*ek`), but not on anything else of the key, on its hash, on the randomness or on the outputs.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `ek` must be valid for reads of 1184 bytes.
@@ -245,7 +310,7 @@ pub const VG_MLKEM768_ENCAPS_H_X2_SHA3_FEATURES: verified_garbage_cpu::Features 
 /// * `m` must be fresh random bytes from an approved RBG (FIPS 203 §3.3).
 /// * `scratch` is working space: on return each of its bytes is unchanged or zero.
 /// * `key`, `ct` and `scratch` must not overlap each other, `ek`, `h` or `m` (distinct Rust objects never do).
-/// * None of `ek`, `h`, `m`, `key`, `ct` and `scratch` may overlap the 160 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `ek`, `h`, `m`, `key`, `ct` and `scratch` may overlap the 176 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha3` target feature.
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mlkem768_encaps_h_x2_sha3(ek: *const [u8; 1184], h: *const [u8; 32], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1088], scratch: *mut [u64; 4096]) -> u32 {
@@ -254,7 +319,15 @@ pub(crate) unsafe extern "C" fn vg_mlkem768_encaps_h_x2_sha3(ek: *const [u8; 118
 bl {vg_mlkem768_encaps_h_body_x2_sha3}
 .inst 0xf9000be0,0xf94007e0,0xd2900001
 bl {vg_zeroize}
-.inst 0xf9400be0,0xf94003fe,0x910083ff,0xd65f03c0
+.inst 0xf9400be0,0xf94003fe,0x910083ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005
+.inst 0xd2800006,0xd2800007,0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d
+.inst 0xd280000e,0xd280000f,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403
+.inst 0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413
+.inst 0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b
+.inst 0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f,0x4e181c28,0x4e181c29,0x4e181c2a
+.inst 0x4e181c2b,0x4e181c2c,0x4e181c2d,0x4e181c2e,0x4e181c2f,0x11000000,0xd102c3ff,0x6f00e41f
+.inst 0x910003e9,0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x3d80113f,0x3d80153f,0x3d80193f
+.inst 0x3d801d3f,0x3d80213f,0x3d80253f,0x3d80293f,0x9102c3ff,0xd65f03c0
 .p2align 6",
         vg_mlkem768_encaps_h_body_x2_sha3 = sym super::mlkem768::vg_mlkem768_encaps_h_body_x2_sha3::vg_mlkem768_encaps_h_body_x2_sha3,
         vg_zeroize = sym super::zeroize::vg_zeroize,
@@ -268,6 +341,8 @@ pub const VG_MLKEM768_DECAPS_X2_SHA3_FEATURES: verified_garbage_cpu::Features = 
 ///
 /// Contract: `VG.Spec.MlKem.decapsContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (bytes 2304–2335 of `*dk`), but not on anything else of the key, on the ciphertext, or on whether it was rejected.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `dk` must be valid for reads of 2400 bytes.
@@ -277,7 +352,7 @@ pub const VG_MLKEM768_DECAPS_X2_SHA3_FEATURES: verified_garbage_cpu::Features = 
 /// * `dk` must have been written by `vg_mlkem768_keygen` (so that it passes the checks of FIPS 203 §7.3).
 /// * `scratch` is working space: on return each of its bytes is unchanged or zero.
 /// * `key` and `scratch` must not overlap each other, `dk` or `ct` (distinct Rust objects never do).
-/// * None of `dk`, `ct`, `key` and `scratch` may overlap the 160 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `dk`, `ct`, `key` and `scratch` may overlap the 176 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha3` target feature.
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mlkem768_decaps_x2_sha3(dk: *const [u8; 2400], ct: *const [u8; 1088], key: *mut [u8; 32], scratch: *mut [u64; 4096]) -> u32 {
@@ -286,7 +361,15 @@ pub(crate) unsafe extern "C" fn vg_mlkem768_decaps_x2_sha3(dk: *const [u8; 2400]
 bl {vg_mlkem768_decaps_body_x2_sha3}
 .inst 0xf9000be0,0xf94007e0,0xd2900001
 bl {vg_zeroize}
-.inst 0xf9400be0,0xf94003fe,0x910083ff,0xd65f03c0
+.inst 0xf9400be0,0xf94003fe,0x910083ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005
+.inst 0xd2800006,0xd2800007,0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d
+.inst 0xd280000e,0xd280000f,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403
+.inst 0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413
+.inst 0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b
+.inst 0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f,0x4e181c28,0x4e181c29,0x4e181c2a
+.inst 0x4e181c2b,0x4e181c2c,0x4e181c2d,0x4e181c2e,0x4e181c2f,0x11000000,0xd102c3ff,0x6f00e41f
+.inst 0x910003e9,0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x3d80113f,0x3d80153f,0x3d80193f
+.inst 0x3d801d3f,0x3d80213f,0x3d80253f,0x3d80293f,0x9102c3ff,0xd65f03c0
 .p2align 6",
         vg_mlkem768_decaps_body_x2_sha3 = sym super::mlkem768::vg_mlkem768_decaps_body_x2_sha3::vg_mlkem768_decaps_body_x2_sha3,
         vg_zeroize = sym super::zeroize::vg_zeroize,
@@ -297,6 +380,8 @@ bl {vg_zeroize}
 ///
 /// Contract: `VG.Spec.MlKem.keyGenContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (the last 32 bytes of the encapsulation key), but not on anything else of the seed or the keys.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `seed` must be valid for reads of 64 bytes.
@@ -306,7 +391,7 @@ bl {vg_zeroize}
 /// * `seed` must be random bytes from an approved RBG (FIPS 203 §3.3), or a seed so generated before.
 /// * `scratch` is working space: on return each of its bytes is unchanged or zero.
 /// * `ek`, `dk` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
-/// * None of `seed`, `ek`, `dk` and `scratch` may overlap the 48 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `seed`, `ek`, `dk` and `scratch` may overlap the 176 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mlkem768_keygen(seed: *const [u8; 64], ek: *mut [u8; 1184], dk: *mut [u8; 2400], scratch: *mut [u64; 4096]) -> u32 {
     core::arch::naked_asm!(
@@ -314,7 +399,14 @@ pub(crate) unsafe extern "C" fn vg_mlkem768_keygen(seed: *const [u8; 64], ek: *m
 bl {vg_mlkem768_keygen_body}
 .inst 0xf9000be0,0xf94007e0,0xd2900001
 bl {vg_zeroize}
-.inst 0xf9400be0,0xf94003fe,0x910083ff,0xd65f03c0
+.inst 0xf9400be0,0xf94003fe,0x910083ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005
+.inst 0xd2800006,0xd2800007,0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d
+.inst 0xd280000e,0xd280000f,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403
+.inst 0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413
+.inst 0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b
+.inst 0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f,0x4e181c28,0x11000000,0xd102c3ff
+.inst 0x6f00e41f,0x910003e9,0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x3d80113f,0x3d80153f
+.inst 0x3d80193f,0x3d801d3f,0x3d80213f,0x3d80253f,0x3d80293f,0x9102c3ff,0xd65f03c0
 .p2align 6",
         vg_mlkem768_keygen_body = sym super::mlkem768::vg_mlkem768_keygen_body::vg_mlkem768_keygen_body,
         vg_zeroize = sym super::zeroize::vg_zeroize,
@@ -324,6 +416,8 @@ bl {vg_zeroize}
 /// ML-KEM-768 encapsulation with given randomness, `ML-KEM.Encaps_internal(ek, m)` (FIPS 203 Algorithm 17): with the encapsulation key `*ek` and the randomness `*m`, writes the shared secret key to `*key` and the ciphertext to `*ct`. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
 /// Contract: `VG.Spec.MlKem.encapsContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (the last 32 bytes of `*ek`), but not on anything else of the key, on the randomness or on the outputs.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -336,7 +430,7 @@ bl {vg_zeroize}
 /// * `m` must be fresh random bytes from an approved RBG (FIPS 203 §3.3).
 /// * `scratch` is working space: on return each of its bytes is unchanged or zero.
 /// * `key`, `ct` and `scratch` must not overlap each other, `ek` or `m` (distinct Rust objects never do).
-/// * None of `ek`, `m`, `key`, `ct` and `scratch` may overlap the 48 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `ek`, `m`, `key`, `ct` and `scratch` may overlap the 176 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mlkem768_encaps(ek: *const [u8; 1184], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1088], scratch: *mut [u64; 4096]) -> u32 {
     core::arch::naked_asm!(
@@ -344,7 +438,14 @@ pub(crate) unsafe extern "C" fn vg_mlkem768_encaps(ek: *const [u8; 1184], m: *co
 bl {vg_mlkem768_encaps_body}
 .inst 0xf9000be0,0xf94007e0,0xd2900001
 bl {vg_zeroize}
-.inst 0xf9400be0,0xf94003fe,0x910083ff,0xd65f03c0
+.inst 0xf9400be0,0xf94003fe,0x910083ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005
+.inst 0xd2800006,0xd2800007,0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d
+.inst 0xd280000e,0xd280000f,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403
+.inst 0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413
+.inst 0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b
+.inst 0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f,0x4e181c28,0x11000000,0xd102c3ff
+.inst 0x6f00e41f,0x910003e9,0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x3d80113f,0x3d80153f
+.inst 0x3d80193f,0x3d801d3f,0x3d80213f,0x3d80253f,0x3d80293f,0x9102c3ff,0xd65f03c0
 .p2align 6",
         vg_mlkem768_encaps_body = sym super::mlkem768::vg_mlkem768_encaps_body::vg_mlkem768_encaps_body,
         vg_zeroize = sym super::zeroize::vg_zeroize,
@@ -354,6 +455,8 @@ bl {vg_zeroize}
 /// ML-KEM-768 encapsulation with given randomness and the hash of the key, `ML-KEM.Encaps_internal(ek, m)` (FIPS 203 Algorithm 17): with the encapsulation key `*ek`, its hash `H(ek)` in `*h` and the randomness `*m`, writes the shared secret key to `*key` and the ciphertext to `*ct`, as `vg_mlkem768_encaps` does, using `*h` instead of hashing `*ek`. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
 /// Contract: `VG.Spec.MlKem.encapsHContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (the last 32 bytes of `*ek`), but not on anything else of the key, on its hash, on the randomness or on the outputs.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -368,7 +471,7 @@ bl {vg_zeroize}
 /// * `m` must be fresh random bytes from an approved RBG (FIPS 203 §3.3).
 /// * `scratch` is working space: on return each of its bytes is unchanged or zero.
 /// * `key`, `ct` and `scratch` must not overlap each other, `ek`, `h` or `m` (distinct Rust objects never do).
-/// * None of `ek`, `h`, `m`, `key`, `ct` and `scratch` may overlap the 48 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `ek`, `h`, `m`, `key`, `ct` and `scratch` may overlap the 176 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mlkem768_encaps_h(ek: *const [u8; 1184], h: *const [u8; 32], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1088], scratch: *mut [u64; 4096]) -> u32 {
     core::arch::naked_asm!(
@@ -376,7 +479,14 @@ pub(crate) unsafe extern "C" fn vg_mlkem768_encaps_h(ek: *const [u8; 1184], h: *
 bl {vg_mlkem768_encaps_h_body}
 .inst 0xf9000be0,0xf94007e0,0xd2900001
 bl {vg_zeroize}
-.inst 0xf9400be0,0xf94003fe,0x910083ff,0xd65f03c0
+.inst 0xf9400be0,0xf94003fe,0x910083ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005
+.inst 0xd2800006,0xd2800007,0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d
+.inst 0xd280000e,0xd280000f,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403
+.inst 0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413
+.inst 0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b
+.inst 0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f,0x4e181c28,0x11000000,0xd102c3ff
+.inst 0x6f00e41f,0x910003e9,0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x3d80113f,0x3d80153f
+.inst 0x3d80193f,0x3d801d3f,0x3d80213f,0x3d80253f,0x3d80293f,0x9102c3ff,0xd65f03c0
 .p2align 6",
         vg_mlkem768_encaps_h_body = sym super::mlkem768::vg_mlkem768_encaps_h_body::vg_mlkem768_encaps_h_body,
         vg_zeroize = sym super::zeroize::vg_zeroize,
@@ -387,6 +497,8 @@ bl {vg_zeroize}
 ///
 /// Contract: `VG.Spec.MlKem.decapsContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (bytes 2304–2335 of `*dk`), but not on anything else of the key, on the ciphertext, or on whether it was rejected.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `dk` must be valid for reads of 2400 bytes.
@@ -396,7 +508,7 @@ bl {vg_zeroize}
 /// * `dk` must have been written by `vg_mlkem768_keygen` (so that it passes the checks of FIPS 203 §7.3).
 /// * `scratch` is working space: on return each of its bytes is unchanged or zero.
 /// * `key` and `scratch` must not overlap each other, `dk` or `ct` (distinct Rust objects never do).
-/// * None of `dk`, `ct`, `key` and `scratch` may overlap the 48 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `dk`, `ct`, `key` and `scratch` may overlap the 176 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mlkem768_decaps(dk: *const [u8; 2400], ct: *const [u8; 1088], key: *mut [u8; 32], scratch: *mut [u64; 4096]) -> u32 {
     core::arch::naked_asm!(
@@ -404,7 +516,14 @@ pub(crate) unsafe extern "C" fn vg_mlkem768_decaps(dk: *const [u8; 2400], ct: *c
 bl {vg_mlkem768_decaps_body}
 .inst 0xf9000be0,0xf94007e0,0xd2900001
 bl {vg_zeroize}
-.inst 0xf9400be0,0xf94003fe,0x910083ff,0xd65f03c0
+.inst 0xf9400be0,0xf94003fe,0x910083ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005
+.inst 0xd2800006,0xd2800007,0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d
+.inst 0xd280000e,0xd280000f,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403
+.inst 0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413
+.inst 0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b
+.inst 0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f,0x4e181c28,0x11000000,0xd102c3ff
+.inst 0x6f00e41f,0x910003e9,0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x3d80113f,0x3d80153f
+.inst 0x3d80193f,0x3d801d3f,0x3d80213f,0x3d80253f,0x3d80293f,0x9102c3ff,0xd65f03c0
 .p2align 6",
         vg_mlkem768_decaps_body = sym super::mlkem768::vg_mlkem768_decaps_body::vg_mlkem768_decaps_body,
         vg_zeroize = sym super::zeroize::vg_zeroize,
@@ -424,6 +543,14 @@ pub(crate) mod vg_mlkem768_decaps_body_x2_sha3;
 pub(crate) mod vg_mlkem768_decaps_body_x2_sha3_keccak_sha3;
 
 #[rustfmt::skip]
+#[path = "internal/vg_mlkem768_decaps_core.rs"]
+pub(crate) mod vg_mlkem768_decaps_core;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mlkem768_decaps_core_x2_sha3.rs"]
+pub(crate) mod vg_mlkem768_decaps_core_x2_sha3;
+
+#[rustfmt::skip]
 #[path = "internal/vg_mlkem768_encaps_body.rs"]
 pub(crate) mod vg_mlkem768_encaps_body;
 
@@ -434,6 +561,14 @@ pub(crate) mod vg_mlkem768_encaps_body_x2_sha3;
 #[rustfmt::skip]
 #[path = "internal/vg_mlkem768_encaps_body_x2_sha3_keccak_sha3.rs"]
 pub(crate) mod vg_mlkem768_encaps_body_x2_sha3_keccak_sha3;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mlkem768_encaps_core.rs"]
+pub(crate) mod vg_mlkem768_encaps_core;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mlkem768_encaps_core_x2_sha3.rs"]
+pub(crate) mod vg_mlkem768_encaps_core_x2_sha3;
 
 #[rustfmt::skip]
 #[path = "internal/vg_mlkem768_encaps_h_body.rs"]
@@ -460,5 +595,17 @@ pub(crate) mod vg_mlkem768_keygen_body_x2_sha3;
 pub(crate) mod vg_mlkem768_keygen_body_x2_sha3_keccak_sha3;
 
 #[rustfmt::skip]
+#[path = "internal/vg_mlkem768_keygen_core.rs"]
+pub(crate) mod vg_mlkem768_keygen_core;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mlkem768_keygen_core_x2_sha3.rs"]
+pub(crate) mod vg_mlkem768_keygen_core_x2_sha3;
+
+#[rustfmt::skip]
 #[path = "internal/vg_mlkem768_pair_prf_840_1176_4248_944_17560_6_0_3.rs"]
 pub(crate) mod vg_mlkem768_pair_prf_840_1176_4248_944_17560_6_0_3;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mlkem768_pair_prf_840_1176_4248_944_17560_6_0_3_scalar.rs"]
+pub(crate) mod vg_mlkem768_pair_prf_840_1176_4248_944_17560_6_0_3_scalar;

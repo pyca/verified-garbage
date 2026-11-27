@@ -1,21 +1,26 @@
 module
 
-public import VerifiedGarbage.Proof.AesEcb.Arm
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.Arm.Print
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.AesEcb.Contract
+import VerifiedGarbage.Proof.Aes.Arm.Scrub
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # AES-ECB (NIST SP 800-38A §6.1) on ARMv7 -/
 
-@[expose] public section
-
 namespace VG.Artifacts.AesEcb.Arm
 
-def artifacts : List Artifact := [
+public def artifacts : List (Artifact Arm.target) := [
   Spec.AesEcb.encryptApi.artifact Arm.target {
-    code := Proof.AesEcb.Arm.encrypt
-    verified := Proof.AesEcb.Arm.encrypt_verified },
+    code := Impl.Aes.Arm.Fn.ecbEncrypt
+    verified := Proof.Aes.Arm.Fn.ecbEncrypt
+    publicOutOk := Proof.Aes.Arm.Fn.ecbEncrypt_public },
   Spec.AesEcb.decryptApi.artifact Arm.target {
-    code := Proof.AesEcb.Arm.decrypt
-    verified := Proof.AesEcb.Arm.decrypt_verified }]
+    code := Impl.Aes.Arm.Fn.ecbDecrypt
+    verified := Proof.Aes.Arm.Fn.ecbDecrypt
+    publicOutOk := Proof.Aes.Arm.Fn.ecbDecrypt_public }]
+
+spec_apis artifacts
 
 end VG.Artifacts.AesEcb.Arm

@@ -1,5 +1,8 @@
 module
 
+public import VerifiedGarbage.Impl.EcKey.P521.AArch64
+public import VerifiedGarbage.Proof.EcKey.AArch64.Scrub
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubProved
 import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.Main
 public import VerifiedGarbage.Spec.EcKey.P521
 import VerifiedGarbage.Proof.Ecdsa.AArch64.P521.Verified
@@ -18,6 +21,8 @@ public import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.Layout
 public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
+import VerifiedGarbage.Proof.Ecdsa.AArch64.AbiOnce
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.AbiOnce
 
 /-! # Instantiate shared compression with P521's field configuration -/
 
@@ -52,13 +57,21 @@ materialize_shared baseline := code
     Spec.EcKey.Instance.compressPublicKeySig, hlen, Spec.EcKey.scratchWords,
     abi, argRegs, satState] [satState] using (satState 66)
 
- theorem calls : CallsKeep code := by lit_decide
- theorem untouched : KeepsUntouched code := by lit_decide
- theorem vec : code.allInstrs keepsV = true := by lit_decide
+ private theorem abi : abiK code = true := by lit_decide
 
  theorem verified (hI : Proof.Weierstrass.AArch64.InvSounds) :
     Verified target code (Spec.EcKey.P521.inst.compressPublicKeyContract abi 0) :=
   Verified.of_correct (compress_correct p521 (p521_ok hI).toBaseCfgOk
-    calls untouched vec) ct (compress_implies Spec.EcKey.P521.inst sat)
+    abi) ct (compress_implies Spec.EcKey.P521.inst sat)
+
+/-- `vg_ec_p521_compress_public_key` as it is emitted, its cleanup included
+(`Impl.EcKey.AArch64.Fn.compressP521`), meets its contract in constant time and
+returns without secret residue. -/
+theorem scrubbed (hI : Proof.Weierstrass.AArch64.InvSounds) :
+    VerifiedScrubbed AArch64.target Impl.EcKey.AArch64.Fn.compressP521
+      (Spec.EcKey.P521.inst.compressPublicKeyContract abi 0) 32 :=
+  AArch64.Scrub.verifiedScrubbedAll (api := Spec.EcKey.P521.inst.compressPublicKeyApi)
+    { code := code, verified := verified hI } _
+    (Proof.EcKey.AArch64.Scrub.compressOk _) (by dsimp only; lit_decide)
 
 end VG.Proof.EcKey.Compressed.AArch64.P521

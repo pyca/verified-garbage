@@ -27,7 +27,8 @@ with `scratch` as its scratch space; it never writes `r24`–`r31`, so our own
 variables live in `r26`–`r31` (`r26` = `state`, `r27` = `scratch`, `r28` =
 `data` or `out`, `r29` = bytes of `data` left, `r30` = bytes in the buffer,
 `r31` = the byte count), and our caller's values of those registers are
-saved in `scratch[512..560)`. Our return address (the link register), which
+saved in `scratch[104..152)`, above the compression function's
+`scratch[0..104)`. Our return address (the link register), which
 each call replaces, is moved to `r0` and saved in a stack frame around the
 whole function.
 
@@ -60,15 +61,15 @@ end
 
 /-- The nonvolatile registers we use, and where they are saved in `scratch`. -/
 def saved : List (Reg × Nat) :=
-  [(.r26, 512), (.r27, 520), (.r28, 528), (.r29, 536), (.r30, 544), (.r31, 552)]
+  [(.r26, 104), (.r27, 112), (.r28, 120), (.r29, 128), (.r30, 136), (.r31, 144)]
 
 /-- Save them, with `scratch` in `b`. -/
 def save (b : Reg) : List Instr := saved.map fun (r, d) => .store .d r b d
 
 /-- Restore them from `scratch` in `r27` (`r27`, the base, last). -/
 def restore : List Instr :=
-  [.load .d .r26 .r27 512, .load .d .r28 .r27 528, .load .d .r29 .r27 536,
-    .load .d .r30 .r27 544, .load .d .r31 .r27 552, .load .d .r27 .r27 520]
+  [.load .d .r26 .r27 104, .load .d .r28 .r27 120, .load .d .r29 .r27 128,
+    .load .d .r30 .r27 136, .load .d .r31 .r27 144, .load .d .r27 .r27 112]
 
 section
 variable {w : Nat} (P : Spec.Blake2.Params w)

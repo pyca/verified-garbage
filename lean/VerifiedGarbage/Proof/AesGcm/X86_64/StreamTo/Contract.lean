@@ -93,7 +93,7 @@ def streamToPub (s₁ s₂ : State) : Prop :=
   s₁.gpr .rdi = s₂.gpr .rdi ∧ s₁.gpr .rsi = s₂.gpr .rsi ∧ s₁.gpr .rdx = s₂.gpr .rdx ∧
     s₁.gpr .rcx = s₂.gpr .rcx ∧ s₁.gpr .r8 = s₂.gpr .r8 ∧ s₁.gpr .r9 = s₂.gpr .r9 ∧
     s₁.gpr .rsp = s₂.gpr .rsp ∧ arg s₁ 0 = arg s₂ 0 ∧ arg s₁ 1 = arg s₂ 1 ∧ arg s₁ 2 = arg s₂ 2 ∧
-    arg s₁ 3 = arg s₂ 3
+    arg s₁ 3 = arg s₂ 3 ∧ s₁.mxcsr = s₂.mxcsr
 
 /-- What `vg_aes_gcm_stream_encrypt_to` leaves: `streamEncryptToPost`. -/
 def streamToPost (s s' : State) : Prop :=

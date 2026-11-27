@@ -58,13 +58,13 @@ theorem encryptChainedFrameSat : ∃ s, (Spec.Rc2.cbcEncryptChainedContract abi 
 
 theorem encryptChained_framed :
     Verified Arm.target
-      (Impl.StackScratch.Arm.withStackScratchWiped 528 0 128 Impl.Rc2.Arm.Cbc.encrypt)
+      (Impl.StackScratch.Arm.withStackScratch 528 0 Impl.Rc2.Arm.Cbc.encrypt)
       (Spec.Rc2.cbcEncryptChainedContract abi 528) :=
-  Arm.Verified.stackScratchWiped (sig := Spec.Rc2.cbcChainedSig) (nm := "scratch") (e := .u64)
+  Arm.Verified.stackScratch (sig := Spec.Rc2.cbcChainedSig) (nm := "scratch") (e := .u64)
     (n := 64) (post := Proof.Rc2.cbcEncChainedPost abi.ptrBits) (wa := true) (stack := 0)
-    (bytes := 528) encryptChained_verified (by decide) (by decide) (by decide) (by decide) (by decide)
+    (bytes := 528) encryptChained_verified (by decide) (by decide) (by decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial)
-    (Proof.Rc2.cbcEncChainedPost_local _) (Proof.Rc2.cbcEncChainedPostOut_local _) encryptChainedFrameSat
+    (Proof.Rc2.cbcEncChainedPost_local _) (fun vs mm m₁ m₂ r hl _ => Proof.Rc2.cbcEncChainedPostOut_local _ vs mm m₁ m₂ r hl) encryptChainedFrameSat
 
 theorem decryptChained_implies : (contract .decrypt).Implies
     (Proof.Rc2.cbcDecChainedScratchContract abi 64 0) where
@@ -87,12 +87,12 @@ theorem decryptChainedFrameSat : ∃ s, (Spec.Rc2.cbcDecryptChainedContract abi 
 
 theorem decryptChained_framed :
     Verified Arm.target
-      (Impl.StackScratch.Arm.withStackScratchWiped 528 0 128 Impl.Rc2.Arm.Cbc.decrypt)
+      (Impl.StackScratch.Arm.withStackScratch 528 0 Impl.Rc2.Arm.Cbc.decrypt)
       (Spec.Rc2.cbcDecryptChainedContract abi 528) :=
-  Arm.Verified.stackScratchWiped (sig := Spec.Rc2.cbcChainedSig) (nm := "scratch") (e := .u64)
+  Arm.Verified.stackScratch (sig := Spec.Rc2.cbcChainedSig) (nm := "scratch") (e := .u64)
     (n := 64) (post := Proof.Rc2.cbcDecChainedPost abi.ptrBits) (wa := true) (stack := 0)
-    (bytes := 528) decryptChained_verified (by decide) (by decide) (by decide) (by decide) (by decide)
+    (bytes := 528) decryptChained_verified (by decide) (by decide) (by decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial)
-    (Proof.Rc2.cbcDecChainedPost_local _) (Proof.Rc2.cbcDecChainedPostOut_local _) decryptChainedFrameSat
+    (Proof.Rc2.cbcDecChainedPost_local _) (fun vs mm m₁ m₂ r hl _ => Proof.Rc2.cbcDecChainedPostOut_local _ vs mm m₁ m₂ r hl) decryptChainedFrameSat
 
 end VG.Proof.Rc2.Arm.Cbc

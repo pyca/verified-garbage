@@ -11,10 +11,9 @@ import VerifiedGarbage.Proof.Framework.Offset
 The arithmetic runs under its public function's `vg_mcdt_enter`, which the
 dispatcher runs first, and sets no MXCSR of its own (see
 `Impl/MlDsa/X86_64/Arith/Vec.lean`). `noMx_ok` and `noMxH_ok`
-state that in the shape of ML-KEM's `withMxcsr_ok` (through `scratch + 768`,
-`mxR`) and of a `withMxcsr` through the last 8 bytes `mxH` of a polynomial,
-which the arithmetic once ran inside: its proofs are those of the code they
-wrapped.
+state that in the shape its proofs had when it ran inside an MXCSR sequence
+of its own, through `scratch + 768` (`mxR`) or the last 8 bytes `mxH` of a
+polynomial: its proofs are those of the code they wrapped.
 -/
 
 @[expose] public section
@@ -33,7 +32,7 @@ theorem mxH_in {p : Addr} {rs : List Region} (hw : pR p ∈ rs) (d : Nat) (hd : 
 
 theorem mxH_sub (p : Addr) : Region.Sub (mxH p) (pR p) := Offset.sub_base p (by decide)
 
-/-- The arithmetic's code once ran inside ML-KEM's `withMxcsr`, through `mxR` of
+/-- The arithmetic's code once ran inside an MXCSR sequence, through `mxR` of
 `scratch`; now it runs under its public function's `vg_mcdt_enter` and
 sets none of its own. Its proofs keep the
 shape they had: `c` runs from `s` itself, which differs from `s` in no

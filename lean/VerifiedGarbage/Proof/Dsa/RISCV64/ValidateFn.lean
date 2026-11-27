@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.RISCV64.ParamsFront
-public import VerifiedGarbage.Proof.Dsa.RISCV64.CheckKey
+public import VerifiedGarbage.Proof.Dsa.RISCV64.VerifyComb
 public import VerifiedGarbage.Impl.Dsa.RISCV64.Prevalidated
 public import VerifiedGarbage.Spec.Dsa.Prevalidated
 import VerifiedGarbage.Proof.Dsa.RISCV64.ParamsFn
@@ -74,7 +74,7 @@ theorem validate_correct (s : State) (h : vkContract.pre s) :
     fun hr hw => psrc_of hrd dKS (Nat.le_of_eq hplq) hr hw
   unfold Prevalidated.validate
   refine WP.mono (WP.rdwr (checkLike_ok (X := checkKey) (Ok := KeyOk) hL hwr nw alS src (fun Out => ?_)
-    (fun hs hr h2 hk hrest hfail => checkKey_ok hL hs hr h2 (by decide) hk hrest hfail)))
+    (fun hs hr hw h2 hk hrest hfail => checkKey_ok hL hs hr hw h2 (by decide) hk hrest hfail)))
     fun w ⟨⟨⟨hp, hra⟩, w0⟩, _, _, hsp⟩ => ⟨⟨hp, hsp, hra⟩, ?_⟩
   · obtain ⟨ep, eq, eg, ey⟩ := keyVals_kept (src rfl rfl) Out
     simp only [KeyOk, ep, eq, eg, ey]

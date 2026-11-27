@@ -126,8 +126,8 @@ def signMdTableContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
         scratchWords nLen.toNat ≤ scratchLen.toNat ∧ digestLenOk A.ptrBits m hash digestLen)
     (post := fun out _outLen n nLen e eLen p pLen q qLen dp _dpLen dq _dqLen qinv _qinvLen
         digest _digestLen salt saltLen _scratch _scratchLen hash mgf1 m m' r =>
-      ∀ H G, MdHashTable.hashAt A.ptrBits m hash = some H →
-        MdHashTable.hashAt A.ptrBits m mgf1 = some G →
+      ∃ H G, MdHashTable.hashAt A.ptrBits m hash = some H ∧
+        MdHashTable.hashAt A.ptrBits m mgf1 = some G ∧
         writtenOutcome m' out nLen.toNat r
           (sign H G (bytesAt m n nLen.toNat) (bytesAt m e eLen.toNat) (bytesAt m p pLen.toNat)
             (bytesAt m q qLen.toNat) (bytesAt m dp pLen.toNat) (bytesAt m dq qLen.toNat)
@@ -160,7 +160,8 @@ def verifyPrecomputedMdTableSig : Sig where
 (`verify H G`), for `H` and `G` the hash functions `hash` and `mgf1` name,
 given precomputed values `pre` for the modulus: returns 1 if it is valid and
 0 otherwise, if `pre` holds `Rsa.publicPrecompute n`. Constant time but for
-the public key and `pre`. -/
+the public key and `pre`. Both tables must identify a hash even when `pre`
+does not match the modulus. -/
 def verifyPrecomputedMdTableContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   verifyPrecomputedMdTableSig.contract A
     (pre := fun _n nLen _e eLen _digest digestLen _sig sigLen _saltLen _anySaltLen _scratch
@@ -170,12 +171,12 @@ def verifyPrecomputedMdTableContract {M : ISA} (A : Abi M) (stack : Nat := 0) : 
         preLen.toNat = Rsa.precomputedWords nLen.toNat ∧ digestLenOk A.ptrBits m hash digestLen)
     (post := fun n nLen e eLen digest _digestLen sig _sigLen saltLen anySaltLen _scratch
         _scratchLen pre preLen hash mgf1 m _m' r =>
-      ∀ H G, MdHashTable.hashAt A.ptrBits m hash = some H →
-        MdHashTable.hashAt A.ptrBits m mgf1 = some G →
-        Rsa.publicPrecompute (bytesAt m n nLen.toNat) = some (Rsa.wordsAt m pre preLen.toNat) →
+      ∃ H G, MdHashTable.hashAt A.ptrBits m hash = some H ∧
+        MdHashTable.hashAt A.ptrBits m mgf1 = some G ∧
+        (Rsa.publicPrecompute (bytesAt m n nLen.toNat) = some (Rsa.wordsAt m pre preLen.toNat) →
           r = if verify H G (bytesAt m n nLen.toNat) (bytesAt m e eLen.toNat)
               (bytesAt m digest H.len) (bytesAt m sig nLen.toNat)
-              (expectedSaltLen saltLen anySaltLen) then 1 else 0)
+              (expectedSaltLen saltLen anySaltLen) then 1 else 0))
     (writeArgs := true) (stack := stack)
     (leak := some fun n nLen e eLen _digest _digestLen _sig _sigLen _saltLen _anySaltLen
         _scratch _scratchLen pre preLen _hash _mgf1 m =>
@@ -242,8 +243,8 @@ def signPrecomputedMdTableContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Co
         digestLenOk A.ptrBits m hash digestLen)
     (post := fun out _outLen n nLen e eLen p pLen q qLen dp _dpLen dq _dqLen qinv _qinvLen
         digest _digestLen salt saltLen _scratch _scratchLen hash mgf1 _pre _preLen m m' r =>
-      ∀ H G, MdHashTable.hashAt A.ptrBits m hash = some H →
-        MdHashTable.hashAt A.ptrBits m mgf1 = some G →
+      ∃ H G, MdHashTable.hashAt A.ptrBits m hash = some H ∧
+        MdHashTable.hashAt A.ptrBits m mgf1 = some G ∧
         writtenOutcome m' out nLen.toNat r
           (sign H G (bytesAt m n nLen.toNat) (bytesAt m e eLen.toNat) (bytesAt m p pLen.toNat)
             (bytesAt m q qLen.toNat) (bytesAt m dp pLen.toNat) (bytesAt m dq qLen.toNat)

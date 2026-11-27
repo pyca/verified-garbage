@@ -1,13 +1,16 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.Arm.ScalarBase
+public import VerifiedGarbage.Impl.Scrub.Arm
 
 /-!
 # X25519 of the base point on ARMv7
 
 `vg_x25519_base(out = r0, scalar = r1, scratch = r2)`: `X25519(k, 9)` as the u-coordinate
 `(1 + y) / (1 - y) = (Z + Y) / (Z - Y)` of `[k] B` on edwards25519 (RFC 7748 §4.1), with
-Ed25519's fixed-base comb (`Impl/Ed25519/Arm/Comb.lean`) rather than the ladder.
+Ed25519's fixed-base comb (`Impl/Ed25519/Arm/Comb.lean`) rather than the ladder. With the flag
+`umaal` its field's products are by `umaal` (`Impl/Ed25519/Arm/MulFn.lean`):
+`vg_x25519_base_umaal`.
 
 * Ed25519's base-point multiplication, `scalarBase`, but for two steps: the scalar's copy in
   the workspace is clamped as `decodeScalar25519` clamps the scalar (byte 0 ANDed with 248,
@@ -35,14 +38,26 @@ def clampBytes : List Instr :=
 def uOps : List FieldOp := [.add 0 2 1, .sub 2 2 1]
 
 /-- The u-coordinate `(Z + Y) / (Z - Y)`, frozen into `FR`. -/
-def uEncode : Prog isa := .seq (fieldCode uOps) (.seq pointAffine (.block (VG.Impl.Ed25519.Arm.freeze 0)))
+def uEncode (umaal : Bool) : Prog isa :=
+  .seq (fieldCode false uOps) (.seq (pointAffine umaal) (.block (VG.Impl.Ed25519.Arm.freeze 0)))
 
 /-- The slots cleared, the scalar copied and clamped, the comb, and the u-coordinate. -/
-def engine : Prog isa :=
+def engine (umaal : Bool) : Prog isa :=
   .seq (.block (initFields ++ combCopy ++ clampBytes))
-    (.seq combInit (.seq (.loop combStep .ne) uEncode))
+    (.seq (.block (scratchAddr SCAL)) (.seq (combMultiply umaal) (uEncode umaal)))
 
-def x25519Base : Prog isa :=
-  .seq (.block scalarBaseSetup) (.seq engine (.block scalarBaseFinish))
+def x25519Base (umaal : Bool) : Prog isa :=
+  .seq (.block scalarBaseSetup) (.seq (engine umaal) (.block scalarBaseFinish))
 
 end VG.Impl.X25519.Arm.Base
+
+namespace VG.Impl.X25519.Arm.Fn
+
+open VG.Arm VG.Impl.Scrub.Arm
+
+/-- `vg_x25519_base`, with either product of the field (`umaal`):
+`x25519Base umaal`, then the registers a callee may change
+and the flags set to constants. -/
+def x25519Base (umaal : Bool) : Prog isa := scrub 0 (Base.x25519Base umaal)
+
+end VG.Impl.X25519.Arm.Fn

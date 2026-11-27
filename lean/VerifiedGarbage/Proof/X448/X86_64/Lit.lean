@@ -34,6 +34,9 @@ materialize_template addT := add
 materialize_template subT := sub
 materialize_template cswapT := cswap
 
+/- The ladder, which `x448` and `x448Base` both contain, checked once. -/
+materialize_code ladderB := ladder baseline
+
 end VG.Proof.X448.X86_64.Lit
 
 namespace VG

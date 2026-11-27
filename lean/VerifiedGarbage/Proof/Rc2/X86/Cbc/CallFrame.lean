@@ -17,24 +17,29 @@ theorem callWithGpr {rs : List Reg} {n : String} {c : Prog isa} {k : Contract is
     (hk : CallPre k rs rd wr s) {Q : State → Prop}
     (hQ : ∀ s', s'.rd = s.rd → s'.wr = s.wr → (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) →
       Frame (wr ++ [below (s.gpr .esp) (4 * rs.length + stackUse c + 4)]) s.mem s'.mem →
-      (∃ s₂ : State, s₂.mem = s'.mem ∧ (∀ r, r ≠ .esp → r ≠ .eax → s₂.gpr r = s'.gpr r) ∧ k.post ((pushed rs s).callEntry.withRegions rd wr) s₂) → Q s') :
+      (∃ s₂ : State, Frame [below (s.gpr .esp) (4 * rs.length)] s₂.mem s'.mem ∧
+        (∀ r, r ≠ .esp → r ≠ .eax → s₂.gpr r = s'.gpr r) ∧ k.post ((pushed rs s).callEntry.withRegions rd wr) s₂) →
+      Q s') :
     WP isa (.frame (.push rs) (.call n c) (.pop .eax rs.length)) s Q := by
   have hn : 4 * rs.length ≤ (s.gpr .esp).toNat := by omega_using [hd]
   have e : ((pushed rs s).gpr .esp).toNat = (s.gpr .esp).toNat - 4 * rs.length := by
     rw [pushed_esp, sub_toNat hn]
   refine WP.frame hne hrs (by decide) hn (fun i hi => hsp i hi) ?_
   refine WP.call hv hsp (by rw [e]; omega_using [hd]) hk.pre (by rw [pushed_rd, pushed_wr]; exact hk.cov)
-    (by rw [pushed_wr]; exact hk.covw) fun s₂ rd₂ wr₂ cs₂ f₂ _ ⟨s₃, m₃, g₃, post₃⟩ => ?_
+    (by rw [pushed_wr]; exact hk.covw) fun s₂ rd₂ wr₂ cs₂ f₂ _ ⟨s₃, m₃, g₃, post₃⟩ m u fl => ?_
   refine hQ _ (by rw [popped_rd, rd₂, pushed_rd]) (by rw [popped_wr, wr₂, pushed_wr]; rfl) (fun r hr => ?_) ?_
-    ⟨s₃, by rw [m₃, popped_mem], fun r hsp hr => (g₃ r hsp).trans (popped_gpr _ _ _ hsp hr).symm, post₃⟩
+    ⟨s₃, by rw [m₃]; exact fl, fun r hsp hr => (g₃ r hsp).trans (popped_gpr _ _ _ hsp hr).symm, post₃⟩
   · by_cases h : r = .esp
     · subst h
       rw [popped_esp, cs₂ .esp hr, pushed_esp]; exact BitVec.sub_add_cancel _ _
     · have hne' : r ≠ .eax := by
         rintro rfl; simp [calleeSaved] at hr
       rw [popped_gpr _ _ _ h hne', cs₂ r hr, pushed_gpr _ _ h]
-  · rw [popped_mem]
-    refine ((pushed_frame hrs hn).sub fun r hr => ?_).trans (f₂.sub fun r hr => ?_)
+  · refine (((pushed_frame hrs hn).sub fun r hr => ?_).trans (f₂.sub fun r hr => ?_)).trans
+      (fl.sub fun r hr => ?_)
+    · simp only [List.mem_singleton] at hr; subst hr
+      exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _), below_sub (by omega_using []) hd⟩
+    rotate_left
     · simp only [List.mem_singleton] at hr; subst hr
       exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _), below_sub (by omega_using []) hd⟩
     · rcases List.mem_append.mp hr with hr | hr

@@ -35,7 +35,7 @@ theorem mul_eq : aesMul = Spec.Aes.mul := rfl
 /-- Both square and multiply `b²`, `b⁴`, …, `b¹²⁸` in the same order: unfolded
 to the same term (no evaluation left for the kernel). -/
 theorem inv_eq (b : BitVec 8) : aesInv b = Spec.Aes.inv b := by
-  simp (config := {decide := true}) only [aesInv, Spec.Aes.inv, Spec.Aes.pow, List.range_succ,
+  simp (config := {decide := true}) only [aesInv, Spec.Aes.inv_eq_pow, Spec.Aes.pow, List.range_succ,
     List.range_zero, List.nil_append, List.foldl_append, List.foldl_cons, List.foldl_nil, mul_eq,
     ite_true, ite_false]
 
@@ -276,7 +276,7 @@ def ctr32ToX86_64 : Contract X86_64.isa where
     s.rd = [sched, src] ∧ s.wr = [counter, dst, scratch] ∧
     sched.Disjoint counter ∧ sched.Disjoint dst ∧ sched.Disjoint scratch ∧
     counter.Disjoint src ∧ counter.Disjoint dst ∧ counter.Disjoint scratch ∧
-    src.Disjoint dst ∧ src.Disjoint scratch ∧ dst.Disjoint scratch ∧
+    (s.gpr .rcx = s.gpr .r11 ∨ src.Disjoint dst) ∧ src.Disjoint scratch ∧ dst.Disjoint scratch ∧
     ret.Disjoint counter ∧ ret.Disjoint dst ∧ ret.Disjoint scratch ∧
     (s.gpr .rcx).toNat + 16 * (s.gpr .r8).toNat ≤ 2 ^ 64 ∧
     (s.gpr .r11).toNat + 16 * (s.gpr .r8).toNat ≤ 2 ^ 64 ∧

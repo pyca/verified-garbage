@@ -229,7 +229,7 @@ theorem nttBlockN_get (f : Poly) {len k start t : Nat} (hlen : 0 < len) (ht : t 
     rcases (by omega_using [] : i < start ∨ (start ≤ i ∧ i < start + t) ∨ i = start + t ∨
         (start + t < i ∧ i < start + len) ∨ (start + len ≤ i ∧ i < start + t + len) ∨
         i = start + t + len ∨ start + t + len < i) with h | h | rfl | h | h | rfl | h <;>
-      simp (disch := omega) only [↓ite_eq_left, ↓ite_eq_right, Nat.add_sub_cancel]
+      simp (disch := omega_arith) only [↓ite_eq_left, ↓ite_eq_right, Nat.add_sub_cancel]
 
 /-- A whole block. -/
 theorem nttBlock_get (f : Poly) {len k start : Nat} (hlen : 0 < len) (hs : start + 2 * len ≤ n)
@@ -327,7 +327,7 @@ theorem nttInvBlockN_get (f : Poly) {len k start t : Nat} (hlen : 0 < len) (ht :
     rcases (by omega_using [] : i < start ∨ (start ≤ i ∧ i < start + t) ∨ i = start + t ∨
         (start + t < i ∧ i < start + len) ∨ (start + len ≤ i ∧ i < start + t + len) ∨
         i = start + t + len ∨ start + t + len < i) with h | h | rfl | h | h | rfl | h <;>
-      simp (disch := omega) only [↓ite_eq_left, ↓ite_eq_right, Nat.add_sub_cancel]
+      simp (disch := omega_arith) only [↓ite_eq_left, ↓ite_eq_right, Nat.add_sub_cancel]
 
 /-- A whole inverse block. -/
 theorem nttInvBlock_get (f : Poly) {len k start : Nat} (hlen : 0 < len) (hs : start + 2 * len ≤ n)
@@ -407,7 +407,7 @@ theorem nttBlockN_get' (f : Poly) {len k start t : Nat} (hlen : 0 < len) (ht : t
     rcases (by omega_using [] : i < start ∨ (start ≤ i ∧ i < start + t) ∨ i = start + t ∨
         (start + t < i ∧ i < start + len) ∨ (start + len ≤ i ∧ i < start + t + len) ∨
         i = start + t + len ∨ start + t + len < i) with h | h | rfl | h | h | rfl | h <;>
-      simp (disch := omega) only [↓ite_eq_left, ↓ite_eq_right, Nat.add_sub_cancel]
+      simp (disch := omega_arith) only [↓ite_eq_left, ↓ite_eq_right, Nat.add_sub_cancel]
 
 theorem nttInvBlockN_get' (f : Poly) {len k start t : Nat} (hlen : 0 < len) (ht : t ≤ len)
     (hs : start + len + t ≤ n) {i : Nat} (hi : i < n) :
@@ -425,7 +425,7 @@ theorem nttInvBlockN_get' (f : Poly) {len k start t : Nat} (hlen : 0 < len) (ht 
     rcases (by omega_using [] : i < start ∨ (start ≤ i ∧ i < start + t) ∨ i = start + t ∨
         (start + t < i ∧ i < start + len) ∨ (start + len ≤ i ∧ i < start + t + len) ∨
         i = start + t + len ∨ start + t + len < i) with h | h | rfl | h | h | rfl | h <;>
-      simp (disch := omega) only [↓ite_eq_left, ↓ite_eq_right, Nat.add_sub_cancel]
+      simp (disch := omega_arith) only [↓ite_eq_left, ↓ite_eq_right, Nat.add_sub_cancel]
 
 /-! ## MultiplyNTTs -/
 

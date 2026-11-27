@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Dsa.PPC64LE.Params.Front
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Dsa.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Dsa.Contract
 
 /-!
 # `vg_dsa_check_parameters` on PPC64LE: the contract on the registers

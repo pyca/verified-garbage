@@ -1,22 +1,21 @@
 module
 
-public import VerifiedGarbage.Proof.Ct.PPC64LE
-public import VerifiedGarbage.TCB.PPC64LE.Print
+public import VerifiedGarbage.TCB.PPC64LE.Target
 public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Ct.Contract
+import VerifiedGarbage.Proof.Ct.PPC64LE.Scrub
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # Constant-time byte comparison on PPC64LE -/
 
-@[expose] public section
-
 namespace VG.Artifacts.Ct.PPC64LE
-open VG.PPC64LE
 
-def artifacts : List Artifact := [
-  { Spec.Ct.eqApi with
-    target := .of target
-    doc := Spec.Ct.eqApi.doc
-    code := Impl.Ct.PPC64LE.eq
-    contract := Spec.Ct.eqContract abi
-    verified := Proof.Ct.PPC64LE.verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+public def artifacts : List (Artifact PPC64LE.target) := [
+  Spec.Ct.eqApi.artifact PPC64LE.target {
+    code := Impl.Ct.PPC64LE.Fn.eq
+    verified := Proof.Ct.PPC64LE.Scrub.eq_scrubbed }]
+
+spec_apis artifacts
+
 end VG.Artifacts.Ct.PPC64LE

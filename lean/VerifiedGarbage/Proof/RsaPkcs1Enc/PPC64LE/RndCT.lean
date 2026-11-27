@@ -1,8 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.RandomPublic
 -- separate module: its proofs build in parallel with `RndCorrect`'s, which `RndVerified` also imports
-
-public import VerifiedGarbage.Proof.RsaPkcs1Enc.PPC64LE.RndCall
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.PPC64LE.RndReject
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.PPC64LE.RndTaint
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.RandomCT
@@ -40,7 +39,7 @@ def pub (a s : State) : Prop :=
 theorem pub_refl (s : State) : pub s s := ⟨rfl, fun _ _ => rfl, fun _ _ => rfl, rfl, rfl, rfl, rfl⟩
 
 /-- An entry state meeting the precondition with the anchor's public data. -/
-def PR (a s : State) : Prop := (Spec.RsaPkcs1Enc.encryptRandomContract abi rndStack).pre s ∧ pub a s
+def PR (a s : State) : Prop := (Proof.RsaPkcs1Enc.encryptRandomAskedContract abi rndStack).pre s ∧ pub a s
 
 theorem PR.pre {a s : State} (h : PR a s) : RPre s := pre_of h.1
 
@@ -394,7 +393,7 @@ theorem body_two : RelCT isa (Two AllocPt) body fun _ _ => True := by
   exact restore_taint fun a x₁ x₂ ⟨s₁, S₁, h₁⟩ ⟨s₂, S₂, h₂⟩ =>
     ⟨by rw [h₁, h₂, S₁.fbEq, S₂.fbEq], fun _ h => absurd h List.not_mem_nil⟩
 
-theorem code_ct : ConstantTime isa (Spec.RsaPkcs1Enc.encryptRandomContract abi rndStack).pre pub code := by
+theorem code_ct : ConstantTime isa (Proof.RsaPkcs1Enc.encryptRandomAskedContract abi rndStack).pre pub code := by
   refine RelCT.constantTime (Q := fun _ _ => True) ?_
   unfold code
   refine (two_alloc (Φ := PR) (R := fun _ _ => True) (fun a s₁ s₂ S₁ S₂ =>

@@ -15,6 +15,9 @@ meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P224.JointLit
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P224.JointLit
 public import VerifiedGarbage.Impl.Ecdsa.Verify.P224.X86_64
+public import VerifiedGarbage.Proof.Framework.X86_64.CallInlineN
+import VerifiedGarbage.Proof.Framework.KernelRfl
+meta import VerifiedGarbage.Proof.Framework.KernelRfl
 meta import VerifiedGarbage.Impl.Ecdsa.Verify.P224.X86_64
 
 /-!
@@ -37,8 +40,18 @@ def jointVerifyP224Erased : Prog isa := Code.erase jointVerifyP224
 
 materialize_shared jointVerifyP224Erased
 
-theorem jointVerifyP224_inlineOk : jointVerifyP224.InlineOk = true :=
-  Code.inlineOk_of_erase (show jointVerifyP224Erased.InlineOk = true by lit_decide)
+/-- `InlineOkN`, calls nested two deep (the additions call the end of the
+addition, `vg_p224_jac_add_tail`). -/
+theorem jointVerifyP224_inlineOk : jointVerifyP224.InlineOkN 2 = true :=
+  Code.inlineOkN_of_erase (show jointVerifyP224Erased.InlineOkN 2 = true by lit_decide)
+
+/-- The code the proofs run: `jointVerifyP224` with the additions' end inline
+(`publicJointF`), which is `jointVerifyP224` inlined at every depth. -/
+abbrev jointVerifyP224F : Prog isa :=
+  Cfg.jointVerify Impl.P224.X86_64.p224v Impl.P224.X86_64.publicJointF
+    (Impl.P224.X86_64.jointDouble Impl.P224.X86_64.publicJointF.K)
+
+theorem jointVerifyP224_inlineAll : jointVerifyP224.inlineAll = jointVerifyP224F.inline := by kernel_rfl
 
 theorem jointVerifyP224_rspMxcsr :
     jointVerifyP224.allInstrs (fun i => !Taint.clobbers i .rsp && !loadsMxcsr i) = true :=

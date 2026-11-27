@@ -1,14 +1,13 @@
 module
 
 public import VerifiedGarbage.Impl.AesXts.RISCV64Unit
-public import VerifiedGarbage.Proof.AesXts.RISCV64.Unit.Contract
+public import VerifiedGarbage.Proof.AesXts.RISCV64.Unit.Dec
 public import VerifiedGarbage.Spec.Xts.Contract
 public import VerifiedGarbage.TCB.RISCV64.Target
 import VerifiedGarbage.Proof.AesXts.RISCV64.Unit.CT
 import VerifiedGarbage.Proof.AesXts.RISCV64.Verified
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
-import VerifiedGarbage.Proof.AesXts.RISCV64.Unit.Dec
 
 /-!
 # XTS-AES of data units on RISC-V: `Verified`

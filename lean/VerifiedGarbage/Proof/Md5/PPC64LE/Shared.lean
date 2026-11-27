@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Md5.Contract
 import VerifiedGarbage.Proof.Md5.PPC64LE.Stream.Init
-import VerifiedGarbage.Proof.Md5.PPC64LE.Stream.Md
 import VerifiedGarbage.Proof.Md5.Scratch
 public import VerifiedGarbage.Spec.Md5.Contract
 public import VerifiedGarbage.Impl.StackScratch.PPC64LE
@@ -60,6 +59,7 @@ theorem update : Verified PPC64LE.target
   PPC64LE.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 14) (stack := 48) (bytes := 144)
     updateScratch (by decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Md5.updatePost_local _)
+    (fun vs m m₁ m₂ r hl _ hb h => Proof.Md5.updatePostOut_local _ vs m m₁ m₂ r hl hb h)
     (PPC64LE.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
 /-- `finalize`: `finalizeScratch` with its working space in a frame of its own. -/
@@ -69,6 +69,7 @@ theorem finalize : Verified PPC64LE.target
   PPC64LE.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 14) (stack := 48) (bytes := 144)
     finalizeScratch (by decide) (by decide)
     (fun _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Md5.finalizePost_local _)
+    (fun vs m m₁ m₂ r hl _ hb h => Proof.Md5.finalizePostOut_local _ vs m m₁ m₂ r hl hb h)
     (PPC64LE.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
 end VG.Proof.Md5.PPC64LE.Shared

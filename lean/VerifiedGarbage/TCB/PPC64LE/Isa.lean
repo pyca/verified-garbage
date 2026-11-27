@@ -41,7 +41,9 @@ Modelling choices:
   Only volatile v0–v19 are modelled, so the nonvolatile vector and FPR
   registers cannot be changed. VSX load/store doubleword pairs do not
   require alignment; the first memory doubleword is the high register
-  half. `mtvsrd` leaves its low half undefined, supplied by `unknowns`.
+  half. `mtvsrd` leaves its low half undefined: the model puts there a value
+  it does not know, which may depend on the instruction's operands (see
+  `State.undef`).
 * In the forms that read `(RA|0)`, `RA = 0` means the value 0, not `r0`: the
   model has only `li` (`addi RT, 0, SI`) and `lis` (`addis RT, 0, SI`) of
   those, and every other such instruction with `r0` as its base (`RA`)
@@ -173,9 +175,24 @@ structure State where
   wr : List Region
   /-- Values the model does not know, used in order: the return address each
   call stores, what linkage code may leave in `r0`, `r11` and `r12` (see
-  `TCB/Code.lean`), the address each `adrSym` leaves in `LR`, and the
-  undefined low doubleword of each `mtvsrd`. -/
+  `TCB/Code.lean`), the address each `adrSym` leaves in `LR`, which
+  undefined result each `mtvsrd` leaves (the first argument of `undef`),
+  and what a released frame's bytes hold (`lose`). -/
   unknowns : Nat → BitVec 64 := fun _ => 0
+  /-- What an instruction leaves where the Power ISA says its result is
+  undefined: the low doubleword of `mtvsrd XT, RA`'s target (Book I
+  §3.3.18, see `Instr.mtvsrd`) is `undef u ra xt`, where `u` is the next of
+  `unknowns`, `ra` the contents of RA and `xt` what XT held before. Nothing
+  constrains the function, and no instruction changes it. An undefined
+  value "may vary between implementations, and between different
+  executions on the same implementation" (Book I §1.3.1, "Definitions"),
+  and the ISA does not say what it may depend on: an implementation may
+  leave there a copy of RA, or the doubleword that was there. So the model
+  lets the result depend on both operands, and what is undefined is as
+  secret as they are (`TCB/PPC64LE/Residue.lean`). It also depends on `u`,
+  a fresh unknown for each execution, so that code cannot rely on two
+  executions with the same operands leaving the same result. -/
+  undef : BitVec 64 → BitVec 64 → BitVec 128 → BitVec 64 := fun _ _ _ => 0
   /-- The address of each `static` the code can name (`adrSym`), by name. -/
   syms : String → BitVec 64 := fun _ => 0
   /-- `XER`'s carry bit, CA. -/
@@ -287,10 +304,18 @@ inductive Instr
   /-- `stxvd2x XS, RA, RB`, XS = vector register + 32 (Book I §7.6.2.1.2). -/
   | stxvd2x (n : VReg) (a b : Reg)
   /-- `mtvsrd XT, RA`, XT = vector register + 32 (Book I §3.3.18).
-  The high doubleword is RA; the low doubleword is undefined, not zero. -/
+  "The contents of GPR[RA] are placed into doubleword element 0 of
+  VSR[XT]. The contents of doubleword element 1 of VSR[XT] are undefined."
+  So the high doubleword is RA, and the low doubleword is not zero but an
+  unknown function of the operands (`State.undef`). -/
   | mtvsrd (d : VReg) (n : Reg)
   /-- `mfvsrd RA, XS`, XS = vector register + 32: the high doubleword. -/
   | mfvsrd (d : Reg) (n : VReg)
+  /-- `dcbz RA, RB` (Book II, "Data Cache Block set to Zero"): every
+  byte of the block containing `EA = (RA) + (RB)` set to zero, the block
+  being `dcbzBytes` bytes aligned to its size. RA must not be r0, as for
+  `addrX`; the whole block must be in one writable region. See `exec`. -/
+  | dcbz (a b : Reg)
   deriving DecidableEq, Repr
 
 /-- Branch conditions: a comparison with zero into `CR0`, then the branch. -/
@@ -363,6 +388,18 @@ in architectural doubleword 0 (the HIGH half) and MEM(EA+8,8) in doubleword
 1. `stxvd2x` is the inverse (Book I §7.6.2.1.2, load/store doubleword*2 indexed).
 This is not a byte reversal, nor a plain 128-bit little-endian load. -/
 def swapDwords (x : BitVec 128) : BitVec 128 := vdword x 1 ++ vdword x 0
+
+/-- The size of the block `dcbz` zeroes. Power ISA (v2.07, the POWER8
+baseline, and later), Book II, "Data Cache Block set to Zero" (`dcbz`): "All
+bytes in the block containing the byte addressed by EA are set to zero",
+where the block is a data cache block, whose size is
+implementation-dependent and which the processor reports to the program
+(Linux's `AT_DCACHEBSIZE`, the device tree's `d-cache-block-size`). It is
+128 bytes on the processors `powerpc64le-unknown-linux-gnu` runs on, which
+requires POWER8 or later: POWER8, POWER9 and POWER10 all have 128-byte data
+cache blocks. On a processor whose block were smaller, `dcbz` would zero
+less than this model says. -/
+def dcbzBytes : Nat := 128
 
 /-- Semantics, transcribing the Power ISA 3.1C, Book I:
 * §3.3.9 "Add" (`RT ← (RA) + (RB)`), "Subtract From" (`RT ← ¬(RA) + (RB)
@@ -443,9 +480,14 @@ def exec : Instr → State → Option State
     else none
   | .stxvd2x n a b, s =>
     (addrX s a b).bind fun ea => s.store ea 16 (swapDwords (s.vpr n))
-  | .mtvsrd d n, s => some { s.writeV d (s.gpr n ++ s.unknowns 0) with
+  | .mtvsrd d n, s =>
+    some { s.writeV d (s.gpr n ++ s.undef (s.unknowns 0) (s.gpr n) (s.vpr d)) with
       unknowns := fun i => s.unknowns (i + 1) }
   | .mfvsrd d n, s => some (s.write d (vdword (s.vpr n) 0))
+  -- The block's address: `EA` with its low `log₂ dcbzBytes` bits cleared.
+  | .dcbz a b, s =>
+    (addrX s a b).bind fun ea =>
+      s.store (ea &&& ~~~BitVec.ofNat 64 (dcbzBytes - 1)) dcbzBytes 0
   | .add d n m, s => some (s.write d (s.gpr n + s.gpr m))
   | .sub d n m, s => some (s.write d (s.gpr n - s.gpr m))
   | .mul d n m, s => some (s.write d (s.gpr n * s.gpr m))
@@ -505,7 +547,7 @@ def exec : Instr → State → Option State
 
 def addrs : Instr → State → List Addr
   | .lxvd2xTbl _ _ b .., s => [s.gpr b]
-  | .lxvd2x _ a b, s | .stxvd2x _ a b, s => [s.gpr a + s.gpr b]
+  | .lxvd2x _ a b, s | .stxvd2x _ a b, s | .dcbz a b, s => [s.gpr a + s.gpr b]
   | .load _ _ n off, s => [s.gpr n + BitVec.ofNat 64 off]
   | .store _ _ n off, s => [s.gpr n + BitVec.ofNat 64 off]
   | .lbz _ n off, s => [s.gpr n + BitVec.ofNat 64 off]
@@ -562,8 +604,9 @@ would wrap around the address space (`sp < 48`).
 new stack pointer, and the `bytes - 32` bytes above the header become a
 writable region, at the head of `wr`, which it does not write: like the 8
 bytes of `push`'s local variable space that it does not write, they hold
-what memory held there before, below the stack pointer, where the contract
-says nothing of them (`Abi.reserved`). Faults unless `bytes` is a multiple
+what memory held there before, below the stack pointer: bytes of which the
+contract says nothing (`Abi.reserved`), or those of a frame the function
+released, which are `lose`'s, so a proof cannot know them either. Faults unless `bytes` is a multiple
 of 16 with `32 < bytes < 4096`, or if the frame would wrap around the
 address space (`sp < bytes`). -/
 def push : Instr → State → Option State
@@ -580,21 +623,57 @@ def push : Instr → State → Option State
     else none
   | _, _ => none
 
+/-- The memory once the `n` bytes at `a`, a released frame, are below the
+stack pointer. The ELFv2 ABI (OpenPOWER, Revision 1.5, §2.2.3.4, "Protected
+Zone"): "The 288 bytes below the stack pointer are available as volatile
+program storage that is not preserved across function calls. Interrupt
+handlers and any other functions that might run without an explicit call
+must take care to preserve a protected zone, also referred to as the red
+zone, of 512 bytes". So code that runs on the stack between two instructions
+(a signal handler) may write the bytes more than 512 below the stack
+pointer, and any function the caller calls may write all of them. A byte
+that keeps its value is one of the outcomes here, so the model holds of the
+protected zone too, and it lets no proof use it (the code may access only
+its regions, none of which is below the stack pointer). Each byte either
+keeps its value or takes one the model does not know, as the unknowns say:
+for the doubleword `j` of the frame, the bytes of `u (2 * j)` say which of
+its bytes are replaced (those not zero), and the bytes of `u (2 * j + 1)`
+are what replaces them. A byte may keep its value, so what a function
+leaves in a frame it releases may be left there (`NoResidue`, whose two
+runs share their unknowns, still tells apart a frame that holds a
+secret). -/
+def lose (m : Mem) (a : Addr) (n : Nat) (u : Nat → BitVec 64) : Mem :=
+  fun x =>
+    let d := (x - a).toNat
+    if d < n then
+      if (u (2 * (d / 8))).extractLsb' (8 * (d % 8)) 8 = 0 then m x
+      else (u (2 * (d / 8) + 1)).extractLsb' (8 * (d % 8)) 8
+    else m x
+
 /-- The pop of a frame: Book I §3.3.2, "Load Doubleword" (`ld RT, 32(r1)`:
 `RT ← MEM((r1) + 32, 8)`), then "Add Immediate" (`addi r1, r1, 48`). Faults
 unless the stack pointer and the writable regions are those the push left
 (`s₁`), whose head is the frame's local variable space; it removes that
 region. `free bytes` is "Add Immediate" alone (`addi r1, r1, bytes`: `RT ←
-(RA) + EXTS(SI)`), likewise for the frame of `alloc bytes`. -/
+(RA) + EXTS(SI)`), likewise for the frame of `alloc bytes`. The whole
+released frame, its header too, is then below the stack pointer, and its
+bytes are `lose`'s: the next of the state's `unknowns`, two for each
+doubleword of the frame, say what each holds. The load reads the frame
+before it is released. -/
 def pop : Instr → State → State → Option State
   | .pop r, s₁, s₂ =>
     if s₂.sp = s₁.sp ∧ s₂.wr = s₁.wr ∧ s₁.wr.head? = some ⟨s₁.sp + 32, 16⟩ then
-      some { s₂.write r (s₂.mem.read (s₂.sp + 32) 8) with sp := s₂.sp + 48, wr := s₂.wr.tail }
+      some { s₂.write r (s₂.mem.read (s₂.sp + 32) 8) with
+        sp := s₂.sp + 48, wr := s₂.wr.tail, mem := lose s₂.mem s₂.sp 48 s₂.unknowns,
+        unknowns := fun n => s₂.unknowns (n + 12) }
     else none
   | .free bytes, s₁, s₂ =>
     if 32 < bytes ∧ bytes < 4096 ∧ bytes % 16 = 0 ∧
         s₂.sp = s₁.sp ∧ s₂.wr = s₁.wr ∧ s₁.wr.head? = some ⟨s₁.sp + 32, bytes - 32⟩ then
-      some { s₂ with sp := s₂.sp + BitVec.ofNat 64 bytes, wr := s₂.wr.tail }
+      some { s₂ with
+        sp := s₂.sp + BitVec.ofNat 64 bytes, wr := s₂.wr.tail,
+        mem := lose s₂.mem s₂.sp bytes s₂.unknowns,
+        unknowns := fun n => s₂.unknowns (n + bytes / 4) }
     else none
   | _, _, _ => none
 
@@ -632,5 +711,7 @@ abbrev isa : ISA where
   icall := icall
   -- A function's symbol, as a static's (`adrSym`).
   fnAddr s name := s.syms name
+  ptrEq := withPtrEq
+  ptrEqDec := withPtrEqDecEq withPtrEq (fun _ _ _ _ => rfl)
 
 end VG.PPC64LE

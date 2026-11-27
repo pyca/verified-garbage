@@ -39,6 +39,23 @@ def blocksPPC64LE (f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State) 
     s₁.gpr .r3 = s₂.gpr .r3 ∧ s₁.gpr .r4 = s₂.gpr .r4 ∧ s₁.gpr .r5 = s₂.gpr .r5 ∧
     s₁.gpr .r6 = s₂.gpr .r6 ∧ s₁.gpr .r7 = s₂.gpr .r7 ∧ s₁.sp = s₂.sp
 
+open VG.PPC64LE in
+/-- `blocksPPC64LE` for callers that give the code no working space: it never
+touches `scratch` (`r7`), so the contract does not mention it. The code may
+read `schedule` (240 bytes) and read and write `data` (`16 n` bytes), which
+may not overlap or wrap around the end of the address space. -/
+def blocksPPC64LEF (f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State) : Contract PPC64LE.isa where
+  pre s :=
+    let sched : Region := ⟨s.gpr .r3, 240⟩
+    let data : Region := ⟨s.gpr .r5, 16 * (s.gpr .r6).toNat⟩
+    s.rd = [sched] ∧ s.wr = [data] ∧ sched.Disjoint data ∧
+    (s.gpr .r5).toNat + 16 * (s.gpr .r6).toNat ≤ 2 ^ 64 ∧
+    ((s.gpr .r4).toNat = 10 ∨ (s.gpr .r4).toNat = 12 ∨ (s.gpr .r4).toNat = 14)
+  post := (blocksPPC64LE f).post
+  pub s₁ s₂ :=
+    s₁.gpr .r3 = s₂.gpr .r3 ∧ s₁.gpr .r4 = s₂.gpr .r4 ∧ s₁.gpr .r5 = s₂.gpr .r5 ∧
+    s₁.gpr .r6 = s₂.gpr .r6 ∧ s₁.sp = s₂.sp
+
 end VG.Proof.Aes
 
 namespace VG.Proof.Aes
@@ -78,6 +95,26 @@ def ctr32PPC64LE : Contract PPC64LE.isa where
     s₁.gpr .r3 = s₂.gpr .r3 ∧ s₁.gpr .r4 = s₂.gpr .r4 ∧ s₁.gpr .r5 = s₂.gpr .r5 ∧
     s₁.gpr .r6 = s₂.gpr .r6 ∧ s₁.gpr .r7 = s₂.gpr .r7 ∧ s₁.gpr .r8 = s₂.gpr .r8 ∧
     s₁.sp = s₂.sp
+
+open VG.PPC64LE in
+/-- `ctr32PPC64LE` for callers that give the code no working space: it never
+touches `scratch` (`r8`), so the contract does not mention it. The code may
+read `schedule` (240 bytes) and read and write `counter` (16 bytes) and
+`data` (`16 n` bytes), which may not overlap each other, nor `data` wrap
+around the end of the address space. -/
+def ctr32PPC64LEF : Contract PPC64LE.isa where
+  pre s :=
+    let sched : Region := ⟨s.gpr .r3, 240⟩
+    let counter : Region := ⟨s.gpr .r5, 16⟩
+    let data : Region := ⟨s.gpr .r6, 16 * (s.gpr .r7).toNat⟩
+    s.rd = [sched] ∧ s.wr = [counter, data] ∧
+    sched.Disjoint counter ∧ sched.Disjoint data ∧ counter.Disjoint data ∧
+    (s.gpr .r6).toNat + 16 * (s.gpr .r7).toNat ≤ 2 ^ 64 ∧
+    ((s.gpr .r4).toNat = 10 ∨ (s.gpr .r4).toNat = 12 ∨ (s.gpr .r4).toNat = 14)
+  post := ctr32PPC64LE.post
+  pub s₁ s₂ :=
+    s₁.gpr .r3 = s₂.gpr .r3 ∧ s₁.gpr .r4 = s₂.gpr .r4 ∧ s₁.gpr .r5 = s₂.gpr .r5 ∧
+    s₁.gpr .r6 = s₂.gpr .r6 ∧ s₁.gpr .r7 = s₂.gpr .r7 ∧ s₁.sp = s₂.sp
 
 end VG.Proof.Aes
 

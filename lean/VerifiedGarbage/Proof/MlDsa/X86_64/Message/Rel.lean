@@ -2,6 +2,7 @@ module
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Message.Args
 public import VerifiedGarbage.Proof.Framework.RelCT
 
+import VerifiedGarbage.Proof.Framework.X86_64.Syms
 import VerifiedGarbage.Proof.MlKem.X86_64.Rel
 import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 import VerifiedGarbage.Proof.Framework.Contract
@@ -138,17 +139,20 @@ theorem call_tr {Φ : Lay → Mem → State → Prop} {as : List Arg} (hok : as.
     (hpre : ∀ (L : Lay) g mx m₀ (t t1 : State), L.Ok → Ctx L g mx m₀ t → Φ L m₀ t → Moved as t t1 →
       k.pre (t1.callEntry.withRegions (rd L) (wr L)))
     (hpub : ∀ (L : Lay) g₁ g₂ mx₁ mx₂ m₁ m₂ (a b a1 b1 : State), L.Ok → I L m₁ m₂ → Ctx L g₁ mx₁ m₁ a →
-      Ctx L g₂ mx₂ m₂ b → Φ L m₁ a → Φ L m₂ b → Moved as a a1 → Moved as b b1 →
-      k.pub (a1.callEntry.withRegions (rd L) (wr L)) (b1.callEntry.withRegions (rd L) (wr L)))
+      Ctx L g₂ mx₂ m₂ b → Φ L m₁ a → Φ L m₂ b → Moved as a a1 → Moved as b b1 → a1.syms = a.syms →
+      b1.syms = b.syms → k.pub (a1.callEntry.withRegions (rd L) (wr L)) (b1.callEntry.withRegions (rd L) (wr L)))
     (hcov : ∀ (L : Lay) g mx m₀ (t : State), L.Ok → Ctx L g mx m₀ t → Φ L m₀ t →
       (∀ r ∈ rd L, ∃ R ∈ L.rd ++ L.FR :: L.wr, Within r R) ∧ (∀ r ∈ wr L, ∃ R ∈ L.wr, Within r R)) :
     RelCT isa (Two I Φ) (callA n c as) fun _ _ => True := by
-  refine RelCT.seq (RelCT.postDep (Q := fun a1 b1 => ∃ a b, Two I Φ a b ∧ Moved as a a1 ∧ Moved as b b1)
+  refine RelCT.seq (RelCT.postDep (Q := fun a1 b1 => ∃ a b, Two I Φ a b ∧ (Moved as a a1 ∧ a1.syms = a.syms) ∧
+      (Moved as b b1 ∧ b1.syms = b.syms))
+    (F := fun a a1 => Moved as a a1 ∧ a1.syms = a.syms)
     (block_rsp_tr (setArgs_spOnly as) fun _ _ h => h.rsp)
     (fun x y ⟨_, _, _, _, _, _, _, _, _, c₁, c₂, _, _⟩ =>
-      ⟨setArgs_ok as hok x c₁.frOk, setArgs_ok as hok y c₂.frOk⟩)
+      ⟨VG.X86_64.WP.mono_syms (setArgs_ok as hok x c₁.frOk) fun _ h hy => ⟨h, hy⟩,
+        VG.X86_64.WP.mono_syms (setArgs_ok as hok y c₂.frOk) fun _ h hy => ⟨h, hy⟩⟩)
     fun x y x1 y1 hp f₁ f₂ => ⟨x, y, hp, f₁, f₂⟩) ?_
-  refine RelCT.callEx hv hct fun a1 b1 ⟨a, b, hp, f₁, f₂⟩ => ?_
+  refine RelCT.callEx hv hct fun a1 b1 ⟨a, b, hp, ⟨f₁, y₁⟩, ⟨f₂, y₂⟩⟩ => ?_
   obtain ⟨L, g₁, g₂, mx₁, mx₂, m₁, m₂, hL, hi, c₁, c₂, φ₁, φ₂⟩ := hp
   obtain ⟨hr, hw⟩ := hcov L g₁ mx₁ m₁ a hL c₁ φ₁
   have cov : ∀ {t t1 : State} {g mx m₀}, Ctx L g mx m₀ t → Moved as t t1 →
@@ -162,7 +166,7 @@ theorem call_tr {Φ : Lay → Mem → State → Prop} {as : List Arg} (hok : as.
     · obtain ⟨R, hR, hW⟩ := hw r hr'
       exact ⟨R, List.mem_cons_of_mem _ hR, hW⟩
   exact ⟨rd L, wr L, rd L, wr L, hpre L g₁ mx₁ m₁ a a1 hL c₁ φ₁ f₁, hpre L g₂ mx₂ m₂ b b1 hL c₂ φ₂ f₂,
-    hpub L g₁ g₂ mx₁ mx₂ m₁ m₂ a b a1 b1 hL hi c₁ c₂ φ₁ φ₂ f₁ f₂, (cov c₁ f₁).1, (cov c₁ f₁).2,
+    hpub L g₁ g₂ mx₁ mx₂ m₁ m₂ a b a1 b1 hL hi c₁ c₂ φ₁ φ₂ f₁ f₂ y₁ y₂, (cov c₁ f₁).1, (cov c₁ f₁).2,
     (cov c₂ f₂).1, (cov c₂ f₂).2,
     by rw [f₁.2.gpr (by decide), f₂.2.gpr (by decide), c₁.rsp, c₂.rsp]⟩
 

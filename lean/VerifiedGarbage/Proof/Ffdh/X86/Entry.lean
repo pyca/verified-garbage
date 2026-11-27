@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Ffdh.X86.Domain
-import VerifiedGarbage.Proof.Bignum.X86.PublicRt.MulArgs
+import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Callee
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Impl.Bignum.X86.PublicRt
@@ -11,7 +11,6 @@ public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Mont.X86.Words
 public import VerifiedGarbage.Spec.Rsa
 public import VerifiedGarbage.Proof.Ffdh.X86.Ops
-public import VerifiedGarbage.Proof.Ffdh.X86.ABI
 import VerifiedGarbage.Proof.Bignum.X86.CrtSave
 public import VerifiedGarbage.Proof.Framework.X86.AllocFrame
 public import VerifiedGarbage.Proof.Dsa.X86.StackArgument
@@ -24,6 +23,160 @@ import VerifiedGarbage.Proof.Framework.X86.Syms
 public import VerifiedGarbage.Impl.Bignum.X86.CrtFn
 public import VerifiedGarbage.Proof.Bignum.X86.CrtValue
 public import VerifiedGarbage.Proof.Framework.X86.Spill
+public import VerifiedGarbage.Spec.Ffdh.Contract
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.Dsa.X86.VerifyingABI
+import VerifiedGarbage.Proof.Framework.Sig
+
+/-! ### `Ffdh.X86.ABI`, which this module and modules that import it used -/
+
+section
+
+/-! # FFDH on i686: the resources the cdecl contracts supply -/
+
+@[expose] public section
+namespace VG.Proof.Ffdh.X86
+open VG VG.X86
+open VG.Proof.Dsa.X86 (argumentPointer)
+
+/-- The bytes of stack the functions use: the frame of the synthetic arguments, a call's frame and its
+return address. -/
+abbrev stack : Nat := 252
+
+structure CheckDomainABI (s : State) : Prop where
+  stackLow : stack ≤ (s.gpr .esp).toNat
+  stackBound : (s.gpr .esp).toNat + 24 ≤ 2 ^ 32
+  rd : s.rd = [⟨argumentPointer s 0, (arg s 1).toNat⟩]
+  wr : s.wr = [⟨argumentPointer s 3, (arg s 4).toNat * 8⟩, ⟨argAddr s 0, 20⟩]
+  domScratch : (⟨argumentPointer s 0, (arg s 1).toNat⟩ : Region).Disjoint ⟨argumentPointer s 3, (arg s 4).toNat * 8⟩
+  scratchArgs : (⟨argumentPointer s 3, (arg s 4).toNat * 8⟩ : Region).Disjoint ⟨argAddr s 0, 20⟩
+  retScratch : (⟨(s.gpr .esp).setWidth 64, 4⟩ : Region).Disjoint ⟨argumentPointer s 3, (arg s 4).toNat * 8⟩
+  belowScratch : (⟨(s.gpr .esp).setWidth 64 - 252#64, 252⟩ : Region).Disjoint
+    ⟨argumentPointer s 3, (arg s 4).toNat * 8⟩
+  belowDom : (⟨(s.gpr .esp).setWidth 64 - 252#64, 252⟩ : Region).Disjoint ⟨argumentPointer s 0, (arg s 1).toNat⟩
+  domBound : (arg s 0).toNat + (arg s 1).toNat ≤ 2 ^ 32
+  scratchBound : (arg s 3).toNat + (arg s 4).toNat * 8 ≤ 2 ^ 32
+  pLen : Spec.Ffdh.pLenValid (arg s 2).toNat
+  dLen : Spec.Ffdh.domainLenValid (arg s 2).toNat (arg s 1).toNat
+  scratchLength : Spec.Rsa.scratchWords (arg s 2).toNat ≤ (arg s 4).toNat
+
+theorem checkDomainABI_of {s : State} (h : (Spec.Ffdh.checkDomainContract abi stack).pre s) : CheckDomainABI s := by
+  sig_pre [Spec.Ffdh.checkDomainContract, Spec.Ffdh.checkDomainSig, abi, argSlots, argVal, argBytes, stackBelow] at h
+  sig_split h
+  constructor <;> with_reducible assumption
+
+structure CheckPublicABI (s : State) : Prop where
+  stackLow : stack ≤ (s.gpr .esp).toNat
+  stackBound : (s.gpr .esp).toNat + 4 + 28 ≤ 2 ^ 32
+  rd : s.rd = [⟨argumentPointer s 0, (arg s 1).toNat⟩, ⟨argumentPointer s 3, (arg s 4).toNat⟩]
+  wr : s.wr = [⟨argumentPointer s 5, (arg s 6).toNat * 8⟩, ⟨argAddr s 0, 28⟩]
+  domScratch : (⟨argumentPointer s 0, (arg s 1).toNat⟩ : Region).Disjoint ⟨argumentPointer s 5, (arg s 6).toNat * 8⟩
+  domArgs : (⟨argumentPointer s 0, (arg s 1).toNat⟩ : Region).Disjoint ⟨argAddr s 0, 28⟩
+  yScratch : (⟨argumentPointer s 3, (arg s 4).toNat⟩ : Region).Disjoint ⟨argumentPointer s 5, (arg s 6).toNat * 8⟩
+  yArgs : (⟨argumentPointer s 3, (arg s 4).toNat⟩ : Region).Disjoint ⟨argAddr s 0, 28⟩
+  scratchArgs : (⟨argumentPointer s 5, (arg s 6).toNat * 8⟩ : Region).Disjoint ⟨argAddr s 0, 28⟩
+  retDom : (⟨(s.gpr .esp).setWidth 64, 4⟩ : Region).Disjoint ⟨argumentPointer s 0, (arg s 1).toNat⟩
+  retY : (⟨(s.gpr .esp).setWidth 64, 4⟩ : Region).Disjoint ⟨argumentPointer s 3, (arg s 4).toNat⟩
+  retScratch : (⟨(s.gpr .esp).setWidth 64, 4⟩ : Region).Disjoint ⟨argumentPointer s 5, (arg s 6).toNat * 8⟩
+  retArgs : (⟨(s.gpr .esp).setWidth 64, 4⟩ : Region).Disjoint ⟨argAddr s 0, 28⟩
+  belowDom : (⟨(s.gpr .esp).setWidth 64 - 252#64, 252⟩ : Region).Disjoint ⟨argumentPointer s 0, (arg s 1).toNat⟩
+  belowY : (⟨(s.gpr .esp).setWidth 64 - 252#64, 252⟩ : Region).Disjoint ⟨argumentPointer s 3, (arg s 4).toNat⟩
+  belowScratch : (⟨(s.gpr .esp).setWidth 64 - 252#64, 252⟩ : Region).Disjoint
+    ⟨argumentPointer s 5, (arg s 6).toNat * 8⟩
+  belowArgs : (⟨(s.gpr .esp).setWidth 64 - 252#64, 252⟩ : Region).Disjoint ⟨argAddr s 0, 28⟩
+  domBound : (arg s 0).toNat + (arg s 1).toNat ≤ 2 ^ 32
+  yBound : (arg s 3).toNat + (arg s 4).toNat ≤ 2 ^ 32
+  scratchBound : (arg s 5).toNat + (arg s 6).toNat * 8 ≤ 2 ^ 32
+  pLen : Spec.Ffdh.pLenValid (arg s 2).toNat
+  dLen : Spec.Ffdh.domainLenValid (arg s 2).toNat (arg s 1).toNat
+  yLen : (arg s 4).toNat = (arg s 2).toNat
+  scratchLength : Spec.Rsa.scratchWords (arg s 2).toNat ≤ (arg s 6).toNat
+
+theorem checkPublicABI_of {s : State} (h : (Spec.Ffdh.checkPublicContract abi stack).pre s) : CheckPublicABI s := by
+  sig_pre [Spec.Ffdh.checkPublicContract, Spec.Ffdh.checkPublicSig, abi, argSlots, argVal, argBytes, stackBelow] at h
+  sig_split h
+  constructor <;> with_reducible assumption
+
+structure CheckPrivateABI (s : State) : Prop where
+  stackLow : stack ≤ (s.gpr .esp).toNat
+  stackBound : (s.gpr .esp).toNat + 4 + 36 ≤ 2 ^ 32
+  rd : s.rd = [⟨argumentPointer s 0, (arg s 1).toNat⟩, ⟨argumentPointer s 3, (arg s 4).toNat⟩,
+    ⟨argumentPointer s 5, (arg s 6).toNat⟩]
+  wr : s.wr = [⟨argumentPointer s 7, (arg s 8).toNat * 8⟩, ⟨argAddr s 0, 36⟩]
+  domScratch : (⟨argumentPointer s 0, (arg s 1).toNat⟩ : Region).Disjoint ⟨argumentPointer s 7, (arg s 8).toNat * 8⟩
+  yScratch : (⟨argumentPointer s 3, (arg s 4).toNat⟩ : Region).Disjoint ⟨argumentPointer s 7, (arg s 8).toNat * 8⟩
+  xScratch : (⟨argumentPointer s 5, (arg s 6).toNat⟩ : Region).Disjoint ⟨argumentPointer s 7, (arg s 8).toNat * 8⟩
+  scratchArgs : (⟨argumentPointer s 7, (arg s 8).toNat * 8⟩ : Region).Disjoint ⟨argAddr s 0, 36⟩
+  retScratch : (⟨(s.gpr .esp).setWidth 64, 4⟩ : Region).Disjoint ⟨argumentPointer s 7, (arg s 8).toNat * 8⟩
+  belowDom : (⟨(s.gpr .esp).setWidth 64 - 252#64, 252⟩ : Region).Disjoint ⟨argumentPointer s 0, (arg s 1).toNat⟩
+  belowY : (⟨(s.gpr .esp).setWidth 64 - 252#64, 252⟩ : Region).Disjoint ⟨argumentPointer s 3, (arg s 4).toNat⟩
+  belowX : (⟨(s.gpr .esp).setWidth 64 - 252#64, 252⟩ : Region).Disjoint ⟨argumentPointer s 5, (arg s 6).toNat⟩
+  belowScratch : (⟨(s.gpr .esp).setWidth 64 - 252#64, 252⟩ : Region).Disjoint
+    ⟨argumentPointer s 7, (arg s 8).toNat * 8⟩
+  domBound : (arg s 0).toNat + (arg s 1).toNat ≤ 2 ^ 32
+  yBound : (arg s 3).toNat + (arg s 4).toNat ≤ 2 ^ 32
+  xBound : (arg s 5).toNat + (arg s 6).toNat ≤ 2 ^ 32
+  scratchBound : (arg s 7).toNat + (arg s 8).toNat * 8 ≤ 2 ^ 32
+  pLen : Spec.Ffdh.pLenValid (arg s 2).toNat
+  dLen : Spec.Ffdh.domainLenValid (arg s 2).toNat (arg s 1).toNat
+  yLen : (arg s 4).toNat = (arg s 2).toNat
+  xPos : 1 ≤ (arg s 6).toNat
+  xLen : (arg s 6).toNat ≤ (arg s 2).toNat
+  scratchLength : Spec.Rsa.scratchWords (arg s 2).toNat ≤ (arg s 8).toNat
+
+theorem checkPrivateABI_of {s : State} (h : (Spec.Ffdh.checkPrivateContract abi stack).pre s) :
+    CheckPrivateABI s := by
+  sig_pre [Spec.Ffdh.checkPrivateContract, Spec.Ffdh.checkPrivateSig, abi, argSlots, argVal, argBytes, stackBelow] at h
+  sig_split h
+  constructor <;> with_reducible assumption
+
+structure ExchangeABI (s : State) : Prop where
+  stackLow : stack ≤ (s.gpr .esp).toNat
+  stackBound : (s.gpr .esp).toNat + 4 + 44 ≤ 2 ^ 32
+  rd : s.rd = [⟨argumentPointer s 2, (arg s 3).toNat⟩, ⟨argumentPointer s 5, (arg s 6).toNat⟩,
+    ⟨argumentPointer s 7, (arg s 8).toNat⟩]
+  wr : s.wr = [⟨argumentPointer s 0, (arg s 1).toNat⟩, ⟨argumentPointer s 9, (arg s 10).toNat * 8⟩,
+    ⟨argAddr s 0, 44⟩]
+  outScratch : (⟨argumentPointer s 0, (arg s 1).toNat⟩ : Region).Disjoint ⟨argumentPointer s 9, (arg s 10).toNat * 8⟩
+  outArgs : (⟨argumentPointer s 0, (arg s 1).toNat⟩ : Region).Disjoint ⟨argAddr s 0, 44⟩
+  domScratch : (⟨argumentPointer s 2, (arg s 3).toNat⟩ : Region).Disjoint ⟨argumentPointer s 9, (arg s 10).toNat * 8⟩
+  xScratch : (⟨argumentPointer s 5, (arg s 6).toNat⟩ : Region).Disjoint ⟨argumentPointer s 9, (arg s 10).toNat * 8⟩
+  yScratch : (⟨argumentPointer s 7, (arg s 8).toNat⟩ : Region).Disjoint ⟨argumentPointer s 9, (arg s 10).toNat * 8⟩
+  outDom : (⟨argumentPointer s 0, (arg s 1).toNat⟩ : Region).Disjoint ⟨argumentPointer s 2, (arg s 3).toNat⟩
+  outX : (⟨argumentPointer s 0, (arg s 1).toNat⟩ : Region).Disjoint ⟨argumentPointer s 5, (arg s 6).toNat⟩
+  outY : (⟨argumentPointer s 0, (arg s 1).toNat⟩ : Region).Disjoint ⟨argumentPointer s 7, (arg s 8).toNat⟩
+  scratchArgs : (⟨argumentPointer s 9, (arg s 10).toNat * 8⟩ : Region).Disjoint ⟨argAddr s 0, 44⟩
+  retOut : (⟨(s.gpr .esp).setWidth 64, 4⟩ : Region).Disjoint ⟨argumentPointer s 0, (arg s 1).toNat⟩
+  retScratch : (⟨(s.gpr .esp).setWidth 64, 4⟩ : Region).Disjoint ⟨argumentPointer s 9, (arg s 10).toNat * 8⟩
+  belowOut : (⟨(s.gpr .esp).setWidth 64 - 252#64, 252⟩ : Region).Disjoint ⟨argumentPointer s 0, (arg s 1).toNat⟩
+  belowDom : (⟨(s.gpr .esp).setWidth 64 - 252#64, 252⟩ : Region).Disjoint ⟨argumentPointer s 2, (arg s 3).toNat⟩
+  belowX : (⟨(s.gpr .esp).setWidth 64 - 252#64, 252⟩ : Region).Disjoint ⟨argumentPointer s 5, (arg s 6).toNat⟩
+  belowY : (⟨(s.gpr .esp).setWidth 64 - 252#64, 252⟩ : Region).Disjoint ⟨argumentPointer s 7, (arg s 8).toNat⟩
+  belowScratch : (⟨(s.gpr .esp).setWidth 64 - 252#64, 252⟩ : Region).Disjoint
+    ⟨argumentPointer s 9, (arg s 10).toNat * 8⟩
+  outBound : (arg s 0).toNat + (arg s 1).toNat ≤ 2 ^ 32
+  domBound : (arg s 2).toNat + (arg s 3).toNat ≤ 2 ^ 32
+  xBound : (arg s 5).toNat + (arg s 6).toNat ≤ 2 ^ 32
+  yBound : (arg s 7).toNat + (arg s 8).toNat ≤ 2 ^ 32
+  scratchBound : (arg s 9).toNat + (arg s 10).toNat * 8 ≤ 2 ^ 32
+  pLen : Spec.Ffdh.pLenValid (arg s 4).toNat
+  dLen : Spec.Ffdh.domainLenValid (arg s 4).toNat (arg s 3).toNat
+  outLen : (arg s 1).toNat = (arg s 4).toNat
+  yLen : (arg s 8).toNat = (arg s 4).toNat
+  xPos : 1 ≤ (arg s 6).toNat
+  xLen : (arg s 6).toNat ≤ (arg s 4).toNat
+  scratchLength : Spec.Rsa.scratchWords (arg s 4).toNat ≤ (arg s 10).toNat
+
+theorem exchangeABI_of {s : State} (h : (Spec.Ffdh.exchangeContract abi stack).pre s) : ExchangeABI s := by
+  sig_pre [Spec.Ffdh.exchangeContract, Spec.Ffdh.exchangeSig, abi, argSlots, argVal, argBytes, stackBelow] at h
+  sig_split h
+  constructor <;> with_reducible assumption
+
+end VG.Proof.Ffdh.X86
+
+end
+
+end
 
 /-! ### `Ffdh.X86.Frame`, which only this module used -/
 
@@ -103,25 +256,25 @@ theorem val_ok {t : State} {a : Args} {g : Nat → BitVec 32} {n : Nat} (hb : Be
     (hr : ∀ j < n, readSrc t (.mem (argAt 19 j)) = some (g j)) (i : Nat)
     (k : ∀ u, Keeps [.eax, .ecx] t u → u.mem = t.mem → u.gpr .eax = synth a g i → WP isa (.block is) u Q) :
     WP isa (.block (val a i ++ is)) t Q := by
-  have opt : ∀ {o : Option Nat}, (∀ j, o = some j → j < n) → synth a g i = optArg g o → val a i = optVal o →
+  obtain opt : ∀ {o : Option Nat}, (∀ j, o = some j → j < n) → synth a g i = optArg g o → val a i = optVal o →
       WP isa (.block (val a i ++ is)) t Q := fun ho e v => by
     rw [v]; exact optVal_ok ho hr fun u K m e' => k u (K.mono (by decide)) m (by rw [e', e])
-  have arg : ∀ {j : Nat}, j < n → synth a g i = g j → val a i = argVal j → WP isa (.block (val a i ++ is)) t Q :=
+  obtain arg : ∀ {j : Nat}, j < n → synth a g i = g j → val a i = argVal j → WP isa (.block (val a i ++ is)) t Q :=
     fun hj e v => by
       rw [v]; exact wp_movS (hr _ hj) fun u U _ => k u (U.keeps.mono (by decide)) U.mem (by rw [U.gpr, e])
-  have comp : ∀ {c : Nat}, c ≤ 2 → val a i = compVal a c →
+  obtain comp : ∀ {c : Nat}, c ≤ 2 → val a i = compVal a c →
       synth a g i = (List.replicate c (g a.plen)).foldl (· + ·) (g a.dom) → WP isa (.block (val a i ++ is)) t Q :=
     fun {c} hc v e => by
       rw [v]
       simp only [compVal, List.cons_append, List.nil_append]
       refine wp_movS (hr _ hb.dom) fun u₁ U₁ _ => ?_
-      have r₁ : readSrc u₁ (.mem (argAt 19 a.plen)) = some (g a.plen) := by
+      obtain r₁ : readSrc u₁ (.mem (argAt 19 a.plen)) = some (g a.plen) := by
         unfold argAt; rw [src_esp U₁.keeps (by decide) U₁.mem]; exact hr _ hb.plen
       refine wp_movS r₁ fun u₂ U₂ _ => ?_
-      have e₂ : u₂.gpr .eax = g a.dom := by rw [U₂.other _ (by decide), U₁.gpr]
+      obtain e₂ : u₂.gpr .eax = g a.dom := by rw [U₂.other _ (by decide), U₁.gpr]
       have c₂ : u₂.gpr .ecx = g a.plen := U₂.gpr
-      have K₂ : Keeps [.eax, .ecx] t u₂ := (U₁.keeps.mono (by decide)).trans (U₂.keeps.mono (by decide))
-      have M₂ : u₂.mem = t.mem := U₂.mem.trans U₁.mem
+      obtain K₂ : Keeps [.eax, .ecx] t u₂ := (U₁.keeps.mono (by decide)).trans (U₂.keeps.mono (by decide))
+      obtain M₂ : u₂.mem = t.mem := U₂.mem.trans U₁.mem
       match c, hc with
       | 0, _ => exact k u₂ K₂ M₂ (by rw [e, e₂]; rfl)
       | 1, _ =>
@@ -131,7 +284,7 @@ theorem val_ok {t : State} {a : Args} {g : Nat → BitVec 32} {n : Nat} (hb : Be
         refine wp_addS rfl fun u₃ U₃ _ => wp_addS rfl fun u U _ =>
           k u ((K₂.trans (U₃.keeps.mono (by decide))).trans (U.keeps.mono (by decide))) (U.mem.trans (U₃.mem.trans M₂)) ?_
         rw [U.gpr, U₃.gpr, U₃.other _ (by decide), e₂, c₂, e]; rfl
-  have zero : synth a g i = 0 → val a i = zeroVal → WP isa (.block (val a i ++ is)) t Q := fun e v => by
+  obtain zero : synth a g i = 0 → val a i = zeroVal → WP isa (.block (val a i ++ is)) t Q := fun e v => by
     rw [v]; exact wp_movS rfl fun u U _ => k u (U.keeps.mono (by decide)) U.mem (by rw [U.gpr, e])
   match i with
   | 0 => exact opt hb.out rfl rfl
@@ -180,7 +333,7 @@ regions apart from it. -/
 theorem src_frame {t u : State} {rs : List Reg} (K : Keeps rs t u) (esp : .esp ∉ rs) {R : List Region}
     (F : Frame R t.mem u.mem) {d : Nat} (hd : ∀ r ∈ R, Region.Disjoint ⟨t.ea (at_ .esp d), 4⟩ r) :
     readSrc u (.mem (at_ .esp d)) = readSrc t (.mem (at_ .esp d)) := by
-  have e : u.ea (at_ .esp d) = t.ea (at_ .esp d) := by simp only [State.ea, at_, K.1 _ esp]
+  obtain e : u.ea (at_ .esp d) = t.ea (at_ .esp d) := by simp only [State.ea, at_, K.1 _ esp]
   simp only [readSrc, State.load32, e, K.2.1, K.2.2]
   rw [F.readW (r := ⟨t.ea (at_ .esp d), 4⟩) (Region.contains_self _ _) hd (by decide)]
 
@@ -199,16 +352,16 @@ theorem fill_ok {t : State} {a : Args} {g : Nat → BitVec 32} {n : Nat} (hb : B
   | c + 1, hc, is, Q, k => by
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, List.append_assoc]
     refine fill_ok hb hP hesp hfr hr hargs c (by omega_using [hc]) fun u K F S => ?_
-    have hr' : ∀ j < n, readSrc u (.mem (argAt 19 j)) = some (g j) := by
+    obtain hr' : ∀ j < n, readSrc u (.mem (argAt 19 j)) = some (g j) := by
       intro j hj
       rw [← hr j hj]
       exact src_frame K (by decide) F fun r hr => by rw [List.mem_singleton.mp hr]; exact hargs j hj
     unfold piece
     rw [List.append_assoc]
     refine val_ok hb hr' c fun v Kv mv ev => ?_
-    have Pv : (v.gpr .esp).setWidth 64 = P := by rw [Kv.1 _ (by decide), K.1 _ (by decide), hP]
-    have ev' : (v.gpr .esp).toNat + 76 ≤ 2 ^ 32 := by rw [Kv.1 _ (by decide), K.1 _ (by decide)]; exact hesp
-    have wv : (⟨P, 76⟩ : Region) ∈ v.wr := by rw [Kv.2.2, K.2.2]; exact hfr
+    obtain Pv : (v.gpr .esp).setWidth 64 = P := by rw [Kv.1 _ (by decide), K.1 _ (by decide), hP]
+    obtain ev' : (v.gpr .esp).toNat + 76 ≤ 2 ^ 32 := by rw [Kv.1 _ (by decide), K.1 _ (by decide)]; exact hesp
+    obtain wv : (⟨P, 76⟩ : Region) ∈ v.wr := by rw [Kv.2.2, K.2.2]; exact hfr
     obtain ⟨ea, wr⟩ := frame76_store Pv ev' wv (i := c) (by omega_using [hc])
     refine wp_storeS ea wr fun w M => ?_
     refine k w ((K.trans Kv).trans (M.keeps _)) ?_ fun i hi => ?_
@@ -266,7 +419,7 @@ structure WrapABI (a : Args) (n : Nat) (s : State) : Prop where
   wsIn : (⟨wsBase a s, wsSize a s⟩ : Region) ∈ s.wr
   scratchArgs : Region.Disjoint ⟨wsBase a s, wsSize a s⟩ ⟨argAddr s 0, 4 * n⟩
   retScratch : Region.Disjoint ⟨(s.gpr .esp).setWidth 64, 4⟩ ⟨wsBase a s, wsSize a s⟩
-  belowScratch : Region.Disjoint ⟨(s.gpr .esp).setWidth 64 - 172#64, 172⟩ ⟨wsBase a s, wsSize a s⟩
+  belowScratch : Region.Disjoint ⟨(s.gpr .esp).setWidth 64 - 252#64, 252⟩ ⟨wsBase a s, wsSize a s⟩
   scratchBound : (arg s a.ws).toNat + wsSize a s ≤ 2 ^ 32
   lower : 64 ≤ pLenOf a s
   upper : pLenOf a s ≤ 1024
@@ -291,16 +444,37 @@ theorem WrapABI.base_toNat (_ : WrapABI a n s) : (wsBase a s).toNat = (arg s a.w
   simp only [wsBase, argumentPointer, BitVec.toNat_setWidth,
     Nat.mod_eq_of_lt (Nat.lt_trans (arg s a.ws).isLt (by decide : 2 ^ 32 < 2 ^ 64))]
 
+/-- The 176 bytes below the frame of the synthetic arguments are apart from the working space. -/
+theorem WrapABI.room (A : WrapABI a n s) :
+    RoomF (s.gpr .esp - BitVec.ofNat 32 argsFrame) (wsBase a s) (wsSize a s) := by
+  have fb : argsFrame = 76 := rfl
+  have st' : stack = 252 := rfl
+  have low := A.stackLow
+  obtain espN : (s.gpr .esp - BitVec.ofNat 32 argsFrame).toNat = (s.gpr .esp).toNat - 76 :=
+    VG.X86.sub_toNat (by omega_using [fb, st', low])
+  obtain FA : frameAt s = (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 argsFrame :=
+    VG.X86.Taint.sub_setWidth (by omega_using [fb, st', low])
+  refine ⟨by rw [espN]; omega_using [st', low], A.belowScratch.sub_left ?_⟩
+  show Region.Sub ⟨(s.gpr .esp - BitVec.ofNat 32 argsFrame - BitVec.ofNat 32 176).setWidth 64, 176⟩ _
+  rw [VG.X86.Taint.sub_setWidth (by rw [espN]; omega_using [st', low]),
+    show (s.gpr .esp - BitVec.ofNat 32 argsFrame).setWidth 64 = frameAt s from rfl, FA,
+    ← VG.Offset.sub_add_eq, show BitVec.ofNat 64 argsFrame + 176#64 = BitVec.ofNat 64 252 from rfl]
+  exact Region.sub_prefix (by decide)
+
+theorem WrapABI.roomF (A : WrapABI a n s) {f : State} (espf : f.gpr .esp = s.gpr .esp - BitVec.ofNat 32 argsFrame) :
+    RoomF (f.gpr .esp) (wsBase a s) (wsSize a s) := by
+  rw [espf]; exact A.room
+
 /-- `entry a`: `edi` the working space, the callee-saved registers saved in its header. -/
 theorem entry_ok (A : WrapABI a n s) :
     WP isa (.block (entry a)) s fun t =>
       Scr t (wsBase a s) (wsSize a s) ∧ Saved t.mem (off (wsBase a s)) s.gpr Impl.Bignum.X86.Crt.savedRegisters ∧
       Keeps [.eax, .edi] s t ∧ Outside (wsBase a s) 0 (wsSize a s) s.mem t.mem := by
-  have hz : 48 ≤ wsSize a s := by have := A.need; simp only [CrtRt.need, Impl.Bignum.X86.CrtRt.numBase] at this; omega_using [this]
+  obtain hz : 48 ≤ wsSize a s := by have := A.need; simp only [CrtRt.need, Impl.Bignum.X86.CrtRt.numBase] at this; omega_using [this]
   have hb := A.base_toNat
-  have read := (A.argument (i := a.ws) (by have := A.below.ws; omega_using [this])).readSrc
-  have stk : StkOk (s.gpr .esp) (wsBase a s) (wsSize a s) :=
-    VG.Proof.Weierstrass.X86.stkOk_of (by decide : 20 ≤ 172) A.stackLow (by rw [hb]; exact A.scratchBound)
+  obtain read := (A.argument (i := a.ws) (by have := A.below.ws; omega_using [this])).readSrc
+  obtain stk : StkOk (s.gpr .esp) (wsBase a s) (wsSize a s) :=
+    VG.Proof.Weierstrass.X86.stkOk_of (by decide : 20 ≤ 252) A.stackLow (by rw [hb]; exact A.scratchBound)
       (by omega_using [hz]) A.belowScratch
   unfold entry
   rw [show Impl.Bignum.X86.CrtRt.save = Impl.Bignum.X86.Crt.save from rfl]
@@ -318,7 +492,7 @@ theorem entry_ok (A : WrapABI a n s) :
       exact stk
   · intro p hp
     rw [T.mem, S p hp]
-    have H : p.1 ≠ .eax := by
+    obtain H : p.1 ≠ .eax := by
       simp only [Impl.Bignum.X86.Crt.savedRegisters, List.mem_cons, List.not_mem_nil, or_false] at hp
       rcases hp with rfl | rfl | rfl | rfl <;> decide
     exact U.other _ H
@@ -330,7 +504,7 @@ theorem entry_ok (A : WrapABI a n s) :
     · rw [T.wr, Wr, U.wr]
   · intro x hx
     rw [T.mem]
-    have H : ¬ InRegions [⟨wsBase a s, wsSize a s⟩] x 1 := by
+    obtain H : ¬ InRegions [⟨wsBase a s, wsSize a s⟩] x 1 := by
       simp only [InRegions, List.mem_singleton, exists_eq_left, Region.Contains]
       change ¬ (ofs (wsBase a s) x + 1 ≤ wsSize a s)
       omega_using [hx]
@@ -341,25 +515,25 @@ theorem argAt_frame (A : WrapABI a n s) {s₁ : State} (K : Keeps [.eax, .edi] s
     (O : Outside (wsBase a s) 0 (wsSize a s) s.mem s₁.mem) {j : Nat} (hj : j < n) :
     readSrc (allocFrame argsFrame s₁) (.mem (argAt 19 j)) = some (arg s j) ∧
       Region.Disjoint ⟨(allocFrame argsFrame s₁).ea (argAt 19 j), 4⟩ ⟨frameAt s, argsFrame⟩ := by
-  have SA := A.argument hj
+  obtain SA := A.argument hj
   have fb : argsFrame = 76 := rfl
-  have st' : stack = 172 := rfl
-  have sp : s₁.gpr .esp = s.gpr .esp := K.1 _ (by decide)
+  have st' : stack = 252 := rfl
+  obtain sp : s₁.gpr .esp = s.gpr .esp := K.1 _ (by decide)
   have low := A.stackLow
   have top := A.stackBound
-  have hE := (s.gpr .esp).isLt
-  have ea : (allocFrame argsFrame s₁).ea (argAt 19 j) = stackAddress s j := by
+  obtain hE := (s.gpr .esp).isLt
+  obtain ea : (allocFrame argsFrame s₁).ea (argAt 19 j) = stackAddress s j := by
     simp only [State.ea, argAt, at_, allocFrame_esp, sp, stackAddress, addr]
     congr 1
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_add, BitVec.toNat_sub, BitVec.toNat_ofNat, argsFrame]
     omega_using []
-  have SE : stackAddress s j = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 (4 + 4 * j) := addr_eq (by omega_using [hj, top])
-  have FA : frameAt s = (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 argsFrame :=
+  obtain SE : stackAddress s j = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 (4 + 4 * j) := addr_eq (by omega_using [hj, top])
+  obtain FA : frameAt s = (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 argsFrame :=
     VG.X86.Taint.sub_setWidth (by omega_using [fb, st', low])
   refine ⟨?_, ?_⟩
   · simp only [readSrc, State.load32, ea, allocFrame_mem, allocFrame_rd, allocFrame_wr]
-    have rd : InRegions (s₁.rd ++ ⟨(s₁.gpr .esp - BitVec.ofNat 32 argsFrame).setWidth 64, argsFrame⟩ :: s₁.wr)
+    obtain rd : InRegions (s₁.rd ++ ⟨(s₁.gpr .esp - BitVec.ofNat 32 argsFrame).setWidth 64, argsFrame⟩ :: s₁.wr)
         (stackAddress s j) 4 := by
       obtain ⟨r, hr, hc⟩ := SA.read
       refine ⟨r, ?_, hc⟩
@@ -368,7 +542,7 @@ theorem argAt_frame (A : WrapABI a n s) {s₁ : State} (K : Keeps [.eax, .edi] s
       · exact List.mem_append_left _ h
       · exact List.mem_append_right _ (List.mem_cons_of_mem _ h)
     rw [ite_eq_left_of_eq_true _ _ (eq_true rd)]
-    have F := VG.Proof.Bignum.outside_frame O (by have := A.scratchBound; have := A.base_toNat; omega_arith)
+    obtain F := VG.Proof.Bignum.outside_frame O (by have := A.scratchBound; have := A.base_toNat; omega_arith)
     simp only [off, BitVec.add_zero] at F
     exact congrArg some (F.readW (r := ⟨stackAddress s j, 4⟩) (Region.contains_self _ _)
       (fun r hr => by rw [List.mem_singleton.mp hr]; exact SA.apart) (by decide))
@@ -388,50 +562,44 @@ theorem frameIn_ok (A : WrapABI a n s) {s₁ : State} (S : Scr s₁ (wsBase a s)
       Frame [⟨frameAt s, argsFrame⟩] s₁.mem f.mem →
       (∀ r, r ≠ .eax → r ≠ .ecx → r ≠ .esp → f.gpr r = s₁.gpr r) → WP isa (.block is) f Q) :
     WP isa (.block (fill a ++ is)) (allocFrame argsFrame s₁) Q := by
-  have sp : s₁.gpr .esp = s.gpr .esp := K.1 _ (by decide)
+  obtain sp : s₁.gpr .esp = s.gpr .esp := K.1 _ (by decide)
   have fb : argsFrame = 76 := rfl
-  have st' : stack = 172 := rfl
+  have st' : stack = 252 := rfl
   have low := A.stackLow
   have top := A.stackBound
-  have hE := (s.gpr .esp).isLt
+  obtain hE := (s.gpr .esp).isLt
   have hb := A.base_toNat
   have bd := A.scratchBound
   have nd := A.need
-  have hz : 48 ≤ wsSize a s := by
+  obtain hz : 48 ≤ wsSize a s := by
     have := nd; simp only [CrtRt.need, Impl.Bignum.X86.CrtRt.numBase] at this; omega_using [this]
   have lo := A.lower
   have hi := A.upper
-  have FA : frameAt s = (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 argsFrame :=
+  obtain FA : frameAt s = (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 argsFrame :=
     VG.X86.Taint.sub_setWidth (by omega_using [fb, st', low])
-  have t0esp : (allocFrame argsFrame s₁).gpr .esp = s.gpr .esp - BitVec.ofNat 32 argsFrame := by
+  obtain t0esp : (allocFrame argsFrame s₁).gpr .esp = s.gpr .esp - BitVec.ofNat 32 argsFrame := by
     rw [allocFrame_esp, sp]
-  have t0P : ((allocFrame argsFrame s₁).gpr .esp).setWidth 64 = frameAt s := by rw [t0esp]
-  have espN : (s.gpr .esp - BitVec.ofNat 32 argsFrame).toNat = (s.gpr .esp).toNat - 76 :=
+  obtain t0P : ((allocFrame argsFrame s₁).gpr .esp).setWidth 64 = frameAt s := by rw [t0esp]
+  obtain espN : (s.gpr .esp - BitVec.ofNat 32 argsFrame).toNat = (s.gpr .esp).toNat - 76 :=
     VG.X86.sub_toNat (by omega_using [fb, st', low])
   refine fill_ok A.below t0P (by rw [t0esp, espN]; omega_using [])
     (by rw [allocFrame_wr, sp]; exact List.mem_cons_self ..)
     (fun j hj => (argAt_frame A K O hj).1) (fun j hj => (argAt_frame A K O hj).2) 18 (Nat.le_refl _)
     fun f Kf Ff Sf => ?_
-  -- The frame lies below the entry's `esp`, within the 172 bytes apart from the working space.
-  have frameSub : Region.Sub ⟨frameAt s, argsFrame⟩ ⟨(s.gpr .esp).setWidth 64 - 172#64, 172⟩ := by
+  -- The frame lies below the entry's `esp`, within the 252 bytes apart from the working space.
+  obtain frameSub : Region.Sub ⟨frameAt s, argsFrame⟩ ⟨(s.gpr .esp).setWidth 64 - 252#64, 252⟩ := by
     rw [FA]; exact Offset.sub_below _ (by decide) (by decide)
-  have frameWs : Region.Disjoint ⟨frameAt s, argsFrame⟩ ⟨wsBase a s, wsSize a s⟩ :=
+  obtain frameWs : Region.Disjoint ⟨frameAt s, argsFrame⟩ ⟨wsBase a s, wsSize a s⟩ :=
     A.belowScratch.sub_left frameSub
-  have espf : f.gpr .esp = s.gpr .esp - BitVec.ofNat 32 argsFrame := by rw [Kf.1 _ (by decide), t0esp]
-  have espfN : (f.gpr .esp).toNat = (s.gpr .esp).toNat - 76 := by rw [espf, espN]
-  have edif : f.gpr .edi = s₁.gpr .edi := by rw [Kf.1 _ (by decide), allocFrame_gpr _ _ (by decide)]
-  have rdf : f.rd = s.rd := by rw [Kf.2.1, allocFrame_rd, K.2.1]
-  have wrf : f.wr = ⟨frameAt s, argsFrame⟩ :: s.wr := by rw [Kf.2.2, allocFrame_wr, sp, K.2.2]
-  have belowf : Region.Disjoint (below (f.gpr .esp) 96) ⟨wsBase a s, wsSize a s⟩ := by
-    refine A.belowScratch.sub_left ?_
-    simp only [below]
-    rw [espf, VG.X86.Taint.sub_setWidth (by rw [espN]; omega_using [st', low]),
-      show (s.gpr .esp - BitVec.ofNat 32 argsFrame).setWidth 64 = frameAt s from rfl, FA,
-      ← VG.Offset.sub_add_eq, show BitVec.ofNat 64 argsFrame + 96#64 = BitVec.ofNat 64 172 from rfl]
-    exact Region.sub_prefix (by decide)
-  have stackF : ∀ i < 18, CallArgument f (wsBase a s) (wsSize a s) i (synth a (arg s) i) := by
+  obtain espf : f.gpr .esp = s.gpr .esp - BitVec.ofNat 32 argsFrame := by rw [Kf.1 _ (by decide), t0esp]
+  obtain espfN : (f.gpr .esp).toNat = (s.gpr .esp).toNat - 76 := by rw [espf, espN]
+  obtain edif : f.gpr .edi = s₁.gpr .edi := by rw [Kf.1 _ (by decide), allocFrame_gpr _ _ (by decide)]
+  obtain rdf : f.rd = s.rd := by rw [Kf.2.1, allocFrame_rd, K.2.1]
+  obtain wrf : f.wr = ⟨frameAt s, argsFrame⟩ :: s.wr := by rw [Kf.2.2, allocFrame_wr, sp, K.2.2]
+  obtain belowf : Region.Disjoint (below (f.gpr .esp) 96) ⟨wsBase a s, wsSize a s⟩ := (A.roomF espf).call.apart
+  obtain stackF : ∀ i < 18, CallArgument f (wsBase a s) (wsSize a s) i (synth a (arg s) i) := by
     intro i hi
-    have SAd : stackAddress f i = slotAddr (frameAt s) i := by
+    obtain SAd : stackAddress f i = slotAddr (frameAt s) i := by
       rw [stackAddress, espf, addr_eq (by rw [espN]; omega_using [hi])]
     refine ⟨⟨?_, ?_⟩, ?_⟩
     · rw [SAd, rdf, wrf]
@@ -439,14 +607,14 @@ theorem frameIn_ok (A : WrapABI a n s) {s₁ : State} (S : Scr s₁ (wsBase a s)
     · rw [SAd]; exact frameWs.sub_left (Offset.sub_base _ (by omega_using [fb, hi]))
     · show f.mem.readW (stackAddress f i) 32 = _
       rw [SAd]; exact Sf i hi
-  have stk : StkOk (f.gpr .esp) (wsBase a s) (wsSize a s) := by
+  obtain stk : StkOk (f.gpr .esp) (wsBase a s) (wsSize a s) := by
     refine VG.Proof.Weierstrass.X86.stkOk_of (by decide : 20 ≤ 96) (by rw [espfN]; omega_using [st', low]) (by rw [hb]; exact bd)
       (by omega_using [hz]) ?_
     have := belowf
     simp only [below] at this
     rwa [VG.X86.Taint.sub_setWidth (by rw [espfN]; omega_using [st', low])] at this
-  have Ft : Frame [⟨wsBase a s, wsSize a s⟩, ⟨frameAt s, argsFrame⟩] s.mem f.mem := by
-    have F₁ := VG.Proof.Bignum.outside_frame O (by omega_using [bd])
+  obtain Ft : Frame [⟨wsBase a s, wsSize a s⟩, ⟨frameAt s, argsFrame⟩] s.mem f.mem := by
+    obtain F₁ := VG.Proof.Bignum.outside_frame O (by omega_using [bd])
     simp only [off, BitVec.add_zero] at F₁
     exact (F₁.mono fun r hr => by rw [List.mem_singleton.mp hr]; exact List.mem_cons_self ..).trans
       (by rw [← allocFrame_mem argsFrame s₁]
@@ -466,7 +634,7 @@ theorem saved_keep {base : Addr} {m m' : Mem} {g : Reg → BitVec 32} {rs : List
     (S : Saved m (off base) g Impl.Bignum.X86.Crt.savedRegisters) :
     Saved m' (off base) g Impl.Bignum.X86.Crt.savedRegisters := by
   intro p hp
-  have B : 32 ≤ p.2 ∧ p.2 + 4 ≤ 48 := by
+  obtain B : 32 ≤ p.2 ∧ p.2 + 4 ≤ 48 := by
     simp only [Impl.Bignum.X86.Crt.savedRegisters, List.mem_cons, List.not_mem_nil, or_false] at hp
     rcases hp with rfl | rfl | rfl | rfl <;> decide
   exact (F.readW (r := ⟨off base 32, 16⟩) (Offset.contains base B.1 (by omega_using [B]) (by decide)) hd (by decide)).trans
@@ -490,37 +658,52 @@ theorem wrap_syms_ok (A : WrapABI a n s) {body : Prog isa} (hsp : NoSp (.seq (.b
     {Ex : List Region → List Region → Prop} (hx : Ex s.rd (⟨frameAt s, argsFrame⟩ :: s.wr))
     {Out : List Region} (outRet : ∀ r ∈ Out, Region.Disjoint ⟨(s.gpr .esp).setWidth 64, 4⟩ r)
     (outWs : ∀ r ∈ Out, Region.Disjoint ⟨wsBase a s, wsSize a s⟩ r) {P : Mem → BitVec 32 → Prop}
+    (hP : ∀ m m' e, Frame [⟨(s.gpr .esp).setWidth 64 - 252#64, 252⟩] m m' → P m e → P m' e)
     (hb : ∀ f, In Ex (wsBase a s) (wsSize a s) (pLenOf a s) (synth a (arg s)) f →
-      f.gpr .esp = s.gpr .esp - BitVec.ofNat 32 argsFrame →
+      f.gpr .esp = s.gpr .esp - BitVec.ofNat 32 argsFrame → RoomF (f.gpr .esp) (wsBase a s) (wsSize a s) →
       Frame [⟨wsBase a s, wsSize a s⟩, ⟨frameAt s, argsFrame⟩] s.mem f.mem → f.syms = s.syms →
       WP isa body f fun t => P t.mem (t.gpr .eax) ∧
-        Frame (Out ++ CrtRt.frameR (wsBase a s) (f.gpr .esp) (fR (pLenOf a s))) f.mem t.mem ∧
+        Frame (Out ++ frameF (wsBase a s) (f.gpr .esp) (fR (pLenOf a s))) f.mem t.mem ∧
         Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] f t) :
     WP isa (wrap a body) s fun u => P u.mem (u.gpr .eax) ∧ abiPreserved s u := by
   have fb : argsFrame = 76 := rfl
-  have st' : stack = 172 := rfl
+  have st' : stack = 252 := rfl
   have low := A.stackLow
   have top := A.stackBound
-  have hE := (s.gpr .esp).isLt
+  obtain hE := (s.gpr .esp).isLt
   have hb' := A.base_toNat
   have bd := A.scratchBound
   have nd := A.need
-  have hz : 48 ≤ wsSize a s := by
+  obtain hz : 48 ≤ wsSize a s := by
     have := nd; simp only [CrtRt.need, Impl.Bignum.X86.CrtRt.numBase] at this; omega_using [this]
-  have FA : frameAt s = (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 argsFrame :=
+  obtain FA : frameAt s = (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 argsFrame :=
     VG.X86.Taint.sub_setWidth (by omega_using [fb, st', low])
   unfold wrap
   refine WP.seq (WP.mono_syms (entry_ok A) fun s₁ ⟨S, Sv, K, O⟩ sy₁ => ?_)
-  have sp : s₁.gpr .esp = s.gpr .esp := K.1 _ (by decide)
+  obtain sp : s₁.gpr .esp = s.gpr .esp := K.1 _ (by decide)
   -- The saved registers and the return address, kept by what the frame changes.
   have retWs := A.retScratch
-  have retFrame : Region.Disjoint ⟨(s.gpr .esp).setWidth 64, 4⟩ ⟨frameAt s, argsFrame⟩ := by
+  obtain retFrame : Region.Disjoint ⟨(s.gpr .esp).setWidth 64, 4⟩ ⟨frameAt s, argsFrame⟩ := by
     rw [FA]; exact Offset.base_disjoint_below _ (by omega_using [fb])
   let R : State → Prop := fun u => P u.mem (u.gpr .eax) ∧ Scr u (wsBase a s) (wsSize a s) ∧
     Saved u.mem (off (wsBase a s)) s.gpr Impl.Bignum.X86.Crt.savedRegisters ∧ u.gpr .esp = s.gpr .esp ∧
     u.mem.readW ((s.gpr .esp).setWidth 64) 32 = s.mem.readW ((s.gpr .esp).setWidth 64) 32
-  refine WP.seq (WP.mono (Q := R) (WP.frameAlloc (bytes := argsFrame) (by decide) (by decide) (by decide)
-    (by rw [sp]; omega_using [fb, st', low]) hsp ?_) fun s₂ R₂ => ?_)
+  refine WP.seq (WP.mono (Q := R) (WP.frameAllocLocal (bytes := argsFrame) (Q := R) (by decide) (by decide) (by decide)
+    (by rw [sp]; omega_using [fb, st', low]) hsp (fun t m u ht fl => ?_) ?_) fun s₂ R₂ => ?_)
+  · -- What `R` asks lies apart from the frame.
+    obtain ⟨Pt, St, Svt, et, rt⟩ := ht
+    obtain flA : Frame [⟨frameAt s, argsFrame⟩] t.mem m := by rw [sp] at fl; exact fl
+    obtain frameSub : Region.Sub ⟨frameAt s, argsFrame⟩ ⟨(s.gpr .esp).setWidth 64 - 252#64, 252⟩ := by
+      rw [FA]; exact Offset.sub_below _ (by decide) (by decide)
+    obtain savedSub : Region.Sub ⟨off (wsBase a s) 32, 16⟩ ⟨wsBase a s, wsSize a s⟩ :=
+      Offset.sub_base _ (d := 32) (n := 16) (by omega_using [hz])
+    refine ⟨hP _ _ _ (flA.sub fun r hr => ⟨_, List.mem_singleton_self _, by rw [List.mem_singleton.mp hr]; exact frameSub⟩) Pt,
+      ⟨St.edi, St.wr, St.nowrap, St.stk⟩, saved_keep flA (fun r hr => ?_) Svt, et, ?_⟩
+    · rw [List.mem_singleton.mp hr]; exact ((A.belowScratch.sub_left frameSub).sub_right savedSub).symm
+    · show m.readW _ _ = _
+      rw [flA.readW (r := ⟨(s.gpr .esp).setWidth 64, 4⟩) (Region.contains_self _ _)
+        (fun r hr => by rw [List.mem_singleton.mp hr]; exact retFrame) (by decide)]
+      exact rt
   · rw [show Impl.Ffdh.X86.fill a = Impl.Ffdh.X86.fill a ++ [] from (List.append_nil _).symm]
     refine WP.seq (WP.mono_syms (frameIn_ok A S K O hx (Q := fun f =>
         In Ex (wsBase a s) (wsSize a s) (pLenOf a s) (synth a (arg s)) f ∧
@@ -530,39 +713,43 @@ theorem wrap_syms_ok (A : WrapABI a n s) {body : Prog isa} (hsp : NoSp (.seq (.b
         (∀ r, r ≠ .eax → r ≠ .ecx → r ≠ .esp → f.gpr r = s₁.gpr r))
       fun f I espf _ wrf Ft Ff₁ regs => WP.block_nil ⟨I, espf, wrf, Ft, Ff₁, regs⟩)
       fun f ⟨I, espf, wrf, Ft, Ff₁, regs⟩ syf => ?_)
-    refine WP.mono (hb f I espf Ft (syf.trans sy₁)) fun t ⟨Pt, Fb, Kt⟩ => ?_
-    have espt : t.gpr .esp = s.gpr .esp - BitVec.ofNat 32 argsFrame := (Kt.1 _ (by decide)).trans espf
-    have ediT : t.gpr .edi = s₁.gpr .edi := (Kt.1 _ (by decide)).trans (regs _ (by decide) (by decide) (by decide))
-    have espN : (s.gpr .esp - BitVec.ofNat 32 argsFrame).toNat = (s.gpr .esp).toNat - 76 :=
+    obtain Rf := A.roomF espf
+    refine WP.mono (hb f I espf Rf Ft (syf.trans sy₁)) fun t ⟨Pt, Fb, Kt⟩ => ?_
+    obtain espt : t.gpr .esp = s.gpr .esp - BitVec.ofNat 32 argsFrame := (Kt.1 _ (by decide)).trans espf
+    obtain ediT : t.gpr .edi = s₁.gpr .edi := (Kt.1 _ (by decide)).trans (regs _ (by decide) (by decide) (by decide))
+    obtain espN : (s.gpr .esp - BitVec.ofNat 32 argsFrame).toNat = (s.gpr .esp).toNat - 76 :=
       VG.X86.sub_toNat (by omega_using [fb, st', low])
-    have belowRet : Region.Disjoint ⟨(s.gpr .esp).setWidth 64, 4⟩ (below (f.gpr .esp) 96) := by
+    obtain belowRet : Region.Disjoint ⟨(s.gpr .esp).setWidth 64, 4⟩ (below (f.gpr .esp) 176) := by
       simp only [below]
       rw [espf, VG.X86.Taint.sub_setWidth (by rw [espN]; omega_using [st', low]),
         show (s.gpr .esp - BitVec.ofNat 32 argsFrame).setWidth 64 = frameAt s from rfl, FA,
-        ← VG.Offset.sub_add_eq, show BitVec.ofNat 64 argsFrame + 96#64 = BitVec.ofNat 64 172 from rfl]
-      exact (Offset.base_disjoint_below _ (n := 172) (k := 4) (by decide)).sub_right (Region.sub_prefix (by decide))
-    have bnd : (wsBase a s).toNat + wsSize a s ≤ 2 ^ 32 := by rw [hb']; exact bd
-    have savedSub : Region.Sub ⟨off (wsBase a s) 32, 16⟩ ⟨wsBase a s, wsSize a s⟩ :=
+        ← VG.Offset.sub_add_eq, show BitVec.ofNat 64 argsFrame + 176#64 = BitVec.ofNat 64 252 from rfl]
+      exact (Offset.base_disjoint_below _ (n := 252) (k := 4) (by decide)).sub_right (Region.sub_prefix (by decide))
+    obtain bnd : (wsBase a s).toNat + wsSize a s ≤ 2 ^ 32 := by rw [hb']; exact bd
+    obtain savedSub : Region.Sub ⟨off (wsBase a s) 32, 16⟩ ⟨wsBase a s, wsSize a s⟩ :=
       Offset.sub_base _ (d := 32) (n := 16) (by omega_using [hz])
-    have belowWs : Region.Disjoint ⟨off (wsBase a s) 32, 16⟩ (below (f.gpr .esp) 96) :=
-      (I.room.apart.sub_right savedSub).symm
-    have frameWs16 : Region.Disjoint ⟨off (wsBase a s) 32, 16⟩ ⟨frameAt s, argsFrame⟩ := by
-      have frameSub : Region.Sub ⟨frameAt s, argsFrame⟩ ⟨(s.gpr .esp).setWidth 64 - 172#64, 172⟩ := by
+    obtain belowWs : Region.Disjoint ⟨off (wsBase a s) 32, 16⟩ (below (f.gpr .esp) 176) :=
+      (Rf.apart.sub_right savedSub).symm
+    obtain sub96 : Region.Sub (below (f.gpr .esp) 96) (below (f.gpr .esp) 176) :=
+      VG.X86.below_sub (by decide) Rf.low
+    obtain frameWs16 : Region.Disjoint ⟨off (wsBase a s) 32, 16⟩ ⟨frameAt s, argsFrame⟩ := by
+      obtain frameSub : Region.Sub ⟨frameAt s, argsFrame⟩ ⟨(s.gpr .esp).setWidth 64 - 252#64, 252⟩ := by
         rw [FA]; exact Offset.sub_below _ (by decide) (by decide)
       exact ((A.belowScratch.sub_left frameSub).sub_right savedSub).symm
-    have Sv₁ : Saved f.mem (off (wsBase a s)) s.gpr Impl.Bignum.X86.Crt.savedRegisters :=
+    obtain Sv₁ : Saved f.mem (off (wsBase a s)) s.gpr Impl.Bignum.X86.Crt.savedRegisters :=
       saved_keep Ff₁ (fun r hr => by rw [List.mem_singleton.mp hr]; exact frameWs16) Sv
-    have Svt : Saved t.mem (off (wsBase a s)) s.gpr Impl.Bignum.X86.Crt.savedRegisters := by
+    obtain Svt : Saved t.mem (off (wsBase a s)) s.gpr Impl.Bignum.X86.Crt.savedRegisters := by
       refine saved_keep Fb (fun r hr => ?_) Sv₁
       rcases List.mem_append.mp hr with hr | hr
       · exact ((outWs r hr).sub_left savedSub)
-      · rw [CrtRt.frameR, List.mem_cons, List.mem_map] at hr
-        rcases hr with rfl | ⟨p, hp, rfl⟩
+      · rw [frameF, CrtRt.frameR, List.mem_cons, List.mem_cons, List.mem_map] at hr
+        rcases hr with rfl | rfl | ⟨p, hp, rfl⟩
         · exact belowWs
+        · exact belowWs.sub_right sub96
         · exact fR_saved bnd nd p hp
-    have F₀ := VG.Proof.Bignum.outside_frame O (by omega_using [bd])
+    obtain F₀ := VG.Proof.Bignum.outside_frame O (by omega_using [bd])
     simp only [off, BitVec.add_zero] at F₀
-    have Ret : t.mem.readW ((s.gpr .esp).setWidth 64) 32 = s.mem.readW ((s.gpr .esp).setWidth 64) 32 := by
+    obtain Ret : t.mem.readW ((s.gpr .esp).setWidth 64) 32 = s.mem.readW ((s.gpr .esp).setWidth 64) 32 := by
       rw [Fb.readW (r := ⟨(s.gpr .esp).setWidth 64, 4⟩) (Region.contains_self _ _) ?_ (by decide),
         Ff₁.readW (r := ⟨(s.gpr .esp).setWidth 64, 4⟩) (Region.contains_self _ _)
           (fun r hr => by rw [List.mem_singleton.mp hr]; exact retFrame) (by decide),
@@ -571,9 +758,10 @@ theorem wrap_syms_ok (A : WrapABI a n s) {body : Prog isa} (hsp : NoSp (.seq (.b
       intro r hr
       rcases List.mem_append.mp hr with hr | hr
       · exact outRet r hr
-      · rw [CrtRt.frameR, List.mem_cons, List.mem_map] at hr
-        rcases hr with rfl | ⟨p, hp, rfl⟩
+      · rw [frameF, CrtRt.frameR, List.mem_cons, List.mem_cons, List.mem_map] at hr
+        rcases hr with rfl | rfl | ⟨p, hp, rfl⟩
         · exact belowRet
+        · exact belowRet.sub_right sub96
         · have := fR_fit I p hp
           exact retWs.sub_right (Offset.sub_base _ (by omega_using [this]))
     refine ⟨by rw [freed_mem, freed_gpr _ _ (by decide)]; exact Pt, ⟨?_, ?_, S.nowrap, ?_⟩, Svt, ?_, Ret⟩
@@ -598,14 +786,15 @@ theorem wrap_ok (A : WrapABI a n s) {body : Prog isa} (hsp : NoSp (.seq (.block 
     {Ex : List Region → List Region → Prop} (hx : Ex s.rd (⟨frameAt s, argsFrame⟩ :: s.wr))
     {Out : List Region} (outRet : ∀ r ∈ Out, Region.Disjoint ⟨(s.gpr .esp).setWidth 64, 4⟩ r)
     (outWs : ∀ r ∈ Out, Region.Disjoint ⟨wsBase a s, wsSize a s⟩ r) {P : Mem → BitVec 32 → Prop}
+    (hP : ∀ m m' e, Frame [⟨(s.gpr .esp).setWidth 64 - 252#64, 252⟩] m m' → P m e → P m' e)
     (hb : ∀ f, In Ex (wsBase a s) (wsSize a s) (pLenOf a s) (synth a (arg s)) f →
-      f.gpr .esp = s.gpr .esp - BitVec.ofNat 32 argsFrame →
+      f.gpr .esp = s.gpr .esp - BitVec.ofNat 32 argsFrame → RoomF (f.gpr .esp) (wsBase a s) (wsSize a s) →
       Frame [⟨wsBase a s, wsSize a s⟩, ⟨frameAt s, argsFrame⟩] s.mem f.mem →
       WP isa body f fun t => P t.mem (t.gpr .eax) ∧
-        Frame (Out ++ CrtRt.frameR (wsBase a s) (f.gpr .esp) (fR (pLenOf a s))) f.mem t.mem ∧
+        Frame (Out ++ frameF (wsBase a s) (f.gpr .esp) (fR (pLenOf a s))) f.mem t.mem ∧
         Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] f t) :
     WP isa (wrap a body) s fun u => P u.mem (u.gpr .eax) ∧ abiPreserved s u :=
-  wrap_syms_ok A hsp hx outRet outWs fun f I e F _ => hb f I e F
+  wrap_syms_ok A hsp hx outRet outWs hP fun f I e R F _ => hb f I e R F
 
 end
 

@@ -1,8 +1,10 @@
 module
 
 public import VerifiedGarbage.Spec.Sha3.Instances
+public import VerifiedGarbage.Spec.Zeroize
 import VerifiedGarbage.Proof.Sha3.Stream
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!
@@ -23,6 +25,56 @@ only its 200 bytes.
 -/
 
 @[expose] public section
+
+namespace VG.Proof.Sha3
+
+open VG.Spec.Sha3
+
+/-! ## `update` with its working space an argument
+
+Each target's `update` (`Spec.Sha3.updateApi`) is code written for a working
+space `scratch` that its caller provides (`Impl.Sha3.<Target>.Instances.update`),
+run in a frame of its own on the stack that holds it (`withStackScratch`). Its
+contract is `Spec.Sha3.updateContract` with `scratch` after its parameters
+(`Sig.scratchContract`): nothing calls it but that frame, so it is no `Api`'s.
+-/
+
+/-- `update`'s parameters and `scratch`, 640 bytes. -/
+def updateScratchSig : Sig where
+  params := [("state", .array true .u64 25), ("pos", .int .usize true),
+    ("data", .slice false .u8 "len"), ("scratch", .array true .u64 80)]
+  ret := some .usize
+
+/-- `pos < rate`. -/
+def updateScratchPre (rate pb : Nat) : Curry (updateScratchSig.words pb) (Mem → Prop) :=
+  fun _state pos _data _len _scratch _ => pos.toNat < rate
+
+/-- `Spec.Sha3.updatePost`, whatever `scratch` is. -/
+def updateScratchPost (rate pb : Nat) : updateScratchSig.Post pb :=
+  fun state pos data len _scratch m m' ret =>
+    (∀ msg, Repr m state rate msg → pos.toNat = msg.length % rate →
+      Repr m' state rate (msg ++ bytesAt m data len.toNat)) ∧
+    ret.toNat = (pos.toNat + len.toNat) % rate
+
+/-- `updateScratchPre` and `updateScratchPost`, for the rate `rate`. -/
+def updateScratchContract {M : ISA} (A : Abi M) (rate : Nat) (stack : Nat := 0) : Contract M :=
+  updateScratchSig.contract A (pre := updateScratchPre rate A.ptrBits)
+    (post := updateScratchPost rate A.ptrBits) (writeArgs := true) (stack := stack)
+
+/-- `updateScratchPost`, and each byte of `scratch` on return is unchanged or
+zero (`Spec.Zeroize.scrubbed`): what RISC-V's `update` proves. -/
+def updateScratchScrubbedPost (rate pb : Nat) : updateScratchSig.Post pb :=
+  fun state pos data len scratch m m' ret =>
+    updateScratchPost rate pb state pos data len scratch m m' ret ∧
+      Spec.Zeroize.scrubbed m m' scratch 640
+
+/-- `updateScratchPre` and `updateScratchScrubbedPost`, for the rate `rate`. -/
+def updateScratchScrubbedContract {M : ISA} (A : Abi M) (rate : Nat) (stack : Nat := 0) :
+    Contract M :=
+  updateScratchSig.contract A (pre := updateScratchPre rate A.ptrBits)
+    (post := updateScratchScrubbedPost rate A.ptrBits) (writeArgs := true) (stack := stack)
+
+end VG.Proof.Sha3
 
 namespace VG.Proof.Sha3.Instances
 
@@ -170,6 +222,33 @@ theorem finalizePost_local (H : HashFn) : ∀ vs m₁ m₂ m' r,
   unfold Spec.Sha3.Repr at hr ⊢
   rw [← hr]; exact (stateAt_agree hb.1).symm
 
+/-- `finalizePost` reads the memory on return only within the buffers. -/
+theorem finalizePostOut_local (H : HashFn) : ∀ vs m m₁ m₂ r,
+    vs.length = ((finalizeSig H.len).words pb).length →
+    (∀ b ∈ Sig.bufs (finalizeSig H.len).params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply ((finalizeSig H.len).words pb) (finalizePost H pb) vs m m₁ r →
+      Curry.apply ((finalizeSig H.len).words pb) (finalizePost H pb) vs m m₂ r := by
+  intro vs m m₁ m₂ r hlen hb h
+  obtain ⟨st, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 2) hlen
+  replace hlen := Nat.succ.inj hlen
+  iterate 2
+    obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero hlen
+  simp only [finalizeSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+    forall_eq, Elem.size] at hb
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr] (finalizePost H pb) _ m m₁ r at h
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr] (finalizePost H pb) _ m m₂ r
+  dsimp only [Curry.apply, finalizePost, ArgWord.ofRaw] at h ⊢
+  intro msg hr hp
+  refine Eq.trans ?_ (h msg hr hp)
+  refine List.map_congr_left fun i hi => (hb.2 _ ?_).symm
+  simp only [Region.Contains]
+  rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat]
+  have := Nat.mod_le i (2 ^ 64)
+  have := List.mem_range.mp hi
+  omega
+
 theorem xofFinalizePre_local (X : Xof) : ∀ vs m₁ m₂, vs.length = (xofFinalizeSig.words pb).length →
     (∀ b ∈ Sig.bufs xofFinalizeSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
     Curry.apply (xofFinalizeSig.words pb) (xofFinalizePre X pb) vs m₁ →
@@ -237,5 +316,64 @@ theorem xofSqueezePost_local (X : Xof) : ∀ vs m₁ m₂ m' r,
   dsimp only [Curry.apply, xofSqueezePost, ArgWord.ofRaw, XofRepr] at h ⊢
   rw [stateAt_agree (m₁ := m₁) (m₂ := m₂) hb.1]
   exact h
+
+
+/-- `xofFinalizePost` reads the memory on return only within the state. -/
+theorem xofFinalizePostOut_local (X : Xof) : ∀ vs m m₁ m₂ r,
+    vs.length = (xofFinalizeSig.words pb).length →
+    (∀ b ∈ Sig.bufs xofFinalizeSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (xofFinalizeSig.words pb) (xofFinalizePost X pb) vs m m₁ r →
+      Curry.apply (xofFinalizeSig.words pb) (xofFinalizePost X pb) vs m m₂ r := by
+  intro vs m m₁ m₂ r hlen hb h
+  obtain ⟨st, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 1) hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero hlen
+  simp only [xofFinalizeSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq,
+    Elem.size] at hb
+  change Curry.apply [ArgWord.addr, ArgWord.int pb] (xofFinalizePost X pb) _ m m₁ r at h
+  change Curry.apply [ArgWord.addr, ArgWord.int pb] (xofFinalizePost X pb) _ m m₂ r
+  dsimp only [Curry.apply, xofFinalizePost, ArgWord.ofRaw, XofRepr] at h ⊢
+  intro msg hr hc d
+  rw [stateAt_agree hb]
+  exact h msg hr hc d
+
+/-- `xofSqueezePost` reads the memory on return only within the state and the
+output. -/
+theorem xofSqueezePostOut_local (X : Xof) : ∀ vs m m₁ m₂ r,
+    vs.length = (xofSqueezeSig.words pb).length →
+    (∀ b ∈ Sig.bufs xofSqueezeSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (xofSqueezeSig.words pb) (xofSqueezePost X pb) vs m m₁ r →
+      Curry.apply (xofSqueezeSig.words pb) (xofSqueezePost X pb) vs m m₂ r := by
+  intro vs m m₁ m₂ r hlen hb h
+  obtain ⟨st, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 3) hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨ot, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨ol, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero hlen
+  simp only [xofSqueezeSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+    forall_eq, Elem.size] at hb
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb]
+    (xofSqueezePost X pb) _ m m₁ r at h
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb]
+    (xofSqueezePost X pb) _ m m₂ r
+  dsimp only [Curry.apply, xofSqueezePost, ArgWord.ofRaw, XofRepr] at h ⊢
+  refine ⟨fun msg n hx => ?_, h.2⟩
+  obtain ⟨h1, h2⟩ := h.1 msg n hx
+  refine ⟨Eq.trans ?_ h1, fun d => ?_⟩
+  · refine List.map_congr_left fun i hi => (hb.2 _ ?_).symm
+    simp only [Region.Contains]
+    rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat]
+    have := Nat.mod_le i (2 ^ 64)
+    have := List.mem_range.mp hi
+    have : (ol.setWidth pb).toNat ≤ ol.toNat := by rw [BitVec.toNat_setWidth]; exact Nat.mod_le _ _
+    omega
+  · rw [stateAt_agree hb.1]
+    exact h2 d
 
 end VG.Proof.Sha3.Instances

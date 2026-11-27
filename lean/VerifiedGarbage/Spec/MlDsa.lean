@@ -245,6 +245,12 @@ def bitUnpack (v : List Byte) (a b : Nat) : IPoly :=
   Vector.ofFn fun i =>
     (b : Int) - bitsToInteger ((List.range c).map fun j => z.getD (i.val * c + j) false)
 
+/-- Algorithms 17 and 19: unpacking a packed polynomial recovers it when all
+its coefficients lie in the encoding range `[-a, b]`. -/
+def BitPackRoundTrip : Prop :=
+  ∀ (w : IPoly) (a b : Nat), (∀ c ∈ w.toList, -(a : Int) ≤ c ∧ c ≤ b) →
+    bitUnpack (bitPack w a b) a b = w
+
 /-- Algorithm 20, `HintBitPack(h)`, for a hint `h` of `R_2^k` with at most
 `ω` nonzero coefficients in all: the `ω + k` bytes `y`, whose first bytes
 are the indices `j` of the nonzero coefficients `h[i]ⱼ`, in order of `i`

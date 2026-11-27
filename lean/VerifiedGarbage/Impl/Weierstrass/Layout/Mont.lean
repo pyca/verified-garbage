@@ -7,6 +7,7 @@ public import VerifiedGarbage.Spec.P384
 public import VerifiedGarbage.Spec.P521
 public import VerifiedGarbage.Spec.Secp256k1
 public import VerifiedGarbage.Spec.BrainpoolP256r1
+public import VerifiedGarbage.Spec.BrainpoolP320r1
 public import VerifiedGarbage.Spec.BrainpoolP384r1
 public import VerifiedGarbage.Spec.BrainpoolP512r1
 
@@ -85,6 +86,12 @@ def brainpoolp256r1p : Modulus :=
 
 def brainpoolp256r1n : Modulus :=
   ⟨"brainpoolp256r1", "n", Spec.BrainpoolP256r1.n, 4, "brainpoolP256r1's order `n`"⟩
+
+def brainpoolp320r1p : Modulus :=
+  ⟨"brainpoolp320r1", "p", Spec.BrainpoolP320r1.p, 5, "brainpoolP320r1's prime `p`"⟩
+
+def brainpoolp320r1n : Modulus :=
+  ⟨"brainpoolp320r1", "n", Spec.BrainpoolP320r1.n, 5, "brainpoolP320r1's order `n`"⟩
 
 def brainpoolp384r1p : Modulus :=
   ⟨"brainpoolp384r1", "p", Spec.BrainpoolP384r1.p, 6, "brainpoolP384r1's prime `p`"⟩

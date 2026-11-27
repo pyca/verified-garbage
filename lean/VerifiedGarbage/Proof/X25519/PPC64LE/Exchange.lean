@@ -31,7 +31,7 @@ namespace VG.Proof.X25519.PPC64LE.Exchange
 
 open VG VG.PPC64LE VG.Proof.Xdh.PPC64LE
 
-theorem callee : Callee 32 4096 Spec.X25519.x25519 Impl.X25519.PPC64LE.x25519
+theorem callee : Callee 32 4096 Spec.X25519.x25519 Impl.X25519.PPC64LE.Fe51.x25519
     (Proof.X25519.x25519Contract PPC64LE.abi) where
   hv := Proof.X25519.PPC64LE.x25519_verified.1
   hct := Proof.X25519.PPC64LE.x25519_verified.2.1
@@ -57,7 +57,7 @@ theorem callee : Callee 32 4096 Spec.X25519.x25519 Impl.X25519.PPC64LE.x25519
   nf := by lit_decide
 
 theorem exchange_verified :
-    Verified PPC64LE.target (Impl.Xdh.PPC64LE.exchange "vg_x25519" Impl.X25519.PPC64LE.x25519 32)
+    Verified PPC64LE.target (Impl.Xdh.PPC64LE.exchange "vg_x25519" Impl.X25519.PPC64LE.Fe51.x25519 32)
       (Spec.X25519.exchangeContract PPC64LE.abi 48) :=
   Verified.of_correct (k := exContract 32 4096 Spec.X25519.x25519) (exchange_correct callee (by decide))
     (exchange_ct callee ⟨_, by taint_decide⟩) (by

@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.PPC64LE.CallsCT
 public import VerifiedGarbage.Proof.MlKem.PPC64LE.RowSum
 import VerifiedGarbage.Proof.MlKem.PPC64LE.Loops
 import VerifiedGarbage.Proof.MlKem.PPC64LE.HashTop

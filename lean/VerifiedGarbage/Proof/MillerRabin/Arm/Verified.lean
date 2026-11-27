@@ -1,6 +1,7 @@
 module
 
 import VerifiedGarbage.Proof.MillerRabin.Arm.Run
+public import VerifiedGarbage.Proof.Bignum.Arm.CallOp
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
@@ -58,7 +59,7 @@ theorem sat_prepared : Proof.MillerRabin.Round.Prepared Proof.MillerRabin.Round.
   decide +kernel
 
 theorem round_implies : roundContract.Implies
-    (Proof.MillerRabin.Round.roundContract abi Proof.MillerRabin.Round.compact 56) where
+    (Proof.MillerRabin.Round.roundContract abi Proof.MillerRabin.Round.compact 104) where
   pre := by
     intro s h
     sig_pre [Proof.MillerRabin.Round.roundContract, Proof.MillerRabin.Round.roundSig, abi, argRegs, reduceClassify, Loc.val,
@@ -67,7 +68,7 @@ theorem round_implies : roundContract.Implies
     obtain ⟨_, mont, w4, w128, fits, _⟩ := lay
     have fits' : arrAt (wOf s.mem (State.addr (s.gpr .r0))) 28 ≤ 8 * (s.gpr .r1).toNat := fits
     refine ⟨rd, by rw [wr]; simp [State.addr, Nat.mul_comm], by omega_arith, spLo, ?_, ⟨mont, w4, w128, ?_⟩, ?_⟩
-    · show (⟨State.addr (s.sp - BitVec.ofNat 32 56), 56⟩ : Region).Disjoint _
+    · show (⟨State.addr (s.sp - BitVec.ofNat 32 104), 104⟩ : Region).Disjoint _
       rw [FrameStack.addr_sub' spLo]
       simpa [State.addr, Nat.mul_comm] using disj
     · have : arrAt (wOf s.mem (State.addr (s.gpr .r0))) nArr ≤ arrAt (wOf s.mem (State.addr (s.gpr .r0))) 28 := by
@@ -110,19 +111,19 @@ theorem round_implies : roundContract.Implies
     exact ⟨by decide, by decide, by decide, Region.disjoint_of_le (by decide) (by decide) (by decide), by decide,
       sat_layout, sat_prepared⟩
 
-theorem round_correct (s : State) (h : roundContract.pre s) (fios : Bool := false) :
-    ∃ tr t, Exec isa (code (fios := fios)) s tr t ∧ abiPreserved s t ∧ roundContract.post s t :=
-  round_ok (fios := fios) h
+theorem round_correct (M : VG.Proof.Bignum.Arm.CallOp) (s : State) (h : roundContract.pre s) :
+    ∃ tr t, Exec isa (code M.op) s tr t ∧ abiPreserved s t ∧ roundContract.post s t :=
+  round_ok M h
 
-theorem round_ct' (fios : Bool := false) : ConstantTime isa roundContract.pre roundContract.pub (code (fios := fios)) := by
+theorem round_ct' (M : VG.Proof.Bignum.Arm.CallOp) : ConstantTime isa roundContract.pre roundContract.pub (code M.op) := by
   intro s t tr1 tr2 u v hs ht hp e1 e2
   obtain ⟨sp, h0, h1, hw⟩ := hp
   have hP : mkP s = mkP t := by
     simp only [mkP]; rw [sp, h1, hw, h0]
-  exact (round_ct (fios := fios) s t tr1 tr2 u v ⟨hs, ht, sp, hP⟩ e1 e2).1
+  exact (round_ct M s t tr1 tr2 u v ⟨hs, ht, sp, hP⟩ e1 e2).1
 
 /-- `vg_miller_rabin_round` against the contract its callers use. -/
-theorem round_verified_lite (fios : Bool := false) : Verified Arm.target (code (fios := fios)) roundContract :=
-  ⟨(round_correct (fios := fios)), (round_ct' (fios := fios)), round_implies.sat_left⟩
+theorem round_verified_lite (M : VG.Proof.Bignum.Arm.CallOp) : Verified Arm.target (code M.op) roundContract :=
+  ⟨round_correct M, round_ct' M, round_implies.sat_left⟩
 
 end VG.Proof.MillerRabin.Arm

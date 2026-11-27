@@ -6,6 +6,7 @@ import VerifiedGarbage.TCB.AArch64.Print
 meta import VerifiedGarbage.TCB.AArch64.Print
 import VerifiedGarbage.Proof.Framework.AArch64.Taint
 meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
+import VerifiedGarbage.Spec.Dit
 
 /-!
 # PSTATE.DIT: `mrsDit` and `msrDitImm`
@@ -74,5 +75,14 @@ private def run (i : Instr) (dit : Bool) (a : BitVec 64) : Option (Bool × BitVe
   (fun τ => (AArch64.Taint.pub τ .x0, AArch64.Taint.pub τ .x1))) == some (false, true)
 #guard ((AArch64.Taint.step (AArch64.Taint.ofRegs [.x1]) (.msrDitImm true)).map
   (fun τ => (AArch64.Taint.pub τ .x0, AArch64.Taint.pub τ .x1))) == some (false, true)
+
+/-! What `vg_dit_enter` and `vg_dit_clear` do to the mode (`Api.mode`): it is
+on after the first, whose result is what it was, whatever that is. -/
+
+example : ∃ q, Spec.Dit.enterApi.mode = some q ∧ q 0 1 0 ∧ q 1 1 1 ∧
+    ¬ q 0 1 1 ∧ ¬ q 1 1 0 ∧ ¬ q 0 0 0 ∧ ¬ q 1 0 1 :=
+  ⟨_, rfl, by decide⟩
+
+example : ∃ q, Spec.Dit.clearApi.mode = some q ∧ q 1 0 0 ∧ ¬ q 1 1 0 := ⟨_, rfl, by decide⟩
 
 end VG.Test.AArch64Dit

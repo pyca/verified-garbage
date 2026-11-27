@@ -4,8 +4,6 @@ public import VerifiedGarbage.Impl.MlKem.X86.Wipe
 public import VerifiedGarbage.Proof.Framework.X86.CallWipe
 public import VerifiedGarbage.Proof.Zeroize.X86
 public import VerifiedGarbage.Proof.MlKem.Scrubbed
-public import VerifiedGarbage.Proof.MlKem.X86.KeyGenFin
-public import VerifiedGarbage.Proof.MlKem.X86.KeyGenPrf
 public import VerifiedGarbage.Proof.MlKem.X86.KeyGenBody
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.MlKem.X86.Common
@@ -18,15 +16,13 @@ public import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Proof.Framework.X86.Lit
 public import VerifiedGarbage.Proof.Framework.X86.Mmx
 public import VerifiedGarbage.Proof.Framework.X86.RegUpd
-public import VerifiedGarbage.Proof.MlKem.X86.NttSetup
 public import VerifiedGarbage.Proof.MlKem.X86.Red
-public import VerifiedGarbage.Proof.MlKem.X86.Table
+public import VerifiedGarbage.Proof.MlKem.X86.Unpack
+public import VerifiedGarbage.Impl.MlKem.X86.Ntt
+public import VerifiedGarbage.Proof.MlKem.X86.Leaf
 public import VerifiedGarbage.Proof.MlKem.X86.TopCall
-public import VerifiedGarbage.Proof.MlKem.X86.TopHash
-public import VerifiedGarbage.Proof.MlKem.X86.TopKem
 public import VerifiedGarbage.Proof.MlKem.X86.TopLocal
-public import VerifiedGarbage.Proof.MlKem.X86.TopPrim
-public import VerifiedGarbage.Proof.MlKem.X86.TopPrim2
+public import VerifiedGarbage.Proof.MlKem.X86.TopKem
 public import VerifiedGarbage.Proof.MlKem.X86.TopSeq
 public import VerifiedGarbage.Proof.Sha512.Spec
 import VerifiedGarbage.Proof.Framework.Sig
@@ -164,7 +160,7 @@ theorem verified : Verified X86.target Impl.MlKem.X86.keyGen (Proof.MlKem.Scrubb
     obtain ⟨habi, -, -, s, hfin, hm, hax⟩ := hq
     refine ⟨habi, ?_⟩
     sig_post [Proof.MlKem.Scrubbed.keyGenBodyContract, keyGenSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
-    rw [setWidth_append32, hax, hfin.eax, hm]
+    rw [setWidth_append32, hax, hfin.eax, argKeep hp hm (k := 1) (l := 1184) (by decide), argKeep hp hm (k := 2) (l := 2400) (by decide)]
     have r := post (by decide) hp hfin
     have ez : Buf.addr s₀ ⟨0, 32, 32⟩ = (arg s₀ 0).setWidth 64 + 32 := Buf.addr_eq hp (by decide)
     simp only [d, z, addr0, ez, show Buf.addr s₀ ⟨1, 0, L768.p.ekLen⟩ = (arg s₀ 1).setWidth 64 from addr0 s₀ 1,
@@ -283,11 +279,11 @@ def satMem : Mem := fun a =>
 
 theorem verified : Verified X86.target Impl.MlKem.X86.encaps (Proof.MlKem.Scrubbed.encapsBodyContract X86.abi 88) := by
   refine Piece.verified (((piece (L := L768) (by decide) (NoSp.of_all (by lit_decide))).pre_mono (fun _ h => pre_of h) fun _ _ _ _ h => pub_of h).mono
-    (fun _ _ _ h => h) fun s₀ s' _ hq => ?_) ?_
+    (fun _ _ _ h => h) fun s₀ s' h₀ hq => ?_) ?_
   · obtain ⟨habi, -, -, s, hfin, hm, hax⟩ := hq
     refine ⟨habi, ?_⟩
     sig_post [Proof.MlKem.Scrubbed.encapsBodyContract, encapsSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
-    rw [setWidth_append32, hax, hfin.eax, hm]
+    rw [setWidth_append32, hax, hfin.eax, argKeep (pre_of h₀) hm (k := 2) (l := 32) (by decide), argKeep (pre_of h₀) hm (k := 3) (l := 1088) (by decide)]
     have r := post (by decide) hfin
     rw [ek_eq, msg_eq, addr0, addr0, addr0, addr0] at r
     exact r
@@ -393,7 +389,7 @@ theorem verifiedH : Verified X86.target Impl.MlKem.X86.encapsH (Proof.MlKem.Scru
     refine ⟨habi, ?_⟩
     sig_post [Proof.MlKem.Scrubbed.encapsHBodyContract, Spec.MlKem.encapsHSig, Spec.MlKem.encapsHSigOf, X86.abi, X86.argSlots,
       X86.argVal, X86.argBytes]
-    rw [setWidth_append32, hax, hfin.eax, hm]
+    rw [setWidth_append32, hax, hfin.eax, argKeep (pre_ofH hpre).1 hm (k := 3) (l := 32) (by decide), argKeep (pre_ofH hpre).1 hm (k := 4) (l := 1088) (by decide)]
     have r := postH (by decide) (pre_ofH hpre).2 hfin
     rw [ek_eq, msgH_eq, addr0, addr0, addr0, addr0] at r
     exact r
@@ -528,7 +524,7 @@ theorem verified : Verified X86.target Impl.MlKem.X86.decaps (Proof.MlKem.Scrubb
     obtain ⟨habi, -, -, s, hfin, hm, hax⟩ := hq
     refine ⟨habi, ?_⟩
     sig_post [Proof.MlKem.Scrubbed.decapsBodyContract, decapsSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
-    rw [setWidth_append32, hax, hfin.eax, hm]
+    rw [setWidth_append32, hax, hfin.eax, argKeep hp hm (k := 2) (l := 32) (by decide)]
     have r := post (by decide) hp hfin
     rw [dk_eq, ct_eq, addr0, addr0, addr0] at r
     exact r
@@ -668,7 +664,7 @@ theorem verified : Verified X86.target Impl.MlKem1024.X86.keyGen (Proof.MlKem.Sc
     obtain ⟨habi, -, -, s, hfin, hm, hax⟩ := hq
     refine ⟨habi, ?_⟩
     sig_post [Proof.MlKem.Scrubbed.keyGen1024BodyContract, Spec.MlKem1024.keyGenSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
-    rw [setWidth_append32, hax, hfin.eax, hm]
+    rw [setWidth_append32, hax, hfin.eax, argKeep hp hm (k := 1) (l := 1568) (by decide), argKeep hp hm (k := 2) (l := 3168) (by decide)]
     have r := post (by decide) hp hfin
     have ez : Buf.addr s₀ ⟨0, 32, 32⟩ = (arg s₀ 0).setWidth 64 + 32 := Buf.addr_eq hp (by decide)
     simp only [d, z, addr0, ez, show Buf.addr s₀ ⟨1, 0, L1024.p.ekLen⟩ = (arg s₀ 1).setWidth 64 from addr0 s₀ 1,
@@ -790,11 +786,11 @@ def satMem : Mem := fun a =>
 
 theorem verified : Verified X86.target Impl.MlKem1024.X86.encaps (Proof.MlKem.Scrubbed.encaps1024BodyContract X86.abi 88) := by
   refine Piece.verified (((piece (L := L1024) (by decide) (NoSp.of_all (by lit_decide))).pre_mono (fun _ h => pre_of h) fun _ _ _ _ h => pub_of h).mono
-    (fun _ _ _ h => h) fun s₀ s' _ hq => ?_) ?_
+    (fun _ _ _ h => h) fun s₀ s' h₀ hq => ?_) ?_
   · obtain ⟨habi, -, -, s, hfin, hm, hax⟩ := hq
     refine ⟨habi, ?_⟩
     sig_post [Proof.MlKem.Scrubbed.encaps1024BodyContract, Spec.MlKem1024.encapsSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
-    rw [setWidth_append32, hax, hfin.eax, hm]
+    rw [setWidth_append32, hax, hfin.eax, argKeep (pre_of h₀) hm (k := 2) (l := 32) (by decide), argKeep (pre_of h₀) hm (k := 3) (l := 1568) (by decide)]
     have r := post (by decide) hfin
     rw [ek_eq, msg_eq, addr0, addr0, addr0, addr0] at r
     exact r
@@ -900,7 +896,7 @@ theorem verifiedH : Verified X86.target Impl.MlKem1024.X86.encapsH (Proof.MlKem.
     refine ⟨habi, ?_⟩
     sig_post [Proof.MlKem.Scrubbed.encapsH1024BodyContract, Spec.MlKem1024.encapsHSig, Spec.MlKem.encapsHSigOf, X86.abi, X86.argSlots,
       X86.argVal, X86.argBytes]
-    rw [setWidth_append32, hax, hfin.eax, hm]
+    rw [setWidth_append32, hax, hfin.eax, argKeep (pre_ofH hpre).1 hm (k := 3) (l := 32) (by decide), argKeep (pre_ofH hpre).1 hm (k := 4) (l := 1568) (by decide)]
     have r := postH (by decide) (pre_ofH hpre).2 hfin
     rw [ek_eq, msgH_eq, addr0, addr0, addr0, addr0] at r
     exact r
@@ -1036,7 +1032,7 @@ theorem verified : Verified X86.target Impl.MlKem1024.X86.decaps (Proof.MlKem.Sc
     obtain ⟨habi, -, -, s, hfin, hm, hax⟩ := hq
     refine ⟨habi, ?_⟩
     sig_post [Proof.MlKem.Scrubbed.decaps1024BodyContract, Spec.MlKem1024.decapsSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
-    rw [setWidth_append32, hax, hfin.eax, hm]
+    rw [setWidth_append32, hax, hfin.eax, argKeep hp hm (k := 2) (l := 32) (by decide)]
     have r := post (by decide) hp hfin
     rw [dk_eq, ct_eq, addr0, addr0, addr0] at r
     exact r
@@ -1065,9 +1061,8 @@ the frame and the return address more stack than the code's 88 bytes: 120
 for key generation, encapsulation and decapsulation (a frame of 28 bytes,
 padded: four or five arguments and the result), 136 for encapsulation with
 `H(ek)` (44 bytes: six arguments and the result, padded); and with `scratch`
-left scrubbed (`*_scrubbed`, the contracts of `Proof/MlKem/Scrubbed.lean`),
-since every byte of it is zero (`Scrubbed.keyGen_wiped`, …). `*_verified` state them as the contracts of
-`Spec/MlKem/`.
+left wiped (`*_scrubbed`, the contracts of `Proof/MlKem/Scrubbed.lean`),
+since every byte of it is zero (`Scrubbed.keyGen_wiped`, …).
 -/
 
 @[expose] public section
@@ -1125,7 +1120,7 @@ theorem keyGen_wipe {body : Prog isa}
       (Scrubbed.keyGenContract abi 120) := by
   have e : slots Spec.MlKem.keyGenSig = 4 := by decide
   have h' := Verified.callWipe' (sig := Spec.MlKem.keyGenSig) (ps₁ := Spec.MlKem.keyGenSig.params.dropLast) (ps₂ := [])
-    (i := 3) (j := 3) (n := 32768) (name := "vg_mlkem768_keygen_body") (zname := "vg_zeroize") h Proof.Zeroize.X86.verified
+    (i := 3) (j := 3) (n := 32768) (name := "vg_mlkem768_keygen_body") (zname := "vg_zeroize_core") h Proof.Zeroize.X86.verified
     (by decide) rfl rfl (by decide) (by decide) (by decide) (by decide) hsp hd zeroize_noSp zeroize_stack
     (Nat.zero_le _)
     (by
@@ -1178,7 +1173,7 @@ theorem encapsH_wipe {body : Prog isa}
       (Scrubbed.encapsHContract abi 136) := by
   have e : slots Spec.MlKem.encapsHSig = 6 := by decide
   have h' := Verified.callWipe' (sig := Spec.MlKem.encapsHSig) (ps₁ := Spec.MlKem.encapsHSig.params.dropLast) (ps₂ := [])
-    (i := 5) (j := 5) (n := 32768) (name := "vg_mlkem768_encaps_h_body") (zname := "vg_zeroize") h Proof.Zeroize.X86.verified
+    (i := 5) (j := 5) (n := 32768) (name := "vg_mlkem768_encaps_h_body") (zname := "vg_zeroize_core") h Proof.Zeroize.X86.verified
     (by decide) rfl rfl (by decide) (by decide) (by decide) (by decide) hsp hd zeroize_noSp zeroize_stack
     (Nat.zero_le _)
     (by
@@ -1238,7 +1233,7 @@ theorem encaps_wipe {body : Prog isa}
       (Scrubbed.encapsContract abi 120) := by
   have e : slots Spec.MlKem.encapsSig = 5 := by decide
   have h' := Verified.callWipe' (sig := Spec.MlKem.encapsSig) (ps₁ := Spec.MlKem.encapsSig.params.dropLast) (ps₂ := [])
-    (i := 4) (j := 4) (n := 32768) (name := "vg_mlkem768_encaps_body") (zname := "vg_zeroize") h Proof.Zeroize.X86.verified
+    (i := 4) (j := 4) (n := 32768) (name := "vg_mlkem768_encaps_body") (zname := "vg_zeroize_core") h Proof.Zeroize.X86.verified
     (by decide) rfl rfl (by decide) (by decide) (by decide) (by decide) hsp hd zeroize_noSp zeroize_stack
     (Nat.zero_le _)
     (by
@@ -1290,7 +1285,7 @@ theorem decaps_wipe {body : Prog isa}
       (Scrubbed.decapsContract abi 120) := by
   have e : slots Spec.MlKem.decapsSig = 4 := by decide
   have h' := Verified.callWipe' (sig := Spec.MlKem.decapsSig) (ps₁ := Spec.MlKem.decapsSig.params.dropLast) (ps₂ := [])
-    (i := 3) (j := 3) (n := 32768) (name := "vg_mlkem768_decaps_body") (zname := "vg_zeroize") h Proof.Zeroize.X86.verified
+    (i := 3) (j := 3) (n := 32768) (name := "vg_mlkem768_decaps_body") (zname := "vg_zeroize_core") h Proof.Zeroize.X86.verified
     (by decide) rfl rfl (by decide) (by decide) (by decide) (by decide) hsp hd zeroize_noSp zeroize_stack
     (Nat.zero_le _)
     (by
@@ -1340,7 +1335,7 @@ theorem keyGen1024_wipe {body : Prog isa}
       (Scrubbed.keyGen1024Contract abi 120) := by
   have e : slots Spec.MlKem1024.keyGenSig = 4 := by decide
   have h' := Verified.callWipe' (sig := Spec.MlKem1024.keyGenSig) (ps₁ := Spec.MlKem1024.keyGenSig.params.dropLast) (ps₂ := [])
-    (i := 3) (j := 3) (n := 49152) (name := "vg_mlkem1024_keygen_body") (zname := "vg_zeroize") h Proof.Zeroize.X86.verified
+    (i := 3) (j := 3) (n := 49152) (name := "vg_mlkem1024_keygen_body") (zname := "vg_zeroize_core") h Proof.Zeroize.X86.verified
     (by decide) rfl rfl (by decide) (by decide) (by decide) (by decide) hsp hd zeroize_noSp zeroize_stack
     (Nat.zero_le _)
     (by
@@ -1393,7 +1388,7 @@ theorem encapsH1024_wipe {body : Prog isa}
       (Scrubbed.encapsH1024Contract abi 136) := by
   have e : slots Spec.MlKem1024.encapsHSig = 6 := by decide
   have h' := Verified.callWipe' (sig := Spec.MlKem1024.encapsHSig) (ps₁ := Spec.MlKem1024.encapsHSig.params.dropLast) (ps₂ := [])
-    (i := 5) (j := 5) (n := 49152) (name := "vg_mlkem1024_encaps_h_body") (zname := "vg_zeroize") h Proof.Zeroize.X86.verified
+    (i := 5) (j := 5) (n := 49152) (name := "vg_mlkem1024_encaps_h_body") (zname := "vg_zeroize_core") h Proof.Zeroize.X86.verified
     (by decide) rfl rfl (by decide) (by decide) (by decide) (by decide) hsp hd zeroize_noSp zeroize_stack
     (Nat.zero_le _)
     (by
@@ -1453,7 +1448,7 @@ theorem encaps1024_wipe {body : Prog isa}
       (Scrubbed.encaps1024Contract abi 120) := by
   have e : slots Spec.MlKem1024.encapsSig = 5 := by decide
   have h' := Verified.callWipe' (sig := Spec.MlKem1024.encapsSig) (ps₁ := Spec.MlKem1024.encapsSig.params.dropLast) (ps₂ := [])
-    (i := 4) (j := 4) (n := 49152) (name := "vg_mlkem1024_encaps_body") (zname := "vg_zeroize") h Proof.Zeroize.X86.verified
+    (i := 4) (j := 4) (n := 49152) (name := "vg_mlkem1024_encaps_body") (zname := "vg_zeroize_core") h Proof.Zeroize.X86.verified
     (by decide) rfl rfl (by decide) (by decide) (by decide) (by decide) hsp hd zeroize_noSp zeroize_stack
     (Nat.zero_le _)
     (by
@@ -1505,7 +1500,7 @@ theorem decaps1024_wipe {body : Prog isa}
       (Scrubbed.decaps1024Contract abi 120) := by
   have e : slots Spec.MlKem1024.decapsSig = 4 := by decide
   have h' := Verified.callWipe' (sig := Spec.MlKem1024.decapsSig) (ps₁ := Spec.MlKem1024.decapsSig.params.dropLast) (ps₂ := [])
-    (i := 3) (j := 3) (n := 49152) (name := "vg_mlkem1024_decaps_body") (zname := "vg_zeroize") h Proof.Zeroize.X86.verified
+    (i := 3) (j := 3) (n := 49152) (name := "vg_mlkem1024_decaps_body") (zname := "vg_zeroize_core") h Proof.Zeroize.X86.verified
     (by decide) rfl rfl (by decide) (by decide) (by decide) (by decide) hsp hd zeroize_noSp zeroize_stack
     (Nat.zero_le _)
     (by
@@ -1621,64 +1616,32 @@ theorem keyGen_scrubbed :
     Verified target Impl.MlKem.X86.Wipe.keyGen (Scrubbed.keyGenContract abi 120) :=
   keyGen_wipe Proof.MlKem.X86.KeyGen.verified (NoSp.of_all (by lit_decide)) keyGen_stack keyGen_sat
 
-theorem keyGen_verified :
-    Verified target Impl.MlKem.X86.Wipe.keyGen (Spec.MlKem.keyGenContract abi 120) :=
-  keyGen_scrubbed
-
 theorem encapsH_scrubbed :
     Verified target Impl.MlKem.X86.Wipe.encapsH (Scrubbed.encapsHContract abi 136) :=
   encapsH_wipe Proof.MlKem.X86.Encaps.verifiedH (NoSp.of_all (by lit_decide)) encapsH_stack encapsH_sat
-
-theorem encapsH_verified :
-    Verified target Impl.MlKem.X86.Wipe.encapsH (Spec.MlKem.encapsHContract abi 136) :=
-  encapsH_scrubbed
 
 theorem encaps_scrubbed :
     Verified target Impl.MlKem.X86.Wipe.encaps (Scrubbed.encapsContract abi 120) :=
   encaps_wipe Proof.MlKem.X86.Encaps.verified (NoSp.of_all (by lit_decide)) encaps_stack encaps_sat
 
-theorem encaps_verified :
-    Verified target Impl.MlKem.X86.Wipe.encaps (Spec.MlKem.encapsContract abi 120) :=
-  encaps_scrubbed
-
 theorem decaps_scrubbed :
     Verified target Impl.MlKem.X86.Wipe.decaps (Scrubbed.decapsContract abi 120) :=
   decaps_wipe Proof.MlKem.X86.Decaps.verified (NoSp.of_all (by lit_decide)) decaps_stack decaps_sat
-
-theorem decaps_verified :
-    Verified target Impl.MlKem.X86.Wipe.decaps (Spec.MlKem.decapsContract abi 120) :=
-  decaps_scrubbed
 
 theorem keyGen1024_scrubbed :
     Verified target Impl.MlKem.X86.Wipe.keyGen1024 (Scrubbed.keyGen1024Contract abi 120) :=
   keyGen1024_wipe Proof.MlKem1024.X86.KeyGen.verified (NoSp.of_all (by lit_decide)) keyGen1024_stack keyGen1024_sat
 
-theorem keyGen1024_verified :
-    Verified target Impl.MlKem.X86.Wipe.keyGen1024 (Spec.MlKem1024.keyGenContract abi 120) :=
-  keyGen1024_scrubbed
-
 theorem encapsH1024_scrubbed :
     Verified target Impl.MlKem.X86.Wipe.encapsH1024 (Scrubbed.encapsH1024Contract abi 136) :=
   encapsH1024_wipe Proof.MlKem1024.X86.Encaps.verifiedH (NoSp.of_all (by lit_decide)) encapsH1024_stack encapsH1024_sat
-
-theorem encapsH1024_verified :
-    Verified target Impl.MlKem.X86.Wipe.encapsH1024 (Spec.MlKem1024.encapsHContract abi 136) :=
-  encapsH1024_scrubbed
 
 theorem encaps1024_scrubbed :
     Verified target Impl.MlKem.X86.Wipe.encaps1024 (Scrubbed.encaps1024Contract abi 120) :=
   encaps1024_wipe Proof.MlKem1024.X86.Encaps.verified (NoSp.of_all (by lit_decide)) encaps1024_stack encaps1024_sat
 
-theorem encaps1024_verified :
-    Verified target Impl.MlKem.X86.Wipe.encaps1024 (Spec.MlKem1024.encapsContract abi 120) :=
-  encaps1024_scrubbed
-
 theorem decaps1024_scrubbed :
     Verified target Impl.MlKem.X86.Wipe.decaps1024 (Scrubbed.decaps1024Contract abi 120) :=
   decaps1024_wipe Proof.MlKem1024.X86.Decaps.verified (NoSp.of_all (by lit_decide)) decaps1024_stack decaps1024_sat
-
-theorem decaps1024_verified :
-    Verified target Impl.MlKem.X86.Wipe.decaps1024 (Spec.MlKem1024.decapsContract abi 120) :=
-  decaps1024_scrubbed
 
 end VG.Proof.MlKem.X86.Wipe

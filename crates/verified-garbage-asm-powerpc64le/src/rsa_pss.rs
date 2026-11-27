@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.RsaPss.verifyPrecomputedMdTableContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, `salt_len`, `any_salt_len`, the contents of `n`, `e` and `pre`, and which tables `hash` and `mgf1` are, not on the digest, the signature or anything computed from them but the result.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `n` must be valid for reads of `n_len` bytes.
@@ -1005,7 +1007,7 @@ b 2239f
 2239:
 .base64 "AACBOfAADOimAwh8cADM6XgA7OmAAAzqiAAs6pAATOqYAGzqoACM6qgArOqwAMzquADs6sAADOvIACzr0ABM69gAbOvgAIzr6ACs6w=="
 21:
-.base64 "AAEhOCAAgE4=""#,
+.base64 "AAEhOAAAADjR/iH4IACBOQAADPgIAAz4EAAM+BgADPggAAz4KAAM+DAADPg4AAz4QAAM+EgADPhQAAz4WAAM+GAADPhoAAz4cAAM+HgADPiAAAz4iAAM+JAADPiYAAz4oAAM+KgADPiwAAz4uAAM+MAADPjIAAz40AAM+NgADPjgAAz46AAM+PAADPj4AAz4AAEM+AgBDPgwASE4xgdjeCIAY3gAAIA4AACgOAAAwDgAAOA4AAAAOQAAIDkAAEA5AABgOQAAgDkUAAB8xAQAEMQMIRDEFEIQxBxjEMQkhBDELKUQxDTGEMQ85xDERAgRxEwpEcRUShHEXGsRxGSMEcRsrRHEdM4RxHzvEcSEEBLEjDESxJRSEsSccxIgAIBO""#,
         vg_rsa_public_precomputed_checked = sym super::rsa::vg_rsa_public_precomputed_checked::vg_rsa_public_precomputed_checked,
     )
 }
@@ -1013,6 +1015,8 @@ b 2239f
 /// `vg_rsa_pss_sign`, given the key's precomputed values `pre`: computes and returns what `vg_rsa_pss_sign` does with the same arguments. `pre` (`pre_len` words) must hold what `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1), as `n`, `p` and `q` must be valid.
 ///
 /// Contract: `VG.Spec.RsaPss.signPrecomputedMdTableContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, the contents of `n` and `e`, the first `2 * ⌈n_len / 8⌉` words of `pre` (the modulus' values), and which tables `hash` and `mgf1` are, not on the private key, the rest of `pre`, the digest or the salt.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1676,7 +1680,7 @@ bne %cr0, 2181b
 2162:
 .base64 "AACBOfAADOimAwh8cADM6XgA7OmAAAzqiAAs6pAATOqYAGzqoACM6qgArOqwAMzquADs6sAADOvIACzr0ABM69gAbOvgAIzr6ACs6w=="
 21:
-.base64 "AAEhOCAAgE4=""#,
+.base64 "AAEhOAAAADgx8SH4IACBOQAADPgIAAz4EAAM+BgADPggAAz4KAAM+DAADPg4AAz4QAAM+EgADPhQAAz4WAAM+GAADPhoAAz4cAAM+HgADPiAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfAAADPgIAAz4EAAM+BgADPggAAz4KAAM+DAADPg4AAz4QAAM+EgADPhQAAz4WAAM+GAADPhoAAz4cAAM+HgADPiAAAz4iAAM+JAADPiYAAz4oAAM+KgADPjQDiE4xgdjeCIAY3gAAIA4AACgOAAAwDgAAOA4AAAAOQAAIDkAAEA5AABgOQAAgDkUAAB8xAQAEMQMIRDEFEIQxBxjEMQkhBDELKUQxDTGEMQ85xDERAgRxEwpEcRUShHEXGsRxGSMEcRsrRHEdM4RxHzvEcSEEBLEjDESxJRSEsSccxIgAIBO""#,
         vg_rsa_private_checked_precomputed = sym super::rsa::vg_rsa_private_checked_precomputed::vg_rsa_private_checked_precomputed,
     )
 }

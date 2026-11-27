@@ -1,28 +1,25 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcmSiv.Arm.Verified
-import Mathlib.Algebra.Order.Field.Basic
-import Mathlib.Data.Sym.Sym2.Init
-import Mathlib.Tactic.ContinuousFunctionalCalculus
-import Mathlib.Tactic.NormNum.GCD
-import Mathlib.Tactic.Positivity.Finset
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.Arm.Print
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.GcmSiv.Contract
+import VerifiedGarbage.Proof.Gcm.Arm.Law
+import VerifiedGarbage.Proof.AesGcmSiv.Arm.Verified
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # AES-GCM-SIV (RFC 8452) on ARMv7 -/
 
-@[expose] public section
-
 namespace VG.Artifacts.AesGcmSiv.Arm
 
-open VG.Proof.AesGcmSiv.Arm
-
-def artifacts : List Artifact := [
+public def artifacts : List (Artifact Arm.target) := [
   Spec.GcmSiv.sealApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratch 3792 4 Impl.AesGcmSiv.Arm.«seal»
-    verified := Proof.AesGcmSiv.seal_keyed seal_framed },
+    code := Impl.AesGcmSiv.Arm.Fn.«seal»
+    verified := Proof.AesGcmSiv.Arm.Fn.«seal» },
   Spec.GcmSiv.openApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratch 3792 4 Impl.AesGcmSiv.Arm.«open»
-    verified := Proof.AesGcmSiv.open_keyed open_framed }]
+    code := Impl.AesGcmSiv.Arm.Fn.«open»
+    verified := Proof.AesGcmSiv.Arm.Fn.«open» }]
+
+spec_apis artifacts
 
 end VG.Artifacts.AesGcmSiv.Arm

@@ -1,26 +1,27 @@
 module
 
-public import VerifiedGarbage.Proof.AesSiv.PPC64LE.Verified
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.PPC64LE.Print
+public import VerifiedGarbage.TCB.PPC64LE.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Siv.Contract
+import VerifiedGarbage.Proof.AesSiv.PPC64LE.Scrub
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # AES-SIV (RFC 5297) on PPC64LE -/
 
-@[expose] public section
-
 namespace VG.Artifacts.AesSiv.PPC64LE
 
-open VG.Proof.AesSiv.PPC64LE
-
-def artifacts : List Artifact := [
+public def artifacts : List (Artifact PPC64LE.target) := [
   Spec.Siv.initApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratch 2592 .r6 Impl.AesSiv.PPC64LE.init
-    verified := init_framed },
+    code := Impl.AesSiv.PPC64LE.Fn.init
+    verified := Proof.AesSiv.PPC64LE.Scrub.init_scrubbed },
   Spec.Siv.encryptApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratch 2608 .r10 Impl.AesSiv.PPC64LE.encrypt
-    verified := Proof.AesSiv.encrypt_keyed encrypt_framed },
+    code := Impl.AesSiv.PPC64LE.Fn.encrypt
+    verified := Proof.AesSiv.PPC64LE.Scrub.encrypt_scrubbed },
   Spec.Siv.decryptApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratch 2608 .r10 Impl.AesSiv.PPC64LE.decrypt
-    verified := Proof.AesSiv.decrypt_keyed decrypt_framed }]
+    code := Impl.AesSiv.PPC64LE.Fn.decrypt
+    verified := Proof.AesSiv.PPC64LE.Scrub.decrypt_scrubbed }]
+
+spec_apis artifacts
 
 end VG.Artifacts.AesSiv.PPC64LE

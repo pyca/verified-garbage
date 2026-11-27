@@ -1,7 +1,9 @@
 module
 
-import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.DecompressMain
-import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.Candidate
+public import VerifiedGarbage.Impl.EcKey.P384.AArch64
+public import VerifiedGarbage.Proof.EcKey.AArch64.Scrub
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubProved
+public import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.DecompressMain
 import VerifiedGarbage.Proof.Weierstrass.Sqrt
 public import VerifiedGarbage.Spec.EcKey.P384
 import VerifiedGarbage.Proof.Ecdsa.AArch64.P384.Verified
@@ -17,8 +19,6 @@ meta import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.Contract
 public import VerifiedGarbage.Impl.EcKey.Compressed.AArch64.Decompress
 public import VerifiedGarbage.Impl.EcKey.Compressed.Root
 public import VerifiedGarbage.Impl.Ecdsa.P384.AArch64.Cfg
-public import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.DecompressContract
-public import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.DecompressMiddle
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
 
@@ -65,9 +65,20 @@ materialize_shared baseline := code
     Verified target code (Spec.EcKey.P384.inst.decompressPublicKeyContract abi 0) := by
   have hc := (p384_ok hI).toBaseCfgOk
   exact Verified.of_correct (decompress_correct p384 hc _
-    (candidateThree_correct hc (by decide +kernel) chain_ok)
-    (by lit_decide) (by lit_decide) (by lit_decide)) ct
+    (candidateThree_correct hc (rootCall_of hc (by decide)) (by decide +kernel) chain_ok)
+    (by lit_decide)) ct
     (decompress_implies Spec.EcKey.P384.inst _
       (Proof.Weierstrass.rootFacts_three_mod_four hL (by decide +kernel)) sat)
+
+/-- `vg_ec_p384_decompress_public_key` as it is emitted, its cleanup included
+(`Impl.EcKey.AArch64.Fn.decompressP384`), meets its contract in constant time and
+returns without secret residue. -/
+theorem scrubbed (hL : Proof.Weierstrass.Law Spec.P384.curve)
+    (hI : Proof.Weierstrass.AArch64.InvSounds) :
+    VerifiedScrubbed AArch64.target Impl.EcKey.AArch64.Fn.decompressP384
+      (Spec.EcKey.P384.inst.decompressPublicKeyContract abi 0) 32 :=
+  AArch64.Scrub.verifiedScrubbedAll (api := Spec.EcKey.P384.inst.decompressPublicKeyApi)
+    { code := code, verified := verified hL hI } _
+    (Proof.EcKey.AArch64.Scrub.decompressOk _) (by dsimp only; lit_decide)
 
 end VG.Proof.EcKey.Compressed.AArch64.P384Decompress

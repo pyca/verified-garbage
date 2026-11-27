@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Sha3.AArch64.Sums
 
 /-!
-# ML-DSA on AArch64: the loop of `vg_mldsa_rej_bounded_poly`
+# ML-DSA on AArch64: the loop of `RejBoundedPoly`
 
 The coefficient of a half-byte, computed without a branch (`rbVal`), is the
 one of `CoeffFromHalfByte`, modulo `q`, for every half-byte it accepts

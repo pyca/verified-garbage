@@ -9,6 +9,7 @@ public import VerifiedGarbage.Proof.AesGcm.X86.Callee
 import VerifiedGarbage.Proof.AesGcm.X86.Env
 import VerifiedGarbage.Proof.Cmac.Spec
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Aes.X86.AesNi.Lit
@@ -16,7 +17,115 @@ import VerifiedGarbage.Proof.Aes.X86.VariantProof
 import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Spec.Gcm.OutOfPlace
 import VerifiedGarbage.Proof.Gcm.SealGather
-import VerifiedGarbage.Proof.AesGcm.X86.Gather.Contract
+public import VerifiedGarbage.Proof.AesGcm.Rounds
+public import VerifiedGarbage.Proof.Framework.PowLit
+
+/-! ### `AesGcm.X86.Gather.Contract`, which this module and modules that import it used -/
+
+section
+
+/-!
+# AES-GCM one-shot encryption out of place, from a list of slices, x86: the contract
+
+Untrusted: everything here is checked by Lean. The contract the proof of
+`vg_aes_gcm_seal_gather` is written against, which the shared one
+(`Proof.AesGcm.sealGatherRoundsContract`, with the `N + 128` bytes of stack below the stack
+pointer that its frame and its call use) implies (`Gather/Verified.lean`):
+cdecl, `(ctx, rounds, nonce, nonce_len, aad, aad_len, src, src_count, dst,
+len, tag)` at `[esp + 4]` on, which the function may overwrite.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.AesGcm.X86.Gather
+
+theorem sw32 (x : BitVec 32) : (x.setWidth 64).setWidth 32 = x := by
+  apply BitVec.eq_of_toNat_eq; simp
+
+
+open VG VG.X86
+open VG.Spec.Aes (bytesAt)
+open VG.Spec.Gcm (ctxCiph ctxH encryptWith gathered gatheredLen)
+
+section
+variable (s : State)
+
+/-- The arguments. -/
+abbrev K : BitVec 32 := arg s 0
+abbrev Nn : BitVec 32 := arg s 2
+abbrev NL : Nat := (arg s 3).toNat
+abbrev Ad : BitVec 32 := arg s 4
+abbrev AL : Nat := (arg s 5).toNat
+abbrev Src : BitVec 32 := arg s 6
+abbrev Cnt : Nat := (arg s 7).toNat
+abbrev Dst : BitVec 32 := arg s 8
+abbrev L : Nat := (arg s 9).toNat
+abbrev Tg : BitVec 32 := arg s 10
+
+/-- The regions: the key context, the nonce, the additional data, the
+descriptors, the slices they list, the output, the tag, the arguments, the
+return address and the stack below it. -/
+abbrev kR : Region := ⟨w64 (K s), 256⟩
+abbrev nR : Region := ⟨w64 (Nn s), NL s⟩
+abbrev aR : Region := ⟨w64 (Ad s), AL s⟩
+abbrev dsR : Region := ⟨w64 (Src s), Cnt s * 8⟩
+abbrev lsR : List Region := Sig.listed 32 s.mem .u8 (w64 (Src s)) (Cnt s)
+abbrev dR : Region := ⟨w64 (Dst s), L s⟩
+abbrev tgR : Region := ⟨w64 (Tg s), 16⟩
+abbrev argR : Region := ⟨argAddr s 0, 44⟩
+abbrev retR : Region := ⟨w64 (s.gpr .esp), 4⟩
+abbrev stkR (N : Nat) : Region := ⟨w64 (s.gpr .esp) - BitVec.ofNat 64 (N + 128), N + 128⟩
+
+/-- The total length of the first `i` slices, and their bytes. -/
+abbrev gl (i : Nat) : Nat := gatheredLen 32 s.mem (w64 (Src s)) i
+abbrev pt (i : Nat) : List Byte := gathered 32 s.mem (w64 (Src s)) i
+
+end
+
+/-- What the code of `vg_aes_gcm_seal_gather` needs, with a working space of `N` bytes: `N + 128`
+bytes of stack. -/
+def gatherPre (N : Nat) (s : State) : Prop :=
+  s.rd = [kR s, nR s, aR s, dsR s] ++ lsR s ∧ s.wr = [dR s, tgR s, argR s] ∧
+    (kR s).Disjoint (dR s) ∧ (kR s).Disjoint (tgR s) ∧ (kR s).Disjoint (argR s) ∧
+    (nR s).Disjoint (dR s) ∧ (nR s).Disjoint (tgR s) ∧ (nR s).Disjoint (argR s) ∧
+    (aR s).Disjoint (dR s) ∧ (aR s).Disjoint (tgR s) ∧ (aR s).Disjoint (argR s) ∧
+    (dR s).Disjoint (tgR s) ∧ (dR s).Disjoint (dsR s) ∧ (∀ r ∈ lsR s, (dR s).Disjoint r) ∧
+    (dR s).Disjoint (argR s) ∧ (tgR s).Disjoint (dsR s) ∧ (∀ r ∈ lsR s, (tgR s).Disjoint r) ∧
+    (tgR s).Disjoint (argR s) ∧ (dsR s).Disjoint (argR s) ∧ (∀ r ∈ lsR s, r.Disjoint (argR s)) ∧
+    (retR s).Disjoint (kR s) ∧ (retR s).Disjoint (nR s) ∧ (retR s).Disjoint (aR s) ∧
+    (retR s).Disjoint (dR s) ∧ (retR s).Disjoint (tgR s) ∧ (retR s).Disjoint (dsR s) ∧
+    (∀ r ∈ lsR s, (retR s).Disjoint r) ∧ (retR s).Disjoint (argR s) ∧
+    (stkR s N).Disjoint (kR s) ∧ (stkR s N).Disjoint (nR s) ∧ (stkR s N).Disjoint (aR s) ∧
+    (stkR s N).Disjoint (dR s) ∧ (stkR s N).Disjoint (tgR s) ∧ (stkR s N).Disjoint (dsR s) ∧
+    (∀ r ∈ lsR s, (stkR s N).Disjoint r) ∧ (stkR s N).Disjoint (argR s) ∧
+    (K s).toNat + 256 ≤ 2 ^ 32 ∧ (Nn s).toNat + NL s ≤ 2 ^ 32 ∧ (Ad s).toNat + AL s ≤ 2 ^ 32 ∧
+    (Dst s).toNat + L s ≤ 2 ^ 32 ∧ (Tg s).toNat + 16 ≤ 2 ^ 32 ∧
+    (Src s).toNat + Cnt s * 8 ≤ 2 ^ 32 ∧ (∀ r ∈ lsR s, r.base.toNat + r.len ≤ 2 ^ 32) ∧
+    N + 128 ≤ (s.gpr .esp).toNat ∧ (s.gpr .esp).toNat + 48 ≤ 2 ^ 32 ∧
+    ((arg s 1).toNat = 10 ∨ (arg s 1).toNat = 12 ∨ (arg s 1).toNat = 14) ∧ gl s (Cnt s) = L s
+
+/-- What two runs agree on: the stack pointer, the arguments and the descriptors. -/
+def gatherPub (s₁ s₂ : State) : Prop :=
+  s₁.gpr .esp = s₂.gpr .esp ∧ (∀ i < 11, arg s₁ i = arg s₂ i) ∧
+    ∀ i < Cnt s₁ * 8, s₁.mem (w64 (Src s₁) + BitVec.ofNat 64 i) = s₂.mem (w64 (Src s₁) + BitVec.ofNat 64 i)
+
+/-- What `vg_aes_gcm_seal_gather` leaves: `sealGatherPost`. -/
+def gatherPost (s s' : State) : Prop :=
+  encryptWith (ctxCiph s.mem (w64 (K s)) (arg s 1).toNat) (ctxH s.mem (w64 (K s))) 16
+      (bytesAt s.mem (w64 (Nn s)) (NL s)) (pt s (Cnt s)) (bytesAt s.mem (w64 (Ad s)) (AL s)) =
+    (bytesAt s'.mem (w64 (Dst s)) (L s), bytesAt s'.mem (w64 (Tg s)) 16)
+
+/-- `vg_aes_gcm_seal_gather`. -/
+def gatherX86 (N : Nat) : Contract isa where
+  pre := gatherPre N
+  post := gatherPost
+  pub := gatherPub
+
+end VG.Proof.AesGcm.X86.Gather
+
+end
+
+end
 
 /-! ### `AesGcm.X86.Gather.Copy`, which only this module used -/
 
@@ -158,6 +267,108 @@ theorem copyWords_ok (s : State) {S D : BitVec 32} {k : Nat} (h : WordsPre s S D
     refine ⟨by simp [eval, hz, he], k - (i + 1), by omega_using [hi], i + 1, rfl, by omega_using [hi, he], edi', edx',
       by rw [ecx', pred_count hi hk32], hmem, kp.trans kp'⟩
 
+abbrev chunkBody : List Instr :=
+  [.movdquLoad .xmm0 (at_ .edi 0), .movdquStore (at_ .edx 0) .xmm0, .alu .add .edi (imm 16), .alu .add .edx (imm 16),
+    .alu .sub .ecx (imm 1)]
+
+theorem add16 (P : BitVec 32) (i : Nat) :
+    P + BitVec.ofNat 32 (16 * i) + BitVec.ofNat 32 16 = P + BitVec.ofNat 32 (16 * (i + 1)) := by
+  rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat, Nat.mul_succ]
+
+private theorem store128_setMem (s : State) (a : Addr) (v : BitVec 128) :
+    s.store128 a v = if InRegions s.wr a 16 then some (setMem s (s.mem.writeW a v)) else none := rfl
+
+theorem ea_setXmm (s : State) (r : XReg) (v : BitVec 128) (m : MemOp) : (s.setXmm r v).ea m = s.ea m := rfl
+
+theorem chunkStep_ok (s : State) {S D : BitVec 32} {i w : Nat} (hs : s.gpr .edi = S + BitVec.ofNat 32 (16 * i))
+    (hd : s.gpr .edx = D + BitVec.ofNat 32 (16 * i)) (hn : s.gpr .ecx = BitVec.ofNat 32 w)
+    (r : InRegions (s.rd ++ s.wr) (w64 (S + BitVec.ofNat 32 (16 * i))) 16)
+    (wr : InRegions s.wr (w64 (D + BitVec.ofNat 32 (16 * i))) 16) :
+    ∃ s', runBlock isa chunkBody s = some s' ∧
+      s'.mem = s.mem.writeW (w64 (D + BitVec.ofNat 32 (16 * i)))
+        (s.mem.readW (w64 (S + BitVec.ofNat 32 (16 * i))) 128) ∧
+      s'.gpr .edi = S + BitVec.ofNat 32 (16 * (i + 1)) ∧ s'.gpr .edx = D + BitVec.ofNat 32 (16 * (i + 1)) ∧
+      s'.gpr .ecx = BitVec.ofNat 32 w - BitVec.ofNat 32 1 ∧
+      s'.zf = some (BitVec.ofNat 32 w - BitVec.ofNat 32 1 == 0) ∧ Keeps s s' := by
+  have e₁ : s.ea (at_ .edi 0) = w64 (S + BitVec.ofNat 32 (16 * i)) := by
+    simp only [State.ea, at_, hs, BitVec.add_zero]
+  have e₂ : s.ea (at_ .edx 0) = w64 (D + BitVec.ofNat 32 (16 * i)) := by
+    simp only [State.ea, at_, hd, BitVec.add_zero]
+  refine ⟨_, by
+    (simp only [chunkBody, runBlock_cons, runStep_some, runBlock_nil, exec, State.load128, store128_setMem,
+      e₁, r, ↓reduceIte, Option.map_some, ea_setXmm, wr_setXmm, e₂, wr, execAlu, readSrc, Option.bind_some, imm]) <;>
+      try rfl, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · simp only [mem_setMem, gpr_setMem, mem_setReg, mem_arithFlags, gpr_setReg, mem_setXmm, xmm_setXmm_self, ite_true]
+  · simp only [gpr_setMem, gpr_setReg, gpr_arithFlags, gpr_setXmm, ite_true, ite_false, reduceCtorEq, hs, add16]
+  · simp only [gpr_setMem, gpr_setReg, gpr_arithFlags, gpr_setXmm, ite_true, ite_false, reduceCtorEq, hd, add16]
+  · simp only [gpr_setMem, gpr_setReg, gpr_arithFlags, gpr_setXmm, ite_true, ite_false, reduceCtorEq, hn]
+  · simp only [zf_setMem, gpr_setMem, zf_setReg, zf_arithFlags, gpr_setReg, gpr_arithFlags, gpr_setXmm, ite_true,
+      ite_false, reduceCtorEq, hn]
+  · refine ⟨fun r h => ?_, rfl, rfl⟩
+    simp only [copyRegs, List.mem_cons, List.not_mem_nil, or_false, not_or] at h
+    obtain ⟨h₁, h₂, h₃, h₄⟩ := h
+    simp [gpr_setMem, gpr_setReg, gpr_setXmm, h₁, h₂, h₃, h₄]
+
+/-- What the loop of 16 bytes needs: `k ≥ 1` blocks of 16 bytes at `S` to copy
+to `D`, apart. -/
+structure ChunksPre (s : State) (S D : BitVec 32) (k : Nat) : Prop where
+  edi : s.gpr .edi = S
+  edx : s.gpr .edx = D
+  ecx : s.gpr .ecx = BitVec.ofNat 32 k
+  pos : 1 ≤ k
+  fitS : S.toNat + 16 * k ≤ 2 ^ 32
+  fitD : D.toNat + 16 * k ≤ 2 ^ 32
+  rd : Covers [⟨w64 S, 16 * k⟩] (s.rd ++ s.wr)
+  wr : Covers [⟨w64 D, 16 * k⟩] s.wr
+  disj : (⟨w64 S, 16 * k⟩ : Region).Disjoint ⟨w64 D, 16 * k⟩
+
+/-- The 16 bytes of a read, as a list. -/
+theorem read16_bytes (m : Mem) (a : Addr) :
+    (List.range 16).map (fun j => (m.read a 16).extractLsb' (8 * j) 8) = bytesAt m a 16 := by
+  simp only [bytesAt]
+  refine List.map_congr_left fun j hj => ?_
+  rw [List.mem_range] at hj
+  exact Mem.extractLsb'_read m a hj
+
+theorem writeW_readW16 (m m' : Mem) (D S : Addr) :
+    m'.writeW D (m.readW S 128) = writeBytes m' D (bytesAt m S 16) := by
+  rw [Mem.writeW, Mem.readW, show (128 / 8 : Nat) = 16 from rfl, BitVec.setWidth_eq, BitVec.setWidth_eq,
+    write_eq_writeBytes, read16_bytes]
+
+theorem copyChunks_ok (s : State) {S D : BitVec 32} {k : Nat} (h : ChunksPre s S D k) :
+    WP isa copyChunks s fun s' => s'.mem = writeBytes s.mem (w64 D) (bytesAt s.mem (w64 S) (16 * k)) ∧
+      s'.gpr .edi = S + BitVec.ofNat 32 (16 * k) ∧ s'.gpr .edx = D + BitVec.ofNat 32 (16 * k) ∧ Keeps s s' := by
+  have hS := h.fitS
+  have hD := h.fitD
+  refine WP.loop (M := isa) (body := .block chunkBody) (c := .ne)
+    (fun (w : Nat) (t : State) => ∃ i, w = k - i ∧ i < k ∧ t.gpr .edi = S + BitVec.ofNat 32 (16 * i) ∧
+      t.gpr .edx = D + BitVec.ofNat 32 (16 * i) ∧ t.gpr .ecx = BitVec.ofNat 32 (k - i) ∧
+      t.mem = writeBytes s.mem (w64 D) (bytesAt s.mem (w64 S) (16 * i)) ∧ Keeps s t) ?_ (k - 0) _
+    ⟨0, rfl, h.pos, by rw [h.edi]; simp, by rw [h.edx]; simp, by rw [h.ecx, Nat.sub_zero],
+      by simp [bytesAt, writeBytes_nil], Keeps.refl s⟩
+  rintro w t ⟨i, rfl, hi, edi, edx, ecx, mem, kp⟩
+  have hin : 16 * i + 16 ≤ 16 * k := by omega_using [hi]
+  have aS : w64 (S + BitVec.ofNat 32 (16 * i)) = w64 S + BitVec.ofNat 64 (16 * i) := w64_add (by omega_using [hS, hi])
+  have aD : w64 (D + BitVec.ofNat 32 (16 * i)) = w64 D + BitVec.ofNat 64 (16 * i) := w64_add (by omega_using [hD, hi])
+  have cov (rs : List Region) (P : Addr) (hc : Covers [⟨P, 16 * k⟩] rs) :
+      InRegions rs (P + BitVec.ofNat 64 (16 * i)) 16 :=
+    hc _ _ ⟨_, List.mem_singleton_self _, Offset.contains_base P hin (by omega_using [hS, hi])⟩
+  obtain ⟨t', run', mem', edi', edx', ecx', zf', kp'⟩ := chunkStep_ok t (w := k - i) edi edx ecx
+    (by rw [kp.rd, kp.wr, aS]; exact cov _ _ h.rd) (by rw [kp.wr, aD]; exact cov _ _ h.wr)
+  refine WP.of_runBlock ⟨t', run', ?_⟩
+  have hk32 : k < 2 ^ 32 := by omega_using [hS]
+  have hmem : t'.mem = writeBytes s.mem (w64 D) (bytesAt s.mem (w64 S) (16 * (i + 1))) := by
+    rw [mem', mem, aS, aD, Mem.readW, read_kept h.disj hin (by omega_using [hS]), ← Mem.readW, writeW_readW16,
+      show 16 * (i + 1) = 16 * i + 16 by omega_using [], bytesAt_append,
+      ← writeBytes_append _ _ _ _ (by simp [Proof.Cmac.bytesAt_length]; omega_using [hS, hi]), Proof.Cmac.bytesAt_length]
+  have hz : t'.zf = some (decide (i + 1 = k)) := by rw [zf', pred_beq hi hk32]
+  by_cases he : i + 1 = k
+  · left
+    refine ⟨by simp [eval, hz, he], by rw [hmem, he], by rw [edi', he], by rw [edx', he], kp.trans kp'⟩
+  · right
+    refine ⟨by simp [eval, hz, he], k - (i + 1), by omega_using [hi], i + 1, rfl, by omega_using [hi, he], edi', edx',
+      by rw [ecx', pred_count hi hk32], hmem, kp.trans kp'⟩
+
 theorem shr2 {n : Nat} (hn : n < 2 ^ 32) : BitVec.ofNat 32 n >>> 2 = BitVec.ofNat 32 (n / 4) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hn,
@@ -206,16 +417,29 @@ structure SlicePre (s : State) (A₀ S D : BitVec 32) (n : Nat) : Prop where
 section
 variable {s : State} {A₀ S D : BitVec 32} {n : Nat}
 
-/-- After `wordsArg`: the slice's address in `edi` and its number of whole
-words in `ecx`. -/
-structure Words1 (s : State) (A₀ S D : BitVec 32) (n : Nat) (s₁ : State) : Prop where
+/-- After `chunksArg`: the slice's address in `edi` and its number of whole
+blocks of 16 bytes in `ecx`. -/
+structure Chunks1 (s : State) (A₀ S D : BitVec 32) (n : Nat) (s₁ : State) : Prop where
   esi : s₁.gpr .esi = A₀
   edi : s₁.gpr .edi = S
   edx : s₁.gpr .edx = D
-  ecx : s₁.gpr .ecx = BitVec.ofNat 32 (n / 4)
-  zf : s₁.zf = some (decide (n / 4 = 0))
+  ecx : s₁.gpr .ecx = BitVec.ofNat 32 (n / 16)
+  zf : s₁.zf = some (decide (n / 16 = 0))
   mem : s₁.mem = s.mem
   keep : Keeps s s₁
+
+/-- After the blocks of 16 bytes: `edi` and `edx` past them. -/
+structure Chunks2 (s : State) (A₀ S D : BitVec 32) (n : Nat) (s₂ : State) : Prop where
+  esi : s₂.gpr .esi = A₀
+  edi : s₂.gpr .edi = S + BitVec.ofNat 32 (16 * (n / 16))
+  edx : s₂.gpr .edx = D + BitVec.ofNat 32 (16 * (n / 16))
+  mem : s₂.mem = writeBytes s.mem (w64 D) (bytesAt s.mem (w64 S) (16 * (n / 16)))
+  keep : Keeps s s₂
+
+/-- After `wordsArg`: the number of whole words left in `ecx`. -/
+structure Words1 (s : State) (A₀ S D : BitVec 32) (n : Nat) (s₃ : State) : Prop extends Chunks2 s A₀ S D n s₃ where
+  ecx : s₃.gpr .ecx = BitVec.ofNat 32 (n / 4 % 4)
+  zf : s₃.zf = some (decide (n / 4 % 4 = 0))
 
 /-- After the whole words: `edi` and `edx` past them. -/
 structure Words2 (s : State) (A₀ S D : BitVec 32) (n : Nat) (s₂ : State) : Prop where
@@ -230,41 +454,125 @@ structure Bytes1 (s : State) (A₀ S D : BitVec 32) (n : Nat) (s₃ : State) : P
   ecx : s₃.gpr .ecx = BitVec.ofNat 32 (n % 4)
   zf : s₃.zf = some (decide (n % 4 = 0))
 
-theorem wordsArg_wp (h : SlicePre s A₀ S D n) : WP isa (.block wordsArg) s (Words1 s A₀ S D n) := by
+theorem chunksArg_wp (h : SlicePre s A₀ S D n) : WP isa (.block chunksArg) s (Chunks1 s A₀ S D n) := by
   have hn := h.lt
-  refine WP.of_runBlock ⟨_, by xrun [wordsArg, add_zero32, h.esi, h.d0, h.d4], ?_⟩
+  refine WP.of_runBlock ⟨_, by xrun [chunksArg, add_zero32, h.esi, h.d0, h.d4], ?_⟩
   refine ⟨?_, ?_, ?_, ?_, ?_, rfl, ⟨fun r hr => ?_, rfl, rfl⟩⟩
   · simp only [gpr_setMem, gpr_setReg, gpr_arithFlags, gpr_setFlags, ite_false, reduceCtorEq, h.esi]
   · simp only [gpr_setMem, gpr_setReg, gpr_arithFlags, gpr_setFlags, ite_true, ite_false, reduceCtorEq, h.w0]
   · simp only [gpr_setMem, gpr_setReg, gpr_arithFlags, gpr_setFlags, ite_false, reduceCtorEq, h.edx]
   · simp only [gpr_setMem, gpr_setReg, gpr_arithFlags, gpr_setFlags, ite_true, ite_false, reduceCtorEq, h.w4,
-      shr2 hn]
+      shr4 hn]
   · simp only [zf_arithFlags, gpr_setMem, gpr_setReg, gpr_arithFlags, gpr_setFlags, ite_true, ite_false, reduceCtorEq,
-      h.w4, shr2 hn, BitVec.sub_zero, VG.X86.Wp.ofNat_beq_zero (show n / 4 < 2 ^ 32 by omega_using [hn])]
+      h.w4, shr4 hn, BitVec.sub_zero, VG.X86.Wp.ofNat_beq_zero (show n / 16 < 2 ^ 32 by omega_using [hn])]
   · simp only [copyRegs, List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     obtain ⟨h₁, h₂, h₃, h₄⟩ := hr
     simp [gpr_setMem, gpr_setReg, gpr_arithFlags, gpr_setFlags, h₁, h₂, h₃, h₄]
+
+theorem chunks_wp (h : SlicePre s A₀ S D n) {s₁ : State} (h₁ : Chunks1 s A₀ S D n s₁) :
+    WP isa (.ite .e (.block []) copyChunks) s₁ (Chunks2 s A₀ S D n) := by
+  have hn := h.lt
+  have hfS := h.fitS
+  have hfD := h.fitD
+  refine WP.ite (decide (n / 16 = 0)) h₁.zf (fun ht => ?_) (fun hf => ?_)
+  · have h0 : n / 16 = 0 := by simpa using ht
+    refine WP.block_nil ⟨h₁.esi, ?_, ?_, ?_, h₁.keep⟩
+    · rw [h₁.edi, h0]; simp
+    · rw [h₁.edx, h0]; simp
+    · rw [h₁.mem, h0, Nat.mul_zero]; simp [bytesAt, writeBytes_nil]
+  · have h0 : n / 16 ≠ 0 := by simpa using hf
+    have hw : ChunksPre s₁ S D (n / 16) :=
+      ⟨h₁.edi, h₁.edx, h₁.ecx, by omega_using [h0], by omega_using [hfS], by omega_using [hfD],
+        by rw [h₁.keep.rd, h₁.keep.wr]; exact covers_prefix h.rd (by omega_using []) (by omega_using [hn]),
+        by rw [h₁.keep.wr]; exact covers_prefix (h.wr (by omega_using [h0])) (by omega_using []) (by omega_using [hn]),
+        (h.disj.sub_left (Region.sub_prefix (by omega_using []))).sub_right (Region.sub_prefix (by omega_using []))⟩
+    refine WP.mono (WP.keepGpr (r := .esi) (copyChunks_ok s₁ hw) (by decide))
+      fun s₂ ⟨⟨m₂, edi₂, edx₂, kp₂⟩, esi₂⟩ => ⟨by rw [esi₂, h₁.esi], edi₂, edx₂, by rw [m₂, h₁.mem],
+        h₁.keep.trans kp₂⟩
+
+theorem frame_chunks {s₂ : State} (h₂ : Chunks2 s A₀ S D n s₂) : Frame [⟨w64 D, n⟩] s.mem s₂.mem := by
+  have hlen : (bytesAt s.mem (w64 S) (16 * (n / 16))).length = 16 * (n / 16) := Proof.Cmac.bytesAt_length _ _ _
+  rw [h₂.mem]
+  refine writeBytes_frame _ _ _ ?_
+  simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero, hlen]
+  omega_using []
+
+theorem wordsArg_wp (h : SlicePre s A₀ S D n) {s₂ : State} (h₂ : Chunks2 s A₀ S D n s₂) :
+    WP isa (.block wordsArg) s₂ (Words1 s A₀ S D n) := by
+  have hn := h.lt
+  have w4₂ : s₂.mem.readW (w64 (A₀ + BitVec.ofNat 32 4)) 32 = BitVec.ofNat 32 n := by
+    rw [(frame_chunks h₂).readW (Region.contains_self _ _) (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact h.dd) (by decide), h.w4]
+  have d4 : InRegions (s₂.rd ++ s₂.wr) (w64 (A₀ + BitVec.ofNat 32 4)) 4 := by
+    rw [h₂.keep.rd, h₂.keep.wr]; exact h.d4
+  have hq : n / 4 < 2 ^ 32 := by omega_using [hn]
+  refine WP.of_runBlock ⟨_, by xrun [wordsArg, h₂.esi, d4], ?_⟩
+  refine ⟨⟨?_, ?_, ?_, ?_, h₂.keep.trans ⟨fun r hr => ?_, rfl, rfl⟩⟩, ?_, ?_⟩
+  · simp only [gpr_setMem, gpr_setReg, gpr_arithFlags, gpr_setFlags, ite_false, reduceCtorEq, h₂.esi]
+  · simp only [gpr_setMem, gpr_setReg, gpr_arithFlags, gpr_setFlags, ite_false, reduceCtorEq, h₂.edi]
+  · simp only [gpr_setMem, gpr_setReg, gpr_arithFlags, gpr_setFlags, ite_false, reduceCtorEq, h₂.edx]
+  · simp only [mem_setReg, mem_arithFlags, mem_setFlags, h₂.mem]
+  · simp only [copyRegs, List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+    obtain ⟨h₁, h₂, h₃, h₄⟩ := hr
+    simp [gpr_setMem, gpr_setReg, gpr_arithFlags, gpr_setFlags, h₁, h₂, h₃, h₄]
+  · simp only [gpr_setMem, gpr_setReg, gpr_arithFlags, gpr_setFlags, ite_true, w4₂, shr2 hn, and3 hq]
+  · simp only [zf_setReg, zf_arithFlags, gpr_setReg, gpr_arithFlags, gpr_setFlags, ite_true, w4₂, shr2 hn, and3 hq,
+      VG.X86.Wp.ofNat_beq_zero (show n / 4 % 4 < 2 ^ 32 by omega_using [])]
 
 theorem words_wp (h : SlicePre s A₀ S D n) {s₁ : State} (h₁ : Words1 s A₀ S D n s₁) :
     WP isa (.ite .e (.block []) copyWords) s₁ (Words2 s A₀ S D n) := by
   have hn := h.lt
   have hfS := h.fitS
   have hfD := h.fitD
-  refine WP.ite (decide (n / 4 = 0)) h₁.zf (fun ht => ?_) (fun hf => ?_)
-  · have h0 : n / 4 = 0 := by simpa using ht
+  have hqr : 16 * (n / 16) + 4 * (n / 4 % 4) = 4 * (n / 4) := by omega_using []
+  have hlen : (bytesAt s.mem (w64 S) (16 * (n / 16))).length = 16 * (n / 16) := Proof.Cmac.bytesAt_length _ _ _
+  have hfr := frame_chunks h₁.toChunks2
+  have hS : (⟨w64 S + BitVec.ofNat 64 (16 * (n / 16)), 4 * (n / 4 % 4)⟩ : Region).Sub ⟨w64 S, n⟩ :=
+    Offset.sub_base _ (by omega_using [])
+  have hD : (⟨w64 D + BitVec.ofNat 64 (16 * (n / 16)), 4 * (n / 4 % 4)⟩ : Region).Sub ⟨w64 D, n⟩ :=
+    Offset.sub_base _ (by omega_using [])
+  have hrest : bytesAt s₁.mem (w64 S + BitVec.ofNat 64 (16 * (n / 16))) (4 * (n / 4 % 4)) =
+      bytesAt s.mem (w64 S + BitVec.ofNat 64 (16 * (n / 16))) (4 * (n / 4 % 4)) := by
+    refine Proof.Cmac.bytesAt_frame hfr (fun r hr => ?_) (by omega_using [])
+    simp only [List.mem_singleton] at hr; subst hr
+    exact h.disj.sub_left hS
+  have hendS : S + BitVec.ofNat 32 (16 * (n / 16)) + BitVec.ofNat 32 (4 * (n / 4 % 4)) =
+      S + BitVec.ofNat 32 (4 * (n / 4)) := by
+    rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat, hqr]
+  have hendD : D + BitVec.ofNat 32 (16 * (n / 16)) + BitVec.ofNat 32 (4 * (n / 4 % 4)) =
+      D + BitVec.ofNat 32 (4 * (n / 4)) := by
+    rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat, hqr]
+  have hall : writeBytes (writeBytes s.mem (w64 D) (bytesAt s.mem (w64 S) (16 * (n / 16))))
+      (w64 D + BitVec.ofNat 64 (16 * (n / 16)))
+      (bytesAt s.mem (w64 S + BitVec.ofNat 64 (16 * (n / 16))) (4 * (n / 4 % 4))) =
+      writeBytes s.mem (w64 D) (bytesAt s.mem (w64 S) (4 * (n / 4))) := by
+    have e := writeBytes_append s.mem (w64 D) (bytesAt s.mem (w64 S) (16 * (n / 16)))
+      (bytesAt s.mem (w64 S + BitVec.ofNat 64 (16 * (n / 16))) (4 * (n / 4 % 4)))
+      (by rw [hlen, Proof.Cmac.bytesAt_length]; omega_using [hn])
+    rw [hlen] at e
+    rw [e, ← bytesAt_append, hqr]
+  refine WP.ite (decide (n / 4 % 4 = 0)) h₁.zf (fun ht => ?_) (fun hf => ?_)
+  · have h0 : n / 4 % 4 = 0 := by simpa using ht
     refine WP.block_nil ⟨h₁.esi, ?_, ?_, ?_, h₁.keep⟩
-    · rw [h₁.edi, h0]; simp
-    · rw [h₁.edx, h0]; simp
-    · rw [h₁.mem, h0, Nat.mul_zero]; simp [bytesAt, writeBytes_nil]
-  · have h0 : n / 4 ≠ 0 := by simpa using hf
-    have hw : WordsPre s₁ S D (n / 4) :=
-      ⟨h₁.edi, h₁.edx, h₁.ecx, by omega_using [h0], by omega_using [hfS], by omega_using [hfD],
-        by rw [h₁.keep.rd, h₁.keep.wr]; exact covers_prefix h.rd (by omega_using []) (by omega_using [hn]),
-        by rw [h₁.keep.wr]; exact covers_prefix (h.wr (by omega_using [h0])) (by omega_using []) (by omega_using [hn]),
-        (h.disj.sub_left (Region.sub_prefix (by omega_using []))).sub_right (Region.sub_prefix (by omega_using []))⟩
+    · rw [h₁.edi, ← hendS, h0]; simp
+    · rw [h₁.edx, ← hendD, h0]; simp
+    · rw [h₁.mem, ← hall, h0]; simp [bytesAt, writeBytes_nil]
+  · have h0 : n / 4 % 4 ≠ 0 := by simpa using hf
+    have aS : w64 (S + BitVec.ofNat 32 (16 * (n / 16))) = w64 S + BitVec.ofNat 64 (16 * (n / 16)) :=
+      w64_add (by omega_using [hfS, h0])
+    have aD : w64 (D + BitVec.ofNat 32 (16 * (n / 16))) = w64 D + BitVec.ofNat 64 (16 * (n / 16)) :=
+      w64_add (by omega_using [hfD, h0])
+    have hw : WordsPre s₁ (S + BitVec.ofNat 32 (16 * (n / 16))) (D + BitVec.ofNat 32 (16 * (n / 16))) (n / 4 % 4) :=
+      ⟨h₁.edi, h₁.edx, h₁.ecx, by omega_using [h0],
+        by rw [toNat_add_of_lt (by omega_using [hfS, h0])]; omega_using [hfS],
+        by rw [toNat_add_of_lt (by omega_using [hfD, h0])]; omega_using [hfD],
+        by rw [h₁.keep.rd, h₁.keep.wr, aS]; exact covers_off h.rd (by omega_using []) (by omega_using [hn]),
+        by rw [h₁.keep.wr, aD]; exact covers_off (h.wr (by omega_using [h0])) (by omega_using []) (by omega_using [hn]),
+        by rw [aS, aD]; exact (h.disj.sub_left hS).sub_right hD⟩
     refine WP.mono (WP.keepGpr (r := .esi) (copyWords_ok s₁ hw) (by decide))
-      fun s₂ ⟨⟨m₂, edi₂, edx₂, kp₂⟩, esi₂⟩ => ⟨by rw [esi₂, h₁.esi], edi₂, edx₂, by rw [m₂, h₁.mem],
+      fun s₂ ⟨⟨m₂, edi₂, edx₂, kp₂⟩, esi₂⟩ => ⟨by rw [esi₂, h₁.esi], by rw [edi₂, hendS], by rw [edx₂, hendD], ?_,
         h₁.keep.trans kp₂⟩
+    rw [m₂, aS, aD, hrest, h₁.mem, hall]
 
 theorem frame_words {s₂ : State} (h₂ : Words2 s A₀ S D n s₂) : Frame [⟨w64 D, n⟩] s.mem s₂.mem := by
   have hlen : (bytesAt s.mem (w64 S) (4 * (n / 4))).length = 4 * (n / 4) := Proof.Cmac.bytesAt_length _ _ _
@@ -351,8 +659,9 @@ theorem bytes_wp (h : SlicePre s A₀ S D n) {s₃ : State} (h₃ : Bytes1 s A�
 theorem copySlice_wp (s : State) (h : SlicePre s A₀ S D n) :
     WP isa copySlice s fun s' => s'.mem = writeBytes s.mem (w64 D) (bytesAt s.mem (w64 S) n) ∧
       s'.gpr .edx = D + BitVec.ofNat 32 n ∧ Keeps s s' :=
-  WP.seq (WP.mono (wordsArg_wp h) fun _ h₁ => WP.seq (WP.mono (words_wp h h₁) fun _ h₂ =>
-    WP.seq (WP.mono (bytesArg_wp h h₂) fun _ h₃ => bytes_wp h h₃)))
+  WP.seq (WP.mono (chunksArg_wp h) fun _ c₁ => WP.seq (WP.mono (chunks_wp h c₁) fun _ c₂ =>
+    WP.seq (WP.mono (wordsArg_wp h c₂) fun _ h₁ => WP.seq (WP.mono (words_wp h h₁) fun _ h₂ =>
+      WP.seq (WP.mono (bytesArg_wp h h₂) fun _ h₃ => bytes_wp h h₃)))))
 
 end
 
@@ -679,10 +988,13 @@ def allocated (bytes : Nat) (s : State) : State :=
 def freed (bytes : Nat) (s : State) : State :=
   { s.setReg .esp (s.gpr .esp + BitVec.ofNat 32 bytes) with wr := s.wr.tail }
 
-/-- A frame of `bytes` bytes of stack around a body that never writes `esp`. -/
+/-- A frame of `bytes` bytes of stack around a body that never writes `esp`:
+the postcondition holds whatever the frame's bytes and the unknowns are after
+the release. -/
 theorem WP.alloc {bytes : Nat} {body : Prog isa} {s : State} {Q : State → Prop}
     (hn : 0 < bytes ∧ bytes < 4096 ∧ bytes % 4 = 0) (hsp : bytes ≤ (s.gpr .esp).toNat) (hb : NoSp body)
-    (h : WP isa body (allocated bytes s) fun s₂ => Q (freed bytes s₂)) :
+    (h : WP isa body (allocated bytes s) fun s₂ => ∀ m u,
+      Frame [below (s.gpr .esp) bytes] s₂.mem m → Q { freed bytes s₂ with mem := m, unknowns := u }) :
     WP isa (.frame (.alloc bytes) body (.free bytes)) s Q := by
   obtain ⟨t, s₂, he, hq⟩ := h
   obtain ⟨-, hw⟩ := Exec.rdwr he
@@ -690,11 +1002,15 @@ theorem WP.alloc {bytes : Nat} {body : Prog isa} {s : State} {Q : State → Prop
   have ha : isa.push (.alloc bytes) s = some (allocated bytes s) := by
     simp only [isa, push, hn.1, hn.2.1, hn.2.2, hsp, and_self, ite_true]
     rfl
-  have hf : isa.pop (.free bytes) (allocated bytes s) s₂ = some (freed bytes s₂) := by
+  have hf : isa.pop (.free bytes) (allocated bytes s) s₂ = some { freed bytes s₂ with
+      mem := lose s₂.mem ((s₂.gpr .esp).setWidth 64) bytes s₂.unknowns
+      unknowns := fun n => s₂.unknowns (n + bytes / 2) } := by
     simp only [isa, pop]
     refine ite_eq_left ⟨hn.1, hn.2.1, hn.2.2, hp, hw, ?_⟩
     rfl
-  exact ⟨_, _, Exec.frame ha he hf, hq⟩
+  have e : (s₂.gpr .esp).setWidth 64 = (below (s.gpr .esp) bytes).base := by
+    rw [hp]; simp [allocated, gpr_setReg, below]
+  exact ⟨_, _, Exec.frame ha he hf, hq _ _ (by rw [e]; exact lose_frame _ _ _ _)⟩
 
 @[simp] theorem allocated_esp (n : Nat) (s : State) : (allocated n s).gpr .esp = s.gpr .esp - BitVec.ofNat 32 n := by
   simp [allocated, gpr_setReg]

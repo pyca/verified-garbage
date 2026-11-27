@@ -56,8 +56,7 @@ theorem MapInv.checkBlock (hA : A.MapInv f P) (is : List M.Instr) :
   | nil => exact fun τ hτ => ⟨rfl, fun τ' h => by cases h; exact hτ⟩
   | cons i is ih =>
     intro τ hτ
-    show (A.step τ (f i)).bind (A.checkBlock · (KList.map f is)) = (A.step τ i).bind (A.checkBlock · is) ∧
-      ∀ τ', (A.step τ i).bind (A.checkBlock · is) = some τ' → P τ'
+    rw [show KList.map f (i :: is) = f i :: KList.map f is from rfl, Taint.checkBlock_cons, Taint.checkBlock_cons]
     rw [hA.step i hτ]
     cases e : A.step τ i with
     | none => exact ⟨rfl, fun _ h => by cases h⟩
@@ -375,7 +374,8 @@ open Lean Meta Elab Term Command TaintSum in
 analysis of `c'`, which `he : c.mapBlocks f = c'` says is `c` with `f`
 applied to its instructions, which the analysis does not read from `τ`
 (`hA : A.MapInv f P`, with `P τ` by `decide`): for code whose copies differ
-only in what `f` rewrites, which `c'` shares. -/
+only in what `f` rewrites, which `c'` shares. The kernel checks the analysis
+of `c'` as a literal, which it checks once (`N.code.lit`). -/
 elab "taint_summary_map " id:ident " : " a:term:max τ:term:max c:term:max " via " hA:term:max he:term:max :
     command => liftTermElabM do
   let A ← instantiateMVars (← elabTerm a none)
@@ -398,6 +398,7 @@ elab "taint_summary_map " id:ident " : " a:term:max τ:term:max c:term:max " via
     throwError "taint_summary_map: the taint, the code and the proofs must be closed"
   let fr ← synthInstance (mkApp2 (mkConst ``Taint.Frame) M A)
   let (S, _) ← summaries M A #[]
+  Lit.materialize ((← getCurrNamespace) ++ id.getId ++ `code) c'
   let (post, hint) ← hintChecked "taint_summary_map" #[] M A fr S τ c'
   let hAty ← whnfR (← inferType hA)
   unless hAty.isAppOfArity ``Taint.MapInv 4 do throwError "taint_summary_map: {hA} is not a `Taint.MapInv`"

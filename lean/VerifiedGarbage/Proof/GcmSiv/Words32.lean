@@ -122,7 +122,7 @@ theorem hkeyOf_words (w₀ w₁ w₂ w₃ : BitVec 32) :
   clear hR h0 hx hm
   rcases (by omega_using [hi] : i < 31 ∨ i = 31 ∨ 32 ≤ i ∧ i < 63 ∨ i = 63 ∨ 64 ≤ i ∧ i < 95 ∨ i = 95 ∨
       96 ≤ i ∧ i < 127 ∨ i = 127) with h | rfl | h | rfl | h | rfl | h | rfl <;>
-    simp (disch := omega) only [↓reduceIte, decide_true, decide_false, ite_eq_left, ite_eq_right,
+    simp (disch := omega_arith) only [↓reduceIte, decide_true, decide_false, ite_eq_left, ite_eq_right,
       decide_eq_true, decide_eq_false, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
       Bool.not_true, Bool.not_false, Bool.or_false, Bool.false_or, Bool.xor_false, Bool.false_xor, Nat.sub_sub,
       Nat.add_sub_assoc, Nat.reduceAdd, Nat.reduceSub]

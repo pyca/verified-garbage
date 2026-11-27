@@ -3,15 +3,12 @@ module
 import VerifiedGarbage.Proof.Dsa.Arm.VerifyCT
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
-import Mathlib.Logic.Function.Basic
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.Dsa.Arm.Entry
 public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Spec.Dsa.SignVerify
 public import VerifiedGarbage.Proof.Weierstrass.PointContract
 public import VerifiedGarbage.TCB.Arm.Target
 import VerifiedGarbage.Proof.Dsa.Arm.SignCT
-import VerifiedGarbage.Proof.Dsa.Arm.VerifyCorrect
 import VerifiedGarbage.Proof.Dsa.Arm.SignCorrect
 
 /-!

@@ -9,7 +9,9 @@ public meta import VerifiedGarbage.Proof.Framework.NativeHintOps
 
 /-! Optional native hint search (`native_taint_decide`), for the domains
 with a compiled copy, by name: `X86.taint` (`Proof/Framework/NativeTaint.lean`)
-and `Arm.taint` (`Proof/Framework/Arm/NativeTaint.lean`), which import them. The original taint domain and checker stay
+and `Arm.taint` (`Proof/Framework/Arm/NativeTaint.lean`), which import them, and
+those that extend their steps (`X86.sseTaint`, `Arm.taintU`, `Arm.taintSym`
+and `Arm.taintSymU`). The original taint domain and checker stay
 unchanged: generated expressions must pass the same kernel check. -/
 
 public meta section
@@ -34,20 +36,27 @@ private meta def decideAt (chunkSize : Expr) (w : Option Term) : TacticM Unit :=
     | throwError "native_taint_decide: expected a taint check"
   let args := chk.getAppArgs
   let (m, a, τ, c, h) := (args[0]!, args[1]!, args[2]!, args[3]!, args[4]!)
-  -- The checked domain's state type, the native one, and the native provider.
-  let some (srcT, natT, prov) :=
-      if a.getAppFn.isConstOf `VG.X86.taint then
-        some (`VG.X86.Taint.T, `VG.NativeHints.X86.T, `VG.NativeHints.X86.provider)
-      else if a.getAppFn.isConstOf `VG.Arm.taint then
-        some (`VG.Arm.Taint.T, `VG.NativeHints.Arm.T, `VG.NativeHints.Arm.provider)
-      else none
+  -- The checked domain's state type, the native one, the native provider, and
+  -- what the provider takes before its other arguments.
+  let x86 (p : Name) := some (`VG.X86.Taint.T, `VG.NativeHints.X86.T, p, #[])
+  let armX (um : Bool) (L : Expr) :=
+    some (`VG.Arm.Taint.T, `VG.NativeHints.Arm.T, `VG.NativeHints.Arm.providerX, #[toExpr um, L])
+  let some (srcT, natT, prov, pre) :=
+      match a.getAppFn.constName?, a.getAppArgs with
+      | some `VG.X86.taint, _ => x86 `VG.NativeHints.X86.provider
+      | some `VG.X86.sseTaint, _ => x86 `VG.NativeHints.X86.sseProvider
+      | some `VG.Arm.taint, _ => some (`VG.Arm.Taint.T, `VG.NativeHints.Arm.T, `VG.NativeHints.Arm.provider, #[])
+      | some `VG.Arm.taintU, _ => armX true (toExpr ([] : List String))
+      | some `VG.Arm.taintSym, #[L] => armX false L
+      | some `VG.Arm.taintSymU, #[L] => armX true L
+      | _, _ => none
     | return ← VG.taintDecideAt chunkSize "native_taint_decide" w
   -- The copy of the domain is not imported: the interpreted search.
   unless (← getEnv).contains natT && (← getEnv).contains (prov ++ `hintOfSize) do
     return ← VG.taintDecideAt chunkSize "native_taint_decide" w
   let nativeType := mkConst natT
   let state ← convertState srcT natT τ
-  let mut hint := mkApp3 (mkConst (prov ++ `hintOfSize)) chunkSize state c
+  let mut hint := mkAppN (mkConst (prov ++ `hintOfSize)) (pre ++ #[chunkSize, state, c])
   if let some w := w then
     unless h.isMVar do throwError "native_taint_decide: hint already supplied"
     let tT ← whnfD (mkApp2 (mkConst ``Taint.T) m a)
@@ -58,11 +67,10 @@ private meta def decideAt (chunkSize : Expr) (w : Option Term) : TacticM Unit :=
       let old ← convertState natT srcT t
       let new ← convertState srcT natT (mkApp wv old)
       mkLambdaFVars #[t] new
-    hint := mkApp4 (mkConst (prov ++ `hintWeakOfSize)) chunkSize nw state c
-  let hty := mkApp (mkConst ``VG.NativeHints.Hint) nativeType
-  let inst ← synthInstance (mkApp (mkConst ``ToExpr [0]) hty)
-  let hv ← unsafe evalExpr Expr (mkConst ``Expr)
-    (mkApp3 (mkConst ``ToExpr.toExpr [0]) hty inst hint)
+    hint := mkAppN (mkConst (prov ++ `hintWeakOfSize)) (pre ++ #[chunkSize, nw, state, c])
+  let inst ← synthInstance (mkApp (mkConst ``ToExpr [0]) nativeType)
+  let hv ← unsafe VG.Lit.evalOnce Expr (mkConst ``Expr)
+    (mkApp3 (mkConst ``VG.NativeHints.Hint.toExprNS) nativeType inst hint)
   if h.isMVar then h.mvarId!.assign (checkedHintExpr natT srcT hv)
   evalTactic (← `(tactic| lit_decide))
 
@@ -84,6 +92,8 @@ private meta def frameCopy? (a : Expr) : MetaM (Option (Name × Name × Name)) :
   let some r :=
       if a.getAppFn.isConstOf `VG.X86.taint then
         some (`VG.X86.Taint.T, `VG.NativeHints.X86.T, `VG.NativeHints.X86.provider)
+      else if a.getAppFn.isConstOf `VG.X86.sseTaint then
+        some (`VG.X86.Taint.T, `VG.NativeHints.X86.T, `VG.NativeHints.X86.sseProvider)
       else none
     | return none
   let env ← getEnv
@@ -126,10 +136,10 @@ private meta def hintCheckedNative (who : String) (names : Array Name) (M c : Ex
   let repTy ← mkAppM ``List #[← mkAppM ``Prod #[mkConst ``String, mkConst ``Nat]]
   let r := mkAppN (mkConst (prov ++ `hintReport)) #[S, ← codeFn M true, ← codeFn M false, ← conv τ, c]
   let e ← withLetDecl `r (← mkAppM ``Prod #[phTy, repTy]) r fun r => do
-    let ph ← mkAppM ``ToExpr.toExpr #[← mkAppM ``Prod.snd #[← mkAppM ``Prod.fst #[r]]]
+    let ph ← mkAppM ``VG.NativeHints.SHint.toExprNS #[← mkAppM ``Prod.snd #[← mkAppM ``Prod.fst #[r]]]
     mkLetFVars #[r] (← mkAppM ``Prod.mk #[ph, ← mkAppM ``Prod.snd #[r]])
   let ty ← mkAppM ``Prod #[mkConst ``Expr, repTy]
-  let (h, missed) ← unsafe evalExpr (Expr × List (String × Nat)) ty e
+  let (h, missed) ← unsafe VG.Lit.evalOnce (Expr × List (String × Nat)) ty e
   -- The copy's constructors renamed to the checked domain's.
   let h := checkedHintExpr natT srcT h
   let h := h.replace fun t => match t with

@@ -173,7 +173,7 @@ theorem mulNat_mod (a b : Nat → Nat) :
   have e := colR_eq (2 ^ 51) (fun i => a i % 2 ^ 52) (fun j => b j % 2 ^ 52)
   rw [lv_eq, lv_eq, lv_eq, ← e, show (2 ^ 51 : Nat) ^ 5 = 2 ^ 255 by rfl, fold255]
   simp only [lvR, mulNat_col, Nat.zero_add, Nat.reduceAdd]
-  congr 1
+  refine congrArg (· % P) ?_
   omega_using []
 
 /-- `mulG`'s limbs are `mul4`'s, summed in another order, plus what it starts from. -/

@@ -306,7 +306,7 @@ theorem LInv.sub {base : Addr} {Sl : Nat → Prop} {V V' : List Nat} {E : Nat �
 theorem LInv.update {base : Addr} {Sl : Nat → Prop} (hL : ULay Sl) {V : List Nat} {E : Nat → Fe W} {s s' : State}
     (hI : LInv base Sl V E s) {o : Nat} (ho : Sl o) (hk : KeepR 9 base [o] s s')
     (hr : Tight (wv base s' o)) {v : Fe W} (hv : uf (wv base s' o) = v) :
-    LInv base Sl (o :: V) (Function.update E o v) s' := by
+    LInv base Sl (o :: V) (Fun.update E o v) s' := by
   have heq : ∀ x ∈ V, x ≠ o → wv base s' x = wv base s x := by
     intro x hx hxo
     have hxS := hI.sl x hx
@@ -330,9 +330,9 @@ theorem LInv.update {base : Addr} {Sl : Nat → Prop} (hL : ULay Sl) {V : List N
       rw [heq x hx' hxo]; exact hI.tight x hx'
   · intro x hx
     by_cases hxo : x = o
-    · subst hxo; rw [Function.update_self]; exact hv
+    · subst hxo; rw [Fun.update_self]; exact hv
     · have hx' := List.mem_of_ne_of_mem hxo hx
-      rw [heq x hx' hxo, Function.update_of_ne hxo]
+      rw [heq x hx' hxo, Fun.update_of_ne hxo]
       exact hI.val x hx'
 
 /-- One operation. -/
@@ -429,6 +429,6 @@ theorem uofN_ok {base : Addr} {Sl : Nat → Prop} (hL : ULay Sl) {N : List FOp} 
     rcases List.mem_append.mp hx with hx | hx
     · exact Or.inr (ofN_out_mem hN hx)
     · exact Or.inl hx
-  · exact congrArg₂ Prod.mk (ofN_run hN hA E 6) (congrArg₂ Prod.mk (ofN_run hN hA E 7) (ofN_run hN hA E 8))
+  · exact congr (congrArg Prod.mk (ofN_run hN hA E 6)) (congr (congrArg Prod.mk (ofN_run hN hA E 7)) (ofN_run hN hA E 8))
 
 end VG.Proof.Weierstrass.RISCV64.P521Unsat

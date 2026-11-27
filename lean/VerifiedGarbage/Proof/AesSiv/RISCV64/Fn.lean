@@ -143,14 +143,14 @@ theorem compare_wp {c : Cx} (L : Lay c) {s : State} (E : Env c s) :
     ((PK.ofUpd u₉).trans ((PK.ofUpd u₁₀).trans (PK.ofUpd u₁₁)))))))))),
     by rw [u₁₁.mem, u₁₀.mem, u₉.mem, u₈.mem, u₇.mem, u₆.mem, u₅.mem, u₄.mem, u₃.mem,
       u₂.mem, u₁.mem], ?_⟩
-  have hd : s₇.gpr .t0 =
+  obtain hd : s₇.gpr .t0 =
       (s.mem.readW (c.W + BitVec.ofNat 64 0) 64 ^^^ s.mem.readW (c.W + BitVec.ofNat 64 tO) 64) |||
       (s.mem.readW (c.W + BitVec.ofNat 64 8) 64 ^^^ s.mem.readW (c.W + BitVec.ofNat 64 (tO + 8)) 64) := by
     rw [u₇.gpr, u₆.gpr, u₆.other .t0 (by decide), u₅.gpr, u₅.other .t1 (by decide), u₄.gpr,
       u₅.other .t0 (by decide), u₄.other .t0 (by decide), u₃.gpr, u₂.gpr, u₂.other .t0 (by decide), u₁.gpr,
       u₄.mem, u₃.mem, u₂.mem, u₁.mem]
   rw [u₁₁.gpr, u₁₀.gpr, u₁₀.other .t0 (by decide), u₉.gpr, u₈.gpr, u₈.other .t0 (by decide), hd, zero_test]
-  have hw := Proof.AesCcm.words_eq s.mem (c.W + BitVec.ofNat 64 0) (c.W + BitVec.ofNat 64 tO)
+  obtain hw := Proof.AesCcm.words_eq s.mem (c.W + BitVec.ofNat 64 0) (c.W + BitVec.ofNat 64 tO)
   rw [Offset.add_add, Offset.add_add, BitVec.add_zero] at hw
   rw [BitVec.add_zero]
   congr 2
@@ -186,15 +186,15 @@ theorem mask_wp {c : Cx} (L : Lay c) {s : State} (E : Env c s) {P : Prop} [Decid
   unfold mask
   refine WP.seq (wp_li (by decide) fun s₁ u₁ => wp_sub fun s₂ u₂ => wp_mv fun s₃ u₃ => wp_mv fun s₄ u₄ =>
     WP.block_nil ?_)
-  have pk₄ : PK s s₄ := (PK.ofUpd u₁).trans ((PK.ofUpd u₂).trans ((PK.ofUpd u₃).trans (PK.ofUpd u₄)))
-  have m₄ : s₄.mem = s.mem := by rw [u₄.mem, u₃.mem, u₂.mem, u₁.mem]
-  have s0₄ : s₄.gpr .s0 = s.gpr .s0 := by
+  obtain pk₄ : PK s s₄ := (PK.ofUpd u₁).trans ((PK.ofUpd u₂).trans ((PK.ofUpd u₃).trans (PK.ofUpd u₄)))
+  obtain m₄ : s₄.mem = s.mem := by rw [u₄.mem, u₃.mem, u₂.mem, u₁.mem]
+  obtain s0₄ : s₄.gpr .s0 = s.gpr .s0 := by
     rw [u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide)]
-  have r9₄ : s₄.gpr .t1 = BitVec.ofNat 64 0 - BitVec.ofNat 64 (if P then 1 else 0) := by
+  obtain r9₄ : s₄.gpr .t1 = BitVec.ofNat 64 0 - BitVec.ofNat 64 (if P then 1 else 0) := by
     rw [u₄.other _ (by decide), u₃.other _ (by decide), u₂.gpr, u₁.gpr, u₁.other _ (by decide), hs0]
-  have r3₄ : s₄.gpr .a0 = c.D := by
+  obtain r3₄ : s₄.gpr .a0 = c.D := by
     rw [u₄.other _ (by decide), u₃.gpr, u₂.other _ (by decide), u₁.other _ (by decide), E.s9]
-  have r4₄ : s₄.gpr .a2 = BitVec.ofNat 64 c.n := by
+  obtain r4₄ : s₄.gpr .a2 = BitVec.ofNat 64 c.n := by
     rw [u₄.gpr, u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide), E.s10]
   let f : Byte → Byte := fun b => if P then b else 0
   refine WP.ite (decide (c.n = 0)) (eval_z r4₄ hn) (fun ht => ?_) (fun hf => ?_)
@@ -210,8 +210,8 @@ theorem mask_wp {c : Cx} (L : Lay c) {s : State} (E : Env c s) {P : Prop} [Decid
       ⟨0, rfl, by omega_using [h0], by rw [r3₄]; exact (BitVec.add_zero _).symm, by rw [r4₄, Nat.sub_zero], rfl, s0₄,
         by rw [m₄]; simp [bytesAt, writeBytes_nil], pk₄⟩
     rintro w t ⟨i, rfl, hi, r3, r4, r9, s0, mem, pk⟩
-    have Et := E.of_pk pk
-    have hin : i + 1 ≤ c.n := by omega_using [hi]
+    obtain Et := E.of_pk pk
+    obtain hin : i + 1 ≤ c.n := by omega_using [hi]
     have hD : Covers [⟨c.D, c.n⟩] t.wr := Et.perm.d
     unfold maskBody
     refine wp_lbu (a := c.D + BitVec.ofNat 64 i) (by decide)
@@ -223,31 +223,31 @@ theorem mask_wp {c : Cx} (L : Lay c) {s : State} (E : Env c s) {P : Prop} [Decid
       (by rw [u₂.wr, u₁.wr]; exact in_off hD hin hn) fun t₃ u₃ => ?_
     refine wp_addi (by decide) fun t₄ u₄ => wp_subi (by decide) fun t₅ u₅ =>
       WP.block_nil ?_
-    have pk₅ : PK s t₅ := pk.trans ((PK.ofUpd u₁).trans ((PK.ofUpd u₂).trans ((PK.ofMupd u₃).trans
+    obtain pk₅ : PK s t₅ := pk.trans ((PK.ofUpd u₁).trans ((PK.ofUpd u₂).trans ((PK.ofMupd u₃).trans
       ((PK.ofUpd u₄).trans (PK.ofUpd u₅)))))
-    have hlen : ((bytesAt s.mem c.D i).map f).length = i := by rw [List.length_map, length_bytesAt]
-    have hb : t.mem (c.D + BitVec.ofNat 64 i) = s.mem (c.D + BitVec.ofNat 64 i) := by
+    obtain hlen : ((bytesAt s.mem c.D i).map f).length = i := by rw [List.length_map, length_bytesAt]
+    obtain hb : t.mem (c.D + BitVec.ofNat 64 i) = s.mem (c.D + BitVec.ofNat 64 i) := by
       rw [mem]
       have := writeBytes_end s.mem c.D ((bytesAt s.mem c.D i).map f) (by rw [hlen]; omega_using [hn, hi])
       rwa [hlen] at this
-    have hmem : t₅.mem = writeBytes s.mem c.D ((bytesAt s.mem c.D (i + 1)).map f) := by
+    obtain hmem : t₅.mem = writeBytes s.mem c.D ((bytesAt s.mem c.D (i + 1)).map f) := by
       rw [u₅.mem, u₄.mem, u₃.mem, u₂.gpr, u₁.gpr, u₁.other .t1 (by decide), r9, r9₄, u₂.mem,
         u₁.mem, mask_byte, hb, mem, Proof.Cmac.Stream.bytesAt_append, bytesAt_one,
         List.map_append, List.map_singleton]
       rw [writeBytes_snoc _ _ _ _ (by rw [hlen]; omega_using [hn, hi]), hlen]
-    have hstep : c.D + BitVec.ofNat 64 i + BitVec.ofNat 64 1 = c.D + BitVec.ofNat 64 (i + 1) := by
+    obtain hstep : c.D + BitVec.ofNat 64 i + BitVec.ofNat 64 1 = c.D + BitVec.ofNat 64 (i + 1) := by
       rw [BitVec.add_assoc, ← BitVec.ofNat_add]
-    have r3' : t₅.gpr .a0 = c.D + BitVec.ofNat 64 (i + 1) := by
+    obtain r3' : t₅.gpr .a0 = c.D + BitVec.ofNat 64 (i + 1) := by
       rw [u₅.other _ (by decide), u₄.gpr, u₃.gpr, u₂.other _ (by decide), u₁.other _ (by decide), r3, hstep]
-    have r4' : t₅.gpr .a2 = BitVec.ofNat 64 (c.n - (i + 1)) := by
+    obtain r4' : t₅.gpr .a2 = BitVec.ofNat 64 (c.n - (i + 1)) := by
       rw [u₅.gpr, u₄.other _ (by decide), u₃.gpr, u₂.other _ (by decide), u₁.other _ (by decide), r4,
         ofNat_sub_one (by omega_using [hi]), Nat.sub_sub]
-    have r9' : t₅.gpr .t1 = s₄.gpr .t1 := by
+    obtain r9' : t₅.gpr .t1 = s₄.gpr .t1 := by
       rw [u₅.other _ (by decide), u₄.other _ (by decide), u₃.gpr, u₂.other _ (by decide), u₁.other _ (by decide), r9]
-    have s0' : t₅.gpr .s0 = s.gpr .s0 := by
+    obtain s0' : t₅.gpr .s0 = s.gpr .s0 := by
       rw [u₅.other _ (by decide), u₄.other _ (by decide), u₃.gpr, u₂.other _ (by decide), u₁.other _ (by decide),
         s0]
-    have ev := eval_nz (r := .a2) (a := c.n - (i + 1)) r4' (by omega_using [hn])
+    obtain ev := eval_nz (r := .a2) (a := c.n - (i + 1)) r4' (by omega_using [hn])
     by_cases he : i + 1 = c.n
     · left
       exact ⟨by rw [ev]; simp [he], pk₅, s0', by rw [hmem, he]⟩

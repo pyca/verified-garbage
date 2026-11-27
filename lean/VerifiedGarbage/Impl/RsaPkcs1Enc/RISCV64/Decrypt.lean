@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Rsa.RISCV64.Priv
 public import VerifiedGarbage.Impl.Hmac.Stream.RISCV64
-public import VerifiedGarbage.Impl.Sha256.RISCV64.Stream
+public import VerifiedGarbage.Impl.Sha256.RISCV64.Fn
 public import VerifiedGarbage.Impl.RsaPkcs1Sig.RISCV64.Encode
 public import VerifiedGarbage.Spec.Sha256.Contract
 public import VerifiedGarbage.Spec.Hmac.Generic
@@ -41,7 +41,7 @@ branch depends only on the pointers, the lengths and the counters. `out`'s
 and `AM`'s bytes are all read, whichever is returned.
 
 The frame (`alloc frameBytes`) holds the private-key operation's twelve
-(or, for `vg_rsa_pkcs1_decrypt_precomputed`, fourteen) stack arguments (at
+(or, for `vg_rsa_pkcs1_decrypt_precomputed_body`, fourteen) stack arguments (at
 `sp`), then our caller's `s0`–`s9` and our return
 address (`saved`). Our own stack arguments are at `sp + frameBytes + 8 j`,
 from `t6` (`argBase`). The values kept across the calls are in `s0`–`s9`,
@@ -82,18 +82,10 @@ def sCL : Nat := 272
 def sAM : Nat := 528
 def sD : Nat := 1552
 
-/-- SHA-256's streaming functions, as HMAC calls them. -/
-def sha256 : Hash where
-  b := 6
-  N := 32
-  D := 32
-  F := 144
-  initN := Spec.Sha256.initApi.name
-  initC := Impl.Sha256.RISCV64.Stream.init
-  updN := Spec.Sha256.updateApi.name
-  updC := Impl.Sha256.RISCV64.Stream.update
-  finN := Spec.Sha256.finalizeApi.name
-  finC := Impl.Sha256.RISCV64.Stream.finalize
+/-- SHA-256's streaming functions, as HMAC calls them
+(`Impl.Sha256.RISCV64.Fn.hash256`): as the internal `vg_sha256_init_core`, …,
+whose exported functions also clear what they leave. -/
+abbrev sha256 : Hash := Impl.Sha256.RISCV64.Fn.hash256
 
 /-- `vg_rsa_private_checked`, or with `pc` `vg_rsa_private_checked_precomputed`. -/
 def privCall : Bool → Prog isa
@@ -103,8 +95,8 @@ def privCall : Bool → Prog isa
 /-- The private-key operation's stack arguments: twelve, or with `pc`
 fourteen (`pre` and `pre_len` too). -/
 def nCallArgs (pc : Bool) : Nat := if pc then 14 else 12
-def macInitCall : Prog isa := .call Spec.Hmac.sha256I.initAnyKeyApi.name sha256.init
-def macFinCall : Prog isa := .call Spec.Hmac.sha256I.finalizeApi.name sha256.finalize
+def macInitCall : Prog isa := .call (Spec.Hmac.sha256I.initAnyKeyApi.name ++ "_core") sha256.init
+def macFinCall : Prog isa := .call (Spec.Hmac.sha256I.finalizeApi.name ++ "_core") sha256.finalize
 
 /-! ## 1. The private-key operation -/
 
@@ -313,13 +305,13 @@ def body (pc : Bool) : Prog isa :=
   .seq (.block (setup pc)) (.seq (privCall pc) (.seq dBuild (.seq hashD (.seq kdkMac (.seq clLoop
     (.seq amLoop (.seq maskPart (.seq alPart (.seq scanPart selPart)))))))))
 
-/-- `vg_rsa_pkcs1_decrypt`, or with `pc` `vg_rsa_pkcs1_decrypt_precomputed`. -/
+/-- `vg_rsa_pkcs1_decrypt`, or with `pc` `vg_rsa_pkcs1_decrypt_precomputed_body`. -/
 def codeG (pc : Bool) : Prog isa := .frame (.alloc frameBytes) (body pc) (.free frameBytes)
 
 /-- `vg_rsa_pkcs1_decrypt`. -/
 abbrev code : Prog isa := codeG false
 
-/-- `vg_rsa_pkcs1_decrypt_precomputed`: with the key's precomputed values
+/-- `vg_rsa_pkcs1_decrypt_precomputed_body`: with the key's precomputed values
 `pre` (our stack arguments 15 and 16), calling
 `vg_rsa_private_checked_precomputed`. -/
 abbrev codeP : Prog isa := codeG true

@@ -47,11 +47,9 @@ theorem rotation_bounds (i : Nat) : 1 ≤ Spec.Rc2.rotation i ∧ Spec.Rc2.rotat
   have h : ∀ j < 4, 1 ≤ Spec.Rc2.rotation j ∧ Spec.Rc2.rotation j < 16 := by decide
   simpa only [Spec.Rc2.rotation, Nat.mod_mod] using h (i % 4) (Nat.mod_lt _ (by decide))
 
-theorem rotate16_ok (s : State) (r : Reg) (hr : r ≠ .esi)
-    (x : BitVec 16) (hx : s.gpr r = x.setWidth 32)
-    (n : Nat) (hn : 1 ≤ n) (hn' : n < 16) :
+theorem rotate16_ok (s : State) (r : Reg) (hr : r ≠ .esi) (n : Nat) (hn : 1 ≤ n) (hn' : n < 16) :
     ∃ s', runBlock isa (rotate16 r n) s = some s' ∧
-      s'.gpr r = (x.rotateLeft n).setWidth 32 ∧ Keep [r, .esi] s s' := by
+      (s'.gpr r).setWidth 16 = ((s.gpr r).setWidth 16).rotateLeft n ∧ Keep [r, .esi] s s' := by
   have hleft : 1 ≤ 32 - n ∧ 32 - n ≤ 31 := by omega_using [hn, hn']
   have hright : 1 ≤ 16 - n ∧ 16 - n ≤ 31 := by omega_using [hn']
   refine ⟨_, by
@@ -62,8 +60,11 @@ theorem rotate16_ok (s : State) (r : Reg) (hr : r ≠ .esi)
   constructor
   · simp only [gpr_setReg, gpr_arithFlags, gpr_setFlags, ite_true,
       hr, ite_false]
-    rw [hx]
-    exact Word32.rotateWord x n hn hn'
+    rw [Word32.maskWord]
+    have h := congrArg (BitVec.setWidth 16) (Word32.rotateWord ((s.gpr r).setWidth 16) n hn hn')
+    rw [Word32.maskWord, BitVec.setWidth_setWidth_of_le _ (by decide : 16 ≤ 32), BitVec.setWidth_eq,
+      BitVec.setWidth_setWidth_of_le _ (by decide : 16 ≤ 32), BitVec.setWidth_eq] at h
+    exact h
   · constructor
     · intro r' hr'
       simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr'
@@ -93,42 +94,12 @@ theorem mixSelect_ok (s : State) (i : Nat) :
     · rfl
     · rfl
 
-theorem mixKey_ok (s : State) (j : Nat) (hj : j < 64)
-    (stackRead : InRegions (s.rd ++ s.wr) (argAddr s 0) 4)
-    (fit : (arg s 0).toNat + 128 ≤ 2 ^ 32)
-    (readable : ∀ i < 128, InRegions (s.rd ++ s.wr) (addr32 (arg s 0) + BitVec.ofNat 64 i) 1) :
-    ∃ s', runBlock isa (mixKey j) s = some s' ∧
-      s'.gpr .esi = ((Spec.Rc2.scheduleAt s.mem (addr32 (arg s 0))).getD j 0).setWidth 32 ∧
-      Keep [.esi, .edi] s s' := by
-  have lo := readable (2 * j) (by omega_using [hj])
-  have hi := readable (2 * j + 1) (by omega_using [hj])
-  have loAddr := addr_add (by omega_using [hj, fit] : (arg s 0).toNat + 2 * j < 2 ^ 32)
-  have hiAddr := addr_add (by omega_using [hj, fit] : (arg s 0).toNat + (2 * j + 1) < 2 ^ 32)
-  simp only [arg, argAddr, Nat.mul_zero, Nat.add_zero, ← addr_eq_def] at stackRead lo hi loAddr hiAddr ⊢
-  refine ⟨_, by
-    simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLeDiff, Nat.reduceEqDiff, and_self, mixKey, memOp, State.ea, runBlock_cons,
-      runStep_some, runBlock_nil, reduceExec, execAlu, execShift, readSrc, State.load32, State.load8,
-      gpr_setReg, gpr_setFlags, mem_setReg,
-      rd_setReg, wr_setReg,
-      stackRead, Option.map_some, Option.bind_some, 
-      ← addr_eq_def, loAddr, hiAddr, lo, hi]
-    rfl, ?_⟩
-  constructor
-  · rw [gpr_setReg_self, Word32.joinBytes, scheduleAt_getD _ _ _ hj]
-  · constructor
-    · intro r hr
-      simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-      simp only [gpr_setReg, gpr_arithFlags, gpr_setFlags, hr.1, hr.2, ite_false]
-    · rfl
-    · rfl
-    · rfl
-
 theorem adjust_ok (sub : Bool) (s : State) (r : Reg) :
     ∃ s', runBlock isa (adjust sub r) s = some s' ∧
       s'.gpr r = (if sub then s.gpr r - s.gpr .esi else s.gpr r + s.gpr .esi) ∧
       Keep [r] s s' := by
   cases sub <;>
-    refine ⟨_, by simp only [adjust, Bool.false_eq_true, ite_false, ite_true,
+    refine ⟨_, by simp only [adjust, adjustOp, Bool.false_eq_true, ite_false, ite_true,
       runBlock_cons, reduceExec, execAlu, readSrc, Option.bind_some, runStep_some, runBlock_nil]; rfl, ?_⟩
   all_goals
     constructor

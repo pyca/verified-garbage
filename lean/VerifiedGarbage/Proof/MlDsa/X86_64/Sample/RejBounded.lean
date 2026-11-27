@@ -1,11 +1,11 @@
 module
+
 public import VerifiedGarbage.Impl.MlDsa.X86_64.Sample.RejBounded
 public import VerifiedGarbage.Proof.MlDsa.Sample.RejBounded
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Sponge
-
 import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejBoundedLoop
 import VerifiedGarbage.Proof.MlKem.Mem
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Pro
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNttLoop
 
 /-!
 # ML-DSA on x86-64: `vg_mldsa_rej_bounded_poly`, correctness

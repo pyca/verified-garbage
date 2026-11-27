@@ -12,7 +12,7 @@ namespace VG.Proof.Ffdh.Arm.ParameterCandidate
 open VG VG.Arm VG.Proof.Mont VG.Proof.Bignum.Arm
 
 def phaseRegions (p : WitnessParams) (sp : BitVec 32) : List Region :=
-  [⟨State.addr p.base, 8 * p.capacity⟩, FrameStack.belowA sp 56, ⟨State.addr (sp + 40#32), 28⟩]
+  [⟨State.addr p.base, 8 * p.capacity⟩, FrameStack.belowA sp 104, ⟨State.addr (sp + 40#32), 28⟩]
 
 private theorem local_sub {s : State} {d : Nat} (stack : Workspace s s.sp 72)
     (lower : 40 ≤ d) (upper : d + 4 ≤ 68) :
@@ -22,14 +22,16 @@ private theorem local_sub {s : State} {d : Nat} (stack : Workspace s s.sp 72)
 
 theorem phase_preparation_frame {s t : State} {p : WitnessParams} (stack : Workspace s s.sp 72)
     (changed : Frame [⟨State.addr p.base, 8 * p.capacity⟩, ⟨State.addr (s.sp + 60#32), 4⟩,
-      ⟨State.addr (s.sp + 64#32), 4⟩] s.mem t.mem) : Frame (phaseRegions p s.sp) s.mem t.mem := by
+      ⟨State.addr (s.sp + 64#32), 4⟩, FrameStack.belowA s.sp 104] s.mem t.mem) :
+    Frame (phaseRegions p s.sp) s.mem t.mem := by
   refine changed.sub ?_
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl
+  rcases hr with rfl | rfl | rfl | rfl
   · exact ⟨⟨State.addr p.base, 8 * p.capacity⟩, by simp [phaseRegions], fun _ h => h⟩
   · exact ⟨⟨State.addr (s.sp + 40#32), 28⟩, by simp [phaseRegions], local_sub stack (by decide) (by decide)⟩
   · exact ⟨⟨State.addr (s.sp + 40#32), 28⟩, by simp [phaseRegions], local_sub stack (by decide) (by decide)⟩
+  · exact ⟨FrameStack.belowA s.sp 104, by simp [phaseRegions], fun _ h => h⟩
 
 theorem phase_witness_frame {s t : State} {p : WitnessParams} (stack : Workspace s s.sp 72)
     (changed : Frame (witnessRegions p s.sp) s.mem t.mem) : Frame (phaseRegions p s.sp) s.mem t.mem := by
@@ -38,7 +40,7 @@ theorem phase_witness_frame {s t : State} {p : WitnessParams} (stack : Workspace
   simp only [witnessRegions, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
   · exact ⟨⟨State.addr p.base, 8 * p.capacity⟩, by simp [phaseRegions], fun _ h => h⟩
-  · exact ⟨FrameStack.belowA s.sp 56, by simp [phaseRegions], fun _ h => h⟩
+  · exact ⟨FrameStack.belowA s.sp 104, by simp [phaseRegions], fun _ h => h⟩
   · exact ⟨⟨State.addr (s.sp + 40#32), 28⟩, by simp [phaseRegions], local_sub stack (by decide) (by decide)⟩
   · exact ⟨⟨State.addr (s.sp + 40#32), 28⟩, by simp [phaseRegions], local_sub stack (by decide) (by decide)⟩
 

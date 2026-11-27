@@ -22,6 +22,12 @@ def multiply : Prog isa := .seq mq Impl.P256.EcdhInverse.inverse
 def finish : Prog isa := Impl.Ecdh.AArch64.Cfg.middle Impl.Ecdsa.AArch64.p256
 end VG.Proof.P256.EcdhJac
 namespace VG
+/-! The window (its doublings woven with the table's scan, its additions
+through the forwarding pass) and the inversion are in both `exchange` and
+`multiply`: each has a literal of its own first, which those two read, so
+that the kernel runs the passes once. -/
+materialize_code Impl.P256.EcdhJac.wrappedWindow
+materialize_code Impl.P256.EcdhInverse.inverse
 materialize_code Impl.P256.EcdhJac.exchange
 materialize_code Proof.P256.EcdhJac.before
 materialize_code Proof.P256.EcdhJac.multiply

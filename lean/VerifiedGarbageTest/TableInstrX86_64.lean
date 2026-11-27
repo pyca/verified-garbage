@@ -2,6 +2,8 @@ module
 
 import VerifiedGarbage.TCB.Rust
 meta import VerifiedGarbage.TCB.Rust
+import VerifiedGarbageTest.RenderOnly
+meta import VerifiedGarbageTest.RenderOnly
 import VerifiedGarbage.TCB.X86_64.Target
 meta import VerifiedGarbage.TCB.X86_64.Target
 import VerifiedGarbage.TCB.X86_64.Print
@@ -96,22 +98,25 @@ theorem verified (w : BitVec 64) : Verified target (code w) (contract w) := by
   · cases e with | block e => rw [exec_code w s] at e; cases e; rfl
   · sig_pre [contract, sig, abi, argRegs, stackBelow, sat]
 
-def artifactOf (fn : String) (w : BitVec 64) : Artifact where
-  target := .of target
-  module := "test"
-  name := fn
-  sig := sig
-  doc := "Returns 1 plus word 1 of its table."
+def artifactOf (fn : String) (w : BitVec 64) : EmitArtifact where
+  target := .of (renderOnly target) emitter
+  api := { module := "test", name := fn, sig := sig, safety := []
+           summary := "Returns 1 plus word 1 of its table." }
   code := code w
   contract := contract w
-  verified := verified w
+  verified := renderOnly_verified (verified w)
   spSafe := rfl
 
-def artifact : Artifact := artifactOf "vg_test_alutbl" 42
+def artifact : EmitArtifact := artifactOf "vg_test_alutbl" 42
 
 /-- The rendering: the table read through a register, as any memory operand. -/
 def expected : String := "/// Returns 1 plus word 1 of its table.
-#[allow(clippy::missing_safety_doc)]
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// # Safety
+///
+///
 #[unsafe(naked)]
 pub unsafe extern \"sysv64\" fn vg_test_alutbl() -> u64 {
     core::arch::naked_asm!(
@@ -127,7 +132,7 @@ pub unsafe extern \"sysv64\" fn vg_test_alutbl() -> u64 {
 
 -- The emitter writes the static from the instruction's words, byte for byte,
 -- and the code may name it without `Artifact.consts`.
-#guard (Rust.checkConsts [.of (.of artifact)] (.of (.of artifact))).isOk
+#guard (Rust.checkConsts (.of artifact.toArtifact)).isOk && (Rust.checkTables "" [("", Rust.tablesOf artifact)]).isOk
 #guard Rust.tables [artifact] == [(name, tbl 42)]
 #guard Rust.tableFile "x86_64" name (tbl 42) ==
   Rust.header ++ "//! The table of constants `VG_TEST_ALUTBL` of the verified functions for `x86_64` (`Artifact.consts`).
@@ -144,12 +149,14 @@ pub static VG_TEST_ALUTBL: Table<16> = Table(*b\"\\
 
 -- Two artifacts carrying the same table: one static. Another giving it other
 -- words: refused.
-def same : Artifact := artifactOf "vg_test_alutbl_same" 42
-def other : Artifact := artifactOf "vg_test_alutbl_other" 41
-#guard (Rust.checkConsts [.of (.of artifact), .of (.of same)] (.of (.of artifact))).isOk
+def same : EmitArtifact := artifactOf "vg_test_alutbl_same" 42
+def other : EmitArtifact := artifactOf "vg_test_alutbl_other" 41
+#guard (Rust.checkTables "" [("a", Rust.tablesOf artifact), ("b", Rust.tablesOf same)]).isOk
 #guard Rust.tables [artifact, same] == [(name, tbl 42)]
-#guard !(Rust.checkConsts [.of (.of artifact), .of (.of other)] (.of (.of artifact))).isOk
-#guard !(Rust.checkConsts [.of (.of artifact), .of (.of other)] (.of (.of other))).isOk
+#guard !(Rust.checkTables "" [("a", Rust.tablesOf artifact), ("b", Rust.tablesOf other)]).isOk
+#guard !(Rust.checkTables "" [("b", Rust.tablesOf other), ("a", Rust.tablesOf artifact)]).isOk
+-- Nor may one artifact give it two lists of words.
+#guard !(Rust.checkTables "" [("a", Rust.tablesOf artifact ++ Rust.tablesOf other)]).isOk
 
 -- The semantics: the word at the table's offset, else a fault.
 #guard Instr.asm (add 42) == ["add rax, QWORD PTR [rdx+8]"]

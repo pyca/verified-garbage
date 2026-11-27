@@ -10,6 +10,8 @@ pub const VG_CHACHA20_POLY1305_SEAL_SSSE3_FEATURES: verified_garbage_cpu::Featur
 ///
 /// Contract: `VG.Spec.ChaCha20Poly1305.sealContract`. Constant time: only the pointers and the lengths may affect timing, not the key, the nonce or the data. The block counter wraps around beyond 2³²-1 blocks of data (RFC 8439's `P_MAX`), which the caller must not exceed for the construction to be secure.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety
@@ -20,55 +22,88 @@ pub const VG_CHACHA20_POLY1305_SEAL_SSSE3_FEATURES: verified_garbage_cpu::Featur
 /// * `data` must be valid for reads and writes of `len` bytes.
 /// * `tag` must be valid for reads and writes of 16 bytes.
 /// * `data` and `tag` must not overlap each other, `key`, `nonce` or `aad` (distinct Rust objects never do).
-/// * None of `key`, `nonce`, `aad`, `data` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 772 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `key`, `nonce`, `aad`, `data` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 1424 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `ssse3` target feature.
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_seal_ssse3(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        r#".base64 "jaQkHP3//4uEJOgCAACJRCQEi4Qk7AIAAIlEJAiLhCTwAgAAiUQkDIuEJPQCAACJRCQQi4Qk+AIAAIlEJBSLhCT8AgAAiUQkGIuEJAADAACJRCQcieCDwCSJRCQgi0QkIItMJBSJTCQgiRiJcASJeAiJaAyJx4tMJASLVCQIuGV4cGGJR0C4bmQgM4lHRLgyLWJ5iUdIuHRlIGuJR0yLAYlHUItBBIlHVItBCIlHWItBDIlHXItBEIlHYItBFIlHZItBGIlHaItBHIlHbLgAAAAAiUdwiwKJR3SLQgSJR3iLQgiJR3yJ+YPBQIn6gcKAAAAAUlE="
+        r#".base64 "jaQkjPz//4uEJHgDAACJRCQEi4QkfAMAAIlEJAiLhCSAAwAAiUQkDIuEJIQDAACJRCQQi4QkiAMAAIlEJBSLhCSMAwAAiUQkGIuEJJADAACJRCQcieCDwCSJRCQgi0QkIItMJBSJTCQgiRiJcASJeAiJaAyJx4tMJASLVCQIuGV4cGGJR0C4bmQgM4lHRLgyLWJ5iUdIuHRlIGuJR0yLAYlHUItBBIlHVItBCIlHWItBDIlHXItBEIlHYItBFIlHZItBGIlHaItBHIlHbLgAAAAAiUdwiwKJR3SLQgSJR3iLQgiJR3yJ+YPBQIn6gcKAAAAAi0QkGIPoAT3AAAAA"
+jb 20f
+.base64 "UlE="
 call {vg_chacha20_block}
 .base64 "WFiJ+YHBgAAAAIn6gcLAAQAAUVI="
-call {vg_poly1305_init}
-.base64 "WFiLXCQMi2wkEInowegEifmBwcABAABQU1E="
-call {vg_poly1305_blocks}
-.base64 "WFhYieqD4g8="
-je 20f
-.base64 "ie4p1gHeuAAAAACJRzCJRzSJRziJRzyJ+YPBMA=="
-22:
-.base64 "D7YGiAGDxgGDwQGD6gE="
-jne 22b
-.base64 "uAEAAACJ+YPBMIn6gcLAAQAAUFFS"
-call {vg_poly1305_blocks}
-.base64 "WFhY"
+call {vg_poly1305_init_core}
+.base64 "WFg="
 jmp 21f
 20:
-21:
-.base64 "i0QkEIlHIItEJBiJRyi4AAAAAIlHJIlHLLgBAAAAiUdwifiDwECLTCQUi1QkGIn7gcOAAAAAi3QkIFNSUVA="
+.base64 "Zg/vwPMPf4dAAgAA8w9/h1ACAADzD3+HYAIAAPMPf4dwAgAA8w9/h4ACAADzD3+HkAIAAPMPf4egAgAA8w9/h7ACAADzD3+HwAIAAPMPf4fQAgAA8w9/h+ACAADzD3+H8AIAAPMPf4cAAwAA8w9/hxADAADzD3+HIAMAAPMPf4cwAwAAifiDwECJ+YHBQAIAALoAAQAAifuBw4AAAACJzlNSUVA="
 call {vg_chacha20_xor_ssse3}
-.base64 "WFhYWItcJBSLbCQYiejB6ASJ+YHBwAEAAFBTUQ=="
+.base64 "WFhYWIn5gcFAAgAAifqBwsABAABRUg=="
+call {vg_poly1305_init_core}
+.base64 "WFg="
+21:
+.base64 "i1wkDItsJBCJ6MHoBIn5gcHAAQAAUFNR"
 call {vg_poly1305_blocks}
 .base64 "WFhYieqD4g8="
-je 23f
+je 22f
 .base64 "ie4p1gHeuAAAAACJRzCJRzSJRziJRzyJ+YPBMA=="
-25:
+24:
 .base64 "D7YGiAGDxgGDwQGD6gE="
-jne 25b
+jne 24b
 .base64 "uAEAAACJ+YPBMIn6gcLAAQAAUFFS"
 call {vg_poly1305_blocks}
 .base64 "WFhY"
-jmp 24f
+jmp 23f
+22:
 23:
-24:
+.base64 "i0QkEIlHIItEJBiJRyi4AAAAAIlHJIlHLItEJBiD6AE9wAAAAA=="
+jb 25f
+.base64 "uAEAAACJR3CJ+IPAQItMJBSLVCQYifuBw4AAAACLdCQgU1JRUA=="
+call {vg_chacha20_xor_ssse3}
+.base64 "WFhYWA=="
+jmp 26f
+25:
+.base64 "i3QkFItUJCCLTCQYif2BxYACAACD+RA="
+jb 27f
+29:
+.base64 "8w9vJvMPb20AZg/v5fMPfyKDxhCDwhCDxRCD6RCD+RA="
+jae 29b
+jmp 28f
+27:
+28:
+.base64 "hck="
+je 210f
+212:
+.base64 "D7YGM0UAiAKDxgGDwgGDxQGD6QE="
+jne 212b
+jmp 211f
+210:
+211:
+26:
+.base64 "i1wkFItsJBiJ6MHoBIn5gcHAAQAAUFNR"
+call {vg_poly1305_blocks}
+.base64 "WFhYieqD4g8="
+je 213f
+.base64 "ie4p1gHeuAAAAACJRzCJRzSJRziJRzyJ+YPBMA=="
+215:
+.base64 "D7YGiAGDxgGDwQGD6gE="
+jne 215b
+.base64 "uAEAAACJ+YPBMIn6gcLAAQAAUFFS"
+call {vg_poly1305_blocks}
+.base64 "WFhY"
+jmp 214f
+213:
+214:
 .base64 "uAEAAACJ+YPBIIn6gcLAAQAAUFFS"
 call {vg_poly1305_blocks}
 .base64 "WFhYifuBw0ACAACLTCQcuAAAAACJ/oHGwAEAAFNRUFBW"
 call {vg_poly1305_finalize_scratch}
-.base64 "WFhYWFiLH4t3BItvDIt/CLkAAAAAiUwkJIlMJCiJTCQsiUwkMIlMJDSJTCQ4iUwkPIlMJECJTCREiUwkSIlMJEyJTCRQiUwkVIlMJFiJTCRciUwkYIlMJGSJTCRoiUwkbIlMJHCJTCR0iUwkeIlMJHyJjCSAAAAAiYwkhAAAAImMJIgAAACJjCSMAAAAiYwkkAAAAImMJJQAAACJjCSYAAAAiYwknAAAAImMJKAAAACJjCSkAAAAiYwkqAAAAImMJKwAAACJjCSwAAAAiYwktAAAAImMJLgAAACJjCS8AAAAiYwkwAAAAImMJMQAAACJjCTIAAAAiYwkzAAAAImMJNAAAACJjCTUAAAAiYwk2AAAAImMJNwAAACJjCTgAAAAiYwk5AAAAImMJOgAAACJjCTsAAAAiYwk8AAAAImMJPQAAACJjCT4AAAAiYwk/AAAAImMJAABAACJjCQEAQAAiYwkCAEAAImMJAwBAACJjCQQAQAAiYwkFAEAAImMJBgBAACJjCQcAQAAiYwkIAEAAImMJCQBAACJjCQoAQAAiYwkLAEAAImMJDABAACJjCQ0AQAAiYwkOAEAAImMJDwBAACJjCRAAQAAiYwkRAEAAImMJEgBAACJjCRMAQAAiYwkUAEAAImMJFQBAACJjCRYAQAAiYwkXAEAAImMJGABAACJjCRkAQAAiYwkaAEAAImMJGwBAACJjCRwAQAAiYwkdAEAAImMJHgBAACJjCR8AQAAiYwkgAEAAImMJIQBAACJjCSIAQAAiYwkjAEAAImMJJABAACJjCSUAQAAiYwkmAEAAImMJJwBAACJjCSgAQAAiYwkpAEAAImMJKgBAACJjCSsAQAAiYwksAEAAImMJLQBAACJjCS4AQAAiYwkvAEAAImMJMABAACJjCTEAQAAiYwkyAEAAImMJMwBAACJjCTQAQAAiYwk1AEAAImMJNgBAACJjCTcAQAAiYwk4AEAAImMJOQBAACJjCToAQAAiYwk7AEAAImMJPABAACJjCT0AQAAiYwk+AEAAImMJPwBAACJjCQAAgAAiYwkBAIAAImMJAgCAACJjCQMAgAAiYwkEAIAAImMJBQCAACJjCQYAgAAiYwkHAIAAImMJCACAACJjCQkAgAAiYwkKAIAAImMJCwCAACJjCQwAgAAiYwkNAIAAImMJDgCAACJjCQ8AgAAiYwkQAIAAImMJEQCAACJjCRIAgAAiYwkTAIAAImMJFACAACJjCRUAgAAiYwkWAIAAImMJFwCAACJjCRgAgAAiYwkZAIAAImMJGgCAACJjCRsAgAAiYwkcAIAAImMJHQCAACJjCR4AgAAiYwkfAIAAImMJIACAACJjCSEAgAAiYwkiAIAAImMJIwCAACJjCSQAgAAiYwklAIAAImMJJgCAACJjCScAgAAiYwkoAIAAImMJKQCAACJjCSoAgAAiYwkrAIAAImMJLACAACJjCS0AgAAiYwkuAIAAImMJLwCAACJjCTAAgAAiYwkxAIAAImMJMgCAACJjCTMAgAAiYwk0AIAAImMJNQCAACJjCTYAgAAiYwk3AIAAImMJOACAACNpCTkAgAAww=="
+.base64 "WFhYWFiLH4t3BItvDIt/CI2kJHQDAABmD+/AjaQkcPr///MPfwQk8w9/RCQQ8w9/RCQg8w9/RCQw8w9/RCRA8w9/RCRQ8w9/RCRg8w9/RCRw8w9/hCSAAAAA8w9/hCSQAAAA8w9/hCSgAAAA8w9/hCSwAAAA8w9/hCTAAAAA8w9/hCTQAAAA8w9/hCTgAAAA8w9/hCTwAAAA8w9/hCQAAQAA8w9/hCQQAQAA8w9/hCQgAQAA8w9/hCQwAQAA8w9/hCRAAQAA8w9/hCRQAQAA8w9/hCRgAQAA8w9/hCRwAQAA8w9/hCSAAQAA8w9/hCSQAQAA8w9/hCSgAQAA8w9/hCSwAQAA8w9/hCTAAQAA8w9/hCTQAQAA8w9/hCTgAQAA8w9/hCTwAQAA8w9/hCQAAgAA8w9/hCQQAgAA8w9/hCQgAgAA8w9/hCQwAgAA8w9/hCRAAgAA8w9/hCRQAgAA8w9/hCRgAgAA8w9/hCRwAgAA8w9/hCSAAgAA8w9/hCSQAgAA8w9/hCSgAgAA8w9/hCSwAgAA8w9/hCTAAgAA8w9/hCTQAgAA8w9/hCTgAgAA8w9/hCTwAgAA8w9/hCQAAwAA8w9/hCQQAwAA8w9/hCQgAwAA8w9/hCQwAwAA8w9/hCRAAwAA8w9/hCRQAwAA8w9/hCRgAwAA8w9/hCRwAwAA8w9/hCSAAwAA8w9/hCSQAwAA8w9/hCSgAwAA8w9/hCSwAwAA8w9/hCTAAwAA8w9/hCTQAwAA8w9/hCTgAwAA8w9/hCTwAwAA8w9/hCQABAAA8w9/hCQQBAAA8w9/hCQgBAAA8w9/hCQwBAAA8w9/hCRABAAA8w9/hCRQBAAA8w9/hCRgBAAA8w9/hCRwBAAA8w9/hCSABAAA8w9/hCSQBAAA8w9/hCSgBAAA8w9/hCSwBAAA8w9/hCTABAAA8w9/hCTQBAAA8w9/hCTgBAAA8w9/hCTwBAAA8w9/hCQABQAA8w9/hCQQBQAA8w9/hCQgBQAA8w9/hCQwBQAA8w9/hCRABQAA8w9/hCRQBQAA8w9/hCRgBQAA8w9/hCRwBQAA8w9/hCSABQAAjaQkkAUAALgAAAAAugAAAAAxyWYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ww=="
 .p2align 6"#,
         vg_chacha20_block = sym super::chacha20::vg_chacha20_block::vg_chacha20_block,
-        vg_poly1305_init = sym super::poly1305::vg_poly1305_init,
-        vg_poly1305_blocks = sym super::poly1305::vg_poly1305_blocks::vg_poly1305_blocks,
+        vg_poly1305_init_core = sym super::poly1305::vg_poly1305_init_core::vg_poly1305_init_core,
         vg_chacha20_xor_ssse3 = sym super::chacha20::vg_chacha20_xor_ssse3::vg_chacha20_xor_ssse3,
+        vg_poly1305_blocks = sym super::poly1305::vg_poly1305_blocks::vg_poly1305_blocks,
         vg_poly1305_finalize_scratch = sym super::poly1305::vg_poly1305_finalize_scratch::vg_poly1305_finalize_scratch,
     )
 }
@@ -80,6 +115,8 @@ pub const VG_CHACHA20_POLY1305_OPEN_SSSE3_FEATURES: verified_garbage_cpu::Featur
 ///
 /// Contract: `VG.Spec.ChaCha20Poly1305.openZeroContract`. Constant time but for the result: only the pointers, the lengths and whether the function returns 1 or 0 may affect timing, not the key, the nonce, the additional data, the tag or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety
@@ -90,68 +127,101 @@ pub const VG_CHACHA20_POLY1305_OPEN_SSSE3_FEATURES: verified_garbage_cpu::Featur
 /// * `data` must be valid for reads and writes of `len` bytes.
 /// * `tag` must be valid for reads of 16 bytes.
 /// * `data` must not overlap `key`, `nonce`, `aad` or `tag` (distinct Rust objects never do).
-/// * None of `key`, `nonce`, `aad`, `data` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 772 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `key`, `nonce`, `aad`, `data` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 1424 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `ssse3` target feature.
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_open_ssse3(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
-        r#".base64 "jaQkHP3//4uEJOgCAACJRCQEi4Qk7AIAAIlEJAiLhCTwAgAAiUQkDIuEJPQCAACJRCQQi4Qk+AIAAIlEJBSLhCT8AgAAiUQkGIuEJAADAACJRCQcieCDwCSJRCQgi0QkIItMJBSJTCQgiRiJcASJeAiJaAyJx4tMJASLVCQIuGV4cGGJR0C4bmQgM4lHRLgyLWJ5iUdIuHRlIGuJR0yLAYlHUItBBIlHVItBCIlHWItBDIlHXItBEIlHYItBFIlHZItBGIlHaItBHIlHbLgAAAAAiUdwiwKJR3SLQgSJR3iLQgiJR3yJ+YPBQIn6gcKAAAAAUlE="
+        r#".base64 "jaQkjPz//4uEJHgDAACJRCQEi4QkfAMAAIlEJAiLhCSAAwAAiUQkDIuEJIQDAACJRCQQi4QkiAMAAIlEJBSLhCSMAwAAiUQkGIuEJJADAACJRCQcieCDwCSJRCQgi0QkIItMJBSJTCQgiRiJcASJeAiJaAyJx4tMJASLVCQIuGV4cGGJR0C4bmQgM4lHRLgyLWJ5iUdIuHRlIGuJR0yLAYlHUItBBIlHVItBCIlHWItBDIlHXItBEIlHYItBFIlHZItBGIlHaItBHIlHbLgAAAAAiUdwiwKJR3SLQgSJR3iLQgiJR3yJ+YPBQIn6gcKAAAAAi0QkGIPoAT3AAAAA"
+jb 20f
+.base64 "UlE="
 call {vg_chacha20_block}
 .base64 "WFiJ+YHBgAAAAIn6gcLAAQAAUVI="
-call {vg_poly1305_init}
-.base64 "WFiLXCQMi2wkEInowegEifmBwcABAABQU1E="
+call {vg_poly1305_init_core}
+.base64 "WFg="
+jmp 21f
+20:
+.base64 "Zg/vwPMPf4dAAgAA8w9/h1ACAADzD3+HYAIAAPMPf4dwAgAA8w9/h4ACAADzD3+HkAIAAPMPf4egAgAA8w9/h7ACAADzD3+HwAIAAPMPf4fQAgAA8w9/h+ACAADzD3+H8AIAAPMPf4cAAwAA8w9/hxADAADzD3+HIAMAAPMPf4cwAwAAifiDwECJ+YHBQAIAALoAAQAAifuBw4AAAACJzlNSUVA="
+call {vg_chacha20_xor_ssse3}
+.base64 "WFhYWIn5gcFAAgAAifqBwsABAABRUg=="
+call {vg_poly1305_init_core}
+.base64 "WFg="
+21:
+.base64 "i1wkDItsJBCJ6MHoBIn5gcHAAQAAUFNR"
 call {vg_poly1305_blocks}
 .base64 "WFhYieqD4g8="
-je 20f
+je 22f
 .base64 "ie4p1gHeuAAAAACJRzCJRzSJRziJRzyJ+YPBMA=="
-22:
+24:
 .base64 "D7YGiAGDxgGDwQGD6gE="
-jne 22b
+jne 24b
 .base64 "uAEAAACJ+YPBMIn6gcLAAQAAUFFS"
 call {vg_poly1305_blocks}
 .base64 "WFhY"
-jmp 21f
-20:
-21:
+jmp 23f
+22:
+23:
 .base64 "i1wkFItsJBiJ6MHoBIn5gcHAAQAAUFNR"
 call {vg_poly1305_blocks}
 .base64 "WFhYieqD4g8="
-je 23f
+je 25f
 .base64 "ie4p1gHeuAAAAACJRzCJRzSJRziJRzyJ+YPBMA=="
-25:
+27:
 .base64 "D7YGiAGDxgGDwQGD6gE="
-jne 25b
+jne 27b
 .base64 "uAEAAACJ+YPBMIn6gcLAAQAAUFFS"
 call {vg_poly1305_blocks}
 .base64 "WFhY"
-jmp 24f
-23:
-24:
+jmp 26f
+25:
+26:
 .base64 "i0QkEIlHIItEJBiJRyi4AAAAAIlHJIlHLLgBAAAAifmDwSCJ+oHCwAEAAFBRUg=="
 call {vg_poly1305_blocks}
-.base64 "WFhYuAEAAACJR3CJ+IPAQItMJBSLVCQYifuBw4AAAACLdCQgU1JRUA=="
+.base64 "WFhYi0QkGIPoAT3AAAAA"
+jb 28f
+.base64 "uAEAAACJR3CJ+IPAQItMJBSLVCQYifuBw4AAAACLdCQgU1JRUA=="
 call {vg_chacha20_xor_ssse3}
-.base64 "WFhYWIn7gcNAAgAAifmDwRC4AAAAAIn+gcbAAQAAU1FQUFY="
-call {vg_poly1305_finalize_scratch}
-.base64 "WFhYWFiLVCQci0cQMwKLTxQzSgQJyItPGDNKCAnIi08cM0oMCciD+AG4AAAAAIPQAIP4AA=="
-je 26f
-jmp 27f
-26:
-.base64 "i0wkIItUJBiD+gA="
-je 28f
-210:
-.base64 "iAGDwQGD6gE="
-jne 210b
+.base64 "WFhYWA=="
 jmp 29f
 28:
+.base64 "i3QkFItUJCCLTCQYif2BxYACAACD+RA="
+jb 210f
+212:
+.base64 "8w9vJvMPb20AZg/v5fMPfyKDxhCDwhCDxRCD6RCD+RA="
+jae 212b
+jmp 211f
+210:
+211:
+.base64 "hck="
+je 213f
+215:
+.base64 "D7YGM0UAiAKDxgGDwgGDxQGD6QE="
+jne 215b
+jmp 214f
+213:
+214:
 29:
-27:
-.base64 "ix+LdwSLbwyLfwi5AAAAAIlMJCSJTCQoiUwkLIlMJDCJTCQ0iUwkOIlMJDyJTCRAiUwkRIlMJEiJTCRMiUwkUIlMJFSJTCRYiUwkXIlMJGCJTCRkiUwkaIlMJGyJTCRwiUwkdIlMJHiJTCR8iYwkgAAAAImMJIQAAACJjCSIAAAAiYwkjAAAAImMJJAAAACJjCSUAAAAiYwkmAAAAImMJJwAAACJjCSgAAAAiYwkpAAAAImMJKgAAACJjCSsAAAAiYwksAAAAImMJLQAAACJjCS4AAAAiYwkvAAAAImMJMAAAACJjCTEAAAAiYwkyAAAAImMJMwAAACJjCTQAAAAiYwk1AAAAImMJNgAAACJjCTcAAAAiYwk4AAAAImMJOQAAACJjCToAAAAiYwk7AAAAImMJPAAAACJjCT0AAAAiYwk+AAAAImMJPwAAACJjCQAAQAAiYwkBAEAAImMJAgBAACJjCQMAQAAiYwkEAEAAImMJBQBAACJjCQYAQAAiYwkHAEAAImMJCABAACJjCQkAQAAiYwkKAEAAImMJCwBAACJjCQwAQAAiYwkNAEAAImMJDgBAACJjCQ8AQAAiYwkQAEAAImMJEQBAACJjCRIAQAAiYwkTAEAAImMJFABAACJjCRUAQAAiYwkWAEAAImMJFwBAACJjCRgAQAAiYwkZAEAAImMJGgBAACJjCRsAQAAiYwkcAEAAImMJHQBAACJjCR4AQAAiYwkfAEAAImMJIABAACJjCSEAQAAiYwkiAEAAImMJIwBAACJjCSQAQAAiYwklAEAAImMJJgBAACJjCScAQAAiYwkoAEAAImMJKQBAACJjCSoAQAAiYwkrAEAAImMJLABAACJjCS0AQAAiYwkuAEAAImMJLwBAACJjCTAAQAAiYwkxAEAAImMJMgBAACJjCTMAQAAiYwk0AEAAImMJNQBAACJjCTYAQAAiYwk3AEAAImMJOABAACJjCTkAQAAiYwk6AEAAImMJOwBAACJjCTwAQAAiYwk9AEAAImMJPgBAACJjCT8AQAAiYwkAAIAAImMJAQCAACJjCQIAgAAiYwkDAIAAImMJBACAACJjCQUAgAAiYwkGAIAAImMJBwCAACJjCQgAgAAiYwkJAIAAImMJCgCAACJjCQsAgAAiYwkMAIAAImMJDQCAACJjCQ4AgAAiYwkPAIAAImMJEACAACJjCREAgAAiYwkSAIAAImMJEwCAACJjCRQAgAAiYwkVAIAAImMJFgCAACJjCRcAgAAiYwkYAIAAImMJGQCAACJjCRoAgAAiYwkbAIAAImMJHACAACJjCR0AgAAiYwkeAIAAImMJHwCAACJjCSAAgAAiYwkhAIAAImMJIgCAACJjCSMAgAAiYwkkAIAAImMJJQCAACJjCSYAgAAiYwknAIAAImMJKACAACJjCSkAgAAiYwkqAIAAImMJKwCAACJjCSwAgAAiYwktAIAAImMJLgCAACJjCS8AgAAiYwkwAIAAImMJMQCAACJjCTIAgAAiYwkzAIAAImMJNACAACJjCTUAgAAiYwk2AIAAImMJNwCAACJjCTgAgAAjaQk5AIAAMM="
+.base64 "ifuBw0ACAACJ+YPBELgAAAAAif6BxsABAABTUVBQVg=="
+call {vg_poly1305_finalize_scratch}
+.base64 "WFhYWFiLVCQci0cQMwKLTxQzSgQJyItPGDNKCAnIi08cM0oMCciD+AG4AAAAAIPQAIP4AA=="
+je 216f
+jmp 217f
+216:
+.base64 "i0wkIItUJBiD+gA="
+je 218f
+220:
+.base64 "iAGDwQGD6gE="
+jne 220b
+jmp 219f
+218:
+219:
+217:
+.base64 "ix+LdwSLbwyLfwiNpCR0AwAAZg/vwI2kJHD6///zD38EJPMPf0QkEPMPf0QkIPMPf0QkMPMPf0QkQPMPf0QkUPMPf0QkYPMPf0QkcPMPf4QkgAAAAPMPf4QkkAAAAPMPf4QkoAAAAPMPf4QksAAAAPMPf4QkwAAAAPMPf4Qk0AAAAPMPf4Qk4AAAAPMPf4Qk8AAAAPMPf4QkAAEAAPMPf4QkEAEAAPMPf4QkIAEAAPMPf4QkMAEAAPMPf4QkQAEAAPMPf4QkUAEAAPMPf4QkYAEAAPMPf4QkcAEAAPMPf4QkgAEAAPMPf4QkkAEAAPMPf4QkoAEAAPMPf4QksAEAAPMPf4QkwAEAAPMPf4Qk0AEAAPMPf4Qk4AEAAPMPf4Qk8AEAAPMPf4QkAAIAAPMPf4QkEAIAAPMPf4QkIAIAAPMPf4QkMAIAAPMPf4QkQAIAAPMPf4QkUAIAAPMPf4QkYAIAAPMPf4QkcAIAAPMPf4QkgAIAAPMPf4QkkAIAAPMPf4QkoAIAAPMPf4QksAIAAPMPf4QkwAIAAPMPf4Qk0AIAAPMPf4Qk4AIAAPMPf4Qk8AIAAPMPf4QkAAMAAPMPf4QkEAMAAPMPf4QkIAMAAPMPf4QkMAMAAPMPf4QkQAMAAPMPf4QkUAMAAPMPf4QkYAMAAPMPf4QkcAMAAPMPf4QkgAMAAPMPf4QkkAMAAPMPf4QkoAMAAPMPf4QksAMAAPMPf4QkwAMAAPMPf4Qk0AMAAPMPf4Qk4AMAAPMPf4Qk8AMAAPMPf4QkAAQAAPMPf4QkEAQAAPMPf4QkIAQAAPMPf4QkMAQAAPMPf4QkQAQAAPMPf4QkUAQAAPMPf4QkYAQAAPMPf4QkcAQAAPMPf4QkgAQAAPMPf4QkkAQAAPMPf4QkoAQAAPMPf4QksAQAAPMPf4QkwAQAAPMPf4Qk0AQAAPMPf4Qk4AQAAPMPf4Qk8AQAAPMPf4QkAAUAAPMPf4QkEAUAAPMPf4QkIAUAAPMPf4QkMAUAAPMPf4QkQAUAAPMPf4QkUAUAAPMPf4QkYAUAAPMPf4QkcAUAAPMPf4QkgAUAAI2kJJAFAAC6AAAAADHJZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7//D"
 .p2align 6"#,
         vg_chacha20_block = sym super::chacha20::vg_chacha20_block::vg_chacha20_block,
-        vg_poly1305_init = sym super::poly1305::vg_poly1305_init,
-        vg_poly1305_blocks = sym super::poly1305::vg_poly1305_blocks::vg_poly1305_blocks,
+        vg_poly1305_init_core = sym super::poly1305::vg_poly1305_init_core::vg_poly1305_init_core,
         vg_chacha20_xor_ssse3 = sym super::chacha20::vg_chacha20_xor_ssse3::vg_chacha20_xor_ssse3,
+        vg_poly1305_blocks = sym super::poly1305::vg_poly1305_blocks::vg_poly1305_blocks,
         vg_poly1305_finalize_scratch = sym super::poly1305::vg_poly1305_finalize_scratch::vg_poly1305_finalize_scratch,
     )
 }
@@ -163,6 +233,8 @@ pub const VG_CHACHA20_POLY1305_OPEN_TO_SSSE3_FEATURES: verified_garbage_cpu::Fea
 ///
 /// Contract: `VG.Spec.ChaCha20Poly1305.openToContract`. Constant time but for the result: only the pointers, the lengths and whether the function returns 1 or 0 may affect timing, not the key, the nonce, the additional data, the tag or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety
@@ -176,68 +248,101 @@ pub const VG_CHACHA20_POLY1305_OPEN_TO_SSSE3_FEATURES: verified_garbage_cpu::Fea
 /// * `dst_len` must equal `len`.
 /// * `len` must be at most `P_MAX`, 2³² − 1 blocks of 64 bytes (RFC 8439 §2.8).
 /// * `dst` must not overlap `key`, `nonce`, `aad`, `src` or `tag` (distinct Rust objects never do).
-/// * None of `key`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 780 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `key`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 1432 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `ssse3` target feature.
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_open_to_ssse3(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
-        r#".base64 "jaQkFP3//4uEJPACAACJRCQEi4Qk9AIAAIlEJAiLhCT4AgAAiUQkDIuEJPwCAACJRCQQi4QkAAMAAIlEJBSLhCQEAwAAiUQkGIuEJAgDAACJRCQci4QkDAMAAIlEJCCLhCQQAwAAiUQkJIngg8AsiUQkKItMJByLVCQki0QkKIlUJByJTCQgiRiJcASJeAiJaAyJx4tMJASLVCQIuGV4cGGJR0C4bmQgM4lHRLgyLWJ5iUdIuHRlIGuJR0yLAYlHUItBBIlHVItBCIlHWItBDIlHXItBEIlHYItBFIlHZItBGIlHaItBHIlHbLgAAAAAiUdwiwKJR3SLQgSJR3iLQgiJR3yJ+YPBQIn6gcKAAAAAUlE="
+        r#".base64 "jaQkhPz//4uEJIADAACJRCQEi4QkhAMAAIlEJAiLhCSIAwAAiUQkDIuEJIwDAACJRCQQi4QkkAMAAIlEJBSLhCSUAwAAiUQkGIuEJJgDAACJRCQci4QknAMAAIlEJCCLhCSgAwAAiUQkJIngg8AsiUQkKItMJByLVCQki0QkKIlUJByJTCQgiRiJcASJeAiJaAyJx4tMJASLVCQIuGV4cGGJR0C4bmQgM4lHRLgyLWJ5iUdIuHRlIGuJR0yLAYlHUItBBIlHVItBCIlHWItBDIlHXItBEIlHYItBFIlHZItBGIlHaItBHIlHbLgAAAAAiUdwiwKJR3SLQgSJR3iLQgiJR3yJ+YPBQIn6gcKAAAAAi0QkGIPoAT3AAAAA"
+jb 20f
+.base64 "UlE="
 call {vg_chacha20_block}
 .base64 "WFiJ+YHBgAAAAIn6gcLAAQAAUVI="
-call {vg_poly1305_init}
-.base64 "WFiLXCQMi2wkEInowegEifmBwcABAABQU1E="
+call {vg_poly1305_init_core}
+.base64 "WFg="
+jmp 21f
+20:
+.base64 "Zg/vwPMPf4dAAgAA8w9/h1ACAADzD3+HYAIAAPMPf4dwAgAA8w9/h4ACAADzD3+HkAIAAPMPf4egAgAA8w9/h7ACAADzD3+HwAIAAPMPf4fQAgAA8w9/h+ACAADzD3+H8AIAAPMPf4cAAwAA8w9/hxADAADzD3+HIAMAAPMPf4cwAwAAifiDwECJ+YHBQAIAALoAAQAAifuBw4AAAACJzlNSUVA="
+call {vg_chacha20_xor_ssse3}
+.base64 "WFhYWIn5gcFAAgAAifqBwsABAABRUg=="
+call {vg_poly1305_init_core}
+.base64 "WFg="
+21:
+.base64 "i1wkDItsJBCJ6MHoBIn5gcHAAQAAUFNR"
 call {vg_poly1305_blocks}
 .base64 "WFhYieqD4g8="
-je 20f
+je 22f
 .base64 "ie4p1gHeuAAAAACJRzCJRzSJRziJRzyJ+YPBMA=="
-22:
+24:
 .base64 "D7YGiAGDxgGDwQGD6gE="
-jne 22b
+jne 24b
 .base64 "uAEAAACJ+YPBMIn6gcLAAQAAUFFS"
 call {vg_poly1305_blocks}
 .base64 "WFhY"
-jmp 21f
-20:
-21:
+jmp 23f
+22:
+23:
 .base64 "i1wkFItsJBiJ6MHoBIn5gcHAAQAAUFNR"
 call {vg_poly1305_blocks}
 .base64 "WFhYieqD4g8="
-je 23f
+je 25f
 .base64 "ie4p1gHeuAAAAACJRzCJRzSJRziJRzyJ+YPBMA=="
-25:
+27:
 .base64 "D7YGiAGDxgGDwQGD6gE="
-jne 25b
+jne 27b
 .base64 "uAEAAACJ+YPBMIn6gcLAAQAAUFFS"
 call {vg_poly1305_blocks}
 .base64 "WFhY"
-jmp 24f
-23:
-24:
+jmp 26f
+25:
+26:
 .base64 "i0QkEIlHIItEJBiJRyi4AAAAAIlHJIlHLLgBAAAAifmDwSCJ+oHCwAEAAFBRUg=="
 call {vg_poly1305_blocks}
-.base64 "WFhYuAEAAACJR3CJ+IPAQItMJBSLVCQYifuBw4AAAACLdCQgU1JRUA=="
+.base64 "WFhYi0QkGIPoAT3AAAAA"
+jb 28f
+.base64 "uAEAAACJR3CJ+IPAQItMJBSLVCQYifuBw4AAAACLdCQgU1JRUA=="
 call {vg_chacha20_xor_ssse3}
-.base64 "WFhYWIn7gcNAAgAAifmDwRC4AAAAAIn+gcbAAQAAU1FQUFY="
-call {vg_poly1305_finalize_scratch}
-.base64 "WFhYWFiLVCQci0cQMwKLTxQzSgQJyItPGDNKCAnIi08cM0oMCciD+AG4AAAAAIPQAIP4AA=="
-je 26f
-jmp 27f
-26:
-.base64 "i0wkIItUJBiD+gA="
-je 28f
-210:
-.base64 "iAGDwQGD6gE="
-jne 210b
+.base64 "WFhYWA=="
 jmp 29f
 28:
+.base64 "i3QkFItUJCCLTCQYif2BxYACAACD+RA="
+jb 210f
+212:
+.base64 "8w9vJvMPb20AZg/v5fMPfyKDxhCDwhCDxRCD6RCD+RA="
+jae 212b
+jmp 211f
+210:
+211:
+.base64 "hck="
+je 213f
+215:
+.base64 "D7YGM0UAiAKDxgGDwgGDxQGD6QE="
+jne 215b
+jmp 214f
+213:
+214:
 29:
-27:
-.base64 "ix+LdwSLbwyLfwi5AAAAAIlMJCyJTCQwiUwkNIlMJDiJTCQ8iUwkQIlMJESJTCRIiUwkTIlMJFCJTCRUiUwkWIlMJFyJTCRgiUwkZIlMJGiJTCRsiUwkcIlMJHSJTCR4iUwkfImMJIAAAACJjCSEAAAAiYwkiAAAAImMJIwAAACJjCSQAAAAiYwklAAAAImMJJgAAACJjCScAAAAiYwkoAAAAImMJKQAAACJjCSoAAAAiYwkrAAAAImMJLAAAACJjCS0AAAAiYwkuAAAAImMJLwAAACJjCTAAAAAiYwkxAAAAImMJMgAAACJjCTMAAAAiYwk0AAAAImMJNQAAACJjCTYAAAAiYwk3AAAAImMJOAAAACJjCTkAAAAiYwk6AAAAImMJOwAAACJjCTwAAAAiYwk9AAAAImMJPgAAACJjCT8AAAAiYwkAAEAAImMJAQBAACJjCQIAQAAiYwkDAEAAImMJBABAACJjCQUAQAAiYwkGAEAAImMJBwBAACJjCQgAQAAiYwkJAEAAImMJCgBAACJjCQsAQAAiYwkMAEAAImMJDQBAACJjCQ4AQAAiYwkPAEAAImMJEABAACJjCREAQAAiYwkSAEAAImMJEwBAACJjCRQAQAAiYwkVAEAAImMJFgBAACJjCRcAQAAiYwkYAEAAImMJGQBAACJjCRoAQAAiYwkbAEAAImMJHABAACJjCR0AQAAiYwkeAEAAImMJHwBAACJjCSAAQAAiYwkhAEAAImMJIgBAACJjCSMAQAAiYwkkAEAAImMJJQBAACJjCSYAQAAiYwknAEAAImMJKABAACJjCSkAQAAiYwkqAEAAImMJKwBAACJjCSwAQAAiYwktAEAAImMJLgBAACJjCS8AQAAiYwkwAEAAImMJMQBAACJjCTIAQAAiYwkzAEAAImMJNABAACJjCTUAQAAiYwk2AEAAImMJNwBAACJjCTgAQAAiYwk5AEAAImMJOgBAACJjCTsAQAAiYwk8AEAAImMJPQBAACJjCT4AQAAiYwk/AEAAImMJAACAACJjCQEAgAAiYwkCAIAAImMJAwCAACJjCQQAgAAiYwkFAIAAImMJBgCAACJjCQcAgAAiYwkIAIAAImMJCQCAACJjCQoAgAAiYwkLAIAAImMJDACAACJjCQ0AgAAiYwkOAIAAImMJDwCAACJjCRAAgAAiYwkRAIAAImMJEgCAACJjCRMAgAAiYwkUAIAAImMJFQCAACJjCRYAgAAiYwkXAIAAImMJGACAACJjCRkAgAAiYwkaAIAAImMJGwCAACJjCRwAgAAiYwkdAIAAImMJHgCAACJjCR8AgAAiYwkgAIAAImMJIQCAACJjCSIAgAAiYwkjAIAAImMJJACAACJjCSUAgAAiYwkmAIAAImMJJwCAACJjCSgAgAAiYwkpAIAAImMJKgCAACJjCSsAgAAiYwksAIAAImMJLQCAACJjCS4AgAAiYwkvAIAAImMJMACAACJjCTEAgAAiYwkyAIAAImMJMwCAACJjCTQAgAAiYwk1AIAAImMJNgCAACJjCTcAgAAiYwk4AIAAImMJOQCAACJjCToAgAAjaQk7AIAAMM="
+.base64 "ifuBw0ACAACJ+YPBELgAAAAAif6BxsABAABTUVBQVg=="
+call {vg_poly1305_finalize_scratch}
+.base64 "WFhYWFiLVCQci0cQMwKLTxQzSgQJyItPGDNKCAnIi08cM0oMCciD+AG4AAAAAIPQAIP4AA=="
+je 216f
+jmp 217f
+216:
+.base64 "i0wkIItUJBiD+gA="
+je 218f
+220:
+.base64 "iAGDwQGD6gE="
+jne 220b
+jmp 219f
+218:
+219:
+217:
+.base64 "ix+LdwSLbwyLfwiNpCR8AwAAZg/vwLkAAAAAjaQkaPr///MPfwQk8w9/RCQQ8w9/RCQg8w9/RCQw8w9/RCRA8w9/RCRQ8w9/RCRg8w9/RCRw8w9/hCSAAAAA8w9/hCSQAAAA8w9/hCSgAAAA8w9/hCSwAAAA8w9/hCTAAAAA8w9/hCTQAAAA8w9/hCTgAAAA8w9/hCTwAAAA8w9/hCQAAQAA8w9/hCQQAQAA8w9/hCQgAQAA8w9/hCQwAQAA8w9/hCRAAQAA8w9/hCRQAQAA8w9/hCRgAQAA8w9/hCRwAQAA8w9/hCSAAQAA8w9/hCSQAQAA8w9/hCSgAQAA8w9/hCSwAQAA8w9/hCTAAQAA8w9/hCTQAQAA8w9/hCTgAQAA8w9/hCTwAQAA8w9/hCQAAgAA8w9/hCQQAgAA8w9/hCQgAgAA8w9/hCQwAgAA8w9/hCRAAgAA8w9/hCRQAgAA8w9/hCRgAgAA8w9/hCRwAgAA8w9/hCSAAgAA8w9/hCSQAgAA8w9/hCSgAgAA8w9/hCSwAgAA8w9/hCTAAgAA8w9/hCTQAgAA8w9/hCTgAgAA8w9/hCTwAgAA8w9/hCQAAwAA8w9/hCQQAwAA8w9/hCQgAwAA8w9/hCQwAwAA8w9/hCRAAwAA8w9/hCRQAwAA8w9/hCRgAwAA8w9/hCRwAwAA8w9/hCSAAwAA8w9/hCSQAwAA8w9/hCSgAwAA8w9/hCSwAwAA8w9/hCTAAwAA8w9/hCTQAwAA8w9/hCTgAwAA8w9/hCTwAwAA8w9/hCQABAAA8w9/hCQQBAAA8w9/hCQgBAAA8w9/hCQwBAAA8w9/hCRABAAA8w9/hCRQBAAA8w9/hCRgBAAA8w9/hCRwBAAA8w9/hCSABAAA8w9/hCSQBAAA8w9/hCSgBAAA8w9/hCSwBAAA8w9/hCTABAAA8w9/hCTQBAAA8w9/hCTgBAAA8w9/hCTwBAAA8w9/hCQABQAA8w9/hCQQBQAA8w9/hCQgBQAA8w9/hCQwBQAA8w9/hCRABQAA8w9/hCRQBQAA8w9/hCRgBQAA8w9/hCRwBQAA8w9/hCSABQAAiYwkkAUAAImMJJQFAACNpCSYBQAAugAAAAAxyWYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ww=="
 .p2align 6"#,
         vg_chacha20_block = sym super::chacha20::vg_chacha20_block::vg_chacha20_block,
-        vg_poly1305_init = sym super::poly1305::vg_poly1305_init,
-        vg_poly1305_blocks = sym super::poly1305::vg_poly1305_blocks::vg_poly1305_blocks,
+        vg_poly1305_init_core = sym super::poly1305::vg_poly1305_init_core::vg_poly1305_init_core,
         vg_chacha20_xor_ssse3 = sym super::chacha20::vg_chacha20_xor_ssse3::vg_chacha20_xor_ssse3,
+        vg_poly1305_blocks = sym super::poly1305::vg_poly1305_blocks::vg_poly1305_blocks,
         vg_poly1305_finalize_scratch = sym super::poly1305::vg_poly1305_finalize_scratch::vg_poly1305_finalize_scratch,
     )
 }
@@ -249,6 +354,8 @@ pub const VG_CHACHA20_POLY1305_SEAL_GATHER_SSSE3_FEATURES: verified_garbage_cpu:
 ///
 /// Contract: `VG.Spec.ChaCha20Poly1305.sealGatherContract`. Constant time: only the pointers, the lengths, `src_count` and where the slices are (their addresses and lengths) may affect timing, not the key, the nonce, the additional data or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety
@@ -262,7 +369,7 @@ pub const VG_CHACHA20_POLY1305_SEAL_GATHER_SSSE3_FEATURES: verified_garbage_cpu:
 /// * The slices `src` lists must be `len` bytes long in all.
 /// * `len` must be at most `P_MAX`, 2³² − 1 blocks of 64 bytes (RFC 8439 §2.8).
 /// * `dst` and `tag` must not overlap each other, `key`, `nonce`, `aad`, `src` or the slices `src` lists (distinct Rust objects never do).
-/// * None of `key`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 824 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `key`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 1476 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `ssse3` target feature.
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_seal_gather_ssse3(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
@@ -270,37 +377,47 @@ pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_seal_gather_ssse3(key: *con
         r#".base64 "jWQk0IlcJCSJdCQoiXwkLItEJDSJBCSLRCQ4iUQkBItEJDyJRCQIi0QkQIlEJAyLRCRMiUQkEItEJFCJRCQUi0QkVIlEJBiLdCREi1wkSItUJEyD+wA="
 je 20f
 22:
-.base64 "iz6LTgTB6QKD+QA="
+.base64 "iz6LTgTB6QSD+QA="
 je 23f
 25:
-.base64 "iweJAoPHBIPCBIPpAQ=="
+.base64 "8w9vB/MPfwKDxxCDwhCD6QE="
 jne 25b
 jmp 24f
 23:
 24:
-.base64 "i04Eg+ED"
+.base64 "i04EwekCg+ED"
 je 26f
 28:
-.base64 "D7YHiAKDxwGDwgGD6QE="
+.base64 "iweJAoPHBIPCBIPpAQ=="
 jne 28b
 jmp 27f
 26:
 27:
+.base64 "i04Eg+ED"
+je 29f
+211:
+.base64 "D7YHiAKDxwGDwgGD6QE="
+jne 211b
+jmp 210f
+29:
+210:
 .base64 "g8YIg+sB"
 jne 22b
 jmp 21f
 20:
 21:
-call {vg_chacha20_poly1305_seal_ssse3}
-.base64 "i1wkJIt0JCiLfCQsjWQkMMM="
+call {vg_chacha20_poly1305_seal_core_ssse3}
+.base64 "i1wkJIt0JCiLfCQsjWQkMGYP78C5AAAAAI2kJDz6///zD38EJPMPf0QkEPMPf0QkIPMPf0QkMPMPf0QkQPMPf0QkUPMPf0QkYPMPf0QkcPMPf4QkgAAAAPMPf4QkkAAAAPMPf4QkoAAAAPMPf4QksAAAAPMPf4QkwAAAAPMPf4Qk0AAAAPMPf4Qk4AAAAPMPf4Qk8AAAAPMPf4QkAAEAAPMPf4QkEAEAAPMPf4QkIAEAAPMPf4QkMAEAAPMPf4QkQAEAAPMPf4QkUAEAAPMPf4QkYAEAAPMPf4QkcAEAAPMPf4QkgAEAAPMPf4QkkAEAAPMPf4QkoAEAAPMPf4QksAEAAPMPf4QkwAEAAPMPf4Qk0AEAAPMPf4Qk4AEAAPMPf4Qk8AEAAPMPf4QkAAIAAPMPf4QkEAIAAPMPf4QkIAIAAPMPf4QkMAIAAPMPf4QkQAIAAPMPf4QkUAIAAPMPf4QkYAIAAPMPf4QkcAIAAPMPf4QkgAIAAPMPf4QkkAIAAPMPf4QkoAIAAPMPf4QksAIAAPMPf4QkwAIAAPMPf4Qk0AIAAPMPf4Qk4AIAAPMPf4Qk8AIAAPMPf4QkAAMAAPMPf4QkEAMAAPMPf4QkIAMAAPMPf4QkMAMAAPMPf4QkQAMAAPMPf4QkUAMAAPMPf4QkYAMAAPMPf4QkcAMAAPMPf4QkgAMAAPMPf4QkkAMAAPMPf4QkoAMAAPMPf4QksAMAAPMPf4QkwAMAAPMPf4Qk0AMAAPMPf4Qk4AMAAPMPf4Qk8AMAAPMPf4QkAAQAAPMPf4QkEAQAAPMPf4QkIAQAAPMPf4QkMAQAAPMPf4QkQAQAAPMPf4QkUAQAAPMPf4QkYAQAAPMPf4QkcAQAAPMPf4QkgAQAAPMPf4QkkAQAAPMPf4QkoAQAAPMPf4QksAQAAPMPf4QkwAQAAPMPf4Qk0AQAAPMPf4Qk4AQAAPMPf4Qk8AQAAPMPf4QkAAUAAPMPf4QkEAUAAPMPf4QkIAUAAPMPf4QkMAUAAPMPf4QkQAUAAPMPf4QkUAUAAPMPf4QkYAUAAPMPf4QkcAUAAPMPf4QkgAUAAPMPf4QkkAUAAPMPf4QkoAUAAPMPf4QksAUAAImMJMAFAACNpCTEBQAAuAAAAAC6AAAAADHJZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7//D"
 .p2align 6"#,
-        vg_chacha20_poly1305_seal_ssse3 = sym super::chacha20poly1305::vg_chacha20_poly1305_seal_ssse3,
+        vg_chacha20_poly1305_seal_core_ssse3 = sym super::chacha20::vg_chacha20_poly1305_seal_core_ssse3::vg_chacha20_poly1305_seal_core_ssse3,
     )
 }
 
 /// ChaCha20-Poly1305 encryption (RFC 8439 §2.8): with the key `*key` and the nonce `*nonce`, encrypts the `len` bytes at `data` in place and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`.
 ///
 /// Contract: `VG.Spec.ChaCha20Poly1305.sealContract`. Constant time: only the pointers and the lengths may affect timing, not the key, the nonce or the data. The block counter wraps around beyond 2³²-1 blocks of data (RFC 8439's `P_MAX`), which the caller must not exceed for the construction to be secure.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -312,54 +429,87 @@ call {vg_chacha20_poly1305_seal_ssse3}
 /// * `data` must be valid for reads and writes of `len` bytes.
 /// * `tag` must be valid for reads and writes of 16 bytes.
 /// * `data` and `tag` must not overlap each other, `key`, `nonce` or `aad` (distinct Rust objects never do).
-/// * None of `key`, `nonce`, `aad`, `data` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 772 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `key`, `nonce`, `aad`, `data` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 1424 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_seal(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        r#".base64 "jaQkHP3//4uEJOgCAACJRCQEi4Qk7AIAAIlEJAiLhCTwAgAAiUQkDIuEJPQCAACJRCQQi4Qk+AIAAIlEJBSLhCT8AgAAiUQkGIuEJAADAACJRCQcieCDwCSJRCQgi0QkIItMJBSJTCQgiRiJcASJeAiJaAyJx4tMJASLVCQIuGV4cGGJR0C4bmQgM4lHRLgyLWJ5iUdIuHRlIGuJR0yLAYlHUItBBIlHVItBCIlHWItBDIlHXItBEIlHYItBFIlHZItBGIlHaItBHIlHbLgAAAAAiUdwiwKJR3SLQgSJR3iLQgiJR3yJ+YPBQIn6gcKAAAAAUlE="
+        r#".base64 "jaQkjPz//4uEJHgDAACJRCQEi4QkfAMAAIlEJAiLhCSAAwAAiUQkDIuEJIQDAACJRCQQi4QkiAMAAIlEJBSLhCSMAwAAiUQkGIuEJJADAACJRCQcieCDwCSJRCQgi0QkIItMJBSJTCQgiRiJcASJeAiJaAyJx4tMJASLVCQIuGV4cGGJR0C4bmQgM4lHRLgyLWJ5iUdIuHRlIGuJR0yLAYlHUItBBIlHVItBCIlHWItBDIlHXItBEIlHYItBFIlHZItBGIlHaItBHIlHbLgAAAAAiUdwiwKJR3SLQgSJR3iLQgiJR3yJ+YPBQIn6gcKAAAAAi0QkGIPoAT3AAAAA"
+jb 20f
+.base64 "UlE="
 call {vg_chacha20_block}
 .base64 "WFiJ+YHBgAAAAIn6gcLAAQAAUVI="
-call {vg_poly1305_init}
-.base64 "WFiLXCQMi2wkEInowegEifmBwcABAABQU1E="
-call {vg_poly1305_blocks}
-.base64 "WFhYieqD4g8="
-je 20f
-.base64 "ie4p1gHeuAAAAACJRzCJRzSJRziJRzyJ+YPBMA=="
-22:
-.base64 "D7YGiAGDxgGDwQGD6gE="
-jne 22b
-.base64 "uAEAAACJ+YPBMIn6gcLAAQAAUFFS"
-call {vg_poly1305_blocks}
-.base64 "WFhY"
+call {vg_poly1305_init_core}
+.base64 "WFg="
 jmp 21f
 20:
-21:
-.base64 "i0QkEIlHIItEJBiJRyi4AAAAAIlHJIlHLLgBAAAAiUdwifiDwECLTCQUi1QkGIn7gcOAAAAAi3QkIFNSUVA="
+.base64 "Zg/vwPMPf4dAAgAA8w9/h1ACAADzD3+HYAIAAPMPf4dwAgAA8w9/h4ACAADzD3+HkAIAAPMPf4egAgAA8w9/h7ACAADzD3+HwAIAAPMPf4fQAgAA8w9/h+ACAADzD3+H8AIAAPMPf4cAAwAA8w9/hxADAADzD3+HIAMAAPMPf4cwAwAAifiDwECJ+YHBQAIAALoAAQAAifuBw4AAAACJzlNSUVA="
 call {vg_chacha20_xor}
-.base64 "WFhYWItcJBSLbCQYiejB6ASJ+YHBwAEAAFBTUQ=="
+.base64 "WFhYWIn5gcFAAgAAifqBwsABAABRUg=="
+call {vg_poly1305_init_core}
+.base64 "WFg="
+21:
+.base64 "i1wkDItsJBCJ6MHoBIn5gcHAAQAAUFNR"
 call {vg_poly1305_blocks}
 .base64 "WFhYieqD4g8="
-je 23f
+je 22f
 .base64 "ie4p1gHeuAAAAACJRzCJRzSJRziJRzyJ+YPBMA=="
-25:
+24:
 .base64 "D7YGiAGDxgGDwQGD6gE="
-jne 25b
+jne 24b
 .base64 "uAEAAACJ+YPBMIn6gcLAAQAAUFFS"
 call {vg_poly1305_blocks}
 .base64 "WFhY"
-jmp 24f
+jmp 23f
+22:
 23:
-24:
+.base64 "i0QkEIlHIItEJBiJRyi4AAAAAIlHJIlHLItEJBiD6AE9wAAAAA=="
+jb 25f
+.base64 "uAEAAACJR3CJ+IPAQItMJBSLVCQYifuBw4AAAACLdCQgU1JRUA=="
+call {vg_chacha20_xor}
+.base64 "WFhYWA=="
+jmp 26f
+25:
+.base64 "i3QkFItUJCCLTCQYif2BxYACAACD+RA="
+jb 27f
+29:
+.base64 "8w9vJvMPb20AZg/v5fMPfyKDxhCDwhCDxRCD6RCD+RA="
+jae 29b
+jmp 28f
+27:
+28:
+.base64 "hck="
+je 210f
+212:
+.base64 "D7YGM0UAiAKDxgGDwgGDxQGD6QE="
+jne 212b
+jmp 211f
+210:
+211:
+26:
+.base64 "i1wkFItsJBiJ6MHoBIn5gcHAAQAAUFNR"
+call {vg_poly1305_blocks}
+.base64 "WFhYieqD4g8="
+je 213f
+.base64 "ie4p1gHeuAAAAACJRzCJRzSJRziJRzyJ+YPBMA=="
+215:
+.base64 "D7YGiAGDxgGDwQGD6gE="
+jne 215b
+.base64 "uAEAAACJ+YPBMIn6gcLAAQAAUFFS"
+call {vg_poly1305_blocks}
+.base64 "WFhY"
+jmp 214f
+213:
+214:
 .base64 "uAEAAACJ+YPBIIn6gcLAAQAAUFFS"
 call {vg_poly1305_blocks}
 .base64 "WFhYifuBw0ACAACLTCQcuAAAAACJ/oHGwAEAAFNRUFBW"
 call {vg_poly1305_finalize_scratch}
-.base64 "WFhYWFiLH4t3BItvDIt/CLkAAAAAiUwkJIlMJCiJTCQsiUwkMIlMJDSJTCQ4iUwkPIlMJECJTCREiUwkSIlMJEyJTCRQiUwkVIlMJFiJTCRciUwkYIlMJGSJTCRoiUwkbIlMJHCJTCR0iUwkeIlMJHyJjCSAAAAAiYwkhAAAAImMJIgAAACJjCSMAAAAiYwkkAAAAImMJJQAAACJjCSYAAAAiYwknAAAAImMJKAAAACJjCSkAAAAiYwkqAAAAImMJKwAAACJjCSwAAAAiYwktAAAAImMJLgAAACJjCS8AAAAiYwkwAAAAImMJMQAAACJjCTIAAAAiYwkzAAAAImMJNAAAACJjCTUAAAAiYwk2AAAAImMJNwAAACJjCTgAAAAiYwk5AAAAImMJOgAAACJjCTsAAAAiYwk8AAAAImMJPQAAACJjCT4AAAAiYwk/AAAAImMJAABAACJjCQEAQAAiYwkCAEAAImMJAwBAACJjCQQAQAAiYwkFAEAAImMJBgBAACJjCQcAQAAiYwkIAEAAImMJCQBAACJjCQoAQAAiYwkLAEAAImMJDABAACJjCQ0AQAAiYwkOAEAAImMJDwBAACJjCRAAQAAiYwkRAEAAImMJEgBAACJjCRMAQAAiYwkUAEAAImMJFQBAACJjCRYAQAAiYwkXAEAAImMJGABAACJjCRkAQAAiYwkaAEAAImMJGwBAACJjCRwAQAAiYwkdAEAAImMJHgBAACJjCR8AQAAiYwkgAEAAImMJIQBAACJjCSIAQAAiYwkjAEAAImMJJABAACJjCSUAQAAiYwkmAEAAImMJJwBAACJjCSgAQAAiYwkpAEAAImMJKgBAACJjCSsAQAAiYwksAEAAImMJLQBAACJjCS4AQAAiYwkvAEAAImMJMABAACJjCTEAQAAiYwkyAEAAImMJMwBAACJjCTQAQAAiYwk1AEAAImMJNgBAACJjCTcAQAAiYwk4AEAAImMJOQBAACJjCToAQAAiYwk7AEAAImMJPABAACJjCT0AQAAiYwk+AEAAImMJPwBAACJjCQAAgAAiYwkBAIAAImMJAgCAACJjCQMAgAAiYwkEAIAAImMJBQCAACJjCQYAgAAiYwkHAIAAImMJCACAACJjCQkAgAAiYwkKAIAAImMJCwCAACJjCQwAgAAiYwkNAIAAImMJDgCAACJjCQ8AgAAiYwkQAIAAImMJEQCAACJjCRIAgAAiYwkTAIAAImMJFACAACJjCRUAgAAiYwkWAIAAImMJFwCAACJjCRgAgAAiYwkZAIAAImMJGgCAACJjCRsAgAAiYwkcAIAAImMJHQCAACJjCR4AgAAiYwkfAIAAImMJIACAACJjCSEAgAAiYwkiAIAAImMJIwCAACJjCSQAgAAiYwklAIAAImMJJgCAACJjCScAgAAiYwkoAIAAImMJKQCAACJjCSoAgAAiYwkrAIAAImMJLACAACJjCS0AgAAiYwkuAIAAImMJLwCAACJjCTAAgAAiYwkxAIAAImMJMgCAACJjCTMAgAAiYwk0AIAAImMJNQCAACJjCTYAgAAiYwk3AIAAImMJOACAACNpCTkAgAAww=="
+.base64 "WFhYWFiLH4t3BItvDIt/CI2kJHQDAABmD+/AjaQkcPr///MPfwQk8w9/RCQQ8w9/RCQg8w9/RCQw8w9/RCRA8w9/RCRQ8w9/RCRg8w9/RCRw8w9/hCSAAAAA8w9/hCSQAAAA8w9/hCSgAAAA8w9/hCSwAAAA8w9/hCTAAAAA8w9/hCTQAAAA8w9/hCTgAAAA8w9/hCTwAAAA8w9/hCQAAQAA8w9/hCQQAQAA8w9/hCQgAQAA8w9/hCQwAQAA8w9/hCRAAQAA8w9/hCRQAQAA8w9/hCRgAQAA8w9/hCRwAQAA8w9/hCSAAQAA8w9/hCSQAQAA8w9/hCSgAQAA8w9/hCSwAQAA8w9/hCTAAQAA8w9/hCTQAQAA8w9/hCTgAQAA8w9/hCTwAQAA8w9/hCQAAgAA8w9/hCQQAgAA8w9/hCQgAgAA8w9/hCQwAgAA8w9/hCRAAgAA8w9/hCRQAgAA8w9/hCRgAgAA8w9/hCRwAgAA8w9/hCSAAgAA8w9/hCSQAgAA8w9/hCSgAgAA8w9/hCSwAgAA8w9/hCTAAgAA8w9/hCTQAgAA8w9/hCTgAgAA8w9/hCTwAgAA8w9/hCQAAwAA8w9/hCQQAwAA8w9/hCQgAwAA8w9/hCQwAwAA8w9/hCRAAwAA8w9/hCRQAwAA8w9/hCRgAwAA8w9/hCRwAwAA8w9/hCSAAwAA8w9/hCSQAwAA8w9/hCSgAwAA8w9/hCSwAwAA8w9/hCTAAwAA8w9/hCTQAwAA8w9/hCTgAwAA8w9/hCTwAwAA8w9/hCQABAAA8w9/hCQQBAAA8w9/hCQgBAAA8w9/hCQwBAAA8w9/hCRABAAA8w9/hCRQBAAA8w9/hCRgBAAA8w9/hCRwBAAA8w9/hCSABAAA8w9/hCSQBAAA8w9/hCSgBAAA8w9/hCSwBAAA8w9/hCTABAAA8w9/hCTQBAAA8w9/hCTgBAAA8w9/hCTwBAAA8w9/hCQABQAA8w9/hCQQBQAA8w9/hCQgBQAA8w9/hCQwBQAA8w9/hCRABQAA8w9/hCRQBQAA8w9/hCRgBQAA8w9/hCRwBQAA8w9/hCSABQAAjaQkkAUAALgAAAAAugAAAAAxyWYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ww=="
 .p2align 6"#,
         vg_chacha20_block = sym super::chacha20::vg_chacha20_block::vg_chacha20_block,
-        vg_poly1305_init = sym super::poly1305::vg_poly1305_init,
-        vg_poly1305_blocks = sym super::poly1305::vg_poly1305_blocks::vg_poly1305_blocks,
+        vg_poly1305_init_core = sym super::poly1305::vg_poly1305_init_core::vg_poly1305_init_core,
         vg_chacha20_xor = sym super::chacha20::vg_chacha20_xor::vg_chacha20_xor,
+        vg_poly1305_blocks = sym super::poly1305::vg_poly1305_blocks::vg_poly1305_blocks,
         vg_poly1305_finalize_scratch = sym super::poly1305::vg_poly1305_finalize_scratch::vg_poly1305_finalize_scratch,
     )
 }
@@ -367,6 +517,8 @@ call {vg_poly1305_finalize_scratch}
 /// ChaCha20-Poly1305 decryption (RFC 8439 §2.8): with the key `*key`, the nonce `*nonce` and the received tag `*tag`, returns 1 if the tag is that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, having decrypted the ciphertext in place; otherwise returns 0, and the `len` bytes at `data` are zeros. The tags are compared without a branch.
 ///
 /// Contract: `VG.Spec.ChaCha20Poly1305.openZeroContract`. Constant time but for the result: only the pointers, the lengths and whether the function returns 1 or 0 may affect timing, not the key, the nonce, the additional data, the tag or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -378,67 +530,100 @@ call {vg_poly1305_finalize_scratch}
 /// * `data` must be valid for reads and writes of `len` bytes.
 /// * `tag` must be valid for reads of 16 bytes.
 /// * `data` must not overlap `key`, `nonce`, `aad` or `tag` (distinct Rust objects never do).
-/// * None of `key`, `nonce`, `aad`, `data` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 772 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `key`, `nonce`, `aad`, `data` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 1424 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_open(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
-        r#".base64 "jaQkHP3//4uEJOgCAACJRCQEi4Qk7AIAAIlEJAiLhCTwAgAAiUQkDIuEJPQCAACJRCQQi4Qk+AIAAIlEJBSLhCT8AgAAiUQkGIuEJAADAACJRCQcieCDwCSJRCQgi0QkIItMJBSJTCQgiRiJcASJeAiJaAyJx4tMJASLVCQIuGV4cGGJR0C4bmQgM4lHRLgyLWJ5iUdIuHRlIGuJR0yLAYlHUItBBIlHVItBCIlHWItBDIlHXItBEIlHYItBFIlHZItBGIlHaItBHIlHbLgAAAAAiUdwiwKJR3SLQgSJR3iLQgiJR3yJ+YPBQIn6gcKAAAAAUlE="
+        r#".base64 "jaQkjPz//4uEJHgDAACJRCQEi4QkfAMAAIlEJAiLhCSAAwAAiUQkDIuEJIQDAACJRCQQi4QkiAMAAIlEJBSLhCSMAwAAiUQkGIuEJJADAACJRCQcieCDwCSJRCQgi0QkIItMJBSJTCQgiRiJcASJeAiJaAyJx4tMJASLVCQIuGV4cGGJR0C4bmQgM4lHRLgyLWJ5iUdIuHRlIGuJR0yLAYlHUItBBIlHVItBCIlHWItBDIlHXItBEIlHYItBFIlHZItBGIlHaItBHIlHbLgAAAAAiUdwiwKJR3SLQgSJR3iLQgiJR3yJ+YPBQIn6gcKAAAAAi0QkGIPoAT3AAAAA"
+jb 20f
+.base64 "UlE="
 call {vg_chacha20_block}
 .base64 "WFiJ+YHBgAAAAIn6gcLAAQAAUVI="
-call {vg_poly1305_init}
-.base64 "WFiLXCQMi2wkEInowegEifmBwcABAABQU1E="
+call {vg_poly1305_init_core}
+.base64 "WFg="
+jmp 21f
+20:
+.base64 "Zg/vwPMPf4dAAgAA8w9/h1ACAADzD3+HYAIAAPMPf4dwAgAA8w9/h4ACAADzD3+HkAIAAPMPf4egAgAA8w9/h7ACAADzD3+HwAIAAPMPf4fQAgAA8w9/h+ACAADzD3+H8AIAAPMPf4cAAwAA8w9/hxADAADzD3+HIAMAAPMPf4cwAwAAifiDwECJ+YHBQAIAALoAAQAAifuBw4AAAACJzlNSUVA="
+call {vg_chacha20_xor}
+.base64 "WFhYWIn5gcFAAgAAifqBwsABAABRUg=="
+call {vg_poly1305_init_core}
+.base64 "WFg="
+21:
+.base64 "i1wkDItsJBCJ6MHoBIn5gcHAAQAAUFNR"
 call {vg_poly1305_blocks}
 .base64 "WFhYieqD4g8="
-je 20f
+je 22f
 .base64 "ie4p1gHeuAAAAACJRzCJRzSJRziJRzyJ+YPBMA=="
-22:
+24:
 .base64 "D7YGiAGDxgGDwQGD6gE="
-jne 22b
+jne 24b
 .base64 "uAEAAACJ+YPBMIn6gcLAAQAAUFFS"
 call {vg_poly1305_blocks}
 .base64 "WFhY"
-jmp 21f
-20:
-21:
+jmp 23f
+22:
+23:
 .base64 "i1wkFItsJBiJ6MHoBIn5gcHAAQAAUFNR"
 call {vg_poly1305_blocks}
 .base64 "WFhYieqD4g8="
-je 23f
+je 25f
 .base64 "ie4p1gHeuAAAAACJRzCJRzSJRziJRzyJ+YPBMA=="
-25:
+27:
 .base64 "D7YGiAGDxgGDwQGD6gE="
-jne 25b
+jne 27b
 .base64 "uAEAAACJ+YPBMIn6gcLAAQAAUFFS"
 call {vg_poly1305_blocks}
 .base64 "WFhY"
-jmp 24f
-23:
-24:
+jmp 26f
+25:
+26:
 .base64 "i0QkEIlHIItEJBiJRyi4AAAAAIlHJIlHLLgBAAAAifmDwSCJ+oHCwAEAAFBRUg=="
 call {vg_poly1305_blocks}
-.base64 "WFhYuAEAAACJR3CJ+IPAQItMJBSLVCQYifuBw4AAAACLdCQgU1JRUA=="
+.base64 "WFhYi0QkGIPoAT3AAAAA"
+jb 28f
+.base64 "uAEAAACJR3CJ+IPAQItMJBSLVCQYifuBw4AAAACLdCQgU1JRUA=="
 call {vg_chacha20_xor}
-.base64 "WFhYWIn7gcNAAgAAifmDwRC4AAAAAIn+gcbAAQAAU1FQUFY="
-call {vg_poly1305_finalize_scratch}
-.base64 "WFhYWFiLVCQci0cQMwKLTxQzSgQJyItPGDNKCAnIi08cM0oMCciD+AG4AAAAAIPQAIP4AA=="
-je 26f
-jmp 27f
-26:
-.base64 "i0wkIItUJBiD+gA="
-je 28f
-210:
-.base64 "iAGDwQGD6gE="
-jne 210b
+.base64 "WFhYWA=="
 jmp 29f
 28:
+.base64 "i3QkFItUJCCLTCQYif2BxYACAACD+RA="
+jb 210f
+212:
+.base64 "8w9vJvMPb20AZg/v5fMPfyKDxhCDwhCDxRCD6RCD+RA="
+jae 212b
+jmp 211f
+210:
+211:
+.base64 "hck="
+je 213f
+215:
+.base64 "D7YGM0UAiAKDxgGDwgGDxQGD6QE="
+jne 215b
+jmp 214f
+213:
+214:
 29:
-27:
-.base64 "ix+LdwSLbwyLfwi5AAAAAIlMJCSJTCQoiUwkLIlMJDCJTCQ0iUwkOIlMJDyJTCRAiUwkRIlMJEiJTCRMiUwkUIlMJFSJTCRYiUwkXIlMJGCJTCRkiUwkaIlMJGyJTCRwiUwkdIlMJHiJTCR8iYwkgAAAAImMJIQAAACJjCSIAAAAiYwkjAAAAImMJJAAAACJjCSUAAAAiYwkmAAAAImMJJwAAACJjCSgAAAAiYwkpAAAAImMJKgAAACJjCSsAAAAiYwksAAAAImMJLQAAACJjCS4AAAAiYwkvAAAAImMJMAAAACJjCTEAAAAiYwkyAAAAImMJMwAAACJjCTQAAAAiYwk1AAAAImMJNgAAACJjCTcAAAAiYwk4AAAAImMJOQAAACJjCToAAAAiYwk7AAAAImMJPAAAACJjCT0AAAAiYwk+AAAAImMJPwAAACJjCQAAQAAiYwkBAEAAImMJAgBAACJjCQMAQAAiYwkEAEAAImMJBQBAACJjCQYAQAAiYwkHAEAAImMJCABAACJjCQkAQAAiYwkKAEAAImMJCwBAACJjCQwAQAAiYwkNAEAAImMJDgBAACJjCQ8AQAAiYwkQAEAAImMJEQBAACJjCRIAQAAiYwkTAEAAImMJFABAACJjCRUAQAAiYwkWAEAAImMJFwBAACJjCRgAQAAiYwkZAEAAImMJGgBAACJjCRsAQAAiYwkcAEAAImMJHQBAACJjCR4AQAAiYwkfAEAAImMJIABAACJjCSEAQAAiYwkiAEAAImMJIwBAACJjCSQAQAAiYwklAEAAImMJJgBAACJjCScAQAAiYwkoAEAAImMJKQBAACJjCSoAQAAiYwkrAEAAImMJLABAACJjCS0AQAAiYwkuAEAAImMJLwBAACJjCTAAQAAiYwkxAEAAImMJMgBAACJjCTMAQAAiYwk0AEAAImMJNQBAACJjCTYAQAAiYwk3AEAAImMJOABAACJjCTkAQAAiYwk6AEAAImMJOwBAACJjCTwAQAAiYwk9AEAAImMJPgBAACJjCT8AQAAiYwkAAIAAImMJAQCAACJjCQIAgAAiYwkDAIAAImMJBACAACJjCQUAgAAiYwkGAIAAImMJBwCAACJjCQgAgAAiYwkJAIAAImMJCgCAACJjCQsAgAAiYwkMAIAAImMJDQCAACJjCQ4AgAAiYwkPAIAAImMJEACAACJjCREAgAAiYwkSAIAAImMJEwCAACJjCRQAgAAiYwkVAIAAImMJFgCAACJjCRcAgAAiYwkYAIAAImMJGQCAACJjCRoAgAAiYwkbAIAAImMJHACAACJjCR0AgAAiYwkeAIAAImMJHwCAACJjCSAAgAAiYwkhAIAAImMJIgCAACJjCSMAgAAiYwkkAIAAImMJJQCAACJjCSYAgAAiYwknAIAAImMJKACAACJjCSkAgAAiYwkqAIAAImMJKwCAACJjCSwAgAAiYwktAIAAImMJLgCAACJjCS8AgAAiYwkwAIAAImMJMQCAACJjCTIAgAAiYwkzAIAAImMJNACAACJjCTUAgAAiYwk2AIAAImMJNwCAACJjCTgAgAAjaQk5AIAAMM="
+.base64 "ifuBw0ACAACJ+YPBELgAAAAAif6BxsABAABTUVBQVg=="
+call {vg_poly1305_finalize_scratch}
+.base64 "WFhYWFiLVCQci0cQMwKLTxQzSgQJyItPGDNKCAnIi08cM0oMCciD+AG4AAAAAIPQAIP4AA=="
+je 216f
+jmp 217f
+216:
+.base64 "i0wkIItUJBiD+gA="
+je 218f
+220:
+.base64 "iAGDwQGD6gE="
+jne 220b
+jmp 219f
+218:
+219:
+217:
+.base64 "ix+LdwSLbwyLfwiNpCR0AwAAZg/vwI2kJHD6///zD38EJPMPf0QkEPMPf0QkIPMPf0QkMPMPf0QkQPMPf0QkUPMPf0QkYPMPf0QkcPMPf4QkgAAAAPMPf4QkkAAAAPMPf4QkoAAAAPMPf4QksAAAAPMPf4QkwAAAAPMPf4Qk0AAAAPMPf4Qk4AAAAPMPf4Qk8AAAAPMPf4QkAAEAAPMPf4QkEAEAAPMPf4QkIAEAAPMPf4QkMAEAAPMPf4QkQAEAAPMPf4QkUAEAAPMPf4QkYAEAAPMPf4QkcAEAAPMPf4QkgAEAAPMPf4QkkAEAAPMPf4QkoAEAAPMPf4QksAEAAPMPf4QkwAEAAPMPf4Qk0AEAAPMPf4Qk4AEAAPMPf4Qk8AEAAPMPf4QkAAIAAPMPf4QkEAIAAPMPf4QkIAIAAPMPf4QkMAIAAPMPf4QkQAIAAPMPf4QkUAIAAPMPf4QkYAIAAPMPf4QkcAIAAPMPf4QkgAIAAPMPf4QkkAIAAPMPf4QkoAIAAPMPf4QksAIAAPMPf4QkwAIAAPMPf4Qk0AIAAPMPf4Qk4AIAAPMPf4Qk8AIAAPMPf4QkAAMAAPMPf4QkEAMAAPMPf4QkIAMAAPMPf4QkMAMAAPMPf4QkQAMAAPMPf4QkUAMAAPMPf4QkYAMAAPMPf4QkcAMAAPMPf4QkgAMAAPMPf4QkkAMAAPMPf4QkoAMAAPMPf4QksAMAAPMPf4QkwAMAAPMPf4Qk0AMAAPMPf4Qk4AMAAPMPf4Qk8AMAAPMPf4QkAAQAAPMPf4QkEAQAAPMPf4QkIAQAAPMPf4QkMAQAAPMPf4QkQAQAAPMPf4QkUAQAAPMPf4QkYAQAAPMPf4QkcAQAAPMPf4QkgAQAAPMPf4QkkAQAAPMPf4QkoAQAAPMPf4QksAQAAPMPf4QkwAQAAPMPf4Qk0AQAAPMPf4Qk4AQAAPMPf4Qk8AQAAPMPf4QkAAUAAPMPf4QkEAUAAPMPf4QkIAUAAPMPf4QkMAUAAPMPf4QkQAUAAPMPf4QkUAUAAPMPf4QkYAUAAPMPf4QkcAUAAPMPf4QkgAUAAI2kJJAFAAC6AAAAADHJZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7//D"
 .p2align 6"#,
         vg_chacha20_block = sym super::chacha20::vg_chacha20_block::vg_chacha20_block,
-        vg_poly1305_init = sym super::poly1305::vg_poly1305_init,
-        vg_poly1305_blocks = sym super::poly1305::vg_poly1305_blocks::vg_poly1305_blocks,
+        vg_poly1305_init_core = sym super::poly1305::vg_poly1305_init_core::vg_poly1305_init_core,
         vg_chacha20_xor = sym super::chacha20::vg_chacha20_xor::vg_chacha20_xor,
+        vg_poly1305_blocks = sym super::poly1305::vg_poly1305_blocks::vg_poly1305_blocks,
         vg_poly1305_finalize_scratch = sym super::poly1305::vg_poly1305_finalize_scratch::vg_poly1305_finalize_scratch,
     )
 }
@@ -446,6 +631,8 @@ jmp 29f
 /// ChaCha20-Poly1305 decryption (RFC 8439 §2.8), out of place: with the key `*key`, the nonce `*nonce` and the received tag `*tag`, returns 1 if the tag is that of the `len` bytes of ciphertext at `src` and the `aad_len` bytes of additional data at `aad`, having then written the plaintext to the `dst_len = len` bytes at `dst`; otherwise returns 0, having written zeros to them: `vg_chacha20_poly1305_open` with the ciphertext read from `src` and the plaintext written to `dst`. `src` is not written, and `dst` is a buffer of its own: it overlaps no other buffer, `src` included. The tags are compared without a branch.
 ///
 /// Contract: `VG.Spec.ChaCha20Poly1305.openToContract`. Constant time but for the result: only the pointers, the lengths and whether the function returns 1 or 0 may affect timing, not the key, the nonce, the additional data, the tag or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -460,67 +647,100 @@ jmp 29f
 /// * `dst_len` must equal `len`.
 /// * `len` must be at most `P_MAX`, 2³² − 1 blocks of 64 bytes (RFC 8439 §2.8).
 /// * `dst` must not overlap `key`, `nonce`, `aad`, `src` or `tag` (distinct Rust objects never do).
-/// * None of `key`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 780 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `key`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 1432 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_open_to(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
-        r#".base64 "jaQkFP3//4uEJPACAACJRCQEi4Qk9AIAAIlEJAiLhCT4AgAAiUQkDIuEJPwCAACJRCQQi4QkAAMAAIlEJBSLhCQEAwAAiUQkGIuEJAgDAACJRCQci4QkDAMAAIlEJCCLhCQQAwAAiUQkJIngg8AsiUQkKItMJByLVCQki0QkKIlUJByJTCQgiRiJcASJeAiJaAyJx4tMJASLVCQIuGV4cGGJR0C4bmQgM4lHRLgyLWJ5iUdIuHRlIGuJR0yLAYlHUItBBIlHVItBCIlHWItBDIlHXItBEIlHYItBFIlHZItBGIlHaItBHIlHbLgAAAAAiUdwiwKJR3SLQgSJR3iLQgiJR3yJ+YPBQIn6gcKAAAAAUlE="
+        r#".base64 "jaQkhPz//4uEJIADAACJRCQEi4QkhAMAAIlEJAiLhCSIAwAAiUQkDIuEJIwDAACJRCQQi4QkkAMAAIlEJBSLhCSUAwAAiUQkGIuEJJgDAACJRCQci4QknAMAAIlEJCCLhCSgAwAAiUQkJIngg8AsiUQkKItMJByLVCQki0QkKIlUJByJTCQgiRiJcASJeAiJaAyJx4tMJASLVCQIuGV4cGGJR0C4bmQgM4lHRLgyLWJ5iUdIuHRlIGuJR0yLAYlHUItBBIlHVItBCIlHWItBDIlHXItBEIlHYItBFIlHZItBGIlHaItBHIlHbLgAAAAAiUdwiwKJR3SLQgSJR3iLQgiJR3yJ+YPBQIn6gcKAAAAAi0QkGIPoAT3AAAAA"
+jb 20f
+.base64 "UlE="
 call {vg_chacha20_block}
 .base64 "WFiJ+YHBgAAAAIn6gcLAAQAAUVI="
-call {vg_poly1305_init}
-.base64 "WFiLXCQMi2wkEInowegEifmBwcABAABQU1E="
+call {vg_poly1305_init_core}
+.base64 "WFg="
+jmp 21f
+20:
+.base64 "Zg/vwPMPf4dAAgAA8w9/h1ACAADzD3+HYAIAAPMPf4dwAgAA8w9/h4ACAADzD3+HkAIAAPMPf4egAgAA8w9/h7ACAADzD3+HwAIAAPMPf4fQAgAA8w9/h+ACAADzD3+H8AIAAPMPf4cAAwAA8w9/hxADAADzD3+HIAMAAPMPf4cwAwAAifiDwECJ+YHBQAIAALoAAQAAifuBw4AAAACJzlNSUVA="
+call {vg_chacha20_xor}
+.base64 "WFhYWIn5gcFAAgAAifqBwsABAABRUg=="
+call {vg_poly1305_init_core}
+.base64 "WFg="
+21:
+.base64 "i1wkDItsJBCJ6MHoBIn5gcHAAQAAUFNR"
 call {vg_poly1305_blocks}
 .base64 "WFhYieqD4g8="
-je 20f
+je 22f
 .base64 "ie4p1gHeuAAAAACJRzCJRzSJRziJRzyJ+YPBMA=="
-22:
+24:
 .base64 "D7YGiAGDxgGDwQGD6gE="
-jne 22b
+jne 24b
 .base64 "uAEAAACJ+YPBMIn6gcLAAQAAUFFS"
 call {vg_poly1305_blocks}
 .base64 "WFhY"
-jmp 21f
-20:
-21:
+jmp 23f
+22:
+23:
 .base64 "i1wkFItsJBiJ6MHoBIn5gcHAAQAAUFNR"
 call {vg_poly1305_blocks}
 .base64 "WFhYieqD4g8="
-je 23f
+je 25f
 .base64 "ie4p1gHeuAAAAACJRzCJRzSJRziJRzyJ+YPBMA=="
-25:
+27:
 .base64 "D7YGiAGDxgGDwQGD6gE="
-jne 25b
+jne 27b
 .base64 "uAEAAACJ+YPBMIn6gcLAAQAAUFFS"
 call {vg_poly1305_blocks}
 .base64 "WFhY"
-jmp 24f
-23:
-24:
+jmp 26f
+25:
+26:
 .base64 "i0QkEIlHIItEJBiJRyi4AAAAAIlHJIlHLLgBAAAAifmDwSCJ+oHCwAEAAFBRUg=="
 call {vg_poly1305_blocks}
-.base64 "WFhYuAEAAACJR3CJ+IPAQItMJBSLVCQYifuBw4AAAACLdCQgU1JRUA=="
+.base64 "WFhYi0QkGIPoAT3AAAAA"
+jb 28f
+.base64 "uAEAAACJR3CJ+IPAQItMJBSLVCQYifuBw4AAAACLdCQgU1JRUA=="
 call {vg_chacha20_xor}
-.base64 "WFhYWIn7gcNAAgAAifmDwRC4AAAAAIn+gcbAAQAAU1FQUFY="
-call {vg_poly1305_finalize_scratch}
-.base64 "WFhYWFiLVCQci0cQMwKLTxQzSgQJyItPGDNKCAnIi08cM0oMCciD+AG4AAAAAIPQAIP4AA=="
-je 26f
-jmp 27f
-26:
-.base64 "i0wkIItUJBiD+gA="
-je 28f
-210:
-.base64 "iAGDwQGD6gE="
-jne 210b
+.base64 "WFhYWA=="
 jmp 29f
 28:
+.base64 "i3QkFItUJCCLTCQYif2BxYACAACD+RA="
+jb 210f
+212:
+.base64 "8w9vJvMPb20AZg/v5fMPfyKDxhCDwhCDxRCD6RCD+RA="
+jae 212b
+jmp 211f
+210:
+211:
+.base64 "hck="
+je 213f
+215:
+.base64 "D7YGM0UAiAKDxgGDwgGDxQGD6QE="
+jne 215b
+jmp 214f
+213:
+214:
 29:
-27:
-.base64 "ix+LdwSLbwyLfwi5AAAAAIlMJCyJTCQwiUwkNIlMJDiJTCQ8iUwkQIlMJESJTCRIiUwkTIlMJFCJTCRUiUwkWIlMJFyJTCRgiUwkZIlMJGiJTCRsiUwkcIlMJHSJTCR4iUwkfImMJIAAAACJjCSEAAAAiYwkiAAAAImMJIwAAACJjCSQAAAAiYwklAAAAImMJJgAAACJjCScAAAAiYwkoAAAAImMJKQAAACJjCSoAAAAiYwkrAAAAImMJLAAAACJjCS0AAAAiYwkuAAAAImMJLwAAACJjCTAAAAAiYwkxAAAAImMJMgAAACJjCTMAAAAiYwk0AAAAImMJNQAAACJjCTYAAAAiYwk3AAAAImMJOAAAACJjCTkAAAAiYwk6AAAAImMJOwAAACJjCTwAAAAiYwk9AAAAImMJPgAAACJjCT8AAAAiYwkAAEAAImMJAQBAACJjCQIAQAAiYwkDAEAAImMJBABAACJjCQUAQAAiYwkGAEAAImMJBwBAACJjCQgAQAAiYwkJAEAAImMJCgBAACJjCQsAQAAiYwkMAEAAImMJDQBAACJjCQ4AQAAiYwkPAEAAImMJEABAACJjCREAQAAiYwkSAEAAImMJEwBAACJjCRQAQAAiYwkVAEAAImMJFgBAACJjCRcAQAAiYwkYAEAAImMJGQBAACJjCRoAQAAiYwkbAEAAImMJHABAACJjCR0AQAAiYwkeAEAAImMJHwBAACJjCSAAQAAiYwkhAEAAImMJIgBAACJjCSMAQAAiYwkkAEAAImMJJQBAACJjCSYAQAAiYwknAEAAImMJKABAACJjCSkAQAAiYwkqAEAAImMJKwBAACJjCSwAQAAiYwktAEAAImMJLgBAACJjCS8AQAAiYwkwAEAAImMJMQBAACJjCTIAQAAiYwkzAEAAImMJNABAACJjCTUAQAAiYwk2AEAAImMJNwBAACJjCTgAQAAiYwk5AEAAImMJOgBAACJjCTsAQAAiYwk8AEAAImMJPQBAACJjCT4AQAAiYwk/AEAAImMJAACAACJjCQEAgAAiYwkCAIAAImMJAwCAACJjCQQAgAAiYwkFAIAAImMJBgCAACJjCQcAgAAiYwkIAIAAImMJCQCAACJjCQoAgAAiYwkLAIAAImMJDACAACJjCQ0AgAAiYwkOAIAAImMJDwCAACJjCRAAgAAiYwkRAIAAImMJEgCAACJjCRMAgAAiYwkUAIAAImMJFQCAACJjCRYAgAAiYwkXAIAAImMJGACAACJjCRkAgAAiYwkaAIAAImMJGwCAACJjCRwAgAAiYwkdAIAAImMJHgCAACJjCR8AgAAiYwkgAIAAImMJIQCAACJjCSIAgAAiYwkjAIAAImMJJACAACJjCSUAgAAiYwkmAIAAImMJJwCAACJjCSgAgAAiYwkpAIAAImMJKgCAACJjCSsAgAAiYwksAIAAImMJLQCAACJjCS4AgAAiYwkvAIAAImMJMACAACJjCTEAgAAiYwkyAIAAImMJMwCAACJjCTQAgAAiYwk1AIAAImMJNgCAACJjCTcAgAAiYwk4AIAAImMJOQCAACJjCToAgAAjaQk7AIAAMM="
+.base64 "ifuBw0ACAACJ+YPBELgAAAAAif6BxsABAABTUVBQVg=="
+call {vg_poly1305_finalize_scratch}
+.base64 "WFhYWFiLVCQci0cQMwKLTxQzSgQJyItPGDNKCAnIi08cM0oMCciD+AG4AAAAAIPQAIP4AA=="
+je 216f
+jmp 217f
+216:
+.base64 "i0wkIItUJBiD+gA="
+je 218f
+220:
+.base64 "iAGDwQGD6gE="
+jne 220b
+jmp 219f
+218:
+219:
+217:
+.base64 "ix+LdwSLbwyLfwiNpCR8AwAAZg/vwLkAAAAAjaQkaPr///MPfwQk8w9/RCQQ8w9/RCQg8w9/RCQw8w9/RCRA8w9/RCRQ8w9/RCRg8w9/RCRw8w9/hCSAAAAA8w9/hCSQAAAA8w9/hCSgAAAA8w9/hCSwAAAA8w9/hCTAAAAA8w9/hCTQAAAA8w9/hCTgAAAA8w9/hCTwAAAA8w9/hCQAAQAA8w9/hCQQAQAA8w9/hCQgAQAA8w9/hCQwAQAA8w9/hCRAAQAA8w9/hCRQAQAA8w9/hCRgAQAA8w9/hCRwAQAA8w9/hCSAAQAA8w9/hCSQAQAA8w9/hCSgAQAA8w9/hCSwAQAA8w9/hCTAAQAA8w9/hCTQAQAA8w9/hCTgAQAA8w9/hCTwAQAA8w9/hCQAAgAA8w9/hCQQAgAA8w9/hCQgAgAA8w9/hCQwAgAA8w9/hCRAAgAA8w9/hCRQAgAA8w9/hCRgAgAA8w9/hCRwAgAA8w9/hCSAAgAA8w9/hCSQAgAA8w9/hCSgAgAA8w9/hCSwAgAA8w9/hCTAAgAA8w9/hCTQAgAA8w9/hCTgAgAA8w9/hCTwAgAA8w9/hCQAAwAA8w9/hCQQAwAA8w9/hCQgAwAA8w9/hCQwAwAA8w9/hCRAAwAA8w9/hCRQAwAA8w9/hCRgAwAA8w9/hCRwAwAA8w9/hCSAAwAA8w9/hCSQAwAA8w9/hCSgAwAA8w9/hCSwAwAA8w9/hCTAAwAA8w9/hCTQAwAA8w9/hCTgAwAA8w9/hCTwAwAA8w9/hCQABAAA8w9/hCQQBAAA8w9/hCQgBAAA8w9/hCQwBAAA8w9/hCRABAAA8w9/hCRQBAAA8w9/hCRgBAAA8w9/hCRwBAAA8w9/hCSABAAA8w9/hCSQBAAA8w9/hCSgBAAA8w9/hCSwBAAA8w9/hCTABAAA8w9/hCTQBAAA8w9/hCTgBAAA8w9/hCTwBAAA8w9/hCQABQAA8w9/hCQQBQAA8w9/hCQgBQAA8w9/hCQwBQAA8w9/hCRABQAA8w9/hCRQBQAA8w9/hCRgBQAA8w9/hCRwBQAA8w9/hCSABQAAiYwkkAUAAImMJJQFAACNpCSYBQAAugAAAAAxyWYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ww=="
 .p2align 6"#,
         vg_chacha20_block = sym super::chacha20::vg_chacha20_block::vg_chacha20_block,
-        vg_poly1305_init = sym super::poly1305::vg_poly1305_init,
-        vg_poly1305_blocks = sym super::poly1305::vg_poly1305_blocks::vg_poly1305_blocks,
+        vg_poly1305_init_core = sym super::poly1305::vg_poly1305_init_core::vg_poly1305_init_core,
         vg_chacha20_xor = sym super::chacha20::vg_chacha20_xor::vg_chacha20_xor,
+        vg_poly1305_blocks = sym super::poly1305::vg_poly1305_blocks::vg_poly1305_blocks,
         vg_poly1305_finalize_scratch = sym super::poly1305::vg_poly1305_finalize_scratch::vg_poly1305_finalize_scratch,
     )
 }
@@ -528,6 +748,8 @@ jmp 29f
 /// ChaCha20-Poly1305 encryption (RFC 8439 §2.8), out of place, of a plaintext in pieces: with the key `*key` and the nonce `*nonce`, encrypts the concatenation of the `src_count` slices that `src` lists (each an address and a length, in bytes), writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_chacha20_poly1305_seal` with the plaintext gathered from `src`.
 ///
 /// Contract: `VG.Spec.ChaCha20Poly1305.sealGatherContract`. Constant time: only the pointers, the lengths, `src_count` and where the slices are (their addresses and lengths) may affect timing, not the key, the nonce, the additional data or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -542,37 +764,45 @@ jmp 29f
 /// * The slices `src` lists must be `len` bytes long in all.
 /// * `len` must be at most `P_MAX`, 2³² − 1 blocks of 64 bytes (RFC 8439 §2.8).
 /// * `dst` and `tag` must not overlap each other, `key`, `nonce`, `aad`, `src` or the slices `src` lists (distinct Rust objects never do).
-/// * None of `key`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 824 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `key`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 1476 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_seal_gather(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "jWQk0IlcJCSJdCQoiXwkLItEJDSJBCSLRCQ4iUQkBItEJDyJRCQIi0QkQIlEJAyLRCRMiUQkEItEJFCJRCQUi0QkVIlEJBiLdCREi1wkSItUJEyD+wA="
 je 20f
 22:
-.base64 "iz6LTgTB6QKD+QA="
+.base64 "iz6LTgTB6QSD+QA="
 je 23f
 25:
-.base64 "iweJAoPHBIPCBIPpAQ=="
+.base64 "8w9vB/MPfwKDxxCDwhCD6QE="
 jne 25b
 jmp 24f
 23:
 24:
-.base64 "i04Eg+ED"
+.base64 "i04EwekCg+ED"
 je 26f
 28:
-.base64 "D7YHiAKDxwGDwgGD6QE="
+.base64 "iweJAoPHBIPCBIPpAQ=="
 jne 28b
 jmp 27f
 26:
 27:
+.base64 "i04Eg+ED"
+je 29f
+211:
+.base64 "D7YHiAKDxwGDwgGD6QE="
+jne 211b
+jmp 210f
+29:
+210:
 .base64 "g8YIg+sB"
 jne 22b
 jmp 21f
 20:
 21:
-call {vg_chacha20_poly1305_seal}
-.base64 "i1wkJIt0JCiLfCQsjWQkMMM="
+call {vg_chacha20_poly1305_seal_core}
+.base64 "i1wkJIt0JCiLfCQsjWQkMGYP78C5AAAAAI2kJDz6///zD38EJPMPf0QkEPMPf0QkIPMPf0QkMPMPf0QkQPMPf0QkUPMPf0QkYPMPf0QkcPMPf4QkgAAAAPMPf4QkkAAAAPMPf4QkoAAAAPMPf4QksAAAAPMPf4QkwAAAAPMPf4Qk0AAAAPMPf4Qk4AAAAPMPf4Qk8AAAAPMPf4QkAAEAAPMPf4QkEAEAAPMPf4QkIAEAAPMPf4QkMAEAAPMPf4QkQAEAAPMPf4QkUAEAAPMPf4QkYAEAAPMPf4QkcAEAAPMPf4QkgAEAAPMPf4QkkAEAAPMPf4QkoAEAAPMPf4QksAEAAPMPf4QkwAEAAPMPf4Qk0AEAAPMPf4Qk4AEAAPMPf4Qk8AEAAPMPf4QkAAIAAPMPf4QkEAIAAPMPf4QkIAIAAPMPf4QkMAIAAPMPf4QkQAIAAPMPf4QkUAIAAPMPf4QkYAIAAPMPf4QkcAIAAPMPf4QkgAIAAPMPf4QkkAIAAPMPf4QkoAIAAPMPf4QksAIAAPMPf4QkwAIAAPMPf4Qk0AIAAPMPf4Qk4AIAAPMPf4Qk8AIAAPMPf4QkAAMAAPMPf4QkEAMAAPMPf4QkIAMAAPMPf4QkMAMAAPMPf4QkQAMAAPMPf4QkUAMAAPMPf4QkYAMAAPMPf4QkcAMAAPMPf4QkgAMAAPMPf4QkkAMAAPMPf4QkoAMAAPMPf4QksAMAAPMPf4QkwAMAAPMPf4Qk0AMAAPMPf4Qk4AMAAPMPf4Qk8AMAAPMPf4QkAAQAAPMPf4QkEAQAAPMPf4QkIAQAAPMPf4QkMAQAAPMPf4QkQAQAAPMPf4QkUAQAAPMPf4QkYAQAAPMPf4QkcAQAAPMPf4QkgAQAAPMPf4QkkAQAAPMPf4QkoAQAAPMPf4QksAQAAPMPf4QkwAQAAPMPf4Qk0AQAAPMPf4Qk4AQAAPMPf4Qk8AQAAPMPf4QkAAUAAPMPf4QkEAUAAPMPf4QkIAUAAPMPf4QkMAUAAPMPf4QkQAUAAPMPf4QkUAUAAPMPf4QkYAUAAPMPf4QkcAUAAPMPf4QkgAUAAPMPf4QkkAUAAPMPf4QkoAUAAPMPf4QksAUAAImMJMAFAACNpCTEBQAAuAAAAAC6AAAAADHJZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7//D"
 .p2align 6"#,
-        vg_chacha20_poly1305_seal = sym super::chacha20poly1305::vg_chacha20_poly1305_seal,
+        vg_chacha20_poly1305_seal_core = sym super::chacha20::vg_chacha20_poly1305_seal_core::vg_chacha20_poly1305_seal_core,
     )
 }

@@ -329,7 +329,13 @@ theorem cmp_frame (hB : 0 < B) {s : State} {st sc : BitVec 32} (h : CmpArgs N B 
     rw [Memory.add_ofNat]
     exact fE.bytes (R := ⟨st.setWidth 64, N + B⟩) dS (by show N + B ≤ 2 ^ 64; have h_nst := h.nst; omega_using [h_nst])
       (by show N + k < N + B; omega_using [hk])
-  rw [← m₂, post, show (1 : BitVec 32).toNat = 1 from rfl, Md.compressBlocks_one, e₁, h.blk hB, e₂]
+  have fL : Frame [stk s] s₂.mem s'.mem := m₂.sub fun q hq => by
+    simp only [List.mem_singleton] at hq; subst hq
+    exact ⟨_, List.mem_singleton_self _, below_sub (by simp only [List.length_cons, List.length_nil]; omega_using []) h.sp48⟩
+  have e₃ : H.stateAt s'.mem (st.setWidth 64) = H.stateAt s₂.mem (st.setWidth 64) :=
+    H.stateAt_congr fun i hi => fL.bytes (R := ⟨st.setWidth 64, N + B⟩) dS (by
+      show N + B ≤ 2 ^ 64; have h_nst := h.nst; omega_using [h_nst]) (by show i < N + B; omega_using [hi])
+  rw [e₃, post, show (1 : BitVec 32).toNat = 1 from rfl, Md.compressBlocks_one, e₁, h.blk hB, e₂]
 
 /-- The compression of the block after the hash value at `ebx`, with `eax`
 at the block. -/

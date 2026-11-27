@@ -1,6 +1,9 @@
 module
 
 public import VerifiedGarbage.Impl.AesGcm.X86.SealGather
+public import VerifiedGarbage.Impl.ChaCha20Poly1305.X86
+public import VerifiedGarbage.Impl.Scrub.X86
+public import VerifiedGarbage.Impl.StackScratch.X86
 
 /-!
 # ChaCha20-Poly1305 encryption out of place, from a list of slices: x86 (32-bit) implementation
@@ -48,3 +51,42 @@ def sealGather (name : String) (code : Prog isa) : Prog isa :=
     (.free 48)
 
 end VG.Impl.ChaCha20Poly1305.X86.SealGather
+
+/-! ## The functions as emitted
+
+Each function, in its frame, then its cleanup (`Impl.Scrub.X86.scrubAll rb W`):
+the `W` bytes of stack below `esp` that its frame and its calls use zeroed
+(the working space is in the frame, which does not zero it itself),
+and the registers a callee may change cleared but the 32 bits of `open`'s and
+`open_to`'s result, so that it returns without secret residue. `seal_gather`
+calls `seal`'s code in its frame as the internal
+`vg_chacha20_poly1305_seal_core` (with the implementation's suffix), since the
+exported `seal` is followed by its cleanup: the core's working space is
+zeroed by `seal_gather`'s cleanup, whose 1476 bytes are its frame's 48, the
+call's return address and the core's 1424. -/
+
+namespace VG.Impl.ChaCha20Poly1305.X86.Fn
+
+open VG.X86
+open VG.Impl.ChaCha20.X86 (Callee)
+open VG.Impl.StackScratch.X86 (withStackScratch)
+
+/-- `vg_chacha20_poly1305_seal`, calling the implementation `c` of `vg_chacha20_xor`, as emitted. -/
+def «seal» (c : Callee) : Prog isa :=
+  Impl.Scrub.X86.scrubAll 0 1424 (withStackScratch 884 7 (Impl.ChaCha20Poly1305.X86.«seal» c))
+
+/-- `vg_chacha20_poly1305_open`, as emitted. -/
+def «open» (c : Callee) : Prog isa :=
+  Impl.Scrub.X86.scrubAll 32 1424 (withStackScratch 884 7 (Impl.ChaCha20Poly1305.X86.«open» c))
+
+/-- `vg_chacha20_poly1305_open_to`, as emitted. -/
+def openTo (c : Callee) : Prog isa :=
+  Impl.Scrub.X86.scrubAll 32 1432 (withStackScratch 892 9 (Impl.ChaCha20Poly1305.X86.openTo c))
+
+/-- `vg_chacha20_poly1305_seal_gather`, calling `seal`'s code in its frame as
+`vg_chacha20_poly1305_seal_core` with the suffix `sfx` of `c`, as emitted. -/
+def sealGather (c : Callee) (sfx : String) : Prog isa :=
+  Impl.Scrub.X86.scrubAll 0 1476 (SealGather.sealGather ("vg_chacha20_poly1305_seal_core" ++ sfx)
+    (withStackScratch 884 7 (Impl.ChaCha20Poly1305.X86.«seal» c)))
+
+end VG.Impl.ChaCha20Poly1305.X86.Fn

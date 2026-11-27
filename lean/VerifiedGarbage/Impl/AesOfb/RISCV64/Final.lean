@@ -34,6 +34,6 @@ namespace VG.Impl.AesOfb.RISCV64
 open VG.RISCV64
 
 /-- `vg_aes_ofb_final`, calling `vg_aes_ofb`. -/
-def cryptFinal : Prog isa := Impl.AesCfb.RISCV64.final "vg_aes_ofb" crypt
+def cryptFinal : Prog isa := Impl.AesCfb.RISCV64.final "vg_aes_ofb_core" crypt
 
 end VG.Impl.AesOfb.RISCV64

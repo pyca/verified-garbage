@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.Framework.X86_64.Abi
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 public import VerifiedGarbage.Impl.MdStream.X86_64
 import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.MdStream.X86_64.Pad
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Framework.WriteBytes
 public import VerifiedGarbage.Proof.Framework.X86_64.Call
@@ -17,13 +16,48 @@ meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
 meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
 meta import VerifiedGarbage.Impl.MdStream.X86_64
 meta import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.MdStream.X86_64.Pad
 meta import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Proof.Framework.WriteBytes
 meta import VerifiedGarbage.Proof.Framework.X86_64.Call
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Sha256.Stream
 meta import VerifiedGarbage.Proof.Sha256.Stream
+public import VerifiedGarbage.TCB.X86_64.Sse
+meta import VerifiedGarbage.TCB.X86_64.Sse
+
+/-! ### `MdStream.X86_64.Pad`, which only this module used -/
+
+section
+
+/-!
+# Streaming Merkle–Damgård hash functions on x86-64: the bytes of SSE registers
+
+The 16 bytes of an SSE register (`vbytes`), as `finalize`'s padding
+(`Impl.MdStream.X86_64.vecPad`) and the length fields (`lenV`) build them.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.MdStream.X86_64
+
+open VG VG.X86_64
+
+/-- The 16 bytes of `v`. -/
+def vbytes (v : BitVec 128) : List Byte := (List.range 16).map (byte v)
+
+theorem vbytes_length (v : BitVec 128) : (vbytes v).length = 16 := by simp [vbytes]
+
+theorem vbytes_getElem (v : BitVec 128) {i : Nat} (hi : i < (vbytes v).length) :
+    (vbytes v)[i] = byte v i := by simp [vbytes]
+
+theorem byte_or (a b : BitVec 128) (i : Nat) : byte (a ||| b) i = byte a i ||| byte b i :=
+  BitVec.extractLsb'_or
+
+end VG.Proof.MdStream.X86_64
+
+end
+
+end
 
 /-!
 # Streaming Merkle–Damgård hash functions on x86-64: common lemmas

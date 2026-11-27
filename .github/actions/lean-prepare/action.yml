@@ -90,10 +90,10 @@ runs:
             tar -xzf "$dir/elan.tar.gz" -C "$dir" &&
             "$dir/elan-init" -y --default-toolchain none
           }
-          # `leanprover/lean4:v4.35.0` is the release `v4.35.0` of
+          # `leanprover/lean4:v4.36.0` is the release `v4.36.0` of
           # leanprover/lean4, whose archive for this platform is
-          # `lean-4.35.0-linux.tar.zst` (`-linux_aarch64` on Arm), and
-          # elan keeps it in `toolchains/leanprover--lean4---v4.35.0`.
+          # `lean-4.36.0-linux.tar.zst` (`-linux_aarch64` on Arm), and
+          # elan keeps it in `toolchains/leanprover--lean4---v4.36.0`.
           install_toolchain() {
             local repo=${1%%:*} tag=${1#*:} platform dir
             case "$(uname -m)" in

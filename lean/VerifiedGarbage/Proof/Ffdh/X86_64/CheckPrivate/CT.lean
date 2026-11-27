@@ -13,11 +13,6 @@ import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupLoad
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Bignum.Octets
 meta import VerifiedGarbage.Proof.Bignum.X86_64.R2Impl
-meta import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.StagesCT
-meta import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.TailCT
-meta import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.Correct
-meta import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.Math
-meta import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.Scalar
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.FrontCT
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.Moves
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CTMain

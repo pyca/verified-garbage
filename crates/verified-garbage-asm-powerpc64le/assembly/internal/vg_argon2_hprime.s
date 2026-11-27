@@ -30,7 +30,7 @@ vg_argon2_hprime:
 	addi %r3, %r31, 0
 	addi %r5, %r31, 832
 	li %r6, 0
-	bl {vg_blake2b_init}
+	bl {vg_blake2b_init_core}
 	li %r4, 0
 	addi %r5, %r31, 832
 	li %r6, 4
@@ -72,7 +72,7 @@ vg_argon2_hprime:
 	addi %r3, %r31, 0
 	addi %r5, %r31, 832
 	li %r6, 0
-	bl {vg_blake2b_init}
+	bl {vg_blake2b_init_core}
 	li %r4, 0
 	addi %r5, %r31, 768
 	li %r6, 64
@@ -106,7 +106,7 @@ vg_argon2_hprime:
 	addi %r3, %r31, 0
 	addi %r5, %r31, 832
 	li %r6, 0
-	bl {vg_blake2b_init}
+	bl {vg_blake2b_init_core}
 	li %r4, 0
 	addi %r5, %r31, 768
 	li %r6, 64

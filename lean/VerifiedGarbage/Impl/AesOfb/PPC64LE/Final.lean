@@ -16,7 +16,7 @@ function `vg_aes_ofb` (`Impl/AesOfb/PPC64LE.lean`):
 
 1. the return address and the registers saved in `save`, and the arguments
    kept in callee-saved registers;
-2. a call of `vg_aes_ofb` on the `len / 16` whole blocks, which leaves the
+2. a call of `vg_aes_ofb`'s code, as the internal `vg_aes_ofb_core`, on the `len / 16` whole blocks, which leaves the
    last output block `Oₙ` in `iv`;
 3. if `u = len mod 16 ≠ 0`, a call of the block function on the block at
    `iv` in place, which leaves `Oₙ₊₁ = CIPH_K(Oₙ)` there, the last output
@@ -34,6 +34,6 @@ namespace VG.Impl.AesOfb.PPC64LE
 open VG.PPC64LE
 
 /-- `vg_aes_ofb_final`, calling `vg_aes_ofb`. -/
-def cryptFinal : Prog isa := Impl.AesCfb.PPC64LE.final "vg_aes_ofb" crypt
+def cryptFinal : Prog isa := Impl.AesCfb.PPC64LE.final "vg_aes_ofb_core" crypt
 
 end VG.Impl.AesOfb.PPC64LE

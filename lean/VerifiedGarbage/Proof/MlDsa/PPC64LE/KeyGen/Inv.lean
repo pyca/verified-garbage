@@ -22,7 +22,7 @@ meta import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 /-!
 # ML-DSA key generation on PPC64LE: what holds throughout, and the prologue
 
-As on 32-bit ARM (`Proof/MlDsa/Arm/KeyGen/Inv.lean`): what holds of the
+As on 32-bit ARM (`Proof/MlDsa/Arm/KeyGen/Samp.lean`): what holds of the
 state throughout (`KC`: the layout, the permissions and stack pointer of the
 entry state, our caller's registers saved in `scratch` (ML-KEM's
 `TopSaved`), the callee-saved registers we do not save as they were, and the

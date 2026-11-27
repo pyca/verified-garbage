@@ -8,7 +8,9 @@ public import VerifiedGarbage.Impl.AesCbc.Arm
 `vg_aes_cfb8_encrypt(schedule = r0, rounds = r1, iv = r2, data = r3, len = [sp], scratch = [sp + 4])`
 and `vg_aes_cfb8_decrypt` with the same arguments (see
 `VG.Spec.Cfb8.aesEncryptContract` and `aesDecryptContract`), composed of
-calls of the verified `vg_aes_encrypt_blocks` on one block at a time.
+calls of the verified `vg_aes_encrypt_blocks_keyed` on one block at a time,
+from round keys `vg_aes_blocks_keys` bitslices once
+(`Impl.AesCbc.Arm.wholeK`).
 
 They are built from AES-CBC's pieces (`Impl/AesCbc/Arm.lean`), whose
 arguments are in the same places, with `len` counting bytes: the registers
@@ -31,7 +33,8 @@ namespace VG.Impl.AesCfb8.Arm
 
 open VG.Arm
 open VG.Impl.CmacAes.Arm (mov xor4)
-open VG.Impl.AesCbc.Arm (cOff whole encFrame zero4)
+open VG.Impl.AesCbc.Arm (cOff wholeK zero4)
+open VG.Impl.Aes.Arm (keyedFrame)
 
 /-- The input block copied to `r10 + cOff`, and the arguments of the block
 function for it: the schedule, the rounds, the block, `n = 1`, and the
@@ -59,10 +62,10 @@ def decPost : List Instr :=
   ([.ldrb .r12 .r7 0, .ldrb .lr .r10 cOff, .dp .eor .lr .lr (.reg .r12), .strb .lr .r7 0] : List Instr) ++ shift ++ advance
 
 /-- One byte: the input block enciphered in the scratch buffer, and `post`. -/
-def body (post : List Instr) : Prog isa := .seq (.block pre) (.seq encFrame (.block post))
+def body (post : List Instr) : Prog isa := .seq (.block pre) (.seq keyedFrame (.block post))
 
-def encrypt : Prog isa := whole (body encPost)
+def encrypt : Prog isa := wholeK (body encPost)
 
-def decrypt : Prog isa := whole (body decPost)
+def decrypt : Prog isa := wholeK (body decPost)
 
 end VG.Impl.AesCfb8.Arm

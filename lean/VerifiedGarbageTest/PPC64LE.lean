@@ -207,11 +207,18 @@ def cryptoExpected : List (BitVec 128) := [
   (exec (.vop (.sha512 .v3 .v0 true six)) sVec).isNone
 #guard (exec (.vop (.sldoi .v3 .v0 .v1 16)) sVec).isNone
 
--- The high doubleword of MT VSR is defined, the low one is arbitrary.
--- Check with a nonzero unknown, so a spurious zero-fill cannot pass.
-def sVU : State := { sVec with unknowns := fun i => BitVec.ofNat 64 (i + 123) }
+-- The high doubleword of MT VSR is defined, the low one is undefined: what
+-- `undef` makes of the next unknown, of RA and of what XT held. Check with
+-- a function that depends on all three, so that neither a zero-fill nor a
+-- value that ignores an operand can pass.
+def sVU : State := { sVec with
+  unknowns := fun i => BitVec.ofNat 64 (i + 123)
+  undef := fun u ra xt => u + 3 * ra + 5 * xt.setWidth 64 + 7 * (xt >>> 64).setWidth 64 }
 #guard (exec (.mtvsrd .v3 .r4) sVU).map (·.vpr .v3) ==
-  some 0x80000001f0000001000000000000007b
+  some (sVU.gpr .r4 ++ (123 + 3 * sVU.gpr .r4 + 5 * (sVU.vpr .v3).setWidth 64 +
+    7 * (sVU.vpr .v3 >>> 64).setWidth 64))
+#guard (exec (.mtvsrd .v3 .r4) sVU).map (fun s => vdword (s.vpr .v3) 0) == some 0x80000001f0000001
+#guard (exec (.mtvsrd .v3 .r4) sVU).map (fun s => s.undef 1 2 3) == some (sVU.undef 1 2 3)
 #guard (exec (.mtvsrd .v3 .r4) sVU).map (fun s => s.unknowns 0) == some 124
 #guard (exec (.mfvsrd .r7 .v0) sVec).map (·.gpr .r7) == some 0x0011223344556677
 
@@ -230,6 +237,19 @@ def sUnaligned : State := { sVec with wr := [⟨0x1000, 20⟩] }
   some 0x0b0a090807060504131211100f0e0d0c
 #guard addrs (.lxvd2x .v0 .r3 .r5) sVec == [0x1004]
 #guard addrs (.stxvd2x .v0 .r3 .r5) sVec == [0x1004]
+
+-- DCBZ zeroes the whole 128-byte block containing EA, aligned to its size,
+-- and nothing else; it faults unless the block is within one writable
+-- region, or with RA = 0.
+def sBlock : State := { s0 with wr := [⟨0xf80, 0x180⟩], gpr := fun r => if r = .r3 then 0x1040 else s0.gpr r }
+#guard (exec (.dcbz .r3 .r5) sBlock).map (fun s => s.mem.read 0x1000 128) == some 0
+#guard (exec (.dcbz .r3 .r5) sBlock).map (fun s => s.mem 0xfff) == some 0xff
+#guard (exec (.dcbz .r3 .r5) sBlock).map (fun s => s.mem 0x1080) == some 0x80
+#guard (exec (.dcbz .r3 .r5) s0).isNone -- the block is not within the region
+#guard (exec (.dcbz .r0 .r3) sBlock).isNone -- forbidden RA=0 encoding
+#guard addrs (.dcbz .r3 .r5) sBlock == [0x1044]
+#guard Instr.encode (.dcbz .r3 .r5) == some [0x7c032fec]
+#guard Instr.asm (.dcbz .r3 .r5) == ["dcbz %r3, %r5"]
 
 -- Modular addition carries between bits within a lane, never between lanes.
 def sOnes : State := { sVec with vpr := fun r => if r = .v0 then -1 else 1 }

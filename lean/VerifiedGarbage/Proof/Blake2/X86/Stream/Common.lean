@@ -401,8 +401,14 @@ theorem call_ok {name : String} {code : Prog isa} (hf : CalleeOk P code) {s : St
       have := callEntry_frame fit hrs
       rw [hesp] at this; exact this
     rw [← hsE] at post
-    simp only [compressX86, arg_withRegions, State.withRegions_mem, a0, a1, a2, a3, a4, a5, m₂] at post
+    simp only [compressX86, arg_withRegions, State.withRegions_mem, a0, a1, a2, a3, a4, a5] at post
     refine hQ s' rd' wr' cs' f' ?_
+    -- The pop loses the arguments' frame, below `esp`, apart from the state.
+    have fL : Frame [below E 32] s₂.mem s'.mem := by
+      rw [hesp] at m₂; exact Frame.below_mono (wr := []) m₂ (by simp) hE
+    have e₀ : stateAt w s'.mem (st.setWidth 64) = stateAt w s₂.mem (st.setWidth 64) :=
+      stateAt_congr fun i hi =>
+        fL.bytes (R := ⟨st.setWidth 64, bufOff w⟩) (by simpa using dS.symm) (by simp; omega_arith) hi
     have e₁ : stateAt w sE.mem (st.setWidth 64) = stateAt w s.mem (st.setWidth 64) :=
       stateAt_congr fun i hi =>
         hsE'.bytes (R := ⟨st.setWidth 64, bufOff w⟩) (by simpa using dS.symm) (by simp; omega_arith) hi
@@ -412,7 +418,7 @@ theorem call_ok {name : String} {code : Prog isa} (hf : CalleeOk P code) {s : St
           (thi ++ tlo).toNat (lst != 0) :=
       compressBlocks_congr P fun j hj =>
         hsE'.bytes (R := ⟨blk.setWidth 64, blockBytes w * k⟩) (by simpa using dB.symm) (by simp; omega_arith) hj
-    rw [post, e₁, e₂]
+    rw [e₀, post, e₁, e₂]
 
 /-! ## Copying bytes into the buffer -/
 

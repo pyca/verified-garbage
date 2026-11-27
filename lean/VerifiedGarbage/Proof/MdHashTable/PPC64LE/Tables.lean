@@ -1,10 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPss.PPC64LE.MHash
-public import VerifiedGarbage.Proof.RsaPss.PPC64LE.CTBlocks
+public import VerifiedGarbage.Proof.RsaPss.PPC64LE.CTTab
 public import VerifiedGarbage.Proof.MdHashTable.PPC64LE
 public import VerifiedGarbage.Proof.RsaPss.PPC64LE.Tab
-public import VerifiedGarbage.Proof.RsaPss.PPC64LE.CTTab
 public import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Hashes
 public import VerifiedGarbage.Proof.RsaOaep.PPC64LE.MgfStepsT
 public import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Pre

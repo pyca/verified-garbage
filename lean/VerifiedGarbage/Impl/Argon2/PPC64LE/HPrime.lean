@@ -8,7 +8,7 @@ public import VerifiedGarbage.Impl.Blake2.PPC64LE.Stream
 `vg_argon2_hprime(input = r3, input_len = r4, out = r5, out_len = r6,
 scratch = r7)`: the AArch64 implementation (`Impl/Argon2/AArch64/HPrime.lean`)
 with its registers renamed, calling the PPC64LE BLAKE2b streaming functions
-(`vg_blake2b_init`, `_update_scratch`, `_finalize_scratch`). The caller's 16
+(`vg_blake2b_init_core`, `_update_scratch`, `_finalize_scratch`). The caller's 16
 KiB scratch holds the 192-byte hash state at offset 0, 576 bytes of BLAKE2b
 scratch at 192, the digest at 768, the four-byte length prefix at 832, and the
 saved `r27`–`r31` and return address at 840–895. `r27` and `r28` hold the
@@ -28,7 +28,7 @@ open VG.PPC64LE
 /-- `mr d, n` (as `addi d, n, 0`; `n` is not `r0`). -/
 def mov (d n : Reg) : Instr := .addi d n 0
 
-def initName : String := "vg_blake2b_init"
+def initName : String := "vg_blake2b_init_core"
 def updateName : String := "vg_blake2b_update_scratch"
 def finalizeName : String := "vg_blake2b_finalize_scratch"
 

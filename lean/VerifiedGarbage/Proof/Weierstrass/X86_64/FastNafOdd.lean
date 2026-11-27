@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.FastNafState
-import VerifiedGarbage.Proof.Weierstrass.X86_64.FastNafShift
 import VerifiedGarbage.Proof.Weierstrass.X86_64.FastNafChoose
 import VerifiedGarbage.Proof.Weierstrass.X86_64.FastNafSubtract
 import VerifiedGarbage.Proof.Framework.Block

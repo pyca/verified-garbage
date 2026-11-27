@@ -29,15 +29,16 @@ theorem CrtBuffers.after_mutable {s t : State} {g : CrtGeometry} {bs : Fin 7 →
   apply h.after_frame frame rest
   · intro i r hr
     simp only [crtMutable, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl
+    rcases hr with rfl | rfl | rfl | rfl | rfl
     · exact h.sourceSeparate i
     · exact (h.sourceStack i).sub_right (Region.sub_prefix (by decide))
     · exact (h.sourceStack i).sub_right (Offset.sub_base _ (by decide))
     · exact (h.sourceStack i).sub_right (Offset.sub_base _ (by decide))
+    · exact h.sourceBelow i
   · intro a ha r hr
     have r2 := h.r2 a ha
     simp only [crtMutable, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl
+    rcases hr with rfl | rfl | rfl | rfl | rfl
     · exact ⟨r2.separate, r2.slotSeparate⟩
     · exact ⟨r2.stack.sub_right (Region.sub_prefix (by decide)),
         Offset.disjoint_base _ (by decide) (by decide)⟩
@@ -45,5 +46,6 @@ theorem CrtBuffers.after_mutable {s t : State} {g : CrtGeometry} {bs : Fin 7 →
         Offset.disjoint _ (Or.inr (by decide)) (by decide) (by decide)⟩
     · exact ⟨r2.stack.sub_right (Offset.sub_base _ (by decide)),
         Offset.disjoint _ (Or.inr (by decide)) (by decide) (by decide)⟩
+    · exact ⟨r2.below, r2.slotBelow⟩
 
 end VG.Proof.Bignum.Arm

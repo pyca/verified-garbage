@@ -8,6 +8,8 @@
 ///
 /// It runs `vg_aes_siv_init`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `key` must be valid for reads of `key_len` bytes.
@@ -27,6 +29,8 @@ pub unsafe fn vg_aes_siv_init_auto(_dit: verified_garbage_cpu::Dit<'_>, key: *co
 /// Contract: `VG.Spec.Siv.encryptContract`. Constant time: only the pointers, `rounds`, `ads_count`, `len` and where the components are (their addresses and lengths) may affect timing, not the key context, the associated data or the plaintext.
 ///
 /// It runs `vg_aes_siv_encrypt`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -49,6 +53,8 @@ pub unsafe fn vg_aes_siv_encrypt_auto(_dit: verified_garbage_cpu::Dit<'_>, ctx: 
 /// Contract: `VG.Spec.Siv.decryptContract`. Constant time but for the result: only the pointers, `rounds`, `ads_count`, `len`, where the components are (their addresses and lengths) and whether the function returns 1 or 0 may affect timing, not the key context, the associated data, the data or `V`.
 ///
 /// It runs `vg_aes_siv_decrypt`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///

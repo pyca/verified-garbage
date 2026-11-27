@@ -1,26 +1,24 @@
 module
 
 public import VerifiedGarbage.TCB.PPC64LE.Target
-public import VerifiedGarbage.Proof.Weierstrass.Law
-public import VerifiedGarbage.Impl.Ecdh.BrainpoolP256r1.PPC64LE
-public import VerifiedGarbage.Proof.Ecdh.PPC64LE.BrainpoolP256r1.Verified
-public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.Registration
 public import VerifiedGarbage.Spec.Ecdh.BrainpoolP256r1
-public import VerifiedGarbage.TCB.PPC64LE.Print
-import VerifiedGarbage.Proof.Ecdh.PPC64LE.BrainpoolP256r1.Lit
-public import VerifiedGarbage.Proof.BrainpoolP256r1.PPC64LE.Law
+import VerifiedGarbage.Proof.Ecdh.PPC64LE.Scrub
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.BrainpoolP256r1.PPC64LE.Law
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # ECDH over brainpoolP256r1 (SP 800-56A) on PPC64LE -/
-
-@[expose] public section
 
 namespace VG.Artifacts.EcdhBrainpoolP256r1.PPC64LE
 
 open VG.Proof.BrainpoolP256r1.PPC64LE (hasLaw)
 
-def artifacts : List Artifact := [
+public def artifacts : List (Artifact PPC64LE.target) := [
   Spec.Ecdh.BrainpoolP256r1.exchangeApi.artifact PPC64LE.target {
-    code := Impl.Ecdh.PPC64LE.exchangeBrainpoolP256r1
-    verified := Proof.Ecdh.PPC64LE.BrainpoolP256r1.ecdh_verified hasLaw.law }]
+    code := Impl.Ecdh.PPC64LE.Fn.brainpoolp256r1Exchange
+    verified := Proof.Ecdh.PPC64LE.Scrub.brainpoolp256r1Exchange_scrubbed hasLaw.law }]
+
+spec_apis artifacts
 
 end VG.Artifacts.EcdhBrainpoolP256r1.PPC64LE

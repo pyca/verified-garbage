@@ -1,70 +1,69 @@
 module
-public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Readonly.Call
-public import VerifiedGarbage.Proof.MlKem.AArch64.NttR.FastTable
+public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Call
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Rc4.AArch64.Vec
+public import VerifiedGarbage.Proof.MlKem.AArch64.KeccakCall
+public import VerifiedGarbage.Proof.Framework.Covers
+public import VerifiedGarbage.Proof.MlKem.Mem
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Optimized
 open VG VG.AArch64 VG.Proof.MlKem VG.Proof.MlKem.AArch64
+open VG.Impl.MlKem.AArch64 VG.Impl.MlKem.AArch64.Ntt16
 
-def TransformTable (s : State) (symbol : String) (H : List Nat) : Prop :=
- (∀i<64,s.mem.readW (s.syms symbol+BitVec.ofNat 64 (8*i)) 64=Ntt16.hw4 H i) ∧
- Covers [⟨s.syms symbol,512⟩] (s.rd++s.wr) ∧
- ∀r∈s.wr,(Region.mk (s.syms symbol) 512).Disjoint r
+/-- The table `symbol`, of `n` bytes, holds the words `W`. -/
+def TransformTable (s : State) (symbol : String) (n : Nat) (W : List (BitVec 64)) : Prop :=
+ Ntt16.Holds s.mem (s.syms symbol) n W ∧
+ Covers [⟨s.syms symbol,n⟩] (s.rd++s.wr) ∧
+ ∀r∈s.wr,(Region.mk (s.syms symbol) n).Disjoint r
 
+/-- The tables of `vg_mlkem16_ntt` and `vg_mlkem16_inv_ntt`. -/
 structure TransformTables (s : State) : Prop where
- forward : TransformTable s "VG_MLKEM_NTT16_ZETAS" Impl.MlKem.AArch64.Ntt16.tableHalves
- /-- The table of `vg_mlkem16_inv_ntt`. -/
- inverse : NttR.FastInvTable s
- forwardStack : (Region.mk (s.syms "VG_MLKEM_NTT16_ZETAS") 512).Disjoint (below s.sp 16)
- inverseStack : (NttR.fastInvRegion s).Disjoint (below s.sp 16)
- /-- The table of `vg_mlkem16_ntt`. -/
- fast : NttR.FastTable s
- fastStack : (NttR.fastRegion s).Disjoint (below s.sp 16)
+ forward : TransformTable s Forward.name Ntt16.fwdBytes Forward.words
+ inverse : TransformTable s Inverse.name Ntt16.invBytes Inverse.words
+ forwardStack : (Ntt16.fwdRegion s).Disjoint (below s.sp 16)
+ inverseStack : (Ntt16.invRegion s).Disjoint (below s.sp 16)
 
-theorem TransformTable.apart {s : State} {symbol : String} {H : List Nat} (h : TransformTable s symbol H)
- {r : Region} (hc : Covers [r] s.wr) : (Region.mk (s.syms symbol) 512).Disjoint r := by
+theorem TransformTable.apart {s : State} {symbol : String} {n : Nat} {W : List (BitVec 64)}
+ (h : TransformTable s symbol n W) {r : Region} (hc : Covers [r] s.wr) :
+ (Region.mk (s.syms symbol) n).Disjoint r := by
  intro addr ha hb
  have hi := hc addr 1 ⟨r,by simp,hb⟩
  obtain ⟨q,hq,hh⟩ := hi
  exact h.2.2 q hq addr ha hh
 
-theorem TransformTable.frameFar {s t : State} {symbol : String} {H : List Nat} {rs : List Region}
- (h : TransformTable s symbol H) (hs : t.syms=s.syms) (hr : t.rd=s.rd) (hw : t.wr=s.wr)
- (hf : Frame rs s.mem t.mem) (hd : ∀r∈rs,(Region.mk (s.syms symbol) 512).Disjoint r) :
- TransformTable t symbol H := by
+theorem TransformTable.frameFar {s t : State} {symbol : String} {n : Nat} {W : List (BitVec 64)} {rs : List Region}
+ (h : TransformTable s symbol n W) (hs : t.syms=s.syms) (hr : t.rd=s.rd) (hw : t.wr=s.wr)
+ (hf : Frame rs s.mem t.mem) (hd : ∀r∈rs,(Region.mk (s.syms symbol) n).Disjoint r) (hn : n < 2^32 := by decide) :
+ TransformTable t symbol n W := by
  refine ⟨?_,by simpa only [hs,hr,hw] using h.2.1,by simpa only [hs,hw] using h.2.2⟩
- intro i hi
- rw [hs,hf.readW (r:=⟨s.syms symbol,512⟩) (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])) hd (by decide)]
- exact h.1 i hi
+ rw [hs]
+ exact h.1.frame hf hd hn
 
-theorem TransformTable.frame {s t : State} {symbol : String} {H : List Nat} {rs : List Region}
- (h : TransformTable s symbol H) (hs : t.syms=s.syms) (hr : t.rd=s.rd) (hw : t.wr=s.wr)
- (hf : Frame rs s.mem t.mem) (hc : Covers rs s.wr) : TransformTable t symbol H := by
- refine ⟨?_,by simpa only [hs,hr,hw] using h.2.1,by simpa only [hs,hw] using h.2.2⟩
- intro i hi
- rw [hs,hf.readW (r:=⟨s.syms symbol,512⟩) (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])) ?_ (by decide)]
- · exact h.1 i hi
- · intro r hh
-   exact h.apart (fun a n ⟨q,hq,ha⟩=>hc a n ⟨q,by rw [List.mem_singleton.mp hq]; exact hh,ha⟩)
+theorem TransformTable.frame {s t : State} {symbol : String} {n : Nat} {W : List (BitVec 64)} {rs : List Region}
+ (h : TransformTable s symbol n W) (hs : t.syms=s.syms) (hr : t.rd=s.rd) (hw : t.wr=s.wr)
+ (hf : Frame rs s.mem t.mem) (hc : Covers rs s.wr) (hn : n < 2^32 := by decide) : TransformTable t symbol n W :=
+ h.frameFar hs hr hw hf (fun r hh =>
+   h.apart (fun a n ⟨q,hq,ha⟩=>hc a n ⟨q,by rw [List.mem_singleton.mp hq]; exact hh,ha⟩)) hn
+
+/-- The table is ready for a transform of the polynomial at `f`. -/
+theorem TransformTable.ready {s : State} {symbol : String} {n : Nat} {W : List (BitVec 64)}
+ (h : TransformTable s symbol n W) {f w : Addr} (hc : Covers [⟨f,1024⟩,⟨w,1024⟩] s.wr) : Ntt16.Ready symbol n W s f w :=
+ ⟨h.1,h.2.1,h.apart (Covers.head hc),h.apart (Covers.head (Covers.tail hc))⟩
 
 theorem TransformTables.frame {s t : State} {rs : List Region} (h : TransformTables s)
  (hs : t.syms=s.syms) (hr : t.rd=s.rd) (hw : t.wr=s.wr) (hsp : t.sp=s.sp)
  (hf : Frame rs s.mem t.mem) (hc : Covers rs s.wr) : TransformTables t :=
  ⟨h.forward.frame hs hr hw hf hc,h.inverse.frame hs hr hw hf hc,
-   by simpa only [hs,hsp] using h.forwardStack,by simpa only [NttR.fastInvRegion,NttR.sRegion,hs,hsp] using h.inverseStack,
-   h.fast.frame hs hr hw hf hc,by simpa only [NttR.fastRegion,NttR.sRegion,hs,hsp] using h.fastStack⟩
+   by simpa only [Ntt16.fwdRegion,hs,hsp] using h.forwardStack,by simpa only [Ntt16.invRegion,hs,hsp] using h.inverseStack⟩
 theorem TransformTables.frameFar {s t : State} {rs : List Region} (h : TransformTables s)
  (hs : t.syms=s.syms) (hr : t.rd=s.rd) (hw : t.wr=s.wr) (hsp : t.sp=s.sp)
  (hf : Frame rs s.mem t.mem)
- (hd : ∀r∈rs,(Region.mk (s.syms "VG_MLKEM_NTT16_ZETAS") 512).Disjoint r ∧
-   (NttR.fastInvRegion s).Disjoint r ∧ (NttR.fastRegion s).Disjoint r) :
+ (hd : ∀r∈rs,(Ntt16.fwdRegion s).Disjoint r ∧ (Ntt16.invRegion s).Disjoint r) :
  TransformTables t :=
  ⟨h.forward.frameFar hs hr hw hf (fun r hr=>(hd r hr).1),
-   h.inverse.frameFar hs hr hw hf (fun r hr=>(hd r hr).2.1),
-   by simpa only [hs,hsp] using h.forwardStack,by simpa only [NttR.fastInvRegion,NttR.sRegion,hs,hsp] using h.inverseStack,
-   h.fast.frameFar hs hr hw hf (fun r hr=>(hd r hr).2.2),
-   by simpa only [NttR.fastRegion,NttR.sRegion,hs,hsp] using h.fastStack⟩
+   h.inverse.frameFar hs hr hw hf (fun r hr=>(hd r hr).2),
+   by simpa only [Ntt16.fwdRegion,hs,hsp] using h.forwardStack,by simpa only [Ntt16.invRegion,hs,hsp] using h.inverseStack⟩
 
 end VG.Proof.MlKem.AArch64.Optimized

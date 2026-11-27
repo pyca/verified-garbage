@@ -1,13 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.DeriveChecked.Fn
-public import VerifiedGarbage.Proof.Dsa.PPC64LE.CT.Key
+public import VerifiedGarbage.Proof.Dsa.PPC64LE.VerifyCT
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Derive.CT
-meta import VerifiedGarbage.Proof.Dsa.PPC64LE.CT.Key
+meta import VerifiedGarbage.Proof.Dsa.PPC64LE.VerifyCT
 meta import VerifiedGarbage.Proof.Dsa.PPC64LE.Derive.CT
 meta import VerifiedGarbage.Proof.Dsa.PPC64LE.DeriveChecked.Fn
-import VerifiedGarbage.Proof.Dsa.PPC64LE.CT.SizesRest
-import VerifiedGarbage.Proof.Dsa.PPC64LE.DeriveChecked.Check
 import VerifiedGarbage.Proof.Dsa.PPC64LE.Params.Fn
 import VerifiedGarbage.Proof.Dsa.PPC64LE.Ptr
 import VerifiedGarbage.Proof.Dsa.SizeBounds
@@ -93,7 +91,7 @@ specification's checks. -/
 theorem domainTail_rel {rest fail : Prog isa} {Q : State → State → Prop}
     (hrest : RelCT isa (Two fun v s => K8 v s ∧ KD v) rest Q)
     (hfail : ∀ Φ : VD → State → Prop, (∀ v s, Φ v s → Base v s ∧ KD v) → RelCT isa (Two Φ) fail Q) :
-    RelCT isa (Two fun v s => S5 v s ∧ KD v) (odds (andThen pModQ (.seq setupP (andThen (.seq (.block ptrG)
+    RelCT isa (Two fun v s => S5 v s ∧ KD v) (odds (andThen pModQ (.seq setupPCall (andThen (.seq (.block ptrG)
       Derive.rangeElem) rest fail)) fail) fail) Q := by
   unfold odds andThen
   refine RelCT.seq (two_postG (rel_pins pins_S5' t1) fun _ _ h => w_O1 h)
@@ -102,7 +100,7 @@ theorem domainTail_rel {rest fail : Prog isa} {Q : State → State → Prop}
     (rel_ite_zeroG (zero_iff_agree _ fun _ _ h => h.2.2.2.2.2) ?_ (hfail _ fun _ _ h => ⟨h.1.1.1, h.2⟩))
   refine RelCT.seq (two_postG (rel_pins (pins_and pins_O2) t3) fun _ _ h => w_OM h)
     (rel_ite_zeroG (zero_iff_agree _ fun _ _ h => h.2.2.2.2) ?_ (hfail _ fun _ _ h => ⟨h.1.1.1, h.2⟩))
-  refine RelCT.seq (two_postG (setupP_rel (pins_and pins_OM)
+  refine RelCT.seq (two_postG (setupPCall_rel (pins_and pins_OM)
       fun _ _ ⟨⟨B, r2, _, ⟨ko, _⟩, _⟩, _⟩ => ⟨B, r2, ko.2.1⟩) fun _ _ h => w_P h) (RelCT.seq
     rangeG_rel (rel_ite_zeroG (zero_iff_agree _ fun _ _ h => h.2.2.2.2.2) ?_
       (hfail _ fun _ _ h => ⟨h.1.1.1, h.2⟩)))

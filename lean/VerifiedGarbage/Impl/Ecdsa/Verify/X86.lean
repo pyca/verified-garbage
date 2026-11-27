@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.Weierstrass.X86.Naf
 public import VerifiedGarbage.Impl.Ecdh.X86.Window
 public import VerifiedGarbage.Impl.Weierstrass.X86.NafPrep
+public import VerifiedGarbage.Impl.Weierstrass.X86.PowWindow
 
 /-!
 # ECDSA signature verification on x86 (32-bit)
@@ -24,12 +25,14 @@ x86-64 and AArch64 (`Impl/Ecdsa/Verify/AArch64.lean`):
    into the flag, and the key's point, or `G` if the flag is clear, to the
    slots of ECDH's ladder;
 3. the masks of `r` and `s` in `[1, n-1]` into the flag, and
-   `w = s^(n-2)`, in Montgomery form modulo `n`;
+   `w = s^(n-2)`, in Montgomery form modulo `n` (`sPow`);
 4. `u = e w` and `v = r w` modulo `n`, out of Montgomery's form;
-5. `[u]G` by the signature's ladder (from the table of `u`'s bits), saved
+5. `[u]G` by the signature's ladder (from the table of `u`'s bits), or, for
+   a curve with a comb's tables (`verifyComb`), by its comb, saved
    to `U`, and `R` reset to `O`; then `[v]Q` by ECDH's ladder (from the
-   table of `v`'s bits) and `[u]G + [v]Q` by the complete addition, into
-   `R`;
+   table of `v`'s bits), or with the comb by ECDH's windows (`Cfg.ecdhMul`,
+   `Impl/Ecdsa/X86/Window.lean`), and `[u]G + [v]Q` by the complete
+   addition, into `R`;
 6. `Z^(p-2)` by the signature's power, `x = X Z^(p-2)` out of Montgomery's
    form, and the masks of `Z ≠ 0` and `x R ≡ r R` modulo `n` into the
    flag, which is returned as 0 or 1.
@@ -93,6 +96,37 @@ def loadS : List Instr :=
 def scalars : Prog isa :=
   .seq (.block (c.checkRange (c.sl K) ++ c.checkRange (c.sl PT)))
     (Mont.mulCall c.SN (c.sl SM') (c.sl PT) (c.sl R2N))
+
+/-- From `x^15 = x^(2^4 - 1)` in the accumulator and in slot 7, with `x³` in
+slot 1 (`windowTable`): `x^(2^k - 1)` for `k` = 8, 16, …, 256, 260 and 262,
+saving each of the first five in slot 8, which the table no longer needs. -/
+def p521ScalarChain : List TabOp :=
+  [.squares 4, .mul 7, .put 8, .squares 8, .mul 8, .put 8, .squares 16, .mul 8, .put 8,
+    .squares 32, .mul 8, .put 8, .squares 64, .mul 8, .put 8, .squares 128, .mul 8,
+    .squares 4, .mul 7, .squares 2, .mul 1]
+
+/-- P-521's `n - 2`: its top 262 bits, all ones, by `p521ScalarChain` (259
+squarings and 15 other multiplications, with the table's), then its 259
+other bits by windows of four over the table's odd powers. -/
+def p521ScalarOps : List TabOp :=
+  windowTable ++ p521ScalarChain ++ windowAdd 259 ((Spec.P521.n - 2) % 2 ^ 259) 0 []
+
+/-- The sequence for the power `m - 2` modulo a curve's order `m` of `bits`
+bits at most. -/
+def scalarOps (m bits : Nat) : List TabOp :=
+  if m = Spec.P521.n then p521ScalarOps else windowOps (m - 2) bits
+
+/-- The slots of the saved powers of `s`: the exponents' and the complete
+addition's, and `DX`, none of which holds anything between the checks of the
+key and the points. -/
+def sSlots : List Nat := [EXPP, EXPN, T0, T1, T2, T3, T4, T5, DX]
+
+/-- `w = s^(n-2)` modulo `n`, in `ACC`: the signature's inversion by
+divsteps for 256-bit scalars, else the power by `scalarOps`, whose
+multiplications the exponent places, since it is public (as `s` is, here). -/
+def sPow : Prog isa :=
+  if c.n = 4 ∧ c.C.len = 32 then c.nPow
+  else tabPower c.powN c.SN (sSlots.map c.sl) (scalarOps c.C.n (64 * c.n))
 
 /-- `u` and `v`, from `w R mod n` in `ACC`. -/
 def uv : Prog isa :=
@@ -160,12 +194,12 @@ def projectiveFinal : Prog isa :=
     (.seq (Mont.mulCall c.SP (c.sl XM) (c.sl K) (c.sl XM))
       (fprog c.SP (projectiveOps c.sl)))) (.block (projectiveChecks c))
 
-/-- P-256 compares projective coordinates directly (it reads `r` from `K`'s
-slot, which `vg_<curve>_mul`'s scalar replaces: so only for a curve without
-it, `Cfg.mul`); the other curves retain an affine conversion until the
-direct path has been benchmarked for them. -/
+/-- A curve with `n < p ≤ 2n` compares projective coordinates directly, with
+`r` from `K`'s slot, which the comb and the windows leave as it was (`points`
+would not, for a curve with `vg_<curve>_mul`). The others convert to affine
+coordinates. -/
 def tail : Prog isa :=
-  if c.mul.isNone ∧ c.C.len = 32 ∧ c.C.n < c.C.p ∧ c.C.p ≤ 2 * c.C.n then projectiveFinal c
+  if c.C.n < c.C.p ∧ c.C.p ≤ 2 * c.C.n then projectiveFinal c
   else .seq c.pPow (final c)
 
 /-- The scalar at slot `i` to where the multiplications read it: `K`'s slot,
@@ -194,23 +228,26 @@ def windowMulQ : Prog isa :=
   .seq (Naf.prep 3580 (c.sl V) 3520) <|
   .seq (Naf.window (nafQ c) c.SP) (Naf.finish (nafQ c) c.SP)
 
-/-- Fixed-base comb for `[u]G`, followed by the existing variable-base ladder. -/
+/-- Fixed-base comb for `[u]G`, followed by ECDH's windows for `[v]Q`, from
+the table of `v`'s bits: constant time, although `v` and `Q` are public. -/
 def pointsCombLadder : Prog isa :=
   .seq (bits (c.sl U) (bitsAt c.n 0) (8 * c.n)) <| .seq c.gMul <|
   .seq (.block (save c)) <| .seq (bits (c.sl V) (bitsAt c.n 0) (8 * c.n)) <|
-  .seq (ladder (Impl.Ecdh.X86.Cfg.ladderQ c) c.SP) (sum c)
+  .seq (c.ecdhMul Impl.Ecdh.X86.PX Impl.Ecdh.X86.PY) (sum c)
 
 /-- Fixed-base comb and signed-window variable-base multiplication. -/
 def pointsWindow : Prog isa :=
   .seq (bits (c.sl U) (bitsAt c.n 0) (8 * c.n)) <| .seq c.gMul <|
   .seq (.block (save c)) <| .seq (windowMulQ c) (sum c)
 
-/-- Use signed windows for the 256-bit field; retain the ladder for other sizes. -/
-def pointsComb : Prog isa := if c.n = 4 then pointsWindow c else pointsCombLadder c
+/-- Use signed windows for P-256 (four words, and the comb with Jacobian
+additions: `a = -3`), and ECDH's windows for the other curves. -/
+def pointsComb : Prog isa :=
+  if c.n = 4 ∧ c.combJac = true then pointsWindow c else pointsCombLadder c
 
 /-- Everything after the checks of the key. -/
 def back : Prog isa :=
-  .seq (scalars c) <| .seq c.nPow <| .seq (uv c) <| .seq (points c) <|
+  .seq (scalars c) <| .seq (sPow c) <| .seq (uv c) <| .seq (points c) <|
   .seq c.pPow (final c)
 
 /-- `vg_ecdsa_<curve>_verify`. -/
@@ -226,7 +263,7 @@ def combFront : Prog isa :=
 
 /-- Scalar arithmetic before multiplying the two points. -/
 def combMid : Prog isa :=
-  .seq (scalars c) <| .seq c.nPow <| .seq (uv c) (.block [])
+  .seq (scalars c) <| .seq (sPow c) <| .seq (uv c) (.block [])
 
 /-- Verification body using the comb for its fixed-base multiplication. -/
 def verifyCombBody : Prog isa :=

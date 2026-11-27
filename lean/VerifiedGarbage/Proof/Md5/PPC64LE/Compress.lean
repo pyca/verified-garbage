@@ -27,8 +27,6 @@ meta import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-import Mathlib.Algebra.Group.Nat.Defs
-public import Mathlib.Tactic.IntervalCases
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.TCB.Artifact
 public import VerifiedGarbage.TCB.PPC64LE.Isa

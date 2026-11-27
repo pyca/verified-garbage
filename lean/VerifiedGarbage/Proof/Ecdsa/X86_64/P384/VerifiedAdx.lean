@@ -2,11 +2,9 @@ module
 
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.LitAdx
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.LitAdx
-
 import VerifiedGarbage.Proof.P384.Order
-import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Verified
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.MulBase
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Contract
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Verified
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.MulFn
 public import VerifiedGarbage.Proof.Ecdsa.Contract
 import VerifiedGarbage.Proof.P384.Prime
 import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
@@ -16,8 +14,7 @@ import VerifiedGarbage.Proof.P384.Point
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.LitEraseAdx
 import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Verified
-meta import VerifiedGarbage.Proof.Ecdsa.X86_64.MulBase
-meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Contract
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.MulFn
 meta import VerifiedGarbage.Proof.P384.Prime
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 meta import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
@@ -31,7 +28,7 @@ meta import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
 
 `p384x` is `p384` multiplying modulo `p` and `n` with BMI2 and ADX
 (`Mod.adx`) and selecting the comb's entries with AVX2, which the proof of
-`sign_ok` covers as it covers any multiplication (`Proof/Mont/X86_64/Adx.lean`)
+`sign_ok` covers as it covers any multiplication (`Proof/Mont/X86_64/Rounds.lean`)
 and either selection (`selPassV_ok`): the same curve, so the same facts
 (`p384x_ok`, from `p384_ok`) and the same precondition.
 -/
@@ -85,7 +82,7 @@ theorem p384x_ok (hI : InvSounds) : CfgOk p384x where
   sh := by rw [p384x_sh]; decide
   comb d h := by cases h; exact ⟨by decide, by decide, by decide⟩
   inv _ := ⟨by decide, @hI _ _ (by
-    show Nat.Prime Spec.P384.curve.p
+    show IsPrime Spec.P384.curve.p
     rw [show Spec.P384.curve.p =
       39402006196394479212279040100143613805079739270465446667948293404245721771496870329047266088258938001861606973112319
       by decide +kernel]

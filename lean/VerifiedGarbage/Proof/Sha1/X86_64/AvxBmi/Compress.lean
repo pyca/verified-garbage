@@ -186,10 +186,10 @@ theorem xupd_quad (M : Block) (i : Nat) :
     xupd (quad M i) (quad M (i + 1)) (quad M (i + 2)) (quad M (i + 3)) = quad M (i + 4) := by
   simp only [quad]
   rw [xupd_eq]
-  have w0 := W_ge' M (4 * i)
-  have w1 := W_ge' M (4 * i + 1)
-  have w2 := W_ge' M (4 * i + 2)
-  have w3 := W_ge' M (4 * i + 3)
+  obtain w0 := W_ge' M (4 * i)
+  obtain w1 := W_ge' M (4 * i + 1)
+  obtain w2 := W_ge' M (4 * i + 2)
+  obtain w3 := W_ge' M (4 * i + 3)
   simp only [show 4 * i + 16 = 4 * (i + 4) by omega_arith, show 4 * i + 1 + 16 = 4 * (i + 4) + 1 by omega_arith,
     show 4 * i + 2 + 16 = 4 * (i + 4) + 2 by omega_arith, show 4 * i + 3 + 16 = 4 * (i + 4) + 3 by omega_arith,
     show 4 * i + 13 = 4 * (i + 3) + 1 by omega_arith, show 4 * i + 1 + 13 = 4 * (i + 3) + 2 by omega_arith,
@@ -249,7 +249,7 @@ theorem fadd_eq (g : Fn) (b c d e : Word) : fadd g b c d e = e + fval g b c d :=
 theorem round_nodup (t : Nat) :
     [var t 0, var t 1, var t 2, var t 3, var t 4, T1, .rdi, .rsi, .rdx, .rcx, .rsp].Nodup := by
   simp only [var, Impl.Sha1.X86_64.work, T1]
-  have h5 := Nat.mod_lt t (show 5 > 0 by omega_arith)
+  obtain h5 := Nat.mod_lt t (show 5 > 0 by omega_arith)
   generalize t % 5 = c at *
   revert h5; revert c; decide
 
@@ -276,8 +276,8 @@ theorem round_ok (t : Nat) (s : State) (v : HashValue) (wk : Word)
     (hv : Vars t s v) (hin : InRegions (s.rd ++ s.wr) (s.ea (slot t)) 4)
     (hw : s.mem.readW (s.ea (slot t)) 32 = wk) :
     WP isa (.block (round t)) s fun s' => Vars (t + 1) s' (roundV (fn t) v wk) ∧ Keeps s s' := by
-  have hd := round_nodup t
-  have hd' := VG.nodup_reverse hd
+  obtain hd := round_nodup t
+  obtain hd' := VG.nodup_reverse hd
   simp only [Vars, var_succ_zero, var_succ t _ (show 0 < 4 by omega_arith),
     var_succ t _ (show 1 < 4 by omega_arith), var_succ t _ (show 2 < 4 by omega_arith),
     var_succ t _ (show 3 < 4 by omega_arith)] at hv ⊢
@@ -350,10 +350,10 @@ theorem kreg_cases (g : Nat) : kreg g = .xmm8 ∨ kreg g = .xmm9 ∨ kreg g = .x
 /-- The vector registers of `schedule i` are all different. -/
 theorem msg_nodup (n g : Nat) :
     [msg n, msg (n + 1), msg (n + 2), msg (n + 3), t0, t1, mBswap, tmp, kreg g].Nodup := by
-  have key : ∀ c < 4, ∀ k ∈ [XReg.xmm8, .xmm9, .xmm10, .xmm11],
+  obtain key : ∀ c < 4, ∀ k ∈ [XReg.xmm8, .xmm9, .xmm10, .xmm11],
       [msg c, msg (c + 1), msg (c + 2), msg (c + 3), t0, t1, mBswap, tmp, k].Nodup := by
     decide
-  have e : ∀ k, msg (n + k) = msg (n % 4 + k) := fun k => by
+  obtain e : ∀ k, msg (n + k) = msg (n % 4 + k) := fun k => by
     simp only [msg]; rw [show (n % 4 + k) % 4 = (n + k) % 4 by omega_arith]
   rw [show msg n = msg (n % 4) by simp only [msg, Nat.mod_mod], e 1, e 2, e 3]
   exact key _ (Nat.mod_lt _ (by decide)) _ (by rcases kreg_cases g with h | h | h | h <;> simp [h])
@@ -370,8 +370,8 @@ theorem schedule_ok (i : Nat) (s : State) (a b c d kv : BitVec 128)
       s'.mem = s.mem.writeW (s.gpr .rcx + BitVec.ofInt 64 ((16 * (i % 4) : Nat) : Int))
         (XBinOp.eval .paddd (xupd a b c d) kv) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr := by
-  have hn := msg_nodup i (i / 5)
-  have hn' := VG.nodup_reverse hn
+  obtain hn := msg_nodup i (i / 5)
+  obtain hn' := VG.nodup_reverse hn
   apply WP.of_runBlock
   simp only [schedule, storeWK, vb, vs, at_, List.cons_append, List.nil_append]
   generalize msg i = x₀ at *
@@ -402,8 +402,8 @@ theorem loadW_ok (i : Nat) (s : State) (kv : BitVec 128)
         (XBinOp.eval .paddd (XBinOp.eval .pshufb
           (s.mem.readW (s.gpr .rsi + BitVec.ofInt 64 ((16 * i : Nat) : Int)) 128) bswapMask) kv) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr := by
-  have hn := msg_nodup i (i / 5)
-  have hn' := VG.nodup_reverse hn
+  obtain hn := msg_nodup i (i / 5)
+  obtain hn' := VG.nodup_reverse hn
   apply WP.of_runBlock
   simp only [loadW, storeWK, vb, at_, List.cons_append, List.nil_append]
   generalize msg i = x₀ at *
@@ -456,14 +456,14 @@ theorem Consts.k {s : State} (h : Consts s) {g : Nat} (hg : g < 4) : s.xmm (kreg
 /-- The constants' registers are not those the schedule writes. -/
 theorem consts_ne (n : Nat) : ∀ r ∈ [mBswap, kreg 0, kreg 1, kreg 2, kreg 3],
     r ≠ msg n ∧ r ≠ t0 ∧ r ≠ t1 := by
-  have key : ∀ c < 4, ∀ r ∈ [mBswap, kreg 0, kreg 1, kreg 2, kreg 3], r ≠ msg c ∧ r ≠ t0 ∧ r ≠ t1 := by
+  obtain key : ∀ c < 4, ∀ r ∈ [mBswap, kreg 0, kreg 1, kreg 2, kreg 3], r ≠ msg c ∧ r ≠ t0 ∧ r ≠ t1 := by
     decide
   rw [show msg n = msg (n % 4) by simp only [msg, Nat.mod_mod]]
   exact key _ (Nat.mod_lt _ (by decide))
 
 theorem Consts.of_eq {s s' : State} (h : Consts s) (n : Nat)
     (he : ∀ r, r ≠ msg n → r ≠ t0 → r ≠ t1 → s'.xmm r = s.xmm r) : Consts s' := by
-  have o := fun r hr => he r (consts_ne n r hr).1 (consts_ne n r hr).2.1 (consts_ne n r hr).2.2
+  obtain o := fun r hr => he r (consts_ne n r hr).1 (consts_ne n r hr).2.1 (consts_ne n r hr).2.2
   obtain ⟨h0, h1, h2, h3, h4⟩ := h
   exact ⟨(o _ (by simp)).trans h0, (o _ (by simp)).trans h1, (o _ (by simp)).trans h2,
     (o _ (by simp)).trans h3, (o _ (by simp)).trans h4⟩
@@ -486,8 +486,8 @@ theorem K_group {t : Nat} (ht : t < 80) : K (20 * (t / 4 / 5)) = K t := by
 /-- Round `t` reads `Wₜ + Kₜ`. -/
 theorem wk_read {m : Mem} {scr : Addr} {M : Block} {t : Nat} (ht : t < 80) (h : WKMem m scr M (t / 4)) :
     m.readW (scr + BitVec.ofInt 64 ((4 * (t % 16) : Nat) : Int)) 32 = W M t + K t := by
-  have hq : t % 4 < 4 := Nat.mod_lt _ (by decide)
-  have e : scr + BitVec.ofInt 64 ((4 * (t % 16) : Nat) : Int) =
+  obtain hq : t % 4 < 4 := Nat.mod_lt _ (by decide)
+  obtain e : scr + BitVec.ofInt 64 ((4 * (t % 16) : Nat) : Int) =
       wkAddr scr (t / 4) + BitVec.ofNat 64 (4 * (t % 4)) := by
     simp only [wkAddr, ofInt_natCast]
     rw [Offset.add_ofNat_add_ofNat, show 16 * (t / 4 % 4) + 4 * (t % 4) = 4 * (t % 16) by omega_arith]
@@ -515,7 +515,7 @@ theorem round_step (t : Nat) (ht : t < 80) (H : HashValue) (M : Block) (scr : Ad
     (hv : Vars t s (Spec.Sha1.rounds H M t)) (hrcx : s.gpr .rcx = scr) (hR : (⟨scr, 112⟩ : Region) ∈ s.wr)
     (hw : WKMem s.mem scr M (t / 4)) :
     WP isa (.block (round t)) s fun s' => Vars (t + 1) s' (Spec.Sha1.rounds H M (t + 1)) ∧ Keeps s s' := by
-  have ea : s.ea (slot t) = scr + BitVec.ofInt 64 ((4 * (t % 16) : Nat) : Int) := by
+  obtain ea : s.ea (slot t) = scr + BitVec.ofInt 64 ((4 * (t % 16) : Nat) : Int) := by
     simp only [slot, ea_at, hrcx]
   obtain ⟨r, hr, hc⟩ := in_scr hR (d := 4 * (t % 16)) (n := 4) (by omega_arith)
   refine WP.mono (round_ok t s _ (W M t + K t) hv (by rw [ea]; exact ⟨r, List.mem_append_right _ hr, hc⟩)
@@ -541,7 +541,7 @@ theorem Sched.keeps {M : Block} {scr : Addr} {sB : State} {n : Nat} {s s' : Stat
   rw [Consts, hx]; exact h.consts
 
 theorem msg_ne (n k : Nat) (h₁ : n < k) (h₂ : k ≤ n + 3) : msg k ≠ msg n ∧ msg k ≠ t0 ∧ msg k ≠ t1 := by
-  have key : ∀ c < 4, ∀ d < 4, 0 < d → msg (c + d) ≠ msg c ∧ msg (c + d) ≠ t0 ∧ msg (c + d) ≠ t1 := by
+  obtain key : ∀ c < 4, ∀ d < 4, 0 < d → msg (c + d) ≠ msg c ∧ msg (c + d) ≠ t0 ∧ msg (c + d) ≠ t1 := by
     decide
   rw [show msg k = msg (n % 4 + (k - n)) by simp only [msg]; rw [show (n % 4 + (k - n)) % 4 = k % 4 by omega_arith],
     show msg n = msg (n % 4) by simp only [msg, Nat.mod_mod]]
@@ -553,11 +553,11 @@ theorem sched_step {M : Block} {scr : Addr} {sB : State} (hrcx : sB.gpr .rcx = s
       Sched M scr sB (n + 1) s' ∧ s'.gpr = s.gpr := by
   by_cases h16 : n < 16
   · simp only [h16, ↓reduceIte]
-    have hrcx' : s.gpr .rcx = scr := (h.pub .rcx (by decide)).trans hrcx
-    have m : ∀ q < 4, s.xmm (msg (n + 4 + q)) = quad M (n + q) := fun q hq => by
+    obtain hrcx' : s.gpr .rcx = scr := (h.pub .rcx (by decide)).trans hrcx
+    obtain m : ∀ q < 4, s.xmm (msg (n + 4 + q)) = quad M (n + q) := fun q hq => by
       rw [show n + 4 + q = n + q + 4 by omega_arith, msg_add4]
       exact h.msgs (n + q) (by omega_arith) (by omega_arith) (by omega_arith)
-    have ma := m 0 (by omega_arith)
+    obtain ma := m 0 (by omega_arith)
     simp only [Nat.add_zero] at ma
     refine WP.mono (schedule_ok (n + 4) s _ _ _ _ _ ma (m 1 (by omega_arith)) (m 2 (by omega_arith))
       (m 3 (by omega_arith)) (h.consts.k (by omega_arith))
@@ -594,13 +594,13 @@ theorem rounds4_ok {H : HashValue} {M : Block} {scr : Addr} {sB : State} (hrcx :
     (hs : Sched M scr sB n s) :
     WP isa (.block (round (4 * n) ++ round (4 * n + 1) ++ round (4 * n + 2) ++ round (4 * n + 3))) s
       fun s' => Vars (4 * (n + 1)) s' (Spec.Sha1.rounds H M (4 * (n + 1))) ∧ Sched M scr sB n s' := by
-  have hw : ∀ q < 4, WKMem s.mem scr M ((4 * n + q) / 4) := fun q hq => by
+  obtain hw : ∀ q < 4, WKMem s.mem scr M ((4 * n + q) / 4) := fun q hq => by
     rw [show (4 * n + q) / 4 = n by omega_arith]; exact hs.wk n (by omega_arith) (by omega_arith) hn
-  have st : ∀ q < 4, ∀ {s₁ : State}, Keeps s s₁ → Vars (4 * n + q) s₁ (Spec.Sha1.rounds H M (4 * n + q)) →
+  obtain st : ∀ q < 4, ∀ {s₁ : State}, Keeps s s₁ → Vars (4 * n + q) s₁ (Spec.Sha1.rounds H M (4 * n + q)) →
       WP isa (.block (round (4 * n + q))) s₁ fun s' =>
         Vars (4 * n + q + 1) s' (Spec.Sha1.rounds H M (4 * n + q + 1)) ∧ Keeps s s' := by
     intro q hq s₁ hk hv₁
-    have hs₁ := hs.keeps hk
+    obtain hs₁ := hs.keeps hk
     refine WP.mono (round_step _ (by omega_arith) H M scr s₁ hv₁ ((hs₁.pub .rcx (by decide)).trans hrcx)
       (hs₁.wr ▸ hR) (hk.1 ▸ hw q hq)) fun s' ⟨hv', hk'⟩ => ⟨hv', hk.trans hk'⟩
   rw [WP.block_append_iff, WP.block_append_iff, WP.block_append_iff]
@@ -652,7 +652,7 @@ theorem load_quad (M : Block) (m : Mem) (p : Addr) {n : Nat} (hn : n < 4)
     (hblk : ∀ t : Nat, t < 16 → bswap32 (m.readW (p + BitVec.ofInt 64 ((4 * t : Nat) : Int)) 32) = W M t) :
     XBinOp.eval .pshufb (m.readW (p + BitVec.ofInt 64 ((16 * n : Nat) : Int)) 128) bswapMask = quad M n := by
   rw [show bswapMask = 0x0c0d0e0f08090a0b0405060700010203#128 from rfl, pshufb_bswap]
-  have e : ∀ j, j < 4 → bswap32 (dword (m.readW (p + BitVec.ofInt 64 ((16 * n : Nat) : Int)) 128) j) =
+  obtain e : ∀ j, j < 4 → bswap32 (dword (m.readW (p + BitVec.ofInt 64 ((16 * n : Nat) : Int)) 128) j) =
       W M (4 * n + j) := by
     intro j hj
     rw [dword_readW _ _ hj, ← hblk (4 * n + j) (by omega_arith)]
@@ -679,7 +679,7 @@ theorem load_step {M : Block} {p scr : Addr} {sL : State}
       ∀ t : Nat, t < 16 → bswap32 (m.readW (p + BitVec.ofInt 64 ((4 * t : Nat) : Int)) 32) = W M t)
     {n : Nat} (hn : n < 4) {s : State} (h : LdInv M scr sL n s) :
     WP isa (.block (loadW n)) s (LdInv M scr sL (n + 1)) := by
-  have hq := load_quad M s.mem p hn (hblk _ h.frame)
+  obtain hq := load_quad M s.mem p hn (hblk _ h.frame)
   refine WP.mono (loadW_ok n s (kvec 0) (by rw [h.gpr, h.rd, h.wr, hrsi]; exact hin n hn) h.consts.1
     (by rw [show n / 5 = 0 by omega_arith]; exact h.consts.k (by omega_arith))
     (by rw [h.gpr, h.wr, hrcx]; exact in_scr hR (by omega_arith)))
@@ -699,7 +699,7 @@ theorem load_step {M : Block} {p scr : Addr} {sL : State}
     · have o₁ := (msg_ne k n (by omega_arith) (by omega_arith))
       rw [hx _ (Ne.symm o₁.1) (by
         have := (msg_ne k (k + 1) (by omega_arith) (by omega_arith)).2.1
-        have key : ∀ c < 4, msg c ≠ t0 := by decide
+        obtain key : ∀ c < 4, msg c ≠ t0 := by decide
         rw [show msg k = msg (k % 4) by simp only [msg, Nat.mod_mod]]
         exact key _ (Nat.mod_lt _ (by decide)))]
       exact h.msgs k (by omega_arith)
@@ -711,13 +711,13 @@ theorem loadH_ok {s₀ : State} (hp : Pre s₀) {s : State} (hrdi : s.gpr .rdi =
     WP isa (.block load) s fun s₁ =>
       Vars 0 s₁ (stateAt s.mem (st s₀)) ∧ (∀ r ∈ pubRegs, s₁.gpr r = s.gpr r) ∧
       s₁.rd = s.rd ∧ s₁.wr = s.wr ∧ s₁.mem = s.mem ∧ s₁.xmm = s.xmm := by
-  have hin : ∀ k : Nat, k < 5 →
+  obtain hin : ∀ k : Nat, k < 5 →
       InRegions (s.rd ++ s.wr) (st s₀ + BitVec.ofInt 64 ((4 * k : Nat) : Int)) 4 := by
     rw [hrd, hwr]; exact fun k hk => hp.in_state hk
   apply WP.of_runBlock
   rw [load_eq]
-  have h0 := hin 0 (by decide); have h1 := hin 1 (by decide); have h2 := hin 2 (by decide)
-  have h3 := hin 3 (by decide); have h4 := hin 4 (by decide)
+  obtain h0 := hin 0 (by decide); have h1 := hin 1 (by decide); have h2 := hin 2 (by decide)
+  obtain h3 := hin 3 (by decide); have h4 := hin 4 (by decide)
   simp only [reduceCtorEq, ↓reduceIte, vars0, runBlock_cons, runStep_some,
     runBlock_nil, exec, readSrc32, isa, ea_at,
     State.load32, State.setReg32, RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg,
@@ -738,18 +738,18 @@ theorem updateH_ok {s₀ : State} (hp : Pre s₀) {s : State} (V H : HashValue) 
       s'.zf = some (s.gpr .rdx - 1 == 0) ∧
       s'.gpr .rdi = s.gpr .rdi ∧ s'.gpr .rcx = s.gpr .rcx ∧ s'.gpr .rsp = s.gpr .rsp ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.xmm = s.xmm := by
-  have hin : ∀ k : Nat, k < 5 →
+  obtain hin : ∀ k : Nat, k < 5 →
       InRegions (s.rd ++ s.wr) (st s₀ + BitVec.ofInt 64 ((4 * k : Nat) : Int)) 4 := by
     rw [hrd, hwr]; exact fun k hk => hp.in_state hk
-  have hout : ∀ k : Nat, k < 5 →
+  obtain hout : ∀ k : Nat, k < 5 →
       InRegions s.wr (st s₀ + BitVec.ofInt 64 ((4 * k : Nat) : Int)) 4 := by
     rw [hwr]; exact fun k hk => hp.out_state hk
-  have i0 := hin 0 (by decide); have i1 := hin 1 (by decide); have i2 := hin 2 (by decide)
-  have i3 := hin 3 (by decide); have i4 := hin 4 (by decide)
-  have o0 := hout 0 (by decide); have o1 := hout 1 (by decide); have o2 := hout 2 (by decide)
-  have o3 := hout 3 (by decide); have o4 := hout 4 (by decide)
-  have m0 := hH 0 (by decide); have m1 := hH 1 (by decide); have m2 := hH 2 (by decide)
-  have m3 := hH 3 (by decide); have m4 := hH 4 (by decide)
+  obtain i0 := hin 0 (by decide); have i1 := hin 1 (by decide); have i2 := hin 2 (by decide)
+  obtain i3 := hin 3 (by decide); have i4 := hin 4 (by decide)
+  obtain o0 := hout 0 (by decide); have o1 := hout 1 (by decide); have o2 := hout 2 (by decide)
+  obtain o3 := hout 3 (by decide); have o4 := hout 4 (by decide)
+  obtain m0 := hH 0 (by decide); have m1 := hH 1 (by decide); have m2 := hH 2 (by decide)
+  obtain m3 := hH 3 (by decide); have m4 := hH 4 (by decide)
   rw [vars0] at hv
   obtain ⟨v0, v1, v2, v3, v4⟩ := hv
   apply WP.of_runBlock
@@ -764,8 +764,8 @@ theorem updateH_ok {s₀ : State} (hp : Pre s₀) {s : State} (V H : HashValue) 
     m0, m1, m2, m3, m4, v0, v1, v2, v3, v4,
     Nat.reduceLeDiff, BitVec.setWidth_setWidth_of_le, BitVec.setWidth_eq,
     Option.bind_some, Option.some.injEq, exists_eq_left']
-  have e64 : BitVec.signExtend 64 (64 : BitVec 32) = 64 := by decide
-  have e1 : BitVec.signExtend 64 (1 : BitVec 32) = 1 := by decide
+  obtain e64 : BitVec.signExtend 64 (64 : BitVec 32) = 64 := by decide
+  obtain e1 : BitVec.signExtend 64 (1 : BitVec 32) = 1 := by decide
   refine ⟨?_, by rw [e64], by rw [e1], by rw [e1], by simp only [and_self]⟩
   simp only [writeState, Vector.getElem_zipWith]
 
@@ -787,33 +787,33 @@ theorem body_ok {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < nb s₀) {s :
     WP isa body s fun s' =>
       (eval .ne s' = some false ∧ Common' s₀ (nb s₀) s') ∨
       (eval .ne s' = some true ∧ i + 1 < nb s₀ ∧ LInv' s₀ (i + 1) s') := by
-  have hR : scrR s₀ ∈ s.wr := by rw [hL.wr, hp.wr]; simp
-  have hwin : ∀ r' ∈ [winRegion (scr s₀)], (blR s₀).Disjoint r' := by
+  obtain hR : scrR s₀ ∈ s.wr := by rw [hL.wr, hp.wr]; simp
+  obtain hwin : ∀ r' ∈ [winRegion (scr s₀)], (blR s₀).Disjoint r' := by
     simpa using Region.Disjoint.sub_right hp.blk_scr (win_sub _)
-  have hst : ∀ r' ∈ [winRegion (scr s₀)], (stR s₀).Disjoint r' := by
+  obtain hst : ∀ r' ∈ [winRegion (scr s₀)], (stR s₀).Disjoint r' := by
     simpa using Region.Disjoint.sub_right hp.st_scr (win_sub _)
-  have stw : ∀ {m m' : Mem}, Frame [winRegion (scr s₀)] m m' → ∀ k : Nat, k < 5 →
+  obtain stw : ∀ {m m' : Mem}, Frame [winRegion (scr s₀)] m m' → ∀ k : Nat, k < 5 →
       m'.readW (st s₀ + BitVec.ofInt 64 ((4 * k : Nat) : Int)) 32 =
         m.readW (st s₀ + BitVec.ofInt 64 ((4 * k : Nat) : Int)) 32 :=
     fun hf k hk => hf.readW (contains_offset' (by omega_arith) (by omega_arith)) hst (by decide)
-  have hblk : ∀ m, Frame [winRegion (scr s₀)] s.mem m → ∀ t : Nat, t < 16 →
+  obtain hblk : ∀ m, Frame [winRegion (scr s₀)] s.mem m → ∀ t : Nat, t < 16 →
       bswap32 (m.readW (blkAddr s₀ i + BitVec.ofInt 64 ((4 * t : Nat) : Int)) 32) = W (blk s₀ i) t := by
     intro m hm t ht
     rw [hm.readW (hp.blk_contains hi ht) hwin (by decide),
       hL.frame.readW (hp.blk_contains hi ht) (by simpa using ⟨hp.blk_st, hp.blk_scr⟩) (by decide)]
     exact blk_word i t ht
-  have hin : ∀ n : Nat, n < 4 →
+  obtain hin : ∀ n : Nat, n < 4 →
       InRegions (s.rd ++ s.wr) (blkAddr s₀ i + BitVec.ofInt 64 ((16 * n : Nat) : Int)) 16 :=
     fun n hn => by rw [hL.rd, hL.wr]; exact Proof.Sha1.X86_64.ShaNi.in_blk16_of hp.rd hp.nb_lt hi hn
   have hrsi : s.gpr .rsi = blkAddr s₀ i := hL.rsi
   have hrcx : s.gpr .rcx = scr s₀ := hL.rcx
   -- Load the block and the hash value.
-  have hld : WP isa (.block (loadW 0 ++ loadW 1 ++ loadW 2 ++ loadW 3 ++ load)) s fun s₅ =>
+  obtain hld : WP isa (.block (loadW 0 ++ loadW 1 ++ loadW 2 ++ loadW 3 ++ load)) s fun s₅ =>
       Vars 0 s₅ (stateAt s.mem (st s₀)) ∧ (∀ r ∈ pubRegs, s₅.gpr r = s.gpr r) ∧ s₅.rd = s.rd ∧
       s₅.wr = s.wr ∧ Consts s₅ ∧ Frame [winRegion (scr s₀)] s.mem s₅.mem ∧
       (∀ k < 4, WKMem s₅.mem (scr s₀) (blk s₀ i) k) ∧ (∀ k < 4, s₅.xmm (msg k) = quad (blk s₀ i) k) := by
     rw [WP.block_append_iff, WP.block_append_iff, WP.block_append_iff, WP.block_append_iff]
-    have l0 : LdInv (blk s₀ i) (scr s₀) s 0 s :=
+    obtain l0 : LdInv (blk s₀ i) (scr s₀) s 0 s :=
       ⟨rfl, rfl, rfl, hL.consts, Frame.refl _ _, fun k hk => absurd hk (by omega_arith),
         fun k hk => absurd hk (by omega_arith)⟩
     refine WP.mono (load_step hrsi hrcx hR hin hblk (n := 0) (by decide) l0) fun s₁ l1 => ?_
@@ -822,7 +822,7 @@ theorem body_ok {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < nb s₀) {s :
     refine WP.mono (load_step hrsi hrcx hR hin hblk (n := 3) (by decide) l3) fun s₄ l4 => ?_
     refine WP.mono (loadH_ok hp (by rw [l4.gpr]; exact hL.rdi) (by rw [l4.rd, hL.rd]) (by rw [l4.wr, hL.wr]))
       fun s₅ ⟨hv₅, hpub₅, hrd₅, hwr₅, hm₅, hx₅⟩ => ?_
-    have e : stateAt s₄.mem (st s₀) = stateAt s.mem (st s₀) :=
+    obtain e : stateAt s₄.mem (st s₀) = stateAt s.mem (st s₀) :=
       stateAt_eq fun k hk => by rw [stw l4.frame k hk, ← stateAt_get _ _ hk]
     rw [e] at hv₅
     exact ⟨hv₅, fun r hr => (hpub₅ r hr).trans (by rw [l4.gpr]), hrd₅.trans l4.rd, hwr₅.trans l4.wr,
@@ -830,29 +830,29 @@ theorem body_ok {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < nb s₀) {s :
       fun k hk => hx₅ ▸ l4.msgs k hk⟩
   refine WP.seq (WP.mono hld fun s₅ ⟨hv₅, hpub₅, hrd₅, hwr₅, hc₅, hf₅, hw₅, hx₅⟩ => ?_)
   -- The rounds.
-  have hrcx₅ : s₅.gpr .rcx = scr s₀ := (hpub₅ .rcx (by decide)).trans hrcx
-  have hR₅ : scrR s₀ ∈ s₅.wr := hwr₅ ▸ hR
-  have g₀ : GInv (stateAt s.mem (st s₀)) (blk s₀ i) (scr s₀) s₅ 0 s₅ :=
+  obtain hrcx₅ : s₅.gpr .rcx = scr s₀ := (hpub₅ .rcx (by decide)).trans hrcx
+  obtain hR₅ : scrR s₀ ∈ s₅.wr := hwr₅ ▸ hR
+  obtain g₀ : GInv (stateAt s.mem (st s₀)) (blk s₀ i) (scr s₀) s₅ 0 s₅ :=
     ⟨hv₅, ⟨fun _ _ => rfl, rfl, rfl, hc₅, Frame.refl _ _, fun k _ h₂ _ => hw₅ k h₂,
       fun k _ h₂ _ => hx₅ k h₂⟩⟩
   refine WP.seq (WP.mono (groups_ok _ (blk s₀ i) (scr s₀) s₅ hrcx₅ hR₅ g₀ 20 (Nat.le_refl _))
     fun s₆ ⟨hv₆, hs₆⟩ => ?_)
-  have pub₆ : ∀ r ∈ pubRegs, s₆.gpr r = s.gpr r := fun r hr => by rw [hs₆.pub r hr, hpub₅ r hr]
-  have hrdi₆ : s₆.gpr .rdi = st s₀ := (pub₆ .rdi (by decide)).trans hL.rdi
+  obtain pub₆ : ∀ r ∈ pubRegs, s₆.gpr r = s.gpr r := fun r hr => by rw [hs₆.pub r hr, hpub₅ r hr]
+  obtain hrdi₆ : s₆.gpr .rdi = st s₀ := (pub₆ .rdi (by decide)).trans hL.rdi
   refine WP.mono (updateH_ok hp _ (stateAt s.mem (st s₀)) hv₆ hrdi₆
     (by rw [hs₆.rd, hrd₅, hL.rd]) (by rw [hs₆.wr, hwr₅, hL.wr]) fun k hk => ?_) fun s₇ h₇ => ?_
   · rw [stw hs₆.frame k hk, stw hf₅ k hk, stateAt_get _ _ hk]
   obtain ⟨hm₇, hrsi₇, hrdx₇, hzf₇, hrdi₇, hrcx₇, hrsp₇, hrd₇, hwr₇, hx₇⟩ := h₇
-  have hrdx : s₆.gpr .rdx - 1 = BitVec.ofNat 64 (nb s₀ - (i + 1)) := by
+  obtain hrdx : s₆.gpr .rdx - 1 = BitVec.ofNat 64 (nb s₀ - (i + 1)) := by
     rw [pub₆ .rdx (by decide), hL.rdx, show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl,
       Offset.ofNat_sub_ofNat (by omega_arith), Nat.sub_sub]
-  have winsub : ∀ r ∈ [winRegion (scr s₀)], ∃ r' ∈ [stR s₀, scrR s₀], Region.Sub r r' :=
+  obtain winsub : ∀ r ∈ [winRegion (scr s₀)], ∃ r' ∈ [stR s₀, scrR s₀], Region.Sub r r' :=
     fun r hr => ⟨scrR s₀, by simp, by simp at hr; subst hr; exact win_sub _⟩
-  have hframe : Frame [stR s₀, scrR s₀] s₀.mem s₇.mem := by
+  obtain hframe : Frame [stR s₀, scrR s₀] s₀.mem s₇.mem := by
     refine hL.frame.trans ((hf₅.sub winsub).trans ((hs₆.frame.sub winsub).trans ?_))
     rw [hm₇]
     exact (frame_writeState (Frame.refl _ _) _).sub fun r hr => ⟨r, by simp at hr; simp [hr], fun _ h => h⟩
-  have hcommon : Common' s₀ (i + 1) s₇ := by
+  obtain hcommon : Common' s₀ (i + 1) s₇ := by
     refine ⟨⟨by rw [hrdi₇, hrdi₆], by rw [hrcx₇, pub₆ .rcx (by decide), hL.rcx],
       by rw [hrsp₇, pub₆ .rsp (by decide), hL.rsp], by rw [hrd₇, hs₆.rd, hrd₅, hL.rd],
       by rw [hwr₇, hs₆.wr, hwr₅, hL.wr], hframe, ?_, ?_⟩, ?_⟩
@@ -863,20 +863,20 @@ theorem body_ok {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < nb s₀) {s :
       refine saved_frame hp ?_ (.inl hs₆.frame)
       exact saved_frame hp hL.saved (.inl hf₅)
     · rw [Consts, hx₇]; exact hs₆.consts
-  have hev : eval .ne s₇ = some (!(s₆.gpr .rdx - 1 == 0)) := by
+  obtain hev : eval .ne s₇ = some (!(s₆.gpr .rdx - 1 == 0)) := by
     simp [eval, hzf₇]
   rw [hrdx] at hev
   by_cases hlast : i + 1 = nb s₀
   · left
     refine ⟨by rw [hev, hlast]; simp, hlast ▸ hcommon⟩
   · right
-    have hne : nb s₀ - (i + 1) ≠ 0 := by omega_arith
+    obtain hne : nb s₀ - (i + 1) ≠ 0 := by omega_arith
     refine ⟨?_, by omega_arith, ⟨{ hcommon.toCommon with rsi := ?_, rdx := ?_ }, hcommon.consts⟩⟩
     · rw [hev]
       have := hp.nb_lt
-      have h0 : BitVec.ofNat 64 (nb s₀ - (i + 1)) ≠ 0 := by
+      obtain h0 : BitVec.ofNat 64 (nb s₀ - (i + 1)) ≠ 0 := by
         intro h
-        have h' := congrArg BitVec.toNat h
+        obtain h' := congrArg BitVec.toNat h
         rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)] at h'
         exact hne h'
       simpa using h0
@@ -917,15 +917,15 @@ theorem prologue_ok {s₀ : State} (hp : Pre s₀) :
 theorem restore_ok {s₀ : State} (hp : Pre s₀) {s : State} (hc : Common s₀ (nb s₀) s) :
     WP isa (.block (restore ++ ([.vop .vzeroupper] : List Instr))) s fun s' =>
       gprPreserved s₀ s' ∧ Proof.Sha1.compressX86_64.post s₀ s' := by
-  have hret : s.mem.readW (s₀.gpr .rsp) 64 = s₀.mem.readW (s₀.gpr .rsp) 64 :=
+  obtain hret : s.mem.readW (s₀.gpr .rsp) 64 = s₀.mem.readW (s₀.gpr .rsp) 64 :=
     hc.frame.readW (Region.contains_self _ _) (by simpa using ⟨hp.ret_st, hp.ret_scr⟩) (by decide)
   refine Spill.restore_then .rcx saved s₀.gpr (by decide) (fun p hp' => ?_)
     (by rw [hc.rcx]; exact hc.saved) ?_
   · have := saved_bound p hp'
     rw [hc.rcx, hc.rd, hc.wr]
     exact ⟨scrR s₀, by simp [hp.wr], Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
-  have hm := (Spill.restoreState_mem s₀.gpr s saved).1
-  have hg := Spill.restoreState_calleeSaved (l := saved) (by decide) hc.rsp
+  obtain hm := (Spill.restoreState_mem s₀.gpr s saved).1
+  obtain hg := Spill.restoreState_calleeSaved (l := saved) (by decide) hc.rsp
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, VOp.exec, Option.some.injEq,
     exists_eq_left']
@@ -935,7 +935,7 @@ theorem correct {s₀ : State} (hp : Pre s₀) :
     WP isa compress s₀ fun s' => gprPreserved s₀ s' ∧ Proof.Sha1.compressX86_64.post s₀ s' := by
   refine WP.seq (WP.mono (prologue_ok hp) fun s₁ ⟨hg, hrd, hwr, hm, hzf, hc⟩ => ?_)
   refine WP.seq (WP.mono (Q := Common' s₀ (nb s₀)) ?_ fun s₂ hc => restore_ok hp hc.toCommon)
-  have hc₀ : Common' s₀ 0 s₁ := by
+  obtain hc₀ : Common' s₀ 0 s₁ := by
     refine ⟨⟨by rw [hg _ (by decide)], by rw [hg _ (by decide)], by rw [hg _ (by decide)], hrd, hwr, ?_, ?_,
       by rw [hm]; exact saveMem_saved⟩, hc⟩
     · rw [hm]; exact saveMem_frame.sub fun r hr => ⟨r, by simp at hr; simp [hr], fun _ h => h⟩
@@ -953,7 +953,7 @@ theorem correct {s₀ : State} (hp : Pre s₀) :
       simp only [BitVec.and_self, beq_eq_false_iff_ne, ne_eq] at h
       exact Nat.pos_of_ne_zero fun h' => h (BitVec.eq_of_toNat_eq (by simpa using h'))
     let Inv : Nat → State → Prop := fun m s => ∃ i, m = nb s₀ - i ∧ i < nb s₀ ∧ LInv' s₀ i s
-    have hstep : ∀ m s, Inv m s → WP isa body s (fun s' =>
+    obtain hstep : ∀ m s, Inv m s → WP isa body s (fun s' =>
         (eval .ne s' = some false ∧ Common' s₀ (nb s₀) s') ∨
         (eval .ne s' = some true ∧ ∃ m' < m, Inv m' s')) := by
       rintro m s ⟨i, rfl, hi, hL⟩
@@ -961,7 +961,7 @@ theorem correct {s₀ : State} (hp : Pre s₀) :
       rcases h with ⟨he, hc⟩ | ⟨he, hi', hL'⟩
       · exact .inl ⟨he, hc⟩
       · exact .inr ⟨he, nb s₀ - (i + 1), by omega_arith, i + 1, rfl, hi', hL'⟩
-    have hL₀ : LInv' s₀ 0 s₁ :=
+    obtain hL₀ : LInv' s₀ 0 s₁ :=
       ⟨{ hc₀.toCommon with
         rsi := by rw [hg _ (by decide)]; simp [blkAddr]
         rdx := by rw [hg _ (by decide)]; simp [nb] }, hc⟩

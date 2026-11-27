@@ -65,7 +65,7 @@ def savePtr (n : Reg) : List Instr := [.addi .t0 n 7, .logicImm .and .t0 .t0 (-8
 
 /-- The key expansion's call, with the key at `a0`, its length in `a1` and
 the schedule's address in `a2`. -/
-def keyCall : Prog isa := .call "vg_triple_des_expand_key" Impl.TripleDes.RISCV64.Key.expandKey
+def keyCall : Prog isa := .call "vg_triple_des_expand_key_core" Impl.TripleDes.RISCV64.Key.expandKey
 
 /-- ECB's call, with the schedule at `a0`, the block at `a1` and one block in
 `a2`: the serial code, a block at a time, as `vg_triple_des_ecb_encrypt`

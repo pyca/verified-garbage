@@ -18,6 +18,9 @@ def headN : List FOp :=
   [.mul 0 13 13,.mul 2 11 17,.mul 3 14 0,.mul 4 12 18,
    .mul 5 15 13,.mul 5 5 0,.sub 3 3 2,.sub 5 5 4]
 
+/-- `headN`, with `o.z = Z1 Z2` first (`CachedJac.headZ`). -/
+def headZN : List FOp := .mul 8 13 16 :: headN
+
 def rename (n : Nat) (S : RcbSlots) (p q o : Pt) (dst i : Nat) : Nat :=
   if i=17 then dst else if i=18 then dst+8*n else rcbσ S p q o i
 
@@ -36,8 +39,11 @@ theorem rename_inj {n : Nat} {S : RcbSlots} {p q o : Pt} {dst : Nat}
 theorem head_eq (n : Nat) (S : RcbSlots) (p q o : Pt) (dst : Nat) :
     Impl.Weierstrass.X86_64.CachedJac.head n S p q dst=headN.map (FOp.rename (rename n S p q o dst)) := rfl
 
+theorem headZ_eq (n : Nat) (S : RcbSlots) (p q o : Pt) (dst : Nat) :
+    Impl.Weierstrass.X86_64.CachedJac.headZ n S p q o dst=headZN.map (FOp.rename (rename n S p q o dst)) := rfl
+
 theorem tail_eq (n : Nat) (S : RcbSlots) (p q o : Pt) (dst : Nat) :
-    jacTail S p q o=jacTailN.map (FOp.rename (rename n S p q o dst)) := rfl
+    jacEndTail S p q o=jacEndTailN.map (FOp.rename (rename n S p q o dst)) := rfl
 
 theorem rename_out (n : Nat) (S : RcbSlots) (p q o : Pt) (dst i : Nat) (hi : i<9) :
     rename n S p q o dst i∈rcbW S o := by
@@ -69,9 +75,9 @@ theorem out {n : Nat} {N : List FOp} (hN : ∀ op∈N,op.out<9) {S : RcbSlots} {
 
 theorem head_values {F : Type _} [Lean.Grind.CommRing F] (E : Nat → F)
     (h2 : E 17=E 16*E 16) (h3 : E 18=E 17*E 16) :
-    runOps headN E 3=E 14*(E 13*E 13)-E 11*(E 16*E 16) ∧
-    runOps headN E 5=E 15*E 13*(E 13*E 13)-E 12*E 16*(E 16*E 16) := by
-  simp only [headN,runOps,List.foldl_cons,List.foldl_nil,FOp.run,Function.update_apply]
+    runOps headZN E 3=E 14*(E 13*E 13)-E 11*(E 16*E 16) ∧
+    runOps headZN E 5=E 15*E 13*(E 13*E 13)-E 12*E 16*(E 16*E 16) := by
+  simp only [headZN,headN,runOps,List.foldl_cons,List.foldl_nil,FOp.run,Fun.update_apply]
   simp only [ite_true,h3,h2]
   constructor
   · rfl
@@ -79,10 +85,10 @@ theorem head_values {F : Type _} [Lean.Grind.CommRing F] (E : Nat → F)
 
 theorem full_values {F : Type _} [Lean.Grind.CommRing F] (E : Nat → F)
     (h2 : E 17=E 16*E 16) (h3 : E 18=E 17*E 16) :
-    (runOps (headN++jacTailN) E 6,runOps (headN++jacTailN) E 7,runOps (headN++jacTailN) E 8)=
+    (runOps (headZN++jacEndTailN) E 6,runOps (headZN++jacEndTailN) E 7,runOps (headZN++jacEndTailN) E 8)=
       jacAddF (E 11) (E 12) (E 13) (E 14) (E 15) (E 16) := by
-  simp only [headN,jacTailN,jacTail,List.cons_append,List.nil_append,
-    runOps,List.foldl_cons,List.foldl_nil,FOp.run,Function.update_apply]
+  simp only [headZN,headN,jacEndTailN,jacEndTail,jacTail,List.take,List.cons_append,List.nil_append,
+    runOps,List.foldl_cons,List.foldl_nil,FOp.run,Fun.update_apply]
   simp only [ite_true,h3,h2,jacAddF,Prod.mk.injEq]
   constructor
   · grind
@@ -91,37 +97,37 @@ theorem full_values {F : Type _} [Lean.Grind.CommRing F] (E : Nat → F)
 theorem head_run {F : Type _} [Lean.Grind.CommRing F] {n : Nat} {S : RcbSlots} {p q o : Pt} {dst : Nat}
     (hA : RcbApart S p q o) (h2a : dst∉rcbW S o) (h3a : dst+8*n∉rcbW S o)
     (E : Nat → F) (h2 : E dst=E q.z*E q.z) (h3 : E (dst+8*n)=E dst*E q.z) :
-    runOps (Impl.Weierstrass.X86_64.CachedJac.head n S p q dst) E S.t3=
+    runOps (Impl.Weierstrass.X86_64.CachedJac.headZ n S p q o dst) E S.t3=
       E q.x*(E p.z*E p.z)-E p.x*(E q.z*E q.z) ∧
-    runOps (Impl.Weierstrass.X86_64.CachedJac.head n S p q dst) E S.t5=
+    runOps (Impl.Weierstrass.X86_64.CachedJac.headZ n S p q o dst) E S.t5=
       E q.y*E p.z*(E p.z*E p.z)-E p.y*E q.z*(E q.z*E q.z) := by
-  rw [head_eq n S p q o dst]
-  have he := runOps_rename (rename n S p q o dst) headN E
-    (fun op hop => rename_inj hA h2a h3a ((show ∀ op∈headN,op.out<9 by decide) op hop))
+  rw [headZ_eq n S p q o dst]
+  have he := runOps_rename (rename n S p q o dst) headZN E
+    (fun op hop => rename_inj hA h2a h3a ((show ∀ op∈headZN,op.out<9 by decide) op hop))
   have hv := head_values (fun i => E (rename n S p q o dst i)) h2 h3
   exact ⟨(congrFun he 3).trans hv.1,(congrFun he 5).trans hv.2⟩
 
 theorem full_run {F : Type _} [Lean.Grind.CommRing F] {n : Nat} {S : RcbSlots} {p q o : Pt} {dst : Nat}
     (hA : RcbApart S p q o) (h2a : dst∉rcbW S o) (h3a : dst+8*n∉rcbW S o)
     (E : Nat → F) (h2 : E dst=E q.z*E q.z) (h3 : E (dst+8*n)=E dst*E q.z) :
-    let ops := Impl.Weierstrass.X86_64.CachedJac.head n S p q dst++jacTail S p q o
+    let ops := Impl.Weierstrass.X86_64.CachedJac.headZ n S p q o dst++jacEndTail S p q o
     (runOps ops E o.x,runOps ops E o.y,runOps ops E o.z)=
       jacAddF (E p.x) (E p.y) (E p.z) (E q.x) (E q.y) (E q.z) := by
   dsimp only
-  rw [head_eq n S p q o dst,tail_eq n S p q o dst,←List.map_append]
-  have he := runOps_rename (rename n S p q o dst) (headN++jacTailN) E
+  rw [headZ_eq n S p q o dst,tail_eq n S p q o dst,←List.map_append]
+  have he := runOps_rename (rename n S p q o dst) (headZN++jacEndTailN) E
     (fun op hop => rename_inj hA h2a h3a
-      ((show ∀ op∈headN++jacTailN,op.out<9 by decide) op hop))
-  exact (congrArg₂ Prod.mk (congrFun he 6)
-    (congrArg₂ Prod.mk (congrFun he 7) (congrFun he 8))).trans
+      ((show ∀ op∈headZN++jacEndTailN,op.out<9 by decide) op hop))
+  exact (congr (congrArg Prod.mk (congrFun he 6))
+    (congr (congrArg Prod.mk (congrFun he 7)) (congrFun he 8))).trans
       (full_values (fun i => E (rename n S p q o dst i)) h2 h3)
 
 theorem head_readonly {F : Type _} [Lean.Grind.CommRing F] {n : Nat} {S : RcbSlots} {p q o : Pt}
     {dst : Nat} (hA : RcbApart S p q o) (E : Nat → F) {x : Nat} (hx : x∈rcbR S p q) :
-    runOps (Impl.Weierstrass.X86_64.CachedJac.head n S p q dst) E x=E x := by
+    runOps (Impl.Weierstrass.X86_64.CachedJac.headZ n S p q o dst) E x=E x := by
   apply runOps_of_not_out
   intro op hop he
-  rw [head_eq n S p q o dst] at hop
-  exact hA.apart x hx (he ▸ out (show ∀ op∈headN,op.out<9 by decide) hop)
+  rw [headZ_eq n S p q o dst] at hop
+  exact hA.apart x hx (he ▸ out (show ∀ op∈headZN,op.out<9 by decide) hop)
 
 end VG.Proof.Weierstrass.X86_64.CachedJac

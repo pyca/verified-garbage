@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Hmac.Instance.pbkdf2Contract` of `VG.Spec.Hmac.md5I`. Constant time: only the pointers, the lengths and `c` may affect timing, not the password, the salt or the key.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `password` must be valid for reads of `password_len` bytes.
@@ -79,7 +81,13 @@ b 25f
 24:
 25:
 .inst 0xf940c2f3,0xf940c6f4,0xf940caf5,0xf940cef6,0xf940d2f8,0xf940d6fe,0xf940daf7,0x911003ff
-.inst 0xd65f03c0
+.inst 0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005,0xd2800006,0xd2800007,0xd2800009
+.inst 0xd280000a,0xd280000b,0xd280000c,0xd280000d,0xd280000e,0xd280000f,0xd2800010,0xd2800011
+.inst 0xea01003f,0xd2800000,0xd11043ff,0x6f00e41f,0x910003e9,0xd280020a
+210:
+.inst 0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x91010129,0xd100054a
+cbnz x10, 210b
+.inst 0x3d80013f,0x911043ff,0xd65f03c0
 .p2align 6",
         vg_md5_init = sym super::md5::vg_md5_init,
         vg_md5_update_scratch = sym super::md5::vg_md5_update_scratch::vg_md5_update_scratch,

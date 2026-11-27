@@ -1,55 +1,57 @@
 module
 
 public import VerifiedGarbage.TCB.RISCV64.Target
-public import VerifiedGarbage.Proof.Sha3.RISCV64.Instances
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.RISCV64.Print
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Sha3.Instances
+import VerifiedGarbage.Proof.Sha3.RISCV64.Scrub
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # SHA-3 and SHAKE (FIPS 202) on RISC-V -/
 
-@[expose] public section
-
 namespace VG.Artifacts.Sha3.RISCV64
 
-def artifacts : List Artifact := [
+public def artifacts : List (Artifact RISCV64.target) := [
   Spec.Sha3.updateSha3_224Api.artifact RISCV64.target {
-    code := Impl.Sha3.RISCV64.Instances.update Spec.Sha3.hashSha3_224.rate
-    verified := Proof.Sha3.RISCV64.Instances.update_sha3_224 },
+    code := Impl.Sha3.RISCV64.Fn.update Spec.Sha3.hashSha3_224.rate
+    verified := Proof.Sha3.RISCV64.update_sha3_224_scrubbed },
   Spec.Sha3.finalizeSha3_224Api.artifact RISCV64.target {
-    code := Impl.Sha3.RISCV64.Instances.finalize Spec.Sha3.hashSha3_224.rate Spec.Sha3.hashSha3_224.len
-    verified := Proof.Sha3.RISCV64.Instances.finalize_sha3_224 },
+    code := Impl.Sha3.RISCV64.Fn.finalize Spec.Sha3.hashSha3_224.rate Spec.Sha3.hashSha3_224.len
+    verified := Proof.Sha3.RISCV64.finalize_sha3_224_scrubbed },
   Spec.Sha3.updateSha3_256Api.artifact RISCV64.target {
-    code := Impl.Sha3.RISCV64.Instances.update Spec.Sha3.hashSha3_256.rate
-    verified := Proof.Sha3.RISCV64.Instances.update_sha3_256 },
+    code := Impl.Sha3.RISCV64.Fn.update Spec.Sha3.hashSha3_256.rate
+    verified := Proof.Sha3.RISCV64.update_sha3_256_scrubbed },
   Spec.Sha3.finalizeSha3_256Api.artifact RISCV64.target {
-    code := Impl.Sha3.RISCV64.Instances.finalize Spec.Sha3.hashSha3_256.rate Spec.Sha3.hashSha3_256.len
-    verified := Proof.Sha3.RISCV64.Instances.finalize_sha3_256 },
+    code := Impl.Sha3.RISCV64.Fn.finalize Spec.Sha3.hashSha3_256.rate Spec.Sha3.hashSha3_256.len
+    verified := Proof.Sha3.RISCV64.finalize_sha3_256_scrubbed },
   Spec.Sha3.updateSha3_384Api.artifact RISCV64.target {
-    code := Impl.Sha3.RISCV64.Instances.update Spec.Sha3.hashSha3_384.rate
-    verified := Proof.Sha3.RISCV64.Instances.update_sha3_384 },
+    code := Impl.Sha3.RISCV64.Fn.update Spec.Sha3.hashSha3_384.rate
+    verified := Proof.Sha3.RISCV64.update_sha3_384_scrubbed },
   Spec.Sha3.finalizeSha3_384Api.artifact RISCV64.target {
-    code := Impl.Sha3.RISCV64.Instances.finalize Spec.Sha3.hashSha3_384.rate Spec.Sha3.hashSha3_384.len
-    verified := Proof.Sha3.RISCV64.Instances.finalize_sha3_384 },
+    code := Impl.Sha3.RISCV64.Fn.finalize Spec.Sha3.hashSha3_384.rate Spec.Sha3.hashSha3_384.len
+    verified := Proof.Sha3.RISCV64.finalize_sha3_384_scrubbed },
   Spec.Sha3.updateSha3_512Api.artifact RISCV64.target {
-    code := Impl.Sha3.RISCV64.Instances.update Spec.Sha3.hashSha3_512.rate
-    verified := Proof.Sha3.RISCV64.Instances.update_sha3_512 },
+    code := Impl.Sha3.RISCV64.Fn.update Spec.Sha3.hashSha3_512.rate
+    verified := Proof.Sha3.RISCV64.update_sha3_512_scrubbed },
   Spec.Sha3.finalizeSha3_512Api.artifact RISCV64.target {
-    code := Impl.Sha3.RISCV64.Instances.finalize Spec.Sha3.hashSha3_512.rate Spec.Sha3.hashSha3_512.len
-    verified := Proof.Sha3.RISCV64.Instances.finalize_sha3_512 },
+    code := Impl.Sha3.RISCV64.Fn.finalize Spec.Sha3.hashSha3_512.rate Spec.Sha3.hashSha3_512.len
+    verified := Proof.Sha3.RISCV64.finalize_sha3_512_scrubbed },
   Spec.Sha3.updateShake128Api.artifact RISCV64.target {
-    code := Impl.Sha3.RISCV64.Instances.update Spec.Sha3.xofShake128.rate
-    verified := Proof.Sha3.RISCV64.Instances.update_shake128 },
+    code := Impl.Sha3.RISCV64.Fn.update Spec.Sha3.xofShake128.rate
+    verified := Proof.Sha3.RISCV64.update_shake128_scrubbed },
   Spec.Sha3.finalizeShake128Api.artifact RISCV64.target {
-    code := Impl.Sha3.RISCV64.Instances.xofFinalize Spec.Sha3.xofShake128.rate
-    verified := Proof.Sha3.RISCV64.Instances.finalize_shake128 },
+    code := Impl.Sha3.RISCV64.Fn.xofFinalize Spec.Sha3.xofShake128.rate
+    verified := Proof.Sha3.RISCV64.finalize_shake128_scrubbed },
   Spec.Sha3.squeezeShake128Api.artifact RISCV64.target {
-    code := Impl.Sha3.RISCV64.Instances.xofSqueeze Spec.Sha3.xofShake128.rate
-    verified := Proof.Sha3.RISCV64.Instances.squeeze_shake128 },
+    code := Impl.Sha3.RISCV64.Fn.xofSqueeze Spec.Sha3.xofShake128.rate
+    verified := Proof.Sha3.RISCV64.squeeze_shake128_scrubbed },
   Spec.Sha3.finalizeShake256Api.artifact RISCV64.target {
-    code := Impl.Sha3.RISCV64.Instances.xofFinalize Spec.Sha3.xofShake256.rate
-    verified := Proof.Sha3.RISCV64.Instances.finalize_shake256 },
+    code := Impl.Sha3.RISCV64.Fn.xofFinalize Spec.Sha3.xofShake256.rate
+    verified := Proof.Sha3.RISCV64.finalize_shake256_scrubbed },
   Spec.Sha3.squeezeShake256Api.artifact RISCV64.target {
-    code := Impl.Sha3.RISCV64.Instances.xofSqueeze Spec.Sha3.xofShake256.rate
-    verified := Proof.Sha3.RISCV64.Instances.squeeze_shake256 }]
+    code := Impl.Sha3.RISCV64.Fn.xofSqueeze Spec.Sha3.xofShake256.rate
+    verified := Proof.Sha3.RISCV64.squeeze_shake256_scrubbed }]
+
+spec_apis artifacts
 
 end VG.Artifacts.Sha3.RISCV64

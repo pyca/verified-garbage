@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.Spill
 public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-!
 # X448 on x86-64: the addition chain as a function
@@ -29,11 +30,11 @@ theorem powSaved_lt : ∀ rd ∈ powSaved, 1472 ≤ rd.2 ∧ rd.2 + 8 ≤ 1520 :
 def powClob : List Reg := [.rax, .rcx, .rdx, .r8, .r9, .r10, .r11]
 
 theorem chainEnv_20 (e : Env) : chainEnv 12 e 20 = c222 (e 12) := by
-  simp only [chainEnv, opMul, opSqn, Function.update_apply, c222]
+  simp only [chainEnv, opMul, opSqn, Fun.update_apply, c222]
   rfl
 
 theorem chainEnv_21 (e : Env) : chainEnv 12 e 21 = c223 (e 12) := by
-  simp only [↓reduceIte, chainEnv, opMul, opSqn, Function.update_apply, c223, c222]
+  simp only [↓reduceIte, chainEnv, opMul, opSqn, Fun.update_apply, c223, c222]
   rfl
 
 /-- `vg_gf448_r64_pow223`: what it keeps and computes. -/
@@ -105,7 +106,7 @@ theorem loadsAt_ok {base : Addr} : ∀ (l : List (Reg × Nat)) (s : State), Scr 
     simp only [List.map_cons, List.nodup_cons] at hnd
     rw [List.map_cons, WP.block_cons_iff]
     refine ⟨s.setReg r (word s.mem base d), by
-      simp only [exec, readSrc_sc hs (d := d) hd, Option.map_some], ?_⟩
+      simp only [reduceExec, readSrc_sc hs (d := d) hd, Option.map_some], ?_⟩
     have hs1 : Scr (s.setReg r (word s.mem base d)) base :=
       ⟨by rw [RegUpd.gpr_setReg_of_ne _ _ (Ne.symm hr)]; exact hs.rdi, hs.wr, hs.nowrap⟩
     refine WP.mono (loadsAt_ok l _ hs1 (fun p hp => hl p (List.mem_cons_of_mem _ hp)) hnd.2)
@@ -127,7 +128,7 @@ theorem storesAt_ok {base : Addr} : ∀ (l : List (Reg × Nat)) (s : State), Scr
     rw [List.map_cons, WP.block_cons_iff]
     refine ⟨s, by
       have hw := hs.write (d := d) (n := 8) hd
-      simp only [exec, ea_sc, hs.rdi, State.store64, hw, ite_true, hv, word, writeW_readW64], ?_⟩
+      simp only [reduceExec, ea_sc, hs.rdi, State.store64, hw, ite_true, hv, word, writeW_readW64], ?_⟩
     exact storesAt_ok l s hs fun p hp => hl p (List.mem_cons_of_mem _ hp)
 
 theorem pow223KeepWith_inline (F : Field) (name : String) (keep : List Nat) : (pow223KeepWith F name keep).inline =

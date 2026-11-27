@@ -42,18 +42,18 @@ theorem mulTo_k {I : KIn} {s₀ s : State} (h : KS I s₀ s) {w : Nat} (hW : I.W
       wv t.mem I.B (slot I.W o) (I.W + 2) = x * y := by
   have hn := h.ws.scr.nowrap
   have hZ := h.hZ
-  have hw1 : 1 ≤ w := by have := h.ws.w1; omega_using [hW, this]
+  obtain hw1 : 1 ≤ w := by have := h.ws.w1; omega_using [hW, this]
   have hw2 := h.ws.w2
-  have so := h.ws.sl ho
-  have sa := h.ws.sl ha
-  have sb := h.ws.sl hb
-  have pa := slot_sep (w := I.W) hoa
-  have pb := slot_sep (w := I.W) hob
+  obtain so := h.ws.sl ho
+  obtain sa := h.ws.sl ha
+  obtain sb := h.ws.sl hb
+  obtain pa := slot_sep (w := I.W) hoa
+  obtain pb := slot_sep (w := I.W) hob
   simp only [mulTo, seqs]
   refine WP.seq (WP.mono (zeroA_k h ho) fun s₁ ⟨h₁, f₁, hz, _, k₁⟩ => ?_)
-  have eX : av I s₁.mem a = x := by rw [f₁.av (by simp [Rc.ok, ho]) ha (by simp [Ne.symm hoa]) hZ, hx]
-  have eY : av I s₁.mem b = y := by rw [f₁.av (by simp [Rc.ok, ho]) hb (by simp [Ne.symm hob]) hZ, hy]
-  have e : ws ++ base b .x9 ++ base o .x8 ++ base a .x16 ++ ([mov .x11 .x16, .lsr .x .x12 .x12 1, mov .x13 .x12,
+  obtain eX : av I s₁.mem a = x := by rw [f₁.av (by simp [Rc.ok, ho]) ha (by simp [Ne.symm hoa]) hZ, hx]
+  obtain eY : av I s₁.mem b = y := by rw [f₁.av (by simp [Rc.ok, ho]) hb (by simp [Ne.symm hob]) hZ, hy]
+  obtain e : ws ++ base b .x9 ++ base o .x8 ++ base a .x16 ++ ([mov .x11 .x16, .lsr .x .x12 .x12 1, mov .x13 .x12,
       movi .x7 0] : List Instr) = ws ++ ((base b .x9 ++ base o .x8 ++ base a .x16) ++
         ([mov .x11 .x16, .lsr .x .x12 .x12 1, mov .x13 .x12, movi .x7 0] : List Instr)) := by
     simp only [List.append_assoc]
@@ -61,18 +61,18 @@ theorem mulTo_k {I : KIn} {s₀ s : State} (h : KS I s₀ s) {w : Nat} (hW : I.W
   refine WP.seq (WP.block_append_iff.mpr (WP.mono h₁.ws.ws_ok fun s₂ ⟨⟨h12, h11, m₂, _⟩, k₂⟩ =>
     WP.block_append_iff.mpr (WP.mono (base3_ok b o a .x9 .x8 .x16 ((k₂.gpr .x0 (by decide)).trans h₁.ws.x0) h11)
       fun s₃ ⟨⟨h9, h8, h16, m₃, _⟩, k₃⟩ => ?_)))
-  have h12₃ : s₃.gpr .x12 = BitVec.ofNat 64 (2 * w) := by rw [(k₃.gpr .x12 (by decide)).trans h12, hW]
+  obtain h12₃ : s₃.gpr .x12 = BitVec.ofNat 64 (2 * w) := by rw [(k₃.gpr .x12 (by decide)).trans h12, hW]
   refine WP.mono (WP.keep [.x11, .x12, .x13, .x7] (Q := fun t => t.gpr .x11 = off I.B (slot I.W a) ∧
       t.gpr .x12 = BitVec.ofNat 64 w ∧ t.gpr .x13 = BitVec.ofNat 64 w ∧ t.gpr .x7 = 0 ∧ t.mem = s₃.mem) (by
     brun [h16, h12₃, ofNat_shr1 (show 2 * w < 2 ^ 64 by omega_using [hW, hw2]), show 2 * w / 2 = w by omega_using []])
     (by decide) (by decide) (by decide +kernel)) fun s₄ ⟨⟨h11₄, h12₄, h13₄, h7₄, m₄⟩, k₄⟩ => ?_
-  have k24 := (k₂.trans k₃).trans k₄
-  have hm₄ : s₄.mem = s₁.mem := by rw [m₄, m₃, m₂]
-  have eX₄ : wv s₄.mem I.B (slot I.W a) w = x := by
+  obtain k24 := (k₂.trans k₃).trans k₄
+  obtain hm₄ : s₄.mem = s₁.mem := by rw [m₄, m₃, m₂]
+  obtain eX₄ : wv s₄.mem I.B (slot I.W a) w = x := by
     rw [hm₄]; exact (wv_low_of_lt (v := w) (by omega_using [hW]) (show av I s₁.mem a < _ by rw [eX]; exact hx')).trans eX
-  have eY₄ : wv s₄.mem I.B (slot I.W b) w = y := by
+  obtain eY₄ : wv s₄.mem I.B (slot I.W b) w = y := by
     rw [hm₄]; exact (wv_low_of_lt (v := w) (by omega_using [hW]) (show av I s₁.mem b < _ by rw [eY]; exact hy')).trans eY
-  have eA₄ : wv s₄.mem I.B (slot I.W o) (w + w + 2) = 0 := by
+  obtain eA₄ : wv s₄.mem I.B (slot I.W o) (w + w + 2) = 0 := by
     rw [hm₄, show w + w + 2 = I.W + 2 by omega_using [hW]]; exact hz
   refine WP.mono (mulRows_ok (wa := w) (wb := w) (h₁.ws.scr.congr k24.wr) h11₄ ((k₄.gpr .x9 (by decide)).trans h9)
     h13₄ h12₄ ((k₄.gpr .x8 (by decide)).trans h8) h7₄ hw1 hw1 (by omega_using [hW, hw2]) (by omega_using [hW, so]) (by omega_using [hW, sa]) (by omega_using [hW, sb])
@@ -80,7 +80,7 @@ theorem mulTo_k {I : KIn} {s₀ s : State} (h : KS I s₀ s) {w : Nat} (hW : I.W
   rw [hm₄] at o'
   rw [hm₄, show w + w + 2 = I.W + 2 by omega_using [hW]] at hv
   rw [hm₄] at eX₄ eY₄
-  have f := KF.arr1 (B := I.B) (W := I.W) (j := o) (o' : Outside I.B (slot I.W o) (8 * (w + w + 2)) s₁.mem t.mem)
+  obtain f := KF.arr1 (B := I.B) (W := I.W) (j := o) (o' : Outside I.B (slot I.W o) (8 * (w + w + 2)) s₁.mem t.mem)
     (Nat.le_refl _) (by omega_using [hW])
   refine ⟨h₁.step f (all_mut_arr ho) (k24.trans k₅) (by decide), (f₁.trans f).mono (by simp), ?_⟩
   rw [hv, hz, eX₄, eY₄, Nat.zero_add]
@@ -92,7 +92,7 @@ theorem invFrom_k {I : KIn} {s₀ s : State} (h : KS I s₀ s) {j : Nat} (hj : j
     WP isa (seqs (invFrom j)) s fun t => KS I s₀ t ∧ KF I.B I.W [.arr aV, .arr aX₁, .arr aX₂] s.mem t.mem ∧
       av I t.mem aV = av I s.mem j ∧ av I t.mem aX₁ = 1 ∧ av I t.mem aX₂ = 0 := by
   have hZ := h.hZ
-  have hw1 : 1 ≤ I.W := by have := h.ws.w1; omega_using [this]
+  obtain hw1 : 1 ≤ I.W := by have := h.ws.w1; omega_using [this]
   simp only [invFrom, seqs]
   refine WP.seq (WP.mono (zeroA_k h (j := aV) (by decide)) fun s₁ ⟨h₁, f₁, _, _, _⟩ => ?_)
   refine WP.seq (WP.mono (copyA_k h₁ (o := aV) (a := j) (by decide) hj (Ne.symm hjV)) fun s₂ ⟨h₂, f₂, v₂, _, _⟩ => ?_)
@@ -116,16 +116,16 @@ theorem gcdIsOne_k {I : KIn} {s₀ s : State} (h : KS I s₀ s) {c : Bool}
   simp only [List.append_assoc]
   refine wp_seqs_append (by simp [constA]) (by simp [eqMask, eqA]) (WP.mono (constA_k h (x := 1) (by decide))
     fun s₁ ⟨h₁, f₁, c₁, _⟩ => ?_)
-  have c1 : av I s₁.mem aC = 1 := av_of_full c₁ (Nat.one_lt_two_pow (by have := h.ws.w1; omega_using [this]))
-  have vV : av I s₁.mem aV = av I s.mem aV := f₁.av (by decide) (by decide) (by decide) hZ
-  have hok₁ : word s₁.mem I.B (8 * kOk) = mask c := by rw [f₁.word (by decide) (by decide) (by decide), hok]
+  obtain c1 : av I s₁.mem aC = 1 := av_of_full c₁ (Nat.one_lt_two_pow (by have := h.ws.w1; omega_using [this]))
+  obtain vV : av I s₁.mem aV = av I s.mem aV := f₁.av (by decide) (by decide) (by decide) hZ
+  obtain hok₁ : word s₁.mem I.B (8 * kOk) = mask c := by rw [f₁.word (by decide) (by decide) (by decide), hok]
   refine wp_seqs_append (by simp [eqMask, eqA]) (by simp) (WP.mono (eqMask_k h₁ (a := aV) (b := aC) (by decide)
     (by decide)) fun s₂ ⟨h₂, m₂, h15, _, _⟩ => ?_)
   rw [vV, c1] at h15
   simp only [seqs]
-  have hst := h₂.ws.scr.st (d := 8 * kOk) (by have := h.ws.h256; unfold kOk sFn; omega_using [this])
-  have hld := h₂.ws.scr.ld (d := 8 * kOk) (by have := h.ws.h256; unfold kOk sFn; omega_using [this])
-  have hok₂ : word s₂.mem I.B (8 * kOk) = mask c := by rw [m₂, hok₁]
+  obtain hst := h₂.ws.scr.st (d := 8 * kOk) (by have := h.ws.h256; unfold kOk sFn; omega_using [this])
+  obtain hld := h₂.ws.scr.ld (d := 8 * kOk) (by have := h.ws.h256; unfold kOk sFn; omega_using [this])
+  obtain hok₂ : word s₂.mem I.B (8 * kOk) = mask c := by rw [m₂, hok₁]
   refine WP.mono (WP.keep [.x3, .x15] (Q := fun t => t.mem = s₂.mem.writeW (off I.B (8 * kOk))
     (mask (decide (av I s.mem aV = 1) && c))) (by
       brun [h₂.ws.x0, hdr_enc (show kOk < 32 by decide), hst, hld, h15, hok₂, mask_and'])
@@ -149,7 +149,7 @@ theorem av_or1 {I : KIn} {m : Mem} {j : Nat} (hw : 1 ≤ I.W) (hj : slot I.W j +
     (hc : c = true → av I m j = 0) :
     av I (m.writeW (off I.B (slot I.W j)) (if c then word m I.B (slot I.W j) ||| 1 else word m I.B (slot I.W j))) j =
       (if c then 1 else av I m j) := by
-  have o := writeW_outside m I.B (if c then word m I.B (slot I.W j) ||| 1 else word m I.B (slot I.W j))
+  obtain o := writeW_outside m I.B (if c then word m I.B (slot I.W j) ||| 1 else word m I.B (slot I.W j))
     (d := slot I.W j) (by omega_using [hw, hj])
   dsimp only [av] at hc ⊢
   rw [wv_low hw, wv_low (m := m) hw, word_writeW_self, o.wv (Or.inr (Nat.le_refl _)) (by omega_using [hw, hj])]
@@ -157,8 +157,8 @@ theorem av_or1 {I : KIn} {m : Mem} {j : Nat} (hw : 1 ≤ I.W) (hj : slot I.W j +
   · simp
   · have hz := hc rfl
     rw [wv_low (m := m) hw] at hz
-    have h0 : (word m I.B (slot I.W j)).toNat = 0 := by omega_using [hz]
-    have h1 : wv m I.B (slot I.W j + 8) (I.W - 1) = 0 := by
+    obtain h0 : (word m I.B (slot I.W j)).toNat = 0 := by omega_using [hz]
+    obtain h1 : wv m I.B (slot I.W j + 8) (I.W - 1) = 0 := by
       rcases Nat.eq_zero_or_pos (wv m I.B (slot I.W j + 8) (I.W - 1)) with h | h
       · exact h
       · have := Nat.le_mul_of_pos_right (2 ^ 64) h; omega_using [hz]
@@ -173,37 +173,37 @@ theorem divisorOf_k {I : KIn} {s₀ s : State} (h : KS I s₀ s) {j : Nat} (hj :
       av I t.mem aM = dv (av I s.mem j) := by
   have hn := h.ws.scr.nowrap
   have hZ := h.hZ
-  have hw1 : 1 ≤ I.W := by have := h.ws.w1; omega_using [this]
-  have sM := h.ws.sl (j := aM) (by decide)
+  obtain hw1 : 1 ≤ I.W := by have := h.ws.w1; omega_using [this]
+  obtain sM := h.ws.sl (j := aM) (by decide)
   unfold divisorOf
   simp only [List.append_assoc]
   refine wp_seqs_append (by simp) (by simp [constA]) (WP.mono (zc_k h (o := aM) (a := j) (by decide) hj hjM.symm)
     fun s₁ ⟨h₁, f₁, v₁, _⟩ => ?_)
   refine wp_seqs_append (by simp [constA]) (by simp [eqMask, eqA]) (WP.mono (constA_k h₁ (x := 0) (by decide))
     fun s₂ ⟨h₂, f₂, c₂, _⟩ => ?_)
-  have c0 : av I s₂.mem aC = 0 := av_of_full c₂ (Nat.two_pow_pos _)
-  have vj : av I s₂.mem j = av I s.mem j := by
+  obtain c0 : av I s₂.mem aC = 0 := av_of_full c₂ (Nat.two_pow_pos _)
+  obtain vj : av I s₂.mem j = av I s.mem j := by
     rw [f₂.av (by decide) hj (by simp [hjC]) hZ, f₁.av (by decide) hj (by simp [hjM]) hZ]
-  have vM₂ : av I s₂.mem aM = av I s.mem j := by rw [f₂.av (by decide) (by decide) (by decide) hZ, v₁]
+  obtain vM₂ : av I s₂.mem aM = av I s.mem j := by rw [f₂.av (by decide) (by decide) (by decide) hZ, v₁]
   refine wp_seqs_append (by simp [eqMask, eqA]) (by simp) (WP.mono (eqMask_k h₂ (a := j) (b := aC) hj (by decide))
     fun s₃ ⟨h₃, m₃, h15₃, _, _⟩ => ?_)
   rw [vj, c0] at h15₃
   simp only [seqs]
   rw [← List.append_assoc, WP.block_append_iff]
   refine WP.mono (wsBase16_ok h₃ aM) fun s₄ ⟨⟨h16, _, _, m₄⟩, k₄⟩ => ?_
-  have hs₄ := h₃.ws.scr.congr k₄.wr
-  have h15 : s₄.gpr .x15 = mask (decide (av I s.mem j = 0)) := by rw [k₄.gpr .x15 (by decide), h15₃]
+  obtain hs₄ := h₃.ws.scr.congr k₄.wr
+  obtain h15 : s₄.gpr .x15 = mask (decide (av I s.mem j = 0)) := by rw [k₄.gpr .x15 (by decide), h15₃]
   refine WP.mono (WP.keep [.x3, .x4] (Q := fun t => t.mem = s₃.mem.writeW (off I.B (slot I.W aM))
       (if decide (av I s.mem j = 0) then word s₃.mem I.B (slot I.W aM) ||| 1 else word s₃.mem I.B (slot I.W aM))) (by
     brun [h16, hs₄.ld (d := slot I.W aM) (by omega_using [sM]), hs₄.st (d := slot I.W aM) (by omega_using [sM]), h15, m₄, or_and1_mask])
     (by decide) (by decide) (by decide +kernel)) fun t ⟨hm, k₅⟩ => ?_
-  have o₅ := writeW_outside s₃.mem I.B (if decide (av I s.mem j = 0) then word s₃.mem I.B (slot I.W aM) ||| 1 else
+  obtain o₅ := writeW_outside s₃.mem I.B (if decide (av I s.mem j = 0) then word s₃.mem I.B (slot I.W aM) ||| 1 else
     word s₃.mem I.B (slot I.W aM)) (d := slot I.W aM) (by omega_using [hn, sM])
   rw [← hm] at o₅
-  have f₅ := KF.arr1 (B := I.B) (W := I.W) (j := aM) o₅ (Nat.le_refl _) (by omega_using [])
+  obtain f₅ := KF.arr1 (B := I.B) (W := I.W) (j := aM) o₅ (Nat.le_refl _) (by omega_using [])
   refine ⟨h₃.step f₅ (all_mut_arr (by decide)) (k₄.trans k₅), ((f₁.trans f₂).trans (by rw [← m₃]; exact f₅)).mono
     (by simp), ?_⟩
-  have vM₃ : av I s₃.mem aM = av I s.mem j := by rw [m₃, vM₂]
+  obtain vM₃ : av I s₃.mem aM = av I s.mem j := by rw [m₃, vM₂]
   rw [hm, av_or1 hw1 (by omega_using [hn, sM]) (fun hc => by rw [vM₃]; simpa using hc), vM₃]
   by_cases hz : av I s.mem j = 0 <;> simp [hz, dv]
 

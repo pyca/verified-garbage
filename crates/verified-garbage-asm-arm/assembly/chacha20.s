@@ -50,6 +50,12 @@ vg_chacha20_init:
 	movw r1, #25972
 	movt r1, #27424
 	str r1, [r0, #12]
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_chacha20_set_nonce:
@@ -81,6 +87,12 @@ vg_chacha20_set_nonce:
 	movw r1, #25972
 	movt r1, #27424
 	str r1, [r0, #12]
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_chacha20_apply:
@@ -229,4 +241,9 @@ vg_chacha20_apply:
 20:
 	mov r0, #0
 21:
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr

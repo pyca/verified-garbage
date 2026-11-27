@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.Framework.RISCV64.ByteLoad
 import VerifiedGarbage.Proof.Ed25519.RISCV64.Base
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.X25519.RISCV64.Pass
+import VerifiedGarbage.Proof.X25519.RISCV64.Field
 
 /-!
 # Ed448 on RISCV64: constants in slots

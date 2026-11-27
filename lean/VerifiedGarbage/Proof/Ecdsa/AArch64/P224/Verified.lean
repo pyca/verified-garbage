@@ -1,6 +1,7 @@
 module
 
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Main
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.Main
+import VerifiedGarbage.Proof.Ecdsa.AArch64.CombCall
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.P224.Contract
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.Layout
 public import VerifiedGarbage.Proof.Weierstrass.CombW
@@ -11,6 +12,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
 import VerifiedGarbage.Proof.P224.Prime
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Main
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.CombCall
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.P224.Contract
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Layout
 meta import VerifiedGarbage.Proof.Weierstrass.CombW
@@ -19,6 +21,8 @@ meta import VerifiedGarbage.Proof.P224.Point
 meta import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
 meta import VerifiedGarbage.Proof.P224.Prime
+import VerifiedGarbage.Proof.Ecdsa.AArch64.AbiOnce
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.AbiOnce
 
 /-!
 # ECDSA over P-224 on AArch64: `Verified`
@@ -69,14 +73,13 @@ theorem p224_ok (hI : Weierstrass.AArch64.InvSounds) : CfgOk p224 where
   minv_n := by decide +kernel
   red_p := by decide +kernel
   red_n := by decide +kernel
-  n2 := by decide
   len8 := by decide
   len_lo := by decide
   len_hi := by decide
   sh := by rw [p224_sh]; decide
   n4 := by decide
   sound_p := hI (by
-    show Nat.Prime Spec.P224.curve.p
+    show IsPrime Spec.P224.curve.p
     rw [show Spec.P224.curve.p =
       26959946667150639794667015087019630673557916260026308143510066298881
       by decide +kernel]
@@ -97,17 +100,20 @@ theorem pre_of {s : State} (h : signAArch64.pre s) : Pre p224 s := by
   exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11,
     ⟨by rw [h1]; simp, held, fit, hdw _ (by simp)⟩⟩
 
+/-- A call of `vg_p224_comb` does what the comb does (`combCorrect_call`). -/
+theorem gMulP224_correct (hL : Weierstrass.Law Spec.P224.curve) (hI : Weierstrass.AArch64.InvSounds)
+    (hT : CombOkW p224.C Cfg.combW (Cfg.combJ p224.n) p224.tbl p224.start) : CombCorrect p224 gMulP224 :=
+  combCorrect_call (comb := combP224) (combCorrect (p224_ok hI) hL hT) (by lit_decide)
+
 theorem sign_a64 (hL : Weierstrass.Law Spec.P224.curve) (hI : Weierstrass.AArch64.InvSounds)
     (hT : CombOkW Spec.P224.curve 7 37 Impl.P224.p224Comb7 Impl.P224.p224Comb7Start) (s : State)
     (hs : signAArch64.pre s) :
     ∃ t s', Exec isa signP224 s t s' ∧ abiPreserved s s' ∧ signAArch64.post s s' := by
   -- In steps: elaborated in one term, the unifier would compare P-224's
   -- terms before the literals' facts are known.
-  have hn : CallsKeep signP224 := by lit_decide
-  have hu : KeepsUntouched signP224 := by lit_decide
-  have hv : signP224.allInstrs keepsV = true := by lit_decide
-  obtain ⟨t, s', he, hsv, hpost⟩ := sign_ok (p224_ok hI) hL hT (pre_of hs)
-  exact ⟨t, s', he, abiPreserved_of he hn hu hv hsv, hpost⟩
+  have ha : abiK signP224 = true := by lit_decide
+  obtain ⟨t, s', he, hsv, hpost⟩ := signWith_ok (p224_ok hI).toBaseCfgOk hL _ (gMulP224_correct hL hI hT) (pre_of hs)
+  exact ⟨t, s', he, abiPreserved_ofK he ha hsv, hpost⟩
 
 theorem sign_ct : ConstantTime isa signAArch64.pre signAArch64.pub signP224 :=
   VG.Taint.constantTime (A := taintS [p224.tsym]) (Taint.ofRegs [.x0, .x1, .x2, .x3, .x4])

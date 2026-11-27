@@ -15,10 +15,12 @@ words) and `R_q² mod q` to `pre` and returns 1 if `n` is valid and
 
 * `pre` is zeroed first (`zeroPre`), so that a modulus that is not valid
   leaves it zero, and so that `vg_rsa_private_crt`'s setup and checks
-  (`Crt.nSetup`, `Crt.primesSetup`, `Crt.checks`), run with `pre` as the
+  (`Crt.nHead`, `Crt.primesSetup`, `Crt.checks`), run with `pre` as the
   input and as `qInv` (and `p`, `q` as `dP`, `dQ`, which they do not read),
   find them zero: their mask is then that of `n` valid and `p q = n`, and
-  `p` and `q` are kept under it, else 3.
+  `p` and `q` are kept under it, else 3. The input's Montgomery form,
+  which `Crt.nSetup` multiplies for, is zero too: it is written, not
+  computed (`nSetup`).
 * In each prime's workspace, `R_X² mod X` from `R² mod n` (`r2X`): reduced
   modulo `X` by `Crt.redc` (`x R_X^(-K)`, `K = ⌈w / w_X⌉`) and then by
   `R_X⁻¹` (Montgomery multiplications by 1) while more than `2 w_X` of its
@@ -138,6 +140,11 @@ def outN : List (Prog isa) := [
   .block [ldh .x16 (sArr aR2)],
   maskCopy,
   .block [ldh .x0 sMask, movi .x3 1, .logic .and .x .x0 .x0 .x3]]
+
+/-- `Crt.nSetup` for the input 0, whose Montgomery form `0 R mod n` is 0:
+`Crt.nHead`, and that array zeroed, in place of a multiplication. -/
+def nSetup (mul : Nat → Nat → Nat → Prog isa) : List (Prog isa) :=
+  nHead mul ++ [zeroArr aXm]
 
 /-- The computation, once `n` is known valid. -/
 def main (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=

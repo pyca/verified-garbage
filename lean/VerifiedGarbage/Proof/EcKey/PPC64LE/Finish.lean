@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Impl.EcKey.PPC64LE
 public import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Layout
-import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Finish
 import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Setup
 import VerifiedGarbage.Proof.Weierstrass.PPC64LE.BytesLen
 import VerifiedGarbage.Proof.Weierstrass.Words
@@ -11,6 +10,82 @@ import VerifiedGarbage.Proof.Mont.PPC64LE.Row
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Spec.Ecdsa.Generic
+
+/-! ### `Ecdsa.PPC64LE.Finish`, which this module and modules that import it used -/
+
+section
+
+/-!
+# ECDSA on PPC64LE: the results and the restore
+
+What writing a result shares: the bytes of a range apart from the one that
+changed (`bytesAt_keep`), a range changed at an offset (`outside_shift`), and
+`restore`, which reloads `lr`, `r14` and `r31` from the working space
+(`restore_ok`), as on 32-bit ARM (`Proof/Ecdsa/Arm/Finish.lean`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Ecdsa.PPC64LE
+
+open VG VG.PPC64LE VG.Impl.Weierstrass.PPC64LE VG.Impl.Ecdsa.PPC64LE
+open VG.Proof.Mont VG.Proof.Mont.PPC64LE VG.Proof.Weierstrass VG.Proof.Weierstrass.PPC64LE
+
+/-- The bytes of a range apart from the one that changed. -/
+theorem bytesAt_keep {q p : Addr} {len k : Nat} {m m' : Mem} (h : Outside q 0 len m m')
+    (hd : Region.Disjoint ⟨p, k⟩ ⟨q, len⟩) (hl : len ≤ 2 ^ 64) (hk : k ≤ 2 ^ 64) :
+    Spec.Ecdsa.bytesAt m' p k = Spec.Ecdsa.bytesAt m p k := by
+  simp only [Spec.Ecdsa.bytesAt]
+  refine List.map_congr_left fun i hi => ?_
+  simp only [List.mem_range] at hi
+  exact keep_of_disjoint' h hd hl hi hk
+
+/-- A range changed at `p + d` is one changed at offset `d` of `p`. -/
+theorem outside_shift {p : Addr} {d len : Nat} {m m' : Mem}
+    (h : Outside (p + BitVec.ofNat 64 d) 0 len m m') (hd : d + len ≤ 2 ^ 64) : Outside p d len m m' :=
+  fun x hx => h x (Or.inr (by
+    show 0 + len ≤ (x - (p + BitVec.ofNat 64 d)).toNat
+    rcases Nat.lt_or_ge (x - (p + BitVec.ofNat 64 d)).toNat len with hlt | hge
+    · have := (Offset.lt_iff x p hd).mp hlt
+      simp only [ofs] at hx
+      omega_using [hx, this]
+    · omega_using [hge]))
+
+theorem mask_bit (b : Bool) : (mask64 (b = true) &&& BitVec.ofNat 64 1 : BitVec 64) = if b then 1 else 0 := by
+  cases b <;> decide
+
+theorem restore_eq : Cfg.restore =
+    [.load .d .r0 wb Cfg.lrAt, .mtlr .r0, .load .d .r14 wb 0, .load .d .r31 wb 8] := rfl
+
+/-- `lr`, `r14` and `r31` from the working space. -/
+theorem restore_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) (h3 : At s base .r3 0)
+    (hsz : 24 ≤ size) {is : List Instr} {Q : State → Prop}
+    (k : ∀ t, Rk [.r0, .r14, .r31] s t → t.mem = s.mem → t.lr = word s.mem base Cfg.lrAt →
+      t.gpr .r14 = word s.mem base 0 → t.gpr .r31 = word s.mem base 8 → WP isa (.block is) t Q) :
+    WP isa (.block (Cfg.restore ++ is)) s Q := by
+  rw [restore_eq, List.cons_append, List.cons_append, List.cons_append, List.cons_append, List.nil_append]
+  refine wp_step (ld0_ok hs h3 (by decide) (by decide) (by simp only [Cfg.lrAt]; omega_using [hsz])) ?_
+  refine wp_step exec_mtlr ?_
+  simp only [write_gpr, ite_true]
+  have hs₂ : Ws { s.write .r0 (word s.mem base Cfg.lrAt) with lr := word s.mem base Cfg.lrAt } base size :=
+    hs.of_wr rfl
+  have h3₂ : At { s.write .r0 (word s.mem base Cfg.lrAt) with lr := word s.mem base Cfg.lrAt } base .r3 0 :=
+    h3.write (d := .r0) (word s.mem base Cfg.lrAt)
+  refine wp_step (ld0_ok hs₂ h3₂ (by decide) (by decide) (by omega_using [hsz])) ?_
+  refine wp_step (ld0_ok (hs₂.write .r14 (word s.mem base 0)) (h3₂.write (d := .r14) (word s.mem base 0)) (by decide) (by decide) (by omega_using [hsz])) ?_
+  refine k _ ⟨fun r hr => ?_, rfl, rfl, rfl⟩ rfl ?_ ?_ ?_
+  · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+    simp only [write_gpr, hr.1, hr.2.1, hr.2.2, ite_false]
+  · simp only [write_lr]
+  · simp only [write_gpr, write_mem, reduceCtorEq, ite_false, ite_true]
+  · simp only [write_gpr, write_mem, ite_true]
+
+end VG.Proof.Ecdsa.PPC64LE
+
+end
+
+end
 
 /-!
 # Elliptic curve public keys on PPC64LE: the result
@@ -69,21 +144,21 @@ theorem pkFinishWith_ok (hc : CfgOk c) {x y : Nat} (hx45 : x < 45) (hy45 : y < 4
   have hn0 := hc.n0
   have hn := hw.nowrap
   have hsz : size = 8192 := rfl
-  have hX := sl_le c h7 hx45
-  have hY := sl_le c h7 hy45
-  have hF := sl_le c h7 (i := FLAG) (by decide)
+  obtain hX := sl_le c h7 hx45
+  obtain hY := sl_le c h7 hy45
+  obtain hF := sl_le c h7 (i := FLAG) (by decide)
   have hs := hw.ws
   have h3 := hw.at3
-  have hdsc : ∀ {a d : Nat}, a + 8 * c.n ≤ size → d + c.C.len ≤ 1 + 2 * c.C.len →
+  obtain hdsc : ∀ {a d : Nat}, a + 8 * c.n ≤ size → d + c.C.len ≤ 1 + 2 * c.C.len →
       Region.Disjoint ⟨off base a, 8 * c.n⟩ ⟨out + BitVec.ofNat 64 d, c.C.len⟩ := fun ha hd' =>
     (hd.symm.sub_left (Offset.sub_base base ha)).sub_right (Offset.sub_base out hd')
-  have hin : ∀ {d e m : Nat}, d + e + m ≤ 1 + 2 * c.C.len →
+  obtain hin : ∀ {d e m : Nat}, d + e + m ≤ 1 + 2 * c.C.len →
       InRegions s.wr (out + BitVec.ofNat 64 d + BitVec.ofNat 64 e) m := fun hd' =>
     ⟨_, hwr, by rw [Offset.add_add]; exact Offset.contains_base out hd' (by omega_using [hofit, hd'])⟩
-  have hin0 : InRegions s.wr (out + BitVec.ofNat 64 0) 1 := by
+  obtain hin0 : InRegions s.wr (out + BitVec.ofNat 64 0) 1 := by
     have := hin (d := 0) (e := 0) (m := 1) (by omega_using []); rwa [BitVec.add_zero] at this
   -- The flag and the leading byte.
-  have lead : WP isa (.block [.load .d .r10 wb (c.sl FLAG), .li .r4 4, .logic .and .r4 .r4 .r10, .stb .r4 .r14 0]) s
+  obtain lead : WP isa (.block [.load .d .r10 wb (c.sl FLAG), .li .r4 4, .logic .and .r4 .r4 .r10, .stb .r4 .r14 0]) s
       fun t => Kp [.r4, .r10] s t ∧ t.mem = s.mem.writeW (out + BitVec.ofNat 64 0) (if b then 4 else 0 : BitVec 8) ∧
         t.gpr .r10 = (if b then BitVec.allOnes 64 else 0) := by
     refine wp_step (ld0_ok hs h3 (by decide) (sl_al c FLAG) (by omega_using [hF])) ?_
@@ -97,15 +172,15 @@ theorem pkFinishWith_ok (hc : CfgOk c) {x y : Nat} (hx45 : x < 45) (hy45 : y < 4
     · simp only [write_gpr, reduceCtorEq, ite_false, ite_true]; exact hf
   rw [finish_eq' c x y]
   refine wp_append (WP.mono lead fun s₄ ⟨K₄, hm₄, hc₄⟩ => ?_)
-  have O₄ : Outside out 0 1 s.mem s₄.mem := by
+  obtain O₄ : Outside out 0 1 s.mem s₄.mem := by
     rw [hm₄]; exact writeW8_outside s.mem out (d := 0) _ (by omega_using [])
-  have L₄ : s₄.mem (out + BitVec.ofNat 64 0) = if b then 4 else 0 := by rw [hm₄, writeW8_self]
-  have U₄ := O₄.unch_far (hd.symm.sub_right (Region.sub_prefix (by omega_using [])))
-  have hb₄ : s₄.gpr .r14 = out := by rw [K₄.g, h14]
-  have x₄ : wordsVal s₄.mem base (c.sl x) c.n = sv c base s x := by
+  obtain L₄ : s₄.mem (out + BitVec.ofNat 64 0) = if b then 4 else 0 := by rw [hm₄, writeW8_self]
+  obtain U₄ := O₄.unch_far (hd.symm.sub_right (Region.sub_prefix (by omega_using [])))
+  obtain hb₄ : s₄.gpr .r14 = out := by rw [K₄.g, h14]
+  obtain x₄ : wordsVal s₄.mem base (c.sl x) c.n = sv c base s x := by
     rw [U₄.wordsVal (fun w hw => by simp only [List.mem_singleton] at hw; subst hw; omega) (by omega_using [hX])]
-  have hs₄ := K₄.ws hs
-  have h3₄ := K₄.at h3
+  obtain hs₄ := K₄.ws hs
+  obtain h3₄ := K₄.at h3
   -- `x`, from `out + 1`.
   refine wp_append (WP.mono (storeBytes_ok hs₄ h3₄ (dst := .r14) (d := 1) (a := c.sl x) (by decide) (by decide)
     (by decide) (by decide) b hc₄ (by omega_using [hX]) (sl_al c x) (by omega_using [hl8]) (by omega_using [hllo]) hlhi (by omega_using [h7, hlhi])
@@ -113,10 +188,10 @@ theorem pkFinishWith_ok (hc : CfgOk c) {x y : Nat} (hx45 : x < 45) (hy45 : y < 4
     (by rw [hb₄]; exact hdsc (by omega_using [hsz, hX]) (by omega_using []))) fun s₅ ⟨e₅, k₅, O₅⟩ => ?_)
   rw [hb₄, x₄] at e₅
   rw [hb₄] at O₅
-  have U₅ := O₅.unch_far (hd.symm.sub_right (Offset.sub_base out (d := 1) (n := c.C.len) (by omega_using [])))
-  have hb₅ : s₅.gpr .r14 = out := by rw [k₅.g, hb₄]
-  have hc₅ : s₅.gpr .r10 = if b then BitVec.allOnes 64 else 0 := by rw [k₅.g, hc₄]
-  have y₅ : wordsVal s₅.mem base (c.sl y) c.n = sv c base s y := by
+  obtain U₅ := O₅.unch_far (hd.symm.sub_right (Offset.sub_base out (d := 1) (n := c.C.len) (by omega_using [])))
+  obtain hb₅ : s₅.gpr .r14 = out := by rw [k₅.g, hb₄]
+  obtain hc₅ : s₅.gpr .r10 = if b then BitVec.allOnes 64 else 0 := by rw [k₅.g, hc₄]
+  obtain y₅ : wordsVal s₅.mem base (c.sl y) c.n = sv c base s y := by
     rw [U₅.wordsVal (fun w hw => by simp only [List.mem_singleton] at hw; subst hw; omega) (by omega_using [hY]),
       U₄.wordsVal (fun w hw => by simp only [List.mem_singleton] at hw; subst hw; omega) (by omega_using [hY])]
   -- `y`, from `out + 1 + len`.
@@ -126,13 +201,13 @@ theorem pkFinishWith_ok (hc : CfgOk c) {x y : Nat} (hx45 : x < 45) (hy45 : y < 4
     (by rw [hb₅]; exact hdsc (by omega_using [hsz, hY]) (by omega_using []))) fun s₆ ⟨e₆, k₆, O₆⟩ => ?_)
   rw [hb₅, y₅] at e₆
   rw [hb₅] at O₆
-  have U₆ := O₆.unch_far (hd.symm.sub_right (Offset.sub_base out (d := 1 + c.C.len) (n := c.C.len) (by omega_using [])))
-  have hsv : ∀ d, d + 8 ≤ 24 → word s₆.mem base d = word s.mem base d := fun d hd' => by
+  obtain U₆ := O₆.unch_far (hd.symm.sub_right (Offset.sub_base out (d := 1 + c.C.len) (n := c.C.len) (by omega_using [])))
+  obtain hsv : ∀ d, d + 8 ≤ 24 → word s₆.mem base d = word s.mem base d := fun d hd' => by
     rw [U₆.word (fun w hw => by simp only [List.mem_singleton] at hw; subst hw; omega) (by omega_using [hd']),
       U₅.word (fun w hw => by simp only [List.mem_singleton] at hw; subst hw; omega) (by omega_using [hd']),
       U₄.word (fun w hw => by simp only [List.mem_singleton] at hw; subst hw; omega) (by omega_using [hd'])]
-  have hs₆ := k₆.ws (k₅.ws hs₄)
-  have h3₆ := k₆.at (k₅.at h3₄)
+  obtain hs₆ := k₆.ws (k₅.ws hs₄)
+  obtain h3₆ := k₆.at (k₅.at h3₄)
   -- The return value and the callee-saved registers.
   refine wp_step (exec_li (by decide)) ?_
   refine wp_step exec_logic ?_
@@ -142,7 +217,7 @@ theorem pkFinishWith_ok (hc : CfgOk c) {x y : Nat} (hx45 : x < 45) (hy45 : y < 4
       rw [bytesAt_keep O₆ (Offset.base_disjoint out (by omega_using []) (by omega_using [hofit])) (by omega_using [hofit]) (by omega_using []),
         bytesAt_keep O₅ (Offset.base_disjoint out (by omega_using []) (by omega_using [hofit])) (by omega_using [hofit]) (by omega_using [])]
       exact congrArg (· :: []) L₄
-    have xs : Spec.Ecdsa.bytesAt s₆.mem (out + BitVec.ofNat 64 1) c.C.len =
+    obtain xs : Spec.Ecdsa.bytesAt s₆.mem (out + BitVec.ofNat 64 1) c.C.len =
         if b then toBytes c.C.len (sv c base s x) else List.replicate c.C.len 0 := by
       rw [bytesAt_keep O₆ (Offset.disjoint out (.inl (Nat.le_refl _)) (by omega_using [hofit]) (by omega_using [hofit])) (by omega_using [hofit])
         (by omega_using [hofit]), e₅]

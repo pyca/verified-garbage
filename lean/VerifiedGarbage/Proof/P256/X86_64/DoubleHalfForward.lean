@@ -1,13 +1,11 @@
 module
 
 public import VerifiedGarbage.Impl.P256.X86_64.DoubleHalfForward
-public import VerifiedGarbage.Proof.P256.X86_64.DoubleHalf
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.Forward
-import VerifiedGarbage.Proof.P256.X86_64.DoubleHalfWP
+public import VerifiedGarbage.Proof.P256.X86_64.DoubleHalfWP
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.ForwardStores
 import VerifiedGarbage.Proof.Weierstrass.X86_64.ForwardField
 import VerifiedGarbage.Proof.Weierstrass.PointContract
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JacState
-import VerifiedGarbage.Proof.Weierstrass.X86_64.ForwardStores
 
 /-! Functional correctness of point doubling with register forwarding across every field boundary. -/
 
@@ -24,7 +22,7 @@ theorem half_forward_ok {M : Mod} {base : Addr} {size : Nat} {Sl : Nat → Prop}
     (ho : Sl o) (ha : a∈V) {cs : Forward.Cache} (hc : Forward.Valid cs s) :
     WP isa (.block (Forward.block cs (half o a))) s fun t =>
       (OpKeep M base o s t ∧
-        Inv M base size Spec.P256.p Sl (o::V) (Function.update E o (halfFe (E a))) t) ∧
+        Inv M base size Spec.P256.p Sl (o::V) (Fun.update E o (halfFe (E a))) t) ∧
       Forward.Valid (Forward.ofStores [.r8,.r9,.r10,.r11] o) t := by
   apply Forward.block_wp hc
   exact Forward.block_stores_valid (half_inv_ok hn hL hI ho ha) (fun _ ht => ht.2.scr)

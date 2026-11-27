@@ -25,16 +25,18 @@ namespace VG.Impl.MlKem.Arm.Wipe
 
 open VG.Arm VG.Impl.CallWipe.Arm VG.Impl.CallWipe.ArmStack
 
-/-- A call of the code `body` of the function `fn`, then of `vg_zeroize` on
+/-- A call of the code `body` of the function `fn`, then of `vg_zeroize`'s code
+(as the internal `vg_zeroize_core`) on
 the first `n` bytes of the buffer whose address is in `r`. -/
 def wiped (r : Reg) (n : Nat) (fn : String) (body : Prog isa) : Prog isa :=
-  callWipe r n (fn ++ "_body") body "vg_zeroize" Impl.Zeroize.Arm.zeroize
+  callWipe r n (fn ++ "_body") body "vg_zeroize_core" Impl.Zeroize.Arm.zeroize
 
 /-- A call of the code `body` of the function `fn`, whose arguments take `k`
-words of stack, then of `vg_zeroize` on the first `n` bytes of the buffer
+words of stack, then of `vg_zeroize`'s code
+(as the internal `vg_zeroize_core`) on the first `n` bytes of the buffer
 whose address is the stack argument at byte offset `off`. -/
 def wipedStack (k off n : Nat) (fn : String) (body : Prog isa) : Prog isa :=
-  callWipeStack k off n (fn ++ "_body") body "vg_zeroize" Impl.Zeroize.Arm.zeroize
+  callWipeStack k off n (fn ++ "_body") body "vg_zeroize_core" Impl.Zeroize.Arm.zeroize
 
 /-- `vg_mlkem768_keygen`. -/
 def keyGen : Prog isa := wiped .r3 32768 "vg_mlkem768_keygen" Impl.MlKem.Arm.keygen

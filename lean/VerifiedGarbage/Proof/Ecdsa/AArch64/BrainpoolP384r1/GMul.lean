@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.Taint
 import VerifiedGarbage.Proof.Weierstrass.CombLay
+import VerifiedGarbage.Proof.Framework.Apart
 
 /-! # brainpoolP384r1 multiplication by the base point, by a call of `vg_brainpoolp384r1_mul` -/
 
@@ -24,7 +25,7 @@ theorem ladLayM : LadLay brainpoolp384r1.mulLadder size := by
   constructor
   · refine ⟨by decide +kernel, ?_, by decide +kernel, by decide +kernel⟩
     have h : ∀ x ∈ ladSlots brainpoolp384r1.mulLadder, ∀ y ∈ ladSlots brainpoolp384r1.mulLadder,
-        x ≠ y → x + 48 ≤ y ∨ y + 48 ≤ x := by decide +kernel
+        x ≠ y → x + 48 ≤ y ∨ y + 48 ≤ x := apart_of (by decide +kernel)
     exact fun x y hx hy => h x hx y hy
   · constructor <;> decide +kernel
   · constructor <;> decide +kernel
@@ -41,7 +42,7 @@ theorem ladAM : LadA brainpoolp384r1.mulLadder where
   bits := by decide
   call := by intro f m h; cases h
 
-theorem mulFn_v : brainpoolp384r1.mulFn.allInstrs (fun i => (vdstOf i).isNone) = true := by lit_decide
+theorem mulFn_v : brainpoolp384r1.mulFn.allInstrs (fun i => (vdstOf i != some .v29) && keepsV i) = true := by lit_decide
 
 theorem mulFn_nf : brainpoolp384r1.mulFn.noFrames = true := by lit_decide
 
@@ -64,7 +65,7 @@ theorem gMul_ok (hc : BaseCfgOk brainpoolp384r1) (hC : Law brainpoolp384r1.C)
     show Point.affine (toM _ _ (wordsVal s.mem base (brainpoolp384r1.sl GX) brainpoolp384r1.n))
       (toM _ _ (wordsVal s.mem base (brainpoolp384r1.sl GY) brainpoolp384r1.n)) = Point.affine _ _
     rw [F.gx, F.gy, toM_cmont hc, toM_cmont hc]
-  have W := mulAt_ok hc (.inr (.inl rfl)) (.inr (by decide)) ladLayM ladAM hC mulFn_v mulFn_nf
+  have W := mulAt_ok hc (.inr (.inr (.inl rfl))) (.inr (by decide)) ladLayM ladAM hC mulFn_v mulFn_nf
     (name := "vg_brainpoolp384r1_mul") (px := GX) (py := GY) (by decide) (by decide)
     (by decide) (by decide) (by decide) hs F (lt_of_eq_of_lt F.gx (hmont _))
     (lt_of_eq_of_lt F.gy (hmont _)) (by rw [eG]; exact hc.onG)

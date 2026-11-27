@@ -81,7 +81,7 @@ theorem sha1_anySp (v : Backend) :
 block, or (cold) for any key, wiped. -/
 theorem sha1_initF (v : Backend) :
     Verified X86.target (initCode Spec.Hmac.sha1I v.M.hmacInit v.F) (Spec.Hmac.sha1I.initAnyKeyContract X86.abi (76 + anyFrame Spec.Hmac.sha1I)) :=
-  initCode_verified (Md.X86.initFramed v.hmacInit Md.X86.sha1_initFrameSat (Md.X86.noEsp_of v.initNoSp) v.initStack)
+  initCode_verified (Md.X86.initFramed v.hmacInit Proof.Hmac.sha1_local Md.X86.sha1_initFrameSat (Md.X86.noEsp_of v.initNoSp) v.initStack)
     (sha1_anyFramed v) (by decide) sha1_anyFrameSat
 
 theorem sha1_initSp (v : Backend) : (initCode Spec.Hmac.sha1I v.M.hmacInit v.F).all (fun i => !isa.writesSp i) = true :=

@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.RsaKeyGen.MrIter
 import VerifiedGarbage.Proof.RsaKeyGen.CandSpec
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.Generation.Primality
-import VerifiedGarbage.Proof.Dsa.Arm.Prime.Mont7
+import VerifiedGarbage.Proof.Dsa.Arm.Prime.Mont8
 import VerifiedGarbage.Proof.Dsa.Arm.Prime.Instr
 import VerifiedGarbage.Proof.Dsa.Arm.Prime.Vals
 

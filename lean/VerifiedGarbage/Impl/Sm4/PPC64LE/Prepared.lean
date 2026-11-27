@@ -45,6 +45,76 @@ def prepareKeys : Prog isa :=
 def cryptPrepared : Prog isa :=
   .seq (.block ([movR sb .r3] ++ saveRegs ++ slotAddr .r11 tableEnd)) (.seq crypt16 (.block restoreRegs))
 
+/-! ## ECB
+
+`ecb d(schedule = r3, data = r4, n = r5, scratch = r6)`: `vg_sm4_ecb_encrypt`
+and `vg_sm4_ecb_decrypt` with their working space in the scratch buffer,
+`ecbSlots` slots: the functions' 402 (`slots`), then the caller's `r30` and
+`r31` and the return address, which the function saves there (`ecbEntry`)
+and restores (`ecbExit`).
+
+* `vg_sm4_prepare_keys` builds the table of the direction `d` (`ecbPrepare`).
+* Each group of up to sixteen blocks is copied to the tail buffer
+  (`copyIn`), transformed by `vg_sm4_crypt_prepared` (`ecbCrypt`), and
+  copied back (`copyOut`).
+
+Neither function writes `r5` or `r7`, and both keep the callee-saved
+registers: `r7` keeps the scratch buffer's address throughout (in `r8` too
+between the calls), `r5` the blocks left, `r31` the data pointer, and `r30`
+`n` across `vg_sm4_prepare_keys`, which takes the scratch buffer in `r5`.
+Only these and the copies' pointers and counts (`r3`, `r6`, `r10`, `r12`,
+and the test in `r9`) are addressed or counted, all public. The scratch
+buffer's address stays in a register that no call writes, so the analysis of
+constant time (`VG.PPC64LE.slotTaint`) knows it, and the slots the functions
+save the registers in, on every call.
+-/
+
+/-- The bit `vg_sm4_prepare_keys` takes for the direction. -/
+def dirBit : Dir → Nat
+  | .encrypt => 0
+  | .decrypt => 1
+
+/-- ECB's slots for the caller's `r30` and `r31` and the return address. -/
+def ecbR30 : Nat := slots
+def ecbR31 : Nat := slots + 1
+def ecbLr : Nat := slots + 2
+
+/-- ECB's working space, in 8-byte slots: a 16-byte multiple. -/
+def ecbSlots : Nat := slots + 4
+
+/-- The return address and the caller's `r30` and `r31` to their slots (of
+the scratch buffer, at `r6`); the scratch buffer's address to `r7`, the data
+pointer to `r31` and `n` to `r30`. -/
+def ecbEntry : List Instr :=
+  [.mflr .r0, .store .d .r0 .r6 (8 * ecbLr), .store .d .r30 .r6 (8 * ecbR30),
+   .store .d .r31 .r6 (8 * ecbR31), movR .r7 .r6, movR .r31 .r4, movR .r30 .r5]
+
+/-- `vg_sm4_prepare_keys(r3, d, r7, slots)`, then `n` back to `r5` and the
+scratch buffer's address to `r8`. -/
+def ecbPrepare (d : Dir) : Prog isa :=
+  .seq (.block [.li .r4 (dirBit d), movR .r5 .r7, .li .r6 slots])
+    (.seq (.call "vg_sm4_prepare_keys" prepareKeys) (.block [movR .r5 .r30, movR sb .r7]))
+
+/-- `vg_sm4_crypt_prepared(r7, slots)`, then the scratch buffer's address
+back to `r8`. -/
+def ecbCrypt : Prog isa :=
+  .seq (.block [movR .r3 .r7, .li .r4 slots])
+    (.seq (.call "vg_sm4_crypt_prepared" cryptPrepared) (.block [movR sb .r7]))
+
+/-- Sixteen blocks, or the last one to fifteen, and on to the next. -/
+def ecbGroup : Prog isa :=
+  .seq copyIn (.seq ecbCrypt (.seq copyOut (.block [.sub .r5 .r5 .r12, .addi .r31 .r31 256])))
+
+/-- The caller's `r30`, the return address and the caller's `r31` restored. -/
+def ecbExit : List Instr :=
+  [.load .d .r30 .r7 (8 * ecbR30), .load .d .r0 .r7 (8 * ecbLr), .mtlr .r0,
+   .load .d .r31 .r7 (8 * ecbR31)]
+
+/-- ECB in the direction `d`. -/
+def ecb (d : Dir) : Prog isa :=
+  .seq (.block ecbEntry) (.seq (ecbPrepare d)
+    (.seq (.ite (.zero .d .r5) (.block []) (.loop ecbGroup (.nonzero .d .r5))) (.block ecbExit)))
+
 /-! ## The layout -/
 
 /-- The direction of the specification. -/

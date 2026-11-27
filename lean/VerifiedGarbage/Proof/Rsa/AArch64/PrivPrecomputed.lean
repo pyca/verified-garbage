@@ -1,24 +1,19 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.AArch64.PrivCorrect
-public import VerifiedGarbage.Proof.Rsa.AArch64.PrivCT
 public import VerifiedGarbage.Proof.Rsa.AArch64.PrivVerified
 public import VerifiedGarbage.Proof.Rsa.Contract
 public import VerifiedGarbage.Proof.Bignum.Words
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Rsa.AArch64.PrivCheckOk
 import VerifiedGarbage.Proof.Bignum.AArch64.Copy
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Rsa.AArch64.PrivCorrect
-meta import VerifiedGarbage.Proof.Rsa.AArch64.PrivCT
+meta import VerifiedGarbage.Proof.Rsa.AArch64.PrivVerified
 meta import VerifiedGarbage.Proof.Rsa.Contract
 meta import VerifiedGarbage.Proof.Bignum.Words
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Rsa.PreKey
-meta import VerifiedGarbage.Proof.Rsa.AArch64.PrivCheckOk
 meta import VerifiedGarbage.Proof.Bignum.AArch64.Copy
 meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
@@ -572,6 +567,13 @@ theorem codeP_verified (v : CrtImpl) :
       (Proof.Rsa.privateCheckedPrecomputedContract AArch64.abi stackBytes) :=
   Verified.of_correct (fun s h => codeP_correct v s h) (codeP_constantTime v)
     private_checked_precomputed_implies
+
+/-- `vg_rsa_private_checked_precomputed` never touches PSTATE.DIT, its callees not either. -/
+theorem privPCode_noDit (v : CrtImpl) : (privPCode v).all (fun i => !i.touchesDit) = true := by
+  simp only [privPCode, codeP, bodyP, checkWith, pcCopy, tail, seqs, List.cons_append, List.nil_append,
+    Code.all, v.crtPNoDit, v.pdNoDit, VG.Impl.Bignum.AArch64.copyWords, VG.Impl.Bignum.AArch64.countLoop, cmpLoop,
+    releaseLoop, Bool.true_and]
+  decide
 
 /-- Its frames, as `vg_rsa_private_checked`'s. -/
 theorem privPCode_depth (v : CrtImpl) : (privPCode v).aarch64Depth = stackBytes / 16 := by

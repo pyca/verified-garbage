@@ -1,23 +1,25 @@
 module
 
-public import VerifiedGarbage.Proof.Camellia.Arm.FbVerified
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.Arm.Print
-public import VerifiedGarbage.Proof.Camellia.Arm.FbFinalVerified
-public import VerifiedGarbage.Impl.Camellia.Arm.FbFinal
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Camellia.Ofb
+public import VerifiedGarbage.Spec.Camellia.OfbFinal
+import VerifiedGarbage.Proof.Camellia.Arm.Scrub
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # Camellia-OFB on ARMv7 -/
 
-@[expose] public section
-
 namespace VG.Artifacts.CamelliaOfb.Arm
 
-def artifacts : List Artifact := [
+public def artifacts : List (Artifact Arm.target) := [
   Spec.Camellia.ofbApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratchWiped 88 1 18 Impl.Camellia.Arm.ofb
-    verified := Proof.Camellia.Arm.ofb_framed },
+    code := Impl.Camellia.Arm.Fn.ofb
+    verified := Proof.Camellia.Arm.Fn.ofb },
   Spec.Camellia.ofbFinalApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratchWiped 88 1 18 Impl.Camellia.Arm.ofbFinal
-    verified := Proof.Camellia.Arm.ofbFinal_framed }]
+    code := Impl.Camellia.Arm.Fn.ofbFinal
+    verified := Proof.Camellia.Arm.Fn.ofbFinal }]
+
+spec_apis artifacts
 
 end VG.Artifacts.CamelliaOfb.Arm

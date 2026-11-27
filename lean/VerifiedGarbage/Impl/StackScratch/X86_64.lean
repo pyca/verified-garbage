@@ -14,7 +14,8 @@ buffers; the buffer is the rest of the frame, which is below the stack
 pointer on entry, where no Rust object lies.
 
 `withStackScratchWiped bytes r words c` is the same, but zeroes the first
-`words` quadwords of the buffer after its code (`wipe`), for a function whose
+`words` quadwords of the buffer after its code (`wipe`: 16 bytes at a time
+through a zeroed `xmm0`, the last quadword through `r11`), for a function whose
 working space may hold secrets that its caller would otherwise wipe.
 
 `withStackArgScratch bytes m c` is for a function whose scratch buffer
@@ -41,12 +42,20 @@ on the stack, at `rsp + 8`. -/
 def withStackScratch (bytes : Nat) (r : Reg) (c : Prog isa) : Prog isa :=
   .frame (.alloc bytes) (.seq (.block [.mov r (.reg .rsp), .alu .add r (.imm 8)]) c) (.free bytes)
 
-/-- `mov qword [rsp + 8 + 8k], r11` for each `k < words`. -/
-def wipeStores (words : Nat) : List Instr :=
-  (List.range words).map fun k => .store { base := .rsp, disp := ((8 + 8 * k : Nat) : Int) } .r11
+/-- `movdqu xmmword [rsp + 8 + 16k], xmm0` for each `k < n`. -/
+def wipeStores16 (n : Nat) : List Instr :=
+  (List.range n).map fun k => .movdquStore { base := .rsp, disp := ((8 + 16 * k : Nat) : Int) } .xmm0
 
-/-- Zeroes the `words` quadwords at `rsp + 8`, through `r11`. -/
-def wipe (words : Nat) : List Instr := .mov32 .r11 (.imm 0) :: wipeStores words
+/-- `mov qword [rsp + off + 8k], r11` for each `k < words`. -/
+def wipeStoresAt (off words : Nat) : List Instr :=
+  (List.range words).map fun k => .store { base := .rsp, disp := ((off + 8 * k : Nat) : Int) } .r11
+
+/-- Zeroes the `words` quadwords at `rsp + 8`: two at a time through a
+zeroed `xmm0` (SSE2's `pxor` and `movdqu`), the last, if `words` is odd,
+through `r11`. -/
+def wipe (words : Nat) : List Instr :=
+  .xop (.bin .pxor .xmm0 .xmm0) :: .mov32 .r11 (.imm 0) ::
+    (wipeStores16 (words / 2) ++ wipeStoresAt (8 + 16 * (words / 2)) (words % 2))
 
 /-- `withStackScratch`, zeroing the first `words` quadwords of the buffer
 after the code. -/
@@ -70,10 +79,6 @@ def setArgs (bytes m : Nat) : List Instr :=
 arguments, with the buffer in a frame of `bytes` bytes on the stack. -/
 def withStackArgScratch (bytes m : Nat) (c : Prog isa) : Prog isa :=
   .frame (.alloc bytes) (.seq (.block (setArgs bytes m)) c) (.free bytes)
-
-/-- `mov qword [rsp + off + 8k], r11` for each `k < words`. -/
-def wipeStoresAt (off words : Nat) : List Instr :=
-  (List.range words).map fun k => .store { base := .rsp, disp := ((off + 8 * k : Nat) : Int) } .r11
 
 /-- Zeroes the `words` quadwords at `rsp + off`, through `r11`. -/
 def wipeAt (off words : Nat) : List Instr := .mov32 .r11 (.imm 0) :: wipeStoresAt off words

@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.RelCT
 import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.CallWipe
 import VerifiedGarbage.Proof.Framework.OffsetBelow
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Sig
@@ -66,66 +67,6 @@ theorem regArgs_getD (g : Reg → BitVec 64) {L i : Nat} (hL : L ≤ 8) (hi : i 
   have hi8 : i < argRegs.length := by simp only [argRegs, List.length_cons, List.length_nil]; omega_using [hL, hi]
   simp only [List.getD_eq_getElem?_getD, List.getElem?_map, List.getElem?_take, hi, ite_true,
     List.getElem?_eq_getElem hi8, Option.map_some, Option.getD_some]
-
-/-! ## The array among the parameters -/
-
-theorem Sig.bufs_mem_array {w : Bool} {e : Elem} {k : Nat} {nm : String} (ps₂ : List (String × Param)) :
-    ∀ (ps₁ : List (String × Param)) (vs : List (BitVec 64)),
-      (ps₁.flatMap fun p => p.2.words 64).length < vs.length →
-      (⟨vs.getD (ps₁.flatMap fun p => p.2.words 64).length 0, k * e.size⟩, w) ∈
-        Sig.bufs (ps₁ ++ (nm, .array w e k) :: ps₂) vs
-  | [], p :: vs, _ => List.mem_cons_self ..
-  | (_, .int ..) :: ps, v :: vs, h => by
-    simp only [List.flatMap_cons, Param.words.eq_1, List.length_append, List.length_cons,
-      List.length_nil] at h ⊢
-    simp only [List.cons_append, Sig.bufs, show 0 + 1 + (ps.flatMap fun p => p.2.words 64).length =
-      (ps.flatMap fun p => p.2.words 64).length + 1 by omega_using [], List.getD_cons_succ]
-    exact Sig.bufs_mem_array ps₂ ps vs (by omega_using [h])
-  | (_, .array ..) :: ps, v :: vs, h => by
-    simp only [List.flatMap_cons, Param.words.eq_2, List.length_append, List.length_cons,
-      List.length_nil] at h ⊢
-    simp only [List.cons_append, Sig.bufs, show 0 + 1 + (ps.flatMap fun p => p.2.words 64).length =
-      (ps.flatMap fun p => p.2.words 64).length + 1 by omega_using [], List.getD_cons_succ]
-    exact List.mem_cons_of_mem _ (Sig.bufs_mem_array ps₂ ps vs (by omega_using [h]))
-  | (_, .slice ..) :: ps, v :: l :: vs, h => by
-    simp only [List.flatMap_cons, Param.words.eq_3, List.length_append, List.length_cons,
-      List.length_nil] at h ⊢
-    simp only [List.cons_append, Sig.bufs, show 0 + 1 + 1 + (ps.flatMap fun p => p.2.words 64).length =
-      (ps.flatMap fun p => p.2.words 64).length + 1 + 1 by omega_using [], List.getD_cons_succ]
-    exact List.mem_cons_of_mem _ (Sig.bufs_mem_array ps₂ ps vs (by omega_using [h]))
-  | (_, .slices ..) :: ps, v :: l :: vs, h => by
-    simp only [List.flatMap_cons, Param.words.eq_4, List.length_append, List.length_cons,
-      List.length_nil] at h ⊢
-    simp only [List.cons_append, Sig.bufs, show 0 + 1 + 1 + (ps.flatMap fun p => p.2.words 64).length =
-      (ps.flatMap fun p => p.2.words 64).length + 1 + 1 by omega_using [], List.getD_cons_succ]
-    exact Sig.bufs_mem_array ps₂ ps vs (by omega_using [h])
-  | (_, .table _) :: ps, v :: vs, h => by
-    simp only [List.flatMap_cons, Param.words.eq_5, List.length_append, List.length_cons,
-      List.length_nil] at h ⊢
-    simp only [List.cons_append, Sig.bufs, show 0 + 1 + (ps.flatMap fun p => p.2.words 64).length =
-      (ps.flatMap fun p => p.2.words 64).length + 1 by omega_using [], List.getD_cons_succ]
-    exact Sig.bufs_mem_array ps₂ ps vs (by omega_using [h])
-  | [], [], h => by simp at h
-  | (_, .int ..) :: _, [], h => by simp at h
-  | (_, .array ..) :: _, [], h => by simp at h
-  | (_, .slice ..) :: _, [], h => by simp at h
-  | (_, .slice ..) :: _, [_], h => by simp [Param.words.eq_3] at h
-  | (_, .slices ..) :: _, [], h => by simp at h
-  | (_, .slices ..) :: _, [_], h => by simp [Param.words.eq_4] at h
-  | (_, .table _) :: _, [], h => by simp at h
-
-/-- The array's address is a public argument, of 64 bits. -/
-theorem Sig.pub_array {w : Bool} {e : Elem} {k : Nat} {nm : String} (ps₁ ps₂ : List (String × Param)) :
-    ((ps₁ ++ (nm, .array w e k) :: ps₂).flatMap (·.2.pubs)).getD
-        (ps₁.flatMap fun p => p.2.words 64).length false = true ∧
-      (((ps₁ ++ (nm, .array w e k) :: ps₂).flatMap fun p => p.2.words 64).map (·.bits 64)).getD
-        (ps₁.flatMap fun p => p.2.words 64).length 64 = 64 := by
-  rw [← Sig.pubs_length ps₁ 64]
-  simp only [List.flatMap_append, List.flatMap_cons, List.getD_eq_getElem?_getD, List.map_append]
-  constructor
-  · rw [List.getElem?_append_right (Nat.le_refl _), Nat.sub_self]; rfl
-  · rw [List.getElem?_append_right (by rw [List.length_map, Sig.pubs_length]), List.length_map,
-      Sig.pubs_length, Nat.sub_self]; rfl
 
 /-! ## The blocks -/
 
@@ -684,25 +625,43 @@ theorem cw_wp {name zname : String} {body zcode : Prog isa} {zst : Nat}
     ⟨_, List.mem_append_right _ (by rw [hwrg]; exact List.mem_cons_self ..), by
       rw [hspg]; exact slot31_contains s⟩
   refine WP.block ⟨_, restoreRet_run hin, ?_⟩
+  -- The pop loses the frame's bytes, which lie apart from the buffers.
+  intro m u f
+  have hfr : ∀ b ∈ Sig.bufs sig.params (regArgs sig s), ∀ x, b.1.Contains x 1 →
+      m x = (cwRestore g).mem x := fun b hb x hx => f x fun R hR hc => by
+    simp only [List.mem_singleton] at hR; subst hR
+    have hsub : Region.Sub ⟨s.sp - 48, 48⟩ (below s.sp (stack + 48)) :=
+      Offset.sub_below s.sp (a := 48) (by omega_using []) (by omega_using [])
+    exact hres b hb x (hsub x hc) hx
   refine WP.block ⟨_, mtlr_run _, ?_⟩
-  show abiPreserved s (cwFinal g) ∧ (sig.contract abi pre post wa (stack + 48) leak).post s (cwFinal g) ∧
-    Spec.Zeroize.bytesAt (cwFinal g).mem (s.gpr r) n = Spec.Zeroize.zeros n
-  refine ⟨⟨fun q hq => ?_, by rw [cwFinal_sp, hspg, BitVec.sub_add_cancel], ?_⟩, ?_, ?_⟩
+  show abiPreserved s { cwFinal g with mem := m, unknowns := u } ∧
+    (sig.contract abi pre post wa (stack + 48) leak).post s { cwFinal g with mem := m, unknowns := u } ∧
+    Spec.Zeroize.bytesAt m (s.gpr r) n = Spec.Zeroize.zeros n
+  have eg : ({ cwFinal g with mem := m, unknowns := u } : State).gpr = (cwFinal g).gpr := rfl
+  refine ⟨⟨fun q hq => ?_, by rw [show ({ cwFinal g with mem := m, unknowns := u } : State).sp =
+    (cwFinal g).sp from rfl, cwFinal_sp, hspg, BitVec.sub_add_cancel], ?_⟩, ?_, ?_⟩
   · -- The callee-saved registers.
     obtain ⟨h0, h3, -, -, h12⟩ := preserved_ne q hq
+    rw [eg]
     by_cases hq31 : q = .r31
     · subst hq31; rw [cwFinal_r31, hspg]; exact h31
     · rw [cwFinal_gpr g h0 h3 h12 hq31, hcsg q hq hq31]
-  · rw [cwFinal_lr, hspg]; exact hlr
+  · rw [show ({ cwFinal g with mem := m, unknowns := u } : State).lr = (cwFinal g).lr from rfl,
+      cwFinal_lr, hspg]; exact hlr
   · -- The postcondition, which reads the memory on return only within the buffers apart from the array.
-    rw [post_regs hk, cwFinal_r3, h31g, cwFinal_mem]
+    rw [post_regs hk, eg, cwFinal_r3, h31g]
     refine hout c'.mem _ _ (fun b hb hbA x hx => ?_) hc'.2.2.2.2.2.2
-    refine (hfc x fun R hR hc => ?_).symm
+    refine ((hfr b hb x hx).trans (hfc x fun R hR hc => ?_)).symm
     rcases List.mem_cons.mp hR with rfl | hR
     · exact hbA x hx (Region.sub_prefix hn x hc)
     · simp only [List.mem_singleton] at hR; subst hR
       exact hres b hb x (below_body s.sp stack x hc) hx
-  · rw [cwFinal_mem]; exact hz0
+  · -- The array, a buffer, is zero.
+    refine Eq.trans ?_ hz0
+    simp only [Spec.Zeroize.bytesAt]
+    refine List.map_congr_left fun i hi => ?_
+    exact hfr _ harr _ (Offset.contains_base _ (by omega_using [hn, List.mem_range.mp hi])
+      (by omega_using [hn32, List.mem_range.mp hi]))
 
 end
 
@@ -785,16 +744,16 @@ theorem Verified.callWipe' {post' : sig.Post abi.ptrBits} {name zname : String}
   have harr : ∀ s : State, (⟨s.gpr r, k * e.size⟩, true) ∈ Sig.bufs sig.params (regArgs sig s) := by
     intro s
     rw [← hget s, hps]
-    exact Sig.bufs_mem_array ps₂ ps₁ (regArgs sig s) (by rw [regArgs_length sig s hk, hL]; omega_using [])
+    exact Sig.bufs_mem_array (pb := 64) ps₂ ps₁ (regArgs sig s) (by rw [regArgs_length sig s hk, hL]; omega_using [])
   -- Its address is public.
   have hpubA : ∀ s₁ s₂, (sig.contract abi pre post wa (stack + 48) leak).pub s₁ s₂ → s₁.gpr r = s₂.gpr r := by
     intro s₁ s₂ hp
     have hP : (sig.params.flatMap (·.2.pubs)).getD (ps₁.flatMap fun p => p.2.words 64).length false = true := by
-      rw [hps]; exact (Sig.pub_array ps₁ ps₂).1
+      rw [hps]; exact (Sig.pub_array (pb := 64) ps₁ ps₂).1
     have hW : ((sig.words abi.ptrBits).map (·.bits abi.ptrBits)).getD
         (ps₁.flatMap fun p => p.2.words 64).length 64 = 64 := by
       show ((sig.params.flatMap fun p => p.2.words 64).map (·.bits 64)).getD _ 64 = 64
-      rw [hps]; exact (Sig.pub_array ps₁ ps₂).2
+      rw [hps]; exact (Sig.pub_array (pb := 64) ps₁ ps₂).2
     have h2 := congrArg BitVec.toNat (((pub_regsL hk hl).mp hp).2 _ hP)
     rw [BitVec.toNat_setWidth, BitVec.toNat_setWidth, hW, hget, hget, Nat.mod_eq_of_lt (BitVec.isLt _),
       Nat.mod_eq_of_lt (BitVec.isLt _)] at h2

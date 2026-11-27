@@ -14,6 +14,8 @@ import VerifiedGarbage.Proof.MillerRabin.X86_64.CallTemplate
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 import VerifiedGarbage.Proof.Framework.X86_64.CallInlineRel
 public import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
+public import VerifiedGarbage.Proof.Framework.X86_64.ModeSim
+public import VerifiedGarbage.Proof.Framework.X86_64.CalleeSide
 
 /-! # Shared round implementations for generic RSA and FFDH callers -/
 
@@ -26,6 +28,8 @@ open VG VG.X86_64 VG.Proof.Bignum.X86_64 VG.Impl.MillerRabin.X86_64
 /-- The arithmetic a backend gives the round's callers, and the round they
 inline: Montgomery multiplication by `mm`, which inlines to `mont.mm`. -/
 structure RoundArith where
+  /-- The arithmetic backend's suffix, shared by rounds using the same arithmetic. -/
+  arithSuffix : String := ""
   mont : Mont
   /-- Arithmetic specialized for callers that inline their multiplication.
   The callable kernel may dispatch on operand indices at run time; this
@@ -34,13 +38,16 @@ structure RoundArith where
   inlineDepth : ∀ o a b, (inlineMont.mm o a b).x86_64Depth = 0
   inlineSafe : ∀ o a b, (inlineMont.mm o a b).allInstrs
     (fun i => !loadsMxcsr i && !isa.writesSp i) = true
+  /-- The callers' inlined multiplication never touches MXCSR. -/
+  inlineNoMx : ∀ o a b, (inlineMont.mm o a b).allInstrs (fun i => !touchesMxcsr i) = true
   /-- Montgomery multiplication as the round and its callers emit it: calls
   of a function, which inline to `mont.mm` (`Verified.of_inline`), or
   `mont.mm`. -/
   mm : Nat → Nat → Nat → Prog isa
   mmOk : ∀ o a b, (mm o a b).InlineOk = true
   mmInline : ∀ o a b, (mm o a b).inline = mont.mm o a b
-  mxSafe : (round mm).allInstrs (fun i => !loadsMxcsr i) = true
+  /-- The round never touches MXCSR (so never loads it). -/
+  mxSafe : (round mm).allInstrs (fun i => !touchesMxcsr i) = true
   arithDepth : ∀ o a b, (mont.mm o a b).x86_64Depth = 0
   arithSafe : ∀ o a b, (mont.mm o a b).allInstrs (fun i => !loadsMxcsr i && !isa.writesSp i) = true
 
@@ -51,8 +58,21 @@ theorem RoundArith.body_inline (v : RoundArith) : (body v.mm).inline = body v.mo
   rw [VG.Proof.MillerRabin.X86_64.body_inline]
   simp only [v.mmInline]
 
+/-- An instruction that does not touch MXCSR does not load it. -/
+theorem noLoad_of_noTouch_instr (i : Instr) (h : (!touchesMxcsr i) = true) : (!loadsMxcsr i) = true := by
+  unfold loadsMxcsr
+  split
+  · exact h
+  · rfl
+
+/-- Code that never touches MXCSR never loads it. -/
+theorem noLoad_of_noTouch {c : Prog isa} (h : c.allInstrs (fun i => !touchesMxcsr i) = true) :
+    c.allInstrs (fun i => !loadsMxcsr i) = true := by
+  rw [Code.allInstrs_eq, List.all_eq_true] at h ⊢
+  exact fun i hi => noLoad_of_noTouch_instr i (h i hi)
+
 theorem RoundArith.no_mx_load (v : RoundArith) : ∀ i ∈ instrs (round v.mm), loadsMxcsr i = false := by
-  have h := v.mxSafe
+  have h := noLoad_of_noTouch v.mxSafe
   rw [Code.allInstrs_eq] at h
   intro i hi
   have := List.all_eq_true.mp h i hi
@@ -111,21 +131,47 @@ structure RoundImpl extends RoundArith where
   spSafe : code.all (fun i => !isa.writesSp i) = true
   depth : code.x86_64Depth ≤ 120
   ctl : ctlOk code = true
+  /-- It never touches MXCSR, so its callers' runs need not agree on it
+  (`Contract.mxFree`). -/
+  noMx : code.allInstrs (fun i => !touchesMxcsr i) = true
   correct : ∀ s, roundPre s → ∃ tr t, Exec isa code s tr t ∧ abiPreserved s t ∧ roundPost s t
   ct : ConstantTime isa roundPre roundPub code
+  /-- The level of the vector instructions of its round and multiplication. -/
+  level : Impl.Scrub.X86_64.VecLevel
+  /-- What the cleanup of a function that calls the round needs of its code
+  (`X86_64.Scrub.calleeSide`), evaluated here, once. -/
+  side : X86_64.Scrub.calleeSide code level.level 120 = true
+  /-- What the cleanup of a function that runs its multiplication needs of
+  it, wherever it runs it. -/
+  mmSide : ∀ o a b, X86_64.Scrub.calleeSide (mm o a b) level.level 8 = true
+  /-- The same of its arithmetic inline (`mont.mm`). -/
+  montSide : ∀ o a b, X86_64.Scrub.calleeSide (mont.mm o a b) level.level 0 = true
+  /-- The same of its arithmetic for callers that inline it (`inlineMont.mm`). -/
+  inlineSide : ∀ o a b, X86_64.Scrub.calleeSide (inlineMont.mm o a b) level.level 0 = true
   suffix : String
   features : List String
 
 /-- The backend whose round is `round mm`. -/
 def RoundImpl.ofArith (a : RoundArith) (spSafe : (round a.mm).all (fun i => !isa.writesSp i) = true)
-    (depth : (round a.mm).x86_64Depth ≤ 120) (suffix : String) (features : List String) : RoundImpl :=
+    (depth : (round a.mm).x86_64Depth ≤ 120) (level : Impl.Scrub.X86_64.VecLevel)
+    (side : X86_64.Scrub.calleeSide (round a.mm) level.level 120 = true)
+    (mmSide : ∀ o a' b, X86_64.Scrub.calleeSide (a.mm o a' b) level.level 8 = true)
+    (montSide : ∀ o a' b, X86_64.Scrub.calleeSide (a.mont.mm o a' b) level.level 0 = true)
+    (inlineSide : ∀ o a' b, X86_64.Scrub.calleeSide (a.inlineMont.mm o a' b) level.level 0 = true)
+    (suffix : String) (features : List String) : RoundImpl :=
   { a with
     code := round a.mm
     spSafe := spSafe
     depth := depth
-    ctl := ctlOk_of_noLoad a.mxSafe
+    ctl := ctlOk_of_noLoad (noLoad_of_noTouch a.mxSafe)
+    noMx := a.mxSafe
     correct := a.round_correct
     ct := a.round_ct
+    level := level
+    side := side
+    mmSide := mmSide
+    montSide := montSide
+    inlineSide := inlineSide
     suffix := suffix
     features := features }
 

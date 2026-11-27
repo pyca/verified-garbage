@@ -7,7 +7,6 @@ import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.Interleave
 import VerifiedGarbage.Proof.Framework.Bswap
 import VerifiedGarbage.Proof.Camellia.Layout
-import VerifiedGarbage.Proof.Camellia.KeySched
 import VerifiedGarbage.Proof.Camellia.Common
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith

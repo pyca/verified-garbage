@@ -1,5 +1,7 @@
 module
 
+import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
 public import VerifiedGarbage.Proof.EcKey.X86_64.Scrub.Out
 public import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
 public import VerifiedGarbage.Proof.Framework.Registration
@@ -9,7 +11,6 @@ meta import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
 meta import VerifiedGarbage.Proof.Framework.Registration
 meta import VerifiedGarbage.Spec.Ecdh.P192
 public import VerifiedGarbage.Proof.Ecdh.X86_64.Main
-public import VerifiedGarbage.Proof.Ecdh.X86_64.P192.Contract
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P192.Verified
 public import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
 import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
@@ -19,7 +20,6 @@ public import VerifiedGarbage.Impl.Ecdh.P192.X86_64
 import VerifiedGarbage.Proof.Framework.LitShare
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P192.Lit
 meta import VerifiedGarbage.Proof.Ecdh.X86_64.Main
-meta import VerifiedGarbage.Proof.Ecdh.X86_64.P192.Contract
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P192.Verified
 meta import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
@@ -32,6 +32,101 @@ import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.X86_64.Lit
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.EcKey.P192
+public import VerifiedGarbage.Spec.Ecdh.Generic
+import VerifiedGarbage.Proof.Framework.GetElem
+meta import VerifiedGarbage.TCB.X86_64.Target
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Spec.EcKey.P192
+meta import VerifiedGarbage.Spec.Ecdh.Generic
+meta import VerifiedGarbage.Proof.Framework.GetElem
+
+/-! ### `Ecdh.X86_64.P192.Contract`, which only this module used -/
+
+section
+
+/-!
+# ECDH over p192 on x86-64: the contract the proof is written against
+
+The facts of `Spec.Ecdh.P192.exchangeApi`'s contract for x86-64, by name:
+`vg_ecdh_p192(out = rdi, d = rsi, peer = rdx, scratch = rcx)`, the result
+in `eax`.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Ecdh.X86_64.P192
+
+open VG VG.X86_64 Spec.Weierstrass Spec.EcKey
+
+/-- The shared secret of the private key at `d` and the public key at
+`peer`, as the specification computes it. -/
+abbrev ex (m : Mem) (d peer : Addr) : Option (List Byte) :=
+  Spec.Ecdh.exchange Spec.P192.curve (ofBytes (bytesAt m d 24)) (bytesAt m peer 49)
+
+def ecdhX86_64 : Contract X86_64.isa where
+  pre s :=
+    let out : Region := ⟨s.gpr .rdi, 24⟩
+    let d : Region := ⟨s.gpr .rsi, 24⟩
+    let peer : Region := ⟨s.gpr .rdx, 49⟩
+    let scratch : Region := ⟨s.gpr .rcx, 8192⟩
+    let ret : Region := ⟨s.gpr .rsp, 8⟩
+    s.rd = [d, peer] ∧ s.wr = [out, scratch] ∧ out.Disjoint scratch ∧ out.Disjoint d ∧
+      out.Disjoint peer ∧ d.Disjoint scratch ∧ peer.Disjoint scratch ∧
+      ret.Disjoint out ∧ ret.Disjoint scratch ∧
+      (s.gpr .rdi).toNat + 24 ≤ 2 ^ 64 ∧ (s.gpr .rcx).toNat + 8192 ≤ 2 ^ 64
+  post s s' :=
+    match ex s.mem (s.gpr .rsi) (s.gpr .rdx) with
+    | some z => (s'.gpr .rax).setWidth 32 = 1 ∧ bytesAt s'.mem (s.gpr .rdi) 24 = z
+    | none => (s'.gpr .rax).setWidth 32 = 0 ∧ bytesAt s'.mem (s.gpr .rdi) 24 = List.replicate 24 0
+  pub s₁ s₂ := s₁.gpr .rsp = s₂.gpr .rsp ∧ s₁.gpr .rdi = s₂.gpr .rdi ∧ s₁.gpr .rsi = s₂.gpr .rsi ∧
+    s₁.gpr .rdx = s₂.gpr .rdx ∧ s₁.gpr .rcx = s₂.gpr .rcx
+
+/-- A state satisfying the precondition. -/
+def satState : State where
+  gpr r := match r with
+    | .rdi => 0x1000 | .rsi => 0x2000 | .rdx => 0x3000 | .rcx => 0x8000
+    | .rsp => 0x20000 | _ => 0
+  cf := none
+  zf := none
+  sf := none
+  of := none
+  mem _ := 0
+  rd := [⟨0x2000, 24⟩, ⟨0x3000, 49⟩]
+  wr := [⟨0x1000, 24⟩, ⟨0x8000, 8192⟩]
+
+theorem implies :
+    ecdhX86_64.Implies (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P192.inst X86_64.abi) := by
+  exact
+    { pre := by
+        sig_implies_pre [Spec.EcKey.P192.inst, Spec.Ecdh.Instance.exchangeContract,
+          Spec.Ecdh.Instance.exchangeSig, Spec.P192.curve, Spec.EcKey.scratchWords, X86_64.abi,
+          X86_64.argRegs, ecdhX86_64, ex]
+      post := by
+        intro s s' _ h
+        sig_post [Spec.EcKey.P192.inst, Spec.Ecdh.Instance.exchangeContract,
+          Spec.Ecdh.Instance.exchangeSig, Spec.P192.curve, Spec.EcKey.scratchWords, X86_64.abi,
+          X86_64.argRegs, ecdhX86_64, ex]
+        simp only [ecdhX86_64, ex, Spec.P192.curve] at h
+        revert h
+        generalize Spec.Ecdh.exchange _ _ _ = q
+        rcases q with _ | z <;> exact id
+      pub := by
+        sig_implies_pub [Spec.EcKey.P192.inst, Spec.Ecdh.Instance.exchangeContract,
+          Spec.Ecdh.Instance.exchangeSig, Spec.P192.curve, Spec.EcKey.scratchWords, X86_64.abi,
+          X86_64.argRegs, ecdhX86_64, ex]
+      sat := by
+        sig_implies_sat [Spec.EcKey.P192.inst, Spec.Ecdh.Instance.exchangeContract,
+          Spec.Ecdh.Instance.exchangeSig, Spec.P192.curve, Spec.EcKey.scratchWords, X86_64.abi,
+          X86_64.argRegs, satState] [satState] using satState }
+
+end VG.Proof.Ecdh.X86_64.P192
+
+end
+
+end
 
 /-!
 # ECDH over p192 on x86-64: `Verified`
@@ -59,10 +154,7 @@ theorem pre_of {s : State} (h : ecdhX86_64.pre s) : EPre p192 s := by
 
 theorem post_of {s s' : State} (h : EPost p192 s s') : ecdhX86_64.post s s' := by
   unfold EPost at h
-  show match ex s.mem (s.gpr .rsi) (s.gpr .rdx) with
-    | some z => (s'.gpr .rax).setWidth 32 = 1 ∧ Spec.EcKey.bytesAt s'.mem (s.gpr .rdi) 24 = z
-    | none => (s'.gpr .rax).setWidth 32 = 0 ∧
-        Spec.EcKey.bytesAt s'.mem (s.gpr .rdi) 24 = List.replicate 24 0
+  dsimp only [ecdhX86_64]
   revert h
   generalize hq : ex s.mem (s.gpr .rsi) (s.gpr .rdx) = q
   rw [show Spec.Ecdh.exchange p192.C (dk p192 s)
@@ -138,24 +230,21 @@ theorem ecdh_verified (hL : Weierstrass.Law Spec.P192.curve) (hI : Weierstrass.X
 
 /-! ## Without secret residue -/
 
-/-- The granules of its stack that `vg_ecdh_p192` must wipe on return, from the
-residue analysis (`X86_64.RScrub.keepFor`). -/
-def scrubKs : List Nat := keep_for% Spec.Ecdh.P192.exchangeApi.sig 8 exchangeP192 []
+theorem exchange_codeSp : exchangeP192.all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
 
-theorem scrubOk : ∃ h : VG.Taint.Hint RTaint.FT,
-    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Ecdh.P192.exchangeApi.sig 8 []) exchangeP192 h).any
-      (RScrub.resOkB · 8 scrubKs (Impl.Scrub.X86_64.chunks 8)) = true :=
-  RScrub.Analysed.ok_of _ (by taint_decide)
+/-- `vg_ecdh_p192` as emitted (`Impl.Ecdh.X86_64.Fn.exchangeP192`), its cleanup included,
+meets its contract in constant time and returns without secret residue. -/
+theorem exchange_scrubbed (hL : Weierstrass.Law Spec.P192.curve) (hI : Weierstrass.X86_64.InvSounds) :
+    VerifiedScrubbed X86_64.target Impl.Ecdh.X86_64.Fn.exchangeP192 (Spec.Ecdh.P192.exchangeApi.contract X86_64.abi 8) 32 :=
+  X86_64.Scrub.verifiedScrubbedAll (api := Spec.Ecdh.P192.exchangeApi)
+    { code := exchangeP192
+      stack := 8
+      verified := ecdh_verified hL hI
+      spSafe := exchange_codeSp } .sse (VG.Proof.EcKey.X86_64.Scrub.exchangeOut _ _)
 
-/-- `vg_ecdh_p192`, followed by `Impl.Scrub.X86_64.scrubTail`
-(`X86_64.RScrub.withScrub`): it returns without secret residue. -/
-def scrubReg (hL : Weierstrass.Law Spec.P192.curve) (hI : Weierstrass.X86_64.InvSounds) :
-    Registration Spec.Ecdh.P192.exchangeApi X86_64.target :=
-  RScrub.withScrub {
-    code := exchangeP192
-    stack := 8
-    verified := ecdh_verified hL hI }
-    (VG.Proof.EcKey.X86_64.Scrub.exchangeOut _ _) [] (RScrub.pubOk_nil _)
-    (some ⟨scrubKs, scrubOk⟩)
+theorem exchange_spSafe :
+    Impl.Ecdh.X86_64.Fn.exchangeP192.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  X86_64.Scrub.scrubKs_spSafe exchange_codeSp
 
 end VG.Proof.Ecdh.X86_64.P192

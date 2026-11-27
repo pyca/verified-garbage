@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.Scrub.X86_64.Fn
 public import VerifiedGarbage.TCB.X86_64.Isa
 
 /-!
@@ -40,3 +41,16 @@ def exchange (name : String) (callee : Prog isa) (n : Nat) : Prog isa :=
   .seq (.frame (.push [.rdi]) (.call name callee) (.pop .rdx 1)) (.block (check n))
 
 end VG.Impl.Xdh.X86_64
+
+namespace VG.Impl.Xdh.X86_64.Fn
+
+open VG.X86_64
+open VG.Impl.Scrub.X86_64 (scrubAll)
+
+/-- An exchange that calls the scalar multiplication `callee`, by `name`, as emitted: its code, then its cleanup. -/
+def exchange (name : String) (callee : Prog isa) (n : Nat) : Prog isa := scrubAll .sse 32 24 (_root_.VG.Impl.Xdh.X86_64.exchange name callee n)
+
+/-- `Fn.exchange` for a `callee` with EVEX instructions, clearing `zmm16`–`zmm31` too, as emitted: its code, then its cleanup. -/
+def exchangeEvex (name : String) (callee : Prog isa) (n : Nat) : Prog isa := scrubAll .evex 32 24 (_root_.VG.Impl.Xdh.X86_64.exchange name callee n)
+
+end VG.Impl.Xdh.X86_64.Fn

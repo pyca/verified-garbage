@@ -2,6 +2,8 @@ module
 
 import VerifiedGarbage.TCB.Rust
 meta import VerifiedGarbage.TCB.Rust
+import VerifiedGarbageTest.RenderOnly
+meta import VerifiedGarbageTest.RenderOnly
 import VerifiedGarbage.TCB.X86_64.Target
 meta import VerifiedGarbage.TCB.X86_64.Target
 import VerifiedGarbage.TCB.X86_64.Print
@@ -101,20 +103,23 @@ theorem verified : Verified target code contract := by
       stackBelow, tbl, sat]
     exact ⟨by decide, by decide, Region.disjoint_of_sep (by decide), by decide⟩
 
-def artifact : Artifact where
-  target := .of target
-  module := "test"
-  name := "vg_test_consts"
-  sig := sig
-  doc := "Returns word 1 of its table."
+def artifact : EmitArtifact where
+  target := .of (renderOnly target) emitter
+  api := { module := "test", name := "vg_test_consts", sig := sig, safety := []
+           summary := "Returns word 1 of its table." }
   consts := consts
   code := code
   contract := contract
-  verified := verified
+  verified := renderOnly_verified verified
 
 /-- The rendering: the static's symbol in a RIP-relative operand. -/
 def expected : String := "/// Returns word 1 of its table.
-#[allow(clippy::missing_safety_doc)]
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// # Safety
+///
+///
 #[unsafe(naked)]
 pub unsafe extern \"sysv64\" fn vg_test_consts() -> u64 {
     core::arch::naked_asm!(
@@ -128,7 +133,7 @@ pub unsafe extern \"sysv64\" fn vg_test_consts() -> u64 {
 
 #guard Rust.function artifact (fun _ => "") == expected
 
-#guard (Rust.checkConsts [.of (.of artifact)] (.of (.of artifact))).isOk
+#guard (Rust.checkConsts (.of artifact.toArtifact)).isOk && (Rust.checkTables "" [("", Rust.tablesOf artifact)]).isOk
 #guard Instr.asm (.leaSym .rdx "VG_TEST_TABLE") == ["lea rdx, [rip + VG_TEST_TABLE]"]
 #guard (Instr.leaSym .rdx "VG_TEST_TABLE").requires.isEmpty
 #guard addrs (.leaSym .rdx "VG_TEST_TABLE") sat == []

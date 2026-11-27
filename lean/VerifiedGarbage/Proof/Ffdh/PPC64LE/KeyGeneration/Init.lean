@@ -10,13 +10,14 @@ meta import VerifiedGarbage.Impl.Ffdh.PPC64LE.KeyGeneration.Init
 meta import VerifiedGarbage.Proof.Ffdh.PPC64LE.InitCommon
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 meta import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Spec.Ffdh.KeyGenerationContract
 meta import VerifiedGarbage.TCB.PPC64LE.Target
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Keep
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Keep
 import VerifiedGarbage.Proof.Framework.PPC64LE.RunR
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.RunR
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.PPC64LE.Residue
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.Residue
 
 /-! # Native FFDH key-generation initialization on PPC64LE: correctness, constant time -/
 
@@ -147,5 +148,10 @@ theorem init_verified : Verified target init (Spec.Ffdh.keyInitContract abi) := 
     · exact h.2.2
   · sig_implies [Spec.Ffdh.keyInitContract, Spec.Ffdh.keyInitSig,
       initContract, initPre, initPost, initPub, StateWr, abi, argRegs] [initSat] using initSat
+
+/-- `vg_ffdh_key_generation_init` returns without secret residue: it
+reads no memory, so what it leaves is a function of its arguments (`Residue.noResidue_of_blind`). -/
+theorem init_noResidue (k : Contract isa) (r : Nat) : NoResidue init k r :=
+  Residue.noResidue_of_blind (by decide) k r
 
 end VG.Proof.Ffdh.PPC64LE.KeyGeneration

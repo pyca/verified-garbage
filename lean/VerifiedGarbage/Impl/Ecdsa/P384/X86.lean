@@ -18,7 +18,4 @@ def p384 : Cfg where
   SN := Impl.Weierstrass.Mont.p384n
   mul := some Impl.Weierstrass.Mul.p384
 
-/-- `vg_ecdsa_p384_sign`. -/
-def signP384 : Prog isa := p384.sign
-
 end VG.Impl.Ecdsa.X86

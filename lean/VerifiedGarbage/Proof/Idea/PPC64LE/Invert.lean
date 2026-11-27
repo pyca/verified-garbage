@@ -19,9 +19,7 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.Taint
 meta import VerifiedGarbage.Proof.Idea.PPC64LE.Lit
 import VerifiedGarbage.Proof.Idea.Arith
-import VerifiedGarbage.Proof.Idea.PPC64LE.Block
 meta import VerifiedGarbage.Proof.Idea.Arith
-meta import VerifiedGarbage.Proof.Idea.PPC64LE.Block
 
 /-!
 # IDEA decryption subkeys on PPC64LE

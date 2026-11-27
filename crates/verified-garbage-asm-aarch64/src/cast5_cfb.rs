@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Cast5.cfbEncryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the subkeys, the chaining value or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 128 bytes.
@@ -99,7 +101,10 @@ b 21f
 21:
 .inst 0xf94000a6,0xf9000326,0xf94004b3,0xf94008b4,0xf9400cb5,0xf94010b6,0xf94014b7,0xf94018b8
 .inst 0xf9401cb9,0xf94020ba,0xf94024bb,0xf94028bc,0xd2800011,0x910003f0,0xa9004611,0xa9014611
-.inst 0xa9024611,0xa9034611,0xa9044611,0xa9054611,0xf90033f1,0x9101c3ff,0xd65f03c0
+.inst 0xa9024611,0xa9034611,0xa9044611,0xa9054611,0xf90033f1,0x9101c3ff,0xd2800004,0xd2800006
+.inst 0xd2800007,0xd280000a,0xd280000d,0xd280000e,0xd280000f,0x6f00e400,0x6f00e401,0x6f00e402
+.inst 0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0xea04009f
+.inst 0xd101c3ff,0x6f00e41f,0x910003e9,0x3d80193f,0x9101c3ff,0xd65f03c0
 .p2align 6",
         VG_CAST5_S1234 = sym super::consts::VG_CAST5_S1234,
     )
@@ -109,6 +114,8 @@ b 21f
 ///
 /// Contract: `VG.Spec.Cast5.cfbDecryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the subkeys, the chaining value or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 128 bytes.
@@ -116,101 +123,73 @@ b 21f
 /// * `data` must be valid for reads and writes of `8 * n` bytes.
 /// * `rounds` must be 12 (for a key of up to 10 bytes) or 16 (for a longer one).
 /// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
-/// * None of `schedule`, `iv` and `data` may overlap the 112 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `schedule`, `iv` and `data` may overlap the 224 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_cast5_cfb64_decrypt(schedule: *const [u8; 128], rounds: usize, iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
-        r".inst 0xd101c3ff,0x910003e5,0x910000a5,0xf90004b3,0xf90008b4,0xf9000cb5,0xf90010b6,0xf90014b7
-.inst 0xf90018b8,0xf9001cb9,0xf90020ba,0xf90024bb,0xf90028bc,0x91000059,0x91000077,0x91000098
-.inst 0xf9400326,0xf90000a6
-cbz x24, 20f
-22:
-.inst 0x910000b0,0x910000a2,0xb9400045,0x5ac008a5,0xb9400446,0x5ac008c6,0x9100000c,0xd342fc27
-.inst 0x910004e7,0xd1004028
-23:
-.inst 0xb9400189,0x0b060124,0xb940418d,0x5280002e,0x6a0e01bf,0x13847c8f,0x1a8411e4,0x53017dad
-.inst 0x5280002e,0x6a0e01bf,0x1384788f,0x1a8411e4,0x53017dad,0x5280002e,0x6a0e01bf,0x1384708f
-.inst 0x1a8411e4,0x53017dad,0x5280002e,0x6a0e01bf,0x1384608f,0x1a8411e4,0x53017dad,0x5280002e
-.inst 0x6a0e01bf,0x1384408f,0x1a8411e4,0x53081c8e,0x53187dce,0x4e041dc0,0x53103c8e,0x53187dce
-.inst 0x4e0c1dc0,0x53185c8e,0x53187dce,0x4e141dc0,0x53187c8e,0x4e1c1dc0",
-        concat!("adrp x10, ", vg_sym_page!("{VG_CAST5_S1234}")),
-        concat!("add x10, x10, ", vg_sym_pageoff!("{VG_CAST5_S1234}")),
-        r".inst 0xd280080b,0x6f00e401,0x6f00e402,0x6ea38c63,0x6f210463,0x4e231c04,0x6f00e410,0x6ea48610
-.inst 0x6f3f0404,0x4e231c84,0x6f00e411,0x6ea48631,0x6f3e0412
-24:
-.inst 0x3dc00144,0x3dc00545,0x6eb01ca4,0x3dc00953,0x3dc00d45,0x6eb01cb3,0x6eb11e64,0x6ea28e45
-.inst 0x4e251c84,0x4ea41c21,0x4ea38442,0x9101014a,0xd100056b
-cbnz x11, 24b
-.inst 0x0e1c3c29,0x0e143c2e,0x0e0c3c2f,0x0e043c2a,0x4a0e0124,0x4b0f0084,0x0b0a0084,0x4a050084
-.inst 0x2a0600c5,0x2a040086,0x9100118c,0xb9400189,0x4a060124,0xb940418d,0x5280002e,0x6a0e01bf
-.inst 0x13847c8f,0x1a8411e4,0x53017dad,0x5280002e,0x6a0e01bf,0x1384788f,0x1a8411e4,0x53017dad
-.inst 0x5280002e,0x6a0e01bf,0x1384708f,0x1a8411e4,0x53017dad,0x5280002e,0x6a0e01bf,0x1384608f
-.inst 0x1a8411e4,0x53017dad,0x5280002e,0x6a0e01bf,0x1384408f,0x1a8411e4,0x53081c8e,0x53187dce
-.inst 0x4e041dc0,0x53103c8e,0x53187dce,0x4e0c1dc0,0x53185c8e,0x53187dce,0x4e141dc0,0x53187c8e
-.inst 0x4e1c1dc0",
-        concat!("adrp x10, ", vg_sym_page!("{VG_CAST5_S1234}")),
-        concat!("add x10, x10, ", vg_sym_pageoff!("{VG_CAST5_S1234}")),
-        r".inst 0xd280080b,0x6f00e401,0x6f00e402,0x6ea38c63,0x6f210463,0x4e231c04,0x6f00e410,0x6ea48610
-.inst 0x6f3f0404,0x4e231c84,0x6f00e411,0x6ea48631,0x6f3e0412
-25:
-.inst 0x3dc00144,0x3dc00545,0x6eb01ca4,0x3dc00953,0x3dc00d45,0x6eb01cb3,0x6eb11e64,0x6ea28e45
-.inst 0x4e251c84,0x4ea41c21,0x4ea38442,0x9101014a,0xd100056b
-cbnz x11, 25b
-.inst 0x0e1c3c29,0x0e143c2e,0x0e0c3c2f,0x0e043c2a,0x4b0e0124,0x0b0f0084,0x4a0a0084,0x4a050084
-.inst 0x2a0600c5,0x2a040086,0x9100118c,0xb9400189,0x4b060124,0xb940418d,0x5280002e,0x6a0e01bf
-.inst 0x13847c8f,0x1a8411e4,0x53017dad,0x5280002e,0x6a0e01bf,0x1384788f,0x1a8411e4,0x53017dad
-.inst 0x5280002e,0x6a0e01bf,0x1384708f,0x1a8411e4,0x53017dad,0x5280002e,0x6a0e01bf,0x1384608f
-.inst 0x1a8411e4,0x53017dad,0x5280002e,0x6a0e01bf,0x1384408f,0x1a8411e4,0x53081c8e,0x53187dce
-.inst 0x4e041dc0,0x53103c8e,0x53187dce,0x4e0c1dc0,0x53185c8e,0x53187dce,0x4e141dc0,0x53187c8e
-.inst 0x4e1c1dc0",
-        concat!("adrp x10, ", vg_sym_page!("{VG_CAST5_S1234}")),
-        concat!("add x10, x10, ", vg_sym_pageoff!("{VG_CAST5_S1234}")),
-        r".inst 0xd280080b,0x6f00e401,0x6f00e402,0x6ea38c63,0x6f210463,0x4e231c04,0x6f00e410,0x6ea48610
-.inst 0x6f3f0404,0x4e231c84,0x6f00e411,0x6ea48631,0x6f3e0412
-26:
-.inst 0x3dc00144,0x3dc00545,0x6eb01ca4,0x3dc00953,0x3dc00d45,0x6eb01cb3,0x6eb11e64,0x6ea28e45
-.inst 0x4e251c84,0x4ea41c21,0x4ea38442,0x9101014a,0xd100056b
-cbnz x11, 26b
-.inst 0x0e1c3c29,0x0e143c2e,0x0e0c3c2f,0x0e043c2a,0x0b0e0124,0x4a0f0084,0x4b0a0084,0x4a050084
-.inst 0x2a0600c5,0x2a040086,0x9100118c,0xd10004e7
-cbnz x7, 23b
-cbz x8, 27f
-b 28f
-27:
-.inst 0xb9400189,0x0b060124,0xb940418d,0x5280002e,0x6a0e01bf,0x13847c8f,0x1a8411e4,0x53017dad
-.inst 0x5280002e,0x6a0e01bf,0x1384788f,0x1a8411e4,0x53017dad,0x5280002e,0x6a0e01bf,0x1384708f
-.inst 0x1a8411e4,0x53017dad,0x5280002e,0x6a0e01bf,0x1384608f,0x1a8411e4,0x53017dad,0x5280002e
-.inst 0x6a0e01bf,0x1384408f,0x1a8411e4,0x53081c8e,0x53187dce,0x4e041dc0,0x53103c8e,0x53187dce
-.inst 0x4e0c1dc0,0x53185c8e,0x53187dce,0x4e141dc0,0x53187c8e,0x4e1c1dc0",
-        concat!("adrp x10, ", vg_sym_page!("{VG_CAST5_S1234}")),
-        concat!("add x10, x10, ", vg_sym_pageoff!("{VG_CAST5_S1234}")),
-        r".inst 0xd280080b,0x6f00e401,0x6f00e402,0x6ea38c63,0x6f210463,0x4e231c04,0x6f00e410,0x6ea48610
-.inst 0x6f3f0404,0x4e231c84,0x6f00e411,0x6ea48631,0x6f3e0412
-29:
-.inst 0x3dc00144,0x3dc00545,0x6eb01ca4,0x3dc00953,0x3dc00d45,0x6eb01cb3,0x6eb11e64,0x6ea28e45
-.inst 0x4e251c84,0x4ea41c21,0x4ea38442,0x9101014a,0xd100056b
-cbnz x11, 29b
-.inst 0x0e1c3c29,0x0e143c2e,0x0e0c3c2f,0x0e043c2a,0x4a0e0124,0x4b0f0084,0x0b0a0084,0x4a050084
-.inst 0x2a0600c5,0x2a040086,0x9100118c
-28:
-.inst 0x5ac008c6,0xb9000046,0x5ac008a5,0xb9000445,0x91002042,0xd1000463,0x91000205,0xf94002e6
-.inst 0xf94000a7,0xca0700c6,0xf90002e6,0xf94000a6,0xf94002e7,0xca0700c6,0xf90000a6,0x910022f7
-.inst 0xd1000718
-cbnz x24, 22b
+        r".inst 0xd10383ff,0x910003e5,0x910000a5,0xf90040b3,0xf90044b4,0xf90048b5,0xf9004cb6,0xf90050b7
+.inst 0xf90054b8,0xf90058b9,0xf9005cba,0xf90060bb,0xf90064bc,0xf9400046,0xf90068a6
+cbz x4, 20f
+.inst 0xd1000487,0xd37df0e7,0x8b0300e7,0xf94000e6,0xf9000046
 b 21f
 20:
 21:
-.inst 0xf94000a6,0xf9000326,0xf94004b3,0xf94008b4,0xf9400cb5,0xf94010b6,0xf94014b7,0xf94018b8
-.inst 0xf9401cb9,0xf94020ba,0xf94024bb,0xf94028bc,0xd2800011,0x910003f0,0xa9004611,0xa9014611
-.inst 0xa9024611,0xa9034611,0xa9044611,0xa9054611,0xf90033f1,0x9101c3ff,0xd65f03c0
+.inst 0x91000077,0x91000098
+cbz x24, 22f
+24:
+.inst 0xd344ff0d
+cbnz x13, 25f
+.inst 0x91000310
+b 26f
+25:
+.inst 0xd2800210
+26:
+.inst 0xf94068a8,0xf90000a8,0x910000ae,0x910021ce,0x910002ef,0xd1000611
+cbz x17, 27f
+29:
+.inst 0xf94001e8,0xf90001c8,0x910021ce,0x910021ef,0xd1000631
+cbnz x17, 29b
+b 28f
+27:
+28:
+.inst 0xf94001e8,0xf90068a8,0x4e083d0b,0x4e083d2c,0x4e083d53,0x4e083d74,0x4e083d95,0x4e083dba
+.inst 0x4e083ddb,0x4e083dfc,0x910000b6,0x910000a4,0x91000030,0xd2800806,0x4e010cc2,0xd2801006
+.inst 0x4e010cc3,0x910003ca,0x9100020e
+bl {vg_cast5_batch_encrypt}
+.inst 0x9100015e,0x4e080d68,0x4e080d89,0x4e080e6a,0x4e080e8b,0x4e080eac,0x4e080f4d,0x4e080f6e
+.inst 0x4e080f8f,0x910002c5,0xd344ff0d
+cbnz x13, 210f
+.inst 0x91000310
+b 211f
+210:
+.inst 0xd2800210
+211:
+.inst 0x910000ae,0x910001ce,0x910002ef,0x91000211
+212:
+.inst 0xf94001c8,0xf94001e9,0xca090108,0xf90001e8,0x910021ce,0x910021ef,0xd1000631
+cbnz x17, 212b
+.inst 0x910001f7,0xcb100318
+cbnz x24, 24b
+b 23f
+22:
+23:
+.inst 0xf94040b3,0xf94044b4,0xf94048b5,0xf9404cb6,0xf94050b7,0xf94054b8,0xf94058b9,0xf9405cba
+.inst 0xf94060bb,0xf94064bc,0xd2800011,0x910003f0,0xa9004611,0xa9014611,0xa9024611,0xa9034611
+.inst 0xa9044611,0xa9054611,0xa9064611,0xa9074611,0xa9084611,0xa9094611,0xa90a4611,0xa90b4611
+.inst 0xa90c4611,0xa90d4611,0x910383ff,0xd2800006,0xd2800008,0xd2800009,0x6f00e400,0x6f00e401
+.inst 0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413
+.inst 0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b
+.inst 0xea0600df,0xd65f03c0
 .p2align 6",
-        VG_CAST5_S1234 = sym super::consts::VG_CAST5_S1234,
+        vg_cast5_batch_encrypt = sym super::cast5::vg_cast5_batch_encrypt::vg_cast5_batch_encrypt,
     )
 }
 
 /// CAST5-CFB64 encryption (NIST SP 800-38A §6.3, with 64-bit segments; RFC 2144 §2) of the last piece of a message, of any length, in place: replaces its whole 8-byte blocks `P₁ … Pₙ₋₁` at `data` with `Cⱼ = Pⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and a partial last segment `Pₙ*` of `u` bytes with `Cₙ* = Pₙ* ⊕ MSB_u(Oₙ)`, `Oₙ = CIPH_K(Cₙ₋₁)` (an extension of SP 800-38A, which defines CFB only for whole segments, by the rule of §6.4 and §6.5). Replaces `*iv` with the last ciphertext block, so that a further call continues the message, if `len` is a multiple of 8 (leaving it unchanged if `len = 0`), and otherwise with `Oₙ`: keystream, to be wiped, after which the message must end. `CIPH_K` is CAST5 encryption with `rounds` rounds under the subkeys at `schedule`, as `vg_cast5_expand_key` writes them.
 ///
 /// Contract: `VG.Spec.Cast5.cfbEncryptFinalContract`. Constant time: only the pointers, `rounds` and `len` may affect timing, not the subkeys, the chaining value or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -312,7 +291,10 @@ b 21f
 21:
 .inst 0xf94000a6,0xf9000326,0xf94004b3,0xf94008b4,0xf9400cb5,0xf94010b6,0xf94014b7,0xf94018b8
 .inst 0xf9401cb9,0xf94020ba,0xf94024bb,0xf94028bc,0xd2800011,0x910003f0,0xa9004611,0xa9014611
-.inst 0xa9024611,0xa9034611,0xa9044611,0xa9054611,0xf90033f1,0x9101c3ff,0xd65f03c0
+.inst 0xa9024611,0xa9034611,0xa9044611,0xa9054611,0xf90033f1,0x9101c3ff,0xd2800004,0xd2800006
+.inst 0xd2800007,0xd280000a,0xd280000d,0xd280000e,0xd280000f,0x6f00e400,0x6f00e401,0x6f00e402
+.inst 0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0xea04009f
+.inst 0xd101c3ff,0x6f00e41f,0x910003e9,0x3d80193f,0x9101c3ff,0xd65f03c0
 .p2align 6",
         VG_CAST5_S1234 = sym super::consts::VG_CAST5_S1234,
     )
@@ -321,6 +303,8 @@ b 21f
 /// CAST5-CFB64 decryption (NIST SP 800-38A §6.3, with 64-bit segments; RFC 2144 §2) of the last piece of a message, of any length, in place: replaces its whole 8-byte blocks `C₁ … Cₙ₋₁` at `data` with `Pⱼ = Cⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and a partial last segment `Cₙ*` of `u` bytes with `Pₙ* = Cₙ* ⊕ MSB_u(Oₙ)`, `Oₙ = CIPH_K(Cₙ₋₁)` (an extension of SP 800-38A, which defines CFB only for whole segments, by the rule of §6.4 and §6.5). Replaces `*iv` with the last ciphertext block, the last whole block at `data` on entry, so that a further call continues the message, if `len` is a multiple of 8 (leaving it unchanged if `len = 0`), and otherwise with `Oₙ`: keystream, to be wiped, after which the message must end. `CIPH_K` is CAST5 encryption with `rounds` rounds under the subkeys at `schedule`, as `vg_cast5_expand_key` writes them.
 ///
 /// Contract: `VG.Spec.Cast5.cfbDecryptFinalContract`. Constant time: only the pointers, `rounds` and `len` may affect timing, not the subkeys, the chaining value or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -423,7 +407,10 @@ b 21f
 21:
 .inst 0xf94000a6,0xf9000326,0xf94004b3,0xf94008b4,0xf9400cb5,0xf94010b6,0xf94014b7,0xf94018b8
 .inst 0xf9401cb9,0xf94020ba,0xf94024bb,0xf94028bc,0xd2800011,0x910003f0,0xa9004611,0xa9014611
-.inst 0xa9024611,0xa9034611,0xa9044611,0xa9054611,0xf90033f1,0x9101c3ff,0xd65f03c0
+.inst 0xa9024611,0xa9034611,0xa9044611,0xa9054611,0xf90033f1,0x9101c3ff,0xd2800004,0xd2800006
+.inst 0xd2800007,0xd280000a,0xd280000d,0xd280000e,0xd280000f,0x6f00e400,0x6f00e401,0x6f00e402
+.inst 0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0xea04009f
+.inst 0xd101c3ff,0x6f00e41f,0x910003e9,0x3d80193f,0x9101c3ff,0xd65f03c0
 .p2align 6",
         VG_CAST5_S1234 = sym super::consts::VG_CAST5_S1234,
     )

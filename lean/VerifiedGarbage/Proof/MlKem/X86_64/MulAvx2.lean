@@ -1,9 +1,8 @@
 module
 
-import VerifiedGarbage.Proof.MlKem.X86_64.Mul
+public import VerifiedGarbage.Proof.MlKem.X86_64.Mul
 public import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
 public import VerifiedGarbage.Impl.MlKem.X86_64.MulAvx2
-public import VerifiedGarbage.Proof.MlKem.X86_64.VMul
 import VerifiedGarbage.Proof.MlKem.X86_64.VPack
 import VerifiedGarbage.Proof.Framework.Offset
 

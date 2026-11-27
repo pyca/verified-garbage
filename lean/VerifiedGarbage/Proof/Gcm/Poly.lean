@@ -57,7 +57,7 @@ theorem bit_inj {a b : Bool} (h : bit a = bit b) : a = b := by
 theorem gp_ext {n : Nat} {a b : BitVec n} (h : gp a = gp b) : a = b := by
   apply BitVec.eq_of_getMsbD_eq
   intro i _
-  have := congrArg (coeff · i) h
+  have := congrArg (fun p : P => p.coeff i) h
   simp only [coeff_gp] at this
   exact bit_inj this
 

@@ -1,11 +1,11 @@
 module
+
 public import VerifiedGarbage.Proof.Mgf1.Basic
 public import VerifiedGarbage.Spec.RsaPss
-
 import VerifiedGarbage.Proof.RsaPss.SignCases
 import VerifiedGarbage.Proof.RsaPss.MgfBytes
 import VerifiedGarbage.Proof.RsaPss.Params
-import VerifiedGarbage.Proof.RsaPss.Encoding
+import VerifiedGarbage.Proof.RsaPss.EncBytes
 import Std.Data.DTreeMap.Internal.Operations
 import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.Mem

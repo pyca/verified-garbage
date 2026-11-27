@@ -9,6 +9,11 @@ meta import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
 
 open VG VG.Spec.Ecdsa.Rfc6979
 
+example : Curves.brainpoolp320r1.signSig.params =
+    [("out", .array true .u8 80), ("d", .array false .u8 40),
+      ("digest", .slice false .u8 "digest_len"), ("scratch", .array true .u64 1024),
+      ("hmac", Spec.HmacTable.param)] := rfl
+
 example : Curves.brainpoolp384r1.signSig.params =
     [("out", .array true .u8 96), ("d", .array false .u8 48),
       ("digest", .slice false .u8 "digest_len"), ("scratch", .array true .u64 1024),

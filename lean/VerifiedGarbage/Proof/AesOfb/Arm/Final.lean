@@ -35,7 +35,7 @@ namespace VG.Proof.AesOfb.Arm
 open VG VG.Arm
 open VG.Spec.Aes (bytesAt)
 open VG.Proof.AesCfb.Arm (finalArm FPre Done fW fR fIv fD fL fN final_wp final_ct finalSat finalFrameSat
-  encBlocks_stack)
+  keyedBlocks_stack blocksKeys_stack)
 open VG.Proof.AesCbc.Arm (modeArm)
 open VG.Impl.AesOfb.Arm
 
@@ -78,21 +78,21 @@ theorem final_post {s₀ s₁ s' : State} (h : Done ofbMode s₀ s₁) (hm : s'.
 /-- The whole-block function's frame: 8 bytes around each call of the
 block function. -/
 theorem crypt_stack : VG.Arm.FrameStack.armStack crypt = 8 := by
-  simp only [crypt, Impl.AesCbc.Arm.whole, body, Impl.AesCbc.Arm.encFrame, VG.Arm.FrameStack.armStack,
-    encBlocks_stack]
+  simp only [crypt, Impl.AesCbc.Arm.wholeK, body, Impl.Aes.Arm.keyedFrame, Impl.Aes.Arm.keysCall,
+    VG.Arm.FrameStack.armStack, keyedBlocks_stack, blocksKeys_stack]
   decide
 
 theorem final_correct (s : State) (hs : ofbFinalArm.pre s) :
     ∃ t s', Exec isa cryptFinal s t s' ∧ abiPreserved s s' ∧ ofbFinalArm.post s s' := by
   obtain ⟨t, s', he, hg, s₁, h₁, hm⟩ :=
-    final_wp (M := ofbMode) (name := "vg_aes_ofb") (fun _ hs => AesCbc.Arm.whole_wp body_ok hs) crypt_stack
+    final_wp (M := ofbMode) (name := "vg_aes_ofb_entry") (fun _ hs => AesCbc.Arm.wholeK_wp body_ok hs) crypt_stack
       (FPre.of (enc := true) hs)
   exact ⟨t, s', he, hg, final_post h₁ hm⟩
 
 theorem cryptFinal_verified : Verified Arm.target cryptFinal finalScratchContract :=
   Verified.of_correct final_correct
-    (final_ct (enc := true) (fun _ hs => AesCbc.Arm.whole_wp body_ok hs) (AesCbc.Arm.whole_ct body_ok body_ct)
-      crypt_stack)
+    (final_ct (enc := true) (fun _ hs => AesCbc.Arm.wholeK_wp body_ok hs)
+      (AesCbc.Arm.wholeK_ct body_ok body_ct) crypt_stack)
     final_implies
 
 /-! ## With `save` on the stack
@@ -106,13 +106,15 @@ theorem frameSat_pre : ∃ s, (finalRoundsContract Arm.abi 72).pre s := by
   implies_sat [finalRoundsContract, Spec.Ofb.aesFinalSig, finalPre, finalPost, Arm.abi,
     Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr] [finalFrameSat, finalSat] using finalFrameSat
 
-/-- `cryptFinal`, with `save` on the stack (zeroed on return). -/
+/-- `cryptFinal`, with `save` on the stack, which its function's cleanup
+(`scrubAll`) zeroes. -/
 theorem cryptFinal_framed :
-    Verified Arm.target (Impl.StackScratch.Arm.withStackScratchWiped 56 2 10 cryptFinal)
+    Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 56 2 cryptFinal)
       (finalRoundsContract Arm.abi 72) :=
-  Arm.Verified.stackScratchWiped (sig := Spec.Ofb.aesFinalSig) (nm := "save") (e := .u64) (n := 5)
+  Arm.Verified.stackScratch (sig := Spec.Ofb.aesFinalSig) (nm := "save") (e := .u64) (n := 5)
     (pre := finalPre Arm.abi.ptrBits) (post := finalPost Arm.abi.ptrBits) (wa := false) (stack := 16)
-    (m := 2) (bytes := 56) cryptFinal_verified (by decide) (by decide) (by decide) (by decide) (by decide)
-    (finalPre_local _) (finalPost_local _) (finalPost_localOut _) frameSat_pre
+    (m := 2) (bytes := 56) cryptFinal_verified (by decide) (by decide) (by decide) (by decide)
+    (finalPre_local _) (finalPost_local _) (fun vs mm m₁ m₂ r hl _ => finalPost_localOut _ vs mm m₁ m₂ r hl)
+    frameSat_pre
 
 end VG.Proof.AesOfb.Arm

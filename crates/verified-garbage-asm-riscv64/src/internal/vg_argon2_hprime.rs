@@ -20,7 +20,7 @@ j 21f
 20:
 21:
 .base64 "UoUTBgo0gUY="
-call {vg_blake2b_init}
+call {vg_blake2b_init_core}
 .base64 "gUUTBgo0kUZShRMHCgw="
 call {vg_blake2b_update_scratch}
 .base64 "kUUihqaGUoUTBwoM"
@@ -37,7 +37,7 @@ bnez a6, 24b
 bnez a7, 25f
 27:
 .base64 "kwUABFKFEwYKNIFG"
-call {vg_blake2b_init}
+call {vg_blake2b_init_core}
 .base64 "gUUTBgowkwYABFKFEwcKDA=="
 call {vg_blake2b_update_scratch}
 .base64 "kwUABFKFEwYKMJMGCgw="
@@ -52,7 +52,7 @@ j 26f
 25:
 26:
 .base64 "zoVShRMGCjSBRg=="
-call {vg_blake2b_init}
+call {vg_blake2b_init_core}
 .base64 "gUUTBgowkwYABFKFEwcKDA=="
 call {vg_blake2b_update_scratch}
 .base64 "kwUABFKFEwYKMJMGCgw="
@@ -66,7 +66,7 @@ j 23f
 bnez a6, 29b
 .base64 "gzAKNwM0ijSDNAo1AzmKNYM5CjYDOoo2goA="
 .option pop"#,
-        vg_blake2b_init = sym crate::blake2b::vg_blake2b_init,
+        vg_blake2b_init_core = sym crate::blake2b::vg_blake2b_init_core::vg_blake2b_init_core,
         vg_blake2b_update_scratch = sym crate::blake2b::vg_blake2b_update_scratch::vg_blake2b_update_scratch,
         vg_blake2b_finalize_scratch = sym crate::blake2b::vg_blake2b_finalize_scratch::vg_blake2b_finalize_scratch,
     )

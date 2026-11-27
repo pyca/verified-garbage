@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Ecdh.Instance.exchangeContract`. Constant time but for the peer's public key: timing may depend on the pointers and the contents of `peer`, not on the private key.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of 24 bytes.
@@ -137,7 +139,9 @@ bl {vg_p192_inv_mod_p}
 .inst 0xf902e001,0xf942e003,0xf9425001,0x8a030021,0xdac00c21,0xf9000a81,0xf9425401,0x8a030021
 .inst 0xdac00c21,0xf9000681,0xf9425801,0x8a030021,0xdac00c21,0xf9000281,0xf9425c01,0x8a030021
 .inst 0xf9400013,0xf9400414,0xf9400815,0xf9400c16,0xf9401017,0xf9401418,0xf9401819,0xf9401c1e
-.inst 0xd2800021,0x8a010060,0xd65f03c0
+.inst 0xd2800021,0x8a010060,0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005,0xd2800006
+.inst 0xd2800007,0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d,0xd2800010
+.inst 0xd2800011,0x6f00e41c,0x6f00e41d,0xea01003f,0x11000000,0xd65f03c0
 .p2align 6",
         vg_p192_check_point = sym super::ec_p192_compressed::vg_p192_check_point::vg_p192_check_point,
         vg_p192_mul = sym super::ec_p192::vg_p192_mul::vg_p192_mul,

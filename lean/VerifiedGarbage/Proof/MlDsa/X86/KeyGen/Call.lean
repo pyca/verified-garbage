@@ -230,6 +230,13 @@ theorem call_pubs {s₀ s₀' s s' e e' : State} (hq : TPub Y lk s₀ s₀') (ho
   rw [he.arg i hi, he'.arg i hi]
   exact Arg.val_eq hq (List.all_eq_true.mp hok _ (List.getElem_mem hi))
 
+/-- A buffer keeps its bytes while only the stack below `esp` changes: what
+a call's argument words leave below `esp` after it returns. -/
+theorem lostK {s₀ s' : State} {m m' : Mem} {as : List Arg} (hp : TPre Y s₀) (h' : Ctx Y s₀ s')
+    (hn : as.length ≤ 5) (hN : 96 ≤ Y.stk) (hl : Frame [below (s'.gpr .esp) (4 * as.length)] m m') {b : Buf}
+    (hb : Y.ok b = true) : ∀ i < b.len, m' (b.addr s₀ + BitVec.ofNat 64 i) = m (b.addr s₀ + BitVec.ofNat 64 i) :=
+  lost_keep hp h' (by omega_arith) hl hb
+
 /-- A call of a primitive: see the module documentation. -/
 theorem callP_piece (hv : Verified X86.target c k) (hsp : NoSp c) (hst : stackUse c ≤ 56)
     (hn₀ : as.length ≠ 0) (hn : as.length ≤ 5) (hok : as.all (Arg.ok Y) = true) (hN : 96 ≤ Y.stk)
@@ -243,7 +250,7 @@ theorem callP_piece (hv : Verified X86.target c k) (hsp : NoSp c) (hst : stackUs
       Ent Y s₀ s as e → Ent Y s₀' s' as e' →
       k.pub (e.withRegions (rdR s₀ rB) (wrR s₀ wB as.length)) (e'.withRegions (rdR s₀ rB) (wrR s₀ wB as.length)))
     (hQ : ∀ s₀ s s', TPre Y s₀ → A s₀ s → Ctx Y s₀ s' → Frame (FR s₀ wB 80) s.mem s'.mem →
-      (∃ e s₂, Ent Y s₀ s as e ∧ s₂.mem = s'.mem ∧ k.post (e.withRegions (rdR s₀ rB) (wrR s₀ wB as.length)) s₂) →
+      (∃ e s₂, Ent Y s₀ s as e ∧ Frame [below (s'.gpr .esp) (4 * as.length)] s₂.mem s'.mem ∧ k.post (e.withRegions (rdR s₀ rB) (wrR s₀ wB as.length)) s₂) →
       B s₀ s') :
     Piece (TPre Y) (TPub Y lk) A B (callP Y.sc nm c as) := by
   refine Piece.seq (setup_call as hok tt hA) ?_
@@ -265,6 +272,8 @@ theorem callP_piece (hv : Verified X86.target c k) (hsp : NoSp c) (hst : stackUs
     exact this
   · have fr' := call_fr as wB hp hN h₁ hst hn fr
     have h' : Ctx Y s₀ s' := h₁.call e₁ e₂ e₃ fr' (call_W wB hp hN hw)
+    obtain m₂ : Frame [below (s'.gpr .esp) (4 * as.length)] s₂.mem s'.mem := by
+      rw [h'.esp, ← h₁.esp, ← argRs_len (n := as.length) (by omega_arith)]; exact m₂
     rw [m₁] at fr'
     exact hQ s₀ s s' hp ha h' fr' ⟨_, s₂, ent_of hp hN h₁ m₁ hn v, m₂, post⟩
 
@@ -281,7 +290,7 @@ theorem callPR_piece (hv : Verified X86.target c k) (hsp : NoSp c) (hst : stackU
       Ent Y s₀ s as e → Ent Y s₀' s' as e' →
       k.pub (e.withRegions (rdR s₀ rB) (wrR s₀ wB as.length)) (e'.withRegions (rdR s₀ rB) (wrR s₀ wB as.length)))
     (hQ : ∀ s₀ s s', TPre Y s₀ → A s₀ s → Ctx Y s₀ s' → Frame (FR s₀ wB 80) s.mem s'.mem →
-      (∃ e s₂, Ent Y s₀ s as e ∧ s₂.mem = s'.mem ∧ s₂.gpr .eax = s'.gpr .eax ∧
+      (∃ e s₂, Ent Y s₀ s as e ∧ Frame [below (s'.gpr .esp) (4 * as.length)] s₂.mem s'.mem ∧ s₂.gpr .eax = s'.gpr .eax ∧
         k.post (e.withRegions (rdR s₀ rB) (wrR s₀ wB as.length)) s₂) → B s₀ s') :
     Piece (TPre Y) (TPub Y lk) A B (callPR Y.sc nm c as) := by
   refine Piece.seq (setup_call as hok tt hA) ?_
@@ -303,6 +312,8 @@ theorem callPR_piece (hv : Verified X86.target c k) (hsp : NoSp c) (hst : stackU
     exact this
   · have fr' := call_fr as wB hp hN h₁ hst hn fr
     have h' : Ctx Y s₀ s' := h₁.call e₁ e₂ e₃ fr' (call_W wB hp hN hw)
+    obtain m₂ : Frame [below (s'.gpr .esp) (4 * as.length)] s₂.mem s'.mem := by
+      rw [h'.esp, ← h₁.esp, ← argRs_len (n := as.length) (by omega_arith)]; exact m₂
     rw [m₁] at fr'
     exact hQ s₀ s s' hp ha h' fr' ⟨_, s₂, ent_of hp hN h₁ m₁ hn v, m₂, g₂, post⟩
 
@@ -321,7 +332,7 @@ theorem callPR_pieceK {K : Nat} {Pub : State → State → Prop} (hT : ∀ s₀ 
       Ent Y s₀ s as e → Ent Y s₀' s' as e' →
       k.pub (e.withRegions (rdR s₀ rB) (wrR s₀ wB as.length)) (e'.withRegions (rdR s₀ rB) (wrR s₀ wB as.length)))
     (hQ : ∀ s₀ s s', TPre Y s₀ → A s₀ s → Ctx Y s₀ s' → Frame (FR s₀ wB (K + 24)) s.mem s'.mem →
-      (∃ e s₂, Ent Y s₀ s as e ∧ s₂.mem = s'.mem ∧ s₂.gpr .eax = s'.gpr .eax ∧
+      (∃ e s₂, Ent Y s₀ s as e ∧ Frame [below (s'.gpr .esp) (4 * as.length)] s₂.mem s'.mem ∧ s₂.gpr .eax = s'.gpr .eax ∧
         k.post (e.withRegions (rdR s₀ rB) (wrR s₀ wB as.length)) s₂) → B s₀ s') :
     Piece (TPre Y) Pub A B (callPR Y.sc nm c as) := by
   refine Piece.seq ((setup_call (lk := lk) as hok tt hA).pre_mono (fun _ h => h) fun _ _ _ _ h => hT _ _ h) ?_
@@ -353,6 +364,8 @@ theorem callPR_pieceK {K : Nat} {Pub : State → State → Prop} (hT : ∀ s₀ 
       · exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _),
           stk_sub hp (by omega_arith) (by omega_arith)⟩
     have h' : Ctx Y s₀ s' := h₁.call e₁ e₂ e₃ fr' (wr_sub hp hw (by omega_arith))
+    obtain m₂ : Frame [below (s'.gpr .esp) (4 * as.length)] s₂.mem s'.mem := by
+      rw [h'.esp, ← h₁.esp, ← argRs_len (n := as.length) (by omega_arith)]; exact m₂
     rw [m₁] at fr'
     exact hQ s₀ s s' hp ha h' fr' ⟨_, s₂, ent_of hp hN h₁ m₁ hn v, m₂, g₂, post⟩
 
@@ -418,7 +431,7 @@ theorem callPR_pieceRO (hv : Verified X86.target c k) (hsp : NoSp c) (hst : stac
       k.pub (e.withRegions (rdRO s₀ rB as.length) (wrRO s₀ wB))
         (e'.withRegions (rdRO s₀ rB as.length) (wrRO s₀ wB)))
     (hQ : ∀ s₀ s s', TPre Y s₀ → A s₀ s → Ctx Y s₀ s' → Frame (FR s₀ wB 80) s.mem s'.mem →
-      (∃ e s₂, Ent Y s₀ s as e ∧ s₂.mem = s'.mem ∧ s₂.gpr .eax = s'.gpr .eax ∧
+      (∃ e s₂, Ent Y s₀ s as e ∧ Frame [below (s'.gpr .esp) (4 * as.length)] s₂.mem s'.mem ∧ s₂.gpr .eax = s'.gpr .eax ∧
         k.post (e.withRegions (rdRO s₀ rB as.length) (wrRO s₀ wB)) s₂) → B s₀ s') :
     Piece (TPre Y) (TPub Y lk) A B (callPR Y.sc nm c as) := by
   refine Piece.seq (setup_call as hok tt hA) ?_
@@ -439,6 +452,8 @@ theorem callPR_pieceRO (hv : Verified X86.target c k) (hsp : NoSp c) (hst : stac
     exact hpub s₀ s₀' s s' _ _ hp hp' hq ha ha' (ent_of hp hN h₁ m₁ hn v) (ent_of hp' hN h₁' m₁' hn v')
   · have fr' := call_frRO as wB hp hN h₁ hst hn fr
     have h' : Ctx Y s₀ s' := h₁.call e₁ e₂ e₃ fr' (call_W wB hp hN hw)
+    obtain m₂ : Frame [below (s'.gpr .esp) (4 * as.length)] s₂.mem s'.mem := by
+      rw [h'.esp, ← h₁.esp, ← argRs_len (n := as.length) (by omega_arith)]; exact m₂
     rw [m₁] at fr'
     exact hQ s₀ s s' hp ha h' fr' ⟨_, s₂, ent_of hp hN h₁ m₁ hn v, m₂, g₂, post⟩
 

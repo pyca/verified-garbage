@@ -2,12 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNtt
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNttLoop
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Pro
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNtt
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNttLoop
-meta import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Pro
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 

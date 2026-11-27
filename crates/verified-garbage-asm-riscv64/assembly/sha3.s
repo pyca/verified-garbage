@@ -7,25 +7,23 @@
 vg_sha3_224_update:
 	.option push
 	.option arch, +m, +c
-	addi a5, a4, 0
 	addi a4, a3, 0
 	addi a3, a2, 0
 	addi a2, a1, 0
 	addi a1, zero, 144
-	addi t0, a5, 0
-	sd ra, 512(t0)
-	sd s2, 520(t0)
-	sd s3, 528(t0)
-	sd s4, 536(t0)
-	sd s5, 544(t0)
-	sd s6, 552(t0)
-	sd s7, 560(t0)
+	addi sp, sp, -48
+	addi t0, sp, 0
+	sd ra, 0(t0)
+	sd s2, 8(t0)
+	sd s3, 16(t0)
+	sd s4, 24(t0)
+	sd s5, 32(t0)
+	sd s6, 40(t0)
 	addi s2, a0, 0
 	addi s3, a1, 0
 	addi s4, a2, 0
 	addi s5, a3, 0
 	addi s6, a4, 0
-	addi s7, a5, 0
 	beqz s6, 20f
 22:
 	add t2, s2, s4
@@ -91,23 +89,99 @@ vg_sha3_224_update:
 	j 28f
 27:
 	addi s4, zero, 0
+	addi sp, sp, -512
 	addi a0, s2, 0
-	addi a1, s7, 0
+	addi a1, sp, 0
 	call {vg_keccak_f1600}
+	addi sp, sp, 512
 28:
 	bnez s6, 22b
 	j 21f
 20:
 21:
 	addi a0, s4, 0
-	addi t0, s7, 0
-	ld ra, 512(t0)
-	ld s2, 520(t0)
-	ld s3, 528(t0)
-	ld s4, 536(t0)
-	ld s5, 544(t0)
-	ld s6, 552(t0)
-	ld s7, 560(t0)
+	addi t0, sp, 0
+	ld ra, 0(t0)
+	ld s2, 8(t0)
+	ld s3, 16(t0)
+	ld s4, 24(t0)
+	ld s5, 32(t0)
+	ld s6, 40(t0)
+	addi sp, sp, 48
+	addi t0, zero, 0
+	addi sp, sp, -1168
+	addi t1, sp, 0
+	sd t0, 192(t1)
+	sd t0, 200(t1)
+	sd t0, 208(t1)
+	sd t0, 216(t1)
+	sd t0, 224(t1)
+	sd t0, 232(t1)
+	sd t0, 240(t1)
+	sd t0, 248(t1)
+	sd t0, 256(t1)
+	sd t0, 264(t1)
+	sd t0, 272(t1)
+	sd t0, 280(t1)
+	sd t0, 288(t1)
+	sd t0, 296(t1)
+	sd t0, 304(t1)
+	sd t0, 312(t1)
+	sd t0, 320(t1)
+	sd t0, 328(t1)
+	sd t0, 336(t1)
+	sd t0, 344(t1)
+	sd t0, 352(t1)
+	sd t0, 360(t1)
+	sd t0, 368(t1)
+	sd t0, 376(t1)
+	sd t0, 384(t1)
+	sd t0, 392(t1)
+	sd t0, 400(t1)
+	sd t0, 408(t1)
+	sd t0, 416(t1)
+	sd t0, 424(t1)
+	sd t0, 432(t1)
+	sd t0, 440(t1)
+	sd t0, 448(t1)
+	sd t0, 456(t1)
+	sd t0, 464(t1)
+	sd t0, 472(t1)
+	sd t0, 480(t1)
+	sd t0, 488(t1)
+	sd t0, 496(t1)
+	sd t0, 504(t1)
+	sd t0, 512(t1)
+	sd t0, 520(t1)
+	sd t0, 528(t1)
+	sd t0, 536(t1)
+	sd t0, 544(t1)
+	sd t0, 552(t1)
+	sd t0, 560(t1)
+	sd t0, 568(t1)
+	sd t0, 576(t1)
+	sd t0, 584(t1)
+	sd t0, 1120(t1)
+	sd t0, 1128(t1)
+	sd t0, 1136(t1)
+	sd t0, 1144(t1)
+	sd t0, 1152(t1)
+	sd t0, 1160(t1)
+	addi sp, sp, 1168
+	addi a1, zero, 0
+	addi a2, zero, 0
+	addi a3, zero, 0
+	addi a4, zero, 0
+	addi a5, zero, 0
+	addi a6, zero, 0
+	addi a7, zero, 0
+	addi t0, zero, 0
+	addi t1, zero, 0
+	addi t2, zero, 0
+	addi t3, zero, 0
+	addi t4, zero, 0
+	addi t5, zero, 0
+	addi t6, zero, 0
 	ret
 	.option pop
 
@@ -138,31 +212,112 @@ vg_sha3_224_finalize:
 	ld s3, 16(s4)
 	ld s4, 24(s4)
 	addi sp, sp, 32
+	addi t0, zero, 0
+	addi sp, sp, -1200
+	addi t1, sp, 0
+	sd t0, 192(t1)
+	sd t0, 200(t1)
+	sd t0, 208(t1)
+	sd t0, 216(t1)
+	sd t0, 224(t1)
+	sd t0, 232(t1)
+	sd t0, 240(t1)
+	sd t0, 248(t1)
+	sd t0, 256(t1)
+	sd t0, 264(t1)
+	sd t0, 272(t1)
+	sd t0, 280(t1)
+	sd t0, 288(t1)
+	sd t0, 296(t1)
+	sd t0, 304(t1)
+	sd t0, 312(t1)
+	sd t0, 320(t1)
+	sd t0, 328(t1)
+	sd t0, 336(t1)
+	sd t0, 344(t1)
+	sd t0, 352(t1)
+	sd t0, 360(t1)
+	sd t0, 368(t1)
+	sd t0, 376(t1)
+	sd t0, 384(t1)
+	sd t0, 392(t1)
+	sd t0, 400(t1)
+	sd t0, 408(t1)
+	sd t0, 416(t1)
+	sd t0, 424(t1)
+	sd t0, 432(t1)
+	sd t0, 440(t1)
+	sd t0, 448(t1)
+	sd t0, 456(t1)
+	sd t0, 464(t1)
+	sd t0, 472(t1)
+	sd t0, 480(t1)
+	sd t0, 488(t1)
+	sd t0, 496(t1)
+	sd t0, 504(t1)
+	sd t0, 512(t1)
+	sd t0, 520(t1)
+	sd t0, 528(t1)
+	sd t0, 536(t1)
+	sd t0, 544(t1)
+	sd t0, 552(t1)
+	sd t0, 560(t1)
+	sd t0, 568(t1)
+	sd t0, 576(t1)
+	sd t0, 584(t1)
+	sd t0, 592(t1)
+	sd t0, 600(t1)
+	sd t0, 608(t1)
+	sd t0, 616(t1)
+	sd t0, 1120(t1)
+	sd t0, 1128(t1)
+	sd t0, 1136(t1)
+	sd t0, 1144(t1)
+	sd t0, 1152(t1)
+	sd t0, 1160(t1)
+	sd t0, 1168(t1)
+	sd t0, 1176(t1)
+	sd t0, 1184(t1)
+	sd t0, 1192(t1)
+	addi sp, sp, 1200
+	addi a1, zero, 0
+	addi a2, zero, 0
+	addi a3, zero, 0
+	addi a4, zero, 0
+	addi a5, zero, 0
+	addi a6, zero, 0
+	addi a7, zero, 0
+	addi t0, zero, 0
+	addi t1, zero, 0
+	addi t2, zero, 0
+	addi t3, zero, 0
+	addi t4, zero, 0
+	addi t5, zero, 0
+	addi t6, zero, 0
+	addi a0, zero, 0
 	ret
 	.option pop
 
 vg_sha3_256_update:
 	.option push
 	.option arch, +m, +c
-	addi a5, a4, 0
 	addi a4, a3, 0
 	addi a3, a2, 0
 	addi a2, a1, 0
 	addi a1, zero, 136
-	addi t0, a5, 0
-	sd ra, 512(t0)
-	sd s2, 520(t0)
-	sd s3, 528(t0)
-	sd s4, 536(t0)
-	sd s5, 544(t0)
-	sd s6, 552(t0)
-	sd s7, 560(t0)
+	addi sp, sp, -48
+	addi t0, sp, 0
+	sd ra, 0(t0)
+	sd s2, 8(t0)
+	sd s3, 16(t0)
+	sd s4, 24(t0)
+	sd s5, 32(t0)
+	sd s6, 40(t0)
 	addi s2, a0, 0
 	addi s3, a1, 0
 	addi s4, a2, 0
 	addi s5, a3, 0
 	addi s6, a4, 0
-	addi s7, a5, 0
 	beqz s6, 20f
 22:
 	add t2, s2, s4
@@ -228,23 +383,99 @@ vg_sha3_256_update:
 	j 28f
 27:
 	addi s4, zero, 0
+	addi sp, sp, -512
 	addi a0, s2, 0
-	addi a1, s7, 0
+	addi a1, sp, 0
 	call {vg_keccak_f1600}
+	addi sp, sp, 512
 28:
 	bnez s6, 22b
 	j 21f
 20:
 21:
 	addi a0, s4, 0
-	addi t0, s7, 0
-	ld ra, 512(t0)
-	ld s2, 520(t0)
-	ld s3, 528(t0)
-	ld s4, 536(t0)
-	ld s5, 544(t0)
-	ld s6, 552(t0)
-	ld s7, 560(t0)
+	addi t0, sp, 0
+	ld ra, 0(t0)
+	ld s2, 8(t0)
+	ld s3, 16(t0)
+	ld s4, 24(t0)
+	ld s5, 32(t0)
+	ld s6, 40(t0)
+	addi sp, sp, 48
+	addi t0, zero, 0
+	addi sp, sp, -1168
+	addi t1, sp, 0
+	sd t0, 192(t1)
+	sd t0, 200(t1)
+	sd t0, 208(t1)
+	sd t0, 216(t1)
+	sd t0, 224(t1)
+	sd t0, 232(t1)
+	sd t0, 240(t1)
+	sd t0, 248(t1)
+	sd t0, 256(t1)
+	sd t0, 264(t1)
+	sd t0, 272(t1)
+	sd t0, 280(t1)
+	sd t0, 288(t1)
+	sd t0, 296(t1)
+	sd t0, 304(t1)
+	sd t0, 312(t1)
+	sd t0, 320(t1)
+	sd t0, 328(t1)
+	sd t0, 336(t1)
+	sd t0, 344(t1)
+	sd t0, 352(t1)
+	sd t0, 360(t1)
+	sd t0, 368(t1)
+	sd t0, 376(t1)
+	sd t0, 384(t1)
+	sd t0, 392(t1)
+	sd t0, 400(t1)
+	sd t0, 408(t1)
+	sd t0, 416(t1)
+	sd t0, 424(t1)
+	sd t0, 432(t1)
+	sd t0, 440(t1)
+	sd t0, 448(t1)
+	sd t0, 456(t1)
+	sd t0, 464(t1)
+	sd t0, 472(t1)
+	sd t0, 480(t1)
+	sd t0, 488(t1)
+	sd t0, 496(t1)
+	sd t0, 504(t1)
+	sd t0, 512(t1)
+	sd t0, 520(t1)
+	sd t0, 528(t1)
+	sd t0, 536(t1)
+	sd t0, 544(t1)
+	sd t0, 552(t1)
+	sd t0, 560(t1)
+	sd t0, 568(t1)
+	sd t0, 576(t1)
+	sd t0, 584(t1)
+	sd t0, 1120(t1)
+	sd t0, 1128(t1)
+	sd t0, 1136(t1)
+	sd t0, 1144(t1)
+	sd t0, 1152(t1)
+	sd t0, 1160(t1)
+	addi sp, sp, 1168
+	addi a1, zero, 0
+	addi a2, zero, 0
+	addi a3, zero, 0
+	addi a4, zero, 0
+	addi a5, zero, 0
+	addi a6, zero, 0
+	addi a7, zero, 0
+	addi t0, zero, 0
+	addi t1, zero, 0
+	addi t2, zero, 0
+	addi t3, zero, 0
+	addi t4, zero, 0
+	addi t5, zero, 0
+	addi t6, zero, 0
 	ret
 	.option pop
 
@@ -275,31 +506,112 @@ vg_sha3_256_finalize:
 	ld s3, 16(s4)
 	ld s4, 24(s4)
 	addi sp, sp, 32
+	addi t0, zero, 0
+	addi sp, sp, -1200
+	addi t1, sp, 0
+	sd t0, 192(t1)
+	sd t0, 200(t1)
+	sd t0, 208(t1)
+	sd t0, 216(t1)
+	sd t0, 224(t1)
+	sd t0, 232(t1)
+	sd t0, 240(t1)
+	sd t0, 248(t1)
+	sd t0, 256(t1)
+	sd t0, 264(t1)
+	sd t0, 272(t1)
+	sd t0, 280(t1)
+	sd t0, 288(t1)
+	sd t0, 296(t1)
+	sd t0, 304(t1)
+	sd t0, 312(t1)
+	sd t0, 320(t1)
+	sd t0, 328(t1)
+	sd t0, 336(t1)
+	sd t0, 344(t1)
+	sd t0, 352(t1)
+	sd t0, 360(t1)
+	sd t0, 368(t1)
+	sd t0, 376(t1)
+	sd t0, 384(t1)
+	sd t0, 392(t1)
+	sd t0, 400(t1)
+	sd t0, 408(t1)
+	sd t0, 416(t1)
+	sd t0, 424(t1)
+	sd t0, 432(t1)
+	sd t0, 440(t1)
+	sd t0, 448(t1)
+	sd t0, 456(t1)
+	sd t0, 464(t1)
+	sd t0, 472(t1)
+	sd t0, 480(t1)
+	sd t0, 488(t1)
+	sd t0, 496(t1)
+	sd t0, 504(t1)
+	sd t0, 512(t1)
+	sd t0, 520(t1)
+	sd t0, 528(t1)
+	sd t0, 536(t1)
+	sd t0, 544(t1)
+	sd t0, 552(t1)
+	sd t0, 560(t1)
+	sd t0, 568(t1)
+	sd t0, 576(t1)
+	sd t0, 584(t1)
+	sd t0, 592(t1)
+	sd t0, 600(t1)
+	sd t0, 608(t1)
+	sd t0, 616(t1)
+	sd t0, 1120(t1)
+	sd t0, 1128(t1)
+	sd t0, 1136(t1)
+	sd t0, 1144(t1)
+	sd t0, 1152(t1)
+	sd t0, 1160(t1)
+	sd t0, 1168(t1)
+	sd t0, 1176(t1)
+	sd t0, 1184(t1)
+	sd t0, 1192(t1)
+	addi sp, sp, 1200
+	addi a1, zero, 0
+	addi a2, zero, 0
+	addi a3, zero, 0
+	addi a4, zero, 0
+	addi a5, zero, 0
+	addi a6, zero, 0
+	addi a7, zero, 0
+	addi t0, zero, 0
+	addi t1, zero, 0
+	addi t2, zero, 0
+	addi t3, zero, 0
+	addi t4, zero, 0
+	addi t5, zero, 0
+	addi t6, zero, 0
+	addi a0, zero, 0
 	ret
 	.option pop
 
 vg_sha3_384_update:
 	.option push
 	.option arch, +m, +c
-	addi a5, a4, 0
 	addi a4, a3, 0
 	addi a3, a2, 0
 	addi a2, a1, 0
 	addi a1, zero, 104
-	addi t0, a5, 0
-	sd ra, 512(t0)
-	sd s2, 520(t0)
-	sd s3, 528(t0)
-	sd s4, 536(t0)
-	sd s5, 544(t0)
-	sd s6, 552(t0)
-	sd s7, 560(t0)
+	addi sp, sp, -48
+	addi t0, sp, 0
+	sd ra, 0(t0)
+	sd s2, 8(t0)
+	sd s3, 16(t0)
+	sd s4, 24(t0)
+	sd s5, 32(t0)
+	sd s6, 40(t0)
 	addi s2, a0, 0
 	addi s3, a1, 0
 	addi s4, a2, 0
 	addi s5, a3, 0
 	addi s6, a4, 0
-	addi s7, a5, 0
 	beqz s6, 20f
 22:
 	add t2, s2, s4
@@ -365,23 +677,99 @@ vg_sha3_384_update:
 	j 28f
 27:
 	addi s4, zero, 0
+	addi sp, sp, -512
 	addi a0, s2, 0
-	addi a1, s7, 0
+	addi a1, sp, 0
 	call {vg_keccak_f1600}
+	addi sp, sp, 512
 28:
 	bnez s6, 22b
 	j 21f
 20:
 21:
 	addi a0, s4, 0
-	addi t0, s7, 0
-	ld ra, 512(t0)
-	ld s2, 520(t0)
-	ld s3, 528(t0)
-	ld s4, 536(t0)
-	ld s5, 544(t0)
-	ld s6, 552(t0)
-	ld s7, 560(t0)
+	addi t0, sp, 0
+	ld ra, 0(t0)
+	ld s2, 8(t0)
+	ld s3, 16(t0)
+	ld s4, 24(t0)
+	ld s5, 32(t0)
+	ld s6, 40(t0)
+	addi sp, sp, 48
+	addi t0, zero, 0
+	addi sp, sp, -1168
+	addi t1, sp, 0
+	sd t0, 192(t1)
+	sd t0, 200(t1)
+	sd t0, 208(t1)
+	sd t0, 216(t1)
+	sd t0, 224(t1)
+	sd t0, 232(t1)
+	sd t0, 240(t1)
+	sd t0, 248(t1)
+	sd t0, 256(t1)
+	sd t0, 264(t1)
+	sd t0, 272(t1)
+	sd t0, 280(t1)
+	sd t0, 288(t1)
+	sd t0, 296(t1)
+	sd t0, 304(t1)
+	sd t0, 312(t1)
+	sd t0, 320(t1)
+	sd t0, 328(t1)
+	sd t0, 336(t1)
+	sd t0, 344(t1)
+	sd t0, 352(t1)
+	sd t0, 360(t1)
+	sd t0, 368(t1)
+	sd t0, 376(t1)
+	sd t0, 384(t1)
+	sd t0, 392(t1)
+	sd t0, 400(t1)
+	sd t0, 408(t1)
+	sd t0, 416(t1)
+	sd t0, 424(t1)
+	sd t0, 432(t1)
+	sd t0, 440(t1)
+	sd t0, 448(t1)
+	sd t0, 456(t1)
+	sd t0, 464(t1)
+	sd t0, 472(t1)
+	sd t0, 480(t1)
+	sd t0, 488(t1)
+	sd t0, 496(t1)
+	sd t0, 504(t1)
+	sd t0, 512(t1)
+	sd t0, 520(t1)
+	sd t0, 528(t1)
+	sd t0, 536(t1)
+	sd t0, 544(t1)
+	sd t0, 552(t1)
+	sd t0, 560(t1)
+	sd t0, 568(t1)
+	sd t0, 576(t1)
+	sd t0, 584(t1)
+	sd t0, 1120(t1)
+	sd t0, 1128(t1)
+	sd t0, 1136(t1)
+	sd t0, 1144(t1)
+	sd t0, 1152(t1)
+	sd t0, 1160(t1)
+	addi sp, sp, 1168
+	addi a1, zero, 0
+	addi a2, zero, 0
+	addi a3, zero, 0
+	addi a4, zero, 0
+	addi a5, zero, 0
+	addi a6, zero, 0
+	addi a7, zero, 0
+	addi t0, zero, 0
+	addi t1, zero, 0
+	addi t2, zero, 0
+	addi t3, zero, 0
+	addi t4, zero, 0
+	addi t5, zero, 0
+	addi t6, zero, 0
 	ret
 	.option pop
 
@@ -412,31 +800,112 @@ vg_sha3_384_finalize:
 	ld s3, 16(s4)
 	ld s4, 24(s4)
 	addi sp, sp, 32
+	addi t0, zero, 0
+	addi sp, sp, -1200
+	addi t1, sp, 0
+	sd t0, 192(t1)
+	sd t0, 200(t1)
+	sd t0, 208(t1)
+	sd t0, 216(t1)
+	sd t0, 224(t1)
+	sd t0, 232(t1)
+	sd t0, 240(t1)
+	sd t0, 248(t1)
+	sd t0, 256(t1)
+	sd t0, 264(t1)
+	sd t0, 272(t1)
+	sd t0, 280(t1)
+	sd t0, 288(t1)
+	sd t0, 296(t1)
+	sd t0, 304(t1)
+	sd t0, 312(t1)
+	sd t0, 320(t1)
+	sd t0, 328(t1)
+	sd t0, 336(t1)
+	sd t0, 344(t1)
+	sd t0, 352(t1)
+	sd t0, 360(t1)
+	sd t0, 368(t1)
+	sd t0, 376(t1)
+	sd t0, 384(t1)
+	sd t0, 392(t1)
+	sd t0, 400(t1)
+	sd t0, 408(t1)
+	sd t0, 416(t1)
+	sd t0, 424(t1)
+	sd t0, 432(t1)
+	sd t0, 440(t1)
+	sd t0, 448(t1)
+	sd t0, 456(t1)
+	sd t0, 464(t1)
+	sd t0, 472(t1)
+	sd t0, 480(t1)
+	sd t0, 488(t1)
+	sd t0, 496(t1)
+	sd t0, 504(t1)
+	sd t0, 512(t1)
+	sd t0, 520(t1)
+	sd t0, 528(t1)
+	sd t0, 536(t1)
+	sd t0, 544(t1)
+	sd t0, 552(t1)
+	sd t0, 560(t1)
+	sd t0, 568(t1)
+	sd t0, 576(t1)
+	sd t0, 584(t1)
+	sd t0, 592(t1)
+	sd t0, 600(t1)
+	sd t0, 608(t1)
+	sd t0, 616(t1)
+	sd t0, 1120(t1)
+	sd t0, 1128(t1)
+	sd t0, 1136(t1)
+	sd t0, 1144(t1)
+	sd t0, 1152(t1)
+	sd t0, 1160(t1)
+	sd t0, 1168(t1)
+	sd t0, 1176(t1)
+	sd t0, 1184(t1)
+	sd t0, 1192(t1)
+	addi sp, sp, 1200
+	addi a1, zero, 0
+	addi a2, zero, 0
+	addi a3, zero, 0
+	addi a4, zero, 0
+	addi a5, zero, 0
+	addi a6, zero, 0
+	addi a7, zero, 0
+	addi t0, zero, 0
+	addi t1, zero, 0
+	addi t2, zero, 0
+	addi t3, zero, 0
+	addi t4, zero, 0
+	addi t5, zero, 0
+	addi t6, zero, 0
+	addi a0, zero, 0
 	ret
 	.option pop
 
 vg_sha3_512_update:
 	.option push
 	.option arch, +m, +c
-	addi a5, a4, 0
 	addi a4, a3, 0
 	addi a3, a2, 0
 	addi a2, a1, 0
 	addi a1, zero, 72
-	addi t0, a5, 0
-	sd ra, 512(t0)
-	sd s2, 520(t0)
-	sd s3, 528(t0)
-	sd s4, 536(t0)
-	sd s5, 544(t0)
-	sd s6, 552(t0)
-	sd s7, 560(t0)
+	addi sp, sp, -48
+	addi t0, sp, 0
+	sd ra, 0(t0)
+	sd s2, 8(t0)
+	sd s3, 16(t0)
+	sd s4, 24(t0)
+	sd s5, 32(t0)
+	sd s6, 40(t0)
 	addi s2, a0, 0
 	addi s3, a1, 0
 	addi s4, a2, 0
 	addi s5, a3, 0
 	addi s6, a4, 0
-	addi s7, a5, 0
 	beqz s6, 20f
 22:
 	add t2, s2, s4
@@ -502,23 +971,99 @@ vg_sha3_512_update:
 	j 28f
 27:
 	addi s4, zero, 0
+	addi sp, sp, -512
 	addi a0, s2, 0
-	addi a1, s7, 0
+	addi a1, sp, 0
 	call {vg_keccak_f1600}
+	addi sp, sp, 512
 28:
 	bnez s6, 22b
 	j 21f
 20:
 21:
 	addi a0, s4, 0
-	addi t0, s7, 0
-	ld ra, 512(t0)
-	ld s2, 520(t0)
-	ld s3, 528(t0)
-	ld s4, 536(t0)
-	ld s5, 544(t0)
-	ld s6, 552(t0)
-	ld s7, 560(t0)
+	addi t0, sp, 0
+	ld ra, 0(t0)
+	ld s2, 8(t0)
+	ld s3, 16(t0)
+	ld s4, 24(t0)
+	ld s5, 32(t0)
+	ld s6, 40(t0)
+	addi sp, sp, 48
+	addi t0, zero, 0
+	addi sp, sp, -1168
+	addi t1, sp, 0
+	sd t0, 192(t1)
+	sd t0, 200(t1)
+	sd t0, 208(t1)
+	sd t0, 216(t1)
+	sd t0, 224(t1)
+	sd t0, 232(t1)
+	sd t0, 240(t1)
+	sd t0, 248(t1)
+	sd t0, 256(t1)
+	sd t0, 264(t1)
+	sd t0, 272(t1)
+	sd t0, 280(t1)
+	sd t0, 288(t1)
+	sd t0, 296(t1)
+	sd t0, 304(t1)
+	sd t0, 312(t1)
+	sd t0, 320(t1)
+	sd t0, 328(t1)
+	sd t0, 336(t1)
+	sd t0, 344(t1)
+	sd t0, 352(t1)
+	sd t0, 360(t1)
+	sd t0, 368(t1)
+	sd t0, 376(t1)
+	sd t0, 384(t1)
+	sd t0, 392(t1)
+	sd t0, 400(t1)
+	sd t0, 408(t1)
+	sd t0, 416(t1)
+	sd t0, 424(t1)
+	sd t0, 432(t1)
+	sd t0, 440(t1)
+	sd t0, 448(t1)
+	sd t0, 456(t1)
+	sd t0, 464(t1)
+	sd t0, 472(t1)
+	sd t0, 480(t1)
+	sd t0, 488(t1)
+	sd t0, 496(t1)
+	sd t0, 504(t1)
+	sd t0, 512(t1)
+	sd t0, 520(t1)
+	sd t0, 528(t1)
+	sd t0, 536(t1)
+	sd t0, 544(t1)
+	sd t0, 552(t1)
+	sd t0, 560(t1)
+	sd t0, 568(t1)
+	sd t0, 576(t1)
+	sd t0, 584(t1)
+	sd t0, 1120(t1)
+	sd t0, 1128(t1)
+	sd t0, 1136(t1)
+	sd t0, 1144(t1)
+	sd t0, 1152(t1)
+	sd t0, 1160(t1)
+	addi sp, sp, 1168
+	addi a1, zero, 0
+	addi a2, zero, 0
+	addi a3, zero, 0
+	addi a4, zero, 0
+	addi a5, zero, 0
+	addi a6, zero, 0
+	addi a7, zero, 0
+	addi t0, zero, 0
+	addi t1, zero, 0
+	addi t2, zero, 0
+	addi t3, zero, 0
+	addi t4, zero, 0
+	addi t5, zero, 0
+	addi t6, zero, 0
 	ret
 	.option pop
 
@@ -549,31 +1094,112 @@ vg_sha3_512_finalize:
 	ld s3, 16(s4)
 	ld s4, 24(s4)
 	addi sp, sp, 32
+	addi t0, zero, 0
+	addi sp, sp, -1200
+	addi t1, sp, 0
+	sd t0, 192(t1)
+	sd t0, 200(t1)
+	sd t0, 208(t1)
+	sd t0, 216(t1)
+	sd t0, 224(t1)
+	sd t0, 232(t1)
+	sd t0, 240(t1)
+	sd t0, 248(t1)
+	sd t0, 256(t1)
+	sd t0, 264(t1)
+	sd t0, 272(t1)
+	sd t0, 280(t1)
+	sd t0, 288(t1)
+	sd t0, 296(t1)
+	sd t0, 304(t1)
+	sd t0, 312(t1)
+	sd t0, 320(t1)
+	sd t0, 328(t1)
+	sd t0, 336(t1)
+	sd t0, 344(t1)
+	sd t0, 352(t1)
+	sd t0, 360(t1)
+	sd t0, 368(t1)
+	sd t0, 376(t1)
+	sd t0, 384(t1)
+	sd t0, 392(t1)
+	sd t0, 400(t1)
+	sd t0, 408(t1)
+	sd t0, 416(t1)
+	sd t0, 424(t1)
+	sd t0, 432(t1)
+	sd t0, 440(t1)
+	sd t0, 448(t1)
+	sd t0, 456(t1)
+	sd t0, 464(t1)
+	sd t0, 472(t1)
+	sd t0, 480(t1)
+	sd t0, 488(t1)
+	sd t0, 496(t1)
+	sd t0, 504(t1)
+	sd t0, 512(t1)
+	sd t0, 520(t1)
+	sd t0, 528(t1)
+	sd t0, 536(t1)
+	sd t0, 544(t1)
+	sd t0, 552(t1)
+	sd t0, 560(t1)
+	sd t0, 568(t1)
+	sd t0, 576(t1)
+	sd t0, 584(t1)
+	sd t0, 592(t1)
+	sd t0, 600(t1)
+	sd t0, 608(t1)
+	sd t0, 616(t1)
+	sd t0, 1120(t1)
+	sd t0, 1128(t1)
+	sd t0, 1136(t1)
+	sd t0, 1144(t1)
+	sd t0, 1152(t1)
+	sd t0, 1160(t1)
+	sd t0, 1168(t1)
+	sd t0, 1176(t1)
+	sd t0, 1184(t1)
+	sd t0, 1192(t1)
+	addi sp, sp, 1200
+	addi a1, zero, 0
+	addi a2, zero, 0
+	addi a3, zero, 0
+	addi a4, zero, 0
+	addi a5, zero, 0
+	addi a6, zero, 0
+	addi a7, zero, 0
+	addi t0, zero, 0
+	addi t1, zero, 0
+	addi t2, zero, 0
+	addi t3, zero, 0
+	addi t4, zero, 0
+	addi t5, zero, 0
+	addi t6, zero, 0
+	addi a0, zero, 0
 	ret
 	.option pop
 
 vg_shake128_update:
 	.option push
 	.option arch, +m, +c
-	addi a5, a4, 0
 	addi a4, a3, 0
 	addi a3, a2, 0
 	addi a2, a1, 0
 	addi a1, zero, 168
-	addi t0, a5, 0
-	sd ra, 512(t0)
-	sd s2, 520(t0)
-	sd s3, 528(t0)
-	sd s4, 536(t0)
-	sd s5, 544(t0)
-	sd s6, 552(t0)
-	sd s7, 560(t0)
+	addi sp, sp, -48
+	addi t0, sp, 0
+	sd ra, 0(t0)
+	sd s2, 8(t0)
+	sd s3, 16(t0)
+	sd s4, 24(t0)
+	sd s5, 32(t0)
+	sd s6, 40(t0)
 	addi s2, a0, 0
 	addi s3, a1, 0
 	addi s4, a2, 0
 	addi s5, a3, 0
 	addi s6, a4, 0
-	addi s7, a5, 0
 	beqz s6, 20f
 22:
 	add t2, s2, s4
@@ -639,23 +1265,99 @@ vg_shake128_update:
 	j 28f
 27:
 	addi s4, zero, 0
+	addi sp, sp, -512
 	addi a0, s2, 0
-	addi a1, s7, 0
+	addi a1, sp, 0
 	call {vg_keccak_f1600}
+	addi sp, sp, 512
 28:
 	bnez s6, 22b
 	j 21f
 20:
 21:
 	addi a0, s4, 0
-	addi t0, s7, 0
-	ld ra, 512(t0)
-	ld s2, 520(t0)
-	ld s3, 528(t0)
-	ld s4, 536(t0)
-	ld s5, 544(t0)
-	ld s6, 552(t0)
-	ld s7, 560(t0)
+	addi t0, sp, 0
+	ld ra, 0(t0)
+	ld s2, 8(t0)
+	ld s3, 16(t0)
+	ld s4, 24(t0)
+	ld s5, 32(t0)
+	ld s6, 40(t0)
+	addi sp, sp, 48
+	addi t0, zero, 0
+	addi sp, sp, -1168
+	addi t1, sp, 0
+	sd t0, 192(t1)
+	sd t0, 200(t1)
+	sd t0, 208(t1)
+	sd t0, 216(t1)
+	sd t0, 224(t1)
+	sd t0, 232(t1)
+	sd t0, 240(t1)
+	sd t0, 248(t1)
+	sd t0, 256(t1)
+	sd t0, 264(t1)
+	sd t0, 272(t1)
+	sd t0, 280(t1)
+	sd t0, 288(t1)
+	sd t0, 296(t1)
+	sd t0, 304(t1)
+	sd t0, 312(t1)
+	sd t0, 320(t1)
+	sd t0, 328(t1)
+	sd t0, 336(t1)
+	sd t0, 344(t1)
+	sd t0, 352(t1)
+	sd t0, 360(t1)
+	sd t0, 368(t1)
+	sd t0, 376(t1)
+	sd t0, 384(t1)
+	sd t0, 392(t1)
+	sd t0, 400(t1)
+	sd t0, 408(t1)
+	sd t0, 416(t1)
+	sd t0, 424(t1)
+	sd t0, 432(t1)
+	sd t0, 440(t1)
+	sd t0, 448(t1)
+	sd t0, 456(t1)
+	sd t0, 464(t1)
+	sd t0, 472(t1)
+	sd t0, 480(t1)
+	sd t0, 488(t1)
+	sd t0, 496(t1)
+	sd t0, 504(t1)
+	sd t0, 512(t1)
+	sd t0, 520(t1)
+	sd t0, 528(t1)
+	sd t0, 536(t1)
+	sd t0, 544(t1)
+	sd t0, 552(t1)
+	sd t0, 560(t1)
+	sd t0, 568(t1)
+	sd t0, 576(t1)
+	sd t0, 584(t1)
+	sd t0, 1120(t1)
+	sd t0, 1128(t1)
+	sd t0, 1136(t1)
+	sd t0, 1144(t1)
+	sd t0, 1152(t1)
+	sd t0, 1160(t1)
+	addi sp, sp, 1168
+	addi a1, zero, 0
+	addi a2, zero, 0
+	addi a3, zero, 0
+	addi a4, zero, 0
+	addi a5, zero, 0
+	addi a6, zero, 0
+	addi a7, zero, 0
+	addi t0, zero, 0
+	addi t1, zero, 0
+	addi t2, zero, 0
+	addi t3, zero, 0
+	addi t4, zero, 0
+	addi t5, zero, 0
+	addi t6, zero, 0
 	ret
 	.option pop
 
@@ -665,9 +1367,9 @@ vg_shake128_finalize:
 	addi a2, a1, 0
 	addi a1, zero, 168
 	addi a3, zero, 31
-	addi sp, sp, -528
+	addi sp, sp, -16
 	addi t0, sp, 0
-	sd ra, 512(t0)
+	sd ra, 0(t0)
 	add t1, a0, a2
 	lbu t2, 0(t1)
 	xor t2, t2, a3
@@ -677,11 +1379,84 @@ vg_shake128_finalize:
 	lbu t2, 0(t1)
 	xori t2, t2, 128
 	sb t2, 0(t1)
+	addi sp, sp, -512
 	addi a1, sp, 0
 	call {vg_keccak_f1600}
+	addi sp, sp, 512
 	addi t0, sp, 0
-	ld ra, 512(t0)
-	addi sp, sp, 528
+	ld ra, 0(t0)
+	addi sp, sp, 16
+	addi t0, zero, 0
+	addi sp, sp, -1136
+	addi t1, sp, 0
+	sd t0, 192(t1)
+	sd t0, 200(t1)
+	sd t0, 208(t1)
+	sd t0, 216(t1)
+	sd t0, 224(t1)
+	sd t0, 232(t1)
+	sd t0, 240(t1)
+	sd t0, 248(t1)
+	sd t0, 256(t1)
+	sd t0, 264(t1)
+	sd t0, 272(t1)
+	sd t0, 280(t1)
+	sd t0, 288(t1)
+	sd t0, 296(t1)
+	sd t0, 304(t1)
+	sd t0, 312(t1)
+	sd t0, 320(t1)
+	sd t0, 328(t1)
+	sd t0, 336(t1)
+	sd t0, 344(t1)
+	sd t0, 352(t1)
+	sd t0, 360(t1)
+	sd t0, 368(t1)
+	sd t0, 376(t1)
+	sd t0, 384(t1)
+	sd t0, 392(t1)
+	sd t0, 400(t1)
+	sd t0, 408(t1)
+	sd t0, 416(t1)
+	sd t0, 424(t1)
+	sd t0, 432(t1)
+	sd t0, 440(t1)
+	sd t0, 448(t1)
+	sd t0, 456(t1)
+	sd t0, 464(t1)
+	sd t0, 472(t1)
+	sd t0, 480(t1)
+	sd t0, 488(t1)
+	sd t0, 496(t1)
+	sd t0, 504(t1)
+	sd t0, 512(t1)
+	sd t0, 520(t1)
+	sd t0, 528(t1)
+	sd t0, 536(t1)
+	sd t0, 544(t1)
+	sd t0, 552(t1)
+	sd t0, 560(t1)
+	sd t0, 568(t1)
+	sd t0, 576(t1)
+	sd t0, 584(t1)
+	sd t0, 1120(t1)
+	sd t0, 1128(t1)
+	addi sp, sp, 1136
+	addi a1, zero, 0
+	addi a2, zero, 0
+	addi a3, zero, 0
+	addi a4, zero, 0
+	addi a5, zero, 0
+	addi a6, zero, 0
+	addi a7, zero, 0
+	addi t0, zero, 0
+	addi t1, zero, 0
+	addi t2, zero, 0
+	addi t3, zero, 0
+	addi t4, zero, 0
+	addi t5, zero, 0
+	addi t6, zero, 0
+	addi a0, zero, 0
 	ret
 	.option pop
 
@@ -692,14 +1467,14 @@ vg_shake128_squeeze:
 	addi a3, a2, 0
 	addi a2, a1, 0
 	addi a1, zero, 168
-	addi sp, sp, -560
+	addi sp, sp, -48
 	addi t0, sp, 0
-	sd ra, 512(t0)
-	sd s2, 520(t0)
-	sd s3, 528(t0)
-	sd s4, 536(t0)
-	sd s5, 544(t0)
-	sd s6, 552(t0)
+	sd ra, 0(t0)
+	sd s2, 8(t0)
+	sd s3, 16(t0)
+	sd s4, 24(t0)
+	sd s5, 32(t0)
+	sd s6, 40(t0)
 	addi s2, a0, 0
 	addi s3, a1, 0
 	addi s4, a2, 0
@@ -712,9 +1487,11 @@ vg_shake128_squeeze:
 	j 24f
 23:
 	addi s4, zero, 0
+	addi sp, sp, -512
 	addi a0, s2, 0
 	addi a1, sp, 0
 	call {vg_keccak_f1600}
+	addi sp, sp, 512
 24:
 	add t2, s2, s4
 	or t1, t2, s4
@@ -767,13 +1544,87 @@ vg_shake128_squeeze:
 21:
 	addi a0, s4, 0
 	addi t0, sp, 0
-	ld ra, 512(t0)
-	ld s2, 520(t0)
-	ld s3, 528(t0)
-	ld s4, 536(t0)
-	ld s5, 544(t0)
-	ld s6, 552(t0)
-	addi sp, sp, 560
+	ld ra, 0(t0)
+	ld s2, 8(t0)
+	ld s3, 16(t0)
+	ld s4, 24(t0)
+	ld s5, 32(t0)
+	ld s6, 40(t0)
+	addi sp, sp, 48
+	addi t0, zero, 0
+	addi sp, sp, -1168
+	addi t1, sp, 0
+	sd t0, 192(t1)
+	sd t0, 200(t1)
+	sd t0, 208(t1)
+	sd t0, 216(t1)
+	sd t0, 224(t1)
+	sd t0, 232(t1)
+	sd t0, 240(t1)
+	sd t0, 248(t1)
+	sd t0, 256(t1)
+	sd t0, 264(t1)
+	sd t0, 272(t1)
+	sd t0, 280(t1)
+	sd t0, 288(t1)
+	sd t0, 296(t1)
+	sd t0, 304(t1)
+	sd t0, 312(t1)
+	sd t0, 320(t1)
+	sd t0, 328(t1)
+	sd t0, 336(t1)
+	sd t0, 344(t1)
+	sd t0, 352(t1)
+	sd t0, 360(t1)
+	sd t0, 368(t1)
+	sd t0, 376(t1)
+	sd t0, 384(t1)
+	sd t0, 392(t1)
+	sd t0, 400(t1)
+	sd t0, 408(t1)
+	sd t0, 416(t1)
+	sd t0, 424(t1)
+	sd t0, 432(t1)
+	sd t0, 440(t1)
+	sd t0, 448(t1)
+	sd t0, 456(t1)
+	sd t0, 464(t1)
+	sd t0, 472(t1)
+	sd t0, 480(t1)
+	sd t0, 488(t1)
+	sd t0, 496(t1)
+	sd t0, 504(t1)
+	sd t0, 512(t1)
+	sd t0, 520(t1)
+	sd t0, 528(t1)
+	sd t0, 536(t1)
+	sd t0, 544(t1)
+	sd t0, 552(t1)
+	sd t0, 560(t1)
+	sd t0, 568(t1)
+	sd t0, 576(t1)
+	sd t0, 584(t1)
+	sd t0, 1120(t1)
+	sd t0, 1128(t1)
+	sd t0, 1136(t1)
+	sd t0, 1144(t1)
+	sd t0, 1152(t1)
+	sd t0, 1160(t1)
+	addi sp, sp, 1168
+	addi a1, zero, 0
+	addi a2, zero, 0
+	addi a3, zero, 0
+	addi a4, zero, 0
+	addi a5, zero, 0
+	addi a6, zero, 0
+	addi a7, zero, 0
+	addi t0, zero, 0
+	addi t1, zero, 0
+	addi t2, zero, 0
+	addi t3, zero, 0
+	addi t4, zero, 0
+	addi t5, zero, 0
+	addi t6, zero, 0
 	ret
 	.option pop
 
@@ -783,9 +1634,9 @@ vg_shake256_finalize:
 	addi a2, a1, 0
 	addi a1, zero, 136
 	addi a3, zero, 31
-	addi sp, sp, -528
+	addi sp, sp, -16
 	addi t0, sp, 0
-	sd ra, 512(t0)
+	sd ra, 0(t0)
 	add t1, a0, a2
 	lbu t2, 0(t1)
 	xor t2, t2, a3
@@ -795,11 +1646,84 @@ vg_shake256_finalize:
 	lbu t2, 0(t1)
 	xori t2, t2, 128
 	sb t2, 0(t1)
+	addi sp, sp, -512
 	addi a1, sp, 0
 	call {vg_keccak_f1600}
+	addi sp, sp, 512
 	addi t0, sp, 0
-	ld ra, 512(t0)
-	addi sp, sp, 528
+	ld ra, 0(t0)
+	addi sp, sp, 16
+	addi t0, zero, 0
+	addi sp, sp, -1136
+	addi t1, sp, 0
+	sd t0, 192(t1)
+	sd t0, 200(t1)
+	sd t0, 208(t1)
+	sd t0, 216(t1)
+	sd t0, 224(t1)
+	sd t0, 232(t1)
+	sd t0, 240(t1)
+	sd t0, 248(t1)
+	sd t0, 256(t1)
+	sd t0, 264(t1)
+	sd t0, 272(t1)
+	sd t0, 280(t1)
+	sd t0, 288(t1)
+	sd t0, 296(t1)
+	sd t0, 304(t1)
+	sd t0, 312(t1)
+	sd t0, 320(t1)
+	sd t0, 328(t1)
+	sd t0, 336(t1)
+	sd t0, 344(t1)
+	sd t0, 352(t1)
+	sd t0, 360(t1)
+	sd t0, 368(t1)
+	sd t0, 376(t1)
+	sd t0, 384(t1)
+	sd t0, 392(t1)
+	sd t0, 400(t1)
+	sd t0, 408(t1)
+	sd t0, 416(t1)
+	sd t0, 424(t1)
+	sd t0, 432(t1)
+	sd t0, 440(t1)
+	sd t0, 448(t1)
+	sd t0, 456(t1)
+	sd t0, 464(t1)
+	sd t0, 472(t1)
+	sd t0, 480(t1)
+	sd t0, 488(t1)
+	sd t0, 496(t1)
+	sd t0, 504(t1)
+	sd t0, 512(t1)
+	sd t0, 520(t1)
+	sd t0, 528(t1)
+	sd t0, 536(t1)
+	sd t0, 544(t1)
+	sd t0, 552(t1)
+	sd t0, 560(t1)
+	sd t0, 568(t1)
+	sd t0, 576(t1)
+	sd t0, 584(t1)
+	sd t0, 1120(t1)
+	sd t0, 1128(t1)
+	addi sp, sp, 1136
+	addi a1, zero, 0
+	addi a2, zero, 0
+	addi a3, zero, 0
+	addi a4, zero, 0
+	addi a5, zero, 0
+	addi a6, zero, 0
+	addi a7, zero, 0
+	addi t0, zero, 0
+	addi t1, zero, 0
+	addi t2, zero, 0
+	addi t3, zero, 0
+	addi t4, zero, 0
+	addi t5, zero, 0
+	addi t6, zero, 0
+	addi a0, zero, 0
 	ret
 	.option pop
 
@@ -810,14 +1734,14 @@ vg_shake256_squeeze:
 	addi a3, a2, 0
 	addi a2, a1, 0
 	addi a1, zero, 136
-	addi sp, sp, -560
+	addi sp, sp, -48
 	addi t0, sp, 0
-	sd ra, 512(t0)
-	sd s2, 520(t0)
-	sd s3, 528(t0)
-	sd s4, 536(t0)
-	sd s5, 544(t0)
-	sd s6, 552(t0)
+	sd ra, 0(t0)
+	sd s2, 8(t0)
+	sd s3, 16(t0)
+	sd s4, 24(t0)
+	sd s5, 32(t0)
+	sd s6, 40(t0)
 	addi s2, a0, 0
 	addi s3, a1, 0
 	addi s4, a2, 0
@@ -830,9 +1754,11 @@ vg_shake256_squeeze:
 	j 24f
 23:
 	addi s4, zero, 0
+	addi sp, sp, -512
 	addi a0, s2, 0
 	addi a1, sp, 0
 	call {vg_keccak_f1600}
+	addi sp, sp, 512
 24:
 	add t2, s2, s4
 	or t1, t2, s4
@@ -885,12 +1811,86 @@ vg_shake256_squeeze:
 21:
 	addi a0, s4, 0
 	addi t0, sp, 0
-	ld ra, 512(t0)
-	ld s2, 520(t0)
-	ld s3, 528(t0)
-	ld s4, 536(t0)
-	ld s5, 544(t0)
-	ld s6, 552(t0)
-	addi sp, sp, 560
+	ld ra, 0(t0)
+	ld s2, 8(t0)
+	ld s3, 16(t0)
+	ld s4, 24(t0)
+	ld s5, 32(t0)
+	ld s6, 40(t0)
+	addi sp, sp, 48
+	addi t0, zero, 0
+	addi sp, sp, -1168
+	addi t1, sp, 0
+	sd t0, 192(t1)
+	sd t0, 200(t1)
+	sd t0, 208(t1)
+	sd t0, 216(t1)
+	sd t0, 224(t1)
+	sd t0, 232(t1)
+	sd t0, 240(t1)
+	sd t0, 248(t1)
+	sd t0, 256(t1)
+	sd t0, 264(t1)
+	sd t0, 272(t1)
+	sd t0, 280(t1)
+	sd t0, 288(t1)
+	sd t0, 296(t1)
+	sd t0, 304(t1)
+	sd t0, 312(t1)
+	sd t0, 320(t1)
+	sd t0, 328(t1)
+	sd t0, 336(t1)
+	sd t0, 344(t1)
+	sd t0, 352(t1)
+	sd t0, 360(t1)
+	sd t0, 368(t1)
+	sd t0, 376(t1)
+	sd t0, 384(t1)
+	sd t0, 392(t1)
+	sd t0, 400(t1)
+	sd t0, 408(t1)
+	sd t0, 416(t1)
+	sd t0, 424(t1)
+	sd t0, 432(t1)
+	sd t0, 440(t1)
+	sd t0, 448(t1)
+	sd t0, 456(t1)
+	sd t0, 464(t1)
+	sd t0, 472(t1)
+	sd t0, 480(t1)
+	sd t0, 488(t1)
+	sd t0, 496(t1)
+	sd t0, 504(t1)
+	sd t0, 512(t1)
+	sd t0, 520(t1)
+	sd t0, 528(t1)
+	sd t0, 536(t1)
+	sd t0, 544(t1)
+	sd t0, 552(t1)
+	sd t0, 560(t1)
+	sd t0, 568(t1)
+	sd t0, 576(t1)
+	sd t0, 584(t1)
+	sd t0, 1120(t1)
+	sd t0, 1128(t1)
+	sd t0, 1136(t1)
+	sd t0, 1144(t1)
+	sd t0, 1152(t1)
+	sd t0, 1160(t1)
+	addi sp, sp, 1168
+	addi a1, zero, 0
+	addi a2, zero, 0
+	addi a3, zero, 0
+	addi a4, zero, 0
+	addi a5, zero, 0
+	addi a6, zero, 0
+	addi a7, zero, 0
+	addi t0, zero, 0
+	addi t1, zero, 0
+	addi t2, zero, 0
+	addi t3, zero, 0
+	addi t4, zero, 0
+	addi t5, zero, 0
+	addi t6, zero, 0
 	ret
 	.option pop

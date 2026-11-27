@@ -1,18 +1,144 @@
 module
 
 public import VerifiedGarbage.Proof.RsaOaep.Arm.DecVerified
-public import VerifiedGarbage.Proof.RsaOaep.Arm.DecBase
+public import VerifiedGarbage.Proof.RsaOaep.Arm.DecCall
 public import VerifiedGarbage.Proof.HashTable.Arm
 public import VerifiedGarbage.Proof.RsaOaep.Arm.DecP
 public import VerifiedGarbage.Proof.Rsa.PreKey
 import all Init.Data.Nat.Bitwise.Basic
 public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.RsaOaep.Arm.EncBody
-public import VerifiedGarbage.Proof.RsaOaep.Arm.EncChk
+public import VerifiedGarbage.Proof.RsaOaep.Arm.EncEm
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Callees
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
 import VerifiedGarbage.Proof.Framework.Arm.Syms
-public import VerifiedGarbage.Proof.RsaOaep.Arm.EncBase
+import VerifiedGarbage.Proof.RsaOaep.Arm.EncMask
+import VerifiedGarbage.Proof.RsaOaep.Arm.EncCall
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.RsaOaep.Arm.LabelT
+import VerifiedGarbage.Proof.RsaOaep.Arm.Calls
+import VerifiedGarbage.Proof.RsaPss.Arm.Step
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+meta import VerifiedGarbage.Impl.RsaOaep.Arm
+
+/-! ### `RsaOaep.Arm.EncBody`, which only this module used -/
+
+section
+
+/-!
+# RSAES-OAEP encryption with a precomputed public key on ARMv7: the body
+
+The digest length of the label's hash function's table (`len_vp`), and, for
+that length (`byLen_vp`), the checks, then zeros to `out` if the message
+does not fit (`fail_vp`), or `EM` (`em_vp`), its masks (`mask_vp`) and the
+call (`pa_vp`, `call_vp`): `body_vp`.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.RsaOaep.Arm.Enc
+
+open VG VG.Arm VG.Impl.RsaOaep.Arm VG.Proof.RsaPkcs1Sig.Arm VG.Proof.RsaPss.Arm VG.Proof.RsaOaep.Arm
+open VG.Proof.Rsa.Arm.Recover (VP)
+
+/-- Two runs of `(a; b); c` are two runs of `a; (b; c)`. -/
+theorem relCT_unassoc {P Q : State → State → Prop} {a b c : Prog isa}
+    (h : RelCT isa P (.seq a (.seq b c)) Q) : RelCT isa P (.seq (.seq a b) c) Q := by
+  intro s₁ s₂ t₁ t₂ s₁' s₂' hp e₁ e₂
+  cases e₁ with
+  | seq e₁ c₁ =>
+    cases e₁ with
+    | seq a₁ b₁ =>
+      cases e₂ with
+      | seq e₂ c₂ =>
+        cases e₂ with
+        | seq a₂ b₂ =>
+          obtain ⟨ht, hq⟩ := h _ _ _ _ _ _ hp (.seq a₁ (.seq b₁ c₁)) (.seq a₂ (.seq b₂ c₂))
+          simp only [List.append_assoc] at ht ⊢
+          exact ⟨ht, hq⟩
+
+theorem vp_unassoc {F G : State → State → Prop} {a b c : Prog isa} (h : VP F (.seq a (.seq b c)) G) :
+    VP F (.seq (.seq a b) c) G :=
+  ⟨fun σ s hs => WP.assoc' (h.wp σ s hs), relCT_unassoc h.ct⟩
+
+variable (h : OHash)
+
+/-- A stage, with what follows it, keeping the addresses of the statics. -/
+abbrev Sy (F : State → State → Prop) (σ s : State) : Prop := F σ s ∧ s.syms = σ.syms
+
+/-- After the checks, when the message fits, with the label's hash function
+`h` and MGF1's `g`. -/
+theorem main_vp (P : EP) (g : OHash) {f : Fns} (hT : ∀ σ, P.T σ → TabFacts g.H f P.tab P.ai P.au P.af σ)
+    (hTL : ∀ σ, P.TL σ → TabFacts h.H f P.tabL P.aiL P.auL P.afL σ)
+    (fne : f.init ≠ [] ∧ f.upd ≠ [] ∧ f.fin ≠ []) (c : PdImpl) :
+    VP (Sy (E0 h P)) (encMain h.H f c.name c.code) (Sy (Fin h g P)) := by
+  show VP _ (.seq (encEm h.H f) (.seq (.block (dbArgs h.H 3)) (.seq (mgfXor f 17) (.seq (.block (seedArgs h.H 3))
+    (.seq (mgfXor f 17) (.seq (.block pubArgs) (.call c.name c.code))))))) _
+  refine (em_vp h P hTL fne).seq (VP.assoc (VP.assoc (VP.assoc ?_)))
+  exact (vp_unassoc (vp_unassoc (mask_vp h g P hT fne))).seq (VP.syms ((pa_vp h g P).seq (call_vp h g P c)))
+
+/-- The digest length of the label's hash function's table to `r1`. -/
+theorem len_vp (P : EP) {f : Fns} (hTL : ∀ σ, P.TL σ → TabFacts h.H f P.tabL P.aiL P.auL P.afL σ) :
+    VP (S h P) (.block (lenLoad 16)) (fun σ s => S h P σ s ∧ s.gpr .r1 = BitVec.ofNat 32 h.H.D) := by
+  by_cases hP : ∃ σ, In h.H.D P σ
+  swap
+  · exact VP.empty fun σ s hs => hP ⟨σ, hs.1⟩
+  obtain ⟨σ₀, hi₀⟩ := hP
+  obtain ⟨tR, tRo, tC⟩ := tblL_of hi₀
+  show VP _ (.block ([Impl.RsaPss.Arm.ld .r1 (Impl.RsaPss.Arm.arg 16)] ++ [.ldr .r1 .r1 24])) _
+  refine VP.block_append (G := fun σ s => S h P σ s ∧ s.gpr .r1 = P.tabL)
+    (VP.ldrSp (c := [(.r1, Impl.RsaPss.Arm.arg 16)]) (fun _ _ _ _ h₁ h₂ => h₁.2.sp.trans h₂.2.sp.symm)
+      fun σ s hs => ?_)
+    (VP.taint [.r1] lenWord_cert (fun _ _ _ _ h₁ h₂ r hr => ?_) fun σ s hs => ?_)
+  · obtain ⟨hi, st⟩ := id hs
+    obtain ⟨a16, r16, v16⟩ := argAt hi st (j := 16) (by decide)
+    replace v16 : s.mem.readW ((P.lay h.H.D).fr (Impl.RsaPss.Arm.arg 16)) 32 = P.tabL := v16
+    have hw : WP isa (.block [.ldrSp .r1 (Impl.RsaPss.Arm.arg 16)]) s fun t => t = s.setReg .r1 P.tabL := by
+      apply WP.of_runBlock
+      simp only [runBlock_cons, exec, arg_lt (show 16 < 18 by decide), ↓reduceIte, State.load32, st.sp, a16,
+        r16, v16, Option.map_some, runStep_some, runBlock_nil]
+      simp
+    refine WP.mono hw fun t e => ?_
+    subst e
+    exact ⟨⟨hi, st.regs rfl rfl rfl rfl⟩, by simp only [VG.Arm.RegUpd.gpr_setReg, ↓reduceIte]⟩
+  · simp only [List.mem_singleton] at hr; subst hr; rw [h₁.2, h₂.2]
+  · obtain ⟨⟨hi, st⟩, h1⟩ := hs
+    have T := hTL σ hi.tabTL
+    refine WP.mono (wp_ldrT (by decide) h1 (St_roR st tRo (tC 24 (by decide)))
+      ((St_roW st tRo (tC 24 (by decide))).trans T.d)) fun t e => ?_
+    subst e
+    exact ⟨⟨hi, st.regs rfl rfl rfl rfl⟩, by simp only [VG.Arm.RegUpd.gpr_setReg, ↓reduceIte]⟩
+
+/-- The tail for a digest length, which is all it uses of the hash
+function's shape. -/
+theorem encTail_D {G G' : Impl.Pbkdf2.Stream.Arm.Hash} (hD : G.D = G'.D) (f : Fns) (n : String) (c : Prog isa) :
+    encTail G f n c = encTail G' f n c := by
+  simp only [encTail, encMain, encEm, encChk, seedSet, lhSet, dbArgs, seedArgs, hD]
+
+/-- The body. -/
+theorem body_vp (P : EP) (g : OHash) {f : Fns} (hT : ∀ σ, P.T σ → TabFacts g.H f P.tab P.ai P.au P.af σ)
+    (hTL : ∀ σ, P.TL σ → TabFacts h.H f P.tabL P.aiL P.auL P.afL σ)
+    (fne : f.init ≠ [] ∧ f.upd ≠ [] ∧ f.fin ≠ []) (c : PdImpl) :
+    VP (Sy (S h P)) (encBody f c.name c.code) (Sy (Fin h g P)) := by
+  show VP _ (.seq (.block (lenLoad 16)) (byLen (fun d => encTail (ofLen d) f c.name c.code) lens)) _
+  refine (VP.syms (len_vp h P hTL)).seq (byLen_vp (D := h.H.D) (by have := h.D_le; omega_using [this]) (fun _ _ hs => hs.1.2)
+    (fun σ s v ⟨⟨⟨hi, st⟩, r1⟩, sy⟩ => ⟨⟨⟨hi, st.regs rfl rfl rfl rfl⟩, r1⟩, sy⟩) ?_ h.lens lens_certs)
+  show VP _ (encTail (ofLen h.H.D) f c.name c.code) _
+  rw [encTail_D (G := ofLen h.H.D) (G' := h.H) rfl]
+  show VP _ (.seq (.block (encChk h.H)) (.ite .ne encFail (encMain h.H f c.name c.code))) _
+  refine ((VP.syms (chk_vp h P)).mono (fun _ _ ⟨⟨s', _⟩, sy⟩ => ⟨s', sy⟩) fun _ _ x => x).seq
+    (VP.ite (fun _ _ _ _ h₁ h₂ => by
+      rw [VG.Proof.X25519.Arm.eval_ne, VG.Proof.X25519.Arm.eval_ne, h₁.1.2.2, h₂.1.2.2])
+    ((VP.syms (fail_vp h g P)).mono (fun _ _ ⟨⟨a, b⟩, c⟩ => ⟨⟨a, c⟩, b⟩) fun _ _ x => x) ?_)
+  refine (main_vp h P g hT hTL fne c).mono (fun σ s ⟨⟨⟨hc, hi, z⟩, sy⟩, e⟩ => ⟨⟨hc, hi, ?_⟩, sy⟩) fun _ _ hh => hh
+  rw [VG.Proof.X25519.Arm.eval_ne, z] at e
+  simpa using e
+
+end VG.Proof.RsaOaep.Arm.Enc
+
+end
+
+end
 
 /-! ### `RsaOaep.Arm.DecSat`, which only this module used -/
 
@@ -73,29 +199,29 @@ def satState : State where
 theorem dec_sat {vs : List TVar} {w : TVar} (hw : w ∈ vs) (hl : (names vs).length < 2 ^ 24) :
     ∃ s, (spec (tables vs)).pre s := by
   refine ⟨withTable satState vs w, ?_⟩
-  have hA : ∀ j < 21, (stackArgAddr satState j).toNat + 4 ≤ 0x300000 := by decide
-  have a0 : stackArg (withTable satState vs w) 0 = 64 := (withTable_below _ _ _ (hA 0 (by decide))).trans (by decide)
-  have a1 : stackArg (withTable satState vs w) 1 = 0x2100 := (withTable_below _ _ _ (hA 1 (by decide))).trans (by decide)
-  have a2 : stackArg (withTable satState vs w) 2 = 1 := (withTable_below _ _ _ (hA 2 (by decide))).trans (by decide)
-  have a3 : stackArg (withTable satState vs w) 3 = 0x3100 := (withTable_below _ _ _ (hA 3 (by decide))).trans (by decide)
-  have a4 : stackArg (withTable satState vs w) 4 = 1 := (withTable_below _ _ _ (hA 4 (by decide))).trans (by decide)
-  have a5 : stackArg (withTable satState vs w) 5 = 0x3200 := (withTable_below _ _ _ (hA 5 (by decide))).trans (by decide)
-  have a6 : stackArg (withTable satState vs w) 6 = 1 := (withTable_below _ _ _ (hA 6 (by decide))).trans (by decide)
-  have a7 : stackArg (withTable satState vs w) 7 = 0x3300 := (withTable_below _ _ _ (hA 7 (by decide))).trans (by decide)
-  have a8 : stackArg (withTable satState vs w) 8 = 1 := (withTable_below _ _ _ (hA 8 (by decide))).trans (by decide)
-  have a9 : stackArg (withTable satState vs w) 9 = 0x3400 := (withTable_below _ _ _ (hA 9 (by decide))).trans (by decide)
-  have a10 : stackArg (withTable satState vs w) 10 = 1 := (withTable_below _ _ _ (hA 10 (by decide))).trans (by decide)
-  have a11 : stackArg (withTable satState vs w) 11 = 0x3500 := (withTable_below _ _ _ (hA 11 (by decide))).trans (by decide)
-  have a12 : stackArg (withTable satState vs w) 12 = 1 := (withTable_below _ _ _ (hA 12 (by decide))).trans (by decide)
-  have a13 : stackArg (withTable satState vs w) 13 = 0x3600 := (withTable_below _ _ _ (hA 13 (by decide))).trans (by decide)
-  have a14 : stackArg (withTable satState vs w) 14 = 0 := (withTable_below _ _ _ (hA 14 (by decide))).trans (by decide)
-  have a15 : stackArg (withTable satState vs w) 15 = 0x3700 := (withTable_below _ _ _ (hA 15 (by decide))).trans (by decide)
-  have a16 : stackArg (withTable satState vs w) 16 = 64 := (withTable_below _ _ _ (hA 16 (by decide))).trans (by decide)
-  have a17 : stackArg (withTable satState vs w) 17 = 0x10000 := (withTable_below _ _ _ (hA 17 (by decide))).trans (by decide)
-  have a18 : stackArg (withTable satState vs w) 18 = 0x820 := (withTable_below _ _ _ (hA 18 (by decide))).trans (by decide)
-  have a19 : stackArg (withTable satState vs w) 19 = 0x300000 := (withTable_below _ _ _ (hA 19 (by decide))).trans (by decide)
-  have a20 : stackArg (withTable satState vs w) 20 = 0x300000 := (withTable_below _ _ _ (hA 20 (by decide))).trans (by decide)
-  have e : stackArgAddr (withTable satState vs w) 0 = 0x8000 := show stackArgAddr satState 0 = _ by decide
+  obtain hA : ∀ j < 21, (stackArgAddr satState j).toNat + 4 ≤ 0x300000 := by decide
+  obtain a0 : stackArg (withTable satState vs w) 0 = 64 := (withTable_below _ _ _ (hA 0 (by decide))).trans (by decide)
+  obtain a1 : stackArg (withTable satState vs w) 1 = 0x2100 := (withTable_below _ _ _ (hA 1 (by decide))).trans (by decide)
+  obtain a2 : stackArg (withTable satState vs w) 2 = 1 := (withTable_below _ _ _ (hA 2 (by decide))).trans (by decide)
+  obtain a3 : stackArg (withTable satState vs w) 3 = 0x3100 := (withTable_below _ _ _ (hA 3 (by decide))).trans (by decide)
+  obtain a4 : stackArg (withTable satState vs w) 4 = 1 := (withTable_below _ _ _ (hA 4 (by decide))).trans (by decide)
+  obtain a5 : stackArg (withTable satState vs w) 5 = 0x3200 := (withTable_below _ _ _ (hA 5 (by decide))).trans (by decide)
+  obtain a6 : stackArg (withTable satState vs w) 6 = 1 := (withTable_below _ _ _ (hA 6 (by decide))).trans (by decide)
+  obtain a7 : stackArg (withTable satState vs w) 7 = 0x3300 := (withTable_below _ _ _ (hA 7 (by decide))).trans (by decide)
+  obtain a8 : stackArg (withTable satState vs w) 8 = 1 := (withTable_below _ _ _ (hA 8 (by decide))).trans (by decide)
+  obtain a9 : stackArg (withTable satState vs w) 9 = 0x3400 := (withTable_below _ _ _ (hA 9 (by decide))).trans (by decide)
+  obtain a10 : stackArg (withTable satState vs w) 10 = 1 := (withTable_below _ _ _ (hA 10 (by decide))).trans (by decide)
+  obtain a11 : stackArg (withTable satState vs w) 11 = 0x3500 := (withTable_below _ _ _ (hA 11 (by decide))).trans (by decide)
+  obtain a12 : stackArg (withTable satState vs w) 12 = 1 := (withTable_below _ _ _ (hA 12 (by decide))).trans (by decide)
+  obtain a13 : stackArg (withTable satState vs w) 13 = 0x3600 := (withTable_below _ _ _ (hA 13 (by decide))).trans (by decide)
+  obtain a14 : stackArg (withTable satState vs w) 14 = 0 := (withTable_below _ _ _ (hA 14 (by decide))).trans (by decide)
+  obtain a15 : stackArg (withTable satState vs w) 15 = 0x3700 := (withTable_below _ _ _ (hA 15 (by decide))).trans (by decide)
+  obtain a16 : stackArg (withTable satState vs w) 16 = 64 := (withTable_below _ _ _ (hA 16 (by decide))).trans (by decide)
+  obtain a17 : stackArg (withTable satState vs w) 17 = 0x10000 := (withTable_below _ _ _ (hA 17 (by decide))).trans (by decide)
+  obtain a18 : stackArg (withTable satState vs w) 18 = 0x820 := (withTable_below _ _ _ (hA 18 (by decide))).trans (by decide)
+  obtain a19 : stackArg (withTable satState vs w) 19 = 0x300000 := (withTable_below _ _ _ (hA 19 (by decide))).trans (by decide)
+  obtain a20 : stackArg (withTable satState vs w) 20 = 0x300000 := (withTable_below _ _ _ (hA 20 (by decide))).trans (by decide)
+  obtain e : stackArgAddr (withTable satState vs w) 0 = 0x8000 := show stackArgAddr satState 0 = _ by decide
   sig_pre [Spec.RsaOaep.decryptMdTablesContract, Spec.RsaOaep.decryptMdTablesSig, Spec.RsaOaep.decryptSig,
     Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Abi.withTables, Sig.wordIndex,
     abi, argRegs, reduceClassify, Loc.val]
@@ -157,10 +283,10 @@ theorem putWs32_byte {m : Mem} {a : Addr} : ∀ {p : Addr} {ws : List (BitVec 64
   | _, [], _, _ => rfl
   | p, w :: ws, h, hp => by
     simp only [List.length_cons] at hp
-    have h4 := add4_toNat (p := p) (by omega_using [hp])
+    obtain h4 := add4_toNat (p := p) (by omega_using [hp])
     simp only [putWs32]
     rw [putWs32_byte (by rw [h4]; omega_using [h]) (by rw [h4]; omega_using [hp])]
-    have hne : ¬ (a - p).toNat < 32 / 8 := by
+    obtain hne : ¬ (a - p).toNat < 32 / 8 := by
       rw [BitVec.toNat_sub, Nat.mod_eq_of_lt (by omega_using [h])]; omega_using [hp]
     simp only [Mem.writeW, Mem.write, hne, ↓reduceIte]
 
@@ -170,9 +296,9 @@ theorem satP_key (vs : List TVar) (w : TVar) :
       (Spec.Rsa.bytesAt (withTable satStateP vs w).mem 0x4300 32) =
     some (Spec.Rsa.wordsAt (withTable satStateP vs w).mem 0x4800 24) :=
   key_pre_of fun a ha => by
-    have hk : a.toNat < 0x48C0 := by
+    obtain hk : a.toNat < 0x48C0 := by
       simp only [keyIn, Bool.or_eq_true, Bool.and_eq_true, Nat.ble_eq, Nat.blt_eq] at ha; omega
-    have h2 : (Nat.ble 0x8000 a.toNat && Nat.blt a.toNat 0x805C) = false := by
+    obtain h2 : (Nat.ble 0x8000 a.toNat && Nat.blt a.toNat 0x805C) = false := by
       rw [Bool.eq_false_iff]; intro h; simp only [Bool.and_eq_true, Nat.ble_eq] at h; omega
     show putWs32 satMemP 0x300000 (VG.Proof.HashTable.Arm.twL vs w) a = keyMem a
     rw [putWs32_byte (by show a.toNat < 0x300000; omega_using [hk]) (VG.Proof.HashTable.Arm.twL_room vs w)]
@@ -182,10 +308,10 @@ theorem satP_key (vs : List TVar) (w : TVar) :
 theorem dec_satP {vs : List TVar} {w : TVar} (hw : w ∈ vs) (hl : (names vs).length < 2 ^ 24) :
     ∃ s, (specP (tables vs)).pre s := by
   refine ⟨withTable satStateP vs w, ?_⟩
-  have hA : ∀ j < 23, (stackArgAddr satStateP j).toNat + 4 ≤ 0x300000 := by decide
-  have hb : ∀ j < 23, stackArg (withTable satStateP vs w) j = BitVec.ofNat 32 (satArgsP.getD j 0) :=
+  obtain hA : ∀ j < 23, (stackArgAddr satStateP j).toNat + 4 ≤ 0x300000 := by decide
+  obtain hb : ∀ j < 23, stackArg (withTable satStateP vs w) j = BitVec.ofNat 32 (satArgsP.getD j 0) :=
     fun j hj => (withTable_below _ _ _ (hA j hj)).trans (satP_args j hj)
-  have e : stackArgAddr (withTable satStateP vs w) 0 = 0x8000 := show stackArgAddr satStateP 0 = _ by decide
+  obtain e : stackArgAddr (withTable satStateP vs w) 0 = 0x8000 := show stackArgAddr satStateP 0 = _ by decide
   sig_pre [Spec.RsaOaep.decryptPrecomputedMdTablesContract, Spec.RsaOaep.decryptPrecomputedMdTablesSig,
     Spec.RsaOaep.decryptSig, Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns,
     Abi.withTables, Sig.wordIndex, abi, argRegs, reduceClassify, Loc.val]
@@ -276,19 +402,19 @@ theorem entered_state (hc : Coh vs) {s s' : State} (hs : (espec vs).pre s) {w w�
     (hsy : ∀ n ∈ names vs, s.syms n = s'.syms n) :
     Sy (S w₁.g (epw (vs := vs) s s' w w₁)) (entered frameBytes s) (entered frameBytes s) := by
   obtain ⟨-, -, hpw, hfitL, hfit⟩ := spec_tab hs
-  have hpw' := hpw.sublist (List.sublist_append_left _ _)
-  have hsp' : 56 + frameBytes ≤ s.sp.toNat := by have := spec_sp hs; simp only [stackBytes] at this; omega_using [this]
-  have hHa := hashAt_tableOf hfitL (held_tableOf hfitL hhL).2.1
-  have ok := (in_of_pre (ai := 0) (au := 0) (af := 0) (T := fun _ => True) (aiL := 0) (auL := 0) (afL := 0)
+  obtain hpw' := hpw.sublist (List.sublist_append_left _ _)
+  obtain hsp' : 56 + frameBytes ≤ s.sp.toNat := by have := spec_sp hs; simp only [stackBytes] at this; omega_using [this]
+  obtain hHa := hashAt_tableOf hfitL (held_tableOf hfitL hhL).2.1
+  obtain ok := (in_of_pre (ai := 0) (au := 0) (af := 0) (T := fun _ => True) (aiL := 0) (auL := 0) (afL := 0)
     (TL := fun _ => True) hs hHa trivial trivial).ok
   rw [ep_lay] at ok
-  have hn := Proof.HashTable.Arm.mem_names hw
-  have hnL := Proof.HashTable.Arm.mem_names hw₁
-  have tf := tabFacts_entered ok hsp' (p := stackArg s 13) (by simp [ep]) hfit hc hpw' hw hh
-  have tfL := tabFacts_entered ok hsp' (p := stackArg s 12) (by simp [ep]) hfitL hc hpw' hw₁ hhL
+  obtain hn := Proof.HashTable.Arm.mem_names hw
+  obtain hnL := Proof.HashTable.Arm.mem_names hw₁
+  obtain tf := tabFacts_entered ok hsp' (p := stackArg s 13) (by simp [ep]) hfit hc hpw' hw hh
+  obtain tfL := tabFacts_entered ok hsp' (p := stackArg s 12) (by simp [ep]) hfitL hc hpw' hw₁ hhL
   rw [hsy _ hn.1, hsy _ hn.2.1, hsy _ hn.2.2] at tf
   rw [hsy _ hnL.1, hsy _ hnL.2.1, hsy _ hnL.2.2] at tfL
-  have hi := in_of_pre (ai := s'.syms w.g.H.initN) (au := s'.syms w.g.H.updN) (af := s'.syms w.g.H.finN)
+  obtain hi := in_of_pre (ai := s'.syms w.g.H.initN) (au := s'.syms w.g.H.updN) (af := s'.syms w.g.H.finN)
     (aiL := s'.syms w₁.g.H.initN) (auL := s'.syms w₁.g.H.updN) (afL := s'.syms w₁.g.H.finN) hs hHa tf tfL
   rw [w₁.g.glen] at hi
   exact ⟨⟨hi, ⟨hi.ok, hi.ok.sp, rfl, rfl, Frame.refl _ _⟩⟩, rfl⟩
@@ -298,16 +424,24 @@ theorem code_ok (hc : Coh vs) (c : PdImpl) {s : State} (hs : (espec vs).pre s) :
   obtain ⟨⟨T₁, hT₁, hhL⟩, ⟨T, hT, hh⟩, -, hfitL, hfit⟩ := spec_tab hs
   obtain ⟨w₁, hw₁, rfl⟩ := List.mem_map.mp hT₁
   obtain ⟨w, hw, rfl⟩ := List.mem_map.mp hT
-  have hidx := (held_tableOf hfit hh).2.1
-  have hidxL := (held_tableOf hfitL hhL).2.1
-  have st := entered_state hc hs hw hw₁ hh hhL (s' := s) fun _ _ => rfl
+  obtain hidx := (held_tableOf hfit hh).2.1
+  obtain hidxL := (held_tableOf hfitL hhL).2.1
+  obtain st := entered_state hc hs hw hw₁ hh hhL (s' := s) fun _ _ => rfl
   have hin := st.1.1
-  have hsp := spec_sp hs
-  have hsp' : 56 + frameBytes ≤ s.sp.toNat := by simp only [stackBytes] at hsp; omega_using [hsp]
+  obtain hsp := spec_sp hs
+  obtain hsp' : 56 + frameBytes ≤ s.sp.toNat := by simp only [stackBytes] at hsp; omega_using [hsp]
   refine WP.mono (wrap_ok (by decide) (by omega_using [hsp']) (W := ((epw (vs := vs) s s w w₁).lay w₁.g.H.D).W)
     (Q := fun r m => Res w₁.g w.g (epw (vs := vs) s s w w₁) (entered frameBytes s) m r) (fun r hr => ?_)
     (WP.mono ((body_vp w₁.g (epw (vs := vs) s s w w₁) w.g (fun _ x => x) (fun _ x => x) (fne_of hw) c).wp _ _ st)
-      fun u hu => ⟨hu.1.1.2.frame, hu.1.2⟩)) fun t ⟨abi, res⟩ => ⟨abi, ?_⟩
+      fun u hu => ⟨hu.1.1.2.frame, hu.1.2⟩)
+    (hQ := fun _ m₁ m₂ hf hres hp => by
+      have fit := hin.ok.fits (epw (vs := vs) s s w w₁).OUT (List.mem_append_right _ List.mem_cons_self)
+      exact written_frame hf
+        (released_apart (F := frameBytes) (A := 56) (argv := (epw (vs := vs) s s w w₁).argv)
+          (ro := ((epw (vs := vs) s s w w₁).lay w₁.g.H.D).ro) (rw := ((epw (vs := vs) s s w w₁).lay w₁.g.H.D).rw)
+          hin.ok hsp' (R := (epw (vs := vs) s s w w₁).OUT) (Or.inr (by simp)))
+        (by change (epw (vs := vs) s s w w₁).OUT.len ≤ 2 ^ 64; omega_using [fit]) (hres hp)))
+    fun t ⟨abi, res⟩ => ⟨abi, ?_⟩
   · rw [pushRegion_eq (F := frameBytes) (A := 56) (argv := (epw (vs := vs) s s w w₁).argv)
       (ro := ((epw (vs := vs) s s w w₁).lay w₁.g.H.D).ro) (rw := ((epw (vs := vs) s s w w₁).lay w₁.g.H.D).rw) hsp']
     exact hin.ok.push_apart r hr
@@ -321,16 +455,16 @@ theorem code_ok (hc : Coh vs) (c : PdImpl) {s : State} (hs : (espec vs).pre s) :
       Option.some.injEq] at hG
     subst hH hG
     rw [BitVec.setWidth_append_eq_right]
-    have ro := fun {R : Region} (hR : R ∈ ((epw (vs := vs) s s w w₁).lay w₁.g.H.D).ro) =>
+    obtain ro := fun {R : Region} (hR : R ∈ ((epw (vs := vs) s s w w₁).lay w₁.g.H.D).ro) =>
       entered_ro (F := frameBytes) (A := 56) (argv := (epw (vs := vs) s s w w₁).argv)
         (rw := ((epw (vs := vs) s s w w₁).lay w₁.g.H.D).rw) hin.ok hsp' hR
-    have hL : labB (epw (vs := vs) s s w w₁) (entered frameBytes s) =
+    obtain hL : labB (epw (vs := vs) s s w w₁) (entered frameBytes s) =
         Spec.Rsa.bytesAt s.mem (State.addr (stackArg s 2)) (stackArg s 3).toNat :=
       ro (R := (epw (vs := vs) s s w w₁).LAB) (by simp)
-    have hM : msgB (epw (vs := vs) s s w w₁) (entered frameBytes s) =
+    obtain hM : msgB (epw (vs := vs) s s w w₁) (entered frameBytes s) =
         Spec.Rsa.bytesAt s.mem (State.addr (stackArg s 4)) (stackArg s 5).toNat :=
       ro (R := (epw (vs := vs) s s w w₁).MSG) (by simp)
-    have hS : seedB w₁.g (epw (vs := vs) s s w w₁) (entered frameBytes s) = Spec.Rsa.bytesAt s.mem
+    obtain hS : seedB w₁.g (epw (vs := vs) s s w w₁) (entered frameBytes s) = Spec.Rsa.bytesAt s.mem
         (State.addr (stackArg s 6)) w₁.g.H.D := ro (R := (epw (vs := vs) s s w w₁).SEED w₁.g.H.D) (by simp)
     unfold Res at res
     rw [hL, hM, hS] at res
@@ -345,7 +479,7 @@ theorem code_ct (hc : Coh vs) (c : PdImpl) : ConstantTime isa (espec vs).pre (es
   obtain ⟨⟨T₁, hT₁, hhL₁⟩, ⟨T, hT, hh₁⟩, -, -, -⟩ := spec_tab h₁
   obtain ⟨w₁, hw₁, rfl⟩ := List.mem_map.mp hT₁
   obtain ⟨w, hw, rfl⟩ := List.mem_map.mp hT
-  have hsp1 := spec_sp h₁
+  obtain hsp1 := spec_sp h₁
   sig_pub [Spec.RsaOaep.encryptMdTablesContract, Spec.RsaOaep.encryptMdTablesSig,
       Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Abi.withTables, Sig.wordIndex,
       abi, argRegs, reduceClassify, Loc.val] at hp
@@ -353,14 +487,14 @@ theorem code_ct (hc : Coh vs) (c : PdImpl) : ConstantTime isa (espec vs).pre (es
     List.getD_cons_zero, Option.some.injEq] at hp
   obtain ⟨hsp, hsy, htabL, htab, hl, h0, h1, h2, h3, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12,
     a13⟩ := hp
-  have hh₂ := (htab _ _ rfl rfl _ hT).mp hh₁
-  have hhL₂ := (htabL _ _ rfl rfl _ hT₁).mp hhL₁
-  have hsy' : ∀ n ∈ names vs, s₂.syms n = s₁.syms n := fun n hn =>
+  obtain hh₂ := (htab _ _ rfl rfl _ hT).mp hh₁
+  obtain hhL₂ := (htabL _ _ rfl rfl _ hT₁).mp hhL₁
+  obtain hsy' : ∀ n ∈ names vs, s₂.syms n = s₁.syms n := fun n hn =>
     (hsy n (List.mem_append_left _ hn)).symm
-  have hep : epw (vs := vs) s₁ s₁ w w₁ = epw (vs := vs) s₂ s₁ w w₁ := by
+  obtain hep : epw (vs := vs) s₁ s₁ w w₁ = epw (vs := vs) s₂ s₁ w w₁ := by
     obtain ⟨hab, hw⟩ := List.append_inj hl (by simp [bytesAt_length, h3, a1])
     obtain ⟨hn, he⟩ := List.append_inj (map_toNat_inj hab) (by simp [bytesAt_length, h3])
-    have hw' := map_toNat_inj hw
+    obtain hw' := map_toNat_inj hw
     simp only [ep]
     rw [hsp, h0, h2, h3, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13]
     rw [h2, h3] at hn
@@ -445,80 +579,81 @@ def satState (D : Nat) : State where
 
 theorem encrypt_sat {vs : List TVar} {w : TVar} (hw : w ∈ vs) (hl : (names vs).length < 2 ^ 24) :
     ∃ s, (spec (tables vs)).pre s := by
-  have hha : ∀ s : State, Spec.MdHashTable.hashAt 32 (withTable s vs w).mem (State.addr (0x300000 : BitVec 32)) =
+  obtain hha : ∀ s : State, Spec.MdHashTable.hashAt 32 (withTable s vs w).mem (State.addr (0x300000 : BitVec 32)) =
       some w.g.G := fun s => hashAt_tableOf (by decide) (held_tableOf (by decide) (withTable_held s vs w)).2.1
-  have hl' : w.g.G.len ∈ Impl.RsaOaep.Arm.lens := w.g.glen ▸ w.g.lens
+  obtain hl' : w.g.G.len ∈ Impl.RsaOaep.Arm.lens := w.g.glen ▸ w.g.lens
   generalize hDd : w.g.G.len = D at hl'
   refine ⟨withTable (satState D) vs w, ?_⟩
-  have hA : ∀ D ∈ Impl.RsaOaep.Arm.lens, ∀ j < 14, (stackArgAddr (satState D) j).toNat + 4 ≤ 0x300000 := by decide
-  have hA' := hA D hl'
-  have a0 : stackArg (withTable (satState D) vs w) 0 = 0x2100 :=
+  obtain hA : ∀ D ∈ Impl.RsaOaep.Arm.lens, ∀ j < 14, (stackArgAddr (satState D) j).toNat + 4 ≤ 0x300000 := by decide
+  obtain hA' := hA D hl'
+  obtain a0 : stackArg (withTable (satState D) vs w) 0 = 0x2100 :=
     (withTable_below _ _ _ (hA' 0 (by decide))).trans
       ((show ∀ D ∈ Impl.RsaOaep.Arm.lens, stackArg (satState D) 0 = 0x2100 by decide) D hl')
-  have a1 : stackArg (withTable (satState D) vs w) 1 = 1 :=
+  obtain a1 : stackArg (withTable (satState D) vs w) 1 = 1 :=
     (withTable_below _ _ _ (hA' 1 (by decide))).trans
       ((show ∀ D ∈ Impl.RsaOaep.Arm.lens, stackArg (satState D) 1 = 1 by decide) D hl')
-  have a2 : stackArg (withTable (satState D) vs w) 2 = 0x3000 :=
+  obtain a2 : stackArg (withTable (satState D) vs w) 2 = 0x3000 :=
     (withTable_below _ _ _ (hA' 2 (by decide))).trans
       ((show ∀ D ∈ Impl.RsaOaep.Arm.lens, stackArg (satState D) 2 = 0x3000 by decide) D hl')
-  have a3 : stackArg (withTable (satState D) vs w) 3 = 0 :=
+  obtain a3 : stackArg (withTable (satState D) vs w) 3 = 0 :=
     (withTable_below _ _ _ (hA' 3 (by decide))).trans
       ((show ∀ D ∈ Impl.RsaOaep.Arm.lens, stackArg (satState D) 3 = 0 by decide) D hl')
-  have a4 : stackArg (withTable (satState D) vs w) 4 = 0x3100 :=
+  obtain a4 : stackArg (withTable (satState D) vs w) 4 = 0x3100 :=
     (withTable_below _ _ _ (hA' 4 (by decide))).trans
       ((show ∀ D ∈ Impl.RsaOaep.Arm.lens, stackArg (satState D) 4 = 0x3100 by decide) D hl')
-  have a5 : stackArg (withTable (satState D) vs w) 5 = 0 :=
+  obtain a5 : stackArg (withTable (satState D) vs w) 5 = 0 :=
     (withTable_below _ _ _ (hA' 5 (by decide))).trans
       ((show ∀ D ∈ Impl.RsaOaep.Arm.lens, stackArg (satState D) 5 = 0 by decide) D hl')
-  have a6 : stackArg (withTable (satState D) vs w) 6 = 0x3200 :=
+  obtain a6 : stackArg (withTable (satState D) vs w) 6 = 0x3200 :=
     (withTable_below _ _ _ (hA' 6 (by decide))).trans
       ((show ∀ D ∈ Impl.RsaOaep.Arm.lens, stackArg (satState D) 6 = 0x3200 by decide) D hl')
-  have a7 : stackArg (withTable (satState D) vs w) 7 = BitVec.ofNat 32 D :=
+  obtain a7 : stackArg (withTable (satState D) vs w) 7 = BitVec.ofNat 32 D :=
     (withTable_below _ _ _ (hA' 7 (by decide))).trans
       ((show ∀ D ∈ Impl.RsaOaep.Arm.lens, stackArg (satState D) 7 = BitVec.ofNat 32 D by decide) D hl')
-  have a8 : stackArg (withTable (satState D) vs w) 8 = 0x10000 :=
+  obtain a8 : stackArg (withTable (satState D) vs w) 8 = 0x10000 :=
     (withTable_below _ _ _ (hA' 8 (by decide))).trans
       ((show ∀ D ∈ Impl.RsaOaep.Arm.lens, stackArg (satState D) 8 = 0x10000 by decide) D hl')
-  have a9 : stackArg (withTable (satState D) vs w) 9 = 0x820 :=
+  obtain a9 : stackArg (withTable (satState D) vs w) 9 = 0x820 :=
     (withTable_below _ _ _ (hA' 9 (by decide))).trans
       ((show ∀ D ∈ Impl.RsaOaep.Arm.lens, stackArg (satState D) 9 = 0x820 by decide) D hl')
-  have a10 : stackArg (withTable (satState D) vs w) 10 = 0x7000 :=
+  obtain a10 : stackArg (withTable (satState D) vs w) 10 = 0x7000 :=
     (withTable_below _ _ _ (hA' 10 (by decide))).trans
       ((show ∀ D ∈ Impl.RsaOaep.Arm.lens, stackArg (satState D) 10 = 0x7000 by decide) D hl')
-  have a11 : stackArg (withTable (satState D) vs w) 11 = 16 :=
+  obtain a11 : stackArg (withTable (satState D) vs w) 11 = 16 :=
     (withTable_below _ _ _ (hA' 11 (by decide))).trans
       ((show ∀ D ∈ Impl.RsaOaep.Arm.lens, stackArg (satState D) 11 = 16 by decide) D hl')
-  have a12 : stackArg (withTable (satState D) vs w) 12 = 0x300000 :=
+  obtain a12 : stackArg (withTable (satState D) vs w) 12 = 0x300000 :=
     (withTable_below _ _ _ (hA' 12 (by decide))).trans
       ((show ∀ D ∈ Impl.RsaOaep.Arm.lens, stackArg (satState D) 12 = 0x300000 by decide) D hl')
-  have a13 : stackArg (withTable (satState D) vs w) 13 = 0x300000 :=
+  obtain a13 : stackArg (withTable (satState D) vs w) 13 = 0x300000 :=
     (withTable_below _ _ _ (hA' 13 (by decide))).trans
       ((show ∀ D ∈ Impl.RsaOaep.Arm.lens, stackArg (satState D) 13 = 0x300000 by decide) D hl')
   have e : stackArgAddr (withTable (satState D) vs w) 0 = 0x8000 := rfl
-  have hha' := hha (satState D)
+  obtain hha' := hha (satState D)
   simp only [Impl.RsaOaep.Arm.lens, List.mem_cons, List.not_mem_nil, or_false] at hl'
-  rcases hl' with rfl | rfl | rfl | rfl | rfl | rfl
-  all_goals
-    sig_pre [Spec.RsaOaep.encryptMdTablesContract, Spec.RsaOaep.encryptMdTablesSig, Spec.RsaOaep.seedLenMdOk,
-      Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Abi.withTables, Sig.wordIndex,
-      abi, argRegs, reduceClassify, Loc.val]
-    simp only [String.reduceEq, ↓reduceIte, Option.map_some, Nat.reduceAdd, List.getD_cons_succ,
-      List.getD_cons_zero, Option.some.injEq, exists_eq_left', a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11,
-      a12, a13, e]
-    sig_pre [Spec.RsaOaep.encryptMdTablesContract, Spec.RsaOaep.encryptMdTablesSig, Spec.RsaOaep.seedLenMdOk,
-      Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Abi.withTables, Sig.wordIndex,
-      abi, argRegs, reduceClassify, Loc.val]
-    sig_and_intros
-    all_goals first
-      | exact ⟨tableOf w, List.mem_map_of_mem hw, held_twL _ _ _ rfl⟩
-      | rfl
-      | decide
-      | exact Region.disjoint_of_sep (by decide)
-      | (intro H' hH'
-         obtain rfl := Option.some.inj (hha'.symm.trans hH')
-         rw [hDd]; rfl)
-      | (rw [List.append_eq, List.append_eq, List.append_nil]; exact symsOf32_distinct2 hl)
-      | (simp only [Spec.Rsa.lenValid]; decide)
+  -- The precondition is evaluated once, for any `D`: only the conjuncts that mention `D` are split by it.
+  sig_pre [Spec.RsaOaep.encryptMdTablesContract, Spec.RsaOaep.encryptMdTablesSig, Spec.RsaOaep.seedLenMdOk,
+    Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Abi.withTables, Sig.wordIndex,
+    abi, argRegs, reduceClassify, Loc.val]
+  simp only [String.reduceEq, ↓reduceIte, Option.map_some, Nat.reduceAdd, List.getD_cons_succ,
+    List.getD_cons_zero, Option.some.injEq, exists_eq_left', a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11,
+    a12, a13, e]
+  sig_pre [Spec.RsaOaep.encryptMdTablesContract, Spec.RsaOaep.encryptMdTablesSig, Spec.RsaOaep.seedLenMdOk,
+    Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Abi.withTables, Sig.wordIndex,
+    abi, argRegs, reduceClassify, Loc.val]
+  sig_and_intros
+  all_goals first
+    | exact ⟨tableOf w, List.mem_map_of_mem hw, held_twL _ _ _ rfl⟩
+    | with_reducible rfl
+    | (rw [List.append_eq, List.append_eq, List.append_nil]; exact symsOf32_distinct2 hl)
+    | (rcases hl' with rfl | rfl | rfl | rfl | rfl | rfl <;> first
+        | rfl
+        | decide
+        | exact Region.disjoint_of_sep (by decide)
+        | (intro H' hH'
+           obtain rfl := Option.some.inj (hha'.symm.trans hH')
+           rw [hDd]; rfl)
+        | (simp only [Spec.Rsa.lenValid]; decide))
 
 end VG.Proof.RsaOaep.Arm.Enc
 

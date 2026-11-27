@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Sha256.init224Contract`. The streaming state is the hash value followed by a buffered partial block (`VG.Spec.Sha256.ReprFrom`).
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 96 bytes.
@@ -38,6 +40,12 @@ str r12, [r0, #24]
 movw r12, #20388
 movt r12, #48890
 str r12, [r0, #28]
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
     )
 }
@@ -46,20 +54,22 @@ bx lr",
 ///
 /// Contract: `VG.Spec.Sha256.finalize224Contract`. Constant time: only the pointers and `count` may affect timing, not the state.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 96 bytes.
 /// * `out` must be valid for reads and writes of 28 bytes.
 /// * The contents of `state` on return are unspecified.
 /// * `state` and `out` must not overlap each other or the arguments on the stack (distinct Rust objects never do).
-/// * Neither `state` nor `out` may overlap the 624 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `out` may overlap the 176 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha224_finalize(state: *mut [u8; 96], count: u64, out: *mut [u8; 28]) {
     core::arch::naked_asm!(
-        r"sub sp, sp, #624
+        r"sub sp, sp, #176
 add r12, sp, #0
 str lr, [r12, #8]
-ldr lr, [sp, #624]
+ldr lr, [sp, #176]
 str lr, [r12, #0]
 add lr, sp, #12
 str lr, [r12, #4]
@@ -153,7 +163,34 @@ ldr r9, [r3, #132]
 ldr r10, [r3, #136]
 ldr r11, [r3, #140]
 ldr lr, [r3, #144]
-add sp, sp, #624
+add sp, sp, #176
+sub sp, sp, #176
+add r12, sp, #0
+mov r2, #0
+mov r3, #5
+28:
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+add r12, r12, #32
+subs r3, r3, #1
+bne 28b
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+add sp, sp, #176
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
         vg_sha256_compress = sym super::sha256::vg_sha256_compress::vg_sha256_compress,
     )
@@ -162,6 +199,8 @@ bx lr",
 /// Computes the SHA-224 digest of the `len` bytes at `data` (28 bytes, `VG.Spec.Sha256.sha224`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-224 computation with that message.
 ///
 /// Contract: `VG.Spec.Sha256.digestContract` for `VG.Spec.Sha256.sha224`. Constant time: only the pointers and `len` may affect timing, not the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -191,7 +230,7 @@ mov r5, r2
 movw r12, #196
 add r4, r11, r12
 mov r0, r4
-bl {vg_sha224_init}
+bl {vg_sha224_init_core}
 mov r0, r4
 mov r1, r8
 mov r7, r9
@@ -229,8 +268,12 @@ ldr r9, [r11, #180]
 ldr r10, [r11, #184]
 ldr lr, [r11, #188]
 ldr r11, [r11, #192]
+add sp, sp, #328
+sub sp, sp, #344
 add r12, sp, #0
 mov r2, #0
+mov r3, #10
+21:
 str r2, [r12, #0]
 str r2, [r12, #4]
 str r2, [r12, #8]
@@ -239,83 +282,24 @@ str r2, [r12, #16]
 str r2, [r12, #20]
 str r2, [r12, #24]
 str r2, [r12, #28]
-str r2, [r12, #32]
-str r2, [r12, #36]
-str r2, [r12, #40]
-str r2, [r12, #44]
-str r2, [r12, #48]
-str r2, [r12, #52]
-str r2, [r12, #56]
-str r2, [r12, #60]
-str r2, [r12, #64]
-str r2, [r12, #68]
-str r2, [r12, #72]
-str r2, [r12, #76]
-str r2, [r12, #80]
-str r2, [r12, #84]
-str r2, [r12, #88]
-str r2, [r12, #92]
-str r2, [r12, #96]
-str r2, [r12, #100]
-str r2, [r12, #104]
-str r2, [r12, #108]
-str r2, [r12, #112]
-str r2, [r12, #116]
-str r2, [r12, #120]
-str r2, [r12, #124]
-str r2, [r12, #128]
-str r2, [r12, #132]
-str r2, [r12, #136]
-str r2, [r12, #140]
-str r2, [r12, #144]
-str r2, [r12, #148]
-str r2, [r12, #152]
-str r2, [r12, #156]
-str r2, [r12, #160]
-str r2, [r12, #164]
-str r2, [r12, #168]
-str r2, [r12, #172]
-str r2, [r12, #176]
-str r2, [r12, #180]
-str r2, [r12, #184]
-str r2, [r12, #188]
-str r2, [r12, #192]
-str r2, [r12, #196]
-str r2, [r12, #200]
-str r2, [r12, #204]
-str r2, [r12, #208]
-str r2, [r12, #212]
-str r2, [r12, #216]
-str r2, [r12, #220]
-str r2, [r12, #224]
-str r2, [r12, #228]
-str r2, [r12, #232]
-str r2, [r12, #236]
-str r2, [r12, #240]
-str r2, [r12, #244]
-str r2, [r12, #248]
-str r2, [r12, #252]
-str r2, [r12, #256]
-str r2, [r12, #260]
-str r2, [r12, #264]
-str r2, [r12, #268]
-str r2, [r12, #272]
-str r2, [r12, #276]
-str r2, [r12, #280]
-str r2, [r12, #284]
-str r2, [r12, #288]
-str r2, [r12, #292]
-str r2, [r12, #296]
-str r2, [r12, #300]
-str r2, [r12, #304]
-str r2, [r12, #308]
-str r2, [r12, #312]
-str r2, [r12, #316]
-str r2, [r12, #320]
-str r2, [r12, #324]
-add sp, sp, #328
+add r12, r12, #32
+subs r3, r3, #1
+bne 21b
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+add sp, sp, #344
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
-        vg_sha224_init = sym super::sha256::vg_sha224_init,
+        vg_sha224_init_core = sym super::ecdsa_brainpoolp256r1::vg_sha224_init_core::vg_sha224_init_core,
         vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch::vg_sha256_update_scratch,
         vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch::vg_sha256_finalize_scratch,
     )
@@ -324,6 +308,8 @@ bx lr",
 /// Starts a SHA-256 computation: makes the streaming state `*state` represent the empty message.
 ///
 /// Contract: `VG.Spec.Sha256.initContract`. The streaming state is the hash value followed by a buffered partial block (`VG.Spec.Sha256.Repr`).
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -356,6 +342,12 @@ str r12, [r0, #24]
 movw r12, #52505
 movt r12, #23520
 str r12, [r0, #28]
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
     )
 }
@@ -364,21 +356,23 @@ bx lr",
 ///
 /// Contract: `VG.Spec.Sha256.updateContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 96 bytes.
 /// * `data` must be valid for reads of `len` bytes.
 /// * `state` must not overlap `data` or the arguments on the stack (distinct Rust objects never do).
-/// * Neither `state` nor `data` may overlap the 624 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `data` may overlap the 176 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha256_update(state: *mut [u8; 96], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
-        r"sub sp, sp, #624
+        r"sub sp, sp, #176
 add r12, sp, #0
 str lr, [r12, #12]
-ldr lr, [sp, #624]
+ldr lr, [sp, #176]
 str lr, [r12, #0]
-ldr lr, [sp, #628]
+ldr lr, [sp, #180]
 str lr, [r12, #4]
 add lr, sp, #16
 str lr, [r12, #8]
@@ -504,7 +498,34 @@ ldr r9, [r3, #132]
 ldr r10, [r3, #136]
 ldr r11, [r3, #140]
 ldr lr, [r3, #144]
-add sp, sp, #624
+add sp, sp, #176
+sub sp, sp, #176
+add r12, sp, #0
+mov r2, #0
+mov r3, #5
+223:
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+add r12, r12, #32
+subs r3, r3, #1
+bne 223b
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+add sp, sp, #176
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
         vg_sha256_compress = sym super::sha256::vg_sha256_compress::vg_sha256_compress,
     )
@@ -514,20 +535,22 @@ bx lr",
 ///
 /// Contract: `VG.Spec.Sha256.finalizeContract`. Constant time: only the pointers and `count` may affect timing, not the state.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 96 bytes.
 /// * `out` must be valid for reads and writes of 32 bytes.
 /// * The contents of `state` on return are unspecified.
 /// * `state` and `out` must not overlap each other or the arguments on the stack (distinct Rust objects never do).
-/// * Neither `state` nor `out` may overlap the 624 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `out` may overlap the 176 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha256_finalize(state: *mut [u8; 96], count: u64, out: *mut [u8; 32]) {
     core::arch::naked_asm!(
-        r"sub sp, sp, #624
+        r"sub sp, sp, #176
 add r12, sp, #0
 str lr, [r12, #8]
-ldr lr, [sp, #624]
+ldr lr, [sp, #176]
 str lr, [r12, #0]
 add lr, sp, #12
 str lr, [r12, #4]
@@ -624,7 +647,34 @@ ldr r9, [r3, #132]
 ldr r10, [r3, #136]
 ldr r11, [r3, #140]
 ldr lr, [r3, #144]
-add sp, sp, #624
+add sp, sp, #176
+sub sp, sp, #176
+add r12, sp, #0
+mov r2, #0
+mov r3, #5
+28:
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+add r12, r12, #32
+subs r3, r3, #1
+bne 28b
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+add sp, sp, #176
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
         vg_sha256_compress = sym super::sha256::vg_sha256_compress::vg_sha256_compress,
     )
@@ -633,6 +683,8 @@ bx lr",
 /// Computes the SHA-256 digest of the `len` bytes at `data` (32 bytes, `VG.Spec.Sha256.hash`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-256 computation with that message.
 ///
 /// Contract: `VG.Spec.Sha256.digestContract` for `VG.Spec.Sha256.hash`. Constant time: only the pointers and `len` may affect timing, not the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -662,7 +714,7 @@ mov r5, r2
 movw r12, #196
 add r4, r11, r12
 mov r0, r4
-bl {vg_sha256_init}
+bl {vg_sha256_init_core}
 mov r0, r4
 mov r1, r8
 mov r7, r9
@@ -700,8 +752,12 @@ ldr r9, [r11, #180]
 ldr r10, [r11, #184]
 ldr lr, [r11, #188]
 ldr r11, [r11, #192]
+add sp, sp, #328
+sub sp, sp, #344
 add r12, sp, #0
 mov r2, #0
+mov r3, #10
+21:
 str r2, [r12, #0]
 str r2, [r12, #4]
 str r2, [r12, #8]
@@ -710,83 +766,24 @@ str r2, [r12, #16]
 str r2, [r12, #20]
 str r2, [r12, #24]
 str r2, [r12, #28]
-str r2, [r12, #32]
-str r2, [r12, #36]
-str r2, [r12, #40]
-str r2, [r12, #44]
-str r2, [r12, #48]
-str r2, [r12, #52]
-str r2, [r12, #56]
-str r2, [r12, #60]
-str r2, [r12, #64]
-str r2, [r12, #68]
-str r2, [r12, #72]
-str r2, [r12, #76]
-str r2, [r12, #80]
-str r2, [r12, #84]
-str r2, [r12, #88]
-str r2, [r12, #92]
-str r2, [r12, #96]
-str r2, [r12, #100]
-str r2, [r12, #104]
-str r2, [r12, #108]
-str r2, [r12, #112]
-str r2, [r12, #116]
-str r2, [r12, #120]
-str r2, [r12, #124]
-str r2, [r12, #128]
-str r2, [r12, #132]
-str r2, [r12, #136]
-str r2, [r12, #140]
-str r2, [r12, #144]
-str r2, [r12, #148]
-str r2, [r12, #152]
-str r2, [r12, #156]
-str r2, [r12, #160]
-str r2, [r12, #164]
-str r2, [r12, #168]
-str r2, [r12, #172]
-str r2, [r12, #176]
-str r2, [r12, #180]
-str r2, [r12, #184]
-str r2, [r12, #188]
-str r2, [r12, #192]
-str r2, [r12, #196]
-str r2, [r12, #200]
-str r2, [r12, #204]
-str r2, [r12, #208]
-str r2, [r12, #212]
-str r2, [r12, #216]
-str r2, [r12, #220]
-str r2, [r12, #224]
-str r2, [r12, #228]
-str r2, [r12, #232]
-str r2, [r12, #236]
-str r2, [r12, #240]
-str r2, [r12, #244]
-str r2, [r12, #248]
-str r2, [r12, #252]
-str r2, [r12, #256]
-str r2, [r12, #260]
-str r2, [r12, #264]
-str r2, [r12, #268]
-str r2, [r12, #272]
-str r2, [r12, #276]
-str r2, [r12, #280]
-str r2, [r12, #284]
-str r2, [r12, #288]
-str r2, [r12, #292]
-str r2, [r12, #296]
-str r2, [r12, #300]
-str r2, [r12, #304]
-str r2, [r12, #308]
-str r2, [r12, #312]
-str r2, [r12, #316]
-str r2, [r12, #320]
-str r2, [r12, #324]
-add sp, sp, #328
+add r12, r12, #32
+subs r3, r3, #1
+bne 21b
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+add sp, sp, #344
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
-        vg_sha256_init = sym super::sha256::vg_sha256_init,
+        vg_sha256_init_core = sym super::sha256::vg_sha256_init_core::vg_sha256_init_core,
         vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch::vg_sha256_update_scratch,
         vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch::vg_sha256_finalize_scratch,
     )
@@ -797,12 +794,24 @@ bx lr",
 pub(crate) mod vg_sha256_compress;
 
 #[rustfmt::skip]
+#[path = "internal/vg_sha256_finalize_core.rs"]
+pub(crate) mod vg_sha256_finalize_core;
+
+#[rustfmt::skip]
 #[path = "internal/vg_sha256_finalize_scratch.rs"]
 pub(crate) mod vg_sha256_finalize_scratch;
 
 #[rustfmt::skip]
+#[path = "internal/vg_sha256_init_core.rs"]
+pub(crate) mod vg_sha256_init_core;
+
+#[rustfmt::skip]
 #[path = "internal/vg_sha256_state_digest.rs"]
 pub(crate) mod vg_sha256_state_digest;
+
+#[rustfmt::skip]
+#[path = "internal/vg_sha256_update_core.rs"]
+pub(crate) mod vg_sha256_update_core;
 
 #[rustfmt::skip]
 #[path = "internal/vg_sha256_update_scratch.rs"]

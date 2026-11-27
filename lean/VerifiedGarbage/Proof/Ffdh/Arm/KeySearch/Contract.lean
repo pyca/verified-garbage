@@ -1,7 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeyConstants
-import VerifiedGarbage.Proof.Ffdh.Arm.KeyBackend
+public import VerifiedGarbage.Proof.Ffdh.Arm.KeyBackend
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Controller
 public import VerifiedGarbage.Proof.Framework.Arm.Spill
 import VerifiedGarbage.Proof.Framework.Arm.Contract

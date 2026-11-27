@@ -23,7 +23,9 @@ little-endian number in base `2ᵈ`, and
   are `v` (`field_eq`), and group by group (`digits_group`);
 * hence `simpleBitPack`, `bitPack`, `simpleBitUnpack` and `bitUnpack`
   (`simpleBitPack_eq`, `bitPack_eq`, `simpleBitUnpack_get`,
-  `bitUnpack_get`).
+  `bitUnpack_get`);
+* packing and unpacking a polynomial with coefficients in `[-a, b]` returns
+  that polynomial (`bitUnpack_bitPack`).
 -/
 
 @[expose] public section
@@ -166,5 +168,49 @@ theorem bitUnpack_get (v : List Byte) (a b : Nat) {i : Nat} (hi : i < n) :
       (b : Int) - (digits 8 (v.map (·.toNat)) / 2 ^ (bitlen (a + b) * i) % 2 ^ bitlen (a + b) : Nat) := by
   simp only [bitUnpack, Vector.getElem_ofFn]
   rw [field_eq]
+
+/-- Reading field `i` from the packed bytes recovers its value when every field fits. -/
+private theorem read_packed_field {d : Nat} (hd : 0 < d) {L : List Nat}
+    (hlen : L.length = 256) (hfits : ∀ x ∈ L, x < 2 ^ d) {i : Nat} (hi : i < L.length) :
+    bitsToInteger ((List.range d).map fun j =>
+      (bytesToBits (bitsToBytes (fieldBits d L))).getD (i * d + j) false) = L[i] := by
+  let v := bitsToBytes (fieldBits d L)
+  rw [bitsToInteger_range, ← Nat.mod_eq_of_lt (hfits _ (List.getElem_mem hi)), ← sum_bits]
+  refine congrArg List.sum (List.map_congr_left fun j hjMem => ?_)
+  have hj := List.mem_range.mp hjMem
+  let p := i * d + j
+  have hp : p < 256 * d := calc
+    i * d + j < (i + 1) * d := by rw [Nat.succ_mul]; omega
+    _ ≤ 256 * d := Nat.mul_le_mul_right _ (by omega)
+  have hk : p / 8 < 32 * d := by omega
+  have hbyte : p / 8 < v.length := by rwa [pack_length d L hlen]
+  change ((bytesToBits v).getD p false).toNat * 2 ^ j = _
+  rw [bytesToBits_getD, List.getD_eq_getElem?_getD, List.getElem?_map,
+    List.getElem?_eq_getElem hbyte, Option.map_some, Option.getD_some,
+    ← getElem!_pos v _ hbyte, pack_getElem hd hlen hfits hk, BitVec.toNat_ofNat]
+  rw [mod_pow_div_mod (c := 1) _ (by omega), Nat.div_div_eq_div_mul, ← Nat.pow_add,
+    Nat.div_add_mod, Nat.pow_one, digits_bit hd hfits]
+  simp [p, Nat.mul_comm i d, Nat.mul_add_div hd, Nat.div_eq_of_lt hj,
+    Nat.mod_eq_of_lt hj, List.getD_eq_getElem?_getD, hi]
+
+/-- Unpacking a signed ML-DSA polynomial recovers every coefficient in the encoding range. -/
+theorem bitUnpack_bitPack (w : IPoly) (a b : Nat)
+    (hw : ∀ c ∈ w.toList, -(a : Int) ≤ c ∧ c ≤ b) :
+    bitUnpack (bitPack w a b) a b = w := by
+  let L := w.toList.map fun c => ((b : Int) - c).toNat
+  have hlen : L.length = 256 := by simp [L, n]
+  have hfits : ∀ x ∈ L, x < 2 ^ bitlen (a + b) := by
+    intro x hx
+    obtain ⟨c, hc, rfl⟩ := List.mem_map.mp hx
+    have bounds := hw c hc
+    exact Nat.lt_of_le_of_lt (by omega : ((b : Int) - c).toNat ≤ a + b) Nat.lt_log2_self
+  apply Vector.ext
+  intro i hi
+  rw [bitPack_eq]
+  simp only [bitUnpack, Vector.getElem_ofFn]
+  rw [read_packed_field (L := L) (by simp [bitlen]) hlen hfits (by simpa [L] using hi)]
+  simp only [L, List.getElem_map, Vector.getElem_toList]
+  have bounds := hw w[i] (List.getElem_mem (l := w.toList) (by simpa using hi))
+  omega
 
 end VG.Proof.MlDsa.Pack

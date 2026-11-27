@@ -85,6 +85,10 @@ def brainpoolp256r1 : Curve :=
   { W := Spec.BrainpoolP256r1.curve, curve := "brainpoolp256r1", k := 4, desc := "brainpoolP256r1",
     tmp := 2 }
 
+def brainpoolp320r1 : Curve :=
+  { W := Spec.BrainpoolP320r1.curve, curve := "brainpoolp320r1", k := 5, desc := "brainpoolP320r1",
+    tmp := 2 }
+
 def brainpoolp384r1 : Curve :=
   { W := Spec.BrainpoolP384r1.curve, curve := "brainpoolp384r1", k := 6, desc := "brainpoolP384r1",
     tmp := 83 }
@@ -94,7 +98,7 @@ def brainpoolp512r1 : Curve :=
     tmp := 2, workExtra := 48 }
 
 /-- Every curve. -/
-def curves : List Curve := [p192, p224, p256, secp256k1, p384, p521, brainpoolp256r1, brainpoolp384r1,
-  brainpoolp512r1]
+def curves : List Curve := [p192, p224, p256, secp256k1, p384, p521, brainpoolp256r1,
+  brainpoolp320r1, brainpoolp384r1, brainpoolp512r1]
 
 end VG.Impl.Weierstrass.Inverse

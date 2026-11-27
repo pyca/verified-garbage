@@ -1,34 +1,27 @@
 module
 
-public import VerifiedGarbage.Proof.TripleDes.Arm.Ecb.Verified
-public import VerifiedGarbage.Proof.TripleDes.Arm.Frame
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.Proof.Framework.Arm.CallF
-public import VerifiedGarbage.Proof.Framework.Arm.Lit
-public import VerifiedGarbage.Proof.Framework.Arm.RegScratchWipe
-public import VerifiedGarbage.Proof.Framework.Arm.RegUpd
-public import VerifiedGarbage.Proof.Framework.Arm.RelCT
-public import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.TripleDes.Arm.Key.Verified
-public import VerifiedGarbage.Proof.TripleDes.Bytes
-public import VerifiedGarbage.Proof.TripleDes.Permutation
-public import VerifiedGarbage.TCB.Arm.Print
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.TripleDes.Contract
+import VerifiedGarbage.Proof.TripleDes.Arm.Scrub
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # Triple DES on ARMv7 -/
 
-@[expose] public section
-
 namespace VG.Artifacts.TripleDes.Arm
 
-def artifacts : List Artifact := [
+public def artifacts : List (Artifact Arm.target) := [
   Spec.TripleDes.expandKeyApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withRegScratchWiped 512 .r3 128 Impl.TripleDes.Arm.Key.expandKey
-    verified := Proof.TripleDes.Arm.expandKey_framed },
+    code := Impl.TripleDes.Arm.Fn.expandKey
+    verified := Proof.TripleDes.Arm.Fn.expandKey },
   Spec.TripleDes.ecbEncryptApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withRegScratchWiped 1024 .r3 256 Impl.TripleDes.Arm.Ecb.encrypt
-    verified := Proof.TripleDes.Arm.ecb_framed Proof.TripleDes.Arm.Ecb.encrypt_verified },
+    code := Impl.TripleDes.Arm.Fn.ecbEncrypt
+    verified := Proof.TripleDes.Arm.Fn.ecbEncrypt },
   Spec.TripleDes.ecbDecryptApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withRegScratchWiped 1024 .r3 256 Impl.TripleDes.Arm.Ecb.decrypt
-    verified := Proof.TripleDes.Arm.ecb_framed Proof.TripleDes.Arm.Ecb.decrypt_verified }]
+    code := Impl.TripleDes.Arm.Fn.ecbDecrypt
+    verified := Proof.TripleDes.Arm.Fn.ecbDecrypt }]
+
+spec_apis artifacts
 
 end VG.Artifacts.TripleDes.Arm

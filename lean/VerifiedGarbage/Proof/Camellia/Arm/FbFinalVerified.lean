@@ -7,7 +7,7 @@ public import VerifiedGarbage.Impl.Camellia.Arm.FbFinal
 import VerifiedGarbage.Proof.Modes.Arm.OfbCfb
 import VerifiedGarbage.Proof.Modes.Arm.Cbc
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
-import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
+import VerifiedGarbage.Proof.Framework.Arm.StackScratch
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Camellia.Arm.FbVerified
@@ -17,7 +17,7 @@ meta import VerifiedGarbage.Impl.Camellia.Arm.FbFinal
 meta import VerifiedGarbage.Proof.Modes.Arm.OfbCfb
 meta import VerifiedGarbage.Proof.Modes.Arm.Cbc
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
-meta import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
+meta import VerifiedGarbage.Proof.Framework.Arm.StackScratch
 meta import VerifiedGarbage.Proof.Framework.Arm.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
@@ -32,8 +32,8 @@ of rounds) meet the contracts on the subkeys at the schedule
 words, as the whole-block functions do (`FbVerified.lean`), with the
 specification's results (`Proof.Modes.Arm.cfbEncFinal_post`, …,
 `Proof.Modes.Arm.ofbFinal_post`); the
-`_framed` theorems keep the buffer on the stack, zeroed on return: 88 bytes
-more, and give the specification's contracts (`cfbEncryptFinal_of_sk`, …).
+`_framed` theorems keep the buffer on the stack, 88 bytes more, which the
+functions' cleanup zeroes, and give the specification's contracts (`cfbEncryptFinal_of_sk`, …).
 -/
 
 @[expose] public section
@@ -43,7 +43,7 @@ namespace VG.Proof.Camellia.Arm
 open VG VG.Arm VG.Impl.Camellia.Arm VG.Impl.Modes.Arm VG.Proof.Modes.Arm
 
 theorem cfbEncryptFinalTaint : FinalTaint (ecbCore .encrypt) cfbEnc :=
-  ⟨cfbEncryptTaint.pro, ⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩, cfbEncryptTaint.epi⟩
+  ⟨⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩⟩
 
 theorem cfbEncryptFinal_implies : (seqFinalArm (ecbCore .encrypt) (ecbSpec .encrypt) cfbEnc).Implies
     (Proof.Camellia.cfbEncFinalScratchContract Arm.abi 9 2816) where
@@ -82,17 +82,17 @@ theorem cfbEncryptFinalFrameSat : ∃ s, (Proof.Camellia.cfbEncryptFinalContract
     Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr] [fbFrameSat, fbSat, stackArg,
     stackArgAddr, Mem.readW, Mem.read] using fbFrameSat 0
 
-/-- `cfbEncryptFinal`, with its scratch buffer on the stack (zeroed on return). -/
+/-- `cfbEncryptFinal`, with its scratch buffer on the stack (which its function's cleanup zeroes). -/
 theorem cfbEncryptFinal_framed :
-    Verified Arm.target (Impl.StackScratch.Arm.withStackScratchWiped 88 1 18 cfbEncryptFinal)
+    Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 88 1 cfbEncryptFinal)
       (Spec.Camellia.cfbEncryptFinalContract Arm.abi 2904) :=
   Proof.Camellia.cfbEncryptFinal_of_sk <|
-  Arm.Verified.stackScratchWiped (sig := Spec.Camellia.cfbFinalSig) (nm := "scratch") (e := .u64) (n := 9)
+  Arm.Verified.stackScratch (sig := Spec.Camellia.cfbFinalSig) (nm := "scratch") (e := .u64) (n := 9)
     (pre := Spec.Camellia.cfbFinalPre Arm.abi.ptrBits) (post := Proof.Camellia.cfbEncryptFinalPostSk Arm.abi.ptrBits)
     (wa := true) (stack := 2816) (m := 1) (bytes := 88)
-    cfbEncryptFinal_verified (by decide) (by decide) (by decide) (by decide) (by decide)
+    cfbEncryptFinal_verified (by decide) (by decide) (by decide) (by decide)
     (Proof.Camellia.cfbFinalPre_local _) (Proof.Camellia.cfbEncryptFinalPost_local _)
-    (Proof.Camellia.cfbEncryptFinalPostOut_local _) cfbEncryptFinalFrameSat
+    (fun vs mm m₁ m₂ r hl _ => Proof.Camellia.cfbEncryptFinalPostOut_local _ vs mm m₁ m₂ r hl) cfbEncryptFinalFrameSat
 
 theorem cfbDecryptFinalTaint : FinalTaint (ecbCore .encrypt) cfbDecF :=
   ⟨cfbDecryptTaint.pro, ⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩, cfbDecryptTaint.epi⟩
@@ -134,22 +134,22 @@ theorem cfbDecryptFinalFrameSat : ∃ s, (Proof.Camellia.cfbDecryptFinalContract
     Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr] [fbFrameSat, fbSat, stackArg,
     stackArgAddr, Mem.readW, Mem.read] using fbFrameSat 0
 
-/-- `cfbDecryptFinal`, with its scratch buffer on the stack (zeroed on return). -/
+/-- `cfbDecryptFinal`, with its scratch buffer on the stack (which its function's cleanup zeroes). -/
 theorem cfbDecryptFinal_framed :
-    Verified Arm.target (Impl.StackScratch.Arm.withStackScratchWiped 88 1 18 cfbDecryptFinal)
+    Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 88 1 cfbDecryptFinal)
       (Spec.Camellia.cfbDecryptFinalContract Arm.abi 2904) :=
   Proof.Camellia.cfbDecryptFinal_of_sk <|
-  Arm.Verified.stackScratchWiped (sig := Spec.Camellia.cfbFinalSig) (nm := "scratch") (e := .u64) (n := 9)
+  Arm.Verified.stackScratch (sig := Spec.Camellia.cfbFinalSig) (nm := "scratch") (e := .u64) (n := 9)
     (pre := Spec.Camellia.cfbFinalPre Arm.abi.ptrBits) (post := Proof.Camellia.cfbDecryptFinalPostSk Arm.abi.ptrBits)
     (wa := true) (stack := 2816) (m := 1) (bytes := 88)
-    cfbDecryptFinal_verified (by decide) (by decide) (by decide) (by decide) (by decide)
+    cfbDecryptFinal_verified (by decide) (by decide) (by decide) (by decide)
     (Proof.Camellia.cfbFinalPre_local _) (Proof.Camellia.cfbDecryptFinalPost_local _)
-    (Proof.Camellia.cfbDecryptFinalPostOut_local _) cfbDecryptFinalFrameSat
+    (fun vs mm m₁ m₂ r hl _ => Proof.Camellia.cfbDecryptFinalPostOut_local _ vs mm m₁ m₂ r hl) cfbDecryptFinalFrameSat
 
 /-! ## OFB of a message's last piece -/
 
 theorem ofbFinalTaint : FinalTaint (ecbCore .encrypt) VG.Impl.Modes.Arm.ofb :=
-  ⟨ofbTaint.pro, ⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩, ofbTaint.epi⟩
+  ⟨⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩⟩
 
 theorem ofbFinal_implies : (seqFinalArm (ecbCore .encrypt) (ecbSpec .encrypt) VG.Impl.Modes.Arm.ofb).Implies
     (Proof.Camellia.ofbFinalScratchContract Arm.abi 9 2816) where
@@ -190,16 +190,16 @@ theorem ofbFinalFrameSat : ∃ s, (Proof.Camellia.ofbFinalContractSk Arm.abi 290
     Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr] [fbFrameSat, fbSat, stackArg,
     stackArgAddr, Mem.readW, Mem.read] using fbFrameSat 0
 
-/-- `ofbFinal`, with its scratch buffer on the stack (zeroed on return). -/
+/-- `ofbFinal`, with its scratch buffer on the stack (which its function's cleanup zeroes). -/
 theorem ofbFinal_framed :
-    Verified Arm.target (Impl.StackScratch.Arm.withStackScratchWiped 88 1 18 ofbFinal)
+    Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 88 1 ofbFinal)
       (Spec.Camellia.ofbFinalContract Arm.abi 2904) :=
   Proof.Camellia.ofbFinal_of_sk <|
-  Arm.Verified.stackScratchWiped (sig := Spec.Camellia.ofbFinalSig) (nm := "scratch") (e := .u64) (n := 9)
+  Arm.Verified.stackScratch (sig := Spec.Camellia.ofbFinalSig) (nm := "scratch") (e := .u64) (n := 9)
     (pre := Spec.Camellia.ofbFinalPre Arm.abi.ptrBits) (post := Proof.Camellia.ofbFinalPostSk Arm.abi.ptrBits)
     (wa := true) (stack := 2816) (m := 1) (bytes := 88)
-    ofbFinal_verified (by decide) (by decide) (by decide) (by decide) (by decide)
+    ofbFinal_verified (by decide) (by decide) (by decide) (by decide)
     (Proof.Camellia.ofbFinalPre_local _) (Proof.Camellia.ofbFinalPost_local _)
-    (Proof.Camellia.ofbFinalPostOut_local _) ofbFinalFrameSat
+    (fun vs mm m₁ m₂ r hl _ => Proof.Camellia.ofbFinalPostOut_local _ vs mm m₁ m₂ r hl) ofbFinalFrameSat
 
 end VG.Proof.Camellia.Arm

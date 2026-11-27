@@ -23,6 +23,9 @@ not analysed by this domain.
 
 @[expose] public section
 
+/-- `isa`, for the compiler to leave by name (`Taint.compiled`). -/
+@[noinline] def VG.PPC64LE.isaC : VG.ISA := VG.PPC64LE.isa
+
 namespace VG.PPC64LE.Taint
 
 deriving instance Lean.ToExpr for Reg
@@ -30,6 +33,14 @@ deriving instance Lean.ToExpr for Reg
 instance : RegIdx Reg := ⟨Reg.ctorIdx, fun {a b} h => by rw [← Reg.ofNat_ctorIdx a, h, Reg.ofNat_ctorIdx]⟩
 
 abbrev T := RegSet Reg
+
+/-- A set of registers as a term, for the hints of a check: with a numeral
+for its bits as the kernel's evaluation leaves it (`RegSet.force`), so that a
+taint of a hint and the same taint as a step gives it are the same term, and
+the kernel finds again after a hint the steps it made before it. -/
+instance : Lean.ToExpr T where
+  toExpr t := Lean.mkApp2 (.const ``RegSet.mk []) (Lean.toTypeExpr Reg) (Lean.mkRawNatLit t.bits)
+  toTypeExpr := Lean.mkApp (.const ``RegSet []) (Lean.toTypeExpr Reg)
 
 def pub (τ : T) (r : Reg) : Bool := τ.mem r
 
@@ -64,7 +75,7 @@ def step (τ : T) : Instr → Option T
   -- Frames are analysed by `push` and `pop`; a static's address
   -- (`adrSym`) is not analysed.
   | .push .. | .pop .. | .alloc .. | .free .. | .adrSym ..
-  | .vop .. | .lxvd2x .. | .lxvd2xTbl .. | .stxvd2x .. | .mtvsrd .. | .mfvsrd .. | .bctrl => none
+  | .vop .. | .lxvd2x .. | .lxvd2xTbl .. | .stxvd2x .. | .mtvsrd .. | .mfvsrd .. | .dcbz .. | .bctrl => none
 
 def condPub (τ : T) : Cond → Bool
   | .zero _ r | .nonzero _ r => pub τ r
@@ -103,7 +114,8 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     (hs : step τ i = some τ') (e₁ : exec i s₁ = some s₁') (e₂ : exec i s₂ = some s₂') :
     addrs i s₁ = addrs i s₂ ∧ Agree τ' s₁' s₂' := by
   cases i with
-  | push | pop | alloc | free | bctrl | adrSym | vop | lxvd2x | lxvd2xTbl | stxvd2x | mtvsrd | mfvsrd => simp only [step, reduceCtorEq] at hs
+  | push | pop | alloc | free | bctrl | adrSym | vop | lxvd2x | lxvd2xTbl | stxvd2x | mtvsrd | mfvsrd | dcbz =>
+    simp only [step, reduceCtorEq] at hs
   | addSp d imm =>
     simp only [step, Option.some.injEq] at hs; subst hs
     simp only [reduceExec] at e₁ e₂
@@ -240,6 +252,37 @@ theorem pop_sound {τ τ' : T} {j : Instr} {a₁ a₂ b₁ b₂ c₁ c₂ : Stat
   simp only [RegSet.mem_erase] at hr'
   simp [State.write, hr'.1, h.2 r' hr'.2]
 
+/-! ## The step the kernel evaluates
+
+The kernel evaluates a term when it is read, and remembers the value of every
+term it has evaluated, by the term. `step` gives a set that is a term yet to
+be evaluated, in the set before (`if p then τ.insert r else τ.erase r`), so
+no two sets are the same term and every instruction of the code is
+evaluated. `stepK` gives a set that is evaluated (`RegSet.force`): the kernel
+then finds again every step it has made of the same instruction from the
+same set, wherever the code repeats it. It matches on the instruction once,
+with the cases of the match closed (`inline_match%`). See "An analysis the
+kernel finds again" in the `proof-performance` skill. -/
+
+/-- `step`, as a function of the instruction first. -/
+def stepFn (i : Instr) : T → Option T := fun τ => step τ i
+
+/-- `stepFn`, with its cases closed (`inline_match%`). -/
+def stepFnK : Instr → T → Option T := inline_match% stepFn step
+
+theorem stepFnK_eq (i : Instr) : stepFnK i = stepFn i := by cases i <;> rfl
+
+/-- `step`, giving a set that is evaluated. -/
+def stepK (τ : T) (i : Instr) : Option T :=
+  match stepFnK i τ with
+  | some τ' => τ'.force some
+  | none => none
+
+theorem stepK_eq : stepK = step := by
+  funext τ i
+  rw [stepK, stepFnK_eq, stepFn]
+  cases step τ i <;> rfl
+
 end VG.PPC64LE.Taint
 
 namespace VG.PPC64LE
@@ -248,8 +291,8 @@ namespace VG.PPC64LE
 def taint : VG.Taint isa where
   T := Taint.T
   Agree := Taint.Agree
-  step := Taint.step
-  step_sound := Taint.step_sound
+  step := Taint.stepK
+  step_sound h hs := Taint.step_sound h (Taint.stepK_eq ▸ hs)
   condPub := Taint.condPub
   cond_sound := Taint.cond_sound
   meet τ₁ τ₂ := τ₁.inter τ₂
@@ -282,5 +325,11 @@ def taint : VG.Taint isa where
   push_sound := Taint.push_sound
   pop := Taint.pop
   pop_sound := Taint.pop_sound
+
+kernel_fn VG.Taint.check taint
+
+/-- `taint`'s step is `Taint.step`'s (`stepK_eq`). -/
+theorem taint_step (τ : Taint.T) (i : Instr) : taint.step τ i = Taint.step τ i :=
+  congrFun (congrFun Taint.stepK_eq τ) i
 
 end VG.PPC64LE

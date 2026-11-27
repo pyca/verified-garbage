@@ -8,6 +8,8 @@
 ///
 /// It runs `vg_aes_ctr`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 240 bytes.
@@ -30,6 +32,8 @@ pub unsafe fn vg_aes_ctr_auto(_dit: verified_garbage_cpu::Dit<'_>, schedule: *co
 /// Contract: `VG.Spec.Ctr.aesFinalContract`. Constant time: only the pointers, `rounds`, `len` and the last four bytes of `*ctr` (the 32-bit counter, public in OpenSSL, BoringSSL and AWS-LC, which split the blocks where it wraps) may affect timing, not the key schedule, the rest of the counter block or the data.
 ///
 /// It runs `vg_aes_ctr_final`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///

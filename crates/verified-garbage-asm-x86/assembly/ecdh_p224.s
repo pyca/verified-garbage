@@ -824,42 +824,7 @@ vg_ecdh_p224:
 	and edx, ecx
 	xor eax, edx
 	mov DWORD PTR [edi+1468], eax
-	mov eax, DWORD PTR [edi+1280]
-	mov DWORD PTR [edi+512], eax
-	mov eax, DWORD PTR [edi+1284]
-	mov DWORD PTR [edi+516], eax
-	mov eax, DWORD PTR [edi+1288]
-	mov DWORD PTR [edi+520], eax
-	mov eax, DWORD PTR [edi+1292]
-	mov DWORD PTR [edi+524], eax
-	mov eax, DWORD PTR [edi+1296]
-	mov DWORD PTR [edi+528], eax
-	mov eax, DWORD PTR [edi+1300]
-	mov DWORD PTR [edi+532], eax
-	mov eax, DWORD PTR [edi+1304]
-	mov DWORD PTR [edi+536], eax
-	mov eax, DWORD PTR [edi+1308]
-	mov DWORD PTR [edi+540], eax
-	mov eax, DWORD PTR [edi+1440]
-	mov DWORD PTR [edi+544], eax
-	mov eax, DWORD PTR [edi+1444]
-	mov DWORD PTR [edi+548], eax
-	mov eax, DWORD PTR [edi+1448]
-	mov DWORD PTR [edi+552], eax
-	mov eax, DWORD PTR [edi+1452]
-	mov DWORD PTR [edi+556], eax
-	mov eax, DWORD PTR [edi+1456]
-	mov DWORD PTR [edi+560], eax
-	mov eax, DWORD PTR [edi+1460]
-	mov DWORD PTR [edi+564], eax
-	mov eax, DWORD PTR [edi+1464]
-	mov DWORD PTR [edi+568], eax
-	mov eax, DWORD PTR [edi+1468]
-	mov DWORD PTR [edi+572], eax
-	push edi
-	call {vg_p224_mul}
-	pop eax
-	mov edi, DWORD PTR [esp+16]
+	call {vg_p224_window}
 	mov eax, DWORD PTR [edi+224]
 	mov DWORD PTR [edi+992], eax
 	mov eax, DWORD PTR [edi+228]
@@ -1066,5 +1031,23 @@ vg_ecdh_p224:
 	mov esi, DWORD PTR [edx+4]
 	mov ebp, DWORD PTR [edx+12]
 	mov edi, DWORD PTR [edx+8]
+	pxor xmm0, xmm0
+	mov ecx, 0
+	lea esp, [esp-28]
+	movdqu XMMWORD PTR [esp], xmm0
+	mov DWORD PTR [esp+16], ecx
+	mov DWORD PTR [esp+20], ecx
+	mov DWORD PTR [esp+24], ecx
+	lea esp, [esp+28]
+	mov edx, 0
+	xor ecx, ecx
+	pxor xmm0, xmm0
+	pxor xmm1, xmm1
+	pxor xmm2, xmm2
+	pxor xmm3, xmm3
+	pxor xmm4, xmm4
+	pxor xmm5, xmm5
+	pxor xmm6, xmm6
+	pxor xmm7, xmm7
 	ret
 	.p2align 6

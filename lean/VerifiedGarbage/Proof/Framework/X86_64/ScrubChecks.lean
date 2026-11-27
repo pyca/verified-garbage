@@ -8,7 +8,7 @@ public import VerifiedGarbage.Proof.Framework.CodeOnce
 # The checks of the scrub, compiled (x86-64)
 
 The emitter evaluates the side conditions of the scrub of every x86-64
-function (`Scrub.withScrubAll`, `RScrub.withScrub` and the others) on all of
+function (`scrubAll`, `scrubSel` and the others) on all of
 its code: the level of its instructions (`Instr.vecLevel`), the stack it
 uses (`Code.x86_64Depth`), the registers it writes (`Taint.clobbers`) and
 what it leaves in MXCSR (`mxClass`). This module, which imports only the
@@ -59,15 +59,15 @@ def dstOf : Instr → Option Reg
   | .mov d _ | .mov32 d _ | .alu _ d _ | .alu32 _ d _ | .shift32 _ d _ | .bswap32 d
   | .rorx32 d .. | .andn32 d .. | .rorx d .. | .andn d .. | .movzx8 d _ | .movzx16 d _ | .bswap d | .shift _ d _
   | .shiftCl _ d | .shiftx _ d .. | .movImm64 d _ | .leaSym d _ | .adcx d _ | .adox d _ | .cmov _ d _
-  | .vpmovmskb _ d _ | .vpcmpltuw d .. | .movqR d _ | .imul d _ | .imul3 d .. | .shld d .. | .btr d _ | .aluTbl _ d .. => some d
+  | .vpmovmskb _ d _ | .vpcmpltuw d .. | .evCmpUq _ d .. | .movqR d _ | .imul d _ | .imul3 d .. | .shld d .. | .btr d _ | .aluTbl _ d .. => some d
   | .store .. | .store32 .. | .store8 .. | .store16 .. | .movdquLoad .. | .movdquStore .. | .movdquTbl .. | .xop _
   | .vop _
   | .vmovdquLoad .. | .vmovdquStore .. | .vmovdquTbl .. | .vbroadcasti128 .. | .vbinLoad .. | .zop _
   | .vmovdqu32Load .. | .vmovdqu32Store .. | .vbroadcasti32x4 .. | .vbroadcasti32x4H .. | .zbcst .. | .vpbroadcastdZ .. | .zbcstd .. | .vpmadd52Load ..
   | .stmxcsr _ | .ldmxcsr _
   | .eop _ | .evLoad .. | .evStore .. | .evMadd52Load .. | .kLoad .. | .kStore .. | .kLoad8 .. | .kStore8 .. | .lfence
-  | .e5op _ | .evBroadcastLoad .. | .e5InsertLoad .. | .e5ExtractStore ..
-  | .mul _ | .mulx .. | .push _ | .pop .. | .alloc _ | .free _ | .callr _ => none
+  | .e5op _ | .evMaskAddQ .. | .evBroadcastLoad .. | .e5InsertLoad .. | .e5ExtractStore ..
+  | .mul _ | .mulx .. | .push _ | .pop .. | .alloc _ | .free _ | .callr _ | .callm _ => none
 
 /-- Whether an instruction may write the general-purpose register `r`. -/
 def clobbers (i : Instr) (r : Reg) : Bool :=
@@ -87,29 +87,12 @@ def Instr.vecLevel : Instr → Nat
   | .vpmadd52Load .. | .zop _ | .vmovdqu32Load .. | .vbroadcasti32x4 .. | .zbcst ..
   | .vpbroadcastdZ .. | .zbcstd .. | .kLoad .. | .kLoad8 .. => 1
   | .vbroadcasti32x4H .. | .eop _ | .evLoad .. | .evMadd52Load .. | .ldmxcsr _
-  | .e5op _ | .evBroadcastLoad .. | .e5InsertLoad .. => 2
+  | .e5op _ | .evMaskAddQ .. | .evBroadcastLoad .. | .e5InsertLoad .. => 2
   | _ => 0
 
 /-- The level of the vector registers alone: `vecLevel`, but `ldmxcsr`,
 which writes only MXCSR, at level 0. -/
 def Instr.vecLevelR (i : Instr) : Nat := if loadsMxcsr i then 0 else i.vecLevel
-
-/-- Whether `i` is at a level of at most `k`. -/
-def Instr.levelLe (k : Nat) (i : Instr) : Bool := decide (i.vecLevel ≤ k)
-
-/-- Whether `i` is at a level of the vector registers of at most `k`. -/
-def Instr.levelLeR (k : Nat) (i : Instr) : Bool := decide (i.vecLevelR ≤ k)
-
-/-- Whether every instruction of `c` is at a level of at most `k`
-(`Code.allOnce`). -/
-def levelLeOnce (k : Nat) (c : Prog isa) : Bool := c.allOnce (Instr.levelLe k)
-
-/-- Whether every instruction of `c` is at a level of the vector registers of
-at most `k` (`Code.allOnce`). -/
-def levelLeROnce (k : Nat) (c : Prog isa) : Bool := c.allOnce (Instr.levelLeR k)
-
-/-- Whether no instruction of `c` may write a vector register. -/
-def noVec (c : Prog isa) : Bool := c.all fun i => !Impl.Scrub.X86_64.writesVec i
 
 namespace RTaint
 
@@ -202,52 +185,5 @@ def mxClass : Prog isa → Option MxC
     match mxClass b, mxClass n with
     | some x, some y => if x = y then some x else none
     | _, _ => none
-
-namespace RScrub
-
-/-- `mxClass c`, given calls with their class (`k`: a call's function, code
-and class), with those calls and the calls of `c`: `mxClass` follows the
-code of a function once per call of it, through every function that calls
-it, and this once (`Code.memoCall`). -/
-def mxClassFrom : Prog isa → List (String × Prog isa × Unit × Option MxC) →
-    Option MxC × List (String × Prog isa × Unit × Option MxC)
-  | .block is, k => (if is.all (fun i => !loadsMxcsr i) then some .keep else none, k)
-  | .seq a b, k =>
-    if restoresC a b then (some .mask, k) else
-    let r := mxClassFrom a k
-    match r.1 with
-    | some x =>
-      let q := mxClassFrom b r.2
-      (match q.1 with
-      | some y => (some (x.comp y), q.2)
-      | none => (none, q.2))
-    | none => (none, r.2)
-  | .ite _ t e, k =>
-    let r := mxClassFrom t k
-    match r.1 with
-    | some x =>
-      let q := mxClassFrom e r.2
-      (match q.1 with
-      | some y => (if x = y then some x else none, q.2)
-      | none => (none, q.2))
-    | none => (none, r.2)
-  | .loop b _, k => mxClassFrom b k
-  | .call n b, k => Code.memoCall n b () k fun _ => mxClassFrom b k
-  | .frame i b j, k => if !loadsMxcsr i && !loadsMxcsr j then mxClassFrom b k else (none, k)
-  | .icall i n b nx, k =>
-    if loadsMxcsr i then (none, k) else
-    let r := Code.memoCall n b () k fun _ => mxClassFrom b k
-    match r.1 with
-    | some x =>
-      let q := mxClassFrom nx r.2
-      (match q.1 with
-      | some y => (if x = y then some x else none, q.2)
-      | none => (none, q.2))
-    | none => (none, r.2)
-
-/-- `mxClass c`, following the code of each function `c` calls once. -/
-def mxClassOnce (c : Prog isa) : Option MxC := (mxClassFrom c []).1
-
-end RScrub
 
 end VG.X86_64

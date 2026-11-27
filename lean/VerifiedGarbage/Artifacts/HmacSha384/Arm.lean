@@ -1,22 +1,24 @@
 module
 
-public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.AnyKeyInstances
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.Arm.Print
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Hmac.Generic
+import VerifiedGarbage.Proof.Hmac.Stream.Arm.Scrub
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # HMAC-SHA-384 (RFC 2104) on ARMv7 -/
 
-@[expose] public section
-
 namespace VG.Artifacts.HmacSha384.Arm
 
-def artifacts : List Artifact := [
+public def artifacts : List (Artifact Arm.target) := [
   Spec.Hmac.sha384I.initAnyKeyApi.artifact Arm.target {
-    code := Proof.Pbkdf2.Whole.Arm.initCode Spec.Hmac.sha384I Proof.Pbkdf2.Md.Arm.sha384Md.hmacInit Proof.Pbkdf2.Whole.Arm.sha384F
-    verified := Proof.Pbkdf2.Whole.Arm.Any.sha384_initF },
+    code := Impl.Hmac.Stream.Arm.Fn.initSha384
+    verified := Proof.Hmac.Stream.Arm.Fn.initSha384 },
   Spec.Hmac.sha384I.finalizeApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratch (Proof.Pbkdf2.Md.Arm.frame Spec.Hmac.sha384I) 1 Proof.Pbkdf2.Md.Arm.sha384Md.hmacFin
-    verified := Proof.Pbkdf2.Md.Arm.finFramed Proof.Pbkdf2.Md.Arm.Instances.sha384_finalize
-      Proof.Hmac.sha384_local Proof.Pbkdf2.Md.Arm.sha384_finFrameSat }]
+    code := Impl.Hmac.Stream.Arm.Fn.finalizeSha384
+    verified := Proof.Hmac.Stream.Arm.Fn.finalizeSha384 }]
+
+spec_apis artifacts
 
 end VG.Artifacts.HmacSha384.Arm

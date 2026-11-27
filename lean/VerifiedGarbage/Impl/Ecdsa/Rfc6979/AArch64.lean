@@ -61,10 +61,10 @@ short top word there), `h`, `X` and `core`'s digest if `big` (72 bytes
 each), and `T` (136 bytes); then the table's address. The calls use only
 `scratch`, which `core` overwrites entirely, and the 16 bytes below the
 frame (HMAC's functions); `K`, `V` and the words above the pointers but `D`
-and `B` are cleared before the frame is freed. In `scratch`: HMAC's inner and
-outer streaming states (192 bytes each), the working space of the table's
-functions, the message, the words of a shift, and the copy of the states
-for `K`.
+and `B` are cleared before the frame is freed. In `scratch`: the message,
+the words of a shift, the copy of the states for `K`, then HMAC's inner and
+outer streaming states (192 bytes each) and the working space of the
+table's functions.
 
 1. `X`; `h` (`reduce`, or `prepC`); `V = 0x01…`, `K = 0x00…`.
 2. Steps d to g: `K = HMAC_K(V ‖ 0x00 ‖ d ‖ h)`, `V = HMAC_K(V)`,
@@ -120,15 +120,20 @@ def fTab : Nat := 216 + 8 * extra
 /-- The frame's size, a multiple of 16. -/
 def frameBytes : Nat := fTab + 8
 
-/-! Where things are in `scratch`. -/
-def sInner : Nat := 0
-def sOuter : Nat := 192
-def sWork : Nat := 384
-def sMsg : Nat := 2256
+/-! Where things are in `scratch`: the areas the code addresses with an
+immediate offset first (an `add` immediate is below 4096), then what HMAC's
+functions write, in one range: the two streaming states and the working
+space of the table's functions (`init`'s for a key of any length, the
+largest, `W + S` words: 3408 bytes for SHA-512). The first 16 bytes are
+unused. -/
+def sMsg : Nat := 16
 /-- The words of a conversion, if `big`. -/
-def sSlot : Nat := 2560
+def sSlot : Nat := 320
 /-- A copy of HMAC's two states just after `init`, for the key `K`. -/
-def sSave : Nat := 3072
+def sSave : Nat := 832
+def sInner : Nat := 1216
+def sOuter : Nat := 1408
+def sWork : Nat := 1600
 
 /-- What the code needs of a curve. -/
 structure Cfg where

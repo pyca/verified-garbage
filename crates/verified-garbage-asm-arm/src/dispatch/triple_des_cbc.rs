@@ -8,6 +8,8 @@
 ///
 /// It runs `vg_triple_des_cbc_encrypt_chained`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 384 bytes.
@@ -28,13 +30,15 @@ pub unsafe fn vg_triple_des_cbc_encrypt_chained_auto(_dit: verified_garbage_cpu:
 ///
 /// It runs `vg_triple_des_cbc_decrypt_chained`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 384 bytes.
 /// * `iv` must be valid for reads and writes of 8 bytes.
 /// * `data` must be valid for reads and writes of `8 * n` bytes.
 /// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
-/// * None of `schedule`, `iv` and `data` may overlap the 1088 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `schedule`, `iv` and `data` may overlap the 1040 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_triple_des_cbc_decrypt_chained_auto(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 384], iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {

@@ -94,10 +94,6 @@ theorem dw_split (m : Mem) (P : Addr) (d : Nat) : dw m P d = wd m P d + 2 ^ 32 *
 /-- Four doublewords, lowest first. -/
 def val4 (f : Nat → Nat) : Nat := f 0 + 2 ^ 64 * (f 1 + 2 ^ 64 * (f 2 + 2 ^ 64 * f 3))
 
-theorem val4_congr {f g : Nat → Nat} (h : ∀ i < 4, f i = g i) : val4 f = val4 g := by
-  unfold val4
-  rw [h 0 (by decide), h 1 (by decide), h 2 (by decide), h 3 (by decide)]
-
 /-- The doublewords of the element at `o`. -/
 abbrev ew (m : Mem) (P : Addr) (o : Nat) (i : Nat) : Nat := dw m P (o + 8 * i)
 

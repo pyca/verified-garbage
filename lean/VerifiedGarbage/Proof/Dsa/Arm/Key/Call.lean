@@ -1,18 +1,80 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.Arm.CallF
-import Mathlib.Logic.Function.Basic
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.Dsa.Arm.GenerateKey
 public import VerifiedGarbage.Impl.Dsa.Arm.Generate
-public import VerifiedGarbage.Proof.Dsa.Arm.GenerateContract
+public import VerifiedGarbage.Proof.Dsa.Arm.GenerateCheck
 public import VerifiedGarbage.Proof.Weierstrass.PointContract
-public import VerifiedGarbage.Proof.Dsa.Arm.Key.Saved
-import VerifiedGarbage.Proof.Dsa.Arm.GenerateCheck
 import VerifiedGarbage.Proof.Dsa.Arm.GenerateDerive
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Arm.Frame
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Dsa.Arm.Key.Frame
+public import VerifiedGarbage.Impl.Dsa.Arm.RandomSign
+
+/-! ### `Dsa.Arm.Key.Saved`, which this module and modules that import it used -/
+
+section
+
+/-!
+# DSA key generation's frame on 32-bit ARM: the saved words
+
+As the randomized signer's (`RandomCall.lean`): the callee-saved registers
+and the register arguments, in their slots of the frame.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Dsa.Arm.Key
+
+open VG VG.Arm VG.Proof.Mont VG.Impl.Dsa.Arm VG.Impl.Dsa.Arm.Random VG.Impl.Dsa.Arm.RandomSign
+
+/-- The callee-saved registers and the register arguments, in their slots. -/
+def Saved (s₀ : State) (m : Mem) : Prop :=
+  (∀ i < 9, slot m (rBase s₀) (4 * i) = s₀.gpr (savedRegs.getD i .r0)) ∧
+    slot m (rBase s₀) oOut = s₀.gpr .r0 ∧ slot m (rBase s₀) oOutLen = s₀.gpr .r1 ∧
+    slot m (rBase s₀) oUsedPtr = s₀.gpr .r2 ∧ slot m (rBase s₀) oKey = s₀.gpr .r3
+
+theorem Saved.of_slots {s₀ : State} {m m' : Mem} (h : Saved s₀ m)
+    (he : ∀ d, d + 4 ≤ 36 ∨ 96 ≤ d → d + 4 ≤ 112 → slot m' (rBase s₀) d = slot m (rBase s₀) d) : Saved s₀ m' :=
+  ⟨fun i hi => (he _ (.inl (by omega_using [hi])) (by omega_using [hi])).trans (h.1 i hi), (he _ (by decide) (by decide)).trans h.2.1,
+    (he _ (by decide) (by decide)).trans h.2.2.1, (he _ (by decide) (by decide)).trans h.2.2.2.1,
+    (he _ (by decide) (by decide)).trans h.2.2.2.2⟩
+
+/-- Memory changed only in ranges of `[36, 96)` keeps the saved words. -/
+theorem Saved.of_outs {s₀ : State} {m m' : Mem} {rs : List (Nat × Nat)} (h : Saved s₀ m)
+    (ho : Outs (rBase s₀) rs m m') (hrs : ∀ r ∈ rs, 36 ≤ r.1 ∧ r.1 + r.2 ≤ 96) : Saved s₀ m' :=
+  h.of_slots fun d hd hd' => slot_outs ho (fun r hr => by have := hrs r hr; omega_using [hd, this]) (by omega_using [hd'])
+
+/-- Slots below the ranges that changed. -/
+theorem outs_low {B : Addr} {rs : List (Nat × Nat)} {m m' : Mem} (h : Outs B rs m m') {e : Nat}
+    (hrs : ∀ r ∈ rs, e ≤ r.1) {d : Nat} (hd : d + 4 ≤ e) (hd' : d + 4 < 2 ^ 64) : slot m' B d = slot m B d :=
+  slot_outs h (fun r hr => .inl (Nat.le_trans hd (hrs r hr))) hd'
+
+theorem one_beq {k : Nat} (hk : k < 2 ^ 32) : (BitVec.ofNat 32 k - 1 == 0) = decide (k = 1) := by
+  by_cases h : k = 1
+  · subst h; rfl
+  · simp only [h, decide_false, beq_eq_false_iff_ne, ne_eq]
+    intro e
+    have := congrArg BitVec.toNat e
+    simp only [BitVec.toNat_sub, BitVec.toNat_ofNat, show (1 : BitVec 32).toNat = 1 from rfl,
+      show (0 : BitVec 32).toNat = 0 from rfl] at this
+    omega_using [hk, h, this]
+
+theorem rBytes_frame {m m' : Mem} {p : Addr} {n : Nat} {rs : List Region}
+    (frame : Frame rs m m') (sep : ∀ r ∈ rs, (Region.mk p n).Disjoint r) (bound : n ≤ 2 ^ 64) :
+    Spec.Rsa.bytesAt m' p n = Spec.Rsa.bytesAt m p n := by
+  unfold Spec.Rsa.bytesAt
+  apply List.map_congr_left
+  intro i hi
+  exact frame.bytes sep bound (List.mem_range.mp hi)
+
+end VG.Proof.Dsa.Arm.Key
+
+end
+
+end
 
 /-!
 # Calling the domain check and the key derivation (32-bit ARM)
@@ -36,6 +98,8 @@ open VG VG.Arm VG.Proof.Mont VG.Impl.Dsa.Arm VG.Impl.Dsa.Arm.Random VG.Impl.Dsa.
 open VG.Proof.X25519.Arm (Rest Upd Mupd Fupd wp_mov wp_dp wp_cmp op2_imm op2_reg eval_eq eval_ne
   ofNat_beq_zero toNat_imm)
 open VG.Arm.FrameStack (armStack belowA)
+
+variable {umaal : Bool}
 
 /-- The words the call pushes, as the callee's stack arguments. -/
 abbrev callPush : List Reg := [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11]
@@ -225,11 +289,11 @@ theorem check_covers :
 end
 
 /-- `vg_dsa_check_parameters` uses no stack of its own. -/
-theorem check_armStack : armStack Generate.checkParameters = 0 := by decide +kernel
+theorem check_armStack : armStack (Generate.checkParameters umaal) = 0 := by cases umaal <;> decide +kernel
 
 /-- The call of the domain check, its stack arguments pushed. -/
 theorem callCheck_ok {s₀ u : State} (A : KeyABI s₀) (h : RReady s₀ u) (C : CheckRegs s₀ u) (name : String) :
-    WP isa (callWith name Generate.checkParameters) u fun v => RReady s₀ v ∧
+    WP isa (callWith name (Generate.checkParameters umaal)) u fun v => RReady s₀ v ∧
       Frame (checkWrites s₀) u.mem v.mem ∧
       (∀ r ∈ [Reg.r5, .r6, .r7, .r8, .r9, .r10, .r11], v.gpr r = u.gpr r) ∧
       v.gpr .r0 = (if checkResult s₀ u then 1 else 0) := by
@@ -241,6 +305,7 @@ theorem callCheck_ok {s₀ u : State} (A : KeyABI s₀) (h : RReady s₀ u) (C :
   · obtain ⟨t, s', e, ha, hp⟩ := check_correct hs
     exact ⟨t, s', e, ha, hp⟩
   rw [check_armStack] at hf
+  intro lm lu hfl
   have hpu : ∀ r ∈ preserved, r ≠ .lr → s'.gpr r = u.gpr r := fun r hr hl => by rw [hpres r hr hl, pushed_gpr]
   have Fc : Frame (checkWrites s₀) u.mem s'.mem := by
     refine ((call_push_frame A h).mono fun r hr => ?_).trans (hf.sub fun r hr => ?_)
@@ -250,18 +315,22 @@ theorem callCheck_ok {s₀ u : State} (A : KeyABI s₀) (h : RReady s₀ u) (C :
       rcases hr with rfl | rfl
       · exact ⟨_, by simp [checkWrites], fun _ h => h⟩
       · exact ⟨⟨rLow s₀, 32⟩, by simp [checkWrites], fun _ hc => absurd hc (by simp [Region.Contains])⟩
+  have hfl' : Frame [⟨rLow s₀, 32⟩] s'.mem lm := by
+    rw [show 4 * callPush.length = 32 from rfl, call_sp A h] at hfl; exact hfl
+  have FcL : Frame (checkWrites s₀) u.mem lm :=
+    Fc.trans (hfl'.mono fun r hr => by simp only [List.mem_singleton] at hr; subst hr; simp [checkWrites])
   have hspv : s'.sp + BitVec.ofNat 32 (4 * callPush.length) = u.sp := by
     rw [hsp, pushed_sp, BitVec.sub_add_cancel]
-  have hv : RReady s₀ (popped .r4 (4 * callPush.length) s') := by
+  have hv : RReady s₀ { popped .r4 (4 * callPush.length) s' with mem := lm, unknowns := lu } := by
     refine ⟨⟨?_, ?_, ?_, h.rf.nowrap⟩, ?_, ?_, ?_, ?_⟩
-    · rw [popped_gpr (by decide), hpu .r11 (by decide) (by decide)]; exact h.rf.base
-    · rw [popped_wr, hwr, pushed_wr, List.tail_cons]; exact h.rf.wr
-    · rw [popped_rd, hrd, pushed_rd]; exact h.rf.args
-    · rw [popped_sp, hspv]; exact h.sp
-    · rw [popped_rd, hrd, pushed_rd]; exact h.rd
-    · rw [popped_wr, hwr, pushed_wr, List.tail_cons]; exact h.wr
-    · rw [popped_mem]
-      refine h.frame.trans (Fc.sub fun r hr => ?_)
+    · dsimp only; rw [popped_gpr (by decide), hpu .r11 (by decide) (by decide)]; exact h.rf.base
+    · dsimp only; rw [popped_wr, hwr, pushed_wr, List.tail_cons]; exact h.rf.wr
+    · dsimp only; rw [popped_rd, hrd, pushed_rd]; exact h.rf.args
+    · dsimp only; rw [popped_sp, hspv]; exact h.sp
+    · dsimp only; rw [popped_rd, hrd, pushed_rd]; exact h.rd
+    · dsimp only; rw [popped_wr, hwr, pushed_wr, List.tail_cons]; exact h.wr
+    · dsimp only
+      refine h.frame.trans (FcL.sub fun r hr => ?_)
       simp only [checkWrites, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact ⟨_, by simp [rWrites], fun _ h => h⟩
@@ -269,11 +338,11 @@ theorem callCheck_ok {s₀ u : State} (A : KeyABI s₀) (h : RReady s₀ u) (C :
   have hr := hpost
   dsimp only [checkArm] at hr
   rw [State.withRegions_gpr, BitVec.setWidth_append_eq_right, checkRes_call A h C] at hr
-  refine ⟨hv, by rw [popped_mem]; exact Fc, fun r hr' => ?_, ?_⟩
+  refine ⟨hv, by dsimp only; exact FcL, fun r hr' => ?_, ?_⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr'
     rcases hr' with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-      exact (popped_gpr (by decide) _ _).trans (hpu _ (by decide) (by decide))
-  · rw [popped_gpr (by decide)]
+      dsimp only <;> exact (popped_gpr (by decide) _ _).trans (hpu _ (by decide) (by decide))
+  · dsimp only; rw [popped_gpr (by decide)]
     apply BitVec.eq_of_toNat_eq
     rw [hr]
     split <;> rfl
@@ -454,7 +523,7 @@ theorem derive_covers :
 end
 
 /-- `vg_dsa_derive_key_checked` uses no stack of its own. -/
-theorem derive_armStack : armStack Generate.deriveChecked = 0 := by decide +kernel
+theorem derive_armStack : armStack (Generate.deriveChecked umaal) = 0 := by cases umaal <;> decide +kernel
 
 theorem status_lt (r : Option (List Byte)) : Spec.Dsa.signStatus r < 2 := by
   unfold Spec.Dsa.signStatus; split <;> decide
@@ -463,7 +532,7 @@ theorem status_lt (r : Option (List Byte)) : Spec.Dsa.signStatus r < 2 := by
 theorem callDerive_ok {s₀ u : State} (A : KeyABI s₀) (h : RReady s₀ u) (C : DeriveRegs s₀ u) (name : String)
     (hc : Spec.Dsa.checkParametersBytes (stackArg s₀ 1).toNat (stackArg s₀ 2).toNat
       (Spec.Rsa.bytesAt u.mem (State.addr (s₀.gpr .r3)) (stackArg s₀ 0).toNat) = true) :
-    WP isa (callWith name Generate.deriveChecked) u fun v => RReady s₀ v ∧ Frame (deriveWrites s₀) u.mem v.mem ∧
+    WP isa (callWith name (Generate.deriveChecked umaal)) u fun v => RReady s₀ v ∧ Frame (deriveWrites s₀) u.mem v.mem ∧
       (∀ r ∈ [Reg.r5, .r6, .r7, .r8, .r9, .r10, .r11], v.gpr r = u.gpr r) ∧
       v.gpr .r0 = BitVec.ofNat 32 (Spec.Dsa.signStatus (deriveResult s₀ u)) ∧
       Spec.Rsa.bytesAt v.mem (State.addr (s₀.gpr .r0)) (s₀.gpr .r1).toNat =
@@ -476,6 +545,7 @@ theorem callDerive_ok {s₀ u : State} (A : KeyABI s₀) (h : RReady s₀ u) (C 
   · obtain ⟨t, s', e, ha, hp⟩ := deriveChecked_correct hs
     exact ⟨t, s', e, ha, hp⟩
   rw [derive_armStack] at hf
+  intro lm lu hfl
   have hpu : ∀ r ∈ preserved, r ≠ .lr → s'.gpr r = u.gpr r := fun r hr hl => by rw [hpres r hr hl, pushed_gpr]
   have Fc : Frame (deriveWrites s₀) u.mem s'.mem := by
     refine ((call_push_frame A h).mono fun r hr => ?_).trans (hf.sub fun r hr => ?_)
@@ -486,18 +556,22 @@ theorem callDerive_ok {s₀ u : State} (A : KeyABI s₀) (h : RReady s₀ u) (C 
       · exact ⟨_, by simp [deriveWrites], fun _ h => h⟩
       · exact ⟨_, by simp [deriveWrites], fun _ h => h⟩
       · exact ⟨⟨rLow s₀, 32⟩, by simp [deriveWrites], fun _ hc => absurd hc (by simp [Region.Contains])⟩
+  have hfl' : Frame [⟨rLow s₀, 32⟩] s'.mem lm := by
+    rw [show 4 * callPush.length = 32 from rfl, call_sp A h] at hfl; exact hfl
+  have FcL : Frame (deriveWrites s₀) u.mem lm :=
+    Fc.trans (hfl'.mono fun r hr => by simp only [List.mem_singleton] at hr; subst hr; simp [deriveWrites])
   have hspv : s'.sp + BitVec.ofNat 32 (4 * callPush.length) = u.sp := by
     rw [hsp, pushed_sp, BitVec.sub_add_cancel]
-  have hv : RReady s₀ (popped .r4 (4 * callPush.length) s') := by
+  have hv : RReady s₀ { popped .r4 (4 * callPush.length) s' with mem := lm, unknowns := lu } := by
     refine ⟨⟨?_, ?_, ?_, h.rf.nowrap⟩, ?_, ?_, ?_, ?_⟩
-    · rw [popped_gpr (by decide), hpu .r11 (by decide) (by decide)]; exact h.rf.base
-    · rw [popped_wr, hwr, pushed_wr, List.tail_cons]; exact h.rf.wr
-    · rw [popped_rd, hrd, pushed_rd]; exact h.rf.args
-    · rw [popped_sp, hspv]; exact h.sp
-    · rw [popped_rd, hrd, pushed_rd]; exact h.rd
-    · rw [popped_wr, hwr, pushed_wr, List.tail_cons]; exact h.wr
-    · rw [popped_mem]
-      refine h.frame.trans (Fc.sub fun r hr => ?_)
+    · dsimp only; rw [popped_gpr (by decide), hpu .r11 (by decide) (by decide)]; exact h.rf.base
+    · dsimp only; rw [popped_wr, hwr, pushed_wr, List.tail_cons]; exact h.rf.wr
+    · dsimp only; rw [popped_rd, hrd, pushed_rd]; exact h.rf.args
+    · dsimp only; rw [popped_sp, hspv]; exact h.sp
+    · dsimp only; rw [popped_rd, hrd, pushed_rd]; exact h.rd
+    · dsimp only; rw [popped_wr, hwr, pushed_wr, List.tail_cons]; exact h.wr
+    · dsimp only
+      refine h.frame.trans (FcL.sub fun r hr => ?_)
       simp only [deriveWrites, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
       · exact ⟨_, by simp [rWrites], fun _ h => h⟩
@@ -506,11 +580,16 @@ theorem callDerive_ok {s₀ u : State} (A : KeyABI s₀) (h : RReady s₀ u) (C 
   obtain ⟨hr, hb⟩ := hpost
   rw [State.withRegions_gpr, BitVec.setWidth_append_eq_right, deriveRes_call A h C] at hr
   rw [State.withRegions_mem, dc_r0 C, dc_r1 C, deriveRes_call A h C] at hb
-  refine ⟨hv, by rw [popped_mem]; exact Fc, fun r hr' => ?_, ?_, by rw [popped_mem]; exact hb⟩
+  refine ⟨hv, by dsimp only; exact FcL, fun r hr' => ?_, ?_, by
+    dsimp only
+    rw [rBytes_frame hfl' (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact A.stackOut.symm.sub_right (low_sub s₀ (by decide)))
+      (by have := (s₀.gpr .r1).isLt; omega_using [])]
+    exact hb⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr'
     rcases hr' with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-      exact (popped_gpr (by decide) _ _).trans (hpu _ (by decide) (by decide))
-  · rw [popped_gpr (by decide)]
+      dsimp only <;> exact (popped_gpr (by decide) _ _).trans (hpu _ (by decide) (by decide))
+  · dsimp only; rw [popped_gpr (by decide)]
     apply BitVec.eq_of_toNat_eq
     rw [hr, toNat_imm (by have := status_lt (deriveResult s₀ u); omega_using [hr])]
 

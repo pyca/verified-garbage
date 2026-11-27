@@ -1,7 +1,6 @@
 module
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyPublicCall
 
-import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyNoSp
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyPublicCall
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyFnInput
 import VerifiedGarbage.Proof.Rsa.X86.PrivStackSafety
 import VerifiedGarbage.Proof.Weierstrass.PointContract

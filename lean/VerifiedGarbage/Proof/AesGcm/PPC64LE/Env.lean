@@ -18,7 +18,7 @@ public meta import VerifiedGarbage.TCB.PPC64LE.Isa
 
 Untrusted: everything here is checked by Lean. As on ARMv7
 (`Proof/AesGcm/Arm/Env.lean`): the key context (256 bytes at `c`), the
-streaming state (80 bytes at `st`) and the working space (2560 bytes at `w`)
+streaming state (80 bytes at `st`) and the working space (288 bytes at `w`)
 (`Lay`): the state is disjoint from the parts of `W` other than `[16, 96)`
 (where `seal` and `open` keep it), and the context from both. `Perm` says
 the state may read the context and write the state and `W`; `Env` adds the
@@ -81,11 +81,11 @@ theorem add_ofNat_assoc (p : Addr) (a b : Nat) :
 structure Lay (c st w : Addr) : Prop where
   cw : c.toNat + 256 ≤ 2 ^ 64
   sw : st.toNat + 80 ≤ 2 ^ 64
-  ww : w.toNat + 2560 ≤ 2 ^ 64
+  ww : w.toNat + 288 ≤ 2 ^ 64
   cs : (⟨c, 256⟩ : Region).Disjoint ⟨st, 80⟩
-  cw' : (⟨c, 256⟩ : Region).Disjoint ⟨w, 2560⟩
+  cw' : (⟨c, 256⟩ : Region).Disjoint ⟨w, 288⟩
   sa : (⟨st, 80⟩ : Region).Disjoint ⟨w, 16⟩
-  sb : (⟨st, 80⟩ : Region).Disjoint ⟨w + BitVec.ofNat 64 96, 2464⟩
+  sb : (⟨st, 80⟩ : Region).Disjoint ⟨w + BitVec.ofNat 64 96, 192⟩
 
 /-- The layout, for an environment's registers. -/
 theorem Lay.v {V : Reg → BitVec 64} {c st w : Addr} (L : Lay c st w) (h29 : V .r29 = c) (h30 : V .r30 = st)
@@ -96,7 +96,7 @@ theorem Lay.v {V : Reg → BitVec 64} {c st w : Addr} (L : Lay c st w) (h29 : V 
 structure Perm (c st w : Addr) (s : State) : Prop where
   ctx : Covers [⟨c, 256⟩] (s.rd ++ s.wr)
   st : Covers [⟨st, 80⟩] s.wr
-  w : Covers [⟨w, 2560⟩] s.wr
+  w : Covers [⟨w, 288⟩] s.wr
 
 /-- The registers the pieces keep: our caller's `r2` and `r14`–`r17`
 (which only the functions called touch, and they preserve them), the
@@ -165,11 +165,11 @@ theorem ctxSub {C : Addr} {d n : Nat} (h : d + n ≤ 256) : Region.Sub ⟨C + Bi
 theorem stSub {S : Addr} {d n : Nat} (h : d + n ≤ 80) : Region.Sub ⟨S + BitVec.ofNat 64 d, n⟩ ⟨S, 80⟩ :=
   Offset.sub_base _ h
 
-theorem wSub {W : Addr} {d n : Nat} (h : d + n ≤ 2560) : Region.Sub ⟨W + BitVec.ofNat 64 d, n⟩ ⟨W, 2560⟩ :=
+theorem wSub {W : Addr} {d n : Nat} (h : d + n ≤ 288) : Region.Sub ⟨W + BitVec.ofNat 64 d, n⟩ ⟨W, 288⟩ :=
   Offset.sub_base _ h
 
-theorem bSub {W : Addr} {d n : Nat} (h₁ : 96 ≤ d) (h₂ : d + n ≤ 2560) :
-    Region.Sub ⟨W + BitVec.ofNat 64 d, n⟩ ⟨W + BitVec.ofNat 64 96, 2464⟩ :=
+theorem bSub {W : Addr} {d n : Nat} (h₁ : 96 ≤ d) (h₂ : d + n ≤ 288) :
+    Region.Sub ⟨W + BitVec.ofNat 64 d, n⟩ ⟨W + BitVec.ofNat 64 96, 192⟩ :=
   Offset.sub _ h₁ (by omega_using [h₂])
 
 theorem aSub {W : Addr} {d n : Nat} (h : d + n ≤ 16) : Region.Sub ⟨W + BitVec.ofNat 64 d, n⟩ ⟨W, 16⟩ :=
@@ -179,7 +179,7 @@ variable {c st w : Addr} (L : Lay c st w)
 include L
 
 /-- Parts of the state and of `W` outside `[16, 96)` are disjoint. -/
-theorem st_w {a n d k : Nat} (ha : a + n ≤ 80) (hd : (d + k ≤ 16) ∨ (96 ≤ d ∧ d + k ≤ 2560)) :
+theorem st_w {a n d k : Nat} (ha : a + n ≤ 80) (hd : (d + k ≤ 16) ∨ (96 ≤ d ∧ d + k ≤ 288)) :
     (⟨st + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨w + BitVec.ofNat 64 d, k⟩ := by
   rcases hd with hd | ⟨h₁, h₂⟩
   · exact (L.sa.sub_left (stSub ha)).sub_right (aSub hd)
@@ -189,7 +189,7 @@ theorem ctx_st {a n d k : Nat} (ha : a + n ≤ 256) (hd : d + k ≤ 80) :
     (⟨c + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨st + BitVec.ofNat 64 d, k⟩ :=
   (L.cs.sub_left (ctxSub ha)).sub_right (stSub hd)
 
-theorem ctx_w {a n d k : Nat} (ha : a + n ≤ 256) (hd : d + k ≤ 2560) :
+theorem ctx_w {a n d k : Nat} (ha : a + n ≤ 256) (hd : d + k ≤ 288) :
     (⟨c + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨w + BitVec.ofNat 64 d, k⟩ :=
   (L.cw'.sub_left (ctxSub ha)).sub_right (wSub hd)
 
@@ -201,7 +201,7 @@ theorem st_st {a n d k : Nat} (h : a + n ≤ d ∨ d + k ≤ a) (ha : a + n ≤ 
 
 omit L in
 /-- Parts of `W` are disjoint. -/
-theorem w_w {a n d k : Nat} (h : a + n ≤ d ∨ d + k ≤ a) (ha : a + n ≤ 2560) (hd : d + k ≤ 2560) :
+theorem w_w {a n d k : Nat} (h : a + n ≤ d ∨ d + k ≤ a) (ha : a + n ≤ 288) (hd : d + k ≤ 288) :
     (⟨w + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨w + BitVec.ofNat 64 d, k⟩ :=
   Offset.disjoint _ h (by omega_using [ha]) (by omega_using [hd])
 
@@ -218,10 +218,10 @@ theorem stW {d n : Nat} (h : d + n ≤ 80) : InRegions s.wr (st + BitVec.ofNat 6
 theorem stR {d n : Nat} (h : d + n ≤ 80) : InRegions (s.rd ++ s.wr) (st + BitVec.ofNat 64 d) n :=
   in_left (P.stW h)
 
-theorem wW {d n : Nat} (h : d + n ≤ 2560) : InRegions s.wr (w + BitVec.ofNat 64 d) n :=
+theorem wW {d n : Nat} (h : d + n ≤ 288) : InRegions s.wr (w + BitVec.ofNat 64 d) n :=
   in_off P.w h (by decide)
 
-theorem wR {d n : Nat} (h : d + n ≤ 2560) : InRegions (s.rd ++ s.wr) (w + BitVec.ofNat 64 d) n :=
+theorem wR {d n : Nat} (h : d + n ≤ 288) : InRegions (s.rd ++ s.wr) (w + BitVec.ofNat 64 d) n :=
   in_left (P.wW h)
 
 theorem ctxC {d n : Nat} (h : d + n ≤ 256) : Covers [⟨c + BitVec.ofNat 64 d, n⟩] (s.rd ++ s.wr) :=
@@ -230,7 +230,7 @@ theorem ctxC {d n : Nat} (h : d + n ≤ 256) : Covers [⟨c + BitVec.ofNat 64 d,
 theorem stC {d n : Nat} (h : d + n ≤ 80) : Covers [⟨st + BitVec.ofNat 64 d, n⟩] s.wr :=
   covers_off P.st h (by decide)
 
-theorem wC {d n : Nat} (h : d + n ≤ 2560) : Covers [⟨w + BitVec.ofNat 64 d, n⟩] s.wr :=
+theorem wC {d n : Nat} (h : d + n ≤ 288) : Covers [⟨w + BitVec.ofNat 64 d, n⟩] s.wr :=
   covers_off P.w h (by decide)
 
 end Perm
@@ -244,7 +244,7 @@ structure DataOk (st w : Addr) (s : State) (D : Addr) (n : Nat) : Prop where
   lt : n < 2 ^ 64
   fit : D.toNat + n ≤ 2 ^ 64
   st : (⟨D, n⟩ : Region).Disjoint ⟨st, 80⟩
-  w : (⟨D, n⟩ : Region).Disjoint ⟨w, 2560⟩
+  w : (⟨D, n⟩ : Region).Disjoint ⟨w, 288⟩
 
 namespace DataOk
 

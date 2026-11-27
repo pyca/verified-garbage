@@ -10,6 +10,8 @@ pub const VG_AES_ECB_ENCRYPT_AESNI_FEATURES: verified_garbage_cpu::Features = ve
 ///
 /// Contract: `VG.Spec.AesEcb.encryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 240 bytes.
@@ -43,28 +45,64 @@ jb 22b
 jmp 21f
 20:
 21:
-.base64 "i0QkDInRKcHB6QSDwQCLRCQQOcGLTCQIi0QkBA=="
+.base64 "i0QkDInRKcHB6QSDwQKLRCQQOcGLTCQIi0QkBA=="
 jae 27f
-29:
-.base64 "8w9vAvMPbzBmD+/G8w9vcBBmDzjcxvMPb3AgZg843MbzD29wMGYPONzG8w9vcEBmDzjcxvMPb3BQZg843MbzD29wYGYPONzG8w9vcHBmDzjcxvMPb7CAAAAAZg843MbzD2+wkAAAAGYPONzGg/kK"
-je 210f
-.base64 "8w9vsKAAAABmDzjcxvMPb7CwAAAAZg843MaD+Qw="
-je 212f
-.base64 "8w9vsMAAAABmDzjcxvMPb7DQAAAAZg843MbzD2+w4AAAAGYPON3G"
-jmp 213f
-212:
-.base64 "8w9vsMAAAABmDzjdxg=="
-213:
-jmp 211f
-210:
-.base64 "8w9vsKAAAABmDzjdxg=="
+.base64 "8w9vAvMPb0oQ8w9vUiDzD28wZg/vxmYP785mD+/W8w9vcBBmDzjcxmYPONzOZg843NbzD29wIGYPONzGZg843M5mDzjc1vMPb3AwZg843MZmDzjczmYPONzW8w9vcEBmDzjcxmYPONzOZg843NbzD29wUGYPONzGZg843M5mDzjc1vMPb3BgZg843MZmDzjczmYPONzW8w9vcHBmDzjcxmYPONzOZg843NbzD2+wgAAAAGYPONzGZg843M5mDzjc1vMPb7CQAAAAZg843MZmDzjczmYPONzWg/kK"
+je 29f
+.base64 "8w9vsKAAAABmDzjcxmYPONzOZg843NbzD2+wsAAAAGYPONzGZg843M5mDzjc1oP5DA=="
+je 211f
+.base64 "8w9vsMAAAABmDzjcxmYPONzOZg843NbzD2+w0AAAAGYPONzGZg843M5mDzjc1vMPb7DgAAAAZg843cZmDzjdzmYPON3W"
+jmp 212f
 211:
-.base64 "8w9/AoPCEItEJAyJ0SnBwekEg8EAi0QkEDnBi0wkCItEJAQ="
-jb 29b
+.base64 "8w9vsMAAAABmDzjdxmYPON3OZg843dY="
+212:
+jmp 210f
+29:
+.base64 "8w9vsKAAAABmDzjdxmYPON3OZg843dY="
+210:
+.base64 "8w9/AvMPf0oQ8w9/UiCDwjA="
 jmp 28f
 27:
 28:
-.base64 "ww=="
+.base64 "i0QkDInRKcHB6QSDwQGLRCQQOcGLTCQIi0QkBA=="
+jae 213f
+.base64 "8w9vGvMPb2IQ8w9vMGYP795mD+/m8w9vcBBmDzjc3mYPONzm8w9vcCBmDzjc3mYPONzm8w9vcDBmDzjc3mYPONzm8w9vcEBmDzjc3mYPONzm8w9vcFBmDzjc3mYPONzm8w9vcGBmDzjc3mYPONzm8w9vcHBmDzjc3mYPONzm8w9vsIAAAABmDzjc3mYPONzm8w9vsJAAAABmDzjc3mYPONzmg/kK"
+je 215f
+.base64 "8w9vsKAAAABmDzjc3mYPONzm8w9vsLAAAABmDzjc3mYPONzmg/kM"
+je 217f
+.base64 "8w9vsMAAAABmDzjc3mYPONzm8w9vsNAAAABmDzjc3mYPONzm8w9vsOAAAABmDzjd3mYPON3m"
+jmp 218f
+217:
+.base64 "8w9vsMAAAABmDzjd3mYPON3m"
+218:
+jmp 216f
+215:
+.base64 "8w9vsKAAAABmDzjd3mYPON3m"
+216:
+.base64 "8w9/GvMPf2IQg8Ig"
+jmp 214f
+213:
+214:
+.base64 "i0QkDInRKcHB6QSDwQCLRCQQOcGLTCQIi0QkBA=="
+jae 219f
+.base64 "8w9vKvMPbzBmD+/u8w9vcBBmDzjc7vMPb3AgZg843O7zD29wMGYPONzu8w9vcEBmDzjc7vMPb3BQZg843O7zD29wYGYPONzu8w9vcHBmDzjc7vMPb7CAAAAAZg843O7zD2+wkAAAAGYPONzug/kK"
+je 221f
+.base64 "8w9vsKAAAABmDzjc7vMPb7CwAAAAZg843O6D+Qw="
+je 223f
+.base64 "8w9vsMAAAABmDzjc7vMPb7DQAAAAZg843O7zD2+w4AAAAGYPON3u"
+jmp 224f
+223:
+.base64 "8w9vsMAAAABmDzjd7g=="
+224:
+jmp 222f
+221:
+.base64 "8w9vsKAAAABmDzjd7g=="
+222:
+.base64 "8w9/KoPCEA=="
+jmp 220f
+219:
+220:
+.base64 "uAAAAAC6AAAAADHJZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7//D"
 .p2align 6"#,
     )
 }
@@ -75,6 +113,8 @@ pub const VG_AES_ECB_DECRYPT_AESNI_FEATURES: verified_garbage_cpu::Features = ve
 /// AES-ECB decryption (NIST SP 800-38A §6.1) of whole blocks, in place: replaces each of the `n` 16-byte blocks at `data` with its decryption by AES (FIPS 197 §5.3, `INVCIPHER`) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (the forward cipher's schedule). No padding is removed. Each byte of `scratch` is unchanged or zero on return.
 ///
 /// Contract: `VG.Spec.AesEcb.decryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -91,17 +131,83 @@ pub(crate) unsafe extern "C" fn vg_aes_ecb_decrypt_aesni(schedule: *const [u8; 2
         r#".base64 "jWQk5ItEJCCJBCSLRCQkiUQkBItEJCiJRCQIi0QkLIlEJAyLRCQwiUQkEA=="
 call {vg_aes_decrypt_blocks_aesni}
 .base64 "iUQkFIlUJBiLRCQwiQQkuPAAAACJRCQE"
-call {vg_zeroize}
-.base64 "i0QkFItUJBiNZCQcww=="
+call {vg_zeroize_core}
+.base64 "i0QkFItUJBiNZCQcZg/vwI1kJODzD38EJPMPf0QkEI1kJCC4AAAAALoAAAAAMclmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/8M="
 .p2align 6"#,
         vg_aes_decrypt_blocks_aesni = sym super::aes::vg_aes_decrypt_blocks_aesni::vg_aes_decrypt_blocks_aesni,
-        vg_zeroize = sym super::zeroize::vg_zeroize,
+        vg_zeroize_core = sym super::zeroize::vg_zeroize_core::vg_zeroize_core,
+    )
+}
+
+/// The CPU features `vg_aes_ecb_encrypt_ssse3` requires (`Artifact.features`).
+pub const VG_AES_ECB_ENCRYPT_SSSE3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3);
+
+/// AES-ECB encryption (NIST SP 800-38A §6.1) of whole blocks, in place: replaces each of the `n` 16-byte blocks at `data` with its encryption by AES (FIPS 197 §5.1, `CIPHER`) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it. No padding is added. Each byte of `scratch` is unchanged or zero on return.
+///
+/// Contract: `VG.Spec.AesEcb.encryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `data` must be valid for reads and writes of `16 * n` bytes.
+/// * `scratch` must be valid for reads and writes of 2048 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `data` and `scratch` must not overlap each other, `schedule` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `schedule`, `data` and `scratch` may overlap the return address on the stack or the 32 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `ssse3` target feature.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_aes_ecb_encrypt_ssse3(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
+    core::arch::naked_asm!(
+        r#".base64 "jWQk5ItEJCCJBCSLRCQkiUQkBItEJCiJRCQIi0QkLIlEJAyLRCQwiUQkEA=="
+call {vg_aes_encrypt_blocks_ssse3}
+.base64 "iUQkFIlUJBiLRCQwiQQkuOABAACJRCQE"
+call {vg_zeroize_core}
+.base64 "i0QkFItUJBiNZCQcZg/vwI1kJODzD38EJPMPf0QkEI1kJCC4AAAAALoAAAAAMclmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/8M="
+.p2align 6"#,
+        vg_aes_encrypt_blocks_ssse3 = sym super::aes::vg_aes_encrypt_blocks_ssse3::vg_aes_encrypt_blocks_ssse3,
+        vg_zeroize_core = sym super::zeroize::vg_zeroize_core::vg_zeroize_core,
+    )
+}
+
+/// The CPU features `vg_aes_ecb_decrypt_ssse3` requires (`Artifact.features`).
+pub const VG_AES_ECB_DECRYPT_SSSE3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3);
+
+/// AES-ECB decryption (NIST SP 800-38A §6.1) of whole blocks, in place: replaces each of the `n` 16-byte blocks at `data` with its decryption by AES (FIPS 197 §5.3, `INVCIPHER`) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (the forward cipher's schedule). No padding is removed. Each byte of `scratch` is unchanged or zero on return.
+///
+/// Contract: `VG.Spec.AesEcb.decryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `data` must be valid for reads and writes of `16 * n` bytes.
+/// * `scratch` must be valid for reads and writes of 2048 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `data` and `scratch` must not overlap each other, `schedule` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `schedule`, `data` and `scratch` may overlap the return address on the stack or the 32 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `ssse3` target feature.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_aes_ecb_decrypt_ssse3(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
+    core::arch::naked_asm!(
+        r#".base64 "jWQk5ItEJCCJBCSLRCQkiUQkBItEJCiJRCQIi0QkLIlEJAyLRCQwiUQkEA=="
+call {vg_aes_decrypt_blocks_ssse3}
+.base64 "iUQkFIlUJBiLRCQwiQQkuNACAACJRCQE"
+call {vg_zeroize_core}
+.base64 "i0QkFItUJBiNZCQcZg/vwI1kJODzD38EJPMPf0QkEI1kJCC4AAAAALoAAAAAMclmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/8M="
+.p2align 6"#,
+        vg_aes_decrypt_blocks_ssse3 = sym super::aes::vg_aes_decrypt_blocks_ssse3::vg_aes_decrypt_blocks_ssse3,
+        vg_zeroize_core = sym super::zeroize::vg_zeroize_core::vg_zeroize_core,
     )
 }
 
 /// AES-ECB encryption (NIST SP 800-38A §6.1) of whole blocks, in place: replaces each of the `n` 16-byte blocks at `data` with its encryption by AES (FIPS 197 §5.1, `CIPHER`) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it. No padding is added. Each byte of `scratch` is unchanged or zero on return.
 ///
 /// Contract: `VG.Spec.AesEcb.encryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -117,17 +223,19 @@ pub(crate) unsafe extern "C" fn vg_aes_ecb_encrypt(schedule: *const [u8; 240], r
         r#".base64 "jWQk5ItEJCCJBCSLRCQkiUQkBItEJCiJRCQIi0QkLIlEJAyLRCQwiUQkEA=="
 call {vg_aes_encrypt_blocks}
 .base64 "iUQkFIlUJBiLRCQwiQQkuAAIAACJRCQE"
-call {vg_zeroize}
-.base64 "i0QkFItUJBiNZCQcww=="
+call {vg_zeroize_core}
+.base64 "i0QkFItUJBiNZCQcZg/vwI1kJODzD38EJPMPf0QkEI1kJCC4AAAAALoAAAAAMclmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/8M="
 .p2align 6"#,
         vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks::vg_aes_encrypt_blocks,
-        vg_zeroize = sym super::zeroize::vg_zeroize,
+        vg_zeroize_core = sym super::zeroize::vg_zeroize_core::vg_zeroize_core,
     )
 }
 
 /// AES-ECB decryption (NIST SP 800-38A §6.1) of whole blocks, in place: replaces each of the `n` 16-byte blocks at `data` with its decryption by AES (FIPS 197 §5.3, `INVCIPHER`) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (the forward cipher's schedule). No padding is removed. Each byte of `scratch` is unchanged or zero on return.
 ///
 /// Contract: `VG.Spec.AesEcb.decryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -143,10 +251,10 @@ pub(crate) unsafe extern "C" fn vg_aes_ecb_decrypt(schedule: *const [u8; 240], r
         r#".base64 "jWQk5ItEJCCJBCSLRCQkiUQkBItEJCiJRCQIi0QkLIlEJAyLRCQwiUQkEA=="
 call {vg_aes_decrypt_blocks}
 .base64 "iUQkFIlUJBiLRCQwiQQkuAAIAACJRCQE"
-call {vg_zeroize}
-.base64 "i0QkFItUJBiNZCQcww=="
+call {vg_zeroize_core}
+.base64 "i0QkFItUJBiNZCQcZg/vwI1kJODzD38EJPMPf0QkEI1kJCC4AAAAALoAAAAAMclmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/8M="
 .p2align 6"#,
         vg_aes_decrypt_blocks = sym super::aes::vg_aes_decrypt_blocks::vg_aes_decrypt_blocks,
-        vg_zeroize = sym super::zeroize::vg_zeroize,
+        vg_zeroize_core = sym super::zeroize::vg_zeroize_core::vg_zeroize_core,
     )
 }

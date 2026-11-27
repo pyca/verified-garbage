@@ -4,13 +4,12 @@ public import VerifiedGarbage.Impl.Sm4.Arm.SerialOfb
 import VerifiedGarbage.Proof.Sm4.Arm.CfbGroup
 import VerifiedGarbage.Proof.Sm4.Arm.CfbFill
 public import VerifiedGarbage.Proof.Sm4.Arm.BatchChain
-import VerifiedGarbage.Proof.Sm4.Arm.Keys
 import VerifiedGarbage.Proof.Sm4.Arm.Group
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.MdStream.Arm.Common
 public import VerifiedGarbage.Proof.Sm4.Arm.BatchGroup
-public import VerifiedGarbage.Proof.Sm4.Arm.PreparedBody
+public import VerifiedGarbage.Proof.Sm4.Arm.PreparedVerified
 public import VerifiedGarbage.Proof.Sm4.Prepared
 
 /-! # One prepared-key OFB block -/
@@ -67,7 +66,7 @@ theorem group_wp {s : State} {B D : BitVec 32} {K : Spec.Sm4.Schedule} {n : Nat}
     (hH : Holds layout s.mem (State.addr B) K .encrypt) :
     WP isa SerialOfb.group s (GroupPost s B D K n) := by
   obtain ⟨s₁, e₁, g₁, o₁, m₁, rd₁, wr₁, sp₁⟩ := movImm_ok s .r11 1 (by decide)
-  refine WP.seq (WP.seq (WP.of_runBlock ⟨s₁, e₁, WP.of_runBlock ⟨s₁, CfbFill.pad_run s₁, ?_⟩⟩))
+  refine WP.seq (WP.of_runBlock ⟨s₁, e₁, ?_⟩)
   have b₁ : s₁.gpr sb = B := (o₁ _ (by decide)).trans hB
   have d₁ : s₁.gpr .r6 = D := (o₁ _ (by decide)).trans hD
   have wd₁ : Covers [⟨State.addr D, 16⟩] s₁.wr := by

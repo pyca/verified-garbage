@@ -52,7 +52,7 @@ theorem saveR_contains (P : Addr) {o : Nat} (h₁ : 1288 ≤ o) (h₂ : o + 8 �
 /-- `TopSaved` through a change of memory apart from where they are saved. -/
 theorem TopSaved.keep {m m' : Mem} {P : Addr} {s₀ : State} (h : TopSaved m P s₀) {rs : List Region}
     (hf : Frame rs m m') (hd : ∀ r ∈ rs, (saveR P).Disjoint r) : TopSaved m' P s₀ := by
-  have k : ∀ o, 1288 ≤ o → o + 8 ≤ 1368 →
+  obtain k : ∀ o, 1288 ≤ o → o + 8 ≤ 1368 →
       m'.readW (P + BitVec.ofNat 64 o) 64 = m.readW (P + BitVec.ofNat 64 o) 64 :=
     fun o h₁ h₂ => hf.readW (saveR_contains P h₁ h₂) hd (by decide)
   exact ⟨(k 1288 (by decide) (by decide)).trans h.v3, (k 1296 (by decide) (by decide)).trans h.v4,
@@ -82,26 +82,26 @@ theorem topSave_ok {s : State} {b : Reg} {P : Addr} (hP : s.gpr b = P) (hal : P.
     (hw : ∀ o, 1288 ≤ o → o + 8 ≤ 1368 → InRegions s.wr (P + BitVec.ofNat 64 o) 8) :
     WP isa (.block (topSave b)) s fun s' => TopSaved s'.mem P s ∧ Frame [saveR P] s.mem s'.mem ∧
       s'.gpr = s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp := by
-  have w0 := hw 1288 (by decide) (by decide)
-  have w1 := hw 1296 (by decide) (by decide)
-  have w2 := hw 1304 (by decide) (by decide)
-  have w3 := hw 1312 (by decide) (by decide)
-  have w4 := hw 1320 (by decide) (by decide)
-  have w5 := hw 1328 (by decide) (by decide)
-  have w6 := hw 1336 (by decide) (by decide)
-  have w7 := hw 1344 (by decide) (by decide)
-  have w8 := hw 1352 (by decide) (by decide)
-  have w9 := hw 1360 (by decide) (by decide)
-  have a0 := al8 hal (o := 1288) (by decide)
-  have a1 := al8 hal (o := 1296) (by decide)
-  have a2 := al8 hal (o := 1304) (by decide)
-  have a3 := al8 hal (o := 1312) (by decide)
-  have a4 := al8 hal (o := 1320) (by decide)
-  have a5 := al8 hal (o := 1328) (by decide)
-  have a6 := al8 hal (o := 1336) (by decide)
-  have a7 := al8 hal (o := 1344) (by decide)
-  have a8 := al8 hal (o := 1352) (by decide)
-  have a9 := al8 hal (o := 1360) (by decide)
+  obtain w0 := hw 1288 (by decide) (by decide)
+  obtain w1 := hw 1296 (by decide) (by decide)
+  obtain w2 := hw 1304 (by decide) (by decide)
+  obtain w3 := hw 1312 (by decide) (by decide)
+  obtain w4 := hw 1320 (by decide) (by decide)
+  obtain w5 := hw 1328 (by decide) (by decide)
+  obtain w6 := hw 1336 (by decide) (by decide)
+  obtain w7 := hw 1344 (by decide) (by decide)
+  obtain w8 := hw 1352 (by decide) (by decide)
+  obtain w9 := hw 1360 (by decide) (by decide)
+  obtain a0 := al8 hal (o := 1288) (by decide)
+  obtain a1 := al8 hal (o := 1296) (by decide)
+  obtain a2 := al8 hal (o := 1304) (by decide)
+  obtain a3 := al8 hal (o := 1312) (by decide)
+  obtain a4 := al8 hal (o := 1320) (by decide)
+  obtain a5 := al8 hal (o := 1328) (by decide)
+  obtain a6 := al8 hal (o := 1336) (by decide)
+  obtain a7 := al8 hal (o := 1344) (by decide)
+  obtain a8 := al8 hal (o := 1352) (by decide)
+  obtain a9 := al8 hal (o := 1360) (by decide)
   rw [topSave_eq]
   crun [hP, w0, w1, w2, w3, w4, w5, w6, w7, w8, w9, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9]
   simp only [write8_eq]
@@ -119,27 +119,27 @@ theorem topEnd_ok {s₀ s : State} {P : Addr} (h11 : s.gpr .s11 = P) (hal : P.to
     (hcs : ∀ r ∈ preserved, r ∉ savedTop → s.gpr r = s₀.gpr r) :
     WP isa (.block topEnd) s fun s' => (∀ r ∈ preserved, s'.gpr r = s₀.gpr r) ∧ s'.gpr .ra = s₀.gpr .ra ∧
       s'.gpr .a0 = s.gpr .s4 ∧ s'.mem = s.mem ∧ s'.sp = s.sp ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
-  have i0 := hin 1288 (by decide) (by decide)
-  have i1 := hin 1296 (by decide) (by decide)
-  have i2 := hin 1304 (by decide) (by decide)
-  have i3 := hin 1312 (by decide) (by decide)
-  have i4 := hin 1320 (by decide) (by decide)
-  have i5 := hin 1328 (by decide) (by decide)
-  have i6 := hin 1336 (by decide) (by decide)
-  have i7 := hin 1344 (by decide) (by decide)
-  have i8 := hin 1352 (by decide) (by decide)
-  have i9 := hin 1360 (by decide) (by decide)
-  have a0 := al8 hal (o := 1288) (by decide)
-  have a1 := al8 hal (o := 1296) (by decide)
-  have a2 := al8 hal (o := 1304) (by decide)
-  have a3 := al8 hal (o := 1312) (by decide)
-  have a4 := al8 hal (o := 1320) (by decide)
-  have a5 := al8 hal (o := 1328) (by decide)
-  have a6 := al8 hal (o := 1336) (by decide)
-  have a7 := al8 hal (o := 1344) (by decide)
-  have a8 := al8 hal (o := 1352) (by decide)
-  have a9 := al8 hal (o := 1360) (by decide)
-  have hk : WP isa (.block topEnd) s fun s' =>
+  obtain i0 := hin 1288 (by decide) (by decide)
+  obtain i1 := hin 1296 (by decide) (by decide)
+  obtain i2 := hin 1304 (by decide) (by decide)
+  obtain i3 := hin 1312 (by decide) (by decide)
+  obtain i4 := hin 1320 (by decide) (by decide)
+  obtain i5 := hin 1328 (by decide) (by decide)
+  obtain i6 := hin 1336 (by decide) (by decide)
+  obtain i7 := hin 1344 (by decide) (by decide)
+  obtain i8 := hin 1352 (by decide) (by decide)
+  obtain i9 := hin 1360 (by decide) (by decide)
+  obtain a0 := al8 hal (o := 1288) (by decide)
+  obtain a1 := al8 hal (o := 1296) (by decide)
+  obtain a2 := al8 hal (o := 1304) (by decide)
+  obtain a3 := al8 hal (o := 1312) (by decide)
+  obtain a4 := al8 hal (o := 1320) (by decide)
+  obtain a5 := al8 hal (o := 1328) (by decide)
+  obtain a6 := al8 hal (o := 1336) (by decide)
+  obtain a7 := al8 hal (o := 1344) (by decide)
+  obtain a8 := al8 hal (o := 1352) (by decide)
+  obtain a9 := al8 hal (o := 1360) (by decide)
+  obtain hk : WP isa (.block topEnd) s fun s' =>
       s'.gpr .a0 = s.gpr .s4 ∧ s'.gpr .ra = s.mem.readW (P + BitVec.ofNat 64 1360) 64 ∧
       s'.gpr .s3 = s.mem.readW (P + BitVec.ofNat 64 1288) 64 ∧
       s'.gpr .s4 = s.mem.readW (P + BitVec.ofNat 64 1296) 64 ∧
@@ -156,8 +156,8 @@ theorem topEnd_ok {s₀ s : State} {P : Addr} (h11 : s.gpr .s11 = P) (hal : P.to
     crun [mov, h11, i0, i1, i2, i3, i4, i5, i6, i7, i8, i9, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9]
     refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, fun r hr hs => ?_⟩
     all_goals first | rfl | skip
-    have h0 : r ≠ .a0 := by rintro rfl; simp [preserved] at hr
-    have h3 : r ≠ .ra := by rintro rfl; simp [preserved] at hr
+    obtain h0 : r ≠ .a0 := by rintro rfl; simp [preserved] at hr
+    obtain h3 : r ≠ .ra := by rintro rfl; simp [preserved] at hr
     simp only [savedTop, List.mem_cons, List.not_mem_nil, or_false, not_or] at hs
     obtain ⟨a3, a4, a5, a6, a7, a8, a9, a10, a11⟩ := hs
     simp [a3, a4, a5, a6, a7, a8, a9, a10, a11, h0, h3]

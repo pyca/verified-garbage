@@ -1,7 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.RISCV64.VerifyFront
-import VerifiedGarbage.Proof.Dsa.RISCV64.VerifyFn
+public import VerifiedGarbage.Proof.Dsa.RISCV64.VerifyFn
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 

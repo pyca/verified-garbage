@@ -56,8 +56,9 @@ def decryptRoundsContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M 
 /-! ## The contracts without `scratch`'s clause
 
 `Spec.Cbc.aesEncryptContract` and `Spec.Cbc.aesDecryptContract` are these
-postconditions and `scratch` left scrubbed (`Wipe.scrubbedPost`,
-`Wipe.encrypt_eq`, `Wipe.decrypt_eq`). -/
+postconditions and `scratch` left scrubbed, which each target proves by saying
+which of its bytes are zero (`Wipe.wipedPost`, `Wipe.encrypt_imp`,
+`Wipe.decrypt_imp`). -/
 
 namespace Wipe
 

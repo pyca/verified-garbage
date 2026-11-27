@@ -1,35 +1,31 @@
 module
 
 public import VerifiedGarbage.TCB.PPC64LE.Target
-public import VerifiedGarbage.Proof.Weierstrass.Law
-public import VerifiedGarbage.Impl.Ecdsa.Secp256k1.PPC64LEComb
-public import VerifiedGarbage.Proof.EcKey.PPC64LE.Secp256k1.Comb
-public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.EcKey.Compressed.Contract
 public import VerifiedGarbage.Spec.EcKey.Secp256k1
-public import VerifiedGarbage.TCB.PPC64LE.Print
-import VerifiedGarbage.Proof.EcKey.PPC64LE.Secp256k1.CombLit
-public import VerifiedGarbage.Proof.Secp256k1.PPC64LE.Law
-public import VerifiedGarbage.Impl.EcKey.Compressed.Secp256k1.PPC64LE
-public import VerifiedGarbage.Proof.EcKey.Compressed.PPC64LE.Secp256k1.Verified
-import VerifiedGarbage.Proof.EcKey.Compressed.PPC64LE.Secp256k1.Lit
+import VerifiedGarbage.Proof.EcKey.PPC64LE.Scrub
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Secp256k1.PPC64LE.Law
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # secp256k1 public keys (FIPS 186-5 §A.2) on PPC64LE -/
-
-@[expose] public section
 
 namespace VG.Artifacts.EcSecp256k1.PPC64LE
 
 open VG.Proof.Secp256k1.PPC64LE (hasLaw)
 
-def artifacts : List Artifact := [
+public def artifacts : List (Artifact PPC64LE.target) := [
   Spec.EcKey.Secp256k1.inst.compressPublicKeyApi.artifact PPC64LE.target {
-    code := Impl.EcKey.Compressed.PPC64LE.compressSecp256k1
-    verified := Proof.EcKey.Compressed.PPC64LE.Secp256k1.compress_verified },
+    code := Impl.EcKey.PPC64LE.Fn.secp256k1Compress
+    verified := Proof.EcKey.PPC64LE.Scrub.secp256k1Compress_scrubbed },
   Spec.EcKey.Secp256k1.inst.decompressPublicKeyApi.artifact PPC64LE.target {
-    code := Impl.EcKey.Compressed.PPC64LE.decompressSecp256k1
-    verified := Proof.EcKey.Compressed.PPC64LE.Secp256k1.decompress_verified hasLaw.law },
+    code := Impl.EcKey.PPC64LE.Fn.secp256k1Decompress
+    verified := Proof.EcKey.PPC64LE.Scrub.secp256k1Decompress_scrubbed hasLaw.law },
   Spec.EcKey.Secp256k1.publicKeyApi.artifact PPC64LE.target {
-    code := Impl.EcKey.PPC64LE.publicKeySecp256k1Comb
-    verified := Proof.EcKey.PPC64LE.Secp256k1.combPk_verified hasLaw.law }]
+    code := Impl.EcKey.PPC64LE.Fn.secp256k1PublicKey
+    verified := Proof.EcKey.PPC64LE.Scrub.secp256k1PublicKey_scrubbed hasLaw.law }]
+
+spec_apis artifacts
 
 end VG.Artifacts.EcSecp256k1.PPC64LE

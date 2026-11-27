@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.Bitslice.Dom
+public import VerifiedGarbage.Proof.Framework.Bitslice.Machine
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
@@ -22,13 +23,19 @@ namespace VG.Bitslice
 
 /-- Truth tables of `N` rows: rotations and shifts are not bitwise, and
 only the constants 0 and all-ones are the same at every position. -/
-def table (w N : Nat) : Dom Nat w where
-  xor a b := some (a ^^^ b)
-  and a b := some (a &&& b)
-  or a b := some (a ||| b)
+noncomputable def table (w N : Nat) : Dom Nat w where
+  xor a b := Machine.seqSome (Nat.xor a b)
+  and a b := Machine.seqSome (Nat.land a b)
+  or a b := Machine.seqSome (Nat.lor a b)
   ror _ _ := none
   shr _ _ := none
   const v := if v = 0 then some 0 else if v = BitVec.allOnes w then some (2 ^ N - 1) else none
+
+theorem table_xor (w N : Nat) (a b : Nat) : (table w N).xor a b = some (a ^^^ b) := Machine.seqSome_eq _
+
+theorem table_and (w N : Nat) (a b : Nat) : (table w N).and a b = some (a &&& b) := Machine.seqSome_eq _
+
+theorem table_or (w N : Nat) (a b : Nat) : (table w N).or a b = some (a ||| b) := Machine.seqSome_eq _
 
 /-- Row `c` of the table is bit `p` of the word. -/
 def TableRel {w : Nat} (p c : Nat) (a : Nat) (x : BitVec w) : Prop := a.testBit c = x.getLsbD p
@@ -36,13 +43,13 @@ def TableRel {w : Nat} (p c : Nat) (a : Nat) (x : BitVec w) : Prop := a.testBit 
 theorem table_sound {w N p c : Nat} (hp : p < w) (hc : c < N) :
     (table w N).Sound (TableRel p c) where
   xor ha hb h := by
-    simp only [table, Option.some.injEq] at h; subst h
+    rw [table_xor, Option.some.injEq] at h; subst h
     simp only [TableRel, Nat.testBit_xor, BitVec.getLsbD_xor] at *; rw [ha, hb]
   and ha hb h := by
-    simp only [table, Option.some.injEq] at h; subst h
+    rw [table_and, Option.some.injEq] at h; subst h
     simp only [TableRel, Nat.testBit_and, BitVec.getLsbD_and] at *; rw [ha, hb]
   or ha hb h := by
-    simp only [table, Option.some.injEq] at h; subst h
+    rw [table_or, Option.some.injEq] at h; subst h
     simp only [TableRel, Nat.testBit_or, BitVec.getLsbD_or] at *; rw [ha, hb]
   ror _ h := by cases h
   shr _ h := by cases h

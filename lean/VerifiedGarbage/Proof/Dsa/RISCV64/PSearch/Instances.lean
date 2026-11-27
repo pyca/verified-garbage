@@ -6,6 +6,8 @@ public import VerifiedGarbage.Proof.Dsa.RISCV64.PSearch.HashInst
 public import VerifiedGarbage.Proof.Dsa.RISCV64.Prime.Verified
 public import VerifiedGarbage.Proof.Dsa.RISCV64.ParamsVerified
 public import VerifiedGarbage.Proof.MillerRabin.RISCV64.Backend
+public import VerifiedGarbage.Proof.Variants.MillerRabin.RISCV64
+public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
 
 /-! # DSA parameter search on RISC-V: the three widths
 

@@ -5,6 +5,14 @@
 // gives.
 
 vg_ec_p384_public_key:
+	call 2f
+2:
+	mov eax, DWORD PTR [esp]
+	.byte 0x81, 192
+	.long {VG_P384_COMB}
+	pop ecx
+	mov edx, DWORD PTR [esp+12]
+	mov DWORD PTR [edx+60], eax
 	mov eax, DWORD PTR [esp+12]
 	mov DWORD PTR [eax], ebx
 	mov DWORD PTR [eax+4], esi
@@ -640,58 +648,7 @@ vg_ec_p384_public_key:
 	mov BYTE PTR [ebx+4879], dl
 	test esi, esi
 	jne 22b
-	mov eax, DWORD PTR [edi+448]
-	mov DWORD PTR [edi+736], eax
-	mov eax, DWORD PTR [edi+452]
-	mov DWORD PTR [edi+740], eax
-	mov eax, DWORD PTR [edi+456]
-	mov DWORD PTR [edi+744], eax
-	mov eax, DWORD PTR [edi+460]
-	mov DWORD PTR [edi+748], eax
-	mov eax, DWORD PTR [edi+464]
-	mov DWORD PTR [edi+752], eax
-	mov eax, DWORD PTR [edi+468]
-	mov DWORD PTR [edi+756], eax
-	mov eax, DWORD PTR [edi+472]
-	mov DWORD PTR [edi+760], eax
-	mov eax, DWORD PTR [edi+476]
-	mov DWORD PTR [edi+764], eax
-	mov eax, DWORD PTR [edi+480]
-	mov DWORD PTR [edi+768], eax
-	mov eax, DWORD PTR [edi+484]
-	mov DWORD PTR [edi+772], eax
-	mov eax, DWORD PTR [edi+488]
-	mov DWORD PTR [edi+776], eax
-	mov eax, DWORD PTR [edi+492]
-	mov DWORD PTR [edi+780], eax
-	mov eax, DWORD PTR [edi+496]
-	mov DWORD PTR [edi+784], eax
-	mov eax, DWORD PTR [edi+500]
-	mov DWORD PTR [edi+788], eax
-	mov eax, DWORD PTR [edi+504]
-	mov DWORD PTR [edi+792], eax
-	mov eax, DWORD PTR [edi+508]
-	mov DWORD PTR [edi+796], eax
-	mov eax, DWORD PTR [edi+512]
-	mov DWORD PTR [edi+800], eax
-	mov eax, DWORD PTR [edi+516]
-	mov DWORD PTR [edi+804], eax
-	mov eax, DWORD PTR [edi+520]
-	mov DWORD PTR [edi+808], eax
-	mov eax, DWORD PTR [edi+524]
-	mov DWORD PTR [edi+812], eax
-	mov eax, DWORD PTR [edi+528]
-	mov DWORD PTR [edi+816], eax
-	mov eax, DWORD PTR [edi+532]
-	mov DWORD PTR [edi+820], eax
-	mov eax, DWORD PTR [edi+536]
-	mov DWORD PTR [edi+824], eax
-	mov eax, DWORD PTR [edi+540]
-	mov DWORD PTR [edi+828], eax
-	push edi
-	call {vg_p384_mul}
-	pop eax
-	mov edi, DWORD PTR [esp+12]
+	call {vg_p384_comb}
 	mov eax, DWORD PTR [edi+304]
 	mov DWORD PTR [edi+1456], eax
 	mov eax, DWORD PTR [edi+308]
@@ -1041,5 +998,22 @@ vg_ec_p384_public_key:
 	mov esi, DWORD PTR [edx+4]
 	mov ebp, DWORD PTR [edx+12]
 	mov edi, DWORD PTR [edx+8]
+	pxor xmm0, xmm0
+	mov ecx, 0
+	lea esp, [esp-24]
+	movdqu XMMWORD PTR [esp], xmm0
+	mov DWORD PTR [esp+16], ecx
+	mov DWORD PTR [esp+20], ecx
+	lea esp, [esp+24]
+	mov edx, 0
+	xor ecx, ecx
+	pxor xmm0, xmm0
+	pxor xmm1, xmm1
+	pxor xmm2, xmm2
+	pxor xmm3, xmm3
+	pxor xmm4, xmm4
+	pxor xmm5, xmm5
+	pxor xmm6, xmm6
+	pxor xmm7, xmm7
 	ret
 	.p2align 6

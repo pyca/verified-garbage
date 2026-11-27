@@ -2,12 +2,16 @@ module
 
 import VerifiedGarbage.TCB.Rust
 meta import VerifiedGarbage.TCB.Rust
+import VerifiedGarbage.Impl.Rc2.AArch64.Block
+meta import VerifiedGarbage.Impl.Rc2.AArch64.Block
 import VerifiedGarbage.Artifacts.Rc2.AArch64
 meta import VerifiedGarbage.Artifacts.Rc2.AArch64
 import VerifiedGarbage.Artifacts.Aes.AArch64
 meta import VerifiedGarbage.Artifacts.Aes.AArch64
 import VerifiedGarbage.Artifacts.AesXts.AArch64
 meta import VerifiedGarbage.Artifacts.AesXts.AArch64
+import VerifiedGarbage.TCB.AArch64.Print
+meta import VerifiedGarbage.TCB.AArch64.Print
 
 /-!
 # Internal functions (`Rust.Internal`)
@@ -25,9 +29,10 @@ block functions, internal too: an internal function names another.
 namespace VG.Test.Internal
 open VG
 
-def arts : List Artifact := Artifacts.Rc2.AArch64.artifacts
+def arts : List (Artifact AArch64.target) := Artifacts.Rc2.AArch64.artifacts
 
-def filesOf (as : List Artifact) : List (String × String) := match Rust.files as with
+def filesOf (as : List (Artifact AArch64.target)) : List (String × String) :=
+  match Rust.files [.of AArch64.target AArch64.emitter [("", as)]] with
   | .ok fs => fs
   | .error e => [("error", e)]
 
@@ -80,13 +85,13 @@ def internal : List String := ["vg_rc2_decrypt_block", "vg_rc2_encrypt_block", "
 
 /-- The lines of `vg_rc2_encrypt_block`'s function, from its code. -/
 def blockLines : List Line :=
-  Rust.bodyLines (.of AArch64.target) (AArch64.printer.function Impl.Rc2.AArch64.encryptBlock)
+  Rust.bodyLines (.of AArch64.target AArch64.emitter) (AArch64.printer.function Impl.Rc2.AArch64.encryptBlock)
 
 -- The internal function's code is the block function's, and so is its text.
 #guard has (file "src/internal/vg_rc2_encrypt_block.rs")
-  (Rust.asmOf (.of AArch64.target) blockLines (fun _ => "") "crate")
+  (Rust.asmOf (.of AArch64.target AArch64.emitter) blockLines (fun _ => "") "crate")
 #guard has (file "assembly/internal/vg_rc2_encrypt_block.s")
-  (Rust.moduleAssembly.functionAssembly (.of AArch64.target) "vg_rc2_encrypt_block" blockLines)
+  (Rust.moduleAssembly.functionAssembly (.of AArch64.target AArch64.emitter) "vg_rc2_encrypt_block" blockLines)
 
 -- An internal function's name is a Rust function's.
 #guard Rust.internalName "vg_rc2_encrypt_block" && Rust.internalName "vg_x25519_2"

@@ -1,69 +1,59 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.BrainpoolP256r1.Joint.Verified
-public import VerifiedGarbage.Impl.Ecdsa.AArch64.VerifyHash
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP256r1.Comb.Verified
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.BrainpoolP256r1.Verified
-import Mathlib.Data.Finset.Card
-import Mathlib.Data.Nat.Find
-public import VerifiedGarbage.Proof.Framework.Registration
-public import Mathlib.Tactic.ClearExcept
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.BrainpoolP256r1.Lit
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.TCB.Registration
 public import VerifiedGarbage.Spec.Ecdsa.Verify.BrainpoolP256r1
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP256r1.Lit
-public import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Scrub
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.BrainpoolP256r1.Joint.Verified
+import VerifiedGarbage.Impl.Ecdsa.AArch64.VerifyHash
+import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP256r1.Comb.Verified
+import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.BrainpoolP256r1.Verified
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.EcKey.AArch64.Scrub
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.BrainpoolP256r1.Lit
+import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
+import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP256r1.Lit
+import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-public import VerifiedGarbage.Proof.EcKey.PublicKey
-public import VerifiedGarbage.Proof.Ecdh.AArch64.Peer
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP256r1.Config
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.CombLays
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.Lays
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.Setup
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.SlotOps
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.Stages
-public import VerifiedGarbage.Proof.Ecdsa.Projective
-public import VerifiedGarbage.Proof.Ecdsa.Verify
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.BrainpoolP256r1.Sum
-public import VerifiedGarbage.Proof.Framework.AArch64.Lit
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.AddConst
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Bytes
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Rep
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Window
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
-public import VerifiedGarbage.TCB.AArch64.Print
-public import VerifiedGarbage.Proof.BrainpoolP256r1.AArch64.Law
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvInterface
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.BrainpoolP256r1
-import Mathlib.Data.Finset.Attr
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.SetLike
-public import VerifiedGarbage.Proof.Variants.MdHash.AArch64
+import VerifiedGarbage.Proof.EcKey.PublicKey
+import VerifiedGarbage.Proof.Ecdh.AArch64.Peer
+import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP256r1.Config
+import VerifiedGarbage.Proof.Ecdsa.AArch64.CombLays
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Lays
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Setup
+import VerifiedGarbage.Proof.Ecdsa.AArch64.SlotOps
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Stages
+import VerifiedGarbage.Proof.Ecdsa.Projective
+import VerifiedGarbage.Proof.Ecdsa.Verify
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.BrainpoolP256r1.Sum
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Weierstrass.AArch64.AddConst
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Bytes
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Rep
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Window
+import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
+import VerifiedGarbage.Proof.BrainpoolP256r1.AArch64.Law
+import VerifiedGarbage.Proof.Weierstrass.AArch64.InvInterface
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.BrainpoolP256r1
+import VerifiedGarbage.Proof.Variants.MdHash.AArch64
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # ECDSA over brainpoolP256r1 (FIPS 186-5) on AArch64 -/
-
-@[expose] public section
 
 -- Deterministic ECDSA (RFC 6979) over brainpoolP256r1 on AArch64, with HMAC as a table
 namespace VG.Artifacts.EcdsaBrainpoolP256r1.AArch64.Rfc6979
 
 open VG.Proof.BrainpoolP256r1.AArch64 (hasLaw)
-open VG.Proof.Ecdsa.Rfc6979.AArch64 (signCodeT OK brainpoolp256r1 brainpoolp256r1T_verified)
-open VG.Proof.HmacTable.AArch64 (tables names)
+open VG.Proof.HmacTable.AArch64 (tables)
+open VG.Proof.Variants.MdHash.AArch64 (variants hashes)
 
-def artifactsFor (vs : List Proof.Pbkdf2.Md.AArch64.MdHash) : List Artifact :=
-  if hv : OK vs ∧ "VG_BRAINPOOLP256R1_COMB7" ∉ names vs then [
-    Spec.Ecdsa.Rfc6979.Curves.brainpoolp256r1SignApi.artifact AArch64.target {
-      suffix := ""
-      tables := [("hmac", tables vs)]
-      code := signCodeT (brainpoolp256r1 hasLaw.law hasLaw.inv) Spec.Ecdsa.Rfc6979.Curves.brainpoolp256r1.tries vs
-      verified := brainpoolp256r1T_verified hasLaw.law hasLaw.inv vs hv }]
-  else []
-
-def artifacts : List Artifact :=
-  artifactsFor VG.Proof.Variants.MdHash.AArch64.variants
+def artifacts : List (Artifact AArch64.target) := [
+  Spec.Ecdsa.Rfc6979.Curves.brainpoolp256r1SignApi.artifact AArch64.target {
+    tables := [("hmac", tables variants)]
+    code := Impl.Ecdsa.Rfc6979.AArch64.Fn.brainpoolp256r1 hashes
+    verified := Proof.Ecdsa.Rfc6979.AArch64.brainpoolp256r1Sign_scrubbed hasLaw.law hasLaw.inv }]
 
 end VG.Artifacts.EcdsaBrainpoolP256r1.AArch64.Rfc6979
 
@@ -71,11 +61,12 @@ namespace VG.Artifacts.EcdsaBrainpoolP256r1.AArch64
 
 open VG.Proof.BrainpoolP256r1.AArch64 (hasLaw)
 
-def artifacts : List Artifact := [
+public def artifacts : List (Artifact AArch64.target) := [
   Spec.Ecdsa.BrainpoolP256r1.verifyHashApi.artifact AArch64.target {
-    code := Impl.Ecdsa.AArch64.VerifyHash.verifyHash Spec.Ecdsa.BrainpoolP256r1.inst.curve.len false
-      Impl.Ecdsa.Verify.AArch64.BrainpoolP256r1.Joint.verify
-    verified := Proof.Ecdsa.Verify.AArch64.BrainpoolP256r1.Joint.verifyHash_verified hasLaw.law hasLaw.inv }] ++
+    code := Impl.Ecdsa.Verify.AArch64.BrainpoolP256r1.Joint.Fn.verifyHash
+    verified := Proof.Ecdsa.Rfc6979.AArch64.brainpoolp256r1Verify hasLaw.law hasLaw.inv }] ++
   Rfc6979.artifacts
+
+spec_apis artifacts
 
 end VG.Artifacts.EcdsaBrainpoolP256r1.AArch64

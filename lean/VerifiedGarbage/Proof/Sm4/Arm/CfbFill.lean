@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Sm4.Arm.BatchCfb
 public import VerifiedGarbage.Proof.Sm4.Arm.BatchChain
-public import VerifiedGarbage.Proof.Sm4.Arm.BatchXor
+public import VerifiedGarbage.Proof.Sm4.Arm.BatchGroup
 import VerifiedGarbage.Proof.MdStream.Arm.Common
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Arm.Exec
@@ -189,19 +189,8 @@ theorem steps_wp {s₀ s : State} {B D : BitVec 32} {g j m : Nat}
         (by rw [tailSlot, total_eq]; omega_using [jj])) fun s' c => ?_)
       exact ih jg (by omega_using [hm]) (ic.next h hg jg c)
 
-theorem pad_run (s : State) : runBlock isa BatchCfb.pad s = some s := by
-  change some (s.setReg .r9 (s.gpr .r9)) = some s
-  have hg : (fun r => if r = Reg.r9 then s.gpr .r9 else s.gpr r) = s.gpr := by
-    funext r
-    split
-    · rename_i h; subst r; rfl
-    · rfl
-  unfold State.setReg
-  rw [hg]
-
 theorem fill_wp {s : State} {B D : BitVec 32} {g : Nat} (h : Pre B D g s) (hg : 1 ≤ g) (hg8 : g ≤ 8) :
     WP isa BatchCfb.fill s (Post s B D g) := by
-  refine WP.seq (WP.of_runBlock ⟨s, pad_run s, ?_⟩)
   refine WP.seq (WP.mono (first_wp h) fun s' c => ?_)
   have cf : Frame (regions B) s.mem s'.mem := c.frame.sub fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr

@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Traversal
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttSpec
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TraversalChecked
 import VerifiedGarbage.Proof.MlDsa.KeyGen.Poly
 import VerifiedGarbage.Proof.Framework.GetElem

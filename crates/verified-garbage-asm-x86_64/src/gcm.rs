@@ -46,9 +46,9 @@ jmp 23f
 call {vg_ghash_vpclmul}
 .base64 "SYtGEEmJB0mLRhhJiUcITInvSYu3sAAAAEyJ8kyJ+UiDwQBBuAEAAABNiflJgcEAAgAA"
 call {vg_aes_ctr32_vaes}
-.base64 "SYu/yAAAAEmLB0mLVwhIiQdIiVcISYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJOAAAADF+e/AxfHvycXp79LF4e/bxdnv5MXR7+3Fye/2xcHv/8RBOe/AxEEx78nEQSnv0sRBIe/bxEEZ7+TEQRHv7cRBCe/2xEEB7/9FMdtIjaQkGP///8X+f4QkyAAAAMX+f4QkqAAAAMX+f4QkiAAAAMX+f0QkaMX+f0QkSMX+f0QkKMX+f0QkCEyJHCRIjaQk6AAAADHAMckx0jH2Mf9FMcBFMclFMdLD"
+.base64 "SYu/yAAAAEmLB0mLVwhIiQdIiVcISYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJOAAAADF+e/AxfHvycXp79LF4e/bxdnv5MXR7+3Fye/2xcHv/8RBOe/AxEEx78nEQSnv0sRBIe/bxEEZ7+TEQRHv7cRBCe/2xEEB7/9FMdtIjWQk+EyJHCRIjaQkIP///8X+f4QkwAAAAMX+f4QkoAAAAMX+f4QkgAAAAMX+f0QkYMX+f0QkQMX+f0QkIMX+fwQkSI2kJOAAAABIjWQkCDHAMckx0jH2Mf9FMcBFMclFMdLD"
 .p2align 6"#,
-        vg_ghash_vpclmul = sym super::aes_gcm_siv::vg_ghash_vpclmul::vg_ghash_vpclmul,
+        vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul::vg_ghash_vpclmul,
         vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
     )
 }
@@ -134,9 +134,9 @@ jmp 25f
 24:
 .base64 "uAAAAAA="
 25:
-.base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJCgBAADF+e/AxfHvycXp79LF4e/bxdnv5MXR7+3Fye/2xcHv/8RBOe/AxEEx78nEQSnv0sRBIe/bxEEZ7+TEQRHv7cRBCe/2xEEB7/9FMdtIjaQk0P7//8X+f4QkEAEAAMX+f4Qk8AAAAMX+f4Qk0AAAAMX+f4QksAAAAMX+f4QkkAAAAMX+f0QkcMX+f0QkUMX+f0QkMMX+f0QkEPMPfwQkSI2kJDABAACJwDHJMdIx9jH/RTHARTHJRTHSww=="
+.base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJCgBAADF+e/AxfHvycXp79LF4e/bxdnv5MXR7+3Fye/2xcHv/8RBOe/AxEEx78nEQSnv0sRBIe/bxEEZ7+TEQRHv7cRBCe/2xEEB7/9FMdtIjWQk+EyJHCRIjaQk2P7//8X+f4QkCAEAAMX+f4Qk6AAAAMX+f4QkyAAAAMX+f4QkqAAAAMX+f4QkiAAAAMX+f0QkaMX+f0QkSMX+f0QkKMX+f0QkCEyJHCRIjaQkKAEAAEiNZCQIicAxyTHSMfYx/0UxwEUxyUUx0sM="
 .p2align 6"#,
-        vg_ghash_vpclmul = sym super::aes_gcm_siv::vg_ghash_vpclmul::vg_ghash_vpclmul,
+        vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul::vg_ghash_vpclmul,
         vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
     )
 }
@@ -184,7 +184,7 @@ jmp 23f
 call {vg_ghash_pclmul}
 .base64 "SYtGEEmJB0mLRhhJiUcITInvSYu3sAAAAEyJ8kyJ+UiDwQBBuAEAAABNiflJgcEAAgAA"
 call {vg_aes_ctr32_aesni}
-.base64 "SYu/yAAAAEmLB0mLVwhIiQdIiVcISYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJOAAAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjaQkGP////MPf4Qk2AAAAPMPf4QkyAAAAPMPf4QkuAAAAPMPf4QkqAAAAPMPf4QkmAAAAPMPf4QkiAAAAPMPf0QkePMPf0QkaPMPf0QkWPMPf0QkSPMPf0QkOPMPf0QkKPMPf0QkGPMPf0QkCEyJHCRIjaQk6AAAADHAMckx0jH2Mf9FMcBFMclFMdLD"
+.base64 "SYu/yAAAAEmLB0mLVwhIiQdIiVcISYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJOAAAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjWQk+EyJHCRIjaQkIP////MPf4Qk0AAAAPMPf4QkwAAAAPMPf4QksAAAAPMPf4QkoAAAAPMPf4QkkAAAAPMPf4QkgAAAAPMPf0QkcPMPf0QkYPMPf0QkUPMPf0QkQPMPf0QkMPMPf0QkIPMPf0QkEPMPfwQkSI2kJOAAAABIjWQkCDHAMckx0jH2Mf9FMcBFMclFMdLD"
 .p2align 6"#,
         vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
         vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
@@ -272,7 +272,7 @@ jmp 25f
 24:
 .base64 "uAAAAAA="
 25:
-.base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJCgBAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjaQk0P7///MPf4QkIAEAAPMPf4QkEAEAAPMPf4QkAAEAAPMPf4Qk8AAAAPMPf4Qk4AAAAPMPf4Qk0AAAAPMPf4QkwAAAAPMPf4QksAAAAPMPf4QkoAAAAPMPf4QkkAAAAPMPf4QkgAAAAPMPf0QkcPMPf0QkYPMPf0QkUPMPf0QkQPMPf0QkMPMPf0QkIPMPf0QkEPMPfwQkSI2kJDABAACJwDHJMdIx9jH/RTHARTHJRTHSww=="
+.base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJCgBAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjWQk+EyJHCRIjaQk2P7///MPf4QkGAEAAPMPf4QkCAEAAPMPf4Qk+AAAAPMPf4Qk6AAAAPMPf4Qk2AAAAPMPf4QkyAAAAPMPf4QkuAAAAPMPf4QkqAAAAPMPf4QkmAAAAPMPf4QkiAAAAPMPf0QkePMPf0QkaPMPf0QkWPMPf0QkSPMPf0QkOPMPf0QkKPMPf0QkGPMPf0QkCEyJHCRIjaQkKAEAAEiNZCQIicAxyTHSMfYx/0UxwEUxyUUx0sM="
 .p2align 6"#,
         vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
         vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
@@ -322,7 +322,7 @@ jmp 23f
 call {vg_ghash}
 .base64 "SYtGEEmJB0mLRhhJiUcITInvSYu3sAAAAEyJ8kyJ+UiDwQBBuAEAAABNiflJgcEAAgAA"
 call {vg_aes_ctr32_aesni}
-.base64 "SYu/yAAAAEmLB0mLVwhIiQdIiVcISYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJBADAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjaQk6Pz///MPf4QkCAMAAPMPf4Qk+AIAAPMPf4Qk6AIAAPMPf4Qk2AIAAPMPf4QkyAIAAPMPf4QkuAIAAPMPf4QkqAIAAPMPf4QkmAIAAPMPf4QkiAIAAPMPf4QkeAIAAPMPf4QkaAIAAPMPf4QkWAIAAPMPf4QkSAIAAPMPf4QkOAIAAPMPf4QkKAIAAPMPf4QkGAIAAPMPf4QkCAIAAPMPf4Qk+AEAAPMPf4Qk6AEAAPMPf4Qk2AEAAPMPf4QkyAEAAPMPf4QkuAEAAPMPf4QkqAEAAPMPf4QkmAEAAPMPf4QkiAEAAPMPf4QkeAEAAPMPf4QkaAEAAPMPf4QkWAEAAPMPf4QkSAEAAPMPf4QkOAEAAPMPf4QkKAEAAPMPf4QkGAEAAPMPf4QkCAEAAPMPf4Qk+AAAAPMPf4Qk6AAAAPMPf4Qk2AAAAPMPf4QkyAAAAPMPf4QkuAAAAPMPf4QkqAAAAPMPf4QkmAAAAPMPf4QkiAAAAPMPf0QkePMPf0QkaPMPf0QkWPMPf0QkSPMPf0QkOPMPf0QkKPMPf0QkGPMPf0QkCEyJHCRIjaQkGAMAADHAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
+.base64 "SYu/yAAAAEmLB0mLVwhIiQdIiVcISYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJBADAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjWQk+EyJHCRIjaQk8Pz///MPf4QkAAMAAPMPf4Qk8AIAAPMPf4Qk4AIAAPMPf4Qk0AIAAPMPf4QkwAIAAPMPf4QksAIAAPMPf4QkoAIAAPMPf4QkkAIAAPMPf4QkgAIAAPMPf4QkcAIAAPMPf4QkYAIAAPMPf4QkUAIAAPMPf4QkQAIAAPMPf4QkMAIAAPMPf4QkIAIAAPMPf4QkEAIAAPMPf4QkAAIAAPMPf4Qk8AEAAPMPf4Qk4AEAAPMPf4Qk0AEAAPMPf4QkwAEAAPMPf4QksAEAAPMPf4QkoAEAAPMPf4QkkAEAAPMPf4QkgAEAAPMPf4QkcAEAAPMPf4QkYAEAAPMPf4QkUAEAAPMPf4QkQAEAAPMPf4QkMAEAAPMPf4QkIAEAAPMPf4QkEAEAAPMPf4QkAAEAAPMPf4Qk8AAAAPMPf4Qk4AAAAPMPf4Qk0AAAAPMPf4QkwAAAAPMPf4QksAAAAPMPf4QkoAAAAPMPf4QkkAAAAPMPf4QkgAAAAPMPf0QkcPMPf0QkYPMPf0QkUPMPf0QkQPMPf0QkMPMPf0QkIPMPf0QkEPMPfwQkSI2kJBADAABIjWQkCDHAMckx0jH2Mf9FMcBFMclFMdLD"
 .p2align 6"#,
         vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
         vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
@@ -410,7 +410,7 @@ jmp 25f
 24:
 .base64 "uAAAAAA="
 25:
-.base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJBgDAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjaQk4Pz///MPf4QkEAMAAPMPf4QkAAMAAPMPf4Qk8AIAAPMPf4Qk4AIAAPMPf4Qk0AIAAPMPf4QkwAIAAPMPf4QksAIAAPMPf4QkoAIAAPMPf4QkkAIAAPMPf4QkgAIAAPMPf4QkcAIAAPMPf4QkYAIAAPMPf4QkUAIAAPMPf4QkQAIAAPMPf4QkMAIAAPMPf4QkIAIAAPMPf4QkEAIAAPMPf4QkAAIAAPMPf4Qk8AEAAPMPf4Qk4AEAAPMPf4Qk0AEAAPMPf4QkwAEAAPMPf4QksAEAAPMPf4QkoAEAAPMPf4QkkAEAAPMPf4QkgAEAAPMPf4QkcAEAAPMPf4QkYAEAAPMPf4QkUAEAAPMPf4QkQAEAAPMPf4QkMAEAAPMPf4QkIAEAAPMPf4QkEAEAAPMPf4QkAAEAAPMPf4Qk8AAAAPMPf4Qk4AAAAPMPf4Qk0AAAAPMPf4QkwAAAAPMPf4QksAAAAPMPf4QkoAAAAPMPf4QkkAAAAPMPf4QkgAAAAPMPf0QkcPMPf0QkYPMPf0QkUPMPf0QkQPMPf0QkMPMPf0QkIPMPf0QkEPMPfwQkSI2kJCADAACJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
+.base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJBgDAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjWQk+EyJHCRIjaQk6Pz///MPf4QkCAMAAPMPf4Qk+AIAAPMPf4Qk6AIAAPMPf4Qk2AIAAPMPf4QkyAIAAPMPf4QkuAIAAPMPf4QkqAIAAPMPf4QkmAIAAPMPf4QkiAIAAPMPf4QkeAIAAPMPf4QkaAIAAPMPf4QkWAIAAPMPf4QkSAIAAPMPf4QkOAIAAPMPf4QkKAIAAPMPf4QkGAIAAPMPf4QkCAIAAPMPf4Qk+AEAAPMPf4Qk6AEAAPMPf4Qk2AEAAPMPf4QkyAEAAPMPf4QkuAEAAPMPf4QkqAEAAPMPf4QkmAEAAPMPf4QkiAEAAPMPf4QkeAEAAPMPf4QkaAEAAPMPf4QkWAEAAPMPf4QkSAEAAPMPf4QkOAEAAPMPf4QkKAEAAPMPf4QkGAEAAPMPf4QkCAEAAPMPf4Qk+AAAAPMPf4Qk6AAAAPMPf4Qk2AAAAPMPf4QkyAAAAPMPf4QkuAAAAPMPf4QkqAAAAPMPf4QkmAAAAPMPf4QkiAAAAPMPf0QkePMPf0QkaPMPf0QkWPMPf0QkSPMPf0QkOPMPf0QkKPMPf0QkGPMPf0QkCEyJHCRIjaQkGAMAAEiNZCQIicAxyTHSMfYx/0UxwEUxyUUx0sM="
 .p2align 6"#,
         vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
         vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
@@ -423,6 +423,8 @@ pub const VG_AES_GCM_STREAM_FINISH_PCLMUL_FEATURES: verified_garbage_cpu::Featur
 /// Finishes an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7.1 steps 5–6, §7.2 steps 6–7): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, writes its 128-bit tag to `*tag`. A shorter tag is the first bytes of this one; to check a received tag, use `vg_aes_gcm_stream_verify`.
 ///
 /// Contract: `VG.Spec.Gcm.streamFinishContract`. Constant time: only the pointers, `rounds`, `aad_len` and `text_len` may affect timing, not the key context or the state.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -458,7 +460,7 @@ jmp 23f
 call {vg_ghash_pclmul}
 .base64 "SYtGEEmJB0mLRhhJiUcITInvSYu3sAAAAEyJ8kyJ+UiDwQBBuAEAAABNiflJgcEAAgAA"
 call {vg_aes_ctr32}
-.base64 "SYu/yAAAAEmLB0mLVwhIiQdIiVcISYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJBAKAADD"
+.base64 "SYu/yAAAAEmLB0mLVwhIiQdIiVcISYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJBAKAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjWQk+EyJHCRIjaQk8PX///MPf4QkAAoAAPMPf4Qk8AkAAPMPf4Qk4AkAAPMPf4Qk0AkAAPMPf4QkwAkAAPMPf4QksAkAAPMPf4QkoAkAAPMPf4QkkAkAAPMPf4QkgAkAAPMPf4QkcAkAAPMPf4QkYAkAAPMPf4QkUAkAAPMPf4QkQAkAAPMPf4QkMAkAAPMPf4QkIAkAAPMPf4QkEAkAAPMPf4QkAAkAAPMPf4Qk8AgAAPMPf4Qk4AgAAPMPf4Qk0AgAAPMPf4QkwAgAAPMPf4QksAgAAPMPf4QkoAgAAPMPf4QkkAgAAPMPf4QkgAgAAPMPf4QkcAgAAPMPf4QkYAgAAPMPf4QkUAgAAPMPf4QkQAgAAPMPf4QkMAgAAPMPf4QkIAgAAPMPf4QkEAgAAPMPf4QkAAgAAPMPf4Qk8AcAAPMPf4Qk4AcAAPMPf4Qk0AcAAPMPf4QkwAcAAPMPf4QksAcAAPMPf4QkoAcAAPMPf4QkkAcAAPMPf4QkgAcAAPMPf4QkcAcAAPMPf4QkYAcAAPMPf4QkUAcAAPMPf4QkQAcAAPMPf4QkMAcAAPMPf4QkIAcAAPMPf4QkEAcAAPMPf4QkAAcAAPMPf4Qk8AYAAPMPf4Qk4AYAAPMPf4Qk0AYAAPMPf4QkwAYAAPMPf4QksAYAAPMPf4QkoAYAAPMPf4QkkAYAAPMPf4QkgAYAAPMPf4QkcAYAAPMPf4QkYAYAAPMPf4QkUAYAAPMPf4QkQAYAAPMPf4QkMAYAAPMPf4QkIAYAAPMPf4QkEAYAAPMPf4QkAAYAAPMPf4Qk8AUAAPMPf4Qk4AUAAPMPf4Qk0AUAAPMPf4QkwAUAAPMPf4QksAUAAPMPf4QkoAUAAPMPf4QkkAUAAPMPf4QkgAUAAPMPf4QkcAUAAPMPf4QkYAUAAPMPf4QkUAUAAPMPf4QkQAUAAPMPf4QkMAUAAPMPf4QkIAUAAPMPf4QkEAUAAPMPf4QkAAUAAPMPf4Qk8AQAAPMPf4Qk4AQAAPMPf4Qk0AQAAPMPf4QkwAQAAPMPf4QksAQAAPMPf4QkoAQAAPMPf4QkkAQAAPMPf4QkgAQAAPMPf4QkcAQAAPMPf4QkYAQAAPMPf4QkUAQAAPMPf4QkQAQAAPMPf4QkMAQAAPMPf4QkIAQAAPMPf4QkEAQAAPMPf4QkAAQAAPMPf4Qk8AMAAPMPf4Qk4AMAAPMPf4Qk0AMAAPMPf4QkwAMAAPMPf4QksAMAAPMPf4QkoAMAAPMPf4QkkAMAAPMPf4QkgAMAAPMPf4QkcAMAAPMPf4QkYAMAAPMPf4QkUAMAAPMPf4QkQAMAAPMPf4QkMAMAAPMPf4QkIAMAAPMPf4QkEAMAAPMPf4QkAAMAAPMPf4Qk8AIAAPMPf4Qk4AIAAPMPf4Qk0AIAAPMPf4QkwAIAAPMPf4QksAIAAPMPf4QkoAIAAPMPf4QkkAIAAPMPf4QkgAIAAPMPf4QkcAIAAPMPf4QkYAIAAPMPf4QkUAIAAPMPf4QkQAIAAPMPf4QkMAIAAPMPf4QkIAIAAPMPf4QkEAIAAPMPf4QkAAIAAPMPf4Qk8AEAAPMPf4Qk4AEAAPMPf4Qk0AEAAPMPf4QkwAEAAPMPf4QksAEAAPMPf4QkoAEAAPMPf4QkkAEAAPMPf4QkgAEAAPMPf4QkcAEAAPMPf4QkYAEAAPMPf4QkUAEAAPMPf4QkQAEAAPMPf4QkMAEAAPMPf4QkIAEAAPMPf4QkEAEAAPMPf4QkAAEAAPMPf4Qk8AAAAPMPf4Qk4AAAAPMPf4Qk0AAAAPMPf4QkwAAAAPMPf4QksAAAAPMPf4QkoAAAAPMPf4QkkAAAAPMPf4QkgAAAAPMPf0QkcPMPf0QkYPMPf0QkUPMPf0QkQPMPf0QkMPMPf0QkIPMPf0QkEPMPfwQkSI2kJBAKAABIjWQkCDHAMckx0jH2Mf9FMcBFMclFMdLD"
 .p2align 6"#,
         vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
@@ -471,6 +473,8 @@ pub const VG_AES_GCM_STREAM_VERIFY_PCLMUL_FEATURES: verified_garbage_cpu::Featur
 /// Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is between 4 and 16 and the received tag is the first `tag_len` bytes of the message's 128-bit tag, and 0 otherwise. The tags are compared without a branch.
 ///
 /// Contract: `VG.Spec.Gcm.streamVerifyContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `tag_len` may affect timing, not the key context, the state or the tags.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -544,7 +548,7 @@ jmp 25f
 24:
 .base64 "uAAAAAA="
 25:
-.base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJBgKAADD"
+.base64 "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"
 .p2align 6"#,
         vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
@@ -554,6 +558,8 @@ jmp 25f
 /// Finishes an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7.1 steps 5–6, §7.2 steps 6–7): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, writes its 128-bit tag to `*tag`. A shorter tag is the first bytes of this one; to check a received tag, use `vg_aes_gcm_stream_verify`.
 ///
 /// Contract: `VG.Spec.Gcm.streamFinishContract`. Constant time: only the pointers, `rounds`, `aad_len` and `text_len` may affect timing, not the key context or the state.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -588,7 +594,7 @@ jmp 23f
 call {vg_ghash}
 .base64 "SYtGEEmJB0mLRhhJiUcITInvSYu3sAAAAEyJ8kyJ+UiDwQBBuAEAAABNiflJgcEAAgAA"
 call {vg_aes_ctr32}
-.base64 "SYu/yAAAAEmLB0mLVwhIiQdIiVcISYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJBAKAADD"
+.base64 "SYu/yAAAAEmLB0mLVwhIiQdIiVcISYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJBAKAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjWQk+EyJHCRIjaQk8PX///MPf4QkAAoAAPMPf4Qk8AkAAPMPf4Qk4AkAAPMPf4Qk0AkAAPMPf4QkwAkAAPMPf4QksAkAAPMPf4QkoAkAAPMPf4QkkAkAAPMPf4QkgAkAAPMPf4QkcAkAAPMPf4QkYAkAAPMPf4QkUAkAAPMPf4QkQAkAAPMPf4QkMAkAAPMPf4QkIAkAAPMPf4QkEAkAAPMPf4QkAAkAAPMPf4Qk8AgAAPMPf4Qk4AgAAPMPf4Qk0AgAAPMPf4QkwAgAAPMPf4QksAgAAPMPf4QkoAgAAPMPf4QkkAgAAPMPf4QkgAgAAPMPf4QkcAgAAPMPf4QkYAgAAPMPf4QkUAgAAPMPf4QkQAgAAPMPf4QkMAgAAPMPf4QkIAgAAPMPf4QkEAgAAPMPf4QkAAgAAPMPf4Qk8AcAAPMPf4Qk4AcAAPMPf4Qk0AcAAPMPf4QkwAcAAPMPf4QksAcAAPMPf4QkoAcAAPMPf4QkkAcAAPMPf4QkgAcAAPMPf4QkcAcAAPMPf4QkYAcAAPMPf4QkUAcAAPMPf4QkQAcAAPMPf4QkMAcAAPMPf4QkIAcAAPMPf4QkEAcAAPMPf4QkAAcAAPMPf4Qk8AYAAPMPf4Qk4AYAAPMPf4Qk0AYAAPMPf4QkwAYAAPMPf4QksAYAAPMPf4QkoAYAAPMPf4QkkAYAAPMPf4QkgAYAAPMPf4QkcAYAAPMPf4QkYAYAAPMPf4QkUAYAAPMPf4QkQAYAAPMPf4QkMAYAAPMPf4QkIAYAAPMPf4QkEAYAAPMPf4QkAAYAAPMPf4Qk8AUAAPMPf4Qk4AUAAPMPf4Qk0AUAAPMPf4QkwAUAAPMPf4QksAUAAPMPf4QkoAUAAPMPf4QkkAUAAPMPf4QkgAUAAPMPf4QkcAUAAPMPf4QkYAUAAPMPf4QkUAUAAPMPf4QkQAUAAPMPf4QkMAUAAPMPf4QkIAUAAPMPf4QkEAUAAPMPf4QkAAUAAPMPf4Qk8AQAAPMPf4Qk4AQAAPMPf4Qk0AQAAPMPf4QkwAQAAPMPf4QksAQAAPMPf4QkoAQAAPMPf4QkkAQAAPMPf4QkgAQAAPMPf4QkcAQAAPMPf4QkYAQAAPMPf4QkUAQAAPMPf4QkQAQAAPMPf4QkMAQAAPMPf4QkIAQAAPMPf4QkEAQAAPMPf4QkAAQAAPMPf4Qk8AMAAPMPf4Qk4AMAAPMPf4Qk0AMAAPMPf4QkwAMAAPMPf4QksAMAAPMPf4QkoAMAAPMPf4QkkAMAAPMPf4QkgAMAAPMPf4QkcAMAAPMPf4QkYAMAAPMPf4QkUAMAAPMPf4QkQAMAAPMPf4QkMAMAAPMPf4QkIAMAAPMPf4QkEAMAAPMPf4QkAAMAAPMPf4Qk8AIAAPMPf4Qk4AIAAPMPf4Qk0AIAAPMPf4QkwAIAAPMPf4QksAIAAPMPf4QkoAIAAPMPf4QkkAIAAPMPf4QkgAIAAPMPf4QkcAIAAPMPf4QkYAIAAPMPf4QkUAIAAPMPf4QkQAIAAPMPf4QkMAIAAPMPf4QkIAIAAPMPf4QkEAIAAPMPf4QkAAIAAPMPf4Qk8AEAAPMPf4Qk4AEAAPMPf4Qk0AEAAPMPf4QkwAEAAPMPf4QksAEAAPMPf4QkoAEAAPMPf4QkkAEAAPMPf4QkgAEAAPMPf4QkcAEAAPMPf4QkYAEAAPMPf4QkUAEAAPMPf4QkQAEAAPMPf4QkMAEAAPMPf4QkIAEAAPMPf4QkEAEAAPMPf4QkAAEAAPMPf4Qk8AAAAPMPf4Qk4AAAAPMPf4Qk0AAAAPMPf4QkwAAAAPMPf4QksAAAAPMPf4QkoAAAAPMPf4QkkAAAAPMPf4QkgAAAAPMPf0QkcPMPf0QkYPMPf0QkUPMPf0QkQPMPf0QkMPMPf0QkIPMPf0QkEPMPfwQkSI2kJBAKAABIjWQkCDHAMckx0jH2Mf9FMcBFMclFMdLD"
 .p2align 6"#,
         vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
@@ -598,6 +604,8 @@ call {vg_aes_ctr32}
 /// Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is between 4 and 16 and the received tag is the first `tag_len` bytes of the message's 128-bit tag, and 0 otherwise. The tags are compared without a branch.
 ///
 /// Contract: `VG.Spec.Gcm.streamVerifyContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `tag_len` may affect timing, not the key context, the state or the tags.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -670,7 +678,7 @@ jmp 25f
 24:
 .base64 "uAAAAAA="
 25:
-.base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJBgKAADD"
+.base64 "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"
 .p2align 6"#,
         vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
@@ -678,7 +686,7 @@ jmp 25f
 }
 
 /// The CPU features `vg_aes_gcm_init_vaes` requires (`Artifact.features`).
-pub const VG_AES_GCM_INIT_VAES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::VAES);
+pub const VG_AES_GCM_INIT_VAES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::VAES);
 
 /// The AES-GCM key setup: writes the key context of the `key_len`-byte AES key at `key` to `*ctx`: its key schedule for `Nr = key_len / 4 + 6` rounds (FIPS 197 §5.2, as `vg_aes_expand_key` writes it) in the first `16 * (Nr + 1)` bytes, and the hash subkey `H = CIPH_K(0¹²⁸)` (NIST SP 800-38D §7.1 step 1) in bytes 240–255. The other bytes are unspecified. The other `vg_aes_gcm_*` functions read it, with `Nr` as their `rounds`.
 ///
@@ -693,7 +701,7 @@ pub const VG_AES_GCM_INIT_VAES_FEATURES: verified_garbage_cpu::Features = verifi
 /// * `key_len` must be 16, 24 or 32.
 /// * `ctx` must not overlap `key` (distinct Rust objects never do).
 /// * Neither `key` nor `ctx` may overlap the return address on the stack or the 192 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `aes`, `ssse3`, `avx2` and `vaes` target features.
+/// * The CPU must support the `avx`, `ssse3`, `aes`, `avx2` and `vaes` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_init_vaes(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
     core::arch::naked_asm!(
@@ -701,7 +709,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_init_vaes(key: *const u8, key_le
 call {vg_aes_expand_key_scratch_aesni}
 .base64 "uAAAAABJiYXwAAAASYmF+AAAAEmJR2BJiUdoTInvSIneTIn6SIPCYEyJ6UiBwfAAAABBuAEAAABNiflJgcEAAgAA"
 call {vg_aes_ctr32_vaes}
-.base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJLgAAADF+e/AxfHvycXp79LF4e/bxdnv5MXR7+3Fye/2xcHv/8RBOe/AxEEx78nEQSnv0sRBIe/bxEEZ7+TEQRHv7cRBCe/2xEEB7/9FMdtIjaQkQP///8X+f4QkoAAAAMX+f4QkgAAAAMX+f0QkYMX+f0QkQMX+f0QkIMX+fwQkSI2kJMAAAAAxwDHJMdIx9jH/RTHARTHJRTHSww=="
+.base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJLgAAADF+e/AxfHvycXp79LF4e/bxdnv5MXR7+3Fye/2xcHv/8RBOe/AxEEx78nEQSnv0sRBIe/bxEEZ7+TEQRHv7cRBCe/2xEEB7/9FMdtIjWQk+EyJHCRIjaQkSP///8X+f4QkmAAAAMX+f0QkeMX+f0QkWMX+f0QkOMX+f0QkGPMPf0QkCEyJHCRIjaQkuAAAAEiNZCQIMcAxyTHSMfYx/0UxwEUxyUUx0sM="
 .p2align 6"#,
         vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
         vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
@@ -709,7 +717,7 @@ call {vg_aes_ctr32_vaes}
 }
 
 /// The CPU features `vg_aes_gcm_init_aesni` requires (`Artifact.features`).
-pub const VG_AES_GCM_INIT_AESNI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::SSSE3);
+pub const VG_AES_GCM_INIT_AESNI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES);
 
 /// The AES-GCM key setup: writes the key context of the `key_len`-byte AES key at `key` to `*ctx`: its key schedule for `Nr = key_len / 4 + 6` rounds (FIPS 197 §5.2, as `vg_aes_expand_key` writes it) in the first `16 * (Nr + 1)` bytes, and the hash subkey `H = CIPH_K(0¹²⁸)` (NIST SP 800-38D §7.1 step 1) in bytes 240–255. The other bytes are unspecified. The other `vg_aes_gcm_*` functions read it, with `Nr` as their `rounds`.
 ///
@@ -724,7 +732,7 @@ pub const VG_AES_GCM_INIT_AESNI_FEATURES: verified_garbage_cpu::Features = verif
 /// * `key_len` must be 16, 24 or 32.
 /// * `ctx` must not overlap `key` (distinct Rust objects never do).
 /// * Neither `key` nor `ctx` may overlap the return address on the stack or the 192 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `aes` and `ssse3` target features.
+/// * The CPU must support the `ssse3` and `aes` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_init_aesni(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
     core::arch::naked_asm!(
@@ -732,7 +740,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_init_aesni(key: *const u8, key_l
 call {vg_aes_expand_key_scratch_aesni}
 .base64 "uAAAAABJiYXwAAAASYmF+AAAAEmJR2BJiUdoTInvSIneTIn6SIPCYEyJ6UiBwfAAAABBuAEAAABNiflJgcEAAgAA"
 call {vg_aes_ctr32_aesni}
-.base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJLgAAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjaQkQP////MPf4QksAAAAPMPf4QkoAAAAPMPf4QkkAAAAPMPf4QkgAAAAPMPf0QkcPMPf0QkYPMPf0QkUPMPf0QkQPMPf0QkMPMPf0QkIPMPf0QkEPMPfwQkSI2kJMAAAAAxwDHJMdIx9jH/RTHARTHJRTHSww=="
+.base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJLgAAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjWQk+EyJHCRIjaQkSP////MPf4QkqAAAAPMPf4QkmAAAAPMPf4QkiAAAAPMPf0QkePMPf0QkaPMPf0QkWPMPf0QkSPMPf0QkOPMPf0QkKPMPf0QkGPMPf0QkCEyJHCRIjaQkuAAAAEiNZCQIMcAxyTHSMfYx/0UxwEUxyUUx0sM="
 .p2align 6"#,
         vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
         vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
@@ -742,6 +750,8 @@ call {vg_aes_ctr32_aesni}
 /// The AES-GCM key setup: writes the key context of the `key_len`-byte AES key at `key` to `*ctx`: its key schedule for `Nr = key_len / 4 + 6` rounds (FIPS 197 §5.2, as `vg_aes_expand_key` writes it) in the first `16 * (Nr + 1)` bytes, and the hash subkey `H = CIPH_K(0¹²⁸)` (NIST SP 800-38D §7.1 step 1) in bytes 240–255. The other bytes are unspecified. The other `vg_aes_gcm_*` functions read it, with `Nr` as their `rounds`.
 ///
 /// Contract: `VG.Spec.Gcm.initContract`. The key context is `VG.Spec.Gcm.KeyRepr`. Constant time: only the pointers and `key_len` may affect timing, not the key.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -757,17 +767,372 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_init(key: *const u8, key_len: us
 call {vg_aes_expand_key_scratch}
 .base64 "uAAAAABJiYXwAAAASYmF+AAAAEmJR2BJiUdoTInvSIneTIn6SIPCYEyJ6UiBwfAAAABBuAEAAABNiflJgcEAAgAA"
 call {vg_aes_ctr32}
-.base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJAgKAADD"
+.base64 "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"
 .p2align 6"#,
         vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
     )
 }
 
+/// The CPU features `vg_aes_gcm_seal_contiguous_prepared_vaes_vpclmul_avx512` requires (`Artifact.features`).
+pub const VG_AES_GCM_SEAL_CONTIGUOUS_PREPARED_VAES_VPCLMUL_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AVX512BW | verified_garbage_cpu::feature::AES);
+
+/// `vg_aes_gcm_seal_contiguous` with a 1032-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the prepared powers its count says are present. The powers remain secret; how many are present may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealContiguousPreparedContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 1032 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `src` must be valid for reads of `len` bytes, and `dst` for reads and writes of `len` bytes. The two pointers must be identical or their regions disjoint.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `*ctx` must have the prepared format written by `vg_aes_gcm_prepare` (not the format of `vg_aes_gcm_init_precomputed`).
+/// * `dst` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `src` when distinct from `dst` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `src` when distinct from `dst`, `dst` and `tag` may overlap the return address on the stack or the 2640 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `ssse3`, `pclmulqdq`, `avx`, `avx2`, `avx512f`, `vaes`, `vpclmulqdq`, `avx512bw` and `aes` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_contiguous_prepared_vaes_vpclmul_avx512(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+    core::arch::naked_asm!(
+        r#".base64 "SIuHAAQAAEiD+DA="
+jae 20f
+.base64 "SI2kJND1//9Ii4QkOAoAAEiJRCQISIuEJEAKAABIiUQkEEiLhCRICgAASIlEJBhIi4QkUAoAAEiJRCQgSIngSIPAMEiJRCQoSItEJChIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdNif5Jg8YQSYn9SYm3sAAAAE2Jh+gAAABNiY+4AAAASItEJBBJiYfIAAAASItEJBhJiYfQAAAASYnUSInNSIP9DA=="
+je 22f
+.base64 "uAAAAABJiQZJiUYISYmv2AAAALsAAAAATIniSInpSMHpBEiJ6EiD5Q9IKehJAcRIhck="
+je 24f
+.base64 "TInvSIHH8AAAAEyJ9kiDxgBNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+jmp 25f
+24:
+25:
+.base64 "SInpSIXJ"
+je 26f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMieZBugAAAAA="
+28:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 28b
+.base64 "TInvSIHH8AAAAEyJ9kiDxgBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+jmp 27f
+26:
+27:
+.base64 "uwAAAABJi6/YAAAASInYSAHASAHASAHASA/ISYlHYEiJ6EgBwEgBwEgBwEgPyEmJR2hMie9IgcfwAAAATIn2SIPGAEyJ+kiDwmC5AQAAAE2J+EmBwAACAAA="
+call {vg_ghash_vpclmul}
+jmp 23f
+22:
+.base64 "QYsEJEGLTCQEQYtUJAi+AAAAAUGJBkGJTgRBiVYIQYl2DA=="
+23:
+.base64 "QYsGQYtOBEGLVghBi3YMD86DxgEPzkGJRjBBiU40QYlWOEGJdjy4AAAAAEmJRhBJiUYYTYun6AAAAEmLr7gAAAC7AAAAAEyJ4kiJ6UjB6QRIiehIg+UPSCnoSQHESIXJ"
+je 29f
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+jmp 210f
+29:
+210:
+.base64 "SInpSIXJ"
+je 211f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMieZBugAAAAA="
+213:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 213b
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+jmp 212f
+211:
+212:
+.base64 "SYuH0AAAAEmJh8AAAABIwegESIXA"
+je 214f
+.base64 "TInvSYu3sAAAAEyJ8kiDwjBIi0wkCEmJwE2Ln8gAAABNiflJgcHAAQAA"
+call {vg_aes_ctr32_to_vaes}
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBJi5fIAAAASYuP0AAAAEjB6QRNifhJgcDAAQAA"
+call {vg_ghash_vpclmul}
+.base64 "SYuH0AAAAEiJwUiD4Q9JiY/QAAAASCnISQOHyAAAAEmJh8gAAAA="
+jmp 215f
+214:
+215:
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vAA=="
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vSBDzQQ9vvfAAAABmDzgA+A=="
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "80QPb2ggSLj//////////2ZMD27wZkUPbPZmD2/fZg9z8wFmRA9v32ZBD3PTP2ZBD3P7CGZBD+vbZkQPcN//ZkEPctMfZkUP/t5mRQ/f3WZBD+/bZkUP78BmRQ/vyWZFD+/SZkQPb9tmRA86RNsAZkUP78NmRA9v22ZEDzpE2xFmRQ/v02ZED2/bZkQPOkTbAWZFD+/LZkQPb9tmRA86RNsQZkUP78tmRQ9v2WZBD3PbCGZFD+/TZkEPc/kIZkUP78FmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZFD2/YZkQPOkTZEGZFD3DATmZFD+/DZkEPb/JmQQ/v8MTBem8uxMF6b34wxONVOO8BTInvSYu3sAAAAEmJ8k0B0k0B0k0B0k0B0kkB+mJyfUhaL2LRVUjv7WJyfUhabwFi0lVI3O1icn1IWm8CYtJVSNztYnJ9SFpvA2LSVUjc7WJyfUhabwRi0lVI3O1icn1IWm8FYtJVSNztYnJ9SFpvBmLSVUjc7WJyfUhabwdi0lVI3O1icn1IWm8IYtJVSNztYnJ9SFpvCWLSVUjc7UiD/go="
+je 216f
+.base64 "YnJ9SFpvCmLSVUjc7WJyfUhabwti0lVI3O1Ig/4M"
+je 218f
+.base64 "YnJ9SFpvDGLSVUjc7WJyfUhabw1i0lVI3O0="
+jmp 219f
+218:
+219:
+jmp 217f
+216:
+217:
+.base64 "YlJ9SFoqYtJVSN3tYtF+SH9vEMX4d0mLh9AAAABIhcA="
+je 220f
+.base64 "Zg/v//NBD3+/AAIAAEyJ/0iBxwACAABJi7fIAAAATIn6SIHCEAQAAEmLj9AAAABIi1wkCEkDn8AAAABJK5/QAAAAQboAAAAASYnIScHoBEnB4ARJg/gA"
+je 222f
+224:
+.base64 "xKF6byQTxKFZ7yQSxKF6fyQWxKF6fyQXSYPCEE05wg=="
+jne 224b
+jmp 223f
+222:
+223:
+.base64 "SPfBDwAAAA=="
+je 225f
+.base64 "SPfBDAAAAA=="
+je 227f
+.base64 "SPfBCAAAAA=="
+je 229f
+.base64 "SosEE0ozBBJKiQQWSokEF0mDwgg="
+jmp 230f
+229:
+230:
+.base64 "SPfBBAAAAA=="
+je 231f
+.base64 "QosEE0IzBBJCiQQWQokEF0mDwgQ="
+jmp 232f
+231:
+232:
+.base64 "SPfBAwAAAA=="
+je 233f
+235:
+.base64 "Qg+2BBNGD7YMEkwxyEKIBBZCiAQXSYPCAUk5yg=="
+jne 235b
+jmp 234f
+233:
+234:
+jmp 228f
+227:
+236:
+.base64 "Qg+2BBNGD7YMEkwxyEKIBBZCiAQXSYPCAUk5yg=="
+jne 236b
+228:
+jmp 226f
+225:
+226:
+.base64 "SYuHuAAAAEjB4ANID8hJiYcQAgAASYuHwAAAAEjB4ANID8hJiYcYAgAA80UPb2YQZkQPOADg80EPb78AAgAAZg84APhmQQ/v/GZFD+/AZkUP78lmRQ/v0mZED2/fZkQPOkTeAGZFD+/DZkQPb99mRA86RN4RZkUP79NmRA9v32ZEDzpE3gFmRQ/vy2ZED2/fZkQPOkTeEGZFD+/L80EPb78QAgAAZg84APhmRA9v32ZEDzpE2wBmRQ/vw2ZED2/fZkQPOkTbEWZFD+/TZkQPb99mRA86RNsBZkUP78tmRA9v32ZEDzpE2xBmRQ/vy2ZFD2/ZZkEPc9sIZkUP79NmQQ9z+QhmRQ/vwWZFD2/YZkQPOkTZEGZFD3DATmZFD+/DZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmQQ9v0mZBD+/QxOJpANDEwXpvnwAEAADF6e/TxMF6fxfF+Hc="
+jmp 221f
+220:
+.base64 "SYuHuAAAAEjB4ANID8hJiYcQAgAASYuHwAAAAEjB4ANID8hJiYcYAgAA80UPb2YQZkQPOADg80EPb78QAgAAZg84APhmQQ/v/GZFD+/AZkUP78lmRQ/v0mZED2/fZkQPOkTbAGZFD+/DZkQPb99mRA86RNsRZkUP79NmRA9v32ZEDzpE2wFmRQ/vy2ZED2/fZkQPOkTbEGZFD+/LZkUPb9lmQQ9z2whmRQ/v02ZBD3P5CGZFD+/BZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZBD2/SZkEP79DE4mkA0MTBem+fAAQAAMXp79PEwXp/F8X4dw=="
+221:
+.base64 "SIt8JCBJiwdJi1cISIkHSIlXCEmLn4AAAABJi6+IAAAATYunkAAAAE2Lr5gAAABNi7egAAAATYu/qAAAAEiNpCQwCgAA"
+21:
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbSI1kJPhMiRwkSI2kJLj1//9JieNJg8MgSYPj4MX+fwQkxMF+fwPEwX5/QyDEwX5/Q0DEwX5/Q2DEwX5/g4AAAADEwX5/g6AAAADEwX5/g8AAAADEwX5/g+AAAADEwX5/gwABAADEwX5/gyABAADEwX5/g0ABAADEwX5/g2ABAADEwX5/g4ABAADEwX5/g6ABAADEwX5/g8ABAADEwX5/g+ABAADEwX5/gwACAADEwX5/gyACAADEwX5/g0ACAADEwX5/g2ACAADEwX5/g4ACAADEwX5/g6ACAADEwX5/g8ACAADEwX5/g+ACAADEwX5/gwADAADEwX5/gyADAADEwX5/g0ADAADEwX5/g2ADAADEwX5/g4ADAADEwX5/g6ADAADEwX5/g8ADAADEwX5/g+ADAADEwX5/gwAEAADEwX5/gyAEAADEwX5/g0AEAADEwX5/g2AEAADEwX5/g4AEAADEwX5/g6AEAADEwX5/g8AEAADEwX5/g+AEAADEwX5/gwAFAADEwX5/gyAFAADEwX5/g0AFAADEwX5/g2AFAADEwX5/g4AFAADEwX5/g6AFAADEwX5/g8AFAADEwX5/g+AFAADEwX5/gwAGAADEwX5/gyAGAADEwX5/g0AGAADEwX5/g2AGAADEwX5/g4AGAADEwX5/g6AGAADEwX5/g8AGAADEwX5/g+AGAADEwX5/gwAHAADEwX5/gyAHAADEwX5/g0AHAADEwX5/g2AHAADEwX5/g4AHAADEwX5/g6AHAADEwX5/g8AHAADEwX5/g+AHAADEwX5/gwAIAADEwX5/gyAIAADEwX5/g0AIAADEwX5/g2AIAADEwX5/g4AIAADEwX5/g6AIAADEwX5/g8AIAADEwX5/g+AIAADEwX5/gwAJAADEwX5/gyAJAADEwX5/g0AJAADEwX5/g2AJAADEwX5/g4AJAADEwX5/g6AJAADEwX5/g8AJAADEwX5/g+AJAADEwX5/gwAKAADF/n+EJCAKAADF/n+EJCgKAABFMdtIjaQkSAoAAEiNZCQIMcAxyTHSMfYx/0UxwEUxyUUx0sM="
+20:
+.base64 "SI2kJND1//9Ii4QkOAoAAEiJRCQISIuEJEAKAABIiUQkEEiLhCRICgAASIlEJBhIi4QkUAoAAEiJRCQgSIngSIPAMEiJRCQoSItEJChIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdNif5Jg8YQSYn9SYm3sAAAAE2Jh+gAAABNiY+4AAAASItEJBBJiYfIAAAASItEJBhJiYfQAAAASYnUSInNuAAAAABIg/0M"
+jne 237f
+.base64 "SYuPuAAAAEkLj9AAAABIgfkAAgAA"
+jae 239f
+.base64 "SYuPuAAAAEiDwQ9IwekESYuX0AAAAEiDwg9IweoESAHRSIP5HA=="
+jae 241f
+.base64 "SYuX0AAAAEiJ0UjB4QRIAdFJA4+4AAAASIP5EQ=="
+jb 243f
+.base64 "uAEAAAA="
+jmp 244f
+243:
+244:
+jmp 242f
+241:
+242:
+jmp 240f
+239:
+240:
+jmp 238f
+237:
+238:
+.base64 "SIXA"
+je 245f
+.base64 "SItcJAhNi5fQAAAASYnb"
+call {vg_aes_gcm_bounded_seal_avx512}
+jmp 246f
+245:
+.base64 "uAAAAABIg/0M"
+jne 247f
+.base64 "SYuPuAAAAEiD+RE="
+jae 249f
+.base64 "SYuP0AAAAEiB+QABAAA="
+jb 251f
+.base64 "uAEAAAA="
+jmp 252f
+251:
+252:
+jmp 250f
+249:
+250:
+jmp 248f
+247:
+248:
+.base64 "SIXA"
+je 253f
+.base64 "QYsEJEGLTCQEQYtUJAi+AAAAAUGJBkGJTgRBiVYIQYl2DEGLBkGLTgRBi1YIQYt2DA/Og8YBD85BiUYwQYlONEGJVjhBiXY8uAAAAABJiUYQSYlGGEmLj7gAAABIhck="
+je 255f
+.base64 "SIP5BQ=="
+je 257f
+.base64 "SIP5EA=="
+je 259f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BJi7foAAAAQboAAAAA"
+261:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 261b
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vAA=="
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vSBDzQQ9vf2BmDzgA+PNBD2+dEAEAAGZFD+/AZkUP78lmRQ/v0mZED2/fZkQPOkTbAGZFD+/DZkQPb99mRA86RNsRZkUP79NmRA9v32ZEDzpE2wFmRQ/vy2ZED2/fZkQPOkTbEGZFD+/LZkUPb9lmQQ9z2whmRQ/v02ZBD3P5CGZFD+/BZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZBD2/SZkEP79BmDzgA0PNBD39WEA=="
+jmp 260f
+259:
+.base64 "SYu36AAAAPMPbz4="
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vAA=="
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vSBBmDzgA+PNBD2+dEAEAAGZFD+/AZkUP78lmRQ/v0mZED2/fZkQPOkTbAGZFD+/DZkQPb99mRA86RNsRZkUP79NmRA9v32ZEDzpE2wFmRQ/vy2ZED2/fZkQPOkTbEGZFD+/LZkUPb9lmQQ9z2whmRQ/v02ZBD3P5CGZFD+/BZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZBD2/SZkEP79BmDzgA0PNBD39WEA=="
+260:
+jmp 258f
+257:
+.base64 "SYu36AAAAIsGRA+2VgRJweIgTAHQZkgPbvg="
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vAA=="
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vSBBmDzgA+PNBD2+dEAEAAGZFD+/AZkUP78lmRQ/v0mZED2/fZkQPOkTbAGZFD+/DZkQPb99mRA86RNsRZkUP79NmRA9v32ZEDzpE2wFmRQ/vy2ZED2/fZkQPOkTbEGZFD+/LZkUPb9lmQQ9z2whmRQ/v02ZBD3P5CGZFD+/BZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZBD2/SZkEP79BmDzgA0PNBD39WEA=="
+258:
+jmp 256f
+255:
+256:
+jmp 254f
+253:
+.base64 "SIP9DA=="
+je 262f
+.base64 "uAAAAABJiQZJiUYISYmv2AAAALsAAAAATIniSInpSMHpBEiJ6EiD5Q9IKehJAcRIhck="
+je 264f
+.base64 "TInvSIHH8AAAAEyJ9kiDxgBNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+jmp 265f
+264:
+265:
+.base64 "SInpSIXJ"
+je 266f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMieZBugAAAAA="
+268:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 268b
+.base64 "TInvSIHH8AAAAEyJ9kiDxgBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+jmp 267f
+266:
+267:
+.base64 "uwAAAABJi6/YAAAASInYSAHASAHASAHASA/ISYlHYEiJ6EgBwEgBwEgBwEgPyEmJR2hMie9IgcfwAAAATIn2SIPGAEyJ+kiDwmC5AQAAAE2J+EmBwAACAAA="
+call {vg_ghash_vpclmul}
+jmp 263f
+262:
+.base64 "QYsEJEGLTCQEQYtUJAi+AAAAAUGJBkGJTgRBiVYIQYl2DA=="
+263:
+.base64 "QYsGQYtOBEGLVghBi3YMD86DxgEPzkGJRjBBiU40QYlWOEGJdjy4AAAAAEmJRhBJiUYYTYun6AAAAEmLr7gAAAC7AAAAAEyJ4kiJ6UjB6QRIiehIg+UPSCnoSQHESIXJ"
+je 269f
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+jmp 270f
+269:
+270:
+.base64 "SInpSIXJ"
+je 271f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMieZBugAAAAA="
+273:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 273b
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+jmp 272f
+271:
+272:
+254:
+.base64 "SYuH0AAAAEmJh8AAAABIwegESIXA"
+je 274f
+.base64 "TInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTItEJAhJicFNi5fIAAAATIn4SAXAAQAAUA=="
+call {vg_aes_gcm_seal_blocks_prepared_vaes_vpclmul_avx512}
+.base64 "WEmLh9AAAABIicFIg+EPSYmP0AAAAEgpyEkDh8gAAABJiYfIAAAA"
+jmp 275f
+274:
+275:
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vAA=="
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vSBDzQQ9vnRABAADzQQ9vtQABAADEwXpvLsTBem9+MMTjVTjvAUyJ70mLt7AAAABJifJNAdJNAdJNAdJNAdJJAfpicn1IWi9i0VVI7+1icn1IWm8BYtJVSNztYnJ9SFpvAmLSVUjc7WJyfUhabwNi0lVI3O1icn1IWm8EYtJVSNztYnJ9SFpvBWLSVUjc7WJyfUhabwZi0lVI3O1icn1IWm8HYtJVSNztYnJ9SFpvCGLSVUjc7WJyfUhabwli0lVI3O1Ig/4K"
+je 276f
+.base64 "YnJ9SFpvCmLSVUjc7WJyfUhabwti0lVI3O1Ig/4M"
+je 278f
+.base64 "YnJ9SFpvDGLSVUjc7WJyfUhabw1i0lVI3O0="
+jmp 279f
+278:
+279:
+jmp 277f
+276:
+277:
+.base64 "YlJ9SFoqYtJVSN3tYtF+SH9vEMX4d0mLh9AAAABIhcA="
+je 280f
+.base64 "Zg/v//NBD3+/AAIAAEyJ/0iBxwACAABJi7fIAAAATIn6SIHCEAQAAEmLj9AAAABIi1wkCEkDn8AAAABJK5/QAAAAQboAAAAASYnIScHoBEnB4ARJg/gA"
+je 282f
+284:
+.base64 "xKF6byQTxKFZ7yQSxKF6fyQWxKF6fyQXSYPCEE05wg=="
+jne 284b
+jmp 283f
+282:
+283:
+.base64 "SPfBDwAAAA=="
+je 285f
+.base64 "SPfBDAAAAA=="
+je 287f
+.base64 "SPfBCAAAAA=="
+je 289f
+.base64 "SosEE0ozBBJKiQQWSokEF0mDwgg="
+jmp 290f
+289:
+290:
+.base64 "SPfBBAAAAA=="
+je 291f
+.base64 "QosEE0IzBBJCiQQWQokEF0mDwgQ="
+jmp 292f
+291:
+292:
+.base64 "SPfBAwAAAA=="
+je 293f
+295:
+.base64 "Qg+2BBNGD7YMEkwxyEKIBBZCiAQXSYPCAUk5yg=="
+jne 295b
+jmp 294f
+293:
+294:
+jmp 288f
+287:
+296:
+.base64 "Qg+2BBNGD7YMEkwxyEKIBBZCiAQXSYPCAUk5yg=="
+jne 296b
+288:
+jmp 286f
+285:
+286:
+.base64 "SYuHuAAAAEjB4ANID8hJiYcQAgAASYuHwAAAAEjB4ANID8hJiYcYAgAA80UPb2YQZkQPOADg80EPb78AAgAAZg84APhmQQ/v/GZFD+/AZkUP78lmRQ/v0mZED2/fZkQPOkTeAGZFD+/DZkQPb99mRA86RN4RZkUP79NmRA9v32ZEDzpE3gFmRQ/vy2ZED2/fZkQPOkTeEGZFD+/L80EPb78QAgAAZg84APhmRA9v32ZEDzpE2wBmRQ/vw2ZED2/fZkQPOkTbEWZFD+/TZkQPb99mRA86RNsBZkUP78tmRA9v32ZEDzpE2xBmRQ/vy2ZFD2/ZZkEPc9sIZkUP79NmQQ9z+QhmRQ/vwWZFD2/YZkQPOkTZEGZFD3DATmZFD+/DZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmQQ9v0mZBD+/QxOJpANDEwXpvnwAEAADF6e/TxMF6fxfF+Hc="
+jmp 281f
+280:
+.base64 "SYuHuAAAAEjB4ANID8hJiYcQAgAASYuHwAAAAEjB4ANID8hJiYcYAgAA80UPb2YQZkQPOADg80EPb78QAgAAZg84APhmQQ/v/GZFD+/AZkUP78lmRQ/v0mZED2/fZkQPOkTbAGZFD+/DZkQPb99mRA86RNsRZkUP79NmRA9v32ZEDzpE2wFmRQ/vy2ZED2/fZkQPOkTbEGZFD+/LZkUPb9lmQQ9z2whmRQ/v02ZBD3P5CGZFD+/BZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZBD2/SZkEP79DE4mkA0MTBem+fAAQAAMXp79PEwXp/F8X4dw=="
+281:
+246:
+.base64 "SIt8JCBJiwdJi1cISIkHSIlXCEmLn4AAAABJi6+IAAAATYunkAAAAE2Lr5gAAABNi7egAAAATYu/qAAAAEiNpCQwCgAA"
+jmp 21b
+.p2align 6"#,
+        vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul::vg_ghash_vpclmul,
+        vg_aes_ctr32_to_vaes = sym super::aes::vg_aes_ctr32_to_vaes::vg_aes_ctr32_to_vaes,
+        vg_aes_gcm_bounded_seal_avx512 = sym super::aes::vg_aes_gcm_bounded_seal_avx512::vg_aes_gcm_bounded_seal_avx512,
+        vg_aes_gcm_seal_blocks_prepared_vaes_vpclmul_avx512 = sym super::aes::vg_aes_gcm_seal_blocks_prepared_vaes_vpclmul_avx512::vg_aes_gcm_seal_blocks_prepared_vaes_vpclmul_avx512,
+        VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
+    )
+}
+
 /// The CPU features `vg_aes_gcm_seal_prepared_vaes_vpclmul_avx512` requires (`Artifact.features`).
-pub const VG_AES_GCM_SEAL_PREPARED_VAES_VPCLMUL_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX512BW | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AES);
+pub const VG_AES_GCM_SEAL_PREPARED_VAES_VPCLMUL_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AVX512BW | verified_garbage_cpu::feature::AES);
 
 /// `vg_aes_gcm_seal` with a 1032-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the prepared powers its count says are present. The powers remain secret; how many are present may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealPreparedContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -780,7 +1145,7 @@ pub const VG_AES_GCM_SEAL_PREPARED_VAES_VPCLMUL_AVX512_FEATURES: verified_garbag
 /// * `*ctx` must have the prepared format written by `vg_aes_gcm_prepare` (not the format of `vg_aes_gcm_init_precomputed`).
 /// * `data` and `tag` must not overlap each other, `ctx`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2624 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `ssse3`, `pclmulqdq`, `avx`, `avx2`, `avx512f`, `vaes`, `avx512bw`, `vpclmulqdq` and `aes` target features.
+/// * The CPU must support the `ssse3`, `pclmulqdq`, `avx`, `avx2`, `avx512f`, `vaes`, `vpclmulqdq`, `avx512bw` and `aes` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_prepared_vaes_vpclmul_avx512(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
@@ -1021,7 +1386,7 @@ jmp 261f
 211:
 .base64 "SIt8JBhJiwdJi1cISIkHSIlXCEmLn4AAAABJi6+IAAAATYunkAAAAE2Lr5gAAABNi7egAAAATYu/qAAAAEiNpCQoCgAA"
 21:
-.base64 "ww=="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbSI1kJPhMiRwkSI2kJMj1///F/n+EJBgKAADF/n+EJPgJAADF/n+EJNgJAADF/n+EJLgJAADF/n+EJJgJAADF/n+EJHgJAADF/n+EJFgJAADF/n+EJDgJAADF/n+EJBgJAADF/n+EJPgIAADF/n+EJNgIAADF/n+EJLgIAADF/n+EJJgIAADF/n+EJHgIAADF/n+EJFgIAADF/n+EJDgIAADF/n+EJBgIAADF/n+EJPgHAADF/n+EJNgHAADF/n+EJLgHAADF/n+EJJgHAADF/n+EJHgHAADF/n+EJFgHAADF/n+EJDgHAADF/n+EJBgHAADF/n+EJPgGAADF/n+EJNgGAADF/n+EJLgGAADF/n+EJJgGAADF/n+EJHgGAADF/n+EJFgGAADF/n+EJDgGAADF/n+EJBgGAADF/n+EJPgFAADF/n+EJNgFAADF/n+EJLgFAADF/n+EJJgFAADF/n+EJHgFAADF/n+EJFgFAADF/n+EJDgFAADF/n+EJBgFAADF/n+EJPgEAADF/n+EJNgEAADF/n+EJLgEAADF/n+EJJgEAADF/n+EJHgEAADF/n+EJFgEAADF/n+EJDgEAADF/n+EJBgEAADF/n+EJPgDAADF/n+EJNgDAADF/n+EJLgDAADF/n+EJJgDAADF/n+EJHgDAADF/n+EJFgDAADF/n+EJDgDAADF/n+EJBgDAADF/n+EJPgCAADF/n+EJNgCAADF/n+EJLgCAADF/n+EJJgCAADF/n+EJHgCAADF/n+EJFgCAADF/n+EJDgCAADF/n+EJBgCAADF/n+EJPgBAADF/n+EJNgBAADF/n+EJLgBAADF/n+EJJgBAADF/n+EJHgBAADF/n+EJFgBAADF/n+EJDgBAADF/n+EJBgBAADF/n+EJPgAAADF/n+EJNgAAADF/n+EJLgAAADF/n+EJJgAAADF/n9EJHjF/n9EJFjF/n9EJDjF/n9EJBjzD39EJAhMiRwkSI2kJDgKAABIjWQkCDHAMckx0jH2Mf9FMcBFMclFMdLD"
 20:
 .base64 "SI2kJNj1//9Ii4QkMAoAAEiJRCQISIuEJDgKAABIiUQkEEiLhCRACgAASIlEJBhIieBIg8AoSIlEJCBIi0QkIEiJmIAAAABIiaiIAAAATImgkAAAAEyJqJgAAABMibCgAAAATIm4qAAAAEmJx02J/kmDxhBJif1JibewAAAATYmH6AAAAE2Jj7gAAABIi0QkCEmJh8gAAABIi0QkEEmJh9AAAABJidRIic24AAAAAEiD/Qw="
 jne 277f
@@ -1046,328 +1411,258 @@ jmp 278f
 278:
 .base64 "SIXA"
 je 285f
-.base64 "QYsEJEGLTCQEQYtUJAi+AAAAAUGJBkGJTgRBiVYIQYl2DEmLj7gAAABIg8EPSMHpBEmJjxABAABJi5fQAAAASIPCD0jB6gRJiZcYAQAASInISAHQSIPAAUmJwEmDwANJwegCScHgAk2JhyABAABJKcBNiYcoAQAA"
-lea rax, [rip + {VG_GCM_CONSTS}]
-.base64 "8w9vAA=="
-lea rax, [rip + {VG_GCM_CONSTS}]
-.base64 "8w9vSBDE4304wAFi831IQ8BExON1OMkBYvN1SEPJRGLxbUjv0mLRfkh/Vwhi0X5If1cJYtF+SH9XCmLRfkh/Vwti0X5If1cMYtF+SH9XDWLRfkh/Vw5i0X5If1cPSYu/KAEAAEjB5wRMAf9IgccAAgAASYu36AAAAEmLj7gAAABBugAAAABJichJwegGScHgBkmD+AA="
-je 287f
-289:
-.base64 "YrF+SG8kFmKxfkh/JBdJg8JATTnC"
-jne 289b
-jmp 288f
-287:
-288:
-.base64 "uAEAAABI0+BIg+gBxOH7kshisX/JbyQWxOH7kshisX9JfyQXTInvSYu3sAAAAEyJ8kyJ8U2J+EmBwAAEAADF+m8RxOJpANBIuAEAAAAAAAAAxGH5bvjFem8yxGIJAPDEQQn+78RDDTj1AUi4AgAAAAAAAADEYflu+MRDBTj/AUmJ8k0B0k0B0k0B0k0B0kkB+kiJ0EyJwsRBDf7vYlMNSEP1RMRBBf7/YlMFSEP/RE2LjxgBAABJg8EEScHpAg=="
-290:
-.base64 "YvINSADYYlENSP73YnJ9SFovYtFlSO/dYnJ9SFpvAWLSZUjc3WJyfUhabwJi0mVI3N1icn1IWm8DYtJlSNzdYnJ9SFpvBGLSZUjc3WJyfUhabwVi0mVI3N1icn1IWm8GYtJlSNzdYnJ9SFpvB2LSZUjc3WJyfUhabwhi0mVI3N1icn1IWm8JYtJlSNzdSIP+Cg=="
-je 291f
-.base64 "YnJ9SFpvCmLSZUjc3WJyfUhabwti0mVI3N1Ig/4M"
-je 293f
-.base64 "YnJ9SFpvDGLSZUjc3WJyfUhabw1i0mVI3N0="
-jmp 294f
-293:
-294:
-jmp 292f
-291:
-292:
-.base64 "YlJ9SFoqYtJlSN3dYvF+SH8aSIPCQEmD6QE="
-jne 290b
-.base64 "SYu/KAEAAEkDvxABAABIwecETAH/SIHHAAIAAEmLt8gAAABMifpIgcIQBAAASYuP0AAAAEG6AAAAAEmJyEnB6ARJweAESYP4AA=="
-je 295f
-297:
-.base64 "xKF6byQWxKFZ7yQSxKF6fyQWxKF6fyQXSYPCEE05wg=="
-jne 297b
-jmp 296f
-295:
-296:
-.base64 "SPfBDwAAAA=="
-je 298f
-.base64 "SPfBDAAAAA=="
-je 2100f
-.base64 "SPfBCAAAAA=="
-je 2102f
-.base64 "SosEFkozBBJKiQQWSokEF0mDwgg="
-jmp 2103f
-2102:
-2103:
-.base64 "SPfBBAAAAA=="
-je 2104f
-.base64 "QosEFkIzBBJCiQQWQokEF0mDwgQ="
-jmp 2105f
-2104:
-2105:
-.base64 "SPfBAwAAAA=="
-je 2106f
-2108:
-.base64 "Qg+2BBZGD7YMEkwxyEKIBBZCiAQXSYPCAUk5yg=="
-jne 2108b
-jmp 2107f
-2106:
-2107:
-jmp 2101f
-2100:
-2109:
-.base64 "Qg+2BBZGD7YMEkwxyEKIBBZCiAQXSYPCAUk5yg=="
-jne 2109b
-2101:
-jmp 299f
-298:
-299:
-.base64 "SYu/IAEAAEjB5wRMAf9IgcfwAQAASYuHuAAAAEjB4ANID8hIiQdJi4fQAAAASMHgA0gPyEiJRwhMifpIgcKAAQAATYuPIAEAAEnB6QJNictJweMGTQHrSYPDQGJRPUjvwGJRNUjvyWJRLUjv0g=="
-2110:
-.base64 "YlF+SG9jAmJTHUhD5E5i8X5Ib3oCYvJFSAD4YlNFSETcAGJRPUjvw2JTRUhE3BFiUS1I79NiU0VIRNwBYtNFSET8EGJzJUglz5ZIg8JASYPrQEmD6QE="
-jne 2110b
-.base64 "YnM9SETZEGJRfUhwwE5iUz1IJcuWYnM1SETZEGJRfUhwyU5iUzVIJdOWYlMtSEPaDsRBLe/TxEN9OdMBxMEp79PE4mkA0MTBem+fAAQAAMXp79PEwXp/F8X4dw=="
+.base64 "SYufyAAAAE2Ll9AAAABJids="
+call {vg_aes_gcm_bounded_seal_avx512}
 jmp 286f
 285:
 .base64 "uAAAAABIg/0M"
-jne 2111f
+jne 287f
 .base64 "SYuPuAAAAEiD+RE="
-jae 2113f
+jae 289f
 .base64 "SYuP0AAAAEiB+QABAAA="
-jb 2115f
+jb 291f
 .base64 "uAEAAAA="
-jmp 2116f
-2115:
-2116:
-jmp 2114f
-2113:
-2114:
-jmp 2112f
-2111:
-2112:
+jmp 292f
+291:
+292:
+jmp 290f
+289:
+290:
+jmp 288f
+287:
+288:
 .base64 "SIXA"
-je 2117f
+je 293f
 .base64 "QYsEJEGLTCQEQYtUJAi+AAAAAUGJBkGJTgRBiVYIQYl2DEGLBkGLTgRBi1YIQYt2DA/Og8YBD85BiUYwQYlONEGJVjhBiXY8uAAAAABJiUYQSYlGGEmLj7gAAABIhck="
-je 2119f
+je 295f
 .base64 "SIP5BQ=="
-je 2121f
+je 297f
 .base64 "SIP5EA=="
-je 2123f
+je 299f
 .base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BJi7foAAAAQboAAAAA"
-2125:
+2101:
 .base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 2125b
+jne 2101b
 lea rax, [rip + {VG_GCM_CONSTS}]
 .base64 "8w9vAA=="
 lea rax, [rip + {VG_GCM_CONSTS}]
 .base64 "8w9vSBDzQQ9vf2BmDzgA+PNBD2+dEAEAAGZFD+/AZkUP78lmRQ/v0mZED2/fZkQPOkTbAGZFD+/DZkQPb99mRA86RNsRZkUP79NmRA9v32ZEDzpE2wFmRQ/vy2ZED2/fZkQPOkTbEGZFD+/LZkUPb9lmQQ9z2whmRQ/v02ZBD3P5CGZFD+/BZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZBD2/SZkEP79BmDzgA0PNBD39WEA=="
-jmp 2124f
-2123:
+jmp 2100f
+299:
 .base64 "SYu36AAAAPMPbz4="
 lea rax, [rip + {VG_GCM_CONSTS}]
 .base64 "8w9vAA=="
 lea rax, [rip + {VG_GCM_CONSTS}]
 .base64 "8w9vSBBmDzgA+PNBD2+dEAEAAGZFD+/AZkUP78lmRQ/v0mZED2/fZkQPOkTbAGZFD+/DZkQPb99mRA86RNsRZkUP79NmRA9v32ZEDzpE2wFmRQ/vy2ZED2/fZkQPOkTbEGZFD+/LZkUPb9lmQQ9z2whmRQ/v02ZBD3P5CGZFD+/BZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZBD2/SZkEP79BmDzgA0PNBD39WEA=="
-2124:
-jmp 2122f
-2121:
+2100:
+jmp 298f
+297:
 .base64 "SYu36AAAAIsGRA+2VgRJweIgTAHQZkgPbvg="
 lea rax, [rip + {VG_GCM_CONSTS}]
 .base64 "8w9vAA=="
 lea rax, [rip + {VG_GCM_CONSTS}]
 .base64 "8w9vSBBmDzgA+PNBD2+dEAEAAGZFD+/AZkUP78lmRQ/v0mZED2/fZkQPOkTbAGZFD+/DZkQPb99mRA86RNsRZkUP79NmRA9v32ZEDzpE2wFmRQ/vy2ZED2/fZkQPOkTbEGZFD+/LZkUPb9lmQQ9z2whmRQ/v02ZBD3P5CGZFD+/BZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZBD2/SZkEP79BmDzgA0PNBD39WEA=="
-2122:
-jmp 2120f
-2119:
-2120:
+298:
+jmp 296f
+295:
+296:
 .base64 "SYuH0AAAAEmJh8AAAABIwegESIXA"
-je 2126f
-.base64 "TInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTYuHyAAAAEmJwUyJ+EgFwAEAAFA="
-call {vg_aes_gcm_encrypt_blocks_prepared_vaes_vpclmul_avx512}
+je 2102f
+.base64 "TInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTYuHyAAAAEmJwUyJ+EgFwAEAAFBNicI="
+call {vg_aes_gcm_seal_blocks_prepared_vaes_vpclmul_avx512}
 .base64 "WEmLh9AAAABIicFIg+EPSYmP0AAAAEgpyEkDh8gAAABJiYfIAAAA"
-jmp 2127f
-2126:
-2127:
+jmp 2103f
+2102:
+2103:
 lea rax, [rip + {VG_GCM_CONSTS}]
 .base64 "8w9vAA=="
 lea rax, [rip + {VG_GCM_CONSTS}]
 .base64 "8w9vSBDzQQ9vnRABAADzQQ9vtQABAADEwXpvLsTBem9+MMTjVTjvAUyJ70mLt7AAAABJifJNAdJNAdJNAdJNAdJJAfpicn1IWi9i0VVI7+1icn1IWm8BYtJVSNztYnJ9SFpvAmLSVUjc7WJyfUhabwNi0lVI3O1icn1IWm8EYtJVSNztYnJ9SFpvBWLSVUjc7WJyfUhabwZi0lVI3O1icn1IWm8HYtJVSNztYnJ9SFpvCGLSVUjc7WJyfUhabwli0lVI3O1Ig/4K"
-je 2128f
+je 2104f
 .base64 "YnJ9SFpvCmLSVUjc7WJyfUhabwti0lVI3O1Ig/4M"
-je 2130f
+je 2106f
 .base64 "YnJ9SFpvDGLSVUjc7WJyfUhabw1i0lVI3O0="
-jmp 2131f
-2130:
-2131:
-jmp 2129f
-2128:
-2129:
+jmp 2107f
+2106:
+2107:
+jmp 2105f
+2104:
+2105:
 .base64 "YlJ9SFoqYtJVSN3tYtF+SH9vEMX4d0mLh9AAAABIhcA="
-je 2132f
+je 2108f
 .base64 "Zg/v//NBD3+/AAIAAEyJ/0iBxwACAABJi7fIAAAATIn6SIHCEAQAAEmLj9AAAABBugAAAABJichJwegEScHgBEmD+AA="
-je 2134f
-2136:
+je 2110f
+2112:
 .base64 "xKF6byQWxKFZ7yQSxKF6fyQWxKF6fyQXSYPCEE05wg=="
+jne 2112b
+jmp 2111f
+2110:
+2111:
+.base64 "SPfBDwAAAA=="
+je 2113f
+.base64 "SPfBDAAAAA=="
+je 2115f
+.base64 "SPfBCAAAAA=="
+je 2117f
+.base64 "SosEFkozBBJKiQQWSokEF0mDwgg="
+jmp 2118f
+2117:
+2118:
+.base64 "SPfBBAAAAA=="
+je 2119f
+.base64 "QosEFkIzBBJCiQQWQokEF0mDwgQ="
+jmp 2120f
+2119:
+2120:
+.base64 "SPfBAwAAAA=="
+je 2121f
+2123:
+.base64 "Qg+2BBZGD7YMEkwxyEKIBBZCiAQXSYPCAUk5yg=="
+jne 2123b
+jmp 2122f
+2121:
+2122:
+jmp 2116f
+2115:
+2124:
+.base64 "Qg+2BBZGD7YMEkwxyEKIBBZCiAQXSYPCAUk5yg=="
+jne 2124b
+2116:
+jmp 2114f
+2113:
+2114:
+.base64 "SYuHuAAAAEjB4ANID8hJiYcQAgAASYuHwAAAAEjB4ANID8hJiYcYAgAA80UPb2YQZkQPOADg80EPb78AAgAAZg84APhmQQ/v/GZFD+/AZkUP78lmRQ/v0mZED2/fZkQPOkTeAGZFD+/DZkQPb99mRA86RN4RZkUP79NmRA9v32ZEDzpE3gFmRQ/vy2ZED2/fZkQPOkTeEGZFD+/L80EPb78QAgAAZg84APhmRA9v32ZEDzpE2wBmRQ/vw2ZED2/fZkQPOkTbEWZFD+/TZkQPb99mRA86RNsBZkUP78tmRA9v32ZEDzpE2xBmRQ/vy2ZFD2/ZZkEPc9sIZkUP79NmQQ9z+QhmRQ/vwWZFD2/YZkQPOkTZEGZFD3DATmZFD+/DZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmQQ9v0mZBD+/QxOJpANDEwXpvnwAEAADF6e/TxMF6fxfF+Hc="
+jmp 2109f
+2108:
+.base64 "SYuHuAAAAEjB4ANID8hJiYcQAgAASYuHwAAAAEjB4ANID8hJiYcYAgAA80UPb2YQZkQPOADg80EPb78QAgAAZg84APhmQQ/v/GZFD+/AZkUP78lmRQ/v0mZED2/fZkQPOkTbAGZFD+/DZkQPb99mRA86RNsRZkUP79NmRA9v32ZEDzpE2wFmRQ/vy2ZED2/fZkQPOkTbEGZFD+/LZkUPb9lmQQ9z2whmRQ/v02ZBD3P5CGZFD+/BZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZBD2/SZkEP79DE4mkA0MTBem+fAAQAAMXp79PEwXp/F8X4dw=="
+2109:
+jmp 294f
+293:
+.base64 "SIP9DA=="
+je 2125f
+.base64 "uAAAAABJiQZJiUYISYmv2AAAALsAAAAATIniSInpSMHpBEiJ6EiD5Q9IKehJAcRIhck="
+je 2127f
+.base64 "TInvSIHH8AAAAEyJ9kiDxgBNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+jmp 2128f
+2127:
+2128:
+.base64 "SInpSIXJ"
+je 2129f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMieZBugAAAAA="
+2131:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 2131b
+.base64 "TInvSIHH8AAAAEyJ9kiDxgBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+jmp 2130f
+2129:
+2130:
+.base64 "uwAAAABJi6/YAAAASInYSAHASAHASAHASA/ISYlHYEiJ6EgBwEgBwEgBwEgPyEmJR2hMie9IgcfwAAAATIn2SIPGAEyJ+kiDwmC5AQAAAE2J+EmBwAACAAA="
+call {vg_ghash_vpclmul}
+jmp 2126f
+2125:
+.base64 "QYsEJEGLTCQEQYtUJAi+AAAAAUGJBkGJTgRBiVYIQYl2DA=="
+2126:
+.base64 "QYsGQYtOBEGLVghBi3YMD86DxgEPzkGJRjBBiU40QYlWOEGJdjy4AAAAAEmJRhBJiUYYTYun6AAAAEmLr7gAAAC7AAAAAEyJ4kiJ6UjB6QRIiehIg+UPSCnoSQHESIXJ"
+je 2132f
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+jmp 2133f
+2132:
+2133:
+.base64 "SInpSIXJ"
+je 2134f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMieZBugAAAAA="
+2136:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
 jne 2136b
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
 jmp 2135f
 2134:
 2135:
-.base64 "SPfBDwAAAA=="
+.base64 "SYuH0AAAAEmJh8AAAABIwegESIXA"
 je 2137f
-.base64 "SPfBDAAAAA=="
-je 2139f
-.base64 "SPfBCAAAAA=="
-je 2141f
-.base64 "SosEFkozBBJKiQQWSokEF0mDwgg="
-jmp 2142f
-2141:
-2142:
-.base64 "SPfBBAAAAA=="
-je 2143f
-.base64 "QosEFkIzBBJCiQQWQokEF0mDwgQ="
-jmp 2144f
-2143:
-2144:
-.base64 "SPfBAwAAAA=="
-je 2145f
-2147:
-.base64 "Qg+2BBZGD7YMEkwxyEKIBBZCiAQXSYPCAUk5yg=="
-jne 2147b
-jmp 2146f
-2145:
-2146:
-jmp 2140f
-2139:
-2148:
-.base64 "Qg+2BBZGD7YMEkwxyEKIBBZCiAQXSYPCAUk5yg=="
-jne 2148b
-2140:
+.base64 "TInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTYuHyAAAAEmJwUyJ+EgFwAEAAFBNicI="
+call {vg_aes_gcm_seal_blocks_prepared_vaes_vpclmul_avx512}
+.base64 "WEmLh9AAAABIicFIg+EPSYmP0AAAAEgpyEkDh8gAAABJiYfIAAAA"
 jmp 2138f
 2137:
 2138:
-.base64 "SYuHuAAAAEjB4ANID8hJiYcQAgAASYuHwAAAAEjB4ANID8hJiYcYAgAA80UPb2YQZkQPOADg80EPb78AAgAAZg84APhmQQ/v/GZFD+/AZkUP78lmRQ/v0mZED2/fZkQPOkTeAGZFD+/DZkQPb99mRA86RN4RZkUP79NmRA9v32ZEDzpE3gFmRQ/vy2ZED2/fZkQPOkTeEGZFD+/L80EPb78QAgAAZg84APhmRA9v32ZEDzpE2wBmRQ/vw2ZED2/fZkQPOkTbEWZFD+/TZkQPb99mRA86RNsBZkUP78tmRA9v32ZEDzpE2xBmRQ/vy2ZFD2/ZZkEPc9sIZkUP79NmQQ9z+QhmRQ/vwWZFD2/YZkQPOkTZEGZFD3DATmZFD+/DZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmQQ9v0mZBD+/QxOJpANDEwXpvnwAEAADF6e/TxMF6fxfF+Hc="
-jmp 2133f
-2132:
-.base64 "SYuHuAAAAEjB4ANID8hJiYcQAgAASYuHwAAAAEjB4ANID8hJiYcYAgAA80UPb2YQZkQPOADg80EPb78QAgAAZg84APhmQQ/v/GZFD+/AZkUP78lmRQ/v0mZED2/fZkQPOkTbAGZFD+/DZkQPb99mRA86RNsRZkUP79NmRA9v32ZEDzpE2wFmRQ/vy2ZED2/fZkQPOkTbEGZFD+/LZkUPb9lmQQ9z2whmRQ/v02ZBD3P5CGZFD+/BZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZBD2/SZkEP79DE4mkA0MTBem+fAAQAAMXp79PEwXp/F8X4dw=="
-2133:
-jmp 2118f
-2117:
-.base64 "SIP9DA=="
-je 2149f
-.base64 "uAAAAABJiQZJiUYISYmv2AAAALsAAAAATIniSInpSMHpBEiJ6EiD5Q9IKehJAcRIhck="
-je 2151f
-.base64 "TInvSIHH8AAAAEyJ9kiDxgBNifhJgcAAAgAA"
-call {vg_ghash_vpclmul}
-jmp 2152f
-2151:
-2152:
-.base64 "SInpSIXJ"
-je 2153f
-.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMieZBugAAAAA="
-2155:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 2155b
-.base64 "TInvSIHH8AAAAEyJ9kiDxgBMifpIg8JguQEAAABNifhJgcAAAgAA"
-call {vg_ghash_vpclmul}
-jmp 2154f
-2153:
-2154:
-.base64 "uwAAAABJi6/YAAAASInYSAHASAHASAHASA/ISYlHYEiJ6EgBwEgBwEgBwEgPyEmJR2hMie9IgcfwAAAATIn2SIPGAEyJ+kiDwmC5AQAAAE2J+EmBwAACAAA="
-call {vg_ghash_vpclmul}
-jmp 2150f
-2149:
-.base64 "QYsEJEGLTCQEQYtUJAi+AAAAAUGJBkGJTgRBiVYIQYl2DA=="
-2150:
-.base64 "QYsGQYtOBEGLVghBi3YMD86DxgEPzkGJRjBBiU40QYlWOEGJdjy4AAAAAEmJRhBJiUYYTYun6AAAAEmLr7gAAAC7AAAAAEyJ4kiJ6UjB6QRIiehIg+UPSCnoSQHESIXJ"
-je 2156f
-.base64 "TInvSIHH8AAAAEyJ9kiDxhBNifhJgcAAAgAA"
-call {vg_ghash_vpclmul}
-jmp 2157f
-2156:
-2157:
-.base64 "SInpSIXJ"
-je 2158f
-.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMieZBugAAAAA="
-2160:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 2160b
-.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifpIg8JguQEAAABNifhJgcAAAgAA"
-call {vg_ghash_vpclmul}
-jmp 2159f
-2158:
-2159:
-.base64 "SYuH0AAAAEmJh8AAAABIwegESIXA"
-je 2161f
-.base64 "TInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTYuHyAAAAEmJwUyJ+EgFwAEAAFA="
-call {vg_aes_gcm_encrypt_blocks_prepared_vaes_vpclmul_avx512}
-.base64 "WEmLh9AAAABIicFIg+EPSYmP0AAAAEgpyEkDh8gAAABJiYfIAAAA"
-jmp 2162f
-2161:
-2162:
 lea rax, [rip + {VG_GCM_CONSTS}]
 .base64 "8w9vAA=="
 lea rax, [rip + {VG_GCM_CONSTS}]
 .base64 "8w9vSBDzQQ9vvfAAAABmDzgA+A=="
 lea rax, [rip + {VG_GCM_CONSTS}]
 .base64 "80QPb2ggSLj//////////2ZMD27wZkUPbPZmD2/fZg9z8wFmRA9v32ZBD3PTP2ZBD3P7CGZBD+vbZkQPcN//ZkEPctMfZkUP/t5mRQ/f3WZBD+/bZkUP78BmRQ/vyWZFD+/SZkQPb9tmRA86RNsAZkUP78NmRA9v22ZEDzpE2xFmRQ/v02ZED2/bZkQPOkTbAWZFD+/LZkQPb9tmRA86RNsQZkUP78tmRQ9v2WZBD3PbCGZFD+/TZkEPc/kIZkUP78FmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZFD2/YZkQPOkTZEGZFD3DATmZFD+/DZkEPb/JmQQ/v8MTBem8uxMF6b34wxONVOO8BTInvSYu3sAAAAEmJ8k0B0k0B0k0B0k0B0kkB+mJyfUhaL2LRVUjv7WJyfUhabwFi0lVI3O1icn1IWm8CYtJVSNztYnJ9SFpvA2LSVUjc7WJyfUhabwRi0lVI3O1icn1IWm8FYtJVSNztYnJ9SFpvBmLSVUjc7WJyfUhabwdi0lVI3O1icn1IWm8IYtJVSNztYnJ9SFpvCWLSVUjc7UiD/go="
-je 2163f
+je 2139f
 .base64 "YnJ9SFpvCmLSVUjc7WJyfUhabwti0lVI3O1Ig/4M"
-je 2165f
+je 2141f
 .base64 "YnJ9SFpvDGLSVUjc7WJyfUhabw1i0lVI3O0="
-jmp 2166f
-2165:
-2166:
-jmp 2164f
-2163:
-2164:
+jmp 2142f
+2141:
+2142:
+jmp 2140f
+2139:
+2140:
 .base64 "YlJ9SFoqYtJVSN3tYtF+SH9vEMX4d0mLh9AAAABIhcA="
-je 2167f
+je 2143f
 .base64 "Zg/v//NBD3+/AAIAAEyJ/0iBxwACAABJi7fIAAAATIn6SIHCEAQAAEmLj9AAAABBugAAAABJichJwegEScHgBEmD+AA="
-je 2169f
-2171:
+je 2145f
+2147:
 .base64 "xKF6byQWxKFZ7yQSxKF6fyQWxKF6fyQXSYPCEE05wg=="
-jne 2171b
-jmp 2170f
-2169:
-2170:
+jne 2147b
+jmp 2146f
+2145:
+2146:
 .base64 "SPfBDwAAAA=="
-je 2172f
+je 2148f
 .base64 "SPfBDAAAAA=="
-je 2174f
+je 2150f
 .base64 "SPfBCAAAAA=="
-je 2176f
+je 2152f
 .base64 "SosEFkozBBJKiQQWSokEF0mDwgg="
-jmp 2177f
-2176:
-2177:
+jmp 2153f
+2152:
+2153:
 .base64 "SPfBBAAAAA=="
-je 2178f
+je 2154f
 .base64 "QosEFkIzBBJCiQQWQokEF0mDwgQ="
-jmp 2179f
-2178:
-2179:
+jmp 2155f
+2154:
+2155:
 .base64 "SPfBAwAAAA=="
-je 2180f
-2182:
+je 2156f
+2158:
 .base64 "Qg+2BBZGD7YMEkwxyEKIBBZCiAQXSYPCAUk5yg=="
-jne 2182b
-jmp 2181f
-2180:
-2181:
-jmp 2175f
-2174:
-2183:
+jne 2158b
+jmp 2157f
+2156:
+2157:
+jmp 2151f
+2150:
+2159:
 .base64 "Qg+2BBZGD7YMEkwxyEKIBBZCiAQXSYPCAUk5yg=="
-jne 2183b
-2175:
-jmp 2173f
-2172:
-2173:
+jne 2159b
+2151:
+jmp 2149f
+2148:
+2149:
 .base64 "SYuHuAAAAEjB4ANID8hJiYcQAgAASYuHwAAAAEjB4ANID8hJiYcYAgAA80UPb2YQZkQPOADg80EPb78AAgAAZg84APhmQQ/v/GZFD+/AZkUP78lmRQ/v0mZED2/fZkQPOkTeAGZFD+/DZkQPb99mRA86RN4RZkUP79NmRA9v32ZEDzpE3gFmRQ/vy2ZED2/fZkQPOkTeEGZFD+/L80EPb78QAgAAZg84APhmRA9v32ZEDzpE2wBmRQ/vw2ZED2/fZkQPOkTbEWZFD+/TZkQPb99mRA86RNsBZkUP78tmRA9v32ZEDzpE2xBmRQ/vy2ZFD2/ZZkEPc9sIZkUP79NmQQ9z+QhmRQ/vwWZFD2/YZkQPOkTZEGZFD3DATmZFD+/DZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmQQ9v0mZBD+/QxOJpANDEwXpvnwAEAADF6e/TxMF6fxfF+Hc="
-jmp 2168f
-2167:
+jmp 2144f
+2143:
 .base64 "SYuHuAAAAEjB4ANID8hJiYcQAgAASYuHwAAAAEjB4ANID8hJiYcYAgAA80UPb2YQZkQPOADg80EPb78QAgAAZg84APhmQQ/v/GZFD+/AZkUP78lmRQ/v0mZED2/fZkQPOkTbAGZFD+/DZkQPb99mRA86RNsRZkUP79NmRA9v32ZEDzpE2wFmRQ/vy2ZED2/fZkQPOkTbEGZFD+/LZkUPb9lmQQ9z2whmRQ/v02ZBD3P5CGZFD+/BZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZBD2/SZkEP79DE4mkA0MTBem+fAAQAAMXp79PEwXp/F8X4dw=="
-2168:
-2118:
+2144:
+294:
 286:
 .base64 "SIt8JBhJiwdJi1cISIkHSIlXCEmLn4AAAABJi6+IAAAATYunkAAAAE2Lr5gAAABNi7egAAAATYu/qAAAAEiNpCQoCgAA"
 jmp 21b
 .p2align 6"#,
-        vg_ghash_vpclmul = sym super::aes_gcm_siv::vg_ghash_vpclmul::vg_ghash_vpclmul,
+        vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul::vg_ghash_vpclmul,
         vg_aes_gcm_encrypt_blocks_vaes_vpclmul_avx512 = sym super::aes::vg_aes_gcm_encrypt_blocks_vaes_vpclmul_avx512::vg_aes_gcm_encrypt_blocks_vaes_vpclmul_avx512,
-        vg_aes_gcm_encrypt_blocks_prepared_vaes_vpclmul_avx512 = sym super::aes::vg_aes_gcm_encrypt_blocks_prepared_vaes_vpclmul_avx512::vg_aes_gcm_encrypt_blocks_prepared_vaes_vpclmul_avx512,
+        vg_aes_gcm_bounded_seal_avx512 = sym super::aes::vg_aes_gcm_bounded_seal_avx512::vg_aes_gcm_bounded_seal_avx512,
+        vg_aes_gcm_seal_blocks_prepared_vaes_vpclmul_avx512 = sym super::aes::vg_aes_gcm_seal_blocks_prepared_vaes_vpclmul_avx512::vg_aes_gcm_seal_blocks_prepared_vaes_vpclmul_avx512,
         VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
     )
 }
@@ -1376,6 +1671,8 @@ jmp 21b
 pub const VG_AES_GCM_OPEN_PREPARED_VAES_VPCLMUL_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX512BW | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AES);
 
 /// `vg_aes_gcm_open` with a 1032-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the prepared powers its count says are present. The powers remain secret; how many are present may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openPreparedContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1701,7 +1998,7 @@ jmp 27f
 27:
 .base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJDAKAAA="
 21:
-.base64 "ww=="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbSI1kJPhMiRwkSI2kJMD1///F/n+EJCAKAADF/n+EJAAKAADF/n+EJOAJAADF/n+EJMAJAADF/n+EJKAJAADF/n+EJIAJAADF/n+EJGAJAADF/n+EJEAJAADF/n+EJCAJAADF/n+EJAAJAADF/n+EJOAIAADF/n+EJMAIAADF/n+EJKAIAADF/n+EJIAIAADF/n+EJGAIAADF/n+EJEAIAADF/n+EJCAIAADF/n+EJAAIAADF/n+EJOAHAADF/n+EJMAHAADF/n+EJKAHAADF/n+EJIAHAADF/n+EJGAHAADF/n+EJEAHAADF/n+EJCAHAADF/n+EJAAHAADF/n+EJOAGAADF/n+EJMAGAADF/n+EJKAGAADF/n+EJIAGAADF/n+EJGAGAADF/n+EJEAGAADF/n+EJCAGAADF/n+EJAAGAADF/n+EJOAFAADF/n+EJMAFAADF/n+EJKAFAADF/n+EJIAFAADF/n+EJGAFAADF/n+EJEAFAADF/n+EJCAFAADF/n+EJAAFAADF/n+EJOAEAADF/n+EJMAEAADF/n+EJKAEAADF/n+EJIAEAADF/n+EJGAEAADF/n+EJEAEAADF/n+EJCAEAADF/n+EJAAEAADF/n+EJOADAADF/n+EJMADAADF/n+EJKADAADF/n+EJIADAADF/n+EJGADAADF/n+EJEADAADF/n+EJCADAADF/n+EJAADAADF/n+EJOACAADF/n+EJMACAADF/n+EJKACAADF/n+EJIACAADF/n+EJGACAADF/n+EJEACAADF/n+EJCACAADF/n+EJAACAADF/n+EJOABAADF/n+EJMABAADF/n+EJKABAADF/n+EJIABAADF/n+EJGABAADF/n+EJEABAADF/n+EJCABAADF/n+EJAABAADF/n+EJOAAAADF/n+EJMAAAADF/n+EJKAAAADF/n+EJIAAAADF/n9EJGDF/n9EJEDF/n9EJCDF/n8EJEiNpCRACgAASI1kJAiJwDHJMdIx9jH/RTHARTHJRTHSww=="
 236:
 .base64 "SIn4TCn4SMHoBEiD4AM="
 je 239f
@@ -2161,7 +2458,7 @@ jne 2136b
 2134:
 jmp 2131b
 .p2align 6"#,
-        vg_ghash_vpclmul = sym super::aes_gcm_siv::vg_ghash_vpclmul::vg_ghash_vpclmul,
+        vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul::vg_ghash_vpclmul,
         vg_aes_gcm_decrypt_blocks_vaes_vpclmul_avx512 = sym super::aes::vg_aes_gcm_decrypt_blocks_vaes_vpclmul_avx512::vg_aes_gcm_decrypt_blocks_vaes_vpclmul_avx512,
         vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
         vg_aes_gcm_decrypt_blocks_prepared_vaes_vpclmul_avx512 = sym super::aes::vg_aes_gcm_decrypt_blocks_prepared_vaes_vpclmul_avx512::vg_aes_gcm_decrypt_blocks_prepared_vaes_vpclmul_avx512,
@@ -2170,9 +2467,11 @@ jmp 2131b
 }
 
 /// The CPU features `vg_aes_gcm_open_to_prepared_vaes_vpclmul_avx512` requires (`Artifact.features`).
-pub const VG_AES_GCM_OPEN_TO_PREPARED_VAES_VPCLMUL_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512BW | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AES);
+pub const VG_AES_GCM_OPEN_TO_PREPARED_VAES_VPCLMUL_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AVX512BW | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AES);
 
 /// `vg_aes_gcm_open_to` with a 1032-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the prepared powers its count says are present. The powers remain secret; how many are present may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openToPreparedContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -2187,7 +2486,7 @@ pub const VG_AES_GCM_OPEN_TO_PREPARED_VAES_VPCLMUL_AVX512_FEATURES: verified_gar
 /// * `*ctx` must have the prepared format written by `vg_aes_gcm_prepare` (not the format of `vg_aes_gcm_init_precomputed`).
 /// * `dst` must not overlap `ctx`, `nonce`, `aad`, `src`, `tag` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the return address on the stack or the 2776 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `ssse3`, `pclmulqdq`, `avx2`, `vpclmulqdq`, `avx512f`, `avx512bw`, `vaes` and `aes` target features.
+/// * The CPU must support the `avx`, `avx512f`, `ssse3`, `pclmulqdq`, `avx2`, `vpclmulqdq`, `avx512bw`, `vaes` and `aes` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_open_to_prepared_vaes_vpclmul_avx512(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
@@ -2210,7 +2509,7 @@ jmp 25f
 23:
 .base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW0iNpCRACgAA"
 21:
-.base64 "ww=="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbSI1kJPhMiRwkSI2kJDD1///F/n+EJLAKAADF/n+EJJAKAADF/n+EJHAKAADF/n+EJFAKAADF/n+EJDAKAADF/n+EJBAKAADF/n+EJPAJAADF/n+EJNAJAADF/n+EJLAJAADF/n+EJJAJAADF/n+EJHAJAADF/n+EJFAJAADF/n+EJDAJAADF/n+EJBAJAADF/n+EJPAIAADF/n+EJNAIAADF/n+EJLAIAADF/n+EJJAIAADF/n+EJHAIAADF/n+EJFAIAADF/n+EJDAIAADF/n+EJBAIAADF/n+EJPAHAADF/n+EJNAHAADF/n+EJLAHAADF/n+EJJAHAADF/n+EJHAHAADF/n+EJFAHAADF/n+EJDAHAADF/n+EJBAHAADF/n+EJPAGAADF/n+EJNAGAADF/n+EJLAGAADF/n+EJJAGAADF/n+EJHAGAADF/n+EJFAGAADF/n+EJDAGAADF/n+EJBAGAADF/n+EJPAFAADF/n+EJNAFAADF/n+EJLAFAADF/n+EJJAFAADF/n+EJHAFAADF/n+EJFAFAADF/n+EJDAFAADF/n+EJBAFAADF/n+EJPAEAADF/n+EJNAEAADF/n+EJLAEAADF/n+EJJAEAADF/n+EJHAEAADF/n+EJFAEAADF/n+EJDAEAADF/n+EJBAEAADF/n+EJPADAADF/n+EJNADAADF/n+EJLADAADF/n+EJJADAADF/n+EJHADAADF/n+EJFADAADF/n+EJDADAADF/n+EJBADAADF/n+EJPACAADF/n+EJNACAADF/n+EJLACAADF/n+EJJACAADF/n+EJHACAADF/n+EJFACAADF/n+EJDACAADF/n+EJBACAADF/n+EJPABAADF/n+EJNABAADF/n+EJLABAADF/n+EJJABAADF/n+EJHABAADF/n+EJFABAADF/n+EJDABAADF/n+EJBABAADF/n+EJPAAAADF/n+EJNAAAADF/n+EJLAAAADF/n+EJJAAAADF/n9EJHDF/n9EJFDF/n9EJDDF/n9EJBDzD38EJEiNpCTQCgAASI1kJAiJwDHJMdIx9jH/RTHARTHJRTHSww=="
 20:
 .base64 "SItEJBBIPQAEAAA="
 jae 27f
@@ -2261,7 +2560,7 @@ jmp 223f
 215:
 210:
 .base64 "xfh3SIt8JFBIi3QkSEiLVCRASItMJDhMi0QkMEyLTCQoSItEJHBIiQQkSItEJGhIiUQkCEiLhCSAAAAASIlEJBBIi4QkiAAAAEiJRCQY"
-call {vg_aes_gcm_open_prepared_vaes_vpclmul_avx512}
+call {vg_aes_gcm_open_prepared_vaes_vpclmul_avx512_core}
 .base64 "hcA="
 je 225f
 jmp 226f
@@ -2298,15 +2597,17 @@ jmp 233f
 jmp 28b
 .p2align 6"#,
         vg_aes_gcm_open_split_vaes_vpclmul_avx512 = sym super::aes::vg_aes_gcm_open_split_vaes_vpclmul_avx512::vg_aes_gcm_open_split_vaes_vpclmul_avx512,
-        vg_aes_gcm_open_prepared_vaes_vpclmul_avx512 = sym super::gcm::vg_aes_gcm_open_prepared_vaes_vpclmul_avx512,
+        vg_aes_gcm_open_prepared_vaes_vpclmul_avx512_core = sym super::aes::vg_aes_gcm_open_prepared_vaes_vpclmul_avx512_core::vg_aes_gcm_open_prepared_vaes_vpclmul_avx512_core,
         vg_aes_gcm_open_split_prepared_vaes_vpclmul_avx512 = sym super::aes::vg_aes_gcm_open_split_prepared_vaes_vpclmul_avx512::vg_aes_gcm_open_split_prepared_vaes_vpclmul_avx512,
     )
 }
 
 /// The CPU features `vg_aes_gcm_stream_encrypt_prepared_vaes_vpclmul_avx512` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_ENCRYPT_PREPARED_VAES_VPCLMUL_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512BW | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AES);
+pub const VG_AES_GCM_STREAM_ENCRYPT_PREPARED_VAES_VPCLMUL_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AVX512BW | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AES);
 
 /// `vg_aes_gcm_stream_encrypt` with a 1032-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the prepared powers its count says are present. The powers remain secret; how many are present may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.streamEncryptPreparedContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -2317,7 +2618,7 @@ pub const VG_AES_GCM_STREAM_ENCRYPT_PREPARED_VAES_VPCLMUL_AVX512_FEATURES: verif
 /// * `*ctx` must have the prepared format written by `vg_aes_gcm_prepare` (not the format of `vg_aes_gcm_init_precomputed`).
 /// * `state` and `data` must not overlap each other, `ctx` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `ssse3`, `pclmulqdq`, `avx2`, `avx`, `vpclmulqdq`, `avx512f`, `avx512bw`, `vaes` and `aes` target features.
+/// * The CPU must support the `avx`, `avx512f`, `ssse3`, `pclmulqdq`, `avx2`, `vpclmulqdq`, `avx512bw`, `vaes` and `aes` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_prepared_vaes_vpclmul_avx512(ctx: *const [u64; 129], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
@@ -2486,7 +2787,7 @@ jmp 23f
 23:
 .base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJBgKAAA="
 21:
-.base64 "ww=="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbSI1kJPhMiRwkSI2kJNj1///F/n+EJAgKAADF/n+EJOgJAADF/n+EJMgJAADF/n+EJKgJAADF/n+EJIgJAADF/n+EJGgJAADF/n+EJEgJAADF/n+EJCgJAADF/n+EJAgJAADF/n+EJOgIAADF/n+EJMgIAADF/n+EJKgIAADF/n+EJIgIAADF/n+EJGgIAADF/n+EJEgIAADF/n+EJCgIAADF/n+EJAgIAADF/n+EJOgHAADF/n+EJMgHAADF/n+EJKgHAADF/n+EJIgHAADF/n+EJGgHAADF/n+EJEgHAADF/n+EJCgHAADF/n+EJAgHAADF/n+EJOgGAADF/n+EJMgGAADF/n+EJKgGAADF/n+EJIgGAADF/n+EJGgGAADF/n+EJEgGAADF/n+EJCgGAADF/n+EJAgGAADF/n+EJOgFAADF/n+EJMgFAADF/n+EJKgFAADF/n+EJIgFAADF/n+EJGgFAADF/n+EJEgFAADF/n+EJCgFAADF/n+EJAgFAADF/n+EJOgEAADF/n+EJMgEAADF/n+EJKgEAADF/n+EJIgEAADF/n+EJGgEAADF/n+EJEgEAADF/n+EJCgEAADF/n+EJAgEAADF/n+EJOgDAADF/n+EJMgDAADF/n+EJKgDAADF/n+EJIgDAADF/n+EJGgDAADF/n+EJEgDAADF/n+EJCgDAADF/n+EJAgDAADF/n+EJOgCAADF/n+EJMgCAADF/n+EJKgCAADF/n+EJIgCAADF/n+EJGgCAADF/n+EJEgCAADF/n+EJCgCAADF/n+EJAgCAADF/n+EJOgBAADF/n+EJMgBAADF/n+EJKgBAADF/n+EJIgBAADF/n+EJGgBAADF/n+EJEgBAADF/n+EJCgBAADF/n+EJAgBAADF/n+EJOgAAADF/n+EJMgAAADF/n+EJKgAAADF/n+EJIgAAADF/n9EJGjF/n9EJEjF/n9EJCjF/n9EJAhMiRwkSI2kJCgKAABIjWQkCDHAMckx0jH2Mf9FMcBFMclFMdLD"
 20:
 .base64 "SI2kJOj1//9Ii4QkIAoAAEiJRCQISIngSIPAGEiJRCQQSItEJBBIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdJidZJif1JibewAAAASYmPuAAAAE2Jh8AAAABNiY/IAAAASItsJAhJia/QAAAATYnMTInDSIPjD0iF7Q=="
 je 253f
@@ -2652,7 +2953,7 @@ jmp 254f
 .base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJBgKAAA="
 jmp 21b
 .p2align 6"#,
-        vg_ghash_vpclmul = sym super::aes_gcm_siv::vg_ghash_vpclmul::vg_ghash_vpclmul,
+        vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul::vg_ghash_vpclmul,
         vg_aes_gcm_encrypt_blocks_vaes_vpclmul_avx512 = sym super::aes::vg_aes_gcm_encrypt_blocks_vaes_vpclmul_avx512::vg_aes_gcm_encrypt_blocks_vaes_vpclmul_avx512,
         vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
         vg_aes_gcm_encrypt_blocks_prepared_vaes_vpclmul_avx512 = sym super::aes::vg_aes_gcm_encrypt_blocks_prepared_vaes_vpclmul_avx512::vg_aes_gcm_encrypt_blocks_prepared_vaes_vpclmul_avx512,
@@ -2660,9 +2961,11 @@ jmp 21b
 }
 
 /// The CPU features `vg_aes_gcm_stream_decrypt_prepared_vaes_vpclmul_avx512` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_DECRYPT_PREPARED_VAES_VPCLMUL_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512BW | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AES);
+pub const VG_AES_GCM_STREAM_DECRYPT_PREPARED_VAES_VPCLMUL_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AVX512BW | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AES);
 
 /// `vg_aes_gcm_stream_decrypt` with a 1032-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the prepared powers its count says are present. The powers remain secret; how many are present may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.streamDecryptPreparedContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -2673,7 +2976,7 @@ pub const VG_AES_GCM_STREAM_DECRYPT_PREPARED_VAES_VPCLMUL_AVX512_FEATURES: verif
 /// * `*ctx` must have the prepared format written by `vg_aes_gcm_prepare` (not the format of `vg_aes_gcm_init_precomputed`).
 /// * `state` and `data` must not overlap each other, `ctx` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `ssse3`, `pclmulqdq`, `avx2`, `avx`, `vpclmulqdq`, `avx512f`, `avx512bw`, `vaes` and `aes` target features.
+/// * The CPU must support the `avx`, `avx512f`, `ssse3`, `pclmulqdq`, `avx2`, `vpclmulqdq`, `avx512bw`, `vaes` and `aes` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_decrypt_prepared_vaes_vpclmul_avx512(ctx: *const [u64; 129], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
@@ -2843,7 +3146,7 @@ jmp 23f
 23:
 .base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJBgKAAA="
 21:
-.base64 "ww=="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbSI1kJPhMiRwkSI2kJNj1///F/n+EJAgKAADF/n+EJOgJAADF/n+EJMgJAADF/n+EJKgJAADF/n+EJIgJAADF/n+EJGgJAADF/n+EJEgJAADF/n+EJCgJAADF/n+EJAgJAADF/n+EJOgIAADF/n+EJMgIAADF/n+EJKgIAADF/n+EJIgIAADF/n+EJGgIAADF/n+EJEgIAADF/n+EJCgIAADF/n+EJAgIAADF/n+EJOgHAADF/n+EJMgHAADF/n+EJKgHAADF/n+EJIgHAADF/n+EJGgHAADF/n+EJEgHAADF/n+EJCgHAADF/n+EJAgHAADF/n+EJOgGAADF/n+EJMgGAADF/n+EJKgGAADF/n+EJIgGAADF/n+EJGgGAADF/n+EJEgGAADF/n+EJCgGAADF/n+EJAgGAADF/n+EJOgFAADF/n+EJMgFAADF/n+EJKgFAADF/n+EJIgFAADF/n+EJGgFAADF/n+EJEgFAADF/n+EJCgFAADF/n+EJAgFAADF/n+EJOgEAADF/n+EJMgEAADF/n+EJKgEAADF/n+EJIgEAADF/n+EJGgEAADF/n+EJEgEAADF/n+EJCgEAADF/n+EJAgEAADF/n+EJOgDAADF/n+EJMgDAADF/n+EJKgDAADF/n+EJIgDAADF/n+EJGgDAADF/n+EJEgDAADF/n+EJCgDAADF/n+EJAgDAADF/n+EJOgCAADF/n+EJMgCAADF/n+EJKgCAADF/n+EJIgCAADF/n+EJGgCAADF/n+EJEgCAADF/n+EJCgCAADF/n+EJAgCAADF/n+EJOgBAADF/n+EJMgBAADF/n+EJKgBAADF/n+EJIgBAADF/n+EJGgBAADF/n+EJEgBAADF/n+EJCgBAADF/n+EJAgBAADF/n+EJOgAAADF/n+EJMgAAADF/n+EJKgAAADF/n+EJIgAAADF/n9EJGjF/n9EJEjF/n9EJCjF/n9EJAhMiRwkSI2kJCgKAABIjWQkCDHAMckx0jH2Mf9FMcBFMclFMdLD"
 20:
 .base64 "SI2kJOj1//9Ii4QkIAoAAEiJRCQISIngSIPAGEiJRCQQSItEJBBIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdJidZJif1JibewAAAASYmPuAAAAE2Jh8AAAABNiY/IAAAASItsJAhJia/QAAAATYnMTInDSIPjD0iF7Q=="
 je 253f
@@ -3010,7 +3313,7 @@ jmp 254f
 .base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJBgKAAA="
 jmp 21b
 .p2align 6"#,
-        vg_ghash_vpclmul = sym super::aes_gcm_siv::vg_ghash_vpclmul::vg_ghash_vpclmul,
+        vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul::vg_ghash_vpclmul,
         vg_aes_gcm_decrypt_blocks_vaes_vpclmul_avx512 = sym super::aes::vg_aes_gcm_decrypt_blocks_vaes_vpclmul_avx512::vg_aes_gcm_decrypt_blocks_vaes_vpclmul_avx512,
         vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
         vg_aes_gcm_decrypt_blocks_prepared_vaes_vpclmul_avx512 = sym super::aes::vg_aes_gcm_decrypt_blocks_prepared_vaes_vpclmul_avx512::vg_aes_gcm_decrypt_blocks_prepared_vaes_vpclmul_avx512,
@@ -3018,9 +3321,11 @@ jmp 21b
 }
 
 /// The CPU features `vg_aes_gcm_seal_gather_prepared_vaes_vpclmul_avx512` requires (`Artifact.features`).
-pub const VG_AES_GCM_SEAL_GATHER_PREPARED_VAES_VPCLMUL_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AVX512BW | verified_garbage_cpu::feature::AES);
+pub const VG_AES_GCM_SEAL_GATHER_PREPARED_VAES_VPCLMUL_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512BW | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::VPCLMULQDQ);
 
 /// `vg_aes_gcm_seal_gather` with a 1032-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the prepared powers its count says are present. The powers remain secret; how many are present may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealGatherPreparedContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -3034,438 +3339,784 @@ pub const VG_AES_GCM_SEAL_GATHER_PREPARED_VAES_VPCLMUL_AVX512_FEATURES: verified
 /// * The slices `src` lists must be `len` bytes long in all.
 /// * `*ctx` must have the prepared format written by `vg_aes_gcm_prepare` (not the format of `vg_aes_gcm_init_precomputed`).
 /// * `dst` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `src`, the slices `src` lists or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the return address on the stack or the 5128 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `ssse3`, `pclmulqdq`, `avx`, `avx2`, `avx512f`, `vaes`, `vpclmulqdq`, `avx512bw` and `aes` target features.
+/// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the return address on the stack or the 2672 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `ssse3`, `pclmulqdq`, `aes`, `avx`, `avx512f`, `avx2`, `avx512bw`, `vaes` and `vpclmulqdq` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_gather_prepared_vaes_vpclmul_avx512(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SIuHAAQAAEiD+DA="
 jae 20f
-.base64 "SI2kJBD///9Ii4Qk+AAAAEiJRCQISIuEJAABAABIiUQkEEiLhCQIAQAASIlEJBhIi4QkEAEAAEiJRCQgSIuEJBgBAABIiUQkKEiJ4EiDwDhIiUQkMEyLXCQwTItUJAhIi0QkEEmJO0mJcwhNiUMQTYlLGE2JS1BNiVM4SYlDQEiLRCQYTItUJCBMi0QkKEmJQyBNiVMoTYlDMLgAAAAASYlDSEmJQ1hJiUNgSInWSInKTInZSIPBaEyLXCQwSYtDKEg98AIAAA=="
-jb 22f
-.base64 "TItcJDBJi0MoSD0AAwAA"
-jb 24f
-.base64 "TItcJDBBugAAAABJi0NASIXA"
-je 26f
-.base64 "TYtTOE2LUgg="
-jmp 27f
-26:
-27:
-.base64 "SYtDKEjB6ARIweAESTnCSYtDKEG6AAAAAEkPQ8JIPQADAAA="
+.base64 "SI2kJMj1//9Ii4QkQAoAAEiJRCQISIuEJEgKAABIiUQkEEiLhCRQCgAASIlEJBhIi4QkWAoAAEiJRCQgSIuEJGAKAABIiUQkKEiJ4EiDwDhIiUQkMEiLRCQwSImYgAAAAEiJqIgAAABMiaCQAAAATImomAAAAEyJsKAAAABMibioAAAASYnHTYn+SYPGEEmJ/UmJt7AAAABNiYfoAAAATYmPuAAAAEiLRCQYSYmHyAAAAEiLRCQgSYmH0AAAAEmJ1EiJzUiD/Qw="
+je 22f
+.base64 "uAAAAABJiQZJiUYISYmv2AAAALsAAAAATIniSInpSMHpBEiJ6EiD5Q9IKehJAcRIhck="
+je 24f
+.base64 "TInvSIHH8AAAAEyJ9kiDxgBNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
 jmp 25f
 24:
 25:
-jb 28f
-call {vg_aes_gcm_stream_init_vpclmul_core}
-.base64 "TItcJDBJiztMid5Ig8ZougAAAABJi0sQTYtDGA=="
-call {vg_aes_gcm_stream_aad_vpclmul_core}
-.base64 "TItcJDBJi0MoSIXA"
-je 210f
-.base64 "SYtLGEmJyEmD4A9NhcA="
-je 212f
-.base64 "uBAAAABMKcBJicBJiztIichMAcBJiUNQTIneSIPGaEiJykyJ2UiDwVg="
-call {vg_aes_gcm_stream_aad_vpclmul_core}
-jmp 213f
-212:
+.base64 "SInpSIXJ"
+je 26f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMieZBugAAAAA="
+28:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 28b
+.base64 "TInvSIHH8AAAAEyJ9kiDxgBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+jmp 27f
+26:
+27:
+.base64 "uwAAAABJi6/YAAAASInYSAHASAHASAHASA/ISYlHYEiJ6EgBwEgBwEgBwEgPyEmJR2hMie9IgcfwAAAATIn2SIPGAEyJ+kiDwmC5AQAAAE2J+EmBwAACAAA="
+call {vg_ghash_vpclmul}
+jmp 23f
+22:
+.base64 "QYsEJEGLTCQEQYtUJAi+AAAAAUGJBkGJTgRBiVYIQYl2DA=="
+23:
+.base64 "QYsGQYtOBEGLVghBi3YMD86DxgEPzkGJRjBBiU40QYlWOEGJdjy4AAAAAEmJRhBJiUYYTYun6AAAAEmLr7gAAAC7AAAAAEyJ4kiJ6UjB6QRIiehIg+UPSCnoSQHESIXJ"
+je 29f
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+jmp 210f
+29:
+210:
+.base64 "SInpSIXJ"
+je 211f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMieZBugAAAAA="
 213:
-.base64 "TItcJDBJi0NASIXA"
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 213b
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+jmp 212f
+211:
+212:
+.base64 "SItEJAhJiYcAAQAASItEJBBJiYfgAAAASItEJBhJiYfIAAAASItEJCBJiYfAAAAASYmH0AAAALgAAAAASYmH8AAAAEmJhwgBAABJi4fgAAAASIXA"
 je 214f
 216:
-.base64 "TItcJDBNi1M4TYsKSYtCCE2LUyBJi0tISQHKSYs7SYtzCEyJ2kiDwmhJi0tQTYtDSFBBUlA="
-call {vg_aes_gcm_stream_encrypt_to_vaes_vpclmul_avx512}
-.base64 "WFhYTItcJDBNi1M4SYtCCEmLS0hIAcFJg8IQSYtDQEiD6AFJiUtITYlTOEmJQ0BIhcA="
+.base64 "TYuXAAEAAEmLGkmLaghJg8IQTYmXAAEAAEmLhwgBAABIAcNIKcW4AAAAAEmJhwgBAABJi4fwAAAATYunyAAAAEkBxEiJxkiD5g9IAehJiYfwAAAASIXt"
+je 217f
+.base64 "SIX2"
+je 219f
+.base64 "uRAAAABIKfFIOc1ID0LNTAH2SIPGQEyJ50G6AAAAAA=="
+221:
+.base64 "Qg+2BBNGD7YcFkwx2EKIBBdJg8IBSTnK"
+jne 221b
+.base64 "SAHLSQHMSCnN"
+jmp 220f
+219:
+220:
+.base64 "SYnoScHoBE2FwA=="
+je 222f
+.base64 "SInZTYnjSInoSIPlD0gp6EgBw0kBxEyJ70mLt7AAAABMifJIg8IwTYn5SYHBAAIAAA=="
+call {vg_aes_ctr32_to_vaes}
+jmp 223f
+222:
+223:
+.base64 "SIXt"
+je 224f
+.base64 "uAAAAABJiUZASYlGSEyJ70mLt7AAAABMifJIg8IwTInxSIPBQEG4AQAAAE2J+UmBwQACAAA="
+call {vg_aes_ctr32_vaes}
+.base64 "TInnTIn2SIPGQEiJ6UG6AAAAAA=="
+226:
+.base64 "Qg+2BBNGD7YcFkwx2EKIBBdJg8IBSTnK"
+jne 226b
+jmp 225f
+224:
+225:
+jmp 218f
+217:
+218:
+.base64 "TYuX4AAAAEmD6gFNiZfgAAAA"
 jne 216b
 jmp 215f
 214:
 215:
-jmp 211f
-210:
-211:
-.base64 "TItcJDBJiztJi3MITInaSIPCaEmLSxhNi0MoTYtLMA=="
-call {vg_aes_gcm_stream_finish_vaes_vpclmul_core}
-jmp 29f
-28:
-.base64 "TItcJDBBugAAAABJi0NASIXA"
-je 217f
-.base64 "TYtTOE2LUgg="
-jmp 218f
-217:
-218:
-.base64 "SYtDKEjB6ARIweAEQbgAAAAASTnCTQ9C0EmB+vACAAA="
-jb 219f
-.base64 "SYlzaEmJU3BNi0tASYt7IE2LUzhMidC5AAAAAE2FyQ=="
-je 221f
-.base64 "SYsCSYtKCEmD6QFJg8IQSAHP"
-jmp 222f
-221:
-222:
-.base64 "SYlDeEmJi4AAAABNidNJg/kA"
-je 223f
-225:
-.base64 "SYszSYtLCEmDwxBBugAAAABJichJwegGScHgBkmD+AA="
-je 226f
-228:
-.base64 "80IPbwQW80IPb0wWEPNCD29UFiDzQg9vXBYw80IPfwQX80IPf0wXEPNCD39UFyDzQg9/XBcwSYPCQE05wg=="
-jne 228b
-jmp 227f
-226:
+.base64 "TYunyAAAAEmLr9AAAAC7AAAAAEyJ4kiJ6UjB6QRIiehIg+UPSCnoSQHESIXJ"
+je 227f
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+jmp 228f
 227:
-.base64 "SYnIScHoBEnB4ARNOcI="
+228:
+.base64 "SInpSIXJ"
 je 229f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMieZBugAAAAA="
 231:
-.base64 "80IPbwQW80IPfwQXSYPCEE05wg=="
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
 jne 231b
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
 jmp 230f
 229:
 230:
-.base64 "STnK"
-je 232f
-.base64 "SIP5EA=="
-jb 234f
-.base64 "SYnKSYPqEPNCD28EFvNCD38EFw=="
-jmp 235f
-234:
-236:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 236b
-235:
+.base64 "SYufuAAAAEmLr8AAAABIidhIAcBIAcBIAcBID8hJiUdgSInoSAHASAHASAHASA/ISYlHaEyJ70iBx/AAAABMifZIg8YQTIn6SIPCYLkBAAAATYn4SYHAAAIAAA=="
+call {vg_ghash_vpclmul}
+.base64 "SYtGEEmJB0mLRhhJiUcITInvSYu3sAAAAEyJ8kyJ+UiDwQBBuAEAAABNiflJgcEAAgAA"
+call {vg_aes_ctr32_vaes}
+.base64 "SIt8JChJiwdJi1cISIkHSIlXCEmLn4AAAABJi6+IAAAATYunkAAAAE2Lr5gAAABNi7egAAAATYu/qAAAAEiNpCQ4CgAA"
+21:
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbSI1kJPhMiRwkSI2kJJj1//9JieNJg8MgSYPj4MX+fwQkxMF+fwPEwX5/QyDEwX5/Q0DEwX5/Q2DEwX5/g4AAAADEwX5/g6AAAADEwX5/g8AAAADEwX5/g+AAAADEwX5/gwABAADEwX5/gyABAADEwX5/g0ABAADEwX5/g2ABAADEwX5/g4ABAADEwX5/g6ABAADEwX5/g8ABAADEwX5/g+ABAADEwX5/gwACAADEwX5/gyACAADEwX5/g0ACAADEwX5/g2ACAADEwX5/g4ACAADEwX5/g6ACAADEwX5/g8ACAADEwX5/g+ACAADEwX5/gwADAADEwX5/gyADAADEwX5/g0ADAADEwX5/g2ADAADEwX5/g4ADAADEwX5/g6ADAADEwX5/g8ADAADEwX5/g+ADAADEwX5/gwAEAADEwX5/gyAEAADEwX5/g0AEAADEwX5/g2AEAADEwX5/g4AEAADEwX5/g6AEAADEwX5/g8AEAADEwX5/g+AEAADEwX5/gwAFAADEwX5/gyAFAADEwX5/g0AFAADEwX5/g2AFAADEwX5/g4AFAADEwX5/g6AFAADEwX5/g8AFAADEwX5/g+AFAADEwX5/gwAGAADEwX5/gyAGAADEwX5/g0AGAADEwX5/g2AGAADEwX5/g4AGAADEwX5/g6AGAADEwX5/g8AGAADEwX5/g+AGAADEwX5/gwAHAADEwX5/gyAHAADEwX5/g0AHAADEwX5/g2AHAADEwX5/g4AHAADEwX5/g6AHAADEwX5/g8AHAADEwX5/g+AHAADEwX5/gwAIAADEwX5/gyAIAADEwX5/g0AIAADEwX5/g2AIAADEwX5/g4AIAADEwX5/g6AIAADEwX5/g8AIAADEwX5/g+AIAADEwX5/gwAJAADEwX5/gyAJAADEwX5/g0AJAADEwX5/g2AJAADEwX5/g4AJAADEwX5/g6AJAADEwX5/g8AJAADEwX5/g+AJAADEwX5/gwAKAADEwX5/gyAKAADF/n+EJEAKAADF/n+EJEgKAABFMdtIjaQkaAoAAEiNZCQIMcAxyTHSMfYx/0UxwEUxyUUx0sM="
+20:
+.base64 "SI2kJMj1//9Ii4QkQAoAAEiJRCQISIuEJEgKAABIiUQkEEiLhCRQCgAASIlEJBhIi4QkWAoAAEiJRCQgSIuEJGAKAABIiUQkKEiJ4EiDwDhIiUQkMEmJy0mD6wxJg/kRTQ9D2UiLRCQQSIPoAUiD+AJMD0PY"
+jae 232f
+.base64 "TItUJAhNi1IITInQSMHoBEjB4ARIg8AQSDtEJCBJD0PDSQnDSItEJCBIwegISYH6AAEAAEkPQ8NJCcM="
 jmp 233f
 232:
 233:
-.base64 "SAHPSYPpAQ=="
-jne 225b
-jmp 224f
-223:
-224:
-.base64 "TItcJDBJi1NoSYtLcE2LQxBNi0sYSYtDME2LUyhJi7uAAAAASYtzeE2LWyBQQVJBU1dWTItcJFhJiztJi3MI"
-call {vg_aes_gcm_seal_split_vaes_vpclmul_avx512}
-.base64 "WFhYWFg="
-jmp 220f
-219:
-.base64 "SYlzaEmJU3BNi0tASYt7IE2LWzhJg/kA"
-je 237f
-239:
-.base64 "SYszSYtLCEmDwxBBugAAAABJichJwegGScHgBkmD+AA="
-je 240f
+.base64 "TYXb"
+je 234f
+.base64 "SItEJDBIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdNif5Jg8YQSYn9SYm3sAAAAE2Jh+gAAABNiY+4AAAASItEJBhJiYfIAAAASItEJCBJiYfQAAAASYnUSInNuAAAAABIg/0M"
+jne 236f
+.base64 "SYuPuAAAAEkLj9AAAABIgfkAAgAA"
+jae 238f
+.base64 "SYuPuAAAAEiDwQ9IwekESYuX0AAAAEiDwg9IweoESAHRSIP5HA=="
+jae 240f
+.base64 "SYuX0AAAAEiJ0UjB4QRIAdFJA4+4AAAASIP5EQ=="
+jb 242f
+.base64 "uAEAAAA="
+jmp 243f
 242:
-.base64 "80IPbwQW80IPb0wWEPNCD29UFiDzQg9vXBYw80IPfwQX80IPf0wXEPNCD39UFyDzQg9/XBcwSYPCQE05wg=="
-jne 242b
+243:
 jmp 241f
 240:
 241:
-.base64 "SYnIScHoBEnB4ARNOcI="
-je 243f
-245:
-.base64 "80IPbwQW80IPfwQXSYPCEE05wg=="
-jne 245b
-jmp 244f
-243:
+jmp 239f
+238:
+239:
+jmp 237f
+236:
+237:
+.base64 "SIXA"
+je 244f
+.base64 "SYuH0AAAAEiD+BG5AgAAAEiD2QBIi0QkEEiD6AFIOchIGcA="
+jmp 245f
 244:
-.base64 "STnK"
+245:
 je 246f
-.base64 "SIP5EA=="
-jb 248f
-.base64 "SYnKSYPqEPNCD28EFvNCD38EFw=="
+.base64 "SItEJAhIixhMi1AISItMJBBIg/kC"
+je 248f
+.base64 "SYnb"
 jmp 249f
 248:
-250:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 250b
+.base64 "TItYEA=="
 249:
+call {vg_aes_gcm_bounded_seal_avx512}
 jmp 247f
 246:
-247:
-.base64 "SAHPSYPpAQ=="
-jne 239b
-jmp 238f
-237:
-238:
-.base64 "TItcJDBJiztJi3MISYtTaEmLS3BNi0MQTYtLGEmLQzBNi1MoTYtbIFBBUkFT"
-call {vg_aes_gcm_seal_vaes_vpclmul_avx512}
-.base64 "WFhY"
-220:
-29:
-jmp 23f
-22:
-.base64 "SYlzaEmJU3BNi0tASYt7IE2LWzhJg/kA"
-je 251f
+.base64 "SIP9DA=="
+je 250f
+.base64 "uAAAAABJiQZJiUYISYmv2AAAALsAAAAATIniSInpSMHpBEiJ6EiD5Q9IKehJAcRIhck="
+je 252f
+.base64 "TInvSIHH8AAAAEyJ9kiDxgBNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+jmp 253f
+252:
 253:
-.base64 "SYszSYtLCEmDwxBBugAAAABJichJwegGScHgBkmD+AA="
+.base64 "SInpSIXJ"
 je 254f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMieZBugAAAAA="
 256:
-.base64 "80IPbwQW80IPb0wWEPNCD29UFiDzQg9vXBYw80IPfwQX80IPf0wXEPNCD39UFyDzQg9/XBcwSYPCQE05wg=="
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
 jne 256b
+.base64 "TInvSIHH8AAAAEyJ9kiDxgBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
 jmp 255f
 254:
 255:
-.base64 "SYnIScHoBEnB4ARNOcI="
+.base64 "uwAAAABJi6/YAAAASInYSAHASAHASAHASA/ISYlHYEiJ6EgBwEgBwEgBwEgPyEmJR2hMie9IgcfwAAAATIn2SIPGAEyJ+kiDwmC5AQAAAE2J+EmBwAACAAA="
+call {vg_ghash_vpclmul}
+jmp 251f
+250:
+.base64 "QYsEJEGLTCQEQYtUJAi+AAAAAUGJBkGJTgRBiVYIQYl2DA=="
+251:
+.base64 "QYsGQYtOBEGLVghBi3YMD86DxgEPzkGJRjBBiU40QYlWOEGJdjy4AAAAAEmJRhBJiUYYTYun6AAAAEmLr7gAAAC7AAAAAEyJ4kiJ6UjB6QRIiehIg+UPSCnoSQHESIXJ"
 je 257f
-259:
-.base64 "80IPbwQW80IPfwQXSYPCEE05wg=="
-jne 259b
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
 jmp 258f
 257:
 258:
-.base64 "STnK"
-je 260f
-.base64 "SIP5EA=="
-jb 262f
-.base64 "SYnKSYPqEPNCD28EFvNCD38EFw=="
-jmp 263f
-262:
-264:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 264b
-263:
-jmp 261f
-260:
+.base64 "SInpSIXJ"
+je 259f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMieZBugAAAAA="
 261:
-.base64 "SAHPSYPpAQ=="
-jne 253b
-jmp 252f
-251:
-252:
-.base64 "TItcJDBJiztJi3MISYtTaEmLS3BNi0MQTYtLGEmLQzBNi1MoTYtbIFBBUkFT"
-call {vg_aes_gcm_seal_vaes_vpclmul_avx512}
-.base64 "WFhY"
-23:
-.base64 "SI2kJPAAAAA="
-21:
-.base64 "ww=="
-20:
-.base64 "SI2kJBD///9Ii4Qk+AAAAEiJRCQISIuEJAABAABIiUQkEEiLhCQIAQAASIlEJBhIi4QkEAEAAEiJRCQgSIuEJBgBAABIiUQkKEiJ4EiDwDhIiUQkMEiLRCQgSD0AAQAA"
-jb 265f
-.base64 "SYnLSYPrDEmD+RFND0PZSItEJBBIg+gBSIP4AkwPQ9g="
-jae 267f
-.base64 "TItUJAhNi1IITInQSMHoBEjB4ARIg8AQSDtEJCBJD0PDSQnDSItEJCBIDQABAABIwegISYH6AAEAAEkPQ8NJCcM="
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 261b
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+jmp 260f
+259:
+260:
+.base64 "SItEJAhJiYcAAQAASItEJBBJiYfgAAAASItEJBhJiYfIAAAASItEJCBJiYfAAAAASYmH0AAAALgAAAAASYmH8AAAAEmJhwgBAABJi4fgAAAASIXA"
+je 262f
+.base64 "TYuXAAEAAEmLQghIwegISIXA"
+je 264f
+.base64 "SMHgCEmJhwgBAABNiwJNi5/IAAAATAHYSYmHyAAAAEmLh9AAAABJK4cIAQAASYmH0AAAAE2LjwgBAABJwekETYnKTInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTIn4SAXAAQAATYnaUA=="
+call {vg_aes_gcm_seal_blocks_prepared_vaes_vpclmul_avx512}
+.base64 "WA=="
+jmp 265f
+264:
+265:
+266:
+.base64 "TYuXAAEAAEmLGkmLaghJg8IQTYmXAAEAAEmLhwgBAABIAcNIKcW4AAAAAEmJhwgBAABJi4fwAAAATYunyAAAAEkBxEiJxkiD5g9IAehJiYfwAAAASIXt"
+je 267f
+.base64 "SIX2"
+je 269f
+.base64 "uRAAAABIKfFIOc1ID0LNTAH2SIPGQEyJ50G6AAAAAA=="
+271:
+.base64 "Qg+2BBNGD7YcFkwx2EKIBBdJg8IBSTnK"
+jne 271b
+.base64 "SAHLSQHMSCnN"
+jmp 270f
+269:
+270:
+.base64 "SYnoScHoBE2FwA=="
+je 272f
+.base64 "SInZTYnjSInoSIPlD0gp6EgBw0kBxEyJ70mLt7AAAABMifJIg8IwTYn5SYHBAAIAAA=="
+call {vg_aes_ctr32_to_vaes}
+jmp 273f
+272:
+273:
+.base64 "SIXt"
+je 274f
+.base64 "uAAAAABJiUZASYlGSEyJ70mLt7AAAABMifJIg8IwTInxSIPBQEG4AQAAAE2J+UmBwQACAAA="
+call {vg_aes_ctr32_vaes}
+.base64 "TInnTIn2SIPGQEiJ6UG6AAAAAA=="
+276:
+.base64 "Qg+2BBNGD7YcFkwx2EKIBBdJg8IBSTnK"
+jne 276b
+jmp 275f
+274:
+275:
 jmp 268f
 267:
 268:
-.base64 "TYXb"
-jmp 266f
-265:
-266:
-je 269f
-.base64 "TItcJDBMi1QkCEiLRCQQSYk7SYlzCE2JQxBNiUsYTYlLUE2JUzhJiUNASItEJBhMi1QkIEyLRCQoSYlDIE2JUyhNiUMwuAAAAABJiUNISYlDWEmJQ2BIidZIicpMidlIg8FoTItcJDBJi0MoSD3wAgAA"
-jb 271f
-.base64 "TItcJDBJi0MoSD0AAwAA"
-jb 273f
-.base64 "TItcJDBBugAAAABJi0NASIXA"
-je 275f
-.base64 "TYtTOE2LUgg="
-jmp 276f
-275:
-276:
-.base64 "SYtDKEjB6ARIweAESTnCSYtDKEG6AAAAAEkPQ8JIPQADAAA="
-jmp 274f
-273:
-274:
-jb 277f
-call {vg_aes_gcm_stream_init_vpclmul_core}
-.base64 "TItcJDBJiztMid5Ig8ZougAAAABJi0sQTYtDGA=="
-call {vg_aes_gcm_stream_aad_vpclmul_core}
-.base64 "TItcJDBJi0MoSIXA"
+.base64 "TYuX4AAAAEmD6gFNiZfgAAAA"
+jne 266b
+jmp 263f
+262:
+263:
+.base64 "TYunyAAAAEmLr9AAAAC7AAAAAEyJ4kiJ6UjB6QRIiehIg+UPSCnoSQHESIXJ"
+je 277f
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+jmp 278f
+277:
+278:
+.base64 "SInpSIXJ"
 je 279f
-.base64 "SYtLGEmJyEmD4A9NhcA="
-je 281f
-.base64 "uBAAAABMKcBJicBJiztIichMAcBJiUNQTIneSIPGaEiJykyJ2UiDwVg="
-call {vg_aes_gcm_stream_aad_vpclmul_core}
-jmp 282f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMieZBugAAAAA="
 281:
-282:
-.base64 "TItcJDBJi0NASIXA"
-je 283f
-285:
-.base64 "TItcJDBNi1M4TYsKSYtCCE2LUyBJi0tISQHKSYs7SYtzCEyJ2kiDwmhJi0tQTYtDSFBBUlA="
-call {vg_aes_gcm_stream_encrypt_to_prepared_vaes_vpclmul_avx512}
-.base64 "WFhYTItcJDBNi1M4SYtCCEmLS0hIAcFJg8IQSYtDQEiD6AFJiUtITYlTOEmJQ0BIhcA="
-jne 285b
-jmp 284f
-283:
-284:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 281b
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
 jmp 280f
 279:
 280:
-.base64 "TItcJDBJiztJi3MITInaSIPCaEmLSxhNi0MoTYtLMA=="
-call {vg_aes_gcm_stream_finish_vaes_vpclmul_core}
-jmp 278f
-277:
-.base64 "TItcJDBBugAAAABJi0NASIXA"
-je 286f
-.base64 "TYtTOE2LUgg="
+.base64 "SYufuAAAAEmLr8AAAABIidhIAcBIAcBIAcBID8hJiUdgSInoSAHASAHASAHASA/ISYlHaEyJ70iBx/AAAABMifZIg8YQTIn6SIPCYLkBAAAATYn4SYHAAAIAAA=="
+call {vg_ghash_vpclmul}
+.base64 "SYtGEEmJB0mLRhhJiUcITInvSYu3sAAAAEyJ8kyJ+UiDwQBBuAEAAABNiflJgcEAAgAA"
+call {vg_aes_ctr32_vaes}
+247:
+jmp 235f
+234:
+.base64 "SItEJDBIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdNif5Jg8YQSYn9SYm3sAAAAE2Jh+gAAABNiY+4AAAASItEJBhJiYfIAAAASItEJCBJiYfQAAAASYnUSInNuAAAAABIg/0M"
+jne 282f
+.base64 "SYuPuAAAAEkLj9AAAABIgfkAAgAA"
+jae 284f
+.base64 "SYuPuAAAAEiDwQ9IwekESYuX0AAAAEiDwg9IweoESAHRSIP5HA=="
+jae 286f
+.base64 "SYuX0AAAAEiJ0UjB4QRIAdFJA4+4AAAASIP5EQ=="
+jb 288f
+.base64 "uAEAAAA="
+jmp 289f
+288:
+289:
 jmp 287f
 286:
 287:
-.base64 "SYtDKEjB6ARIweAEQbgAAAAASTnCTQ9C0EmB+vACAAA="
-jb 288f
-.base64 "SYlzaEmJU3BNi0tASYt7IE2LUzhMidC5AAAAAE2FyQ=="
+jmp 285f
+284:
+285:
+jmp 283f
+282:
+283:
+.base64 "SIXA"
 je 290f
-.base64 "SYsCSYtKCEmD6QFJg8IQSAHP"
+.base64 "SYuH0AAAAEiD+BG5AgAAAEiD2QBIi0QkEEiD6AFIOchIGcA="
 jmp 291f
 290:
 291:
-.base64 "SYlDeEmJi4AAAABNidNJg/kA"
 je 292f
+.base64 "SItEJAhIixhMi1AISItMJBBIg/kC"
+je 294f
+.base64 "SYnb"
+jmp 295f
 294:
-.base64 "SYszSYtLCEmDwxBBugAAAABJichJwegGScHgBkmD+AA="
-je 295f
-297:
-.base64 "80IPbwQW80IPb0wWEPNCD29UFiDzQg9vXBYw80IPfwQX80IPf0wXEPNCD39UFyDzQg9/XBcwSYPCQE05wg=="
-jne 297b
-jmp 296f
+.base64 "TItYEA=="
 295:
-296:
-.base64 "SYnIScHoBEnB4ARNOcI="
-je 298f
-2100:
-.base64 "80IPbwQW80IPfwQXSYPCEE05wg=="
-jne 2100b
-jmp 299f
-298:
-299:
-.base64 "STnK"
-je 2101f
-.base64 "SIP5EA=="
-jb 2103f
-.base64 "SYnKSYPqEPNCD28EFvNCD38EFw=="
-jmp 2104f
-2103:
-2105:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 2105b
-2104:
-jmp 2102f
-2101:
-2102:
-.base64 "SAHPSYPpAQ=="
-jne 294b
+call {vg_aes_gcm_bounded_seal_avx512}
 jmp 293f
 292:
-293:
-.base64 "TItcJDBJi1NoSYtLcE2LQxBNi0sYSYtDME2LUyhJi7uAAAAASYtzeE2LWyBQQVJBU1dWTItcJFhJiztJi3MI"
-call {vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512}
-.base64 "WFhYWFg="
-jmp 289f
-288:
-.base64 "SYlzaEmJU3BNi0tASYt7IE2LWzhJg/kA"
-je 2106f
-2108:
-.base64 "SYszSYtLCEmDwxBBugAAAABJichJwegGScHgBkmD+AA="
-je 2109f
-2111:
-.base64 "80IPbwQW80IPb0wWEPNCD29UFiDzQg9vXBYw80IPfwQX80IPf0wXEPNCD39UFyDzQg9/XBcwSYPCQE05wg=="
-jne 2111b
-jmp 2110f
-2109:
-2110:
-.base64 "SYnIScHoBEnB4ARNOcI="
-je 2112f
-2114:
-.base64 "80IPbwQW80IPfwQXSYPCEE05wg=="
-jne 2114b
-jmp 2113f
-2112:
-2113:
-.base64 "STnK"
-je 2115f
+.base64 "QYsEJEGLTCQEQYtUJAi+AAAAAUGJBkGJTgRBiVYIQYl2DEGLBkGLTgRBi1YIQYt2DA/Og8YBD85BiUYwQYlONEGJVjhBiXY8uAAAAABJiUYQSYlGGEmLj7gAAABIhck="
+je 296f
+.base64 "SIP5BQ=="
+je 298f
 .base64 "SIP5EA=="
-jb 2117f
-.base64 "SYnKSYPqEPNCD28EFvNCD38EFw=="
-jmp 2118f
-2117:
-2119:
+je 2100f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BJi7foAAAAQboAAAAA"
+2102:
 .base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 2119b
-2118:
+jne 2102b
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vAA=="
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vSBDzQQ9vf2BmDzgA+PNBD2+dEAEAAGZFD+/AZkUP78lmRQ/v0mZED2/fZkQPOkTbAGZFD+/DZkQPb99mRA86RNsRZkUP79NmRA9v32ZEDzpE2wFmRQ/vy2ZED2/fZkQPOkTbEGZFD+/LZkUPb9lmQQ9z2whmRQ/v02ZBD3P5CGZFD+/BZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZBD2/SZkEP79BmDzgA0PNBD39WEA=="
+jmp 2101f
+2100:
+.base64 "SYu36AAAAPMPbz4="
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vAA=="
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vSBBmDzgA+PNBD2+dEAEAAGZFD+/AZkUP78lmRQ/v0mZED2/fZkQPOkTbAGZFD+/DZkQPb99mRA86RNsRZkUP79NmRA9v32ZEDzpE2wFmRQ/vy2ZED2/fZkQPOkTbEGZFD+/LZkUPb9lmQQ9z2whmRQ/v02ZBD3P5CGZFD+/BZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZBD2/SZkEP79BmDzgA0PNBD39WEA=="
+2101:
+jmp 299f
+298:
+.base64 "SYu36AAAAIsGRA+2VgRJweIgTAHQZkgPbvg="
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vAA=="
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vSBBmDzgA+PNBD2+dEAEAAGZFD+/AZkUP78lmRQ/v0mZED2/fZkQPOkTbAGZFD+/DZkQPb99mRA86RNsRZkUP79NmRA9v32ZEDzpE2wFmRQ/vy2ZED2/fZkQPOkTbEGZFD+/LZkUPb9lmQQ9z2whmRQ/v02ZBD3P5CGZFD+/BZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZBD2/SZkEP79BmDzgA0PNBD39WEA=="
+299:
+jmp 297f
+296:
+297:
+.base64 "TItUJAhNiwJJi0IITItMJBhMi1wkIE2Jh+AAAABNiY/IAAAATYmfwAAAAEjB6ARIhcA="
+je 2103f
+.base64 "TInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTYuH4AAAAEmJwUmJwk2Ln8gAAABMifhIBcABAABNidpQ"
+call {vg_aes_gcm_seal_blocks_prepared_vaes_vpclmul_avx512}
+.base64 "WA=="
+jmp 2104f
+2103:
+2104:
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vAA=="
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vSBDzQQ9vnRABAADzQQ9vtQABAADzQQ9vLvNBD29+MEyJ70mLt7AAAABJifJNAdJNAdJNAdJNAdJJAfrzRA9vB2ZBD+/oZkEP7/jzRA9vRxBmQQ843OhmQQ843PjzRA9vRyBmQQ843OhmQQ843PjzRA9vRzBmQQ843OhmQQ843PjzRA9vR0BmQQ843OhmQQ843PjzRA9vR1BmQQ843OhmQQ843PjzRA9vR2BmQQ843OhmQQ843PjzRA9vR3BmQQ843OhmQQ843PjzRA9vh4AAAABmQQ843OhmQQ843PjzRA9vh5AAAABmQQ843OhmQQ843PhIg/4K"
+je 2105f
+.base64 "80QPb4egAAAAZkEPONzoZkEPONz480QPb4ewAAAAZkEPONzoZkEPONz4SIP+DA=="
+je 2107f
+.base64 "80QPb4fAAAAAZkEPONzoZkEPONz480QPb4fQAAAAZkEPONzoZkEPONz4"
+jmp 2108f
+2107:
+2108:
+jmp 2106f
+2105:
+2106:
+.base64 "80UPbwJmQQ843ehmQQ843fjzQQ9/rwAEAADzQQ9/vxAEAABMi1wkCEmLG0mLSwhJichIg+EPSSnITAHDSYu3yAAAAEwBxkmLr8AAAABMKcVIhe0="
+je 2109f
+.base64 "Zg/v//NBD3+/AAIAAEyJ/0iBxwACAABMifpIgcIQBAAAQboAAAAASIXJ"
+je 2111f
+.base64 "SYnITSnQSYP4BA=="
+jb 2113f
+.base64 "SYP4CA=="
+jb 2115f
+.base64 "SosEE0ozBBJKiQQWSokEF0mDwgg="
 jmp 2116f
 2115:
 2116:
-.base64 "SAHPSYPpAQ=="
-jne 2108b
-jmp 2107f
-2106:
-2107:
-.base64 "TItcJDBJiztJi3MISYtTaEmLS3BNi0MQTYtLGEmLQzBNi1MoTYtbIFBBUkFT"
-call {vg_aes_gcm_seal_prepared_vaes_vpclmul_avx512}
-.base64 "WFhY"
-289:
-278:
-jmp 272f
-271:
-.base64 "SYlzaEmJU3BNi0tASYt7IE2LWzhJg/kA"
-je 2120f
+.base64 "SYnITSnQSYP4BA=="
+jb 2117f
+.base64 "QosEE0IzBBJCiQQWQokEF0mDwgQ="
+jmp 2118f
+2117:
+2118:
+.base64 "TDnR"
+je 2119f
+2121:
+.base64 "Qg+2BBNGD7YMEkwxyEKIBBZCiAQXSYPCAUk5yg=="
+jne 2121b
+jmp 2120f
+2119:
+2120:
+jmp 2114f
+2113:
 2122:
-.base64 "SYszSYtLCEmDwxBBugAAAABJichJwegGScHgBkmD+AA="
+.base64 "Qg+2BBNGD7YMEkwxyEKIBBZCiAQXSYPCAUk5yg=="
+jne 2122b
+2114:
+jmp 2112f
+2111:
+2112:
+.base64 "STnq"
 je 2123f
-2125:
-.base64 "80IPbwQW80IPb0wWEPNCD29UFiDzQg9vXBYw80IPfwQX80IPf0wXEPNCD39UFyDzQg9/XBcwSYPCQE05wg=="
-jne 2125b
-jmp 2124f
-2123:
-2124:
-.base64 "SYnIScHoBEnB4ARNOcI="
-je 2126f
-2128:
-.base64 "80IPbwQW80IPfwQXSYPCEE05wg=="
-jne 2128b
-jmp 2127f
-2126:
+.base64 "SYtbEEwp00iJ6UmJyE0p0EmD+AQ="
+jb 2125f
+.base64 "SYP4CA=="
+jb 2127f
+.base64 "SosEE0ozBBJKiQQWSokEF0mDwgg="
+jmp 2128f
 2127:
-.base64 "STnK"
-je 2129f
-.base64 "SIP5EA=="
-jb 2131f
-.base64 "SYnKSYPqEPNCD28EFvNCD38EFw=="
-jmp 2132f
-2131:
-2133:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 2133b
-2132:
+2128:
+.base64 "SYnITSnQSYP4BA=="
+jb 2129f
+.base64 "QosEE0IzBBJCiQQWQokEF0mDwgQ="
 jmp 2130f
 2129:
 2130:
-.base64 "SAHPSYPpAQ=="
-jne 2122b
-jmp 2121f
-2120:
-2121:
-.base64 "TItcJDBJiztJi3MISYtTaEmLS3BNi0MQTYtLGEmLQzBNi1MoTYtbIFBBUkFT"
-call {vg_aes_gcm_seal_prepared_vaes_vpclmul_avx512}
-.base64 "WFhY"
-272:
-jmp 270f
-269:
-.base64 "TItcJDBMi1QkCEiLRCQQSYk7SYlzCEiD+AE="
-je 2134f
-.base64 "SYtKGEiFyQ=="
-je 2136f
-.base64 "SYtyEEiLfCQYSQN6CEG6AAAAAA=="
-2138:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 2138b
-jmp 2137f
-2136:
-2137:
-jmp 2135f
+.base64 "TDnR"
+je 2131f
+2133:
+.base64 "Qg+2BBNGD7YMEkwxyEKIBBZCiAQXSYPCAUk5yg=="
+jne 2133b
+jmp 2132f
+2131:
+2132:
+jmp 2126f
+2125:
 2134:
-2135:
-.base64 "uQwAAABMi1QkCEmLMkmLeghIi0QkKEyLVCQgTItcJBhQQVJBU1dWTItcJFhJiztJi3MI"
-call {vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512}
-.base64 "WFhYWFg="
-270:
-.base64 "SI2kJPAAAAA="
+.base64 "Qg+2BBNGD7YMEkwxyEKIBBZCiAQXSYPCAUk5yg=="
+jne 2134b
+2126:
+jmp 2124f
+2123:
+2124:
+.base64 "SYuHuAAAAEjB4ANID8hJiYcQAgAASYuHwAAAAEjB4ANID8hJiYcYAgAA80UPb2YQZkQPOADg80EPb78AAgAAZg84APhmQQ/v/GZFD+/AZkUP78lmRQ/v0mZED2/fZkQPOkTeAGZFD+/DZkQPb99mRA86RN4RZkUP79NmRA9v32ZEDzpE3gFmRQ/vy2ZED2/fZkQPOkTeEGZFD+/L80EPb78QAgAAZg84APhmRA9v32ZEDzpE2wBmRQ/vw2ZED2/fZkQPOkTbEWZFD+/TZkQPb99mRA86RNsBZkUP78tmRA9v32ZEDzpE2xBmRQ/vy2ZFD2/ZZkEPc9sIZkUP79NmQQ9z+QhmRQ/vwWZFD2/YZkQPOkTZEGZFD3DATmZFD+/DZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmQQ9v0mZBD+/QxOJpANDEwXpvnwAEAADF6e/TxMF6fxfF+Hc="
+jmp 2110f
+2109:
+.base64 "SYuHuAAAAEjB4ANID8hJiYcQAgAASYuHwAAAAEjB4ANID8hJiYcYAgAA80UPb2YQZkQPOADg80EPb78QAgAAZg84APhmQQ/v/GZFD+/AZkUP78lmRQ/v0mZED2/fZkQPOkTbAGZFD+/DZkQPb99mRA86RNsRZkUP79NmRA9v32ZEDzpE2wFmRQ/vy2ZED2/fZkQPOkTbEGZFD+/LZkUPb9lmQQ9z2whmRQ/v02ZBD3P5CGZFD+/BZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZBD2/SZkEP79DE4mkA0MTBem+fAAQAAMXp79PEwXp/F8X4dw=="
+2110:
+293:
+235:
+.base64 "SIt8JChJiwdJi1cISIkHSIlXCEmLn4AAAABJi6+IAAAATYunkAAAAE2Lr5gAAABNi7egAAAATYu/qAAAAEiNpCQ4CgAA"
 jmp 21b
 .p2align 6"#,
-        vg_aes_gcm_stream_init_vpclmul_core = sym super::aes::vg_aes_gcm_stream_init_vpclmul_core::vg_aes_gcm_stream_init_vpclmul_core,
-        vg_aes_gcm_stream_aad_vpclmul_core = sym super::aes::vg_aes_gcm_stream_aad_vpclmul_core::vg_aes_gcm_stream_aad_vpclmul_core,
-        vg_aes_gcm_stream_encrypt_to_vaes_vpclmul_avx512 = sym super::aes::vg_aes_gcm_stream_encrypt_to_vaes_vpclmul_avx512::vg_aes_gcm_stream_encrypt_to_vaes_vpclmul_avx512,
-        vg_aes_gcm_stream_finish_vaes_vpclmul_core = sym super::aes::vg_aes_gcm_stream_finish_vaes_vpclmul_core::vg_aes_gcm_stream_finish_vaes_vpclmul_core,
-        vg_aes_gcm_seal_split_vaes_vpclmul_avx512 = sym super::aes::vg_aes_gcm_seal_split_vaes_vpclmul_avx512::vg_aes_gcm_seal_split_vaes_vpclmul_avx512,
-        vg_aes_gcm_seal_vaes_vpclmul_avx512 = sym super::aes::vg_aes_gcm_seal_vaes_vpclmul_avx512::vg_aes_gcm_seal_vaes_vpclmul_avx512,
-        vg_aes_gcm_stream_encrypt_to_prepared_vaes_vpclmul_avx512 = sym super::aes::vg_aes_gcm_stream_encrypt_to_prepared_vaes_vpclmul_avx512::vg_aes_gcm_stream_encrypt_to_prepared_vaes_vpclmul_avx512,
-        vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512 = sym super::aes::vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512::vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512,
-        vg_aes_gcm_seal_prepared_vaes_vpclmul_avx512 = sym super::gcm::vg_aes_gcm_seal_prepared_vaes_vpclmul_avx512,
+        vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul::vg_ghash_vpclmul,
+        vg_aes_ctr32_to_vaes = sym super::aes::vg_aes_ctr32_to_vaes::vg_aes_ctr32_to_vaes,
+        vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
+        vg_aes_gcm_bounded_seal_avx512 = sym super::aes::vg_aes_gcm_bounded_seal_avx512::vg_aes_gcm_bounded_seal_avx512,
+        vg_aes_gcm_seal_blocks_prepared_vaes_vpclmul_avx512 = sym super::aes::vg_aes_gcm_seal_blocks_prepared_vaes_vpclmul_avx512::vg_aes_gcm_seal_blocks_prepared_vaes_vpclmul_avx512,
+        VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
+    )
+}
+
+/// The CPU features `vg_aes_gcm_seal_contiguous_prepared_vaes_vpclmul` requires (`Artifact.features`).
+pub const VG_AES_GCM_SEAL_CONTIGUOUS_PREPARED_VAES_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::VAES);
+
+/// `vg_aes_gcm_seal_contiguous` with a 1032-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the prepared powers its count says are present. The powers remain secret; how many are present may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealContiguousPreparedContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 1032 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `src` must be valid for reads of `len` bytes, and `dst` for reads and writes of `len` bytes. The two pointers must be identical or their regions disjoint.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `*ctx` must have the prepared format written by `vg_aes_gcm_prepare` (not the format of `vg_aes_gcm_init_precomputed`).
+/// * `dst` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `src` when distinct from `dst` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `src` when distinct from `dst`, `dst` and `tag` may overlap the return address on the stack or the 2640 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `ssse3`, `pclmulqdq`, `aes`, `avx`, `avx2`, `vpclmulqdq` and `vaes` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_contiguous_prepared_vaes_vpclmul(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+    core::arch::naked_asm!(
+        r#".base64 "SIuHAAQAAEiD+BA="
+jae 20f
+.base64 "SI2kJND1//9Ii4QkOAoAAEiJRCQISIuEJEAKAABIiUQkEEiLhCRICgAASIlEJBhIi4QkUAoAAEiJRCQgSIngSIPAMEiJRCQoSItEJChIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdNif5Jg8YQSYn9SYm3sAAAAE2Jh+gAAABNiY+4AAAASItEJBBJiYfIAAAASItEJBhJiYfQAAAASYnUSInNSIP9DA=="
+je 22f
+.base64 "uAAAAABJiQZJiUYISYmv2AAAALsAAAAATIniSInpSMHpBEiJ6EiD5Q9IKehJAcRIhck="
+je 24f
+.base64 "TInvSIHH8AAAAEyJ9kiDxgBNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+jmp 25f
+24:
+25:
+.base64 "SInpSIXJ"
+je 26f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMieZBugAAAAA="
+28:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 28b
+.base64 "TInvSIHH8AAAAEyJ9kiDxgBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+jmp 27f
+26:
+27:
+.base64 "uwAAAABJi6/YAAAASInYSAHASAHASAHASA/ISYlHYEiJ6EgBwEgBwEgBwEgPyEmJR2hMie9IgcfwAAAATIn2SIPGAEyJ+kiDwmC5AQAAAE2J+EmBwAACAAA="
+call {vg_ghash_vpclmul}
+jmp 23f
+22:
+.base64 "QYsEJEGLTCQEQYtUJAi+AAAAAUGJBkGJTgRBiVYIQYl2DA=="
+23:
+.base64 "QYsGQYtOBEGLVghBi3YMD86DxgEPzkGJRjBBiU40QYlWOEGJdjy4AAAAAEmJRhBJiUYYTYun6AAAAEmLr7gAAAC7AAAAAEyJ4kiJ6UjB6QRIiehIg+UPSCnoSQHESIXJ"
+je 29f
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+jmp 210f
+29:
+210:
+.base64 "SInpSIXJ"
+je 211f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMieZBugAAAAA="
+213:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 213b
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+jmp 212f
+211:
+212:
+.base64 "SYuH0AAAAEmJh8AAAABIwegESIXA"
+je 214f
+.base64 "TInvSYu3sAAAAEyJ8kiDwjBIi0wkCEmJwE2Ln8gAAABNiflJgcHAAQAA"
+call {vg_aes_ctr32_to_vaes}
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBJi5fIAAAASYuP0AAAAEjB6QRNifhJgcDAAQAA"
+call {vg_ghash_vpclmul}
+.base64 "SYuH0AAAAEiJwUiD4Q9JiY/QAAAASCnISQOHyAAAAEmJh8gAAAA="
+jmp 215f
+214:
+215:
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vAA=="
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vSBDzQQ9vvfAAAABmDzgA+A=="
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "80QPb2ggSLj//////////2ZMD27wZkUPbPZmD2/fZg9z8wFmRA9v32ZBD3PTP2ZBD3P7CGZBD+vbZkQPcN//ZkEPctMfZkUP/t5mRQ/f3WZBD+/bZkUP78BmRQ/vyWZFD+/SZkQPb9tmRA86RNsAZkUP78NmRA9v22ZEDzpE2xFmRQ/v02ZED2/bZkQPOkTbAWZFD+/LZkQPb9tmRA86RNsQZkUP78tmRQ9v2WZBD3PbCGZFD+/TZkEPc/kIZkUP78FmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZFD2/YZkQPOkTZEGZFD3DATmZFD+/DZkEPb/JmQQ/v8PNBD28u80EPb34wTInvSYu3sAAAAEmJ8k0B0k0B0k0B0k0B0kkB+vNED28HZkEP7+hmQQ/v+PNED29HEGZBDzjc6GZBDzjc+PNED29HIGZBDzjc6GZBDzjc+PNED29HMGZBDzjc6GZBDzjc+PNED29HQGZBDzjc6GZBDzjc+PNED29HUGZBDzjc6GZBDzjc+PNED29HYGZBDzjc6GZBDzjc+PNED29HcGZBDzjc6GZBDzjc+PNED2+HgAAAAGZBDzjc6GZBDzjc+PNED2+HkAAAAGZBDzjc6GZBDzjc+EiD/go="
+je 216f
+.base64 "80QPb4egAAAAZkEPONzoZkEPONz480QPb4ewAAAAZkEPONzoZkEPONz4SIP+DA=="
+je 218f
+.base64 "80QPb4fAAAAAZkEPONzoZkEPONz480QPb4fQAAAAZkEPONzoZkEPONz4"
+jmp 219f
+218:
+219:
+jmp 217f
+216:
+217:
+.base64 "80UPbwJmQQ843ehmQQ843fjzQQ9/rwAEAADzQQ9/vxAEAABJi4fQAAAASIXA"
+je 220f
+.base64 "Zg/v//NBD3+/AAIAAEyJ/0iBxwACAABJi7fIAAAATIn6SIHCEAQAAEmLj9AAAABIi1wkCEkDn8AAAABJK5/QAAAAQboAAAAASYnIScHoBEnB4ARJg/gA"
+je 222f
+224:
+.base64 "xKF6byQTxKFZ7yQSxKF6fyQWxKF6fyQXSYPCEE05wg=="
+jne 224b
+jmp 223f
+222:
+223:
+.base64 "SPfBDwAAAA=="
+je 225f
+.base64 "SPfBDAAAAA=="
+je 227f
+.base64 "SPfBCAAAAA=="
+je 229f
+.base64 "SosEE0ozBBJKiQQWSokEF0mDwgg="
+jmp 230f
+229:
+230:
+.base64 "SPfBBAAAAA=="
+je 231f
+.base64 "QosEE0IzBBJCiQQWQokEF0mDwgQ="
+jmp 232f
+231:
+232:
+.base64 "SPfBAwAAAA=="
+je 233f
+235:
+.base64 "Qg+2BBNGD7YMEkwxyEKIBBZCiAQXSYPCAUk5yg=="
+jne 235b
+jmp 234f
+233:
+234:
+jmp 228f
+227:
+236:
+.base64 "Qg+2BBNGD7YMEkwxyEKIBBZCiAQXSYPCAUk5yg=="
+jne 236b
+228:
+jmp 226f
+225:
+226:
+.base64 "SYuHuAAAAEjB4ANID8hJiYcQAgAASYuHwAAAAEjB4ANID8hJiYcYAgAA80UPb2YQZkQPOADg80EPb78AAgAAZg84APhmQQ/v/GZFD+/AZkUP78lmRQ/v0mZED2/fZkQPOkTeAGZFD+/DZkQPb99mRA86RN4RZkUP79NmRA9v32ZEDzpE3gFmRQ/vy2ZED2/fZkQPOkTeEGZFD+/L80EPb78QAgAAZg84APhmRA9v32ZEDzpE2wBmRQ/vw2ZED2/fZkQPOkTbEWZFD+/TZkQPb99mRA86RNsBZkUP78tmRA9v32ZEDzpE2xBmRQ/vy2ZFD2/ZZkEPc9sIZkUP79NmQQ9z+QhmRQ/vwWZFD2/YZkQPOkTZEGZFD3DATmZFD+/DZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmQQ9v0mZBD+/QxOJpANDEwXpvnwAEAADF6e/TxMF6fxfF+Hc="
+jmp 221f
+220:
+.base64 "SYuHuAAAAEjB4ANID8hJiYcQAgAASYuHwAAAAEjB4ANID8hJiYcYAgAA80UPb2YQZkQPOADg80EPb78QAgAAZg84APhmQQ/v/GZFD+/AZkUP78lmRQ/v0mZED2/fZkQPOkTbAGZFD+/DZkQPb99mRA86RNsRZkUP79NmRA9v32ZEDzpE2wFmRQ/vy2ZED2/fZkQPOkTbEGZFD+/LZkUPb9lmQQ9z2whmRQ/v02ZBD3P5CGZFD+/BZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZBD2/SZkEP79DE4mkA0MTBem+fAAQAAMXp79PEwXp/F8X4dw=="
+221:
+.base64 "SIt8JCBJiwdJi1cISIkHSIlXCEmLn4AAAABJi6+IAAAATYunkAAAAE2Lr5gAAABNi7egAAAATYu/qAAAAEiNpCQwCgAA"
+21:
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJPhMiRwkSI2kJLj1///F/n+EJCgKAADF/n+EJAgKAADF/n+EJOgJAADF/n+EJMgJAADF/n+EJKgJAADF/n+EJIgJAADF/n+EJGgJAADF/n+EJEgJAADF/n+EJCgJAADF/n+EJAgJAADF/n+EJOgIAADF/n+EJMgIAADF/n+EJKgIAADF/n+EJIgIAADF/n+EJGgIAADF/n+EJEgIAADF/n+EJCgIAADF/n+EJAgIAADF/n+EJOgHAADF/n+EJMgHAADF/n+EJKgHAADF/n+EJIgHAADF/n+EJGgHAADF/n+EJEgHAADF/n+EJCgHAADF/n+EJAgHAADF/n+EJOgGAADF/n+EJMgGAADF/n+EJKgGAADF/n+EJIgGAADF/n+EJGgGAADF/n+EJEgGAADF/n+EJCgGAADF/n+EJAgGAADF/n+EJOgFAADF/n+EJMgFAADF/n+EJKgFAADF/n+EJIgFAADF/n+EJGgFAADF/n+EJEgFAADF/n+EJCgFAADF/n+EJAgFAADF/n+EJOgEAADF/n+EJMgEAADF/n+EJKgEAADF/n+EJIgEAADF/n+EJGgEAADF/n+EJEgEAADF/n+EJCgEAADF/n+EJAgEAADF/n+EJOgDAADF/n+EJMgDAADF/n+EJKgDAADF/n+EJIgDAADF/n+EJGgDAADF/n+EJEgDAADF/n+EJCgDAADF/n+EJAgDAADF/n+EJOgCAADF/n+EJMgCAADF/n+EJKgCAADF/n+EJIgCAADF/n+EJGgCAADF/n+EJEgCAADF/n+EJCgCAADF/n+EJAgCAADF/n+EJOgBAADF/n+EJMgBAADF/n+EJKgBAADF/n+EJIgBAADF/n+EJGgBAADF/n+EJEgBAADF/n+EJCgBAADF/n+EJAgBAADF/n+EJOgAAADF/n+EJMgAAADF/n+EJKgAAADF/n+EJIgAAADF/n9EJGjF/n9EJEjF/n9EJCjF/n9EJAhMiRwkSI2kJEgKAABIjWQkCDHAMckx0jH2Mf9FMcBFMclFMdLD"
+20:
+.base64 "SI2kJND1//9Ii4QkOAoAAEiJRCQISIuEJEAKAABIiUQkEEiLhCRICgAASIlEJBhIi4QkUAoAAEiJRCQgSIngSIPAMEiJRCQoSItEJChIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdNif5Jg8YQSYn9SYm3sAAAAE2Jh+gAAABNiY+4AAAASItEJBBJiYfIAAAASItEJBhJiYfQAAAASYnUSInNuAAAAABIg/0M"
+jne 237f
+.base64 "SYuPuAAAAEiD+RE="
+jae 239f
+.base64 "uAEAAAA="
+jmp 240f
+239:
+240:
+jmp 238f
+237:
+238:
+.base64 "SIXA"
+je 241f
+.base64 "QYsEJEGLTCQEQYtUJAi+AAAAAUGJBkGJTgRBiVYIQYl2DEGLBkGLTgRBi1YIQYt2DA/Og8YBD85BiUYwQYlONEGJVjhBiXY8uAAAAABJiUYQSYlGGEmLj7gAAABIhck="
+je 243f
+.base64 "SIP5BQ=="
+je 245f
+.base64 "SIP5EA=="
+je 247f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BJi7foAAAAQboAAAAA"
+249:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 249b
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vAA=="
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vSBDzQQ9vf2BmDzgA+PNBD2+dEAEAAGZFD+/AZkUP78lmRQ/v0mZED2/fZkQPOkTbAGZFD+/DZkQPb99mRA86RNsRZkUP79NmRA9v32ZEDzpE2wFmRQ/vy2ZED2/fZkQPOkTbEGZFD+/LZkUPb9lmQQ9z2whmRQ/v02ZBD3P5CGZFD+/BZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZBD2/SZkEP79BmDzgA0PNBD39WEA=="
+jmp 248f
+247:
+.base64 "SYu36AAAAPMPbz4="
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vAA=="
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vSBBmDzgA+PNBD2+dEAEAAGZFD+/AZkUP78lmRQ/v0mZED2/fZkQPOkTbAGZFD+/DZkQPb99mRA86RNsRZkUP79NmRA9v32ZEDzpE2wFmRQ/vy2ZED2/fZkQPOkTbEGZFD+/LZkUPb9lmQQ9z2whmRQ/v02ZBD3P5CGZFD+/BZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZBD2/SZkEP79BmDzgA0PNBD39WEA=="
+248:
+jmp 246f
+245:
+.base64 "SYu36AAAAIsGRA+2VgRJweIgTAHQZkgPbvg="
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vAA=="
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vSBBmDzgA+PNBD2+dEAEAAGZFD+/AZkUP78lmRQ/v0mZED2/fZkQPOkTbAGZFD+/DZkQPb99mRA86RNsRZkUP79NmRA9v32ZEDzpE2wFmRQ/vy2ZED2/fZkQPOkTbEGZFD+/LZkUPb9lmQQ9z2whmRQ/v02ZBD3P5CGZFD+/BZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZBD2/SZkEP79BmDzgA0PNBD39WEA=="
+246:
+jmp 244f
+243:
+244:
+jmp 242f
+241:
+.base64 "SIP9DA=="
+je 250f
+.base64 "uAAAAABJiQZJiUYISYmv2AAAALsAAAAATIniSInpSMHpBEiJ6EiD5Q9IKehJAcRIhck="
+je 252f
+.base64 "TInvSIHH8AAAAEyJ9kiDxgBNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+jmp 253f
+252:
+253:
+.base64 "SInpSIXJ"
+je 254f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMieZBugAAAAA="
+256:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 256b
+.base64 "TInvSIHH8AAAAEyJ9kiDxgBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+jmp 255f
+254:
+255:
+.base64 "uwAAAABJi6/YAAAASInYSAHASAHASAHASA/ISYlHYEiJ6EgBwEgBwEgBwEgPyEmJR2hMie9IgcfwAAAATIn2SIPGAEyJ+kiDwmC5AQAAAE2J+EmBwAACAAA="
+call {vg_ghash_vpclmul}
+jmp 251f
+250:
+.base64 "QYsEJEGLTCQEQYtUJAi+AAAAAUGJBkGJTgRBiVYIQYl2DA=="
+251:
+.base64 "QYsGQYtOBEGLVghBi3YMD86DxgEPzkGJRjBBiU40QYlWOEGJdjy4AAAAAEmJRhBJiUYYTYun6AAAAEmLr7gAAAC7AAAAAEyJ4kiJ6UjB6QRIiehIg+UPSCnoSQHESIXJ"
+je 257f
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+jmp 258f
+257:
+258:
+.base64 "SInpSIXJ"
+je 259f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMieZBugAAAAA="
+261:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 261b
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+jmp 260f
+259:
+260:
+242:
+.base64 "SYuH0AAAAEmJh8AAAABIwegESIXA"
+je 262f
+.base64 "TInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTItEJAhJicFNi5fIAAAATIn4SAXAAQAAUA=="
+call {vg_aes_gcm_seal_blocks_prepared16_vaes_vpclmul}
+.base64 "WEmLh9AAAABIicFIg+EPSYmP0AAAAEgpyEkDh8gAAABJiYfIAAAA"
+jmp 263f
+262:
+263:
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vAA=="
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vSBDzQQ9vnRABAADzQQ9vtQABAADzQQ9vLvNBD29+MEyJ70mLt7AAAABJifJNAdJNAdJNAdJNAdJJAfrzRA9vB2ZBD+/oZkEP7/jzRA9vRxBmQQ843OhmQQ843PjzRA9vRyBmQQ843OhmQQ843PjzRA9vRzBmQQ843OhmQQ843PjzRA9vR0BmQQ843OhmQQ843PjzRA9vR1BmQQ843OhmQQ843PjzRA9vR2BmQQ843OhmQQ843PjzRA9vR3BmQQ843OhmQQ843PjzRA9vh4AAAABmQQ843OhmQQ843PjzRA9vh5AAAABmQQ843OhmQQ843PhIg/4K"
+je 264f
+.base64 "80QPb4egAAAAZkEPONzoZkEPONz480QPb4ewAAAAZkEPONzoZkEPONz4SIP+DA=="
+je 266f
+.base64 "80QPb4fAAAAAZkEPONzoZkEPONz480QPb4fQAAAAZkEPONzoZkEPONz4"
+jmp 267f
+266:
+267:
+jmp 265f
+264:
+265:
+.base64 "80UPbwJmQQ843ehmQQ843fjzQQ9/rwAEAADzQQ9/vxAEAABJi4fQAAAASIXA"
+je 268f
+.base64 "Zg/v//NBD3+/AAIAAEyJ/0iBxwACAABJi7fIAAAATIn6SIHCEAQAAEmLj9AAAABIi1wkCEkDn8AAAABJK5/QAAAAQboAAAAASYnIScHoBEnB4ARJg/gA"
+je 270f
+272:
+.base64 "xKF6byQTxKFZ7yQSxKF6fyQWxKF6fyQXSYPCEE05wg=="
+jne 272b
+jmp 271f
+270:
+271:
+.base64 "SPfBDwAAAA=="
+je 273f
+.base64 "SPfBDAAAAA=="
+je 275f
+.base64 "SPfBCAAAAA=="
+je 277f
+.base64 "SosEE0ozBBJKiQQWSokEF0mDwgg="
+jmp 278f
+277:
+278:
+.base64 "SPfBBAAAAA=="
+je 279f
+.base64 "QosEE0IzBBJCiQQWQokEF0mDwgQ="
+jmp 280f
+279:
+280:
+.base64 "SPfBAwAAAA=="
+je 281f
+283:
+.base64 "Qg+2BBNGD7YMEkwxyEKIBBZCiAQXSYPCAUk5yg=="
+jne 283b
+jmp 282f
+281:
+282:
+jmp 276f
+275:
+284:
+.base64 "Qg+2BBNGD7YMEkwxyEKIBBZCiAQXSYPCAUk5yg=="
+jne 284b
+276:
+jmp 274f
+273:
+274:
+.base64 "SYuHuAAAAEjB4ANID8hJiYcQAgAASYuHwAAAAEjB4ANID8hJiYcYAgAA80UPb2YQZkQPOADg80EPb78AAgAAZg84APhmQQ/v/GZFD+/AZkUP78lmRQ/v0mZED2/fZkQPOkTeAGZFD+/DZkQPb99mRA86RN4RZkUP79NmRA9v32ZEDzpE3gFmRQ/vy2ZED2/fZkQPOkTeEGZFD+/L80EPb78QAgAAZg84APhmRA9v32ZEDzpE2wBmRQ/vw2ZED2/fZkQPOkTbEWZFD+/TZkQPb99mRA86RNsBZkUP78tmRA9v32ZEDzpE2xBmRQ/vy2ZFD2/ZZkEPc9sIZkUP79NmQQ9z+QhmRQ/vwWZFD2/YZkQPOkTZEGZFD3DATmZFD+/DZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmQQ9v0mZBD+/QxOJpANDEwXpvnwAEAADF6e/TxMF6fxfF+Hc="
+jmp 269f
+268:
+.base64 "SYuHuAAAAEjB4ANID8hJiYcQAgAASYuHwAAAAEjB4ANID8hJiYcYAgAA80UPb2YQZkQPOADg80EPb78QAgAAZg84APhmQQ/v/GZFD+/AZkUP78lmRQ/v0mZED2/fZkQPOkTbAGZFD+/DZkQPb99mRA86RNsRZkUP79NmRA9v32ZEDzpE2wFmRQ/vy2ZED2/fZkQPOkTbEGZFD+/LZkUPb9lmQQ9z2whmRQ/v02ZBD3P5CGZFD+/BZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZBD2/SZkEP79DE4mkA0MTBem+fAAQAAMXp79PEwXp/F8X4dw=="
+269:
+.base64 "SIt8JCBJiwdJi1cISIkHSIlXCEmLn4AAAABJi6+IAAAATYunkAAAAE2Lr5gAAABNi7egAAAATYu/qAAAAEiNpCQwCgAA"
+jmp 21b
+.p2align 6"#,
+        vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul::vg_ghash_vpclmul,
+        vg_aes_ctr32_to_vaes = sym super::aes::vg_aes_ctr32_to_vaes::vg_aes_ctr32_to_vaes,
+        vg_aes_gcm_seal_blocks_prepared16_vaes_vpclmul = sym super::aes::vg_aes_gcm_seal_blocks_prepared16_vaes_vpclmul::vg_aes_gcm_seal_blocks_prepared16_vaes_vpclmul,
+        VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
     )
 }
 
@@ -3587,7 +4238,7 @@ call {vg_ghash_vpclmul}
 call {vg_aes_ctr32_vaes}
 .base64 "SIt8JBhJiwdJi1cISIkHSIlXCEmLn4AAAABJi6+IAAAATYunkAAAAE2Lr5gAAABNi7egAAAATYu/qAAAAEiNpCQoCgAA"
 21:
-.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI2kJMD1///F/n+EJIAAAADF/n9EJGDF/n9EJEDF/n9EJCDF/n8EJEiNpCRACgAAMcAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJPhMiRwkSI2kJMj1///F/n+EJBgKAADF/n+EJPgJAADF/n+EJNgJAADF/n+EJLgJAADF/n+EJJgJAADF/n+EJHgJAADF/n+EJFgJAADF/n+EJDgJAADF/n+EJBgJAADF/n+EJPgIAADF/n+EJNgIAADF/n+EJLgIAADF/n+EJJgIAADF/n+EJHgIAADF/n+EJFgIAADF/n+EJDgIAADF/n+EJBgIAADF/n+EJPgHAADF/n+EJNgHAADF/n+EJLgHAADF/n+EJJgHAADF/n+EJHgHAADF/n+EJFgHAADF/n+EJDgHAADF/n+EJBgHAADF/n+EJPgGAADF/n+EJNgGAADF/n+EJLgGAADF/n+EJJgGAADF/n+EJHgGAADF/n+EJFgGAADF/n+EJDgGAADF/n+EJBgGAADF/n+EJPgFAADF/n+EJNgFAADF/n+EJLgFAADF/n+EJJgFAADF/n+EJHgFAADF/n+EJFgFAADF/n+EJDgFAADF/n+EJBgFAADF/n+EJPgEAADF/n+EJNgEAADF/n+EJLgEAADF/n+EJJgEAADF/n+EJHgEAADF/n+EJFgEAADF/n+EJDgEAADF/n+EJBgEAADF/n+EJPgDAADF/n+EJNgDAADF/n+EJLgDAADF/n+EJJgDAADF/n+EJHgDAADF/n+EJFgDAADF/n+EJDgDAADF/n+EJBgDAADF/n+EJPgCAADF/n+EJNgCAADF/n+EJLgCAADF/n+EJJgCAADF/n+EJHgCAADF/n+EJFgCAADF/n+EJDgCAADF/n+EJBgCAADF/n+EJPgBAADF/n+EJNgBAADF/n+EJLgBAADF/n+EJJgBAADF/n+EJHgBAADF/n+EJFgBAADF/n+EJDgBAADF/n+EJBgBAADF/n+EJPgAAADF/n+EJNgAAADF/n+EJLgAAADF/n+EJJgAAADF/n9EJHjF/n9EJFjF/n9EJDjF/n9EJBjzD39EJAhMiRwkSI2kJDgKAABIjWQkCDHAMckx0jH2Mf9FMcBFMclFMdLD"
 20:
 .base64 "SI2kJNj1//9Ii4QkMAoAAEiJRCQISIuEJDgKAABIiUQkEEiLhCRACgAASIlEJBhIieBIg8AoSIlEJCBIi0QkIEiJmIAAAABIiaiIAAAATImgkAAAAEyJqJgAAABMibCgAAAATIm4qAAAAEmJx02J/kmDxhBJif1JibewAAAATYmH6AAAAE2Jj7gAAABIi0QkCEmJh8gAAABIi0QkEEmJh9AAAABJidRIic1Ig/0M"
 je 226f
@@ -3635,8 +4286,8 @@ jmp 236f
 236:
 .base64 "SYuH0AAAAEmJh8AAAABIwegESIXA"
 je 238f
-.base64 "TInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTYuHyAAAAEmJwUyJ+EgFwAEAAFA="
-call {vg_aes_gcm_encrypt_blocks_prepared16_vaes_vpclmul}
+.base64 "TInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTYuHyAAAAEmJwUyJ+EgFwAEAAFBNicI="
+call {vg_aes_gcm_seal_blocks_prepared16_vaes_vpclmul}
 .base64 "WEmLh9AAAABIicFIg+EPSYmP0AAAAEgpyEkDh8gAAABJiYfIAAAA"
 jmp 239f
 238:
@@ -3684,10 +4335,10 @@ call {vg_aes_ctr32_vaes}
 .base64 "SIt8JBhJiwdJi1cISIkHSIlXCEmLn4AAAABJi6+IAAAATYunkAAAAE2Lr5gAAABNi7egAAAATYu/qAAAAEiNpCQoCgAA"
 jmp 21b
 .p2align 6"#,
-        vg_ghash_vpclmul = sym super::aes_gcm_siv::vg_ghash_vpclmul::vg_ghash_vpclmul,
+        vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul::vg_ghash_vpclmul,
         vg_aes_gcm_encrypt_blocks_vaes_vpclmul = sym super::aes::vg_aes_gcm_encrypt_blocks_vaes_vpclmul::vg_aes_gcm_encrypt_blocks_vaes_vpclmul,
         vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
-        vg_aes_gcm_encrypt_blocks_prepared16_vaes_vpclmul = sym super::aes::vg_aes_gcm_encrypt_blocks_prepared16_vaes_vpclmul::vg_aes_gcm_encrypt_blocks_prepared16_vaes_vpclmul,
+        vg_aes_gcm_seal_blocks_prepared16_vaes_vpclmul = sym super::aes::vg_aes_gcm_seal_blocks_prepared16_vaes_vpclmul::vg_aes_gcm_seal_blocks_prepared16_vaes_vpclmul,
     )
 }
 
@@ -3695,6 +4346,8 @@ jmp 21b
 pub const VG_AES_GCM_OPEN_PREPARED_VAES_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::VAES);
 
 /// `vg_aes_gcm_open` with a 1032-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the prepared powers its count says are present. The powers remain secret; how many are present may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openPreparedContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -3857,7 +4510,7 @@ jmp 27f
 27:
 .base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJDAKAAA="
 21:
-.base64 "ww=="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJPhMiRwkSI2kJMD1///F/n+EJCAKAADF/n+EJAAKAADF/n+EJOAJAADF/n+EJMAJAADF/n+EJKAJAADF/n+EJIAJAADF/n+EJGAJAADF/n+EJEAJAADF/n+EJCAJAADF/n+EJAAJAADF/n+EJOAIAADF/n+EJMAIAADF/n+EJKAIAADF/n+EJIAIAADF/n+EJGAIAADF/n+EJEAIAADF/n+EJCAIAADF/n+EJAAIAADF/n+EJOAHAADF/n+EJMAHAADF/n+EJKAHAADF/n+EJIAHAADF/n+EJGAHAADF/n+EJEAHAADF/n+EJCAHAADF/n+EJAAHAADF/n+EJOAGAADF/n+EJMAGAADF/n+EJKAGAADF/n+EJIAGAADF/n+EJGAGAADF/n+EJEAGAADF/n+EJCAGAADF/n+EJAAGAADF/n+EJOAFAADF/n+EJMAFAADF/n+EJKAFAADF/n+EJIAFAADF/n+EJGAFAADF/n+EJEAFAADF/n+EJCAFAADF/n+EJAAFAADF/n+EJOAEAADF/n+EJMAEAADF/n+EJKAEAADF/n+EJIAEAADF/n+EJGAEAADF/n+EJEAEAADF/n+EJCAEAADF/n+EJAAEAADF/n+EJOADAADF/n+EJMADAADF/n+EJKADAADF/n+EJIADAADF/n+EJGADAADF/n+EJEADAADF/n+EJCADAADF/n+EJAADAADF/n+EJOACAADF/n+EJMACAADF/n+EJKACAADF/n+EJIACAADF/n+EJGACAADF/n+EJEACAADF/n+EJCACAADF/n+EJAACAADF/n+EJOABAADF/n+EJMABAADF/n+EJKABAADF/n+EJIABAADF/n+EJGABAADF/n+EJEABAADF/n+EJCABAADF/n+EJAABAADF/n+EJOAAAADF/n+EJMAAAADF/n+EJKAAAADF/n+EJIAAAADF/n9EJGDF/n9EJEDF/n9EJCDF/n8EJEiNpCRACgAASI1kJAiJwDHJMdIx9jH/RTHARTHJRTHSww=="
 20:
 .base64 "SI2kJND1//9Ii4QkOAoAAEiJRCQISIuEJEAKAABIiUQkEEiLhCRICgAASIlEJBhIi4QkUAoAAEiJRCQgSIngSIPAMEiJRCQoSItEJChIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdNif5Jg8YQSYn9SYm3sAAAAE2Jh+gAAABNiY+4AAAASItEJAhJiYfIAAAASItEJBBJiYfQAAAASYnUSInNSItcJCBJiZ/gAAAAuQAAAABIg/sE"
 jb 242f
@@ -4135,7 +4788,7 @@ jmp 247f
 .base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJDAKAAA="
 jmp 21b
 .p2align 6"#,
-        vg_ghash_vpclmul = sym super::aes_gcm_siv::vg_ghash_vpclmul::vg_ghash_vpclmul,
+        vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul::vg_ghash_vpclmul,
         vg_aes_gcm_decrypt_blocks_vaes_vpclmul = sym super::aes::vg_aes_gcm_decrypt_blocks_vaes_vpclmul::vg_aes_gcm_decrypt_blocks_vaes_vpclmul,
         vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
         vg_aes_gcm_decrypt_blocks_prepared16_vaes_vpclmul = sym super::aes::vg_aes_gcm_decrypt_blocks_prepared16_vaes_vpclmul::vg_aes_gcm_decrypt_blocks_prepared16_vaes_vpclmul,
@@ -4147,6 +4800,8 @@ jmp 21b
 pub const VG_AES_GCM_OPEN_TO_PREPARED_VAES_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AES);
 
 /// `vg_aes_gcm_open_to` with a 1032-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the prepared powers its count says are present. The powers remain secret; how many are present may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openToPreparedContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -4184,7 +4839,7 @@ jmp 25f
 23:
 .base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW0iNpCRACgAA"
 21:
-.base64 "ww=="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJPhMiRwkSI2kJDD1///F/n+EJLAKAADF/n+EJJAKAADF/n+EJHAKAADF/n+EJFAKAADF/n+EJDAKAADF/n+EJBAKAADF/n+EJPAJAADF/n+EJNAJAADF/n+EJLAJAADF/n+EJJAJAADF/n+EJHAJAADF/n+EJFAJAADF/n+EJDAJAADF/n+EJBAJAADF/n+EJPAIAADF/n+EJNAIAADF/n+EJLAIAADF/n+EJJAIAADF/n+EJHAIAADF/n+EJFAIAADF/n+EJDAIAADF/n+EJBAIAADF/n+EJPAHAADF/n+EJNAHAADF/n+EJLAHAADF/n+EJJAHAADF/n+EJHAHAADF/n+EJFAHAADF/n+EJDAHAADF/n+EJBAHAADF/n+EJPAGAADF/n+EJNAGAADF/n+EJLAGAADF/n+EJJAGAADF/n+EJHAGAADF/n+EJFAGAADF/n+EJDAGAADF/n+EJBAGAADF/n+EJPAFAADF/n+EJNAFAADF/n+EJLAFAADF/n+EJJAFAADF/n+EJHAFAADF/n+EJFAFAADF/n+EJDAFAADF/n+EJBAFAADF/n+EJPAEAADF/n+EJNAEAADF/n+EJLAEAADF/n+EJJAEAADF/n+EJHAEAADF/n+EJFAEAADF/n+EJDAEAADF/n+EJBAEAADF/n+EJPADAADF/n+EJNADAADF/n+EJLADAADF/n+EJJADAADF/n+EJHADAADF/n+EJFADAADF/n+EJDADAADF/n+EJBADAADF/n+EJPACAADF/n+EJNACAADF/n+EJLACAADF/n+EJJACAADF/n+EJHACAADF/n+EJFACAADF/n+EJDACAADF/n+EJBACAADF/n+EJPABAADF/n+EJNABAADF/n+EJLABAADF/n+EJJABAADF/n+EJHABAADF/n+EJFABAADF/n+EJDABAADF/n+EJBABAADF/n+EJPAAAADF/n+EJNAAAADF/n+EJLAAAADF/n+EJJAAAADF/n9EJHDF/n9EJFDF/n9EJDDF/n9EJBDzD38EJEiNpCTQCgAASI1kJAiJwDHJMdIx9jH/RTHARTHJRTHSww=="
 20:
 .base64 "SItEJBBIPQAEAAA="
 jae 27f
@@ -4235,7 +4890,7 @@ jmp 223f
 215:
 210:
 .base64 "xfh3SIt8JFBIi3QkSEiLVCRASItMJDhMi0QkMEyLTCQoSItEJHBIiQQkSItEJGhIiUQkCEiLhCSAAAAASIlEJBBIi4QkiAAAAEiJRCQY"
-call {vg_aes_gcm_open_prepared_vaes_vpclmul}
+call {vg_aes_gcm_open_prepared_vaes_vpclmul_core}
 .base64 "hcA="
 je 225f
 jmp 226f
@@ -4272,15 +4927,17 @@ jmp 233f
 jmp 28b
 .p2align 6"#,
         vg_aes_gcm_open_split_vaes_vpclmul = sym super::aes::vg_aes_gcm_open_split_vaes_vpclmul::vg_aes_gcm_open_split_vaes_vpclmul,
-        vg_aes_gcm_open_prepared_vaes_vpclmul = sym super::gcm::vg_aes_gcm_open_prepared_vaes_vpclmul,
+        vg_aes_gcm_open_prepared_vaes_vpclmul_core = sym super::aes::vg_aes_gcm_open_prepared_vaes_vpclmul_core::vg_aes_gcm_open_prepared_vaes_vpclmul_core,
         vg_aes_gcm_open_split_prepared16_vaes_vpclmul = sym super::aes::vg_aes_gcm_open_split_prepared16_vaes_vpclmul::vg_aes_gcm_open_split_prepared16_vaes_vpclmul,
     )
 }
 
 /// The CPU features `vg_aes_gcm_stream_encrypt_prepared_vaes_vpclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_ENCRYPT_PREPARED_VAES_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AES);
+pub const VG_AES_GCM_STREAM_ENCRYPT_PREPARED_VAES_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AES);
 
 /// `vg_aes_gcm_stream_encrypt` with a 1032-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the prepared powers its count says are present. The powers remain secret; how many are present may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.streamEncryptPreparedContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -4291,7 +4948,7 @@ pub const VG_AES_GCM_STREAM_ENCRYPT_PREPARED_VAES_VPCLMUL_FEATURES: verified_gar
 /// * `*ctx` must have the prepared format written by `vg_aes_gcm_prepare` (not the format of `vg_aes_gcm_init_precomputed`).
 /// * `state` and `data` must not overlap each other, `ctx` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `ssse3`, `pclmulqdq`, `avx2`, `avx`, `vpclmulqdq`, `vaes` and `aes` target features.
+/// * The CPU must support the `avx`, `ssse3`, `pclmulqdq`, `avx2`, `vpclmulqdq`, `vaes` and `aes` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_prepared_vaes_vpclmul(ctx: *const [u64; 129], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
@@ -4460,7 +5117,7 @@ jmp 23f
 23:
 .base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJBgKAAA="
 21:
-.base64 "ww=="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJPhMiRwkSI2kJNj1///F/n+EJAgKAADF/n+EJOgJAADF/n+EJMgJAADF/n+EJKgJAADF/n+EJIgJAADF/n+EJGgJAADF/n+EJEgJAADF/n+EJCgJAADF/n+EJAgJAADF/n+EJOgIAADF/n+EJMgIAADF/n+EJKgIAADF/n+EJIgIAADF/n+EJGgIAADF/n+EJEgIAADF/n+EJCgIAADF/n+EJAgIAADF/n+EJOgHAADF/n+EJMgHAADF/n+EJKgHAADF/n+EJIgHAADF/n+EJGgHAADF/n+EJEgHAADF/n+EJCgHAADF/n+EJAgHAADF/n+EJOgGAADF/n+EJMgGAADF/n+EJKgGAADF/n+EJIgGAADF/n+EJGgGAADF/n+EJEgGAADF/n+EJCgGAADF/n+EJAgGAADF/n+EJOgFAADF/n+EJMgFAADF/n+EJKgFAADF/n+EJIgFAADF/n+EJGgFAADF/n+EJEgFAADF/n+EJCgFAADF/n+EJAgFAADF/n+EJOgEAADF/n+EJMgEAADF/n+EJKgEAADF/n+EJIgEAADF/n+EJGgEAADF/n+EJEgEAADF/n+EJCgEAADF/n+EJAgEAADF/n+EJOgDAADF/n+EJMgDAADF/n+EJKgDAADF/n+EJIgDAADF/n+EJGgDAADF/n+EJEgDAADF/n+EJCgDAADF/n+EJAgDAADF/n+EJOgCAADF/n+EJMgCAADF/n+EJKgCAADF/n+EJIgCAADF/n+EJGgCAADF/n+EJEgCAADF/n+EJCgCAADF/n+EJAgCAADF/n+EJOgBAADF/n+EJMgBAADF/n+EJKgBAADF/n+EJIgBAADF/n+EJGgBAADF/n+EJEgBAADF/n+EJCgBAADF/n+EJAgBAADF/n+EJOgAAADF/n+EJMgAAADF/n+EJKgAAADF/n+EJIgAAADF/n9EJGjF/n9EJEjF/n9EJCjF/n9EJAhMiRwkSI2kJCgKAABIjWQkCDHAMckx0jH2Mf9FMcBFMclFMdLD"
 20:
 .base64 "SI2kJOj1//9Ii4QkIAoAAEiJRCQISIngSIPAGEiJRCQQSItEJBBIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdJidZJif1JibewAAAASYmPuAAAAE2Jh8AAAABNiY/IAAAASItsJAhJia/QAAAATYnMTInDSIPjD0iF7Q=="
 je 253f
@@ -4626,7 +5283,7 @@ jmp 254f
 .base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJBgKAAA="
 jmp 21b
 .p2align 6"#,
-        vg_ghash_vpclmul = sym super::aes_gcm_siv::vg_ghash_vpclmul::vg_ghash_vpclmul,
+        vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul::vg_ghash_vpclmul,
         vg_aes_gcm_encrypt_blocks_vaes_vpclmul = sym super::aes::vg_aes_gcm_encrypt_blocks_vaes_vpclmul::vg_aes_gcm_encrypt_blocks_vaes_vpclmul,
         vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
         vg_aes_gcm_encrypt_blocks_prepared16_vaes_vpclmul = sym super::aes::vg_aes_gcm_encrypt_blocks_prepared16_vaes_vpclmul::vg_aes_gcm_encrypt_blocks_prepared16_vaes_vpclmul,
@@ -4634,9 +5291,11 @@ jmp 21b
 }
 
 /// The CPU features `vg_aes_gcm_stream_decrypt_prepared_vaes_vpclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_DECRYPT_PREPARED_VAES_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AES);
+pub const VG_AES_GCM_STREAM_DECRYPT_PREPARED_VAES_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AES);
 
 /// `vg_aes_gcm_stream_decrypt` with a 1032-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the prepared powers its count says are present. The powers remain secret; how many are present may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.streamDecryptPreparedContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -4647,7 +5306,7 @@ pub const VG_AES_GCM_STREAM_DECRYPT_PREPARED_VAES_VPCLMUL_FEATURES: verified_gar
 /// * `*ctx` must have the prepared format written by `vg_aes_gcm_prepare` (not the format of `vg_aes_gcm_init_precomputed`).
 /// * `state` and `data` must not overlap each other, `ctx` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `ssse3`, `pclmulqdq`, `avx2`, `avx`, `vpclmulqdq`, `vaes` and `aes` target features.
+/// * The CPU must support the `avx`, `ssse3`, `pclmulqdq`, `avx2`, `vpclmulqdq`, `vaes` and `aes` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_decrypt_prepared_vaes_vpclmul(ctx: *const [u64; 129], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
@@ -4817,7 +5476,7 @@ jmp 23f
 23:
 .base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJBgKAAA="
 21:
-.base64 "ww=="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJPhMiRwkSI2kJNj1///F/n+EJAgKAADF/n+EJOgJAADF/n+EJMgJAADF/n+EJKgJAADF/n+EJIgJAADF/n+EJGgJAADF/n+EJEgJAADF/n+EJCgJAADF/n+EJAgJAADF/n+EJOgIAADF/n+EJMgIAADF/n+EJKgIAADF/n+EJIgIAADF/n+EJGgIAADF/n+EJEgIAADF/n+EJCgIAADF/n+EJAgIAADF/n+EJOgHAADF/n+EJMgHAADF/n+EJKgHAADF/n+EJIgHAADF/n+EJGgHAADF/n+EJEgHAADF/n+EJCgHAADF/n+EJAgHAADF/n+EJOgGAADF/n+EJMgGAADF/n+EJKgGAADF/n+EJIgGAADF/n+EJGgGAADF/n+EJEgGAADF/n+EJCgGAADF/n+EJAgGAADF/n+EJOgFAADF/n+EJMgFAADF/n+EJKgFAADF/n+EJIgFAADF/n+EJGgFAADF/n+EJEgFAADF/n+EJCgFAADF/n+EJAgFAADF/n+EJOgEAADF/n+EJMgEAADF/n+EJKgEAADF/n+EJIgEAADF/n+EJGgEAADF/n+EJEgEAADF/n+EJCgEAADF/n+EJAgEAADF/n+EJOgDAADF/n+EJMgDAADF/n+EJKgDAADF/n+EJIgDAADF/n+EJGgDAADF/n+EJEgDAADF/n+EJCgDAADF/n+EJAgDAADF/n+EJOgCAADF/n+EJMgCAADF/n+EJKgCAADF/n+EJIgCAADF/n+EJGgCAADF/n+EJEgCAADF/n+EJCgCAADF/n+EJAgCAADF/n+EJOgBAADF/n+EJMgBAADF/n+EJKgBAADF/n+EJIgBAADF/n+EJGgBAADF/n+EJEgBAADF/n+EJCgBAADF/n+EJAgBAADF/n+EJOgAAADF/n+EJMgAAADF/n+EJKgAAADF/n+EJIgAAADF/n9EJGjF/n9EJEjF/n9EJCjF/n9EJAhMiRwkSI2kJCgKAABIjWQkCDHAMckx0jH2Mf9FMcBFMclFMdLD"
 20:
 .base64 "SI2kJOj1//9Ii4QkIAoAAEiJRCQISIngSIPAGEiJRCQQSItEJBBIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdJidZJif1JibewAAAASYmPuAAAAE2Jh8AAAABNiY/IAAAASItsJAhJia/QAAAATYnMTInDSIPjD0iF7Q=="
 je 253f
@@ -4984,7 +5643,7 @@ jmp 254f
 .base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJBgKAAA="
 jmp 21b
 .p2align 6"#,
-        vg_ghash_vpclmul = sym super::aes_gcm_siv::vg_ghash_vpclmul::vg_ghash_vpclmul,
+        vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul::vg_ghash_vpclmul,
         vg_aes_gcm_decrypt_blocks_vaes_vpclmul = sym super::aes::vg_aes_gcm_decrypt_blocks_vaes_vpclmul::vg_aes_gcm_decrypt_blocks_vaes_vpclmul,
         vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
         vg_aes_gcm_decrypt_blocks_prepared16_vaes_vpclmul = sym super::aes::vg_aes_gcm_decrypt_blocks_prepared16_vaes_vpclmul::vg_aes_gcm_decrypt_blocks_prepared16_vaes_vpclmul,
@@ -4992,9 +5651,11 @@ jmp 21b
 }
 
 /// The CPU features `vg_aes_gcm_seal_gather_prepared_vaes_vpclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_SEAL_GATHER_PREPARED_VAES_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AES);
+pub const VG_AES_GCM_SEAL_GATHER_PREPARED_VAES_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::VPCLMULQDQ);
 
 /// `vg_aes_gcm_seal_gather` with a 1032-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the prepared powers its count says are present. The powers remain secret; how many are present may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealGatherPreparedContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -5008,563 +5669,705 @@ pub const VG_AES_GCM_SEAL_GATHER_PREPARED_VAES_VPCLMUL_FEATURES: verified_garbag
 /// * The slices `src` lists must be `len` bytes long in all.
 /// * `*ctx` must have the prepared format written by `vg_aes_gcm_prepare` (not the format of `vg_aes_gcm_init_precomputed`).
 /// * `dst` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `src`, the slices `src` lists or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the return address on the stack or the 5128 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `ssse3`, `pclmulqdq`, `avx2`, `avx`, `vaes`, `vpclmulqdq` and `aes` target features.
+/// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the return address on the stack or the 2672 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `ssse3`, `pclmulqdq`, `aes`, `avx`, `avx2`, `vaes` and `vpclmulqdq` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_gather_prepared_vaes_vpclmul(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SIuHAAQAAEiD+BA="
 jae 20f
-.base64 "SI2kJBD///9Ii4Qk+AAAAEiJRCQISIuEJAABAABIiUQkEEiLhCQIAQAASIlEJBhIi4QkEAEAAEiJRCQgSIuEJBgBAABIiUQkKEiJ4EiDwDhIiUQkMEyLXCQwTItUJAhIi0QkEEmJO0mJcwhNiUMQTYlLGE2JS1BNiVM4SYlDQEiLRCQYTItUJCBMi0QkKEmJQyBNiVMoTYlDMLgAAAAASYlDSEmJQ1hJiUNgSInWSInKTInZSIPBaEyLXCQwSYtDKEg9AAQAAA=="
-jb 22f
-.base64 "TItcJDBJi0MoSD0AQAAA"
-jb 24f
-.base64 "TItcJDBBugAAAABJi0NASIXA"
-je 26f
-.base64 "TYtTOE2LUgg="
-jmp 27f
-26:
-27:
-.base64 "SYtDKEjB6ARIweAESTnCSYtDKEG6AAAAAEkPQ8JIPQBAAAA="
+.base64 "SI2kJMj1//9Ii4QkQAoAAEiJRCQISIuEJEgKAABIiUQkEEiLhCRQCgAASIlEJBhIi4QkWAoAAEiJRCQgSIuEJGAKAABIiUQkKEiJ4EiDwDhIiUQkMEiLRCQwSImYgAAAAEiJqIgAAABMiaCQAAAATImomAAAAEyJsKAAAABMibioAAAASYnHTYn+SYPGEEmJ/UmJt7AAAABNiYfoAAAATYmPuAAAAEiLRCQYSYmHyAAAAEiLRCQgSYmH0AAAAEmJ1EiJzUiD/Qw="
+je 22f
+.base64 "uAAAAABJiQZJiUYISYmv2AAAALsAAAAATIniSInpSMHpBEiJ6EiD5Q9IKehJAcRIhck="
+je 24f
+.base64 "TInvSIHH8AAAAEyJ9kiDxgBNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
 jmp 25f
 24:
 25:
-jb 28f
-call {vg_aes_gcm_stream_init_vpclmul_core}
-.base64 "TItcJDBJiztMid5Ig8ZougAAAABJi0sQTYtDGA=="
-call {vg_aes_gcm_stream_aad_vpclmul_core}
-.base64 "TItcJDBJi0MoSIXA"
-je 210f
-.base64 "SYtLGEmJyEmD4A9NhcA="
-je 212f
-.base64 "uBAAAABMKcBJicBJiztIichMAcBJiUNQTIneSIPGaEiJykyJ2UiDwVg="
-call {vg_aes_gcm_stream_aad_vpclmul_core}
-jmp 213f
-212:
+.base64 "SInpSIXJ"
+je 26f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMieZBugAAAAA="
+28:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 28b
+.base64 "TInvSIHH8AAAAEyJ9kiDxgBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+jmp 27f
+26:
+27:
+.base64 "uwAAAABJi6/YAAAASInYSAHASAHASAHASA/ISYlHYEiJ6EgBwEgBwEgBwEgPyEmJR2hMie9IgcfwAAAATIn2SIPGAEyJ+kiDwmC5AQAAAE2J+EmBwAACAAA="
+call {vg_ghash_vpclmul}
+jmp 23f
+22:
+.base64 "QYsEJEGLTCQEQYtUJAi+AAAAAUGJBkGJTgRBiVYIQYl2DA=="
+23:
+.base64 "QYsGQYtOBEGLVghBi3YMD86DxgEPzkGJRjBBiU40QYlWOEGJdjy4AAAAAEmJRhBJiUYYTYun6AAAAEmLr7gAAAC7AAAAAEyJ4kiJ6UjB6QRIiehIg+UPSCnoSQHESIXJ"
+je 29f
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+jmp 210f
+29:
+210:
+.base64 "SInpSIXJ"
+je 211f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMieZBugAAAAA="
 213:
-.base64 "TItcJDBJi0NASIXA"
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 213b
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+jmp 212f
+211:
+212:
+.base64 "SItEJAhJiYcAAQAASItEJBBJiYfgAAAASItEJBhJiYfIAAAASItEJCBJiYfAAAAASYmH0AAAALgAAAAASYmH8AAAAEmJhwgBAABJi4fgAAAASIXA"
 je 214f
 216:
-.base64 "TItcJDBNi1M4TYsKSYtCCE2LUyBJi0tISQHKSYs7SYtzCEyJ2kiDwmhJi0tQTYtDSFBBUlA="
-call {vg_aes_gcm_stream_encrypt_to_vaes_vpclmul}
-.base64 "WFhYTItcJDBNi1M4SYtCCEmLS0hIAcFJg8IQSYtDQEiD6AFJiUtITYlTOEmJQ0BIhcA="
+.base64 "TYuXAAEAAEmLGkmLaghJg8IQTYmXAAEAAEmLhwgBAABIAcNIKcW4AAAAAEmJhwgBAABJi4fwAAAATYunyAAAAEkBxEiJxkiD5g9IAehJiYfwAAAASIXt"
+je 217f
+.base64 "SIX2"
+je 219f
+.base64 "uRAAAABIKfFIOc1ID0LNTAH2SIPGQEyJ50G6AAAAAA=="
+221:
+.base64 "Qg+2BBNGD7YcFkwx2EKIBBdJg8IBSTnK"
+jne 221b
+.base64 "SAHLSQHMSCnN"
+jmp 220f
+219:
+220:
+.base64 "SYnoScHoBE2FwA=="
+je 222f
+.base64 "SInZTYnjSInoSIPlD0gp6EgBw0kBxEyJ70mLt7AAAABMifJIg8IwTYn5SYHBAAIAAA=="
+call {vg_aes_ctr32_to_vaes}
+jmp 223f
+222:
+223:
+.base64 "SIXt"
+je 224f
+.base64 "uAAAAABJiUZASYlGSEyJ70mLt7AAAABMifJIg8IwTInxSIPBQEG4AQAAAE2J+UmBwQACAAA="
+call {vg_aes_ctr32_vaes}
+.base64 "TInnTIn2SIPGQEiJ6UG6AAAAAA=="
+226:
+.base64 "Qg+2BBNGD7YcFkwx2EKIBBdJg8IBSTnK"
+jne 226b
+jmp 225f
+224:
+225:
+jmp 218f
+217:
+218:
+.base64 "TYuX4AAAAEmD6gFNiZfgAAAA"
 jne 216b
 jmp 215f
 214:
 215:
-jmp 211f
-210:
-211:
-.base64 "TItcJDBJiztJi3MITInaSIPCaEmLSxhNi0MoTYtLMA=="
-call {vg_aes_gcm_stream_finish_vaes_vpclmul_core}
-jmp 29f
-28:
-.base64 "TItcJDBBugAAAABJi0NASIXA"
-je 217f
-.base64 "TYtTOE2LUgg="
-jmp 218f
-217:
-218:
-.base64 "SYtDKEjB6ARIweAEQbgAAAAASTnCTQ9C0EmB+gAEAAA="
-jb 219f
-.base64 "SYlzaEmJU3BNi0tASYt7IE2LUzhMidC5AAAAAE2FyQ=="
-je 221f
-.base64 "SYsCSYtKCEmD6QFJg8IQSAHP"
-jmp 222f
-221:
-222:
-.base64 "SYlDeEmJi4AAAABNidNJg/kA"
-je 223f
-225:
-.base64 "SYszSYtLCEmDwxBBugAAAABJichJwegGScHgBkmD+AA="
-je 226f
-228:
-.base64 "80IPbwQW80IPb0wWEPNCD29UFiDzQg9vXBYw80IPfwQX80IPf0wXEPNCD39UFyDzQg9/XBcwSYPCQE05wg=="
-jne 228b
-jmp 227f
-226:
+.base64 "TYunyAAAAEmLr9AAAAC7AAAAAEyJ4kiJ6UjB6QRIiehIg+UPSCnoSQHESIXJ"
+je 227f
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+jmp 228f
 227:
-.base64 "SYnIScHoBEnB4ARNOcI="
+228:
+.base64 "SInpSIXJ"
 je 229f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMieZBugAAAAA="
 231:
-.base64 "80IPbwQW80IPfwQXSYPCEE05wg=="
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
 jne 231b
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
 jmp 230f
 229:
 230:
-.base64 "STnK"
-je 232f
-.base64 "SIP5EA=="
-jb 234f
-.base64 "SYnKSYPqEPNCD28EFvNCD38EFw=="
-jmp 235f
-234:
-236:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 236b
-235:
-jmp 233f
-232:
-233:
-.base64 "SAHPSYPpAQ=="
-jne 225b
-jmp 224f
-223:
-224:
-.base64 "TItcJDBJi1NoSYtLcE2LQxBNi0sYSYtDME2LUyhJi7uAAAAASYtzeE2LWyBQQVJBU1dWTItcJFhJiztJi3MI"
-call {vg_aes_gcm_seal_split_vaes_vpclmul}
-.base64 "WFhYWFg="
-jmp 220f
-219:
-.base64 "SYlzaEmJU3BNi0tASYt7IE2LWzhJg/kA"
-je 237f
-239:
-.base64 "SYszSYtLCEmDwxBBugAAAABJichJwegGScHgBkmD+AA="
-je 240f
-242:
-.base64 "80IPbwQW80IPb0wWEPNCD29UFiDzQg9vXBYw80IPfwQX80IPf0wXEPNCD39UFyDzQg9/XBcwSYPCQE05wg=="
-jne 242b
-jmp 241f
-240:
-241:
-.base64 "SYnIScHoBEnB4ARNOcI="
-je 243f
-245:
-.base64 "80IPbwQW80IPfwQXSYPCEE05wg=="
-jne 245b
-jmp 244f
-243:
-244:
-.base64 "STnK"
-je 246f
-.base64 "SIP5EA=="
-jb 248f
-.base64 "SYnKSYPqEPNCD28EFvNCD38EFw=="
-jmp 249f
-248:
-250:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 250b
-249:
-jmp 247f
-246:
-247:
-.base64 "SAHPSYPpAQ=="
-jne 239b
-jmp 238f
-237:
-238:
-.base64 "TItcJDBJiztJi3MISYtTaEmLS3BNi0MQTYtLGEmLQzBNi1MoTYtbIFBBUkFT"
-call {vg_aes_gcm_seal_vaes_vpclmul}
-.base64 "WFhY"
-220:
-29:
-jmp 23f
-22:
-.base64 "SYlzaEmJU3BNi0tASYt7IE2LWzhJg/kA"
-je 251f
-253:
-.base64 "SYszSYtLCEmDwxBBugAAAABJichJwegGScHgBkmD+AA="
-je 254f
-256:
-.base64 "80IPbwQW80IPb0wWEPNCD29UFiDzQg9vXBYw80IPfwQX80IPf0wXEPNCD39UFyDzQg9/XBcwSYPCQE05wg=="
-jne 256b
-jmp 255f
-254:
-255:
-.base64 "SYnIScHoBEnB4ARNOcI="
-je 257f
-259:
-.base64 "80IPbwQW80IPfwQXSYPCEE05wg=="
-jne 259b
-jmp 258f
-257:
-258:
-.base64 "STnK"
-je 260f
-.base64 "SIP5EA=="
-jb 262f
-.base64 "SYnKSYPqEPNCD28EFvNCD38EFw=="
-jmp 263f
-262:
-264:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 264b
-263:
-jmp 261f
-260:
-261:
-.base64 "SAHPSYPpAQ=="
-jne 253b
-jmp 252f
-251:
-252:
-.base64 "TItcJDBJiztJi3MISYtTaEmLS3BNi0MQTYtLGEmLQzBNi1MoTYtbIFBBUkFT"
-call {vg_aes_gcm_seal_vaes_vpclmul}
-.base64 "WFhY"
-23:
-.base64 "SI2kJPAAAAA="
-21:
-.base64 "ww=="
-20:
-.base64 "SI2kJBD///9Ii4Qk+AAAAEiJRCQISIuEJAABAABIiUQkEEiLhCQIAQAASIlEJBhIi4QkEAEAAEiJRCQgSIuEJBgBAABIiUQkKEiJ4EiDwDhIiUQkMEmJy0mD6wxJg/kRTQ9D2UiLRCQQSIPoAUiD+AJMD0PY"
-jae 265f
-.base64 "TItUJAhNi1IITInQSMHoBEjB4ARIg8AQSDtEJCBJD0PDSQnDSItEJCBIwegISYH6AAEAAEkPQ8NJCcM="
-jmp 266f
-265:
-266:
-.base64 "TYXb"
-je 267f
-.base64 "TItcJDBMi1QkCEiLRCQQSYk7SYlzCE2JQxBNiUsYTYlLUE2JUzhJiUNASItEJBhMi1QkIEyLRCQoSYlDIE2JUyhNiUMwuAAAAABJiUNISYlDWEmJQ2BIidZIicpMidlIg8FoTItcJDBJi0MoSD0ABAAA"
-jb 269f
-.base64 "TItcJDBJi0MoSD0AQAAA"
-jb 271f
-.base64 "TItcJDBBugAAAABJi0NASIXA"
-je 273f
-.base64 "TYtTOE2LUgg="
-jmp 274f
-273:
-274:
-.base64 "SYtDKEjB6ARIweAESTnCSYtDKEG6AAAAAEkPQ8JIPQBAAAA="
-jmp 272f
-271:
-272:
-jb 275f
-.base64 "UEiNpCT49f//SYngSYPACEmJmIAAAABJiaiIAAAATYmgkAAAAE2JqJgAAABNibCgAAAATYm4qAAAAE2Jx0mJzkmJ/UmJ9EiJ1UiD/Qw="
-je 277f
-.base64 "uAAAAABJiQZJiUYISYmv2AAAALsAAAAATIniSInpSMHpBEiJ6EiD5Q9IKehJAcRIhck="
-je 279f
-.base64 "TInvSIHH8AAAAEyJ9kiDxgBNifhJgcAAAgAA"
-call {vg_ghash_vpclmul}
-jmp 280f
-279:
-280:
-.base64 "SInpSIXJ"
-je 281f
-.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMieZBugAAAAA="
-283:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 283b
-.base64 "TInvSIHH8AAAAEyJ9kiDxgBMifpIg8JguQEAAABNifhJgcAAAgAA"
-call {vg_ghash_vpclmul}
-jmp 282f
-281:
-282:
-.base64 "uwAAAABJi6/YAAAASInYSAHASAHASAHASA/ISYlHYEiJ6EgBwEgBwEgBwEgPyEmJR2hMie9IgcfwAAAATIn2SIPGAEyJ+kiDwmC5AQAAAE2J+EmBwAACAAA="
-call {vg_ghash_vpclmul}
-jmp 278f
-277:
-.base64 "QYsEJEGLTCQEQYtUJAi+AAAAAUGJBkGJTgRBiVYIQYl2DA=="
-278:
-.base64 "QYsGQYtOBEGLVghBi3YMD86DxgEPzkGJRjBBiU40QYlWOEGJdjy4AAAAAEmJRhBJiUYYSYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJAgKAABYTItcJDBJiztMid5Ig8ZougAAAABJi0sQTYtDGFBIjaQk+PX//0mJ4UmDwQhJiZmAAAAASYmpiAAAAE2JoZAAAABNiamYAAAATYmxoAAAAE2JuagAAABNic9JifZJif1JicxMicVIidNIg+MPSIXt"
-je 284f
-.base64 "SIXb"
-je 286f
-.base64 "uRAAAABIKdlIOc0="
-jb 288f
-jmp 289f
-288:
-.base64 "SInp"
-289:
-.base64 "TIn3SAHfSIPHIEyJ5kG6AAAAAA=="
-290:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 290b
-.base64 "SQHMSCnNSAHLSIP7EA=="
-je 291f
-jmp 292f
-291:
-.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifJIg8IguQEAAABNifhJgcAAAgAA"
-call {vg_ghash_vpclmul}
-292:
-jmp 287f
-286:
-287:
-.base64 "TIniSInpSMHpBEiJ6EiD5Q9IKehJAcRIhck="
-je 293f
-.base64 "TInvSIHH8AAAAEyJ9kiDxhBNifhJgcAAAgAA"
-call {vg_ghash_vpclmul}
-jmp 294f
-293:
-294:
-.base64 "SInpSIXJ"
-je 295f
-.base64 "TIn3SIPHIEyJ5kG6AAAAAA=="
-297:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 297b
-jmp 296f
-295:
-296:
-jmp 285f
-284:
-285:
-.base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJAgKAABYTItcJDBJi0MoSIXA"
-je 298f
-.base64 "SYtLGEmJyEmD4A9NhcA="
-je 2100f
-.base64 "uBAAAABMKcBJicBJiztIichMAcBJiUNQTIneSIPGaEiJykyJ2UiDwVhQSI2kJPj1//9JieFJg8EISYmZgAAAAEmJqYgAAABNiaGQAAAATYmpmAAAAE2JsaAAAABNibmoAAAATYnPSYn2SYn9SYnMTInFSInTSIPjD0iF7Q=="
-je 2102f
-.base64 "SIXb"
-je 2104f
-.base64 "uRAAAABIKdlIOc0="
-jb 2106f
-jmp 2107f
-2106:
-.base64 "SInp"
-2107:
-.base64 "TIn3SAHfSIPHIEyJ5kG6AAAAAA=="
-2108:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 2108b
-.base64 "SQHMSCnNSAHLSIP7EA=="
-je 2109f
-jmp 2110f
-2109:
-.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifJIg8IguQEAAABNifhJgcAAAgAA"
-call {vg_ghash_vpclmul}
-2110:
-jmp 2105f
-2104:
-2105:
-.base64 "TIniSInpSMHpBEiJ6EiD5Q9IKehJAcRIhck="
-je 2111f
-.base64 "TInvSIHH8AAAAEyJ9kiDxhBNifhJgcAAAgAA"
-call {vg_ghash_vpclmul}
-jmp 2112f
-2111:
-2112:
-.base64 "SInpSIXJ"
-je 2113f
-.base64 "TIn3SIPHIEyJ5kG6AAAAAA=="
-2115:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 2115b
-jmp 2114f
-2113:
-2114:
-jmp 2103f
-2102:
-2103:
-.base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJAgKAABY"
-jmp 2101f
-2100:
-2101:
-.base64 "TItcJDBJi0NASIXA"
-je 2116f
-2118:
-.base64 "TItcJDBNi1M4TYsKSYtCCE2LUyBJi0tISQHKSYs7SYtzCEyJ2kiDwmhJi0tQTYtDSFBBUlA="
-call {vg_aes_gcm_stream_encrypt_to_prepared16_vaes_vpclmul}
-.base64 "WFhYTItcJDBNi1M4SYtCCEmLS0hIAcFJg8IQSYtDQEiD6AFJiUtITYlTOEmJQ0BIhcA="
-jne 2118b
-jmp 2117f
-2116:
-2117:
-jmp 299f
-298:
-299:
-.base64 "TItcJDBJiztJi3MITInaSIPCaEmLSxhNi0MoTYtLMFBIjaQk8PX//0iJ4EiDwBBIiUQkCEiLRCQISImYgAAAAEiJqIgAAABMiaCQAAAATImomAAAAEyJsKAAAABMibioAAAASYnHSYnWSYn9SYm3sAAAAEmJj7gAAABNiYfAAAAATYmPyAAAAEmLn8AAAABJi4e4AAAASIXb"
-je 2119f
-jmp 2120f
-2119:
-.base64 "SInD"
-2120:
-.base64 "SIPjD0iF2w=="
-je 2121f
-.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMifZIg8YgSInZQboAAAAA"
-2123:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 2123b
-.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifpIg8JguQEAAABNifhJgcAAAgAA"
-call {vg_ghash_vpclmul}
-jmp 2122f
-2121:
-2122:
 .base64 "SYufuAAAAEmLr8AAAABIidhIAcBIAcBIAcBID8hJiUdgSInoSAHASAHASAHASA/ISYlHaEyJ70iBx/AAAABMifZIg8YQTIn6SIPCYLkBAAAATYn4SYHAAAIAAA=="
 call {vg_ghash_vpclmul}
 .base64 "SYtGEEmJB0mLRhhJiUcITInvSYu3sAAAAEyJ8kyJ+UiDwQBBuAEAAABNiflJgcEAAgAA"
 call {vg_aes_ctr32_vaes}
-.base64 "SYu/yAAAAEmLB0mLVwhIiQdIiVcISYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJBAKAABY"
+.base64 "SIt8JChJiwdJi1cISIkHSIlXCEmLn4AAAABJi6+IAAAATYunkAAAAE2Lr5gAAABNi7egAAAATYu/qAAAAEiNpCQ4CgAA"
+21:
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJPhMiRwkSI2kJJj1///F/n+EJEgKAADF/n+EJCgKAADF/n+EJAgKAADF/n+EJOgJAADF/n+EJMgJAADF/n+EJKgJAADF/n+EJIgJAADF/n+EJGgJAADF/n+EJEgJAADF/n+EJCgJAADF/n+EJAgJAADF/n+EJOgIAADF/n+EJMgIAADF/n+EJKgIAADF/n+EJIgIAADF/n+EJGgIAADF/n+EJEgIAADF/n+EJCgIAADF/n+EJAgIAADF/n+EJOgHAADF/n+EJMgHAADF/n+EJKgHAADF/n+EJIgHAADF/n+EJGgHAADF/n+EJEgHAADF/n+EJCgHAADF/n+EJAgHAADF/n+EJOgGAADF/n+EJMgGAADF/n+EJKgGAADF/n+EJIgGAADF/n+EJGgGAADF/n+EJEgGAADF/n+EJCgGAADF/n+EJAgGAADF/n+EJOgFAADF/n+EJMgFAADF/n+EJKgFAADF/n+EJIgFAADF/n+EJGgFAADF/n+EJEgFAADF/n+EJCgFAADF/n+EJAgFAADF/n+EJOgEAADF/n+EJMgEAADF/n+EJKgEAADF/n+EJIgEAADF/n+EJGgEAADF/n+EJEgEAADF/n+EJCgEAADF/n+EJAgEAADF/n+EJOgDAADF/n+EJMgDAADF/n+EJKgDAADF/n+EJIgDAADF/n+EJGgDAADF/n+EJEgDAADF/n+EJCgDAADF/n+EJAgDAADF/n+EJOgCAADF/n+EJMgCAADF/n+EJKgCAADF/n+EJIgCAADF/n+EJGgCAADF/n+EJEgCAADF/n+EJCgCAADF/n+EJAgCAADF/n+EJOgBAADF/n+EJMgBAADF/n+EJKgBAADF/n+EJIgBAADF/n+EJGgBAADF/n+EJEgBAADF/n+EJCgBAADF/n+EJAgBAADF/n+EJOgAAADF/n+EJMgAAADF/n+EJKgAAADF/n+EJIgAAADF/n9EJGjF/n9EJEjF/n9EJCjF/n9EJAhMiRwkSI2kJGgKAABIjWQkCDHAMckx0jH2Mf9FMcBFMclFMdLD"
+20:
+.base64 "SI2kJMj1//9Ii4QkQAoAAEiJRCQISIuEJEgKAABIiUQkEEiLhCRQCgAASIlEJBhIi4QkWAoAAEiJRCQgSIuEJGAKAABIiUQkKEiJ4EiDwDhIiUQkMEmJy0mD6wxJg/kRTQ9D2UiLRCQQSIPoAUiD+AJMD0PY"
+jae 232f
+.base64 "TItUJAhNi1IITInQSMHoBEjB4ARIg8AQSDtEJCBJD0PDSQnDSItEJCBIwegISYH6AAEAAEkPQ8NJCcM="
+jmp 233f
+232:
+233:
+.base64 "TYXb"
+je 234f
+.base64 "SItEJDBIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdNif5Jg8YQSYn9SYm3sAAAAE2Jh+gAAABNiY+4AAAASItEJBhJiYfIAAAASItEJCBJiYfQAAAASYnUSInNSIP9DA=="
+je 236f
+.base64 "uAAAAABJiQZJiUYISYmv2AAAALsAAAAATIniSInpSMHpBEiJ6EiD5Q9IKehJAcRIhck="
+je 238f
+.base64 "TInvSIHH8AAAAEyJ9kiDxgBNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+jmp 239f
+238:
+239:
+.base64 "SInpSIXJ"
+je 240f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMieZBugAAAAA="
+242:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 242b
+.base64 "TInvSIHH8AAAAEyJ9kiDxgBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+jmp 241f
+240:
+241:
+.base64 "uwAAAABJi6/YAAAASInYSAHASAHASAHASA/ISYlHYEiJ6EgBwEgBwEgBwEgPyEmJR2hMie9IgcfwAAAATIn2SIPGAEyJ+kiDwmC5AQAAAE2J+EmBwAACAAA="
+call {vg_ghash_vpclmul}
+jmp 237f
+236:
+.base64 "QYsEJEGLTCQEQYtUJAi+AAAAAUGJBkGJTgRBiVYIQYl2DA=="
+237:
+.base64 "QYsGQYtOBEGLVghBi3YMD86DxgEPzkGJRjBBiU40QYlWOEGJdjy4AAAAAEmJRhBJiUYYTYun6AAAAEmLr7gAAAC7AAAAAEyJ4kiJ6UjB6QRIiehIg+UPSCnoSQHESIXJ"
+je 243f
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+jmp 244f
+243:
+244:
+.base64 "SInpSIXJ"
+je 245f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMieZBugAAAAA="
+247:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 247b
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+jmp 246f
+245:
+246:
+.base64 "SItEJAhJiYcAAQAASItEJBBJiYfgAAAASItEJBhJiYfIAAAASItEJCBJiYfAAAAASYmH0AAAALgAAAAASYmH8AAAAEmJhwgBAABJi4fgAAAASIXA"
+je 248f
+.base64 "TYuXAAEAAEmLQghIwegISIXA"
+je 250f
+.base64 "SMHgCEmJhwgBAABNiwJNi5/IAAAATAHYSYmHyAAAAEmLh9AAAABJK4cIAQAASYmH0AAAAE2LjwgBAABJwekETYnKTInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTIn4SAXAAQAATYnaUA=="
+call {vg_aes_gcm_seal_blocks_prepared16_vaes_vpclmul}
+.base64 "WA=="
+jmp 251f
+250:
+251:
+252:
+.base64 "TYuXAAEAAEmLGkmLaghJg8IQTYmXAAEAAEmLhwgBAABIAcNIKcW4AAAAAEmJhwgBAABJi4fwAAAATYunyAAAAEkBxEiJxkiD5g9IAehJiYfwAAAASIXt"
+je 253f
+.base64 "SIX2"
+je 255f
+.base64 "uRAAAABIKfFIOc1ID0LNTAH2SIPGQEyJ50G6AAAAAA=="
+257:
+.base64 "Qg+2BBNGD7YcFkwx2EKIBBdJg8IBSTnK"
+jne 257b
+.base64 "SAHLSQHMSCnN"
+jmp 256f
+255:
+256:
+.base64 "SYnoScHoBE2FwA=="
+je 258f
+.base64 "SInZTYnjSInoSIPlD0gp6EgBw0kBxEyJ70mLt7AAAABMifJIg8IwTYn5SYHBAAIAAA=="
+call {vg_aes_ctr32_to_vaes}
+jmp 259f
+258:
+259:
+.base64 "SIXt"
+je 260f
+.base64 "uAAAAABJiUZASYlGSEyJ70mLt7AAAABMifJIg8IwTInxSIPBQEG4AQAAAE2J+UmBwQACAAA="
+call {vg_aes_ctr32_vaes}
+.base64 "TInnTIn2SIPGQEiJ6UG6AAAAAA=="
+262:
+.base64 "Qg+2BBNGD7YcFkwx2EKIBBdJg8IBSTnK"
+jne 262b
+jmp 261f
+260:
+261:
+jmp 254f
+253:
+254:
+.base64 "TYuX4AAAAEmD6gFNiZfgAAAA"
+jne 252b
+jmp 249f
+248:
+249:
+.base64 "TYunyAAAAEmLr9AAAAC7AAAAAEyJ4kiJ6UjB6QRIiehIg+UPSCnoSQHESIXJ"
+je 263f
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+jmp 264f
+263:
+264:
+.base64 "SInpSIXJ"
+je 265f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMieZBugAAAAA="
+267:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 267b
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+jmp 266f
+265:
+266:
+.base64 "SYufuAAAAEmLr8AAAABIidhIAcBIAcBIAcBID8hJiUdgSInoSAHASAHASAHASA/ISYlHaEyJ70iBx/AAAABMifZIg8YQTIn6SIPCYLkBAAAATYn4SYHAAAIAAA=="
+call {vg_ghash_vpclmul}
+.base64 "SYtGEEmJB0mLRhhJiUcITInvSYu3sAAAAEyJ8kyJ+UiDwQBBuAEAAABNiflJgcEAAgAA"
+call {vg_aes_ctr32_vaes}
+jmp 235f
+234:
+.base64 "SItEJDBIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdNif5Jg8YQSYn9SYm3sAAAAE2Jh+gAAABNiY+4AAAASItEJBhJiYfIAAAASItEJCBJiYfQAAAASYnUSInNQYsEJEGLTCQEQYtUJAi+AAAAAUGJBkGJTgRBiVYIQYl2DEGLBkGLTgRBi1YIQYt2DA/Og8YBD85BiUYwQYlONEGJVjhBiXY8uAAAAABJiUYQSYlGGEmLj7gAAABIhck="
+je 268f
+.base64 "SIP5BQ=="
+je 270f
+.base64 "SIP5EA=="
+je 272f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BJi7foAAAAQboAAAAA"
+274:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 274b
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vAA=="
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vSBDzQQ9vf2BmDzgA+PNBD2+dEAEAAGZFD+/AZkUP78lmRQ/v0mZED2/fZkQPOkTbAGZFD+/DZkQPb99mRA86RNsRZkUP79NmRA9v32ZEDzpE2wFmRQ/vy2ZED2/fZkQPOkTbEGZFD+/LZkUPb9lmQQ9z2whmRQ/v02ZBD3P5CGZFD+/BZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZBD2/SZkEP79BmDzgA0PNBD39WEA=="
+jmp 273f
+272:
+.base64 "SYu36AAAAPMPbz4="
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vAA=="
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vSBBmDzgA+PNBD2+dEAEAAGZFD+/AZkUP78lmRQ/v0mZED2/fZkQPOkTbAGZFD+/DZkQPb99mRA86RNsRZkUP79NmRA9v32ZEDzpE2wFmRQ/vy2ZED2/fZkQPOkTbEGZFD+/LZkUPb9lmQQ9z2whmRQ/v02ZBD3P5CGZFD+/BZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZBD2/SZkEP79BmDzgA0PNBD39WEA=="
+273:
+jmp 271f
+270:
+.base64 "SYu36AAAAIsGRA+2VgRJweIgTAHQZkgPbvg="
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vAA=="
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vSBBmDzgA+PNBD2+dEAEAAGZFD+/AZkUP78lmRQ/v0mZED2/fZkQPOkTbAGZFD+/DZkQPb99mRA86RNsRZkUP79NmRA9v32ZEDzpE2wFmRQ/vy2ZED2/fZkQPOkTbEGZFD+/LZkUPb9lmQQ9z2whmRQ/v02ZBD3P5CGZFD+/BZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZBD2/SZkEP79BmDzgA0PNBD39WEA=="
+271:
+jmp 269f
+268:
+269:
+.base64 "TItUJAhNiwJJi0IITItMJBhMi1wkIE2Jh+AAAABNiY/IAAAATYmfwAAAAEjB6ARIhcA="
+je 275f
+.base64 "TInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTYuH4AAAAEmJwUmJwk2Ln8gAAABMifhIBcABAABNidpQ"
+call {vg_aes_gcm_seal_blocks_prepared16_vaes_vpclmul}
+.base64 "WA=="
 jmp 276f
 275:
-.base64 "TItcJDBBugAAAABJi0NASIXA"
-je 2124f
-.base64 "TYtTOE2LUgg="
-jmp 2125f
-2124:
-2125:
-.base64 "SYtDKEjB6ARIweAEQbgAAAAASTnCTQ9C0EmB+gAEAAA="
-jb 2126f
-.base64 "SYlzaEmJU3BNi0tASYt7IE2LUzhMidC5AAAAAE2FyQ=="
-je 2128f
-.base64 "SYsCSYtKCEmD6QFJg8IQSAHP"
-jmp 2129f
-2128:
-2129:
-.base64 "SYlDeEmJi4AAAABNidNJg/kA"
-je 2130f
-2132:
-.base64 "SYszSYtLCEmDwxBBugAAAABJichJwegGScHgBkmD+AA="
-je 2133f
-2135:
-.base64 "80IPbwQW80IPb0wWEPNCD29UFiDzQg9vXBYw80IPfwQX80IPf0wXEPNCD39UFyDzQg9/XBcwSYPCQE05wg=="
-jne 2135b
-jmp 2134f
-2133:
-2134:
-.base64 "SYnIScHoBEnB4ARNOcI="
-je 2136f
-2138:
-.base64 "80IPbwQW80IPfwQXSYPCEE05wg=="
-jne 2138b
-jmp 2137f
-2136:
-2137:
-.base64 "STnK"
-je 2139f
-.base64 "SIP5EA=="
-jb 2141f
-.base64 "SYnKSYPqEPNCD28EFvNCD38EFw=="
-jmp 2142f
-2141:
-2143:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 2143b
-2142:
-jmp 2140f
-2139:
-2140:
-.base64 "SAHPSYPpAQ=="
-jne 2132b
-jmp 2131f
-2130:
-2131:
-.base64 "TItcJDBJi1NoSYtLcE2LQxBNi0sYSYtDME2LUyhJi7uAAAAASYtzeE2LWyBQQVJBU1dWTItcJFhJiztJi3MI"
-call {vg_aes_gcm_seal_split_prepared16_vaes_vpclmul}
-.base64 "WFhYWFg="
-jmp 2127f
-2126:
-.base64 "SYlzaEmJU3BNi0tASYt7IE2LWzhJg/kA"
-je 2144f
-2146:
-.base64 "SYszSYtLCEmDwxBBugAAAABJichJwegGScHgBkmD+AA="
-je 2147f
-2149:
-.base64 "80IPbwQW80IPb0wWEPNCD29UFiDzQg9vXBYw80IPfwQX80IPf0wXEPNCD39UFyDzQg9/XBcwSYPCQE05wg=="
-jne 2149b
-jmp 2148f
-2147:
-2148:
-.base64 "SYnIScHoBEnB4ARNOcI="
-je 2150f
-2152:
-.base64 "80IPbwQW80IPfwQXSYPCEE05wg=="
-jne 2152b
-jmp 2151f
-2150:
-2151:
-.base64 "STnK"
-je 2153f
-.base64 "SIP5EA=="
-jb 2155f
-.base64 "SYnKSYPqEPNCD28EFvNCD38EFw=="
-jmp 2156f
-2155:
-2157:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 2157b
-2156:
-jmp 2154f
-2153:
-2154:
-.base64 "SAHPSYPpAQ=="
-jne 2146b
-jmp 2145f
-2144:
-2145:
-.base64 "TItcJDBJiztJi3MISYtTaEmLS3BNi0MQTYtLGEmLQzBNi1MoTYtbIFBBUkFT"
-call {vg_aes_gcm_seal_prepared_vaes_vpclmul_core}
-.base64 "WFhY"
-2127:
 276:
-jmp 270f
-269:
-.base64 "SYlzaEmJU3BNi0tASYt7IE2LWzhJg/kA"
-je 2158f
-2160:
-.base64 "SYszSYtLCEmDwxBBugAAAABJichJwegGScHgBkmD+AA="
-je 2161f
-2163:
-.base64 "80IPbwQW80IPb0wWEPNCD29UFiDzQg9vXBYw80IPfwQX80IPf0wXEPNCD39UFyDzQg9/XBcwSYPCQE05wg=="
-jne 2163b
-jmp 2162f
-2161:
-2162:
-.base64 "SYnIScHoBEnB4ARNOcI="
-je 2164f
-2166:
-.base64 "80IPbwQW80IPfwQXSYPCEE05wg=="
-jne 2166b
-jmp 2165f
-2164:
-2165:
-.base64 "STnK"
-je 2167f
-.base64 "SIP5EA=="
-jb 2169f
-.base64 "SYnKSYPqEPNCD28EFvNCD38EFw=="
-jmp 2170f
-2169:
-2171:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 2171b
-2170:
-jmp 2168f
-2167:
-2168:
-.base64 "SAHPSYPpAQ=="
-jne 2160b
-jmp 2159f
-2158:
-2159:
-.base64 "TItcJDBJiztJi3MISYtTaEmLS3BNi0MQTYtLGEmLQzBNi1MoTYtbIFBBUkFT"
-call {vg_aes_gcm_seal_prepared_vaes_vpclmul_core}
-.base64 "WFhY"
-270:
-jmp 268f
-267:
-.base64 "TItcJDBMi1QkCEiLRCQQSYk7SYlzCEiD+AE="
-je 2172f
-.base64 "SYtKGEiFyQ=="
-je 2174f
-.base64 "SYtyEEiLfCQYSQN6CEG6AAAAAA=="
-2176:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 2176b
-jmp 2175f
-2174:
-2175:
-jmp 2173f
-2172:
-2173:
-.base64 "uQwAAABMi1QkCEmLMkmLeghIi0QkKEyLVCQgTItcJBhQQVJBU1dWTItcJFhJiztJi3MI"
-call {vg_aes_gcm_seal_split_prepared16_vaes_vpclmul}
-.base64 "WFhYWFg="
-268:
-.base64 "SI2kJPAAAAA="
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vAA=="
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vSBDzQQ9vnRABAADzQQ9vtQABAADzQQ9vLvNBD29+MEyJ70mLt7AAAABJifJNAdJNAdJNAdJNAdJJAfrzRA9vB2ZBD+/oZkEP7/jzRA9vRxBmQQ843OhmQQ843PjzRA9vRyBmQQ843OhmQQ843PjzRA9vRzBmQQ843OhmQQ843PjzRA9vR0BmQQ843OhmQQ843PjzRA9vR1BmQQ843OhmQQ843PjzRA9vR2BmQQ843OhmQQ843PjzRA9vR3BmQQ843OhmQQ843PjzRA9vh4AAAABmQQ843OhmQQ843PjzRA9vh5AAAABmQQ843OhmQQ843PhIg/4K"
+je 277f
+.base64 "80QPb4egAAAAZkEPONzoZkEPONz480QPb4ewAAAAZkEPONzoZkEPONz4SIP+DA=="
+je 279f
+.base64 "80QPb4fAAAAAZkEPONzoZkEPONz480QPb4fQAAAAZkEPONzoZkEPONz4"
+jmp 280f
+279:
+280:
+jmp 278f
+277:
+278:
+.base64 "80UPbwJmQQ843ehmQQ843fjzQQ9/rwAEAADzQQ9/vxAEAABMi1wkCEmLG0mLSwhJichIg+EPSSnITAHDSYu3yAAAAEwBxkmLr8AAAABMKcVIhe0="
+je 281f
+.base64 "Zg/v//NBD3+/AAIAAEyJ/0iBxwACAABMifpIgcIQBAAAQboAAAAASIXJ"
+je 283f
+.base64 "SYnITSnQSYP4BA=="
+jb 285f
+.base64 "SYP4CA=="
+jb 287f
+.base64 "SosEE0ozBBJKiQQWSokEF0mDwgg="
+jmp 288f
+287:
+288:
+.base64 "SYnITSnQSYP4BA=="
+jb 289f
+.base64 "QosEE0IzBBJCiQQWQokEF0mDwgQ="
+jmp 290f
+289:
+290:
+.base64 "TDnR"
+je 291f
+293:
+.base64 "Qg+2BBNGD7YMEkwxyEKIBBZCiAQXSYPCAUk5yg=="
+jne 293b
+jmp 292f
+291:
+292:
+jmp 286f
+285:
+294:
+.base64 "Qg+2BBNGD7YMEkwxyEKIBBZCiAQXSYPCAUk5yg=="
+jne 294b
+286:
+jmp 284f
+283:
+284:
+.base64 "STnq"
+je 295f
+.base64 "SYtbEEwp00iJ6UmJyE0p0EmD+AQ="
+jb 297f
+.base64 "SYP4CA=="
+jb 299f
+.base64 "SosEE0ozBBJKiQQWSokEF0mDwgg="
+jmp 2100f
+299:
+2100:
+.base64 "SYnITSnQSYP4BA=="
+jb 2101f
+.base64 "QosEE0IzBBJCiQQWQokEF0mDwgQ="
+jmp 2102f
+2101:
+2102:
+.base64 "TDnR"
+je 2103f
+2105:
+.base64 "Qg+2BBNGD7YMEkwxyEKIBBZCiAQXSYPCAUk5yg=="
+jne 2105b
+jmp 2104f
+2103:
+2104:
+jmp 298f
+297:
+2106:
+.base64 "Qg+2BBNGD7YMEkwxyEKIBBZCiAQXSYPCAUk5yg=="
+jne 2106b
+298:
+jmp 296f
+295:
+296:
+.base64 "SYuHuAAAAEjB4ANID8hJiYcQAgAASYuHwAAAAEjB4ANID8hJiYcYAgAA80UPb2YQZkQPOADg80EPb78AAgAAZg84APhmQQ/v/GZFD+/AZkUP78lmRQ/v0mZED2/fZkQPOkTeAGZFD+/DZkQPb99mRA86RN4RZkUP79NmRA9v32ZEDzpE3gFmRQ/vy2ZED2/fZkQPOkTeEGZFD+/L80EPb78QAgAAZg84APhmRA9v32ZEDzpE2wBmRQ/vw2ZED2/fZkQPOkTbEWZFD+/TZkQPb99mRA86RNsBZkUP78tmRA9v32ZEDzpE2xBmRQ/vy2ZFD2/ZZkEPc9sIZkUP79NmQQ9z+QhmRQ/vwWZFD2/YZkQPOkTZEGZFD3DATmZFD+/DZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmQQ9v0mZBD+/QxOJpANDEwXpvnwAEAADF6e/TxMF6fxfF+Hc="
+jmp 282f
+281:
+.base64 "SYuHuAAAAEjB4ANID8hJiYcQAgAASYuHwAAAAEjB4ANID8hJiYcYAgAA80UPb2YQZkQPOADg80EPb78QAgAAZg84APhmQQ/v/GZFD+/AZkUP78lmRQ/v0mZED2/fZkQPOkTbAGZFD+/DZkQPb99mRA86RNsRZkUP79NmRA9v32ZEDzpE2wFmRQ/vy2ZED2/fZkQPOkTbEGZFD+/LZkUPb9lmQQ9z2whmRQ/v02ZBD3P5CGZFD+/BZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZBD2/SZkEP79DE4mkA0MTBem+fAAQAAMXp79PEwXp/F8X4dw=="
+282:
+235:
+.base64 "SIt8JChJiwdJi1cISIkHSIlXCEmLn4AAAABJi6+IAAAATYunkAAAAE2Lr5gAAABNi7egAAAATYu/qAAAAEiNpCQ4CgAA"
 jmp 21b
 .p2align 6"#,
-        vg_aes_gcm_stream_init_vpclmul_core = sym super::aes::vg_aes_gcm_stream_init_vpclmul_core::vg_aes_gcm_stream_init_vpclmul_core,
-        vg_aes_gcm_stream_aad_vpclmul_core = sym super::aes::vg_aes_gcm_stream_aad_vpclmul_core::vg_aes_gcm_stream_aad_vpclmul_core,
-        vg_aes_gcm_stream_encrypt_to_vaes_vpclmul = sym super::aes::vg_aes_gcm_stream_encrypt_to_vaes_vpclmul::vg_aes_gcm_stream_encrypt_to_vaes_vpclmul,
-        vg_aes_gcm_stream_finish_vaes_vpclmul_core = sym super::aes::vg_aes_gcm_stream_finish_vaes_vpclmul_core::vg_aes_gcm_stream_finish_vaes_vpclmul_core,
-        vg_aes_gcm_seal_split_vaes_vpclmul = sym super::aes::vg_aes_gcm_seal_split_vaes_vpclmul::vg_aes_gcm_seal_split_vaes_vpclmul,
-        vg_aes_gcm_seal_vaes_vpclmul = sym super::aes::vg_aes_gcm_seal_vaes_vpclmul::vg_aes_gcm_seal_vaes_vpclmul,
-        vg_ghash_vpclmul = sym super::aes_gcm_siv::vg_ghash_vpclmul::vg_ghash_vpclmul,
-        vg_aes_gcm_stream_encrypt_to_prepared16_vaes_vpclmul = sym super::aes::vg_aes_gcm_stream_encrypt_to_prepared16_vaes_vpclmul::vg_aes_gcm_stream_encrypt_to_prepared16_vaes_vpclmul,
+        vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul::vg_ghash_vpclmul,
+        vg_aes_ctr32_to_vaes = sym super::aes::vg_aes_ctr32_to_vaes::vg_aes_ctr32_to_vaes,
         vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
-        vg_aes_gcm_seal_split_prepared16_vaes_vpclmul = sym super::aes::vg_aes_gcm_seal_split_prepared16_vaes_vpclmul::vg_aes_gcm_seal_split_prepared16_vaes_vpclmul,
-        vg_aes_gcm_seal_prepared_vaes_vpclmul_core = sym super::aes::vg_aes_gcm_seal_prepared_vaes_vpclmul_core::vg_aes_gcm_seal_prepared_vaes_vpclmul_core,
+        vg_aes_gcm_seal_blocks_prepared16_vaes_vpclmul = sym super::aes::vg_aes_gcm_seal_blocks_prepared16_vaes_vpclmul::vg_aes_gcm_seal_blocks_prepared16_vaes_vpclmul,
+        VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
+    )
+}
+
+/// The CPU features `vg_aes_gcm_seal_contiguous_prepared_aesni_pclmul_avx` requires (`Artifact.features`).
+pub const VG_AES_GCM_SEAL_CONTIGUOUS_PREPARED_AESNI_PCLMUL_AVX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX);
+
+/// `vg_aes_gcm_seal_contiguous` with a 1032-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the prepared powers its count says are present. The powers remain secret; how many are present may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealContiguousPreparedContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 1032 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `src` must be valid for reads of `len` bytes, and `dst` for reads and writes of `len` bytes. The two pointers must be identical or their regions disjoint.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `*ctx` must have the prepared format written by `vg_aes_gcm_prepare` (not the format of `vg_aes_gcm_init_precomputed`).
+/// * `dst` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `src` when distinct from `dst` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `src` when distinct from `dst`, `dst` and `tag` may overlap the return address on the stack or the 2640 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `ssse3`, `pclmulqdq`, `aes` and `avx` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_contiguous_prepared_aesni_pclmul_avx(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+    core::arch::naked_asm!(
+        r#".base64 "SIuHAAQAAEiD+BA="
+jae 20f
+.base64 "SI2kJND1//9Ii4QkOAoAAEiJRCQISIuEJEAKAABIiUQkEEiLhCRICgAASIlEJBhIi4QkUAoAAEiJRCQgSIngSIPAMEiJRCQoSItEJChIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdNif5Jg8YQSYn9SYm3sAAAAE2Jh+gAAABNiY+4AAAASItEJBBJiYfIAAAASItEJBhJiYfQAAAASYnUSInNSIP9DA=="
+je 22f
+.base64 "uAAAAABJiQZJiUYISYmv2AAAALsAAAAATIniSInpSMHpBEiJ6EiD5Q9IKehJAcRIhck="
+je 24f
+.base64 "TInvSIHH8AAAAEyJ9kiDxgBNifhJgcAAAgAA"
+call {vg_ghash_pclmul}
+jmp 25f
+24:
+25:
+.base64 "SInpSIXJ"
+je 26f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMieZBugAAAAA="
+28:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 28b
+.base64 "TInvSIHH8AAAAEyJ9kiDxgBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_pclmul}
+jmp 27f
+26:
+27:
+.base64 "uwAAAABJi6/YAAAASInYSAHASAHASAHASA/ISYlHYEiJ6EgBwEgBwEgBwEgPyEmJR2hMie9IgcfwAAAATIn2SIPGAEyJ+kiDwmC5AQAAAE2J+EmBwAACAAA="
+call {vg_ghash_pclmul}
+jmp 23f
+22:
+.base64 "QYsEJEGLTCQEQYtUJAi+AAAAAUGJBkGJTgRBiVYIQYl2DA=="
+23:
+.base64 "QYsGQYtOBEGLVghBi3YMD86DxgEPzkGJRjBBiU40QYlWOEGJdjy4AAAAAEmJRhBJiUYYTYun6AAAAEmLr7gAAAC7AAAAAEyJ4kiJ6UjB6QRIiehIg+UPSCnoSQHESIXJ"
+je 29f
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBNifhJgcAAAgAA"
+call {vg_ghash_pclmul}
+jmp 210f
+29:
+210:
+.base64 "SInpSIXJ"
+je 211f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMieZBugAAAAA="
+213:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 213b
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_pclmul}
+jmp 212f
+211:
+212:
+.base64 "SYuH0AAAAEmJh8AAAABIwegESIXA"
+je 214f
+.base64 "TInvSYu3sAAAAEyJ8kiDwjBIi0wkCEmJwE2Ln8gAAABNiflJgcHAAQAA"
+call {vg_aes_ctr32_to_aesni}
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBJi5fIAAAASYuP0AAAAEjB6QRNifhJgcDAAQAA"
+call {vg_ghash_pclmul}
+.base64 "SYuH0AAAAEiJwUiD4Q9JiY/QAAAASCnISQOHyAAAAEmJh8gAAAA="
+jmp 215f
+214:
+215:
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vAA=="
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vSBDzQQ9vvfAAAABmDzgA+A=="
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "80QPb2ggSLj//////////2ZMD27wZkUPbPZmD2/fZg9z8wFmRA9v32ZBD3PTP2ZBD3P7CGZBD+vbZkQPcN//ZkEPctMfZkUP/t5mRQ/f3WZBD+/bZkUP78BmRQ/vyWZFD+/SZkQPb9tmRA86RNsAZkUP78NmRA9v22ZEDzpE2xFmRQ/v02ZED2/bZkQPOkTbAWZFD+/LZkQPb9tmRA86RNsQZkUP78tmRQ9v2WZBD3PbCGZFD+/TZkEPc/kIZkUP78FmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZFD2/YZkQPOkTZEGZFD3DATmZFD+/DZkEPb/JmQQ/v8PNBD28u80EPb34wTInvSYu3sAAAAEmJ8k0B0k0B0k0B0k0B0kkB+vNED28HZkEP7+hmQQ/v+PNED29HEGZBDzjc6GZBDzjc+PNED29HIGZBDzjc6GZBDzjc+PNED29HMGZBDzjc6GZBDzjc+PNED29HQGZBDzjc6GZBDzjc+PNED29HUGZBDzjc6GZBDzjc+PNED29HYGZBDzjc6GZBDzjc+PNED29HcGZBDzjc6GZBDzjc+PNED2+HgAAAAGZBDzjc6GZBDzjc+PNED2+HkAAAAGZBDzjc6GZBDzjc+EiD/go="
+je 216f
+.base64 "80QPb4egAAAAZkEPONzoZkEPONz480QPb4ewAAAAZkEPONzoZkEPONz4SIP+DA=="
+je 218f
+.base64 "80QPb4fAAAAAZkEPONzoZkEPONz480QPb4fQAAAAZkEPONzoZkEPONz4"
+jmp 219f
+218:
+219:
+jmp 217f
+216:
+217:
+.base64 "80UPbwJmQQ843ehmQQ843fjzQQ9/rwAEAADzQQ9/vxAEAABJi4fQAAAASIXA"
+je 220f
+.base64 "Zg/v//NBD3+/AAIAAEyJ/0iBxwACAABJi7fIAAAATIn6SIHCEAQAAEmLj9AAAABIi1wkCEkDn8AAAABJK5/QAAAAQboAAAAASYnIScHoBEnB4ARJg/gA"
+je 222f
+224:
+.base64 "xKF6byQTxKFZ7yQSxKF6fyQWxKF6fyQXSYPCEE05wg=="
+jne 224b
+jmp 223f
+222:
+223:
+.base64 "SPfBDwAAAA=="
+je 225f
+.base64 "SPfBDAAAAA=="
+je 227f
+.base64 "SPfBCAAAAA=="
+je 229f
+.base64 "SosEE0ozBBJKiQQWSokEF0mDwgg="
+jmp 230f
+229:
+230:
+.base64 "SPfBBAAAAA=="
+je 231f
+.base64 "QosEE0IzBBJCiQQWQokEF0mDwgQ="
+jmp 232f
+231:
+232:
+.base64 "SPfBAwAAAA=="
+je 233f
+235:
+.base64 "Qg+2BBNGD7YMEkwxyEKIBBZCiAQXSYPCAUk5yg=="
+jne 235b
+jmp 234f
+233:
+234:
+jmp 228f
+227:
+236:
+.base64 "Qg+2BBNGD7YMEkwxyEKIBBZCiAQXSYPCAUk5yg=="
+jne 236b
+228:
+jmp 226f
+225:
+226:
+.base64 "SYuHuAAAAEjB4ANID8hJiYcQAgAASYuHwAAAAEjB4ANID8hJiYcYAgAA80UPb2YQZkQPOADg80EPb78AAgAAZg84APhmQQ/v/GZFD+/AZkUP78lmRQ/v0mZED2/fZkQPOkTeAGZFD+/DZkQPb99mRA86RN4RZkUP79NmRA9v32ZEDzpE3gFmRQ/vy2ZED2/fZkQPOkTeEGZFD+/L80EPb78QAgAAZg84APhmRA9v32ZEDzpE2wBmRQ/vw2ZED2/fZkQPOkTbEWZFD+/TZkQPb99mRA86RNsBZkUP78tmRA9v32ZEDzpE2xBmRQ/vy2ZFD2/ZZkEPc9sIZkUP79NmQQ9z+QhmRQ/vwWZFD2/YZkQPOkTZEGZFD3DATmZFD+/DZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmQQ9v0mZBD+/QxOJpANDEwXpvnwAEAADF6e/TxMF6fxfF+Hc="
+jmp 221f
+220:
+.base64 "SYuHuAAAAEjB4ANID8hJiYcQAgAASYuHwAAAAEjB4ANID8hJiYcYAgAA80UPb2YQZkQPOADg80EPb78QAgAAZg84APhmQQ/v/GZFD+/AZkUP78lmRQ/v0mZED2/fZkQPOkTbAGZFD+/DZkQPb99mRA86RNsRZkUP79NmRA9v32ZEDzpE2wFmRQ/vy2ZED2/fZkQPOkTbEGZFD+/LZkUPb9lmQQ9z2whmRQ/v02ZBD3P5CGZFD+/BZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZBD2/SZkEP79DE4mkA0MTBem+fAAQAAMXp79PEwXp/F8X4dw=="
+221:
+.base64 "SIt8JCBJiwdJi1cISIkHSIlXCEmLn4AAAABJi6+IAAAATYunkAAAAE2Lr5gAAABNi7egAAAATYu/qAAAAEiNpCQwCgAA"
+21:
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJPhMiRwkSI2kJLj1///F/n+EJCgKAADF/n+EJAgKAADF/n+EJOgJAADF/n+EJMgJAADF/n+EJKgJAADF/n+EJIgJAADF/n+EJGgJAADF/n+EJEgJAADF/n+EJCgJAADF/n+EJAgJAADF/n+EJOgIAADF/n+EJMgIAADF/n+EJKgIAADF/n+EJIgIAADF/n+EJGgIAADF/n+EJEgIAADF/n+EJCgIAADF/n+EJAgIAADF/n+EJOgHAADF/n+EJMgHAADF/n+EJKgHAADF/n+EJIgHAADF/n+EJGgHAADF/n+EJEgHAADF/n+EJCgHAADF/n+EJAgHAADF/n+EJOgGAADF/n+EJMgGAADF/n+EJKgGAADF/n+EJIgGAADF/n+EJGgGAADF/n+EJEgGAADF/n+EJCgGAADF/n+EJAgGAADF/n+EJOgFAADF/n+EJMgFAADF/n+EJKgFAADF/n+EJIgFAADF/n+EJGgFAADF/n+EJEgFAADF/n+EJCgFAADF/n+EJAgFAADF/n+EJOgEAADF/n+EJMgEAADF/n+EJKgEAADF/n+EJIgEAADF/n+EJGgEAADF/n+EJEgEAADF/n+EJCgEAADF/n+EJAgEAADF/n+EJOgDAADF/n+EJMgDAADF/n+EJKgDAADF/n+EJIgDAADF/n+EJGgDAADF/n+EJEgDAADF/n+EJCgDAADF/n+EJAgDAADF/n+EJOgCAADF/n+EJMgCAADF/n+EJKgCAADF/n+EJIgCAADF/n+EJGgCAADF/n+EJEgCAADF/n+EJCgCAADF/n+EJAgCAADF/n+EJOgBAADF/n+EJMgBAADF/n+EJKgBAADF/n+EJIgBAADF/n+EJGgBAADF/n+EJEgBAADF/n+EJCgBAADF/n+EJAgBAADF/n+EJOgAAADF/n+EJMgAAADF/n+EJKgAAADF/n+EJIgAAADF/n9EJGjF/n9EJEjF/n9EJCjF/n9EJAhMiRwkSI2kJEgKAABIjWQkCDHAMckx0jH2Mf9FMcBFMclFMdLD"
+20:
+.base64 "SI2kJND1//9Ii4QkOAoAAEiJRCQISIuEJEAKAABIiUQkEEiLhCRICgAASIlEJBhIi4QkUAoAAEiJRCQgSIngSIPAMEiJRCQoSItEJChIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdNif5Jg8YQSYn9SYm3sAAAAE2Jh+gAAABNiY+4AAAASItEJBBJiYfIAAAASItEJBhJiYfQAAAASYnUSInNuAAAAABIg/0M"
+jne 237f
+.base64 "SYuPuAAAAEiD+RE="
+jae 239f
+.base64 "uAEAAAA="
+jmp 240f
+239:
+240:
+jmp 238f
+237:
+238:
+.base64 "SIXA"
+je 241f
+.base64 "QYsEJEGLTCQEQYtUJAi+AAAAAUGJBkGJTgRBiVYIQYl2DEGLBkGLTgRBi1YIQYt2DA/Og8YBD85BiUYwQYlONEGJVjhBiXY8uAAAAABJiUYQSYlGGEmLj7gAAABIhck="
+je 243f
+.base64 "SIP5BQ=="
+je 245f
+.base64 "SIP5EA=="
+je 247f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BJi7foAAAAQboAAAAA"
+249:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 249b
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vAA=="
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vSBDzQQ9vf2BmDzgA+PNBD2+dEAEAAGZFD+/AZkUP78lmRQ/v0mZED2/fZkQPOkTbAGZFD+/DZkQPb99mRA86RNsRZkUP79NmRA9v32ZEDzpE2wFmRQ/vy2ZED2/fZkQPOkTbEGZFD+/LZkUPb9lmQQ9z2whmRQ/v02ZBD3P5CGZFD+/BZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZBD2/SZkEP79BmDzgA0PNBD39WEA=="
+jmp 248f
+247:
+.base64 "SYu36AAAAPMPbz4="
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vAA=="
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vSBBmDzgA+PNBD2+dEAEAAGZFD+/AZkUP78lmRQ/v0mZED2/fZkQPOkTbAGZFD+/DZkQPb99mRA86RNsRZkUP79NmRA9v32ZEDzpE2wFmRQ/vy2ZED2/fZkQPOkTbEGZFD+/LZkUPb9lmQQ9z2whmRQ/v02ZBD3P5CGZFD+/BZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZBD2/SZkEP79BmDzgA0PNBD39WEA=="
+248:
+jmp 246f
+245:
+.base64 "SYu36AAAAIsGRA+2VgRJweIgTAHQZkgPbvg="
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vAA=="
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vSBBmDzgA+PNBD2+dEAEAAGZFD+/AZkUP78lmRQ/v0mZED2/fZkQPOkTbAGZFD+/DZkQPb99mRA86RNsRZkUP79NmRA9v32ZEDzpE2wFmRQ/vy2ZED2/fZkQPOkTbEGZFD+/LZkUPb9lmQQ9z2whmRQ/v02ZBD3P5CGZFD+/BZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZBD2/SZkEP79BmDzgA0PNBD39WEA=="
+246:
+jmp 244f
+243:
+244:
+jmp 242f
+241:
+.base64 "SIP9DA=="
+je 250f
+.base64 "uAAAAABJiQZJiUYISYmv2AAAALsAAAAATIniSInpSMHpBEiJ6EiD5Q9IKehJAcRIhck="
+je 252f
+.base64 "TInvSIHH8AAAAEyJ9kiDxgBNifhJgcAAAgAA"
+call {vg_ghash_pclmul}
+jmp 253f
+252:
+253:
+.base64 "SInpSIXJ"
+je 254f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMieZBugAAAAA="
+256:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 256b
+.base64 "TInvSIHH8AAAAEyJ9kiDxgBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_pclmul}
+jmp 255f
+254:
+255:
+.base64 "uwAAAABJi6/YAAAASInYSAHASAHASAHASA/ISYlHYEiJ6EgBwEgBwEgBwEgPyEmJR2hMie9IgcfwAAAATIn2SIPGAEyJ+kiDwmC5AQAAAE2J+EmBwAACAAA="
+call {vg_ghash_pclmul}
+jmp 251f
+250:
+.base64 "QYsEJEGLTCQEQYtUJAi+AAAAAUGJBkGJTgRBiVYIQYl2DA=="
+251:
+.base64 "QYsGQYtOBEGLVghBi3YMD86DxgEPzkGJRjBBiU40QYlWOEGJdjy4AAAAAEmJRhBJiUYYTYun6AAAAEmLr7gAAAC7AAAAAEyJ4kiJ6UjB6QRIiehIg+UPSCnoSQHESIXJ"
+je 257f
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBNifhJgcAAAgAA"
+call {vg_ghash_pclmul}
+jmp 258f
+257:
+258:
+.base64 "SInpSIXJ"
+je 259f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMieZBugAAAAA="
+261:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 261b
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_pclmul}
+jmp 260f
+259:
+260:
+242:
+.base64 "SYuH0AAAAEmJh8AAAABIwegESIXA"
+je 262f
+.base64 "TInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTItEJAhJicFNi5fIAAAATIn4SAXAAQAAUA=="
+call {vg_aes_gcm_seal_blocks_prepared16_aesni_pclmul_avx}
+.base64 "WEmLh9AAAABIicFIg+EPSYmP0AAAAEgpyEkDh8gAAABJiYfIAAAA"
+jmp 263f
+262:
+263:
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vAA=="
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vSBDzQQ9vnRABAADzQQ9vtQABAADzQQ9vLvNBD29+MEyJ70mLt7AAAABJifJNAdJNAdJNAdJNAdJJAfrzRA9vB2ZBD+/oZkEP7/jzRA9vRxBmQQ843OhmQQ843PjzRA9vRyBmQQ843OhmQQ843PjzRA9vRzBmQQ843OhmQQ843PjzRA9vR0BmQQ843OhmQQ843PjzRA9vR1BmQQ843OhmQQ843PjzRA9vR2BmQQ843OhmQQ843PjzRA9vR3BmQQ843OhmQQ843PjzRA9vh4AAAABmQQ843OhmQQ843PjzRA9vh5AAAABmQQ843OhmQQ843PhIg/4K"
+je 264f
+.base64 "80QPb4egAAAAZkEPONzoZkEPONz480QPb4ewAAAAZkEPONzoZkEPONz4SIP+DA=="
+je 266f
+.base64 "80QPb4fAAAAAZkEPONzoZkEPONz480QPb4fQAAAAZkEPONzoZkEPONz4"
+jmp 267f
+266:
+267:
+jmp 265f
+264:
+265:
+.base64 "80UPbwJmQQ843ehmQQ843fjzQQ9/rwAEAADzQQ9/vxAEAABJi4fQAAAASIXA"
+je 268f
+.base64 "Zg/v//NBD3+/AAIAAEyJ/0iBxwACAABJi7fIAAAATIn6SIHCEAQAAEmLj9AAAABIi1wkCEkDn8AAAABJK5/QAAAAQboAAAAASYnIScHoBEnB4ARJg/gA"
+je 270f
+272:
+.base64 "xKF6byQTxKFZ7yQSxKF6fyQWxKF6fyQXSYPCEE05wg=="
+jne 272b
+jmp 271f
+270:
+271:
+.base64 "SPfBDwAAAA=="
+je 273f
+.base64 "SPfBDAAAAA=="
+je 275f
+.base64 "SPfBCAAAAA=="
+je 277f
+.base64 "SosEE0ozBBJKiQQWSokEF0mDwgg="
+jmp 278f
+277:
+278:
+.base64 "SPfBBAAAAA=="
+je 279f
+.base64 "QosEE0IzBBJCiQQWQokEF0mDwgQ="
+jmp 280f
+279:
+280:
+.base64 "SPfBAwAAAA=="
+je 281f
+283:
+.base64 "Qg+2BBNGD7YMEkwxyEKIBBZCiAQXSYPCAUk5yg=="
+jne 283b
+jmp 282f
+281:
+282:
+jmp 276f
+275:
+284:
+.base64 "Qg+2BBNGD7YMEkwxyEKIBBZCiAQXSYPCAUk5yg=="
+jne 284b
+276:
+jmp 274f
+273:
+274:
+.base64 "SYuHuAAAAEjB4ANID8hJiYcQAgAASYuHwAAAAEjB4ANID8hJiYcYAgAA80UPb2YQZkQPOADg80EPb78AAgAAZg84APhmQQ/v/GZFD+/AZkUP78lmRQ/v0mZED2/fZkQPOkTeAGZFD+/DZkQPb99mRA86RN4RZkUP79NmRA9v32ZEDzpE3gFmRQ/vy2ZED2/fZkQPOkTeEGZFD+/L80EPb78QAgAAZg84APhmRA9v32ZEDzpE2wBmRQ/vw2ZED2/fZkQPOkTbEWZFD+/TZkQPb99mRA86RNsBZkUP78tmRA9v32ZEDzpE2xBmRQ/vy2ZFD2/ZZkEPc9sIZkUP79NmQQ9z+QhmRQ/vwWZFD2/YZkQPOkTZEGZFD3DATmZFD+/DZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmQQ9v0mZBD+/QxOJpANDEwXpvnwAEAADF6e/TxMF6fxfF+Hc="
+jmp 269f
+268:
+.base64 "SYuHuAAAAEjB4ANID8hJiYcQAgAASYuHwAAAAEjB4ANID8hJiYcYAgAA80UPb2YQZkQPOADg80EPb78QAgAAZg84APhmQQ/v/GZFD+/AZkUP78lmRQ/v0mZED2/fZkQPOkTbAGZFD+/DZkQPb99mRA86RNsRZkUP79NmRA9v32ZEDzpE2wFmRQ/vy2ZED2/fZkQPOkTbEGZFD+/LZkUPb9lmQQ9z2whmRQ/v02ZBD3P5CGZFD+/BZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZBD2/SZkEP79DE4mkA0MTBem+fAAQAAMXp79PEwXp/F8X4dw=="
+269:
+.base64 "SIt8JCBJiwdJi1cISIkHSIlXCEmLn4AAAABJi6+IAAAATYunkAAAAE2Lr5gAAABNi7egAAAATYu/qAAAAEiNpCQwCgAA"
+jmp 21b
+.p2align 6"#,
+        vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
+        vg_aes_ctr32_to_aesni = sym super::aes::vg_aes_ctr32_to_aesni::vg_aes_ctr32_to_aesni,
+        vg_aes_gcm_seal_blocks_prepared16_aesni_pclmul_avx = sym super::aes::vg_aes_gcm_seal_blocks_prepared16_aesni_pclmul_avx::vg_aes_gcm_seal_blocks_prepared16_aesni_pclmul_avx,
+        VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
     )
 }
 
@@ -5572,6 +6375,8 @@ jmp 21b
 pub const VG_AES_GCM_SEAL_PREPARED_AESNI_PCLMUL_AVX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX);
 
 /// `vg_aes_gcm_seal` with a 1032-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the prepared powers its count says are present. The powers remain secret; how many are present may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealPreparedContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -5708,7 +6513,7 @@ jmp 221f
 221:
 .base64 "SIt8JBhJiwdJi1cISIkHSIlXCEmLn4AAAABJi6+IAAAATYunkAAAAE2Lr5gAAABNi7egAAAATYu/qAAAAEiNpCQoCgAA"
 21:
-.base64 "ww=="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJPhMiRwkSI2kJMj1///F/n+EJBgKAADF/n+EJPgJAADF/n+EJNgJAADF/n+EJLgJAADF/n+EJJgJAADF/n+EJHgJAADF/n+EJFgJAADF/n+EJDgJAADF/n+EJBgJAADF/n+EJPgIAADF/n+EJNgIAADF/n+EJLgIAADF/n+EJJgIAADF/n+EJHgIAADF/n+EJFgIAADF/n+EJDgIAADF/n+EJBgIAADF/n+EJPgHAADF/n+EJNgHAADF/n+EJLgHAADF/n+EJJgHAADF/n+EJHgHAADF/n+EJFgHAADF/n+EJDgHAADF/n+EJBgHAADF/n+EJPgGAADF/n+EJNgGAADF/n+EJLgGAADF/n+EJJgGAADF/n+EJHgGAADF/n+EJFgGAADF/n+EJDgGAADF/n+EJBgGAADF/n+EJPgFAADF/n+EJNgFAADF/n+EJLgFAADF/n+EJJgFAADF/n+EJHgFAADF/n+EJFgFAADF/n+EJDgFAADF/n+EJBgFAADF/n+EJPgEAADF/n+EJNgEAADF/n+EJLgEAADF/n+EJJgEAADF/n+EJHgEAADF/n+EJFgEAADF/n+EJDgEAADF/n+EJBgEAADF/n+EJPgDAADF/n+EJNgDAADF/n+EJLgDAADF/n+EJJgDAADF/n+EJHgDAADF/n+EJFgDAADF/n+EJDgDAADF/n+EJBgDAADF/n+EJPgCAADF/n+EJNgCAADF/n+EJLgCAADF/n+EJJgCAADF/n+EJHgCAADF/n+EJFgCAADF/n+EJDgCAADF/n+EJBgCAADF/n+EJPgBAADF/n+EJNgBAADF/n+EJLgBAADF/n+EJJgBAADF/n+EJHgBAADF/n+EJFgBAADF/n+EJDgBAADF/n+EJBgBAADF/n+EJPgAAADF/n+EJNgAAADF/n+EJLgAAADF/n+EJJgAAADF/n9EJHjF/n9EJFjF/n9EJDjF/n9EJBjzD39EJAhMiRwkSI2kJDgKAABIjWQkCDHAMckx0jH2Mf9FMcBFMclFMdLD"
 20:
 .base64 "SI2kJNj1//9Ii4QkMAoAAEiJRCQISIuEJDgKAABIiUQkEEiLhCRACgAASIlEJBhIieBIg8AoSIlEJCBIi0QkIEiJmIAAAABIiaiIAAAATImgkAAAAEyJqJgAAABMibCgAAAATIm4qAAAAEmJx02J/kmDxhBJif1JibewAAAATYmH6AAAAE2Jj7gAAABIi0QkCEmJh8gAAABIi0QkEEmJh9AAAABJidRIic24AAAAAEiD/Qw="
 jne 237f
@@ -5758,8 +6563,8 @@ jmp 244f
 244:
 .base64 "SYuH0AAAAEmJh8AAAABIwegESIXA"
 je 250f
-.base64 "TInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTYuHyAAAAEmJwUyJ+EgFwAEAAFA="
-call {vg_aes_gcm_encrypt_blocks_prepared16_aesni_pclmul_avx}
+.base64 "TInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTYuHyAAAAEmJwUyJ+EgFwAEAAFBNicI="
+call {vg_aes_gcm_seal_blocks_prepared16_aesni_pclmul_avx}
 .base64 "WEmLh9AAAABIicFIg+EPSYmP0AAAAEgpyEkDh8gAAABJiYfIAAAA"
 jmp 251f
 250:
@@ -5874,8 +6679,8 @@ jmp 283f
 283:
 .base64 "SYuH0AAAAEmJh8AAAABIwegESIXA"
 je 285f
-.base64 "TInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTYuHyAAAAEmJwUyJ+EgFwAEAAFA="
-call {vg_aes_gcm_encrypt_blocks_prepared16_aesni_pclmul_avx}
+.base64 "TInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTYuHyAAAAEmJwUyJ+EgFwAEAAFBNicI="
+call {vg_aes_gcm_seal_blocks_prepared16_aesni_pclmul_avx}
 .base64 "WEmLh9AAAABIicFIg+EPSYmP0AAAAEgpyEkDh8gAAABJiYfIAAAA"
 jmp 286f
 285:
@@ -5950,7 +6755,7 @@ jmp 21b
 .p2align 6"#,
         vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
         vg_aes_gcm_encrypt_blocks_aesni_pclmul_avx = sym super::aes::vg_aes_gcm_encrypt_blocks_aesni_pclmul_avx::vg_aes_gcm_encrypt_blocks_aesni_pclmul_avx,
-        vg_aes_gcm_encrypt_blocks_prepared16_aesni_pclmul_avx = sym super::aes::vg_aes_gcm_encrypt_blocks_prepared16_aesni_pclmul_avx::vg_aes_gcm_encrypt_blocks_prepared16_aesni_pclmul_avx,
+        vg_aes_gcm_seal_blocks_prepared16_aesni_pclmul_avx = sym super::aes::vg_aes_gcm_seal_blocks_prepared16_aesni_pclmul_avx::vg_aes_gcm_seal_blocks_prepared16_aesni_pclmul_avx,
         VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
     )
 }
@@ -5959,6 +6764,8 @@ jmp 21b
 pub const VG_AES_GCM_OPEN_PREPARED_AESNI_PCLMUL_AVX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX);
 
 /// `vg_aes_gcm_open` with a 1032-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the prepared powers its count says are present. The powers remain secret; how many are present may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openPreparedContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -6121,7 +6928,7 @@ jmp 27f
 27:
 .base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJDAKAAA="
 21:
-.base64 "ww=="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJPhMiRwkSI2kJMD1///F/n+EJCAKAADF/n+EJAAKAADF/n+EJOAJAADF/n+EJMAJAADF/n+EJKAJAADF/n+EJIAJAADF/n+EJGAJAADF/n+EJEAJAADF/n+EJCAJAADF/n+EJAAJAADF/n+EJOAIAADF/n+EJMAIAADF/n+EJKAIAADF/n+EJIAIAADF/n+EJGAIAADF/n+EJEAIAADF/n+EJCAIAADF/n+EJAAIAADF/n+EJOAHAADF/n+EJMAHAADF/n+EJKAHAADF/n+EJIAHAADF/n+EJGAHAADF/n+EJEAHAADF/n+EJCAHAADF/n+EJAAHAADF/n+EJOAGAADF/n+EJMAGAADF/n+EJKAGAADF/n+EJIAGAADF/n+EJGAGAADF/n+EJEAGAADF/n+EJCAGAADF/n+EJAAGAADF/n+EJOAFAADF/n+EJMAFAADF/n+EJKAFAADF/n+EJIAFAADF/n+EJGAFAADF/n+EJEAFAADF/n+EJCAFAADF/n+EJAAFAADF/n+EJOAEAADF/n+EJMAEAADF/n+EJKAEAADF/n+EJIAEAADF/n+EJGAEAADF/n+EJEAEAADF/n+EJCAEAADF/n+EJAAEAADF/n+EJOADAADF/n+EJMADAADF/n+EJKADAADF/n+EJIADAADF/n+EJGADAADF/n+EJEADAADF/n+EJCADAADF/n+EJAADAADF/n+EJOACAADF/n+EJMACAADF/n+EJKACAADF/n+EJIACAADF/n+EJGACAADF/n+EJEACAADF/n+EJCACAADF/n+EJAACAADF/n+EJOABAADF/n+EJMABAADF/n+EJKABAADF/n+EJIABAADF/n+EJGABAADF/n+EJEABAADF/n+EJCABAADF/n+EJAABAADF/n+EJOAAAADF/n+EJMAAAADF/n+EJKAAAADF/n+EJIAAAADF/n9EJGDF/n9EJEDF/n9EJCDF/n8EJEiNpCRACgAASI1kJAiJwDHJMdIx9jH/RTHARTHJRTHSww=="
 20:
 .base64 "SI2kJND1//9Ii4QkOAoAAEiJRCQISIuEJEAKAABIiUQkEEiLhCRICgAASIlEJBhIi4QkUAoAAEiJRCQgSIngSIPAMEiJRCQoSItEJChIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdNif5Jg8YQSYn9SYm3sAAAAE2Jh+gAAABNiY+4AAAASItEJAhJiYfIAAAASItEJBBJiYfQAAAASYnUSInNSItcJCBJiZ/gAAAAuQAAAABIg/sE"
 jb 242f
@@ -6412,6 +7219,8 @@ pub const VG_AES_GCM_OPEN_TO_PREPARED_AESNI_PCLMUL_AVX_FEATURES: verified_garbag
 
 /// `vg_aes_gcm_open_to` with a 1032-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the prepared powers its count says are present. The powers remain secret; how many are present may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openToPreparedContract`.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads of 1032 bytes.
@@ -6448,7 +7257,7 @@ jmp 25f
 23:
 .base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW0iNpCRACgAA"
 21:
-.base64 "ww=="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJPhMiRwkSI2kJDD1///F/n+EJLAKAADF/n+EJJAKAADF/n+EJHAKAADF/n+EJFAKAADF/n+EJDAKAADF/n+EJBAKAADF/n+EJPAJAADF/n+EJNAJAADF/n+EJLAJAADF/n+EJJAJAADF/n+EJHAJAADF/n+EJFAJAADF/n+EJDAJAADF/n+EJBAJAADF/n+EJPAIAADF/n+EJNAIAADF/n+EJLAIAADF/n+EJJAIAADF/n+EJHAIAADF/n+EJFAIAADF/n+EJDAIAADF/n+EJBAIAADF/n+EJPAHAADF/n+EJNAHAADF/n+EJLAHAADF/n+EJJAHAADF/n+EJHAHAADF/n+EJFAHAADF/n+EJDAHAADF/n+EJBAHAADF/n+EJPAGAADF/n+EJNAGAADF/n+EJLAGAADF/n+EJJAGAADF/n+EJHAGAADF/n+EJFAGAADF/n+EJDAGAADF/n+EJBAGAADF/n+EJPAFAADF/n+EJNAFAADF/n+EJLAFAADF/n+EJJAFAADF/n+EJHAFAADF/n+EJFAFAADF/n+EJDAFAADF/n+EJBAFAADF/n+EJPAEAADF/n+EJNAEAADF/n+EJLAEAADF/n+EJJAEAADF/n+EJHAEAADF/n+EJFAEAADF/n+EJDAEAADF/n+EJBAEAADF/n+EJPADAADF/n+EJNADAADF/n+EJLADAADF/n+EJJADAADF/n+EJHADAADF/n+EJFADAADF/n+EJDADAADF/n+EJBADAADF/n+EJPACAADF/n+EJNACAADF/n+EJLACAADF/n+EJJACAADF/n+EJHACAADF/n+EJFACAADF/n+EJDACAADF/n+EJBACAADF/n+EJPABAADF/n+EJNABAADF/n+EJLABAADF/n+EJJABAADF/n+EJHABAADF/n+EJFABAADF/n+EJDABAADF/n+EJBABAADF/n+EJPAAAADF/n+EJNAAAADF/n+EJLAAAADF/n+EJJAAAADF/n9EJHDF/n9EJFDF/n9EJDDF/n9EJBDzD38EJEiNpCTQCgAASI1kJAiJwDHJMdIx9jH/RTHARTHJRTHSww=="
 20:
 .base64 "SItEJBBIPQAEAAA="
 jae 27f
@@ -6499,7 +7308,7 @@ jmp 223f
 215:
 210:
 .base64 "xfh3SIt8JFBIi3QkSEiLVCRASItMJDhMi0QkMEyLTCQoSItEJHBIiQQkSItEJGhIiUQkCEiLhCSAAAAASIlEJBBIi4QkiAAAAEiJRCQY"
-call {vg_aes_gcm_open_prepared_aesni_pclmul_avx}
+call {vg_aes_gcm_open_prepared_aesni_pclmul_avx_core}
 .base64 "hcA="
 je 225f
 jmp 226f
@@ -6536,15 +7345,17 @@ jmp 233f
 jmp 28b
 .p2align 6"#,
         vg_aes_gcm_open_split_aesni_pclmul_avx = sym super::aes::vg_aes_gcm_open_split_aesni_pclmul_avx::vg_aes_gcm_open_split_aesni_pclmul_avx,
-        vg_aes_gcm_open_prepared_aesni_pclmul_avx = sym super::gcm::vg_aes_gcm_open_prepared_aesni_pclmul_avx,
+        vg_aes_gcm_open_prepared_aesni_pclmul_avx_core = sym super::aes::vg_aes_gcm_open_prepared_aesni_pclmul_avx_core::vg_aes_gcm_open_prepared_aesni_pclmul_avx_core,
         vg_aes_gcm_open_split_prepared16_aesni_pclmul_avx = sym super::aes::vg_aes_gcm_open_split_prepared16_aesni_pclmul_avx::vg_aes_gcm_open_split_prepared16_aesni_pclmul_avx,
     )
 }
 
 /// The CPU features `vg_aes_gcm_stream_encrypt_prepared_aesni_pclmul_avx` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_ENCRYPT_PREPARED_AESNI_PCLMUL_AVX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AES);
+pub const VG_AES_GCM_STREAM_ENCRYPT_PREPARED_AESNI_PCLMUL_AVX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::AES);
 
 /// `vg_aes_gcm_stream_encrypt` with a 1032-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the prepared powers its count says are present. The powers remain secret; how many are present may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.streamEncryptPreparedContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -6555,7 +7366,7 @@ pub const VG_AES_GCM_STREAM_ENCRYPT_PREPARED_AESNI_PCLMUL_AVX_FEATURES: verified
 /// * `*ctx` must have the prepared format written by `vg_aes_gcm_prepare` (not the format of `vg_aes_gcm_init_precomputed`).
 /// * `state` and `data` must not overlap each other, `ctx` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `ssse3`, `pclmulqdq`, `avx` and `aes` target features.
+/// * The CPU must support the `avx`, `ssse3`, `pclmulqdq` and `aes` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_prepared_aesni_pclmul_avx(ctx: *const [u64; 129], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
@@ -6724,7 +7535,7 @@ jmp 23f
 23:
 .base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJBgKAAA="
 21:
-.base64 "ww=="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJPhMiRwkSI2kJNj1///F/n+EJAgKAADF/n+EJOgJAADF/n+EJMgJAADF/n+EJKgJAADF/n+EJIgJAADF/n+EJGgJAADF/n+EJEgJAADF/n+EJCgJAADF/n+EJAgJAADF/n+EJOgIAADF/n+EJMgIAADF/n+EJKgIAADF/n+EJIgIAADF/n+EJGgIAADF/n+EJEgIAADF/n+EJCgIAADF/n+EJAgIAADF/n+EJOgHAADF/n+EJMgHAADF/n+EJKgHAADF/n+EJIgHAADF/n+EJGgHAADF/n+EJEgHAADF/n+EJCgHAADF/n+EJAgHAADF/n+EJOgGAADF/n+EJMgGAADF/n+EJKgGAADF/n+EJIgGAADF/n+EJGgGAADF/n+EJEgGAADF/n+EJCgGAADF/n+EJAgGAADF/n+EJOgFAADF/n+EJMgFAADF/n+EJKgFAADF/n+EJIgFAADF/n+EJGgFAADF/n+EJEgFAADF/n+EJCgFAADF/n+EJAgFAADF/n+EJOgEAADF/n+EJMgEAADF/n+EJKgEAADF/n+EJIgEAADF/n+EJGgEAADF/n+EJEgEAADF/n+EJCgEAADF/n+EJAgEAADF/n+EJOgDAADF/n+EJMgDAADF/n+EJKgDAADF/n+EJIgDAADF/n+EJGgDAADF/n+EJEgDAADF/n+EJCgDAADF/n+EJAgDAADF/n+EJOgCAADF/n+EJMgCAADF/n+EJKgCAADF/n+EJIgCAADF/n+EJGgCAADF/n+EJEgCAADF/n+EJCgCAADF/n+EJAgCAADF/n+EJOgBAADF/n+EJMgBAADF/n+EJKgBAADF/n+EJIgBAADF/n+EJGgBAADF/n+EJEgBAADF/n+EJCgBAADF/n+EJAgBAADF/n+EJOgAAADF/n+EJMgAAADF/n+EJKgAAADF/n+EJIgAAADF/n9EJGjF/n9EJEjF/n9EJCjF/n9EJAhMiRwkSI2kJCgKAABIjWQkCDHAMckx0jH2Mf9FMcBFMclFMdLD"
 20:
 .base64 "SI2kJOj1//9Ii4QkIAoAAEiJRCQISIngSIPAGEiJRCQQSItEJBBIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdJidZJif1JibewAAAASYmPuAAAAE2Jh8AAAABNiY/IAAAASItsJAhJia/QAAAATYnMTInDSIPjD0iF7Q=="
 je 253f
@@ -6898,9 +7709,11 @@ jmp 21b
 }
 
 /// The CPU features `vg_aes_gcm_stream_decrypt_prepared_aesni_pclmul_avx` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_DECRYPT_PREPARED_AESNI_PCLMUL_AVX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AES);
+pub const VG_AES_GCM_STREAM_DECRYPT_PREPARED_AESNI_PCLMUL_AVX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::AES);
 
 /// `vg_aes_gcm_stream_decrypt` with a 1032-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the prepared powers its count says are present. The powers remain secret; how many are present may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.streamDecryptPreparedContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -6911,7 +7724,7 @@ pub const VG_AES_GCM_STREAM_DECRYPT_PREPARED_AESNI_PCLMUL_AVX_FEATURES: verified
 /// * `*ctx` must have the prepared format written by `vg_aes_gcm_prepare` (not the format of `vg_aes_gcm_init_precomputed`).
 /// * `state` and `data` must not overlap each other, `ctx` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `ssse3`, `pclmulqdq`, `avx` and `aes` target features.
+/// * The CPU must support the `avx`, `ssse3`, `pclmulqdq` and `aes` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_decrypt_prepared_aesni_pclmul_avx(ctx: *const [u64; 129], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
@@ -7081,7 +7894,7 @@ jmp 23f
 23:
 .base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJBgKAAA="
 21:
-.base64 "ww=="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJPhMiRwkSI2kJNj1///F/n+EJAgKAADF/n+EJOgJAADF/n+EJMgJAADF/n+EJKgJAADF/n+EJIgJAADF/n+EJGgJAADF/n+EJEgJAADF/n+EJCgJAADF/n+EJAgJAADF/n+EJOgIAADF/n+EJMgIAADF/n+EJKgIAADF/n+EJIgIAADF/n+EJGgIAADF/n+EJEgIAADF/n+EJCgIAADF/n+EJAgIAADF/n+EJOgHAADF/n+EJMgHAADF/n+EJKgHAADF/n+EJIgHAADF/n+EJGgHAADF/n+EJEgHAADF/n+EJCgHAADF/n+EJAgHAADF/n+EJOgGAADF/n+EJMgGAADF/n+EJKgGAADF/n+EJIgGAADF/n+EJGgGAADF/n+EJEgGAADF/n+EJCgGAADF/n+EJAgGAADF/n+EJOgFAADF/n+EJMgFAADF/n+EJKgFAADF/n+EJIgFAADF/n+EJGgFAADF/n+EJEgFAADF/n+EJCgFAADF/n+EJAgFAADF/n+EJOgEAADF/n+EJMgEAADF/n+EJKgEAADF/n+EJIgEAADF/n+EJGgEAADF/n+EJEgEAADF/n+EJCgEAADF/n+EJAgEAADF/n+EJOgDAADF/n+EJMgDAADF/n+EJKgDAADF/n+EJIgDAADF/n+EJGgDAADF/n+EJEgDAADF/n+EJCgDAADF/n+EJAgDAADF/n+EJOgCAADF/n+EJMgCAADF/n+EJKgCAADF/n+EJIgCAADF/n+EJGgCAADF/n+EJEgCAADF/n+EJCgCAADF/n+EJAgCAADF/n+EJOgBAADF/n+EJMgBAADF/n+EJKgBAADF/n+EJIgBAADF/n+EJGgBAADF/n+EJEgBAADF/n+EJCgBAADF/n+EJAgBAADF/n+EJOgAAADF/n+EJMgAAADF/n+EJKgAAADF/n+EJIgAAADF/n9EJGjF/n9EJEjF/n9EJCjF/n9EJAhMiRwkSI2kJCgKAABIjWQkCDHAMckx0jH2Mf9FMcBFMclFMdLD"
 20:
 .base64 "SI2kJOj1//9Ii4QkIAoAAEiJRCQISIngSIPAGEiJRCQQSItEJBBIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdJidZJif1JibewAAAASYmPuAAAAE2Jh8AAAABNiY/IAAAASItsJAhJia/QAAAATYnMTInDSIPjD0iF7Q=="
 je 253f
@@ -7260,6 +8073,8 @@ pub const VG_AES_GCM_SEAL_GATHER_PREPARED_AESNI_PCLMUL_AVX_FEATURES: verified_ga
 
 /// `vg_aes_gcm_seal_gather` with a 1032-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the prepared powers its count says are present. The powers remain secret; how many are present may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealGatherPreparedContract`.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads of 1032 bytes.
@@ -7272,563 +8087,501 @@ pub const VG_AES_GCM_SEAL_GATHER_PREPARED_AESNI_PCLMUL_AVX_FEATURES: verified_ga
 /// * The slices `src` lists must be `len` bytes long in all.
 /// * `*ctx` must have the prepared format written by `vg_aes_gcm_prepare` (not the format of `vg_aes_gcm_init_precomputed`).
 /// * `dst` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `src`, the slices `src` lists or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the return address on the stack or the 5128 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the return address on the stack or the 2672 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `ssse3`, `pclmulqdq`, `aes` and `avx` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_gather_prepared_aesni_pclmul_avx(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SIuHAAQAAEiD+BA="
 jae 20f
-.base64 "SI2kJBD///9Ii4Qk+AAAAEiJRCQISIuEJAABAABIiUQkEEiLhCQIAQAASIlEJBhIi4QkEAEAAEiJRCQgSIuEJBgBAABIiUQkKEiJ4EiDwDhIiUQkMEyLXCQwTItUJAhIi0QkEEmJO0mJcwhNiUMQTYlLGE2JS1BNiVM4SYlDQEiLRCQYTItUJCBMi0QkKEmJQyBNiVMoTYlDMLgAAAAASYlDSEmJQ1hJiUNgSInWSInKTInZSIPBaEyLXCQwSYtDKEg9gAEAAA=="
-jb 22f
-.base64 "TItcJDBJi0MoSD0ADAAA"
-jb 24f
-.base64 "TItcJDBBugAAAABJi0NASIXA"
-je 26f
-.base64 "TYtTOE2LUgg="
-jmp 27f
-26:
-27:
-.base64 "SYtDKEjB6ARIweAESTnCSYtDKEG6AAAAAEkPQ8JIPQAMAAA="
+.base64 "SI2kJMj1//9Ii4QkQAoAAEiJRCQISIuEJEgKAABIiUQkEEiLhCRQCgAASIlEJBhIi4QkWAoAAEiJRCQgSIuEJGAKAABIiUQkKEiJ4EiDwDhIiUQkMEiLRCQwSImYgAAAAEiJqIgAAABMiaCQAAAATImomAAAAEyJsKAAAABMibioAAAASYnHTYn+SYPGEEmJ/UmJt7AAAABNiYfoAAAATYmPuAAAAEiLRCQYSYmHyAAAAEiLRCQgSYmH0AAAAEmJ1EiJzUiD/Qw="
+je 22f
+.base64 "uAAAAABJiQZJiUYISYmv2AAAALsAAAAATIniSInpSMHpBEiJ6EiD5Q9IKehJAcRIhck="
+je 24f
+.base64 "TInvSIHH8AAAAEyJ9kiDxgBNifhJgcAAAgAA"
+call {vg_ghash_pclmul}
 jmp 25f
 24:
 25:
-jb 28f
-call {vg_aes_gcm_stream_init_pclmul_core}
-.base64 "TItcJDBJiztMid5Ig8ZougAAAABJi0sQTYtDGA=="
-call {vg_aes_gcm_stream_aad_pclmul_core}
-.base64 "TItcJDBJi0MoSIXA"
-je 210f
-.base64 "SYtLGEmJyEmD4A9NhcA="
-je 212f
-.base64 "uBAAAABMKcBJicBJiztIichMAcBJiUNQTIneSIPGaEiJykyJ2UiDwVg="
-call {vg_aes_gcm_stream_aad_pclmul_core}
-jmp 213f
-212:
+.base64 "SInpSIXJ"
+je 26f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMieZBugAAAAA="
+28:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 28b
+.base64 "TInvSIHH8AAAAEyJ9kiDxgBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_pclmul}
+jmp 27f
+26:
+27:
+.base64 "uwAAAABJi6/YAAAASInYSAHASAHASAHASA/ISYlHYEiJ6EgBwEgBwEgBwEgPyEmJR2hMie9IgcfwAAAATIn2SIPGAEyJ+kiDwmC5AQAAAE2J+EmBwAACAAA="
+call {vg_ghash_pclmul}
+jmp 23f
+22:
+.base64 "QYsEJEGLTCQEQYtUJAi+AAAAAUGJBkGJTgRBiVYIQYl2DA=="
+23:
+.base64 "QYsGQYtOBEGLVghBi3YMD86DxgEPzkGJRjBBiU40QYlWOEGJdjy4AAAAAEmJRhBJiUYYTYun6AAAAEmLr7gAAAC7AAAAAEyJ4kiJ6UjB6QRIiehIg+UPSCnoSQHESIXJ"
+je 29f
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBNifhJgcAAAgAA"
+call {vg_ghash_pclmul}
+jmp 210f
+29:
+210:
+.base64 "SInpSIXJ"
+je 211f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMieZBugAAAAA="
 213:
-.base64 "TItcJDBJi0NASIXA"
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 213b
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_pclmul}
+jmp 212f
+211:
+212:
+.base64 "SItEJAhJiYcAAQAASItEJBBJiYfgAAAASItEJBhJiYfIAAAASItEJCBJiYfAAAAASYmH0AAAALgAAAAASYmH8AAAAEmJhwgBAABJi4fgAAAASIXA"
 je 214f
 216:
-.base64 "TItcJDBNi1M4TYsKSYtCCE2LUyBJi0tISQHKSYs7SYtzCEyJ2kiDwmhJi0tQTYtDSFBBUlA="
-call {vg_aes_gcm_stream_encrypt_to_aesni_pclmul_avx}
-.base64 "WFhYTItcJDBNi1M4SYtCCEmLS0hIAcFJg8IQSYtDQEiD6AFJiUtITYlTOEmJQ0BIhcA="
+.base64 "TYuXAAEAAEmLGkmLaghJg8IQTYmXAAEAAEmLhwgBAABIAcNIKcW4AAAAAEmJhwgBAABJi4fwAAAATYunyAAAAEkBxEiJxkiD5g9IAehJiYfwAAAASIXt"
+je 217f
+.base64 "SIX2"
+je 219f
+.base64 "uRAAAABIKfFIOc1ID0LNTAH2SIPGQEyJ50G6AAAAAA=="
+221:
+.base64 "Qg+2BBNGD7YcFkwx2EKIBBdJg8IBSTnK"
+jne 221b
+.base64 "SAHLSQHMSCnN"
+jmp 220f
+219:
+220:
+.base64 "SYnoScHoBE2FwA=="
+je 222f
+.base64 "SInZTYnjSInoSIPlD0gp6EgBw0kBxEyJ70mLt7AAAABMifJIg8IwTYn5SYHBAAIAAA=="
+call {vg_aes_ctr32_to_aesni}
+jmp 223f
+222:
+223:
+.base64 "SIXt"
+je 224f
+.base64 "uAAAAABJiUZASYlGSEyJ70mLt7AAAABMifJIg8IwTInxSIPBQEG4AQAAAE2J+UmBwQACAAA="
+call {vg_aes_ctr32_aesni}
+.base64 "TInnTIn2SIPGQEiJ6UG6AAAAAA=="
+226:
+.base64 "Qg+2BBNGD7YcFkwx2EKIBBdJg8IBSTnK"
+jne 226b
+jmp 225f
+224:
+225:
+jmp 218f
+217:
+218:
+.base64 "TYuX4AAAAEmD6gFNiZfgAAAA"
 jne 216b
 jmp 215f
 214:
 215:
-jmp 211f
-210:
-211:
-.base64 "TItcJDBJiztJi3MITInaSIPCaEmLSxhNi0MoTYtLMA=="
-call {vg_aes_gcm_stream_finish_aesni_pclmul_core}
-jmp 29f
-28:
-.base64 "TItcJDBBugAAAABJi0NASIXA"
-je 217f
-.base64 "TYtTOE2LUgg="
-jmp 218f
-217:
-218:
-.base64 "SYtDKEjB6ARIweAEQbgAAAAASTnCTQ9C0EmB+oABAAA="
-jb 219f
-.base64 "SYlzaEmJU3BNi0tASYt7IE2LUzhMidC5AAAAAE2FyQ=="
-je 221f
-.base64 "SYsCSYtKCEmD6QFJg8IQSAHP"
-jmp 222f
-221:
-222:
-.base64 "SYlDeEmJi4AAAABNidNJg/kA"
-je 223f
-225:
-.base64 "SYszSYtLCEmDwxBBugAAAABJichJwegGScHgBkmD+AA="
-je 226f
-228:
-.base64 "80IPbwQW80IPb0wWEPNCD29UFiDzQg9vXBYw80IPfwQX80IPf0wXEPNCD39UFyDzQg9/XBcwSYPCQE05wg=="
-jne 228b
-jmp 227f
-226:
+.base64 "TYunyAAAAEmLr9AAAAC7AAAAAEyJ4kiJ6UjB6QRIiehIg+UPSCnoSQHESIXJ"
+je 227f
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBNifhJgcAAAgAA"
+call {vg_ghash_pclmul}
+jmp 228f
 227:
-.base64 "SYnIScHoBEnB4ARNOcI="
+228:
+.base64 "SInpSIXJ"
 je 229f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMieZBugAAAAA="
 231:
-.base64 "80IPbwQW80IPfwQXSYPCEE05wg=="
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
 jne 231b
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_pclmul}
 jmp 230f
 229:
 230:
-.base64 "STnK"
-je 232f
-.base64 "SIP5EA=="
-jb 234f
-.base64 "SYnKSYPqEPNCD28EFvNCD38EFw=="
-jmp 235f
-234:
-236:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 236b
-235:
-jmp 233f
-232:
-233:
-.base64 "SAHPSYPpAQ=="
-jne 225b
-jmp 224f
-223:
-224:
-.base64 "TItcJDBJi1NoSYtLcE2LQxBNi0sYSYtDME2LUyhJi7uAAAAASYtzeE2LWyBQQVJBU1dWTItcJFhJiztJi3MI"
-call {vg_aes_gcm_seal_split_aesni_pclmul_avx}
-.base64 "WFhYWFg="
-jmp 220f
-219:
-.base64 "SYlzaEmJU3BNi0tASYt7IE2LWzhJg/kA"
-je 237f
-239:
-.base64 "SYszSYtLCEmDwxBBugAAAABJichJwegGScHgBkmD+AA="
-je 240f
-242:
-.base64 "80IPbwQW80IPb0wWEPNCD29UFiDzQg9vXBYw80IPfwQX80IPf0wXEPNCD39UFyDzQg9/XBcwSYPCQE05wg=="
-jne 242b
-jmp 241f
-240:
-241:
-.base64 "SYnIScHoBEnB4ARNOcI="
-je 243f
-245:
-.base64 "80IPbwQW80IPfwQXSYPCEE05wg=="
-jne 245b
-jmp 244f
-243:
-244:
-.base64 "STnK"
-je 246f
-.base64 "SIP5EA=="
-jb 248f
-.base64 "SYnKSYPqEPNCD28EFvNCD38EFw=="
-jmp 249f
-248:
-250:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 250b
-249:
-jmp 247f
-246:
-247:
-.base64 "SAHPSYPpAQ=="
-jne 239b
-jmp 238f
-237:
-238:
-.base64 "TItcJDBJiztJi3MISYtTaEmLS3BNi0MQTYtLGEmLQzBNi1MoTYtbIFBBUkFT"
-call {vg_aes_gcm_seal_aesni_pclmul_avx}
-.base64 "WFhY"
-220:
-29:
-jmp 23f
-22:
-.base64 "SYlzaEmJU3BNi0tASYt7IE2LWzhJg/kA"
-je 251f
-253:
-.base64 "SYszSYtLCEmDwxBBugAAAABJichJwegGScHgBkmD+AA="
-je 254f
-256:
-.base64 "80IPbwQW80IPb0wWEPNCD29UFiDzQg9vXBYw80IPfwQX80IPf0wXEPNCD39UFyDzQg9/XBcwSYPCQE05wg=="
-jne 256b
-jmp 255f
-254:
-255:
-.base64 "SYnIScHoBEnB4ARNOcI="
-je 257f
-259:
-.base64 "80IPbwQW80IPfwQXSYPCEE05wg=="
-jne 259b
-jmp 258f
-257:
-258:
-.base64 "STnK"
-je 260f
-.base64 "SIP5EA=="
-jb 262f
-.base64 "SYnKSYPqEPNCD28EFvNCD38EFw=="
-jmp 263f
-262:
-264:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 264b
-263:
-jmp 261f
-260:
-261:
-.base64 "SAHPSYPpAQ=="
-jne 253b
-jmp 252f
-251:
-252:
-.base64 "TItcJDBJiztJi3MISYtTaEmLS3BNi0MQTYtLGEmLQzBNi1MoTYtbIFBBUkFT"
-call {vg_aes_gcm_seal_aesni_pclmul_avx}
-.base64 "WFhY"
-23:
-.base64 "SI2kJPAAAAA="
-21:
-.base64 "ww=="
-20:
-.base64 "SI2kJBD///9Ii4Qk+AAAAEiJRCQISIuEJAABAABIiUQkEEiLhCQIAQAASIlEJBhIi4QkEAEAAEiJRCQgSIuEJBgBAABIiUQkKEiJ4EiDwDhIiUQkMEmJy0mD6wxJg/kRTQ9D2UiLRCQQSIPoAUiD+AJMD0PY"
-jae 265f
-.base64 "TItUJAhNi1IITInQSMHoBEjB4ARIg8AQSDtEJCBJD0PDSQnDSItEJCBIwegISYH6AAEAAEkPQ8NJCcM="
-jmp 266f
-265:
-266:
-.base64 "TYXb"
-je 267f
-.base64 "TItcJDBMi1QkCEiLRCQQSYk7SYlzCE2JQxBNiUsYTYlLUE2JUzhJiUNASItEJBhMi1QkIEyLRCQoSYlDIE2JUyhNiUMwuAAAAABJiUNISYlDWEmJQ2BIidZIicpMidlIg8FoTItcJDBJi0MoSD2AAQAA"
-jb 269f
-.base64 "TItcJDBJi0MoSD0ADAAA"
-jb 271f
-.base64 "TItcJDBBugAAAABJi0NASIXA"
-je 273f
-.base64 "TYtTOE2LUgg="
-jmp 274f
-273:
-274:
-.base64 "SYtDKEjB6ARIweAESTnCSYtDKEG6AAAAAEkPQ8JIPQAMAAA="
-jmp 272f
-271:
-272:
-jb 275f
-.base64 "UEiNpCT49f//SYngSYPACEmJmIAAAABJiaiIAAAATYmgkAAAAE2JqJgAAABNibCgAAAATYm4qAAAAE2Jx0mJzkmJ/UmJ9EiJ1UiD/Qw="
-je 277f
-.base64 "uAAAAABJiQZJiUYISYmv2AAAALsAAAAATIniSInpSMHpBEiJ6EiD5Q9IKehJAcRIhck="
-je 279f
-.base64 "TInvSIHH8AAAAEyJ9kiDxgBNifhJgcAAAgAA"
-call {vg_ghash_pclmul}
-jmp 280f
-279:
-280:
-.base64 "SInpSIXJ"
-je 281f
-.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMieZBugAAAAA="
-283:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 283b
-.base64 "TInvSIHH8AAAAEyJ9kiDxgBMifpIg8JguQEAAABNifhJgcAAAgAA"
-call {vg_ghash_pclmul}
-jmp 282f
-281:
-282:
-.base64 "uwAAAABJi6/YAAAASInYSAHASAHASAHASA/ISYlHYEiJ6EgBwEgBwEgBwEgPyEmJR2hMie9IgcfwAAAATIn2SIPGAEyJ+kiDwmC5AQAAAE2J+EmBwAACAAA="
-call {vg_ghash_pclmul}
-jmp 278f
-277:
-.base64 "QYsEJEGLTCQEQYtUJAi+AAAAAUGJBkGJTgRBiVYIQYl2DA=="
-278:
-.base64 "QYsGQYtOBEGLVghBi3YMD86DxgEPzkGJRjBBiU40QYlWOEGJdjy4AAAAAEmJRhBJiUYYSYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJAgKAABYTItcJDBJiztMid5Ig8ZougAAAABJi0sQTYtDGFBIjaQk+PX//0mJ4UmDwQhJiZmAAAAASYmpiAAAAE2JoZAAAABNiamYAAAATYmxoAAAAE2JuagAAABNic9JifZJif1JicxMicVIidNIg+MPSIXt"
-je 284f
-.base64 "SIXb"
-je 286f
-.base64 "uRAAAABIKdlIOc0="
-jb 288f
-jmp 289f
-288:
-.base64 "SInp"
-289:
-.base64 "TIn3SAHfSIPHIEyJ5kG6AAAAAA=="
-290:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 290b
-.base64 "SQHMSCnNSAHLSIP7EA=="
-je 291f
-jmp 292f
-291:
-.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifJIg8IguQEAAABNifhJgcAAAgAA"
-call {vg_ghash_pclmul}
-292:
-jmp 287f
-286:
-287:
-.base64 "TIniSInpSMHpBEiJ6EiD5Q9IKehJAcRIhck="
-je 293f
-.base64 "TInvSIHH8AAAAEyJ9kiDxhBNifhJgcAAAgAA"
-call {vg_ghash_pclmul}
-jmp 294f
-293:
-294:
-.base64 "SInpSIXJ"
-je 295f
-.base64 "TIn3SIPHIEyJ5kG6AAAAAA=="
-297:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 297b
-jmp 296f
-295:
-296:
-jmp 285f
-284:
-285:
-.base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJAgKAABYTItcJDBJi0MoSIXA"
-je 298f
-.base64 "SYtLGEmJyEmD4A9NhcA="
-je 2100f
-.base64 "uBAAAABMKcBJicBJiztIichMAcBJiUNQTIneSIPGaEiJykyJ2UiDwVhQSI2kJPj1//9JieFJg8EISYmZgAAAAEmJqYgAAABNiaGQAAAATYmpmAAAAE2JsaAAAABNibmoAAAATYnPSYn2SYn9SYnMTInFSInTSIPjD0iF7Q=="
-je 2102f
-.base64 "SIXb"
-je 2104f
-.base64 "uRAAAABIKdlIOc0="
-jb 2106f
-jmp 2107f
-2106:
-.base64 "SInp"
-2107:
-.base64 "TIn3SAHfSIPHIEyJ5kG6AAAAAA=="
-2108:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 2108b
-.base64 "SQHMSCnNSAHLSIP7EA=="
-je 2109f
-jmp 2110f
-2109:
-.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifJIg8IguQEAAABNifhJgcAAAgAA"
-call {vg_ghash_pclmul}
-2110:
-jmp 2105f
-2104:
-2105:
-.base64 "TIniSInpSMHpBEiJ6EiD5Q9IKehJAcRIhck="
-je 2111f
-.base64 "TInvSIHH8AAAAEyJ9kiDxhBNifhJgcAAAgAA"
-call {vg_ghash_pclmul}
-jmp 2112f
-2111:
-2112:
-.base64 "SInpSIXJ"
-je 2113f
-.base64 "TIn3SIPHIEyJ5kG6AAAAAA=="
-2115:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 2115b
-jmp 2114f
-2113:
-2114:
-jmp 2103f
-2102:
-2103:
-.base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJAgKAABY"
-jmp 2101f
-2100:
-2101:
-.base64 "TItcJDBJi0NASIXA"
-je 2116f
-2118:
-.base64 "TItcJDBNi1M4TYsKSYtCCE2LUyBJi0tISQHKSYs7SYtzCEyJ2kiDwmhJi0tQTYtDSFBBUlA="
-call {vg_aes_gcm_stream_encrypt_to_prepared16_aesni_pclmul_avx}
-.base64 "WFhYTItcJDBNi1M4SYtCCEmLS0hIAcFJg8IQSYtDQEiD6AFJiUtITYlTOEmJQ0BIhcA="
-jne 2118b
-jmp 2117f
-2116:
-2117:
-jmp 299f
-298:
-299:
-.base64 "TItcJDBJiztJi3MITInaSIPCaEmLSxhNi0MoTYtLMFBIjaQk8PX//0iJ4EiDwBBIiUQkCEiLRCQISImYgAAAAEiJqIgAAABMiaCQAAAATImomAAAAEyJsKAAAABMibioAAAASYnHSYnWSYn9SYm3sAAAAEmJj7gAAABNiYfAAAAATYmPyAAAAEmLn8AAAABJi4e4AAAASIXb"
-je 2119f
-jmp 2120f
-2119:
-.base64 "SInD"
-2120:
-.base64 "SIPjD0iF2w=="
-je 2121f
-.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMifZIg8YgSInZQboAAAAA"
-2123:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 2123b
-.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifpIg8JguQEAAABNifhJgcAAAgAA"
-call {vg_ghash_pclmul}
-jmp 2122f
-2121:
-2122:
 .base64 "SYufuAAAAEmLr8AAAABIidhIAcBIAcBIAcBID8hJiUdgSInoSAHASAHASAHASA/ISYlHaEyJ70iBx/AAAABMifZIg8YQTIn6SIPCYLkBAAAATYn4SYHAAAIAAA=="
 call {vg_ghash_pclmul}
 .base64 "SYtGEEmJB0mLRhhJiUcITInvSYu3sAAAAEyJ8kyJ+UiDwQBBuAEAAABNiflJgcEAAgAA"
 call {vg_aes_ctr32_aesni}
-.base64 "SYu/yAAAAEmLB0mLVwhIiQdIiVcISYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJBAKAABY"
+.base64 "SIt8JChJiwdJi1cISIkHSIlXCEmLn4AAAABJi6+IAAAATYunkAAAAE2Lr5gAAABNi7egAAAATYu/qAAAAEiNpCQ4CgAA"
+21:
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJPhMiRwkSI2kJJj1///F/n+EJEgKAADF/n+EJCgKAADF/n+EJAgKAADF/n+EJOgJAADF/n+EJMgJAADF/n+EJKgJAADF/n+EJIgJAADF/n+EJGgJAADF/n+EJEgJAADF/n+EJCgJAADF/n+EJAgJAADF/n+EJOgIAADF/n+EJMgIAADF/n+EJKgIAADF/n+EJIgIAADF/n+EJGgIAADF/n+EJEgIAADF/n+EJCgIAADF/n+EJAgIAADF/n+EJOgHAADF/n+EJMgHAADF/n+EJKgHAADF/n+EJIgHAADF/n+EJGgHAADF/n+EJEgHAADF/n+EJCgHAADF/n+EJAgHAADF/n+EJOgGAADF/n+EJMgGAADF/n+EJKgGAADF/n+EJIgGAADF/n+EJGgGAADF/n+EJEgGAADF/n+EJCgGAADF/n+EJAgGAADF/n+EJOgFAADF/n+EJMgFAADF/n+EJKgFAADF/n+EJIgFAADF/n+EJGgFAADF/n+EJEgFAADF/n+EJCgFAADF/n+EJAgFAADF/n+EJOgEAADF/n+EJMgEAADF/n+EJKgEAADF/n+EJIgEAADF/n+EJGgEAADF/n+EJEgEAADF/n+EJCgEAADF/n+EJAgEAADF/n+EJOgDAADF/n+EJMgDAADF/n+EJKgDAADF/n+EJIgDAADF/n+EJGgDAADF/n+EJEgDAADF/n+EJCgDAADF/n+EJAgDAADF/n+EJOgCAADF/n+EJMgCAADF/n+EJKgCAADF/n+EJIgCAADF/n+EJGgCAADF/n+EJEgCAADF/n+EJCgCAADF/n+EJAgCAADF/n+EJOgBAADF/n+EJMgBAADF/n+EJKgBAADF/n+EJIgBAADF/n+EJGgBAADF/n+EJEgBAADF/n+EJCgBAADF/n+EJAgBAADF/n+EJOgAAADF/n+EJMgAAADF/n+EJKgAAADF/n+EJIgAAADF/n9EJGjF/n9EJEjF/n9EJCjF/n9EJAhMiRwkSI2kJGgKAABIjWQkCDHAMckx0jH2Mf9FMcBFMclFMdLD"
+20:
+.base64 "SI2kJMj1//9Ii4QkQAoAAEiJRCQISIuEJEgKAABIiUQkEEiLhCRQCgAASIlEJBhIi4QkWAoAAEiJRCQgSIuEJGAKAABIiUQkKEiJ4EiDwDhIiUQkMEmJy0mD6wxJg/kRTQ9D2UiLRCQQSIPoAUiD+AJMD0PY"
+jae 232f
+.base64 "TItUJAhNi1IITInQSMHoBEjB4ARIg8AQSDtEJCBJD0PDSQnDSItEJCBIwegISYH6AAEAAEkPQ8NJCcM="
+jmp 233f
+232:
+233:
+.base64 "TYXb"
+je 234f
+.base64 "SItEJDBIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdNif5Jg8YQSYn9SYm3sAAAAE2Jh+gAAABNiY+4AAAASItEJBhJiYfIAAAASItEJCBJiYfQAAAASYnUSInNSIP9DA=="
+je 236f
+.base64 "uAAAAABJiQZJiUYISYmv2AAAALsAAAAATIniSInpSMHpBEiJ6EiD5Q9IKehJAcRIhck="
+je 238f
+.base64 "TInvSIHH8AAAAEyJ9kiDxgBNifhJgcAAAgAA"
+call {vg_ghash_pclmul}
+jmp 239f
+238:
+239:
+.base64 "SInpSIXJ"
+je 240f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMieZBugAAAAA="
+242:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 242b
+.base64 "TInvSIHH8AAAAEyJ9kiDxgBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_pclmul}
+jmp 241f
+240:
+241:
+.base64 "uwAAAABJi6/YAAAASInYSAHASAHASAHASA/ISYlHYEiJ6EgBwEgBwEgBwEgPyEmJR2hMie9IgcfwAAAATIn2SIPGAEyJ+kiDwmC5AQAAAE2J+EmBwAACAAA="
+call {vg_ghash_pclmul}
+jmp 237f
+236:
+.base64 "QYsEJEGLTCQEQYtUJAi+AAAAAUGJBkGJTgRBiVYIQYl2DA=="
+237:
+.base64 "QYsGQYtOBEGLVghBi3YMD86DxgEPzkGJRjBBiU40QYlWOEGJdjy4AAAAAEmJRhBJiUYYTYun6AAAAEmLr7gAAAC7AAAAAEyJ4kiJ6UjB6QRIiehIg+UPSCnoSQHESIXJ"
+je 243f
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBNifhJgcAAAgAA"
+call {vg_ghash_pclmul}
+jmp 244f
+243:
+244:
+.base64 "SInpSIXJ"
+je 245f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMieZBugAAAAA="
+247:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 247b
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_pclmul}
+jmp 246f
+245:
+246:
+.base64 "SItEJAhJiYcAAQAASItEJBBJiYfgAAAASItEJBhJiYfIAAAASItEJCBJiYfAAAAASYmH0AAAALgAAAAASYmH8AAAAEmJhwgBAABJi4fgAAAASIXA"
+je 248f
+.base64 "TYuXAAEAAEmLQghIwegISIXA"
+je 250f
+.base64 "SMHgCEmJhwgBAABNiwJNi5/IAAAATAHYSYmHyAAAAEmLh9AAAABJK4cIAQAASYmH0AAAAE2LjwgBAABJwekETYnKTInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTIn4SAXAAQAATYnaUA=="
+call {vg_aes_gcm_seal_blocks_prepared16_aesni_pclmul_avx}
+.base64 "WA=="
+jmp 251f
+250:
+251:
+252:
+.base64 "TYuXAAEAAEmLGkmLaghJg8IQTYmXAAEAAEmLhwgBAABIAcNIKcW4AAAAAEmJhwgBAABJi4fwAAAATYunyAAAAEkBxEiJxkiD5g9IAehJiYfwAAAASIXt"
+je 253f
+.base64 "SIX2"
+je 255f
+.base64 "uRAAAABIKfFIOc1ID0LNTAH2SIPGQEyJ50G6AAAAAA=="
+257:
+.base64 "Qg+2BBNGD7YcFkwx2EKIBBdJg8IBSTnK"
+jne 257b
+.base64 "SAHLSQHMSCnN"
+jmp 256f
+255:
+256:
+.base64 "SYnoScHoBE2FwA=="
+je 258f
+.base64 "SInZTYnjSInoSIPlD0gp6EgBw0kBxEyJ70mLt7AAAABMifJIg8IwTYn5SYHBAAIAAA=="
+call {vg_aes_ctr32_to_aesni}
+jmp 259f
+258:
+259:
+.base64 "SIXt"
+je 260f
+.base64 "uAAAAABJiUZASYlGSEyJ70mLt7AAAABMifJIg8IwTInxSIPBQEG4AQAAAE2J+UmBwQACAAA="
+call {vg_aes_ctr32_aesni}
+.base64 "TInnTIn2SIPGQEiJ6UG6AAAAAA=="
+262:
+.base64 "Qg+2BBNGD7YcFkwx2EKIBBdJg8IBSTnK"
+jne 262b
+jmp 261f
+260:
+261:
+jmp 254f
+253:
+254:
+.base64 "TYuX4AAAAEmD6gFNiZfgAAAA"
+jne 252b
+jmp 249f
+248:
+249:
+.base64 "TYunyAAAAEmLr9AAAAC7AAAAAEyJ4kiJ6UjB6QRIiehIg+UPSCnoSQHESIXJ"
+je 263f
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBNifhJgcAAAgAA"
+call {vg_ghash_pclmul}
+jmp 264f
+263:
+264:
+.base64 "SInpSIXJ"
+je 265f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMieZBugAAAAA="
+267:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 267b
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_pclmul}
+jmp 266f
+265:
+266:
+.base64 "SYufuAAAAEmLr8AAAABIidhIAcBIAcBIAcBID8hJiUdgSInoSAHASAHASAHASA/ISYlHaEyJ70iBx/AAAABMifZIg8YQTIn6SIPCYLkBAAAATYn4SYHAAAIAAA=="
+call {vg_ghash_pclmul}
+.base64 "SYtGEEmJB0mLRhhJiUcITInvSYu3sAAAAEyJ8kyJ+UiDwQBBuAEAAABNiflJgcEAAgAA"
+call {vg_aes_ctr32_aesni}
+jmp 235f
+234:
+.base64 "SItEJDBIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdNif5Jg8YQSYn9SYm3sAAAAE2Jh+gAAABNiY+4AAAASItEJBhJiYfIAAAASItEJCBJiYfQAAAASYnUSInNQYsEJEGLTCQEQYtUJAi+AAAAAUGJBkGJTgRBiVYIQYl2DEGLBkGLTgRBi1YIQYt2DA/Og8YBD85BiUYwQYlONEGJVjhBiXY8uAAAAABJiUYQSYlGGEmLj7gAAABIhck="
+je 268f
+.base64 "SIP5BQ=="
+je 270f
+.base64 "SIP5EA=="
+je 272f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BJi7foAAAAQboAAAAA"
+274:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 274b
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vAA=="
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vSBDzQQ9vf2BmDzgA+PNBD2+dEAEAAGZFD+/AZkUP78lmRQ/v0mZED2/fZkQPOkTbAGZFD+/DZkQPb99mRA86RNsRZkUP79NmRA9v32ZEDzpE2wFmRQ/vy2ZED2/fZkQPOkTbEGZFD+/LZkUPb9lmQQ9z2whmRQ/v02ZBD3P5CGZFD+/BZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZBD2/SZkEP79BmDzgA0PNBD39WEA=="
+jmp 273f
+272:
+.base64 "SYu36AAAAPMPbz4="
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vAA=="
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vSBBmDzgA+PNBD2+dEAEAAGZFD+/AZkUP78lmRQ/v0mZED2/fZkQPOkTbAGZFD+/DZkQPb99mRA86RNsRZkUP79NmRA9v32ZEDzpE2wFmRQ/vy2ZED2/fZkQPOkTbEGZFD+/LZkUPb9lmQQ9z2whmRQ/v02ZBD3P5CGZFD+/BZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZBD2/SZkEP79BmDzgA0PNBD39WEA=="
+273:
+jmp 271f
+270:
+.base64 "SYu36AAAAIsGRA+2VgRJweIgTAHQZkgPbvg="
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vAA=="
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vSBBmDzgA+PNBD2+dEAEAAGZFD+/AZkUP78lmRQ/v0mZED2/fZkQPOkTbAGZFD+/DZkQPb99mRA86RNsRZkUP79NmRA9v32ZEDzpE2wFmRQ/vy2ZED2/fZkQPOkTbEGZFD+/LZkUPb9lmQQ9z2whmRQ/v02ZBD3P5CGZFD+/BZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZBD2/SZkEP79BmDzgA0PNBD39WEA=="
+271:
+jmp 269f
+268:
+269:
+.base64 "TItUJAhNiwJJi0IITItMJBhMi1wkIE2Jh+AAAABNiY/IAAAATYmfwAAAAEjB6ARIhcA="
+je 275f
+.base64 "TInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTYuH4AAAAEmJwUmJwk2Ln8gAAABMifhIBcABAABNidpQ"
+call {vg_aes_gcm_seal_blocks_prepared16_aesni_pclmul_avx}
+.base64 "WA=="
 jmp 276f
 275:
-.base64 "TItcJDBBugAAAABJi0NASIXA"
-je 2124f
-.base64 "TYtTOE2LUgg="
-jmp 2125f
-2124:
-2125:
-.base64 "SYtDKEjB6ARIweAEQbgAAAAASTnCTQ9C0EmB+oABAAA="
-jb 2126f
-.base64 "SYlzaEmJU3BNi0tASYt7IE2LUzhMidC5AAAAAE2FyQ=="
-je 2128f
-.base64 "SYsCSYtKCEmD6QFJg8IQSAHP"
-jmp 2129f
-2128:
-2129:
-.base64 "SYlDeEmJi4AAAABNidNJg/kA"
-je 2130f
-2132:
-.base64 "SYszSYtLCEmDwxBBugAAAABJichJwegGScHgBkmD+AA="
-je 2133f
-2135:
-.base64 "80IPbwQW80IPb0wWEPNCD29UFiDzQg9vXBYw80IPfwQX80IPf0wXEPNCD39UFyDzQg9/XBcwSYPCQE05wg=="
-jne 2135b
-jmp 2134f
-2133:
-2134:
-.base64 "SYnIScHoBEnB4ARNOcI="
-je 2136f
-2138:
-.base64 "80IPbwQW80IPfwQXSYPCEE05wg=="
-jne 2138b
-jmp 2137f
-2136:
-2137:
-.base64 "STnK"
-je 2139f
-.base64 "SIP5EA=="
-jb 2141f
-.base64 "SYnKSYPqEPNCD28EFvNCD38EFw=="
-jmp 2142f
-2141:
-2143:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 2143b
-2142:
-jmp 2140f
-2139:
-2140:
-.base64 "SAHPSYPpAQ=="
-jne 2132b
-jmp 2131f
-2130:
-2131:
-.base64 "TItcJDBJi1NoSYtLcE2LQxBNi0sYSYtDME2LUyhJi7uAAAAASYtzeE2LWyBQQVJBU1dWTItcJFhJiztJi3MI"
-call {vg_aes_gcm_seal_split_prepared16_aesni_pclmul_avx}
-.base64 "WFhYWFg="
-jmp 2127f
-2126:
-.base64 "SYlzaEmJU3BNi0tASYt7IE2LWzhJg/kA"
-je 2144f
-2146:
-.base64 "SYszSYtLCEmDwxBBugAAAABJichJwegGScHgBkmD+AA="
-je 2147f
-2149:
-.base64 "80IPbwQW80IPb0wWEPNCD29UFiDzQg9vXBYw80IPfwQX80IPf0wXEPNCD39UFyDzQg9/XBcwSYPCQE05wg=="
-jne 2149b
-jmp 2148f
-2147:
-2148:
-.base64 "SYnIScHoBEnB4ARNOcI="
-je 2150f
-2152:
-.base64 "80IPbwQW80IPfwQXSYPCEE05wg=="
-jne 2152b
-jmp 2151f
-2150:
-2151:
-.base64 "STnK"
-je 2153f
-.base64 "SIP5EA=="
-jb 2155f
-.base64 "SYnKSYPqEPNCD28EFvNCD38EFw=="
-jmp 2156f
-2155:
-2157:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 2157b
-2156:
-jmp 2154f
-2153:
-2154:
-.base64 "SAHPSYPpAQ=="
-jne 2146b
-jmp 2145f
-2144:
-2145:
-.base64 "TItcJDBJiztJi3MISYtTaEmLS3BNi0MQTYtLGEmLQzBNi1MoTYtbIFBBUkFT"
-call {vg_aes_gcm_seal_prepared_aesni_pclmul_avx}
-.base64 "WFhY"
-2127:
 276:
-jmp 270f
-269:
-.base64 "SYlzaEmJU3BNi0tASYt7IE2LWzhJg/kA"
-je 2158f
-2160:
-.base64 "SYszSYtLCEmDwxBBugAAAABJichJwegGScHgBkmD+AA="
-je 2161f
-2163:
-.base64 "80IPbwQW80IPb0wWEPNCD29UFiDzQg9vXBYw80IPfwQX80IPf0wXEPNCD39UFyDzQg9/XBcwSYPCQE05wg=="
-jne 2163b
-jmp 2162f
-2161:
-2162:
-.base64 "SYnIScHoBEnB4ARNOcI="
-je 2164f
-2166:
-.base64 "80IPbwQW80IPfwQXSYPCEE05wg=="
-jne 2166b
-jmp 2165f
-2164:
-2165:
-.base64 "STnK"
-je 2167f
-.base64 "SIP5EA=="
-jb 2169f
-.base64 "SYnKSYPqEPNCD28EFvNCD38EFw=="
-jmp 2170f
-2169:
-2171:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 2171b
-2170:
-jmp 2168f
-2167:
-2168:
-.base64 "SAHPSYPpAQ=="
-jne 2160b
-jmp 2159f
-2158:
-2159:
-.base64 "TItcJDBJiztJi3MISYtTaEmLS3BNi0MQTYtLGEmLQzBNi1MoTYtbIFBBUkFT"
-call {vg_aes_gcm_seal_prepared_aesni_pclmul_avx}
-.base64 "WFhY"
-270:
-jmp 268f
-267:
-.base64 "TItcJDBMi1QkCEiLRCQQSYk7SYlzCEiD+AE="
-je 2172f
-.base64 "SYtKGEiFyQ=="
-je 2174f
-.base64 "SYtyEEiLfCQYSQN6CEG6AAAAAA=="
-2176:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 2176b
-jmp 2175f
-2174:
-2175:
-jmp 2173f
-2172:
-2173:
-.base64 "uQwAAABMi1QkCEmLMkmLeghIi0QkKEyLVCQgTItcJBhQQVJBU1dWTItcJFhJiztJi3MI"
-call {vg_aes_gcm_seal_split_prepared16_aesni_pclmul_avx}
-.base64 "WFhYWFg="
-268:
-.base64 "SI2kJPAAAAA="
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vAA=="
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vSBDzQQ9vnRABAADzQQ9vtQABAADzQQ9vLvNBD29+MEyJ70mLt7AAAABJifJNAdJNAdJNAdJNAdJJAfrzRA9vB2ZBD+/oZkEP7/jzRA9vRxBmQQ843OhmQQ843PjzRA9vRyBmQQ843OhmQQ843PjzRA9vRzBmQQ843OhmQQ843PjzRA9vR0BmQQ843OhmQQ843PjzRA9vR1BmQQ843OhmQQ843PjzRA9vR2BmQQ843OhmQQ843PjzRA9vR3BmQQ843OhmQQ843PjzRA9vh4AAAABmQQ843OhmQQ843PjzRA9vh5AAAABmQQ843OhmQQ843PhIg/4K"
+je 277f
+.base64 "80QPb4egAAAAZkEPONzoZkEPONz480QPb4ewAAAAZkEPONzoZkEPONz4SIP+DA=="
+je 279f
+.base64 "80QPb4fAAAAAZkEPONzoZkEPONz480QPb4fQAAAAZkEPONzoZkEPONz4"
+jmp 280f
+279:
+280:
+jmp 278f
+277:
+278:
+.base64 "80UPbwJmQQ843ehmQQ843fjzQQ9/rwAEAADzQQ9/vxAEAABMi1wkCEmLG0mLSwhJichIg+EPSSnITAHDSYu3yAAAAEwBxkmLr8AAAABMKcVIhe0="
+je 281f
+.base64 "Zg/v//NBD3+/AAIAAEyJ/0iBxwACAABMifpIgcIQBAAAQboAAAAASIXJ"
+je 283f
+.base64 "SYnITSnQSYP4BA=="
+jb 285f
+.base64 "SYP4CA=="
+jb 287f
+.base64 "SosEE0ozBBJKiQQWSokEF0mDwgg="
+jmp 288f
+287:
+288:
+.base64 "SYnITSnQSYP4BA=="
+jb 289f
+.base64 "QosEE0IzBBJCiQQWQokEF0mDwgQ="
+jmp 290f
+289:
+290:
+.base64 "TDnR"
+je 291f
+293:
+.base64 "Qg+2BBNGD7YMEkwxyEKIBBZCiAQXSYPCAUk5yg=="
+jne 293b
+jmp 292f
+291:
+292:
+jmp 286f
+285:
+294:
+.base64 "Qg+2BBNGD7YMEkwxyEKIBBZCiAQXSYPCAUk5yg=="
+jne 294b
+286:
+jmp 284f
+283:
+284:
+.base64 "STnq"
+je 295f
+.base64 "SYtbEEwp00iJ6UmJyE0p0EmD+AQ="
+jb 297f
+.base64 "SYP4CA=="
+jb 299f
+.base64 "SosEE0ozBBJKiQQWSokEF0mDwgg="
+jmp 2100f
+299:
+2100:
+.base64 "SYnITSnQSYP4BA=="
+jb 2101f
+.base64 "QosEE0IzBBJCiQQWQokEF0mDwgQ="
+jmp 2102f
+2101:
+2102:
+.base64 "TDnR"
+je 2103f
+2105:
+.base64 "Qg+2BBNGD7YMEkwxyEKIBBZCiAQXSYPCAUk5yg=="
+jne 2105b
+jmp 2104f
+2103:
+2104:
+jmp 298f
+297:
+2106:
+.base64 "Qg+2BBNGD7YMEkwxyEKIBBZCiAQXSYPCAUk5yg=="
+jne 2106b
+298:
+jmp 296f
+295:
+296:
+.base64 "SYuHuAAAAEjB4ANID8hJiYcQAgAASYuHwAAAAEjB4ANID8hJiYcYAgAA80UPb2YQZkQPOADg80EPb78AAgAAZg84APhmQQ/v/GZFD+/AZkUP78lmRQ/v0mZED2/fZkQPOkTeAGZFD+/DZkQPb99mRA86RN4RZkUP79NmRA9v32ZEDzpE3gFmRQ/vy2ZED2/fZkQPOkTeEGZFD+/L80EPb78QAgAAZg84APhmRA9v32ZEDzpE2wBmRQ/vw2ZED2/fZkQPOkTbEWZFD+/TZkQPb99mRA86RNsBZkUP78tmRA9v32ZEDzpE2xBmRQ/vy2ZFD2/ZZkEPc9sIZkUP79NmQQ9z+QhmRQ/vwWZFD2/YZkQPOkTZEGZFD3DATmZFD+/DZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmQQ9v0mZBD+/QxOJpANDEwXpvnwAEAADF6e/TxMF6fxfF+Hc="
+jmp 282f
+281:
+.base64 "SYuHuAAAAEjB4ANID8hJiYcQAgAASYuHwAAAAEjB4ANID8hJiYcYAgAA80UPb2YQZkQPOADg80EPb78QAgAAZg84APhmQQ/v/GZFD+/AZkUP78lmRQ/v0mZED2/fZkQPOkTbAGZFD+/DZkQPb99mRA86RNsRZkUP79NmRA9v32ZEDzpE2wFmRQ/vy2ZED2/fZkQPOkTbEGZFD+/LZkUPb9lmQQ9z2whmRQ/v02ZBD3P5CGZFD+/BZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZBD2/SZkEP79DE4mkA0MTBem+fAAQAAMXp79PEwXp/F8X4dw=="
+282:
+235:
+.base64 "SIt8JChJiwdJi1cISIkHSIlXCEmLn4AAAABJi6+IAAAATYunkAAAAE2Lr5gAAABNi7egAAAATYu/qAAAAEiNpCQ4CgAA"
 jmp 21b
 .p2align 6"#,
-        vg_aes_gcm_stream_init_pclmul_core = sym super::aes::vg_aes_gcm_stream_init_pclmul_core::vg_aes_gcm_stream_init_pclmul_core,
-        vg_aes_gcm_stream_aad_pclmul_core = sym super::aes::vg_aes_gcm_stream_aad_pclmul_core::vg_aes_gcm_stream_aad_pclmul_core,
-        vg_aes_gcm_stream_encrypt_to_aesni_pclmul_avx = sym super::aes::vg_aes_gcm_stream_encrypt_to_aesni_pclmul_avx::vg_aes_gcm_stream_encrypt_to_aesni_pclmul_avx,
-        vg_aes_gcm_stream_finish_aesni_pclmul_core = sym super::aes::vg_aes_gcm_stream_finish_aesni_pclmul_core::vg_aes_gcm_stream_finish_aesni_pclmul_core,
-        vg_aes_gcm_seal_split_aesni_pclmul_avx = sym super::aes::vg_aes_gcm_seal_split_aesni_pclmul_avx::vg_aes_gcm_seal_split_aesni_pclmul_avx,
-        vg_aes_gcm_seal_aesni_pclmul_avx = sym super::aes::vg_aes_gcm_seal_aesni_pclmul_avx::vg_aes_gcm_seal_aesni_pclmul_avx,
         vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
-        vg_aes_gcm_stream_encrypt_to_prepared16_aesni_pclmul_avx = sym super::aes::vg_aes_gcm_stream_encrypt_to_prepared16_aesni_pclmul_avx::vg_aes_gcm_stream_encrypt_to_prepared16_aesni_pclmul_avx,
+        vg_aes_ctr32_to_aesni = sym super::aes::vg_aes_ctr32_to_aesni::vg_aes_ctr32_to_aesni,
         vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
-        vg_aes_gcm_seal_split_prepared16_aesni_pclmul_avx = sym super::aes::vg_aes_gcm_seal_split_prepared16_aesni_pclmul_avx::vg_aes_gcm_seal_split_prepared16_aesni_pclmul_avx,
-        vg_aes_gcm_seal_prepared_aesni_pclmul_avx = sym super::gcm::vg_aes_gcm_seal_prepared_aesni_pclmul_avx,
+        vg_aes_gcm_seal_blocks_prepared16_aesni_pclmul_avx = sym super::aes::vg_aes_gcm_seal_blocks_prepared16_aesni_pclmul_avx::vg_aes_gcm_seal_blocks_prepared16_aesni_pclmul_avx,
+        VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
+    )
+}
+
+/// The CPU features `vg_aes_gcm_seal_contiguous_prepared_aesni_pclmul` requires (`Artifact.features`).
+pub const VG_AES_GCM_SEAL_CONTIGUOUS_PREPARED_AESNI_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::AES);
+
+/// `vg_aes_gcm_seal_contiguous` with a 1032-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the prepared powers its count says are present. The powers remain secret; how many are present may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealContiguousPreparedContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 1032 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `src` must be valid for reads of `len` bytes, and `dst` for reads and writes of `len` bytes. The two pointers must be identical or their regions disjoint.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `*ctx` must have the prepared format written by `vg_aes_gcm_prepare` (not the format of `vg_aes_gcm_init_precomputed`).
+/// * `dst` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `src` when distinct from `dst` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `src` when distinct from `dst`, `dst` and `tag` may overlap the return address on the stack or the 2640 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `ssse3`, `pclmulqdq` and `aes` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_contiguous_prepared_aesni_pclmul(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+    core::arch::naked_asm!(
+        r#".base64 "SI2kJND1//9Ii4QkOAoAAEiJRCQISIuEJEAKAABIiUQkEEiLhCRICgAASIlEJBhIi4QkUAoAAEiJRCQgSIngSIPAMEiJRCQoSItEJChIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdNif5Jg8YQSYn9SYm3sAAAAE2Jh+gAAABNiY+4AAAASItEJBBJiYfIAAAASItEJBhJiYfQAAAASYnUSInNSIP9DA=="
+je 20f
+.base64 "uAAAAABJiQZJiUYISYmv2AAAALsAAAAATIniSInpSMHpBEiJ6EiD5Q9IKehJAcRIhck="
+je 22f
+.base64 "TInvSIHH8AAAAEyJ9kiDxgBNifhJgcAAAgAA"
+call {vg_ghash_pclmul}
+jmp 23f
+22:
+23:
+.base64 "SInpSIXJ"
+je 24f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMieZBugAAAAA="
+26:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 26b
+.base64 "TInvSIHH8AAAAEyJ9kiDxgBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_pclmul}
+jmp 25f
+24:
+25:
+.base64 "uwAAAABJi6/YAAAASInYSAHASAHASAHASA/ISYlHYEiJ6EgBwEgBwEgBwEgPyEmJR2hMie9IgcfwAAAATIn2SIPGAEyJ+kiDwmC5AQAAAE2J+EmBwAACAAA="
+call {vg_ghash_pclmul}
+jmp 21f
+20:
+.base64 "QYsEJEGLTCQEQYtUJAi+AAAAAUGJBkGJTgRBiVYIQYl2DA=="
+21:
+.base64 "QYsGQYtOBEGLVghBi3YMD86DxgEPzkGJRjBBiU40QYlWOEGJdjy4AAAAAEmJRhBJiUYYTYun6AAAAEmLr7gAAAC7AAAAAEyJ4kiJ6UjB6QRIiehIg+UPSCnoSQHESIXJ"
+je 27f
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBNifhJgcAAAgAA"
+call {vg_ghash_pclmul}
+jmp 28f
+27:
+28:
+.base64 "SInpSIXJ"
+je 29f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMieZBugAAAAA="
+211:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 211b
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_pclmul}
+jmp 210f
+29:
+210:
+.base64 "SYuH0AAAAEmJh8AAAABIwegESIXA"
+je 212f
+.base64 "TInvSYu3sAAAAEyJ8kiDwjBIi0wkCEmJwE2Ln8gAAABNiflJgcHAAQAA"
+call {vg_aes_ctr32_to_aesni}
+.base64 "SYuH0AAAAEiJwUiD4Q9JiY/QAAAASCnISQOHyAAAAEmJh8gAAAA="
+jmp 213f
+212:
+213:
+.base64 "SItcJAhJA5/AAAAASSuf0AAAAE2Lp8gAAABJi6/QAAAASIXt"
+je 214f
+.base64 "uAAAAABJiUZASYlGSEyJ70mLt7AAAABMifJIg8IwTInxSIPBQEG4AQAAAE2J+UmBwQACAAA="
+call {vg_aes_ctr32_aesni}
+.base64 "TInnTIn2SIPGQEiJ6UG6AAAAAA=="
+216:
+.base64 "Qg+2BBNGD7YcFkwx2EKIBBdJg8IBSTnK"
+jne 216b
+jmp 215f
+214:
+215:
+.base64 "TItkJBBJi6/AAAAAuwAAAABMieJIielIwekESInoSIPlD0gp6EkBxEiFyQ=="
+je 217f
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBNifhJgcAAAgAA"
+call {vg_ghash_pclmul}
+jmp 218f
+217:
+218:
+.base64 "SInpSIXJ"
+je 219f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMieZBugAAAAA="
+221:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 221b
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_pclmul}
+jmp 220f
+219:
+220:
+.base64 "SYufuAAAAEmLr8AAAABIidhIAcBIAcBIAcBID8hJiUdgSInoSAHASAHASAHASA/ISYlHaEyJ70iBx/AAAABMifZIg8YQTIn6SIPCYLkBAAAATYn4SYHAAAIAAA=="
+call {vg_ghash_pclmul}
+.base64 "SYtGEEmJB0mLRhhJiUcITInvSYu3sAAAAEyJ8kyJ+UiDwQBBuAEAAABNiflJgcEAAgAA"
+call {vg_aes_ctr32_aesni}
+.base64 "SIt8JCBJiwdJi1cISIkHSIlXCEmLn4AAAABJi6+IAAAATYunkAAAAE2Lr5gAAABNi7egAAAATYu/qAAAAEiNpCQwCgAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJPhMiRwkSI2kJLj1///zD3+EJDgKAADzD3+EJCgKAADzD3+EJBgKAADzD3+EJAgKAADzD3+EJPgJAADzD3+EJOgJAADzD3+EJNgJAADzD3+EJMgJAADzD3+EJLgJAADzD3+EJKgJAADzD3+EJJgJAADzD3+EJIgJAADzD3+EJHgJAADzD3+EJGgJAADzD3+EJFgJAADzD3+EJEgJAADzD3+EJDgJAADzD3+EJCgJAADzD3+EJBgJAADzD3+EJAgJAADzD3+EJPgIAADzD3+EJOgIAADzD3+EJNgIAADzD3+EJMgIAADzD3+EJLgIAADzD3+EJKgIAADzD3+EJJgIAADzD3+EJIgIAADzD3+EJHgIAADzD3+EJGgIAADzD3+EJFgIAADzD3+EJEgIAADzD3+EJDgIAADzD3+EJCgIAADzD3+EJBgIAADzD3+EJAgIAADzD3+EJPgHAADzD3+EJOgHAADzD3+EJNgHAADzD3+EJMgHAADzD3+EJLgHAADzD3+EJKgHAADzD3+EJJgHAADzD3+EJIgHAADzD3+EJHgHAADzD3+EJGgHAADzD3+EJFgHAADzD3+EJEgHAADzD3+EJDgHAADzD3+EJCgHAADzD3+EJBgHAADzD3+EJAgHAADzD3+EJPgGAADzD3+EJOgGAADzD3+EJNgGAADzD3+EJMgGAADzD3+EJLgGAADzD3+EJKgGAADzD3+EJJgGAADzD3+EJIgGAADzD3+EJHgGAADzD3+EJGgGAADzD3+EJFgGAADzD3+EJEgGAADzD3+EJDgGAADzD3+EJCgGAADzD3+EJBgGAADzD3+EJAgGAADzD3+EJPgFAADzD3+EJOgFAADzD3+EJNgFAADzD3+EJMgFAADzD3+EJLgFAADzD3+EJKgFAADzD3+EJJgFAADzD3+EJIgFAADzD3+EJHgFAADzD3+EJGgFAADzD3+EJFgFAADzD3+EJEgFAADzD3+EJDgFAADzD3+EJCgFAADzD3+EJBgFAADzD3+EJAgFAADzD3+EJPgEAADzD3+EJOgEAADzD3+EJNgEAADzD3+EJMgEAADzD3+EJLgEAADzD3+EJKgEAADzD3+EJJgEAADzD3+EJIgEAADzD3+EJHgEAADzD3+EJGgEAADzD3+EJFgEAADzD3+EJEgEAADzD3+EJDgEAADzD3+EJCgEAADzD3+EJBgEAADzD3+EJAgEAADzD3+EJPgDAADzD3+EJOgDAADzD3+EJNgDAADzD3+EJMgDAADzD3+EJLgDAADzD3+EJKgDAADzD3+EJJgDAADzD3+EJIgDAADzD3+EJHgDAADzD3+EJGgDAADzD3+EJFgDAADzD3+EJEgDAADzD3+EJDgDAADzD3+EJCgDAADzD3+EJBgDAADzD3+EJAgDAADzD3+EJPgCAADzD3+EJOgCAADzD3+EJNgCAADzD3+EJMgCAADzD3+EJLgCAADzD3+EJKgCAADzD3+EJJgCAADzD3+EJIgCAADzD3+EJHgCAADzD3+EJGgCAADzD3+EJFgCAADzD3+EJEgCAADzD3+EJDgCAADzD3+EJCgCAADzD3+EJBgCAADzD3+EJAgCAADzD3+EJPgBAADzD3+EJOgBAADzD3+EJNgBAADzD3+EJMgBAADzD3+EJLgBAADzD3+EJKgBAADzD3+EJJgBAADzD3+EJIgBAADzD3+EJHgBAADzD3+EJGgBAADzD3+EJFgBAADzD3+EJEgBAADzD3+EJDgBAADzD3+EJCgBAADzD3+EJBgBAADzD3+EJAgBAADzD3+EJPgAAADzD3+EJOgAAADzD3+EJNgAAADzD3+EJMgAAADzD3+EJLgAAADzD3+EJKgAAADzD3+EJJgAAADzD3+EJIgAAADzD39EJHjzD39EJGjzD39EJFjzD39EJEjzD39EJDjzD39EJCjzD39EJBjzD39EJAhMiRwkSI2kJEgKAABIjWQkCDHAMckx0jH2Mf9FMcBFMclFMdLD"
+.p2align 6"#,
+        vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
+        vg_aes_ctr32_to_aesni = sym super::aes::vg_aes_ctr32_to_aesni::vg_aes_ctr32_to_aesni,
+        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
     )
 }
 
@@ -7946,7 +8699,7 @@ jmp 222f
 call {vg_ghash_pclmul}
 .base64 "SYtGEEmJB0mLRhhJiUcITInvSYu3sAAAAEyJ8kyJ+UiDwQBBuAEAAABNiflJgcEAAgAA"
 call {vg_aes_ctr32_aesni}
-.base64 "SIt8JBhJiwdJi1cISIkHSIlXCEmLn4AAAABJi6+IAAAATYunkAAAAE2Lr5gAAABNi7egAAAATYu/qAAAAEiNpCQoCgAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJPhIjaQkyPX///MPf4QkmAAAAPMPf4QkiAAAAPMPf0QkePMPf0QkaPMPf0QkWPMPf0QkSPMPf0QkOPMPf0QkCEyJHCRIjaQkOAoAAEiNZCQIMcAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
+.base64 "SIt8JBhJiwdJi1cISIkHSIlXCEmLn4AAAABJi6+IAAAATYunkAAAAE2Lr5gAAABNi7egAAAATYu/qAAAAEiNpCQoCgAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJPhMiRwkSI2kJMj1///zD3+EJCgKAADzD3+EJBgKAADzD3+EJAgKAADzD3+EJPgJAADzD3+EJOgJAADzD3+EJNgJAADzD3+EJMgJAADzD3+EJLgJAADzD3+EJKgJAADzD3+EJJgJAADzD3+EJIgJAADzD3+EJHgJAADzD3+EJGgJAADzD3+EJFgJAADzD3+EJEgJAADzD3+EJDgJAADzD3+EJCgJAADzD3+EJBgJAADzD3+EJAgJAADzD3+EJPgIAADzD3+EJOgIAADzD3+EJNgIAADzD3+EJMgIAADzD3+EJLgIAADzD3+EJKgIAADzD3+EJJgIAADzD3+EJIgIAADzD3+EJHgIAADzD3+EJGgIAADzD3+EJFgIAADzD3+EJEgIAADzD3+EJDgIAADzD3+EJCgIAADzD3+EJBgIAADzD3+EJAgIAADzD3+EJPgHAADzD3+EJOgHAADzD3+EJNgHAADzD3+EJMgHAADzD3+EJLgHAADzD3+EJKgHAADzD3+EJJgHAADzD3+EJIgHAADzD3+EJHgHAADzD3+EJGgHAADzD3+EJFgHAADzD3+EJEgHAADzD3+EJDgHAADzD3+EJCgHAADzD3+EJBgHAADzD3+EJAgHAADzD3+EJPgGAADzD3+EJOgGAADzD3+EJNgGAADzD3+EJMgGAADzD3+EJLgGAADzD3+EJKgGAADzD3+EJJgGAADzD3+EJIgGAADzD3+EJHgGAADzD3+EJGgGAADzD3+EJFgGAADzD3+EJEgGAADzD3+EJDgGAADzD3+EJCgGAADzD3+EJBgGAADzD3+EJAgGAADzD3+EJPgFAADzD3+EJOgFAADzD3+EJNgFAADzD3+EJMgFAADzD3+EJLgFAADzD3+EJKgFAADzD3+EJJgFAADzD3+EJIgFAADzD3+EJHgFAADzD3+EJGgFAADzD3+EJFgFAADzD3+EJEgFAADzD3+EJDgFAADzD3+EJCgFAADzD3+EJBgFAADzD3+EJAgFAADzD3+EJPgEAADzD3+EJOgEAADzD3+EJNgEAADzD3+EJMgEAADzD3+EJLgEAADzD3+EJKgEAADzD3+EJJgEAADzD3+EJIgEAADzD3+EJHgEAADzD3+EJGgEAADzD3+EJFgEAADzD3+EJEgEAADzD3+EJDgEAADzD3+EJCgEAADzD3+EJBgEAADzD3+EJAgEAADzD3+EJPgDAADzD3+EJOgDAADzD3+EJNgDAADzD3+EJMgDAADzD3+EJLgDAADzD3+EJKgDAADzD3+EJJgDAADzD3+EJIgDAADzD3+EJHgDAADzD3+EJGgDAADzD3+EJFgDAADzD3+EJEgDAADzD3+EJDgDAADzD3+EJCgDAADzD3+EJBgDAADzD3+EJAgDAADzD3+EJPgCAADzD3+EJOgCAADzD3+EJNgCAADzD3+EJMgCAADzD3+EJLgCAADzD3+EJKgCAADzD3+EJJgCAADzD3+EJIgCAADzD3+EJHgCAADzD3+EJGgCAADzD3+EJFgCAADzD3+EJEgCAADzD3+EJDgCAADzD3+EJCgCAADzD3+EJBgCAADzD3+EJAgCAADzD3+EJPgBAADzD3+EJOgBAADzD3+EJNgBAADzD3+EJMgBAADzD3+EJLgBAADzD3+EJKgBAADzD3+EJJgBAADzD3+EJIgBAADzD3+EJHgBAADzD3+EJGgBAADzD3+EJFgBAADzD3+EJEgBAADzD3+EJDgBAADzD3+EJCgBAADzD3+EJBgBAADzD3+EJAgBAADzD3+EJPgAAADzD3+EJOgAAADzD3+EJNgAAADzD3+EJMgAAADzD3+EJLgAAADzD3+EJKgAAADzD3+EJJgAAADzD3+EJIgAAADzD39EJHjzD39EJGjzD39EJFjzD39EJEjzD39EJDjzD39EJCjzD39EJBjzD39EJAhMiRwkSI2kJDgKAABIjWQkCDHAMckx0jH2Mf9FMcBFMclFMdLD"
 .p2align 6"#,
         vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
         vg_aes_gcm_encrypt_blocks_aesni_pclmul = sym super::aes::vg_aes_gcm_encrypt_blocks_aesni_pclmul::vg_aes_gcm_encrypt_blocks_aesni_pclmul,
@@ -7971,12 +8724,12 @@ pub const VG_AES_GCM_OPEN_PREPARED_AESNI_PCLMUL_FEATURES: verified_garbage_cpu::
 /// * `rounds` must be 10, 12 or 14.
 /// * `*ctx` must have the prepared format written by `vg_aes_gcm_prepare` (not the format of `vg_aes_gcm_init_precomputed`).
 /// * `data` must not overlap `ctx`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2640 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `ssse3`, `pclmulqdq` and `aes` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_open_prepared_aesni_pclmul(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
-        r#".base64 "SI2kJMj1//9Ii4QkQAoAAEiJRCQISIuEJEgKAABIiUQkEEiLhCRQCgAASIlEJBhIi4QkWAoAAEiJRCQgSIngSIPAMEiJRCQoSItEJChIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdNif5Jg8YQSYn9SYm3sAAAAE2Jh+gAAABNiY+4AAAASItEJAhJiYfIAAAASItEJBBJiYfQAAAASYnUSInNSItcJCBJiZ/gAAAAuQAAAABIg/sE"
+        r#".base64 "SI2kJND1//9Ii4QkOAoAAEiJRCQISIuEJEAKAABIiUQkEEiLhCRICgAASIlEJBhIi4QkUAoAAEiJRCQgSIngSIPAMEiJRCQoSItEJChIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdNif5Jg8YQSYn9SYm3sAAAAE2Jh+gAAABNiY+4AAAASItEJAhJiYfIAAAASItEJBBJiYfQAAAASYnUSInNSItcJCBJiZ/gAAAAuQAAAABIg/sE"
 jb 20f
 .base64 "SIP7EQ=="
 jb 22f
@@ -8118,7 +8871,7 @@ jmp 25f
 24:
 .base64 "uAAAAAA="
 25:
-.base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJDgKAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjWQk+EyJHCRIjaQk2Pb///MPf0QkKPMPf0QkGEyJHCRIjWQk+EiNpCTo/v//8w9/hCS4AAAA8w9/hCSYAAAA8w9/hCSIAAAA8w9/RCR48w9/RCRo8w9/RCRY8w9/RCQITIkcJEiNpCQYAQAASI1kJAhIjaQkKAkAAEiNZCQIicAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
+.base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJDAKAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjWQk+EyJHCRIjaQkwPX///MPf4QkMAoAAPMPf4QkIAoAAPMPf4QkEAoAAPMPf4QkAAoAAPMPf4Qk8AkAAPMPf4Qk4AkAAPMPf4Qk0AkAAPMPf4QkwAkAAPMPf4QksAkAAPMPf4QkoAkAAPMPf4QkkAkAAPMPf4QkgAkAAPMPf4QkcAkAAPMPf4QkYAkAAPMPf4QkUAkAAPMPf4QkQAkAAPMPf4QkMAkAAPMPf4QkIAkAAPMPf4QkEAkAAPMPf4QkAAkAAPMPf4Qk8AgAAPMPf4Qk4AgAAPMPf4Qk0AgAAPMPf4QkwAgAAPMPf4QksAgAAPMPf4QkoAgAAPMPf4QkkAgAAPMPf4QkgAgAAPMPf4QkcAgAAPMPf4QkYAgAAPMPf4QkUAgAAPMPf4QkQAgAAPMPf4QkMAgAAPMPf4QkIAgAAPMPf4QkEAgAAPMPf4QkAAgAAPMPf4Qk8AcAAPMPf4Qk4AcAAPMPf4Qk0AcAAPMPf4QkwAcAAPMPf4QksAcAAPMPf4QkoAcAAPMPf4QkkAcAAPMPf4QkgAcAAPMPf4QkcAcAAPMPf4QkYAcAAPMPf4QkUAcAAPMPf4QkQAcAAPMPf4QkMAcAAPMPf4QkIAcAAPMPf4QkEAcAAPMPf4QkAAcAAPMPf4Qk8AYAAPMPf4Qk4AYAAPMPf4Qk0AYAAPMPf4QkwAYAAPMPf4QksAYAAPMPf4QkoAYAAPMPf4QkkAYAAPMPf4QkgAYAAPMPf4QkcAYAAPMPf4QkYAYAAPMPf4QkUAYAAPMPf4QkQAYAAPMPf4QkMAYAAPMPf4QkIAYAAPMPf4QkEAYAAPMPf4QkAAYAAPMPf4Qk8AUAAPMPf4Qk4AUAAPMPf4Qk0AUAAPMPf4QkwAUAAPMPf4QksAUAAPMPf4QkoAUAAPMPf4QkkAUAAPMPf4QkgAUAAPMPf4QkcAUAAPMPf4QkYAUAAPMPf4QkUAUAAPMPf4QkQAUAAPMPf4QkMAUAAPMPf4QkIAUAAPMPf4QkEAUAAPMPf4QkAAUAAPMPf4Qk8AQAAPMPf4Qk4AQAAPMPf4Qk0AQAAPMPf4QkwAQAAPMPf4QksAQAAPMPf4QkoAQAAPMPf4QkkAQAAPMPf4QkgAQAAPMPf4QkcAQAAPMPf4QkYAQAAPMPf4QkUAQAAPMPf4QkQAQAAPMPf4QkMAQAAPMPf4QkIAQAAPMPf4QkEAQAAPMPf4QkAAQAAPMPf4Qk8AMAAPMPf4Qk4AMAAPMPf4Qk0AMAAPMPf4QkwAMAAPMPf4QksAMAAPMPf4QkoAMAAPMPf4QkkAMAAPMPf4QkgAMAAPMPf4QkcAMAAPMPf4QkYAMAAPMPf4QkUAMAAPMPf4QkQAMAAPMPf4QkMAMAAPMPf4QkIAMAAPMPf4QkEAMAAPMPf4QkAAMAAPMPf4Qk8AIAAPMPf4Qk4AIAAPMPf4Qk0AIAAPMPf4QkwAIAAPMPf4QksAIAAPMPf4QkoAIAAPMPf4QkkAIAAPMPf4QkgAIAAPMPf4QkcAIAAPMPf4QkYAIAAPMPf4QkUAIAAPMPf4QkQAIAAPMPf4QkMAIAAPMPf4QkIAIAAPMPf4QkEAIAAPMPf4QkAAIAAPMPf4Qk8AEAAPMPf4Qk4AEAAPMPf4Qk0AEAAPMPf4QkwAEAAPMPf4QksAEAAPMPf4QkoAEAAPMPf4QkkAEAAPMPf4QkgAEAAPMPf4QkcAEAAPMPf4QkYAEAAPMPf4QkUAEAAPMPf4QkQAEAAPMPf4QkMAEAAPMPf4QkIAEAAPMPf4QkEAEAAPMPf4QkAAEAAPMPf4Qk8AAAAPMPf4Qk4AAAAPMPf4Qk0AAAAPMPf4QkwAAAAPMPf4QksAAAAPMPf4QkoAAAAPMPf4QkkAAAAPMPf4QkgAAAAPMPf0QkcPMPf0QkYPMPf0QkUPMPf0QkQPMPf0QkMPMPf0QkIPMPf0QkEPMPfwQkSI2kJEAKAABIjWQkCInAMckx0jH2Mf9FMcBFMclFMdLD"
 .p2align 6"#,
         vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
         vg_aes_gcm_decrypt_blocks_aesni_pclmul = sym super::aes::vg_aes_gcm_decrypt_blocks_aesni_pclmul::vg_aes_gcm_decrypt_blocks_aesni_pclmul,
@@ -8130,6 +8883,8 @@ jmp 25f
 pub const VG_AES_GCM_OPEN_TO_PREPARED_AESNI_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::AES);
 
 /// `vg_aes_gcm_open_to` with a 1032-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the prepared powers its count says are present. The powers remain secret; how many are present may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openToPreparedContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -8163,7 +8918,7 @@ jmp 23f
 22:
 23:
 21:
-.base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW0iNpCRACgAAww=="
+.base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW0iNpCRACgAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJPhMiRwkSI2kJDD1///zD3+EJMAKAADzD3+EJLAKAADzD3+EJKAKAADzD3+EJJAKAADzD3+EJIAKAADzD3+EJHAKAADzD3+EJGAKAADzD3+EJFAKAADzD3+EJEAKAADzD3+EJDAKAADzD3+EJCAKAADzD3+EJBAKAADzD3+EJAAKAADzD3+EJPAJAADzD3+EJOAJAADzD3+EJNAJAADzD3+EJMAJAADzD3+EJLAJAADzD3+EJKAJAADzD3+EJJAJAADzD3+EJIAJAADzD3+EJHAJAADzD3+EJGAJAADzD3+EJFAJAADzD3+EJEAJAADzD3+EJDAJAADzD3+EJCAJAADzD3+EJBAJAADzD3+EJAAJAADzD3+EJPAIAADzD3+EJOAIAADzD3+EJNAIAADzD3+EJMAIAADzD3+EJLAIAADzD3+EJKAIAADzD3+EJJAIAADzD3+EJIAIAADzD3+EJHAIAADzD3+EJGAIAADzD3+EJFAIAADzD3+EJEAIAADzD3+EJDAIAADzD3+EJCAIAADzD3+EJBAIAADzD3+EJAAIAADzD3+EJPAHAADzD3+EJOAHAADzD3+EJNAHAADzD3+EJMAHAADzD3+EJLAHAADzD3+EJKAHAADzD3+EJJAHAADzD3+EJIAHAADzD3+EJHAHAADzD3+EJGAHAADzD3+EJFAHAADzD3+EJEAHAADzD3+EJDAHAADzD3+EJCAHAADzD3+EJBAHAADzD3+EJAAHAADzD3+EJPAGAADzD3+EJOAGAADzD3+EJNAGAADzD3+EJMAGAADzD3+EJLAGAADzD3+EJKAGAADzD3+EJJAGAADzD3+EJIAGAADzD3+EJHAGAADzD3+EJGAGAADzD3+EJFAGAADzD3+EJEAGAADzD3+EJDAGAADzD3+EJCAGAADzD3+EJBAGAADzD3+EJAAGAADzD3+EJPAFAADzD3+EJOAFAADzD3+EJNAFAADzD3+EJMAFAADzD3+EJLAFAADzD3+EJKAFAADzD3+EJJAFAADzD3+EJIAFAADzD3+EJHAFAADzD3+EJGAFAADzD3+EJFAFAADzD3+EJEAFAADzD3+EJDAFAADzD3+EJCAFAADzD3+EJBAFAADzD3+EJAAFAADzD3+EJPAEAADzD3+EJOAEAADzD3+EJNAEAADzD3+EJMAEAADzD3+EJLAEAADzD3+EJKAEAADzD3+EJJAEAADzD3+EJIAEAADzD3+EJHAEAADzD3+EJGAEAADzD3+EJFAEAADzD3+EJEAEAADzD3+EJDAEAADzD3+EJCAEAADzD3+EJBAEAADzD3+EJAAEAADzD3+EJPADAADzD3+EJOADAADzD3+EJNADAADzD3+EJMADAADzD3+EJLADAADzD3+EJKADAADzD3+EJJADAADzD3+EJIADAADzD3+EJHADAADzD3+EJGADAADzD3+EJFADAADzD3+EJEADAADzD3+EJDADAADzD3+EJCADAADzD3+EJBADAADzD3+EJAADAADzD3+EJPACAADzD3+EJOACAADzD3+EJNACAADzD3+EJMACAADzD3+EJLACAADzD3+EJKACAADzD3+EJJACAADzD3+EJIACAADzD3+EJHACAADzD3+EJGACAADzD3+EJFACAADzD3+EJEACAADzD3+EJDACAADzD3+EJCACAADzD3+EJBACAADzD3+EJAACAADzD3+EJPABAADzD3+EJOABAADzD3+EJNABAADzD3+EJMABAADzD3+EJLABAADzD3+EJKABAADzD3+EJJABAADzD3+EJIABAADzD3+EJHABAADzD3+EJGABAADzD3+EJFABAADzD3+EJEABAADzD3+EJDABAADzD3+EJCABAADzD3+EJBABAADzD3+EJAABAADzD3+EJPAAAADzD3+EJOAAAADzD3+EJNAAAADzD3+EJMAAAADzD3+EJLAAAADzD3+EJKAAAADzD3+EJJAAAADzD3+EJIAAAADzD39EJHDzD39EJGDzD39EJFDzD39EJEDzD39EJDDzD39EJCDzD39EJBDzD38EJEiNpCTQCgAASI1kJAiJwDHJMdIx9jH/RTHARTHJRTHSww=="
 .p2align 6"#,
         vg_aes_gcm_open_split_aesni_pclmul = sym super::aes::vg_aes_gcm_open_split_aesni_pclmul::vg_aes_gcm_open_split_aesni_pclmul,
     )
@@ -8173,6 +8928,8 @@ jmp 23f
 pub const VG_AES_GCM_STREAM_ENCRYPT_PREPARED_AESNI_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::AES);
 
 /// `vg_aes_gcm_stream_encrypt` with a 1032-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the prepared powers its count says are present. The powers remain secret; how many are present may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.streamEncryptPreparedContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -8348,7 +9105,7 @@ jmp 238f
 jmp 21f
 20:
 21:
-.base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJBgKAADD"
+.base64 "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"
 .p2align 6"#,
         vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
         vg_aes_gcm_encrypt_blocks_aesni_pclmul = sym super::aes::vg_aes_gcm_encrypt_blocks_aesni_pclmul::vg_aes_gcm_encrypt_blocks_aesni_pclmul,
@@ -8360,6 +9117,8 @@ jmp 21f
 pub const VG_AES_GCM_STREAM_DECRYPT_PREPARED_AESNI_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::AES);
 
 /// `vg_aes_gcm_stream_decrypt` with a 1032-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the prepared powers its count says are present. The powers remain secret; how many are present may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.streamDecryptPreparedContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -8536,7 +9295,7 @@ jmp 240f
 jmp 21f
 20:
 21:
-.base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJBgKAADD"
+.base64 "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"
 .p2align 6"#,
         vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
         vg_aes_gcm_decrypt_blocks_aesni_pclmul = sym super::aes::vg_aes_gcm_decrypt_blocks_aesni_pclmul::vg_aes_gcm_decrypt_blocks_aesni_pclmul,
@@ -8548,6 +9307,8 @@ jmp 21f
 pub const VG_AES_GCM_SEAL_GATHER_PREPARED_AESNI_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::AES);
 
 /// `vg_aes_gcm_seal_gather` with a 1032-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the prepared powers its count says are present. The powers remain secret; how many are present may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealGatherPreparedContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -8561,207 +9322,238 @@ pub const VG_AES_GCM_SEAL_GATHER_PREPARED_AESNI_PCLMUL_FEATURES: verified_garbag
 /// * The slices `src` lists must be `len` bytes long in all.
 /// * `*ctx` must have the prepared format written by `vg_aes_gcm_prepare` (not the format of `vg_aes_gcm_init_precomputed`).
 /// * `dst` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `src`, the slices `src` lists or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the return address on the stack or the 5128 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the return address on the stack or the 2672 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `ssse3`, `pclmulqdq` and `aes` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_gather_prepared_aesni_pclmul(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        r#".base64 "SI2kJBD///9Ii4Qk+AAAAEiJRCQISIuEJAABAABIiUQkEEiLhCQIAQAASIlEJBhIi4QkEAEAAEiJRCQgSIuEJBgBAABIiUQkKEiJ4EiDwDhIiUQkMEyLXCQwTItUJAhIi0QkEEmJO0mJcwhNiUMQTYlLGE2JS1BNiVM4SYlDQEiLRCQYTItUJCBMi0QkKEmJQyBNiVMoTYlDMLgAAAAASYlDSEmJQ1hJiUNgSInWSInKTInZSIPBaEyLXCQwSYtDKEg97///fw=="
-jb 20f
-.base64 "TItcJDBJi0MoSD3///9/"
-jb 22f
-.base64 "TItcJDBBugAAAABJi0NASIXA"
-je 24f
-.base64 "TYtTOE2LUgg="
-jmp 25f
-24:
-25:
-.base64 "SYtDKEjB6ARIweAESTnCSYtDKEG6AAAAAEkPQ8JIPf///38="
+        r#".base64 "SI2kJMj1//9Ii4QkQAoAAEiJRCQISIuEJEgKAABIiUQkEEiLhCRQCgAASIlEJBhIi4QkWAoAAEiJRCQgSIuEJGAKAABIiUQkKEiJ4EiDwDhIiUQkMEiLRCQwSImYgAAAAEiJqIgAAABMiaCQAAAATImomAAAAEyJsKAAAABMibioAAAASYnHTYn+SYPGEEmJ/UmJt7AAAABNiYfoAAAATYmPuAAAAEiLRCQYSYmHyAAAAEiLRCQgSYmH0AAAAEmJ1EiJzUiD/Qw="
+je 20f
+.base64 "uAAAAABJiQZJiUYISYmv2AAAALsAAAAATIniSInpSMHpBEiJ6EiD5Q9IKehJAcRIhck="
+je 22f
+.base64 "TInvSIHH8AAAAEyJ9kiDxgBNifhJgcAAAgAA"
+call {vg_ghash_pclmul}
 jmp 23f
 22:
 23:
-jb 26f
-call {vg_aes_gcm_stream_init_pclmul_core}
-.base64 "TItcJDBJiztMid5Ig8ZougAAAABJi0sQTYtDGA=="
-call {vg_aes_gcm_stream_aad_pclmul_core}
-.base64 "TItcJDBJi0MoSIXA"
-je 28f
-.base64 "SYtLGEmJyEmD4A9NhcA="
-je 210f
-.base64 "uBAAAABMKcBJicBJiztIichMAcBJiUNQTIneSIPGaEiJykyJ2UiDwVg="
-call {vg_aes_gcm_stream_aad_pclmul_core}
-jmp 211f
-210:
+.base64 "SInpSIXJ"
+je 24f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMieZBugAAAAA="
+26:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 26b
+.base64 "TInvSIHH8AAAAEyJ9kiDxgBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_pclmul}
+jmp 25f
+24:
+25:
+.base64 "uwAAAABJi6/YAAAASInYSAHASAHASAHASA/ISYlHYEiJ6EgBwEgBwEgBwEgPyEmJR2hMie9IgcfwAAAATIn2SIPGAEyJ+kiDwmC5AQAAAE2J+EmBwAACAAA="
+call {vg_ghash_pclmul}
+jmp 21f
+20:
+.base64 "QYsEJEGLTCQEQYtUJAi+AAAAAUGJBkGJTgRBiVYIQYl2DA=="
+21:
+.base64 "QYsGQYtOBEGLVghBi3YMD86DxgEPzkGJRjBBiU40QYlWOEGJdjy4AAAAAEmJRhBJiUYYTYun6AAAAEmLr7gAAAC7AAAAAEyJ4kiJ6UjB6QRIiehIg+UPSCnoSQHESIXJ"
+je 27f
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBNifhJgcAAAgAA"
+call {vg_ghash_pclmul}
+jmp 28f
+27:
+28:
+.base64 "SInpSIXJ"
+je 29f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMieZBugAAAAA="
 211:
-.base64 "TItcJDBJi0NASIXA"
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 211b
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_pclmul}
+jmp 210f
+29:
+210:
+.base64 "SItEJAhJiYcAAQAASItEJBBJiYfgAAAASItEJBhJiYfIAAAASItEJCBJiYfAAAAASYmH0AAAALgAAAAASYmH8AAAAEmJhwgBAABJi4fgAAAASIXA"
 je 212f
 214:
-.base64 "TItcJDBNi1M4TYsKSYtCCE2LUyBJi0tISQHKSYs7SYtzCEyJ2kiDwmhJi0tQTYtDSFBBUlA="
-call {vg_aes_gcm_stream_encrypt_to_aesni_pclmul}
-.base64 "WFhYTItcJDBNi1M4SYtCCEmLS0hIAcFJg8IQSYtDQEiD6AFJiUtITYlTOEmJQ0BIhcA="
+.base64 "TYuXAAEAAEmLGkmLaghJg8IQTYmXAAEAAEmLhwgBAABIAcNIKcW4AAAAAEmJhwgBAABJi4fwAAAATYunyAAAAEkBxEiJxkiD5g9IAehJiYfwAAAASIXt"
+je 215f
+.base64 "SIX2"
+je 217f
+.base64 "uRAAAABIKfFIOc1ID0LNTAH2SIPGQEyJ50G6AAAAAA=="
+219:
+.base64 "Qg+2BBNGD7YcFkwx2EKIBBdJg8IBSTnK"
+jne 219b
+.base64 "SAHLSQHMSCnN"
+jmp 218f
+217:
+218:
+.base64 "SYnoScHoBE2FwA=="
+je 220f
+.base64 "SInZTYnjSInoSIPlD0gp6EgBw0kBxEyJ70mLt7AAAABMifJIg8IwTYn5SYHBAAIAAA=="
+call {vg_aes_ctr32_to_aesni}
+jmp 221f
+220:
+221:
+.base64 "SIXt"
+je 222f
+.base64 "uAAAAABJiUZASYlGSEyJ70mLt7AAAABMifJIg8IwTInxSIPBQEG4AQAAAE2J+UmBwQACAAA="
+call {vg_aes_ctr32_aesni}
+.base64 "TInnTIn2SIPGQEiJ6UG6AAAAAA=="
+224:
+.base64 "Qg+2BBNGD7YcFkwx2EKIBBdJg8IBSTnK"
+jne 224b
+jmp 223f
+222:
+223:
+jmp 216f
+215:
+216:
+.base64 "TYuX4AAAAEmD6gFNiZfgAAAA"
 jne 214b
 jmp 213f
 212:
 213:
-jmp 29f
-28:
-29:
-.base64 "TItcJDBJiztJi3MITInaSIPCaEmLSxhNi0MoTYtLMA=="
-call {vg_aes_gcm_stream_finish_aesni_pclmul_core}
-jmp 27f
-26:
-.base64 "TItcJDBBugAAAABJi0NASIXA"
-je 215f
-.base64 "TYtTOE2LUgg="
-jmp 216f
-215:
-216:
-.base64 "SYtDKEjB6ARIweAEQbgAAAAASTnCTQ9C0EmB+u///38="
-jb 217f
-.base64 "SYlzaEmJU3BNi0tASYt7IE2LUzhMidC5AAAAAE2FyQ=="
-je 219f
-.base64 "SYsCSYtKCEmD6QFJg8IQSAHP"
-jmp 220f
-219:
-220:
-.base64 "SYlDeEmJi4AAAABNidNJg/kA"
-je 221f
-223:
-.base64 "SYszSYtLCEmDwxBBugAAAABJichJwegGScHgBkmD+AA="
-je 224f
-226:
-.base64 "80IPbwQW80IPb0wWEPNCD29UFiDzQg9vXBYw80IPfwQX80IPf0wXEPNCD39UFyDzQg9/XBcwSYPCQE05wg=="
-jne 226b
-jmp 225f
-224:
+.base64 "TYunyAAAAEmLr9AAAAC7AAAAAEyJ4kiJ6UjB6QRIiehIg+UPSCnoSQHESIXJ"
+je 225f
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBNifhJgcAAAgAA"
+call {vg_ghash_pclmul}
+jmp 226f
 225:
-.base64 "SYnIScHoBEnB4ARNOcI="
+226:
+.base64 "SInpSIXJ"
 je 227f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMieZBugAAAAA="
 229:
-.base64 "80IPbwQW80IPfwQXSYPCEE05wg=="
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
 jne 229b
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_pclmul}
 jmp 228f
 227:
 228:
-.base64 "STnK"
-je 230f
-.base64 "SIP5EA=="
-jb 232f
-.base64 "SYnKSYPqEPNCD28EFvNCD38EFw=="
-jmp 233f
-232:
-234:
+.base64 "SYufuAAAAEmLr8AAAABIidhIAcBIAcBIAcBID8hJiUdgSInoSAHASAHASAHASA/ISYlHaEyJ70iBx/AAAABMifZIg8YQTIn6SIPCYLkBAAAATYn4SYHAAAIAAA=="
+call {vg_ghash_pclmul}
+.base64 "SYtGEEmJB0mLRhhJiUcITInvSYu3sAAAAEyJ8kyJ+UiDwQBBuAEAAABNiflJgcEAAgAA"
+call {vg_aes_ctr32_aesni}
+.base64 "SIt8JChJiwdJi1cISIkHSIlXCEmLn4AAAABJi6+IAAAATYunkAAAAE2Lr5gAAABNi7egAAAATYu/qAAAAEiNpCQ4CgAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJPhMiRwkSI2kJJj1///zD3+EJFgKAADzD3+EJEgKAADzD3+EJDgKAADzD3+EJCgKAADzD3+EJBgKAADzD3+EJAgKAADzD3+EJPgJAADzD3+EJOgJAADzD3+EJNgJAADzD3+EJMgJAADzD3+EJLgJAADzD3+EJKgJAADzD3+EJJgJAADzD3+EJIgJAADzD3+EJHgJAADzD3+EJGgJAADzD3+EJFgJAADzD3+EJEgJAADzD3+EJDgJAADzD3+EJCgJAADzD3+EJBgJAADzD3+EJAgJAADzD3+EJPgIAADzD3+EJOgIAADzD3+EJNgIAADzD3+EJMgIAADzD3+EJLgIAADzD3+EJKgIAADzD3+EJJgIAADzD3+EJIgIAADzD3+EJHgIAADzD3+EJGgIAADzD3+EJFgIAADzD3+EJEgIAADzD3+EJDgIAADzD3+EJCgIAADzD3+EJBgIAADzD3+EJAgIAADzD3+EJPgHAADzD3+EJOgHAADzD3+EJNgHAADzD3+EJMgHAADzD3+EJLgHAADzD3+EJKgHAADzD3+EJJgHAADzD3+EJIgHAADzD3+EJHgHAADzD3+EJGgHAADzD3+EJFgHAADzD3+EJEgHAADzD3+EJDgHAADzD3+EJCgHAADzD3+EJBgHAADzD3+EJAgHAADzD3+EJPgGAADzD3+EJOgGAADzD3+EJNgGAADzD3+EJMgGAADzD3+EJLgGAADzD3+EJKgGAADzD3+EJJgGAADzD3+EJIgGAADzD3+EJHgGAADzD3+EJGgGAADzD3+EJFgGAADzD3+EJEgGAADzD3+EJDgGAADzD3+EJCgGAADzD3+EJBgGAADzD3+EJAgGAADzD3+EJPgFAADzD3+EJOgFAADzD3+EJNgFAADzD3+EJMgFAADzD3+EJLgFAADzD3+EJKgFAADzD3+EJJgFAADzD3+EJIgFAADzD3+EJHgFAADzD3+EJGgFAADzD3+EJFgFAADzD3+EJEgFAADzD3+EJDgFAADzD3+EJCgFAADzD3+EJBgFAADzD3+EJAgFAADzD3+EJPgEAADzD3+EJOgEAADzD3+EJNgEAADzD3+EJMgEAADzD3+EJLgEAADzD3+EJKgEAADzD3+EJJgEAADzD3+EJIgEAADzD3+EJHgEAADzD3+EJGgEAADzD3+EJFgEAADzD3+EJEgEAADzD3+EJDgEAADzD3+EJCgEAADzD3+EJBgEAADzD3+EJAgEAADzD3+EJPgDAADzD3+EJOgDAADzD3+EJNgDAADzD3+EJMgDAADzD3+EJLgDAADzD3+EJKgDAADzD3+EJJgDAADzD3+EJIgDAADzD3+EJHgDAADzD3+EJGgDAADzD3+EJFgDAADzD3+EJEgDAADzD3+EJDgDAADzD3+EJCgDAADzD3+EJBgDAADzD3+EJAgDAADzD3+EJPgCAADzD3+EJOgCAADzD3+EJNgCAADzD3+EJMgCAADzD3+EJLgCAADzD3+EJKgCAADzD3+EJJgCAADzD3+EJIgCAADzD3+EJHgCAADzD3+EJGgCAADzD3+EJFgCAADzD3+EJEgCAADzD3+EJDgCAADzD3+EJCgCAADzD3+EJBgCAADzD3+EJAgCAADzD3+EJPgBAADzD3+EJOgBAADzD3+EJNgBAADzD3+EJMgBAADzD3+EJLgBAADzD3+EJKgBAADzD3+EJJgBAADzD3+EJIgBAADzD3+EJHgBAADzD3+EJGgBAADzD3+EJFgBAADzD3+EJEgBAADzD3+EJDgBAADzD3+EJCgBAADzD3+EJBgBAADzD3+EJAgBAADzD3+EJPgAAADzD3+EJOgAAADzD3+EJNgAAADzD3+EJMgAAADzD3+EJLgAAADzD3+EJKgAAADzD3+EJJgAAADzD3+EJIgAAADzD39EJHjzD39EJGjzD39EJFjzD39EJEjzD39EJDjzD39EJCjzD39EJBjzD39EJAhMiRwkSI2kJGgKAABIjWQkCDHAMckx0jH2Mf9FMcBFMclFMdLD"
+.p2align 6"#,
+        vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
+        vg_aes_ctr32_to_aesni = sym super::aes::vg_aes_ctr32_to_aesni::vg_aes_ctr32_to_aesni,
+        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+    )
+}
+
+/// The CPU features `vg_aes_gcm_seal_contiguous_prepared_aesni` requires (`Artifact.features`).
+pub const VG_AES_GCM_SEAL_CONTIGUOUS_PREPARED_AESNI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES);
+
+/// `vg_aes_gcm_seal_contiguous` with a 1032-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the prepared powers its count says are present. The powers remain secret; how many are present may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealContiguousPreparedContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 1032 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `src` must be valid for reads of `len` bytes, and `dst` for reads and writes of `len` bytes. The two pointers must be identical or their regions disjoint.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `*ctx` must have the prepared format written by `vg_aes_gcm_prepare` (not the format of `vg_aes_gcm_init_precomputed`).
+/// * `dst` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `src` when distinct from `dst` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `src` when distinct from `dst`, `dst` and `tag` may overlap the return address on the stack or the 2640 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `ssse3` and `aes` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_contiguous_prepared_aesni(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+    core::arch::naked_asm!(
+        r#".base64 "SI2kJND1//9Ii4QkOAoAAEiJRCQISIuEJEAKAABIiUQkEEiLhCRICgAASIlEJBhIi4QkUAoAAEiJRCQgSIngSIPAMEiJRCQoSItEJChIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdNif5Jg8YQSYn9SYm3sAAAAE2Jh+gAAABNiY+4AAAASItEJBBJiYfIAAAASItEJBhJiYfQAAAASYnUSInNSIP9DA=="
+je 20f
+.base64 "uAAAAABJiQZJiUYISYmv2AAAALsAAAAATIniSInpSMHpBEiJ6EiD5Q9IKehJAcRIhck="
+je 22f
+.base64 "TInvSIHH8AAAAEyJ9kiDxgBNifhJgcAAAgAA"
+call {vg_ghash}
+jmp 23f
+22:
+23:
+.base64 "SInpSIXJ"
+je 24f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMieZBugAAAAA="
+26:
 .base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 234b
-233:
-jmp 231f
-230:
-231:
-.base64 "SAHPSYPpAQ=="
-jne 223b
-jmp 222f
-221:
-222:
-.base64 "TItcJDBJi1NoSYtLcE2LQxBNi0sYSYtDME2LUyhJi7uAAAAASYtzeE2LWyBQQVJBU1dWTItcJFhJiztJi3MI"
-call {vg_aes_gcm_seal_split_aesni_pclmul}
-.base64 "WFhYWFg="
-jmp 218f
-217:
-.base64 "SYlzaEmJU3BNi0tASYt7IE2LWzhJg/kA"
-je 235f
-237:
-.base64 "SYszSYtLCEmDwxBBugAAAABJichJwegGScHgBkmD+AA="
-je 238f
-240:
-.base64 "80IPbwQW80IPb0wWEPNCD29UFiDzQg9vXBYw80IPfwQX80IPf0wXEPNCD39UFyDzQg9/XBcwSYPCQE05wg=="
-jne 240b
-jmp 239f
-238:
-239:
-.base64 "SYnIScHoBEnB4ARNOcI="
-je 241f
-243:
-.base64 "80IPbwQW80IPfwQXSYPCEE05wg=="
-jne 243b
-jmp 242f
-241:
-242:
-.base64 "STnK"
-je 244f
-.base64 "SIP5EA=="
-jb 246f
-.base64 "SYnKSYPqEPNCD28EFvNCD38EFw=="
-jmp 247f
-246:
-248:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 248b
-247:
-jmp 245f
-244:
-245:
-.base64 "SAHPSYPpAQ=="
-jne 237b
-jmp 236f
-235:
-236:
-.base64 "TItcJDBJiztJi3MISYtTaEmLS3BNi0MQTYtLGEmLQzBNi1MoTYtbIFBBUkFT"
-call {vg_aes_gcm_seal_aesni_pclmul}
-.base64 "WFhY"
-218:
-27:
+jne 26b
+.base64 "TInvSIHH8AAAAEyJ9kiDxgBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash}
+jmp 25f
+24:
+25:
+.base64 "uwAAAABJi6/YAAAASInYSAHASAHASAHASA/ISYlHYEiJ6EgBwEgBwEgBwEgPyEmJR2hMie9IgcfwAAAATIn2SIPGAEyJ+kiDwmC5AQAAAE2J+EmBwAACAAA="
+call {vg_ghash}
 jmp 21f
 20:
-.base64 "SYlzaEmJU3BNi0tASYt7IE2LWzhJg/kA"
-je 249f
-251:
-.base64 "SYszSYtLCEmDwxBBugAAAABJichJwegGScHgBkmD+AA="
-je 252f
-254:
-.base64 "80IPbwQW80IPb0wWEPNCD29UFiDzQg9vXBYw80IPfwQX80IPf0wXEPNCD39UFyDzQg9/XBcwSYPCQE05wg=="
-jne 254b
-jmp 253f
-252:
-253:
-.base64 "SYnIScHoBEnB4ARNOcI="
-je 255f
-257:
-.base64 "80IPbwQW80IPfwQXSYPCEE05wg=="
-jne 257b
-jmp 256f
-255:
-256:
-.base64 "STnK"
-je 258f
-.base64 "SIP5EA=="
-jb 260f
-.base64 "SYnKSYPqEPNCD28EFvNCD38EFw=="
-jmp 261f
-260:
-262:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 262b
-261:
-jmp 259f
-258:
-259:
-.base64 "SAHPSYPpAQ=="
-jne 251b
-jmp 250f
-249:
-250:
-.base64 "TItcJDBJiztJi3MISYtTaEmLS3BNi0MQTYtLGEmLQzBNi1MoTYtbIFBBUkFT"
-call {vg_aes_gcm_seal_aesni_pclmul}
-.base64 "WFhY"
+.base64 "QYsEJEGLTCQEQYtUJAi+AAAAAUGJBkGJTgRBiVYIQYl2DA=="
 21:
-.base64 "SI2kJPAAAADD"
+.base64 "QYsGQYtOBEGLVghBi3YMD86DxgEPzkGJRjBBiU40QYlWOEGJdjy4AAAAAEmJRhBJiUYYTYun6AAAAEmLr7gAAAC7AAAAAEyJ4kiJ6UjB6QRIiehIg+UPSCnoSQHESIXJ"
+je 27f
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBNifhJgcAAAgAA"
+call {vg_ghash}
+jmp 28f
+27:
+28:
+.base64 "SInpSIXJ"
+je 29f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMieZBugAAAAA="
+211:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 211b
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash}
+jmp 210f
+29:
+210:
+.base64 "SYuH0AAAAEmJh8AAAABIwegESIXA"
+je 212f
+.base64 "TInvSYu3sAAAAEyJ8kiDwjBIi0wkCEmJwE2Ln8gAAABNiflJgcHAAQAA"
+call {vg_aes_ctr32_to_aesni}
+.base64 "SYuH0AAAAEiJwUiD4Q9JiY/QAAAASCnISQOHyAAAAEmJh8gAAAA="
+jmp 213f
+212:
+213:
+.base64 "SItcJAhJA5/AAAAASSuf0AAAAE2Lp8gAAABJi6/QAAAASIXt"
+je 214f
+.base64 "uAAAAABJiUZASYlGSEyJ70mLt7AAAABMifJIg8IwTInxSIPBQEG4AQAAAE2J+UmBwQACAAA="
+call {vg_aes_ctr32_aesni}
+.base64 "TInnTIn2SIPGQEiJ6UG6AAAAAA=="
+216:
+.base64 "Qg+2BBNGD7YcFkwx2EKIBBdJg8IBSTnK"
+jne 216b
+jmp 215f
+214:
+215:
+.base64 "TItkJBBJi6/AAAAAuwAAAABMieJIielIwekESInoSIPlD0gp6EkBxEiFyQ=="
+je 217f
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBNifhJgcAAAgAA"
+call {vg_ghash}
+jmp 218f
+217:
+218:
+.base64 "SInpSIXJ"
+je 219f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMieZBugAAAAA="
+221:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 221b
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash}
+jmp 220f
+219:
+220:
+.base64 "SYufuAAAAEmLr8AAAABIidhIAcBIAcBIAcBID8hJiUdgSInoSAHASAHASAHASA/ISYlHaEyJ70iBx/AAAABMifZIg8YQTIn6SIPCYLkBAAAATYn4SYHAAAIAAA=="
+call {vg_ghash}
+.base64 "SYtGEEmJB0mLRhhJiUcITInvSYu3sAAAAEyJ8kyJ+UiDwQBBuAEAAABNiflJgcEAAgAA"
+call {vg_aes_ctr32_aesni}
+.base64 "SIt8JCBJiwdJi1cISIkHSIlXCEmLn4AAAABJi6+IAAAATYunkAAAAE2Lr5gAAABNi7egAAAATYu/qAAAAEiNpCQwCgAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJPhMiRwkSI2kJLj1///zD3+EJDgKAADzD3+EJCgKAADzD3+EJBgKAADzD3+EJAgKAADzD3+EJPgJAADzD3+EJOgJAADzD3+EJNgJAADzD3+EJMgJAADzD3+EJLgJAADzD3+EJKgJAADzD3+EJJgJAADzD3+EJIgJAADzD3+EJHgJAADzD3+EJGgJAADzD3+EJFgJAADzD3+EJEgJAADzD3+EJDgJAADzD3+EJCgJAADzD3+EJBgJAADzD3+EJAgJAADzD3+EJPgIAADzD3+EJOgIAADzD3+EJNgIAADzD3+EJMgIAADzD3+EJLgIAADzD3+EJKgIAADzD3+EJJgIAADzD3+EJIgIAADzD3+EJHgIAADzD3+EJGgIAADzD3+EJFgIAADzD3+EJEgIAADzD3+EJDgIAADzD3+EJCgIAADzD3+EJBgIAADzD3+EJAgIAADzD3+EJPgHAADzD3+EJOgHAADzD3+EJNgHAADzD3+EJMgHAADzD3+EJLgHAADzD3+EJKgHAADzD3+EJJgHAADzD3+EJIgHAADzD3+EJHgHAADzD3+EJGgHAADzD3+EJFgHAADzD3+EJEgHAADzD3+EJDgHAADzD3+EJCgHAADzD3+EJBgHAADzD3+EJAgHAADzD3+EJPgGAADzD3+EJOgGAADzD3+EJNgGAADzD3+EJMgGAADzD3+EJLgGAADzD3+EJKgGAADzD3+EJJgGAADzD3+EJIgGAADzD3+EJHgGAADzD3+EJGgGAADzD3+EJFgGAADzD3+EJEgGAADzD3+EJDgGAADzD3+EJCgGAADzD3+EJBgGAADzD3+EJAgGAADzD3+EJPgFAADzD3+EJOgFAADzD3+EJNgFAADzD3+EJMgFAADzD3+EJLgFAADzD3+EJKgFAADzD3+EJJgFAADzD3+EJIgFAADzD3+EJHgFAADzD3+EJGgFAADzD3+EJFgFAADzD3+EJEgFAADzD3+EJDgFAADzD3+EJCgFAADzD3+EJBgFAADzD3+EJAgFAADzD3+EJPgEAADzD3+EJOgEAADzD3+EJNgEAADzD3+EJMgEAADzD3+EJLgEAADzD3+EJKgEAADzD3+EJJgEAADzD3+EJIgEAADzD3+EJHgEAADzD3+EJGgEAADzD3+EJFgEAADzD3+EJEgEAADzD3+EJDgEAADzD3+EJCgEAADzD3+EJBgEAADzD3+EJAgEAADzD3+EJPgDAADzD3+EJOgDAADzD3+EJNgDAADzD3+EJMgDAADzD3+EJLgDAADzD3+EJKgDAADzD3+EJJgDAADzD3+EJIgDAADzD3+EJHgDAADzD3+EJGgDAADzD3+EJFgDAADzD3+EJEgDAADzD3+EJDgDAADzD3+EJCgDAADzD3+EJBgDAADzD3+EJAgDAADzD3+EJPgCAADzD3+EJOgCAADzD3+EJNgCAADzD3+EJMgCAADzD3+EJLgCAADzD3+EJKgCAADzD3+EJJgCAADzD3+EJIgCAADzD3+EJHgCAADzD3+EJGgCAADzD3+EJFgCAADzD3+EJEgCAADzD3+EJDgCAADzD3+EJCgCAADzD3+EJBgCAADzD3+EJAgCAADzD3+EJPgBAADzD3+EJOgBAADzD3+EJNgBAADzD3+EJMgBAADzD3+EJLgBAADzD3+EJKgBAADzD3+EJJgBAADzD3+EJIgBAADzD3+EJHgBAADzD3+EJGgBAADzD3+EJFgBAADzD3+EJEgBAADzD3+EJDgBAADzD3+EJCgBAADzD3+EJBgBAADzD3+EJAgBAADzD3+EJPgAAADzD3+EJOgAAADzD3+EJNgAAADzD3+EJMgAAADzD3+EJLgAAADzD3+EJKgAAADzD3+EJJgAAADzD3+EJIgAAADzD39EJHjzD39EJGjzD39EJFjzD39EJEjzD39EJDjzD39EJCjzD39EJBjzD39EJAhMiRwkSI2kJEgKAABIjWQkCDHAMckx0jH2Mf9FMcBFMclFMdLD"
 .p2align 6"#,
-        vg_aes_gcm_stream_init_pclmul_core = sym super::aes::vg_aes_gcm_stream_init_pclmul_core::vg_aes_gcm_stream_init_pclmul_core,
-        vg_aes_gcm_stream_aad_pclmul_core = sym super::aes::vg_aes_gcm_stream_aad_pclmul_core::vg_aes_gcm_stream_aad_pclmul_core,
-        vg_aes_gcm_stream_encrypt_to_aesni_pclmul = sym super::aes::vg_aes_gcm_stream_encrypt_to_aesni_pclmul::vg_aes_gcm_stream_encrypt_to_aesni_pclmul,
-        vg_aes_gcm_stream_finish_aesni_pclmul_core = sym super::aes::vg_aes_gcm_stream_finish_aesni_pclmul_core::vg_aes_gcm_stream_finish_aesni_pclmul_core,
-        vg_aes_gcm_seal_split_aesni_pclmul = sym super::aes::vg_aes_gcm_seal_split_aesni_pclmul::vg_aes_gcm_seal_split_aesni_pclmul,
-        vg_aes_gcm_seal_aesni_pclmul = sym super::aes::vg_aes_gcm_seal_aesni_pclmul::vg_aes_gcm_seal_aesni_pclmul,
+        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
+        vg_aes_ctr32_to_aesni = sym super::aes::vg_aes_ctr32_to_aesni::vg_aes_ctr32_to_aesni,
+        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
     )
 }
 
@@ -8769,6 +9561,8 @@ call {vg_aes_gcm_seal_aesni_pclmul}
 pub const VG_AES_GCM_SEAL_PREPARED_AESNI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES);
 
 /// `vg_aes_gcm_seal` with a 1032-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the prepared powers its count says are present. The powers remain secret; how many are present may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealPreparedContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -8877,7 +9671,7 @@ jmp 222f
 call {vg_ghash}
 .base64 "SYtGEEmJB0mLRhhJiUcITInvSYu3sAAAAEyJ8kyJ+UiDwQBBuAEAAABNiflJgcEAAgAA"
 call {vg_aes_ctr32_aesni}
-.base64 "SIt8JBhJiwdJi1cISIkHSIlXCEmLn4AAAABJi6+IAAAATYunkAAAAE2Lr5gAAABNi7egAAAATYu/qAAAAEiNpCQoCgAAww=="
+.base64 "SIt8JBhJiwdJi1cISIkHSIlXCEmLn4AAAABJi6+IAAAATYunkAAAAE2Lr5gAAABNi7egAAAATYu/qAAAAEiNpCQoCgAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJPhMiRwkSI2kJMj1///zD3+EJCgKAADzD3+EJBgKAADzD3+EJAgKAADzD3+EJPgJAADzD3+EJOgJAADzD3+EJNgJAADzD3+EJMgJAADzD3+EJLgJAADzD3+EJKgJAADzD3+EJJgJAADzD3+EJIgJAADzD3+EJHgJAADzD3+EJGgJAADzD3+EJFgJAADzD3+EJEgJAADzD3+EJDgJAADzD3+EJCgJAADzD3+EJBgJAADzD3+EJAgJAADzD3+EJPgIAADzD3+EJOgIAADzD3+EJNgIAADzD3+EJMgIAADzD3+EJLgIAADzD3+EJKgIAADzD3+EJJgIAADzD3+EJIgIAADzD3+EJHgIAADzD3+EJGgIAADzD3+EJFgIAADzD3+EJEgIAADzD3+EJDgIAADzD3+EJCgIAADzD3+EJBgIAADzD3+EJAgIAADzD3+EJPgHAADzD3+EJOgHAADzD3+EJNgHAADzD3+EJMgHAADzD3+EJLgHAADzD3+EJKgHAADzD3+EJJgHAADzD3+EJIgHAADzD3+EJHgHAADzD3+EJGgHAADzD3+EJFgHAADzD3+EJEgHAADzD3+EJDgHAADzD3+EJCgHAADzD3+EJBgHAADzD3+EJAgHAADzD3+EJPgGAADzD3+EJOgGAADzD3+EJNgGAADzD3+EJMgGAADzD3+EJLgGAADzD3+EJKgGAADzD3+EJJgGAADzD3+EJIgGAADzD3+EJHgGAADzD3+EJGgGAADzD3+EJFgGAADzD3+EJEgGAADzD3+EJDgGAADzD3+EJCgGAADzD3+EJBgGAADzD3+EJAgGAADzD3+EJPgFAADzD3+EJOgFAADzD3+EJNgFAADzD3+EJMgFAADzD3+EJLgFAADzD3+EJKgFAADzD3+EJJgFAADzD3+EJIgFAADzD3+EJHgFAADzD3+EJGgFAADzD3+EJFgFAADzD3+EJEgFAADzD3+EJDgFAADzD3+EJCgFAADzD3+EJBgFAADzD3+EJAgFAADzD3+EJPgEAADzD3+EJOgEAADzD3+EJNgEAADzD3+EJMgEAADzD3+EJLgEAADzD3+EJKgEAADzD3+EJJgEAADzD3+EJIgEAADzD3+EJHgEAADzD3+EJGgEAADzD3+EJFgEAADzD3+EJEgEAADzD3+EJDgEAADzD3+EJCgEAADzD3+EJBgEAADzD3+EJAgEAADzD3+EJPgDAADzD3+EJOgDAADzD3+EJNgDAADzD3+EJMgDAADzD3+EJLgDAADzD3+EJKgDAADzD3+EJJgDAADzD3+EJIgDAADzD3+EJHgDAADzD3+EJGgDAADzD3+EJFgDAADzD3+EJEgDAADzD3+EJDgDAADzD3+EJCgDAADzD3+EJBgDAADzD3+EJAgDAADzD3+EJPgCAADzD3+EJOgCAADzD3+EJNgCAADzD3+EJMgCAADzD3+EJLgCAADzD3+EJKgCAADzD3+EJJgCAADzD3+EJIgCAADzD3+EJHgCAADzD3+EJGgCAADzD3+EJFgCAADzD3+EJEgCAADzD3+EJDgCAADzD3+EJCgCAADzD3+EJBgCAADzD3+EJAgCAADzD3+EJPgBAADzD3+EJOgBAADzD3+EJNgBAADzD3+EJMgBAADzD3+EJLgBAADzD3+EJKgBAADzD3+EJJgBAADzD3+EJIgBAADzD3+EJHgBAADzD3+EJGgBAADzD3+EJFgBAADzD3+EJEgBAADzD3+EJDgBAADzD3+EJCgBAADzD3+EJBgBAADzD3+EJAgBAADzD3+EJPgAAADzD3+EJOgAAADzD3+EJNgAAADzD3+EJMgAAADzD3+EJLgAAADzD3+EJKgAAADzD3+EJJgAAADzD3+EJIgAAADzD39EJHjzD39EJGjzD39EJFjzD39EJEjzD39EJDjzD39EJCjzD39EJBjzD39EJAhMiRwkSI2kJDgKAABIjWQkCDHAMckx0jH2Mf9FMcBFMclFMdLD"
 .p2align 6"#,
         vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
         vg_aes_gcm_encrypt_blocks_aesni = sym super::aes::vg_aes_gcm_encrypt_blocks_aesni::vg_aes_gcm_encrypt_blocks_aesni,
@@ -8889,6 +9683,8 @@ call {vg_aes_ctr32_aesni}
 pub const VG_AES_GCM_OPEN_PREPARED_AESNI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES);
 
 /// `vg_aes_gcm_open` with a 1032-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the prepared powers its count says are present. The powers remain secret; how many are present may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openPreparedContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -9047,7 +9843,7 @@ jmp 25f
 24:
 .base64 "uAAAAAA="
 25:
-.base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJDAKAADD"
+.base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJDAKAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjWQk+EyJHCRIjaQkwPX///MPf4QkMAoAAPMPf4QkIAoAAPMPf4QkEAoAAPMPf4QkAAoAAPMPf4Qk8AkAAPMPf4Qk4AkAAPMPf4Qk0AkAAPMPf4QkwAkAAPMPf4QksAkAAPMPf4QkoAkAAPMPf4QkkAkAAPMPf4QkgAkAAPMPf4QkcAkAAPMPf4QkYAkAAPMPf4QkUAkAAPMPf4QkQAkAAPMPf4QkMAkAAPMPf4QkIAkAAPMPf4QkEAkAAPMPf4QkAAkAAPMPf4Qk8AgAAPMPf4Qk4AgAAPMPf4Qk0AgAAPMPf4QkwAgAAPMPf4QksAgAAPMPf4QkoAgAAPMPf4QkkAgAAPMPf4QkgAgAAPMPf4QkcAgAAPMPf4QkYAgAAPMPf4QkUAgAAPMPf4QkQAgAAPMPf4QkMAgAAPMPf4QkIAgAAPMPf4QkEAgAAPMPf4QkAAgAAPMPf4Qk8AcAAPMPf4Qk4AcAAPMPf4Qk0AcAAPMPf4QkwAcAAPMPf4QksAcAAPMPf4QkoAcAAPMPf4QkkAcAAPMPf4QkgAcAAPMPf4QkcAcAAPMPf4QkYAcAAPMPf4QkUAcAAPMPf4QkQAcAAPMPf4QkMAcAAPMPf4QkIAcAAPMPf4QkEAcAAPMPf4QkAAcAAPMPf4Qk8AYAAPMPf4Qk4AYAAPMPf4Qk0AYAAPMPf4QkwAYAAPMPf4QksAYAAPMPf4QkoAYAAPMPf4QkkAYAAPMPf4QkgAYAAPMPf4QkcAYAAPMPf4QkYAYAAPMPf4QkUAYAAPMPf4QkQAYAAPMPf4QkMAYAAPMPf4QkIAYAAPMPf4QkEAYAAPMPf4QkAAYAAPMPf4Qk8AUAAPMPf4Qk4AUAAPMPf4Qk0AUAAPMPf4QkwAUAAPMPf4QksAUAAPMPf4QkoAUAAPMPf4QkkAUAAPMPf4QkgAUAAPMPf4QkcAUAAPMPf4QkYAUAAPMPf4QkUAUAAPMPf4QkQAUAAPMPf4QkMAUAAPMPf4QkIAUAAPMPf4QkEAUAAPMPf4QkAAUAAPMPf4Qk8AQAAPMPf4Qk4AQAAPMPf4Qk0AQAAPMPf4QkwAQAAPMPf4QksAQAAPMPf4QkoAQAAPMPf4QkkAQAAPMPf4QkgAQAAPMPf4QkcAQAAPMPf4QkYAQAAPMPf4QkUAQAAPMPf4QkQAQAAPMPf4QkMAQAAPMPf4QkIAQAAPMPf4QkEAQAAPMPf4QkAAQAAPMPf4Qk8AMAAPMPf4Qk4AMAAPMPf4Qk0AMAAPMPf4QkwAMAAPMPf4QksAMAAPMPf4QkoAMAAPMPf4QkkAMAAPMPf4QkgAMAAPMPf4QkcAMAAPMPf4QkYAMAAPMPf4QkUAMAAPMPf4QkQAMAAPMPf4QkMAMAAPMPf4QkIAMAAPMPf4QkEAMAAPMPf4QkAAMAAPMPf4Qk8AIAAPMPf4Qk4AIAAPMPf4Qk0AIAAPMPf4QkwAIAAPMPf4QksAIAAPMPf4QkoAIAAPMPf4QkkAIAAPMPf4QkgAIAAPMPf4QkcAIAAPMPf4QkYAIAAPMPf4QkUAIAAPMPf4QkQAIAAPMPf4QkMAIAAPMPf4QkIAIAAPMPf4QkEAIAAPMPf4QkAAIAAPMPf4Qk8AEAAPMPf4Qk4AEAAPMPf4Qk0AEAAPMPf4QkwAEAAPMPf4QksAEAAPMPf4QkoAEAAPMPf4QkkAEAAPMPf4QkgAEAAPMPf4QkcAEAAPMPf4QkYAEAAPMPf4QkUAEAAPMPf4QkQAEAAPMPf4QkMAEAAPMPf4QkIAEAAPMPf4QkEAEAAPMPf4QkAAEAAPMPf4Qk8AAAAPMPf4Qk4AAAAPMPf4Qk0AAAAPMPf4QkwAAAAPMPf4QksAAAAPMPf4QkoAAAAPMPf4QkkAAAAPMPf4QkgAAAAPMPf0QkcPMPf0QkYPMPf0QkUPMPf0QkQPMPf0QkMPMPf0QkIPMPf0QkEPMPfwQkSI2kJEAKAABIjWQkCInAMckx0jH2Mf9FMcBFMclFMdLD"
 .p2align 6"#,
         vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
         vg_aes_gcm_decrypt_blocks_aesni = sym super::aes::vg_aes_gcm_decrypt_blocks_aesni::vg_aes_gcm_decrypt_blocks_aesni,
@@ -9059,6 +9855,8 @@ jmp 25f
 pub const VG_AES_GCM_OPEN_TO_PREPARED_AESNI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES);
 
 /// `vg_aes_gcm_open_to` with a 1032-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the prepared powers its count says are present. The powers remain secret; how many are present may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openToPreparedContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -9092,7 +9890,7 @@ jmp 23f
 22:
 23:
 21:
-.base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW0iNpCRACgAAww=="
+.base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW0iNpCRACgAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJPhMiRwkSI2kJDD1///zD3+EJMAKAADzD3+EJLAKAADzD3+EJKAKAADzD3+EJJAKAADzD3+EJIAKAADzD3+EJHAKAADzD3+EJGAKAADzD3+EJFAKAADzD3+EJEAKAADzD3+EJDAKAADzD3+EJCAKAADzD3+EJBAKAADzD3+EJAAKAADzD3+EJPAJAADzD3+EJOAJAADzD3+EJNAJAADzD3+EJMAJAADzD3+EJLAJAADzD3+EJKAJAADzD3+EJJAJAADzD3+EJIAJAADzD3+EJHAJAADzD3+EJGAJAADzD3+EJFAJAADzD3+EJEAJAADzD3+EJDAJAADzD3+EJCAJAADzD3+EJBAJAADzD3+EJAAJAADzD3+EJPAIAADzD3+EJOAIAADzD3+EJNAIAADzD3+EJMAIAADzD3+EJLAIAADzD3+EJKAIAADzD3+EJJAIAADzD3+EJIAIAADzD3+EJHAIAADzD3+EJGAIAADzD3+EJFAIAADzD3+EJEAIAADzD3+EJDAIAADzD3+EJCAIAADzD3+EJBAIAADzD3+EJAAIAADzD3+EJPAHAADzD3+EJOAHAADzD3+EJNAHAADzD3+EJMAHAADzD3+EJLAHAADzD3+EJKAHAADzD3+EJJAHAADzD3+EJIAHAADzD3+EJHAHAADzD3+EJGAHAADzD3+EJFAHAADzD3+EJEAHAADzD3+EJDAHAADzD3+EJCAHAADzD3+EJBAHAADzD3+EJAAHAADzD3+EJPAGAADzD3+EJOAGAADzD3+EJNAGAADzD3+EJMAGAADzD3+EJLAGAADzD3+EJKAGAADzD3+EJJAGAADzD3+EJIAGAADzD3+EJHAGAADzD3+EJGAGAADzD3+EJFAGAADzD3+EJEAGAADzD3+EJDAGAADzD3+EJCAGAADzD3+EJBAGAADzD3+EJAAGAADzD3+EJPAFAADzD3+EJOAFAADzD3+EJNAFAADzD3+EJMAFAADzD3+EJLAFAADzD3+EJKAFAADzD3+EJJAFAADzD3+EJIAFAADzD3+EJHAFAADzD3+EJGAFAADzD3+EJFAFAADzD3+EJEAFAADzD3+EJDAFAADzD3+EJCAFAADzD3+EJBAFAADzD3+EJAAFAADzD3+EJPAEAADzD3+EJOAEAADzD3+EJNAEAADzD3+EJMAEAADzD3+EJLAEAADzD3+EJKAEAADzD3+EJJAEAADzD3+EJIAEAADzD3+EJHAEAADzD3+EJGAEAADzD3+EJFAEAADzD3+EJEAEAADzD3+EJDAEAADzD3+EJCAEAADzD3+EJBAEAADzD3+EJAAEAADzD3+EJPADAADzD3+EJOADAADzD3+EJNADAADzD3+EJMADAADzD3+EJLADAADzD3+EJKADAADzD3+EJJADAADzD3+EJIADAADzD3+EJHADAADzD3+EJGADAADzD3+EJFADAADzD3+EJEADAADzD3+EJDADAADzD3+EJCADAADzD3+EJBADAADzD3+EJAADAADzD3+EJPACAADzD3+EJOACAADzD3+EJNACAADzD3+EJMACAADzD3+EJLACAADzD3+EJKACAADzD3+EJJACAADzD3+EJIACAADzD3+EJHACAADzD3+EJGACAADzD3+EJFACAADzD3+EJEACAADzD3+EJDACAADzD3+EJCACAADzD3+EJBACAADzD3+EJAACAADzD3+EJPABAADzD3+EJOABAADzD3+EJNABAADzD3+EJMABAADzD3+EJLABAADzD3+EJKABAADzD3+EJJABAADzD3+EJIABAADzD3+EJHABAADzD3+EJGABAADzD3+EJFABAADzD3+EJEABAADzD3+EJDABAADzD3+EJCABAADzD3+EJBABAADzD3+EJAABAADzD3+EJPAAAADzD3+EJOAAAADzD3+EJNAAAADzD3+EJMAAAADzD3+EJLAAAADzD3+EJKAAAADzD3+EJJAAAADzD3+EJIAAAADzD39EJHDzD39EJGDzD39EJFDzD39EJEDzD39EJDDzD39EJCDzD39EJBDzD38EJEiNpCTQCgAASI1kJAiJwDHJMdIx9jH/RTHARTHJRTHSww=="
 .p2align 6"#,
         vg_aes_gcm_open_split_aesni = sym super::aes::vg_aes_gcm_open_split_aesni::vg_aes_gcm_open_split_aesni,
     )
@@ -9102,6 +9900,8 @@ jmp 23f
 pub const VG_AES_GCM_STREAM_ENCRYPT_PREPARED_AESNI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES);
 
 /// `vg_aes_gcm_stream_encrypt` with a 1032-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the prepared powers its count says are present. The powers remain secret; how many are present may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.streamEncryptPreparedContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -9277,7 +10077,7 @@ jmp 238f
 jmp 21f
 20:
 21:
-.base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJBgKAADD"
+.base64 "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"
 .p2align 6"#,
         vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
         vg_aes_gcm_encrypt_blocks_aesni = sym super::aes::vg_aes_gcm_encrypt_blocks_aesni::vg_aes_gcm_encrypt_blocks_aesni,
@@ -9289,6 +10089,8 @@ jmp 21f
 pub const VG_AES_GCM_STREAM_DECRYPT_PREPARED_AESNI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES);
 
 /// `vg_aes_gcm_stream_decrypt` with a 1032-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the prepared powers its count says are present. The powers remain secret; how many are present may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.streamDecryptPreparedContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -9465,7 +10267,7 @@ jmp 240f
 jmp 21f
 20:
 21:
-.base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJBgKAADD"
+.base64 "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"
 .p2align 6"#,
         vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
         vg_aes_gcm_decrypt_blocks_aesni = sym super::aes::vg_aes_gcm_decrypt_blocks_aesni::vg_aes_gcm_decrypt_blocks_aesni,
@@ -9477,6 +10279,8 @@ jmp 21f
 pub const VG_AES_GCM_SEAL_GATHER_PREPARED_AESNI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES);
 
 /// `vg_aes_gcm_seal_gather` with a 1032-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the prepared powers its count says are present. The powers remain secret; how many are present may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealGatherPreparedContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -9490,207 +10294,269 @@ pub const VG_AES_GCM_SEAL_GATHER_PREPARED_AESNI_FEATURES: verified_garbage_cpu::
 /// * The slices `src` lists must be `len` bytes long in all.
 /// * `*ctx` must have the prepared format written by `vg_aes_gcm_prepare` (not the format of `vg_aes_gcm_init_precomputed`).
 /// * `dst` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `src`, the slices `src` lists or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the return address on the stack or the 5128 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the return address on the stack or the 2672 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `ssse3` and `aes` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_gather_prepared_aesni(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        r#".base64 "SI2kJBD///9Ii4Qk+AAAAEiJRCQISIuEJAABAABIiUQkEEiLhCQIAQAASIlEJBhIi4QkEAEAAEiJRCQgSIuEJBgBAABIiUQkKEiJ4EiDwDhIiUQkMEyLXCQwTItUJAhIi0QkEEmJO0mJcwhNiUMQTYlLGE2JS1BNiVM4SYlDQEiLRCQYTItUJCBMi0QkKEmJQyBNiVMoTYlDMLgAAAAASYlDSEmJQ1hJiUNgSInWSInKTInZSIPBaEyLXCQwSYtDKEg97///fw=="
-jb 20f
-.base64 "TItcJDBJi0MoSD3///9/"
-jb 22f
-.base64 "TItcJDBBugAAAABJi0NASIXA"
-je 24f
-.base64 "TYtTOE2LUgg="
-jmp 25f
-24:
-25:
-.base64 "SYtDKEjB6ARIweAESTnCSYtDKEG6AAAAAEkPQ8JIPf///38="
+        r#".base64 "SI2kJMj1//9Ii4QkQAoAAEiJRCQISIuEJEgKAABIiUQkEEiLhCRQCgAASIlEJBhIi4QkWAoAAEiJRCQgSIuEJGAKAABIiUQkKEiJ4EiDwDhIiUQkMEiLRCQwSImYgAAAAEiJqIgAAABMiaCQAAAATImomAAAAEyJsKAAAABMibioAAAASYnHTYn+SYPGEEmJ/UmJt7AAAABNiYfoAAAATYmPuAAAAEiLRCQYSYmHyAAAAEiLRCQgSYmH0AAAAEmJ1EiJzUiD/Qw="
+je 20f
+.base64 "uAAAAABJiQZJiUYISYmv2AAAALsAAAAATIniSInpSMHpBEiJ6EiD5Q9IKehJAcRIhck="
+je 22f
+.base64 "TInvSIHH8AAAAEyJ9kiDxgBNifhJgcAAAgAA"
+call {vg_ghash}
 jmp 23f
 22:
 23:
-jb 26f
-call {vg_aes_gcm_stream_init_core}
-.base64 "TItcJDBJiztMid5Ig8ZougAAAABJi0sQTYtDGA=="
-call {vg_aes_gcm_stream_aad_core}
-.base64 "TItcJDBJi0MoSIXA"
-je 28f
-.base64 "SYtLGEmJyEmD4A9NhcA="
-je 210f
-.base64 "uBAAAABMKcBJicBJiztIichMAcBJiUNQTIneSIPGaEiJykyJ2UiDwVg="
-call {vg_aes_gcm_stream_aad_core}
-jmp 211f
-210:
+.base64 "SInpSIXJ"
+je 24f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMieZBugAAAAA="
+26:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 26b
+.base64 "TInvSIHH8AAAAEyJ9kiDxgBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash}
+jmp 25f
+24:
+25:
+.base64 "uwAAAABJi6/YAAAASInYSAHASAHASAHASA/ISYlHYEiJ6EgBwEgBwEgBwEgPyEmJR2hMie9IgcfwAAAATIn2SIPGAEyJ+kiDwmC5AQAAAE2J+EmBwAACAAA="
+call {vg_ghash}
+jmp 21f
+20:
+.base64 "QYsEJEGLTCQEQYtUJAi+AAAAAUGJBkGJTgRBiVYIQYl2DA=="
+21:
+.base64 "QYsGQYtOBEGLVghBi3YMD86DxgEPzkGJRjBBiU40QYlWOEGJdjy4AAAAAEmJRhBJiUYYTYun6AAAAEmLr7gAAAC7AAAAAEyJ4kiJ6UjB6QRIiehIg+UPSCnoSQHESIXJ"
+je 27f
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBNifhJgcAAAgAA"
+call {vg_ghash}
+jmp 28f
+27:
+28:
+.base64 "SInpSIXJ"
+je 29f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMieZBugAAAAA="
 211:
-.base64 "TItcJDBJi0NASIXA"
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 211b
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash}
+jmp 210f
+29:
+210:
+.base64 "SItEJAhJiYcAAQAASItEJBBJiYfgAAAASItEJBhJiYfIAAAASItEJCBJiYfAAAAASYmH0AAAALgAAAAASYmH8AAAAEmJhwgBAABJi4fgAAAASIXA"
 je 212f
 214:
-.base64 "TItcJDBNi1M4TYsKSYtCCE2LUyBJi0tISQHKSYs7SYtzCEyJ2kiDwmhJi0tQTYtDSFBBUlA="
-call {vg_aes_gcm_stream_encrypt_to_aesni}
-.base64 "WFhYTItcJDBNi1M4SYtCCEmLS0hIAcFJg8IQSYtDQEiD6AFJiUtITYlTOEmJQ0BIhcA="
+.base64 "TYuXAAEAAEmLGkmLaghJg8IQTYmXAAEAAEmLhwgBAABIAcNIKcW4AAAAAEmJhwgBAABJi4fwAAAATYunyAAAAEkBxEiJxkiD5g9IAehJiYfwAAAASIXt"
+je 215f
+.base64 "SIX2"
+je 217f
+.base64 "uRAAAABIKfFIOc1ID0LNTAH2SIPGQEyJ50G6AAAAAA=="
+219:
+.base64 "Qg+2BBNGD7YcFkwx2EKIBBdJg8IBSTnK"
+jne 219b
+.base64 "SAHLSQHMSCnN"
+jmp 218f
+217:
+218:
+.base64 "SYnoScHoBE2FwA=="
+je 220f
+.base64 "SInZTYnjSInoSIPlD0gp6EgBw0kBxEyJ70mLt7AAAABMifJIg8IwTYn5SYHBAAIAAA=="
+call {vg_aes_ctr32_to_aesni}
+jmp 221f
+220:
+221:
+.base64 "SIXt"
+je 222f
+.base64 "uAAAAABJiUZASYlGSEyJ70mLt7AAAABMifJIg8IwTInxSIPBQEG4AQAAAE2J+UmBwQACAAA="
+call {vg_aes_ctr32_aesni}
+.base64 "TInnTIn2SIPGQEiJ6UG6AAAAAA=="
+224:
+.base64 "Qg+2BBNGD7YcFkwx2EKIBBdJg8IBSTnK"
+jne 224b
+jmp 223f
+222:
+223:
+jmp 216f
+215:
+216:
+.base64 "TYuX4AAAAEmD6gFNiZfgAAAA"
 jne 214b
 jmp 213f
 212:
 213:
-jmp 29f
-28:
-29:
-.base64 "TItcJDBJiztJi3MITInaSIPCaEmLSxhNi0MoTYtLMA=="
-call {vg_aes_gcm_stream_finish_aesni_core}
-jmp 27f
-26:
-.base64 "TItcJDBBugAAAABJi0NASIXA"
-je 215f
-.base64 "TYtTOE2LUgg="
-jmp 216f
-215:
-216:
-.base64 "SYtDKEjB6ARIweAEQbgAAAAASTnCTQ9C0EmB+u///38="
-jb 217f
-.base64 "SYlzaEmJU3BNi0tASYt7IE2LUzhMidC5AAAAAE2FyQ=="
-je 219f
-.base64 "SYsCSYtKCEmD6QFJg8IQSAHP"
-jmp 220f
-219:
-220:
-.base64 "SYlDeEmJi4AAAABNidNJg/kA"
-je 221f
-223:
-.base64 "SYszSYtLCEmDwxBBugAAAABJichJwegGScHgBkmD+AA="
-je 224f
-226:
-.base64 "80IPbwQW80IPb0wWEPNCD29UFiDzQg9vXBYw80IPfwQX80IPf0wXEPNCD39UFyDzQg9/XBcwSYPCQE05wg=="
-jne 226b
-jmp 225f
-224:
+.base64 "TYunyAAAAEmLr9AAAAC7AAAAAEyJ4kiJ6UjB6QRIiehIg+UPSCnoSQHESIXJ"
+je 225f
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBNifhJgcAAAgAA"
+call {vg_ghash}
+jmp 226f
 225:
-.base64 "SYnIScHoBEnB4ARNOcI="
+226:
+.base64 "SInpSIXJ"
 je 227f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMieZBugAAAAA="
 229:
-.base64 "80IPbwQW80IPfwQXSYPCEE05wg=="
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
 jne 229b
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash}
 jmp 228f
 227:
 228:
-.base64 "STnK"
-je 230f
-.base64 "SIP5EA=="
-jb 232f
-.base64 "SYnKSYPqEPNCD28EFvNCD38EFw=="
-jmp 233f
-232:
-234:
+.base64 "SYufuAAAAEmLr8AAAABIidhIAcBIAcBIAcBID8hJiUdgSInoSAHASAHASAHASA/ISYlHaEyJ70iBx/AAAABMifZIg8YQTIn6SIPCYLkBAAAATYn4SYHAAAIAAA=="
+call {vg_ghash}
+.base64 "SYtGEEmJB0mLRhhJiUcITInvSYu3sAAAAEyJ8kyJ+UiDwQBBuAEAAABNiflJgcEAAgAA"
+call {vg_aes_ctr32_aesni}
+.base64 "SIt8JChJiwdJi1cISIkHSIlXCEmLn4AAAABJi6+IAAAATYunkAAAAE2Lr5gAAABNi7egAAAATYu/qAAAAEiNpCQ4CgAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJPhMiRwkSI2kJJj1///zD3+EJFgKAADzD3+EJEgKAADzD3+EJDgKAADzD3+EJCgKAADzD3+EJBgKAADzD3+EJAgKAADzD3+EJPgJAADzD3+EJOgJAADzD3+EJNgJAADzD3+EJMgJAADzD3+EJLgJAADzD3+EJKgJAADzD3+EJJgJAADzD3+EJIgJAADzD3+EJHgJAADzD3+EJGgJAADzD3+EJFgJAADzD3+EJEgJAADzD3+EJDgJAADzD3+EJCgJAADzD3+EJBgJAADzD3+EJAgJAADzD3+EJPgIAADzD3+EJOgIAADzD3+EJNgIAADzD3+EJMgIAADzD3+EJLgIAADzD3+EJKgIAADzD3+EJJgIAADzD3+EJIgIAADzD3+EJHgIAADzD3+EJGgIAADzD3+EJFgIAADzD3+EJEgIAADzD3+EJDgIAADzD3+EJCgIAADzD3+EJBgIAADzD3+EJAgIAADzD3+EJPgHAADzD3+EJOgHAADzD3+EJNgHAADzD3+EJMgHAADzD3+EJLgHAADzD3+EJKgHAADzD3+EJJgHAADzD3+EJIgHAADzD3+EJHgHAADzD3+EJGgHAADzD3+EJFgHAADzD3+EJEgHAADzD3+EJDgHAADzD3+EJCgHAADzD3+EJBgHAADzD3+EJAgHAADzD3+EJPgGAADzD3+EJOgGAADzD3+EJNgGAADzD3+EJMgGAADzD3+EJLgGAADzD3+EJKgGAADzD3+EJJgGAADzD3+EJIgGAADzD3+EJHgGAADzD3+EJGgGAADzD3+EJFgGAADzD3+EJEgGAADzD3+EJDgGAADzD3+EJCgGAADzD3+EJBgGAADzD3+EJAgGAADzD3+EJPgFAADzD3+EJOgFAADzD3+EJNgFAADzD3+EJMgFAADzD3+EJLgFAADzD3+EJKgFAADzD3+EJJgFAADzD3+EJIgFAADzD3+EJHgFAADzD3+EJGgFAADzD3+EJFgFAADzD3+EJEgFAADzD3+EJDgFAADzD3+EJCgFAADzD3+EJBgFAADzD3+EJAgFAADzD3+EJPgEAADzD3+EJOgEAADzD3+EJNgEAADzD3+EJMgEAADzD3+EJLgEAADzD3+EJKgEAADzD3+EJJgEAADzD3+EJIgEAADzD3+EJHgEAADzD3+EJGgEAADzD3+EJFgEAADzD3+EJEgEAADzD3+EJDgEAADzD3+EJCgEAADzD3+EJBgEAADzD3+EJAgEAADzD3+EJPgDAADzD3+EJOgDAADzD3+EJNgDAADzD3+EJMgDAADzD3+EJLgDAADzD3+EJKgDAADzD3+EJJgDAADzD3+EJIgDAADzD3+EJHgDAADzD3+EJGgDAADzD3+EJFgDAADzD3+EJEgDAADzD3+EJDgDAADzD3+EJCgDAADzD3+EJBgDAADzD3+EJAgDAADzD3+EJPgCAADzD3+EJOgCAADzD3+EJNgCAADzD3+EJMgCAADzD3+EJLgCAADzD3+EJKgCAADzD3+EJJgCAADzD3+EJIgCAADzD3+EJHgCAADzD3+EJGgCAADzD3+EJFgCAADzD3+EJEgCAADzD3+EJDgCAADzD3+EJCgCAADzD3+EJBgCAADzD3+EJAgCAADzD3+EJPgBAADzD3+EJOgBAADzD3+EJNgBAADzD3+EJMgBAADzD3+EJLgBAADzD3+EJKgBAADzD3+EJJgBAADzD3+EJIgBAADzD3+EJHgBAADzD3+EJGgBAADzD3+EJFgBAADzD3+EJEgBAADzD3+EJDgBAADzD3+EJCgBAADzD3+EJBgBAADzD3+EJAgBAADzD3+EJPgAAADzD3+EJOgAAADzD3+EJNgAAADzD3+EJMgAAADzD3+EJLgAAADzD3+EJKgAAADzD3+EJJgAAADzD3+EJIgAAADzD39EJHjzD39EJGjzD39EJFjzD39EJEjzD39EJDjzD39EJCjzD39EJBjzD39EJAhMiRwkSI2kJGgKAABIjWQkCDHAMckx0jH2Mf9FMcBFMclFMdLD"
+.p2align 6"#,
+        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
+        vg_aes_ctr32_to_aesni = sym super::aes::vg_aes_ctr32_to_aesni::vg_aes_ctr32_to_aesni,
+        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+    )
+}
+
+/// The CPU features `vg_aes_gcm_seal_contiguous_prepared_pclmul` requires (`Artifact.features`).
+pub const VG_AES_GCM_SEAL_CONTIGUOUS_PREPARED_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::PCLMULQDQ);
+
+/// `vg_aes_gcm_seal_contiguous` with a 1032-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the prepared powers its count says are present. The powers remain secret; how many are present may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealContiguousPreparedContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 1032 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `src` must be valid for reads of `len` bytes, and `dst` for reads and writes of `len` bytes. The two pointers must be identical or their regions disjoint.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `*ctx` must have the prepared format written by `vg_aes_gcm_prepare` (not the format of `vg_aes_gcm_init_precomputed`).
+/// * `dst` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `src` when distinct from `dst` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `src` when distinct from `dst`, `dst` and `tag` may overlap the return address on the stack or the 2640 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `ssse3` and `pclmulqdq` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_contiguous_prepared_pclmul(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+    core::arch::naked_asm!(
+        r#".base64 "SI2kJND1//9Ii4QkOAoAAEiJRCQISIuEJEAKAABIiUQkEEiLhCRICgAASIlEJBhIi4QkUAoAAEiJRCQgSIngSIPAMEiJRCQoSItEJChIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdNif5Jg8YQSYn9SYm3sAAAAE2Jh+gAAABNiY+4AAAASItEJBBJiYfIAAAASItEJBhJiYfQAAAASYnUSInNSIP9DA=="
+je 20f
+.base64 "uAAAAABJiQZJiUYISYmv2AAAALsAAAAATIniSInpSMHpBEiJ6EiD5Q9IKehJAcRIhck="
+je 22f
+.base64 "TInvSIHH8AAAAEyJ9kiDxgBNifhJgcAAAgAA"
+call {vg_ghash_pclmul}
+jmp 23f
+22:
+23:
+.base64 "SInpSIXJ"
+je 24f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMieZBugAAAAA="
+26:
 .base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 234b
-233:
-jmp 231f
-230:
-231:
-.base64 "SAHPSYPpAQ=="
-jne 223b
+jne 26b
+.base64 "TInvSIHH8AAAAEyJ9kiDxgBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_pclmul}
+jmp 25f
+24:
+25:
+.base64 "uwAAAABJi6/YAAAASInYSAHASAHASAHASA/ISYlHYEiJ6EgBwEgBwEgBwEgPyEmJR2hMie9IgcfwAAAATIn2SIPGAEyJ+kiDwmC5AQAAAE2J+EmBwAACAAA="
+call {vg_ghash_pclmul}
+jmp 21f
+20:
+.base64 "QYsEJEGLTCQEQYtUJAi+AAAAAUGJBkGJTgRBiVYIQYl2DA=="
+21:
+.base64 "QYsGQYtOBEGLVghBi3YMD86DxgEPzkGJRjBBiU40QYlWOEGJdjy4AAAAAEmJRhBJiUYYTYun6AAAAEmLr7gAAAC7AAAAAEyJ4kiJ6UjB6QRIiehIg+UPSCnoSQHESIXJ"
+je 27f
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBNifhJgcAAAgAA"
+call {vg_ghash_pclmul}
+jmp 28f
+27:
+28:
+.base64 "SInpSIXJ"
+je 29f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMieZBugAAAAA="
+211:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 211b
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_pclmul}
+jmp 210f
+29:
+210:
+.base64 "SYuH0AAAAEiD6BBIwcgESIP4Bw=="
+jb 212f
+.base64 "SYuH0AAAAEmJh8AAAABIwegESIXA"
+je 214f
+.base64 "TInvSYu3sAAAAEyJ8kiDwjBIi0wkCEmJwE2Ln8gAAABNiflJgcHAAQAA"
+call {vg_aes_ctr32_to}
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBJi5fIAAAASYuP0AAAAEjB6QRNifhJgcDAAQAA"
+call {vg_ghash_pclmul}
+.base64 "SYuH0AAAAEiJwUiD4Q9JiY/QAAAASCnISQOHyAAAAEmJh8gAAAA="
+jmp 215f
+214:
+215:
+.base64 "SYuH0AAAAEiFwA=="
+je 216f
+.base64 "SItcJAhJA5/AAAAASSuf0AAAAE2Lp8gAAABJi6/QAAAA80EPbwbzQQ9/hwABAADzQQ9vRjDzQQ9/hxABAABMie9Ji7ewAAAATIn6SIHCAAEAALkCAAAATYn4SYHAAAIAAA=="
+call {vg_aes_encrypt_blocks}
+.base64 "SIXt"
+je 218f
+.base64 "TInnSInpTIn+SIHGEAEAAEG6AAAAAA=="
+220:
+.base64 "Qg+2BBNGD7YcFkwx2EKIBBdJg8IBSTnK"
+jne 220b
+jmp 219f
+218:
+219:
+.base64 "TYunyAAAAEmLr9AAAAC7AAAAAEyJ4kiJ6UjB6QRIiehIg+UPSCnoSQHESIXJ"
+je 221f
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBNifhJgcAAAgAA"
+call {vg_ghash_pclmul}
 jmp 222f
 221:
 222:
-.base64 "TItcJDBJi1NoSYtLcE2LQxBNi0sYSYtDME2LUyhJi7uAAAAASYtzeE2LWyBQQVJBU1dWTItcJFhJiztJi3MI"
-call {vg_aes_gcm_seal_split_aesni}
-.base64 "WFhYWFg="
-jmp 218f
+.base64 "SInpSIXJ"
+je 223f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMieZBugAAAAA="
+225:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 225b
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_pclmul}
+jmp 224f
+223:
+224:
+.base64 "SYufuAAAAEmLr8AAAABIidhIAcBIAcBIAcBID8hJiUdgSInoSAHASAHASAHASA/ISYlHaEyJ70iBx/AAAABMifZIg8YQTIn6SIPCYLkBAAAATYn4SYHAAAIAAA=="
+call {vg_ghash_pclmul}
+.base64 "80EPb4cAAQAA80EPb04QZg/vwfNBD38H"
+jmp 217f
+216:
+.base64 "SYufuAAAAEmLr8AAAABIidhIAcBIAcBIAcBID8hJiUdgSInoSAHASAHASAHASA/ISYlHaEyJ70iBx/AAAABMifZIg8YQTIn6SIPCYLkBAAAATYn4SYHAAAIAAA=="
+call {vg_ghash_pclmul}
+.base64 "80EPbwbzQQ9/hwABAABMie9Ji7ewAAAATIn6SIHCAAEAALkBAAAATYn4SYHAAAIAAA=="
+call {vg_aes_encrypt_blocks}
+.base64 "80EPb4cAAQAA80EPb04QZg/vwfNBD38H"
 217:
-.base64 "SYlzaEmJU3BNi0tASYt7IE2LWzhJg/kA"
-je 235f
-237:
-.base64 "SYszSYtLCEmDwxBBugAAAABJichJwegGScHgBkmD+AA="
-je 238f
-240:
-.base64 "80IPbwQW80IPb0wWEPNCD29UFiDzQg9vXBYw80IPfwQX80IPf0wXEPNCD39UFyDzQg9/XBcwSYPCQE05wg=="
-jne 240b
-jmp 239f
-238:
-239:
-.base64 "SYnIScHoBEnB4ARNOcI="
-je 241f
-243:
-.base64 "80IPbwQW80IPfwQXSYPCEE05wg=="
-jne 243b
-jmp 242f
-241:
-242:
-.base64 "STnK"
-je 244f
-.base64 "SIP5EA=="
-jb 246f
-.base64 "SYnKSYPqEPNCD28EFvNCD38EFw=="
-jmp 247f
-246:
-248:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 248b
-247:
-jmp 245f
-244:
-245:
-.base64 "SAHPSYPpAQ=="
-jne 237b
-jmp 236f
-235:
-236:
-.base64 "TItcJDBJiztJi3MISYtTaEmLS3BNi0MQTYtLGEmLQzBNi1MoTYtbIFBBUkFT"
-call {vg_aes_gcm_seal_aesni}
-.base64 "WFhY"
-218:
-27:
-jmp 21f
-20:
-.base64 "SYlzaEmJU3BNi0tASYt7IE2LWzhJg/kA"
-je 249f
-251:
-.base64 "SYszSYtLCEmDwxBBugAAAABJichJwegGScHgBkmD+AA="
-je 252f
-254:
-.base64 "80IPbwQW80IPb0wWEPNCD29UFiDzQg9vXBYw80IPfwQX80IPf0wXEPNCD39UFyDzQg9/XBcwSYPCQE05wg=="
-jne 254b
-jmp 253f
-252:
-253:
-.base64 "SYnIScHoBEnB4ARNOcI="
-je 255f
-257:
-.base64 "80IPbwQW80IPfwQXSYPCEE05wg=="
-jne 257b
-jmp 256f
-255:
-256:
-.base64 "STnK"
-je 258f
-.base64 "SIP5EA=="
-jb 260f
-.base64 "SYnKSYPqEPNCD28EFvNCD38EFw=="
-jmp 261f
-260:
-262:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 262b
-261:
-jmp 259f
-258:
-259:
-.base64 "SAHPSYPpAQ=="
-jne 251b
-jmp 250f
-249:
-250:
-.base64 "TItcJDBJiztJi3MISYtTaEmLS3BNi0MQTYtLGEmLQzBNi1MoTYtbIFBBUkFT"
-call {vg_aes_gcm_seal_aesni}
-.base64 "WFhY"
-21:
-.base64 "SI2kJPAAAADD"
+jmp 213f
+212:
+.base64 "80EPbwbzQQ9/hwABAABFi14MQQ/LQboAAAAASYuv0AAAAEmJr8AAAAA="
+226:
+.base64 "80MPf4QXEAEAAEGDwwFEidgPyEOJhBccAQAASYPCEEk56g=="
+jne 226b
+.base64 "TInvSYu3sAAAAEyJ+kiBwgABAABIielIwekESIPBAU2J+EmBwAACAAA="
+call {vg_aes_encrypt_blocks}
+.base64 "SIt8JAhJi7fIAAAAQboAAAAA"
+227:
+.base64 "80IPbwQX80MPb4wXEAEAAGYP78HzQg9/BBZJg8IQSTnq"
+jne 227b
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBJi5fIAAAASYuP0AAAAEjB6QRNifhJgcDAAQAA"
+call {vg_ghash_pclmul}
+.base64 "SYufuAAAAEmLr8AAAABIidhIAcBIAcBIAcBID8hJiUdgSInoSAHASAHASAHASA/ISYlHaEyJ70iBx/AAAABMifZIg8YQTIn6SIPCYLkBAAAATYn4SYHAAAIAAA=="
+call {vg_ghash_pclmul}
+.base64 "80EPb4cAAQAA80EPb04QZg/vwfNBD38H"
+213:
+.base64 "SIt8JCBJiwdJi1cISIkHSIlXCEmLn4AAAABJi6+IAAAATYunkAAAAE2Lr5gAAABNi7egAAAATYu/qAAAAEiNpCQwCgAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJPhMiRwkSI2kJLj1///zD3+EJDgKAADzD3+EJCgKAADzD3+EJBgKAADzD3+EJAgKAADzD3+EJPgJAADzD3+EJOgJAADzD3+EJNgJAADzD3+EJMgJAADzD3+EJLgJAADzD3+EJKgJAADzD3+EJJgJAADzD3+EJIgJAADzD3+EJHgJAADzD3+EJGgJAADzD3+EJFgJAADzD3+EJEgJAADzD3+EJDgJAADzD3+EJCgJAADzD3+EJBgJAADzD3+EJAgJAADzD3+EJPgIAADzD3+EJOgIAADzD3+EJNgIAADzD3+EJMgIAADzD3+EJLgIAADzD3+EJKgIAADzD3+EJJgIAADzD3+EJIgIAADzD3+EJHgIAADzD3+EJGgIAADzD3+EJFgIAADzD3+EJEgIAADzD3+EJDgIAADzD3+EJCgIAADzD3+EJBgIAADzD3+EJAgIAADzD3+EJPgHAADzD3+EJOgHAADzD3+EJNgHAADzD3+EJMgHAADzD3+EJLgHAADzD3+EJKgHAADzD3+EJJgHAADzD3+EJIgHAADzD3+EJHgHAADzD3+EJGgHAADzD3+EJFgHAADzD3+EJEgHAADzD3+EJDgHAADzD3+EJCgHAADzD3+EJBgHAADzD3+EJAgHAADzD3+EJPgGAADzD3+EJOgGAADzD3+EJNgGAADzD3+EJMgGAADzD3+EJLgGAADzD3+EJKgGAADzD3+EJJgGAADzD3+EJIgGAADzD3+EJHgGAADzD3+EJGgGAADzD3+EJFgGAADzD3+EJEgGAADzD3+EJDgGAADzD3+EJCgGAADzD3+EJBgGAADzD3+EJAgGAADzD3+EJPgFAADzD3+EJOgFAADzD3+EJNgFAADzD3+EJMgFAADzD3+EJLgFAADzD3+EJKgFAADzD3+EJJgFAADzD3+EJIgFAADzD3+EJHgFAADzD3+EJGgFAADzD3+EJFgFAADzD3+EJEgFAADzD3+EJDgFAADzD3+EJCgFAADzD3+EJBgFAADzD3+EJAgFAADzD3+EJPgEAADzD3+EJOgEAADzD3+EJNgEAADzD3+EJMgEAADzD3+EJLgEAADzD3+EJKgEAADzD3+EJJgEAADzD3+EJIgEAADzD3+EJHgEAADzD3+EJGgEAADzD3+EJFgEAADzD3+EJEgEAADzD3+EJDgEAADzD3+EJCgEAADzD3+EJBgEAADzD3+EJAgEAADzD3+EJPgDAADzD3+EJOgDAADzD3+EJNgDAADzD3+EJMgDAADzD3+EJLgDAADzD3+EJKgDAADzD3+EJJgDAADzD3+EJIgDAADzD3+EJHgDAADzD3+EJGgDAADzD3+EJFgDAADzD3+EJEgDAADzD3+EJDgDAADzD3+EJCgDAADzD3+EJBgDAADzD3+EJAgDAADzD3+EJPgCAADzD3+EJOgCAADzD3+EJNgCAADzD3+EJMgCAADzD3+EJLgCAADzD3+EJKgCAADzD3+EJJgCAADzD3+EJIgCAADzD3+EJHgCAADzD3+EJGgCAADzD3+EJFgCAADzD3+EJEgCAADzD3+EJDgCAADzD3+EJCgCAADzD3+EJBgCAADzD3+EJAgCAADzD3+EJPgBAADzD3+EJOgBAADzD3+EJNgBAADzD3+EJMgBAADzD3+EJLgBAADzD3+EJKgBAADzD3+EJJgBAADzD3+EJIgBAADzD3+EJHgBAADzD3+EJGgBAADzD3+EJFgBAADzD3+EJEgBAADzD3+EJDgBAADzD3+EJCgBAADzD3+EJBgBAADzD3+EJAgBAADzD3+EJPgAAADzD3+EJOgAAADzD3+EJNgAAADzD3+EJMgAAADzD3+EJLgAAADzD3+EJKgAAADzD3+EJJgAAADzD3+EJIgAAADzD39EJHjzD39EJGjzD39EJFjzD39EJEjzD39EJDjzD39EJCjzD39EJBjzD39EJAhMiRwkSI2kJEgKAABIjWQkCDHAMckx0jH2Mf9FMcBFMclFMdLD"
 .p2align 6"#,
-        vg_aes_gcm_stream_init_core = sym super::aes::vg_aes_gcm_stream_init_core::vg_aes_gcm_stream_init_core,
-        vg_aes_gcm_stream_aad_core = sym super::aes::vg_aes_gcm_stream_aad_core::vg_aes_gcm_stream_aad_core,
-        vg_aes_gcm_stream_encrypt_to_aesni = sym super::aes::vg_aes_gcm_stream_encrypt_to_aesni::vg_aes_gcm_stream_encrypt_to_aesni,
-        vg_aes_gcm_stream_finish_aesni_core = sym super::aes::vg_aes_gcm_stream_finish_aesni_core::vg_aes_gcm_stream_finish_aesni_core,
-        vg_aes_gcm_seal_split_aesni = sym super::aes::vg_aes_gcm_seal_split_aesni::vg_aes_gcm_seal_split_aesni,
-        vg_aes_gcm_seal_aesni = sym super::aes::vg_aes_gcm_seal_aesni::vg_aes_gcm_seal_aesni,
+        vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
+        vg_aes_ctr32_to = sym super::aes::vg_aes_ctr32_to::vg_aes_ctr32_to,
+        vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks::vg_aes_encrypt_blocks,
     )
 }
 
@@ -9698,6 +10564,8 @@ call {vg_aes_gcm_seal_aesni}
 pub const VG_AES_GCM_SEAL_PREPARED_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::PCLMULQDQ);
 
 /// `vg_aes_gcm_seal` with a 1032-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the prepared powers its count says are present. The powers remain secret; how many are present may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealPreparedContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -9806,7 +10674,7 @@ jmp 222f
 call {vg_ghash_pclmul}
 .base64 "SYtGEEmJB0mLRhhJiUcITInvSYu3sAAAAEyJ8kyJ+UiDwQBBuAEAAABNiflJgcEAAgAA"
 call {vg_aes_ctr32}
-.base64 "SIt8JBhJiwdJi1cISIkHSIlXCEmLn4AAAABJi6+IAAAATYunkAAAAE2Lr5gAAABNi7egAAAATYu/qAAAAEiNpCQoCgAAww=="
+.base64 "SIt8JBhJiwdJi1cISIkHSIlXCEmLn4AAAABJi6+IAAAATYunkAAAAE2Lr5gAAABNi7egAAAATYu/qAAAAEiNpCQoCgAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJPhMiRwkSI2kJMj1///zD3+EJCgKAADzD3+EJBgKAADzD3+EJAgKAADzD3+EJPgJAADzD3+EJOgJAADzD3+EJNgJAADzD3+EJMgJAADzD3+EJLgJAADzD3+EJKgJAADzD3+EJJgJAADzD3+EJIgJAADzD3+EJHgJAADzD3+EJGgJAADzD3+EJFgJAADzD3+EJEgJAADzD3+EJDgJAADzD3+EJCgJAADzD3+EJBgJAADzD3+EJAgJAADzD3+EJPgIAADzD3+EJOgIAADzD3+EJNgIAADzD3+EJMgIAADzD3+EJLgIAADzD3+EJKgIAADzD3+EJJgIAADzD3+EJIgIAADzD3+EJHgIAADzD3+EJGgIAADzD3+EJFgIAADzD3+EJEgIAADzD3+EJDgIAADzD3+EJCgIAADzD3+EJBgIAADzD3+EJAgIAADzD3+EJPgHAADzD3+EJOgHAADzD3+EJNgHAADzD3+EJMgHAADzD3+EJLgHAADzD3+EJKgHAADzD3+EJJgHAADzD3+EJIgHAADzD3+EJHgHAADzD3+EJGgHAADzD3+EJFgHAADzD3+EJEgHAADzD3+EJDgHAADzD3+EJCgHAADzD3+EJBgHAADzD3+EJAgHAADzD3+EJPgGAADzD3+EJOgGAADzD3+EJNgGAADzD3+EJMgGAADzD3+EJLgGAADzD3+EJKgGAADzD3+EJJgGAADzD3+EJIgGAADzD3+EJHgGAADzD3+EJGgGAADzD3+EJFgGAADzD3+EJEgGAADzD3+EJDgGAADzD3+EJCgGAADzD3+EJBgGAADzD3+EJAgGAADzD3+EJPgFAADzD3+EJOgFAADzD3+EJNgFAADzD3+EJMgFAADzD3+EJLgFAADzD3+EJKgFAADzD3+EJJgFAADzD3+EJIgFAADzD3+EJHgFAADzD3+EJGgFAADzD3+EJFgFAADzD3+EJEgFAADzD3+EJDgFAADzD3+EJCgFAADzD3+EJBgFAADzD3+EJAgFAADzD3+EJPgEAADzD3+EJOgEAADzD3+EJNgEAADzD3+EJMgEAADzD3+EJLgEAADzD3+EJKgEAADzD3+EJJgEAADzD3+EJIgEAADzD3+EJHgEAADzD3+EJGgEAADzD3+EJFgEAADzD3+EJEgEAADzD3+EJDgEAADzD3+EJCgEAADzD3+EJBgEAADzD3+EJAgEAADzD3+EJPgDAADzD3+EJOgDAADzD3+EJNgDAADzD3+EJMgDAADzD3+EJLgDAADzD3+EJKgDAADzD3+EJJgDAADzD3+EJIgDAADzD3+EJHgDAADzD3+EJGgDAADzD3+EJFgDAADzD3+EJEgDAADzD3+EJDgDAADzD3+EJCgDAADzD3+EJBgDAADzD3+EJAgDAADzD3+EJPgCAADzD3+EJOgCAADzD3+EJNgCAADzD3+EJMgCAADzD3+EJLgCAADzD3+EJKgCAADzD3+EJJgCAADzD3+EJIgCAADzD3+EJHgCAADzD3+EJGgCAADzD3+EJFgCAADzD3+EJEgCAADzD3+EJDgCAADzD3+EJCgCAADzD3+EJBgCAADzD3+EJAgCAADzD3+EJPgBAADzD3+EJOgBAADzD3+EJNgBAADzD3+EJMgBAADzD3+EJLgBAADzD3+EJKgBAADzD3+EJJgBAADzD3+EJIgBAADzD3+EJHgBAADzD3+EJGgBAADzD3+EJFgBAADzD3+EJEgBAADzD3+EJDgBAADzD3+EJCgBAADzD3+EJBgBAADzD3+EJAgBAADzD3+EJPgAAADzD3+EJOgAAADzD3+EJNgAAADzD3+EJMgAAADzD3+EJLgAAADzD3+EJKgAAADzD3+EJJgAAADzD3+EJIgAAADzD39EJHjzD39EJGjzD39EJFjzD39EJEjzD39EJDjzD39EJCjzD39EJBjzD39EJAhMiRwkSI2kJDgKAABIjWQkCDHAMckx0jH2Mf9FMcBFMclFMdLD"
 .p2align 6"#,
         vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
         vg_aes_gcm_encrypt_blocks_pclmul = sym super::aes::vg_aes_gcm_encrypt_blocks_pclmul::vg_aes_gcm_encrypt_blocks_pclmul,
@@ -9818,6 +10686,8 @@ call {vg_aes_ctr32}
 pub const VG_AES_GCM_OPEN_PREPARED_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::PCLMULQDQ);
 
 /// `vg_aes_gcm_open` with a 1032-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the prepared powers its count says are present. The powers remain secret; how many are present may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openPreparedContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -9976,7 +10846,7 @@ jmp 25f
 24:
 .base64 "uAAAAAA="
 25:
-.base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJDAKAADD"
+.base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJDAKAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjWQk+EyJHCRIjaQkwPX///MPf4QkMAoAAPMPf4QkIAoAAPMPf4QkEAoAAPMPf4QkAAoAAPMPf4Qk8AkAAPMPf4Qk4AkAAPMPf4Qk0AkAAPMPf4QkwAkAAPMPf4QksAkAAPMPf4QkoAkAAPMPf4QkkAkAAPMPf4QkgAkAAPMPf4QkcAkAAPMPf4QkYAkAAPMPf4QkUAkAAPMPf4QkQAkAAPMPf4QkMAkAAPMPf4QkIAkAAPMPf4QkEAkAAPMPf4QkAAkAAPMPf4Qk8AgAAPMPf4Qk4AgAAPMPf4Qk0AgAAPMPf4QkwAgAAPMPf4QksAgAAPMPf4QkoAgAAPMPf4QkkAgAAPMPf4QkgAgAAPMPf4QkcAgAAPMPf4QkYAgAAPMPf4QkUAgAAPMPf4QkQAgAAPMPf4QkMAgAAPMPf4QkIAgAAPMPf4QkEAgAAPMPf4QkAAgAAPMPf4Qk8AcAAPMPf4Qk4AcAAPMPf4Qk0AcAAPMPf4QkwAcAAPMPf4QksAcAAPMPf4QkoAcAAPMPf4QkkAcAAPMPf4QkgAcAAPMPf4QkcAcAAPMPf4QkYAcAAPMPf4QkUAcAAPMPf4QkQAcAAPMPf4QkMAcAAPMPf4QkIAcAAPMPf4QkEAcAAPMPf4QkAAcAAPMPf4Qk8AYAAPMPf4Qk4AYAAPMPf4Qk0AYAAPMPf4QkwAYAAPMPf4QksAYAAPMPf4QkoAYAAPMPf4QkkAYAAPMPf4QkgAYAAPMPf4QkcAYAAPMPf4QkYAYAAPMPf4QkUAYAAPMPf4QkQAYAAPMPf4QkMAYAAPMPf4QkIAYAAPMPf4QkEAYAAPMPf4QkAAYAAPMPf4Qk8AUAAPMPf4Qk4AUAAPMPf4Qk0AUAAPMPf4QkwAUAAPMPf4QksAUAAPMPf4QkoAUAAPMPf4QkkAUAAPMPf4QkgAUAAPMPf4QkcAUAAPMPf4QkYAUAAPMPf4QkUAUAAPMPf4QkQAUAAPMPf4QkMAUAAPMPf4QkIAUAAPMPf4QkEAUAAPMPf4QkAAUAAPMPf4Qk8AQAAPMPf4Qk4AQAAPMPf4Qk0AQAAPMPf4QkwAQAAPMPf4QksAQAAPMPf4QkoAQAAPMPf4QkkAQAAPMPf4QkgAQAAPMPf4QkcAQAAPMPf4QkYAQAAPMPf4QkUAQAAPMPf4QkQAQAAPMPf4QkMAQAAPMPf4QkIAQAAPMPf4QkEAQAAPMPf4QkAAQAAPMPf4Qk8AMAAPMPf4Qk4AMAAPMPf4Qk0AMAAPMPf4QkwAMAAPMPf4QksAMAAPMPf4QkoAMAAPMPf4QkkAMAAPMPf4QkgAMAAPMPf4QkcAMAAPMPf4QkYAMAAPMPf4QkUAMAAPMPf4QkQAMAAPMPf4QkMAMAAPMPf4QkIAMAAPMPf4QkEAMAAPMPf4QkAAMAAPMPf4Qk8AIAAPMPf4Qk4AIAAPMPf4Qk0AIAAPMPf4QkwAIAAPMPf4QksAIAAPMPf4QkoAIAAPMPf4QkkAIAAPMPf4QkgAIAAPMPf4QkcAIAAPMPf4QkYAIAAPMPf4QkUAIAAPMPf4QkQAIAAPMPf4QkMAIAAPMPf4QkIAIAAPMPf4QkEAIAAPMPf4QkAAIAAPMPf4Qk8AEAAPMPf4Qk4AEAAPMPf4Qk0AEAAPMPf4QkwAEAAPMPf4QksAEAAPMPf4QkoAEAAPMPf4QkkAEAAPMPf4QkgAEAAPMPf4QkcAEAAPMPf4QkYAEAAPMPf4QkUAEAAPMPf4QkQAEAAPMPf4QkMAEAAPMPf4QkIAEAAPMPf4QkEAEAAPMPf4QkAAEAAPMPf4Qk8AAAAPMPf4Qk4AAAAPMPf4Qk0AAAAPMPf4QkwAAAAPMPf4QksAAAAPMPf4QkoAAAAPMPf4QkkAAAAPMPf4QkgAAAAPMPf0QkcPMPf0QkYPMPf0QkUPMPf0QkQPMPf0QkMPMPf0QkIPMPf0QkEPMPfwQkSI2kJEAKAABIjWQkCInAMckx0jH2Mf9FMcBFMclFMdLD"
 .p2align 6"#,
         vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
         vg_aes_gcm_decrypt_blocks_pclmul = sym super::aes::vg_aes_gcm_decrypt_blocks_pclmul::vg_aes_gcm_decrypt_blocks_pclmul,
@@ -9988,6 +10858,8 @@ jmp 25f
 pub const VG_AES_GCM_OPEN_TO_PREPARED_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::PCLMULQDQ);
 
 /// `vg_aes_gcm_open_to` with a 1032-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the prepared powers its count says are present. The powers remain secret; how many are present may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openToPreparedContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -10021,7 +10893,7 @@ jmp 23f
 22:
 23:
 21:
-.base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW0iNpCRACgAAww=="
+.base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW0iNpCRACgAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJPhMiRwkSI2kJDD1///zD3+EJMAKAADzD3+EJLAKAADzD3+EJKAKAADzD3+EJJAKAADzD3+EJIAKAADzD3+EJHAKAADzD3+EJGAKAADzD3+EJFAKAADzD3+EJEAKAADzD3+EJDAKAADzD3+EJCAKAADzD3+EJBAKAADzD3+EJAAKAADzD3+EJPAJAADzD3+EJOAJAADzD3+EJNAJAADzD3+EJMAJAADzD3+EJLAJAADzD3+EJKAJAADzD3+EJJAJAADzD3+EJIAJAADzD3+EJHAJAADzD3+EJGAJAADzD3+EJFAJAADzD3+EJEAJAADzD3+EJDAJAADzD3+EJCAJAADzD3+EJBAJAADzD3+EJAAJAADzD3+EJPAIAADzD3+EJOAIAADzD3+EJNAIAADzD3+EJMAIAADzD3+EJLAIAADzD3+EJKAIAADzD3+EJJAIAADzD3+EJIAIAADzD3+EJHAIAADzD3+EJGAIAADzD3+EJFAIAADzD3+EJEAIAADzD3+EJDAIAADzD3+EJCAIAADzD3+EJBAIAADzD3+EJAAIAADzD3+EJPAHAADzD3+EJOAHAADzD3+EJNAHAADzD3+EJMAHAADzD3+EJLAHAADzD3+EJKAHAADzD3+EJJAHAADzD3+EJIAHAADzD3+EJHAHAADzD3+EJGAHAADzD3+EJFAHAADzD3+EJEAHAADzD3+EJDAHAADzD3+EJCAHAADzD3+EJBAHAADzD3+EJAAHAADzD3+EJPAGAADzD3+EJOAGAADzD3+EJNAGAADzD3+EJMAGAADzD3+EJLAGAADzD3+EJKAGAADzD3+EJJAGAADzD3+EJIAGAADzD3+EJHAGAADzD3+EJGAGAADzD3+EJFAGAADzD3+EJEAGAADzD3+EJDAGAADzD3+EJCAGAADzD3+EJBAGAADzD3+EJAAGAADzD3+EJPAFAADzD3+EJOAFAADzD3+EJNAFAADzD3+EJMAFAADzD3+EJLAFAADzD3+EJKAFAADzD3+EJJAFAADzD3+EJIAFAADzD3+EJHAFAADzD3+EJGAFAADzD3+EJFAFAADzD3+EJEAFAADzD3+EJDAFAADzD3+EJCAFAADzD3+EJBAFAADzD3+EJAAFAADzD3+EJPAEAADzD3+EJOAEAADzD3+EJNAEAADzD3+EJMAEAADzD3+EJLAEAADzD3+EJKAEAADzD3+EJJAEAADzD3+EJIAEAADzD3+EJHAEAADzD3+EJGAEAADzD3+EJFAEAADzD3+EJEAEAADzD3+EJDAEAADzD3+EJCAEAADzD3+EJBAEAADzD3+EJAAEAADzD3+EJPADAADzD3+EJOADAADzD3+EJNADAADzD3+EJMADAADzD3+EJLADAADzD3+EJKADAADzD3+EJJADAADzD3+EJIADAADzD3+EJHADAADzD3+EJGADAADzD3+EJFADAADzD3+EJEADAADzD3+EJDADAADzD3+EJCADAADzD3+EJBADAADzD3+EJAADAADzD3+EJPACAADzD3+EJOACAADzD3+EJNACAADzD3+EJMACAADzD3+EJLACAADzD3+EJKACAADzD3+EJJACAADzD3+EJIACAADzD3+EJHACAADzD3+EJGACAADzD3+EJFACAADzD3+EJEACAADzD3+EJDACAADzD3+EJCACAADzD3+EJBACAADzD3+EJAACAADzD3+EJPABAADzD3+EJOABAADzD3+EJNABAADzD3+EJMABAADzD3+EJLABAADzD3+EJKABAADzD3+EJJABAADzD3+EJIABAADzD3+EJHABAADzD3+EJGABAADzD3+EJFABAADzD3+EJEABAADzD3+EJDABAADzD3+EJCABAADzD3+EJBABAADzD3+EJAABAADzD3+EJPAAAADzD3+EJOAAAADzD3+EJNAAAADzD3+EJMAAAADzD3+EJLAAAADzD3+EJKAAAADzD3+EJJAAAADzD3+EJIAAAADzD39EJHDzD39EJGDzD39EJFDzD39EJEDzD39EJDDzD39EJCDzD39EJBDzD38EJEiNpCTQCgAASI1kJAiJwDHJMdIx9jH/RTHARTHJRTHSww=="
 .p2align 6"#,
         vg_aes_gcm_open_split_pclmul = sym super::aes::vg_aes_gcm_open_split_pclmul::vg_aes_gcm_open_split_pclmul,
     )
@@ -10031,6 +10903,8 @@ jmp 23f
 pub const VG_AES_GCM_STREAM_ENCRYPT_PREPARED_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::PCLMULQDQ);
 
 /// `vg_aes_gcm_stream_encrypt` with a 1032-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the prepared powers its count says are present. The powers remain secret; how many are present may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.streamEncryptPreparedContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -10206,7 +11080,7 @@ jmp 238f
 jmp 21f
 20:
 21:
-.base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJBgKAADD"
+.base64 "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"
 .p2align 6"#,
         vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
         vg_aes_gcm_encrypt_blocks_pclmul = sym super::aes::vg_aes_gcm_encrypt_blocks_pclmul::vg_aes_gcm_encrypt_blocks_pclmul,
@@ -10218,6 +11092,8 @@ jmp 21f
 pub const VG_AES_GCM_STREAM_DECRYPT_PREPARED_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::PCLMULQDQ);
 
 /// `vg_aes_gcm_stream_decrypt` with a 1032-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the prepared powers its count says are present. The powers remain secret; how many are present may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.streamDecryptPreparedContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -10394,7 +11270,7 @@ jmp 240f
 jmp 21f
 20:
 21:
-.base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJBgKAADD"
+.base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJBgKAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjWQk+EyJHCRIjaQk2PX///MPf4QkGAoAAPMPf4QkCAoAAPMPf4Qk+AkAAPMPf4Qk6AkAAPMPf4Qk2AkAAPMPf4QkyAkAAPMPf4QkuAkAAPMPf4QkqAkAAPMPf4QkmAkAAPMPf4QkiAkAAPMPf4QkeAkAAPMPf4QkaAkAAPMPf4QkWAkAAPMPf4QkSAkAAPMPf4QkOAkAAPMPf4QkKAkAAPMPf4QkGAkAAPMPf4QkCAkAAPMPf4Qk+AgAAPMPf4Qk6AgAAPMPf4Qk2AgAAPMPf4QkyAgAAPMPf4QkuAgAAPMPf4QkqAgAAPMPf4QkmAgAAPMPf4QkiAgAAPMPf4QkeAgAAPMPf4QkaAgAAPMPf4QkWAgAAPMPf4QkSAgAAPMPf4QkOAgAAPMPf4QkKAgAAPMPf4QkGAgAAPMPf4QkCAgAAPMPf4Qk+AcAAPMPf4Qk6AcAAPMPf4Qk2AcAAPMPf4QkyAcAAPMPf4QkuAcAAPMPf4QkqAcAAPMPf4QkmAcAAPMPf4QkiAcAAPMPf4QkeAcAAPMPf4QkaAcAAPMPf4QkWAcAAPMPf4QkSAcAAPMPf4QkOAcAAPMPf4QkKAcAAPMPf4QkGAcAAPMPf4QkCAcAAPMPf4Qk+AYAAPMPf4Qk6AYAAPMPf4Qk2AYAAPMPf4QkyAYAAPMPf4QkuAYAAPMPf4QkqAYAAPMPf4QkmAYAAPMPf4QkiAYAAPMPf4QkeAYAAPMPf4QkaAYAAPMPf4QkWAYAAPMPf4QkSAYAAPMPf4QkOAYAAPMPf4QkKAYAAPMPf4QkGAYAAPMPf4QkCAYAAPMPf4Qk+AUAAPMPf4Qk6AUAAPMPf4Qk2AUAAPMPf4QkyAUAAPMPf4QkuAUAAPMPf4QkqAUAAPMPf4QkmAUAAPMPf4QkiAUAAPMPf4QkeAUAAPMPf4QkaAUAAPMPf4QkWAUAAPMPf4QkSAUAAPMPf4QkOAUAAPMPf4QkKAUAAPMPf4QkGAUAAPMPf4QkCAUAAPMPf4Qk+AQAAPMPf4Qk6AQAAPMPf4Qk2AQAAPMPf4QkyAQAAPMPf4QkuAQAAPMPf4QkqAQAAPMPf4QkmAQAAPMPf4QkiAQAAPMPf4QkeAQAAPMPf4QkaAQAAPMPf4QkWAQAAPMPf4QkSAQAAPMPf4QkOAQAAPMPf4QkKAQAAPMPf4QkGAQAAPMPf4QkCAQAAPMPf4Qk+AMAAPMPf4Qk6AMAAPMPf4Qk2AMAAPMPf4QkyAMAAPMPf4QkuAMAAPMPf4QkqAMAAPMPf4QkmAMAAPMPf4QkiAMAAPMPf4QkeAMAAPMPf4QkaAMAAPMPf4QkWAMAAPMPf4QkSAMAAPMPf4QkOAMAAPMPf4QkKAMAAPMPf4QkGAMAAPMPf4QkCAMAAPMPf4Qk+AIAAPMPf4Qk6AIAAPMPf4Qk2AIAAPMPf4QkyAIAAPMPf4QkuAIAAPMPf4QkqAIAAPMPf4QkmAIAAPMPf4QkiAIAAPMPf4QkeAIAAPMPf4QkaAIAAPMPf4QkWAIAAPMPf4QkSAIAAPMPf4QkOAIAAPMPf4QkKAIAAPMPf4QkGAIAAPMPf4QkCAIAAPMPf4Qk+AEAAPMPf4Qk6AEAAPMPf4Qk2AEAAPMPf4QkyAEAAPMPf4QkuAEAAPMPf4QkqAEAAPMPf4QkmAEAAPMPf4QkiAEAAPMPf4QkeAEAAPMPf4QkaAEAAPMPf4QkWAEAAPMPf4QkSAEAAPMPf4QkOAEAAPMPf4QkKAEAAPMPf4QkGAEAAPMPf4QkCAEAAPMPf4Qk+AAAAPMPf4Qk6AAAAPMPf4Qk2AAAAPMPf4QkyAAAAPMPf4QkuAAAAPMPf4QkqAAAAPMPf4QkmAAAAPMPf4QkiAAAAPMPf0QkePMPf0QkaPMPf0QkWPMPf0QkSPMPf0QkOPMPf0QkKPMPf0QkGPMPf0QkCEyJHCRIjaQkKAoAAEiNZCQIMcAxyTHSMfYx/0UxwEUxyUUx0sM="
 .p2align 6"#,
         vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
         vg_aes_gcm_decrypt_blocks_pclmul = sym super::aes::vg_aes_gcm_decrypt_blocks_pclmul::vg_aes_gcm_decrypt_blocks_pclmul,
@@ -10406,6 +11282,8 @@ jmp 21f
 pub const VG_AES_GCM_SEAL_GATHER_PREPARED_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::PCLMULQDQ);
 
 /// `vg_aes_gcm_seal_gather` with a 1032-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the prepared powers its count says are present. The powers remain secret; how many are present may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealGatherPreparedContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -10419,211 +11297,271 @@ pub const VG_AES_GCM_SEAL_GATHER_PREPARED_PCLMUL_FEATURES: verified_garbage_cpu:
 /// * The slices `src` lists must be `len` bytes long in all.
 /// * `*ctx` must have the prepared format written by `vg_aes_gcm_prepare` (not the format of `vg_aes_gcm_init_precomputed`).
 /// * `dst` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `src`, the slices `src` lists or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the return address on the stack or the 5128 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the return address on the stack or the 2672 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `ssse3` and `pclmulqdq` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_gather_prepared_pclmul(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        r#".base64 "SI2kJBD///9Ii4Qk+AAAAEiJRCQISIuEJAABAABIiUQkEEiLhCQIAQAASIlEJBhIi4QkEAEAAEiJRCQgSIuEJBgBAABIiUQkKEiJ4EiDwDhIiUQkMEyLXCQwTItUJAhIi0QkEEmJO0mJcwhNiUMQTYlLGE2JS1BNiVM4SYlDQEiLRCQYTItUJCBMi0QkKEmJQyBNiVMoTYlDMLgAAAAASYlDSEmJQ1hJiUNgSInWSInKTInZSIPBaEyLXCQwSYtDKEg97///fw=="
-jb 20f
-.base64 "TItcJDBJi0MoSD3///9/"
-jb 22f
-.base64 "TItcJDBBugAAAABJi0NASIXA"
-je 24f
-.base64 "TYtTOE2LUgg="
-jmp 25f
-24:
-25:
-.base64 "SYtDKEjB6ARIweAESTnCSYtDKEG6AAAAAEkPQ8JIPf///38="
+        r#".base64 "SI2kJMj1//9Ii4QkQAoAAEiJRCQISIuEJEgKAABIiUQkEEiLhCRQCgAASIlEJBhIi4QkWAoAAEiJRCQgSIuEJGAKAABIiUQkKEiJ4EiDwDhIiUQkMEiLRCQwSImYgAAAAEiJqIgAAABMiaCQAAAATImomAAAAEyJsKAAAABMibioAAAASYnHTYn+SYPGEEmJ/UmJt7AAAABNiYfoAAAATYmPuAAAAEiLRCQYSYmHyAAAAEiLRCQgSYmH0AAAAEmJ1EiJzUiD/Qw="
+je 20f
+.base64 "uAAAAABJiQZJiUYISYmv2AAAALsAAAAATIniSInpSMHpBEiJ6EiD5Q9IKehJAcRIhck="
+je 22f
+.base64 "TInvSIHH8AAAAEyJ9kiDxgBNifhJgcAAAgAA"
+call {vg_ghash_pclmul}
 jmp 23f
 22:
 23:
-jb 26f
-call {vg_aes_gcm_stream_init_pclmul_core}
-.base64 "TItcJDBJiztMid5Ig8ZougAAAABJi0sQTYtDGA=="
-call {vg_aes_gcm_stream_aad_pclmul_core}
-.base64 "TItcJDBJi0MoSIXA"
-je 28f
-.base64 "SYtLGEmJyEmD4A9NhcA="
-je 210f
-.base64 "uBAAAABMKcBJicBJiztIichMAcBJiUNQTIneSIPGaEiJykyJ2UiDwVg="
-call {vg_aes_gcm_stream_aad_pclmul_core}
-jmp 211f
-210:
+.base64 "SInpSIXJ"
+je 24f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMieZBugAAAAA="
+26:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 26b
+.base64 "TInvSIHH8AAAAEyJ9kiDxgBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_pclmul}
+jmp 25f
+24:
+25:
+.base64 "uwAAAABJi6/YAAAASInYSAHASAHASAHASA/ISYlHYEiJ6EgBwEgBwEgBwEgPyEmJR2hMie9IgcfwAAAATIn2SIPGAEyJ+kiDwmC5AQAAAE2J+EmBwAACAAA="
+call {vg_ghash_pclmul}
+jmp 21f
+20:
+.base64 "QYsEJEGLTCQEQYtUJAi+AAAAAUGJBkGJTgRBiVYIQYl2DA=="
+21:
+.base64 "QYsGQYtOBEGLVghBi3YMD86DxgEPzkGJRjBBiU40QYlWOEGJdjy4AAAAAEmJRhBJiUYYTYun6AAAAEmLr7gAAAC7AAAAAEyJ4kiJ6UjB6QRIiehIg+UPSCnoSQHESIXJ"
+je 27f
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBNifhJgcAAAgAA"
+call {vg_ghash_pclmul}
+jmp 28f
+27:
+28:
+.base64 "SInpSIXJ"
+je 29f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMieZBugAAAAA="
 211:
-.base64 "TItcJDBJi0NASIXA"
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 211b
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_pclmul}
+jmp 210f
+29:
+210:
+.base64 "SItEJAhJiYcAAQAASItEJBBJiYfgAAAASItEJBhJiYfIAAAASItEJCBJiYfAAAAASYmH0AAAALgAAAAASYmH8AAAAEmJhwgBAABJi4fgAAAASIXA"
 je 212f
 214:
-.base64 "TItcJDBNi1M4TYsKSYtCCE2LUyBJi0tISQHKSYs7SYtzCEyJ2kiDwmhJi0tQTYtDSFBBUlA="
-call {vg_aes_gcm_stream_encrypt_to_pclmul}
-.base64 "WFhYTItcJDBNi1M4SYtCCEmLS0hIAcFJg8IQSYtDQEiD6AFJiUtITYlTOEmJQ0BIhcA="
+.base64 "TYuXAAEAAEmLGkmLaghJg8IQTYmXAAEAAEmLhwgBAABIAcNIKcW4AAAAAEmJhwgBAABJi4fwAAAATYunyAAAAEkBxEiJxkiD5g9IAehJiYfwAAAASIXt"
+je 215f
+.base64 "SIX2"
+je 217f
+.base64 "uRAAAABIKfFIOc1ID0LNTAH2SIPGQEyJ50G6AAAAAA=="
+219:
+.base64 "Qg+2BBNGD7YcFkwx2EKIBBdJg8IBSTnK"
+jne 219b
+.base64 "SAHLSQHMSCnN"
+jmp 218f
+217:
+218:
+.base64 "SYnoScHoBE2FwA=="
+je 220f
+.base64 "SInZTYnjSInoSIPlD0gp6EgBw0kBxEyJ70mLt7AAAABMifJIg8IwTYn5SYHBAAIAAA=="
+call {vg_aes_ctr32_to}
+jmp 221f
+220:
+221:
+.base64 "SIXt"
+je 222f
+.base64 "uAAAAABJiUZASYlGSEyJ70mLt7AAAABMifJIg8IwTInxSIPBQEG4AQAAAE2J+UmBwQACAAA="
+call {vg_aes_ctr32}
+.base64 "TInnTIn2SIPGQEiJ6UG6AAAAAA=="
+224:
+.base64 "Qg+2BBNGD7YcFkwx2EKIBBdJg8IBSTnK"
+jne 224b
+jmp 223f
+222:
+223:
+jmp 216f
+215:
+216:
+.base64 "TYuX4AAAAEmD6gFNiZfgAAAA"
 jne 214b
 jmp 213f
 212:
 213:
-jmp 29f
-28:
-29:
-.base64 "TItcJDBJiztJi3MITInaSIPCaEmLSxhNi0MoTYtLMA=="
-call {vg_aes_gcm_stream_finish_pclmul}
-jmp 27f
-26:
-.base64 "TItcJDBBugAAAABJi0NASIXA"
-je 215f
-.base64 "TYtTOE2LUgg="
-jmp 216f
-215:
-216:
-.base64 "SYtDKEjB6ARIweAEQbgAAAAASTnCTQ9C0EmB+u///38="
-jb 217f
-.base64 "SYlzaEmJU3BNi0tASYt7IE2LUzhMidC5AAAAAE2FyQ=="
-je 219f
-.base64 "SYsCSYtKCEmD6QFJg8IQSAHP"
-jmp 220f
-219:
-220:
-.base64 "SYlDeEmJi4AAAABNidNJg/kA"
-je 221f
-223:
-.base64 "SYszSYtLCEmDwxBBugAAAABJichJwegGScHgBkmD+AA="
-je 224f
-226:
-.base64 "80IPbwQW80IPb0wWEPNCD29UFiDzQg9vXBYw80IPfwQX80IPf0wXEPNCD39UFyDzQg9/XBcwSYPCQE05wg=="
-jne 226b
-jmp 225f
-224:
+.base64 "TYunyAAAAEmLr9AAAAC7AAAAAEyJ4kiJ6UjB6QRIiehIg+UPSCnoSQHESIXJ"
+je 225f
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBNifhJgcAAAgAA"
+call {vg_ghash_pclmul}
+jmp 226f
 225:
-.base64 "SYnIScHoBEnB4ARNOcI="
+226:
+.base64 "SInpSIXJ"
 je 227f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMieZBugAAAAA="
 229:
-.base64 "80IPbwQW80IPfwQXSYPCEE05wg=="
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
 jne 229b
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_pclmul}
 jmp 228f
 227:
 228:
-.base64 "STnK"
-je 230f
-.base64 "SIP5EA=="
-jb 232f
-.base64 "SYnKSYPqEPNCD28EFvNCD38EFw=="
-jmp 233f
-232:
-234:
+.base64 "SYufuAAAAEmLr8AAAABIidhIAcBIAcBIAcBID8hJiUdgSInoSAHASAHASAHASA/ISYlHaEyJ70iBx/AAAABMifZIg8YQTIn6SIPCYLkBAAAATYn4SYHAAAIAAA=="
+call {vg_ghash_pclmul}
+.base64 "SYtGEEmJB0mLRhhJiUcITInvSYu3sAAAAEyJ8kyJ+UiDwQBBuAEAAABNiflJgcEAAgAA"
+call {vg_aes_ctr32}
+.base64 "SIt8JChJiwdJi1cISIkHSIlXCEmLn4AAAABJi6+IAAAATYunkAAAAE2Lr5gAAABNi7egAAAATYu/qAAAAEiNpCQ4CgAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJPhMiRwkSI2kJJj1///zD3+EJFgKAADzD3+EJEgKAADzD3+EJDgKAADzD3+EJCgKAADzD3+EJBgKAADzD3+EJAgKAADzD3+EJPgJAADzD3+EJOgJAADzD3+EJNgJAADzD3+EJMgJAADzD3+EJLgJAADzD3+EJKgJAADzD3+EJJgJAADzD3+EJIgJAADzD3+EJHgJAADzD3+EJGgJAADzD3+EJFgJAADzD3+EJEgJAADzD3+EJDgJAADzD3+EJCgJAADzD3+EJBgJAADzD3+EJAgJAADzD3+EJPgIAADzD3+EJOgIAADzD3+EJNgIAADzD3+EJMgIAADzD3+EJLgIAADzD3+EJKgIAADzD3+EJJgIAADzD3+EJIgIAADzD3+EJHgIAADzD3+EJGgIAADzD3+EJFgIAADzD3+EJEgIAADzD3+EJDgIAADzD3+EJCgIAADzD3+EJBgIAADzD3+EJAgIAADzD3+EJPgHAADzD3+EJOgHAADzD3+EJNgHAADzD3+EJMgHAADzD3+EJLgHAADzD3+EJKgHAADzD3+EJJgHAADzD3+EJIgHAADzD3+EJHgHAADzD3+EJGgHAADzD3+EJFgHAADzD3+EJEgHAADzD3+EJDgHAADzD3+EJCgHAADzD3+EJBgHAADzD3+EJAgHAADzD3+EJPgGAADzD3+EJOgGAADzD3+EJNgGAADzD3+EJMgGAADzD3+EJLgGAADzD3+EJKgGAADzD3+EJJgGAADzD3+EJIgGAADzD3+EJHgGAADzD3+EJGgGAADzD3+EJFgGAADzD3+EJEgGAADzD3+EJDgGAADzD3+EJCgGAADzD3+EJBgGAADzD3+EJAgGAADzD3+EJPgFAADzD3+EJOgFAADzD3+EJNgFAADzD3+EJMgFAADzD3+EJLgFAADzD3+EJKgFAADzD3+EJJgFAADzD3+EJIgFAADzD3+EJHgFAADzD3+EJGgFAADzD3+EJFgFAADzD3+EJEgFAADzD3+EJDgFAADzD3+EJCgFAADzD3+EJBgFAADzD3+EJAgFAADzD3+EJPgEAADzD3+EJOgEAADzD3+EJNgEAADzD3+EJMgEAADzD3+EJLgEAADzD3+EJKgEAADzD3+EJJgEAADzD3+EJIgEAADzD3+EJHgEAADzD3+EJGgEAADzD3+EJFgEAADzD3+EJEgEAADzD3+EJDgEAADzD3+EJCgEAADzD3+EJBgEAADzD3+EJAgEAADzD3+EJPgDAADzD3+EJOgDAADzD3+EJNgDAADzD3+EJMgDAADzD3+EJLgDAADzD3+EJKgDAADzD3+EJJgDAADzD3+EJIgDAADzD3+EJHgDAADzD3+EJGgDAADzD3+EJFgDAADzD3+EJEgDAADzD3+EJDgDAADzD3+EJCgDAADzD3+EJBgDAADzD3+EJAgDAADzD3+EJPgCAADzD3+EJOgCAADzD3+EJNgCAADzD3+EJMgCAADzD3+EJLgCAADzD3+EJKgCAADzD3+EJJgCAADzD3+EJIgCAADzD3+EJHgCAADzD3+EJGgCAADzD3+EJFgCAADzD3+EJEgCAADzD3+EJDgCAADzD3+EJCgCAADzD3+EJBgCAADzD3+EJAgCAADzD3+EJPgBAADzD3+EJOgBAADzD3+EJNgBAADzD3+EJMgBAADzD3+EJLgBAADzD3+EJKgBAADzD3+EJJgBAADzD3+EJIgBAADzD3+EJHgBAADzD3+EJGgBAADzD3+EJFgBAADzD3+EJEgBAADzD3+EJDgBAADzD3+EJCgBAADzD3+EJBgBAADzD3+EJAgBAADzD3+EJPgAAADzD3+EJOgAAADzD3+EJNgAAADzD3+EJMgAAADzD3+EJLgAAADzD3+EJKgAAADzD3+EJJgAAADzD3+EJIgAAADzD39EJHjzD39EJGjzD39EJFjzD39EJEjzD39EJDjzD39EJCjzD39EJBjzD39EJAhMiRwkSI2kJGgKAABIjWQkCDHAMckx0jH2Mf9FMcBFMclFMdLD"
+.p2align 6"#,
+        vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
+        vg_aes_ctr32_to = sym super::aes::vg_aes_ctr32_to::vg_aes_ctr32_to,
+        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+    )
+}
+
+/// `vg_aes_gcm_seal_contiguous` with a 1032-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the prepared powers its count says are present. The powers remain secret; how many are present may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealContiguousPreparedContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 1032 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `src` must be valid for reads of `len` bytes, and `dst` for reads and writes of `len` bytes. The two pointers must be identical or their regions disjoint.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `*ctx` must have the prepared format written by `vg_aes_gcm_prepare` (not the format of `vg_aes_gcm_init_precomputed`).
+/// * `dst` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `src` when distinct from `dst` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `src` when distinct from `dst`, `dst` and `tag` may overlap the return address on the stack or the 2640 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_contiguous_prepared(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+    core::arch::naked_asm!(
+        r#".base64 "SI2kJND1//9Ii4QkOAoAAEiJRCQISIuEJEAKAABIiUQkEEiLhCRICgAASIlEJBhIi4QkUAoAAEiJRCQgSIngSIPAMEiJRCQoSItEJChIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdNif5Jg8YQSYn9SYm3sAAAAE2Jh+gAAABNiY+4AAAASItEJBBJiYfIAAAASItEJBhJiYfQAAAASYnUSInNSIP9DA=="
+je 20f
+.base64 "uAAAAABJiQZJiUYISYmv2AAAALsAAAAATIniSInpSMHpBEiJ6EiD5Q9IKehJAcRIhck="
+je 22f
+.base64 "TInvSIHH8AAAAEyJ9kiDxgBNifhJgcAAAgAA"
+call {vg_ghash}
+jmp 23f
+22:
+23:
+.base64 "SInpSIXJ"
+je 24f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMieZBugAAAAA="
+26:
 .base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 234b
-233:
-jmp 231f
-230:
-231:
-.base64 "SAHPSYPpAQ=="
-jne 223b
+jne 26b
+.base64 "TInvSIHH8AAAAEyJ9kiDxgBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash}
+jmp 25f
+24:
+25:
+.base64 "uwAAAABJi6/YAAAASInYSAHASAHASAHASA/ISYlHYEiJ6EgBwEgBwEgBwEgPyEmJR2hMie9IgcfwAAAATIn2SIPGAEyJ+kiDwmC5AQAAAE2J+EmBwAACAAA="
+call {vg_ghash}
+jmp 21f
+20:
+.base64 "QYsEJEGLTCQEQYtUJAi+AAAAAUGJBkGJTgRBiVYIQYl2DA=="
+21:
+.base64 "QYsGQYtOBEGLVghBi3YMD86DxgEPzkGJRjBBiU40QYlWOEGJdjy4AAAAAEmJRhBJiUYYTYun6AAAAEmLr7gAAAC7AAAAAEyJ4kiJ6UjB6QRIiehIg+UPSCnoSQHESIXJ"
+je 27f
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBNifhJgcAAAgAA"
+call {vg_ghash}
+jmp 28f
+27:
+28:
+.base64 "SInpSIXJ"
+je 29f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMieZBugAAAAA="
+211:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 211b
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash}
+jmp 210f
+29:
+210:
+.base64 "SYuH0AAAAEiD6BBIwcgESIP4Bw=="
+jb 212f
+.base64 "SYuH0AAAAEmJh8AAAABIwegESIXA"
+je 214f
+.base64 "TInvSYu3sAAAAEyJ8kiDwjBIi0wkCEmJwE2Ln8gAAABNiflJgcHAAQAA"
+call {vg_aes_ctr32_to}
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBJi5fIAAAASYuP0AAAAEjB6QRNifhJgcDAAQAA"
+call {vg_ghash}
+.base64 "SYuH0AAAAEiJwUiD4Q9JiY/QAAAASCnISQOHyAAAAEmJh8gAAAA="
+jmp 215f
+214:
+215:
+.base64 "SYuH0AAAAEiFwA=="
+je 216f
+.base64 "SItcJAhJA5/AAAAASSuf0AAAAE2Lp8gAAABJi6/QAAAA80EPbwbzQQ9/hwABAADzQQ9vRjDzQQ9/hxABAABMie9Ji7ewAAAATIn6SIHCAAEAALkCAAAATYn4SYHAAAIAAA=="
+call {vg_aes_encrypt_blocks}
+.base64 "SIXt"
+je 218f
+.base64 "TInnSInpTIn+SIHGEAEAAEG6AAAAAA=="
+220:
+.base64 "Qg+2BBNGD7YcFkwx2EKIBBdJg8IBSTnK"
+jne 220b
+jmp 219f
+218:
+219:
+.base64 "TYunyAAAAEmLr9AAAAC7AAAAAEyJ4kiJ6UjB6QRIiehIg+UPSCnoSQHESIXJ"
+je 221f
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBNifhJgcAAAgAA"
+call {vg_ghash}
 jmp 222f
 221:
 222:
-.base64 "TItcJDBJi1NoSYtLcE2LQxBNi0sYSYtDME2LUyhJi7uAAAAASYtzeE2LWyBQQVJBU1dWTItcJFhJiztJi3MI"
-call {vg_aes_gcm_seal_split_pclmul}
-.base64 "WFhYWFg="
-jmp 218f
+.base64 "SInpSIXJ"
+je 223f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMieZBugAAAAA="
+225:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 225b
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash}
+jmp 224f
+223:
+224:
+.base64 "SYufuAAAAEmLr8AAAABIidhIAcBIAcBIAcBID8hJiUdgSInoSAHASAHASAHASA/ISYlHaEyJ70iBx/AAAABMifZIg8YQTIn6SIPCYLkBAAAATYn4SYHAAAIAAA=="
+call {vg_ghash}
+.base64 "80EPb4cAAQAA80EPb04QZg/vwfNBD38H"
+jmp 217f
+216:
+.base64 "SYufuAAAAEmLr8AAAABIidhIAcBIAcBIAcBID8hJiUdgSInoSAHASAHASAHASA/ISYlHaEyJ70iBx/AAAABMifZIg8YQTIn6SIPCYLkBAAAATYn4SYHAAAIAAA=="
+call {vg_ghash}
+.base64 "80EPbwbzQQ9/hwABAABMie9Ji7ewAAAATIn6SIHCAAEAALkBAAAATYn4SYHAAAIAAA=="
+call {vg_aes_encrypt_blocks}
+.base64 "80EPb4cAAQAA80EPb04QZg/vwfNBD38H"
 217:
-.base64 "SYlzaEmJU3BNi0tASYt7IE2LWzhJg/kA"
-je 235f
-237:
-.base64 "SYszSYtLCEmDwxBBugAAAABJichJwegGScHgBkmD+AA="
-je 238f
-240:
-.base64 "80IPbwQW80IPb0wWEPNCD29UFiDzQg9vXBYw80IPfwQX80IPf0wXEPNCD39UFyDzQg9/XBcwSYPCQE05wg=="
-jne 240b
-jmp 239f
-238:
-239:
-.base64 "SYnIScHoBEnB4ARNOcI="
-je 241f
-243:
-.base64 "80IPbwQW80IPfwQXSYPCEE05wg=="
-jne 243b
-jmp 242f
-241:
-242:
-.base64 "STnK"
-je 244f
-.base64 "SIP5EA=="
-jb 246f
-.base64 "SYnKSYPqEPNCD28EFvNCD38EFw=="
-jmp 247f
-246:
-248:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 248b
-247:
-jmp 245f
-244:
-245:
-.base64 "SAHPSYPpAQ=="
-jne 237b
-jmp 236f
-235:
-236:
-.base64 "TItcJDBJiztJi3MISYtTaEmLS3BNi0MQTYtLGEmLQzBNi1MoTYtbIFBBUkFT"
-call {vg_aes_gcm_seal_pclmul}
-.base64 "WFhY"
-218:
-27:
-jmp 21f
-20:
-.base64 "SYlzaEmJU3BNi0tASYt7IE2LWzhJg/kA"
-je 249f
-251:
-.base64 "SYszSYtLCEmDwxBBugAAAABJichJwegGScHgBkmD+AA="
-je 252f
-254:
-.base64 "80IPbwQW80IPb0wWEPNCD29UFiDzQg9vXBYw80IPfwQX80IPf0wXEPNCD39UFyDzQg9/XBcwSYPCQE05wg=="
-jne 254b
-jmp 253f
-252:
-253:
-.base64 "SYnIScHoBEnB4ARNOcI="
-je 255f
-257:
-.base64 "80IPbwQW80IPfwQXSYPCEE05wg=="
-jne 257b
-jmp 256f
-255:
-256:
-.base64 "STnK"
-je 258f
-.base64 "SIP5EA=="
-jb 260f
-.base64 "SYnKSYPqEPNCD28EFvNCD38EFw=="
-jmp 261f
-260:
-262:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 262b
-261:
-jmp 259f
-258:
-259:
-.base64 "SAHPSYPpAQ=="
-jne 251b
-jmp 250f
-249:
-250:
-.base64 "TItcJDBJiztJi3MISYtTaEmLS3BNi0MQTYtLGEmLQzBNi1MoTYtbIFBBUkFT"
-call {vg_aes_gcm_seal_pclmul}
-.base64 "WFhY"
-21:
-.base64 "SI2kJPAAAADD"
+jmp 213f
+212:
+.base64 "80EPbwbzQQ9/hwABAABFi14MQQ/LQboAAAAASYuv0AAAAEmJr8AAAAA="
+226:
+.base64 "80MPf4QXEAEAAEGDwwFEidgPyEOJhBccAQAASYPCEEk56g=="
+jne 226b
+.base64 "TInvSYu3sAAAAEyJ+kiBwgABAABIielIwekESIPBAU2J+EmBwAACAAA="
+call {vg_aes_encrypt_blocks}
+.base64 "SIt8JAhJi7fIAAAAQboAAAAA"
+227:
+.base64 "80IPbwQX80MPb4wXEAEAAGYP78HzQg9/BBZJg8IQSTnq"
+jne 227b
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBJi5fIAAAASYuP0AAAAEjB6QRNifhJgcDAAQAA"
+call {vg_ghash}
+.base64 "SYufuAAAAEmLr8AAAABIidhIAcBIAcBIAcBID8hJiUdgSInoSAHASAHASAHASA/ISYlHaEyJ70iBx/AAAABMifZIg8YQTIn6SIPCYLkBAAAATYn4SYHAAAIAAA=="
+call {vg_ghash}
+.base64 "80EPb4cAAQAA80EPb04QZg/vwfNBD38H"
+213:
+.base64 "SIt8JCBJiwdJi1cISIkHSIlXCEmLn4AAAABJi6+IAAAATYunkAAAAE2Lr5gAAABNi7egAAAATYu/qAAAAEiNpCQwCgAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJPhMiRwkSI2kJLj1///zD3+EJDgKAADzD3+EJCgKAADzD3+EJBgKAADzD3+EJAgKAADzD3+EJPgJAADzD3+EJOgJAADzD3+EJNgJAADzD3+EJMgJAADzD3+EJLgJAADzD3+EJKgJAADzD3+EJJgJAADzD3+EJIgJAADzD3+EJHgJAADzD3+EJGgJAADzD3+EJFgJAADzD3+EJEgJAADzD3+EJDgJAADzD3+EJCgJAADzD3+EJBgJAADzD3+EJAgJAADzD3+EJPgIAADzD3+EJOgIAADzD3+EJNgIAADzD3+EJMgIAADzD3+EJLgIAADzD3+EJKgIAADzD3+EJJgIAADzD3+EJIgIAADzD3+EJHgIAADzD3+EJGgIAADzD3+EJFgIAADzD3+EJEgIAADzD3+EJDgIAADzD3+EJCgIAADzD3+EJBgIAADzD3+EJAgIAADzD3+EJPgHAADzD3+EJOgHAADzD3+EJNgHAADzD3+EJMgHAADzD3+EJLgHAADzD3+EJKgHAADzD3+EJJgHAADzD3+EJIgHAADzD3+EJHgHAADzD3+EJGgHAADzD3+EJFgHAADzD3+EJEgHAADzD3+EJDgHAADzD3+EJCgHAADzD3+EJBgHAADzD3+EJAgHAADzD3+EJPgGAADzD3+EJOgGAADzD3+EJNgGAADzD3+EJMgGAADzD3+EJLgGAADzD3+EJKgGAADzD3+EJJgGAADzD3+EJIgGAADzD3+EJHgGAADzD3+EJGgGAADzD3+EJFgGAADzD3+EJEgGAADzD3+EJDgGAADzD3+EJCgGAADzD3+EJBgGAADzD3+EJAgGAADzD3+EJPgFAADzD3+EJOgFAADzD3+EJNgFAADzD3+EJMgFAADzD3+EJLgFAADzD3+EJKgFAADzD3+EJJgFAADzD3+EJIgFAADzD3+EJHgFAADzD3+EJGgFAADzD3+EJFgFAADzD3+EJEgFAADzD3+EJDgFAADzD3+EJCgFAADzD3+EJBgFAADzD3+EJAgFAADzD3+EJPgEAADzD3+EJOgEAADzD3+EJNgEAADzD3+EJMgEAADzD3+EJLgEAADzD3+EJKgEAADzD3+EJJgEAADzD3+EJIgEAADzD3+EJHgEAADzD3+EJGgEAADzD3+EJFgEAADzD3+EJEgEAADzD3+EJDgEAADzD3+EJCgEAADzD3+EJBgEAADzD3+EJAgEAADzD3+EJPgDAADzD3+EJOgDAADzD3+EJNgDAADzD3+EJMgDAADzD3+EJLgDAADzD3+EJKgDAADzD3+EJJgDAADzD3+EJIgDAADzD3+EJHgDAADzD3+EJGgDAADzD3+EJFgDAADzD3+EJEgDAADzD3+EJDgDAADzD3+EJCgDAADzD3+EJBgDAADzD3+EJAgDAADzD3+EJPgCAADzD3+EJOgCAADzD3+EJNgCAADzD3+EJMgCAADzD3+EJLgCAADzD3+EJKgCAADzD3+EJJgCAADzD3+EJIgCAADzD3+EJHgCAADzD3+EJGgCAADzD3+EJFgCAADzD3+EJEgCAADzD3+EJDgCAADzD3+EJCgCAADzD3+EJBgCAADzD3+EJAgCAADzD3+EJPgBAADzD3+EJOgBAADzD3+EJNgBAADzD3+EJMgBAADzD3+EJLgBAADzD3+EJKgBAADzD3+EJJgBAADzD3+EJIgBAADzD3+EJHgBAADzD3+EJGgBAADzD3+EJFgBAADzD3+EJEgBAADzD3+EJDgBAADzD3+EJCgBAADzD3+EJBgBAADzD3+EJAgBAADzD3+EJPgAAADzD3+EJOgAAADzD3+EJNgAAADzD3+EJMgAAADzD3+EJLgAAADzD3+EJKgAAADzD3+EJJgAAADzD3+EJIgAAADzD39EJHjzD39EJGjzD39EJFjzD39EJEjzD39EJDjzD39EJCjzD39EJBjzD39EJAhMiRwkSI2kJEgKAABIjWQkCDHAMckx0jH2Mf9FMcBFMclFMdLD"
 .p2align 6"#,
-        vg_aes_gcm_stream_init_pclmul_core = sym super::aes::vg_aes_gcm_stream_init_pclmul_core::vg_aes_gcm_stream_init_pclmul_core,
-        vg_aes_gcm_stream_aad_pclmul_core = sym super::aes::vg_aes_gcm_stream_aad_pclmul_core::vg_aes_gcm_stream_aad_pclmul_core,
-        vg_aes_gcm_stream_encrypt_to_pclmul = sym super::aes::vg_aes_gcm_stream_encrypt_to_pclmul::vg_aes_gcm_stream_encrypt_to_pclmul,
-        vg_aes_gcm_stream_finish_pclmul = sym super::gcm::vg_aes_gcm_stream_finish_pclmul,
-        vg_aes_gcm_seal_split_pclmul = sym super::aes::vg_aes_gcm_seal_split_pclmul::vg_aes_gcm_seal_split_pclmul,
-        vg_aes_gcm_seal_pclmul = sym super::aes::vg_aes_gcm_seal_pclmul::vg_aes_gcm_seal_pclmul,
+        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
+        vg_aes_ctr32_to = sym super::aes::vg_aes_ctr32_to::vg_aes_ctr32_to,
+        vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks::vg_aes_encrypt_blocks,
     )
 }
 
 /// `vg_aes_gcm_seal` with a 1032-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the prepared powers its count says are present. The powers remain secret; how many are present may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealPreparedContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -10731,7 +11669,7 @@ jmp 222f
 call {vg_ghash}
 .base64 "SYtGEEmJB0mLRhhJiUcITInvSYu3sAAAAEyJ8kyJ+UiDwQBBuAEAAABNiflJgcEAAgAA"
 call {vg_aes_ctr32}
-.base64 "SIt8JBhJiwdJi1cISIkHSIlXCEmLn4AAAABJi6+IAAAATYunkAAAAE2Lr5gAAABNi7egAAAATYu/qAAAAEiNpCQoCgAAww=="
+.base64 "SIt8JBhJiwdJi1cISIkHSIlXCEmLn4AAAABJi6+IAAAATYunkAAAAE2Lr5gAAABNi7egAAAATYu/qAAAAEiNpCQoCgAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJPhMiRwkSI2kJMj1///zD3+EJCgKAADzD3+EJBgKAADzD3+EJAgKAADzD3+EJPgJAADzD3+EJOgJAADzD3+EJNgJAADzD3+EJMgJAADzD3+EJLgJAADzD3+EJKgJAADzD3+EJJgJAADzD3+EJIgJAADzD3+EJHgJAADzD3+EJGgJAADzD3+EJFgJAADzD3+EJEgJAADzD3+EJDgJAADzD3+EJCgJAADzD3+EJBgJAADzD3+EJAgJAADzD3+EJPgIAADzD3+EJOgIAADzD3+EJNgIAADzD3+EJMgIAADzD3+EJLgIAADzD3+EJKgIAADzD3+EJJgIAADzD3+EJIgIAADzD3+EJHgIAADzD3+EJGgIAADzD3+EJFgIAADzD3+EJEgIAADzD3+EJDgIAADzD3+EJCgIAADzD3+EJBgIAADzD3+EJAgIAADzD3+EJPgHAADzD3+EJOgHAADzD3+EJNgHAADzD3+EJMgHAADzD3+EJLgHAADzD3+EJKgHAADzD3+EJJgHAADzD3+EJIgHAADzD3+EJHgHAADzD3+EJGgHAADzD3+EJFgHAADzD3+EJEgHAADzD3+EJDgHAADzD3+EJCgHAADzD3+EJBgHAADzD3+EJAgHAADzD3+EJPgGAADzD3+EJOgGAADzD3+EJNgGAADzD3+EJMgGAADzD3+EJLgGAADzD3+EJKgGAADzD3+EJJgGAADzD3+EJIgGAADzD3+EJHgGAADzD3+EJGgGAADzD3+EJFgGAADzD3+EJEgGAADzD3+EJDgGAADzD3+EJCgGAADzD3+EJBgGAADzD3+EJAgGAADzD3+EJPgFAADzD3+EJOgFAADzD3+EJNgFAADzD3+EJMgFAADzD3+EJLgFAADzD3+EJKgFAADzD3+EJJgFAADzD3+EJIgFAADzD3+EJHgFAADzD3+EJGgFAADzD3+EJFgFAADzD3+EJEgFAADzD3+EJDgFAADzD3+EJCgFAADzD3+EJBgFAADzD3+EJAgFAADzD3+EJPgEAADzD3+EJOgEAADzD3+EJNgEAADzD3+EJMgEAADzD3+EJLgEAADzD3+EJKgEAADzD3+EJJgEAADzD3+EJIgEAADzD3+EJHgEAADzD3+EJGgEAADzD3+EJFgEAADzD3+EJEgEAADzD3+EJDgEAADzD3+EJCgEAADzD3+EJBgEAADzD3+EJAgEAADzD3+EJPgDAADzD3+EJOgDAADzD3+EJNgDAADzD3+EJMgDAADzD3+EJLgDAADzD3+EJKgDAADzD3+EJJgDAADzD3+EJIgDAADzD3+EJHgDAADzD3+EJGgDAADzD3+EJFgDAADzD3+EJEgDAADzD3+EJDgDAADzD3+EJCgDAADzD3+EJBgDAADzD3+EJAgDAADzD3+EJPgCAADzD3+EJOgCAADzD3+EJNgCAADzD3+EJMgCAADzD3+EJLgCAADzD3+EJKgCAADzD3+EJJgCAADzD3+EJIgCAADzD3+EJHgCAADzD3+EJGgCAADzD3+EJFgCAADzD3+EJEgCAADzD3+EJDgCAADzD3+EJCgCAADzD3+EJBgCAADzD3+EJAgCAADzD3+EJPgBAADzD3+EJOgBAADzD3+EJNgBAADzD3+EJMgBAADzD3+EJLgBAADzD3+EJKgBAADzD3+EJJgBAADzD3+EJIgBAADzD3+EJHgBAADzD3+EJGgBAADzD3+EJFgBAADzD3+EJEgBAADzD3+EJDgBAADzD3+EJCgBAADzD3+EJBgBAADzD3+EJAgBAADzD3+EJPgAAADzD3+EJOgAAADzD3+EJNgAAADzD3+EJMgAAADzD3+EJLgAAADzD3+EJKgAAADzD3+EJJgAAADzD3+EJIgAAADzD39EJHjzD39EJGjzD39EJFjzD39EJEjzD39EJDjzD39EJCjzD39EJBjzD39EJAhMiRwkSI2kJDgKAABIjWQkCDHAMckx0jH2Mf9FMcBFMclFMdLD"
 .p2align 6"#,
         vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
         vg_aes_gcm_encrypt_blocks = sym super::aes::vg_aes_gcm_encrypt_blocks::vg_aes_gcm_encrypt_blocks,
@@ -10740,6 +11678,8 @@ call {vg_aes_ctr32}
 }
 
 /// `vg_aes_gcm_open` with a 1032-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the prepared powers its count says are present. The powers remain secret; how many are present may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openPreparedContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -10897,7 +11837,7 @@ jmp 25f
 24:
 .base64 "uAAAAAA="
 25:
-.base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJDAKAADD"
+.base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJDAKAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjWQk+EyJHCRIjaQkwPX///MPf4QkMAoAAPMPf4QkIAoAAPMPf4QkEAoAAPMPf4QkAAoAAPMPf4Qk8AkAAPMPf4Qk4AkAAPMPf4Qk0AkAAPMPf4QkwAkAAPMPf4QksAkAAPMPf4QkoAkAAPMPf4QkkAkAAPMPf4QkgAkAAPMPf4QkcAkAAPMPf4QkYAkAAPMPf4QkUAkAAPMPf4QkQAkAAPMPf4QkMAkAAPMPf4QkIAkAAPMPf4QkEAkAAPMPf4QkAAkAAPMPf4Qk8AgAAPMPf4Qk4AgAAPMPf4Qk0AgAAPMPf4QkwAgAAPMPf4QksAgAAPMPf4QkoAgAAPMPf4QkkAgAAPMPf4QkgAgAAPMPf4QkcAgAAPMPf4QkYAgAAPMPf4QkUAgAAPMPf4QkQAgAAPMPf4QkMAgAAPMPf4QkIAgAAPMPf4QkEAgAAPMPf4QkAAgAAPMPf4Qk8AcAAPMPf4Qk4AcAAPMPf4Qk0AcAAPMPf4QkwAcAAPMPf4QksAcAAPMPf4QkoAcAAPMPf4QkkAcAAPMPf4QkgAcAAPMPf4QkcAcAAPMPf4QkYAcAAPMPf4QkUAcAAPMPf4QkQAcAAPMPf4QkMAcAAPMPf4QkIAcAAPMPf4QkEAcAAPMPf4QkAAcAAPMPf4Qk8AYAAPMPf4Qk4AYAAPMPf4Qk0AYAAPMPf4QkwAYAAPMPf4QksAYAAPMPf4QkoAYAAPMPf4QkkAYAAPMPf4QkgAYAAPMPf4QkcAYAAPMPf4QkYAYAAPMPf4QkUAYAAPMPf4QkQAYAAPMPf4QkMAYAAPMPf4QkIAYAAPMPf4QkEAYAAPMPf4QkAAYAAPMPf4Qk8AUAAPMPf4Qk4AUAAPMPf4Qk0AUAAPMPf4QkwAUAAPMPf4QksAUAAPMPf4QkoAUAAPMPf4QkkAUAAPMPf4QkgAUAAPMPf4QkcAUAAPMPf4QkYAUAAPMPf4QkUAUAAPMPf4QkQAUAAPMPf4QkMAUAAPMPf4QkIAUAAPMPf4QkEAUAAPMPf4QkAAUAAPMPf4Qk8AQAAPMPf4Qk4AQAAPMPf4Qk0AQAAPMPf4QkwAQAAPMPf4QksAQAAPMPf4QkoAQAAPMPf4QkkAQAAPMPf4QkgAQAAPMPf4QkcAQAAPMPf4QkYAQAAPMPf4QkUAQAAPMPf4QkQAQAAPMPf4QkMAQAAPMPf4QkIAQAAPMPf4QkEAQAAPMPf4QkAAQAAPMPf4Qk8AMAAPMPf4Qk4AMAAPMPf4Qk0AMAAPMPf4QkwAMAAPMPf4QksAMAAPMPf4QkoAMAAPMPf4QkkAMAAPMPf4QkgAMAAPMPf4QkcAMAAPMPf4QkYAMAAPMPf4QkUAMAAPMPf4QkQAMAAPMPf4QkMAMAAPMPf4QkIAMAAPMPf4QkEAMAAPMPf4QkAAMAAPMPf4Qk8AIAAPMPf4Qk4AIAAPMPf4Qk0AIAAPMPf4QkwAIAAPMPf4QksAIAAPMPf4QkoAIAAPMPf4QkkAIAAPMPf4QkgAIAAPMPf4QkcAIAAPMPf4QkYAIAAPMPf4QkUAIAAPMPf4QkQAIAAPMPf4QkMAIAAPMPf4QkIAIAAPMPf4QkEAIAAPMPf4QkAAIAAPMPf4Qk8AEAAPMPf4Qk4AEAAPMPf4Qk0AEAAPMPf4QkwAEAAPMPf4QksAEAAPMPf4QkoAEAAPMPf4QkkAEAAPMPf4QkgAEAAPMPf4QkcAEAAPMPf4QkYAEAAPMPf4QkUAEAAPMPf4QkQAEAAPMPf4QkMAEAAPMPf4QkIAEAAPMPf4QkEAEAAPMPf4QkAAEAAPMPf4Qk8AAAAPMPf4Qk4AAAAPMPf4Qk0AAAAPMPf4QkwAAAAPMPf4QksAAAAPMPf4QkoAAAAPMPf4QkkAAAAPMPf4QkgAAAAPMPf0QkcPMPf0QkYPMPf0QkUPMPf0QkQPMPf0QkMPMPf0QkIPMPf0QkEPMPfwQkSI2kJEAKAABIjWQkCInAMckx0jH2Mf9FMcBFMclFMdLD"
 .p2align 6"#,
         vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
         vg_aes_gcm_decrypt_blocks = sym super::aes::vg_aes_gcm_decrypt_blocks::vg_aes_gcm_decrypt_blocks,
@@ -10906,6 +11846,8 @@ jmp 25f
 }
 
 /// `vg_aes_gcm_open_to` with a 1032-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the prepared powers its count says are present. The powers remain secret; how many are present may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openToPreparedContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -10938,13 +11880,15 @@ jmp 23f
 22:
 23:
 21:
-.base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW0iNpCRACgAAww=="
+.base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW0iNpCRACgAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJPhMiRwkSI2kJDD1///zD3+EJMAKAADzD3+EJLAKAADzD3+EJKAKAADzD3+EJJAKAADzD3+EJIAKAADzD3+EJHAKAADzD3+EJGAKAADzD3+EJFAKAADzD3+EJEAKAADzD3+EJDAKAADzD3+EJCAKAADzD3+EJBAKAADzD3+EJAAKAADzD3+EJPAJAADzD3+EJOAJAADzD3+EJNAJAADzD3+EJMAJAADzD3+EJLAJAADzD3+EJKAJAADzD3+EJJAJAADzD3+EJIAJAADzD3+EJHAJAADzD3+EJGAJAADzD3+EJFAJAADzD3+EJEAJAADzD3+EJDAJAADzD3+EJCAJAADzD3+EJBAJAADzD3+EJAAJAADzD3+EJPAIAADzD3+EJOAIAADzD3+EJNAIAADzD3+EJMAIAADzD3+EJLAIAADzD3+EJKAIAADzD3+EJJAIAADzD3+EJIAIAADzD3+EJHAIAADzD3+EJGAIAADzD3+EJFAIAADzD3+EJEAIAADzD3+EJDAIAADzD3+EJCAIAADzD3+EJBAIAADzD3+EJAAIAADzD3+EJPAHAADzD3+EJOAHAADzD3+EJNAHAADzD3+EJMAHAADzD3+EJLAHAADzD3+EJKAHAADzD3+EJJAHAADzD3+EJIAHAADzD3+EJHAHAADzD3+EJGAHAADzD3+EJFAHAADzD3+EJEAHAADzD3+EJDAHAADzD3+EJCAHAADzD3+EJBAHAADzD3+EJAAHAADzD3+EJPAGAADzD3+EJOAGAADzD3+EJNAGAADzD3+EJMAGAADzD3+EJLAGAADzD3+EJKAGAADzD3+EJJAGAADzD3+EJIAGAADzD3+EJHAGAADzD3+EJGAGAADzD3+EJFAGAADzD3+EJEAGAADzD3+EJDAGAADzD3+EJCAGAADzD3+EJBAGAADzD3+EJAAGAADzD3+EJPAFAADzD3+EJOAFAADzD3+EJNAFAADzD3+EJMAFAADzD3+EJLAFAADzD3+EJKAFAADzD3+EJJAFAADzD3+EJIAFAADzD3+EJHAFAADzD3+EJGAFAADzD3+EJFAFAADzD3+EJEAFAADzD3+EJDAFAADzD3+EJCAFAADzD3+EJBAFAADzD3+EJAAFAADzD3+EJPAEAADzD3+EJOAEAADzD3+EJNAEAADzD3+EJMAEAADzD3+EJLAEAADzD3+EJKAEAADzD3+EJJAEAADzD3+EJIAEAADzD3+EJHAEAADzD3+EJGAEAADzD3+EJFAEAADzD3+EJEAEAADzD3+EJDAEAADzD3+EJCAEAADzD3+EJBAEAADzD3+EJAAEAADzD3+EJPADAADzD3+EJOADAADzD3+EJNADAADzD3+EJMADAADzD3+EJLADAADzD3+EJKADAADzD3+EJJADAADzD3+EJIADAADzD3+EJHADAADzD3+EJGADAADzD3+EJFADAADzD3+EJEADAADzD3+EJDADAADzD3+EJCADAADzD3+EJBADAADzD3+EJAADAADzD3+EJPACAADzD3+EJOACAADzD3+EJNACAADzD3+EJMACAADzD3+EJLACAADzD3+EJKACAADzD3+EJJACAADzD3+EJIACAADzD3+EJHACAADzD3+EJGACAADzD3+EJFACAADzD3+EJEACAADzD3+EJDACAADzD3+EJCACAADzD3+EJBACAADzD3+EJAACAADzD3+EJPABAADzD3+EJOABAADzD3+EJNABAADzD3+EJMABAADzD3+EJLABAADzD3+EJKABAADzD3+EJJABAADzD3+EJIABAADzD3+EJHABAADzD3+EJGABAADzD3+EJFABAADzD3+EJEABAADzD3+EJDABAADzD3+EJCABAADzD3+EJBABAADzD3+EJAABAADzD3+EJPAAAADzD3+EJOAAAADzD3+EJNAAAADzD3+EJMAAAADzD3+EJLAAAADzD3+EJKAAAADzD3+EJJAAAADzD3+EJIAAAADzD39EJHDzD39EJGDzD39EJFDzD39EJEDzD39EJDDzD39EJCDzD39EJBDzD38EJEiNpCTQCgAASI1kJAiJwDHJMdIx9jH/RTHARTHJRTHSww=="
 .p2align 6"#,
         vg_aes_gcm_open_split = sym super::aes::vg_aes_gcm_open_split::vg_aes_gcm_open_split,
     )
 }
 
 /// `vg_aes_gcm_stream_encrypt` with a 1032-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the prepared powers its count says are present. The powers remain secret; how many are present may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.streamEncryptPreparedContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -11119,7 +12063,7 @@ jmp 238f
 jmp 21f
 20:
 21:
-.base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJBgKAADD"
+.base64 "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"
 .p2align 6"#,
         vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
         vg_aes_gcm_encrypt_blocks = sym super::aes::vg_aes_gcm_encrypt_blocks::vg_aes_gcm_encrypt_blocks,
@@ -11128,6 +12072,8 @@ jmp 21f
 }
 
 /// `vg_aes_gcm_stream_decrypt` with a 1032-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the prepared powers its count says are present. The powers remain secret; how many are present may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.streamDecryptPreparedContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -11303,7 +12249,7 @@ jmp 240f
 jmp 21f
 20:
 21:
-.base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJBgKAADD"
+.base64 "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"
 .p2align 6"#,
         vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
         vg_aes_gcm_decrypt_blocks = sym super::aes::vg_aes_gcm_decrypt_blocks::vg_aes_gcm_decrypt_blocks,
@@ -11312,6 +12258,8 @@ jmp 21f
 }
 
 /// `vg_aes_gcm_seal_gather` with a 1032-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the prepared powers its count says are present. The powers remain secret; how many are present may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealGatherPreparedContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -11325,206 +12273,122 @@ jmp 21f
 /// * The slices `src` lists must be `len` bytes long in all.
 /// * `*ctx` must have the prepared format written by `vg_aes_gcm_prepare` (not the format of `vg_aes_gcm_init_precomputed`).
 /// * `dst` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `src`, the slices `src` lists or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the return address on the stack or the 5128 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the return address on the stack or the 2672 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_gather_prepared(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        r#".base64 "SI2kJBD///9Ii4Qk+AAAAEiJRCQISIuEJAABAABIiUQkEEiLhCQIAQAASIlEJBhIi4QkEAEAAEiJRCQgSIuEJBgBAABIiUQkKEiJ4EiDwDhIiUQkMEyLXCQwTItUJAhIi0QkEEmJO0mJcwhNiUMQTYlLGE2JS1BNiVM4SYlDQEiLRCQYTItUJCBMi0QkKEmJQyBNiVMoTYlDMLgAAAAASYlDSEmJQ1hJiUNgSInWSInKTInZSIPBaEyLXCQwSYtDKEg97///fw=="
-jb 20f
-.base64 "TItcJDBJi0MoSD3///9/"
-jb 22f
-.base64 "TItcJDBBugAAAABJi0NASIXA"
-je 24f
-.base64 "TYtTOE2LUgg="
-jmp 25f
-24:
-25:
-.base64 "SYtDKEjB6ARIweAESTnCSYtDKEG6AAAAAEkPQ8JIPf///38="
+        r#".base64 "SI2kJMj1//9Ii4QkQAoAAEiJRCQISIuEJEgKAABIiUQkEEiLhCRQCgAASIlEJBhIi4QkWAoAAEiJRCQgSIuEJGAKAABIiUQkKEiJ4EiDwDhIiUQkMEiLRCQwSImYgAAAAEiJqIgAAABMiaCQAAAATImomAAAAEyJsKAAAABMibioAAAASYnHTYn+SYPGEEmJ/UmJt7AAAABNiYfoAAAATYmPuAAAAEiLRCQYSYmHyAAAAEiLRCQgSYmH0AAAAEmJ1EiJzUiD/Qw="
+je 20f
+.base64 "uAAAAABJiQZJiUYISYmv2AAAALsAAAAATIniSInpSMHpBEiJ6EiD5Q9IKehJAcRIhck="
+je 22f
+.base64 "TInvSIHH8AAAAEyJ9kiDxgBNifhJgcAAAgAA"
+call {vg_ghash}
 jmp 23f
 22:
 23:
-jb 26f
-call {vg_aes_gcm_stream_init_core}
-.base64 "TItcJDBJiztMid5Ig8ZougAAAABJi0sQTYtDGA=="
-call {vg_aes_gcm_stream_aad_core}
-.base64 "TItcJDBJi0MoSIXA"
-je 28f
-.base64 "SYtLGEmJyEmD4A9NhcA="
-je 210f
-.base64 "uBAAAABMKcBJicBJiztIichMAcBJiUNQTIneSIPGaEiJykyJ2UiDwVg="
-call {vg_aes_gcm_stream_aad_core}
-jmp 211f
-210:
+.base64 "SInpSIXJ"
+je 24f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMieZBugAAAAA="
+26:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 26b
+.base64 "TInvSIHH8AAAAEyJ9kiDxgBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash}
+jmp 25f
+24:
+25:
+.base64 "uwAAAABJi6/YAAAASInYSAHASAHASAHASA/ISYlHYEiJ6EgBwEgBwEgBwEgPyEmJR2hMie9IgcfwAAAATIn2SIPGAEyJ+kiDwmC5AQAAAE2J+EmBwAACAAA="
+call {vg_ghash}
+jmp 21f
+20:
+.base64 "QYsEJEGLTCQEQYtUJAi+AAAAAUGJBkGJTgRBiVYIQYl2DA=="
+21:
+.base64 "QYsGQYtOBEGLVghBi3YMD86DxgEPzkGJRjBBiU40QYlWOEGJdjy4AAAAAEmJRhBJiUYYTYun6AAAAEmLr7gAAAC7AAAAAEyJ4kiJ6UjB6QRIiehIg+UPSCnoSQHESIXJ"
+je 27f
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBNifhJgcAAAgAA"
+call {vg_ghash}
+jmp 28f
+27:
+28:
+.base64 "SInpSIXJ"
+je 29f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMieZBugAAAAA="
 211:
-.base64 "TItcJDBJi0NASIXA"
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 211b
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash}
+jmp 210f
+29:
+210:
+.base64 "SItEJAhJiYcAAQAASItEJBBJiYfgAAAASItEJBhJiYfIAAAASItEJCBJiYfAAAAASYmH0AAAALgAAAAASYmH8AAAAEmJhwgBAABJi4fgAAAASIXA"
 je 212f
 214:
-.base64 "TItcJDBNi1M4TYsKSYtCCE2LUyBJi0tISQHKSYs7SYtzCEyJ2kiDwmhJi0tQTYtDSFBBUlA="
-call {vg_aes_gcm_stream_encrypt_to}
-.base64 "WFhYTItcJDBNi1M4SYtCCEmLS0hIAcFJg8IQSYtDQEiD6AFJiUtITYlTOEmJQ0BIhcA="
+.base64 "TYuXAAEAAEmLGkmLaghJg8IQTYmXAAEAAEmLhwgBAABIAcNIKcW4AAAAAEmJhwgBAABJi4fwAAAATYunyAAAAEkBxEiJxkiD5g9IAehJiYfwAAAASIXt"
+je 215f
+.base64 "SIX2"
+je 217f
+.base64 "uRAAAABIKfFIOc1ID0LNTAH2SIPGQEyJ50G6AAAAAA=="
+219:
+.base64 "Qg+2BBNGD7YcFkwx2EKIBBdJg8IBSTnK"
+jne 219b
+.base64 "SAHLSQHMSCnN"
+jmp 218f
+217:
+218:
+.base64 "SYnoScHoBE2FwA=="
+je 220f
+.base64 "SInZTYnjSInoSIPlD0gp6EgBw0kBxEyJ70mLt7AAAABMifJIg8IwTYn5SYHBAAIAAA=="
+call {vg_aes_ctr32_to}
+jmp 221f
+220:
+221:
+.base64 "SIXt"
+je 222f
+.base64 "uAAAAABJiUZASYlGSEyJ70mLt7AAAABMifJIg8IwTInxSIPBQEG4AQAAAE2J+UmBwQACAAA="
+call {vg_aes_ctr32}
+.base64 "TInnTIn2SIPGQEiJ6UG6AAAAAA=="
+224:
+.base64 "Qg+2BBNGD7YcFkwx2EKIBBdJg8IBSTnK"
+jne 224b
+jmp 223f
+222:
+223:
+jmp 216f
+215:
+216:
+.base64 "TYuX4AAAAEmD6gFNiZfgAAAA"
 jne 214b
 jmp 213f
 212:
 213:
-jmp 29f
-28:
-29:
-.base64 "TItcJDBJiztJi3MITInaSIPCaEmLSxhNi0MoTYtLMA=="
-call {vg_aes_gcm_stream_finish}
-jmp 27f
-26:
-.base64 "TItcJDBBugAAAABJi0NASIXA"
-je 215f
-.base64 "TYtTOE2LUgg="
-jmp 216f
-215:
-216:
-.base64 "SYtDKEjB6ARIweAEQbgAAAAASTnCTQ9C0EmB+u///38="
-jb 217f
-.base64 "SYlzaEmJU3BNi0tASYt7IE2LUzhMidC5AAAAAE2FyQ=="
-je 219f
-.base64 "SYsCSYtKCEmD6QFJg8IQSAHP"
-jmp 220f
-219:
-220:
-.base64 "SYlDeEmJi4AAAABNidNJg/kA"
-je 221f
-223:
-.base64 "SYszSYtLCEmDwxBBugAAAABJichJwegGScHgBkmD+AA="
-je 224f
-226:
-.base64 "80IPbwQW80IPb0wWEPNCD29UFiDzQg9vXBYw80IPfwQX80IPf0wXEPNCD39UFyDzQg9/XBcwSYPCQE05wg=="
-jne 226b
-jmp 225f
-224:
+.base64 "TYunyAAAAEmLr9AAAAC7AAAAAEyJ4kiJ6UjB6QRIiehIg+UPSCnoSQHESIXJ"
+je 225f
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBNifhJgcAAAgAA"
+call {vg_ghash}
+jmp 226f
 225:
-.base64 "SYnIScHoBEnB4ARNOcI="
+226:
+.base64 "SInpSIXJ"
 je 227f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMieZBugAAAAA="
 229:
-.base64 "80IPbwQW80IPfwQXSYPCEE05wg=="
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
 jne 229b
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash}
 jmp 228f
 227:
 228:
-.base64 "STnK"
-je 230f
-.base64 "SIP5EA=="
-jb 232f
-.base64 "SYnKSYPqEPNCD28EFvNCD38EFw=="
-jmp 233f
-232:
-234:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 234b
-233:
-jmp 231f
-230:
-231:
-.base64 "SAHPSYPpAQ=="
-jne 223b
-jmp 222f
-221:
-222:
-.base64 "TItcJDBJi1NoSYtLcE2LQxBNi0sYSYtDME2LUyhJi7uAAAAASYtzeE2LWyBQQVJBU1dWTItcJFhJiztJi3MI"
-call {vg_aes_gcm_seal_split}
-.base64 "WFhYWFg="
-jmp 218f
-217:
-.base64 "SYlzaEmJU3BNi0tASYt7IE2LWzhJg/kA"
-je 235f
-237:
-.base64 "SYszSYtLCEmDwxBBugAAAABJichJwegGScHgBkmD+AA="
-je 238f
-240:
-.base64 "80IPbwQW80IPb0wWEPNCD29UFiDzQg9vXBYw80IPfwQX80IPf0wXEPNCD39UFyDzQg9/XBcwSYPCQE05wg=="
-jne 240b
-jmp 239f
-238:
-239:
-.base64 "SYnIScHoBEnB4ARNOcI="
-je 241f
-243:
-.base64 "80IPbwQW80IPfwQXSYPCEE05wg=="
-jne 243b
-jmp 242f
-241:
-242:
-.base64 "STnK"
-je 244f
-.base64 "SIP5EA=="
-jb 246f
-.base64 "SYnKSYPqEPNCD28EFvNCD38EFw=="
-jmp 247f
-246:
-248:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 248b
-247:
-jmp 245f
-244:
-245:
-.base64 "SAHPSYPpAQ=="
-jne 237b
-jmp 236f
-235:
-236:
-.base64 "TItcJDBJiztJi3MISYtTaEmLS3BNi0MQTYtLGEmLQzBNi1MoTYtbIFBBUkFT"
-call {vg_aes_gcm_seal}
-.base64 "WFhY"
-218:
-27:
-jmp 21f
-20:
-.base64 "SYlzaEmJU3BNi0tASYt7IE2LWzhJg/kA"
-je 249f
-251:
-.base64 "SYszSYtLCEmDwxBBugAAAABJichJwegGScHgBkmD+AA="
-je 252f
-254:
-.base64 "80IPbwQW80IPb0wWEPNCD29UFiDzQg9vXBYw80IPfwQX80IPf0wXEPNCD39UFyDzQg9/XBcwSYPCQE05wg=="
-jne 254b
-jmp 253f
-252:
-253:
-.base64 "SYnIScHoBEnB4ARNOcI="
-je 255f
-257:
-.base64 "80IPbwQW80IPfwQXSYPCEE05wg=="
-jne 257b
-jmp 256f
-255:
-256:
-.base64 "STnK"
-je 258f
-.base64 "SIP5EA=="
-jb 260f
-.base64 "SYnKSYPqEPNCD28EFvNCD38EFw=="
-jmp 261f
-260:
-262:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 262b
-261:
-jmp 259f
-258:
-259:
-.base64 "SAHPSYPpAQ=="
-jne 251b
-jmp 250f
-249:
-250:
-.base64 "TItcJDBJiztJi3MISYtTaEmLS3BNi0MQTYtLGEmLQzBNi1MoTYtbIFBBUkFT"
-call {vg_aes_gcm_seal}
-.base64 "WFhY"
-21:
-.base64 "SI2kJPAAAADD"
+.base64 "SYufuAAAAEmLr8AAAABIidhIAcBIAcBIAcBID8hJiUdgSInoSAHASAHASAHASA/ISYlHaEyJ70iBx/AAAABMifZIg8YQTIn6SIPCYLkBAAAATYn4SYHAAAIAAA=="
+call {vg_ghash}
+.base64 "SYtGEEmJB0mLRhhJiUcITInvSYu3sAAAAEyJ8kyJ+UiDwQBBuAEAAABNiflJgcEAAgAA"
+call {vg_aes_ctr32}
+.base64 "SIt8JChJiwdJi1cISIkHSIlXCEmLn4AAAABJi6+IAAAATYunkAAAAE2Lr5gAAABNi7egAAAATYu/qAAAAEiNpCQ4CgAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJPhMiRwkSI2kJJj1///zD3+EJFgKAADzD3+EJEgKAADzD3+EJDgKAADzD3+EJCgKAADzD3+EJBgKAADzD3+EJAgKAADzD3+EJPgJAADzD3+EJOgJAADzD3+EJNgJAADzD3+EJMgJAADzD3+EJLgJAADzD3+EJKgJAADzD3+EJJgJAADzD3+EJIgJAADzD3+EJHgJAADzD3+EJGgJAADzD3+EJFgJAADzD3+EJEgJAADzD3+EJDgJAADzD3+EJCgJAADzD3+EJBgJAADzD3+EJAgJAADzD3+EJPgIAADzD3+EJOgIAADzD3+EJNgIAADzD3+EJMgIAADzD3+EJLgIAADzD3+EJKgIAADzD3+EJJgIAADzD3+EJIgIAADzD3+EJHgIAADzD3+EJGgIAADzD3+EJFgIAADzD3+EJEgIAADzD3+EJDgIAADzD3+EJCgIAADzD3+EJBgIAADzD3+EJAgIAADzD3+EJPgHAADzD3+EJOgHAADzD3+EJNgHAADzD3+EJMgHAADzD3+EJLgHAADzD3+EJKgHAADzD3+EJJgHAADzD3+EJIgHAADzD3+EJHgHAADzD3+EJGgHAADzD3+EJFgHAADzD3+EJEgHAADzD3+EJDgHAADzD3+EJCgHAADzD3+EJBgHAADzD3+EJAgHAADzD3+EJPgGAADzD3+EJOgGAADzD3+EJNgGAADzD3+EJMgGAADzD3+EJLgGAADzD3+EJKgGAADzD3+EJJgGAADzD3+EJIgGAADzD3+EJHgGAADzD3+EJGgGAADzD3+EJFgGAADzD3+EJEgGAADzD3+EJDgGAADzD3+EJCgGAADzD3+EJBgGAADzD3+EJAgGAADzD3+EJPgFAADzD3+EJOgFAADzD3+EJNgFAADzD3+EJMgFAADzD3+EJLgFAADzD3+EJKgFAADzD3+EJJgFAADzD3+EJIgFAADzD3+EJHgFAADzD3+EJGgFAADzD3+EJFgFAADzD3+EJEgFAADzD3+EJDgFAADzD3+EJCgFAADzD3+EJBgFAADzD3+EJAgFAADzD3+EJPgEAADzD3+EJOgEAADzD3+EJNgEAADzD3+EJMgEAADzD3+EJLgEAADzD3+EJKgEAADzD3+EJJgEAADzD3+EJIgEAADzD3+EJHgEAADzD3+EJGgEAADzD3+EJFgEAADzD3+EJEgEAADzD3+EJDgEAADzD3+EJCgEAADzD3+EJBgEAADzD3+EJAgEAADzD3+EJPgDAADzD3+EJOgDAADzD3+EJNgDAADzD3+EJMgDAADzD3+EJLgDAADzD3+EJKgDAADzD3+EJJgDAADzD3+EJIgDAADzD3+EJHgDAADzD3+EJGgDAADzD3+EJFgDAADzD3+EJEgDAADzD3+EJDgDAADzD3+EJCgDAADzD3+EJBgDAADzD3+EJAgDAADzD3+EJPgCAADzD3+EJOgCAADzD3+EJNgCAADzD3+EJMgCAADzD3+EJLgCAADzD3+EJKgCAADzD3+EJJgCAADzD3+EJIgCAADzD3+EJHgCAADzD3+EJGgCAADzD3+EJFgCAADzD3+EJEgCAADzD3+EJDgCAADzD3+EJCgCAADzD3+EJBgCAADzD3+EJAgCAADzD3+EJPgBAADzD3+EJOgBAADzD3+EJNgBAADzD3+EJMgBAADzD3+EJLgBAADzD3+EJKgBAADzD3+EJJgBAADzD3+EJIgBAADzD3+EJHgBAADzD3+EJGgBAADzD3+EJFgBAADzD3+EJEgBAADzD3+EJDgBAADzD3+EJCgBAADzD3+EJBgBAADzD3+EJAgBAADzD3+EJPgAAADzD3+EJOgAAADzD3+EJNgAAADzD3+EJMgAAADzD3+EJLgAAADzD3+EJKgAAADzD3+EJJgAAADzD3+EJIgAAADzD39EJHjzD39EJGjzD39EJFjzD39EJEjzD39EJDjzD39EJCjzD39EJBjzD39EJAhMiRwkSI2kJGgKAABIjWQkCDHAMckx0jH2Mf9FMcBFMclFMdLD"
 .p2align 6"#,
-        vg_aes_gcm_stream_init_core = sym super::aes::vg_aes_gcm_stream_init_core::vg_aes_gcm_stream_init_core,
-        vg_aes_gcm_stream_aad_core = sym super::aes::vg_aes_gcm_stream_aad_core::vg_aes_gcm_stream_aad_core,
-        vg_aes_gcm_stream_encrypt_to = sym super::aes::vg_aes_gcm_stream_encrypt_to::vg_aes_gcm_stream_encrypt_to,
-        vg_aes_gcm_stream_finish = sym super::gcm::vg_aes_gcm_stream_finish,
-        vg_aes_gcm_seal_split = sym super::aes::vg_aes_gcm_seal_split::vg_aes_gcm_seal_split,
-        vg_aes_gcm_seal = sym super::aes::vg_aes_gcm_seal::vg_aes_gcm_seal,
+        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
+        vg_aes_ctr32_to = sym super::aes::vg_aes_ctr32_to::vg_aes_ctr32_to,
+        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
     )
 }
 
@@ -11576,9 +12440,9 @@ jmp 21f
 20:
 .base64 "QYsEJEGLTCQEQYtUJAi+AAAAAUGJBkGJTgRBiVYIQYl2DA=="
 21:
-.base64 "QYsGQYtOBEGLVghBi3YMD86DxgEPzkGJRjBBiU40QYlWOEGJdjy4AAAAAEmJRhBJiUYYSYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJOgAAADF+e/AxfHvycXp79LF4e/bxdnv5MXR7+3Fye/2xcHv/8RBOe/AxEEx78nEQSnv0sRBIe/bxEEZ7+TEQRHv7cRBCe/2xEEB7/9FMdtIjaQkEP///8X+f4Qk0AAAAMX+f4QksAAAAMX+f4QkkAAAAMX+f0QkcMX+f0QkUMX+f0QkMMX+f0QkEPMPfwQkSI2kJPAAAAAxwDHJMdIx9jH/RTHARTHSww=="
+.base64 "QYsGQYtOBEGLVghBi3YMD86DxgEPzkGJRjBBiU40QYlWOEGJdjy4AAAAAEmJRhBJiUYYSYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJOgAAADF+e/AxfHvycXp79LF4e/bxdnv5MXR7+3Fye/2xcHv/8RBOe/AxEEx78nEQSnv0sRBIe/bxEEZ7+TEQRHv7cRBCe/2xEEB7/9FMdtIjWQk+EyJHCRIjaQkGP///8X+f4QkyAAAAMX+f4QkqAAAAMX+f4QkiAAAAMX+f0QkaMX+f0QkSMX+f0QkKMX+f0QkCEyJHCRIjaQk6AAAAEiNZCQIMcAxyTHSMfYx/0UxwEUxyUUx0sM="
 .p2align 6"#,
-        vg_ghash_vpclmul = sym super::aes_gcm_siv::vg_ghash_vpclmul::vg_ghash_vpclmul,
+        vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul::vg_ghash_vpclmul,
     )
 }
 
@@ -11645,9 +12509,9 @@ jmp 212f
 jmp 21f
 20:
 21:
-.base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJLgAAADF+e/AxfHvycXp79LF4e/bxdnv5MXR7+3Fye/2xcHv/8RBOe/AxEEx78nEQSnv0sRBIe/bxEEZ7+TEQRHv7cRBCe/2xEEB7/9FMdtIjaQkQP///8X+f4QkoAAAAMX+f4QkgAAAAMX+f0QkYMX+f0QkQMX+f0QkIMX+fwQkSI2kJMAAAAAxwDHJMdIx9jH/RTHARTHJRTHSww=="
+.base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJLgAAADF+e/AxfHvycXp79LF4e/bxdnv5MXR7+3Fye/2xcHv/8RBOe/AxEEx78nEQSnv0sRBIe/bxEEZ7+TEQRHv7cRBCe/2xEEB7/9FMdtIjWQk+EyJHCRIjaQkSP///8X+f4QkmAAAAMX+f0QkeMX+f0QkWMX+f0QkOMX+f0QkGPMPf0QkCEyJHCRIjaQkuAAAAEiNZCQIMcAxyTHSMfYx/0UxwEUxyUUx0sM="
 .p2align 6"#,
-        vg_ghash_vpclmul = sym super::aes_gcm_siv::vg_ghash_vpclmul::vg_ghash_vpclmul,
+        vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul::vg_ghash_vpclmul,
     )
 }
 
@@ -11699,7 +12563,7 @@ jmp 21f
 20:
 .base64 "QYsEJEGLTCQEQYtUJAi+AAAAAUGJBkGJTgRBiVYIQYl2DA=="
 21:
-.base64 "QYsGQYtOBEGLVghBi3YMD86DxgEPzkGJRjBBiU40QYlWOEGJdjy4AAAAAEmJRhBJiUYYSYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJOgAAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjaQkEP////MPf4Qk4AAAAPMPf4Qk0AAAAPMPf4QkwAAAAPMPf4QksAAAAPMPf4QkoAAAAPMPf4QkkAAAAPMPf4QkgAAAAPMPf0QkcPMPf0QkYPMPf0QkUPMPf0QkQPMPf0QkMPMPf0QkIPMPf0QkEPMPfwQkSI2kJPAAAAAxwDHJMdIx9jH/RTHARTHSww=="
+.base64 "QYsGQYtOBEGLVghBi3YMD86DxgEPzkGJRjBBiU40QYlWOEGJdjy4AAAAAEmJRhBJiUYYSYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJOgAAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjWQk+EyJHCRIjaQkGP////MPf4Qk2AAAAPMPf4QkyAAAAPMPf4QkuAAAAPMPf4QkqAAAAPMPf4QkmAAAAPMPf4QkiAAAAPMPf0QkePMPf0QkaPMPf0QkWPMPf0QkSPMPf0QkOPMPf0QkKPMPf0QkGPMPf0QkCEyJHCRIjaQk6AAAAEiNZCQIMcAxyTHSMfYx/0UxwEUxyUUx0sM="
 .p2align 6"#,
         vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
     )
@@ -11768,7 +12632,7 @@ jmp 212f
 jmp 21f
 20:
 21:
-.base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJLgAAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjaQkQP////MPf4QksAAAAPMPf4QkoAAAAPMPf4QkkAAAAPMPf4QkgAAAAPMPf0QkcPMPf0QkYPMPf0QkUPMPf0QkQPMPf0QkMPMPf0QkIPMPf0QkEPMPfwQkSI2kJMAAAAAxwDHJMdIx9jH/RTHARTHJRTHSww=="
+.base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJLgAAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjWQk+EyJHCRIjaQkSP////MPf4QkqAAAAPMPf4QkmAAAAPMPf4QkiAAAAPMPf0QkePMPf0QkaPMPf0QkWPMPf0QkSPMPf0QkOPMPf0QkKPMPf0QkGPMPf0QkCEyJHCRIjaQkuAAAAEiNZCQIMcAxyTHSMfYx/0UxwEUxyUUx0sM="
 .p2align 6"#,
         vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
     )
@@ -11818,7 +12682,7 @@ jmp 21f
 20:
 .base64 "QYsEJEGLTCQEQYtUJAi+AAAAAUGJBkGJTgRBiVYIQYl2DA=="
 21:
-.base64 "QYsGQYtOBEGLVghBi3YMD86DxgEPzkGJRjBBiU40QYlWOEGJdjy4AAAAAEmJRhBJiUYYSYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJAgDAABmD+/ARTHbSI2kJPD8///zD3+EJAADAADzD3+EJPACAADzD3+EJOACAADzD3+EJNACAADzD3+EJMACAADzD3+EJLACAADzD3+EJKACAADzD3+EJJACAADzD3+EJIACAADzD3+EJHACAADzD3+EJGACAADzD3+EJFACAADzD3+EJEACAADzD3+EJDACAADzD3+EJCACAADzD3+EJBACAADzD3+EJAACAADzD3+EJPABAADzD3+EJOABAADzD3+EJNABAADzD3+EJMABAADzD3+EJLABAADzD3+EJKABAADzD3+EJJABAADzD3+EJIABAADzD3+EJHABAADzD3+EJGABAADzD3+EJFABAADzD3+EJEABAADzD3+EJDABAADzD3+EJCABAADzD3+EJBABAADzD3+EJAABAADzD3+EJPAAAADzD3+EJOAAAADzD3+EJNAAAADzD3+EJMAAAADzD3+EJLAAAADzD3+EJKAAAADzD3+EJJAAAADzD3+EJIAAAADzD39EJHDzD39EJGDzD39EJFDzD39EJEDzD39EJDDzD39EJCDzD39EJBDzD38EJEiNpCQQAwAAMcAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
+.base64 "QYsGQYtOBEGLVghBi3YMD86DxgEPzkGJRjBBiU40QYlWOEGJdjy4AAAAAEmJRhBJiUYYSYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJAgDAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjWQk+EyJHCRIjaQk+Pz///MPf4Qk+AIAAPMPf4Qk6AIAAPMPf4Qk2AIAAPMPf4QkyAIAAPMPf4QkuAIAAPMPf4QkqAIAAPMPf4QkmAIAAPMPf4QkiAIAAPMPf4QkeAIAAPMPf4QkaAIAAPMPf4QkWAIAAPMPf4QkSAIAAPMPf4QkOAIAAPMPf4QkKAIAAPMPf4QkGAIAAPMPf4QkCAIAAPMPf4Qk+AEAAPMPf4Qk6AEAAPMPf4Qk2AEAAPMPf4QkyAEAAPMPf4QkuAEAAPMPf4QkqAEAAPMPf4QkmAEAAPMPf4QkiAEAAPMPf4QkeAEAAPMPf4QkaAEAAPMPf4QkWAEAAPMPf4QkSAEAAPMPf4QkOAEAAPMPf4QkKAEAAPMPf4QkGAEAAPMPf4QkCAEAAPMPf4Qk+AAAAPMPf4Qk6AAAAPMPf4Qk2AAAAPMPf4QkyAAAAPMPf4QkuAAAAPMPf4QkqAAAAPMPf4QkmAAAAPMPf4QkiAAAAPMPf0QkePMPf0QkaPMPf0QkWPMPf0QkSPMPf0QkOPMPf0QkKPMPf0QkGPMPf0QkCEyJHCRIjaQkCAMAAEiNZCQIMcAxyTHSMfYx/0UxwEUxyUUx0sM="
 .p2align 6"#,
         vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
     )
@@ -11883,7 +12747,7 @@ jmp 212f
 jmp 21f
 20:
 21:
-.base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJAgDAABmD+/ARTHbSI2kJPD8///zD3+EJAADAADzD3+EJPACAADzD3+EJOACAADzD3+EJNACAADzD3+EJMACAADzD3+EJLACAADzD3+EJKACAADzD3+EJJACAADzD3+EJIACAADzD3+EJHACAADzD3+EJGACAADzD3+EJFACAADzD3+EJEACAADzD3+EJDACAADzD3+EJCACAADzD3+EJBACAADzD3+EJAACAADzD3+EJPABAADzD3+EJOABAADzD3+EJNABAADzD3+EJMABAADzD3+EJLABAADzD3+EJKABAADzD3+EJJABAADzD3+EJIABAADzD3+EJHABAADzD3+EJGABAADzD3+EJFABAADzD3+EJEABAADzD3+EJDABAADzD3+EJCABAADzD3+EJBABAADzD3+EJAABAADzD3+EJPAAAADzD3+EJOAAAADzD3+EJNAAAADzD3+EJMAAAADzD3+EJLAAAADzD3+EJKAAAADzD3+EJJAAAADzD3+EJIAAAADzD39EJHDzD39EJGDzD39EJFDzD39EJEDzD39EJDDzD39EJCDzD39EJBDzD38EJEiNpCQQAwAAMcAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
+.base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJAgDAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjWQk+EyJHCRIjaQk+Pz///MPf4Qk+AIAAPMPf4Qk6AIAAPMPf4Qk2AIAAPMPf4QkyAIAAPMPf4QkuAIAAPMPf4QkqAIAAPMPf4QkmAIAAPMPf4QkiAIAAPMPf4QkeAIAAPMPf4QkaAIAAPMPf4QkWAIAAPMPf4QkSAIAAPMPf4QkOAIAAPMPf4QkKAIAAPMPf4QkGAIAAPMPf4QkCAIAAPMPf4Qk+AEAAPMPf4Qk6AEAAPMPf4Qk2AEAAPMPf4QkyAEAAPMPf4QkuAEAAPMPf4QkqAEAAPMPf4QkmAEAAPMPf4QkiAEAAPMPf4QkeAEAAPMPf4QkaAEAAPMPf4QkWAEAAPMPf4QkSAEAAPMPf4QkOAEAAPMPf4QkKAEAAPMPf4QkGAEAAPMPf4QkCAEAAPMPf4Qk+AAAAPMPf4Qk6AAAAPMPf4Qk2AAAAPMPf4QkyAAAAPMPf4QkuAAAAPMPf4QkqAAAAPMPf4QkmAAAAPMPf4QkiAAAAPMPf0QkePMPf0QkaPMPf0QkWPMPf0QkSPMPf0QkOPMPf0QkKPMPf0QkGPMPf0QkCEyJHCRIjaQkCAMAAEiNZCQIMcAxyTHSMfYx/0UxwEUxyUUx0sM="
 .p2align 6"#,
         vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
     )
@@ -11892,7 +12756,7 @@ jmp 21f
 /// The CPU features `vg_aes_gcm_prepare_vpclmul_avx512` requires (`Artifact.features`).
 pub const VG_AES_GCM_PREPARE_VPCLMUL_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AVX512F);
 
-/// Makes the 1032-byte `*ctx`, whose first 256 bytes are a key context of `vg_aes_gcm_init`, the prepared key context of the same key, in place: keeps its first 256 bytes, at byte `256 + 32*k`, for `k` from 0 to `n/2 - 1`, stores `preparedPower(H^(2*k+2))` and then `preparedPower(H^(2*k+1))`, as two little-endian 128-bit words, `H` being the hash subkey in its bytes 240–255, and stores `n` in the 64-bit word at byte 1024, `n` being 48, 16 or 0, as the implementation's other functions read. Use only the `*_prepared` APIs, or APIs that read the first 256 bytes, with this format. Contract: `VG.Spec.Gcm.prepareContract`: the first 256 bytes are kept and the context satisfies `PreparedRepr`. Constant time: only the pointer may affect timing, not the hash subkey.
+/// Makes the 1032-byte `*ctx`, whose first 256 bytes are a key context of `vg_aes_gcm_init`, the prepared key context of the same key, in place: keeps its first 256 bytes, at byte `256 + 32*k`, for `k` from 0 to `n/2 - 1`, stores `preparedPower(H^(2*k+2))` and then `preparedPower(H^(2*k+1))`, as two little-endian 128-bit words, `H` being the hash subkey in its bytes 240–255, and stores `n` in the 64-bit word at byte 1024, `n` being 48, 16 or 0, as the implementation's other functions read; it writes nothing else. Use only the `*_prepared` APIs, or APIs that read the first 256 bytes, with this format. Contract: `VG.Spec.Gcm.prepareContract`: the first 256 bytes are kept, the context satisfies `PreparedRepr`, and the bytes between its powers and their count are unchanged. Constant time: only the pointer may affect timing, not the hash subkey.
 ///
 /// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
@@ -11910,7 +12774,7 @@ lea rax, [rip + {VG_GCM_CONSTS}]
 lea rax, [rip + {VG_GCM_CONSTS}]
 .base64 "8w9vSBDzD2+/8AAAAGYPOAD4"
 lea rax, [rip + {VG_GCM_CONSTS}]
-.base64 "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"
+.base64 "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"
 .p2align 6"#,
         VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
     )
@@ -11919,7 +12783,7 @@ lea rax, [rip + {VG_GCM_CONSTS}]
 /// The CPU features `vg_aes_gcm_prepare_vpclmul` requires (`Artifact.features`).
 pub const VG_AES_GCM_PREPARE_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AVX);
 
-/// Makes the 1032-byte `*ctx`, whose first 256 bytes are a key context of `vg_aes_gcm_init`, the prepared key context of the same key, in place: keeps its first 256 bytes, at byte `256 + 32*k`, for `k` from 0 to `n/2 - 1`, stores `preparedPower(H^(2*k+2))` and then `preparedPower(H^(2*k+1))`, as two little-endian 128-bit words, `H` being the hash subkey in its bytes 240–255, and stores `n` in the 64-bit word at byte 1024, `n` being 48, 16 or 0, as the implementation's other functions read. Use only the `*_prepared` APIs, or APIs that read the first 256 bytes, with this format. Contract: `VG.Spec.Gcm.prepareContract`: the first 256 bytes are kept and the context satisfies `PreparedRepr`. Constant time: only the pointer may affect timing, not the hash subkey.
+/// Makes the 1032-byte `*ctx`, whose first 256 bytes are a key context of `vg_aes_gcm_init`, the prepared key context of the same key, in place: keeps its first 256 bytes, at byte `256 + 32*k`, for `k` from 0 to `n/2 - 1`, stores `preparedPower(H^(2*k+2))` and then `preparedPower(H^(2*k+1))`, as two little-endian 128-bit words, `H` being the hash subkey in its bytes 240–255, and stores `n` in the 64-bit word at byte 1024, `n` being 48, 16 or 0, as the implementation's other functions read; it writes nothing else. Use only the `*_prepared` APIs, or APIs that read the first 256 bytes, with this format. Contract: `VG.Spec.Gcm.prepareContract`: the first 256 bytes are kept, the context satisfies `PreparedRepr`, and the bytes between its powers and their count are unchanged. Constant time: only the pointer may affect timing, not the hash subkey.
 ///
 /// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
@@ -11937,7 +12801,7 @@ lea rax, [rip + {VG_GCM_CONSTS}]
 lea rax, [rip + {VG_GCM_CONSTS}]
 .base64 "8w9vSBDzD2+/8AAAAGYPOAD4"
 lea rax, [rip + {VG_GCM_CONSTS}]
-.base64 "80QPb2ggSLj//////////2ZMD27wZkUPbPZmD2/fZg9z8wFmRA9v32ZBD3PTP2ZBD3P7CGZBD+vbZkQPcN//ZkEPctMfZkUP/t5mRQ/f3WZBD+/bxON1OMkBxGNlRMMAxGNlRNMRxGM9RNkQxEF9cMBOxEE978PEYz1E2RDEQX1wwE7EQT3vw8TBLe/gxGNdOOMBxONdOPwBxX5/pwABAADEYx1ExwDEYx1E1xHEYx1EzwHEYx1E3xDEQTXvy8RjPUTZEMRBfXDATsRBPe/DxEE178jEYzVE2RDEQX1wyU7EQTXvy8RBLe/pxGNFRMcAxGNFRNcRxGM9RNkQxEF9cMBOxEE978PEYz1E2RDEQX1wwE7EQT3vw8TBLe/QxX5/ryABAADEYx1EwgDEYx1E0hHEYx1EygHEYx1E2hDEQTXvy8RjPUTZEMRBfXDATsRBPe/DxEE178jEYzVE2RDEQX1wyU7EQTXvy8RBLe/xxGMVRMIAxGMVRNIRxGMVRMoBxGMVRNoQxEE178vEYz1E2RDEQX1wwE7EQT3vw8RBNe/IxGM1RNkQxEF9cMlOxEE178vEQS3v+cRjbUTCAMRjbUTSEcRjPUTZEMRBfXDATsRBPe/DxGM9RNkQxEF9cMBOxEE978PEwS3v+MV+f7dAAQAAxX5/v2ABAADEYx1ExwDEYx1E1xHEYx1EzwHEYx1E3xDEQTXvy8RjPUTZEMRBfXDATsRBPe/DxEE178jEYzVE2RDEQX1wyU7EQTXvy8TBLe/xxf5/t4ABAADEYxVExwDEYxVE1xHEYxVEzwHEYxVE3xDEQTXvy8RjPUTZEMRBfXDATsRBPe/DxEE178jEYzVE2RDEQX1wyU7EQTXvy8TBLe/pxf5/r6ABAADEYw1ExwDEYw1E1xHEYw1EzwHEYw1E3xDEQTXvy8RjPUTZEMRBfXDATsRBPe/DxEE178jEYzVE2RDEQX1wyU7EQTXvy8TBLe/hxf5/p8ABAADEYwVExwDEYwVE1xHEYwVEzwHEYwVE3xDEQTXvy8RjPUTZEMRBfXDATsRBPe/DxEE178jEYzVE2RDEQX1wyU7EQTXvy8TBLe/Zxf5/n+ABAADF+HfF+e/AxfHvycXp79LF4e/bxdnv5MXR7+3Fye/2xcHv/8RBOe/AxEEx78nEQSnv0sRBIe/bxEEZ7+TEQRHv7cRBCe/2xEEB7/8xwEUx28M="
+.base64 "80QPb2ggSLj//////////2ZMD27wZkUPbPZmD2/fZg9z8wFmRA9v32ZBD3PTP2ZBD3P7CGZBD+vbZkQPcN//ZkEPctMfZkUP/t5mRQ/f3WZBD+/bxON1OMkBxGNlRMMAxGNlRNMRxGM9RNkQxEF9cMBOxEE978PEYz1E2RDEQX1wwE7EQT3vw8TBLe/gxGNdOOMBxONdOPwBxX5/pwABAADEYx1ExwDEYx1E1xHEYx1EzwHEYx1E3xDEQTXvy8RjPUTZEMRBfXDATsRBPe/DxEE178jEYzVE2RDEQX1wyU7EQTXvy8RBLe/pxGNFRMcAxGNFRNcRxGM9RNkQxEF9cMBOxEE978PEYz1E2RDEQX1wwE7EQT3vw8TBLe/QxX5/ryABAADEYx1EwgDEYx1E0hHEYx1EygHEYx1E2hDEQTXvy8RjPUTZEMRBfXDATsRBPe/DxEE178jEYzVE2RDEQX1wyU7EQTXvy8RBLe/xxGMVRMIAxGMVRNIRxGMVRMoBxGMVRNoQxEE178vEYz1E2RDEQX1wwE7EQT3vw8RBNe/IxGM1RNkQxEF9cMlOxEE178vEQS3v+cRjbUTCAMRjbUTSEcRjPUTZEMRBfXDATsRBPe/DxGM9RNkQxEF9cMBOxEE978PEwS3v+MV+f7dAAQAAxX5/v2ABAADEYx1ExwDEYx1E1xHEYx1EzwHEYx1E3xDEQTXvy8RjPUTZEMRBfXDATsRBPe/DxEE178jEYzVE2RDEQX1wyU7EQTXvy8TBLe/xxf5/t4ABAADEYxVExwDEYxVE1xHEYxVEzwHEYxVE3xDEQTXvy8RjPUTZEMRBfXDATsRBPe/DxEE178jEYzVE2RDEQX1wyU7EQTXvy8TBLe/pxf5/r6ABAADEYw1ExwDEYw1E1xHEYw1EzwHEYw1E3xDEQTXvy8RjPUTZEMRBfXDATsRBPe/DxEE178jEYzVE2RDEQX1wyU7EQTXvy8TBLe/hxf5/p8ABAADEYwVExwDEYwVE1xHEYwVEzwHEYwVE3xDEQTXvy8RjPUTZEMRBfXDATsRBPe/DxEE178jEYzVE2RDEQX1wyU7EQTXvy8TBLe/Zxf5/n+ABAADF+HfF+e/AxfHvycXp79LF4e/bxdnv5MXR7+3Fye/2xcHv/8RBOe/AxEEx78nEQSnv0sRBIe/bxEEZ7+TEQRHv7cRBCe/2xEEB7/8xwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
     )
@@ -11946,7 +12810,7 @@ lea rax, [rip + {VG_GCM_CONSTS}]
 /// The CPU features `vg_aes_gcm_prepare_pclmul_avx` requires (`Artifact.features`).
 pub const VG_AES_GCM_PREPARE_PCLMUL_AVX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::PCLMULQDQ);
 
-/// Makes the 1032-byte `*ctx`, whose first 256 bytes are a key context of `vg_aes_gcm_init`, the prepared key context of the same key, in place: keeps its first 256 bytes, at byte `256 + 32*k`, for `k` from 0 to `n/2 - 1`, stores `preparedPower(H^(2*k+2))` and then `preparedPower(H^(2*k+1))`, as two little-endian 128-bit words, `H` being the hash subkey in its bytes 240–255, and stores `n` in the 64-bit word at byte 1024, `n` being 48, 16 or 0, as the implementation's other functions read. Use only the `*_prepared` APIs, or APIs that read the first 256 bytes, with this format. Contract: `VG.Spec.Gcm.prepareContract`: the first 256 bytes are kept and the context satisfies `PreparedRepr`. Constant time: only the pointer may affect timing, not the hash subkey.
+/// Makes the 1032-byte `*ctx`, whose first 256 bytes are a key context of `vg_aes_gcm_init`, the prepared key context of the same key, in place: keeps its first 256 bytes, at byte `256 + 32*k`, for `k` from 0 to `n/2 - 1`, stores `preparedPower(H^(2*k+2))` and then `preparedPower(H^(2*k+1))`, as two little-endian 128-bit words, `H` being the hash subkey in its bytes 240–255, and stores `n` in the 64-bit word at byte 1024, `n` being 48, 16 or 0, as the implementation's other functions read; it writes nothing else. Use only the `*_prepared` APIs, or APIs that read the first 256 bytes, with this format. Contract: `VG.Spec.Gcm.prepareContract`: the first 256 bytes are kept, the context satisfies `PreparedRepr`, and the bytes between its powers and their count are unchanged. Constant time: only the pointer may affect timing, not the hash subkey.
 ///
 /// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
@@ -11958,12 +12822,12 @@ pub const VG_AES_GCM_PREPARE_PCLMUL_AVX_FEATURES: verified_garbage_cpu::Features
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_prepare_pclmul_avx(ctx: *mut [u64; 129]) {
     core::arch::naked_asm!(
-        r#".base64 "SMfAEAAAAEiJhwAEAABIuA8ODQwLCgkIxOH5bsBIuAcGBQQDAgEAxGH5buDEwXlsxEi4AAAAAAAAAADE4fluyEi4AAAAAAAAAMLEYflu4MTBcWzMxfpvv/AAAADE4kEA+Ei4AQAAAAAAAADEYflu6Ei4AAAAAAAAAMLEYflu4MRBEWzsSLj//////////8Rh+W7wxEEJbPbF4XP3AcWhc9c/xMEhc/sIxaHr28V5cN//xMEhctMfxEEh/t7EQSHf3cWh79vF+n+fEAEAAMRjYUTDAMRjYUTTEcRjOUTZEMRBeXDATsRBOe/DxGM5RNkQxEF5cMBOxEE578PEwSnv4MX6f6cAAQAAxGNZRMMAxGNZRNMRxGNZRMsBxGNZRNsQxEEx78vEYzlE2RDEQXlwwE7EQTnvw8RBMe/IxGMxRNkQxEF5cMlOxEEx78vEwSnv6cX6f68wAQAAxGNZRMQAxGNZRNQRxGM5RNkQxEF5cMBOxEE578PEYzlE2RDEQXlwwE7EQTnvw8TBKe/wxfp/tyABAADEY0lEwwDEY0lE0xHEY0lEywHEY0lE2xDEQTHvy8RjOUTZEMRBeXDATsRBOe/DxEEx78jEYzFE2RDEQXlwyU7EQTHvy8RBKe/hxXp/p1ABAADEY1FExQDEY1FE1RHEYzlE2RDEQXlwwE7EQTnvw8RjOUTZEMRBeXDATsRBOe/DxEEp7+jFen+vQAEAAMRjSUTFAMRjSUTVEcRjSUTNAcRjSUTdEMRBMe/LxGM5RNkQxEF5cMBOxEE578PEQTHvyMRjMUTZEMRBeXDJTsRBMe/LxEEp7/HFen+3cAEAAMRjSUTGAMRjSUTWEcRjOUTZEMRBeXDATsRBOe/DxGM5RNkQxEF5cMBOxEE578PEQSnv+MV6f79gAQAAxGMBRMMAxGMBRNMRxGMBRMsBxGMBRNsQxEEx78vEYzlE2RDEQXlwwE7EQTnvw8RBMe/IxGMxRNkQxEF5cMlOxEEx78vEwSnv0cX6f5eQAQAAxEMZRMQAxEMZRNQRxGM5RNkQxEF5cMBOxEE578PEYzlE2RDEQXlwwE7EQTnvw8TBKe/gxfp/p4ABAADEYwFExQDEYwFE1RHEYwFEzQHEYwFE3RDEQTHvy8RjOUTZEMRBeXDATsRBOe/DxEEx78jEYzFE2RDEQXlwyU7EQTHvy8TBKe/xxfp/t7ABAADEQxFExQDEQxFE1RHEYzlE2RDEQXlwwE7EQTnvw8RjOUTZEMRBeXDATsRBOe/DxMEp7/jF+n+/oAEAAMRDAUTEAMRDAUTUEcRDAUTMAcRDAUTcEMRBMe/LxGM5RNkQxEF5cMBOxEE578PEQTHvyMRjMUTZEMRBeXDJTsRBMe/LxMEp78HF+n+H0AEAAMRDCUTGAMRDCUTWEcRjOUTZEMRBeXDATsRBOe/DxGM5RNkQxEF5cMBOxEE578PEwSnv0MX6f5fAAQAAxEMBRMYAxEMBRNYRxEMBRM4BxEMBRN4QxEEx78vEYzlE2RDEQXlwwE7EQTnvw8RBMe/IxGMxRNkQxEF5cMlOxEEx78vEwSnv4cX6f6fwAQAAxEMBRMcAxEMBRNcRxGM5RNkQxEF5cMBOxEE578PEYzlE2RDEQXlwwE7EQTnvw8TBKe/wxfp/t+ABAADF+e/AxfHvycXp79LF4e/bxdnv5MXR7+3Fye/2xcHv/8RBOe/AxEEx78nEQSnv0sRBIe/bxEEZ7+TEQRHv7cRBCe/2xEEB7/8xwEUx28M="
+        r#".base64 "SMfAEAAAAEiJhwAEAABIuA8ODQwLCgkIxOH5bsBIuAcGBQQDAgEAxGH5buDEwXlsxEi4AAAAAAAAAADE4fluyEi4AAAAAAAAAMLEYflu4MTBcWzMxfpvv/AAAADE4kEA+Ei4AQAAAAAAAADEYflu6Ei4AAAAAAAAAMLEYflu4MRBEWzsSLj//////////8Rh+W7wxEEJbPbF4XP3AcWhc9c/xMEhc/sIxaHr28V5cN//xMEhctMfxEEh/t7EQSHf3cWh79vF+n+fEAEAAMRjYUTDAMRjYUTTEcRjOUTZEMRBeXDATsRBOe/DxGM5RNkQxEF5cMBOxEE578PEwSnv4MX6f6cAAQAAxGNZRMMAxGNZRNMRxGNZRMsBxGNZRNsQxEEx78vEYzlE2RDEQXlwwE7EQTnvw8RBMe/IxGMxRNkQxEF5cMlOxEEx78vEwSnv6cX6f68wAQAAxGNZRMQAxGNZRNQRxGM5RNkQxEF5cMBOxEE578PEYzlE2RDEQXlwwE7EQTnvw8TBKe/wxfp/tyABAADEY0lEwwDEY0lE0xHEY0lEywHEY0lE2xDEQTHvy8RjOUTZEMRBeXDATsRBOe/DxEEx78jEYzFE2RDEQXlwyU7EQTHvy8RBKe/hxXp/p1ABAADEY1FExQDEY1FE1RHEYzlE2RDEQXlwwE7EQTnvw8RjOUTZEMRBeXDATsRBOe/DxEEp7+jFen+vQAEAAMRjSUTFAMRjSUTVEcRjSUTNAcRjSUTdEMRBMe/LxGM5RNkQxEF5cMBOxEE578PEQTHvyMRjMUTZEMRBeXDJTsRBMe/LxEEp7/HFen+3cAEAAMRjSUTGAMRjSUTWEcRjOUTZEMRBeXDATsRBOe/DxGM5RNkQxEF5cMBOxEE578PEQSnv+MV6f79gAQAAxGMBRMMAxGMBRNMRxGMBRMsBxGMBRNsQxEEx78vEYzlE2RDEQXlwwE7EQTnvw8RBMe/IxGMxRNkQxEF5cMlOxEEx78vEwSnv0cX6f5eQAQAAxEMZRMQAxEMZRNQRxGM5RNkQxEF5cMBOxEE578PEYzlE2RDEQXlwwE7EQTnvw8TBKe/gxfp/p4ABAADEYwFExQDEYwFE1RHEYwFEzQHEYwFE3RDEQTHvy8RjOUTZEMRBeXDATsRBOe/DxEEx78jEYzFE2RDEQXlwyU7EQTHvy8TBKe/xxfp/t7ABAADEQxFExQDEQxFE1RHEYzlE2RDEQXlwwE7EQTnvw8RjOUTZEMRBeXDATsRBOe/DxMEp7/jF+n+/oAEAAMRDAUTEAMRDAUTUEcRDAUTMAcRDAUTcEMRBMe/LxGM5RNkQxEF5cMBOxEE578PEQTHvyMRjMUTZEMRBeXDJTsRBMe/LxMEp78HF+n+H0AEAAMRDCUTGAMRDCUTWEcRjOUTZEMRBeXDATsRBOe/DxGM5RNkQxEF5cMBOxEE578PEwSnv0MX6f5fAAQAAxEMBRMYAxEMBRNYRxEMBRM4BxEMBRN4QxEEx78vEYzlE2RDEQXlwwE7EQTnvw8RBMe/IxGMxRNkQxEF5cMlOxEEx78vEwSnv4cX6f6fwAQAAxEMBRMcAxEMBRNcRxGM5RNkQxEF5cMBOxEE578PEYzlE2RDEQXlwwE7EQTnvw8TBKe/wxfp/t+ABAADF+e/AxfHvycXp79LF4e/bxdnv5MXR7+3Fye/2xcHv/8RBOe/AxEEx78nEQSnv0sRBIe/bxEEZ7+TEQRHv7cRBCe/2xEEB7/8xwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
     )
 }
 
-/// Makes the 1032-byte `*ctx`, whose first 256 bytes are a key context of `vg_aes_gcm_init`, the prepared key context of the same key, in place: keeps its first 256 bytes, at byte `256 + 32*k`, for `k` from 0 to `n/2 - 1`, stores `preparedPower(H^(2*k+2))` and then `preparedPower(H^(2*k+1))`, as two little-endian 128-bit words, `H` being the hash subkey in its bytes 240–255, and stores `n` in the 64-bit word at byte 1024, `n` being 48, 16 or 0, as the implementation's other functions read. Use only the `*_prepared` APIs, or APIs that read the first 256 bytes, with this format. Contract: `VG.Spec.Gcm.prepareContract`: the first 256 bytes are kept and the context satisfies `PreparedRepr`. Constant time: only the pointer may affect timing, not the hash subkey.
+/// Makes the 1032-byte `*ctx`, whose first 256 bytes are a key context of `vg_aes_gcm_init`, the prepared key context of the same key, in place: keeps its first 256 bytes, at byte `256 + 32*k`, for `k` from 0 to `n/2 - 1`, stores `preparedPower(H^(2*k+2))` and then `preparedPower(H^(2*k+1))`, as two little-endian 128-bit words, `H` being the hash subkey in its bytes 240–255, and stores `n` in the 64-bit word at byte 1024, `n` being 48, 16 or 0, as the implementation's other functions read; it writes nothing else. Use only the `*_prepared` APIs, or APIs that read the first 256 bytes, with this format. Contract: `VG.Spec.Gcm.prepareContract`: the first 256 bytes are kept, the context satisfies `PreparedRepr`, and the bytes between its powers and their count are unchanged. Constant time: only the pointer may affect timing, not the hash subkey.
 ///
 /// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
@@ -11974,7 +12838,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_prepare_pclmul_avx(ctx: *mut [u6
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_prepare(ctx: *mut [u64; 129]) {
     core::arch::naked_asm!(
-        r#".base64 "SMfAAAAAAEiJhwAEAAAxwEUx28M="
+        r#".base64 "SMfAAAAAAEiJhwAEAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/8xwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
     )
 }
@@ -11982,7 +12846,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_prepare(ctx: *mut [u64; 129]) {
 /// The CPU features `vg_aes_gcm_wipe_prepared_avx` requires (`Artifact.features`).
 pub const VG_AES_GCM_WIPE_PREPARED_AVX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX);
 
-/// Wipes the 1032-byte `*ctx`, a prepared key context of `vg_aes_gcm_prepare`: sets to zero the key context and the powers its count (the 64-bit word at byte 1024) says are present: its first 1024 bytes if the count is at least 48, 512 if it is at least 16, and 256 otherwise (the bytes after them were not written). Contract: `VG.Spec.Gcm.wipePreparedContract`. Constant time: only the pointer and which of those the count is may affect timing, not the bytes wiped.
+/// Wipes the 1032-byte `*ctx`, a prepared key context of `vg_aes_gcm_prepare`: sets to zero the key context and the powers its count (the 64-bit word at byte 1024) says are present: its first 1024 bytes if the count is at least 48, 512 if it is at least 16, and 256 otherwise (`vg_aes_gcm_prepare` did not write the bytes after them, but the count), and leaves the others unchanged. Contract: `VG.Spec.Gcm.wipePreparedContract`. Constant time: only the pointer and which of those the count is may affect timing, not the bytes wiped.
 ///
 /// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
@@ -12001,7 +12865,7 @@ jae 22f
 .base64 "xfnvwMX+fwfF/n9HIMX+f0dAxf5/R2DF/n+HgAAAAMX+f4egAAAAxf5/h8AAAADF/n+H4AAAAMX4dw=="
 23:
 21:
-.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//McBFMdvD"
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//McAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 22:
 .base64 "xfnvwMX+fwfF/n9HIMX+f0dAxf5/R2DF/n+HgAAAAMX+f4egAAAAxf5/h8AAAADF/n+H4AAAAMX+f4cAAQAAxf5/hyABAADF/n+HQAEAAMX+f4dgAQAAxf5/h4ABAADF/n+HoAEAAMX+f4fAAQAAxf5/h+ABAADF+Hc="
 jmp 23b
@@ -12012,7 +12876,7 @@ jmp 21b
     )
 }
 
-/// Wipes the 1032-byte `*ctx`, a prepared key context of `vg_aes_gcm_prepare`: sets to zero the key context and the powers its count (the 64-bit word at byte 1024) says are present: its first 1024 bytes if the count is at least 48, 512 if it is at least 16, and 256 otherwise (the bytes after them were not written). Contract: `VG.Spec.Gcm.wipePreparedContract`. Constant time: only the pointer and which of those the count is may affect timing, not the bytes wiped.
+/// Wipes the 1032-byte `*ctx`, a prepared key context of `vg_aes_gcm_prepare`: sets to zero the key context and the powers its count (the 64-bit word at byte 1024) says are present: its first 1024 bytes if the count is at least 48, 512 if it is at least 16, and 256 otherwise (`vg_aes_gcm_prepare` did not write the bytes after them, but the count), and leaves the others unchanged. Contract: `VG.Spec.Gcm.wipePreparedContract`. Constant time: only the pointer and which of those the count is may affect timing, not the bytes wiped.
 ///
 /// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
@@ -12030,7 +12894,7 @@ jae 22f
 .base64 "Zg/vwPMPfwfzD39HEPMPf0cg8w9/RzDzD39HQPMPf0dQ8w9/R2DzD39HcPMPf4eAAAAA8w9/h5AAAADzD3+HoAAAAPMPf4ewAAAA8w9/h8AAAADzD3+H0AAAAPMPf4fgAAAA8w9/h/AAAAA="
 23:
 21:
-.base64 "Zg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//McBFMdvD"
+.base64 "Zg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//McAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 22:
 .base64 "Zg/vwPMPfwfzD39HEPMPf0cg8w9/RzDzD39HQPMPf0dQ8w9/R2DzD39HcPMPf4eAAAAA8w9/h5AAAADzD3+HoAAAAPMPf4ewAAAA8w9/h8AAAADzD3+H0AAAAPMPf4fgAAAA8w9/h/AAAADzD3+HAAEAAPMPf4cQAQAA8w9/hyABAADzD3+HMAEAAPMPf4dAAQAA8w9/h1ABAADzD3+HYAEAAPMPf4dwAQAA8w9/h4ABAADzD3+HkAEAAPMPf4egAQAA8w9/h7ABAADzD3+HwAEAAPMPf4fQAQAA8w9/h+ABAADzD3+H8AEAAA=="
 jmp 23b
@@ -12040,3 +12904,7 @@ jmp 21b
 .p2align 6"#,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_ghash_vpclmul.rs"]
+pub(crate) mod vg_ghash_vpclmul;

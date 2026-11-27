@@ -1,30 +1,32 @@
 module
 
-public import VerifiedGarbage.Proof.AesCfb.RISCV64.Verified
-public import VerifiedGarbage.Proof.AesCfb.RISCV64.Final
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.RISCV64.Print
+public import VerifiedGarbage.TCB.RISCV64.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Cfb.Contract
+public import VerifiedGarbage.Spec.Cfb.Final
+import VerifiedGarbage.Proof.Aes.RISCV64.Scrub
+import VerifiedGarbage.Impl.Aes.RISCV64.Fn
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # AES-CFB128 (NIST SP 800-38A §6.3) on RISC-V -/
 
-@[expose] public section
-
 namespace VG.Artifacts.AesCfb.RISCV64
 
-open VG.Proof.AesCfb.RISCV64
-
-def artifacts : List Artifact := [
+public def artifacts : List (Artifact RISCV64.target) := [
   Spec.Cfb.aesEncryptApi.artifact RISCV64.target {
-    code := Impl.AesCfb.RISCV64.encrypt
-    verified := Proof.AesCfb.encrypt_keyed encrypt_verified },
+    code := Impl.Aes.RISCV64.Fn.cfbEncrypt
+    verified := Proof.Aes.RISCV64.Scrub.cfbEncrypt_scrubbed },
   Spec.Cfb.aesDecryptApi.artifact RISCV64.target {
-    code := Impl.AesCfb.RISCV64.decrypt
-    verified := Proof.AesCfb.decrypt_keyed decrypt_verified },
+    code := Impl.Aes.RISCV64.Fn.cfbDecrypt
+    verified := Proof.Aes.RISCV64.Scrub.cfbDecrypt_scrubbed },
   Spec.Cfb.aesEncryptFinalApi.artifact RISCV64.target {
-    code := Impl.StackScratch.RISCV64.withStackScratchWiped 64 .a6 8 Impl.AesCfb.RISCV64.encryptFinal
-    verified := Proof.AesCfb.encryptFinal_keyed Final.encryptFinal_framed },
+    code := Impl.Aes.RISCV64.Fn.cfbEncryptFinal
+    verified := Proof.Aes.RISCV64.Scrub.cfbEncryptFinal_scrubbed },
   Spec.Cfb.aesDecryptFinalApi.artifact RISCV64.target {
-    code := Impl.StackScratch.RISCV64.withStackScratchWiped 64 .a6 8 Impl.AesCfb.RISCV64.decryptFinal
-    verified := Proof.AesCfb.decryptFinal_keyed Final.decryptFinal_framed }]
+    code := Impl.Aes.RISCV64.Fn.cfbDecryptFinal
+    verified := Proof.Aes.RISCV64.Scrub.cfbDecryptFinal_scrubbed }]
+
+spec_apis artifacts
 
 end VG.Artifacts.AesCfb.RISCV64

@@ -14,6 +14,17 @@ vg_md5_init:
 	mov DWORD PTR [eax+8], ecx
 	mov ecx, 271733878
 	mov DWORD PTR [eax+12], ecx
+	mov eax, 0
+	mov edx, 0
+	xor ecx, ecx
+	pxor xmm0, xmm0
+	pxor xmm1, xmm1
+	pxor xmm2, xmm2
+	pxor xmm3, xmm3
+	pxor xmm4, xmm4
+	pxor xmm5, xmm5
+	pxor xmm6, xmm6
+	pxor xmm7, xmm7
 	ret
 	.p2align 6
 
@@ -152,6 +163,30 @@ vg_md5_update:
 	mov edi, DWORD PTR [eax+72]
 	mov ebp, DWORD PTR [eax+76]
 	lea esp, [esp+140]
+	pxor xmm0, xmm0
+	lea esp, [esp-160]
+	movdqu XMMWORD PTR [esp], xmm0
+	movdqu XMMWORD PTR [esp+16], xmm0
+	movdqu XMMWORD PTR [esp+32], xmm0
+	movdqu XMMWORD PTR [esp+48], xmm0
+	movdqu XMMWORD PTR [esp+64], xmm0
+	movdqu XMMWORD PTR [esp+80], xmm0
+	movdqu XMMWORD PTR [esp+96], xmm0
+	movdqu XMMWORD PTR [esp+112], xmm0
+	movdqu XMMWORD PTR [esp+128], xmm0
+	movdqu XMMWORD PTR [esp+144], xmm0
+	lea esp, [esp+160]
+	mov eax, 0
+	mov edx, 0
+	xor ecx, ecx
+	pxor xmm0, xmm0
+	pxor xmm1, xmm1
+	pxor xmm2, xmm2
+	pxor xmm3, xmm3
+	pxor xmm4, xmm4
+	pxor xmm5, xmm5
+	pxor xmm6, xmm6
+	pxor xmm7, xmm7
 	ret
 	.p2align 6
 
@@ -263,5 +298,32 @@ vg_md5_finalize:
 	mov edi, DWORD PTR [ebp+72]
 	mov ebp, DWORD PTR [ebp+76]
 	lea esp, [esp+136]
+	pxor xmm0, xmm0
+	mov ecx, 0
+	lea esp, [esp-156]
+	movdqu XMMWORD PTR [esp], xmm0
+	movdqu XMMWORD PTR [esp+16], xmm0
+	movdqu XMMWORD PTR [esp+32], xmm0
+	movdqu XMMWORD PTR [esp+48], xmm0
+	movdqu XMMWORD PTR [esp+64], xmm0
+	movdqu XMMWORD PTR [esp+80], xmm0
+	movdqu XMMWORD PTR [esp+96], xmm0
+	movdqu XMMWORD PTR [esp+112], xmm0
+	movdqu XMMWORD PTR [esp+128], xmm0
+	mov DWORD PTR [esp+144], ecx
+	mov DWORD PTR [esp+148], ecx
+	mov DWORD PTR [esp+152], ecx
+	lea esp, [esp+156]
+	mov eax, 0
+	mov edx, 0
+	xor ecx, ecx
+	pxor xmm0, xmm0
+	pxor xmm1, xmm1
+	pxor xmm2, xmm2
+	pxor xmm3, xmm3
+	pxor xmm4, xmm4
+	pxor xmm5, xmm5
+	pxor xmm6, xmm6
+	pxor xmm7, xmm7
 	ret
 	.p2align 6

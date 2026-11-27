@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.Arm.Open
+public import VerifiedGarbage.Proof.AesGcm.Arm.CTCrypt
 public import VerifiedGarbage.Proof.AesGcm.RoundsTo
 public import VerifiedGarbage.Proof.Framework.Scratch
 public import VerifiedGarbage.Impl.StackScratch.Arm
@@ -8,7 +8,6 @@ public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Proof.Zeroize.Common
 import VerifiedGarbage.Proof.AesGcm.Arm.CTOpen
-import VerifiedGarbage.Proof.AesGcm.Arm.CTFn
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import VerifiedGarbage.Proof.AesGcm.Arm.Verified
 import VerifiedGarbage.Proof.AesGcm.Scratch
@@ -272,7 +271,7 @@ theorem openToEnd_wp {s₀ s : State} (ho : OPre true s₀) (ob : OB true s₀ s
       rw [e]
       exact ⟨by rw [g _ (by decide) (by decide) (by decide), tg, r0₅, r0, e]; rfl, bytesAt_zeros pz⟩
 
-theorem openTo_wp {s₀ : State} (h : openToArm.pre s₀) :
+theorem openTo_wp [VG.Proof.Gcm.Arm.GhashLaw] {s₀ : State} (h : openToArm.pre s₀) :
     WP isa openTo s₀ fun s' => abiPreserved s₀ s' ∧ openToArm.post s₀ s' :=
   have ho := openToPreArm.oPre h
   openBody_wp ho fun _ ob => openToEnd_wp ho ob
@@ -293,7 +292,7 @@ theorem cmp_OE {t s : State} {b : Bool} (hb : (openResG true t).isSome = b) (h :
   WP.mono (cmpR0_ok s) fun s' ⟨tm, tg, tsp, tz, trd, twr⟩ =>
     ⟨⟨h.args.of_eq tm tsp trd twr, by rw [tg]; exact h.r0⟩, by rw [tz, h.r0, hb]; cases b <;> rfl⟩
 
-theorem openTo_rel {s₀ s₀' : State} (h0 : openToArm.pre s₀) (h0' : openToArm.pre s₀') (hq : openToArm.pub s₀ s₀') :
+theorem openTo_rel [VG.Proof.Gcm.Arm.GhashLaw] {s₀ s₀' : State} (h0 : openToArm.pre s₀) (h0' : openToArm.pre s₀') (hq : openToArm.pub s₀ s₀') :
     RelCT isa (fun a b => a = s₀ ∧ b = s₀') openTo fun _ _ => True := by
   have ho := openToPreArm.oPre h0
   have ho' := openToPreArm.oPre h0'
@@ -330,7 +329,7 @@ theorem openTo_rel {s₀ s₀' : State} (h0 : openToArm.pre s₀) (h0' : openToA
       h.1.1.args.agree h.2.1.args q₀ spf qa (one_hw ho.one) (one_hw ho'.one) (rs := []) (by simp)) hW
   exact openBody_rel ho ho' hq.1 hres (d1.seq (d2.seq d3))
 
-theorem openTo_ct : ConstantTime isa openToArm.pre openToArm.pub openTo :=
+theorem openTo_ct [VG.Proof.Gcm.Arm.GhashLaw] : ConstantTime isa openToArm.pre openToArm.pub openTo :=
   fun _ _ _ _ _ _ h₁ h₂ hq e₁ e₂ => (openTo_rel h₁ h₂ hq _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
 
 /-! ## `Verified`, with the working space an argument -/
@@ -363,7 +362,7 @@ def otSat : State :=
 /-- The postconditions match on `openResult`; the result is the low word of
 `r1:r0`; and `open_to`'s public data include its leak, whether it succeeds
 (for `rounds` of 10, 12 or 14). -/
-theorem openTo_verified : Verified Arm.target openTo (openToScratchContract Arm.abi 12) :=
+theorem openTo_verified [VG.Proof.Gcm.Arm.GhashLaw] : Verified Arm.target openTo (openToScratchContract Arm.abi 12) :=
   Verified.of_correct (fun _ hs => openTo_wp hs) openTo_ct
     { pre := by
         sig_implies_pre [openToScratchContract, openToScratchSig, Spec.Gcm.openToPre, openToArm,
@@ -442,6 +441,35 @@ theorem openToPost_local : ∀ vs m₁ m₂ m' r, vs.length = (Spec.Gcm.openToSi
     (agree_of hb.2.2.2.1) (agree_of hb.2.2.2.2.2)]
   exact h hr
 
+/-- `Proof.AesGcm.openToRoundsPost` reads the memory on return only within the buffers. -/
+theorem openToPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (Spec.Gcm.openToSig.words pb).length →
+    Curry.apply (Spec.Gcm.openToSig.words pb) (Spec.Gcm.openToPre pb) vs m →
+    (∀ b ∈ Sig.bufs Spec.Gcm.openToSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (Spec.Gcm.openToSig.words pb) (Proof.AesGcm.openToRoundsPost pb) vs m m₁ r →
+      Curry.apply (Spec.Gcm.openToSig.words pb) (Proof.AesGcm.openToRoundsPost pb) vs m m₂ r := by
+  intro vs m m₁ m₂ r hlen hpre hb h
+  obtain ⟨ctx, rd, nonce, nl, aad, al, src, len, dst, dl, tag, tl, rfl⟩ :=
+    twelve (hlen.trans (openToSig_length pb))
+  simp only [Spec.Gcm.openToSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+    forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
+    ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb]
+    (Spec.Gcm.openToPre pb) _ m at hpre
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
+    ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb]
+    (Proof.AesGcm.openToRoundsPost pb) _ m m₁ r at h
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
+    ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb]
+    (Proof.AesGcm.openToRoundsPost pb) _ m m₂ r
+  dsimp only [Curry.apply, Spec.Gcm.openToPre, ArgWord.ofRaw, IntTy.bits] at hpre
+  dsimp only [Curry.apply, Proof.AesGcm.openToRoundsPost, ArgWord.ofRaw, IntTy.bits] at h ⊢
+  intro hr
+  have := Nat.mod_le dl.toNat (2 ^ pb)
+  rw [Proof.AesGcm.bytesAt_congr (m₁ := m₁) (m₂ := m₂) (p := dst) (n := (len.setWidth pb).toNat) fun i hi =>
+    agree_of hb.2.2.2.2.1 i (by
+      rw [← hpre.2, BitVec.toNat_setWidth] at hi; omega_using [this, hi])]
+  exact h hr
+
 theorem openToLeak_local : ∀ vs m₁ m₂, vs.length = (Spec.Gcm.openToSig.words pb).length →
     (∀ b ∈ Sig.bufs Spec.Gcm.openToSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
     Curry.apply (Spec.Gcm.openToSig.words pb) (Spec.Gcm.openToLeak pb) vs m₁ =
@@ -482,7 +510,7 @@ theorem openToFrameSat_pre : ∃ s, (Proof.AesGcm.openToRoundsContract Arm.abi 2
 
 /-- `open_to` in a frame of 2608 bytes (an immediate `sub` can encode) holding its working space and copies
 of its eight words of stack arguments. -/
-theorem openTo_framed :
+theorem openTo_framed [VG.Proof.Gcm.Arm.GhashLaw] :
     Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 2608 8 openTo)
       (Proof.AesGcm.openToRoundsContract Arm.abi 2620) :=
   Arm.Verified.stackScratch (sig := Spec.Gcm.openToSig) (nm := "work") (e := .u64)
@@ -490,7 +518,7 @@ theorem openTo_framed :
     (post := Proof.AesGcm.openToRoundsPost Arm.abi.ptrBits) (wa := true) (stack := 12)
     (leak := some (Spec.Gcm.openToLeak Arm.abi.ptrBits))
     (m := 8) openTo_verified (by decide) (by decide) (by decide) (by decide)
-    (openToPre_local _) (openToPost_local _) openToFrameSat_pre
+    (openToPre_local _) (openToPost_local _) (openToPostOut_local _) openToFrameSat_pre
     (hleak := openToLeak_local _)
 
 end VG.Proof.AesGcm.Arm

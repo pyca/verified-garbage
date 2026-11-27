@@ -1,9 +1,8 @@
 module
-public import VerifiedGarbage.Proof.Weierstrass.X86.TCombScan
-public import VerifiedGarbage.Impl.Weierstrass.X86.TCombJ
 
+public import VerifiedGarbage.Proof.Weierstrass.X86.TCombOne
+public import VerifiedGarbage.Impl.Weierstrass.X86.TCombJ
 import VerifiedGarbage.Proof.Weierstrass.Words32
-import VerifiedGarbage.Proof.Weierstrass.X86.TCombOne
 import VerifiedGarbage.Proof.Weierstrass.X86.Copy
 import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Framework.X86.RegUpd

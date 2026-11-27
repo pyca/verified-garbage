@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Framework.PPC64LE.RelCT
 import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 import VerifiedGarbage.Proof.MlKem.PPC64LE.SampleCT
-import VerifiedGarbage.Proof.Sha3.PPC64LE.Stream.CT
 import VerifiedGarbage.Proof.Sha3.PPC64LE.Stream.Verified
 import VerifiedGarbage.Proof.MlKem.PPC64LE.Sample
 meta import VerifiedGarbage.Proof.Sha3.PPC64LE.Pieces
@@ -13,7 +12,6 @@ meta import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.RelCT
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 meta import VerifiedGarbage.Proof.MlKem.PPC64LE.SampleCT
-meta import VerifiedGarbage.Proof.Sha3.PPC64LE.Stream.CT
 meta import VerifiedGarbage.Proof.Sha3.PPC64LE.Stream.Verified
 meta import VerifiedGarbage.Proof.MlKem.PPC64LE.Sample
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
@@ -48,7 +46,7 @@ open VG.Impl.Sha3.PPC64LE.Stream (mov)
 /-- An instruction that accesses no memory. -/
 def noMem : Instr → Bool
   | .load .. | .store .. | .lbz .. | .stb .. | .loadRev .. | .storeRev .. | .push _ | .pop _
-  | .alloc _ | .lxvd2x .. | .lxvd2xTbl .. | .stxvd2x .. => false
+  | .alloc _ | .lxvd2x .. | .lxvd2xTbl .. | .stxvd2x .. | .dcbz .. => false
   | _ => true
 
 theorem addrs_noMem {i : Instr} (h : noMem i = true) (s : State) : VG.PPC64LE.addrs i s = [] := by

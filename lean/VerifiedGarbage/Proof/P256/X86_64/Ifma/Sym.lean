@@ -3,6 +3,7 @@ module
 -- separate module: its proofs (about 2 s, the terms' evaluation) are not checked again when `Stage` changes
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.ESym
+public import VerifiedGarbage.Proof.Framework.SymRun
 import VerifiedGarbage.Proof.Framework.X86_64.Avx
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Mem
@@ -29,7 +30,7 @@ namespace VG.Proof.P256.X86_64.Ifma
 
 open VG VG.X86_64
 open VG.Proof.Bignum.X86_64.AmmSym (baseOff baseOff_ok)
-open VG.Proof.Bignum.X86_64.Ifma (vi vreg_vi vi_inj qv qv_setVy qword256_lanes qword_lane256 qword256_madd
+open VG.Proof.Bignum.X86_64.Ifma (vi vreg_vi vi_lt vi_inj qv qv_setVy qword256_lanes qword_lane256 qword256_madd
   lane_app0 lane_app1 gpr_setVy)
 open VG.Proof.Poly1305.X86_64.Avx2 (qword_app0 qword_app1 qword_paddq qword_psrlq qword_psllq mod2_lt qword256_eq qword256_cat
   qword_and qword256_perm sel4 sel4_lt)
@@ -206,6 +207,99 @@ def VSym.step (P : Par) (σ : VSym) : Instr → Option VSym
 def VSym.run (P : Par) (σ : VSym) : List Instr → Option VSym
   | [] => some σ
   | i :: is => (σ.step P i).bind fun σ' => σ'.run P is
+
+/-! ### For the kernel -/
+
+open VG.SymRun (Act)
+
+/-- `VSym.src`, of the stores. -/
+def srcOf (P : Par) (st : List (Nat × T)) (m : MemOp) : Option T :=
+  (baseOff m).bind fun bo =>
+    if bo.1 = .rdi then (if bo.2 % 32 = P.al ∧ bo.2 + 32 ≤ P.win then some (look st bo.2) else none)
+    else if bo.1 = P.cb then litOf P.cst bo.2
+    else if bo.2 + 32 ≤ P.lim bo.1 then some (.ld bo.1 bo.2) else none
+
+/-- `VSym.eop`, as an `Act`. -/
+def VSym.eact : EOp → Act T (List (Nat × T))
+  | .bin .vpaddq d a b => .r2 (vi d) (vi a) (vi b) fun _ x y => some (.add x y)
+  | .bin .vpsubq d a b => .r2 (vi d) (vi a) (vi b) fun _ x y => some (.sub x y)
+  | .bin .vpxorq d a b => if a = b then .r0 (vi d) fun _ => some (.lit 0 0 0 0) else .bad
+  | .bin .vpandq d a b => .r2 (vi d) (vi a) (vi b) fun _ x y =>
+    (maskOf y).map fun j => .mask x j.1 j.2.1 j.2.2.1 j.2.2.2
+  | .shift .vpsrlq d a n => if n.toNat < 64 then .r1 (vi d) (vi a) fun _ x => some (shrOf x n.toNat) else .bad
+  | .shift .vpsllq d a n => if n.toNat < 64 then .r1 (vi d) (vi a) fun _ x => some (.shl x n.toNat) else .bad
+  | .vpsraq d a n => if n.toNat < 64 then .r1 (vi d) (vi a) fun _ x => some (.sra x n.toNat) else .bad
+  | .vpermq d a o => .r1 (vi d) (vi a) fun _ x => some (.perm x o.toNat)
+  | .vpternlogq d a b n =>
+    if n = 0xD8 then .r3 (vi d) (vi b) (vi d) (vi a) fun _ x y z => some (selOf x y z) else .bad
+  | .vmovdqa64 d a => .r1 (vi d) (vi a) fun _ x => some x
+  | .vpmadd52 h d a b => .r3 (vi d) (vi d) (vi a) (vi b) fun _ w x y => some (.mad h w x y)
+  | _ => .bad
+
+/-- `VSym.step`, as an `Act`. -/
+def VSym.act (P : Par) : Instr → Act T (List (Nat × T))
+  | .eop o => VSym.eact o
+  | .evLoad d m => .r0 (vi d) fun st => srcOf P st m
+  | .evMadd52Load h d a m => .r2 (vi d) (vi d) (vi a) fun st w x => (srcOf P st m).map fun t => .mad h w x t
+  | .evStore m r => .s1 (vi r) fun st x => (baseOff m).bind fun bo =>
+    if bo.1 = .rdi ∧ bo.2 % 32 = P.al ∧ bo.2 + 32 ≤ P.win ∧ P.lo ≤ bo.2 then some ((bo.2, x) :: st) else none
+  | _ => .bad
+
+theorem VSym.eact_below (o : EOp) : (VSym.eact o).Below (2 ^ 5) := by
+  unfold VSym.eact
+  split <;> (try split) <;> first
+    | trivial | exact vi_lt _ | exact ⟨vi_lt _, vi_lt _⟩ | exact ⟨vi_lt _, vi_lt _, vi_lt _⟩
+    | exact ⟨vi_lt _, vi_lt _, vi_lt _, vi_lt _⟩
+
+theorem VSym.act_below (P : Par) (i : Instr) : (VSym.act P i).Below (2 ^ 5) := by
+  unfold VSym.act
+  split <;> first
+    | trivial | exact VSym.eact_below _ | exact vi_lt _ | exact ⟨vi_lt _, vi_lt _, vi_lt _⟩
+
+theorem VSym.eop_act (g : Nat → T) (st : List (Nat × T)) (o : EOp) :
+    (VSym.mk g st).eop o = ((VSym.eact o).app g st).map fun p => ⟨p.1, p.2⟩ := by
+  unfold VSym.eop VSym.eact
+  split <;> first
+    | rfl | (split <;> rfl)
+    | (simp only [Act.app, Option.map_map]; rfl)
+
+theorem VSym.step_act (P : Par) (g : Nat → T) (st : List (Nat × T)) (i : Instr) :
+    (VSym.mk g st).step P i = ((VSym.act P i).app g st).map fun p => ⟨p.1, p.2⟩ := by
+  unfold VSym.step VSym.act
+  split
+  · exact VSym.eop_act g st _
+  · simp only [Act.app, Option.map_map]; rfl
+  · simp only [Act.app, Option.map_map]; rfl
+  · simp only [Act.app, Option.map_map]
+    cases baseOff _ with
+    | none => rfl
+    | some bo => simp only [Option.bind_some]; split <;> rfl
+  · rfl
+
+/-- `k t`, with `t` evaluated. -/
+noncomputable def T.seq {β : Type} (t : T) (k : T → β) : β :=
+  T.rec (motive := fun _ => (T → β) → β) (fun r k => k (.reg r)) (fun a b c d k => k (.lit a b c d))
+    (fun b d k => k (.ld b d)) (fun a b _ _ k => k (.add a b)) (fun a b _ _ k => k (.sub a b))
+    (fun a n _ k => k (.shl a n)) (fun a n _ k => k (.shr a n)) (fun a n _ k => k (.sra a n))
+    (fun a j0 j1 j2 j3 _ k => k (.mask a j0 j1 j2 j3)) (fun a b m _ _ k => k (.blend a b m))
+    (fun a o _ k => k (.perm a o)) (fun h c a b _ _ _ k => k (.mad h c a b)) (fun a n j _ k => k (.slr a n j))
+    (fun c a b _ _ _ k => k (.sel c a b)) t k
+
+theorem T.seq_eq {β : Type} (t : T) (k : T → β) : t.seq k = k t := by cases t <;> rfl
+
+/-- What `f` makes of the terms of the registers and the stores after a block, as the kernel runs it. -/
+noncomputable def VSym.runK {β : Type} (P : Par) (is : List Instr)
+    (f : SymRun.Tree T → List (Nat × T) → Option β) : Option β :=
+  SymRun.run T.seq (VSym.act P) is (SymRun.Tree.ofFn 5 .reg) [] f
+
+theorem VSym.runK_ok {β : Type} {P : Par} {is : List Instr} {f : SymRun.Tree T → List (Nat × T) → Option β} {b : β}
+    (h : VSym.runK P is f = some b) :
+    ∃ σ t, VSym.init.run P is = some σ ∧ SymRun.Tree.Holds 5 t σ.reg ∧ f t σ.st = some b := by
+  obtain ⟨g, st, t, e, ht, hc⟩ := SymRun.run_sound T.seq_eq (VSym.act_below P) is (SymRun.Tree.holds_ofFn 5 T.reg) h
+  refine ⟨⟨g, st⟩, t, ?_, ht, hc⟩
+  have := SymRun.runs (run := fun σ is => VSym.run P σ is) (step := fun σ i => VSym.step P σ i) VSym.mk
+    (VSym.step_act P) (fun _ => rfl) (fun _ _ _ => rfl) is T.reg []
+  exact this.trans (by rw [e]; rfl)
 
 /-! ## The machine agrees -/
 

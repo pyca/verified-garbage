@@ -3558,6 +3558,29 @@ vg_cmac_triple_des_stream_init:
 	ldr lr, [r10, #80]
 	ldr r10, [r10, #84]
 	add sp, sp, #640
+	sub sp, sp, #640
+	add r12, sp, #0
+	mov r2, #0
+	mov r3, #20
+25:
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 25b
+	add sp, sp, #640
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_cmac_triple_des_absorb:
@@ -6295,6 +6318,31 @@ vg_cmac_triple_des_absorb:
 	ldr r8, [r10, #652]
 	ldr r10, [r10, #656]
 	add sp, sp, #704
+	sub sp, sp, #712
+	add r12, sp, #0
+	mov r2, #0
+	mov r3, #22
+226:
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 226b
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	add sp, sp, #712
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_cmac_triple_des_finish:
@@ -7653,4 +7701,33 @@ vg_cmac_triple_des_finish:
 	ldr r10, [r10, #84]
 	ldr r12, [sp], #4
 	add sp, sp, #656
+	sub sp, sp, #664
+	add r12, sp, #0
+	mov r2, #0
+	mov r3, #20
+29:
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 29b
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	add sp, sp, #664
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr

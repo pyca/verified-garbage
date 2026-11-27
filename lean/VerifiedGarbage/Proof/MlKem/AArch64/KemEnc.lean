@@ -6,13 +6,11 @@ import VerifiedGarbage.Proof.MlKem.AArch64.KemB
 /-!
 # ML-KEM on AArch64: K-PKE.Encrypt after the matrix
 
-`ŷ` (`y_step`), `u` into the ciphertext (`u_step`), and `v` into it (`v_ok`),
-with `r` at `RB`, `m` at `MB`, `Â` as the matrix left it, `t̂` decoded from
-the bytes of `ek` in a buffer the function only reads, and the ciphertext in a
-written buffer (`EncArgs`). What each step establishes survives the steps
-after it (`EInv`), as they write only apart from it (`Far`). The steps over
-`i < k` are loops (`WPs.range`), and the sums of products in `u[i]` and `v`
-loops over `j < k` (`WPs.dot`).
+`ŷ`, `u` into the ciphertext, and `v` into it, with `r` at `RB`, `m` at `MB`,
+`Â` as the matrix left it, `t̂` decoded from the bytes of `ek` in a buffer the
+function only reads, and the ciphertext in a written buffer (`EncArgs`). What
+each step establishes survives the steps after it (`EInvW`), as they write
+only apart from it (`Far`).
 -/
 
 @[expose] public section
@@ -47,10 +45,6 @@ structure EncArgs (P : KemLay) (L : Layout) (kE eo kC co : Nat) : Prop where
 abbrev aMW (w16 : Bool) (P : KemLay) (L : Layout) (s₀ : State) (mB : Mem) (i j : Nat) : Poly :=
   polyAtW (cw w16) mB (sA L s₀ (aOff P i j))
 
-/-- `Â` as the matrix left it in `mB`. -/
-abbrev aM (P : KemLay) (L : Layout) (s₀ : State) (mB : Mem) (i j : Nat) : Poly :=
-  polyAt mB (sA L s₀ (aOff P i j))
-
 /-- All that `K-PKE.Encrypt` writes: the Keccak state and working space,
 `N`, `scratch` past `r ‖ N` and `K'` and `K̄`, the stack below the stack
 pointer, and the ciphertext. -/
@@ -73,9 +67,7 @@ structure EInvW (w16 : Bool) (P : KemLay) (L : Layout) (s₀ : State) (kC co : N
     compressEncode P.du (KPke.encU P.params (aMW w16 P L s₀ mB) rv i)
   fr : Frame (encW P L s₀ kC co) mE s.mem
 
-abbrev EInv := EInvW false
-
-/-- A region apart from what `EInv` describes. -/
+/-- A region apart from what `EInvW` describes. -/
 def Far (P : KemLay) (L : Layout) (s₀ : State) (kC co nY nU : Nat) (r : Region) : Prop :=
   (R (kA s₀) L.sc RB 32).Disjoint r ∧ (R (kA s₀) L.sc MB 32).Disjoint r ∧
     (R (kA s₀) L.sc AH (1024 * (P.k * P.k))).Disjoint r ∧ (R (kA s₀) L.sc (YH P) (1024 * nY)).Disjoint r ∧
@@ -100,7 +92,7 @@ theorem EInvW.frame {w16 : Bool} {s₀ : State} (hp : Pre P L s₀) {kC co : Nat
       (R.sub2 (by omega_using []) (by have := mul_succ_le (a := 32 * P.du) hi; omega_using [this]))) (by kom)]
     exact h.u i hi
 
-/-- A buffer of `scratch` apart from what `EInv` describes. -/
+/-- A buffer of `scratch` apart from what `EInvW` describes. -/
 theorem far_s {s₀ : State} (hp : Pre P L s₀) {kE eo kC co : Nat} (A : EncArgs P L kE eo kC co)
     {nY nU o l : Nat} (hnY : nY ≤ P.k) (hnU : nU ≤ P.k) (f : o + l ≤ SV P)
     (h : (o + l ≤ RB ∨ RB + 32 ≤ o) ∧ (o + l ≤ MB ∨ MB + 32 ≤ o) ∧
@@ -144,7 +136,6 @@ theorem po_y (hP : P.Wf) {j : Nat} (hj : j < P.k) : PO P (yOff P j) := ⟨by lom
 theorem po_TP (hP : P.Wf) : PO P (TP P) := ⟨by lom, by lom⟩
 theorem po_PP (hP : P.Wf) : PO P (PP P) := ⟨by lom, by lom⟩
 theorem po_EP (hP : P.Wf) : PO P (EP P) := ⟨by lom, by lom⟩
-theorem po_TH (hP : P.Wf) : PO P (TH P) := ⟨by lom, by lom⟩
 
 /-- A polynomial buffer of `scratch` that `K-PKE.Encrypt` writes. -/
 theorem far_w {s₀ : State} (hp : Pre P L s₀) {kE eo kC co : Nat} (A : EncArgs P L kE eo kC co) {nY nU : Nat}
@@ -190,43 +181,6 @@ theorem papart {s₀ : State} (hp : Pre P L s₀) {o₁ o₂ : Nat} (h₁ : PO P
     (h : o₁ + 1024 ≤ o₂ ∨ o₂ + 1024 ≤ o₁) : (polyRegion (sA L s₀ o₁)).Disjoint (R (kA s₀) L.sc o₂ 1024) :=
   sdisj hp h₁.le h₂.le h
 
-/-- A polynomial buffer of `scratch` past the NTT's working space is apart from it. -/
-theorem pns {s₀ : State} (hp : Pre P L s₀) {o : Nat} (h : PO P o) :
-    (polyRegion (sA L s₀ o)).Disjoint (R (kA s₀) L.sc NS 1024) := h.ns hp
-
-/-! ## `ŷ` -/
-
-theorem y_step {s₀ : State} (hp : Pre P L s₀) {kE eo kC co : Nat} (A : EncArgs P L kE eo kC co) {mE mB : Mem}
-    {v : BitVec 64} {rv mv : List Byte} {j : Nat} (hj : j < P.k) {s : State}
-    (h : EInv P L s₀ kC co mE mB v rv mv j 0 s) :
-    WP isa (P.encYAtWith keccak.callee j) s (EInv P L s₀ kC co mE mB v rv mv (j + 1) 0) := by
-  have hw := hp.wf
-  have hpo := po_y hw hj
-  have h1 : YH P + 1024 * j ≤ yOff P j := by simp only [yOff]; omega_using []
-  have h2 : yOff P j + 1024 ≤ CB P := by lom
-  refine WP.seq (WP.mono (prfCbd_ok hp (N := j) (off := yOff P j) (by lom) hpo h.kb h.r)
-    fun s₁ ⟨kb₁, f₁, p₁, x₁⟩ => ?_)
-  have e₁ := h.frame hp kb₁ x₁ f₁ (far_pcW hp A (by omega_using [hj]) (by omega_using []) h1 h2)
-  refine WP.mono (ntt_ok hp hpo kb₁ p₁.1) fun s₂ ⟨kb₂, f₂, p₂, x₂⟩ => ?_
-  have e₂ := e₁.frame hp kb₂ x₂ f₂ (far_mul hp A (by omega_using [hj]) (by omega_using []) h1 h2)
-  rw [p₁.2] at p₂
-  refine ⟨e₂.kb, e₂.x24, e₂.r, e₂.m, e₂.a, fun j' hj' => ?_, fun i hi => absurd hi (Nat.not_lt_zero _), e₂.fr⟩
-  rcases (by omega_using [hj'] : j' < j ∨ j' = j) with hj' | rfl
-  · have hy := po_y hw (j := j') (by omega_arith)
-    refine polyIs_frame f₂ (fun r hr => by
-      rcases mem2' hr with rfl | rfl
-      · exact papart hp hy hpo (by simp only [yOff]; omega_using [hj'])
-      · exact pns hp hy) (polyIs_frame f₁ (fun r hr => ?_) (h.y j' hj'))
-    -- `ŷ[j']` is apart from what `prfCbdWith keccak.callee` writes
-    rcases mem6 hr with rfl | rfl | rfl | rfl | rfl | rfl
-    · exact sdisj hp hy.le (by lom) (.inr (by lom))
-    · exact sdisj hp hy.le (by lom) (.inr (by lom))
-    · exact below_R hp hp.scb (hp.fs hy.le)
-    · exact sdisj hp hy.le (by lom) (.inr (by lom))
-    · exact sdisj hp hy.le (by lom) (.inr (by lom))
-    · exact papart hp hy hpo (by simp only [yOff]; omega_using [hj'])
-  · exact p₂
-
 /-! ## `u` and `v` -/
 
 /-- Bytes of the ciphertext past those written so far. -/
@@ -249,206 +203,9 @@ theorem far_ct {s₀ : State} (hp : Pre P L s₀) {kE eo kC co : Nat} (A : EncAr
   exact ⟨g (by lom), g (by lom), g (by lom), g (by lom),
     hp.args.rdisj hb hb (by omega_using [h, f, fC]) f' (.inl rfl) (.inr (.inl h)), ⟨_, by simp, R.sub2 (by omega_using [h]) f⟩⟩
 
-/-- `Â[j, i] ŷ[j]` into `h` (`TP` or `PP`). -/
-theorem uprod_ok {s₀ : State} (hp : Pre P L s₀) {kE eo kC co : Nat} (A : EncArgs P L kE eo kC co) {mE mB : Mem}
-    {v : BitVec 64} {rv mv : List Byte} {i j h : Nat} (hi : i < P.k) (hj : j < P.k) (hh : h = TP P ∨ h = PP P)
-    {s : State} (e : EInv P L s₀ kC co mE mB v rv mv P.k i s) :
-    WP isa (mulAt h (aOff P j i) (yOff P j)) s fun s' => EInv P L s₀ kC co mE mB v rv mv P.k i s' ∧
-      (∀ a, h = PP P → PolyIs s.mem (sA L s₀ (TP P)) a → PolyIs s'.mem (sA L s₀ (TP P)) a) ∧
-      PolyIs s'.mem (sA L s₀ h) (multiplyNTTs (aM P L s₀ mB j i) (encY rv j)) := by
-  have hw := hp.wf
-  have hji := ij_lt hj hi
-  have a₁ := e.a j hj i hi
-  have y₁ := e.y j hj
-  have ph : PO P h := by rcases hh with rfl | rfl; exacts [po_TP hw, po_PP hw]
-  refine WP.mono (mul_ok hp ph (po_a hw hj hi) (po_y hw hj) (.inr (by rcases hh with rfl | rfl <;> lom))
-    (.inr (by rcases hh with rfl | rfl <;> lom)) e.kb a₁.1 y₁.1) fun s₂ ⟨kb₂, f₂, t₂, x₂⟩ => ?_
-  have a₂ : polyAt s.mem (sA L s₀ (aOff P j i)) = aM P L s₀ mB j i := a₁.2
-  have y₂ : polyAt s.mem (sA L s₀ (yOff P j)) = encY rv j := y₁.2
-  rw [a₂, y₂] at t₂
-  refine ⟨e.frame hp kb₂ x₂ f₂ (far_mul hp A (Nat.le_refl _) (Nat.le_of_lt hi) (by rcases hh with rfl | rfl <;> lom)
-    (by rcases hh with rfl | rfl <;> lom)), fun a ep ta => ?_, t₂⟩
-  subst ep
-  exact polyIs_frame f₂ (fun r hr => by
-    rcases mem2' hr with rfl | rfl
-    · exact papart hp (po_TP hw) (po_PP hw) (.inl (by lom))
-    · exact pns hp (po_TP hw)) ta
-
-/-- `TP ← TP + PP`. -/
-theorem acc_TP {s₀ : State} (hp : Pre P L s₀) {kE eo kC co : Nat} (A : EncArgs P L kE eo kC co) {mE mB : Mem}
-    {v : BitVec 64} {rv mv : List Byte} {nU : Nat} (hnU : nU ≤ P.k) {s : State} {a b : Poly}
-    (e : EInv P L s₀ kC co mE mB v rv mv P.k nU s) (ht : PolyIs s.mem (sA L s₀ (TP P)) a)
-    (hq : PolyIs s.mem (sA L s₀ (PP P)) b) :
-    WP isa (addAt (TP P) (PP P)) s fun s' => EInv P L s₀ kC co mE mB v rv mv P.k nU s' ∧
-      PolyIs s'.mem (sA L s₀ (TP P)) (add a b) := by
-  have hw := hp.wf
-  refine WP.mono (add_ok hp (po_TP hw) (po_PP hw) (.inl (by lom)) e.kb ht.1 hq.1) fun s₃ ⟨kb₃, f₃, t₃, x₃⟩ => ?_
-  rw [ht.2, hq.2] at t₃
-  exact ⟨e.frame hp kb₃ x₃ f₃ (far_one hp A (Nat.le_refl _) hnU (by lom) (by lom)), t₃⟩
-
-theorem u_step {s₀ : State} (hp : Pre P L s₀) (hc : Calls P) {kE eo kC co : Nat} (A : EncArgs P L kE eo kC co)
-    {mE mB : Mem} {v : BitVec 64} {rv mv : List Byte} {i : Nat} (hi : i < P.k) {s : State}
-    (h : EInv P L s₀ kC co mE mB v rv mv P.k i s) :
-    WP isa (P.encUAtWith keccak.callee (slotReg kC) co i) s (EInv P L s₀ kC co mE mB v rv mv P.k (i + 1)) := by
-  have hw := hp.wf
-  have k1 := hw.facts.1
-  have hn : i ≤ P.k := Nat.le_of_lt hi
-  refine WPs.seqs (by simp) (WPs.append (WPs.mono (WPs.dot (tp := TP P) (pp := PP P)
-      (term := fun j h => [mulAt h (aOff P j i) (yOff P j)])
-      (E := EInv P L s₀ kC co mE mB v rv mv P.k i)
-      (T := fun s a => PolyIs s.mem (sA L s₀ (TP P)) a) (Q := fun s a => PolyIs s.mem (sA L s₀ (PP P)) a)
-      (v := fun j => multiplyNTTs (aM P L s₀ mB j i) (encY rv j)) (N := P.k)
-      (fun s e => WPs.single (WP.mono (uprod_ok hp A hi k1 (.inl rfl) e) fun _ ⟨e', _, t'⟩ => ⟨e', t'⟩))
-      (fun j _ hj s a e t => WPs.single (WP.mono (uprod_ok hp A hi hj (.inr rfl) e)
-        fun _ ⟨e', ft, q'⟩ => ⟨e', ft a rfl t, q'⟩))
-      (fun s a b e t q => acc_TP hp A hn e t q) k1 (Nat.le_refl _) h) ?_))
-  intro s₁ ⟨e₁, t₁⟩
-  refine WPs.cons (WP.mono (nttInv_ok hp (po_TP hw) e₁.kb t₁.1) fun s₂ ⟨kb₂, f₂, t₂, x₂⟩ => ?_)
-  have e₂ := e₁.frame hp kb₂ x₂ f₂ (far_mul hp A (Nat.le_refl _) hn (by lom) (by lom))
-  rw [t₁.2] at t₂
-  refine WPs.cons (WP.mono (prfCbd_ok hp (N := P.k + i) (by lom) (po_EP hw) e₂.kb e₂.r)
-    fun s₃ ⟨kb₃, f₃, p₃, x₃⟩ => ?_)
-  have e₃ := e₂.frame hp kb₃ x₃ f₃ (far_pcW hp A (Nat.le_refl _) hn (by lom) (by lom))
-  have t₃ := polyIs_frame f₃ (fun r hr => by
-    rcases mem6 hr with rfl | rfl | rfl | rfl | rfl | rfl
-    · exact sdisj hp (po_TP hw).le (by lom) (by lom)
-    · exact sdisj hp (po_TP hw).le (by lom) (by lom)
-    · exact below_R hp hp.scb (hp.fs (po_TP hw).le)
-    · exact sdisj hp (po_TP hw).le (by lom) (by lom)
-    · exact sdisj hp (po_TP hw).le (by lom) (by lom)
-    · exact papart hp (po_TP hw) (po_EP hw) (by lom)) t₂
-  refine WPs.cons (WP.mono (add_ok hp (po_TP hw) (po_EP hw) (.inr (by lom)) e₃.kb t₃.1 p₃.1)
-    fun s₄ ⟨kb₄, f₄, t₄, x₄⟩ => ?_)
-  have e₄ := e₃.frame hp kb₄ x₄ f₄ (far_one hp A (Nat.le_refl _) hn (by lom) (by lom))
-  rw [t₃.2, p₃.2] at t₄
-  have fC := A.fC
-  have hu := du_le hi
-  refine WPs.single (WP.mono (ceL_ok hp hc (off := TP P) (d := P.du) (k := kC) (o := co + 32 * P.du * i)
-    (po_TP hw) (.inl rfl) A.hkC A.wC (by lom) (by
-      rcases A.sC with hC | hC
-      · exact .inl hC
-      · exact .inr ⟨by subst hC; lom, .inr (by subst hC; lom)⟩)
-    e₄.kb t₄.1) fun s₅ ⟨kb₅, f₅, b₅, x₅⟩ => ?_)
-  have e₅ := e₄.frame hp kb₅ x₅ f₅ fun r hr => by
-    rw [List.mem_singleton.mp hr]; exact far_ct hp A (Nat.le_refl _) (by lom)
-  refine ⟨e₅.kb, e₅.x24, e₅.r, e₅.m, e₅.a, e₅.y, fun i' hi' => ?_, e₅.fr⟩
-  rcases (by omega_using [hi'] : i' < i ∨ i' = i) with hi' | rfl
-  · exact e₅.u i' hi'
-  · rw [b₅, t₄.2]; rfl
-
-/-- `t̂[j] ŷ[j]` into `h` (`TP` or `PP`), with `t̂[j]` decoded into `TH`. -/
-theorem vprod_ok {s₀ : State} (hp : Pre P L s₀) {kE eo kC co : Nat} (A : EncArgs P L kE eo kC co)
-    {mE mB : Mem} {v : BitVec 64} {rv mv : List Byte} {T : Nat → Poly}
-    (hT : ∀ j < P.k, decode12 (bytesAt s₀.mem (kA s₀ (L.slot kE) + BitVec.ofNat 64 (eo + 384 * j)) 384) = T j)
-    {j h : Nat} (hj : j < P.k) (hh : h = TP P ∨ h = PP P) {s : State}
-    (e : EInv P L s₀ kC co mE mB v rv mv P.k P.k s) :
-    WPs [dec12At (slotReg kE) (eo + 384 * j) (TH P), mulAt h (TH P) (yOff P j)] s fun s' =>
-      EInv P L s₀ kC co mE mB v rv mv P.k P.k s' ∧
-      (∀ a, h = PP P → PolyIs s.mem (sA L s₀ (TP P)) a → PolyIs s'.mem (sA L s₀ (TP P)) a) ∧
-      PolyIs s'.mem (sA L s₀ h) (multiplyNTTs (T j) (encY rv j)) := by
-  have hw := hp.wf
-  have fE := A.fE
-  have hs : L.slot kE ≠ L.sc := by have := A.rE; have := hp.scw; omega_arith
-  have hjE := mul_succ_le (a := 384) hj
-  refine WPs.cons (WP.mono (dec12_ok hp (k := kE) (o := eo + 384 * j) A.hkE (by omega_using [hj, fE]) (po_TH hw) (.inl hs) e.kb)
-    fun s₁ ⟨kb₁, f₁, d₁, x₁⟩ => ?_)
-  have e₁ := e.frame hp kb₁ x₁ f₁ (far_one hp A (Nat.le_refl _) (Nat.le_refl _) (by lom) (by lom))
-  rw [e.kb.ro_bytes A.rE (by omega_using [hj, fE]), hT j hj] at d₁
-  have y₁ := e₁.y j hj
-  have ph : PO P h := by rcases hh with rfl | rfl; exacts [po_TP hw, po_PP hw]
-  refine WPs.single (WP.mono (mul_ok hp ph (po_TH hw) (po_y hw hj) (.inl (by rcases hh with rfl | rfl <;> lom))
-    (.inr (by rcases hh with rfl | rfl <;> lom)) e₁.kb d₁.1 y₁.1) fun s₂ ⟨kb₂, f₂, t₂, x₂⟩ => ?_)
-  have y₂ : polyAt s₁.mem (sA L s₀ (yOff P j)) = encY rv j := y₁.2
-  rw [d₁.2, y₂] at t₂
-  refine ⟨e₁.frame hp kb₂ x₂ f₂ (far_mul hp A (Nat.le_refl _) (Nat.le_refl _)
-    (by rcases hh with rfl | rfl <;> lom) (by rcases hh with rfl | rfl <;> lom)), fun a ep ta => ?_, t₂⟩
-  subst ep
-  refine polyIs_frame f₂ (fun r hr => by
-    rcases mem2' hr with rfl | rfl
-    · exact papart hp (po_TP hw) (po_PP hw) (.inl (by lom))
-    · exact pns hp (po_TP hw)) (polyIs_frame f₁ (fun r hr => ?_) ta)
-  rw [List.mem_singleton.mp hr]; exact papart hp (po_TP hw) (po_TH hw) (.inl (by lom))
-
 /-- `v`. -/
 abbrev vPoly (P : KemLay) (T : Nat → Poly) (rv mv : List Byte) : Poly :=
   add (add (nttInv (KPke.dotK T (encY rv) P.k)) (cbd rv (2 * P.k))) (decodeDecompress 1 mv)
-
-theorem v_ok {s₀ : State} (hp : Pre P L s₀) (hc : Calls P) {kE eo kC co : Nat} (A : EncArgs P L kE eo kC co)
-    {mE mB : Mem} {v : BitVec 64} {rv mv : List Byte} {T : Nat → Poly}
-    (hT : ∀ j < P.k, decode12 (bytesAt s₀.mem (kA s₀ (L.slot kE) + BitVec.ofNat 64 (eo + 384 * j)) 384) = T j)
-    {s : State} (h : EInv P L s₀ kC co mE mB v rv mv P.k P.k s) :
-    WP isa (P.encVAtWith keccak.callee (slotReg kE) eo .x28 MB (slotReg kC) co) s fun s' =>
-      EInv P L s₀ kC co mE mB v rv mv P.k P.k s' ∧
-      bytesAt s'.mem (kA s₀ (L.slot kC) + BitVec.ofNat 64 (co + 32 * P.du * P.k)) (32 * P.dv) =
-        compressEncode P.dv (vPoly P T rv mv) := by
-  have hw := hp.wf
-  have k1 := hw.facts.1
-  refine WPs.seqs (by simp) (WPs.append (WPs.mono (WPs.dot (tp := TP P) (pp := PP P)
-      (term := fun j h => [dec12At (slotReg kE) (eo + 384 * j) (TH P), mulAt h (TH P) (yOff P j)])
-      (E := EInv P L s₀ kC co mE mB v rv mv P.k P.k)
-      (T := fun s a => PolyIs s.mem (sA L s₀ (TP P)) a) (Q := fun s a => PolyIs s.mem (sA L s₀ (PP P)) a)
-      (v := fun j => multiplyNTTs (T j) (encY rv j)) (N := P.k)
-      (fun s e => WPs.mono (vprod_ok hp A hT k1 (.inl rfl) e) fun _ ⟨e', _, t'⟩ => ⟨e', t'⟩)
-      (fun j _ hj s a e t => WPs.mono (vprod_ok hp A hT hj (.inr rfl) e)
-        fun _ ⟨e', ft, q'⟩ => ⟨e', ft a rfl t, q'⟩)
-      (fun s a b e t q => acc_TP hp A (Nat.le_refl _) e t q) k1 (Nat.le_refl _) h) ?_))
-  intro s₀' ⟨e₀, t₀⟩
-  refine WPs.cons (WP.mono (nttInv_ok hp (po_TP hw) e₀.kb t₀.1) fun s₁ ⟨kb₁, f₁, t₁, x₁⟩ => ?_)
-  have e₁ := e₀.frame hp kb₁ x₁ f₁ (far_mul hp A (Nat.le_refl _) (Nat.le_refl _) (by lom) (by lom))
-  rw [t₀.2] at t₁
-  refine WPs.cons (WP.mono (prfCbd_ok hp (N := 2 * P.k) (by lom) (po_EP hw) e₁.kb e₁.r)
-    fun s₂ ⟨kb₂, f₂, p₂, x₂⟩ => ?_)
-  have e₂ := e₁.frame hp kb₂ x₂ f₂ (far_pcW hp A (Nat.le_refl _) (Nat.le_refl _) (by lom) (by lom))
-  have fTP : ∀ r ∈ pcW L s₀ (EP P), (polyRegion (sA L s₀ (TP P))).Disjoint r := fun r hr => by
-    rcases mem6 hr with rfl | rfl | rfl | rfl | rfl | rfl
-    · exact sdisj hp (po_TP hw).le (by lom) (by lom)
-    · exact sdisj hp (po_TP hw).le (by lom) (by lom)
-    · exact below_R hp hp.scb (hp.fs (po_TP hw).le)
-    · exact sdisj hp (po_TP hw).le (by lom) (by lom)
-    · exact sdisj hp (po_TP hw).le (by lom) (by lom)
-    · exact papart hp (po_TP hw) (po_EP hw) (by lom)
-  have t₂ := polyIs_frame f₂ fTP t₁
-  refine WPs.cons (WP.mono (add_ok hp (po_TP hw) (po_EP hw) (.inr (by lom)) e₂.kb t₂.1 p₂.1)
-    fun s₃ ⟨kb₃, f₃, t₃, x₃⟩ => ?_)
-  have e₃ := e₂.frame hp kb₃ x₃ f₃ (far_one hp A (Nat.le_refl _) (Nat.le_refl _) (by lom) (by lom))
-  rw [t₂.2, p₂.2] at t₃
-  refine WPs.cons (WP.mono (dd_ok hp (k := 3) (o := MB) (d := 1) (off := EP P) (by decide)
-    (hp.fs (by lom)) (by decide) (po_EP hw) (.inr (.inl (by lom))) e₃.kb)
-    fun s₄ ⟨kb₄, f₄, p₄, x₄⟩ => ?_)
-  have e₄ := e₃.frame hp kb₄ x₄ f₄ (far_one hp A (Nat.le_refl _) (Nat.le_refl _) (by lom) (by lom))
-  have t₄ := polyIs_frame f₄ (fun r hr => by
-    rw [List.mem_singleton.mp hr]; exact papart hp (po_TP hw) (po_EP hw) (by lom)) t₃
-  have hm : bytesAt s₃.mem (kA s₀ (L.slot 3) + BitVec.ofNat 64 MB) (32 * 1) = mv := e₃.m
-  rw [hm] at p₄
-  refine WPs.cons (WP.mono (add_ok hp (po_TP hw) (po_EP hw) (.inr (by lom)) e₄.kb t₄.1 p₄.1)
-    fun s₅ ⟨kb₅, f₅, t₅, x₅⟩ => ?_)
-  have e₅ := e₄.frame hp kb₅ x₅ f₅ (far_one hp A (Nat.le_refl _) (Nat.le_refl _) (by lom) (by lom))
-  rw [t₄.2, p₄.2] at t₅
-  have fC := A.fC
-  have hmk := Nat.mul_assoc 32 P.du P.k
-  refine WPs.single (WP.mono (ceL_ok hp hc (off := TP P) (d := P.dv) (k := kC) (o := co + 32 * P.du * P.k)
-    (po_TP hw) (.inr rfl) A.hkC A.wC (by lom) (by
-      rcases A.sC with hC | hC
-      · exact .inl hC
-      · exact .inr ⟨by subst hC; lom, .inr (by subst hC; lom)⟩)
-    e₅.kb t₅.1) fun s₆ ⟨kb₆, f₆, b₆, x₆⟩ => ?_)
-  refine ⟨e₅.frame hp kb₆ x₆ f₆ fun r hr => by
-    rw [List.mem_singleton.mp hr]; exact far_ct hp A (Nat.le_refl _) (by lom), ?_⟩
-  rw [b₆, t₅.2]
-
-/-- `ŷ`, `u` and `v`. -/
-theorem encrypt_ok {s₀ : State} (hp : Pre P L s₀) (hc : Calls P) {kE eo kC co : Nat}
-    (A : EncArgs P L kE eo kC co) {mE mB : Mem} {v : BitVec 64} {rv mv : List Byte} {T : Nat → Poly}
-    (hT : ∀ j < P.k, decode12 (bytesAt s₀.mem (kA s₀ (L.slot kE) + BitVec.ofNat 64 (eo + 384 * j)) 384) = T j)
-    {s : State} (h : EInv P L s₀ kC co mE mB v rv mv 0 0 s) :
-    WP isa (P.encryptCWith keccak.callee (slotReg kE) eo .x28 MB (slotReg kC) co) s fun s' =>
-      EInv P L s₀ kC co mE mB v rv mv P.k P.k s' ∧
-      bytesAt s'.mem (kA s₀ (L.slot kC) + BitVec.ofNat 64 (co + 32 * P.du * P.k)) (32 * P.dv) =
-        compressEncode P.dv (vPoly P T rv mv) := by
-  refine WPs.seqs (by simp) (WPs.append (WPs.append (WPs.mono (WPs.range
-    (I := fun j => EInv P L s₀ kC co mE mB v rv mv j 0) (fun j hj _ h => y_step hp A hj h) h) fun s₁ h₁ =>
-    WPs.mono (WPs.range (I := EInv P L s₀ kC co mE mB v rv mv P.k) (fun i hi _ h => u_step hp hc A hi h) h₁)
-      fun s₂ h₂ => WPs.single (v_ok hp hc A hT h₂))))
 
 /-- The ciphertext's bytes. -/
 theorem ct_at {m : Mem} {p : Addr} {U : Nat → List Byte} {V : List Byte}

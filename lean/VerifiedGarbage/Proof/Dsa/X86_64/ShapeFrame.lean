@@ -9,11 +9,6 @@ public import Aesop.BuiltinRules
 import VerifiedGarbage.Proof.Dsa.Layout
 import VerifiedGarbage.Proof.Bignum.Words
 import VerifiedGarbage.Proof.Dsa.X86_64.Masks
-import Mathlib.Order.RelClasses
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Push
-import Mathlib.Tactic.Attr.Core
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Dsa.X86_64.Operands
 import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
 /-! # Memory changed by the public DSA domain-shape check -/

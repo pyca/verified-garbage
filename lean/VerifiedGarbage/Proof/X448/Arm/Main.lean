@@ -3,8 +3,6 @@ module
 public import VerifiedGarbage.Proof.X448.Contract
 import VerifiedGarbage.Proof.X448.Arm.Bits
 import VerifiedGarbage.Proof.X448.Arm.Finish
-import VerifiedGarbage.Proof.X448.Arm.Ladder
-import VerifiedGarbage.Proof.X448.Arm.FinalSwap
 import VerifiedGarbage.Proof.X448.Arm.Inv
 public import VerifiedGarbage.Spec.X448.Contract
 public import VerifiedGarbage.TCB.Arm.Target
@@ -67,6 +65,8 @@ namespace VG.Proof.X448.Arm
 
 open VG VG.Arm VG.Impl.X448.Arm VG.Proof.X448
 
+variable {fv : Bool}
+
 section
 variable (s₀ : State)
 abbrev outR : Region := ⟨State.addr (s₀.gpr .r0), 56⟩
@@ -117,10 +117,10 @@ theorem E_outside {base : Addr} {o n : Nat} {m m' : Mem} (h : Outside base o n m
   simp only [E, F]
   rw [h.fe hi (by have := i.isLt; simp only [slot]; omega_using [])]
 
-/-- What `setup` and `setupBase` leave, for the u-coordinate `u`. -/
+/-- What `setup` leaves, for the u-coordinate `u`. -/
 def SetupPost (s₀ : State) (base : Addr) (u : Spec.X448.Fe) (t : State) : Prop :=
-  Scr t base ∧ BoundedEnv t.mem base ∧ t.gpr .r8 = s₀.gpr .r0 ∧ t.gpr .r10 = s₀.gpr .lr ∧
-    Keeps setupRegs s₀ t ∧ Outside base 0 8192 s₀.mem t.mem ∧ Saved base s₀.gpr t.mem ∧
+  Scr t base ∧ BoundedEnv t.mem base ∧ t.gpr .r8 = s₀.gpr .r0 ∧
+    Keeps setupRegs s₀ t ∧ Outside base 0 8192 s₀.mem t.mem ∧ SavedL savedL base s₀.gpr t.mem ∧
     E t.mem base 0 = u ∧ E t.mem base 1 = 1 ∧ E t.mem base 2 = 0 ∧
     E t.mem base 3 = E t.mem base 0 ∧ E t.mem base 4 = 1 ∧ word t.mem base SWAP = 0
 
@@ -131,10 +131,10 @@ theorem afterSetup_ok {s₀ s₁ : State} {base : Addr} {pb : List Byte}
     (out_sc : (outR s₀).Disjoint ⟨base, 8192⟩) (scalar_sc : (scalarR s₀).Disjoint ⟨base, 8192⟩)
     (out_fit : (s₀.gpr .r0).toNat + 56 ≤ 2 ^ 32) (scalar_fit : (s₀.gpr .r1).toNat + 56 ≤ 2 ^ 32)
     (h₁ : SetupPost s₀ base (toFe (Spec.X448.decodeUCoordinate pb)) s₁) :
-    WP isa afterSetup s₁ fun s' => (∀ r ∈ preserved, s'.gpr r = s₀.gpr r) ∧
+    WP isa (afterSetup fv) s₁ fun s' => (∀ r ∈ preserved, s'.gpr r = s₀.gpr r) ∧
       Spec.X448.bytesAt s'.mem (State.addr (s₀.gpr .r0)) 56 =
         Spec.X448.x448 (Spec.X448.bytesAt s₀.mem (State.addr (s₀.gpr .r1)) 56) pb := by
-  obtain ⟨hs₁, b₁, savedOut₁, savedLr₁, k₁, o₁, sv₁, x1₁, x2₁, z2₁, x3₁, z3₁, sw₁⟩ := h₁
+  obtain ⟨hs₁, b₁, savedOut₁, k₁, o₁, sv₁, x1₁, x2₁, z2₁, x3₁, z3₁, sw₁⟩ := h₁
   have kd : ∀ j < 56, 8192 ≤ ofs base (off (State.addr (s₀.gpr .r1)) j) :=
     fun j hj => far scalar_sc hj (by decide)
   unfold afterSetup
@@ -146,7 +146,7 @@ theorem afterSetup_ok {s₀ s₁ : State} {base : Addr} {pb : List Byte}
   have k₂ : Keeps bitRegs s₁ s₂ := ⟨g₂, rd₂, wr₂⟩
   have k02 := k₁.then k₂
   have hs₂ := hs₁.of_keeps k₂ (by decide)
-  have sv₂ : Saved base s₀.gpr s₂.mem := by exact sv₁.outside o₂ (by decide)
+  have sv₂ : SavedL savedL base s₀.gpr s₂.mem := by exact SavedL.outside sv₁ o₂ (by decide)
   have e₂ : ∀ i : Index, E s₂.mem base i = E s₁.mem base i := by
     intro i; exact E_outside o₂ i (Or.inl (by have := i.isLt; simp only [slot, BITS]; omega_using []))
   have b₂ : BoundedEnv s₂.mem base := by
@@ -176,18 +176,16 @@ theorem afterSetup_ok {s₀ s₁ : State} {base : Addr} {pb : List Byte}
   have hs₅ := k₅.scr L.scr
   refine WP.seq (WP.mono (invert_ok hs₅ b₅) fun s₆ ⟨k₆, b₆, e₆⟩ => ?_)
   have k26 := L.regs.then (k₅.regs.then k₆.regs)
-  have sv₆ := ((sv₂.outside2 L.mem (by decide) (by decide)).outside2 k₅.mem (by decide)
+  have sv₆ := ((SavedL.outside2 sv₂ L.mem (by decide) (by decide)).outside2 k₅.mem (by decide)
     (by decide)).outside2 k₆.mem (by decide) (by decide)
   have out₆ : s₆.gpr .r8 = s₀.gpr .r0 :=
     (k26.1 _ (by decide)).trans ((g₂ _ (by decide)).trans savedOut₁)
-  have lr₆ : s₆.gpr .r10 = s₀.gpr .lr :=
-    (k26.1 _ (by decide)).trans ((g₂ _ (by decide)).trans savedLr₁)
   have k06 := k02.then k26
   have hw₆ : ∀ j < 56, InRegions s₆.wr (off (State.addr (s₀.gpr .r0)) j) 1 := fun j hj =>
     ⟨outR s₀, by rw [k06.2.2]; exact hwo, Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj])⟩
-  refine WP.mono (finish_ok (k₆.scr hs₅) b₆ (congrArg State.addr out₆)
+  refine WP.mono (finishL_ok (k₆.scr hs₅) b₆ (congrArg State.addr out₆)
     (by rw [out₆]; exact out_fit) hw₆
-    (fun j hj => far_output out_sc hj) sv₆) fun s' ⟨restored, lr', kf, fm, result⟩ => ?_
+    (fun j hj => far_output out_sc hj) sv₆) fun s' ⟨restored, kf, fm, result⟩ => ?_
   have kall := k06.then kf
   refine ⟨?_, ?_⟩
   · intro r hr
@@ -199,18 +197,19 @@ theorem afterSetup_ok {s₀ s₁ : State} {base : Addr} {pb : List Byte}
     · exact restored 3 (by decide)
     · exact restored 4 (by decide)
     · exact restored 5 (by decide)
-    · exact restored 6 (by decide)
+    · exact kall.1 _ (by decide)
     · exact restored 7 (by decide)
-    · exact lr'.trans lr₆
+    · exact restored 6 (by decide)
   · rw [result, x448_eq]
     apply congrArg Spec.X448.encodeUCoordinate
     rw [e₆, invEnv_x2, invEnv_eval, e₅]
-    simp (config := {decide := true}) only [opSwap, Function.update_apply, ite_true, ite_false]
+    simp (config := {decide := true}) only [opSwap, Fun.update_apply, ite_true, ite_false]
     rw [L.x2, L.x3, L.z2, L.z3, cswap_fst, cswap_fst]
 
 
 theorem correct {s₀ : State} (hp : Pre s₀) :
-    WP isa x448 s₀ fun s' => (∀ r ∈ preserved, s'.gpr r = s₀.gpr r) ∧ Proof.X448.x448Arm.post s₀ s' := by
+    WP isa (x448 fv) s₀ fun s' =>
+      (∀ r ∈ preserved, s'.gpr r = s₀.gpr r) ∧ Proof.X448.x448Arm.post s₀ s' := by
   obtain ⟨base, hbase⟩ : ∃ b, State.addr (s₀.gpr .r3) = b := ⟨_, rfl⟩
   have hn := hp.sc_fit
   have hw₀ : (⟨base, 8192⟩ : Region) ∈ s₀.wr := by rw [hp.wr, ← hbase]; simp
@@ -236,26 +235,5 @@ structure BasePre (s₀ : State) : Prop where
 theorem BasePre.of (s₀ : State) (h : Proof.X448.x448BaseArm.pre s₀) : BasePre s₀ := by
   obtain ⟨h1, h2, h3, h4, h5, h6, h7⟩ := h
   exact ⟨h1, h2, h3, h4, h5, h6, h7⟩
-
-theorem correctBase {s₀ : State} (hp : BasePre s₀) :
-    WP isa x448Base s₀ fun s' => (∀ r ∈ preserved, s'.gpr r = s₀.gpr r) ∧
-      Proof.X448.x448BaseArm.post s₀ s' := by
-  rw [x448Base]
-  refine WP.seq ?_
-  rw [List.singleton_append]
-  refine VG.Proof.X25519.Arm.wp_mov (VG.Proof.X25519.Arm.op2_reg _ _) fun s₁ h₁ => ?_
-  have r0 : s₁.gpr .r0 = s₀.gpr .r0 := h₁.other _ (by decide)
-  have r1 : s₁.gpr .r1 = s₀.gpr .r1 := h₁.other _ (by decide)
-  refine WP.mono (setupBase_ok (s := s₁) rfl (by rw [h₁.wr, hp.wr, h₁.gpr]; simp)
-    (by rw [h₁.gpr]; exact hp.sc_fit)) fun s₂ h₂ => ?_
-  refine WP.mono (afterSetup_ok (s₀ := s₁) (by simp only [scalarR]; rw [h₁.rd, hp.rd, r1]; simp)
-    (by simp only [outR]; rw [h₁.wr, hp.wr, r0]; simp)
-    (by simp only [outR]; rw [r0, h₁.gpr]; exact hp.out_sc)
-    (by simp only [scalarR]; rw [r1, h₁.gpr]; exact hp.scalar_sc)
-    (by rw [r0]; exact hp.out_fit) (by rw [r1]; exact hp.scalar_fit) h₂) fun s' ⟨hpres, hpost⟩ => ?_
-  have hpr : ∀ r ∈ preserved, r ≠ Reg.r3 := by decide
-  refine ⟨fun r hr => (hpres r hr).trans (h₁.other r (hpr r hr)), ?_⟩
-  change Spec.X448.bytesAt s'.mem (State.addr (s₀.gpr .r0)) 56 = _
-  rw [← r0, hpost, r1, h₁.mem]
 
 end VG.Proof.X448.Arm

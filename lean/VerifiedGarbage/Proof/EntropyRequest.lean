@@ -2,13 +2,14 @@ module
 
 public import VerifiedGarbage.Spec.RsaKeyGen.Generation
 public import VerifiedGarbage.Spec.Ffdh.Generation
+public import VerifiedGarbage.Spec.Dsa.ParameterSearch
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # The entropy requests the searches' code makes
 
 `Spec/Entropy.lean` lets a search ask for any next tape longer than the octets
 it had left and at most its budget (`Spec.Entropy.RequestValid`). The code of
-the RSA prime search and of the FFDH parameter search asks for twice the
+the RSA prime search and of the FFDH and DSA parameter searches asks for twice the
 larger of the octets left and a floor, capped at the budget (`request`), so
 that the octets replayed by unfinished steps are at most about as many as
 those consumed. This is that choice, what each target's proof shows its code
@@ -70,6 +71,22 @@ def primeRequest (pLen available : Nat) : Nat :=
 def requested (pLen : Nat) (r : Spec.RsaKeyGen.PrimeSearchResult) : Nat :=
   Entropy.requested (primeRequest pLen) r
 
+/-- The length `q` the code asks for after the result `r`, of the search for a prime
+or of the search for a key: one the contracts allow, and a function of the result's
+status and of the octets left. -/
+def Asked {σ α : Type} (pLen : Nat) (r : Spec.Entropy.Result σ α) (q : Nat) : Prop :=
+  r.Requests (Spec.RsaKeyGen.primeEntropy pLen) q ∧ q = Entropy.requested (primeRequest pLen) r
+
+/-- The length `q` of the first tape the code asks for, for primes of `pLen` octets: one the
+contract allows, and `32 * pLen`. -/
+def FirstAsked (pLen q : Nat) : Prop :=
+  Spec.Entropy.RequestValid (Spec.RsaKeyGen.primeEntropy pLen) 0 q ∧ q = 32 * pLen
+
+theorem firstAsked {pLen : Nat} (h : 0 < pLen) : FirstAsked pLen (32 * pLen) := by
+  refine ⟨?_, rfl⟩
+  unfold Spec.Entropy.RequestValid Spec.RsaKeyGen.primeEntropy
+  omega_using [h]
+
 end VG.Proof.RsaKeyGen
 
 namespace VG.Proof.Ffdh
@@ -86,10 +103,18 @@ def requested (bits : Nat) : Spec.Ffdh.ParameterSearchResult → Nat
   | .entropy _ available _ => parameterRequest bits available
   | _ => 0
 
-/-- The first tape's length the code asks for, 512 octets per octet of p, is
-one the contract allows. -/
-theorem first_valid {bits : Nat} (h : 512 ≤ bits) :
-    Spec.Entropy.RequestValid (Spec.Ffdh.parameterEntropy bits) 0 (512 * ((bits + 7) / 8)) := by
+/-- The length `q` the code asks for after the result `r`: one the contract allows, and a
+function of the result. -/
+def Asked (bits : Nat) (r : Spec.Ffdh.ParameterSearchResult) (q : Nat) : Prop :=
+  r.Requests (Spec.Ffdh.parameterEntropy bits) q ∧ q = requested bits r
+
+/-- The length `q` of the first tape the code asks for: one the contract allows, and 512
+octets per octet of p. -/
+def FirstAsked (bits q : Nat) : Prop :=
+  Spec.Entropy.RequestValid (Spec.Ffdh.parameterEntropy bits) 0 q ∧ q = 512 * ((bits + 7) / 8)
+
+theorem firstAsked {bits : Nat} (h : 512 ≤ bits) : FirstAsked bits (512 * ((bits + 7) / 8)) := by
+  refine ⟨?_, rfl⟩
   unfold Spec.Entropy.RequestValid Spec.Ffdh.parameterEntropy
   omega_using [h]
 
@@ -103,3 +128,34 @@ theorem requested_requests {bits : Nat} {r : Spec.Ffdh.ParameterSearchResult}
   | exhausted => rfl
 
 end VG.Proof.Ffdh
+
+namespace VG.Proof.Dsa.Generation
+
+open VG.Spec.Dsa (parameterEntropy ParameterSearchResult)
+
+/-- The DSA parameter search's next tape (`Entropy.request`): at first `512 * pLen`, enough
+for a seed, the tests of its `p` candidates and the 128 witnesses of `p`'s, most of the
+time. -/
+def parameterRequest (pLen available : Nat) : Nat :=
+  Entropy.request (256 * pLen) (parameterEntropy pLen) available
+
+/-- The length the DSA parameter search's code writes after the result `r`. -/
+def requested (pLen : Nat) (r : ParameterSearchResult) : Nat :=
+  Entropy.requested (parameterRequest pLen) r
+
+/-- The length `q` the code asks for after the result `r`: one the contract allows, and a
+function of the result. -/
+def Asked (pLen : Nat) (r : ParameterSearchResult) (q : Nat) : Prop :=
+  r.Requests (parameterEntropy pLen) q ∧ q = requested pLen r
+
+/-- The length `q` of the first tape the code asks for: one the contract allows, and
+`512 * pLen`. -/
+def FirstAsked (pLen q : Nat) : Prop :=
+  Spec.Entropy.RequestValid (parameterEntropy pLen) 0 q ∧ q = 512 * pLen
+
+theorem firstAsked {pLen : Nat} (h : 0 < pLen) : FirstAsked pLen (512 * pLen) := by
+  refine ⟨?_, rfl⟩
+  unfold Spec.Entropy.RequestValid parameterEntropy
+  omega_using [h]
+
+end VG.Proof.Dsa.Generation

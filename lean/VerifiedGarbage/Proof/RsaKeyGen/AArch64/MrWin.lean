@@ -170,13 +170,31 @@ def winTail : List Instr :=
     .logic .eor .x .x6 .x6 .x8, ldh .x4 kFlag, .logic .and .x .x4 .x4 .x6, .logic .orr .x .x4 .x4 .x15,
     sth .x4 kFlag, ldh .x3 kV, .lsl .x .x3 .x3 4, sth .x3 kV, ldh .x3 kBits, .subImm .x .x3 .x3 1, sth .x3 kBits]
 
+theorem mrWinS_eq (sel : List (Prog isa)) (mul : Nat → Nat → Nat → Prog isa) : mrWinS sel mul =
+    mrSq mul ++ (mrSq mul ++ (mrSq mul ++ mrSq mul)) ++
+      (([.block [ldh .x3 kV, .lsr .x .x3 .x3 60, sth .x3 kG]] : List (Prog isa)) ++
+        (sel ++ (([mul aY aY aXm] : List (Prog isa)) ++ (eqMask aRm1 ++
+          (([.block [sth .x15 kG]] : List (Prog isa)) ++ (eqMask aR1 ++
+            ([.block winTail] : List (Prog isa)))))))) := by
+  simp only [mrWinS, winTail, List.append_assoc]
+
 theorem mrWin_eq (mul : Nat → Nat → Nat → Prog isa) : mrWin mul =
     mrSq mul ++ (mrSq mul ++ (mrSq mul ++ mrSq mul)) ++
       (([.block [ldh .x3 kV, .lsr .x .x3 .x3 60, sth .x3 kG]] : List (Prog isa)) ++
         (mrSel ++ (([mul aY aY aXm] : List (Prog isa)) ++ (eqMask aRm1 ++
           (([.block [sth .x15 kG]] : List (Prog isa)) ++ (eqMask aR1 ++
-            ([.block winTail] : List (Prog isa)))))))) := by
-  simp only [mrWin, winTail, List.append_assoc]
+            ([.block winTail] : List (Prog isa)))))))) := mrWinS_eq mrSel mul
+
+/-- What a window's selection does (`mrSel_ok`): `[aXm] := T_d` for the digit
+`d` in `kG`. -/
+def SelOK (sel : List (Prog isa)) : Prop :=
+  ∀ {s : State} {B : Addr} {Z w d : Nat}, Ws s B Z w → slot w aE + 8 * (w + 2) ≤ Z → d < 16 →
+    word s.mem B (8 * kG) = BitVec.ofNat 64 d →
+    WP isa (seqs sel) s fun t =>
+      wv t.mem B (slot w aXm) w = wv s.mem B (slot w (aT0 + d)) w ∧
+      Outside B (slot w aXm) (8 * w) s.mem t.mem ∧ Scr t B Z ∧ Keep mmRegs s t
+
+theorem mrSel_selOK : SelOK mrSel := fun h hEZ hd hG => mrSel_ok h hEZ hd hG
 
 /-- The flag, `kV` and `kBits`. -/
 theorem winTail_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w)
@@ -192,8 +210,8 @@ theorem winTail_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w)
   have hs := h.scr
   have hn := hs.nowrap
   have h256 := h.h256
-  have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off B (8 * i)) 8 := fun i hi => hs.ld (by omega_using [h256, hi])
-  have hst : ∀ i < 32, InRegions s.wr (off B (8 * i)) 8 := fun i hi => hs.st (by omega_using [h256, hi])
+  obtain hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off B (8 * i)) 8 := fun i hi => hs.ld (by omega_using [h256, hi])
+  obtain hst : ∀ i < 32, InRegions s.wr (off B (8 * i)) 8 := fun i hi => hs.st (by omega_using [h256, hi])
   refine WP.keep [.x3, .x4, .x5, .x6, .x7, .x8, .x15] ?_ (by decide) (by decide) (by decide +kernel)
   brun [winTail, h.x0, hdr_enc (show kV < 32 by decide), hdr_enc (show kG < 32 by decide),
     hdr_enc (show kFlag < 32 by decide), hdr_enc (show kBits < 32 by decide), hl kV (by decide), hl kG (by decide),
@@ -217,13 +235,13 @@ theorem winDigit_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {V : Bit
   brun [h.x0, hdr_enc (show kV < 32 by decide), hdr_enc (show kG < 32 by decide),
     hs.ld (d := 8 * kV) (by simp only [kV, kT0, sCnt, sFn]; omega_using [h256]), hs.st (d := 8 * kG) (by simp only [kG]; omega_using [h256]), hV]
 
-/-- One window. -/
-theorem mrWin_ok (M : Mont) {s : State} {B : Addr} {Z w c bm b y : Nat} {P : Bool} (hw128 : w ≤ 128)
+/-- One window, with the selection `sel`. -/
+theorem mrWinS_ok {sel : List (Prog isa)} (hne : sel ≠ []) (hsel : SelOK sel) (M : Mont) {s : State} {B : Addr} {Z w c bm b y : Nat} {P : Bool} (hw128 : w ≤ 128)
     (hEZ : slot w aE + 8 * (w + 2) ≤ Z) (hc : MrCtx s B Z w c bm) (hT : TabOK s.mem B w c b) (hodd : c % 2 = 1)
     (hc1 : 1 < c) (hY : wv s.mem B (slot w aY) w = y * 2 ^ (64 * w) % c) (hP : word s.mem B (8 * kFlag) = mask P)
     {V : BitVec 64} {n : Nat} (hV : word s.mem B (8 * kV) = V)
     (hnb : word s.mem B (8 * kBits) = BitVec.ofNat 64 n) (hn1 : 1 ≤ n) (hn' : n < 2 ^ 64) :
-    WP isa (seqs (mrWin M.mm)) s fun t =>
+    WP isa (seqs (mrWinS sel M.mm)) s fun t =>
       MrCtx t B Z w c bm ∧ TabOK t.mem B w c b ∧
       wv t.mem B (slot w aY) w = (wWin c b (V >>> 60).toNat (y, P)).1 * 2 ^ (64 * w) % c ∧
       word t.mem B (8 * kFlag) = mask (wWin c b (V >>> 60).toNat (y, P)).2 ∧
@@ -232,45 +250,45 @@ theorem mrWin_ok (M : Mont) {s : State} {B : Addr} {Z w c bm b y : Nat} {P : Boo
   have hn := hc.ws.scr.nowrap
   have hZ := hc.ws.hZ
   have hw2 := hc.ws.w1
-  have hw' : w < 2 ^ 31 := by omega_arith
-  have hR : Nat.Coprime (2 ^ (64 * w)) c := VG.Proof.Bignum.coprime_pow2 hodd _
-  have hc0 : 0 < c := by omega_arith
+  obtain hw' : w < 2 ^ 31 := by omega_arith
+  obtain hR : Nat.Coprime (2 ^ (64 * w)) c := VG.Proof.Bignum.coprime_pow2 hodd _
+  obtain hc0 : 0 < c := by omega_arith
   have hZ8 := hc.good.2
-  have hYl : slot w aY + 8 * (w + 2) ≤ slot w aT0 := slot_lt (show aY < aT0 by decide)
-  have hXl : slot w aXm + 8 * (w + 2) ≤ slot w aT0 := slot_lt (show aXm < aT0 by decide)
-  have hT0 : slot w aT0 ≤ Z := by have := VG.Proof.Bignum.slot_mono w (show aT0 ≤ aE by decide); omega_arith
+  obtain hYl : slot w aY + 8 * (w + 2) ≤ slot w aT0 := slot_lt (show aY < aT0 by decide)
+  obtain hXl : slot w aXm + 8 * (w + 2) ≤ slot w aT0 := slot_lt (show aXm < aT0 by decide)
+  obtain hT0 : slot w aT0 ≤ Z := by have := VG.Proof.Bignum.slot_mono w (show aT0 ≤ aE by decide); omega_arith
   generalize hd' : (V >>> 60).toNat = d
-  have hd16 : d < 16 := hd' ▸ top_nibble V
-  rw [mrWin_eq]
+  obtain hd16 : d < 16 := hd' ▸ top_nibble V
+  rw [mrWinS_eq]
   -- The four squarings.
   refine wp_seqs_append (by simp [mrSq]) (by simp) (WP.mono (sq4_ok M hw128 hc hodd hc1 (st := (y, P)) hY hP)
     fun s₁ ⟨hc₁, hY₁, hP₁, hf₁, k₁⟩ => ?_)
   generalize hs4 : wSq c true (wSq c true (wSq c true (wSq c true (y, P)))) = s4 at hY₁ hP₁
-  have hf₁w := hf₁.mono (sqRanges_win w)
-  have hlo₁ : ∀ i, i = kV ∨ i = kBits → word s₁.mem B (8 * i) = word s.mem B (8 * i) := fun i hi => by
+  obtain hf₁w := hf₁.mono (sqRanges_win w)
+  obtain hlo₁ : ∀ i, i = kV ∨ i = kBits → word s₁.mem B (8 * i) = word s.mem B (8 * i) := fun i hi => by
     rcases hi with rfl | rfl
     · exact hf₁.word_eq (by unfold sqRanges; w_disj) (by simp only [kV, kT0, sCnt, sFn]; omega_arith)
     · exact hf₁.word_eq (by unfold sqRanges; w_disj) (by simp only [kBits, kT2, sFn]; omega_arith)
-  have hT₁ : TabOK s₁.mem B w c b := hT.of_low hf₁w (winRanges_low w) hEZ hn
+  obtain hT₁ : TabOK s₁.mem B w c b := hT.of_low hf₁w (winRanges_low w) hEZ hn
   -- The digit into `kG`.
-  refine wp_seqs_append (by simp) (by simp [mrSel]) ?_
+  refine wp_seqs_append (by simp) (by simp [hne]) ?_
   simp only [seqs]
   refine WP.mono (winDigit_ok hc₁.ws (V := V) (by rw [hlo₁ kV (Or.inl rfl)]; exact hV)) fun s₂ ⟨hm₂, k₂⟩ => ?_
   rw [hd'] at hm₂
-  have hf₂ : Frm B [(8 * kG, 8)] s₁.mem s₂.mem := by
+  obtain hf₂ : Frm B [(8 * kG, 8)] s₁.mem s₂.mem := by
     rw [hm₂]; exact Frm.of_outside (writeW_outside _ B _ (d := 8 * kG) (by decide)) (by simp)
-  have hc₂ := hc₁.of_win hf₂ (by simp [winRanges]) k₂ (by decide)
+  obtain hc₂ := hc₁.of_win hf₂ (by simp [winRanges]) k₂ (by decide)
   -- `T_d` into `aXm`.
-  refine wp_seqs_append (by simp [mrSel]) (by simp) ?_
-  refine WP.mono (mrSel_ok hc₂.ws hEZ hd16 (by rw [hm₂, word_writeW_self])) fun s₃ ⟨hv₃, ho₃, hs₃, k₃⟩ => ?_
-  have hf₃ : Frm B [(slot w aXm, 8 * (w + 2))] s₂.mem s₃.mem :=
+  refine wp_seqs_append hne (by simp) ?_
+  refine WP.mono (hsel hc₂.ws hEZ hd16 (by rw [hm₂, word_writeW_self])) fun s₃ ⟨hv₃, ho₃, hs₃, k₃⟩ => ?_
+  obtain hf₃ : Frm B [(slot w aXm, 8 * (w + 2))] s₂.mem s₃.mem :=
     Frm.of_outside (ho₃.mono (o' := slot w aXm) (n' := 8 * (w + 2)) (Nat.le_refl _) (by omega_arith)) (by simp)
-  have hf13 : Frm B (midRanges w) s₁.mem s₃.mem :=
+  obtain hf13 : Frm B (midRanges w) s₁.mem s₃.mem :=
     (hf₂.mono (by simp [midRanges])).trans (hf₃.mono (by simp [midRanges]))
-  have hc₃ : MrCtx s₃ B Z w c bm := hc₁.of_win hf13 (midRanges_sub w) (k₂.trans k₃) (by decide)
-  have hT₂ : TabOK s₂.mem B w c b := hT₁.of_low (hf₂.mono (by simp [winRanges])) (winRanges_low w) hEZ hn
-  have hX₃ : wv s₃.mem B (slot w aXm) w = Spec.Rsa.powMod b d c * 2 ^ (64 * w) % c := by rw [hv₃]; exact hT₂ d hd16
-  have hY₃ : wv s₃.mem B (slot w aY) w = s4.1 * 2 ^ (64 * w) % c := by
+  obtain hc₃ : MrCtx s₃ B Z w c bm := hc₁.of_win hf13 (midRanges_sub w) (k₂.trans k₃) (by decide)
+  obtain hT₂ : TabOK s₂.mem B w c b := hT₁.of_low (hf₂.mono (by simp [winRanges])) (winRanges_low w) hEZ hn
+  obtain hX₃ : wv s₃.mem B (slot w aXm) w = Spec.Rsa.powMod b d c * 2 ^ (64 * w) % c := by rw [hv₃]; exact hT₂ d hd16
+  obtain hY₃ : wv s₃.mem B (slot w aY) w = s4.1 * 2 ^ (64 * w) % c := by
     rw [hf₃.wv_eq (d := slot w aY) (k := w) (by w_disj) (by omega_arith),
       hf₂.wv_eq (d := slot w aY) (k := w) (by w_disj) (by omega_arith)]; exact hY₁
   -- `y := y T_d`.
@@ -281,60 +299,60 @@ theorem mrWin_ok (M : Mont) {s : State} {B : Addr} {Z w c bm b y : Nat} {P : Boo
     (by rw [hX₃, hc₃.n]; exact Nat.mod_lt _ hc0)) fun s₄ ⟨_, hlt₄, hy₄, ha₄, k₄⟩ => ?_
   rw [hc₃.n] at hlt₄ hy₄
   rw [hY₃, hX₃] at hy₄
-  have hY₄ : wv s₄.mem B (slot w aY) w = s4.1 * Spec.Rsa.powMod b d c % c * 2 ^ (64 * w) % c :=
+  obtain hY₄ : wv s₄.mem B (slot w aY) w = s4.1 * Spec.Rsa.powMod b d c % c * 2 ^ (64 * w) % c :=
     mont_val hR hlt₄ hy₄ rfl rfl
-  have hf₄ : Frm B (midRanges w) s₃.mem s₄.mem := Frm.of_arrays ha₄ (by simp [midRanges])
-  have hc₄ : MrCtx s₄ B Z w c bm := hc₃.of_win hf₄ (midRanges_sub w) k₄ (by decide)
-  have hlt2 : s4.1 * Spec.Rsa.powMod b d c % c < c := Nat.mod_lt _ hc0
+  obtain hf₄ : Frm B (midRanges w) s₃.mem s₄.mem := Frm.of_arrays ha₄ (by simp [midRanges])
+  obtain hc₄ : MrCtx s₄ B Z w c bm := hc₃.of_win hf₄ (midRanges_sub w) k₄ (by decide)
+  obtain hlt2 : s4.1 * Spec.Rsa.powMod b d c % c < c := Nat.mod_lt _ hc0
   -- `y = c − 1` into `kG`, `y = 1` into `x15`.
   refine wp_seqs_append (by simp [eqMask, eqA]) (by simp) ?_
   refine WP.mono (eqMask_ok hc₄.ws (j := aRm1) (by decide)) fun s₅ ⟨h15₅, hm₅, k₅⟩ => ?_
   rw [hY₄, hc₄.rm1, decide_eq_decide.mpr (mont_eq_m1 hR hc1 hlt2)] at h15₅
   refine wp_seqs_append (by simp) (by simp [eqMask, eqA]) ?_
-  have h0₅ : s₅.gpr .x0 = B := (k₅.gpr .x0 (by decide)).trans hc₄.ws.x0
+  obtain h0₅ : s₅.gpr .x0 = B := (k₅.gpr .x0 (by decide)).trans hc₄.ws.x0
   refine WP.mono (WP.keep [] (Q := fun t => t.mem = s₅.mem.writeW (off B (8 * kG)) (s₅.gpr .x15)) (by
     brun [h0₅, hdr_enc (show kG < 32 by decide), (hc₄.ws.scr.congr k₅.wr).st (d := 8 * kG)
       (by have := hdr_lt_slot w 8 (show kG < 32 by decide); omega_arith)]) (by decide) (by decide) (by decide +kernel))
     fun s₆ ⟨hm₆, k₆⟩ => ?_
   rw [h15₅, hm₅] at hm₆
-  have hf₆ : Frm B (midRanges w) s₄.mem s₆.mem := by
+  obtain hf₆ : Frm B (midRanges w) s₄.mem s₆.mem := by
     rw [hm₆]; exact Frm.of_outside (writeW_outside _ B _ (d := 8 * kG) (by decide)) (by simp [midRanges])
-  have hc₆ := hc₄.of_win hf₆ (midRanges_sub w) (k₅.trans k₆) (by decide)
-  have hY₆ : wv s₆.mem B (slot w aY) w = wv s₄.mem B (slot w aY) w := by
+  obtain hc₆ := hc₄.of_win hf₆ (midRanges_sub w) (k₅.trans k₆) (by decide)
+  obtain hY₆ : wv s₆.mem B (slot w aY) w = wv s₄.mem B (slot w aY) w := by
     rw [hm₆, hdrStore_wv _ _ _ (by decide) (by decide) (by omega_arith)]
   refine wp_seqs_append (by simp [eqMask, eqA]) (by simp) ?_
   refine WP.mono (eqMask_ok hc₆.ws (j := aR1) (by decide)) fun s₇ ⟨h15₇, hm₇, k₇⟩ => ?_
   rw [hY₆, hY₄, hc₆.r1, decide_eq_decide.mpr (mont_eq_one hR hc1 hlt2)] at h15₇
-  have hf₇ : Frm B (midRanges w) s₆.mem s₇.mem := fun x _ => by rw [hm₇]
-  have hc₇ := hc₆.of_win hf₇ (midRanges_sub w) k₇ (by decide)
+  obtain hf₇ : Frm B (midRanges w) s₆.mem s₇.mem := fun x _ => by rw [hm₇]
+  obtain hc₇ := hc₆.of_win hf₇ (midRanges_sub w) k₇ (by decide)
   -- The header words after `y := y T_d`.
-  have hf17 : Frm B (midRanges w) s₁.mem s₇.mem := ((hf13.trans hf₄).trans hf₆).trans hf₇
-  have hh₇ : ∀ i, i = kV ∨ i = kBits ∨ i = kFlag → word s₇.mem B (8 * i) = word s₁.mem B (8 * i) := fun i hi => by
-    have h32 : i < 32 := by rcases hi with rfl | rfl | rfl <;> decide
+  obtain hf17 : Frm B (midRanges w) s₁.mem s₇.mem := ((hf13.trans hf₄).trans hf₆).trans hf₇
+  obtain hh₇ : ∀ i, i = kV ∨ i = kBits ∨ i = kFlag → word s₇.mem B (8 * i) = word s₁.mem B (8 * i) := fun i hi => by
+    obtain h32 : i < 32 := by rcases hi with rfl | rfl | rfl <;> decide
     refine hf17.word_eq ?_ (by omega_arith)
     unfold midRanges
     rcases hi with rfl | rfl | rfl <;> w_disj
-  have hG₇ : word s₇.mem B (8 * kG) = mask (decide (s4.1 * Spec.Rsa.powMod b d c % c = c - 1)) := by
+  obtain hG₇ : word s₇.mem B (8 * kG) = mask (decide (s4.1 * Spec.Rsa.powMod b d c % c = c - 1)) := by
     rw [hm₇, hm₆, word_writeW_self]
   -- The flag, `kV` and `kBits`.
-  have hV₇ : word s₇.mem B (8 * kV) = V := by rw [hh₇ kV (Or.inl rfl), hlo₁ kV (Or.inl rfl)]; exact hV
-  have hB₇ : word s₇.mem B (8 * kBits) = BitVec.ofNat 64 n := by
+  obtain hV₇ : word s₇.mem B (8 * kV) = V := by rw [hh₇ kV (Or.inl rfl), hlo₁ kV (Or.inl rfl)]; exact hV
+  obtain hB₇ : word s₇.mem B (8 * kBits) = BitVec.ofNat 64 n := by
     rw [hh₇ kBits (Or.inr (Or.inl rfl)), hlo₁ kBits (Or.inr rfl)]; exact hnb
-  have hP₇ : word s₇.mem B (8 * kFlag) = mask s4.2 := by rw [hh₇ kFlag (Or.inr (Or.inr rfl))]; exact hP₁
+  obtain hP₇ : word s₇.mem B (8 * kFlag) = mask s4.2 := by rw [hh₇ kFlag (Or.inr (Or.inr rfl))]; exact hP₁
   refine WP.mono (winTail_ok hc₇.ws hV₇ hG₇ h15₇ hP₇ hB₇ hn1 hn') fun t ht => ?_
   obtain ⟨⟨hm, h3⟩, k⟩ := ht
-  have hft : Frm B (winRanges w) s₁.mem t.mem := by
+  obtain hft : Frm B (winRanges w) s₁.mem t.mem := by
     refine (hf17.mono (midRanges_sub w)).trans ?_
     rw [hm]
     refine ((Frm.of_outside (writeW_outside _ B _ (d := 8 * kFlag) (by decide))
       (by simp [winRanges])).trans (Frm.of_outside (writeW_outside _ B _ (d := 8 * kV) (by decide))
       (by simp [winRanges]))).trans (Frm.of_outside (writeW_outside _ B _ (d := 8 * kBits) (by decide))
         (by simp [winRanges]))
-  have hz : (!decide (V >>> 60 = 0)) = !decide (d = 0) := by
+  obtain hz : (!decide (V >>> 60 = 0)) = !decide (d = 0) := by
     rw [← hd']
     congr 1
-  have hw1 : (wWin c b d (y, P)).1 = s4.1 * Spec.Rsa.powMod b d c % c := by simp only [wWin, hs4]
-  have hw2 : (wWin c b d (y, P)).2 = (if !decide (d = 0) then
+  obtain hw1 : (wWin c b d (y, P)).1 = s4.1 * Spec.Rsa.powMod b d c % c := by simp only [wWin, hs4]
+  obtain hw2 : (wWin c b d (y, P)).2 = (if !decide (d = 0) then
       decide (s4.1 * Spec.Rsa.powMod b d c % c = 1) || decide (s4.1 * Spec.Rsa.powMod b d c % c = c - 1)
       else s4.2) := by
     simp only [wWin, hs4]
@@ -348,5 +366,42 @@ theorem mrWin_ok (M : Mont) {s : State} {B : Addr} {Z w c bm b y : Nat} {P : Boo
       word_writeW_self, hw2, hz]
   · rw [hm, hdrStore_hdr _ _ _ (by decide) (by decide) (by decide), word_writeW_self]
   · rw [hm, word_writeW_self]
+
+/-- What a window does (`mrWinS_ok`'s statement), for the loops over it. -/
+def WinOK (win : List (Prog isa)) : Prop :=
+  ∀ {s : State} {B : Addr} {Z w c bm b y : Nat} {P : Bool}, w ≤ 128 →
+    slot w aE + 8 * (w + 2) ≤ Z → MrCtx s B Z w c bm → TabOK s.mem B w c b → c % 2 = 1 →
+    1 < c → wv s.mem B (slot w aY) w = y * 2 ^ (64 * w) % c → word s.mem B (8 * kFlag) = mask P →
+    ∀ {V : BitVec 64} {n : Nat}, word s.mem B (8 * kV) = V →
+    word s.mem B (8 * kBits) = BitVec.ofNat 64 n → 1 ≤ n → n < 2 ^ 64 →
+    WP isa (seqs win) s fun t =>
+      MrCtx t B Z w c bm ∧ TabOK t.mem B w c b ∧
+      wv t.mem B (slot w aY) w = (wWin c b (V >>> 60).toNat (y, P)).1 * 2 ^ (64 * w) % c ∧
+      word t.mem B (8 * kFlag) = mask (wWin c b (V >>> 60).toNat (y, P)).2 ∧
+      word t.mem B (8 * kV) = V <<< 4 ∧ word t.mem B (8 * kBits) = BitVec.ofNat 64 (n - 1) ∧
+      t.gpr .x3 = BitVec.ofNat 64 (n - 1) ∧ Frm B (winRanges w) s.mem t.mem ∧ Keep mmRegs s t
+
+theorem mrWinS_winOK {sel : List (Prog isa)} (hne : sel ≠ []) (hsel : SelOK sel) (M : Mont) :
+    WinOK (mrWinS sel M.mm) :=
+  fun hw128 hEZ hc hT hodd hc1 hY hP _ _ hV hnb hn1 hn' =>
+    mrWinS_ok hne hsel M hw128 hEZ hc hT hodd hc1 hY hP hV hnb hn1 hn'
+
+theorem mrSel_ne : mrSel ≠ [] := by unfold mrSel; exact List.cons_ne_nil _ _
+
+theorem mrWin_winOK (M : Mont) : WinOK (mrWin M.mm) := mrWinS_winOK mrSel_ne mrSel_selOK M
+
+/-- One window. -/
+theorem mrWin_ok (M : Mont) {s : State} {B : Addr} {Z w c bm b y : Nat} {P : Bool} (hw128 : w ≤ 128)
+    (hEZ : slot w aE + 8 * (w + 2) ≤ Z) (hc : MrCtx s B Z w c bm) (hT : TabOK s.mem B w c b) (hodd : c % 2 = 1)
+    (hc1 : 1 < c) (hY : wv s.mem B (slot w aY) w = y * 2 ^ (64 * w) % c) (hP : word s.mem B (8 * kFlag) = mask P)
+    {V : BitVec 64} {n : Nat} (hV : word s.mem B (8 * kV) = V)
+    (hnb : word s.mem B (8 * kBits) = BitVec.ofNat 64 n) (hn1 : 1 ≤ n) (hn' : n < 2 ^ 64) :
+    WP isa (seqs (mrWin M.mm)) s fun t =>
+      MrCtx t B Z w c bm ∧ TabOK t.mem B w c b ∧
+      wv t.mem B (slot w aY) w = (wWin c b (V >>> 60).toNat (y, P)).1 * 2 ^ (64 * w) % c ∧
+      word t.mem B (8 * kFlag) = mask (wWin c b (V >>> 60).toNat (y, P)).2 ∧
+      word t.mem B (8 * kV) = V <<< 4 ∧ word t.mem B (8 * kBits) = BitVec.ofNat 64 (n - 1) ∧
+      t.gpr .x3 = BitVec.ofNat 64 (n - 1) ∧ Frm B (winRanges w) s.mem t.mem ∧ Keep mmRegs s t :=
+  mrWin_winOK M hw128 hEZ hc hT hodd hc1 hY hP hV hnb hn1 hn'
 
 end VG.Proof.RsaKeyGen.AArch64

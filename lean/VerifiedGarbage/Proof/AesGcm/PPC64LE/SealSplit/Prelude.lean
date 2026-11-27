@@ -90,8 +90,8 @@ def argOffsets : List Nat := [96,104]++readOffsets
 structure Config (s : State) : Prop where
   reads : ∀ off ∈ readOffsets, InRegions (s.rd++s.wr) (s.sp+BitVec.ofNat 64 off) 8
   writes : ∀ off ∈ [96,104], InRegions s.wr (s.sp+BitVec.ofNat 64 off) 8
-  workCovers : Covers [⟨work s,2560⟩] s.wr
-  apart : ∀ off ∈ argOffsets, (⟨work s,2560⟩ : Region).Disjoint ⟨s.sp+BitVec.ofNat 64 off,8⟩
+  workCovers : Covers [⟨work s,1152⟩] s.wr
+  apart : ∀ off ∈ argOffsets, (⟨work s,1152⟩ : Region).Disjoint ⟨s.sp+BitVec.ofNat 64 off,8⟩
 
 
 def state (s : State) : State := configState (savedState (headState s))
@@ -104,7 +104,7 @@ theorem ok (s : State) (cfg : Config s) :
   subst h
   refine WP.mono (save_ok (headState s) (by
     intro p hp
-    have ho : ∀ p ∈ sourceSaved, p.2+8≤2560 := by decide
+    have ho : ∀ p ∈ sourceSaved, p.2+8≤1152 := by decide
     exact cfg.workCovers _ _ ⟨_,List.mem_singleton_self _,Offset.contains_base _ (ho p hp) (by have := ho p hp; omega_using [this])⟩))
     fun u hu => ?_
   subst u
@@ -142,7 +142,7 @@ theorem cache_read (s : State) (cfg : Config s) (off : Nat) (ho : off ∈ argOff
   intro r hr
   rw [List.mem_singleton] at hr
   subst r
-  exact (cfg.apart off ho).symm.sub_right (Offset.sub_base _ (d := 112) (n := 16) (k := 2560) (by decide))
+  exact (cfg.apart off ho).symm.sub_right (Offset.sub_base _ (d := 112) (n := 16) (k := 1152) (by decide))
 
 
 theorem source_saved (s : State) (cfg : Config s) : Spill.Saved (work s) s.gpr sourceSaved (state s).mem := by
@@ -158,8 +158,8 @@ theorem source_saved (s : State) (cfg : Config s) : Spill.Saved (work s) s.gpr s
   change r ∈ [⟨s.sp+96,8⟩,⟨s.sp+104,8⟩] at hr
   simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
   rcases hr with rfl | rfl
-  · exact (cfg.apart 96 (by decide)).sub_left (Offset.sub_base _ (d := 112) (n := 16) (k := 2560) (by decide))
-  · exact (cfg.apart 104 (by decide)).sub_left (Offset.sub_base _ (d := 112) (n := 16) (k := 2560) (by decide))
+  · exact (cfg.apart 96 (by decide)).sub_left (Offset.sub_base _ (d := 112) (n := 16) (k := 1152) (by decide))
+  · exact (cfg.apart 104 (by decide)).sub_left (Offset.sub_base _ (d := 112) (n := 16) (k := 1152) (by decide))
 
 
 

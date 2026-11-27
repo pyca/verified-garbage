@@ -1,27 +1,24 @@
 module
 
-public import VerifiedGarbage.Proof.Poly1305.AArch64.Init
-public import VerifiedGarbage.Proof.Poly1305.AArch64.Vector.Update
-public import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Blocks
-public import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Frame
-import Mathlib.Tactic.NormNum.Inv
-import Mathlib.Tactic.NormNum.Pow
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.AArch64.Print
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Poly1305.Contract
+import VerifiedGarbage.Impl.Poly1305.AArch64.Vector
+import VerifiedGarbage.Proof.Poly1305.AArch64.Scrub
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # Poly1305 (RFC 8439 §2.5) on AArch64 -/
 
-@[expose] public section
-
 namespace VG.Artifacts.Poly1305.AArch64
 
-def artifacts : List Artifact := [
+public def artifacts : List (Artifact AArch64.target) := [
   Spec.Poly1305.initApi.artifact AArch64.target {
     code := Impl.Poly1305.AArch64.init
-    verified := Proof.Poly1305.AArch64.init_verified },
+    verified := Proof.Poly1305.AArch64.Fn.init },
   Spec.Poly1305.updateApi.artifact AArch64.target {
-    code := Impl.StackScratch.AArch64.withStackScratch 128 .x4 Impl.Poly1305.AArch64.Radix64.update
-    verified := Proof.Poly1305.AArch64.Radix64.update_framed },
+    code := Impl.Poly1305.AArch64.Fn.update
+    verified := Proof.Poly1305.AArch64.Fn.update },
   Spec.Poly1305.updateApi.artifact AArch64.target {
     suffix := "_neon"
     -- Faster on Apple's cores (about twice as fast), slower on Neoverse N2. It
@@ -30,10 +27,12 @@ def artifacts : List Artifact := [
     -- elsewhere for the tests.
     extra := ["neon"]
     vendor := some "apple"
-    code := Impl.StackScratch.AArch64.withStackScratch 128 .x4 Impl.Poly1305.AArch64.Vector.update
-    verified := Proof.Poly1305.AArch64.Vector.update_framed },
+    code := Impl.Poly1305.AArch64.Fn.updateNeon
+    verified := Proof.Poly1305.AArch64.Fn.updateNeon },
   Spec.Poly1305.finalizeApi.artifact AArch64.target {
-    code := Impl.StackScratch.AArch64.withStackScratch 128 .x3 Impl.Poly1305.AArch64.Radix64.finalize
-    verified := Proof.Poly1305.AArch64.Radix64.finalize_framed }]
+    code := Impl.Poly1305.AArch64.Fn.finalize
+    verified := Proof.Poly1305.AArch64.Fn.finalize }]
+
+spec_apis artifacts
 
 end VG.Artifacts.Poly1305.AArch64

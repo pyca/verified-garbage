@@ -1,11 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.EcKey.Compressed.RISCV64.P521.Main
 public import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 public import VerifiedGarbage.Spec.EcKey.P521
 import VerifiedGarbage.Proof.EcKey.Compressed.RISCV64.P521.Lit
 import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.EcKey.Compressed.RISCV64.P521.Main
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 meta import VerifiedGarbage.Spec.EcKey.P521
 meta import VerifiedGarbage.Proof.EcKey.Compressed.RISCV64.P521.Lit
@@ -14,6 +12,104 @@ import VerifiedGarbage.Proof.Framework.RISCV64.TaintMono
 meta import VerifiedGarbage.Proof.Framework.RISCV64.TaintMono
 import VerifiedGarbage.Proof.Weierstrass.RISCV64.P521Field.Verified
 meta import VerifiedGarbage.Proof.Weierstrass.RISCV64.P521Field.Verified
+public import VerifiedGarbage.Proof.EcKey.Compressed.RISCV64.MainAll
+public import VerifiedGarbage.Proof.Ecdh.RISCV64.P521.Exchange
+public import VerifiedGarbage.Impl.EcKey.Compressed.P521.RISCV64
+public import VerifiedGarbage.Spec.EcKey.Compressed.Contract
+public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
+public import VerifiedGarbage.Proof.EcKey.RISCV64.Scrub
+import VerifiedGarbage.Proof.Framework.KernelRfl
+meta import VerifiedGarbage.Proof.EcKey.Compressed.RISCV64.MainAll
+meta import VerifiedGarbage.Proof.Ecdh.RISCV64.P521.Exchange
+meta import VerifiedGarbage.Impl.EcKey.Compressed.P521.RISCV64
+meta import VerifiedGarbage.Spec.EcKey.Compressed.Contract
+meta import VerifiedGarbage.Proof.Framework.KernelRfl
+meta import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
+meta import VerifiedGarbage.Proof.EcKey.RISCV64.Scrub
+
+/-! ### `EcKey.Compressed.RISCV64.P521.Main`, which only this module used -/
+
+section
+
+/-!
+# P-521's point compression and decompression on RISC-V: correctness
+
+`vg_ec_p521_compress_public_key` and `vg_ec_p521_decompress_public_key`
+meet their contracts by register (`compRV`, `compress_ok`; `DPre`, `DPostC`,
+`decompress_ok`): the proofs of `Proof/EcKey/Compressed/RISCV64/MainAll.lean`
+for every curve, over the curve's kit of ECDH.
+-/
+
+@[expose] public section
+
+-- `p`, below `2^521`, is evaluated.
+set_option exponentiation.threshold 1024
+
+namespace VG.Proof.EcKey.Compressed.RISCV64.P521
+
+open VG VG.RISCV64 VG.RISCV64.Steps VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.RISCV64
+open VG.Impl.Ecdsa.RISCV64 VG.Impl.Ecdh.RISCV64 VG.Impl.Ecdh.RISCV64.Cfg VG.Impl.EcKey.Compressed.RISCV64
+open VG.Proof.Mont VG.Proof.Weierstrass VG.Proof.Weierstrass.RISCV64 VG.Proof.Ecdsa.RISCV64.P521
+open VG.Proof.Ecdh.RISCV64.P521
+open VG.Proof.X25519.RISCV64 (Rest wp_and)
+open VG.Spec.Weierstrass (Curve Fe Point ofBytes toBytes)
+open VG.Spec.Ecdsa (bytesAt)
+open VG.WriteBytes (writeBytes writeBytes_snoc writeBytes_nil writeBytes_append)
+
+/-- `vg_ec_p521_compress_public_key(out = a0, public = a1, scratch = a2)`, by
+register. -/
+def compRV : Contract isa where
+  pre s :=
+    let out : Region := ⟨s.gpr .a0, 67⟩
+    let pk : Region := ⟨s.gpr .a1, 133⟩
+    let ws : Region := ⟨s.gpr .a2, 8192⟩
+    s.rd = [pk] ∧ s.wr = [out, ws] ∧ pk.Disjoint out ∧ pk.Disjoint ws ∧ out.Disjoint ws ∧
+      (s.gpr .a0).toNat + 67 ≤ 2 ^ 64 ∧ (s.gpr .a1).toNat + 133 ≤ 2 ^ 64 ∧ (s.gpr .a2).toNat + 8192 ≤ 2 ^ 64 ∧
+      (s.gpr .a2).toNat % 8 = 0
+  post s s' :=
+    match Spec.EcKey.compressPublicKey Spec.P521.curve (bytesAt s.mem (s.gpr .a1) 133) with
+    | some bs => s'.gpr .a0 = 1 ∧ bytesAt s'.mem (s.gpr .a0) 67 = bs
+    | none => s'.gpr .a0 = 0 ∧ bytesAt s'.mem (s.gpr .a0) 67 = List.replicate 67 0
+  pub s₁ s₂ := s₁.sp = s₂.sp ∧ s₁.gpr .a0 = s₂.gpr .a0 ∧ s₁.gpr .a1 = s₂.gpr .a1 ∧ s₁.gpr .a2 = s₂.gpr .a2
+
+/-- The contract's postcondition is the kit's. -/
+theorem compPost_eq : compRV.post = kit.compPost := by kernel_rfl
+
+/-- `vg_ec_p521_compress_public_key` by register. -/
+theorem compress_ok {s : State} (hs : compRV.pre s) :
+    WP isa compressP521 s fun s' => abiPreserved s s' ∧ compRV.post s s' := by
+  rw [compPost_eq]; exact kit.compress_ok hs
+
+/-! ## Decompression -/
+
+/-- `vg_ec_p521_decompress_public_key(out = a0, public = a1, scratch = a2)`'s
+precondition, by register. -/
+def DPre (s : State) : Prop :=
+  let out : Region := ⟨s.gpr .a0, 133⟩
+  let pk : Region := ⟨s.gpr .a1, 67⟩
+  let ws : Region := ⟨s.gpr .a2, 8192⟩
+  s.rd = [pk] ∧ s.wr = [out, ws] ∧ pk.Disjoint out ∧ pk.Disjoint ws ∧ out.Disjoint ws ∧
+    (s.gpr .a0).toNat + 133 ≤ 2 ^ 64 ∧ (s.gpr .a1).toNat + 67 ≤ 2 ^ 64 ∧ (s.gpr .a2).toNat + 8192 ≤ 2 ^ 64 ∧
+    (s.gpr .a2).toNat % 8 = 0
+
+/-- `vg_ec_p521_decompress_public_key`'s postcondition, by register. -/
+def DPostC (s s' : State) : Prop :=
+  let bs := bytesAt s.mem (s.gpr .a1) 67
+  (s'.gpr .a0 = 1 ∧ ∃ Q, Spec.EcKey.matchesCompressedPublicKey Spec.P521.curve bs Q ∧
+      bytesAt s'.mem (s.gpr .a0) 133 = Spec.EcKey.encodePoint Q) ∨
+    (s'.gpr .a0 = 0 ∧ (¬ ∃ Q, Spec.EcKey.matchesCompressedPublicKey Spec.P521.curve bs Q) ∧
+      bytesAt s'.mem (s.gpr .a0) 133 = List.replicate 133 0)
+
+/-- `vg_ec_p521_decompress_public_key` by register. -/
+theorem decompress_ok (hL : VG.Proof.Weierstrass.Law W) {s : State} (hs : DPre s) :
+    WP isa decompressP521 s fun s' => abiPreserved s s' ∧ DPostC s s' :=
+  kit.decompress_ok (by decide) hL hs
+
+end VG.Proof.EcKey.Compressed.RISCV64.P521
+
+end
+
+end
 
 /-!
 # SEC 1 point conversion over P-521 on RISC-V: `Verified`
@@ -72,9 +168,8 @@ theorem compress_verified :
         sig_post [Spec.EcKey.P521.inst, Spec.EcKey.Instance.compressPublicKeyContract,
           Spec.EcKey.Instance.compressPublicKeySig, Spec.P521.curve, Spec.EcKey.scratchWords, compRV,
           RISCV64.abi, RISCV64.argRegs]
-        have h' : match Spec.EcKey.compressPublicKey Spec.P521.curve (Spec.Ecdsa.bytesAt s.mem (s.gpr .a1) 133) with
-            | some bs => s'.gpr .a0 = 1 ∧ Spec.Ecdsa.bytesAt s'.mem (s.gpr .a0) 67 = bs
-            | none => s'.gpr .a0 = 0 ∧ Spec.Ecdsa.bytesAt s'.mem (s.gpr .a0) 67 = List.replicate 67 0 := h
+        have h' := h
+        dsimp only [compRV] at h'
         generalize hq : Spec.EcKey.compressPublicKey _ _ = q
         have hq' : Spec.EcKey.compressPublicKey Spec.P521.curve (Spec.Ecdsa.bytesAt s.mem (s.gpr .a1) 133) = q := hq
         rw [hq'] at h'
@@ -136,5 +231,25 @@ theorem decompress_verified (hL : VG.Proof.Weierstrass.Law Spec.P521.curve) :
         sig_implies_sat [Spec.EcKey.P521.inst, Spec.EcKey.Instance.decompressPublicKeyContract,
           Spec.EcKey.Instance.decompressPublicKeySig, Spec.P521.curve, Spec.EcKey.scratchWords, decRV, DPre,
           RISCV64.abi, RISCV64.argRegs, convSat] [convSat] using (convSat 133 67) }
+
+/-- `vg_ec_p521_compress_public_key` as emitted, cleanup included
+(`Impl.EcKey.Compressed.RISCV64.Fn.compressP521`), meets its contract in constant
+time and returns without secret residue. -/
+theorem compress_scrubbed :
+    VerifiedScrubbed RISCV64.target Impl.EcKey.Compressed.RISCV64.Fn.compressP521
+      (Spec.EcKey.P521.inst.compressPublicKeyContract RISCV64.abi) 32 :=
+  RISCV64.Scrub.verifiedScrubbedAll (api := Spec.EcKey.P521.inst.compressPublicKeyApi) (W := 0)
+    { code := compressP521, verified := compress_verified }
+    (EcKey.RISCV64.Scrub.compressOut _ _ []) (by dsimp only; lit_decide)
+
+/-- `vg_ec_p521_decompress_public_key` as emitted, cleanup included
+(`Impl.EcKey.Compressed.RISCV64.Fn.decompressP521`), meets its contract in
+constant time and returns without secret residue. -/
+theorem decompress_scrubbed (hL : VG.Proof.Weierstrass.Law Spec.P521.curve) :
+    VerifiedScrubbed RISCV64.target Impl.EcKey.Compressed.RISCV64.Fn.decompressP521
+      (Spec.EcKey.P521.inst.decompressPublicKeyContract RISCV64.abi) 32 :=
+  RISCV64.Scrub.verifiedScrubbedAll (api := Spec.EcKey.P521.inst.decompressPublicKeyApi) (W := 0)
+    { code := decompressP521, verified := decompress_verified hL }
+    (EcKey.RISCV64.Scrub.decompressOut _ _ []) (by dsimp only; lit_decide)
 
 end VG.Proof.EcKey.Compressed.RISCV64.P521

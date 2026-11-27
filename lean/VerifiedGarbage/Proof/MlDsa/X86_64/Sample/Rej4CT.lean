@@ -12,7 +12,6 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.X86_64.Lit
 import VerifiedGarbage.Proof.Framework.X86_64.Sse
 import VerifiedGarbage.Proof.Framework.X86_64.Words
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej4Sq
 import VerifiedGarbage.Proof.MlKem.Encode
 import VerifiedGarbage.Proof.MlKem.Mem
 import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
@@ -29,8 +28,7 @@ meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 meta import VerifiedGarbage.Proof.Framework.X86_64.Sse
 meta import VerifiedGarbage.Proof.Framework.X86_64.Words
-meta import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Pro
-meta import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej4Sq
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNttLoop
 meta import VerifiedGarbage.Proof.MlKem.Compress
 meta import VerifiedGarbage.Proof.MlKem.Encode
 meta import VerifiedGarbage.Proof.MlKem.Mem
@@ -41,7 +39,7 @@ meta import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 meta import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
 meta import VerifiedGarbage.Proof.MlKem.X86_64.Zero
 meta import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Pad
-meta import VerifiedGarbage.Proof.Sha3.X86_64.X4R.Loop
+meta import VerifiedGarbage.Proof.MlKem.X86_64.S4Squeeze
 
 /-!
 # ML-DSA on x86-64: `vg_mldsa_rej_ntt_poly4_avx2`, constant time but for the seeds

@@ -1298,6 +1298,16 @@ vg_triple_des_ofb:
 	stp x17, x17, [x16, #16]
 	stp x17, x17, [x16, #32]
 	add sp, sp, #560
+	movz x6, #0, lsl #0
+	movz x7, #0, lsl #0
+	movz x9, #0, lsl #0
+	movz x11, #0, lsl #0
+	movz x12, #0, lsl #0
+	movz x13, #0, lsl #0
+	movi v0.2d, #0
+	movi v1.2d, #0
+	movi v2.2d, #0
+	movi v3.2d, #0
 	ret
 	.p2align 6
 
@@ -2610,5 +2620,15 @@ vg_triple_des_ofb_final:
 	stp x17, x17, [x16, #16]
 	stp x17, x17, [x16, #32]
 	add sp, sp, #560
+	movz x6, #0, lsl #0
+	movz x7, #0, lsl #0
+	movz x9, #0, lsl #0
+	movz x11, #0, lsl #0
+	movz x12, #0, lsl #0
+	movz x13, #0, lsl #0
+	movi v0.2d, #0
+	movi v1.2d, #0
+	movi v2.2d, #0
+	movi v3.2d, #0
 	ret
 	.p2align 6

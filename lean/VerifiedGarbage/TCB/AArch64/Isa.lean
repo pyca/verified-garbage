@@ -77,8 +77,7 @@ Modelling choices:
   the other instructions' timing depends on nothing but what they leak is what
   Arm specifies for code run with PSTATE.DIT 1, and the model does not check
   that it is. `Target.abiPreserved` says nothing about it. The calling
-  convention gives it as the mode (`Abi.mode`, `TCB/AArch64/Target.lean`),
-  which a contract may make public.
+  convention makes it public (`TCB/AArch64/Target.lean`).
 * Barriers, `barrier` (DSB SY, ISB and SB): the model has no memory ordering,
   pipeline or speculation, which is all they act on, so each leaves the state
   as it is and leaks nothing (DDI 0602 2026-03: "DSB", whose operation for
@@ -169,11 +168,14 @@ Modelling choices:
   ZIP1, ZIP2, TRN1, TRN2, UZP1, UZP2, TBL, TBX, UMULL, UMLAL, PMULL, MUL, MLA, MLS, SQDMULH, UMIN), and the cryptographic ones
   (AESE, AESD, AESMC, AESIMC, SHA1C, SHA1P, SHA1M, SHA1H, SHA1SU0, SHA1SU1,
   SHA256H, SHA256H2, SHA256SU0, SHA256SU1, SHA512H, SHA512H2, SHA512SU0,
-  SHA512SU1, EOR3, BCAX, RAX1, XAR), and SVE2's XAR, are all among those whose
+  SHA512SU1, EOR3, BCAX, RAX1, XAR, SM4E, SM4EKEY, SM3SS1, SM3TT1A, SM3TT1B,
+  SM3TT2A, SM3TT2B, SM3PARTW1, SM3PARTW2), and SVE2's XAR, are all among those whose
   timing Arm specifies to be independent of their data when PSTATE.DIT is 1
   (DDI 0487, "About PSTATE.DIT"; the description of SVE2's XAR says "This
   instruction is a data-independent-time instruction as described in About
-  PSTATE.DIT"). CMHI, CMHS, ADDV and UADDLV are in the list of
+  PSTATE.DIT", and so do those of SM4E, SM4EKEY and the seven SM3
+  instructions in the A64 ISA XML 2025-12, and that of PMULL and PMULL2, for
+  every element size, in the A64 ISA XML 2026-03). CMHI, CMHS, ADDV and UADDLV are in the list of
   data-independent-time instructions of DDI 0487 M.b C5.2.4, "DIT, Data
   Independent Timing" (also DDI 0601 2026-09): "Advanced SIMD three same: ADD,
   ADDP, AND, …, CMEQ, CMGE, CMGT, CMHI, CMHS, …" and "Advanced SIMD across
@@ -249,8 +251,9 @@ structure State where
   /-- Regions the code may read and write. -/
   wr : List Region
   /-- Values the model does not know, used in order: the return address each
-  call stores and, on the ARM targets, what a linker veneer may leave in the
-  intra-procedure-call scratch registers (see `TCB/Code.lean`). -/
+  call stores, on the ARM targets what a linker veneer may leave in the
+  intra-procedure-call scratch registers (see `TCB/Code.lean`), and what a
+  released frame's bytes hold (`lose`). -/
   unknowns : Nat → BitVec 64 := fun _ => 0
   /-- The address of each `static` the code can name (`adrSym`), by name. -/
   syms : String → BitVec 64 := fun _ => 0
@@ -304,6 +307,10 @@ inductive VSelOp | bsl | bit | bif
 /-- The functions of SHA1C (`SHAchoose`), SHA1P (`SHAparity`) and SHA1M
 (`SHAmajority`). -/
 inductive Sha1Op | c | p | m
+  deriving DecidableEq, Repr
+
+/-- SM3TT1A, SM3TT1B, SM3TT2A and SM3TT2B. -/
+inductive Sm3TtOp | tt1a | tt1b | tt2a | tt2b
   deriving DecidableEq, Repr
 
 /-- AdvSIMD and cryptographic instructions that write only a vector
@@ -388,6 +395,9 @@ inductive VOp
   | mulHE (op : VMulHOp) (d n m : VReg) (i : Nat)
   /-- `pmull vd.1q, vn.1d, vm.1d`, or `pmull2 vd.1q, vn.2d, vm.2d` if `hi` -/
   | pmull (hi : Bool) (d n m : VReg)
+  /-- `pmull vd.8h, vn.8b, vm.8b`, or `pmull2 vd.8h, vn.16b, vm.16b` if `hi`
+  (PMULL, PMULL2 with 8-bit source elements, `size = 00`) -/
+  | pmull8 (hi : Bool) (d n m : VReg)
   /-- `aese vd.16b, vn.16b` -/
   | aese (d n : VReg)
   /-- `aesd vd.16b, vn.16b` -/
@@ -420,6 +430,18 @@ inductive VOp
   | sha512su0 (d n : VReg)
   /-- `sha512su1 vd.2d, vn.2d, vm.2d` -/
   | sha512su1 (d n m : VReg)
+  /-- `sm4e vd.4s, vn.4s` -/
+  | sm4e (d n : VReg)
+  /-- `sm4ekey vd.4s, vn.4s, vm.4s` -/
+  | sm4ekey (d n m : VReg)
+  /-- `sm3ss1 vd.4s, vn.4s, vm.4s, va.4s` -/
+  | sm3ss1 (d n m a : VReg)
+  /-- `sm3tt1a`/`sm3tt1b`/`sm3tt2a`/`sm3tt2b vd.4s, vn.4s, vm.s[i]` -/
+  | sm3tt (op : Sm3TtOp) (d n m : VReg) (i : Nat)
+  /-- `sm3partw1 vd.4s, vn.4s, vm.4s` -/
+  | sm3partw1 (d n m : VReg)
+  /-- `sm3partw2 vd.4s, vn.4s, vm.4s` -/
+  | sm3partw2 (d n m : VReg)
   /-- `eor3 vd.16b, vn.16b, vm.16b, va.16b` -/
   | eor3 (d n m a : VReg)
   /-- `bcax vd.16b, vn.16b, vm.16b, va.16b` -/
@@ -945,6 +967,12 @@ def Sha1Op.f : Sha1Op → BitVec 32 → BitVec 32 → BitVec 32 → BitVec 32
 * "UMIN" (`.4s`): `Elem[result, e] = Min(UInt(element1), UInt(element2))`;
 * "PMULL", "PMULL2" (`.1q`): `Elem[result, 0, 128] =
   PolynomialMult(Elem[operand1, part, 64], Elem[operand2, part, 64])`;
+* "PMULL", "PMULL2" (`.8h`, `size = 00`: `esize = 8 << UInt(size)`,
+  `datasize = 64`, `part = UInt(Q)`, `elements = 8`): `operand1 = Vpart[n,
+  part, 64]; operand2 = Vpart[m, part, 64]; for e = 0 to 7: Elem[result, e,
+  16] = PolynomialMult(Elem[operand1, e, 8], Elem[operand2, e, 8])`
+  (`polyMul8`), `V[d, 128] = result`: byte `e` of the lower (`pmull`) or
+  upper (`pmull2`) half of each source;
 * "AESE": `AESSubBytes(AESShiftRows(operand1 EOR operand2))`; "AESD":
   `AESInvSubBytes(AESInvShiftRows(operand1 EOR operand2))`, with `operand1
   = V[d]`, `operand2 = V[n]`; "AESMC": `AESMixColumns(V[n])`; "AESIMC":
@@ -956,6 +984,13 @@ def Sha1Op.f : Sha1Op → BitVec 32 → BitVec 32 → BitVec 32 → BitVec 32
   `sha256Su0`, `sha256Su1`;
 * "SHA512H", "SHA512H2", "SHA512SU0", "SHA512SU1": `sha512H`, `sha512H2`,
   `sha512Su0`, `sha512Su1`;
+* "SM4E", "SM4EKEY" (A64 ISA XML 2025-12): `sm4E`, `sm4EKey`, four rounds of
+  SM4's encryption of `V[d]` under the round keys `V[n]`, and of its key
+  expansion from `V[n]` with the constants `V[m]`;
+* "SM3SS1", "SM3TT1A", "SM3TT1B", "SM3TT2A", "SM3TT2B", "SM3PARTW1",
+  "SM3PARTW2" (A64 ISA XML 2025-12): `sm3Ss1`, `sm3Tt1`, `sm3Tt2`,
+  `sm3PartW1`, `sm3PartW2`, with `WjPrime`/`Wj = Vm[i*:32]` the word `i =
+  UInt(imm2)` of `V[m]`;
 * "EOR3": `Vn EOR Vm EOR Va`; "BCAX": `Vn EOR (Vm AND NOT(Va))`; "RAX1":
   `Elem[Vd, e, 64] = Elem[Vn, e, 64] EOR ROL(Elem[Vm, e, 64], 1)`; "XAR":
   `Elem[Vd, e, 64] = ROR(Elem[Vn, e, 64] EOR Elem[Vm, e, 64], imm6)`;
@@ -1065,6 +1100,9 @@ def VOp.eval (s : State) : VOp → Option (VReg × BitVec 128)
   | .pmull hi d n m =>
     let p := if hi then 1 else 0
     some (d, polyMul (vdword (s.v n) p) (vdword (s.v m) p))
+  | .pmull8 hi d n m =>
+    let p := if hi then 8 else 0
+    some (d, ofVHalves fun e => polyMul8 (vbyte (s.v n) (p + e)) (vbyte (s.v m) (p + e)))
   | .aese d n => some (d, aesMapBytes aesSbox (aesShiftRows (s.v d ^^^ s.v n)))
   | .aesd d n => some (d, aesMapBytes aesInvSbox (aesInvShiftRows (s.v d ^^^ s.v n)))
   | .aesmc d n => some (d, aesMixColumns (s.v n))
@@ -1081,6 +1119,19 @@ def VOp.eval (s : State) : VOp → Option (VReg × BitVec 128)
   | .sha512h2 d n m => some (d, sha512H2 (s.v d) (s.v n) (s.v m))
   | .sha512su0 d n => some (d, sha512Su0 (s.v d) (s.v n))
   | .sha512su1 d n m => some (d, sha512Su1 (s.v d) (s.v n) (s.v m))
+  | .sm4e d n => some (d, sm4E (s.v d) (s.v n))
+  | .sm4ekey d n m => some (d, sm4EKey (s.v n) (s.v m))
+  | .sm3ss1 d n m a => some (d, sm3Ss1 (s.v n) (s.v m) (s.v a))
+  | .sm3tt op d n m i =>
+    if i < 4 then
+      some (d, match op with
+        | .tt1a => sm3Tt1 false (s.v d) (s.v n) (vword (s.v m) i)
+        | .tt1b => sm3Tt1 true (s.v d) (s.v n) (vword (s.v m) i)
+        | .tt2a => sm3Tt2 false (s.v d) (s.v n) (vword (s.v m) i)
+        | .tt2b => sm3Tt2 true (s.v d) (s.v n) (vword (s.v m) i))
+    else none
+  | .sm3partw1 d n m => some (d, sm3PartW1 (s.v d) (s.v n) (s.v m))
+  | .sm3partw2 d n m => some (d, sm3PartW2 (s.v d) (s.v n) (s.v m))
   | .eor3 d n m a => some (d, s.v n ^^^ s.v m ^^^ s.v a)
   | .bcax d n m a => some (d, s.v n ^^^ (s.v m &&& ~~~(s.v a)))
   | .rax1 d n m => some (d, VArr.d2.map2 (fun _ x y => x ^^^ y.rotateLeft 1) (s.v n) (s.v m))
@@ -1420,11 +1471,12 @@ then 8 bytes it does not write) become a writable region, at the head of
 The model grants 16 bytes but writes only the first 8, so `[sp, #8]` then
 holds what memory held there before the push. That memory was below the
 stack pointer, where on hardware a signal handler may change it at any
-time, while the model keeps it until a store. This is harmless: the
-contract says nothing of those bytes (they are in the stack below the
-caller's stack pointer, `Abi.reserved`, which no buffer overlaps), so a
-proof holds whatever they contain and learns nothing from reading them;
-it could only rely on two reads agreeing. `ldrSp` and `strSp` can read
+time, while the model keeps it until a store. This is harmless: those bytes
+are either in the stack below the caller's stack pointer, of which the
+contract says nothing (`Abi.reserved`, which no buffer overlaps), or those
+of a frame the function released, which are `lose`'s; so a proof holds
+whatever they contain and learns nothing from reading them; it could only
+rely on two reads agreeing. `ldrSp` and `strSp` can read
 and write the frame directly, and `addSp` can form a pointer to it. None
 grants permission below the currently allocated stack: `strSp` stores
 through `State.store`, which faults outside the writable regions, so it
@@ -1457,20 +1509,56 @@ def push : Instr → State → Option State
     else none
   | _, _ => none
 
+/-- The memory once the `n` bytes at `a`, a released frame, are below the
+stack pointer. AAPCS64 (release 2026Q3), 6.4.5 "The Stack": "The inactive
+region of T's stack is the area of memory denoted by the half-open interval
+[T.limit, T.SP)", and 6.4.5.1 "Universal stack constraints": "No thread is
+permitted to access (for reading or for writing) the inactive region of S."
+Anything that runs on the stack between two instructions (a signal handler)
+may have written them, and the code can assume nothing of them. Apple's
+platforms keep more: "The ARM64 red zone consists of the 128 bytes
+immediately below the stack pointer. Apple platforms don't modify these
+bytes during exceptions" ("Writing ARM64 code for Apple platforms",
+"Respect the stack's red zone"); a byte that keeps its value is one of the
+outcomes here, so the model holds on those targets too, and it lets no
+proof use the red zone (the code may access only its regions, none of which
+is below the stack pointer). Each byte either keeps its value or takes one
+the model does not know, as the unknowns say: for the doubleword `j` of the
+frame, the bytes of `u (2 * j)` say which of its bytes are replaced (those
+not zero), and the bytes of `u (2 * j + 1)` are what replaces them. A byte
+may keep its value, so what a function leaves in a frame it releases may be
+left there (`NoResidue`, whose two runs share their unknowns, still tells
+apart a frame that holds a secret). -/
+def lose (m : Mem) (a : Addr) (n : Nat) (u : Nat → BitVec 64) : Mem :=
+  fun x =>
+    let d := (x - a).toNat
+    if d < n then
+      if (u (2 * (d / 8))).extractLsb' (8 * (d % 8)) 8 = 0 then m x
+      else (u (2 * (d / 8) + 1)).extractLsb' (8 * (d % 8)) 8
+    else m x
+
 /-- The pop of a frame, DDI 0487 C6.2 "LDR (immediate)", 64-bit, post-index
 (`ldr xr, [sp], #16`): `address = SP[]`; `data = Mem[address, 8]`; `SP[] =
 address + 16`; `X[t] = data`. Faults unless the stack pointer and the
 writable regions are those the push left (`s₁`), whose head is the frame;
-it removes the frame. -/
+it removes the frame. `free bytes` is `add sp, sp, #bytes` alone, likewise
+for the frame of `alloc bytes`. The released frame's bytes are then below
+the stack pointer, and are `lose`'s: the next of the state's `unknowns`,
+two for each doubleword of the frame, say what each holds. -/
 def pop : Instr → State → State → Option State
   | .free bytes, s₁, s₂ =>
     if 0 < bytes ∧ bytes < 4096 ∧ bytes % 16 = 0 ∧
         s₂.sp = s₁.sp ∧ s₂.wr = s₁.wr ∧ s₁.wr.head? = some ⟨s₁.sp, bytes⟩ then
-      some { s₂ with sp := s₂.sp + BitVec.ofNat 64 bytes, wr := s₂.wr.tail }
+      some { s₂ with
+        sp := s₂.sp + BitVec.ofNat 64 bytes, wr := s₂.wr.tail,
+        mem := lose s₂.mem s₂.sp bytes s₂.unknowns,
+        unknowns := fun n => s₂.unknowns (n + bytes / 4) }
     else none
   | .pop r, s₁, s₂ =>
     if s₂.sp = s₁.sp ∧ s₂.wr = s₁.wr ∧ s₁.wr.head? = some ⟨s₁.sp, 16⟩ then
-      some { s₂.write .x r (s₂.mem.read s₂.sp 8) with sp := s₂.sp + 16, wr := s₂.wr.tail }
+      some { s₂.write .x r (s₂.mem.read s₂.sp 8) with
+        sp := s₂.sp + 16, wr := s₂.wr.tail, mem := lose s₂.mem s₂.sp 16 s₂.unknowns,
+        unknowns := fun n => s₂.unknowns (n + 4) }
     else none
   | _, _, _ => none
 
@@ -1481,11 +1569,22 @@ requires), named as
 Rust's target features. DDI 0487 A2 ("Armv8-A architecture extensions") and
 the "Is FEAT_…" condition in each instruction's decode (C7.2): FEAT_AES for
 AESE, AESD, AESMC, AESIMC and FEAT_PMULL for PMULL/PMULL2 with 64-bit
-sources, which Rust's `aes` feature covers together; FEAT_SHA1 for SHA1C,
+sources, which Rust's `aes` feature covers together (PMULL/PMULL2 with 8-bit
+sources, `pmull8`, need AdvSIMD alone, the baseline: A64 ISA XML 2026-03,
+"PMULL, PMULL2", decodes `if size == '01' || size == '10' then
+EndOfDecode(Decode_UNDEF); end; if size == '11' &&
+!IsFeatureImplemented(FEAT_PMULL) then EndOfDecode(Decode_UNDEF); end;`, and
+says "The PMULL and PMULL2 variants that operate on 64-bit source elements
+are defined only when FEAT_PMULL is implemented"); FEAT_SHA1 for SHA1C,
 SHA1P, SHA1M, SHA1H, SHA1SU0, SHA1SU1 and FEAT_SHA256 for SHA256H,
 SHA256H2, SHA256SU0, SHA256SU1 (Rust's `sha2`); FEAT_SHA512 for SHA512H,
 SHA512H2, SHA512SU0, SHA512SU1 and FEAT_SHA3 for EOR3, BCAX, RAX1, XAR
-(Rust's `sha3`); FEAT_SVE2 for SVE2's XAR (DDI 0602, "XAR": `if
+(Rust's `sha3`); FEAT_SM4 for SM4E and SM4EKEY (A64 ISA XML 2025-12, "SM4E",
+"SM4EKEY": `if !IsFeatureImplemented(FEAT_SM4) then
+EndOfDecode(Decode_UNDEF); end;`), Rust's `sm4`, which stands for FEAT_SM4
+and FEAT_SM3 together, so that it is also what SM3SS1, SM3TT1A, SM3TT1B,
+SM3TT2A, SM3TT2B, SM3PARTW1 and SM3PARTW2 need (`if
+!IsFeatureImplemented(FEAT_SM3) then EndOfDecode(Decode_UNDEF); end;`); FEAT_SVE2 for SVE2's XAR (DDI 0602, "XAR": `if
 !IsFeatureImplemented(FEAT_SVE2) && !IsFeatureImplemented(FEAT_SME) then
 UNDEFINED`; Rust's `sve2`, which implies `sve`, since FEAT_SVE2 requires
 FEAT_SVE); FEAT_DIT for MRS of the system register DIT (DDI 0601 2026-03,
@@ -1507,6 +1606,8 @@ def Instr.requires : Instr → List String
     ["sha2"]
   | .vop (.sha512h ..) | .vop (.sha512h2 ..) | .vop (.sha512su0 ..) | .vop (.sha512su1 ..)
   | .vop (.eor3 ..) | .vop (.bcax ..) | .vop (.rax1 ..) | .vop (.xar ..) => ["sha3"]
+  | .vop (.sm4e ..) | .vop (.sm4ekey ..)
+  | .vop (.sm3ss1 ..) | .vop (.sm3tt ..) | .vop (.sm3partw1 ..) | .vop (.sm3partw2 ..) => ["sm4"]
   | .vop (.xarS ..) => ["sve2"]
   | .mrsDit _ | .msrDitImm _ => ["dit"]
   | .barrier .sb => ["sb"]
@@ -1542,5 +1643,7 @@ abbrev isa : ISA where
   icall := icall
   -- A function's symbol, as a static's (`adrSym`).
   fnAddr s name := s.syms name
+  ptrEq := withPtrEq
+  ptrEqDec := withPtrEqDecEq withPtrEq (fun _ _ _ _ => rfl)
 
 end VG.AArch64

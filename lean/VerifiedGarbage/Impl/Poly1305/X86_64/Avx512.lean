@@ -9,7 +9,10 @@ public import VerifiedGarbage.Impl.Poly1305.X86_64.Avx2
 contract of `vg_poly1305_blocks`, for CPUs with AVX-512F (and AVX2, whose
 implementation it calls).
 
-Fewer than `minBlocks` blocks are left to `vg_poly1305_blocks_avx2`.
+Fewer than `minBlocks` blocks are left to the code of
+`vg_poly1305_blocks_avx2` with its own call of `vg_mcdt_enter`
+(`Avx2.blocksAvx2`, inline, so that that call is at the same depth as this
+one's).
 Otherwise the first `8 ⌊n / 8⌋` blocks are absorbed eight at a time, as
 `vg_poly1305_blocks_avx2` absorbs four at a time but in the eight quadwords
 of `zmm` registers, and the rest (fewer than eight) by calling
@@ -36,9 +39,8 @@ of `zmm` registers, and the rest (fewer than eight) by calling
   multiplying `(r², r)` by `r²`, then `(r^(4 - j), r^(4 - j))` in lane `j`
   (with `vpunpck{l,h}qdq` and `vshufi32x4`), multiplied by `(r⁴, 1)`.
 * `vpmuludq` has MXCSR-configuration-dependent timing on some processors:
-  the dispatcher runs `vg_mcdt_enter` first, which leaves MXCSR `0x1FBF` for the
-  whole call, so the code sets none of its own, as in
-  `vg_poly1305_blocks_avx2`.
+  as in `vg_poly1305_blocks_avx2`, the vector code runs only once its own
+  call of `vg_mcdt_enter` has returned 1 (`Avx2.guard`).
 * At the end the quadwords of `H` are summed into quadword 0
   (`vshufi32x4`, `vpunpckhqdq`), carried, and then reduced and stored by
   the code of `vg_poly1305_blocks_avx2`.
@@ -260,12 +262,13 @@ def body : Prog isa :=
       ([.vop .vzeroupper, .alu .add .rsi (.imm 128), .alu .and .rdx (.imm 7)] : List Instr))))
 
 def scalar : Prog isa := .call "vg_poly1305_blocks" blocks
-def avx2 : Prog isa := .call "vg_poly1305_blocks_avx2" Avx2.blocksAvx2
 
+/-- The vector code, from at least `minBlocks` blocks. -/
+def big : Prog isa :=
+  .seq body (.seq (.block [.alu .test .rdx (.reg .rdx)]) (.ite .e (.block []) scalar))
+
+/-- The function, with its own call of `vg_mcdt_enter` (`Avx2.guard`). -/
 def blocksAvx512 : Prog isa :=
-  .seq (.block [.alu .cmp .rdx (.imm (BitVec.ofNat 32 minBlocks))])
-    (.ite .b avx2
-      (.seq body
-        (.seq (.block [.alu .test .rdx (.reg .rdx)]) (.ite .e (.block []) scalar))))
+  .seq (.block [.alu .cmp .rdx (.imm (BitVec.ofNat 32 minBlocks))]) (.ite .b Avx2.blocksAvx2 (Avx2.guard big))
 
 end VG.Impl.Poly1305.X86_64.Avx512

@@ -21,7 +21,6 @@ vg_seed_ofb:
 	add x25, x1, #0
 	add x23, x2, #0
 	add x24, x3, #0
-	dup v31.2d, x25
 	ldr x6, [x0, #0]
 	str x6, [x5, #1232]
 	ldr x6, [x0, #8]
@@ -54,28 +53,15 @@ vg_seed_ofb:
 	str x6, [x5, #1344]
 	ldr x6, [x0, #120]
 	str x6, [x5, #1352]
-	umov x25, v31.d[0]
 	ldr x6, [x25, #0]
 	str x6, [x5, #976]
 	ldr x6, [x25, #8]
 	str x6, [x5, #984]
 	cbz x24, 20f
 22:
-	dup v31.2d, x25
-	dup v28.2d, x30
-	dup v27.2d, x5
-	dup v29.2d, x23
-	dup v30.2d, x24
-	add x0, x5, #1232
-	add x1, x5, #976
-	movz x2, #16, lsl #0
-	add x3, x5, #0
-	bl {vg_seed_encrypt_blocks}
-	umov x5, v27.d[0]
-	umov x30, v28.d[0]
-	umov x23, v29.d[0]
-	umov x24, v30.d[0]
-	umov x25, v31.d[0]
+	add x19, x30, #0
+	bl {vg_seed_serial_encrypt}
+	add x30, x19, #0
 	ldr x6, [x23, #0]
 	ldr x7, [x5, #976]
 	eor x6, x6, x7
@@ -200,6 +186,21 @@ vg_seed_ofb:
 	stp x17, x17, [x16, #400]
 	stp x17, x17, [x16, #416]
 	add sp, sp, #1456
+	movz x1, #0, lsl #0
+	movz x2, #0, lsl #0
+	movz x3, #0, lsl #0
+	movz x6, #0, lsl #0
+	movz x7, #0, lsl #0
+	movz x8, #0, lsl #0
+	movz x9, #0, lsl #0
+	movz x10, #0, lsl #0
+	movz x11, #0, lsl #0
+	movz x12, #0, lsl #0
+	movz x13, #0, lsl #0
+	movi v0.2d, #0
+	movi v1.2d, #0
+	movi v3.2d, #0
+	movz x0, #0, lsl #0
 	ret
 	.p2align 6
 
@@ -220,7 +221,6 @@ vg_seed_ofb_final:
 	add x25, x1, #0
 	add x23, x2, #0
 	add x24, x3, #0
-	dup v31.2d, x25
 	ldr x6, [x0, #0]
 	str x6, [x5, #1232]
 	ldr x6, [x0, #8]
@@ -253,28 +253,15 @@ vg_seed_ofb_final:
 	str x6, [x5, #1344]
 	ldr x6, [x0, #120]
 	str x6, [x5, #1352]
-	umov x25, v31.d[0]
 	ldr x6, [x25, #0]
 	str x6, [x5, #976]
 	ldr x6, [x25, #8]
 	str x6, [x5, #984]
 	cbz x24, 20f
 22:
-	dup v31.2d, x25
-	dup v28.2d, x30
-	dup v27.2d, x5
-	dup v29.2d, x23
-	dup v30.2d, x24
-	add x0, x5, #1232
-	add x1, x5, #976
-	movz x2, #16, lsl #0
-	add x3, x5, #0
-	bl {vg_seed_encrypt_blocks}
-	umov x5, v27.d[0]
-	umov x30, v28.d[0]
-	umov x23, v29.d[0]
-	umov x24, v30.d[0]
-	umov x25, v31.d[0]
+	add x19, x30, #0
+	bl {vg_seed_serial_encrypt}
+	add x30, x19, #0
 	lsr x8, x24, #4
 	cbz x8, 23f
 	ldr x6, [x23, #0]
@@ -414,5 +401,19 @@ vg_seed_ofb_final:
 	stp x17, x17, [x16, #400]
 	stp x17, x17, [x16, #416]
 	add sp, sp, #1456
+	movz x1, #0, lsl #0
+	movz x2, #0, lsl #0
+	movz x3, #0, lsl #0
+	movz x6, #0, lsl #0
+	movz x7, #0, lsl #0
+	movz x9, #0, lsl #0
+	movz x10, #0, lsl #0
+	movz x11, #0, lsl #0
+	movz x12, #0, lsl #0
+	movz x13, #0, lsl #0
+	movi v0.2d, #0
+	movi v1.2d, #0
+	movi v3.2d, #0
+	movz x0, #0, lsl #0
 	ret
 	.p2align 6

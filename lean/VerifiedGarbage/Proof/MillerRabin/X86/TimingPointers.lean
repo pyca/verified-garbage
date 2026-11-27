@@ -1,11 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.MillerRabin.X86.TimingBase
-
 import VerifiedGarbage.Proof.MillerRabin.X86.Copy
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.MillerRabin.X86.TimingBlocks
+
 /-! # Correctness republishes array pointers and width after header loads -/
 
 -- Formerly `VerifiedGarbage/Proof/MillerRabin/X86/TimingPointerRaw.lean`, which only this module imported.

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.Scrub.X86_64.Fn
 public import VerifiedGarbage.Impl.Mgf1.X86_64.Table
 public import VerifiedGarbage.Impl.Weierstrass.X86_64
 
@@ -61,8 +62,9 @@ digest if `big` (72 bytes each), and `T` (136 bytes); then the table's
 address. The calls use only `scratch`, which `core` overwrites
 entirely, and the stack below the frame; `K`, `V` and the words above the
 pointers but `D` and `B` are cleared before the frame is popped. In `scratch`: HMAC's inner and outer streaming states (192
-bytes each), the working space of the table's functions, the message, the
-words of a shift, and the copy of the states for `K`.
+bytes each), the working space of the table's functions (3104 bytes: HMAC's
+`init` for a key of any length, which the table holds, takes `W + S` words),
+the message, the words of a shift, and the copy of the states for `K`.
 
 1. `X`; `h` (`reduce`, or `prepC`); `V = 0x01…`, `K = 0x00…`.
 2. Steps d to g: `K = HMAC_K(V ‖ 0x00 ‖ d ‖ h)`, `V = HMAC_K(V)`,
@@ -126,11 +128,11 @@ def fTab : Nat := 216 + 8 * extra
 def sInner : Nat := 0
 def sOuter : Nat := 192
 def sWork : Nat := 384
-def sMsg : Nat := 2256
+def sMsg : Nat := 3488
 /-- The words of a conversion, if `big`. -/
-def sSlot : Nat := 2560
+def sSlot : Nat := 3792
 /-- A copy of HMAC's two states just after `init`, for the key `K`. -/
-def sSave : Nat := 3072
+def sSave : Nat := 4304
 
 /-- What the code needs of a curve. -/
 structure Cfg where
@@ -460,3 +462,13 @@ def entry : List Instr := [.mov .rcx (.reg .r8), .mov .r10 (.mem (at_ .r9 32)), 
 def signCode (c : Cfg) : Prog isa := .seq (.block entry) c.sign
 
 end VG.Impl.Ecdsa.Rfc6979.X86_64
+
+namespace VG.Impl.Ecdsa.Rfc6979.X86_64.Fn
+
+open VG.X86_64
+open VG.Impl.Scrub.X86_64 (scrubAll)
+
+/-- `vg_ecdsa_<curve>_sign`, with the configuration `c`, as emitted: its code, then its cleanup. -/
+def sign (c : Cfg) : Prog isa := scrubAll .sse 32 640 (_root_.VG.Impl.Ecdsa.Rfc6979.X86_64.signCode c)
+
+end VG.Impl.Ecdsa.Rfc6979.X86_64.Fn

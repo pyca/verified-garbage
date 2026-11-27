@@ -2,6 +2,8 @@ module
 
 import VerifiedGarbage.TCB.Rust
 meta import VerifiedGarbage.TCB.Rust
+import VerifiedGarbageTest.RenderOnly
+meta import VerifiedGarbageTest.RenderOnly
 import VerifiedGarbage.TCB.AArch64.Target
 meta import VerifiedGarbage.TCB.AArch64.Target
 import VerifiedGarbage.TCB.AArch64.Print
@@ -94,21 +96,24 @@ theorem verified : Verified target code contract := by
       stackBelow, tbl, sat]
     exact ⟨by decide, by decide⟩
 
-def artifact : Artifact where
-  target := .of target
-  module := "test"
-  name := "vg_test_consts"
-  sig := sig
-  doc := "Returns word 1 of its table."
+def artifact : EmitArtifact where
+  target := .of (renderOnly target) emitter
+  api := { module := "test", name := "vg_test_consts", sig := sig, safety := []
+           summary := "Returns word 1 of its table." }
   consts := consts
   code := code
   contract := contract
-  verified := verified
+  verified := renderOnly_verified verified
 
 /-- The rendering: the static's page and offset in the syntax of the object
 format (`vg_sym_page!`, `vg_sym_pageoff!`), and its symbol. -/
 def expected : String := "/// Returns word 1 of its table.
-#[allow(clippy::missing_safety_doc)]
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// # Safety
+///
+///
 #[unsafe(naked)]
 pub unsafe extern \"C\" fn vg_test_consts() -> u64 {
     core::arch::naked_asm!(
@@ -160,11 +165,31 @@ pub static VG_TEST_TABLE: Table<16> = Table(*b\"\\
 #guard Rust.wordBytes 0 == "\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00"
 #guard Rust.wordBytes 0xffffffffffffffff == "\\xff\\xff\\xff\\xff\\xff\\xff\\xff\\xff"
 
-#guard (Rust.checkConsts [.of (.of artifact)] (.of (.of artifact))).isOk
+#guard (Rust.checkConsts (.of artifact.toArtifact)).isOk && (Rust.checkTables "" [("", Rust.tablesOf artifact)]).isOk
 #guard Rust.consistent consts [("VG_TEST_TABLE", [7, 42]), ("VG_OTHER", [1])]
 #guard !Rust.consistent consts [("VG_OTHER", [1]), ("VG_TEST_TABLE", [7, 43])]
 #guard Rust.tableName "VG_P256_COMB7" && !Rust.tableName "vg_table" && !Rust.tableName "_A" &&
   !Rust.tableName "MOD" && !Rust.tableName "TABLE" && !Rust.tableName "VG_" && !Rust.tableName "VG_a" &&
   !Rust.tableName "" && !Rust.tableName "A-B"
+
+-- A symbol the code names is one of its tables, or a function its code runs (a call or a
+-- candidate of an indirect call), and nothing else (`checkConsts`).
+#guard Rust.symNamed ["VG_TEST_TABLE"] [] "VG_TEST_TABLE"
+#guard Rust.symNamed [] ["vg_test_callee"] "vg_test_callee"
+#guard !Rust.symNamed ["VG_TEST_TABLE"] ["vg_test_callee"] "vg_test_other"
+
+/-- A function's symbol (`adrSym` of a function its code runs) is bound at the
+function's path, as a call of it is; a table's at `consts`. -/
+def expectedSyms : String := "    core::arch::naked_asm!(
+        concat!(\"adrp x0, \", vg_sym_page!(\"{vg_test_callee}\")),
+        concat!(\"adrp x1, \", vg_sym_page!(\"{VG_TEST_TABLE}\")),
+        vg_test_callee = sym super::test::vg_test_callee,
+        VG_TEST_TABLE = sym super::consts::VG_TEST_TABLE,
+    )
+"
+
+#guard Rust.asmOf (.of (renderOnly target) emitter)
+  [.sym "adrp x0, " .page "vg_test_callee", .sym "adrp x1, " .page "VG_TEST_TABLE"]
+  (fun n => if n == "vg_test_callee" then "test" else "") "super" == expectedSyms
 
 end VG.Test.ConstTables

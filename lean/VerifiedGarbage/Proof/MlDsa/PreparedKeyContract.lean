@@ -2,7 +2,11 @@ module
 
 public import VerifiedGarbage.Spec.MlDsa.PreparedKey
 public import VerifiedGarbage.Proof.MlDsa.Contract
+public import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.MlDsa.Arith.Mem
+import VerifiedGarbage.Proof.MlKem.Mem
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # ML-DSA with prepared keys: the contracts of its internal functions
@@ -50,6 +54,40 @@ theorem preparedSecretKey_iff {p : Params} {m : Mem} {key : Addr} :
       PolyIs m (key + BitVec.ofNat 64 (p.skLen + 4 * n * i))
         (preparedSecretPolys p (bytesAt m key p.skLen))[i]! :=
   forall_congr' fun _ => imp_congr_right fun _ => polyStored_iff
+
+/-- A prepared public key is unchanged by writes outside it. -/
+theorem preparedPublicKey_frame {p : Params} {m m' : Mem} {key : Addr} {W : List Region}
+    (hf : Frame W m m') (hd : ∀ R ∈ W, (⟨key, preparedPublicKeyBytes p⟩ : Region).Disjoint R)
+    (hb : preparedPublicKeyBytes p < 2 ^ 32) (h : PreparedPublicKey p m key) :
+    PreparedPublicKey p m' key := by
+  obtain hs : Region.Sub (⟨key, p.pkLen⟩ : Region) ⟨key, preparedPublicKeyBytes p⟩ :=
+    Region.sub_prefix (by simp only [preparedPublicKeyBytes]; omega_using [])
+  obtain hk := Proof.MlKem.bytesAt_frame hf (fun R hR => (hd R hR).sub_left hs)
+    (by simp only [preparedPublicKeyBytes] at hb; omega_using [hb])
+  refine preparedPublicKey_iff.2 fun i hi => ?_
+  rw [hk]
+  exact Arith.polyIs_frame hf (fun R hR => (hd R hR).sub_left (by
+      change Region.Sub ⟨key + BitVec.ofNat 64 (p.pkLen + 4 * n * i), 1024⟩ _
+      apply Offset.sub_base key
+      simp only [preparedPublicKeyBytes, n]
+      omega_using [hi])) (preparedPublicKey_iff.1 h i hi)
+
+/-- A prepared private key is unchanged by writes outside it. -/
+theorem preparedSecretKey_frame {p : Params} {m m' : Mem} {key : Addr} {W : List Region}
+    (hf : Frame W m m') (hd : ∀ R ∈ W, (⟨key, preparedSecretKeyBytes p⟩ : Region).Disjoint R)
+    (hb : preparedSecretKeyBytes p < 2 ^ 32) (h : PreparedSecretKey p m key) :
+    PreparedSecretKey p m' key := by
+  obtain hs : Region.Sub (⟨key, p.skLen⟩ : Region) ⟨key, preparedSecretKeyBytes p⟩ :=
+    Region.sub_prefix (by simp only [preparedSecretKeyBytes]; omega_using [])
+  obtain hk := Proof.MlKem.bytesAt_frame hf (fun R hR => (hd R hR).sub_left hs)
+    (by simp only [preparedSecretKeyBytes] at hb; omega_using [hb])
+  refine preparedSecretKey_iff.2 fun i hi => ?_
+  rw [hk]
+  exact Arith.polyIs_frame hf (fun R hR => (hd R hR).sub_left (by
+      change Region.Sub ⟨key + BitVec.ofNat 64 (p.skLen + 4 * n * i), 1024⟩ _
+      apply Offset.sub_base key
+      simp only [preparedSecretKeyBytes, n]
+      omega_using [hi])) (preparedSecretKey_iff.1 h i hi)
 
 /-! ## Signing and verifying a message representative with a prepared key -/
 

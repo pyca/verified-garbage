@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Sha512.initContract` for `VG.Spec.Sha512.H0_384`. The streaming state is the hash value followed by a buffered partial block (`VG.Spec.Sha512.Repr`).
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 192 bytes.
@@ -21,6 +23,8 @@ pub(crate) unsafe extern "C" fn vg_sha384_init(state: *mut [u8; 192]) {
 /// Starts a SHA-512 computation: makes the SHA-512 streaming state `*state` represent the empty message, hashed from the initial hash value of SHA-512 (`VG.Spec.Sha512.H0_512`). Continue with `vg_sha512_update` and `vg_sha512_finalize`.
 ///
 /// Contract: `VG.Spec.Sha512.initContract` for `VG.Spec.Sha512.H0_512`. The streaming state is the hash value followed by a buffered partial block (`VG.Spec.Sha512.Repr`).
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -37,6 +41,8 @@ pub(crate) unsafe extern "C" fn vg_sha512_init(state: *mut [u8; 192]) {
 ///
 /// Contract: `VG.Spec.Sha512.initContract` for `VG.Spec.Sha512.H0_512_224`. The streaming state is the hash value followed by a buffered partial block (`VG.Spec.Sha512.Repr`).
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 192 bytes.
@@ -52,6 +58,8 @@ pub(crate) unsafe extern "C" fn vg_sha512_224_init(state: *mut [u8; 192]) {
 ///
 /// Contract: `VG.Spec.Sha512.initContract` for `VG.Spec.Sha512.H0_512_256`. The streaming state is the hash value followed by a buffered partial block (`VG.Spec.Sha512.Repr`).
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 192 bytes.
@@ -66,6 +74,8 @@ pub(crate) unsafe extern "C" fn vg_sha512_256_init(state: *mut [u8; 192]) {
 /// Absorbs data into a SHA-384, SHA-512, SHA-512/224 or SHA-512/256 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), it then represents that message followed by the `len` bytes at `data`.
 ///
 /// Contract: `VG.Spec.Sha512.updateContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -161,7 +171,7 @@ bne %cr0, 22b
 b 21f
 20:
 21:
-.base64 "sABb68AAm+vIALvr0ADb69gA++u4AHvrgAUhOCAAgE4=""#,
+.base64 "sABb68AAm+vIALvr0ADb69gA++u4AHvrgAUhOAAAADiB+iH4IACBOQAADPgIAAz4EAAM+BgADPggAAz4KAAM+DAADPg4AAz4QAAM+EgADPhQAAz4WAAM+GAADPhoAAz4cAAM+HgADPiAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHwAAAz4CAAM+BAADPgYAAz4IAAM+CgADPgwAAz4OAAM+EAADPhIAAz4UAAM+FgADPhgAAz4aAAM+HAADPh4AAz4gAAM+IgADPiQAAz4mAAM+KAADPioAAz4sAAM+LgADPjAAAz4yAAM+NAADPjYAAz4gAUhOAAAYDgAAIA4AACgOAAAwDgAAOA4AAAAOQAAIDkAAEA5AABgOQAAgDnEBAAQxAwhEMQUQhDEHGMQxCSEEMQspRDENMYQxDznEMRECBHETCkRxFRKEcRcaxHEZIwRxGytEcR0zhHEfO8RxIQQEsSMMRLElFISxJxzEiAAgE4=""#,
         VG_SHA512_PPC64LE_K = sym super::consts::VG_SHA512_PPC64LE_K,
     )
 }
@@ -169,6 +179,8 @@ b 21f
 /// Finishes a SHA-384, SHA-512, SHA-512/224 or SHA-512/256 computation: if the streaming state `*state` represents a message of `count` bytes, hashed from an initial hash value, writes the final hash value `H⁽ᴺ⁾` of that message (64 bytes) to `*out`. The SHA-512 digest is all of it; the SHA-384, SHA-512/224 and SHA-512/256 digests are its first 48, 28 and 32 bytes.
 ///
 /// Contract: `VG.Spec.Sha512.finalizeContract`. Constant time: only the pointers and `count` may affect timing, not the state.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -223,7 +235,7 @@ b 29f
 29:
 .base64 "gADG6YgA5umQAAbqmAAm6qAAZuoIAEbqAADAO////zsAAD8o"
 beq %cr0, 20b
-.base64 "AAAa6QAAYDkoXRx9CAAa6QgAYDkoXRx9EAAa6RAAYDkoXRx9GAAa6RgAYDkoXRx9IAAa6SAAYDkoXRx9KAAa6SgAYDkoXRx9MAAa6TAAYDkoXRx9OAAa6TgAYDkoXRx9sABb68AAm+vIALvr0ADb69gA++u4AHvrgAUhOCAAgE4=""#,
+.base64 "AAAa6QAAYDkoXRx9CAAa6QgAYDkoXRx9EAAa6RAAYDkoXRx9GAAa6RgAYDkoXRx9IAAa6SAAYDkoXRx9KAAa6SgAYDkoXRx9MAAa6TAAYDkoXRx9OAAa6TgAYDkoXRx9sABb68AAm+vIALvr0ADb69gA++u4AHvrgAUhOAAAADiB+iH4IACBOQAADPgIAAz4EAAM+BgADPggAAz4KAAM+DAADPg4AAz4QAAM+EgADPhQAAz4WAAM+GAADPhoAAz4cAAM+HgADPiAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHwAAAz4CAAM+BAADPgYAAz4IAAM+CgADPgwAAz4OAAM+EAADPhIAAz4UAAM+FgADPhgAAz4aAAM+HAADPh4AAz4gAAM+IgADPiQAAz4mAAM+KAADPioAAz4sAAM+LgADPjAAAz4yAAM+NAADPjYAAz4gAUhOAAAYDgAAIA4AACgOAAAwDgAAOA4AAAAOQAAIDkAAEA5AABgOQAAgDnEBAAQxAwhEMQUQhDEHGMQxCSEEMQspRDENMYQxDznEMRECBHETCkRxFRKEcRcaxHEZIwRxGytEcR0zhHEfO8RxIQQEsSMMRLElFISxJxzEiAAgE4=""#,
         VG_SHA512_PPC64LE_K = sym super::consts::VG_SHA512_PPC64LE_K,
     )
 }
@@ -231,6 +243,8 @@ beq %cr0, 20b
 /// Finishes a SHA-384 computation: if the streaming state `*state` represents a message of `count` bytes, hashed from the initial hash value of SHA-384 (as `vg_sha384_init` starts it), writes the SHA-384 digest of that message (48 bytes, `VG.Spec.Sha512.sha384`) to `*out`.
 ///
 /// Contract: `VG.Spec.Sha512.finalizeDigestContract` for `VG.Spec.Sha512.H0_384` and `VG.Spec.Sha512.sha384`. Constant time: only the pointers and `count` may affect timing, not the state.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -285,7 +299,7 @@ b 29f
 29:
 .base64 "gADG6YgA5umQAAbqmAAm6qAAZuoIAEbqAADAO////zsAAD8o"
 beq %cr0, 20b
-.base64 "AAAa6QAAYDkoXRx9CAAa6QgAYDkoXRx9EAAa6RAAYDkoXRx9GAAa6RgAYDkoXRx9IAAa6SAAYDkoXRx9KAAa6SgAYDkoXRx9sABb68AAm+vIALvr0ADb69gA++u4AHvrgAUhOCAAgE4=""#,
+.base64 "AAAa6QAAYDkoXRx9CAAa6QgAYDkoXRx9EAAa6RAAYDkoXRx9GAAa6RgAYDkoXRx9IAAa6SAAYDkoXRx9KAAa6SgAYDkoXRx9sABb68AAm+vIALvr0ADb69gA++u4AHvrgAUhOAAAADiB+iH4IACBOQAADPgIAAz4EAAM+BgADPggAAz4KAAM+DAADPg4AAz4QAAM+EgADPhQAAz4WAAM+GAADPhoAAz4cAAM+HgADPiAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHwAAAz4CAAM+BAADPgYAAz4IAAM+CgADPgwAAz4OAAM+EAADPhIAAz4UAAM+FgADPhgAAz4aAAM+HAADPh4AAz4gAAM+IgADPiQAAz4mAAM+KAADPioAAz4sAAM+LgADPjAAAz4yAAM+NAADPjYAAz4gAUhOAAAYDgAAIA4AACgOAAAwDgAAOA4AAAAOQAAIDkAAEA5AABgOQAAgDnEBAAQxAwhEMQUQhDEHGMQxCSEEMQspRDENMYQxDznEMRECBHETCkRxFRKEcRcaxHEZIwRxGytEcR0zhHEfO8RxIQQEsSMMRLElFISxJxzEiAAgE4=""#,
         VG_SHA512_PPC64LE_K = sym super::consts::VG_SHA512_PPC64LE_K,
     )
 }
@@ -293,6 +307,8 @@ beq %cr0, 20b
 /// Finishes a SHA-512/256 computation: if the streaming state `*state` represents a message of `count` bytes, hashed from the initial hash value of SHA-512/256 (as `vg_sha512_256_init` starts it), writes the SHA-512/256 digest of that message (32 bytes, `VG.Spec.Sha512.sha512_256`) to `*out`.
 ///
 /// Contract: `VG.Spec.Sha512.finalizeDigestContract` for `VG.Spec.Sha512.H0_512_256` and `VG.Spec.Sha512.sha512_256`. Constant time: only the pointers and `count` may affect timing, not the state.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -347,7 +363,7 @@ b 29f
 29:
 .base64 "gADG6YgA5umQAAbqmAAm6qAAZuoIAEbqAADAO////zsAAD8o"
 beq %cr0, 20b
-.base64 "AAAa6QAAYDkoXRx9CAAa6QgAYDkoXRx9EAAa6RAAYDkoXRx9GAAa6RgAYDkoXRx9sABb68AAm+vIALvr0ADb69gA++u4AHvrgAUhOCAAgE4=""#,
+.base64 "AAAa6QAAYDkoXRx9CAAa6QgAYDkoXRx9EAAa6RAAYDkoXRx9GAAa6RgAYDkoXRx9sABb68AAm+vIALvr0ADb69gA++u4AHvrgAUhOAAAADiB+iH4IACBOQAADPgIAAz4EAAM+BgADPggAAz4KAAM+DAADPg4AAz4QAAM+EgADPhQAAz4WAAM+GAADPhoAAz4cAAM+HgADPiAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHwAAAz4CAAM+BAADPgYAAz4IAAM+CgADPgwAAz4OAAM+EAADPhIAAz4UAAM+FgADPhgAAz4aAAM+HAADPh4AAz4gAAM+IgADPiQAAz4mAAM+KAADPioAAz4sAAM+LgADPjAAAz4yAAM+NAADPjYAAz4gAUhOAAAYDgAAIA4AACgOAAAwDgAAOA4AAAAOQAAIDkAAEA5AABgOQAAgDnEBAAQxAwhEMQUQhDEHGMQxCSEEMQspRDENMYQxDznEMRECBHETCkRxFRKEcRcaxHEZIwRxGytEcR0zhHEfO8RxIQQEsSMMRLElFISxJxzEiAAgE4=""#,
         VG_SHA512_PPC64LE_K = sym super::consts::VG_SHA512_PPC64LE_K,
     )
 }
@@ -355,6 +371,8 @@ beq %cr0, 20b
 /// Finishes a SHA-512/224 computation: if the streaming state `*state` represents a message of `count` bytes, hashed from the initial hash value of SHA-512/224 (as `vg_sha512_224_init` starts it), writes the SHA-512/224 digest of that message (28 bytes, `VG.Spec.Sha512.sha512_224`) to `*out`.
 ///
 /// Contract: `VG.Spec.Sha512.finalizeDigestContract` for `VG.Spec.Sha512.H0_512_224` and `VG.Spec.Sha512.sha512_224`. Constant time: only the pointers and `count` may affect timing, not the state.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -409,7 +427,7 @@ b 29f
 29:
 .base64 "gADG6YgA5umQAAbqmAAm6qAAZuoIAEbqAADAO////zsAAD8o"
 beq %cr0, 20b
-.base64 "AAAa6QAAYDkoXRx9CAAa6QgAYDkoXRx9EAAa6RAAYDkoXRx9HAAagRgAYDksXRx9sABb68AAm+vIALvr0ADb69gA++u4AHvrgAUhOCAAgE4=""#,
+.base64 "AAAa6QAAYDkoXRx9CAAa6QgAYDkoXRx9EAAa6RAAYDkoXRx9HAAagRgAYDksXRx9sABb68AAm+vIALvr0ADb69gA++u4AHvrgAUhOAAAADiB+iH4IACBOQAADPgIAAz4EAAM+BgADPggAAz4KAAM+DAADPg4AAz4QAAM+EgADPhQAAz4WAAM+GAADPhoAAz4cAAM+HgADPiAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHwAAAz4CAAM+BAADPgYAAz4IAAM+CgADPgwAAz4OAAM+EAADPhIAAz4UAAM+FgADPhgAAz4aAAM+HAADPh4AAz4gAAM+IgADPiQAAz4mAAM+KAADPioAAz4sAAM+LgADPjAAAz4yAAM+NAADPjYAAz4gAUhOAAAYDgAAIA4AACgOAAAwDgAAOA4AAAAOQAAIDkAAEA5AABgOQAAgDnEBAAQxAwhEMQUQhDEHGMQxCSEEMQspRDENMYQxDznEMRECBHETCkRxFRKEcRcaxHEZIwRxGytEcR0zhHEfO8RxIQQEsSMMRLElFISxJxzEiAAgE4=""#,
         VG_SHA512_PPC64LE_K = sym super::consts::VG_SHA512_PPC64LE_K,
     )
 }
@@ -417,6 +435,8 @@ beq %cr0, 20b
 /// Computes the SHA-384 digest of the `len` bytes at `data` (48 bytes, `VG.Spec.Sha512.sha384`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-384 computation with that message.
 ///
 /// Contract: `VG.Spec.Sha512.digestContract` for `VG.Spec.Sha512.sha384`. Constant time: only the pointers and `len` may affect timing, not the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -433,7 +453,7 @@ bl {vg_sha384_init}
 bl {vg_sha512_update_scratch}
 .base64 "AAB0OAAAmDjQAbU4AADVOA=="
 bl {vg_sha512_finalize_scratch}
-.base64 "0AEVgQAAFpHUARWBBAAWkdgBFYEIABaR3AEVgQwAFpHgARWBEAAWkeQBFYEUABaR6AEVgRgAFpHsARWBHAAWkfABFYEgABaR9AEVgSQAFpH4ARWBKAAWkfwBFYEsABaREAKV6iAC1eooAvXqMAIV6zgCNesYArXqIAAB6DAAITimAwh8IACBOQAAYDkAAGz5CABs+RAAbPkYAGz5IABs+SgAbPkwAGz5OABs+UAAbPlIAGz5UABs+VgAbPlgAGz5aABs+XAAbPl4AGz5gABs+YgAbPmQAGz5mABs+aAAbPmoAGz5sABs+bgAbPnAAGz5yABs+dAAbPnYAGz54ABs+egAbPnwAGz5+ABs+QABbPkIAWz5EAFs+RgBbPkgAWz5KAFs+TABbPk4AWz5QAFs+UgBbPlQAWz5WAFs+WABbPloAWz5cAFs+XgBbPmAAWz5iAFs+ZABbPmYAWz5oAFs+agBbPmwAWz5uAFs+cABbPnIAWz50AFs+dgBbPngAWz56AFs+fABbPn4AWz5AAJs+QgCbPkQAmz5GAJs+SACbPkoAmz5MAJs+TgCbPlgAiE4IACATg==""#,
+.base64 "0AEVgQAAFpHUARWBBAAWkdgBFYEIABaR3AEVgQwAFpHgARWBEAAWkeQBFYEUABaR6AEVgRgAFpHsARWBHAAWkfABFYEgABaR9AEVgSQAFpH4ARWBKAAWkfwBFYEsABaREAKV6iAC1eooAvXqMAIV6zgCNesYArXqIAAB6DAAITimAwh8IACBOQAAADgAAAz4CAAM+BAADPgYAAz4IAAM+CgADPgwAAz4OAAM+EAADPhIAAz4UAAM+FgADPhgAAz4aAAM+HAADPh4AAz4gACMOewHDHyAAIw57AcMfIAAjDnsBwx8AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhAAAz4SAAM+FAADPhYAAz4YAAM+GgADPhwAAz4eAAM+IAADPiIAAz4kAAM+JgADPigAAz4qAAM+LAADPi4AAz4YAIhOAAAADhx/SH4IACBOQAADPgIAAz4EAAM+BgADPggAAz4KAAM+DAADPg4AAz4QAAM+EgADPhQAAz4WAAM+GAADPhoAAz4cAAM+HgADPiAAIw57AcMfIAAjDnsBwx8gACMOewHDHwAAAz4CAAM+BAADPgYAAz4IAAM+CgADPgwAAz4OAAM+EAADPhIAAz4UAAM+FgADPhgAAz4aAAM+HAADPh4AAz4gAAM+IgADPiQAAz4mAAM+KAADPioAAz4sAAM+LgADPjAAAz4yAAM+NAADPjYAAz44AAM+OgADPiQAiE4AABgOAAAgDgAAKA4AADAOAAA4DgAAAA5AAAgOQAAQDkAAGA5AACAOcQEABDEDCEQxBRCEMQcYxDEJIQQxCylEMQ0xhDEPOcQxEQIEcRMKRHEVEoRxFxrEcRkjBHEbK0RxHTOEcR87xHEhBASxIwxEsSUUhLEnHMSIACATg==""#,
         vg_sha384_init = sym super::sha512::vg_sha384_init,
         vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
         vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
@@ -443,6 +463,8 @@ bl {vg_sha512_finalize_scratch}
 /// Computes the SHA-512 digest of the `len` bytes at `data` (64 bytes, `VG.Spec.Sha512.sha512`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-512 computation with that message.
 ///
 /// Contract: `VG.Spec.Sha512.digestContract` for `VG.Spec.Sha512.sha512`. Constant time: only the pointers and `len` may affect timing, not the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -459,7 +481,7 @@ bl {vg_sha512_init}
 bl {vg_sha512_update_scratch}
 .base64 "AAB0OAAAmDjQAbU4AADVOA=="
 bl {vg_sha512_finalize_scratch}
-.base64 "0AEVgQAAFpHUARWBBAAWkdgBFYEIABaR3AEVgQwAFpHgARWBEAAWkeQBFYEUABaR6AEVgRgAFpHsARWBHAAWkfABFYEgABaR9AEVgSQAFpH4ARWBKAAWkfwBFYEsABaRAAIVgTAAFpEEAhWBNAAWkQgCFYE4ABaRDAIVgTwAFpEQApXqIALV6igC9eowAhXrOAI16xgCteogAAHoMAAhOKYDCHwgAIE5AABgOQAAbPkIAGz5EABs+RgAbPkgAGz5KABs+TAAbPk4AGz5QABs+UgAbPlQAGz5WABs+WAAbPloAGz5cABs+XgAbPmAAGz5iABs+ZAAbPmYAGz5oABs+agAbPmwAGz5uABs+cAAbPnIAGz50ABs+dgAbPngAGz56ABs+fAAbPn4AGz5AAFs+QgBbPkQAWz5GAFs+SABbPkoAWz5MAFs+TgBbPlAAWz5SAFs+VABbPlYAWz5YAFs+WgBbPlwAWz5eAFs+YABbPmIAWz5kAFs+ZgBbPmgAWz5qAFs+bABbPm4AWz5wAFs+cgBbPnQAWz52AFs+eABbPnoAWz58AFs+fgBbPkAAmz5CAJs+RACbPkYAmz5IAJs+SgCbPkwAmz5OAJs+WACITggAIBO""#,
+.base64 "0AEVgQAAFpHUARWBBAAWkdgBFYEIABaR3AEVgQwAFpHgARWBEAAWkeQBFYEUABaR6AEVgRgAFpHsARWBHAAWkfABFYEgABaR9AEVgSQAFpH4ARWBKAAWkfwBFYEsABaRAAIVgTAAFpEEAhWBNAAWkQgCFYE4ABaRDAIVgTwAFpEQApXqIALV6igC9eowAhXrOAI16xgCteogAAHoMAAhOKYDCHwgAIE5AAAAOAAADPgIAAz4EAAM+BgADPggAAz4KAAM+DAADPg4AAz4QAAM+EgADPhQAAz4WAAM+GAADPhoAAz4cAAM+HgADPiAAIw57AcMfIAAjDnsBwx8gACMOewHDHwAAAz4CAAM+BAADPgYAAz4IAAM+CgADPgwAAz4OAAM+EAADPhIAAz4UAAM+FgADPhgAAz4aAAM+HAADPh4AAz4gAAM+IgADPiQAAz4mAAM+KAADPioAAz4sAAM+LgADPhgAiE4AAAAOHH9IfggAIE5AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhAAAz4SAAM+FAADPhYAAz4YAAM+GgADPhwAAz4eAAM+IAAjDnsBwx8gACMOewHDHyAAIw57AcMfAAADPgIAAz4EAAM+BgADPggAAz4KAAM+DAADPg4AAz4QAAM+EgADPhQAAz4WAAM+GAADPhoAAz4cAAM+HgADPiAAAz4iAAM+JAADPiYAAz4oAAM+KgADPiwAAz4uAAM+MAADPjIAAz40AAM+NgADPjgAAz46AAM+JACITgAAGA4AACAOAAAoDgAAMA4AADgOAAAADkAACA5AABAOQAAYDkAAIA5xAQAEMQMIRDEFEIQxBxjEMQkhBDELKUQxDTGEMQ85xDERAgRxEwpEcRUShHEXGsRxGSMEcRsrRHEdM4RxHzvEcSEEBLEjDESxJRSEsSccxIgAIBO""#,
         vg_sha512_init = sym super::sha512::vg_sha512_init,
         vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
         vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
@@ -469,6 +491,8 @@ bl {vg_sha512_finalize_scratch}
 /// Computes the SHA-512/224 digest of the `len` bytes at `data` (28 bytes, `VG.Spec.Sha512.sha512_224`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-512/224 computation with that message.
 ///
 /// Contract: `VG.Spec.Sha512.digestContract` for `VG.Spec.Sha512.sha512_224`. Constant time: only the pointers and `len` may affect timing, not the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -485,7 +509,7 @@ bl {vg_sha512_224_init}
 bl {vg_sha512_update_scratch}
 .base64 "AAB0OAAAmDjQAbU4AADVOA=="
 bl {vg_sha512_finalize_scratch}
-.base64 "0AEVgQAAFpHUARWBBAAWkdgBFYEIABaR3AEVgQwAFpHgARWBEAAWkeQBFYEUABaR6AEVgRgAFpEQApXqIALV6igC9eowAhXrOAI16xgCteogAAHoMAAhOKYDCHwgAIE5AABgOQAAbPkIAGz5EABs+RgAbPkgAGz5KABs+TAAbPk4AGz5QABs+UgAbPlQAGz5WABs+WAAbPloAGz5cABs+XgAbPmAAGz5iABs+ZAAbPmYAGz5oABs+agAbPmwAGz5uABs+cAAbPnIAGz50ABs+dgAbPngAGz56ABs+fAAbPn4AGz5AAFs+QgBbPkQAWz5GAFs+SABbPkoAWz5MAFs+TgBbPlAAWz5SAFs+VABbPlYAWz5YAFs+WgBbPlwAWz5eAFs+YABbPmIAWz5kAFs+ZgBbPmgAWz5qAFs+bABbPm4AWz5wAFs+cgBbPnQAWz52AFs+eABbPnoAWz58AFs+fgBbPkAAmz5CAJs+RACbPkYAmz5IAJs+SgCbPkwAmz5OAJs+WACITggAIBO""#,
+.base64 "0AEVgQAAFpHUARWBBAAWkdgBFYEIABaR3AEVgQwAFpHgARWBEAAWkeQBFYEUABaR6AEVgRgAFpEQApXqIALV6igC9eowAhXrOAI16xgCteogAAHoMAAhOKYDCHwgAIE5AAAAOAAADPgIAAz4EAAM+BgADPggAAz4KAAM+DAADPg4AAz4QAAM+EgADPhQAAz4WAAM+GAADPhoAAz4cAAM+HgADPiAAIw57AcMfIAAjDnsBwx8gACMOewHDHwAAAz4CAAM+BAADPgYAAz4IAAM+CgADPgwAAz4OAAM+EAADPhIAAz4UAAM+FgADPhgAAz4aAAM+HAADPh4AAz4gAAM+IgADPiQAAz4mAAM+KAADPioAAz4sAAM+LgADPhgAiE4AAAAOHH9IfggAIE5AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhAAAz4SAAM+FAADPhYAAz4YAAM+GgADPhwAAz4eAAM+IAAjDnsBwx8gACMOewHDHyAAIw57AcMfAAADPgIAAz4EAAM+BgADPggAAz4KAAM+DAADPg4AAz4QAAM+EgADPhQAAz4WAAM+GAADPhoAAz4cAAM+HgADPiAAAz4iAAM+JAADPiYAAz4oAAM+KgADPiwAAz4uAAM+MAADPjIAAz40AAM+NgADPjgAAz46AAM+JACITgAAGA4AACAOAAAoDgAAMA4AADgOAAAADkAACA5AABAOQAAYDkAAIA5xAQAEMQMIRDEFEIQxBxjEMQkhBDELKUQxDTGEMQ85xDERAgRxEwpEcRUShHEXGsRxGSMEcRsrRHEdM4RxHzvEcSEEBLEjDESxJRSEsSccxIgAIBO""#,
         vg_sha512_224_init = sym super::sha512::vg_sha512_224_init,
         vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
         vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
@@ -495,6 +519,8 @@ bl {vg_sha512_finalize_scratch}
 /// Computes the SHA-512/256 digest of the `len` bytes at `data` (32 bytes, `VG.Spec.Sha512.sha512_256`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-512/256 computation with that message.
 ///
 /// Contract: `VG.Spec.Sha512.digestContract` for `VG.Spec.Sha512.sha512_256`. Constant time: only the pointers and `len` may affect timing, not the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -511,7 +537,7 @@ bl {vg_sha512_256_init}
 bl {vg_sha512_update_scratch}
 .base64 "AAB0OAAAmDjQAbU4AADVOA=="
 bl {vg_sha512_finalize_scratch}
-.base64 "0AEVgQAAFpHUARWBBAAWkdgBFYEIABaR3AEVgQwAFpHgARWBEAAWkeQBFYEUABaR6AEVgRgAFpHsARWBHAAWkRACleogAtXqKAL16jACFes4AjXrGAK16iAAAegwACE4pgMIfCAAgTkAAGA5AABs+QgAbPkQAGz5GABs+SAAbPkoAGz5MABs+TgAbPlAAGz5SABs+VAAbPlYAGz5YABs+WgAbPlwAGz5eABs+YAAbPmIAGz5kABs+ZgAbPmgAGz5qABs+bAAbPm4AGz5wABs+cgAbPnQAGz52ABs+eAAbPnoAGz58ABs+fgAbPkAAWz5CAFs+RABbPkYAWz5IAFs+SgBbPkwAWz5OAFs+UABbPlIAWz5UAFs+VgBbPlgAWz5aAFs+XABbPl4AWz5gAFs+YgBbPmQAWz5mAFs+aABbPmoAWz5sAFs+bgBbPnAAWz5yAFs+dABbPnYAWz54AFs+egBbPnwAWz5+AFs+QACbPkIAmz5EAJs+RgCbPkgAmz5KAJs+TACbPk4Amz5YAIhOCAAgE4=""#,
+.base64 "0AEVgQAAFpHUARWBBAAWkdgBFYEIABaR3AEVgQwAFpHgARWBEAAWkeQBFYEUABaR6AEVgRgAFpHsARWBHAAWkRACleogAtXqKAL16jACFes4AjXrGAK16iAAAegwACE4pgMIfCAAgTkAAAA4AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhAAAz4SAAM+FAADPhYAAz4YAAM+GgADPhwAAz4eAAM+IAAjDnsBwx8gACMOewHDHyAAIw57AcMfAAADPgIAAz4EAAM+BgADPggAAz4KAAM+DAADPg4AAz4QAAM+EgADPhQAAz4WAAM+GAADPhoAAz4cAAM+HgADPiAAAz4iAAM+JAADPiYAAz4oAAM+KgADPiwAAz4uAAM+GACITgAAAA4cf0h+CAAgTkAAAz4CAAM+BAADPgYAAz4IAAM+CgADPgwAAz4OAAM+EAADPhIAAz4UAAM+FgADPhgAAz4aAAM+HAADPh4AAz4gACMOewHDHyAAIw57AcMfIAAjDnsBwx8AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhAAAz4SAAM+FAADPhYAAz4YAAM+GgADPhwAAz4eAAM+IAADPiIAAz4kAAM+JgADPigAAz4qAAM+LAADPi4AAz4wAAM+MgADPjQAAz42AAM+OAADPjoAAz4kAIhOAAAYDgAAIA4AACgOAAAwDgAAOA4AAAAOQAAIDkAAEA5AABgOQAAgDnEBAAQxAwhEMQUQhDEHGMQxCSEEMQspRDENMYQxDznEMRECBHETCkRxFRKEcRcaxHEZIwRxGytEcR0zhHEfO8RxIQQEsSMMRLElFISxJxzEiAAgE4=""#,
         vg_sha512_256_init = sym super::sha512::vg_sha512_256_init,
         vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
         vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
@@ -521,6 +547,10 @@ bl {vg_sha512_finalize_scratch}
 #[rustfmt::skip]
 #[path = "internal/vg_sha512_compress.rs"]
 pub(crate) mod vg_sha512_compress;
+
+#[rustfmt::skip]
+#[path = "internal/vg_sha512_digest_core.rs"]
+pub(crate) mod vg_sha512_digest_core;
 
 #[rustfmt::skip]
 #[path = "internal/vg_sha512_finalize_scratch.rs"]

@@ -71,34 +71,34 @@ theorem topWords_ok {s : State} {B : BitVec 32} {Z w N X : Nat} (h : Ws s B Z w 
   generalize ey2 : w32 s.mem (State.addr B) (X + 8) = y2 at k
   generalize ey3 : w32 s.mem (State.addr B) (X + 12) = y3 at k
   generalize eP : slot s.mem B sP = P at k
-  have a0 : State.addr (B + BitVec.ofNat 32 X) = off (State.addr B) X := h.addr (by omega_using [hXZ])
-  have a4 : State.addr (B + BitVec.ofNat 32 X + BitVec.ofNat 32 4) = off (State.addr B) (X + 4) := by
+  obtain a0 : State.addr (B + BitVec.ofNat 32 X) = off (State.addr B) X := h.addr (by omega_using [hXZ])
+  obtain a4 : State.addr (B + BitVec.ofNat 32 X + BitVec.ofNat 32 4) = off (State.addr B) (X + 4) := by
     rw [add_ofNat_assoc]; exact h.addr (by omega_using [hXZ])
-  have a8 : State.addr (B + BitVec.ofNat 32 X + BitVec.ofNat 32 8) = off (State.addr B) (X + 8) := by
+  obtain a8 : State.addr (B + BitVec.ofNat 32 X + BitVec.ofNat 32 8) = off (State.addr B) (X + 8) := by
     rw [add_ofNat_assoc]; exact h.addr (by omega_using [hXZ])
-  have a12 : State.addr (B + BitVec.ofNat 32 X + BitVec.ofNat 32 12) = off (State.addr B) (X + 12) := by
+  obtain a12 : State.addr (B + BitVec.ofNat 32 X + BitVec.ofNat 32 12) = off (State.addr B) (X + 12) := by
     rw [add_ofNat_assoc]; exact h.addr (by omega_using [hXZ])
-  have aP := h.addr (d := sP) (by simp only [sP, VG.Impl.Rsa.Arm.Keys.hdr] at hz ⊢; omega_using [hz])
-  have r0 : InRegions (s.rd ++ s.wr) (off (State.addr B) X) 4 := h.read (by omega_using [hXZ])
-  have r4 : InRegions (s.rd ++ s.wr) (off (State.addr B) (X + 4)) 4 := h.read (by omega_using [hXZ])
-  have r8 : InRegions (s.rd ++ s.wr) (off (State.addr B) (X + 8)) 4 := h.read (by omega_using [hXZ])
-  have r12 : InRegions (s.rd ++ s.wr) (off (State.addr B) (X + 12)) 4 := h.read (by omega_using [hXZ])
-  have rP : InRegions (s.rd ++ s.wr) (off (State.addr B) sP) 4 :=
+  obtain aP := h.addr (d := sP) (by simp only [sP, VG.Impl.Rsa.Arm.Keys.hdr] at hz ⊢; omega_using [hz])
+  obtain r0 : InRegions (s.rd ++ s.wr) (off (State.addr B) X) 4 := h.read (by omega_using [hXZ])
+  obtain r4 : InRegions (s.rd ++ s.wr) (off (State.addr B) (X + 4)) 4 := h.read (by omega_using [hXZ])
+  obtain r8 : InRegions (s.rd ++ s.wr) (off (State.addr B) (X + 8)) 4 := h.read (by omega_using [hXZ])
+  obtain r12 : InRegions (s.rd ++ s.wr) (off (State.addr B) (X + 12)) 4 := h.read (by omega_using [hXZ])
+  obtain rP : InRegions (s.rd ++ s.wr) (off (State.addr B) sP) 4 :=
     h.read (by simp only [sP, VG.Impl.Rsa.Arm.Keys.hdr] at hz ⊢; omega_using [hz])
-  have v0 : s.mem.readW (off (State.addr B) X) 32 = BitVec.ofNat 32 y0 := by rw [← ey0]; exact (ofNat_toNat32 _).symm
-  have v4 : s.mem.readW (off (State.addr B) (X + 4)) 32 = BitVec.ofNat 32 y1 := by
+  obtain v0 : s.mem.readW (off (State.addr B) X) 32 = BitVec.ofNat 32 y0 := by rw [← ey0]; exact (ofNat_toNat32 _).symm
+  obtain v4 : s.mem.readW (off (State.addr B) (X + 4)) 32 = BitVec.ofNat 32 y1 := by
     rw [← ey1]; exact (ofNat_toNat32 _).symm
-  have v8 : s.mem.readW (off (State.addr B) (X + 8)) 32 = BitVec.ofNat 32 y2 := by
+  obtain v8 : s.mem.readW (off (State.addr B) (X + 8)) 32 = BitVec.ofNat 32 y2 := by
     rw [← ey2]; exact (ofNat_toNat32 _).symm
-  have v12 : s.mem.readW (off (State.addr B) (X + 12)) 32 = BitVec.ofNat 32 y3 := by
+  obtain v12 : s.mem.readW (off (State.addr B) (X + 12)) 32 = BitVec.ofNat 32 y3 := by
     rw [← ey3]; exact (ofNat_toNat32 _).symm
-  have vP : s.mem.readW (off (State.addr B) sP) 32 = BitVec.ofNat 32 P := by rw [← eP]; exact (ofNat_toNat32 _).symm
-  have hy0 : y0 < 2 ^ 32 := ey0 ▸ BitVec.isLt _
-  have hy1 : y1 < 2 ^ 32 := ey1 ▸ BitVec.isLt _
-  have hy2 : y2 < 2 ^ 32 := ey2 ▸ BitVec.isLt _
-  have hy3 : y3 < 2 ^ 32 := ey3 ▸ BitVec.isLt _
-  have hP : P < 2 ^ 32 := eP ▸ BitVec.isLt _
-  have tn : ∀ {a : Nat}, a < 2 ^ 32 → (BitVec.ofNat 32 a).toNat = a := fun h => by
+  obtain vP : s.mem.readW (off (State.addr B) sP) 32 = BitVec.ofNat 32 P := by rw [← eP]; exact (ofNat_toNat32 _).symm
+  obtain hy0 : y0 < 2 ^ 32 := ey0 ▸ BitVec.isLt _
+  obtain hy1 : y1 < 2 ^ 32 := ey1 ▸ BitVec.isLt _
+  obtain hy2 : y2 < 2 ^ 32 := ey2 ▸ BitVec.isLt _
+  obtain hy3 : y3 < 2 ^ 32 := ey3 ▸ BitVec.isLt _
+  obtain hP : P < 2 ^ 32 := eP ▸ BitVec.isLt _
+  obtain tn : ∀ {a : Nat}, a < 2 ^ 32 → (BitVec.ofNat 32 a).toNat = a := fun h => by
     rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt h
   simp only [topWords, List.append_assoc]
   refine WP.block_append_iff.mpr (WP.mono (WP.keep [.r12, .r0, .r11, .lr, .r10, .r2, .r1] (Q := fun v =>
@@ -110,48 +110,48 @@ theorem topWords_ok {s : State} {B : BitVec 32} {Z w N X : Nat} (h : Ws s B Z w 
   refine wp_wide fun v2 e2 P2 => ?_
   rw [i1, p1, tn hy0, tn hP] at e2
   obtain ⟨lo2, hi2⟩ := wide_lo_hi (BitVec.isLt _) e2
-  have g := fun (r : Reg) (hr : r ∉ VG.Proof.Bignum.Arm.clobbers) => P2.regs r hr
+  obtain g := fun (r : Reg) (hr : r ∉ VG.Proof.Bignum.Arm.clobbers) => P2.regs r hr
   refine WP.block_append_iff.mpr (WP.mono (WP.keep [.r0, .r1] (Q := fun v =>
       v.gpr .r0 = v2.gpr .r4 ∧ v.gpr .r1 = BitVec.ofNat 32 y1 ∧ v.mem = v2.mem) (by
     krun [g .r11 (by decide), y1']) (by decide)) fun v3 ⟨⟨x3, i3, m3⟩, k3⟩ => ?_)
   refine wp_wide fun v4 e4 P4 => ?_
   rw [i3, tn hy1, (k3.gpr _ (by decide)).trans ((P2.regs _ (by decide)).trans p1), tn hP] at e4
   obtain ⟨lo4, hi4⟩ := wide_lo_hi (BitVec.isLt _) e4
-  have wU0 : InRegions v4.wr (off (State.addr B) sU0) 4 := by
+  obtain wU0 : InRegions v4.wr (off (State.addr B) sU0) 4 := by
     rw [P4.wr, k3.wr, P2.wr, k1.wr]; exact h.write (by simp only [sU0, VG.Impl.Rsa.Arm.Keys.hdr] at hz ⊢; omega_using [hz])
-  have aU0 := h.addr (d := sU0) (by simp only [sU0, VG.Impl.Rsa.Arm.Keys.hdr] at hz ⊢; omega_using [hz])
-  have b4 : v4.gpr .r12 = B := (P4.regs _ (by decide)).trans ((k3.gpr _ (by decide)).trans ((P2.regs _ (by decide)).trans b1))
-  have l4 : v4.gpr .lr = BitVec.ofNat 32 y2 :=
+  obtain aU0 := h.addr (d := sU0) (by simp only [sU0, VG.Impl.Rsa.Arm.Keys.hdr] at hz ⊢; omega_using [hz])
+  obtain b4 : v4.gpr .r12 = B := (P4.regs _ (by decide)).trans ((k3.gpr _ (by decide)).trans ((P2.regs _ (by decide)).trans b1))
+  obtain l4 : v4.gpr .lr = BitVec.ofNat 32 y2 :=
     (P4.regs _ (by decide)).trans ((k3.gpr _ (by decide)).trans ((P2.regs _ (by decide)).trans l1))
-  have x4 : v4.gpr .r0 = v2.gpr .r4 := (P4.regs _ (by decide)).trans x3
+  obtain x4 : v4.gpr .r0 = v2.gpr .r4 := (P4.regs _ (by decide)).trans x3
   refine WP.block_append_iff.mpr (WP.mono (WP.keep [.r3, .r0, .r1] (Q := fun v =>
       v.mem = v4.mem.writeW (off (State.addr B) sU0) (v4.gpr .r3 + v2.gpr .r4) ∧ v.gpr .r0 = v4.gpr .r4 ∧
       v.gpr .r1 = BitVec.ofNat 32 y2) (by
     krun [b4, l4, x4, aU0, wU0]) (by decide)) fun v5 ⟨⟨m5, x5, i5⟩, k5⟩ => ?_)
-  have p5 : v5.gpr .r2 = BitVec.ofNat 32 P :=
+  obtain p5 : v5.gpr .r2 = BitVec.ofNat 32 P :=
     (k5.gpr _ (by decide)).trans ((P4.regs _ (by decide)).trans ((k3.gpr _ (by decide)).trans
       ((P2.regs _ (by decide)).trans p1)))
   refine wp_wide fun v6 e6 P6 => ?_
   rw [i5, p5, tn hy2, tn hP] at e6
   obtain ⟨lo6, hi6⟩ := wide_lo_hi (BitVec.isLt _) e6
-  have x6 : v6.gpr .r0 = v4.gpr .r4 := (P6.regs _ (by decide)).trans x5
-  have t6 : v6.gpr .r10 = BitVec.ofNat 32 y3 :=
+  obtain x6 : v6.gpr .r0 = v4.gpr .r4 := (P6.regs _ (by decide)).trans x5
+  obtain t6 : v6.gpr .r10 = BitVec.ofNat 32 y3 :=
     (P6.regs _ (by decide)).trans ((k5.gpr _ (by decide)).trans ((P4.regs _ (by decide)).trans
       ((k3.gpr _ (by decide)).trans ((P2.regs _ (by decide)).trans t1))))
   refine WP.block_append_iff.mpr (WP.mono (WP.keep [.r11, .r0, .r1] (Q := fun v =>
       v.gpr .r11 = v6.gpr .r3 + v4.gpr .r4 ∧ v.gpr .r0 = v6.gpr .r4 ∧ v.gpr .r1 = BitVec.ofNat 32 y3 ∧
       v.mem = v6.mem) (by
     krun [x6, t6]) (by decide)) fun v7 ⟨⟨u7, x7, i7, m7⟩, k7⟩ => ?_)
-  have p7 : v7.gpr .r2 = BitVec.ofNat 32 P := (k7.gpr _ (by decide)).trans ((P6.regs _ (by decide)).trans p5)
+  obtain p7 : v7.gpr .r2 = BitVec.ofNat 32 P := (k7.gpr _ (by decide)).trans ((P6.regs _ (by decide)).trans p5)
   refine wp_wide fun v8 e8 P8 => ?_
   rw [i7, p7, tn hy3, tn hP] at e8
   obtain ⟨lo8, hi8⟩ := wide_lo_hi (BitVec.isLt _) e8
-  have x8 : v8.gpr .r0 = v6.gpr .r4 := (P8.regs _ (by decide)).trans x7
-  have b8 : v8.gpr .r12 = B :=
+  obtain x8 : v8.gpr .r0 = v6.gpr .r4 := (P8.regs _ (by decide)).trans x7
+  obtain b8 : v8.gpr .r12 = B :=
     (P8.regs _ (by decide)).trans ((k7.gpr _ (by decide)).trans ((P6.regs _ (by decide)).trans
       ((k5.gpr _ (by decide)).trans b4)))
-  have aU2 := h.addr (d := sU2) (by simp only [sU2, VG.Impl.Rsa.Arm.Keys.hdr] at hz ⊢; omega_using [hz])
-  have wU2 : InRegions v8.wr (off (State.addr B) sU2) 4 := by
+  obtain aU2 := h.addr (d := sU2) (by simp only [sU2, VG.Impl.Rsa.Arm.Keys.hdr] at hz ⊢; omega_using [hz])
+  obtain wU2 : InRegions v8.wr (off (State.addr B) sU2) 4 := by
     rw [P8.wr, k7.wr, P6.wr, k5.wr, P4.wr, k3.wr, P2.wr, k1.wr]
     exact h.write (by simp only [sU2, VG.Impl.Rsa.Arm.Keys.hdr] at hz ⊢; omega_using [hz])
   refine WP.block_append_iff.mpr (WP.mono (WP.keep [.r3] (Q := fun v =>

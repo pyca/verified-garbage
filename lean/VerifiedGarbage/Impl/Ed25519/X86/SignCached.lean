@@ -35,7 +35,7 @@ def finalizeArgs (prefixLen : Nat) (withMessage : Bool) : List Instr :=
   Whole.setup 0 [.caller 5 0, .const prefixLen, .const 0, .frame 192, .caller 5 192] ++
     if withMessage then Whole.countArgs 4 prefixLen else []
 
-def init : Prog isa := callWith initArgs Spec.Sha512.init512Api.name
+def init : Prog isa := callWith initArgs (Spec.Sha512.init512Api.name ++ "_core")
   (Sha512.X86.Stream.init Spec.Sha512.H0_512)
 
 def update (args : List Instr) : Prog isa :=

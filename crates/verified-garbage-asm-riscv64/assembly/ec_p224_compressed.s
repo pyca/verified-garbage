@@ -598,6 +598,22 @@ vg_ec_p224_compress_public_key:
 	ld s1, 8(s0)
 	ld s3, 32(s0)
 	ld s0, 0(s0)
+	addi t0, zero, 0
+	addiw a0, a0, 0
+	addi a1, zero, 0
+	addi a2, zero, 0
+	addi a3, zero, 0
+	addi a4, zero, 0
+	addi a5, zero, 0
+	addi a6, zero, 0
+	addi a7, zero, 0
+	addi t0, zero, 0
+	addi t1, zero, 0
+	addi t2, zero, 0
+	addi t3, zero, 0
+	addi t4, zero, 0
+	addi t5, zero, 0
+	addi t6, zero, 0
 	ret
 	.option pop
 
@@ -2540,11 +2556,24 @@ vg_ec_p224_decompress_public_key:
 	ld t0, 537(t0)
 	sd t0, 568(s0)
 	addi s6, zero, 0
+	addi s1, zero, 0
+231:
+	slli t0, s1, 5
+	add t0, t0, s0
+	addi t0, t0, 2047
+	addi t0, t0, 545
+	ld t3, 0(t0)
+	sd t3, 608(s0)
+	ld t3, 8(t0)
+	sd t3, 616(s0)
+	ld t3, 16(t0)
+	sd t3, 624(s0)
+	ld t3, 24(t0)
+	sd t3, 632(s0)
 	addi a0, s0, 0
 	addi a1, zero, 768
 	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 545
+	addi a3, zero, 608
 	call {vg_p224_sub_mod_p}
 	addi t3, zero, 0
 	ld t4, 768(s0)
@@ -2560,338 +2589,14 @@ vg_ec_p224_decompress_public_key:
 	or t4, t4, t3
 	srli t4, t4, 63
 	addi a7, t4, -1
-	andi a7, a7, 0
+	addi t0, zero, 16
+	sub t0, t0, s1
+	andi t0, t0, 15
+	and a7, a7, t0
 	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 577
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 15
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 609
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 14
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 641
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 13
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 673
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 12
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 705
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 11
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 737
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 10
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 769
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 9
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 801
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 8
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 833
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 7
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 865
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 6
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 897
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 5
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 929
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 4
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 961
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 3
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 993
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 2
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 1025
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 1
-	add s6, s6, a7
+	addi s1, s1, 1
+	addi t0, zero, 16
+	bne s1, t0, 231b
 	andi s6, s6, 15
 	slli s6, s6, 0
 	or s4, s4, s6
@@ -2908,11 +2613,19 @@ vg_ec_p224_decompress_public_key:
 	ld t0, 505(t0)
 	sd t0, 568(s0)
 	addi s6, zero, 0
+232:
 	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 22
+	addi t1, s6, 22
 	slli t1, t1, 9
 	add t0, t0, t1
-	srli t2, s4, 0
+	slli t2, s6, 2
+	addi t3, zero, 16
+	bltu s6, t3, 233f
+	srl t2, s5, t2
+	j 234f
+233:
+	srl t2, s4, t2
+234:
 	andi t2, t2, 15
 	slli t2, t2, 5
 	add t0, t0, t2
@@ -2929,11 +2642,28 @@ vg_ec_p224_decompress_public_key:
 	addi a2, zero, 544
 	addi a3, zero, 608
 	call {vg_p224_mul_mod_p}
+	addi s6, s6, 1
+	addi t0, zero, 1
+	bne s6, t0, 232b
+	addi s6, zero, 0
+	addi s1, zero, 0
+235:
+	slli t0, s1, 5
+	add t0, t0, s0
+	addi t0, t0, 2047
+	addi t0, t0, 545
+	ld t3, 0(t0)
+	sd t3, 608(s0)
+	ld t3, 8(t0)
+	sd t3, 616(s0)
+	ld t3, 16(t0)
+	sd t3, 624(s0)
+	ld t3, 24(t0)
+	sd t3, 632(s0)
 	addi a0, s0, 0
 	addi a1, zero, 768
 	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 545
+	addi a3, zero, 608
 	call {vg_p224_sub_mod_p}
 	addi t3, zero, 0
 	ld t4, 768(s0)
@@ -2949,338 +2679,14 @@ vg_ec_p224_decompress_public_key:
 	or t4, t4, t3
 	srli t4, t4, 63
 	addi a7, t4, -1
-	andi a7, a7, 0
+	addi t0, zero, 16
+	sub t0, t0, s1
+	andi t0, t0, 15
+	and a7, a7, t0
 	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 577
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 15
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 609
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 14
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 641
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 13
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 673
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 12
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 705
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 11
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 737
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 10
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 769
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 9
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 801
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 8
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 833
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 7
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 865
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 6
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 897
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 5
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 929
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 4
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 961
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 3
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 993
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 2
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 1025
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 1
-	add s6, s6, a7
+	addi s1, s1, 1
+	addi t0, zero, 16
+	bne s1, t0, 235b
 	andi s6, s6, 15
 	slli s6, s6, 4
 	or s4, s4, s6
@@ -3297,11 +2703,19 @@ vg_ec_p224_decompress_public_key:
 	ld t0, 473(t0)
 	sd t0, 568(s0)
 	addi s6, zero, 0
+236:
 	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 21
+	addi t1, s6, 21
 	slli t1, t1, 9
 	add t0, t0, t1
-	srli t2, s4, 0
+	slli t2, s6, 2
+	addi t3, zero, 16
+	bltu s6, t3, 237f
+	srl t2, s5, t2
+	j 238f
+237:
+	srl t2, s4, t2
+238:
 	andi t2, t2, 15
 	slli t2, t2, 5
 	add t0, t0, t2
@@ -3318,14 +2732,16 @@ vg_ec_p224_decompress_public_key:
 	addi a2, zero, 544
 	addi a3, zero, 608
 	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 22
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 4
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
+	addi s6, s6, 1
+	addi t0, zero, 2
+	bne s6, t0, 236b
+	addi s6, zero, 0
+	addi s1, zero, 0
+239:
+	slli t0, s1, 5
+	add t0, t0, s0
+	addi t0, t0, 2047
+	addi t0, t0, 545
 	ld t3, 0(t0)
 	sd t3, 608(s0)
 	ld t3, 8(t0)
@@ -3335,15 +2751,9 @@ vg_ec_p224_decompress_public_key:
 	ld t3, 24(t0)
 	sd t3, 632(s0)
 	addi a0, s0, 0
-	addi a1, zero, 544
+	addi a1, zero, 768
 	addi a2, zero, 544
 	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 545
 	call {vg_p224_sub_mod_p}
 	addi t3, zero, 0
 	ld t4, 768(s0)
@@ -3359,338 +2769,14 @@ vg_ec_p224_decompress_public_key:
 	or t4, t4, t3
 	srli t4, t4, 63
 	addi a7, t4, -1
-	andi a7, a7, 0
+	addi t0, zero, 16
+	sub t0, t0, s1
+	andi t0, t0, 15
+	and a7, a7, t0
 	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 577
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 15
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 609
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 14
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 641
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 13
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 673
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 12
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 705
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 11
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 737
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 10
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 769
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 9
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 801
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 8
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 833
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 7
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 865
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 6
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 897
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 5
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 929
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 4
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 961
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 3
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 993
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 2
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 1025
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 1
-	add s6, s6, a7
+	addi s1, s1, 1
+	addi t0, zero, 16
+	bne s1, t0, 239b
 	andi s6, s6, 15
 	slli s6, s6, 8
 	or s4, s4, s6
@@ -3707,11 +2793,19 @@ vg_ec_p224_decompress_public_key:
 	ld t0, 441(t0)
 	sd t0, 568(s0)
 	addi s6, zero, 0
+240:
 	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 20
+	addi t1, s6, 20
 	slli t1, t1, 9
 	add t0, t0, t1
-	srli t2, s4, 0
+	slli t2, s6, 2
+	addi t3, zero, 16
+	bltu s6, t3, 241f
+	srl t2, s5, t2
+	j 242f
+241:
+	srl t2, s4, t2
+242:
 	andi t2, t2, 15
 	slli t2, t2, 5
 	add t0, t0, t2
@@ -3728,14 +2822,16 @@ vg_ec_p224_decompress_public_key:
 	addi a2, zero, 544
 	addi a3, zero, 608
 	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 21
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 4
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
+	addi s6, s6, 1
+	addi t0, zero, 3
+	bne s6, t0, 240b
+	addi s6, zero, 0
+	addi s1, zero, 0
+243:
+	slli t0, s1, 5
+	add t0, t0, s0
+	addi t0, t0, 2047
+	addi t0, t0, 545
 	ld t3, 0(t0)
 	sd t3, 608(s0)
 	ld t3, 8(t0)
@@ -3745,36 +2841,9 @@ vg_ec_p224_decompress_public_key:
 	ld t3, 24(t0)
 	sd t3, 632(s0)
 	addi a0, s0, 0
-	addi a1, zero, 544
+	addi a1, zero, 768
 	addi a2, zero, 544
 	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 22
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 8
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 545
 	call {vg_p224_sub_mod_p}
 	addi t3, zero, 0
 	ld t4, 768(s0)
@@ -3790,338 +2859,14 @@ vg_ec_p224_decompress_public_key:
 	or t4, t4, t3
 	srli t4, t4, 63
 	addi a7, t4, -1
-	andi a7, a7, 0
+	addi t0, zero, 16
+	sub t0, t0, s1
+	andi t0, t0, 15
+	and a7, a7, t0
 	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 577
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 15
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 609
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 14
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 641
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 13
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 673
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 12
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 705
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 11
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 737
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 10
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 769
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 9
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 801
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 8
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 833
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 7
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 865
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 6
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 897
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 5
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 929
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 4
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 961
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 3
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 993
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 2
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 1025
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 1
-	add s6, s6, a7
+	addi s1, s1, 1
+	addi t0, zero, 16
+	bne s1, t0, 243b
 	andi s6, s6, 15
 	slli s6, s6, 12
 	or s4, s4, s6
@@ -4138,11 +2883,19 @@ vg_ec_p224_decompress_public_key:
 	ld t0, 409(t0)
 	sd t0, 568(s0)
 	addi s6, zero, 0
+244:
 	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 19
+	addi t1, s6, 19
 	slli t1, t1, 9
 	add t0, t0, t1
-	srli t2, s4, 0
+	slli t2, s6, 2
+	addi t3, zero, 16
+	bltu s6, t3, 245f
+	srl t2, s5, t2
+	j 246f
+245:
+	srl t2, s4, t2
+246:
 	andi t2, t2, 15
 	slli t2, t2, 5
 	add t0, t0, t2
@@ -4159,14 +2912,16 @@ vg_ec_p224_decompress_public_key:
 	addi a2, zero, 544
 	addi a3, zero, 608
 	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 20
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 4
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
+	addi s6, s6, 1
+	addi t0, zero, 4
+	bne s6, t0, 244b
+	addi s6, zero, 0
+	addi s1, zero, 0
+247:
+	slli t0, s1, 5
+	add t0, t0, s0
+	addi t0, t0, 2047
+	addi t0, t0, 545
 	ld t3, 0(t0)
 	sd t3, 608(s0)
 	ld t3, 8(t0)
@@ -4176,57 +2931,9 @@ vg_ec_p224_decompress_public_key:
 	ld t3, 24(t0)
 	sd t3, 632(s0)
 	addi a0, s0, 0
-	addi a1, zero, 544
+	addi a1, zero, 768
 	addi a2, zero, 544
 	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 21
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 8
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 22
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 12
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 545
 	call {vg_p224_sub_mod_p}
 	addi t3, zero, 0
 	ld t4, 768(s0)
@@ -4242,338 +2949,14 @@ vg_ec_p224_decompress_public_key:
 	or t4, t4, t3
 	srli t4, t4, 63
 	addi a7, t4, -1
-	andi a7, a7, 0
+	addi t0, zero, 16
+	sub t0, t0, s1
+	andi t0, t0, 15
+	and a7, a7, t0
 	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 577
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 15
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 609
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 14
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 641
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 13
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 673
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 12
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 705
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 11
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 737
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 10
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 769
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 9
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 801
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 8
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 833
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 7
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 865
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 6
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 897
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 5
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 929
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 4
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 961
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 3
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 993
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 2
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 1025
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 1
-	add s6, s6, a7
+	addi s1, s1, 1
+	addi t0, zero, 16
+	bne s1, t0, 247b
 	andi s6, s6, 15
 	slli s6, s6, 16
 	or s4, s4, s6
@@ -4590,11 +2973,19 @@ vg_ec_p224_decompress_public_key:
 	ld t0, 377(t0)
 	sd t0, 568(s0)
 	addi s6, zero, 0
+248:
 	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 18
+	addi t1, s6, 18
 	slli t1, t1, 9
 	add t0, t0, t1
-	srli t2, s4, 0
+	slli t2, s6, 2
+	addi t3, zero, 16
+	bltu s6, t3, 249f
+	srl t2, s5, t2
+	j 250f
+249:
+	srl t2, s4, t2
+250:
 	andi t2, t2, 15
 	slli t2, t2, 5
 	add t0, t0, t2
@@ -4611,14 +3002,16 @@ vg_ec_p224_decompress_public_key:
 	addi a2, zero, 544
 	addi a3, zero, 608
 	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 19
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 4
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
+	addi s6, s6, 1
+	addi t0, zero, 5
+	bne s6, t0, 248b
+	addi s6, zero, 0
+	addi s1, zero, 0
+251:
+	slli t0, s1, 5
+	add t0, t0, s0
+	addi t0, t0, 2047
+	addi t0, t0, 545
 	ld t3, 0(t0)
 	sd t3, 608(s0)
 	ld t3, 8(t0)
@@ -4628,78 +3021,9 @@ vg_ec_p224_decompress_public_key:
 	ld t3, 24(t0)
 	sd t3, 632(s0)
 	addi a0, s0, 0
-	addi a1, zero, 544
+	addi a1, zero, 768
 	addi a2, zero, 544
 	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 20
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 8
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 21
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 12
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 22
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 16
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 545
 	call {vg_p224_sub_mod_p}
 	addi t3, zero, 0
 	ld t4, 768(s0)
@@ -4715,338 +3039,14 @@ vg_ec_p224_decompress_public_key:
 	or t4, t4, t3
 	srli t4, t4, 63
 	addi a7, t4, -1
-	andi a7, a7, 0
+	addi t0, zero, 16
+	sub t0, t0, s1
+	andi t0, t0, 15
+	and a7, a7, t0
 	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 577
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 15
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 609
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 14
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 641
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 13
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 673
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 12
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 705
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 11
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 737
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 10
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 769
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 9
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 801
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 8
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 833
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 7
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 865
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 6
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 897
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 5
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 929
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 4
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 961
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 3
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 993
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 2
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 1025
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 1
-	add s6, s6, a7
+	addi s1, s1, 1
+	addi t0, zero, 16
+	bne s1, t0, 251b
 	andi s6, s6, 15
 	slli s6, s6, 20
 	or s4, s4, s6
@@ -5063,11 +3063,19 @@ vg_ec_p224_decompress_public_key:
 	ld t0, 345(t0)
 	sd t0, 568(s0)
 	addi s6, zero, 0
+252:
 	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 17
+	addi t1, s6, 17
 	slli t1, t1, 9
 	add t0, t0, t1
-	srli t2, s4, 0
+	slli t2, s6, 2
+	addi t3, zero, 16
+	bltu s6, t3, 253f
+	srl t2, s5, t2
+	j 254f
+253:
+	srl t2, s4, t2
+254:
 	andi t2, t2, 15
 	slli t2, t2, 5
 	add t0, t0, t2
@@ -5084,14 +3092,16 @@ vg_ec_p224_decompress_public_key:
 	addi a2, zero, 544
 	addi a3, zero, 608
 	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 18
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 4
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
+	addi s6, s6, 1
+	addi t0, zero, 6
+	bne s6, t0, 252b
+	addi s6, zero, 0
+	addi s1, zero, 0
+255:
+	slli t0, s1, 5
+	add t0, t0, s0
+	addi t0, t0, 2047
+	addi t0, t0, 545
 	ld t3, 0(t0)
 	sd t3, 608(s0)
 	ld t3, 8(t0)
@@ -5101,99 +3111,9 @@ vg_ec_p224_decompress_public_key:
 	ld t3, 24(t0)
 	sd t3, 632(s0)
 	addi a0, s0, 0
-	addi a1, zero, 544
+	addi a1, zero, 768
 	addi a2, zero, 544
 	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 19
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 8
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 20
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 12
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 21
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 16
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 22
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 20
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 545
 	call {vg_p224_sub_mod_p}
 	addi t3, zero, 0
 	ld t4, 768(s0)
@@ -5209,338 +3129,14 @@ vg_ec_p224_decompress_public_key:
 	or t4, t4, t3
 	srli t4, t4, 63
 	addi a7, t4, -1
-	andi a7, a7, 0
+	addi t0, zero, 16
+	sub t0, t0, s1
+	andi t0, t0, 15
+	and a7, a7, t0
 	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 577
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 15
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 609
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 14
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 641
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 13
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 673
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 12
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 705
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 11
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 737
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 10
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 769
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 9
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 801
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 8
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 833
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 7
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 865
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 6
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 897
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 5
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 929
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 4
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 961
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 3
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 993
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 2
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 1025
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 1
-	add s6, s6, a7
+	addi s1, s1, 1
+	addi t0, zero, 16
+	bne s1, t0, 255b
 	andi s6, s6, 15
 	slli s6, s6, 24
 	or s4, s4, s6
@@ -5557,11 +3153,19 @@ vg_ec_p224_decompress_public_key:
 	ld t0, 313(t0)
 	sd t0, 568(s0)
 	addi s6, zero, 0
+256:
 	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 16
+	addi t1, s6, 16
 	slli t1, t1, 9
 	add t0, t0, t1
-	srli t2, s4, 0
+	slli t2, s6, 2
+	addi t3, zero, 16
+	bltu s6, t3, 257f
+	srl t2, s5, t2
+	j 258f
+257:
+	srl t2, s4, t2
+258:
 	andi t2, t2, 15
 	slli t2, t2, 5
 	add t0, t0, t2
@@ -5578,14 +3182,16 @@ vg_ec_p224_decompress_public_key:
 	addi a2, zero, 544
 	addi a3, zero, 608
 	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 17
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 4
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
+	addi s6, s6, 1
+	addi t0, zero, 7
+	bne s6, t0, 256b
+	addi s6, zero, 0
+	addi s1, zero, 0
+259:
+	slli t0, s1, 5
+	add t0, t0, s0
+	addi t0, t0, 2047
+	addi t0, t0, 545
 	ld t3, 0(t0)
 	sd t3, 608(s0)
 	ld t3, 8(t0)
@@ -5595,120 +3201,9 @@ vg_ec_p224_decompress_public_key:
 	ld t3, 24(t0)
 	sd t3, 632(s0)
 	addi a0, s0, 0
-	addi a1, zero, 544
+	addi a1, zero, 768
 	addi a2, zero, 544
 	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 18
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 8
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 19
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 12
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 20
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 16
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 21
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 20
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 22
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 24
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 545
 	call {vg_p224_sub_mod_p}
 	addi t3, zero, 0
 	ld t4, 768(s0)
@@ -5724,338 +3219,14 @@ vg_ec_p224_decompress_public_key:
 	or t4, t4, t3
 	srli t4, t4, 63
 	addi a7, t4, -1
-	andi a7, a7, 0
+	addi t0, zero, 16
+	sub t0, t0, s1
+	andi t0, t0, 15
+	and a7, a7, t0
 	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 577
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 15
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 609
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 14
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 641
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 13
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 673
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 12
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 705
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 11
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 737
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 10
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 769
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 9
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 801
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 8
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 833
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 7
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 865
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 6
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 897
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 5
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 929
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 4
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 961
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 3
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 993
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 2
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 1025
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 1
-	add s6, s6, a7
+	addi s1, s1, 1
+	addi t0, zero, 16
+	bne s1, t0, 259b
 	andi s6, s6, 15
 	slli s6, s6, 28
 	or s4, s4, s6
@@ -6072,11 +3243,19 @@ vg_ec_p224_decompress_public_key:
 	ld t0, 281(t0)
 	sd t0, 568(s0)
 	addi s6, zero, 0
+260:
 	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 15
+	addi t1, s6, 15
 	slli t1, t1, 9
 	add t0, t0, t1
-	srli t2, s4, 0
+	slli t2, s6, 2
+	addi t3, zero, 16
+	bltu s6, t3, 261f
+	srl t2, s5, t2
+	j 262f
+261:
+	srl t2, s4, t2
+262:
 	andi t2, t2, 15
 	slli t2, t2, 5
 	add t0, t0, t2
@@ -6093,14 +3272,16 @@ vg_ec_p224_decompress_public_key:
 	addi a2, zero, 544
 	addi a3, zero, 608
 	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 16
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 4
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
+	addi s6, s6, 1
+	addi t0, zero, 8
+	bne s6, t0, 260b
+	addi s6, zero, 0
+	addi s1, zero, 0
+263:
+	slli t0, s1, 5
+	add t0, t0, s0
+	addi t0, t0, 2047
+	addi t0, t0, 545
 	ld t3, 0(t0)
 	sd t3, 608(s0)
 	ld t3, 8(t0)
@@ -6110,141 +3291,9 @@ vg_ec_p224_decompress_public_key:
 	ld t3, 24(t0)
 	sd t3, 632(s0)
 	addi a0, s0, 0
-	addi a1, zero, 544
+	addi a1, zero, 768
 	addi a2, zero, 544
 	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 17
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 8
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 18
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 12
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 19
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 16
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 20
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 20
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 21
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 24
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 22
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 28
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 545
 	call {vg_p224_sub_mod_p}
 	addi t3, zero, 0
 	ld t4, 768(s0)
@@ -6260,338 +3309,14 @@ vg_ec_p224_decompress_public_key:
 	or t4, t4, t3
 	srli t4, t4, 63
 	addi a7, t4, -1
-	andi a7, a7, 0
+	addi t0, zero, 16
+	sub t0, t0, s1
+	andi t0, t0, 15
+	and a7, a7, t0
 	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 577
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 15
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 609
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 14
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 641
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 13
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 673
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 12
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 705
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 11
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 737
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 10
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 769
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 9
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 801
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 8
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 833
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 7
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 865
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 6
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 897
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 5
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 929
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 4
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 961
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 3
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 993
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 2
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 1025
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 1
-	add s6, s6, a7
+	addi s1, s1, 1
+	addi t0, zero, 16
+	bne s1, t0, 263b
 	andi s6, s6, 15
 	slli s6, s6, 32
 	or s4, s4, s6
@@ -6608,11 +3333,19 @@ vg_ec_p224_decompress_public_key:
 	ld t0, 249(t0)
 	sd t0, 568(s0)
 	addi s6, zero, 0
+264:
 	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 14
+	addi t1, s6, 14
 	slli t1, t1, 9
 	add t0, t0, t1
-	srli t2, s4, 0
+	slli t2, s6, 2
+	addi t3, zero, 16
+	bltu s6, t3, 265f
+	srl t2, s5, t2
+	j 266f
+265:
+	srl t2, s4, t2
+266:
 	andi t2, t2, 15
 	slli t2, t2, 5
 	add t0, t0, t2
@@ -6629,14 +3362,16 @@ vg_ec_p224_decompress_public_key:
 	addi a2, zero, 544
 	addi a3, zero, 608
 	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 15
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 4
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
+	addi s6, s6, 1
+	addi t0, zero, 9
+	bne s6, t0, 264b
+	addi s6, zero, 0
+	addi s1, zero, 0
+267:
+	slli t0, s1, 5
+	add t0, t0, s0
+	addi t0, t0, 2047
+	addi t0, t0, 545
 	ld t3, 0(t0)
 	sd t3, 608(s0)
 	ld t3, 8(t0)
@@ -6646,162 +3381,9 @@ vg_ec_p224_decompress_public_key:
 	ld t3, 24(t0)
 	sd t3, 632(s0)
 	addi a0, s0, 0
-	addi a1, zero, 544
+	addi a1, zero, 768
 	addi a2, zero, 544
 	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 16
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 8
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 17
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 12
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 18
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 16
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 19
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 20
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 20
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 24
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 21
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 28
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 22
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 32
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 545
 	call {vg_p224_sub_mod_p}
 	addi t3, zero, 0
 	ld t4, 768(s0)
@@ -6817,338 +3399,14 @@ vg_ec_p224_decompress_public_key:
 	or t4, t4, t3
 	srli t4, t4, 63
 	addi a7, t4, -1
-	andi a7, a7, 0
+	addi t0, zero, 16
+	sub t0, t0, s1
+	andi t0, t0, 15
+	and a7, a7, t0
 	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 577
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 15
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 609
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 14
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 641
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 13
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 673
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 12
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 705
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 11
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 737
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 10
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 769
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 9
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 801
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 8
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 833
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 7
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 865
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 6
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 897
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 5
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 929
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 4
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 961
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 3
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 993
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 2
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 1025
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 1
-	add s6, s6, a7
+	addi s1, s1, 1
+	addi t0, zero, 16
+	bne s1, t0, 267b
 	andi s6, s6, 15
 	slli s6, s6, 36
 	or s4, s4, s6
@@ -7165,11 +3423,19 @@ vg_ec_p224_decompress_public_key:
 	ld t0, 217(t0)
 	sd t0, 568(s0)
 	addi s6, zero, 0
+268:
 	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 13
+	addi t1, s6, 13
 	slli t1, t1, 9
 	add t0, t0, t1
-	srli t2, s4, 0
+	slli t2, s6, 2
+	addi t3, zero, 16
+	bltu s6, t3, 269f
+	srl t2, s5, t2
+	j 270f
+269:
+	srl t2, s4, t2
+270:
 	andi t2, t2, 15
 	slli t2, t2, 5
 	add t0, t0, t2
@@ -7186,14 +3452,16 @@ vg_ec_p224_decompress_public_key:
 	addi a2, zero, 544
 	addi a3, zero, 608
 	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 14
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 4
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
+	addi s6, s6, 1
+	addi t0, zero, 10
+	bne s6, t0, 268b
+	addi s6, zero, 0
+	addi s1, zero, 0
+271:
+	slli t0, s1, 5
+	add t0, t0, s0
+	addi t0, t0, 2047
+	addi t0, t0, 545
 	ld t3, 0(t0)
 	sd t3, 608(s0)
 	ld t3, 8(t0)
@@ -7203,183 +3471,9 @@ vg_ec_p224_decompress_public_key:
 	ld t3, 24(t0)
 	sd t3, 632(s0)
 	addi a0, s0, 0
-	addi a1, zero, 544
+	addi a1, zero, 768
 	addi a2, zero, 544
 	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 15
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 8
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 16
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 12
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 17
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 16
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 18
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 20
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 19
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 24
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 20
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 28
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 21
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 32
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 22
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 36
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 545
 	call {vg_p224_sub_mod_p}
 	addi t3, zero, 0
 	ld t4, 768(s0)
@@ -7395,338 +3489,14 @@ vg_ec_p224_decompress_public_key:
 	or t4, t4, t3
 	srli t4, t4, 63
 	addi a7, t4, -1
-	andi a7, a7, 0
+	addi t0, zero, 16
+	sub t0, t0, s1
+	andi t0, t0, 15
+	and a7, a7, t0
 	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 577
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 15
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 609
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 14
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 641
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 13
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 673
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 12
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 705
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 11
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 737
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 10
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 769
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 9
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 801
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 8
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 833
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 7
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 865
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 6
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 897
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 5
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 929
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 4
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 961
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 3
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 993
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 2
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 1025
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 1
-	add s6, s6, a7
+	addi s1, s1, 1
+	addi t0, zero, 16
+	bne s1, t0, 271b
 	andi s6, s6, 15
 	slli s6, s6, 40
 	or s4, s4, s6
@@ -7743,11 +3513,19 @@ vg_ec_p224_decompress_public_key:
 	ld t0, 185(t0)
 	sd t0, 568(s0)
 	addi s6, zero, 0
+272:
 	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 12
+	addi t1, s6, 12
 	slli t1, t1, 9
 	add t0, t0, t1
-	srli t2, s4, 0
+	slli t2, s6, 2
+	addi t3, zero, 16
+	bltu s6, t3, 273f
+	srl t2, s5, t2
+	j 274f
+273:
+	srl t2, s4, t2
+274:
 	andi t2, t2, 15
 	slli t2, t2, 5
 	add t0, t0, t2
@@ -7764,14 +3542,16 @@ vg_ec_p224_decompress_public_key:
 	addi a2, zero, 544
 	addi a3, zero, 608
 	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 13
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 4
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
+	addi s6, s6, 1
+	addi t0, zero, 11
+	bne s6, t0, 272b
+	addi s6, zero, 0
+	addi s1, zero, 0
+275:
+	slli t0, s1, 5
+	add t0, t0, s0
+	addi t0, t0, 2047
+	addi t0, t0, 545
 	ld t3, 0(t0)
 	sd t3, 608(s0)
 	ld t3, 8(t0)
@@ -7781,204 +3561,9 @@ vg_ec_p224_decompress_public_key:
 	ld t3, 24(t0)
 	sd t3, 632(s0)
 	addi a0, s0, 0
-	addi a1, zero, 544
+	addi a1, zero, 768
 	addi a2, zero, 544
 	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 14
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 8
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 15
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 12
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 16
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 16
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 17
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 20
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 18
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 24
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 19
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 28
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 20
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 32
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 21
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 36
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 22
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 40
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 545
 	call {vg_p224_sub_mod_p}
 	addi t3, zero, 0
 	ld t4, 768(s0)
@@ -7994,338 +3579,14 @@ vg_ec_p224_decompress_public_key:
 	or t4, t4, t3
 	srli t4, t4, 63
 	addi a7, t4, -1
-	andi a7, a7, 0
+	addi t0, zero, 16
+	sub t0, t0, s1
+	andi t0, t0, 15
+	and a7, a7, t0
 	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 577
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 15
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 609
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 14
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 641
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 13
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 673
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 12
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 705
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 11
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 737
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 10
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 769
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 9
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 801
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 8
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 833
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 7
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 865
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 6
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 897
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 5
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 929
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 4
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 961
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 3
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 993
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 2
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 1025
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 1
-	add s6, s6, a7
+	addi s1, s1, 1
+	addi t0, zero, 16
+	bne s1, t0, 275b
 	andi s6, s6, 15
 	slli s6, s6, 44
 	or s4, s4, s6
@@ -8342,11 +3603,19 @@ vg_ec_p224_decompress_public_key:
 	ld t0, 153(t0)
 	sd t0, 568(s0)
 	addi s6, zero, 0
+276:
 	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 11
+	addi t1, s6, 11
 	slli t1, t1, 9
 	add t0, t0, t1
-	srli t2, s4, 0
+	slli t2, s6, 2
+	addi t3, zero, 16
+	bltu s6, t3, 277f
+	srl t2, s5, t2
+	j 278f
+277:
+	srl t2, s4, t2
+278:
 	andi t2, t2, 15
 	slli t2, t2, 5
 	add t0, t0, t2
@@ -8363,14 +3632,16 @@ vg_ec_p224_decompress_public_key:
 	addi a2, zero, 544
 	addi a3, zero, 608
 	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 12
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 4
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
+	addi s6, s6, 1
+	addi t0, zero, 12
+	bne s6, t0, 276b
+	addi s6, zero, 0
+	addi s1, zero, 0
+279:
+	slli t0, s1, 5
+	add t0, t0, s0
+	addi t0, t0, 2047
+	addi t0, t0, 545
 	ld t3, 0(t0)
 	sd t3, 608(s0)
 	ld t3, 8(t0)
@@ -8380,225 +3651,9 @@ vg_ec_p224_decompress_public_key:
 	ld t3, 24(t0)
 	sd t3, 632(s0)
 	addi a0, s0, 0
-	addi a1, zero, 544
+	addi a1, zero, 768
 	addi a2, zero, 544
 	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 13
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 8
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 14
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 12
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 15
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 16
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 16
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 20
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 17
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 24
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 18
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 28
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 19
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 32
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 20
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 36
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 21
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 40
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 22
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 44
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 545
 	call {vg_p224_sub_mod_p}
 	addi t3, zero, 0
 	ld t4, 768(s0)
@@ -8614,338 +3669,14 @@ vg_ec_p224_decompress_public_key:
 	or t4, t4, t3
 	srli t4, t4, 63
 	addi a7, t4, -1
-	andi a7, a7, 0
+	addi t0, zero, 16
+	sub t0, t0, s1
+	andi t0, t0, 15
+	and a7, a7, t0
 	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 577
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 15
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 609
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 14
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 641
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 13
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 673
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 12
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 705
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 11
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 737
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 10
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 769
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 9
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 801
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 8
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 833
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 7
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 865
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 6
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 897
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 5
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 929
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 4
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 961
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 3
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 993
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 2
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 1025
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 1
-	add s6, s6, a7
+	addi s1, s1, 1
+	addi t0, zero, 16
+	bne s1, t0, 279b
 	andi s6, s6, 15
 	slli s6, s6, 48
 	or s4, s4, s6
@@ -8962,11 +3693,19 @@ vg_ec_p224_decompress_public_key:
 	ld t0, 121(t0)
 	sd t0, 568(s0)
 	addi s6, zero, 0
+280:
 	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 10
+	addi t1, s6, 10
 	slli t1, t1, 9
 	add t0, t0, t1
-	srli t2, s4, 0
+	slli t2, s6, 2
+	addi t3, zero, 16
+	bltu s6, t3, 281f
+	srl t2, s5, t2
+	j 282f
+281:
+	srl t2, s4, t2
+282:
 	andi t2, t2, 15
 	slli t2, t2, 5
 	add t0, t0, t2
@@ -8983,14 +3722,16 @@ vg_ec_p224_decompress_public_key:
 	addi a2, zero, 544
 	addi a3, zero, 608
 	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 11
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 4
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
+	addi s6, s6, 1
+	addi t0, zero, 13
+	bne s6, t0, 280b
+	addi s6, zero, 0
+	addi s1, zero, 0
+283:
+	slli t0, s1, 5
+	add t0, t0, s0
+	addi t0, t0, 2047
+	addi t0, t0, 545
 	ld t3, 0(t0)
 	sd t3, 608(s0)
 	ld t3, 8(t0)
@@ -9000,246 +3741,9 @@ vg_ec_p224_decompress_public_key:
 	ld t3, 24(t0)
 	sd t3, 632(s0)
 	addi a0, s0, 0
-	addi a1, zero, 544
+	addi a1, zero, 768
 	addi a2, zero, 544
 	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 12
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 8
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 13
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 12
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 14
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 16
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 15
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 20
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 16
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 24
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 17
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 28
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 18
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 32
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 19
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 36
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 20
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 40
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 21
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 44
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 22
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 48
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 545
 	call {vg_p224_sub_mod_p}
 	addi t3, zero, 0
 	ld t4, 768(s0)
@@ -9255,338 +3759,14 @@ vg_ec_p224_decompress_public_key:
 	or t4, t4, t3
 	srli t4, t4, 63
 	addi a7, t4, -1
-	andi a7, a7, 0
+	addi t0, zero, 16
+	sub t0, t0, s1
+	andi t0, t0, 15
+	and a7, a7, t0
 	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 577
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 15
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 609
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 14
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 641
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 13
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 673
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 12
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 705
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 11
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 737
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 10
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 769
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 9
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 801
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 8
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 833
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 7
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 865
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 6
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 897
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 5
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 929
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 4
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 961
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 3
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 993
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 2
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 1025
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 1
-	add s6, s6, a7
+	addi s1, s1, 1
+	addi t0, zero, 16
+	bne s1, t0, 283b
 	andi s6, s6, 15
 	slli s6, s6, 52
 	or s4, s4, s6
@@ -9603,11 +3783,19 @@ vg_ec_p224_decompress_public_key:
 	ld t0, 89(t0)
 	sd t0, 568(s0)
 	addi s6, zero, 0
+284:
 	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 9
+	addi t1, s6, 9
 	slli t1, t1, 9
 	add t0, t0, t1
-	srli t2, s4, 0
+	slli t2, s6, 2
+	addi t3, zero, 16
+	bltu s6, t3, 285f
+	srl t2, s5, t2
+	j 286f
+285:
+	srl t2, s4, t2
+286:
 	andi t2, t2, 15
 	slli t2, t2, 5
 	add t0, t0, t2
@@ -9624,14 +3812,16 @@ vg_ec_p224_decompress_public_key:
 	addi a2, zero, 544
 	addi a3, zero, 608
 	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 10
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 4
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
+	addi s6, s6, 1
+	addi t0, zero, 14
+	bne s6, t0, 284b
+	addi s6, zero, 0
+	addi s1, zero, 0
+287:
+	slli t0, s1, 5
+	add t0, t0, s0
+	addi t0, t0, 2047
+	addi t0, t0, 545
 	ld t3, 0(t0)
 	sd t3, 608(s0)
 	ld t3, 8(t0)
@@ -9641,267 +3831,9 @@ vg_ec_p224_decompress_public_key:
 	ld t3, 24(t0)
 	sd t3, 632(s0)
 	addi a0, s0, 0
-	addi a1, zero, 544
+	addi a1, zero, 768
 	addi a2, zero, 544
 	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 11
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 8
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 12
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 12
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 13
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 16
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 14
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 20
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 15
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 24
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 16
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 28
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 17
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 32
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 18
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 36
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 19
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 40
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 20
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 44
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 21
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 48
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 22
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 52
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 545
 	call {vg_p224_sub_mod_p}
 	addi t3, zero, 0
 	ld t4, 768(s0)
@@ -9917,338 +3849,14 @@ vg_ec_p224_decompress_public_key:
 	or t4, t4, t3
 	srli t4, t4, 63
 	addi a7, t4, -1
-	andi a7, a7, 0
+	addi t0, zero, 16
+	sub t0, t0, s1
+	andi t0, t0, 15
+	and a7, a7, t0
 	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 577
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 15
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 609
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 14
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 641
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 13
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 673
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 12
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 705
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 11
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 737
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 10
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 769
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 9
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 801
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 8
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 833
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 7
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 865
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 6
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 897
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 5
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 929
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 4
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 961
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 3
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 993
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 2
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 1025
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 1
-	add s6, s6, a7
+	addi s1, s1, 1
+	addi t0, zero, 16
+	bne s1, t0, 287b
 	andi s6, s6, 15
 	slli s6, s6, 56
 	or s4, s4, s6
@@ -10265,11 +3873,19 @@ vg_ec_p224_decompress_public_key:
 	ld t0, 57(t0)
 	sd t0, 568(s0)
 	addi s6, zero, 0
+288:
 	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 8
+	addi t1, s6, 8
 	slli t1, t1, 9
 	add t0, t0, t1
-	srli t2, s4, 0
+	slli t2, s6, 2
+	addi t3, zero, 16
+	bltu s6, t3, 289f
+	srl t2, s5, t2
+	j 290f
+289:
+	srl t2, s4, t2
+290:
 	andi t2, t2, 15
 	slli t2, t2, 5
 	add t0, t0, t2
@@ -10286,14 +3902,16 @@ vg_ec_p224_decompress_public_key:
 	addi a2, zero, 544
 	addi a3, zero, 608
 	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 9
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 4
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
+	addi s6, s6, 1
+	addi t0, zero, 15
+	bne s6, t0, 288b
+	addi s6, zero, 0
+	addi s1, zero, 0
+291:
+	slli t0, s1, 5
+	add t0, t0, s0
+	addi t0, t0, 2047
+	addi t0, t0, 545
 	ld t3, 0(t0)
 	sd t3, 608(s0)
 	ld t3, 8(t0)
@@ -10303,288 +3921,9 @@ vg_ec_p224_decompress_public_key:
 	ld t3, 24(t0)
 	sd t3, 632(s0)
 	addi a0, s0, 0
-	addi a1, zero, 544
+	addi a1, zero, 768
 	addi a2, zero, 544
 	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 10
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 8
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 11
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 12
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 12
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 16
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 13
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 20
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 14
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 24
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 15
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 28
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 16
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 32
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 17
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 36
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 18
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 40
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 19
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 44
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 20
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 48
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 21
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 52
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 22
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 56
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 545
 	call {vg_p224_sub_mod_p}
 	addi t3, zero, 0
 	ld t4, 768(s0)
@@ -10600,338 +3939,14 @@ vg_ec_p224_decompress_public_key:
 	or t4, t4, t3
 	srli t4, t4, 63
 	addi a7, t4, -1
-	andi a7, a7, 0
+	addi t0, zero, 16
+	sub t0, t0, s1
+	andi t0, t0, 15
+	and a7, a7, t0
 	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 577
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 15
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 609
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 14
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 641
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 13
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 673
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 12
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 705
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 11
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 737
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 10
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 769
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 9
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 801
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 8
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 833
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 7
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 865
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 6
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 897
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 5
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 929
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 4
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 961
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 3
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 993
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 2
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 1025
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 1
-	add s6, s6, a7
+	addi s1, s1, 1
+	addi t0, zero, 16
+	bne s1, t0, 291b
 	andi s6, s6, 15
 	slli s6, s6, 60
 	or s4, s4, s6
@@ -10948,11 +3963,19 @@ vg_ec_p224_decompress_public_key:
 	ld t0, 25(t0)
 	sd t0, 568(s0)
 	addi s6, zero, 0
+292:
 	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 7
+	addi t1, s6, 7
 	slli t1, t1, 9
 	add t0, t0, t1
-	srli t2, s4, 0
+	slli t2, s6, 2
+	addi t3, zero, 16
+	bltu s6, t3, 293f
+	srl t2, s5, t2
+	j 294f
+293:
+	srl t2, s4, t2
+294:
 	andi t2, t2, 15
 	slli t2, t2, 5
 	add t0, t0, t2
@@ -10969,14 +3992,16 @@ vg_ec_p224_decompress_public_key:
 	addi a2, zero, 544
 	addi a3, zero, 608
 	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 8
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 4
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
+	addi s6, s6, 1
+	addi t0, zero, 16
+	bne s6, t0, 292b
+	addi s6, zero, 0
+	addi s1, zero, 0
+295:
+	slli t0, s1, 5
+	add t0, t0, s0
+	addi t0, t0, 2047
+	addi t0, t0, 545
 	ld t3, 0(t0)
 	sd t3, 608(s0)
 	ld t3, 8(t0)
@@ -10986,309 +4011,9 @@ vg_ec_p224_decompress_public_key:
 	ld t3, 24(t0)
 	sd t3, 632(s0)
 	addi a0, s0, 0
-	addi a1, zero, 544
+	addi a1, zero, 768
 	addi a2, zero, 544
 	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 9
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 8
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 10
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 12
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 11
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 16
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 12
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 20
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 13
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 24
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 14
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 28
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 15
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 32
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 16
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 36
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 17
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 40
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 18
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 44
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 19
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 48
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 20
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 52
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 21
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 56
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 22
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 60
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 545
 	call {vg_p224_sub_mod_p}
 	addi t3, zero, 0
 	ld t4, 768(s0)
@@ -11304,338 +4029,14 @@ vg_ec_p224_decompress_public_key:
 	or t4, t4, t3
 	srli t4, t4, 63
 	addi a7, t4, -1
-	andi a7, a7, 0
+	addi t0, zero, 16
+	sub t0, t0, s1
+	andi t0, t0, 15
+	and a7, a7, t0
 	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 577
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 15
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 609
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 14
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 641
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 13
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 673
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 12
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 705
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 11
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 737
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 10
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 769
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 9
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 801
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 8
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 833
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 7
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 865
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 6
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 897
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 5
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 929
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 4
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 961
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 3
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 993
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 2
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 1025
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 1
-	add s6, s6, a7
+	addi s1, s1, 1
+	addi t0, zero, 16
+	bne s1, t0, 295b
 	andi s6, s6, 15
 	slli s6, s6, 0
 	or s5, s5, s6
@@ -11648,11 +4049,19 @@ vg_ec_p224_decompress_public_key:
 	ld t0, 2040(s0)
 	sd t0, 568(s0)
 	addi s6, zero, 0
+296:
 	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 6
+	addi t1, s6, 6
 	slli t1, t1, 9
 	add t0, t0, t1
-	srli t2, s4, 0
+	slli t2, s6, 2
+	addi t3, zero, 16
+	bltu s6, t3, 297f
+	srl t2, s5, t2
+	j 298f
+297:
+	srl t2, s4, t2
+298:
 	andi t2, t2, 15
 	slli t2, t2, 5
 	add t0, t0, t2
@@ -11669,14 +4078,16 @@ vg_ec_p224_decompress_public_key:
 	addi a2, zero, 544
 	addi a3, zero, 608
 	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 7
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 4
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
+	addi s6, s6, 1
+	addi t0, zero, 17
+	bne s6, t0, 296b
+	addi s6, zero, 0
+	addi s1, zero, 0
+299:
+	slli t0, s1, 5
+	add t0, t0, s0
+	addi t0, t0, 2047
+	addi t0, t0, 545
 	ld t3, 0(t0)
 	sd t3, 608(s0)
 	ld t3, 8(t0)
@@ -11685,331 +4096,10 @@ vg_ec_p224_decompress_public_key:
 	sd t3, 624(s0)
 	ld t3, 24(t0)
 	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 8
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 8
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 9
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 12
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 10
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 16
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 11
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 20
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 12
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 24
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 13
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 28
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 14
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 32
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 15
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 36
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 16
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 40
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 17
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 44
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 18
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 48
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 19
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 52
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 20
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 56
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 21
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 60
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 22
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s5, 0
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 768
 	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 545
+	addi a3, zero, 608
 	call {vg_p224_sub_mod_p}
 	addi t3, zero, 0
 	ld t4, 768(s0)
@@ -12025,338 +4115,14 @@ vg_ec_p224_decompress_public_key:
 	or t4, t4, t3
 	srli t4, t4, 63
 	addi a7, t4, -1
-	andi a7, a7, 0
+	addi t0, zero, 16
+	sub t0, t0, s1
+	andi t0, t0, 15
+	and a7, a7, t0
 	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 577
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 15
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 609
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 14
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 641
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 13
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 673
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 12
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 705
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 11
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 737
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 10
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 769
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 9
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 801
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 8
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 833
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 7
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 865
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 6
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 897
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 5
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 929
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 4
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 961
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 3
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 993
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 2
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 1025
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 1
-	add s6, s6, a7
+	addi s1, s1, 1
+	addi t0, zero, 16
+	bne s1, t0, 299b
 	andi s6, s6, 15
 	slli s6, s6, 4
 	or s5, s5, s6
@@ -12369,11 +4135,19 @@ vg_ec_p224_decompress_public_key:
 	ld t0, 2008(s0)
 	sd t0, 568(s0)
 	addi s6, zero, 0
+2100:
 	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 5
+	addi t1, s6, 5
 	slli t1, t1, 9
 	add t0, t0, t1
-	srli t2, s4, 0
+	slli t2, s6, 2
+	addi t3, zero, 16
+	bltu s6, t3, 2101f
+	srl t2, s5, t2
+	j 2102f
+2101:
+	srl t2, s4, t2
+2102:
 	andi t2, t2, 15
 	slli t2, t2, 5
 	add t0, t0, t2
@@ -12390,14 +4164,16 @@ vg_ec_p224_decompress_public_key:
 	addi a2, zero, 544
 	addi a3, zero, 608
 	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 6
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 4
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
+	addi s6, s6, 1
+	addi t0, zero, 18
+	bne s6, t0, 2100b
+	addi s6, zero, 0
+	addi s1, zero, 0
+2103:
+	slli t0, s1, 5
+	add t0, t0, s0
+	addi t0, t0, 2047
+	addi t0, t0, 545
 	ld t3, 0(t0)
 	sd t3, 608(s0)
 	ld t3, 8(t0)
@@ -12406,352 +4182,10 @@ vg_ec_p224_decompress_public_key:
 	sd t3, 624(s0)
 	ld t3, 24(t0)
 	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 7
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 8
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 8
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 12
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 9
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 16
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 10
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 20
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 11
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 24
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 12
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 28
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 13
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 32
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 14
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 36
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 15
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 40
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 16
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 44
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 17
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 48
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 18
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 52
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 19
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 56
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 20
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 60
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 21
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s5, 0
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 22
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s5, 4
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 768
 	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 545
+	addi a3, zero, 608
 	call {vg_p224_sub_mod_p}
 	addi t3, zero, 0
 	ld t4, 768(s0)
@@ -12767,338 +4201,14 @@ vg_ec_p224_decompress_public_key:
 	or t4, t4, t3
 	srli t4, t4, 63
 	addi a7, t4, -1
-	andi a7, a7, 0
+	addi t0, zero, 16
+	sub t0, t0, s1
+	andi t0, t0, 15
+	and a7, a7, t0
 	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 577
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 15
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 609
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 14
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 641
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 13
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 673
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 12
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 705
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 11
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 737
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 10
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 769
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 9
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 801
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 8
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 833
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 7
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 865
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 6
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 897
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 5
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 929
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 4
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 961
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 3
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 993
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 2
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 1025
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 1
-	add s6, s6, a7
+	addi s1, s1, 1
+	addi t0, zero, 16
+	bne s1, t0, 2103b
 	andi s6, s6, 15
 	slli s6, s6, 8
 	or s5, s5, s6
@@ -13111,11 +4221,19 @@ vg_ec_p224_decompress_public_key:
 	ld t0, 1976(s0)
 	sd t0, 568(s0)
 	addi s6, zero, 0
+2104:
 	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 4
+	addi t1, s6, 4
 	slli t1, t1, 9
 	add t0, t0, t1
-	srli t2, s4, 0
+	slli t2, s6, 2
+	addi t3, zero, 16
+	bltu s6, t3, 2105f
+	srl t2, s5, t2
+	j 2106f
+2105:
+	srl t2, s4, t2
+2106:
 	andi t2, t2, 15
 	slli t2, t2, 5
 	add t0, t0, t2
@@ -13132,14 +4250,16 @@ vg_ec_p224_decompress_public_key:
 	addi a2, zero, 544
 	addi a3, zero, 608
 	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 5
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 4
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
+	addi s6, s6, 1
+	addi t0, zero, 19
+	bne s6, t0, 2104b
+	addi s6, zero, 0
+	addi s1, zero, 0
+2107:
+	slli t0, s1, 5
+	add t0, t0, s0
+	addi t0, t0, 2047
+	addi t0, t0, 545
 	ld t3, 0(t0)
 	sd t3, 608(s0)
 	ld t3, 8(t0)
@@ -13148,373 +4268,10 @@ vg_ec_p224_decompress_public_key:
 	sd t3, 624(s0)
 	ld t3, 24(t0)
 	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 6
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 8
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 7
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 12
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 8
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 16
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 9
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 20
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 10
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 24
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 11
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 28
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 12
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 32
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 13
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 36
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 14
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 40
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 15
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 44
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 16
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 48
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 17
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 52
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 18
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 56
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 19
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 60
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 20
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s5, 0
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 21
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s5, 4
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 22
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s5, 8
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 768
 	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 545
+	addi a3, zero, 608
 	call {vg_p224_sub_mod_p}
 	addi t3, zero, 0
 	ld t4, 768(s0)
@@ -13530,338 +4287,14 @@ vg_ec_p224_decompress_public_key:
 	or t4, t4, t3
 	srli t4, t4, 63
 	addi a7, t4, -1
-	andi a7, a7, 0
+	addi t0, zero, 16
+	sub t0, t0, s1
+	andi t0, t0, 15
+	and a7, a7, t0
 	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 577
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 15
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 609
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 14
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 641
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 13
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 673
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 12
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 705
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 11
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 737
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 10
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 769
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 9
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 801
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 8
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 833
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 7
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 865
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 6
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 897
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 5
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 929
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 4
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 961
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 3
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 993
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 2
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 1025
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 1
-	add s6, s6, a7
+	addi s1, s1, 1
+	addi t0, zero, 16
+	bne s1, t0, 2107b
 	andi s6, s6, 15
 	slli s6, s6, 12
 	or s5, s5, s6
@@ -13874,11 +4307,19 @@ vg_ec_p224_decompress_public_key:
 	ld t0, 1944(s0)
 	sd t0, 568(s0)
 	addi s6, zero, 0
+2108:
 	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 3
+	addi t1, s6, 3
 	slli t1, t1, 9
 	add t0, t0, t1
-	srli t2, s4, 0
+	slli t2, s6, 2
+	addi t3, zero, 16
+	bltu s6, t3, 2109f
+	srl t2, s5, t2
+	j 2110f
+2109:
+	srl t2, s4, t2
+2110:
 	andi t2, t2, 15
 	slli t2, t2, 5
 	add t0, t0, t2
@@ -13895,14 +4336,16 @@ vg_ec_p224_decompress_public_key:
 	addi a2, zero, 544
 	addi a3, zero, 608
 	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 4
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 4
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
+	addi s6, s6, 1
+	addi t0, zero, 20
+	bne s6, t0, 2108b
+	addi s6, zero, 0
+	addi s1, zero, 0
+2111:
+	slli t0, s1, 5
+	add t0, t0, s0
+	addi t0, t0, 2047
+	addi t0, t0, 545
 	ld t3, 0(t0)
 	sd t3, 608(s0)
 	ld t3, 8(t0)
@@ -13911,394 +4354,10 @@ vg_ec_p224_decompress_public_key:
 	sd t3, 624(s0)
 	ld t3, 24(t0)
 	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 5
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 8
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 6
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 12
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 7
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 16
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 8
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 20
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 9
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 24
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 10
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 28
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 11
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 32
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 12
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 36
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 13
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 40
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 14
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 44
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 15
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 48
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 16
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 52
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 17
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 56
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 18
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 60
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 19
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s5, 0
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 20
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s5, 4
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 21
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s5, 8
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 22
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s5, 12
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 768
 	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 545
+	addi a3, zero, 608
 	call {vg_p224_sub_mod_p}
 	addi t3, zero, 0
 	ld t4, 768(s0)
@@ -14314,338 +4373,14 @@ vg_ec_p224_decompress_public_key:
 	or t4, t4, t3
 	srli t4, t4, 63
 	addi a7, t4, -1
-	andi a7, a7, 0
+	addi t0, zero, 16
+	sub t0, t0, s1
+	andi t0, t0, 15
+	and a7, a7, t0
 	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 577
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 15
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 609
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 14
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 641
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 13
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 673
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 12
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 705
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 11
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 737
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 10
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 769
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 9
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 801
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 8
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 833
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 7
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 865
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 6
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 897
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 5
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 929
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 4
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 961
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 3
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 993
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 2
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 1025
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 1
-	add s6, s6, a7
+	addi s1, s1, 1
+	addi t0, zero, 16
+	bne s1, t0, 2111b
 	andi s6, s6, 15
 	slli s6, s6, 16
 	or s5, s5, s6
@@ -14658,11 +4393,19 @@ vg_ec_p224_decompress_public_key:
 	ld t0, 1912(s0)
 	sd t0, 568(s0)
 	addi s6, zero, 0
+2112:
 	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 2
+	addi t1, s6, 2
 	slli t1, t1, 9
 	add t0, t0, t1
-	srli t2, s4, 0
+	slli t2, s6, 2
+	addi t3, zero, 16
+	bltu s6, t3, 2113f
+	srl t2, s5, t2
+	j 2114f
+2113:
+	srl t2, s4, t2
+2114:
 	andi t2, t2, 15
 	slli t2, t2, 5
 	add t0, t0, t2
@@ -14679,14 +4422,16 @@ vg_ec_p224_decompress_public_key:
 	addi a2, zero, 544
 	addi a3, zero, 608
 	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 3
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 4
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
+	addi s6, s6, 1
+	addi t0, zero, 21
+	bne s6, t0, 2112b
+	addi s6, zero, 0
+	addi s1, zero, 0
+2115:
+	slli t0, s1, 5
+	add t0, t0, s0
+	addi t0, t0, 2047
+	addi t0, t0, 545
 	ld t3, 0(t0)
 	sd t3, 608(s0)
 	ld t3, 8(t0)
@@ -14695,415 +4440,10 @@ vg_ec_p224_decompress_public_key:
 	sd t3, 624(s0)
 	ld t3, 24(t0)
 	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 4
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 8
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 5
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 12
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 6
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 16
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 7
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 20
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 8
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 24
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 9
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 28
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 10
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 32
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 11
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 36
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 12
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 40
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 13
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 44
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 14
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 48
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 15
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 52
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 16
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 56
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 17
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 60
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 18
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s5, 0
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 19
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s5, 4
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 20
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s5, 8
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 21
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s5, 12
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 22
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s5, 16
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 768
 	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 545
+	addi a3, zero, 608
 	call {vg_p224_sub_mod_p}
 	addi t3, zero, 0
 	ld t4, 768(s0)
@@ -15119,338 +4459,14 @@ vg_ec_p224_decompress_public_key:
 	or t4, t4, t3
 	srli t4, t4, 63
 	addi a7, t4, -1
-	andi a7, a7, 0
+	addi t0, zero, 16
+	sub t0, t0, s1
+	andi t0, t0, 15
+	and a7, a7, t0
 	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 577
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 15
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 609
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 14
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 641
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 13
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 673
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 12
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 705
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 11
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 737
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 10
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 769
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 9
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 801
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 8
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 833
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 7
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 865
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 6
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 897
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 5
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 929
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 4
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 961
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 3
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 993
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 2
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 1025
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 1
-	add s6, s6, a7
+	addi s1, s1, 1
+	addi t0, zero, 16
+	bne s1, t0, 2115b
 	andi s6, s6, 15
 	slli s6, s6, 20
 	or s5, s5, s6
@@ -15463,11 +4479,19 @@ vg_ec_p224_decompress_public_key:
 	ld t0, 1880(s0)
 	sd t0, 568(s0)
 	addi s6, zero, 0
+2116:
 	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 1
+	addi t1, s6, 1
 	slli t1, t1, 9
 	add t0, t0, t1
-	srli t2, s4, 0
+	slli t2, s6, 2
+	addi t3, zero, 16
+	bltu s6, t3, 2117f
+	srl t2, s5, t2
+	j 2118f
+2117:
+	srl t2, s4, t2
+2118:
 	andi t2, t2, 15
 	slli t2, t2, 5
 	add t0, t0, t2
@@ -15484,14 +4508,16 @@ vg_ec_p224_decompress_public_key:
 	addi a2, zero, 544
 	addi a3, zero, 608
 	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 2
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 4
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
+	addi s6, s6, 1
+	addi t0, zero, 22
+	bne s6, t0, 2116b
+	addi s6, zero, 0
+	addi s1, zero, 0
+2119:
+	slli t0, s1, 5
+	add t0, t0, s0
+	addi t0, t0, 2047
+	addi t0, t0, 545
 	ld t3, 0(t0)
 	sd t3, 608(s0)
 	ld t3, 8(t0)
@@ -15500,436 +4526,10 @@ vg_ec_p224_decompress_public_key:
 	sd t3, 624(s0)
 	ld t3, 24(t0)
 	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 3
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 8
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 4
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 12
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 5
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 16
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 6
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 20
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 7
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 24
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 8
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 28
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 9
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 32
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 10
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 36
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 11
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 40
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 12
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 44
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 13
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 48
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 14
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 52
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 15
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 56
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 16
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 60
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 17
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s5, 0
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 18
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s5, 4
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 19
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s5, 8
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 20
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s5, 12
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 21
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s5, 16
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 22
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s5, 20
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 768
 	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 545
+	addi a3, zero, 608
 	call {vg_p224_sub_mod_p}
 	addi t3, zero, 0
 	ld t4, 768(s0)
@@ -15945,338 +4545,14 @@ vg_ec_p224_decompress_public_key:
 	or t4, t4, t3
 	srli t4, t4, 63
 	addi a7, t4, -1
-	andi a7, a7, 0
+	addi t0, zero, 16
+	sub t0, t0, s1
+	andi t0, t0, 15
+	and a7, a7, t0
 	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 577
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 15
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 609
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 14
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 641
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 13
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 673
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 12
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 705
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 11
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 737
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 10
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 769
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 9
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 801
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 8
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 833
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 7
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 865
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 6
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 897
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 5
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 929
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 4
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 961
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 3
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 993
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 2
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 1025
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 1
-	add s6, s6, a7
+	addi s1, s1, 1
+	addi t0, zero, 16
+	bne s1, t0, 2119b
 	andi s6, s6, 15
 	slli s6, s6, 24
 	or s5, s5, s6
@@ -16289,11 +4565,19 @@ vg_ec_p224_decompress_public_key:
 	ld t0, 1848(s0)
 	sd t0, 568(s0)
 	addi s6, zero, 0
+2120:
 	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 0
+	addi t1, s6, 0
 	slli t1, t1, 9
 	add t0, t0, t1
-	srli t2, s4, 0
+	slli t2, s6, 2
+	addi t3, zero, 16
+	bltu s6, t3, 2121f
+	srl t2, s5, t2
+	j 2122f
+2121:
+	srl t2, s4, t2
+2122:
 	andi t2, t2, 15
 	slli t2, t2, 5
 	add t0, t0, t2
@@ -16310,14 +4594,16 @@ vg_ec_p224_decompress_public_key:
 	addi a2, zero, 544
 	addi a3, zero, 608
 	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 1
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 4
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
+	addi s6, s6, 1
+	addi t0, zero, 23
+	bne s6, t0, 2120b
+	addi s6, zero, 0
+	addi s1, zero, 0
+2123:
+	slli t0, s1, 5
+	add t0, t0, s0
+	addi t0, t0, 2047
+	addi t0, t0, 545
 	ld t3, 0(t0)
 	sd t3, 608(s0)
 	ld t3, 8(t0)
@@ -16326,457 +4612,10 @@ vg_ec_p224_decompress_public_key:
 	sd t3, 624(s0)
 	ld t3, 24(t0)
 	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 2
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 8
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 3
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 12
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 4
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 16
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 5
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 20
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 6
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 24
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 7
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 28
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 8
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 32
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 9
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 36
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 10
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 40
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 11
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 44
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 12
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 48
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 13
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 52
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 14
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 56
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 15
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 60
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 16
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s5, 0
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 17
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s5, 4
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 18
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s5, 8
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 19
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s5, 12
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 20
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s5, 16
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 21
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s5, 20
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 22
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s5, 24
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 544
-	addi a2, zero, 544
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 768
 	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 545
+	addi a3, zero, 608
 	call {vg_p224_sub_mod_p}
 	addi t3, zero, 0
 	ld t4, 768(s0)
@@ -16792,338 +4631,14 @@ vg_ec_p224_decompress_public_key:
 	or t4, t4, t3
 	srli t4, t4, 63
 	addi a7, t4, -1
-	andi a7, a7, 0
+	addi t0, zero, 16
+	sub t0, t0, s1
+	andi t0, t0, 15
+	and a7, a7, t0
 	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 577
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 15
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 609
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 14
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 641
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 13
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 673
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 12
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 705
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 11
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 737
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 10
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 769
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 9
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 801
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 8
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 833
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 7
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 865
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 6
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 897
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 5
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 929
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 4
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 961
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 3
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 993
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 2
-	add s6, s6, a7
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 544
-	addi a3, zero, 2047
-	addi a3, a3, 1025
-	call {vg_p224_sub_mod_p}
-	addi t3, zero, 0
-	ld t4, 768(s0)
-	or t3, t3, t4
-	ld t4, 776(s0)
-	or t3, t3, t4
-	ld t4, 784(s0)
-	or t3, t3, t4
-	ld t4, 792(s0)
-	or t3, t3, t4
-	addi t4, zero, 0
-	sub t4, t4, t3
-	or t4, t4, t3
-	srli t4, t4, 63
-	addi a7, t4, -1
-	andi a7, a7, 1
-	add s6, s6, a7
+	addi s1, s1, 1
+	addi t0, zero, 16
+	bne s1, t0, 2123b
 	andi s6, s6, 15
 	slli s6, s6, 28
 	or s5, s5, s6
@@ -17139,11 +4654,20 @@ vg_ec_p224_decompress_public_key:
 	slli t1, s5, 63
 	or s4, t0, t1
 	srli s5, s5, 1
+	addi s6, zero, 0
+2124:
 	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 0
+	addi t1, s6, 0
 	slli t1, t1, 9
 	add t0, t0, t1
-	srli t2, s4, 0
+	slli t2, s6, 2
+	addi t3, zero, 16
+	bltu s6, t3, 2125f
+	srl t2, s5, t2
+	j 2126f
+2125:
+	srl t2, s4, t2
+2126:
 	andi t2, t2, 15
 	slli t2, t2, 5
 	add t0, t0, t2
@@ -17160,489 +4684,9 @@ vg_ec_p224_decompress_public_key:
 	addi a2, zero, 992
 	addi a3, zero, 608
 	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 1
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 4
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 2
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 8
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 3
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 12
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 4
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 16
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 5
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 20
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 6
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 24
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 7
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 28
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 8
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 32
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 9
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 36
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 10
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 40
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 11
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 44
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 12
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 48
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 13
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 52
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 14
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 56
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 15
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s4, 60
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 16
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s5, 0
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 17
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s5, 4
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 18
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s5, 8
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 19
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s5, 12
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 20
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s5, 16
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 21
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s5, 20
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 22
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s5, 24
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
-	lla t0, {VG_P224_SQRT}
-	addi t1, zero, 23
-	slli t1, t1, 9
-	add t0, t0, t1
-	srli t2, s5, 28
-	andi t2, t2, 15
-	slli t2, t2, 5
-	add t0, t0, t2
-	ld t3, 0(t0)
-	sd t3, 608(s0)
-	ld t3, 8(t0)
-	sd t3, 616(s0)
-	ld t3, 16(t0)
-	sd t3, 624(s0)
-	ld t3, 24(t0)
-	sd t3, 632(s0)
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 608
-	call {vg_p224_mul_mod_p}
+	addi s6, s6, 1
+	addi t0, zero, 24
+	bne s6, t0, 2124b
 	ld s4, 40(s0)
 	ld s5, 48(s0)
 	ld s6, 56(s0)
@@ -17860,5 +4904,21 @@ vg_ec_p224_decompress_public_key:
 	ld s1, 8(s0)
 	ld s3, 32(s0)
 	ld s0, 0(s0)
+	addi t0, zero, 0
+	addiw a0, a0, 0
+	addi a1, zero, 0
+	addi a2, zero, 0
+	addi a3, zero, 0
+	addi a4, zero, 0
+	addi a5, zero, 0
+	addi a6, zero, 0
+	addi a7, zero, 0
+	addi t0, zero, 0
+	addi t1, zero, 0
+	addi t2, zero, 0
+	addi t3, zero, 0
+	addi t4, zero, 0
+	addi t5, zero, 0
+	addi t6, zero, 0
 	ret
 	.option pop

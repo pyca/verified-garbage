@@ -100,9 +100,9 @@ theorem CtrCallF.withScr {Ctx St W SP : Addr} {o R : Nat} {s : State} (L : Lay C
     (he : Env Ctx St W SP s) (h : CtrCallF s Ctx St (W + BitVec.ofNat 64 o) (W + BitVec.ofNat 64 512) R 1) :
     CtrCall s Ctx St (W + BitVec.ofNat 64 o) (W + BitVec.ofNat 64 512) R 1 := by
   have hk := he.rsp
-  have hS : (⟨St, 16⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 512, 2048⟩ := by
+  obtain hS : (⟨St, 16⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 512, 2048⟩ := by
     simpa using L.st_w (a := 0) (n := 16) (d := 512) (k := 2048) (by decide) (.inr ⟨by decide, by decide⟩)
-  have hs : Covers [⟨W + BitVec.ofNat 64 512, 2048⟩] s.wr := he.perm.wC (by decide)
+  obtain hs : Covers [⟨W + BitVec.ofNat 64 512, 2048⟩] s.wr := he.perm.wC (by decide)
   exact ⟨h.rdi, h.rsi, h.rdx, h.rcx, h.r8, h.r9, h.rounds, h.wrap, h.kc, h.kd,
     (L.cw'.sub_left (Region.sub_prefix (by decide))).sub_right (Lay.wSub (by decide)), h.cd, hS,
     L.w_w (by omega_using [ho]) (by omega_using [ho]) (by decide), h.stkK, h.stkC, h.stkD, by rw [hk]; exact L.stk_w (by decide),
@@ -171,10 +171,10 @@ theorem tagMid_okL (hN : 184 ≤ N) {o R : Nat} (ho : o = 0 ∨ o = 112) {H J : 
       (s.gpr .rbx).toNat (s.gpr .rbp).toNat s.mem N s' ∧
       s'.mem.readW (W + BitVec.ofNat 64 96) 64 = byteRev64 (BitVec.ofNat 64 (8 * (s.gpr .rbx).toNat)) ∧
       s'.mem.readW (W + BitVec.ofNat 64 104) 64 = byteRev64 (BitVec.ofNat 64 (8 * (s.gpr .rbp).toNat)) := by
-  have hoW : o + 16 ≤ 16 ∨ (96 ≤ o ∧ o + 16 ≤ N) := by omega_arith
+  obtain hoW : o + 16 ≤ 16 ∨ (96 ≤ o ∧ o + 16 ≤ N) := by omega_arith
   refine WP.seq (WP.mono (lens_okL v L (yo := 16) (.inr rfl) he hH) fun s₁ ⟨⟨he₁, hH₁, hY₁, f₁⟩, hT96, hT104⟩ => ?_)
-  have h13 := he₁.r13; have h14 := he₁.r14; have h15 := he₁.r15
-  have dJ : ∀ r ∈ tFrame St W SP 16 gs, (⟨St, 16⟩ : Region).Disjoint r := by
+  obtain h13 := he₁.r13; have h14 := he₁.r14; have h15 := he₁.r15
+  obtain dJ : ∀ r ∈ tFrame St W SP 16 gs, (⟨St, 16⟩ : Region).Disjoint r := by
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
@@ -182,27 +182,27 @@ theorem tagMid_okL (hN : 184 ≤ N) {o R : Nat} (ho : o = 0 ∨ o = 112) {H J : 
     · simpa using L.st_w (a := 0) (n := 16) (d := 96) (k := 16) (by decide) (.inr ⟨by decide, (Lay.leN hN)⟩)
     · simpa using L.st_gh G.fit (a := 0) (n := 16) (by decide)
     · simpa using (L.stk_st (a := 0) (n := 16) (by decide)).symm
-  have hJ₁ : blockAt s₁.mem St = J := by rw [blockAt_frame f₁ dJ, hJ]
-  have hR₁ : RoundsAt s₁.mem W R := rounds_frame f₁ (fun r hr => by
+  obtain hJ₁ : blockAt s₁.mem St = J := by rw [blockAt_frame f₁ dJ, hJ]
+  obtain hR₁ : RoundsAt s₁.mem W R := rounds_frame f₁ (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
     · exact (L.st_w (by decide) (.inr ⟨by decide, (Lay.leN hN)⟩)).symm
     · exact L.w_w (.inr (by decide)) (Lay.leN hN) (Lay.leN hN)
     · exact L.w_gh G.fit (by decide) (Lay.leN hN)
     · exact (L.stk_w (Lay.leN hN)).symm) hR
-  have hc₁ : ciphOf s₁.mem Ctx R = ciphOf s.mem Ctx R := ciph_frame f₁ (fun r hr => by
+  obtain hc₁ : ciphOf s₁.mem Ctx R = ciphOf s.mem Ctx R := ciph_frame f₁ (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
     · exact L.cs.sub_right (Lay.stSub (by decide))
     · exact L.cw'.sub_right (Lay.wSub (Lay.leN hN))
     · exact L.cw'.sub_right (Lay.ghSub G.fit)
     · exact L.kc.symm) hR.2
-  have r₁ := he₁.perm.stR (show 16 + 8 ≤ 80 by decide)
-  have r₂ := he₁.perm.stR (show 24 + 8 ≤ 80 by decide)
-  have r₃ := he₁.perm.wR (show 176 + 8 ≤ N by omega_using [hN]) L.nlt
-  have w₁ := he₁.perm.wW (show o + 8 ≤ N by omega_arith) L.nlt
-  have w₂ := he₁.perm.wW (show o + 8 + 8 ≤ N by omega_arith) L.nlt
-  have dsep : (⟨W + BitVec.ofNat 64 o, 8⟩ : Region).Disjoint ⟨St + BitVec.ofNat 64 16 + BitVec.ofNat 64 8, 8⟩ := by
+  obtain r₁ := he₁.perm.stR (show 16 + 8 ≤ 80 by decide)
+  obtain r₂ := he₁.perm.stR (show 24 + 8 ≤ 80 by decide)
+  obtain r₃ := he₁.perm.wR (show 176 + 8 ≤ N by omega_using [hN]) L.nlt
+  obtain w₁ := he₁.perm.wW (show o + 8 ≤ N by omega_arith) L.nlt
+  obtain w₂ := he₁.perm.wW (show o + 8 + 8 ≤ N by omega_arith) L.nlt
+  obtain dsep : (⟨W + BitVec.ofNat 64 o, 8⟩ : Region).Disjoint ⟨St + BitVec.ofNat 64 16 + BitVec.ofNat 64 8, 8⟩ := by
     rw [add_ofNat_assoc]
     exact (L.st_w (a := 24) (n := 8) (by decide) (by omega_arith)).symm
   obtain ⟨s₂, run₂, hm₂, hdi, hsi, hdx, hcx, h8, h9, hg₂, hrd₂, hwr₂⟩ : ∃ s₂, runBlock isa
@@ -218,15 +218,15 @@ theorem tagMid_okL (hN : 184 ≤ N) {o R : Nat} (ho : o = 0 ∨ o = 112) {H J : 
       s₂.gpr .r9 = W + BitVec.ofNat 64 512 ∧
       (∀ r, r ≠ .rax → r ≠ .rdi → r ≠ .rsi → r ≠ .rdx → r ≠ .rcx → r ≠ .r8 → r ≠ .r9 → s₂.gpr r = s₁.gpr r) ∧
       s₂.rd = s₁.rd ∧ s₂.wr = s₁.wr := by
-    have hsep : ∀ (m : Mem) (x y : BitVec 64), ((m.writeW (W + BitVec.ofNat 64 o) x).writeW
+    obtain hsep : ∀ (m : Mem) (x y : BitVec 64), ((m.writeW (W + BitVec.ofNat 64 o) x).writeW
         (W + BitVec.ofNat 64 (o + 8)) y).readW (W + BitVec.ofNat 64 176) 64 = m.readW (W + BitVec.ofNat 64 176) 64 := by
       intro m x y
       rw [Mem.readW_writeW_sep (Region.Disjoint.sep (L.w_w (a := 176) (n := 8) (d := o + 8) (k := 8) (by omega_arith)
           (Lay.leN hN) (by omega_arith)) (Region.contains_self _ _) (Region.contains_self _ _)) (by decide),
         Mem.readW_writeW_sep (Region.Disjoint.sep (L.w_w (a := 176) (n := 8) (d := o) (k := 8) (by omega_arith)
           (Lay.leN hN) (by omega_arith)) (Region.contains_self _ _) (Region.contains_self _ _)) (by decide)]
-    have e24 : St + BitVec.ofNat 64 16 + BitVec.ofNat 64 8 = St + BitVec.ofNat 64 24 := add_ofNat_assoc ..
-    have eo : W + BitVec.ofNat 64 o + BitVec.ofNat 64 8 = W + BitVec.ofNat 64 (o + 8) := add_ofNat_assoc ..
+    obtain e24 : St + BitVec.ofNat 64 16 + BitVec.ofNat 64 8 = St + BitVec.ofNat 64 24 := add_ofNat_assoc ..
+    obtain eo : W + BitVec.ofNat 64 o + BitVec.ofNat 64 8 = W + BitVec.ofNat 64 (o + 8) := add_ofNat_assoc ..
     rw [e24, eo]
     refine ⟨_, by xrun [h13, h14, h15, r₁, r₂, r₃, w₁, w₂], ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
     · simp only [mem_setReg, mem_arithFlags]
@@ -240,24 +240,24 @@ theorem tagMid_okL (hN : 184 ≤ N) {o R : Nat} (ho : o = 0 ∨ o = 112) {H J : 
     · simp [rd_setReg, rd_arithFlags]
     · simp [wr_setReg, wr_arithFlags]
   refine WP.of_runBlock ⟨s₂, run₂, ?_⟩
-  have he₂ : Env Ctx St W SP s₂ N := he₁.keep (fun r hr => by
+  obtain he₂ : Env Ctx St W SP s₂ N := he₁.keep (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl <;>
       exact hg₂ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)) hrd₂ hwr₂
   have hk := he₂.rsp
-  have f₂ : Frame [⟨W + BitVec.ofNat 64 o, 16⟩] s₁.mem s₂.mem := by rw [hm₂]; exact Cmac.frame_store2 _ _ _
-  have hT : bytesAt s₂.mem (W + BitVec.ofNat 64 o) 16 = bytesAt s₁.mem (St + BitVec.ofNat 64 16) 16 := by
+  obtain f₂ : Frame [⟨W + BitVec.ofNat 64 o, 16⟩] s₁.mem s₂.mem := by rw [hm₂]; exact Cmac.frame_store2 _ _ _
+  obtain hT : bytesAt s₂.mem (W + BitVec.ofNat 64 o) 16 = bytesAt s₁.mem (St + BitVec.ofNat 64 16) 16 := by
     rw [hm₂, bytesAt_copy2 _ dsep]
-  have dJo : (⟨St, 16⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 o, 16⟩ := by
+  obtain dJo : (⟨St, 16⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 o, 16⟩ := by
     simpa using L.st_w (a := 0) (n := 16) (by decide) hoW
-  have hJ₂ : blockAt s₂.mem St = J := by
+  obtain hJ₂ : blockAt s₂.mem St = J := by
     rw [blockAt_frame f₂ fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact dJo, hJ₁]
-  have hc₂ : ciphOf s₂.mem Ctx R = ciphOf s.mem Ctx R := by
+  obtain hc₂ : ciphOf s₂.mem Ctx R = ciphOf s.mem Ctx R := by
     rw [ciph_frame f₂ (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact L.cw'.sub_right (Lay.wSub (by omega_arith))) hR.2, hc₁]
-  have hR₂ : RoundsAt s₂.mem W R := rounds_frame f₂ (fun r hr => by
+  obtain hR₂ : RoundsAt s₂.mem W R := rounds_frame f₂ (fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact L.w_w (by omega_arith) (Lay.leN hN) (by omega_arith)) hR₁
-  have hcall : CtrCallF s₂ Ctx St (W + BitVec.ofNat 64 o) (W + BitVec.ofNat 64 512) R 1 := by
+  obtain hcall : CtrCallF s₂ Ctx St (W + BitVec.ofNat 64 o) (W + BitVec.ofNat 64 512) R 1 := by
     refine ⟨hdi, hsi, hdx, hcx, h8, h9, hR.2, by have := L.ww; rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega_arith,
       by simpa using (L.cs.sub_left (Region.sub_prefix (by decide))).sub_right (Lay.stSub (d := 0) (n := 16) (by decide)),
       (L.cw'.sub_left (Region.sub_prefix (by decide))).sub_right (Lay.wSub (by omega_arith)),
@@ -272,7 +272,7 @@ theorem tagMid_okL (hN : 184 ≤ N) {o R : Nat} (ho : o = 0 ∨ o = 112) {H J : 
       · simpa using covers_left (he₂.perm.stC (d := 0) (n := 16) (by decide))
     · exact covers_cons (by simpa using he₂.perm.stC (d := 0) (n := 16) (by decide))
         (he₂.perm.wC (by omega_arith) L.nlt)
-  have dT : ∀ d, 96 ≤ d → d + 8 ≤ 112 → ∀ r ∈ [(⟨W + BitVec.ofNat 64 o, 16⟩ : Region)],
+  obtain dT : ∀ d, 96 ≤ d → d + 8 ≤ 112 → ∀ r ∈ [(⟨W + BitVec.ofNat 64 o, 16⟩ : Region)],
       (⟨W + BitVec.ofNat 64 d, 8⟩ : Region).Disjoint r := fun d h₁ h₂ r hr => by
     simp only [List.mem_singleton] at hr; subst hr
     exact L.w_w (by omega_arith) (by omega_arith) (by omega_arith)
@@ -314,7 +314,7 @@ theorem tag_okL (hN : 184 ≤ N) (T : TagCall v N) {o R : Nat} (ho : o = 0 ∨ o
   refine WP.mono (T.ok L ho M.env M.call) fun s₃ g => ?_
   have gout := g.out
   rw [blocksAt_one, blocksAt_one, ctr32_single, List.cons.injEq] at gout
-  have dT : ∀ d, 96 ≤ d → d + 8 ≤ 112 → ∀ r ∈ [⟨St, 16⟩, ⟨W + BitVec.ofNat 64 o, 16⟩,
+  obtain dT : ∀ d, 96 ≤ d → d + 8 ≤ 112 → ∀ r ∈ [⟨St, 16⟩, ⟨W + BitVec.ofNat 64 o, 16⟩,
       ⟨W + BitVec.ofNat 64 512, N - 512⟩, below SP 8], (⟨W + BitVec.ofNat 64 d, 8⟩ : Region).Disjoint r :=
     fun d h₁ h₂ r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr

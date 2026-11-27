@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.JacMul
+import Batteries.Tactic.Init
 import VerifiedGarbage.Proof.Weierstrass.JacAdd
 
 /-!
@@ -95,7 +96,7 @@ theorem dblJ0_eq (S : RcbSlots) (p o : Pt) : dblJ0 S p o = ofN dblJ0N S p p o :=
 
 theorem dblJ0N_run {F : Type _} [Lean.Grind.CommRing F] (e : Nat → F) :
     (runOps dblJ0N e 6, runOps dblJ0N e 7, runOps dblJ0N e 8) = dbl0F (e 11) (e 12) (e 13) := by
-  dsimp only [dblJ0N, dblJ0, runOps, List.foldl, FOp.run, Function.update]
+  dsimp only [dblJ0N, dblJ0, runOps, List.foldl, FOp.run, Fun.update]
   simp only [dbl0F, Prod.mk.injEq]
   constructor
   · grind

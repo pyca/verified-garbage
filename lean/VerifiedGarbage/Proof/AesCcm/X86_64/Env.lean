@@ -249,11 +249,34 @@ structure Slots (W : Addr) (R : Nat) (N A D : Addr) (nl al n tl : Nat) (m : Mem)
   len : m.readW (W + BitVec.ofNat 64 200) 64 = BitVec.ofNat 64 n
   tl : m.readW (W + BitVec.ofNat 64 208) 64 = BitVec.ofNat 64 tl
 
+/-- Whether the memory-frame proof uses the callees' scratch-free contracts. -/
+class Footprint where
+  tight : Bool
+
+instance (priority := low) Footprint.full : Footprint := ⟨false⟩
+
+variable [fp : Footprint]
+
+abbrev scratchBytes : Nat := if fp.tight then 0 else 2176
+abbrev tailBytes : Nat := if fp.tight then 32 else 2320
+
+theorem scratchBytes_le : scratchBytes ≤ 2176 := by unfold scratchBytes; split <;> decide
+theorem tailBytes_ge : 32 ≤ tailBytes := by unfold tailBytes; split <;> decide
+
+theorem tailBytes_le : tailBytes ≤ 2320 := by unfold tailBytes; split <;> decide
+
 /-- The parts of `W` the pieces write: the blocks at `[0, 112)`, the slots
 `[216, 232)` and `[240, 2560)`. -/
 abbrev wA (W : Addr) : Region := ⟨W, 112⟩
 abbrev wK (W : Addr) : Region := ⟨W + BitVec.ofNat 64 216, 16⟩
-abbrev wC (W : Addr) : Region := ⟨W + BitVec.ofNat 64 240, 2320⟩
+abbrev wC (W : Addr) : Region := ⟨W + BitVec.ofNat 64 240, tailBytes⟩
+
+theorem scratch_sub_tail (W : Addr) :
+    Region.Sub ⟨W + BitVec.ofNat 64 384, scratchBytes⟩ (wC W) := by
+  unfold scratchBytes wC tailBytes
+  split
+  · intro a h; simp [Region.Contains] at h
+  · exact Offset.sub W (by decide) (by decide)
 
 /-- What the pieces may change: those parts of `W`, the stack below `SP`
 and the data. -/
@@ -270,7 +293,7 @@ theorem kept_mut {K W SP D : Addr} {n : Nat} (L : Lay K W SP) (hD : (⟨D, n⟩ 
   · rcases hd with hd | hd
     · exact L.w_w (.inl (by omega_using [hd])) (by omega_using [hd]) (by decide)
     · exact L.w_w (.inr (by omega_using [hd])) (by omega_using [hd]) (by decide)
-  · exact L.w_w (.inl (by omega_using [hd])) (by omega_using [hd]) (by decide)
+  · exact L.w_w (.inl (by omega_using [hd])) (by omega_using [hd]) (by have := tailBytes_le; omega)
   · exact (L.stk_w' (by omega_using [hd])).symm
   · exact (hD.sub_right (Lay.wSub (by omega_using [hd]))).symm
 

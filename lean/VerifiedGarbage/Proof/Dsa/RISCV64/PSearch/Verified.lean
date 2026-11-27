@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Dsa.ParameterPublic
 public import VerifiedGarbage.Proof.Dsa.RISCV64.PSearch.Top
 public import VerifiedGarbage.Proof.Dsa.RISCV64.PSearch.Finish
 public import VerifiedGarbage.Proof.Dsa.RISCV64.PSearch.Hash
@@ -121,7 +122,7 @@ open VG VG.RISCV64
 open VG.Impl.Dsa.RISCV64.ParameterSearch
 
 /-- The contract, with the table, for the 512 bytes of stack the tests use. -/
-abbrev searchK : Contract isa := Spec.Dsa.parameterSearchContract (abi.withConsts kT) 512
+abbrev searchK : Contract isa := Proof.Dsa.parameterSearchAskedContract (abi.withConsts kT) 512
 
 theorem map_toNat_inj {a b : List Byte} (h : a.map (·.toNat) = b.map (·.toNat)) : a = b :=
   (List.map_inj_right (fun _ _ h => BitVec.toNat_inj.1 h)).1 h
@@ -134,7 +135,7 @@ theorem mkG_eq {s₁ s₂ : State} (h : searchK.pub s₁ s₂) : mkG s₁ = mkG 
   obtain ⟨h, hy⟩ := (pub_consts (c₀ := (Impl.RsaKeyGen.TrialTable32.symbol, Impl.RsaKeyGen.TrialTable32.packed))
     (cs := [])).mp h
   have ht := hy _ List.mem_cons_self
-  sig_pub [Spec.Dsa.parameterSearchContract, Spec.Dsa.parameterSearchSig, abi, argRegs, List.append_eq] at h
+  sig_pub [Proof.Dsa.parameterSearchAskedContract, Spec.Dsa.parameterSearchSig, abi, argRegs, List.append_eq] at h
   obtain ⟨hsp, hl, r0, r1, r2, r3, r4, r5, r6, r7⟩ := h
   have l1 : ((Spec.Rsa.wordsAt s₁.mem (s₁.gpr .a7) 4).map (·.toNat)).length =
       ((Spec.Rsa.wordsAt s₂.mem (s₂.gpr .a7) 4).map (·.toNat)).length := by simp [Spec.Rsa.wordsAt]
@@ -158,12 +159,12 @@ theorem code_ok (K1 : GeoOk g1 128 20) (K2 : GeoOk g2 256 32) (K3 : GeoOk g3 384
   refine WP.mono ((body_vp (G := mkG s) K1 K2 K3).wp s _ ⟨rfl, hpre, rfl⟩ rfl) fun u hu => ⟨hu.abi, ?_⟩
   refine (post_consts (c₀ := (Impl.RsaKeyGen.TrialTable32.symbol, Impl.RsaKeyGen.TrialTable32.packed))
     (cs := [])).mpr ?_
-  sig_post [Spec.Dsa.parameterSearchContract, Spec.Dsa.parameterSearchSig, abi, argRegs, List.append_eq]
+  sig_post [Proof.Dsa.parameterSearchAskedContract, Spec.Dsa.parameterSearchSig, abi, argRegs, List.append_eq]
   have hp : 0 < (mkG s).pLen := by
     have := hpre.lens
     simp only [Spec.Dsa.generationPLenValid, Bool.or_eq_true, beq_iff_eq] at this
     omega
-  exact ⟨hu.status, hu.out, hu.used, _, hu.state, VG.Proof.Dsa.Generation.requested_requests hp _ _⟩
+  exact ⟨hu.status, hu.out, hu.used, _, hu.state, VG.Proof.Dsa.Generation.requested_asked hp _ _⟩
 
 /-- The code leaks only what its contract makes public. -/
 theorem code_ct (K1 : GeoOk g1 128 20) (K2 : GeoOk g2 256 32) (K3 : GeoOk g3 384 32) :

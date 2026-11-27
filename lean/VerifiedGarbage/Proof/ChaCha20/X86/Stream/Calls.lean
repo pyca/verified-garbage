@@ -308,8 +308,15 @@ theorem block_call {s₀ s : State} (hp : APre s₀) (h : At s₀ s) (hebx : s.g
     have a1 : arg (pushed [.eax, .ebx] s).callEntry 1 = ST s₀ + BitVec.ofNat 32 64 := by
       rw [callEntry_arg fit (by decide) (by decide)]; exact heax
     simp only [Proof.ChaCha20.blockX86, arg_withRegions, State.withRegions_mem, a0, a1,
-      hp.eaS (d := 64) (by decide), m₂] at post
-    rw [post, VG.Proof.ChaCha20.X86.Xor.stateAt_frame (h.entry_frame hp hk (by decide)) (by
+      hp.eaS (d := 64) (by decide)] at post
+    -- The pop loses the arguments' frame, below `esp`, apart from the state.
+    have fL : Frame [stkR s₀] s₂.mem s'.mem := m₂.sub fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact ⟨stkR s₀, by simp, by rw [h.esp]; exact below_sub (by omega_arith) hp.sp_lo⟩
+    rw [VG.Proof.ChaCha20.X86.Xor.stateAt_frame fL (by
+      simp only [List.mem_singleton, forall_eq]
+      exact (hp.stk_st.sub_right (Offset.sub_base _ (by omega_arith))).symm), post,
+      VG.Proof.ChaCha20.X86.Xor.stateAt_frame (h.entry_frame hp hk (by decide)) (by
       simp only [List.mem_singleton, forall_eq]
       exact (hp.stk_st.sub_right (prefix_sub _ (by decide))).symm)]
 

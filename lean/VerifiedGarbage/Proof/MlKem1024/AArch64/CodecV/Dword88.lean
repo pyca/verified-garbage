@@ -8,6 +8,32 @@ import VerifiedGarbage.Proof.Framework.AArch64.Tbl
 import VerifiedGarbage.Proof.Framework.AArch64.LaneRestore
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
 import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Lane
+public import VerifiedGarbage.Proof.MlKem.AArch64.Width
+import VerifiedGarbage.Proof.MlKem.Compress1024
+
+/-! ### `MlKem1024.AArch64.CodecV.Widths`, which the modules that import this one used -/
+
+section
+
+/-! # ML-KEM-1024 on AArch64: the widths of the vector codecs -/
+
+@[expose] public section
+
+namespace VG.Proof.MlKem1024.AArch64
+
+open VG.Impl.MlKem1024.AArch64 VG.Proof.MlKem VG.Proof.MlKem.AArch64
+
+theorem width5_ok : WOk width5 := ⟨compress1024_eq (d := 5) (by decide), by decide, by decide, rfl, rfl, rfl,
+  by decide, by decide, by decide, by decide, by decide, by decide, by decide, by decide⟩
+
+theorem width11_ok : WOk width11 := ⟨compress1024_eq (d := 11) (by decide), by decide, by decide, rfl, rfl,
+  rfl, by decide, by decide, by decide, by decide, by decide, by decide, by decide, by decide⟩
+
+end VG.Proof.MlKem1024.AArch64
+
+end
+
+end
 
 /-!
 # ML-KEM-1024 on AArch64: groups of 88 bits

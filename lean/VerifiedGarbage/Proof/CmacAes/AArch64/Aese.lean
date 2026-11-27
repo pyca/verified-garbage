@@ -68,11 +68,11 @@ structure PlainInv (s₀ : State) (k : Nat) (s : State) : Prop where
   wr : s.wr = s₀.wr
   state : bytes (s.v .v0) = Spec.Cmac.chain (ciph s₀) (Spec.Aes.bytesAt s₀.mem (St s₀) 16) ((blks s₀).take k)
 
-theorem key_in {s₀ : State} (hp : UPre s₀) {o : Nat} (h : o + 16 ≤ 240) :
+theorem key_in {n : Nat} {s₀ : State} (hp : UPreW n s₀) {o : Nat} (h : o + 16 ≤ 240) :
     InRegions (s₀.rd ++ s₀.wr) (W s₀ + BitVec.ofNat 64 o) 16 :=
   ⟨schR s₀, by rw [hp.rd]; simp, Offset.contains_base _ h (by omega_arith)⟩
 
-theorem setupKeys_ok {s₀ : State} (hp : UPre s₀) : WP isa (.block setupKeys) s₀ (PlainInv s₀ 0) := by
+theorem setupKeys_ok {n : Nat} {s₀ : State} (hp : UPreW n s₀) : WP isa (.block setupKeys) s₀ (PlainInv s₀ 0) := by
   have hR := hp.rounds
   have hx1 := x1_ofNat s₀
   rw [setupKeys, WP.block_append_iff]
@@ -140,7 +140,7 @@ theorem vframe_setV {rs : List VReg} {s t : State} (h : VFrame rs s t) {d : VReg
   ⟨h.gpr, h.sp, h.mem, h.rd, h.wr, fun r hr => by
     rw [v_setV_of_ne (h := fun e => hr (by rw [e]; exact hd)), h.v r hr]⟩
 
-theorem setup_ok {s₀ : State} (hp : UPre s₀) : WP isa (.block setup) s₀ (Inv s₀ 0) := by
+theorem setup_ok {n : Nat} {s₀ : State} (hp : UPreW n s₀) : WP isa (.block setup) s₀ (Inv s₀ 0) := by
   rw [setup, WP.block_append_iff]
   refine WP.mono (setupKeys_ok hp) fun s h => ?_
   rw [fold, WP.block_cons_iff]
@@ -237,7 +237,7 @@ theorem advance_ok (s : State) : WP isa (.block advance) s fun s' =>
   simp only [List.mem_cons, not_or] at hr
   simp [State.write, hr.1, hr.2]
 
-theorem body_ok {s₀ : State} (hp : UPre s₀) {middle : Nat} (hm : middle + 2 = R s₀) {k : Nat} (hk : k < N s₀) {s : State}
+theorem body_ok {n : Nat} {s₀ : State} (hp : UPreW n s₀) {middle : Nat} (hm : middle + 2 = R s₀) {k : Nat} (hk : k < N s₀) {s : State}
     (h : Inv s₀ k s) : WP isa (body middle) s (Inv s₀ (k + 1)) := by
   have hin : InRegions (s.rd ++ s.wr) (s.gpr .x3 + BitVec.ofNat 64 0) 16 := by
     rw [h.rd, h.wr, h.x3, BitVec.add_zero, hp.rd]
@@ -277,7 +277,7 @@ theorem eval_count {s : State} {n : Nat} (hn : n < 2 ^ 64)
   show some (s.read .x .x4 != 0) = _
   rw [State.read, h, BitVec.setWidth_eq, ofNat_ne_zero hn]
 
-theorem loop_ok {s₀ : State} (hp : UPre s₀) {middle : Nat} (hm : middle + 2 = R s₀) {k : Nat} (hk : k < N s₀) {s : State}
+theorem loop_ok {n : Nat} {s₀ : State} (hp : UPreW n s₀) {middle : Nat} (hm : middle + 2 = R s₀) {k : Nat} (hk : k < N s₀) {s : State}
     (h : Inv s₀ k s) : WP isa (.loop (body middle) (.nonzero .x .x4)) s (Inv s₀ (N s₀)) := by
   refine WP.loop (M := isa) (fun (n : Nat) (t : State) =>
     ∃ j, n = N s₀ - j ∧ j < N s₀ ∧ Inv s₀ j t) ?_ (N s₀ - k) s ⟨k, rfl, hk, h⟩
@@ -292,7 +292,7 @@ theorem loop_ok {s₀ : State} (hp : UPre s₀) {middle : Nat} (hm : middle + 2 
   · right
     exact ⟨by rw [ev]; simp [hz], N s₀ - (k + 1), by omega_arith, k + 1, rfl, by omega_arith, h'⟩
 
-theorem loops_ok {s₀ : State} (hp : UPre s₀) {s : State}
+theorem loops_ok {n : Nat} {s₀ : State} (hp : UPreW n s₀) {s : State}
     (hn : 0 < N s₀) (h : Inv s₀ 0 s) : WP isa loops s (Inv s₀ (N s₀)) := by
   have hx6 := h.keys.x6
   have hx7 := h.keys.x7
@@ -321,7 +321,7 @@ theorem store_bytes (m : Mem) (p : Addr) (v : BitVec 128) :
     change (if (p + BitVec.ofNat 64 i - p).toNat < 16 then _ else _) = _
     rw [Mem.sub_ofNat_toNat p (by omega_arith), ite_eq_left hi']
 
-theorem correct_wp {s₀ : State} (hp : UPre s₀) : WP isa update s₀ (updateAArch64.post s₀) := by
+theorem correct_wp {n : Nat} {s₀ : State} (hp : UPreW n s₀) : WP isa update s₀ (updateAArch64.post s₀) := by
   have ev : isa.eval (.zero .x .x4) s₀ = some (decide (N s₀ = 0)) := by
     show some (s₀.read .x .x4 == 0) = _
     rw [State.read, BitVec.setWidth_eq, x4_ofNat]
@@ -346,18 +346,26 @@ theorem correct_wp {s₀ : State} (hp : UPre s₀) : WP isa update s₀ (updateA
     rw [h₂.x2, BitVec.add_zero, store_bytes, h₂.state,
       List.take_of_length_le (by simp [Spec.Cmac.blocksAt])]
 
-theorem correct (s : State) (hs : updateAArch64.pre s) :
-    ∃ t s', Exec isa update s t s' ∧ abiPreserved s s' ∧ updateAArch64.post s s' := by
-  obtain ⟨t, s', he, hq, hg⟩ := WP.gprs (rs := preserved) (correct_wp (UPre.of hs))
+/-- Correct with any working space: the code uses none. -/
+theorem correctW (n : Nat) (s : State) (hs : (updateAArch64With n).pre s) :
+    ∃ t s', Exec isa update s t s' ∧ abiPreserved s s' ∧ (updateAArch64With n).post s s' := by
+  obtain ⟨t, s', he, hq, hg⟩ := WP.gprs (rs := preserved) (correct_wp (UPreW.of hs))
     (by decide +kernel) (by decide +kernel)
   exact ⟨t, s', he, ⟨hg, Exec.sp he, Exec.preservedV he (by lit_decide)⟩, hq⟩
 
-theorem ct : ConstantTime isa updateAArch64.pre updateAArch64.pub update := by
+theorem correct (s : State) (hs : updateAArch64.pre s) :
+    ∃ t s', Exec isa update s t s' ∧ abiPreserved s s' ∧ updateAArch64.post s s' := by
+  rw [← updateAArch64With_2176] at hs ⊢; exact correctW 2176 s hs
+
+theorem ctW (n : Nat) : ConstantTime isa (updateAArch64With n).pre (updateAArch64With n).pub update := by
   refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3, .x4, .x5])
     ?_ (by taint_decide)
   intro s₁ s₂ _ _ ⟨h1, h2, h3, h4, h5, h6, hsp⟩
   refine ⟨hsp, fun r hr => ?_⟩
   simp only [VG.AArch64.Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
+
+theorem ct : ConstantTime isa updateAArch64.pre updateAArch64.pub update := by
+  rw [← updateAArch64With_2176]; exact ctW 2176
 
 end VG.Proof.CmacAes.AArch64.Aese

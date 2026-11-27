@@ -169,14 +169,14 @@ abbrev sWb2 : List Nat := [0, 1, 4]
 
 /-- Closes a goal that two buffers are disjoint from the precondition `hp`. -/
 macro "sdisj " hp:term:max es:term:max : tactic => `(tactic| first
-  | exact ($hp).d_kg | exact ($hp).d_kg.symm | exact ($hp).d_kc | exact ($hp).d_kc.symm
-  | exact ($hp).d_mg | exact ($hp).d_mg.symm | exact ($hp).d_mc | exact ($hp).d_mc.symm
-  | exact ($hp).d_rg | exact ($hp).d_rg.symm | exact ($hp).d_rc | exact ($hp).d_rc.symm
-  | exact ($hp).d_gc | exact ($hp).d_gc.symm
+  | with_reducible exact ($hp).d_kg | with_reducible exact ($hp).d_kg.symm | with_reducible exact ($hp).d_kc | with_reducible exact ($hp).d_kc.symm
+  | with_reducible exact ($hp).d_mg | with_reducible exact ($hp).d_mg.symm | with_reducible exact ($hp).d_mc | with_reducible exact ($hp).d_mc.symm
+  | with_reducible exact ($hp).d_rg | with_reducible exact ($hp).d_rg.symm | with_reducible exact ($hp).d_rc | with_reducible exact ($hp).d_rc.symm
+  | with_reducible exact ($hp).d_gc | with_reducible exact ($hp).d_gc.symm
   | (rw [$es:term]; first
-      | exact ($hp).b_k | exact ($hp).b_k.symm | exact ($hp).b_m | exact ($hp).b_m.symm
-      | exact ($hp).b_r | exact ($hp).b_r.symm | exact ($hp).b_g | exact ($hp).b_g.symm
-      | exact ($hp).b_c | exact ($hp).b_c.symm))
+      | with_reducible exact ($hp).b_k | with_reducible exact ($hp).b_k.symm | with_reducible exact ($hp).b_m | with_reducible exact ($hp).b_m.symm
+      | with_reducible exact ($hp).b_r | with_reducible exact ($hp).b_r.symm | with_reducible exact ($hp).b_g | with_reducible exact ($hp).b_g.symm
+      | with_reducible exact ($hp).b_c | with_reducible exact ($hp).b_c.symm))
 
 theorem stk_fit {p : Params} {STK : Nat} {σ : State} (hp : SPre p STK σ) :
     (σ.sp - BitVec.ofNat 64 STK).toNat + STK ≤ 2 ^ 64 := by

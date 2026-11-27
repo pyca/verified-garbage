@@ -294,6 +294,37 @@ pub fn bench(c: &mut Criterion) {
         });
     }
     g.finish();
+
+    // Exercise the public operation's ADX fallback even when IFMA is available:
+    // unsupported IFMA modulus widths, and odd exponents other than 65537.
+    for (exponent, sizes) in [
+        (65537, &[1024, 1536][..]),
+        (3, &[2048, 3072, 4096][..]),
+        (17, &[2048][..]),
+    ] {
+        let mut g = c.benchmark_group(format!("rsa_pkcs1_recover_fallback_e{exponent}"));
+        for &bits in sizes {
+            let key = Rsa::generate_with_e(bits, &BigNum::from_u32(exponent).unwrap()).unwrap();
+            let public = PublicKey::new(
+                BigUint::from_be_bytes(&key.n().to_vec()),
+                BigUint::from_be_bytes(&key.e().to_vec()),
+            )
+            .unwrap();
+            let pkey = PKey::from_rsa(key).unwrap();
+            let mut signer = ctx(&pkey, |c| c.sign_init().unwrap());
+            let mut sig = vec![0; (bits / 8) as usize];
+            signer.sign(&digest, Some(&mut sig)).unwrap();
+            assert_eq!(public.recover_pkcs1v15(&sig, Hash::Sha256).unwrap(), digest);
+            g.bench(BenchmarkId::new(VG, sig.len()), |b| {
+                b.iter(|| {
+                    black_box(&public)
+                        .recover_pkcs1v15(black_box(&sig), Hash::Sha256)
+                        .unwrap()
+                })
+            });
+        }
+        g.finish();
+    }
 }
 
 #[cfg(not(any(

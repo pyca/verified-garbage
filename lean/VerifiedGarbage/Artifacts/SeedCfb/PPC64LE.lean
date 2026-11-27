@@ -1,31 +1,36 @@
 module
 
-public import VerifiedGarbage.Proof.Seed.PPC64LE.ModesVerified
-public import VerifiedGarbage.Proof.Seed.PPC64LE.ModesFrame
-public import VerifiedGarbage.Proof.Seed.PPC64LE.FbFinalVerified
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.PPC64LE.Print
+public import VerifiedGarbage.TCB.PPC64LE.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Seed.Cfb
+public import VerifiedGarbage.Spec.Seed.CfbFinal
+import VerifiedGarbage.Proof.Seed.PPC64LE.ModesVerified
+import VerifiedGarbage.Proof.Seed.PPC64LE.ModesFrame
+import VerifiedGarbage.Proof.Seed.PPC64LE.FbFinalVerified
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Seed.PPC64LE.Scrub
 import VerifiedGarbage.Proof.Seed.PPC64LE.ModesLit
 import VerifiedGarbage.Proof.Seed.PPC64LE.FbFinalLit
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # SEED-CFB128 on PPC64LE -/
 
-@[expose] public section
-
 namespace VG.Artifacts.SeedCfb.PPC64LE
 
-def artifacts : List Artifact := [
+public def artifacts : List (Artifact PPC64LE.target) := [
   Spec.Seed.cfbEncryptApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratchWiped 1184 .r7 144 Impl.Seed.PPC64LE.cfbEncrypt
-    verified := Proof.Seed.PPC64LE.cfbEnc_framed Proof.Seed.PPC64LE.Modes.cfbEncrypt_verified },
+    code := Impl.Seed.PPC64LE.Fn.cfbEncrypt
+    verified := Proof.Seed.PPC64LE.Scrub.cfbEncrypt_scrubbed },
   Spec.Seed.cfbDecryptApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratchWiped 1424 .r7 174 Impl.Seed.PPC64LE.cfbDecrypt
-    verified := Proof.Seed.PPC64LE.cfbDec_framed Proof.Seed.PPC64LE.Modes.cfbDecrypt_verified },
+    code := Impl.Seed.PPC64LE.Fn.cfbDecrypt
+    verified := Proof.Seed.PPC64LE.Scrub.cfbDecrypt_scrubbed },
   Spec.Seed.cfbEncryptFinalApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratchWiped 1184 .r7 144 Impl.Seed.PPC64LE.cfbEncryptFinal
-    verified := Proof.Seed.PPC64LE.FbFinal.cfbEncryptFinal_framed },
+    code := Impl.Seed.PPC64LE.Fn.cfbEncryptFinal
+    verified := Proof.Seed.PPC64LE.Scrub.cfbEncryptFinal_scrubbed },
   Spec.Seed.cfbDecryptFinalApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratchWiped 1184 .r7 144 Impl.Seed.PPC64LE.cfbDecryptFinal
-    verified := Proof.Seed.PPC64LE.FbFinal.cfbDecryptFinal_framed }]
+    code := Impl.Seed.PPC64LE.Fn.cfbDecryptFinal
+    verified := Proof.Seed.PPC64LE.Scrub.cfbDecryptFinal_scrubbed }]
+
+spec_apis artifacts
 
 end VG.Artifacts.SeedCfb.PPC64LE

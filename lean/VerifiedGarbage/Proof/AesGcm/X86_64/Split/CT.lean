@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Split.Run
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Split.FinCT
 import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.CT
 import VerifiedGarbage.Proof.AesGcm.X86_64.SealCT
 import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
@@ -9,7 +8,6 @@ import VerifiedGarbage.Proof.AesGcm.X86_64.FinTagCT
 import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.CT
 import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Split.Run
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.Split.FinCT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.CT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.SealCT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
@@ -28,6 +26,116 @@ import VerifiedGarbage.Proof.Framework.X86_64.Exec
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
+public import VerifiedGarbage.Impl.AesGcm.X86_64.SealSplit
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.CT
+import VerifiedGarbage.Proof.AesGcm.X86_64.Split.Body
+meta import VerifiedGarbage.Impl.AesGcm.X86_64.SealSplit
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Short.CT
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Split.Body
+
+/-! ### `AesGcm.X86_64.Split.FinCT`, which this module and modules that import it used -/
+
+section
+
+/-!
+# AES-GCM `seal_split` on x86-64: the end, in two runs
+
+Untrusted: everything here is checked by Lean. `FinRel` states what
+constant time needs of the end of `seal_split`: two runs from states that
+hold the same public slots of `W`, the total length `N` in its slot, leak the
+same trace. `Short.finish_rel` proves it of `Short.finishWith`
+(`finRel_finishWith`), `oneCrypt_rel` and `oneTag_rel` of
+`SealSplit.finCalls` (`finRel_calls`). Before it, `oneBlocks` keeps the
+total length kept at `auxO` (`oneBlocks_aux`), and `fixTlen` puts it back
+(`fixTlen_oneS`).
+-/
+
+@[expose] public section
+
+set_option linter.unusedSimpArgs false
+
+namespace VG.Proof.AesGcm.X86_64.Split
+
+open VG VG.X86_64 VG.X86_64.RegUpd VG.Impl.AesGcm.X86_64
+open VG.Proof.Gcm.X86_64.Stitch (CtxMode)
+open VG.Proof.AesGcm.X86_64.Short (ShortFacts KsOk KsRel FinI finish_rel)
+
+/-- What constant time needs of the end `fin` of `seal_split`. -/
+def FinRel (M : CtxMode) (fin : Prog isa) : Prop :=
+  ∀ {Ctx W SP A D : Addr} {R al n N : Nat}, Lay Ctx (W + BitVec.ofNat 64 16) W SP → (R = 10 ∨ R = 12 ∨ R = 14) →
+    n < 2 ^ 64 → (⟨D, n⟩ : Region).Disjoint ⟨W, 2560⟩ →
+    RelCT isa (OneS₂ M Ctx W SP R A al D n (some N)) fin fun _ _ => True
+
+/-- The end without calls, with the keystream of `ks`. -/
+theorem finRel_finishWith {M : CtxMode} (hF : ShortFacts) {ks : Prog isa} (hks : KsOk ks) (hkr : KsRel ks) :
+    FinRel M (Short.finishWith ks) := by
+  intro Ctx W SP A D R al n N _ hR hn _
+  exact (finish_rel hF hks hkr (Ctx := Ctx) (W := W) (SP := SP) (D := D) hR hn).mono
+    (fun _ _ g => ⟨⟨g.1.env, g.1.rounds.1, g.1.dat, g.1.len⟩, ⟨g.2.env, g.2.rounds.1, g.2.dat, g.2.len⟩⟩)
+    fun _ _ g => g
+
+/-- The end with calls: `oneCrypt` and `oneTag 0`. -/
+theorem finRel_calls (v : GcmImpl) {M : CtxMode} : FinRel M (SealSplit.finCalls v.callees) := by
+  intro Ctx W SP A D R al n N L _ _ hDW
+  exact RelCT.seq (oneCrypt_rel v L hDW) (oneTag_rel v L (.inl rfl) hDW)
+
+section
+variable {Ctx W SP : Addr} (L : Lay Ctx (W + BitVec.ofNat 64 16) W SP) {M : CtxMode}
+include L
+
+/-- The total length put back, from `auxO`. -/
+theorem fixTlen_oneS {R : Nat} {A : Addr} {al : Nat} {D : Addr} {n N : Nat} {T : Option Nat} {s : State}
+    (h : OneS M Ctx W SP R A al D n T s) (haux : s.mem.readW (W + BitVec.ofNat 64 216) 64 = BitVec.ofNat 64 N) :
+    WP isa (.block SealSplit.fixTlen) s (OneS M Ctx W SP R A al D n (some N)) := by
+  refine WP.mono (fixTlen_ok h.env haux) fun s' ⟨m, g, rd, wr⟩ => ?_
+  have sep : ∀ d, (d + 8 ≤ 192 ∨ 200 ≤ d) → d + 8 ≤ 2560 →
+      s'.mem.readW (W + BitVec.ofNat 64 d) 64 = s.mem.readW (W + BitVec.ofNat 64 d) 64 := by
+    intro d hd hd'
+    rw [m]
+    exact Mem.readW_writeW_sep (Offset.sep W (by omega_using [hd]) (by have := L.ww; omega_using [hd']) (by have := L.ww; omega_using []))
+      (by decide)
+  have fW : Frame [⟨W + BitVec.ofNat 64 192, 8⟩] s.mem s'.mem := by
+    rw [m]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
+  exact ⟨h.env.keep (fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl <;> exact g _ (by decide)) rd wr,
+    ⟨by rw [sep 176 (.inl (by decide)) (by decide)]; exact h.rounds.1, h.rounds.2⟩,
+    by rw [sep 232 (.inr (by decide)) (by decide)]; exact h.aad,
+    by rw [sep 184 (.inl (by decide)) (by decide)]; exact h.alen,
+    by rw [sep 200 (.inr (by decide)) (by decide)]; exact h.dat,
+    by rw [sep 208 (.inr (by decide)) (by decide)]; exact h.len,
+    h.dA.of_eq rd wr, h.dD.of_eq rd wr, fun _ e => by cases e; rw [m, Mem.readW_writeW_self64],
+    h.ext.keep rd wr fW fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact h.ext.cw.sub_right (Lay.wSub (by decide))⟩
+
+/-- `oneBlocks`, keeping what is at `auxO`. -/
+theorem oneBlocks_aux (B : BlkFn M) {R : Nat} {A : Addr} {al : Nat} {D : Addr} {n N : Nat} {T : Option Nat}
+    (t_c : (below SP 24).Disjoint ⟨Ctx, 256⟩) (t_w : (below SP 24).Disjoint ⟨W, 2560⟩)
+    (t_d : (below SP 24).Disjoint ⟨D, n⟩) (sp24 : 24 ≤ SP.toNat) {s : State}
+    (h : OneS M Ctx W SP R A al D n T s) (haux : s.mem.readW (W + BitVec.ofNat 64 216) 64 = BitVec.ofNat 64 N) :
+    WP isa (oneBlocks B.enc) s fun s' =>
+      OneS M Ctx W SP R A al (D + BitVec.ofNat 64 (16 * (n / 16))) (n - 16 * (n / 16)) (some n) s' ∧
+      s'.mem.readW (W + BitVec.ofNat 64 216) 64 = BitVec.ofNat 64 N := by
+  have hD := h.dD.ok.w
+  refine WP.mono (oneBlocks_core L B.enc (Out := fun _ _ => True) ⟨h.env, h.rounds, h.dat, h.len, h.dD, t_c, t_w, t_d, sp24,
+    h.ext⟩ (fun s₂ hi => WP.mono (obFrameE_ok L B hi) fun _ o => ⟨o.1, o.2.1, o.2.2.1, o.2.2.2.1, trivial⟩)
+    (fun _ _ _ => trivial) (fun _ _ _ _ _ _ => trivial)) fun s' ⟨P, _⟩ => ⟨ObPost.oneS L t_w h P, ?_⟩
+  have d216 : ∀ r ∈ (⟨W + BitVec.ofNat 64 192, 24⟩ :: obFrame (W + BitVec.ofNat 64 16) W SP D (n / 16)),
+      (⟨W + BitVec.ofNat 64 216, 8⟩ : Region).Disjoint r := by
+    intro r hr
+    rcases List.mem_cons.mp hr with rfl | hr
+    · exact Offset.disjoint W (.inr (by decide)) (by have := L.ww; omega_using []) (by have := L.ww; omega_using [])
+    · exact ob_slots L hD (by have := h.dD.ok.lt; omega_using []) t_w (by decide) (by decide) r hr
+  rw [P.frame.readW (Region.contains_self _ _) d216 (by decide), haux]
+
+end
+
+end VG.Proof.AesGcm.X86_64.Split
+
+end
+
+end
 
 /-!
 # AES-GCM `seal_split` on x86-64: constant time
@@ -106,7 +214,8 @@ theorem g₁_wp : WP isa (.block SealSplit.preTest) σ (G₁ Ctx W SP sl σ) := 
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl <;> exact g₁ _ (by decide)) rd₁ wr₁, ax₁, zf₁, m₁, rd₁, wr₁⟩
 
-theorem g₂_wp {s : State} (g : G₀ Ctx W SP sl σ s) : WP isa (.block SealSplit.preArgs) s (G₂ Ctx W SP D S R sl σ) := by
+omit h in
+theorem g₂_wp (h : CallInputs M Ctx W SP D S R n sl σ) {s : State} (g : G₀ Ctx W SP sl σ s) : WP isa (.block SealSplit.preArgs) s (G₂ Ctx W SP D S R sl σ) := by
   obtain ⟨he, ax, m, rd, wr⟩ := g
   refine WP.mono (pre2_ok (R := R) (D := D) (S := S) he (by rw [m]; exact h.rounds) (by rw [m]; exact h.dat)
     (by rw [m]; exact h.src)) fun s₂ ⟨di, si, dx, cx, r8, r9, r10, r11, a, g₂, m₂, rd₂, wr₂⟩ => ?_
@@ -121,7 +230,8 @@ theorem mid2_zero {s : State} (g : G₁ Ctx W SP sl σ s) (h0 : sl / 16 = 0) : M
   · rw [h0, m]; rfl
   · rw [h0, m]; rfl
 
-theorem mid2_call_wp (T : BlkToFn M) {s : State} (g : G₂ Ctx W SP D S R sl σ s) :
+omit h in
+theorem mid2_call_wp (h : CallRegions M Ctx W SP D S R n sl σ) (T : BlkToFn M) {s : State} (g : G₂ Ctx W SP D S R sl σ s) :
     WP isa (.frame (.push [.rax, .r10, .r11]) (.call T.fn.name T.fn.code) (.pop .rax 3)) s
       (Mid2 Ctx W SP D S R sl σ) := by
   obtain ⟨he, di, si, dx, cx, r8, r9, r10, r11, ax, m, rd, wr⟩ := g
@@ -185,9 +295,10 @@ variable {M : CtxMode} {Ctx W SP D S : Addr} {R n sl : Nat} {σ σ' : State}
   (h : PP M Ctx W SP D S R n sl σ) (h' : PP M Ctx W SP D S R n sl σ')
 include h h'
 
+omit h h' in
 /-- The call of `vg_aes_gcm_encrypt_blocks_to`, in two runs: the same public
 arguments. -/
-theorem call_rel (T : BlkToFn M) :
+theorem call_rel (h : CallRegions M Ctx W SP D S R n sl σ) (h' : CallRegions M Ctx W SP D S R n sl σ') (T : BlkToFn M) :
     RelCT isa (fun s₁ s₂ => G₂ Ctx W SP D S R sl σ s₁ ∧ G₂ Ctx W SP D S R sl σ' s₂)
       (.frame (.push [.rax, .r10, .r11]) (.call T.fn.name T.fn.code) (.pop .rax 3)) fun _ _ => True := by
   have hq : 16 * (sl / 16) ≤ sl := Nat.mul_div_le _ _
@@ -209,8 +320,9 @@ theorem call_rel (T : BlkToFn M) :
     gU₂ _ (by decide : Reg.r9 ≠ .rsp), di₁, di₂, si₁, si₂, dx₁, dx₂, cx₁, cx₂, r8₁, r8₂, r9₁, r9₂, hU₁, hU₂,
     a0₁, a0₂, a1₁, a1₂, a2₁, a2₂, and_self]
 
+omit h h' in
 /-- `prefix`'s call, from states with the number of whole blocks in `rax`. -/
-theorem callPart_rel (T : BlkToFn M) :
+theorem callPart_rel (h : CallInputs M Ctx W SP D S R n sl σ) (h' : CallInputs M Ctx W SP D S R n sl σ') (T : BlkToFn M) :
     RelCT isa (fun a b => G₀ Ctx W SP sl σ a ∧ G₀ Ctx W SP sl σ' b)
       (.seq (.block SealSplit.preArgs) (.frame (.push [.rax, .r10, .r11]) (.call T.fn.name T.fn.code) (.pop .rax 3)))
       fun a b => Mid2 Ctx W SP D S R sl σ a ∧ Mid2 Ctx W SP D S R sl σ' b := by
@@ -223,8 +335,8 @@ theorem callPart_rel (T : BlkToFn M) :
       · rw [e₁.r14, e₂.r14]
       · rw [e₁.r15, e₂.r15])
     (fun _ _ g => g) (fun _ g => g₂_wp h g) (fun _ g => g₂_wp h' g)) ?_
-  exact (rel_wp (call_rel h h' T) (fun _ _ g => g) (fun _ g => mid2_call_wp h T g)
-    (fun _ g => mid2_call_wp h' T g)).mono (fun _ _ g => g) fun _ _ g => g.2
+  exact (rel_wp (call_rel h.regions h'.regions T) (fun _ _ g => g) (fun _ g => mid2_call_wp h.regions T g)
+    (fun _ g => mid2_call_wp h'.regions T g)).mono (fun _ _ g => g) fun _ _ g => g.2
 
 /-- After `prefix`'s call (or none): the bytes left copied, and `rest`. -/
 theorem tail_rel :
@@ -268,7 +380,7 @@ theorem prefix_ct (T : BlkToFn M) :
   · refine StreamTo.RelCT.of_imp (sl / 16 = 0) (fun _ _ g => by
       have e := g.2; simp only [eval, g.1.1.2.2.1] at e; simpa using e) fun h0 => ?_
     exact skip_rel fun _ _ g => ⟨mid2_zero g.1.1 h0, mid2_zero g.1.2 h0⟩
-  · exact (callPart_rel h h' T).mono (fun _ _ g =>
+  · exact (callPart_rel h.toCallInputs h'.toCallInputs T).mono (fun _ _ g =>
       ⟨⟨g.1.1.1, g.1.1.2.1, g.1.1.2.2.2⟩, ⟨g.1.2.1, g.1.2.2.1, g.1.2.2.2.2⟩⟩) fun _ _ g => g
   exact tail_rel h h'
 

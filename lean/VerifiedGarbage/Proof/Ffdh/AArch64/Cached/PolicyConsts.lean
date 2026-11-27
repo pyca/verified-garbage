@@ -1,17 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PolicyMath
+public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PolicyTable
 public import VerifiedGarbage.Proof.Framework.AArch64.StackScratchConsts
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PolicyRecordEnv
 public import VerifiedGarbage.Spec.Rsa.Contract
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PolicyTable
-
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.PackedBytes
 import VerifiedGarbage.Proof.X25519.Bytes
 import VerifiedGarbage.Proof.Framework.CallLay
+
 /-! The emitted native quadwords contain exactly the reviewed public vetted-group table. -/
 
 -- Formerly `VerifiedGarbage/Proof/Ffdh/AArch64/Cached/PolicyRecordBytes.lean`, which only this module imported.

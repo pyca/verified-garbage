@@ -4,6 +4,8 @@ import Lean.Elab.Command
 meta import Lean.Elab.Command
 import VerifiedGarbage.Spec.RsaPss
 meta import VerifiedGarbage.Spec.RsaPss
+import VerifiedGarbage.Spec.RsaPss.MdTable
+import VerifiedGarbage.TCB.X86_64.Target
 import VerifiedGarbage.TCB.Audit
 meta import VerifiedGarbage.TCB.Audit
 import VerifiedGarbageTest.Memo
@@ -190,7 +192,7 @@ def checkGen (v : Vector) (key : CrtKey) : Except String Unit := do
   let H' := withTable H (t ++ Test.tableOf H.hash (seeds H ((withTable H t).hash m') (emLen - H.len - 1)))
   let some em := encodeK H' H' v.n mHash salt | throw "encoding failed"
   unless some em == Rsa.publicOp v.n v.e v.sig do throw "encodeK is not S^e mod n"
-  unless Rsa.i2osp (Rsa.powMod (Rsa.os2ip em) (Rsa.os2ip v.d) n) k == v.sig do
+  unless Rsa.i2osp (Nat.powMod (Rsa.os2ip em) (Rsa.os2ip v.d) n) k == v.sig do
     throw "S is not EM^d mod n"
   unless verify H' H' v.n v.e mHash v.sig (some salt.length) do throw "verify"
   unless sign H' H' v.n v.e key.1 key.2.1 key.2.2.1 key.2.2.2.1 key.2.2.2.2 mHash salt ==
@@ -240,6 +242,21 @@ def checkMgf1 : Except String Unit := do
       unless mgf1 H seed len == blocks.take len do throw s!"MGF1 with {H.rust}, {len} octets"
     unless (H.hash []).length == H.len do throw s!"{H.rust}: digest length"
 
+/-- Both signing entry points take the message hash and MGF1 table pointers in
+stack arguments 16 and 17 on x86-64. Both contracts require each lookup. -/
+example (before after : X86_64.State)
+    (missing : Spec.MdHashTable.hashAt 64 before.mem (X86_64.stackArg before 16) = none ∨
+      Spec.MdHashTable.hashAt 64 before.mem (X86_64.stackArg before 17) = none) :
+    ¬ (Spec.RsaPss.signMdTableContract X86_64.abi).post before after ∧
+    ¬ (Spec.RsaPss.signPrecomputedMdTableContract X86_64.abi).post before after := by
+  have incompatible {H G : Hash}
+      (hash : Spec.MdHashTable.hashAt 64 before.mem (X86_64.stackArg before 16) = some H)
+      (mgf1 : Spec.MdHashTable.hashAt 64 before.mem (X86_64.stackArg before 17) = some G) : False := by
+    rcases missing with h | h
+    · cases h.symm.trans hash
+    · cases h.symm.trans mgf1
+  constructor <;> rintro ⟨_, _, hash, mgf1, _⟩ <;> exact incompatible hash mgf1
+
 #assert_no_compiler_overrides Spec.RsaPss.encodeK Spec.RsaPss.verify Spec.RsaPss.sign Spec.Mgf1.mgf1
 
 run_cmd do
@@ -256,5 +273,16 @@ run_cmd do
     match ← checkFile root name last count generation with
     | .ok () => pure ()
     | .error e => throwError "{e}"
+
+/-- Neither table lookup can be skipped by the verification contract. On x86-64
+the message hash and MGF1 table pointers are stack arguments 8 and 9. -/
+example (before after : X86_64.State)
+    (missing : Spec.MdHashTable.hashAt 64 before.mem (X86_64.stackArg before 8) = none ∨
+      Spec.MdHashTable.hashAt 64 before.mem (X86_64.stackArg before 9) = none) :
+    ¬ (Spec.RsaPss.verifyPrecomputedMdTableContract X86_64.abi).post before after := by
+  rintro ⟨_, _, hash, mgf1, _⟩
+  rcases missing with h | h
+  · cases h.symm.trans hash
+  · cases h.symm.trans mgf1
 
 end VG.Test.RsaPss

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Rsa.X86_64.CrtIfma
 public import VerifiedGarbage.Impl.Rsa.X86_64.PubIfma
+public import VerifiedGarbage.Impl.Subst
 
 /-!
 # FFDH's exponentiation with AVX512_IFMA on x86-64
@@ -83,6 +84,27 @@ def code (mul : Nat → Nat → Nat → Prog isa) (sp sl : Nat) : List (Prog isa
   [.seq (.block (fits PubIfma.pay2048 sl)) (.ite .e (seqs (exp PubIfma.pay2048 sp sl))
     (.seq (.block (fits PubIfma.pay3072 sl)) (.ite .e (seqs (exp PubIfma.pay3072 sp sl))
       (.seq (.block (fits PubIfma.pay4096 sl)) (.ite .e (seqs (exp PubIfma.pay4096 sp sl))
+        (seqs (Crt.expLoop mul tabSelect sp sl)))))))]
+
+/-- Conversion kernels shared by every exponentiation using this layout. -/
+def conversionCall (code : Prog isa) : Prog isa :=
+  if code = arrLoop l 0 then .call s!"vg_ffdh_ifma_to52_{l.W * 64}" code
+  else if code = (result l 0).headD (.block []) then .call s!"vg_ffdh_ifma_to64_{l.W * 64}" code
+  else code
+
+/-- `exp`, with shared conversion kernels and the vector code called as
+`name`. Every domain operation shares these leaf functions. -/
+def expC (name : String) (sp sl : Nat) : List (Prog isa) :=
+  [.block (head l sl)] ++ (region l 0 sp sl).map (conversionCall l) ++
+    [.block (bases l), .call name (vec l)] ++ (result l 0).map (conversionCall l) ++
+    [.block (tail l)]
+
+/-- `code` as emitted: each layout's conversion and vector kernels are
+calls (`expC`), which inline to `code`. -/
+def codeC (mul : Nat → Nat → Nat → Prog isa) (sp sl : Nat) : List (Prog isa) :=
+  [.seq (.block (fits PubIfma.pay2048 sl)) (.ite .e (seqs (expC PubIfma.pay2048 "vg_ffdh_exp_ifma_2048" sp sl))
+    (.seq (.block (fits PubIfma.pay3072 sl)) (.ite .e (seqs (expC PubIfma.pay3072 "vg_ffdh_exp_ifma_3072" sp sl))
+      (.seq (.block (fits PubIfma.pay4096 sl)) (.ite .e (seqs (expC PubIfma.pay4096 "vg_ffdh_exp_ifma_4096" sp sl))
         (seqs (Crt.expLoop mul tabSelect sp sl)))))))]
 
 end VG.Impl.Ffdh.X86_64.Ifma

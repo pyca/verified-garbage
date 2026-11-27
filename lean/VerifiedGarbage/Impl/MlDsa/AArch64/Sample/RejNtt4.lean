@@ -3,7 +3,8 @@ module
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejNtt
 public import VerifiedGarbage.Impl.Sha3.AArch64.Neon.X2
 
-/-! Four independent SHAKE128 samplers, computed as two pairs of NEON lanes.
+/-! Four independent SHAKE128 samplers, computed as two pairs of interleaved
+states, each permuted by a call of `vg_keccak_f1600_x2` (`Neon/X2.lean`).
 The 1008 bytes per stream and rejection loop match the single-stream sampler. -/
 
 @[expose] public section

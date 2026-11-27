@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Hmac.Instance.initAnyKeyContract` of `VG.Spec.Hmac.sha224I`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `inner` must be valid for reads and writes of 96 bytes.
@@ -61,7 +63,7 @@ b 212f
 bl {vg_sha256_update_scratch}
 .base64 "oACV6rAA1eq4APXqwAAV68gANeuoALXqIAAB6DAAITimAwh8YAMhOA=="
 21:
-.base64 "IACATg=="
+.base64 "AAAAOEH8IfggAIE5AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhAAAz4SAAM+FAADPhYAAz4YAAM+GgADPhwAAz4eAAM+IAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfAAADPgIAAz4EAAM+BgADPggAAz4KAAM+DAADPg4AAz4QAAM+EgADPhQAAz4WAAM+GAADPhoAAz4cAAM+HgADPiAAAz4iAAM+JAADPiYAAz4wAMhOAAAYDgAAIA4AACgOAAAwDgAAOA4AAAAOQAAIDkAAEA5AABgOQAAgDnEBAAQxAwhEMQUQhDEHGMQxCSEEMQspRDENMYQxDznEMRECBHETCkRxFRKEcRcaxHEZIwRxGytEcR0zhHEfO8RxIQQEsSMMRLElFISxJxzEiAAgE4="
 20:
 .base64 "0fwh+CAA4TimAgh80f8h+CAAAfhQAYf6WAGn+mABx/poAef6cAEH+3gBJ/sAAKc6AADDOgAA5DoAAAY7AAAlO9AAhzoAAHQ4"
 bl {vg_sha224_init}
@@ -71,7 +73,7 @@ bl {vg_sha256_update_scratch}
 bl {vg_sha256_finalize_scratch}
 .base64 "AAB2OAAAlzgwAbU4HADAOAAA9ThQAZXqYAHV6mgB9epwARXreAE161gBteo="
 bl {vg_hmac_sha224_init_scratch}
-.base64 "IAAB6DAAITimAwh8IACBOQAAYDkAAGz5CABs+RAAbPkYAGz5IABs+SgAbPkwAGz5OABs+UAAbPlIAGz5UABs+VgAbPlgAGz5aABs+XAAbPl4AGz5gABs+YgAbPmQAGz5mABs+aAAbPmoAGz5sABs+bgAbPnAAGz5yABs+dAAbPnYAGz54ABs+egAbPnwAGz5+ABs+QABbPkIAWz5EAFs+RgBbPkgAWz5KAFs+TABbPk4AWz5QAFs+UgBbPlQAWz5WAFs+WABbPloAWz5cAFs+XgBbPkwAyE4"
+.base64 "IAAB6DAAITimAwh8IACBOQAAADgAAAz4CAAM+BAADPgYAAz4IAAM+CgADPgwAAz4OAAM+EAADPhIAAz4UAAM+FgADPhgAAz4aAAM+HAADPh4AAz4gAAM+IgADPiQAAz4mAAM+KAADPioAAz4sAAM+LgADPjAAAz4yAAM+NAADPjYAAz44AAM+OgADPjwAAz4+AAM+AABDPgIAQz4EAEM+BgBDPggAQz4KAEM+DABDPg4AQz4QAEM+EgBDPhQAQz4WAEM+GABDPhoAQz4cAEM+HgBDPgwAyE4"
 b 21b"#,
         vg_sha224_init = sym super::sha256::vg_sha224_init,
         vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch::vg_sha256_update_scratch,
@@ -83,6 +85,8 @@ b 21b"#,
 /// Finishes an HMAC-SHA-224 computation: if, for a 64-byte key `K₀` and a text of fewer than 2⁶⁴ − 64 bytes, the SHA-224 streaming state `*inner` represents `(K₀ ⊕ ipad) ‖ text`, of `count` bytes, and `*outer` represents `K₀ ⊕ opad`, writes the HMAC-SHA-224 of the text under `K₀` (28 bytes) to `*out`.
 ///
 /// Contract: `VG.Spec.Hmac.Instance.finalizeContract` of `VG.Spec.Hmac.sha224I`. Constant time: only the pointers and `count` may affect timing, not the states.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -101,7 +105,7 @@ bl {vg_sha256_finalize_scratch}
 bl {vg_sha256_update_scratch}
 .base64 "AAB0OFwAgDjQALU4AADVOA=="
 bl {vg_sha256_finalize_scratch}
-.base64 "0AAVgQAAF5HUABWBBAAXkdgAFYEIABeR3AAVgQwAF5HgABWBEAAXkeQAFYEUABeR6AAVgRgAF5GgAJXqsADV6rgA9erAABXryAA166gAteogAAHoMAAhOKYDCHxgAyE4IACATg==""#,
+.base64 "0AAVgQAAF5HUABWBBAAXkdgAFYEIABeR3AAVgQwAF5HgABWBEAAXkeQAFYEUABeR6AAVgRgAF5GgAJXqsADV6rgA9erAABXryAA166gAteogAAHoMAAhOKYDCHxgAyE4AAAAOEH8IfggAIE5AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhAAAz4SAAM+FAADPhYAAz4YAAM+GgADPhwAAz4eAAM+IAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfAAADPgIAAz4EAAM+BgADPggAAz4KAAM+DAADPg4AAz4QAAM+EgADPhQAAz4WAAM+GAADPhoAAz4cAAM+HgADPiAAAz4iAAM+JAADPiYAAz4wAMhOAAAYDgAAIA4AACgOAAAwDgAAOA4AAAAOQAAIDkAAEA5AABgOQAAgDnEBAAQxAwhEMQUQhDEHGMQxCSEEMQspRDENMYQxDznEMRECBHETCkRxFRKEcRcaxHEZIwRxGytEcR0zhHEfO8RxIQQEsSMMRLElFISxJxzEiAAgE4=""#,
         vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch::vg_sha256_finalize_scratch,
         vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch::vg_sha256_update_scratch,
     )
@@ -110,6 +114,14 @@ bl {vg_sha256_finalize_scratch}
 #[rustfmt::skip]
 #[path = "internal/vg_hmac_sha224_finalize_scratch.rs"]
 pub(crate) mod vg_hmac_sha224_finalize_scratch;
+
+#[rustfmt::skip]
+#[path = "internal/vg_hmac_sha224_init_any_scratch.rs"]
+pub(crate) mod vg_hmac_sha224_init_any_scratch;
+
+#[rustfmt::skip]
+#[path = "internal/vg_hmac_sha224_init_core.rs"]
+pub(crate) mod vg_hmac_sha224_init_core;
 
 #[rustfmt::skip]
 #[path = "internal/vg_hmac_sha224_init_scratch.rs"]

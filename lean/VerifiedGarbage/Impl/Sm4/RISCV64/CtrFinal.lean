@@ -67,12 +67,12 @@ def ctrFinalTailArgs : List Instr :=
 /-- The partial last block: the output block `CIPH_K(Tₙ₊₁)` in the block of
 `save`, and its first `u` bytes XORed into the data. -/
 def ctrFinalTail : Prog isa :=
-  .seq (.block ctrFinalTailArgs) (.seq (.call "vg_sm4_ctr" ctr)
+  .seq (.block ctrFinalTailArgs) (.seq (.call "vg_sm4_ctr_core" ctr)
     (.seq (.block tailKey) (.loop (.block xorStep) (.nonzero .s3))))
 
 /-- `vg_sm4_ctr_final`. -/
 def ctrFinal : Prog isa :=
-  .seq (.block ctrFinalSetup) (.seq (.call "vg_sm4_ctr" ctr)
+  .seq (.block ctrFinalSetup) (.seq (.call "vg_sm4_ctr_core" ctr)
     (.seq (.ite (.zero .s3) (.block []) ctrFinalTail) (.block finalRestore)))
 
 end VG.Impl.Sm4.RISCV64

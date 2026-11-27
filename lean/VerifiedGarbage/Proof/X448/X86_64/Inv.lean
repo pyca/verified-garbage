@@ -147,26 +147,26 @@ theorem decRbx_ok {s : State} {k : Nat} (hk : k < 2 ^ 32)
     RegUpd.gpr_arithFlags], trivial, trivial, trivial, trivial⟩
 
 /-- Slot `o` becomes slot `a` squared `n` times. -/
-def opSqn (o a : Index) (n : Nat) (e : Env) : Env := Function.update e o (sqn (e a) n)
+def opSqn (o a : Index) (n : Nat) (e : Env) : Env := Fun.update e o (sqn (e a) n)
 
 theorem opMul_update (o : Index) (e : Env) (v : Spec.X448.Fe) :
-    opMul o o o (Function.update e o v) = Function.update e o (v * v) := by
-  simp only [opMul, Function.update_self, Function.update_idem]
+    opMul o o o (Fun.update e o v) = Fun.update e o (v * v) := by
+  simp only [opMul, Fun.update_self, Fun.update_idem]
 
 include hf in
 /-- The loop of `sqn`, with the counter `rbx = m` and slot `o` squared
 `n - m` times since `s₀`. -/
 theorem sqLoop_ok {s₀ : State} {base : Addr} (hs₀ : Scr s₀ base) (o : Index) (ho : ISlot o)
     (x : Spec.X448.Fe) (n : Nat) (hn : n < 2 ^ 32) :
-    ∀ m s, 1 ≤ m → m < n → IKeep base s₀ s → s.gpr .rbx = BitVec.ofNat 64 m →
-      E s.mem base = Function.update (E s₀.mem base) o (sqn x (n - m)) →
+    ∀ m s, 1 ≤ m → m ≤ n → IKeep base s₀ s → s.gpr .rbx = BitVec.ofNat 64 m →
+      E s.mem base = Fun.update (E s₀.mem base) o (sqn x (n - m)) →
       WP isa (.loop (.block (fld.sqr (slot o.val) (slot o.val) ++
           ([.alu .sub .rbx (.imm 1)] : List Instr))) .ne) s fun s' =>
-        IKeep base s₀ s' ∧ E s'.mem base = Function.update (E s₀.mem base) o (sqn x n) := by
+        IKeep base s₀ s' ∧ E s'.mem base = Fun.update (E s₀.mem base) o (sqn x n) := by
   intro m s h1 h2 hk hb he
-  refine WP.loop (M := isa) (Inv := fun m (s : State) => 1 ≤ m ∧ m < n ∧ IKeep base s₀ s ∧
+  refine WP.loop (M := isa) (Inv := fun m (s : State) => 1 ≤ m ∧ m ≤ n ∧ IKeep base s₀ s ∧
     s.gpr .rbx = BitVec.ofNat 64 m ∧
-    E s.mem base = Function.update (E s₀.mem base) o (sqn x (n - m))) ?_ m s ⟨h1, h2, hk, hb, he⟩
+    E s.mem base = Fun.update (E s₀.mem base) o (sqn x (n - m))) ?_ m s ⟨h1, h2, hk, hb, he⟩
   intro m s ⟨h1, h2, hk, hb, he⟩
   obtain ⟨m, rfl⟩ : ∃ m', m = m' + 1 := ⟨m - 1, by omega_using [h1]⟩
   rw [WP.block_append_iff]
@@ -174,7 +174,7 @@ theorem sqLoop_ok {s₀ : State} {base : Addr} (hs₀ : Scr s₀ base) (o : Inde
   refine WP.mono (decRbx_ok (by omega_using [hn, h2]) (b1.trans hb)) fun s2 ⟨b2, g2, m2, rd2, wr2, z2⟩ => ?_
   have k2 : IKeep base s₀ s2 := hk.trans (k1.trans ⟨fun r _ hr => g2 r hr, rd2, wr2,
     by rw [m2]; exact Outside2.refl _ _ _ _ _ _⟩)
-  have e2 : E s2.mem base = Function.update (E s₀.mem base) o (sqn x (n - m)) := by
+  have e2 : E s2.mem base = Fun.update (E s₀.mem base) o (sqn x (n - m)) := by
     rw [m2, e1, he, opMul_update]
     congr 2
     rw [show n - m = (n - (m + 1)) + 1 by omega_using [h2]]
@@ -197,15 +197,34 @@ theorem sqnI (base : Addr) (o a : Index) (ho : ISlot o) (n : Nat) (hn : 1 ≤ n)
     rw [ite_eq_left rfl]
     exact WP.mono (sqrI_ok hf hs o a ho) fun _ ⟨k, _, e⟩ => ⟨k, by rw [e]; rfl⟩
   rw [ite_eq_right h1]
-  refine WP.seq ?_
-  rw [WP.block_append_iff]
-  refine WP.mono (sqrI_ok hf hs o a ho) fun s1 ⟨k1, _, e1⟩ => ?_
-  refine WP.mono (setRbx_ok s1 (n - 1) (by omega_using [hn'])) fun s2 ⟨b2, g2, m2, rd2, wr2⟩ => ?_
-  have k2 : IKeep base s s2 := k1.trans ⟨fun r _ hr => g2 r hr, rd2, wr2,
-    by rw [m2]; exact Outside2.refl _ _ _ _ _ _⟩
-  refine sqLoop_ok hf hs o ho (E s.mem base a) n hn' (n - 1) s2 (by omega_using [hn, h1]) (by omega_using [hn]) k2 b2 ?_
-  rw [m2, e1, show n - (n - 1) = 1 by omega_using [hn]]
-  rfl
+  by_cases hoa : o = a
+  · subst a
+    rw [ite_eq_left rfl]
+    refine WP.seq (WP.mono (setRbx_ok s n hn') fun s2 ⟨b2, g2, m2, rd2, wr2⟩ => ?_)
+    have k2 : IKeep base s s2 := ⟨fun r _ hr => g2 r hr, rd2, wr2,
+      by rw [m2]; exact Outside2.refl _ _ _ _ _ _⟩
+    refine sqLoop_ok hf hs o ho (E s.mem base o) n hn' n s2 hn (Nat.le_refl _) k2 b2 ?_
+    rw [m2, Nat.sub_self]
+    funext j
+    by_cases hj : j = o
+    · subst j; simp only [Fun.update_self]; rfl
+    · rw [Fun.update_of_ne hj]
+  · have hslot : slot o.val ≠ slot a.val := by
+      intro he
+      apply hoa
+      apply Fin.ext
+      simp only [slot] at he
+      omega_using [he]
+    rw [ite_eq_right hslot]
+    refine WP.seq ?_
+    rw [WP.block_append_iff]
+    refine WP.mono (sqrI_ok hf hs o a ho) fun s1 ⟨k1, _, e1⟩ => ?_
+    refine WP.mono (setRbx_ok s1 (n - 1) (by omega_using [hn'])) fun s2 ⟨b2, g2, m2, rd2, wr2⟩ => ?_
+    have k2 : IKeep base s s2 := k1.trans ⟨fun r _ hr => g2 r hr, rd2, wr2,
+      by rw [m2]; exact Outside2.refl _ _ _ _ _ _⟩
+    refine sqLoop_ok hf hs o ho (E s.mem base a) n hn' (n - 1) s2 (by omega_using [hn, h1]) (by omega_using [hn]) k2 b2 ?_
+    rw [m2, e1, show n - (n - 1) = 1 by omega_using [hn]]
+    rfl
 
 /-! ## The inversion -/
 
@@ -267,7 +286,7 @@ theorem invert_spec (base : Addr) : ISpec base (Impl.X448.X86_64.invert fld) inv
   (chain223_spec hf base 2).seq (invTail_spec hf base)
 
 theorem invEnv_eval (e : Env) : invEnv e 21 = VG.Proof.X448.invert (e 2) := by
-  simp only [↓reduceIte, invEnv, tailEnv, chainEnv, opMul, opSqn, Function.update_apply]
+  simp only [↓reduceIte, invEnv, tailEnv, chainEnv, opMul, opSqn, Fun.update_apply]
   rfl
 
 include hf in

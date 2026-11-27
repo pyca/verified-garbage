@@ -12,9 +12,9 @@
 pub(crate) unsafe extern "C" fn vg_hmac_md5_init_scratch() {
     core::arch::naked_asm!(
         r#".base64 "i0QkFIlYcIlwdIl4eIlofInFi1wkBIt0JAhT"
-call {vg_md5_init}
+call {vg_md5_init_core}
 .base64 "WFY="
-call {vg_md5_init}
+call {vg_md5_init_core}
 .base64 "WLk2NjY2iUsQiUsUiUsYiUsciUsgiUskiUsoiUssiUswiUs0iUs4iUs8iUtAiUtEiUtIiUtMi3wkDItMJBCJ2oPCEIXJ"
 je 20f
 22:
@@ -29,7 +29,7 @@ call {vg_md5_compress}
 call {vg_md5_compress}
 .base64 "WFhYWInoi1hwi3B0i3h4i2h8ww=="
 .p2align 6"#,
-        vg_md5_init = sym crate::md5::vg_md5_init,
+        vg_md5_init_core = sym crate::md5::vg_md5_init_core::vg_md5_init_core,
         vg_md5_compress = sym crate::md5::vg_md5_compress::vg_md5_compress,
     )
 }

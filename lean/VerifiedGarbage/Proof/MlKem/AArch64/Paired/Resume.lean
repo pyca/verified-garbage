@@ -3,15 +3,115 @@ module
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Stream
 public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Saved
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Checkpoint
-public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Context
-
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Impl.MlKem.AArch64.Paired
-import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Zero
+public import VerifiedGarbage.Impl.MlKem.AArch64.Paired
 import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Memory
 import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Cover
+public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Scalar
+import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Zero
+import VerifiedGarbage.Proof.Rc4.AArch64.Vec
+import VerifiedGarbage.Proof.Sha3.AArch64.Sums
+public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Readonly
+public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Vector
+import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Env
+import VerifiedGarbage.Proof.MlKem.AArch64.Lay
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
+
+/-! ### `MlKem.AArch64.Paired.Context`, which this module and modules that import it used -/
+
+section
+
+@[expose] public section
+namespace VG.Proof.MlKem.AArch64.Paired
+open VG VG.AArch64 VG.Proof.MlKem.AArch64 VG.Spec.MlKem VG.Proof.MlKem
+
+def stepWrites (p a b : Addr) : List Region := [⟨p,2048⟩,polyRegion a,polyRegion b]
+
+structure Context (p a b c : Addr) (s : State) : Prop where
+  scratch : Covers [⟨p,2048⟩] s.wr
+  outA : Covers [polyRegion a] s.wr
+  outB : Covers [polyRegion b] s.wr
+  farA : (Region.mk p 2048).Disjoint (polyRegion a)
+  farB : (Region.mk p 2048).Disjoint (polyRegion b)
+  apart : (polyRegion a).Disjoint (polyRegion b)
+  artifact : Rej8.TableArtifact s.mem c
+  readable : Covers [⟨c,4096⟩] (s.rd++s.wr)
+  tableScratch : (Region.mk c 4096).Disjoint ⟨p,2048⟩
+  tableA : (Region.mk c 4096).Disjoint (polyRegion a)
+  tableB : (Region.mk c 4096).Disjoint (polyRegion b)
+
+theorem Context.frame {s t : State} {p a b c : Addr} (h : Context p a b c s)
+    (hr : t.rd=s.rd) (hw : t.wr=s.wr) (hf : Frame (stepWrites p a b) s.mem t.mem) : Context p a b c t := by
+  refine ⟨by simpa only [hw] using h.scratch,by simpa only [hw] using h.outA,
+    by simpa only [hw] using h.outB,h.farA,h.farB,h.apart,?_,by simpa only [hr,hw] using h.readable,
+    h.tableScratch,h.tableA,h.tableB⟩
+  exact h.artifact.frame hf (by
+    intro r hh
+    simp only [stepWrites,List.mem_cons,List.not_mem_nil,or_false] at hh
+    rcases hh with rfl|rfl|rfl
+    · exact h.tableScratch
+    · exact h.tableA
+    · exact h.tableB)
+
+theorem Context.envW {w16 : Bool} {s : State} {p a b c out : Addr} {N off : Nat} {B : Nat→Byte}
+    (h : Context p a b c s) (hx : s.gpr .x16=c) (hn : N≤280) (ho : off+3*N+4≤2048)
+    (hout : out=a ∨ out=b)
+    (bytes : ∀i<3*N,s.mem ((p+BitVec.ofNat 64 off)+BitVec.ofNat 64 i)=B i) :
+    Rej8.EnvW w16 N B (p+BitVec.ofNat 64 off) out s := by
+  have hc : Covers [polyRegion out] s.wr := by rcases hout with rfl|rfl; exact h.outA; exact h.outB
+  have hd : (Region.mk p 2048).Disjoint (polyRegion out) := by rcases hout with rfl|rfl; exact h.farA; exact h.farB
+  have ht : Rej8.TableReady s out := by
+    refine ⟨by rw [hx]; exact h.artifact,by rw [hx]; exact h.readable,?_⟩
+    rw [hx]
+    rcases hout with rfl|rfl
+    · exact h.tableA
+    · exact h.tableB
+  exact rejection_envW hn ho h.scratch hc hd bytes (fun _ hm=>ht.read hm)
+    (fun _ hm=>ht.artifact.vector hm) (fun _ hm=>ht.disjoint hm)
+
+end VG.Proof.MlKem.AArch64.Paired
+
+end
+
+end
+
+/-! ### `MlKem.AArch64.Paired.Zero`, which this module and modules that import it used -/
+
+section
+
+/-! # Clear the suffix of a failed continued matrix sample -/
+
+@[expose] public section
+
+namespace VG.Proof.MlKem.AArch64.Paired
+open VG VG.AArch64 VG.Proof.MlKem.AArch64 VG.Spec.MlKem VG.Proof.MlKem
+
+theorem zeroExtra_ok {w16 : Bool} (s : State) {slot : Nat} (ho : slot+8<32768) (ha : slot%8=0)
+    {L : List Zq} {aP : Addr} (hl : L.length≤256)
+    (hc : Rej8.Scalar.CoeffsW w16 s.mem aP L)
+    (hcp : checkpointW w16 (s.gpr .x19+BitVec.ofNat 64 slot) aP L s.mem)
+    (h0 : InRegions (s.rd++s.wr) (s.gpr .x19+BitVec.ofNat 64 slot) 8)
+    (h1 : InRegions (s.rd++s.wr) (s.gpr .x19+BitVec.ofNat 64 (slot+8)) 8)
+    (hw : ∀i<256,InRegions s.wr (cAddr w16 aP i) 4) :
+    WP isa (Impl.MlKem.AArch64.Paired.zeroExtra slot w16) s fun u =>
+      Keep [.x3,.x4,.x13] s u ∧ Frame [polyRegion aP] s.mem u.mem ∧
+      CoeffsUpToW w16 u.mem aP L.length (Sample.cvW w16 L) (fun _ => 0) ∧ ReducedW (cw w16) u.mem aP := by
+  refine WP.seq (WP.mono (load_checkpoint s ho ha h0 h1) fun a ⟨ha,_,a3,a4⟩ => ?_)
+  refine WP.mono (Rej8.zeroSuffix_prefix (by rw [ha.wr]; exact hw) hl
+    (by rw [ha.mem]; exact hc) (a3.trans hcp.1) (by
+      rw [a4,show s.gpr .x19+BitVec.ofNat 64 (slot+8)=s.gpr .x19+BitVec.ofNat 64 slot+8 by
+        rw [BitVec.ofNat_add,BitVec.add_assoc]; rfl]
+      exact hcp.2)) fun u ⟨hu,hf,hc⟩ => ?_
+  exact ⟨(ha.keep.trans hu).mono (by decide),by rw [←ha.mem]; exact hf,hc,Sample.reduced_of_coeffs hc⟩
+
+end VG.Proof.MlKem.AArch64.Paired
+
+end
+
+end
+
 /-! # Bounded fourth/fifth-block continuation and exact failure cleanup -/
 
 -- Formerly `VerifiedGarbage/Proof/MlKem/AArch64/Paired/ZeroBoth.lean`, which only this module imported.
@@ -20,6 +120,7 @@ section
 /-! # Finalize both bounded matrix samples, retaining zero-filled failure outputs -/
 section
 namespace VG.Proof.MlKem.AArch64.Paired
+variable {sha3 : Bool}
 open VG VG.AArch64 VG.Spec.MlKem VG.Proof.MlKem
 
 theorem zeroBoth_ok {w16 : Bool} {s : State} {p a b c : Addr} {L M : List Zq}
@@ -64,6 +165,7 @@ end
 
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Paired
+variable {sha3 : Bool}
 open VG VG.AArch64 VG.Spec.MlKem VG.Proof.MlKem VG.Proof.Sha3
 open VG.Proof.Sha3.AArch64.Neon
 
@@ -160,9 +262,9 @@ theorem retry_cond {x y : BitVec 64} {n : Nat} (hx : x.toNat ≤ 1) (hy : y=BitV
 /-- An iteration of `Paired.retry`: a block, then `x7` says whether to take another. -/
 theorem retryStep_ok {w16 : Bool} {A B : Spec.Sha3.State} {p a b c : Addr} {s v : State} {n : Nat}
     (step : ∀{t : State}{n : Nat}, n=3 ∨ n=4 → ProgressW w16 A B n p a b c t →
-      t.syms "VG_MLKEM_REJ_SHUFFLE"=c → WP isa (Impl.MlKem.AArch64.Paired.extraStep w16) t (AdvancedW w16 A B (n+1) p a b c t))
+      t.syms "VG_MLKEM_REJ_SHUFFLE"=c → WP isa (Impl.MlKem.AArch64.Paired.extraStep sha3 w16) t (AdvancedW w16 A B (n+1) p a b c t))
     (h : RetryInv w16 A B p a b c s n v) :
-    WP isa (.seq (Impl.MlKem.AArch64.Paired.extraStep w16)
+    WP isa (.seq (Impl.MlKem.AArch64.Paired.extraStep sha3 w16)
       (.block [.sub .x .x7 .x6 .x30,.lsr .x .x7 .x7 63,.movz .x .x30 0 0])) v fun u =>
       isa.eval (.nonzero .x .x7) u=some (retryAgain A B n) ∧
       (retryAgain A B n=false → BoundedW w16 A B p a b c s u) ∧
@@ -210,12 +312,12 @@ theorem retryInit_ok {w16 : Bool} {A B : Spec.Sha3.State} {p a b c : Addr} {s : 
 /-- The fourth block, and the fifth when a stream still lacks candidates after it. -/
 theorem bounded_ok {w16 : Bool} {A B : Spec.Sha3.State} {p a b c : Addr} {s : State}
     (step : ∀{t : State}{n : Nat}, n=3 ∨ n=4 → ProgressW w16 A B n p a b c t →
-      t.syms "VG_MLKEM_REJ_SHUFFLE"=c → WP isa (Impl.MlKem.AArch64.Paired.extraStep w16) t (AdvancedW w16 A B (n+1) p a b c t))
+      t.syms "VG_MLKEM_REJ_SHUFFLE"=c → WP isa (Impl.MlKem.AArch64.Paired.extraStep sha3 w16) t (AdvancedW w16 A B (n+1) p a b c t))
     (h : ProgressW w16 A B 3 p a b c s) (hs : s.syms "VG_MLKEM_REJ_SHUFFLE"=c) :
-    WP isa (Impl.MlKem.AArch64.Paired.retry w16) s (BoundedW w16 A B p a b c s) := by
+    WP isa (Impl.MlKem.AArch64.Paired.retry sha3 w16) s (BoundedW w16 A B p a b c s) := by
   refine WP.seq (WP.mono (retryInit_ok h hs) fun v inv => ?_)
   refine WP.loop (M := isa) (fun n u => RetryInv w16 A B p a b c s n u) (fun n u hu => ?_) 1 v inv
-  refine WP.mono (retryStep_ok step hu) fun u' ⟨ev,hb,hi⟩ => ?_
+  refine WP.mono (retryStep_ok (sha3 := sha3) step hu) fun u' ⟨ev,hb,hi⟩ => ?_
   cases hr : retryAgain A B n
   · exact .inl ⟨by rw [ev,hr],hb hr⟩
   · have hn : n=1 := by simp only [retryAgain,decide_eq_true_eq] at hr; exact hr.1
@@ -232,11 +334,11 @@ structure ResumePostW (w16 : Bool) (A B : Spec.Sha3.State) (p a b : Addr) (s u :
 
 theorem resume_ok {w16 : Bool} {A B : Spec.Sha3.State} {p a b c : Addr} {s : State}
     (step : ∀{t : State}{n : Nat}, n=3 ∨ n=4 → ProgressW w16 A B n p a b c t →
-      t.syms "VG_MLKEM_REJ_SHUFFLE"=c → WP isa (Impl.MlKem.AArch64.Paired.extraStep w16) t (AdvancedW w16 A B (n+1) p a b c t))
+      t.syms "VG_MLKEM_REJ_SHUFFLE"=c → WP isa (Impl.MlKem.AArch64.Paired.extraStep sha3 w16) t (AdvancedW w16 A B (n+1) p a b c t))
     (h : ProgressW w16 A B 3 p a b c s) (hs : s.syms "VG_MLKEM_REJ_SHUFFLE"=c) :
-    WP isa (Impl.MlKem.AArch64.Paired.extraPair w16) s (ResumePostW w16 A B p a b s) := by
-  change WP isa (.seq (Impl.MlKem.AArch64.Paired.retry w16) (.seq (.block _) _)) s _
-  refine WP.seq (WP.mono (bounded_ok step h hs) fun t ht => ?_)
+    WP isa (Impl.MlKem.AArch64.Paired.extraPair sha3 w16) s (ResumePostW w16 A B p a b s) := by
+  change WP isa (.seq (Impl.MlKem.AArch64.Paired.retry sha3 w16) (.seq (.block _) _)) s _
+  refine WP.seq (WP.mono (bounded_ok (sha3 := sha3) step h hs) fun t ht => ?_)
   have hand : WP isa (.block [.logic .and .x .x24 .x24 .x6]) t fun v=>
       Only [.x24] t v ∧ v.gpr .x24=t.gpr .x24 &&& t.gpr .x6 :=
     wp_and fun v kv ev=>wp_nil ⟨kv,ev⟩

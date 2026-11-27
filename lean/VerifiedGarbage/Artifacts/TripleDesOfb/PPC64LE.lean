@@ -1,26 +1,31 @@
 module
 
-public import VerifiedGarbage.Proof.TripleDes.PPC64LE.ModesVerified
-public import VerifiedGarbage.Proof.TripleDes.PPC64LE.ModesFrame
-public import VerifiedGarbage.Proof.TripleDes.PPC64LE.FbFinalVerified
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.PPC64LE.Print
+public import VerifiedGarbage.TCB.PPC64LE.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.TripleDes.Ofb
+public import VerifiedGarbage.Spec.TripleDes.OfbFinal
+import VerifiedGarbage.Proof.TripleDes.PPC64LE.ModesVerified
+import VerifiedGarbage.Proof.TripleDes.PPC64LE.ModesFrame
+import VerifiedGarbage.Proof.TripleDes.PPC64LE.FbFinalVerified
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.TripleDes.PPC64LE.Scrub
 import VerifiedGarbage.Proof.TripleDes.PPC64LE.ModesLit
 import VerifiedGarbage.Proof.TripleDes.PPC64LE.FbFinalLit
 import VerifiedGarbage.Proof.TripleDes.PPC64LE.FunctionsLit
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # Triple DES-OFB on PPC64LE -/
 
-@[expose] public section
-
 namespace VG.Artifacts.TripleDesOfb.PPC64LE
 
-def artifacts : List Artifact := [
+public def artifacts : List (Artifact PPC64LE.target) := [
   Spec.TripleDes.ofbApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratchWiped 608 .r7 72 Impl.TripleDes.PPC64LE.ofb
-    verified := Proof.TripleDes.PPC64LE.ofb_framed Proof.TripleDes.PPC64LE.Modes.ofb_verified },
+    code := Impl.TripleDes.PPC64LE.Fn.ofb
+    verified := Proof.TripleDes.PPC64LE.Scrub.ofb_scrubbed },
   Spec.TripleDes.ofbFinalApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratchWiped 608 .r7 72 Impl.TripleDes.PPC64LE.ofbFinal
-    verified := Proof.TripleDes.PPC64LE.FbFinal.ofbFinal_framed }]
+    code := Impl.TripleDes.PPC64LE.Fn.ofbFinal
+    verified := Proof.TripleDes.PPC64LE.Scrub.ofbFinal_scrubbed }]
+
+spec_apis artifacts
 
 end VG.Artifacts.TripleDesOfb.PPC64LE

@@ -7,6 +7,7 @@ public import VerifiedGarbage.TCB.PPC64LE.Target
 import VerifiedGarbage.Proof.Framework.Covers
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.PPC64LE.Call
+import VerifiedGarbage.Proof.Framework.PPC64LE.Reduce
 
 /-!
 # A scratch buffer on the stack, for a signature with lists of slices (PPC64LE)
@@ -284,7 +285,8 @@ theorem withStackScratch_runLists {c : Prog isa} (hk : (sig.words abi.ptrBits).l
     (he : Exec isa c (narrow sig e n bytes s) t s₃) (ha : abiPreserved (narrow sig e n bytes s) s₃) :
     Exec isa (withStackScratch bytes (argRegs.getD (sig.words abi.ptrBits).length .r3) c) s
         (.addr (s.sp - BitVec.ofNat 64 bytes) :: t) (popState bytes s s₃) ∧
-      abiPreserved s (popState bytes s s₃) ∧ (popState bytes s s₃).mem = s₃.mem ∧
+      abiPreserved s (popState bytes s s₃) ∧
+      Frame [⟨s.sp - BitVec.ofNat 64 bytes, bytes⟩] s₃.mem (popState bytes s s₃).mem ∧
       (popState bytes s s₃).gpr = s₃.gpr := by
   obtain ⟨hb0, hb1, hb2, hb3⟩ := hb
   obtain ⟨hr2, -⟩ := argRegs_scratch _ hk
@@ -296,7 +298,7 @@ theorem withStackScratch_runLists {c : Prog isa} (hk : (sig.words abi.ptrBits).l
     exact ite_eq_left ⟨hb0, hb1, hb2, by omega_arith⟩
   have hblk : Exec isa (.block [.addSp (argRegs.getD (sig.words abi.ptrBits).length .r3) 32])
       (allocated bytes s) [] (scratchState sig bytes s) :=
-    .block (by simp only [execBlock, isa, exec, show (32 : Nat) < 2 ^ 15 by decide, ite_true,
+    .block (by simp only [execBlock, isa, reduceExec, show (32 : Nat) < 2 ^ 15 by decide, ite_true,
       Option.map_some, addrs, List.map_nil, List.append_nil, scratchState]; rfl)
   have hcov : Covers (s.wr ++ [⟨s.sp - BitVec.ofNat 64 bytes + 32, n * e.size⟩])
       (frameR bytes s :: s.wr) :=
@@ -315,7 +317,7 @@ theorem withStackScratch_runLists {c : Prog isa} (hk : (sig.words abi.ptrBits).l
   have hex := Exec.frame hpush (Exec.seq hblk hw) hpop
   simp only [isa, addrs, List.map_cons, List.map_nil, List.nil_append, List.append_nil,
     List.cons_append] at hex
-  refine ⟨hex, ⟨fun q hq => ?_, rfl, ?_⟩, rfl, rfl⟩
+  refine ⟨hex, ⟨fun q hq => ?_, rfl, ?_⟩, lose_frame _ _ _ _, rfl⟩
   · have hqr : q ≠ argRegs.getD (sig.words abi.ptrBits).length .r3 := fun h => hr2 (h ▸ hq)
     show s₃.gpr q = s.gpr q
     rw [ha.1 q hq, narrow_gpr]
@@ -329,7 +331,9 @@ for the function without it, which allocates the buffer in a frame of
 `bytes` more bytes of stack (`withStackScratch`), with any leak, if its
 precondition, postcondition and leak read memory only within the function's
 buffers and its lists of slices (`hpre`, `hpost`, `hleak`, which holds of no
-leak). The signature may have lists of slices. -/
+leak), and its postcondition reads the memory on return only within the
+buffers (`hpostOut`), where the precondition holds: the `free` loses the
+frame's bytes. The signature may have lists of slices. -/
 theorem Verified.stackScratchLists {c : Prog isa}
     (h : Verified target c (Sig.scratchContract abi sig nm e n pre post wa stack leak))
     (hk : (sig.words abi.ptrBits).length < 8)
@@ -343,18 +347,35 @@ theorem Verified.stackScratchLists {c : Prog isa}
       (∀ r ∈ Sig.lists abi.ptrBits m₁ sig.params vs, ∀ a, r.Contains a 1 → m₁ a = m₂ a) →
       Curry.apply (sig.words abi.ptrBits) post vs m₁ m' r →
         Curry.apply (sig.words abi.ptrBits) post vs m₂ m' r)
+    (hpostOut : ∀ vs m m₁ m₂ r, vs.length = (sig.words abi.ptrBits).length →
+      Curry.apply (sig.words abi.ptrBits) pre vs m →
+      (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+      Curry.apply (sig.words abi.ptrBits) post vs m m₁ r →
+        Curry.apply (sig.words abi.ptrBits) post vs m m₂ r)
     (hsat : ∃ s, (sig.contract abi pre post wa (stack + bytes)).pre s)
     (hleak : Sig.LeakLocalL abi.ptrBits sig leak := by trivial) :
     Verified target (withStackScratch bytes (argRegs.getD (sig.words abi.ptrBits).length .r3) c)
       (sig.contract abi pre post wa (stack + bytes) leak) := by
   obtain ⟨hcor, hct, -⟩ := h
   have hlen := regArgs_length sig
+  -- The frame, below the stack the contract without it reserves, so apart
+  -- from the function's buffers.
+  have hdisjF : ∀ s, (sig.contract abi pre post wa (stack + bytes) leak).pre s →
+      ∀ b ∈ Sig.bufs sig.params (regArgs sig s),
+        b.1.Disjoint ⟨s.sp - BitVec.ofNat 64 bytes, bytes⟩ := by
+    intro s hs b hb'
+    rw [pre_regsLists (by omega_arith)] at hs
+    obtain ⟨-, -, -, -, hres, -, -⟩ := hs
+    have hbelow : below s.sp (stack + bytes) ∈ stackBelow s.sp (stack + bytes) := by
+      rw [stackBelow_pos _ (by omega_arith)]; simp
+    exact ((hres _ hbelow b (List.mem_append_left _ hb')).sub_left
+      (Offset.sub_below _ (by omega_arith) (by omega_arith))).symm
   have hrun : ∀ s, (sig.contract abi pre post wa (stack + bytes) leak).pre s → ∃ t s₃,
       Exec isa c (narrow sig e n bytes s) t s₃ ∧
       (Sig.scratchContract abi sig nm e n pre post wa stack leak).post (narrow sig e n bytes s) s₃ ∧
       Exec isa (withStackScratch bytes (argRegs.getD (sig.words abi.ptrBits).length .r3) c) s
         (.addr (s.sp - BitVec.ofNat 64 bytes) :: t) (popState bytes s s₃) ∧
-      abiPreserved s (popState bytes s s₃) ∧ (popState bytes s s₃).mem = s₃.mem ∧
+      abiPreserved s (popState bytes s s₃) ∧ Frame [⟨s.sp - BitVec.ofNat 64 bytes, bytes⟩] s₃.mem (popState bytes s s₃).mem ∧
       (popState bytes s s₃).gpr = s₃.gpr := by
     intro s hs
     obtain ⟨t, s₃, he, ha, hq⟩ := hcor _ (narrow_preLists hk hb hpre hs)
@@ -368,14 +389,20 @@ theorem Verified.stackScratchLists {c : Prog isa}
       (post := Curry.withScratch abi.ptrBits nm e n sig.params post)
       (by rw [Sig.words_withScratch, List.length_append, List.length_singleton]; omega_arith)).mp hq
     rw [narrow_regArgs hk] at hq'
-    rw [hm, hg]
+    rw [hg]
     have hq'' := Eq.mp (congrFun (congrFun (congrFun (Curry.apply_withScratch abi.ptrBits nm e n sig.params
       post _ _ (hlen s (by omega_arith))) _) s₃.mem) _) hq'
     have hag := narrow_agreeLists (e := e) (n := n) hk hb.1 hs
-    exact hpost _ _ _ _ _ (hlen s (by omega_arith))
+    have h₄ := hpost _ _ _ _ _ (hlen s (by omega_arith))
       (fun b hb' a ha => (hag b (List.mem_append_left _ hb') a ha).symm)
       (fun r hr a ha => (hag (r, false) (List.mem_append_right _
         (List.mem_map.mpr ⟨r, (narrow_listsL hk hb.1 hs) ▸ hr, rfl⟩)) a ha).symm) hq''
+    -- The memory on return: after the `free`, which loses only the frame.
+    have hpr := ((pre_regsLists (by omega_arith)).mp hs).2.2.2.2.2.2
+    refine hpostOut _ _ _ _ _ (hlen s (by omega_arith)) hpr (fun b hb' a ha' => ?_) h₄
+    exact (hm a fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact hdisjF s hs b hb' a ha').symm
   · obtain ⟨u₁, r₁, f₁, -, x₁, -⟩ := hrun s₁ h₁
     obtain ⟨u₂, r₂, f₂, -, x₂, -⟩ := hrun s₂ h₂
     rw [(Exec.det e₁ x₁).1, (Exec.det e₂ x₂).1, ((pub_regsLists (by omega_arith)).mp hp).1.1,

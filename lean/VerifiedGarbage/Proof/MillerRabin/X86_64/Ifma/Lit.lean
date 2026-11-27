@@ -20,11 +20,35 @@ its constant-time check): the literal of the code (`materialize_code`,
 
 namespace VG.Proof.MillerRabin.X86_64.Ifma
 
-materialize_code ifma1024 := Impl.MillerRabin.X86_64.Ifma.ifma Impl.Rsa.X86_64.PubIfma.pay1024
-materialize_code ifma1536 := Impl.MillerRabin.X86_64.Ifma.ifma Impl.Rsa.X86_64.PubIfma.pay1536
-materialize_code ifma2048 := Impl.MillerRabin.X86_64.Ifma.ifma Impl.Rsa.X86_64.PubIfma.pay2048
-materialize_code ifma3072 := Impl.MillerRabin.X86_64.Ifma.ifma Impl.Rsa.X86_64.PubIfma.pay3072
-materialize_code ifma4096 := Impl.MillerRabin.X86_64.Ifma.ifma Impl.Rsa.X86_64.PubIfma.pay4096
+/-! The limb arithmetic before the vector code is the same instructions at
+other offsets of the area (`addN` four times in a round, `subN` three,
+`selN` twice, `eqN` four): each is evaluated once per layout, as a function of
+its offsets (`materialize_template`), and the literals below add the offsets. -/
+
+materialize_template addN1024 := Impl.MillerRabin.X86_64.Ifma.addN Impl.Rsa.X86_64.PubIfma.pay1024
+materialize_template subN1024 := Impl.MillerRabin.X86_64.Ifma.subN Impl.Rsa.X86_64.PubIfma.pay1024
+materialize_template selN1024 := Impl.MillerRabin.X86_64.Ifma.selN Impl.Rsa.X86_64.PubIfma.pay1024
+materialize_template eqN1024 := Impl.MillerRabin.X86_64.Ifma.eqN Impl.Rsa.X86_64.PubIfma.pay1024
+
+materialize_template addN1536 := Impl.MillerRabin.X86_64.Ifma.addN Impl.Rsa.X86_64.PubIfma.pay1536
+materialize_template subN1536 := Impl.MillerRabin.X86_64.Ifma.subN Impl.Rsa.X86_64.PubIfma.pay1536
+materialize_template selN1536 := Impl.MillerRabin.X86_64.Ifma.selN Impl.Rsa.X86_64.PubIfma.pay1536
+materialize_template eqN1536 := Impl.MillerRabin.X86_64.Ifma.eqN Impl.Rsa.X86_64.PubIfma.pay1536
+
+materialize_template addN2048 := Impl.MillerRabin.X86_64.Ifma.addN Impl.Rsa.X86_64.PubIfma.pay2048
+materialize_template subN2048 := Impl.MillerRabin.X86_64.Ifma.subN Impl.Rsa.X86_64.PubIfma.pay2048
+materialize_template selN2048 := Impl.MillerRabin.X86_64.Ifma.selN Impl.Rsa.X86_64.PubIfma.pay2048
+materialize_template eqN2048 := Impl.MillerRabin.X86_64.Ifma.eqN Impl.Rsa.X86_64.PubIfma.pay2048
+
+materialize_template addN3072 := Impl.MillerRabin.X86_64.Ifma.addN Impl.Rsa.X86_64.PubIfma.pay3072
+materialize_template subN3072 := Impl.MillerRabin.X86_64.Ifma.subN Impl.Rsa.X86_64.PubIfma.pay3072
+materialize_template selN3072 := Impl.MillerRabin.X86_64.Ifma.selN Impl.Rsa.X86_64.PubIfma.pay3072
+materialize_template eqN3072 := Impl.MillerRabin.X86_64.Ifma.eqN Impl.Rsa.X86_64.PubIfma.pay3072
+
+materialize_template addN4096 := Impl.MillerRabin.X86_64.Ifma.addN Impl.Rsa.X86_64.PubIfma.pay4096
+materialize_template subN4096 := Impl.MillerRabin.X86_64.Ifma.subN Impl.Rsa.X86_64.PubIfma.pay4096
+materialize_template selN4096 := Impl.MillerRabin.X86_64.Ifma.selN Impl.Rsa.X86_64.PubIfma.pay4096
+materialize_template eqN4096 := Impl.MillerRabin.X86_64.Ifma.eqN Impl.Rsa.X86_64.PubIfma.pay4096
 
 -- The frame's bodies, which the constant-time check (`CT.body_t`) evaluates.
 materialize_code body1024 := Impl.Bignum.X86_64.seqs (Impl.MillerRabin.X86_64.Ifma.setup Impl.Rsa.X86_64.PubIfma.pay1024 ++
@@ -37,5 +61,13 @@ materialize_code body3072 := Impl.Bignum.X86_64.seqs (Impl.MillerRabin.X86_64.If
   [Impl.MillerRabin.X86_64.Ifma.vec Impl.Rsa.X86_64.PubIfma.pay3072, .block (Impl.MillerRabin.X86_64.Ifma.finish Impl.Rsa.X86_64.PubIfma.pay3072)])
 materialize_code body4096 := Impl.Bignum.X86_64.seqs (Impl.MillerRabin.X86_64.Ifma.setup Impl.Rsa.X86_64.PubIfma.pay4096 ++
   [Impl.MillerRabin.X86_64.Ifma.vec Impl.Rsa.X86_64.PubIfma.pay4096, .block (Impl.MillerRabin.X86_64.Ifma.finish Impl.Rsa.X86_64.PubIfma.pay4096)])
+
+-- The rounds: the bodies in their frames, read from the literals above
+-- (`ifma l` unfolds to the body's term), so each body is evaluated once.
+materialize_code ifma1024 := Impl.MillerRabin.X86_64.Ifma.ifma Impl.Rsa.X86_64.PubIfma.pay1024
+materialize_code ifma1536 := Impl.MillerRabin.X86_64.Ifma.ifma Impl.Rsa.X86_64.PubIfma.pay1536
+materialize_code ifma2048 := Impl.MillerRabin.X86_64.Ifma.ifma Impl.Rsa.X86_64.PubIfma.pay2048
+materialize_code ifma3072 := Impl.MillerRabin.X86_64.Ifma.ifma Impl.Rsa.X86_64.PubIfma.pay3072
+materialize_code ifma4096 := Impl.MillerRabin.X86_64.Ifma.ifma Impl.Rsa.X86_64.PubIfma.pay4096
 
 end VG.Proof.MillerRabin.X86_64.Ifma

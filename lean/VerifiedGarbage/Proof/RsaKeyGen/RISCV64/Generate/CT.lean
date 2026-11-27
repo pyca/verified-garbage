@@ -2,17 +2,15 @@ module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.Contract
 public import VerifiedGarbage.Proof.RsaKeyGen.RISCV64.Generate.Steps
-public import VerifiedGarbage.Proof.RsaKeyGen.RISCV64.Generate.Loop
 public import VerifiedGarbage.Proof.RsaKeyGen.RISCV64.Generate.Correct
 public import VerifiedGarbage.Proof.RsaKeyGen.RISCV64.Search.CT
 public import VerifiedGarbage.Proof.RsaKeyGen.RISCV64.Key.KeyCT
 import VerifiedGarbage.Proof.EntropyRequest
 import VerifiedGarbage.Proof.RsaKeyGen.RISCV64.Key.Correct
-import VerifiedGarbage.Proof.RsaKeyGen.RISCV64.Key.Verified
 import VerifiedGarbage.Proof.RsaKeyGen.InitWords
 import VerifiedGarbage.Proof.Bignum.Layout
 import VerifiedGarbage.Proof.Framework.Sig
-import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.RISCV64.RegUpd
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
@@ -22,13 +20,11 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Spec.RsaKeyGen.GenerationAgrees
 meta import VerifiedGarbage.Proof.RsaKeyGen.RISCV64.Generate.Steps
-meta import VerifiedGarbage.Proof.RsaKeyGen.RISCV64.Generate.Loop
 meta import VerifiedGarbage.Proof.RsaKeyGen.RISCV64.Generate.Correct
 meta import VerifiedGarbage.Proof.RsaKeyGen.RISCV64.Search.CT
 meta import VerifiedGarbage.Proof.RsaKeyGen.RISCV64.Key.KeyCT
 meta import VerifiedGarbage.Proof.EntropyRequest
 meta import VerifiedGarbage.Proof.RsaKeyGen.RISCV64.Key.Correct
-meta import VerifiedGarbage.Proof.RsaKeyGen.RISCV64.Key.Verified
 meta import VerifiedGarbage.Proof.RsaKeyGen.InitWords
 meta import VerifiedGarbage.Proof.Bignum.Layout
 meta import VerifiedGarbage.Proof.Framework.Sig
@@ -41,6 +37,56 @@ meta import VerifiedGarbage.Proof.Framework.RISCV64.Syms
 meta import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Spec.RsaKeyGen.GenerationAgrees
+public import VerifiedGarbage.Impl.RsaKeyGen.RISCV64.Key
+public import VerifiedGarbage.Proof.Rsa.RISCV64.InvLaw
+public import VerifiedGarbage.Spec.RsaKeyGen.Contract
+public import VerifiedGarbage.TCB.RISCV64.Target
+meta import VerifiedGarbage.Impl.RsaKeyGen.RISCV64.Key
+meta import VerifiedGarbage.Proof.Rsa.RISCV64.InvLaw
+meta import VerifiedGarbage.Spec.RsaKeyGen.Contract
+meta import VerifiedGarbage.Proof.RsaKeyGen.Contract
+meta import VerifiedGarbage.TCB.RISCV64.Target
+
+/-! ### `RsaKeyGen.RISCV64.Key.Verified`, which only this module used -/
+
+section
+
+/-! # `vg_rsa_keygen_key` on RISC-V: verified against the shared contract
+
+Correct (`key_verified_of`, `Correct.lean`) and constant time (`key_ct`, `KeyCT.lean`). -/
+
+@[expose] public section
+
+namespace VG.Proof.RsaKeyGen.RISCV64.Key
+
+open VG VG.RISCV64
+
+/-- The cuts of the constant-time proof after the inverses, by correctness. -/
+private theorem front1_ok [VG.Proof.Rsa.RISCV64.InvLaw] : ∀ d s, S2 d s → WP isa front1 s (S5 d) := by
+  rintro d s ⟨s0, c0, c, a7⟩
+  obtain ⟨tr, t, e, V, F, k⟩ := dFront_ok (preC_of c0.1) c a7
+  exact ⟨tr, t, exec_front1 e, s0, c0, V, F, k⟩
+
+private theorem front'_ok [VG.Proof.Rsa.RISCV64.InvLaw] : ∀ d s, S2 d s → WP isa front' s (S5 d) := by
+  rintro d s ⟨s0, c0, c, a7⟩
+  obtain ⟨tr, t, e, V, F, k⟩ := crtFront_ok (preC_of c0.1) c a7
+  exact ⟨tr, t, exec_front e, s0, c0, V, F, k⟩
+
+/-- Constant time, with the cuts proven. -/
+theorem key_ct_full [VG.Proof.Rsa.RISCV64.InvLaw] : ConstantTime isa (Proof.RsaKeyGen.keyContract RISCV64.abi).pre
+    (Proof.RsaKeyGen.keyContract RISCV64.abi).pub VG.Impl.RsaKeyGen.RISCV64.Key.code :=
+  key_ct front1_ok front'_ok
+
+/-- `vg_rsa_keygen_key`. -/
+theorem key_verified [VG.Proof.Rsa.RISCV64.InvLaw] :
+    Verified RISCV64.target VG.Impl.RsaKeyGen.RISCV64.Key.code (Proof.RsaKeyGen.keyContract RISCV64.abi) :=
+  key_verified_of key_ct_full
+
+end VG.Proof.RsaKeyGen.RISCV64.Key
+
+end
+
+end
 
 -- separate module: its proofs build in parallel with those of `Implies`, which `Verified` also imports
 

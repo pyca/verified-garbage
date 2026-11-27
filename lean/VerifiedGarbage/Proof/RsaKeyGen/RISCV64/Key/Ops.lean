@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Rsa.RISCV64.KeyOps
 public import VerifiedGarbage.Proof.Rsa.RISCV64.InvLaw
 public import VerifiedGarbage.Proof.Rsa.RISCV64.RdOps
 public meta import VerifiedGarbage.Proof.Bignum.RISCV64.Run
+import VerifiedGarbage.Proof.Framework.RISCV64.Call
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
@@ -175,6 +176,77 @@ abbrev invOfArrs : List Nat := 0 :: 8 :: VG.Proof.Rsa.RISCV64.InvBatch.invArrs
 /-- The registers `invOf` changes. -/
 abbrev invOfRegs : List Reg := .s8 :: VG.Proof.Rsa.RISCV64.InvBatch.invRegs
 
+private theorem saveInverseRA_ok {s : State} {B : Addr} {Z w N : Nat} (h : Ws s B Z w N) :
+    WP isa (.block [.store .d .ra .s11 96]) s fun a =>
+      a.mem = s.mem.writeW (off B 96) (s.gpr .ra) ∧ Keep [] s a := by
+  have hz := h.hdr_le
+  simp only [hdr_eq] at hz
+  refine WP.keep [] ?_ (by rfl) (by rfl)
+  brun [h.s11, h.scr.st (d := 96) (n := 8) (by omega_using [hz]),
+    h.scr.al8 (d := 96) (by omega_using [hz]) (by decide)]
+
+/-- The inverse's arithmetic is unchanged by the internal call. Only its
+existing arrays and the link-save word at byte 96 can change. -/
+private theorem inverseCall_ok [InvLaw] {s : State} {B : Addr} {Z w N n x m : Nat}
+    (h : VG.Proof.Rsa.RISCV64.InvBatch.Ctx s B Z w N n) (hN : N ≤ 256)
+    (hx : num s.mem B w 0 = x) (hxn : x < 2 ^ (32 * n))
+    (hm : num s.mem B w 8 = m) (hmn : m < 2 ^ (32 * n)) (hodd : m % 2 = 1) :
+    WP isa Impl.RsaKeyGen.RISCV64.Key.inverseCall s fun t => Ws t B Z w N ∧
+      Frame B w VG.Proof.Rsa.RISCV64.InvBatch.invArrs [96] s.mem t.mem ∧
+      Keep VG.Proof.Rsa.RISCV64.InvBatch.invRegs s t ∧
+      (1 < m → num t.mem B w 1 = Nat.gcd x m ∧
+        (m : Int) ∣ (num t.mem B w 3 : Int) * x - num t.mem B w 1 ∧ num t.mem B w 3 < m) := by
+  unfold Impl.RsaKeyGen.RISCV64.Key.inverseCall
+  refine WP.seq (WP.mono (saveInverseRA_ok h.ws) fun a ⟨ma, ka⟩ => ?_)
+  have fs := slot_write (m := s.mem) (B := B) (w := w) (d := 96) (s.gpr .ra) (by decide)
+  rw [← ma] at fs
+  have ha := h.of_keep' ka
+  have kc : Keep linkRegs a a.callEntry :=
+    ⟨fun r hr => State.callEntry_gpr a hr, State.callEntry_rd a, State.callEntry_wr a⟩
+  have hc := ha.of_keep' kc
+  have xa : num a.callEntry.mem B w 0 = x := by
+    rw [State.callEntry_mem, fs.1.num (j := 0) (by simp) (by decide)
+      (h.ws.fit64 (by omega_using [h.room]))]
+    exact hx
+  have mm : num a.callEntry.mem B w 8 = m := by
+    rw [State.callEntry_mem, fs.1.num (j := 8) (by simp) (by decide)
+      (h.ws.fit64 (by omega_using [h.room]))]
+    exact hm
+  obtain ⟨trace, u, eu, wu, fu, ku, vu⟩ := InvLaw.inverse_ok hc hN xa hxn mm hmn hodd
+  have ret : isa.ret a.callEntry u = some u := by
+    simp only [isa, VG.RISCV64.ret, ku.gpr (r := .ra) (by decide), ite_true]
+  refine WP.seq (show WP isa (.call "vg_rsa_keygen_inverse" Impl.Rsa.RISCV64.InvBatch.inverse) a _ from
+    ⟨_, u, Exec.call (call_callEntry a) eu ret, ?_⟩)
+  have saved : word u.mem B 96 = s.gpr .ra := by
+    apply BitVec.eq_of_toNat_eq
+    change slot u.mem B 96 = (s.gpr .ra).toNat
+    rw [fu.slot (by decide) (by simp), State.callEntry_mem, fs.2]
+  have load : WP isa (.block [.load .d .ra .s11 96]) u fun z =>
+      (z.gpr .ra = word u.mem B 96 ∧ z.mem = u.mem) ∧ Keep [.ra] u z := by
+    have hz := wu.hdr_le
+    simp only [hdr_eq] at hz
+    refine WP.keep [.ra] ?_ (by rfl) (by rfl)
+    brun [wu.s11, wu.scr.ld (d := 96) (n := 8) (by omega_using [hz]),
+      wu.scr.al8 (d := 96) (by omega_using [hz]) (by decide)]
+  refine WP.mono load fun z ⟨⟨zr, zm⟩, kz⟩ => ?_
+  have links : ∀ r, r ≠ .ra → r ∉ VG.Proof.Rsa.RISCV64.InvBatch.invRegs → r ∉ linkRegs := by
+    intro r hr hc
+    revert hr hc
+    cases r <;> decide
+  have keep : Keep VG.Proof.Rsa.RISCV64.InvBatch.invRegs s z := by
+    refine ⟨fun r hr => ?_, kz.2.1.trans (ku.2.1.trans ((State.callEntry_rd a).trans ka.2.1)),
+      kz.2.2.trans (ku.2.2.trans ((State.callEntry_wr a).trans ka.2.2))⟩
+    by_cases he : r = .ra
+    · subst r
+      exact zr.trans saved
+    · rw [kz.gpr (by simpa using he), ku.gpr hr, State.callEntry_gpr a (links r he hr), ka.gpr (by simp)]
+  refine ⟨wu.of_keep kz, ?_, keep, ?_⟩
+  · rw [State.callEntry_mem] at fu
+    rw [zm]
+    exact (fs.1.mono (by simp) (by simp)).trans (fu.mono (by simp) (by simp))
+  · rw [zm]
+    exact vu
+
 /-- `invOf a m k`: with `k` setting `s8 := n` (the digit count) from registers the copies
 keep (`hk`), for `[a]` and an odd `[m]` below `2^(32 n)`, `gcd([a], [m])` in array 1 and,
 for `[m] > 1`, the inverse in array 3. `a` and `m` are past the inverse's arrays. -/
@@ -186,7 +258,7 @@ theorem invOf_ok [InvLaw] {s : State} {B : Addr} {Z w N a m n : Nat} {k : List I
     (hxn : num s.mem B w a < 2 ^ (32 * n)) (hmn : num s.mem B w m < 2 ^ (32 * n))
     (hodd : num s.mem B w m % 2 = 1) :
     WP isa (Impl.RsaKeyGen.RISCV64.Key.invOf a m k) s fun t => Ws t B Z w N ∧
-      Frame B w invOfArrs [] s.mem t.mem ∧ Keep invOfRegs s t ∧
+      Frame B w invOfArrs [96] s.mem t.mem ∧ Keep invOfRegs s t ∧
       (1 < num s.mem B w m →
         num t.mem B w 1 = Nat.gcd (num s.mem B w a) (num s.mem B w m) ∧
         (num s.mem B w m : Int) ∣ (num t.mem B w 3 : Int) * num s.mem B w a - num t.mem B w 1 ∧
@@ -200,7 +272,7 @@ theorem invOf_ok [InvLaw] {s : State} {B : Addr} {Z w N a m n : Nat} {k : List I
   have hm0 : m ≠ 0 := by omega_using [hm15]
   have e : Impl.RsaKeyGen.RISCV64.Key.invOf a m k =
       seqs [copy VG.Impl.Rsa.RISCV64.InvBatch.aX a, copy VG.Impl.Rsa.RISCV64.InvBatch.aMin m, .block k,
-        VG.Impl.Rsa.RISCV64.InvBatch.inverse] := rfl
+        Impl.RsaKeyGen.RISCV64.Key.inverseCall] := rfl
   rw [e, wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (copy_ok h h0 ha hN' (Ne.symm ha0)) fun t1 ⟨w1, f1, v1, k1, _⟩ => ?_
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
@@ -219,7 +291,7 @@ theorem invOf_ok [InvLaw] {s : State} {B : Addr} {Z w N a m n : Nat} {k : List I
   have mm3 : num t3.mem B w VG.Impl.Rsa.RISCV64.InvBatch.aMin = num s.mem B w m := by
     rw [m3, v2, m1]
   simp only [seqs]
-  refine WP.mono (InvLaw.inverse_ok ctx hN x3 hxn mm3 hmn hodd) fun t ⟨wt, ft, kt, vt⟩ => ?_
+  refine WP.mono (inverseCall_ok ctx hN x3 hxn mm3 hmn hodd) fun t ⟨wt, ft, kt, vt⟩ => ?_
   rw [m3] at ft
   refine ⟨wt, ((f1.mono (by decide) (by simp)).trans (f2.mono (by decide) (by simp))).trans
       (ft.mono (by decide) (by simp)),

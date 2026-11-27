@@ -38,12 +38,27 @@ def piLookupLit : List Instr :=
 
 materialize_value piLookupLit
 
+theorem piValues_eq_lit : piValues = piValuesLit := by
+  funext n
+  simp only [piValues, piValuesLit, VG.Rc2.piTable_getD]
+
+/-- `piLookup`'s literal: the one of `piLookupLit`, which the literals of the
+code that contains `piLookup` read (three times in the key expansion),
+rather than look PITABLE up in the specification's vector again. -/
+noncomputable abbrev piLookup.lit : List Instr := piLookupLit.lit
+
+theorem piLookup.lit_eq : piLookup = piLookup.lit :=
+  Eq.trans (b := piLookupLit)
+    (by rw [piLookup, piLookupLit, show piStep = piStepLit from funext fun n => by
+      rw [piStep, piStepLit, piValues_eq_lit]])
+    piLookupLit.lit_eq
+
 end VG.Impl.Rc2.X86_64.Sse2
 
 namespace VG
 
-materialize_flat_code Impl.Rc2.X86_64.encryptBlock
-materialize_flat_code Impl.Rc2.X86_64.decryptBlock
-materialize_flat_code Impl.Rc2.X86_64.expandKey
+materialize_code Impl.Rc2.X86_64.encryptBlock
+materialize_code Impl.Rc2.X86_64.decryptBlock
+materialize_code Impl.Rc2.X86_64.expandKey
 
 end VG

@@ -11,9 +11,9 @@ public import VerifiedGarbage.TCB.X86.Target
 default dialect of Rust's `asm!`/`naked_asm!` on x86.
 
 Each straight-line instruction, and the return, is printed as its machine
-code (`Encode.lean`), `.byte <bytes>`, after a line `// <the instruction's
-text>`, which the emitter writes in the module's assembly file, not in its code
-(`Rust.assembly`): the
+code (`Encode.lean`), a line of its bytes with the instruction's text
+(`Line.code`): the emitter writes the bytes in the module's code and the
+text in its assembly file (`Rust.template`, `Rust.assembly`), so the
 assembler only copies the bytes. The branches (`jcc`, `jmp`), the call and
 the address of a static (`symPush`) are printed as text, for the assembler
 and linker to lay out.
@@ -92,10 +92,12 @@ def XBinOp.name : XBinOp → String
   | .paddq => "paddq" | .sha1msg1 => "sha1msg1" | .sha1msg2 => "sha1msg2"
   | .sha1nexte => "sha1nexte" | .aesdec => "aesdec" | .aesdeclast => "aesdeclast"
   | .aesimc => "aesimc"
+  | .paddw => "paddw" | .psubw => "psubw" | .packssdw => "packssdw"
+  | .punpcklwd => "punpcklwd" | .punpckhwd => "punpckhwd"
 
 def XShiftOp.name : XShiftOp → String
   | .pslld => "pslld" | .psrld => "psrld" | .psllq => "psllq" | .psrlq => "psrlq"
-  | .pslldq => "pslldq" | .psrldq => "psrldq"
+  | .pslldq => "pslldq" | .psrldq => "psrldq" | .psraw => "psraw"
 
 def XOp.asm : XOp → String
   | .bin op d r => s!"{op.name} {d.name}, {r.name}"
@@ -130,6 +132,8 @@ def Instr.asm : Instr → List String
   | .movdquStore m r => [s!"movdqu {m.str128}, {r.name}"]
   | .movqLoad d m => [s!"movq {d.name}, {m.str64}"]
   | .movqStore m r => [s!"movq {m.str64}, {r.name}"]
+  | .movdquTbl d m .. => [s!"movdqu {d.name}, {m.str128}"]
+  | .movqTbl d m .. => [s!"movq {d.name}, {m.str64}"]
   | .xop op => [op.asm]
   | .mop op => [op.asm]
   | .mmxStore m r => [s!"movq {m.str64}, {r.name}"]
@@ -137,6 +141,8 @@ def Instr.asm : Instr → List String
   | .mmxEnter => []
   | .emms => ["emms"]
   | .pmuludq d r => [s!"pmuludq {d.name}, {r.name}"]
+  | .pmullw d r => [s!"pmullw {d.name}, {r.name}"]
+  | .pmulhw d r => [s!"pmulhw {d.name}, {r.name}"]
   -- Intel's MCDT prologue and epilogue, as `ci/check_mcdt.py` checks them.
   | .mcdtEnter r => ["lea esp, [esp-12]", "stmxcsr DWORD PTR [esp+4]", s!"mov {r.name}, 8127",
       s!"mov DWORD PTR [esp], {r.name}", "ldmxcsr DWORD PTR [esp]", "lfence"]
@@ -145,14 +151,14 @@ def Instr.asm : Instr → List String
 def Cond.name : Cond → String
   | .e => "e" | .ne => "ne" | .b => "b" | .ae => "ae"
 
-/-- The lines of an instruction: each of its instructions' text (`asm`) as a
-comment, then that instruction's bytes (`encode`); its text if it has no
+/-- The lines of an instruction: each of its instructions' text (`asm`) with
+that instruction's bytes (`encode`), a `Line.code`; its text if it has no
 encoding (`symPush`, printed by `symLines`, or an instruction that
 `unencodable` reports, which the emitter refuses). -/
-def Instr.code (i : Instr) : List String :=
+def Instr.code (i : Instr) : List Line :=
   match i.encode with
-  | some bs => (i.asm.zip bs).flatMap fun (t, b) => [s!"// {t}", byteLine b]
-  | none => i.asm
+  | some bs => (i.asm.zip bs).map fun (t, b) => .code t b
+  | none => i.asm.map .text
 
 def printer : Printer isa where
   instr := Instr.code
@@ -167,9 +173,13 @@ def printer : Printer isa where
         .text s!"mov {d.name}, DWORD PTR [esp]",
         .text s!".byte 0x81, {192 + d.ctorIdx}", .sym ".long " .x86PcRel name]
     | _ => none
-  branch c l := [s!"j{c.name} {l}"]
+  tables
+    | .movdquTbl _ _ name ws => [(name, ws)]
+    | .movqTbl _ _ name ws => [(name, ws)]
+    | _ => []
+  branch c l := [.text s!"j{c.name} {l}"]
   jump l := s!"jmp {l}"
-  ret := ["// ret", byteLine retBytes]
+  ret := [.code "ret" retBytes]
   call := "call"
   /- Every function starts on a 64-byte boundary, a cache line: the unit
   AMD's op cache builds its entries from (Zen 4 Software Optimization Guide,
@@ -184,8 +194,9 @@ def printer : Printer isa where
 
 /-- What the emitter needs of the target (`Emitter`): its printer, its Rust `cfg`
 and ABI string, and how documentation names its calling convention's
-argument area and reserved memory (`abi`'s `argArea` and `reserved`). -/
-instance : Emitter isa where
+argument area and reserved memory (`abi`'s `argArea` and `reserved`). Every
+artifact of the target is emitted with it (`Emit.driver`). -/
+def emitter : Emitter isa where
   printer := printer
   -- The model's baseline is i686 with SSE2 (`TCB/X86/Isa.lean`), which the
   -- `i586-*` targets and `i686-unknown-uefi` lack.
@@ -194,5 +205,12 @@ instance : Emitter isa where
   argAreaDoc ws := if argBytes ws = 0 then none else some ("the arguments on the stack", true)
   reservedDoc n := some (if n = 0 then "the return address on the stack" else
     s!"the return address on the stack or the {n} bytes of stack below it")
+  callBytes := 4
+  frameBytes
+    | .push rs => 4 * rs.length
+    | .alloc bytes => bytes
+    | .symPush .. => 4
+    | .mcdtEnter _ => 12
+    | _ => 0
 
 end VG.X86

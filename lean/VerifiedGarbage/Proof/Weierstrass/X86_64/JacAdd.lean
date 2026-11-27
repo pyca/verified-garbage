@@ -140,8 +140,8 @@ theorem jacTail_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
     · exact Or.inr (hv x hx)
     · exact Or.inl ((mem_validAfter _ _).mpr (Or.inl hx))
   · rw [he]
-    exact (congrArg₂ Prod.mk (ofN_run jacAddN_ok hA E 6)
-      (congrArg₂ Prod.mk (ofN_run jacAddN_ok hA E 7) (ofN_run jacAddN_ok hA E 8))).trans
+    exact (congr (congrArg Prod.mk (ofN_run jacAddN_ok hA E 6))
+      (congr (congrArg Prod.mk (ofN_run jacAddN_ok hA E 7)) (ofN_run jacAddN_ok hA E 8))).trans
       (jacAddN_run (fun i => E (rcbσ S p q o i)))
 
 /-- A point operation's frame, canonical field values, and represented point. -/

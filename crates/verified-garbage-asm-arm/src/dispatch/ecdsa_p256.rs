@@ -8,6 +8,8 @@
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_ecdsa_p256_verify_umaal` if it is compiled (`any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd")`) and the CPU supports its features (`VG_ECDSA_P256_VERIFY_UMAAL_FEATURES`); or else `vg_ecdsa_p256_verify`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `public` must be valid for reads of 65 bytes.
@@ -60,6 +62,8 @@ pub unsafe fn vg_ecdsa_p256_verify_auto(_dit: verified_garbage_cpu::Dit<'_>, pub
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_ecdsa_p256_sign_umaal` if it is compiled (`any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd")`) and the CPU supports its features (`VG_ECDSA_P256_SIGN_UMAAL_FEATURES`); or else `vg_ecdsa_p256_sign`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of 64 bytes.
@@ -71,7 +75,7 @@ pub unsafe fn vg_ecdsa_p256_verify_auto(_dit: verified_garbage_cpu::Dit<'_>, pub
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `hmac` is a table of HMAC over the hash function of the digest, which RFC 6979 uses: the one of `VG.Spec.Mgf1.hashes` at the index in its first word of data (the HMAC tables of this crate, `fn_tables`, say which they name).
 /// * `out` and `scratch` must not overlap each other, `d`, `digest`, `hmac` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `d`, `digest`, `scratch` and `hmac` may overlap the 536 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `out`, `d`, `digest`, `scratch` and `hmac` may overlap the 544 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * `hmac` must be the `as_ptr()` of one of the `Hmac` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
 #[allow(clippy::too_many_arguments)]
 #[inline]

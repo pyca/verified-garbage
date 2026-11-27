@@ -1,8 +1,7 @@
 module
+
 public import VerifiedGarbage.Proof.Rc2.AArch64.KeyLoop
 public import VerifiedGarbage.Proof.Rc2.Expansion
-
-import VerifiedGarbage.Proof.Rc2.AArch64.FillKey
 import VerifiedGarbage.Proof.Rc2.AArch64.DescendKey
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec

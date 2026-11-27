@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Hmac.Instance.initAnyKeyContract` of `VG.Spec.Hmac.sha384I`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `inner` must be valid for reads and writes of 192 bytes.
@@ -61,7 +63,7 @@ b 212f
 bl {vg_sha512_update_scratch}
 .base64 "4ACV6vAA1er4APXqAAEV6wgBNevoALXqIAAB6DAAITimAwh8cAchOA=="
 21:
-.base64 "IACATg=="
+.base64 "AAAAOGH4IfggAIE5AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhAAAz4SAAM+FAADPhYAAz4YAAM+GgADPhwAAz4eAAM+IAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHwAAAz4CAAM+BAADPgYAAz4IAAM+CgADPgwAAz4OAAM+EAADPhIAAz4UAAM+FgADPhgAAz4aAAM+HAADPh4AAz4oAchOAAAYDgAAIA4AACgOAAAwDgAAOA4AAAAOQAAIDkAAEA5AABgOQAAgDnEBAAQxAwhEMQUQhDEHGMQxCSEEMQspRDENMYQxDznEMRECBHETCkRxFRKEcRcaxHEZIwRxGytEcR0zhHEfO8RxIQQEsSMMRLElFISxJxzEiAAgE4="
 20:
 .base64 "wfgh+CAA4TimAgh80f8h+CAAAfgQAof6GAKn+iACx/ooAuf6MAIH+zgCJ/sAAKc6AADDOgAA5DoAAAY7AAAlOxABhzoAAHQ4"
 bl {vg_sha384_init}
@@ -71,7 +73,7 @@ bl {vg_sha512_update_scratch}
 bl {vg_sha512_finalize_scratch}
 .base64 "AAB2OAAAlzjQAbU4MADAOAAA9TgQApXqIALV6igC9eowAhXrOAI16xgCteo="
 bl {vg_hmac_sha384_init_scratch}
-.base64 "IAAB6DAAITimAwh8IACBOQAAYDkAAGz5CABs+RAAbPkYAGz5IABs+SgAbPkwAGz5OABs+UAAbPlIAGz5UABs+VgAbPlgAGz5aABs+XAAbPl4AGz5gABs+YgAbPmQAGz5mABs+aAAbPmoAGz5sABs+bgAbPnAAGz5yABs+dAAbPnYAGz54ABs+egAbPnwAGz5+ABs+QABbPkIAWz5EAFs+RgBbPkgAWz5KAFs+TABbPk4AWz5QAFs+UgBbPlQAWz5WAFs+WABbPloAWz5cAFs+XgBbPmAAWz5iAFs+ZABbPmYAWz5oAFs+agBbPmwAWz5uAFs+cABbPnIAWz50AFs+dgBbPngAWz56AFs+fABbPn4AWz5AAJs+QgCbPkQAmz5GAJs+SACbPkoAmz5MAJs+TgCbPlAByE4"
+.base64 "IAAB6DAAITimAwh8IACBOQAAADgAAAz4CAAM+BAADPgYAAz4IAAM+CgADPgwAAz4OAAM+EAADPhIAAz4UAAM+FgADPhgAAz4aAAM+HAADPh4AAz4gACMOewHDHyAAIw57AcMfIAAjDnsBwx8AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhAAAz4SAAM+FAADPhYAAz4YAAM+GgADPhwAAz4eAAM+IAADPiIAAz4kAAM+JgADPigAAz4qAAM+LAADPi4AAz4QAchOA=="
 b 21b"#,
         vg_sha384_init = sym super::sha512::vg_sha384_init,
         vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
@@ -83,6 +85,8 @@ b 21b"#,
 /// Finishes an HMAC-SHA-384 computation: if, for a 128-byte key `K₀` and a text of fewer than 2⁶⁴ − 128 bytes, the SHA-384 streaming state `*inner` represents `(K₀ ⊕ ipad) ‖ text`, of `count` bytes, and `*outer` represents `K₀ ⊕ opad`, writes the HMAC-SHA-384 of the text under `K₀` (48 bytes) to `*out`.
 ///
 /// Contract: `VG.Spec.Hmac.Instance.finalizeContract` of `VG.Spec.Hmac.sha384I`. Constant time: only the pointers and `count` may affect timing, not the states.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -101,7 +105,7 @@ bl {vg_sha512_finalize_scratch}
 bl {vg_sha512_update_scratch}
 .base64 "AAB0OLAAgDgQAbU4AADVOA=="
 bl {vg_sha512_finalize_scratch}
-.base64 "EAEVgQAAF5EUARWBBAAXkRgBFYEIABeRHAEVgQwAF5EgARWBEAAXkSQBFYEUABeRKAEVgRgAF5EsARWBHAAXkTABFYEgABeRNAEVgSQAF5E4ARWBKAAXkTwBFYEsABeR4ACV6vAA1er4APXqAAEV6wgBNevoALXqIAAB6DAAITimAwh8cAchOCAAgE4=""#,
+.base64 "EAEVgQAAF5EUARWBBAAXkRgBFYEIABeRHAEVgQwAF5EgARWBEAAXkSQBFYEUABeRKAEVgRgAF5EsARWBHAAXkTABFYEgABeRNAEVgSQAF5E4ARWBKAAXkTwBFYEsABeR4ACV6vAA1er4APXqAAEV6wgBNevoALXqIAAB6DAAITimAwh8cAchOAAAADhh+CH4IACBOQAADPgIAAz4EAAM+BgADPggAAz4KAAM+DAADPg4AAz4QAAM+EgADPhQAAz4WAAM+GAADPhoAAz4cAAM+HgADPiAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhAAAz4SAAM+FAADPhYAAz4YAAM+GgADPhwAAz4eAAM+KAHITgAAGA4AACAOAAAoDgAAMA4AADgOAAAADkAACA5AABAOQAAYDkAAIA5xAQAEMQMIRDEFEIQxBxjEMQkhBDELKUQxDTGEMQ85xDERAgRxEwpEcRUShHEXGsRxGSMEcRsrRHEdM4RxHzvEcSEEBLEjDESxJRSEsSccxIgAIBO""#,
         vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
         vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
     )
@@ -110,6 +114,14 @@ bl {vg_sha512_finalize_scratch}
 #[rustfmt::skip]
 #[path = "internal/vg_hmac_sha384_finalize_scratch.rs"]
 pub(crate) mod vg_hmac_sha384_finalize_scratch;
+
+#[rustfmt::skip]
+#[path = "internal/vg_hmac_sha384_init_any_scratch.rs"]
+pub(crate) mod vg_hmac_sha384_init_any_scratch;
+
+#[rustfmt::skip]
+#[path = "internal/vg_hmac_sha384_init_core.rs"]
+pub(crate) mod vg_hmac_sha384_init_core;
 
 #[rustfmt::skip]
 #[path = "internal/vg_hmac_sha384_init_scratch.rs"]

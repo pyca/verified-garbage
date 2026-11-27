@@ -1,204 +1,72 @@
 module
 
 public import VerifiedGarbage.Proof.Sha3.AArch64.Variant
+public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Absorb
+public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Lit
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Variant
-public import VerifiedGarbage.Proof.Sha3.AArch64.Sums
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Sums
-public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Permute
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Permute
-import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Lit
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Lit
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Absorb
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Lit
+
+/-! # Keccak-f[1600] on AArch64, with FEAT_SHA3: the backend of the sponge -/
 
 @[expose] public section
 
-namespace VG.Proof.Sha3.AArch64.Sha3
+namespace VG.Proof.Sha3.AArch64.Sha3.Vector
 
 open VG VG.AArch64
+open VG.Impl.Sha3.AArch64.Sha3.Vector
 
-def callee : Impl.Sha3.AArch64.Callee where
-  name := "vg_keccak_f1600_sha3"
-  code := Impl.Sha3.AArch64.Sha3.Vector.permute
-  suffix := "_sha3"
-  pairedSha3 := true
-  absorbOverride := none
+sponge_taint_summaries Sums Impl.Sha3.AArch64.Sha3.Vector.callee
 
-sponge_taint_summaries Sha3Sums callee
-
-/-- The summaries the sponge's callers' checks use (`Callers.sums`, from this backend's summaries
-with their frames: `Taint.SumOk.restrict`). -/
-theorem callerSums : Taint.AllOk VectorTaint.taint (Callers.sums callee) :=
+theorem callerSums : Taint.AllOk VectorTaint.taint (Callers.sums Impl.Sha3.AArch64.Sha3.Vector.callee) :=
   Callers.sums_ok (by
     exact
-      .cons (Sha3Sums.absorb.restrict (by decide) (by decide)) <|
-      .cons (Sha3Sums.absorb.restrict (by decide) (by decide)) <|
-      .cons (Sha3Sums.absorb.restrict (by decide) (by decide)) <|
-      .cons (Sha3Sums.absorb.restrict (by decide) (by decide)) <|
-      .cons (Sha3Sums.absorb.restrict (by decide) (by decide)) <|
-      .cons (Sha3Sums.pad.restrict (by decide) (by decide)) <|
-      .cons (Sha3Sums.pad.restrict (by decide) (by decide)) <|
-      .cons (Sha3Sums.pad.restrict (by decide) (by decide)) <|
-      .cons (Sha3Sums.squeeze.restrict (by decide) (by decide)) <|
-      .cons (Sha3Sums.squeeze.restrict (by decide) (by decide)) <|
-      .cons (Sha3Sums.squeeze.restrict (by decide) (by decide)) <|
-      .cons (Sha3Sums.perm.restrict (by decide) (by decide)) <|
-      .cons (Sha3Sums.perm.restrict (by decide) (by decide)) <|
-      .cons (Sha3Sums.perm.restrict (by decide) (by decide)) <|
-      .cons (Sha3Sums.perm.restrict (by decide) (by decide)) <|
-      .cons (Sha3Sums.perm.restrict (by decide) (by decide)) <|
-      .cons (Sha3Sums.perm.restrict (by decide) (by decide)) <|
-      .cons (Sha3Sums.perm.restrict (by decide) (by decide)) <|
-      .cons (Sha3Sums.perm.restrict (by decide) (by decide)) <|
+      .cons (Sums.absorb.restrict (by decide) (by decide)) <|
+      .cons (Sums.absorb.restrict (by decide) (by decide)) <|
+      .cons (Sums.absorb.restrict (by decide) (by decide)) <|
+      .cons (Sums.absorb.restrict (by decide) (by decide)) <|
+      .cons (Sums.absorb.restrict (by decide) (by decide)) <|
+      .cons (Sums.pad.restrict (by decide) (by decide)) <|
+      .cons (Sums.pad.restrict (by decide) (by decide)) <|
+      .cons (Sums.pad.restrict (by decide) (by decide)) <|
+      .cons (Sums.squeeze.restrict (by decide) (by decide)) <|
+      .cons (Sums.squeeze.restrict (by decide) (by decide)) <|
+      .cons (Sums.squeeze.restrict (by decide) (by decide)) <|
+      .cons (Sums.perm.restrict (by decide) (by decide)) <|
+      .cons (Sums.perm.restrict (by decide) (by decide)) <|
+      .cons (Sums.perm.restrict (by decide) (by decide)) <|
+      .cons (Sums.perm.restrict (by decide) (by decide)) <|
+      .cons (Sums.perm.restrict (by decide) (by decide)) <|
+      .cons (Sums.perm.restrict (by decide) (by decide)) <|
+      .cons (Sums.perm.restrict (by decide) (by decide)) <|
+      .cons (Sums.perm.restrict (by decide) (by decide)) <|
       .nil)
 
-theorem absorbTaint : ∃ h, (VectorTaint.taint.check (VectorTaint.ofRegs [.x0, .x1, .x2, .x3, .x4, .x5])
-    (Impl.Sha3.AArch64.Stream.absorbWith callee) h).isSome = true :=
-  -- From the summary of a call of it.
-  Taint.exists_check_of_sumOk_call Sha3Sums.absorb (VG.AArch64.VectorTaint.le_refl _) rfl
-
-theorem padTaint : ∃ h, (VectorTaint.taint.check (VectorTaint.ofRegs [.x0, .x1, .x2, .x4])
-    (Impl.Sha3.AArch64.Stream.padWith callee) h).isSome = true :=
-  -- From the summary of a call of it.
-  Taint.exists_check_of_sumOk_call Sha3Sums.pad (VG.AArch64.VectorTaint.le_refl _) rfl
-
-theorem squeezeTaint : ∃ h, (VectorTaint.taint.check (VectorTaint.ofRegs [.x0, .x1, .x2, .x3, .x4, .x5])
-    (Impl.Sha3.AArch64.Stream.squeezeWith callee) h).isSome = true :=
-  -- From the summary of a call of it.
-  Taint.exists_check_of_sumOk_call Sha3Sums.squeeze (VG.AArch64.VectorTaint.le_refl _) rfl
-
-theorem sampleFullTaint : ∃ h, (VectorTaint.taint.check (VectorTaint.ofRegs [.x0, .x1, .x2])
-    (Impl.MlKem.AArch64.sampleSqueezeWith callee) h).isSome = true :=
-  Callers.sampleFullTaint _ callerSums
-
-theorem sampleFastTaint : ∃ h, (VectorTaint.taint.check (VectorTaint.ofRegs [.x0, .x1, .x2])
-    (Impl.MlKem.AArch64.sampleSqueezeNWith callee 504 (Impl.MlKem.AArch64.sampleRegs 168)) h).isSome = true :=
-  Callers.sampleFastTaint _ callerSums
-
-theorem mldsaNttTaint : ∃ h, (VectorTaint.taint.check (VectorTaint.ofRegs [.x25, .x26, .x27, .x3, .x4])
-    (Impl.MlDsa.AArch64.Sample.spongeWith callee 168 1008) h).isSome = true :=
-  Callers.mldsaNttTaint _ callerSums
-
-theorem mldsaBoundedTaint : ∃ h, (VectorTaint.taint.check (VectorTaint.ofRegs [.x25, .x26, .x27, .x3, .x4])
-    (Impl.MlDsa.AArch64.Sample.spongeWith callee 136 544) h).isSome = true :=
-  Callers.mldsaBoundedTaint _ callerSums
-
-theorem mldsaBallTaint : ∃ h, (VectorTaint.taint.check (VectorTaint.ofRegs [.x25, .x26, .x27, .x3, .x4])
-    (Impl.MlDsa.AArch64.Sample.spongeWith callee 136 272) h).isSome = true :=
-  Callers.mldsaBallTaint _ callerSums
-
-theorem mldsaMaskTaint : ∃ h, (VectorTaint.taint.check (VectorTaint.ofRegs [.x25, .x26, .x27, .x3, .x4])
-    (Impl.MlDsa.AArch64.Sample.expandMaskTailWith callee) h).isSome = true :=
-  Callers.mldsaMaskTaint _ callerSums
-
-theorem mlkemKgATaint : ∃ h, (VectorTaint.taint.check (VectorTaint.ofRegs [.x0, .x1, .x2, .x3])
-    (Impl.MlKem.AArch64.kgAWith callee) h).isSome = true :=
-  Callers.mlkemKgATaint _ callerSums
-
-theorem mlkemKgCTaint : ∃ h, (VectorTaint.taint.check (VectorTaint.ofRegs [.x25, .x26, .x27, .x28])
-    (Impl.MlKem.AArch64.kgCWith callee) h).isSome = true :=
-  Callers.mlkemKgCTaint _ callerSums
-
-theorem mlkemEnATaint : ∃ h, (VectorTaint.taint.check (VectorTaint.ofRegs [.x0, .x1, .x2, .x3, .x4])
-    (Impl.MlKem.AArch64.enAWith callee) h).isSome = true :=
-  Callers.mlkemEnATaint _ callerSums
-
-theorem mlkemEnCTaint : ∃ h, (VectorTaint.taint.check (VectorTaint.ofRegs [.x25, .x26, .x27, .x28])
-    (Impl.MlKem.AArch64.enCWith callee) h).isSome = true :=
-  Callers.mlkemEnCTaint _ callerSums
-
-theorem mlkemDeATaint : ∃ h, (VectorTaint.taint.check (VectorTaint.ofRegs [.x0, .x1, .x2, .x3])
-    (Impl.MlKem.AArch64.deAWith callee) h).isSome = true :=
-  Callers.mlkemDeATaint _ callerSums
-
-theorem mlkemDeCTaint : ∃ h, (VectorTaint.taint.check (VectorTaint.ofRegs [.x25, .x26, .x27, .x28])
-    (Impl.MlKem.AArch64.deCWith callee) h).isSome = true :=
-  Callers.mlkemDeCTaint _ callerSums
-
-theorem mlkem1024KgATaint : ∃ h, (VectorTaint.taint.check (VectorTaint.ofRegs [.x0, .x1, .x2, .x3])
-    (Impl.MlKem1024.AArch64.kgAWith callee) h).isSome = true :=
-  Callers.mlkem1024KgATaint _ callerSums
-
-theorem mlkem1024KgCTaint : ∃ h, (VectorTaint.taint.check (VectorTaint.ofRegs [.x25, .x26, .x27, .x28])
-    (Impl.MlKem1024.AArch64.kgCWith callee) h).isSome = true :=
-  Callers.mlkem1024KgCTaint _ callerSums
-
-theorem mlkem1024EnATaint : ∃ h, (VectorTaint.taint.check (VectorTaint.ofRegs [.x0, .x1, .x2, .x3, .x4])
-    (Impl.MlKem1024.AArch64.enAWith callee) h).isSome = true :=
-  Callers.mlkem1024EnATaint _ callerSums
-
-theorem mlkem1024EnCTaint : ∃ h, (VectorTaint.taint.check (VectorTaint.ofRegs [.x25, .x26, .x27, .x28])
-    (Impl.MlKem1024.AArch64.enCWith callee) h).isSome = true :=
-  Callers.mlkem1024EnCTaint _ callerSums
-
-theorem mlkem1024DeATaint : ∃ h, (VectorTaint.taint.check (VectorTaint.ofRegs [.x0, .x1, .x2, .x3])
-    (Impl.MlKem1024.AArch64.deAWith callee) h).isSome = true :=
-  Callers.mlkem1024DeATaint _ callerSums
-
-theorem mlkem1024DeCTaint : ∃ h, (VectorTaint.taint.check (VectorTaint.ofRegs [.x25, .x26, .x27, .x28])
-    (Impl.MlKem1024.AArch64.deCWith callee) h).isSome = true :=
-  Callers.mlkem1024DeCTaint _ callerSums
-
-theorem mldsaSeedsTaint : ∃ h, (VectorTaint.taint.check (VectorTaint.ofRegs [.x25, .x26, .x27, .x28])
-    (Impl.MlDsa.AArch64.KeyGen.shake256With callee [⟨.x25, 0, 32⟩, ⟨.x28, 896, 2⟩] [⟨.x28, 1024, 128⟩]) h).isSome = true :=
-  Callers.mldsaSeedsTaint _ callerSums
-
-theorem mldsaTrHashTaint : ∀ p : Spec.MlDsa.Params,
-    (p = Spec.MlDsa.mlDsa44 ∨ p = Spec.MlDsa.mlDsa65 ∨ p = Spec.MlDsa.mlDsa87) → ∃ h, (VectorTaint.taint.check (VectorTaint.ofRegs [.x25, .x26, .x27, .x28])
-    (Impl.MlDsa.AArch64.KeyGen.trHashWith callee p) h).isSome = true :=
-  Callers.mldsaTrHashTaint _ callerSums
-
-theorem mldsaVerifyHashTaint : ∀ p : Spec.MlDsa.Params,
-    (p = Spec.MlDsa.mlDsa44 ∨ p = Spec.MlDsa.mlDsa65 ∨ p = Spec.MlDsa.mlDsa87) → ∃ h, (VectorTaint.taint.check (VectorTaint.ofRegs [.x25, .x26, .x27, .x28])
-    (Impl.MlDsa.AArch64.KeyGen.shake256With callee [⟨.x26, 0, 64⟩,
-      ⟨.x28, (Impl.MlDsa.AArch64.Verify.bP p).2, p.k * Impl.MlDsa.AArch64.Verify.w1Len p⟩]
-      [⟨.x28, 1024, p.ctildeLen⟩]) h).isSome = true :=
-  Callers.mldsaVerifyHashTaint _ callerSums
-
-theorem mldsaSignDecodeTaint : ∃ h, (VectorTaint.taint.check (VectorTaint.ofRegs [.x23, .x25, .x26, .x27, .x28])
-    (Impl.MlDsa.AArch64.Sign.shakeAtWith callee [⟨.x25, 32, 32⟩, ⟨.x27, 0, 32⟩, ⟨.x26, 0, 64⟩] ⟨.x28, 960, 64⟩) h).isSome = true :=
-  Callers.mldsaSignDecodeTaint _ callerSums
-
-theorem mldsaSignCommitTaint : ∀ p : Spec.MlDsa.Params,
-    (p = Spec.MlDsa.mlDsa44 ∨ p = Spec.MlDsa.mlDsa65 ∨ p = Spec.MlDsa.mlDsa87) → ∃ h, (VectorTaint.taint.check (VectorTaint.ofRegs [.x23, .x25, .x26, .x27, .x28])
-    (Impl.MlDsa.AArch64.Sign.shakeAtWith callee [⟨.x26, 0, 64⟩,
-      ⟨.x28, 2048, p.k * Impl.MlDsa.AArch64.Sign.w1Len p⟩]
-      ⟨.x28, 1040, Impl.MlDsa.AArch64.Sign.cLen p⟩) h).isSome = true :=
-  Callers.mldsaSignCommitTaint _ callerSums
-
+/-- The backend with FEAT_SHA3. -/
 def backend : Permutation where
-  callee := callee
+  callee := Impl.Sha3.AArch64.Sha3.Vector.callee
   features := ["sha3"]
-  ok := Vector.permute_correct
-  noFrames := Vector.permute_noFrames
+  scrub := by lit_decide
+  blocksScrub := by intro _ _ h; cases h; lit_decide
+  ok := fun s h => permute_ok s h
+  noFrames := by lit_decide
+  noDit := by lit_decide
   callerSums := callerSums
-  absorbOverrideOk := by intro code h; cases h
-  absorbOverrideDepth := by intro code h; cases h
-  absorbTaint := absorbTaint
-  padTaint := padTaint
-  squeezeTaint := squeezeTaint
-  sampleFullTaint := sampleFullTaint
-  sampleFastTaint := sampleFastTaint
-  mldsaNttTaint := mldsaNttTaint
-  mldsaBoundedTaint := mldsaBoundedTaint
-  mldsaBallTaint := mldsaBallTaint
-  mldsaMaskTaint := mldsaMaskTaint
-  mlkemKgATaint := mlkemKgATaint
-  mlkemKgCTaint := mlkemKgCTaint
-  mlkemEnATaint := mlkemEnATaint
-  mlkemEnCTaint := mlkemEnCTaint
-  mlkemDeATaint := mlkemDeATaint
-  mlkemDeCTaint := mlkemDeCTaint
-  mlkem1024KgATaint := mlkem1024KgATaint
-  mlkem1024KgCTaint := mlkem1024KgCTaint
-  mlkem1024EnATaint := mlkem1024EnATaint
-  mlkem1024EnCTaint := mlkem1024EnCTaint
-  mlkem1024DeATaint := mlkem1024DeATaint
-  mlkem1024DeCTaint := mlkem1024DeCTaint
+  blocksOk := by intro _ _ h s hp; cases h; exact absorbBlocks_ok s hp
+  blocksNoFrames := by intro _ _ h; cases h; lit_decide
+  blocksNoDit := by intro _ _ h; cases h; lit_decide
+  absorbTaint := by sponge_taint_decide Sums
+  padTaint := by sponge_taint_decide Sums
+  squeezeTaint := by sponge_taint_decide Sums
+  mldsaNttTaint := Callers.mldsaNttTaint _ callerSums
+  mldsaBallTaint := Callers.mldsaBallTaint _ callerSums
+  mldsaMaskTaint := Callers.mldsaMaskTaint _ callerSums
+  mldsaSeedsTaint := Callers.mldsaSeedsTaint _ callerSums
+  mldsaTrHashTaint := Callers.mldsaTrHashTaint _ callerSums
+  mldsaVerifyHashTaint := Callers.mldsaVerifyHashTaint _ callerSums
+  mldsaSignDecodeTaint := Callers.mldsaSignDecodeTaint _ callerSums
+  mldsaSignCommitTaint := Callers.mldsaSignCommitTaint _ callerSums
 
-  mldsaSeedsTaint := mldsaSeedsTaint
-  mldsaTrHashTaint := mldsaTrHashTaint
-  mldsaVerifyHashTaint := mldsaVerifyHashTaint
-
-  mldsaSignDecodeTaint := mldsaSignDecodeTaint
-  mldsaSignCommitTaint := mldsaSignCommitTaint
-
-end VG.Proof.Sha3.AArch64.Sha3
+end VG.Proof.Sha3.AArch64.Sha3.Vector

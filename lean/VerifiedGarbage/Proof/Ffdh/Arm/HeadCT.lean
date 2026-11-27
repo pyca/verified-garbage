@@ -10,7 +10,6 @@ import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Impl.Ffdh.Arm.Domain
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
 public import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
-meta import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
 meta import VerifiedGarbage.Proof.Bignum.Arm.RoundState
 
 /-! The common native head accesses only public domain and local-frame addresses. -/

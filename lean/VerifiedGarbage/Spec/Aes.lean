@@ -53,9 +53,15 @@ def pow (b : Byte) (n : Nat) : Byte :=
   ((List.range 8).foldl (fun (acc, sq) i => (if n.testBit i then mul acc sq else acc, mul sq sq))
     ((1 : Byte), b)).1
 
+/-- The 256 field inverses, computed from the field arithmetic of §4. -/
+def inverses : Vector Byte 256 := Vector.ofFn fun i => pow (BitVec.ofNatLT i.val i.isLt) 254
+
 /-- §4.4, the multiplicative inverse `b⁻¹ = b²⁵⁴` of a nonzero `b`, and
 `{00}` for `{00}` (which §5.1.1 maps to itself). -/
-def inv (b : Byte) : Byte := pow b 254
+def inv (b : Byte) : Byte := inverses[b.toNat]'b.isLt
+
+theorem inv_eq_pow (b : Byte) : inv b = pow b 254 := by
+  simp only [inv, inverses, Vector.getElem_ofFn, BitVec.ofNatLT_toNat]
 
 /-! ## The cipher's transformations (§5.1) -/
 

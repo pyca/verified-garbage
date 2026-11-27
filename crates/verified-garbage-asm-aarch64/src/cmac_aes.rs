@@ -10,19 +10,21 @@ pub const VG_CMAC_AES_ABSORB_AES_FEATURES: verified_garbage_cpu::Features = veri
 ///
 /// Contract: `VG.Spec.Cmac.aesAbsorbContract`. Constant time: only the pointers, `rounds`, `count` and `len` may affect timing, not the state or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 304 bytes.
 /// * `data` must be valid for reads of `len` bytes.
 /// * `rounds` must be 10, 12 or 14.
 /// * `state` must not overlap `data` (distinct Rust objects never do).
-/// * Neither `state` nor `data` may overlap the 2304 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `data` may overlap the 64 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_cmac_aes_absorb_aes(state: *mut [u64; 38], rounds: usize, count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
-        r".inst 0xd12403ff,0x910003e5,0xf90440b3,0xf90444b4,0xf90448b5,0xf9044cb6,0xf90450b8,0xf90454be
-.inst 0xf90458b7,0x91000013,0x91000034,0x91000075,0x91000096,0x910000b7
+        r".inst 0xd10103ff,0x910003e5,0xf90004b3,0xf90008b4,0xf9000cb5,0xf90010b6,0xf90014b8,0xf90018be
+.inst 0xf9001cb7,0x91000013,0x91000034,0x91000075,0x91000096,0x910000b7
 cbz x2, 20f
 .inst 0xd1000449,0xd28001ea,0x8a0a0129,0x91000529
 b 21f
@@ -56,7 +58,7 @@ cbz x22, 29f
 b 210f
 29:
 210:
-.inst 0x91000260,0x91000281,0x91044262,0x91048263,0x910002e5
+.inst 0x91000260,0x91000281,0x91044262,0x91048263,0x910102e5
 bl {vg_cmac_aes_update_aes}
 .inst 0xd2800018
 cbz x22, 211f
@@ -64,7 +66,7 @@ cbz x22, 211f
 b 212f
 211:
 212:
-.inst 0xd344ff04,0x91000260,0x91000281,0x91044262,0x910002a3,0x910002e5
+.inst 0xd344ff04,0x91000260,0x91000281,0x91044262,0x910002a3,0x910102e5
 bl {vg_cmac_aes_update_aes}
 .inst 0x8b1802b5,0xcb1802d6,0x91048266,0x910002a7,0x910002c8
 cbz x8, 213f
@@ -74,8 +76,13 @@ cbnz x8, 215b
 b 214f
 213:
 214:
-.inst 0xf94442f3,0xf94446f4,0xf9444af5,0xf9444ef6,0xf94452f8,0xf94456fe,0xf9445af7,0x912403ff
-.inst 0xd65f03c0
+.inst 0xf94006f3,0xf9400af4,0xf9400ef5,0xf94012f6,0xf94016f8,0xf9401afe,0xf9401ef7,0x910103ff
+.inst 0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005,0xd2800006,0xd2800007,0xd2800008
+.inst 0xd2800009,0xd280000a,0xd280000b,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e410
+.inst 0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418
+.inst 0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f
+.inst 0xd2800000,0xd10103ff,0x6f00e41f,0x910003e9,0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f
+.inst 0x910103ff,0xd65f03c0
 .p2align 6",
         vg_cmac_aes_update_aes = sym super::cmac_aes::vg_cmac_aes_update_aes::vg_cmac_aes_update_aes,
     )
@@ -85,18 +92,20 @@ b 214f
 ///
 /// Contract: `VG.Spec.Cmac.aesAbsorbContract`. Constant time: only the pointers, `rounds`, `count` and `len` may affect timing, not the state or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 304 bytes.
 /// * `data` must be valid for reads of `len` bytes.
 /// * `rounds` must be 10, 12 or 14.
 /// * `state` must not overlap `data` (distinct Rust objects never do).
-/// * Neither `state` nor `data` may overlap the 2304 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `data` may overlap the 2240 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_cmac_aes_absorb(state: *mut [u64; 38], rounds: usize, count: u64, data: *const u8, len: usize) {
+pub(crate) unsafe extern "C" fn vg_cmac_aes_absorb_neon(state: *mut [u64; 38], rounds: usize, count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
-        r".inst 0xd12403ff,0x910003e5,0xf90440b3,0xf90444b4,0xf90448b5,0xf9044cb6,0xf90450b8,0xf90454be
-.inst 0xf90458b7,0x91000013,0x91000034,0x91000075,0x91000096,0x910000b7
+        r".inst 0xd12303ff,0x910003e5,0xf90004b3,0xf90008b4,0xf9000cb5,0xf90010b6,0xf90014b8,0xf90018be
+.inst 0xf9001cb7,0x91000013,0x91000034,0x91000075,0x91000096,0x910000b7
 cbz x2, 20f
 .inst 0xd1000449,0xd28001ea,0x8a0a0129,0x91000529
 b 21f
@@ -130,7 +139,92 @@ cbz x22, 29f
 b 210f
 29:
 210:
-.inst 0x91000260,0x91000281,0x91044262,0x91048263,0x910002e5
+.inst 0x91000260,0x91000281,0x91044262,0x91048263,0x910102e5
+bl {vg_cmac_aes_update_neon}
+.inst 0xd2800018
+cbz x22, 211f
+.inst 0xd10006d8,0xd28001e9,0x8a090309,0xcb090318
+b 212f
+211:
+212:
+.inst 0xd344ff04,0x91000260,0x91000281,0x91044262,0x910002a3,0x910102e5
+bl {vg_cmac_aes_update_neon}
+.inst 0x8b1802b5,0xcb1802d6,0x91048266,0x910002a7,0x910002c8
+cbz x8, 213f
+215:
+.inst 0x394000e9,0x390000c9,0x910004e7,0x910004c6,0xd1000508
+cbnz x8, 215b
+b 214f
+213:
+214:
+.inst 0xf94006f3,0xf9400af4,0xf9400ef5,0xf94012f6,0xf94016f8,0xf9401afe,0xf9401ef7,0x912303ff
+.inst 0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005,0xd2800006,0xd2800007,0xd2800008
+.inst 0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401
+.inst 0x6f00e402,0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411
+.inst 0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419
+.inst 0x6f00e41a,0x6f00e41b,0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f,0xd2800000
+.inst 0xd12303ff,0x6f00e41f,0x910003e9,0xd280046a
+216:
+.inst 0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x91010129,0xd100054a
+cbnz x10, 216b
+.inst 0x912303ff,0xd65f03c0
+.p2align 6",
+        vg_cmac_aes_update_neon = sym super::cmac_aes::vg_cmac_aes_update_neon::vg_cmac_aes_update_neon,
+    )
+}
+
+/// Absorbs data into an AES-CMAC computation (NIST SP 800-38B §6.2): if the streaming state `*state` represents a message of `count` bytes under an AES key with `rounds` rounds (as `vg_cmac_aes_init` set it up), it then represents that message followed by the `len` bytes at `data`, under the same key, provided that the two together are shorter than 2⁶⁴ bytes. It chains (step 6) every block of the message but its last bytes `Mₙ*` (step 3), which it holds back in the state, since only `vg_cmac_aes_finish` knows they are the last.
+///
+/// Contract: `VG.Spec.Cmac.aesAbsorbContract`. Constant time: only the pointers, `rounds`, `count` and `len` may affect timing, not the state or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 304 bytes.
+/// * `data` must be valid for reads of `len` bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `state` must not overlap `data` (distinct Rust objects never do).
+/// * Neither `state` nor `data` may overlap the 2240 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_cmac_aes_absorb(state: *mut [u64; 38], rounds: usize, count: u64, data: *const u8, len: usize) {
+    core::arch::naked_asm!(
+        r".inst 0xd12303ff,0x910003e5,0xf90004b3,0xf90008b4,0xf9000cb5,0xf90010b6,0xf90014b8,0xf90018be
+.inst 0xf9001cb7,0x91000013,0x91000034,0x91000075,0x91000096,0x910000b7
+cbz x2, 20f
+.inst 0xd1000449,0xd28001ea,0x8a0a0129,0x91000529
+b 21f
+20:
+.inst 0xd2800009
+21:
+.inst 0xd344feca
+cbz x10, 22f
+.inst 0xd280020a
+b 23f
+22:
+.inst 0x910002ca
+23:
+.inst 0xd2800208,0xcb090108,0xcb08014b,0xd37ffd6b
+cbz x11, 24f
+.inst 0x91000148
+b 25f
+24:
+25:
+.inst 0x9100010a,0x8b090266,0x910480c6,0x910002a7
+cbz x8, 26f
+28:
+.inst 0x394000e9,0x390000c9,0x910004e7,0x910004c6,0xd1000508
+cbnz x8, 28b
+b 27f
+26:
+27:
+.inst 0x8b0a02b5,0xcb0a02d6,0xd2800004
+cbz x22, 29f
+.inst 0xd2800024
+b 210f
+29:
+210:
+.inst 0x91000260,0x91000281,0x91044262,0x91048263,0x910102e5
 bl {vg_cmac_aes_update}
 .inst 0xd2800018
 cbz x22, 211f
@@ -138,7 +232,7 @@ cbz x22, 211f
 b 212f
 211:
 212:
-.inst 0xd344ff04,0x91000260,0x91000281,0x91044262,0x910002a3,0x910002e5
+.inst 0xd344ff04,0x91000260,0x91000281,0x91044262,0x910002a3,0x910102e5
 bl {vg_cmac_aes_update}
 .inst 0x8b1802b5,0xcb1802d6,0x91048266,0x910002a7,0x910002c8
 cbz x8, 213f
@@ -148,8 +242,17 @@ cbnz x8, 215b
 b 214f
 213:
 214:
-.inst 0xf94442f3,0xf94446f4,0xf9444af5,0xf9444ef6,0xf94452f8,0xf94456fe,0xf9445af7,0x912403ff
-.inst 0xd65f03c0
+.inst 0xf94006f3,0xf9400af4,0xf9400ef5,0xf94012f6,0xf94016f8,0xf9401afe,0xf9401ef7,0x912303ff
+.inst 0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005,0xd2800006,0xd2800007,0xd2800008
+.inst 0xd2800009,0xd280000a,0xd280000b,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402
+.inst 0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413
+.inst 0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b
+.inst 0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f,0xd2800000,0xd12303ff,0x6f00e41f
+.inst 0x910003e9,0xd280046a
+216:
+.inst 0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x91010129,0xd100054a
+cbnz x10, 216b
+.inst 0x912303ff,0xd65f03c0
 .p2align 6",
         vg_cmac_aes_update = sym super::cmac_aes::vg_cmac_aes_update::vg_cmac_aes_update,
     )
@@ -162,24 +265,35 @@ pub const VG_CMAC_AES_INIT_AES_FEATURES: verified_garbage_cpu::Features = verifi
 ///
 /// Contract: `VG.Spec.Cmac.aesInitContract`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 304 bytes.
 /// * `key` must be valid for reads of `key_len` bytes.
 /// * `key_len` must be 16, 24 or 32.
 /// * `state` must not overlap `key` (distinct Rust objects never do).
-/// * Neither `state` nor `key` may overlap the 2304 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `key` may overlap the 544 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_cmac_aes_init_aes(state: *mut [u64; 38], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
-        r".inst 0xd12403ff,0x910003e3,0xf9044073,0xf9044474,0xf9044875,0xf9044c7e,0x91000013,0x91000074
-.inst 0xd342fc55,0x91001ab5,0x91000020,0x91000041,0x91000262
+        r".inst 0xd10883ff,0x910003e3,0xf9000073,0xf9000474,0xf9000875,0xf9000c7e,0x91000013,0x91000074
+.inst 0xd342fc55,0x91001ab5,0x91000020,0x91000041,0x91000262,0x91008063
 bl {vg_aes_expand_key_scratch_aes}
-.inst 0x91000260,0x910002a1,0x9103c262,0x91000283
+.inst 0x91000260,0x910002a1,0x9103c262,0x91008283
 bl {vg_cmac_aes_subkeys_aes}
-.inst 0xd2800009,0xf9008a69,0xf9008e69,0xf9444e9e,0xf9444293,0xf9444a95,0xf9444694,0x912403ff
-.inst 0xd65f03c0
+.inst 0xd2800009,0xf9008a69,0xf9008e69,0xf9400e9e,0xf9400293,0xf9400a95,0xf9400694,0x910883ff
+.inst 0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005,0xd2800006,0xd2800007,0xd2800008
+.inst 0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d,0xd2800010,0xd2800011,0x6f00e400
+.inst 0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410
+.inst 0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418
+.inst 0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f
+.inst 0xd2800000,0xd10883ff,0x6f00e41f,0x910003e9,0xd280010a
+20:
+.inst 0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x91010129,0xd100054a
+cbnz x10, 20b
+.inst 0x3d80013f,0x3d80053f,0x910883ff,0xd65f03c0
 .p2align 6",
         vg_aes_expand_key_scratch_aes = sym super::aes::vg_aes_expand_key_scratch_aes::vg_aes_expand_key_scratch_aes,
         vg_cmac_aes_subkeys_aes = sym super::cmac_aes::vg_cmac_aes_subkeys_aes::vg_cmac_aes_subkeys_aes,
@@ -193,6 +307,8 @@ pub const VG_CMAC_AES_FINISH_AES_FEATURES: verified_garbage_cpu::Features = veri
 ///
 /// Contract: `VG.Spec.Cmac.aesFinishContract`. Constant time: only the pointers, `rounds` and `count` may affect timing, not the state.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 304 bytes.
@@ -200,20 +316,26 @@ pub const VG_CMAC_AES_FINISH_AES_FEATURES: verified_garbage_cpu::Features = veri
 /// * `rounds` must be 10, 12 or 14.
 /// * The contents of `state` on return are unspecified.
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
-/// * Neither `state` nor `out` may overlap the 2304 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `out` may overlap the 144 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_cmac_aes_finish_aes(state: *mut [u64; 38], rounds: usize, count: u64, out: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        r".inst 0xd12403ff,0x910003e4,0xf9408809,0xf9000069,0xf9408c09,0xf9000469,0xf9044093,0xf904449e
-.inst 0x91000093,0x91000085,0x91000044,0x91000062,0x91048003
+        r".inst 0xd10243ff,0x910003e4,0xf9408809,0xf9000069,0xf9408c09,0xf9000469,0xf9000093,0xf900049e
+.inst 0x91000093,0x91004085,0x91000044,0x91000062,0x91048003
 cbz x4, 20f
 .inst 0xd1000484,0xd28001e9,0x8a090084,0x91000484
 b 21f
 20:
 21:
 bl {vg_cmac_aes_finalize_aes}
-.inst 0xf944467e,0xf9444273,0x912403ff,0xd65f03c0
+.inst 0xf940067e,0xf9400273,0x910243ff,0xd2800002,0xd2800003,0xd2800004,0xd2800005,0xd2800006
+.inst 0xd2800007,0xd2800008,0xd2800009,0xd280000a,0xd280000c,0xd280000d,0xd2800010,0xd2800011
+.inst 0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407
+.inst 0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417
+.inst 0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f
+.inst 0xea01003f,0xd2800000,0xd10243ff,0x6f00e41f,0x910003e9,0x3d80013f,0x3d80053f,0x3d80093f
+.inst 0x3d800d3f,0x3d80113f,0x3d80153f,0x3d80193f,0x3d801d3f,0x3d80213f,0x910243ff,0xd65f03c0
 .p2align 6",
         vg_cmac_aes_finalize_aes = sym super::cmac_aes::vg_cmac_aes_finalize_aes::vg_cmac_aes_finalize_aes,
     )
@@ -223,23 +345,112 @@ bl {vg_cmac_aes_finalize_aes}
 ///
 /// Contract: `VG.Spec.Cmac.aesInitContract`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 304 bytes.
 /// * `key` must be valid for reads of `key_len` bytes.
 /// * `key_len` must be 16, 24 or 32.
 /// * `state` must not overlap `key` (distinct Rust objects never do).
-/// * Neither `state` nor `key` may overlap the 2304 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `key` may overlap the 2208 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_cmac_aes_init_neon(state: *mut [u64; 38], key: *const u8, key_len: usize) {
+    core::arch::naked_asm!(
+        r".inst 0xd12283ff,0x910003e3,0xf9000073,0xf9000474,0xf9000875,0xf9000c7e,0x91000013,0x91000074
+.inst 0xd342fc55,0x91001ab5,0x91000020,0x91000041,0x91000262,0x91008063
+bl {vg_aes_expand_key_scratch}
+.inst 0x91000260,0x910002a1,0x9103c262,0x91008283
+bl {vg_cmac_aes_subkeys_neon}
+.inst 0xd2800009,0xf9008a69,0xf9008e69,0xf9400e9e,0xf9400293,0xf9400a95,0xf9400694,0x912283ff
+.inst 0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005,0xd2800006,0xd2800007,0xd2800008
+.inst 0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401
+.inst 0x6f00e402,0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411
+.inst 0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419
+.inst 0x6f00e41a,0x6f00e41b,0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f,0xd2800000
+.inst 0xd12283ff,0x6f00e41f,0x910003e9,0xd280044a
+20:
+.inst 0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x91010129,0xd100054a
+cbnz x10, 20b
+.inst 0x3d80013f,0x3d80053f,0x912283ff,0xd65f03c0
+.p2align 6",
+        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
+        vg_cmac_aes_subkeys_neon = sym super::cmac_aes::vg_cmac_aes_subkeys_neon::vg_cmac_aes_subkeys_neon,
+    )
+}
+
+/// Finishes an AES-CMAC computation (NIST SP 800-38B §6.2, with `Tlen = 128`): if the streaming state `*state` represents a message of `count` bytes, shorter than 2⁶⁴ bytes, under an AES key with `rounds` rounds (as `vg_cmac_aes_init` and `vg_cmac_aes_absorb` set it up), writes the MAC of that message under that key to `*out`: `Cₙ = CIPH_K(Cₙ₋₁ ⊕ Mₙ)`, where `Mₙ = K1 ⊕ Mₙ*` if the message's last bytes `Mₙ*` are a complete block, and `Mₙ = K2 ⊕ (Mₙ* ‖ 10ʲ)` otherwise (step 4). The caller truncates it (step 7) and compares it (§6.3).
+///
+/// Contract: `VG.Spec.Cmac.aesFinishContract`. Constant time: only the pointers, `rounds` and `count` may affect timing, not the state.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 304 bytes.
+/// * `out` must be valid for reads and writes of 16 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * The contents of `state` on return are unspecified.
+/// * `state` and `out` must not overlap each other (distinct Rust objects never do).
+/// * Neither `state` nor `out` may overlap the 2192 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_cmac_aes_finish_neon(state: *mut [u64; 38], rounds: usize, count: u64, out: *mut [u8; 16]) {
+    core::arch::naked_asm!(
+        r".inst 0xd12243ff,0x910003e4,0xf9408809,0xf9000069,0xf9408c09,0xf9000469,0xf9000093,0xf900049e
+.inst 0x91000093,0x91004085,0x91000044,0x91000062,0x91048003
+cbz x4, 20f
+.inst 0xd1000484,0xd28001e9,0x8a090084,0x91000484
+b 21f
+20:
+21:
+bl {vg_cmac_aes_finalize_neon}
+.inst 0xf940067e,0xf9400273,0x912243ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005
+.inst 0xd2800006,0xd2800007,0xd2800008,0xd2800009,0xd280000a,0xd280000c,0xd2800010,0xd2800011
+.inst 0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407
+.inst 0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417
+.inst 0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f
+.inst 0xea01003f,0xd2800000,0xd12243ff,0x6f00e41f,0x910003e9,0xd280044a
+22:
+.inst 0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x91010129,0xd100054a
+cbnz x10, 22b
+.inst 0x3d80013f,0x912243ff,0xd65f03c0
+.p2align 6",
+        vg_cmac_aes_finalize_neon = sym super::cmac_aes::vg_cmac_aes_finalize_neon::vg_cmac_aes_finalize_neon,
+    )
+}
+
+/// Starts an AES-CMAC computation (NIST SP 800-38B, RFC 4493): makes the streaming state `*state` represent the empty message under the AES key of `key_len` bytes at `key` (AES-128, AES-192 or AES-256). The state holds the key schedule of AES (FIPS 197) with `key_len / 4 + 6` rounds, the subkeys `K1 ‖ K2` (§6.1), the chaining value and the message's last bytes, held back (`VG.Spec.Cmac.Repr`). Continue with `vg_cmac_aes_absorb` and `vg_cmac_aes_finish`, passing them `key_len / 4 + 6` as `rounds`.
+///
+/// Contract: `VG.Spec.Cmac.aesInitContract`. Constant time: only the pointers and `key_len` may affect timing, not the key.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 304 bytes.
+/// * `key` must be valid for reads of `key_len` bytes.
+/// * `key_len` must be 16, 24 or 32.
+/// * `state` must not overlap `key` (distinct Rust objects never do).
+/// * Neither `state` nor `key` may overlap the 2208 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_cmac_aes_init(state: *mut [u64; 38], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
-        r".inst 0xd12403ff,0x910003e3,0xf9044073,0xf9044474,0xf9044875,0xf9044c7e,0x91000013,0x91000074
-.inst 0xd342fc55,0x91001ab5,0x91000020,0x91000041,0x91000262
+        r".inst 0xd12283ff,0x910003e3,0xf9000073,0xf9000474,0xf9000875,0xf9000c7e,0x91000013,0x91000074
+.inst 0xd342fc55,0x91001ab5,0x91000020,0x91000041,0x91000262,0x91008063
 bl {vg_aes_expand_key_scratch}
-.inst 0x91000260,0x910002a1,0x9103c262,0x91000283
+.inst 0x91000260,0x910002a1,0x9103c262,0x91008283
 bl {vg_cmac_aes_subkeys}
-.inst 0xd2800009,0xf9008a69,0xf9008e69,0xf9444e9e,0xf9444293,0xf9444a95,0xf9444694,0x912403ff
-.inst 0xd65f03c0
+.inst 0xd2800009,0xf9008a69,0xf9008e69,0xf9400e9e,0xf9400293,0xf9400a95,0xf9400694,0x912283ff
+.inst 0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005,0xd2800006,0xd2800007,0xd2800008
+.inst 0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401
+.inst 0x6f00e402,0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411
+.inst 0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419
+.inst 0x6f00e41a,0x6f00e41b,0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f,0xd2800000
+.inst 0xd12283ff,0x6f00e41f,0x910003e9,0xd280044a
+20:
+.inst 0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x91010129,0xd100054a
+cbnz x10, 20b
+.inst 0x3d80013f,0x3d80053f,0x912283ff,0xd65f03c0
 .p2align 6",
         vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
         vg_cmac_aes_subkeys = sym super::cmac_aes::vg_cmac_aes_subkeys::vg_cmac_aes_subkeys,
@@ -250,6 +461,8 @@ bl {vg_cmac_aes_subkeys}
 ///
 /// Contract: `VG.Spec.Cmac.aesFinishContract`. Constant time: only the pointers, `rounds` and `count` may affect timing, not the state.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 304 bytes.
@@ -257,19 +470,28 @@ bl {vg_cmac_aes_subkeys}
 /// * `rounds` must be 10, 12 or 14.
 /// * The contents of `state` on return are unspecified.
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
-/// * Neither `state` nor `out` may overlap the 2304 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `out` may overlap the 2192 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_cmac_aes_finish(state: *mut [u64; 38], rounds: usize, count: u64, out: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        r".inst 0xd12403ff,0x910003e4,0xf9408809,0xf9000069,0xf9408c09,0xf9000469,0xf9044093,0xf904449e
-.inst 0x91000093,0x91000085,0x91000044,0x91000062,0x91048003
+        r".inst 0xd12243ff,0x910003e4,0xf9408809,0xf9000069,0xf9408c09,0xf9000469,0xf9000093,0xf900049e
+.inst 0x91000093,0x91004085,0x91000044,0x91000062,0x91048003
 cbz x4, 20f
 .inst 0xd1000484,0xd28001e9,0x8a090084,0x91000484
 b 21f
 20:
 21:
 bl {vg_cmac_aes_finalize}
-.inst 0xf944467e,0xf9444273,0x912403ff,0xd65f03c0
+.inst 0xf940067e,0xf9400273,0x912243ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005
+.inst 0xd2800006,0xd2800007,0xd2800008,0xd2800009,0xd280000a,0xd2800010,0xd2800011,0x6f00e400
+.inst 0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e410,0x6f00e411
+.inst 0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419
+.inst 0x6f00e41a,0x6f00e41b,0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f,0xd2800000
+.inst 0xd12243ff,0x6f00e41f,0x910003e9,0xd280044a
+22:
+.inst 0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x91010129,0xd100054a
+cbnz x10, 22b
+.inst 0x3d80013f,0x912243ff,0xd65f03c0
 .p2align 6",
         vg_cmac_aes_finalize = sym super::cmac_aes::vg_cmac_aes_finalize::vg_cmac_aes_finalize,
     )
@@ -284,6 +506,10 @@ pub(crate) mod vg_cmac_aes_finalize;
 pub(crate) mod vg_cmac_aes_finalize_aes;
 
 #[rustfmt::skip]
+#[path = "internal/vg_cmac_aes_finalize_neon.rs"]
+pub(crate) mod vg_cmac_aes_finalize_neon;
+
+#[rustfmt::skip]
 #[path = "internal/vg_cmac_aes_subkeys.rs"]
 pub(crate) mod vg_cmac_aes_subkeys;
 
@@ -292,9 +518,17 @@ pub(crate) mod vg_cmac_aes_subkeys;
 pub(crate) mod vg_cmac_aes_subkeys_aes;
 
 #[rustfmt::skip]
+#[path = "internal/vg_cmac_aes_subkeys_neon.rs"]
+pub(crate) mod vg_cmac_aes_subkeys_neon;
+
+#[rustfmt::skip]
 #[path = "internal/vg_cmac_aes_update.rs"]
 pub(crate) mod vg_cmac_aes_update;
 
 #[rustfmt::skip]
 #[path = "internal/vg_cmac_aes_update_aes.rs"]
 pub(crate) mod vg_cmac_aes_update_aes;
+
+#[rustfmt::skip]
+#[path = "internal/vg_cmac_aes_update_neon.rs"]
+pub(crate) mod vg_cmac_aes_update_neon;

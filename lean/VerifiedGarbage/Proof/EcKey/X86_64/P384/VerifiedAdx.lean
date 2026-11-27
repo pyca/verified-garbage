@@ -1,5 +1,8 @@
 module
 
+public import VerifiedGarbage.TCB.Registration
+import VerifiedGarbage.Proof.EcKey.X86_64.Scrub.Out
+import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.VerifiedAdx
 import VerifiedGarbage.Proof.Weierstrass.X86_64.CodeErase
 public import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
@@ -7,7 +10,7 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 import VerifiedGarbage.Proof.Framework.LitShare
 import VerifiedGarbage.Proof.EcKey.X86_64.P384.LitAdx
 public import VerifiedGarbage.Impl.EcKey.P384.X86_64
-public import VerifiedGarbage.Proof.EcKey.X86_64.P384.Contract
+public import VerifiedGarbage.Proof.EcKey.X86_64.P384.Verified
 public import VerifiedGarbage.Proof.EcKey.X86_64.Main
 import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
 import VerifiedGarbage.Proof.EcKey.X86_64.P384.Lit
@@ -20,7 +23,6 @@ meta import VerifiedGarbage.Proof.Framework.LitShare
 meta import VerifiedGarbage.Proof.EcKey.X86_64.P384.LitAdx
 meta import VerifiedGarbage.Proof.EcKey.X86_64.P384.Verified
 meta import VerifiedGarbage.Impl.EcKey.P384.X86_64
-meta import VerifiedGarbage.Proof.EcKey.X86_64.P384.Contract
 meta import VerifiedGarbage.Proof.EcKey.X86_64.Main
 meta import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
 meta import VerifiedGarbage.Proof.EcKey.X86_64.P384.Lit
@@ -29,7 +31,6 @@ import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.X86_64.Lit
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
-public import VerifiedGarbage.Proof.EcKey.X86_64.P384.Verified
 
 /-!
 # P-384 public keys on x86-64 with BMI2 and ADX: `Verified`
@@ -59,11 +60,7 @@ theorem pre_of_x {s : State} (h : pkX86_64.pre s) : PkPre p384x s := by
 
 theorem post_of_x {s s' : State} (h : PkPost p384x s s') : pkX86_64.post s s' := by
   unfold PkPost at h
-  show match pk s.mem (s.gpr .rsi) with
-    | some (.affine x y) => (s'.gpr .rax).setWidth 32 = 1 ∧
-        Spec.EcKey.bytesAt s'.mem (s.gpr .rdi) 97 = Spec.EcKey.encodePoint (.affine x y)
-    | _ => (s'.gpr .rax).setWidth 32 = 0 ∧
-        Spec.EcKey.bytesAt s'.mem (s.gpr .rdi) 97 = List.replicate 97 0
+  dsimp only [pkX86_64]
   revert h
   generalize hq : pk s.mem (s.gpr .rsi) = q
   rw [show Spec.EcKey.publicKey p384x.C (dk p384x s) = pk s.mem (s.gpr .rsi) from rfl, hq]
@@ -138,5 +135,25 @@ theorem pk_verified_adx (hL : Weierstrass.Law Spec.P384.curve)
       (Spec.EcKey.P384.inst.publicKeyContract (X86_64.abi.withConsts p384.combConsts) 8) :=
   Verified.of_inline_ct pk_inlineOk_adx (pk_x86_adx hL hT hI) pk_ct_adx implies8
     (fun _ h => Sig.clear_of_pre_consts h) pk_patch
+
+
+theorem publicKeyAdx_codeSp : (publicKeyP384Adx).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
+
+/-- `vg_ec_p384_public_key_adx` as emitted (`Impl.EcKey.X86_64.Fn.publicKeyP384Adx`), its cleanup included, meets its contract in
+constant time and returns without secret residue. -/
+theorem publicKeyAdx_scrubbed (hL : Weierstrass.Law Spec.P384.curve)
+    (hT : Weierstrass.CombOkW Spec.P384.curve 7 55 Impl.P384.p384Comb7 Impl.P384.p384Comb7Start)
+    (hI : Weierstrass.X86_64.InvSounds) :
+    VerifiedScrubbed X86_64.target Impl.EcKey.X86_64.Fn.publicKeyP384Adx
+      (Spec.EcKey.P384.publicKeyApi.contract (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p384.combConsts) 8) 32 :=
+  X86_64.Scrub.verifiedScrubbedAll (api := Spec.EcKey.P384.publicKeyApi)
+    { code := publicKeyP384Adx
+      stack := 8
+      verified := pk_verified_adx hL hT hI
+      spSafe := publicKeyAdx_codeSp } .avx (EcKey.X86_64.Scrub.publicKeyOut_consts Spec.EcKey.P384.inst 8 Impl.Ecdsa.X86_64.p384.combConsts)
+
+theorem publicKeyAdx_spSafe : Impl.EcKey.X86_64.Fn.publicKeyP384Adx.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  X86_64.Scrub.scrubKs_spSafe publicKeyAdx_codeSp
 
 end VG.Proof.EcKey.X86_64.P384

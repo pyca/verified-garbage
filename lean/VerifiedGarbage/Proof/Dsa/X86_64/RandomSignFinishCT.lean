@@ -1,30 +1,22 @@
 module
+
 public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 public import VerifiedGarbage.Impl.Dsa.X86_64.RandomSign
-
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignFinish
-import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignZero
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomFrame
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
-public import Mathlib.Algebra.Group.Nat.Defs
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.Attr.Core
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 meta import VerifiedGarbage.Impl.Dsa.X86_64.RandomSign
 meta import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignFinish
-meta import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignZero
 meta import VerifiedGarbage.Proof.Dsa.X86_64.RandomFrame
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Loop
-meta import Mathlib.Algebra.Group.Nat.Defs
 meta import Aesop.BuiltinRules
-meta import Mathlib.Tactic.Attr.Core
-meta import Mathlib.Tactic.ToDual
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub

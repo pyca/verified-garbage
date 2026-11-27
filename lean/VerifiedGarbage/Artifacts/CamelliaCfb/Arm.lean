@@ -1,29 +1,31 @@
 module
 
-public import VerifiedGarbage.Proof.Camellia.Arm.FbVerified
-public import VerifiedGarbage.Proof.Camellia.Arm.FbFinalVerified
-public import VerifiedGarbage.Impl.Camellia.Arm.FbFinal
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.Arm.Print
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Camellia.Cfb
+public import VerifiedGarbage.Spec.Camellia.CfbFinal
+import VerifiedGarbage.Proof.Camellia.Arm.Scrub
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # Camellia-CFB128 on ARMv7 -/
 
-@[expose] public section
-
 namespace VG.Artifacts.CamelliaCfb.Arm
 
-def artifacts : List Artifact := [
+public def artifacts : List (Artifact Arm.target) := [
   Spec.Camellia.cfbEncryptApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratchWiped 88 1 18 Impl.Camellia.Arm.cfbEncrypt
-    verified := Proof.Camellia.Arm.cfbEncrypt_framed },
+    code := Impl.Camellia.Arm.Fn.cfbEncrypt
+    verified := Proof.Camellia.Arm.Fn.cfbEncrypt },
   Spec.Camellia.cfbDecryptApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratchWiped 88 1 18 Impl.Camellia.Arm.cfbDecrypt
-    verified := Proof.Camellia.Arm.cfbDecrypt_framed },
+    code := Impl.Camellia.Arm.Fn.cfbDecrypt
+    verified := Proof.Camellia.Arm.Fn.cfbDecrypt },
   Spec.Camellia.cfbEncryptFinalApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratchWiped 88 1 18 Impl.Camellia.Arm.cfbEncryptFinal
-    verified := Proof.Camellia.Arm.cfbEncryptFinal_framed },
+    code := Impl.Camellia.Arm.Fn.cfbEncryptFinal
+    verified := Proof.Camellia.Arm.Fn.cfbEncryptFinal },
   Spec.Camellia.cfbDecryptFinalApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratchWiped 88 1 18 Impl.Camellia.Arm.cfbDecryptFinal
-    verified := Proof.Camellia.Arm.cfbDecryptFinal_framed }]
+    code := Impl.Camellia.Arm.Fn.cfbDecryptFinal
+    verified := Proof.Camellia.Arm.Fn.cfbDecryptFinal }]
+
+spec_apis artifacts
 
 end VG.Artifacts.CamelliaCfb.Arm

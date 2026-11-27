@@ -1,23 +1,24 @@
 module
 
-public import VerifiedGarbage.Proof.AesCfb8.Arm.Verified
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.Arm.Print
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Cfb8.Contract
+import VerifiedGarbage.Proof.Aes.Arm.Scrub
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # AES-CFB8 (NIST SP 800-38A §6.3) on ARMv7 -/
 
-@[expose] public section
-
 namespace VG.Artifacts.AesCfb8.Arm
 
-open VG.Proof.AesCfb8.Arm
-
-def artifacts : List Artifact := [
+public def artifacts : List (Artifact Arm.target) := [
   Spec.Cfb8.aesEncryptApi.artifact Arm.target {
-    code := Impl.AesCfb8.Arm.encrypt
-    verified := Proof.AesCfb8.encrypt_keyed encrypt_verified },
+    code := Impl.Aes.Arm.Fn.cfb8Encrypt
+    verified := Proof.Aes.Arm.Fn.cfb8Encrypt },
   Spec.Cfb8.aesDecryptApi.artifact Arm.target {
-    code := Impl.AesCfb8.Arm.decrypt
-    verified := Proof.AesCfb8.decrypt_keyed decrypt_verified }]
+    code := Impl.Aes.Arm.Fn.cfb8Decrypt
+    verified := Proof.Aes.Arm.Fn.cfb8Decrypt }]
+
+spec_apis artifacts
 
 end VG.Artifacts.AesCfb8.Arm

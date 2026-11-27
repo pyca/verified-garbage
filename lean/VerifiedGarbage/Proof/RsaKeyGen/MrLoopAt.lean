@@ -1,8 +1,26 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.MrIter
-import VerifiedGarbage.Proof.RsaKeyGen.MrCounts
 import VerifiedGarbage.Proof.Framework.Omega
+
+/-! ### `RsaKeyGen.MrCounts`, which this module and modules that import it used -/
+
+section
+
+/-! # Exact blinded and uniform witness counters -/
+
+@[expose] public section
+namespace VG.Proof.RsaKeyGen
+open VG VG.Spec.RsaKeyGen
+
+instance goSDecidable (checks : Nat) (s : Nat × Nat) : Decidable (goS checks s) :=
+  inferInstanceAs (Decidable (s.1 ≤ blindedChecks ∨ s.2 < checks))
+
+end VG.Proof.RsaKeyGen
+
+end
+
+end
 
 /-!
 # Miller–Rabin witness by witness, for any checks and any first offset

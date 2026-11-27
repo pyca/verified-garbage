@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.RsaPkcs1Sig.PPC64LE.SignVerified
 public import VerifiedGarbage.Proof.Rsa.PreKey
 meta import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.PPC64LE.SignCT
 import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
 
@@ -161,6 +160,6 @@ theorem sign_impliesP : fnContractP.Implies (Spec.RsaPkcs1Sig.signPrecomputedCon
 
 /-- `vg_rsa_pkcs1_sign_precomputed`. -/
 theorem codeP_verified : Verified target codeP (Spec.RsaPkcs1Sig.signPrecomputedContract abi stackBytes) :=
-  Verified.of_correct codeP_correct codeP_ct sign_impliesP
+  Verified.of_correct (k := fnContractP) codeP_correct codeP_ct sign_impliesP
 
 end VG.Proof.RsaPkcs1Sig.PPC64LE.Sign

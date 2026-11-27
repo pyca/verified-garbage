@@ -264,6 +264,18 @@ def enc : Prog isa :=
   .seq (.block (ipCode ++ [mov .x10 .x15])) (.seq (.seq (pass false) (.block (passTail 120)))
     (.seq (.seq (pass true) (.block (passTail 136))) (.seq (pass false) (.block fpCode))))
 
+/-- Between decryption's passes: `x10` back to the next pass's first key (`d`
+bytes back), and `L` and `R` exchanged. -/
+def passBack (d : Nat) : List Instr :=
+  [.subImm .x .x10 .x10 d, mov .x5 .x11, mov .x11 .x12, mov .x12 .x5]
+
+/-- TDEA decryption (`D_K1(E_K2(D_K3(x)))`) of the block `x` in `x5`, into
+`x5`, after `prep`: `enc`'s passes over the spread keys from the last to the
+first, each pass in the other direction. -/
+def dec : Prog isa :=
+  .seq (.block (ipCode ++ [.addImm .x .x10 .x15 376])) (.seq (.seq (pass true) (.block (passBack 120)))
+    (.seq (.seq (pass false) (.block (passBack 136))) (.seq (pass true) (.block fpCode))))
+
 /-- TDEA encryption of one block, keeping the callee-saved registers. -/
 def block : Prog isa := .seq prep (.seq enc (.block blockRestore))
 

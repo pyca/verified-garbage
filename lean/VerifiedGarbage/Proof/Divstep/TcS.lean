@@ -1,7 +1,6 @@
 module
-public import VerifiedGarbage.Proof.Divstep.Alg
 
-import VerifiedGarbage.Proof.Divstep.Tc
+public import VerifiedGarbage.Proof.Divstep.Tc
 import VerifiedGarbage.Proof.Divstep.Batch
 import VerifiedGarbage.Proof.Framework.Omega
 import Mathlib.Algebra.Order.Ring.Abs

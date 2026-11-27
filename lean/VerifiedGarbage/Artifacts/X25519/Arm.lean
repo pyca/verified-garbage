@@ -1,27 +1,35 @@
 module
 
-public import VerifiedGarbage.Proof.X25519.Arm.Verified
-public import VerifiedGarbage.Proof.X25519.Arm.Base
-public import VerifiedGarbage.Proof.X25519.Arm.Exchange
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.Arm.Print
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.X25519.Contract
+import VerifiedGarbage.Proof.X25519.Arm.Verified
+import VerifiedGarbage.Proof.X25519.Arm.Base
+import VerifiedGarbage.Proof.X25519.Arm.Exchange
+import VerifiedGarbage.Impl.X25519.Arm.Exchange
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Variants.Ed25519Field.Arm
+import VerifiedGarbage.Proof.X25519.Arm.Lit
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # X25519 (RFC 7748) on ARMv7 -/
 
-@[expose] public section
-
 namespace VG.Artifacts.X25519.Arm
 
-def artifacts : List Artifact := [
+public def artifacts : List (Artifact Arm.target) := [
   Spec.X25519.exchangeApi.artifact Arm.target {
-    code := Impl.Xdh.Arm.exchange "vg_x25519" Impl.X25519.Arm.x25519 32
-    verified := Proof.X25519.Arm.Exchange.exchange_baseline },
+    code := Impl.X25519.Arm.Fn.exchange
+    verified := Proof.X25519.Arm.Fn.exchange },
   Spec.X25519.exchangeApi.artifact Arm.target {
     suffix := "_umaal"
-    code := Impl.Xdh.Arm.exchange "vg_x25519_umaal" Impl.X25519.Arm.x25519Umaal 32
-    verified := Proof.X25519.Arm.Exchange.exchange_umaal },
-  Spec.X25519.x25519BaseApi.artifact Arm.target {
-    code := Impl.X25519.Arm.Base.x25519Base
-    verified := Proof.X25519.Arm.Base.x25519Base_verified }]
+    code := Impl.X25519.Arm.Fn.exchangeUmaal
+    verified := Proof.X25519.Arm.Fn.exchangeUmaal }] ++
+  VG.Proof.Variants.Ed25519Field.Arm.variants.map fun (v : Proof.Variants.Ed25519Field.Arm.Variant) =>
+    Spec.X25519.x25519BaseApi.artifact Arm.target {
+      suffix := v.suffix
+      code := Impl.X25519.Arm.Fn.x25519Base v.umaal
+      verified := Proof.X25519.Arm.Fn.x25519Base v.umaal }
+
+spec_apis artifacts
 
 end VG.Artifacts.X25519.Arm

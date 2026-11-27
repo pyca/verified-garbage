@@ -2,10 +2,6 @@ module
 
 import VerifiedGarbage.Proof.Framework.RISCV64.TaintMono
 meta import VerifiedGarbage.Proof.Framework.RISCV64.TaintMono
-public import VerifiedGarbage.Proof.MdStream.RISCV64.Update
-public meta import VerifiedGarbage.Proof.MdStream.RISCV64.Update
-public import VerifiedGarbage.Proof.MdStream.RISCV64.Finalize
-public meta import VerifiedGarbage.Proof.MdStream.RISCV64.Finalize
 public import VerifiedGarbage.Proof.MdStream.RISCV64.Init
 public meta import VerifiedGarbage.Proof.MdStream.RISCV64.Init
 public import VerifiedGarbage.Proof.Md5.Md

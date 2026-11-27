@@ -5,14 +5,13 @@ public import VerifiedGarbage.Proof.Ffdh.PPC64LE.InitCommon
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.RelCT
-public import VerifiedGarbage.Spec.Ffdh.GenerationContract
+public import VerifiedGarbage.Proof.Ffdh.ParameterPublic
 public import VerifiedGarbage.TCB.PPC64LE.Target
 meta import VerifiedGarbage.Impl.Ffdh.PPC64LE.Generation.Init
 meta import VerifiedGarbage.Proof.Ffdh.PPC64LE.InitCommon
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.RelCT
-meta import VerifiedGarbage.Spec.Ffdh.GenerationContract
 meta import VerifiedGarbage.TCB.PPC64LE.Target
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Keep
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Keep
@@ -20,6 +19,8 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.RunR
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.RunR
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.EntropyRequest
+import VerifiedGarbage.Proof.Framework.PPC64LE.Residue
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.Residue
 
 /-! # Native FFDH parameter-generation initialization on PPC64LE: correctness, constant time -/
 
@@ -105,7 +106,7 @@ def initPost (s t : State) : Prop :=
       Spec.Rsa.wordsAt t.mem (s.gpr .r3) 4 = List.replicate 4 0
   | some values => ((t.gpr .r3).setWidth 32).toNat = 1 ∧ ∃ first,
       Spec.Rsa.wordsAt t.mem (s.gpr .r3) 4 = (values ++ [first]).map (BitVec.ofNat 64) ∧
-      Spec.Entropy.RequestValid (Spec.Ffdh.parameterEntropy (s.gpr .r4).toNat) 0 first
+      Proof.Ffdh.FirstAsked (s.gpr .r4).toNat first
 
 def initPub (s t : State) : Prop :=
   s.sp = t.sp ∧ s.gpr .r3 = t.gpr .r3 ∧ s.gpr .r4 = t.gpr .r4 ∧
@@ -164,7 +165,7 @@ theorem init_ok {s : State} (h : StateWr s) : WP isa init s (initPost s) := by
         refine ite_eq_left ?_
         simpa only [initValid, Bool.and_eq_true, Bool.or_eq_true, decide_eq_true_eq, beq_iff_eq, and_assoc] using hv
       simp only [initPost, he]
-      refine ⟨by rw [ht]; rfl, _, ?_, by rw [hxn]; exact Proof.Ffdh.first_valid hv.1⟩
+      refine ⟨by rw [ht]; rfl, _, ?_, by rw [hxn]; exact Proof.Ffdh.firstAsked hv.1⟩
       rw [hmt, hm', hm, h3, initWritten_words]
       rfl
     · rw [ite_eq_right hv] at h12'
@@ -272,7 +273,7 @@ theorem init_relCT (p : Inputs) (hn : p.n < 2 ^ 64) (hg : p.g < 2 ^ 32) :
       decide_eq_false hb] at he
     cases he
 
-theorem init_verified : Verified target init (Spec.Ffdh.parameterInitContract abi) := by
+theorem init_verified : Verified target init (Proof.Ffdh.parameterInitAskedContract abi) := by
   refine Verified.of_correct (k := initContract) init_correct ?_ ?_
   · intro s₁ s₂ tr₁ tr₂ t₁ t₂ _ _ hp e₁ e₂
     obtain ⟨hsp, h3, h4, h5⟩ := hp
@@ -282,7 +283,12 @@ theorem init_verified : Verified target init (Spec.Ffdh.parameterInitContract ab
     have i₂ : Input p s₂ := ⟨h3.symm, by simp only [p, h4, BitVec.ofNat_toNat, BitVec.setWidth_eq],
       by simp only [p, h5, BitVec.ofNat_toNat, BitVec.setWidth_eq], hsp.symm⟩
     exact (init_relCT p (s₁.gpr .r4).isLt ((s₁.gpr .r5).setWidth 32).isLt _ _ _ _ _ _ ⟨i₁, i₂⟩ e₁ e₂).1
-  · sig_implies [Spec.Ffdh.parameterInitContract, Spec.Ffdh.parameterInitSig,
+  · sig_implies [Proof.Ffdh.parameterInitAskedContract, Spec.Ffdh.parameterInitSig,
       initContract, initPre, initPost, initPub, StateWr, abi, argRegs] [initSat] using initSat
+
+/-- `vg_ffdh_parameter_generation_init` returns without secret residue: it
+reads no memory, so what it leaves is a function of its arguments (`Residue.noResidue_of_blind`). -/
+theorem init_noResidue (k : Contract isa) (r : Nat) : NoResidue init k r :=
+  Residue.noResidue_of_blind (by decide) k r
 
 end VG.Proof.Ffdh.PPC64LE.Generation

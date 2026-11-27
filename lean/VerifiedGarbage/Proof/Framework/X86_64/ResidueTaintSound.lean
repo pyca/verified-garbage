@@ -3,11 +3,14 @@ module
 public import VerifiedGarbage.Proof.Framework.X86_64.ResidueTaint
 public import VerifiedGarbage.Proof.Framework.X86_64.ResidueKeep
 import VerifiedGarbage.Proof.Framework.X86_64.Reduce
+import VerifiedGarbage.Proof.Framework.X86_64.Syms
 import VerifiedGarbage.Proof.Framework.X86_64.Inline
 import VerifiedGarbage.Proof.Framework.X86_64.Call
 import VerifiedGarbage.Proof.Framework.X86_64.Depth
+import VerifiedGarbage.Proof.Framework.X86_64.Masked
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Frame
 
 /-!
 # The residue analysis is sound (x86-64)
@@ -42,29 +45,6 @@ macro_rules
     | (apply Pres.bind'; intro _; uk_go)
     | (split <;> uk_go))
 
-theorem exec_unknowns_pres (i : Instr) (s : State) :
-    Pres (fun x => x.unknowns = s.unknowns) (exec i s) := by
-  cases i
-  case vop op => simp only [reduceExec]; rw [Taint.VOp.exec_eq]; exact Pres.some' rfl
-  case zop op => simp only [reduceExec]; rw [Taint.ZOp.exec_eq]; exact Pres.some' rfl
-  case xop op => simp only [reduceExec]; rw [Taint.XOp.exec_eq]; exact Pres.some' rfl
-  case eop op => simp only [reduceExec]; rw [Taint.EOp.exec_eq]; exact Pres.some' rfl
-  case e5op op => simp only [reduceExec]; rw [Taint.E5Op.exec_eq]; exact Pres.some' rfl
-  case vmovdquLoad len _ _ | vmovdquStore len _ _ | vbinLoad _ len _ _ _ =>
-    cases len <;> simp only [reduceExec, State.store128, State.store256] <;> uk_go
-  case evLoad d _ | evMadd52Load _ d _ _ | evBroadcastLoad d _ =>
-    simp only [reduceExec]; apply Pres.map'; intro _; rw [Taint.setVy_eq]
-  case e5InsertLoad d _ _ _ =>
-    simp only [reduceExec]; apply Pres.map'; intro _; rw [Taint.setVz_eq]
-  all_goals simp only [reduceExec, execAlu, execAluW, execAlu32, execShift32, execShift, execRorx32,
-      execRorx, execShld, execBtr, execMulx, execAdcx, execAdox, execCmov, State.store64,
-      State.store32, State.store8, State.store16, State.store128, State.store256, State.store512,
-      State.storeMasked512, State.storeMasked512B]
-  all_goals uk_go
-
-theorem exec_unknowns {i : Instr} {s s' : State} (h : exec i s = some s') : s'.unknowns = s.unknowns :=
-  exec_unknowns_pres i s s' h
-
 theorem exec_frame {i : Instr} {s s' : State} (h : exec i s = some s') :
     s'.wr = s.wr ∧ Frame s.wr s.mem s'.mem := by
   have e : execBlock isa [i] s = some (s', (addrs i s).map Leak.addr) := by
@@ -72,19 +52,17 @@ theorem exec_frame {i : Instr} {s s' : State} (h : exec i s = some s') :
   obtain ⟨-, hw, hf⟩ := execBlock_regions e
   exact ⟨hw, hf⟩
 
-
-
 theorem exec_mem_pres (i : Instr) (s : State) (h : writesMem i = false) :
     Pres (fun x => x.mem = s.mem) (exec i s) := by
-  cases i <;> simp only [writesMem, storeW, Option.isSome_some, Option.isSome_none, Bool.true_or,
-    Bool.false_or, reduceCtorEq] at h
+  cases i <;> first | (cases h; done) | skip
   case vop op => simp only [reduceExec]; rw [Taint.VOp.exec_eq]; exact Pres.some' rfl
   case zop op => simp only [reduceExec]; rw [Taint.ZOp.exec_eq]; exact Pres.some' rfl
   case xop op => simp only [reduceExec]; rw [Taint.XOp.exec_eq]; exact Pres.some' rfl
+  case evMaskAddQ k d a b => cases d <;> exact Pres.some' rfl
   case eop op => simp only [reduceExec]; rw [Taint.EOp.exec_eq]; exact Pres.some' rfl
   case e5op op => simp only [reduceExec]; rw [Taint.E5Op.exec_eq]; exact Pres.some' rfl
   case vmovdquLoad len _ _ | vbinLoad _ len _ _ _ => cases len <;> simp only [reduceExec] <;> uk_go
-  case vmovdquStore len _ _ => cases len <;> simp at h
+  case vmovdquStore len _ _ => cases len <;> cases h
   case evLoad d _ | evMadd52Load _ d _ _ | evBroadcastLoad d _ =>
     simp only [reduceExec]; apply Pres.map'; intro _; rw [Taint.setVy_eq]
   case e5InsertLoad d _ _ _ =>
@@ -155,6 +133,24 @@ theorem byte_not_in {τ : Taint.T} {s : State} (hw : Wf τ s) {i d n j k : Nat} 
     · exact hdisj j i hj hi h _ (hrj ▸ hX) (hri ▸ hXi)
     · exact hdisj i j hi hj h _ (hri ▸ hXi) (hrj ▸ hX)
 
+/-! ## The public bytes of the regions -/
+
+theorem byteAddr_wr {s s' : State} (h : s'.wr = s.wr) (i k : Nat) : byteAddr s' i k = byteAddr s i k := by
+  simp only [byteAddr, region, h]
+
+/-- The base analysis's agreement, without its slots. -/
+theorem _root_.VG.X86_64.Taint.Agree.noSlots {t : Taint.T} {s₁ s₂ : State} (ha : Taint.Agree t s₁ s₂) :
+    Taint.Agree { t with slots := [] } s₁ s₂ :=
+  ⟨ha.rf, ha.wr, ha.wf₁, ha.wf₂, fun _ h => (by cases h), fun _ h => (by cases h), ha.lo, ha.xr⟩
+
+/-- Two memories after a store of the same value at the same address are the
+same at a byte the store writes, or one where they were. -/
+theorem writeW_same {m₁ m₂ : Mem} {A X : Addr} {w : Nat} (v : BitVec w)
+    (h : (X - A).toNat < w / 8 ∨ m₁ X = m₂ X) : m₁.writeW A v X = m₂.writeW A v X := by
+  simp only [Mem.writeW, Mem.write]
+  split
+  · rfl
+  · rename_i hn; exact h.resolve_left hn
 
 /-! ## Stores within a known range of a region -/
 
@@ -517,9 +513,121 @@ theorem argPost_sound {τ : FT} {i : Instr} {t' : Taint.T} {s₁ s₂ s₁' s₂
     · exact ha
   · exact ha
 
+/-! ## Loads of public bytes of the regions -/
+
+/-- The bytes `pbPub` says are public: at the same address, and the same, in both runs. -/
+theorem pbPub_eq {τ : FT} {s₁ s₂ : State} (ha : Taint.Agree τ.t s₁ s₂) (hwr : s₁.wr = s₂.wr)
+    (hpb : PbEq τ s₁ s₂) {m : MemOp} {w : Nat} (h : pbPub τ m w = true) :
+    s₂.ea m = s₁.ea m ∧ ∀ j < w, s₁.mem (s₁.ea m + BitVec.ofNat 64 j) = s₂.mem (s₁.ea m + BitVec.ofNat 64 j) := by
+  unfold pbPub at h
+  split at h <;> [rename_i i d hm; cases h]
+  have hea : s₂.ea m = s₁.ea m := by
+    rw [ea_of_addrOf ha.wf₁ hm, ea_of_addrOf ha.wf₂ hm]; exact byteAddr_wr hwr.symm i d
+  refine ⟨hea, fun j hj => ?_⟩
+  have := (hpb i (d + j) (btest_bit h (Nat.le_add_right _ _) (by omega_using [hj]))).2
+  rw [← byteAddr_add, ← byteAddr_add, ← ea_of_addrOf ha.wf₁ hm, ← ea_of_addrOf ha.wf₂ hm, hea] at this
+  exact this
+
+theorem pbPost_sound {τ : FT} {i : Instr} {t' : Taint.T} {s₁ s₂ s₁' s₂' : State}
+    (ha : Taint.Agree τ.t s₁ s₂) (hwr : s₁.wr = s₂.wr) (hpb : PbEq τ s₁ s₂)
+    (hb : Taint.Agree t' s₁' s₂') (e₁ : exec i s₁ = some s₁') (e₂ : exec i s₂ = some s₂') :
+    Taint.Agree (pbPost τ i t') s₁' s₂' := by
+  unfold pbPost
+  split
+  · rename_i d m
+    split
+    · rename_i hp
+      obtain ⟨hea, hm⟩ := pbPub_eq ha hwr hpb hp
+      refine hb.addReg ?_
+      rw [(exec_mov_mem e₁).1, (exec_mov_mem e₂).1, hea]
+      exact Mem.readW_congr fun j hj => hm j hj
+    · exact hb
+  · rename_i d m
+    split
+    · rename_i hp
+      obtain ⟨hea, hm⟩ := pbPub_eq ha hwr hpb hp
+      refine hb.addReg ?_
+      rw [(exec_mov32_mem e₁).1, (exec_mov32_mem e₂).1, hea]
+      exact congrArg (BitVec.setWidth 64) (Mem.readW_congr fun j hj => hm j hj)
+    · exact hb
+  · rename_i c d m
+    split
+    · rename_i hp
+      simp only [Bool.and_eq_true] at hp
+      obtain ⟨⟨hp, hd⟩, hf⟩ := hp
+      obtain ⟨hea, hm⟩ := pbPub_eq ha hwr hpb hp
+      obtain ⟨v₁, c₁, hv₁, hc₁, rfl⟩ := execCmov_some (by simpa only [reduceExec] using e₁)
+      obtain ⟨v₂, c₂, hv₂, hc₂, rfl⟩ := execCmov_some (by simpa only [reduceExec] using e₂)
+      have r₁ : v₁ = s₁.mem.readW (s₁.ea m) 64 := by
+        simp only [readSrc, State.load64] at hv₁; split at hv₁ <;> cases hv₁; rfl
+      have r₂ : v₂ = s₂.mem.readW (s₂.ea m) 64 := by
+        simp only [readSrc, State.load64] at hv₂; split at hv₂ <;> cases hv₂; rfl
+      have hc : c₁ = c₂ := by
+        have := Taint.cond_sound (c := c) ha hf
+        rw [hc₁, hc₂] at this
+        exact Option.some.inj this
+      refine hb.addReg ?_
+      rw [cmov_gpr, cmov_gpr]
+      simp only [↓reduceIte]
+      rw [hc, r₁, r₂, hea, ha.reg hd, Mem.readW_congr fun j hj => hm j hj]
+    · exact hb
+  · exact hb
+
+/-! ## The lengths of the regions, kept -/
+
+theorem argPost_lens (τ : FT) (i : Instr) (t : Taint.T) : (argPost τ i t).lens = t.lens := by
+  unfold argPost; split <;> (try split) <;> (try split) <;> (try split) <;> rfl
+
+theorem post_lens (τ : FT) (i : Instr) (t : Taint.T) : (post τ i t).lens = t.lens := by
+  unfold post; split <;> (try split) <;> (try split) <;> rfl
+
+theorem pbPost_lens (τ : FT) (i : Instr) (t : Taint.T) : (pbPost τ i t).lens = t.lens := by
+  unfold pbPost; split <;> (try split) <;> rfl
+
+/-- No instruction's step changes what the base analysis knows of the regions' lengths. -/
+theorem _root_.VG.X86_64.Taint.step_lens {τ τ' : Taint.T} {i : Instr} (h : Taint.step τ i = some τ') :
+    τ'.lens = τ.lens := by
+  cases i
+  case vmovdquStore l _ _ =>
+    cases l <;> simp only [Taint.reduceStep, storeStep, Option.ite_none_right_eq_some, Option.some.injEq] at h <;>
+      obtain ⟨-, rfl⟩ := h <;> rfl
+  case xop op =>
+    cases op <;> simp only [Taint.reduceStep, noX, Option.some.injEq] at h <;> subst h <;> rfl
+  all_goals
+    simp only [Taint.reduceStep, storeStep, aluStep, adxStep, cmovStep, mulStep, mulxStep, noX,
+      Option.ite_none_right_eq_some, Option.some.injEq, reduceCtorEq] at h
+  all_goals first
+    | (obtain ⟨-, -, rfl⟩ := h; rfl)
+    | (obtain ⟨-, rfl⟩ := h; rfl)
+    | (subst h; rfl)
+
+theorem special_lens {τ : FT} {i : Instr} {t' : Taint.T} (h : special τ i = some t') : t'.lens = τ.t.lens := by
+  unfold special at h
+  repeat' split at h
+  all_goals first
+    | (cases h; rfl)
+    | (simp only [storeStep, Option.ite_none_right_eq_some, Option.some.injEq] at h; obtain ⟨-, rfl⟩ := h; rfl)
+    | cases h
+
+theorem baseStep_lens {τ : FT} {i : Instr} {t' : Taint.T} (h : baseStep τ i = some t') : t'.lens = τ.t.lens := by
+  unfold baseStep at h
+  split at h
+  · rename_i t'' hs
+    cases h
+    exact special_lens hs
+  · obtain ⟨t'', ht, rfl⟩ := Option.map_eq_some_iff.mp h
+    rw [pbPost_lens, argPost_lens, post_lens]
+    rcases Taint.stepKD_spec τ.t i with ⟨h', -⟩ | ⟨a, b, h₁, h₂, hab⟩
+    · rw [show X86_64.taint.step τ.t i = Taint.stepKD τ.t i from taint_step _ _, h'] at ht; cases ht
+    · rw [show X86_64.taint.step τ.t i = Taint.stepKD τ.t i from taint_step _ _, h₁] at ht
+      cases ht
+      rw [hab.lens]
+      exact Taint.step_lens h₂
+
 theorem baseStep_sound {τ : FT} {i : Instr} {t' : Taint.T} {s₁ s₂ s₁' s₂' : State}
     (ha : Taint.Agree τ.t s₁ s₂) (hsp : s₁.gpr .rsp = s₂.gpr .rsp) (o₁ : One τ s₁) (o₂ : One τ s₂)
-    (hsa : SaEq τ s₁ s₂) (h : baseStep τ i = some t') (e₁ : exec i s₁ = some s₁') (e₂ : exec i s₂ = some s₂') :
+    (hsa : SaEq τ s₁ s₂) (hwr : s₁.wr = s₂.wr) (hpb : PbEq τ s₁ s₂)
+    (h : baseStep τ i = some t') (e₁ : exec i s₁ = some s₁') (e₂ : exec i s₂ = some s₂') :
     addrs i s₁ = addrs i s₂ ∧ Taint.Agree t' s₁' s₂' := by
   unfold baseStep at h
   split at h
@@ -528,7 +636,8 @@ theorem baseStep_sound {τ : FT} {i : Instr} {t' : Taint.T} {s₁ s₂ s₁' s�
     exact special_sound ha o₁ o₂ hs e₁ e₂
   · obtain ⟨t'', ht, rfl⟩ := Option.map_eq_some_iff.mp h
     obtain ⟨had, hb⟩ := X86_64.taint.step_sound ha ht e₁ e₂
-    exact ⟨had, argPost_sound hsp o₁ o₂ hsa (post_sound ha.wf₁ ha.wf₂ o₁ o₂ hb e₁ e₂) e₁ e₂⟩
+    exact ⟨had, pbPost_sound ha hwr hpb
+      (argPost_sound hsp o₁ o₂ hsa (post_sound ha.wf₁ ha.wf₂ o₁ o₂ hb e₁ e₂) e₁ e₂) e₁ e₂⟩
 
 /-! ## The argument area, kept -/
 
@@ -786,6 +895,164 @@ theorem mb_step {τ : FT} {i : Instr} {s s' : State} (hw : Wf τ.t s) (o : One �
       rw [exec_mem (Bool.of_not_eq_true hwm) e]
       exact o.mb q hq
 
+/-! ## The public bytes of the regions, after an instruction -/
+
+/-- A masked store changes memory only within the 64 bytes at its address. -/
+theorem exec_kStore {i : Instr} {m : MemOp} (hi : kStoreOp i = some m) {s s' : State}
+    (e : exec i s = some s') : ∀ y, ¬ (y - s.ea m).toNat < 64 → s'.mem y = s.mem y := by
+  intro y hy
+  cases i <;> simp only [kStoreOp, reduceCtorEq, Option.some.injEq] at hi
+  case kStore m' k x =>
+    subst hi
+    obtain ⟨V, rfl⟩ := State.storeMasked512_eq (by simpa only [reduceExec] using e)
+    exact Mem.write_apply hy
+  case kStore8 m' k x =>
+    subst hi
+    obtain ⟨V, rfl⟩ := State.storeMasked512B_eq (by simpa only [reduceExec] using e)
+    exact Mem.write_apply hy
+
+/-- The byte at offset `k` of region `j` is outside what a store bounded by
+`[lo, hi)` of region `ri` writes. -/
+theorem byte_keep {τ : FT} {m : MemOp} {w ri lo hi : Nat} {s s' : State}
+    (hw : Wf τ.t s) (o : One τ s) (hw0 : 0 < w) (hr : storeRange τ m w = some (ri, lo, hi))
+    (hst : ∀ y, ¬ (y - s.ea m).toNat < w → s'.mem y = s.mem y) {j k : Nat} (hk : k < τ.t.lens.getD j 0)
+    (hsep : j ≠ ri ∨ k < lo ∨ hi ≤ k) : s'.mem (byteAddr s j k) = s.mem (byteAddr s j k) := by
+  obtain ⟨d, hea, hlo, hhi, hfit⟩ := storeRange_ea hw o hr
+  apply hst
+  rw [hea]
+  exact byte_not_in hw hw0 (by omega_using [hhi, hfit]) hk (by omega_using [hsep, hlo, hhi])
+
+/-- After a store `stPub` says is of a public value, the two memories are
+the same at the bytes it writes, and where they were. -/
+theorem pub_store_mem {τ : FT} {i : Instr} {m : MemOp} {w : Nat} {s₁ s₂ s₁' s₂' : State}
+    (hp : stPub τ i = true) (hsw : storeW i = some (m, w)) (ha : Taint.Agree τ.t s₁ s₂)
+    (had : addrs i s₁ = addrs i s₂) (e₁ : exec i s₁ = some s₁') (e₂ : exec i s₂ = some s₂') :
+    ∀ X, ((X - s₁.ea m).toNat < w ∨ s₁.mem X = s₂.mem X) → s₁'.mem X = s₂'.mem X := by
+  intro X hX
+  cases i <;> simp only [stPub, Bool.false_eq_true] at hp
+  case store m' r =>
+    simp only [storeW, Option.some.injEq, Prod.mk.injEq] at hsw; obtain ⟨rfl, rfl⟩ := hsw
+    have hea : s₁.ea m' = s₂.ea m' := by simpa only [addrs, List.cons.injEq, and_true] using had
+    simp only [reduceExec, State.store64] at e₁ e₂
+    split at e₁ <;> [skip; cases e₁]; split at e₂ <;> [skip; cases e₂]
+    cases e₁; cases e₂
+    show (s₁.mem.writeW _ _) X = (s₂.mem.writeW _ _) X
+    rw [← hea, ← ha.reg hp]; exact writeW_same _ hX
+  case store32 m' r =>
+    simp only [storeW, Option.some.injEq, Prod.mk.injEq] at hsw; obtain ⟨rfl, rfl⟩ := hsw
+    have hea : s₁.ea m' = s₂.ea m' := by simpa only [addrs, List.cons.injEq, and_true] using had
+    simp only [reduceExec, State.store32] at e₁ e₂
+    split at e₁ <;> [skip; cases e₁]; split at e₂ <;> [skip; cases e₂]
+    cases e₁; cases e₂
+    show (s₁.mem.writeW _ _) X = (s₂.mem.writeW _ _) X
+    rw [← hea, ← ha.reg hp]; exact writeW_same _ hX
+  case store8 m' r =>
+    simp only [storeW, Option.some.injEq, Prod.mk.injEq] at hsw; obtain ⟨rfl, rfl⟩ := hsw
+    have hea : s₁.ea m' = s₂.ea m' := by simpa only [addrs, List.cons.injEq, and_true] using had
+    simp only [reduceExec, State.store8] at e₁ e₂
+    split at e₁ <;> [skip; cases e₁]; split at e₂ <;> [skip; cases e₂]
+    cases e₁; cases e₂
+    show (s₁.mem.writeW _ _) X = (s₂.mem.writeW _ _) X
+    rw [← hea, ← ha.reg hp]; exact writeW_same _ hX
+  case store16 m' r =>
+    simp only [storeW, Option.some.injEq, Prod.mk.injEq] at hsw; obtain ⟨rfl, rfl⟩ := hsw
+    have hea : s₁.ea m' = s₂.ea m' := by simpa only [addrs, List.cons.injEq, and_true] using had
+    simp only [reduceExec, State.store16] at e₁ e₂
+    split at e₁ <;> [skip; cases e₁]; split at e₂ <;> [skip; cases e₂]
+    cases e₁; cases e₂
+    show (s₁.mem.writeW _ _) X = (s₂.mem.writeW _ _) X
+    rw [← hea, ← ha.reg hp]; exact writeW_same _ hX
+  case movdquStore m' x =>
+    simp only [storeW, Option.some.injEq, Prod.mk.injEq] at hsw; obtain ⟨rfl, rfl⟩ := hsw
+    rw [Bool.and_eq_true] at hp
+    have hea : s₁.ea m' = s₂.ea m' := by simpa only [addrs, List.cons.injEq, and_true] using had
+    simp only [reduceExec, State.store128] at e₁ e₂
+    split at e₁ <;> [skip; cases e₁]; split at e₂ <;> [skip; cases e₂]
+    cases e₁; cases e₂
+    show (s₁.mem.writeW _ _) X = (s₂.mem.writeW _ _) X
+    rw [← hea, ← ha.xr x hp.1]; exact writeW_same _ hX
+
+/-- The bytes `pbAfter` says are public after an instruction are. -/
+theorem pb_step {τ : FT} {i : Instr} {s₁ s₂ s₁' s₂' : State} (inv : RInv τ s₁ s₂)
+    (had : addrs i s₁ = addrs i s₂) (e₁ : exec i s₁ = some s₁') (e₂ : exec i s₂ = some s₂') :
+    ∀ j k, (pbGet (pbAfter τ i) j).testBit k = true →
+      k < τ.t.lens.getD j 0 ∧ s₁'.mem (byteAddr s₁' j k) = s₂'.mem (byteAddr s₂' j k) := by
+  intro j k hk
+  have hpb : ∀ j k, (pbGet τ.pb j).testBit k = true →
+      k < τ.t.lens.getD j 0 ∧ s₁.mem (byteAddr s₁ j k) = s₂.mem (byteAddr s₁ j k) := fun j k h => by
+    have := inv.pb j k h; rwa [byteAddr_wr inv.wr.symm] at this
+  rw [byteAddr_wr (exec_frame e₁).1, byteAddr_wr (exec_frame e₂).1, byteAddr_wr inv.wr.symm]
+  -- A store within `[lo, hi)` of region `ri`: the bytes outside it are as they were.
+  have range : ∀ {m : MemOp} {w ri lo hi : Nat}, storeRange τ m w = some (ri, lo, hi) → 0 < w →
+      (∀ y, ¬ (y - s₁.ea m).toNat < w → s₁'.mem y = s₁.mem y) →
+      (∀ y, ¬ (y - s₂.ea m).toNat < w → s₂'.mem y = s₂.mem y) →
+      (pbGet (pbMod (bclr · lo (hi - lo)) τ.pb ri) j).testBit k = true →
+      k < τ.t.lens.getD j 0 ∧ s₁'.mem (byteAddr s₁ j k) = s₂'.mem (byteAddr s₁ j k) := by
+    intro m w ri lo hi hr hw0 hst₁ hst₂ hk
+    obtain ⟨d, -, hlo, hhi, -⟩ := storeRange_ea inv.base.wf₁ inv.one₁ hr
+    have h : (pbGet τ.pb j).testBit k = true ∧ (j ≠ ri ∨ k < lo ∨ hi ≤ k) := by
+      rw [pbGet_mod] at hk
+      split at hk
+      · rename_i hc
+        rw [testBit_bclr] at hk
+        simp only [Bool.and_eq_true, Bool.not_eq_true', Bool.and_eq_false_iff, decide_eq_false_iff_not,
+          Nat.not_le, Nat.not_lt] at hk
+        exact ⟨hc.1 ▸ hk.1, by omega_using [hk, hlo, hhi, hw0]⟩
+      · rename_i hc
+        refine ⟨hk, .inl fun hj => ?_⟩
+        rw [pbGet_ge (by omega_using [hc, hj])] at hk
+        simp only [Nat.zero_testBit, Bool.false_eq_true] at hk
+    have hlt := (hpb j k h.1).1
+    have h₂ := byte_keep inv.base.wf₂ inv.one₂ hw0 hr hst₂ hlt h.2
+    rw [byteAddr_wr inv.wr.symm] at h₂
+    rw [byte_keep inv.base.wf₁ inv.one₁ hw0 hr hst₁ hlt h.2, h₂]
+    exact ⟨hlt, (hpb j k h.1).2⟩
+  unfold pbAfter at hk
+  split at hk
+  · rename_i m w hsw
+    split at hk
+    · -- A public value: the bytes written are the same, and the others as they were.
+      rename_i hp
+      have hmem := pub_store_mem hp hsw inv.base had e₁ e₂
+      have hold : (pbGet τ.pb j).testBit k = true →
+          k < τ.t.lens.getD j 0 ∧ s₁'.mem (byteAddr s₁ j k) = s₂'.mem (byteAddr s₁ j k) := fun h =>
+        ⟨(hpb j k h).1, hmem _ (.inr (hpb j k h).2)⟩
+      split at hk
+      · rename_i r d hm
+        split at hk
+        · rename_i hfit
+          rw [pbGet_mod] at hk
+          split at hk
+          · rename_i hc
+            obtain ⟨rfl, -⟩ := hc
+            rw [testBit_bset, Bool.or_eq_true] at hk
+            rcases hk with hk | hk
+            · exact hold hk
+            · simp only [Bool.and_eq_true, decide_eq_true_eq] at hk
+              refine ⟨by omega_using [hk, hfit], hmem _ (.inl ?_)⟩
+              rw [ea_of_addrOf inv.base.wf₁ hm, show k = d + (k - d) by omega_using [hk], ← byteAddr_add,
+                Offset.add_sub_cancel_left, BitVec.toNat_ofNat]
+              exact Nat.lt_of_le_of_lt (Nat.mod_le _ _) (by omega_using [hk])
+          · exact hold hk
+        · exact hold hk
+      · exact hold hk
+    · -- Any other store: the bytes it may write are no longer public.
+      split at hk
+      · rename_i ri lo hi hr
+        exact range hr (storeW_pos hsw) (exec_store hsw e₁) (exec_store hsw e₂) hk
+      · rw [pbGet_zero] at hk
+        simp only [Nat.zero_testBit, Bool.false_eq_true] at hk
+  · split at hk
+    · split at hk
+      · rename_i ri lo hi hr
+        obtain ⟨m, hm, hr⟩ := Option.bind_eq_some_iff.mp hr
+        exact range hr (by decide) (exec_kStore hm e₁) (exec_kStore hm e₂) hk
+      · rw [pbGet_zero] at hk
+        simp only [Nat.zero_testBit, Bool.false_eq_true] at hk
+    · rename_i hwm
+      rw [exec_mem (Bool.of_not_eq_true hwm) e₁, exec_mem (Bool.of_not_eq_true hwm) e₂]
+      exact hpb j k hk
+
 /-! ## Soundness: instructions -/
 
 theorem step_sound {τ τ' : FT} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha : Agree τ s₁ s₂)
@@ -796,11 +1063,14 @@ theorem step_sound {τ τ' : FT} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha
   simp only [Bool.and_eq_true, Bool.not_eq_true'] at hok
   obtain ⟨hok, hsp⟩ := hok
   split at hs <;> [rename_i t' ht; cases hs]
-  split at hs <;> [rename_i hl; cases hs]
   cases hs
-  have hl : t'.lens = τ.t.lens := by simpa using hl
+  have hl : t'.lens = τ.t.lens := baseStep_lens ht
   have inv := ha hok
-  obtain ⟨had, hb⟩ := baseStep_sound inv.base inv.rsp inv.one₁ inv.one₂ inv.saEq ht e₁ e₂
+  obtain ⟨had, hb⟩ := baseStep_sound inv.base inv.rsp inv.one₁ inv.one₂ inv.saEq inv.wr inv.pb ht e₁ e₂
+  have hl' : (if writesMem i = true then { t' with slots := [] } else t').lens = τ.t.lens := by
+    split <;> exact hl
+  have hb' : Taint.Agree (if writesMem i = true then { t' with slots := [] } else t') s₁' s₂' := by
+    split <;> [exact hb.noSlots; exact hb]
   have r₁ := exec_rsp hsp e₁
   have r₂ := exec_rsp hsp e₂
   obtain ⟨w₁, f₁⟩ := exec_frame e₁
@@ -813,16 +1083,17 @@ theorem step_sound {τ τ' : FT} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha
     fun τ' h1 h2 => aa_shift (by rw [r₁, h1]) (by rw [h1, h2])
   have haa₂ : ∀ τ' : FT, τ'.room = τ.room → τ'.depth = τ.depth → aa s₂' τ' = aa s₂ τ :=
     fun τ' h1 h2 => aa_shift (by rw [r₂, h1]) (by rw [h1, h2])
-  refine ⟨had, fun _ => ⟨hb, by rw [r₁, r₂, inv.rsp], by rw [exec_unknowns e₁, exec_unknowns e₂, inv.unk],
-    by rw [w₁, w₂, inv.wr], fun h => by rw [w₁]; exact inv.lens (hl ▸ h), by rw [w₁]; exact inv.nfr,
+  refine ⟨had, fun _ => ⟨hb', by rw [r₁, r₂, inv.rsp], by rw [exec_unknowns e₁, exec_unknowns e₂, inv.unk],
+    by rw [w₁, w₂, inv.wr], fun h => by rw [w₁]; exact inv.lens (hl' ▸ h), by rw [w₁]; exact inv.nfr,
     by rw [r₁]; exact inv.room, by rw [r₁]; exact inv.top, ?_, ?_, inv.rasIn, inv.rasSorted, ?_, ?_,
-    fun e he => by rw [hl]; exact hfit e he,
+    fun e he => by rw [hl']; exact hfit e he,
     ⟨ub_step inv.one₁ e₁, fl_step e₁, mb_step inv.base.wf₁ inv.one₁ inv.mbFit e₁,
       sp_keep inv.one₁ inv.spFit hm₁ w₁ (haa₁ _ rfl rfl) rfl⟩,
     ⟨ub_step inv.one₂ e₂, fl_step e₂, mb_step inv.base.wf₂ inv.one₂ inv.mbFit e₂,
       sp_keep inv.one₂ inv.spFit (by rw [← aa_eq inv.rsp]; exact hm₂) w₂ (haa₂ _ rfl rfl) rfl⟩, ?_,
     by rw [r₁]; exact inv.aTop, aFree_of (haa₁ _ rfl rfl) rfl fun k hk r hr => inv.aFree k hk r (by rwa [w₁] at hr),
-    inv.saFit, sa_keep inv hm₁ hm₂ (haa₁ _ rfl rfl) (haa₂ _ rfl rfl) rfl, inv.spFit⟩⟩
+    inv.saFit, sa_keep inv hm₁ hm₂ (haa₁ _ rfl rfl) (haa₂ _ rfl rfl) rfl, inv.spFit,
+    fun j k hk => by rw [hl']; exact pb_step inv had e₁ e₂ j k hk⟩⟩
   · intro i hi; simp only [region, w₁, r₁]; exact inv.frames i hi
   · intro i h₁ h₂; simp only [region, w₁, wb, r₁]; rw [w₁] at h₂; exact inv.others i h₁ h₂
   · intro j hj i hi; simp only [region, raSlot, wa, wb, w₁, r₁]; exact inv.rasFr j hj i hi
@@ -848,7 +1119,8 @@ theorem RInv.weaken {τ σ : FT} {s₁ s₂ : State} (inv : RInv τ s₁ s₂) (
     (hsec : ∀ j, ¬ InSec σ.sec j → ¬ InSec τ.sec j)
     (hub : ∀ p ∈ σ.ub, ∃ n, (p.1, n) ∈ τ.ub ∧ n ≤ p.2) (hfl : σ.fl = none ∨ σ.fl = τ.fl)
     (hmb : ∀ e ∈ σ.mb, e ∈ τ.mb) (hfw : σ.fw = τ.fw) (han : σ.an = τ.an)
-    (hsa : ∀ e ∈ σ.sa, e ∈ τ.sa) (hsp : ∀ e ∈ σ.sp, e ∈ τ.sp) : RInv σ s₁ s₂ := by
+    (hsa : ∀ e ∈ σ.sa, e ∈ τ.sa) (hsp : ∀ e ∈ σ.sp, e ∈ τ.sp)
+    (hpb : ∀ i k, (pbGet σ.pb i).testBit k = true → (pbGet τ.pb i).testBit k = true) : RInv σ s₁ s₂ := by
   have e : ∀ s, wa s σ = wa s τ := fun s => by funext j; simp only [wa, wb, hr]
   have e' : ∀ s, raSlot s σ = raSlot s τ := fun s => by funext j; simp only [raSlot, e]
   have ea : ∀ s, aa s σ = aa s τ := fun s => by funext j; simp only [aa, e, hr, hd]
@@ -867,7 +1139,8 @@ theorem RInv.weaken {τ σ : FT} {s₁ s₂ : State} (inv : RInv τ s₁ s₂) (
     by rw [hd, han]; exact inv.aTop, fun k hk r hr' => by rw [ea]; exact inv.aFree k (han ▸ hk) r hr',
     fun e he => han ▸ inv.saFit e (hsa e he),
     fun e he k h1 h2 => by rw [ea, ea]; exact inv.saEq e (hsa e he) k h1 h2,
-    fun e he => han ▸ inv.spFit e (hsp e he)⟩
+    fun e he => han ▸ inv.spFit e (hsp e he),
+    fun i k hk => by rw [hl]; exact inv.pb i k (hpb i k hk)⟩
   · rw [hn, hd]; exact inv.frames
   · intro i h₁ h₂; simp only [wb, hr, hd]; exact inv.others i (hn ▸ h₁) h₂
   · rw [hra, hr, hd]; exact inv.rasIn
@@ -880,11 +1153,13 @@ theorem RInv.weaken {τ σ : FT} {s₁ s₂ : State} (inv : RInv τ s₁ s₂) (
     rw [e, List.getElem_of_eq hfw hi]
     exact inv.fw i (hfw ▸ hi)
 
-theorem inSec_append_left {l₁ l₂ : List (Nat × Nat)} {j : Nat} (h : ¬ InSec (l₁ ++ l₂) j) : ¬ InSec l₁ j :=
-  fun ⟨p, hp, h'⟩ => h ⟨p, List.mem_append_left _ hp, h'⟩
+theorem inSec_lor_left {a b j : Nat} (h : ¬ InSec (Nat.lor a b) j) : ¬ InSec a j := fun h' => h (by
+  show (a ||| b).testBit j = true
+  rw [Nat.testBit_or, show a.testBit j = true from h', Bool.true_or])
 
-theorem inSec_append_right {l₁ l₂ : List (Nat × Nat)} {j : Nat} (h : ¬ InSec (l₁ ++ l₂) j) : ¬ InSec l₂ j :=
-  fun ⟨p, hp, h'⟩ => h ⟨p, List.mem_append_right _ hp, h'⟩
+theorem inSec_lor_right {a b j : Nat} (h : ¬ InSec (Nat.lor a b) j) : ¬ InSec b j := fun h' => h (by
+  show (a ||| b).testBit j = true
+  rw [Nat.testBit_or, show b.testBit j = true from h', Bool.or_true])
 
 theorem mem_ubMeet {l₁ l₂ : List (Reg × Nat)} {p : Reg × Nat}
     (h : p ∈ l₁.filterMap fun p => (ubOf l₂ p.1).map fun n => (p.1, max p.2 n)) :
@@ -901,9 +1176,10 @@ theorem meet_left {τ₁ τ₂ : FT} {s₁ s₂ : State} (h : Agree τ₁ s₁ s
     obtain ⟨⟨⟨⟨⟨⟨⟨⟨h1, -⟩, -⟩, -⟩, -⟩, -⟩, hl⟩, -⟩, -⟩ := hc
     intro _
     refine (h h1).weaken rfl rfl rfl rfl (Taint.meet_left (h h1).base) (by simp [Taint.meet, hl])
-      (fun j hn => inSec_append_left hn) (fun p hp => (mem_ubMeet hp).1) ?_
+      (fun j hn => inSec_lor_left hn) (fun p hp => (mem_ubMeet hp).1) ?_
       (fun e he => (List.mem_filter.mp he).1) rfl rfl (fun e he => (List.mem_filter.mp he).1)
       (fun e he => (List.mem_filter.mp he).1)
+      (fun i k hk => by rw [pbGet_meet, Nat.testBit_and, Bool.and_eq_true] at hk; exact hk.1)
     simp only
     split <;> [exact .inr rfl; exact .inl rfl]
   · exact fun h => absurd h (by decide)
@@ -916,9 +1192,10 @@ theorem meet_right {τ₁ τ₂ : FT} {s₁ s₂ : State} (h : Agree τ₂ s₁ 
     obtain ⟨⟨⟨⟨⟨⟨⟨⟨-, h2⟩, hn⟩, hd⟩, hr⟩, hra⟩, hl⟩, hfw⟩, han⟩ := hc
     intro _
     refine (h h2).weaken hn hd hr hra (Taint.meet_right (h h2).base) (by simp [Taint.meet, hl])
-      (fun j hn => inSec_append_right hn) (fun p hp => (mem_ubMeet hp).2) ?_
+      (fun j hn => inSec_lor_right hn) (fun p hp => (mem_ubMeet hp).2) ?_
       (fun e he => by simpa using (List.mem_filter.mp he).2) hfw han
       (fun e he => by simpa using (List.mem_filter.mp he).2) (fun e he => by simpa using (List.mem_filter.mp he).2)
+      (fun i k hk => by rw [pbGet_meet, Nat.testBit_and, Bool.and_eq_true] at hk; exact hk.2)
     simp only
     split
     · rename_i hf; simp only [beq_iff_eq] at hf; exact .inr hf
@@ -929,14 +1206,14 @@ theorem le_sound {τ σ : FT} {s₁ s₂ : State} (hle : le τ σ = true) (h : A
   intro hτ
   simp only [le, hτ, Bool.not_true, Bool.false_or, Bool.and_eq_true, beq_iff_eq, List.all_eq_true,
     List.contains_iff_mem] at hle
-  obtain ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨hs, hn⟩, hd⟩, hr⟩, hra⟩, hb⟩, hsec⟩, hub⟩, hfl⟩, hmb⟩, hfw⟩, han⟩, hsa⟩, hsp⟩ := hle
+  obtain ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨hs, hn⟩, hd⟩, hr⟩, hra⟩, hb⟩, hsec⟩, hub⟩, hfl⟩, hmb⟩, hfw⟩, han⟩, hsa⟩, hsp⟩, hpb⟩ := hle
   have inv := h hs
   have hbase := Taint.le_sound (Taint.leK_eq ▸ hb) inv.base
   have hl : τ.t.lens = σ.t.lens := by
     have hb' := hb
     rw [Taint.leK_eq] at hb'; simp only [Taint.le, Bool.and_eq_true, beq_iff_eq] at hb'; exact hb'.1.1.1.1.2
-  refine inv.weaken hn hd hr hra hbase hl (fun j hnot ⟨p, hp, h'⟩ => hnot ⟨p, hsec p hp, h'⟩) ?_ ?_ hmb hfw
-    han hsa hsp
+  refine inv.weaken hn hd hr hra hbase hl (fun j hnot h' => hnot (bsub_bit hsec h')) ?_ ?_ hmb hfw
+    han hsa hsp (fun i k hk => pbLe_bit hpb hk)
   · intro p hp
     have h := hub p hp
     cases hn : ubOf σ.ub p.1 with
@@ -1037,6 +1314,20 @@ theorem mb_out {τ : FT} {s s' : State} (hw : Wf τ.t s) (o : One τ s)
   have := hfit e he
   obtain ⟨h1, h2⟩ := byte_in hw (i := e.1) (k := e.2.1 + k) (by omega_using [hk, this])
   exact hm _ ⟨_, h1, h2⟩
+
+/-- The public bytes of the regions are kept by a change of memory outside the writable regions. -/
+theorem PbEq.out {τ τ' : FT} {s₁ s₂ s₁' s₂' : State} (h : PbEq τ s₁ s₂) (hw₁ : Wf τ.t s₁) (hw₂ : Wf τ.t s₂)
+    (hwr₁ : s₁'.wr = s₁.wr) (hwr₂ : s₂'.wr = s₂.wr)
+    (hm₁ : ∀ y, (∃ r ∈ s₁.wr, r.Contains y 1) → s₁'.mem y = s₁.mem y)
+    (hm₂ : ∀ y, (∃ r ∈ s₂.wr, r.Contains y 1) → s₂'.mem y = s₂.mem y)
+    (hpb : τ'.pb = τ.pb) (hl : τ'.t.lens = τ.t.lens) : PbEq τ' s₁' s₂' := by
+  intro i k hk
+  rw [hpb] at hk
+  obtain ⟨h1, h2⟩ := h i k hk
+  obtain ⟨a1, a2⟩ := byte_in hw₁ h1
+  obtain ⟨b1, b2⟩ := byte_in hw₂ h1
+  rw [hl, byteAddr_wr hwr₁, byteAddr_wr hwr₂, hm₁ _ ⟨_, a1, a2⟩, hm₂ _ ⟨_, b1, b2⟩]
+  exact ⟨h1, h2⟩
 
 /-- The base analysis's agreement after a call or a return: the stack pointer
 moves the same way in both runs, and memory changes only to equal values. -/
@@ -1162,7 +1453,10 @@ theorem call_sound {τ τ' : FT} {s₁ s₂ s₁' s₂' : State} (ha : Agree τ 
     ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, inv.mbFit, ?_, ?_, ?_,
     fun h => by dsimp only at h ⊢; rw [c₁.sp, hr8]; have := inv.aTop h; omega_using [h8, hroom, this],
     aFree_of (haa₁ _ rfl rfl) rfl fun k hk r hr => inv.aFree k hk r (by rwa [c₁.wr] at hr),
-    inv.saFit, sa_keep inv hm₁ hm₂ (haa₁ _ rfl rfl) (haa₂ _ rfl rfl) rfl, inv.spFit⟩
+    inv.saFit, sa_keep inv hm₁ hm₂ (haa₁ _ rfl rfl) (haa₂ _ rfl rfl) rfl, inv.spFit,
+    inv.pb.out inv.base.wf₁ inv.base.wf₂ c₁.wr c₂.wr
+      (fun y ⟨r, hr, hc⟩ => hout₁ y (fun hy => hfree₁ y hy r hr hc))
+      (fun y ⟨r, hr, hc⟩ => hout₂ y (fun hy => hfree₁ y hy r (inv.wr ▸ hr) hc)) rfl rfl⟩
   · dsimp only; rw [c₁.sp]; omega_using [hroom, hr8]
   · dsimp only; rw [c₁.sp]; omega_using [h8, hroom, htop, hr8]
   · intro i hi
@@ -1185,7 +1479,7 @@ theorem call_sound {τ τ' : FT} {s₁ s₂ s₁' s₂' : State} (ha : Agree τ 
   · intro j hj i hi
     simp only [raSlot]
     -- The taint is given up to its `room`: left to unification, `wa_shift hsh₁` takes seconds to find it.
-    rw [wa_shift (τ := τ) (τ' := ⟨_, _, _, _, τ.room - 8, _, _, _, _, _, _, _, _, _⟩) hsh₁, hrg]
+    rw [wa_shift (τ := τ) (τ' := ⟨_, _, _, _, τ.room - 8, _, _, _, _, _, _, _, _, _, _⟩) hsh₁, hrg]
     dsimp only at hj
     rcases List.mem_cons.mp hj with rfl | hj
     · rw [hwa8]
@@ -1301,7 +1595,8 @@ theorem ret_sound {τ τ' : FT} {a₁ a₂ b₁ b₂ c₁ c₂ : State} (ha : Ag
     ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, inv.mbFit, ?_, ?_, ?_,
     fun h => by dsimp only at h ⊢; rw [sp₁, hr8]; have := inv.aTop h; omega_using [h8, this],
     aFree_of (haa₁ _ rfl rfl) rfl fun k hk r hr => inv.aFree k hk r (by rwa [w₁] at hr),
-    inv.saFit, sa_keep inv hm₁ hm₂ (haa₁ _ rfl rfl) (haa₂ _ rfl rfl) rfl, inv.spFit⟩
+    inv.saFit, sa_keep inv hm₁ hm₂ (haa₁ _ rfl rfl) (haa₂ _ rfl rfl) rfl, inv.spFit,
+    inv.pb.out inv.base.wf₁ inv.base.wf₂ w₁ w₂ (fun y _ => by rw [m₁]) (fun y _ => by rw [m₂]) rfl rfl⟩
   · dsimp only; rw [sp₁]; omega_using [hroom, hr8]
   · dsimp only; rw [sp₁]; omega_using [htop, hr8]
   · intro i hi
@@ -1352,35 +1647,6 @@ theorem ret_sound {τ τ' : FT} {a₁ a₂ b₁ b₂ c₁ c₂ : State} (ha : Ag
 
 /-! ## Soundness: frames -/
 
-theorem split16_mem : ∀ {f x n : Nat} {q : Nat × Nat}, q ∈ split16 f x n → x ≤ q.1 ∧ q.1 + q.2 ≤ x + n ∧ 0 < q.2
-  | 0, _, _, _, h => by simp [split16] at h
-  | _ + 1, _, 0, _, h => by simp [split16] at h
-  | f + 1, x, n + 1, q, h => by
-    simp only [split16] at h
-    split at h
-    · simp only [List.mem_singleton] at h; subst h; simp only; omega_using []
-    · rcases List.mem_cons.mp h with rfl | h
-      · simp only; omega_arith
-      · have := split16_mem h; omega_using [this]
-
-/-- The slots of a new frame are bytes of the frame outside `sec`. -/
-theorem newSlots_mem {sec : List (Nat × Nat)} {a b : Nat} {sl : Nat × Nat × Nat} (h : sl ∈ newSlots sec a b) :
-    sl.1 = 0 ∧ sl.2.1 + sl.2.2 ≤ b ∧ ∀ k, sl.2.1 ≤ k → k < sl.2.1 + sl.2.2 → ¬ InSec sec (a + k) := by
-  simp only [newSlots, List.mem_map, List.mem_flatMap] at h
-  obtain ⟨q, ⟨p, hp, hq⟩, rfl⟩ := h
-  obtain ⟨h1, h2, h3⟩ := split16_mem hq
-  have hin : ∀ j, q.1 ≤ j → j < q.1 + q.2 → (a ≤ j ∧ j < a + b) ∧ ¬ InSec sec j := by
-    intro j hj₁ hj₂
-    have := (mem_gaps (j := j) sec [(a, b)]).mp ⟨p, hp, by omega_using [h1, hj₁], by omega_using [h2, hj₂]⟩
-    obtain ⟨⟨p', hp', h'⟩, hn⟩ := this
-    simp only [List.mem_singleton] at hp'; subst hp'
-    exact ⟨h', hn⟩
-  have hq1 := (hin q.1 (Nat.le_refl _) (by omega_using [h3])).1
-  have hq2 := (hin (q.1 + q.2 - 1) (by omega_using [h3]) (by omega_using [h3])).1
-  refine ⟨rfl, by simp only; omega_using [hq1, hq2], fun k hk₁ hk₂ => ?_⟩
-  simp only at hk₁ hk₂
-  exact (hin (a + k) (by omega_using [hk₁]) (by omega_using [hq1, hk₂])).2
-
 /-- What the allocation of a frame of `b` bytes does to the state. -/
 structure AllocFx (b : Nat) (s s' : State) : Prop where
   sp : s'.gpr .rsp = s.gpr .rsp - BitVec.ofNat 64 b
@@ -1418,7 +1684,8 @@ theorem wr_facts {τ : FT} {s₁ s₂ : State} (inv : RInv τ s₁ s₂) :
 theorem push_sound {τ τ' : FT} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha : Agree τ s₁ s₂)
     (hs : pushF τ i = some τ') (e₁ : isa.push i s₁ = some s₁') (e₂ : isa.push i s₂ = some s₂') :
     isa.addrs i s₁ = isa.addrs i s₂ ∧ Agree τ' s₁' s₂' := by
-  cases i <;> simp only [pushF, reduceCtorEq] at hs
+  cases i <;> first | (cases hs; done) | skip
+  simp only [pushF] at hs
   rename_i b
   split at hs <;> [rename_i hc; cases hs]
   simp only [Bool.and_eq_true, decide_eq_true_eq, beq_iff_eq] at hc
@@ -1450,9 +1717,9 @@ theorem push_sound {τ τ' : FT} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha
     intro r hr a ha hc
     exact hfree a (by simp only [Region.Contains] at ha; omega_using [ha]) r hr hc
   have hwr₂ : s₂'.wr = s₁'.wr := by rw [c₁.wr, c₂.wr, inv.rsp, inv.wr]
-  have hbase : Taint.Agree (shiftIn τ.t b (newSlots τ.sec (τ.room - b) b)) s₁' s₂' := by
+  have hbase : Taint.Agree (shiftIn τ.t b) s₁' s₂' := by
     have wf : ∀ {s s' : State}, AllocFx b s s' → s.gpr .rsp = s₁.gpr .rsp → s.wr = s₁.wr → Wf τ.t s →
-        Wf (shiftIn τ.t b (newSlots τ.sec (τ.room - b) b)) s' := by
+        Wf (shiftIn τ.t b) s' := by
       intro s s' c hsp hwr hw
       refine ⟨fun _ => ?_, fun p hp => ?_⟩
       · rw [c.wr, hsp, hwr]
@@ -1477,25 +1744,15 @@ theorem push_sound {τ τ' : FT} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha
         c₁.flags.2.2.2, c₂.flags.2.2.2]
       exact ⟨a, b', c, d⟩
     · intro sl hsl
-      simp only [shiftIn, List.mem_append, List.mem_map] at hsl
-      rcases hsl with hsl | ⟨q, hq, rfl⟩
-      · obtain ⟨h0, hle, -⟩ := newSlots_mem hsl
-        simp only [h0]; exact hle
-      · exact inv.base.ok q hq
+      simp only [shiftIn, List.mem_map] at hsl
+      obtain ⟨q, hq, rfl⟩ := hsl
+      exact inv.base.ok q hq
     · intro sl hsl k hk₁ hk₂
-      simp only [shiftIn, List.mem_append, List.mem_map] at hsl
-      rcases hsl with hsl | ⟨q, hq, rfl⟩
-      · obtain ⟨h0, hle, hn⟩ := newSlots_mem hsl
-        rw [h0]
-        have hb₁ : byteAddr s₁' 0 k = wa s₁ τ (τ.room - b + k) := by
-          rw [hwab]; simp only [byteAddr, hr0]
-        have hb₂ : byteAddr s₂' 0 k = wa s₂ τ (τ.room - b + k) := by
-          rw [← wa_eq inv.rsp, ← hb₁]; simp only [byteAddr, region, hwr₂]
-        rw [hb₁, hb₂, c₁.mem, c₂.mem]
-        exact inv.dead _ (by omega_using [hbr, hk₂, hle]) (hn k hk₁ hk₂) (below_free inv (by omega_using [hbr, hk₂, hle]))
-      · simp only at hk₁ hk₂ ⊢
-        rw [hba, hba₂, c₁.mem, c₂.mem]
-        exact inv.base.slots q hq k hk₁ hk₂
+      simp only [shiftIn, List.mem_map] at hsl
+      obtain ⟨q, hq, rfl⟩ := hsl
+      simp only at hk₁ hk₂ ⊢
+      rw [hba, hba₂, c₁.mem, c₂.mem]
+      exact inv.base.slots q hq k hk₁ hk₂
   -- The argument area, above the new frame.
   have haa₁ : ∀ τ' : FT, τ'.room = τ.room - b → τ'.depth = τ.depth + b → aa s₁' τ' = aa s₁ τ :=
     fun τ' h1 h2 => aa_shift (by rw [h1]; exact hsh₁) (by rw [h1, h2]; omega_using [hbr])
@@ -1513,7 +1770,28 @@ theorem push_sound {τ τ' : FT} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha
     fun e he => by
       simp only [List.mem_map] at he
       obtain ⟨e, he, rfl⟩ := he
-      exact inv.spFit e he⟩
+      exact inv.spFit e he, ?_⟩
+  rotate_right
+  · -- The public bytes: those of the new frame that `sec` does not list, and the others'.
+    intro i k hk
+    dsimp only at hk
+    cases i with
+    | zero =>
+      rw [pbGet_cons_zero, testBit_frameBits, Bool.and_eq_true, decide_eq_true_eq, Bool.not_eq_true'] at hk
+      refine ⟨by simp only [shiftIn, List.getD_cons_zero]; exact hk.1, ?_⟩
+      have hb₁ : byteAddr s₁' 0 k = wa s₁ τ (τ.room - b + k) := by
+        rw [hwab]; simp only [byteAddr, hr0]
+      have hb₂ : byteAddr s₂' 0 k = wa s₂ τ (τ.room - b + k) := by
+        rw [← wa_eq inv.rsp, ← hb₁]; simp only [byteAddr, region, hwr₂]
+      rw [hb₁, hb₂, c₁.mem, c₂.mem]
+      exact inv.dead _ (by omega_using [hbr, hk.1]) (fun h => by rw [show _ = true from h] at hk; cases hk.2)
+        (below_free inv (by omega_using [hbr, hk.1]))
+    | succ i =>
+      rw [pbGet_cons_succ] at hk
+      obtain ⟨h1, h2⟩ := inv.pb i k hk
+      refine ⟨by simp only [shiftIn, List.getD_cons_succ]; exact h1, ?_⟩
+      rw [hba, hba₂, c₁.mem, c₂.mem]
+      exact h2
   · dsimp only; rw [c₁.sp]; omega_using [hroom, hrb]
   · dsimp only; rw [c₁.sp]; omega_using [hbr, hroom, htop, hrb]
   · intro i hi
@@ -1596,15 +1874,16 @@ theorem push_sound {τ τ' : FT} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha
       omega_using [this]
     · exact inv.aFree k hk r hr
 
-/-- What the free of a frame of `b` bytes does to the state. -/
+/-- What the free of a frame of `b` bytes does to the state: the frame's
+bytes are `lose`'s, as the unknowns say. -/
 structure FreeFx (b : Nat) (s s' : State) : Prop where
   head : s.wr = ⟨s.gpr .rsp, b⟩ :: s'.wr
   sp : s'.gpr .rsp = s.gpr .rsp + BitVec.ofNat 64 b
   gpr : ∀ r, r ≠ .rsp → s'.gpr r = s.gpr r
   flags : s'.cf = s.cf ∧ s'.zf = s.zf ∧ s'.sf = s.sf ∧ s'.of = s.of
   xmm : s'.xmm = s.xmm
-  unk : s'.unknowns = s.unknowns
-  mem : s'.mem = s.mem
+  unk : s'.unknowns = fun n => s.unknowns (n + b / 4)
+  mem : s'.mem = lose s.mem (s.gpr .rsp) b s.unknowns
 
 theorem freeFx {b : Nat} {a s s' : State} (h : isa.pop (.free b) a s = some s') : FreeFx b s s' := by
   simp only [isa, pop] at h
@@ -1624,7 +1903,8 @@ theorem region_tail {s s' : State} {r : Region} (h : s.wr = r :: s'.wr) (i : Nat
 theorem pop_sound {τ τ' : FT} {j : Instr} {a₁ a₂ b₁ b₂ c₁ c₂ : State} (ha : Agree τ b₁ b₂)
     (hs : popF τ j = some τ') (e₁ : isa.pop j a₁ b₁ = some c₁) (e₂ : isa.pop j a₂ b₂ = some c₂) :
     isa.addrs j b₁ = isa.addrs j b₂ ∧ Agree τ' c₁ c₂ := by
-  cases j <;> simp only [popF, reduceCtorEq] at hs
+  cases j <;> first | (cases hs; done) | skip
+  simp only [popF] at hs
   rename_i b
   split at hs <;> [rename_i hc; cases hs]
   simp only [Bool.and_eq_true, decide_eq_true_eq, beq_iff_eq, List.all_eq_true] at hc
@@ -1669,6 +1949,67 @@ theorem pop_sound {τ τ' : FT} {j : Instr} {a₁ a₂ b₁ b₂ c₁ c₂ : Sta
       rw [region_cons_succ hw1, List.getD_eq_getElem?_getD, List.getElem?_eq_none (by omega_using [hi]),
         Option.getD_none] at hx
       simp only [Region.Contains] at hx; omega
+  -- Outside the frame, each run's memory is as it was; in it, the two runs'
+  -- bytes are lost alike (the same address and unknowns), so bytes that
+  -- agreed still agree.
+  have hout₁ : ∀ y, ¬ (⟨b₁.gpr .rsp, b⟩ : Region).Contains y 1 → c₁.mem y = b₁.mem y := by
+    intro y hy
+    rw [c₁'.mem]
+    exact lose_out (by simp only [Region.Contains] at hy; omega)
+  have hout₂ : ∀ y, ¬ (⟨b₁.gpr .rsp, b⟩ : Region).Contains y 1 → c₂.mem y = b₂.mem y := by
+    intro y hy
+    rw [c₂'.mem, ← inv.rsp]
+    exact lose_out (by simp only [Region.Contains] at hy; omega)
+  have hrelA : ∀ y y', y = y' → b₁.mem y = b₂.mem y' → c₁.mem y = c₂.mem y' := by
+    intro y y' e h
+    subst e
+    rw [c₁'.mem, c₂'.mem, ← inv.rsp, ← inv.unk]
+    exact lose_congr _ _ _ h
+  have hfr : (⟨b₁.gpr .rsp, b⟩ : Region) ∈ b₁.wr := by rw [hw1]; exact List.mem_cons_self ..
+  have hmA₁ : ∀ k < τ.an, c₁.mem (aa b₁ τ k) = b₁.mem (aa b₁ τ k) :=
+    fun k hk => hout₁ _ (inv.aFree k hk _ hfr)
+  have hmA₂ : ∀ k < τ.an, c₂.mem (aa b₁ τ k) = b₂.mem (aa b₁ τ k) :=
+    fun k hk => hout₂ _ (inv.aFree k hk _ hfr)
+  have hsp₁ : ∀ e ∈ τ.sp, c₁.mem.readW (aa b₁ τ e.1) 64 = b₁.mem.readW (aa b₁ τ e.1) 64 := by
+    intro e he
+    apply Mem.readW_congr
+    intro j hj
+    simp only [Nat.reduceDiv] at hj
+    rw [aa_add]
+    exact hmA₁ _ (by have := inv.spFit e he; omega_using [hj, this])
+  have hsp₂ : ∀ e ∈ τ.sp, c₂.mem.readW (aa b₂ τ e.1) 64 = b₂.mem.readW (aa b₂ τ e.1) 64 := by
+    intro e he
+    rw [← aa_eq inv.rsp]
+    apply Mem.readW_congr
+    intro j hj
+    simp only [Nat.reduceDiv] at hj
+    rw [aa_add]
+    exact hmA₂ _ (by have := inv.spFit e he; omega_using [hj, this])
+  have hmb₁ : ∀ e ∈ τ.mb, e.1 ≠ 0 →
+      c₁.mem.readW (byteAddr b₁ e.1 e.2.1) 64 = b₁.mem.readW (byteAddr b₁ e.1 e.2.1) 64 := by
+    intro e he h0
+    apply Mem.readW_congr
+    intro j hj
+    simp only [Nat.reduceDiv] at hj
+    rw [byteAddr_add]
+    have := inv.mbFit e he
+    obtain ⟨-, h2⟩ := byte_in inv.base.wf₁ (i := e.1) (k := e.2.1 + j) (by omega_using [hj, this])
+    obtain ⟨i, hi⟩ : ∃ i, e.1 = i + 1 := ⟨e.1 - 1, by omega_using [h0]⟩
+    rw [hi] at h2 ⊢
+    exact hout₁ _ fun hc => hdis i _ h2 hc
+  have hmb₂ : ∀ e ∈ τ.mb, e.1 ≠ 0 →
+      c₂.mem.readW (byteAddr b₂ e.1 e.2.1) 64 = b₂.mem.readW (byteAddr b₂ e.1 e.2.1) 64 := by
+    intro e he h0
+    rw [← byteAddr_wr inv.wr]
+    apply Mem.readW_congr
+    intro j hj
+    simp only [Nat.reduceDiv] at hj
+    rw [byteAddr_add]
+    have := inv.mbFit e he
+    obtain ⟨-, h2⟩ := byte_in inv.base.wf₁ (i := e.1) (k := e.2.1 + j) (by omega_using [hj, this])
+    obtain ⟨i, hi⟩ : ∃ i, e.1 = i + 1 := ⟨e.1 - 1, by omega_using [h0]⟩
+    rw [hi] at h2 ⊢
+    exact hout₂ _ fun hc => hdis i _ h2 hc
   have hbase : Taint.Agree (shiftOut τ.t) c₁ c₂ := by
     have wf : ∀ {s s' : State}, FreeFx b s s' → Wf τ.t s → Wf (shiftOut τ.t) s' := by
       intro s s' c hw
@@ -1712,8 +2053,8 @@ theorem pop_sound {τ τ' : FT} {j : Instr} {a₁ a₂ b₁ b₂ c₁ c₂ : Sta
       split at hq' <;> [cases hq'; rename_i hq0]
       cases hq'
       simp only at hk₁ hk₂ ⊢
-      rw [hba, hba₂, c₁'.mem, c₂'.mem, Nat.sub_add_cancel (by omega_using [hq0])]
-      exact inv.base.slots q hq k hk₁ hk₂
+      rw [hba, hba₂, Nat.sub_add_cancel (by omega_using [hq0])]
+      exact hrelA _ _ (byteAddr_wr inv.wr _ _) (inv.base.slots q hq k hk₁ hk₂)
   -- The argument area, above the frame freed.
   have haa₁ : ∀ τ' : FT, τ'.room = τ.room + b → τ'.depth = τ.depth - b → aa c₁ τ' = aa b₁ τ :=
     fun τ' h1 h2 => aa_shift (by rw [h1]; exact hsh₁) (by rw [h1, h2]; omega_using [hbd])
@@ -1733,10 +2074,21 @@ theorem pop_sound {τ τ' : FT} {j : Instr} {a₁ a₂ b₁ b₂ c₁ c₂ : Sta
     fun h => by dsimp only at h ⊢; rw [c₁'.sp, hrb]; have := inv.aTop h; omega_using [hbd, this],
     aFree_of (haa₁ _ rfl rfl) rfl fun k hk r hr => inv.aFree k hk r (by rw [hw1]; exact List.mem_cons_of_mem _ hr),
     inv.saFit,
-    sa_keep inv (fun _ _ => by rw [c₁'.mem]) (fun _ _ => by rw [c₂'.mem]) (haa₁ _ rfl rfl) (haa₂ _ rfl rfl) rfl,
+    sa_keep inv hmA₁ hmA₂ (haa₁ _ rfl rfl) (haa₂ _ rfl rfl) rfl,
     fun e he => by
       obtain ⟨q, hq, -, rfl⟩ := hsp' he
-      exact inv.spFit q hq⟩
+      exact inv.spFit q hq, ?_⟩
+  rotate_right
+  · intro i k hk
+    dsimp only at hk
+    rw [pbGet_tail] at hk
+    obtain ⟨h1, h2⟩ := inv.pb (i + 1) k hk
+    refine ⟨?_, ?_⟩
+    · simp only [shiftOut, hlt, List.tail_cons]
+      rw [hlt, List.getD_cons_succ] at h1
+      exact h1
+    · rw [hba, hba₂]
+      exact hrelA _ _ (byteAddr_wr inv.wr _ _) h2
   · intro h
     have hF' := hF
     rw [hw1, hlt] at hF'
@@ -1770,7 +2122,8 @@ theorem pop_sound {τ τ' : FT} {j : Instr} {a₁ a₂ b₁ b₂ c₁ c₂ : Sta
     dsimp only at hj hn
     simp only [wa, wb] at hw ⊢
     rw [hsh₁] at hw
-    rw [hsh₁, hsh₂, c₁'.mem, c₂'.mem]
+    rw [hsh₁, hsh₂]
+    refine hrelA (wa b₁ τ j) (wa b₂ τ j) (wa_eq inv.rsp j) ?_
     show b₁.mem (wa b₁ τ j) = b₂.mem (wa b₂ τ j)
     change ∀ r ∈ c₁.wr, ¬ r.Contains (wa b₁ τ j) 1 at hw
     by_cases hin : (⟨b₁.gpr .rsp, b⟩ : Region).Contains (wa b₁ τ j) 1
@@ -1781,23 +2134,21 @@ theorem pop_sound {τ τ' : FT} {j : Instr} {a₁ a₂ b₁ b₂ c₁ c₂ : Sta
         have h := (Offset.lt_iff (wa b₁ τ j) (wb b₁ τ) (d := τ.room) (n := b) (by omega_using [hroom, hrb])).mp (by omega_using [hin])
         simp only [wa, Mem.sub_ofNat_toNat _ (show j < 2 ^ 64 by omega_using [hbd, hroom, htop, hj])] at h
         exact h
-      have hfs : InSec (frameSlots τ.t τ.room) j := Classical.byContradiction fun hns => hn (by
-        obtain ⟨p, hp, h⟩ := (mem_gaps (j := j) (frameSlots τ.t τ.room) [(τ.room, b)]).mpr
-          ⟨⟨(τ.room, b), List.mem_singleton_self _, hj'⟩, hns⟩
-        exact ⟨p, List.mem_append_right _ hp, h⟩)
-      obtain ⟨p, hp, hp1, hp2⟩ := hfs
-      simp only [frameSlots, List.mem_filterMap] at hp
-      obtain ⟨sl, hsl, hsl'⟩ := hp
-      split at hsl' <;> [rename_i h0; cases hsl']
-      cases hsl'
-      simp only at hp1 hp2
-      have hag := inv.base.slots sl hsl (j - τ.room) (by omega_using [hp1]) (by omega_using [hj', hp2])
-      have e₁ : byteAddr b₁ sl.1 (j - τ.room) = wa b₁ τ j := by
-        rw [h0, byteAddr, hr0]
+      have hbit : (pbGet τ.pb 0).testBit (j - τ.room) = true := by
+        have hn' : (secFree τ.sec (pbGet τ.pb 0) τ.room b).testBit j = false := Bool.eq_false_iff.mpr hn
+        rw [testBit_secFree, Bool.or_eq_false_iff] at hn'
+        have h2 := hn'.2
+        simp only [show decide (τ.room ≤ j) = true from decide_eq_true hj'.1,
+          show decide (j - τ.room < b) = true from decide_eq_true (by omega_using [hj']), Bool.true_and,
+          Bool.not_eq_false'] at h2
+        exact h2
+      obtain ⟨-, hag⟩ := inv.pb 0 (j - τ.room) hbit
+      have e₁ : byteAddr b₁ 0 (j - τ.room) = wa b₁ τ j := by
+        rw [byteAddr, hr0]
         dsimp only
         rw [hrw, wa, BitVec.add_assoc, ← BitVec.ofNat_add, Nat.add_sub_cancel' hj'.1]
-      have e₂ : byteAddr b₂ sl.1 (j - τ.room) = wa b₂ τ j := by
-        rw [← inv.base.byteAddr_eq hsl (by omega_using [hj', hp2]), e₁, wa_eq inv.rsp]
+      have e₂ : byteAddr b₂ 0 (j - τ.room) = wa b₂ τ j := by
+        rw [byteAddr_wr inv.wr.symm, e₁, wa_eq inv.rsp]
       rw [← e₁, ← e₂]
       exact hag
     · have hw' : ∀ r ∈ b₁.wr, ¬ r.Contains (wa b₁ τ j) 1 := by
@@ -1806,7 +2157,7 @@ theorem pop_sound {τ τ' : FT} {j : Instr} {a₁ a₂ b₁ b₂ c₁ c₂ : Sta
         rcases List.mem_cons.mp hr with rfl | hr
         · exact hin
         · exact hw r hr
-      exact inv.dead j (by omega_using [hbd, hj]) (inSec_append_left hn) hw'
+      exact inv.dead j (by omega_using [hbd, hj]) (inSec_lor_left hn) hw'
   · intro e he
     simp only [List.mem_filterMap] at he
     obtain ⟨q, hq, hq'⟩ := he
@@ -1822,7 +2173,7 @@ theorem pop_sound {τ τ' : FT} {j : Instr} {a₁ a₂ b₁ b₂ c₁ c₂ : Sta
   · refine ⟨fun p hp => ?_, fun _ _ h => (by cases h), fun e he => ?_, sp_of (haa₁ _ rfl rfl) fun e he => ?_⟩
     rotate_left 2
     · obtain ⟨q, hq, hq0, rfl⟩ := hsp' he
-      rw [hrt, c₁'.mem, Nat.sub_add_cancel (by omega_using [hq0])]
+      rw [hrt, hsp₁ q hq, Nat.sub_add_cancel (by omega_using [hq0])]
       exact inv.one₁.sp q hq
     · simp only [List.mem_filter, bne_iff_ne, ne_eq] at hp
       rw [c₁'.gpr _ hp.2]; exact inv.one₁.ub p hp.1
@@ -1831,12 +2182,13 @@ theorem pop_sound {τ τ' : FT} {j : Instr} {a₁ a₂ b₁ b₂ c₁ c₂ : Sta
       split at hq' <;> [cases hq'; rename_i hq0]
       cases hq'
       simp only
-      rw [hba, hrt, c₁'.mem, Nat.sub_add_cancel (by omega_using [hq0]), Nat.sub_add_cancel (by omega_using [hq0])]
+      rw [hba, hrt, Nat.sub_add_cancel (by omega_using [hq0]), hmb₁ q hq (fun h => hq0 (Or.inl h)),
+        Nat.sub_add_cancel (by omega_using [hq0])]
       exact inv.one₁.mb q hq
   · refine ⟨fun p hp => ?_, fun _ _ h => (by cases h), fun e he => ?_, sp_of (haa₂ _ rfl rfl) fun e he => ?_⟩
     rotate_left 2
     · obtain ⟨q, hq, hq0, rfl⟩ := hsp' he
-      rw [hrt₂, c₂'.mem, Nat.sub_add_cancel (by omega_using [hq0])]
+      rw [hrt₂, hsp₂ q hq, Nat.sub_add_cancel (by omega_using [hq0])]
       exact inv.one₂.sp q hq
     · simp only [List.mem_filter, bne_iff_ne, ne_eq] at hp
       rw [c₂'.gpr _ hp.2]; exact inv.one₂.ub p hp.1
@@ -1845,7 +2197,8 @@ theorem pop_sound {τ τ' : FT} {j : Instr} {a₁ a₂ b₁ b₂ c₁ c₂ : Sta
       split at hq' <;> [cases hq'; rename_i hq0]
       cases hq'
       simp only
-      rw [hba₂, hrt₂, c₂'.mem, Nat.sub_add_cancel (by omega_using [hq0]), Nat.sub_add_cancel (by omega_using [hq0])]
+      rw [hba₂, hrt₂, Nat.sub_add_cancel (by omega_using [hq0]), hmb₂ q hq (fun h => hq0 (Or.inl h)),
+        Nat.sub_add_cancel (by omega_using [hq0])]
       exact inv.one₂.mb q hq
   · intro i hi
     simp only [hrt, wa, wb]
@@ -1866,31 +2219,36 @@ theorem natsEq_eq (a b : List Nat) : natsEq a b = (a == b) := by
 
 /-- What `step` adds to the base step is nothing for an instruction `isPlain` says is. -/
 theorem plain_facts {i : Instr} (h : isPlain i = true) (τ : FT) :
-    special τ i = none ∧ (∀ t, argPost τ i (post τ i t) = t) ∧ ubNew τ i = none ∧ flOf i = none ∧
-    mbAfter τ i = τ.mb ∧ ∀ r, Taint.clobbers i r = (Taint.dstOf i == some r) := by
+    special τ i = none ∧ (∀ t, pbPost τ i (argPost τ i (post τ i t)) = t) ∧ ubNew τ i = none ∧ flOf i = none ∧
+    mbAfter τ i = τ.mb ∧ (∀ r, Taint.clobbers i r = (Taint.dstOf i == some r)) ∧ writesMem i = false := by
   cases i
   case alu op d src | alu32 op d src =>
-    cases op <;> cases src <;>
-      simp_all [isPlain, flOf, special, post, argPost, ubNew, mbAfter, storeW, writesMem, Taint.clobbers]
-  case mov d src =>
-    cases src <;> simp_all [isPlain, flOf, special, post, argPost, ubNew, mbAfter, storeW, writesMem, Taint.clobbers]
-  case mov32 d src =>
-    cases src
-    case mem m =>
-      have ho : argOff τ m = none := by
-        unfold argOff
-        split
-        · next hc => simp [isPlain, regEq_eq, hc.1, hc.2.1] at h
-        · rfl
-      simp_all [isPlain, flOf, special, post, argPost, ubNew, mbAfter, storeW, writesMem, Taint.clobbers]
-    all_goals simp_all [isPlain, flOf, special, post, argPost, ubNew, mbAfter, storeW, writesMem, Taint.clobbers]
+    cases op <;> cases src <;> first
+      | cases h; done
+      | exact ⟨rfl, fun _ => rfl, rfl, rfl, rfl, fun _ => rfl, rfl⟩
+      | exact ⟨rfl, fun _ => ite_eq_right (mt eq_of_beq (bne_iff_ne.mp h)), rfl, rfl, rfl, fun _ => rfl, rfl⟩
+  case mov d src | mov32 d src =>
+    cases src <;> first
+      | cases h; done
+      | exact ⟨rfl, fun _ => rfl, rfl, rfl, rfl, fun _ => rfl, rfl⟩
   case xop op =>
     cases op
     case bin op x x' =>
-      cases op <;> simp_all [isPlain, flOf, special, post, argPost, ubNew, mbAfter, storeW, writesMem, Taint.clobbers]
-    all_goals simp_all [isPlain, flOf, special, post, argPost, ubNew, mbAfter, storeW, writesMem, Taint.clobbers]
-  case vmovdquStore l _ _ => cases l <;> simp_all [isPlain]
-  all_goals simp_all [isPlain, flOf, special, post, argPost, ubNew, mbAfter, storeW, writesMem, Taint.clobbers]
+      cases op <;> first
+        | exact ⟨rfl, fun _ => rfl, rfl, rfl, rfl, fun _ => rfl, rfl⟩
+        | cases h; done
+    all_goals exact ⟨rfl, fun _ => rfl, rfl, rfl, rfl, fun _ => rfl, rfl⟩
+  case vmovdquStore l _ _ => cases l <;> cases h
+  all_goals first
+    | exact ⟨rfl, fun _ => rfl, rfl, rfl, rfl, fun _ => rfl, rfl⟩
+    | cases h; done
+
+/-- An instruction that writes no memory leaves the public bytes of the regions. -/
+theorem pbAfter_of_not_writes {i : Instr} (h : writesMem i = false) (τ : FT) : pbAfter τ i = τ.pb := by
+  unfold pbAfter
+  cases hs : storeW i with
+  | none => simp only [h, Bool.false_eq_true, ↓reduceIte]
+  | some q => simp only [writesMem, hs, Option.isSome_some, Bool.true_or, reduceCtorEq] at h
 
 theorem ubDrop_eq {i : Instr} (hc : ∀ r, Taint.clobbers i r = (Taint.dstOf i == some r)) (ub : List (Reg × Nat)) :
     ubDrop (Taint.dstOf i) ub = ubKill ub i := by
@@ -1906,78 +2264,292 @@ theorem ubDrop_eq {i : Instr} (hc : ∀ r, Taint.clobbers i r = (Taint.dstOf i =
       simp only [Bool.not_eq_true', beq_eq_false_iff_ne, ne_eq, Option.some.injEq]
       exact ⟨fun h h' => h h'.symm, fun h h' => h h'.symm⟩
 
+theorem forceList_eq {α β : Type} (l : List β) (k : List β → α) : forceList l k = k l := by
+  cases l <;> rfl
+
+theorem forceOpt_eq {α β : Type} (o : Option β) (k : Option β → α) : forceOpt o k = k o := by
+  cases o <;> rfl
+
+theorem forceTAll_eq {α : Type} (t : Taint.T) (k : Taint.T → α) : forceTAll t k = k t := by
+  obtain ⟨rg, f, l, b, sl, lo, x⟩ := t
+  simp only [forceTAll, forceList_eq, RegSet.force_eq, Taint.forceT_eq]
+
+/-- `step` changes only the base taint, the bounds, the flags, the pointers in
+slots and the public bytes of the regions. -/
+theorem step_same {τ τ' : FT} {i : Instr} (h : step τ i = some τ') :
+    τ' = ⟨true, τ'.t, τ.nfr, τ.depth, τ.room, τ.sec, τ.ras, τ'.ub, τ'.fl, τ'.mb, τ.fw, τ.an, τ.sa, τ.sp, τ'.pb⟩ := by
+  obtain ⟨ok, t, nfr, depth, room, sec, ras, ub, fl, mb, fw, an, sa, sp, pb⟩ := τ
+  unfold step at h
+  cases ok
+  · cases h
+  · split at h <;> [skip; cases h]
+    split at h <;> [skip; cases h]
+    cases h
+    rfl
+
+theorem keepNats_eq (a b : List Nat) : keepNats a b = b := by
+  unfold keepNats
+  cases h : natsEq b a
+  · rfl
+  · rw [natsEq_eq] at h
+    exact (eq_of_beq h).symm
+
+theorem slowFn_run (i : Instr) (τ : FT) : (slowFn i).run τ = step τ i := by
+  obtain ⟨ok, t, nfr, depth, room, sec, ras, ub, fl, mb, fw, an, sa, sp, pb⟩ := τ
+  simp only [slowFn]
+  cases h : step ⟨ok, t, nfr, depth, room, sec, ras, ub, fl, mb, fw, an, sa, sp, pb⟩ i with
+  | none => rfl
+  | some τ' =>
+    simp only [forceTAll_eq, forceList_eq, forceOpt_eq, keepNats_eq]
+    exact congrArg some (step_same h).symm
+
+theorem slowFn_eq (i : Instr) : slowFn i = ⟨(step · i)⟩ :=
+  congrArg RStep.mk (funext (slowFn_run i))
+
+theorem runF_eq (b : Taint.Step) (t : Taint.T) : runF b t = b.run t := by
+  unfold runF
+  cases b.run t with
+  | none => rfl
+  | some t' => exact Taint.forceT_eq t' some
+
 theorem fastFn_eq {i : Instr} (h : isPlain i = true) (hsp : isa.writesSp i = false) (τ : FT) :
     (fastFn (Taint.stepKDFn i) (Taint.dstOf i)).run τ = step τ i := by
-  obtain ⟨hs, hp, hu, hf, hm, hc⟩ := plain_facts h τ
+  obtain ⟨hs, hp, hu, hf, hm, hc, hwm⟩ := plain_facts h τ
   have hb : baseStep τ i = (Taint.stepKDFn i).run τ.t := by
-    rw [baseStep, hs, show (fun t => argPost τ i (post τ i t)) = id from funext hp, Option.map_id]; rfl
+    rw [baseStep, hs, show (fun t => pbPost τ i (argPost τ i (post τ i t))) = id from funext hp, Option.map_id]
+    exact taint_step _ _
   unfold step
-  rw [hb, hu, hf, hm, hsp]
-  obtain ⟨ok, t, nfr, depth, room, sec, ras, ub, fl, mb, fw, an, sa, sp⟩ := τ
+  rw [hb, hu, hf, hm, hsp, pbAfter_of_not_writes hwm, hwm]
+  obtain ⟨ok, t, nfr, depth, room, sec, ras, ub, fl, mb, fw, an, sa, sp, pb⟩ := τ
   cases ok
   · rfl
-  · simp only [fastFn, Bool.cond_true, Bool.not_false, Bool.and_self, ↓reduceIte, natsEq_eq]
+  · simp only [fastFn, runF_eq, Bool.cond_true, Bool.not_false, Bool.and_self, ↓reduceIte, Bool.false_eq_true]
     cases (Taint.stepKDFn i).run t with
     | none => rfl
-    | some t' => simp only [Bool.cond_eq_ite, Option.toList, List.nil_append, ubDrop_eq hc]
+    | some t' => simp only [Option.toList, List.nil_append, ubDrop_eq hc, forceList_eq]
 
-theorem fastStore_eq {i : Instr} {m : MemOp} {w : Nat} {src : Option Reg}
-    (hsp : isa.writesSp i = false) (hs : ∀ τ, special τ i = none) (hp : ∀ τ t, argPost τ i (post τ i t) = t)
+theorem pbMod_self (f : Nat → Nat) : ∀ (l : List Nat) (i : Nat), f (pbGet l i) = pbGet l i → pbMod f l i = l
+  | [], _, _ => rfl
+  | _ :: l, 0, h => congrArg (· :: l) h
+  | a :: l, i + 1, h => congrArg (a :: ·) (pbMod_self f l i h)
+
+theorem pbModKeep_eq (f : Nat → Nat) (l : List Nat) (i : Nat) : pbModKeep f l i = pbMod f l i := by
+  unfold pbModKeep
+  cases h : Nat.beq (f (pbGet l i)) (pbGet l i)
+  · rfl
+  · exact (pbMod_self f l i (Nat.eq_of_beq_eq_true h)).symm
+
+/-- `pbAfter` of a store of a register without an index register. -/
+theorem pbStore_eq {i : Instr} {m : MemOp} {w : Nat} {p : Taint.T → Bool} (hsw : storeW i = some (m, w))
+    (hx : m.index = none) (hst : ∀ τ, stPub τ i = p τ.t) (τ : FT) :
+    pbAfter τ i = pbStore τ.t τ.pb m w (p τ.t) := by
+  unfold pbAfter pbStore
+  simp only [hsw, hst, addrOfK_eq, storeRange, idxRange, hx, pbModKeep_eq, keepNats_eq]
+  cases p τ.t
+  · cases addrOf τ.t m with
+    | none => rfl
+    | some q =>
+      obtain ⟨ri, d⟩ := q
+      by_cases hfit : d + w ≤ τ.t.lens.getD ri 0
+      · simp only [Bool.false_eq_true, ↓reduceIte, hfit, Nat.add_sub_cancel_left, KList.ble_eq, decide_true,
+          Bool.cond_true, Bool.cond_false]
+      · simp only [Bool.false_eq_true, ↓reduceIte, hfit, KList.ble_eq, decide_false, Bool.cond_false]
+  · cases addrOf τ.t m with
+    | none => rfl
+    | some q =>
+      obtain ⟨ri, d⟩ := q
+      by_cases hfit : d + w ≤ τ.t.lens.getD ri 0
+      · simp only [↓reduceIte, hfit, KList.ble_eq, decide_true, Bool.cond_true]
+      · simp only [↓reduceIte, hfit, KList.ble_eq, decide_false, Bool.cond_false, Bool.cond_true]
+
+/-- `mbAfter` of a store of `w` bytes at `m`, from the register `src` if a
+64-bit store, as `mbAfter` computes it. -/
+def mbStoreM (τ : FT) (m : MemOp) (w : Nat) (src : Option Reg) : List (Nat × Nat × Nat × Nat) :=
+  match storeRange τ m w with
+  | some (ri, lo, hi) =>
+    match src with
+    | some r =>
+      match τ.t.bases.find? (·.1 == r), addrOf τ.t m with
+      | some (_, pj, pk), some _ => (ri, lo, pj, pk) :: mbKill τ.mb ri lo hi
+      | _, _ => mbKill τ.mb ri lo hi
+    | none => mbKill τ.mb ri lo hi
+  | none => []
+
+theorem mbKill_eq (mb : List (Nat × Nat × Nat × Nat)) (ri d w : Nat) :
+    KList.filter (fun e => !Nat.beq e.1 ri || Nat.ble (e.2.1 + 8) d || Nat.ble (d + w) e.2.1) mb =
+      mbKill mb ri d (d + w) := by
+  simp only [mbKill, KList.filter_eq, KList.beq_eq, KList.ble_eq, bne]
+
+/-- `mbStore` is `mbAfter`'s, for a store without an index register. -/
+theorem mbStore_eq {m : MemOp} (hx : m.index = none) (w : Nat) (src : Option Reg) (τ : FT) :
+    mbStoreM τ m w src = mbStore τ.t τ.mb m w src := by
+  obtain ⟨ok, t, nfr, depth, room, sec, ras, ub, fl, mb, fw, an, sa, sp, pb⟩ := τ
+  have hf : ∀ r, KList.find? (fun p => regEq p.1 r) t.bases = t.bases.find? (·.1 == r) := fun r => by
+    simp only [KList.find?_eq, regEq_eq]
+  unfold mbStoreM mbStore
+  simp only [storeRange, idxRange, hx, addrOfK_eq, mbKill_eq, hf]
+  cases addrOf t m with
+  | none => cases mb <;> cases src <;> (try rfl) <;> (dsimp only; split <;> rfl)
+  | some q =>
+    obtain ⟨ri, d⟩ := q
+    by_cases hfit : d + w ≤ t.lens.getD ri 0
+    · simp only [hfit, ↓reduceIte, KList.ble_eq, decide_true, Bool.cond_true]
+      cases src with
+      | none => cases mb <;> rfl
+      | some r =>
+        cases mb <;> dsimp only <;> cases t.bases.find? (·.1 == r) with
+        | none => rfl
+        | some q => obtain ⟨b, pj, pk⟩ := q; rfl
+    · simp only [hfit, ↓reduceIte, KList.ble_eq, decide_false, Bool.cond_false]
+      cases mb <;> cases src <;> (try rfl) <;> (dsimp only; split <;> rfl)
+
+theorem storeStepKD_noSlots (t : Taint.T) (m : MemOp) (w : Nat) (p : Bool) :
+    (Taint.storeStepKD t m w p).map (fun t' => ({ t' with slots := [] } : Taint.T)) =
+      if memPub t m = true then some { t with slots := [] } else none := by
+  obtain ⟨rg, f, l, b, sl, lo, x⟩ := t
+  simp only [Taint.storeStepKD]
+  cases memPub ⟨rg, f, l, b, sl, lo, x⟩ m <;> rfl
+
+/-- The base step of a store that `special` leaves to the base analysis. -/
+theorem baseStep_store {τ : FT} {i : Instr} {m : MemOp} {w : Nat} {p : Bool} (hs : special τ i = none)
+    (hp : ∀ t, pbPost τ i (argPost τ i (post τ i t)) = t)
+    (hb : (Taint.stepKDFn i).run τ.t = Taint.storeStepKD τ.t m w p) :
+    (baseStep τ i).map (fun t' => ({ t' with slots := [] } : Taint.T)) =
+      if memPub τ.t m = true then some { τ.t with slots := [] } else none := by
+  rw [baseStep, hs, show (fun t => pbPost τ i (argPost τ i (post τ i t))) = id from funext hp, Option.map_id,
+    ← storeStepKD_noSlots τ.t m w p, ← hb]
+  exact congrArg (Option.map _) (taint_step _ _)
+
+theorem fastStore_eq {i : Instr} {m : MemOp} {w : Nat} {p : Taint.T → Bool} {src : Option Reg}
+    (hsp : isa.writesSp i = false)
+    (hbase : ∀ τ, (baseStep τ i).map (fun t' => ({ t' with slots := [] } : Taint.T)) =
+      if memPub τ.t m = true then some { τ.t with slots := [] } else none)
     (hu : ∀ τ, ubNew τ i = none) (hf : flOf i = none) (hc : ∀ r, Taint.clobbers i r = false)
-    (hm : ∀ τ, mbAfter τ i = mbStore τ m w src) (τ : FT) :
-    (fastStore (Taint.stepKDFn i) m w src).run τ = step τ i := by
-  have hb : baseStep τ i = (Taint.stepKDFn i).run τ.t := by
-    rw [baseStep, hs, show (fun t => argPost τ i (post τ i t)) = id from funext (hp τ), Option.map_id]; rfl
+    (hm : ∀ τ, mbAfter τ i = mbStore τ.t τ.mb m w src) (hwm : writesMem i = true)
+    (hpb : ∀ τ, pbAfter τ i = pbStore τ.t τ.pb m w (p τ.t)) (τ : FT) :
+    (fastStore m w p src).run τ = step τ i := by
   have hk : ubKill τ.ub i = τ.ub := by
     simp only [ubKill, hc, Bool.not_false]; exact List.filter_eq_self.mpr fun _ _ => rfl
+  have hb := hbase τ
   unfold step
-  rw [hb, hu, hf, hm, hsp, hk]
-  obtain ⟨ok, t, nfr, depth, room, sec, ras, ub, fl, mb, fw, an, sa, sp⟩ := τ
+  rw [hu, hf, hm, hsp, hk, hpb, hwm]
+  obtain ⟨ok, t, nfr, depth, room, sec, ras, ub, fl, mb, fw, an, sa, sp, pb⟩ := τ
   cases ok
   · rfl
-  · simp only [fastStore, Bool.cond_true, Bool.not_false, Bool.and_self, ↓reduceIte, natsEq_eq]
+  · obtain ⟨rg, f, l, b, sl, lo, x⟩ := t
+    simp only [fastStore, Bool.cond_true, Bool.not_false, Bool.and_self, ↓reduceIte, forceList_eq]
+    simp only at hb
+    cases hbs : baseStep ⟨true, ⟨rg, f, l, b, sl, lo, x⟩, nfr, depth, room, sec, ras, ub, fl, mb, fw, an, sa, sp, pb⟩ i with
+    | none =>
+      rw [hbs] at hb
+      cases hmp : memPub ⟨rg, f, l, b, sl, lo, x⟩ m
+      · rfl
+      · rw [hmp] at hb; cases hb
+    | some t' =>
+      rw [hbs] at hb
+      cases hmp : memPub ⟨rg, f, l, b, sl, lo, x⟩ m
+      · rw [hmp] at hb; cases hb
+      · rw [hmp] at hb
+        simp only [Option.map_some, ↓reduceIte, Option.some.injEq] at hb
+        simp only [Bool.cond_true, Option.toList, List.nil_append, hb]
+
+theorem mbStoreI_eq {i : Instr} {m : MemOp} {w : Nat} (hsw : storeW i = some (m, w))
+    (hi : ∀ m' r, i ≠ .store m' r) (τ : FT) : mbAfter τ i = mbStoreI τ m w := by
+  unfold mbAfter mbStoreI
+  simp only [hsw]
+  obtain ⟨ok, t, nfr, depth, room, sec, ras, ub, fl, mb, fw, an, sa, sp, pb⟩ := τ
+  cases hr : storeRange ⟨ok, t, nfr, depth, room, sec, ras, ub, fl, mb, fw, an, sa, sp, pb⟩ m w with
+  | none => cases mb <;> rfl
+  | some q =>
+    obtain ⟨ri, lo, hi'⟩ := q
+    cases i <;> first | exact absurd rfl (hi _ _) | (cases mb <;> rfl)
+
+theorem pbStoreI_eq {i : Instr} {m : MemOp} {w : Nat} (hsw : storeW i = some (m, w))
+    (hst : ∀ τ, stPub τ i = false) (τ : FT) : pbAfter τ i = pbStoreI τ m w := by
+  unfold pbAfter pbStoreI
+  simp only [hsw, hst, Bool.false_eq_true, ↓reduceIte, pbModKeep_eq, keepNats_eq]
+  rfl
+
+theorem fastStoreI_eq {i : Instr} {m : MemOp} {w : Nat}
+    (hsp : isa.writesSp i = false)
+    (hbase : ∀ τ, (baseStep τ i).map (fun t' => ({ t' with slots := [] } : Taint.T)) =
+      if memPub τ.t m = true then some { τ.t with slots := [] } else none)
+    (hu : ∀ τ, ubNew τ i = none) (hf : flOf i = none) (hc : ∀ r, Taint.clobbers i r = false)
+    (hm : ∀ τ, mbAfter τ i = mbStoreI τ m w) (hwm : writesMem i = true)
+    (hpb : ∀ τ, pbAfter τ i = pbStoreI τ m w) (τ : FT) :
+    (fastStoreI m w).run τ = step τ i := by
+  have hk : ubKill τ.ub i = τ.ub := by
+    simp only [ubKill, hc, Bool.not_false]; exact List.filter_eq_self.mpr fun _ _ => rfl
+  have hb := hbase τ
+  unfold step
+  rw [hu, hf, hm, hsp, hk, hpb, hwm]
+  obtain ⟨ok, t, nfr, depth, room, sec, ras, ub, fl, mb, fw, an, sa, sp, pb⟩ := τ
+  cases ok
+  · rfl
+  · obtain ⟨rg, f, l, b, sl, lo, x⟩ := t
+    simp only [fastStoreI, Bool.cond_true, Bool.not_false, Bool.and_self, ↓reduceIte, forceList_eq]
+    simp only at hb
+    cases hbs : baseStep ⟨true, ⟨rg, f, l, b, sl, lo, x⟩, nfr, depth, room, sec, ras, ub, fl, mb, fw, an, sa, sp, pb⟩ i with
+    | none =>
+      rw [hbs] at hb
+      cases hmp : memPub ⟨rg, f, l, b, sl, lo, x⟩ m
+      · rfl
+      · rw [hmp] at hb; cases hb
+    | some t' =>
+      rw [hbs] at hb
+      cases hmp : memPub ⟨rg, f, l, b, sl, lo, x⟩ m
+      · rw [hmp] at hb; cases hb
+      · rw [hmp] at hb
+        simp only [Option.map_some, ↓reduceIte, Option.some.injEq] at hb
+        simp only [Bool.cond_true, Option.toList, List.nil_append, hb]
+
+theorem insReg_eq (d : Reg) (t : Taint.T) : insReg d t = { t with regs := t.regs.insert d } := by
+  cases t; rfl
+
+theorem insX_eq (x : XReg) (t : Taint.T) : insX x t = { t with xregs := t.xregs.insert x } := by
+  cases t; rfl
+
+theorem ubOfK_eq : ubOfK = ubOf := by
+  funext l r; simp only [ubOfK, ubOf, KList.find?_eq, regEq_eq]
+
+theorem fastG_eq {i : Instr} {pf : Taint.T → Taint.T} {fl' : Option (Reg × Reg)}
+    {u : Option (Reg × Reg) → List (Reg × Nat) → List (Reg × Nat)} {τ : FT}
+    (hsp : isa.writesSp i = false) (hs : special τ i = none)
+    (hp : ∀ t, pbPost τ i (argPost τ i (post τ i t)) = pf t)
+    (hf : flOf i = fl') (hm : mbAfter τ i = τ.mb) (hwm : writesMem i = false)
+    (hu : (ubNew τ i).toList ++ ubKill τ.ub i = u τ.fl τ.ub) :
+    (fastG (Taint.stepKDFn i) pf fl' u).run τ = step τ i := by
+  have hb : baseStep τ i = ((Taint.stepKDFn i).run τ.t).map pf := by
+    rw [baseStep, hs, show (fun t => pbPost τ i (argPost τ i (post τ i t))) = pf from funext hp]
+    exact congrArg (Option.map pf) (taint_step _ _)
+  unfold step
+  rw [hb, hf, hm, hsp, hu, pbAfter_of_not_writes hwm, hwm]
+  obtain ⟨ok, t, nfr, depth, room, sec, ras, ub, fl, mb, fw, an, sa, sp, pb⟩ := τ
+  cases ok
+  · rfl
+  · simp only [fastG, Bool.cond_true, Bool.not_false, Bool.and_self, ↓reduceIte, Bool.false_eq_true]
     cases (Taint.stepKDFn i).run t with
     | none => rfl
-    | some t' => simp only [Bool.cond_eq_ite, Option.toList, List.nil_append]
+    | some t' => simp only [Option.map_some, Taint.forceT_eq, forceList_eq]
 
-theorem mem3R_eq (i d w : Nat) : ∀ l : List (Nat × Nat × Nat), mem3R i d w l = Taint.mem3 (i, d, w) l
-  | [] => rfl
-  | ⟨b1, b2, b3⟩ :: l => by
-    show Bool.rec (mem3R i d w l) (Bool.rec (mem3R i d w l) (Bool.rec (mem3R i d w l) true (Nat.beq w b3))
-      (Nat.beq i b1)) (Nat.beq d b2) = (Nat.beq i b1 && Nat.beq d b2 && Nat.beq w b3 || Taint.mem3 (i, d, w) l)
-    rw [mem3R_eq i d w l]
-    cases Nat.beq d b2 <;> cases Nat.beq i b1 <;> cases Nat.beq w b3 <;> rfl
-
-theorem storeSlotsR_eq (τ : Taint.T) (m : MemOp) (w : Nat) (p : Bool) :
-    storeSlotsR τ m w p = Taint.storeSlotsKD τ m w p := by
-  unfold storeSlotsR Taint.storeSlotsKD
-  rcases Taint.addrOfK τ m with _ | ⟨i, d⟩
-  · rfl
-  · simp only [mem3R_eq]
-
-theorem storeR_eq (m : MemOp) (w : Nat) (r : Reg) :
-    storeR m w r = ⟨fun τ => Taint.storeStepKD τ m w (pub τ r)⟩ := by
-  unfold storeR
-  congr 1; funext τ
-  obtain ⟨rg, f, l, b, sl, lo, x⟩ := τ
-  simp only [Taint.storeStepKD, storeSlotsR_eq]
-
-theorem fastU_eq {i : Instr} {u : List (Reg × Nat) → List (Reg × Nat)}
-    (hsp : isa.writesSp i = false) (hs : ∀ τ, special τ i = none) (hp : ∀ τ t, argPost τ i (post τ i t) = t)
-    (hf : flOf i = none) (hm : ∀ τ, mbAfter τ i = τ.mb)
-    (hu : ∀ τ, (ubNew τ i).toList ++ ubKill τ.ub i = u τ.ub) (τ : FT) :
+theorem fastU_eq {i : Instr} {u : List (Reg × Nat) → List (Reg × Nat)} {τ : FT}
+    (hsp : isa.writesSp i = false) (hs : special τ i = none)
+    (hp : ∀ t, pbPost τ i (argPost τ i (post τ i t)) = t)
+    (hf : flOf i = none) (hm : mbAfter τ i = τ.mb) (hwm : writesMem i = false)
+    (hu : (ubNew τ i).toList ++ ubKill τ.ub i = u τ.ub) :
     (fastU (Taint.stepKDFn i) u).run τ = step τ i := by
   have hb : baseStep τ i = (Taint.stepKDFn i).run τ.t := by
-    rw [baseStep, hs, show (fun t => argPost τ i (post τ i t)) = id from funext (hp τ), Option.map_id]; rfl
+    rw [baseStep, hs, show (fun t => pbPost τ i (argPost τ i (post τ i t))) = id from funext hp, Option.map_id]
+    exact taint_step _ _
   unfold step
-  rw [hb, hf, hm, hsp, hu τ]
-  obtain ⟨ok, t, nfr, depth, room, sec, ras, ub, fl, mb, fw, an, sa, sp⟩ := τ
+  rw [hb, hf, hm, hsp, hu, pbAfter_of_not_writes hwm, hwm]
+  obtain ⟨ok, t, nfr, depth, room, sec, ras, ub, fl, mb, fw, an, sa, sp, pb⟩ := τ
   cases ok
   · rfl
-  · simp only [fastU, Bool.cond_true, Bool.not_false, Bool.and_self, ↓reduceIte, natsEq_eq]
+  · simp only [fastU, runF_eq, Bool.cond_true, Bool.not_false, Bool.and_self, ↓reduceIte, Bool.false_eq_true]
     cases (Taint.stepKDFn i).run t with
     | none => rfl
-    | some t' => simp only [Bool.cond_eq_ite]
+    | some t' => simp only [forceList_eq]
 
 theorem ubDrop2_eq {i : Instr} {a b : Reg} (hc : ∀ r, Taint.clobbers i r = (r == a || r == b))
     (ub : List (Reg × Nat)) : ubDrop2 a b ub = ubKill ub i := by
@@ -1997,31 +2569,37 @@ theorem argPost_nil {τ : FT} (ha : τ.sa = []) (hp : τ.sp = []) (i : Instr) (t
   simp only [ha, hp, List.any_nil, Bool.false_eq_true, ↓reduceIte, List.find?_nil]
   split <;> (try split) <;> rfl
 
-theorem argPost_lens (τ : FT) (i : Instr) (t : Taint.T) : (argPost τ i t).lens = t.lens := by
-  unfold argPost; split <;> (try split) <;> (try split) <;> (try split) <;> rfl
+theorem pbPubK_eq (τ : FT) (m : MemOp) (w : Nat) : pbPubK τ.t τ.pb m w = pbPub τ m w := by
+  unfold pbPubK pbPub; rw [addrOfK_eq]
 
-theorem post_lens (τ : FT) (i : Instr) (t : Taint.T) : (post τ i t).lens = t.lens := by
-  unfold post; split <;> (try split) <;> (try split) <;> rfl
-
-theorem fastLoad_eq {d : Reg} {m : MemOp} (hsp : isa.writesSp (.mov d (.mem m)) = false) (τ : FT) :
-    (fastLoad (Taint.stepKDFn (.mov d (.mem m))) d (.mov d (.mem m))).run τ = step τ (.mov d (.mem m)) := by
-  have hb : baseStep τ (.mov d (.mem m)) =
-      ((Taint.stepKDFn (.mov d (.mem m))).run τ.t).map
-        fun t' => argPost τ (.mov d (.mem m)) (post τ (.mov d (.mem m)) t') := rfl
-  have hk : ubKill τ.ub (.mov d (.mem m)) = ubDrop (some d) τ.ub :=
-    (ubDrop_eq (i := .mov d (.mem m)) (fun _ => rfl) τ.ub).symm
-  have hm : mbAfter τ (.mov d (.mem m)) = τ.mb := rfl
+theorem fastLoad_eq {i : Instr} {d : Reg} {m : MemOp} {w : Nat} {c : Taint.T → Bool}
+    (hsp : isa.writesSp i = false)
+    (hs : ∀ τ, special τ i = none) (hpost : ∀ τ t, τ.mb = [] → post τ i t = t)
+    (hpb : ∀ τ t, pbPost τ i t =
+      if (pbPub τ m w && c τ.t) = true then { t with regs := t.regs.insert d } else t)
+    (hk : ∀ ub, ubKill ub i = ubDrop (some d) ub) (hu : ∀ τ, ubNew τ i = none) (hf : flOf i = none)
+    (hwm : writesMem i = false) (hm : ∀ τ, mbAfter τ i = τ.mb) (τ : FT) :
+    (fastLoad (Taint.stepKDFn i) d m w c i).run τ = step τ i := by
+  have hb : baseStep τ i =
+      ((Taint.stepKDFn i).run τ.t).map fun t' => pbPost τ i (argPost τ i (post τ i t')) := by
+    rw [baseStep, hs]; exact congrArg (Option.map _) (taint_step _ _)
   unfold step
-  rw [hb, hk, hm, hsp, show ubNew τ (.mov d (.mem m)) = none from rfl, show flOf (.mov d (.mem m)) = none from rfl]
-  obtain ⟨ok, t, nfr, depth, room, sec, ras, ub, fl, mb, fw, an, sa, sp⟩ := τ
+  rw [hb, hk, hm, hsp, hu, hf, pbAfter_of_not_writes hwm, hwm]
+  have hq := pbPubK_eq τ m w
+  have hpost' := hpost τ
+  have hpb' := hpb τ
+  obtain ⟨ok, t, nfr, depth, room, sec, ras, ub, fl, mb, fw, an, sa, sp, pb⟩ := τ
   cases ok
   · rfl
-  · simp only [fastLoad, Bool.cond_true, Bool.not_false, Bool.and_self, ↓reduceIte, natsEq_eq]
-    cases (Taint.stepKDFn (.mov d (.mem m))).run t with
+  · simp only [fastLoad, Bool.cond_true, Bool.not_false, Bool.and_self, ↓reduceIte, Bool.false_eq_true]
+    cases (Taint.stepKDFn i).run t with
     | none => rfl
     | some t' =>
-      simp only [Option.map_some, argPost_lens, post_lens, Bool.cond_eq_ite, Option.toList, List.nil_append]
-      cases mb <;> cases sa <;> cases sp <;> (try simp only [post_mb_nil, argPost_nil]) <;> rfl
+      simp only at hq
+      simp only [Option.map_some, Bool.cond_eq_ite, Option.toList, List.nil_append, hq, Taint.forceT_eq,
+        forceList_eq, insReg_eq]
+      cases mb <;> cases sa <;> cases sp <;> (try simp only [hpost' _ rfl]) <;> (try simp only [argPost_nil]) <;>
+        rw [hpb']
 
 theorem stepFn_eq (i : Instr) (τ : FT) : (stepFn i).run τ = step τ i := by
   unfold stepFn
@@ -2031,33 +2609,177 @@ theorem stepFn_eq (i : Instr) (τ : FT) : (stepFn i).run τ = step τ i := by
       cases i
       case store m r | store32 m r | store8 m r | store16 m r =>
         cases hx : m.index
-        · simp only [hx, Option.isNone_none, Bool.cond_true, storeR_eq]
-          refine fastStore_eq hsp (fun τ => ?_) (fun _ _ => rfl) (fun _ => rfl) rfl (fun _ => rfl) (fun τ => ?_) τ
+        · simp only [hx, Option.isNone_none, Bool.cond_true]
+          refine fastStore_eq hsp (fun τ => baseStep_store ?_ (fun _ => rfl) rfl) (fun _ => rfl) rfl (fun _ => rfl)
+            (fun τ => ?_) rfl (pbStore_eq rfl hx fun _ => rfl) τ
           · simp only [special, hx, storeW]
-          · unfold mbAfter mbStore; simp only [storeW]
+          · rw [← mbStore_eq hx]; unfold mbAfter mbStoreM; simp only [storeW]; rfl
         · simp only [hx, Option.isNone_some, Bool.cond_false]
+      case movdquStore m x =>
+        cases hx : m.index
+        · simp only [hx, Option.isNone_none, Bool.cond_true]
+          refine fastStore_eq hsp (fun τ => ?_) (fun _ => rfl) rfl (fun _ => rfl)
+            (fun τ => ?_) rfl (pbStore_eq rfl hx fun τ => ?_) τ
+          · cases hxp : xpub τ.t x
+            · exact baseStep_store (p := false) (by simp only [special, hx, hxp, Bool.false_eq_true, ↓reduceIte])
+                (fun _ => rfl) rfl
+            · have hs : special τ (.movdquStore m x) = storeStep τ.t m 16 true := by
+                simp only [special, hx, hxp, ↓reduceIte]
+              cases hmp : memPub τ.t m
+              · have h1 : storeStep τ.t m 16 true = none := by
+                  simp only [storeStep, hmp, Bool.false_eq_true, ↓reduceIte]
+                have h := baseStep_store (m := m) (w := 16) (p := false) (hs.trans h1) (fun _ => rfl) rfl
+                rwa [hmp] at h
+              · rw [baseStep, hs]
+                simp only [storeStep, hmp, ↓reduceIte, Option.map_some]
+          · rw [← mbStore_eq hx]; unfold mbAfter mbStoreM; simp only [storeW]; rfl
+          · simp only [stPub, hx, Option.isNone_none, Bool.true_or, Bool.and_true]
+        · simp only [hx, Option.isNone_some, Bool.cond_false]
+      case vmovdquStore l m x =>
+        cases l <;> cases hx : m.index
+        all_goals first
+          | (simp only [hx, Option.isNone_some, Bool.cond_false]
+             refine fastStoreI_eq hsp (fun τ => baseStep_store (p := false) ?_ (fun _ => rfl) rfl) (fun _ => rfl) rfl
+               (fun _ => rfl) (mbStoreI_eq rfl (fun _ _ h => nomatch h)) rfl (pbStoreI_eq rfl fun _ => rfl) τ
+             simp only [special])
+          | (simp only [hx, Option.isNone_none, Bool.cond_true]
+             refine fastStore_eq hsp (fun τ => baseStep_store (p := false) ?_ (fun _ => rfl) rfl) (fun _ => rfl) rfl
+               (fun _ => rfl) (fun τ => ?_) rfl (pbStore_eq rfl hx fun _ => rfl) τ
+             · simp only [special]
+             · rw [← mbStore_eq hx]; unfold mbAfter mbStoreM; simp only [storeW]; rfl)
+      case vmovdqu32Store m x | evStore m x | e5ExtractStore m x k | stmxcsr m =>
+        cases hx : m.index
+        · simp only [hx, Option.isNone_none, Bool.cond_true]
+          refine fastStore_eq hsp (fun τ => baseStep_store (p := false) ?_ (fun _ => rfl) rfl) (fun _ => rfl) rfl
+            (fun _ => rfl) (fun τ => ?_) rfl (pbStore_eq rfl hx fun _ => rfl) τ
+          · simp only [special]
+          · rw [← mbStore_eq hx]; unfold mbAfter mbStoreM; simp only [storeW]; rfl
+        · simp only [hx, Option.isNone_some, Bool.cond_false]
+          refine fastStoreI_eq hsp (fun τ => baseStep_store (p := false) ?_ (fun _ => rfl) rfl) (fun _ => rfl) rfl
+            (fun _ => rfl) (mbStoreI_eq rfl (fun _ _ h => nomatch h)) rfl (pbStoreI_eq rfl fun _ => rfl) τ
+          simp only [special]
       case mov d src =>
         cases src with
         | reg => rfl
-        | mem m => exact fastLoad_eq hsp τ
+        | mem m =>
+          exact fastLoad_eq hsp (fun _ => rfl) (fun τ t h => post_mb_nil h d m t)
+            (fun _ _ => by simp only [pbPost, Bool.and_true])
+            (fun ub => (ubDrop_eq (i := .mov d (.mem m)) (fun _ => rfl) ub).symm) (fun _ => rfl) rfl rfl
+            (fun _ => rfl) τ
         | imm v =>
-          refine fastU_eq hsp (fun _ => rfl) (fun _ _ => rfl) rfl (fun _ => rfl) (fun τ => ?_) τ
+          refine fastU_eq hsp rfl (fun _ => rfl) rfl rfl rfl ?_
           rw [← ubDrop_eq (i := .mov d (.imm v)) (fun _ => rfl)]
           cases hm : v.msb <;> simp [ubNew, hm] <;> rfl
       case mov32 d src =>
         cases src with
         | reg => rfl
-        | mem => rfl
+        | mem m =>
+          exact fastLoad_eq hsp (fun _ => rfl) (fun _ _ _ => rfl) (fun _ _ => by simp only [pbPost, Bool.and_true])
+            (fun ub => (ubDrop_eq (i := .mov32 d (.mem m)) (fun _ => rfl) ub).symm) (fun _ => rfl) rfl rfl
+            (fun _ => rfl) τ
         | imm v =>
-          refine fastU_eq hsp (fun _ => rfl) (fun _ _ => rfl) rfl (fun _ => rfl) (fun τ => ?_) τ
+          refine fastU_eq hsp rfl (fun _ => rfl) rfl rfl rfl ?_
           rw [← ubDrop_eq (i := .mov32 d (.imm v)) (fun _ => rfl)]
           rfl
+      case cmov c d src =>
+        have hk : ∀ ub, ubKill ub (.cmov c d src) = ubDrop (some d) ub := fun ub =>
+          (ubDrop_eq (i := .cmov c d src) (fun _ => rfl) ub).symm
+        cases src with
+        | mem m =>
+          cases c <;>
+            exact fastLoad_eq hsp (fun _ => rfl) (fun _ _ _ => rfl)
+              (fun _ _ => by simp only [pbPost, Bool.and_assoc]) hk (fun _ => rfl) rfl rfl (fun _ => rfl) τ
+        | reg x =>
+          cases c
+          case b =>
+            refine fastG_eq hsp rfl (fun _ => rfl) rfl rfl rfl ?_
+            rw [hk]
+            obtain ⟨ok, t, nfr, depth, room, sec, ras, ub, fl, mb, fw, an, sa, sp, pb⟩ := τ
+            simp only [ubNew, cmovUb, ubOfK_eq]
+            rcases fl with _ | ⟨a, b⟩
+            · rfl
+            · simp only [regEq_eq]
+              by_cases h : (a, b) = (x, d)
+              · cases h
+                simp only [beq_self_eq_true, Bool.and_self, Bool.cond_true, ↓reduceIte]
+                cases ubOf ub d <;> rfl
+              · have h1 : (some (a, b) == some (x, d)) = false := by simpa using h
+                have h2 : (a == x && b == d) = false := by
+                  rw [Bool.and_eq_false_iff, beq_eq_false_iff_ne, beq_eq_false_iff_ne]
+                  by_cases ha : a = x
+                  · exact .inr fun hb => h (by rw [ha, hb])
+                  · exact .inl ha
+                simp only [h1, h2, Bool.false_eq_true, ↓reduceIte, Bool.cond_false, Option.toList, List.nil_append]
+          all_goals exact fastU_eq hsp rfl (fun _ => rfl) rfl rfl rfl (hk τ.ub)
+        | imm v => cases c <;> exact fastU_eq hsp rfl (fun _ => rfl) rfl rfl rfl (hk τ.ub)
+      case alu op d src =>
+        cases op
+        case xor =>
+          cases src with
+          | reg d' =>
+            have hd : d = d' := bne_eq_false_iff_eq.mp hpl
+            subst hd
+            refine fastG_eq hsp rfl
+              (fun _ => by simp only [post, pbPost, argPost, beq_self_eq_true, ↓reduceIte, insReg_eq]) rfl rfl rfl ?_
+            exact (ubDrop_eq (i := .alu .xor d (.reg d)) (fun _ => rfl) τ.ub).symm
+          | _ => rfl
+        case and =>
+          cases src with
+          | imm v =>
+            refine fastU_eq hsp rfl (fun _ => rfl) rfl rfl rfl ?_
+            rw [← ubDrop_eq (i := .alu .and d (.imm v)) (fun _ => rfl)]
+            cases hm : v.msb <;> simp [ubNew, hm] <;> rfl
+          | _ => rfl
+        case cmp =>
+          cases src with
+          | reg b =>
+            refine fastG_eq hsp rfl (fun _ => rfl) rfl rfl rfl ?_
+            exact (ubDrop_eq (i := .alu .cmp d (.reg b)) (fun _ => rfl) τ.ub).symm
+          | _ => rfl
+        all_goals (cases src <;> rfl)
+      case alu32 op d src =>
+        cases op
+        case xor =>
+          cases src with
+          | reg d' =>
+            have hd : d = d' := bne_eq_false_iff_eq.mp hpl
+            subst hd
+            refine fastG_eq hsp rfl
+              (fun _ => by simp only [post, pbPost, argPost, beq_self_eq_true, ↓reduceIte, insReg_eq]) rfl rfl rfl ?_
+            exact (ubDrop_eq (i := .alu32 .xor d (.reg d)) (fun _ => rfl) τ.ub).symm
+          | _ => rfl
+        case and =>
+          cases src with
+          | imm v =>
+            refine fastU_eq hsp rfl (fun _ => rfl) rfl rfl rfl ?_
+            rw [← ubDrop_eq (i := .alu32 .and d (.imm v)) (fun _ => rfl)]
+            rfl
+          | _ => rfl
+        all_goals (cases src <;> rfl)
+      case xop op =>
+        cases op with
+        | bin bop x x' =>
+          cases bop
+          case pxor =>
+            have hk : ubKill τ.ub (.xop (.bin .pxor x x')) = τ.ub := by
+              simp only [ubKill, Taint.clobbers, Taint.dstOf]
+              exact List.filter_eq_self.mpr fun _ _ => rfl
+            by_cases hxx : x = x'
+            · subst hxx
+              simp only [beq_self_eq_true, Bool.cond_true]
+              exact fastG_eq hsp rfl (fun _ => by simp [post, argPost, pbPost, insX_eq]) rfl rfl rfl
+                ((congrArg _ hk).trans (List.nil_append _))
+            · have hne : (x == x') = false := by simpa using hxx
+              simp only [hne, Bool.cond_false]
+              exact fastG_eq hsp rfl (fun _ => by simp [post, argPost, pbPost, hne]) rfl rfl rfl
+                ((congrArg _ hk).trans (List.nil_append _))
+          all_goals rfl
+        | _ => rfl
       case mul r =>
-        exact fastU_eq hsp (fun _ => rfl) (fun _ _ => rfl) rfl (fun _ => rfl)
-          (fun τ => (ubDrop2_eq (i := .mul r) (fun _ => rfl) τ.ub).symm) τ
+        exact fastU_eq hsp rfl (fun _ => rfl) rfl rfl rfl (ubDrop2_eq (i := .mul r) (fun _ => rfl) τ.ub).symm
       case mulx hi lo src =>
-        exact fastU_eq hsp (fun _ => rfl) (fun _ _ => rfl) rfl (fun _ => rfl)
-          (fun τ => (ubDrop2_eq (i := .mulx hi lo src) (fun _ => rfl) τ.ub).symm) τ
+        exact fastU_eq hsp rfl (fun _ => rfl) rfl rfl rfl
+          (ubDrop2_eq (i := .mulx hi lo src) (fun _ => rfl) τ.ub).symm
       all_goals rfl
     · exact fastFn_eq hpl hsp τ
   · show none = _
@@ -2068,19 +2790,34 @@ theorem isSp_eq (d : Reg) : isSp d = (some d == some Reg.rsp) := by cases d <;> 
 theorem isSpR_eq (d : Reg) : isSpR d = (d == Reg.rsp) := by cases d <;> rfl
 
 theorem stepFn1_eq (i : Instr) : stepFn1 i = stepFn i := by
-  unfold stepFn1 stepFn
-  simp only [isSp_eq, isSpR_eq]
+  delta stepFn1 stepFn
+  rw [show isSp = _ from funext isSp_eq, show isSpR = _ from funext isSpR_eq,
+    show Taint.stepKeepFn = _ from funext Taint.stepKeepFn_eq, show slowFn = _ from funext slowFn_eq]
   cases i with
   | mov d src | mov32 d src => cases src <;> rfl
   | alu op d src | alu32 op d src => cases op <;> cases src <;> rfl
+  | cmov c d src => cases c <;> cases src <;> rfl
   | xop op =>
     cases op with
     | bin op a b => cases op <;> rfl
     | _ => rfl
+  | vmovdquStore l m x => cases l <;> rfl
+  | _ => rfl
+
+theorem stepFn1K_eq (i : Instr) : stepFn1K i = stepFn1 i := by
+  cases i with
+  | mov d src | mov32 d src => cases src <;> rfl
+  | alu op d src | alu32 op d src => cases op <;> cases src <;> rfl
+  | cmov c d src => cases c <;> cases src <;> rfl
+  | xop op =>
+    cases op with
+    | bin op a b => cases op <;> rfl
+    | _ => rfl
+  | vmovdquStore l m x => cases l <;> rfl
   | _ => rfl
 
 theorem stepF_eq : stepF = step := by
-  funext τ i; show (stepFn1 i).run τ = _; rw [stepFn1_eq]; exact stepFn_eq i τ
+  funext τ i; show (stepFn1K i).run τ = _; rw [stepFn1K_eq, stepFn1_eq]; exact stepFn_eq i τ
 
 theorem eq2_iff {a b : Nat × Nat} : eq2 a b = true ↔ a = b := by
   obtain ⟨a1, a2⟩ := a; obtain ⟨b1, b2⟩ := b
@@ -2116,9 +2853,6 @@ theorem leKF_eq : leKF = Taint.le := by
   funext τ σ
   rw [← leK_eq]
   simp only [leKF, leK, natsEq_eq, slotsLe_eq, mem3_eq, KList.all_eq]
-
-theorem ubOfK_eq : ubOfK = ubOf := by
-  funext l r; simp only [ubOfK, ubOf, KList.find?_eq, regEq_eq]
 
 theorem any_eq2 (l : List (Nat × Nat)) (p : Nat × Nat) : KList.any l (eq2 p) = l.contains p := by
   rw [KList.any_eq, Bool.eq_iff_iff, List.any_eq_true, List.contains_iff_mem]
@@ -2185,5 +2919,7 @@ def rtaint : VG.Taint isa where
   push_sound := push_sound
   pop := popF
   pop_sound := pop_sound
+
+kernel_fn VG.Taint.check rtaint
 
 end VG.X86_64.RTaint

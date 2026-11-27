@@ -93,7 +93,7 @@ structure BP (M : CtxMode) (s : State) : Prop where
 theorem BP.ofM {M : CtxMode} {s : State} (h : Proof.AesGcm.blocksPreM M s) : BP M s := by
   simp only [Proof.AesGcm.blocksPreM, Proof.AesGcm.args, Proof.AesGcm.arg, Proof.AesGcm.ret, Proof.AesGcm.stk,
     Proof.AesGcm.rounds] at h
-  have hA : stackArgAddr s 0 = s.gpr .rsp + BitVec.ofNat 64 8 := by simp [stackArgAddr]
+  obtain hA : stackArgAddr s 0 = s.gpr .rsp + BitVec.ofNat 64 8 := by simp [stackArgAddr]
   rw [hA] at h
   sig_split h
   rename_i a₁ a₂ a₃ a₄ a₅ a₆ a₇ a₈ a₉ a₁₀ a₁₁ a₁₂ a₁₃ a₁₄ a₁₅ a₁₆ a₁₇ a₁₈ a₁₉ a₂₀ a₂₁ a₂₂ a₂₃ a₂₄ a₂₅ a₂₆ a₂₇

@@ -34,4 +34,10 @@ need wipe only the bytes it may write. -/
 def scrubbed (m m' : Mem) (p : Addr) (len : Nat) : Prop :=
   ∀ a, Region.Contains ⟨p, len⟩ a 1 → m' a = m a ∨ m' a = 0
 
+/-- What a function left in the `len` bytes at `p` (`scratch`), as numbers: a
+function whose contract has `scrubbed` of them states that they are public
+(`Api.publicOut`), in two runs that agree on them on entry. So which of them it
+left as they were, and which are zero, depends on nothing secret. -/
+def left (m : Mem) (p : Addr) (len : Nat) : List Nat := (bytesAt m p len).map (·.toNat)
+
 end VG.Spec.Zeroize

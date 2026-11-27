@@ -1,24 +1,20 @@
 module
 
 public import VerifiedGarbage.Proof.Sm4.Arm.BatchPrologue
-public import VerifiedGarbage.Proof.Sm4.Arm.SerialCfbLoop
-import VerifiedGarbage.Proof.Sm4.Arm.Core
+public import VerifiedGarbage.Proof.Sm4.Arm.SerialCfbHead
+import VerifiedGarbage.Proof.Sm4.Arm.Group
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Impl.Sm4.Arm.SerialCfb
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.TCB.Arm.Target
 import VerifiedGarbage.Proof.Sm4.Arm.BatchChain
-import VerifiedGarbage.Proof.Sm4.Arm.BatchEntry
 public import VerifiedGarbage.Spec.Cfb
 public import VerifiedGarbage.Spec.Sm4.Ctr
-import VerifiedGarbage.Proof.Sm4.Arm.SerialCfbGroup
-public import VerifiedGarbage.Proof.Sm4.Arm.SerialCfbHead
 import VerifiedGarbage.Proof.Sm4.Arm.BatchTaint
-import VerifiedGarbage.Proof.Sm4.Arm.SerialCfbTaint
 import VerifiedGarbage.Proof.Sm4.Arm.BatchHead
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
 public import VerifiedGarbage.Proof.Framework.RelCT
-public import VerifiedGarbage.Proof.Sm4.Arm.PreparedBody
+public import VerifiedGarbage.Proof.Sm4.Arm.PreparedVerified
 public import VerifiedGarbage.Proof.Sm4.Prepared
 public import VerifiedGarbage.Proof.Sm4.FbScratch
 public import VerifiedGarbage.Spec.Sm4.Cfb
@@ -30,6 +26,32 @@ import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Sm4.FbScratch
 meta import VerifiedGarbage.Proof.Framework.Arm.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
+meta import VerifiedGarbage.Impl.Sm4.Arm.SerialCfb
+meta import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
+
+/-! ### `Sm4.Arm.SerialCfbTaint`, which only this module used -/
+
+section
+
+/-! # Constant-time input filling and encryption for CFB encryption -/
+
+@[expose] public section
+namespace VG.Proof.Sm4.Arm.SerialCfbTaint
+open VG VG.Arm VG.Impl.Sm4.Arm
+
+theorem groupHead_check : ∃ h, (taint.check (Taint.ofRegs [.r6, .r7, .r8])
+    (.seq SerialCfb.count (.seq BatchCfb.fill BatchCtr.crypt)) h).isSome = true := ⟨_, by taint_decide⟩
+
+theorem groupTail_check : ∃ h, (taint.check (Taint.ofRegs [.r6, .r7, .r8, .r11])
+    (.seq BatchCtr.xorGroup (.seq (.block SerialCfb.saveCipher)
+      (.block [.subs .r7 .r7 (.reg .r11)]))) h).isSome = true := ⟨_, by taint_decide⟩
+
+end VG.Proof.Sm4.Arm.SerialCfbTaint
+
+end
+
+end
 
 /-! ### `Sm4.Arm.SerialCfbBody`, which only this module used -/
 
@@ -415,12 +437,12 @@ theorem frameSat : ∃ s, (Spec.Sm4.cfbEncryptContract Arm.abi 1520).pre s := by
     Arm.Loc.val, State.addr] [frameState, satState] using frameState
 
 theorem framed : Verified Arm.target
-    (Impl.StackScratch.Arm.withStackScratchWiped 1520 0 378 SerialCfb.encrypt)
+    (Impl.StackScratch.Arm.withStackScratch 1520 0 SerialCfb.encrypt)
     (Spec.Sm4.cfbEncryptContract Arm.abi 1520) :=
-  Arm.Verified.stackScratchWiped (sig := Spec.Sm4.cfbSig) (nm := "scratch") (e := .u64) (n := 189)
+  Arm.Verified.stackScratch (sig := Spec.Sm4.cfbSig) (nm := "scratch") (e := .u64) (n := 189)
     (post := Proof.Sm4.cfbEncPost Arm.abi.ptrBits) (wa := true) (stack := 0) (m := 0) (bytes := 1520)
-    verified (by decide) (by decide) (by decide) (by decide) (by decide)
+    verified (by decide) (by decide) (by decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Sm4.cfbEncPost_local _)
-    (Proof.Sm4.cfbEncPostOut_local _) frameSat
+    (fun vs mm m₁ m₂ r hl _ => Proof.Sm4.cfbEncPostOut_local _ vs mm m₁ m₂ r hl) frameSat
 
 end VG.Proof.Sm4.Arm.SerialCfbVerified

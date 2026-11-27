@@ -563,6 +563,9 @@ vg_idea_expand_key:
 	and %r12, %r12, %r11
 	xor %r10, %r10, %r12
 	std %r10, 96(%r4)
+	li %r10, 0
+	li %r11, 0
+	li %r12, 0
 	blr
 
 vg_idea_invert_key:
@@ -1551,6 +1554,14 @@ vg_idea_invert_key:
 	rldicr %r12, %r12, 48, 15
 	or %r8, %r8, %r12
 	std %r8, 96(%r4)
+	li %r0, 0
+	li %r5, 0
+	li %r6, 0
+	li %r7, 0
+	li %r8, 0
+	li %r9, 0
+	li %r11, 0
+	li %r12, 0
 	blr
 
 vg_idea_ecb:
@@ -2333,4 +2344,14 @@ vg_idea_ecb:
 	b 21f
 20:
 21:
+	li %r0, 0
+	li %r4, 0
+	li %r5, 0
+	li %r6, 0
+	li %r7, 0
+	li %r8, 0
+	li %r9, 0
+	li %r10, 0
+	li %r11, 0
+	li %r12, 0
 	blr

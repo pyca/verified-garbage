@@ -46,211 +46,217 @@ abbrev dig512_224F : StreamFn := dig512_224FnS compress (.inl rfl) Proof.Sha512.
 
 /-! ## Without secret residue
 
-Each function, followed by `Impl.Scrub.X86_64.scrubTail`, which wipes the
-registers and the granules of its stack that the residue analysis of its
-code (`X86_64.RTaint`) finds may hold secrets. -/
+Each function, followed by its cleanup (`StreamFnS.scrubbed`): what the cleanup
+needs of its code, evaluated here once, the runs of granules of its stack
+that the residue analysis (`X86_64.RTaint`) finds may hold secrets, and its
+other conditions (`X86_64.Scrub.SelScrub`). -/
 
-def updateKs : List Nat := keep_for% Spec.Sha512.updateApi.sig updF.stack updF.code
+/-- The other conditions of the functions' cleanups: in one declaration, so that the kernel walks the
+code they share once. -/
+theorem stream_sides :
+    VG.X86_64.Scrub.scrubSideG updF.code updF.stack updF.retBits .avx true
+      (Impl.Scrub.X86_64.runKs []) (Impl.Scrub.X86_64.chunksA updF.stack)
+      (Impl.Scrub.X86_64.gsAll (Impl.Scrub.X86_64.runKs [])) [] = true ∧
+    VG.X86_64.Scrub.scrubSideG finF.code finF.stack finF.retBits .avx true
+      (Impl.Scrub.X86_64.runKs []) (Impl.Scrub.X86_64.chunksA finF.stack)
+      (Impl.Scrub.X86_64.gsAll (Impl.Scrub.X86_64.runKs [])) [] = true ∧
+    VG.X86_64.Scrub.scrubSideG digF.code digF.stack digF.retBits .avx true
+      (Impl.Scrub.X86_64.runKs []) (Impl.Scrub.X86_64.chunksA digF.stack)
+      (Impl.Scrub.X86_64.gsAll (Impl.Scrub.X86_64.runKs [])) [] = true ∧
+    VG.X86_64.Scrub.scrubSideG fin384F.code fin384F.stack fin384F.retBits .avx true
+      (Impl.Scrub.X86_64.runKs []) (Impl.Scrub.X86_64.chunksA fin384F.stack)
+      (Impl.Scrub.X86_64.gsAll (Impl.Scrub.X86_64.runKs [])) [] = true ∧
+    VG.X86_64.Scrub.scrubSideG dig384F.code dig384F.stack dig384F.retBits .avx true
+      (Impl.Scrub.X86_64.runKs []) (Impl.Scrub.X86_64.chunksA dig384F.stack)
+      (Impl.Scrub.X86_64.gsAll (Impl.Scrub.X86_64.runKs [])) [] = true ∧
+    VG.X86_64.Scrub.scrubSideG fin512_256F.code fin512_256F.stack fin512_256F.retBits .avx true
+      (Impl.Scrub.X86_64.runKs []) (Impl.Scrub.X86_64.chunksA fin512_256F.stack)
+      (Impl.Scrub.X86_64.gsAll (Impl.Scrub.X86_64.runKs [])) [] = true ∧
+    VG.X86_64.Scrub.scrubSideG dig512_256F.code dig512_256F.stack dig512_256F.retBits .avx true
+      (Impl.Scrub.X86_64.runKs []) (Impl.Scrub.X86_64.chunksA dig512_256F.stack)
+      (Impl.Scrub.X86_64.gsAll (Impl.Scrub.X86_64.runKs [])) [] = true ∧
+    VG.X86_64.Scrub.scrubSideG fin512_224F.code fin512_224F.stack fin512_224F.retBits .avx true
+      (Impl.Scrub.X86_64.runKs []) (Impl.Scrub.X86_64.chunksA fin512_224F.stack)
+      (Impl.Scrub.X86_64.gsAll (Impl.Scrub.X86_64.runKs [])) [] = true ∧
+    VG.X86_64.Scrub.scrubSideG dig512_224F.code dig512_224F.stack dig512_224F.retBits .avx true
+      (Impl.Scrub.X86_64.runKs []) (Impl.Scrub.X86_64.chunksA dig512_224F.stack)
+      (Impl.Scrub.X86_64.gsAll (Impl.Scrub.X86_64.runKs [])) [] = true := by
+  lit_decide
 
-theorem updateRes : ResOk updF.code updF.contract updF.stack updateKs (chunks updF.stack) :=
-  RScrub.resOk_reg0 updF.reg updateKs (by taint_decide)
+theorem update_ok : ∃ h : VG.Taint.Hint VG.X86_64.RTaint.FT,
+    (VG.Taint.check VG.X86_64.RTaint.rtaint (VG.X86_64.RScrub.init updF.api.sig updF.stack []) updF.code h).any
+      (VG.X86_64.RScrub.resOkB · updF.stack (Impl.Scrub.X86_64.runKs [])
+        (Impl.Scrub.X86_64.chunksA updF.stack)) = true :=
+  VG.X86_64.Scrub.SelScrub.ok_of [] (by taint_decide_lit)
 
-def update : StreamFn := updF.scrub .avx updateKs (by lit_decide) (by decide) (by decide)
-  (by lit_decide) (by decide) (updOutS compress (.inl rfl) Proof.Sha512.X86_64.Stream.shani_verified0) updateRes
+def update : Proof.Pbkdf2.Md.X86_64.StreamFnS updF.api := ⟨updF, (updOutS compress (.inl rfl) Proof.Sha512.X86_64.Stream.shani_verified0), ⟨.avx, [], update_ok, stream_sides.1⟩, rfl⟩
 
-theorem update_noResidue : NoResidue update.code updF.contract updF.retBits :=
-  StreamFn.scrub_noResidue _ _ _ _ _ _ _ _ _ _
+theorem finalize_ok : ∃ h : VG.Taint.Hint VG.X86_64.RTaint.FT,
+    (VG.Taint.check VG.X86_64.RTaint.rtaint (VG.X86_64.RScrub.init finF.api.sig finF.stack []) finF.code h).any
+      (VG.X86_64.RScrub.resOkB · finF.stack (Impl.Scrub.X86_64.runKs [])
+        (Impl.Scrub.X86_64.chunksA finF.stack)) = true :=
+  VG.X86_64.Scrub.SelScrub.ok_of [] (by taint_decide_lit)
 
-def finalizeKs : List Nat := keep_for% Spec.Sha512.finalizeApi.sig finF.stack finF.code
+def finalize : Proof.Pbkdf2.Md.X86_64.StreamFnS finF.api := ⟨finF, (finOutS compress (.inl rfl) Proof.Sha512.X86_64.Stream.shani_verified0), ⟨.avx, [], finalize_ok, stream_sides.2.1⟩, rfl⟩
 
-theorem finalizeRes : ResOk finF.code finF.contract finF.stack finalizeKs (chunks finF.stack) :=
-  RScrub.resOk_reg0 finF.reg finalizeKs (by taint_decide)
+theorem digest_ok : ∃ h : VG.Taint.Hint VG.X86_64.RTaint.FT,
+    (VG.Taint.check VG.X86_64.RTaint.rtaint (VG.X86_64.RScrub.init digF.api.sig digF.stack []) digF.code h).any
+      (VG.X86_64.RScrub.resOkB · digF.stack (Impl.Scrub.X86_64.runKs [])
+        (Impl.Scrub.X86_64.chunksA digF.stack)) = true :=
+  VG.X86_64.Scrub.SelScrub.ok_of [] (by taint_decide_lit)
 
-def finalize : StreamFn := finF.scrub .avx finalizeKs (by lit_decide) (by decide) (by decide)
-  (by lit_decide) (by decide) (finOutS compress (.inl rfl) Proof.Sha512.X86_64.Stream.shani_verified0) finalizeRes
+def digest : Proof.Pbkdf2.Md.X86_64.StreamFnS digF.api := ⟨digF, (digOutS compress (.inl rfl) Proof.Sha512.X86_64.Stream.shani_verified0), ⟨.avx, [], digest_ok, stream_sides.2.2.1⟩, rfl⟩
 
-theorem finalize_noResidue : NoResidue finalize.code finF.contract finF.retBits :=
-  StreamFn.scrub_noResidue _ _ _ _ _ _ _ _ _ _
+theorem finalize384_ok : ∃ h : VG.Taint.Hint VG.X86_64.RTaint.FT,
+    (VG.Taint.check VG.X86_64.RTaint.rtaint (VG.X86_64.RScrub.init fin384F.api.sig fin384F.stack []) fin384F.code h).any
+      (VG.X86_64.RScrub.resOkB · fin384F.stack (Impl.Scrub.X86_64.runKs [])
+        (Impl.Scrub.X86_64.chunksA fin384F.stack)) = true :=
+  VG.X86_64.Scrub.SelScrub.ok_of [] (by taint_decide_lit)
 
-def digestKs : List Nat := keep_for% Spec.Sha512.digest512Api.sig digF.stack digF.code
+def finalize384 : Proof.Pbkdf2.Md.X86_64.StreamFnS fin384F.api := ⟨fin384F, (fin384OutS compress (.inl rfl) Proof.Sha512.X86_64.Stream.shani_verified0), ⟨.avx, [], finalize384_ok, stream_sides.2.2.2.1⟩, rfl⟩
 
-theorem digestRes : ResOk digF.code digF.contract digF.stack digestKs (chunks digF.stack) :=
-  RScrub.resOk_reg0 digF.reg digestKs (by taint_decide)
+theorem digest384_ok : ∃ h : VG.Taint.Hint VG.X86_64.RTaint.FT,
+    (VG.Taint.check VG.X86_64.RTaint.rtaint (VG.X86_64.RScrub.init dig384F.api.sig dig384F.stack []) dig384F.code h).any
+      (VG.X86_64.RScrub.resOkB · dig384F.stack (Impl.Scrub.X86_64.runKs [])
+        (Impl.Scrub.X86_64.chunksA dig384F.stack)) = true :=
+  VG.X86_64.Scrub.SelScrub.ok_of [] (by taint_decide_lit)
 
-def digest : StreamFn := digF.scrub .avx digestKs (by lit_decide) (by decide) (by decide)
-  (by lit_decide) (by decide) (digOutS compress (.inl rfl) Proof.Sha512.X86_64.Stream.shani_verified0) digestRes
+def digest384 : Proof.Pbkdf2.Md.X86_64.StreamFnS dig384F.api := ⟨dig384F, (dig384OutS compress (.inl rfl) Proof.Sha512.X86_64.Stream.shani_verified0), ⟨.avx, [], digest384_ok, stream_sides.2.2.2.2.1⟩, rfl⟩
 
-theorem digest_noResidue : NoResidue digest.code digF.contract digF.retBits :=
-  StreamFn.scrub_noResidue _ _ _ _ _ _ _ _ _ _
+theorem finalize512_256_ok : ∃ h : VG.Taint.Hint VG.X86_64.RTaint.FT,
+    (VG.Taint.check VG.X86_64.RTaint.rtaint (VG.X86_64.RScrub.init fin512_256F.api.sig fin512_256F.stack []) fin512_256F.code h).any
+      (VG.X86_64.RScrub.resOkB · fin512_256F.stack (Impl.Scrub.X86_64.runKs [])
+        (Impl.Scrub.X86_64.chunksA fin512_256F.stack)) = true :=
+  VG.X86_64.Scrub.SelScrub.ok_of [] (by taint_decide_lit)
 
-def finalize384Ks : List Nat := keep_for% Spec.Sha512.finalize384Api.sig fin384F.stack fin384F.code
+def finalize512_256 : Proof.Pbkdf2.Md.X86_64.StreamFnS fin512_256F.api := ⟨fin512_256F, (fin512_256OutS compress (.inl rfl) Proof.Sha512.X86_64.Stream.shani_verified0), ⟨.avx, [], finalize512_256_ok, stream_sides.2.2.2.2.2.1⟩, rfl⟩
 
-theorem finalize384Res : ResOk fin384F.code fin384F.contract fin384F.stack finalize384Ks (chunks fin384F.stack) :=
-  RScrub.resOk_reg0 fin384F.reg finalize384Ks (by taint_decide)
+theorem digest512_256_ok : ∃ h : VG.Taint.Hint VG.X86_64.RTaint.FT,
+    (VG.Taint.check VG.X86_64.RTaint.rtaint (VG.X86_64.RScrub.init dig512_256F.api.sig dig512_256F.stack []) dig512_256F.code h).any
+      (VG.X86_64.RScrub.resOkB · dig512_256F.stack (Impl.Scrub.X86_64.runKs [])
+        (Impl.Scrub.X86_64.chunksA dig512_256F.stack)) = true :=
+  VG.X86_64.Scrub.SelScrub.ok_of [] (by taint_decide_lit)
 
-def finalize384 : StreamFn := fin384F.scrub .avx finalize384Ks (by lit_decide) (by decide) (by decide)
-  (by lit_decide) (by decide) (fin384OutS compress (.inl rfl) Proof.Sha512.X86_64.Stream.shani_verified0) finalize384Res
+def digest512_256 : Proof.Pbkdf2.Md.X86_64.StreamFnS dig512_256F.api := ⟨dig512_256F, (dig512_256OutS compress (.inl rfl) Proof.Sha512.X86_64.Stream.shani_verified0), ⟨.avx, [], digest512_256_ok, stream_sides.2.2.2.2.2.2.1⟩, rfl⟩
 
-theorem finalize384_noResidue : NoResidue finalize384.code fin384F.contract fin384F.retBits :=
-  StreamFn.scrub_noResidue _ _ _ _ _ _ _ _ _ _
+theorem finalize512_224_ok : ∃ h : VG.Taint.Hint VG.X86_64.RTaint.FT,
+    (VG.Taint.check VG.X86_64.RTaint.rtaint (VG.X86_64.RScrub.init fin512_224F.api.sig fin512_224F.stack []) fin512_224F.code h).any
+      (VG.X86_64.RScrub.resOkB · fin512_224F.stack (Impl.Scrub.X86_64.runKs [])
+        (Impl.Scrub.X86_64.chunksA fin512_224F.stack)) = true :=
+  VG.X86_64.Scrub.SelScrub.ok_of [] (by taint_decide_lit)
 
-def digest384Ks : List Nat := keep_for% Spec.Sha512.digest384Api.sig dig384F.stack dig384F.code
+def finalize512_224 : Proof.Pbkdf2.Md.X86_64.StreamFnS fin512_224F.api := ⟨fin512_224F, (fin512_224OutS compress (.inl rfl) Proof.Sha512.X86_64.Stream.shani_verified0), ⟨.avx, [], finalize512_224_ok, stream_sides.2.2.2.2.2.2.2.1⟩, rfl⟩
 
-theorem digest384Res : ResOk dig384F.code dig384F.contract dig384F.stack digest384Ks (chunks dig384F.stack) :=
-  RScrub.resOk_reg0 dig384F.reg digest384Ks (by taint_decide)
+theorem digest512_224_ok : ∃ h : VG.Taint.Hint VG.X86_64.RTaint.FT,
+    (VG.Taint.check VG.X86_64.RTaint.rtaint (VG.X86_64.RScrub.init dig512_224F.api.sig dig512_224F.stack []) dig512_224F.code h).any
+      (VG.X86_64.RScrub.resOkB · dig512_224F.stack (Impl.Scrub.X86_64.runKs [])
+        (Impl.Scrub.X86_64.chunksA dig512_224F.stack)) = true :=
+  VG.X86_64.Scrub.SelScrub.ok_of [] (by taint_decide_lit)
 
-def digest384 : StreamFn := dig384F.scrub .avx digest384Ks (by lit_decide) (by decide) (by decide)
-  (by lit_decide) (by decide) (dig384OutS compress (.inl rfl) Proof.Sha512.X86_64.Stream.shani_verified0) digest384Res
-
-theorem digest384_noResidue : NoResidue digest384.code dig384F.contract dig384F.retBits :=
-  StreamFn.scrub_noResidue _ _ _ _ _ _ _ _ _ _
-
-def finalize512_256Ks : List Nat := keep_for% Spec.Sha512.finalize512_256Api.sig fin512_256F.stack fin512_256F.code
-
-theorem finalize512_256Res : ResOk fin512_256F.code fin512_256F.contract fin512_256F.stack finalize512_256Ks (chunks fin512_256F.stack) :=
-  RScrub.resOk_reg0 fin512_256F.reg finalize512_256Ks (by taint_decide)
-
-def finalize512_256 : StreamFn := fin512_256F.scrub .avx finalize512_256Ks (by lit_decide) (by decide) (by decide)
-  (by lit_decide) (by decide) (fin512_256OutS compress (.inl rfl) Proof.Sha512.X86_64.Stream.shani_verified0) finalize512_256Res
-
-theorem finalize512_256_noResidue : NoResidue finalize512_256.code fin512_256F.contract fin512_256F.retBits :=
-  StreamFn.scrub_noResidue _ _ _ _ _ _ _ _ _ _
-
-def digest512_256Ks : List Nat := keep_for% Spec.Sha512.digest512_256Api.sig dig512_256F.stack dig512_256F.code
-
-theorem digest512_256Res : ResOk dig512_256F.code dig512_256F.contract dig512_256F.stack digest512_256Ks (chunks dig512_256F.stack) :=
-  RScrub.resOk_reg0 dig512_256F.reg digest512_256Ks (by taint_decide)
-
-def digest512_256 : StreamFn := dig512_256F.scrub .avx digest512_256Ks (by lit_decide) (by decide) (by decide)
-  (by lit_decide) (by decide) (dig512_256OutS compress (.inl rfl) Proof.Sha512.X86_64.Stream.shani_verified0) digest512_256Res
-
-theorem digest512_256_noResidue : NoResidue digest512_256.code dig512_256F.contract dig512_256F.retBits :=
-  StreamFn.scrub_noResidue _ _ _ _ _ _ _ _ _ _
-
-def finalize512_224Ks : List Nat := keep_for% Spec.Sha512.finalize512_224Api.sig fin512_224F.stack fin512_224F.code
-
-theorem finalize512_224Res : ResOk fin512_224F.code fin512_224F.contract fin512_224F.stack finalize512_224Ks (chunks fin512_224F.stack) :=
-  RScrub.resOk_reg0 fin512_224F.reg finalize512_224Ks (by taint_decide)
-
-def finalize512_224 : StreamFn := fin512_224F.scrub .avx finalize512_224Ks (by lit_decide) (by decide) (by decide)
-  (by lit_decide) (by decide) (fin512_224OutS compress (.inl rfl) Proof.Sha512.X86_64.Stream.shani_verified0) finalize512_224Res
-
-theorem finalize512_224_noResidue : NoResidue finalize512_224.code fin512_224F.contract fin512_224F.retBits :=
-  StreamFn.scrub_noResidue _ _ _ _ _ _ _ _ _ _
-
-def digest512_224Ks : List Nat := keep_for% Spec.Sha512.digest512_224Api.sig dig512_224F.stack dig512_224F.code
-
-theorem digest512_224Res : ResOk dig512_224F.code dig512_224F.contract dig512_224F.stack digest512_224Ks (chunks dig512_224F.stack) :=
-  RScrub.resOk_reg0 dig512_224F.reg digest512_224Ks (by taint_decide)
-
-def digest512_224 : StreamFn := dig512_224F.scrub .avx digest512_224Ks (by lit_decide) (by decide) (by decide)
-  (by lit_decide) (by decide) (dig512_224OutS compress (.inl rfl) Proof.Sha512.X86_64.Stream.shani_verified0) digest512_224Res
-
-theorem digest512_224_noResidue : NoResidue digest512_224.code dig512_224F.contract dig512_224F.retBits :=
-  StreamFn.scrub_noResidue _ _ _ _ _ _ _ _ _ _
+def digest512_224 : Proof.Pbkdf2.Md.X86_64.StreamFnS dig512_224F.api := ⟨dig512_224F, (dig512_224OutS compress (.inl rfl) Proof.Sha512.X86_64.Stream.shani_verified0), ⟨.avx, [], digest512_224_ok, stream_sides.2.2.2.2.2.2.2.2⟩, rfl⟩
 
 end Scrub
 
-/-- The streaming `update` and `finalize`, and SHA-512's one-shot `digest`.
+/-- SHA-384 with this compression function. -/
+def variant384 : Proof.Pbkdf2.Md.X86_64.MdHash :=
+  Proof.Pbkdf2.Md.X86_64.Sha512.sha384 compress
+
+/-- SHA-384's `finalize` and one-shot `digest` with this compression function,
+with their cleanup, for its registration file. -/
+def streams384 : Proof.Pbkdf2.Md.X86_64.StreamFns2 Spec.Sha512.finalize384Api Spec.Sha512.digest384Api :=
+  ⟨variant384.suffix, finalize384, digest384⟩
+
+/-- SHA-512 with this compression function. -/
+def variant512 : Proof.Pbkdf2.Md.X86_64.MdHash :=
+  Proof.Pbkdf2.Md.X86_64.Sha512.sha512 compress
+
+/-- The streaming `update` and `finalize`, and SHA-512's one-shot `digest`, made
+with this compression function, with their cleanup, for its registration file.
 Ed25519's key-pair generation calls the digest's code as the internal
 `vg_sha512_digest<suffix>_core`. -/
-def stream : List Proof.Pbkdf2.Md.X86_64.StreamFn := [update, finalize, digest]
+def streams512 : Proof.Pbkdf2.Md.X86_64.StreamFns Spec.Sha512.updateApi Spec.Sha512.finalizeApi Spec.Sha512.digest512Api :=
+  ⟨variant512.suffix, update, finalize, digest⟩
 
-/-- SHA-384's `finalize` and one-shot `digest`. -/
-def stream384 : List Proof.Pbkdf2.Md.X86_64.StreamFn := [finalize384, digest384]
-
-/-- SHA-512/256's `finalize` and one-shot `digest`. -/
-def stream512_256 : List Proof.Pbkdf2.Md.X86_64.StreamFn := [finalize512_256, digest512_256]
-
-/-- SHA-512/224's `finalize` and one-shot `digest`. -/
-def stream512_224 : List Proof.Pbkdf2.Md.X86_64.StreamFn := [finalize512_224, digest512_224]
-
-/-- SHA-384 with this compression function, before the residue analysis of
-HMAC's `finalize`. -/
-def unscrubbed384 : Proof.Pbkdf2.Md.X86_64.MdHash :=
-  Proof.Pbkdf2.Md.X86_64.Sha512.sha384 compress stream384
-
-/-- HMAC's `finalize` over `unscrubbed384`, followed by `Impl.Scrub.X86_64.scrubTail`,
-which wipes the registers and the granules of its stack that the residue
-analysis of its code finds may hold secrets (`MdHash.hmacFinReg`). -/
-def hmacFin384Ks : List Nat := keep_for% unscrubbed384.I.finalizeApi.sig (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame unscrubbed384.H)
-  (Impl.StackScratch.X86_64.withStackScratch (Proof.Pbkdf2.Md.X86_64.hmacFrame unscrubbed384.H) .r8
-      unscrubbed384.H.hmacFin) []
-
-theorem hmacFin384Ok : ∃ h : VG.Taint.Hint VG.X86_64.RTaint.FT,
-    (VG.Taint.check VG.X86_64.RTaint.rtaint (VG.X86_64.RScrub.init unscrubbed384.I.finalizeApi.sig (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame unscrubbed384.H) [])
-      (Impl.StackScratch.X86_64.withStackScratch (Proof.Pbkdf2.Md.X86_64.hmacFrame unscrubbed384.H) .r8
-      unscrubbed384.H.hmacFin) h).any
-      (VG.X86_64.RScrub.resOkB · (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame unscrubbed384.H) hmacFin384Ks (Impl.Scrub.X86_64.chunks (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame unscrubbed384.H))) = true :=
-  VG.X86_64.RScrub.Analysed.ok_of hmacFin384Ks (by taint_decide)
-
-def variant384 : Proof.Pbkdf2.Md.X86_64.MdHash :=
-  { unscrubbed384 with hmacFinRes := some ⟨hmacFin384Ks, hmacFin384Ok⟩ }
-
-/-- SHA-512 with this compression function, before the residue analysis of
-HMAC's `finalize`. -/
-def unscrubbed512 : Proof.Pbkdf2.Md.X86_64.MdHash :=
-  Proof.Pbkdf2.Md.X86_64.Sha512.sha512 compress stream
-
-/-- HMAC's `finalize` over `unscrubbed512`, followed by `Impl.Scrub.X86_64.scrubTail`,
-which wipes the registers and the granules of its stack that the residue
-analysis of its code finds may hold secrets (`MdHash.hmacFinReg`). -/
-def hmacFin512Ks : List Nat := keep_for% unscrubbed512.I.finalizeApi.sig (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame unscrubbed512.H)
-  (Impl.StackScratch.X86_64.withStackScratch (Proof.Pbkdf2.Md.X86_64.hmacFrame unscrubbed512.H) .r8
-      unscrubbed512.H.hmacFin) []
-
-theorem hmacFin512Ok : ∃ h : VG.Taint.Hint VG.X86_64.RTaint.FT,
-    (VG.Taint.check VG.X86_64.RTaint.rtaint (VG.X86_64.RScrub.init unscrubbed512.I.finalizeApi.sig (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame unscrubbed512.H) [])
-      (Impl.StackScratch.X86_64.withStackScratch (Proof.Pbkdf2.Md.X86_64.hmacFrame unscrubbed512.H) .r8
-      unscrubbed512.H.hmacFin) h).any
-      (VG.X86_64.RScrub.resOkB · (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame unscrubbed512.H) hmacFin512Ks (Impl.Scrub.X86_64.chunks (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame unscrubbed512.H))) = true :=
-  VG.X86_64.RScrub.Analysed.ok_of hmacFin512Ks (by taint_decide)
-
-def variant512 : Proof.Pbkdf2.Md.X86_64.MdHash :=
-  { unscrubbed512 with hmacFinRes := some ⟨hmacFin512Ks, hmacFin512Ok⟩ }
-
-/-- SHA-512/224 with this compression function, before the residue analysis of
-HMAC's `finalize`. -/
-def unscrubbed512_224 : Proof.Pbkdf2.Md.X86_64.MdHash :=
-  Proof.Pbkdf2.Md.X86_64.Sha512.sha512_224 compress stream512_224
-
-/-- HMAC's `finalize` over `unscrubbed512_224`, followed by `Impl.Scrub.X86_64.scrubTail`,
-which wipes the registers and the granules of its stack that the residue
-analysis of its code finds may hold secrets (`MdHash.hmacFinReg`). -/
-def hmacFin512_224Ks : List Nat := keep_for% unscrubbed512_224.I.finalizeApi.sig (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame unscrubbed512_224.H)
-  (Impl.StackScratch.X86_64.withStackScratch (Proof.Pbkdf2.Md.X86_64.hmacFrame unscrubbed512_224.H) .r8
-      unscrubbed512_224.H.hmacFin) []
-
-theorem hmacFin512_224Ok : ∃ h : VG.Taint.Hint VG.X86_64.RTaint.FT,
-    (VG.Taint.check VG.X86_64.RTaint.rtaint (VG.X86_64.RScrub.init unscrubbed512_224.I.finalizeApi.sig (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame unscrubbed512_224.H) [])
-      (Impl.StackScratch.X86_64.withStackScratch (Proof.Pbkdf2.Md.X86_64.hmacFrame unscrubbed512_224.H) .r8
-      unscrubbed512_224.H.hmacFin) h).any
-      (VG.X86_64.RScrub.resOkB · (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame unscrubbed512_224.H) hmacFin512_224Ks (Impl.Scrub.X86_64.chunks (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame unscrubbed512_224.H))) = true :=
-  VG.X86_64.RScrub.Analysed.ok_of hmacFin512_224Ks (by taint_decide)
-
+/-- SHA-512/224 with this compression function. -/
 def variant512_224 : Proof.Pbkdf2.Md.X86_64.MdHash :=
-  { unscrubbed512_224 with hmacFinRes := some ⟨hmacFin512_224Ks, hmacFin512_224Ok⟩ }
+  Proof.Pbkdf2.Md.X86_64.Sha512.sha512_224 compress
 
-/-- SHA-512/256 with this compression function, before the residue analysis of
-HMAC's `finalize`. -/
-def unscrubbed512_256 : Proof.Pbkdf2.Md.X86_64.MdHash :=
-  Proof.Pbkdf2.Md.X86_64.Sha512.sha512_256 compress stream512_256
+/-- SHA-512/224's `finalize` and one-shot `digest` with this compression function,
+with their cleanup, for its registration file. -/
+def streams512_224 : Proof.Pbkdf2.Md.X86_64.StreamFns2 Spec.Sha512.finalize512_224Api Spec.Sha512.digest512_224Api :=
+  ⟨variant512_224.suffix, finalize512_224, digest512_224⟩
 
-/-- HMAC's `finalize` over `unscrubbed512_256`, followed by `Impl.Scrub.X86_64.scrubTail`,
-which wipes the registers and the granules of its stack that the residue
-analysis of its code finds may hold secrets (`MdHash.hmacFinReg`). -/
-def hmacFin512_256Ks : List Nat := keep_for% unscrubbed512_256.I.finalizeApi.sig (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame unscrubbed512_256.H)
-  (Impl.StackScratch.X86_64.withStackScratch (Proof.Pbkdf2.Md.X86_64.hmacFrame unscrubbed512_256.H) .r8
-      unscrubbed512_256.H.hmacFin) []
-
-theorem hmacFin512_256Ok : ∃ h : VG.Taint.Hint VG.X86_64.RTaint.FT,
-    (VG.Taint.check VG.X86_64.RTaint.rtaint (VG.X86_64.RScrub.init unscrubbed512_256.I.finalizeApi.sig (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame unscrubbed512_256.H) [])
-      (Impl.StackScratch.X86_64.withStackScratch (Proof.Pbkdf2.Md.X86_64.hmacFrame unscrubbed512_256.H) .r8
-      unscrubbed512_256.H.hmacFin) h).any
-      (VG.X86_64.RScrub.resOkB · (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame unscrubbed512_256.H) hmacFin512_256Ks (Impl.Scrub.X86_64.chunks (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame unscrubbed512_256.H))) = true :=
-  VG.X86_64.RScrub.Analysed.ok_of hmacFin512_256Ks (by taint_decide)
-
+/-- SHA-512/256 with this compression function. -/
 def variant512_256 : Proof.Pbkdf2.Md.X86_64.MdHash :=
-  { unscrubbed512_256 with hmacFinRes := some ⟨hmacFin512_256Ks, hmacFin512_256Ok⟩ }
+  Proof.Pbkdf2.Md.X86_64.Sha512.sha512_256 compress
+
+/-- SHA-512/256's `finalize` and one-shot `digest` with this compression function,
+with their cleanup, for its registration file. -/
+def streams512_256 : Proof.Pbkdf2.Md.X86_64.StreamFns2 Spec.Sha512.finalize512_256Api Spec.Sha512.digest512_256Api :=
+  ⟨variant512_256.suffix, finalize512_256, digest512_256⟩
+
+/-- The same of HMAC's `finalize`s. -/
+theorem fin_sides :
+    VG.X86_64.Scrub.scrubSideG
+      (Impl.StackScratch.X86_64.withStackScratch (Proof.Pbkdf2.Md.X86_64.hmacFrame variant384.H) .r8 variant384.H.hmacFin)
+      (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame variant384.H) ((Spec.Hmac.finalizeSig variant384.I.S).retBits 64) .avx true
+      (Impl.Scrub.X86_64.runKs [(112, 5)]) (Impl.Scrub.X86_64.chunksA (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame variant384.H))
+      (Impl.Scrub.X86_64.gsAll (Impl.Scrub.X86_64.runKs [(112, 5)])) [] = true ∧
+    VG.X86_64.Scrub.scrubSideG
+      (Impl.StackScratch.X86_64.withStackScratch (Proof.Pbkdf2.Md.X86_64.hmacFrame variant512.H) .r8 variant512.H.hmacFin)
+      (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame variant512.H) ((Spec.Hmac.finalizeSig variant512.I.S).retBits 64) .avx true
+      (Impl.Scrub.X86_64.runKs [(112, 5)]) (Impl.Scrub.X86_64.chunksA (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame variant512.H))
+      (Impl.Scrub.X86_64.gsAll (Impl.Scrub.X86_64.runKs [(112, 5)])) [] = true ∧
+    VG.X86_64.Scrub.scrubSideG
+      (Impl.StackScratch.X86_64.withStackScratch (Proof.Pbkdf2.Md.X86_64.hmacFrame variant512_224.H) .r8 variant512_224.H.hmacFin)
+      (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame variant512_224.H) ((Spec.Hmac.finalizeSig variant512_224.I.S).retBits 64) .avx true
+      (Impl.Scrub.X86_64.runKs [(112, 5)]) (Impl.Scrub.X86_64.chunksA (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame variant512_224.H))
+      (Impl.Scrub.X86_64.gsAll (Impl.Scrub.X86_64.runKs [(112, 5)])) [] = true ∧
+    VG.X86_64.Scrub.scrubSideG
+      (Impl.StackScratch.X86_64.withStackScratch (Proof.Pbkdf2.Md.X86_64.hmacFrame variant512_256.H) .r8 variant512_256.H.hmacFin)
+      (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame variant512_256.H) ((Spec.Hmac.finalizeSig variant512_256.I.S).retBits 64) .avx true
+      (Impl.Scrub.X86_64.runKs [(112, 5)]) (Impl.Scrub.X86_64.chunksA (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame variant512_256.H))
+      (Impl.Scrub.X86_64.gsAll (Impl.Scrub.X86_64.runKs [(112, 5)])) [] = true := by
+  lit_decide
+
+theorem fin384_ok : ∃ h : VG.Taint.Hint VG.X86_64.RTaint.FT,
+    (VG.Taint.check VG.X86_64.RTaint.rtaint (VG.X86_64.RScrub.init variant384.I.finalizeApi.sig (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame variant384.H) [])
+      (Impl.StackScratch.X86_64.withStackScratch (Proof.Pbkdf2.Md.X86_64.hmacFrame variant384.H) .r8 variant384.H.hmacFin) h).any
+      (VG.X86_64.RScrub.resOkB · (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame variant384.H) (Impl.Scrub.X86_64.runKs [(112, 5)])
+        (Impl.Scrub.X86_64.chunksA (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame variant384.H))) = true :=
+  VG.X86_64.Scrub.SelScrub.ok_of [(112, 5)] (by taint_decide_lit)
+
+/-- HMAC's `finalize` over `variant384`, with what its cleanup needs. -/
+def fin384 : Proof.Pbkdf2.Md.X86_64.FinImpl := ⟨variant384, by decide, ⟨.avx, [(112, 5)], fin384_ok, fin_sides.1⟩⟩
+
+theorem fin512_ok : ∃ h : VG.Taint.Hint VG.X86_64.RTaint.FT,
+    (VG.Taint.check VG.X86_64.RTaint.rtaint (VG.X86_64.RScrub.init variant512.I.finalizeApi.sig (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame variant512.H) [])
+      (Impl.StackScratch.X86_64.withStackScratch (Proof.Pbkdf2.Md.X86_64.hmacFrame variant512.H) .r8 variant512.H.hmacFin) h).any
+      (VG.X86_64.RScrub.resOkB · (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame variant512.H) (Impl.Scrub.X86_64.runKs [(112, 5)])
+        (Impl.Scrub.X86_64.chunksA (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame variant512.H))) = true :=
+  VG.X86_64.Scrub.SelScrub.ok_of [(112, 5)] (by taint_decide_lit)
+
+/-- HMAC's `finalize` over `variant512`, with what its cleanup needs. -/
+def fin512 : Proof.Pbkdf2.Md.X86_64.FinImpl := ⟨variant512, by decide, ⟨.avx, [(112, 5)], fin512_ok, fin_sides.2.1⟩⟩
+
+theorem fin512_224_ok : ∃ h : VG.Taint.Hint VG.X86_64.RTaint.FT,
+    (VG.Taint.check VG.X86_64.RTaint.rtaint (VG.X86_64.RScrub.init variant512_224.I.finalizeApi.sig (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame variant512_224.H) [])
+      (Impl.StackScratch.X86_64.withStackScratch (Proof.Pbkdf2.Md.X86_64.hmacFrame variant512_224.H) .r8 variant512_224.H.hmacFin) h).any
+      (VG.X86_64.RScrub.resOkB · (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame variant512_224.H) (Impl.Scrub.X86_64.runKs [(112, 5)])
+        (Impl.Scrub.X86_64.chunksA (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame variant512_224.H))) = true :=
+  VG.X86_64.Scrub.SelScrub.ok_of [(112, 5)] (by taint_decide_lit)
+
+/-- HMAC's `finalize` over `variant512_224`, with what its cleanup needs. -/
+def fin512_224 : Proof.Pbkdf2.Md.X86_64.FinImpl := ⟨variant512_224, by decide, ⟨.avx, [(112, 5)], fin512_224_ok, fin_sides.2.2.1⟩⟩
+
+theorem fin512_256_ok : ∃ h : VG.Taint.Hint VG.X86_64.RTaint.FT,
+    (VG.Taint.check VG.X86_64.RTaint.rtaint (VG.X86_64.RScrub.init variant512_256.I.finalizeApi.sig (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame variant512_256.H) [])
+      (Impl.StackScratch.X86_64.withStackScratch (Proof.Pbkdf2.Md.X86_64.hmacFrame variant512_256.H) .r8 variant512_256.H.hmacFin) h).any
+      (VG.X86_64.RScrub.resOkB · (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame variant512_256.H) (Impl.Scrub.X86_64.runKs [(112, 5)])
+        (Impl.Scrub.X86_64.chunksA (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame variant512_256.H))) = true :=
+  VG.X86_64.Scrub.SelScrub.ok_of [(112, 5)] (by taint_decide_lit)
+
+/-- HMAC's `finalize` over `variant512_256`, with what its cleanup needs. -/
+def fin512_256 : Proof.Pbkdf2.Md.X86_64.FinImpl := ⟨variant512_256, by decide, ⟨.avx, [(112, 5)], fin512_256_ok, fin_sides.2.2.2⟩⟩
 
 end VG.Proof.Variants.MdHash.X86_64.Sha512ShaNi

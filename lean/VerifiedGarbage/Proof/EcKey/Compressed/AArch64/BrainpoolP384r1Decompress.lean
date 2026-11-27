@@ -1,7 +1,9 @@
 module
 
-import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.DecompressMain
-import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.Candidate
+public import VerifiedGarbage.Impl.EcKey.BrainpoolP384r1.AArch64
+public import VerifiedGarbage.Proof.EcKey.AArch64.Scrub
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubProved
+public import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.DecompressMain
 import VerifiedGarbage.Proof.Weierstrass.Sqrt
 public import VerifiedGarbage.Spec.EcKey.BrainpoolP384r1
 import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP384r1.Config
@@ -19,8 +21,6 @@ meta import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.Contract
 public import VerifiedGarbage.Impl.EcKey.Compressed.AArch64.Decompress
 public import VerifiedGarbage.Impl.EcKey.Compressed.Root
 public import VerifiedGarbage.Impl.Ecdsa.BrainpoolP384r1.AArch64
-public import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.DecompressContract
-public import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.DecompressMiddle
 public import VerifiedGarbage.Proof.Framework.AArch64.Inline
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
 
@@ -66,9 +66,20 @@ materialize_shared baseline := code
     Verified target code (Spec.EcKey.BrainpoolP384r1.inst.decompressPublicKeyContract abi 0) := by
   have hc := (brainpoolp384r1_ok hI)
   exact Verified.of_correct (decompress_correct brainpoolp384r1 hc _
-    (candidateThree_correct hc (by decide +kernel) chain_ok)
-    (by lit_decide) (by lit_decide) (by lit_decide)) ct
+    (candidateThree_correct hc (rootCall_of hc (by decide)) (by decide +kernel) chain_ok)
+    (by lit_decide)) ct
     (decompress_implies Spec.EcKey.BrainpoolP384r1.inst _
       (Proof.Weierstrass.rootFacts_three_mod_four hL (by decide +kernel)) sat)
+
+/-- `vg_ec_brainpoolp384r1_decompress_public_key` as it is emitted, its cleanup included
+(`Impl.EcKey.AArch64.Fn.decompressBrainpoolP384r1`), meets its contract in constant time and
+returns without secret residue. -/
+theorem scrubbed (hL : Proof.Weierstrass.Law Spec.BrainpoolP384r1.curve)
+    (hI : Proof.Weierstrass.AArch64.InvSounds) :
+    VerifiedScrubbed AArch64.target Impl.EcKey.AArch64.Fn.decompressBrainpoolP384r1
+      (Spec.EcKey.BrainpoolP384r1.inst.decompressPublicKeyContract abi 0) 32 :=
+  AArch64.Scrub.verifiedScrubbedAll (api := Spec.EcKey.BrainpoolP384r1.inst.decompressPublicKeyApi)
+    { code := code, verified := verified hL hI } _
+    (Proof.EcKey.AArch64.Scrub.decompressOk _) (by dsimp only; lit_decide)
 
 end VG.Proof.EcKey.Compressed.AArch64.BrainpoolP384r1Decompress

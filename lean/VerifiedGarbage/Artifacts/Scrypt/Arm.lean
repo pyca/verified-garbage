@@ -1,19 +1,21 @@
 module
 
-public import VerifiedGarbage.Proof.Scrypt.Arm.Whole.Verified
-public import VerifiedGarbage.Proof.Scrypt.Arm.RoMixCT
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.Arm.Print
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Scrypt.Contract
+import VerifiedGarbage.Proof.Scrypt.Arm.Scrub
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # scrypt (RFC 7914) on ARMv7 -/
 
-@[expose] public section
-
 namespace VG.Artifacts.Scrypt.Arm
 
-def artifacts : List Artifact := [
+public def artifacts : List (Artifact Arm.target) := [
   Spec.Scrypt.scryptApi.artifact Arm.target {
-    code := Impl.Scrypt.Arm.scrypt "vg_pbkdf2_hmac_sha256_scratch" Proof.Scrypt.Arm.Whole.pbkC
-    verified := Proof.Scrypt.Arm.Whole.scrypt_verified }]
+    code := Impl.Scrypt.Arm.Fn.scrypt
+    verified := Proof.Scrypt.Arm.Fn.scrypt }]
+
+spec_apis artifacts
 
 end VG.Artifacts.Scrypt.Arm

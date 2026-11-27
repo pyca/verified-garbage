@@ -73,8 +73,8 @@ theorem Ctx.vj {s : State} {B : Addr} {Z w N : Nat} (h : Ctx s B Z w N) {m m' : 
 theorem Ctx.of {s t : State} {B : Addr} {Z w N : Nat} (h : Ctx s B Z w N) {rs : List Reg} (k : Keep rs s t)
     (hrs : ∀ r ∈ [Reg.a7, .s5, .t0, .t1], r ∉ rs) (o : Arrays B w powJs s.mem t.mem) : Ctx t B Z w N := by
   have hnw := h.scr.nowrap
-  have hrs' : ∀ r ∈ [Reg.a7, .s5, .t0, .t1], t.gpr r = s.gpr r := fun r hr => k.gpr (hrs r hr)
-  have s0 := h.sl (j := 0) (by decide)
+  obtain hrs' : ∀ r ∈ [Reg.a7, .s5, .t0, .t1], t.gpr r = s.gpr r := fun r hr => k.gpr (hrs r hr)
+  obtain s0 := h.sl (j := 0) (by decide)
   refine ⟨h.scr.congr k.2.2, h.w2, h.w31, h.hZ, (hrs' .a7 (by decide)).trans h.a7,
     (hrs' .s5 (by decide)).trans h.s5, (hrs' .t0 (by decide)).trans h.t0, ?_, ?_⟩
   · rw [hrs' .t1 (by decide), o.word_eq (fun j hj => by
@@ -98,7 +98,7 @@ theorem Ctx.mont {s : State} {B : Addr} {Z w N : Nat} (h : Ctx s B Z w N) {o a b
         Arrays B w powJs s.mem t.mem) ∧ Keep montRegs s t := by
   refine WP.mono (montOp_ok h.scr ho ha hb ho2 ho3 ha2 hb2 h.w2 h.w31 h.hZ h.a7 h.s5 h.t0 h.inv
     (by rw [show wordsVal s.mem B (slot w 0) w = N from h.n]; exact hB)) fun t ⟨⟨hlt, he, out⟩, k⟩ => ?_
-  have op : Arrays B w powJs s.mem t.mem := arrays_pow out (by
+  obtain op : Arrays B w powJs s.mem t.mem := arrays_pow out (by
     intro j hj; simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
     simp only [powJs, List.mem_cons, List.not_mem_nil, or_false]; omega_arith)
   rw [show wordsVal s.mem B (slot w 0) w = N from h.n] at hlt he
@@ -116,7 +116,7 @@ theorem Ctx.square {s : State} {B : Addr} {Z w N : Nat} (h : Ctx s B Z w N)
   refine WP.mono (square_ok h.scr h.w2 h.w31 h.hZ h.a7 h.s5 h.t0 h.inv
     (by rw [show wordsVal s.mem B (slot w 0) w = N from h.n]; exact hA))
     fun t ⟨⟨hlt, he, out⟩, k⟩ => ?_
-  have op : Arrays B w powJs s.mem t.mem := arrays_pow out (by decide)
+  obtain op : Arrays B w powJs s.mem t.mem := arrays_pow out (by decide)
   rw [show wordsVal s.mem B (slot w 0) w = N from h.n] at hlt he
   exact ⟨⟨h.of k (by decide) op, hlt, he,
     fun j hj h1 h2 h3 h5 => h.vj hj (by
@@ -158,7 +158,7 @@ theorem r24_shift (x : BitVec 64) :
 theorem last_step {A S Y X c R N : Nat} (hR : Nat.Coprime R N) (hA : A % N = X ^ c * R % N)
     (hS : S * R % N = A * A % N) (b : Bool) (hY : Y * R % N = (if b then X else 1) * S % N) :
     Y % N = X ^ (2 * c + if b then 1 else 0) % N := by
-  have hS' := sq_step hR hA hS
+  obtain hS' := sq_step hR hA hS
   refine VG.Proof.Bignum.mont_cancel hR ?_
   rw [hY, Nat.mul_mod, hS', ← Nat.mul_mod]
   cases b
@@ -179,7 +179,7 @@ theorem bit_step {A S A' X XM c R N r r' v q : Nat} (hR : Nat.Coprime R N) (hA :
     (hr : r' + (if b then 1 else 0) * 2 ^ 64 = 2 * r) :
     (2 * c + if b then 1 else 0) * 2 ^ 64 + r' = v * 2 ^ 31 * 2 ^ (q + 1) ∧
       A' % N = X ^ (2 * c + if b then 1 else 0) * R % N := by
-  have hS' := sq_step hR hA hS
+  obtain hS' := sq_step hR hA hS
   refine ⟨by rw [pow_step (v * 2 ^ 31) q, ← hc]; exact shift_arith hr, ?_⟩
   cases b
   · simp only [Bool.false_eq_true, ↓reduceIte] at hA' ⊢
@@ -193,7 +193,7 @@ theorem one_word (m : Mem) (B : Addr) (d : Nat) {w : Nat} (hw : 1 ≤ w) (hfit :
     (hz : ∀ i < w, Mont.word m B (d + 8 * i) = 0) :
     wordsVal (m.writeW (off B d) (BitVec.ofNat 64 1)) B d w = 1 := by
   obtain ⟨k, rfl⟩ : ∃ k, w = k + 1 := ⟨w - 1, by omega_arith⟩
-  have ho := writeW_outside m B (d := d) (BitVec.ofNat 64 1) (by omega_arith)
+  obtain ho := writeW_outside m B (d := d) (BitVec.ofNat 64 1) (by omega_arith)
   simp only [wordsVal]
   rw [VG.Proof.Mont.word_writeW_self, Outside.wordsVal ho (by omega_arith) (by omega_arith),
     wsv_zero (fun i hi => by rw [show d + 8 + 8 * i = d + 8 * (i + 1) by omega_arith]; exact hz _ (by omega_arith))]
@@ -206,17 +206,17 @@ theorem oneP_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z) (hw1 : 1 ≤
     WP isa PublicChecked.one s fun t =>
       (V t.mem B w 7 = 1 ∧ Outside B (slot w 7) (8 * w) s.mem t.mem) ∧ Keep [.s0, .t3, .t5] s t := by
   have hnw := hs.nowrap
-  have s7 := slot_le (w := w) (j := 7) (by decide)
-  have al := slot_al w
+  obtain s7 := slot_le (w := w) (j := 7) (by decide)
+  obtain al := slot_al w
   unfold PublicChecked.one
   refine WP.seq (WP.mono (base_ok (rd := .t3) (by decide) h7 h5 7) fun s₁ ⟨⟨a3, m1⟩, k1⟩ => ?_)
   refine WP.seq (WP.mono (zeroWords_ok (hs.congr k1.2.2) a3 ((k1.gpr (by decide)).trans ht0) hw1 hw' (al 7)
     (by omega_arith)) fun s₂ ⟨⟨_, hz, out₂⟩, k₂⟩ => ?_)
-  have k12 := k1.trans k₂
+  obtain k12 := k1.trans k₂
   rw [WP.block_append_iff]
   refine WP.mono (base_ok (rd := .t3) (by decide) ((k12.gpr (by decide)).trans h7)
     ((k12.gpr (by decide)).trans h5) 7) fun s₃ ⟨⟨b3, m3⟩, k3⟩ => ?_
-  have k13 := k12.trans k3
+  obtain k13 := k12.trans k3
   refine WP.mono (WP.keep [.s0] (Q := fun t =>
     t.mem = s₃.mem.writeW (off B (slot w 7)) (BitVec.ofNat 64 1)) ?_ (by rfl) (by rfl))
     fun t ⟨tm, k4⟩ => ⟨⟨?_, ?_⟩, ((k13.trans k4).mono (by decide))⟩
@@ -241,7 +241,7 @@ theorem skipBody_ok {t : State} {n : Nat} (hn : 1 ≤ n) (hn' : n < 2 ^ 32) (h8 
       Keep [.t3, .s7, .s8] t t' := by
   refine WP.keep _ ?_ (by rfl) (by rfl)
   brun [top_bit, h8]
-  have e : BitVec.ofNat 64 n - BitVec.ofNat 64 1 = BitVec.ofNat 64 (n - 1) := by
+  obtain e : BitVec.ofNat 64 n - BitVec.ofNat 64 1 = BitVec.ofNat 64 (n - 1) := by
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
     omega_arith
@@ -266,11 +266,11 @@ theorem skip_ok {s : State} {v : Nat} (h7 : (s.gpr .s7).toNat = v * 2 ^ 31) :
   refine WP.loop Inv (fun n t ⟨i, hn, hi, t8, t7, tm, kt⟩ => ?_) 33 s₁
     ⟨0, rfl, by omega_arith, h8, by rw [k1.gpr (by decide), h7]; simp, m1, k1.mono (by decide)⟩
   refine WP.mono (skipBody_ok (n := 33 - i) (by omega_arith) (by omega_arith) t8) fun t' ⟨⟨a7, a8, a3, am⟩, k'⟩ => ?_
-  have hsh := r24_shift (t.gpr .s7)
+  obtain hsh := r24_shift (t.gpr .s7)
   rw [← a7] at hsh
-  have hlt := (t'.gpr .s7).isLt
-  have hlt' := (t.gpr .s7).isLt
-  have kt' : Keep [.t3, .s7, .s8] s t' := (kt.trans k').mono (by decide)
+  obtain hlt := (t'.gpr .s7).isLt
+  obtain hlt' := (t.gpr .s7).isLt
+  obtain kt' : Keep [.t3, .s7, .s8] s t' := (kt.trans k').mono (by decide)
   by_cases hb : 2 ^ 63 ≤ (t.gpr .s7).toNat
   · simp only [hb, ↓reduceIte] at a3 hsh
     refine .inl ⟨by rw [Steps.eval_nonzero, a3]; rfl, ⟨i, hi, by rw [a8]; congr 1; omega_arith, fun _ => ?_,
@@ -314,11 +314,11 @@ theorem initBlock_ok {t : State} {B : Addr} {w : Nat} (h7 : t.gpr .a7 = off B (s
   rw [WP.block_append_iff]
   refine WP.mono (base_ok (rd := .a5) (by decide) ((k1.gpr (by decide)).trans h7)
     ((k1.gpr (by decide)).trans h5) 6) fun t₂ ⟨⟨a5, m2⟩, k2⟩ => ?_
-  have k12 := k1.trans k2
+  obtain k12 := k1.trans k2
   rw [WP.block_append_iff]
   refine WP.mono (base_ok (rd := .a6) (by decide) ((k12.gpr (by decide)).trans h7)
     ((k12.gpr (by decide)).trans h5) 6) fun t₃ ⟨⟨a6, m3⟩, k3⟩ => ?_
-  have k13 := k12.trans k3
+  obtain k13 := k12.trans k3
   refine WP.mono (base_ok (rd := .a2) (by decide) ((k13.gpr (by decide)).trans h7)
     ((k13.gpr (by decide)).trans h5) 5) fun t₄ ⟨⟨a2, m4⟩, k4⟩ =>
       ⟨⟨?_, ?_, ?_, a2, ?_⟩, (k13.trans k4).mono (by decide)⟩
@@ -337,22 +337,22 @@ theorem initA_ok {s : State} {B : Addr} {Z w N : Nat} (h : Ctx s B Z w N) :
         (∀ j < 8, j ≠ 5 → V t.mem B w j = V s.mem B w j) ∧ Arrays B w powJs s.mem t.mem) ∧
       Keep initRegs s t := by
   have hnw := h.scr.nowrap
-  have al := slot_al w
+  obtain al := slot_al w
   unfold initA
   refine WP.seq (WP.mono (initBlock_ok h.a7 h.s5) fun s₁ ⟨⟨a4, a5, a6, a2, m1⟩, k1⟩ => ?_)
-  have s5 := h.sl (j := 5) (by decide)
-  have s6 := h.sl (j := 6) (by decide)
-  have d56 := slot_sep (w := w) (show (5 : Nat) ≠ 6 by decide)
+  obtain s5 := h.sl (j := 5) (by decide)
+  obtain s6 := h.sl (j := 6) (by decide)
+  obtain d56 := slot_sep (w := w) (show (5 : Nat) ≠ 6 by decide)
   refine WP.mono (selectAcc64_ok (b := true) (w := w) (dA := slot w 6) (dT := slot w 6) (dO := slot w 5)
     (h.scr.congr k1.2.2) a5 a6 a2 ((k1.gpr (by decide)).trans h.t0) (by rw [a4]; rfl)
     (by have := h.w2; omega_arith) h.w31 (al 6) (al 6) (al 5) (by omega_arith) (by omega_arith) (by omega_arith)
     (by omega_arith) (by omega_arith))
     fun t ⟨hv, out, k2⟩ => ?_
   rw [m1] at hv out
-  have o : Arrays B w [5] s.mem t.mem :=
+  obtain o : Arrays B w [5] s.mem t.mem :=
     Arrays.of_outside (j := 5) (by simp) out (Nat.le_refl _) (by omega_arith)
-  have op : Arrays B w powJs s.mem t.mem := arrays_pow o (by decide)
-  have k12 : Keep initRegs s t := (k1.trans k2).mono (by decide)
+  obtain op : Arrays B w powJs s.mem t.mem := arrays_pow o (by decide)
+  obtain k12 : Keep initRegs s t := (k1.trans k2).mono (by decide)
   simp only [ite_true] at hv
   exact ⟨⟨h.of k12 (by decide) op, hv,
     fun j hj hj5 => h.vj hj (by simp only [List.mem_cons, List.not_mem_nil, or_false]; omega_arith) o, op⟩, k12⟩
@@ -376,12 +376,12 @@ theorem bitStep_ok {s : State} {B : Addr} {Z w N : Nat} (h : Ctx s B Z w N) (hA 
   refine WP.seq (WP.mono (WP.keep [.t3, .s7] (Q := fun t => t.gpr .t3 = s₁.gpr .s7 >>> 63 ∧
       t.gpr .s7 = s₁.gpr .s7 <<< 1 ∧ t.mem = s₁.mem) (by brun) (by rfl) (by rfl))
     fun s₂ ⟨⟨a3, a7, m2⟩, k2⟩ => ?_)
-  have e7 : s₁.gpr .s7 = s.gpr .s7 := k1.gpr (by decide)
+  obtain e7 : s₁.gpr .s7 = s.gpr .s7 := k1.gpr (by decide)
   rw [e7, top_bit] at a3
   rw [e7] at a7
-  have k12 := k1.trans k2
-  have c2 : Ctx s₂ B Z w N := c1.of k2 (by decide) (by rw [m2]; exact fun _ _ => rfl)
-  have X1 : V s₁.mem B w 6 = V s.mem B w 6 := v1 6 (by decide) (by decide) (by decide) (by decide) (by decide)
+  obtain k12 := k1.trans k2
+  obtain c2 : Ctx s₂ B Z w N := c1.of k2 (by decide) (by rw [m2]; exact fun _ _ => rfl)
+  obtain X1 : V s₁.mem B w 6 = V s.mem B w 6 := v1 6 (by decide) (by decide) (by decide) (by decide) (by decide)
   refine WP.ite (decide (2 ^ 63 ≤ (s.gpr .s7).toNat)) (by
     rw [Steps.eval_nonzero, a3, ne_zero_iff]; split <;> rename_i hb <;> simp [hb]) (fun hb => ?_) (fun hb => ?_)
   · simp only [decide_eq_true_eq] at hb
@@ -412,12 +412,12 @@ theorem lastBit_ok {s : State} {B : Addr} {Z w N : Nat} (h : Ctx s B Z w N) (hA 
   refine WP.seq (WP.mono (h.square hA) fun s₁ ⟨⟨c1, lt1, e1, v1, o1⟩, k1⟩ => ?_)
   refine WP.seq (WP.mono (WP.keep [.t3] (Q := fun t => t.gpr .t3 = s₁.gpr .s7 >>> 63 ∧ t.mem = s₁.mem)
     (by brun) (by rfl) (by rfl)) fun s₂ ⟨⟨a3, m2⟩, k2⟩ => ?_)
-  have e7 : s₁.gpr .s7 = s.gpr .s7 := k1.gpr (by decide)
+  obtain e7 : s₁.gpr .s7 = s.gpr .s7 := k1.gpr (by decide)
   rw [e7, top_bit] at a3
-  have k12 := k1.trans k2
-  have c2 : Ctx s₂ B Z w N := c1.of k2 (by decide) (by rw [m2]; exact fun _ _ => rfl)
-  have X1 : V s₁.mem B w 4 = V s.mem B w 4 := v1 4 (by decide) (by decide) (by decide) (by decide) (by decide)
-  have S1 : V s₁.mem B w 7 = 1 := by rw [v1 7 (by decide) (by decide) (by decide) (by decide) (by decide), h7]
+  obtain k12 := k1.trans k2
+  obtain c2 : Ctx s₂ B Z w N := c1.of k2 (by decide) (by rw [m2]; exact fun _ _ => rfl)
+  obtain X1 : V s₁.mem B w 4 = V s.mem B w 4 := v1 4 (by decide) (by decide) (by decide) (by decide) (by decide)
+  obtain S1 : V s₁.mem B w 7 = 1 := by rw [v1 7 (by decide) (by decide) (by decide) (by decide) (by decide), h7]
   refine WP.ite (decide (2 ^ 63 ≤ (s.gpr .s7).toNat)) (by
     rw [Steps.eval_nonzero, a3, ne_zero_iff]; split <;> rename_i hb <;> simp [hb]) (fun hb => ?_) (fun hb => ?_)
   · simp only [decide_eq_true_eq] at hb

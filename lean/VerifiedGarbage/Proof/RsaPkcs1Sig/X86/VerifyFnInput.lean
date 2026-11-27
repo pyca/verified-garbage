@@ -5,6 +5,45 @@ public import VerifiedGarbage.Proof.Dsa.X86.RandomContext
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyRegions
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyPublicCall
+import VerifiedGarbage.Proof.Dsa.X86.RandomSignCorrect
+import VerifiedGarbage.Proof.Framework.X86.CallWith
+import VerifiedGarbage.Proof.Weierstrass.PointContract
+
+/-! ### `RsaPkcs1Sig.X86.VerifyNoSp`, which the modules that import this one used -/
+
+section
+
+/-! # Verification uses its two stack frames without changing their pointers -/
+
+@[expose] public section
+namespace VG.Proof.RsaPkcs1Sig.X86.Ver
+open VG VG.X86 VG.Impl.RsaPkcs1Sig.X86.Verify
+
+theorem body_noSp (v : PublicImpl) : NoSp (body v.name v.code) := by
+  unfold body
+  exact .seq' (.of_all (by decide +kernel)) (.ite' (.of_all (by decide +kernel))
+    (.seq' (.of_all (by decide +kernel)) (.seq' (.call' v.noSp) (.of_all (by decide +kernel)))))
+
+theorem allocation_noSp (v : PublicImpl) :
+    NoSp (.frame (.alloc frameBytes) (body v.name v.code) (.free frameBytes)) := by
+  intro i hi
+  simp only [instrs, List.mem_cons, List.mem_append, List.not_mem_nil, or_false] at hi
+  rcases hi with (rfl | hi) | rfl
+  · rfl
+  · exact body_noSp v i hi
+  · rfl
+
+theorem inner_noSp (v : PublicImpl) :
+    NoSp (.seq (.frame (.alloc frameBytes) (body v.name v.code) (.free frameBytes))
+      (.block VG.Impl.RsaPkcs1Sig.X86.Sign.restore)) :=
+  .seq' (allocation_noSp v) (.of_all (by decide +kernel))
+
+end VG.Proof.RsaPkcs1Sig.X86.Ver
+
+end
+
+end
 
 /-! # Entry state and preserved saved-register words for checked private RSA -/
 
@@ -26,6 +65,22 @@ theorem FnInput.savedSp {g : Geometry} {bs : Fin 5 → List Byte} {s : State}
     (pushed savedRegisters s).gpr .esp = g.stack + BitVec.ofNat 32 VG.Impl.RsaPkcs1Sig.X86.Verify.frameBytes := by
   rw [← h.context.sp]
   exact (BitVec.sub_add_cancel _ _).symm
+
+/-- The frame reserved below the saved registers is `innerRegion`. -/
+theorem FnInput.innerBelow {g : Geometry} {bs : Fin 5 → List Byte} {s : State} (h : FnInput g bs s) :
+    below ((pushed savedRegisters s).gpr .esp) VG.Impl.RsaPkcs1Sig.X86.Verify.frameBytes = g.innerRegion := by
+  show (⟨((pushed savedRegisters s).gpr .esp - BitVec.ofNat 32 VG.Impl.RsaPkcs1Sig.X86.Verify.frameBytes).setWidth 64, VG.Impl.RsaPkcs1Sig.X86.Verify.frameBytes⟩ : Region) =
+    ⟨byteAddr g.stack, VG.Impl.RsaPkcs1Sig.X86.Verify.frameBytes⟩
+  rw [← allocated_esp, show (allocated VG.Impl.RsaPkcs1Sig.X86.Verify.frameBytes (pushed savedRegisters s)).gpr .esp = g.stack from h.context.sp]
+  rfl
+
+/-- The saved registers' words are `savedRegion`. -/
+theorem FnInput.savedBelow {g : Geometry} {bs : Fin 5 → List Byte} {s : State} (h : FnInput g bs s) :
+    below (s.gpr .esp) (4 * savedRegisters.length) = g.savedRegion := by
+  show (⟨(s.gpr .esp - BitVec.ofNat 32 (4 * savedRegisters.length)).setWidth 64, 4 * savedRegisters.length⟩ :
+    Region) = ⟨byteAddr g.stack + BitVec.ofNat 64 VG.Impl.RsaPkcs1Sig.X86.Verify.frameBytes, 16⟩
+  rw [← pushed_esp, h.savedSp]
+  exact congrArg (fun a => Region.mk a 16) (h.context.valid.offsetAddr (by decide))
 
 theorem savedRegion_separate {g : Geometry} (h : g.Valid) :
     ∀ r ∈ bodyWrites g, g.savedRegion.Disjoint r := by

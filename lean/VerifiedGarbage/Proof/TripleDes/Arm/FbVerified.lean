@@ -2,30 +2,157 @@ module
 
 public import VerifiedGarbage.Proof.TripleDes.Arm.ModeCore
 public import VerifiedGarbage.Proof.TripleDes.FbScratch
-import VerifiedGarbage.Proof.Modes.Arm.Cfb8
-import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
+import VerifiedGarbage.Proof.Framework.Arm.StackScratch
 public import VerifiedGarbage.Impl.TripleDes.Arm.Fb
 public import VerifiedGarbage.Spec.TripleDes.Cfb
-public import VerifiedGarbage.Proof.Modes.Arm.SeqCT
+public import VerifiedGarbage.Proof.Modes.Arm.Cbc
 import VerifiedGarbage.Proof.Modes.Arm.OfbCfb
-import VerifiedGarbage.Proof.Modes.Arm.Cbc
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.TripleDes.Arm.ModeCore
 meta import VerifiedGarbage.Proof.TripleDes.FbScratch
-meta import VerifiedGarbage.Proof.Modes.Arm.Cfb8
-meta import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
+meta import VerifiedGarbage.Proof.Framework.Arm.StackScratch
 meta import VerifiedGarbage.Impl.TripleDes.Arm.Fb
 meta import VerifiedGarbage.Spec.TripleDes.Cfb
-meta import VerifiedGarbage.Proof.Modes.Arm.SeqCT
-meta import VerifiedGarbage.Proof.Modes.Arm.OfbCfb
 meta import VerifiedGarbage.Proof.Modes.Arm.Cbc
+meta import VerifiedGarbage.Proof.Modes.Arm.OfbCfb
 meta import VerifiedGarbage.Proof.Framework.Arm.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.Cfb8
+meta import VerifiedGarbage.Spec.Cfb8
+
+/-! ### `Modes.Arm.Cfb8`, which only this module used -/
+
+section
+
+/-!
+# CFB8 as a mode a byte at a time on ARMv7
+
+`Impl.Modes.Arm.cfb8Enc` and `cfb8Dec` run CFB with `s = 8` (SP 800-38A
+§6.3, `Spec/Cfb8.lean`): with the input block in the chaining block (from
+the IV), whatever the spare block holds, `runSeq` on the data's bytes (as
+one-byte elements) gives `Spec.Cfb8.encrypt` and `Spec.Cfb8.decrypt`, and
+leaves in the chaining block the input block to continue from
+(`Spec.Cfb8.next`), which they return in the IV.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Modes.Arm
+
+open VG VG.Arm VG.Impl.Modes.Arm
+open VG.Spec.Aes (bytesAt)
+
+theorem cfb8Enc_ok (c : Core) (h : encodable (BitVec.ofNat 32 (oOff + c.bs)) = true) : ModeOk c cfb8Enc :=
+  ⟨by rfl, by rfl, by decide, h⟩
+
+theorem cfb8Dec_ok (c : Core) (h : encodable (BitVec.ofNat 32 (oOff + c.bs)) = true) : ModeOk c cfb8Dec :=
+  ⟨by rfl, by rfl, by decide, h⟩
+
+theorem next_cons (iv cs : List Byte) (x : Byte) (hiv : iv ≠ []) :
+    Spec.Cfb8.next iv (x :: cs) = Spec.Cfb8.next (iv.tail ++ [x]) cs := by
+  obtain ⟨a, as, rfl⟩ := List.exists_cons_of_ne_nil hiv
+  simp [Spec.Cfb8.next]
+
+theorem runSeq_cfb8Enc (ciph : Spec.Cbc.Cipher) :
+    ∀ (b : Blks) (xs : List (List Byte)), b.o ≠ [] → (∀ x ∈ xs, x.length = 1) →
+      (runSeq cfb8Enc ciph b xs).1.flatten = Spec.Cfb8.encrypt ciph b.o xs.flatten ∧
+        (runSeq cfb8Enc ciph b xs).2.o = Spec.Cfb8.next b.o (Spec.Cfb8.encrypt ciph b.o xs.flatten)
+  | _, [], _, _ => ⟨rfl, by simp [Spec.Cfb8.next, Spec.Cfb8.encrypt, runSeq]⟩
+  | b, x :: xs, ho, hx => by
+    obtain ⟨p, rfl⟩ : ∃ p, x = [p] := by
+      have := hx x List.mem_cons_self
+      match x, this with | [p], _ => exact ⟨p, rfl⟩
+    have hd : (stepOf cfb8Enc ciph (b.set .d [p])).d = [p ^^^ (ciph b.o).headD 0] := by
+      simp [stepOf, runOps, runOp, cfb8Enc, Blks.set, Blks.get, xorHead]
+    have hO : (stepOf cfb8Enc ciph (b.set .d [p])).o = b.o.tail ++ [p ^^^ (ciph b.o).headD 0] := by
+      simp [stepOf, runOps, runOp, cfb8Enc, Blks.set, Blks.get, xorHead]
+    have ih := runSeq_cfb8Enc ciph (stepOf cfb8Enc ciph (b.set .d [p])) xs (by rw [hO]; simp)
+      (fun z hz => hx z (List.mem_cons_of_mem _ hz))
+    rw [hO] at ih
+    refine ⟨?_, ?_⟩
+    · simp only [runSeq, List.flatten_cons, hd, ih.1, List.singleton_append, Spec.Cfb8.encrypt]
+    · simp only [runSeq, List.flatten_cons, ih.2, List.singleton_append, Spec.Cfb8.encrypt, next_cons _ _ _ ho]
+
+theorem runSeq_cfb8Dec (ciph : Spec.Cbc.Cipher) :
+    ∀ (b : Blks) (xs : List (List Byte)), b.o ≠ [] → (∀ x ∈ xs, x.length = 1) →
+      (runSeq cfb8Dec ciph b xs).1.flatten = Spec.Cfb8.decrypt ciph b.o xs.flatten ∧
+        (runSeq cfb8Dec ciph b xs).2.o = Spec.Cfb8.next b.o xs.flatten
+  | _, [], _, _ => ⟨rfl, by simp [Spec.Cfb8.next, runSeq]⟩
+  | b, x :: xs, ho, hx => by
+    obtain ⟨p, rfl⟩ : ∃ p, x = [p] := by
+      have := hx x List.mem_cons_self
+      match x, this with | [p], _ => exact ⟨p, rfl⟩
+    have hd : (stepOf cfb8Dec ciph (b.set .d [p])).d = [p ^^^ (ciph b.o).headD 0] := by
+      simp [stepOf, runOps, runOp, cfb8Dec, Blks.set, Blks.get, xorHead]
+    have hO : (stepOf cfb8Dec ciph (b.set .d [p])).o = b.o.tail ++ [p] := by
+      simp [stepOf, runOps, runOp, cfb8Dec, Blks.set, Blks.get, xorHead]
+    have ih := runSeq_cfb8Dec ciph (stepOf cfb8Dec ciph (b.set .d [p])) xs (by rw [hO]; simp)
+      (fun z hz => hx z (List.mem_cons_of_mem _ hz))
+    rw [hO] at ih
+    refine ⟨?_, ?_⟩
+    · simp only [runSeq, List.flatten_cons, hd, ih.1, List.singleton_append, Spec.Cfb8.decrypt]
+    · simp only [runSeq, List.flatten_cons, ih.2, List.singleton_append, next_cons _ _ _ ho]
+
+/-- The bytes of the data, as one-byte elements. -/
+theorem flatten_blocksOf_one (m : Mem) (p : Addr) (n : Nat) :
+    (VG.Proof.Modes.blocksOf 1 m p n).flatten = bytesAt m p n := by
+  induction n with
+  | zero => rfl
+  | succ n ih =>
+    simp only [VG.Proof.Modes.blocksOf, List.range_succ, List.map_append, List.flatten_append] at ih ⊢
+    rw [ih]
+    simp [bytesAt, List.range_succ, Nat.one_mul]
+
+theorem blocksOf_one_len (m : Mem) (p : Addr) (n : Nat) : ∀ x ∈ VG.Proof.Modes.blocksOf 1 m p n, x.length = 1 := by
+  intro x hx
+  simp only [VG.Proof.Modes.blocksOf, List.mem_map] at hx
+  obtain ⟨_, _, rfl⟩ := hx
+  simp [bytesAt]
+
+theorem cfb8Enc_post {c : Core} {S : CoreSpec c} (hbs : 0 < c.bs) {s s' : State}
+    (h : (seqArm c S cfb8Enc).post s s') :
+    let ciph := S.ciphAt s.mem (State.addr (s.gpr .r0)) (s.gpr .r1)
+    let iv := bytesAt s.mem (State.addr (ivArg c s)) c.bs
+    let xs := bytesAt s.mem (State.addr (dArg c s)) (nArg c s).toNat
+    bytesAt s'.mem (State.addr (dArg c s)) (nArg c s).toNat = Spec.Cfb8.encrypt ciph iv xs ∧
+      bytesAt s'.mem (State.addr (ivArg c s)) c.bs = Spec.Cfb8.next iv (Spec.Cfb8.encrypt ciph iv xs) := by
+  have e := runSeq_cfb8Enc (S.ciphAt s.mem (State.addr (s.gpr .r0)) (s.gpr .r1)) ⟨[], bytesAt s.mem
+    (State.addr (ivArg c s)) c.bs, bytesAt s.mem (State.addr (scArg c s) +
+      BitVec.ofNat 64 (oOff + c.bs)) c.bs⟩
+    (VG.Proof.Modes.blocksOf 1 s.mem (State.addr (dArg c s)) (nArg c s).toNat)
+    (by show bytesAt _ _ c.bs ≠ []; simp [bytesAt]; omega_using [hbs]) (blocksOf_one_len _ _ _)
+  rw [flatten_blocksOf_one] at e
+  have h1 := congrArg List.flatten h.1
+  rw [show c.ds cfb8Enc = 1 from rfl, flatten_blocksOf_one] at h1
+  exact ⟨h1.trans e.1, (h.2 rfl).trans e.2⟩
+
+theorem cfb8Dec_post {c : Core} {S : CoreSpec c} (hbs : 0 < c.bs) {s s' : State}
+    (h : (seqArm c S cfb8Dec).post s s') :
+    let ciph := S.ciphAt s.mem (State.addr (s.gpr .r0)) (s.gpr .r1)
+    let iv := bytesAt s.mem (State.addr (ivArg c s)) c.bs
+    let xs := bytesAt s.mem (State.addr (dArg c s)) (nArg c s).toNat
+    bytesAt s'.mem (State.addr (dArg c s)) (nArg c s).toNat = Spec.Cfb8.decrypt ciph iv xs ∧
+      bytesAt s'.mem (State.addr (ivArg c s)) c.bs = Spec.Cfb8.next iv xs := by
+  have e := runSeq_cfb8Dec (S.ciphAt s.mem (State.addr (s.gpr .r0)) (s.gpr .r1)) ⟨[], bytesAt s.mem
+    (State.addr (ivArg c s)) c.bs, bytesAt s.mem (State.addr (scArg c s) +
+      BitVec.ofNat 64 (oOff + c.bs)) c.bs⟩
+    (VG.Proof.Modes.blocksOf 1 s.mem (State.addr (dArg c s)) (nArg c s).toNat)
+    (by show bytesAt _ _ c.bs ≠ []; simp [bytesAt]; omega_using [hbs]) (blocksOf_one_len _ _ _)
+  rw [flatten_blocksOf_one] at e
+  have h1 := congrArg List.flatten h.1
+  rw [show c.ds cfb8Dec = 1 from rfl, flatten_blocksOf_one] at h1
+  exact ⟨h1.trans e.1, (h.2 rfl).trans e.2⟩
+
+end VG.Proof.Modes.Arm
+
+end
+
+end
 
 /-!
 # Triple DES-OFB, -CFB64 and -CFB8 on ARMv7 meet their contracts
@@ -34,8 +161,9 @@ The generic OFB, CFB and CFB8 one element at a time over Triple DES's ECB
 encryption (`Proof.Modes.Arm.seq_verified` with `ecbSpec .encrypt`) meet the
 contracts with a scratch buffer of 7 words (`Proof.TripleDes.fbScratchContract`,
 `cfb8ScratchContract`), with the 1024 bytes of stack the ECB function uses;
-the `_framed` theorems keep the buffer on the stack, zeroed on return: 64
-bytes more.
+the `_framed` theorems keep the buffer on the stack, 64 bytes more, which the
+functions' cleanup zeroes. CFB64 decryption is
+`Bitsliced/WideVerified.lean`'s.
 -/
 
 @[expose] public section
@@ -91,14 +219,14 @@ theorem ofbFrameSat : ∃ s, (Spec.TripleDes.ofbContract Arm.abi 1088).pre s := 
   implies_sat [Spec.TripleDes.ofbContract, Spec.TripleDes.ofbSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
     Arm.State.addr] [fbFrameSat, fbSat] using fbFrameSat 8
 
-/-- `ofb`, with its scratch buffer on the stack (zeroed on return). -/
+/-- `ofb`, with its scratch buffer on the stack (which its function's cleanup zeroes). -/
 theorem ofb_framed :
-    Verified Arm.target (Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 ofb) (Spec.TripleDes.ofbContract Arm.abi 1088) :=
-  Arm.Verified.stackScratchWiped (sig := Spec.TripleDes.ofbSig) (nm := "scratch") (e := .u64) (n := 7)
+    Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 64 0 ofb) (Spec.TripleDes.ofbContract Arm.abi 1088) :=
+  Arm.Verified.stackScratch (sig := Spec.TripleDes.ofbSig) (nm := "scratch") (e := .u64) (n := 7)
     (post := Proof.TripleDes.ofbPost Arm.abi.ptrBits) (wa := true) (stack := 1024) (m := 0) (bytes := 64)
-    ofb_verified (by decide) (by decide) (by decide) (by decide) (by decide)
+    ofb_verified (by decide) (by decide) (by decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.TripleDes.ofbPost_local _)
-    (Proof.TripleDes.ofbPostOut_local _) ofbFrameSat
+    (fun vs mm m₁ m₂ r hl _ => Proof.TripleDes.ofbPostOut_local _ vs mm m₁ m₂ r hl) ofbFrameSat
 
 theorem cfbEncryptTaint : SeqTaint (ecbCore .encrypt) cfbEnc :=
   ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
@@ -130,53 +258,14 @@ theorem cfbEncryptFrameSat : ∃ s, (Spec.TripleDes.cfbEncryptContract Arm.abi 1
   implies_sat [Spec.TripleDes.cfbEncryptContract, Spec.TripleDes.cfbSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
     Arm.State.addr] [fbFrameSat, fbSat] using fbFrameSat 8
 
-/-- `cfbEncrypt`, with its scratch buffer on the stack (zeroed on return). -/
+/-- `cfbEncrypt`, with its scratch buffer on the stack (which its function's cleanup zeroes). -/
 theorem cfbEncrypt_framed :
-    Verified Arm.target (Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 cfbEncrypt) (Spec.TripleDes.cfbEncryptContract Arm.abi 1088) :=
-  Arm.Verified.stackScratchWiped (sig := Spec.TripleDes.cfbSig) (nm := "scratch") (e := .u64) (n := 7)
+    Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 64 0 cfbEncrypt) (Spec.TripleDes.cfbEncryptContract Arm.abi 1088) :=
+  Arm.Verified.stackScratch (sig := Spec.TripleDes.cfbSig) (nm := "scratch") (e := .u64) (n := 7)
     (post := Proof.TripleDes.cfbEncPost Arm.abi.ptrBits) (wa := true) (stack := 1024) (m := 0) (bytes := 64)
-    cfbEncrypt_verified (by decide) (by decide) (by decide) (by decide) (by decide)
+    cfbEncrypt_verified (by decide) (by decide) (by decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.TripleDes.cfbEncPost_local _)
-    (Proof.TripleDes.cfbEncPostOut_local _) cfbEncryptFrameSat
-
-theorem cfbDecryptTaint : SeqTaint (ecbCore .encrypt) cfbDec :=
-  ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
-
-theorem cfbDecrypt_implies : (seqArm (ecbCore .encrypt) (ecbSpec .encrypt) cfbDec).Implies
-    (Proof.TripleDes.fbScratchContract Arm.abi 7 Proof.TripleDes.cfbDecPost 1024) where
-  pre s h := seqArm_pre_rw rfl (len := (· * 8)) (fun n => rfl) (by
-    sig_pre [Proof.TripleDes.fbScratchContract, Proof.TripleDes.fbScratchSig, Spec.TripleDes.ofbSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val] at h
-    exact h)
-  post s s' _ h := by
-    sig_post [Proof.TripleDes.fbScratchContract, Proof.TripleDes.fbScratchSig, Proof.TripleDes.cfbDecPost, Spec.TripleDes.ofbSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
-    have e := cfbDec_post h
-    obtain ⟨e1, e2, e3, -, -⟩ := args_plain (c := ecbCore .encrypt) rfl s
-    simp only [e1, e2, e3] at e
-    rw [show (ecbCore .encrypt).bs = 8 from rfl] at e
-    simp only [ecbSpec, dirCipher, State.addr, blocksOf_eq] at e
-    exact e
-  pub s₁ s₂ _ _ h := by
-    sig_pub [Proof.TripleDes.fbScratchContract, Proof.TripleDes.fbScratchSig, Spec.TripleDes.ofbSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val] at h
-    exact seqArm_pub rfl h
-  sat := by
-    sig_implies_sat [Proof.TripleDes.fbScratchContract, Proof.TripleDes.fbScratchSig, Spec.TripleDes.ofbSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
-      Arm.State.addr] [fbSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using fbSat 8
-
-theorem cfbDecrypt_verified : Verified Arm.target cfbDecrypt (Proof.TripleDes.fbScratchContract Arm.abi 7 Proof.TripleDes.cfbDecPost 1024) :=
-  seq_verified (ecbSpec .encrypt) (cfbDec_ok _) cfbDecryptTaint cfbDecrypt_implies
-
-theorem cfbDecryptFrameSat : ∃ s, (Spec.TripleDes.cfbDecryptContract Arm.abi 1088).pre s := by
-  implies_sat [Spec.TripleDes.cfbDecryptContract, Spec.TripleDes.cfbSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
-    Arm.State.addr] [fbFrameSat, fbSat] using fbFrameSat 8
-
-/-- `cfbDecrypt`, with its scratch buffer on the stack (zeroed on return). -/
-theorem cfbDecrypt_framed :
-    Verified Arm.target (Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 cfbDecrypt) (Spec.TripleDes.cfbDecryptContract Arm.abi 1088) :=
-  Arm.Verified.stackScratchWiped (sig := Spec.TripleDes.cfbSig) (nm := "scratch") (e := .u64) (n := 7)
-    (post := Proof.TripleDes.cfbDecPost Arm.abi.ptrBits) (wa := true) (stack := 1024) (m := 0) (bytes := 64)
-    cfbDecrypt_verified (by decide) (by decide) (by decide) (by decide) (by decide)
-    (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.TripleDes.cfbDecPost_local _)
-    (Proof.TripleDes.cfbDecPostOut_local _) cfbDecryptFrameSat
+    (fun vs mm m₁ m₂ r hl _ => Proof.TripleDes.cfbEncPostOut_local _ vs mm m₁ m₂ r hl) cfbEncryptFrameSat
 
 theorem cfb8EncryptTaint : SeqTaint (ecbCore .encrypt) cfb8Enc :=
   ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
@@ -205,14 +294,14 @@ theorem cfb8EncryptFrameSat : ∃ s, (Spec.TripleDes.cfb8EncryptContract Arm.abi
   implies_sat [Spec.TripleDes.cfb8EncryptContract, Spec.TripleDes.cfb8Sig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
     Arm.State.addr] [fbFrameSat, fbSat] using fbFrameSat 1
 
-/-- `cfb8Encrypt`, with its scratch buffer on the stack (zeroed on return). -/
+/-- `cfb8Encrypt`, with its scratch buffer on the stack (which its function's cleanup zeroes). -/
 theorem cfb8Encrypt_framed :
-    Verified Arm.target (Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 cfb8Encrypt) (Spec.TripleDes.cfb8EncryptContract Arm.abi 1088) :=
-  Arm.Verified.stackScratchWiped (sig := Spec.TripleDes.cfb8Sig) (nm := "scratch") (e := .u64) (n := 7)
+    Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 64 0 cfb8Encrypt) (Spec.TripleDes.cfb8EncryptContract Arm.abi 1088) :=
+  Arm.Verified.stackScratch (sig := Spec.TripleDes.cfb8Sig) (nm := "scratch") (e := .u64) (n := 7)
     (post := Proof.TripleDes.cfb8EncPost Arm.abi.ptrBits) (wa := true) (stack := 1024) (m := 0) (bytes := 64)
-    cfb8Encrypt_verified (by decide) (by decide) (by decide) (by decide) (by decide)
+    cfb8Encrypt_verified (by decide) (by decide) (by decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.TripleDes.cfb8EncPost_local _)
-    (Proof.TripleDes.cfb8EncPostOut_local _) cfb8EncryptFrameSat
+    (fun vs mm m₁ m₂ r hl _ => Proof.TripleDes.cfb8EncPostOut_local _ vs mm m₁ m₂ r hl) cfb8EncryptFrameSat
 
 theorem cfb8DecryptTaint : SeqTaint (ecbCore .encrypt) cfb8Dec :=
   ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
@@ -241,13 +330,13 @@ theorem cfb8DecryptFrameSat : ∃ s, (Spec.TripleDes.cfb8DecryptContract Arm.abi
   implies_sat [Spec.TripleDes.cfb8DecryptContract, Spec.TripleDes.cfb8Sig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
     Arm.State.addr] [fbFrameSat, fbSat] using fbFrameSat 1
 
-/-- `cfb8Decrypt`, with its scratch buffer on the stack (zeroed on return). -/
+/-- `cfb8Decrypt`, with its scratch buffer on the stack (which its function's cleanup zeroes). -/
 theorem cfb8Decrypt_framed :
-    Verified Arm.target (Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 cfb8Decrypt) (Spec.TripleDes.cfb8DecryptContract Arm.abi 1088) :=
-  Arm.Verified.stackScratchWiped (sig := Spec.TripleDes.cfb8Sig) (nm := "scratch") (e := .u64) (n := 7)
+    Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 64 0 cfb8Decrypt) (Spec.TripleDes.cfb8DecryptContract Arm.abi 1088) :=
+  Arm.Verified.stackScratch (sig := Spec.TripleDes.cfb8Sig) (nm := "scratch") (e := .u64) (n := 7)
     (post := Proof.TripleDes.cfb8DecPost Arm.abi.ptrBits) (wa := true) (stack := 1024) (m := 0) (bytes := 64)
-    cfb8Decrypt_verified (by decide) (by decide) (by decide) (by decide) (by decide)
+    cfb8Decrypt_verified (by decide) (by decide) (by decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.TripleDes.cfb8DecPost_local _)
-    (Proof.TripleDes.cfb8DecPostOut_local _) cfb8DecryptFrameSat
+    (fun vs mm m₁ m₂ r hl _ => Proof.TripleDes.cfb8DecPostOut_local _ vs mm m₁ m₂ r hl) cfb8DecryptFrameSat
 
 end VG.Proof.TripleDes.Arm

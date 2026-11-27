@@ -28,6 +28,8 @@ set_option linter.unusedSimpArgs false
 
 namespace VG.Proof.AesGcm.X86
 
+variable {N : Nat}
+
 variable {vg : GcmImpl}
 
 open VG VG.X86 VG.X86.RegUpd VG.Impl.AesGcm.X86
@@ -67,11 +69,17 @@ theorem covers_pre {p : Addr} {k n : Nat} {rs : List Region} (h : Covers [⟨p, 
   have := covers_off (d := 0) (n := n) h (by omega_using [hn]) hk
   rwa [BitVec.add_zero] at this
 
+/-! ### With the whole working space
+
+`vg_aes_gcm_init` gives `vg_aes_ctr32_to` the 2048 bytes every implementation
+takes, as it gives `vg_aes_expand_key_scratch` its 512 at the same place: its
+working space is 2560 bytes whatever the implementation. -/
+
 /-- The call of `vg_aes_ctr32_to` and `ebp` back to `W`. -/
 abbrev ctrW (vg : GcmImpl) : Prog isa := .seq (ctrCall vg.callees) (.block unscr)
 
 /-- Ready for `ctrW`: the arguments of `vg_aes_ctr32_to` in their registers. -/
-structure CtrReady (Ctx St W SP : BitVec 32) (R : Nat) (C Dp : BitVec 32) (nb : Nat) (s : State) : Prop where
+structure CtrReady (N : Nat) (Ctx St W SP : BitVec 32) (R : Nat) (C Dp : BitVec 32) (nb : Nat) (s : State) : Prop where
   eax : s.gpr .eax = Ctx
   ecx : s.gpr .ecx = BitVec.ofNat 32 R
   edx : s.gpr .edx = C
@@ -82,7 +90,7 @@ structure CtrReady (Ctx St W SP : BitVec 32) (R : Nat) (C Dp : BitVec 32) (nb : 
   esp : s.gpr .esp = SP
   ctxR : Covers [⟨w64 Ctx, 256⟩] (s.rd ++ s.wr)
   stW : Covers [⟨w64 St, 80⟩] s.wr
-  wW : Covers [⟨w64 W, 2560⟩] s.wr
+  wW : Covers [⟨w64 W, N⟩] s.wr
   ctx : s.mem.readW (w64 W + BitVec.ofNat 64 ctxO) 32 = Ctx
   rounds : RoundsAt s.mem W R
   fC : C.toNat + 16 ≤ 2 ^ 32
@@ -92,18 +100,18 @@ structure CtrReady (Ctx St W SP : BitVec 32) (R : Nat) (C Dp : BitVec 32) (nb : 
   cd : (⟨w64 C, 16⟩ : Region).Disjoint ⟨w64 Dp, 16 * nb⟩
   kC : (⟨w64 Ctx, 256⟩ : Region).Disjoint ⟨w64 C, 16⟩
   kD : (⟨w64 Ctx, 256⟩ : Region).Disjoint ⟨w64 Dp, 16 * nb⟩
-  sC : (⟨w64 C, 16⟩ : Region).Disjoint ⟨w64 W + BitVec.ofNat 64 512, 2048⟩
-  sD : (⟨w64 Dp, 16 * nb⟩ : Region).Disjoint ⟨w64 W + BitVec.ofNat 64 512, 2048⟩
+  sC : (⟨w64 C, 16⟩ : Region).Disjoint ⟨w64 W + BitVec.ofNat 64 512, N - 512⟩
+  sD : (⟨w64 Dp, 16 * nb⟩ : Region).Disjoint ⟨w64 W + BitVec.ofNat 64 512, N - 512⟩
   bC : (below SP 32).Disjoint ⟨w64 C, 16⟩
   bD : (below SP 32).Disjoint ⟨w64 Dp, 16 * nb⟩
   pC : (keptR W).Disjoint ⟨w64 C, 16⟩
   pD : (keptR W).Disjoint ⟨w64 Dp, 16 * nb⟩
 
 /-- What `ctrW` leaves. -/
-structure CtrOut (Ctx St W SP : BitVec 32) (R : Nat) (C Dp : BitVec 32) (nb : Nat) (s s' : State) : Prop where
-  env : Env Ctx St W SP s'
+structure CtrOut (N : Nat) (Ctx St W SP : BitVec 32) (R : Nat) (C Dp : BitVec 32) (nb : Nat) (s s' : State) : Prop where
+  env : Env N Ctx St W SP s'
   rounds : RoundsAt s'.mem W R
-  frame : Frame [⟨w64 C, 16⟩, ⟨w64 Dp, 16 * nb⟩, ⟨w64 W + BitVec.ofNat 64 512, 2048⟩, below SP 32] s.mem s'.mem
+  frame : Frame [⟨w64 C, 16⟩, ⟨w64 Dp, 16 * nb⟩, ⟨w64 W + BitVec.ofNat 64 512, N - 512⟩, below SP 32] s.mem s'.mem
   out : blocksAt s'.mem (w64 Dp) nb = ctr32 (ciphOf s.mem Ctx R) (blockAt s.mem (w64 C)) (blocksAt s.mem (w64 Dp) nb)
   ctr : blockAt s'.mem (w64 C) = Nat.repeat Spec.Gcm.inc32 nb (blockAt s.mem (w64 C))
   ebx : s'.gpr .ebx = s.gpr .ebx
@@ -112,44 +120,60 @@ structure CtrOut (Ctx St W SP : BitVec 32) (R : Nat) (C Dp : BitVec 32) (nb : Na
   wr : s'.wr = s.wr
 
 section
-variable {Ctx St W SP : BitVec 32} {K : Nat} (L : Lay Ctx St W SP K) (hK : K = 32)
+/- The working space holds what the implementation of `vg_aes_ctr32_to` uses. -/
+variable {Ctx St W SP : BitVec 32} {K : Nat} (L : Lay N Ctx St W SP K) (hK : K = 32) [ws : WSize N vg.ctr.scr]
 include L hK
 
 theorem CtrReady.call {R : Nat} {C Dp : BitVec 32} {nb : Nat} {s : State}
-    (h : CtrReady Ctx St W SP R C Dp nb s) :
-    CtrCall s Ctx C Dp (W + BitVec.ofNat 32 512) R nb := by
+    (h : CtrReady N Ctx St W SP R C Dp nb s) :
+    CtrCall vg.ctr.scr s Ctx C Dp (W + BitVec.ofNat 32 512) R nb := by
   have eS := L.aW (o := 512) (by decide)
   have hsp : below (s.gpr .esp) 32 = below SP 32 := by rw [h.esp]
+  -- The implementation's working space, the first bytes of the callees'.
+  have hS : Region.Sub ⟨w64 W + BitVec.ofNat 64 512, vg.ctr.scr⟩ ⟨w64 W + BitVec.ofNat 64 512, N - 512⟩ :=
+    Lay.hiPre ws.hB
+  have hSW : Region.Sub ⟨w64 W + BitVec.ofNat 64 512, vg.ctr.scr⟩ ⟨w64 W, N⟩ := Lay.scrSub ws.hB
   refine ⟨h.eax, h.ecx, h.edx, h.ebx, h.edi, h.ebp, h.rounds.2, by rw [h.esp]; have := L.sp; omega_using [hK, this],
     h.kC.sub_left (Region.sub_prefix (by decide)), h.kD.sub_left (Region.sub_prefix (by decide)), ?_, h.cd,
-    by rw [eS]; exact h.sC, by rw [eS]; exact h.sD, by rw [hsp]; subst hK; exact L.kc.sub_right (Region.sub_prefix (by decide)),
+    by rw [eS]; exact h.sC.sub_right hS, by rw [eS]; exact h.sD.sub_right hS,
+    by rw [hsp]; subst hK; exact L.kc.sub_right (Region.sub_prefix (by decide)),
     by rw [hsp]; exact h.bC, by rw [hsp]; exact h.bD, ?_, by have := L.fc; omega_using [this], h.fC, h.fD, ?_,
     covers_pre h.ctxR (by decide) (by decide), ?_⟩
-  · rw [eS]; exact (L.cw.sub_left (Region.sub_prefix (by decide))).sub_right (Lay.wSub (by decide))
-  · rw [hsp, eS]; subst hK; exact L.kw.sub_right (Lay.wSub (by decide))
-  · rw [L.nW (by decide)]; have := L.fw; omega_using [this]
-  · rw [eS]; exact covers_cons h.wC (covers_cons h.wD (covers_cons (covers_off h.wW (by decide) (by decide))
+  · rw [eS]; exact (L.cw.sub_left (Region.sub_prefix (by decide))).sub_right hSW
+  · rw [hsp, eS]; subst hK; exact L.kw.sub_right hSW
+  · rw [L.nW (by decide)]; have hfw := L.fw; have hB := ws.hB; omega_using [hfw, hB]
+  · rw [eS]; exact covers_cons h.wC (covers_cons h.wD (covers_cons (covers_off h.wW ws.hB L.nlt)
       covers_nil))
 
 theorem CtrReady.kept {R : Nat} {C Dp : BitVec 32} {nb : Nat} {s : State}
-    (h : CtrReady Ctx St W SP R C Dp nb s) :
-    ∀ r ∈ [(⟨w64 C, 16⟩ : Region), ⟨w64 Dp, 16 * nb⟩, ⟨w64 W + BitVec.ofNat 64 512, 2048⟩, below SP 32],
+    (h : CtrReady N Ctx St W SP R C Dp nb s) :
+    ∀ r ∈ [(⟨w64 C, 16⟩ : Region), ⟨w64 Dp, 16 * nb⟩, ⟨w64 W + BitVec.ofNat 64 512, N - 512⟩, below SP 32],
       (keptR W).Disjoint r := fun r hr => by
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
   · exact h.pC
   · exact h.pD
-  · exact Lay.w_w (.inl (by decide)) (by decide) (by decide)
+  · exact L.w_hi (by decide)
   · subst hK; exact (L.stk_w (by decide)).symm
 
 theorem ctrW_ok {R : Nat} {C Dp : BitVec 32} {nb : Nat} {s : State}
-    (h : CtrReady Ctx St W SP R C Dp nb s) :
-    WP isa (ctrW vg) s (CtrOut Ctx St W SP R C Dp nb s) := by
+    (h : CtrReady N Ctx St W SP R C Dp nb s) :
+    WP isa (ctrW vg) s (CtrOut N Ctx St W SP R C Dp nb s) := by
   have eS := L.aW (o := 512) (by decide)
   refine WP.seq (WP.mono (ctr_call vg (h.call L hK)) fun s₁ g => ?_)
   have gf := g.frame
   have hsp : below (s.gpr .esp) 32 = below SP 32 := by rw [h.esp]
   rw [eS, hsp] at gf
+  -- The implementation's working space is within the callees'.
+  replace gf : Frame [⟨w64 C, 16⟩, ⟨w64 Dp, 16 * nb⟩, ⟨w64 W + BitVec.ofNat 64 512, N - 512⟩, below SP 32]
+      s.mem s₁.mem := gf.sub fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl
+    · exact ⟨_, List.mem_cons_self .., fun _ h => h⟩
+    · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), fun _ h => h⟩
+    · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)), Lay.hiPre ws.hB⟩
+    · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_singleton_self _))),
+        fun _ h => h⟩
   have hk := h.kept L hK
   have bp₁ : s₁.gpr .ebp = W + BitVec.ofNat 32 512 := by rw [g.saved .ebp (by decide), h.ebp]
   refine WP.of_runBlock ⟨_, by xrun [unscr, bp₁], ?_⟩
@@ -169,7 +193,7 @@ theorem ctrW_ok {R : Nat} {C Dp : BitVec 32} {nb : Nat} {s : State}
   · mems [g.rd]
   · mems [g.wr]
 
-theorem ctrW_ct {R : Nat} {C Dp : BitVec 32} {nb : Nat} : CT (CtrReady Ctx St W SP R C Dp nb) (ctrW vg) := by
+theorem ctrW_ct {R : Nat} {C Dp : BitVec 32} {nb : Nat} : CT (CtrReady N Ctx St W SP R C Dp nb) (ctrW vg) := by
   refine CT.seq (J := fun s => s.gpr .ebp = W + BitVec.ofNat 32 512)
     (ctr_ct vg (E := SP) fun s h => ⟨h.call L hK, h.esp⟩) (fun s h => WP.mono (ctr_call vg (h.call L hK))
       fun s₁ g => by rw [g.saved .ebp (by decide), h.ebp]) ?_

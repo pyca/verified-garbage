@@ -9,14 +9,12 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 import all Init.Data.Nat.Bitwise.Basic
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Call
 public import VerifiedGarbage.Proof.Framework.RelCT
-import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Block
+public import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Block
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 meta import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Block
-meta import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Contract
 meta import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Xor
 meta import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Vmx4.Xor
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
-public import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Contract
 public import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Xor
 public import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Vmx4.Xor
 

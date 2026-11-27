@@ -1,10 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.Mont.X86.CombTable
-
-public import VerifiedGarbage.Proof.Mont.X86.CombFrame
+public import VerifiedGarbage.Proof.Mont.X86.CombAccess
 public import VerifiedGarbage.Spec.Rsa.FixedBaseComb
-import VerifiedGarbage.Proof.Mont.X86.CombAccess
 import VerifiedGarbage.Proof.Mont.X86.ContextLayout
 
 /-! Partial comb tables and their preservation by shared arithmetic. -/

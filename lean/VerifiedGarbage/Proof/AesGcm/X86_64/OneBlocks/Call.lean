@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksVerified
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks.CT
 import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
@@ -240,24 +239,6 @@ structure BlkFn (M : CtxMode) where
   encXd : enc.code.x86_64Depth ≤ 8
   decXd : dec.code.x86_64Depth ≤ 8
 
-/-- What `B.enc` leaves in its scratch `S` (the 2112 bytes at `[rsp + 8]`):
-a function `L` of its arguments and `S` says, byte by byte, the value it
-leaves (`some b`) or that it leaves the byte as it found it (`none`). -/
-def BlkLeaves {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) : Prop :=
-  ∃ L : BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → Addr → Addr → Option (BitVec 8),
-    ∀ s t s', (Proof.AesGcm.encryptBlocksX86_64M M).pre s → Exec isa B.enc.code s t s' →
-      ∀ x, (⟨stackArg s 0, 2112⟩ : Region).Contains x 1 →
-        s'.mem x = (L (s.gpr .rdi) (s.gpr .rsi) (s.gpr .rdx) (s.gpr .rcx) (s.gpr .r8) (s.gpr .r9)
-          (stackArg s 0) x).getD (s.mem x)
-
-/-- What `B.dec` leaves in its scratch `S`, as `BlkLeaves` says of `B.enc`. -/
-def BlkLeavesD {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) : Prop :=
-  ∃ L : BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → Addr → Addr → Option (BitVec 8),
-    ∀ s t s', (Proof.AesGcm.decryptBlocksX86_64M M).pre s → Exec isa B.dec.code s t s' →
-      ∀ x, (⟨stackArg s 0, 2112⟩ : Region).Contains x 1 →
-        s'.mem x = (L (s.gpr .rdi) (s.gpr .rsi) (s.gpr .rdx) (s.gpr .rcx) (s.gpr .r8) (s.gpr .r9)
-          (stackArg s 0) x).getD (s.mem x)
-
 open Gcm.X86_64.Stitch (CtxMode) in
 /-- `vg_aes_gcm_encrypt_blocks` and `_decrypt_blocks` calling `v`'s
 implementations and interleaving with the loops `st`, named `e` and `d`. -/
@@ -286,26 +267,54 @@ def GcmImpl.blkB (v : GcmImpl) : BlkFn CtxMode.base where
   enc := v.callees.enc
   dec := v.callees.dec
   encOk := by
-    have h := (v.blkM (v.stitch.map (·.code CtxMode.base)) "" "").encOk
-    simp only [GcmImpl.blkM, map_code_enc, StitchImpl.encFull_code, StitchImpl.encSmall_code] at h; exact h
+    simp only [GcmImpl.callees]
+    cases hs : v.stitch with
+    | none =>
+      intro s hs
+      obtain ⟨t, u, he, hg, hp⟩ := Blocks.encryptSeparateWP v hs
+      exact ⟨t, u, he, abiPreserved_of_exec (encryptBlocks_mxB v none) he hg, hp⟩
+    | some p =>
+      have h := (v.blkM ((some p).map (·.code CtxMode.base)) "" "").encOk
+      simp only [GcmImpl.blkM, map_code_enc, StitchImpl.encFull_code, StitchImpl.encSmall_code] at h; exact h
   decOk := by
     have h := (v.blkM (v.stitch.map (·.code CtxMode.base)) "" "").decOk
     simp only [GcmImpl.blkM, map_code_dec, StitchImpl.decFull_code, StitchImpl.decSmall_code] at h; exact h
   encCt := by
-    have h := (v.blkM (v.stitch.map (·.code CtxMode.base)) "" "").encCt
-    simp only [GcmImpl.blkM, map_code_enc, StitchImpl.encFull_code, StitchImpl.encSmall_code] at h; exact h
+    simp only [GcmImpl.callees]
+    cases hs : v.stitch with
+    | none =>
+      exact Blocks.encryptSeparateCT v
+    | some p =>
+      have h := (v.blkM ((some p).map (·.code CtxMode.base)) "" "").encCt
+      simp only [GcmImpl.blkM, map_code_enc, StitchImpl.encFull_code, StitchImpl.encSmall_code] at h; exact h
   decCt := by
     have h := (v.blkM (v.stitch.map (·.code CtxMode.base)) "" "").decCt
     simp only [GcmImpl.blkM, map_code_dec, StitchImpl.decFull_code, StitchImpl.decSmall_code] at h; exact h
   encNosp := by
-    have h := (v.blkM (v.stitch.map (·.code CtxMode.base)) "" "").encNosp
-    simp only [GcmImpl.blkM, map_code_enc, StitchImpl.encFull_code, StitchImpl.encSmall_code] at h; exact h
+    simp only [GcmImpl.callees]
+    cases hs : v.stitch with
+    | none =>
+      refine nosp_of_all ?_
+      have hc : v.ctr.ctrTo.callee.code.allInstrs (fun i => !Taint.clobbers i .rsp) = true := by
+        rw [Code.allInstrs_eq, List.all_eq_true]; intro i hi; simp [v.ctr.ctrTo.nosp i hi]
+      simp only [GcmImpl.encryptBase, Blocks.encryptSeparate, Blocks.blocks, Blocks.body, Blocks.head, Blocks.tail,
+      Blocks.ctrAlias, Blocks.aliasLeaf, Blocks.ghCall,
+        Code.allInstrs, hc, gh_nosp_all v.gh, Bool.true_and, Bool.and_true] <;> decide +kernel
+    | some p =>
+      have h := (v.blkM ((some p).map (·.code CtxMode.base)) "" "").encNosp
+      simp only [GcmImpl.blkM, map_code_enc, StitchImpl.encFull_code, StitchImpl.encSmall_code] at h; exact h
   decNosp := by
     have h := (v.blkM (v.stitch.map (·.code CtxMode.base)) "" "").decNosp
     simp only [GcmImpl.blkM, map_code_dec, StitchImpl.decFull_code, StitchImpl.decSmall_code] at h; exact h
   encDepth := by
-    have h := (v.blkM (v.stitch.map (·.code CtxMode.base)) "" "").encDepth
-    simp only [GcmImpl.blkM, map_code_enc, StitchImpl.encFull_code, StitchImpl.encSmall_code] at h; exact h
+    simp only [GcmImpl.callees]
+    cases hs : v.stitch with
+    | none =>
+      simp only [GcmImpl.encryptBase, Blocks.encryptSeparate, Blocks.blocks, Blocks.body, Blocks.head, Blocks.tail,
+      Blocks.ctrAlias, Blocks.aliasLeaf, Blocks.ghCall, Code.depth, v.ctr.ctrTo.depth, v.gh.depth] <;> decide +kernel
+    | some p =>
+      have h := (v.blkM ((some p).map (·.code CtxMode.base)) "" "").encDepth
+      simp only [GcmImpl.blkM, map_code_enc, StitchImpl.encFull_code, StitchImpl.encSmall_code] at h; exact h
   decDepth := by
     have h := (v.blkM (v.stitch.map (·.code CtxMode.base)) "" "").decDepth
     simp only [GcmImpl.blkM, map_code_dec, StitchImpl.decFull_code, StitchImpl.decSmall_code] at h; exact h

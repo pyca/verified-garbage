@@ -13,7 +13,8 @@ open VG.Arm
 /-- P-256 as the code has it, its field multiplications by
 `vg_p256_mul_mod_<p|n>_umaal` if `u`. -/
 def p256With (u : Bool) : Cfg :=
-  ⟨4, Spec.P256.curve, Impl.Weierstrass.Mont.p256p, Impl.Weierstrass.Mont.p256n, some Impl.Weierstrass.Mul.p256, u⟩
+  ⟨4, Spec.P256.curve, Impl.Weierstrass.Mont.p256p, Impl.Weierstrass.Mont.p256n, some Impl.Weierstrass.Mul.p256, u,
+    "VG_P256_FRAME_CONSTS"⟩
 
 /-- P-256 as the code has it. -/
 def p256 : Cfg := p256With false
@@ -29,5 +30,14 @@ def mulP256 : Prog isa := mulP256With false
 
 /-- `vg_p256_mul_umaal`. -/
 def mulP256U : Prog isa := mulP256With true
+
+/-- `vg_p256_mul_public`, or with `u` `vg_p256_mul_public_umaal`. -/
+def mulPubP256With (u : Bool) : Prog isa := (p256With u).pubFn
+
+/-- `vg_p256_mul_public`. -/
+def mulPubP256 : Prog isa := mulPubP256With false
+
+/-- `vg_p256_mul_public_umaal`. -/
+def mulPubP256U : Prog isa := mulPubP256With true
 
 end VG.Impl.Ecdsa.Arm

@@ -1,114 +1,233 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.X86.Arith.AddSub
+public import VerifiedGarbage.Proof.MlDsa.X86.Arith.NttInv
+public import VerifiedGarbage.Proof.MlDsa.X86.Arith.VLanes
+public import VerifiedGarbage.Proof.MlKem.X86.Mcdt
 public import VerifiedGarbage.Impl.MlDsa.X86.Arith.Mul
-import VerifiedGarbage.Proof.MlDsa.X86.Arith.Basic
-import VerifiedGarbage.Proof.MlKem.X86.Red
-import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Framework.X86.Sse
+import VerifiedGarbage.Proof.Framework.X86.SseDword
+import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
+import VerifiedGarbage.Proof.Framework.X86.Wp
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.MlDsa.X86.Arith.AddSub
+meta import VerifiedGarbage.Proof.MlDsa.X86.Arith.NttInv
+meta import VerifiedGarbage.Proof.MlDsa.X86.Arith.VLanes
+meta import VerifiedGarbage.Proof.MlKem.X86.Mcdt
 meta import VerifiedGarbage.Impl.MlDsa.X86.Arith.Mul
-meta import VerifiedGarbage.Proof.MlDsa.X86.Arith.Basic
-meta import VerifiedGarbage.Proof.MlKem.X86.Red
-meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.X86.Sse
+meta import VerifiedGarbage.Proof.Framework.X86.SseDword
+meta import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
+meta import VerifiedGarbage.Proof.Framework.X86.Wp
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 
 /-!
 # ML-DSA on x86 (32-bit): `vg_mldsa_multiply_ntt` and `vg_mldsa_multiply_add_ntt`
 
-`mulHead` leaves `f[i] · g[i] mod q` in `ebx` (`head_spec`): two Montgomery
-reductions, the second of the first times `2⁶⁴ mod q` (`mont_mont_R2`). The
-loop over the coefficients is proven once for both functions (`MulInv`,
-`step`), with the value `V a b c` of coefficient `i` from those of `f`, `g`
-and `h`.
+The vector pieces of `Impl/MlDsa/X86/Arith/Mul.lean` on the registers the
+code uses them with (`vjoin_wp`, `vmont_wp`, `vmont2_wp`, `vcsub_wp`): each
+is run an instruction at a time from a state given by its XMM registers
+(`wp_xs`, and `wp_pm` for `pmuludq`, which needs an open MCDT frame), and
+leaves in `xmm0` the value `VLanes.lean` describes. A core leaves
+`f[i] · g[i] mod q` in each doubleword (`mul_lane`): two Montgomery
+reductions, the second of the first times `2⁶⁴ mod q` (`mont_mont_R2`), and
+a conditional subtraction; `multiplyAddNTT`'s adds `h[i]` and reduces
+(`mulAdd_lane`).
+
+The loop over the 64 groups of four coefficients is proven once for both
+functions (`VInv`, `vstep`), for a core (`CoreOk`) whose doublewords are
+the value `V a b c` of a coefficient from those of `f`, `g` and `h`
+(`LaneOk`): after `k` groups, `eax`, `ecx` and `edx` point at coefficient
+`4k` of `h`, `f` and `g`, the slot of `h` holds `h + 1024`, and the first
+`4k` coefficients of `h` are the new ones. The function is the loop inside
+its MCDT frame (`Piece.mcdt`, `Proof/MlKem/X86/Mcdt.lean`), constant time by the analysis
+of general and XMM registers (`Piece.sse`) from `esp` and the three
+pointers.
 -/
 
 @[expose] public section
 
 namespace VG.Proof.MlDsa.X86.Arith
 
-open VG VG.X86 VG.Impl.MlDsa.X86.Arith
-open VG.Impl.MlKem.X86 (at_ leaf)
+open VG VG.X86 VG.X86.Lanes VG.Impl.MlDsa.X86.Arith
+open VG.Impl.MlKem.X86 (at_)
 open VG.Proof.MlDsa.Arith
 open VG.Spec.MlDsa VG.Proof.MlDsa
-open VG.Proof.MlKem.X86 (Only wp_cons wp_movm wp_movr wp_mul toNat_ofNat32 eq_ofNat_of_toNat E0 P0 P0_esp
-  P0_wr frameR retR LeafPost LeafEnd Piece ea_add ptr_next cnt_next cnt_ne execMul_other satState)
+open VG.Proof.MlKem.X86 (toNat_ofNat32 eq_ofNat_of_toNat E0 retR Piece ea_add ptr_next satState)
+open VG.Proof.MlKem.X86 (M0 mcdtR McdtEnd McdtPost M0_esp M0_wr M0_rd M0_frame ret_mcdt)
 
-theorem mulHead_eq (is : List Instr) : mulHead ++ is =
-    .mov .eax (.mem (at_ .esi 0)) :: .mov .edx (.mem (at_ .edi 0)) :: .mul .edx :: (mredRaw .ebx ++
-      (.mov .eax (.reg .ebx) :: .mov .edx (.imm r2Imm) :: .mul .edx :: (mred .ebx ++ is))) := by
-  simp only [mulHead, List.cons_append, List.nil_append, List.append_assoc]
+/-! ## Straight-line XMM code -/
+
+/-- `s'` is `s` but for its XMM registers. -/
+def Same (s s' : State) : Prop := ∃ f, s' = { s with xmm := f }
+
+variable {s : State}
+
+/-- An instruction that writes an XMM register, from a state given by its XMM registers. -/
+theorem wp_xs {f : XReg → BitVec 128} {i : Instr} {is : List Instr} {Q : State → Prop} {d : XReg} {v : BitVec 128}
+    (h : exec i { s with xmm := f } = some (State.setXmm { s with xmm := f } d v))
+    (k : WP isa (.block is) { s with xmm := fun r => if r = d then v else f r } Q) :
+    WP isa (.block (i :: is)) { s with xmm := f } Q := Wp.cons h k
+
+/-- `pmuludq`, inside an MCDT frame. -/
+theorem wp_pm {f : XReg → BitVec 128} {is : List Instr} {Q : State → Prop} {d r : XReg} (hm : 0 < s.mcdt)
+    (k : WP isa (.block is) { s with xmm := fun x => if x = d then pmuludq (f d) (f r) else f x } Q) :
+    WP isa (.block (.pmuludq d r :: is)) { s with xmm := f } Q :=
+  Wp.cons (show (if 0 < s.mcdt then some _ else none) = _ by rw [ite_eq_left hm]; rfl) k
+
+/-- A 16-byte load. -/
+theorem wp_ld {f : XReg → BitVec 128} {is : List Instr} {Q : State → Prop} {d : XReg} {m : MemOp} {a : Addr}
+    (ha : s.ea m = a) (hin : InRegions (s.rd ++ s.wr) a 16)
+    (k : WP isa (.block is) { s with xmm := fun r => if r = d then s.mem.readW a 128 else f r } Q) :
+    WP isa (.block (.movdquLoad d m :: is)) { s with xmm := f } Q :=
+  Wp.cons (show (State.load128 { s with xmm := f } (s.ea m)).map _ = _ by
+    rw [ha, State.load128, ite_eq_left hin]; rfl) k
+
+/-- The registers of the constants. -/
+structure VC (f : XReg → BitVec 128) : Prop where
+  q : f .xmm7 = qV
+  nqi : f .xmm6 = nqiV
+  r2 : f .xmm5 = bc r2Imm
+  ones : f .xmm4 = onesV
+  negq : f .xmm3 = negqV
+
+theorem vjoin_wp {f : XReg → BitVec 128} {is : List Instr} {Q : State → Prop} (hm : 0 < s.mcdt)
+    (h6 : f .xmm6 = nqiV) (h7 : f .xmm7 = qV)
+    (k : ∀ g : XReg → BitVec 128, g .xmm0 = joinV (f .xmm0) (f .xmm2) →
+      (∀ r, r ≠ .xmm0 → r ≠ .xmm1 → r ≠ .xmm2 → g r = f r) → WP isa (.block is) { s with xmm := g } Q) :
+    WP isa (.block (vjoin .xmm0 .xmm2 .xmm1 ++ is)) { s with xmm := f } Q := by
+  refine wp_xs rfl (wp_pm hm (wp_pm hm (wp_xs rfl (wp_xs rfl (wp_xs rfl (wp_pm hm (wp_pm hm (wp_xs rfl
+    (wp_xs rfl (k _ ?_ ?_))))))))))
+  · simp only [joinV, redcV]
+    rw [← h6, ← h7]
+    rfl
+  · intro r h0 h1 h2
+    simp only [h0, h1, h2, ite_false]
+
+theorem vmont_wp {f : XReg → BitVec 128} {is : List Instr} {Q : State → Prop} (hm : 0 < s.mcdt)
+    (h6 : f .xmm6 = nqiV) (h7 : f .xmm7 = qV)
+    (k : ∀ g : XReg → BitVec 128, g .xmm0 = montV (f .xmm0) (f .xmm5) →
+      (∀ r, r ≠ .xmm0 → r ≠ .xmm1 → r ≠ .xmm2 → g r = f r) → WP isa (.block is) { s with xmm := g } Q) :
+    WP isa (.block (vmont .xmm0 .xmm5 .xmm2 .xmm1 ++ is)) { s with xmm := f } Q := by
+  refine wp_xs rfl (wp_xs rfl (wp_pm hm (wp_pm hm (vjoin_wp hm h6 h7 fun g hg hr => k g (hg.trans rfl)
+    fun r h0 h1 h2 => (hr r h0 h1 h2).trans ?_))))
+  simp only [h0, h2, ite_false]
+
+theorem vmont2_wp {f : XReg → BitVec 128} {is : List Instr} {Q : State → Prop} (hm : 0 < s.mcdt)
+    (h6 : f .xmm6 = nqiV) (h7 : f .xmm7 = qV)
+    (k : ∀ g : XReg → BitVec 128, g .xmm0 = mont2V (f .xmm0) (f .xmm1) →
+      (∀ r, r ≠ .xmm0 → r ≠ .xmm1 → r ≠ .xmm2 → g r = f r) → WP isa (.block is) { s with xmm := g } Q) :
+    WP isa (.block (vmont2 .xmm0 .xmm1 .xmm2 ++ is)) { s with xmm := f } Q := by
+  refine wp_xs rfl (wp_xs rfl (wp_pm hm (wp_xs rfl (wp_pm hm (vjoin_wp hm h6 h7 fun g hg hr => k g (hg.trans rfl)
+    fun r h0 h1 h2 => (hr r h0 h1 h2).trans ?_)))))
+  simp only [h0, h1, h2, ite_false]
+
+theorem vcsub_wp {f : XReg → BitVec 128} {is : List Instr} {Q : State → Prop}
+    (h3 : f .xmm3 = negqV) (h4 : f .xmm4 = onesV) (h7 : f .xmm7 = qV)
+    (k : ∀ g : XReg → BitVec 128, g .xmm0 = csubV (f .xmm0) →
+      (∀ r, r ≠ .xmm0 → r ≠ .xmm1 → g r = f r) → WP isa (.block is) { s with xmm := g } Q) :
+    WP isa (.block (vcsub .xmm0 .xmm1 ++ is)) { s with xmm := f } Q := by
+  refine wp_xs rfl (wp_xs rfl (wp_xs rfl (wp_xs rfl (wp_xs rfl (wp_xs rfl (k _ ?_ ?_))))))
+  · simp only [csubV]
+    rw [← h3, ← h4, ← h7]
+    rfl
+  · intro r h0 h1
+    simp only [h0, h1, ite_false]
+
+/-! ## The cores -/
+
+/-- What `mulCore` leaves in `xmm0`. -/
+def mulX (x y : BitVec 128) : BitVec 128 := csubV (montV (mont2V x y) (bc r2Imm))
+
+/-- What `mulAddCore` leaves in `xmm0`. -/
+def mulAddX (x y h : BitVec 128) : BitVec 128 := csubV (XBinOp.eval .paddd (mulX x y) h)
+
+theorem mulCore_wp {f : XReg → BitVec 128} {is : List Instr} {Q : State → Prop} (hm : 0 < s.mcdt) (hc : VC f)
+    (k : ∀ g : XReg → BitVec 128, g .xmm0 = mulX (f .xmm0) (f .xmm1) →
+      (∀ r, r ≠ .xmm0 → r ≠ .xmm1 → r ≠ .xmm2 → g r = f r) → WP isa (.block is) { s with xmm := g } Q) :
+    WP isa (.block (mulCore ++ is)) { s with xmm := f } Q := by
+  rw [show mulCore ++ is = vmont2 .xmm0 .xmm1 .xmm2 ++ (vmont .xmm0 .xmm5 .xmm2 .xmm1 ++ (vcsub .xmm0 .xmm1 ++ is)) by
+    simp only [mulCore, List.append_assoc]]
+  refine vmont2_wp hm hc.nqi hc.q fun g₁ v₁ r₁ => ?_
+  have e₁ : ∀ r, r ≠ .xmm0 → r ≠ .xmm1 → r ≠ .xmm2 → g₁ r = f r := r₁
+  refine vmont_wp hm ((e₁ _ (by decide) (by decide) (by decide)).trans hc.nqi)
+    ((e₁ _ (by decide) (by decide) (by decide)).trans hc.q) fun g₂ v₂ r₂ => ?_
+  have e₂ : ∀ r, r ≠ .xmm0 → r ≠ .xmm1 → r ≠ .xmm2 → g₂ r = f r := fun r h0 h1 h2 =>
+    (r₂ r h0 h1 h2).trans (e₁ r h0 h1 h2)
+  refine vcsub_wp ((e₂ _ (by decide) (by decide) (by decide)).trans hc.negq)
+    ((e₂ _ (by decide) (by decide) (by decide)).trans hc.ones)
+    ((e₂ _ (by decide) (by decide) (by decide)).trans hc.q) fun g₃ v₃ r₃ => k g₃ ?_ ?_
+  · rw [v₃, v₂, v₁, e₁ .xmm5 (by decide) (by decide) (by decide), hc.r2, mulX]
+  · exact fun r h0 h1 h2 => (r₃ r h0 h1).trans (e₂ r h0 h1 h2)
+
+/-- A core: from the four coefficients of `f` and `g` in `xmm0` and `xmm1`
+and those of `h` at `[eax]`, it leaves `F` of them in `xmm0`, and keeps the
+constants. -/
+def CoreOk (core : List Instr) (F : BitVec 128 → BitVec 128 → BitVec 128 → BitVec 128) : Prop :=
+  ∀ (s : State) (f : XReg → BitVec 128) (is : List Instr) (Q : State → Prop) (a : Addr), 0 < s.mcdt → VC f →
+    s.ea (at_ .eax 0) = a → InRegions (s.rd ++ s.wr) a 16 →
+    (∀ g : XReg → BitVec 128, g .xmm0 = F (f .xmm0) (f .xmm1) (s.mem.readW a 128) → VC g →
+      WP isa (.block is) { s with xmm := g } Q) →
+    WP isa (.block (core ++ is)) { s with xmm := f } Q
+
+theorem VC.of_eq {f g : XReg → BitVec 128} (hc : VC f) (h : ∀ r, r ≠ .xmm0 → r ≠ .xmm1 → r ≠ .xmm2 → g r = f r) :
+    VC g :=
+  ⟨(h _ (by decide) (by decide) (by decide)).trans hc.q, (h _ (by decide) (by decide) (by decide)).trans hc.nqi,
+    (h _ (by decide) (by decide) (by decide)).trans hc.r2, (h _ (by decide) (by decide) (by decide)).trans hc.ones,
+    (h _ (by decide) (by decide) (by decide)).trans hc.negq⟩
+
+theorem mul_core : CoreOk mulCore fun x y _ => mulX x y := fun _ _ _ _ _ hm hc _ _ k =>
+  mulCore_wp hm hc fun g v r => k g v (hc.of_eq r)
+
+theorem mulAdd_core : CoreOk mulAddCore mulAddX := fun s f is Q a hm hc ha hin k => by
+  rw [show mulAddCore ++ is = mulCore ++ (.movdquLoad .xmm1 (at_ .eax 0) :: xb .paddd .xmm0 .xmm1 ::
+      (vcsub .xmm0 .xmm1 ++ is)) by
+    simp only [mulAddCore, List.append_assoc, List.cons_append, List.nil_append]]
+  refine mulCore_wp hm hc fun g₁ v₁ r₁ => ?_
+  have c₁ := hc.of_eq r₁
+  refine wp_ld ha hin (wp_xs rfl (vcsub_wp c₁.negq c₁.ones c₁.q fun g₂ v₂ r₂ => k g₂ ?_ ?_))
+  · rw [v₂, mulAddX, ← v₁]; rfl
+  · exact c₁.of_eq fun r h0 h1 _ => (r₂ r h0 h1).trans (by simp only [h0, h1, ite_false])
+
+/-! ## The doublewords of the cores' results -/
 
 theorem r2Imm_toNat : r2Imm.toNat = 2 ^ 64 % q := rfl
 
-/-- `mulHead` leaves `a · b mod q` in `ebx` from `[esi] = a` and `[edi] = b`,
-changing only `eax`, `edx`, `ebx` and the flags. -/
-theorem head_spec (is : List Instr) (s : State) (P : State → Prop) {a b : Nat} (ha : a < q) (hb : b < q)
-    (hia : InRegions (s.rd ++ s.wr) (s.ea (at_ .esi 0)) 4) (hva : (s.mem.readW (s.ea (at_ .esi 0)) 32).toNat = a)
-    (hib : InRegions (s.rd ++ s.wr) (s.ea (at_ .edi 0)) 4) (hvb : (s.mem.readW (s.ea (at_ .edi 0)) 32).toNat = b)
-    (k : ∀ s', Only [.eax, .edx, .ebx] s s' → (s'.gpr .ebx).toNat = a * b % q → WP isa (.block is) s' P) :
-    WP isa (.block (mulHead ++ is)) s P := by
-  rw [mulHead_eq]
-  refine wp_movm hia (wp_movm ?_ (wp_mul ?_))
-  · simpa only [State.ea, at_, State.setReg, show Reg.edi ≠ Reg.eax by decide, ite_false] using hib
-  let s₁ := (s.setReg .eax (s.mem.readW (s.ea (at_ .esi 0)) 32)).setReg .edx
-    ((s.setReg .eax (s.mem.readW (s.ea (at_ .esi 0)) 32)).mem.readW
-      ((s.setReg .eax (s.mem.readW (s.ea (at_ .esi 0)) 32)).ea (at_ .edi 0)) 32)
-  try rewrite [show (s.setReg .eax (s.mem.readW (s.ea (at_ .esi 0)) 32)).setReg .edx
-    ((s.setReg .eax (s.mem.readW (s.ea (at_ .esi 0)) 32)).mem.readW
-      ((s.setReg .eax (s.mem.readW (s.ea (at_ .esi 0)) 32)).ea (at_ .edi 0)) 32) = s₁ from rfl] at *
-  have hs₁ : s₁ = (s.setReg .eax (s.mem.readW (s.ea (at_ .esi 0)) 32)).setReg .edx
-    ((s.setReg .eax (s.mem.readW (s.ea (at_ .esi 0)) 32)).mem.readW
-      ((s.setReg .eax (s.mem.readW (s.ea (at_ .esi 0)) 32)).ea (at_ .edi 0)) 32) := rfl
-  have e₁ : ((execMul .edx s₁).gpr .edx).toNat * 2 ^ 32 + ((execMul .edx s₁).gpr .eax).toNat = a * b := by
-    rw [execMul_pair]
-    simp only [hs₁, State.setReg, ite_true, ite_false, show Reg.eax ≠ Reg.edx by decide, State.ea, at_,
-      show Reg.edi ≠ Reg.eax by decide]
-    simp only [State.ea, at_] at hva hvb
-    rw [hva, hvb]
-  have hab : a * b < q * 2 ^ 32 := Nat.lt_of_lt_of_le (Nat.mul_lt_mul_of_lt_of_lt ha hb) (by decide)
-  refine mredRaw_spec (by decide) (by decide) _ _ P e₁ hab fun s₂ o₂ v₂ => ?_
-  refine wp_movr (wp_movi (wp_mul ?_))
-  have ht := mont_lt hab
-  have e₂ : ((execMul .edx ((s₂.setReg .eax (s₂.gpr .ebx)).setReg .edx r2Imm)).gpr .edx).toNat * 2 ^ 32 +
-      ((execMul .edx ((s₂.setReg .eax (s₂.gpr .ebx)).setReg .edx r2Imm)).gpr .eax).toNat =
-      mont (a * b) * (2 ^ 64 % q) := by
-    rw [execMul_pair]
-    simp only [State.setReg, ite_true, ite_false, show Reg.eax ≠ Reg.edx by decide]
-    rw [v₂, r2Imm_toNat]
-  have hlt : mont (a * b) * (2 ^ 64 % q) < q * 2 ^ 32 := by
-    have : 2 ^ 64 % q < q := Nat.mod_lt _ (by decide)
-    have := Nat.mul_lt_mul_of_lt_of_lt ht this
-    rw [q_eq] at this ⊢; omega_using [v₂]
-  refine mred_spec (by decide) (by decide) _ _ P e₂ hlt fun s₃ o₃ v₃ => k s₃ ⟨fun r hr => ?_, ?_, ?_, ?_⟩ ?_
-  · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-    rw [o₃.gpr r (by simp [hr.1, hr.2.1, hr.2.2]), execMul_other _ _ hr.1 hr.2.1]
-    simp only [State.setReg, hr.1, hr.2.1, ite_false]
-    rw [o₂.gpr r (by simp [hr.1, hr.2.1, hr.2.2]), execMul_other _ _ hr.1 hr.2.1]
-    simp [hs₁, State.setReg, hr.1, hr.2.1]
-  · rw [o₃.mem]; simp only [execMul, State.setReg, State.setFlags]; rw [o₂.mem]; rfl
-  · rw [o₃.rd]; simp only [execMul, State.setReg, State.setFlags]; rw [o₂.rd]; rfl
-  · rw [o₃.wr]; simp only [execMul, State.setReg, State.setFlags]; rw [o₂.wr]; rfl
-  · rw [v₃, mont_mont_R2]
+theorem mul_lane {x y : BitVec 128} (hx : ∀ i < 4, (dword x i).toNat < q) (hy : ∀ i < 4, (dword y i).toNat < q)
+    {j : Nat} (hj : j < 4) :
+    (dword (mulX x y) j).toNat = (dword x j).toNat * (dword y j).toNat % q ∧ (dword (mulX x y) j).toNat < q := by
+  have h1 : ∀ i < 4, (dword x i).toNat * (dword y i).toNat < q * 2 ^ 32 := fun i hi =>
+    Nat.lt_of_lt_of_le (Nat.mul_lt_mul_of_lt_of_lt (hx i hi) (hy i hi)) (by decide)
+  have h2 : ∀ i < 4, (dword (mont2V x y) i).toNat * (dword (bc r2Imm) (2 * (i / 2))).toNat < q * 2 ^ 32 :=
+    fun i hi => by
+      rw [dword_mont2V h1 hi, dword_bc _ (by omega_using [hi]), r2Imm_toNat]
+      have := mont_lt (h1 i hi)
+      rw [q_eq] at this ⊢
+      omega_using [this]
+  have e : (dword (mulX x y) j).toNat = (dword x j).toNat * (dword y j).toNat % q := by
+    rw [mulX, dword_csubV _ hj, csubL_toNat (by rw [dword_montV h2 hj]; exact mont_lt (h2 j hj)),
+      dword_montV h2 hj, condSub_mont (h2 j hj), dword_mont2V h1 hj, dword_bc _ (by omega_using [hj]), r2Imm_toNat]
+    exact mont_mont_R2 _
+  exact ⟨e, by rw [e]; exact Nat.mod_lt _ (by decide)⟩
 
-/-! ## The bodies -/
+theorem mulAdd_lane {x y h : BitVec 128} (hx : ∀ i < 4, (dword x i).toNat < q)
+    (hy : ∀ i < 4, (dword y i).toNat < q) {j : Nat} (hj : j < 4) (hh : (dword h j).toNat < q) :
+    (dword (mulAddX x y h) j).toNat = ((dword x j).toNat * (dword y j).toNat % q + (dword h j).toNat) % q := by
+  obtain ⟨e, hl⟩ := mul_lane hx hy hj
+  have es : (dword (mulX x y) j + dword h j).toNat = (dword (mulX x y) j).toNat + (dword h j).toNat := by
+    rw [BitVec.toNat_add]; rw [q_eq] at hl hh; omega_using [hl, hh]
+  rw [mulAddX, dword_csubV _ hj, dword_paddd _ _ hj,
+    csubL_toNat (by rw [es]; rw [q_eq] at hl hh ⊢; omega_using [hl, hh]), es,
+    condSub_eq (by rw [q_eq] at hl hh ⊢; omega_using [hl, hh]), e]
 
-/-- The arithmetic of the body of `multiplyNTT` (`acc = false`) or
-`multiplyAddNTT` (`true`): `ebx ← V a b c` from `[esi] = a`, `[edi] = b` and
-`[ebp] = c` (reduced if `acc`), changing only `eax`, `edx`, `ebx` and the
-flags. -/
-def CoreSpec (core : List Instr) (acc : Bool) (V : Nat → Nat → Nat → Nat) : Prop :=
-  ∀ (is : List Instr) (s : State) (P : State → Prop) (a b c : Nat), a < q → b < q → (acc = true → c < q) →
-    InRegions (s.rd ++ s.wr) (s.ea (at_ .esi 0)) 4 → (s.mem.readW (s.ea (at_ .esi 0)) 32).toNat = a →
-    InRegions (s.rd ++ s.wr) (s.ea (at_ .edi 0)) 4 → (s.mem.readW (s.ea (at_ .edi 0)) 32).toNat = b →
-    InRegions (s.rd ++ s.wr) (s.ea (at_ .ebp 0)) 4 → (s.mem.readW (s.ea (at_ .ebp 0)) 32).toNat = c →
-    (∀ s', Only [.eax, .edx, .ebx] s s' → (s'.gpr .ebx).toNat = V a b c → WP isa (.block is) s' P) →
-    WP isa (.block (core ++ is)) s P
+/-- The doublewords of a core's result: `V` of the coefficients, which are
+reduced (those of `h` if `acc`). -/
+def LaneOk (F : BitVec 128 → BitVec 128 → BitVec 128 → BitVec 128) (acc : Bool) (V : Nat → Nat → Nat → Nat) : Prop :=
+  ∀ (x y h : BitVec 128), (∀ i < 4, (dword x i).toNat < q) → (∀ i < 4, (dword y i).toNat < q) →
+    (acc = true → ∀ i < 4, (dword h i).toNat < q) → ∀ j < 4,
+      (dword (F x y h) j).toNat = V (dword x j).toNat (dword y j).toNat (dword h j).toNat
 
 /-- The value of `multiplyNTT`. -/
 def mulV (a b _c : Nat) : Nat := a * b % q
@@ -116,40 +235,11 @@ def mulV (a b _c : Nat) : Nat := a * b % q
 /-- The value of `multiplyAddNTT`. -/
 def mulAddV (a b c : Nat) : Nat := (a * b % q + c) % q
 
-theorem mul_core : CoreSpec mulHead false mulV :=
-  fun is s P _ _ _ ha hb _ hia hva hib hvb _ _ k => head_spec is s P ha hb hia hva hib hvb k
+theorem mul_lanes : LaneOk (fun x y _ => mulX x y) false mulV :=
+  fun _ _ _ hx hy _ _ hj => (mul_lane hx hy hj).1
 
-/-- `mulHead`, then `h[i]` added. -/
-def mulAddCore : List Instr := mulHead ++ .alu .add .ebx (.mem (at_ .ebp 0)) :: csubQ .ebx .edx
-
-theorem mulAdd_core : CoreSpec mulAddCore true mulAddV := by
-  intro is s P a b c ha hb hc hia hva hib hvb hic hvc k
-  rw [mulAddCore, List.append_assoc]
-  refine head_spec _ s P ha hb hia hva hib hvb fun s₁ o₁ v₁ => ?_
-  have hc' := hc rfl
-  have hic' : InRegions (s₁.rd ++ s₁.wr) ((s₁.gpr .ebp + BitVec.ofNat 32 0).setWidth 64) 4 := by
-    rw [o₁.rd, o₁.wr, o₁.gpr .ebp (by decide)]; exact hic
-  have hvc' : (s₁.mem.readW ((s₁.gpr .ebp + BitVec.ofNat 32 0).setWidth 64) 32).toNat = c := by
-    rw [o₁.mem, o₁.gpr .ebp (by decide)]; exact hvc
-  let C := s₁.mem.readW ((s₁.gpr .ebp + BitVec.ofNat 32 0).setWidth 64) 32
-  try rewrite [show s₁.mem.readW ((s₁.gpr .ebp + BitVec.ofNat 32 0).setWidth 64) 32 = C from rfl] at *
-  have hC : C = s₁.mem.readW ((s₁.gpr .ebp + BitVec.ofNat 32 0).setWidth 64) 32 := rfl
-  rw [List.cons_append]
-  refine wp_cons (s' := (arithFlags s₁ (s₁.gpr .ebx + C) (2 ^ 32 ≤ (s₁.gpr .ebx).toNat + C.toNat)
-    (addOverflow (s₁.gpr .ebx) C (s₁.gpr .ebx + C))).setReg .ebx (s₁.gpr .ebx + C))
-    (by simp only [exec, execAlu, readSrc, State.ea, at_, State.load32, hic', ite_true, Option.bind_some]; rfl) ?_
-  have hlt := Nat.mod_lt (a * b) (show q > 0 by decide)
-  have e : (s₁.gpr .ebx + C).toNat = a * b % q + c := by
-    rw [BitVec.toNat_add, v₁, hvc', Nat.mod_eq_of_lt (by rw [q_eq] at hlt hc' ⊢; omega_using [hc'])]
-  refine csubQ_spec (by decide) is _ P (by simp only [State.setReg, ite_true]; rw [e]; rw [q_eq] at hlt hc' ⊢; omega_using [hc'])
-    fun s' o v => k s' ((o₁.trans (show Only [.ebx, .edx] s₁ s' from ⟨fun r hr => ?_, o.mem, o.rd, o.wr⟩)).mono
-      fun r hr => ?_) ?_
-  · rw [o.gpr r (by simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr ⊢; exact hr)]
-    simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-    simp [State.setReg, arithFlags, State.setFlags, hr.1]
-  · simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
-    rcases hr with (e | e | e) | (e | e) <;> simp [e]
-  · rw [v]; simp only [State.setReg, ite_true]; rw [e]; rfl
+theorem mulAdd_lanes : LaneOk mulAddX true mulAddV :=
+  fun _ _ _ hx hy hh j hj => mulAdd_lane hx hy hj (hh rfl j hj)
 
 /-! ## The precondition -/
 
@@ -204,6 +294,7 @@ theorem MulPre.of_mulAdd {s₀ : State} (h : (mulAddContract X86.abi 16).pre s�
   exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17, h18, h19, h20,
     fun _ => h21, h22, h23⟩
 
+
 /-! ## The loop -/
 
 /-- The new value of coefficient `i`. -/
@@ -211,118 +302,190 @@ def newM (V : Nat → Nat → Nat → Nat) (s₀ : State) (i : Nat) : BitVec 32 
   BitVec.ofNat 32 (V (coeffAt s₀.mem (fA' s₀) i).toNat (coeffAt s₀.mem (gA' s₀) i).toNat
     (coeffAt s₀.mem (hA s₀) i).toNat)
 
-/-- After `k` coefficients. -/
-structure MulInv (V : Nat → Nat → Nat → Nat) (s₀ : State) (k : Nat) (s : State) : Prop where
-  esp : s.gpr .esp = (P0 s₀).gpr .esp
-  rd : s.rd = (P0 s₀).rd
-  wr : s.wr = (P0 s₀).wr
-  ebp : s.gpr .ebp = hP s₀ + BitVec.ofNat 32 (4 * k)
-  esi : s.gpr .esi = fP' s₀ + BitVec.ofNat 32 (4 * k)
-  edi : s.gpr .edi = gP' s₀ + BitVec.ofNat 32 (4 * k)
-  ecx : s.gpr .ecx = BitVec.ofNat 32 (256 - k)
-  frame : Frame [polyRegion (hA s₀)] (P0 s₀).mem s.mem
-  h : ∀ i < 256, coeffAt s.mem (hA s₀) i = if i < k then newM V s₀ i else coeffAt s₀.mem (hA s₀) i
+/-- After `k` groups of four coefficients. -/
+structure VInv (V : Nat → Nat → Nat → Nat) (s₀ : State) (k : Nat) (s : State) : Prop where
+  esp : s.gpr .esp = (M0 s₀).gpr .esp
+  rd : s.rd = (M0 s₀).rd
+  wr : s.wr = (M0 s₀).wr
+  eax : s.gpr .eax = hP s₀ + BitVec.ofNat 32 (16 * k)
+  ecx : s.gpr .ecx = fP' s₀ + BitVec.ofNat 32 (16 * k)
+  edx : s.gpr .edx = gP' s₀ + BitVec.ofNat 32 (16 * k)
+  endp : s.mem.readW (argAddr s₀ 0) 32 = hP s₀ + 1024
+  frame : Frame [polyRegion (hA s₀), aR3 s₀] (M0 s₀).mem s.mem
+  h : ∀ i < 256, coeffAt s.mem (hA s₀) i = if i < 4 * k then newM V s₀ i else coeffAt s₀.mem (hA s₀) i
+  mcdt : s.mcdt = s₀.mcdt + 1
+  saved : ∀ r ∈ [Reg.ebx, .esi, .edi, .ebp], s.gpr r = s₀.gpr r
+  vc : VC s.xmm
+
+theorem coeffAt_write16 (m : Mem) (p : Addr) (v : BitVec 128) {k i : Nat} (hk : k < 64) (hi : i < 256) :
+    coeffAt (m.writeW (coeffAddr p (4 * k)) v) p i =
+      if 4 * k ≤ i ∧ i < 4 * k + 4 then dword v (i - 4 * k) else coeffAt m p i := by
+  split
+  · rename_i h
+    obtain ⟨j, hj, rfl⟩ : ∃ j < 4, i = 4 * k + j := ⟨i - 4 * k, by omega_using [h], by omega_using [h]⟩
+    rw [coeffAt_eq, ← coeffAddr_add, readW_writeW128 _ _ _ hj, Nat.add_sub_cancel_left]
+  · rename_i h
+    exact Mem.readW_writeW_sep (Offset.sep p (by omega_using [h]) (by omega_using [hi]) (by omega_using [hk]))
+      (by decide)
 
 namespace MulPre
 variable {acc : Bool} {s₀ : State} (hp : MulPre acc s₀)
 include hp
 
-theorem in_h {s : State} (hw : s.wr = (P0 s₀).wr) {k : Nat} (hk : k < 256) :
-    InRegions s.wr (coeffAddr (hA s₀) k) 4 := by
-  rw [hw, P0_wr, hp.wr]
-  exact ⟨polyRegion (hA s₀), by simp, coeff_contains _ hk⟩
+theorem sp12 : 12 ≤ (E0 s₀).toNat := by have := hp.sp; omega_using [this]
 
-theorem in_h' {s : State} (hw : s.wr = (P0 s₀).wr) {k : Nat} (hk : k < 256) :
-    InRegions (s.rd ++ s.wr) (coeffAddr (hA s₀) k) 4 :=
-  let ⟨r, h, c⟩ := hp.in_h hw hk; ⟨r, List.mem_append_right _ h, c⟩
+/-- A region apart from the contract's stack is apart from the MCDT frame. -/
+theorem mcdt_disj {R : Region} (h : (stkR s₀).Disjoint R) : (mcdtR s₀).Disjoint R := by
+  intro a h₁ h₂
+  refine h a ?_ h₂
+  have := hp.sp
+  have := (E0 s₀).isLt
+  simp only [Region.Contains] at h₁ ⊢
+  bv_omega
 
-theorem in_f {s : State} (hr : s.rd = (P0 s₀).rd) {k : Nat} (hk : k < 256) :
-    InRegions (s.rd ++ s.wr) (coeffAddr (fA' s₀) k) 4 := by
-  rw [hr, pushed_rd, hp.rd]
-  exact ⟨polyRegion (fA' s₀), by simp, coeff_contains _ hk⟩
+theorem arg_contains3 {i : Nat} (hi : i < 3) : (aR3 s₀).Contains (argAddr s₀ i) 4 := by
+  have := hp.sp'
+  simp only [argAddr, Region.Contains, E0] at this ⊢
+  bv_omega
 
-theorem in_g {s : State} (hr : s.rd = (P0 s₀).rd) {k : Nat} (hk : k < 256) :
-    InRegions (s.rd ++ s.wr) (coeffAddr (gA' s₀) k) 4 := by
-  rw [hr, pushed_rd, hp.rd]
-  exact ⟨polyRegion (gA' s₀), by simp, coeff_contains _ hk⟩
+/-- The arguments, at `[esp + 16 + 4i]` after the push. -/
+theorem arg_M0 {i : Nat} (hi : i < 3) :
+    ((M0 s₀).gpr .esp + BitVec.ofNat 32 (16 + 4 * i)).setWidth 64 = argAddr s₀ i ∧
+      (M0 s₀).mem.readW (argAddr s₀ i) 32 = arg s₀ i := by
+  refine ⟨?_, ?_⟩
+  · rw [M0_esp]; simp only [argAddr, E0]; congr 1; have := hp.sp; bv_omega
+  · exact (M0_frame s₀ hp.sp12).readW (hp.arg_contains3 hi) (fun r hr => by
+      rw [List.mem_singleton.mp hr]; exact (hp.mcdt_disj hp.stk_a).symm) (by decide)
 
-/-- `f` and `g` are never written. -/
-theorem f_keep {s : State} (hf : Frame [polyRegion (hA s₀)] (P0 s₀).mem s.mem) {i : Nat} (hi : i < 256) :
-    coeffAt s.mem (fA' s₀) i = coeffAt s₀.mem (fA' s₀) i := by
+theorem in_h16 {s : State} (hw : s.wr = (M0 s₀).wr) {k : Nat} (hk : k < 64) :
+    InRegions s.wr (coeffAddr (hA s₀) (4 * k)) 16 := by
+  rw [hw, M0_wr, hp.wr]
+  exact ⟨polyRegion (hA s₀), by simp, Offset.contains_base _ (by omega_using [hk]) (by omega_using [hk])⟩
+
+theorem in_h16' {s : State} (hw : s.wr = (M0 s₀).wr) {k : Nat} (hk : k < 64) :
+    InRegions (s.rd ++ s.wr) (coeffAddr (hA s₀) (4 * k)) 16 :=
+  let ⟨r, h, c⟩ := hp.in_h16 hw hk; ⟨r, List.mem_append_right _ h, c⟩
+
+theorem in_f16 {s : State} (hr : s.rd = (M0 s₀).rd) {k : Nat} (hk : k < 64) :
+    InRegions (s.rd ++ s.wr) (coeffAddr (fA' s₀) (4 * k)) 16 := by
+  rw [hr, M0_rd, hp.rd]
+  exact ⟨polyRegion (fA' s₀), by simp, Offset.contains_base _ (by omega_using [hk]) (by omega_using [hk])⟩
+
+theorem in_g16 {s : State} (hr : s.rd = (M0 s₀).rd) {k : Nat} (hk : k < 64) :
+    InRegions (s.rd ++ s.wr) (coeffAddr (gA' s₀) (4 * k)) 16 := by
+  rw [hr, M0_rd, hp.rd]
+  exact ⟨polyRegion (gA' s₀), by simp, Offset.contains_base _ (by omega_using [hk]) (by omega_using [hk])⟩
+
+theorem in_arg {s : State} (hw : s.wr = (M0 s₀).wr) {i : Nat} (hi : i < 3) : InRegions s.wr (argAddr s₀ i) 4 := by
+  rw [hw, M0_wr, hp.wr]
+  exact ⟨aR3 s₀, by simp, hp.arg_contains3 hi⟩
+
+/-- A polynomial apart from `h`, the arguments and the stack is never written. -/
+theorem keep {s : State} (hf : Frame [polyRegion (hA s₀), aR3 s₀] (M0 s₀).mem s.mem) {p : Addr}
+    (h1 : (polyRegion p).Disjoint (polyRegion (hA s₀))) (h2 : (polyRegion p).Disjoint (aR3 s₀))
+    (h3 : (stkR s₀).Disjoint (polyRegion p)) {i : Nat} (hi : i < 256) :
+    coeffAt s.mem p i = coeffAt s₀.mem p i := by
   rw [coeffAt_congr (m := s₀.mem) (m' := s.mem) (fun j hj => ?_) hi]
-  rw [hf.bytes (R := polyRegion (fA' s₀)) (by simpa using hp.h_f.symm) (polyLen _) hj,
-    (P0_mem hp.sp).bytes (R := polyRegion (fA' s₀)) (by simpa [← stk_eq hp.sp] using hp.stk_f.symm)
-      (polyLen _) hj]
+  rw [hf.bytes (R := polyRegion p) (fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact h1
+      · exact h2) (polyLen _) hj,
+    (M0_frame s₀ hp.sp12).bytes (R := polyRegion p) (fun r hr => by
+      rw [List.mem_singleton.mp hr]; exact (hp.mcdt_disj h3).symm) (polyLen _) hj]
 
-theorem g_keep {s : State} (hf : Frame [polyRegion (hA s₀)] (P0 s₀).mem s.mem) {i : Nat} (hi : i < 256) :
-    coeffAt s.mem (gA' s₀) i = coeffAt s₀.mem (gA' s₀) i := by
-  rw [coeffAt_congr (m := s₀.mem) (m' := s.mem) (fun j hj => ?_) hi]
-  rw [hf.bytes (R := polyRegion (gA' s₀)) (by simpa using hp.h_g.symm) (polyLen _) hj,
-    (P0_mem hp.sp).bytes (R := polyRegion (gA' s₀)) (by simpa [← stk_eq hp.sp] using hp.stk_g.symm)
-      (polyLen _) hj]
-
-theorem h_P0 {i : Nat} (hi : i < 256) : coeffAt (P0 s₀).mem (hA s₀) i = coeffAt s₀.mem (hA s₀) i :=
-  coeffAt_congr (fun j hj => (P0_mem hp.sp).bytes (R := polyRegion (hA s₀))
-    (by simpa [← stk_eq hp.sp] using hp.stk_h.symm) (polyLen _) hj) hi
+theorem h_M0 {i : Nat} (hi : i < 256) : coeffAt (M0 s₀).mem (hA s₀) i = coeffAt s₀.mem (hA s₀) i :=
+  coeffAt_congr (fun j hj => (M0_frame s₀ hp.sp12).bytes (R := polyRegion (hA s₀)) (fun r hr => by
+    rw [List.mem_singleton.mp hr]; exact (hp.mcdt_disj hp.stk_h).symm) (polyLen _) hj) hi
 
 end MulPre
 
-theorem mul_step {core : List Instr} {acc : Bool} {V : Nat → Nat → Nat → Nat} (hc : CoreSpec core acc V)
-    {s₀ : State} (hp : MulPre acc s₀) {k : Nat} (hk : k < 256) {s : State} (h : MulInv V s₀ k s) :
-    WP isa (.block (core ++ mulTail)) s fun s' =>
-      MulInv V s₀ (k + 1) s' ∧ eval .ne s' = some (decide (k + 1 < 256)) := by
-  have hk' : k < n := hk
-  have eh : s.ea (at_ .ebp 0) = coeffAddr (hA s₀) k := by
-    rw [State.ea, at_, h.ebp]; exact ea_ptr hp.h_fit hk
-  have ef : s.ea (at_ .esi 0) = coeffAddr (fA' s₀) k := by
-    rw [State.ea, at_, h.esi]; exact ea_ptr hp.f_fit hk
-  have eg : s.ea (at_ .edi 0) = coeffAddr (gA' s₀) k := by
-    rw [State.ea, at_, h.edi]; exact ea_ptr hp.g_fit hk
-  refine hc _ s _ _ _ _ (hp.f_red k hk') (hp.g_red k hk') (fun e => (hp.h_red e) k hk')
-    (by rw [ef]; exact hp.in_f h.rd hk) (by rw [ef, ← coeffAt_eq, hp.f_keep h.frame hk])
-    (by rw [eg]; exact hp.in_g h.rd hk) (by rw [eg, ← coeffAt_eq, hp.g_keep h.frame hk])
-    (by rw [eh]; exact hp.in_h' h.wr hk) (by rw [eh, ← coeffAt_eq, h.h k hk, ite_eq_right (Nat.lt_irrefl k)])
-    fun s₂ o₂ v₂ => ?_
-  have g₂ : ∀ r, r ≠ .eax → r ≠ .edx → r ≠ .ebx → s₂.gpr r = s.gpr r := fun r h₁ h₂ h₃ => by
-    rw [o₂.gpr r (by simp [h₁, h₂, h₃])]
-  have m₂ : s₂.mem = s.mem := o₂.mem
-  have r₂ : s₂.rd = (P0 s₀).rd := o₂.rd.trans h.rd
-  have w₂ : s₂.wr = (P0 s₀).wr := o₂.wr.trans h.wr
-  have ebp₂ : s₂.gpr .ebp = hP s₀ + BitVec.ofNat 32 (4 * k) := by
-    rw [g₂ _ (by decide) (by decide) (by decide), h.ebp]
-  have esi₂ : s₂.gpr .esi = fP' s₀ + BitVec.ofNat 32 (4 * k) := by
-    rw [g₂ _ (by decide) (by decide) (by decide), h.esi]
-  have edi₂ : s₂.gpr .edi = gP' s₀ + BitVec.ofNat 32 (4 * k) := by
-    rw [g₂ _ (by decide) (by decide) (by decide), h.edi]
-  have ecx₂ : s₂.gpr .ecx = BitVec.ofNat 32 (256 - k) := by
-    rw [g₂ _ (by decide) (by decide) (by decide), h.ecx]
-  have out : InRegions s₂.wr (coeffAddr (hA s₀) k) 4 := hp.in_h w₂ hk
+theorem vstep {core : List Instr} {F : BitVec 128 → BitVec 128 → BitVec 128 → BitVec 128} {acc : Bool}
+    {V : Nat → Nat → Nat → Nat} (hc : CoreOk core F) (hl : LaneOk F acc V) {s₀ : State} (hp : MulPre acc s₀)
+    {k : Nat} (hk : k < 64) {s : State} (h : VInv V s₀ k s) :
+    WP isa (.block (mulStep core)) s fun s' =>
+      VInv V s₀ (k + 1) s' ∧ eval .ne s' = some (decide (k + 1 < 64)) := by
+  have hk4 : 4 * k < 256 := by omega_using [hk]
+  have e16 : 16 * k = 4 * (4 * k) := by omega_using []
+  have eh : s.ea (at_ .eax 0) = coeffAddr (hA s₀) (4 * k) := by
+    rw [State.ea, at_, h.eax, e16]; exact ea_ptr hp.h_fit hk4
+  have ef : s.ea (at_ .ecx 0) = coeffAddr (fA' s₀) (4 * k) := by
+    rw [State.ea, at_, h.ecx, e16]; exact ea_ptr hp.f_fit hk4
+  have eg : s.ea (at_ .edx 0) = coeffAddr (gA' s₀) (4 * k) := by
+    rw [State.ea, at_, h.edx, e16]; exact ea_ptr hp.g_fit hk4
+  have hm : 0 < s.mcdt := by rw [h.mcdt]; exact Nat.succ_pos _
+  show WP isa (.block (.movdquLoad .xmm0 (at_ .ecx 0) :: .movdquLoad .xmm1 (at_ .edx 0) :: (core ++ _)))
+    { s with xmm := s.xmm } _
+  refine wp_ld ef (hp.in_f16 h.rd hk) (wp_ld eg (hp.in_g16 h.rd hk) (hc s _ _ _ _ hm
+    ⟨h.vc.q, h.vc.nqi, h.vc.r2, h.vc.ones, h.vc.negq⟩ eh (hp.in_h16' h.wr hk) fun g vg cg => ?_))
+  have hst : InRegions s.wr ((s.gpr .eax + BitVec.ofNat 32 0).setWidth 64) 16 := by
+    have := hp.in_h16 h.wr hk; rwa [← eh] at this
+  obtain ⟨a16, -⟩ := hp.arg_M0 (i := 0) (by decide)
+  simp only [Nat.mul_zero, Nat.add_zero] at a16
+  have hcmp : InRegions (s.rd ++ s.wr) ((s.gpr .esp + BitVec.ofNat 32 16).setWidth 64) 4 := by
+    rw [h.esp, a16]
+    exact let ⟨r, hr, c⟩ := hp.in_arg h.wr (i := 0) (by decide); ⟨r, List.mem_append_right _ hr, c⟩
   apply WP.of_runBlock
-  simp only [reduceCtorEq, ↓reduceIte, Nat.reducePow, mulTail, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu,
-    readSrc, State.ea, at_, State.store32, State.setReg, arithFlags, State.setFlags, ebp₂,
-    ea_ptr hp.h_fit hk, out, Option.bind_some, Option.some.injEq, exists_eq_left']
-  have hv : s₂.gpr .ebx = newM V s₀ k := eq_ofNat_of_toNat v₂
-  refine ⟨⟨by simp [g₂, h.esp], r₂, w₂, ?_, ?_, ?_, ?_, ?_, fun i hi => ?_⟩, ?_⟩
-  · simp only [ite_true, ite_false, show Reg.ebp ≠ Reg.ecx by decide]
-    exact ptr_next _ _ 4
-  · simp only [ite_true, ite_false, show Reg.esi ≠ Reg.ecx by decide, show Reg.esi ≠ Reg.edi by decide,
-      show Reg.esi ≠ Reg.ebp by decide, esi₂]
-    exact ptr_next _ _ 4
-  · simp only [ite_true, ite_false, show Reg.edi ≠ Reg.ecx by decide, show Reg.edi ≠ Reg.ebp by decide, edi₂]
-    exact ptr_next _ _ 4
-  · simp only [ite_true, ecx₂]
-    exact cnt_next hk
-  · rw [m₂]; exact h.frame.writeW (List.mem_singleton_self _) _ (coeff_contains _ hk')
-  · dsimp only
-    rw [coeffAt_writeW _ _ (show i < n from hi) hk', m₂, hv, h.h i hi]
-    by_cases e : k = i
-    · subst e; simp
-    · rw [ite_eq_right e]
-      by_cases hik : i < k
-      · rw [ite_eq_left hik, ite_eq_left (by omega_using [hik])]
-      · rw [ite_eq_right hik, ite_eq_right (by omega_using [e, hik])]
-  · simp only [eval, ecx₂]
-    exact cnt_ne hk (by decide)
+  simp only [reduceCtorEq, ↓reduceIte, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu,
+    readSrc, State.ea, at_, State.store128, State.load32, State.setReg, arithFlags, State.setFlags, hst, hcmp,
+    Option.bind_some, Option.some.injEq, exists_eq_left']
+  have eh' : BitVec.setWidth 64 (s.gpr .eax + 0#32) = coeffAddr (hA s₀) (4 * k) := eh
+  have ea' : BitVec.setWidth 64 (s.gpr .esp + 16#32) = argAddr s₀ 0 := by rw [h.esp]; exact a16
+  have hcon : (polyRegion (hA s₀)).Contains (coeffAddr (hA s₀) (4 * k)) (128 / 8) :=
+    Offset.contains_base _ (by omega_using [hk]) (by omega_using [hk])
+  have hend : (s.mem.writeW (coeffAddr (hA s₀) (4 * k)) (g .xmm0)).readW (argAddr s₀ 0) 32 = hP s₀ + 1024 := by
+    rw [((Frame.refl [polyRegion (hA s₀)] s.mem).writeW (List.mem_singleton_self _) (g .xmm0) hcon).readW
+      (r := aR3 s₀) (hp.arg_contains3 (i := 0) (by decide))
+      (fun r hr => by rw [List.mem_singleton.mp hr]; exact hp.h_a.symm) (by decide), h.endp]
+  have vg' : g .xmm0 = F (s.mem.readW (coeffAddr (fA' s₀) (4 * k)) 128) (s.mem.readW (coeffAddr (gA' s₀) (4 * k)) 128)
+      (s.mem.readW (coeffAddr (hA s₀) (4 * k)) 128) := vg
+  -- the doublewords loaded are the coefficients
+  have df : ∀ j < 4, dword (s.mem.readW (coeffAddr (fA' s₀) (4 * k)) 128) j = coeffAt s₀.mem (fA' s₀) (4 * k + j) :=
+    fun j hj => by
+      rw [dword_readW _ _ hj, coeffAddr_add, ← coeffAt_eq,
+        hp.keep h.frame hp.h_f.symm hp.f_a hp.stk_f (by omega_using [hk, hj])]
+  have dg : ∀ j < 4, dword (s.mem.readW (coeffAddr (gA' s₀) (4 * k)) 128) j = coeffAt s₀.mem (gA' s₀) (4 * k + j) :=
+    fun j hj => by
+      rw [dword_readW _ _ hj, coeffAddr_add, ← coeffAt_eq,
+        hp.keep h.frame hp.h_g.symm hp.g_a hp.stk_g (by omega_using [hk, hj])]
+  have dh : ∀ j < 4, dword (s.mem.readW (coeffAddr (hA s₀) (4 * k)) 128) j = coeffAt s₀.mem (hA s₀) (4 * k + j) :=
+    fun j hj => by
+      rw [dword_readW _ _ hj, coeffAddr_add, ← coeffAt_eq, h.h _ (by omega_using [hk, hj]),
+        ite_eq_right (by omega_using [])]
+  have lanes : ∀ j < 4, dword (g .xmm0) j = newM V s₀ (4 * k + j) := fun j hj => by
+    refine eq_ofNat_of_toNat ?_
+    rw [vg', hl _ _ _ (fun i hi => by rw [df i hi]; exact hp.f_red _ (by rw [n_eq]; omega_using [hk, hi]))
+      (fun i hi => by rw [dg i hi]; exact hp.g_red _ (by rw [n_eq]; omega_using [hk, hi]))
+      (fun e i hi => by rw [dh i hi]; exact hp.h_red e _ (by rw [n_eq]; omega_using [hk, hi])) j hj, df j hj, dg j hj,
+      dh j hj]
+  rw [eh', ea', hend]
+  refine ⟨⟨h.esp, h.rd, h.wr, ?_, ?_, ?_, hend, h.frame.writeW (List.mem_cons_self ..) _ hcon, fun i hi => ?_,
+    h.mcdt, fun r hr => ?_, cg⟩, ?_⟩
+  · show s.gpr .eax + 16 = _
+    rw [h.eax]; exact ptr_next _ _ 16
+  · show s.gpr .ecx + 16 = _
+    rw [h.ecx]; exact ptr_next _ _ 16
+  · show s.gpr .edx + 16 = _
+    rw [h.edx]; exact ptr_next _ _ 16
+  · show coeffAt (s.mem.writeW (coeffAddr (hA s₀) (4 * k)) (g .xmm0)) (hA s₀) i = _
+    rw [coeffAt_write16 _ _ _ hk hi, h.h i hi]
+    by_cases h1 : 4 * k ≤ i ∧ i < 4 * k + 4
+    · rw [ite_eq_left h1, ite_eq_left (by omega_using [h1]), lanes _ (by omega_using [h1]),
+        show 4 * k + (i - 4 * k) = i by omega_using [h1]]
+    · rw [ite_eq_right h1]
+      by_cases h2 : i < 4 * k
+      · rw [ite_eq_left h2, ite_eq_left (by omega_using [h2])]
+      · rw [ite_eq_right h2, ite_eq_right (by omega_using [h1, h2])]
+  · have := h.saved r hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl <;> exact this
+  · show (some (s.gpr .eax + 16 - (hP s₀ + 1024) == 0) : Option Bool).map (!·) = _
+    rw [h.eax, show hP s₀ + BitVec.ofNat 32 (16 * k) + 16 = hP s₀ + BitVec.ofNat 32 (16 * (k + 1)) from
+      ptr_next _ _ 16, NttLoop.end_cmp _ (by omega_using [hk])]
+    simp only [Option.map_some, Option.some.injEq]
+    by_cases h1 : k + 1 < 64
+    · rw [decide_eq_true h1, decide_eq_false (by omega_using [h1])]; rfl
+    · rw [decide_eq_false h1, decide_eq_true (by omega_using [hk, h1])]; rfl
 
 /-! ## The functions -/
 
@@ -330,61 +493,94 @@ theorem mul_step {core : List Instr} {acc : Bool} {V : Nat → Nat → Nat → N
 def MulPub (s₀ s₀' : State) : Prop :=
   E0 s₀ = E0 s₀' ∧ arg s₀ 0 = arg s₀' 0 ∧ arg s₀ 1 = arg s₀' 1 ∧ arg s₀ 2 = arg s₀' 2
 
-/-- The arguments, which the push leaves in place. -/
-theorem MulPre.arg_P0 {acc : Bool} {s₀ : State} (hp : MulPre acc s₀) {i : Nat} (hi : i < 3) :
-    ((P0 s₀).gpr .esp + BitVec.ofNat 32 (20 + 4 * i)).setWidth 64 = argAddr s₀ i ∧
-      InRegions ((P0 s₀).rd ++ (P0 s₀).wr) (argAddr s₀ i) 4 ∧
-      (P0 s₀).mem.readW (argAddr s₀ i) 32 = arg s₀ i := by
-  have hc : (aR3 s₀).Contains (argAddr s₀ i) 4 := by
+theorem vinit {acc : Bool} (V : Nat → Nat → Nat → Nat) {s₀ s : State} (hp : MulPre acc s₀) (e : s = M0 s₀) :
+    WP isa (.block mulInit) s (VInv V s₀ 0) := by
+  obtain ⟨a₀, v₀⟩ := hp.arg_M0 (i := 0) (by decide)
+  obtain ⟨a₁, v₁⟩ := hp.arg_M0 (i := 1) (by decide)
+  obtain ⟨a₂, v₂⟩ := hp.arg_M0 (i := 2) (by decide)
+  simp only [Nat.mul_zero, Nat.add_zero, Nat.mul_one, Nat.reduceAdd, Nat.reduceMul] at a₀ a₁ a₂
+  rw [← e] at a₀ a₁ a₂ v₀ v₁ v₂
+  have hwr : s.wr = (M0 s₀).wr := by rw [e]
+  have i₀ : InRegions (s.rd ++ s.wr) (argAddr s₀ 0) 4 :=
+    let ⟨r, hr, c⟩ := hp.in_arg hwr (i := 0) (by decide); ⟨r, List.mem_append_right _ hr, c⟩
+  have i₁ : InRegions (s.rd ++ s.wr) (argAddr s₀ 1) 4 :=
+    let ⟨r, hr, c⟩ := hp.in_arg hwr (i := 1) (by decide); ⟨r, List.mem_append_right _ hr, c⟩
+  have i₂ : InRegions (s.rd ++ s.wr) (argAddr s₀ 2) 4 :=
+    let ⟨r, hr, c⟩ := hp.in_arg hwr (i := 2) (by decide); ⟨r, List.mem_append_right _ hr, c⟩
+  have w₀ : InRegions s.wr (argAddr s₀ 0) 4 := hp.in_arg hwr (by decide)
+  apply WP.of_runBlock
+  simp only [reduceCtorEq, ↓reduceIte, mulInit, vconst, at_, List.cons_append, List.nil_append, runBlock_cons,
+    runStep_some, runBlock_nil, exec, execAlu, XOp.exec, State.setXmm, readSrc, State.ea, State.load32,
+    State.store32, State.setReg, arithFlags, State.setFlags, a₀, a₁, a₂, i₀, i₁, i₂, w₀, v₀,
+    Option.bind_some, Option.map_some, Option.some.injEq, exists_eq_left']
+  have dj : ∀ i, 0 < i → i < 3 → (⟨argAddr s₀ i, 4⟩ : Region).Disjoint ⟨argAddr s₀ 0, 4⟩ := fun i h0 hi a h₁ h₂ => by
     have := hp.sp'
-    simp only [argAddr, Region.Contains, E0] at this ⊢
+    simp only [Region.Contains, argAddr, E0] at this h₁ h₂
     bv_omega
-  refine ⟨?_, ⟨aR3 s₀, by simp [hp.wr], hc⟩, ?_⟩
-  · rw [P0_esp]; simp only [argAddr, E0]; congr 1; bv_omega
-  · exact (P0_mem hp.sp).readW hc (by simpa [← stk_eq hp.sp] using hp.stk_a.symm) (by decide)
+  have fw : Frame [⟨argAddr s₀ 0, 4⟩] s.mem (s.mem.writeW (argAddr s₀ 0) (arg s₀ 0 + 1024)) :=
+    (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
+  have r₁ : (s.mem.writeW (argAddr s₀ 0) (arg s₀ 0 + 1024)).readW (argAddr s₀ 1) 32 = arg s₀ 1 := by
+    rw [fw.readW (r := ⟨argAddr s₀ 1, 4⟩) (Region.contains_self _ _) (fun r hr => by
+      rw [List.mem_singleton.mp hr]; exact dj 1 (by decide) (by decide)) (by decide), v₁]
+  have r₂ : (s.mem.writeW (argAddr s₀ 0) (arg s₀ 0 + 1024)).readW (argAddr s₀ 2) 32 = arg s₀ 2 := by
+    rw [fw.readW (r := ⟨argAddr s₀ 2, 4⟩) (Region.contains_self _ _) (fun r hr => by
+      rw [List.mem_singleton.mp hr]; exact dj 2 (by decide) (by decide)) (by decide), v₂]
+  have fr : Frame [polyRegion (hA s₀), aR3 s₀] (M0 s₀).mem (s.mem.writeW (argAddr s₀ 0) (arg s₀ 0 + 1024)) := by
+    rw [e]
+    exact (Frame.refl _ _).writeW (List.mem_cons_of_mem _ (List.mem_singleton_self _)) _
+      (hp.arg_contains3 (i := 0) (by decide))
+  rw [r₁, r₂]
+  refine ⟨?_, ?_, hwr, ?_, ?_, ?_, Mem.readW_writeW_self32 _ _ _, fr, fun i hi => ?_, ?_,
+    fun r hr => ?_, ⟨bc_eq _, bc_eq _, bc_eq _, bc_eq _, bc_eq _⟩⟩
+  · show s.gpr .esp = _
+    rw [e]
+  · show s.rd = _
+    rw [e]
+  · show arg s₀ 0 = _
+    rw [Nat.mul_zero]; exact (BitVec.add_zero _).symm
+  · show arg s₀ 1 = _
+    rw [Nat.mul_zero]; exact (BitVec.add_zero _).symm
+  · show arg s₀ 2 = _
+    rw [Nat.mul_zero]; exact (BitVec.add_zero _).symm
+  · show coeffAt (s.mem.writeW (argAddr s₀ 0) (arg s₀ 0 + 1024)) (hA s₀) i = _
+    have fa : Frame [aR3 s₀] s.mem (s.mem.writeW (argAddr s₀ 0) (arg s₀ 0 + 1024)) :=
+      (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (hp.arg_contains3 (i := 0) (by decide))
+    rw [ite_eq_right (Nat.not_lt_zero _), ← hp.h_M0 hi, ← e]
+    exact coeffAt_congr (fun j hj => fa.bytes (R := polyRegion (hA s₀)) (fun r hr => by
+      rw [List.mem_singleton.mp hr]; exact hp.h_a) (polyLen _) hj) hi
+  · show s.mcdt = _
+    rw [e]; rfl
+  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl <;> (show s.gpr _ = _; rw [e]; rfl)
 
-theorem mulInit_piece (acc : Bool) (V : Nat → Nat → Nat → Nat) :
-    Piece (MulPre acc) MulPub (fun s₀ s => s = P0 s₀) (MulInv V · 0) (.block mulInit) := by
-  refine Piece.taint [.esp] (fun s₀ s hp e => ?_) (fun s₀ s₀' s s' _ _ hq e e' r hr => ?_)
-    (by native_taint_decide)
-  · subst e
-    obtain ⟨a₀, i₀, v₀⟩ := hp.arg_P0 (i := 0) (by omega_using [])
-    obtain ⟨a₁, i₁, v₁⟩ := hp.arg_P0 (i := 1) (by omega_using [])
-    obtain ⟨a₂, i₂, v₂⟩ := hp.arg_P0 (i := 2) (by omega_using [])
-    simp only [Nat.mul_zero, Nat.add_zero, Nat.mul_one, Nat.reduceAdd, Nat.reduceMul] at a₀ a₁ a₂
-    apply WP.of_runBlock
-    simp only [reduceCtorEq, ↓reduceIte, mulInit, at_, runBlock_cons, runStep_some, runBlock_nil,
-      exec, readSrc, State.ea, State.load32, State.setReg, Option.map_some, a₀, a₁, a₂, i₀, i₁, i₂, v₀, v₁,
-      v₂, Option.some.injEq, exists_eq_left']
-    refine ⟨by simp, rfl, rfl, by simp, by simp, by simp, by simp, Frame.refl _ _, fun i hi => ?_⟩
-    simp only [Nat.not_lt_zero, ite_false]
-    exact hp.h_P0 hi
-  · simp only [List.mem_singleton] at hr
-    subst hr
-    rw [e, e', P0_esp, P0_esp, hq.1]
-
-theorem mul_piece {core : List Instr} {acc : Bool} {V : Nat → Nat → Nat → Nat} (hc : CoreSpec core acc V)
-    (hsp : NoSp (.seq (.block mulInit) (.loop (.block (core ++ mulTail)) .ne))) {hh : Taint.Hint VG.X86.Taint.T}
-    (ht : (VG.X86.taint.check (τr [.esp, .ebp, .esi, .edi, .ecx]) (.block (core ++ mulTail)) hh).isSome = true) :
-    Piece (MulPre acc) MulPub (fun s₀ s => s = s₀) (fun s₀ s' => LeafPost (MulInv V s₀ 256) s₀ s')
-      (leaf (.seq (.block mulInit) (.loop (.block (core ++ mulTail)) .ne))) :=
-  Piece.leaf (fun s₀ => [polyRegion (hA s₀)]) hsp (fun _ hp => ⟨hp.sp, by have := hp.sp'; omega_using [this]⟩)
+theorem mul_piece {core : List Instr} {F : BitVec 128 → BitVec 128 → BitVec 128 → BitVec 128} {acc : Bool}
+    {V : Nat → Nat → Nat → Nat} (hc : CoreOk core F) (hl : LaneOk F acc V)
+    (hsp : NoSp (.seq (.block mulInit) (.loop (.block (mulStep core)) .ne)))
+    {h₁ h₂ : Taint.Hint VG.X86.Taint.T}
+    (ht₁ : (VG.X86.sseTaint.check (τr [.esp]) (.block mulInit) h₁).isSome = true)
+    (ht₂ : (VG.X86.sseTaint.check (τr [.esp, .eax, .ecx, .edx]) (.block (mulStep core)) h₂).isSome = true) :
+    Piece (MulPre acc) MulPub (fun s₀ s => s = s₀) (fun s₀ s' => McdtPost (VInv V s₀ 64) s₀ s') (mulFn core) :=
+  Piece.mcdt (fun s₀ => [polyRegion (hA s₀), aR3 s₀]) hsp (fun _ hp => hp.sp12)
     (fun _ hp r hr => by
-      simp only [List.mem_singleton] at hr
-      subst hr
-      exact ⟨by rw [← stk_eq hp.sp]; exact hp.stk_h, hp.ret_h⟩)
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact ⟨hp.mcdt_disj hp.stk_h, hp.ret_h⟩
+      · exact ⟨hp.mcdt_disj hp.stk_a, hp.ret_a⟩)
     (fun _ _ _ _ hq => hq.1)
-    ((Piece.seq (mulInit_piece acc V) (Piece.loop (fun k s₀ s => MulInv V s₀ k s) (by decide) fun k hk =>
-      Piece.taint [.esp, .ebp, .esi, .edi, .ecx] (fun _ _ hp h => mul_step hc hp hk h)
-        (fun s₀ s₀' s s' _ _ hq h h' r hr => by
-          simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-          rcases hr with rfl | rfl | rfl | rfl | rfl
-          · rw [h.esp, h'.esp, P0_esp, P0_esp, hq.1]
-          · rw [h.ebp, h'.ebp, hP, hP, hq.2.1]
-          · rw [h.esi, h'.esi, fP', fP', hq.2.2.1]
-          · rw [h.edi, h'.edi, gP', gP', hq.2.2.2]
-          · rw [h.ecx, h'.ecx]) ht)).mono (fun _ _ _ h => h)
-      fun _ _ _ h => ⟨⟨h.frame, h.esp, h.rd, h.wr⟩, h⟩)
+    ((Piece.seq (Piece.sse [.esp] (fun _ _ hp e => vinit V hp e) (fun s₀ s₀' s s' _ _ hq e e' r hr => by
+          simp only [List.mem_singleton] at hr
+          subst hr
+          rw [e, e', M0_esp, M0_esp, hq.1]) ht₁)
+        (Piece.loop (fun k s₀ s => VInv V s₀ k s) (by decide) fun k hk =>
+          Piece.sse [.esp, .eax, .ecx, .edx] (fun _ _ hp h => vstep hc hl hp hk h)
+            (fun s₀ s₀' s s' _ _ hq h h' r hr => by
+              simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+              rcases hr with rfl | rfl | rfl | rfl
+              · rw [h.esp, h'.esp, M0_esp, M0_esp, hq.1]
+              · rw [h.eax, h'.eax, hP, hP, hq.2.1]
+              · rw [h.ecx, h'.ecx, fP', fP', hq.2.2.1]
+              · rw [h.edx, h'.edx, gP', gP', hq.2.2.2]) ht₂)).mono (fun _ _ _ h => h)
+      fun _ _ _ h => ⟨⟨h.frame, h.esp, h.rd, h.wr, h.mcdt, h.saved⟩, h⟩)
 
 /-- Memory with the arguments `0`, `0x400` and `0x800` at `0x5004`. -/
 def mulSatMem : Mem := fun a => if a = 0x5009 then 4 else if a = 0x500d then 8 else 0
@@ -395,17 +591,17 @@ theorem mulSat_zero (a : Addr) (ha : a.toNat < 0x5000) : mulSatMem a = 0 := by
     ite_eq_right_iff.mpr fun h => absurd (congrArg BitVec.toNat h) (by simp; omega_using [ha])]
 
 theorem mul_verified : Verified X86.target mul (mulContract X86.abi 16) := by
-  refine Piece.verified (((mul_piece mul_core (NoSp.of_all (by decide +kernel)) (by native_taint_decide)).pre_mono
+  refine Piece.verified (((mul_piece mul_core mul_lanes (NoSp.of_all (by lit_decide)) (by taint_decide) (by taint_decide)).pre_mono
     (fun _ h => MulPre.of_mul h) fun s s' _ _ h => by
       sig_pub [mulContract, mulSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at h
       exact h).mono (fun _ _ _ h => h) fun s₀ s' h₀ hq => ?_) ?_
-  · obtain ⟨habi, -, -, s, hinv, hm, -⟩ := hq
+  · obtain ⟨habi, -, -, s, hinv, hm⟩ := hq
     refine ⟨habi, ?_⟩
     sig_post [mulContract, mulSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
-    rw [hm]
     have hp := MulPre.of_mul h₀
+    refine Proof.MlDsa.Arith.polyIs_frame hm (fun r hr => by rw [List.mem_singleton.mp hr]; exact (hp.mcdt_disj hp.stk_h).symm) ?_
     refine polyIs_of_toNat fun i hi => ?_
-    rw [hinv.h i hi, ite_eq_left hi, mul_get _ _ hi, val_mul, polyAt_val hp.f_red hi, polyAt_val hp.g_red hi,
+    rw [hinv.h i hi, ite_eq_left (show i < 4 * 64 from hi), mul_get _ _ hi, val_mul, polyAt_val hp.f_red hi, polyAt_val hp.g_red hi,
       newM, mulV, toNat_ofNat32 (mod_q_lt32 _)]
   · let st := satState mulSatMem [⟨0x400, 1024⟩, ⟨0x800, 1024⟩] [⟨0, 1024⟩, ⟨0x5004, 12⟩]
     have a0 : arg st 0 = 0 := by decide
@@ -421,18 +617,18 @@ theorem mul_verified : Verified X86.target mul (mulContract X86.abi 16) := by
     all_goals exact Region.disjoint_of_sep (by decide)
 
 theorem mulAdd_verified : Verified X86.target mulAdd (mulAddContract X86.abi 16) := by
-  refine Piece.verified ((((mul_piece mulAdd_core (NoSp.of_all (by decide +kernel)) (by native_taint_decide)).pre_mono
+  refine Piece.verified ((((mul_piece mulAdd_core mulAdd_lanes (NoSp.of_all (by lit_decide)) (by taint_decide) (by taint_decide)).pre_mono
     (fun _ h => MulPre.of_mulAdd h) fun s s' _ _ h => by
       sig_pub [mulAddContract, mulSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at h
       exact h)).mono (fun _ _ _ h => h) fun s₀ s' h₀ hq => ?_) ?_
-  · obtain ⟨habi, -, -, s, hinv, hm, -⟩ := hq
+  · obtain ⟨habi, -, -, s, hinv, hm⟩ := hq
     refine ⟨habi, ?_⟩
     sig_post [mulAddContract, mulSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
-    rw [hm]
     have hp := MulPre.of_mulAdd h₀
+    refine Proof.MlDsa.Arith.polyIs_frame hm (fun r hr => by rw [List.mem_singleton.mp hr]; exact (hp.mcdt_disj hp.stk_h).symm) ?_
     have hr := hp.h_red rfl
     refine polyIs_of_toNat fun i hi => ?_
-    rw [hinv.h i hi, ite_eq_left hi, add_get _ _ hi, val_add', mul_get _ _ hi, val_mul, polyAt_val hp.f_red hi,
+    rw [hinv.h i hi, ite_eq_left (show i < 4 * 64 from hi), add_get _ _ hi, val_add', mul_get _ _ hi, val_mul, polyAt_val hp.f_red hi,
       polyAt_val hp.g_red hi, polyAt_val hr hi, newM, mulAddV, Nat.add_comm (_ % q),
       toNat_ofNat32 (mod_q_lt32 _)]
   · let st := satState mulSatMem [⟨0x400, 1024⟩, ⟨0x800, 1024⟩] [⟨0, 1024⟩, ⟨0x5004, 12⟩]
@@ -447,5 +643,6 @@ theorem mulAdd_verified : Verified X86.target mulAdd (mulAddContract X86.abi 16)
       by decide, by decide, by decide, reduced_below mulSat_zero 0 (by decide),
       reduced_below mulSat_zero 0x400 (by decide), reduced_below mulSat_zero 0x800 (by decide)⟩
     all_goals exact Region.disjoint_of_sep (by decide)
+
 
 end VG.Proof.MlDsa.X86.Arith

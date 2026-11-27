@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Rsa.PPC64LE.Loops
 public import VerifiedGarbage.Proof.Mont.Words
 public import VerifiedGarbage.Impl.Rsa.PPC64LE.Div
 import VerifiedGarbage.Proof.Bignum.PPC64LE.MontFios
-import VerifiedGarbage.Proof.Bignum.PPC64LE.MontStep
+import VerifiedGarbage.Proof.Bignum.PPC64LE.MontRound
 import VerifiedGarbage.Proof.Framework.PPC64LE.Carry
 import VerifiedGarbage.Proof.Framework.Omega
 

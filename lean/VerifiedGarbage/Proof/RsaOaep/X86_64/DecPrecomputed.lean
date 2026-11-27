@@ -253,14 +253,15 @@ theorem dec_pre_of {ts : List FnTable} {s : State} (hg : s.gpr = preState.gpr)
     Spec.MdHashTable.dataWords, Abi.withTables, Sig.wordIndex, abi, argRegs, decStack, RsaPkcs1Enc.X86_64.privStack,
     Impl.RsaOaep.X86_64.frameBytes, List.append_eq, List.range, List.range.loop]
   sig_and_intros
+  -- `hK` after `decide`: on another equation, `exact hK` evaluates the precomputation before it fails.
   all_goals first
-    | exact hK
     | exact hH
     | exact hsy
     | exact Region.disjoint_of_sep (by decide)
     | (simp only [Spec.Rsa.lenValid]; decide)
-    | rfl
     | decide
+    | exact hK
+    | rfl
 
 theorem preSat {vs : List MdHash} {w : MdHash} (hw : w ∈ vs) (hl : (names vs).length < 2 ^ 32) :
     ∃ s, (pdspec (tables vs)).pre s := by

@@ -449,7 +449,7 @@ theorem verified {H : Hash} (hH : HashOK H) (hz : PSizes H) (hc : Checks H)
   refine ⟨fun s hs => ?_, fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hpub e₁ e₂ => ?_, hsat⟩
   · obtain ⟨t, s', he, hg, hpost⟩ := correct (pre_of hH hs) hz hH hIn hInsp hInd hF hFsp hFd hI hIsp hId
     exact ⟨t, s', he, abiPreserved_of_exec hmx he hg, hpost⟩
-  · obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9⟩ := hpub
+  · obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, -⟩ := hpub
     exact (ct hH (pre_of hH h₁) (pre_of hH h₂) hz ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9⟩ hc hF hFsp hFd hI hIsp
       hId hIn hInsp hInd _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
 

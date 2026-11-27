@@ -18,7 +18,7 @@ jmp 21f
 20:
 21:
 .base64 "uAAAAACJ2VBRUlM="
-call {vg_blake2b_init}
+call {vg_blake2b_init_core}
 .base64 "WFhYWLkAAAAAugAAAACJ3oHGQAMAAL8EAAAAidgFwAAAAFBXVlJRUw=="
 call {vg_blake2b_update_scratch}
 .base64 "WFhYWFhYuQQAAAC6AAAAAIt0JASLfCQIidgFwAAAAFBXVlJRUw=="
@@ -35,7 +35,7 @@ jne 24b
 jb 25f
 27:
 .base64 "ukAAAAC4AAAAAInZUFFSUw=="
-call {vg_blake2b_init}
+call {vg_blake2b_init_core}
 .base64 "WFhYWLkAAAAAugAAAACJ3oHGAAMAAL9AAAAAidgFwAAAAFBXVlJRUw=="
 call {vg_blake2b_update_scratch}
 .base64 "WFhYWFhYuUAAAAC6AAAAAInYBcAAAACJ3oHGAAMAAFBWUlFT"
@@ -50,7 +50,7 @@ jmp 26f
 25:
 26:
 .base64 "i5NcAwAAuAAAAACJ2VBRUlM="
-call {vg_blake2b_init}
+call {vg_blake2b_init_core}
 .base64 "WFhYWLkAAAAAugAAAACJ3oHGAAMAAL9AAAAAidgFwAAAAFBXVlJRUw=="
 call {vg_blake2b_update_scratch}
 .base64 "WFhYWFhYuUAAAAC6AAAAAInYBcAAAACJ3oHGAAMAAFBWUlFT"
@@ -65,7 +65,7 @@ jmp 23f
 jne 29b
 .base64 "ibtYAwAAi7tQAwAAi7NMAwAAi5tIAwAAww=="
 .p2align 6"#,
-        vg_blake2b_init = sym crate::blake2b::vg_blake2b_init,
+        vg_blake2b_init_core = sym crate::blake2b::vg_blake2b_init_core::vg_blake2b_init_core,
         vg_blake2b_update_scratch = sym crate::blake2b::vg_blake2b_update_scratch::vg_blake2b_update_scratch,
         vg_blake2b_finalize_scratch = sym crate::blake2b::vg_blake2b_finalize_scratch::vg_blake2b_finalize_scratch,
     )

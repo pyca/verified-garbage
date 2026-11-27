@@ -9,12 +9,12 @@ vg_blake2b_update_scratch:
 	.option arch, +m, +c
 	addi t0, a4, 7
 	andi t0, t0, -8
-	sd ra, 512(t0)
-	sd s7, 520(t0)
-	sd s9, 528(t0)
-	sd s10, 536(t0)
-	sd s11, 544(t0)
-	sd s8, 552(t0)
+	sd ra, 280(t0)
+	sd s7, 288(t0)
+	sd s9, 296(t0)
+	sd s10, 304(t0)
+	sd s11, 312(t0)
+	sd s8, 320(t0)
 	addi s7, a0, 0
 	addi s8, t0, 0
 	addi s9, a2, 0
@@ -112,11 +112,11 @@ vg_blake2b_update_scratch:
 	j 23f
 22:
 23:
-	ld ra, 512(s8)
-	ld s7, 520(s8)
-	ld s9, 528(s8)
-	ld s10, 536(s8)
-	ld s11, 544(s8)
-	ld s8, 552(s8)
+	ld ra, 280(s8)
+	ld s7, 288(s8)
+	ld s9, 296(s8)
+	ld s10, 304(s8)
+	ld s11, 312(s8)
+	ld s8, 320(s8)
 	ret
 	.option pop

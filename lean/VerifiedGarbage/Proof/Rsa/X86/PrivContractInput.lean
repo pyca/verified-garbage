@@ -99,12 +99,15 @@ theorem private_abi_entry (s : State) (A : PrivABI s) :
     have de : arg s 13 = arg s 9 := BitVec.eq_of_toNat_eq dpLen
     have qe : arg s 17 = arg s 9 := BitVec.eq_of_toNat_eq qiLen
     have dqe : arg s 15 = arg s 11 := BitVec.eq_of_toNat_eq dqLen
+    -- a length, as the geometry states it
+    obtain e : ∀ x : BitVec 32, x = BitVec.ofNat 32 x.toNat := fun x =>
+      ((BitVec.ofNat_toNat 32 x).trans (BitVec.setWidth_eq x)).symm
     rcases (show j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7 ∨
         j = 8 ∨ j = 9 ∨ j = 10 ∨ j = 11 ∨ j = 12 ∨ j = 13 ∨ j = 14 ∨ j = 15 ∨
         j = 16 ∨ j = 17 ∨ j = 18 ∨ j = 19 by omega_arith) with
       rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-    all_goals simp [privateGeometry, PrivGeometry.argument, oe, ie, de, qe, dqe]
-    all_goals rfl
+    exacts [rfl, oe.trans (e _), rfl, e _, rfl, e _, rfl, ie.trans (e _), rfl, e _, rfl, e _, rfl, de.trans (e _),
+      rfl, dqe.trans (e _), rfl, qe.trans (e _), rfl, e _]
   · intro r hr
     have belowRet : (⟨(s.gpr .esp).setWidth 64, 4⟩ : Region).Disjoint (privateGeometry s).wholeStack := by
       rw [privateGeometry_wholeStack s stackFit]

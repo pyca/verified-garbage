@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.PrimeBytes
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Load
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.DrawBuffer
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ProbablePrime
 import VerifiedGarbage.Proof.Framework.Omega
 
@@ -62,14 +62,14 @@ theorem loadPrimeBytes_ok {P : PrimeParams} {mi : BitVec 64} {used : Nat} {s : S
 
 /-- Trial division and Miller–Rabin operate on the saved candidate bytes;
 all candidate-loading writes are included in the returned memory frame. -/
-theorem primeBytes_ok (M : Mont) (K : Kernel) {P : PrimeParams} {mi : BitVec 64} {used : Nat} {s : State}
+theorem primeBytes_ok (M : Mont) (K : Kernel) (S : Preparation M) {P : PrimeParams} {mi : BitVec 64} {used : Nat} {s : State}
     (h : PrimeArguments P mi used s) {cp : Addr} {bs : List Byte}
     (hptr : word s.mem P.B 160 = cp) (hlen : bs.length = P.len)
     (hvalue : Spec.Rsa.os2ip bs = P.N) (hsrc : Src s P.B P.Z cp bs)
     (hu : used ≤ P.rand.length) (hw : P.w ≤ 48) (hz : slot P.w aTab + 2048 ≤ P.Z)
     (hn : 8161 < P.N) (hpolicy : 1024 < Spec.Dsa.bitLength P.N ↔ 16 < P.w)
     (hchecks : P.checks = Spec.Dsa.primeChecks (Spec.Dsa.bitLength P.N)) :
-    WP isa (Impl.Dsa.X86_64.Generation.primeBytes M.mm K.run) s fun t =>
+    WP isa (Impl.Dsa.X86_64.Generation.primeBytes M.mm K.run S.code) s fun t =>
       let res := Spec.Dsa.probablePrime P.N (P.rand.drop used)
       ∃ mi' used', PrimeInput P mi' used' t ∧ used' ≤ P.rand.length ∧
         (res = none → word t.mem P.B (8 * kStat) = BitVec.ofNat 64 0) ∧
@@ -80,7 +80,7 @@ theorem primeBytes_ok (M : Mont) (K : Kernel) {P : PrimeParams} {mi : BitVec 64}
         Keep mmRegs s t := by
   unfold Impl.Dsa.X86_64.Generation.primeBytes
   refine WP.seq (WP.mono (loadPrimeBytes_ok h hptr hlen hvalue hsrc) fun u ⟨hi, hf, hk⟩ => ?_)
-  refine WP.mono (probablePrime_ok M K hi hu hw hz hn hpolicy hchecks)
+  refine WP.mono (probablePrime_ok M K S hi hu hw hz hn hpolicy hchecks)
     fun t ⟨mi', used', ht, hut, he, hr, ft, kt⟩ => ?_
   have fl : Frm P.B [(slot P.w 0, 8 * (P.w + 2))] s.mem u.mem :=
     Frm.of_outside hf (by simp)

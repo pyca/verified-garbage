@@ -3,10 +3,9 @@ module
 public import VerifiedGarbage.Impl.Ffdh.Arm.Arithmetic
 public import VerifiedGarbage.Proof.Ffdh.Arm.Octets
 public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
-public import VerifiedGarbage.Proof.Bignum.Arm.ExpPhaseInput
+public import VerifiedGarbage.Proof.Bignum.Arm.WindowPhase
 import VerifiedGarbage.Proof.Bignum.Arm.ExpControls
 import VerifiedGarbage.Proof.Bignum.Arm.ImportOperand
-import VerifiedGarbage.Proof.Bignum.Arm.WindowPhase
 import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
 import VerifiedGarbage.Proof.Framework.Block
 

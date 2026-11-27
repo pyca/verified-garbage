@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.TimeExp
-import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Seed
+import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Exponentiate
 meta import VerifiedGarbage.Proof.Bignum.X86.PublicRt.TimeExp
 public import VerifiedGarbage.Proof.Framework.CallLay
 import VerifiedGarbage.Proof.Framework.Omega

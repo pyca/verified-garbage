@@ -62,4 +62,36 @@ def expandKey : Prog isa :=
       loadHalf 1 ++ toBs ++ slotAddr .a4 tableEnd ++ slotAddr kr tableSlot))
     (.seq (.loop (.block keyBody) (.nonzero t0)) (.block restoreRegs))
 
+/-- Load the key before reusing its pointer register to keep the caller's
+return address across the shared schedule. Save the callee-saved registers
+before the key loads use any of them as temporaries. -/
+def keyPrefix : List Instr :=
+  [movR sb .a2] ++ saveRegs ++ loadHalf 0 ++ loadHalf 1 ++ [movR .a0 .ra]
+
+/-- Group table slots by their constant value, loading each distinct value once. -/
+def ckGroups : List (BitVec 64 × List Nat) :=
+  (ckEntries.map (·.2)).eraseDups.map fun value =>
+    (value, (ckEntries.filter (fun kv => kv.2 == value)).map (·.1))
+
+def ckStoreGroup (g : BitVec 64 × List Nat) : List Instr :=
+  li64 t0 t1 g.1 ++ g.2.map (fun k => .store .d t0 .a4 (8*k))
+
+/-- The same table of CK planes with repeated constant loads eliminated. -/
+def ckTableGrouped : List Instr :=
+  slotAddr .a4 tableSlot ++ ckGroups.flatMap ckStoreGroup
+
+/-- The shared schedule, with the key already in the tail buffer. The caller
+keeps its return address in `a0` and restores the saved registers afterwards. -/
+def expandKeyCore : Prog isa :=
+  .seq (.block (setSlots (keyMasks ++ bsKs) ++ ckTableGrouped ++ toBs ++
+      slotAddr .a4 tableEnd ++ slotAddr kr tableSlot))
+    (.loop (.block keyBody) (.nonzero t0))
+
+/-- Key expansion through the shared schedule, in the same scratch buffer
+and with no additional stack space. -/
+def expandKeyCalled : Prog isa :=
+  .seq (.block keyPrefix)
+    (.seq (.call "vg_sm4_expand_key_shared" expandKeyCore)
+      (.block (movR .ra .a0 :: restoreRegs)))
+
 end VG.Impl.Sm4.RISCV64

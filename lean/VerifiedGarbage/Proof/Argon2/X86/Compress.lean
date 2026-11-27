@@ -4,7 +4,6 @@ import VerifiedGarbage.Proof.Blake2.X86.CompressB.Body
 public import VerifiedGarbage.Spec.Argon2.Contract
 public import VerifiedGarbage.Proof.Argon2.Contract
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Blake2.X86.CompressB.G
 public import VerifiedGarbage.Proof.Argon2.Spec
 public import VerifiedGarbage.Impl.Argon2.X86.Compress
 public import VerifiedGarbage.Proof.Sha512.X86.Rounds
@@ -26,7 +25,7 @@ Each step of GB (`VG.Impl.Argon2.X86.gb`) reads its operands from `scratch`
 (at `esi`) and writes its result back. `addMul_ok`, `xorRot32_ok`, `xorRot_ok`
 and `xorRot63_ok` give the memory each leaves, for any offsets, with the
 64-bit operations on register pairs of `Proof/Sha512/X86/Rounds.lean` and
-the rotations of `Proof/Blake2/X86/CompressB/G.lean`.
+the rotations of `Proof/Blake2/X86/CompressB/Body.lean`.
 -/
 
 namespace VG.Proof.Argon2.X86

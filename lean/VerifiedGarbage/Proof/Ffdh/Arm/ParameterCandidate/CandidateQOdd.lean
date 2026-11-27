@@ -5,7 +5,7 @@ public import VerifiedGarbage.Impl.Ffdh.Arm.ParameterCandidate
 public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.ReadContext
 public import VerifiedGarbage.Spec.Rsa.Contract
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.ResidueBytes
+import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateResidue
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.X25519.Arm.Instr
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.TrialFlag
@@ -13,7 +13,6 @@ import VerifiedGarbage.Proof.Ffdh.Arm.Block
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateBuffers
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateMemory
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateResidue
 
 /-! ### `Ffdh.Arm.ParameterCandidate.QOdd`, which only this module used -/
 

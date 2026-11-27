@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.Hmac.Stream.Arm
 public import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Sha256
 public import VerifiedGarbage.Proof.Pbkdf2.Contract
 public import VerifiedGarbage.Proof.Hmac.Contract
@@ -11,6 +12,7 @@ import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.Framework.TaintBatch
 import VerifiedGarbage.Proof.Sha1.Arm.Lit
 import VerifiedGarbage.Proof.Sha512.Arm.Lit
+meta import VerifiedGarbage.Impl.Hmac.Stream.Arm
 meta import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Sha256
 meta import VerifiedGarbage.Proof.Pbkdf2.Stream.Arm.Sha224
 meta import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Instances
@@ -41,17 +43,7 @@ open VG VG.Arm VG.Proof.MdStream
 open VG.Impl.Pbkdf2.Md.Arm (Hash)
 open VG.Proof.Pbkdf2.Stream.Arm (sha224H sha224OK)
 
-/-- SHA-224: SHA-256's 32-byte hash value, big-endian length field and
-`vg_sha256_compress`, with 112 bytes of scratch space. -/
-def sha224Md : Hash where
-  st := sha224H
-  N := 32
-  L := 8
-  be := true
-  so := 112
-  out := Impl.Sha256.Arm.Stream.params.out
-  compN := "vg_sha256_compress"
-  compC := Impl.Sha256.Arm.compress
+export VG.Impl.Hmac.Stream.Arm (sha224Md)
 
 def sha224MdOK : HashOK sha224Md where
   md := Proof.Sha256.md

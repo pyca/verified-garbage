@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Hmac.Instance.pbkdf2Contract` of `VG.Spec.Hmac.sha1I`. Constant time: only the pointers, the lengths and `c` may affect timing, not the password, the salt or the key.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `password` must be valid for reads of `password_len` bytes.
@@ -19,7 +21,7 @@
 pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha1(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
         r#".base64 "gfsh+CAAQTmmAgh80f8h+CAAAfgAAIr6CACq+hAAyvoYAOr6IAAK+ygAKvsAAKo6AACGOgAAxzoAAOg6AAAJOwAAJTsAAKM4AADEOPABdThEApU4"
-bl {vg_hmac_sha1_init}
+bl {vg_hmac_sha1_init_core}
 .base64 "AQCAORQDYDksXZV9AAA4KA=="
 beq %cr0, 20f
 22:
@@ -46,8 +48,8 @@ bne %cr0, 22b
 b 21f
 20:
 21:
-.base64 "AACV6hAA1eoYAPXqIAAV6ygANesIALXqIAAB6DAAITimAwh8gAQhOCAAgE4=""#,
-        vg_hmac_sha1_init = sym super::hmac_sha1::vg_hmac_sha1_init,
+.base64 "AACV6hAA1eoYAPXqIAAV6ygANesIALXqIAAB6DAAITimAwh8gAQhOAAAADgR+SH4IACBOQAADPgIAAz4EAAM+BgADPggAAz4KAAM+DAADPg4AAz4QAAM+EgADPhQAAz4WAAM+GAADPhoAAz4cAAM+HgADPiAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHwAAAz4CAAM+BAADPgYAAz4IAAM+CgADPgwAAz4OAAM+EAADPhIAAz4UAAM+FgADPhgAAz4aAAM+HAADPh4AAz4gAAM+IgADPiQAAz4mAAM+KAADPioAAz4sAAM+LgADPjAAAz4yAAM+PAGITgAAGA4AACAOAAAoDgAAMA4AADgOAAAADkAACA5AABAOQAAYDkAAIA5IACATg==""#,
+        vg_hmac_sha1_init_core = sym super::hmac_sha1::vg_hmac_sha1_init_core::vg_hmac_sha1_init_core,
         vg_sha1_update_scratch = sym super::sha1::vg_sha1_update_scratch::vg_sha1_update_scratch,
         vg_hmac_sha1_finalize_scratch = sym super::hmac_sha1::vg_hmac_sha1_finalize_scratch::vg_hmac_sha1_finalize_scratch,
         vg_pbkdf2_hmac_sha1_iterate = sym super::pbkdf2_sha1::vg_pbkdf2_hmac_sha1_iterate::vg_pbkdf2_hmac_sha1_iterate,

@@ -8,6 +8,8 @@
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_mldsa44_keygen_sha3` if the CPU supports its features (`VG_MLDSA44_KEYGEN_SHA3_FEATURES`); or else `vg_mldsa44_keygen`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `seed` must be valid for reads of 32 bytes.
@@ -60,6 +62,8 @@ pub unsafe fn vg_mldsa44_keygen_auto(_dit: verified_garbage_cpu::Dit<'_>, seed: 
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_mldsa44_pk_tr_sha3` if the target's vendor is `apple` (or `VG_CPU_FEATURES` names every feature it needs) and the CPU supports its features (`VG_MLDSA44_PK_TR_SHA3_FEATURES`); or else `vg_mldsa44_pk_tr`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `pk` must be valid for reads of 1312 bytes.
@@ -111,6 +115,8 @@ pub unsafe fn vg_mldsa44_pk_tr_auto(_dit: verified_garbage_cpu::Dit<'_>, pk: *co
 ///
 /// It runs `vg_mldsa44_prepare_verifying_key`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `pk` must be valid for reads of 1312 bytes.
@@ -131,6 +137,8 @@ pub unsafe fn vg_mldsa44_prepare_verifying_key_auto(_dit: verified_garbage_cpu::
 /// Contract: `VG.Spec.MlDsa.prepareSecretKeyContract`. Constant time.
 ///
 /// It runs `vg_mldsa44_prepare_signing_key`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -153,6 +161,8 @@ pub unsafe fn vg_mldsa44_prepare_signing_key_auto(_dit: verified_garbage_cpu::Di
 /// Contract: `VG.Spec.MlDsa.signContract`. Constant time but for `ρ` and the rejection sampling: timing may depend on the pointers, on `ρ` (the first 32 bytes of `*sk`), on the number of iterations of the signing loop, the commitment hash of each and which validity check rejected it, and on the hint of the signature (`signLeak`), but not on anything else of the key, the message representative or the randomness.
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_mldsa44_sign_sha3` if the CPU supports its features (`VG_MLDSA44_SIGN_SHA3_FEATURES`); or else `vg_mldsa44_sign`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -208,6 +218,8 @@ pub unsafe fn vg_mldsa44_sign_auto(_dit: verified_garbage_cpu::Dit<'_>, sk: *con
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_mldsa44_sign_prepared_sha3` if the CPU supports its features (`VG_MLDSA44_SIGN_PREPARED_SHA3_FEATURES`); or else `vg_mldsa44_sign_prepared`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `sk` must be valid for reads of 14848 bytes.
@@ -257,11 +269,13 @@ pub unsafe fn vg_mldsa44_sign_prepared_auto(_dit: verified_garbage_cpu::Dit<'_>,
     unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(sk, mu, rnd, sig, scratch) }
 }
 
-/// ML-DSA-44 signing, `ML-DSA.Sign(sk, M, ctx)` (FIPS 204 Algorithm 2) on the randomness `*rnd` (line 5): with the private key `*sk`, the `msg_len` bytes of the message at `msg` and the `ctx_len` bytes of the context string at `ctx`, writes the signature of the formatted message `M′ = 0 ‖ ctx_len ‖ ctx ‖ M` (line 10), `ML-DSA.Sign_internal(sk, M′, rnd)` (Algorithm 7), to `*sig`. Returns 1 on success. Returns 0 if a loop reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed. Returns 2 if `ctx_len` is greater than 255 (FIPS 204 returns the error indication `⊥`): `*sig` is then unspecified.
+/// ML-DSA-44 signing, `ML-DSA.Sign(sk, M, ctx)` (FIPS 204 Algorithm 2) on the randomness `*rnd` (line 5): with the private key `*sk`, the `msg_len` bytes of the message at `msg` and the `ctx_len` bytes of the context string at `ctx`, writes the signature of the formatted message `M′ = 0 ‖ ctx_len ‖ ctx ‖ M` (line 10), `ML-DSA.Sign_internal(sk, M′, rnd)` (Algorithm 7), to `*sig`. Returns 1 on success. Returns 0 if a loop reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed. Returns 2 if `ctx_len` is greater than 255 (FIPS 204 returns the error indication `⊥`): `*sig` is then unchanged.
 ///
 /// Contract: `VG.Spec.MlDsa.signMessageContract`. Constant time but for `ρ` and the rejection sampling: timing may depend on the pointers, on `msg_len` and `ctx_len`, on `ρ` (the first 32 bytes of `*sk`), on the number of iterations of the signing loop, the commitment hash of each and which validity check rejected it, and on the hint of the signature (`signMessageLeak`), but not on anything else of the key, the message, the context string or the randomness.
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_mldsa44_sign_message_sha3` if the CPU supports its features (`VG_MLDSA44_SIGN_MESSAGE_SHA3_FEATURES`); or else `vg_mldsa44_sign_message`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -317,6 +331,8 @@ pub unsafe fn vg_mldsa44_sign_message_auto(_dit: verified_garbage_cpu::Dit<'_>, 
 /// Contract: `VG.Spec.MlDsa.preparedSignMessageContract`.
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_mldsa44_sign_message_prepared_sha3` if the CPU supports its features (`VG_MLDSA44_SIGN_MESSAGE_PREPARED_SHA3_FEATURES`); or else `vg_mldsa44_sign_message_prepared`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -374,6 +390,8 @@ pub unsafe fn vg_mldsa44_sign_message_prepared_auto(_dit: verified_garbage_cpu::
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_mldsa44_verify_sha3` if the CPU supports its features (`VG_MLDSA44_VERIFY_SHA3_FEATURES`); or else `vg_mldsa44_verify`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `pk` must be valid for reads of 1312 bytes.
@@ -424,6 +442,8 @@ pub unsafe fn vg_mldsa44_verify_auto(_dit: verified_garbage_cpu::Dit<'_>, pk: *c
 /// Contract: `VG.Spec.MlDsa.preparedVerifyContract`.
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_mldsa44_verify_prepared_sha3` if the CPU supports its features (`VG_MLDSA44_VERIFY_PREPARED_SHA3_FEATURES`); or else `vg_mldsa44_verify_prepared`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -476,6 +496,8 @@ pub unsafe fn vg_mldsa44_verify_prepared_auto(_dit: verified_garbage_cpu::Dit<'_
 /// Contract: `VG.Spec.MlDsa.verifyMessageCachedContract`. Timing may depend on the public key, message, context string and signature, and on argument addresses and lengths.
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_mldsa44_verify_message_cached_sha3` if the CPU supports its features (`VG_MLDSA44_VERIFY_MESSAGE_CACHED_SHA3_FEATURES`); or else `vg_mldsa44_verify_message_cached`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -530,6 +552,8 @@ pub unsafe fn vg_mldsa44_verify_message_cached_auto(_dit: verified_garbage_cpu::
 /// Contract: `VG.Spec.MlDsa.preparedVerifyMessageContract`.
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_mldsa44_verify_message_prepared_sha3` if the CPU supports its features (`VG_MLDSA44_VERIFY_MESSAGE_PREPARED_SHA3_FEATURES`); or else `vg_mldsa44_verify_message_prepared`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///

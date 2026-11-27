@@ -1,42 +1,46 @@
 module
 
 public import VerifiedGarbage.TCB.PPC64LE.Target
-public import VerifiedGarbage.Proof.Weierstrass.Law
-public import VerifiedGarbage.Impl.Ecdsa.P256.PPC64LE
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.Spec.Ecdsa.P256
-public import VerifiedGarbage.Impl.Ecdsa.Verify.P256.PPC64LE
-public import VerifiedGarbage.Proof.Ecdsa.Verify.PPC64LE.Verified
+public import VerifiedGarbage.TCB.Registration
 public import VerifiedGarbage.Spec.Ecdsa.Verify.P256
-public import VerifiedGarbage.Impl.Ecdsa.PPC64LE.VerifyHash
-public import VerifiedGarbage.TCB.PPC64LE.Print
+public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
+import VerifiedGarbage.Proof.Weierstrass.Law
+import VerifiedGarbage.Impl.Ecdsa.P256.PPC64LE
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Spec.Ecdsa.P256
+import VerifiedGarbage.Impl.Ecdsa.Verify.P256.PPC64LE
+import VerifiedGarbage.Proof.Ecdsa.Verify.PPC64LE.Verified
+import VerifiedGarbage.Impl.Ecdsa.PPC64LE.VerifyHash
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Scrub
+import VerifiedGarbage.Impl.Ecdsa.Rfc6979.PPC64LE.Fn
+import VerifiedGarbage.Proof.Ecdsa.Verify.PPC64LE.Scrub
 import VerifiedGarbage.Proof.Ecdsa.Verify.PPC64LE.Lit
-public import VerifiedGarbage.Proof.P256.PPC64LE.Law
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.P256
-public import VerifiedGarbage.Proof.HmacTable.PPC64LE.Vars
+import VerifiedGarbage.Proof.P256.PPC64LE.Law
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.P256
+import VerifiedGarbage.Proof.HmacTable.PPC64LE.Vars
 import VerifiedGarbage.Proof.Ecdsa.PPC64LE.P256CombLit
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # ECDSA over P-256 (FIPS 186-5) on PPC64LE -/
 
-@[expose] public section
-
 namespace VG.Artifacts.EcdsaP256.PPC64LE
 
-open VG.Proof.Ecdsa.Rfc6979.PPC64LE (signCodeT OK p256R p256T_verified)
-open VG.Proof.HmacTable.PPC64LE (vars tables names)
+open VG.Proof.Ecdsa.Rfc6979.PPC64LE (OK)
+open VG.Proof.HmacTable.PPC64LE (vars names tables fnsOf)
 
 open VG.Proof.P256.PPC64LE (hasLaw)
 
-def artifacts : List Artifact := [
+public def artifacts : List (Artifact PPC64LE.target) := [
   Spec.Ecdsa.P256.verifyHashApi.artifact PPC64LE.target {
-    code := Impl.Ecdsa.PPC64LE.VerifyHash.verifyHash Spec.Ecdsa.P256.inst.curve.len false
-      Impl.Ecdsa.Verify.PPC64LE.verifyP256
-    verified := Proof.Ecdsa.Verify.PPC64LE.verifyHash_verified hasLaw.law }] ++
-  (if hv : OK vars ∧ "VG_P256_COMB" ∉ names vars then [
+    code := Impl.Ecdsa.Verify.PPC64LE.Fn.p256Verify
+    verified := Proof.Ecdsa.Verify.PPC64LE.Scrub.p256Verify_scrubbed hasLaw.law }] ++
+  (if hv : OK vars ∧ "VG_P256_COMB" ∉ names vars ∧ "VG_P256_FRAME_CONSTS" ∉ names vars then [
     Spec.Ecdsa.Rfc6979.Curves.p256SignApi.artifact PPC64LE.target {
       tables := [("hmac", tables vars)]
-      code := signCodeT (p256R hasLaw.law) Spec.Ecdsa.Rfc6979.Curves.p256.tries vars
-      verified := p256T_verified hasLaw.law vars hv }]
+      code := Impl.Ecdsa.Rfc6979.PPC64LE.Fn.p256 (fnsOf vars)
+      verified := Proof.Ecdsa.Rfc6979.PPC64LE.Scrub.p256Sign_scrubbed hasLaw.law hv }]
   else [])
+
+spec_apis artifacts
 
 end VG.Artifacts.EcdsaP256.PPC64LE

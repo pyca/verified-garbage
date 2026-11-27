@@ -5,7 +5,6 @@ public import VerifiedGarbage.Impl.Ecdsa.P521.PPC64LEComb
 public import VerifiedGarbage.Proof.Ecdsa.PPC64LE.LadPow
 import VerifiedGarbage.Proof.Ecdsa.PPC64LE.P521
 import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Stages
-import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Lays
 import VerifiedGarbage.Proof.P521.Comb7
 import VerifiedGarbage.Proof.Weierstrass.TCombWords
 import VerifiedGarbage.Proof.Weierstrass.Env

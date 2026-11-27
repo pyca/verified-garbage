@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Idea.expandKeyContract`. Constant time: only pointers may affect timing, not the key.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `key` must be valid for reads of 16 bytes.
@@ -68,7 +70,7 @@ pub(crate) unsafe extern "C" fn vg_idea_expand_key(key: *const [u8; 16], schedul
 .inst 0x8a0a0129,0xca09016b,0xf9400009,0x93c90929,0xd298000a,0xf2b8000a,0xf2d8000a,0x8a0a0129
 .inst 0xca09016b,0xf9400409,0x93c98929,0xd280000a,0xf2c007ea,0xf2e007ea,0x8a0a0129,0xca09016b
 .inst 0xf9400409,0x93c94929,0xd280000a,0xf2e7f80a,0x8a0a0129,0xca09016b,0xf9400409,0x93c90929
-.inst 0xd280000a,0xf2f8000a,0x8a0a0129,0xca09016b,0xf900302b,0xd65f03c0
+.inst 0xd280000a,0xf2f8000a,0x8a0a0129,0xca09016b,0xf900302b,0xd2800009,0xd280000b,0xd65f03c0
 .p2align 6",
     )
 }
@@ -76,6 +78,8 @@ pub(crate) unsafe extern "C" fn vg_idea_expand_key(key: *const [u8; 16], schedul
 /// IDEA decryption key schedule (Lai, 1992, §3.3): writes to `*inverse` the 52 decryption subkeys of the 52 encryption subkeys at `schedule` (both as little-endian 16-bit words, as `vg_idea_expand_key` writes them): the multiplicative inverses modulo 2^16 + 1 (with 0 standing for 2^16), additive inverses modulo 2^16 and copies of the encryption subkeys, in reverse round order.
 ///
 /// Contract: `VG.Spec.Idea.invertKeyContract`. Constant time: only pointers may affect timing, not the subkeys, including those that are 0 or 1.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -238,7 +242,8 @@ cbnz x7, 216b
 .inst 0x8a0f016b,0x9100056b,0xd10004ac,0x8a0f018c,0x9100058c,0x9b0c7d6b,0x8a0f016c,0xd350fd6b
 .inst 0xcb0b018c,0xd37ffd8b,0x8b0b018c,0xd370bd6b,0x8b0b018c,0x8a0f0186,0xd10004e7
 cbnz x7, 217b
-.inst 0x910000c3,0xd3503c63,0xaa030129,0xf9003029,0xd65f03c0
+.inst 0x910000c3,0xd3503c63,0xaa030129,0xf9003029,0xd2800003,0xd2800004,0xd2800005,0xd2800006
+.inst 0xd2800009,0xd280000b,0xd280000c,0xd65f03c0
 .p2align 6",
     )
 }
@@ -246,6 +251,8 @@ cbnz x7, 217b
 /// IDEA in ECB mode (Lai, 1992, §3.3; SP 800-38A §6.1) on `n` complete 8-byte blocks at `data`, in place, under the 52 subkeys at `schedule`: encryption under the subkeys `vg_idea_expand_key` writes, decryption under those `vg_idea_invert_key` writes. No padding is added or removed. For `n = 0`, no data is transformed.
 ///
 /// Contract: `VG.Spec.Idea.ecbContract`. Constant time: only pointers and `n` may affect timing, not the subkeys or data, including words or subkeys that are 0.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -354,7 +361,8 @@ cbnz x2, 22b
 b 21f
 20:
 21:
-.inst 0xd65f03c0
+.inst 0xd2800003,0xd2800004,0xd2800005,0xd2800006,0xd2800007,0xd2800008,0xd2800009,0xd280000a
+.inst 0xd280000b,0xd280000c,0xd280000d,0xd280000e,0xd65f03c0
 .p2align 6",
     )
 }

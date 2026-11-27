@@ -1,7 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdh.X86.Main
-public import VerifiedGarbage.Proof.Ecdh.X86.BrainpoolP512r1.Contract
+public import VerifiedGarbage.Proof.Ecdh.X86.CallTaint
+public import VerifiedGarbage.Proof.Framework.X86.SseTaintMono
+meta import VerifiedGarbage.Proof.Ecdh.X86.CallTaint
+meta import VerifiedGarbage.Proof.Framework.X86.SseTaintMono
 import VerifiedGarbage.Proof.Ecdsa.X86.BrainpoolP512r1.Config
 public import VerifiedGarbage.Proof.Framework.X86.TaintMono
 public import VerifiedGarbage.Spec.EcKey.BrainpoolP512r1
@@ -13,7 +16,6 @@ import VerifiedGarbage.Proof.Framework.NativeTaintCore
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Ecdh.X86.Main
-meta import VerifiedGarbage.Proof.Ecdh.X86.BrainpoolP512r1.Contract
 meta import VerifiedGarbage.Proof.Ecdsa.X86.BrainpoolP512r1.Config
 meta import VerifiedGarbage.Proof.Framework.X86.TaintMono
 meta import VerifiedGarbage.Spec.EcKey.BrainpoolP512r1
@@ -26,6 +28,73 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Spec.BrainpoolP512r1
+public import VerifiedGarbage.Spec.EcKey.Generic
+public import VerifiedGarbage.Spec.Ecdh
+public import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.GetElem
+meta import VerifiedGarbage.TCB.X86.Target
+meta import VerifiedGarbage.Spec.BrainpoolP512r1
+meta import VerifiedGarbage.Spec.EcKey.Generic
+meta import VerifiedGarbage.Spec.Ecdh
+meta import VerifiedGarbage.Proof.Framework.PowLit
+meta import VerifiedGarbage.Proof.Framework.GetElem
+meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
+
+/-! ### `Ecdh.X86.BrainpoolP512r1.Contract`, which only this module used -/
+
+section
+
+/-!
+# ECDH over brainpoolP512r1 on x86 (32-bit): the contract the proof is written against
+
+The facts of `Spec.Ecdh.BrainpoolP512r1.inst.exchangeContract` for x86, by name:
+`vg_ecdh_brainpoolp512r1(out, d, peer, scratch)`, whose arguments are on the stack
+(cdecl), the result in `eax`. Its arguments' slots are readable here; the
+shared contract makes them writable (`Verified.narrowTo`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Ecdh.X86.BrainpoolP512r1
+
+open VG VG.X86 Spec.Weierstrass Spec.EcKey
+
+/-- The shared secret of the private key at `d` and the public key at
+`peer`, as the specification computes it. -/
+abbrev ex (m : Mem) (d peer : Addr) : Option (List Byte) :=
+  Spec.Ecdh.exchange Spec.BrainpoolP512r1.curve (ofBytes (bytesAt m d 64)) (bytesAt m peer 129)
+
+def ecdhX86 : Contract X86.isa where
+  pre s :=
+    let out : Region := ⟨(arg s 0).setWidth 64, 64⟩
+    let d : Region := ⟨(arg s 1).setWidth 64, 64⟩
+    let peer : Region := ⟨(arg s 2).setWidth 64, 129⟩
+    let scratch : Region := ⟨(arg s 3).setWidth 64, 8192⟩
+    let args : Region := ⟨argAddr s 0, 16⟩
+    let ret : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
+    let stack : Region := ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 24, 24⟩
+    s.rd = [d, peer, args] ∧ s.wr = [out, scratch] ∧ out.Disjoint scratch ∧ out.Disjoint d ∧
+      out.Disjoint peer ∧ d.Disjoint scratch ∧ peer.Disjoint scratch ∧
+      args.Disjoint out ∧ args.Disjoint scratch ∧ ret.Disjoint out ∧ ret.Disjoint scratch ∧
+      (arg s 0).toNat + 64 ≤ 2 ^ 32 ∧ (arg s 1).toNat + 64 ≤ 2 ^ 32 ∧ (arg s 2).toNat + 129 ≤ 2 ^ 32 ∧
+      (arg s 3).toNat + 8192 ≤ 2 ^ 32 ∧ (s.gpr .esp).toNat + 20 ≤ 2 ^ 32 ∧
+      24 ≤ (s.gpr .esp).toNat ∧ stack.Disjoint out ∧ stack.Disjoint scratch
+  post s s' :=
+    match ex s.mem ((arg s 1).setWidth 64) ((arg s 2).setWidth 64) with
+    | some z => BitVec.setWidth 32 (s'.gpr .edx ++ s'.gpr .eax) = 1 ∧
+      bytesAt s'.mem ((arg s 0).setWidth 64) 64 = z
+    | none => BitVec.setWidth 32 (s'.gpr .edx ++ s'.gpr .eax) = 0 ∧
+      bytesAt s'.mem ((arg s 0).setWidth 64) 64 = List.replicate 64 0
+  pub s₁ s₂ := s₁.gpr .esp = s₂.gpr .esp ∧ arg s₁ 0 = arg s₂ 0 ∧ arg s₁ 1 = arg s₂ 1 ∧
+    arg s₁ 2 = arg s₂ 2 ∧ arg s₁ 3 = arg s₂ 3
+
+end VG.Proof.Ecdh.X86.BrainpoolP512r1
+
+end
+
+end
 
 /-!
 # ECDH over brainpoolP512r1 on x86 (32-bit): `Verified`
@@ -55,11 +124,7 @@ theorem pre_of {s : State} (h : ecdhX86.pre s) : EPre brainpoolp512r1 s := by
 
 theorem post_of {s s' : State} (h : EPost brainpoolp512r1 s s') : ecdhX86.post s s' := by
   unfold EPost at h
-  show match ex s.mem ((arg s 1).setWidth 64) ((arg s 2).setWidth 64) with
-    | some z => BitVec.setWidth 32 (s'.gpr .edx ++ s'.gpr .eax) = 1 ∧
-        Spec.EcKey.bytesAt s'.mem ((arg s 0).setWidth 64) 64 = z
-    | none => BitVec.setWidth 32 (s'.gpr .edx ++ s'.gpr .eax) = 0 ∧
-        Spec.EcKey.bytesAt s'.mem ((arg s 0).setWidth 64) 64 = List.replicate 64 0
+  dsimp only [ecdhX86]
   rw [BitVec.setWidth_append_eq_right]
   revert h
   generalize hq : ex s.mem ((arg s 1).setWidth 64) ((arg s 2).setWidth 64) = q
@@ -68,13 +133,13 @@ theorem post_of {s s' : State} (h : EPost brainpoolp512r1 s s') : ecdhX86.post s
         ((arg s 2).setWidth 64) from rfl, hq]
   rcases q with _ | z <;> exact id
 
-/-- No instruction writes `esp`, and the calls use 20 bytes of stack. -/
-theorem ecdh_sp : SpOk exchangeBrainpoolP512r1 brainpoolp512r1.stk := ⟨NoSp.of_all (by lit_decide), by lit_decide⟩
+/-- No instruction writes `esp`, and the calls use 24 bytes of stack. -/
+theorem ecdh_sp : SpOk exchangeBrainpoolP512r1 24 := ⟨NoSp.of_all (by lit_decide), by lit_decide⟩
 
 theorem ecdh_x86 (hL : Weierstrass.Law Spec.BrainpoolP512r1.curve) (s : State) (hs : ecdhX86.pre s) :
     ∃ t s', Exec isa exchangeBrainpoolP512r1 s t s' ∧ abiPreserved s s' ∧ ecdhX86.post s s' := by
   have hp := pre_of hs
-  obtain ⟨t, s', he, K, hpost⟩ := exchange_ok brainpoolp512r1_ok hL rfl ecdh_sp hp
+  obtain ⟨t, s', he, K, hpost⟩ := exchange_ok brainpoolp512r1_ok hL ecdh_sp hp
   refine ⟨t, s', he, ⟨fun r hr => ?_, K.ret hp⟩, post_of hpost⟩
   simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl
@@ -89,7 +154,7 @@ holding `out` and `scratch` known to be the base addresses of the writable
 regions. -/
 def τ₀ : VG.X86.Taint.T :=
   { regs := .ofList [.esp], flags := false, lens := [64, 8192], argLen := 20, argBases := [(4, 0), (16, 1)],
-    room := 20 }
+    room := 24 }
 
 theorem wf₀ {s : State} (hp : EPre brainpoolp512r1 s) : VG.X86.Taint.Wf τ₀ s := by
   have hsc := hp.sc_fit; have ho := hp.out_fit; have hs := hp.sp_fit
@@ -135,23 +200,22 @@ theorem agree₀ {s₁ s₂ : State} (h₁ : ecdhX86.pre s₁) (h₂ : ecdhX86.p
     · exact congrArg _ a2
     · exact congrArg _ a3
 
-/-- What is public on entry to every call of the multiplication modulo `p`
-(as for P-521, `Proof/Ecdh/X86/P521/Verified.lean`): the stack pointer and
-the four words of its arguments' frame, below the return address. Its calls
-are entered from several taints, each analysing its body again in full; the
-summary analyses it once. -/
-def τMul : VG.X86.Taint.T :=
-  { regs := ⟨215⟩, flags := false, lens := [16, 64, 8192], bases := [(.edi, 2, 0), (.esp, 0, 4)],
-    slots := [(0, 12, 4), (0, 8, 4), (0, 4, 4), (0, 0, 4)], wbases := [(0, 0, 2)], argLen := 20,
-    argBases := [(4, 1), (16, 2)], stk := [none, some 16], room := 20 }
+/-! The field functions, analysed once from what is public on entry to
+their calls (`CallTaint`), in place of each call. The windows select their
+table's entries with SSE2 instructions, so the analysis is the one that
+follows the `xmm` registers. -/
 
-taint_summary mulSum : taint τMul
+taint_summary mulSum : sseTaint { callτ 64 with room := 24 }
   (Impl.Weierstrass.X86.Mont.mulFn Impl.Weierstrass.Mont.brainpoolp512r1p.k Impl.Weierstrass.Mont.brainpoolp512r1p.m)
+taint_summary addSum : sseTaint { callτ 64 with room := 24 }
+  (Impl.Weierstrass.X86.Mont.addFn Impl.Weierstrass.Mont.brainpoolp512r1p.k Impl.Weierstrass.Mont.brainpoolp512r1p.m)
+taint_summary subSum : sseTaint { callτ 64 with room := 24 }
+  (Impl.Weierstrass.X86.Mont.subFn Impl.Weierstrass.Mont.brainpoolp512r1p.k Impl.Weierstrass.Mont.brainpoolp512r1p.m)
 
 theorem ecdh_ct : ConstantTime isa ecdhX86.pre ecdhX86.pub exchangeBrainpoolP512r1 := by
-  obtain ⟨_, hc⟩ : ∃ h, (taint.check τ₀ exchangeBrainpoolP512r1 h).isSome = true := by
-    taint_decide_sum [mulSum]
-  exact VG.Taint.constantTime (A := taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁ h₂ hp) hc
+  obtain ⟨_, hc⟩ : ∃ h, (sseTaint.check τ₀ exchangeBrainpoolP512r1 h).isSome = true := by
+    native_taint_decide_sum [mulSum, addSum, subSum]
+  exact VG.Taint.constantTime (A := sseTaint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁ h₂ hp) hc
 
 /-- The contract with the regions the shared one gives: the arguments'
 slots writable rather than readable. -/
@@ -164,13 +228,13 @@ def ecdhWide : Contract isa :=
     let scratch : Region := ⟨(arg s 3).setWidth 64, 8192⟩
     let args : Region := ⟨argAddr s 0, 16⟩
     let ret : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
-    let stack : Region := ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 20, 20⟩
+    let stack : Region := ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 24, 24⟩
     s.rd = [d, peer] ∧ s.wr = [out, scratch, args] ∧ out.Disjoint scratch ∧ out.Disjoint d ∧
       out.Disjoint peer ∧ d.Disjoint scratch ∧ peer.Disjoint scratch ∧
       args.Disjoint out ∧ args.Disjoint scratch ∧ ret.Disjoint out ∧ ret.Disjoint scratch ∧
       (arg s 0).toNat + 64 ≤ 2 ^ 32 ∧ (arg s 1).toNat + 64 ≤ 2 ^ 32 ∧ (arg s 2).toNat + 129 ≤ 2 ^ 32 ∧
       (arg s 3).toNat + 8192 ≤ 2 ^ 32 ∧ (s.gpr .esp).toNat + 20 ≤ 2 ^ 32 ∧
-      20 ≤ (s.gpr .esp).toNat ∧ stack.Disjoint out ∧ stack.Disjoint scratch }
+      24 ≤ (s.gpr .esp).toNat ∧ stack.Disjoint out ∧ stack.Disjoint scratch }
 
 def ecdhRd (s : State) : List Region :=
   [⟨(arg s 1).setWidth 64, 64⟩, ⟨(arg s 2).setWidth 64, 129⟩, ⟨argAddr s 0, 16⟩]
@@ -200,7 +264,7 @@ def satState : State where
   wr := [⟨0x1000, 64⟩, ⟨0x8000, 8192⟩, ⟨0x20004, 16⟩]
 
 theorem ecdhWide_implies :
-    ecdhWide.Implies (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.BrainpoolP512r1.inst X86.abi 20) := by
+    ecdhWide.Implies (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.BrainpoolP512r1.inst X86.abi 24) := by
   have a0 : arg satState 0 = 0x1000 := by decide
   have a1 : arg satState 1 = 0x2000 := by decide
   have a2 : arg satState 2 = 0x3000 := by decide
@@ -212,7 +276,7 @@ theorem ecdhWide_implies :
     ecdhX86, ex] [a0, a1, a2, a3, e, esp] using satState
 
 theorem ecdh_verified (hL : Weierstrass.Law Spec.BrainpoolP512r1.curve) :
-    Verified X86.target exchangeBrainpoolP512r1 (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.BrainpoolP512r1.inst X86.abi 20) := by
+    Verified X86.target exchangeBrainpoolP512r1 (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.BrainpoolP512r1.inst X86.abi 24) := by
   have hsat := ecdhWide_implies.sat_left
   have satLocal : ∃ s, ecdhX86.pre s := hsat.elim fun s h => ⟨_, ecdhWide_pre s h⟩
   have verifiedLocal : Verified X86.target exchangeBrainpoolP512r1 ecdhX86 :=

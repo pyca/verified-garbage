@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Impl.Sm4.X86.Modes
-public import VerifiedGarbage.Impl.Modes.Ctr
 
 /-! # SM4-CTR on baseline x86 -/
 
@@ -9,7 +8,8 @@ public import VerifiedGarbage.Impl.Modes.Ctr
 
 namespace VG.Impl.Sm4.X86
 
-/-- CTR with full 128-bit big-endian counter increments. -/
-def ctr : Prog VG.X86.isa := (dirCore .encrypt).seq Modes.Mode.ctr
+/-- CTR with full 128-bit big-endian counter increments, the counter blocks
+in groups of `levels`, then one at a time (`Impl/Modes/X86/Wide.lean`). -/
+def ctr : Prog VG.X86.isa := (dirCore .encrypt).seqLevels Modes.Mode.ctrWide levels Modes.Mode.ctrEarly
 
 end VG.Impl.Sm4.X86

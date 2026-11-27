@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Spec.X448
 
-/-! Affine multiples `[i]B`, kernel-checked by `Proof/Ed448/Window.lean`. -/
+/-! Affine multiples `[i]B`, kernel-checked by `Proof/Ed448/X86_64/Window/Mask.lean`. -/
 
 @[expose] public section
 

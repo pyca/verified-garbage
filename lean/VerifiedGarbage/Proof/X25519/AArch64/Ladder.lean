@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.X25519.Ladder
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 public import VerifiedGarbage.Proof.X25519.AArch64.Ops
-public import Mathlib.Logic.Function.Basic
+public import VerifiedGarbage.Proof.Framework.FunUpdate
 
 /-!
 # X25519 on AArch64: the ladder
@@ -25,7 +25,7 @@ open VG VG.AArch64 VG.Impl.X25519.AArch64 VG.Spec.X25519 VG.Proof.X25519
 
 /-- Evaluates the slots' values after an operation, so that they refer to the
 earlier ones only through their values. -/
-macro "vsimp" " at " h:ident : tactic => `(tactic| plain_simp_names simp only [Function.update_apply, lvals, ite_true, ite_false,
+macro "vsimp" " at " h:ident : tactic => `(tactic| plain_simp_names simp only [Fun.update_apply, lvals, ite_true, ite_false,
                    Nat.reduceEqDiff] at $h:ident)
 
 end VG.Proof.X25519.AArch64

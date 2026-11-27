@@ -1,12 +1,11 @@
 module
 
 import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Init
-public import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Invariant
+public import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Recode
 public import VerifiedGarbage.Impl.Ed448.X86_64.Wnaf.Joint
 public import VerifiedGarbage.Proof.Ed448.X86_64.Point64.Fn
 public import VerifiedGarbage.Proof.Ed448.X86_64.Window.Memory
 import VerifiedGarbage.Proof.Ed448.X86_64.Window.Table
-import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Recode
 import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Loop
 import VerifiedGarbage.Proof.Ed448.Wnaf.Recoding
 import Mathlib.Tactic.NormNum.Prime

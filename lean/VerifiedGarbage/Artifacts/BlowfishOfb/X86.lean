@@ -1,24 +1,39 @@
 module
 
-public import VerifiedGarbage.Proof.Blowfish.X86.FbVerified
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Blowfish.Ofb
+public import VerifiedGarbage.Spec.Blowfish.OfbFinal
+import VerifiedGarbage.Proof.Blowfish.X86.Scrub
+import VerifiedGarbage.Impl.Blowfish.X86.Fn
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Blowfish.X86.Ssse3Verified
+import VerifiedGarbage.Impl.Blowfish.X86.Ssse3
 import VerifiedGarbage.Proof.Blowfish.X86.ModesLit
-public import VerifiedGarbage.Proof.Blowfish.X86.FbFinalVerified
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.X86.Print
 import VerifiedGarbage.Proof.Blowfish.X86.FbFinalLit
+import VerifiedGarbage.Proof.Blowfish.X86.Ssse3Lit
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # Blowfish-OFB on x86 -/
 
-@[expose] public section
-
 namespace VG.Artifacts.BlowfishOfb.X86
 
-def artifacts : List Artifact := [
+public def artifacts : List (Artifact X86.target) := [
   Spec.Blowfish.ofbApi.artifact X86.target {
-    code := Impl.StackScratch.X86.withStackScratchWiped 112 4 22 Impl.Blowfish.X86.ofb
-    verified := Proof.Blowfish.X86.Fb.ofb_framed },
+    suffix := "_ssse3"
+    code := Impl.Blowfish.X86.Ssse3.Fn.ofb
+    verified := Proof.Blowfish.X86.Ssse3.ofb_scrubbed },
+  Spec.Blowfish.ofbApi.artifact X86.target {
+    code := Impl.Blowfish.X86.Fn.ofb
+    verified := Proof.Blowfish.X86.Scrub.ofb_scrubbed },
   Spec.Blowfish.ofbFinalApi.artifact X86.target {
-    code := Impl.StackScratch.X86.withStackScratchWiped 112 4 22 Impl.Blowfish.X86.ofbFinal
-    verified := Proof.Blowfish.X86.FbFinal.ofbFinal_framed }]
+    suffix := "_ssse3"
+    code := Impl.Blowfish.X86.Ssse3.Fn.ofbFinal
+    verified := Proof.Blowfish.X86.Ssse3.ofbFinal_scrubbed },
+  Spec.Blowfish.ofbFinalApi.artifact X86.target {
+    code := Impl.Blowfish.X86.Fn.ofbFinal
+    verified := Proof.Blowfish.X86.Scrub.ofbFinal_scrubbed }]
+
+spec_apis artifacts
 
 end VG.Artifacts.BlowfishOfb.X86

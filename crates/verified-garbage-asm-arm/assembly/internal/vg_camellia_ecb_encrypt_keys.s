@@ -1,0 +1,130 @@
+// The functions of `src/internal/vg_camellia_ecb_encrypt_keys.rs` of `verified-garbage-asm-arm`, as text: generated from
+// Lean (`lean/VerifiedGarbage/TCB/Rust.lean`) with them, and not compiled.
+// Each instruction the printer encodes is here as its text, and in
+// `src/` as its machine code, which `lean/VerifiedGarbage/TCB/<ISA>/Encode.lean`
+// gives.
+
+vg_camellia_ecb_encrypt_keys:
+	mov r12, r2
+	str r4, [r12, #2472]
+	str r5, [r12, #2476]
+	str r6, [r12, #2480]
+	str r7, [r12, #2484]
+	str r8, [r12, #2488]
+	str r9, [r12, #2492]
+	str r10, [r12, #2496]
+	str r11, [r12, #2500]
+	str lr, [r12, #2504]
+	mov r8, r12
+	mov r12, r0
+	cmp r1, #18
+	beq 20f
+	mov lr, #34
+	b 21f
+20:
+	mov lr, #26
+21:
+	add r9, r8, #288
+22:
+	ldr r4, [r12, #0]
+	movw r11, #257
+	movt r11, #257
+	and r5, r11, r4
+	eor r5, r5, r5, ror #31
+	eor r5, r5, r5, ror #30
+	eor r5, r5, r5, ror #28
+	str r5, [r9, #0]
+	and r5, r11, r4, lsr #1
+	eor r5, r5, r5, ror #31
+	eor r5, r5, r5, ror #30
+	eor r5, r5, r5, ror #28
+	str r5, [r9, #4]
+	and r5, r11, r4, lsr #2
+	eor r5, r5, r5, ror #31
+	eor r5, r5, r5, ror #30
+	eor r5, r5, r5, ror #28
+	str r5, [r9, #8]
+	and r5, r11, r4, lsr #3
+	eor r5, r5, r5, ror #31
+	eor r5, r5, r5, ror #30
+	eor r5, r5, r5, ror #28
+	str r5, [r9, #12]
+	and r5, r11, r4, lsr #4
+	eor r5, r5, r5, ror #31
+	eor r5, r5, r5, ror #30
+	eor r5, r5, r5, ror #28
+	str r5, [r9, #16]
+	and r5, r11, r4, lsr #5
+	eor r5, r5, r5, ror #31
+	eor r5, r5, r5, ror #30
+	eor r5, r5, r5, ror #28
+	str r5, [r9, #20]
+	and r5, r11, r4, lsr #6
+	eor r5, r5, r5, ror #31
+	eor r5, r5, r5, ror #30
+	eor r5, r5, r5, ror #28
+	str r5, [r9, #24]
+	and r5, r11, r4, lsr #7
+	eor r5, r5, r5, ror #31
+	eor r5, r5, r5, ror #30
+	eor r5, r5, r5, ror #28
+	str r5, [r9, #28]
+	ldr r4, [r12, #4]
+	movw r11, #257
+	movt r11, #257
+	and r5, r11, r4
+	eor r5, r5, r5, ror #31
+	eor r5, r5, r5, ror #30
+	eor r5, r5, r5, ror #28
+	str r5, [r9, #32]
+	and r5, r11, r4, lsr #1
+	eor r5, r5, r5, ror #31
+	eor r5, r5, r5, ror #30
+	eor r5, r5, r5, ror #28
+	str r5, [r9, #36]
+	and r5, r11, r4, lsr #2
+	eor r5, r5, r5, ror #31
+	eor r5, r5, r5, ror #30
+	eor r5, r5, r5, ror #28
+	str r5, [r9, #40]
+	and r5, r11, r4, lsr #3
+	eor r5, r5, r5, ror #31
+	eor r5, r5, r5, ror #30
+	eor r5, r5, r5, ror #28
+	str r5, [r9, #44]
+	and r5, r11, r4, lsr #4
+	eor r5, r5, r5, ror #31
+	eor r5, r5, r5, ror #30
+	eor r5, r5, r5, ror #28
+	str r5, [r9, #48]
+	and r5, r11, r4, lsr #5
+	eor r5, r5, r5, ror #31
+	eor r5, r5, r5, ror #30
+	eor r5, r5, r5, ror #28
+	str r5, [r9, #52]
+	and r5, r11, r4, lsr #6
+	eor r5, r5, r5, ror #31
+	eor r5, r5, r5, ror #30
+	eor r5, r5, r5, ror #28
+	str r5, [r9, #56]
+	and r5, r11, r4, lsr #7
+	eor r5, r5, r5, ror #31
+	eor r5, r5, r5, ror #30
+	eor r5, r5, r5, ror #28
+	str r5, [r9, #60]
+	add r9, r9, #64
+	add r12, r12, #8
+	subs lr, lr, #1
+	bne 22b
+	sub lr, r9, #128
+	mov r12, r8
+	ldr r4, [r12, #2472]
+	ldr r5, [r12, #2476]
+	ldr r6, [r12, #2480]
+	ldr r7, [r12, #2484]
+	ldr r8, [r12, #2488]
+	ldr r9, [r12, #2492]
+	ldr r10, [r12, #2496]
+	ldr r11, [r12, #2500]
+	ldr lr, [r12, #2504]
+	bx lr

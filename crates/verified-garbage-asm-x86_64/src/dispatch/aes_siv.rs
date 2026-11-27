@@ -16,7 +16,7 @@
 /// * `ctx` must be valid for reads and writes of 512 bytes.
 /// * `key_len` must be 32, 48 or 64.
 /// * `ctx` must not overlap `key` (distinct Rust objects never do).
-/// * Neither `key` nor `ctx` may overlap the return address on the stack or the 2584 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * Neither `key` nor `ctx` may overlap the return address on the stack or the 1944 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_aes_siv_init_auto(_dit: verified_garbage_cpu::Dit<'_>, key: *const u8, key_len: usize, ctx: *mut [u64; 64]) {
@@ -64,6 +64,8 @@ pub unsafe fn vg_aes_siv_init_auto(_dit: verified_garbage_cpu::Dit<'_>, key: *co
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_siv_encrypt_aesni` if the CPU supports its features (`VG_AES_SIV_ENCRYPT_AESNI_FEATURES`); or else `vg_aes_siv_encrypt`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads of 512 bytes.
@@ -72,7 +74,7 @@ pub unsafe fn vg_aes_siv_init_auto(_dit: verified_garbage_cpu::Dit<'_>, key: *co
 /// * `siv` must be valid for reads and writes of 16 bytes.
 /// * `rounds` must be 10, 12 or 14.
 /// * `data` and `siv` must not overlap each other, `ctx`, `ads`, the slices `ads` lists or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `ads`, the slices `ads` lists, `data` and `siv` may overlap the return address on the stack or the 2616 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `ads`, the slices `ads` lists, `data` and `siv` may overlap the return address on the stack or the 1976 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_aes_siv_encrypt_auto(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *mut [u8; 16]) {
@@ -115,6 +117,8 @@ pub unsafe fn vg_aes_siv_encrypt_auto(_dit: verified_garbage_cpu::Dit<'_>, ctx: 
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_siv_decrypt_aesni` if the CPU supports its features (`VG_AES_SIV_DECRYPT_AESNI_FEATURES`); or else `vg_aes_siv_decrypt`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads of 512 bytes.
@@ -123,7 +127,7 @@ pub unsafe fn vg_aes_siv_encrypt_auto(_dit: verified_garbage_cpu::Dit<'_>, ctx: 
 /// * `siv` must be valid for reads of 16 bytes.
 /// * `rounds` must be 10, 12 or 14.
 /// * `data` must not overlap `ctx`, `ads`, the slices `ads` lists, `siv` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `ads`, the slices `ads` lists, `data` and `siv` may overlap the return address on the stack or the 2616 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `ads`, the slices `ads` lists, `data` and `siv` may overlap the return address on the stack or the 1976 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_aes_siv_decrypt_auto(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *const [u8; 16]) -> u32 {

@@ -1,30 +1,31 @@
 module
 
-public import VerifiedGarbage.Proof.AesCfb.Arm.Verified
-public import VerifiedGarbage.Proof.AesCfb.Arm.Final
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.Arm.Print
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Cfb.Contract
+public import VerifiedGarbage.Spec.Cfb.Final
+import VerifiedGarbage.Proof.Aes.Arm.Scrub
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # AES-CFB128 (NIST SP 800-38A §6.3) on ARMv7 -/
 
-@[expose] public section
-
 namespace VG.Artifacts.AesCfb.Arm
 
-open VG.Proof.AesCfb.Arm
-
-def artifacts : List Artifact := [
+public def artifacts : List (Artifact Arm.target) := [
   Spec.Cfb.aesEncryptApi.artifact Arm.target {
-    code := Impl.AesCfb.Arm.encrypt
-    verified := Proof.AesCfb.encrypt_keyed encrypt_verified },
+    code := Impl.Aes.Arm.Fn.cfbEncrypt
+    verified := Proof.Aes.Arm.Fn.cfbEncrypt },
   Spec.Cfb.aesDecryptApi.artifact Arm.target {
-    code := Impl.AesCfb.Arm.decrypt
-    verified := Proof.AesCfb.decrypt_keyed decrypt_verified },
+    code := Impl.Aes.Arm.Fn.cfbDecrypt
+    verified := Proof.Aes.Arm.Fn.cfbDecrypt },
   Spec.Cfb.aesEncryptFinalApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratchWiped 56 2 10 Impl.AesCfb.Arm.encryptFinal
-    verified := Proof.AesCfb.encryptFinal_keyed encryptFinal_framed },
+    code := Impl.Aes.Arm.Fn.cfbEncryptFinal
+    verified := Proof.Aes.Arm.Fn.cfbEncryptFinal },
   Spec.Cfb.aesDecryptFinalApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratchWiped 56 2 10 Impl.AesCfb.Arm.decryptFinal
-    verified := Proof.AesCfb.decryptFinal_keyed decryptFinal_framed }]
+    code := Impl.Aes.Arm.Fn.cfbDecryptFinal
+    verified := Proof.Aes.Arm.Fn.cfbDecryptFinal }]
+
+spec_apis artifacts
 
 end VG.Artifacts.AesCfb.Arm

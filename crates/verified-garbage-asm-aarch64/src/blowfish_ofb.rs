@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Blowfish.ofbContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 4168 bytes.
@@ -143,7 +145,10 @@ b 21f
 .inst 0xf94000a6,0xf9000326,0xf94040b3,0xf94044b4,0xf94048b5,0xf9404cb6,0xf94050b7,0xf94054b8
 .inst 0xf94058b9,0xf9405cba,0xf94060bb,0xf94064bc,0xd2800011,0x910003f0,0xa9004611,0xa9014611
 .inst 0xa9024611,0xa9034611,0xa9044611,0xa9054611,0xa9064611,0xa9074611,0xa9084611,0xa9094611
-.inst 0xa90a4611,0xa90b4611,0xa90c4611,0xa90d4611,0x910383ff,0xd65f03c0
+.inst 0xa90a4611,0xa90b4611,0xa90c4611,0xa90d4611,0x910383ff,0xd2800006,0xd2800007,0x6f00e400
+.inst 0x6f00e401,0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412
+.inst 0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a
+.inst 0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xd65f03c0
 .p2align 6",
     )
 }
@@ -151,6 +156,8 @@ b 21f
 /// Blowfish-OFB encryption or decryption (NIST SP 800-38A §6.4, Schneier, FSE 1994) of the last piece of a message, of any length, in place: XORs the `len` bytes at `data` with the output blocks `Oⱼ = CIPH_K(Oⱼ₋₁)`, where `O₀` is the block at `*iv`, a partial last block `Pₙ*` of `u` bytes with `MSB_u(Oₙ)`, and replaces `*iv` with the last output block used, `Oₙ` (leaving it unchanged if `len = 0`): so that a further call continues the message if `len` is a multiple of 8, and otherwise keystream, to be wiped, after which the message must end. `CIPH_K` is Blowfish encryption under the schedule written by `vg_blowfish_expand_key`.
 ///
 /// Contract: `VG.Spec.Blowfish.ofbFinalContract`. Constant time: only the pointers and `len` may affect timing, not the schedule, the chaining value or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -296,7 +303,10 @@ b 21f
 .inst 0xf94000a6,0xf9000326,0xf94040b3,0xf94044b4,0xf94048b5,0xf9404cb6,0xf94050b7,0xf94054b8
 .inst 0xf94058b9,0xf9405cba,0xf94060bb,0xf94064bc,0xd2800011,0x910003f0,0xa9004611,0xa9014611
 .inst 0xa9024611,0xa9034611,0xa9044611,0xa9054611,0xa9064611,0xa9074611,0xa9084611,0xa9094611
-.inst 0xa90a4611,0xa90b4611,0xa90c4611,0xa90d4611,0x910383ff,0xd65f03c0
+.inst 0xa90a4611,0xa90b4611,0xa90c4611,0xa90d4611,0x910383ff,0xd2800006,0xd2800007,0x6f00e400
+.inst 0x6f00e401,0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412
+.inst 0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a
+.inst 0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xd65f03c0
 .p2align 6",
     )
 }

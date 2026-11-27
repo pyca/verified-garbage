@@ -1,10 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Gcm.PPC64LE.Ghash
-public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Contract
+public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Fn
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.CryptOk
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.TextAbsorb
-public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Fn
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.StreamInit
 import VerifiedGarbage.Proof.Gcm.Compose
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
@@ -17,7 +16,7 @@ public import VerifiedGarbage.Impl.AesGcm.PPC64LE
 # AES-GCM on PPC64LE: `vg_aes_gcm_stream_encrypt` and `vg_aes_gcm_stream_decrypt`
 
 Untrusted: everything here is checked by Lean. As on ARMv7
-(`Proof/AesGcm/Arm/StreamCrypt.lean`): the entry saves our caller's
+(`Proof/AesGcm/Arm/StreamFinish.lean`): the entry saves our caller's
 registers and keeps the arguments in `r19`–`r30` (`sc1_wp`); `encrypt` runs
 `crypt` on the data and then absorbs what it wrote (`textAbsorb`), `decrypt`
 absorbs the data first; both keep `J₀` (`enc_run`, `dec_run`), which is a
@@ -46,16 +45,16 @@ structure SC1 (s₀ s₁ : State) : Prop where
   r20 : s₁.gpr .r20 = s₀.gpr .r8
   r19 : s₁.gpr .r19 = s₀.gpr .r9
 
-theorem sc1_wp {s₀ : State} (hW : Covers [⟨s₀.gpr .r10, 2560⟩] s₀.wr) :
+theorem sc1_wp {s₀ : State} (hW : Covers [⟨s₀.gpr .r10, 288⟩] s₀.wr) :
     WP isa (.block cryptEntry) s₀ (SC1 s₀) := by
   refine WP.block_append (WP.mono (save_ok (b := .r10) (by decide) hW) fun s₁ ⟨hg, h31, hk, hsv, hf⟩ => ?_)
-  have e3 : s₁.gpr .r3 = s₀.gpr .r3 := hg _ (by decide) (by decide)
-  have e4 : s₁.gpr .r4 = s₀.gpr .r4 := hg _ (by decide) (by decide)
-  have e5 : s₁.gpr .r5 = s₀.gpr .r5 := hg _ (by decide) (by decide)
-  have e6 : s₁.gpr .r6 = s₀.gpr .r6 := hg _ (by decide) (by decide)
-  have e7 : s₁.gpr .r7 = s₀.gpr .r7 := hg _ (by decide) (by decide)
-  have e8 : s₁.gpr .r8 = s₀.gpr .r8 := hg _ (by decide) (by decide)
-  have e9 : s₁.gpr .r9 = s₀.gpr .r9 := hg _ (by decide) (by decide)
+  obtain e3 : s₁.gpr .r3 = s₀.gpr .r3 := hg _ (by decide) (by decide)
+  obtain e4 : s₁.gpr .r4 = s₀.gpr .r4 := hg _ (by decide) (by decide)
+  obtain e5 : s₁.gpr .r5 = s₀.gpr .r5 := hg _ (by decide) (by decide)
+  obtain e6 : s₁.gpr .r6 = s₀.gpr .r6 := hg _ (by decide) (by decide)
+  obtain e7 : s₁.gpr .r7 = s₀.gpr .r7 := hg _ (by decide) (by decide)
+  obtain e8 : s₁.gpr .r8 = s₀.gpr .r8 := hg _ (by decide) (by decide)
+  obtain e9 : s₁.gpr .r9 = s₀.gpr .r9 := hg _ (by decide) (by decide)
   crun [mov, BitVec.or_self, e3, e4, e5, e6, e7, e8, e9, h31]
   refine ⟨⟨fun r hr => by simp at hr; rcases hr with rfl | rfl | rfl | rfl | rfl <;> simp [hg],
     ⟨hk.rd, hk.wr, hk.sp, hk.lr⟩, hsv, hf⟩, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
@@ -69,13 +68,13 @@ theorem scLay : Lay (s₀.gpr .r3) (s₀.gpr .r5) (s₀.gpr .r10) := by
   obtain ⟨-, -, dcs, -, dcw, -, dsw, -, fc, fs, -, fw, -⟩ := h
   exact Lay.of fc fs fw dcs dcw dsw
 
-theorem sc_W : Covers [⟨s₀.gpr .r10, 2560⟩] s₀.wr := by
+theorem sc_W : Covers [⟨s₀.gpr .r10, 288⟩] s₀.wr := by
   rw [h.2.1]; exact covers_mem (by simp)
 
 /-- The environment after the entry. -/
 theorem sc_env {s₁ : State} (h1 : SC1 s₀ s₁) : Env s₁.gpr s₀.sp s₁ := by
   obtain ⟨hrd, hwr, -⟩ := h
-  have perm : Perm (s₀.gpr .r3) (s₀.gpr .r5) (s₀.gpr .r10) s₁ :=
+  obtain perm : Perm (s₀.gpr .r3) (s₀.gpr .r5) (s₀.gpr .r10) s₁ :=
     (⟨covers_mem (by rw [hrd]; simp), covers_mem (by rw [hwr]; simp), covers_mem (by rw [hwr]; simp)⟩ :
       Perm (s₀.gpr .r3) (s₀.gpr .r5) (s₀.gpr .r10) s₀).of_eq h1.en.keeps.rd h1.en.keeps.wr
   exact ⟨fun _ _ => rfl, h1.en.keeps.sp, by rw [h1.r29, h1.r30, h1.r31]; exact perm⟩
@@ -84,7 +83,7 @@ theorem sc_env {s₁ : State} (h1 : SC1 s₀ s₁) : Env s₁.gpr s₀.sp s₁ :
 theorem sc_dataW {s : State} (hwr' : s.wr = s₀.wr) :
     DataW (s₀.gpr .r3) (s₀.gpr .r5) (s₀.gpr .r10) s (s₀.gpr .r8) (s₀.gpr .r9).toNat := by
   obtain ⟨-, hwr, -, dcd, -, dsd, -, ddw, -, -, fd, -, -⟩ := h
-  have hD : Covers [⟨s₀.gpr .r8, (s₀.gpr .r9).toNat⟩] s.wr := by rw [hwr', hwr]; exact covers_mem (by simp)
+  obtain hD : Covers [⟨s₀.gpr .r8, (s₀.gpr .r9).toNat⟩] s.wr := by rw [hwr', hwr]; exact covers_mem (by simp)
   exact ⟨⟨covers_left hD, (s₀.gpr .r9).isLt, fd, dsd.symm, ddw⟩, hD, dcd⟩
 
 end
@@ -95,21 +94,20 @@ include L
 
 theorem stp_crFrame {s : State} {D : Addr} {n : Nat} (hd : DataW c st w s D n) {d k : Nat} (h1 : d + k ≤ 48) :
     ∀ r ∈ crFrame st w D n, (⟨st + BitVec.ofNat 64 d, k⟩ : Region).Disjoint r := by
+  refine (fun (_ : Lay c st w) => ?_) L
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl
+  rcases hr with rfl | rfl
   · exact (hd.ok.st.sub_right (Lay.stSub (by omega_arith))).symm
   · exact Lay.st_st (.inl h1) (by omega_arith) (by decide)
-  · exact L.st_w (by omega_arith) (.inr ⟨by decide, by decide⟩)
 
 theorem stp_taFrame {d k : Nat} (hd : d + k ≤ 16 ∨ 48 ≤ d ∧ d + k ≤ 80) :
     ∀ r ∈ taFrame st w, (⟨st + BitVec.ofNat 64 d, k⟩ : Region).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl
+  rcases hr with rfl | rfl | rfl
   · exact Lay.st_st (by omega_arith) (by omega_arith) (by decide)
   · exact Lay.st_st (by omega_arith) (by omega_arith) (by decide)
-  · exact L.st_w (by omega_arith) (.inr ⟨by decide, by decide⟩)
   · exact L.st_w (by omega_arith) (.inr ⟨by decide, by decide⟩)
 
 theorem stp_saved {d k : Nat} (h1 : d + k ≤ 80) :
@@ -124,10 +122,9 @@ theorem ctx_saved : ∀ r ∈ [savedR w], (⟨c, 256⟩ : Region).Disjoint r := 
 theorem ctx_taFrame : ∀ r ∈ taFrame st w, (⟨c, 256⟩ : Region).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl
+  rcases hr with rfl | rfl | rfl
   · exact L.cs.sub_right (Lay.stSub (by decide))
   · exact L.cs.sub_right (Lay.stSub (by decide))
-  · exact L.cw'.sub_right (Lay.wSub (by decide))
   · exact L.cw'.sub_right (Lay.wSub (by decide))
 
 omit L in
@@ -135,10 +132,9 @@ theorem data_taFrame {s : State} {D : Addr} {n : Nat} (hd : DataOk st w s D n) :
     ∀ r ∈ taFrame st w, (⟨D, n⟩ : Region).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl
+  rcases hr with rfl | rfl | rfl
   · exact hd.st.sub_right (Lay.stSub (by decide))
   · exact hd.st.sub_right (Lay.stSub (by decide))
-  · exact hd.w.sub_right (Lay.wSub (by decide))
   · exact hd.w.sub_right (Lay.wSub (by decide))
 
 omit L in
@@ -150,20 +146,18 @@ theorem data_saved {s : State} {D : Addr} {n : Nat} (hd : DataOk st w s D n) :
 theorem saved_taFrame : ∀ r ∈ taFrame st w, (savedR w).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl
+  rcases hr with rfl | rfl | rfl
   · exact L.saved_st (by decide)
   · exact L.saved_st (by decide)
   · exact saved_w (by decide) (.inl (by decide))
-  · exact saved_w (by decide) (.inr (by decide))
 
 theorem saved_crFrame {s : State} {D : Addr} {n : Nat} (hd : DataW c st w s D n) :
     ∀ r ∈ crFrame st w D n, (savedR w).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl
+  rcases hr with rfl | rfl
   · exact (hd.ok.w.sub_right (Lay.wSub (by decide))).symm
   · exact L.saved_st (by decide)
-  · exact saved_w (by decide) (.inr (by decide))
 
 omit L in
 /-- `ciphOf` is `ctxCiph`, and a frame apart from the context keeps it. -/
@@ -207,50 +201,50 @@ structure EncOut (s₀ : State) (icb : Block) (a ct : List Byte) (dec : Bool) (s
 theorem enc_run [VG.Proof.Gcm.PPC64LE.GhashLaw] {s₀ : State} (h : streamCryptPre s₀) (icb : Block) {a ct : List Byte}
     (ha : a.length % 16 = (s₀.gpr .r6).toNat % 16) (hP : (s₀.gpr .r7).toNat = ct.length) :
     WP isa streamEncrypt s₀ fun s' => abiPreserved s₀ s' ∧ EncOut s₀ icb a ct false s' := by
-  have L₀ := scLay h
+  obtain L₀ := scLay h
   have hR : scR s₀ = 10 ∨ scR s₀ = 12 ∨ scR s₀ = 14 := h.2.2.2.2.2.2.2.2.2.2.2.2
   refine WP.seq (WP.block_append (WP.mono (sc1_wp (sc_W h)) fun s₁ h1 => ?_))
-  have he₁ := sc_env h h1
-  have L := L₀.v h1.r29 h1.r30 h1.r31
+  obtain he₁ := sc_env h h1
+  obtain L := L₀.v h1.r29 h1.r30 h1.r31
   refine WP.mono textArgs_ok fun s₂ ⟨h24, h25, h26, hg₂, hk₂⟩ => ?_
-  have he₂ : Env s₁.gpr s₀.sp s₂ := he₁.keep (fun r hr => hg₂ r (by revert r; decide) (by revert r; decide)
+  obtain he₂ : Env s₁.gpr s₀.sp s₂ := he₁.keep (fun r hr => hg₂ r (by revert r; decide) (by revert r; decide)
     (by revert r; decide) (by revert r; decide)) hk₂.sp hk₂.rd hk₂.wr
-  have hd₂₀ := sc_dataW h (s := s₂) (hk₂.wr.trans h1.en.keeps.wr)
-  have hd₂ : DataW (s₁.gpr .r29) (s₁.gpr .r30) (s₁.gpr .r31) s₂ (s₁.gpr .r20) (s₁.gpr .r19).toNat := by
+  obtain hd₂₀ := sc_dataW h (s := s₂) (hk₂.wr.trans h1.en.keeps.wr)
+  obtain hd₂ : DataW (s₁.gpr .r29) (s₁.gpr .r30) (s₁.gpr .r31) s₂ (s₁.gpr .r20) (s₁.gpr .r19).toNat := by
     rw [h1.r29, h1.r30, h1.r31, h1.r20, h1.r19]; exact hd₂₀
-  have ci : CrIn s₁.gpr s₀.sp (scR s₀) icb ct.length (s₁.gpr .r20) (s₁.gpr .r19).toNat s₂ :=
+  obtain ci : CrIn s₁.gpr s₀.sp (scR s₀) icb ct.length (s₁.gpr .r20) (s₁.gpr .r19).toNat s₂ :=
     ⟨he₂, h24, by rw [h25, BitVec.ofNat_toNat, BitVec.setWidth_eq], by rw [h26, h1.r23, hP],
       by rw [h1.r28, scR, BitVec.ofNat_toNat, BitVec.setWidth_eq], hR, hd₂⟩
   refine WP.seq (WP.mono (WP.with_rdwr (crypt_ok L ci)) fun s₃ ⟨co, rd₃, wr₃, _⟩ => ?_)
-  have hd₃ := hd₂.ok.of_eq rd₃ wr₃
-  have f₂ : Frame [savedR (s₀.gpr .r10)] s₀.mem s₂.mem := by rw [hk₂.mem]; exact h1.en.frame
+  obtain hd₃ := hd₂.ok.of_eq rd₃ wr₃
+  obtain f₂ : Frame [savedR (s₀.gpr .r10)] s₀.mem s₂.mem := by rw [hk₂.mem]; exact h1.en.frame
   have cf := co.frame
   rw [h1.r30, h1.r31, h1.r20, h1.r19] at cf
-  have hH₃ : blockAt s₃.mem (s₁.gpr .r29 + BitVec.ofNat 64 240) = ctxH s₀.mem (s₀.gpr .r3) := by
+  obtain hH₃ : blockAt s₃.mem (s₁.gpr .r29 + BitVec.ofNat 64 240) = ctxH s₀.mem (s₀.gpr .r3) := by
     rw [h1.r29, blockAt_frame cf (fun r hr => (ctx_crFrame L₀ hd₂₀ r hr).sub_left (Lay.ctxSub (by decide))),
       ctxH_keep f₂ (ctx_saved L₀)]
   refine WP.seq (WP.mono (WP.with_rdwr (textAbsorb_ok L (a := a) (ct := ct) co.env hH₃ hd₃ (by rw [h1.r22]; exact ha)
     (by rw [h1.r23]; exact hP))) fun s₄ ⟨ta, rd₄, wr₄, _⟩ => ?_)
   have tf := ta.frame
   rw [h1.r30, h1.r31] at tf
-  have sv₄ : SavedAt s₄.mem (s₀.gpr .r10) s₀ :=
+  obtain sv₄ : SavedAt s₄.mem (s₀.gpr .r10) s₀ :=
     (((hk₂.mem ▸ h1.en.saved : SavedAt s₂.mem (s₀.gpr .r10) s₀)).frame cf (saved_crFrame L₀ hd₂₀)).frame tf
       (saved_taFrame L₀)
-  have e31 : s₄.gpr .r31 = s₀.gpr .r10 := (ta.env.fr _ (by decide)).trans h1.r31
+  obtain e31 : s₄.gpr .r31 = s₀.gpr .r10 := (ta.env.fr _ (by decide)).trans h1.r31
   refine WP.mono (restore_ok e31 (by have := ta.env.perm.w; rw [h1.r31] at this; exact Covers.right this) sv₄
     ta.env.sp (fun r hr => by rw [ta.env.fr r (by revert hr; revert r; decide)]; exact h1.en.low r hr))
     fun s' ⟨ga, hm, _⟩ => ⟨ga, ?_⟩
-  have hc : ciphOf s₂.mem (s₁.gpr .r29) (scR s₀) = ctxCiph s₀.mem (s₀.gpr .r3) (scR s₀) := by
+  obtain hc : ciphOf s₂.mem (s₁.gpr .r29) (scR s₀) = ctxCiph s₀.mem (s₀.gpr .r3) (scR s₀) := by
     rw [h1.r29]; exact ciph_keep f₂ (ctx_saved L₀) hR
-  have ctr₂ : ∀ {P : Nat}, Ctr s₀.mem (s₀.gpr .r5 + BitVec.ofNat 64 48) (s₀.gpr .r5 + BitVec.ofNat 64 64)
+  obtain ctr₂ : ∀ {P : Nat}, Ctr s₀.mem (s₀.gpr .r5 + BitVec.ofNat 64 48) (s₀.gpr .r5 + BitVec.ofNat 64 64)
       (ctxCiph s₀.mem (s₀.gpr .r3) (scR s₀)) icb P →
       Ctr s₂.mem (s₁.gpr .r30 + BitVec.ofNat 64 48) (s₁.gpr .r30 + BitVec.ofNat 64 64)
         (ciphOf s₂.mem (s₁.gpr .r29) (scR s₀)) icb P := fun hc₀ => by
     rw [hc, h1.r30]
     exact hc₀.congr (blockAt_frame f₂ (stp_saved L₀ (by decide))) (blockAt_frame f₂ (stp_saved L₀ (by decide)))
-  have dat₂ : bytesAt s₂.mem (s₀.gpr .r8) (s₀.gpr .r9).toNat = bytesAt s₀.mem (s₀.gpr .r8) (s₀.gpr .r9).toNat :=
+  obtain dat₂ : bytesAt s₂.mem (s₀.gpr .r8) (s₀.gpr .r9).toNat = bytesAt s₀.mem (s₀.gpr .r8) (s₀.gpr .r9).toNat :=
     bytesAt_frame f₂ (data_saved hd₂₀.ok) (by have := hd₂₀.ok.lt; omega_arith)
-  have out₃ : Ctr s₀.mem (s₀.gpr .r5 + BitVec.ofNat 64 48) (s₀.gpr .r5 + BitVec.ofNat 64 64)
+  obtain out₃ : Ctr s₀.mem (s₀.gpr .r5 + BitVec.ofNat 64 48) (s₀.gpr .r5 + BitVec.ofNat 64 64)
       (ctxCiph s₀.mem (s₀.gpr .r3) (scR s₀)) icb ct.length →
       bytesAt s₃.mem (s₀.gpr .r8) (s₀.gpr .r9).toNat =
         xorKs (ctxCiph s₀.mem (s₀.gpr .r3) (scR s₀)) icb ct.length (bytesAt s₀.mem (s₀.gpr .r8) (s₀.gpr .r9).toNat) :=
@@ -258,7 +252,7 @@ theorem enc_run [VG.Proof.Gcm.PPC64LE.GhashLaw] {s₀ : State} (h : streamCryptP
       have := co.out (ctr₂ hc₀)
       rw [hc, h1.r20, h1.r19, dat₂] at this
       exact this
-  have hd₃₀ : DataOk (s₀.gpr .r5) (s₀.gpr .r10) s₃ (s₀.gpr .r8) (s₀.gpr .r9).toNat := hd₂₀.ok.of_eq rd₃ wr₃
+  obtain hd₃₀ : DataOk (s₀.gpr .r5) (s₀.gpr .r10) s₃ (s₀.gpr .r8) (s₀.gpr .r9).toNat := hd₂₀.ok.of_eq rd₃ wr₃
   refine ⟨fun hc₀ => ?_, fun hc₀ => ?_, fun hc₀ hab => ?_, ?_⟩
   · rw [hm]
     have := co.ctr (ctr₂ hc₀)
@@ -268,8 +262,8 @@ theorem enc_run [VG.Proof.Gcm.PPC64LE.GhashLaw] {s₀ : State} (h : streamCryptP
   · rw [hm, bytesAt_frame tf (data_taFrame hd₃₀) (by have := hd₃₀.lt; omega_arith)]
     exact out₃ hc₀
   · rw [hm]
-    have hb := Nat.mod_lt (ghashInput a ct).length (show 16 > 0 by decide)
-    have hab₃ : Absorbed s₃.mem (s₀.gpr .r5 + BitVec.ofNat 64 16) (s₀.gpr .r5 + BitVec.ofNat 64 32)
+    obtain hb := Nat.mod_lt (ghashInput a ct).length (show 16 > 0 by decide)
+    obtain hab₃ : Absorbed s₃.mem (s₀.gpr .r5 + BitVec.ofNat 64 16) (s₀.gpr .r5 + BitVec.ofNat 64 32)
         (ctxH s₀.mem (s₀.gpr .r3)) (ghashInput a ct) :=
       (hab.congr (blockAt_frame f₂ (stp_saved L₀ (by decide)))
         (bytesAt_frame f₂ (stp_saved L₀ (by omega_arith)) (by omega_arith))).congr
@@ -285,59 +279,59 @@ theorem enc_run [VG.Proof.Gcm.PPC64LE.GhashLaw] {s₀ : State} (h : streamCryptP
 theorem dec_run [VG.Proof.Gcm.PPC64LE.GhashLaw] {s₀ : State} (h : streamCryptPre s₀) (icb : Block) {a ct : List Byte}
     (ha : a.length % 16 = (s₀.gpr .r6).toNat % 16) (hP : (s₀.gpr .r7).toNat = ct.length) :
     WP isa streamDecrypt s₀ fun s' => abiPreserved s₀ s' ∧ EncOut s₀ icb a ct true s' := by
-  have L₀ := scLay h
+  obtain L₀ := scLay h
   have hR : scR s₀ = 10 ∨ scR s₀ = 12 ∨ scR s₀ = 14 := h.2.2.2.2.2.2.2.2.2.2.2.2
   refine WP.seq (WP.mono (sc1_wp (sc_W h)) fun s₁ h1 => ?_)
-  have he₁ := sc_env h h1
-  have L := L₀.v h1.r29 h1.r30 h1.r31
+  obtain he₁ := sc_env h h1
+  obtain L := L₀.v h1.r29 h1.r30 h1.r31
   have f₁ : Frame [savedR (s₀.gpr .r10)] s₀.mem s₁.mem := h1.en.frame
-  have hd₁₀ := sc_dataW h (s := s₁) h1.en.keeps.wr
-  have hd₁ : DataOk (s₁.gpr .r30) (s₁.gpr .r31) s₁ (s₁.gpr .r20) (s₁.gpr .r19).toNat := by
+  obtain hd₁₀ := sc_dataW h (s := s₁) h1.en.keeps.wr
+  obtain hd₁ : DataOk (s₁.gpr .r30) (s₁.gpr .r31) s₁ (s₁.gpr .r20) (s₁.gpr .r19).toNat := by
     rw [h1.r30, h1.r31, h1.r20, h1.r19]; exact hd₁₀.ok
-  have hH₁ : blockAt s₁.mem (s₁.gpr .r29 + BitVec.ofNat 64 240) = ctxH s₀.mem (s₀.gpr .r3) := by
+  obtain hH₁ : blockAt s₁.mem (s₁.gpr .r29 + BitVec.ofNat 64 240) = ctxH s₀.mem (s₀.gpr .r3) := by
     rw [h1.r29]; exact ctxH_keep f₁ (ctx_saved L₀)
   refine WP.seq (WP.mono (WP.with_rdwr (textAbsorb_ok L (a := a) (ct := ct) he₁ hH₁ hd₁
     (by rw [h1.r22]; exact ha) (by rw [h1.r23]; exact hP))) fun s₄ ⟨ta, rd₄, wr₄, _⟩ => ?_)
   have tf := ta.frame
   rw [h1.r30, h1.r31] at tf
   refine WP.seq (WP.mono textArgs_ok fun s₅ ⟨h24, h25, h26, hg₅, hk₅⟩ => ?_)
-  have he₅ : Env s₁.gpr s₀.sp s₅ := ta.env.keep (fun r hr => hg₅ r (by revert r; decide) (by revert r; decide)
+  obtain he₅ : Env s₁.gpr s₀.sp s₅ := ta.env.keep (fun r hr => hg₅ r (by revert r; decide) (by revert r; decide)
     (by revert r; decide) (by revert r; decide)) hk₅.sp hk₅.rd hk₅.wr
-  have hd₅₀ := sc_dataW h (s := s₅) (hk₅.wr.trans (wr₄.trans h1.en.keeps.wr))
-  have hd₅ : DataW (s₁.gpr .r29) (s₁.gpr .r30) (s₁.gpr .r31) s₅ (s₁.gpr .r20) (s₁.gpr .r19).toNat := by
+  obtain hd₅₀ := sc_dataW h (s := s₅) (hk₅.wr.trans (wr₄.trans h1.en.keeps.wr))
+  obtain hd₅ : DataW (s₁.gpr .r29) (s₁.gpr .r30) (s₁.gpr .r31) s₅ (s₁.gpr .r20) (s₁.gpr .r19).toNat := by
     rw [h1.r29, h1.r30, h1.r31, h1.r20, h1.r19]; exact hd₅₀
-  have e20 := ta.env.fr .r20 (by decide)
-  have e19 := ta.env.fr .r19 (by decide)
-  have e23 := ta.env.fr .r23 (by decide)
-  have ci : CrIn s₁.gpr s₀.sp (scR s₀) icb ct.length (s₁.gpr .r20) (s₁.gpr .r19).toNat s₅ :=
+  obtain e20 := ta.env.fr .r20 (by decide)
+  obtain e19 := ta.env.fr .r19 (by decide)
+  obtain e23 := ta.env.fr .r23 (by decide)
+  obtain ci : CrIn s₁.gpr s₀.sp (scR s₀) icb ct.length (s₁.gpr .r20) (s₁.gpr .r19).toNat s₅ :=
     ⟨he₅, by rw [h24, e20], by rw [h25, e19, BitVec.ofNat_toNat, BitVec.setWidth_eq],
       by rw [h26, e23, h1.r23, hP], by rw [h1.r28, scR, BitVec.ofNat_toNat, BitVec.setWidth_eq], hR, hd₅⟩
   refine WP.seq (WP.mono (WP.with_rdwr (crypt_ok L ci)) fun s₆ ⟨co, rd₆, wr₆, _⟩ => ?_)
   have cf := co.frame
   rw [h1.r30, h1.r31, h1.r20, h1.r19] at cf
-  have sv₆ : SavedAt s₆.mem (s₀.gpr .r10) s₀ :=
+  obtain sv₆ : SavedAt s₆.mem (s₀.gpr .r10) s₀ :=
     ((h1.en.saved.frame tf (saved_taFrame L₀)) : SavedAt s₄.mem (s₀.gpr .r10) s₀) |>.frame
       (hk₅.mem ▸ cf) (saved_crFrame L₀ hd₅₀)
-  have e31 : s₆.gpr .r31 = s₀.gpr .r10 := (co.env.fr _ (by decide)).trans h1.r31
+  obtain e31 : s₆.gpr .r31 = s₀.gpr .r10 := (co.env.fr _ (by decide)).trans h1.r31
   refine WP.mono (restore_ok e31 (by have := co.env.perm.w; rw [h1.r31] at this; exact Covers.right this) sv₆
     co.env.sp (fun r hr => by rw [co.env.fr r (by revert hr; revert r; decide)]; exact h1.en.low r hr))
     fun s' ⟨ga, hm, _⟩ => ⟨ga, ?_⟩
-  have hc : ciphOf s₅.mem (s₁.gpr .r29) (scR s₀) = ctxCiph s₀.mem (s₀.gpr .r3) (scR s₀) := by
+  obtain hc : ciphOf s₅.mem (s₁.gpr .r29) (scR s₀) = ctxCiph s₀.mem (s₀.gpr .r3) (scR s₀) := by
     rw [h1.r29, hk₅.mem, ciph_frame tf (ctx_taFrame L₀) hR]; exact ciph_keep f₁ (ctx_saved L₀) hR
-  have blk₅ : ∀ {d : Nat}, (d + 16 ≤ 16 ∨ 48 ≤ d ∧ d + 16 ≤ 80) →
+  obtain blk₅ : ∀ {d : Nat}, (d + 16 ≤ 16 ∨ 48 ≤ d ∧ d + 16 ≤ 80) →
       blockAt s₅.mem (s₀.gpr .r5 + BitVec.ofNat 64 d) = blockAt s₀.mem (s₀.gpr .r5 + BitVec.ofNat 64 d) :=
     fun hd => by
       rw [hk₅.mem, blockAt_frame tf (stp_taFrame L₀ hd), blockAt_frame f₁ (stp_saved L₀ (by omega_arith))]
-  have ctr₅ : ∀ {P : Nat}, Ctr s₀.mem (s₀.gpr .r5 + BitVec.ofNat 64 48) (s₀.gpr .r5 + BitVec.ofNat 64 64)
+  obtain ctr₅ : ∀ {P : Nat}, Ctr s₀.mem (s₀.gpr .r5 + BitVec.ofNat 64 48) (s₀.gpr .r5 + BitVec.ofNat 64 64)
       (ctxCiph s₀.mem (s₀.gpr .r3) (scR s₀)) icb P →
       Ctr s₅.mem (s₁.gpr .r30 + BitVec.ofNat 64 48) (s₁.gpr .r30 + BitVec.ofNat 64 64)
         (ciphOf s₅.mem (s₁.gpr .r29) (scR s₀)) icb P := fun hc₀ => by
     rw [hc, h1.r30]
     exact hc₀.congr (blk₅ (d := 48) (.inr ⟨by decide, by decide⟩)) (blk₅ (d := 64) (.inr ⟨by decide, by decide⟩))
-  have dat₅ : bytesAt s₅.mem (s₀.gpr .r8) (s₀.gpr .r9).toNat = bytesAt s₀.mem (s₀.gpr .r8) (s₀.gpr .r9).toNat := by
+  obtain dat₅ : bytesAt s₅.mem (s₀.gpr .r8) (s₀.gpr .r9).toNat = bytesAt s₀.mem (s₀.gpr .r8) (s₀.gpr .r9).toNat := by
     have hlt := hd₁₀.ok.lt
     rw [hk₅.mem, bytesAt_frame tf (data_taFrame hd₁₀.ok) (by omega_arith), bytesAt_frame f₁ (data_saved hd₁₀.ok) (by omega_arith)]
-  have dat₁ : bytesAt s₁.mem (s₀.gpr .r8) (s₀.gpr .r9).toNat = bytesAt s₀.mem (s₀.gpr .r8) (s₀.gpr .r9).toNat :=
+  obtain dat₁ : bytesAt s₁.mem (s₀.gpr .r8) (s₀.gpr .r9).toNat = bytesAt s₀.mem (s₀.gpr .r8) (s₀.gpr .r9).toNat :=
     bytesAt_frame f₁ (data_saved hd₁₀.ok) (by have := hd₁₀.ok.lt; omega_arith)
   refine ⟨fun hc₀ => ?_, fun hc₀ => ?_, fun hc₀ hab => ?_, ?_⟩
   · rw [hm]
@@ -349,7 +343,7 @@ theorem dec_run [VG.Proof.Gcm.PPC64LE.GhashLaw] {s₀ : State} (h : streamCryptP
     rw [hc, h1.r20, h1.r19, dat₅] at this
     exact this
   · simp only [hm, ↓reduceIte]
-    have hab₁ : Absorbed s₁.mem (s₀.gpr .r5 + BitVec.ofNat 64 16) (s₀.gpr .r5 + BitVec.ofNat 64 32)
+    obtain hab₁ : Absorbed s₁.mem (s₀.gpr .r5 + BitVec.ofNat 64 16) (s₀.gpr .r5 + BitVec.ofNat 64 32)
         (ctxH s₀.mem (s₀.gpr .r3)) (ghashInput a ct) :=
       hab.congr (blockAt_frame f₁ (stp_saved L₀ (by decide)))
         (bytesAt_frame f₁ (stp_saved L₀ (by omega_arith)) (by omega_arith))
@@ -364,7 +358,7 @@ theorem dec_run [VG.Proof.Gcm.PPC64LE.GhashLaw] {s₀ : State} (h : streamCryptP
 theorem streamEncrypt_wp [VG.Proof.Gcm.PPC64LE.GhashLaw] {s₀ : State} (h : streamEncryptPPC64LE.pre s₀) :
     WP isa streamEncrypt s₀ fun s' => abiPreserved s₀ s' ∧ streamEncryptPPC64LE.post s₀ s' := by
   have h' : streamCryptPre s₀ := h
-  have h₀ := enc_run h' 0 (a := List.replicate ((s₀.gpr .r6).toNat % 16) 0)
+  obtain h₀ := enc_run h' 0 (a := List.replicate ((s₀.gpr .r6).toNat % 16) 0)
     (ct := List.replicate (s₀.gpr .r7).toNat 0) (by simp) (by simp)
   refine WP.mono (WP.forall_det (WP.mono h₀ fun _ hh => hh.1)
     (P := fun i : List Byte × List Byte × List Byte =>
@@ -379,11 +373,11 @@ theorem streamEncrypt_wp [VG.Proof.Gcm.PPC64LE.GhashLaw] {s₀ : State} (h : str
   obtain ⟨-, eo⟩ := hh.2 ⟨iv, a, p⟩ ⟨hs, hl, hp⟩
   rw [Proof.Gcm.streamRepr_iff] at hs
   obtain ⟨hj, hab, hct⟩ := hs
-  have hl' : (gctr (ctxCiph s₀.mem (s₀.gpr .r3) (s₀.gpr .r4).toNat)
+  obtain hl' : (gctr (ctxCiph s₀.mem (s₀.gpr .r3) (s₀.gpr .r4).toNat)
       (inc32 (j0 (ctxH s₀.mem (s₀.gpr .r3)) iv)) p).length = p.length := Proof.Gcm.length_gctr _ _ _
-  have eo₁ := eo.ctr hct
-  have eo₂ := eo.out hct
-  have eo₃ := eo.abs hct hab
+  obtain eo₁ := eo.ctr hct
+  obtain eo₂ := eo.out hct
+  obtain eo₃ := eo.abs hct hab
   simp only [Bool.false_eq_true, ite_false] at eo₃
   rw [hl'] at eo₁ eo₂ eo₃
   rw [← Proof.Gcm.gctr_append] at eo₃
@@ -396,7 +390,7 @@ theorem streamEncrypt_wp [VG.Proof.Gcm.PPC64LE.GhashLaw] {s₀ : State} (h : str
 theorem streamDecrypt_wp [VG.Proof.Gcm.PPC64LE.GhashLaw] {s₀ : State} (h : streamDecryptPPC64LE.pre s₀) :
     WP isa streamDecrypt s₀ fun s' => abiPreserved s₀ s' ∧ streamDecryptPPC64LE.post s₀ s' := by
   have h' : streamCryptPre s₀ := h
-  have h₀ := dec_run h' 0 (a := List.replicate ((s₀.gpr .r6).toNat % 16) 0)
+  obtain h₀ := dec_run h' 0 (a := List.replicate ((s₀.gpr .r6).toNat % 16) 0)
     (ct := List.replicate (s₀.gpr .r7).toNat 0) (by simp) (by simp)
   refine WP.mono (WP.forall_det (WP.mono h₀ fun _ hh => hh.1)
     (P := fun i : List Byte × List Byte × List Byte =>
@@ -410,9 +404,9 @@ theorem streamDecrypt_wp [VG.Proof.Gcm.PPC64LE.GhashLaw] {s₀ : State} (h : str
   obtain ⟨-, eo⟩ := hh.2 ⟨iv, a, c⟩ ⟨hs, hl, hp⟩
   rw [Proof.Gcm.streamRepr_iff] at hs
   obtain ⟨hj, hab, hct⟩ := hs
-  have eo₁ := eo.ctr hct
-  have eo₂ := eo.out hct
-  have eo₃ := eo.abs hct hab
+  obtain eo₁ := eo.ctr hct
+  obtain eo₂ := eo.out hct
+  obtain eo₃ := eo.abs hct hab
   simp only [ite_true] at eo₃
   refine ⟨?_, ?_⟩
   · rw [Proof.Gcm.streamRepr_iff]

@@ -1,18 +1,18 @@
 module
 
-import VerifiedGarbage.Proof.MlKem.X86_64.NttInv
-import VerifiedGarbage.Proof.MlKem.X86_64.YAddSub
+import VerifiedGarbage.Proof.MlKem.X86_64.KpkeAcc
+import VerifiedGarbage.Proof.MlKem.X86_64.FinY
 import VerifiedGarbage.Proof.MlKem.X86_64.DecMulV
 import VerifiedGarbage.Proof.MlKem.X86_64.EncMulV
 import VerifiedGarbage.Proof.MlKem.X86_64.KgMulV
-import VerifiedGarbage.Proof.MlKem.X86_64.Cbd16Avx2
+public import VerifiedGarbage.Proof.MlKem.X86_64.Cbd16Avx2
 import VerifiedGarbage.Proof.MlKem.X86_64.Decode12Avx2
 import VerifiedGarbage.Proof.MlKem.X86_64.Encode12Avx2
 public import VerifiedGarbage.Impl.MlKem.X86_64.Frag
 public import VerifiedGarbage.Proof.Framework.X86_64.Call
-public import VerifiedGarbage.Proof.MlKem.X86_64.KgMul
+public import VerifiedGarbage.Proof.MlKem.X86_64.KpkeBodiesY
 public import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
-public import VerifiedGarbage.Proof.MlKem.X86_64.Cbd16
+public import VerifiedGarbage.Proof.Framework.X86_64.ModeSim
 import VerifiedGarbage.Proof.MlKem.X86_64.Lit
 import VerifiedGarbage.Proof.MlKem.X86_64.Decode12
 import VerifiedGarbage.Proof.MlKem.X86_64.Encode12
@@ -30,7 +30,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.Words
 import VerifiedGarbage.Proof.MlKem.PolyW
 import VerifiedGarbage.Proof.MlKem.X86_64.CompressEncodeAvx2
 import VerifiedGarbage.Proof.MlKem.X86_64.MulAvx2
-import VerifiedGarbage.Proof.MlKem.X86_64.NttLazy
+import VerifiedGarbage.Proof.MlKem.X86_64.NttR.Top
 import VerifiedGarbage.Proof.MlKem.X86_64.VLay42
 import VerifiedGarbage.Proof.MlKem.X86_64.VMxcsr
 import VerifiedGarbage.Proof.MlKem.X86_64.VPack
@@ -61,6 +61,21 @@ theorem nosp_of {c : Prog isa} (h : c.allInstrs (fun i => !Taint.clobbers i .rsp
   rw [Code.allInstrs_eq] at h
   intro i hi
   simpa using List.all_eq_true.mp h i hi
+
+/-- `NoSp`, and that the code never touches MXCSR (`touchesMxcsr`), in one
+walk of the code. -/
+theorem nospMx_of {c : Prog isa} (h : c.allInstrs (fun i => !Taint.clobbers i .rsp && !touchesMxcsr i) = true) :
+    NoSp c ∧ c.allInstrs (fun i => !touchesMxcsr i) = true := by
+  rw [Code.allInstrs_eq, List.all_eq_true] at h
+  refine ⟨fun i hi => ?_, ?_⟩
+  · have := h i hi
+    simp only [Bool.and_eq_true, Bool.not_eq_eq_eq_not, Bool.not_true] at this
+    exact this.1
+  · rw [Code.allInstrs_eq, List.all_eq_true]
+    intro i hi
+    have := h i hi
+    simp only [Bool.and_eq_true] at this
+    exact this.2
 
 /-- What a caller needs of a function with the contract `k`. -/
 structure CalleeOk (k : Contract isa) (c : Prog isa) : Prop where

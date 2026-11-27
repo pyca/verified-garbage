@@ -8,6 +8,8 @@
 ///
 /// It runs `vg_sha384_init`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 192 bytes.
@@ -24,6 +26,8 @@ pub unsafe fn vg_sha384_init_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *m
 /// Contract: `VG.Spec.Sha512.initContract` for `VG.Spec.Sha512.H0_512`. The streaming state is the hash value followed by a buffered partial block (`VG.Spec.Sha512.Repr`).
 ///
 /// It runs `vg_sha512_init`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -42,6 +46,8 @@ pub unsafe fn vg_sha512_init_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *m
 ///
 /// It runs `vg_sha512_224_init`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 192 bytes.
@@ -58,6 +64,8 @@ pub unsafe fn vg_sha512_224_init_auto(_dit: verified_garbage_cpu::Dit<'_>, state
 /// Contract: `VG.Spec.Sha512.initContract` for `VG.Spec.Sha512.H0_512_256`. The streaming state is the hash value followed by a buffered partial block (`VG.Spec.Sha512.Repr`).
 ///
 /// It runs `vg_sha512_256_init`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -76,6 +84,8 @@ pub unsafe fn vg_sha512_256_init_auto(_dit: verified_garbage_cpu::Dit<'_>, state
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_sha384_finalize_sha512` if the CPU supports its features (`VG_SHA384_FINALIZE_SHA512_FEATURES`); or else `vg_sha384_finalize`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 192 bytes.
@@ -83,7 +93,7 @@ pub unsafe fn vg_sha512_256_init_auto(_dit: verified_garbage_cpu::Dit<'_>, state
 /// * `count` must be the exact length of the message: messages of 2⁶⁴ bytes or more are not supported.
 /// * The contents of `state` on return are unspecified.
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
-/// * Neither `state` nor `out` may overlap the 1392 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `out` may overlap the 704 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_sha384_finalize_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u8; 192], count: u64, out: *mut [u8; 48]) {
@@ -125,6 +135,8 @@ pub unsafe fn vg_sha384_finalize_auto(_dit: verified_garbage_cpu::Dit<'_>, state
 /// Contract: `VG.Spec.Sha512.digestContract` for `VG.Spec.Sha512.sha384`. Constant time: only the pointers and `len` may affect timing, not the data.
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_sha384_digest_sha512` if the CPU supports its features (`VG_SHA384_DIGEST_SHA512_FEATURES`); or else `vg_sha384_digest`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -174,12 +186,14 @@ pub unsafe fn vg_sha384_digest_auto(_dit: verified_garbage_cpu::Dit<'_>, data: *
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_sha512_update_sha512` if the CPU supports its features (`VG_SHA512_UPDATE_SHA512_FEATURES`); or else `vg_sha512_update`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 192 bytes.
 /// * `data` must be valid for reads of `len` bytes.
 /// * `state` must not overlap `data` (distinct Rust objects never do).
-/// * Neither `state` nor `data` may overlap the 1392 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `data` may overlap the 704 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_sha512_update_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u8; 192], count: u64, data: *const u8, len: usize) {
@@ -222,6 +236,8 @@ pub unsafe fn vg_sha512_update_auto(_dit: verified_garbage_cpu::Dit<'_>, state: 
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_sha512_finalize_sha512` if the CPU supports its features (`VG_SHA512_FINALIZE_SHA512_FEATURES`); or else `vg_sha512_finalize`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 192 bytes.
@@ -229,7 +245,7 @@ pub unsafe fn vg_sha512_update_auto(_dit: verified_garbage_cpu::Dit<'_>, state: 
 /// * `count` must be the exact length of the message: messages of 2⁶⁴ bytes or more are not supported.
 /// * The contents of `state` on return are unspecified.
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
-/// * Neither `state` nor `out` may overlap the 1392 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `out` may overlap the 704 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_sha512_finalize_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u8; 192], count: u64, out: *mut [u8; 64]) {
@@ -271,6 +287,8 @@ pub unsafe fn vg_sha512_finalize_auto(_dit: verified_garbage_cpu::Dit<'_>, state
 /// Contract: `VG.Spec.Sha512.digestContract` for `VG.Spec.Sha512.sha512`. Constant time: only the pointers and `len` may affect timing, not the data.
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_sha512_digest_sha512` if the CPU supports its features (`VG_SHA512_DIGEST_SHA512_FEATURES`); or else `vg_sha512_digest`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -320,6 +338,8 @@ pub unsafe fn vg_sha512_digest_auto(_dit: verified_garbage_cpu::Dit<'_>, data: *
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_sha512_224_finalize_sha512` if the CPU supports its features (`VG_SHA512_224_FINALIZE_SHA512_FEATURES`); or else `vg_sha512_224_finalize`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 192 bytes.
@@ -327,7 +347,7 @@ pub unsafe fn vg_sha512_digest_auto(_dit: verified_garbage_cpu::Dit<'_>, data: *
 /// * `count` must be the exact length of the message: messages of 2⁶⁴ bytes or more are not supported.
 /// * The contents of `state` on return are unspecified.
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
-/// * Neither `state` nor `out` may overlap the 1392 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `out` may overlap the 704 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_sha512_224_finalize_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u8; 192], count: u64, out: *mut [u8; 28]) {
@@ -369,6 +389,8 @@ pub unsafe fn vg_sha512_224_finalize_auto(_dit: verified_garbage_cpu::Dit<'_>, s
 /// Contract: `VG.Spec.Sha512.digestContract` for `VG.Spec.Sha512.sha512_224`. Constant time: only the pointers and `len` may affect timing, not the data.
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_sha512_224_digest_sha512` if the CPU supports its features (`VG_SHA512_224_DIGEST_SHA512_FEATURES`); or else `vg_sha512_224_digest`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -418,6 +440,8 @@ pub unsafe fn vg_sha512_224_digest_auto(_dit: verified_garbage_cpu::Dit<'_>, dat
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_sha512_256_finalize_sha512` if the CPU supports its features (`VG_SHA512_256_FINALIZE_SHA512_FEATURES`); or else `vg_sha512_256_finalize`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 192 bytes.
@@ -425,7 +449,7 @@ pub unsafe fn vg_sha512_224_digest_auto(_dit: verified_garbage_cpu::Dit<'_>, dat
 /// * `count` must be the exact length of the message: messages of 2⁶⁴ bytes or more are not supported.
 /// * The contents of `state` on return are unspecified.
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
-/// * Neither `state` nor `out` may overlap the 1392 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `out` may overlap the 704 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_sha512_256_finalize_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u8; 192], count: u64, out: *mut [u8; 32]) {
@@ -467,6 +491,8 @@ pub unsafe fn vg_sha512_256_finalize_auto(_dit: verified_garbage_cpu::Dit<'_>, s
 /// Contract: `VG.Spec.Sha512.digestContract` for `VG.Spec.Sha512.sha512_256`. Constant time: only the pointers and `len` may affect timing, not the data.
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_sha512_256_digest_sha512` if the CPU supports its features (`VG_SHA512_256_DIGEST_SHA512_FEATURES`); or else `vg_sha512_256_digest`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///

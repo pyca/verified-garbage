@@ -10,6 +10,8 @@ pub const VG_HMAC_SHA512_224_INIT_SHA512_FEATURES: verified_garbage_cpu::Feature
 ///
 /// Contract: `VG.Spec.Hmac.Instance.initAnyKeyContract` of `VG.Spec.Hmac.sha512_224I`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `inner` must be valid for reads and writes of 192 bytes.
@@ -23,7 +25,7 @@ pub(crate) unsafe extern "C" fn vg_hmac_sha512_224_init_sha512(inner: *mut [u8; 
     core::arch::naked_asm!(
         r".inst 0xd280100a,0xd280000c,0xeb03014b,0x9a832189
 cbnz x9, 20f
-.inst 0xd11d43ff,0x910003e4,0xf9015893,0xf9015c94,0xf9016095,0xf9016496,0xf9016898,0xf9016c9e
+.inst 0xd10bc3ff,0x910003e4,0xf9015893,0xf9015c94,0xf9016095,0xf9016496,0xf9016898,0xf9016c9e
 .inst 0xf9017097,0x91000013,0x91000094,0x91000035,0x91000056,0x91000097,0x91000078,0x91000260
 bl {vg_sha512_224_init}
 .inst 0x910002a0
@@ -56,15 +58,25 @@ b 23f
 bl {vg_sha512_compress_sha512}
 .inst 0x910002b3,0x910102a1,0x91000260,0xd2800022,0x91000283
 bl {vg_sha512_compress_sha512}
-.inst 0xf9415af3,0xf9415ef4,0xf94162f5,0xf94166f6,0xf9416af8,0xf9416efe,0xf94172f7,0x911d43ff
+.inst 0xf9415af3,0xf9415ef4,0xf94162f5,0xf94166f6,0xf9416af8,0xf9416efe,0xf94172f7,0x910bc3ff
+.inst 0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800009,0xd280000a,0xd280000b,0xd280000c
+.inst 0xd280000d,0xd280000e,0xd280000f,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402
+.inst 0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412
+.inst 0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a
+.inst 0x6f00e41b,0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f,0xd2800000,0xd10c03ff
+.inst 0x6f00e41f,0x910003e9,0xd280018a
+25:
+.inst 0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x91010129,0xd100054a
+cbnz x10, 25b
+.inst 0x910c03ff
 21:
 .inst 0xd65f03c0
 20:
 .inst 0xd13543ff,0x910003e4,0xf903a893,0xf903ac94,0xf903b095,0xf903b496,0xf903b898,0xf903bc9e
 .inst 0xf903c097,0x91000097,0x91000053,0x91000074,0x91000015,0x91000036,0xd347fe89
-cbz x9, 25f
+cbz x9, 26f
 .inst 0xd1020289
-cbz x9, 27f
+cbz x9, 28f
 .inst 0x912782e0
 bl {vg_sha512_224_init}
 .inst 0x912782e0,0xd2800001,0x91000262,0x91000283,0x910002e4
@@ -72,14 +84,14 @@ bl {vg_sha512_update_scratch_sha512}
 .inst 0x912782e0,0x91000281,0x912b62e2,0x910002e3
 bl {vg_sha512_finalize_scratch_sha512}
 .inst 0x912b62e2,0xd2800383
-b 28f
-27:
-.inst 0x91000262,0x91000283
+b 29f
 28:
-b 26f
-25:
 .inst 0x91000262,0x91000283
+29:
+b 27f
 26:
+.inst 0x91000262,0x91000283
+27:
 .inst 0x910002a0,0x910002c1,0x910002e4
 bl {vg_hmac_sha512_224_init_scratch_sha512}
 .inst 0xf943aaf3,0xf943aef4,0xf943b2f5,0xf943b6f6,0xf943baf8,0xf943befe,0xf943c2f7,0xd2800011
@@ -110,7 +122,16 @@ bl {vg_hmac_sha512_224_init_scratch_sha512}
 .inst 0xa91a4611,0xa91b4611,0xa91c4611,0xa91d4611,0xa91e4611,0xa91f4611,0x913003f0,0xa9004611
 .inst 0xa9014611,0xa9024611,0xa9034611,0xa9044611,0xa9054611,0xa9064611,0xa9074611,0xa9084611
 .inst 0xa9094611,0xa90a4611,0xa90b4611,0xa90c4611,0xa90d4611,0xa90e4611,0xa90f4611,0xa9104611
-.inst 0xa9114611,0xa9124611,0xa9134611,0xa9144611,0x913543ff
+.inst 0xa9114611,0xa9124611,0xa9134611,0xa9144611,0x913543ff,0xd2800001,0xd2800002,0xd2800003
+.inst 0xd2800004,0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d,0xd280000e,0xd280000f
+.inst 0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404,0x6f00e405
+.inst 0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415
+.inst 0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c,0x6f00e41d
+.inst 0x6f00e41e,0x6f00e41f,0xea01003f,0xd2800000,0xd13583ff,0x6f00e41f,0x910003e9,0xd28006aa
+210:
+.inst 0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x91010129,0xd100054a
+cbnz x10, 210b
+.inst 0x3d80013f,0x3d80053f,0x913583ff
 b 21b
 .p2align 6",
         vg_sha512_224_init = sym super::sha512::vg_sha512_224_init,
@@ -128,6 +149,8 @@ pub const VG_HMAC_SHA512_224_FINALIZE_SHA512_FEATURES: verified_garbage_cpu::Fea
 ///
 /// Contract: `VG.Spec.Hmac.Instance.finalizeContract` of `VG.Spec.Hmac.sha512_224I`. Constant time: only the pointers and `count` may affect timing, not the states.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `inner` must be valid for reads and writes of 192 bytes.
@@ -135,12 +158,12 @@ pub const VG_HMAC_SHA512_224_FINALIZE_SHA512_FEATURES: verified_garbage_cpu::Fea
 /// * `out` must be valid for reads and writes of 28 bytes.
 /// * The contents of `inner` on return are unspecified.
 /// * `inner` and `out` must not overlap each other or `outer` (distinct Rust objects never do).
-/// * None of `inner`, `outer` and `out` may overlap the 1888 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `inner`, `outer` and `out` may overlap the 832 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha3` target feature.
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_hmac_sha512_224_finalize_sha512(inner: *mut [u8; 192], outer: *const [u8; 192], count: u64, out: *mut [u8; 28]) {
     core::arch::naked_asm!(
-        r".inst 0xd11d43ff,0x910003e4,0xf9015893,0xf9015c94,0xf9016095,0xf9016496,0xf9016898,0xf9016c9e
+        r".inst 0xd10cc3ff,0x910003e4,0xf9015893,0xf9015c94,0xf9016095,0xf9016496,0xf9016898,0xf9016c9e
 .inst 0xf9017097,0x91000013,0x91000034,0x91000075,0x91000097,0x91000041,0x910ba2e2,0x910002e3
 bl {vg_sha512_finalize_scratch_sha512}
 .inst 0xa9402a89,0xa9002a69,0xa9412a89,0xa9012a69,0xa9422a89,0xa9022a69,0xa9432a89,0xa9032a69
@@ -153,7 +176,16 @@ bl {vg_sha512_compress_sha512}
 .inst 0xf9000aa9,0xf9400e69,0xdac00d29,0xf9000ea9,0xf9401269,0xdac00d29,0xf90012a9,0xf9401669
 .inst 0xdac00d29,0xf90016a9,0xf9401a69,0xdac00d29,0xf9001aa9,0xf9401e69,0xdac00d29,0xf9001ea9
 .inst 0xa9402aa9,0xa9002b09,0xf9400aa9,0xf9000b09,0xb9401aa9,0xb9001b09,0xf9415af3,0xf9415ef4
-.inst 0xf94162f5,0xf94166f6,0xf9416af8,0xf9416efe,0xf94172f7,0x911d43ff,0xd65f03c0
+.inst 0xf94162f5,0xf94166f6,0xf9416af8,0xf9416efe,0xf94172f7,0x910cc3ff,0xd2800001,0xd2800002
+.inst 0xd2800003,0xd2800004,0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d,0xd2800010
+.inst 0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e406
+.inst 0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416
+.inst 0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c,0x6f00e41d,0x6f00e41e
+.inst 0x6f00e41f,0xea01003f,0xd2800000,0xd10d03ff,0x6f00e41f,0x910003e9,0xd28001aa
+20:
+.inst 0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x91010129,0xd100054a
+cbnz x10, 20b
+.inst 0x910d03ff,0xd65f03c0
 .p2align 6",
         vg_sha512_finalize_scratch_sha512 = sym super::sha512::vg_sha512_finalize_scratch_sha512::vg_sha512_finalize_scratch_sha512,
         vg_sha512_compress_sha512 = sym super::sha512::vg_sha512_compress_sha512::vg_sha512_compress_sha512,
@@ -163,6 +195,8 @@ bl {vg_sha512_compress_sha512}
 /// Starts an HMAC-SHA-512/224 computation with a key of any length: makes the SHA-512/224 streaming state `*inner` represent `K₀ ⊕ ipad` and `*outer` represent `K₀ ⊕ opad`, where `K₀` is the `key_len` bytes at `key` (or their SHA-512/224 digest, if there are more than 128) padded with zeros to 128 bytes (FIPS 198-1 §4, steps 1–3). The text is then absorbed with `vg_sha512_update` on `*inner` (its `count` starting at 128), and the MAC computed with `vg_hmac_sha512_224_finalize`.
 ///
 /// Contract: `VG.Spec.Hmac.Instance.initAnyKeyContract` of `VG.Spec.Hmac.sha512_224I`. Constant time: only the pointers and `key_len` may affect timing, not the key.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -176,7 +210,7 @@ pub(crate) unsafe extern "C" fn vg_hmac_sha512_224_init(inner: *mut [u8; 192], o
     core::arch::naked_asm!(
         r".inst 0xd280100a,0xd280000c,0xeb03014b,0x9a832189
 cbnz x9, 20f
-.inst 0xd11d43ff,0x910003e4,0xf9015893,0xf9015c94,0xf9016095,0xf9016496,0xf9016898,0xf9016c9e
+.inst 0xd10bc3ff,0x910003e4,0xf9015893,0xf9015c94,0xf9016095,0xf9016496,0xf9016898,0xf9016c9e
 .inst 0xf9017097,0x91000013,0x91000094,0x91000035,0x91000056,0x91000097,0x91000078,0x91000260
 bl {vg_sha512_224_init}
 .inst 0x910002a0
@@ -209,15 +243,23 @@ b 23f
 bl {vg_sha512_compress}
 .inst 0x910002b3,0x910102a1,0x91000260,0xd2800022,0x91000283
 bl {vg_sha512_compress}
-.inst 0xf9415af3,0xf9415ef4,0xf94162f5,0xf94166f6,0xf9416af8,0xf9416efe,0xf94172f7,0x911d43ff
+.inst 0xf9415af3,0xf9415ef4,0xf94162f5,0xf94166f6,0xf9416af8,0xf9416efe,0xf94172f7,0x910bc3ff
+.inst 0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005,0xd2800006,0xd2800007,0xd2800008
+.inst 0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d,0xd280000e,0xd280000f,0xd2800010
+.inst 0xd2800011,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416
+.inst 0xea01003f,0xd2800000,0xd10c03ff,0x6f00e41f,0x910003e9,0xd280018a
+25:
+.inst 0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x91010129,0xd100054a
+cbnz x10, 25b
+.inst 0x910c03ff
 21:
 .inst 0xd65f03c0
 20:
 .inst 0xd13543ff,0x910003e4,0xf903a893,0xf903ac94,0xf903b095,0xf903b496,0xf903b898,0xf903bc9e
 .inst 0xf903c097,0x91000097,0x91000053,0x91000074,0x91000015,0x91000036,0xd347fe89
-cbz x9, 25f
+cbz x9, 26f
 .inst 0xd1020289
-cbz x9, 27f
+cbz x9, 28f
 .inst 0x912782e0
 bl {vg_sha512_224_init}
 .inst 0x912782e0,0xd2800001,0x91000262,0x91000283,0x910002e4
@@ -225,14 +267,14 @@ bl {vg_sha512_update_scratch}
 .inst 0x912782e0,0x91000281,0x912b62e2,0x910002e3
 bl {vg_sha512_finalize_scratch}
 .inst 0x912b62e2,0xd2800383
-b 28f
-27:
-.inst 0x91000262,0x91000283
+b 29f
 28:
-b 26f
-25:
 .inst 0x91000262,0x91000283
+29:
+b 27f
 26:
+.inst 0x91000262,0x91000283
+27:
 .inst 0x910002a0,0x910002c1,0x910002e4
 bl {vg_hmac_sha512_224_init_scratch}
 .inst 0xf943aaf3,0xf943aef4,0xf943b2f5,0xf943b6f6,0xf943baf8,0xf943befe,0xf943c2f7,0xd2800011
@@ -263,7 +305,15 @@ bl {vg_hmac_sha512_224_init_scratch}
 .inst 0xa91a4611,0xa91b4611,0xa91c4611,0xa91d4611,0xa91e4611,0xa91f4611,0x913003f0,0xa9004611
 .inst 0xa9014611,0xa9024611,0xa9034611,0xa9044611,0xa9054611,0xa9064611,0xa9074611,0xa9084611
 .inst 0xa9094611,0xa90a4611,0xa90b4611,0xa90c4611,0xa90d4611,0xa90e4611,0xa90f4611,0xa9104611
-.inst 0xa9114611,0xa9124611,0xa9134611,0xa9144611,0x913543ff
+.inst 0xa9114611,0xa9124611,0xa9134611,0xa9144611,0x913543ff,0xd2800001,0xd2800002,0xd2800003
+.inst 0xd2800004,0xd2800005,0xd2800006,0xd2800007,0xd2800008,0xd2800009,0xd280000a,0xd280000b
+.inst 0xd280000c,0xd280000d,0xd280000e,0xd280000f,0xd2800010,0xd2800011,0x6f00e410,0x6f00e411
+.inst 0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416,0xea01003f,0xd2800000,0xd13583ff
+.inst 0x6f00e41f,0x910003e9,0xd28006aa
+210:
+.inst 0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x91010129,0xd100054a
+cbnz x10, 210b
+.inst 0x3d80013f,0x3d80053f,0x913583ff
 b 21b
 .p2align 6",
         vg_sha512_224_init = sym super::sha512::vg_sha512_224_init,
@@ -278,6 +328,8 @@ b 21b
 ///
 /// Contract: `VG.Spec.Hmac.Instance.finalizeContract` of `VG.Spec.Hmac.sha512_224I`. Constant time: only the pointers and `count` may affect timing, not the states.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `inner` must be valid for reads and writes of 192 bytes.
@@ -285,11 +337,11 @@ b 21b
 /// * `out` must be valid for reads and writes of 28 bytes.
 /// * The contents of `inner` on return are unspecified.
 /// * `inner` and `out` must not overlap each other or `outer` (distinct Rust objects never do).
-/// * None of `inner`, `outer` and `out` may overlap the 1888 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `inner`, `outer` and `out` may overlap the 832 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_hmac_sha512_224_finalize(inner: *mut [u8; 192], outer: *const [u8; 192], count: u64, out: *mut [u8; 28]) {
     core::arch::naked_asm!(
-        r".inst 0xd11d43ff,0x910003e4,0xf9015893,0xf9015c94,0xf9016095,0xf9016496,0xf9016898,0xf9016c9e
+        r".inst 0xd10cc3ff,0x910003e4,0xf9015893,0xf9015c94,0xf9016095,0xf9016496,0xf9016898,0xf9016c9e
 .inst 0xf9017097,0x91000013,0x91000034,0x91000075,0x91000097,0x91000041,0x910ba2e2,0x910002e3
 bl {vg_sha512_finalize_scratch}
 .inst 0xa9402a89,0xa9002a69,0xa9412a89,0xa9012a69,0xa9422a89,0xa9022a69,0xa9432a89,0xa9032a69
@@ -302,7 +354,15 @@ bl {vg_sha512_compress}
 .inst 0xf9000aa9,0xf9400e69,0xdac00d29,0xf9000ea9,0xf9401269,0xdac00d29,0xf90012a9,0xf9401669
 .inst 0xdac00d29,0xf90016a9,0xf9401a69,0xdac00d29,0xf9001aa9,0xf9401e69,0xdac00d29,0xf9001ea9
 .inst 0xa9402aa9,0xa9002b09,0xf9400aa9,0xf9000b09,0xb9401aa9,0xb9001b09,0xf9415af3,0xf9415ef4
-.inst 0xf94162f5,0xf94166f6,0xf9416af8,0xf9416efe,0xf94172f7,0x911d43ff,0xd65f03c0
+.inst 0xf94162f5,0xf94166f6,0xf9416af8,0xf9416efe,0xf94172f7,0x910cc3ff,0xd2800001,0xd2800002
+.inst 0xd2800003,0xd2800004,0xd2800005,0xd2800006,0xd2800007,0xd2800008,0xd2800009,0xd280000a
+.inst 0xd280000b,0xd280000c,0xd280000d,0xd280000e,0xd280000f,0xd2800010,0xd2800011,0x6f00e410
+.inst 0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416,0xea01003f,0xd2800000
+.inst 0xd10d03ff,0x6f00e41f,0x910003e9,0xd28001aa
+20:
+.inst 0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x91010129,0xd100054a
+cbnz x10, 20b
+.inst 0x910d03ff,0xd65f03c0
 .p2align 6",
         vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
         vg_sha512_compress = sym super::sha512::vg_sha512_compress::vg_sha512_compress,
@@ -316,6 +376,14 @@ pub(crate) mod vg_hmac_sha512_224_finalize_scratch;
 #[rustfmt::skip]
 #[path = "internal/vg_hmac_sha512_224_finalize_scratch_sha512.rs"]
 pub(crate) mod vg_hmac_sha512_224_finalize_scratch_sha512;
+
+#[rustfmt::skip]
+#[path = "internal/vg_hmac_sha512_224_init_any_scratch.rs"]
+pub(crate) mod vg_hmac_sha512_224_init_any_scratch;
+
+#[rustfmt::skip]
+#[path = "internal/vg_hmac_sha512_224_init_any_scratch_sha512.rs"]
+pub(crate) mod vg_hmac_sha512_224_init_any_scratch_sha512;
 
 #[rustfmt::skip]
 #[path = "internal/vg_hmac_sha512_224_init_scratch.rs"]

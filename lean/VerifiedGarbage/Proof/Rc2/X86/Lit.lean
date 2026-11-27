@@ -18,9 +18,7 @@ meta import VerifiedGarbage.Proof.Framework.X86.Lit
 
 namespace VG.Impl.Rc2.X86
 
-materialize_value keyLookup
-
-materialize_flat_code encryptBlock
-materialize_flat_code decryptBlock
+materialize_code encryptBlock
+materialize_code decryptBlock
 
 end VG.Impl.Rc2.X86

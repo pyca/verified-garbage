@@ -17,7 +17,4 @@ def brainpoolp256r1 : Cfg where
   SP := Impl.Weierstrass.Mont.brainpoolp256r1p
   SN := Impl.Weierstrass.Mont.brainpoolp256r1n
 
-/-- `vg_ecdsa_brainpoolp256r1_sign`. -/
-def signBrainpoolP256r1 : Prog isa := brainpoolp256r1.sign
-
 end VG.Impl.Ecdsa.X86

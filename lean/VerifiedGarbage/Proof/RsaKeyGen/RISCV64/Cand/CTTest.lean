@@ -20,7 +20,7 @@ meta import VerifiedGarbage.Proof.Framework.Omega
 
 `test_ct`: two runs of the test (trial division, then Miller–Rabin and the
 result), from calls with the same public data and stack pointer, leak the
-same trace, as on PPC64LE (`Proof/RsaKeyGen/PPC64LE/Cand/CTTest.lean`):
+same trace, as on PPC64LE (`Proof/RsaKeyGen/PPC64LE/Cand/CTTop.lean`):
 trial division by its own constant time (`DivOk.ct`), from candidates its
 table divides alike (`tt_divRel`); whether it found a divisor, and the test's
 result, are the same in both runs (`comp_agree`, `shape_eq`). The loads

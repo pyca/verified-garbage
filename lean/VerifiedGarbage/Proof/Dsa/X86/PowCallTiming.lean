@@ -1,15 +1,13 @@
 module
-import Mathlib.Logic.Function.Basic
-import Mathlib.Tactic.SplitIfs
+
 public import VerifiedGarbage.Impl.Dsa.X86.Pow
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Weierstrass
-import Mathlib.Tactic.Set
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.TCB.X86.Target
-
 import VerifiedGarbage.Proof.Framework.X86.RelCT
-public import VerifiedGarbage.Proof.Dsa.X86.PowTiming
+public import VerifiedGarbage.Proof.Dsa.X86.PowCorrect
+public import VerifiedGarbage.Proof.Dsa.X86.PowJoint
 public import VerifiedGarbage.Proof.Dsa.X86.StackFrame
 import VerifiedGarbage.Proof.Dsa.X86.PowCallFrame
 import VerifiedGarbage.Proof.Framework.X86.CallWith
@@ -43,13 +41,14 @@ theorem body_readArg {n e : Nat} {s t : State} {tr : List Leak}
         cases H
 
 /-- What a call of the exponentiation needs of a run: the working space at `edi`, the stack its
-call uses apart from it, and the modulus odd and above 1. -/
-def CallIn (n : Nat) (s : State) : Prop :=
-  ∃ base size, Scr s base size ∧ Room (s.gpr .esp) base size ∧ contextBytes n ≤ size ∧
-    1 < wordsVal s.mem base (slot n 0) n ∧ wordsVal s.mem base (slot n 0) n % 2 = 1
+call uses apart from it, and the modulus `m`, which is public, odd and above 1. -/
+def CallIn (n size m : Nat) (s : State) : Prop :=
+  ∃ base, Scr s base size ∧ Room (s.gpr .esp) base size ∧ contextBytes n ≤ size ∧
+    wordsVal s.mem base (slot n 0) n = m ∧ 1 < m ∧ m % 2 = 1
 
-theorem bodyIn_of {n : Nat} {s : State} (h : CallIn n s) : BodyIn n (pushed [.eax, .edi] s).callEntry := by
-  obtain ⟨base, size, hs, ⟨h108, sep⟩, hz, h1, hodd⟩ := h
+theorem bodyIn_of {n size m : Nat} {s : State} (h : CallIn n size m s) :
+    BodyIn n size m (pushed [.eax, .edi] s).callEntry := by
+  obtain ⟨base, hs, ⟨h108, sep⟩, hz, hm, h1, hodd⟩ := h
   have nw := hs.nowrap
   have spBound := (s.gpr .esp).isLt
   have fit : 4 * [Reg.eax, .edi].length + 4 ≤ (s.gpr .esp).toNat := by simp; omega_using [h108]
@@ -66,7 +65,7 @@ theorem bodyIn_of {n : Nat} {s : State} (h : CallIn n s) : BodyIn n (pushed [.ea
       (by simp only [contextBytes, slot, stride] at hz ⊢; omega_using [hz])]
   unfold BodyIn
   rw [ws, mv]
-  refine ⟨size, ⟨?_, ws, ?_, nw, ?_⟩, ⟨by omega_using [h108, tsp], fun x h₁ h₂ => ?_⟩, hz, h1, hodd⟩
+  refine ⟨⟨?_, ws, ?_, nw, ?_⟩, ⟨by omega_using [h108, tsp], fun x h₁ h₂ => ?_⟩, hz, hm, h1, hodd⟩
   · refine ⟨below (s.gpr .esp) 8, ?_, ?_⟩
     · simp only [State.callEntry_rd, State.callEntry_wr, pushed_rd, pushed_wr]
       exact List.mem_append_right _ (List.mem_cons_self ..)
@@ -79,15 +78,15 @@ theorem bodyIn_of {n : Nat} {s : State} (h : CallIn n s) : BodyIn n (pushed [.ea
     have h₁' := below_inner (sp := s.gpr .esp) (a := 96) (k := 12) (b := 108) (by decide) h108 x h₁
     have := zone_ofs' ⟨h108, sep⟩ nw (k := 108) (by decide) h₁'
     simp only [Region.Contains, ofs] at h₂ this
-    omega_using [h108, sep, hz, h1, hodd, nw, spBound, fit, a0, ws, tsp, tEsp, mv, h₂, this]
+    omega_using [h108, sep, hz, nw, spBound, fit, tsp, h₂, this]
 
-theorem framed_relCT (n e : Nat) (hn : 2 ≤ n) (hn48 : n ≤ 48) (he : 1 < e) (hen : e ≤ 2 * n) :
-    RelCT isa (fun s t => s.gpr .esp = t.gpr .esp ∧ s.gpr .edi = t.gpr .edi ∧ CallIn n s ∧ CallIn n t)
+theorem framed_relCT (n e size m : Nat) (hn : 2 ≤ n) (hn48 : n ≤ 48) (he : 1 < e) (hen : e ≤ 2 * n) :
+    RelCT isa (fun s t => s.gpr .esp = t.gpr .esp ∧ s.gpr .edi = t.gpr .edi ∧ CallIn n size m s ∧ CallIn n size m t)
       (.frame (.push [.eax, .edi]) (.call (name n e) (body n e)) (.pop .eax 2))
       (fun _ _ => True) := by
   refine RelCT.frame (R := fun _ _ => True) (fun _ _ H => H.1) ?_
   rintro _ _ tr ur sf tf ⟨s, t, ⟨SP, DI, C₁, C₂⟩, rfl, rfl⟩ E F
-  have fit : 12 ≤ (s.gpr .esp).toNat := by obtain ⟨_, _, _, ⟨h, _⟩, _⟩ := C₁; omega_using [h]
+  have fit : 12 ≤ (s.gpr .esp).toNat := by obtain ⟨_, _, ⟨h, _⟩, _⟩ := C₁; omega_using [h]
   cases E with
   | call C E R =>
     cases F with
@@ -102,27 +101,27 @@ theorem framed_relCT (n e : Nat) (hn : 2 ≤ n) (hn48 : n ≤ 48) (he : 1 < e) (
         rw [callEntry_arg (rs := [.eax, .edi]) (s := s) fit (by decide) (by decide),
           callEntry_arg (rs := [.eax, .edi]) (s := t) (by rw [← SP]; exact fit) (by decide) (by decide)]
         exact DI
-      have traces := (body_relCT n e hn hn48 he hen) _ _ _ _ _ _
+      have traces := (body_relCT n e size m hn hn48 he hen) _ _ _ _ _ _
         ⟨sp, args, body_readArg E, body_readArg F, bodyIn_of C₁, bodyIn_of C₂⟩ E F
       have r := (ret_gpr R .esp).1
       have q := (ret_gpr S .esp).1
       refine ⟨?_, trivial⟩
       simp only [r, q, State.callEntry_esp, pushed_esp, SP, traces.1]
 
-theorem call_relCT (n e : Nat) (hn : 2 ≤ n) (hn48 : n ≤ 48) (he : 1 < e) (hen : e ≤ 2 * n) :
-    RelCT isa (fun s t => s.gpr .esp = t.gpr .esp ∧ s.gpr .edi = t.gpr .edi ∧ CallIn n s ∧ CallIn n t)
+theorem call_relCT (n e size m : Nat) (hn : 2 ≤ n) (hn48 : n ≤ 48) (he : 1 < e) (hen : e ≤ 2 * n) :
+    RelCT isa (fun s t => s.gpr .esp = t.gpr .esp ∧ s.gpr .edi = t.gpr .edi ∧ CallIn n size m s ∧ CallIn n size m t)
       (Impl.Dsa.X86.Pow.call n e) (fun _ _ => True) := by
   unfold Impl.Dsa.X86.Pow.call
-  refine RelCT.seq ?_ (framed_relCT n e hn hn48 he hen)
+  refine RelCT.seq ?_ (framed_relCT n e size m hn hn48 he hen)
   intro s t tr ur sf tf H E F
   have W (s : State) : WP isa (.block [.mov .eax (.imm (BitVec.ofNat 32 (VG.Impl.Mont.X86.Dynamic.contextBytes n / 8)))]) s
       (fun t => VG.Proof.Mont.X86.Keeps [.eax] s t ∧ t.mem = s.mem) :=
     wp_movS rfl fun _ U _ => WP.block_nil ⟨U.keeps, U.mem⟩
   have K := wp_result (W s) E
   have L := wp_result (W t) F
-  have keep : ∀ {u v : State}, VG.Proof.Mont.X86.Keeps [.eax] u v → v.mem = u.mem → CallIn n u → CallIn n v :=
-    fun K M ⟨base, size, hs, R, hz, h1, hodd⟩ =>
-      ⟨base, size, hs.of_keeps K (by decide), by rw [K.1 _ (by decide)]; exact R, hz, M ▸ h1, M ▸ hodd⟩
+  have keep : ∀ {u v : State}, VG.Proof.Mont.X86.Keeps [.eax] u v → v.mem = u.mem → CallIn n size m u → CallIn n size m v :=
+    fun K M ⟨base, hs, R, hz, hm, h1, hodd⟩ =>
+      ⟨base, hs.of_keeps K (by decide), by rw [K.1 _ (by decide)]; exact R, hz, M ▸ hm, h1, hodd⟩
   refine ⟨?_, ?_⟩
   · cases E with
     | block E => cases F with

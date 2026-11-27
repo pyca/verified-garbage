@@ -896,7 +896,7 @@ theorem final_rel {s₀ s₀' : State} (h0 : ctrFinalPPC64LE.pre s₀) (h0' : ct
       obtain ⟨rfl, rfl⟩ := h
       exact ⟨wp_sp (setup_wp hp), wp_sp (setup_wp hp')⟩
   -- The whole blocks.
-  have r₂ := (RelCT.callEx (k := ctrF) (n := "vg_camellia_ctr") ctr_ok ctr_ct
+  have r₂ := (RelCT.callEx (k := ctrF) (n := "vg_camellia_ctr_core") ctr_ok ctr_ct
     (P := fun a b => (KSetup s₀ a ∧ a.sp = s₀.sp) ∧ (KSetup s₀' b ∧ b.sp = s₀'.sp)) fun a b ⟨ha, hb⟩ => by
       obtain ⟨pa, ca, wa⟩ := whole_pre hp ha.1 ha.2
       obtain ⟨pb, cb, wb⟩ := whole_pre hp' hb.1 hb.2
@@ -931,7 +931,7 @@ theorem final_rel {s₀ s₀' : State} (h0 : ctrFinalPPC64LE.pre s₀) (h0' : ct
       (F₁ := fun (s : State) => KArgs s₀ s ∧ s.sp = s₀.sp) (F₂ := fun (s : State) => KArgs s₀' s ∧ s.sp = s₀'.sp)
       fun a b h => ⟨WP.mono (wp_sp (tail_args_wp hp h.1.1)) fun _ x => ⟨x.1, x.2.trans h.1.2⟩,
         WP.mono (wp_sp (tail_args_wp hp' h.2.1)) fun _ x => ⟨x.1, x.2.trans h.2.2⟩⟩
-    have a₂ := (RelCT.callEx (k := ctrF) (n := "vg_camellia_ctr") ctr_ok ctr_ct
+    have a₂ := (RelCT.callEx (k := ctrF) (n := "vg_camellia_ctr_core") ctr_ok ctr_ct
       (P := fun a b => (KArgs s₀ a ∧ a.sp = s₀.sp) ∧ (KArgs s₀' b ∧ b.sp = s₀'.sp)) fun a b ⟨ha, hb⟩ => by
         obtain ⟨pa, ca, wa⟩ := tail_pre hp ha.1 ha.2
         obtain ⟨pb, cb, wb⟩ := tail_pre hp' hb.1 hb.2

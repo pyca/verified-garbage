@@ -1,5 +1,4 @@
 module
-public import Mathlib.Data.Fintype.Fin
 import Mathlib.Tactic.FinCases
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.PairedTable
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Base

@@ -9,7 +9,13 @@ import VerifiedGarbage.Proof.Framework.RISCV64.CallAny
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.RISCV64.TableSat
 public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
 public import VerifiedGarbage.Proof.Framework.TaintBatch
+public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
+public import VerifiedGarbage.Impl.Ecdsa.Rfc6979.RISCV64.Fn
+public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.RISCV64.Scrub
+public import VerifiedGarbage.Proof.Variants.MdHash.RISCV64
 import VerifiedGarbage.Proof.Weierstrass.RISCV64.P224Field.Lit
+import VerifiedGarbage.Proof.Framework.KernelRfl
 meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.RISCV64.Common
 meta import VerifiedGarbage.Proof.Ecdsa.RISCV64.P224.Sign
 meta import VerifiedGarbage.Spec.Ecdsa.P224
@@ -20,6 +26,12 @@ meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.RISCV64.TableSat
 meta import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Weierstrass.RISCV64.P224Field.Lit
+meta import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
+meta import VerifiedGarbage.Impl.Ecdsa.Rfc6979.RISCV64.Fn
+meta import VerifiedGarbage.Proof.Framework.Registration
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.RISCV64.Scrub
+meta import VerifiedGarbage.Proof.Variants.MdHash.RISCV64
+meta import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-!
 # Deterministic ECDSA on RISC-V: P-224's kit
@@ -177,5 +189,38 @@ theorem verifiedT (hL : VG.Proof.Weierstrass.Law Spec.P224.curve) (vs : List Pro
   have hsat := sat_one (T := Spec.Ecdsa.Rfc6979.Curves.p224) h.1 VG.Proof.Ecdsa.RISCV64.P224.Comb.combSatMem h.2
     (by rw [VG.Proof.Ecdsa.RISCV64.P224.Comb.combWords_length]; decide) VG.Proof.Ecdsa.RISCV64.P224.Comb.combSatMem_held (by decide) rfl
   exact signT_spec ⟨rfl, by decide, by decide⟩ (checksT hL) rfl h.1 hsat
+
+/-! ## The function, as emitted
+
+`vg_ecdsa_p224_sign` as emitted, cleanup included
+(`Impl.Ecdsa.Rfc6979.RISCV64.Fn.p224`), with the tables of the hash functions
+of `Proof.Variants.MdHash.RISCV64.variants`: the theorem its registration file
+binds. What the cleanup needs of the code with nothing in the place of HMAC's
+functions (`RISCV64.Scrub.scrubSide`) is evaluated here, by the kernel; that
+of the hash functions, where each is defined (`HVar.scrub`). -/
+
+section
+
+open VG.Proof.Variants.MdHash.RISCV64 (variants fns)
+
+/-- What the cleanup needs of the code, with nothing in the place of HMAC's
+functions. -/
+theorem stub_side : RISCV64.Scrub.scrubSide
+    (Impl.Ecdsa.Rfc6979.RISCV64.Fn.p224Cfg Proof.Ecdsa.Rfc6979.RISCV64.Scrub.stubFns).sign 512 32 [] = true := by
+  lit_decide
+
+/-- The comb's table is named apart from the hash functions' tables. -/
+theorem sym_ok : Impl.Ecdsa.RISCV64.Comb.p224Sym ∉ Proof.HmacTable.RISCV64.names variants :=
+  of_decide_eq_true (by kernel_rfl)
+
+/-- `vg_ecdsa_p224_sign` as emitted, for the curve's group law `hL`: it meets
+its contract in constant time and returns without secret residue. -/
+theorem sign_scrubbed (hL : VG.Proof.Weierstrass.Law Spec.P224.curve) :
+    VerifiedScrubbed RISCV64.target (Impl.Ecdsa.Rfc6979.RISCV64.Fn.p224 fns)
+      (specK Spec.Ecdsa.Rfc6979.Curves.p224 (kit hL).K variants) 32 :=
+  Proof.Ecdsa.Rfc6979.RISCV64.Scrub.sign_scrubbed Impl.Ecdsa.Rfc6979.RISCV64.Fn.p224Cfg
+    (verifiedT hL variants ⟨Proof.Ecdsa.Rfc6979.RISCV64.Scrub.variants_ok, sym_ok⟩) rfl stub_side
+
+end
 
 end VG.Proof.Ecdsa.Rfc6979.RISCV64.P224

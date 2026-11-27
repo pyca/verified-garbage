@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointPrepFields
 public import VerifiedGarbage.Impl.Ecdsa.Verify.X86_64
 public import VerifiedGarbage.Impl.P521.X86_64.Joint
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
+import VerifiedGarbage.Proof.Framework.Apart
 
 /-! Concrete separation checks for P-521's joint verifier's scratch allocation. -/
 
@@ -18,7 +19,7 @@ open VG.Proof.Mont VG.Proof.Weierstrass.X86_64
 private theorem joint_lay : Lay publicJoint.K.M 8192 (·∈jointSlots publicJoint) := by
   refine ⟨by decide +kernel,?_,by decide +kernel,by decide +kernel⟩
   have h : ∀ x∈jointSlots publicJoint,∀ y∈jointSlots publicJoint,x≠y →
-      x+8*publicJoint.K.M.n≤y ∨ y+8*publicJoint.K.M.n≤x := by decide +kernel
+      x+8*publicJoint.K.M.n≤y ∨ y+8*publicJoint.K.M.n≤x := apart_of (by decide +kernel)
   exact fun x y hx hy => h x hx y hy
 
 theorem joint_layout : JointLayout publicJoint 8192 :=
@@ -29,7 +30,7 @@ theorem joint_lookup_layout : JointLookupLayout publicJoint 8192 :=
     by decide,by decide,by decide,by decide⟩
 
 theorem joint_add_layout : JointAddLayout publicJoint 8192 := by
-  refine ⟨joint_lookup_layout,?_,by decide,by decide,by decide,by decide,⟨fun _ h => by cases h⟩⟩
+  refine ⟨joint_lookup_layout,?_,by decide,by decide,by decide,by decide,⟨fun _ h => (by cases h), fun _ h => (by cases h)⟩⟩
   constructor <;> decide +kernel
 
 theorem joint_adx_layout : JointLayout publicJointAdx 8192 :=
@@ -43,7 +44,7 @@ theorem joint_adx_lookup_layout : JointLookupLayout publicJointAdx 8192 :=
 theorem joint_adx_add_layout : JointAddLayout publicJointAdx 8192 :=
   ⟨joint_adx_lookup_layout,joint_add_layout.addApart,joint_add_layout.cache2Apart,
     joint_add_layout.cache3Apart,joint_add_layout.accumNodup,joint_add_layout.copyApart,
-    ⟨fun _ h => by cases h⟩⟩
+    ⟨fun _ h => (by cases h), fun _ h => (by cases h)⟩⟩
 
 private theorem naf_lay : Lay publicJoint.K.M 8192 (·∈nafSlots publicJoint.K) := by
   have hs : ∀ x∈nafSlots publicJoint.K,x∈jointSlots publicJoint := fun _ hx =>

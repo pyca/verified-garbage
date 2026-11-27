@@ -1,14 +1,87 @@
 module
 
+public import VerifiedGarbage.Impl.Hmac.Stream.PPC64LE.Fn
+meta import VerifiedGarbage.Impl.Hmac.Stream.PPC64LE.Fn
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.PPC64LE.Instance
 public import VerifiedGarbage.Proof.Pbkdf2.Contract
-public import VerifiedGarbage.Proof.Pbkdf2.PPC64LE.Md5
 public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Md5
 public import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Pbkdf2.Whole.PPC64LE.Instance
-meta import VerifiedGarbage.Proof.Pbkdf2.PPC64LE.Md5
 meta import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Md5
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
+public import VerifiedGarbage.Proof.Pbkdf2.PPC64LE.Correct
+import VerifiedGarbage.Proof.Md5.PPC64LE.Stream.Init
+public import VerifiedGarbage.Spec.Pbkdf2.Generic
+import VerifiedGarbage.Proof.Hmac.Generic.Common
+meta import VerifiedGarbage.Proof.Pbkdf2.PPC64LE.Correct
+meta import VerifiedGarbage.Proof.Md5.PPC64LE.Stream.Init
+meta import VerifiedGarbage.Spec.Pbkdf2.Generic
+public import VerifiedGarbage.Impl.Md5.PPC64LE.Stream
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Call
+public import VerifiedGarbage.Proof.Md5.Md
+public import VerifiedGarbage.Proof.Md5.PPC64LE.Compress
+meta import VerifiedGarbage.Proof.Pbkdf2.Contract
+meta import VerifiedGarbage.Proof.Hmac.Generic.Common
+meta import VerifiedGarbage.Impl.Md5.PPC64LE.Stream
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.Call
+meta import VerifiedGarbage.Proof.Md5.Md
+meta import VerifiedGarbage.Proof.Md5.PPC64LE.Compress
+
+/-! ### `Pbkdf2.PPC64LE.Md5`, which only this module used -/
+
+section
+
+/-!
+# PBKDF2-HMAC-MD5 on PPC64LE: `iterate`
+
+The iteration over a Merkle–Damgård hash function (`Impl/Pbkdf2/PPC64LE.lean`)
+for MD5's streaming parameters and compression function: what its proof
+needs of MD5 (`hashOk`), its constant time, which the kernel checks.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Pbkdf2.PPC64LE.Md5
+
+open VG.PPC64LE
+
+/-- `iterate`'s code. -/
+abbrev code : Prog isa :=
+  Impl.Pbkdf2.PPC64LE.iterate Impl.Md5.PPC64LE.Stream.params 16 "vg_md5_compress" Impl.Md5.PPC64LE.compress
+
+theorem hashOk : HashOk Impl.Md5.PPC64LE.Stream.params 16 (8 * Spec.Hmac.md5I.scratch) Spec.Hmac.md5S
+    Proof.Md5.md Spec.Md5.H0 where
+  sizes := ⟨Proof.Md5.PPC64LE.Stream.dims, by decide, by decide, by decide, by decide, by decide, by decide,
+    by decide, by decide, by decide⟩
+  shape := Proof.Md5.PPC64LE.Stream.shape
+  reloc m m' p q h := by
+    apply Vector.ext
+    intro j hj
+    simp only [Proof.Md5.md, Spec.Md5.stateAt, Vector.getElem_ofFn]
+    exact Hmac.Generic.Common.readW_reloc (n := 16) h (by omega_using [hj])
+  lenOk := trivial
+  link := ⟨rfl, rfl, rfl, fun _ _ _ h => h, fun m => by
+    show Spec.Md5.hash m = _
+    rw [Proof.Md5.hash_eq]
+    exact (List.take_of_length_le (Nat.le_of_eq (Proof.Md5.md.digest_length _))).symm,
+    by decide, by decide⟩
+
+theorem fdepth : code.fdepth ≤ 2 := by
+  rw [fdepth_of_noFrames (iterate_noFrames _ _ _ Proof.Md5.PPC64LE.Stream.callee.noFrames)]; decide
+
+theorem pushFrames : VG.PPC64LE.pushFrames code = true :=
+  pushFrames_of_noFrames (iterate_noFrames _ _ _ Proof.Md5.PPC64LE.Stream.callee.noFrames)
+
+/-- `iterate`'s constant time, which the kernel checks. -/
+theorem iterate_ct : ConstantTime isa (iterK Spec.Hmac.md5S (8 * Spec.Hmac.md5I.scratch)).pre
+    (iterK Spec.Hmac.md5S (8 * Spec.Hmac.md5I.scratch)).pub code :=
+  ct _ _ _ _ _ _ (by taint_decide)
+
+end VG.Proof.Pbkdf2.PPC64LE.Md5
+
+end
+
+end
 
 /-!
 # PBKDF2-HMAC-MD5 on PPC64LE: the whole derivation
@@ -25,37 +98,35 @@ a frame of its own (`pbkdf2`).
 namespace VG.Proof.Pbkdf2.Whole.PPC64LE.Md5
 
 open VG.PPC64LE
-open VG.Proof.Hmac.Stream.PPC64LE.Md5 (hash ok)
-
-/-- The functions `pbkdf2` calls. -/
-def F : Impl.Pbkdf2.Whole.PPC64LE.Fns :=
-  fnsOf hash Spec.Hmac.md5I 6 Pbkdf2.PPC64LE.Md5.code (8 * Spec.Hmac.md5I.scratch)
+open VG.Proof.Hmac.Stream.PPC64LE.Md5 (ok)
+open VG.Impl.Hmac.Stream.PPC64LE (hmacFrame)
+open VG.Impl.Pbkdf2.Whole.PPC64LE (md5F pbkFrame)
 
 /-- What the proofs need of them. -/
-def okF : FnsOK F :=
+def okF : FnsOK md5F :=
   okOf ok rfl Proof.Hmac.Stream.PPC64LE.Md5.initAny Proof.Hmac.Stream.PPC64LE.Md5.fin_ct
     (Pbkdf2.PPC64LE.correctG Pbkdf2.PPC64LE.Md5.hashOk Proof.Md5.PPC64LE.Stream.callee 96)
     (Pbkdf2.PPC64LE.ctG Pbkdf2.PPC64LE.Md5.iterate_ct 96) Pbkdf2.PPC64LE.Md5.fdepth Pbkdf2.PPC64LE.Md5.pushFrames
     (by decide) (Nat.le_refl _) (by decide) (by decide) (by decide)
 
-theorem checks : Checks F := by
+theorem checks : Checks md5F := by
   constructor <;> refine ⟨?_, ?_⟩
   taint_decide_all
 
-theorem scratch : Verified PPC64LE.target F.pbkdf2
-    (Proof.Pbkdf2.Instance.pbkdf2ScratchContract Spec.Hmac.md5I PPC64LE.abi (Proof.Hmac.Stream.PPC64LE.hmacFrame Spec.Hmac.md5I + 144)) :=
+theorem scratch : Verified PPC64LE.target md5F.pbkdf2
+    (Proof.Pbkdf2.Instance.pbkdf2ScratchContract Spec.Hmac.md5I PPC64LE.abi (hmacFrame Spec.Hmac.md5I + 144)) :=
   VG.Proof.Pbkdf2.Whole.PPC64LE.scratch okF checks rfl (by decide) (by
     inst_sat [Proof.Pbkdf2.Instance.pbkdf2ScratchContract, Proof.Pbkdf2.pbkdf2ScratchContract,
       Proof.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Hmac.Instance.pbkdf2Scratch, Spec.Hmac.md5I, Spec.Hmac.md5S, Spec.Hmac.md5,
-      Proof.Hmac.Stream.PPC64LE.hmacFrame, PPC64LE.abi, PPC64LE.argRegs]
+      hmacFrame, PPC64LE.abi, PPC64LE.argRegs]
       using pbkSat (8 * Spec.Hmac.md5I.pbkdf2Scratch))
 
 theorem pbkdf2 : Verified PPC64LE.target
-    (Impl.StackScratch.PPC64LE.withStackScratch (pbkFrame Spec.Hmac.md5I) .r10 F.pbkdf2)
-    (Spec.Hmac.md5I.pbkdf2Contract PPC64LE.abi (Proof.Hmac.Stream.PPC64LE.hmacFrame Spec.Hmac.md5I + 144 + pbkFrame Spec.Hmac.md5I)) :=
+    (Impl.StackScratch.PPC64LE.withStackScratch (pbkFrame Spec.Hmac.md5I) .r10 md5F.pbkdf2)
+    (Spec.Hmac.md5I.pbkdf2Contract PPC64LE.abi (hmacFrame Spec.Hmac.md5I + 144 + pbkFrame Spec.Hmac.md5I)) :=
   framed scratch (by decide) (by
     inst_sat [Spec.Hmac.Instance.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Sig,
-      Spec.Pbkdf2.pbkdf2Pre, Spec.Hmac.md5I, Spec.Hmac.md5S, Spec.Hmac.md5, Proof.Hmac.Stream.PPC64LE.hmacFrame, pbkFrame, PPC64LE.abi, PPC64LE.argRegs]
+      Spec.Pbkdf2.pbkdf2Pre, Spec.Hmac.md5I, Spec.Hmac.md5S, Spec.Hmac.md5, hmacFrame, pbkFrame, PPC64LE.abi, PPC64LE.argRegs]
       using pbkSat0)
 
 end VG.Proof.Pbkdf2.Whole.PPC64LE.Md5

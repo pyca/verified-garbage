@@ -1,32 +1,31 @@
 module
 
-public import VerifiedGarbage.Proof.Idea.Arm.FbVerified
-public import VerifiedGarbage.Proof.Idea.Arm.FbFinalVerified
-public import VerifiedGarbage.Impl.Idea.Arm.FbFinal
-import Mathlib.Data.Finset.Attr
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.SetLike
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.Arm.Print
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Idea.Cfb
+public import VerifiedGarbage.Spec.Idea.CfbFinal
+import VerifiedGarbage.Proof.Idea.Arm.Scrub
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # IDEA-CFB64 on ARMv7 -/
 
-@[expose] public section
-
 namespace VG.Artifacts.IdeaCfb.Arm
 
-def artifacts : List Artifact := [
+public def artifacts : List (Artifact Arm.target) := [
   Spec.Idea.cfbEncryptApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.Idea.Arm.cfbEncrypt
-    verified := Proof.Idea.Arm.cfbEncrypt_framed },
+    code := Impl.Idea.Arm.Fn.cfbEncrypt
+    verified := Proof.Idea.Arm.Fn.cfbEncrypt },
   Spec.Idea.cfbDecryptApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.Idea.Arm.cfbDecrypt
-    verified := Proof.Idea.Arm.cfbDecrypt_framed },
+    code := Impl.Idea.Arm.Fn.cfbDecrypt
+    verified := Proof.Idea.Arm.Fn.cfbDecrypt },
   Spec.Idea.cfbEncryptFinalApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.Idea.Arm.cfbEncryptFinal
-    verified := Proof.Idea.Arm.cfbEncryptFinal_framed },
+    code := Impl.Idea.Arm.Fn.cfbEncryptFinal
+    verified := Proof.Idea.Arm.Fn.cfbEncryptFinal },
   Spec.Idea.cfbDecryptFinalApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.Idea.Arm.cfbDecryptFinal
-    verified := Proof.Idea.Arm.cfbDecryptFinal_framed }]
+    code := Impl.Idea.Arm.Fn.cfbDecryptFinal
+    verified := Proof.Idea.Arm.Fn.cfbDecryptFinal }]
+
+spec_apis artifacts
 
 end VG.Artifacts.IdeaCfb.Arm

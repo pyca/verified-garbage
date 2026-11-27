@@ -4,14 +4,17 @@ public import VerifiedGarbage.Proof.Framework.X86_64.Straight
 public import VerifiedGarbage.Proof.Sha3.Compl
 public import VerifiedGarbage.Impl.Sha3.X86_64
 import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Sha3.ComplLit
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.X86_64.Straight
 meta import VerifiedGarbage.Proof.Sha3.Compl
 meta import VerifiedGarbage.Impl.Sha3.X86_64
 meta import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Sha3.ComplLit
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-!
 # Keccak-f[1600] on x86-64: a round, by evaluation
@@ -60,24 +63,19 @@ def post (e : Straight.Env Poly) : Bool :=
 
 /-- The round from `s` to `d`, with ι (the round constant, atom 25, XORed
 into `r9`) between `roundA` and `roundB`. -/
-def check (s d : Reg) : Bool :=
-  match Straight.eval anf (cfg s d) ext (roundA s) env₀ with
-  | none => false
-  | some e₁ => match e₁.reg .r9 with
+noncomputable def check (s d : Reg) : Bool :=
+  Straight.check anf (cfg s d) ext (roundA s) env₀ fun e₁ => match e₁.reg .r9 with
     | none => false
     | some a => Straight.check anf (cfg s d) ext (roundB s d) (e₁.setReg .r9 (pxor a (atom 25))) post
 
 theorem of_check {s d : Reg} (h : check s d = true) :
     ∃ e₁ a, Straight.eval anf (cfg s d) ext (roundA s) env₀ = some e₁ ∧ e₁.reg .r9 = some a ∧
       Straight.check anf (cfg s d) ext (roundB s d) (e₁.setReg .r9 (pxor a (atom 25))) post = true := by
-  unfold check at h
+  obtain ⟨e₁, he₁, h⟩ := Straight.of_check _ _ _ h
   split at h
   · cases h
-  · rename_i e₁ he₁
-    split at h
-    · cases h
-    · rename_i a ha
-      exact ⟨e₁, a, he₁, ha, h⟩
+  · rename_i a ha
+    exact ⟨e₁, a, he₁, ha, h⟩
 
 /-- The registers a round keeps. -/
 def kept : List Reg := [.rdi, .rsi, .r15, .rsp]
@@ -163,7 +161,7 @@ theorem round_ok {sR dR : Reg} (hc : check sR dR = true) (hk : keeps sR dR = tru
   let v := s₁.gpr .r9 ^^^ rc
   have hexec : exec (iota k) s₁ =
       some ((arithFlags s₁ v false false).setReg .r9 v) := by
-    simp [iota, exec, execAlu, readSrc, State.load64, hea, hin₁, hrc₁, v]
+    simp [iota, reduceExec, execAlu, readSrc, State.load64, hea, hin₁, hrc₁, v]
   have hr9 : AnfRel V (pxor a (atom 25)) v := by
     simp only [AnfRel, eval_pxor, eval_atom, hV25, v]; rw [p₁.rel.reg _ _ ha]
   have hb₁ : Reg.r9 ≠ (cfg sR dR).base := fun h => by
@@ -194,14 +192,6 @@ theorem round_ok {sR dR : Reg} (hc : check sR dR = true) (hk : keeps sR dR = tru
     simp only [slotRegion, cfg, hb₂, hd] at f₁ f₃
     exact f₁.trans f₃
   · rw [p₃.other r (by rw [(hk' r hr).2]; decide), p₂.other r (fun h => by subst h; simp [kept] at hr), k₁ r hr]
-
-deriving instance Lean.ToExpr for Poly
-
-/- `specP` reads the tables of `sD` and `sB`, so that the kernel evaluates each of their
-values once, not once for each lane that uses it. -/
-materialize_table Compl.sD 5
-materialize_table Compl.sB 5 5
-materialize_table specP 25
 
 theorem check₀ : check .rdi .rsi = true := by lit_decide
 theorem check₁ : check .rsi .rdi = true := by lit_decide

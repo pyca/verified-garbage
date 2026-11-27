@@ -6,7 +6,9 @@
 ///
 /// Contract: `VG.Spec.Gcm.initContract`. The key context is `VG.Spec.Gcm.KeyRepr`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
-/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_gcm_init_aesni` if the CPU supports its features (`VG_AES_GCM_INIT_AESNI_FEATURES`); or else `vg_aes_gcm_init`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_gcm_init_aesni` if the CPU supports its features (`VG_AES_GCM_INIT_AESNI_FEATURES`); `vg_aes_gcm_init_ssse3` if the CPU supports its features (`VG_AES_GCM_INIT_SSSE3_FEATURES`); or else `vg_aes_gcm_init`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -31,6 +33,11 @@ pub unsafe fn vg_aes_gcm_init_auto(_dit: verified_garbage_cpu::Dit<'_>, key: *co
             || cpu.contains(crate::gcm::VG_AES_GCM_INIT_AESNI_FEATURES)
         {
             return crate::gcm::vg_aes_gcm_init_aesni;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_INIT_SSSE3_FEATURES) }
+            || cpu.contains(crate::gcm::VG_AES_GCM_INIT_SSSE3_FEATURES)
+        {
+            return crate::gcm::vg_aes_gcm_init_ssse3;
         }
         crate::gcm::vg_aes_gcm_init
     }
@@ -59,7 +66,9 @@ pub unsafe fn vg_aes_gcm_init_auto(_dit: verified_garbage_cpu::Dit<'_>, key: *co
 ///
 /// Contract: `VG.Spec.Gcm.streamEncryptContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `len` may affect timing, not the key context, the state or the data.
 ///
-/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_gcm_stream_encrypt_aesni_pclmul` if the CPU supports its features (`VG_AES_GCM_STREAM_ENCRYPT_AESNI_PCLMUL_FEATURES`); `vg_aes_gcm_stream_encrypt_aesni` if the CPU supports its features (`VG_AES_GCM_STREAM_ENCRYPT_AESNI_FEATURES`); `vg_aes_gcm_stream_encrypt_pclmul` if the CPU supports its features (`VG_AES_GCM_STREAM_ENCRYPT_PCLMUL_FEATURES`); or else `vg_aes_gcm_stream_encrypt`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_gcm_stream_encrypt_aesni_pclmul` if the CPU supports its features (`VG_AES_GCM_STREAM_ENCRYPT_AESNI_PCLMUL_FEATURES`); `vg_aes_gcm_stream_encrypt_aesni` if the CPU supports its features (`VG_AES_GCM_STREAM_ENCRYPT_AESNI_FEATURES`); `vg_aes_gcm_stream_encrypt_ssse3_pclmul` if the CPU supports its features (`VG_AES_GCM_STREAM_ENCRYPT_SSSE3_PCLMUL_FEATURES`); `vg_aes_gcm_stream_encrypt_ssse3` if the CPU supports its features (`VG_AES_GCM_STREAM_ENCRYPT_SSSE3_FEATURES`); or else `vg_aes_gcm_stream_encrypt`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -91,10 +100,15 @@ pub unsafe fn vg_aes_gcm_stream_encrypt_auto(_dit: verified_garbage_cpu::Dit<'_>
         {
             return crate::gcm::vg_aes_gcm_stream_encrypt_aesni;
         }
-        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_STREAM_ENCRYPT_PCLMUL_FEATURES) }
-            || cpu.contains(crate::gcm::VG_AES_GCM_STREAM_ENCRYPT_PCLMUL_FEATURES)
+        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_STREAM_ENCRYPT_SSSE3_PCLMUL_FEATURES) }
+            || cpu.contains(crate::gcm::VG_AES_GCM_STREAM_ENCRYPT_SSSE3_PCLMUL_FEATURES)
         {
-            return crate::gcm::vg_aes_gcm_stream_encrypt_pclmul;
+            return crate::gcm::vg_aes_gcm_stream_encrypt_ssse3_pclmul;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_STREAM_ENCRYPT_SSSE3_FEATURES) }
+            || cpu.contains(crate::gcm::VG_AES_GCM_STREAM_ENCRYPT_SSSE3_FEATURES)
+        {
+            return crate::gcm::vg_aes_gcm_stream_encrypt_ssse3;
         }
         crate::gcm::vg_aes_gcm_stream_encrypt
     }
@@ -123,7 +137,9 @@ pub unsafe fn vg_aes_gcm_stream_encrypt_auto(_dit: verified_garbage_cpu::Dit<'_>
 ///
 /// Contract: `VG.Spec.Gcm.streamDecryptContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `len` may affect timing, not the key context, the state or the data.
 ///
-/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_gcm_stream_decrypt_aesni_pclmul` if the CPU supports its features (`VG_AES_GCM_STREAM_DECRYPT_AESNI_PCLMUL_FEATURES`); `vg_aes_gcm_stream_decrypt_aesni` if the CPU supports its features (`VG_AES_GCM_STREAM_DECRYPT_AESNI_FEATURES`); `vg_aes_gcm_stream_decrypt_pclmul` if the CPU supports its features (`VG_AES_GCM_STREAM_DECRYPT_PCLMUL_FEATURES`); or else `vg_aes_gcm_stream_decrypt`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_gcm_stream_decrypt_aesni_pclmul` if the CPU supports its features (`VG_AES_GCM_STREAM_DECRYPT_AESNI_PCLMUL_FEATURES`); `vg_aes_gcm_stream_decrypt_aesni` if the CPU supports its features (`VG_AES_GCM_STREAM_DECRYPT_AESNI_FEATURES`); `vg_aes_gcm_stream_decrypt_ssse3_pclmul` if the CPU supports its features (`VG_AES_GCM_STREAM_DECRYPT_SSSE3_PCLMUL_FEATURES`); `vg_aes_gcm_stream_decrypt_ssse3` if the CPU supports its features (`VG_AES_GCM_STREAM_DECRYPT_SSSE3_FEATURES`); or else `vg_aes_gcm_stream_decrypt`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -155,10 +171,15 @@ pub unsafe fn vg_aes_gcm_stream_decrypt_auto(_dit: verified_garbage_cpu::Dit<'_>
         {
             return crate::gcm::vg_aes_gcm_stream_decrypt_aesni;
         }
-        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_STREAM_DECRYPT_PCLMUL_FEATURES) }
-            || cpu.contains(crate::gcm::VG_AES_GCM_STREAM_DECRYPT_PCLMUL_FEATURES)
+        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_STREAM_DECRYPT_SSSE3_PCLMUL_FEATURES) }
+            || cpu.contains(crate::gcm::VG_AES_GCM_STREAM_DECRYPT_SSSE3_PCLMUL_FEATURES)
         {
-            return crate::gcm::vg_aes_gcm_stream_decrypt_pclmul;
+            return crate::gcm::vg_aes_gcm_stream_decrypt_ssse3_pclmul;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_STREAM_DECRYPT_SSSE3_FEATURES) }
+            || cpu.contains(crate::gcm::VG_AES_GCM_STREAM_DECRYPT_SSSE3_FEATURES)
+        {
+            return crate::gcm::vg_aes_gcm_stream_decrypt_ssse3;
         }
         crate::gcm::vg_aes_gcm_stream_decrypt
     }
@@ -185,7 +206,9 @@ pub unsafe fn vg_aes_gcm_stream_decrypt_auto(_dit: verified_garbage_cpu::Dit<'_>
 ///
 /// Contract: `VG.Spec.Gcm.streamFinishContract`. Constant time: only the pointers, `rounds`, `aad_len` and `text_len` may affect timing, not the key context or the state.
 ///
-/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_gcm_stream_finish_aesni_pclmul` if the CPU supports its features (`VG_AES_GCM_STREAM_FINISH_AESNI_PCLMUL_FEATURES`); `vg_aes_gcm_stream_finish_aesni` if the CPU supports its features (`VG_AES_GCM_STREAM_FINISH_AESNI_FEATURES`); `vg_aes_gcm_stream_finish_pclmul` if the CPU supports its features (`VG_AES_GCM_STREAM_FINISH_PCLMUL_FEATURES`); or else `vg_aes_gcm_stream_finish`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_gcm_stream_finish_aesni_pclmul` if the CPU supports its features (`VG_AES_GCM_STREAM_FINISH_AESNI_PCLMUL_FEATURES`); `vg_aes_gcm_stream_finish_aesni` if the CPU supports its features (`VG_AES_GCM_STREAM_FINISH_AESNI_FEATURES`); `vg_aes_gcm_stream_finish_ssse3_pclmul` if the CPU supports its features (`VG_AES_GCM_STREAM_FINISH_SSSE3_PCLMUL_FEATURES`); `vg_aes_gcm_stream_finish_ssse3` if the CPU supports its features (`VG_AES_GCM_STREAM_FINISH_SSSE3_FEATURES`); or else `vg_aes_gcm_stream_finish`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -218,10 +241,15 @@ pub unsafe fn vg_aes_gcm_stream_finish_auto(_dit: verified_garbage_cpu::Dit<'_>,
         {
             return crate::gcm::vg_aes_gcm_stream_finish_aesni;
         }
-        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_STREAM_FINISH_PCLMUL_FEATURES) }
-            || cpu.contains(crate::gcm::VG_AES_GCM_STREAM_FINISH_PCLMUL_FEATURES)
+        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_STREAM_FINISH_SSSE3_PCLMUL_FEATURES) }
+            || cpu.contains(crate::gcm::VG_AES_GCM_STREAM_FINISH_SSSE3_PCLMUL_FEATURES)
         {
-            return crate::gcm::vg_aes_gcm_stream_finish_pclmul;
+            return crate::gcm::vg_aes_gcm_stream_finish_ssse3_pclmul;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_STREAM_FINISH_SSSE3_FEATURES) }
+            || cpu.contains(crate::gcm::VG_AES_GCM_STREAM_FINISH_SSSE3_FEATURES)
+        {
+            return crate::gcm::vg_aes_gcm_stream_finish_ssse3;
         }
         crate::gcm::vg_aes_gcm_stream_finish
     }
@@ -248,7 +276,9 @@ pub unsafe fn vg_aes_gcm_stream_finish_auto(_dit: verified_garbage_cpu::Dit<'_>,
 ///
 /// Contract: `VG.Spec.Gcm.streamVerifyContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `tag_len` may affect timing, not the key context, the state or the tags.
 ///
-/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_gcm_stream_verify_aesni_pclmul` if the CPU supports its features (`VG_AES_GCM_STREAM_VERIFY_AESNI_PCLMUL_FEATURES`); `vg_aes_gcm_stream_verify_aesni` if the CPU supports its features (`VG_AES_GCM_STREAM_VERIFY_AESNI_FEATURES`); `vg_aes_gcm_stream_verify_pclmul` if the CPU supports its features (`VG_AES_GCM_STREAM_VERIFY_PCLMUL_FEATURES`); or else `vg_aes_gcm_stream_verify`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_gcm_stream_verify_aesni_pclmul` if the CPU supports its features (`VG_AES_GCM_STREAM_VERIFY_AESNI_PCLMUL_FEATURES`); `vg_aes_gcm_stream_verify_aesni` if the CPU supports its features (`VG_AES_GCM_STREAM_VERIFY_AESNI_FEATURES`); `vg_aes_gcm_stream_verify_ssse3_pclmul` if the CPU supports its features (`VG_AES_GCM_STREAM_VERIFY_SSSE3_PCLMUL_FEATURES`); `vg_aes_gcm_stream_verify_ssse3` if the CPU supports its features (`VG_AES_GCM_STREAM_VERIFY_SSSE3_FEATURES`); or else `vg_aes_gcm_stream_verify`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -281,10 +311,15 @@ pub unsafe fn vg_aes_gcm_stream_verify_auto(_dit: verified_garbage_cpu::Dit<'_>,
         {
             return crate::gcm::vg_aes_gcm_stream_verify_aesni;
         }
-        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_STREAM_VERIFY_PCLMUL_FEATURES) }
-            || cpu.contains(crate::gcm::VG_AES_GCM_STREAM_VERIFY_PCLMUL_FEATURES)
+        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_STREAM_VERIFY_SSSE3_PCLMUL_FEATURES) }
+            || cpu.contains(crate::gcm::VG_AES_GCM_STREAM_VERIFY_SSSE3_PCLMUL_FEATURES)
         {
-            return crate::gcm::vg_aes_gcm_stream_verify_pclmul;
+            return crate::gcm::vg_aes_gcm_stream_verify_ssse3_pclmul;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_STREAM_VERIFY_SSSE3_FEATURES) }
+            || cpu.contains(crate::gcm::VG_AES_GCM_STREAM_VERIFY_SSSE3_FEATURES)
+        {
+            return crate::gcm::vg_aes_gcm_stream_verify_ssse3;
         }
         crate::gcm::vg_aes_gcm_stream_verify
     }
@@ -313,7 +348,9 @@ pub unsafe fn vg_aes_gcm_stream_verify_auto(_dit: verified_garbage_cpu::Dit<'_>,
 ///
 /// Contract: `VG.Spec.Gcm.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key context, the nonce, the additional data or the data.
 ///
-/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_gcm_seal_aesni_pclmul` if the CPU supports its features (`VG_AES_GCM_SEAL_AESNI_PCLMUL_FEATURES`); `vg_aes_gcm_seal_aesni` if the CPU supports its features (`VG_AES_GCM_SEAL_AESNI_FEATURES`); `vg_aes_gcm_seal_pclmul` if the CPU supports its features (`VG_AES_GCM_SEAL_PCLMUL_FEATURES`); or else `vg_aes_gcm_seal`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_gcm_seal_aesni_pclmul` if the CPU supports its features (`VG_AES_GCM_SEAL_AESNI_PCLMUL_FEATURES`); `vg_aes_gcm_seal_aesni` if the CPU supports its features (`VG_AES_GCM_SEAL_AESNI_FEATURES`); `vg_aes_gcm_seal_ssse3_pclmul` if the CPU supports its features (`VG_AES_GCM_SEAL_SSSE3_PCLMUL_FEATURES`); `vg_aes_gcm_seal_ssse3` if the CPU supports its features (`VG_AES_GCM_SEAL_SSSE3_FEATURES`); or else `vg_aes_gcm_seal`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -347,10 +384,15 @@ pub unsafe fn vg_aes_gcm_seal_auto(_dit: verified_garbage_cpu::Dit<'_>, ctx: *co
         {
             return crate::gcm::vg_aes_gcm_seal_aesni;
         }
-        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_SEAL_PCLMUL_FEATURES) }
-            || cpu.contains(crate::gcm::VG_AES_GCM_SEAL_PCLMUL_FEATURES)
+        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_SEAL_SSSE3_PCLMUL_FEATURES) }
+            || cpu.contains(crate::gcm::VG_AES_GCM_SEAL_SSSE3_PCLMUL_FEATURES)
         {
-            return crate::gcm::vg_aes_gcm_seal_pclmul;
+            return crate::gcm::vg_aes_gcm_seal_ssse3_pclmul;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_SEAL_SSSE3_FEATURES) }
+            || cpu.contains(crate::gcm::VG_AES_GCM_SEAL_SSSE3_FEATURES)
+        {
+            return crate::gcm::vg_aes_gcm_seal_ssse3;
         }
         crate::gcm::vg_aes_gcm_seal
     }
@@ -379,7 +421,9 @@ pub unsafe fn vg_aes_gcm_seal_auto(_dit: verified_garbage_cpu::Dit<'_>, ctx: *co
 ///
 /// Contract: `VG.Spec.Gcm.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths, `tag_len` and whether the function returns 1 or 0 may affect timing, not the key context, the nonce, the additional data, the data or the tag.
 ///
-/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_gcm_open_aesni_pclmul` if the CPU supports its features (`VG_AES_GCM_OPEN_AESNI_PCLMUL_FEATURES`); `vg_aes_gcm_open_aesni` if the CPU supports its features (`VG_AES_GCM_OPEN_AESNI_FEATURES`); `vg_aes_gcm_open_pclmul` if the CPU supports its features (`VG_AES_GCM_OPEN_PCLMUL_FEATURES`); or else `vg_aes_gcm_open`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_gcm_open_aesni_pclmul` if the CPU supports its features (`VG_AES_GCM_OPEN_AESNI_PCLMUL_FEATURES`); `vg_aes_gcm_open_aesni` if the CPU supports its features (`VG_AES_GCM_OPEN_AESNI_FEATURES`); `vg_aes_gcm_open_ssse3_pclmul` if the CPU supports its features (`VG_AES_GCM_OPEN_SSSE3_PCLMUL_FEATURES`); `vg_aes_gcm_open_ssse3` if the CPU supports its features (`VG_AES_GCM_OPEN_SSSE3_FEATURES`); or else `vg_aes_gcm_open`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -413,10 +457,15 @@ pub unsafe fn vg_aes_gcm_open_auto(_dit: verified_garbage_cpu::Dit<'_>, ctx: *co
         {
             return crate::gcm::vg_aes_gcm_open_aesni;
         }
-        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_OPEN_PCLMUL_FEATURES) }
-            || cpu.contains(crate::gcm::VG_AES_GCM_OPEN_PCLMUL_FEATURES)
+        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_OPEN_SSSE3_PCLMUL_FEATURES) }
+            || cpu.contains(crate::gcm::VG_AES_GCM_OPEN_SSSE3_PCLMUL_FEATURES)
         {
-            return crate::gcm::vg_aes_gcm_open_pclmul;
+            return crate::gcm::vg_aes_gcm_open_ssse3_pclmul;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_OPEN_SSSE3_FEATURES) }
+            || cpu.contains(crate::gcm::VG_AES_GCM_OPEN_SSSE3_FEATURES)
+        {
+            return crate::gcm::vg_aes_gcm_open_ssse3;
         }
         crate::gcm::vg_aes_gcm_open
     }
@@ -439,13 +488,84 @@ pub unsafe fn vg_aes_gcm_open_auto(_dit: verified_garbage_cpu::Dit<'_>, ctx: *co
     unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(ctx, rounds, nonce, nonce_len, aad, aad_len, data, len, tag, tag_len) }
 }
 
+/// AES-GCM authenticated encryption (NIST SP 800-38D §7.1), with the key context, public rounds, IV and additional data of `vg_aes_gcm_seal`. Encrypts the initial `len` bytes at `src` into `dst` and writes the 16-byte tag to `tag`. As for `vg_aes_gcm_seal`, callers must use a fresh nonce for each encryption under a key and enforce the GCM input length limits (§5.2.1.1). Only pointers, lengths and the round count may affect timing. Contract: `VG.Spec.Gcm.sealContiguousContract`.
+///
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_gcm_seal_contiguous_aesni_pclmul` if the CPU supports its features (`VG_AES_GCM_SEAL_CONTIGUOUS_AESNI_PCLMUL_FEATURES`); `vg_aes_gcm_seal_contiguous_aesni` if the CPU supports its features (`VG_AES_GCM_SEAL_CONTIGUOUS_AESNI_FEATURES`); `vg_aes_gcm_seal_contiguous_ssse3_pclmul` if the CPU supports its features (`VG_AES_GCM_SEAL_CONTIGUOUS_SSSE3_PCLMUL_FEATURES`); `vg_aes_gcm_seal_contiguous_ssse3` if the CPU supports its features (`VG_AES_GCM_SEAL_CONTIGUOUS_SSSE3_FEATURES`); or else `vg_aes_gcm_seal_contiguous`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// The function may overwrite the arguments on the stack, as the calling convention lets it.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `src` must be valid for reads of `len` bytes, and `dst` for reads and writes of `len` bytes. The two pointers must be identical or their regions disjoint.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `dst` and `tag` must not overlap each other, `ctx`, `nonce`, `aad` or `src` when distinct from `dst` (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `src` when distinct from `dst`, `dst` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2604 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_aes_gcm_seal_contiguous_auto(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+    /// The type of the implementations.
+    type Impl = unsafe extern "C" fn(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, dst: *mut u8, len: usize, tag: *mut [u8; 16]);
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_SEAL_CONTIGUOUS_AESNI_PCLMUL_FEATURES) }
+            || cpu.contains(crate::gcm::VG_AES_GCM_SEAL_CONTIGUOUS_AESNI_PCLMUL_FEATURES)
+        {
+            return crate::gcm::vg_aes_gcm_seal_contiguous_aesni_pclmul;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_SEAL_CONTIGUOUS_AESNI_FEATURES) }
+            || cpu.contains(crate::gcm::VG_AES_GCM_SEAL_CONTIGUOUS_AESNI_FEATURES)
+        {
+            return crate::gcm::vg_aes_gcm_seal_contiguous_aesni;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_SEAL_CONTIGUOUS_SSSE3_PCLMUL_FEATURES) }
+            || cpu.contains(crate::gcm::VG_AES_GCM_SEAL_CONTIGUOUS_SSSE3_PCLMUL_FEATURES)
+        {
+            return crate::gcm::vg_aes_gcm_seal_contiguous_ssse3_pclmul;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_SEAL_CONTIGUOUS_SSSE3_FEATURES) }
+            || cpu.contains(crate::gcm::VG_AES_GCM_SEAL_CONTIGUOUS_SSSE3_FEATURES)
+        {
+            return crate::gcm::vg_aes_gcm_seal_contiguous_ssse3;
+        }
+        crate::gcm::vg_aes_gcm_seal_contiguous
+    }
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "C" fn first(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(ctx, rounds, nonce, nonce_len, aad, aad_len, src, dst, len, tag) }
+    }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(ctx, rounds, nonce, nonce_len, aad, aad_len, src, dst, len, tag) }
+}
+
 /// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag), out of place, of a plaintext in pieces: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the concatenation of the `src_count` slices that `src` lists (each an address and a length, in bytes), under the IV the `nonce_len` bytes at `nonce`, writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_aes_gcm_seal` with the plaintext gathered from `src`. A shorter tag is the first bytes of this one.
 ///
 /// The function checks no length. GCM is secure only for a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of data and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must ensure; and a nonce must never be used twice with the same key.
 ///
 /// Contract: `VG.Spec.Gcm.sealGatherContract`. Constant time: only the pointers, `rounds`, the lengths, `src_count` and where the slices are (their addresses and lengths) may affect timing, not the key context, the nonce, the additional data or the data.
 ///
-/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_gcm_seal_gather_aesni_pclmul` if the CPU supports its features (`VG_AES_GCM_SEAL_GATHER_AESNI_PCLMUL_FEATURES`); `vg_aes_gcm_seal_gather_aesni` if the CPU supports its features (`VG_AES_GCM_SEAL_GATHER_AESNI_FEATURES`); `vg_aes_gcm_seal_gather_pclmul` if the CPU supports its features (`VG_AES_GCM_SEAL_GATHER_PCLMUL_FEATURES`); or else `vg_aes_gcm_seal_gather`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_gcm_seal_gather_aesni_pclmul` if the CPU supports its features (`VG_AES_GCM_SEAL_GATHER_AESNI_PCLMUL_FEATURES`); `vg_aes_gcm_seal_gather_aesni` if the CPU supports its features (`VG_AES_GCM_SEAL_GATHER_AESNI_FEATURES`); `vg_aes_gcm_seal_gather_ssse3_pclmul` if the CPU supports its features (`VG_AES_GCM_SEAL_GATHER_SSSE3_PCLMUL_FEATURES`); `vg_aes_gcm_seal_gather_ssse3` if the CPU supports its features (`VG_AES_GCM_SEAL_GATHER_SSSE3_FEATURES`); or else `vg_aes_gcm_seal_gather`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -481,10 +601,15 @@ pub unsafe fn vg_aes_gcm_seal_gather_auto(_dit: verified_garbage_cpu::Dit<'_>, c
         {
             return crate::gcm::vg_aes_gcm_seal_gather_aesni;
         }
-        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_SEAL_GATHER_PCLMUL_FEATURES) }
-            || cpu.contains(crate::gcm::VG_AES_GCM_SEAL_GATHER_PCLMUL_FEATURES)
+        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_SEAL_GATHER_SSSE3_PCLMUL_FEATURES) }
+            || cpu.contains(crate::gcm::VG_AES_GCM_SEAL_GATHER_SSSE3_PCLMUL_FEATURES)
         {
-            return crate::gcm::vg_aes_gcm_seal_gather_pclmul;
+            return crate::gcm::vg_aes_gcm_seal_gather_ssse3_pclmul;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_SEAL_GATHER_SSSE3_FEATURES) }
+            || cpu.contains(crate::gcm::VG_AES_GCM_SEAL_GATHER_SSSE3_FEATURES)
+        {
+            return crate::gcm::vg_aes_gcm_seal_gather_ssse3;
         }
         crate::gcm::vg_aes_gcm_seal_gather
     }
@@ -513,7 +638,9 @@ pub unsafe fn vg_aes_gcm_seal_gather_auto(_dit: verified_garbage_cpu::Dit<'_>, c
 ///
 /// Contract: `VG.Spec.Gcm.openToContract`. Constant time but for the result: only the pointers, `rounds`, the lengths, `tag_len` and whether the function returns 1 or 0 may affect timing, not the key context, the nonce, the additional data, the data or the tag.
 ///
-/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_gcm_open_to_aesni_pclmul` if the CPU supports its features (`VG_AES_GCM_OPEN_TO_AESNI_PCLMUL_FEATURES`); `vg_aes_gcm_open_to_aesni` if the CPU supports its features (`VG_AES_GCM_OPEN_TO_AESNI_FEATURES`); `vg_aes_gcm_open_to_pclmul` if the CPU supports its features (`VG_AES_GCM_OPEN_TO_PCLMUL_FEATURES`); or else `vg_aes_gcm_open_to`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_gcm_open_to_aesni_pclmul` if the CPU supports its features (`VG_AES_GCM_OPEN_TO_AESNI_PCLMUL_FEATURES`); `vg_aes_gcm_open_to_aesni` if the CPU supports its features (`VG_AES_GCM_OPEN_TO_AESNI_FEATURES`); `vg_aes_gcm_open_to_ssse3_pclmul` if the CPU supports its features (`VG_AES_GCM_OPEN_TO_SSSE3_PCLMUL_FEATURES`); `vg_aes_gcm_open_to_ssse3` if the CPU supports its features (`VG_AES_GCM_OPEN_TO_SSSE3_FEATURES`); or else `vg_aes_gcm_open_to`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -549,10 +676,15 @@ pub unsafe fn vg_aes_gcm_open_to_auto(_dit: verified_garbage_cpu::Dit<'_>, ctx: 
         {
             return crate::gcm::vg_aes_gcm_open_to_aesni;
         }
-        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_OPEN_TO_PCLMUL_FEATURES) }
-            || cpu.contains(crate::gcm::VG_AES_GCM_OPEN_TO_PCLMUL_FEATURES)
+        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_OPEN_TO_SSSE3_PCLMUL_FEATURES) }
+            || cpu.contains(crate::gcm::VG_AES_GCM_OPEN_TO_SSSE3_PCLMUL_FEATURES)
         {
-            return crate::gcm::vg_aes_gcm_open_to_pclmul;
+            return crate::gcm::vg_aes_gcm_open_to_ssse3_pclmul;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_OPEN_TO_SSSE3_FEATURES) }
+            || cpu.contains(crate::gcm::VG_AES_GCM_OPEN_TO_SSSE3_FEATURES)
+        {
+            return crate::gcm::vg_aes_gcm_open_to_ssse3;
         }
         crate::gcm::vg_aes_gcm_open_to
     }
@@ -580,6 +712,8 @@ pub unsafe fn vg_aes_gcm_open_to_auto(_dit: verified_garbage_cpu::Dit<'_>, ctx: 
 /// Contract: `VG.Spec.Gcm.streamAadContract`. Constant time: only the pointers, `aad_len` and `len` may affect timing, not the key context, the state or the data.
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_gcm_stream_aad_pclmul` if the CPU supports its features (`VG_AES_GCM_STREAM_AAD_PCLMUL_FEATURES`); or else `vg_aes_gcm_stream_aad`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -633,6 +767,8 @@ pub unsafe fn vg_aes_gcm_stream_aad_auto(_dit: verified_garbage_cpu::Dit<'_>, ct
 /// Contract: `VG.Spec.Gcm.streamInitContract`. The streaming state is `J₀`, the GHASH accumulator, a partial block, the next counter block and a keystream block (`VG.Spec.Gcm.StreamRepr`). Constant time: only the pointers and `nonce_len` may affect timing, not the key context or the nonce.
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_gcm_stream_init_pclmul` if the CPU supports its features (`VG_AES_GCM_STREAM_INIT_PCLMUL_FEATURES`); or else `vg_aes_gcm_stream_init`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///

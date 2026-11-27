@@ -5,7 +5,9 @@ public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 public import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Impl.Ed448.PPC64LE.VerifyEquation
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
+import VerifiedGarbage.Proof.X448.PPC64LE.Lit
 meta import VerifiedGarbage.Proof.Framework.RelCT
+meta import VerifiedGarbage.Proof.X448.PPC64LE.Lit
 
 /-!
 # Ed448's verification equation on PPC64LE: the pieces the taint analysis checks

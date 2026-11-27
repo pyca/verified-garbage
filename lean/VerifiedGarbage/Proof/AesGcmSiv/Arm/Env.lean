@@ -4,9 +4,8 @@ public import VerifiedGarbage.Proof.AesGcm.Arm.Contract
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 import VerifiedGarbage.Proof.AesGcm.Arm.Run
-public import VerifiedGarbage.Proof.AesGcm.Arm.Callee
+public import VerifiedGarbage.Proof.AesGcm.Arm.Env
 public import VerifiedGarbage.Spec.GcmSiv
-import VerifiedGarbage.Proof.AesGcm.Arm.Env
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Impl.AesGcmSiv.Arm

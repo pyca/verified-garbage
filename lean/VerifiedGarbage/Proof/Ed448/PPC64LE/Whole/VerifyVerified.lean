@@ -93,6 +93,8 @@ theorem verify_framed (hR : Proof.Ed448.RecoverOk) :
     (post := Proof.Ed448.WholeLocal.verifyPost PPC64LE.abi.ptrBits) (wa := true) (stack := 48) (bytes := 304)
     (leak := some (Proof.Ed448.WholeLocal.verifyLeak PPC64LE.abi.ptrBits)) (verify_verified hR) (by decide)
     (by decide) (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial)
-    (Proof.Ed448.WholeLocal.verifyPost_local _) (Proof.Ed448.WholeLocal.verifyLeak_local _) verFrameSat_pre
+    (Proof.Ed448.WholeLocal.verifyPost_local _)
+    (fun vs m m₁ m₂ r hl _ => Proof.Ed448.WholeLocal.verifyPostOut_local _ vs m m₁ m₂ r hl)
+    (Proof.Ed448.WholeLocal.verifyLeak_local _) verFrameSat_pre
 
 end VG.Proof.Ed448.PPC64LE.Whole

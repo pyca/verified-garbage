@@ -1,9 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcGuard
+public import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcMont
 public import VerifiedGarbage.Impl.Bignum.AArch64.SquareEightRaw
-import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcMont
-meta import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcGuard
+meta import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcMont
 meta import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightCorrect
 meta import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightCorrect

@@ -1,14 +1,16 @@
 module
+
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointFixedSource
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.JointDigit
 public import VerifiedGarbage.Proof.Weierstrass.FastNaf
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointFixedEntry
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacMixedAddB
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeStore
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeArithmetic
+import VerifiedGarbage.Proof.Weierstrass.AArch64.NafNeg
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowInvariant
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Unch
+
 @[expose] public section
 namespace VG.Proof.Ecdsa.Verify.AArch64.P521.Joint
 open VG VG.AArch64 VG.Impl.Mont VG.Impl.Mont.AArch64 VG.Impl.Weierstrass VG.Impl.Weierstrass.AArch64
@@ -97,7 +99,7 @@ theorem fixedDigit_using {s₀ s : State} {base T : Addr} {u v j : Nat} {C : Cur
      fun x hx=>it.lt x (List.mem_append_left _ hx),
      it.point_tmv (fun x hx=>List.mem_append_left _ hx) jt,
      CacheOk.unch hL.win hL.cache ca ut h.st.scr.nowrap⟩
- · have hm0 : FastNaf.magnitude 7 u j=0 := by simpa only [ne_eq,not_not] using of_decide_eq_false hz
+ · have hm0 : FastNaf.magnitude 7 u j=0 := by simpa only [ne_eq,Classical.not_not] using of_decide_eq_false hz
    have pt : FastNaf.point C G 7 u j=.infinity := by
      rw [FastNaf.point,hm0]
      have h0 : mul 0 G=.infinity := by rw [Spec.Weierstrass.mul]; rfl

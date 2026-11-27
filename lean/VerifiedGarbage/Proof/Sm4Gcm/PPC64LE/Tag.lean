@@ -40,7 +40,7 @@ open VG.Proof.Gcm (lensBlock)
 
 /-- The regions `tag o` writes. -/
 abbrev tagFrame (st w x : Addr) (o : Nat) : List Region :=
-  [⟨st, 32⟩, ⟨w + BitVec.ofNat 64 96, 16⟩, ⟨w + BitVec.ofNat 64 o, 16⟩, ⟨w + BitVec.ofNat 64 512, 256⟩, xR x]
+  [⟨st, 32⟩, ⟨w + BitVec.ofNat 64 96, 16⟩, ⟨w + BitVec.ofNat 64 o, 16⟩, xR x]
 
 /-- After `tag o`, from `m₀`: the tag of the accumulator `Y` (before the
 lengths block) and the counter block `J`. -/
@@ -73,9 +73,8 @@ theorem tagLens_ok [VG.Proof.Gcm.PPC64LE.GhashLaw] {H J : Block} {s : State} (he
   refine WP.mono (lens_ok L (.inr rfl) he hH) fun s₁ ⟨he₁, _, hY₁, _, f₁⟩ => ?_
   exact ⟨he₁, hY₁, by rw [blockAt_frame f₁ (j_tFrame L), hJ], ciph_frame f₁ (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl
+    rcases hr with rfl | rfl
     · exact L.cs.sub_right (Lay.stSub (by decide))
-    · exact L.cw'.sub_right (Lay.wSub (by decide))
     · exact L.cw'.sub_right (Lay.wSub (by decide))), f₁⟩
 
 omit L in
@@ -93,8 +92,8 @@ theorem tagArgs_ok {o : Nat} (ho : o + 16 ≤ 128) (ho4 : o % 4 = 0) {s : State}
   have h29 := he.r29; have h30 := he.r30; have h31 := he.r31; have h28 := he.fr .r28 (by decide)
   have r₀ := he.perm.stR (show 16 + 8 ≤ 80 by decide)
   have r₁ := he.perm.stR (show 24 + 8 ≤ 80 by decide)
-  have w₀ := he.perm.wW (show o + 8 ≤ 2560 by omega_using [ho])
-  have w₁ := he.perm.wW (show o + 8 + 8 ≤ 2560 by omega_using [ho])
+  have w₀ := he.perm.wW (show o + 8 ≤ 288 by omega_using [ho])
+  have w₁ := he.perm.wW (show o + 8 + 8 ≤ 288 by omega_using [ho])
   have o₀ : o < 2 ^ 15 := by omega_using [ho]
   have o₁ : o + 8 < 2 ^ 15 := by omega_using [ho]
   have ho4' : (o + 8) % 4 = 0 := by omega_using [ho4]
@@ -114,7 +113,7 @@ theorem ctrTag_mk {o : Nat} (ho : o = 0 ∨ o = 112) {s : State} (he : Env V sp 
     (h6 : s.gpr .r6 = BitVec.ofNat 64 1) (h7 : s.gpr .r7 = V .r28)
     (hxw : Covers [xR (V .r28)] s.wr) :
     CtrCall s (V .r29) (V .r30) (V .r31 + BitVec.ofNat 64 o) (V .r28) 1 := by
-  have hoW : o + 16 ≤ 16 ∨ (96 ≤ o ∧ o + 16 ≤ 2560) := by omega_using [ho]
+  have hoW : o + 16 ≤ 16 ∨ (96 ≤ o ∧ o + 16 ≤ 288) := by omega_using [ho]
   have hfx := X.fit
   refine ⟨h3, h4, h5, h6, h7, by decide, ?_, ?_, ctx_x X, ?_, by simpa using st_x X (a := 0) (k := 16) (by decide),
     ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
@@ -140,7 +139,7 @@ theorem tagCall_ok {o : Nat} (ho : o = 0 ∨ o = 112) {H Y J : Block} {aLen cLen
     (h : TagMid V sp H Y J aLen cLen m₀ s) (hxw : Covers [xR (V .r28)] s.wr) :
     WP isa (.seq (.block (tagArgs o)) Impl.Sm4.PPC64LE.ctr32) s (TagOut V sp o H Y J aLen cLen m₀) := by
   have he := h.env
-  have hoW : o + 16 ≤ 16 ∨ (96 ≤ o ∧ o + 16 ≤ 2560) := by omega_using [ho]
+  have hoW : o + 16 ≤ 16 ∨ (96 ≤ o ∧ o + 16 ≤ 288) := by omega_using [ho]
   refine WP.seq (WP.mono (tagArgs_ok (by omega_using [ho]) (by omega_using [ho]) he) fun s₂ ⟨hm₂, a3, a4, a5, a6, a7, hg₂, hk₂⟩ => ?_)
   rw [show V .r31 + BitVec.ofNat 64 (o + 8) = V .r31 + BitVec.ofNat 64 o + BitVec.ofNat 64 8 from
       (add_ofNat_assoc _ _ _).symm,
@@ -171,10 +170,9 @@ theorem tagCall_ok {o : Nat} (ho : o = 0 ∨ o = 112) {H Y J : Block} {aLen cLen
         by rw [blockAt, blockAt, hT], h.hY]
   · have fA : Frame (tagFrame (V .r30) (V .r31) (V .r28) o) m₀ s.mem := h.frame.sub fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl
+      rcases hr with rfl | rfl
       · exact ⟨_, List.mem_cons_self .., by simpa using Offset.sub_base (V .r30) (show 16 + 16 ≤ 32 by decide)⟩
       · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), fun _ h => h⟩
-      · exact ⟨⟨V .r31 + BitVec.ofNat 64 512, 256⟩, by simp, fun _ h => h⟩
     refine (fA.trans (f₂.sub fun r hr => ?_)).trans (gframe.sub fun r hr => ?_)
     · simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, by simp, fun _ h => h⟩
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr

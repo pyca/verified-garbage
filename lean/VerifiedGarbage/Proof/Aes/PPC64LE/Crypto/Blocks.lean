@@ -16,12 +16,17 @@ open VG.Impl.Aes.PPC64LE.Crypto (mask byteMask)
 
 def blockGprs : List Reg := [.r0, .r6, .r7, .r8, .r9, .r10, .r11, .r12]
 
-theorem blocks_ok (inverse : Bool) (s : State)
-    (hs : (Proof.Aes.blocksPPC64LE (result inverse)).pre s) :
+/-- `blocks`, from what it needs of the buffers: the schedule readable, the
+data writable, the two apart, and the data not wrapping around. -/
+theorem blocks_wp (inverse : Bool) (s : State)
+    (hK : (⟨s.gpr .r3, 240⟩ : Region) ∈ s.rd ++ s.wr)
+    (hD : (⟨s.gpr .r5, 16 * (s.gpr .r6).toNat⟩ : Region) ∈ s.wr)
+    (hsep : (⟨s.gpr .r3, 240⟩ : Region).Disjoint ⟨s.gpr .r5, 16 * (s.gpr .r6).toNat⟩)
+    (hbound : (s.gpr .r5).toNat + 16 * (s.gpr .r6).toNat ≤ 2 ^ 64)
+    (hnr : (s.gpr .r4).toNat = 10 ∨ (s.gpr .r4).toNat = 12 ∨ (s.gpr .r4).toNat = 14) :
     WP isa (Impl.Aes.PPC64LE.Crypto.blocks inverse) s fun t =>
       Keep blockGprs s t ∧ Frame [⟨s.gpr .r5, 16 * (s.gpr .r6).toNat⟩] s.mem t.mem ∧
         (Proof.Aes.blocksPPC64LE (result inverse)).post s t := by
-  obtain ⟨hrd, hwr, hsep, _, _, hbound, hnr⟩ := hs
   let n := (s.gpr .r6).toNat
   let nr := (s.gpr .r4).toNat
   let D := s.gpr .r5
@@ -44,15 +49,15 @@ theorem blocks_ok (inverse : Bool) (s : State)
       · rw [he.keep.gpr (by decide)]
         simp only [nr, BitVec.ofNat_toNat, BitVec.setWidth_eq]
       · intro j hj
-        rw [he.keep.2.1, he.keep.2.2, he.keep.gpr (by decide), hrd, hwr]
-        exact ⟨⟨s.gpr .r3, 240⟩, by simp,
+        rw [he.keep.2.1, he.keep.2.2, he.keep.gpr (by decide)]
+        exact ⟨⟨s.gpr .r3, 240⟩, hK,
           Offset.contains_base _ (d := 16*j) (n := 16) (k := 240) (by omega_using [hnrlt, hj]) (by omega_using [hnrlt, hj])⟩
-      · rw [he.keep.2.2, hwr]
-        exact List.mem_cons_self
+      · rw [he.keep.2.2]
+        exact hD
       · rw [he.keep.gpr (by decide)]
         exact hsep
-      · rw [he.keep.2.2, hwr]
-        exact List.mem_append_right _ List.mem_cons_self
+      · rw [he.keep.2.2]
+        exact List.mem_append_right _ hD
     have hi : LoopInv inverse false base nr n D D 0 0 base := by
       refine ⟨by omega_using [], Keep.refl _ _, ?_, ?_, Processed.refl _ _ _ _, Frame.refl _ _, hm,
         by simp, by simp⟩
@@ -68,5 +73,21 @@ theorem blocks_ok (inverse : Bool) (s : State)
       change Spec.Aes.statesAt t.mem D n = (List.range n).map
         (fun i => result inverse nr (schedule nr s) (Spec.Aes.stateAt s.mem (D + BitVec.ofNat 64 (16*i)))) at hstates
       simpa only [Proof.Aes.blocksPPC64LE, Spec.Aes.statesAt, List.map_map, Function.comp_def] using hstates
+
+theorem blocks_ok (inverse : Bool) (s : State)
+    (hs : (Proof.Aes.blocksPPC64LE (result inverse)).pre s) :
+    WP isa (Impl.Aes.PPC64LE.Crypto.blocks inverse) s fun t =>
+      Keep blockGprs s t ∧ Frame [⟨s.gpr .r5, 16 * (s.gpr .r6).toNat⟩] s.mem t.mem ∧
+        (Proof.Aes.blocksPPC64LE (result inverse)).post s t := by
+  obtain ⟨hrd, hwr, hsep, _, _, hbound, hnr⟩ := hs
+  exact blocks_wp inverse s (by rw [hrd]; simp) (by rw [hwr]; simp) hsep hbound hnr
+
+theorem blocks_okF (inverse : Bool) (s : State)
+    (hs : (Proof.Aes.blocksPPC64LEF (result inverse)).pre s) :
+    WP isa (Impl.Aes.PPC64LE.Crypto.blocks inverse) s fun t =>
+      Keep blockGprs s t ∧ Frame [⟨s.gpr .r5, 16 * (s.gpr .r6).toNat⟩] s.mem t.mem ∧
+        (Proof.Aes.blocksPPC64LEF (result inverse)).post s t := by
+  obtain ⟨hrd, hwr, hsep, hbound, hnr⟩ := hs
+  exact blocks_wp inverse s (by rw [hrd]; simp) (by rw [hwr]; simp) hsep hbound hnr
 
 end VG.Proof.Aes.PPC64LE.Crypto

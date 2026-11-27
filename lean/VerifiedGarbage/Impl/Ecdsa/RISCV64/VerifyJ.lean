@@ -73,7 +73,7 @@ def verify (FN : Field) (checkName : String) (checkCode : Prog isa) : Prog isa :
   .seq (.block ((Sign.Cfg.nConsts c).flatMap (fun (i, x) => Ecdh.RISCV64.setConst c.n (c.sl i) x))) <|
   .seq (Verify.Cfg.uv c FN) <|
   .seq (joint c dbl) <|
-  .seq (chainPow (Ecdh.RISCV64.Cfg.chainP c) (c.sl ONEP) c.FP) <|
+  .seq (Ecdh.RISCV64.Cfg.invP c) <|
   .seq (Ecdh.RISCV64.Cfg.affineCoord c Ecdh.RISCV64.XM Ecdh.RISCV64.XO RX) <|
   .seq (Verify.Cfg.compare c FN) (.block (Verify.Cfg.finish c))
 

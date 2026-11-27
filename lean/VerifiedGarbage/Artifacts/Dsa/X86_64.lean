@@ -1,32 +1,28 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Scrub
-public import VerifiedGarbage.Proof.Framework.X86_64.ScrubOr
-public import VerifiedGarbage.Proof.Dsa.X86_64.ParameterSearchInit
-public import VerifiedGarbage.Proof.Dsa.X86_64.ParameterSearchInitScrub
+public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.TCB.Registration
-public import VerifiedGarbage.TCB.X86_64.Print
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignVerified
-public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignCode
-public import VerifiedGarbage.Proof.Dsa.X86_64.GenerateKeyVerified
-import Mathlib.Tactic.Finiteness.Attr
-public import VerifiedGarbage.Proof.Dsa.X86_64.GenerateKeyCorrect
-public import VerifiedGarbage.Proof.Variants.DsaArithmetic.X86_64
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.RefillVerified
-public import VerifiedGarbage.TCB.Emit
-public import VerifiedGarbage.Proof.Variants.MdHash.X86_64
-public import VerifiedGarbage.Proof.Variants.MillerRabin.X86_64
-public import VerifiedGarbage.Proof.Framework.QualifiedName
+public import VerifiedGarbage.Spec.Dsa.ParameterSearchContract
+public import VerifiedGarbage.Spec.Dsa.PrevalidatedSign
+public import VerifiedGarbage.Spec.Dsa.Prevalidated
+public import VerifiedGarbage.Spec.Dsa.Generate
+public import VerifiedGarbage.Spec.Dsa.Derive
+import VerifiedGarbage.Impl.Dsa.X86_64.Fn
+import VerifiedGarbage.Proof.Dsa.X86_64.ParameterSearchInitScrub
+import VerifiedGarbage.Proof.Dsa.X86_64.BackendScrub
+import VerifiedGarbage.Proof.Dsa.X86_64.Slots
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchScrub
+import VerifiedGarbage.Proof.Variants.DsaArithmetic.X86_64
+import VerifiedGarbage.Proof.Variants.MillerRabin.X86_64
+import VerifiedGarbage.Proof.Framework.QualifiedName
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # DSA (FIPS 186-4) on x86-64 -/
 
-@[expose] public section
-
 namespace VG.Artifacts.Dsa.X86_64
 
-def direct : List Artifact := [
-  Spec.Dsa.parameterInitApi.artifact X86_64.target Proof.Dsa.X86_64.ParameterSearchInit.initReg]
+def direct : List (Artifact X86_64.target) := [
+  Spec.Dsa.parameterInitApi.artifact X86_64.target { code := Impl.Dsa.X86_64.Fn.parameterInit, verified := Proof.Dsa.X86_64.ParameterSearchInit.init_scrubbed, publicOutOk := Proof.Dsa.X86_64.ParameterSearchInit.init_public, spSafe := Proof.Dsa.X86_64.ParameterSearchInit.init_spSafe }]
 
 end VG.Artifacts.Dsa.X86_64
 
@@ -34,54 +30,54 @@ namespace VG.Artifacts.Dsa.X86_64
 
 open VG.Proof.Dsa.X86_64
 
-def artifacts : List Artifact :=
+public def artifacts : List (Artifact X86_64.target) :=
   direct ++
-  (VG.Proof.Variants.DsaArithmetic.X86_64.variants.flatMap fun (v : Backend) => [
-    Spec.Dsa.randomSignPrevalidatedApi.artifact X86_64.target (X86_64.RScrub.withScrubAllM {
-      suffix := v.suffix
-      code := Impl.Dsa.X86_64.RandomSign.code (prevalidatedSignerName v)
-        (Impl.Dsa.X86_64.PrevalidatedSign.sign v.sq v.mul)
-      verified := random_sign_prevalidated_verified v
-      spSafe := random_sign_sp v.prevalidatedSigner }
-      (Proof.Dsa.X86_64.Scrub.randomSignPrevalidatedOut _)),
-    Spec.Dsa.validatePrivateKeyApi.artifact X86_64.target (X86_64.RScrub.withScrubAllM {
-      suffix := v.suffix
-      code := Impl.Dsa.X86_64.PrevalidatedSign.validate v.sq v.mul
-      verified := v.validatePrivateVerified
-      spSafe := v.validatePrivateSp }
-      (Proof.Dsa.X86_64.Scrub.validatePrivateKeyOut _)),
-    Spec.Dsa.validatePublicKeyApi.artifact X86_64.target (X86_64.RScrub.withScrubAllM {
-      suffix := v.suffix
-      code := Impl.Dsa.X86_64.Prevalidated.validate v.sq v.mul
-      verified := v.validateVerified
-      spSafe := v.validateSp }
-      (Proof.Dsa.X86_64.Scrub.validatePublicKeyOut _)),
-    Spec.Dsa.verifyPrevalidatedApi.artifact X86_64.target (X86_64.RScrub.withScrubAllM {
-      suffix := v.suffix
-      code := Impl.Dsa.X86_64.Prevalidated.verify v.sq v.mul
-      verified := v.prevalidatedVerified
-      spSafe := v.prevalidatedSp }
-      (Proof.Dsa.X86_64.Scrub.verifyPrevalidatedOut _)),
-    Spec.Dsa.generateKeyApi.artifact X86_64.target (X86_64.RScrub.withScrubAllM {
-      suffix := v.suffix
-      code := Impl.Dsa.X86_64.GenerateKey.code (keygenCheckName v) (keygenDeriveName v)
-        (Impl.Dsa.X86_64.Generate.checkParameters v.sq v.mul) (Impl.Dsa.X86_64.Generate.deriveChecked v.sq v.mul)
-      verified := keygen_verified v
-      spSafe := keygen_sp v }
-      (Proof.Dsa.X86_64.Scrub.generateKeyOut _)),
-    Spec.Dsa.deriveKeyApi.artifact X86_64.target (X86_64.RScrub.withScrubAllM {
-      suffix := v.suffix
-      code := Impl.Dsa.X86_64.Generate.deriveKey v.sq v.mul
-      verified := v.deriveVerified
-      spSafe := v.deriveSp }
-      (Proof.Dsa.X86_64.Scrub.deriveKeyOut _))]) ++
+  (VG.Proof.Variants.DsaArithmetic.X86_64.variants.flatMap fun (a : Proof.Dsa.X86_64.Slots.SlotBackend) => [
+    Spec.Dsa.randomSignPrevalidatedApi.artifact X86_64.target {
+      suffix := a.backend.suffix
+      code := Impl.Dsa.X86_64.Fn.randomSignPrevalidatedS a.backend.level (prevalidatedSignerName a.backend) a.nm a.ns
+        a.bm a.bs
+      verified := Proof.Dsa.X86_64.BackendScrub.randomSign_scrubbed a
+      spSafe := Proof.Dsa.X86_64.BackendScrub.randomSign_spSafe a },
+    Spec.Dsa.validatePrivateKeyApi.artifact X86_64.target {
+      suffix := a.backend.suffix
+      code := Impl.Dsa.X86_64.Fn.validatePrivateKeyS a.backend.level a.nm a.ns a.bm a.bs
+      verified := Proof.Dsa.X86_64.Slots.validatePrivate_scrubbed a
+      spSafe := Proof.Dsa.X86_64.Slots.validatePrivate_spSafe a },
+    Spec.Dsa.validatePublicKeyApi.artifact X86_64.target {
+      suffix := a.backend.suffix
+      code := Impl.Dsa.X86_64.Fn.validatePublicKeyS a.backend.level a.nm a.ns a.bm a.bs
+      verified := Proof.Dsa.X86_64.Slots.validatePublic_scrubbed a
+      spSafe := Proof.Dsa.X86_64.Slots.validatePublic_spSafe a },
+    Spec.Dsa.verifyPrevalidatedApi.artifact X86_64.target {
+      suffix := a.backend.suffix
+      code := Impl.Dsa.X86_64.Fn.verifyPrevalidatedS a.backend.level a.nm a.ns a.bm a.bs
+      verified := Proof.Dsa.X86_64.Slots.verify_scrubbed a
+      spSafe := Proof.Dsa.X86_64.Slots.verify_spSafe a },
+    Spec.Dsa.generateKeyApi.artifact X86_64.target {
+      suffix := a.backend.suffix
+      code := Impl.Dsa.X86_64.Fn.generateKeyS a.backend.level (keygenCheckName a.backend) (keygenDeriveName a.backend)
+        a.nm a.ns a.bm a.bs
+      verified := Proof.Dsa.X86_64.BackendScrub.generateKey_scrubbed a
+      spSafe := Proof.Dsa.X86_64.BackendScrub.generateKey_spSafe a },
+    Spec.Dsa.deriveKeyApi.artifact X86_64.target {
+      suffix := a.backend.suffix
+      code := Impl.Dsa.X86_64.Fn.deriveKeyS a.backend.level a.nm a.ns a.bm a.bs
+      verified := Proof.Dsa.X86_64.Slots.deriveKey_scrubbed a
+      spSafe := Proof.Dsa.X86_64.Slots.deriveKey_spSafe a }]) ++
   (Generation.RefillBackend.hashPairs.flatMap fun (p : Generation.RefillBackend.Hashes) =>
     VG.Proof.Variants.MillerRabin.X86_64.variants.map fun (v : Proof.MillerRabin.X86_64.RoundImpl) =>
-    Spec.Dsa.parameterSearchApi.artifact X86_64.target (X86_64.RScrub.withScrubAllM {
+    Spec.Dsa.parameterSearchApi.artifact X86_64.target {
       suffix := qualifiedName "" [("sha1", p.sha1.suffix), ("sha256", p.sha256.suffix), ("mr", v.suffix)]
-      code := Generation.RefillBackend.searchCode p.sha1 p.sha256 v
-      verified := Generation.RefillBackend.search_verified p.sha1 p.sha256 v p.h1 p.h256
-      spSafe := Generation.RefillBackend.searchCode_spSafe p.sha1 p.sha256 v }
-      (Proof.Dsa.X86_64.Scrub.parameterSearchOut _)))
+      code := Impl.Dsa.X86_64.Fn.parameterSearch (Proof.Dsa.X86_64.Generation.SearchScrub.level p v)
+        (Generation.RefillBackend.addrs p.sha1 v) (Generation.RefillBackend.addrs p.sha256 v)
+        (Generation.RefillBackend.addrs p.sha256 v) (Generation.RefillBackend.name 128)
+        (Generation.RefillBackend.name 256) (Generation.RefillBackend.name 384) (Generation.RefillBackend.body p.sha1 v 128)
+        (Generation.RefillBackend.body p.sha256 v 256) (Generation.RefillBackend.body p.sha256 v 384)
+      verified := Proof.Dsa.X86_64.Generation.SearchScrub.search_scrubbed p v
+      publicOutOk := Proof.Dsa.X86_64.Generation.SearchScrub.search_public p v
+      spSafe := Proof.Dsa.X86_64.Generation.SearchScrub.search_spSafe p v })
+
+spec_apis artifacts
 
 end VG.Artifacts.Dsa.X86_64

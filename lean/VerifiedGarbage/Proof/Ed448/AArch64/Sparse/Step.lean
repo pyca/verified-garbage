@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Ed448.AArch64.Sparse.Recode
-public import VerifiedGarbage.Proof.Ed448.WnafWide.Bits
+public import VerifiedGarbage.Proof.Ed448.WnafWide.Word
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.X448.AArch64.Mem
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
@@ -9,7 +9,6 @@ import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.X448.AArch64.BitWrite
 import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.Ed448.WnafWide.Word
 
 /-! ### `Ed448.AArch64.Sparse.Read`, which only this module used -/
 

@@ -539,7 +539,7 @@ end
 /-!
 # Eight blocks of bitsliced SM4 on x86 (32-bit): the rounds
 
-As on ARMv7 (`Proof/Sm4/Arm/Core.lean`): with the table of bitsliced
+As on ARMv7 (`Proof/Sm4/Arm/Group.lean`): with the table of bitsliced
 round keys `E 0 … E 31` in the scratch buffer (`KeyCtx`), the rounds are
 `round_ok`, four at a time (`rounds4_ok`), in a loop whose invariant is
 `quads`; they write only the slots below the table (`Ctx`). `rounds_wp`

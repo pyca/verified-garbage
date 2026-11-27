@@ -31,7 +31,9 @@ lanes (`Bitslice.inWordW`), which the kernel evaluates once. -/
 def inWord (i : Nat) : Nat × Nat := inWordW 32 i
 
 /-- The word whose bit `p` is the XOR of the atoms `g p`. -/
-def outWord (g : Nat → List Nat) : Nat × Nat := (0, mk 32 g 32)
+def outWord (g : Nat → List Nat) : Nat × Nat := (0, mkK 32 g 32)
+
+theorem outWord_eq (g : Nat → List Nat) : outWord g = (0, mk 32 g 32) := by rw [outWord, mkK_eq]
 
 /-- Bit `a % 32` of word `a / 32`. -/
 def bitOf (W : Nat → BitVec 32) (a : Nat) : Bool := (W (a / 32)).getLsbD (a % 32)
@@ -74,8 +76,8 @@ theorem outWord_rel {k : Nat} {W : Nat → BitVec 32} {g : Nat → List Nat} {x 
     (hg : ∀ p < 32, ∀ a ∈ g p, a < 2 ^ k) (h : LaneRel k (assign W (2 ^ k)) (outWord g) x) :
     ∀ p < 32, x.getLsbD p = xorBits W (g p) := by
   intro p hp
-  rw [h.2 p hp]
-  simp only [outWord, Nat.zero_testBit, Bool.false_xor]
+  rw [h.2 p hp, outWord_eq]
+  simp only [Nat.zero_testBit, Bool.false_xor]
   rw [par_mk hp (Nat.le_refl _) _ (fun q hq => hg q hq), xorA_assign W (hg p hp)]
   simp [hp]
 
@@ -90,8 +92,8 @@ theorem outWord_rel_of_lt {k : Nat} {W : Nat → BitVec 32} {g : Nat → List Na
     have : a ≤ ((List.range 32).flatMap g).sum :=
       le_sum_of_mem (List.mem_flatMap.mpr ⟨q, List.mem_range.mpr hq, ha⟩)
     exact Nat.lt_of_le_of_lt this (Nat.lt_add_left _ (Nat.lt_succ_self _))
-  rw [h.2 p hp]
-  simp only [outWord, Nat.zero_testBit, Bool.false_xor]
+  rw [h.2 p hp, outWord_eq]
+  simp only [Nat.zero_testBit, Bool.false_xor]
   rw [← xorA_assign W (hM p hp), ← (Bool.true_and _ : (true && xorA _ (g p)) = _),
     ← decide_eq_true hp, ← par_mk hp (Nat.le_refl _) _ hM, par_high hb hp]
   refine par_congr_assign fun a ha => ?_
@@ -102,7 +104,7 @@ theorem outWord_rel_of_lt {k : Nat} {W : Nat → BitVec 32} {g : Nat → List Na
 with `g` evaluated once (as `Bitslice.outOkW`). -/
 def outOk (k : Nat) (v : Option (Nat × Nat)) (g : Nat → List Nat) : Bool :=
   match v with
-  | some v => v == outWord g && decide (v.2 < 2 ^ (32 * 2 ^ k))
+  | some v => Nat.beq v.1 0 && (Nat.beq v.2 (mkK 32 g 32) && Nat.blt v.2 (2 ^ (32 * 2 ^ k)))
   | none => false
 
 theorem outOk_spec {k : Nat} {v : Option (Nat × Nat)} {g : Nat → List Nat}
@@ -110,9 +112,10 @@ theorem outOk_spec {k : Nat} {v : Option (Nat × Nat)} {g : Nat → List Nat}
   cases v with
   | none => cases h
   | some v =>
-    simp only [outOk, Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at h
-    obtain ⟨rfl, h⟩ := h
-    exact ⟨rfl, h⟩
+    obtain ⟨c, f⟩ := v
+    simp only [outOk, Bool.and_eq_true, Nat.beq_eq, Nat.blt_eq, mkK_eq] at h
+    obtain ⟨rfl, rfl, h⟩ := h
+    exact ⟨congrArg some (outWord_eq g).symm, h⟩
 
 /-! ## The check -/
 

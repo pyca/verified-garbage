@@ -3,15 +3,14 @@ module
 public import VerifiedGarbage.Proof.Modes.Arm.Core
 public import VerifiedGarbage.Impl.Blowfish.Arm.Modes
 public import VerifiedGarbage.Spec.Blowfish.Cbc
-public import VerifiedGarbage.Proof.Blowfish.Arm.Verified
+public import VerifiedGarbage.Proof.Blowfish.Arm.Frame
 import VerifiedGarbage.Proof.Blowfish.Schedule
 import VerifiedGarbage.Proof.Blowfish.Arm.Lit
-import VerifiedGarbage.Proof.Blowfish.Arm.Run
+import VerifiedGarbage.Proof.Blowfish.Arm.Ecb
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.TaintSum
-public import VerifiedGarbage.Proof.Blowfish.Arm.Frame
 
 /-!
 # Blowfish's ECB functions on ARMv7 as the modes' core

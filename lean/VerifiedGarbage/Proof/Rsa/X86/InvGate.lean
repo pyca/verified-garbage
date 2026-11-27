@@ -6,9 +6,6 @@ public import VerifiedGarbage.Proof.Bignum.X86.PublicCall
 public import VerifiedGarbage.Proof.Mont.Words32
 public import Batteries.Tactic.PermuteGoals
 public import Batteries.Tactic.SeqFocus
-import Mathlib.Logic.Function.Basic
-import Mathlib.Tactic.Set
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.GetElem
 public import VerifiedGarbage.Proof.Framework.Lit

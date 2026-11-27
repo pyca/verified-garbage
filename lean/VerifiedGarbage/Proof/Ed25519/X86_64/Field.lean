@@ -6,8 +6,6 @@ import VerifiedGarbage.Proof.X25519.X86_64.Adx.A24
 public import VerifiedGarbage.Spec.Ed25519
 public import VerifiedGarbage.Impl.X25519.X86_64.Adx
 public import VerifiedGarbage.Proof.X25519.X86_64.Env
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.Sqr
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.Mul
 import VerifiedGarbage.Proof.X25519.X86_64.Sqr
 import VerifiedGarbage.Proof.X25519.X86_64.AddSub
 import VerifiedGarbage.Proof.Framework.Block
@@ -44,14 +42,14 @@ def env (m : Mem) (base : Addr) : Env := fun i => F m base (offset i)
 
 def evalOp (op : FieldOp) (e : Env) : Env :=
   match op with
-  | .copy o a => Function.update e o (e a)
-  | .const o v => Function.update e o v
-  | .mul o a b => Function.update e o (e a * e b)
-  | .sqr o a => Function.update e o (e a * e a)
-  | .add o a b => Function.update e o (e a + e b)
-  | .sub o a b => Function.update e o (e a - e b)
-  | .mul2 o a b => Function.update e o (e a * e b + e a * e b)
-  | .sqr2 o a => Function.update e o (e a * e a + e a * e a)
+  | .copy o a => Fun.update e o (e a)
+  | .const o v => Fun.update e o v
+  | .mul o a b => Fun.update e o (e a * e b)
+  | .sqr o a => Fun.update e o (e a * e a)
+  | .add o a b => Fun.update e o (e a + e b)
+  | .sub o a b => Fun.update e o (e a - e b)
+  | .mul2 o a b => Fun.update e o (e a * e b + e a * e b)
+  | .sqr2 o a => Fun.update e o (e a * e a + e a * e a)
 
 def evalOps (ops : List FieldOp) (e : Env) : Env := ops.foldl (fun e op => evalOp op e) e
 
@@ -74,11 +72,11 @@ theorem Keep.scr {base : Addr} {s t : State} (h : Keep base s t) (hs : Scr s bas
 
 theorem env_update {base : Addr} {m m' : Mem} (o : Slot)
     (h : Outside base (offset o) 32 m m') :
-    env m' base = Function.update (env m base) o (F m' base (offset o)) := by
+    env m' base = Fun.update (env m base) o (F m' base (offset o)) := by
   funext i
   by_cases hi : i = o
   · subst hi; simp [env]
-  · rw [Function.update_of_ne hi]
+  · rw [Fun.update_of_ne hi]
     simp only [env, F]
     have hne : i.val ≠ o.val := fun h => hi (Fin.ext h)
     rw [h.fe (by simp only [offset]; omega_arith) (by simp only [offset]; omega_arith)]

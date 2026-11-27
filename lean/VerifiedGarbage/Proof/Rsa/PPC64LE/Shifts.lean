@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Impl.Rsa.PPC64LE.Div
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.Loops
 import VerifiedGarbage.Proof.Bignum.PPC64LE.MontRound
-import VerifiedGarbage.Proof.Bignum.PPC64LE.MontStep
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-!

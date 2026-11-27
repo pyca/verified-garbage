@@ -4,8 +4,9 @@
 //! Each function has verified functions of its own, whose code has its rate
 //! and domain-separation suffix and whose contracts name the function of
 //! FIPS 202 they compute (`VG.Spec.Sha3`): `update` absorbs a piece of the
-//! message, and `finalize` writes the digest (SHA-3) or pads the message for
-//! `squeeze` to output it in pieces (SHAKE). Absorbing depends only on the
+//! message, keeping its working space on its own stack, which its residue
+//! proof covers, and `finalize` writes the digest (SHA-3) or pads the message
+//! for `squeeze` to output it in pieces (SHAKE). Absorbing depends only on the
 //! rate, so SHAKE256 absorbs with SHA3-256's `update`, of the same rate. This module keeps the state and
 //! the position in the block that each call returns for the next; each call
 //! runs the function's dispatcher (`crate::arch::dispatch::sha3`).
@@ -27,11 +28,6 @@ use crate::arch::dispatch::sha3::{
     vg_shake128_squeeze_auto, vg_shake128_update_auto, vg_shake256_finalize_auto,
     vg_shake256_squeeze_auto,
 };
-use core::mem::MaybeUninit;
-
-/// The working space of the `update` functions, aligned to a cache line.
-#[repr(C, align(128))]
-struct Scratch(MaybeUninit<[u64; 80]>);
 
 /// The state of a computation absorbing a message: `state` represents the
 /// message so far for the function's rate, and `pos` is the position its
@@ -80,28 +76,15 @@ macro_rules! absorb {
         let dit: crate::dit::Dit<'_> = $dit;
         let s: &mut Absorbing = $s;
         let data: &[u8] = $data;
-        // Uninitialized: the contract holds whatever the scratch holds, so
-        // filling it first would only cost time.
-        let mut scratch = Scratch(MaybeUninit::uninit());
         // SAFETY: `s.pos` is the position the function's `update` returned
         // for the message `s.state` represents (0 for the all-zero state, the
         // empty message), so it is less than the function's rate.
-        // `s.state` is valid for reads and writes of 200 bytes, `data` for
-        // reads of `data.len()` bytes and `scratch` for reads and writes of
-        // 640 bytes (the state and `scratch`, arrays of `u64`, are aligned
-        // for it); they are distinct objects, so they do not overlap each
-        // other or the stack below the stack pointer. The dispatcher calls
-        // only an implementation the CPU has the features of.
-        s.pos = unsafe {
-            $update(
-                dit,
-                &mut s.state.0,
-                s.pos,
-                data.as_ptr(),
-                data.len(),
-                scratch.0.as_mut_ptr(),
-            )
-        };
+        // `s.state` is valid for reads and writes of 200 bytes and `data` for
+        // reads of `data.len()` bytes (the state, an array of `u64`, is
+        // aligned for it); they are distinct objects, so they do not overlap
+        // each other or the stack below the stack pointer. The dispatcher
+        // calls only an implementation the CPU has the features of.
+        s.pos = unsafe { $update(dit, &mut s.state.0, s.pos, data.as_ptr(), data.len()) };
     }};
 }
 

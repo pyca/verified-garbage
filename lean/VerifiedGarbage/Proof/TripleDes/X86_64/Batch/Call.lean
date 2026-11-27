@@ -15,6 +15,7 @@ import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Modes.X86_64.Steps
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubCall
 import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Lit
 import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx2.SboxLit
 import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedSse.SboxLit
@@ -61,10 +62,16 @@ structure EcbImpl where
   spSafe : ∀ d, SpSafe (code d)
   depth : ∀ d, (code d).x86_64Depth ≤ 1040
   noMxcsr : ∀ d, (code d).allInstrs (fun i => !loadsMxcsr i) = true
+  /-- The level of its vector instructions, the one its callers clear at. -/
+  level : Impl.Scrub.X86_64.VecLevel
+  /-- What the cleanup of a caller needs of its code (`Scrub.Fill`), proved
+  here, of each direction, so that no caller evaluates it. -/
+  side : ∀ d, X86_64.Scrub.calleeSide (code d) level.level 1040 = true
 
 /-- The name the modes call the function of the direction `d` by: its code
 as registered before the clearing of what it leaves
-(`Proof.TripleDes.X86_64.Scrub.ecbReg`), as an internal function of its own,
+(`Proof.TripleDes.X86_64.Scrub.ecbEncryptSse_scrubbed` and the
+others), as an internal function of its own,
 `vg_triple_des_ecb_<direction><suffix>_core`. -/
 def EcbImpl.name (v : EcbImpl) : Direction → String
   | .encrypt => "vg_triple_des_ecb_encrypt" ++ v.suffix ++ "_core"
@@ -121,6 +128,8 @@ def sse : EcbImpl where
   spSafe d := SpSafe.of_all (ecb_spSafe (EcbCall.sse_sp d))
   depth d := framed_depth (EcbCall.sse_depth d)
   noMxcsr d := framed_mx (by cases d <;> exact sse_mx _)
+  level := .sse
+  side d := by cases d <;> lit_decide
 
 /-- The AVX2 implementation, `vg_triple_des_ecb_encrypt_avx2` and `_decrypt_avx2`. -/
 def avx2 : EcbImpl where
@@ -132,6 +141,8 @@ def avx2 : EcbImpl where
   spSafe d := SpSafe.of_all (ecb_spSafe (EcbCall.avx2_sp d))
   depth d := framed_depth (EcbCall.avx2_depth d)
   noMxcsr d := framed_mx (by cases d <;> exact avx2_mx _)
+  level := .avx
+  side d := by cases d <;> lit_decide
 
 /-- The AVX-512 implementation, `vg_triple_des_ecb_encrypt_avx512` and `_decrypt_avx512`. -/
 def avx512 : EcbImpl where
@@ -143,6 +154,8 @@ def avx512 : EcbImpl where
   spSafe d := SpSafe.of_all (ecb_spSafe (EcbCall.avx512_sp d))
   depth d := framed_depth (EcbCall.avx512_depth d)
   noMxcsr d := framed_mx (by cases d <;> exact avx512_mx _)
+  level := .avx
+  side d := by cases d <;> lit_decide
 
 /-- The stack below the stack pointer that a call uses: its return address
 and the callee's 1040 bytes. -/
@@ -203,6 +216,7 @@ structure EcbCallPost (d : Direction) (s : State) (K D : Addr) (n : Nat) (s' : S
   out : ∀ j < n, ∀ u < 8, s'.mem (D + BitVec.ofNat 64 (8 * j + u)) =
     (blockCipher (Spec.TripleDes.scheduleAt s.mem K) d
       (Spec.TripleDes.bytesAt s.mem (D + BitVec.ofNat 64 (8 * j)) 8)).getD u 0
+  mx : s'.mxcsr = s.mxcsr
 
 theorem EcbCallPre.pre {d : Direction} {s : State} {K D : Addr} {n : Nat} (h : EcbCallPre s K D n) :
     (Spec.TripleDes.ecbContract X86_64.abi d 1040).pre
@@ -264,10 +278,12 @@ theorem scheduleAt_congr {m m' : Mem} {p : Addr}
 theorem ecb_call (v : EcbImpl) (d : Direction) {s : State} {K D : Addr} {n : Nat} (h : EcbCallPre s K D n) :
     WP isa (.call (v.name d) (v.code d)) s (EcbCallPost d s K D n) := by
   have hn := toNat_ofNat_lt (show n < 2 ^ 64 by have := h.wrap; omega_using [this])
+  refine WP.of_mx (c := .call _ (v.code d)) (v.noMxcsr d) ?_
   refine WP.callF (k := Spec.TripleDes.ecbContract X86_64.abi d 1040) (v.verified d).1 (v.spSafe d)
     (Nat.lt_of_le_of_lt (Nat.add_le_add_right (v.depth d) 16) (by decide))
     (rd := [⟨K, 384⟩]) (wr := [⟨D, 8 * n⟩]) h.pre h.reads h.writes ?_
   intro s' hrd hwr hcs hf ⟨s₂, hm₂, _, hpost⟩ _
+  intro hmx
   sig_post [Spec.TripleDes.ecbContract, Spec.TripleDes.ecbSig, Spec.TripleDes.ecbPost, X86_64.abi,
     X86_64.argRegs] at hpost
   rw [h.rdi, h.rsi, h.rdx, hn, hm₂] at hpost
@@ -279,7 +295,7 @@ theorem ecb_call (v : EcbImpl) (d : Direction) {s : State} {K D : Addr} {n : Nat
     fun i hi => fE.bytes (R := ⟨K, 384⟩) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact (h.stkK.sub_left s8).symm) (by show 384 ≤ 2 ^ 64; decide) hi
   have out := ecb_bytes hpost
-  refine ⟨hrd, hwr, hcs, hf.sub fun r hr => ?_, fun j hj u hu => ?_⟩
+  refine ⟨hrd, hwr, hcs, hf.sub fun r hr => ?_, fun j hj u hu => ?_, hmx⟩
   · simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact ⟨_, List.mem_cons_self, fun _ h => h⟩
@@ -294,13 +310,13 @@ theorem ecb_call (v : EcbImpl) (d : Direction) {s : State} {K D : Addr} {n : Nat
 constant time. -/
 theorem ecb_rel (v : EcbImpl) (d : Direction) {P : State → State → Prop}
     (h : ∀ s₁ s₂, P s₁ s₂ → ∃ K D : Addr, ∃ n : Nat,
-      EcbCallPre s₁ K D n ∧ EcbCallPre s₂ K D n ∧ s₁.gpr .rsp = s₂.gpr .rsp) :
+      EcbCallPre s₁ K D n ∧ EcbCallPre s₂ K D n ∧ s₁.gpr .rsp = s₂.gpr .rsp ∧ s₁.mxcsr = s₂.mxcsr) :
     RelCT isa P (.call (v.name d) (v.code d)) fun _ _ => True := by
   refine RelCT.callEx (v.verified d).1 (v.verified d).2.1 fun s₁ s₂ hp => ?_
-  obtain ⟨K, D, n, h₁, h₂, hsp⟩ := h s₁ s₂ hp
+  obtain ⟨K, D, n, h₁, h₂, hsp, hmx⟩ := h s₁ s₂ hp
   refine ⟨_, _, _, _, h₁.pre, h₂.pre, ?_, h₁.reads, h₁.writes, h₂.reads, h₂.writes, hsp⟩
   sig_pub [Spec.TripleDes.ecbContract, Spec.TripleDes.ecbSig, X86_64.abi, X86_64.argRegs]
-  simp only [h₁.rdi, h₁.rsi, h₁.rdx, h₂.rdi, h₂.rsi, h₂.rdx, hsp]
-  exact ⟨trivial, trivial, trivial, trivial⟩
+  simp only [h₁.rdi, h₁.rsi, h₁.rdx, h₂.rdi, h₂.rsi, h₂.rdx, hsp, hmx]
+  exact ⟨trivial, trivial, trivial, trivial, trivial⟩
 
 end VG.Proof.TripleDes.X86_64.Batch

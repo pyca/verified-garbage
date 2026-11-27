@@ -1,7 +1,6 @@
 module
 
 import VerifiedGarbage.Proof.Ecdh.AArch64.BrainpoolP256r1.Main
-public import VerifiedGarbage.Proof.Ecdh.AArch64.BrainpoolP256r1.Contract
 public import VerifiedGarbage.Proof.Ecdh.AArch64.Main
 import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP256r1.Config
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
@@ -9,13 +8,106 @@ import VerifiedGarbage.Proof.Ecdh.AArch64.BrainpoolP256r1.Lit
 public import VerifiedGarbage.Impl.Ecdh.BrainpoolP256r1.AArch64
 import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
 meta import VerifiedGarbage.Proof.Ecdh.AArch64.BrainpoolP256r1.Main
-meta import VerifiedGarbage.Proof.Ecdh.AArch64.BrainpoolP256r1.Contract
 meta import VerifiedGarbage.Proof.Ecdh.AArch64.Main
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP256r1.Config
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
 meta import VerifiedGarbage.Proof.Ecdh.AArch64.BrainpoolP256r1.Lit
 meta import VerifiedGarbage.Impl.Ecdh.BrainpoolP256r1.AArch64
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.EcKey.BrainpoolP256r1
+public import VerifiedGarbage.Spec.Ecdh.Generic
+import VerifiedGarbage.Proof.Framework.GetElem
+meta import VerifiedGarbage.TCB.AArch64.Target
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Spec.EcKey.BrainpoolP256r1
+meta import VerifiedGarbage.Spec.Ecdh.Generic
+meta import VerifiedGarbage.Proof.Framework.GetElem
+public import VerifiedGarbage.Proof.EcKey.AArch64.Scrub
+public import VerifiedGarbage.Spec.Ecdh.BrainpoolP256r1
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubProved
+import VerifiedGarbage.Proof.Ecdsa.AArch64.AbiOnce
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.AbiOnce
+
+/-! ### `Ecdh.AArch64.BrainpoolP256r1.Contract`, which only this module used -/
+
+section
+
+/-!
+# ECDH over brainpoolP256r1 on AArch64: the contract the proof is written against
+
+The facts of `Spec.Ecdh.BrainpoolP256r1.exchangeApi`'s contract for AArch64, by name:
+`vg_ecdh_brainpoolp256r1(out = x0, d = x1, peer = x2, scratch = x3)`, the result in
+`w0`.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Ecdh.AArch64.BrainpoolP256r1
+
+open VG VG.AArch64 Spec.Weierstrass Spec.EcKey
+
+/-- The shared secret of the private key at `d` and the public key at
+`peer`, as the specification computes it. -/
+abbrev ex (m : Mem) (d peer : Addr) : Option (List Byte) :=
+  Spec.Ecdh.exchange Spec.BrainpoolP256r1.curve (ofBytes (bytesAt m d 32)) (bytesAt m peer 65)
+
+def ecdhAArch64 : Contract AArch64.isa where
+  pre s :=
+    let out : Region := ⟨s.gpr .x0, 32⟩
+    let d : Region := ⟨s.gpr .x1, 32⟩
+    let peer : Region := ⟨s.gpr .x2, 65⟩
+    let scratch : Region := ⟨s.gpr .x3, 8192⟩
+    s.rd = [d, peer] ∧ s.wr = [out, scratch] ∧ out.Disjoint scratch ∧ out.Disjoint d ∧
+      out.Disjoint peer ∧ d.Disjoint scratch ∧ peer.Disjoint scratch ∧
+      (s.gpr .x0).toNat + 32 ≤ 2 ^ 64 ∧ (s.gpr .x3).toNat + 8192 ≤ 2 ^ 64
+  post s s' :=
+    match ex s.mem (s.gpr .x1) (s.gpr .x2) with
+    | some z => (s'.gpr .x0).setWidth 32 = 1 ∧ bytesAt s'.mem (s.gpr .x0) 32 = z
+    | none => (s'.gpr .x0).setWidth 32 = 0 ∧ bytesAt s'.mem (s.gpr .x0) 32 = List.replicate 32 0
+  pub s₁ s₂ := s₁.gpr .x0 = s₂.gpr .x0 ∧ s₁.gpr .x1 = s₂.gpr .x1 ∧ s₁.gpr .x2 = s₂.gpr .x2 ∧
+    s₁.gpr .x3 = s₂.gpr .x3 ∧ s₁.sp = s₂.sp
+
+/-- A state satisfying the precondition. -/
+def satState : State where
+  gpr r := match r with
+    | .x0 => 0x1000 | .x1 => 0x2000 | .x2 => 0x3000 | .x3 => 0x8000 | _ => 0
+  sp := 0x20000
+  mem _ := 0
+  rd := [⟨0x2000, 32⟩, ⟨0x3000, 65⟩]
+  wr := [⟨0x1000, 32⟩, ⟨0x8000, 8192⟩]
+
+theorem implies :
+    ecdhAArch64.Implies (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.BrainpoolP256r1.inst AArch64.abi) := by
+  exact
+    { pre := by
+        sig_implies_pre [Spec.EcKey.BrainpoolP256r1.inst, Spec.Ecdh.Instance.exchangeContract,
+          Spec.Ecdh.Instance.exchangeSig, Spec.BrainpoolP256r1.curve, Spec.EcKey.scratchWords, AArch64.abi,
+          AArch64.argRegs, ecdhAArch64, ex]
+      post := by
+        intro s s' _ h
+        sig_post [Spec.EcKey.BrainpoolP256r1.inst, Spec.Ecdh.Instance.exchangeContract,
+          Spec.Ecdh.Instance.exchangeSig, Spec.BrainpoolP256r1.curve, Spec.EcKey.scratchWords, AArch64.abi,
+          AArch64.argRegs, ecdhAArch64, ex]
+        simp only [ecdhAArch64, ex, Spec.BrainpoolP256r1.curve] at h
+        revert h
+        generalize Spec.Ecdh.exchange _ _ _ = q
+        rcases q with _ | z <;> exact id
+      pub := by
+        sig_implies_pub [Spec.EcKey.BrainpoolP256r1.inst, Spec.Ecdh.Instance.exchangeContract,
+          Spec.Ecdh.Instance.exchangeSig, Spec.BrainpoolP256r1.curve, Spec.EcKey.scratchWords, AArch64.abi,
+          AArch64.argRegs, ecdhAArch64, ex]
+      sat := by
+        sig_implies_sat [Spec.EcKey.BrainpoolP256r1.inst, Spec.Ecdh.Instance.exchangeContract,
+          Spec.Ecdh.Instance.exchangeSig, Spec.BrainpoolP256r1.curve, Spec.EcKey.scratchWords, AArch64.abi,
+          AArch64.argRegs, satState] [satState] using satState }
+
+end VG.Proof.Ecdh.AArch64.BrainpoolP256r1
+
+end
+
+end
 
 /-!
 # ECDH over brainpoolP256r1 on AArch64: `Verified`
@@ -42,10 +134,7 @@ theorem pre_of {s : State} (h : ecdhAArch64.pre s) : EPre brainpoolp256r1 s := b
 
 theorem post_of {s s' : State} (h : EPost brainpoolp256r1 s s') : ecdhAArch64.post s s' := by
   unfold EPost at h
-  show match ex s.mem (s.gpr .x1) (s.gpr .x2) with
-    | some z => (s'.gpr .x0).setWidth 32 = 1 ∧ Spec.EcKey.bytesAt s'.mem (s.gpr .x0) 32 = z
-    | none => (s'.gpr .x0).setWidth 32 = 0 ∧
-        Spec.EcKey.bytesAt s'.mem (s.gpr .x0) 32 = List.replicate 32 0
+  dsimp only [ecdhAArch64]
   revert h
   generalize hq : ex s.mem (s.gpr .x1) (s.gpr .x2) = q
   rw [show Spec.Ecdh.exchange brainpoolp256r1.C (dk brainpoolp256r1 s)
@@ -55,7 +144,7 @@ theorem post_of {s s' : State} (h : EPost brainpoolp256r1 s s') : ecdhAArch64.po
 theorem ecdh_a64 (hL : Weierstrass.Law Spec.BrainpoolP256r1.curve) (hI : Weierstrass.AArch64.InvSounds) (s : State) (hs : ecdhAArch64.pre s) :
     ∃ t s', Exec isa VG.Impl.Ecdh.AArch64.BrainpoolP256r1.exchange s t s' ∧ abiPreserved s s' ∧ ecdhAArch64.post s s' := by
   obtain ⟨t, s', he, hsv, hpost⟩ := exchange_ok (brainpoolp256r1_ok hI) hL (pre_of hs)
-  exact ⟨t, s', he, abiPreserved_of he (by lit_decide) (by lit_decide) (by lit_decide) hsv, post_of hpost⟩
+  exact ⟨t, s', he, abiPreserved_ofK he (by lit_decide) hsv, post_of hpost⟩
 
 theorem ecdh_ct : ConstantTime isa ecdhAArch64.pre ecdhAArch64.pub VG.Impl.Ecdh.AArch64.BrainpoolP256r1.exchange :=
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3])
@@ -71,5 +160,16 @@ theorem ecdh_verified (hL : Weierstrass.Law Spec.BrainpoolP256r1.curve) (hI : We
     Verified AArch64.target VG.Impl.Ecdh.AArch64.BrainpoolP256r1.exchange
       (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.BrainpoolP256r1.inst AArch64.abi) :=
   Verified.of_correct (ecdh_a64 hL hI) ecdh_ct implies
+
+
+/-- ECDH over brainpoolP256r1 as it is emitted, its cleanup included
+(`Impl.Ecdh.AArch64.Fn.exchangeBrainpoolP256r1`), meets its contract in constant time and
+returns without secret residue. -/
+theorem exchange_scrubbed (hL : Weierstrass.Law Spec.BrainpoolP256r1.curve) (hI : Weierstrass.AArch64.InvSounds) :
+    VerifiedScrubbed AArch64.target VG.Impl.Ecdh.AArch64.Fn.exchangeBrainpoolP256r1
+      (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.BrainpoolP256r1.inst AArch64.abi) 32 :=
+  VG.AArch64.Scrub.verifiedScrubbedAll (api := Spec.Ecdh.BrainpoolP256r1.exchangeApi)
+    { code := VG.Impl.Ecdh.AArch64.BrainpoolP256r1.exchange, verified := ecdh_verified hL hI } _
+    (VG.Proof.EcKey.AArch64.Scrub.exchangeOk _) (by dsimp only; lit_decide)
 
 end VG.Proof.Ecdh.AArch64.BrainpoolP256r1

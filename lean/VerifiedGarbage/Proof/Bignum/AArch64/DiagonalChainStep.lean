@@ -1,11 +1,9 @@
 module
 
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareDiagonal
-
-import VerifiedGarbage.Proof.Bignum.AArch64.DiagonalChainCore
+public import VerifiedGarbage.Proof.Bignum.AArch64.DiagonalChainCore
 public import VerifiedGarbage.Proof.Bignum.AArch64.Run
 public import VerifiedGarbage.Impl.Bignum.AArch64.DiagonalChain
-public import VerifiedGarbage.Proof.Bignum.AArch64.DiagonalChainMath
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 

@@ -1,19 +1,27 @@
 module
 
 public import VerifiedGarbage.Impl.X25519.Arm.Base
+import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
 public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseVerified
 meta import VerifiedGarbage.Impl.X25519.Arm.Base
+meta import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
 meta import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseVerified
 public import VerifiedGarbage.Spec.X25519.Contract
 meta import VerifiedGarbage.Spec.X25519.Contract
-import VerifiedGarbage.Proof.Ed25519.Arm.CombLoop
-meta import VerifiedGarbage.Proof.Ed25519.Arm.CombLoop
+public import VerifiedGarbage.Proof.Framework.Arm.ScrubProved
+meta import VerifiedGarbage.Proof.Framework.Arm.Scrub
+public import VerifiedGarbage.Proof.Framework.Registration
+meta import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTMul
+meta import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTMul
 import VerifiedGarbage.Proof.Ed25519.Arm.InitFields
 meta import VerifiedGarbage.Proof.Ed25519.Arm.InitFields
 import VerifiedGarbage.Proof.Ed25519.Arm.PointAffine
 meta import VerifiedGarbage.Proof.Ed25519.Arm.PointAffine
-import VerifiedGarbage.Proof.Ed25519.Arm.Freeze
-meta import VerifiedGarbage.Proof.Ed25519.Arm.Freeze
+import VerifiedGarbage.Proof.Ed25519.Arm.PointEncode
+meta import VerifiedGarbage.Proof.Ed25519.Arm.PointEncode
 import VerifiedGarbage.Proof.Ed25519.Arm.FieldProg
 meta import VerifiedGarbage.Proof.Ed25519.Arm.FieldProg
 import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTSupport
@@ -68,6 +76,8 @@ namespace VG.Proof.X25519.Arm.Base
 open VG VG.Arm VG.Impl.Ed25519.Arm VG.Impl.X25519.Arm.Base
 open VG.Proof.Ed25519.Arm VG.Proof.X25519.Arm
 open VG.Proof.Ed25519 (Rep baseAff)
+
+variable {umaal : Bool}
 
 /-! ## The clamp -/
 
@@ -161,7 +171,7 @@ theorem clampBytes_ok {s : State} {b : BitVec 32} (hc : VG.Proof.Ed25519.Arm.Ctx
 
 theorem uOps_eval (e : Env) :
     evalOps uOps e 0 = e 2 + e 1 ∧ evalOps uOps e 2 = e 2 - e 1 := by
-  simp [uOps, evalOps, evalOp, Function.update]
+  simp [uOps, evalOps, evalOp, Fun.update]
 
 /-- The slots cleared, and the scalar copied and clamped. -/
 theorem prep_ok {s : State} {base ptr T : BitVec 32} (hc : VG.Proof.Ed25519.Arm.Ctx base s)
@@ -220,30 +230,39 @@ theorem engine_ok {s : State} {base ptr T : BitVec 32} (hc : VG.Proof.Ed25519.Ar
     (hr : ∀ i < 32, InRegions (s.rd ++ s.wr) (State.addr ptr + BitVec.ofNat 64 i) 1)
     (hsep : (⟨State.addr ptr, 32⟩ : Region).Disjoint ⟨State.addr base, 8192⟩)
     (hT : TblAt s T) (hsym : s.syms combSym = T) (apart : (TBL T).Disjoint ⟨State.addr base, 8192⟩) :
-    WP isa engine s fun t => PointKeep base s t ∧ Lim t.mem (State.addr base) FR ∧
+    WP isa (engine umaal) s fun t => CombKeep base s t ∧ Lim t.mem (State.addr base) FR ∧
       Spec.X25519.x25519 (Spec.Ed25519.bytesAt s.mem (State.addr ptr) 32) Spec.X25519.basePoint =
         Spec.Ed25519.encodeLE 32 (V t.mem (State.addr base) FR) := by
   have hk : (Spec.Ed25519.bytesAt s.mem (State.addr ptr) 32).length = 32 := by simp [Spec.Ed25519.bytesAt]
   rw [engine]
   refine WP.seq (WP.mono (prep_ok hc hp hfit hr hsep hT hsym apart) fun v ⟨kav, lv, tv, syv, cv⟩ => ?_)
   have hcv := kav.ctx hc
-  refine WP.seq (WP.mono (combInit_ok hcv lv tv syv apart) fun w ⟨kw, E, I⟩ => ?_)
-  rw [cv, ← decode_clamp hk] at I
-  have hS : Spec.X25519.decodeScalar25519 (Spec.Ed25519.bytesAt s.mem (State.addr ptr) 32) < 2 ^ 256 := by
-    have h := VG.Proof.X25519.Edwards.decodeScalar25519_shift hk
-    rw [Nat.shiftRight_eq_div_pow] at h
-    have := (Nat.div_eq_zero_iff_lt (by positivity)).mp h
-    omega_using [h]
-  refine WP.seq (WP.mono (combFrom_ok E I hS) fun x ⟨kx, lx, rx⟩ => ?_)
-  have hcx := (kav.trans (kw.trans kx)).ctx hc
+  refine WP.seq (WP.mono_syms (scratchAddr_ok hcv SCAL (by decide)) fun a ⟨ar, am, ap⟩ sya => ?_)
+  have ka : PointKeep base v a := ⟨ar.mono (by decide), by rw [am]; exact Frame.refl _ _⟩
+  have hca := ka.ctx hcv
+  have fit : (base + BitVec.ofNat 32 SCAL).toNat + 32 ≤ 2 ^ 32 := by
+    rw [BitVec.toNat_add_of_lt (by simp only [SCAL, BitVec.toNat_ofNat]; omega_using [hc.fit])]
+    simp only [SCAL, BitVec.toNat_ofNat]
+    omega_using [hc.fit]
+  have readable : ∀ k < 32, InRegions (a.rd ++ a.wr)
+      (State.addr (base + BitVec.ofNat 32 SCAL) + BitVec.ofNat 64 k) 1 := by
+    intro k hk
+    rw [addr_add (by simp only [SCAL]; omega_using [hc.fit]), Offset.add_add]
+    exact in_base (List.mem_append_right _ hca.wr) (by simp only [SCAL]; omega_using [hk])
+      (by simp only [SCAL]; omega_using [hk])
+  refine WP.seq (WP.mono (combMultiply_ok hca (by rw [am]; exact lv) ap fit readable (.inr rfl)
+    (by exact ⟨tv.fit, by rw [ar.rd, ar.wr]; exact tv.rd, by rw [am]; exact tv.words⟩)
+    (by rw [sya]; exact syv) apart) fun x ⟨kx, lx, rx⟩ => ?_)
+  rw [am, cv, ← decode_clamp hk] at rx
+  have hcx := kx.ctx hca
   rw [uEncode]
   refine WP.seq (WP.mono (fieldCode_ok uOps hcx lx) fun y ⟨ky, ly, ey⟩ => ?_)
   have hcy := ky.ctx hcx
   refine WP.seq (WP.mono (pointAffine_ok hcy ly) fun z ⟨kz, lz, zx, _⟩ => ?_)
   have hcz := (PointKeep.of_ikeep kz).ctx hcy
   refine WP.mono (freeze_ok hcz lz 0) fun t ⟨kt, _, _, lt, vt⟩ => ?_
-  refine ⟨(kav.trans (kw.trans (kx.trans ((PointKeep.of_keep ky).trans
-    ((PointKeep.of_ikeep kz).trans (PointKeep.of_keep kt)))))), lt, ?_⟩
+  refine ⟨(kav.trans ka).toCombKeep.trans (kx.trans (((PointKeep.of_keep ky).trans
+    ((PointKeep.of_ikeep kz).trans (PointKeep.of_keep kt))).toCombKeep)), lt, ?_⟩
   rw [VG.Proof.X25519.Edwards.x25519_basePoint hk _ (VG.Proof.X25519.Edwards.u_rep rx), vt, zx, ey,
     (uOps_eval _).1, (uOps_eval _).2]
   rfl
@@ -257,7 +276,7 @@ def baseLocal : Contract Arm.isa :=
       Spec.X25519.x25519 (Spec.Ed25519.bytesAt s.mem (State.addr (s.gpr .r1)) 32) Spec.X25519.basePoint }
 
 theorem x25519Base_correct {s : State} (h : ScalarBasePre s) :
-    WP isa x25519Base s fun t => abiPreserved s t ∧ baseLocal.post s t := by
+    WP isa (x25519Base umaal) s fun t => abiPreserved s t ∧ baseLocal.post s t := by
   refine WP.seq (WP.mono_syms (scalarBaseSetup_ok h) fun u ⟨hcu, pu, su, ou, lu, ku, fu⟩ syu => ?_)
   have input : (⟨State.addr (s.gpr .r1), 32⟩ : Region) ∈ s.rd ++ s.wr := by rw [h.rd]; simp
   refine WP.seq (WP.mono (engine_ok hcu pu h.f1
@@ -266,8 +285,8 @@ theorem x25519Base_correct {s : State} (h : ScalarBasePre s) :
     fun v ⟨kv, lv, vv⟩ => ?_)
   have sv : ScalarSaved (State.addr (s.gpr .r2)) s.gpr v.mem :=
     su.frame kv.frame fun r hr i hi => by
-      simp only [pointRegions, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl <;> exact Offset.disjoint _ (.inl (by omega_using [hi])) (by omega_using [hi]) (by decide)
+      simp only [combRegions, combReturnRegion, combReturn, pointRegions, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl <;> exact Offset.disjoint _ (.inl (by omega_using [hi])) (by omega_using [hi]) (by decide)
   have ov : v.mem.readW (State.addr (s.gpr .r2) + BitVec.ofNat 64 48) 32 = s.gpr .r0 :=
     (kv.word 48 (.inl rfl) (by decide)).trans ou
   refine WP.mono (scalarBaseFinish_ok (kv.ctx hcu) lv ov h.f0
@@ -304,14 +323,15 @@ def Mid (b T : BitVec 32) (s : State) : Prop :=
     (TBL T).Disjoint ⟨State.addr b, 8192⟩
 
 def prepCT : Prog isa := .block (initFields ++ combCopy ++ clampBytes)
-def initCT : Prog isa := combInit
+def initCT : Prog isa := .block (scratchAddr SCAL)
 
 materialize_code prepCT
 materialize_code initCT
-materialize_code uEncode
+materialize_code uEncodePlain := uEncode false
+materialize_code uEncodeUmaal := uEncode true
 
 theorem engine_ct (b p T : BitVec 32) :
-    CT (fun x y => BaseCTPre b p T x ∧ BaseCTPre b p T y) engine (fun _ _ => True) := by
+    CT (fun x y => BaseCTPre b p T x ∧ BaseCTPre b p T y) (engine umaal) (fun _ _ => True) := by
   have h1 : CT (fun x y => BaseCTPre b p T x ∧ BaseCTPre b p T y) prepCT
       (fun x y => Mid b T x ∧ Mid b T y) := by
     apply ctBoth
@@ -325,39 +345,47 @@ theorem engine_ct (b p T : BitVec 32) :
       exact WP.mono (prep_ok hc hp hfit hr hsep hT hsym apart) fun v ⟨kv, lv, tv, sv, _⟩ =>
         ⟨kv.ctx hc, lv, tv, sv, apart⟩
   have h2 : CT (fun x y => Mid b T x ∧ Mid b T y) initCT
-      (fun x y => CombRun b T 0 x ∧ CombRun b T 0 y) := by
+      (fun x y => CombCTPre b (b + BitVec.ofNat 32 SCAL) T x ∧
+        CombCTPre b (b + BitVec.ofNat 32 SCAL) T y) := by
     apply ctBoth
     · apply ctRegs [.r0] _ (by native_taint_decide)
       intro x y h r hr
+      rw [List.mem_singleton.mp hr]; exact h.1.1.r0.trans h.2.1.r0.symm
+    · intro s ⟨hc, hl, ht, hy, ha⟩
+      refine WP.mono_syms (scratchAddr_ok hc SCAL (by decide)) fun t ⟨rt, mt, pt⟩ syt => ?_
+      have hct := hc.of_rest rt (by decide)
+      refine ⟨⟨hct, pt, ?_, ?_, .inr rfl, ?_, by rw [syt]; exact hy, ha⟩, by rw [mt]; exact hl⟩
+      · rw [BitVec.toNat_add_of_lt (by simp only [SCAL, BitVec.toNat_ofNat]; omega_using [hc.fit])]
+        simp only [SCAL, BitVec.toNat_ofNat]; omega_using [hc.fit]
+      · intro k hk
+        rw [addr_add (by simp only [SCAL]; omega_using [hc.fit]), Offset.add_add]
+        exact in_base (List.mem_append_right _ hct.wr) (by simp only [SCAL]; omega_using [hk]) (by simp only [SCAL]; omega_using [hk])
+      · exact ⟨ht.fit, by rw [rt.rd, rt.wr]; exact ht.rd, by rw [mt]; exact ht.words⟩
+  have h4 : CT (fun x y => VG.Proof.Ed25519.Arm.Ctx b x ∧ VG.Proof.Ed25519.Arm.Ctx b y) (uEncode umaal)
+      (fun _ _ => True) := by
+    cases umaal <;> [apply ctRegs [.r0] _ (by native_taint_decide); apply ctRegsU [.r0] _ (by taint_decide)]
+    all_goals
+      intro x y h r hr
       rw [List.mem_singleton] at hr
       subst r
-      exact h.1.1.r0.trans h.2.1.r0.symm
-    · intro s ⟨hc, hl, hT, hsym, apart⟩
-      exact WP.mono (combInit_ok hc hl hT hsym apart) fun w ⟨_, E, I⟩ => ⟨w, _, _, E, I⟩
-  have h4 : CT (fun x y => VG.Proof.Ed25519.Arm.Ctx b x ∧ VG.Proof.Ed25519.Arm.Ctx b y) uEncode
-      (fun _ _ => True) := by
-    apply ctRegs [.r0] _ (by native_taint_decide)
-    intro x y h r hr
-    rw [List.mem_singleton] at hr
-    subst r
-    exact h.1.r0.trans h.2.r0.symm
-  exact RelCT.seq h1 (RelCT.seq h2 (RelCT.seq (combLoop_ct b T) h4))
+      exact h.1.r0.trans h.2.r0.symm
+  exact RelCT.seq h1 (RelCT.seq h2 (RelCT.seq (combMultiply_ct b (b + BitVec.ofNat 32 SCAL) T) h4))
 
 theorem work_ct (b p out T : BitVec 32) :
     CT (fun x y => BaseWorkCTPre b p out T x ∧ BaseWorkCTPre b p out T y)
-      engine (fun x y => BaseFinishCTPre b out x ∧ BaseFinishCTPre b out y) := by
+      (engine umaal) (fun x y => BaseFinishCTPre b out x ∧ BaseFinishCTPre b out y) := by
   apply ctBoth
   · exact (engine_ct b p T).mono (fun _ _ h => ⟨h.1.1, h.2.1⟩) (fun _ _ h => h)
   · intro s ⟨⟨hc, hp, hf, hr, hsep, hT, hsym, apart⟩, ho⟩
     refine WP.mono (engine_ok hc hp hf hr hsep hT hsym apart) fun t ⟨tk, _, _⟩ => ?_
     exact ⟨tk.ctx hc, (tk.word 48 (.inl rfl) (by decide)).trans ho⟩
 
-theorem x25519Base_ct : ConstantTime isa baseLocal.pre baseLocal.pub x25519Base := by
+theorem x25519Base_ct : ConstantTime isa baseLocal.pre baseLocal.pub (x25519Base umaal) := by
   have hct (b p out T : BitVec 32) :
-      CT (fun x y => BaseWrapCTPre b p out T x ∧ BaseWrapCTPre b p out T y) x25519Base (fun _ _ => True) :=
+      CT (fun x y => BaseWrapCTPre b p out T x ∧ BaseWrapCTPre b p out T y) (x25519Base umaal) (fun _ _ => True) :=
     RelCT.seq (scalarBaseSetup_ct b p out T)
       (RelCT.seq (work_ct b p out T) (scalarBaseFinish_ct b out))
-  intro s t tx ty u v hs ht ⟨_, h0, h1, h2, hT⟩ ex ey
+  intro s t tx ty a v hs ht ⟨_, h0, h1, h2, hT⟩ ex ey
   exact (hct (s.gpr .r2) (s.gpr .r1) (s.gpr .r0) (s.syms combSym) _ _ _ _ _ _
     ⟨⟨hs, rfl, rfl, rfl, rfl⟩, ⟨ht, h0.symm, h1.symm, h2.symm, hT.symm⟩⟩ ex ey).1
 
@@ -400,7 +428,7 @@ theorem base_pre {s : State} (h : baseSpec.pre s) : baseLocal.pre s := by
     exact hw
 
 theorem x25519Base_ok (s : State) (hs : baseLocal.pre s) :
-    ∃ t s', Exec isa x25519Base s t s' ∧ abiPreserved s s' ∧ baseLocal.post s s' :=
+    ∃ t s', Exec isa (x25519Base umaal) s t s' ∧ abiPreserved s s' ∧ baseLocal.post s s' :=
   x25519Base_correct (ScalarBasePre.of hs)
 
 theorem base_sat : baseSpec.pre baseSatState := by
@@ -436,8 +464,36 @@ theorem base_implies : baseLocal.Implies baseSpec where
     exact ⟨hsp, h0, h1, h2, hsy⟩
   sat := ⟨baseSatState, base_sat⟩
 
-theorem x25519Base_verified : Verified Arm.target x25519Base baseSpec :=
+theorem x25519Base_verified : Verified Arm.target (x25519Base umaal) baseSpec :=
   Verified.of_correct x25519Base_ok x25519Base_ct base_implies
 
+/-! ## Without secret residue
+
+The code has no frames: it keeps the registers it saves in its scratch space, a buffer. Its shape
+is the same with either product of the field (`Proof.Ed25519.Arm.Shape`), so `Code.noFrames` is
+proven once for both. It is emitted with its cleanup (`Impl.X25519.Arm.Fn.x25519Base`):
+instructions that set the registers a callee may change and the flags to
+constants. -/
+
+theorem x25519Base_noFrames (umaal : Bool) : (x25519Base umaal).noFrames = true := by
+  simp only [x25519Base, engine, uEncode, Impl.Ed25519.Arm.combMultiply, Impl.Ed25519.Arm.combMultiplyFn, Impl.Ed25519.Arm.combMultiplyInline, Impl.Ed25519.Arm.combPrepare, Impl.Ed25519.Arm.combInit, Impl.Ed25519.Arm.combStep, Impl.Ed25519.Arm.combNeg, Impl.Ed25519.Arm.pointAffine,
+    Impl.Ed25519.Arm.invert, Impl.Ed25519.Arm.asFn, Impl.Ed25519.Arm.chain250,
+    Impl.Ed25519.Arm.sqn, Impl.Ed25519.Arm.sqnLoop, Impl.Ed25519.Arm.sqrCall, Impl.Ed25519.Arm.sqrFn,
+    Impl.Ed25519.Arm.sqLoop, Impl.Ed25519.Arm.mulP, Impl.Ed25519.Arm.mulPc, Impl.Ed25519.Arm.mulCall, Code.noFrames,
+    (Proof.Ed25519.Arm.Shape.fieldCode _ _).1, (Proof.Ed25519.Arm.Shape.mulIn _ _ _ _).1,
+    (Proof.Ed25519.Arm.Shape.mulFn _).1, Bool.and_self]
 
 end VG.Proof.X25519.Arm.Base
+
+namespace VG.Proof.X25519.Arm.Fn
+
+open VG VG.Arm VG.Arm.Scrub
+
+/-- `vg_x25519_base`, with either product of the field. -/
+theorem x25519Base (umaal : Bool) :
+    VerifiedScrubbed target (Impl.X25519.Arm.Fn.x25519Base umaal) Base.baseSpec 0 :=
+  verifiedScrubbed (api := Spec.X25519.x25519BaseApi)
+    { code := Impl.X25519.Arm.Base.x25519Base umaal, verified := Base.x25519Base_verified }
+    (Base.x25519Base_noFrames umaal)
+
+end VG.Proof.X25519.Arm.Fn

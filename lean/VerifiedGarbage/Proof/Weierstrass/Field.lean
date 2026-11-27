@@ -106,7 +106,7 @@ theorem pow_sub_two_eq_inv (hp : 2 < p) (z : ZMod p) : z ^ (p - 2) = z⁻¹ := b
 variable {C : Curve} [Fact C.p.Prime]
 
 theorem toF_inv (hp : 2 < C.p) (x : Fe C) : toF (inv x) = (toF x)⁻¹ := by
-  rw [inv, toF_pow, pow_sub_two_eq_inv hp]
+  rw [inv, toF_npow, pow_sub_two_eq_inv hp]
 
 end
 

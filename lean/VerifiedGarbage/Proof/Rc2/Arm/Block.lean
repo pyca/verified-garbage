@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Rc2.Arm.Save
-public import VerifiedGarbage.Proof.Rc2.Arm.ConstantTime
 public import VerifiedGarbage.Spec.Rc2.Contract
 public import VerifiedGarbage.Proof.Rc2.Contract
 public import VerifiedGarbage.Proof.Framework.Arm.Spill
@@ -12,6 +11,35 @@ import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Rc2.Arm.Lit
+import VerifiedGarbage.Proof.Framework.Arm.Taint
+public import VerifiedGarbage.Impl.Rc2.Arm.Block
+import VerifiedGarbage.Proof.Framework.Mem
+meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Rc2.Arm.Lit
+meta import VerifiedGarbage.Impl.Rc2.Arm.Block
+meta import VerifiedGarbage.Proof.Framework.Mem
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+
+/-! ### `Rc2.Arm.ConstantTime`, which only this module used -/
+
+section
+
+/-! # Constant-time RC2 block operations -/
+
+@[expose] public section
+
+namespace VG.Proof.Rc2.Arm
+
+open VG VG.Arm VG.Impl.Rc2.Arm
+
+def PublicRegs (rs : List Reg) (s₁ s₂ : State) : Prop :=
+  s₁.sp = s₂.sp ∧ ∀ r ∈ rs, s₁.gpr r = s₂.gpr r
+
+end VG.Proof.Rc2.Arm
+
+end
+
+end
 
 /-! # Verified RC2 block encryption and decryption -/
 

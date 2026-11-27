@@ -1,22 +1,240 @@
 module
 
 public import VerifiedGarbage.Proof.X25519.Field32Contract
-public import VerifiedGarbage.Proof.Ed25519.PPC64LE.PointOps
-import VerifiedGarbage.Proof.Ed25519.PPC64LE.Freeze
-public import VerifiedGarbage.Proof.Ed25519.PPC64LE.Power
+public import VerifiedGarbage.Proof.Ed25519.PPC64LE.PointPowers
+public import VerifiedGarbage.Proof.Ed25519.PPC64LE.Packed
 public import VerifiedGarbage.Proof.X25519.Invert
 import VerifiedGarbage.Proof.Framework.PPC64LE.Call
-import VerifiedGarbage.Proof.X25519.PPC64LE.Invert
-import VerifiedGarbage.Proof.Ed25519.PPC64LE.PointTable
-import VerifiedGarbage.Proof.Ed25519.PPC64LE.PointPowers
+public import VerifiedGarbage.Proof.X25519.PPC64LE.Field
 import VerifiedGarbage.Proof.Framework.PPC64LE.Inline
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Ed25519.PPC64LE.FieldVerified
-import VerifiedGarbage.Proof.Ed25519.PPC64LE.SpecConv
 public import VerifiedGarbage.Impl.Ed25519.PPC64LE.Freeze
 public import VerifiedGarbage.Proof.Ed25519.PPC64LE.Field
 public import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.X25519.PPC64LE.Freeze
+import VerifiedGarbage.Proof.X25519.PPC64LE.AddSub
+import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
+import VerifiedGarbage.Proof.Framework.Range
+public import VerifiedGarbage.Impl.Ed25519.PPC64LE.Field
+
+/-! ### `Ed25519.PPC64LE.Freeze`, which this module and modules that import it used -/
+
+section
+
+/-!
+# Ed25519 on PPC64LE: an element reduced fully
+
+`freeze a` leaves at `FR` the limbs of the element of slot `a` modulo `p`
+(`freeze_ok`): X25519's final reduction (`Proof/X25519/PPC64LE/Freeze.lean`,
+its steps at `FR` and `FY`), with the result selected back into `FR`.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Ed25519.PPC64LE
+
+open VG VG.PPC64LE VG.Impl.Ed25519.PPC64LE VG.Proof.X25519.PPC64LE
+open VG.Spec.X25519 (P)
+
+theorem FR_eq : FR = 864 := rfl
+theorem FY_eq : FY = 896 := rfl
+
+section
+variable {b : Addr}
+
+/-- The slot's limbs copied to `FR`. -/
+theorem freezeCopy_ok {s : State} (hc : Ctx b s) (a : Slot) :
+    WP isa (.block (freezeCopy a)) s fun t =>
+      Rest [.r7] s t ∧ Frame [⟨b + BitVec.ofNat 64 FR, 32⟩] s.mem t.mem ∧
+      ∀ k < 8, limb t.mem b FR k = limb s.mem b (offset a) k := by
+  obtain ha := slot_range a
+  have hF := FR_eq
+  refine WP.mono (fill_ok (o := FR) (src := fun k => [.load .w .r7 .r6 (offset a + 4 * k)])
+    (f := limb s.mem b (offset a)) hc (by omega_arith) fun k hk t h => ?_) fun t h => ⟨h.rest, h.frame, h.outs⟩
+  refine lw0_ok (hc.of_rest h.rest (by decide)) (d := offset a + 4 * k) (by omega_arith) fun u v =>
+    WP.block_nil ⟨?_, v.rest (by decide), v.mem⟩
+  rw [v.gpr, toNat_ext32, Nat.mod_eq_of_lt (BitVec.isLt _)]
+  show wd t.mem b (offset a + 4 * k) = _
+  refine wd_frame h.frame fun r hr => ?_
+  rw [List.mem_singleton.mp hr]
+  exact Offset.disjoint _ (.inl (by omega_arith)) (by omega_arith) (by omega_arith)
+
+/-- A prefix of eight limb stores, each source writing `r5` and `r7`. -/
+structure FillInv5 (b : Addr) (o : Nat) (s0 : State) (f : Nat → Nat) (k : Nat) (s : State) : Prop where
+  rest : Rest [.r5, .r7] s0 s
+  frame : Frame [⟨b + BitVec.ofNat 64 o, 4 * k⟩] s0.mem s.mem
+  outs : ∀ j < k, limb s.mem b o j = f j
+
+theorem fill5_ok {o : Nat} {src : Nat → List Instr} {s0 : State}
+    {f : Nat → Nat} (hc : Ctx b s0) (ho : o + 32 ≤ 4096)
+    (hsrc : ∀ k < 8, ∀ s, FillInv5 b o s0 f k s →
+      WP isa (.block (src k)) s fun t =>
+        (t.gpr .r7).toNat % 2 ^ 32 = f k ∧ Rest [.r5, .r7] s t ∧ t.mem = s.mem) :
+    WP isa (.block ((List.range 8).flatMap fun k =>
+      src k ++ ([.store .w .r7 .r6 (o + 4 * k)] : List Instr))) s0 (FillInv5 b o s0 f 8) := by
+  refine wp_range_flatMap (M := isa) (FillInv5 b o s0 f) (fun k s hk h => ?_)
+    8 (Nat.le_refl _) s0 ⟨Rest.refl _ _, Frame.refl _ _, fun j hj => by omega_arith⟩
+  refine WP.append (hsrc k hk s h) fun t ⟨hv, hr, hm⟩ => ?_
+  refine sw0_ok ((hc.of_rest h.rest (by decide)).of_rest hr (by decide))
+    (by omega_arith) fun u hu => WP.block_nil ?_
+  obtain em : u.mem = s.mem.writeW (b + BitVec.ofNat 64 (o + 4 * k)) ((t.gpr .r7).setWidth 32) := by
+    rw [hu.mem, hm]
+  refine ⟨h.rest.trans (hr.trans (hu.rest _)), ?_, fun j hj => ?_⟩
+  · rw [em]
+    refine (h.frame.sub fun r hmem => ⟨_, List.mem_singleton_self _, ?_⟩).writeW
+      (List.mem_singleton_self _) _ (Offset.contains _ (Nat.le_add_right _ _)
+        (by omega_arith) (by omega_arith))
+    rw [List.mem_singleton.mp hmem]
+    exact Region.sub_prefix (by omega_arith)
+  · rw [limb, em]
+    rcases Nat.lt_succ_iff_lt_or_eq.mp hj with hj | rfl
+    · rw [wd_write_other _ _ _ (by omega_arith) (by omega_arith) (by omega_arith)]
+      exact h.outs j hj
+    · rw [wd_write_self, toNat_lo32, hv]
+
+/-- After `j` limbs of the selection from `s0`. -/
+theorem freezeSelect_ok {s0 : State} (hc : Ctx b s0) {sw : Nat} (hsw : sw ≤ 1)
+    (h11 : s0.gpr .r11 = 0 - BitVec.ofNat 64 sw) :
+    WP isa (.block freezeSelect) s0 fun t =>
+      Rest [.r5, .r7] s0 t ∧ Frame [⟨b + BitVec.ofNat 64 FR, 32⟩] s0.mem t.mem ∧
+      ∀ k < 8, limb t.mem b FR k = sel sw (limb s0.mem b FR k) (limb s0.mem b FY k) := by
+  have hF := FR_eq
+  have hY := FY_eq
+  refine WP.mono (fill5_ok (o := FR) (f := fun k => sel sw (limb s0.mem b FR k) (limb s0.mem b FY k)) hc
+    (by omega_arith) fun k hk t h => ?_) fun t h => ⟨h.rest, h.frame, h.outs⟩
+  obtain hct : Ctx b t := hc.of_rest h.rest (by decide)
+  obtain hw : ∀ d, d + 4 ≤ FR ∨ FR + 4 * k ≤ d → d + 4 ≤ 4096 → wd t.mem b d = wd s0.mem b d := fun d hd hd' =>
+    wd_frame h.frame fun r hr => by
+      rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ hd (by omega_arith) (by omega_arith)
+  unfold selectSrc
+  refine lw0_ok hct (d := FR + 4 * k) (by omega_arith) fun t1 v1 => ?_
+  refine lw0_ok (hct.of_rest (v1.rest (ws := [.r7]) (by decide)) (by decide)) (d := FY + 4 * k) (by omega_arith)
+    fun t2 v2 => ?_
+  refine wp_xor fun t3 v3 => wp_and fun t4 v4 => wp_xor fun t5 v5 => WP.block_nil ⟨?_, ?_, ?_⟩
+  · have em : t3.gpr .r11 = 0 - BitVec.ofNat 64 sw := by
+      rw [v3.other _ (by decide), v2.other _ (by decide), v1.other _ (by decide), h.rest.gpr _ (by decide), h11]
+    obtain ex : t2.gpr .r7 = (t.mem.readW (b + BitVec.ofNat 64 (FR + 4 * k)) 32).setWidth 64 := by
+      rw [v2.other _ (by decide), v1.gpr]
+    obtain ey : t2.gpr .r5 = (t.mem.readW (b + BitVec.ofNat 64 (FY + 4 * k)) 32).setWidth 64 := by
+      rw [v2.gpr, v1.mem]
+    obtain hx := hw (FR + 4 * k) (.inr (by omega_arith)) (by omega_arith)
+    obtain hy := hw (FY + 4 * k) (.inr (by omega_arith)) (by omega_arith)
+    unfold wd at hx hy
+    rw [v5.gpr, v4.other .r7 (by decide), v4.gpr, v3.other .r7 (by decide), v3.gpr, em, ex, ey]
+    rcases Nat.le_one_iff_eq_zero_or_eq_one.mp hsw with rfl | rfl
+    · rw [sel0r, toNat_ext32, hx]; exact Nat.mod_eq_of_lt (BitVec.isLt _)
+    · rw [sel1r, toNat_ext32, hy]; exact Nat.mod_eq_of_lt (BitVec.isLt _)
+  · exact (v1.rest (by decide)).trans ((v2.rest (by decide)).trans ((v3.rest (by decide)).trans
+      ((v4.rest (by decide)).trans (v5.rest (by decide)))))
+  · rw [v5.mem, v4.mem, v3.mem, v2.mem, v1.mem]
+
+/-- **The element of slot `a` modulo `p`**, its limbs `frR` at `FR`. -/
+theorem freeze_ok {s : State} (hc : Ctx b s) (a : Slot) :
+    WP isa (.block (freeze a)) s fun t =>
+      Rest [.r4, .r5, .r7, .r8, .r11] s t ∧ Frame [⟨b + BitVec.ofNat 64 FR, 64⟩] s.mem t.mem ∧
+      (∀ k < 8, limb t.mem b FR k = frR (limb s.mem b (offset a)) k) ∧
+      V t.mem b FR = V s.mem b (offset a) % P := by
+  have hX := FR_eq
+  have hY := FY_eq
+  obtain hl : ∀ k < 8, limb s.mem b (offset a) k < 2 ^ 32 := fun k _ => limb_lt _ _ _ _
+  obtain ⟨tA, tY, hS, hR, hv⟩ := freeze_facts hl
+  obtain ⟨-, -, lm, c1⟩ := mask31_facts hl
+  unfold freeze freezeCore
+  simp only [List.append_assoc, List.cons_append, List.nil_append]
+  refine WP.append (freezeCopy_ok hc a) fun s0 ⟨r0, f0, l0⟩ => ?_
+  obtain hc0 : Ctx b s0 := hc.of_rest r0 (by decide)
+  obtain hl0 : limb s0.mem b FR = fun k => if k < 8 then limb s.mem b (offset a) k else limb s0.mem b FR k := by
+    funext k; split
+    · exact l0 k ‹_›
+    · rfl
+  refine WP.append (freezeA_ok (X2 := FR) (by omega_arith) hc0) fun s1 ⟨h8, hl1, hf1, hr1⟩ => ?_
+  obtain hl1' : ∀ k < 8, limb s1.mem b FR k = mask31 (limb s.mem b (offset a)) k := fun k hk => by
+    rw [hl1 k hk]
+    simp only [mask31]
+    split
+    · rename_i h; subst h; rw [l0 7 (by decide)]
+    · rw [l0 k hk]
+  obtain h8' : (s1.gpr .r8).toNat = 19 * (limb s.mem b (offset a) 7 / 2 ^ 31) := by rw [h8, l0 7 (by decide)]
+  obtain hc1 : Ctx b s1 := hc0.of_rest hr1 (by decide)
+  refine WP.append (pass_ok (rb := .r6) (o := FR) (s0 := s1) (c := mask31 (limb s.mem b (offset a)))
+    (cin := 19 * (limb s.mem b (offset a) 7 / 2 ^ 31)) (by decide) (by decide) (by omega_arith)
+    (fun k hk => by rw [hc1.r6]; exact hc1.inW (by omega_arith)) h8'
+    (fun k hk => by have := lm k hk; omega_arith) (by omega_arith) ?_) fun s2 hp2 => ?_
+  · intro k hk s' hp
+    refine WP.mono (ldSrc_ok (hc1.of_rest hp.rest (by decide)) (o := FR) (k := k) (by omega_arith))
+      fun t ht => ⟨?_, ht.2.1.mono (by decide), ht.2.2⟩
+    rw [ht.1, wd_pass hc1 hp.frame (by omega_arith) (by omega_arith) (by omega_arith)]
+    exact hl1' k hk
+  obtain hc2 : Ctx b s2 := hc1.of_rest hp2.rest (by decide)
+  obtain hpo2 : ∀ j < 8, wd s2.mem b (FR + 4 * j) = frA (limb s.mem b (offset a)) j :=
+    fun j hj => by have := hp2.outs j hj; rwa [hc1.r6] at this
+  obtain hpf2 : Frame [⟨b + BitVec.ofNat 64 FR, 32⟩] s1.mem s2.mem := by
+    have := hp2.frame; rwa [hc1.r6] at this
+  refine wp_li (by decide) fun s3 u3 => ?_
+  obtain hc3 : Ctx b s3 := hc2.of_rest (u3.rest (ws := [.r8]) (by decide)) (by decide)
+  refine WP.append (pass_ok (rb := .r6) (o := FY) (s0 := s3) (c := frA (limb s.mem b (offset a)))
+    (cin := 19) (by decide) (by decide) (by omega_arith)
+    (fun k hk => by rw [hc3.r6]; exact hc3.inW (by omega_arith))
+    (by rw [u3.gpr]; rfl) (fun k hk => by
+      have := out_lt (mask31 (limb s.mem b (offset a))) (19 * (limb s.mem b (offset a) 7 / 2 ^ 31)) k
+      unfold frA; omega_arith) (by decide) ?_) fun s4 hp4 => ?_
+  · intro k hk s' hp
+    refine WP.mono (ldSrc_ok (hc3.of_rest hp.rest (by decide)) (o := FR) (k := k) (by omega_arith))
+      fun t ht => ⟨?_, ht.2.1.mono (by decide), ht.2.2⟩
+    rw [ht.1, wd_pass hc3 hp.frame (by omega_arith) (by omega_arith) (by omega_arith), u3.mem]
+    exact hpo2 k hk
+  obtain hc4 : Ctx b s4 := hc3.of_rest hp4.rest (by decide)
+  obtain hpo4 : ∀ j < 8, wd s4.mem b (FY + 4 * j) = frY (limb s.mem b (offset a)) j :=
+    fun j hj => by have := hp4.outs j hj; rwa [hc3.r6] at this
+  obtain hpf4 : Frame [⟨b + BitVec.ofNat 64 FY, 32⟩] s3.mem s4.mem := by
+    have := hp4.frame; rwa [hc3.r6] at this
+  obtain hx4 : ∀ k < 8, limb s4.mem b FR k = frA (limb s.mem b (offset a)) k := by
+    intro k hk
+    rw [limb, wd_frame hpf4 fun r hr => by
+      rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (.inl (by omega_arith)) (by omega_arith) (by omega_arith),
+      u3.mem, hpo2 k hk]
+  refine WP.append (freezeB_ok (Y := FY) (by omega_arith) hc4) fun s5 ⟨h11, hy5, hf5, hr5⟩ => ?_
+  obtain hc5 : Ctx b s5 := hc4.of_rest hr5 (by decide)
+  obtain hx5 : ∀ k < 8, limb s5.mem b FR k = frA (limb s.mem b (offset a)) k := by
+    intro k hk
+    rw [limb, wd_frame hf5 fun r hr => by
+      rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (.inl (by omega_arith)) (by omega_arith) (by omega_arith)]
+    exact hx4 k hk
+  obtain hy5' : ∀ k < 8, limb s5.mem b FY k = mask31 (frY (limb s.mem b (offset a))) k := by
+    intro k hk
+    rw [hy5 k hk]
+    simp only [mask31]
+    split
+    · rename_i h; subst h; rw [limb, hpo4 7 (by decide)]
+    · rw [limb, hpo4 k hk]
+  obtain h11' : s5.gpr .r11 = 0 - BitVec.ofNat 64 (frS (limb s.mem b (offset a))) := by
+    rw [h11, limb, hpo4 7 (by decide)]; rfl
+  refine WP.mono (freezeSelect_ok hc5 hS h11') fun t ⟨rt, ft, lt⟩ => ⟨?_, ?_, ?_, ?_⟩
+  · exact (r0.mono (by decide)).trans ((hr1.mono (by decide)).trans ((hp2.rest.mono (by decide)).trans
+      ((u3.rest (by decide)).trans ((hp4.rest.mono (by decide)).trans ((hr5.mono (by decide)).trans
+        (rt.mono (by decide)))))))
+  · have hs1 : ∀ z, z = FR ∨ z = FY → Region.Sub ⟨b + BitVec.ofNat 64 z, 32⟩ ⟨b + BitVec.ofNat 64 FR, 64⟩ :=
+      fun z hz => by rcases hz with rfl | rfl <;> exact Offset.sub _ (by omega_arith) (by omega_arith)
+    refine (frame_sub1 f0 (hs1 FR (.inl rfl)) (List.mem_singleton_self _)).trans ?_
+    refine (frame_sub1 hf1 (hs1 FR (.inl rfl)) (List.mem_singleton_self _)).trans ?_
+    refine (frame_sub1 hpf2 (hs1 FR (.inl rfl)) (List.mem_singleton_self _)).trans ?_
+    rw [← u3.mem]
+    refine (frame_sub1 hpf4 (hs1 FY (.inr rfl)) (List.mem_singleton_self _)).trans ?_
+    refine (frame_sub1 hf5 (hs1 FY (.inr rfl)) (List.mem_singleton_self _)).trans ?_
+    exact frame_sub1 ft (hs1 FR (.inl rfl)) (List.mem_singleton_self _)
+  · intro k hk
+    rw [lt k hk, hx5 k hk, hy5' k hk]; rfl
+  · rw [V, val32_congr (g := frR (limb s.mem b (offset a))) fun k hk => (lt k hk).trans (by rw [hx5 k hk, hy5' k hk]; rfl), hv]
+    rfl
+
+end
+
+end VG.Proof.Ed25519.PPC64LE
+
+end
+
+end
 
 /-!
 # Ed25519 on PPC64LE: inversion and encoding
@@ -133,13 +351,13 @@ theorem sqnLoop_ok {b : Addr} {s : State} (hc : Ctx b s) (o : Slot) (ho : 14 ≤
     (hn' : n < 2 ^ 15) :
     WP isa (sqnLoop o n) s fun t =>
       Rest (.r12 :: clob) s t ∧ Frame [PR b] s.mem t.mem ∧
-      env t.mem b = Function.update (env s.mem b) o (sqn (env s.mem b o) n) := by
+      env t.mem b = Fun.update (env s.mem b) o (sqn (env s.mem b o) n) := by
   unfold sqnLoop
   refine WP.seq (wp_li (by omega_arith) fun s1 u1 => WP.block_nil ?_)
   refine sqLoop_ok hc o ho (env s.mem b o) n hn' n s1 hn (Nat.le_refl _) (u1.rest (by decide))
     (by rw [u1.mem]; exact Frame.refl _ _) u1.gpr ?_
   rw [u1.mem, Nat.sub_self]
-  exact (Function.update_eq_self _ _).symm
+  exact (Fun.update_eq_self _ _).symm
 
 theorem inv_exp : (2 ^ 250 - 1) * 2 ^ 5 + 11 = P - 2 := by decide
 
@@ -157,10 +375,10 @@ theorem invert_ok {b : Addr} {s : State} (hc : Ctx8 b s) :
   refine WP.mono (mulCall_ok hc2.ctx 15 15 14) fun t3 ⟨k3, e3⟩ => ⟨?_, ?_, fun i hi => ?_⟩
   · refine k1.trans (Keep.trans ⟨r2.mono (by decide), f2.sub fun r hr => ⟨_, List.mem_singleton_self _, ?_⟩⟩ k3)
     rw [List.mem_singleton.mp hr]; exact Offset.sub _ (by omega_arith) (by omega_arith)
-  · rw [e3, Function.update_self, e2, Function.update_self, Function.update_of_ne (by decide), e15, e14,
+  · rw [e3, Fun.update_self, e2, Fun.update_self, Fun.update_of_ne (by decide), e15, e14,
       Proof.X25519.sqn_pw, Proof.X25519.pw_mul, inv_exp, Proof.X25519.pow_pw]
   · have h15 : i ≠ 15 := fun h => by subst h; exact absurd hi (by decide)
-    rw [e3, Function.update_of_ne h15, e2, Function.update_of_ne h15, ek i hi]
+    rw [e3, Fun.update_of_ne h15, e2, Fun.update_of_ne h15, ek i hi]
 
 theorem affine_eval (e : Env) :
     evalOps affineOps e 0 = e 0 * e 15 ∧ evalOps affineOps e 1 = e 1 * e 15 := ⟨rfl, rfl⟩
@@ -236,8 +454,8 @@ theorem encodeSign_ok {s : State} (hc : Ctx b s) {y x : Nat} (hy : y < 2 ^ 255) 
       by_cases h : k = 7
       · subst h
         have hx := Nat.mod_lt x (show 0 < 2 by decide)
-        rw [iteT rfl, wd_write_self, toNat_lo32, e2, Nat.mod_eq_of_lt (by omega_arith)]
-      · rw [iteF h, wd_write_other _ _ _ (by omega_arith) (by omega_arith) (by omega_arith)]; rfl
+        rw [ite_eq_left rfl, wd_write_self, toNat_lo32, e2, Nat.mod_eq_of_lt (by omega_arith)]
+      · rw [ite_eq_right h, wd_write_other _ _ _ (by omega_arith) (by omega_arith) (by omega_arith)]; rfl
     rw [V, val32_congr hl, ← hv, V]
     simp only [val32, ite_true, show (0 : Nat) ≠ 7 by decide, show (1 : Nat) ≠ 7 by decide,
       show (2 : Nat) ≠ 7 by decide, show (3 : Nat) ≠ 7 by decide, show (4 : Nat) ≠ 7 by decide,

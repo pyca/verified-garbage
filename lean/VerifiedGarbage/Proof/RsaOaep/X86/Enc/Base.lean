@@ -13,7 +13,7 @@ public import VerifiedGarbage.Impl.RsaPss.X86
 /-!
 # RSAES-OAEP encryption with a precomputed public key on x86: where everything is
 
-As on ARMv7 (`Proof/RsaOaep/Arm/EncBase.lean`): `EP`, what two runs share
+As on ARMv7 (`Proof/RsaOaep/Arm/EncEm.lean`): `EP`, what two runs share
 (the frame's base `B`, the pointers, the lengths, and the public key's bytes
 and precomputed words), and its layout (`EP.lay`, with the seed's `D`
 bytes), with the 100 bytes below the frame that the call of

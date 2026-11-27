@@ -5,6 +5,14 @@
 // gives.
 
 vg_ecdsa_p224_sign_k:
+	call 2f
+2:
+	mov eax, DWORD PTR [esp]
+	.byte 0x81, 192
+	.long {VG_P224_COMB}
+	pop ecx
+	mov edx, DWORD PTR [esp+20]
+	mov DWORD PTR [edx+60], eax
 	mov eax, DWORD PTR [esp+20]
 	mov DWORD PTR [eax], ebx
 	mov DWORD PTR [eax+4], esi
@@ -473,42 +481,7 @@ vg_ecdsa_p224_sign_k:
 	mov BYTE PTR [ebx+4623], dl
 	test esi, esi
 	jne 22b
-	mov eax, DWORD PTR [edi+320]
-	mov DWORD PTR [edi+512], eax
-	mov eax, DWORD PTR [edi+324]
-	mov DWORD PTR [edi+516], eax
-	mov eax, DWORD PTR [edi+328]
-	mov DWORD PTR [edi+520], eax
-	mov eax, DWORD PTR [edi+332]
-	mov DWORD PTR [edi+524], eax
-	mov eax, DWORD PTR [edi+336]
-	mov DWORD PTR [edi+528], eax
-	mov eax, DWORD PTR [edi+340]
-	mov DWORD PTR [edi+532], eax
-	mov eax, DWORD PTR [edi+344]
-	mov DWORD PTR [edi+536], eax
-	mov eax, DWORD PTR [edi+348]
-	mov DWORD PTR [edi+540], eax
-	mov eax, DWORD PTR [edi+352]
-	mov DWORD PTR [edi+544], eax
-	mov eax, DWORD PTR [edi+356]
-	mov DWORD PTR [edi+548], eax
-	mov eax, DWORD PTR [edi+360]
-	mov DWORD PTR [edi+552], eax
-	mov eax, DWORD PTR [edi+364]
-	mov DWORD PTR [edi+556], eax
-	mov eax, DWORD PTR [edi+368]
-	mov DWORD PTR [edi+560], eax
-	mov eax, DWORD PTR [edi+372]
-	mov DWORD PTR [edi+564], eax
-	mov eax, DWORD PTR [edi+376]
-	mov DWORD PTR [edi+568], eax
-	mov eax, DWORD PTR [edi+380]
-	mov DWORD PTR [edi+572], eax
-	push edi
-	call {vg_p224_mul}
-	pop eax
-	mov edi, DWORD PTR [esp+20]
+	call {vg_p224_comb}
 	mov eax, DWORD PTR [edi+224]
 	mov DWORD PTR [edi+992], eax
 	mov eax, DWORD PTR [edi+228]

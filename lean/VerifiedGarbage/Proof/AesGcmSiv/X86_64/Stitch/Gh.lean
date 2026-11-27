@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
 import VerifiedGarbage.Proof.Aes.X86_64.Lit
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-!
 # AES-GCM-SIV's interleaved loop: the POLYVAL loads
@@ -84,7 +85,7 @@ theorem loadR_ok {k : Nat} (hk : k < 8) (s : State)
   let v := s.mem.readW a 256
   let s₁ := s.setV .l256 .xmm7 (v.extractLsb' 0 128) (v.extractLsb' 128 128)
   rw [ldR_eq, WP.block_cons_iff]
-  refine ⟨s₁, by simp only [isa, exec, State.load256, ea_at, hin, ite_true, Option.map_some]; rfl, ?_⟩
+  refine ⟨s₁, by simp only [isa, reduceExec, State.load256, ea_at, hin, ite_true, Option.map_some]; rfl, ?_⟩
   have l7 : ∀ l < 2, s₁.lane .xmm7 l = s.mem.readW (a + BitVec.ofNat 64 (16 * l)) 128 := fun l hl => by
     rcases (by omega_using [hl] : l = 0 ∨ l = 1) with rfl | rfl
     · simp [s₁, State.lane_setV256, v, load256_lo]
@@ -120,7 +121,7 @@ theorem ghLoad_ok {k : Nat} (hk : k < 8) (t : State)
   let v := t.mem.readW a 256
   let t₁ := t.setV .l256 .xmm12 (v.extractLsb' 0 128) (v.extractLsb' 128 128)
   rw [ghLoad, WP.block_cons_iff]
-  refine ⟨t₁, by simp only [isa, exec, State.load256, ea_at, hpin, ite_true, Option.map_some]; rfl, ?_⟩
+  refine ⟨t₁, by simp only [isa, reduceExec, State.load256, ea_at, hpin, ite_true, Option.map_some]; rfl, ?_⟩
   have keep : ∀ r, r ≠ .xmm12 → ∀ l < 2, t₁.lane r l = t.lane r l := fun r hr l _ => by
     simp [t₁, State.lane_setV256, hr]
   have l12 : ∀ l < 2, t₁.lane .xmm12 l = t.mem.readW (a + BitVec.ofNat 64 (16 * l)) 128 := fun l hl => by

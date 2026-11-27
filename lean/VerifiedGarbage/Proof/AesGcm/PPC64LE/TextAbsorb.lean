@@ -15,7 +15,7 @@ public import VerifiedGarbage.Impl.AesGcm.PPC64LE
 # AES-GCM on PPC64LE: absorbing the text (`textAbsorb`)
 
 Untrusted: everything here is checked by Lean. As on ARMv7
-(`Proof/AesGcm/Arm/TextAbsorb.lean`): `textAbsorb` absorbs the `len` bytes
+(`Proof/AesGcm/Arm/StreamFinish.lean`): `textAbsorb` absorbs the `len` bytes
 (`r19`) at `data` (`r20`) into GHASH as text: before the first text
 (`text_len`, `r23`, 0) it pads the additional data (of `aad_len` bytes,
 `r22`) first (`firstFlush`), and it does nothing for no bytes
@@ -33,8 +33,7 @@ open VG.Proof.Gcm (Absorbed)
 
 /-- The regions `textAbsorb` writes. -/
 abbrev taFrame (st w : Addr) : List Region :=
-  [⟨st + BitVec.ofNat 64 16, 16⟩, ⟨st + BitVec.ofNat 64 32, 16⟩, ⟨w + BitVec.ofNat 64 96, 16⟩,
-    ⟨w + BitVec.ofNat 64 512, 256⟩]
+  [⟨st + BitVec.ofNat 64 16, 16⟩, ⟨st + BitVec.ofNat 64 32, 16⟩, ⟨w + BitVec.ofNat 64 96, 16⟩]
 
 /-- After `textAbsorb`, from `m₀`: GHASH has absorbed `x`. -/
 structure TaOut (V : Reg → BitVec 64) (sp : Addr) (H : Block) (x₀ x : List Byte) (m₀ : Mem) (s : State) :
@@ -49,12 +48,12 @@ theorem abs_taFrame {st w : Addr} {m m' : Mem} (h : Frame (absFrame st w 16) m m
     Frame (taFrame st w) m m' :=
   h.mono fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl <;> simp
+    rcases hr with rfl | rfl <;> simp
 
 theorem t_taFrame {st w : Addr} {m m' : Mem} (h : Frame (tFrame st w 16) m m') : Frame (taFrame st w) m m' :=
   h.mono fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl <;> simp
+    rcases hr with rfl | rfl <;> simp
 
 /-- Code never changes the permissions or the stack pointer. -/
 theorem WP.with_rdwr {c : Prog isa} {s : State} {Q : State → Prop} (h : WP isa c s Q) :
@@ -153,9 +152,8 @@ theorem textAbsorb_ok [VG.Proof.Gcm.PPC64LE.GhashLaw] {s : State} {H : Block} {a
     rw [hk₅.mem]
     exact bytesAt_frame hf₄ (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl
+      rcases hr with rfl | rfl
       · exact hd.st.sub_right (Lay.stSub (by decide))
-      · exact hd.w.sub_right (Lay.wSub (by decide))
       · exact hd.w.sub_right (Lay.wSub (by decide))) (by have := hd.lt; omega_using [])
   have hne : bytesAt s.mem (V .r20) (V .r19).toNat ≠ [] := by
     intro e; have := congrArg List.length e; rw [length_bytesAt] at this; exact h0 (by simpa using this)

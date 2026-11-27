@@ -26,6 +26,5 @@ the instructions again in every check that evaluates the code (constant time,
 namespace VG.Impl.X448.X86
 
 materialize_code x448
-materialize_code x448Base
 
 end VG.Impl.X448.X86

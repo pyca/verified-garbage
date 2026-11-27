@@ -3,21 +3,15 @@ module
 import VerifiedGarbage.Impl.ChaCha20Poly1305.RISCV64
 public import VerifiedGarbage.Proof.ChaCha20.RISCV64.Xor
 public import VerifiedGarbage.Proof.Poly1305.RISCV64.Init
-public import VerifiedGarbage.Proof.Poly1305.RISCV64.Update
-public import VerifiedGarbage.Proof.Poly1305.RISCV64.Finalize
 public import VerifiedGarbage.Proof.Framework.RISCV64.Call
 import VerifiedGarbage.Proof.Poly1305.RISCV64.Lit
-import VerifiedGarbage.Proof.ChaCha20.RISCV64.Block
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.PowLit
 meta import VerifiedGarbage.Proof.Poly1305.RISCV64.Lit
-meta import VerifiedGarbage.Proof.ChaCha20.RISCV64.Block
+meta import VerifiedGarbage.Proof.ChaCha20.RISCV64.Xor
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Poly1305.RISCV64.Init
-meta import VerifiedGarbage.Proof.Poly1305.RISCV64.Update
-meta import VerifiedGarbage.Proof.Poly1305.RISCV64.Finalize
-meta import VerifiedGarbage.Proof.ChaCha20.RISCV64.Xor
 meta import VerifiedGarbage.Impl.ChaCha20Poly1305.RISCV64
 public import VerifiedGarbage.Impl.ChaCha20.RISCV64.Xor
 public import VerifiedGarbage.Impl.Poly1305.RISCV64
@@ -123,7 +117,7 @@ theorem init_call {s : State} {P K : Addr} (h0 : s.gpr .a0 = P) (h1 : s.gpr .a1 
     (hc : Covers ([⟨K, 32⟩] ++ [⟨P, 128⟩]) (s.rd ++ s.wr))
     (hw : Covers [⟨P, 128⟩] s.wr) {Q : State → Prop}
     (hQ : ∀ s', Kept [⟨P, 128⟩] s s' → Repr s'.mem P (bytesAt s.mem K 32) [] → Q s') :
-    WP isa (.call "vg_poly1305_init" Impl.Poly1305.RISCV64.init) s Q := by
+    WP isa (.call "vg_poly1305_init_core" Impl.Poly1305.RISCV64.init) s Q := by
   have c0 : s.callEntry.gpr .a0 = P := (State.callEntry_gpr _ (by decide)).trans h0
   have c1 : s.callEntry.gpr .a1 = K := (State.callEntry_gpr _ (by decide)).trans h1
   refine WP.call (k := Proof.Poly1305.initRISCV64) Proof.Poly1305.RISCV64.init_verified.1
@@ -146,7 +140,7 @@ theorem update_call {s : State} {P D : Addr} {c : BitVec 64} {n : Nat} (h0 : s.g
     (hQ : ∀ s', Kept [⟨P, 128⟩] s s' →
       (∀ key msg, Buffered s.mem P key msg → c.toNat % 16 = msg.length % 16 →
         Buffered s'.mem P key (msg ++ bytesAt s.mem D n)) → Q s') :
-    WP isa (.call "vg_poly1305_update" Impl.Poly1305.RISCV64.update) s Q := by
+    WP isa (.call "vg_poly1305_update_core" Impl.Poly1305.RISCV64.update) s Q := by
   have hn' : (BitVec.ofNat 64 n).toNat = n := by
     rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt hn
   have c0 : s.callEntry.gpr .a0 = P := (State.callEntry_gpr _ (by decide)).trans h0
@@ -173,7 +167,7 @@ theorem finalize_call {s : State} {P O : Addr} {c : BitVec 64} (h0 : s.gpr .a0 =
     (hQ : ∀ s', Kept [⟨P, 128⟩, ⟨O, 16⟩] s s' →
       (∀ key msg, Buffered s.mem P key msg → c.toNat % 16 = msg.length % 16 →
         bytesAt s'.mem O 16 = mac key msg) → Q s') :
-    WP isa (.call "vg_poly1305_finalize" Impl.Poly1305.RISCV64.finalize) s Q := by
+    WP isa (.call "vg_poly1305_finalize_core" Impl.Poly1305.RISCV64.finalize) s Q := by
   have c0 : s.callEntry.gpr .a0 = P := (State.callEntry_gpr _ (by decide)).trans h0
   have c1 : s.callEntry.gpr .a1 = c := (State.callEntry_gpr _ (by decide)).trans h1
   have c2 : s.callEntry.gpr .a2 = O := (State.callEntry_gpr _ (by decide)).trans h2

@@ -1,12 +1,11 @@
 module
 
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.PairedTable
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTableLayout
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTableConstants
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTableWords
 import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
 import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Mem
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TableWords
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTableConstants
 
 /-! ### `MlDsa.AArch64.Optimized.PairedTableLayout`, which only this module used -/
 

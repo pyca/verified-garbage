@@ -17,6 +17,10 @@ inductive Hint (T : Type) where
   | frame (h : Hint T)
   deriving Lean.ToExpr
 
+/-- `toExpr` of a hint, compiled here (`Taint.Hint.toExprNS`). -/
+@[nospecialize] def Hint.toExprNS {T : Type} [Lean.ToExpr T] (h : Hint T) : Lean.Expr :=
+  Lean.toExpr h
+
 end NativeHints
 
 /-- Operations for untrusted hint search. Only the separate sound checker
@@ -41,13 +45,14 @@ def checkBlock (τ : A.T) (is : List M.Instr) : Option A.T :=
 
 def chunk : Nat := 256
 
-def chunkHints (chunkSize : Nat) : A.T → List M.Instr → Nat → List A.T
-  | _, _, 0 => []
+/-- The analysis of a block, with its hints: the analysis after every `chunkSize`
+instructions but the last (of at most `n + 1` such chunks). -/
+def blockHint (chunkSize : Nat) : A.T → List M.Instr → Nat → Option (A.T × List A.T)
+  | τ, is, 0 => (A.checkBlock τ is).map (·, [])
   | τ, is, n + 1 =>
-    if is.length ≤ chunkSize then [] else
-    match A.checkBlock τ (is.take chunkSize) with
-    | some τ' => τ' :: chunkHints chunkSize τ' (is.drop chunkSize) n
-    | none => []
+    if is.length ≤ chunkSize then (A.checkBlock τ is).map (·, []) else
+    (A.checkBlock τ (is.take chunkSize)).bind fun τ' =>
+      (blockHint chunkSize τ' (is.drop chunkSize) n).map fun (τ'', ms) => (τ'', τ' :: ms)
 
 /-- How many times the search for a loop invariant weakens its candidate. -/
 def loopFuel : Nat := 4
@@ -58,7 +63,7 @@ public everything the candidate says is public (or leaves the loop condition
 secret), weakening the candidate to what is public both before and after the
 body. -/
 def hint (chunkSize : Nat) : A.T → Prog M → Option (A.T × Hint A.T)
-  | τ, .block is => (A.checkBlock τ is).map fun τ' => (τ', .block (chunkHints A chunkSize τ is is.length) chunkSize)
+  | τ, .block is => (blockHint A chunkSize τ is is.length).map fun (τ', ms) => (τ', .block ms chunkSize)
   | τ, .seq c₁ c₂ =>
     (hint chunkSize τ c₁).bind fun (τ₁, h₁) => (hint chunkSize τ₁ c₂).map fun (τ₂, h₂) => (τ₂, .seq τ₁ h₁ h₂)
   | τ, .ite _ t e =>
@@ -145,6 +150,10 @@ inductive SHint (T : Type) where
   | sum (k : Nat)
   deriving Lean.ToExpr
 
+/-- `toExpr` of a hint, compiled here (`Taint.Hint.toExprNS`). -/
+@[nospecialize] def SHint.toExprNS {T : Type} [Lean.ToExpr T] (h : SHint T) : Lean.Expr :=
+  Lean.toExpr h
+
 /-- `Taint.codeBeq`. -/
 def codeBeq {I C : Type} [BEq I] [BEq C] : Code I C → Code I C → Bool
   | .block a, .block b => a == b
@@ -219,7 +228,7 @@ def chunk : Nat := 256
 def hintSumA (S : List A.Summary) (same : Prog M → Prog M → Bool) :
     List A.T → A.T → Prog M → Option (A.T × SHint A.T)
   | _, τ, .block is => sumOr (findSumCode A same (.block is) τ S 0) fun _ =>
-    (A.checkBlock τ is).map fun τ' => (τ', .block (A.chunkHints chunk τ is is.length))
+    (A.blockHint chunk τ is is.length).map fun (τ', ms) => (τ', .block ms)
   | anc, τ, .seq c₁ c₂ => sumOr (findSumCode A same (.seq c₁ c₂) τ S 0) fun _ =>
     (hintSumA S same anc τ c₁).bind fun (τ₁, h₁) =>
       let anc' := τ :: anc

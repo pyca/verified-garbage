@@ -25,6 +25,10 @@ building. Exits non-zero on violations.
     directly or not): every module that reaches it pays about 1.5e9 more
     instructions to import (a quarter of a typical module's build), and its
     simp lemmas slow `simp` down.
+  * A module that publicly imports any module of Mathlib is read (imported,
+    or passed on by `public import`s) by at most `PUBLIC_READERS` modules, but
+    those of `PUBLIC_READERS_ALLOWED`: each of its readers loads that part of
+    Mathlib (0.1 to 0.4 s, and its linters), whether it uses it or not.
   * A module of `Proof/` or `Artifacts/` with a
     numeral exponent (`x ^ 32`) imports `Proof/Framework/PowLit.lean`
     (directly or through another module), whose macro elaborates it as
@@ -113,6 +117,7 @@ META = re.compile(
 META_WORDS = ("elab", "simproc", "CoreM", "MetaM", "SimpM", "TermElabM", "TacticM", "CommandElabM")
 # `import`, and in a module `public`, `meta` and `all` imports.
 IMPORT = re.compile(r"^(?:public\s+)?(?:meta\s+)?import\s+(?:all\s+)?([\w.]+)", re.M)
+PUBLIC_IMPORT = re.compile(r"^public\s+(?:meta\s+)?import\s+(?:all\s+)?([\w.]+)", re.M)
 TAUTO = re.compile(r"tauto(?![\w.])")  # not after `[\w.]`
 # `set_option profiler false` on a line of its own (for the whole module).
 PROFILER_OFF = re.compile(r"^set_option profiler false[ \t]*$", re.M)
@@ -134,6 +139,20 @@ HEAVY_HUBS_ALLOWED = {
     "VerifiedGarbage.Proof.Edwards.Group",
     "VerifiedGarbage.Proof.Ed448.Group.Projective",
     "VerifiedGarbage.Proof.Ed25519.Group.Extended",
+}
+PUBLIC_READERS = 40
+# Modules that publicly import Mathlib and more than `PUBLIC_READERS` modules
+# read: algebra, and bounds, that are about Mathlib's fields, `|x|` and
+# `[ZMOD n]`. Add nothing else: state what many modules read with core Lean
+# (`Framework/IsPrime.lean`, `Framework/FunUpdate.lean`, `Rsa/Iterate.lean`),
+# and convert in the proofs that need Mathlib.
+PUBLIC_READERS_ALLOWED = HEAVY_HUBS_ALLOWED | {
+    "VerifiedGarbage.Proof.Divstep.Batch",
+    "VerifiedGarbage.Proof.Divstep.Incl",
+    "VerifiedGarbage.Proof.Divstep.Tc",
+    "VerifiedGarbage.Proof.Gcm.Poly",
+    "VerifiedGarbage.Proof.Weierstrass.Complete",
+    "VerifiedGarbage.Proof.Weierstrass.Field",
 }
 # A Weierstrass curve's group law on a target, `Proof/<Curve>/<Target>/Law.lean`:
 # by design the only files that import the algebra of its proof
@@ -387,6 +406,32 @@ def heavy_hubs(imports: dict[str, list[str]]) -> list[tuple[str, list[str], int]
     return out
 
 
+def public_hubs(imports: dict[str, list[str]], public: dict[str, list[str]]) -> list[tuple[str, list[str], int]]:
+    """The modules that publicly import Mathlib and are read by more than
+    `PUBLIC_READERS` modules: (module, public imports of Mathlib, readers)."""
+    importers: dict[str, list[str]] = {}
+    passed_on: dict[str, list[str]] = {}
+    for edges, inverse in ((imports, importers), (public, passed_on)):
+        for m, imps in edges.items():
+            for i in imps:
+                inverse.setdefault(i, []).append(m)
+    out = []
+    for m, imps in public.items():
+        mathlib = [i for i in imps if i.startswith("Mathlib.")]
+        if not mathlib or m in PUBLIC_READERS_ALLOWED:
+            continue
+        seen, todo = {m}, [m]  # those that pass `m` on
+        while todo:
+            for i in passed_on.get(todo.pop(), ()):
+                if i not in seen:
+                    seen.add(i)
+                    todo.append(i)
+        readers = {i for s in seen for i in importers.get(s, ())}
+        if len(readers) > PUBLIC_READERS:
+            out.append((m, mathlib, len(readers)))
+    return out
+
+
 def imports_pow_lit(module: str, imports: dict[str, list[str]], memo: dict[str, bool]) -> bool:
     """Whether `module` imports `PowLit`, directly or through other modules."""
     if module not in memo:
@@ -395,9 +440,9 @@ def imports_pow_lit(module: str, imports: dict[str, list[str]], memo: dict[str, 
     return memo[module]
 
 
-def check_file(key: str, globs: list[str]) -> tuple[str, pathlib.Path, list[str], int | None, list[str]]:
+def check_file(key: str, globs: list[str]) -> tuple[str, pathlib.Path, list[str], list[str], int | None, list[str]]:
     """The rules about one file, `key` (relative to `lean/`): its module, its
-    path, its imports, the line of a numeral exponent if its module must
+    path, its imports, those that are public, the line of a numeral exponent if its module must
     import `PowLit` (which needs every module's imports to decide), and the
     other violations."""
     text = (LEAN / key).read_text()
@@ -492,7 +537,7 @@ def check_file(key: str, globs: list[str]) -> tuple[str, pathlib.Path, list[str]
                     f"{rel}:{line_of(text, m.start(1) + u.start())}: simp unfolds {u.group(1)}; "
                     "step with runBlock_cons, runStep_some and runBlock_nil"
                 )
-    return module, rel, IMPORT.findall(text), pow_line, errors
+    return module, rel, IMPORT.findall(text), PUBLIC_IMPORT.findall(text), pow_line, errors
 
 
 def lean_sources() -> list[str]:
@@ -522,10 +567,11 @@ def main() -> int:
     errors = []
     globs = precompiled_globs((LEAN / "lakefile.toml").read_text())
     results = check_files(lean_sources(), globs)
-    imports = {module: found for module, _, found, _, _ in results}
-    paths = {module: rel for module, rel, _, _, _ in results}
+    imports = {module: found for module, _, found, _, _, _ in results}
+    public = {module: found for module, _, _, found, _, _ in results}
+    paths = {module: rel for module, rel, _, _, _, _ in results}
     pow_memo: dict[str, bool] = {}
-    for module, rel, _, pow_line, found in results:
+    for module, rel, _, _, pow_line, found in results:
         if pow_line is not None and not imports_pow_lit(module, imports, pow_memo):
             errors.append(
                 f"{rel}:{pow_line}: numeral exponent in a module that does not import "
@@ -536,6 +582,11 @@ def main() -> int:
         errors.append(
             f"{paths[m]}: imports {', '.join(heavy)} and {n} modules import it (more than "
             f"{HEAVY_IMPORTERS}); move what needs that algebra into the few modules that use it"
+        )
+    for m, mathlib, n in public_hubs(imports, public):
+        errors.append(
+            f"{paths[m]}: publicly imports {', '.join(mathlib)}, which the {n} modules that read it load too (more than "
+            f"{PUBLIC_READERS}); import it privately, or state what they read without Mathlib"
         )
     lakefile = LEAN / "lakefile.toml"
     text = lakefile.read_text()

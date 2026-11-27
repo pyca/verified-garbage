@@ -14,6 +14,8 @@ DSA entry saves its registers at bytes 128–163. This helper uses bytes
 namespace VG.Impl.Dsa.Arm.PublicValidation
 open VG VG.Arm VG.Impl.Dsa.Layout
 
+variable (umaal : Bool)
+
 def slots : List (Reg × Nat) :=
   [(.r4, 168), (.r5, 172), (.r6, 176), (.r7, 180), (.r8, 184),
     (.r9, 188), (.r10, 192), (.r11, 196), (.lr, 200)]
@@ -23,7 +25,7 @@ def save : List Instr := .mov .r12 (.reg .r0) :: slots.map fun (r, o) => .str r 
 def restore : List Instr := slots.map fun (r, o) => .ldr r .r12 o
 
 def body (pLen qLen : Nat) : Prog isa :=
-  .seq (.block save) (.seq (Validate.publicKey pLen qLen) (.block restore))
+  .seq (.block save) (.seq (Validate.publicKey umaal pLen qLen) (.block restore))
 
 def scratch : List (Nat × Nat) := [(0, 64), (116, 4), (168, 36), (256, 15456)]
 
@@ -39,13 +41,14 @@ def layout (pLen qLen : Nat) : Impl.Dsa.PublicValidation.Layout where
   scratch := scratch
   size := 15713
 
-def name (pLen qLen : Nat) : String := s!"vg_dsa_public_validate_{(layout pLen qLen).pLen}_{(layout pLen qLen).qLen}"
+def name (pLen qLen : Nat) : String :=
+  s!"vg_dsa_public_validate_{(layout pLen qLen).pLen}_{(layout pLen qLen).qLen}" ++ Impl.Mont.Arm.Dynamic.suffix umaal
 
 /-- Pass the workspace and packed public key; keep r12 in a callee-saved
 register across the call and its possible linker veneer. -/
 def call (pLen qLen : Nat) : Prog isa :=
   .seq (.block [.mov .r11 (.reg .r12), .mov .r0 (.reg .r12), .movw .r1 2048,
       .ldr .r2 .r12 (Layout.field .p), .movw .r3 (BitVec.ofNat 16 (3 * pLen + qLen))])
-    (.seq (.call (name pLen qLen) (body pLen qLen)) (.block [.mov .r12 (.reg .r11)]))
+    (.seq (.call (name umaal pLen qLen) (body umaal pLen qLen)) (.block [.mov .r12 (.reg .r11)]))
 
 end VG.Impl.Dsa.Arm.PublicValidation

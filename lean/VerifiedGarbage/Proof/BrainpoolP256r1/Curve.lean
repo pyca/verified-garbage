@@ -31,7 +31,7 @@ theorem curve_p : Spec.BrainpoolP256r1.curve.p = 7688495639704534422080974662900
 
 theorem curve_p_prime : Nat.Prime Spec.BrainpoolP256r1.curve.p := by
   rw [curve_p]
-  exact prime_76884956397045344220809746629001649093037950200943055203735601445031516197751
+  exact Nat.prime_def.mpr prime_76884956397045344220809746629001649093037950200943055203735601445031516197751
 
 /-- `-a` modulo `p`. -/
 private def negA : Nat :=

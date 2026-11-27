@@ -8,7 +8,7 @@ public import VerifiedGarbage.Impl.Weierstrass.Layout.Mont
 
 Not trusted: where three functions for each modulus `m` (the primes `p` and
 the orders `n` of P-192, P-224, P-256, P-384, P-521, secp256k1,
-brainpoolP256r1, brainpoolP384r1 and brainpoolP512r1) keep their numbers,
+brainpoolP256r1, brainpoolP320r1, brainpoolP384r1 and brainpoolP512r1) keep their numbers,
 which the code of a curve's functions calls instead of repeating its field
 arithmetic at every use:
 

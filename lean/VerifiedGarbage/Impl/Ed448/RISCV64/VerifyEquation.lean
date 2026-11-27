@@ -59,6 +59,10 @@ if it passes.
 * `[4](Q + (-R))` (`addNegR`) is the neutral point exactly when the equation
   holds: `X = 0` and `Y - Z = 0`, fully reduced.
 
+The point operations are functions the code calls (`dblCall`, `addAffCall`
+and `additionCall` of `ScalarBase.lean`), each call site keeping `t1`, `t2`
+and the return address in X448's slot `Y` around the call (`viaCall`).
+
 The result is 1 if `BAD` is 0. The function uses only caller-saved
 registers and no stack. Its only branches are on loop counters and, in the
 joint loop, on the digits of `S` and `k`, and its addresses are pointers plus
@@ -265,16 +269,18 @@ def stSlots (r : Reg) (off : Nat) (os : List Nat) : List Instr :=
   (List.range os.length).flatMap fun j => cp7 .a3 (os.getD j 0) r (off + 56 * j)
 
 /-- `-A` (with `Z = 1`) into `R` and the table's entry 0 (at `t2`), `R`
-doubled and into `P`, and `R` back from entry 0. -/
+doubled and into `P`, and `R` back from entry 0. `t2` is set again from `a0`
+after the doubling, whose call site reloads it from memory, so that the
+address it gives depends on no value the analysis takes as secret. -/
 def keyHead : Prog isa :=
   .seq (.block (copySlot RX NAX ++ copySlot RY NAY ++ copySlot RZ ONE ++ [.addi .t2 .a0 (KT - OUT)] ++
       stSlots .t2 0 [RX, RY, RZ]))
-    (.seq (opsProg dblOps) (.block (copySlot PX RX ++ copySlot PY RY ++ copySlot PZ RZ ++
-      ldSlots .t2 0 [RX, RY, RZ] ++ [.li .t1 7])))
+    (.seq dblCall (.block (copySlot PX RX ++ copySlot PY RY ++ copySlot PZ RZ ++
+      [.addi .t2 .a0 (KT - OUT)] ++ ldSlots .t2 0 [RX, RY, RZ] ++ [.li .t1 7])))
 
 /-- The next entry: `T = R + 2(-A)`, stored and into `R`. -/
 def keyStep : Prog isa :=
-  .seq addition (.block ([.addi .t2 .t2 168] ++ stSlots .t2 0 [TX, TY, TZ] ++
+  .seq additionCall (.block ([.addi .t2 .t2 168] ++ stSlots .t2 0 [TX, TY, TZ] ++
     copySlot RX TX ++ copySlot RY TY ++ copySlot RZ TZ ++ [.addi .t1 .t1 (-1)]))
 
 def keyTable : Prog isa := .seq keyHead (.loop keyStep (.nonzero .t1))
@@ -303,7 +309,7 @@ def digitIndex : List Instr :=
 def baseBody : Prog isa :=
   .seq (.block (digitIndex ++ [.shift .sll .d .t0 .a5 7, .shift .sll .d .a5 .a5 4, .sub .t0 .t0 .a5,
       .add .t0 .t0 .a0, .addi .t2 .t0 2047, .addi .t2 .t2 (BT - OUT - 2047 : Nat)] ++ ldSlots .t2 0 [SX, SY]))
-    (.seq (.ite (.nonzero .a6) (.block (sub U0 SX SX ++ sub SX U0 SX)) (.block [])) (opsProg addOps))
+    (.seq (.ite (.nonzero .a6) (.block (sub U0 SX SX ++ sub SX U0 SX)) (.block [])) addAffCall)
 
 def addBase : Prog isa := .seq (.block (loadDigit 2)) (.ite (.nonzero .a5) baseBody (.block []))
 
@@ -314,13 +320,13 @@ def keyBody : Prog isa :=
       .shift .sll .d .a2 .a5 3, .add .t0 .t0 .a2, .add .t0 .t0 .a0, .addi .t2 .t0 (KT - OUT)] ++
       ldSlots .t2 0 [PX, PY, PZ]))
     (.seq (.ite (.nonzero .a6) (.block (sub TA PX PX ++ sub PX TA PX)) (.block []))
-      (.seq addition (.block (copySlot RX TX ++ copySlot RY TY ++ copySlot RZ TZ))))
+      (.seq additionCall (.block (copySlot RX TX ++ copySlot RY TY ++ copySlot RZ TZ))))
 
 def addKey : Prog isa := .seq (.block (loadDigit 3)) (.ite (.nonzero .a5) keyBody (.block []))
 
 /-- One position `n = t1 - 1`, from the top: `R = [2]R + [S_n]B + [k_n](-A)`. -/
 def jointStep : Prog isa :=
-  .seq (.block [.addi .t1 .t1 (-1)]) (.seq (opsProg dblOps) (.seq addBase addKey))
+  .seq (.block [.addi .t1 .t1 (-1)]) (.seq dblCall (.seq addBase addKey))
 
 /-- `R = (0 : 1 : 1)`, and the 464 positions. -/
 def jointLoop : Prog isa :=
@@ -329,7 +335,7 @@ def jointLoop : Prog isa :=
 
 /-- `R = [4](R + (-R'))`, `R'` the signature's point. -/
 def addNegR : Prog isa :=
-  .seq (.block (copySlot SX NRX ++ copySlot SY NRY)) (.seq (opsProg addOps) (.seq (opsProg dblOps) (opsProg dblOps)))
+  .seq (.block (copySlot SX NRX ++ copySlot SY NRY)) (.seq addAffCall (.seq dblCall dblCall))
 
 /-! ## The function -/
 
@@ -347,11 +353,14 @@ def vFinish : List Instr :=
   [.load .d .a6 .a3 BAD, .li .a5 0, .sub .a5 .a5 .a6, .logic .or .a6 .a6 .a5, .shift .srl .d .a6 .a6 63, .li .a0 1,
     .sub .a0 .a0 .a6]
 
-/-- Everything before the joint loop, whose branches are only on loop counters. -/
-def vPrefix : Prog isa :=
+/-- The inputs decoded and checked, and both scalars' digits. -/
+def vHead : Prog isa :=
   .seq (.block vSetup) <| .seq (decode SG NRX NRY) <| .seq (decode PK NAX NAY) <|
   .seq (.block checkS) <| .seq bitsZero <| .seq (bitsOf SGS 0) <| .seq (bitsOf CH 1) <|
-  .seq (recode 0) <| .seq (recode 1) <| .seq keyTable (.block baseTable)
+  .seq (recode 0) (recode 1)
+
+/-- Everything before the joint loop, whose branches are only on loop counters. -/
+def vPrefix : Prog isa := .seq vHead <| .seq keyTable (.block baseTable)
 
 def verifyEquation : Prog isa :=
   .seq vPrefix <| .seq jointLoop <| .seq addNegR (.block vFinish)

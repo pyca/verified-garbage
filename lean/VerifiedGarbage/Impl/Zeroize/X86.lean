@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.TCB.X86.Isa
+public import VerifiedGarbage.Impl.Scrub.X86
 
 /-! Eight four-byte stores (32 bytes) at a time, then four-byte stores, then
 a byte tail, using only caller-saved registers. -/
@@ -37,3 +38,19 @@ def zeroize : Prog isa :=
     (.seq (loop true) (.seq (.block [.mov .edx (.mem {base := .esp, disp := 8}),
       .alu .and .edx (.imm 3)]) (loop false)))))
 end VG.Impl.Zeroize.X86
+
+/-! ## The function as emitted
+
+`vg_zeroize`, which calls nothing and has no frame, then the clearing of the
+registers a callee may change (`Impl.Scrub.X86.scrub 0`), so that it returns
+without secret residue. The functions that call `zeroize` call it as the
+internal `vg_zeroize_core`, without this cleanup. -/
+
+namespace VG.Impl.Zeroize.X86.Fn
+
+open VG.X86
+
+/-- `vg_zeroize`, as emitted. -/
+def zeroize : Prog isa := Impl.Scrub.X86.scrub 0 Impl.Zeroize.X86.zeroize
+
+end VG.Impl.Zeroize.X86.Fn

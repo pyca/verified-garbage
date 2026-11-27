@@ -1,140 +1,135 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.PPC64LE.KeyGen.Inst
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.PPC64LE.Print
-public import VerifiedGarbage.Proof.MlDsa.PPC64LE.PkTr
-public import VerifiedGarbage.Proof.MlDsa.PPC64LE.PreparedKey
-public import VerifiedGarbage.Proof.MlDsa.PPC64LE.Sign.Inst
-public import VerifiedGarbage.Proof.MlDsa.PPC64LE.Message.Inst
-public import VerifiedGarbage.Proof.MlDsa.PPC64LE.Verify.Inst
+public import VerifiedGarbage.TCB.PPC64LE.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.MlDsa.Contract
+public import VerifiedGarbage.Spec.MlDsa.PkTr
+public import VerifiedGarbage.Spec.MlDsa.PreparedKey
+public import VerifiedGarbage.Spec.MlDsa.CachedVerify
+import VerifiedGarbage.Proof.MlDsa.PPC64LE.Scrub
+import VerifiedGarbage.Proof.MlDsa.PPC64LE.KeyGen.Inst
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.MlDsa.PPC64LE.PkTr
+import VerifiedGarbage.Proof.MlDsa.PPC64LE.PreparedKey
+import VerifiedGarbage.Proof.MlDsa.PPC64LE.Sign.Inst
+import VerifiedGarbage.Proof.MlDsa.PPC64LE.Message.Inst
+import VerifiedGarbage.Proof.MlDsa.PPC64LE.Verify.Inst
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # ML-DSA (FIPS 204) on PPC64LE -/
 
-@[expose] public section
-
 namespace VG.Artifacts.MlDsa.PPC64LE
 
-def artifacts : List Artifact := [
+public def artifacts : List (Artifact PPC64LE.target) := [
   Spec.MlDsa.keyGen44Api.artifact PPC64LE.target {
-    code := Impl.MlDsa.PPC64LE.KeyGen.keyGen44
-    verified := Proof.MlDsa.PPC64LE.KeyGen.keyGen44_verified },
+    code := Impl.MlDsa.PPC64LE.Fn.keyGen44
+    verified := Proof.MlDsa.PPC64LE.Scrub.keyGen44_scrubbed },
   Spec.MlDsa.keyGen65Api.artifact PPC64LE.target {
-    code := Impl.MlDsa.PPC64LE.KeyGen.keyGen65
-    verified := Proof.MlDsa.PPC64LE.KeyGen.keyGen65_verified },
+    code := Impl.MlDsa.PPC64LE.Fn.keyGen65
+    verified := Proof.MlDsa.PPC64LE.Scrub.keyGen65_scrubbed },
   Spec.MlDsa.keyGen87Api.artifact PPC64LE.target {
-    code := Impl.MlDsa.PPC64LE.KeyGen.keyGen87
-    verified := Proof.MlDsa.PPC64LE.KeyGen.keyGen87_verified },
+    code := Impl.MlDsa.PPC64LE.Fn.keyGen87
+    verified := Proof.MlDsa.PPC64LE.Scrub.keyGen87_scrubbed },
   Spec.MlDsa.pkTr44Api.artifact PPC64LE.target {
-    code := Impl.MlDsa.PPC64LE.PkTr.pkTr Spec.MlDsa.mlDsa44
-    verified := Proof.MlDsa.PPC64LE.PkTr.pkTr44_verified },
+    code := Impl.MlDsa.PPC64LE.Fn.pkTr44
+    verified := Proof.MlDsa.PPC64LE.Scrub.pkTr44_scrubbed },
   Spec.MlDsa.pkTr65Api.artifact PPC64LE.target {
-    code := Impl.MlDsa.PPC64LE.PkTr.pkTr Spec.MlDsa.mlDsa65
-    verified := Proof.MlDsa.PPC64LE.PkTr.pkTr65_verified },
+    code := Impl.MlDsa.PPC64LE.Fn.pkTr65
+    verified := Proof.MlDsa.PPC64LE.Scrub.pkTr65_scrubbed },
   Spec.MlDsa.pkTr87Api.artifact PPC64LE.target {
-    code := Impl.MlDsa.PPC64LE.PkTr.pkTr Spec.MlDsa.mlDsa87
-    verified := Proof.MlDsa.PPC64LE.PkTr.pkTr87_verified },
-  (Spec.MlDsa.preparePublicKeyApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44").artifact PPC64LE.target {
-    code := Impl.MlDsa.PPC64LE.PreparedKey.preparePublic Spec.MlDsa.mlDsa44
-    verified := Proof.MlDsa.PPC64LE.PreparedKey.preparePublic_verified (.inl rfl) },
-  (Spec.MlDsa.prepareSecretKeyApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44").artifact PPC64LE.target {
-    code := Impl.MlDsa.PPC64LE.PreparedKey.prepareSecret Spec.MlDsa.mlDsa44
-    verified := Proof.MlDsa.PPC64LE.PreparedKey.prepareSecret_verified (.inl rfl) },
-  (Spec.MlDsa.preparePublicKeyApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65").artifact PPC64LE.target {
-    code := Impl.MlDsa.PPC64LE.PreparedKey.preparePublic Spec.MlDsa.mlDsa65
-    verified := Proof.MlDsa.PPC64LE.PreparedKey.preparePublic_verified (.inr (.inl rfl)) },
-  (Spec.MlDsa.prepareSecretKeyApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65").artifact PPC64LE.target {
-    code := Impl.MlDsa.PPC64LE.PreparedKey.prepareSecret Spec.MlDsa.mlDsa65
-    verified := Proof.MlDsa.PPC64LE.PreparedKey.prepareSecret_verified (.inr (.inl rfl)) },
-  (Spec.MlDsa.preparePublicKeyApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87").artifact PPC64LE.target {
-    code := Impl.MlDsa.PPC64LE.PreparedKey.preparePublic Spec.MlDsa.mlDsa87
-    verified := Proof.MlDsa.PPC64LE.PreparedKey.preparePublic_verified (.inr (.inr rfl)) },
-  (Spec.MlDsa.prepareSecretKeyApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87").artifact PPC64LE.target {
-    code := Impl.MlDsa.PPC64LE.PreparedKey.prepareSecret Spec.MlDsa.mlDsa87
-    verified := Proof.MlDsa.PPC64LE.PreparedKey.prepareSecret_verified (.inr (.inr rfl)) },
+    code := Impl.MlDsa.PPC64LE.Fn.pkTr87
+    verified := Proof.MlDsa.PPC64LE.Scrub.pkTr87_scrubbed },
+  Spec.MlDsa.preparePublicKey44Api.artifact PPC64LE.target {
+    code := Impl.MlDsa.PPC64LE.Fn.preparePublic44
+    verified := Proof.MlDsa.PPC64LE.Scrub.preparePublic44_scrubbed },
+  Spec.MlDsa.prepareSecretKey44Api.artifact PPC64LE.target {
+    code := Impl.MlDsa.PPC64LE.Fn.prepareSecret44
+    verified := Proof.MlDsa.PPC64LE.Scrub.prepareSecret44_scrubbed },
+  Spec.MlDsa.preparePublicKey65Api.artifact PPC64LE.target {
+    code := Impl.MlDsa.PPC64LE.Fn.preparePublic65
+    verified := Proof.MlDsa.PPC64LE.Scrub.preparePublic65_scrubbed },
+  Spec.MlDsa.prepareSecretKey65Api.artifact PPC64LE.target {
+    code := Impl.MlDsa.PPC64LE.Fn.prepareSecret65
+    verified := Proof.MlDsa.PPC64LE.Scrub.prepareSecret65_scrubbed },
+  Spec.MlDsa.preparePublicKey87Api.artifact PPC64LE.target {
+    code := Impl.MlDsa.PPC64LE.Fn.preparePublic87
+    verified := Proof.MlDsa.PPC64LE.Scrub.preparePublic87_scrubbed },
+  Spec.MlDsa.prepareSecretKey87Api.artifact PPC64LE.target {
+    code := Impl.MlDsa.PPC64LE.Fn.prepareSecret87
+    verified := Proof.MlDsa.PPC64LE.Scrub.prepareSecret87_scrubbed },
   Spec.MlDsa.sign44Api.artifact PPC64LE.target {
-    code := Impl.MlDsa.PPC64LE.Sign.sign44
-    verified := Proof.MlDsa.PPC64LE.Sign.sign44_verified },
+    code := Impl.MlDsa.PPC64LE.Fn.sign44
+    verified := Proof.MlDsa.PPC64LE.Scrub.sign44_scrubbed },
   Spec.MlDsa.sign65Api.artifact PPC64LE.target {
-    code := Impl.MlDsa.PPC64LE.Sign.sign65
-    verified := Proof.MlDsa.PPC64LE.Sign.sign65_verified },
+    code := Impl.MlDsa.PPC64LE.Fn.sign65
+    verified := Proof.MlDsa.PPC64LE.Scrub.sign65_scrubbed },
   Spec.MlDsa.sign87Api.artifact PPC64LE.target {
-    code := Impl.MlDsa.PPC64LE.Sign.sign87
-    verified := Proof.MlDsa.PPC64LE.Sign.sign87_verified },
-  (Spec.MlDsa.preparedSignApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44").artifact PPC64LE.target {
-    code := Impl.MlDsa.PPC64LE.Sign.signPrepared44
-    verified := Proof.MlDsa.PPC64LE.Sign.signPrepared44_verified },
-  (Spec.MlDsa.preparedSignApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65").artifact PPC64LE.target {
-    code := Impl.MlDsa.PPC64LE.Sign.signPrepared65
-    verified := Proof.MlDsa.PPC64LE.Sign.signPrepared65_verified },
-  (Spec.MlDsa.preparedSignApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87").artifact PPC64LE.target {
-    code := Impl.MlDsa.PPC64LE.Sign.signPrepared87
-    verified := Proof.MlDsa.PPC64LE.Sign.signPrepared87_verified },
+    code := Impl.MlDsa.PPC64LE.Fn.sign87
+    verified := Proof.MlDsa.PPC64LE.Scrub.sign87_scrubbed },
+  Spec.MlDsa.preparedSign44Api.artifact PPC64LE.target {
+    code := Impl.MlDsa.PPC64LE.Fn.signPrepared44
+    verified := Proof.MlDsa.PPC64LE.Scrub.signPrepared44_scrubbed },
+  Spec.MlDsa.preparedSign65Api.artifact PPC64LE.target {
+    code := Impl.MlDsa.PPC64LE.Fn.signPrepared65
+    verified := Proof.MlDsa.PPC64LE.Scrub.signPrepared65_scrubbed },
+  Spec.MlDsa.preparedSign87Api.artifact PPC64LE.target {
+    code := Impl.MlDsa.PPC64LE.Fn.signPrepared87
+    verified := Proof.MlDsa.PPC64LE.Scrub.signPrepared87_scrubbed },
   Spec.MlDsa.signMessage44Api.artifact PPC64LE.target {
-    code := Impl.MlDsa.PPC64LE.Message.signMessage Spec.MlDsa.sign44Api.name
-      Impl.MlDsa.PPC64LE.Sign.sign44 Spec.MlDsa.mlDsa44
-    verified := Proof.MlDsa.PPC64LE.Message.signMessage44_verified },
+    code := Impl.MlDsa.PPC64LE.Fn.signMessage44
+    verified := Proof.MlDsa.PPC64LE.Scrub.signMessage44_scrubbed },
   Spec.MlDsa.signMessage65Api.artifact PPC64LE.target {
-    code := Impl.MlDsa.PPC64LE.Message.signMessage Spec.MlDsa.sign65Api.name
-      Impl.MlDsa.PPC64LE.Sign.sign65 Spec.MlDsa.mlDsa65
-    verified := Proof.MlDsa.PPC64LE.Message.signMessage65_verified },
+    code := Impl.MlDsa.PPC64LE.Fn.signMessage65
+    verified := Proof.MlDsa.PPC64LE.Scrub.signMessage65_scrubbed },
   Spec.MlDsa.signMessage87Api.artifact PPC64LE.target {
-    code := Impl.MlDsa.PPC64LE.Message.signMessage Spec.MlDsa.sign87Api.name
-      Impl.MlDsa.PPC64LE.Sign.sign87 Spec.MlDsa.mlDsa87
-    verified := Proof.MlDsa.PPC64LE.Message.signMessage87_verified },
-  (Spec.MlDsa.preparedSignMessageApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44").artifact PPC64LE.target {
-    code := Impl.MlDsa.PPC64LE.Message.signMessage (Proof.MlDsa.preparedSignName "mldsa44")
-      Impl.MlDsa.PPC64LE.Sign.signPrepared44 Spec.MlDsa.mlDsa44
-    verified := Proof.MlDsa.PPC64LE.Message.preparedSignMessage44_verified },
-  (Spec.MlDsa.preparedSignMessageApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65").artifact PPC64LE.target {
-    code := Impl.MlDsa.PPC64LE.Message.signMessage (Proof.MlDsa.preparedSignName "mldsa65")
-      Impl.MlDsa.PPC64LE.Sign.signPrepared65 Spec.MlDsa.mlDsa65
-    verified := Proof.MlDsa.PPC64LE.Message.preparedSignMessage65_verified },
-  (Spec.MlDsa.preparedSignMessageApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87").artifact PPC64LE.target {
-    code := Impl.MlDsa.PPC64LE.Message.signMessage (Proof.MlDsa.preparedSignName "mldsa87")
-      Impl.MlDsa.PPC64LE.Sign.signPrepared87 Spec.MlDsa.mlDsa87
-    verified := Proof.MlDsa.PPC64LE.Message.preparedSignMessage87_verified },
+    code := Impl.MlDsa.PPC64LE.Fn.signMessage87
+    verified := Proof.MlDsa.PPC64LE.Scrub.signMessage87_scrubbed },
+  Spec.MlDsa.preparedSignMessage44Api.artifact PPC64LE.target {
+    code := Impl.MlDsa.PPC64LE.Fn.preparedSignMessage44
+    verified := Proof.MlDsa.PPC64LE.Scrub.preparedSignMessage44_scrubbed },
+  Spec.MlDsa.preparedSignMessage65Api.artifact PPC64LE.target {
+    code := Impl.MlDsa.PPC64LE.Fn.preparedSignMessage65
+    verified := Proof.MlDsa.PPC64LE.Scrub.preparedSignMessage65_scrubbed },
+  Spec.MlDsa.preparedSignMessage87Api.artifact PPC64LE.target {
+    code := Impl.MlDsa.PPC64LE.Fn.preparedSignMessage87
+    verified := Proof.MlDsa.PPC64LE.Scrub.preparedSignMessage87_scrubbed },
   Spec.MlDsa.verify44Api.artifact PPC64LE.target {
-    code := Impl.MlDsa.PPC64LE.Verify.verify44
-    verified := Proof.MlDsa.PPC64LE.Verify.verify44_verified },
+    code := Impl.MlDsa.PPC64LE.Fn.verify44
+    verified := Proof.MlDsa.PPC64LE.Scrub.verify44_scrubbed },
   Spec.MlDsa.verify65Api.artifact PPC64LE.target {
-    code := Impl.MlDsa.PPC64LE.Verify.verify65
-    verified := Proof.MlDsa.PPC64LE.Verify.verify65_verified },
+    code := Impl.MlDsa.PPC64LE.Fn.verify65
+    verified := Proof.MlDsa.PPC64LE.Scrub.verify65_scrubbed },
   Spec.MlDsa.verify87Api.artifact PPC64LE.target {
-    code := Impl.MlDsa.PPC64LE.Verify.verify87
-    verified := Proof.MlDsa.PPC64LE.Verify.verify87_verified },
-  (Spec.MlDsa.preparedVerifyApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44").artifact PPC64LE.target {
-    code := Impl.MlDsa.PPC64LE.Verify.verifyPrepared44
-    verified := Proof.MlDsa.PPC64LE.Verify.verifyPrepared44_verified },
-  (Spec.MlDsa.preparedVerifyApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65").artifact PPC64LE.target {
-    code := Impl.MlDsa.PPC64LE.Verify.verifyPrepared65
-    verified := Proof.MlDsa.PPC64LE.Verify.verifyPrepared65_verified },
-  (Spec.MlDsa.preparedVerifyApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87").artifact PPC64LE.target {
-    code := Impl.MlDsa.PPC64LE.Verify.verifyPrepared87
-    verified := Proof.MlDsa.PPC64LE.Verify.verifyPrepared87_verified },
-  (Spec.MlDsa.verifyMessageCachedApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44").artifact PPC64LE.target {
-    code := Impl.MlDsa.PPC64LE.Message.verifyMessageCached Spec.MlDsa.verify44Api.name
-      Impl.MlDsa.PPC64LE.Verify.verify44 Spec.MlDsa.mlDsa44
-    verified := Proof.MlDsa.PPC64LE.Message.verifyMessageCached44_verified },
-  (Spec.MlDsa.verifyMessageCachedApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65").artifact PPC64LE.target {
-    code := Impl.MlDsa.PPC64LE.Message.verifyMessageCached Spec.MlDsa.verify65Api.name
-      Impl.MlDsa.PPC64LE.Verify.verify65 Spec.MlDsa.mlDsa65
-    verified := Proof.MlDsa.PPC64LE.Message.verifyMessageCached65_verified },
-  (Spec.MlDsa.verifyMessageCachedApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87").artifact PPC64LE.target {
-    code := Impl.MlDsa.PPC64LE.Message.verifyMessageCached Spec.MlDsa.verify87Api.name
-      Impl.MlDsa.PPC64LE.Verify.verify87 Spec.MlDsa.mlDsa87
-    verified := Proof.MlDsa.PPC64LE.Message.verifyMessageCached87_verified },
-  (Spec.MlDsa.preparedVerifyMessageApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44").artifact PPC64LE.target {
-    code := Impl.MlDsa.PPC64LE.Message.verifyMessageCached (Proof.MlDsa.preparedVerifyName "mldsa44")
-      Impl.MlDsa.PPC64LE.Verify.verifyPrepared44 Spec.MlDsa.mlDsa44
-    verified := Proof.MlDsa.PPC64LE.Message.preparedVerifyMessage44_verified },
-  (Spec.MlDsa.preparedVerifyMessageApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65").artifact PPC64LE.target {
-    code := Impl.MlDsa.PPC64LE.Message.verifyMessageCached (Proof.MlDsa.preparedVerifyName "mldsa65")
-      Impl.MlDsa.PPC64LE.Verify.verifyPrepared65 Spec.MlDsa.mlDsa65
-    verified := Proof.MlDsa.PPC64LE.Message.preparedVerifyMessage65_verified },
-  (Spec.MlDsa.preparedVerifyMessageApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87").artifact PPC64LE.target {
-    code := Impl.MlDsa.PPC64LE.Message.verifyMessageCached (Proof.MlDsa.preparedVerifyName "mldsa87")
-      Impl.MlDsa.PPC64LE.Verify.verifyPrepared87 Spec.MlDsa.mlDsa87
-    verified := Proof.MlDsa.PPC64LE.Message.preparedVerifyMessage87_verified }]
+    code := Impl.MlDsa.PPC64LE.Fn.verify87
+    verified := Proof.MlDsa.PPC64LE.Scrub.verify87_scrubbed },
+  Spec.MlDsa.preparedVerify44Api.artifact PPC64LE.target {
+    code := Impl.MlDsa.PPC64LE.Fn.verifyPrepared44
+    verified := Proof.MlDsa.PPC64LE.Scrub.verifyPrepared44_scrubbed },
+  Spec.MlDsa.preparedVerify65Api.artifact PPC64LE.target {
+    code := Impl.MlDsa.PPC64LE.Fn.verifyPrepared65
+    verified := Proof.MlDsa.PPC64LE.Scrub.verifyPrepared65_scrubbed },
+  Spec.MlDsa.preparedVerify87Api.artifact PPC64LE.target {
+    code := Impl.MlDsa.PPC64LE.Fn.verifyPrepared87
+    verified := Proof.MlDsa.PPC64LE.Scrub.verifyPrepared87_scrubbed },
+  Spec.MlDsa.verifyMessageCached44Api.artifact PPC64LE.target {
+    code := Impl.MlDsa.PPC64LE.Fn.verifyMessageCached44
+    verified := Proof.MlDsa.PPC64LE.Scrub.verifyMessageCached44_scrubbed },
+  Spec.MlDsa.verifyMessageCached65Api.artifact PPC64LE.target {
+    code := Impl.MlDsa.PPC64LE.Fn.verifyMessageCached65
+    verified := Proof.MlDsa.PPC64LE.Scrub.verifyMessageCached65_scrubbed },
+  Spec.MlDsa.verifyMessageCached87Api.artifact PPC64LE.target {
+    code := Impl.MlDsa.PPC64LE.Fn.verifyMessageCached87
+    verified := Proof.MlDsa.PPC64LE.Scrub.verifyMessageCached87_scrubbed },
+  Spec.MlDsa.preparedVerifyMessage44Api.artifact PPC64LE.target {
+    code := Impl.MlDsa.PPC64LE.Fn.preparedVerifyMessage44
+    verified := Proof.MlDsa.PPC64LE.Scrub.preparedVerifyMessage44_scrubbed },
+  Spec.MlDsa.preparedVerifyMessage65Api.artifact PPC64LE.target {
+    code := Impl.MlDsa.PPC64LE.Fn.preparedVerifyMessage65
+    verified := Proof.MlDsa.PPC64LE.Scrub.preparedVerifyMessage65_scrubbed },
+  Spec.MlDsa.preparedVerifyMessage87Api.artifact PPC64LE.target {
+    code := Impl.MlDsa.PPC64LE.Fn.preparedVerifyMessage87
+    verified := Proof.MlDsa.PPC64LE.Scrub.preparedVerifyMessage87_scrubbed }]
+
+spec_apis artifacts
 
 end VG.Artifacts.MlDsa.PPC64LE

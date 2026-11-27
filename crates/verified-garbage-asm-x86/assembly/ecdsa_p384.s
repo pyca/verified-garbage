@@ -166,6 +166,14 @@ vg_ecdsa_p384_verify:
 	mov DWORD PTR [esp+12], eax
 	mov eax, DWORD PTR [esp+20]
 	mov DWORD PTR [esp+16], eax
+	call 2f
+2:
+	mov eax, DWORD PTR [esp]
+	.byte 0x81, 192
+	.long {VG_P384_COMB}
+	pop ecx
+	mov edx, DWORD PTR [esp+16]
+	mov DWORD PTR [edx+60], eax
 	mov eax, DWORD PTR [esp+16]
 	mov DWORD PTR [eax], ebx
 	mov DWORD PTR [eax+4], esi
@@ -1402,31 +1410,79 @@ vg_ecdsa_p384_verify:
 	pop eax
 	pop eax
 	pop eax
-	mov eax, DWORD PTR [edi+592]
+	mov eax, DWORD PTR [edi+1840]
 	mov DWORD PTR [edi+1456], eax
-	mov eax, DWORD PTR [edi+596]
+	mov eax, DWORD PTR [edi+1844]
 	mov DWORD PTR [edi+1460], eax
-	mov eax, DWORD PTR [edi+600]
+	mov eax, DWORD PTR [edi+1848]
 	mov DWORD PTR [edi+1464], eax
-	mov eax, DWORD PTR [edi+604]
+	mov eax, DWORD PTR [edi+1852]
 	mov DWORD PTR [edi+1468], eax
-	mov eax, DWORD PTR [edi+608]
+	mov eax, DWORD PTR [edi+1856]
 	mov DWORD PTR [edi+1472], eax
-	mov eax, DWORD PTR [edi+612]
+	mov eax, DWORD PTR [edi+1860]
 	mov DWORD PTR [edi+1476], eax
-	mov eax, DWORD PTR [edi+616]
+	mov eax, DWORD PTR [edi+1864]
 	mov DWORD PTR [edi+1480], eax
-	mov eax, DWORD PTR [edi+620]
+	mov eax, DWORD PTR [edi+1868]
 	mov DWORD PTR [edi+1484], eax
-	mov eax, DWORD PTR [edi+624]
+	mov eax, DWORD PTR [edi+1872]
 	mov DWORD PTR [edi+1488], eax
-	mov eax, DWORD PTR [edi+628]
+	mov eax, DWORD PTR [edi+1876]
 	mov DWORD PTR [edi+1492], eax
-	mov eax, DWORD PTR [edi+632]
+	mov eax, DWORD PTR [edi+1880]
 	mov DWORD PTR [edi+1496], eax
-	mov eax, DWORD PTR [edi+636]
+	mov eax, DWORD PTR [edi+1884]
 	mov DWORD PTR [edi+1500], eax
-	mov esi, 384
+	mov eax, DWORD PTR [edi+1840]
+	mov DWORD PTR [edi+1504], eax
+	mov eax, DWORD PTR [edi+1844]
+	mov DWORD PTR [edi+1508], eax
+	mov eax, DWORD PTR [edi+1848]
+	mov DWORD PTR [edi+1512], eax
+	mov eax, DWORD PTR [edi+1852]
+	mov DWORD PTR [edi+1516], eax
+	mov eax, DWORD PTR [edi+1856]
+	mov DWORD PTR [edi+1520], eax
+	mov eax, DWORD PTR [edi+1860]
+	mov DWORD PTR [edi+1524], eax
+	mov eax, DWORD PTR [edi+1864]
+	mov DWORD PTR [edi+1528], eax
+	mov eax, DWORD PTR [edi+1868]
+	mov DWORD PTR [edi+1532], eax
+	mov eax, DWORD PTR [edi+1872]
+	mov DWORD PTR [edi+1536], eax
+	mov eax, DWORD PTR [edi+1876]
+	mov DWORD PTR [edi+1540], eax
+	mov eax, DWORD PTR [edi+1880]
+	mov DWORD PTR [edi+1544], eax
+	mov eax, DWORD PTR [edi+1884]
+	mov DWORD PTR [edi+1548], eax
+	mov eax, DWORD PTR [edi+1456]
+	mov DWORD PTR [edi+640], eax
+	mov eax, DWORD PTR [edi+1460]
+	mov DWORD PTR [edi+644], eax
+	mov eax, DWORD PTR [edi+1464]
+	mov DWORD PTR [edi+648], eax
+	mov eax, DWORD PTR [edi+1468]
+	mov DWORD PTR [edi+652], eax
+	mov eax, DWORD PTR [edi+1472]
+	mov DWORD PTR [edi+656], eax
+	mov eax, DWORD PTR [edi+1476]
+	mov DWORD PTR [edi+660], eax
+	mov eax, DWORD PTR [edi+1480]
+	mov DWORD PTR [edi+664], eax
+	mov eax, DWORD PTR [edi+1484]
+	mov DWORD PTR [edi+668], eax
+	mov eax, DWORD PTR [edi+1488]
+	mov DWORD PTR [edi+672], eax
+	mov eax, DWORD PTR [edi+1492]
+	mov DWORD PTR [edi+676], eax
+	mov eax, DWORD PTR [edi+1496]
+	mov DWORD PTR [edi+680], eax
+	mov eax, DWORD PTR [edi+1500]
+	mov DWORD PTR [edi+684], eax
+	mov esi, 1
 28:
 	sub esi, 1
 	mov eax, 1456
@@ -1441,9 +1497,35 @@ vg_ecdsa_p384_verify:
 	pop eax
 	pop eax
 	pop eax
-	mov eax, 1840
+	test esi, esi
+	jne 28b
+	mov eax, DWORD PTR [edi+1456]
+	mov DWORD PTR [edi+880], eax
+	mov eax, DWORD PTR [edi+1460]
+	mov DWORD PTR [edi+884], eax
+	mov eax, DWORD PTR [edi+1464]
+	mov DWORD PTR [edi+888], eax
+	mov eax, DWORD PTR [edi+1468]
+	mov DWORD PTR [edi+892], eax
+	mov eax, DWORD PTR [edi+1472]
+	mov DWORD PTR [edi+896], eax
+	mov eax, DWORD PTR [edi+1476]
+	mov DWORD PTR [edi+900], eax
+	mov eax, DWORD PTR [edi+1480]
+	mov DWORD PTR [edi+904], eax
+	mov eax, DWORD PTR [edi+1484]
+	mov DWORD PTR [edi+908], eax
+	mov eax, DWORD PTR [edi+1488]
+	mov DWORD PTR [edi+912], eax
+	mov eax, DWORD PTR [edi+1492]
+	mov DWORD PTR [edi+916], eax
+	mov eax, DWORD PTR [edi+1496]
+	mov DWORD PTR [edi+920], eax
+	mov eax, DWORD PTR [edi+1500]
+	mov DWORD PTR [edi+924], eax
+	mov eax, 640
 	mov ecx, 1456
-	mov edx, 1504
+	mov edx, 1456
 	push eax
 	push ecx
 	push edx
@@ -1453,85 +1535,2764 @@ vg_ecdsa_p384_verify:
 	pop eax
 	pop eax
 	pop eax
-	mov eax, edi
-	add eax, esi
-	movzx eax, BYTE PTR [eax+4872]
-	mov ecx, 0
-	sub ecx, eax
 	mov eax, DWORD PTR [edi+1456]
-	mov edx, DWORD PTR [edi+1504]
-	xor edx, eax
-	and edx, ecx
-	xor eax, edx
-	mov DWORD PTR [edi+1456], eax
+	mov DWORD PTR [edi+688], eax
 	mov eax, DWORD PTR [edi+1460]
-	mov edx, DWORD PTR [edi+1508]
-	xor edx, eax
-	and edx, ecx
-	xor eax, edx
-	mov DWORD PTR [edi+1460], eax
+	mov DWORD PTR [edi+692], eax
 	mov eax, DWORD PTR [edi+1464]
-	mov edx, DWORD PTR [edi+1512]
-	xor edx, eax
-	and edx, ecx
-	xor eax, edx
-	mov DWORD PTR [edi+1464], eax
+	mov DWORD PTR [edi+696], eax
 	mov eax, DWORD PTR [edi+1468]
-	mov edx, DWORD PTR [edi+1516]
-	xor edx, eax
-	and edx, ecx
-	xor eax, edx
-	mov DWORD PTR [edi+1468], eax
+	mov DWORD PTR [edi+700], eax
 	mov eax, DWORD PTR [edi+1472]
-	mov edx, DWORD PTR [edi+1520]
-	xor edx, eax
-	and edx, ecx
-	xor eax, edx
-	mov DWORD PTR [edi+1472], eax
+	mov DWORD PTR [edi+704], eax
 	mov eax, DWORD PTR [edi+1476]
-	mov edx, DWORD PTR [edi+1524]
-	xor edx, eax
-	and edx, ecx
-	xor eax, edx
-	mov DWORD PTR [edi+1476], eax
+	mov DWORD PTR [edi+708], eax
 	mov eax, DWORD PTR [edi+1480]
-	mov edx, DWORD PTR [edi+1528]
-	xor edx, eax
-	and edx, ecx
-	xor eax, edx
-	mov DWORD PTR [edi+1480], eax
+	mov DWORD PTR [edi+712], eax
 	mov eax, DWORD PTR [edi+1484]
-	mov edx, DWORD PTR [edi+1532]
-	xor edx, eax
-	and edx, ecx
-	xor eax, edx
-	mov DWORD PTR [edi+1484], eax
+	mov DWORD PTR [edi+716], eax
 	mov eax, DWORD PTR [edi+1488]
-	mov edx, DWORD PTR [edi+1536]
-	xor edx, eax
-	and edx, ecx
-	xor eax, edx
-	mov DWORD PTR [edi+1488], eax
+	mov DWORD PTR [edi+720], eax
 	mov eax, DWORD PTR [edi+1492]
-	mov edx, DWORD PTR [edi+1540]
-	xor edx, eax
-	and edx, ecx
-	xor eax, edx
-	mov DWORD PTR [edi+1492], eax
+	mov DWORD PTR [edi+724], eax
 	mov eax, DWORD PTR [edi+1496]
-	mov edx, DWORD PTR [edi+1544]
-	xor edx, eax
-	and edx, ecx
-	xor eax, edx
-	mov DWORD PTR [edi+1496], eax
+	mov DWORD PTR [edi+728], eax
 	mov eax, DWORD PTR [edi+1500]
-	mov edx, DWORD PTR [edi+1548]
-	xor edx, eax
-	and edx, ecx
-	xor eax, edx
+	mov DWORD PTR [edi+732], eax
+	mov eax, 880
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov eax, DWORD PTR [edi+1456]
+	mov DWORD PTR [edi+1168], eax
+	mov eax, DWORD PTR [edi+1460]
+	mov DWORD PTR [edi+1172], eax
+	mov eax, DWORD PTR [edi+1464]
+	mov DWORD PTR [edi+1176], eax
+	mov eax, DWORD PTR [edi+1468]
+	mov DWORD PTR [edi+1180], eax
+	mov eax, DWORD PTR [edi+1472]
+	mov DWORD PTR [edi+1184], eax
+	mov eax, DWORD PTR [edi+1476]
+	mov DWORD PTR [edi+1188], eax
+	mov eax, DWORD PTR [edi+1480]
+	mov DWORD PTR [edi+1192], eax
+	mov eax, DWORD PTR [edi+1484]
+	mov DWORD PTR [edi+1196], eax
+	mov eax, DWORD PTR [edi+1488]
+	mov DWORD PTR [edi+1200], eax
+	mov eax, DWORD PTR [edi+1492]
+	mov DWORD PTR [edi+1204], eax
+	mov eax, DWORD PTR [edi+1496]
+	mov DWORD PTR [edi+1208], eax
+	mov eax, DWORD PTR [edi+1500]
+	mov DWORD PTR [edi+1212], eax
+	mov eax, 880
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov eax, DWORD PTR [edi+1456]
+	mov DWORD PTR [edi+1216], eax
+	mov eax, DWORD PTR [edi+1460]
+	mov DWORD PTR [edi+1220], eax
+	mov eax, DWORD PTR [edi+1464]
+	mov DWORD PTR [edi+1224], eax
+	mov eax, DWORD PTR [edi+1468]
+	mov DWORD PTR [edi+1228], eax
+	mov eax, DWORD PTR [edi+1472]
+	mov DWORD PTR [edi+1232], eax
+	mov eax, DWORD PTR [edi+1476]
+	mov DWORD PTR [edi+1236], eax
+	mov eax, DWORD PTR [edi+1480]
+	mov DWORD PTR [edi+1240], eax
+	mov eax, DWORD PTR [edi+1484]
+	mov DWORD PTR [edi+1244], eax
+	mov eax, DWORD PTR [edi+1488]
+	mov DWORD PTR [edi+1248], eax
+	mov eax, DWORD PTR [edi+1492]
+	mov DWORD PTR [edi+1252], eax
+	mov eax, DWORD PTR [edi+1496]
+	mov DWORD PTR [edi+1256], eax
+	mov eax, DWORD PTR [edi+1500]
+	mov DWORD PTR [edi+1260], eax
+	mov eax, 880
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov eax, DWORD PTR [edi+1456]
+	mov DWORD PTR [edi+1264], eax
+	mov eax, DWORD PTR [edi+1460]
+	mov DWORD PTR [edi+1268], eax
+	mov eax, DWORD PTR [edi+1464]
+	mov DWORD PTR [edi+1272], eax
+	mov eax, DWORD PTR [edi+1468]
+	mov DWORD PTR [edi+1276], eax
+	mov eax, DWORD PTR [edi+1472]
+	mov DWORD PTR [edi+1280], eax
+	mov eax, DWORD PTR [edi+1476]
+	mov DWORD PTR [edi+1284], eax
+	mov eax, DWORD PTR [edi+1480]
+	mov DWORD PTR [edi+1288], eax
+	mov eax, DWORD PTR [edi+1484]
+	mov DWORD PTR [edi+1292], eax
+	mov eax, DWORD PTR [edi+1488]
+	mov DWORD PTR [edi+1296], eax
+	mov eax, DWORD PTR [edi+1492]
+	mov DWORD PTR [edi+1300], eax
+	mov eax, DWORD PTR [edi+1496]
+	mov DWORD PTR [edi+1304], eax
+	mov eax, DWORD PTR [edi+1500]
+	mov DWORD PTR [edi+1308], eax
+	mov eax, 880
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov eax, DWORD PTR [edi+1456]
+	mov DWORD PTR [edi+1312], eax
+	mov eax, DWORD PTR [edi+1460]
+	mov DWORD PTR [edi+1316], eax
+	mov eax, DWORD PTR [edi+1464]
+	mov DWORD PTR [edi+1320], eax
+	mov eax, DWORD PTR [edi+1468]
+	mov DWORD PTR [edi+1324], eax
+	mov eax, DWORD PTR [edi+1472]
+	mov DWORD PTR [edi+1328], eax
+	mov eax, DWORD PTR [edi+1476]
+	mov DWORD PTR [edi+1332], eax
+	mov eax, DWORD PTR [edi+1480]
+	mov DWORD PTR [edi+1336], eax
+	mov eax, DWORD PTR [edi+1484]
+	mov DWORD PTR [edi+1340], eax
+	mov eax, DWORD PTR [edi+1488]
+	mov DWORD PTR [edi+1344], eax
+	mov eax, DWORD PTR [edi+1492]
+	mov DWORD PTR [edi+1348], eax
+	mov eax, DWORD PTR [edi+1496]
+	mov DWORD PTR [edi+1352], eax
+	mov eax, DWORD PTR [edi+1500]
+	mov DWORD PTR [edi+1356], eax
+	mov eax, 880
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov eax, DWORD PTR [edi+1456]
+	mov DWORD PTR [edi+1360], eax
+	mov eax, DWORD PTR [edi+1460]
+	mov DWORD PTR [edi+1364], eax
+	mov eax, DWORD PTR [edi+1464]
+	mov DWORD PTR [edi+1368], eax
+	mov eax, DWORD PTR [edi+1468]
+	mov DWORD PTR [edi+1372], eax
+	mov eax, DWORD PTR [edi+1472]
+	mov DWORD PTR [edi+1376], eax
+	mov eax, DWORD PTR [edi+1476]
+	mov DWORD PTR [edi+1380], eax
+	mov eax, DWORD PTR [edi+1480]
+	mov DWORD PTR [edi+1384], eax
+	mov eax, DWORD PTR [edi+1484]
+	mov DWORD PTR [edi+1388], eax
+	mov eax, DWORD PTR [edi+1488]
+	mov DWORD PTR [edi+1392], eax
+	mov eax, DWORD PTR [edi+1492]
+	mov DWORD PTR [edi+1396], eax
+	mov eax, DWORD PTR [edi+1496]
+	mov DWORD PTR [edi+1400], eax
+	mov eax, DWORD PTR [edi+1500]
+	mov DWORD PTR [edi+1404], eax
+	mov eax, 880
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov eax, DWORD PTR [edi+1456]
+	mov DWORD PTR [edi+1408], eax
+	mov eax, DWORD PTR [edi+1460]
+	mov DWORD PTR [edi+1412], eax
+	mov eax, DWORD PTR [edi+1464]
+	mov DWORD PTR [edi+1416], eax
+	mov eax, DWORD PTR [edi+1468]
+	mov DWORD PTR [edi+1420], eax
+	mov eax, DWORD PTR [edi+1472]
+	mov DWORD PTR [edi+1424], eax
+	mov eax, DWORD PTR [edi+1476]
+	mov DWORD PTR [edi+1428], eax
+	mov eax, DWORD PTR [edi+1480]
+	mov DWORD PTR [edi+1432], eax
+	mov eax, DWORD PTR [edi+1484]
+	mov DWORD PTR [edi+1436], eax
+	mov eax, DWORD PTR [edi+1488]
+	mov DWORD PTR [edi+1440], eax
+	mov eax, DWORD PTR [edi+1492]
+	mov DWORD PTR [edi+1444], eax
+	mov eax, DWORD PTR [edi+1496]
+	mov DWORD PTR [edi+1448], eax
+	mov eax, DWORD PTR [edi+1500]
+	mov DWORD PTR [edi+1452], eax
+	mov eax, DWORD PTR [edi+688]
+	mov DWORD PTR [edi+1456], eax
+	mov eax, DWORD PTR [edi+692]
+	mov DWORD PTR [edi+1460], eax
+	mov eax, DWORD PTR [edi+696]
+	mov DWORD PTR [edi+1464], eax
+	mov eax, DWORD PTR [edi+700]
+	mov DWORD PTR [edi+1468], eax
+	mov eax, DWORD PTR [edi+704]
+	mov DWORD PTR [edi+1472], eax
+	mov eax, DWORD PTR [edi+708]
+	mov DWORD PTR [edi+1476], eax
+	mov eax, DWORD PTR [edi+712]
+	mov DWORD PTR [edi+1480], eax
+	mov eax, DWORD PTR [edi+716]
+	mov DWORD PTR [edi+1484], eax
+	mov eax, DWORD PTR [edi+720]
+	mov DWORD PTR [edi+1488], eax
+	mov eax, DWORD PTR [edi+724]
+	mov DWORD PTR [edi+1492], eax
+	mov eax, DWORD PTR [edi+728]
+	mov DWORD PTR [edi+1496], eax
+	mov eax, DWORD PTR [edi+732]
 	mov DWORD PTR [edi+1500], eax
+	mov esi, 4
+29:
+	sub esi, 1
+	mov eax, 1456
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
 	test esi, esi
-	jne 28b
+	jne 29b
+	mov eax, 1408
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+210:
+	sub esi, 1
+	mov eax, 1456
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 210b
+	mov eax, 1408
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+211:
+	sub esi, 1
+	mov eax, 1456
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 211b
+	mov eax, 1408
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+212:
+	sub esi, 1
+	mov eax, 1456
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 212b
+	mov eax, 1408
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+213:
+	sub esi, 1
+	mov eax, 1456
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 213b
+	mov eax, 1408
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+214:
+	sub esi, 1
+	mov eax, 1456
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 214b
+	mov eax, 1408
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+215:
+	sub esi, 1
+	mov eax, 1456
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 215b
+	mov eax, 1408
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+216:
+	sub esi, 1
+	mov eax, 1456
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 216b
+	mov eax, 1408
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+217:
+	sub esi, 1
+	mov eax, 1456
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 217b
+	mov eax, 1408
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+218:
+	sub esi, 1
+	mov eax, 1456
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 218b
+	mov eax, 1408
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+219:
+	sub esi, 1
+	mov eax, 1456
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 219b
+	mov eax, 1408
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+220:
+	sub esi, 1
+	mov eax, 1456
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 220b
+	mov eax, 1408
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+221:
+	sub esi, 1
+	mov eax, 1456
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 221b
+	mov eax, 1408
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+222:
+	sub esi, 1
+	mov eax, 1456
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 222b
+	mov eax, 1408
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+223:
+	sub esi, 1
+	mov eax, 1456
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 223b
+	mov eax, 1408
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+224:
+	sub esi, 1
+	mov eax, 1456
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 224b
+	mov eax, 1408
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+225:
+	sub esi, 1
+	mov eax, 1456
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 225b
+	mov eax, 1408
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+226:
+	sub esi, 1
+	mov eax, 1456
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 226b
+	mov eax, 1408
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+227:
+	sub esi, 1
+	mov eax, 1456
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 227b
+	mov eax, 1408
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+228:
+	sub esi, 1
+	mov eax, 1456
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 228b
+	mov eax, 1408
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+229:
+	sub esi, 1
+	mov eax, 1456
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 229b
+	mov eax, 1408
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+230:
+	sub esi, 1
+	mov eax, 1456
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 230b
+	mov eax, 1408
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+231:
+	sub esi, 1
+	mov eax, 1456
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 231b
+	mov eax, 1408
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+232:
+	sub esi, 1
+	mov eax, 1456
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 232b
+	mov eax, 1408
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+233:
+	sub esi, 1
+	mov eax, 1456
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 233b
+	mov eax, 1408
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+234:
+	sub esi, 1
+	mov eax, 1456
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 234b
+	mov eax, 1408
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+235:
+	sub esi, 1
+	mov eax, 1456
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 235b
+	mov eax, 1408
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+236:
+	sub esi, 1
+	mov eax, 1456
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 236b
+	mov eax, 1408
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+237:
+	sub esi, 1
+	mov eax, 1456
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 237b
+	mov eax, 1408
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+238:
+	sub esi, 1
+	mov eax, 1456
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 238b
+	mov eax, 1408
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+239:
+	sub esi, 1
+	mov eax, 1456
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 239b
+	mov eax, 1408
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+240:
+	sub esi, 1
+	mov eax, 1456
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 240b
+	mov eax, 1408
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+241:
+	sub esi, 1
+	mov eax, 1456
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 241b
+	mov eax, 1408
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+242:
+	sub esi, 1
+	mov eax, 1456
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 242b
+	mov eax, 1408
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+243:
+	sub esi, 1
+	mov eax, 1456
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 243b
+	mov eax, 1408
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+244:
+	sub esi, 1
+	mov eax, 1456
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 244b
+	mov eax, 1408
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+245:
+	sub esi, 1
+	mov eax, 1456
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 245b
+	mov eax, 1408
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+246:
+	sub esi, 1
+	mov eax, 1456
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 246b
+	mov eax, 1408
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+247:
+	sub esi, 1
+	mov eax, 1456
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 247b
+	mov eax, 1408
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+248:
+	sub esi, 1
+	mov eax, 1456
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 248b
+	mov eax, 1408
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+249:
+	sub esi, 1
+	mov eax, 1456
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 249b
+	mov eax, 1408
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+250:
+	sub esi, 1
+	mov eax, 1456
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 250b
+	mov eax, 1408
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+251:
+	sub esi, 1
+	mov eax, 1456
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 251b
+	mov eax, 1408
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+252:
+	sub esi, 1
+	mov eax, 1456
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 252b
+	mov eax, 1408
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+253:
+	sub esi, 1
+	mov eax, 1456
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 253b
+	mov eax, 1408
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+254:
+	sub esi, 1
+	mov eax, 1456
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 254b
+	mov eax, 1408
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+255:
+	sub esi, 1
+	mov eax, 1456
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 255b
+	mov eax, 1408
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+256:
+	sub esi, 1
+	mov eax, 1456
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 256b
+	mov eax, 1408
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 5
+257:
+	sub esi, 1
+	mov eax, 1456
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 257b
+	mov eax, 688
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+258:
+	sub esi, 1
+	mov eax, 1456
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 258b
+	mov eax, 1312
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 5
+259:
+	sub esi, 1
+	mov eax, 1456
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 259b
+	mov eax, 688
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 5
+260:
+	sub esi, 1
+	mov eax, 1456
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 260b
+	mov eax, 1264
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+261:
+	sub esi, 1
+	mov eax, 1456
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 261b
+	mov eax, 1312
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 9
+262:
+	sub esi, 1
+	mov eax, 1456
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 262b
+	mov eax, 1216
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+263:
+	sub esi, 1
+	mov eax, 1456
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 263b
+	mov eax, 1360
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 5
+264:
+	sub esi, 1
+	mov eax, 1456
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 264b
+	mov eax, 640
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+265:
+	sub esi, 1
+	mov eax, 1456
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 265b
+	mov eax, 1312
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+266:
+	sub esi, 1
+	mov eax, 1456
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 266b
+	mov eax, 1264
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 5
+267:
+	sub esi, 1
+	mov eax, 1456
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 267b
+	mov eax, 1360
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+268:
+	sub esi, 1
+	mov eax, 1456
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 268b
+	mov eax, 1360
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+269:
+	sub esi, 1
+	mov eax, 1456
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 269b
+	mov eax, 1408
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 5
+270:
+	sub esi, 1
+	mov eax, 1456
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 270b
+	mov eax, 1312
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 10
+271:
+	sub esi, 1
+	mov eax, 1456
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 271b
+	mov eax, 1360
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 7
+272:
+	sub esi, 1
+	mov eax, 1456
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 272b
+	mov eax, 688
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 5
+273:
+	sub esi, 1
+	mov eax, 1456
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 273b
+	mov eax, 1360
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+274:
+	sub esi, 1
+	mov eax, 1456
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 274b
+	mov eax, 1264
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 6
+275:
+	sub esi, 1
+	mov eax, 1456
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 275b
+	mov eax, 1264
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 7
+276:
+	sub esi, 1
+	mov eax, 1456
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 276b
+	mov eax, 1312
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 7
+277:
+	sub esi, 1
+	mov eax, 1456
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 277b
+	mov eax, 1168
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 5
+278:
+	sub esi, 1
+	mov eax, 1456
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 278b
+	mov eax, 1216
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 5
+279:
+	sub esi, 1
+	mov eax, 1456
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 279b
+	mov eax, 1408
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 5
+280:
+	sub esi, 1
+	mov eax, 1456
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 280b
+	mov eax, 1312
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+281:
+	sub esi, 1
+	mov eax, 1456
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 281b
+	mov eax, 1312
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+282:
+	sub esi, 1
+	mov eax, 1456
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 282b
+	mov eax, 688
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+283:
+	sub esi, 1
+	mov eax, 1456
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 283b
+	mov eax, 1312
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 6
+284:
+	sub esi, 1
+	mov eax, 1456
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 284b
+	mov eax, 640
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+285:
+	sub esi, 1
+	mov eax, 1456
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 285b
+	mov eax, 1264
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 5
+286:
+	sub esi, 1
+	mov eax, 1456
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 286b
+	mov eax, 1360
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 5
+287:
+	sub esi, 1
+	mov eax, 1456
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 287b
+	mov eax, 1312
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+288:
+	sub esi, 1
+	mov eax, 1456
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 288b
+	mov eax, 688
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+289:
+	sub esi, 1
+	mov eax, 1456
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 289b
+	mov eax, 688
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+290:
+	sub esi, 1
+	mov eax, 1456
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 290b
+	mov eax, 640
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 5
+291:
+	sub esi, 1
+	mov eax, 1456
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 291b
+	mov eax, 1264
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 5
+292:
+	sub esi, 1
+	mov eax, 1456
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 292b
+	mov eax, 1264
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+293:
+	sub esi, 1
+	mov eax, 1456
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 293b
+	mov eax, 1216
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 4
+294:
+	sub esi, 1
+	mov eax, 1456
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 294b
+	mov eax, 640
+	mov ecx, 1456
+	mov edx, 1456
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
 	mov eax, 544
 	mov ecx, 1600
 	mov edx, 1984
@@ -1604,82 +4365,51 @@ vg_ecdsa_p384_verify:
 	pop eax
 	pop eax
 	pop eax
-	mov eax, DWORD PTR [edi+1696]
-	mov DWORD PTR [edi+1552], eax
-	mov eax, DWORD PTR [edi+1700]
-	mov DWORD PTR [edi+1556], eax
-	mov eax, DWORD PTR [edi+1704]
-	mov DWORD PTR [edi+1560], eax
-	mov eax, DWORD PTR [edi+1708]
-	mov DWORD PTR [edi+1564], eax
-	mov eax, DWORD PTR [edi+1712]
-	mov DWORD PTR [edi+1568], eax
-	mov eax, DWORD PTR [edi+1716]
-	mov DWORD PTR [edi+1572], eax
-	mov eax, DWORD PTR [edi+1720]
-	mov DWORD PTR [edi+1576], eax
-	mov eax, DWORD PTR [edi+1724]
-	mov DWORD PTR [edi+1580], eax
-	mov eax, DWORD PTR [edi+1728]
-	mov DWORD PTR [edi+1584], eax
-	mov eax, DWORD PTR [edi+1732]
-	mov DWORD PTR [edi+1588], eax
-	mov eax, DWORD PTR [edi+1736]
-	mov DWORD PTR [edi+1592], eax
-	mov eax, DWORD PTR [edi+1740]
-	mov DWORD PTR [edi+1596], eax
-	mov eax, DWORD PTR [edi+448]
-	mov DWORD PTR [edi+736], eax
-	mov eax, DWORD PTR [edi+452]
-	mov DWORD PTR [edi+740], eax
-	mov eax, DWORD PTR [edi+456]
-	mov DWORD PTR [edi+744], eax
-	mov eax, DWORD PTR [edi+460]
-	mov DWORD PTR [edi+748], eax
-	mov eax, DWORD PTR [edi+464]
-	mov DWORD PTR [edi+752], eax
-	mov eax, DWORD PTR [edi+468]
-	mov DWORD PTR [edi+756], eax
-	mov eax, DWORD PTR [edi+472]
-	mov DWORD PTR [edi+760], eax
-	mov eax, DWORD PTR [edi+476]
-	mov DWORD PTR [edi+764], eax
-	mov eax, DWORD PTR [edi+480]
-	mov DWORD PTR [edi+768], eax
-	mov eax, DWORD PTR [edi+484]
-	mov DWORD PTR [edi+772], eax
-	mov eax, DWORD PTR [edi+488]
-	mov DWORD PTR [edi+776], eax
-	mov eax, DWORD PTR [edi+492]
-	mov DWORD PTR [edi+780], eax
-	mov eax, DWORD PTR [edi+496]
-	mov DWORD PTR [edi+784], eax
-	mov eax, DWORD PTR [edi+500]
-	mov DWORD PTR [edi+788], eax
-	mov eax, DWORD PTR [edi+504]
-	mov DWORD PTR [edi+792], eax
-	mov eax, DWORD PTR [edi+508]
-	mov DWORD PTR [edi+796], eax
-	mov eax, DWORD PTR [edi+512]
-	mov DWORD PTR [edi+800], eax
-	mov eax, DWORD PTR [edi+516]
-	mov DWORD PTR [edi+804], eax
-	mov eax, DWORD PTR [edi+520]
-	mov DWORD PTR [edi+808], eax
-	mov eax, DWORD PTR [edi+524]
-	mov DWORD PTR [edi+812], eax
-	mov eax, DWORD PTR [edi+528]
-	mov DWORD PTR [edi+816], eax
-	mov eax, DWORD PTR [edi+532]
-	mov DWORD PTR [edi+820], eax
-	mov eax, DWORD PTR [edi+536]
-	mov DWORD PTR [edi+824], eax
-	mov eax, DWORD PTR [edi+540]
-	mov DWORD PTR [edi+828], eax
-	push edi
-	call {vg_p384_mul}
-	pop eax
-	mov edi, DWORD PTR [esp+16]
+	mov esi, 48
+295:
+	sub esi, 1
+	mov eax, edi
+	add eax, esi
+	movzx eax, BYTE PTR [eax+1696]
+	mov ebx, esi
+	add ebx, ebx
+	add ebx, ebx
+	add ebx, ebx
+	add ebx, edi
+	mov edx, eax
+	and edx, 1
+	mov BYTE PTR [ebx+4096], dl
+	mov edx, eax
+	shr edx, 1
+	and edx, 1
+	mov BYTE PTR [ebx+4097], dl
+	mov edx, eax
+	shr edx, 2
+	and edx, 1
+	mov BYTE PTR [ebx+4098], dl
+	mov edx, eax
+	shr edx, 3
+	and edx, 1
+	mov BYTE PTR [ebx+4099], dl
+	mov edx, eax
+	shr edx, 4
+	and edx, 1
+	mov BYTE PTR [ebx+4100], dl
+	mov edx, eax
+	shr edx, 5
+	and edx, 1
+	mov BYTE PTR [ebx+4101], dl
+	mov edx, eax
+	shr edx, 6
+	and edx, 1
+	mov BYTE PTR [ebx+4102], dl
+	mov edx, eax
+	shr edx, 7
+	and edx, 1
+	mov BYTE PTR [ebx+4103], dl
+	test esi, esi
+	jne 295b
+	call {vg_p384_comb}
 	mov eax, DWORD PTR [edi+736]
 	mov DWORD PTR [edi+2032], eax
 	mov eax, DWORD PTR [edi+740]
@@ -1824,82 +4554,51 @@ vg_ecdsa_p384_verify:
 	mov DWORD PTR [edi+872], eax
 	mov eax, 0
 	mov DWORD PTR [edi+876], eax
-	mov eax, DWORD PTR [edi+1744]
-	mov DWORD PTR [edi+1552], eax
-	mov eax, DWORD PTR [edi+1748]
-	mov DWORD PTR [edi+1556], eax
-	mov eax, DWORD PTR [edi+1752]
-	mov DWORD PTR [edi+1560], eax
-	mov eax, DWORD PTR [edi+1756]
-	mov DWORD PTR [edi+1564], eax
-	mov eax, DWORD PTR [edi+1760]
-	mov DWORD PTR [edi+1568], eax
-	mov eax, DWORD PTR [edi+1764]
-	mov DWORD PTR [edi+1572], eax
-	mov eax, DWORD PTR [edi+1768]
-	mov DWORD PTR [edi+1576], eax
-	mov eax, DWORD PTR [edi+1772]
-	mov DWORD PTR [edi+1580], eax
-	mov eax, DWORD PTR [edi+1776]
-	mov DWORD PTR [edi+1584], eax
-	mov eax, DWORD PTR [edi+1780]
-	mov DWORD PTR [edi+1588], eax
-	mov eax, DWORD PTR [edi+1784]
-	mov DWORD PTR [edi+1592], eax
-	mov eax, DWORD PTR [edi+1788]
-	mov DWORD PTR [edi+1596], eax
-	mov eax, DWORD PTR [edi+1888]
-	mov DWORD PTR [edi+736], eax
-	mov eax, DWORD PTR [edi+1892]
-	mov DWORD PTR [edi+740], eax
-	mov eax, DWORD PTR [edi+1896]
-	mov DWORD PTR [edi+744], eax
-	mov eax, DWORD PTR [edi+1900]
-	mov DWORD PTR [edi+748], eax
-	mov eax, DWORD PTR [edi+1904]
-	mov DWORD PTR [edi+752], eax
-	mov eax, DWORD PTR [edi+1908]
-	mov DWORD PTR [edi+756], eax
-	mov eax, DWORD PTR [edi+1912]
-	mov DWORD PTR [edi+760], eax
-	mov eax, DWORD PTR [edi+1916]
-	mov DWORD PTR [edi+764], eax
-	mov eax, DWORD PTR [edi+1920]
-	mov DWORD PTR [edi+768], eax
-	mov eax, DWORD PTR [edi+1924]
-	mov DWORD PTR [edi+772], eax
-	mov eax, DWORD PTR [edi+1928]
-	mov DWORD PTR [edi+776], eax
-	mov eax, DWORD PTR [edi+1932]
-	mov DWORD PTR [edi+780], eax
-	mov eax, DWORD PTR [edi+2128]
-	mov DWORD PTR [edi+784], eax
-	mov eax, DWORD PTR [edi+2132]
-	mov DWORD PTR [edi+788], eax
-	mov eax, DWORD PTR [edi+2136]
-	mov DWORD PTR [edi+792], eax
-	mov eax, DWORD PTR [edi+2140]
-	mov DWORD PTR [edi+796], eax
-	mov eax, DWORD PTR [edi+2144]
-	mov DWORD PTR [edi+800], eax
-	mov eax, DWORD PTR [edi+2148]
-	mov DWORD PTR [edi+804], eax
-	mov eax, DWORD PTR [edi+2152]
-	mov DWORD PTR [edi+808], eax
-	mov eax, DWORD PTR [edi+2156]
-	mov DWORD PTR [edi+812], eax
-	mov eax, DWORD PTR [edi+2160]
-	mov DWORD PTR [edi+816], eax
-	mov eax, DWORD PTR [edi+2164]
-	mov DWORD PTR [edi+820], eax
-	mov eax, DWORD PTR [edi+2168]
-	mov DWORD PTR [edi+824], eax
-	mov eax, DWORD PTR [edi+2172]
-	mov DWORD PTR [edi+828], eax
-	push edi
-	call {vg_p384_mul}
-	pop eax
-	mov edi, DWORD PTR [esp+16]
+	mov esi, 48
+296:
+	sub esi, 1
+	mov eax, edi
+	add eax, esi
+	movzx eax, BYTE PTR [eax+1744]
+	mov ebx, esi
+	add ebx, ebx
+	add ebx, ebx
+	add ebx, ebx
+	add ebx, edi
+	mov edx, eax
+	and edx, 1
+	mov BYTE PTR [ebx+4096], dl
+	mov edx, eax
+	shr edx, 1
+	and edx, 1
+	mov BYTE PTR [ebx+4097], dl
+	mov edx, eax
+	shr edx, 2
+	and edx, 1
+	mov BYTE PTR [ebx+4098], dl
+	mov edx, eax
+	shr edx, 3
+	and edx, 1
+	mov BYTE PTR [ebx+4099], dl
+	mov edx, eax
+	shr edx, 4
+	and edx, 1
+	mov BYTE PTR [ebx+4100], dl
+	mov edx, eax
+	shr edx, 5
+	and edx, 1
+	mov BYTE PTR [ebx+4101], dl
+	mov edx, eax
+	shr edx, 6
+	and edx, 1
+	mov BYTE PTR [ebx+4102], dl
+	mov edx, eax
+	shr edx, 7
+	and edx, 1
+	mov BYTE PTR [ebx+4103], dl
+	test esi, esi
+	jne 296b
+	call {vg_p384_window}
 	mov eax, 736
 	mov ecx, 2032
 	mov edx, 1168
@@ -2452,138 +5151,80 @@ vg_ecdsa_p384_verify:
 	mov DWORD PTR [edi+872], eax
 	mov eax, DWORD PTR [edi+1020]
 	mov DWORD PTR [edi+876], eax
-	mov eax, DWORD PTR [edi+304]
+	mov eax, 1
+	mov DWORD PTR [edi+1696], eax
+	mov eax, -2
+	mov DWORD PTR [edi+1700], eax
+	mov eax, 0
+	mov DWORD PTR [edi+1704], eax
+	mov eax, 2
+	mov DWORD PTR [edi+1708], eax
+	mov eax, 0
+	mov DWORD PTR [edi+1712], eax
+	mov eax, -2
+	mov DWORD PTR [edi+1716], eax
+	mov eax, 0
+	mov DWORD PTR [edi+1720], eax
+	mov eax, 2
+	mov DWORD PTR [edi+1724], eax
+	mov eax, 1
+	mov DWORD PTR [edi+1728], eax
+	mov eax, 0
+	mov DWORD PTR [edi+1732], eax
+	mov eax, 0
+	mov DWORD PTR [edi+1736], eax
+	mov eax, 0
+	mov DWORD PTR [edi+1740], eax
+	mov eax, -859494029
 	mov DWORD PTR [edi+1456], eax
-	mov eax, DWORD PTR [edi+308]
+	mov eax, 539422710
 	mov DWORD PTR [edi+1460], eax
-	mov eax, DWORD PTR [edi+312]
+	mov eax, 1539608081
 	mov DWORD PTR [edi+1464], eax
-	mov eax, DWORD PTR [edi+316]
+	mov eax, -600928341
 	mov DWORD PTR [edi+1468], eax
-	mov eax, DWORD PTR [edi+320]
+	mov eax, 1439589129
 	mov DWORD PTR [edi+1472], eax
-	mov eax, DWORD PTR [edi+324]
+	mov eax, 147382406
 	mov DWORD PTR [edi+1476], eax
-	mov eax, DWORD PTR [edi+328]
+	mov eax, -647534676
 	mov DWORD PTR [edi+1480], eax
-	mov eax, DWORD PTR [edi+332]
+	mov eax, 1280392083
 	mov DWORD PTR [edi+1484], eax
-	mov eax, DWORD PTR [edi+336]
+	mov eax, -1147503774
 	mov DWORD PTR [edi+1488], eax
-	mov eax, DWORD PTR [edi+340]
+	mov eax, -949793407
 	mov DWORD PTR [edi+1492], eax
-	mov eax, DWORD PTR [edi+344]
+	mov eax, -1
 	mov DWORD PTR [edi+1496], eax
-	mov eax, DWORD PTR [edi+348]
+	mov eax, -1
 	mov DWORD PTR [edi+1500], eax
-	mov esi, 384
-29:
-	sub esi, 1
-	mov eax, 1456
-	mov ecx, 1456
-	mov edx, 1456
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	mov eax, 832
-	mov ecx, 1456
-	mov edx, 1504
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_p}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	mov eax, edi
-	add eax, esi
-	movzx eax, BYTE PTR [eax+4484]
-	mov ecx, 0
-	sub ecx, eax
-	mov eax, DWORD PTR [edi+1456]
-	mov edx, DWORD PTR [edi+1504]
-	xor edx, eax
-	and edx, ecx
-	xor eax, edx
-	mov DWORD PTR [edi+1456], eax
-	mov eax, DWORD PTR [edi+1460]
-	mov edx, DWORD PTR [edi+1508]
-	xor edx, eax
-	and edx, ecx
-	xor eax, edx
-	mov DWORD PTR [edi+1460], eax
-	mov eax, DWORD PTR [edi+1464]
-	mov edx, DWORD PTR [edi+1512]
-	xor edx, eax
-	and edx, ecx
-	xor eax, edx
-	mov DWORD PTR [edi+1464], eax
-	mov eax, DWORD PTR [edi+1468]
-	mov edx, DWORD PTR [edi+1516]
-	xor edx, eax
-	and edx, ecx
-	xor eax, edx
-	mov DWORD PTR [edi+1468], eax
-	mov eax, DWORD PTR [edi+1472]
-	mov edx, DWORD PTR [edi+1520]
-	xor edx, eax
-	and edx, ecx
-	xor eax, edx
-	mov DWORD PTR [edi+1472], eax
-	mov eax, DWORD PTR [edi+1476]
-	mov edx, DWORD PTR [edi+1524]
-	xor edx, eax
-	and edx, ecx
-	xor eax, edx
-	mov DWORD PTR [edi+1476], eax
-	mov eax, DWORD PTR [edi+1480]
-	mov edx, DWORD PTR [edi+1528]
-	xor edx, eax
-	and edx, ecx
-	xor eax, edx
-	mov DWORD PTR [edi+1480], eax
-	mov eax, DWORD PTR [edi+1484]
-	mov edx, DWORD PTR [edi+1532]
-	xor edx, eax
-	and edx, ecx
-	xor eax, edx
-	mov DWORD PTR [edi+1484], eax
-	mov eax, DWORD PTR [edi+1488]
-	mov edx, DWORD PTR [edi+1536]
-	xor edx, eax
-	and edx, ecx
-	xor eax, edx
-	mov DWORD PTR [edi+1488], eax
-	mov eax, DWORD PTR [edi+1492]
-	mov edx, DWORD PTR [edi+1540]
-	xor edx, eax
-	and edx, ecx
-	xor eax, edx
-	mov DWORD PTR [edi+1492], eax
-	mov eax, DWORD PTR [edi+1496]
-	mov edx, DWORD PTR [edi+1544]
-	xor edx, eax
-	and edx, ecx
-	xor eax, edx
-	mov DWORD PTR [edi+1496], eax
-	mov eax, DWORD PTR [edi+1500]
-	mov edx, DWORD PTR [edi+1548]
-	xor edx, eax
-	and edx, ecx
-	xor eax, edx
-	mov DWORD PTR [edi+1500], eax
-	test esi, esi
-	jne 29b
-	mov eax, 1456
-	mov ecx, 736
+	mov eax, 859494028
+	mov DWORD PTR [edi+112], eax
+	mov eax, 320071318
+	mov DWORD PTR [edi+116], eax
+	mov eax, -1219536763
+	mov DWORD PTR [edi+120], eax
+	mov eax, -1478102452
+	mov DWORD PTR [edi+124], eax
+	mov eax, 197710367
+	mov DWORD PTR [edi+128], eax
+	mov eax, 949793406
+	mov DWORD PTR [edi+132], eax
+	mov eax, 0
+	mov DWORD PTR [edi+136], eax
+	mov eax, 0
+	mov DWORD PTR [edi+140], eax
+	mov eax, 0
+	mov DWORD PTR [edi+144], eax
+	mov eax, 0
+	mov DWORD PTR [edi+148], eax
+	mov eax, 0
+	mov DWORD PTR [edi+152], eax
+	mov eax, 0
+	mov DWORD PTR [edi+156], eax
+	mov eax, 1696
+	mov ecx, 1552
 	mov edx, 1696
 	push eax
 	push ecx
@@ -2594,7 +5235,7 @@ vg_ecdsa_p384_verify:
 	pop eax
 	pop eax
 	pop eax
-	mov eax, 256
+	mov eax, 832
 	mov ecx, 1696
 	mov edx, 1744
 	push eax
@@ -2606,30 +5247,117 @@ vg_ecdsa_p384_verify:
 	pop eax
 	pop eax
 	pop eax
-	mov eax, 544
-	mov ecx, 1744
-	mov edx, 1888
-	push eax
-	push ecx
-	push edx
-	push edi
-	call {vg_p384_mul_mod_n}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	mov eax, 1936
-	mov ecx, 1888
+	mov eax, 1744
+	mov ecx, 736
 	mov edx, 1984
 	push eax
 	push ecx
 	push edx
 	push edi
-	call {vg_p384_sub_mod_n}
+	call {vg_p384_sub_mod_p}
 	pop eax
 	pop eax
 	pop eax
 	pop eax
+	mov eax, 1456
+	mov ecx, 1696
+	mov edx, 1696
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_add_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov eax, 832
+	mov ecx, 1696
+	mov edx, 1744
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_mul_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov eax, 1744
+	mov ecx, 736
+	mov edx, 1888
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p384_sub_mod_p}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov edx, DWORD PTR [edi+1984]
+	or edx, DWORD PTR [edi+1988]
+	or edx, DWORD PTR [edi+1992]
+	or edx, DWORD PTR [edi+1996]
+	or edx, DWORD PTR [edi+2000]
+	or edx, DWORD PTR [edi+2004]
+	or edx, DWORD PTR [edi+2008]
+	or edx, DWORD PTR [edi+2012]
+	or edx, DWORD PTR [edi+2016]
+	or edx, DWORD PTR [edi+2020]
+	or edx, DWORD PTR [edi+2024]
+	or edx, DWORD PTR [edi+2028]
+	mov ecx, 0
+	sub ecx, edx
+	sbb edx, edx
+	xor edx, -1
+	mov ebx, edx
+	mov edx, DWORD PTR [edi+1552]
+	sub edx, DWORD PTR [edi+112]
+	mov edx, DWORD PTR [edi+1556]
+	sbb edx, DWORD PTR [edi+116]
+	mov edx, DWORD PTR [edi+1560]
+	sbb edx, DWORD PTR [edi+120]
+	mov edx, DWORD PTR [edi+1564]
+	sbb edx, DWORD PTR [edi+124]
+	mov edx, DWORD PTR [edi+1568]
+	sbb edx, DWORD PTR [edi+128]
+	mov edx, DWORD PTR [edi+1572]
+	sbb edx, DWORD PTR [edi+132]
+	mov edx, DWORD PTR [edi+1576]
+	sbb edx, DWORD PTR [edi+136]
+	mov edx, DWORD PTR [edi+1580]
+	sbb edx, DWORD PTR [edi+140]
+	mov edx, DWORD PTR [edi+1584]
+	sbb edx, DWORD PTR [edi+144]
+	mov edx, DWORD PTR [edi+1588]
+	sbb edx, DWORD PTR [edi+148]
+	mov edx, DWORD PTR [edi+1592]
+	sbb edx, DWORD PTR [edi+152]
+	mov edx, DWORD PTR [edi+1596]
+	sbb edx, DWORD PTR [edi+156]
+	sbb eax, eax
+	mov edx, DWORD PTR [edi+1888]
+	or edx, DWORD PTR [edi+1892]
+	or edx, DWORD PTR [edi+1896]
+	or edx, DWORD PTR [edi+1900]
+	or edx, DWORD PTR [edi+1904]
+	or edx, DWORD PTR [edi+1908]
+	or edx, DWORD PTR [edi+1912]
+	or edx, DWORD PTR [edi+1916]
+	or edx, DWORD PTR [edi+1920]
+	or edx, DWORD PTR [edi+1924]
+	or edx, DWORD PTR [edi+1928]
+	or edx, DWORD PTR [edi+1932]
+	mov ecx, 0
+	sub ecx, edx
+	sbb edx, edx
+	xor edx, -1
+	and edx, eax
+	or edx, ebx
+	mov eax, DWORD PTR [edi+2176]
+	and eax, edx
+	mov DWORD PTR [edi+2176], eax
 	mov edx, DWORD PTR [edi+832]
 	or edx, DWORD PTR [edi+836]
 	or edx, DWORD PTR [edi+840]
@@ -2648,25 +5376,6 @@ vg_ecdsa_p384_verify:
 	mov eax, DWORD PTR [edi+2176]
 	and eax, edx
 	mov DWORD PTR [edi+2176], eax
-	mov edx, DWORD PTR [edi+1984]
-	or edx, DWORD PTR [edi+1988]
-	or edx, DWORD PTR [edi+1992]
-	or edx, DWORD PTR [edi+1996]
-	or edx, DWORD PTR [edi+2000]
-	or edx, DWORD PTR [edi+2004]
-	or edx, DWORD PTR [edi+2008]
-	or edx, DWORD PTR [edi+2012]
-	or edx, DWORD PTR [edi+2016]
-	or edx, DWORD PTR [edi+2020]
-	or edx, DWORD PTR [edi+2024]
-	or edx, DWORD PTR [edi+2028]
-	mov ecx, 0
-	sub ecx, edx
-	sbb edx, edx
-	xor edx, -1
-	mov eax, DWORD PTR [edi+2176]
-	and eax, edx
-	mov DWORD PTR [edi+2176], eax
 	mov ecx, DWORD PTR [edi+2176]
 	mov eax, ecx
 	and eax, 1
@@ -2676,6 +5385,29 @@ vg_ecdsa_p384_verify:
 	mov ebp, DWORD PTR [edx+12]
 	mov edi, DWORD PTR [edx+8]
 	lea esp, [esp+108]
+	pxor xmm0, xmm0
+	mov ecx, 0
+	lea esp, [esp-132]
+	movdqu XMMWORD PTR [esp], xmm0
+	movdqu XMMWORD PTR [esp+16], xmm0
+	movdqu XMMWORD PTR [esp+32], xmm0
+	movdqu XMMWORD PTR [esp+48], xmm0
+	movdqu XMMWORD PTR [esp+64], xmm0
+	movdqu XMMWORD PTR [esp+80], xmm0
+	movdqu XMMWORD PTR [esp+96], xmm0
+	movdqu XMMWORD PTR [esp+112], xmm0
+	mov DWORD PTR [esp+128], ecx
+	lea esp, [esp+132]
+	mov edx, 0
+	xor ecx, ecx
+	pxor xmm0, xmm0
+	pxor xmm1, xmm1
+	pxor xmm2, xmm2
+	pxor xmm3, xmm3
+	pxor xmm4, xmm4
+	pxor xmm5, xmm5
+	pxor xmm6, xmm6
+	pxor xmm7, xmm7
 	ret
 	.p2align 6
 
@@ -2910,55 +5642,55 @@ vg_ecdsa_p384_sign:
 	mov edi, DWORD PTR [esp+532]
 	mov esi, DWORD PTR [esp+520]
 	mov eax, 0
-	mov BYTE PTR [edi+2256], al
+	mov BYTE PTR [edi+3792], al
 	mov eax, DWORD PTR [esi]
-	mov DWORD PTR [edi+2257], eax
+	mov DWORD PTR [edi+3793], eax
 	mov eax, DWORD PTR [esi+4]
-	mov DWORD PTR [edi+2261], eax
+	mov DWORD PTR [edi+3797], eax
 	mov eax, DWORD PTR [esi+8]
-	mov DWORD PTR [edi+2265], eax
+	mov DWORD PTR [edi+3801], eax
 	mov eax, DWORD PTR [esi+12]
-	mov DWORD PTR [edi+2269], eax
+	mov DWORD PTR [edi+3805], eax
 	mov eax, DWORD PTR [esi+16]
-	mov DWORD PTR [edi+2273], eax
+	mov DWORD PTR [edi+3809], eax
 	mov eax, DWORD PTR [esi+20]
-	mov DWORD PTR [edi+2277], eax
+	mov DWORD PTR [edi+3813], eax
 	mov eax, DWORD PTR [esi+24]
-	mov DWORD PTR [edi+2281], eax
+	mov DWORD PTR [edi+3817], eax
 	mov eax, DWORD PTR [esi+28]
-	mov DWORD PTR [edi+2285], eax
+	mov DWORD PTR [edi+3821], eax
 	mov eax, DWORD PTR [esi+32]
-	mov DWORD PTR [edi+2289], eax
+	mov DWORD PTR [edi+3825], eax
 	mov eax, DWORD PTR [esi+36]
-	mov DWORD PTR [edi+2293], eax
+	mov DWORD PTR [edi+3829], eax
 	mov eax, DWORD PTR [esi+40]
-	mov DWORD PTR [edi+2297], eax
+	mov DWORD PTR [edi+3833], eax
 	mov eax, DWORD PTR [esi+44]
-	mov DWORD PTR [edi+2301], eax
+	mov DWORD PTR [edi+3837], eax
 	mov eax, DWORD PTR [esp+160]
-	mov DWORD PTR [edi+2305], eax
+	mov DWORD PTR [edi+3841], eax
 	mov eax, DWORD PTR [esp+164]
-	mov DWORD PTR [edi+2309], eax
+	mov DWORD PTR [edi+3845], eax
 	mov eax, DWORD PTR [esp+168]
-	mov DWORD PTR [edi+2313], eax
+	mov DWORD PTR [edi+3849], eax
 	mov eax, DWORD PTR [esp+172]
-	mov DWORD PTR [edi+2317], eax
+	mov DWORD PTR [edi+3853], eax
 	mov eax, DWORD PTR [esp+176]
-	mov DWORD PTR [edi+2321], eax
+	mov DWORD PTR [edi+3857], eax
 	mov eax, DWORD PTR [esp+180]
-	mov DWORD PTR [edi+2325], eax
+	mov DWORD PTR [edi+3861], eax
 	mov eax, DWORD PTR [esp+184]
-	mov DWORD PTR [edi+2329], eax
+	mov DWORD PTR [edi+3865], eax
 	mov eax, DWORD PTR [esp+188]
-	mov DWORD PTR [edi+2333], eax
+	mov DWORD PTR [edi+3869], eax
 	mov eax, DWORD PTR [esp+192]
-	mov DWORD PTR [edi+2337], eax
+	mov DWORD PTR [edi+3873], eax
 	mov eax, DWORD PTR [esp+196]
-	mov DWORD PTR [edi+2341], eax
+	mov DWORD PTR [edi+3877], eax
 	mov eax, DWORD PTR [esp+200]
-	mov DWORD PTR [edi+2345], eax
+	mov DWORD PTR [edi+3881], eax
 	mov eax, DWORD PTR [esp+204]
-	mov DWORD PTR [edi+2349], eax
+	mov DWORD PTR [edi+3885], eax
 	mov edi, DWORD PTR [esp+532]
 	add edi, 0
 	mov esi, DWORD PTR [esp+532]
@@ -3011,7 +5743,7 @@ vg_ecdsa_p384_sign:
 	add esi, DWORD PTR [esp+144]
 	mov eax, 0
 	mov edx, DWORD PTR [esp+532]
-	add edx, 2256
+	add edx, 3792
 	mov ecx, 97
 	mov ebp, DWORD PTR [esp+532]
 	add ebp, 384
@@ -3082,7 +5814,7 @@ vg_ecdsa_p384_sign:
 	mov esi, DWORD PTR [esp+532]
 	add esi, 0
 	mov ebx, DWORD PTR [esp+532]
-	add ebx, 3072
+	add ebx, 4608
 	mov ecx, 384
 21:
 	movzx eax, BYTE PTR [esi]
@@ -3146,57 +5878,57 @@ vg_ecdsa_p384_sign:
 	mov edi, DWORD PTR [esp+532]
 	mov esi, DWORD PTR [esp+520]
 	mov eax, 1
-	mov BYTE PTR [edi+2256], al
+	mov BYTE PTR [edi+3792], al
 	mov eax, DWORD PTR [esi]
-	mov DWORD PTR [edi+2257], eax
+	mov DWORD PTR [edi+3793], eax
 	mov eax, DWORD PTR [esi+4]
-	mov DWORD PTR [edi+2261], eax
+	mov DWORD PTR [edi+3797], eax
 	mov eax, DWORD PTR [esi+8]
-	mov DWORD PTR [edi+2265], eax
+	mov DWORD PTR [edi+3801], eax
 	mov eax, DWORD PTR [esi+12]
-	mov DWORD PTR [edi+2269], eax
+	mov DWORD PTR [edi+3805], eax
 	mov eax, DWORD PTR [esi+16]
-	mov DWORD PTR [edi+2273], eax
+	mov DWORD PTR [edi+3809], eax
 	mov eax, DWORD PTR [esi+20]
-	mov DWORD PTR [edi+2277], eax
+	mov DWORD PTR [edi+3813], eax
 	mov eax, DWORD PTR [esi+24]
-	mov DWORD PTR [edi+2281], eax
+	mov DWORD PTR [edi+3817], eax
 	mov eax, DWORD PTR [esi+28]
-	mov DWORD PTR [edi+2285], eax
+	mov DWORD PTR [edi+3821], eax
 	mov eax, DWORD PTR [esi+32]
-	mov DWORD PTR [edi+2289], eax
+	mov DWORD PTR [edi+3825], eax
 	mov eax, DWORD PTR [esi+36]
-	mov DWORD PTR [edi+2293], eax
+	mov DWORD PTR [edi+3829], eax
 	mov eax, DWORD PTR [esi+40]
-	mov DWORD PTR [edi+2297], eax
+	mov DWORD PTR [edi+3833], eax
 	mov eax, DWORD PTR [esi+44]
-	mov DWORD PTR [edi+2301], eax
+	mov DWORD PTR [edi+3837], eax
 	mov eax, DWORD PTR [esp+160]
-	mov DWORD PTR [edi+2305], eax
+	mov DWORD PTR [edi+3841], eax
 	mov eax, DWORD PTR [esp+164]
-	mov DWORD PTR [edi+2309], eax
+	mov DWORD PTR [edi+3845], eax
 	mov eax, DWORD PTR [esp+168]
-	mov DWORD PTR [edi+2313], eax
+	mov DWORD PTR [edi+3849], eax
 	mov eax, DWORD PTR [esp+172]
-	mov DWORD PTR [edi+2317], eax
+	mov DWORD PTR [edi+3853], eax
 	mov eax, DWORD PTR [esp+176]
-	mov DWORD PTR [edi+2321], eax
+	mov DWORD PTR [edi+3857], eax
 	mov eax, DWORD PTR [esp+180]
-	mov DWORD PTR [edi+2325], eax
+	mov DWORD PTR [edi+3861], eax
 	mov eax, DWORD PTR [esp+184]
-	mov DWORD PTR [edi+2329], eax
+	mov DWORD PTR [edi+3865], eax
 	mov eax, DWORD PTR [esp+188]
-	mov DWORD PTR [edi+2333], eax
+	mov DWORD PTR [edi+3869], eax
 	mov eax, DWORD PTR [esp+192]
-	mov DWORD PTR [edi+2337], eax
+	mov DWORD PTR [edi+3873], eax
 	mov eax, DWORD PTR [esp+196]
-	mov DWORD PTR [edi+2341], eax
+	mov DWORD PTR [edi+3877], eax
 	mov eax, DWORD PTR [esp+200]
-	mov DWORD PTR [edi+2345], eax
+	mov DWORD PTR [edi+3881], eax
 	mov eax, DWORD PTR [esp+204]
-	mov DWORD PTR [edi+2349], eax
+	mov DWORD PTR [edi+3885], eax
 	mov esi, DWORD PTR [esp+532]
-	add esi, 3072
+	add esi, 4608
 	mov ebx, DWORD PTR [esp+532]
 	add ebx, 0
 	mov ecx, 384
@@ -3238,7 +5970,7 @@ vg_ecdsa_p384_sign:
 	add esi, DWORD PTR [esp+144]
 	mov eax, 0
 	mov edx, DWORD PTR [esp+532]
-	add edx, 2256
+	add edx, 3792
 	mov ecx, 97
 	mov ebp, DWORD PTR [esp+532]
 	add ebp, 384
@@ -3309,7 +6041,7 @@ vg_ecdsa_p384_sign:
 	mov esi, DWORD PTR [esp+532]
 	add esi, 0
 	mov ebx, DWORD PTR [esp+532]
-	add ebx, 3072
+	add ebx, 4608
 	mov ecx, 384
 23:
 	movzx eax, BYTE PTR [esi]
@@ -3377,7 +6109,7 @@ vg_ecdsa_p384_sign:
 	mov DWORD PTR [esp+152], eax
 25:
 	mov esi, DWORD PTR [esp+532]
-	add esi, 3072
+	add esi, 4608
 	mov ebx, DWORD PTR [esp+532]
 	add ebx, 0
 	mov ecx, 384
@@ -3492,7 +6224,7 @@ vg_ecdsa_p384_sign:
 	mov edi, DWORD PTR [esp+532]
 	mov esi, DWORD PTR [esp+520]
 	mov eax, 0
-	mov BYTE PTR [edi+2256], al
+	mov BYTE PTR [edi+3792], al
 	mov edi, DWORD PTR [esp+532]
 	add edi, 0
 	mov esi, DWORD PTR [esp+532]
@@ -3545,7 +6277,7 @@ vg_ecdsa_p384_sign:
 	add esi, DWORD PTR [esp+144]
 	mov eax, 0
 	mov edx, DWORD PTR [esp+532]
-	add edx, 2256
+	add edx, 3792
 	mov ecx, 1
 	mov ebp, DWORD PTR [esp+532]
 	add ebp, 384
@@ -3616,7 +6348,7 @@ vg_ecdsa_p384_sign:
 	mov esi, DWORD PTR [esp+532]
 	add esi, 0
 	mov ebx, DWORD PTR [esp+532]
-	add ebx, 3072
+	add ebx, 4608
 	mov ecx, 384
 210:
 	movzx eax, BYTE PTR [esi]
@@ -3809,5 +6541,58 @@ vg_ecdsa_p384_sign:
 	mov edi, DWORD PTR [esp+136]
 	mov ebp, DWORD PTR [esp+140]
 	lea esp, [esp+512]
+	pxor xmm0, xmm0
+	mov ecx, 0
+	lea esp, [esp-612]
+	movdqu XMMWORD PTR [esp], xmm0
+	movdqu XMMWORD PTR [esp+16], xmm0
+	movdqu XMMWORD PTR [esp+32], xmm0
+	movdqu XMMWORD PTR [esp+48], xmm0
+	movdqu XMMWORD PTR [esp+64], xmm0
+	movdqu XMMWORD PTR [esp+80], xmm0
+	movdqu XMMWORD PTR [esp+96], xmm0
+	movdqu XMMWORD PTR [esp+112], xmm0
+	movdqu XMMWORD PTR [esp+128], xmm0
+	movdqu XMMWORD PTR [esp+144], xmm0
+	movdqu XMMWORD PTR [esp+160], xmm0
+	movdqu XMMWORD PTR [esp+176], xmm0
+	movdqu XMMWORD PTR [esp+192], xmm0
+	movdqu XMMWORD PTR [esp+208], xmm0
+	movdqu XMMWORD PTR [esp+224], xmm0
+	movdqu XMMWORD PTR [esp+240], xmm0
+	movdqu XMMWORD PTR [esp+256], xmm0
+	movdqu XMMWORD PTR [esp+272], xmm0
+	movdqu XMMWORD PTR [esp+288], xmm0
+	movdqu XMMWORD PTR [esp+304], xmm0
+	movdqu XMMWORD PTR [esp+320], xmm0
+	movdqu XMMWORD PTR [esp+336], xmm0
+	movdqu XMMWORD PTR [esp+352], xmm0
+	movdqu XMMWORD PTR [esp+368], xmm0
+	movdqu XMMWORD PTR [esp+384], xmm0
+	movdqu XMMWORD PTR [esp+400], xmm0
+	movdqu XMMWORD PTR [esp+416], xmm0
+	movdqu XMMWORD PTR [esp+432], xmm0
+	movdqu XMMWORD PTR [esp+448], xmm0
+	movdqu XMMWORD PTR [esp+464], xmm0
+	movdqu XMMWORD PTR [esp+480], xmm0
+	movdqu XMMWORD PTR [esp+496], xmm0
+	movdqu XMMWORD PTR [esp+512], xmm0
+	movdqu XMMWORD PTR [esp+528], xmm0
+	movdqu XMMWORD PTR [esp+544], xmm0
+	movdqu XMMWORD PTR [esp+560], xmm0
+	movdqu XMMWORD PTR [esp+576], xmm0
+	movdqu XMMWORD PTR [esp+592], xmm0
+	mov DWORD PTR [esp+608], ecx
+	lea esp, [esp+612]
+	mov edx, 0
+	xor ecx, ecx
+	pxor xmm0, xmm0
+	pxor xmm1, xmm1
+	pxor xmm2, xmm2
+	pxor xmm3, xmm3
+	pxor xmm4, xmm4
+	pxor xmm5, xmm5
+	pxor xmm6, xmm6
+	pxor xmm7, xmm7
 	ret
 	.p2align 6

@@ -4,7 +4,7 @@
 #![allow(dead_code)]
 
 /// The CPU features `vg_aes_expand_key_aesni` requires (`Artifact.features`).
-pub const VG_AES_EXPAND_KEY_AESNI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
+pub const VG_AES_EXPAND_KEY_AESNI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES);
 
 /// The AES key expansion (FIPS 197 §5.2, `KEYEXPANSION`): writes the key schedule of the `key_len`-byte key at `key`, the words `w[0] … w[4 * Nr + 3]` for `Nr = key_len / 4 + 6` rounds, each as its 4 bytes (`16 * (Nr + 1)` bytes in all), to the start of `*schedule`.
 ///
@@ -20,7 +20,7 @@ pub const VG_AES_EXPAND_KEY_AESNI_FEATURES: verified_garbage_cpu::Features = ver
 /// * The bytes of `schedule` after the key schedule are unspecified on return.
 /// * `schedule` must not overlap `key` (distinct Rust objects never do).
 /// * Neither `key` nor `schedule` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `aes` target feature.
+/// * The CPU must support the `ssse3` and `aes` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_expand_key_aesni(key: *const u8, key_len: usize, schedule: *mut [u8; 240]) {
     core::arch::naked_asm!(
@@ -28,16 +28,16 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_expand_key_aesni(key: *const u8, key
 je 20f
 .base64 "SIP+IA=="
 je 22f
-.base64 "ZkQPb+1mRA/v7mZFD+/oZkUP7+lmRQ9v9WZFD/728w9vD/MPfwpmD3DZ/2YPc9sBZg9w2wBmDzjd3WYPb+FmD3P8BGYP78xmD2/hZg9z/AhmD+/MZg/vy/MPf0oQZg9w2f9mD3PbAWYPcNsAZg843d5mD2/hZg9z/ARmD+/MZg9v4WYPc/wIZg/vzGYP78vzD39KIGYPcNn/Zg9z2wFmD3DbAGYPON3fZg9v4WYPc/wEZg/vzGYPb+FmD3P8CGYP78xmD+/L8w9/SjBmD3DZ/2YPc9sBZg9w2wBmQQ843dhmD2/hZg9z/ARmD+/MZg9v4WYPc/wIZg/vzGYP78vzD39KQGYPcNn/Zg9z2wFmD3DbAGZBDzjd2WYPb+FmD3P8BGYP78xmD2/hZg9z/AhmD+/MZg/vy/MPf0pQZg9w2f9mD3PbAWYPcNsAZkEPON3aZg9v4WYPc/wEZg/vzGYPb+FmD3P8CGYP78xmD+/L8w9/SmBmD3DZ/2YPc9sBZg9w2wBmQQ843dtmD2/hZg9z/ARmD+/MZg9v4WYPc/wIZg/vzGYP78vzD39KcGYPcNn/Zg9z2wFmD3DbAGZBDzjd3GYPb+FmD3P8BGYP78xmD2/hZg9z/AhmD+/MZg/vy/MPf4qAAAAAZg9w2f9mD3PbAWYPcNsAZkEPON3dZg9v4WYPc/wEZg/vzGYPb+FmD3P8CGYP78xmD+/L8w9/ipAAAABmD3DZ/2YPc9sBZg9w2wBmQQ843d5mD2/hZg9z/ARmD+/MZg9v4WYPc/wIZg/vzGYP78vzD3+KoAAAAA=="
+.base64 "ZkQPb+1mRA/v7mZFD+/oZkUP7+lmRQ9v9WZFD/72SLgNDg8MDQ4PDGZID27AZg9swPMPbw/zD38KZg9v2WYPOADYZg843d1mD2/hZg9z/ARmD+/MZg9v4WYPc/wIZg/vzGYP78vzD39KEGYPb9lmDzgA2GYPON3eZg9v4WYPc/wEZg/vzGYPb+FmD3P8CGYP78xmD+/L8w9/SiBmD2/ZZg84ANhmDzjd32YPb+FmD3P8BGYP78xmD2/hZg9z/AhmD+/MZg/vy/MPf0owZg9v2WYPOADYZkEPON3YZg9v4WYPc/wEZg/vzGYPb+FmD3P8CGYP78xmD+/L8w9/SkBmD2/ZZg84ANhmQQ843dlmD2/hZg9z/ARmD+/MZg9v4WYPc/wIZg/vzGYP78vzD39KUGYPb9lmDzgA2GZBDzjd2mYPb+FmD3P8BGYP78xmD2/hZg9z/AhmD+/MZg/vy/MPf0pgZg9v2WYPOADYZkEPON3bZg9v4WYPc/wEZg/vzGYPb+FmD3P8CGYP78xmD+/L8w9/SnBmD2/ZZg84ANhmQQ843dxmD2/hZg9z/ARmD+/MZg9v4WYPc/wIZg/vzGYP78vzD3+KgAAAAGYPb9lmDzgA2GZBDzjd3WYPb+FmD3P8BGYP78xmD2/hZg9z/AhmD+/MZg/vy/MPf4qQAAAAZg9v2WYPOADYZkEPON3eZg9v4WYPc/wEZg/vzGYPb+FmD3P8CGYP78xmD+/L8w9/iqAAAAA="
 jmp 23f
 22:
-.base64 "ZkUP7//zD28P8w9vVxDzD38K8w9/UhBmD3Da/2YPc9sBZg9w2wBmDzjd3WYPb+FmD3P8BGYP78xmD2/hZg9z/AhmD+/MZg/vy/MPf0ogZg9w2f9mQQ843d9mD2/iZg9z/ARmD+/UZg9v4mYPc/wIZg/v1GYP79PzD39SMGYPcNr/Zg9z2wFmD3DbAGYPON3eZg9v4WYPc/wEZg/vzGYPb+FmD3P8CGYP78xmD+/L8w9/SkBmD3DZ/2ZBDzjd32YPb+JmD3P8BGYP79RmD2/iZg9z/AhmD+/UZg/v0/MPf1JQZg9w2v9mD3PbAWYPcNsAZg843d9mD2/hZg9z/ARmD+/MZg9v4WYPc/wIZg/vzGYP78vzD39KYGYPcNn/ZkEPON3fZg9v4mYPc/wEZg/v1GYPb+JmD3P8CGYP79RmD+/T8w9/UnBmD3Da/2YPc9sBZg9w2wBmQQ843dhmD2/hZg9z/ARmD+/MZg9v4WYPc/wIZg/vzGYP78vzD3+KgAAAAGYPcNn/ZkEPON3fZg9v4mYPc/wEZg/v1GYPb+JmD3P8CGYP79RmD+/T8w9/kpAAAABmD3Da/2YPc9sBZg9w2wBmQQ843dlmD2/hZg9z/ARmD+/MZg9v4WYPc/wIZg/vzGYP78vzD3+KoAAAAGYPcNn/ZkEPON3fZg9v4mYPc/wEZg/v1GYPb+JmD3P8CGYP79RmD+/T8w9/krAAAABmD3Da/2YPc9sBZg9w2wBmQQ843dpmD2/hZg9z/ARmD+/MZg9v4WYPc/wIZg/vzGYP78vzD3+KwAAAAGYPcNn/ZkEPON3fZg9v4mYPc/wEZg/v1GYPb+JmD3P8CGYP79RmD+/T8w9/ktAAAABmD3Da/2YPc9sBZg9w2wBmQQ843dtmD2/hZg9z/ARmD+/MZg9v4WYPc/wIZg/vzGYP78vzD3+K4AAAAA=="
+.base64 "SLgNDg8MDQ4PDGZID27AZg9swGZFD+//8w9vD/MPb1cQ8w9/CvMPf1IQZg9v2mYPOADYZg843d1mD2/hZg9z/ARmD+/MZg9v4WYPc/wIZg/vzGYP78vzD39KIGYPcNn/ZkEPON3fZg9v4mYPc/wEZg/v1GYPb+JmD3P8CGYP79RmD+/T8w9/UjBmD2/aZg84ANhmDzjd3mYPb+FmD3P8BGYP78xmD2/hZg9z/AhmD+/MZg/vy/MPf0pAZg9w2f9mQQ843d9mD2/iZg9z/ARmD+/UZg9v4mYPc/wIZg/v1GYP79PzD39SUGYPb9pmDzgA2GYPON3fZg9v4WYPc/wEZg/vzGYPb+FmD3P8CGYP78xmD+/L8w9/SmBmD3DZ/2ZBDzjd32YPb+JmD3P8BGYP79RmD2/iZg9z/AhmD+/UZg/v0/MPf1JwZg9v2mYPOADYZkEPON3YZg9v4WYPc/wEZg/vzGYPb+FmD3P8CGYP78xmD+/L8w9/ioAAAABmD3DZ/2ZBDzjd32YPb+JmD3P8BGYP79RmD2/iZg9z/AhmD+/UZg/v0/MPf5KQAAAAZg9v2mYPOADYZkEPON3ZZg9v4WYPc/wEZg/vzGYPb+FmD3P8CGYP78xmD+/L8w9/iqAAAABmD3DZ/2ZBDzjd32YPb+JmD3P8BGYP79RmD2/iZg9z/AhmD+/UZg/v0/MPf5KwAAAAZg9v2mYPOADYZkEPON3aZg9v4WYPc/wEZg/vzGYPb+FmD3P8CGYP78xmD+/L8w9/isAAAABmD3DZ/2ZBDzjd32YPb+JmD3P8BGYP79RmD2/iZg9z/AhmD+/UZg/v0/MPf5LQAAAAZg9v2mYPOADYZkEPON3bZg9v4WYPc/wEZg/vzGYPb+FmD3P8CGYP78xmD+/L8w9/iuAAAAA="
 23:
 jmp 21f
 20:
-.base64 "8w9vD/MPb1cIZg9z2gjzD38K8w9/UhBmD3DaVWYPc9sBZg9w2wBmDzjd3WYPb+FmD3P8BGYP78xmD2/hZg9z/AhmD+/MZg/vy/MPf0oYZg9w2f9mD2/iZg9z/ARmD+/UZg/v0/MPf1IoZg9w2lVmD3PbAWYPcNsAZg843d5mD2/hZg9z/ARmD+/MZg9v4WYPc/wIZg/vzGYP78vzD39KMGYPcNn/Zg9v4mYPc/wEZg/v1GYP79PzD39SQGYPcNpVZg9z2wFmD3DbAGYPON3fZg9v4WYPc/wEZg/vzGYPb+FmD3P8CGYP78xmD+/L8w9/SkhmD3DZ/2YPb+JmD3P8BGYP79RmD+/T8w9/UlhmD3DaVWYPc9sBZg9w2wBmQQ843dhmD2/hZg9z/ARmD+/MZg9v4WYPc/wIZg/vzGYP78vzD39KYGYPcNn/Zg9v4mYPc/wEZg/v1GYP79PzD39ScGYPcNpVZg9z2wFmD3DbAGZBDzjd2WYPb+FmD3P8BGYP78xmD2/hZg9z/AhmD+/MZg/vy/MPf0p4Zg9w2f9mD2/iZg9z/ARmD+/UZg/v0/MPf5KIAAAAZg9w2lVmD3PbAWYPcNsAZkEPON3aZg9v4WYPc/wEZg/vzGYPb+FmD3P8CGYP78xmD+/L8w9/ipAAAABmD3DZ/2YPb+JmD3P8BGYP79RmD+/T8w9/kqAAAABmD3DaVWYPc9sBZg9w2wBmQQ843dtmD2/hZg9z/ARmD+/MZg9v4WYPc/wIZg/vzGYP78vzD3+KqAAAAGYPcNn/Zg9v4mYPc/wEZg/v1GYP79PzD3+SuAAAAGYPcNpVZg9z2wFmD3DbAGZBDzjd3GYPb+FmD3P8BGYP78xmD2/hZg9z/AhmD+/MZg/vy/MPf4rAAAAA"
+.base64 "SLgFBgcEBQYHBGZID27AZg9swPMPbw/zD29XCGYPc9oI8w9/CvMPf1IQZg9v2mYPOADYZg843d1mD2/hZg9z/ARmD+/MZg9v4WYPc/wIZg/vzGYP78vzD39KGGYPcNn/Zg9v4mYPc/wEZg/v1GYP79PzD39SKGYPb9pmDzgA2GYPON3eZg9v4WYPc/wEZg/vzGYPb+FmD3P8CGYP78xmD+/L8w9/SjBmD3DZ/2YPb+JmD3P8BGYP79RmD+/T8w9/UkBmD2/aZg84ANhmDzjd32YPb+FmD3P8BGYP78xmD2/hZg9z/AhmD+/MZg/vy/MPf0pIZg9w2f9mD2/iZg9z/ARmD+/UZg/v0/MPf1JYZg9v2mYPOADYZkEPON3YZg9v4WYPc/wEZg/vzGYPb+FmD3P8CGYP78xmD+/L8w9/SmBmD3DZ/2YPb+JmD3P8BGYP79RmD+/T8w9/UnBmD2/aZg84ANhmQQ843dlmD2/hZg9z/ARmD+/MZg9v4WYPc/wIZg/vzGYP78vzD39KeGYPcNn/Zg9v4mYPc/wEZg/v1GYP79PzD3+SiAAAAGYPb9pmDzgA2GZBDzjd2mYPb+FmD3P8BGYP78xmD2/hZg9z/AhmD+/MZg/vy/MPf4qQAAAAZg9w2f9mD2/iZg9z/ARmD+/UZg/v0/MPf5KgAAAAZg9v2mYPOADYZkEPON3bZg9v4WYPc/wEZg/vzGYPb+FmD3P8CGYP78xmD+/L8w9/iqgAAABmD3DZ/2YPb+JmD3P8BGYP79RmD+/T8w9/krgAAABmD2/aZg84ANhmQQ843dxmD2/hZg9z/ARmD+/MZg9v4WYPc/wIZg/vzGYP78vzD3+KwAAAAA=="
 21:
-.base64 "Zg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//McAx9sM="
+.base64 "Zg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//McAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
     )
 }
@@ -61,36 +61,31 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_expand_key(key: *const u8, key_len: 
     core::arch::naked_asm!(
         r#".base64 "SI2kJPj9//9IieFIg8EISYnJSYmZgAEAAEmJqYgBAABNiaGQAQAATYmpmAEAAE2JsaABAABNibmoAQAASYnw"
 20:
-.base64 "SIsHSIkCSIPHCEiDwghIg+4I"
+.base64 "iweJAkiDxwRIg8IESYPoBA=="
 jne 20b
-.base64 "TCnGSIn3ScHoAkyJwE0BwEkBwEmDwBxIuAEAAAAAAAAASYmBsAEAAA=="
+.base64 "QboBAAAATYmRsAEAAEG4AAAAAEiJ90gB90gB90iDx3A="
 21:
-.base64 "i0L8SDn3"
+.base64 "i0L8TYXA"
 je 22f
-.base64 "SIP/8A=="
+.base64 "SYnyTQHCSYP6MA=="
 je 24f
 jmp 25f
 24:
-.base64 "SIP+4A=="
-je 26f
-jmp 27f
-26:
-.base64 "Sb5VVVVVVVVVVU2JcSBJvjMzMzMzMzMzTYlxKEm+Dw8PDw8PDw9NiXEwSYnGSdHuSTHeTSNxIEwx80nBzj9MMfBJic5J0e5JMe5NI3EgTDH1ScHOP0wx8U2J1knR7k0x3k0jcSBNMfNJwc4/TTHyTYnmSdHuTTHuTSNxIE0x9UnBzj9NMfRJicZJwe4CSTHOTSNxKEwx8UnBzj5MMfBJid5Jwe4CSTHuTSNxKEwx9UnBzj5MMfNNidZJwe4CTTHmTSNxKE0x9EnBzj5NMfJNid5Jwe4CTTHuTSNxKE0x9UnBzj5NMfNJicZJwe4ETTHWTSNxME0x8knBzjxMMfBJid5Jwe4ETTHeTSNxME0x80nBzjxMMfNJic5Jwe4ETTHmTSNxME0x9EnBzjxMMfFJie5Jwe4ETTHuTSNxME0x9UnBzjxMMfVJvv//////////TYkxTYnWSTHOTYnvSTHfSYlpCEyJ7Uwx1UmJaRBMie1IMc1NMeNNiWEYTYncSTHETTHiTYlRIE2J+k0x8k2JcShNieZNMe5MMeNNiXEwSYneSTHuSYlZOEmLWQhMMdNIMdlJM1kYTYlhGEmJzEkxxE2JYQhJicxNMdxNiXFASYneTTNxEEmJWUhIicNMMfNJiVlQTInjTDHzSYlZWEyJ40gx600x80mJWWBMiftMMdtNMd1NiWloTYnVSSHNTYlRcE2LUUBNI1EITTHqSYlJeEmLSSBIIcFMMelNif1NId1NibmAAAAATYt5OE0jeRhNMe9NiZmIAAAATYtZME0jWVBNMetNi2kQTSH1TYmxkAAAAE2LcShNI3FYTTHuSYmBmAAAAEiJ6Ewh4Ewx6E0x8kgxwU0x90kxw00zUUhJM0lgSTHfTTNZaEyJ00gxy00h+kyJ2Ewx0EmJ3kkhxkkxzk2J/U0x3Uwx0Uwh6Uwx2Ukxz0mJxUkxzU0h600x30wx2Ewh8Egxw0iJ2Ewx+E2J80kxy02J9Ukx3UmJyk0x+kmJaWhMid1IMcVJiUFgTInQSSNBeEmJQXhMifhJI0EISYlBCEiJyEkjgZgAAABJiYGYAAAATInoSSOBiAAAAEmJgYgAAABIidhJI0EYSYlBGEyJ8EkjQVBJiUFQTInYSSOBkAAAAEmJgZAAAABIiehJI0FYTSNhYE0jUXBNI3lASSNJIE0jqYAAAABJI1k4TSNxME0jWRBJI2koTYlxKE2LcWBNI3FoSTHrTDH5STNZUE0x+k2LuZgAAABNMe9JiUloSYuJmAAAAEkzSVBJMcRJiUlQSYtJeEkziYgAAABJM4GQAAAATDH1STHdSTHPTYtxGE0x3kkzgYgAAABNMftNM3koTTH0TTHyTYtxGEkxxk0x50mJaRhJi2kITDHVTDHQTTHlTTMpTDHbSTMZTYnzTTH7SDHpSTNpUE0zeWhJMc5NMzFNM1kYTTMZTYlpGEmJxU2J9EmJykyJ+UmJWWhJi1kYSYtBaEm+VVVVVVVVVVVNiXEgSb4zMzMzMzMzM02JcShJvg8PDw8PDw8PTYlxMEmJxknR7kkx3k0jcSBMMfNJwc4/TDHwSYnOSdHuSTHuTSNxIEwx9UnBzj9MMfFNidZJ0e5NMd5NI3EgTTHzScHOP00x8k2J5knR7k0x7k0jcSBNMfVJwc4/TTH0SYnGScHuAkkxzk0jcShMMfFJwc4+TDHwSYneScHuAkkx7k0jcShMMfVJwc4+TDHzTYnWScHuAk0x5k0jcShNMfRJwc4+TTHyTYneScHuAk0x7k0jcShNMfVJwc4+TTHzSYnGScHuBE0x1k0jcTBNMfJJwc48TDHwSYneScHuBE0x3k0jcTBNMfNJwc48TDHzSYnOScHuBE0x5k0jcTBNMfRJwc48TDHxSYnuScHuBE0x7k0jcTBNMfVJwc48TDH1"
-27:
+.base64 "SInDSNHrSInBSMHpAkiJxUjB7QNJicJJweoESYnDScHrBUmJxEnB7AZJicVJwe0HSb7//////////02JMUwx2UmJzkkx3k2J900x50wx8Ewx/Uwx7U2JYQhJiexJMcxJiUkQTInhSDHBSTHLTYlxGEmJxk0x7kmJQSBIichMMdBNiXEoSYnOTTH+TYlxME2J3k0x7k2JaThJicVNMfVNiVlASYnDSSHLSYlJSEyJ4Uwx0Ukx6kgxxUmJQVBMifBMIfhNiXlYSYnPSSHvSDHLTDH4SYlpYEyJ7UkjaTBJMe9Ji2kwSDHdTYlpaEmJzU0zaUBJiUlwSYtJKEgh2UmJWXhMietIIetMMflJMd9Ji1kgTCHTSYmpgAAAAEmLaThJI2kYTDHZSTHfSTHrSDHDTIn1STNpCEkzSRBJMcNJi0FASSNBCEkx60gxw0mLQUBJM0EYSDHDTTHnSYnMTTH8TInYSCHITIn9SDHFSDHYTCHgSTHbTDH4SDHBSYnETSNhOE2JYThJiexJMcRNIedMMflJIc5JMe9MId1IMetIic1JI2lYSSHfTTHfSYnbTTH7TSHdSYncSTHETSHiTSOZgAAAAE2JsYAAAABNif5NI3FoTYlxaE2J5k0jcSBNMe5NiXEgTYn+TSNxMEkxz00x/E0zaThIMcFJI0EYTTHzTTHaTYlRGE2J4k0jUWBNMdNJMcNIMcVIichJI0EISSNJQEkxw00jYXBIidhJI0F4TTNhaEkxxkyJ+EkjQVBJI1koTDHgSTHuSTHFSDHYSTMBTSN5SEkxzU0x+00zYSBNMfRNMyFJMcZJMcJNMxFMMdVNMepMMeNJMxlJM5mAAAAATTNRGE0zEUwx/UkzWWhJM1k4SYlBOEyJ4EmJWWhJi1k4TInpSYlpGEyJ3U2JkYAAAABNi1FoTYnzTYuhgAAAAE2LaRhIJQEBAQFIgeMBAQEBSMHLP0gx2EiB4QEBAQFIwck+SDHISIHlAQEBAUjBzT1IMehJgeIBAQEBScHKPEwx0EmB4wEBAQFJwcs7TDHYSYHkAQEBAUnBzDpMMeBJgeUBAQEBScHNOUwx6A=="
 25:
 jmp 23f
 22:
-.base64 "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"
+.base64 "SInDSNHrSInBSMHpAkiJxUjB7QNJicJJweoESYnDScHrBUmJxEnB7AZJicVJwe0HSb7//////////02JMUwx2UmJzkkx3k2J900x50wx8Ewx/Uwx7U2JYQhJiexJMcxJiUkQTInhSDHBSTHLTYlxGEmJxk0x7kmJQSBIichMMdBNiXEoSYnOTTH+TYlxME2J3k0x7k2JaThJicVNMfVNiVlASYnDSSHLSYlJSEyJ4Uwx0Ukx6kgxxUmJQVBMifBMIfhNiXlYSYnPSSHvSDHLTDH4SYlpYEyJ7UkjaTBJMe9Ji2kwSDHdTYlpaEmJzU0zaUBJiUlwSYtJKEgh2UmJWXhMietIIetMMflJMd9Ji1kgTCHTSYmpgAAAAEmLaThJI2kYTDHZSTHfSTHrSDHDTIn1STNpCEkzSRBJMcNJi0FASSNBCEkx60gxw0mLQUBJM0EYSDHDTTHnSYnMTTH8TInYSCHITIn9SDHFSDHYTCHgSTHbTDH4SDHBSYnETSNhOE2JYThJiexJMcRNIedMMflJIc5JMe9MId1IMetIic1JI2lYSSHfTTHfSYnbTTH7TSHdSYncSTHETSHiTSOZgAAAAE2JsYAAAABNif5NI3FoTYlxaE2J5k0jcSBNMe5NiXEgTYn+TSNxMEkxz00x/E0zaThIMcFJI0EYTTHzTTHaTYlRGE2J4k0jUWBNMdNJMcNIMcVIichJI0EISSNJQEkxw00jYXBIidhJI0F4TTNhaEkxxkyJ+EkjQVBJI1koTDHgSTHuSTHFSDHYSTMBTSN5SEkxzU0x+00zYSBNMfRNMyFJMcZJMcJNMxFMMdVNMepMMeNJMxlJM5mAAAAATTNRGE0zEUwx/UkzWWhJM1k4SYlBOEyJ4EmJWWhJi1k4TInpSYlpGEyJ3U2JkYAAAABNi1FoTYnzTYuhgAAAAE2LaRhIJQEBAQFIgeMBAQEBSMHLP0gx2EiB4QEBAQFIwck+SDHISIHlAQEBAUjBzT1IMehJgeIBAQEBScHKPEwx0EmB4wEBAQFJwcs7TDHYSYHkAQEBAUnBzDpMMeBJgeUBAQEBScHNOUwx6MHICE2LkbABAABMMdBJ0eJNidNJwesIQbwAAAAATSncSYHkGwEAAE0x4k2JkbABAAA="
 23:
-.base64 "MwQyiQJIg8IESIPHBA=="
-je 28f
-jmp 29f
-28:
-.base64 "SIn3"
-29:
-.base64 "SYPoAQ=="
+.base64 "SYnSSSnyQTMCiQJIg8IESYPABEk58A=="
+je 26f
+jmp 27f
+26:
+.base64 "QbgAAAAA"
+27:
+.base64 "SIPvBA=="
 jne 21b
-.base64 "SYuZgAEAAEmLqYgBAABNi6GQAQAATYupmAEAAE2LsaABAABNi7moAQAAQbsAAAAATIlcJAhMiVwkEEyJXCQYTIlcJCBMiVwkKEyJXCQwTIlcJDhMiVwkQEyJXCRITIlcJFBMiVwkWEyJXCRgTIlcJGhMiVwkcEyJXCR4TImcJIAAAABMiZwkiAAAAEyJnCSQAAAATImcJJgAAABMiZwkoAAAAEyJnCSoAAAATImcJLAAAABMiZwkuAAAAEyJnCTAAAAATImcJMgAAABMiZwk0AAAAEyJnCTYAAAATImcJOAAAABMiZwk6AAAAEyJnCTwAAAATImcJPgAAABMiZwkAAEAAEyJnCQIAQAATImcJBABAABMiZwkGAEAAEyJnCQgAQAATImcJCgBAABMiZwkMAEAAEyJnCQ4AQAATImcJEABAABMiZwkSAEAAEyJnCRQAQAATImcJFgBAABMiZwkYAEAAEyJnCRoAQAATImcJHABAABMiZwkeAEAAEyJnCSAAQAATImcJIgBAABMiZwkkAEAAEyJnCSYAQAATImcJKABAABMiZwkqAEAAEyJnCSwAQAATImcJLgBAABMiZwkwAEAAEyJnCTIAQAATImcJNABAABMiZwk2AEAAEyJnCTgAQAATImcJOgBAABMiZwk8AEAAEyJnCT4AQAATImcJAACAABIjaQkCAIAAGYP78BFMdtIjaQk+P3//0yJHCRIjaQkCAIAADHAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
+.base64 "SYuZgAEAAEmLqYgBAABNi6GQAQAATYupmAEAAE2LsaABAABNi7moAQAAZg/vwEG7AAAAAPMPf0QkCPMPf0QkGPMPf0QkKPMPf0QkOPMPf0QkSPMPf0QkWPMPf0QkaPMPf0QkePMPf4QkiAAAAPMPf4QkmAAAAPMPf4QkqAAAAPMPf4QkuAAAAPMPf4QkyAAAAPMPf4Qk2AAAAPMPf4Qk6AAAAPMPf4Qk+AAAAPMPf4QkCAEAAPMPf4QkGAEAAPMPf4QkKAEAAPMPf4QkOAEAAPMPf4QkSAEAAPMPf4QkWAEAAPMPf4QkaAEAAPMPf4QkeAEAAPMPf4QkiAEAAPMPf4QkmAEAAPMPf4QkqAEAAPMPf4QkuAEAAPMPf4QkyAEAAPMPf4Qk2AEAAPMPf4Qk6AEAAPMPf4Qk+AEAAEiNpCQIAgAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJPhIjaQkAP7///MPfwQkSI2kJAACAABIjWQkCDHAMckx0jH2Mf9FMcBFMclFMdLD"
 .p2align 6"#,
     )
 }
@@ -126,6 +121,14 @@ pub(crate) mod vg_aes_ctr32;
 #[rustfmt::skip]
 #[path = "internal/vg_aes_ctr32_aesni.rs"]
 pub(crate) mod vg_aes_ctr32_aesni;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_ctr32_keyed.rs"]
+pub(crate) mod vg_aes_ctr32_keyed;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_ctr32_keys.rs"]
+pub(crate) mod vg_aes_ctr32_keys;
 
 #[rustfmt::skip]
 #[path = "internal/vg_aes_ctr32_to.rs"]
@@ -174,6 +177,10 @@ pub(crate) mod vg_aes_expand_key_scratch;
 #[rustfmt::skip]
 #[path = "internal/vg_aes_expand_key_scratch_aesni.rs"]
 pub(crate) mod vg_aes_expand_key_scratch_aesni;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_bounded_seal_avx512.rs"]
+pub(crate) mod vg_aes_gcm_bounded_seal_avx512;
 
 #[rustfmt::skip]
 #[path = "internal/vg_aes_gcm_decrypt_blocks.rs"]
@@ -288,52 +295,24 @@ pub(crate) mod vg_aes_gcm_encrypt_blocks_prepared16_vaes_vpclmul;
 pub(crate) mod vg_aes_gcm_encrypt_blocks_prepared_vaes_vpclmul_avx512;
 
 #[rustfmt::skip]
-#[path = "internal/vg_aes_gcm_encrypt_blocks_to.rs"]
-pub(crate) mod vg_aes_gcm_encrypt_blocks_to;
-
-#[rustfmt::skip]
-#[path = "internal/vg_aes_gcm_encrypt_blocks_to_aesni.rs"]
-pub(crate) mod vg_aes_gcm_encrypt_blocks_to_aesni;
-
-#[rustfmt::skip]
-#[path = "internal/vg_aes_gcm_encrypt_blocks_to_aesni_pclmul.rs"]
-pub(crate) mod vg_aes_gcm_encrypt_blocks_to_aesni_pclmul;
-
-#[rustfmt::skip]
-#[path = "internal/vg_aes_gcm_encrypt_blocks_to_aesni_pclmul_avx.rs"]
-pub(crate) mod vg_aes_gcm_encrypt_blocks_to_aesni_pclmul_avx;
-
-#[rustfmt::skip]
-#[path = "internal/vg_aes_gcm_encrypt_blocks_to_pclmul.rs"]
-pub(crate) mod vg_aes_gcm_encrypt_blocks_to_pclmul;
-
-#[rustfmt::skip]
-#[path = "internal/vg_aes_gcm_encrypt_blocks_to_prepared16_aesni_pclmul_avx.rs"]
-pub(crate) mod vg_aes_gcm_encrypt_blocks_to_prepared16_aesni_pclmul_avx;
-
-#[rustfmt::skip]
-#[path = "internal/vg_aes_gcm_encrypt_blocks_to_prepared16_vaes_vpclmul.rs"]
-pub(crate) mod vg_aes_gcm_encrypt_blocks_to_prepared16_vaes_vpclmul;
-
-#[rustfmt::skip]
-#[path = "internal/vg_aes_gcm_encrypt_blocks_to_prepared_vaes_vpclmul_avx512.rs"]
-pub(crate) mod vg_aes_gcm_encrypt_blocks_to_prepared_vaes_vpclmul_avx512;
-
-#[rustfmt::skip]
-#[path = "internal/vg_aes_gcm_encrypt_blocks_to_vaes_vpclmul.rs"]
-pub(crate) mod vg_aes_gcm_encrypt_blocks_to_vaes_vpclmul;
-
-#[rustfmt::skip]
-#[path = "internal/vg_aes_gcm_encrypt_blocks_to_vaes_vpclmul_avx512.rs"]
-pub(crate) mod vg_aes_gcm_encrypt_blocks_to_vaes_vpclmul_avx512;
-
-#[rustfmt::skip]
 #[path = "internal/vg_aes_gcm_encrypt_blocks_vaes_vpclmul.rs"]
 pub(crate) mod vg_aes_gcm_encrypt_blocks_vaes_vpclmul;
 
 #[rustfmt::skip]
 #[path = "internal/vg_aes_gcm_encrypt_blocks_vaes_vpclmul_avx512.rs"]
 pub(crate) mod vg_aes_gcm_encrypt_blocks_vaes_vpclmul_avx512;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_open_prepared_aesni_pclmul_avx_core.rs"]
+pub(crate) mod vg_aes_gcm_open_prepared_aesni_pclmul_avx_core;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_open_prepared_vaes_vpclmul_avx512_core.rs"]
+pub(crate) mod vg_aes_gcm_open_prepared_vaes_vpclmul_avx512_core;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_open_prepared_vaes_vpclmul_core.rs"]
+pub(crate) mod vg_aes_gcm_open_prepared_vaes_vpclmul_core;
 
 #[rustfmt::skip]
 #[path = "internal/vg_aes_gcm_open_split.rs"]
@@ -376,177 +355,13 @@ pub(crate) mod vg_aes_gcm_open_split_vaes_vpclmul;
 pub(crate) mod vg_aes_gcm_open_split_vaes_vpclmul_avx512;
 
 #[rustfmt::skip]
-#[path = "internal/vg_aes_gcm_seal.rs"]
-pub(crate) mod vg_aes_gcm_seal;
+#[path = "internal/vg_aes_gcm_seal_blocks_prepared16_aesni_pclmul_avx.rs"]
+pub(crate) mod vg_aes_gcm_seal_blocks_prepared16_aesni_pclmul_avx;
 
 #[rustfmt::skip]
-#[path = "internal/vg_aes_gcm_seal_aesni.rs"]
-pub(crate) mod vg_aes_gcm_seal_aesni;
+#[path = "internal/vg_aes_gcm_seal_blocks_prepared16_vaes_vpclmul.rs"]
+pub(crate) mod vg_aes_gcm_seal_blocks_prepared16_vaes_vpclmul;
 
 #[rustfmt::skip]
-#[path = "internal/vg_aes_gcm_seal_aesni_pclmul.rs"]
-pub(crate) mod vg_aes_gcm_seal_aesni_pclmul;
-
-#[rustfmt::skip]
-#[path = "internal/vg_aes_gcm_seal_aesni_pclmul_avx.rs"]
-pub(crate) mod vg_aes_gcm_seal_aesni_pclmul_avx;
-
-#[rustfmt::skip]
-#[path = "internal/vg_aes_gcm_seal_pclmul.rs"]
-pub(crate) mod vg_aes_gcm_seal_pclmul;
-
-#[rustfmt::skip]
-#[path = "internal/vg_aes_gcm_seal_prepared_vaes_vpclmul_core.rs"]
-pub(crate) mod vg_aes_gcm_seal_prepared_vaes_vpclmul_core;
-
-#[rustfmt::skip]
-#[path = "internal/vg_aes_gcm_seal_split.rs"]
-pub(crate) mod vg_aes_gcm_seal_split;
-
-#[rustfmt::skip]
-#[path = "internal/vg_aes_gcm_seal_split_aesni.rs"]
-pub(crate) mod vg_aes_gcm_seal_split_aesni;
-
-#[rustfmt::skip]
-#[path = "internal/vg_aes_gcm_seal_split_aesni_pclmul.rs"]
-pub(crate) mod vg_aes_gcm_seal_split_aesni_pclmul;
-
-#[rustfmt::skip]
-#[path = "internal/vg_aes_gcm_seal_split_aesni_pclmul_avx.rs"]
-pub(crate) mod vg_aes_gcm_seal_split_aesni_pclmul_avx;
-
-#[rustfmt::skip]
-#[path = "internal/vg_aes_gcm_seal_split_pclmul.rs"]
-pub(crate) mod vg_aes_gcm_seal_split_pclmul;
-
-#[rustfmt::skip]
-#[path = "internal/vg_aes_gcm_seal_split_prepared16_aesni_pclmul_avx.rs"]
-pub(crate) mod vg_aes_gcm_seal_split_prepared16_aesni_pclmul_avx;
-
-#[rustfmt::skip]
-#[path = "internal/vg_aes_gcm_seal_split_prepared16_vaes_vpclmul.rs"]
-pub(crate) mod vg_aes_gcm_seal_split_prepared16_vaes_vpclmul;
-
-#[rustfmt::skip]
-#[path = "internal/vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512.rs"]
-pub(crate) mod vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512;
-
-#[rustfmt::skip]
-#[path = "internal/vg_aes_gcm_seal_split_vaes_vpclmul.rs"]
-pub(crate) mod vg_aes_gcm_seal_split_vaes_vpclmul;
-
-#[rustfmt::skip]
-#[path = "internal/vg_aes_gcm_seal_split_vaes_vpclmul_avx512.rs"]
-pub(crate) mod vg_aes_gcm_seal_split_vaes_vpclmul_avx512;
-
-#[rustfmt::skip]
-#[path = "internal/vg_aes_gcm_seal_vaes_vpclmul.rs"]
-pub(crate) mod vg_aes_gcm_seal_vaes_vpclmul;
-
-#[rustfmt::skip]
-#[path = "internal/vg_aes_gcm_seal_vaes_vpclmul_avx512.rs"]
-pub(crate) mod vg_aes_gcm_seal_vaes_vpclmul_avx512;
-
-#[rustfmt::skip]
-#[path = "internal/vg_aes_gcm_stream_aad_core.rs"]
-pub(crate) mod vg_aes_gcm_stream_aad_core;
-
-#[rustfmt::skip]
-#[path = "internal/vg_aes_gcm_stream_aad_pclmul_core.rs"]
-pub(crate) mod vg_aes_gcm_stream_aad_pclmul_core;
-
-#[rustfmt::skip]
-#[path = "internal/vg_aes_gcm_stream_aad_vpclmul_core.rs"]
-pub(crate) mod vg_aes_gcm_stream_aad_vpclmul_core;
-
-#[rustfmt::skip]
-#[path = "internal/vg_aes_gcm_stream_encrypt.rs"]
-pub(crate) mod vg_aes_gcm_stream_encrypt;
-
-#[rustfmt::skip]
-#[path = "internal/vg_aes_gcm_stream_encrypt_aesni.rs"]
-pub(crate) mod vg_aes_gcm_stream_encrypt_aesni;
-
-#[rustfmt::skip]
-#[path = "internal/vg_aes_gcm_stream_encrypt_aesni_pclmul.rs"]
-pub(crate) mod vg_aes_gcm_stream_encrypt_aesni_pclmul;
-
-#[rustfmt::skip]
-#[path = "internal/vg_aes_gcm_stream_encrypt_aesni_pclmul_avx.rs"]
-pub(crate) mod vg_aes_gcm_stream_encrypt_aesni_pclmul_avx;
-
-#[rustfmt::skip]
-#[path = "internal/vg_aes_gcm_stream_encrypt_pclmul.rs"]
-pub(crate) mod vg_aes_gcm_stream_encrypt_pclmul;
-
-#[rustfmt::skip]
-#[path = "internal/vg_aes_gcm_stream_encrypt_to.rs"]
-pub(crate) mod vg_aes_gcm_stream_encrypt_to;
-
-#[rustfmt::skip]
-#[path = "internal/vg_aes_gcm_stream_encrypt_to_aesni.rs"]
-pub(crate) mod vg_aes_gcm_stream_encrypt_to_aesni;
-
-#[rustfmt::skip]
-#[path = "internal/vg_aes_gcm_stream_encrypt_to_aesni_pclmul.rs"]
-pub(crate) mod vg_aes_gcm_stream_encrypt_to_aesni_pclmul;
-
-#[rustfmt::skip]
-#[path = "internal/vg_aes_gcm_stream_encrypt_to_aesni_pclmul_avx.rs"]
-pub(crate) mod vg_aes_gcm_stream_encrypt_to_aesni_pclmul_avx;
-
-#[rustfmt::skip]
-#[path = "internal/vg_aes_gcm_stream_encrypt_to_pclmul.rs"]
-pub(crate) mod vg_aes_gcm_stream_encrypt_to_pclmul;
-
-#[rustfmt::skip]
-#[path = "internal/vg_aes_gcm_stream_encrypt_to_prepared16_aesni_pclmul_avx.rs"]
-pub(crate) mod vg_aes_gcm_stream_encrypt_to_prepared16_aesni_pclmul_avx;
-
-#[rustfmt::skip]
-#[path = "internal/vg_aes_gcm_stream_encrypt_to_prepared16_vaes_vpclmul.rs"]
-pub(crate) mod vg_aes_gcm_stream_encrypt_to_prepared16_vaes_vpclmul;
-
-#[rustfmt::skip]
-#[path = "internal/vg_aes_gcm_stream_encrypt_to_prepared_vaes_vpclmul_avx512.rs"]
-pub(crate) mod vg_aes_gcm_stream_encrypt_to_prepared_vaes_vpclmul_avx512;
-
-#[rustfmt::skip]
-#[path = "internal/vg_aes_gcm_stream_encrypt_to_vaes_vpclmul.rs"]
-pub(crate) mod vg_aes_gcm_stream_encrypt_to_vaes_vpclmul;
-
-#[rustfmt::skip]
-#[path = "internal/vg_aes_gcm_stream_encrypt_to_vaes_vpclmul_avx512.rs"]
-pub(crate) mod vg_aes_gcm_stream_encrypt_to_vaes_vpclmul_avx512;
-
-#[rustfmt::skip]
-#[path = "internal/vg_aes_gcm_stream_encrypt_vaes_vpclmul.rs"]
-pub(crate) mod vg_aes_gcm_stream_encrypt_vaes_vpclmul;
-
-#[rustfmt::skip]
-#[path = "internal/vg_aes_gcm_stream_encrypt_vaes_vpclmul_avx512.rs"]
-pub(crate) mod vg_aes_gcm_stream_encrypt_vaes_vpclmul_avx512;
-
-#[rustfmt::skip]
-#[path = "internal/vg_aes_gcm_stream_finish_aesni_core.rs"]
-pub(crate) mod vg_aes_gcm_stream_finish_aesni_core;
-
-#[rustfmt::skip]
-#[path = "internal/vg_aes_gcm_stream_finish_aesni_pclmul_core.rs"]
-pub(crate) mod vg_aes_gcm_stream_finish_aesni_pclmul_core;
-
-#[rustfmt::skip]
-#[path = "internal/vg_aes_gcm_stream_finish_vaes_vpclmul_core.rs"]
-pub(crate) mod vg_aes_gcm_stream_finish_vaes_vpclmul_core;
-
-#[rustfmt::skip]
-#[path = "internal/vg_aes_gcm_stream_init_core.rs"]
-pub(crate) mod vg_aes_gcm_stream_init_core;
-
-#[rustfmt::skip]
-#[path = "internal/vg_aes_gcm_stream_init_pclmul_core.rs"]
-pub(crate) mod vg_aes_gcm_stream_init_pclmul_core;
-
-#[rustfmt::skip]
-#[path = "internal/vg_aes_gcm_stream_init_vpclmul_core.rs"]
-pub(crate) mod vg_aes_gcm_stream_init_vpclmul_core;
+#[path = "internal/vg_aes_gcm_seal_blocks_prepared_vaes_vpclmul_avx512.rs"]
+pub(crate) mod vg_aes_gcm_seal_blocks_prepared_vaes_vpclmul_avx512;

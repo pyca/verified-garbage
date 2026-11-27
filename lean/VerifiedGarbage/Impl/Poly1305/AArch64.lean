@@ -190,12 +190,17 @@ def pack : List Instr := [
   .add .x .x15 .x15 .x9,
   .lsr .x .x16 .x8 24]
 
-/-! ## `init(state = x0, key = x1)` -/
+/-! ## `init(state = x0, key = x1)`
+
+It copies the key to the state through `x2`–`x5`, and clears them before it
+returns, so that it leaves no word of the key in a register: `x2` holds the
+zeros of the accumulator, `x3`–`x5` are cleared at the end. -/
 
 def init : Prog isa := .block [
   .ldr .x .x2 .x1 0, .ldr .x .x3 .x1 8, .ldr .x .x4 .x1 16, .ldr .x .x5 .x1 24,
   .str .x .x2 .x0 24, .str .x .x3 .x0 32, .str .x .x4 .x0 40, .str .x .x5 .x0 48,
-  .movz .x .x2 0 0, .str .x .x2 .x0 0, .str .x .x2 .x0 8, .str .x .x2 .x0 16]
+  .movz .x .x2 0 0, .str .x .x2 .x0 0, .str .x .x2 .x0 8, .str .x .x2 .x0 16,
+  .movz .x .x3 0 0, .movz .x .x4 0 0, .movz .x .x5 0 0]
 
 /-! ## `blocks(state = x0, blocks = x1, n = x2)` -/
 

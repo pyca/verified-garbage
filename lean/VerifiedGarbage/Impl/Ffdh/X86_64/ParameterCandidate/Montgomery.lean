@@ -1,4 +1,5 @@
 module
+public import VerifiedGarbage.Impl.Bignum.X86_64.R2Words
 public import VerifiedGarbage.Impl.MillerRabin.X86_64.Core
 
 
@@ -40,5 +41,9 @@ def prepareConstants (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=
 /-- Prepare all the modulus-dependent values required by the shared round. -/
 def prepareModulus (mul : Nat → Nat → Nat → Prog isa) (r2 : Prog isa) : Prog isa :=
   .seq (prepareR2 r2) (.seq (prepareConstants mul) (seqs expSetup))
+
+/-- The modulus preparation shared by every witness phase. -/
+def prepareCall (name : String) (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=
+  .call name (prepareModulus mul (R2Words.choice mul))
 
 end VG.Impl.Ffdh.X86_64.ParameterCandidate

@@ -49,7 +49,7 @@ theorem input_length (m : Mem) (S D : Addr) (total count : Nat) (hc : count≤to
 
 theorem whole_done {V : Reg → BitVec 64} {sp : Addr} {R count : Nat} {S : Addr} {a : List Byte}
     {s t : State}
-    (L : Lay (V .r29) (V .r30) (V .r31))
+    (L : Lay (V .r29) (V .r30) (V .r31)) (K : Kern V s)
     (hd : DataW (V .r29) (V .r30) (V .r31) s (V .r27) (V .r23).toNat)
     (hc : count≤(V .r23).toNat) (hv : R=10 ∨ R=12 ∨ R=14)
     (hw : WholeOutWith V sp R s.mem (Input.blocks s.mem S (V .r27) (V .r23).toNat count) t)
@@ -60,7 +60,7 @@ theorem whole_done {V : Reg → BitVec 64} {sp : Addr} {R count : Nat} {S : Addr
       (Spec.Aes.bytesAt s.mem (V .r27+BitVec.ofNat 64 (16*((V .r23).toNat/16))) ((V .r23).toNat%16)) t := by
   have hh := Proof.Gcm.ctr_blocks (ks := V .r30+64) (input_length _ _ _ _ _ hc) hw.data hw.counter
   rw [Proof.Gcm.gctr_eq] at hh
-  refine ⟨hw.env,?_,hh.1,hh.2,?_,hw.cipher L hd hv,hw.hashKey L hd,hw.j0 L hd,hw.rest hd,
+  refine ⟨hw.env,?_,hh.1,hh.2,?_,hw.cipher L K hd hv,hw.hashKey L K hd,hw.j0 K hd,hw.rest K hd,
     hw.frame.sub (whole_body_sub V)⟩
   · rw [Proof.Gcm.length_flatMap_toBytes,input_length _ _ _ _ _ hc]
   · exact hw.absorbed hab (by

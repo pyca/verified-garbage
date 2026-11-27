@@ -14,7 +14,7 @@ The postconditions of key generation, of `pk_tr` and of signing (of a
 message representative or of a message, with a key or a prepared key) read
 the memory on return only within their outputs, and those of verification
 not at all (`X86_64.Scrub.PostOut`): each function returns with its whole
-stack, 32 to 112 bytes, wiped (`X86_64.Scrub.withScrubAll`).
+stack, 32 to 224 bytes, wiped (`Impl.Scrub.X86_64.scrubAll`).
 -/
 
 @[expose] public section
@@ -86,7 +86,7 @@ theorem signMessageOut : PostOut (signMessageContract p X86_64.abi stack) ((sign
       have e := bytesAt_of (n := p.sigLen) (Nat.le_refl _) hb.2.2.2.2.1
       show match formatMessage (Spec.Sha3.bytesAt m ctx ((ArgWord.int X86_64.abi.ptrBits).ofRaw cl).toNat)
           (Spec.Sha3.bytesAt m msg ((ArgWord.int X86_64.abi.ptrBits).ofRaw ml).toNat) with
-        | none => r = 2
+        | none => r = 2 ∧ Spec.Sha3.bytesAt m₂ sig p.sigLen = Spec.Sha3.bytesAt m sig p.sigLen
         | some M' => Outcome (fun b => signInternal p b (Spec.Sha3.bytesAt m sk p.skLen) M'
             (Spec.Sha3.bytesAt m rnd 32)) r (Spec.Sha3.bytesAt m₂ sig p.sigLen)
       rw [e]
@@ -102,7 +102,7 @@ theorem preparedSignMessageOut :
       have e := bytesAt_of (n := p.sigLen) (Nat.le_refl _) hb.2.2.2.2.1
       show match formatMessage (Spec.Sha3.bytesAt m ctx ((ArgWord.int X86_64.abi.ptrBits).ofRaw cl).toNat)
           (Spec.Sha3.bytesAt m msg ((ArgWord.int X86_64.abi.ptrBits).ofRaw ml).toNat) with
-        | none => r = 2
+        | none => r = 2 ∧ Spec.Sha3.bytesAt m₂ sig p.sigLen = Spec.Sha3.bytesAt m sig p.sigLen
         | some M' => Outcome (fun b => signInternal p b (Spec.Sha3.bytesAt m sk p.skLen) M'
             (Spec.Sha3.bytesAt m rnd 32)) r (Spec.Sha3.bytesAt m₂ sig p.sigLen)
       rw [e]

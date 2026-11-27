@@ -1,29 +1,31 @@
 module
 
-public import VerifiedGarbage.Proof.TripleDes.Arm.FbVerified
-public import VerifiedGarbage.Proof.TripleDes.Arm.FbFinalVerified
-public import VerifiedGarbage.Impl.TripleDes.Arm.FbFinal
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.Arm.Print
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.TripleDes.Cfb
+public import VerifiedGarbage.Spec.TripleDes.CfbFinal
+import VerifiedGarbage.Proof.TripleDes.Arm.Scrub
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # Triple DES-CFB64 on ARMv7 -/
 
-@[expose] public section
-
 namespace VG.Artifacts.TripleDesCfb.Arm
 
-def artifacts : List Artifact := [
+public def artifacts : List (Artifact Arm.target) := [
   Spec.TripleDes.cfbEncryptApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.TripleDes.Arm.cfbEncrypt
-    verified := Proof.TripleDes.Arm.cfbEncrypt_framed },
+    code := Impl.TripleDes.Arm.Fn.cfbEncrypt
+    verified := Proof.TripleDes.Arm.Fn.cfbEncrypt },
   Spec.TripleDes.cfbDecryptApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.TripleDes.Arm.cfbDecrypt
-    verified := Proof.TripleDes.Arm.cfbDecrypt_framed },
+    code := Impl.TripleDes.Arm.Fn.cfbDecrypt
+    verified := Proof.TripleDes.Arm.Fn.cfbDecrypt },
   Spec.TripleDes.cfbEncryptFinalApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.TripleDes.Arm.cfbEncryptFinal
-    verified := Proof.TripleDes.Arm.cfbEncryptFinal_framed },
+    code := Impl.TripleDes.Arm.Fn.cfbEncryptFinal
+    verified := Proof.TripleDes.Arm.Fn.cfbEncryptFinal },
   Spec.TripleDes.cfbDecryptFinalApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.TripleDes.Arm.cfbDecryptFinal
-    verified := Proof.TripleDes.Arm.cfbDecryptFinal_framed }]
+    code := Impl.TripleDes.Arm.Fn.cfbDecryptFinal
+    verified := Proof.TripleDes.Arm.Fn.cfbDecryptFinal }]
+
+spec_apis artifacts
 
 end VG.Artifacts.TripleDesCfb.Arm

@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Rsa.X86.PrivP.Contract
 public import VerifiedGarbage.Spec.Weierstrass
 import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Rsa.Contract
-public import VerifiedGarbage.Proof.Rsa.X86.PrivStages
+public import VerifiedGarbage.Proof.Rsa.X86.PrivCallsTiming
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Framework.X86.RelCT
 import VerifiedGarbage.Proof.Rsa.X86.PrivBodyTiming

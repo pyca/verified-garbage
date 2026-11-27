@@ -15,7 +15,7 @@ multiplication on Weierstraß elliptic curves from Co-Z arithmetic"), for
   at `(8, 9, 10)`, and `D` at its new `Z` at `(0, 1)`.
 
 The slots `2 … 7` are temporaries. These are the operations of ECDH's table
-(`Proof/P256/EcdhJac/TableMath.lean`) without its last two, which keep the
+(`Proof/P256/EcdhJac/Dblu.lean`) without its last two, which keep the
 square and cube of `Z`.
 -/
 

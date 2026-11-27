@@ -1,13 +1,12 @@
 module
-public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignCallResult
+
+public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignSingle
 public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignCall
 public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignPublic
 public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignRunning
-
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignSingleCT
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignSampleCT
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignAttempt
-import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignSample
 import VerifiedGarbage.Proof.Dsa.RandomSignTrace
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.Offset
@@ -18,7 +17,6 @@ meta import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignRunning
 meta import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignSingleCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignSampleCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignAttempt
-meta import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignSample
 meta import VerifiedGarbage.Proof.Dsa.RandomSignTrace
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.Offset
@@ -56,7 +54,7 @@ theorem random_sign_attempt_agreement (S : Signer) {s t a b : State}
     (hpub : RandomSignPublicAgree s t) (hbound : fuel + 1 < 2 ^ 64)
     (htrace : (randomSignRemaining (randomInput s) used (fuel + 1)).trace =
       (randomSignRemaining (randomInput t) used (fuel + 1)).trace)
-    (hvs : RandomValid S s) (hvt : RandomValid S t)
+    (hvs : RandomValid S s) (hvt : RandomValid S t) (hsy : SymsAgree [S.nm, S.ns] a b)
     {tsa tsb : List Leak} {u w : State}
     (ea : Exec isa (RandomSign.attempt S.name S.code) a tsa u)
     (eb : Exec isa (RandomSign.attempt S.name S.code) b tsb w) : tsa = tsb := by
@@ -96,7 +94,7 @@ theorem random_sign_attempt_agreement (S : Signer) {s t a b : State}
               rw [← hbm] at hnonceb
               rw [← hused] at hbr'
               have hsingle := random_sign_single_agreement S har' hbr' hpub (by omega_using []) hbound
-                hnoncea hnonceb hsucc hvs hvt eata ebtb
+                hnoncea hnonceb hsucc hvs hvt ((hsy.exec eas ebs).exec eac ebc) eata ebtb
               rw [hsample, hcmp, hsingle]
             | iteF hcb _ =>
               simp only [eval, haz, Option.some.injEq, hstatus] at hca

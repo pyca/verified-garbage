@@ -37,8 +37,8 @@ def init (sb ss a b k : Nat) : List Instr :=
  [mov .x19 .x2] ++ initCore sb a b k ++
  [.addImm .x .x20 .x19 400,.addImm .x .x21 .x19 904,.movz .x .x22 3 0]
 
-def squeeze : Prog isa :=
- .loop (.seq (VG.Impl.Sha3.AArch64.Neon.X2.call true .x19 .x19 1536)
+def squeeze (sha3 : Bool) : Prog isa :=
+ .loop (.seq (VG.Impl.Sha3.AArch64.Neon.X2.call sha3 .x19 .x19 1536)
   (.block (VG.Impl.Sha3.AArch64.Neon.X2.squeeze 21 .x19 .x20 .x21 ++
    [.addImm .x .x20 .x20 168,.addImm .x .x21 .x21 168,.subImm .x .x22 .x22 1]))) (.nonzero .x .x22)
 def reject (buf out : Nat) (flag : Reg) (w16 : Bool := false) : Prog isa :=
@@ -63,12 +63,12 @@ def fullInit (sb ss a k : Nat) : List Instr :=
  [.str .x .x22 .x19 1848,.str .x .x23 .x19 1856] ++
  (init sb ss a a k).take 1 ++ (init sb ss a a k).drop 7 ++ [.movz .x .x22 5 0]
 
-def fullSample (L : KemLay) (kg : Bool) (a : Nat) (w16 : Bool := false) : Prog isa :=
+def fullSample (sha3 : Bool) (L : KemLay) (kg : Bool) (a : Nat) (w16 : Bool := false) : Prog isa :=
  let sb := if kg then KG.SB else KEM.SB
  let ss := if kg then KG.SS else KEM.SS
  let off := if kg then KG.AH else KEM.AH
  seqs [.block (fullInit sb ss a L.k),
- .loop (.seq (VG.Impl.Sha3.AArch64.Neon.X2.call true .x19 .x19 1536)
+ .loop (.seq (VG.Impl.Sha3.AArch64.Neon.X2.call sha3 .x19 .x19 1536)
   (.block ((List.range 21).flatMap (fun i => [.ldr .x .x6 .x19 (16*i),.str .x .x6 .x20 (8*i)]) ++
    [.addImm .x .x20 .x20 168,.subImm .x .x22 .x22 1]))) (.nonzero .x .x22),
  .block (rejConsts ++ [.movz .x .x9 0 0,.str .x .x9 .x19 1240] ++ ptrTo .x3 .x28 (off+1024*a) ++
@@ -94,9 +94,9 @@ def extraBoth (w16 : Bool := false) : Prog isa :=
  .loop (.seq (extraReject w16) (.block [.logic .and .x .x22 .x22 .x0,.addImm .x .x20 .x20 504,
    .addImm .x .x1 .x1 16,.subImm .x .x23 .x23 1])) (.nonzero .x .x23),
  .block [mov .x6 .x22]]
-def extraStep (w16 : Bool := false) : Prog isa :=
+def extraStep (sha3 : Bool) (w16 : Bool := false) : Prog isa :=
  seqs [.block [.addImm .x .x20 .x19 400,.addImm .x .x21 .x19 904],
- VG.Impl.Sha3.AArch64.Neon.X2.call true .x19 .x19 1536,
+ VG.Impl.Sha3.AArch64.Neon.X2.call sha3 .x19 .x19 1536,
  .block (VG.Impl.Sha3.AArch64.Neon.X2.squeeze 21 .x19 .x20 .x21 ++ rejConsts),
  extraBoth w16]
 def zeroExtra (slot : Nat) (w16 : Bool := false) : Prog isa :=
@@ -106,28 +106,28 @@ def zeroExtra (slot : Nat) (w16 : Bool := false) : Prog isa :=
 /-- The fourth block, and the fifth while either stream lacks candidates
 (`x6 = 0`), as a loop: `x30` (saved by `init`, restored at the end of the
 pair) is the number of blocks left after this one. -/
-def retry (w16 : Bool := false) : Prog isa :=
+def retry (sha3 : Bool) (w16 : Bool := false) : Prog isa :=
  .seq (.block [.movz .x .x30 1 0])
- (.loop (.seq (extraStep w16) (.block [.sub .x .x7 .x6 .x30,.lsr .x .x7 .x7 63,.movz .x .x30 0 0]))
+ (.loop (.seq (extraStep sha3 w16) (.block [.sub .x .x7 .x6 .x30,.lsr .x .x7 .x7 63,.movz .x .x30 0 0]))
   (.nonzero .x .x7))
-def extraPair (w16 : Bool := false) : Prog isa :=
- seqs [retry w16,.block [.logic .and .x .x24 .x24 .x6],zeroExtra 1680 w16,zeroExtra 1696 w16]
+def extraPair (sha3 : Bool) (w16 : Bool := false) : Prog isa :=
+ seqs [retry sha3 w16,.block [.logic .and .x .x24 .x24 .x6],zeroExtra 1680 w16,zeroExtra 1696 w16]
 
-def pair (L : KemLay) (keygen : Bool) (a : Nat) (w16 : Bool := false) : Prog isa :=
+def pair (sha3 : Bool) (L : KemLay) (keygen : Bool) (a : Nat) (w16 : Bool := false) : Prog isa :=
  let sb := if keygen then KG.SB else KEM.SB
  let ss := if keygen then KG.SS else KEM.SS
  let off := if keygen then KG.AH else KEM.AH
- seqs [.block (init sb ss a (a+1) L.k), squeeze, .block rejConsts,
+ seqs [.block (init sb ss a (a+1) L.k), squeeze sha3, .block rejConsts,
   rejectBoth (off+1024*a) (off+1024*(a+1)) w16,
-  .ite (.zero .x .x6) (extraPair w16) (.block []),
+  .ite (.zero .x .x6) (extraPair sha3 w16) (.block []),
   .block ((saved.zipIdx.reverse.map fun (r,i) => .ldr .x r .x19 (1800+8*i)))]
-def lastSample (L : KemLay) (keygen : Bool) (w16 : Bool := false) : Prog isa :=
+def lastSample (sha3 : Bool) (L : KemLay) (keygen : Bool) (w16 : Bool := false) : Prog isa :=
  let sb := if keygen then KG.SB else KEM.SB
  let ss := if keygen then KG.SS else KEM.SS
  let off := if keygen then KG.AH else KEM.AH
  let a := L.k*L.k-1
- seqs [.block (init sb ss a a L.k),squeeze,.block rejConsts,
+ seqs [.block (init sb ss a a L.k),squeeze sha3,.block rejConsts,
   reject 400 (off+1024*a) .x22 w16,
-  .ite (.zero .x .x22) (fullSample L keygen (L.k*L.k-1) w16) (.block []),
+  .ite (.zero .x .x22) (fullSample sha3 L keygen (L.k*L.k-1) w16) (.block []),
   .block (saved.zipIdx.reverse.map fun (r,i) => .ldr .x r .x19 (1800+8*i))]
 end VG.Impl.MlKem.AArch64.Paired

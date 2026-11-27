@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Sha1.initContract`. The streaming state is the hash value followed by a buffered partial block (`VG.Spec.Sha1.Repr`).
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 84 bytes.
@@ -29,6 +31,12 @@ str r12, [r0, #12]
 movw r12, #57840
 movt r12, #50130
 str r12, [r0, #16]
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
     )
 }
@@ -36,6 +44,8 @@ bx lr",
 /// Absorbs data into a SHA-1 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), it then represents that message followed by the `len` bytes at `data`.
 ///
 /// Contract: `VG.Spec.Sha1.updateContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -178,6 +188,33 @@ ldr r10, [r3, #136]
 ldr r11, [r3, #140]
 ldr lr, [r3, #144]
 add sp, sp, #176
+sub sp, sp, #176
+add r12, sp, #0
+mov r2, #0
+mov r3, #5
+223:
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+add r12, r12, #32
+subs r3, r3, #1
+bne 223b
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+add sp, sp, #176
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
         vg_sha1_compress = sym super::sha1::vg_sha1_compress::vg_sha1_compress,
     )
@@ -186,6 +223,8 @@ bx lr",
 /// Finishes a SHA-1 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), writes the SHA-1 digest of that message to `*out`.
 ///
 /// Contract: `VG.Spec.Sha1.finalizeContract`. Constant time: only the pointers and `count` may affect timing, not the state.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -289,6 +328,33 @@ ldr r10, [r3, #136]
 ldr r11, [r3, #140]
 ldr lr, [r3, #144]
 add sp, sp, #176
+sub sp, sp, #176
+add r12, sp, #0
+mov r2, #0
+mov r3, #5
+28:
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+add r12, r12, #32
+subs r3, r3, #1
+bne 28b
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+add sp, sp, #176
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
         vg_sha1_compress = sym super::sha1::vg_sha1_compress::vg_sha1_compress,
     )
@@ -297,6 +363,8 @@ bx lr",
 /// Computes the SHA-1 digest of the `len` bytes at `data` (20 bytes, `VG.Spec.Sha1.hash`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-1 computation with that message.
 ///
 /// Contract: `VG.Spec.Sha1.digestContract`. Constant time: only the pointers and `len` may affect timing, not the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -326,7 +394,7 @@ mov r5, r2
 movw r12, #196
 add r4, r11, r12
 mov r0, r4
-bl {vg_sha1_init}
+bl {vg_sha1_init_core}
 mov r0, r4
 mov r1, r8
 mov r7, r9
@@ -364,8 +432,12 @@ ldr r9, [r11, #180]
 ldr r10, [r11, #184]
 ldr lr, [r11, #188]
 ldr r11, [r11, #192]
+add sp, sp, #304
+sub sp, sp, #320
 add r12, sp, #0
 mov r2, #0
+mov r3, #10
+21:
 str r2, [r12, #0]
 str r2, [r12, #4]
 str r2, [r12, #8]
@@ -374,77 +446,18 @@ str r2, [r12, #16]
 str r2, [r12, #20]
 str r2, [r12, #24]
 str r2, [r12, #28]
-str r2, [r12, #32]
-str r2, [r12, #36]
-str r2, [r12, #40]
-str r2, [r12, #44]
-str r2, [r12, #48]
-str r2, [r12, #52]
-str r2, [r12, #56]
-str r2, [r12, #60]
-str r2, [r12, #64]
-str r2, [r12, #68]
-str r2, [r12, #72]
-str r2, [r12, #76]
-str r2, [r12, #80]
-str r2, [r12, #84]
-str r2, [r12, #88]
-str r2, [r12, #92]
-str r2, [r12, #96]
-str r2, [r12, #100]
-str r2, [r12, #104]
-str r2, [r12, #108]
-str r2, [r12, #112]
-str r2, [r12, #116]
-str r2, [r12, #120]
-str r2, [r12, #124]
-str r2, [r12, #128]
-str r2, [r12, #132]
-str r2, [r12, #136]
-str r2, [r12, #140]
-str r2, [r12, #144]
-str r2, [r12, #148]
-str r2, [r12, #152]
-str r2, [r12, #156]
-str r2, [r12, #160]
-str r2, [r12, #164]
-str r2, [r12, #168]
-str r2, [r12, #172]
-str r2, [r12, #176]
-str r2, [r12, #180]
-str r2, [r12, #184]
-str r2, [r12, #188]
-str r2, [r12, #192]
-str r2, [r12, #196]
-str r2, [r12, #200]
-str r2, [r12, #204]
-str r2, [r12, #208]
-str r2, [r12, #212]
-str r2, [r12, #216]
-str r2, [r12, #220]
-str r2, [r12, #224]
-str r2, [r12, #228]
-str r2, [r12, #232]
-str r2, [r12, #236]
-str r2, [r12, #240]
-str r2, [r12, #244]
-str r2, [r12, #248]
-str r2, [r12, #252]
-str r2, [r12, #256]
-str r2, [r12, #260]
-str r2, [r12, #264]
-str r2, [r12, #268]
-str r2, [r12, #272]
-str r2, [r12, #276]
-str r2, [r12, #280]
-str r2, [r12, #284]
-str r2, [r12, #288]
-str r2, [r12, #292]
-str r2, [r12, #296]
-str r2, [r12, #300]
-add sp, sp, #304
+add r12, r12, #32
+subs r3, r3, #1
+bne 21b
+add sp, sp, #320
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
-        vg_sha1_init = sym super::sha1::vg_sha1_init,
+        vg_sha1_init_core = sym super::sha1::vg_sha1_init_core::vg_sha1_init_core,
         vg_sha1_update_scratch = sym super::sha1::vg_sha1_update_scratch::vg_sha1_update_scratch,
         vg_sha1_finalize_scratch = sym super::sha1::vg_sha1_finalize_scratch::vg_sha1_finalize_scratch,
     )
@@ -457,6 +470,10 @@ pub(crate) mod vg_sha1_compress;
 #[rustfmt::skip]
 #[path = "internal/vg_sha1_finalize_scratch.rs"]
 pub(crate) mod vg_sha1_finalize_scratch;
+
+#[rustfmt::skip]
+#[path = "internal/vg_sha1_init_core.rs"]
+pub(crate) mod vg_sha1_init_core;
 
 #[rustfmt::skip]
 #[path = "internal/vg_sha1_state_digest.rs"]

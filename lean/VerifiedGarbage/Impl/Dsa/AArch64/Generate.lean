@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.AArch64.SignVerify
+public import VerifiedGarbage.Impl.Dsa.AArch64.SharedPower
 
 /-! # AAPCS64 DSA domain checking and private-key derivation
 
@@ -70,8 +71,8 @@ def deriveKey (mul : Nat → Nat → Nat → Prog isa) : Prog isa := seqs [
   .block deriveEntry, Checks.domainShape,
   .ite (.zero .x .x3) deriveFailure (seqs [
     workspaces, Checks.range qWorkspace Core.privateScalar,
-    Core.pow mul pWorkspace Core.generator Core.privateScalar (Core.element t2),
-    copyY, Checks.signingKey mul, writeKey, .block result])]
+    SharedPower.pow mul Core.generator Core.privateScalar (Core.element t2),
+    copyY, seqs (Checks.publicPrefix mul), writeKey, .block result])]
 
 /-- Key derivation for a domain whose check (`checkParameters`) has
 succeeded: `deriveKey` with the signer's checks of g and y but the

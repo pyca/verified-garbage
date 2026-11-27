@@ -1,26 +1,47 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.X86.Taint
-public import VerifiedGarbage.Proof.Blowfish.X86.Frame
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Blowfish.Contract
+import VerifiedGarbage.Proof.Blowfish.X86.Scrub
+import VerifiedGarbage.Impl.Blowfish.X86.Fn
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Blowfish.X86.Ssse3Verified
+import VerifiedGarbage.Impl.Blowfish.X86.Ssse3
+import VerifiedGarbage.Proof.Blowfish.X86.Ssse3WideVerified
+import VerifiedGarbage.Impl.Blowfish.X86.Ssse3Wide
 import VerifiedGarbage.Proof.Blowfish.X86.Lit
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.X86.Print
+import VerifiedGarbage.Proof.Blowfish.X86.Ssse3Lit
+import VerifiedGarbage.Proof.Blowfish.X86.Ssse3WideLit
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # Blowfish on x86 -/
 
-@[expose] public section
-
 namespace VG.Artifacts.Blowfish.X86
 
-def artifacts : List Artifact := [
+public def artifacts : List (Artifact X86.target) := [
   Spec.Blowfish.expandKeyApi.artifact X86.target {
-    code := Impl.StackScratch.X86.withStackScratchWiped 84 3 10 Impl.Blowfish.X86.expandKey
-    verified := Proof.Blowfish.X86.expandKey_framed },
+    suffix := "_ssse3"
+    code := Impl.Blowfish.X86.Ssse3.Fn.expandKey
+    verified := Proof.Blowfish.X86.Ssse3.expandKey_scrubbed },
+  Spec.Blowfish.expandKeyApi.artifact X86.target {
+    code := Impl.Blowfish.X86.Fn.expandKey
+    verified := Proof.Blowfish.X86.Scrub.expandKey_scrubbed },
   Spec.Blowfish.ecbEncryptApi.artifact X86.target {
-    code := Impl.StackScratch.X86.withStackScratchWiped 276 3 10 Impl.Blowfish.X86.encrypt
-    verified := Proof.Blowfish.X86.ecb_framed true },
+    suffix := "_ssse3"
+    code := Impl.Blowfish.X86.Ssse3.Wide.Fn.ecbEncrypt
+    verified := Proof.Blowfish.X86.Ssse3.Wide.Ecb.ecbEncrypt_scrubbed },
+  Spec.Blowfish.ecbEncryptApi.artifact X86.target {
+    code := Impl.Blowfish.X86.Fn.ecbEncrypt
+    verified := Proof.Blowfish.X86.Scrub.ecbEncrypt_scrubbed },
   Spec.Blowfish.ecbDecryptApi.artifact X86.target {
-    code := Impl.StackScratch.X86.withStackScratchWiped 276 3 10 Impl.Blowfish.X86.decrypt
-    verified := Proof.Blowfish.X86.ecb_framed false }]
+    suffix := "_ssse3"
+    code := Impl.Blowfish.X86.Ssse3.Wide.Fn.ecbDecrypt
+    verified := Proof.Blowfish.X86.Ssse3.Wide.Ecb.ecbDecrypt_scrubbed },
+  Spec.Blowfish.ecbDecryptApi.artifact X86.target {
+    code := Impl.Blowfish.X86.Fn.ecbDecrypt
+    verified := Proof.Blowfish.X86.Scrub.ecbDecrypt_scrubbed }]
+
+spec_apis artifacts
 
 end VG.Artifacts.Blowfish.X86

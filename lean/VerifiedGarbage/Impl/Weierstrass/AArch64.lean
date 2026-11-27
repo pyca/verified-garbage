@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.Mont.AArch64.P256Square
-public import VerifiedGarbage.Impl.Mont.AArch64.P521Linear
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.Mont
+public import VerifiedGarbage.Impl.Weierstrass.AArch64.P521
 public import VerifiedGarbage.Impl.Weierstrass.Rcb0
 
 /-!
@@ -37,8 +37,64 @@ open VG.AArch64 VG.Impl.Mont VG.Impl.Mont.AArch64 VG.Impl.Weierstrass
 def opCode (M : Mod) : FOp → List Instr
   | .mul o a b => if a == b && P256Square.supported M then
       P256Square.square M o a else Mont.AArch64.mul M o a b
-  | .add o a b => if P521Linear.supported M then P521Linear.add o a b else Mont.AArch64.add M o a b
-  | .sub o a b => if P521Linear.supported M then P521Linear.sub o a b else Mont.AArch64.sub M o a b
+  | .add o a b => if P521.supported M then Mont.AArch64.P521.add o a b else Mont.AArch64.add M o a b
+  | .sub o a b => if P521.supported M then Mont.AArch64.P521.sub o a b else Mont.AArch64.sub M o a b
+
+/-- The general Brainpool ladders' existing inline Montgomery layouts. -/
+def ladderFieldParams : List (Nat × Nat × Nat) :=
+  [(8, 192, 9483228555485245381), (4, 128, 14314504021056784825),
+   (5, 144, 4404128606415658601), (6, 4048, 11128018014536910885)]
+
+def ladderFieldMod (p : Nat) : Mod :=
+  let args := ladderFieldParams.getD p (0, 0, 0)
+  { n := args.1, mo := 64, tmp := args.2.1, minv := BitVec.ofNat 64 args.2.2, tight := true }
+
+def ladderFieldArgs (p : Nat) : List (Nat × Nat × Nat) :=
+  let sl := fun k => 64 + 8 * (ladderFieldMod p).n * k
+  [(sl 26, sl 26, sl 27), (sl 27, sl 27, sl 28), (sl 25, sl 6, sl 25),
+   (sl 27, sl 7, sl 27), (sl 23, sl 24, sl 27), (sl 23, sl 28, sl 27), (sl 23, sl 26, sl 24)]
+
+def ladderFieldOp (p i : Nat) : FOp :=
+  let args := (ladderFieldArgs p).getD i (0, 0, 0)
+  .mul args.1 args.2.1 args.2.2
+
+def ladderFieldBody (p i : Nat) : Prog isa := .block (opCode (ladderFieldMod p) (ladderFieldOp p i))
+
+def ladderFieldName (p i : Nat) : String :=
+  let names :=
+    [["vg_brainpoolp512r1_ladder_field_0", "vg_brainpoolp512r1_ladder_field_1", "vg_brainpoolp512r1_ladder_field_2", "vg_brainpoolp512r1_ladder_field_3", "vg_brainpoolp512r1_ladder_field_4", "vg_brainpoolp512r1_ladder_field_5", "vg_brainpoolp512r1_ladder_field_6"],
+     ["vg_brainpoolp256r1_ladder_field_0", "vg_brainpoolp256r1_ladder_field_1", "vg_brainpoolp256r1_ladder_field_2", "vg_brainpoolp256r1_ladder_field_3", "vg_brainpoolp256r1_ladder_field_4", "vg_brainpoolp256r1_ladder_field_5", "vg_brainpoolp256r1_ladder_field_6"],
+     ["vg_brainpoolp320r1_ladder_field_0", "vg_brainpoolp320r1_ladder_field_1", "vg_brainpoolp320r1_ladder_field_2", "vg_brainpoolp320r1_ladder_field_3", "vg_brainpoolp320r1_ladder_field_4", "vg_brainpoolp320r1_ladder_field_5", "vg_brainpoolp320r1_ladder_field_6"],
+     ["vg_brainpoolp384r1_ladder_field_0", "vg_brainpoolp384r1_ladder_field_1", "vg_brainpoolp384r1_ladder_field_2", "vg_brainpoolp384r1_ladder_field_3", "vg_brainpoolp384r1_ladder_field_4", "vg_brainpoolp384r1_ladder_field_5", "vg_brainpoolp384r1_ladder_field_6"]]
+  (names.getD p []).getD i "vg_brainpoolp512r1_ladder_field_0"
+
+/-- The caller's link register is kept above the low lane used by field calls. -/
+def ladderFieldCall (p i : Nat) : Prog isa :=
+  .seq (.block [.vop (.ins .d2 .v31 1 .x30)]) <|
+    .seq (.call (ladderFieldName p i) (ladderFieldBody p i))
+      (.block [.umov .x .x30 .v31 1])
+
+/-- A computational layout check; every field affecting the inline kernel is fixed. -/
+def ladderFieldLayout (M : Mod) (p : Nat) : Bool :=
+  let N := ladderFieldMod p
+  M.n == N.n && M.mo == 64 && M.tmp == N.tmp && M.minv == N.minv &&
+  (match M.red with | .general => true | .friendly _ => false) &&
+  M.tight && !M.adx && !M.sparse && !M.inl && !M.fnN && M.fnMod.isNone
+
+def ladderProfile? (M : Mod) : Option Nat := (List.range 4).find? (ladderFieldLayout M)
+
+def sameLadderField (op : FOp) (p i : Nat) : Bool :=
+  let args := (ladderFieldArgs p).getD i (0, 0, 0)
+  match op with
+  | .mul o a b => o == args.1 && a == args.2.1 && b == args.2.2
+  | _ => false
+
+def ladderField? (M : Mod) (op : FOp) : Option (Nat × Nat) :=
+  match ladderProfile? M with
+  | none => none
+  | some p => match (List.range 7).find? (sameLadderField op p) with
+    | none => none
+    | some i => some (p, i)
 
 /-- A straight-line sequence of field operations. -/
 def fprog (M : Mod) (ops : List FOp) : List Instr := ops.flatMap (opCode M)
@@ -60,21 +116,29 @@ def mulCall (f : String) (n m o a b : Nat) : Prog isa := callProg f (Mont.mulFn 
 def sqrCall (o a : Nat) : Prog isa :=
   callProg (Impl.Weierstrass.Mont.p384p.fn "sqr") Mont.sqrFn384 o a a
 
-/-- `[o] = [a]^2 R⁻¹ mod p` by the dedicated P-521 square. -/
-def sqrCall521 (o a : Nat) : Prog isa :=
-  callProg (Impl.Weierstrass.Mont.p521p.fn "sqr") Mont.sqrFn521 o a a
-
-/-- Recognize the nine-word field modulus, excluding P-521's scalar order. -/
-def sqr521Ok (n m : Nat) : Bool := n == 9 && m == Impl.Weierstrass.Mont.p521p.m
+/-- `[o] = [a] [b] R⁻¹ mod p`, or the square where `a` is `b`, by a call of
+P-521's field functions. -/
+def fieldCall521 (o a b : Nat) : Prog isa :=
+  if a == b then callProg (Impl.Weierstrass.Mont.p521p.fn "sqr") P521.sqrFn o a a
+  else callProg (Impl.Weierstrass.Mont.p521p.fn "prod") P521.prodFn o a b
 
 /-- The code of a field operation: a call for a product modulo a modulus
 whose products are functions (`Mont.callOf`), using the dedicated square for
-P-384's or P-521's field prime when both input slots agree, else `opCode`. -/
-def opProg (M : Mod) (op : FOp) : Prog isa :=
+P-384's field prime when both input slots agree, and P-521's field functions,
+else `opCode`. -/
+def opProgRaw (M : Mod) (op : FOp) : Prog isa :=
   match op, Mont.callOf M with
   | .mul o a b, some (f, m) => if a == b && sparseOk M.n m then sqrCall o a
-      else if a == b && sqr521Ok M.n m then sqrCall521 o a else mulCall f M.n m o a b
+      else if P521.isField M.n m then fieldCall521 o a b else mulCall f M.n m o a b
   | op, _ => .block (opCode M op)
+
+/-- Share only the repeated closed ladder products; other field code retains its layout. -/
+def opProg (M : Mod) (op : FOp) (share : Bool := false) : Prog isa :=
+  if share then
+    match ladderField? M op with
+    | some (p, i) => ladderFieldCall p i
+    | none => opProgRaw M op
+  else opProgRaw M op
 
 /-- Programs one after the other. -/
 def progs : List (Prog isa) → Prog isa
@@ -90,7 +154,8 @@ def blocks : List (List Instr) → Prog isa
   | b :: bs => .seq (.block b) (blocks bs)
 
 /-- `fprog`, a block per operation, or a call for a product. -/
-def fprogB (M : Mod) (ops : List FOp) : Prog isa := progs (ops.map (opProg M))
+def fprogB (M : Mod) (ops : List FOp) (share : Bool := false) : Prog isa :=
+  progs (ops.map (fun op => opProg M op share))
 
 /-- `[o] = [a]` if the mask `x3` is zero, `[b]` if it is all ones, `n`
 words, through `x1` and `x2`. -/
@@ -120,8 +185,8 @@ def decCounter : Instr := .subImm .x .x19 .x19 1
 `T = D + G` (for `a0`, by the formulas for `a = 0` and an affine `G`,
 `ladDblOps`), then `R = T` if bit `t` is set, else `D`. -/
 def ladderBody (L : LadderCfg) (a0 : Bool := false) : Prog isa :=
-  .seq (.block [decCounter]) <| .seq (fprogB L.M (ladDblOps L a0)) <|
-    .seq (fprogB L.M (ladAddOps L a0)) <|
+  .seq (.block [decCounter]) <| .seq (fprogB L.M (ladDblOps L a0) true) <|
+    .seq (fprogB L.M (ladAddOps L a0) true) <|
     .block (bitMask L.bits ++ selPt L.M.n L.R L.D L.T)
 
 /-- The ladder over the bits `nbits - 1` down to 0, from `R` as set up by the

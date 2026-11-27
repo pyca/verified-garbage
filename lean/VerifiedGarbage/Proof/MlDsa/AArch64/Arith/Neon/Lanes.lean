@@ -91,44 +91,5 @@ theorem bfly_ok (hc : VConsts s) {A B Z : Nat → Nat}
       (((((((h₁.trans h₂).trans h₃.chg).trans h₄.chg).trans h₅).trans h₆.chg).trans h₇.chg).trans h₈).mono ?_ l₈
   rw [h₈.get .v0, h₇.get .v0, h₆.get .v0]; exact l₅
 
-theorem bflyInv_ok (hc : VConsts s) {A B Z : Nat → Nat}
-    (ha : Lanes (s.v .v0) A) (hb : Lanes (s.v .v1) B) (hz : Lanes (s.v .v18) Z)
-    (halt : ∀ e < 4, A e < q) (hblt : ∀ e < 4, B e < q) (hzlt : ∀ e < 4, Z e < q)
-    (k : ∀ s', VChg [.v0,.v2,.v3,.v4,.v5] s s' →
-      Lanes (s'.v .v0) (fun e => (A e + B e)%q) →
-      Lanes (s'.v .v5) (fun e => mont ((A e + q - B e)*Z e)%q) →
-      WP isa (.block rest) s' Q) : WP isa (.block (bflyInv ++ rest)) s Q := by
-  simp only [bflyInv, List.append_assoc, List.cons_append]
-  refine wp_vop (d := .v5) rfl fun s₁ h₁ => wp_vop (d := .v5) rfl fun s₂ h₂ => ?_
-  have a₁ : Lanes (s₁.v .v5) (fun e => A e + q) := by
-    rw [h₁.v]
-    exact (lanes_add ha hc.lanes_q).congr fun e he => Nat.mod_eq_of_lt (by
-      have ha' := halt e he; rw [q_eq] at ha' ⊢; omega_using [ha'])
-  have b₁ : Lanes (s₁.v .v1) B := by rw [h₁.get .v1]; exact hb
-  have diff : Lanes (s₂.v .v5) (fun e => A e + q - B e) := by
-    rw [h₂.v]
-    exact (lanes_sub a₁ b₁).congr fun e he => by
-      have ha' := halt e he; have hb' := hblt e he; rw [q_eq] at ha' hb' ⊢; omega_using [ha', hb']
-  have c₂ := hc.chg (h₁.chg.trans h₂.chg)
-  refine wp_vop (d := .v0) rfl fun s₃ h₃ => ?_
-  have sum : Lanes (s₃.v .v0) (fun e => A e + B e) := by
-    rw [h₃.v]
-    exact (lanes_add (by rw [h₂.get .v0, h₁.get .v0]; exact ha)
-      (by rw [h₂.get .v1, h₁.get .v1]; exact hb)).congr fun e he => Nat.mod_eq_of_lt (by
-        have ha' := halt e he; have hb' := hblt e he; rw [q_eq] at ha' hb'; omega_using [ha', hb'])
-  refine csub_ok (by decide) (c₂.chg h₃.chg).lanes_q sum
-    (fun e he => by have := halt e he; have := hblt e he; omega_arith) fun s₄ h₄ l₄ => ?_
-  have c₄ := c₂.chg (h₃.chg.trans h₄)
-  have diff₄ : Lanes (s₄.v .v5) (fun e => A e + q - B e) := by
-    rw [h₄.get .v5, h₃.get .v5]; exact diff
-  have z₄ : Lanes (s₄.v .v18) Z := by
-    rw [h₄.get .v18, h₃.get .v18, h₂.get .v18, h₁.get .v18]; exact hz
-  refine mont_lanes (by decide) (by decide) c₄ diff₄ z₄ hzlt fun s₅ h₅ l₅ => ?_
-  refine csub_ok (by decide) (c₄.chg h₅).lanes_q l₅
-    (fun e he => mont_lt (by
-      simpa only [Nat.mul_comm] using Nat.mul_lt_mul'' (diff₄.lt he) (hzlt e he)))
-    fun s₆ h₆ l₆ => k s₆ (((((h₁.chg.trans h₂.chg).trans h₃.chg).trans h₄).trans h₅).trans h₆).mono ?_ l₆
-  rw [h₆.get .v0, h₅.get .v0]; exact l₄
-
 end
 end VG.Proof.MlDsa.AArch64.Arith.Neon

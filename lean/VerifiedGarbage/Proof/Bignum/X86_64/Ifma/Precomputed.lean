@@ -5,14 +5,9 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTCode
 public import VerifiedGarbage.Impl.Rsa.X86_64.CrtIfma
 public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Terms
 public import VerifiedGarbage.Proof.Rsa.Contract
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtPreCT
-public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.CTPre
-public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.CTPost
 public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.CTMain
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtCode
 import VerifiedGarbage.Proof.Bignum.X86_64.PubFail
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTFin
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTP
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTRedc
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTExpL
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTExp
@@ -27,14 +22,9 @@ meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTCode
 meta import VerifiedGarbage.Impl.Rsa.X86_64.CrtIfma
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Terms
 meta import VerifiedGarbage.Proof.Rsa.Contract
-meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtPreCT
-meta import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.CTPre
-meta import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.CTPost
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.CTMain
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCode
 meta import VerifiedGarbage.Proof.Bignum.X86_64.PubFail
-meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTFin
-meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTP
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTRedc
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTExpL
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTExp
@@ -103,7 +93,7 @@ theorem ifmaPartP_ok {l2 : VG.Impl.Rsa.X86_64.CrtIfma.Lay} (h2 : Lay2 l2) (hl2 :
         (WP.mono (ifmaAny_ok h2 hl2 h hv hr rfl hs hA) fun t ⟨hd, mxa⟩ =>
           WP.mono (branchBP_ok hl M h hv hd rfl hw hp hq
             (hpP.congr hd.iscr (hd.keep.gpr (by decide)) hd.keep.2.1 hd.keep.2.2) hpost) fun t' ⟨hd', mxb⟩ =>
-            ⟨hd', by rw [mxb, mxa, mx_ffff, mx₁, mx₀]⟩))
+            ⟨hd', by rw [mxb, mxa, mx₁, mx₀]⟩))
 
 /-- `mainBack_ok` with `preP` and `postP`. -/
 theorem mainBackP_ok {l2 : VG.Impl.Rsa.X86_64.CrtIfma.Lay} (h2 : Lay2 l2) (M : Mont) {s t₀ : State} {B : Addr} {Z k : Nat}

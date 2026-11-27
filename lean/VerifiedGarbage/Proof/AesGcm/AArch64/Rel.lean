@@ -31,6 +31,12 @@ theorem rel_ctr (v : Ctr32Impl) {σ₁ σ₂ : State} {K C D S : Addr} {R n : Na
     RelCT isa (Eq2 σ₁ σ₂) (.call v.callee.name v.callee.code) TT :=
   ctr_rel v fun a b hab => by obtain ⟨rfl, rfl⟩ := hab; exact ⟨K, C, D, S, R, n, h₁, h₂, hsp⟩
 
+/-- `rel_ctr`, for calls with `N ≥ v.scratch` bytes of working space. -/
+theorem rel_ctrLe (v : Ctr32Impl) {N : Nat} (hle : v.scratch ≤ N) {σ₁ σ₂ : State} {K C D S : Addr} {R n : Nat}
+    (h₁ : CtrCall σ₁ K C D S R n N) (h₂ : CtrCall σ₂ K C D S R n N) (hsp : σ₁.sp = σ₂.sp) :
+    RelCT isa (Eq2 σ₁ σ₂) (.call v.callee.name v.callee.code) TT :=
+  ctr_relLe v hle fun a b hab => by obtain ⟨rfl, rfl⟩ := hab; exact ⟨K, C, D, S, R, n, h₁, h₂, hsp⟩
+
 theorem rel_key (k : KeyImpl) {σ₁ σ₂ : State} {K C S : Addr} {L : Nat} (h₁ : KeyCall σ₁ K C S L)
     (h₂ : KeyCall σ₂ K C S L) (hsp : σ₁.sp = σ₂.sp) : RelCT isa (Eq2 σ₁ σ₂) (.call k.fn.name k.fn.code) TT :=
   key_rel k fun a b hab => by obtain ⟨rfl, rfl⟩ := hab; exact ⟨K, C, S, L, h₁, h₂, hsp⟩

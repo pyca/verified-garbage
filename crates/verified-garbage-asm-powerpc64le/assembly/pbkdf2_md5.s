@@ -26,7 +26,7 @@ vg_pbkdf2_hmac_md5:
 	addi %r6, %r4, 0
 	addi %r3, %r21, 432
 	addi %r4, %r21, 512
-	bl {vg_hmac_md5_init}
+	bl {vg_hmac_md5_init_core}
 	li %r12, 1
 	li %r11, 704
 	stwbrx %r12, %r21, %r11
@@ -145,4 +145,78 @@ vg_pbkdf2_hmac_md5:
 	addi %r1, %r1, 48
 	mtlr %r0
 	addi %r1, %r1, 1056
+	li %r0, 0
+	stdu %r1, -1616(%r1)
+	addi %r12, %r1, 32
+	std %r0, 0(%r12)
+	std %r0, 8(%r12)
+	std %r0, 16(%r12)
+	std %r0, 24(%r12)
+	std %r0, 32(%r12)
+	std %r0, 40(%r12)
+	std %r0, 48(%r12)
+	std %r0, 56(%r12)
+	std %r0, 64(%r12)
+	std %r0, 72(%r12)
+	std %r0, 80(%r12)
+	std %r0, 88(%r12)
+	std %r0, 96(%r12)
+	std %r0, 104(%r12)
+	std %r0, 112(%r12)
+	std %r0, 120(%r12)
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	std %r0, 0(%r12)
+	std %r0, 8(%r12)
+	std %r0, 16(%r12)
+	std %r0, 24(%r12)
+	std %r0, 32(%r12)
+	std %r0, 40(%r12)
+	std %r0, 48(%r12)
+	std %r0, 56(%r12)
+	std %r0, 64(%r12)
+	std %r0, 72(%r12)
+	std %r0, 80(%r12)
+	std %r0, 88(%r12)
+	std %r0, 96(%r12)
+	std %r0, 104(%r12)
+	std %r0, 112(%r12)
+	std %r0, 120(%r12)
+	std %r0, 128(%r12)
+	std %r0, 136(%r12)
+	std %r0, 144(%r12)
+	std %r0, 152(%r12)
+	std %r0, 160(%r12)
+	std %r0, 168(%r12)
+	addi %r1, %r1, 1616
+	li %r3, 0
+	li %r4, 0
+	li %r5, 0
+	li %r6, 0
+	li %r7, 0
+	li %r8, 0
+	li %r9, 0
+	li %r10, 0
+	li %r11, 0
+	li %r12, 0
 	blr

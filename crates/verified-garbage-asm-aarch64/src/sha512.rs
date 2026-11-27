@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Sha512.initContract` for `VG.Spec.Sha512.H0_384`. The streaming state is the hash value followed by a buffered partial block (`VG.Spec.Sha512.Repr`).
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 192 bytes.
@@ -27,6 +29,8 @@ pub(crate) unsafe extern "C" fn vg_sha384_init(state: *mut [u8; 192]) {
 /// Starts a SHA-512 computation: makes the SHA-512 streaming state `*state` represent the empty message, hashed from the initial hash value of SHA-512 (`VG.Spec.Sha512.H0_512`). Continue with `vg_sha512_update` and `vg_sha512_finalize`.
 ///
 /// Contract: `VG.Spec.Sha512.initContract` for `VG.Spec.Sha512.H0_512`. The streaming state is the hash value followed by a buffered partial block (`VG.Spec.Sha512.Repr`).
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -49,6 +53,8 @@ pub(crate) unsafe extern "C" fn vg_sha512_init(state: *mut [u8; 192]) {
 ///
 /// Contract: `VG.Spec.Sha512.initContract` for `VG.Spec.Sha512.H0_512_224`. The streaming state is the hash value followed by a buffered partial block (`VG.Spec.Sha512.Repr`).
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 192 bytes.
@@ -69,6 +75,8 @@ pub(crate) unsafe extern "C" fn vg_sha512_224_init(state: *mut [u8; 192]) {
 /// Starts a SHA-512/256 computation: makes the SHA-512 streaming state `*state` represent the empty message, hashed from the initial hash value of SHA-512/256 (`VG.Spec.Sha512.H0_512_256`). Continue with `vg_sha512_update` and `vg_sha512_finalize`.
 ///
 /// Contract: `VG.Spec.Sha512.initContract` for `VG.Spec.Sha512.H0_512_256`. The streaming state is the hash value followed by a buffered partial block (`VG.Spec.Sha512.Repr`).
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -94,6 +102,8 @@ pub const VG_SHA384_FINALIZE_SHA512_FEATURES: verified_garbage_cpu::Features = v
 ///
 /// Contract: `VG.Spec.Sha512.finalizeDigestContract` for `VG.Spec.Sha512.H0_384` and `VG.Spec.Sha512.sha384`. Constant time: only the pointers and `count` may affect timing, not the state.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 192 bytes.
@@ -101,12 +111,12 @@ pub const VG_SHA384_FINALIZE_SHA512_FEATURES: verified_garbage_cpu::Features = v
 /// * `count` must be the exact length of the message: messages of 2⁶⁴ bytes or more are not supported.
 /// * The contents of `state` on return are unspecified.
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
-/// * Neither `state` nor `out` may overlap the 1392 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `out` may overlap the 704 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha3` target feature.
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha384_finalize_sha512(state: *mut [u8; 192], count: u64, out: *mut [u8; 48]) {
     core::arch::naked_asm!(
-        r".inst 0xd11583ff,0x910003e3,0xf81f0ffe,0xf9014073,0xf9014474,0xf9014875,0xf9014c76,0xf9015077
+        r".inst 0xd10ac3ff,0x910003e3,0xf81f0ffe,0xf9014073,0xf9014474,0xf9014875,0xf9014c76,0xf9015077
 .inst 0xf9015478,0x91000013,0x91000074,0x91000055,0x91000036,0xd2800fe9,0x8a0902d7,0xd2801009
 .inst 0x8b17026c,0x39010189,0x910006f7,0x91003ef8,0xd347ff18
 20:
@@ -143,7 +153,16 @@ cbz x24, 20b
 .inst 0xf9400269,0xdac00d29,0xf90002a9,0xf9400669,0xdac00d29,0xf90006a9,0xf9400a69,0xdac00d29
 .inst 0xf9000aa9,0xf9400e69,0xdac00d29,0xf9000ea9,0xf9401269,0xdac00d29,0xf90012a9,0xf9401669
 .inst 0xdac00d29,0xf90016a9,0xf9414293,0xf9414a95,0xf9414e96,0xf9415297,0xf9415698,0xf9414694
-.inst 0xf84107fe,0x911583ff,0xd65f03c0
+.inst 0xf84107fe,0x910ac3ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800009,0xd280000b
+.inst 0xd280000c,0xd280000d,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403
+.inst 0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413
+.inst 0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b
+.inst 0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f,0xd2800000,0xd10b03ff,0x6f00e41f
+.inst 0x910003e9,0xd280016a
+211:
+.inst 0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x91010129,0xd100054a
+cbnz x10, 211b
+.inst 0x910b03ff,0xd65f03c0
 .p2align 6",
         vg_sha512_compress_sha512 = sym super::sha512::vg_sha512_compress_sha512::vg_sha512_compress_sha512,
     )
@@ -155,6 +174,8 @@ pub const VG_SHA384_DIGEST_SHA512_FEATURES: verified_garbage_cpu::Features = ver
 /// Computes the SHA-384 digest of the `len` bytes at `data` (48 bytes, `VG.Spec.Sha512.sha384`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-384 computation with that message.
 ///
 /// Contract: `VG.Spec.Sha512.digestContract` for `VG.Spec.Sha512.sha384`. Constant time: only the pointers and `len` may affect timing, not the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -224,7 +245,16 @@ bl {vg_sha512_compress_sha512}
 .inst 0xf90012a9,0xf9401669,0xdac00d29,0xf90016a9,0x910003f0,0xd2800011,0xa9004611,0xa9014611
 .inst 0xa9024611,0xa9034611,0xa9044611,0xa9054611,0xa9064611,0xa9074611,0xa9084611,0xa9094611
 .inst 0xa90a4611,0xa90b4611,0x910d03f0,0xa9405613,0xa9416616,0xa9426e1a,0xa9437a1c,0x910e03ff
-.inst 0xd65f03c0
+.inst 0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800006,0xd2800007,0xd2800009,0xd280000a
+.inst 0xd280000b,0xd280000c,0xd280000d,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402
+.inst 0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412
+.inst 0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a
+.inst 0x6f00e41b,0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f,0xd2800000,0xd10e03ff
+.inst 0x6f00e41f,0x910003e9,0xd28001ca
+212:
+.inst 0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x91010129,0xd100054a
+cbnz x10, 212b
+.inst 0x910e03ff,0xd65f03c0
 .p2align 6",
         vg_sha512_compress_sha512 = sym super::sha512::vg_sha512_compress_sha512::vg_sha512_compress_sha512,
     )
@@ -234,6 +264,8 @@ bl {vg_sha512_compress_sha512}
 ///
 /// Contract: `VG.Spec.Sha512.finalizeDigestContract` for `VG.Spec.Sha512.H0_384` and `VG.Spec.Sha512.sha384`. Constant time: only the pointers and `count` may affect timing, not the state.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 192 bytes.
@@ -241,11 +273,11 @@ bl {vg_sha512_compress_sha512}
 /// * `count` must be the exact length of the message: messages of 2⁶⁴ bytes or more are not supported.
 /// * The contents of `state` on return are unspecified.
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
-/// * Neither `state` nor `out` may overlap the 1392 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `out` may overlap the 704 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha384_finalize(state: *mut [u8; 192], count: u64, out: *mut [u8; 48]) {
     core::arch::naked_asm!(
-        r".inst 0xd11583ff,0x910003e3,0xf81f0ffe,0xf9014073,0xf9014474,0xf9014875,0xf9014c76,0xf9015077
+        r".inst 0xd10ac3ff,0x910003e3,0xf81f0ffe,0xf9014073,0xf9014474,0xf9014875,0xf9014c76,0xf9015077
 .inst 0xf9015478,0x91000013,0x91000074,0x91000055,0x91000036,0xd2800fe9,0x8a0902d7,0xd2801009
 .inst 0x8b17026c,0x39010189,0x910006f7,0x91003ef8,0xd347ff18
 20:
@@ -282,7 +314,14 @@ cbz x24, 20b
 .inst 0xf9400269,0xdac00d29,0xf90002a9,0xf9400669,0xdac00d29,0xf90006a9,0xf9400a69,0xdac00d29
 .inst 0xf9000aa9,0xf9400e69,0xdac00d29,0xf9000ea9,0xf9401269,0xdac00d29,0xf90012a9,0xf9401669
 .inst 0xdac00d29,0xf90016a9,0xf9414293,0xf9414a95,0xf9414e96,0xf9415297,0xf9415698,0xf9414694
-.inst 0xf84107fe,0x911583ff,0xd65f03c0
+.inst 0xf84107fe,0x910ac3ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005,0xd2800006
+.inst 0xd2800007,0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d,0xd280000e
+.inst 0xd280000f,0xd2800010,0xd2800011,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414
+.inst 0x6f00e415,0x6f00e416,0xea01003f,0xd2800000,0xd10b03ff,0x6f00e41f,0x910003e9,0xd280016a
+211:
+.inst 0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x91010129,0xd100054a
+cbnz x10, 211b
+.inst 0x910b03ff,0xd65f03c0
 .p2align 6",
         vg_sha512_compress = sym super::sha512::vg_sha512_compress::vg_sha512_compress,
     )
@@ -291,6 +330,8 @@ cbz x24, 20b
 /// Computes the SHA-384 digest of the `len` bytes at `data` (48 bytes, `VG.Spec.Sha512.sha384`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-384 computation with that message.
 ///
 /// Contract: `VG.Spec.Sha512.digestContract` for `VG.Spec.Sha512.sha384`. Constant time: only the pointers and `len` may affect timing, not the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -359,7 +400,15 @@ bl {vg_sha512_compress}
 .inst 0xf90012a9,0xf9401669,0xdac00d29,0xf90016a9,0x910003f0,0xd2800011,0xa9004611,0xa9014611
 .inst 0xa9024611,0xa9034611,0xa9044611,0xa9054611,0xa9064611,0xa9074611,0xa9084611,0xa9094611
 .inst 0xa90a4611,0xa90b4611,0x910d03f0,0xa9405613,0xa9416616,0xa9426e1a,0xa9437a1c,0x910e03ff
-.inst 0xd65f03c0
+.inst 0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005,0xd2800006,0xd2800007,0xd2800008
+.inst 0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d,0xd280000e,0xd280000f,0xd2800010
+.inst 0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404,0x6f00e410,0x6f00e411
+.inst 0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416,0xea01003f,0xd2800000,0xd10e03ff
+.inst 0x6f00e41f,0x910003e9,0xd28001ca
+212:
+.inst 0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x91010129,0xd100054a
+cbnz x10, 212b
+.inst 0x910e03ff,0xd65f03c0
 .p2align 6",
         vg_sha512_compress = sym super::sha512::vg_sha512_compress::vg_sha512_compress,
     )
@@ -372,17 +421,19 @@ pub const VG_SHA512_UPDATE_SHA512_FEATURES: verified_garbage_cpu::Features = ver
 ///
 /// Contract: `VG.Spec.Sha512.updateContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 192 bytes.
 /// * `data` must be valid for reads of `len` bytes.
 /// * `state` must not overlap `data` (distinct Rust objects never do).
-/// * Neither `state` nor `data` may overlap the 1392 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `data` may overlap the 704 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha3` target feature.
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha512_update_sha512(state: *mut [u8; 192], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
-        r".inst 0xd11583ff,0x910003e4,0xf81f0ffe,0xf9014093,0xf9014494,0xf9014895,0xf9014c96,0xf9015097
+        r".inst 0xd10ac3ff,0x910003e4,0xf81f0ffe,0xf9014093,0xf9014494,0xf9014895,0xf9014c96,0xf9015097
 .inst 0xf9015498,0x91000013,0x91000094,0x91000055,0x91000076,0xd2800fe9,0x8a090037
 cbz x22, 20f
 22:
@@ -471,8 +522,17 @@ cbnz x22, 22b
 b 21f
 20:
 21:
-.inst 0xf9414293,0xf9414a95,0xf9414e96,0xf9415297,0xf9415698,0xf9414694,0xf84107fe,0x911583ff
-.inst 0xd65f03c0
+.inst 0xf9414293,0xf9414a95,0xf9414e96,0xf9415297,0xf9415698,0xf9414694,0xf84107fe,0x910ac3ff
+.inst 0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800009,0xd280000a,0xd280000b,0xd280000c
+.inst 0xd280000d,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404
+.inst 0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414
+.inst 0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c
+.inst 0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f,0xd2800000,0xd10b03ff,0x6f00e41f,0x910003e9
+.inst 0xd280016a
+233:
+.inst 0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x91010129,0xd100054a
+cbnz x10, 233b
+.inst 0x910b03ff,0xd65f03c0
 .p2align 6",
         vg_sha512_compress_sha512 = sym super::sha512::vg_sha512_compress_sha512::vg_sha512_compress_sha512,
     )
@@ -485,6 +545,8 @@ pub const VG_SHA512_FINALIZE_SHA512_FEATURES: verified_garbage_cpu::Features = v
 ///
 /// Contract: `VG.Spec.Sha512.finalizeContract`. Constant time: only the pointers and `count` may affect timing, not the state.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 192 bytes.
@@ -492,12 +554,12 @@ pub const VG_SHA512_FINALIZE_SHA512_FEATURES: verified_garbage_cpu::Features = v
 /// * `count` must be the exact length of the message: messages of 2⁶⁴ bytes or more are not supported.
 /// * The contents of `state` on return are unspecified.
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
-/// * Neither `state` nor `out` may overlap the 1392 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `out` may overlap the 704 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha3` target feature.
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha512_finalize_sha512(state: *mut [u8; 192], count: u64, out: *mut [u8; 64]) {
     core::arch::naked_asm!(
-        r".inst 0xd11583ff,0x910003e3,0xf81f0ffe,0xf9014073,0xf9014474,0xf9014875,0xf9014c76,0xf9015077
+        r".inst 0xd10ac3ff,0x910003e3,0xf81f0ffe,0xf9014073,0xf9014474,0xf9014875,0xf9014c76,0xf9015077
 .inst 0xf9015478,0x91000013,0x91000074,0x91000055,0x91000036,0xd2800fe9,0x8a0902d7,0xd2801009
 .inst 0x8b17026c,0x39010189,0x910006f7,0x91003ef8,0xd347ff18
 20:
@@ -534,8 +596,16 @@ cbz x24, 20b
 .inst 0xf9400269,0xdac00d29,0xf90002a9,0xf9400669,0xdac00d29,0xf90006a9,0xf9400a69,0xdac00d29
 .inst 0xf9000aa9,0xf9400e69,0xdac00d29,0xf9000ea9,0xf9401269,0xdac00d29,0xf90012a9,0xf9401669
 .inst 0xdac00d29,0xf90016a9,0xf9401a69,0xdac00d29,0xf9001aa9,0xf9401e69,0xdac00d29,0xf9001ea9
-.inst 0xf9414293,0xf9414a95,0xf9414e96,0xf9415297,0xf9415698,0xf9414694,0xf84107fe,0x911583ff
-.inst 0xd65f03c0
+.inst 0xf9414293,0xf9414a95,0xf9414e96,0xf9415297,0xf9415698,0xf9414694,0xf84107fe,0x910ac3ff
+.inst 0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800009,0xd280000b,0xd280000c,0xd280000d
+.inst 0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404,0x6f00e405
+.inst 0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415
+.inst 0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c,0x6f00e41d
+.inst 0x6f00e41e,0x6f00e41f,0xea01003f,0xd2800000,0xd10b03ff,0x6f00e41f,0x910003e9,0xd280016a
+211:
+.inst 0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x91010129,0xd100054a
+cbnz x10, 211b
+.inst 0x910b03ff,0xd65f03c0
 .p2align 6",
         vg_sha512_compress_sha512 = sym super::sha512::vg_sha512_compress_sha512::vg_sha512_compress_sha512,
     )
@@ -547,6 +617,8 @@ pub const VG_SHA512_DIGEST_SHA512_FEATURES: verified_garbage_cpu::Features = ver
 /// Computes the SHA-512 digest of the `len` bytes at `data` (64 bytes, `VG.Spec.Sha512.sha512`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-512 computation with that message.
 ///
 /// Contract: `VG.Spec.Sha512.digestContract` for `VG.Spec.Sha512.sha512`. Constant time: only the pointers and `len` may affect timing, not the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -616,7 +688,17 @@ bl {vg_sha512_compress_sha512}
 .inst 0xf90012a9,0xf9401669,0xdac00d29,0xf90016a9,0xf9401a69,0xdac00d29,0xf9001aa9,0xf9401e69
 .inst 0xdac00d29,0xf9001ea9,0x910003f0,0xd2800011,0xa9004611,0xa9014611,0xa9024611,0xa9034611
 .inst 0xa9044611,0xa9054611,0xa9064611,0xa9074611,0xa9084611,0xa9094611,0xa90a4611,0xa90b4611
-.inst 0x910d03f0,0xa9405613,0xa9416616,0xa9426e1a,0xa9437a1c,0x910e03ff,0xd65f03c0
+.inst 0x910d03f0,0xa9405613,0xa9416616,0xa9426e1a,0xa9437a1c,0x910e03ff,0xd2800001,0xd2800002
+.inst 0xd2800003,0xd2800004,0xd2800006,0xd2800007,0xd2800009,0xd280000a,0xd280000b,0xd280000c
+.inst 0xd280000d,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404
+.inst 0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414
+.inst 0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c
+.inst 0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f,0xd2800000,0xd10e03ff,0x6f00e41f,0x910003e9
+.inst 0xd28001ca
+212:
+.inst 0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x91010129,0xd100054a
+cbnz x10, 212b
+.inst 0x910e03ff,0xd65f03c0
 .p2align 6",
         vg_sha512_compress_sha512 = sym super::sha512::vg_sha512_compress_sha512::vg_sha512_compress_sha512,
     )
@@ -626,16 +708,18 @@ bl {vg_sha512_compress_sha512}
 ///
 /// Contract: `VG.Spec.Sha512.updateContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 192 bytes.
 /// * `data` must be valid for reads of `len` bytes.
 /// * `state` must not overlap `data` (distinct Rust objects never do).
-/// * Neither `state` nor `data` may overlap the 1392 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `data` may overlap the 704 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha512_update(state: *mut [u8; 192], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
-        r".inst 0xd11583ff,0x910003e4,0xf81f0ffe,0xf9014093,0xf9014494,0xf9014895,0xf9014c96,0xf9015097
+        r".inst 0xd10ac3ff,0x910003e4,0xf81f0ffe,0xf9014093,0xf9014494,0xf9014895,0xf9014c96,0xf9015097
 .inst 0xf9015498,0x91000013,0x91000094,0x91000055,0x91000076,0xd2800fe9,0x8a090037
 cbz x22, 20f
 22:
@@ -724,8 +808,15 @@ cbnz x22, 22b
 b 21f
 20:
 21:
-.inst 0xf9414293,0xf9414a95,0xf9414e96,0xf9415297,0xf9415698,0xf9414694,0xf84107fe,0x911583ff
-.inst 0xd65f03c0
+.inst 0xf9414293,0xf9414a95,0xf9414e96,0xf9415297,0xf9415698,0xf9414694,0xf84107fe,0x910ac3ff
+.inst 0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005,0xd2800006,0xd2800007,0xd2800008
+.inst 0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d,0xd280000e,0xd280000f,0xd2800010
+.inst 0xd2800011,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416
+.inst 0xea01003f,0xd2800000,0xd10b03ff,0x6f00e41f,0x910003e9,0xd280016a
+233:
+.inst 0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x91010129,0xd100054a
+cbnz x10, 233b
+.inst 0x910b03ff,0xd65f03c0
 .p2align 6",
         vg_sha512_compress = sym super::sha512::vg_sha512_compress::vg_sha512_compress,
     )
@@ -735,6 +826,8 @@ b 21f
 ///
 /// Contract: `VG.Spec.Sha512.finalizeContract`. Constant time: only the pointers and `count` may affect timing, not the state.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 192 bytes.
@@ -742,11 +835,11 @@ b 21f
 /// * `count` must be the exact length of the message: messages of 2⁶⁴ bytes or more are not supported.
 /// * The contents of `state` on return are unspecified.
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
-/// * Neither `state` nor `out` may overlap the 1392 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `out` may overlap the 704 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha512_finalize(state: *mut [u8; 192], count: u64, out: *mut [u8; 64]) {
     core::arch::naked_asm!(
-        r".inst 0xd11583ff,0x910003e3,0xf81f0ffe,0xf9014073,0xf9014474,0xf9014875,0xf9014c76,0xf9015077
+        r".inst 0xd10ac3ff,0x910003e3,0xf81f0ffe,0xf9014073,0xf9014474,0xf9014875,0xf9014c76,0xf9015077
 .inst 0xf9015478,0x91000013,0x91000074,0x91000055,0x91000036,0xd2800fe9,0x8a0902d7,0xd2801009
 .inst 0x8b17026c,0x39010189,0x910006f7,0x91003ef8,0xd347ff18
 20:
@@ -783,8 +876,15 @@ cbz x24, 20b
 .inst 0xf9400269,0xdac00d29,0xf90002a9,0xf9400669,0xdac00d29,0xf90006a9,0xf9400a69,0xdac00d29
 .inst 0xf9000aa9,0xf9400e69,0xdac00d29,0xf9000ea9,0xf9401269,0xdac00d29,0xf90012a9,0xf9401669
 .inst 0xdac00d29,0xf90016a9,0xf9401a69,0xdac00d29,0xf9001aa9,0xf9401e69,0xdac00d29,0xf9001ea9
-.inst 0xf9414293,0xf9414a95,0xf9414e96,0xf9415297,0xf9415698,0xf9414694,0xf84107fe,0x911583ff
-.inst 0xd65f03c0
+.inst 0xf9414293,0xf9414a95,0xf9414e96,0xf9415297,0xf9415698,0xf9414694,0xf84107fe,0x910ac3ff
+.inst 0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005,0xd2800006,0xd2800007,0xd2800008
+.inst 0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d,0xd280000e,0xd280000f,0xd2800010
+.inst 0xd2800011,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416
+.inst 0xea01003f,0xd2800000,0xd10b03ff,0x6f00e41f,0x910003e9,0xd280016a
+211:
+.inst 0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x91010129,0xd100054a
+cbnz x10, 211b
+.inst 0x910b03ff,0xd65f03c0
 .p2align 6",
         vg_sha512_compress = sym super::sha512::vg_sha512_compress::vg_sha512_compress,
     )
@@ -793,6 +893,8 @@ cbz x24, 20b
 /// Computes the SHA-512 digest of the `len` bytes at `data` (64 bytes, `VG.Spec.Sha512.sha512`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-512 computation with that message.
 ///
 /// Contract: `VG.Spec.Sha512.digestContract` for `VG.Spec.Sha512.sha512`. Constant time: only the pointers and `len` may affect timing, not the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -861,7 +963,16 @@ bl {vg_sha512_compress}
 .inst 0xf90012a9,0xf9401669,0xdac00d29,0xf90016a9,0xf9401a69,0xdac00d29,0xf9001aa9,0xf9401e69
 .inst 0xdac00d29,0xf9001ea9,0x910003f0,0xd2800011,0xa9004611,0xa9014611,0xa9024611,0xa9034611
 .inst 0xa9044611,0xa9054611,0xa9064611,0xa9074611,0xa9084611,0xa9094611,0xa90a4611,0xa90b4611
-.inst 0x910d03f0,0xa9405613,0xa9416616,0xa9426e1a,0xa9437a1c,0x910e03ff,0xd65f03c0
+.inst 0x910d03f0,0xa9405613,0xa9416616,0xa9426e1a,0xa9437a1c,0x910e03ff,0xd2800001,0xd2800002
+.inst 0xd2800003,0xd2800004,0xd2800005,0xd2800006,0xd2800007,0xd2800008,0xd2800009,0xd280000a
+.inst 0xd280000b,0xd280000c,0xd280000d,0xd280000e,0xd280000f,0xd2800010,0xd2800011,0x6f00e400
+.inst 0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413
+.inst 0x6f00e414,0x6f00e415,0x6f00e416,0xea01003f,0xd2800000,0xd10e03ff,0x6f00e41f,0x910003e9
+.inst 0xd28001ca
+212:
+.inst 0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x91010129,0xd100054a
+cbnz x10, 212b
+.inst 0x910e03ff,0xd65f03c0
 .p2align 6",
         vg_sha512_compress = sym super::sha512::vg_sha512_compress::vg_sha512_compress,
     )
@@ -874,6 +985,8 @@ pub const VG_SHA512_224_FINALIZE_SHA512_FEATURES: verified_garbage_cpu::Features
 ///
 /// Contract: `VG.Spec.Sha512.finalizeDigestContract` for `VG.Spec.Sha512.H0_512_224` and `VG.Spec.Sha512.sha512_224`. Constant time: only the pointers and `count` may affect timing, not the state.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 192 bytes.
@@ -881,12 +994,12 @@ pub const VG_SHA512_224_FINALIZE_SHA512_FEATURES: verified_garbage_cpu::Features
 /// * `count` must be the exact length of the message: messages of 2⁶⁴ bytes or more are not supported.
 /// * The contents of `state` on return are unspecified.
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
-/// * Neither `state` nor `out` may overlap the 1392 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `out` may overlap the 704 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha3` target feature.
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha512_224_finalize_sha512(state: *mut [u8; 192], count: u64, out: *mut [u8; 28]) {
     core::arch::naked_asm!(
-        r".inst 0xd11583ff,0x910003e3,0xf81f0ffe,0xf9014073,0xf9014474,0xf9014875,0xf9014c76,0xf9015077
+        r".inst 0xd10ac3ff,0x910003e3,0xf81f0ffe,0xf9014073,0xf9014474,0xf9014875,0xf9014c76,0xf9015077
 .inst 0xf9015478,0x91000013,0x91000074,0x91000055,0x91000036,0xd2800fe9,0x8a0902d7,0xd2801009
 .inst 0x8b17026c,0x39010189,0x910006f7,0x91003ef8,0xd347ff18
 20:
@@ -922,7 +1035,16 @@ bl {vg_sha512_compress_sha512}
 cbz x24, 20b
 .inst 0xf9400269,0xdac00d29,0xf90002a9,0xf9400669,0xdac00d29,0xf90006a9,0xf9400a69,0xdac00d29
 .inst 0xf9000aa9,0xb9401e69,0x5ac00929,0xb9001aa9,0xf9414293,0xf9414a95,0xf9414e96,0xf9415297
-.inst 0xf9415698,0xf9414694,0xf84107fe,0x911583ff,0xd65f03c0
+.inst 0xf9415698,0xf9414694,0xf84107fe,0x910ac3ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004
+.inst 0xd2800009,0xd280000b,0xd280000c,0xd280000d,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401
+.inst 0x6f00e402,0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411
+.inst 0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419
+.inst 0x6f00e41a,0x6f00e41b,0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f,0xd2800000
+.inst 0xd10b03ff,0x6f00e41f,0x910003e9,0xd280016a
+211:
+.inst 0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x91010129,0xd100054a
+cbnz x10, 211b
+.inst 0x910b03ff,0xd65f03c0
 .p2align 6",
         vg_sha512_compress_sha512 = sym super::sha512::vg_sha512_compress_sha512::vg_sha512_compress_sha512,
     )
@@ -934,6 +1056,8 @@ pub const VG_SHA512_224_DIGEST_SHA512_FEATURES: verified_garbage_cpu::Features =
 /// Computes the SHA-512/224 digest of the `len` bytes at `data` (28 bytes, `VG.Spec.Sha512.sha512_224`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-512/224 computation with that message.
 ///
 /// Contract: `VG.Spec.Sha512.digestContract` for `VG.Spec.Sha512.sha512_224`. Constant time: only the pointers and `len` may affect timing, not the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1002,7 +1126,16 @@ bl {vg_sha512_compress_sha512}
 .inst 0xf9400a69,0xdac00d29,0xf9000aa9,0xb9401e69,0x5ac00929,0xb9001aa9,0x910003f0,0xd2800011
 .inst 0xa9004611,0xa9014611,0xa9024611,0xa9034611,0xa9044611,0xa9054611,0xa9064611,0xa9074611
 .inst 0xa9084611,0xa9094611,0xa90a4611,0xa90b4611,0x910d03f0,0xa9405613,0xa9416616,0xa9426e1a
-.inst 0xa9437a1c,0x910e03ff,0xd65f03c0
+.inst 0xa9437a1c,0x910e03ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800006,0xd2800007
+.inst 0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d,0xd2800010,0xd2800011,0x6f00e400
+.inst 0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410
+.inst 0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418
+.inst 0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f
+.inst 0xd2800000,0xd10e03ff,0x6f00e41f,0x910003e9,0xd28001ca
+212:
+.inst 0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x91010129,0xd100054a
+cbnz x10, 212b
+.inst 0x910e03ff,0xd65f03c0
 .p2align 6",
         vg_sha512_compress_sha512 = sym super::sha512::vg_sha512_compress_sha512::vg_sha512_compress_sha512,
     )
@@ -1012,6 +1145,8 @@ bl {vg_sha512_compress_sha512}
 ///
 /// Contract: `VG.Spec.Sha512.finalizeDigestContract` for `VG.Spec.Sha512.H0_512_224` and `VG.Spec.Sha512.sha512_224`. Constant time: only the pointers and `count` may affect timing, not the state.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 192 bytes.
@@ -1019,11 +1154,11 @@ bl {vg_sha512_compress_sha512}
 /// * `count` must be the exact length of the message: messages of 2⁶⁴ bytes or more are not supported.
 /// * The contents of `state` on return are unspecified.
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
-/// * Neither `state` nor `out` may overlap the 1392 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `out` may overlap the 704 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha512_224_finalize(state: *mut [u8; 192], count: u64, out: *mut [u8; 28]) {
     core::arch::naked_asm!(
-        r".inst 0xd11583ff,0x910003e3,0xf81f0ffe,0xf9014073,0xf9014474,0xf9014875,0xf9014c76,0xf9015077
+        r".inst 0xd10ac3ff,0x910003e3,0xf81f0ffe,0xf9014073,0xf9014474,0xf9014875,0xf9014c76,0xf9015077
 .inst 0xf9015478,0x91000013,0x91000074,0x91000055,0x91000036,0xd2800fe9,0x8a0902d7,0xd2801009
 .inst 0x8b17026c,0x39010189,0x910006f7,0x91003ef8,0xd347ff18
 20:
@@ -1059,7 +1194,15 @@ bl {vg_sha512_compress}
 cbz x24, 20b
 .inst 0xf9400269,0xdac00d29,0xf90002a9,0xf9400669,0xdac00d29,0xf90006a9,0xf9400a69,0xdac00d29
 .inst 0xf9000aa9,0xb9401e69,0x5ac00929,0xb9001aa9,0xf9414293,0xf9414a95,0xf9414e96,0xf9415297
-.inst 0xf9415698,0xf9414694,0xf84107fe,0x911583ff,0xd65f03c0
+.inst 0xf9415698,0xf9414694,0xf84107fe,0x910ac3ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004
+.inst 0xd2800005,0xd2800006,0xd2800007,0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c
+.inst 0xd280000d,0xd280000e,0xd280000f,0xd2800010,0xd2800011,0x6f00e410,0x6f00e411,0x6f00e412
+.inst 0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416,0xea01003f,0xd2800000,0xd10b03ff,0x6f00e41f
+.inst 0x910003e9,0xd280016a
+211:
+.inst 0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x91010129,0xd100054a
+cbnz x10, 211b
+.inst 0x910b03ff,0xd65f03c0
 .p2align 6",
         vg_sha512_compress = sym super::sha512::vg_sha512_compress::vg_sha512_compress,
     )
@@ -1068,6 +1211,8 @@ cbz x24, 20b
 /// Computes the SHA-512/224 digest of the `len` bytes at `data` (28 bytes, `VG.Spec.Sha512.sha512_224`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-512/224 computation with that message.
 ///
 /// Contract: `VG.Spec.Sha512.digestContract` for `VG.Spec.Sha512.sha512_224`. Constant time: only the pointers and `len` may affect timing, not the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1135,7 +1280,15 @@ bl {vg_sha512_compress}
 .inst 0xf9400a69,0xdac00d29,0xf9000aa9,0xb9401e69,0x5ac00929,0xb9001aa9,0x910003f0,0xd2800011
 .inst 0xa9004611,0xa9014611,0xa9024611,0xa9034611,0xa9044611,0xa9054611,0xa9064611,0xa9074611
 .inst 0xa9084611,0xa9094611,0xa90a4611,0xa90b4611,0x910d03f0,0xa9405613,0xa9416616,0xa9426e1a
-.inst 0xa9437a1c,0x910e03ff,0xd65f03c0
+.inst 0xa9437a1c,0x910e03ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005,0xd2800006
+.inst 0xd2800007,0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d,0xd280000e
+.inst 0xd280000f,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404
+.inst 0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416,0xea01003f
+.inst 0xd2800000,0xd10e03ff,0x6f00e41f,0x910003e9,0xd28001ca
+212:
+.inst 0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x91010129,0xd100054a
+cbnz x10, 212b
+.inst 0x910e03ff,0xd65f03c0
 .p2align 6",
         vg_sha512_compress = sym super::sha512::vg_sha512_compress::vg_sha512_compress,
     )
@@ -1148,6 +1301,8 @@ pub const VG_SHA512_256_FINALIZE_SHA512_FEATURES: verified_garbage_cpu::Features
 ///
 /// Contract: `VG.Spec.Sha512.finalizeDigestContract` for `VG.Spec.Sha512.H0_512_256` and `VG.Spec.Sha512.sha512_256`. Constant time: only the pointers and `count` may affect timing, not the state.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 192 bytes.
@@ -1155,12 +1310,12 @@ pub const VG_SHA512_256_FINALIZE_SHA512_FEATURES: verified_garbage_cpu::Features
 /// * `count` must be the exact length of the message: messages of 2⁶⁴ bytes or more are not supported.
 /// * The contents of `state` on return are unspecified.
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
-/// * Neither `state` nor `out` may overlap the 1392 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `out` may overlap the 704 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha3` target feature.
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha512_256_finalize_sha512(state: *mut [u8; 192], count: u64, out: *mut [u8; 32]) {
     core::arch::naked_asm!(
-        r".inst 0xd11583ff,0x910003e3,0xf81f0ffe,0xf9014073,0xf9014474,0xf9014875,0xf9014c76,0xf9015077
+        r".inst 0xd10ac3ff,0x910003e3,0xf81f0ffe,0xf9014073,0xf9014474,0xf9014875,0xf9014c76,0xf9015077
 .inst 0xf9015478,0x91000013,0x91000074,0x91000055,0x91000036,0xd2800fe9,0x8a0902d7,0xd2801009
 .inst 0x8b17026c,0x39010189,0x910006f7,0x91003ef8,0xd347ff18
 20:
@@ -1196,7 +1351,16 @@ bl {vg_sha512_compress_sha512}
 cbz x24, 20b
 .inst 0xf9400269,0xdac00d29,0xf90002a9,0xf9400669,0xdac00d29,0xf90006a9,0xf9400a69,0xdac00d29
 .inst 0xf9000aa9,0xf9400e69,0xdac00d29,0xf9000ea9,0xf9414293,0xf9414a95,0xf9414e96,0xf9415297
-.inst 0xf9415698,0xf9414694,0xf84107fe,0x911583ff,0xd65f03c0
+.inst 0xf9415698,0xf9414694,0xf84107fe,0x910ac3ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004
+.inst 0xd2800009,0xd280000b,0xd280000c,0xd280000d,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401
+.inst 0x6f00e402,0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411
+.inst 0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419
+.inst 0x6f00e41a,0x6f00e41b,0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f,0xd2800000
+.inst 0xd10b03ff,0x6f00e41f,0x910003e9,0xd280016a
+211:
+.inst 0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x91010129,0xd100054a
+cbnz x10, 211b
+.inst 0x910b03ff,0xd65f03c0
 .p2align 6",
         vg_sha512_compress_sha512 = sym super::sha512::vg_sha512_compress_sha512::vg_sha512_compress_sha512,
     )
@@ -1208,6 +1372,8 @@ pub const VG_SHA512_256_DIGEST_SHA512_FEATURES: verified_garbage_cpu::Features =
 /// Computes the SHA-512/256 digest of the `len` bytes at `data` (32 bytes, `VG.Spec.Sha512.sha512_256`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-512/256 computation with that message.
 ///
 /// Contract: `VG.Spec.Sha512.digestContract` for `VG.Spec.Sha512.sha512_256`. Constant time: only the pointers and `len` may affect timing, not the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1276,7 +1442,16 @@ bl {vg_sha512_compress_sha512}
 .inst 0xf9400a69,0xdac00d29,0xf9000aa9,0xf9400e69,0xdac00d29,0xf9000ea9,0x910003f0,0xd2800011
 .inst 0xa9004611,0xa9014611,0xa9024611,0xa9034611,0xa9044611,0xa9054611,0xa9064611,0xa9074611
 .inst 0xa9084611,0xa9094611,0xa90a4611,0xa90b4611,0x910d03f0,0xa9405613,0xa9416616,0xa9426e1a
-.inst 0xa9437a1c,0x910e03ff,0xd65f03c0
+.inst 0xa9437a1c,0x910e03ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800006,0xd2800007
+.inst 0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d,0xd2800010,0xd2800011,0x6f00e400
+.inst 0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410
+.inst 0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418
+.inst 0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f
+.inst 0xd2800000,0xd10e03ff,0x6f00e41f,0x910003e9,0xd28001ca
+212:
+.inst 0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x91010129,0xd100054a
+cbnz x10, 212b
+.inst 0x910e03ff,0xd65f03c0
 .p2align 6",
         vg_sha512_compress_sha512 = sym super::sha512::vg_sha512_compress_sha512::vg_sha512_compress_sha512,
     )
@@ -1286,6 +1461,8 @@ bl {vg_sha512_compress_sha512}
 ///
 /// Contract: `VG.Spec.Sha512.finalizeDigestContract` for `VG.Spec.Sha512.H0_512_256` and `VG.Spec.Sha512.sha512_256`. Constant time: only the pointers and `count` may affect timing, not the state.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 192 bytes.
@@ -1293,11 +1470,11 @@ bl {vg_sha512_compress_sha512}
 /// * `count` must be the exact length of the message: messages of 2⁶⁴ bytes or more are not supported.
 /// * The contents of `state` on return are unspecified.
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
-/// * Neither `state` nor `out` may overlap the 1392 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `out` may overlap the 704 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha512_256_finalize(state: *mut [u8; 192], count: u64, out: *mut [u8; 32]) {
     core::arch::naked_asm!(
-        r".inst 0xd11583ff,0x910003e3,0xf81f0ffe,0xf9014073,0xf9014474,0xf9014875,0xf9014c76,0xf9015077
+        r".inst 0xd10ac3ff,0x910003e3,0xf81f0ffe,0xf9014073,0xf9014474,0xf9014875,0xf9014c76,0xf9015077
 .inst 0xf9015478,0x91000013,0x91000074,0x91000055,0x91000036,0xd2800fe9,0x8a0902d7,0xd2801009
 .inst 0x8b17026c,0x39010189,0x910006f7,0x91003ef8,0xd347ff18
 20:
@@ -1333,7 +1510,15 @@ bl {vg_sha512_compress}
 cbz x24, 20b
 .inst 0xf9400269,0xdac00d29,0xf90002a9,0xf9400669,0xdac00d29,0xf90006a9,0xf9400a69,0xdac00d29
 .inst 0xf9000aa9,0xf9400e69,0xdac00d29,0xf9000ea9,0xf9414293,0xf9414a95,0xf9414e96,0xf9415297
-.inst 0xf9415698,0xf9414694,0xf84107fe,0x911583ff,0xd65f03c0
+.inst 0xf9415698,0xf9414694,0xf84107fe,0x910ac3ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004
+.inst 0xd2800005,0xd2800006,0xd2800007,0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c
+.inst 0xd280000d,0xd280000e,0xd280000f,0xd2800010,0xd2800011,0x6f00e410,0x6f00e411,0x6f00e412
+.inst 0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416,0xea01003f,0xd2800000,0xd10b03ff,0x6f00e41f
+.inst 0x910003e9,0xd280016a
+211:
+.inst 0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x91010129,0xd100054a
+cbnz x10, 211b
+.inst 0x910b03ff,0xd65f03c0
 .p2align 6",
         vg_sha512_compress = sym super::sha512::vg_sha512_compress::vg_sha512_compress,
     )
@@ -1342,6 +1527,8 @@ cbz x24, 20b
 /// Computes the SHA-512/256 digest of the `len` bytes at `data` (32 bytes, `VG.Spec.Sha512.sha512_256`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-512/256 computation with that message.
 ///
 /// Contract: `VG.Spec.Sha512.digestContract` for `VG.Spec.Sha512.sha512_256`. Constant time: only the pointers and `len` may affect timing, not the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1409,7 +1596,15 @@ bl {vg_sha512_compress}
 .inst 0xf9400a69,0xdac00d29,0xf9000aa9,0xf9400e69,0xdac00d29,0xf9000ea9,0x910003f0,0xd2800011
 .inst 0xa9004611,0xa9014611,0xa9024611,0xa9034611,0xa9044611,0xa9054611,0xa9064611,0xa9074611
 .inst 0xa9084611,0xa9094611,0xa90a4611,0xa90b4611,0x910d03f0,0xa9405613,0xa9416616,0xa9426e1a
-.inst 0xa9437a1c,0x910e03ff,0xd65f03c0
+.inst 0xa9437a1c,0x910e03ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005,0xd2800006
+.inst 0xd2800007,0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d,0xd280000e
+.inst 0xd280000f,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404
+.inst 0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416,0xea01003f
+.inst 0xd2800000,0xd10e03ff,0x6f00e41f,0x910003e9,0xd28001ca
+212:
+.inst 0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x91010129,0xd100054a
+cbnz x10, 212b
+.inst 0x910e03ff,0xd65f03c0
 .p2align 6",
         vg_sha512_compress = sym super::sha512::vg_sha512_compress::vg_sha512_compress,
     )

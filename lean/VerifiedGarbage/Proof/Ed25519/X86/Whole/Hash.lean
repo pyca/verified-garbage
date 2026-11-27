@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Ed25519.X86.Whole.Layout
 import VerifiedGarbage.Proof.Sha512.X86.Stream.Init
-import VerifiedGarbage.Proof.Sha512.X86.Stream.Finalize
 public import VerifiedGarbage.Spec.Ed25519.Contract
 public import VerifiedGarbage.Spec.Sha512.Contract
 public import VerifiedGarbage.Proof.Sha512.X86.Compress
@@ -68,7 +67,7 @@ theorem init_call (hc : Ctx E g m₀ rd wr t) (hE : 24 ≤ E.toNat)
     (hcov : Covers (rd' ++ wr') (rd ++ FR E :: wr))
     (hw : ∀ r ∈ wr', Within r (FR E) ∨ ∃ R ∈ wr, Within r R)
     {scr : BitVec 32} (ha : arg t.callEntry 0 = scr) :
-    WP isa (.call Spec.Sha512.init512Api.name (init Spec.Sha512.H0_512)) t fun u =>
+    WP isa (.call (Spec.Sha512.init512Api.name ++ "_core") (init Spec.Sha512.H0_512)) t fun u =>
       Ctx E g m₀ rd wr u ∧ Frame (wr' ++ [below E 24]) t.mem u.mem ∧
       Spec.Sha512.Repr Spec.Sha512.H0_512 u.mem (scr.setWidth 64) [] := by
   refine call_ok hc hE (Proof.Sha512.X86.Stream.init_verified _).1 init_nosp

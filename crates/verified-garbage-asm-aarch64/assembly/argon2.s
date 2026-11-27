@@ -1674,5 +1674,41 @@ vg_argon2:
 	ldr x21, [sp], #16
 	ldr x20, [sp], #16
 	ldr x19, [sp], #16
+	movz x1, #0, lsl #0
+	movz x2, #0, lsl #0
+	movz x3, #0, lsl #0
+	movz x4, #0, lsl #0
+	movz x5, #0, lsl #0
+	movz x6, #0, lsl #0
+	movz x7, #0, lsl #0
+	movz x8, #0, lsl #0
+	movz x9, #0, lsl #0
+	movz x10, #0, lsl #0
+	movz x11, #0, lsl #0
+	movz x12, #0, lsl #0
+	movz x13, #0, lsl #0
+	movz x14, #0, lsl #0
+	movz x15, #0, lsl #0
+	movz x16, #0, lsl #0
+	movz x17, #0, lsl #0
+	movi v0.2d, #0
+	movi v1.2d, #0
+	movi v16.2d, #0
+	tst x1, x1
+	movz x0, #0, lsl #0
+	sub sp, sp, #400
+	movi v31.2d, #0
+	add x9, sp, #0
+	movz x10, #6, lsl #0
+233:
+	str q31, [x9, #0]
+	str q31, [x9, #16]
+	str q31, [x9, #32]
+	str q31, [x9, #48]
+	add x9, x9, #64
+	sub x10, x10, #1
+	cbnz x10, 233b
+	str q31, [x9, #0]
+	add sp, sp, #400
 	ret
 	.p2align 6

@@ -1,25 +1,27 @@
 module
 
-public import VerifiedGarbage.Proof.Cast5.Arm.EcbVerified
-public import VerifiedGarbage.Proof.Cast5.Arm.KeyVerified
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.Arm.Print
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Cast5.Contract
+import VerifiedGarbage.Proof.Cast5.Arm.Scrub
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # CAST5 (RFC 2144) on ARMv7 -/
 
-@[expose] public section
-
 namespace VG.Artifacts.Cast5.Arm
 
-def artifacts : List Artifact := [
+public def artifacts : List (Artifact Arm.target) := [
   Spec.Cast5.expandKeyApi.artifact Arm.target {
-    code := Impl.Cast5.Arm.expandKey
-    verified := Proof.Cast5.Arm.expandKey_verified },
+    code := Impl.Cast5.Arm.Fn.expandKey
+    verified := Proof.Cast5.Arm.Fn.expandKey },
   Spec.Cast5.ecbEncryptApi.artifact Arm.target {
-    code := Impl.Cast5.Arm.ecbEncrypt
-    verified := Proof.Cast5.ecbEncrypt_keyed Proof.Cast5.Arm.ecbEncrypt_verified },
+    code := Impl.Cast5.Arm.Fn.ecbEncrypt
+    verified := Proof.Cast5.Arm.Fn.ecbEncrypt },
   Spec.Cast5.ecbDecryptApi.artifact Arm.target {
-    code := Impl.Cast5.Arm.ecbDecrypt
-    verified := Proof.Cast5.ecbDecrypt_keyed Proof.Cast5.Arm.ecbDecrypt_verified }]
+    code := Impl.Cast5.Arm.Fn.ecbDecrypt
+    verified := Proof.Cast5.Arm.Fn.ecbDecrypt }]
+
+spec_apis artifacts
 
 end VG.Artifacts.Cast5.Arm

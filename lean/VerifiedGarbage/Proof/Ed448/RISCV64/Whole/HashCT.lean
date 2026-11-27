@@ -10,7 +10,7 @@ import VerifiedGarbage.Proof.Sha3.RISCV64.Stream.CallsCT
 /-!
 # Ed448's whole functions on RISC-V: the hash in constant time
 
-As on PPC64LE (`Proof/Ed448/PPC64LE/Whole/HashCT.lean`): two runs of
+As on PPC64LE (`Proof/Ed448/PPC64LE/Whole/SignNonce.lean`): two runs of
 `hash` from states that agree on the registers it reads (`hashRegs`) and on
 the stack pointer leak the same trace (`hash_ct`). The sponge functions save
 and restore registers in their working space, which a taint analysis would

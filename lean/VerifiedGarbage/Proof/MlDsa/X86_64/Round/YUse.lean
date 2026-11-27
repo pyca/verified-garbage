@@ -4,14 +4,14 @@ import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Round.YBits
 import VerifiedGarbage.Proof.MlDsa.X86_64.Round.UseHint
 import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YBase
-import VerifiedGarbage.Proof.MlDsa.X86_64.Round.OneOut
+import VerifiedGarbage.Proof.MlDsa.X86_64.Round.Bits
 import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VLay
 import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Round.YBits
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Round.UseHint
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YBase
-meta import VerifiedGarbage.Proof.MlDsa.X86_64.Round.OneOut
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Round.Bits
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VLay
 meta import VerifiedGarbage.Proof.Framework.Offset
 

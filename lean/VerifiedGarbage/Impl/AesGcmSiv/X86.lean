@@ -1,6 +1,10 @@
 module
 
 public import VerifiedGarbage.Impl.AesGcm.X86
+public import VerifiedGarbage.Impl.Aes.X86.AesNi
+public import VerifiedGarbage.Impl.Gcm.X86.Pclmul
+public import VerifiedGarbage.Impl.Scrub.X86
+public import VerifiedGarbage.Impl.StackScratch.X86
 
 /-!
 # AES-GCM-SIV: x86 (32-bit) implementation
@@ -24,14 +28,25 @@ x86's AES-GCM's (`Impl/AesGcm/X86.lean`):
   `vg_ghash` absorbs them (`chunk`). The last bytes of a string, padded
   with zeros, and the lengths block are put in the block at `W + 224` and
   absorbed the same way (`absorb`, `lens`); the result is read back
-  reversed (`tagIn`).
+  reversed (`tagIn`). The copies are made a word at a time (`revLoop`), but
+  over the implementation of `vg_ghash` with PCLMULQDQ, whose code has
+  `pshufb`, a block at a time by `pshufb` with the mask that code builds,
+  in `xmm0` (`revShuf`).
 * The tag is `vg_aes_ctr32_to` of the tag input on a zero block (`tag`).
 * Counter mode (§4) increments the first 4 bytes of the counter block, as a
   little-endian number, which `vg_aes_ctr32_to` (which increments the last 4,
   big-endian) does not: each block is encrypted by a call of its own from a
   copy of the counter block, which is then incremented (`cryptBlock`); the
   last bytes are XORed with a keystream block computed as a tag is
-  (`cryptTail`).
+  (`cryptTail`). Over the AES-NI implementation of `vg_aes_ctr32_to` the
+  whole blocks make no call (`niBlocks`): the counter block's first word is
+  kept in `edx` and zeroed in the block at `W + 96`, each counter block is
+  that word ORed into those 16 bytes in a register, enciphered there with
+  the round keys loaded from the schedule (`Impl.Aes.X86.AesNi.aes`) and
+  XORed into the block of the data; the word is stored back after the last.
+  Six blocks a turn while six are left (`niSix`: six counter blocks in
+  `xmm0`–`xmm5`, each round key applied to the six, as
+  `vg_aes_ctr32_to_aesni` does), then one a turn (`niBlock`).
 * `open` decrypts first, computes the tag of the plaintext at `W + 240` and
   compares it with the received one without a branch (`cmp`), then ANDs
   every byte of the data with `0 − ok` (`mask`).
@@ -77,7 +92,7 @@ is right) affect timing.
 namespace VG.Impl.AesGcmSiv.X86
 
 open VG.X86
-open VG.Impl.AesGcm.X86 (at_ imm slot argOp keep entry restore zero4 copyLoop xorLoop Callees ctrCall ghCall
+open VG.Impl.AesGcm.X86 (at_ imm slot argOp keep entry restore zero4 copyLoop xorLoop maskWords Callees ctrCall ghCall
   keyCall)
 
 abbrev tagO : Nat := 0
@@ -202,6 +217,25 @@ def revLoop : Prog isa :=
     .bswap .eax, .store (at_ .edx 8) .eax, .mov .eax (.mem (at_ .esi 0)), .bswap .eax, .store (at_ .edx 12) .eax,
     .alu .add .esi (imm 16), .alu .add .edx (imm 16), .alu .sub .ecx (imm 1)]) .ne
 
+/-- One block of `revShuf`. -/
+def shufBody : List Instr :=
+  [.movdquLoad .xmm7 (Impl.Gcm.X86.Pclmul.at_ .esi 0), .xop (.bin .pshufb .xmm7 .xmm0),
+   .movdquStore (at_ .edx 0) .xmm7, .alu .add .esi (imm 16), .alu .add .edx (imm 16), .alu .sub .ecx (imm 1)]
+
+/-- As `revLoop`, with `pshufb`: the mask that reverses 16 bytes in `xmm0`
+(built in `eax` and `xmm5`, as `vg_ghash` builds it), then each block
+loaded, shuffled and stored. -/
+def revShuf : Prog isa :=
+  .seq (.block (Impl.Gcm.X86.Pclmul.const .xmm0 Impl.Gcm.X86.Pclmul.revMask)) (.loop (.block shufBody) .ne)
+
+/-- Whether `vg_ghash` is the implementation with PCLMULQDQ, whose code has
+`pshufb` (SSSE3): the copies are then `revShuf`'s. -/
+def shuffles : Bool := c.gh.name == "vg_ghash_pclmul"
+
+/-- The `ecx` (at least 1) blocks at `esi` copied to `edx`, the bytes of
+each reversed, advancing both: with `pshufb` where `vg_ghash` has it. -/
+def rev : Prog isa := if shuffles c then revShuf else revLoop
+
 /-- After the copies: `W + nO` past the blocks, and the arguments of
 `vg_ghash`. -/
 def chunkArgs : List Instr :=
@@ -213,14 +247,14 @@ def chunkArgs : List Instr :=
 /-- Up to 64 of the whole blocks of the `nO` bytes at `esi` reversed at
 `W + 768`, `esi` and `nO` past them, and the arguments of `vg_ghash`. -/
 def chunkPre : Prog isa :=
-  .seq (chunkLen) (.seq (.block [.mov .edx (.reg .ebp), .alu .add .edx (imm revO)]) (.seq revLoop (.block chunkArgs)))
+  .seq (chunkLen) (.seq (.block [.mov .edx (.reg .ebp), .alu .add .edx (imm revO)]) (.seq (rev c) (.block chunkArgs)))
 
 /-- ZF set iff fewer than 16 of the `nO` bytes are left. -/
 def wholeLeft : List Instr := [.mov .ecx (slot nO), .shift .shr .ecx 4, .alu .test .ecx (.reg .ecx)]
 
 /-- Up to 64 of the whole blocks of the `nO` bytes at `esi`, reversed and
 absorbed; `esi` and `nO` past them, and ZF set if no whole block is left. -/
-def chunk : Prog isa := .seq (chunkPre) (.seq (callGh c) (.block wholeLeft))
+def chunk : Prog isa := .seq (chunkPre c) (.seq (callGh c) (.block wholeLeft))
 
 /-- ZF set iff no byte is left. -/
 def anyLeft : List Instr := [.mov .ecx (slot nO), .alu .test .ecx (.reg .ecx)]
@@ -314,6 +348,67 @@ then incremented; `esi` and `nO` past it, and ZF set if no whole block is
 left. -/
 def cryptBlock : Prog isa := .seq (.block blockArgs) (.seq (callCtr c) (.block blockNext))
 
+/-- For the whole blocks with AES-NI: the counter block's first word in `edx`
+and zeroed at `W + 96`, the encryption key's schedule in `eax`, `rounds` in
+`ecx` and the number of bytes left in `edi`. -/
+def niPre : List Instr :=
+  [.mov .edx (slot cbO), .mov .eax (imm 0), .store (at_ .ebp cbO) .eax, .mov .eax (.reg .ebp),
+   .alu .add .eax (imm skO), .mov .ecx (slot roundsO), .mov .edi (slot nO)]
+
+/-- One block with AES-NI: the counter block, `edx` ORed into the 16 bytes
+at `W + 96`, in `xmm0`, enciphered there (the round keys through `xmm6`) and
+XORed into the block at `esi` (through `xmm7`), in place; the counter, `esi`
+and the bytes left past the block, and CF set if no whole block is left. -/
+def niBlock : Prog isa :=
+  .seq (.block [.movdquLoad .xmm7 (at_ .ebp cbO), .xop (.movd .xmm0 .edx), .xop (.bin .por .xmm0 .xmm7)])
+    (.seq (Impl.Aes.X86.AesNi.aes [.xmm0])
+      (.block [.movdquLoad .xmm7 (at_ .esi 0), .xop (.bin .pxor .xmm0 .xmm7), .movdquStore (at_ .esi 0) .xmm0,
+        .alu .add .edx (imm 1), .alu .add .esi (imm 16), .alu .sub .edi (imm 16), .alu .cmp .edi (imm 16)]))
+
+/-- The registers of the six counter blocks of a turn. -/
+def niRegs : List XReg := [.xmm0, .xmm1, .xmm2, .xmm3, .xmm4, .xmm5]
+
+/-- A counter block in each register of `regs`: `edx`, which is then
+incremented, ORed into the 16 bytes at `W + 96`, which `xmm7` holds. -/
+def niCtrs : List XReg → List Instr
+  | [] => []
+  | b :: bs => ([.xop (.movd b .edx), .xop (.bin .por b .xmm7), .alu .add .edx (imm 1)] : List Instr) ++ niCtrs bs
+
+/-- Six blocks with AES-NI: their counter blocks in `xmm0`–`xmm5`, enciphered
+together (each round key, through `xmm6`, applied to the six) and XORed into
+the six blocks at `esi` (through `xmm7`), in place; the counter, `esi` and
+the bytes left past them, and CF set if fewer than six whole blocks are
+left. -/
+def niSix : Prog isa :=
+  .seq (.block (.movdquLoad .xmm7 (at_ .ebp cbO) :: niCtrs niRegs))
+    (.seq (Impl.Aes.X86.AesNi.aes niRegs)
+      (.block (Impl.Aes.X86.AesNi.xorData .esi niRegs 0 ++
+        ([.alu .add .esi (imm 96), .alu .sub .edi (imm 96), .alu .cmp .edi (imm 96)] : List Instr))))
+
+/-- The counter block's first word stored back, and the bytes left at
+`W + nO`. -/
+def niPost : List Instr := [.store (at_ .ebp cbO) .edx, .store (at_ .ebp nO) .edi]
+
+/-- The whole blocks (at least one) of the `nO` bytes at `esi` encrypted in
+place with AES-NI, six at a time while six are left and then one at a time,
+the counter block incremented for each; `esi` and `nO` past them. -/
+def niBlocks : Prog isa :=
+  .seq (.block niPre)
+  (.seq (.block [.alu .cmp .edi (imm 96)])
+  (.seq (.ite .b (.block []) (.loop niSix .ae))
+  (.seq (.block [.alu .cmp .edi (imm 16)])
+  (.seq (.ite .b (.block []) (.loop niBlock .ae)) (.block niPost)))))
+
+/-- `c`'s `vg_aes_ctr32_to` is the AES-NI implementation, with which the
+whole blocks of counter mode are enciphered in line. -/
+def hardware : Bool := c.ctr.name == "vg_aes_ctr32_to_aesni"
+
+/-- The whole blocks (at least one) of the `nO` bytes at `esi` encrypted in
+place from the counter block, which is incremented for each; `esi` and `nO`
+past them: with AES-NI in line, otherwise a call of `vg_aes_ctr32_to` a
+block. -/
+def blocks : Prog isa := if hardware c then niBlocks else .loop (cryptBlock c) .ne
+
 /-- The last `nO` (1 to 15) bytes at `esi` XORed with a keystream block,
 computed at `W + 224`. -/
 def cryptTail : Prog isa :=
@@ -324,7 +419,7 @@ def cryptTail : Prog isa :=
 top bit of its last byte set. -/
 def crypt : Prog isa :=
   .seq (.block cryptHead)
-  (.seq (.ite .e (.block []) (.loop (cryptBlock c) .ne))
+  (.seq (.ite .e (.block []) (blocks c))
   (.seq (.block anyLeft) (.ite .e (.block []) (cryptTail c))))
 
 end
@@ -339,13 +434,17 @@ def cmp : List Instr :=
    .alu .or .eax (.reg .ecx), .mov .ecx (slot (tagO + 12)), .alu .xor .ecx (slot (t2O + 12)),
    .alu .or .eax (.reg .ecx), .alu .cmp .eax (imm 1), .mov .eax (imm 0), .alu .adc .eax (imm 0)]
 
-/-- Every byte of the data ANDed with `0 − eax`, with `eax` kept. -/
+/-- Every byte of the data ANDed with `0 − eax`, with `eax` kept: 16 at a
+time, then four at a time (`maskWords`), then one at a time. -/
 def mask : Prog isa :=
   .seq (.block [.mov .ebx (imm 0), .alu .sub .ebx (.reg .eax), .mov .ecx (slot lenO), .alu .test .ecx (.reg .ecx)])
     (.ite .e (.block [])
       (.seq (.block [.mov .edi (slot dataO)])
-        (.loop (.block [.movzx8 .edx (at_ .edi 0), .alu .and .edx (.reg .ebx), .store8 (at_ .edi 0) .dl,
-          .alu .add .edi (imm 1), .alu .sub .ecx (imm 1)]) .ne)))
+        (.seq maskWords
+          (.seq (.block [.alu .test .ecx (.reg .ecx)])
+            (.ite .e (.block [])
+              (.loop (.block [.movzx8 .edx (at_ .edi 0), .alu .and .edx (.reg .ebx), .store8 (at_ .edi 0) .dl,
+                .alu .add .edi (imm 1), .alu .sub .ecx (imm 1)]) .ne))))))
 
 /-! ## The functions -/
 
@@ -385,3 +484,25 @@ def «open» : Prog isa :=
 end
 
 end VG.Impl.AesGcmSiv.X86
+
+/-! ## The functions as emitted
+
+Each function, then its cleanup (`Impl.Scrub.X86.scrubAll rb W`): the `W`
+bytes of stack below `esp` that it and its callees use zeroed, and the
+registers a callee may change cleared but the `rb` bits of the result, so
+that it returns without secret residue. -/
+
+namespace VG.Impl.AesGcmSiv.X86.Fn
+
+open VG.X86
+open Impl.StackScratch.X86 (withStackScratch)
+
+/-- `vg_aes_gcm_siv_seal` over the functions `c`, as emitted. -/
+def «seal» (c : Impl.AesGcm.X86.Callees) : Prog isa :=
+  Impl.Scrub.X86.scrubAll 0 2888 (withStackScratch 2856 8 (Impl.AesGcmSiv.X86.«seal» c))
+
+/-- `vg_aes_gcm_siv_open` over the functions `c`, as emitted. -/
+def «open» (c : Impl.AesGcm.X86.Callees) : Prog isa :=
+  Impl.Scrub.X86.scrubAll 32 2888 (withStackScratch 2856 8 (Impl.AesGcmSiv.X86.«open» c))
+
+end VG.Impl.AesGcmSiv.X86.Fn

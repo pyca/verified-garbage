@@ -1,27 +1,28 @@
 module
 
-public import VerifiedGarbage.Proof.AesSiv.RISCV64.Init
-public import VerifiedGarbage.Proof.AesSiv.RISCV64.Verified
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.RISCV64.Print
+public import VerifiedGarbage.TCB.RISCV64.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Siv.Contract
+import VerifiedGarbage.Proof.AesSiv.RISCV64.Init
+import VerifiedGarbage.Proof.AesSiv.RISCV64.Verified
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # AES-SIV (RFC 5297) on RISC-V -/
 
-@[expose] public section
-
 namespace VG.Artifacts.AesSiv.RISCV64
 
-open VG.Proof.AesSiv.RISCV64
-
-def artifacts : List Artifact := [
+public def artifacts : List (Artifact RISCV64.target) := [
   Spec.Siv.initApi.artifact RISCV64.target {
-    code := Impl.StackScratch.RISCV64.withStackScratch 2560 .a3 Impl.AesSiv.RISCV64.init
-    verified := init_framed },
+    code := Impl.AesSiv.RISCV64.Fn.init
+    verified := Proof.AesSiv.RISCV64.init_scrubbed },
   Spec.Siv.encryptApi.artifact RISCV64.target {
-    code := Impl.StackScratch.RISCV64.withStackScratch 2576 .a7 Impl.AesSiv.RISCV64.encrypt
-    verified := Proof.AesSiv.encrypt_keyed encrypt_framed },
+    code := Impl.AesSiv.RISCV64.Fn.encrypt
+    verified := Proof.AesSiv.RISCV64.Scrub.encrypt_scrubbed },
   Spec.Siv.decryptApi.artifact RISCV64.target {
-    code := Impl.StackScratch.RISCV64.withStackScratch 2576 .a7 Impl.AesSiv.RISCV64.decrypt
-    verified := Proof.AesSiv.decrypt_keyed decrypt_framed }]
+    code := Impl.AesSiv.RISCV64.Fn.decrypt
+    verified := Proof.AesSiv.RISCV64.Scrub.decrypt_scrubbed }]
+
+spec_apis artifacts
 
 end VG.Artifacts.AesSiv.RISCV64

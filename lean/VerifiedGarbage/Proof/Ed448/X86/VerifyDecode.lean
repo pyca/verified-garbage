@@ -1,14 +1,131 @@
 module
-public import VerifiedGarbage.Proof.Ed448.X86.VerifyChecks
-public import VerifiedGarbage.Proof.X448.Radix16Bytes
-public import VerifiedGarbage.Spec.Ed448.Contract
 
+public import VerifiedGarbage.Proof.Ed448.X86.VerifyChecks
+public import VerifiedGarbage.Spec.Ed448.Contract
 import VerifiedGarbage.Proof.Ed448.X86.VerifySign
-import VerifiedGarbage.Proof.Ed448.X86.VerifyRoot
 import VerifiedGarbage.Proof.Ed448.Recover
 import VerifiedGarbage.Proof.Ed448.X86.VerifyDecodeY
+public import VerifiedGarbage.Proof.Ed448.X86.VerifyS
+import VerifiedGarbage.Proof.X448.X86.Decode
 import VerifiedGarbage.Proof.Ed448.VerifyFormulas
 import VerifiedGarbage.Proof.Ed448.Scalar
+public import VerifiedGarbage.Proof.Ed448.Root
+public import VerifiedGarbage.Impl.Ed448.X86.VerifyEquation
+public import VerifiedGarbage.Proof.X448.X86.Square
+import VerifiedGarbage.Proof.Framework.Contract
+
+/-! ### `Ed448.X86.VerifyRoot`, which this module and modules that import it used -/
+
+section
+
+/-!
+# Ed448 verification's equation on x86 (32-bit): the square root's power
+
+`root`: X448's addition chain for the inversion as far as `z^(2^223 - 1)`,
+then 223 squarings and a multiplication, for `z` in slot 12, into slot 21
+with the temporaries 14–20: `Proof.Ed448.rootPow`, `z^((p-3)/4)`.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Ed448.X86
+
+open VG VG.X86 VG.Impl.Ed448.X86 VG.Proof.X448.X86
+
+/-- The field slots after `root`. -/
+def rootEnv (e : Env) : Env :=
+  let e := applyOps [.copy 14 12] e
+  let e := opSqn 14 1 e
+  let e := applyOps [.mul 14 14 12, .copy 15 14] e
+  let e := opSqn 15 2 e
+  let e := applyOps [.mul 15 15 14, .copy 16 15] e
+  let e := opSqn 16 4 e
+  let e := applyOps [.mul 16 16 15, .copy 17 16] e
+  let e := opSqn 17 8 e
+  let e := applyOps [.mul 17 17 16, .copy 18 17] e
+  let e := opSqn 18 16 e
+  let e := applyOps [.mul 18 18 17, .copy 19 18] e
+  let e := opSqn 19 32 e
+  let e := applyOps [.mul 19 19 18, .copy 20 19] e
+  let e := opSqn 20 64 e
+  let e := applyOps [.mul 20 20 19] e
+  let e := opSqn 20 64 e
+  let e := applyOps [.mul 20 20 19] e
+  let e := opSqn 20 16 e
+  let e := applyOps [.mul 20 20 17] e
+  let e := opSqn 20 8 e
+  let e := applyOps [.mul 20 20 16] e
+  let e := opSqn 20 4 e
+  let e := applyOps [.mul 20 20 15] e
+  let e := opSqn 20 2 e
+  let e := applyOps [.mul 20 20 14, .copy 21 20] e
+  let e := opSqn 21 1 e
+  let e := applyOps [.mul 21 21 12] e
+  let e := opSqn 21 223 e
+  applyOps [.mul 21 21 20] e
+
+theorem root_spec (base : Addr) : ISpec base root rootEnv := by
+  have h : ISpec base _ _ :=
+    (opsI base [.copy 14 12]).seq <|
+    (sqnI base 14 (n := 1) (by decide) (by decide)).seq <|
+    (opsI base [.mul 14 14 12, .copy 15 14]).seq <|
+    (sqnI base 15 (n := 2) (by decide) (by decide)).seq <|
+    (opsI base [.mul 15 15 14, .copy 16 15]).seq <|
+    (sqnI base 16 (n := 4) (by decide) (by decide)).seq <|
+    (opsI base [.mul 16 16 15, .copy 17 16]).seq <|
+    (sqnI base 17 (n := 8) (by decide) (by decide)).seq <|
+    (opsI base [.mul 17 17 16, .copy 18 17]).seq <|
+    (sqnI base 18 (n := 16) (by decide) (by decide)).seq <|
+    (opsI base [.mul 18 18 17, .copy 19 18]).seq <|
+    (sqnI base 19 (n := 32) (by decide) (by decide)).seq <|
+    (opsI base [.mul 19 19 18, .copy 20 19]).seq <|
+    (sqnI base 20 (n := 64) (by decide) (by decide)).seq <|
+    (opsI base [.mul 20 20 19]).seq <|
+    (sqnI base 20 (n := 64) (by decide) (by decide)).seq <|
+    (opsI base [.mul 20 20 19]).seq <|
+    (sqnI base 20 (n := 16) (by decide) (by decide)).seq <|
+    (opsI base [.mul 20 20 17]).seq <|
+    (sqnI base 20 (n := 8) (by decide) (by decide)).seq <|
+    (opsI base [.mul 20 20 16]).seq <|
+    (sqnI base 20 (n := 4) (by decide) (by decide)).seq <|
+    (opsI base [.mul 20 20 15]).seq <|
+    (sqnI base 20 (n := 2) (by decide) (by decide)).seq <|
+    (opsI base [.mul 20 20 14, .copy 21 20]).seq <|
+    (sqnI base 21 (n := 1) (by decide) (by decide)).seq <|
+    (opsI base [.mul 21 21 12]).seq <|
+    (sqnI base 21 (n := 223) (by decide) (by decide)).seq <|
+    (opsI base [.mul 21 21 20])
+  exact h
+
+theorem rootEnv_eval (e : Env) : rootEnv e 21 = Proof.Ed448.rootPow (e 12) := by
+  simp only [↓reduceIte, rootEnv, applyOps, FieldOp.apply, opMul, opCopy, opSqn,
+    Fun.update_apply]
+  rfl
+
+theorem rootEnv_keep (e : Env) (i : Index) (hi : i.val < 14) : rootEnv e i = e i := by
+  have h14 : i ≠ 14 := fun h => by subst h; omega_using [hi]
+  have h15 : i ≠ 15 := fun h => by subst h; omega_using [hi]
+  have h16 : i ≠ 16 := fun h => by subst h; omega_using [hi]
+  have h17 : i ≠ 17 := fun h => by subst h; omega_using [hi]
+  have h18 : i ≠ 18 := fun h => by subst h; omega_using [hi]
+  have h19 : i ≠ 19 := fun h => by subst h; omega_using [hi]
+  have h20 : i ≠ 20 := fun h => by subst h; omega_using [hi]
+  have h21 : i ≠ 21 := fun h => by subst h; omega_using [hi]
+  simp only [rootEnv, applyOps, FieldOp.apply, opMul, opCopy, opSqn,
+    Fun.update_of_ne h21, Fun.update_of_ne h14, Fun.update_of_ne h15,
+    Fun.update_of_ne h16, Fun.update_of_ne h17, Fun.update_of_ne h18,
+    Fun.update_of_ne h19, Fun.update_of_ne h20]
+
+theorem root_ok {s : State} {base : Addr} (hs : Scr s base) (hc : CallCtx s base) :
+    WP isa root s fun t =>
+      IKeep base s t ∧ E t.mem base = rootEnv (E s.mem base) :=
+  root_spec base s hs hc
+
+end VG.Proof.Ed448.X86
+
+end
+
+end
 
 /-!
 # Ed448 verification's equation on x86 (32-bit): decoding a point
@@ -25,8 +142,9 @@ the point is `(x : y : 1)` with `x` in slot `xo` and `y` in slot `yo` (by
 
 namespace VG.Proof.Ed448.X86
 
-open VG VG.X86 VG.Impl.Ed448 VG.Impl.Ed448.X86 VG.Proof.X448.X86 VG.Proof.X448.Radix16
+open VG VG.X86 VG.Impl.Ed448 VG.Impl.Ed448.X86 VG.Proof.X448.X86
 open VG.Impl.X448.X86 (slot X2 ACC at_)
+open VG.Proof.X25519.X86 (num)
 open VG.Proof.Ed448 (RecoverOk rootPow evalOps fopValid)
 
 /-! ## The bytes -/
@@ -43,21 +161,21 @@ theorem bytesAt57_len (m : Mem) (p : Addr) : (Spec.Ed448.bytesAt m p 57).length 
   simp [Spec.Ed448.bytesAt]
 
 theorem decodeLE_56 (m : Mem) (p : Addr) :
-    Spec.Ed448.decodeLE (Spec.Ed448.bytesAt m p 56) = valN (decoded m p) 28 := by
-  rw [Proof.Ed448.decodeLE_eq, show (56 : Nat) = 2 * 28 from rfl]
-  exact decoded_val m p 28
+    Spec.Ed448.decodeLE (Spec.Ed448.bytesAt m p 56) = num (strW m p) 14 := by
+  rw [Proof.Ed448.decodeLE_eq]
+  exact bytes_num m p 14
 
 /-! ## Decoding -/
 
 theorem decode_ok (hR : RecoverOk) {s : State} {base : Addr} (hs : Scr s base) (hc : CallCtx s base)
-    (hb : BoundedEnv s.mem base)
     {p : BitVec 32} (hp : s.gpr .esi = p) (hfit : p.toNat + 57 ≤ 2 ^ 32)
     (hr : ∀ j < 57, InRegions (s.rd ++ s.wr) (p.setWidth 64 + BitVec.ofNat 64 j) 1)
+    (hr4 : ∀ k < 14, InRegions (s.rd ++ s.wr) (off (p.setWidth 64) (4 * k)) 4)
     (hd : ∀ j < 57, 8192 ≤ ofs base (p.setWidth 64 + BitVec.ofNat 64 j))
     (xo yo : Index) (hxy : xo = 6 ∧ yo = 7 ∨ xo = 8 ∧ yo = 9)
     (h10 : E s.mem base 10 = 1) (h11 : E s.mem base 11 = Spec.Ed448.d) :
     WP isa (decode xo.val yo.val) s fun t =>
-      VKeep base s t ∧ BoundedEnv t.mem base ∧
+      VKeep base s t ∧
       BadUpd ((Spec.Ed448.decodePoint (Spec.Ed448.bytesAt s.mem (p.setWidth 64) 57)).isSome)
         (word s.mem base BAD) (word t.mem base BAD) ∧
       (∀ a, Spec.Ed448.decodePoint (Spec.Ed448.bytesAt s.mem (p.setWidth 64) 57) = some a →
@@ -74,33 +192,33 @@ theorem decode_ok (hR : RecoverOk) {s : State} {base : Addr} (hs : Scr s base) (
   generalize hq : p.setWidth 64 = q
   unfold decode
   -- `y`, the sign bit, and the first checks
-  refine WP.seq (WP.mono (decodeY_ok hs hb hp hfit hr hd yo hy1)
-    fun s1 ⟨k1, b1, sg1, c1, y1, e1⟩ => ?_)
+  refine WP.seq (WP.mono (decodeY_ok hs hp hfit hr hr4 hd yo hy1)
+    fun s1 ⟨k1, sg1, c1, y1, e1⟩ => ?_)
   rw [hq] at sg1 c1 y1
   have hs1 := k1.scr hs
   have hc1 := k1.ctx hc
   -- `u`, `v`, `t` and `t (uv)²`
   refine field_seq (decodeUV yo.val xo.val)
-    (by rcases hxy with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> decide) hs1 hc1 b1 fun s2 k2 b2 e2 => ?_
+    (by rcases hxy with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> decide) hs1 hc1 fun s2 k2 e2 => ?_
   have hs2 := k2.scr hs1
   have hc2 := k2.ctx hc1
   -- the root
-  refine WP.seq (WP.mono (root_ok hs2 hc2 b2) fun s3 ⟨k3, b3, e3⟩ => ?_)
+  refine WP.seq (WP.mono (root_ok hs2 hc2) fun s3 ⟨k3, e3⟩ => ?_)
   have hs3 := k3.scr hs2
   have hc3 := k3.ctx hc2
   -- `x` and `v x²`
   refine field_seq [.mul xo.val xo.val 21, .sqr 12 xo.val, .mul 12 3 12]
-    (by rcases hxo with rfl | rfl <;> decide) hs3 hc3 b3 fun s4 k4 b4 e4 => ?_
+    (by rcases hxo with rfl | rfl <;> decide) hs3 hc3 fun s4 k4 e4 => ?_
   have hs4 := k4.scr hs3
   have hc4 := k4.ctx hc3
   -- `v x² = u`
-  refine WP.seq (WP.mono (eqSlots_ok hs4 b4 12 13 (by decide) (by decide) (by decide))
-    fun s5 ⟨k5, b5, e5, c5, _⟩ => ?_)
+  refine WP.seq (WP.mono (eqSlots_ok hs4 12 13 (by decide) (by decide) (by decide))
+    fun s5 ⟨k5, e5, c5, _⟩ => ?_)
   have hs5 := k5.scr hs4
   have hc5 := k5.ctx hc4
   -- `-x`
   refine field_seq [.sub 12 xo.val xo.val, .sub 12 12 xo.val]
-    (by rcases hxo with rfl | rfl <;> decide) hs5 hc5 b5 fun s6 k6 b6 e6 => ?_
+    (by rcases hxo with rfl | rfl <;> decide) hs5 hc5 fun s6 k6 e6 => ?_
   have hs6 := k6.scr hs5
   -- the sign
   have hb128 : (s.mem (q + BitVec.ofNat 64 56)).toNat / 128 < 2 := by
@@ -116,7 +234,7 @@ theorem decode_ok (hR : RecoverOk) {s : State} {base : Addr} (hs : Scr s base) (
     rw [e1 11 (by decide) (by rcases hxy with ⟨_, rfl⟩ | ⟨_, rfl⟩ <;> decide), h11]
   obtain ⟨u2, v2, t2, w2, k2e⟩ := Proof.Ed448.decodeUV_eval xo yo hxy (E s1.mem base)
   simp only [h10', h11', y1, ← e2] at u2 v2 t2 w2 k2e
-  generalize hY : Proof.X448.toFe (valN (decoded s.mem q) 28) = Y at *
+  generalize hY : Proof.X448.toFe (num (strW s.mem q) 14) = Y at *
   generalize hu : Y * Y - 1 = u at *
   generalize hv : Spec.Ed448.d * (Y * Y) - 1 = v at *
   generalize ht : u * u * u * v = tt at *
@@ -134,13 +252,13 @@ theorem decode_ok (hR : RecoverOk) {s : State} {base : Addr} (hs : Scr s base) (
   rw [← e6] at n6 k6e
   have x6 : E s6.mem base xo = x := by rw [k6e xo hx12, x5]
   rw [x5] at n6
-  refine WP.mono (decodeSign_ok hs6 b6 xo hxo hb128 sg (by rw [x6]; exact n6))
-    fun t ⟨kt, bt, ct, xt, et⟩ => ?_
+  refine WP.mono (decodeSign_ok hs6 xo hxo hb128 sg (by rw [x6]; exact n6))
+    fun t ⟨kt, ct, xt, et⟩ => ?_
   rw [x6] at ct xt
   rw [w4, u4] at c5
   -- `decodePoint`
   have hD := Proof.Ed448.decodePoint_impl hR (Spec.Ed448.bytesAt s.mem q 57) (bytesAt57_len _ _)
-    (valN (decoded s.mem q) 28) ((s.mem (q + BitVec.ofNat 64 56)).toNat)
+    (num (strW s.mem q) 14) ((s.mem (q + BitVec.ofNat 64 56)).toNat)
     (by rw [bytesAt57_take, decodeLE_56]) (by rw [bytesAt57_getD]) Y u v tt x hY hu hv ht hx
   have kY : E t.mem base yo = Y := by
     rw [et yo hy1 (by rcases hxy with ⟨_, rfl⟩ | ⟨_, rfl⟩ <;> decide) hyx,
@@ -152,7 +270,7 @@ theorem decode_ok (hR : RecoverOk) {s : State} {base : Addr} (hs : Scr s base) (
         (by rcases hxy with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> decide)
         (by rcases hxy with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> decide) hyx, y1]
   refine ⟨k1.trans ((Keep.toV k2).trans ((IKeep.toV k3).trans ((Keep.toV k4).trans
-    ((CKeep.toV k5).trans ((Keep.toV k6).trans (CKeep.toV kt)))))), bt, ?_, fun a ha => ?_,
+    ((CKeep.toV k5).trans ((Keep.toV k6).trans (CKeep.toV kt)))))), ?_, fun a ha => ?_,
     fun i hix hiy hi => ?_⟩
   · have c5' : BadUpd (v * (x * x) = u) (word s1.mem base BAD) (word s5.mem base BAD) := by
       rw [← Keep.bad k2, ← IKeep.bad k3, ← Keep.bad k4]; exact c5
@@ -162,7 +280,7 @@ theorem decode_ok (hR : RecoverOk) {s : State} {base : Addr} (hs : Scr s base) (
     refine ((c1.trans c5').trans ct').congr ?_
     rw [hD]
     by_cases hall : ((s.mem (q + BitVec.ofNat 64 56)).toNat % 128 = 0 ∧
-        valN (decoded s.mem q) 28 < Spec.X448.P) ∧ v * (x * x) = u ∧
+        num (strW s.mem q) 14 < Spec.X448.P) ∧ v * (x * x) = u ∧
         ¬ (x = 0 ∧ (s.mem (q + BitVec.ofNat 64 56)).toNat / 128 = 1)
     · rw [ite_eq_left hall]
       exact ⟨fun _ => rfl, fun _ => ⟨⟨hall.1, hall.2.1⟩, hall.2.2⟩⟩
@@ -170,7 +288,7 @@ theorem decode_ok (hR : RecoverOk) {s : State} {base : Addr} (hs : Scr s base) (
       exact ⟨fun h => absurd ⟨h.1.1, h.1.2, h.2⟩ hall, fun h => absurd h (by simp)⟩
   · rw [hD] at ha
     by_cases hall : ((s.mem (q + BitVec.ofNat 64 56)).toNat % 128 = 0 ∧
-        valN (decoded s.mem q) 28 < Spec.X448.P) ∧ v * (x * x) = u ∧
+        num (strW s.mem q) 14 < Spec.X448.P) ∧ v * (x * x) = u ∧
         ¬ (x = 0 ∧ (s.mem (q + BitVec.ofNat 64 56)).toNat / 128 = 1)
     · rw [ite_eq_left hall] at ha
       cases ha

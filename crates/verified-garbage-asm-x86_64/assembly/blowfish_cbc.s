@@ -511,17 +511,13 @@ vg_blowfish_cbc_encrypt_chained:
 	mov r13, QWORD PTR [r9+48]
 	mov r14, QWORD PTR [r9+56]
 	mov r15, QWORD PTR [r9+64]
+	pxor xmm0, xmm0
 	mov r11d, 0
-	mov QWORD PTR [rsp+8], r11
-	mov QWORD PTR [rsp+16], r11
-	mov QWORD PTR [rsp+24], r11
-	mov QWORD PTR [rsp+32], r11
-	mov QWORD PTR [rsp+40], r11
-	mov QWORD PTR [rsp+48], r11
-	mov QWORD PTR [rsp+56], r11
-	mov QWORD PTR [rsp+64], r11
-	mov QWORD PTR [rsp+72], r11
-	mov QWORD PTR [rsp+80], r11
+	movdqu XMMWORD PTR [rsp+8], xmm0
+	movdqu XMMWORD PTR [rsp+24], xmm0
+	movdqu XMMWORD PTR [rsp+40], xmm0
+	movdqu XMMWORD PTR [rsp+56], xmm0
+	movdqu XMMWORD PTR [rsp+72], xmm0
 	mov QWORD PTR [rsp+88], r11
 	lea rsp, [rsp+96]
 	pxor xmm0, xmm0
@@ -541,17 +537,19 @@ vg_blowfish_cbc_encrypt_chained:
 	pxor xmm14, xmm14
 	pxor xmm15, xmm15
 	xor r11d, r11d
-	lea rsp, [rsp-96]
-	movdqu XMMWORD PTR [rsp], xmm0
-	lea rsp, [rsp+96]
+	lea rsp, [rsp-8]
+	lea rsp, [rsp-88]
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp+88]
+	lea rsp, [rsp+8]
 	xor eax, eax
 	xor ecx, ecx
 	xor edx, edx
 	xor esi, esi
+	xor edi, edi
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -1092,17 +1090,13 @@ vg_blowfish_cbc_decrypt_chained:
 	mov r13, QWORD PTR [r9+48]
 	mov r14, QWORD PTR [r9+56]
 	mov r15, QWORD PTR [r9+64]
+	pxor xmm0, xmm0
 	mov r11d, 0
-	mov QWORD PTR [rsp+8], r11
-	mov QWORD PTR [rsp+16], r11
-	mov QWORD PTR [rsp+24], r11
-	mov QWORD PTR [rsp+32], r11
-	mov QWORD PTR [rsp+40], r11
-	mov QWORD PTR [rsp+48], r11
-	mov QWORD PTR [rsp+56], r11
-	mov QWORD PTR [rsp+64], r11
-	mov QWORD PTR [rsp+72], r11
-	mov QWORD PTR [rsp+80], r11
+	movdqu XMMWORD PTR [rsp+8], xmm0
+	movdqu XMMWORD PTR [rsp+24], xmm0
+	movdqu XMMWORD PTR [rsp+40], xmm0
+	movdqu XMMWORD PTR [rsp+56], xmm0
+	movdqu XMMWORD PTR [rsp+72], xmm0
 	mov QWORD PTR [rsp+88], r11
 	lea rsp, [rsp+96]
 	pxor xmm0, xmm0
@@ -1122,16 +1116,18 @@ vg_blowfish_cbc_decrypt_chained:
 	pxor xmm14, xmm14
 	pxor xmm15, xmm15
 	xor r11d, r11d
-	lea rsp, [rsp-96]
-	movdqu XMMWORD PTR [rsp], xmm0
-	lea rsp, [rsp+96]
+	lea rsp, [rsp-8]
+	lea rsp, [rsp-88]
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp+88]
+	lea rsp, [rsp+8]
 	xor eax, eax
 	xor ecx, ecx
 	xor edx, edx
 	xor esi, esi
+	xor edi, edi
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 	.p2align 6

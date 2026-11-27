@@ -25,8 +25,9 @@ words, `D = 4n` digits; an array of digits holds one a word.
 * `csubD M src o`: the `D` digits and top digit at `[src]`, a number below
   `2m`, reduced modulo `m` into `[o]` (through `[M.tmp]`): its difference
   with `m`, packed, if that did not borrow, else itself.
-* `mul M inv acc o a b`: `[o] = [a] [b] R⁻¹ mod m` (`R = 2^(16 D)`) by CIOS
-  on digits, as the fixed-modulus `mul`, with `m'` at `[inv]`.
+* `mul umaal M inv acc o a b`: `[o] = [a] [b] R⁻¹ mod m` (`R = 2^(16 D)`),
+  with `m'` at `[inv]`: by CIOS on digits (`mulD`), as the fixed-modulus
+  `mul`, or, with the CPU feature `umaal`, on words (`mulU`).
 * `selectW k src tmp o`: `[o] = [tmp]` where the mask `r3` is all ones, else
   `[src]`.
 
@@ -141,10 +142,69 @@ def rowD (M : Mod) (inv a b : Nat) : Prog isa :=
 
 /-- `[o] = [a] [b] R⁻¹ mod m`, `m'` at `[inv]`, through `2D + 2` digits at
 `[acc]` (`o` may be `a` or `b`). -/
-def mul (M : Mod) (inv acc o a b : Nat) : Prog isa :=
+def mulD (M : Mod) (inv acc o a b : Nat) : Prog isa :=
   .seq (zeros (2 * digits M + 2) acc) <|
   .seq (.block ([mask16] ++ ptr .r0 acc ++ ptr .r1 a)) <|
   .seq (.loop (rowD M inv a b) .ne)
     (csubD M (acc + 4 * digits M) o)
+
+/-! ## The multiplication on words, by `umaal` -/
+
+/-- Word `h` of `[src]` (at `[r8 + 4h]`) times `r2`, plus the carry `r3`,
+added to the window's word at `[r10 + 4h]`, its carry to `r3`. -/
+def macU (h : Nat) : List Instr :=
+  [.ldr .r7 .r8 (4 * h), .ldr .r5 .r10 (4 * h), .umaal .r5 .r3 .r7 .r2, .str .r5 .r10 (4 * h)]
+
+/-- The window at `r0` `+= r2 · [src]` (`W` words, two an iteration), with
+its carry into its words `W` and `W + 1`; `r4` is zero. -/
+def mulRowU (M : Mod) (src : Nat) : Prog isa :=
+  .seq (.block ([.mov .r3 (.imm 0), .mov .r10 (.reg .r0)] ++ ptr .r8 src ++ ptr .r9 (src + 4 * words M)))
+  (.seq (ptrLoop .r8 (macU 0 ++ macU 1 ++ [bump .r10 8, bump .r8 8]))
+    (.block [.ldr .r5 .r10 0, .umaal .r5 .r3 .r4 .r4, .str .r5 .r10 0,
+      .ldr .r7 .r10 4, .dp .add .r7 .r7 (.reg .r3), .str .r7 .r10 4]))
+
+/-- An iteration, for the word at `[r1]` of `[a]`: the window `+= a_i [b]`,
+then `+= q m` for `q = t₀ m' mod 2³²` (`m'` in `r6`), which clears its low
+word; then the window and `r1` move up a word. -/
+def rowU (M : Mod) (a b : Nat) : Prog isa :=
+  .seq (.block [.ldr .r2 .r1 0]) <|
+  .seq (mulRowU M b) <|
+  .seq (.block [.ldr .r2 .r0 0, .mul .r2 .r2 .r6]) <|
+  .seq (mulRowU M M.mo)
+    (.block ([bump .r0 4, bump .r1 4] ++ ptr .r9 (a + 4 * words M) ++ [.cmp .r1 (.reg .r9)]))
+
+/-- `r6 = -m⁻¹ mod 2³²`, from `x = -m⁻¹ mod 2¹⁶` at `[inv]` and `m`'s low
+word: `x (2 + m x)`, a Newton step; and `r4 = 0`. -/
+def inverseU (M : Mod) (inv : Nat) : List Instr :=
+  ptr .r5 M.mo ++ [.ldr .r5 .r5 0, .ldr .r4 .r12 inv, .mul .r6 .r5 .r4, .dp .add .r6 .r6 (.imm 2),
+    .mul .r6 .r6 .r4, .mov .r4 (.imm 0)]
+
+/-- The number at `[src]` (`W` words, then a top word 0 or 1), below `2m`,
+reduced modulo `m` into `[o]`: its difference with `m` goes to `[tmp]`, a
+word a `umaal` of `m`'s complemented word, `r2 = 1`, the carry `r3` and the
+word; `r3` is then 1 if it did not borrow, and the negation of its sum with
+the top word selects the difference. -/
+def csubU (M : Mod) (src o : Nat) : Prog isa :=
+  .seq (.block ([.mov .r3 (.imm 1), .mov .r2 (.imm 1)] ++ ptr .r10 src ++ ptr .r1 M.mo ++ ptr .r8 M.tmp ++
+      ptr .r9 (M.mo + 4 * words M)))
+  (.seq (ptrLoop .r1 [.ldr .r7 .r1 0, .mvn .r7 (.reg .r7), .ldr .r5 .r10 0, .umaal .r5 .r3 .r7 .r2,
+      .str .r5 .r8 0, bump .r10 4, bump .r1 4, bump .r8 4])
+  (.seq (.block [.ldr .r5 .r10 0, .dp .add .r3 .r3 (.reg .r5), .mov .r4 (.imm 0), .dp .sub .r3 .r4 (.reg .r3)])
+    (selectW (words M) src M.tmp o)))
+
+/-- `[o] = [a] [b] R⁻¹ mod m` (`R = 2^(32 W)`), `-m⁻¹ mod 2¹⁶` at `[inv]`,
+by CIOS on words through `2W + 2` words at `[acc]` (`o` may be `a` or `b`). -/
+def mulU (M : Mod) (inv acc o a b : Nat) : Prog isa :=
+  .seq (zeros (2 * words M + 2) acc) <|
+  .seq (.block (inverseU M inv ++ ptr .r0 acc ++ ptr .r1 a)) <|
+  .seq (.loop (rowU M a b) .ne)
+    (csubU M (acc + 4 * words M) o)
+
+/-- The multiplication: on words where the CPU has `umaal`, else on digits. -/
+def mul (umaal : Bool) (M : Mod) (inv acc o a b : Nat) : Prog isa :=
+  bif umaal then mulU M inv acc o a b else mulD M inv acc o a b
+
+/-- The suffix of a function whose code holds a multiplication. -/
+def suffix (umaal : Bool) : String := if umaal then "_umaal" else ""
 
 end VG.Impl.Mont.Arm.Dynamic

@@ -2,8 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Framework.PowLit
 public import Mathlib.Data.Int.ModEq
-import Mathlib.Algebra.Order.Group.Unbundled.Abs
-import Mathlib.Algebra.Order.Ring.Int
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Recovering an absolute value from its low-word residue -/

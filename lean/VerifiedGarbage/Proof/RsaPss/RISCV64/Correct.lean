@@ -2,15 +2,13 @@ module
 
 -- separate module: it builds in parallel with the constant-time proofs (`CTHash`, `CTPost`), which `Verified`
 -- also needs.
-
 public import VerifiedGarbage.Proof.RsaPss.RISCV64.Post
 public import VerifiedGarbage.Proof.RsaPss.VerifyCases
 import VerifiedGarbage.Proof.RsaPss.EncBytes
-import VerifiedGarbage.Proof.RsaPss.Encoding
 import VerifiedGarbage.Proof.Mgf1.Bytes
 public import VerifiedGarbage.Proof.RsaPss.RISCV64.Call
 import VerifiedGarbage.Proof.RsaPss.Params
-import VerifiedGarbage.Proof.RsaOaep.RISCV64.Mgf
+import VerifiedGarbage.Proof.RsaOaep.RISCV64.MgfT
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
@@ -24,7 +22,7 @@ public import VerifiedGarbage.Proof.RsaPss.RISCV64.Prefix
 # RSASSA-PSS verification on RISC-V: correctness
 
 Untrusted: everything here is checked by Lean. As on PPC64LE
-(`Proof/RsaPss/PPC64LE/Correct.lean`): the checks (`checks_done`), a
+(`Proof/RsaPss/PPC64LE/CTPub.lean`): the checks (`checks_done`), a
 modulus whose first byte is zero (`verify_zero₂`), and an encoding too short
 for the digest (`chkEm`) or the salt length expected (`expLen`, `chkSalt`:
 `verify_short₂`) return 0; otherwise RSAVP1 of the signature (`call_ok`) and
@@ -39,7 +37,7 @@ it (`res_iff`, `verify_bytes₂`), if `pre` holds the modulus' values.
 # RSASSA-PSS verification on RISC-V: the checks are EMSA-PSS-VERIFY's
 
 Untrusted: everything here is checked by Lean. As on PPC64LE
-(`Proof/RsaPss/PPC64LE/Logic.lean`): for `EM` of `emLen = E`
+(`Proof/RsaPss/PPC64LE/CTPub.lean`): for `EM` of `emLen = E`
 bytes after `lo` (`lN`) in the view `V`, `DB` unmasked as the code does
 (`wR`) is `Proof.RsaPss.vDb` (`wR_eq`), and `Res` (`Post.lean`) holds
 exactly when the leading byte is zero if `lo = 1` and the encoding is
@@ -626,10 +624,11 @@ theorem checks_done {t : State} (E : Entered Hs.len s t) (sy : t.syms = s.syms) 
 
 /-- The code for the hash function `H`, in its frame. -/
 theorem code_ok : WP isa (verifyFor H M.be f g) s (Post Hs Gs s) := by
-  refine WP.alloc (by decide) (by have := P.sp1; unfold frameBytes; unfold stackBytes at this; omega_using [this]) ?_
+  refine WP.allocLe (by decide) (by have := P.sp1; unfold frameBytes; unfold stackBytes at this; omega_using [this]) ?_
   refine WP.seq (WP.mono_syms (entry_ok P hHl.symm (hHl ▸ hH.hD64)) fun t E y => WP.seq (WP.mono
     (checks_done P hH hF T hHh hHl hHv hG hGF TG hGh hGl hGv E (y.trans rfl)) fun t' ⟨sv, res⟩ =>
-      WP.mono (restore_ok sv (fb_al8 P)) fun w ⟨habi, h3, _⟩ => ⟨habi, fun hc => ?_⟩))
+      WP.mono (restore_ok sv (fb_al8 P)) fun w ⟨habi, h3, _⟩ _ _ _ =>
+        ⟨⟨habi.1, habi.2.1, habi.2.2⟩, fun hc => ?_⟩))
   show w.gpr .a0 = _
   rw [h3]
   exact res hc

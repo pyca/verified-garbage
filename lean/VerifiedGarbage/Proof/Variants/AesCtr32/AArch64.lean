@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Aes.AArch64.Variant
+public import VerifiedGarbage.Proof.Variants.AesCtr32.AArch64.Neon
 
 /-! # The implementations of `AesCtr32` on AArch64 -/
 
@@ -15,6 +16,6 @@ def scalar : Proof.Aes.AArch64.Ctr32Impl := .scalar
 /-- Every implementation, best first: each function generic over them is
 emitted with each (the registration files that import this), and its
 dispatcher tries them in this order. -/
-def variants := [aese, scalar]
+def variants := [aese, neon, scalar]
 
 end VG.Proof.Variants.AesCtr32.AArch64

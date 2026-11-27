@@ -1,6 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.Rsa.PPC64LE.PrivCorrect
+public import VerifiedGarbage.Proof.Rsa.PPC64LE.PrivCorrect
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.PrivPreCopy
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.MontCT
 meta import VerifiedGarbage.Proof.Framework.Contract
@@ -14,7 +14,6 @@ import VerifiedGarbage.Proof.Bignum.PPC64LE.PubCorrect
 import VerifiedGarbage.Proof.Framework.PPC64LE.RelCT
 import VerifiedGarbage.Proof.Framework.Covers
 import VerifiedGarbage.Proof.Framework.PPC64LE.Alloc
-public import VerifiedGarbage.Proof.Rsa.PPC64LE.PrivPubCall
 public import VerifiedGarbage.Proof.Rsa.PrivCheck
 public import VerifiedGarbage.Proof.Rsa.Contract
 meta import VerifiedGarbage.Proof.Rsa.Contract

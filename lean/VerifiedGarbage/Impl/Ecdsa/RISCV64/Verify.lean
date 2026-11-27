@@ -88,7 +88,7 @@ def setup : List Instr :=
 
 /-- `w = (s R)^(n-2)`, `u = e w` and `v = r w` modulo `n`. -/
 def uv : Prog isa :=
-  progs [mulCall FN (c.sl KM) (c.sl VS) (c.sl R2N), chainPow (Sign.Cfg.chainN c) (c.sl Sign.ONEN) FN,
+  progs [mulCall FN (c.sl KM) (c.sl VS) (c.sl R2N), Sign.Cfg.invN c FN,
     mulCall FN (c.sl EM) (c.sl VE) (c.sl R2N), mulCall FN (c.sl UM) (c.sl EM) (c.sl ACC),
     mulCall FN (c.sl UU) (c.sl UM) (c.sl ONE), mulCall FN (c.sl RM) (c.sl VR) (c.sl R2N),
     mulCall FN (c.sl VM) (c.sl RM) (c.sl ACC), mulCall FN (c.sl VV) (c.sl VM) (c.sl ONE)]

@@ -206,6 +206,21 @@ theorem Context.temporaryArgsP {s : State} (h : Context g bs s) :
   exact Offset.disjoint_base _ (by decide : 88 ≤ VG.Impl.RsaPkcs1Sig.X86.Sign.emOffset)
     (by have := h.valid.maxLength; simp only [VG.Impl.RsaPkcs1Sig.X86.Sign.emOffset]; omega_using [this])
 
+/-- `privateArgumentP`'s twenty-two values: evaluated here once, for the proofs that read them all. -/
+private theorem privateArgumentP_eqs (g : Geometry) (P : BitVec 32) (L : Nat) :
+    privateArgumentP g P L 0 = g.output ∧ privateArgumentP g P L 1 = BitVec.ofNat 32 g.length ∧
+      privateArgumentP g P L 2 = g.sources 0 ∧ privateArgumentP g P L 3 = BitVec.ofNat 32 g.length ∧
+      privateArgumentP g P L 4 = g.sources 1 ∧ privateArgumentP g P L 5 = BitVec.ofNat 32 g.exponentLength ∧
+      privateArgumentP g P L 6 = g.temporary ∧ privateArgumentP g P L 7 = BitVec.ofNat 32 g.length ∧
+      privateArgumentP g P L 8 = g.sources 3 ∧ privateArgumentP g P L 9 = BitVec.ofNat 32 g.pLength ∧
+      privateArgumentP g P L 10 = g.sources 4 ∧ privateArgumentP g P L 11 = BitVec.ofNat 32 g.qLength ∧
+      privateArgumentP g P L 12 = g.sources 5 ∧ privateArgumentP g P L 13 = BitVec.ofNat 32 g.pLength ∧
+      privateArgumentP g P L 14 = g.sources 6 ∧ privateArgumentP g P L 15 = BitVec.ofNat 32 g.qLength ∧
+      privateArgumentP g P L 16 = g.sources 7 ∧ privateArgumentP g P L 17 = BitVec.ofNat 32 g.pLength ∧
+      privateArgumentP g P L 18 = g.workspace ∧ privateArgumentP g P L 19 = BitVec.ofNat 32 g.scratchLength ∧
+      privateArgumentP g P L 20 = P ∧ privateArgumentP g P L 21 = BitVec.ofNat 32 L :=
+  ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩
+
 theorem privateArgsP_values {s : State} (h : Context g bs s) (a : PrivateArgsP g P L s) {j : Nat} (hj : j < 22) :
     arg (s.callEntry.withRegions (privateRdP g P L) (privateWrP g)) j = privateArgumentP g P L j := by
   rw [arg_withRegions, arg_callEntry (by rw [h.sp]; have := h.valid.stackLow; simp only [calleeBytes] at this; omega_using [this])
@@ -230,6 +245,8 @@ theorem privateCallP_pre {s : State} (h : Context g bs s) (H : SPreCtx g bs P L 
   have qfit : g.qLength < 2 ^ 32 := by have := h.valid.qFits; omega_arith
   have wfit : g.scratchLength < 2 ^ 32 := by have := h.valid.workspaceFit; omega_arith
   have lfit := H.L32
+  obtain ⟨p0, p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19, p20, p21⟩ :=
+    privateArgumentP_eqs g P L
   sig_pre [Proof.Rsa.privateCheckedPrecomputedContract, Proof.Rsa.privateCheckedPrecomputedSig,
     Proof.Rsa.privateCheckedSig, abi, argSlots, argVal, argBytes, stackBelow]
   simp only [sa (by decide : 0 < 22),
@@ -254,8 +271,8 @@ theorem privateCallP_pre {s : State} (h : Context g bs s) (H : SPreCtx g bs P L 
     sa (by decide : 19 < 22),
     sa (by decide : 20 < 22),
     sa (by decide : 21 < 22),
-    privateArgumentP, privateArgument, Geometry.argument, Nat.reduceAdd, Nat.reduceLT, Nat.reduceEqDiff, ite_true,
-    ite_false, BitVec.toNat_ofNat, Nat.mod_eq_of_lt kfit, Nat.mod_eq_of_lt efit, Nat.mod_eq_of_lt pfit,
+    p0, p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19, p20, p21,
+    BitVec.toNat_ofNat, Nat.mod_eq_of_lt kfit, Nat.mod_eq_of_lt efit, Nat.mod_eq_of_lt pfit,
     Nat.mod_eq_of_lt qfit, Nat.mod_eq_of_lt wfit, Nat.mod_eq_of_lt lfit,
     argAddr_withRegions, argAddr_callEntry, h.sp, Nat.mul_zero, BitVec.add_zero]
   rw [show g.scratchLength * 8 = 8 * g.scratchLength from Nat.mul_comm _ _, show L * 8 = 8 * L from Nat.mul_comm _ _]
@@ -406,6 +423,7 @@ theorem private_callP (v : CrtImpl) (w : CrtPImpl) {s : State} {em : List Byte}
   sig_post [Proof.Rsa.privateCheckedPrecomputedContract, Proof.Rsa.privateCheckedPrecomputedSig,
     Proof.Rsa.privateCheckedSig, abi, argSlots, argVal, argBytes] at post
   have sa := fun {j} (hj : j < 22) => privateArgsP_values h a hj
+  obtain ⟨p0, -, p2, p3, p4, p5, p6, -, p8, p9, p10, p11, p12, -, p14, -, p16, -⟩ := privateArgumentP_eqs g P L
   have kfit : g.length < 2 ^ 32 := by have := h.valid.maxLength; omega_using [this]
   have efit : g.exponentLength < 2 ^ 32 := by have := h.valid.exponentFits; omega_using [kfit, this]
   have pfit : g.pLength < 2 ^ 32 := by have := h.valid.pFits; omega_using [kfit, this]
@@ -414,8 +432,7 @@ theorem private_callP (v : CrtImpl) (w : CrtPImpl) {s : State} {em : List Byte}
     sa (by decide : 4 < 22), sa (by decide : 5 < 22), sa (by decide : 6 < 22),
     sa (by decide : 8 < 22), sa (by decide : 9 < 22), sa (by decide : 10 < 22), sa (by decide : 11 < 22),
     sa (by decide : 12 < 22), sa (by decide : 14 < 22),
-    sa (by decide : 16 < 22), privateArgumentP, privateArgument, Geometry.argument,
-    Nat.reduceAdd, Nat.reduceLT, Nat.reduceEqDiff, ite_true, ite_false, BitVec.toNat_ofNat,
+    sa (by decide : 16 < 22), p0, p2, p3, p4, p5, p6, p8, p9, p10, p11, p12, p14, p16, BitVec.toNat_ofNat,
     Nat.mod_eq_of_lt kfit, Nat.mod_eq_of_lt efit, Nat.mod_eq_of_lt pfit, Nat.mod_eq_of_lt qfit] at post
   rw [BitVec.setWidth_append_eq_right, M, G .eax (by decide)] at post
   change Spec.Rsa.writtenOutcome t.mem (byteAddr g.output) g.length (t.gpr .eax)
@@ -473,6 +490,8 @@ theorem privateCallP_pub {bs1 bs2 : Fin 8 → List Byte} {s t : State}
     Proof.Rsa.privateCheckedSig, abi, argSlots, argVal, argBytes]
   have sa := fun {j} (hj : j < 22) => privateArgsP_values hs argsS hj
   have ta := fun {j} (hj : j < 22) => privateArgsP_values ht argsT hj
+  obtain ⟨p0, p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19, p20, p21⟩ :=
+    privateArgumentP_eqs g P L
   simp only [hs.sp, ht.sp, sa (by decide : 0 < 22), ta (by decide : 0 < 22),
     sa (by decide : 1 < 22), ta (by decide : 1 < 22),
     sa (by decide : 2 < 22), ta (by decide : 2 < 22),
@@ -495,8 +514,8 @@ theorem privateCallP_pub {bs1 bs2 : Fin 8 → List Byte} {s t : State}
     sa (by decide : 19 < 22), ta (by decide : 19 < 22),
     sa (by decide : 20 < 22), ta (by decide : 20 < 22),
     sa (by decide : 21 < 22), ta (by decide : 21 < 22),
-    privateArgumentP, privateArgument, Geometry.argument, Nat.reduceAdd, Nat.reduceLT, Nat.reduceEqDiff, ite_true,
-    ite_false, true_and, and_true]
+    p0, p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19, p20, p21,
+    true_and, and_true]
   have kf : g.length < 2 ^ 32 := by have := hs.valid.maxLength; omega_using [this]
   have ef : g.exponentLength < 2 ^ 32 := by have := hs.valid.exponentFits; have := hs.valid.maxLength; omega_arith
   simp only [BitVec.toNat_ofNat, Nat.mod_eq_of_lt kf, Nat.mod_eq_of_lt ef]

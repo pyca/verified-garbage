@@ -15,8 +15,6 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 import VerifiedGarbage.Proof.Sha3.PPC64LE.Stream.Verified
 meta import VerifiedGarbage.Proof.Sha3.PPC64LE.Stream.Verified
-import VerifiedGarbage.Proof.Sha3.PPC64LE.Stream.CT
-meta import VerifiedGarbage.Proof.Sha3.PPC64LE.Stream.CT
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.SigEval
 meta import VerifiedGarbage.Proof.MlKem.PPC64LE.Sample

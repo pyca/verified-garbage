@@ -1,7 +1,8 @@
 module
 
+public import VerifiedGarbage.TCB.Registration
 public import VerifiedGarbage.Impl.Dsa.AArch64.ParameterSearch
-public import VerifiedGarbage.Spec.Dsa.ParameterSearchContract
+public import VerifiedGarbage.Proof.Dsa.ParameterPublic
 public import VerifiedGarbage.Proof.Bignum.AArch64.Run
 public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.RsaKeyGen.InitWords
@@ -13,7 +14,6 @@ import VerifiedGarbage.Proof.Framework.TaintBatch
 import VerifiedGarbage.Proof.Framework.AArch64.RelCT
 import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
 meta import VerifiedGarbage.Impl.Dsa.AArch64.ParameterSearch
-meta import VerifiedGarbage.Spec.Dsa.ParameterSearchContract
 meta import VerifiedGarbage.Proof.Bignum.AArch64.Run
 meta import VerifiedGarbage.TCB.AArch64.Target
 meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
@@ -21,6 +21,8 @@ meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Sig
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
+import VerifiedGarbage.Proof.Framework.AArch64.Residue
+meta import VerifiedGarbage.Proof.Framework.AArch64.Residue
 
 /-! # Starting the DSA parameter search on AArch64: correctness, constant time -/
 
@@ -150,7 +152,7 @@ def initPost (s t : State) : Prop :=
       Spec.Rsa.wordsAt t.mem (s.gpr .x0) 4 = List.replicate 4 0
   | some values => ((t.gpr .x0).setWidth 32).toNat = 1 ∧ ∃ first,
       Spec.Rsa.wordsAt t.mem (s.gpr .x0) 4 = (values ++ [first]).map (BitVec.ofNat 64) ∧
-      Spec.Entropy.RequestValid (Spec.Dsa.parameterEntropy (s.gpr .x1).toNat) 0 first
+      Proof.Dsa.Generation.FirstAsked (s.gpr .x1).toNat first
 
 def initPub (s t : State) : Prop :=
   s.sp = t.sp ∧ s.gpr .x0 = t.gpr .x0 ∧ s.gpr .x1 = t.gpr .x1
@@ -173,8 +175,7 @@ theorem result_post {s t : State} (h : InitPost (s.gpr .x1).toNat s.mem (s.gpr .
     refine ⟨by rw [h.1]; rfl, 512 * (s.gpr .x1).toNat, ?_, ?_⟩
     · rw [h.2, words, written_words]
       rfl
-    · unfold Spec.Entropy.RequestValid Spec.Dsa.parameterEntropy
-      omega_using [hp]
+    · exact Proof.Dsa.Generation.firstAsked hp
   · rename_i hv
     rw [ite_eq_right_of_eq_false _ _ (eq_false hv)]
     exact ⟨by rw [h.1]; rfl, by rw [h.2, written_words]; rfl⟩
@@ -207,11 +208,34 @@ def initSat : State where
   rd := []
   wr := [⟨0x1000, 32⟩]
 
-theorem init_verified : Verified target init (Spec.Dsa.parameterInitContract abi) := by
+theorem init_verified : Verified target init (Proof.Dsa.parameterInitAskedContract abi) := by
   refine Verified.of_correct (k := initContract) init_correct ?_ ?_
   · intro s₁ s₂ tr₁ tr₂ t₁ t₂ _ _ hp h₁ h₂
     exact init_constantTime s₁ s₂ tr₁ tr₂ t₁ t₂ trivial trivial hp h₁ h₂
-  · sig_implies [Spec.Dsa.parameterInitContract, Spec.Dsa.parameterInitSig,
+  · sig_implies [Proof.Dsa.parameterInitAskedContract, Spec.Dsa.parameterInitSig,
       initContract, initPre, initPost, initPub, abi, argRegs] [initSat] using initSat
+
+/-- `vg_dsa_parameter_search_init` returns without secret residue: it reads no memory, so what it
+leaves is a function of its arguments (`Residue.noResidue_of_blind`). -/
+theorem init_noResidue (k : Contract isa) (r : Nat) : NoResidue init k r :=
+  Residue.noResidue_of_blind (by decide) k r
+
+/-- The function as its registration binds it: it meets its contract in constant time and returns
+without secret residue. -/
+theorem _root_.VG.Proof.Dsa.AArch64.ParameterSearchInit.init_asked :
+    VerifiedScrubbed AArch64.target Impl.Dsa.AArch64.ParameterSearch.init
+      (Proof.Dsa.parameterInitAskedContract AArch64.abi) 32 :=
+  ⟨Proof.Dsa.AArch64.ParameterSearchInit.init_verified,
+    Proof.Dsa.AArch64.ParameterSearchInit.init_noResidue _ _, fun ty _ h => by cases ty <;> cases h⟩
+
+theorem _root_.VG.Proof.Dsa.AArch64.ParameterSearchInit.init_scrubbed :
+    VerifiedScrubbed AArch64.target Impl.Dsa.AArch64.ParameterSearch.init
+      (Spec.Dsa.parameterInitContract AArch64.abi) 32 :=
+  Proof.Dsa.parameterInit_imp init_asked id
+
+theorem _root_.VG.Proof.Dsa.AArch64.ParameterSearchInit.init_public :
+    Spec.Dsa.parameterInitOut.Of AArch64.abi Impl.Dsa.AArch64.ParameterSearch.init
+      (Spec.Dsa.parameterInitContract AArch64.abi) :=
+  Proof.Dsa.parameterInit_public init_asked
 
 end VG.Proof.Dsa.AArch64.ParameterSearchInit

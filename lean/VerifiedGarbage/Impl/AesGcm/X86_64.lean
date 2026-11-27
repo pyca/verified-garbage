@@ -97,6 +97,31 @@ structure Fn where
   name : String
   code : Prog isa
 
+/-- An in-place certification of the compact seal leaf: its destination
+register is initialized to its source. `Fn.callBlocks` supplies this argument
+on the caller side so both layouts call the same symbol. -/
+def Fn.withSameDst (f : Fn) : Fn :=
+  ⟨f.name,.seq (.block [.mov .r10 (.reg .r8)]) f.code⟩
+
+/-- Pass the destination to the compact leaf before CALL. Other block
+functions retain their existing calling convention. -/
+def Fn.callBlocks (f : Fn) : Prog isa :=
+  match f.code with
+  | .seq (.block [.mov .r10 (.reg .r8)]) body =>
+    .seq (.block [.mov .r10 (.reg .r8)]) (.call f.name body)
+  | body => .call f.name body
+
+/-- On seal, put the identical-buffer argument at call sites of this
+particular shared block symbol. Other call targets keep their code and ABI. -/
+def placeSealArgs (target : String) : Prog isa → Prog isa
+  | .block is => .block is
+  | .seq a b => .seq (placeSealArgs target a) (placeSealArgs target b)
+  | .ite c a b => .ite c (placeSealArgs target a) (placeSealArgs target b)
+  | .loop b c => .loop (placeSealArgs target b) c
+  | .call n b => if n = target then (Fn.mk n b).callBlocks else .call n b
+  | .frame i b j => .frame i (placeSealArgs target b) j
+  | .icall i n b a => .icall i n b a
+
 /-- The implementations called: of `vg_aes_ctr32`, `vg_aes_expand_key_scratch` and
 `vg_ghash`, and the instances of `vg_aes_gcm_encrypt_blocks` and
 `vg_aes_gcm_decrypt_blocks` that call them. -/
@@ -582,15 +607,15 @@ def streamVerify : Prog isa :=
         (cmp 0)))))
     (.block restore)))
 
-/-- The entry of `seal` and `open`: `(ctx = rdi, rounds = rsi, nonce = rdx,
-nonce_len = rcx, aad = r8, aad_len = r9, data = [rsp + 8], len = [rsp + 16],
-tag = [rsp + 24])`, and `work` at `[rsp + wo]`. The state is at `W + 16`. -/
-def oneEntry (wo : Nat) : List Instr :=
+/-- Initialize one-shot GCM from the six register arguments. The output pointer,
+length and work pointer are at stack byte offsets `dataOff`, `lenOff` and `wo`.
+The state starts at `W + 16`. -/
+def oneEntry (wo : Nat) (dataOff : Nat := 8) (lenOff : Nat := 16) : List Instr :=
   ([.mov .rax (.mem (at_ .rsp wo))] : List Instr) ++ save .rax ++
     ([.mov .r15 (.reg .rax)] : List Instr) ++ ptr .r14 .r15 stO ++
     ([.mov .r13 (.reg .rdi), .store (at_ .r15 roundsO) .rsi, .store (at_ .r15 aadO) .r8,
-      .store (at_ .r15 alenO) .r9, .mov .rax (.mem (at_ .rsp 8)), .store (at_ .r15 dataO) .rax,
-      .mov .rax (.mem (at_ .rsp 16)), .store (at_ .r15 lenO) .rax, .mov .r12 (.reg .rdx),
+      .store (at_ .r15 alenO) .r9, .mov .rax (.mem (at_ .rsp dataOff)), .store (at_ .r15 dataO) .rax,
+      .mov .rax (.mem (at_ .rsp lenOff)), .store (at_ .r15 lenO) .rax, .mov .r12 (.reg .rdx),
       .mov .rbp (.reg .rcx)] : List Instr)
 
 /-- `J₀`, then the additional data absorbed and padded. -/
@@ -618,11 +643,14 @@ def oneBlocks (f : Fn) : Prog isa :=
 
 /-- The data left (as ciphertext) absorbed and padded, and the tag of all of it
 (`len` at `W + 192`) into `W + o`. -/
+abbrev tagCiphertext (o : Nat) : Prog isa :=
+  .seq (absorbPad c 16)
+  (.seq (.block [.mov .rbx (.mem (at_ .r15 alenO)), .mov .rbp (.mem (at_ .r15 tlenO))])
+    (tag c o))
+
 def oneTag (o : Nat) : Prog isa :=
   .seq (.block [.mov .r12 (.mem (at_ .r15 dataO)), .mov .rbp (.mem (at_ .r15 lenO)), .mov32 .rbx (imm 0)])
-  (.seq (absorbPad c 16)
-  (.seq (.block [.mov .rbx (.mem (at_ .r15 alenO)), .mov .rbp (.mem (at_ .r15 tlenO))])
-    (tag c o)))
+    (tagCiphertext c o)
 
 /-- The data left, kept at `W + 200`, and its length, `lenO`: in place, the
 data at `r12`, from the start of a keystream block (`rbx = 0`); out of

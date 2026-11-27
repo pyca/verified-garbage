@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Seed.PPC64LE.ModesVerified
 public import VerifiedGarbage.Proof.Seed.PPC64LE.ModesFrame
 public import VerifiedGarbage.Proof.Modes.PPC64LE.SeqFinal
-public import VerifiedGarbage.Proof.Seed.PPC64LE.SerialCore
 public import VerifiedGarbage.Proof.Modes.CfbFinalScratch
 public import VerifiedGarbage.Impl.Seed.PPC64LE.FbFinal
 public import VerifiedGarbage.Spec.Seed.CfbFinal

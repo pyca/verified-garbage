@@ -1,27 +1,27 @@
 module
 
-public import VerifiedGarbage.Proof.AesOcb.PPC64LE.Init
-public import VerifiedGarbage.Proof.AesOcb.PPC64LE.Frame
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.PPC64LE.Print
+public import VerifiedGarbage.TCB.PPC64LE.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Ocb.Contract
+import VerifiedGarbage.Proof.AesOcb.PPC64LE.Scrub
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # AES-OCB (RFC 7253) on PPC64LE -/
 
-@[expose] public section
-
 namespace VG.Artifacts.AesOcb.PPC64LE
 
-open VG.Proof.AesOcb.PPC64LE
-
-def artifacts : List Artifact := [
+public def artifacts : List (Artifact PPC64LE.target) := [
   Spec.Ocb.initApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratch 2592 .r6 Impl.AesGcm.PPC64LE.init
-    verified := init_framed },
+    code := Impl.AesOcb.PPC64LE.Fn.init
+    verified := Proof.AesOcb.PPC64LE.Scrub.init_scrubbed },
   Spec.Ocb.sealApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratchArgs 2688 2 Impl.AesOcb.PPC64LE.«seal»
-    verified := Proof.AesOcb.seal_keyed seal_framed },
+    code := Impl.AesOcb.PPC64LE.Fn.seal
+    verified := Proof.AesOcb.PPC64LE.Scrub.seal_scrubbed },
   Spec.Ocb.openApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratchArgs 2688 2 Impl.AesOcb.PPC64LE.«open»
-    verified := Proof.AesOcb.open_keyed open_framed }]
+    code := Impl.AesOcb.PPC64LE.Fn.open
+    verified := Proof.AesOcb.PPC64LE.Scrub.open_scrubbed }]
+
+spec_apis artifacts
 
 end VG.Artifacts.AesOcb.PPC64LE

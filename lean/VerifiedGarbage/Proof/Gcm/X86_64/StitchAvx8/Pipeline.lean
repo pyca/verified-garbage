@@ -39,7 +39,7 @@ theorem advanceCounter_ok (m : Mem) (p : Addr) (n : Nat) :
   apply VG.Proof.Aes.X86_64.ctr_after
   intro k hk
   simp only [advanceCounter, VG.Proof.Aes.X86_64.writeW_apply,
-    VG.Proof.Aes.X86_64.off_toNat p (i := k) (j := 12) (by omega_arith) (by omega_arith)]
+    Offset.sub_toNat' p (show 12 < 2 ^ 64 by decide) (show k < 2 ^ 64 by omega_arith)]
   by_cases h : k < 12
   · simp only [ite_eq_right (show ¬ 12 ≤ k by omega_arith),
       ite_eq_right (show ¬ 2 ^ 64 + k - 12 < 32 / 8 by omega_arith), ite_eq_left h]

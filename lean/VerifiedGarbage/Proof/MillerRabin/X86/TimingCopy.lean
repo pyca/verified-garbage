@@ -1,8 +1,7 @@
 module
 
 import VerifiedGarbage.Proof.MillerRabin.X86.TimingPointers
-import VerifiedGarbage.Proof.MillerRabin.X86.Copy
-public import VerifiedGarbage.Proof.MillerRabin.X86.CopyLoop
+public import VerifiedGarbage.Proof.MillerRabin.X86.Copy
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import VerifiedGarbage.Proof.MillerRabin.X86.TimingBase

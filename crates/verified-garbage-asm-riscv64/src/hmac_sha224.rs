@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Hmac.Instance.initAnyKeyContract` of `VG.Spec.Hmac.sha224I`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `inner` must be valid for reads and writes of 96 bytes.
@@ -22,19 +24,19 @@ pub(crate) unsafe extern "C" fn vg_hmac_sha224_init(inner: *mut [u8; 96], outer:
 .base64 "cXGKgiOwEggjtHIJI7iCCSO8kgkjsKILI7SyC6qLFoyujDKNto0T03YAk/P2B5OD8wOT03MAHpM="
 beqz t1, 20f
 .base64 "YoU="
-call {vg_sha224_init}
+call {vg_sha224_init_core}
 .base64 "YoWBRWqG7oY="
-call {vg_sha256_update}
+call {vg_sha256_update_core}
 .base64 "YoXuhRMGDAY="
-call {vg_sha224_finalize}
+call {vg_sha224_finalize_core}
 .base64 "Ew0MBvFN"
 j 21f
 20:
 21:
 .base64 "XoU="
-call {vg_sha224_init}
+call {vg_sha224_init_core}
 .base64 "ZoU="
-call {vg_sha224_init}
+call {vg_sha224_init_core}
 .base64 "Ew9gA4FP6oNujg=="
 beqz t3, 22f
 24:
@@ -52,7 +54,7 @@ j 26f
 25:
 26:
 .base64 "XoWBRROGDAKTBgAE"
-call {vg_sha256_update}
+call {vg_sha256_update_core}
 .base64 "Ew/ABYFP6oNujg=="
 beqz t3, 28f
 210:
@@ -70,18 +72,20 @@ j 212f
 211:
 212:
 .base64 "ZoWBRROGCwKTBgAE"
-call {vg_sha256_update}
-.base64 "AUMjMGwAIzRsACM4bAAjPGwAIzBsAiM0bAIjOGwCIzxsAiMwbAQjNGwEIzhsBCM8bAQjMGwGIzRsBiM4bAYjPGwGgzAMCIM7jAiDPIwJAz0MCoM9jAoDPAwJTWGCgA=="
+call {vg_sha256_update_core}
+.base64 "AUMjMGwAIzRsACM4bAAjPGwAIzBsAiM0bAIjOGwCIzxsAiMwbAQjNGwEIzhsBCM8bAQjMGwGIzRsBiM4bAYjPGwGgzAMCIM7jAiDPIwJAz0MCoM9jAoDPAwJTWGBQilxCoMjMFMAIzRTACM4UwAjPFMAIzBTAiM0UwIjOFMCIzxTAiMwUwQjNFMEIzhTBCM8UwQjMFMGIzRTBiM4UwYjPFMGIzBTCCM0UwgjOFMQIzxTECMwUxIjNFMSIzhTEiM8UxIxYYFFAUaBRgFHgUcBSIFIgUIBQ4FDAU6BTgFPgU8BRYKA"
 .option pop"#,
-        vg_sha224_init = sym super::sha256::vg_sha224_init,
-        vg_sha256_update = sym super::sha256::vg_sha256_update,
-        vg_sha224_finalize = sym super::sha256::vg_sha224_finalize,
+        vg_sha224_init_core = sym super::ecdsa_brainpoolp256r1::vg_sha224_init_core::vg_sha224_init_core,
+        vg_sha256_update_core = sym super::sha256::vg_sha256_update_core::vg_sha256_update_core,
+        vg_sha224_finalize_core = sym super::ecdsa_brainpoolp256r1::vg_sha224_finalize_core::vg_sha224_finalize_core,
     )
 }
 
 /// Finishes an HMAC-SHA-224 computation: if, for a 64-byte key `K₀` and a text of fewer than 2⁶⁴ − 64 bytes, the SHA-224 streaming state `*inner` represents `(K₀ ⊕ ipad) ‖ text`, of `count` bytes, and `*outer` represents `K₀ ⊕ opad`, writes the HMAC-SHA-224 of the text under `K₀` (28 bytes) to `*out`.
 ///
 /// Contract: `VG.Spec.Hmac.Instance.finalizeContract` of `VG.Spec.Hmac.sha224I`. Constant time: only the pointers and `count` may affect timing, not the states.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -97,14 +101,22 @@ pub(crate) unsafe extern "C" fn vg_hmac_sha224_finalize(inner: *mut [u8; 96], ou
         r#".option push
 .option arch, +m, +c
 .base64 "XXGKgiOwEgIjtHIDI7iCAyO8kgMjsKIFI7SyBaqLFoyujDaNsoUWhg=="
-call {vg_sha224_finalize}
+call {vg_sha224_finalize_core}
 .base64 "A8MMACOAawADwxwAo4BrAAPDLAAjgWsAA8M8AKOBawADw0wAI4JrAAPDXACjgmsAA8NsACODawADw3wAo4NrAAPDjAAjhGsAA8OcAKOEawADw6wAI4VrAAPDvACjhWsAA8PMACOGawADw9wAo4ZrAAPD7AAjh2sAA8P8AKOHawADwwwBI4hrAAPDHAGjiGsAA8MsASOJawADwzwBo4lrAAPDTAEjimsAA8NcAaOKawADw2wBI4trAAPDfAGji2sAA8OMASOMawADw5wBo4xrAAPDrAEjjWsAA8O8AaONawADw8wBI45rAAPD3AGjjmsAA8PsASOPawADw/wBo49rAF6FkwUABGKG8UY="
-call {vg_sha256_update}
+call {vg_sha256_update_core}
 .base64 "XoWTBcAFaoY="
-call {vg_sha224_finalize}
-.base64 "gzAMAoM7jAKDPIwDAz0MBIM9jAQDPAwDYWGCgA=="
+call {vg_sha224_finalize_core}
+.base64 "gzAMAoM7jAKDPIwDAz0MBIM9jAQDPAwDYWGBQhVxCoMjMFMAIzRTACM4UwAjPFMAIzBTAiM0UwIjOFMCIzxTAiMwUwQjNFMEIzhTBCM8UwQjMFMGIzRTBiM4UwYjPFMGIzBTCCM0UwgjOFMIIzxTCCMwUwojNFMKIzhTCiM8UwojMFMMIzRTDCM4UwwjPFMMLWEBRYFFAUaBRgFHgUcBSIFIgUIBQ4FDAU6BTgFPgU+CgA=="
 .option pop"#,
-        vg_sha224_finalize = sym super::sha256::vg_sha224_finalize,
-        vg_sha256_update = sym super::sha256::vg_sha256_update,
+        vg_sha224_finalize_core = sym super::ecdsa_brainpoolp256r1::vg_sha224_finalize_core::vg_sha224_finalize_core,
+        vg_sha256_update_core = sym super::sha256::vg_sha256_update_core::vg_sha256_update_core,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_hmac_sha224_finalize_core.rs"]
+pub(crate) mod vg_hmac_sha224_finalize_core;
+
+#[rustfmt::skip]
+#[path = "internal/vg_hmac_sha224_init_core.rs"]
+pub(crate) mod vg_hmac_sha224_init_core;

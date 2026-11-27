@@ -8,12 +8,12 @@ vg_blake2b_finalize_scratch:
 	mflr %r0
 	stdu %r1, -48(%r1)
 	std %r0, 32(%r1)
-	std %r26, 512(%r6)
-	std %r27, 520(%r6)
-	std %r28, 528(%r6)
-	std %r29, 536(%r6)
-	std %r30, 544(%r6)
-	std %r31, 552(%r6)
+	std %r26, 104(%r6)
+	std %r27, 112(%r6)
+	std %r28, 120(%r6)
+	std %r29, 128(%r6)
+	std %r30, 136(%r6)
+	std %r31, 144(%r6)
 	addi %r26, %r3, 0
 	addi %r27, %r6, 0
 	addi %r28, %r5, 0
@@ -66,12 +66,12 @@ vg_blake2b_finalize_scratch:
 	std %r9, 48(%r28)
 	ld %r9, 56(%r26)
 	std %r9, 56(%r28)
-	ld %r26, 512(%r27)
-	ld %r28, 528(%r27)
-	ld %r29, 536(%r27)
-	ld %r30, 544(%r27)
-	ld %r31, 552(%r27)
-	ld %r27, 520(%r27)
+	ld %r26, 104(%r27)
+	ld %r28, 120(%r27)
+	ld %r29, 128(%r27)
+	ld %r30, 136(%r27)
+	ld %r31, 144(%r27)
+	ld %r27, 112(%r27)
 	ld %r0, 32(%r1)
 	addi %r1, %r1, 48
 	mtlr %r0

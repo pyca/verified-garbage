@@ -2,9 +2,36 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateParams
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.WitnessState
-public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.PhaseState
 import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Shape
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.TCB.Arm.Isa
+public import VerifiedGarbage.Spec.Ffdh
+
+/-! ### `Ffdh.Arm.ParameterCandidate.PhaseState`, which this module and modules that import it used -/
+
+section
+
+/-! The public parameter-generation phase's four saved policy words. -/
+
+@[expose] public section
+namespace VG.Proof.Ffdh.Arm.ParameterCandidate
+open VG VG.Arm
+
+def phaseBits (q : Bool) (bits : Nat) : Nat := if q then bits - 1 else bits
+
+def phaseMemory (s : State) (q : Bool) (bits : Nat) : Mem :=
+  (((s.mem.writeW (State.addr (s.sp + 44#32)) (BitVec.ofNat 32 (phaseBits q bits))).writeW
+    (State.addr (s.sp + 48#32)) (BitVec.ofNat 32 ((phaseBits q bits + 7) / 8))).writeW
+    (State.addr (s.sp + 52#32)) (BitVec.ofNat 32 (VG.Spec.Ffdh.primeChecks (phaseBits q bits)))).writeW
+    (State.addr (s.sp + 56#32)) (0#32)
+
+
+
+end VG.Proof.Ffdh.Arm.ParameterCandidate
+
+end
+
+end
 
 /-! q and p share the fixed p-width RSA workspace and the same entropy tape. -/
 

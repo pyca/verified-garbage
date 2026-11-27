@@ -13,6 +13,8 @@ pub const VG_AES_CBC_DECRYPT_AES_SHA3_SCRATCH_WRITTEN: usize = 0;
 ///
 /// Contract: `VG.Spec.Cbc.aesDecryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule, the chaining value or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// It writes at most the first 0 bytes of `scratch` (`VG_AES_CBC_DECRYPT_AES_SHA3_SCRATCH_WRITTEN`): no byte of `scratch` beyond them changes.
 ///
 /// # Safety
@@ -185,7 +187,9 @@ b 220f
 220:
 .inst 0x3d80017f
 21:
-.inst 0xd65f03c0
+.inst 0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e410
+.inst 0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418
+.inst 0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xd65f03c0
 .p2align 6",
     )
 }
@@ -199,6 +203,8 @@ pub const VG_AES_CBC_DECRYPT_AES_SCRATCH_WRITTEN: usize = 0;
 /// AES-CBC decryption (NIST SP 800-38A §6.2) of whole blocks, in place: replaces the `n` 16-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = CIPH⁻¹_K(Cⱼ) ⊕ Cⱼ₋₁`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ`, the last block at `data` on entry (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH⁻¹_K` is the AES inverse cipher (FIPS 197 §5.3) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it. No padding is removed.
 ///
 /// Contract: `VG.Spec.Cbc.aesDecryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule, the chaining value or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// It writes at most the first 0 bytes of `scratch` (`VG_AES_CBC_DECRYPT_AES_SCRATCH_WRITTEN`): no byte of `scratch` beyond them changes.
 ///
@@ -374,7 +380,9 @@ b 220f
 220:
 .inst 0x3d80017f
 21:
-.inst 0xd65f03c0
+.inst 0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e410
+.inst 0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418
+.inst 0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xd65f03c0
 .p2align 6",
     )
 }
@@ -388,6 +396,8 @@ pub const VG_AES_CBC_ENCRYPT_AES_SCRATCH_WRITTEN: usize = 0;
 /// AES-CBC encryption (NIST SP 800-38A §6.2) of whole blocks, in place: replaces the `n` 16-byte blocks `P₁ … Pₙ` at `data` with `Cⱼ = CIPH_K(Pⱼ ⊕ Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ` (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH_K` is AES (FIPS 197) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it. No padding is added.
 ///
 /// Contract: `VG.Spec.Cbc.aesEncryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule, the chaining value or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// It writes at most the first 0 bytes of `scratch` (`VG_AES_CBC_ENCRYPT_AES_SCRATCH_WRITTEN`): no byte of `scratch` beyond them changes.
 ///
@@ -483,7 +493,10 @@ b 215f
 215:
 .inst 0x6e3e1fff,0x3d80017f
 21:
-.inst 0xd65f03c0
+.inst 0xd2800002,0xd2800003,0xd2800004,0xd2800006,0xd2800007,0xd2800009,0xd280000a,0xd280000b
+.inst 0xd280000c,0xd280000d,0x6f00e400,0x6f00e401,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412
+.inst 0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a
+.inst 0x6f00e41b,0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f,0xd2800000,0xd65f03c0
 .p2align 6",
     )
 }
@@ -491,6 +504,78 @@ b 215f
 /// AES-CBC encryption (NIST SP 800-38A §6.2) of whole blocks, in place: replaces the `n` 16-byte blocks `P₁ … Pₙ` at `data` with `Cⱼ = CIPH_K(Pⱼ ⊕ Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ` (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH_K` is AES (FIPS 197) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it. No padding is added.
 ///
 /// Contract: `VG.Spec.Cbc.aesEncryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule, the chaining value or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `iv` must be valid for reads and writes of 16 bytes.
+/// * `data` must be valid for reads and writes of `16 * n` bytes.
+/// * `scratch` must be valid for reads and writes of 2176 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * On return each byte of `scratch` is unchanged or zero.
+/// * `iv`, `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `iv`, `data` and `scratch` may overlap the 32 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_aes_cbc_encrypt_neon(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
+    core::arch::naked_asm!(
+        r".inst 0xd10083ff,0xf90003fe,0xf90007e5
+bl {vg_aes_cbc_encrypt_unwiped_neon}
+.inst 0xf9000be0,0xf94007e0,0xd2811001
+bl {vg_zeroize}
+.inst 0xf9400be0,0xf94003fe,0x910083ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005
+.inst 0xd2800006,0xd2800007,0xd2800008,0xd2800009,0xd280000a,0xd2800010,0xd2800011,0x6f00e400
+.inst 0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410
+.inst 0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418
+.inst 0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f
+.inst 0xd2800000,0xd10083ff,0x6f00e41f,0x910003e9,0x3d80013f,0x3d80053f,0x910083ff,0xd65f03c0
+.p2align 6",
+        vg_aes_cbc_encrypt_unwiped_neon = sym super::aes_cbc::vg_aes_cbc_encrypt_unwiped_neon::vg_aes_cbc_encrypt_unwiped_neon,
+        vg_zeroize = sym super::zeroize::vg_zeroize,
+    )
+}
+
+/// AES-CBC decryption (NIST SP 800-38A §6.2) of whole blocks, in place: replaces the `n` 16-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = CIPH⁻¹_K(Cⱼ) ⊕ Cⱼ₋₁`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ`, the last block at `data` on entry (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH⁻¹_K` is the AES inverse cipher (FIPS 197 §5.3) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it. No padding is removed.
+///
+/// Contract: `VG.Spec.Cbc.aesDecryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule, the chaining value or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `iv` must be valid for reads and writes of 16 bytes.
+/// * `data` must be valid for reads and writes of `16 * n` bytes.
+/// * `scratch` must be valid for reads and writes of 2176 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * On return each byte of `scratch` is unchanged or zero.
+/// * `iv`, `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `iv`, `data` and `scratch` may overlap the 32 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_aes_cbc_decrypt_neon(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
+    core::arch::naked_asm!(
+        r".inst 0xd10083ff,0xf90003fe,0xf90007e5
+bl {vg_aes_cbc_decrypt_unwiped_neon}
+.inst 0xf9000be0,0xf94007e0,0xd2811001
+bl {vg_zeroize}
+.inst 0xf9400be0,0xf94003fe,0x910083ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800006
+.inst 0xd2800007,0xd2800008,0xd2800009,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402
+.inst 0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412
+.inst 0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a
+.inst 0x6f00e41b,0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f,0xd2800000,0xd10083ff
+.inst 0x6f00e41f,0x910003e9,0x3d80013f,0x3d80053f,0x910083ff,0xd65f03c0
+.p2align 6",
+        vg_aes_cbc_decrypt_unwiped_neon = sym super::aes_cbc::vg_aes_cbc_decrypt_unwiped_neon::vg_aes_cbc_decrypt_unwiped_neon,
+        vg_zeroize = sym super::zeroize::vg_zeroize,
+    )
+}
+
+/// AES-CBC encryption (NIST SP 800-38A §6.2) of whole blocks, in place: replaces the `n` 16-byte blocks `P₁ … Pₙ` at `data` with `Cⱼ = CIPH_K(Pⱼ ⊕ Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ` (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH_K` is AES (FIPS 197) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it. No padding is added.
+///
+/// Contract: `VG.Spec.Cbc.aesEncryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule, the chaining value or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -509,7 +594,12 @@ pub(crate) unsafe extern "C" fn vg_aes_cbc_encrypt(schedule: *const [u8; 240], r
 bl {vg_aes_cbc_encrypt_unwiped}
 .inst 0xf9000be0,0xf94007e0,0xd2811001
 bl {vg_zeroize}
-.inst 0xf9400be0,0xf94003fe,0x910083ff,0xd65f03c0
+.inst 0xf9400be0,0xf94003fe,0x910083ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800006
+.inst 0xd2800009,0xd280000a,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403
+.inst 0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414
+.inst 0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c
+.inst 0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f,0xd2800000,0xd10083ff,0x6f00e41f,0x910003e9
+.inst 0x3d80013f,0x3d80053f,0x910083ff,0xd65f03c0
 .p2align 6",
         vg_aes_cbc_encrypt_unwiped = sym super::aes_cbc::vg_aes_cbc_encrypt_unwiped::vg_aes_cbc_encrypt_unwiped,
         vg_zeroize = sym super::zeroize::vg_zeroize,
@@ -519,6 +609,8 @@ bl {vg_zeroize}
 /// AES-CBC decryption (NIST SP 800-38A §6.2) of whole blocks, in place: replaces the `n` 16-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = CIPH⁻¹_K(Cⱼ) ⊕ Cⱼ₋₁`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ`, the last block at `data` on entry (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH⁻¹_K` is the AES inverse cipher (FIPS 197 §5.3) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it. No padding is removed.
 ///
 /// Contract: `VG.Spec.Cbc.aesDecryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule, the chaining value or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -537,7 +629,12 @@ pub(crate) unsafe extern "C" fn vg_aes_cbc_decrypt(schedule: *const [u8; 240], r
 bl {vg_aes_cbc_decrypt_unwiped}
 .inst 0xf9000be0,0xf94007e0,0xd2811001
 bl {vg_zeroize}
-.inst 0xf9400be0,0xf94003fe,0x910083ff,0xd65f03c0
+.inst 0xf9400be0,0xf94003fe,0x910083ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800006
+.inst 0xd2800009,0xd280000a,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403
+.inst 0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413
+.inst 0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b
+.inst 0x6f00e41c,0x6f00e41d,0x6f00e41e,0xea01003f,0xd2800000,0xd10083ff,0x6f00e41f,0x910003e9
+.inst 0x3d80013f,0x3d80053f,0x910083ff,0xd65f03c0
 .p2align 6",
         vg_aes_cbc_decrypt_unwiped = sym super::aes_cbc::vg_aes_cbc_decrypt_unwiped::vg_aes_cbc_decrypt_unwiped,
         vg_zeroize = sym super::zeroize::vg_zeroize,
@@ -549,5 +646,13 @@ bl {vg_zeroize}
 pub(crate) mod vg_aes_cbc_decrypt_unwiped;
 
 #[rustfmt::skip]
+#[path = "internal/vg_aes_cbc_decrypt_unwiped_neon.rs"]
+pub(crate) mod vg_aes_cbc_decrypt_unwiped_neon;
+
+#[rustfmt::skip]
 #[path = "internal/vg_aes_cbc_encrypt_unwiped.rs"]
 pub(crate) mod vg_aes_cbc_encrypt_unwiped;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_cbc_encrypt_unwiped_neon.rs"]
+pub(crate) mod vg_aes_cbc_encrypt_unwiped_neon;

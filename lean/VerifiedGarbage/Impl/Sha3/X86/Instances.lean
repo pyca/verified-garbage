@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.Sha3.X86.Stream
+public import VerifiedGarbage.Impl.StackScratch.X86
+public import VerifiedGarbage.Impl.Scrub.X86
 
 /-!
 # SHA-3 and SHAKE on x86 (32-bit): the functions of each instance
@@ -14,7 +16,8 @@ caller's arguments, at `esp + bytes + 4` and above; `const`; `buf`, an
 address in the frame), and calls the sponge function.
 
 * `update rate (state, pos, data, len, scratch)` calls `absorb(state, rate,
-  pos, data, len, scratch)` and returns what it returns.
+  pos, data, len, scratch)` and returns what it returns; `absorb rate (state,
+  pos, data, len)` is `update` with `scratch` in a frame of its own.
 * `xofFinalize rate (state, pos)` calls `pad(state, rate, pos, 0x1f,
   scratch)` (SHAKE's suffix).
 * `xofSqueeze rate (state, pos, out, outlen)` calls `squeeze(state, rate,
@@ -55,6 +58,13 @@ def update (rate : Nat) : Prog isa :=
   .frame (.alloc 24)
     (.seq (.block (updateArgs rate)) (.call "vg_keccak_absorb_scratch" Stream.absorb)) (.free 24)
 
+/-- `absorb rate (state, pos, data, len)`: `update`, with its working space
+`scratch` in a frame of 664 bytes on the stack, passed as its stack argument
+(`withStackScratch`: the four argument slots copied, then the buffer's
+address, at `esp + 24`), so that it is left in no memory of the caller's. -/
+def absorb (rate : Nat) : Prog isa :=
+  Impl.StackScratch.X86.withStackScratch 664 4 (update rate)
+
 /-- `pad(state, rate, pos, 0x1f, scratch = esp + 20)`, from SHAKE's
 `finalize`'s arguments. -/
 def xofPadArgs (rate : Nat) : List Instr :=
@@ -91,3 +101,28 @@ def finalize (rate len : Nat) : Prog isa :=
     (.free 664)
 
 end VG.Impl.Sha3.X86.Instances
+
+/-! ## The functions as emitted
+
+Each instance's function, then its cleanup (`Impl.Scrub.X86.scrubAll rb W`):
+the `W` bytes of stack below `esp` that it and the sponge use zeroed, and
+the registers a callee may change cleared but the `rb` bits of the result,
+so that it returns without secret residue. -/
+
+namespace VG.Impl.Sha3.X86.Fn
+
+open VG.X86
+
+/-- `vg_<f>_update` at rate `rate`, as emitted. -/
+def update (rate : Nat) : Prog isa := Impl.Scrub.X86.scrubAll 32 704 (Instances.absorb rate)
+
+/-- SHA-3's `vg_<f>_finalize` at rate `rate`, of `len` bytes, as emitted. -/
+def finalize (rate len : Nat) : Prog isa := Impl.Scrub.X86.scrubAll 0 680 (Instances.finalize rate len)
+
+/-- SHAKE's `vg_<f>_finalize` at rate `rate`, as emitted. -/
+def xofFinalize (rate : Nat) : Prog isa := Impl.Scrub.X86.scrubAll 0 676 (Instances.xofFinalize rate)
+
+/-- SHAKE's `vg_<f>_squeeze` at rate `rate`, as emitted. -/
+def xofSqueeze (rate : Nat) : Prog isa := Impl.Scrub.X86.scrubAll 32 680 (Instances.xofSqueeze rate)
+
+end VG.Impl.Sha3.X86.Fn

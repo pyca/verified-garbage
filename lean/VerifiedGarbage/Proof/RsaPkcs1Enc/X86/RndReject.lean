@@ -1,10 +1,7 @@
 module
 
 -- separate module: its proofs build in parallel with `RndAccept`'s, which `RndVerified` also imports
-
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86.RndScan
-import VerifiedGarbage.Proof.RsaPkcs1Enc.X86.RndTaint
-import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.Instr
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.Loops
 import VerifiedGarbage.Proof.RsaPkcs1Sig.BytesAt
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
@@ -266,8 +263,9 @@ theorem exhausted_vp : VP (fun σ s => RJ5 P σ s ∧ isa.eval .ae s = some true
         (0 : BitVec 32)).writeW (P.tape.setWidth 64 + BitVec.ofNat 64 12) (0 : BitVec 32) := by
       rw [u6.mem, m5, m4, m3, u2.mem, m1, BitVec.add_zero, g4, g3, u2.gpr, h.ax]
     unfold Res
+    have hR' := hR
     rw [ho, hu, hR, u6.gpr]
-    refine ⟨⟨0, ?_, by simp only [Spec.Entropy.Result.Requests, ho]⟩, rfl, ?_⟩
+    refine ⟨⟨0, ?_, padAsked_exhausted hnz (by rw [hR']; exact hge)⟩, rfl, ?_⟩
     · rw [mm, words4, zero_append_ofNat (by omega_using [hl]),
         show (0 : BitVec 32) ++ (0 : BitVec 32) = BitVec.ofNat 64 0 by decide]
     · rw [Proof.RsaPkcs1Sig.bytesAt_frame fr (fun r hr => by
@@ -342,10 +340,13 @@ theorem request_vp : VP (RJ7 P) (.block request) (Fin P) :=
     refine ⟨⟨min (P.pl + 128) (P.len + (P.pl - cnt P.mask P.mask.length)), ?_, ?_⟩, rfl, ?_⟩
     · rw [mm, words4, zero_append_ofNat (by omega_using [hpl]),
         show (0 : BitVec 32) ++ (0 : BitVec 32) = BitVec.ofNat 64 0 by decide]
-    · simp only [Spec.Entropy.Result.Requests, ho, Spec.Entropy.RequestValid, Spec.RsaPkcs1Enc.padEntropy]
-      have := h.short
-      rw [hR]
-      exact ⟨Nat.lt_min.mpr ⟨h.lt, by omega_using [this]⟩, Nat.min_le_left _ _⟩
+    · refine padAsked_entropy hnz (by rw [hR]; exact h.lt) (congrArg (min _) ?_)
+      have e := hs.1.cntE (Nat.le_refl _)
+      rw [hN, ← hR, List.take_length, hR] at e
+      have hsh := h.short
+      rw [hN] at hsh
+      rw [hR, e, hN]
+      omega_using [hsh]
     · rw [Proof.RsaPkcs1Sig.bytesAt_frame fr (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
         have ww := hs.1.ok.wrw

@@ -8,6 +8,9 @@ against the Edwards addition formula, without trusting the generator. -/
 
 @[expose] public section
 
+-- The interpreter looks up each constant extracted from a table at every evaluation of it.
+set_option compiler.extract_closed false
+
 namespace VG.Impl.Ed448.PublicTable
 
 open VG.Spec.X448 (Fe)

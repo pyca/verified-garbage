@@ -50,9 +50,11 @@ def lane (A : State) (x y : Nat) : Lane := A[x % 5 + 5 * (y % 5)]!
 `A′[x, y, z] = A[x, y, z] ⊕ D[x, z]`. (Taking bit `(z - 1) mod 64` of a lane
 for bit `z` is rotating the lane left by one.) -/
 def theta (A : State) : State :=
-  let C (x : Nat) : Lane := lane A x 0 ^^^ lane A x 1 ^^^ lane A x 2 ^^^ lane A x 3 ^^^ lane A x 4
-  let D (x : Nat) : Lane := C ((x + 4) % 5) ^^^ (C ((x + 1) % 5)).rotateLeft 1
-  Vector.ofFn fun i => A[i] ^^^ D (i % 5)
+  let C : Vector Lane 5 := Vector.ofFn fun x =>
+    lane A x 0 ^^^ lane A x 1 ^^^ lane A x 2 ^^^ lane A x 3 ^^^ lane A x 4
+  let D : Vector Lane 5 := Vector.ofFn fun x =>
+    C[(x.val + 4) % 5] ^^^ (C[(x.val + 1) % 5]).rotateLeft 1
+  Vector.ofFn fun i => A[i] ^^^ D[i.val % 5]
 
 /-- The positions `(x, y)` visited by Algorithm 2: `(1, 0)` at `t = 0`, and
 `(y, (2x + 3y) mod 5)` after `(x, y)`. -/
@@ -60,14 +62,18 @@ def rhoPos : Nat → Nat × Nat
   | 0 => (1, 0)
   | t + 1 => let (x, y) := rhoPos t; (y, (2 * x + 3 * y) % 5)
 
+/-- Algorithm 2's rotation for each lane. The positions depend only on the
+lane index and can be computed once for all rounds. -/
+def rhoOffsets : Vector Nat 25 := Vector.ofFn fun i =>
+  match (List.range 24).find? (fun t => rhoPos t == (i.val % 5, i.val / 5)) with
+  | some t => (t + 1) * (t + 2) / 2 % 64
+  | none => 0
+
 /-- Algorithm 2, ρ: `A′[0, 0] = A[0, 0]`, and for `t = 0 … 23`,
 `A′[x, y, z] = A[x, y, (z - (t + 1)(t + 2)/2) mod 64]` at the `t`-th position
 `(x, y)`: lane `(x, y)` rotated left by `(t + 1)(t + 2)/2 mod 64`. -/
 def rho (A : State) : State :=
-  Vector.ofFn fun i =>
-    match (List.range 24).find? (fun t => rhoPos t == (i.val % 5, i.val / 5)) with
-    | some t => A[i].rotateLeft ((t + 1) * (t + 2) / 2 % 64)
-    | none => A[i]
+  Vector.ofFn fun i => A[i.val].rotateLeft rhoOffsets[i.val]
 
 /-- Algorithm 3, π: `A′[x, y, z] = A[(x + 3y) mod 5, x, z]`. -/
 def pi (A : State) : State :=
@@ -89,11 +95,13 @@ def rcStep (R : Nat) : Nat :=
   let r8 := R / 256 % 2
   (R ^^^ (r8 * 0b1110001)) % 256
 
+/-- The low bit of the shift register at each position in its period. -/
+def rcBits : Vector Bool 255 := Vector.ofFn fun i => Nat.repeat rcStep i.val 1 % 2 == 1
+
 /-- Algorithm 5, `rc(t)`: 1 if `t mod 255 = 0`, and otherwise `R[0]` after
 `t mod 255` steps from `R = 10000000`. -/
 def rc (t : Nat) : Bool :=
-  if t % 255 = 0 then true
-  else Nat.repeat rcStep (t % 255) 1 % 2 == 1
+  rcBits[t % 255]
 
 /-- The round constant of Algorithm 6 for round `iᵣ`: the lane with bit
 `2ʲ - 1` equal to `rc(j + 7iᵣ)` for `j = 0 … 6` (`ℓ = 6`), and every other bit

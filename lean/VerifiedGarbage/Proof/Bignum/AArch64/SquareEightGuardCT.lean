@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightCtSetup
-public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightCtHead
+public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightCtRows
 public import VerifiedGarbage.Impl.Bignum.AArch64.SquareEightDispatch
 import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcMont
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightCT
@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightCtSetup
-meta import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightCtHead
+meta import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightCtRows
 meta import VerifiedGarbage.Impl.Bignum.AArch64.SquareEightDispatch
 meta import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcMont
 meta import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightCT

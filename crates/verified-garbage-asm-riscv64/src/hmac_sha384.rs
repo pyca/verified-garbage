@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Hmac.Instance.initAnyKeyContract` of `VG.Spec.Hmac.sha384I`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `inner` must be valid for reads and writes of 192 bytes.
@@ -22,19 +24,19 @@ pub(crate) unsafe extern "C" fn vg_hmac_sha384_init(inner: *mut [u8; 192], outer
 .base64 "LXGKgiO4Eg4jvHIPI7CCESO0khEjuKIRI7yyEaqLFoyujDKNto0T04YAk/P2D5OD8weT04MAHpM="
 beqz t1, 20f
 .base64 "YoU="
-call {vg_sha384_init}
+call {vg_sha384_init_core}
 .base64 "YoWBRWqG7oY="
-call {vg_sha512_update}
+call {vg_sha512_update_core}
 .base64 "YoXuhRMGDAw="
-call {vg_sha384_finalize}
+call {vg_sha384_finalize_core}
 .base64 "Ew0MDJMNAAM="
 j 21f
 20:
 21:
 .base64 "XoU="
-call {vg_sha384_init}
+call {vg_sha384_init_core}
 .base64 "ZoU="
-call {vg_sha384_init}
+call {vg_sha384_init_core}
 .base64 "Ew9gA4FP6oNujg=="
 beqz t3, 22f
 24:
@@ -52,7 +54,7 @@ j 26f
 25:
 26:
 .base64 "XoWBRROGDASTBgAI"
-call {vg_sha512_update}
+call {vg_sha512_update_core}
 .base64 "Ew/ABYFP6oNujg=="
 beqz t3, 28f
 210:
@@ -70,18 +72,20 @@ j 212f
 211:
 212:
 .base64 "ZoWBRROGCwSTBgAI"
-call {vg_sha512_update}
-.base64 "AUMjMGwAIzRsACM4bAAjPGwAIzBsAiM0bAIjOGwCIzxsAiMwbAQjNGwEIzhsBCM8bAQjMGwGIzRsBiM4bAYjPGwGIzBsCCM0bAgjOGwIIzxsCCMwbAojNGwKIzhsCiM8bAojMGwMIzRsDCM4bAwjPGwMIzBsDiM0bA6DMAwPgzuMD4M8jBADPQwRgz2MEQM8DBAVYYKA"
+call {vg_sha512_update_core}
+.base64 "AUMjMGwAIzRsACM4bAAjPGwAIzBsAiM0bAIjOGwCIzxsAiMwbAQjNGwEIzhsBCM8bAQjMGwGIzRsBiM4bAYjPGwGIzBsCCM0bAgjOGwIIzxsCCMwbAojNGwKIzhsCiM8bAojMGwMIzRsDCM4bAwjPGwMIzBsDiM0bA6DMAwPgzuMD4M8jBADPQwRgz2MEQM8DBAVYYFCQXEKgyMwUwAjNFMAIzhTACM8UwAjMFMCIzRTAiM4UwIjPFMCIzBTBCM0UwQjOFMEIzxTBCMwUwYjNFMGIzhTBiM8UwYjMFMIIzRTCCM4UwgjPFMIIzBTCiM0UwojOFMKIzxTCiMwUwwjNFMMIzBTHCM0UxwjOFMcIzxTHCMwUx4jNFMefWGBRQFGgUYBR4FHAUiBSIFCAUOBQwFOgU4BT4FPAUWCgA=="
 .option pop"#,
-        vg_sha384_init = sym super::sha512::vg_sha384_init,
-        vg_sha512_update = sym super::sha512::vg_sha512_update,
-        vg_sha384_finalize = sym super::sha512::vg_sha384_finalize,
+        vg_sha384_init_core = sym super::ecdsa_brainpoolp256r1::vg_sha384_init_core::vg_sha384_init_core,
+        vg_sha512_update_core = sym super::sha512::vg_sha512_update_core::vg_sha512_update_core,
+        vg_sha384_finalize_core = sym super::ecdsa_brainpoolp256r1::vg_sha384_finalize_core::vg_sha384_finalize_core,
     )
 }
 
 /// Finishes an HMAC-SHA-384 computation: if, for a 128-byte key `K₀` and a text of fewer than 2⁶⁴ − 128 bytes, the SHA-384 streaming state `*inner` represents `(K₀ ⊕ ipad) ‖ text`, of `count` bytes, and `*outer` represents `K₀ ⊕ opad`, writes the HMAC-SHA-384 of the text under `K₀` (48 bytes) to `*out`.
 ///
 /// Contract: `VG.Spec.Hmac.Instance.finalizeContract` of `VG.Spec.Hmac.sha384I`. Constant time: only the pointers and `count` may affect timing, not the states.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -97,14 +101,22 @@ pub(crate) unsafe extern "C" fn vg_hmac_sha384_finalize(inner: *mut [u8; 192], o
         r#".option push
 .option arch, +m, +c
 .base64 "HXGKgiO4EgIjvHIDI7CCBSO0kgUjuKIFI7yyBaqLFoyujDaNsoUWhg=="
-call {vg_sha384_finalize}
+call {vg_sha384_finalize_core}
 .base64 "A8MMACOAawADwxwAo4BrAAPDLAAjgWsAA8M8AKOBawADw0wAI4JrAAPDXACjgmsAA8NsACODawADw3wAo4NrAAPDjAAjhGsAA8OcAKOEawADw6wAI4VrAAPDvACjhWsAA8PMACOGawADw9wAo4ZrAAPD7AAjh2sAA8P8AKOHawADwwwBI4hrAAPDHAGjiGsAA8MsASOJawADwzwBo4lrAAPDTAEjimsAA8NcAaOKawADw2wBI4trAAPDfAGji2sAA8OMASOMawADw5wBo4xrAAPDrAEjjWsAA8O8AaONawADw8wBI45rAAPD3AGjjmsAA8PsASOPawADw/wBo49rAAPDDAIjgGsCA8McAqOAawIDwywCI4FrAgPDPAKjgWsCA8NMAiOCawIDw1wCo4JrAgPDbAIjg2sCA8N8AqODawIDw4wCI4RrAgPDnAKjhGsCA8OsAiOFawIDw7wCo4VrAgPDzAIjhmsCA8PcAqOGawIDw+wCI4drAgPD/AKjh2sCA8MMAyOIawIDwxwDo4hrAgPDLAMjiWsCA8M8A6OJawIDw0wDI4prAgPDXAOjimsCA8NsAyOLawIDw3wDo4trAgPDjAMjjGsCA8OcA6OMawIDw6wDI41rAgPDvAOjjWsCA8PMAyOOawIDw9wDo45rAgPD7AMjj2sCA8P8A6OPawJehZMFAAhihpMGAAM="
-call {vg_sha512_update}
+call {vg_sha512_update_core}
 .base64 "XoWTBQALaoY="
-call {vg_sha384_finalize}
-.base64 "gzAMA4M7jAODPIwEAz0MBYM9jAUDPAwEJWGCgA=="
+call {vg_sha384_finalize_core}
+.base64 "gzAMA4M7jAODPIwEAz0MBYM9jAUDPAwEJWGBQmlxCoMjMFMAIzRTACM4UwAjPFMAIzBTAiM0UwIjOFMCIzxTAiMwUwQjNFMEIzhTBCM8UwQjMFMGIzRTBiM4UwYjPFMGIzBTCCM0UwgjOFMIIzxTCCMwUwojNFMKIzhTCiM8UwojMFMMIzRTDCM4UwwjPFMMIzBTDiM0Uw4jOFMOIzxTDiMwUxAjNFMQIzhTECM8UxAjMFMSIzRTElVhAUWBRQFGgUYBR4FHAUiBSIFCAUOBQwFOgU4BT4FPgoA="
 .option pop"#,
-        vg_sha384_finalize = sym super::sha512::vg_sha384_finalize,
-        vg_sha512_update = sym super::sha512::vg_sha512_update,
+        vg_sha384_finalize_core = sym super::ecdsa_brainpoolp256r1::vg_sha384_finalize_core::vg_sha384_finalize_core,
+        vg_sha512_update_core = sym super::sha512::vg_sha512_update_core::vg_sha512_update_core,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_hmac_sha384_finalize_core.rs"]
+pub(crate) mod vg_hmac_sha384_finalize_core;
+
+#[rustfmt::skip]
+#[path = "internal/vg_hmac_sha384_init_core.rs"]
+pub(crate) mod vg_hmac_sha384_init_core;

@@ -29,6 +29,9 @@ meta import VerifiedGarbage.Proof.Blake2.X86.LitB
 meta import VerifiedGarbage.Impl.Blake2.X86.CompressB
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 
 /-!
 # BLAKE2b on x86 (32-bit): the instance
@@ -56,7 +59,7 @@ theorem callee : CalleeOk Spec.Blake2.b Impl.Blake2.X86.CompressB.compress :=
 
 theorem init_ct : ConstantTime isa (initX86 b).pre (initX86 b).pub (Impl.Blake2.X86.Stream.init b) :=
   VG.Taint.constantTime (A := taint) (τInit 64) (fun _ _ h₁ h₂ hp => init_agree ok h₁ h₂ hp)
-    (by taint_decide)
+    (by native_taint_decide)
 
 /-- What is public at `update`'s calls of the compression function: its
 pushed arguments, the stack and the bases of `state` and `scratch`, and the
@@ -79,13 +82,13 @@ theorem update_ct : ConstantTime isa (updateX86 b).pre (updateX86 b).pub
     (Impl.Blake2.X86.Stream.update 64 "vg_blake2b_compress" Impl.Blake2.X86.CompressB.compress) := by
   obtain ⟨_, hc⟩ : ∃ h, (taint.check (τUpdate 64) (Impl.Blake2.X86.Stream.update 64 "vg_blake2b_compress"
       Impl.Blake2.X86.CompressB.compress) h).isSome = true := by
-    taint_decide_sum [compressBufSum, directSum]
+    native_taint_decide_sum [compressBufSum, directSum]
   exact VG.Taint.constantTime (A := taint) (τUpdate 64) (fun _ _ h₁ h₂ hp => update_agree ok h₁ h₂ hp) hc
 
 theorem finalize_ct : ConstantTime isa (finalizeX86 b).pre (finalizeX86 b).pub
     (Impl.Blake2.X86.Stream.finalize 64 "vg_blake2b_compress" Impl.Blake2.X86.CompressB.compress) :=
   VG.Taint.constantTime (A := taint) (τFinalize 64) (fun _ _ h₁ h₂ hp => finalize_agree ok h₁ h₂ hp)
-    (by taint_decide)
+    (by native_taint_decide)
 
 /-! ## States satisfying the preconditions -/
 
@@ -175,7 +178,7 @@ theorem updateB_framed : Verified X86.target
     (Spec.Blake2.updateBContract X86.abi (32 + 604)) :=
   X86.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 72) (stack := 32) (bytes := 604)
     updateB_verified (by decide) (by lit_decide) (by lit_decide)
-    (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Blake2.updateBPost_local _)
+    (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Blake2.updateBPost_local _) (fun vs m m₁ m₂ r hl _ hb => Proof.Blake2.updateBPost_out _ vs m m₁ m₂ r hl hb)
     (by implies_sat [Spec.Blake2.updateBContract, Spec.Blake2.updateBSig, X86.abi, X86.argSlots, X86.argVal,
         X86.argBytes]
       [updateFrameSat, satWith, X86.arg, X86.argAddr, Mem.readW, Mem.read] using updateFrameSat)
@@ -185,7 +188,7 @@ theorem finalizeB_framed : Verified X86.target
     (Spec.Blake2.finalizeBContract X86.abi (32 + 600)) :=
   X86.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 72) (stack := 32) (bytes := 600)
     finalizeB_verified (by decide) (by lit_decide) (by lit_decide)
-    (fun _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Blake2.finalizeBPost_local _)
+    (fun _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Blake2.finalizeBPost_local _) (fun vs m m₁ m₂ r hl _ hb => Proof.Blake2.finalizeBPost_out _ vs m m₁ m₂ r hl hb)
     (by implies_sat [Spec.Blake2.finalizeBContract, Spec.Blake2.finalizeBSig, X86.abi, X86.argSlots,
         X86.argVal, X86.argBytes]
       [finalizeFrameSat, satWith, X86.arg, X86.argAddr, Mem.readW, Mem.read] using finalizeFrameSat)

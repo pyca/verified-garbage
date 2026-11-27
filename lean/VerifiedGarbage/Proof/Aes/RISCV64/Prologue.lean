@@ -80,7 +80,7 @@ theorem storeMasks_eq (base : Nat) (ms : List (Nat × BitVec 64)) :
   simp only [storeMasks, storeKs, ksOf, List.flatMap_map]
 
 theorem maskInit_eq : maskInit = storeKs allKs := by
-  simp only [maskInit, storeMasks_eq, allKs, storeKs, List.flatMap_append, bsKs, srKs, invSrKs]
+  simp only [maskInit, storeMasks_eq, allKs, storeKs, List.flatMap_append, bsKs, srKs, fxKs]
 
 /-- The slots of `ks`. -/
 def ksRegions (b : Addr) (ks : List (Nat × BitVec 64)) : List Region :=

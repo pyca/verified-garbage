@@ -32,12 +32,17 @@ The tactics `TCB/Registration.lean` declares for the default proofs of a
   calling convention of the `Sig.contract` it unfolds to (as `of_sig`
   unfolds it), whose head is unfolded until it is an application of
   `Abi.withConsts`; and none if there is no such application.
+* `fns_of` gives `fns`, the functions of public address in the contract
+  `verified` proves (the goal `FnsOf contract`): those of the first
+  `Abi.withFns A fns` in it, found as `consts_of` finds the tables of
+  constants, and none if there is no such application.
 * `stack_of` gives `stack`, the stack that the contract `verified` proves
   is for (the goal `StackOf contract`): the `stack` of the `Sig.contract` it
   unfolds to (as `of_sig` unfolds it), as that contract states it, so that
   `ofApi` and `ofSig` compare a number with itself; and 0 if it does not
   unfold to one, which `ofSig` then reports.
 * `sp_safe` proves `spSafe`, `code.all (fun i => !T.isa.writesSp i) = true`:
+  by an instance of `SpSafeCode code`, if there is one; otherwise
   on the ISAs whose `writesSp` is always `false` (ARMv7, AArch64, PPC64LE) by
   `Code.all_of_forall`, which evaluates nothing, and on the others (x86,
   x86-64) by `Code.all_of_spTest (by lit_decide)`, which evaluates the ISA's
@@ -49,6 +54,93 @@ The tactics `TCB/Registration.lean` declares for the default proofs of a
   Code that depends on a variable of an enumeration (`adx : Bool`, a
   variant's `FieldVariant`) is proven for each of its values, by cases.
 -/
+
+@[expose] public section
+
+namespace VG
+
+/-- `Registration.spSafe` of `c`, from a proof given already (`sp_safe` looks for an
+instance before it evaluates the code): what the kernel has evaluated of a
+function's code, it need not evaluate again of the function with its cleanup, or
+in the registration file. -/
+class SpSafeCode {M : ISA} (c : Prog M) : Prop where
+  all : c.all (fun i => !M.writesSp i) = true
+
+/-- What a form that builds a scrubbed registration takes: code with its
+proof of `Verified`, and what else a `Registration` states, with the same
+fields and defaults, so that a call site writes it as it would a
+registration (`{ code := c, verified := h }`). It is not a registration: the
+form's result is, with the proof that the code it built returns without
+secret residue (`VerifiedScrubbed`). -/
+structure Unscrubbed (api : Api) (target : Target) where
+  /-- `Registration.suffix`. -/
+  suffix : String := ""
+  /-- `Registration.tables`. -/
+  tables : List (String × List FnTable) := []
+  code : Prog target.isa
+  /-- `Registration.contract`. -/
+  contract : Contract target.isa :=
+    api.contract (target.abi.withTables api.sig tables) 0
+  verified : Verified target code contract
+  /-- `Registration.consts`. -/
+  consts : ConstsOf contract := by consts_of
+  /-- `Registration.stack`. -/
+  stack : StackOf contract := by stack_of
+  ofApi : contract = api.contract ((target.abi.withConsts consts).withTables api.sig tables) stack := by
+    exact rfl
+  /-- `Registration.ofSig`. -/
+  ofSig : ∃ pre post leak,
+      contract = api.sig.contract
+        ((target.abi.withConsts consts).withTables api.sig tables) pre post
+        api.writeArgs stack leak := by
+    of_sig
+  /-- `Registration.spSafe`. -/
+  spSafe : code.all (fun i => !target.isa.writesSp i) = true := by sp_safe
+  /-- `Registration.written`. -/
+  written : List (String × Nat) := []
+  /-- `Registration.writtenOk`. -/
+  writtenOk : ∀ s t s', contract.pre s → Exec target.isa code s t s' →
+      Sig.writtenWithin target.abi api.sig written s s' := by
+    exact fun _ _ _ _ _ => True.intro
+  /-- `Registration.extra`. -/
+  extra : List String := []
+  /-- `Registration.vendor`. -/
+  vendor : Option String := none
+  /-- `Registration.notWith`. -/
+  notWith : List String := []
+
+/-- `Abi.withConsts` leaves the pointer width as it is. -/
+theorem Abi.ptrBits_withConsts {M : ISA} (A : Abi M) (cs : List (String × List (BitVec 64))) :
+    (A.withConsts cs).ptrBits = A.ptrBits := by
+  unfold Abi.withConsts
+  split <;> rfl
+
+/-- `Abi.withTables` leaves the pointer width as it is. -/
+theorem Abi.ptrBits_withTables {M : ISA} (A : Abi M) (sig : Sig) (ts : List (String × List FnTable)) :
+    (A.withTables sig ts).ptrBits = A.ptrBits := by
+  unfold Abi.withTables
+  split <;> rfl
+
+/-- A result's bits under a calling convention with tables of constants and
+of functions are its bits under the calling convention: what
+`Registration.verified` states them with. -/
+theorem Abi.retBits_withConsts_withTables {M : ISA} (A : Abi M) (sig sig' : Sig)
+    (cs : List (String × List (BitVec 64))) (ts : List (String × List FnTable)) :
+    sig.retBits ((A.withConsts cs).withTables sig' ts).ptrBits = sig.retBits A.ptrBits := by
+  rw [Abi.ptrBits_withTables, Abi.ptrBits_withConsts]
+
+/-- `VerifiedScrubbed` proven for the result's bits under the calling
+convention with its tables is `VerifiedScrubbed` as a registration states it
+(`Abi.retBits_withConsts_withTables`). -/
+theorem VerifiedScrubbed.abi {T : Target} {c : Prog T.isa} {k : Contract T.isa} {sig sig' : Sig}
+    {cs : List (String × List (BitVec 64))} {ts : List (String × List FnTable)}
+    (h : VerifiedScrubbed T c k (sig.retBits ((T.abi.withConsts cs).withTables sig' ts).ptrBits)) :
+    VerifiedScrubbed T c k (sig.retBits T.abi.ptrBits) :=
+  Abi.retBits_withConsts_withTables T.abi sig sig' cs ts ▸ h
+
+end VG
+
+end
 
 public meta section
 
@@ -122,6 +214,48 @@ elab_rules : tactic
       g.assign cs
     | none => evalTactic (← `(tactic| exact []))
 
+/-- The functions `fns` of the first application `Abi.withFns A fns` in `e`
+that has neither loose bound variables nor metavariables. -/
+def findFns? (e : Expr) : Option Expr :=
+  (e.find? fun e => e.isAppOfArity ``Abi.withFns 3 && !e.hasLooseBVars && !e.hasMVar).map
+    (·.appArg!)
+
+/-- The functions of public address of the calling convention `A`: those of
+the first application of `Abi.withFns` in it, with its head unfolded until
+there is one, or none. -/
+partial def abiFns? (A : Expr) : MetaM (Option Expr) := do
+  if let some fs := findFns? A then return some fs
+  match ← unfoldDefinition? A with
+  | some A' => abiFns? (← whnfCore A')
+  | none => return none
+
+elab_rules : tactic
+  | `(tactic| fns_of) => do
+    let g ← getMainGoal
+    let ty := (← instantiateMVars (← g.getType)).cleanupAnnotations
+    unless ty.isAppOfArity ``FnsOf 2 do
+      throwError "fns_of: the goal is not `FnsOf contract`: {ty}"
+    let c := ty.appArg!
+    if c.hasMVar then
+      throwError "fns_of: the contract is not known; give `contract`: {c}"
+    let fs? ← match findFns? c with
+      | some fs => pure (some fs)
+      | none =>
+        let s ← saveState
+        try
+          let c' ← toSigContract c
+          -- `Sig.contract A sig pre post writeArgs stack leak`, implicit `M` first.
+          abiFns? (c'.getArg! 1)
+        catch _ =>
+          s.restore
+          pure none
+    match fs? with
+    | some fs =>
+      unless ← isDefEq (← inferType fs) (← g.getType) do
+        throwError "fns_of: {fs} is not a list of functions"
+      g.assign fs
+    | none => evalTactic (← `(tactic| exact []))
+
 elab_rules : tactic
   | `(tactic| stack_of) => do
     let g ← getMainGoal
@@ -160,6 +294,13 @@ def enumFVar? (e : Expr) : MetaM (Option FVarId) := do
       return some fv
   return none
 
+/-- `spSafe` of the code `c`, from an instance of `SpSafeCode c`. -/
+def spSafe? (c : Expr) : MetaM (Option Expr) := do
+  let ty ← inferType c
+  unless ty.isAppOfArity ``Prog 1 do return none
+  let some inst ← synthInstance? (mkApp2 (mkConst ``SpSafeCode) ty.appArg! c) | return none
+  return mkApp3 (mkConst ``SpSafeCode.all) ty.appArg! c inst
+
 elab_rules : tactic
   | `(tactic| sp_safe) => do
     let ty ← instantiateMVars (← getMainTarget)
@@ -172,6 +313,8 @@ elab_rules : tactic
       return (← whnf (mkApp p i)).isConstOf ``Bool.true
     if always then
       evalTactic (← `(tactic| exact Code.all_of_forall (fun _ => rfl) _))
+    else if let some e ← spSafe? lhs.appArg! then
+      closeMainGoal `sp_safe (← mkExpectedTypeHint e ty)
     else if let some fv ← enumFVar? lhs then
       let gs ← (← getMainGoal).cases fv
       for g in gs do

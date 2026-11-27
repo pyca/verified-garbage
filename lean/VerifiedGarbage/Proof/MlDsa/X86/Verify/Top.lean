@@ -1,7 +1,7 @@
 module
-public import VerifiedGarbage.Proof.MlDsa.X86.Verify.Hint
-public import VerifiedGarbage.Proof.MlDsa.X86.Verify.Row
 
+public import VerifiedGarbage.Proof.MlDsa.X86.Verify.Samp
+public import VerifiedGarbage.Proof.MlDsa.X86.Verify.Row
 import VerifiedGarbage.Proof.MlDsa.X86.Verify.Final
 import VerifiedGarbage.Proof.MlDsa.X86.Verify.Ball
 import VerifiedGarbage.Proof.MlDsa.X86.Verify.Local
@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.MlDsa.DecideAt
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
 import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.MlKem.X86.TopKem
-meta import VerifiedGarbage.Proof.MlDsa.X86.Verify.Hint
+meta import VerifiedGarbage.Proof.MlDsa.X86.Verify.Samp
 meta import VerifiedGarbage.Proof.MlDsa.X86.Verify.Final
 meta import VerifiedGarbage.Proof.MlDsa.X86.Verify.Ball
 meta import VerifiedGarbage.Proof.MlDsa.X86.Verify.Local

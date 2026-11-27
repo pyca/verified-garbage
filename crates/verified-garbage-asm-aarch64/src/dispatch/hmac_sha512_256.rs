@@ -8,6 +8,8 @@
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_hmac_sha512_256_init_sha512` if the CPU supports its features (`VG_HMAC_SHA512_256_INIT_SHA512_FEATURES`); or else `vg_hmac_sha512_256_init`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `inner` must be valid for reads and writes of 192 bytes.
@@ -57,6 +59,8 @@ pub unsafe fn vg_hmac_sha512_256_init_auto(_dit: verified_garbage_cpu::Dit<'_>, 
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_hmac_sha512_256_finalize_sha512` if the CPU supports its features (`VG_HMAC_SHA512_256_FINALIZE_SHA512_FEATURES`); or else `vg_hmac_sha512_256_finalize`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `inner` must be valid for reads and writes of 192 bytes.
@@ -64,7 +68,7 @@ pub unsafe fn vg_hmac_sha512_256_init_auto(_dit: verified_garbage_cpu::Dit<'_>, 
 /// * `out` must be valid for reads and writes of 32 bytes.
 /// * The contents of `inner` on return are unspecified.
 /// * `inner` and `out` must not overlap each other or `outer` (distinct Rust objects never do).
-/// * None of `inner`, `outer` and `out` may overlap the 1888 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `inner`, `outer` and `out` may overlap the 832 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_hmac_sha512_256_finalize_auto(_dit: verified_garbage_cpu::Dit<'_>, inner: *mut [u8; 192], outer: *const [u8; 192], count: u64, out: *mut [u8; 32]) {

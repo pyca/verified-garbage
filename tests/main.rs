@@ -38,6 +38,8 @@ mod rfc3686;
 mod rfc4231;
 #[path = "rfc5528/main.rs"]
 mod rfc5528;
+#[path = "rfc5869/main.rs"]
+mod rfc5869;
 #[path = "rfc6229/main.rs"]
 mod rfc6229;
 #[path = "rfc6979/main.rs"]

@@ -1,24 +1,28 @@
 module
 
-public import VerifiedGarbage.Proof.AesCbc.RISCV64.Wiped
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.RISCV64.Print
+public import VerifiedGarbage.TCB.RISCV64.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Cbc.Contract
+import VerifiedGarbage.Proof.Aes.RISCV64.Scrub
+import VerifiedGarbage.Impl.Aes.RISCV64.Fn
+import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.AesCbc.RISCV64.Lit
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # AES-CBC (NIST SP 800-38A §6.2) on RISC-V -/
 
-@[expose] public section
-
 namespace VG.Artifacts.AesCbc.RISCV64
 
-open VG.Proof.AesCbc.RISCV64
-
-def artifacts : List Artifact := [
+public def artifacts : List (Artifact RISCV64.target) := [
   Spec.Cbc.aesEncryptApi.artifact RISCV64.target {
-    code := Wiped.encrypt
-    verified := Wiped.encrypt_verified },
+    code := Impl.Aes.RISCV64.Fn.cbcEncrypt
+    verified := Proof.Aes.RISCV64.Scrub.cbcEncrypt_scrubbed
+    publicOutOk := Proof.Aes.RISCV64.Scrub.cbcEncrypt_public },
   Spec.Cbc.aesDecryptApi.artifact RISCV64.target {
-    code := Wiped.decrypt
-    verified := Wiped.decrypt_verified }]
+    code := Impl.Aes.RISCV64.Fn.cbcDecrypt
+    verified := Proof.Aes.RISCV64.Scrub.cbcDecrypt_scrubbed
+    publicOutOk := Proof.Aes.RISCV64.Scrub.cbcDecrypt_public }]
+
+spec_apis artifacts
 
 end VG.Artifacts.AesCbc.RISCV64

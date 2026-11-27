@@ -40,6 +40,8 @@ variable (l : Lay)
 
 def oA : Nat := 24 * (l.W + 2)
 def oB : Nat := oA l + l.NB
+/-- 8 bytes after `B`, which once held the caller's MXCSR and `0x1FBF`: the
+code no longer loads MXCSR (`CrtIfma.withVzu`). -/
 def oMx : Nat := oB l + l.NB
 
 /-- `2^kb`, by which `amm(R², R²)` becomes `R'² mod m` (`R = 2^(64 W)`,
@@ -70,15 +72,6 @@ def pow2 : List Instr :=
     ([.movImm64 .rax (BitVec.ofNat 64 (2 ^ (kb l % 52))), .store (at_ .r11 (oB l + l.off (kb l / 52))) .rax] :
       List Instr)
 
-/-- Intel's MXCSR prologue and epilogue around `c` (see "MCDT" in
-`TCB/X86_64/Isa.lean`), the slots at `oMx`. -/
-def withMx (c : Prog isa) : Prog isa :=
-  .seq (.block [.stmxcsr (at_ .rbx (oMx l)), .mov32 .r11 (.mem (at_ .rbx (oMx l))), .alu32 .and .r11 (.imm 0xFFFF),
-      .store32 (at_ .rbx (oMx l)) .r11])
-    (.seq (.seq (.block [.mov32 .rax (.imm 0x1FBF), .store32 (at_ .rbx (oMx l + 4)) .rax,
-        .ldmxcsr (at_ .rbx (oMx l + 4)), .lfence]) (.seq c (.block [.lfence])))
-      (.block [.ldmxcsr (at_ .rbx (oMx l)), .vop .vzeroupper]))
-
 /-- `ammCore`'s operands: `[o] := [a] [b]`, the offsets from `rbx`. -/
 def setOps (o a b : Nat) : List Instr :=
   [.mov .r8 (.reg .rbx), .alu .add .r8 (.imm (BitVec.ofNat 32 a)), .mov .r9 (.reg .rbx),
@@ -96,7 +89,7 @@ def sel : Prog isa :=
 /-- The vector code: the twenty multiplications of `sel`, by one `ammMul`
 in a loop (`r13` counting them): `A = x^65537`, almost reduced. -/
 def vec : Prog isa :=
-  withMx l (.seq (.block [.mov32 .r13 (.imm 0)])
+  withVzu (.seq (.block [.mov32 .r13 (.imm 0)])
     (.loop (seqs [sel l, ammMul l, .block [.alu .add .r13 (.imm 1), .alu .cmp .r13 (.imm 20)]]) .ne))
 
 /-- `A` into words at the accumulator, reduced below `m` into the result. -/
@@ -115,13 +108,29 @@ def adxExp (mm : Nat → Nat → Nat → Prog isa) : Prog isa := seqs [mm aXm aX
 /-- `w` (in `rax`) compared with `n`. -/
 def cmpW (n : Nat) : Prog isa := .block [.mov .rax (.mem (hdr sW)), .alu .cmp .rax (.imm (BitVec.ofNat 32 n))]
 
-/-- For `e = 65537` and 2048-, 3072- or 4096-bit moduli, `exp65537`;
-otherwise the ADX code's. -/
+/-- Set ZF after a successful size comparison. -/
+def flagIfmaYes : Prog isa := .block [.alu .cmp .r11 (.reg .r11)]
+
+/-- Clear ZF when the exponent cannot use IFMA. -/
+def flagIfmaNo : Prog isa := .block [.mov32 .rax (.imm 0), .alu .cmp .rax (.imm 1)]
+
+/-- ZF iff the modulus has an IFMA layout. -/
+def ifmaSizes : Prog isa :=
+  .seq (cmpW 32) (.ite .e flagIfmaYes
+    (.seq (cmpW 48) (.ite .e flagIfmaYes (cmpW 64))))
+
+/-- ZF iff the exponent and modulus can use IFMA. -/
+def ifmaEligible : Prog isa :=
+  .seq Folded.is65537 (.ite .e ifmaSizes flagIfmaNo)
+
+/-- The three supported layouts, after `ifmaEligible` accepted the input. -/
+def ifmaChoose : Prog isa :=
+  .seq (cmpW 32) (.ite .e (exp65537 pay2048)
+    (.seq (cmpW 48) (.ite .e (exp65537 pay3072) (exp65537 pay4096))))
+
+/-- Select the vector path once; all other inputs share one ADX fallback. -/
 def pubExp (mm : Nat → Nat → Nat → Prog isa) : Prog isa :=
-  .seq Folded.is65537 (.ite .e
-    (.seq (cmpW 32) (.ite .e (exp65537 pay2048) (.seq (cmpW 48) (.ite .e (exp65537 pay3072)
-      (.seq (cmpW 64) (.ite .e (exp65537 pay4096) (adxExp mm)))))))
-    (adxExp mm))
+  .seq ifmaEligible (.ite .e ifmaChoose (adxExp mm))
 
 /-- `Folded.rest` with `pubExp`. -/
 def rest (mm : Nat → Nat → Nat → Prog isa) : Prog isa := seqs [

@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Md5.initContract`. The streaming state is the MD buffer followed by a buffered partial block (`VG.Spec.Md5.Repr`).
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 80 bytes.
@@ -16,7 +18,7 @@ pub(crate) unsafe extern "C" fn vg_md5_init(state: *mut [u8; 80]) {
     core::arch::naked_asm!(
         r#".option push
 .option arch, +m, +c
-.base64 "tyJFZ5uCEjAjAFUAE9OCAKMAZQAT0wIBIwFlABPTggGjAWUAt7LN75uCkrgjAlUAE9OCAKMCZQAT0wIBIwNlABPTggGjA2UAt+K6mJuC4s8jBFUAE9OCAKMEZQAT0wIBIwVlABPTggGjBWUAt1IyEJuCYkcjBlUAE9OCAKMGZQAT0wIBIwdlABPTggGjB2UAgoA="
+.base64 "tyJFZ5uCEjAjAFUAE9OCAKMAZQAT0wIBIwFlABPTggGjAWUAt7LN75uCkrgjAlUAE9OCAKMCZQAT0wIBIwNlABPTggGjA2UAt+K6mJuC4s8jBFUAE9OCAKMEZQAT0wIBIwVlABPTggGjBWUAt1IyEJuCYkcjBlUAE9OCAKMGZQAT0wIBIwdlABPTggGjB2UAgUIBRYFFAUaBRgFHgUcBSIFIgUIBQ4FDAU6BTgFPgU+CgA=="
 .option pop"#,
     )
 }
@@ -24,6 +26,8 @@ pub(crate) unsafe extern "C" fn vg_md5_init(state: *mut [u8; 80]) {
 /// Absorbs data into an MD5 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), it then represents that message followed by the `len` bytes at `data`.
 ///
 /// Contract: `VG.Spec.Md5.updateContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -102,7 +106,7 @@ bnez s4, 22b
 j 21f
 20:
 21:
-.base64 "gzAJBYM0iQWDOYkGAzoJB4M6iQcDOwkIAzkJBklhgoA="
+.base64 "gzAJBYM0iQWDOYkGAzoJB4M6iQcDOwkIAzkJBklhgUJ1cQqDIzBTACM0UwAjOFMAIzxTACMwUwIjNFMCIzhTAiM8UwIjMFMEIzRTBCM4UwQjPFMEIzBTBiM0UwYjOFMGIzxTBiMwUwgjNFMISWEBRYFFAUaBRgFHgUcBSIFIgUIBQ4FDAU6BTgFPgU+CgA=="
 .option pop"#,
         vg_md5_compress = sym super::md5::vg_md5_compress::vg_md5_compress,
     )
@@ -111,6 +115,8 @@ j 21f
 /// Finishes an MD5 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), writes the MD5 digest of that message to `*out`.
 ///
 /// Contract: `VG.Spec.Md5.finalizeContract`. Constant time: only the pointers and `count` may affect timing, not the state.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -149,7 +155,7 @@ j 27f
 call {vg_md5_compress}
 .base64 "gUp9Gw=="
 beqz s6, 20b
-.base64 "A8MEAIPDFACiAzNjcwCDwyQAwgMzY3MAg8M0AOIDM2NzACOAaQCTU4MAo4B5AJNTAwEjgXkAk1ODAaOBeQADw0QAg8NUAKIDM2NzAIPDZADCAzNjcwCDw3QA4gMzY3MAI4JpAJNTgwCjgnkAk1MDASODeQCTU4MBo4N5AAPDhACDw5QAogMzY3MAg8OkAMIDM2NzAIPDtADiAzNjcwAjhGkAk1ODAKOEeQCTUwMBI4V5AJNTgwGjhXkAA8PEAIPD1ACiAzNjcwCDw+QAwgMzY3MAg8P0AOIDM2NzACOGaQCTU4MAo4Z5AJNTAwEjh3kAk1ODAaOHeQCDMAkFgzSJBYM5iQYDOgkHgzqJBwM7CQgDOQkGSWGCgA=="
+.base64 "A8MEAIPDFACiAzNjcwCDwyQAwgMzY3MAg8M0AOIDM2NzACOAaQCTU4MAo4B5AJNTAwEjgXkAk1ODAaOBeQADw0QAg8NUAKIDM2NzAIPDZADCAzNjcwCDw3QA4gMzY3MAI4JpAJNTgwCjgnkAk1MDASODeQCTU4MBo4N5AAPDhACDw5QAogMzY3MAg8OkAMIDM2NzAIPDtADiAzNjcwAjhGkAk1ODAKOEeQCTUwMBI4V5AJNTgwGjhXkAA8PEAIPD1ACiAzNjcwCDw+QAwgMzY3MAg8P0AOIDM2NzACOGaQCTU4MAo4Z5AJNTAwEjh3kAk1ODAaOHeQCDMAkFgzSJBYM5iQYDOgkHgzqJBwM7CQgDOQkGSWGBQnVxCoMjMFMAIzRTACM4UwAjPFMAIzBTAiM0UwIjOFMCIzxTAiMwUwQjNFMEIzhTBCM8UwQjMFMGIzRTBiM4UwYjPFMGIzBTCCM0UwhJYQFFgUUBRoFGAUeBRwFIgUiBQgFDgUMBToFOAU+BT4KA"
 .option pop"#,
         vg_md5_compress = sym super::md5::vg_md5_compress::vg_md5_compress,
     )
@@ -160,5 +166,17 @@ beqz s6, 20b
 pub(crate) mod vg_md5_compress;
 
 #[rustfmt::skip]
+#[path = "internal/vg_md5_finalize_core.rs"]
+pub(crate) mod vg_md5_finalize_core;
+
+#[rustfmt::skip]
+#[path = "internal/vg_md5_init_core.rs"]
+pub(crate) mod vg_md5_init_core;
+
+#[rustfmt::skip]
 #[path = "internal/vg_md5_state_digest.rs"]
 pub(crate) mod vg_md5_state_digest;
+
+#[rustfmt::skip]
+#[path = "internal/vg_md5_update_core.rs"]
+pub(crate) mod vg_md5_update_core;

@@ -84,7 +84,7 @@ def step (τ : T) : Instr → Option T
   | .mflr d => some (wr τ d false)
   | .mtlr _ => some τ
   | .push .. | .pop .. | .alloc .. | .free .. | .adrSym ..
-  | .vop .. | .lxvd2x .. | .lxvd2xTbl .. | .stxvd2x .. | .mtvsrd .. | .mfvsrd .. | .bctrl => none
+  | .vop .. | .lxvd2x .. | .lxvd2xTbl .. | .stxvd2x .. | .mtvsrd .. | .mfvsrd .. | .dcbz .. | .bctrl => none
 
 def condPub (τ : T) (c : Cond) : Bool := Taint.condPub τ.regs c
 
@@ -203,7 +203,8 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     (hs : step τ i = some τ') (e₁ : exec i s₁ = some s₁') (e₂ : exec i s₂ = some s₂') :
     addrs i s₁ = addrs i s₂ ∧ Agree τ' s₁' s₂' := by
   cases i with
-  | push | pop | alloc | free | bctrl | adrSym | vop | lxvd2x | lxvd2xTbl | stxvd2x | mtvsrd | mfvsrd => simp only [step, reduceCtorEq] at hs
+  | push | pop | alloc | free | bctrl | adrSym | vop | lxvd2x | lxvd2xTbl | stxvd2x | mtvsrd | mfvsrd | dcbz =>
+    simp only [step, reduceCtorEq] at hs
   | addSp d imm =>
     simp only [step, Option.some.injEq] at hs; subst hs
     simp only [reduceExec] at e₁ e₂
@@ -337,10 +338,11 @@ def push (τ : T) : Instr → Option T
   | .push _ | .alloc _ => some ⟨τ.regs, 0⟩
   | _ => none
 
-/-- A frame's pop loads a secret. -/
+/-- A frame's pop loads a secret, and the frame's bytes are lost: the slots
+are forgotten, since the frame may be the one the slots are in. -/
 def pop (τ : T) : Instr → Option T
-  | .pop r => some (wr τ r false)
-  | .free _ => some τ
+  | .pop r => some ⟨set τ.regs r false, 0⟩
+  | .free _ => some ⟨τ.regs, 0⟩
   | _ => none
 
 theorem push_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (h : Agree τ s₁ s₂)
@@ -363,7 +365,7 @@ theorem pop_sound {τ τ' : T} {j : Instr} {a₁ a₂ b₁ b₂ c₁ c₂ : Stat
     split at e₁ <;> [skip; cases e₁]
     split at e₂ <;> [skip; cases e₂]
     cases e₁; cases e₂
-    exact ⟨rfl, ⟨by simp [h.1.1], h.1.2⟩, h.2⟩
+    exact ⟨rfl, ⟨by simp [h.1.1], h.1.2⟩, fun k _ hb => by simp at hb⟩
   rename_i r
   cases hs
   simp only [isa, PPC64LE.pop] at e₁ e₂
@@ -372,7 +374,7 @@ theorem pop_sound {τ τ' : T} {j : Instr} {a₁ a₂ b₁ b₂ c₁ c₂ : Stat
   cases e₁; cases e₂
   have w := h.write r (v₁ := b₁.mem.read (b₁.sp + 32) 8) (v₂ := b₂.mem.read (b₂.sp + 32) 8)
     (p := false) fun h => by cases h
-  exact ⟨by simp [addrs, h.1.1], ⟨by simp [h.1.1], w.1.2⟩, w.2⟩
+  exact ⟨by simp [addrs, h.1.1], ⟨by simp [h.1.1], w.1.2⟩, fun k _ hb => by simp at hb⟩
 
 end VG.PPC64LE.FrameTaint
 
@@ -426,5 +428,7 @@ def frameTaint : VG.Taint isa where
   push_sound := FrameTaint.push_sound
   pop := FrameTaint.pop
   pop_sound := FrameTaint.pop_sound
+
+kernel_fn VG.Taint.check frameTaint
 
 end VG.PPC64LE

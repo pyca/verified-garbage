@@ -1,28 +1,51 @@
 module
 
-public import VerifiedGarbage.Proof.Sha256.AArch64.Shared
-public import VerifiedGarbage.Proof.Sha256.AArch64.Sha2.Compress
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.AArch64.Print
-public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Variant
-public import VerifiedGarbage.Proof.Variants.MdHash.AArch64
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Sha256.Contract
+import VerifiedGarbage.Proof.Sha256.AArch64.Shared
+import VerifiedGarbage.Proof.Sha256.AArch64.Sha2.Compress
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Hashes.Sha256
+import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Hashes.Sha512
+import VerifiedGarbage.Proof.Variants.Sha256Compress.AArch64
+import VerifiedGarbage.Proof.Sha256.AArch64.Residue
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # SHA-256 (FIPS 180-4) on AArch64 -/
 
-@[expose] public section
-
 namespace VG.Artifacts.Sha256.AArch64
 
-def artifacts : List Artifact := [
+public def artifacts : List (Artifact AArch64.target) := [
   Spec.Sha256.init224Api.artifact AArch64.target {
     code := Impl.Sha256.AArch64.Stream.init224
-    verified := Proof.Sha256.AArch64.Shared.init224 },
+    verified := Proof.Sha256.AArch64.Residue.init224_scrubbed },
   Spec.Sha256.initApi.artifact AArch64.target {
     code := Impl.Sha256.AArch64.Stream.init
-    verified := Proof.Sha256.AArch64.Shared.init }] ++
-  ((VG.Proof.Variants.MdHash.AArch64.sha224Variants ++
-      VG.Proof.Variants.MdHash.AArch64.sha256Variants).flatMap fun (v : Proof.Pbkdf2.Md.AArch64.MdHash) =>
-    v.stream.map fun f =>
-      f.api.artifact AArch64.target { f.reg with suffix := v.suffix})
+    verified := Proof.Sha256.AArch64.Residue.init_scrubbed }] ++
+  (VG.Proof.Variants.Sha256Compress.AArch64.variants.flatMap fun (v : Proof.Sha256.AArch64.Compress) => [
+    Spec.Sha256.finalize224Api.artifact AArch64.target {
+      suffix := v.suffix
+      code := Impl.Sha256.AArch64.Stream.Fn.finalize224 v.name v.code
+      verified := Proof.Pbkdf2.Md.AArch64.Sha224.finalize224_scrubbed v },
+    Spec.Sha256.digest224Api.artifact AArch64.target {
+      suffix := v.suffix
+      code := Impl.Sha256.AArch64.Stream.Fn.digest224 v.name v.code
+      verified := Proof.Pbkdf2.Md.AArch64.Sha224.digest224_scrubbed v }]) ++
+  (VG.Proof.Variants.Sha256Compress.AArch64.variants.flatMap fun (v : Proof.Sha256.AArch64.Compress) => [
+    Spec.Sha256.updateApi.artifact AArch64.target {
+      suffix := v.suffix
+      code := Impl.Sha256.AArch64.Stream.Fn.update v.name v.code
+      verified := Proof.Pbkdf2.Md.AArch64.Sha256.update_scrubbed v },
+    Spec.Sha256.finalizeApi.artifact AArch64.target {
+      suffix := v.suffix
+      code := Impl.Sha256.AArch64.Stream.Fn.finalize v.name v.code
+      verified := Proof.Pbkdf2.Md.AArch64.Sha256.finalize_scrubbed v },
+    Spec.Sha256.digest256Api.artifact AArch64.target {
+      suffix := v.suffix
+      code := Impl.Sha256.AArch64.Stream.Fn.digest256 v.name v.code
+      verified := Proof.Pbkdf2.Md.AArch64.Sha256.digest256_scrubbed v }])
+
+spec_apis artifacts
 
 end VG.Artifacts.Sha256.AArch64

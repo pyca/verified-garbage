@@ -8,6 +8,8 @@
 ///
 /// It runs `vg_cmac_triple_des_stream_init`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 416 bytes.
@@ -28,12 +30,14 @@ pub unsafe fn vg_cmac_triple_des_stream_init_auto(_dit: verified_garbage_cpu::Di
 ///
 /// It runs `vg_cmac_triple_des_absorb`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 416 bytes.
 /// * `data` must be valid for reads of `len` bytes.
 /// * `state` must not overlap `data` or the arguments on the stack (distinct Rust objects never do).
-/// * Neither `state` nor `data` may overlap the 708 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `data` may overlap the 712 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_cmac_triple_des_absorb_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 52], count: u64, data: *const u8, len: usize) {
@@ -47,13 +51,15 @@ pub unsafe fn vg_cmac_triple_des_absorb_auto(_dit: verified_garbage_cpu::Dit<'_>
 ///
 /// It runs `vg_cmac_triple_des_finish`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 416 bytes.
 /// * `out` must be valid for reads and writes of 8 bytes.
 /// * The contents of `state` on return are unspecified.
 /// * `state` and `out` must not overlap each other or the arguments on the stack (distinct Rust objects never do).
-/// * Neither `state` nor `out` may overlap the 660 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `out` may overlap the 664 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_cmac_triple_des_finish_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 52], count: u64, out: *mut [u8; 8]) {

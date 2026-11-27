@@ -2,52 +2,31 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Backend
 public import VerifiedGarbage.Proof.Bignum.AArch64.MulFixedCallMont
-public import VerifiedGarbage.Proof.Dsa.AArch64.SigningVerified
-public import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingVerified
+public import VerifiedGarbage.Proof.Dsa.AArch64.PrevalidatedSignVerified
+public import VerifiedGarbage.Proof.Dsa.AArch64.ValidateCT
 public import VerifiedGarbage.Impl.Dsa.AArch64.Prevalidated
 public import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
-public import VerifiedGarbage.Proof.Dsa.AArch64.CallHeadCT
+public import VerifiedGarbage.Proof.Dsa.AArch64.ReadyCallCT
 public import VerifiedGarbage.Proof.Dsa.AArch64.CoreSign
 public import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleCTState
-public import VerifiedGarbage.Proof.Dsa.AArch64.SignReleaseCT
-public import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingABI
-public import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingPublic
-public import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingReturn
-public import VerifiedGarbage.Proof.Dsa.AArch64.WorkspaceBridge
+public import VerifiedGarbage.Proof.Dsa.AArch64.DomainShapeCT
+public import VerifiedGarbage.Proof.Dsa.AArch64.DeriveChecked
+public import VerifiedGarbage.Proof.Dsa.AArch64.ParametersCT
 public import VerifiedGarbage.Spec.Dsa.Prevalidated
-import VerifiedGarbage.Proof.Dsa.AArch64.PrevalidatedCT
-public import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingABIPost
-import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingAgreement
 import VerifiedGarbage.Proof.Bignum.AArch64.PcCode
-import VerifiedGarbage.Proof.Dsa.AArch64.PrevalidatedBody
 import VerifiedGarbage.Proof.Dsa.Encoding
 import VerifiedGarbage.Proof.Dsa.DomainWidths
-import Mathlib.Algebra.Group.Nat.Defs
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingShape
-public import VerifiedGarbage.Proof.Dsa.AArch64.PrevalidatedSat
-import Mathlib.Data.Nat.Basic
-public import VerifiedGarbage.Proof.Dsa.AArch64.ValidateCT
 public import VerifiedGarbage.Proof.Dsa.AArch64.ParametersVerified
 public import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Dsa.AArch64.ABIRegions
+import VerifiedGarbage.Proof.Dsa.AArch64.Sequences
 public import VerifiedGarbage.Proof.Bignum.Octets
-import VerifiedGarbage.Proof.Dsa.AArch64.ValidateMain
-public import VerifiedGarbage.Proof.Dsa.AArch64.ValidateBody
 public import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingInput
-public import VerifiedGarbage.Proof.Dsa.AArch64.DeriveVerified
-public import VerifiedGarbage.Proof.Dsa.AArch64.DeriveCheckedVerified
-public import VerifiedGarbage.Proof.Dsa.AArch64.PrevalidatedSignVerified
-public import VerifiedGarbage.Proof.Dsa.AArch64.ValidatePrivateCT
 public import VerifiedGarbage.Spec.Dsa.PrevalidatedSign
 import VerifiedGarbage.Proof.Dsa.AArch64.PublicSlices
-public import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightGuard
-public import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightGuardCT
 public import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightMont
-public import VerifiedGarbage.Proof.Dsa.AArch64.SigningABIPost
-public import VerifiedGarbage.Proof.Dsa.AArch64.SigningABIPre
-public import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingABIPre
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-! ### `Dsa.AArch64.PrevalidatedVerified`, which only this module used -/
 
@@ -525,6 +504,64 @@ namespace VG.Proof.Variants.DsaArithmetic.AArch64.Base
 
 open VG VG.AArch64 VG.Proof.Dsa.AArch64 VG.Proof.Bignum.AArch64
 
+open VG.Impl.Dsa.AArch64 in
+/-- What the kernel evaluates of the eight entry points: that none writes the
+stack pointer, the stack of those that call, and that those that run under
+DIT do not touch it. One declaration states it of all of them, since the
+kernel remembers what it has evaluated only within a declaration, and they
+are built of the same code (the arithmetic they call, and most of what is
+around it). -/
+theorem checks :
+    (([Prevalidated.validate Mont.calledProductEight.mm, Prevalidated.verify Mont.calledProductEight.mm,
+      Generate.checkParameters Mont.calledProductEight.mm, Generate.deriveKey Mont.calledProductEight.mm,
+      SignVerify.sign Mont.calledProductEight.mm, PrevalidatedSign.sign Mont.calledProductEight.mm,
+      PrevalidatedSign.validate Mont.calledProductEight.mm,
+      Generate.deriveChecked Mont.calledProductEight.mm].all fun c => c.all (fun i => !isa.writesSp i)) &&
+    (([Generate.checkParameters Mont.calledProductEight.mm, Generate.deriveKey Mont.calledProductEight.mm,
+      SignVerify.sign Mont.calledProductEight.mm, PrevalidatedSign.sign Mont.calledProductEight.mm,
+      Generate.deriveChecked Mont.calledProductEight.mm].all fun c => Nat.ble (16 * c.aarch64Depth) 0) &&
+    ([Generate.checkParameters Mont.calledProductEight.mm, SignVerify.sign Mont.calledProductEight.mm,
+      PrevalidatedSign.sign Mont.calledProductEight.mm,
+      Generate.deriveChecked Mont.calledProductEight.mm].all fun c => c.all (fun i => !i.touchesDit)))) = true := by
+  decide +kernel
+
+/-- Entry point `k` of `checks` does not write the stack pointer. -/
+theorem checks_sp {l l' l'' : List (Prog isa)}
+    (h : ((l.all fun c => c.all (fun i => !isa.writesSp i)) &&
+      ((l'.all fun c => Nat.ble (16 * c.aarch64Depth) 0) &&
+      (l''.all fun c => c.all (fun i => !i.touchesDit)))) = true)
+    (k : Nat) (hk : k < l.length) : (l[k]'hk).all (fun i => !isa.writesSp i) = true :=
+  List.all_eq_true.mp (Bool.and_eq_true_iff.mp h).1 _ (List.getElem_mem hk)
+
+/-- The stack of entry point `k` of those of `checks` that call. -/
+theorem checks_depth {l l' l'' : List (Prog isa)}
+    (h : ((l.all fun c => c.all (fun i => !isa.writesSp i)) &&
+      ((l'.all fun c => Nat.ble (16 * c.aarch64Depth) 0) &&
+      (l''.all fun c => c.all (fun i => !i.touchesDit)))) = true)
+    (k : Nat) (hk : k < l'.length) : 16 * (l'[k]'hk).aarch64Depth ≤ 0 :=
+  Nat.le_of_ble_eq_true (List.all_eq_true.mp
+    (Bool.and_eq_true_iff.mp (Bool.and_eq_true_iff.mp h).2).1 _ (List.getElem_mem hk))
+
+/-- Entry point `k` of those of `checks` that run under DIT does not touch it. -/
+theorem checks_dit {l l' l'' : List (Prog isa)}
+    (h : ((l.all fun c => c.all (fun i => !isa.writesSp i)) &&
+      ((l'.all fun c => Nat.ble (16 * c.aarch64Depth) 0) &&
+      (l''.all fun c => c.all (fun i => !i.touchesDit)))) = true)
+    (k : Nat) (hk : k < l''.length) : (l''[k]'hk).all (fun i => !i.touchesDit) = true :=
+  List.all_eq_true.mp (Bool.and_eq_true_iff.mp (Bool.and_eq_true_iff.mp h).2).2 _ (List.getElem_mem hk)
+
+open VG.Impl.Dsa.AArch64 in
+/-- What the cleanups need of the entry points, in one evaluation like `checks`. -/
+theorem scrubs :
+    Scrub.scrubSide (Prevalidated.validate Mont.calledProductEight.mm) 0 32 Fn.clear [] = true ∧
+    Scrub.scrubSide (Prevalidated.verify Mont.calledProductEight.mm) 0 32 Fn.clear [] = true ∧
+    Scrub.scrubSide (PrevalidatedSign.validate Mont.calledProductEight.mm) 0 32 Fn.clear [] = true ∧
+    Scrub.scrubSide (Generate.deriveKey Mont.calledProductEight.mm) 0 32 Fn.clear [] = true ∧
+    Scrub.scrubSide (RandomSign.code ("vg_dsa_sign_prevalidated" ++ "") (PrevalidatedSign.sign Mont.calledProductEight.mm)) 256 32 Fn.clear [] = true ∧
+    Scrub.scrubSide (GenerateKey.code ("vg_dsa_check_parameters" ++ "") ("vg_dsa_derive_key_checked" ++ "")
+      (Generate.checkParameters Mont.calledProductEight.mm) (Generate.deriveChecked Mont.calledProductEight.mm)) 256 32 Fn.clear [] = true := by
+  lit_decide
+
 def variant : Backend where
   mul := Mont.calledProductEight.mm
   suffix := ""
@@ -532,24 +569,34 @@ def variant : Backend where
   signVerified := signing_verified Mont.calledProductEight
   validateVerified := validating_verified Mont.calledProductEight
   prevalidatedVerified := prevalidated_verified Mont.calledProductEight
-  validateSp := by decide +kernel
-  prevalidatedSp := by decide +kernel
+  validateSp := checks_sp checks 0 (by decide)
+  prevalidatedSp := checks_sp checks 1 (by decide)
   parametersVerified := parameters_verified Mont.calledProductEight
   deriveVerified := derive_verified Mont.calledProductEight
-  parametersSp := by decide +kernel
-  parametersDepth := by decide +kernel
-  deriveSp := by decide +kernel
-  deriveDepth := by decide +kernel
-  signSp := by decide +kernel
-  signDepth := by decide +kernel
+  parametersSp := checks_sp checks 2 (by decide)
+  parametersNoDit := checks_dit checks 0 (by decide)
+  parametersDepth := checks_depth checks 0 (by decide)
+  deriveSp := checks_sp checks 3 (by decide)
+  deriveDepth := checks_depth checks 1 (by decide)
+  signSp := checks_sp checks 4 (by decide)
+  signNoDit := checks_dit checks 1 (by decide)
+  signDepth := checks_depth checks 2 (by decide)
   prevalidatedSignVerified := prevalidated_sign_verified Mont.calledProductEight
-  prevalidatedSignSp := by decide +kernel
-  prevalidatedSignDepth := by decide +kernel
+  prevalidatedSignSp := checks_sp checks 5 (by decide)
+  prevalidatedSignNoDit := checks_dit checks 2 (by decide)
+  prevalidatedSignDepth := checks_depth checks 3 (by decide)
   validatePrivateVerified := validating_private_verified Mont.calledProductEight
-  validatePrivateSp := by decide +kernel
+  validatePrivateSp := checks_sp checks 6 (by decide)
   deriveCheckedVerified := derive_checked_verified Mont.calledProductEight
-  deriveCheckedSp := by decide +kernel
-  deriveCheckedDepth := by decide +kernel
+  deriveCheckedSp := checks_sp checks 7 (by decide)
+  deriveCheckedNoDit := checks_dit checks 3 (by decide)
+  deriveCheckedDepth := checks_depth checks 4 (by decide)
   stackBound := by decide
+  validateScrub := scrubs.1
+  prevalidatedScrub := scrubs.2.1
+  validatePrivateScrub := scrubs.2.2.1
+  deriveScrub := scrubs.2.2.2.1
+  randomSignScrub := scrubs.2.2.2.2.1
+  generateKeyScrub := scrubs.2.2.2.2.2
 
 end VG.Proof.Variants.DsaArithmetic.AArch64.Base

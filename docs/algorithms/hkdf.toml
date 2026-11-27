@@ -1,0 +1,15 @@
+name = "HKDF"
+family = "KDFs"
+specs = ["Hkdf", "Hmac"]
+modules = ["src/kdf/hkdf.rs"]
+asm = [
+  "hkdf",
+  "hmac_md5",
+  "hmac_sha1",
+  "hmac_sha224",
+  "hmac_sha256",
+  "hmac_sha384",
+  "hmac_sha512",
+  "hmac_sha512_224",
+  "hmac_sha512_256",
+]

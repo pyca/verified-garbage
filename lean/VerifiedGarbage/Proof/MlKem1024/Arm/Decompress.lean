@@ -4,9 +4,8 @@ public import VerifiedGarbage.Proof.MlKem.Arm.Decompress
 import VerifiedGarbage.Proof.MlKem.Encode1024
 public import VerifiedGarbage.Impl.MlKem1024.Arm.Poly
 public import VerifiedGarbage.Spec.MlKem.Contract1024
-public import VerifiedGarbage.Proof.MlKem1024.Contract
+public import VerifiedGarbage.Proof.MlKem.Compress1024
 import VerifiedGarbage.Proof.Framework.Range
-import VerifiedGarbage.Proof.MlKem.Compress1024
 import VerifiedGarbage.Proof.MlKem.Arm.Add
 import VerifiedGarbage.Proof.MlKem.Arith
 import VerifiedGarbage.Proof.Framework.Contract
@@ -17,9 +16,8 @@ meta import VerifiedGarbage.Proof.MlKem.Arm.Decompress
 meta import VerifiedGarbage.Proof.MlKem.Encode1024
 meta import VerifiedGarbage.Impl.MlKem1024.Arm.Poly
 meta import VerifiedGarbage.Spec.MlKem.Contract1024
-meta import VerifiedGarbage.Proof.MlKem1024.Contract
-meta import VerifiedGarbage.Proof.Framework.Range
 meta import VerifiedGarbage.Proof.MlKem.Compress1024
+meta import VerifiedGarbage.Proof.Framework.Range
 meta import VerifiedGarbage.Proof.MlKem.Arm.Add
 meta import VerifiedGarbage.Proof.MlKem.Arith
 meta import VerifiedGarbage.Proof.Framework.Contract

@@ -8,8 +8,7 @@ public import VerifiedGarbage.Proof.Ed25519.AArch64.Ops
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Spec.Ed25519
-public import Mathlib.Logic.Function.Basic
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.FunUpdate
 
 /-! ### `Ed25519.AArch64.Sub`, which only this module used -/
 
@@ -625,12 +624,12 @@ def env (m : Mem) (base : Addr) : Env := fun i => F m base (offset i)
 
 def evalOp (op : FieldOp) (e : Env) : Env :=
   match op with
-  | .copy o a => Function.update e o (e a)
-  | .const o v => Function.update e o v
-  | .mul o a b => Function.update e o (e a * e b)
-  | .sqr o a => Function.update e o (e a * e a)
-  | .add o a b => Function.update e o (e a + e b)
-  | .sub o a b => Function.update e o (e a - e b)
+  | .copy o a => Fun.update e o (e a)
+  | .const o v => Fun.update e o v
+  | .mul o a b => Fun.update e o (e a * e b)
+  | .sqr o a => Fun.update e o (e a * e a)
+  | .add o a b => Fun.update e o (e a + e b)
+  | .sub o a b => Fun.update e o (e a - e b)
 
 def evalOps (ops : List FieldOp) (e : Env) : Env := ops.foldl (fun e op => evalOp op e) e
 
@@ -654,11 +653,11 @@ theorem Keep.scr {base : Addr} {s t : State} (h : Keep base s t) (hs : Scr s bas
 
 theorem env_update {base : Addr} {m m' : Mem} (o : Slot)
     (h : Outside base (offset o) 32 m m') :
-    env m' base = Function.update (env m base) o (F m' base (offset o)) := by
+    env m' base = Fun.update (env m base) o (F m' base (offset o)) := by
   funext i
   by_cases hi : i = o
   · subst hi; simp [env]
-  · rw [Function.update_of_ne hi]
+  · rw [Fun.update_of_ne hi]
     simp only [env, F]
     have hne : i.val ≠ o.val := fun h => hi (Fin.ext h)
     rw [h.fe (by simp only [offset]; omega_arith) (by simp only [offset]; omega_arith)]
@@ -790,7 +789,7 @@ theorem fieldCode_ok (ops : List FieldOp) {s : State} {base : Addr} (hs : Scr s 
 
 theorem constField_ok {s : State} {base : Addr} (hs : Scr s base large) (o : Slot) (v : Spec.X25519.Fe) :
     WP isa (.block (constField o v)) s fun t =>
-      Keep base s t ∧ env t.mem base = Function.update (env s.mem base) o v := by
+      Keep base s t ∧ env t.mem base = Fun.update (env s.mem base) o v := by
   have _hcap := workSize_le large
   have _hmin := workSize_ge large
   refine WP.mono (constField_op hs o v) fun t ⟨hk, hv⟩ => ?_

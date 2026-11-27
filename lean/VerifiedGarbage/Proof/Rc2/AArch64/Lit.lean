@@ -28,12 +28,24 @@ def piLookupLit : List Instr :=
 
 materialize_value piLookupLit
 
+/-- `piLookup`'s literal: the one of `piLookupLit`, which the literals of the
+code that contains `piLookup` read (three times in the key expansion),
+rather than look PITABLE up in the specification's vector again. -/
+noncomputable abbrev piLookup.lit : List Instr := piLookupLit.lit
+
+theorem piLookup.lit_eq : piLookup = piLookup.lit :=
+  Eq.trans (b := piLookupLit)
+    (congrArg (fun t : Nat → BitVec 8 => loadTable t ++ ([.vop (.dup .b16 .v0 .x8)] : List Instr) ++
+        quarters true ++ select true ++ ([.umov .w .x8 .v0 0] : List Instr) ++ mask .x8 8)
+      (funext VG.Rc2.piTable_getD))
+    piLookupLit.lit_eq
+
 end VG.Impl.Rc2.AArch64
 
 namespace VG
 
-materialize_flat_code Impl.Rc2.AArch64.encryptBlock
-materialize_flat_code Impl.Rc2.AArch64.decryptBlock
-materialize_flat_code Impl.Rc2.AArch64.expandKey
+materialize_code Impl.Rc2.AArch64.encryptBlock
+materialize_code Impl.Rc2.AArch64.decryptBlock
+materialize_code Impl.Rc2.AArch64.expandKey
 
 end VG

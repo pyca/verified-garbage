@@ -4,15 +4,15 @@ public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Main
 public import VerifiedGarbage.Proof.Ecdh.X86_64.Main
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.ProjectiveFinal
 public import VerifiedGarbage.Proof.Weierstrass.Jac
-
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Stages
 import VerifiedGarbage.Proof.Weierstrass.X86_64.ForwardField
-import VerifiedGarbage.Proof.Ecdsa.X86_64.Lays
+import VerifiedGarbage.Proof.Ecdsa.X86_64.Fixed
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Unch
 import VerifiedGarbage.Proof.Ecdh.Exchange
 import VerifiedGarbage.Spec.Ecdsa.Verify
 import VerifiedGarbage.Proof.Ecdsa.Verify
 import VerifiedGarbage.Proof.Weierstrass.JacAdd
+
 /-! The measured Jacobian denominator square and projective check satisfy verification. -/
 
 -- Formerly `VerifiedGarbage/Proof/Ecdsa/Verify/X86_64/JointSquare.lean`, which only this module imported.
@@ -65,7 +65,7 @@ theorem jointSquare_ok {c : Cfg} (hc : BaseCfgOk c)
     (sv_unch un hc.n10 h.scr.nowrap (by decide) (apart_slW (by decide))).trans h.k,
     flag.trans h.flag,rx ▸ h.rx_lt,rzlt⟩,?_,?_⟩
   · exact congrArg (fun x => toM c.C.p (2^(64*c.n)) x) rx
-  · simpa only [MP'_n,tmv,runOps,List.foldl_cons,List.foldl_nil,FOp.run,Function.update_self] using rzv
+  · simpa only [MP'_n,tmv,runOps,List.foldl_cons,List.foldl_nil,FOp.run,Fun.update_self] using rzv
 
 end VG.Proof.Ecdsa.Verify.X86_64
 end

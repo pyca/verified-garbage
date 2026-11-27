@@ -13,7 +13,7 @@ hold the key context (`rdi`), the number of rounds (`rsi`), the counter
 the output (`r10`) and the working space (`r11`).
 `SPreTo s₀` is what they need of it, and `EPostTo` what they do
 (`StitchToOkM`): `SPre`/`EPost` (`Stitch/Spec.lean`), with the plaintext
-read from `r8`, which nothing writes, and the ciphertext written to `r10`.
+read from `r8` and ciphertext written to `r10`. The pointers may be identical.
 -/
 
 @[expose] public section
@@ -34,9 +34,9 @@ abbrev oR : Region := ⟨op s₀, 16 * nb s₀⟩
 
 end
 
-structure SPreTo (M : CtxMode) (s₀ : State) : Prop where
+structure SPreTo (M : CtxMode) (s₀ : State) (lo : Nat := 16) : Prop where
   rounds : nr s₀ = 10 ∨ nr s₀ = 12 ∨ nr s₀ = 14
-  nb16 : 16 ≤ nb s₀
+  nb16 : lo ≤ nb s₀
   k_in : InRegions (s₀.rd ++ s₀.wr) (kp s₀) M.len
   c_in : InRegions s₀.wr (cp s₀) 16
   y_in : InRegions s₀.wr (yp s₀) 16
@@ -50,7 +50,8 @@ structure SPreTo (M : CtxMode) (s₀ : State) : Prop where
   k_p : (⟨kp s₀, M.len⟩ : Region).Disjoint (pR s₀)
   s_c : (sR s₀).Disjoint (cR s₀)
   s_y : (sR s₀).Disjoint (yR s₀)
-  s_o : (sR s₀).Disjoint (oR s₀)
+  /-- Source and destination have the same base or disjoint byte ranges. -/
+  s_o : sp s₀ = op s₀ ∨ (sR s₀).Disjoint (oR s₀)
   s_p : (sR s₀).Disjoint (pR s₀)
   o_c : (oR s₀).Disjoint (cR s₀)
   o_y : (oR s₀).Disjoint (yR s₀)

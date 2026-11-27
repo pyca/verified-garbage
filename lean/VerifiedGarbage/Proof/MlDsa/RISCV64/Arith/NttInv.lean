@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.RISCV64.Arith.Ntt
-public import VerifiedGarbage.Proof.MlDsa.RISCV64.Arith.Lazy
 import VerifiedGarbage.Proof.MlKem.RISCV64.Common
 import VerifiedGarbage.Proof.MlKem.RISCV64.Add
 import VerifiedGarbage.Proof.MlDsa.RISCV64.Arith.AddSub
@@ -12,7 +11,6 @@ import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import all Init.Data.Nat.Bitwise.Basic
 meta import VerifiedGarbage.Proof.MlDsa.RISCV64.Arith.Ntt
-meta import VerifiedGarbage.Proof.MlDsa.RISCV64.Arith.Lazy
 meta import VerifiedGarbage.Proof.MlKem.RISCV64.Common
 meta import VerifiedGarbage.Proof.MlKem.RISCV64.Add
 meta import VerifiedGarbage.Proof.MlDsa.RISCV64.Arith.AddSub

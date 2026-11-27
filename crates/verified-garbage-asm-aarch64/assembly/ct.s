@@ -29,5 +29,8 @@ vg_ct_eq:
 	sub x4, x4, #1
 	lsr x0, x4, #63
 21:
+	movz x4, #0, lsl #0
+	movz x6, #0, lsl #0
+	movz x7, #0, lsl #0
 	ret
 	.p2align 6

@@ -25,11 +25,16 @@ meta import VerifiedGarbage.Proof.Framework.Arm.Lit
 namespace VG
 
 -- The parts of the code that the constant-time proofs analyse on their own.
-materialize_code Impl.ChaCha20Poly1305.Arm.sealMain
-materialize_code Impl.ChaCha20Poly1305.Arm.openMain
+materialize_code armChaChaSealMain := Impl.ChaCha20Poly1305.Arm.sealMain false
+materialize_code armChaChaSealMainU := Impl.ChaCha20Poly1305.Arm.sealMain true
+materialize_code armChaChaOpenMain := Impl.ChaCha20Poly1305.Arm.openMain false
+materialize_code armChaChaOpenMainU := Impl.ChaCha20Poly1305.Arm.openMain true
 materialize_code Impl.ChaCha20Poly1305.Arm.openEnd
-materialize_code Impl.ChaCha20Poly1305.Arm.seal
-materialize_code Impl.ChaCha20Poly1305.Arm.open
-materialize_code Impl.ChaCha20Poly1305.Arm.openTo
+materialize_code armChaChaSeal := Impl.ChaCha20Poly1305.Arm.seal false
+materialize_code armChaChaSealU := Impl.ChaCha20Poly1305.Arm.seal true
+materialize_code armChaChaOpen := Impl.ChaCha20Poly1305.Arm.open false
+materialize_code armChaChaOpenU := Impl.ChaCha20Poly1305.Arm.open true
+materialize_code armChaChaOpenTo := Impl.ChaCha20Poly1305.Arm.openTo false
+materialize_code armChaChaOpenToU := Impl.ChaCha20Poly1305.Arm.openTo true
 
 end VG

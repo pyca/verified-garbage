@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Aes.AArch64.Ctr32
+public import VerifiedGarbage.Impl.Aes.AArch64.OneBlock
 
 /-!
 # The AES key expansion on AArch64
@@ -9,19 +10,19 @@ public import VerifiedGarbage.Impl.Aes.AArch64.Ctr32
 runs it with `scratch` in a frame of its own (`Proof/Aes/AArch64/Frame.lean`).
 
 FIPS 197 §5.2 (`KEYEXPANSION`), one word at a time, with `SUBWORD` done by
-the bitsliced S-box of `Sbox.lean` on the word in the low 32 bits of `q 0`
-(as BearSSL's `aes_ct64` does in its `sub_word`; Thomas Pornin, MIT
-licence).
+table lookups in vector registers: the S-box is loaded into `v16`–`v31` once
+(`OneBlock.setup`), and the word, moved to `v0` from the low 32 bits of
+`q 0` and back, selects from it with `tbl`, whose time does not depend on
+its data.
 
-* The scratch buffer's base moves to `x5`, which the S-box uses; the
-  callee-saved registers are saved in its slots 48–58, and the round
-  constant is kept in slot 59.
+* The scratch buffer's base moves to `x5`; the callee-saved registers are
+  saved in its slots 48–58, and the round constant is kept in slot 59.
 * The key is copied into the schedule 8 bytes at a time (16, 24 and 32 are
   multiples of 8); the last word copied, `w[Nk − 1]`, is left in `q 0`.
 * Word `i` (from `Nk` on) is computed with `x0` at `w[i − Nk]`, `x2` at
   `w[i]`, `x3 = Nk`, `x1 = i mod Nk`, `x4` the words left, and `q 0 =
   w[i − 1]`. Every branch is on these, which depend only on `key_len`; the
-  key's bytes only ever reach the S-box's registers and memory.
+  key's bytes only ever reach registers, `tbl`'s operands and the schedule.
 -/
 
 @[expose] public section
@@ -46,8 +47,12 @@ def wordSetup : List Instr :=
    .add .x .x4 .x3 .x3, .add .x .x4 .x4 .x3, .addImm .x .x4 .x4 28,
    .movz .x (q 1) 1 0, stS rconSlot (q 1)]
 
-/-- The S-box on each byte of `q 0` (and of the other words). -/
-def subAll : List Instr := toBs ++ sboxCode ++ fromBs
+/-- The S-box on each byte of `q 0`: through `v0`, with its bytes XORed with
+64, 128 and 192 in `v1`–`v3` (`Impl.Tbl.AArch64.select`). -/
+def subAll : List Instr :=
+  ([.vop (.ins .d2 .v0 0 (q 0)), .vop (.logic .eor .v1 .v0 .v6), .vop (.logic .eor .v2 .v0 .v5),
+    .vop (.logic .eor .v3 .v1 .v5)] : List Instr) ++ (Impl.Tbl.AArch64.select true ++
+  ([.umov .x (q 0) .v0 0] : List Instr))
 
 /-- After `subAll`: `q 0 := ROTWORD(q 0) ⊕ Rcon` (on the low 32 bits), and
 the round constant times `x` (without a branch: `{1b}` times its bit 7 is
@@ -72,10 +77,13 @@ def wordBody : Prog isa :=
       (.seq (.ite (.zero .x (q 1)) (.block [.movz .x .x1 0 0]) (.block []))
         (.block [.subImm .x .x4 .x4 1])))
 
-def expandKey : Prog isa :=
+/-- The key expansion, with the S-box in the table registers. -/
+def expandWords : Prog isa :=
   .seq (.block ([movR sb .x3] ++ saveRegs ++ [movR .x4 .x1]))
     (.seq (.loop (.block copyBody) (.nonzero .x .x4))
       (.seq (.block wordSetup)
         (.seq (.loop wordBody (.nonzero .x .x4)) (.block restoreRegs))))
+
+def expandKey : Prog isa := .seq (.block OneBlock.setup) expandWords
 
 end VG.Impl.Aes.AArch64

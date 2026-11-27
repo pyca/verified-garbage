@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Compute
 import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Control
-import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Steps
+import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Piece
 import VerifiedGarbage.Proof.MlDsa.Verify.Norm
 import VerifiedGarbage.Proof.MlDsa.PreparedKey.Values
 import VerifiedGarbage.Proof.MlKem.Arm.Loops

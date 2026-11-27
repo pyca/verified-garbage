@@ -13,11 +13,13 @@ import VerifiedGarbage.Proof.Framework.Contract
 namespace VG.Proof.Aes.X86.AesNi
 open VG VG.X86 VG.X86.RegUpd
 open VG.Proof.Aes.X86 (GPre argRg schP nRounds ctrP datP nBlk scrP scrR ctrR)
+
+variable {B : Nat}
 open VG.Impl.Aes.X86.AesNi (at_ argOp savedRegs)
 
 /-- An argument loaded, from any state that keeps the stack pointer, the
 permissions and the arguments. -/
-theorem arg_exec' {to : Bool} {s₀ s : State} (hp : GPre to s₀) {rs : List Region}
+theorem arg_exec' {to : Bool} {s₀ s : State} (hp : GPre to s₀ B) {rs : List Region}
     (hesp : s.gpr .esp = s₀.gpr .esp) (hrd : s.rd = s₀.rd) (hf : Frame rs s₀.mem s.mem)
     (hd : ∀ r ∈ rs, (argRg to s₀).Disjoint r)
     {i : Nat} (hi : i < 6 ∨ (to = true ∧ i = 6)) (d : Reg) :
@@ -31,7 +33,7 @@ theorem arg_exec' {to : Bool} {s₀ s : State} (hp : GPre to s₀) {rs : List Re
     hf.readW (arg_contains hp hi) hd (by decide)
   simp only [exec, readSrc, State.load32, he, hin, ite_true, hm, Option.map_some]
 
-theorem arg_exec {to : Bool} {s₀ s : State} (hp : GPre to s₀) (hs : Setup s₀ s)
+theorem arg_exec {to : Bool} {s₀ s : State} (hp : GPre to s₀ B) (hs : Setup B s₀ s)
     {i : Nat} (hi : i < 6 ∨ (to = true ∧ i = 6)) (d : Reg) :
     exec (.mov d (.mem (argOp i))) s = some (s.setReg d (arg s₀ i)) :=
   arg_exec' hp hs.esp hs.rd hs.frame (fun r hr => by
@@ -41,21 +43,21 @@ theorem arg_exec {to : Bool} {s₀ s : State} (hp : GPre to s₀) (hs : Setup s�
 /-- The memory after saving the registers. -/
 abbrev saveMem (s : State) : Mem := Spill.saveMem s.mem (addr (scrP s)) s.gpr savedRegs
 
-theorem saveMem_saved {to : Bool} (s : State) (hp : GPre to s) : Saved s (saveMem s) :=
-  Spill.saveMem_saved_addr _ _ (n := 16) (by decide) (by have := hp.fB; omega_using [this])
+theorem saveMem_saved {to : Bool} (s : State) (hp : GPre to s B) : Saved s (saveMem s) :=
+  Spill.saveMem_saved_addr _ _ (n := 16) (by decide) (by have := hp.fB; have hB := hp.hB; omega_using [this, hB])
 
-theorem saveMem_frame {to : Bool} (s : State) (hp : GPre to s) : Frame [scrR s] s.mem (saveMem s) :=
+theorem saveMem_frame {to : Bool} (s : State) (hp : GPre to s B) : Frame [scrR s B] s.mem (saveMem s) :=
   Spill.saveMem_frame List.mem_cons_self _ _ _ _ fun p h =>
     scratch_contains hp (by have := savedRegs_bound p h; omega_using [this])
 
 def saveHead : List Instr := [.mov .eax (.mem (argOp 5))] ++
   savedRegs.map (fun (r, d) => .store (at_ .eax d) r)
 
-theorem saveHead_ok {to : Bool} (s₀ : State) (hp : GPre to s₀) :
+theorem saveHead_ok {to : Bool} (s₀ : State) (hp : GPre to s₀ B) :
     WP isa (.block saveHead) s₀ fun s =>
-      Setup s₀ s ∧ s.gpr .eax = scrP s₀ ∧
+      Setup B s₀ s ∧ s.gpr .eax = scrP s₀ ∧
       (∀ r, r ≠ .eax → s.gpr r = s₀.gpr r) ∧ s.mem = saveMem s₀ := by
-  have hs : Setup s₀ s₀ := ⟨rfl, rfl, rfl, Frame.refl _ _⟩
+  have hs : Setup B s₀ s₀ := ⟨rfl, rfl, rfl, Frame.refl _ _⟩
   rw [show saveHead = .mov .eax (.mem (argOp 5)) :: (Spill.saveCode .eax savedRegs ++ []) from rfl]
   refine Wp.cons (arg_exec hp hs (i := 5) (.inl (by decide)) .eax) ?_
   have e : (s₀.setReg .eax (arg s₀ 5)).gpr .eax = scrP s₀ := gpr_setReg_self _ _ _
@@ -69,7 +71,7 @@ theorem saveHead_ok {to : Bool} (s₀ : State) (hp : GPre to s₀) :
   rw [u.gpr, gpr_setReg_of_ne _ _ hr]
 
 
-structure Loaded (s₀ s : State) : Prop extends Setup s₀ s where
+structure Loaded (B : Nat) (s₀ s : State) : Prop extends Setup B s₀ s where
   eax : s.gpr .eax = schP s₀
   ecx : s.gpr .ecx = arg s₀ 1
   edx : s.gpr .edx = ctrP s₀
@@ -81,9 +83,9 @@ def loadArgs : List Instr :=
   [.mov .ebp (.reg .eax), .mov .eax (.mem (argOp 0)), .mov .ecx (.mem (argOp 1)),
    .mov .edx (.mem (argOp 2)), .mov .esi (.mem (argOp 3)), .mov .edi (.mem (argOp 4))]
 
-theorem loadArgs_ok {to : Bool} {s₀ s : State} (hp : GPre to s₀) (hs : Setup s₀ s)
+theorem loadArgs_ok {to : Bool} {s₀ s : State} (hp : GPre to s₀ B) (hs : Setup B s₀ s)
     (hb : s.gpr .eax = scrP s₀) :
-    WP isa (.block loadArgs) s fun s' => Loaded s₀ s' ∧ s'.mem = s.mem := by
+    WP isa (.block loadArgs) s fun s' => Loaded B s₀ s' ∧ s'.mem = s.mem := by
   unfold loadArgs
   rw [WP.block_cons_iff]
   let s₁ := s.setReg .ebp (s.gpr .eax)
@@ -115,9 +117,10 @@ theorem loadArgs_ok {to : Bool} {s₀ s : State} (hp : GPre to s₀) (hs : Setup
   exact hb
 
 
-theorem Saved.writePrefix {to : Bool} {s₀ : State} {m : Mem} (hp : GPre to s₀) (h : Saved s₀ m)
+theorem Saved.writePrefix {to : Bool} {s₀ : State} {m : Mem} (hp : GPre to s₀ B) (h : Saved s₀ m)
     (v : BitVec 128) : Saved s₀ (m.writeW (addr (scrP s₀) 16) v) :=
-  h.writeW_addr (n := 2048) hp.fB (fun p h => by have := savedRegs_bound p h; omega_using [this]) (by decide) (by decide) v
+  h.writeW_addr (n := 32) (by have := hp.fB; have hB := hp.hB; omega_using [this, hB])
+    (fun p h => by have := savedRegs_bound p h; omega_using [this]) (by decide) (by decide) v
 
 def counterSetup : List Instr :=
   [.mov .ebx (.mem (at_ .edx 12)), .bswap .ebx,
@@ -125,8 +128,8 @@ def counterSetup : List Instr :=
    .xop (.shift .psrldq .xmm7 4), .movdquStore (at_ .ebp 16) .xmm7,
    .alu .cmp .edi (.imm 6)]
 
-theorem counterSetup_ok {to : Bool} {s₀ s : State} (hp : GPre to s₀) (hs : Loaded s₀ s)
-    (saved : Saved s₀ s.mem) : WP isa (.block counterSetup) s (Start s₀) := by
+theorem counterSetup_ok {to : Bool} {s₀ s : State} (hp : GPre to s₀ B) (hs : Loaded B s₀ s)
+    (saved : Saved s₀ s.mem) : WP isa (.block counterSetup) s (Start B s₀) := by
   have hc0 : InRegions (s.rd ++ s.wr) (addr (ctrP s₀) 0) 16 := by
     exact inRegions_wr ⟨ctrR s₀, by rw [hs.wr]; exact hp.wC, ctr_contains hp (by decide)⟩
   have hc12 : InRegions (s.rd ++ s.wr) (addr (ctrP s₀) 12) 4 := by
@@ -155,7 +158,7 @@ theorem counterSetup_ok {to : Bool} {s₀ s : State} (hp : GPre to s₀) (hs : L
     · simp (config := {decide := true}) only [gpr_arithFlags, gpr_setReg, ite_false]; exact hs.esp
     · simp only [rd_arithFlags, rd_setXmm, rd_setReg]; exact hs.rd
     · simp only [wr_arithFlags]; exact hs.wr
-    · change Frame [scrR s₀] s₀.mem (s.mem.writeW (addr (scrP s₀) 16)
+    · change Frame [scrR s₀ B] s₀.mem (s.mem.writeW (addr (scrP s₀) 16)
         (XShiftOp.eval .psrldq (XShiftOp.eval .pslldq (s.mem.readW (addr (ctrP s₀) 0) 128) 4) 4))
       exact hs.frame.writeW (List.mem_singleton_self _) _ (scratch_contains hp (by decide))
   · simp (config := {decide := true}) only [gpr_arithFlags, gpr_setReg, ite_false]; exact hs.eax
@@ -186,8 +189,8 @@ theorem counterSetup_ok {to : Bool} {s₀ s : State} (hp : GPre to s₀) (hs : L
 
 theorem prologue_eq : Impl.Aes.X86.AesNi.prologue = saveHead ++ loadArgs ++ counterSetup := rfl
 
-theorem prologue_ok {to : Bool} (s₀ : State) (hp : GPre to s₀) :
-    WP isa (.block Impl.Aes.X86.AesNi.prologue) s₀ (Start s₀) := by
+theorem prologue_ok {to : Bool} (s₀ : State) (hp : GPre to s₀ B) :
+    WP isa (.block Impl.Aes.X86.AesNi.prologue) s₀ (Start B s₀) := by
   rw [prologue_eq, List.append_assoc, WP.block_append_iff]
   refine WP.mono (saveHead_ok s₀ hp) fun s₁ ⟨h₁, ptr₁, _, mem₁⟩ => ?_
   rw [WP.block_append_iff]

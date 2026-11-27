@@ -8,6 +8,8 @@
 ///
 /// It runs `vg_poly1305_init`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 128 bytes.
@@ -27,12 +29,14 @@ pub unsafe fn vg_poly1305_init_auto(_dit: verified_garbage_cpu::Dit<'_>, state: 
 ///
 /// It runs `vg_poly1305_update`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 128 bytes.
 /// * `data` must be valid for reads of `len` bytes.
 /// * `state` must not overlap `data` or the arguments on the stack (distinct Rust objects never do).
-/// * Neither `state` nor `data` may overlap the return address on the stack or the 156 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `data` may overlap the return address on the stack or the 680 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_poly1305_update_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 16], count: u64, data: *const u8, len: usize) {
@@ -45,6 +49,8 @@ pub unsafe fn vg_poly1305_update_auto(_dit: verified_garbage_cpu::Dit<'_>, state
 /// Contract: `VG.Spec.Poly1305.finalizeContract`. Constant time: only the pointers and `count` may affect timing, not the state.
 ///
 /// It runs `vg_poly1305_finalize`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///

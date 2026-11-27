@@ -1,8 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.ReadEnv
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.MontgomeryOne
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.Stable
+public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.MontgomeryOne
 
 /-! Initialize Montgomery one from the cached R²; no initial scratch value is assumed. -/
 @[expose] public section

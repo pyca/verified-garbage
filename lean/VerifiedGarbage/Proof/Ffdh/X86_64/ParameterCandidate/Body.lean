@@ -1,25 +1,113 @@
 module
 
+public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.PrepareCall
+
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Start
-public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.PolicyResult
-import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.HalveOutput
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.PhaseSetup
-import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.LoadOutput
-public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.CheckPrime
+public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.CheckCall
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.LeavePhase
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.ModulusPolicy
-import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.PhaseRounds
-import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.ShapeOriginal
+public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.ModulusPolicy
 import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Shape
-import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Consume
-public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.CheckGenerator
-import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Screen
-import Mathlib.Algebra.Group.Nat.Defs
+public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Screen
 public import VerifiedGarbage.Spec.Ffdh.Contract
 public import VerifiedGarbage.Proof.Ffdh.Contract
-import Mathlib.Basic.IsEmpty.Defs
 import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.ScreenedStream
+
+/-! ### `Ffdh.X86_64.ParameterCandidate.PolicyResult`, which only this module used -/
+
+section
+
+/-! # FFDH parameter generation on x86-64: compose the phases' tape results
+
+p's first witness, then q's, then p's others (`policyFirst`), as
+`Spec.Ffdh.screenedParameterWitnesses` draws them.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Ffdh.X86_64.ParameterCandidate
+
+open VG VG.Proof.Bignum VG.Impl.Ffdh.X86_64.ParameterCandidate
+open VG.Proof.Ffdh.ParameterCandidate (checkWitnesses)
+
+def TapeOutcome (p : CandidateP) (used consumed : Nat) (result : Option (Bool × List Byte)) (m : Mem) : Prop :=
+  match result with
+  | none => word m p.B (8 * oStatus) = 0
+  | some (pass, rest) => word m p.B (8 * oStatus) = BitVec.ofNat 64 (if pass then 1 else 2) ∧
+      rest = p.rand.drop (used + consumed)
+
+/-- A phase's result, then `next` on the rest of the tape if it passed. -/
+def thenPolicy (r : Option (Bool × List Byte)) (next : List Byte → Option (Bool × List Byte)) :
+    Option (Bool × List Byte) := do
+  let (pass, rest) ← r
+  if !pass then return (false, rest)
+  next rest
+
+/-- p's other witnesses. -/
+def policyRest (p : CandidateP) (r : List Byte) : Option (Bool × List Byte) :=
+  checkWitnesses p.P (p.phaseChecks false .rest) r
+
+/-- q's witnesses, then p's others. -/
+def policyQ (p : CandidateP) (r : List Byte) : Option (Bool × List Byte) :=
+  thenPolicy (checkWitnesses p.Q (p.phaseChecks true .all) r) (policyRest p)
+
+/-- p's first witness, then q's, then p's others. -/
+def policyFirst (p : CandidateP) (r : List Byte) : Option (Bool × List Byte) :=
+  thenPolicy (checkWitnesses p.P (p.phaseChecks false .first) r) (policyQ p)
+
+/-- p's whole trial division, then the witnesses. -/
+def sievedP (p : CandidateP) (r : List Byte) : Option (Bool × List Byte) :=
+  if p.sieved p.P then policyFirst p r else some (false, r)
+
+/-- q's trial division, then p's, then the witnesses. -/
+def sievedPolicy (p : CandidateP) (r : List Byte) : Option (Bool × List Byte) :=
+  if p.sieved p.Q then sievedP p r else some (false, r)
+
+theorem tape_reject {p : CandidateP} {used : Nat} {m : Mem} (hstatus : word m p.B (8 * oStatus) = 2) :
+    TapeOutcome p used 0 (some (false, p.rand.drop used)) m := by
+  simp [TapeOutcome, hstatus]
+
+theorem tape_stop {p : CandidateP} {used n : Nat} {q : Bool} {c : Checks} {m : Mem}
+    {next : List Byte → Option (Bool × List Byte)}
+    (h : PhaseOutcome p used n q c m) (hn : word m p.B (8 * oStatus) ≠ 1) :
+    TapeOutcome p used n
+      (thenPolicy (checkWitnesses (p.phaseValue q) (p.phaseChecks q c) (p.rand.drop used)) next) m := by
+  unfold PhaseOutcome at h
+  unfold thenPolicy
+  cases he : checkWitnesses (p.phaseValue q) (p.phaseChecks q c) (p.rand.drop used) with
+  | none => simpa [he, TapeOutcome] using h
+  | some ar =>
+    obtain ⟨pass, rest⟩ := ar
+    cases pass
+    · simpa [he, TapeOutcome] using h
+    · simp only [he] at h
+      exact False.elim (hn h.1)
+
+theorem tape_then {p : CandidateP} {used n k : Nat} {q : Bool} {c : Checks} {m m' : Mem}
+    {next : List Byte → Option (Bool × List Byte)}
+    (h : PhaseOutcome p used n q c m) (hy : word m p.B (8 * oStatus) = 1)
+    (hk : TapeOutcome p (used + n) k (next (p.rand.drop (used + n))) m') :
+    TapeOutcome p used (n + k)
+      (thenPolicy (checkWitnesses (p.phaseValue q) (p.phaseChecks q c) (p.rand.drop used)) next) m' := by
+  unfold PhaseOutcome at h
+  cases he : checkWitnesses (p.phaseValue q) (p.phaseChecks q c) (p.rand.drop used) with
+  | none => simp only [he] at h; simp [hy] at h
+  | some ar =>
+    obtain ⟨pass, rest⟩ := ar
+    cases pass
+    · simp only [he] at h; simp [hy] at h
+    · simp only [he] at h
+      unfold thenPolicy
+      simp only [Bool.not_true, Bool.false_eq_true, ite_false, bind, Option.bind_some, h.2]
+      unfold TapeOutcome at hk ⊢
+      simpa only [Nat.add_assoc] using hk
+
+end VG.Proof.Ffdh.X86_64.ParameterCandidate
+
+end
+
+end
 
 /-! ### `Ffdh.X86_64.ParameterCandidate.CandidateTest`, which only this module used -/
 
@@ -54,7 +142,7 @@ def PhasePost (p : CandidateP) (used : Nat) (R : Option (Bool × List Byte)) (s 
     (word t.mem p.B (8 * oStatus) = 1 → Spec.Rsa.os2ip (Spec.Rsa.bytesAt t.mem p.op p.k) = p.P) ∧
     CandidateSaved p s.mem t.mem ∧ CandidateFrame p s.mem t.mem ∧ Keep (.rdi :: mmRegs) s t
 
-theorem phaseTest_ok (M : Mont) (R : R2Impl M) (K : Kernel)
+theorem phaseTest_ok (M : Mont) (R : Preparation M) (K : Kernel)
     {p : CandidateP} {used : Nat} {s : State} {prep next : Prog isa} (q : Bool) (c : Checks)
     (nextR : List Byte → Option (Bool × List Byte))
     (h : CandidateTape p used s) (hodd : p.phaseValue q % 2 = 1)
@@ -111,7 +199,7 @@ theorem shape_prep {p : CandidateP} {used : Nat} {s : State}
   WP.mono (shapeOriginal_ok h hdi havail) fun _ ⟨ht, hd, hv, hs, hf, k, _⟩ =>
     ⟨ht, hd, hv, hs, hf, k.mono (by decide)⟩
 
-theorem testP_ok (M : Mont) (R : R2Impl M) (K : Kernel)
+theorem testP_ok (M : Mont) (R : Preparation M) (K : Kernel)
     {p : CandidateP} {used : Nat} {s : State}
     (h : CandidateTape p used s) (hdi : s.gpr .rdi = p.B) (havail : p.k ≤ p.rand.length) :
     WP isa (testP M.mm R.code K.run) s (PhasePost p used (policyRest p (p.rand.drop used)) s) := by
@@ -127,7 +215,7 @@ theorem testP_ok (M : Mont) (R : R2Impl M) (K : Kernel)
   exact ⟨0, Nat.zero_le _, by simpa only [Nat.add_zero] using ht', hdt', by simp [TapeOutcome, hy'],
     fun _ => hvt', hst', hft', kt'.mono (by decide)⟩
 
-theorem testQ_ok (M : Mont) (R : R2Impl M) (K : Kernel)
+theorem testQ_ok (M : Mont) (R : Preparation M) (K : Kernel)
     {p : CandidateP} {used : Nat} {s : State}
     (h : CandidateTape p used s) (hdi : s.gpr .rdi = p.B) (havail : p.k ≤ p.rand.length)
     (hq : p.Q % 2 = 1) :
@@ -137,7 +225,7 @@ theorem testQ_ok (M : Mont) (R : R2Impl M) (K : Kernel)
   exact WP.mono (halveOutput_ok h₁ hd₁ hv₁) fun t ⟨ht, hd, hv, hs, hf, k⟩ =>
     ⟨ht, hd, hv, hs₁.trans hs, hf₁.trans hf, (k₁.trans k).mono (by decide)⟩
 
-theorem testFirst_ok (M : Mont) (R : R2Impl M) (K : Kernel)
+theorem testFirst_ok (M : Mont) (R : Preparation M) (K : Kernel)
     {p : CandidateP} {used : Nat} {s : State}
     (h : CandidateTape p used s) (hdi : s.gpr .rdi = p.B) (havail : p.k ≤ p.rand.length)
     (hq : p.Q % 2 = 1) :
@@ -145,7 +233,7 @@ theorem testFirst_ok (M : Mont) (R : R2Impl M) (K : Kernel)
   phaseTest_ok M R K false .first _ h (p.odd_P (by omega_using [h.base.bits1])) (shape_prep h hdi havail)
     fun u t ht hdt _ => testQ_ok M R K ht hdt havail hq
 
-theorem sieveP_ok (M : Mont) (R : R2Impl M) (K : Kernel)
+theorem sieveP_ok (M : Mont) (R : Preparation M) (K : Kernel)
     {p : CandidateP} {used : Nat} {s : State}
     (h : CandidateTape p used s) (hdi : s.gpr .rdi = p.B) (havail : p.k ≤ p.rand.length)
     (hq : p.Q % 2 = 1) :
@@ -178,7 +266,7 @@ theorem sieveP_ok (M : Mont) (R : R2Impl M) (K : Kernel)
       fun he => by rw [hst] at he; contradiction,
       hs.trans hsave, hf.trans hframe, (kk.trans kt).mono (by decide)⟩
 
-theorem sieveQ_ok (M : Mont) (R : R2Impl M) (K : Kernel)
+theorem sieveQ_ok (M : Mont) (R : Preparation M) (K : Kernel)
     {p : CandidateP} {used : Nat} {s : State}
     (h : CandidateTape p used s) (hdi : s.gpr .rdi = p.B) (havail : p.k ≤ p.rand.length)
     (hv : Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem p.op p.k) = p.P) :
@@ -240,7 +328,7 @@ def CandidateTestPost (p : CandidateP) (s t : State) : Prop :=
     (word t.mem p.B (8 * oStatus) = 1 → Spec.Rsa.os2ip (Spec.Rsa.bytesAt t.mem p.op p.k) = p.P) ∧
     CandidateSaved p s.mem t.mem ∧ CandidateFrame p s.mem t.mem ∧ Keep (.rdi :: mmRegs) s t
 
-theorem testCandidate_ok (M : Mont) (R : R2Impl M) (K : Kernel)
+theorem testCandidate_ok (M : Mont) (R : Preparation M) (K : Kernel)
     {p : CandidateP} {s : State} (h : CandidateTape p 0 s)
     (hdi : s.gpr .rdi = p.B) (havail : p.k ≤ p.rand.length) :
     WP isa (testCandidate M.mm R.code K.run) s (CandidateTestPost p s) := by
@@ -462,7 +550,7 @@ def BodyPost (s t : State) : Prop :=
     (word t.mem p.B (8 * oStatus) = 1 → Spec.Rsa.os2ip (Spec.Rsa.bytesAt t.mem p.op p.k) = p.P) ∧
     (∀ i < 6, word t.mem p.B (8 * i) = s.gpr (saved.getD i .rax)) ∧ Keep (.rdi :: mmRegs) s t
 
-theorem body_ok (M : Mont) (R : R2Impl M) (K : Kernel) {s : State} (c : PcCtx s) :
+theorem body_ok (M : Mont) (R : Preparation M) (K : Kernel) {s : State} (c : PcCtx s) :
     WP isa (body M.mm R.code K.run) s (BodyPost s) := by
   let p := candidateOfState s
   change WP isa (body M.mm R.code K.run) s (fun t => ∃ used,

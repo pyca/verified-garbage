@@ -1,7 +1,6 @@
 module
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejNtt4
-public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Keep
-public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Load
+public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Pair
 
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Simd64

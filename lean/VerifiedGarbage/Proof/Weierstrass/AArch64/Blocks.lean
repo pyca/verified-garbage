@@ -31,7 +31,7 @@ theorem blocks_wp : ∀ (ls : List (List Instr)) {s : State} {Q : State → Prop
       fun h => WP.mono h fun _ h' => (blocks_wp (c :: bs)).mpr h'⟩
 
 theorem opProg_none {M : Mod} (hc : Mont.callOf M = none) (op : FOp) : opProg M op = .block (opCode M op) := by
-  cases op <;> simp [opProg, hc]
+  cases op <;> simp [opProg, opProgRaw, hc]
 
 theorem fprogB_none {M : Mod} (hc : Mont.callOf M = none) :
     ∀ ops : List FOp, fprogB M ops = blocks (ops.map (opCode M))

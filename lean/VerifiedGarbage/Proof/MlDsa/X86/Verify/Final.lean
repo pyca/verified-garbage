@@ -1,8 +1,7 @@
 module
-public import VerifiedGarbage.Proof.MlDsa.X86.Verify.Compute
-public import VerifiedGarbage.Proof.MlKem.X86.DecapsCmp
 
 public import VerifiedGarbage.Proof.MlDsa.X86.Verify.Row
+public import VerifiedGarbage.Proof.MlKem.X86.DecapsCmp
 import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Seeds
 import VerifiedGarbage.Proof.MlDsa.X86.Verify.Local
 import VerifiedGarbage.Proof.MlDsa.KeyGen.Rest
@@ -10,9 +9,8 @@ import VerifiedGarbage.Proof.MlDsa.DecideAt
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
 import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.MlKem.X86.TopKem
-meta import VerifiedGarbage.Proof.MlDsa.X86.Verify.Compute
-meta import VerifiedGarbage.Proof.MlKem.X86.DecapsCmp
 meta import VerifiedGarbage.Proof.MlDsa.X86.Verify.Row
+meta import VerifiedGarbage.Proof.MlKem.X86.DecapsCmp
 meta import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Seeds
 meta import VerifiedGarbage.Proof.MlDsa.X86.Verify.Local
 meta import VerifiedGarbage.Proof.MlDsa.KeyGen.Rest
@@ -20,8 +18,8 @@ meta import VerifiedGarbage.Proof.MlDsa.DecideAt
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.Framework.KernelRfl
 meta import VerifiedGarbage.Proof.MlKem.X86.TopKem
-import VerifiedGarbage.Proof.MlKem.X86.TopHash
-meta import VerifiedGarbage.Proof.MlKem.X86.TopHash
+import VerifiedGarbage.Proof.MlKem.X86.TopLocal
+meta import VerifiedGarbage.Proof.MlKem.X86.TopLocal
 meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 
 /-!

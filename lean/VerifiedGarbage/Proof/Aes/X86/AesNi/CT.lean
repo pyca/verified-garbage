@@ -34,4 +34,15 @@ theorem ctr32To_ct : ConstantTime isa Proof.Aes.ctr32ToX86.pre
   VG.Taint.constantTime (A := sseTaint) Proof.Aes.X86.ctrToτ₀
     (fun _ _ h₁ h₂ hp => Proof.Aes.X86.ctrTo_agree₀ h₁ h₂ hp) (by taint_decide)
 
+/-- `vg_aes_ctr32_to_aesni` in place, with a scratch buffer of the 32 bytes it uses. -/
+theorem ctr32S_ct : ConstantTime isa (Proof.Aes.ctr32X86N 32).pre
+    (Proof.Aes.ctr32X86N 32).pub Impl.Aes.X86.AesNi.ctr32To :=
+  VG.Taint.constantTime (A := sseTaint) (Proof.Aes.X86.ctrToτN 32)
+    (fun _ _ h₁ h₂ hp => Proof.Aes.X86.ctr_agreeN h₁ h₂ hp) (by taint_decide)
+
+theorem ctr32ToS_ct : ConstantTime isa (Proof.Aes.ctr32ToX86N 32).pre
+    (Proof.Aes.ctr32ToX86N 32).pub Impl.Aes.X86.AesNi.ctr32To :=
+  VG.Taint.constantTime (A := sseTaint) (Proof.Aes.X86.ctrToτN 32)
+    (fun _ _ h₁ h₂ hp => Proof.Aes.X86.ctrTo_agreeN h₁ h₂ hp) (by taint_decide)
+
 end VG.Proof.Aes.X86.AesNi

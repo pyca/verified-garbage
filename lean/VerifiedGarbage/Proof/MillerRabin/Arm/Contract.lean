@@ -13,7 +13,8 @@ establish it: the working space laid out for Montgomery multiplication
 Montgomery one and minus one, the exponent and the word `2^(t mod 64)` after
 it in it (`PreparedLite`), as in the shared contract, without its
 representation's choice and stride. Only the arrays `wJs` and the header
-words 23, 26, 29 and 30 change (`KeepsLite`).
+words 23, 26, 29 and 30 change (`KeepsLite`). The round's frame (56 bytes) and
+its calls of the shared product (48 bytes below it) use 104 bytes of stack.
 It implies `Proof.MillerRabin.Round.roundContract` (`round_implies`, `Proof/MillerRabin/Arm/Verified.lean`).
 -/
 
@@ -47,8 +48,8 @@ def KeepsLite (ws : Addr) (len w : Nat) (m m' : Mem) : Prop :=
 def roundPre (s : State) : Prop :=
   let ws := State.addr (s.gpr .r0)
   let n := (s.gpr .r1).toNat
-  s.rd = [] ∧ s.wr = [⟨ws, 8 * n⟩] ∧ (s.gpr .r0).toNat + 8 * n ≤ 2 ^ 32 ∧ 56 ≤ s.sp.toNat ∧
-    (FrameStack.belowA s.sp 56).Disjoint ⟨ws, 8 * n⟩ ∧ LayoutLite s.mem ws n ∧ PreparedLite s.mem ws
+  s.rd = [] ∧ s.wr = [⟨ws, 8 * n⟩] ∧ (s.gpr .r0).toNat + 8 * n ≤ 2 ^ 32 ∧ 104 ≤ s.sp.toNat ∧
+    (FrameStack.belowA s.sp 104).Disjoint ⟨ws, 8 * n⟩ ∧ LayoutLite s.mem ws n ∧ PreparedLite s.mem ws
 
 def roundPost (s t : State) : Prop :=
   let ws := State.addr (s.gpr .r0)

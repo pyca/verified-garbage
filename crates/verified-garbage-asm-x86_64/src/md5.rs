@@ -16,7 +16,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_md5_init(state: *mut [u8; 80]) {
     core::arch::naked_asm!(
-        r#".base64 "uAEjRWeJB7iJq83viUcEuP7cupiJRwi4dlQyEIlHDDHARTHbww=="
+        r#".base64 "uAEjRWeJB7iJq83viUcEuP7cupiJRwi4dlQyEIlHDGYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ZkUP78BmRQ/vyWZFD+/SZkUP79tmRQ/v5GZFD+/tZkUP7/ZmRQ/v/zHAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 .p2align 6"#,
     )
 }
@@ -115,7 +115,7 @@ call {vg_md5_compress}
 226:
 .base64 "TYX2"
 jne 20b
-.base64 "SYsfSYtvCE2LZxBNi28YTYt3IE2LfyhIjWQkOEiNZCTASI1kJEAxwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
+.base64 "SYsfSYtvCE2LZxBNi28YTYt3IE2LfyhIjWQkOGYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ZkUP78BmRQ/vyWZFD+/SZkUP79tmRQ/v5GZFD+/tZkUP7/ZmRQ/v/0iNZCT4SI1kJMhIjWQkOEiNZCQIMcAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_md5_compress = sym super::md5::vg_md5_compress::vg_md5_compress,
     )
@@ -196,7 +196,7 @@ jmp 219f
 call {vg_md5_compress}
 .base64 "SIn7SYnPQb0AAAAAQbkAAAAASYPuAQ=="
 je 22b
-.base64 "iwOJRQCLQwSJRQSLQwiJRQiLQwyJRQxJix9Ji28ITYtnEE2LbxhNi3cgTYt/KEiNZCQ4Zg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//SI1kJMBIjWQkQDHAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
+.base64 "iwOJRQCLQwSJRQSLQwiJRQiLQwyJRQxJix9Ji28ITYtnEE2LbxhNi3cgTYt/KEiNZCQ4Zg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//SI1kJPhIjWQkyEiNZCQ4SI1kJAgxwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_md5_compress = sym super::md5::vg_md5_compress::vg_md5_compress,
     )

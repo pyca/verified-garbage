@@ -1,35 +1,30 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.X86.KeyPair
-import Mathlib.Algebra.Order.Field.Basic
-import Mathlib.Data.Nat.Totient
-import Mathlib.Data.Sym.Sym2.Init
-import Mathlib.Tactic.ContinuousFunctionalCalculus
-import Mathlib.Tactic.NormNum.GCD
-import Mathlib.Tactic.NormNum.Prime
-import Mathlib.Tactic.Positivity.Finset
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.X86.Print
-public import VerifiedGarbage.Proof.Ed25519.X86.SignCached.Verified
-public import VerifiedGarbage.Proof.Ed25519.X86.VerifyMessage.Verified
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Ed25519.KeyPair
+public import VerifiedGarbage.Spec.Ed25519.ExpandedSign
+public import VerifiedGarbage.Spec.Ed25519.Contract
+import VerifiedGarbage.Proof.Ed25519.X86.Scrub
+import VerifiedGarbage.Impl.Ed25519.X86.Fn
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # Ed25519 (RFC 8032) on x86 -/
 
-@[expose] public section
-
 namespace VG.Artifacts.Ed25519.X86
 
-def artifacts : List Artifact := [
+public def artifacts : List (Artifact X86.target) := [
   Spec.Ed25519.keyPairApi.artifact X86.target {
-    code := Impl.Ed25519.X86.KeyPair.keyPair Spec.Sha512.digest512Api.name
-      Proof.Ed25519.X86.KeyPair.dgCode "vg_ed25519_public_key_expanded"
-      Impl.Ed25519.X86.PublicKey.publicKeyExpanded
-    verified := Proof.Ed25519.X86.KeyPair.verified },
+    code := Impl.Ed25519.X86.Fn.keyPair
+    verified := Proof.Ed25519.X86.Scrub.keyPair_scrubbed },
   Spec.Ed25519.signExpandedApi.artifact X86.target {
-    code := Impl.Ed25519.X86.SignCached.codeExpanded
-    verified := Proof.Ed25519.X86.SignCached.signExpanded_verified },
+    code := Impl.Ed25519.X86.Fn.signExpanded
+    verified := Proof.Ed25519.X86.Scrub.signExpanded_scrubbed },
   Spec.Ed25519.verifyApi.artifact X86.target {
-    code := Impl.Ed25519.X86.VerifyMessage.code
-    verified := Proof.Ed25519.X86.VerifyMessage.verifyMessage_verified }]
+    code := Impl.Ed25519.X86.Fn.verify
+    verified := Proof.Ed25519.X86.Scrub.verify_scrubbed }]
+
+spec_apis artifacts
 
 end VG.Artifacts.Ed25519.X86

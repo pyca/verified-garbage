@@ -7,12 +7,28 @@
 pub struct Table<const N: usize>(pub [u8; N]);
 
 #[rustfmt::skip]
+mod vg_aes_sbox;
+pub use vg_aes_sbox::VG_AES_SBOX;
+
+#[rustfmt::skip]
+mod vg_aes_vperm;
+pub use vg_aes_vperm::VG_AES_VPERM;
+
+#[rustfmt::skip]
+mod vg_aes_vperm_dec;
+pub use vg_aes_vperm_dec::VG_AES_VPERM_DEC;
+
+#[rustfmt::skip]
 mod vg_blowfish_init;
 pub use vg_blowfish_init::VG_BLOWFISH_INIT;
 
 #[rustfmt::skip]
 mod vg_brainpoolp256r1_comb7;
 pub use vg_brainpoolp256r1_comb7::VG_BRAINPOOLP256R1_COMB7;
+
+#[rustfmt::skip]
+mod vg_brainpoolp320r1_comb7;
+pub use vg_brainpoolp320r1_comb7::VG_BRAINPOOLP320R1_COMB7;
 
 #[rustfmt::skip]
 mod vg_brainpoolp384r1_comb7;
@@ -23,12 +39,12 @@ mod vg_brainpoolp512r1_comb7;
 pub use vg_brainpoolp512r1_comb7::VG_BRAINPOOLP512R1_COMB7;
 
 #[rustfmt::skip]
-mod vg_cast5_s1234;
-pub use vg_cast5_s1234::VG_CAST5_S1234;
+mod vg_cast5_planes;
+pub use vg_cast5_planes::VG_CAST5_PLANES;
 
 #[rustfmt::skip]
-mod vg_cast5_s5678;
-pub use vg_cast5_s5678::VG_CAST5_S5678;
+mod vg_cast5_s1234;
+pub use vg_cast5_s1234::VG_CAST5_S1234;
 
 #[rustfmt::skip]
 mod vg_ed25519_comb;
@@ -49,6 +65,14 @@ pub use vg_ffdh_vetted_groups_a64::VG_FFDH_VETTED_GROUPS_A64;
 #[rustfmt::skip]
 mod vg_gcm_tail_idx;
 pub use vg_gcm_tail_idx::VG_GCM_TAIL_IDX;
+
+#[rustfmt::skip]
+mod vg_keccak_rc;
+pub use vg_keccak_rc::VG_KECCAK_RC;
+
+#[rustfmt::skip]
+mod vg_keccak_rc_pairs;
+pub use vg_keccak_rc_pairs::VG_KECCAK_RC_PAIRS;
 
 #[rustfmt::skip]
 mod vg_mldsa_inv_folded;
@@ -73,10 +97,6 @@ pub use vg_mlkem16_ntt_zetas::VG_MLKEM16_NTT_ZETAS;
 #[rustfmt::skip]
 mod vg_mlkem_gamma;
 pub use vg_mlkem_gamma::VG_MLKEM_GAMMA;
-
-#[rustfmt::skip]
-mod vg_mlkem_ntt16_zetas;
-pub use vg_mlkem_ntt16_zetas::VG_MLKEM_NTT16_ZETAS;
 
 #[rustfmt::skip]
 mod vg_mlkem_rej_shuffle;
@@ -121,6 +141,14 @@ pub use vg_sha256_k::VG_SHA256_K;
 #[rustfmt::skip]
 mod vg_sha512_k;
 pub use vg_sha512_k::VG_SHA512_K;
+
+#[rustfmt::skip]
+mod vg_sm4_fk_ck;
+pub use vg_sm4_fk_ck::VG_SM4_FK_CK;
+
+#[rustfmt::skip]
+mod vg_triple_des_key_select;
+pub use vg_triple_des_key_select::VG_TRIPLE_DES_KEY_SELECT;
 
 #[rustfmt::skip]
 mod vg_x448_comb;

@@ -162,12 +162,12 @@ def maskK : List Instr :=
 
 /-- `[d]P` into `R`, for `d` at `K` and `P` at `PX`, `PY`, `ONEP`: by windows for
 up to nine words when enabled (`d` reduced below `2^nbits` first), else by the ladder,
-calling `vg_<curve>_mul` if the curve has it. -/
+calling `vg_<curve>_mul` if the curve has it (`Cfg.mulRun`). -/
 def mulQ : Prog isa :=
   if c.n ≤ 9 ∧ c.windows = true then .seq (.block (maskK c)) (.seq (c.winPrep (c.sl K)) (WinCfg.window (c.winCfg PX PY BP)))
   else match c.mul with
     | some C => .seq (.block (copy c.n (c.sl RX) (c.sl PX) ++ copy c.n (c.sl RY) (c.sl PY)))
-        (.call s!"vg_{C.curve}_mul" c.mulFn)
+        (c.mulRun C)
     | none => ladder (ladderQ c)
 
 /-- `x` (or zeros) to `out`, the flag's low bit to `rax`, and the
@@ -180,6 +180,9 @@ def finish : List Instr :=
 /-- `x = X Z⁻¹`, with `Z⁻¹ R` in `ACC`, out of Montgomery form, the checks
 of `d` and `Z`, and the result. -/
 def middle : Prog isa :=
+  if c.affineOn then
+    progs [c.affineX, .block (c.checkRange (c.sl D) ++ c.checkNonzero (c.sl RZ) ++ finish c)]
+  else
   progs [opProg c.MP' (.mul (c.sl XM) (c.sl RX) (c.sl ACC)),
     opProg c.MP' (.mul (c.sl X) (c.sl XM) (c.sl ONE)),
     .block (c.checkRange (c.sl D) ++ c.checkNonzero (c.sl RZ) ++ finish c)]
@@ -213,9 +216,15 @@ def jwinPrep : Prog isa :=
   .seq (.block (WinCfg.addConst c.n (c.sl K) c.winK (JacWinCfg.offset (jwinJ c))))
     (bits c.winK c.winBits (8 * (c.n + 1)))
 
+/-- The function that builds the odd window method's table (`ecdhTable`):
+`vg_<curve>_ecdh_table`, with `fnSuffix`, for a curve with `checkPoint`. -/
+def tableFn : Option String :=
+  if c.ecdhTable then c.checkPoint.map fun C => s!"vg_{C.curve}_ecdh_table" ++ c.fnSuffix else none
+
 /-- The odd window method's configuration: `jwinCfg`, its windows read from
-bit 1 of its table of bits (`JacWinCfg.windowO`). -/
-def jwinCfgO : JacWinCfg := { jwinCfg c with bits := c.winBits + 1 }
+bit 1 of its table of bits (`JacWinCfg.windowO`), and its table built by a
+call of `tableFn` if the curve names one. -/
+def jwinCfgO : JacWinCfg := { jwinCfg c with bits := c.winBits + 1, buildFn := tableFn c }
 
 /-- `k = d` if `d` is odd, else `n - d` (`oddScalar`, in `d`'s slot, through
 the window's), then `k + 32^J - 1` and its bits, from the slot of `d`. -/
@@ -251,14 +260,18 @@ def invJAWords : Nat := (bitsAt c.n 3 + (64 * c.n + 64) - c.sl WB) / 8
 past those words. -/
 def invJAPt : Nat := bitsAt c.n 2 + 8 * invJAWords c
 
-/-- `invJA` by a call of `vg_<curve>_inv_mod_p` (`Cfg.pPow`, `[ACC] =
-[RZ]^(p-2)`), keeping the bytes of the window's slots and table of bits that
-the function's own working space covers, then `ACC` into `E.x`. -/
-def invJACall : Prog isa :=
+/-- `[RZ]^(p-2)` into `x` by a call of `vg_<curve>_inv_mod_p` (`Cfg.pPow`,
+`[ACC] = [RZ]^(p-2)`), keeping in the table of the bits of `n - 2` the bytes
+of the window's table of bits that the function's own working space covers,
+and `PT`, which it writes, then `ACC` into `x`. -/
+def invCallTo (x : Nat) : Prog isa :=
   .seq (.block (copy (invJAWords c) (bitsAt c.n 2) (c.sl WB) ++ copy c.n (invJAPt c) (c.sl PT))) <|
   .seq c.pPow <|
-  .block (copy c.n (jwinCfg c).E.x (c.sl ACC) ++ copy c.n (c.sl PT) (invJAPt c) ++
+  .block (copy c.n x (c.sl ACC) ++ copy c.n (c.sl PT) (invJAPt c) ++
     copy (invJAWords c) (c.sl WB) (bitsAt c.n 2))
+
+/-- `invJA` by a call (`invCallTo`), into `E.x`. -/
+def invJACall : Prog isa := invCallTo c (jwinCfg c).E.x
 
 /-- The inversion of `mulQJA`'s table: a call if the curve has six words and
 inversion functions (`Cfg.inverse`), else written out. -/
@@ -282,11 +295,18 @@ does not read (and which ends below the window's table of bits for three
 words or more). -/
 def invWin : InvCfg := .ofMod c.MP' (c.sl TX) (c.sl RZ) (bitsAt c.n 2) c.C.p
 
+/-- The inversion of `mulQJ4`'s table: for nine words with inversion
+functions (`Cfg.inverse`), a call of `vg_<curve>_inv_mod_p` into `TX`
+(`invCallTo`), which ECDH calls anyway, so that the table needs no inversion
+of its own; else written out (`invWin`). -/
+def invWinProg : Prog isa :=
+  if c.n = 9 ∧ c.inverse.isSome then invCallTo c (c.sl TX) else InvCfg.inv (invWin c)
+
 /-- `[d]P` into `R` by 4-bit windows with a Jacobian accumulator and an
 affine table (`d` reduced below `2^nbits` first). -/
 def mulQJ4 : Prog isa :=
   .seq (.block (maskK c))
-    (.seq (c.winPrep (c.sl K)) (WinCfg.windowJ (c.winCfg PX PY BP) (InvCfg.inv (invWin c))))
+    (.seq (c.winPrep (c.sl K)) (WinCfg.windowJ (c.winCfg PX PY BP) (invWinProg c)))
 
 /-- `vg_ecdh_<curve>`, with `mq` computing `[d]P` into `R`. -/
 def exchangeWith (mq : Prog isa) : Prog isa :=

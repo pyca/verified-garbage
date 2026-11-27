@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.AesGcm.Rounds
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.GatherSplit.Correct
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.GatherSplit.CT
-import VerifiedGarbage.Proof.AesGcm.PPC64LE.Gather.Verified
+import VerifiedGarbage.Proof.AesGcm.PPC64LE.GatherSplit.Contract
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.Frame
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Sig
@@ -14,12 +14,6 @@ import VerifiedGarbage.Proof.Framework.Sig
 @[expose] public section
 namespace VG.Proof.AesGcm.PPC64LE.GatherSplit
 open VG VG.PPC64LE
-
-
-theorem sat_pre : ∃ s,contract.pre s := by
-  sig_implies_sat [contract,Proof.AesGcm.sealGatherRoundsContract,Spec.Gcm.sealGatherSig,Spec.Gcm.sealGatherPre,PPC64LE.abi,
-    PPC64LE.argRegs,Gather.stackArgs_three,List.append_eq]
-    [Gather.gatherSat,stackArg,stackArgAddr,Mem.readW,Mem.read] using Gather.gatherSat
 
 
 theorem verified [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw] :

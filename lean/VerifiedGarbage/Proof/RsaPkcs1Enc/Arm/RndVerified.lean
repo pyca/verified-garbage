@@ -1,9 +1,10 @@
 module
 
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.RandomPublic
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.Arm.RndInvoke
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.Arm.RndTail
 public import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.RsaPkcs1Enc.Arm.RndTaint
+import VerifiedGarbage.Proof.RsaPkcs1Enc.Arm.RndScan
 import VerifiedGarbage.Proof.Bignum.Arm.MaskBytesCT
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Vp
 import VerifiedGarbage.Proof.Framework.Omega
@@ -143,7 +144,7 @@ The frames around the body (`wrap_ok`, `wrap_ct`), the result as the shared
 contract states it, and a state that meets it (`sat`):
 `vg_rsa_pkcs1_encrypt_random`, calling any implementation `c` of
 `vg_rsa_public_precomputed_checked` through `vg_rsa_pkcs1_encrypt_precomputed`,
-is verified (`code_verified`), with `stackBytes` (2312) bytes of stack.
+is verified (`code_verified`), with `stackBytes` (2360) bytes of stack.
 -/
 
 open VG VG.Arm VG.Impl.RsaPkcs1Enc.Arm.Random VG.Proof.RsaPkcs1Sig.Arm
@@ -153,26 +154,49 @@ theorem entered_state {s : State} (h : spec.pre s) :
   ⟨in_of_pre h, ⟨(in_of_pre h).ok, (in_of_pre h).ok.sp, rfl, rfl, Frame.refl _ _⟩⟩
 
 theorem spec_sp {s : State} (h : spec.pre s) : stackBytes ≤ s.sp.toNat := by
-  sig_pre [Spec.RsaPkcs1Enc.encryptRandomContract, Spec.RsaPkcs1Enc.encryptRandomSig, abi,
+  sig_pre [Proof.RsaPkcs1Enc.encryptRandomAskedContract, Spec.RsaPkcs1Enc.encryptRandomSig, abi,
     argRegs, reduceClassify, Loc.val] at h
   exact h.1
 
 theorem code_ok (encName : String) (c : PdImpl) {s : State} (h : spec.pre s) :
     WP isa (code encName (Impl.RsaPkcs1Enc.Arm.Precomputed.code c.name c.code)) s fun t =>
       abiPreserved s t ∧ spec.post s t := by
-  have hs : 2312 ≤ s.sp.toNat := spec_sp h
+  have hs : 2360 ≤ s.sp.toNat := spec_sp h
   have hin := in_of_pre h
   have st := entered_state h
   have hsp : 56 + frameBytes ≤ s.sp.toNat := by show 56 + 1088 ≤ _; omega_using [hs]
   refine WP.mono (wrap_ok (by decide) (show frameBytes + 56 ≤ s.sp.toNat by show 1088 + 56 ≤ _; omega_using [hs])
     (W := (ep s).lay.W)
     (Q := fun r m => Res (ep s) (entered frameBytes s) m r) (fun r hr => ?_)
-    (WP.mono ((main_vp encName c).wp _ _ st) fun u hu => ⟨hu.1.2.frame, hu.2⟩)) fun t ⟨abi, res⟩ => ⟨abi, ?_⟩
+    (WP.mono ((main_vp encName c).wp _ _ st) fun u hu => ⟨hu.1.2.frame, hu.2⟩)
+    (hQ := fun _ m₁ m₂ hf hres => by
+      have rel {R : Region} (hR : R ∈ [(ep s).OUT, (ep s).TAPE, (ep s).SCR]) :=
+        released_apart (F := frameBytes) (A := 44) (C := callStack) (argv := (ep s).argv)
+          (ro := [(ep s).N, (ep s).E, (ep s).MSG, (ep s).RAND, (ep s).PRE])
+          (rw := [(ep s).OUT, (ep s).TAPE, (ep s).SCR]) hin.ok hsp (R := R) (Or.inr hR)
+      have fitO := hin.ok.fits (ep s).OUT (List.mem_append_right _ List.mem_cons_self)
+      have eO : Spec.Rsa.bytesAt m₂ (State.addr (ep s).out) (ep s).K = Spec.Rsa.bytesAt m₁ (State.addr (ep s).out) (ep s).K :=
+        bytesAt_frame hf (rel (R := (ep s).OUT) (by simp))
+          (by change (ep s).OUT.len ≤ 2 ^ 64; omega_using [fitO])
+      have eT : Spec.Rsa.wordsAt m₂ (State.addr (ep s).tape) 2 = Spec.Rsa.wordsAt m₁ (State.addr (ep s).tape) 2 :=
+        wordsAt_frame hf (rel (R := (ep s).TAPE) (by simp)) (by decide)
+      have wr : ∀ o r, Spec.RsaPkcs1Enc.writtenRandom m₁ (State.addr (ep s).out) (ep s).K r o →
+          Spec.RsaPkcs1Enc.writtenRandom m₂ (State.addr (ep s).out) (ep s).K r o := by
+        intro o r w; cases o <;> exact ⟨w.1, eO.trans w.2⟩
+      unfold Res at hres ⊢
+      obtain ⟨⟨req, hw, hr⟩, hm⟩ := hres
+      refine ⟨⟨req, eT.trans hw, hr⟩, ?_⟩
+      revert hm
+      cases (Spec.RsaPkcs1Enc.padSearch (ep s).pl (randB (ep s) (entered frameBytes s))).outcome <;>
+        dsimp only <;> intro hm
+      · exact ⟨hm.1, eO.trans hm.2⟩
+      · exact fun hpre => wr _ _ (hm hpre)
+      · exact ⟨hm.1, eO.trans hm.2⟩)) fun t ⟨abi, res⟩ => ⟨abi, ?_⟩
   · rw [pushRegion_eq (F := frameBytes) (A := 44) (argv := (ep s).argv)
       (ro := [(ep s).N, (ep s).E, (ep s).MSG, (ep s).RAND, (ep s).PRE])
       (rw := [(ep s).OUT, (ep s).TAPE, (ep s).SCR]) (C := callStack) hsp]
     exact hin.ok.push_apart r hr
-  · sig_post [Spec.RsaPkcs1Enc.encryptRandomContract, Spec.RsaPkcs1Enc.encryptRandomSig, abi,
+  · sig_post [Proof.RsaPkcs1Enc.encryptRandomAskedContract, Spec.RsaPkcs1Enc.encryptRandomSig, abi,
       argRegs, reduceClassify, Loc.val]
     rw [BitVec.setWidth_append_eq_right]
     have ro := fun {R : Region} (hR : R ∈ [(ep s).N, (ep s).E, (ep s).MSG, (ep s).RAND, (ep s).PRE]) =>
@@ -196,7 +220,7 @@ theorem wordsAt_length (m : Mem) (p : Addr) (n : Nat) : (Spec.Rsa.wordsAt m p n)
 
 /-- Two entry states with the same public data have the same public parameters. -/
 theorem ep_eq {s₁ s₂ : State} (hp : spec.pub s₁ s₂) : ep s₁ = ep s₂ := by
-  sig_pub [Spec.RsaPkcs1Enc.encryptRandomContract, Spec.RsaPkcs1Enc.encryptRandomSig, abi,
+  sig_pub [Proof.RsaPkcs1Enc.encryptRandomAskedContract, Spec.RsaPkcs1Enc.encryptRandomSig, abi,
     argRegs, reduceClassify, Loc.val] at hp
   obtain ⟨hsp, hl, h0, h1, h2, h3, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10⟩ := hp
   obtain ⟨hab, hc⟩ := List.append_inj hl (by simp [bytesAt_length, wordsAt_length, a0, a2, a10])
@@ -214,13 +238,13 @@ theorem code_ct (encName : String) (c : PdImpl) :
   intro s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp e₁ e₂
   have hep := ep_eq hp
   have hsp : s₁.sp = s₂.sp := by
-    sig_pub [Spec.RsaPkcs1Enc.encryptRandomContract, Spec.RsaPkcs1Enc.encryptRandomSig, abi,
+    sig_pub [Proof.RsaPkcs1Enc.encryptRandomAskedContract, Spec.RsaPkcs1Enc.encryptRandomSig, abi,
       argRegs, reduceClassify, Loc.val] at hp
     exact hp.1
   refine (VG.Proof.RsaPkcs1Sig.Arm.wrap_ct (F := frameBytes) (by decide) (P := fun a b => a = s₁ ∧ b = s₂)
     (fun a b h => by rw [h.1, h.2]; exact hsp)
     (fun a b h => by
-      rw [h.1]; have : 2312 ≤ s₁.sp.toNat := spec_sp h₁; show 1088 + 56 ≤ _; omega_using [this]) ?_
+      rw [h.1]; have : 2360 ≤ s₁.sp.toNat := spec_sp h₁; show 1088 + 56 ≤ _; omega_using [this]) ?_
     s₁ s₂ t₁ t₂ s₁' s₂' ⟨rfl, rfl⟩ e₁ e₂).1
   refine (main_vp (P := ep s₁) encName c).ct.mono ?_ fun _ _ _ => trivial
   rintro a b ⟨_, _, ⟨rfl, rfl⟩, rfl, rfl⟩
@@ -250,7 +274,7 @@ def satState : State where
   wr := [⟨0x1000, 64⟩, ⟨0x6200, 16⟩, ⟨0x4000, 8448⟩]
 
 theorem sat : ∃ s, spec.pre s := by
-  sig_implies_sat [Spec.RsaPkcs1Enc.encryptRandomContract, Spec.RsaPkcs1Enc.encryptRandomSig, abi,
+  sig_implies_sat [Proof.RsaPkcs1Enc.encryptRandomAskedContract, Spec.RsaPkcs1Enc.encryptRandomSig, abi,
     argRegs, reduceClassify, Loc.val, State.addr]
     [satState, stackArg, stackArgAddr, Mem.readW, Mem.read, Spec.Rsa.lenValid, Spec.Rsa.scratchWords,
       Spec.Rsa.precomputedWords, Spec.Rsa.modulusWords, Spec.RsaPkcs1Enc.padEntropy] using satState

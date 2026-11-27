@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.RsaKeyGen.X86_64.KeyInit
-public import VerifiedGarbage.Spec.RsaKeyGen.KeySearchContract
+public import VerifiedGarbage.Proof.RsaKeyGen.KeySearchPublic
 public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 public import VerifiedGarbage.Proof.Framework.Semantics
 import VerifiedGarbage.Proof.RsaKeyGen.InitWords
@@ -21,10 +21,8 @@ import VerifiedGarbage.Proof.Framework.X86_64.Depth
 import VerifiedGarbage.Proof.Ffdh.ControlMemory
 import VerifiedGarbage.Proof.Bignum.X86_64.WordIOBytes
 meta import VerifiedGarbage.Impl.RsaKeyGen.X86_64.KeyInit
-meta import VerifiedGarbage.Spec.RsaKeyGen.KeySearchContract
 meta import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 meta import VerifiedGarbage.Proof.Framework.Semantics
-meta import VerifiedGarbage.Proof.RsaKeyGen.InitWords
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Words
 meta import VerifiedGarbage.Proof.Bignum.Words
@@ -183,6 +181,12 @@ theorem sub_beq_zero {x k : Nat} (hx : x < 2 ^ 64) (hk : k < 2 ^ 64) :
     omega_using [hx, hk, this]
   · intro h; subst h; exact BitVec.sub_self _
 
+/-- Two instructions that each write only registers of `rs`. -/
+private theorem writesOnly_pair {rs : List Reg} {i j : Instr} (hi : writesIn rs i = true)
+    (hj : writesIn rs j = true) : writesOnly rs (.block [i, j]) = true := by
+  show (writesIn rs i && (writesIn rs j && true)) = true
+  rw [hi, hj]; rfl
+
 /-- `cmp r, k` then `cmov cc d, q`, for `cc` below, above or equal. -/
 theorem cmp_cmov {s : State} (r : Reg) (c : BitVec 32) (cc : Cond) (d q : Reg) {x k : Nat}
     (hr : s.gpr r = BitVec.ofNat 64 x) (hx : x < 2 ^ 64) (hk : BitVec.signExtend 64 c = BitVec.ofNat 64 k)
@@ -191,7 +195,8 @@ theorem cmp_cmov {s : State} (r : Reg) (c : BitVec 32) (cc : Cond) (d q : Reg) {
       (t.gpr d = (if (match cc with | .b => decide (x < k) | .ae => decide (k ≤ x) | _ => decide (x = k))
           then s.gpr q else s.gpr d) ∧ t.mem = s.mem ∧ t.gpr r = s.gpr r) ∧
         Keep [d, r] s t := by
-  refine WP.keep [d, r] ?_ (by cases r <;> cases d <;> rfl)
+  refine WP.keep [d, r] ?_ (writesOnly_pair (List.contains_iff_mem.mpr (List.mem_cons_of_mem _ List.mem_cons_self))
+    (List.contains_iff_mem.mpr List.mem_cons_self))
   have hdr : d ≠ r := Ne.symm hrd
   cases cc with
   | ne => exact absurd rfl hcc
@@ -213,7 +218,8 @@ theorem test_cmov_ne {s : State} (r d q : Reg) (hrd : r ≠ d) :
     WP isa (.block [.alu .test r (.reg r), .cmov .ne d (.reg q)]) s fun t =>
       (t.gpr d = (if s.gpr r = 0 then s.gpr d else s.gpr q) ∧ t.mem = s.mem ∧ t.gpr r = s.gpr r) ∧
         Keep [d, r] s t := by
-  refine WP.keep [d, r] ?_ (by cases r <;> cases d <;> rfl)
+  refine WP.keep [d, r] ?_ (writesOnly_pair (List.contains_iff_mem.mpr (List.mem_cons_of_mem _ List.mem_cons_self))
+    (List.contains_iff_mem.mpr List.mem_cons_self))
   xrun [eval, execCmov, BitVec.and_self]
   by_cases h : s.gpr r = 0#64
   · simp [h, State.setFlags]
@@ -433,7 +439,7 @@ def initPost (s t : State) : Prop :=
       Spec.Rsa.wordsAt t.mem (s.gpr .rdi) 6 =
         (values ++ [first, 0, Spec.RsaKeyGen.keyGenerations]).map (BitVec.ofNat 64) ∧
       Spec.Rsa.bytesAt t.mem (s.gpr .rdi + 48) 8 = Spec.Rsa.i2osp (Spec.Rsa.os2ip eB) 8 ∧
-      Spec.Entropy.RequestValid (Spec.RsaKeyGen.primeEntropy (values.getD 1 0)) 0 first
+      Proof.RsaKeyGen.FirstAsked (values.getD 1 0) first
 
 theorem plen_eq {bits : Nat} (hb : bits < 2 ^ 64) : plenBV bits = BitVec.ofNat 64 (bits / 128 * 8) := by
   apply BitVec.eq_of_toNat_eq
@@ -496,8 +502,7 @@ theorem result_post {s t : State} {E : Nat}
         simp only [wordValues, List.getD_cons_zero, List.getD_cons_succ, Nat.mod_eq_of_lt hvE.2.2]
         exact bswap_bytes E
       · simp only [List.getD_cons_zero, List.getD_cons_succ, hP]
-        unfold Spec.Entropy.RequestValid Spec.RsaKeyGen.primeEntropy
-        omega_using [hn]
+        exact Proof.RsaKeyGen.firstAsked (by omega_using [hn])
   · have hv' : Spec.RsaKeyGen.exponentValid E = false := by simpa using hv
     rw [ite_eq_left (by rw [hv']; rfl)]
     have h0 : initStatus bits E = 0 := by
@@ -589,11 +594,11 @@ private def initSat : State where
   rd := [⟨0x2000, 3⟩]
   wr := [⟨0x1000, 56⟩]
 
-theorem init_verified : Verified target init (Spec.RsaKeyGen.keyInitContract abi) := by
+theorem init_verified : Verified target init (Proof.RsaKeyGen.keyInitAskedContract abi) := by
   refine Verified.of_correct (k := initContract) init_correct ?_ ?_
   · intro s₁ s₂ tr₁ tr₂ t₁ t₂ _ _ hp h₁ h₂
     exact init_constantTime s₁ s₂ tr₁ tr₂ t₁ t₂ trivial trivial hp h₁ h₂
-  · sig_implies [Spec.RsaKeyGen.keyInitContract, Spec.RsaKeyGen.keyInitSig,
+  · sig_implies [Proof.RsaKeyGen.keyInitAskedContract, Spec.RsaKeyGen.keyInitSig,
       initContract, initPre, initPost, initPub, abi, argRegs] [initSat] using initSat
 
 end VG.Proof.RsaKeyGen.X86_64.KeyInit

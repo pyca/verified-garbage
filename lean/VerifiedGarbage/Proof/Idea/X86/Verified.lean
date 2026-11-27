@@ -4,13 +4,8 @@ public import VerifiedGarbage.Proof.Idea.X86.Ecb
 import VerifiedGarbage.Proof.Idea.Local
 import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
 public import VerifiedGarbage.Impl.StackScratch.X86
-public import VerifiedGarbage.Proof.Idea.X86.Invert
 import VerifiedGarbage.Proof.Idea.X86.Lit
-import Mathlib.Data.Finset.Attr
-import Mathlib.Tactic.SetLike
 import Batteries.Data.List.Lemmas
-import Mathlib.Order.RelClasses
-import Mathlib.Tactic.Finiteness.Attr
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
@@ -18,13 +13,8 @@ meta import VerifiedGarbage.Proof.Idea.X86.Ecb
 meta import VerifiedGarbage.Proof.Idea.Local
 meta import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
 meta import VerifiedGarbage.Impl.StackScratch.X86
-meta import VerifiedGarbage.Proof.Idea.X86.Invert
 meta import VerifiedGarbage.Proof.Idea.X86.Lit
-meta import Mathlib.Data.Finset.Attr
-meta import Mathlib.Tactic.SetLike
 meta import Batteries.Data.List.Lemmas
-meta import Mathlib.Order.RelClasses
-meta import Mathlib.Tactic.Finiteness.Attr
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
@@ -155,6 +145,7 @@ theorem invertKey_framed :
     (post := Spec.Idea.invertKeyPost X86.abi.ptrBits) (wa := false) (stack := 0) (bytes := 32)
     invertKey_verified (by decide) (by lit_decide) (by lit_decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial)
-    (Proof.Idea.invertKeyPost_local _) invertFrameSat_pre
+    (Proof.Idea.invertKeyPost_local _)
+    (fun vs m m₁ m₂ r hl _ hb => Proof.Idea.invertKeyPostOut_local _ vs m m₁ m₂ r hl hb) invertFrameSat_pre
 
 end VG.Proof.Idea.X86

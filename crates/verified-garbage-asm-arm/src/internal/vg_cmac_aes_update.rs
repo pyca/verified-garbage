@@ -28,36 +28,35 @@ ldr r8, [sp, #0]
 mov r10, r12
 cmp r8, #0
 beq 20f
-22:
-ldr r0, [r6, #0]
-ldr r1, [r7, #0]
-eor r0, r0, r1
-str r0, [r10, #2048]
-ldr r0, [r6, #4]
-ldr r1, [r7, #4]
-eor r0, r0, r1
-str r0, [r10, #2052]
-ldr r0, [r6, #8]
-ldr r1, [r7, #8]
-eor r0, r0, r1
-str r0, [r10, #2056]
-ldr r0, [r6, #12]
-ldr r1, [r7, #12]
-eor r0, r0, r1
-str r0, [r10, #2060]
-mov r0, #0
-str r0, [r6, #0]
-str r0, [r6, #4]
-str r0, [r6, #8]
-str r0, [r6, #12]
 mov r0, r4
 mov r1, r5
-add r2, r10, #2048
-mov r3, r6
-mov r9, #1
-push {{r9, r10}}
-bl {vg_aes_ctr32}
-ldr r9, [sp], #8
+mov r2, r10
+bl {vg_aes_blocks_keys}
+22:
+ldr r12, [r6, #0]
+ldr lr, [r7, #0]
+eor r12, r12, lr
+str r12, [r6, #0]
+ldr r12, [r6, #4]
+ldr lr, [r7, #4]
+eor r12, r12, lr
+str r12, [r6, #4]
+ldr r12, [r6, #8]
+ldr lr, [r7, #8]
+eor r12, r12, lr
+str r12, [r6, #8]
+ldr r12, [r6, #12]
+ldr lr, [r7, #12]
+eor r12, r12, lr
+str r12, [r6, #12]
+mov r0, r4
+mov r1, r5
+mov r2, r6
+mov r3, #1
+mov r12, r10
+push {{r12, lr}}
+bl {vg_aes_encrypt_blocks_keyed}
+ldr r12, [sp], #8
 add r7, r7, #16
 subs r8, r8, #1
 bne 22b
@@ -73,6 +72,7 @@ ldr r9, [r10, #2084]
 ldr lr, [r10, #2092]
 ldr r10, [r10, #2088]
 bx lr",
-        vg_aes_ctr32 = sym crate::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_aes_blocks_keys = sym crate::aes::vg_aes_blocks_keys::vg_aes_blocks_keys,
+        vg_aes_encrypt_blocks_keyed = sym crate::aes::vg_aes_encrypt_blocks_keyed::vg_aes_encrypt_blocks_keyed,
     )
 }

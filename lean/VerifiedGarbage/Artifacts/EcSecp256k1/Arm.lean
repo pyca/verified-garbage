@@ -1,46 +1,44 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.Arm.LadderP
-public import VerifiedGarbage.Proof.Framework.Taint
-public import VerifiedGarbage.Impl.NatPairs
-public import VerifiedGarbage.Proof.EcKey.Arm.Secp256k1.CombMain
-public import VerifiedGarbage.Proof.EcKey.Arm.Secp256k1.CombVerified -- shake: keep (proof binding in exposed artifacts)
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.Arm.Print
-public import VerifiedGarbage.Proof.Secp256k1.Arm.Law
-public import VerifiedGarbage.Proof.EcKey.Compressed.Arm.Secp256k1
-public import VerifiedGarbage.Proof.EcKey.Compressed.Arm.Secp256k1Decompress
-public import VerifiedGarbage.Proof.Weierstrass.Law
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.EcKey.Compressed.Contract
+public import VerifiedGarbage.Spec.EcKey.Secp256k1
+import VerifiedGarbage.Impl.EcKey.Secp256k1.ArmFn
+import VerifiedGarbage.Proof.EcKey.Arm.Secp256k1.Scrub
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Secp256k1.Arm.Law
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # secp256k1 public keys (FIPS 186-5 §A.2) on ARMv7 -/
-
-@[expose] public section
 
 namespace VG.Artifacts.EcSecp256k1.Arm
 
 open VG.Proof.Secp256k1.Arm (hasLaw)
 
-def artifacts : List Artifact := [
+public def artifacts : List (Artifact Arm.target) := [
   Spec.EcKey.Secp256k1.inst.compressPublicKeyApi.artifact Arm.target {
-    code := Proof.EcKey.Compressed.Arm.Secp256k1.code
-    verified := Proof.EcKey.Compressed.Arm.Secp256k1.verified },
+    code := Impl.EcKey.Arm.Fn.compressSecp256k1
+    verified := Proof.EcKey.Arm.Fn.compressSecp256k1 },
   Spec.EcKey.Secp256k1.inst.decompressPublicKeyApi.artifact Arm.target {
-    code := Proof.EcKey.Compressed.Arm.Secp256k1Decompress.code
-    verified := Proof.EcKey.Compressed.Arm.Secp256k1Decompress.verified hasLaw.law },
+    code := Impl.EcKey.Arm.Fn.decompressSecp256k1
+    verified := Proof.EcKey.Arm.Fn.decompressSecp256k1 hasLaw.law },
   Spec.EcKey.Secp256k1.inst.compressPublicKeyApi.artifact Arm.target {
     suffix := "_umaal"
-    code := Proof.EcKey.Compressed.Arm.Secp256k1.codeU
-    verified := Proof.EcKey.Compressed.Arm.Secp256k1.verifiedU },
+    code := Impl.EcKey.Arm.Fn.compressSecp256k1U
+    verified := Proof.EcKey.Arm.Fn.compressSecp256k1U },
   Spec.EcKey.Secp256k1.inst.decompressPublicKeyApi.artifact Arm.target {
     suffix := "_umaal"
-    code := Proof.EcKey.Compressed.Arm.Secp256k1Decompress.codeU
-    verified := Proof.EcKey.Compressed.Arm.Secp256k1Decompress.verifiedU hasLaw.law },
+    code := Impl.EcKey.Arm.Fn.decompressSecp256k1U
+    verified := Proof.EcKey.Arm.Fn.decompressSecp256k1U hasLaw.law },
   Spec.EcKey.Secp256k1.publicKeyApi.artifact Arm.target {
-    code := Impl.Ecdsa.Arm.publicKeySecp256k1Comb
-    verified := Proof.EcKey.Arm.Secp256k1.combPk_verified hasLaw.law },
+    code := Impl.EcKey.Arm.Fn.publicKeySecp256k1
+    verified := Proof.EcKey.Arm.Fn.publicKeySecp256k1 hasLaw.law },
   Spec.EcKey.Secp256k1.publicKeyApi.artifact Arm.target {
     suffix := "_umaal"
-    code := Impl.Ecdsa.Arm.publicKeySecp256k1CombU
-    verified := Proof.EcKey.Arm.Secp256k1.combPkU_verified hasLaw.law }]
+    code := Impl.EcKey.Arm.Fn.publicKeySecp256k1U
+    verified := Proof.EcKey.Arm.Fn.publicKeySecp256k1U hasLaw.law }]
+
+spec_apis artifacts
 
 end VG.Artifacts.EcSecp256k1.Arm

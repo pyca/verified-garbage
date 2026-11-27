@@ -1,152 +1,92 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.CheckEk
-public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Inv
-public import VerifiedGarbage.Proof.MlKem.AArch64.AddSub
-public import VerifiedGarbage.Proof.MlKem.AArch64.Cbd2
-public import VerifiedGarbage.Proof.MlKem.AArch64.CompressEncode
-public import VerifiedGarbage.Proof.MlKem.AArch64.Decode12
-public import VerifiedGarbage.Proof.MlKem.AArch64.DecodeDecompress
-public import VerifiedGarbage.Proof.MlKem.AArch64.Encode12
-public import VerifiedGarbage.Proof.MlKem.AArch64.Mul
-public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Fwd
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.AArch64.Print
-public import VerifiedGarbage.Proof.MlKem.AArch64.CallWipe
-public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Inst
-public import VerifiedGarbage.TCB.Emit
-public import VerifiedGarbage.Proof.Variants.KeccakX2.AArch64
-public import VerifiedGarbage.Proof.Variants.Keccak.AArch64
-public import VerifiedGarbage.Proof.Framework.QualifiedName
-public import VerifiedGarbage.Proof.MlKem1024.AArch64.CompressEncode
-public import VerifiedGarbage.Proof.MlKem1024.AArch64.DecodeDecompress
-public import VerifiedGarbage.Proof.MlKem1024.AArch64.CheckEk
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.MlKem.Contract
+public import VerifiedGarbage.Spec.MlKem.EncapsH
+public import VerifiedGarbage.Spec.MlKem.Contract1024
+import VerifiedGarbage.Proof.MlKem.AArch64.Scrub
+import VerifiedGarbage.Proof.MlKem.AArch64.Residue
+import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Inst
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.QualifiedName
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # ML-KEM (FIPS 203) on AArch64 -/
 
-@[expose] public section
-
 namespace VG.Artifacts.MlKem.AArch64
 
-def direct : List Artifact := [
-  Spec.MlKem.checkEkApi.artifact AArch64.target {
-    code := Impl.MlKem.AArch64.checkEk
-    verified := Proof.MlKem.AArch64.CheckEk.checkEk_verified }]
+open VG.Proof.MlKem.AArch64.FixedHash.Inst (parts)
 
-end VG.Artifacts.MlKem.AArch64
+/-- ML-KEM-768 and ML-KEM-1024, for each pair of Keccak implementations
+(`FixedHash.Inst.variants`): paired sampling and fused arithmetic, calling
+the two- and three-state functions of `x2` and the single-state permutation
+of `v`. -/
+public def artifacts : List (Artifact AArch64.target) :=
+  [Spec.MlKem.checkEkApi.artifact AArch64.target {
+    code := Impl.MlKem.AArch64.Fn.checkEk
+    verified := Proof.MlKem.AArch64.Residue.checkEk_scrubbed }] ++
+  (VG.Proof.MlKem.AArch64.FixedHash.Inst.variants.flatMap fun (x2, v) => [
+    Spec.MlKem.keyGenApi.artifact AArch64.target {
+      suffix := qualifiedName "" (parts x2 v)
+      vendor := v.vendor
+      code := Impl.MlKem.AArch64.Fn.keyGen (qualifiedName "" (parts x2 v))
+        (qualifiedName "" [("x2", x2.suffix)]) x2.sha3 v.callee
+      verified := Proof.MlKem.AArch64.Scrub.keyGen_scrubbed x2 v
+      publicOutOk := Proof.MlKem.AArch64.Scrub.keyGen_public x2 v },
+    Spec.MlKem.encapsApi.artifact AArch64.target {
+      suffix := qualifiedName "" (parts x2 v)
+      vendor := v.vendor
+      code := Impl.MlKem.AArch64.Fn.encaps (qualifiedName "" (parts x2 v))
+        (qualifiedName "" [("x2", x2.suffix)]) x2.sha3 v.callee
+      verified := Proof.MlKem.AArch64.Scrub.encaps_scrubbed x2 v
+      publicOutOk := Proof.MlKem.AArch64.Scrub.encaps_public x2 v },
+    Spec.MlKem.encapsHApi.artifact AArch64.target {
+      suffix := qualifiedName "" (parts x2 v)
+      vendor := v.vendor
+      code := Impl.MlKem.AArch64.Fn.encapsH (qualifiedName "" (parts x2 v))
+        (qualifiedName "" [("x2", x2.suffix)]) x2.sha3 v.callee
+      verified := Proof.MlKem.AArch64.Scrub.encapsH_scrubbed x2 v
+      publicOutOk := Proof.MlKem.AArch64.Scrub.encapsH_public x2 v },
+    Spec.MlKem.decapsApi.artifact AArch64.target {
+      suffix := qualifiedName "" (parts x2 v)
+      vendor := v.vendor
+      code := Impl.MlKem.AArch64.Fn.decaps (qualifiedName "" (parts x2 v))
+        (qualifiedName "" [("x2", x2.suffix)]) x2.sha3 v.callee
+      verified := Proof.MlKem.AArch64.Scrub.decaps_scrubbed x2 v
+      publicOutOk := Proof.MlKem.AArch64.Scrub.decaps_public x2 v },
+    Spec.MlKem1024.keyGenApi.artifact AArch64.target {
+      suffix := qualifiedName "" (parts x2 v)
+      vendor := v.vendor
+      code := Impl.MlKem.AArch64.Fn.keyGen1024 (qualifiedName "" (parts x2 v))
+        (qualifiedName "" [("x2", x2.suffix)]) x2.sha3 v.callee
+      verified := Proof.MlKem.AArch64.Scrub.keyGen1024_scrubbed x2 v
+      publicOutOk := Proof.MlKem.AArch64.Scrub.keyGen1024_public x2 v },
+    Spec.MlKem1024.encapsApi.artifact AArch64.target {
+      suffix := qualifiedName "" (parts x2 v)
+      vendor := v.vendor
+      code := Impl.MlKem.AArch64.Fn.encaps1024 (qualifiedName "" (parts x2 v))
+        (qualifiedName "" [("x2", x2.suffix)]) x2.sha3 v.callee
+      verified := Proof.MlKem.AArch64.Scrub.encaps1024_scrubbed x2 v
+      publicOutOk := Proof.MlKem.AArch64.Scrub.encaps1024_public x2 v },
+    Spec.MlKem1024.encapsHApi.artifact AArch64.target {
+      suffix := qualifiedName "" (parts x2 v)
+      vendor := v.vendor
+      code := Impl.MlKem.AArch64.Fn.encapsH1024 (qualifiedName "" (parts x2 v))
+        (qualifiedName "" [("x2", x2.suffix)]) x2.sha3 v.callee
+      verified := Proof.MlKem.AArch64.Scrub.encapsH1024_scrubbed x2 v
+      publicOutOk := Proof.MlKem.AArch64.Scrub.encapsH1024_public x2 v },
+    Spec.MlKem1024.decapsApi.artifact AArch64.target {
+      suffix := qualifiedName "" (parts x2 v)
+      vendor := v.vendor
+      code := Impl.MlKem.AArch64.Fn.decaps1024 (qualifiedName "" (parts x2 v))
+        (qualifiedName "" [("x2", x2.suffix)]) x2.sha3 v.callee
+      verified := Proof.MlKem.AArch64.Scrub.decaps1024_scrubbed x2 v
+      publicOutOk := Proof.MlKem.AArch64.Scrub.decaps1024_public x2 v }]) ++
+  [Spec.MlKem1024.checkEkApi.artifact AArch64.target {
+    code := Impl.MlKem.AArch64.Fn.checkEk1024
+    verified := Proof.MlKem.AArch64.Residue.checkEk1024_scrubbed }]
 
--- ML-KEM-768 and ML-KEM-1024 (FIPS 203) on AArch64, for each Keccak implementation
-namespace VG.Artifacts.MlKem.AArch64.KeccakX2Keccak
-
-open VG.Proof.MlKem.AArch64.FixedHash (fixedHash prfW)
-open VG.Proof.MlKem.AArch64.FixedHash.Inst (paired sponge parts)
-
-/-- One Keccak state at a time, over the sponge functions of `v`. -/
-def spongeArtifacts (v : Proof.Sha3.AArch64.Permutation) : List Artifact := [
-  Spec.MlKem.keyGenApi.artifact AArch64.target {
-    suffix := v.callee.suffix
-    code := Impl.MlKem.AArch64.Wipe.keyGen v.callee.suffix (Impl.MlKem.AArch64.keyGenWith v.callee)
-    verified := Proof.MlKem.AArch64.Wipe.keyGenS768_verified v },
-  Spec.MlKem.encapsApi.artifact AArch64.target {
-    suffix := v.callee.suffix
-    code := Impl.MlKem.AArch64.Wipe.encaps v.callee.suffix (Impl.MlKem.AArch64.encapsWith v.callee)
-    verified := Proof.MlKem.AArch64.Wipe.encapsS768_verified v },
-  Spec.MlKem.encapsHApi.artifact AArch64.target {
-    suffix := v.callee.suffix
-    code := Impl.MlKem.AArch64.Wipe.encapsH v.callee.suffix (Impl.MlKem.AArch64.encapsHWith v.callee)
-    verified := Proof.MlKem.AArch64.Wipe.encapsHS768_verified v },
-  Spec.MlKem.decapsApi.artifact AArch64.target {
-    suffix := v.callee.suffix
-    code := Impl.MlKem.AArch64.Wipe.decaps v.callee.suffix (Impl.MlKem.AArch64.decapsWith v.callee)
-    verified := Proof.MlKem.AArch64.Wipe.decapsS768_verified v },
-  Spec.MlKem1024.keyGenApi.artifact AArch64.target {
-    suffix := v.callee.suffix
-    code := Impl.MlKem.AArch64.Wipe.keyGen1024 v.callee.suffix (Impl.MlKem1024.AArch64.keyGenWith v.callee)
-    verified := Proof.MlKem.AArch64.Wipe.keyGenS1024_verified v },
-  Spec.MlKem1024.encapsApi.artifact AArch64.target {
-    suffix := v.callee.suffix
-    code := Impl.MlKem.AArch64.Wipe.encaps1024 v.callee.suffix (Impl.MlKem1024.AArch64.encapsWith v.callee)
-    verified := Proof.MlKem.AArch64.Wipe.encapsS1024_verified v },
-  Spec.MlKem1024.encapsHApi.artifact AArch64.target {
-    suffix := v.callee.suffix
-    code := Impl.MlKem.AArch64.Wipe.encapsH1024 v.callee.suffix (Impl.MlKem1024.AArch64.encapsHWith v.callee)
-    verified := Proof.MlKem.AArch64.Wipe.encapsHS1024_verified v },
-  Spec.MlKem1024.decapsApi.artifact AArch64.target {
-    suffix := v.callee.suffix
-    code := Impl.MlKem.AArch64.Wipe.decaps1024 v.callee.suffix (Impl.MlKem1024.AArch64.decapsWith v.callee)
-    verified := Proof.MlKem.AArch64.Wipe.decapsS1024_verified v }]
-
-/-- Paired sampling and fused arithmetic, calling `vg_keccak_f1600_x2_sha3`
-(and, in `encaps` and `decaps`, `vg_keccak_f1600_x3_sha3`) and the single-state
-permutation of `v` rather than the sponge functions. -/
-def pairedArtifacts (x2 : Proof.Sha3.AArch64.X2Permutation) (v : Proof.Sha3.AArch64.Permutation) :
-    List Artifact := [
-  Spec.MlKem.keyGenApi.artifact AArch64.target {
-    suffix := qualifiedName "" (parts x2 v)
-    vendor := v.vendor
-    code := Impl.MlKem.AArch64.Wipe.keyGen (qualifiedName "" (parts x2 v))
-      (Impl.MlKem.AArch64.Kem16P.keyGen (fixedHash v.callee) v.callee Impl.MlKem.AArch64.lay768)
-    verified := Proof.MlKem.AArch64.Wipe.keyGenP768_verified v _ },
-  Spec.MlKem.encapsApi.artifact AArch64.target {
-    suffix := qualifiedName "" (parts x2 v)
-    vendor := v.vendor
-    code := Impl.MlKem.AArch64.Wipe.encaps (qualifiedName "" (parts x2 v))
-      (Impl.MlKem.AArch64.Kem16P.encaps (fixedHash v.callee) (prfW v.callee) Impl.MlKem.AArch64.lay768)
-    verified := Proof.MlKem.AArch64.Wipe.encapsP768_verified v _ },
-  Spec.MlKem.encapsHApi.artifact AArch64.target {
-    suffix := qualifiedName "" (parts x2 v)
-    vendor := v.vendor
-    code := Impl.MlKem.AArch64.Wipe.encapsH (qualifiedName "" (parts x2 v))
-      (Impl.MlKem.AArch64.Kem16P.encapsH (fixedHash v.callee) (prfW v.callee) Impl.MlKem.AArch64.lay768)
-    verified := Proof.MlKem.AArch64.Wipe.encapsHP768_verified v _ },
-  Spec.MlKem.decapsApi.artifact AArch64.target {
-    suffix := qualifiedName "" (parts x2 v)
-    vendor := v.vendor
-    code := Impl.MlKem.AArch64.Wipe.decaps (qualifiedName "" (parts x2 v))
-      (Impl.MlKem.AArch64.Kem16P.decaps (fixedHash v.callee) (prfW v.callee) Impl.MlKem.AArch64.lay768)
-    verified := Proof.MlKem.AArch64.Wipe.decapsP768_verified v _ },
-  Spec.MlKem1024.keyGenApi.artifact AArch64.target {
-    suffix := qualifiedName "" (parts x2 v)
-    vendor := v.vendor
-    code := Impl.MlKem.AArch64.Wipe.keyGen1024 (qualifiedName "" (parts x2 v))
-      (Impl.MlKem.AArch64.Kem16P.keyGen (fixedHash v.callee) v.callee Impl.MlKem1024.AArch64.lay1024)
-    verified := Proof.MlKem.AArch64.Wipe.keyGenP1024_verified v _ },
-  Spec.MlKem1024.encapsApi.artifact AArch64.target {
-    suffix := qualifiedName "" (parts x2 v)
-    vendor := v.vendor
-    code := Impl.MlKem.AArch64.Wipe.encaps1024 (qualifiedName "" (parts x2 v))
-      (Impl.MlKem.AArch64.Kem16P.encaps (fixedHash v.callee) (prfW v.callee) Impl.MlKem1024.AArch64.lay1024)
-    verified := Proof.MlKem.AArch64.Wipe.encapsP1024_verified v _ },
-  Spec.MlKem1024.encapsHApi.artifact AArch64.target {
-    suffix := qualifiedName "" (parts x2 v)
-    vendor := v.vendor
-    code := Impl.MlKem.AArch64.Wipe.encapsH1024 (qualifiedName "" (parts x2 v))
-      (Impl.MlKem.AArch64.Kem16P.encapsH (fixedHash v.callee) (prfW v.callee) Impl.MlKem1024.AArch64.lay1024)
-    verified := Proof.MlKem.AArch64.Wipe.encapsHP1024_verified v _ },
-  Spec.MlKem1024.decapsApi.artifact AArch64.target {
-    suffix := qualifiedName "" (parts x2 v)
-    vendor := v.vendor
-    code := Impl.MlKem.AArch64.Wipe.decaps1024 (qualifiedName "" (parts x2 v))
-      (Impl.MlKem.AArch64.Kem16P.decaps (fixedHash v.callee) (prfW v.callee) Impl.MlKem1024.AArch64.lay1024)
-    verified := Proof.MlKem.AArch64.Wipe.decapsP1024_verified v _ }]
-
-/-- The functions over the paired-state permutation `x2` and the
-single-state one `v`: the paired path where `x2` uses the SHA3 instructions
-(`paired`), the sponge path where both are the baseline (`sponge`), and
-none for the other pairs. -/
-def artifacts (x2 : Proof.Sha3.AArch64.X2Permutation) (v : Proof.Sha3.AArch64.Permutation) : List Artifact :=
-  if paired x2 then pairedArtifacts x2 v else if sponge x2 v then spongeArtifacts v else []
-
-end VG.Artifacts.MlKem.AArch64.KeccakX2Keccak
-
-namespace VG.Artifacts.MlKem.AArch64
-
-def artifacts : List Artifact :=
-  direct ++
-  (VG.Proof.Variants.KeccakX2.AArch64.variants.flatMap fun v => VG.Proof.Variants.Keccak.AArch64.variants.flatMap fun v2 => KeccakX2Keccak.artifacts v v2) ++
-  [
-    Spec.MlKem1024.checkEkApi.artifact AArch64.target {
-      code := Impl.MlKem1024.AArch64.checkEk
-      verified := Proof.MlKem1024.AArch64.CheckEk.checkEk_verified }]
+spec_apis artifacts
 
 end VG.Artifacts.MlKem.AArch64

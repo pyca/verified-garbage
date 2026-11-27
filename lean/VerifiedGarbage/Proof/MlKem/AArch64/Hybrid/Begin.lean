@@ -21,6 +21,7 @@ from `Paired.finish_ok`.
 @[expose] public section
 
 namespace VG.Proof.MlKem.AArch64.Hybrid
+variable {sha3 : Bool}
 
 open VG VG.AArch64 VG.Proof.MlKem.AArch64 VG.Impl.MlKem.AArch64
 open VG.Proof.Sha3.AArch64.Neon (PairAt pairR)
@@ -31,10 +32,10 @@ open VG.Proof.Sha3 (iterF)
 open VG.Spec.Sha3 (stateAt bytesAt)
 open VG.Proof.MlKem (polyRegion)
 
-def beginMCode (L : KemLay) (S : Impl.MlKem.AArch64.Hybrid.HSrc) (sb ss a b j m oa ob : Nat)
+def beginMCode (sha3 : Bool) (L : KemLay) (S : Impl.MlKem.AArch64.Hybrid.HSrc) (sb ss a b j m oa ob : Nat)
     (w16 : Bool := false) : Prog isa :=
   .seq (.block (Impl.MlKem.AArch64.Paired.init sb ss a b L.k))
-    (.seq (Impl.MlKem.AArch64.Hybrid.squeezeM S j m)
+    (.seq (Impl.MlKem.AArch64.Hybrid.squeezeM sha3 S j m)
       (.seq (.block Impl.MlKem.AArch64.Rej8.rejConsts) (initialCode oa ob w16)))
 
 def beginRegs3 : List Reg := startRegs3 ++ [.x9, .x16] ++
@@ -86,10 +87,10 @@ theorem beginM_ok {w16 : Bool} (L : KemLay) (S : Impl.MlKem.AArch64.Hybrid.HSrc)
     (h : Paired.BeginInput sb ss oa ob p seed outA outB table s) (hh : HashInput S p outA outB table e st s)
     (hb : ∀ k < m, k < 3 → 136 * (j + k) < S.len)
     (hash : stateAt s.mem st = hstate E j (dB S)) (hE : bytesAt s.mem e S.len = E) :
-    WP isa (beginMCode L S sb ss a b j m oa ob w16) s
+    WP isa (beginMCode sha3 L S sb ss a b j m oa ob w16) s
       (BeginMPostW w16 S (seedState s.mem seed a L.k) (seedState s.mem seed b L.k) p outA outB table e st E j m s) := by
   have ctx := h.context
-  have combined := WP.mono_syms (startM_ok (a := a) (b := b) L S hS hss hsb h8b h.ptr h.seedPtr h.readable h.separate
+  have combined := WP.mono_syms (startM_ok (sha3 := sha3) (a := a) (b := b) L S hS hss hsb h8b h.ptr h.seedPtr h.readable h.separate
     hh.lay hh.h25 hh.h28 hb hash hE)
     (R := fun u => WP isa (.seq (.block Impl.MlKem.AArch64.Rej8.rejConsts) (initialCode oa ob w16)) u
       (BeginMPostW w16 S (seedState s.mem seed a L.k) (seedState s.mem seed b L.k) p outA outB table e st E j m s))

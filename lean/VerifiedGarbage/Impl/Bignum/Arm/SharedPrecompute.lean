@@ -9,7 +9,7 @@ public import VerifiedGarbage.Impl.Bignum.Arm.SharedR2
 namespace VG.Impl.Bignum.Arm.SharedPrecompute
 open VG VG.Arm
 
-def precompute (op : Nat → Nat → Nat → Prog isa) : Prog isa :=
-  .seq importModulus (.seq precomputeInverse (SharedR2.r2 op))
+def precompute (op : Nat → Nat → Nat → Prog isa) (dbl : Prog isa) : Prog isa :=
+  .seq importModulus (.seq precomputeInverse (SharedR2.r2 op dbl))
 
 end VG.Impl.Bignum.Arm.SharedPrecompute

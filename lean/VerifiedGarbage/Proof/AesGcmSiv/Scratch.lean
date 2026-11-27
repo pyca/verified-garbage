@@ -1,9 +1,131 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcmSiv.Rounds
 import VerifiedGarbage.Proof.AesGcm.Scratch
 public import VerifiedGarbage.Proof.Framework.Scratch
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Spec.GcmSiv.Contract
+public import VerifiedGarbage.Proof.Framework.PostMono
+
+/-! ### `AesGcmSiv.Rounds`, which this module and modules that import it used -/
+
+section
+
+/-!
+# AES-GCM-SIV: the contracts on the key schedule they are given
+
+Not trusted: the contracts that the proofs of `vg_aes_gcm_siv_seal` and
+`vg_aes_gcm_siv_open` are written against, for the cipher of the key
+schedule and the number of rounds they are given (`Spec.GcmSiv.ctxCiph`,
+`Spec.GcmSiv.keyLen`), whatever key that schedule came from. The shared
+contracts in `Spec/` are stated for every key-generating key whose schedule
+is in memory with its number of rounds (`Spec.Aes.KeySchedule`), and follow
+from these (`Verified.post_mono`): with the schedule of a key and its
+rounds, the cipher of the schedule is AES with that key
+(`Spec.GcmSiv.ctxCiph_eq`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.AesGcmSiv
+
+open VG.Spec
+open VG.Spec.GcmSiv
+
+/-- For `rounds` of 10 or 14, with the key schedule of the key-generating key
+in the first `16 (rounds + 1)` bytes at `schedule`: the `len` bytes at
+`data` are encrypted, with the 12-byte nonce at `nonce` and the `aad_len`
+bytes of additional data at `aad` (`encryptWith`), and the 16-byte tag is
+at `tag`. -/
+def sealRoundsPost (pb : Nat) : sealSig.Post pb :=
+  fun schedule rounds nonce aad aadLen data len tag m m' _ =>
+    (rounds.toNat = 10 ∨ rounds.toNat = 14) →
+    encryptWith (ctxCiph m schedule rounds.toNat) (keyLen rounds.toNat) (Aes.bytesAt m nonce 12)
+        (Aes.bytesAt m data len.toNat) (Aes.bytesAt m aad aadLen.toNat) =
+      (Aes.bytesAt m' data len.toNat, Aes.bytesAt m' tag 16)
+
+/-- For `rounds` of 10 or 14, with the key schedule of the key-generating key
+in the first `16 (rounds + 1)` bytes at `schedule`: encrypts the `len` bytes
+at `data` in place, with the 12-byte nonce at `nonce` and the `aad_len`
+bytes of additional data at `aad` (`encryptWith`), and writes the 16-byte
+tag to `tag`. -/
+def sealRoundsContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  sealSig.contract A (pre := sealPre A.ptrBits) (post := sealRoundsPost A.ptrBits)
+    (writeArgs := true)
+    (stack := stack)
+
+/-- For `rounds` of 10 or 14, with the key schedule of the key-generating key
+in the first `16 (rounds + 1)` bytes at `schedule` and the received tag the
+16 bytes at `tag`: if the tag is right for the `len` bytes of encrypted
+plaintext at `data`, the 12-byte nonce at `nonce` and the `aad_len` bytes of
+additional data at `aad` (`decryptWith`), the result is 1 and the plaintext
+is at `data`; otherwise the result is 0 and zeros are at `data`. -/
+def openRoundsPost (pb : Nat) : openSig.Post pb :=
+  fun schedule rounds nonce aad aadLen data len tag m m' r =>
+    (rounds.toNat = 10 ∨ rounds.toNat = 14) →
+    match decryptWith (ctxCiph m schedule rounds.toNat) (keyLen rounds.toNat)
+        (Aes.bytesAt m nonce 12) (Aes.bytesAt m data len.toNat) (Aes.bytesAt m aad aadLen.toNat)
+        (Aes.bytesAt m tag 16) with
+    | some pt => r = 1 ∧ Aes.bytesAt m' data len.toNat = pt
+    | none => r = 0 ∧ Aes.bytesAt m' data len.toNat = zeros len.toNat
+
+/-- For `rounds` of 10 or 14, with the key schedule of the key-generating key
+in the first `16 (rounds + 1)` bytes at `schedule` and the received tag the
+16 bytes at `tag`: if the tag is right for the `len` bytes of encrypted
+plaintext at `data`, the 12-byte nonce at `nonce` and the `aad_len` bytes of
+additional data at `aad` (`decryptWith`), returns 1 and leaves the plaintext
+at `data`; otherwise returns 0 and leaves zeros at `data`. May leak which
+(`decryptWith`'s outcome). -/
+def openRoundsContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  openSig.contract A (pre := openPre A.ptrBits) (post := openRoundsPost A.ptrBits)
+    (writeArgs := true)
+    (stack := stack)
+    (leak := some (openLeak A.ptrBits))
+
+/-- `Spec.GcmSiv.sealContract` from `sealRoundsContract`. -/
+theorem seal_keyed {T : Target} {c : Prog T.isa} {A : Abi T.isa} {stack : Nat}
+    (h : Verified T c (sealRoundsContract A stack)) : Verified T c (Spec.GcmSiv.sealContract A stack) :=
+  h.post_mono fun schedule rounds _ _ _ _ _ _ m _ _ hp key hl hk => by
+    dsimp only [sealRoundsPost, Spec.GcmSiv.sealPost] at hp ⊢
+    have hr : rounds.toNat = Aes.rounds (key.length / 4) := hk.2.1
+    have hw := hk.2.2
+    have hn : keyLen (Aes.rounds (key.length / 4)) = key.length := by
+      rcases hl with h | h <;> rw [h] <;> rfl
+    have e : encryptWith (aes key) key.length =
+        encryptWith (ctxCiph m schedule rounds.toNat) (keyLen rounds.toNat) := by
+      rw [hr] at hw ⊢
+      rw [ctxCiph_eq hw, hn]
+    have g : rounds.toNat = 10 ∨ rounds.toNat = 14 := by
+      rw [hr]; rcases hl with h | h <;> rw [h] <;> decide
+    have h' := hp g
+    rw [e]
+    exact h'
+
+/-- `Spec.GcmSiv.openContract` from `openRoundsContract`. -/
+theorem open_keyed {T : Target} {c : Prog T.isa} {A : Abi T.isa} {stack : Nat}
+    (h : Verified T c (openRoundsContract A stack)) : Verified T c (Spec.GcmSiv.openContract A stack) :=
+  h.post_mono fun schedule rounds _ _ _ _ _ _ m _ _ hp key hl hk => by
+    dsimp only [openRoundsPost, Spec.GcmSiv.openPost] at hp ⊢
+    have hr : rounds.toNat = Aes.rounds (key.length / 4) := hk.2.1
+    have hw := hk.2.2
+    have hn : keyLen (Aes.rounds (key.length / 4)) = key.length := by
+      rcases hl with h | h <;> rw [h] <;> rfl
+    have e : decryptWith (aes key) key.length =
+        decryptWith (ctxCiph m schedule rounds.toNat) (keyLen rounds.toNat) := by
+      rw [hr] at hw ⊢
+      rw [ctxCiph_eq hw, hn]
+    have g : rounds.toNat = 10 ∨ rounds.toNat = 14 := by
+      rw [hr]; rcases hl with h | h <;> rw [h] <;> decide
+    rw [e]
+    -- the result as a variable before anything reads the `match`es on it: to see what `hp g`
+    -- is, the elaborator would evaluate the decryption as far as its first comparison
+    generalize decryptWith _ _ _ _ _ _ = res at hp ⊢
+    cases res <;> exact hp g
+
+end VG.Proof.AesGcmSiv
+
+end
+
+end
 
 /-!
 # AES-GCM-SIV with its working space as an argument
@@ -159,6 +281,43 @@ theorem sealPost_local : ∀ vs m₁ m₂ m' r, vs.length = (sealSig.words pb).l
   rw [e₁, e₂, e₃, e₄]
   exact h hr
 
+/-- `sealRoundsPost` reads the memory on return only within the buffers. -/
+theorem sealPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (sealSig.words pb).length →
+    (∀ b ∈ Sig.bufs sealSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (sealSig.words pb) (sealRoundsPost pb) vs m m₁ r →
+      Curry.apply (sealSig.words pb) (sealRoundsPost pb) vs m m₂ r := by
+  intro vs m m₁ m₂ r hlen hb h
+  obtain ⟨sch, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 7) hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨rd, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨nonce, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨aad, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨al, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨data, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨len, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨tag, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero hlen
+  simp only [sealSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+    forall_eq, Elem.size, Nat.mul_one] at hb
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr]
+    (sealRoundsPost pb) _ m m₁ r at h
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr]
+    (sealRoundsPost pb) _ m m₂ r
+  dsimp only [Curry.apply, sealRoundsPost, ArgWord.ofRaw, IntTy.bits] at h ⊢
+  intro hr
+  obtain ⟨-, -, -, e₄, e₅⟩ := inputs_local (pb := pb) (le14 hr)
+    (agree_of hb.1) (agree_of hb.2.1) (agree_of hb.2.2.1) (agree_of hb.2.2.2.1)
+    (agree_of hb.2.2.2.2)
+  rw [e₄, e₅]
+  exact h hr
+
 theorem openPre_local : ∀ vs m₁ m₂, vs.length = (openSig.words pb).length →
     (∀ b ∈ Sig.bufs openSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
     Curry.apply (openSig.words pb) (openPre pb) vs m₁ →
@@ -211,6 +370,45 @@ theorem openPost_local : ∀ vs m₁ m₂ m' r, vs.length = (openSig.words pb).l
     (agree_of hb.2.2.2.2)
   rw [e₁, e₂, e₃, e₄, e₅, hd₁] at hd₂
   subst hd₂
+  exact h hr
+
+/-- `openRoundsPost` reads the memory on return only within the buffers. -/
+theorem openPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (openSig.words pb).length →
+    (∀ b ∈ Sig.bufs openSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (openSig.words pb) (openRoundsPost pb) vs m m₁ r →
+      Curry.apply (openSig.words pb) (openRoundsPost pb) vs m m₂ r := by
+  intro vs m m₁ m₂ r hlen hb h
+  obtain ⟨sch, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 7) hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨rd, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨nonce, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨aad, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨al, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨data, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨len, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨tag, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero hlen
+  simp only [openSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+    forall_eq, Elem.size, Nat.mul_one] at hb
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr]
+    (openRoundsPost pb) _ m m₁ r at h
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr]
+    (openRoundsPost pb) _ m m₂ r
+  dsimp only [Curry.apply, openRoundsPost, ArgWord.ofRaw, IntTy.bits] at h ⊢
+  -- The outcome is of `m` in both: named, so that nothing unfolds `decryptWith` to reduce the `match` on it.
+  generalize decryptWith _ _ _ _ _ _ = dec at h ⊢
+  intro hr
+  obtain ⟨-, -, -, e₄, -⟩ := inputs_local (pb := pb) (le14 hr)
+    (agree_of hb.1) (agree_of hb.2.1) (agree_of hb.2.2.1) (agree_of hb.2.2.2.1)
+    (agree_of hb.2.2.2.2)
+  rw [e₄]
   exact h hr
 
 theorem openLeak_local : ∀ vs m₁ m₂, vs.length = (openSig.words pb).length →

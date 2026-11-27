@@ -15,8 +15,7 @@ meta import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
 public import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Impl.Bignum.Arm.ArrayCompare
-import VerifiedGarbage.Proof.Ffdh.Arm.ChecksCT
-meta import VerifiedGarbage.Proof.Ffdh.Arm.ChecksCT
+meta import VerifiedGarbage.Proof.Ffdh.Arm.EqualCT
 
 /-! Testing zero and one uses fixed-width arithmetic without value-dependent branches. -/
 

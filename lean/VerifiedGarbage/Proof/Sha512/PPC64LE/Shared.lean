@@ -6,8 +6,7 @@ public import VerifiedGarbage.Proof.Framework.PPC64LE.Inline
 public import VerifiedGarbage.Proof.Framework.PPC64LE.StackScratch
 public import VerifiedGarbage.Proof.Sha512.PPC64LE.Compress
 public import VerifiedGarbage.Proof.Sha512.PPC64LE.Stream.Finalize
-import VerifiedGarbage.Proof.Sha512.PPC64LE.Stream.Init
-public import VerifiedGarbage.Proof.Sha512.PPC64LE.Stream.Update
+public import VerifiedGarbage.Proof.Sha512.PPC64LE.Stream.Init
 import VerifiedGarbage.Proof.Sha512.Scratch
 public import VerifiedGarbage.Proof.Sha512.Digest
 public import VerifiedGarbage.Spec.Sha512.Contract
@@ -122,6 +121,7 @@ theorem update : Verified PPC64LE.target
   PPC64LE.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 172) (stack := 0) (bytes := 1408)
     updateScratch (by decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Sha512.updatePost_local _)
+    (fun vs m m₁ m₂ r hl _ hb h => Proof.Sha512.updatePostOut_local _ vs m m₁ m₂ r hl hb h)
     (PPC64LE.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
 /-- `finalize`: `finalizeScratch` with its working space in a frame of its own. -/
@@ -131,6 +131,7 @@ theorem finalize : Verified PPC64LE.target
   PPC64LE.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 172) (stack := 0) (bytes := 1408)
     finalizeScratch (by decide) (by decide)
     (fun _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Sha512.finalizePost_local _)
+    (fun vs m m₁ m₂ r hl _ hb h => Proof.Sha512.finalizePostOut_local _ vs m m₁ m₂ r hl hb h)
     (PPC64LE.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
 /-! ## The truncated digests
@@ -211,6 +212,7 @@ theorem finalizeDigest_of {code : Prog isa} {D : Nat} {iv : Spec.Sha512.HashValu
   exact PPC64LE.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 172) (stack := 0) (bytes := 1408)
     h (by decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Sha512.finalizeDigestPost_local _ _ _ _)
+    (fun vs m m₁ m₂ r hl _ hb h => Proof.Sha512.finalizeDigestPostOut_local _ _ _ _ vs m m₁ m₂ r hl hb h)
     (PPC64LE.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
 theorem finalize384 : Verified PPC64LE.target

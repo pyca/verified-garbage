@@ -139,12 +139,7 @@ theorem codeP_correct (hc : MdHashTable.PPC64LE.Coh vs) (hc' : MdHashTable.PPC64
   sig_post [Spec.RsaPss.signPrecomputedMdTableContract, Spec.RsaPss.signPrecomputedMdTableSig,
     Spec.MdHashTable.param, Spec.MdHashTable.param, Abi.withTables, abi, argRegs, stackArgs_eighteen,
     List.append_eq]
-  intro H' G' hH' hG'
-  rw [hH] at hH'
-  rw [hG] at hG'
-  cases hH'
-  cases hG'
-  exact hr (hypS_ofP h)
+  exact ⟨_, _, hH, hG, hr (hypS_ofP h)⟩
 
 /-- Constant time: `constantTime_of` with the variant's contract's facts. -/
 theorem codeP_constantTime (hc : MdHashTable.PPC64LE.Coh vs) (hc' : MdHashTable.PPC64LE.Coh gs) :

@@ -10,7 +10,7 @@ vg_hmac_sha512_init_sha512:
 	subs x11, x10, x3
 	csel x9, x12, x3, hs
 	cbnz x9, 20f
-	sub sp, sp, #1872
+	sub sp, sp, #752
 	add x4, sp, #0
 	str x19, [x4, #688]
 	str x20, [x4, #696]
@@ -193,7 +193,59 @@ vg_hmac_sha512_init_sha512:
 	ldr x24, [x23, #720]
 	ldr x30, [x23, #728]
 	ldr x23, [x23, #736]
-	add sp, sp, #1872
+	add sp, sp, #752
+	movz x1, #0, lsl #0
+	movz x2, #0, lsl #0
+	movz x3, #0, lsl #0
+	movz x4, #0, lsl #0
+	movz x9, #0, lsl #0
+	movz x10, #0, lsl #0
+	movz x11, #0, lsl #0
+	movz x12, #0, lsl #0
+	movz x13, #0, lsl #0
+	movz x14, #0, lsl #0
+	movz x15, #0, lsl #0
+	movz x16, #0, lsl #0
+	movz x17, #0, lsl #0
+	movi v0.2d, #0
+	movi v1.2d, #0
+	movi v2.2d, #0
+	movi v3.2d, #0
+	movi v4.2d, #0
+	movi v5.2d, #0
+	movi v6.2d, #0
+	movi v7.2d, #0
+	movi v16.2d, #0
+	movi v17.2d, #0
+	movi v18.2d, #0
+	movi v19.2d, #0
+	movi v20.2d, #0
+	movi v21.2d, #0
+	movi v22.2d, #0
+	movi v23.2d, #0
+	movi v24.2d, #0
+	movi v25.2d, #0
+	movi v26.2d, #0
+	movi v27.2d, #0
+	movi v28.2d, #0
+	movi v29.2d, #0
+	movi v30.2d, #0
+	movi v31.2d, #0
+	tst x1, x1
+	movz x0, #0, lsl #0
+	sub sp, sp, #768
+	movi v31.2d, #0
+	add x9, sp, #0
+	movz x10, #12, lsl #0
+25:
+	str q31, [x9, #0]
+	str q31, [x9, #16]
+	str q31, [x9, #32]
+	str q31, [x9, #48]
+	add x9, x9, #64
+	sub x10, x10, #1
+	cbnz x10, 25b
+	add sp, sp, #768
 21:
 	ret
 20:
@@ -212,9 +264,9 @@ vg_hmac_sha512_init_sha512:
 	add x21, x0, #0
 	add x22, x1, #0
 	lsr x9, x20, #7
-	cbz x9, 25f
+	cbz x9, 26f
 	sub x9, x20, #128
-	cbz x9, 27f
+	cbz x9, 28f
 	add x0, x23, #2528
 	bl {vg_sha512_init}
 	add x0, x23, #2528
@@ -230,16 +282,16 @@ vg_hmac_sha512_init_sha512:
 	bl {vg_sha512_finalize_scratch_sha512}
 	add x2, x23, #2848
 	movz x3, #64, lsl #0
-	b 28f
-27:
-	add x2, x19, #0
-	add x3, x20, #0
+	b 29f
 28:
-	b 26f
-25:
 	add x2, x19, #0
 	add x3, x20, #0
+29:
+	b 27f
 26:
+	add x2, x19, #0
+	add x3, x20, #0
+27:
 	add x0, x21, #0
 	add x1, x22, #0
 	add x4, x23, #0
@@ -473,11 +525,65 @@ vg_hmac_sha512_init_sha512:
 	stp x17, x17, [x16, #304]
 	stp x17, x17, [x16, #320]
 	add sp, sp, #3408
+	movz x1, #0, lsl #0
+	movz x2, #0, lsl #0
+	movz x3, #0, lsl #0
+	movz x4, #0, lsl #0
+	movz x9, #0, lsl #0
+	movz x10, #0, lsl #0
+	movz x11, #0, lsl #0
+	movz x12, #0, lsl #0
+	movz x13, #0, lsl #0
+	movz x14, #0, lsl #0
+	movz x15, #0, lsl #0
+	movz x16, #0, lsl #0
+	movz x17, #0, lsl #0
+	movi v0.2d, #0
+	movi v1.2d, #0
+	movi v2.2d, #0
+	movi v3.2d, #0
+	movi v4.2d, #0
+	movi v5.2d, #0
+	movi v6.2d, #0
+	movi v7.2d, #0
+	movi v16.2d, #0
+	movi v17.2d, #0
+	movi v18.2d, #0
+	movi v19.2d, #0
+	movi v20.2d, #0
+	movi v21.2d, #0
+	movi v22.2d, #0
+	movi v23.2d, #0
+	movi v24.2d, #0
+	movi v25.2d, #0
+	movi v26.2d, #0
+	movi v27.2d, #0
+	movi v28.2d, #0
+	movi v29.2d, #0
+	movi v30.2d, #0
+	movi v31.2d, #0
+	tst x1, x1
+	movz x0, #0, lsl #0
+	sub sp, sp, #3424
+	movi v31.2d, #0
+	add x9, sp, #0
+	movz x10, #53, lsl #0
+210:
+	str q31, [x9, #0]
+	str q31, [x9, #16]
+	str q31, [x9, #32]
+	str q31, [x9, #48]
+	add x9, x9, #64
+	sub x10, x10, #1
+	cbnz x10, 210b
+	str q31, [x9, #0]
+	str q31, [x9, #16]
+	add sp, sp, #3424
 	b 21b
 	.p2align 6
 
 vg_hmac_sha512_finalize_sha512:
-	sub sp, sp, #1872
+	sub sp, sp, #816
 	add x4, sp, #0
 	str x19, [x4, #688]
 	str x20, [x4, #696]
@@ -568,7 +674,57 @@ vg_hmac_sha512_finalize_sha512:
 	ldr x24, [x23, #720]
 	ldr x30, [x23, #728]
 	ldr x23, [x23, #736]
-	add sp, sp, #1872
+	add sp, sp, #816
+	movz x1, #0, lsl #0
+	movz x2, #0, lsl #0
+	movz x3, #0, lsl #0
+	movz x4, #0, lsl #0
+	movz x9, #0, lsl #0
+	movz x10, #0, lsl #0
+	movz x11, #0, lsl #0
+	movz x12, #0, lsl #0
+	movz x13, #0, lsl #0
+	movz x16, #0, lsl #0
+	movz x17, #0, lsl #0
+	movi v0.2d, #0
+	movi v1.2d, #0
+	movi v2.2d, #0
+	movi v3.2d, #0
+	movi v4.2d, #0
+	movi v5.2d, #0
+	movi v6.2d, #0
+	movi v7.2d, #0
+	movi v16.2d, #0
+	movi v17.2d, #0
+	movi v18.2d, #0
+	movi v19.2d, #0
+	movi v20.2d, #0
+	movi v21.2d, #0
+	movi v22.2d, #0
+	movi v23.2d, #0
+	movi v24.2d, #0
+	movi v25.2d, #0
+	movi v26.2d, #0
+	movi v27.2d, #0
+	movi v28.2d, #0
+	movi v29.2d, #0
+	movi v30.2d, #0
+	movi v31.2d, #0
+	tst x1, x1
+	movz x0, #0, lsl #0
+	sub sp, sp, #832
+	movi v31.2d, #0
+	add x9, sp, #0
+	movz x10, #13, lsl #0
+20:
+	str q31, [x9, #0]
+	str q31, [x9, #16]
+	str q31, [x9, #32]
+	str q31, [x9, #48]
+	add x9, x9, #64
+	sub x10, x10, #1
+	cbnz x10, 20b
+	add sp, sp, #832
 	ret
 	.p2align 6
 
@@ -578,7 +734,7 @@ vg_hmac_sha512_init:
 	subs x11, x10, x3
 	csel x9, x12, x3, hs
 	cbnz x9, 20f
-	sub sp, sp, #1872
+	sub sp, sp, #752
 	add x4, sp, #0
 	str x19, [x4, #688]
 	str x20, [x4, #696]
@@ -761,7 +917,46 @@ vg_hmac_sha512_init:
 	ldr x24, [x23, #720]
 	ldr x30, [x23, #728]
 	ldr x23, [x23, #736]
-	add sp, sp, #1872
+	add sp, sp, #752
+	movz x1, #0, lsl #0
+	movz x2, #0, lsl #0
+	movz x3, #0, lsl #0
+	movz x4, #0, lsl #0
+	movz x5, #0, lsl #0
+	movz x6, #0, lsl #0
+	movz x7, #0, lsl #0
+	movz x8, #0, lsl #0
+	movz x9, #0, lsl #0
+	movz x10, #0, lsl #0
+	movz x11, #0, lsl #0
+	movz x12, #0, lsl #0
+	movz x13, #0, lsl #0
+	movz x14, #0, lsl #0
+	movz x15, #0, lsl #0
+	movz x16, #0, lsl #0
+	movz x17, #0, lsl #0
+	movi v16.2d, #0
+	movi v17.2d, #0
+	movi v18.2d, #0
+	movi v19.2d, #0
+	movi v20.2d, #0
+	movi v21.2d, #0
+	movi v22.2d, #0
+	tst x1, x1
+	movz x0, #0, lsl #0
+	sub sp, sp, #768
+	movi v31.2d, #0
+	add x9, sp, #0
+	movz x10, #12, lsl #0
+25:
+	str q31, [x9, #0]
+	str q31, [x9, #16]
+	str q31, [x9, #32]
+	str q31, [x9, #48]
+	add x9, x9, #64
+	sub x10, x10, #1
+	cbnz x10, 25b
+	add sp, sp, #768
 21:
 	ret
 20:
@@ -780,9 +975,9 @@ vg_hmac_sha512_init:
 	add x21, x0, #0
 	add x22, x1, #0
 	lsr x9, x20, #7
-	cbz x9, 25f
+	cbz x9, 26f
 	sub x9, x20, #128
-	cbz x9, 27f
+	cbz x9, 28f
 	add x0, x23, #2528
 	bl {vg_sha512_init}
 	add x0, x23, #2528
@@ -798,16 +993,16 @@ vg_hmac_sha512_init:
 	bl {vg_sha512_finalize_scratch}
 	add x2, x23, #2848
 	movz x3, #64, lsl #0
-	b 28f
-27:
-	add x2, x19, #0
-	add x3, x20, #0
+	b 29f
 28:
-	b 26f
-25:
 	add x2, x19, #0
 	add x3, x20, #0
+29:
+	b 27f
 26:
+	add x2, x19, #0
+	add x3, x20, #0
+27:
 	add x0, x21, #0
 	add x1, x22, #0
 	add x4, x23, #0
@@ -1041,11 +1236,52 @@ vg_hmac_sha512_init:
 	stp x17, x17, [x16, #304]
 	stp x17, x17, [x16, #320]
 	add sp, sp, #3408
+	movz x1, #0, lsl #0
+	movz x2, #0, lsl #0
+	movz x3, #0, lsl #0
+	movz x4, #0, lsl #0
+	movz x5, #0, lsl #0
+	movz x6, #0, lsl #0
+	movz x7, #0, lsl #0
+	movz x8, #0, lsl #0
+	movz x9, #0, lsl #0
+	movz x10, #0, lsl #0
+	movz x11, #0, lsl #0
+	movz x12, #0, lsl #0
+	movz x13, #0, lsl #0
+	movz x14, #0, lsl #0
+	movz x15, #0, lsl #0
+	movz x16, #0, lsl #0
+	movz x17, #0, lsl #0
+	movi v16.2d, #0
+	movi v17.2d, #0
+	movi v18.2d, #0
+	movi v19.2d, #0
+	movi v20.2d, #0
+	movi v21.2d, #0
+	movi v22.2d, #0
+	tst x1, x1
+	movz x0, #0, lsl #0
+	sub sp, sp, #3424
+	movi v31.2d, #0
+	add x9, sp, #0
+	movz x10, #53, lsl #0
+210:
+	str q31, [x9, #0]
+	str q31, [x9, #16]
+	str q31, [x9, #32]
+	str q31, [x9, #48]
+	add x9, x9, #64
+	sub x10, x10, #1
+	cbnz x10, 210b
+	str q31, [x9, #0]
+	str q31, [x9, #16]
+	add sp, sp, #3424
 	b 21b
 	.p2align 6
 
 vg_hmac_sha512_finalize:
-	sub sp, sp, #1872
+	sub sp, sp, #816
 	add x4, sp, #0
 	str x19, [x4, #688]
 	str x20, [x4, #696]
@@ -1136,6 +1372,45 @@ vg_hmac_sha512_finalize:
 	ldr x24, [x23, #720]
 	ldr x30, [x23, #728]
 	ldr x23, [x23, #736]
-	add sp, sp, #1872
+	add sp, sp, #816
+	movz x1, #0, lsl #0
+	movz x2, #0, lsl #0
+	movz x3, #0, lsl #0
+	movz x4, #0, lsl #0
+	movz x5, #0, lsl #0
+	movz x6, #0, lsl #0
+	movz x7, #0, lsl #0
+	movz x8, #0, lsl #0
+	movz x9, #0, lsl #0
+	movz x10, #0, lsl #0
+	movz x11, #0, lsl #0
+	movz x12, #0, lsl #0
+	movz x13, #0, lsl #0
+	movz x14, #0, lsl #0
+	movz x15, #0, lsl #0
+	movz x16, #0, lsl #0
+	movz x17, #0, lsl #0
+	movi v16.2d, #0
+	movi v17.2d, #0
+	movi v18.2d, #0
+	movi v19.2d, #0
+	movi v20.2d, #0
+	movi v21.2d, #0
+	movi v22.2d, #0
+	tst x1, x1
+	movz x0, #0, lsl #0
+	sub sp, sp, #832
+	movi v31.2d, #0
+	add x9, sp, #0
+	movz x10, #13, lsl #0
+20:
+	str q31, [x9, #0]
+	str q31, [x9, #16]
+	str q31, [x9, #32]
+	str q31, [x9, #48]
+	add x9, x9, #64
+	sub x10, x10, #1
+	cbnz x10, 20b
+	add sp, sp, #832
 	ret
 	.p2align 6

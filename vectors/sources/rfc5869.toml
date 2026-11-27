@@ -1,0 +1,5 @@
+name = "RFC 5869, HMAC-based Extract-and-Expand Key Derivation Function (HKDF) (HKDF-SHA-256 and HKDF-SHA-1 test vectors in Appendix A)"
+directories = ["rfc5869"]
+url = "https://www.rfc-editor.org/rfc/rfc5869.txt"
+sha256 = "7a40eb3835b35fc947eb12a2ed614db079d43b26e50dbc537c31fba16397089c"
+retrieved = 2026-11-21

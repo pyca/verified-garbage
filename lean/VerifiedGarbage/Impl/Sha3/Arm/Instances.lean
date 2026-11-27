@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.Sha3.Arm.Stream
+public import VerifiedGarbage.Impl.StackScratch.Arm
+public import VerifiedGarbage.Impl.Scrub.Arm
 
 /-!
 # SHA-3 and SHAKE on ARMv7: the functions of each instance
@@ -51,6 +53,13 @@ def update (rate : Nat) : Prog isa :=
      .seq (.call "vg_keccak_absorb_scratch" Stream.absorb) (.block [.ldrSp .lr 8]))
     (.free 16)
 
+/-- `absorb rate (state = r0, pos = r1, data = r2, len = r3)`: `update`, with
+its working space `scratch` in a frame of 648 bytes on the stack, passed as
+its stack argument (`withStackScratch`), so that it is left in no memory of
+the caller's. -/
+def absorb (rate : Nat) : Prog isa :=
+  Impl.StackScratch.Arm.withStackScratch 648 0 (update rate)
+
 /-- `pad`'s arguments, from SHAKE's `finalize`'s, in a frame of 648 bytes:
 `scratch = sp + 8` at `sp`, `lr` at `sp + 4`, the working space at `sp + 8`. -/
 def xofPadArgs (rate : Nat) : List Instr :=
@@ -97,3 +106,30 @@ def finalize (rate len : Nat) : Prog isa :=
     (.free 664)
 
 end VG.Impl.Sha3.Arm.Instances
+
+/-! ## The functions as emitted
+
+Each is its code, then its cleanup (`Impl/Scrub/Arm.lean`): the stack of
+its contract zeroed, 664 bytes for `update` (its frame of 648 bytes and the
+16 that `update`'s frames push) and SHA-3's `finalize`, 648 for SHAKE's
+`finalize` and 656 for its `squeeze`, then the registers a callee may change
+set to constants, but for `update`'s and `squeeze`'s 32-bit result, the new
+position in the block. -/
+
+namespace VG.Impl.Sha3.Arm.Fn
+
+open VG.Arm VG.Impl.Scrub.Arm
+
+/-- `vg_<f>_update`, for a function of rate `rate`. -/
+def update (rate : Nat) : Prog isa := scrubAll 32 664 (Instances.absorb rate)
+
+/-- `vg_sha3_<n>_finalize`, for rate `rate` and a `len`-byte digest. -/
+def finalize (rate len : Nat) : Prog isa := scrubAll 0 664 (Instances.finalize rate len)
+
+/-- `vg_shake<n>_finalize`, for rate `rate`. -/
+def xofFinalize (rate : Nat) : Prog isa := scrubAll 0 648 (Instances.xofFinalize rate)
+
+/-- `vg_shake<n>_squeeze`, for rate `rate`. -/
+def xofSqueeze (rate : Nat) : Prog isa := scrubAll 32 656 (Instances.xofSqueeze rate)
+
+end VG.Impl.Sha3.Arm.Fn

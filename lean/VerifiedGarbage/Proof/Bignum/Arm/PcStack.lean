@@ -7,6 +7,8 @@ import VerifiedGarbage.Proof.Bignum.Arm.LayoutPreserved
 import VerifiedGarbage.Proof.Bignum.Arm.Stack
 import VerifiedGarbage.Proof.Framework.CallLay
 import VerifiedGarbage.Proof.Framework.Arm.Exec
+public import VerifiedGarbage.Proof.Framework.Arm.CallF
+import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Public precomputation arguments saved in the outer frame -/
@@ -47,6 +49,34 @@ theorem PcStack.after_workspace {base dst src : BitVec 32} {len k : Nat} {s t : 
   · rw [rest.sp, eq.word (d := 4) (bits := 32) (by decide)]; exact h.savedOutput
   · rw [rest.sp, eq.word (d := 8) (bits := 32) (by decide)]; exact h.savedInput
   · rw [rest.sp, eq.word (d := 12) (bits := 32) (by decide)]; exact h.savedCount
+
+/-- The stack words survive a step that writes only regions apart from them. -/
+theorem PcStack.after_frame {base dst src : BitVec 32} {len k : Nat} {s t : State} {rs : List Reg}
+    {regions : List Region} (h : PcStack base dst src len k s) (frame : Frame regions s.mem t.mem)
+    (sep : ∀ r ∈ regions, Region.Disjoint ⟨State.addr s.sp, 16⟩ r)
+    (rest : Rest rs s t) : PcStack base dst src len k t := by
+  have eq : WorkspaceEq (State.addr s.sp) 16 s.mem t.mem := WorkspaceEq.of_frame (by decide) frame sep
+  refine ⟨by rw [rest.sp]; exact h.nowrap, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · rw [rest.rd, rest.wr, rest.sp]; exact h.readable
+  · rw [rest.sp]; exact h.separate
+  · rw [rest.sp]
+    have keep := eq.word (d := 0) (bits := 32) (by decide)
+    simp only [off, BitVec.add_zero] at keep
+    exact keep.trans h.savedBase
+  · rw [rest.sp, eq.word (d := 4) (bits := 32) (by decide)]; exact h.savedOutput
+  · rw [rest.sp, eq.word (d := 8) (bits := 32) (by decide)]; exact h.savedInput
+  · rw [rest.sp, eq.word (d := 12) (bits := 32) (by decide)]; exact h.savedCount
+
+/-- The stack words are apart from the 48 bytes below them, which a call of
+the shared product writes. -/
+theorem below48_apart {sp : BitVec 32} {n : Nat} (fit : 48 ≤ sp.toNat) (hn : n ≤ 2 ^ 32) :
+    Region.Disjoint ⟨State.addr sp, n⟩ (FrameStack.belowA sp 48) := by
+  unfold FrameStack.belowA
+  rw [FrameStack.addr_sub' fit]
+  simpa using Offset.disjoint_below (State.addr sp) (n := 48) (d := 0) (k := n) (by omega)
+
+theorem PcStack.below48 {s : State} (fit : 48 ≤ s.sp.toNat) :
+    Region.Disjoint ⟨State.addr s.sp, 16⟩ (FrameStack.belowA s.sp 48) := below48_apart fit (by decide)
 
 theorem pcInputs_ok (s : State) {base dst src : BitVec 32} {len k : Nat}
     (h : PcStack base dst src len k s) :

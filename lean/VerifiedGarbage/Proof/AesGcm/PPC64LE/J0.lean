@@ -15,7 +15,7 @@ public import VerifiedGarbage.Impl.AesGcm.PPC64LE
 # AES-GCM on PPC64LE: the pre-counter block (`j0`)
 
 Untrusted: everything here is checked by Lean. As on ARMv7
-(`Proof/AesGcm/Arm/J0.lean`): `j0` writes `J₀` for the `r25`-byte nonce at
+(`Proof/AesGcm/Arm/Fn.lean`): `j0` writes `J₀` for the `r25`-byte nonce at
 `r24` to the state: its words and `0x00000001` for a 12-byte nonce
 (`j012_ok`), and otherwise GHASH of the nonce padded with zeros and the
 lengths block, with `absorb`, `flush` and `lens` on the accumulator at the
@@ -85,7 +85,7 @@ theorem add_ofNat_zero (p : Addr) : p + BitVec.ofNat 64 0 = p := by simp
 
 /-- The regions `j0` writes. -/
 abbrev j0Frame (st w : Addr) : List Region :=
-  [⟨st, 80⟩, ⟨w + BitVec.ofNat 64 96, 16⟩, ⟨w + BitVec.ofNat 64 512, 256⟩]
+  [⟨st, 80⟩, ⟨w + BitVec.ofNat 64 96, 16⟩]
 
 /-- Before `j0`: the `n`-byte nonce at `Np`, its length also in `r18`. -/
 structure J0In (V : Reg → BitVec 64) (sp : Addr) (H : Block) (Np : Addr) (n : Nat) (s : State) : Prop where
@@ -126,8 +126,12 @@ theorem st_j0Frame {m m' : Mem} {d k : Nat} (h : Frame [⟨V .r30 + BitVec.ofNat
     exact ⟨_, List.mem_cons_self .., Lay.stSub hk⟩
 
 /-- `J₀` of a 12-byte nonce. -/
-theorem j012_ok {H : Block} {Np : Addr} {s : State} (h : J0In V sp H Np 12 s) :
-    WP isa (.block j012) s (J0Mid V sp H (bytesAt s.mem Np 12) s.mem) := by
+theorem j012_regs_ok {H : Block} {Np : Addr} {s : State} (h : J0In V sp H Np 12 s) :
+    WP isa (.block j012) s (fun t =>
+      J0Mid V sp H (bytesAt s.mem Np 12) s.mem t ∧
+      (t.gpr .r3).setWidth 32 = s.mem.readW Np 32 ∧
+      (t.gpr .r4).setWidth 32 = s.mem.readW (Np + BitVec.ofNat 64 4) 32 ∧
+      (t.gpr .r5).setWidth 32 = s.mem.readW (Np + BitVec.ofNat 64 8) 32) := by
   have he := h.env
   have h30 := he.r30
   have hd := h.data
@@ -144,6 +148,9 @@ theorem j012_ok {H : Block} {Np : Addr} {s : State} (h : J0In V sp H Np 12 s) :
       s'.mem = store4 s.mem (V .r30) (s.mem.readW Np 32)
         (s.mem.readW (Np + BitVec.ofNat 64 4) 32) (s.mem.readW (Np + BitVec.ofNat 64 8) 32)
         (BitVec.ofNat 32 0x01000000) ∧
+      (s'.gpr .r3).setWidth 32 = s.mem.readW Np 32 ∧
+      (s'.gpr .r4).setWidth 32 = s.mem.readW (Np + BitVec.ofNat 64 4) 32 ∧
+      (s'.gpr .r5).setWidth 32 = s.mem.readW (Np + BitVec.ofNat 64 8) 32 ∧
       (∀ r, r ≠ .r3 → r ≠ .r4 → r ≠ .r5 → r ≠ .r6 → s'.gpr r = s.gpr r) ∧ Keeps' s s' := by
     apply WP.of_runBlock
     simp only [j012, runBlock_cons, runStep_some, runBlock_nil, exec, addr, State.load, State.store,
@@ -151,8 +158,8 @@ theorem j012_ok {H : Block} {Np : Addr} {s : State} (h : J0In V sp H Np 12 s) :
       Option.map_some, Option.some.injEq, exists_eq_left', reduceCtorEq, ne_eq, add_ofNat_zero,
       not_false_eq_true, Nat.reduceLT, Nat.reducePow, Nat.reduceMul, Nat.reduceMod, ↓reduceIte, and_self,
       implies_true]
-    refine ⟨by rw [ww32, ww32, ww32, lis_one]; rfl, fun r a b c d => by simp [a, b, c, d], ⟨rfl, rfl, rfl, rfl⟩⟩
-  refine WP.mono hrun fun s' ⟨hm, hg, hk⟩ => ?_
+    refine ⟨by rw [ww32, ww32, ww32, lis_one]; rfl, ww32 _, ww32 _, ww32 _, fun r a b c d => by simp [a, b, c, d], ⟨rfl, rfl, rfl, rfl⟩⟩
+  refine WP.mono hrun fun s' ⟨hm, r3, r4, r5, hg, hk⟩ => ⟨?_,r3,r4,r5⟩
   have f : Frame [⟨V .r30 + BitVec.ofNat 64 0, 16⟩] s.mem s'.mem := by
     rw [hm, add_ofNat_zero]; exact Proof.Cmac.frame_store4 _ _ _ _ _
   refine ⟨he.keep (fun r hr => hg r (by revert r; decide) (by revert r; decide) (by revert r; decide)
@@ -165,6 +172,55 @@ theorem j012_ok {H : Block} {Np : Addr} {s : State} (h : J0In V sp H Np 12 s) :
         add_ofNat_assoc, List.append_assoc]
     rw [Proof.Gcm.j0_12 _ (length_bytesAt _ _ _), blockAt, hm, Proof.Cmac.bytesAt_store4, Proof.Cmac.le4_readW,
       Proof.Cmac.le4_readW, Proof.Cmac.le4_readW, le4_one, hb]
+
+/-- `J₀` of a 12-byte nonce. -/
+theorem j012_ok {H : Block} {Np : Addr} {s : State} (h : J0In V sp H Np 12 s) :
+    WP isa (.block j012) s (J0Mid V sp H (bytesAt s.mem Np 12) s.mem) :=
+  WP.mono (j012_regs_ok L h) fun _ v => v.1
+
+/-- A counter written as four words and a zeroed accumulator establish the
+stream state. Both the arbitrary-nonce and 96-bit nonce paths use these stores. -/
+theorem initWords_ok {H : Block} {iv : List Byte} {m₀ : Mem} {s s' : State} (h : J0Mid V sp H iv m₀ s)
+    {a b c d : BitVec 32}
+    (hc : ofBytes (le4 a ++ le4 b ++ le4 c ++ le4 d) = inc32 (Spec.Gcm.j0 H iv))
+    (hm : s'.mem = ((store4 s.mem (V .r30 + BitVec.ofNat 64 48) a b c d).writeW
+      (V .r30 + BitVec.ofNat 64 16) (0 : BitVec 64)).writeW (V .r30 + BitVec.ofNat 64 24) (0 : BitVec 64))
+    (hg : ∀ r, r ≠ .r3 → r ≠ .r4 → r ≠ .r5 → r ≠ .r6 → r ≠ .r7 → r ≠ .r8 → s'.gpr r = s.gpr r)
+    (hk : Keeps' s s') : J0Out V sp H iv m₀ s' := by
+  let m₁ := store4 s.mem (V .r30 + BitVec.ofNat 64 48) a b c d
+  have hm₁ : m₁ = store4 s.mem (V .r30 + BitVec.ofNat 64 48) a b c d := rfl
+  rw [← hm₁] at hm
+  have e24 : V .r30 + BitVec.ofNat 64 24 = V .r30 + BitVec.ofNat 64 16 + BitVec.ofNat 64 8 := by
+    simp only [BitVec.add_assoc, BitVec.ofNat_add_ofNat]
+  rw [e24] at hm
+  have f₄ : Frame [⟨V .r30 + BitVec.ofNat 64 48, 16⟩] s.mem m₁ := by
+    rw [hm₁]; exact Proof.Cmac.frame_store4 _ _ _ _ _
+  have fz : Frame [⟨V .r30 + BitVec.ofNat 64 16, 16⟩] m₁ s'.mem := by
+    rw [hm]; exact Proof.Cmac.frame_store2 _ _ _
+  have dz : (⟨V .r30 + BitVec.ofNat 64 48, 16⟩ : Region).Disjoint ⟨V .r30 + BitVec.ofNat 64 16, 16⟩ :=
+    Lay.st_st (.inr (by decide)) (by decide) (by decide)
+  have ff : Frame [⟨V .r30 + BitVec.ofNat 64 0, 80⟩] s.mem s'.mem := by
+    refine (f₄.sub fun r hr => ?_).trans (fz.sub fun r hr => ?_) <;>
+      simp only [List.mem_singleton] at hr <;> subst hr <;>
+      exact ⟨_, List.mem_singleton_self _, Offset.sub _ (by decide) (by decide)⟩
+  have hJ : blockAt s'.mem (V .r30) = blockAt s.mem (V .r30) := by
+    rw [blockAt_frame fz (fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr
+        simpa using Lay.st_st (st := V .r30) (a := 0) (n := 16) (d := 16) (k := 16) (.inl (by decide))
+          (by decide) (by decide)),
+      blockAt_frame f₄ (fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr
+        simpa using Lay.st_st (st := V .r30) (a := 0) (n := 16) (d := 48) (k := 16) (.inl (by decide))
+          (by decide) (by decide))]
+  refine ⟨h.env.keep (fun r hr => hg r (by revert r; decide) (by revert r; decide) (by revert r; decide)
+      (by revert r; decide) (by revert r; decide) (by revert r; decide)) hk.sp hk.rd hk.wr, ?_,
+    by rw [hJ, h.j0], ?_, ?_, h.frame.trans (st_j0Frame ff (by decide))⟩
+  · rw [blockAt_frame ff (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact L.ctx_st (by decide) (by decide)), h.hH]
+  · rw [blockAt, hm, Proof.Cmac.bytesAt_store2, Proof.Cmac.le8_zero]; decide
+  · rw [blockAt, bytesAt_frame fz (fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr; exact dz) (by decide),
+      hm₁, Proof.Cmac.bytesAt_store4, hc]
 
 /-- The first counter block, and the accumulator zeroed. -/
 theorem initState_ok {H : Block} {iv : List Byte} {m₀ : Mem} {s : State} (h : J0Mid V sp H iv m₀ s) :
@@ -199,62 +255,26 @@ theorem initState_ok {H : Block} {iv : List Byte} {m₀ : Mem} {s : State} (h : 
     refine ⟨by simp only [ww32, ww32_add1', rev32_eq, BitVec.setWidth_eq, store4, add_ofNat_assoc, Nat.reduceAdd]; rfl,
       fun r a b c d e f => by simp [a, b, c, d, e, f], ⟨rfl, rfl, rfl, rfl⟩⟩
   refine WP.mono hrun fun s' ⟨hm, hg, hk⟩ => ?_
-  obtain ⟨m₁, hm₁⟩ : ∃ m₁, m₁ = store4 s.mem (V .r30 + BitVec.ofNat 64 48) (s.mem.readW (V .r30) 32)
-      (s.mem.readW (V .r30 + BitVec.ofNat 64 4) 32) (s.mem.readW (V .r30 + BitVec.ofNat 64 8) 32)
-      (byteRev32 (byteRev32 w3 + 1)) := ⟨_, rfl⟩
-  rw [← hm₁] at hm
-  have e24 : V .r30 + BitVec.ofNat 64 24 = V .r30 + BitVec.ofNat 64 16 + BitVec.ofNat 64 8 := by
-    simp only [BitVec.add_assoc, BitVec.ofNat_add_ofNat]
-  rw [e24] at hm
-  have f₄ : Frame [⟨V .r30 + BitVec.ofNat 64 48, 16⟩] s.mem m₁ := by
-    rw [hm₁]; exact Proof.Cmac.frame_store4 _ _ _ _ _
-  have fz : Frame [⟨V .r30 + BitVec.ofNat 64 16, 16⟩] m₁ s'.mem := by
-    rw [hm]; exact Proof.Cmac.frame_store2 _ _ _
-  have dz : (⟨V .r30 + BitVec.ofNat 64 48, 16⟩ : Region).Disjoint ⟨V .r30 + BitVec.ofNat 64 16, 16⟩ :=
-    Lay.st_st (.inr (by decide)) (by decide) (by decide)
-  have ff : Frame [⟨V .r30 + BitVec.ofNat 64 0, 80⟩] s.mem s'.mem := by
-    refine (f₄.sub fun r hr => ?_).trans (fz.sub fun r hr => ?_) <;>
-      simp only [List.mem_singleton] at hr <;> subst hr <;>
-      exact ⟨_, List.mem_singleton_self _, Offset.sub _ (by decide) (by decide)⟩
-  have hJ : blockAt s'.mem (V .r30) = blockAt s.mem (V .r30) := by
-    rw [blockAt_frame fz (fun r hr => by
-        simp only [List.mem_singleton] at hr; subst hr
-        simpa using Lay.st_st (st := V .r30) (a := 0) (n := 16) (d := 16) (k := 16) (.inl (by decide))
-          (by decide) (by decide)),
-      blockAt_frame f₄ (fun r hr => by
-        simp only [List.mem_singleton] at hr; subst hr
-        simpa using Lay.st_st (st := V .r30) (a := 0) (n := 16) (d := 48) (k := 16) (.inl (by decide))
-          (by decide) (by decide))]
-  refine ⟨he.keep (fun r hr => hg r (by revert r; decide) (by revert r; decide) (by revert r; decide)
-      (by revert r; decide) (by revert r; decide) (by revert r; decide)) hk.sp hk.rd hk.wr, ?_,
-    by rw [hJ, h.j0], ?_, ?_, h.frame.trans (st_j0Frame ff (by decide))⟩
-  · rw [blockAt_frame ff (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact L.ctx_st (by decide) (by decide)), h.hH]
-  · rw [blockAt, hm, Proof.Cmac.bytesAt_store2, Proof.Cmac.le8_zero]; decide
-  · rw [blockAt, bytesAt_frame fz (fun r hr => by
-        simp only [List.mem_singleton] at hr; subst hr; exact dz) (by decide),
-      hm₁, Proof.Cmac.bytesAt_store4, Proof.Cmac.le4_readW, Proof.Cmac.le4_readW, Proof.Cmac.le4_readW, ← h.j0,
-      blockAt, Proof.Cmac.ofBytes_rev4, ← Proof.Cmac.le4_readW s.mem (V .r30), ← Proof.Cmac.le4_readW,
-      ← Proof.Cmac.le4_readW, ofBytes_le4, hw, Proof.Cmac.byteRev32_byteRev32, inc32_words]
+  refine initWords_ok L h ?_ hm hg hk
+  rw [← h.j0, blockAt, Proof.Cmac.ofBytes_rev4, ofBytes_le4, hw,
+    Proof.Cmac.byteRev32_byteRev32, inc32_words]
 
 omit L in
 theorem abs_j0Frame {m m' : Mem} (h : Frame (absFrame (V .r30) (V .r31) 0) m m') :
     Frame (j0Frame (V .r30) (V .r31)) m m' :=
   h.sub fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl
+    rcases hr with rfl | rfl
     · exact ⟨_, List.mem_cons_self .., Lay.stSub (by decide)⟩
     · exact ⟨_, List.mem_cons_self .., Lay.stSub (by decide)⟩
-    · exact ⟨_, by simp, fun _ h => h⟩
 
 omit L in
 theorem t_j0Frame {m m' : Mem} (h : Frame (tFrame (V .r30) (V .r31) 0) m m') :
     Frame (j0Frame (V .r30) (V .r31)) m m' :=
   h.sub fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl
+    rcases hr with rfl | rfl
     · exact ⟨_, List.mem_cons_self .., Lay.stSub (by decide)⟩
-    · exact ⟨_, by simp, fun _ h => h⟩
     · exact ⟨_, by simp, fun _ h => h⟩
 
 /-- The first block of `j0hash`: the accumulator at the state zeroed. -/

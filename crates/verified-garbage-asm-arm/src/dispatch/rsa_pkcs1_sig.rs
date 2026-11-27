@@ -8,6 +8,8 @@
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_rsa_pkcs1_sign_precomputed_umaal` if it is compiled (`any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd")`) and the CPU supports its features (`VG_RSA_PKCS1_SIGN_PRECOMPUTED_UMAAL_FEATURES`); or else `vg_rsa_pkcs1_sign_precomputed`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of `out_len` bytes.
@@ -31,7 +33,7 @@
 /// * `pre_len` must be `2 * ⌈n_len / 8⌉ + max(2, ⌈p_len / 8⌉) + max(2, ⌈q_len / 8⌉)`.
 /// * `pre` must hold what `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1), and not have changed since.
 /// * `out` and `scratch` must not overlap each other, `n`, `e`, `digest`, `p`, `q`, `dp`, `dq`, `qinv`, `pre` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `n`, `e`, `digest`, `p`, `q`, `dp`, `dq`, `qinv`, `scratch` and `pre` may overlap the 4616 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `out`, `n`, `e`, `digest`, `p`, `q`, `dp`, `dq`, `qinv`, `scratch` and `pre` may overlap the 4664 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_rsa_pkcs1_sign_precomputed_auto(_dit: verified_garbage_cpu::Dit<'_>, out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, hash: u32, digest: *const u8, digest_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
@@ -79,6 +81,8 @@ pub unsafe fn vg_rsa_pkcs1_sign_precomputed_auto(_dit: verified_garbage_cpu::Dit
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_rsa_pkcs1_verify_precomputed_umaal` if it is compiled (`any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd")`) and the CPU supports its features (`VG_RSA_PKCS1_VERIFY_PRECOMPUTED_UMAAL_FEATURES`); or else `vg_rsa_pkcs1_verify_precomputed`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `n` must be valid for reads of `n_len` bytes.
@@ -94,7 +98,7 @@ pub unsafe fn vg_rsa_pkcs1_sign_precomputed_auto(_dit: verified_garbage_cpu::Dit
 /// * `pre_len` must be `2 * ⌈n_len / 8⌉`.
 /// * For the result to be signature verification's, `pre` must hold what `vg_rsa_public_precompute` wrote for `n` (returning 1).
 /// * `scratch` must not overlap `n`, `e`, `digest`, `sig`, `pre` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `n`, `e`, `digest`, `sig`, `scratch` and `pre` may overlap the 2192 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `n`, `e`, `digest`, `sig`, `scratch` and `pre` may overlap the 2240 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_rsa_pkcs1_verify_precomputed_auto(_dit: verified_garbage_cpu::Dit<'_>, n: *const u8, n_len: usize, e: *const u8, e_len: usize, hash: u32, digest: *const u8, digest_len: usize, sig: *const u8, sig_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
@@ -142,6 +146,8 @@ pub unsafe fn vg_rsa_pkcs1_verify_precomputed_auto(_dit: verified_garbage_cpu::D
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_rsa_pkcs1_recover_precomputed_umaal` if it is compiled (`any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd")`) and the CPU supports its features (`VG_RSA_PKCS1_RECOVER_PRECOMPUTED_UMAAL_FEATURES`); or else `vg_rsa_pkcs1_recover_precomputed`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of `out_len` bytes.
@@ -158,7 +164,7 @@ pub unsafe fn vg_rsa_pkcs1_verify_precomputed_auto(_dit: verified_garbage_cpu::D
 /// * `pre_len` must be `2 * ⌈n_len / 8⌉`.
 /// * For the result to be recovery's, `pre` must hold what `vg_rsa_public_precompute` wrote for `n` (returning 1).
 /// * `out` and `scratch` must not overlap each other, `n`, `e`, `sig`, `pre` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `n`, `e`, `sig`, `scratch` and `pre` may overlap the 2192 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `out`, `n`, `e`, `sig`, `scratch` and `pre` may overlap the 2240 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_rsa_pkcs1_recover_precomputed_auto(_dit: verified_garbage_cpu::Dit<'_>, out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, hash: u32, sig: *const u8, sig_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {

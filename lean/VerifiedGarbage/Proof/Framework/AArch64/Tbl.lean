@@ -395,7 +395,10 @@ theorem exec_dupb (s : State) (d : VReg) (n : Reg) :
 
 theorem exec_insd (s : State) (d : VReg) (i : Nat) (hi : i < 2) (n : Reg) :
     exec (.vop (.ins .d2 d i n)) s = some (s.setV d (setLane (s.v d) 64 i (s.gpr n))) := by
-  simp [exec, VOp.eval, hi]
+  obtain e : (VOp.ins .d2 d i n).eval s = some (d, setLane (s.v d) 64 i (s.gpr n)) := ite_eq_left hi
+  show ((VOp.ins .d2 d i n).eval s).map _ = _
+  rw [e]
+  rfl
 
 /-- A 128-bit constant into a vector register, through `x6` and `x7`. -/
 theorem const128_ok (s : State) (d : VReg) (v : BitVec 128) :

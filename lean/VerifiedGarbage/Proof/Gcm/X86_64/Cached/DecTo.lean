@@ -1,20 +1,17 @@
 module
 
 -- separate module: the out-of-place loop's proof, which only the instances (`AesGcm/X86_64/Instances.lean`) use, so that a change to them does not rebuild it
-
 public import VerifiedGarbage.Impl.Gcm.X86_64.StitchZH
 public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.SpecToDec
 public import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Context
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Loop
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Cvt
-public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Gh48
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Loop48
 public import VerifiedGarbage.Proof.Aes.X86_64.VaesZH.Rounds
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchToDec.Loop
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Loop48
 import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Prepared
 import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemD
 import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.OutOfPlace
-import VerifiedGarbage.Proof.Aes.X86_64.VaesZH.Load
 import VerifiedGarbage.Proof.Framework.X86_64.HighKeep
 import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Base
 import VerifiedGarbage.Proof.Aes.X86_64.CodeLit

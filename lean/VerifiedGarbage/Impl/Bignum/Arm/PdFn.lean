@@ -18,12 +18,13 @@ open VG VG.Arm
 
 def entry : List Instr := PublicFn.entry ++ [.str .r1 .r12 12]
 def prepare : Prog isa := .seq (.block PcFn.inputs) PublicFn.prepare
-def apply : Prog isa := .seq precomputeInverse PublicFn.applyInput
-def checked : Prog isa := .seq pdChecks (.ite .eq PublicFn.fail apply)
-def imported : Prog isa := .seq prepare (.seq pdImport checked)
-def body : Prog isa := .seq (.block PublicFn.exponentArgs) (.seq exponentCheck
-  (.seq (.block [.subs .r7 .r7 (.imm 0)]) (.ite .eq PublicFn.fail imported)))
-def code : Prog isa :=
+def apply (op : Nat → Nat → Nat → Prog isa) : Prog isa := .seq precomputeInverse (PublicFn.applyInputWith op)
+def checked (op : Nat → Nat → Nat → Prog isa) : Prog isa := .seq pdChecks (.ite .eq PublicFn.fail (apply op))
+def imported (op : Nat → Nat → Nat → Prog isa) : Prog isa := .seq prepare (.seq pdImport (checked op))
+def body (op : Nat → Nat → Nat → Prog isa) : Prog isa := .seq (.block PublicFn.exponentArgs) (.seq exponentCheck
+  (.seq (.block [.subs .r7 .r7 (.imm 0)]) (.ite .eq PublicFn.fail (imported op))))
+/-- `vg_rsa_public_precomputed_checked`, its products by `op`. -/
+def code (op : Nat → Nat → Nat → Prog isa) : Prog isa :=
   .frame (.push [.r0, .r1, .r2, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12, .lr])
-    (.seq (.block entry) (.seq body (.block PcFn.restore))) (.pop .r12 56)
+    (.seq (.block entry) (.seq (body op) (.block PcFn.restore))) (.pop .r12 56)
 end VG.Impl.Bignum.Arm.PdFn

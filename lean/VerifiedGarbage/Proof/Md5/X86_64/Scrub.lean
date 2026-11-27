@@ -1,5 +1,9 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubSel
+public import VerifiedGarbage.Impl.Md5.X86_64.Fn
+import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
 public import VerifiedGarbage.Spec.Md5.Contract
 public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
 public import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
@@ -18,17 +22,21 @@ meta import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 meta import VerifiedGarbage.Proof.Md5.Stream
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Md5.X86_64.Lit
+import VerifiedGarbage.Proof.Md5.PostOut
+meta import VerifiedGarbage.Proof.Md5.PostOut
 
 /-!
 # MD5's streaming functions on x86-64, without secret residue
 
 `vg_md5_init`, `vg_md5_update` and `vg_md5_finalize`, each followed by
-`Impl.Scrub.X86_64.scrubTail` (`X86_64.Scrub.withScrub`), which clears the
-registers and the granules of its stack that the residue analysis
-(`X86_64.RTaint`) finds may hold secrets. HMAC-MD5 and PBKDF2-HMAC-MD5 call
-`vg_md5_init`'s code as the internal `vg_md5_init_core`
-(`Proof.Pbkdf2.Md.X86_64.Md5.hash`), which clears what it leaves itself. Their postconditions read the memory on
-return only within the buffers (`X86_64.Scrub.PostOut`): the streaming state (`Stream.repr_congr`) and the digest.
+`Impl.Scrub.X86_64.scrubSel` (`X86_64.Scrub.verifiedScrubbedSel`), which clears
+every caller-saved register and the granules of its stack that the residue
+analysis (`X86_64.RTaint`) finds may hold secrets. HMAC-MD5 and PBKDF2-HMAC-MD5
+call `vg_md5_init`'s code as the internal `vg_md5_init_core`
+(`Proof.Pbkdf2.Md.X86_64.Md5.hash`), which clears what it leaves itself. Their
+postconditions read the memory on return only within the buffers
+(`X86_64.Scrub.PostOut`): the streaming state (`Stream.repr_congr`) and the
+digest.
 -/
 
 @[expose] public section
@@ -37,50 +45,14 @@ namespace VG.Proof.Md5.X86_64
 
 open VG.Spec.Md5 VG.X86_64 VG.X86_64.Scrub
 
-theorem agreeBuf {m₁ m₂ : Mem} {p : Addr} {n : Nat} (hn : n < 2 ^ 64)
-    (h : ∀ a, Region.Contains ⟨p, n⟩ a 1 → m₁ a = m₂ a) :
-    ∀ i < n, m₂ (p + BitVec.ofNat 64 i) = m₁ (p + BitVec.ofNat 64 i) := fun i hi =>
-  (h _ (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hn, hi]))).symm
-
 theorem initOut : PostOut (initContract X86_64.abi) (initSig.retBits 64) :=
-  postOut_of_local (leak := none) ScrubAbi.plain fun vs m m₁ m₂ r hlen hb h => by
-    obtain ⟨st, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 0) hlen
-    obtain rfl := List.eq_nil_of_length_eq_zero (Nat.succ.inj hlen)
-    simp only [initSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq] at hb
-    exact Stream.repr_congr (fun i hi => agreeBuf (n := 80 * Elem.size .u8) (by decide) hb i
-      (by simp only [Elem.size]; omega_using [hi])) h
+  postOut_of_local (leak := none) ScrubAbi.plain (Proof.Md5.initPost_out 64)
 
 theorem updateOut (stack : Nat) : PostOut (updateContract X86_64.abi stack) (updateSig.retBits 64) :=
-  postOut_of_local (leak := none) ScrubAbi.plain fun vs m m₁ m₂ r hlen hb h => by
-    obtain ⟨st, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 3) hlen
-    replace hlen := Nat.succ.inj hlen
-    obtain ⟨ct, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-    replace hlen := Nat.succ.inj hlen
-    obtain ⟨dt, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-    replace hlen := Nat.succ.inj hlen
-    obtain ⟨ln, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-    obtain rfl := List.eq_nil_of_length_eq_zero (Nat.succ.inj hlen)
-    simp only [updateSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
-      forall_eq] at hb
-    intro msg hr hc
-    exact Stream.repr_congr (fun i hi => agreeBuf (n := 80 * Elem.size .u8) (by decide) hb.1 i
-      (by simp only [Elem.size]; omega_using [hi])) (h msg hr hc)
+  postOut_of_local (leak := none) ScrubAbi.plain (Proof.Md5.updatePost_out 64)
 
 theorem finalizeOut (stack : Nat) : PostOut (finalizeContract X86_64.abi stack) (finalizeSig.retBits 64) :=
-  postOut_of_local (leak := none) ScrubAbi.plain fun vs m m₁ m₂ r hlen hb h => by
-    obtain ⟨st, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 2) hlen
-    replace hlen := Nat.succ.inj hlen
-    obtain ⟨ct, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-    replace hlen := Nat.succ.inj hlen
-    obtain ⟨ot, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-    obtain rfl := List.eq_nil_of_length_eq_zero (Nat.succ.inj hlen)
-    simp only [finalizeSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
-      forall_eq] at hb
-    intro msg hr hc
-    show bytesAt m₂ ot 16 = _
-    rw [Stream.bytesAt_congr fun i hi => agreeBuf (n := 16 * Elem.size .u8) (by decide) hb.2 i
-      (by simp only [Elem.size]; omega_using [hi])]
-    exact h msg hr hc
+  postOut_of_local (leak := none) ScrubAbi.plain (Proof.Md5.finalizePost_out 64)
 
 /-! ## The registrations -/
 
@@ -92,47 +64,55 @@ abbrev updateCode : Prog isa :=
 abbrev finalizeCode : Prog isa :=
   Impl.StackScratch.X86_64.withStackScratch 56 .rcx Impl.Md5.X86_64.Stream.finalize
 
-def initKs : List Nat := keep_for% Spec.Md5.initApi.sig 0 Impl.Md5.X86_64.Stream.init []
+/-! ## The functions as emitted -/
 
-theorem initOk : ∃ h : VG.Taint.Hint RTaint.FT,
-    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Md5.initApi.sig 0 []) Impl.Md5.X86_64.Stream.init
-      h).any (RScrub.resOkB · 0 initKs (Impl.Scrub.X86_64.chunks 0)) = true :=
-  RScrub.Analysed.ok_of initKs (by taint_decide)
+theorem init_codeSp : (Impl.Md5.X86_64.Stream.init).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
 
-def updateKs : List Nat := keep_for% Spec.Md5.updateApi.sig (8 + 56) updateCode []
+/-- `Spec.Md5.initApi`'s function as emitted (`Impl.Md5.X86_64.Fn.init`) meets its contract in
+constant time and returns without secret residue. -/
+theorem init_scrubbed :
+    VerifiedScrubbed target Impl.Md5.X86_64.Fn.init (Spec.Md5.initApi.contract X86_64.abi 0) 0 :=
+  verifiedScrubbedSel (api := Spec.Md5.initApi)
+    { code := Impl.Md5.X86_64.Stream.init
+      verified := Shared.init
+      spSafe := init_codeSp }
+    .sse [] initOut (RScrub.pubOk_nil _) (by taint_decide)
 
-theorem updateOk : ∃ h : VG.Taint.Hint RTaint.FT,
-    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Md5.updateApi.sig (8 + 56) []) updateCode
-      h).any (RScrub.resOkB · (8 + 56) updateKs (Impl.Scrub.X86_64.chunks (8 + 56))) = true :=
-  RScrub.Analysed.ok_of updateKs (by taint_decide)
+theorem init_spSafe : Impl.Md5.X86_64.Fn.init.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe init_codeSp
 
-def finalizeKs : List Nat := keep_for% Spec.Md5.finalizeApi.sig (8 + 56) finalizeCode []
+theorem update_codeSp : (Impl.StackScratch.X86_64.withStackScratch 56 .r8 Impl.Md5.X86_64.Stream.update).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
 
-theorem finalizeOk : ∃ h : VG.Taint.Hint RTaint.FT,
-    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Md5.finalizeApi.sig (8 + 56) []) finalizeCode
-      h).any (RScrub.resOkB · (8 + 56) finalizeKs (Impl.Scrub.X86_64.chunks (8 + 56))) = true :=
-  RScrub.Analysed.ok_of finalizeKs (by taint_decide)
+/-- `Spec.Md5.updateApi`'s function as emitted (`Impl.Md5.X86_64.Fn.update`) meets its contract in
+constant time and returns without secret residue. -/
+theorem update_scrubbed :
+    VerifiedScrubbed target Impl.Md5.X86_64.Fn.update (Spec.Md5.updateApi.contract X86_64.abi 64) 0 :=
+  verifiedScrubbedSel (api := Spec.Md5.updateApi)
+    { code := updateCode
+      stack := 8 + 56
+      verified := Shared.update
+      spSafe := update_codeSp }
+    .sse [] (updateOut _) (RScrub.pubOk_nil _) (by taint_decide)
 
-open VG.X86_64.RScrub in
-/-- `vg_md5_init`. -/
-def initReg : Registration Spec.Md5.initApi X86_64.target :=
-  withScrub { code := Impl.Md5.X86_64.Stream.init, verified := Shared.init } initOut []
-    (pubOk_nil _) (some ⟨initKs, initOk⟩)
+theorem update_spSafe : Impl.Md5.X86_64.Fn.update.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe update_codeSp
 
-open VG.X86_64.RScrub in
-/-- `vg_md5_update`. -/
-def updateReg : Registration Spec.Md5.updateApi X86_64.target :=
-  withScrub {
-    code := updateCode
-    stack := 8 + 56
-    verified := Shared.update } (updateOut _) [] (pubOk_nil _) (some ⟨updateKs, updateOk⟩)
+theorem finalize_codeSp : (Impl.StackScratch.X86_64.withStackScratch 56 .rcx Impl.Md5.X86_64.Stream.finalize).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
 
-open VG.X86_64.RScrub in
-/-- `vg_md5_finalize`. -/
-def finalizeReg : Registration Spec.Md5.finalizeApi X86_64.target :=
-  withScrub {
-    code := finalizeCode
-    stack := 8 + 56
-    verified := Shared.finalize } (finalizeOut _) [] (pubOk_nil _) (some ⟨finalizeKs, finalizeOk⟩)
+/-- `Spec.Md5.finalizeApi`'s function as emitted (`Impl.Md5.X86_64.Fn.finalize`) meets its contract in
+constant time and returns without secret residue. -/
+theorem finalize_scrubbed :
+    VerifiedScrubbed target Impl.Md5.X86_64.Fn.finalize (Spec.Md5.finalizeApi.contract X86_64.abi 64) 0 :=
+  verifiedScrubbedSel (api := Spec.Md5.finalizeApi)
+    { code := finalizeCode
+      stack := 8 + 56
+      verified := Shared.finalize
+      spSafe := finalize_codeSp }
+    .sse [] (finalizeOut _) (RScrub.pubOk_nil _) (by taint_decide)
 
+theorem finalize_spSafe : Impl.Md5.X86_64.Fn.finalize.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe finalize_codeSp
 end VG.Proof.Md5.X86_64

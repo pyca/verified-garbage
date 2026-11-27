@@ -8,6 +8,9 @@ meta import VerifiedGarbage.Proof.Framework.Scratch
 meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
+public import VerifiedGarbage.Proof.Framework.X86.SseTaint
+public import VerifiedGarbage.Proof.Framework.X86.Rel2
+meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
 meta import VerifiedGarbage.Impl.AesGcm.X86.SealGather
 meta import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
@@ -40,49 +43,6 @@ open VG.Spec.Gcm (gathered gatheredLen)
 
 /-! ## Relating two runs -/
 
-/-- Two runs from `σ₁` and `σ₂`. -/
-abbrev Eq2 (σ₁ σ₂ : State) (a b : State) : Prop := a = σ₁ ∧ b = σ₂
-
-/-- Nothing is required of the final states. -/
-abbrev TT (_ _ : State) : Prop := True
-
-/-- Then: the next piece, from the states the correctness proofs describe. -/
-theorem rel_seq {c₁ c₂ : Prog isa} {σ₁ σ₂ : State} {F₁ F₂ : State → Prop}
-    (h₁ : RelCT isa (Eq2 σ₁ σ₂) c₁ TT) (w₁ : WP isa c₁ σ₁ F₁) (w₂ : WP isa c₁ σ₂ F₂)
-    (h₂ : ∀ τ₁ τ₂, F₁ τ₁ → F₂ τ₂ → RelCT isa (Eq2 τ₁ τ₂) c₂ TT) :
-    RelCT isa (Eq2 σ₁ σ₂) (.seq c₁ c₂) TT := by
-  refine RelCT.seq (R := fun a b => F₁ a ∧ F₂ b) ((h₁.wp (F₁ := F₁) (F₂ := F₂) fun a b hab => by
-    obtain ⟨rfl, rfl⟩ := hab; exact ⟨w₁, w₂⟩).mono (fun _ _ h => h) fun _ _ h => h.2) ?_
-  intro s₁ s₂ t₁ t₂ s₁' s₂' hp e₁ e₂
-  exact h₂ s₁ s₂ hp.1 hp.2 s₁ s₂ t₁ t₂ s₁' s₂' ⟨rfl, rfl⟩ e₁ e₂
-
-/-- Code the taint analysis checks, from registers the two runs agree on. -/
-theorem rel_taint {c : Prog isa} {σ₁ σ₂ : State} (rs : List Reg) (hr : ∀ r ∈ rs, σ₁.gpr r = σ₂.gpr r)
-    (hc : ∃ h, (VG.X86.taint.check (τr rs) c h).isSome = true) : RelCT isa (Eq2 σ₁ σ₂) c TT := by
-  obtain ⟨_, hc⟩ := hc
-  exact RelCT.taint (A := VG.X86.taint) _ (fun a b hab => by obtain ⟨rfl, rfl⟩ := hab; exact agree_regs hr) hc
-
-/-- An empty block. -/
-theorem rel_skip {σ₁ σ₂ : State} : RelCT isa (Eq2 σ₁ σ₂) (.block []) TT :=
-  RelCT.nil fun _ _ _ => trivial
-
-/-- A branch both runs take the same way. -/
-theorem rel_ite {c : Cond} {t e : Prog isa} {σ₁ σ₂ : State} {b : Bool} (e₁ : isa.eval c σ₁ = some b)
-    (e₂ : isa.eval c σ₂ = some b) (ht : b = true → RelCT isa (Eq2 σ₁ σ₂) t TT)
-    (hf : b = false → RelCT isa (Eq2 σ₁ σ₂) e TT) : RelCT isa (Eq2 σ₁ σ₂) (.ite c t e) TT := by
-  refine RelCT.ite (fun a b' hab => by obtain ⟨rfl, rfl⟩ := hab; rw [e₁, e₂]) ?_ ?_
-  · cases b
-    · exact RelCT.of_false fun a b' h => by obtain ⟨⟨rfl, -⟩, h⟩ := h; rw [e₁] at h; cases h
-    · exact (ht rfl).mono (fun _ _ h => h.1) fun _ _ h => h
-  · cases b
-    · exact (hf rfl).mono (fun _ _ h => h.1) fun _ _ h => h
-    · exact RelCT.of_false fun a b' h => by obtain ⟨⟨rfl, -⟩, h⟩ := h; rw [e₁] at h; cases h
-
-/-- Constant time, from related runs from every pair of states. -/
-theorem ct_of {pre : State → Prop} {pub : State → State → Prop} {c : Prog isa}
-    (h : ∀ σ₁ σ₂, pre σ₁ → pre σ₂ → pub σ₁ σ₂ → RelCT isa (Eq2 σ₁ σ₂) c TT) : ConstantTime isa pre pub c :=
-  fun s₁ s₂ _ _ _ _ h₁ h₂ hp e₁ e₂ => (h s₁ s₂ h₁ h₂ hp _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
-
 theorem alloc_eq {n : Nat} {s a : State} (h : isa.push (.alloc n) s = some a) : a = allocated n s := by
   simp only [isa, push] at h
   split at h <;> cases h
@@ -112,12 +72,19 @@ theorem rel_alloc {n : Nat} {body : Prog isa} {σ₁ σ₂ : State}
 length, the addresses are its and the descriptor's. -/
 theorem copySlice_rel {σ₁ σ₂ : State} {A₀ S D : BitVec 32} {n : Nat} (h₁ : SlicePre σ₁ A₀ S D n)
     (h₂ : SlicePre σ₂ A₀ S D n) : RelCT isa (Eq2 σ₁ σ₂) copySlice TT := by
+  have tc : ∃ h, (VG.X86.sseTaint.check (τr [.edi, .edx, .ecx]) copyChunks h).isSome = true :=
+    ⟨_, by taint_decide⟩
   have tw : ∃ h, (VG.X86.taint.check (τr [.edi, .edx, .ecx]) copyWords h).isSome = true :=
     ⟨_, by taint_decide⟩
   have tl : ∃ h, (VG.X86.taint.check (τr [.edi, .edx, .ecx]) copyLoop h).isSome = true :=
     ⟨_, by taint_decide⟩
   refine rel_seq (rel_taint [.esi] (by simp [h₁.esi, h₂.esi]) ⟨_, by taint_decide⟩)
-    (wordsArg_wp h₁) (wordsArg_wp h₂) fun τ₁ τ₂ w₁ w₂ => ?_
+    (chunksArg_wp h₁) (chunksArg_wp h₂) fun τ₁ τ₂ c₁ c₂ => ?_
+  refine rel_seq (rel_ite c₁.zf c₂.zf (fun _ => rel_skip) fun _ =>
+      rel_taintSse [.edi, .edx, .ecx] (by simp [c₁.edi, c₂.edi, c₁.edx, c₂.edx, c₁.ecx, c₂.ecx]) tc)
+    (chunks_wp h₁ c₁) (chunks_wp h₂ c₂) fun υ₁ υ₂ d₁ d₂ => ?_
+  refine rel_seq (rel_taint [.esi] (by simp [d₁.esi, d₂.esi]) ⟨_, by taint_decide⟩)
+    (wordsArg_wp h₁ d₁) (wordsArg_wp h₂ d₂) fun τ₁ τ₂ w₁ w₂ => ?_
   refine rel_seq (rel_ite w₁.zf w₂.zf (fun _ => rel_skip) fun _ =>
       rel_taint [.edi, .edx, .ecx] (by simp [w₁.edi, w₂.edi, w₁.edx, w₂.edx, w₁.ecx, w₂.ecx]) tw)
     (words_wp h₁ w₁) (words_wp h₂ w₂) fun v₁ v₂ x₁ x₂ => ?_

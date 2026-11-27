@@ -1,17 +1,13 @@
 module
 
+public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.PrepareCall
+
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.StageCTData
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Prepared
 public import VerifiedGarbage.Proof.MillerRabin.X86_64.Kernel
-public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.RoundBodyCT
-public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.RoundRun
+public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.PrepareCT
+public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.PhaseWitness
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.RoundBody
-public import Mathlib.Algebra.Group.Nat.Defs
-import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Rounds
-import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.PrepareCT
-import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.PrepareState
-import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.PhaseWitness
 import VerifiedGarbage.Proof.Bignum.Octets
 
 /-! ### `Ffdh.X86_64.ParameterCandidate.RoundsCT`, which only this module used -/
@@ -199,17 +195,14 @@ open VG.Impl.Ffdh.X86_64.ParameterCandidate VG.Impl.Bignum.X86_64.Public
 open VG.Proof.MlKem.X86_64 VG.Proof.MillerRabin.X86_64
 open VG.Proof.RsaKeyGen.X86_64 (two_bind)
 
-def PhasePrime (q : Bool) (c : Checks) (d : CandidatePublic) (s : State) : Prop :=
-  PhaseLoaded q c d s ∧ d.p.phaseValue q % 2 = 1
-
 def PhasePrepared (q : Bool) (c : Checks) (d : CandidatePublic) (s : State) : Prop :=
   CandidateState d s ∧ d.p.phaseValue q % 2 = 1 ∧ ∃ mi,
     ModulusReady s (off d.p.B 256) (d.p.Z - 256) (d.p.phaseWords q) mi (d.p.phaseValue q) ∧ PhaseHeader d.p q c s
 
-private theorem prepare_phase (M : Mont) (R : R2Impl M) (q : Bool) (c : Checks) (d : CandidatePublic) (s : State) (h : PhasePrime q c d s) :
-    WP isa (prepareModulus M.mm R.code) s (PhasePrepared q c d) := by
+private theorem prepare_phase (M : Mont) (R : Preparation M) (q : Bool) (c : Checks) (d : CandidatePublic) (s : State) (h : PhasePrime q c d s) :
+    WP isa R.code s (PhasePrepared q c d) := by
   obtain ⟨mi, hg, hp, hn⟩ := h.1.2
-  exact WP.mono (prepareModulus_state_ok M R h.1.1.1 hg hp hn h.2)
+  exact WP.mono (R.ok h.1.1.1 hg hp hn h.2)
     fun _ ⟨mi', ht, hr, hp', _, _, k⟩ => ⟨⟨ht, k.2.2.trans h.1.1.2.1, h.1.1.2.2⟩, h.2, mi', hr, hp'⟩
 
 private theorem prepared_rounds (q : Bool) (c : Checks) {s₁ s₂ : State} (h : Two (PhasePrepared q c) s₁ s₂) : Two RoundsBefore s₁ s₂ := by
@@ -237,11 +230,11 @@ private theorem prepared_rounds (q : Bool) (c : Checks) {s₁ s₂ : State} (h :
   · exact ⟨⟨h₂.1.1.drawState hp₂ h₁.2.1 hr₂, h₂.1.2.1, h₂.1.2.2⟩,
       h₂.1.1.roundRoom h₁.2.1, h₂.1.1.base.sp, hp₂.checks, hchecks.1, hchecks.2⟩
 
-theorem modulusPolicy_ct (M : Mont) (R : R2Impl M) (K : Kernel) (q : Bool) (c : Checks) :
+theorem modulusPolicy_ct (M : Mont) (R : Preparation M) (K : Kernel) (q : Bool) (c : Checks) :
     RelCT isa (Two (PhasePrime q c)) (modulusPolicy M.mm R.code K.run) fun _ _ => True := by
   unfold modulusPolicy
   exact RelCT.seq (two_post
-    (two_map (fun d : CandidatePublic => d.prep q) (fun _ _ h => h.1.prepare h.2) (prepareModulus_ct M R))
+    (R.ct q c)
     (prepare_phase M R q c)) ((rounds_ct M K).mono (fun _ _ h => prepared_rounds q c h) (fun _ _ h => h))
 
 end VG.Proof.Ffdh.X86_64.ParameterCandidate

@@ -4,6 +4,7 @@ public import VerifiedGarbage.Impl.Rsa.X86.PrivChecked
 public import VerifiedGarbage.Spec.Rsa.Contract
 public import VerifiedGarbage.Proof.Rsa.Contract
 public import VerifiedGarbage.Proof.Framework.X86.Call
+public import VerifiedGarbage.Proof.Framework.X86.ScrubSide
 import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # Verified callees and stack bounds for checked private RSA -/
@@ -18,16 +19,25 @@ structure CrtImpl where
   verified : Verified target code (Proof.Rsa.privateCrtContract abi 96)
   stack : stackUse code ≤ 96
   noSp : NoSp code
+  /-- Its code, and the code it calls, has no MMX instruction and makes no indirect call (`calleeOk`):
+  what the cleanup of every function that calls it needs of it, with its
+  stack (`X86.Scrub.calleeSide`), so that each proves only its own code,
+  whatever the implementation (`Proof/Framework/X86/ScrubCall.lean`). -/
+  scrub : calleeOk code = true
   pcName : String
   pc : Prog isa
   pcVerified : Verified target pc (Spec.Rsa.publicPrecomputeContract abi 96)
   pcStack : stackUse pc ≤ 96
   pcNoSp : NoSp pc
+  /-- `scrub`, of `pc`. -/
+  pcScrub : calleeOk pc = true
   pdName : String
   pd : Prog isa
   pdVerified : Verified target pd (Proof.Rsa.publicPrecomputedCheckedContract abi 96)
   pdStack : stackUse pd ≤ 96
   pdNoSp : NoSp pd
+  /-- `scrub`, of `pd`. -/
+  pdScrub : calleeOk pd = true
   suffix : String := ""
   features : List String := []
 

@@ -13,8 +13,8 @@ namespace VG.Impl.Ed25519.Arm
 open VG.Arm
 
 /-- The slots cleared, `[s]B` by the comb (`combMultiply`), and its encoding. -/
-def scalarBaseEngine : Prog isa :=
-  .seq (.block initFields) (.seq combMultiply pointEncode)
+def scalarBaseEngine (umaal : Bool) : Prog isa :=
+  .seq (.block initFields) (.seq (combMultiply umaal) (pointEncode umaal))
 
 def scalarBaseSetup : List Instr :=
   scalarSave .r2 ++ [.str .r0 .r2 48, .mov .r0 (.reg .r2)] ++ scratchAddr LRS ++
@@ -23,7 +23,7 @@ def scalarBaseSetup : List Instr :=
 def scalarBaseFinish : List Instr :=
   scratchAddr LRS ++ [.ldr .lr .r12 0, .ldr .r12 .r0 48] ++ packField FR 0 ++ scalarRestore
 
-def scalarBase : Prog isa :=
-  .seq (.block scalarBaseSetup) (.seq scalarBaseEngine (.block scalarBaseFinish))
+def scalarBase (umaal : Bool) : Prog isa :=
+  .seq (.block scalarBaseSetup) (.seq (scalarBaseEngine umaal) (.block scalarBaseFinish))
 
 end VG.Impl.Ed25519.Arm

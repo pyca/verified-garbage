@@ -1,25 +1,27 @@
 module
 
-public import VerifiedGarbage.Proof.Camellia.Arm.KeyVerified
-public import VerifiedGarbage.Proof.Camellia.Arm.Verified
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.Arm.Print
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Camellia.Contract
+import VerifiedGarbage.Proof.Camellia.Arm.Scrub
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # Camellia on ARMv7 -/
 
-@[expose] public section
-
 namespace VG.Artifacts.Camellia.Arm
 
-def artifacts : List Artifact := [
+public def artifacts : List (Artifact Arm.target) := [
   Spec.Camellia.expandKeyApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withRegScratchWiped 2720 .r3 680 Impl.Camellia.Arm.expandKey
-    verified := Proof.Camellia.Arm.expandKey_framed },
+    code := Impl.Camellia.Arm.Fn.expandKey
+    verified := Proof.Camellia.Arm.Fn.expandKey },
   Spec.Camellia.ecbEncryptApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratchWiped 2816 0 680 (Impl.Camellia.Arm.ecb .encrypt)
-    verified := Proof.Camellia.Arm.ecb_framed .encrypt },
+    code := Impl.Camellia.Arm.Fn.ecbEncrypt
+    verified := Proof.Camellia.Arm.Fn.ecbEncrypt },
   Spec.Camellia.ecbDecryptApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratchWiped 2816 0 680 (Impl.Camellia.Arm.ecb .decrypt)
-    verified := Proof.Camellia.Arm.ecb_framed .decrypt }]
+    code := Impl.Camellia.Arm.Fn.ecbDecrypt
+    verified := Proof.Camellia.Arm.Fn.ecbDecrypt }]
+
+spec_apis artifacts
 
 end VG.Artifacts.Camellia.Arm

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.Scrub.X86_64.Fn
 public import VerifiedGarbage.Impl.Ed448.X86_64.Verify
 
 /-!
@@ -121,3 +122,13 @@ def signCachedFor (v : FieldVariant) : Prog isa :=
     (.frame (.push regs) (bodyFor v) (.pop .r11 56))
 
 end VG.Impl.Ed448.X86_64.SignCached
+
+namespace VG.Impl.Ed448.X86_64.SignCached.Fn
+
+open VG.X86_64
+open VG.Impl.Scrub.X86_64 (scrubAll)
+
+/-- `vg_ed448_sign_cached`, with the field arithmetic `v`, as emitted: its code, then its cleanup. -/
+def signCached (v : Impl.Ed448.X86_64.FieldVariant) : Prog isa := scrubAll .sse 0 464 (_root_.VG.Impl.Ed448.X86_64.SignCached.signCachedFor v)
+
+end VG.Impl.Ed448.X86_64.SignCached.Fn

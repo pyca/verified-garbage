@@ -1,49 +1,34 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
-public import VerifiedGarbage.Proof.EcKey.AArch64.BrainpoolP512r1.Verified
-import Mathlib.Data.Finset.Card
-import Mathlib.Data.Nat.Find
-public import VerifiedGarbage.Proof.Framework.Registration
-public import Mathlib.Tactic.ClearExcept
-public import VerifiedGarbage.Proof.EcKey.AArch64.BrainpoolP512r1.Lit
-public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.TCB.Registration
 public import VerifiedGarbage.Spec.EcKey.BrainpoolP512r1
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-public import VerifiedGarbage.Impl.Ecdh.BrainpoolP512r1.AArch64
-public import VerifiedGarbage.Proof.EcKey.PublicKey
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.Flags
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.Lays
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.Setup
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.SlotOps
-public import VerifiedGarbage.Proof.Ecdsa.Sign
-public import VerifiedGarbage.Proof.Framework.AArch64.Lit
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Bytes
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Zero
-public import VerifiedGarbage.TCB.AArch64.Print
-public import VerifiedGarbage.Proof.BrainpoolP512r1.AArch64.Law
-public import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.BrainpoolP512r1
-public import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.BrainpoolP512r1Decompress
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvInterface
+public import VerifiedGarbage.Spec.EcKey.Compressed.Contract
+import VerifiedGarbage.Impl.EcKey.BrainpoolP512r1.AArch64
+import VerifiedGarbage.Proof.BrainpoolP512r1.AArch64.Law
+import VerifiedGarbage.Proof.EcKey.AArch64.BrainpoolP512r1.Verified
+import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.BrainpoolP512r1
+import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.BrainpoolP512r1Decompress
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # brainpoolP512r1 public keys (FIPS 186-5 §A.2) on AArch64 -/
-
-@[expose] public section
 
 namespace VG.Artifacts.EcBrainpoolP512r1.AArch64
 
 open VG.Proof.BrainpoolP512r1.AArch64 (hasLaw)
 
-def artifacts : List Artifact := [
+public def artifacts : List (Artifact AArch64.target) := [
   Spec.EcKey.BrainpoolP512r1.publicKeyApi.artifact AArch64.target {
-    code := Impl.EcKey.AArch64.publicKeyBrainpoolP512r1
-    verified := Proof.EcKey.AArch64.BrainpoolP512r1.pk_verified hasLaw.law hasLaw.inv },
+    code := Impl.EcKey.AArch64.Fn.publicKeyBrainpoolP512r1
+    verified := Proof.EcKey.AArch64.BrainpoolP512r1.pk_scrubbed hasLaw.law hasLaw.inv },
   Spec.EcKey.BrainpoolP512r1.inst.compressPublicKeyApi.artifact AArch64.target {
-    code := Proof.EcKey.Compressed.AArch64.BrainpoolP512r1.code
-    verified := Proof.EcKey.Compressed.AArch64.BrainpoolP512r1.verified hasLaw.inv },
+    code := Impl.EcKey.AArch64.Fn.compressBrainpoolP512r1
+    verified := Proof.EcKey.Compressed.AArch64.BrainpoolP512r1.scrubbed hasLaw.inv },
   Spec.EcKey.BrainpoolP512r1.inst.decompressPublicKeyApi.artifact AArch64.target {
-    code := Proof.EcKey.Compressed.AArch64.BrainpoolP512r1Decompress.code
-    verified := Proof.EcKey.Compressed.AArch64.BrainpoolP512r1Decompress.verified hasLaw.law hasLaw.inv }]
+    code := Impl.EcKey.AArch64.Fn.decompressBrainpoolP512r1
+    verified := Proof.EcKey.Compressed.AArch64.BrainpoolP512r1Decompress.scrubbed hasLaw.law hasLaw.inv }]
+
+spec_apis artifacts
 
 end VG.Artifacts.EcBrainpoolP512r1.AArch64

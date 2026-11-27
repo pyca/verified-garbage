@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.X86.KeyGen
 public import VerifiedGarbage.Proof.Ffdh.X86.Entry
-public import VerifiedGarbage.Proof.Ffdh.X86.ABI
 public import VerifiedGarbage.Proof.Mont.X86.StaticSquare.Shape
 import VerifiedGarbage.Proof.Rsa.X86.StackTactic
 meta import VerifiedGarbage.Proof.Rsa.X86.StackTactic
@@ -33,10 +32,10 @@ abbrev yR (s : State) : Region := ⟨argumentPointer s 2, (arg s 3).toNat⟩
 structure Geo (args : Nat → BitVec 32) (base : Addr) (bytes len dlen : Nat) (sp : BitVec 32) (rd wr : List Region) :
     Prop where
   dom : DomGeo args base bytes len dlen rd wr
-  dom40 : Region.Disjoint ⟨byteAddr (args 2), dlen⟩ (below sp 96)
+  dom40 : Region.Disjoint ⟨byteAddr (args 2), dlen⟩ (below sp 176)
   cut : KeyCut.CutGeo base bytes len (args 10) (args 0) sp rd wr
   rWs : Region.Disjoint ⟨byteAddr (args 10), len⟩ ⟨base, bytes⟩
-  r40 : Region.Disjoint ⟨byteAddr (args 10), len⟩ (below sp 96)
+  r40 : Region.Disjoint ⟨byteAddr (args 10), len⟩ (below sp 176)
   domX : Region.Disjoint ⟨byteAddr (args 2), dlen⟩ ⟨byteAddr (args 0), len⟩
   ox : OutAt args base bytes len 0 sp wr
   oy : OutAt args base bytes len 8 sp wr

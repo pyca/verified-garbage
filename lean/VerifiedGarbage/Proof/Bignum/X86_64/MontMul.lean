@@ -39,7 +39,7 @@ theorem bases_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hs : Scr
       t.gpr .r10 = off B (slot w mo) ∧ t.gpr .r8 = off B (slot w acc) ∧
       t.gpr .r12 = BitVec.ofNat 64 w ∧ t.gpr .r15 = minv ∧ t.gpr .rsi = off B (slot w tmp) ∧ t.mem = s.mem ∧
       Keep [.rbx, .r11, .r9, .r10, .r8, .r12, .r15, .rsi] s t := by
-  have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off B (8 * i)) 8 := fun i hi =>
+  obtain hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off B (8 * i)) 8 := fun i hi =>
     hs.ld (by have := hdr_lt_slot w 8 hi; omega_using [hZ, this])
   refine WP.mono (WP.keep [.rbx, .r11, .r9, .r10, .r8, .r12, .r15, .rsi] (c := .block (bases o a b mo acc tmp))
     (Q := fun t => t.gpr .rbx = off B (slot w o) ∧ t.gpr .r11 = off B (slot w a) ∧
@@ -87,20 +87,20 @@ theorem mmTailLazy_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hs 
         wv s.mem B (slot w a) w * wv s.mem B (slot w b) w % wv s.mem B (slot w mo) w ∧
       Arrays B w [acc, tmp, o] s.mem t.mem ∧ Keep mmRegs s t := by
   have hn := hs.nowrap
-  have sl : ∀ j < 8, slot w j + 8 * (w + 2) ≤ Z := fun j hj => Nat.le_trans (slot_le hj) hZ
-  have sp : ∀ {j k}, j ≠ k → slot w j + 8 * (w + 2) ≤ slot w k ∨ slot w k + 8 * (w + 2) ≤ slot w j :=
+  obtain sl : ∀ j < 8, slot w j + 8 * (w + 2) ≤ Z := fun j hj => Nat.le_trans (slot_le hj) hZ
+  obtain sp : ∀ {j k}, j ≠ k → slot w j + 8 * (w + 2) ≤ slot w k ∨ slot w k + 8 * (w + 2) ≤ slot w j :=
     fun h => slot_sep h
-  have hN0 : 0 < wv s.mem B (slot w mo) w := wv_pos_of_inv (by omega_arith) hinv
+  obtain hN0 : 0 < wv s.mem B (slot w mo) w := wv_pos_of_inv (by omega_arith) hinv
   have hs₁ := hs
-  have k₁ : Keep [] s s := Keep.refl _ _
+  obtain k₁ : Keep [] s s := Keep.refl _ _
   -- The accumulator := 0.
   refine WP.seq (WP.mono (zeroAccLoop_ok hs₁ h8 h12 (by omega_arith) hw' (sl acc hacc))
     fun s₂ ⟨hz₂, ho₂, k₂⟩ => ?_)
-  have hs₂ := hs₁.congr k₂.2.2
-  have k12 := k₁.trans k₂
-  have fr₂ : ∀ {j}, j < 8 → j ≠ acc → wv s₂.mem B (slot w j) w = wv s.mem B (slot w j) w :=
+  obtain hs₂ := hs₁.congr k₂.2.2
+  obtain k12 := k₁.trans k₂
+  obtain fr₂ : ∀ {j}, j < 8 → j ≠ acc → wv s₂.mem B (slot w j) w = wv s.mem B (slot w j) w :=
     fun hj hne => ho₂.wv (by have := sp hne; omega_arith) (by have := sl _ hj; omega_arith)
-  have fw₂ : word s₂.mem B (slot w mo) = word s.mem B (slot w mo) :=
+  obtain fw₂ : word s₂.mem B (slot w mo) = word s.mem B (slot w mo) :=
     ho₂.word (by have := sp (Ne.symm d1); have := sl _ hmo; omega_arith) (by have := sl _ hmo; omega_arith)
   -- The rounds.
   refine WP.seq (WP.mono (rounds_ok hs₂ ((k₂.gpr (by decide)).trans h8) ((k₂.gpr (by decide)).trans h9)
@@ -115,37 +115,37 @@ theorem mmTailLazy_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hs 
   rw [fr₂ hmo (Ne.symm d1), fr₂ hb (Ne.symm d5)] at hTlt
   rw [fr₂ hmo (Ne.symm d1)] at hTc
   rw [fr₂ ha (Ne.symm d4), fr₂ hb (Ne.symm d5)] at hTc
-  have k123 := k12.trans hR.keep
+  obtain k123 := k12.trans hR.keep
   have hs₃ := hR.scr
-  have fr₃ : ∀ {j}, j < 8 → j ≠ acc → wv s₃.mem B (slot w j) w = wv s.mem B (slot w j) w := fun hj hne =>
+  obtain fr₃ : ∀ {j}, j < 8 → j ≠ acc → wv s₃.mem B (slot w j) w = wv s.mem B (slot w j) w := fun hj hne =>
     (hR.out.wv (by have := sp hne; omega_arith) (by have := sl _ hj; omega_arith)).trans (fr₂ hj hne)
-  have k14 := k₂.trans hR.keep
-  have hsi : s₃.gpr .rsi = off B (slot w tmp) := (k14.gpr (by decide)).trans hsi₁
+  obtain k14 := k₂.trans hR.keep
+  obtain hsi : s₃.gpr .rsi = off B (slot w tmp) := (k14.gpr (by decide)).trans hsi₁
   -- `T - m`.
   refine WP.seq (WP.mono (subMod_ok hs₃ ((k14.gpr (by decide)).trans h8) ((k14.gpr (by decide)).trans h10)
     hsi ((k14.gpr (by decide)).trans h12) (by omega_arith) hw' (by have := sl acc hacc; omega_arith)
     (by have := sl mo hmo; omega_arith) (by have := sl tmp htmp; omega_arith) (by have := sp d2; omega_arith)
     (by have := sp d6; omega_arith)) fun s₅ ⟨c, lt, hbp, hlt, hD, ho₅, k₅⟩ => ?_)
-  have k5 := k123.trans k₅
-  have k15 := k14.trans k₅
+  obtain k5 := k123.trans k₅
+  obtain k15 := k14.trans k₅
   -- The selection.
-  have hs₅ := hs₃.congr k₅.2.2
+  obtain hs₅ := hs₃.congr k₅.2.2
   refine WP.mono (selectAcc_ok hs₅ ((k15.gpr (by decide)).trans h8) ((k₅.gpr (by decide)).trans hsi)
     ((k15.gpr (by decide)).trans hbx) ((k15.gpr (by decide)).trans h12) hbp (by omega_arith) hw'
     (by have := sl acc hacc; omega_arith) (by have := sl tmp htmp; omega_arith) (by have := sl o ho; omega_arith)
     (by have := sp (Ne.symm d3); omega_arith) (by have := sp (Ne.symm d7); omega_arith)) fun t ⟨hv, hot, k₆⟩ => ?_
   -- The words of `T` in `s₅`, as after the rounds.
-  have hacc₅ : wv s₅.mem B (slot w acc) w = wv s₃.mem B (slot w acc) w :=
+  obtain hacc₅ : wv s₅.mem B (slot w acc) w = wv s₃.mem B (slot w acc) w :=
     ho₅.wv (by have := sp d2; omega_arith) (by have := sl acc hacc; omega_arith)
-  have hD' : wv s₅.mem B (slot w tmp) w + wv s.mem B (slot w mo) w = wv s₃.mem B (slot w acc) w +
+  obtain hD' : wv s₅.mem B (slot w tmp) w + wv s.mem B (slot w mo) w = wv s₃.mem B (slot w acc) w +
       2 ^ (64 * w) * c.toNat := by
     rw [← fr₃ hmo (Ne.symm d1)]; exact hD
-  have hsel : wv t.mem B (slot w o) w = if (word s₃.mem B (slot w acc + 8 * w)).toNat < c.toNat then
+  obtain hsel : wv t.mem B (slot w o) w = if (word s₃.mem B (slot w acc + 8 * w)).toNat < c.toNat then
       wv s₃.mem B (slot w acc) w else wv s₅.mem B (slot w tmp) w := by
     rw [hv, hacc₅, hlt]
     by_cases h : (word s₃.mem B (slot w acc + 8 * w)).toNat < c.toNat <;> simp [h]
-  have hBR := wv_lt s.mem B (slot w b) w
-  have hNR := wv_lt s.mem B (slot w mo) w
+  obtain hBR := wv_lt s.mem B (slot w b) w
+  obtain hNR := wv_lt s.mem B (slot w mo) w
   rw [wv_top2] at hTlt hTc
   obtain ⟨hlz, hlm⟩ := VG.Proof.Bignum.csub_lazy (Tl := wv s₃.mem B (slot w acc) w)
       (Tw := (word s₃.mem B (slot w acc + 8 * w)).toNat)
@@ -163,9 +163,9 @@ theorem mmTailLazy_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hs 
   · rw [hsel, Nat.mul_mod, hlm, ← Nat.mul_mod, Nat.mul_comm]; exact hTc
   · have a3 : Arrays B w [acc, tmp, o] s.mem s₃.mem :=
       Arrays.of_outside (j := acc) (by simp) (ho₂.trans hR.out) (Nat.le_refl _) (Nat.le_refl _)
-    have a5 : Arrays B w [acc, tmp, o] s₃.mem s₅.mem :=
+    obtain a5 : Arrays B w [acc, tmp, o] s₃.mem s₅.mem :=
       Arrays.of_outside (j := tmp) (by simp) ho₅ (Nat.le_refl _) (by omega_arith)
-    have a6 : Arrays B w [acc, tmp, o] s₅.mem t.mem :=
+    obtain a6 : Arrays B w [acc, tmp, o] s₅.mem t.mem :=
       Arrays.of_outside (j := o) (by simp) hot (Nat.le_refl _) (by omega_arith)
     exact (a3.trans a5).trans a6
 

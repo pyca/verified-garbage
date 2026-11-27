@@ -82,18 +82,18 @@ theorem dbodyM_okF {ix : Bool} {s₀ : State} (hp : LPre ix s₀) {P : Nat → N
       Frame [wR ix s₀] s.mem s'.mem := by
   have hw := hp.wrap_d
   have hwp := hp.wrap_w
-  have hn : nb s₀ < 2 ^ 64 := (s₀.gpr .r9).isLt
+  obtain hn : nb s₀ < 2 ^ 64 := (s₀.gpr .r9).isLt
   let a := s.gpr .rdx
   let X : Nat → Block := fun i => blk s₀ (16 * e + i)
   let yl : Nat → Block := fun l => s.lane .xmm2 l
-  have ha : a.toNat = (dp s₀).toNat + 256 * e := by
+  obtain ha : a.toNat = (dp s₀).toNat + 256 * e := by
     show (s.gpr .rdx).toNat = _
     rw [hI.rdx, BitVec.toNat_add, toNat_ofNat_lt (by omega_arith), Nat.mod_eq_of_lt (by omega_arith)]
-  have hr11 : s.gpr .r11 = pp s₀ :=
+  obtain hr11 : s.gpr .r11 = pp s₀ :=
     hI.gpr .r11 (by decide) (by decide) (fun _ => by decide) (by decide) (by decide)
   refine WP.seq (WP.mono (zero_lanes s) fun s₁ ⟨z₁, f₁, _⟩ => ?_)
-  have hA₁ := hI.a.yframe f₁ (by decide) (by decide) (by decide)
-  have hE₁ : GEnv s₀ 0 a X P s₁ :=
+  obtain hA₁ := hI.a.yframe f₁ (by decide) (by decide) (by decide)
+  obtain hE₁ : GEnv s₀ 0 a X P s₁ :=
     { rdx := by rw [f₁.gpr]
       r11 := by rw [f₁.gpr, hr11]
       xs := fun i _ hi => by
@@ -122,7 +122,7 @@ theorem dbodyM_okF {ix : Bool} {s₀ : State} (hp : LPre ix s₀) {P : Nat → N
       by rw [ite_f (by decide)]
          exact ⟨fun l hl => z₁ l hl, fun l hl => by rw [f₁.lane _ (by decide) l hl]⟩⟩)
     fun s₂ ⟨hA₂, hQ₂, hg₂, hl₂, hm₂⟩ => ?_)
-  have hQ₂' : QG s₀ loB a X P yl ordD 4 true 1 s₂ := by
+  obtain hQ₂' : QG s₀ loB a X P yl ordD 4 true 1 s₂ := by
     obtain ⟨hE, h1, h2⟩ := hQ₂
     rw [ite_f (by decide)] at h2
     exact ⟨hE, h1, by rw [ite_f (by decide)]; exact h2⟩
@@ -140,22 +140,22 @@ theorem dbodyM_okF {ix : Bool} {s₀ : State} (hp : LPre ix s₀) {P : Nat → N
   refine WP.mono (nextD_ok s₃) fun s' ⟨frdx, fr9, fcf, fg, fl, fm, frd, fwr⟩ => ?_
   obtain ⟨_, _, h2⟩ := hQ₃
   rw [ite_t ⟨rfl, by decide⟩] at h2
-  have dP : ∀ c, c + 8 ≤ nb s₀ → ∀ r' ∈ [(⟨wAddr ix s₀ c, 128⟩ : Region)], (pR s₀).Disjoint r' := fun c hc r hr => by
+  obtain dP : ∀ c, c + 8 ≤ nb s₀ → ∀ r' ∈ [(⟨wAddr ix s₀ c, 128⟩ : Region)], (pR s₀).Disjoint r' := fun c hc r hr => by
     simp only [List.mem_singleton] at hr; subst hr
     exact hp.w_p.symm.sub_right (Offset.sub_base _ (by omega_arith))
-  have keepP : ∀ k < 8, ∀ l < 2, s'.mem.readW (pp s₀ + BitVec.ofNat 64 (32 * k + 16 * l)) 128 =
+  obtain keepP : ∀ k < 8, ∀ l < 2, s'.mem.readW (pp s₀ + BitVec.ofNat 64 (32 * k + 16 * l)) 128 =
       s.mem.readW (pp s₀ + BitVec.ofNat 64 (32 * k + 16 * l)) 128 :=
     fun k hk l hl => by
       rw [fm, hm₃.readW (r := pR s₀) (Offset.contains_base _ (by omega_arith) (by omega_arith)) (dP _ (by omega_arith)) (by decide),
         hm₂.readW (r := pR s₀) (Offset.contains_base _ (by omega_arith) (by omega_arith)) (dP _ (by omega_arith)) (by decide), f₁.mem]
-  have gk : ∀ r, r ≠ .rdx → r ≠ .r9 → s'.gpr r = s.gpr r := fun r h1 h2 => by rw [fg r h1 h2, hg₃, hg₂, f₁.gpr]
-  have lk : ∀ r, r ≠ .xmm13 → r ≠ .xmm14 → r ∉ aregs → r ∉ gRegs → ∀ l < 2, s'.lane r l = s.lane r l :=
+  obtain gk : ∀ r, r ≠ .rdx → r ≠ .r9 → s'.gpr r = s.gpr r := fun r h1 h2 => by rw [fg r h1 h2, hg₃, hg₂, f₁.gpr]
+  obtain lk : ∀ r, r ≠ .xmm13 → r ≠ .xmm14 → r ∉ aregs → r ∉ gRegs → ∀ l < 2, s'.lane r l = s.lane r l :=
     fun r h13 h14 ha' hg' l hl => by
       rw [fl r l, hl₃ r h13 h14 ha' hg' l hl, hl₂ r h13 h14 ha' hg' l hl,
         f₁.lane r (fun h => hg' (by
           simp only [List.mem_cons, List.not_mem_nil, or_false] at h
           rcases h with rfl | rfl | rfl <;> decide)) l hl]
-  have hA' : AInvM ix s₀ (16 * (e + 1)) s' := by
+  obtain hA' : AInvM ix s₀ (16 * (e + 1)) s' := by
     rw [show 16 * (e + 1) = 16 * e + 8 + 8 by omega_arith]
     exact ⟨hA₃.le, fun l hl => by rw [fl]; exact hA₃.ctr l hl, fun l hl => by rw [fl]; exact hA₃.msk l hl,
       fun l hl => by rw [fl]; exact hA₃.inc l hl,
@@ -163,11 +163,11 @@ theorem dbodyM_okF {ix : Bool} {s₀ : State} (hp : LPre ix s₀) {P : Nat → N
       by rw [fg _ (by decide) (by decide)]; exact hA₃.r10,
       by rw [fm]; exact hA₃.frame, fun k hk => by rw [fm]; exact hA₃.out k hk,
       fun k hk hc => by rw [fm]; exact hA₃.src k hk hc, by rw [frd]; exact hA₃.rd, by rw [fwr]; exact hA₃.wr⟩
-  have hr9 : s₃.gpr .r9 - 16 = BitVec.ofNat 64 (nb s₀ - 16 * (e + 1)) := by
+  obtain hr9 : s₃.gpr .r9 - 16 = BitVec.ofNat 64 (nb s₀ - 16 * (e + 1)) := by
     rw [hg₃, hg₂, f₁.gpr, hI.r9, show (16 : BitVec 64) = BitVec.ofNat 64 16 from rfl,
       ofNat_sub_ofNat (by omega_arith) (by omega_arith)]
     congr 1
-  have fr : Frame [wR ix s₀] s.mem s'.mem := by
+  obtain fr : Frame [wR ix s₀] s.mem s'.mem := by
     rw [fm, ← f₁.mem]
     exact (frame_w hp (by omega_arith) hm₂).trans (frame_w hp (by omega_arith) hm₃)
   refine ⟨⟨⟨hA', ?_, by rw [fr9, hr9], by rw [gk _ (by decide) (by decide)]; exact hI.rax,
@@ -214,12 +214,12 @@ theorem dfinalM_okF {ix : Bool} {s₀ : State} (hp : LPre ix s₀) {P : Nat → 
     (he : nb s₀ = 16 * e) {s : State} (hI : DInvM ix s₀ P e s) :
     WP isa (.block (storeCtr ++ storeY)) s fun s' => DPostM ix s₀ s' ∧ Frame [cR s₀, yR s₀] s.mem s'.mem := by
   have hw := hp.wrap_w
-  have hm0 : s.lane .xmm0 0 = revMask := hI.a.msk 0 (by decide)
+  obtain hm0 : s.lane .xmm0 0 = revMask := hI.a.msk 0 (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (store16_ok .xmm13 .xmm14 .rax s hm0 (by rw [hI.rax, hI.a.wr]; exact hp.c_in))
     fun s₁ ⟨m₁, g₁, rd₁, wr₁, l₁⟩ => ?_
   rw [hI.rax] at m₁
-  have hrcx : s.gpr .rcx = yp s₀ :=
+  obtain hrcx : s.gpr .rcx = yp s₀ :=
     hI.gpr _ (by decide) (by decide) (fun _ => by decide) (by decide) (by decide)
   rw [show storeY = [.vop (.vbin .vpshufb .l128 .xmm2 .xmm2 .xmm0),
     .vmovdquStore .l128 (VG.Impl.Gcm.X86_64.Pclmul.at_ .rcx 0) .xmm2] ++ [.vop .vzeroupper] from rfl,
@@ -233,9 +233,9 @@ theorem dfinalM_okF {ix : Bool} {s₀ : State} (hp : LPre ix s₀) {P : Nat → 
     rw [m₂]
     exact ((Frame.refl _ _).writeW (r := cR s₀) (by simp) _ (Region.contains_self _ _)).writeW (r := yR s₀) (by simp) _
       (Region.contains_self _ _)⟩
-  have cD : ∀ k < nb s₀, Region.Disjoint ⟨wAddr ix s₀ k, 16⟩ (cR s₀) := fun k hk =>
+  obtain cD : ∀ k < nb s₀, Region.Disjoint ⟨wAddr ix s₀ k, 16⟩ (cR s₀) := fun k hk =>
     hp.w_c.sub_left (Offset.sub_base _ (by omega_arith))
-  have yD : ∀ k < nb s₀, Region.Disjoint ⟨wAddr ix s₀ k, 16⟩ (yR s₀) := fun k hk =>
+  obtain yD : ∀ k < nb s₀, Region.Disjoint ⟨wAddr ix s₀ k, 16⟩ (yR s₀) := fun k hk =>
     hp.w_y.sub_left (Offset.sub_base _ (by omega_arith))
   refine ⟨fun k hk => ?_, ?_, ?_, ?_, ?_, by show s₂.rd = _; rw [rd₂, rd₁, hI.a.rd],
     by show s₂.wr = _; rw [wr₂, wr₁, hI.a.wr]⟩
@@ -272,7 +272,7 @@ theorem decTailM_ok {ix : Bool} {s₀ : State} (hp : LPre ix s₀) (h16 : 16 ≤
     {P : Nat → Nat → Block} (hf : FinOk ordD (hk s₀) P) {s₁ : State} (hI₁ : DInvM ix s₀ P 0 s₁) :
     WP isa (.seq (.loop (dbody ix) .ae) (.block (storeCtr ++ storeY))) s₁ (DPostM ix s₀) := by
   let I : Nat → State → Prop := fun m s => ∃ e, m = nb s₀ - 16 * e ∧ 16 * (e + 1) ≤ nb s₀ ∧ DInvM ix s₀ P e s
-  have hstep : ∀ m s, I m s → WP isa (dbody ix) s (fun s' =>
+  obtain hstep : ∀ m s, I m s → WP isa (dbody ix) s (fun s' =>
       (eval .ae s' = some false ∧ ∃ e, nb s₀ = 16 * e ∧ DInvM ix s₀ P e s') ∨
       (eval .ae s' = some true ∧ ∃ m' < m, I m' s')) := by
     rintro m s ⟨e, rfl, he, hI⟩
@@ -293,7 +293,7 @@ theorem decTailM_okF {ix : Bool} {s₀ : State} (hp : LPre ix s₀) (h16 : 16 �
       DPostM ix s₀ s' ∧ Frame [cR s₀, yR s₀, wR ix s₀] s₁.mem s'.mem := by
   let I : Nat → State → Prop := fun m s => ∃ e, m = nb s₀ - 16 * e ∧ 16 * (e + 1) ≤ nb s₀ ∧ DInvM ix s₀ P e s ∧
     Frame [wR ix s₀] s₁.mem s.mem
-  have hstep : ∀ m s, I m s → WP isa (dbody ix) s (fun s' =>
+  obtain hstep : ∀ m s, I m s → WP isa (dbody ix) s (fun s' =>
       (eval .ae s' = some false ∧ ∃ e, nb s₀ = 16 * e ∧ DInvM ix s₀ P e s' ∧ Frame [wR ix s₀] s₁.mem s'.mem) ∨
       (eval .ae s' = some true ∧ ∃ m' < m, I m' s')) := by
     rintro m s ⟨e, rfl, he, hI, hF⟩

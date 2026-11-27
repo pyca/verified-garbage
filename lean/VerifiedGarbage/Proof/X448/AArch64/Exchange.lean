@@ -49,7 +49,7 @@ theorem callee : Callee 56 8192 Spec.X448.x448 Impl.X448.AArch64.Fast.x448
     sig_post [Proof.X448.x448Contract, Proof.X448.x448Sig, AArch64.abi, AArch64.argRegs] at h
     exact h
   pub s₁ s₂ h := by
-    obtain ⟨q0, q1, q2, q3, qsp⟩ := h
+    obtain ⟨q0, q1, q2, q3, qsp, qd⟩ := h
     sig_pub [Proof.X448.x448Contract, Proof.X448.x448Sig, AArch64.abi, AArch64.argRegs]
     sig_reduce [Proof.X448.x448Contract, Proof.X448.x448Sig, AArch64.abi, AArch64.argRegs]
     sig_and_intros

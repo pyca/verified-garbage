@@ -1,9 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Context
-public import Mathlib.Algebra.GroupWithZero.Nat
-public import Mathlib.Algebra.NeZero
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeometryHash
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeometryWork
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PConstructPlan
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeometryPrime
 import VerifiedGarbage.Proof.Framework.OmegaLit
@@ -16,9 +14,6 @@ public import VerifiedGarbage.Proof.Bignum.Octets -- shake: keep
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PPrimalityPlan
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
-public import Mathlib.Data.Nat.Basic
-public import Mathlib.Tactic.Push
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeometryWork
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchPlan
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ArenaSource
 

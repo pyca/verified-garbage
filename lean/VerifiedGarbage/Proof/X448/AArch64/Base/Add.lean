@@ -75,7 +75,7 @@ theorem ops1_ok (z1 : Index) (hs : Scr s base) (hb : BEnv s.mem base) :
     WP isa (ops [.mul (slot (10 : Index).val) (slot z1.val) (slot z1.val)]) s fun t =>
       FKeep base s t ∧ BEnv t.mem base ∧ Same base [10] s.mem t.mem ∧
       Bnd Mb t.mem base (slot (10 : Index).val) ∧
-      EV t.mem base = Function.update (EV s.mem base) 10 (EV s.mem base z1 * EV s.mem base z1) :=
+      EV t.mem base = Fun.update (EV s.mem base) 10 (EV s.mem base z1 * EV s.mem base z1) :=
   mulOp hs hb 10 z1 z1 (Or.inl rfl) fun _ k1 b1 m1 s1 e1 => WP.block_nil ⟨k1, b1, s1, m1, e1⟩
 
 /-- The first part: `b = Z²`, then `c = X x` and `e = Y y` in AdvSIMD. -/
@@ -90,8 +90,8 @@ theorem part1_ok (x1 y1 z1 x2 y2 : Index) (hs : Scr s base) (hb : BEnv s.mem bas
       Bnd Mb t.mem base (slot (12 : Index).val) ∧
       EV t.mem base =
         let e := EV s.mem base
-        let e := Function.update e 10 (e z1 * e z1)
-        Function.update (Function.update e 11 (e x1 * e x2)) 12 (e y1 * e y2) := by
+        let e := Fun.update e 10 (e z1 * e z1)
+        Fun.update (Fun.update e 11 (e x1 * e x2)) 12 (e y1 * e y2) := by
   refine WP.weave hind (WP.mono (block_codeOf (ops1_ok z1 hs hb)) fun t ⟨tk, tb, ts, t10, te⟩ => ?_)
   refine WP.mono (mul2E (tk.scr hs) tb 11 x1 x2 12 y1 y2 (by decide)) fun u ⟨uk, ub, u11, u12, us, ue⟩ =>
     ⟨tk.trans uk, ub, ts.append us, us.bnd (by decide) t10, u11, u12, ?_⟩
@@ -107,10 +107,10 @@ theorem ops2_ok (hs : Scr s base) (hb : BEnv s.mem base) (h10 : Bnd Mb s.mem bas
       FKeep base s t ∧ BEnv t.mem base ∧ Same base [13, 14, 15, 10] s.mem t.mem ∧
       EV t.mem base =
         let e := EV s.mem base
-        let e := Function.update e 13 (e 11 * e 12)
-        let e := Function.update e 14 (e 10 + Spec.X448.a24 * e 13)
-        let e := Function.update e 15 (e 19 - e 13)
-        Function.update e 10 (e 10 + Spec.X448.a24 * e 15) := by
+        let e := Fun.update e 13 (e 11 * e 12)
+        let e := Fun.update e 14 (e 10 + Spec.X448.a24 * e 13)
+        let e := Fun.update e 15 (e 19 - e 13)
+        Fun.update e 10 (e 10 + Spec.X448.a24 * e 15) := by
   refine mulOp hs hb 13 11 12 (by decide) fun t1 k1 b1 m1 s1 e1 => ?_
   have hs1 := k1.scr hs
   refine smallOp (o := 14) (a := 10) (e := 13) hs1 b1 (s1.bnd (by decide) h10) fun t2 k2 b2 s2 e2 => ?_
@@ -141,11 +141,11 @@ theorem part2_ok (x1 y1 x2 y2 : Index) (hs : Scr s base) (hb : BEnv s.mem base)
       Bnd Mb t.mem base (slot (16 : Index).val) ∧ Bnd Mb t.mem base (slot (17 : Index).val) ∧
       EV t.mem base =
         let e := EV s.mem base
-        let e := Function.update e 13 (e 11 * e 12)
-        let e := Function.update e 14 (e 10 + Spec.X448.a24 * e 13)
-        let e := Function.update e 15 (e 19 - e 13)
-        let e := Function.update e 10 (e 10 + Spec.X448.a24 * e 15)
-        Function.update (Function.update e 16 (e x1 * e y2)) 17 (e y1 * e x2) := by
+        let e := Fun.update e 13 (e 11 * e 12)
+        let e := Fun.update e 14 (e 10 + Spec.X448.a24 * e 13)
+        let e := Fun.update e 15 (e 19 - e 13)
+        let e := Fun.update e 10 (e 10 + Spec.X448.a24 * e 15)
+        Fun.update (Fun.update e 16 (e x1 * e y2)) 17 (e y1 * e x2) := by
   refine WP.weave hind (WP.mono (block_codeOf (ops2_ok hs hb h10 h19)) fun t ⟨tk, tb, ts, te⟩ => ?_)
   refine WP.mono (mul2E (tk.scr hs) tb 16 x1 y2 17 y1 x2 (by decide)) fun u ⟨uk, ub, u16, u17, us, ue⟩ =>
     ⟨tk.trans uk, ub, ts.append us, u16, u17, ?_⟩
@@ -162,8 +162,8 @@ theorem part3_ok (hs : Scr s base) (hb : BEnv s.mem base) (h11 : Bnd Mb s.mem ba
       FKeep base s t ∧ BEnv t.mem base ∧ Same base [13, 15, 16, 17] s.mem t.mem ∧
       EV t.mem base =
         let e := EV s.mem base
-        let e := Function.update (Function.update e 13 (e 16 + e 17)) 15 (e 16 - e 17)
-        Function.update (Function.update e 16 (e 12 + e 11)) 17 (e 12 - e 11) := by
+        let e := Fun.update (Fun.update e 13 (e 16 + e 17)) 15 (e 16 - e 17)
+        Fun.update (Fun.update e 16 (e 12 + e 11)) 17 (e 12 - e 11) := by
   refine block_codeOf (addSubOp (o₁ := 13) (o₂ := 15) (a := 16) (b := 17) hs hb h16 h17
     (by decide) (by decide) (by decide) (by decide) (by decide) fun t1 k1 b1 s1 e1 => ?_)
   refine addSubOp (o₁ := 16) (o₂ := 17) (a := 12) (b := 11) (k1.scr hs) b1 (s1.bnd (by decide) h12)
@@ -177,7 +177,7 @@ theorem ops4_ok (hs : Scr s base) (hb : BEnv s.mem base) :
     WP isa (ops [.mul (slot (18 : Index).val) (slot (14 : Index).val) (slot (10 : Index).val)]) s fun t =>
       FKeep base s t ∧ BEnv t.mem base ∧ Same base [18] s.mem t.mem ∧
       Bnd Mb t.mem base (slot (18 : Index).val) ∧
-      EV t.mem base = Function.update (EV s.mem base) 18 (EV s.mem base 14 * EV s.mem base 10) :=
+      EV t.mem base = Fun.update (EV s.mem base) 18 (EV s.mem base 14 * EV s.mem base 10) :=
   mulOp hs hb 18 14 10 (by decide) fun _ k1 b1 m1 s1 e1 => WP.block_nil ⟨k1, b1, s1, m1, e1⟩
 
 /-- The fourth part: `f·g`, then `Z f` and `Z g` in AdvSIMD. -/
@@ -192,8 +192,8 @@ theorem part4_ok (z1 : Index) (hs : Scr s base) (hb : BEnv s.mem base)
       Bnd Mb t.mem base (slot (12 : Index).val) ∧
       EV t.mem base =
         let e := EV s.mem base
-        let e := Function.update e 18 (e 14 * e 10)
-        Function.update (Function.update e 11 (e z1 * e 14)) 12 (e z1 * e 10) := by
+        let e := Fun.update e 18 (e 14 * e 10)
+        Fun.update (Fun.update e 11 (e z1 * e 14)) 12 (e z1 * e 10) := by
   refine WP.weave hind (WP.mono (block_codeOf (ops4_ok hs hb)) fun t ⟨tk, tb, ts, t18, te⟩ => ?_)
   refine WP.mono (mul2E (tk.scr hs) tb 11 z1 14 12 z1 10 (by decide)) fun u ⟨uk, ub, u11, u12, us, ue⟩ =>
     ⟨tk.trans uk, ub, ts.append us, us.bnd (by decide) t18, u11, u12, ?_⟩
@@ -221,7 +221,7 @@ theorem part5_ok (x1 y1 z1 : Index) (hxy : x1 ≠ y1) (hzx : z1 ≠ x1) (hzy : z
       EV t.mem base =
         let e := EV s.mem base
         let e := opCopy z1 18 e
-        Function.update (Function.update e x1 (e 11 * e 13)) y1 (e 12 * e 17) := by
+        Fun.update (Fun.update e x1 (e 11 * e 13)) y1 (e 12 * e 17) := by
   refine WP.weave hind (WP.mono (block_codeOf (ops5_ok z1 hs hb h18)) fun t ⟨tk, tb, ts, tz, te⟩ => ?_)
   refine WP.mono (mul2E (tk.scr hs) tb x1 11 13 y1 12 17 hxy) fun u ⟨uk, ub, ux, uy, us, ue⟩ =>
     ⟨tk.trans uk, ub, ts.append us, ux, uy, us.bnd (by simp [hzx, hzy]) tz, ?_⟩

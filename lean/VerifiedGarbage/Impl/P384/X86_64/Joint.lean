@@ -4,7 +4,6 @@ public import VerifiedGarbage.Impl.Ecdsa.P384.X86_64
 public import VerifiedGarbage.Impl.P384.GTable9
 public import VerifiedGarbage.Impl.Ecdh.X86_64
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.DoubleIn
-public import VerifiedGarbage.Impl.Weierstrass.X86_64.DoubleCms
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.Joint
 
 /-! The x86-64 P-384 joint multiplication layout, for public verification. -/
@@ -43,12 +42,22 @@ def publicJoint : Joint.Cfg :=
 def publicJointAdx : Joint.Cfg :=
   {publicJoint with K := p384vx.winCfg Impl.Ecdh.X86_64.PX Impl.Ecdh.X86_64.PY Impl.Ecdh.X86_64.BP}
 
+/-- `publicJoint` for the proofs: the additions' calls run the end of the
+addition inline (`Joint.Cfg.flat`), the code of `publicJoint` with its calls
+inlined at every depth. -/
+def publicJointF : Joint.Cfg := { publicJoint with flat := true }
+
+/-- `publicJointAdx` for the proofs: the additions' calls run the end of the
+addition inline (`Joint.Cfg.flat`), the code of `publicJointAdx` with its calls
+inlined at every depth. -/
+def publicJointAdxF : Joint.Cfg := { publicJointAdx with flat := true }
+
 /-- The joint loop's doubler: in place (`doubleIn`), with no copy from a
 temporary point. -/
 def jointDouble (K : WinCfg) : Prog isa := doubleIn K.M K.S K.R
 
-/-- The joint loop's doubler with BMI2 and ADX: in place, with its small
-multiples fused (`doubleCms`), as in ECDH. -/
-def jointDoubleAdx (K : WinCfg) : Prog isa := doubleCms K.M K.S K.R
+/-- The joint loop's doubler with BMI2 and ADX: in place (`doubleInT`), as in
+ECDH. -/
+def jointDoubleAdx (K : WinCfg) : Prog isa := doubleInT K.M K.S K.R
 
 end VG.Impl.P384.X86_64

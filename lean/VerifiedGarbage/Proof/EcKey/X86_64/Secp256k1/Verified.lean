@@ -1,5 +1,7 @@
 module
 
+import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
 public import VerifiedGarbage.Proof.EcKey.X86_64.Scrub.Out
 public import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
 public import VerifiedGarbage.Proof.Framework.Registration
@@ -8,7 +10,6 @@ meta import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
 meta import VerifiedGarbage.Proof.Framework.Registration
 meta import VerifiedGarbage.Spec.EcKey.Secp256k1
 public import VerifiedGarbage.Proof.EcKey.X86_64.Main
-public import VerifiedGarbage.Proof.EcKey.X86_64.Secp256k1.Contract
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Secp256k1.Verified
 public import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
 import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
@@ -20,7 +21,6 @@ import VerifiedGarbage.Proof.Framework.LitShare
 import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Secp256k1.Lit
 meta import VerifiedGarbage.Proof.EcKey.X86_64.Main
-meta import VerifiedGarbage.Proof.EcKey.X86_64.Secp256k1.Contract
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.Secp256k1.Verified
 meta import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
@@ -35,6 +35,92 @@ import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.X86_64.Lit
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
+public import VerifiedGarbage.Spec.EcKey.Secp256k1
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.TCB.X86_64.Target
+meta import VerifiedGarbage.Proof.Framework.Contract
+
+/-! ### `EcKey.X86_64.Secp256k1.Contract`, which only this module used -/
+
+section
+
+/-!
+# secp256k1 public keys on x86-64: the contract the proof is written against
+
+The facts of `Spec.EcKey.Secp256k1.inst.publicKeyContract` for x86-64, by name:
+`vg_ec_secp256k1_public_key(out = rdi, d = rsi, scratch = rdx)`, the result in
+`eax`.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.EcKey.X86_64.Secp256k1
+
+open VG VG.X86_64 Spec.Weierstrass Spec.EcKey
+
+/-- The public key of the private key at `d`, as the specification computes it. -/
+abbrev pk (m : Mem) (d : Addr) : Option (Point Spec.Secp256k1.curve) :=
+  publicKey Spec.Secp256k1.curve (ofBytes (bytesAt m d 32))
+
+def pkX86_64 : Contract X86_64.isa where
+  pre s :=
+    let out : Region := ⟨s.gpr .rdi, 65⟩
+    let d : Region := ⟨s.gpr .rsi, 32⟩
+    let scratch : Region := ⟨s.gpr .rdx, 8192⟩
+    let ret : Region := ⟨s.gpr .rsp, 8⟩
+    s.rd = [d] ∧ s.wr = [out, scratch] ∧ out.Disjoint scratch ∧ out.Disjoint d ∧ d.Disjoint scratch ∧
+      ret.Disjoint out ∧ ret.Disjoint scratch ∧
+      (s.gpr .rdi).toNat + 65 ≤ 2 ^ 64 ∧ (s.gpr .rdx).toNat + 8192 ≤ 2 ^ 64
+  post s s' :=
+    match pk s.mem (s.gpr .rsi) with
+    | some (.affine x y) => (s'.gpr .rax).setWidth 32 = 1 ∧ bytesAt s'.mem (s.gpr .rdi) 65 = encodePoint (.affine x y)
+    | _ => (s'.gpr .rax).setWidth 32 = 0 ∧ bytesAt s'.mem (s.gpr .rdi) 65 = List.replicate 65 0
+  pub s₁ s₂ := s₁.gpr .rsp = s₂.gpr .rsp ∧ s₁.gpr .rdi = s₂.gpr .rdi ∧ s₁.gpr .rsi = s₂.gpr .rsi ∧
+    s₁.gpr .rdx = s₂.gpr .rdx
+
+/-- A state satisfying the precondition. -/
+def satState : State where
+  gpr r := match r with
+    | .rdi => 0x1000 | .rsi => 0x2000 | .rdx => 0x8000
+    | .rsp => 0x20000 | _ => 0
+  cf := none
+  zf := none
+  sf := none
+  of := none
+  mem _ := 0
+  rd := [⟨0x2000, 32⟩]
+  wr := [⟨0x1000, 65⟩, ⟨0x8000, 8192⟩]
+
+theorem implies : pkX86_64.Implies (Spec.EcKey.Secp256k1.inst.publicKeyContract X86_64.abi) := by
+  exact
+    { pre := by
+        sig_implies_pre [Spec.EcKey.Secp256k1.inst, Spec.EcKey.Instance.publicKeyContract,
+          Spec.EcKey.Instance.publicKeySig, Spec.Secp256k1.curve, Spec.EcKey.scratchWords, X86_64.abi,
+          X86_64.argRegs, pkX86_64, pk]
+      post := by
+        intro s s' _ h
+        sig_post [Spec.EcKey.Secp256k1.inst, Spec.EcKey.Instance.publicKeyContract,
+          Spec.EcKey.Instance.publicKeySig, Spec.Secp256k1.curve, Spec.EcKey.scratchWords, X86_64.abi,
+          X86_64.argRegs, pkX86_64, pk]
+        simp only [pkX86_64, pk, Spec.Secp256k1.curve] at h
+        revert h
+        generalize publicKey _ _ = q
+        rcases q with _ | _ | ⟨x, y⟩ <;> exact id
+      pub := by
+        sig_implies_pub [Spec.EcKey.Secp256k1.inst, Spec.EcKey.Instance.publicKeyContract,
+          Spec.EcKey.Instance.publicKeySig, Spec.Secp256k1.curve, Spec.EcKey.scratchWords, X86_64.abi,
+          X86_64.argRegs, pkX86_64, pk]
+      sat := by
+        sig_implies_sat [Spec.EcKey.Secp256k1.inst, Spec.EcKey.Instance.publicKeyContract,
+          Spec.EcKey.Instance.publicKeySig, Spec.Secp256k1.curve, Spec.EcKey.scratchWords, X86_64.abi,
+          X86_64.argRegs, satState] [satState] using satState }
+
+end VG.Proof.EcKey.X86_64.Secp256k1
+
+end
+
+end
 
 /-!
 # secp256k1 public keys on x86-64: `Verified`
@@ -61,11 +147,7 @@ theorem pre_of {s : State} (h : pkX86_64.pre s) : PkPre secp256k1 s := by
 
 theorem post_of {s s' : State} (h : PkPost secp256k1 s s') : pkX86_64.post s s' := by
   unfold PkPost at h
-  show match pk s.mem (s.gpr .rsi) with
-    | some (.affine x y) => (s'.gpr .rax).setWidth 32 = 1 ∧
-        Spec.EcKey.bytesAt s'.mem (s.gpr .rdi) 65 = Spec.EcKey.encodePoint (.affine x y)
-    | _ => (s'.gpr .rax).setWidth 32 = 0 ∧
-        Spec.EcKey.bytesAt s'.mem (s.gpr .rdi) 65 = List.replicate 65 0
+  dsimp only [pkX86_64]
   revert h
   generalize hq : pk s.mem (s.gpr .rsi) = q
   rw [show Spec.EcKey.publicKey secp256k1.C (dk secp256k1 s) = pk s.mem (s.gpr .rsi) from rfl, hq]
@@ -146,23 +228,23 @@ theorem pk_verified (hL : Weierstrass.Law Spec.Secp256k1.curve) (hI : Weierstras
 
 /-! ## Without secret residue -/
 
-/-- The granules of its stack that `vg_ec_secp256k1_public_key` must wipe on
-return, from the residue analysis (`X86_64.RScrub.keepFor`). -/
-def scrubKs : List Nat := keep_for% Spec.EcKey.Secp256k1.publicKeyApi.sig 8 publicKeySecp256k1 []
 
-theorem scrubOk : ∃ h : VG.Taint.Hint RTaint.FT,
-    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.EcKey.Secp256k1.publicKeyApi.sig 8 []) publicKeySecp256k1 h).any
-      (RScrub.resOkB · 8 scrubKs (Impl.Scrub.X86_64.chunks 8)) = true :=
-  RScrub.Analysed.ok_of _ (by taint_decide)
 
-/-- `vg_ec_secp256k1_public_key`, followed by `Impl.Scrub.X86_64.scrubTail`
-(`X86_64.RScrub.withScrub`): it returns without secret residue. -/
-def scrubReg (hL : Weierstrass.Law Spec.Secp256k1.curve) (hI : Weierstrass.X86_64.InvSounds) :
-    Registration Spec.EcKey.Secp256k1.publicKeyApi X86_64.target :=
-  RScrub.withScrub {
-    code := publicKeySecp256k1
-    stack := 8
-    verified := pk_verified hL hI }
-    (EcKey.X86_64.Scrub.publicKeyOut _ _) [] (RScrub.pubOk_nil _) (some ⟨scrubKs, scrubOk⟩)
+theorem publicKey_codeSp : (publicKeySecp256k1).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
+
+/-- `vg_ec_secp256k1_public_key` as emitted (`Impl.EcKey.X86_64.Fn.publicKeySecp256k1`), its cleanup included, meets its contract in
+constant time and returns without secret residue. -/
+theorem publicKey_scrubbed (hL : Weierstrass.Law Spec.Secp256k1.curve) (hI : Weierstrass.X86_64.InvSounds) :
+    VerifiedScrubbed X86_64.target Impl.EcKey.X86_64.Fn.publicKeySecp256k1
+      (Spec.EcKey.Secp256k1.publicKeyApi.contract X86_64.abi 8) 32 :=
+  X86_64.Scrub.verifiedScrubbedAll (api := Spec.EcKey.Secp256k1.publicKeyApi)
+    { code := publicKeySecp256k1
+      stack := 8
+      verified := pk_verified hL hI
+      spSafe := publicKey_codeSp } .sse (EcKey.X86_64.Scrub.publicKeyOut _ _)
+
+theorem publicKey_spSafe : Impl.EcKey.X86_64.Fn.publicKeySecp256k1.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  X86_64.Scrub.scrubKs_spSafe publicKey_codeSp
 
 end VG.Proof.EcKey.X86_64.Secp256k1

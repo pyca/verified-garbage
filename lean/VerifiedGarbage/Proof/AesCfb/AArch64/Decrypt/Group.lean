@@ -4,8 +4,6 @@ public import VerifiedGarbage.Impl.AesCfb.AArch64.Decrypt
 public import VerifiedGarbage.Proof.Aes.AArch64.Aese.Blocks
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Aes.AArch64.Aese.Dec
-public import VerifiedGarbage.Proof.Aes.AArch64.Ecb
 public import VerifiedGarbage.Proof.AesCbc.AArch64.Loop
 public import VerifiedGarbage.Proof.Aes.AArch64.Aese.Rounds
 

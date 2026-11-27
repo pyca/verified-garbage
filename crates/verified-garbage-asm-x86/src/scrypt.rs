@@ -10,6 +10,8 @@ pub const VG_SCRYPT_SHANI_FEATURES: verified_garbage_cpu::Features = verified_ga
 ///
 /// Contract: `VG.Spec.Scrypt.scryptContract`. Not constant time in the indices: timing may depend on the pointers, the lengths, `r`, `N`, `p` and the indices `j` of step 3 of each scryptROMix, which are derived from the password and the salt and so leak information about them (as in every scrypt that indexes `V` directly), but on nothing else.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety
@@ -38,7 +40,7 @@ call {vg_scrypt_romix}
 jne 20b
 .base64 "i0QkKIkEJItEJCyJRCQEi0QkPIlEJAiLRCRAwcgZiUQkDLgBAAAAiUQkEItEJFSJRCQUi0QkWIlEJBiLRCRMiUQkHA=="
 call {vg_pbkdf2_hmac_sha256_scratch_shani}
-.base64 "WFhYWFhYWFhYww=="
+.base64 "WFhYWFhYWFhYZg/vwLkAAAAAjWQkjPMPfwQk8w9/RCQQ8w9/RCQg8w9/RCQw8w9/RCRA8w9/RCRQ8w9/RCRgiUwkcI1kJHS4AAAAALoAAAAAMclmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/8M="
 .p2align 6"#,
         vg_pbkdf2_hmac_sha256_scratch_shani = sym super::scrypt::vg_pbkdf2_hmac_sha256_scratch_shani::vg_pbkdf2_hmac_sha256_scratch_shani,
         vg_scrypt_romix = sym super::scrypt::vg_scrypt_romix::vg_scrypt_romix,
@@ -48,6 +50,8 @@ call {vg_pbkdf2_hmac_sha256_scratch_shani}
 /// scrypt (RFC 7914 §6) with block size parameter `r`, cost parameter `N = vlen / r` and parallelization parameter `p = blen / r`: writes the `out_len`-byte key derived from the `password_len` bytes at `password` and the `salt_len` bytes at `salt` to `out`.
 ///
 /// Contract: `VG.Spec.Scrypt.scryptContract`. Not constant time in the indices: timing may depend on the pointers, the lengths, `r`, `N`, `p` and the indices `j` of step 3 of each scryptROMix, which are derived from the password and the salt and so leak information about them (as in every scrypt that indexes `V` directly), but on nothing else.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -76,7 +80,7 @@ call {vg_scrypt_romix}
 jne 20b
 .base64 "i0QkKIkEJItEJCyJRCQEi0QkPIlEJAiLRCRAwcgZiUQkDLgBAAAAiUQkEItEJFSJRCQUi0QkWIlEJBiLRCRMiUQkHA=="
 call {vg_pbkdf2_hmac_sha256_scratch}
-.base64 "WFhYWFhYWFhYww=="
+.base64 "WFhYWFhYWFhYZg/vwLkAAAAAjWQkjPMPfwQk8w9/RCQQ8w9/RCQg8w9/RCQw8w9/RCRA8w9/RCRQ8w9/RCRgiUwkcI1kJHS4AAAAALoAAAAAMclmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/8M="
 .p2align 6"#,
         vg_pbkdf2_hmac_sha256_scratch = sym super::scrypt::vg_pbkdf2_hmac_sha256_scratch::vg_pbkdf2_hmac_sha256_scratch,
         vg_scrypt_romix = sym super::scrypt::vg_scrypt_romix::vg_scrypt_romix,

@@ -8,13 +8,14 @@ public import VerifiedGarbage.Impl.Rc2.Table
 Public lengths control the loops. `lr` holds public addresses; all
 callee-saved registers are saved in the scratch buffer supplied on the stack.
 
-Each PITABLE lookup scans the whole static `VG_RC2_PITABLE`
-(`Impl/Rc2/Table.lean`): a loop over its 256 bytes in order, a word of four
-entries at a time, at addresses that depend only on the entries' numbers,
-keeping the word under a mask that is all ones exactly when the (secret)
-index is one of its entries, then selects the index's byte of that word with
-masks. The scans never branch on key bytes or use them as addresses or shift
-amounts.
+Each PITABLE lookup visits the whole static `VG_RC2_PITABLE`
+(`Impl/Rc2/Table.lean`), its 64 words of four entries each, as 32 rows of
+two words, at addresses that depend on nothing. Each row has a bit that is
+1 exactly when the (secret) index is one of its eight entries; each of its
+two words times that bit is added to the register of its column (`mla`),
+and then the index's word of the two, and its byte of that word, are chosen
+with multiplications by bits of the index. The lookups never branch on key
+bytes or use them as addresses or shift amounts.
 -/
 
 @[expose] public section
@@ -31,39 +32,34 @@ def save (base : Reg) (offset : Nat) : List Instr :=
 def restore (base : Reg) (offset : Nat) : List Instr :=
   saved.zipIdx |>.map fun (r, i) => .ldr r base (offset + 4 * i)
 
-/-- Four entries of the scan of PITABLE: their word, at `lr`, is kept iff
-the index in `r12` is in the entries `r9 … r9 + 3` (both below 256 and `r9`
-a multiple of 4, so `(r12 ^ r9) - 4` is negative exactly then, and the mask
-`((r12 ^ r9) - 4) >> 8`, widened by `orr` with itself shifted left by 8, is
-all ones exactly then, and 0 otherwise), ORed into `r3`; then on to the next
-four (Z set after the last, 252). -/
-def piBody : List Instr :=
-  [.ldr .r10 .lr 0, .dp .eor .r11 .r12 (.reg .r9), .dp .sub .r11 .r11 (.imm 4),
-   .mov .r11 (.shifted .r11 .lsr 8), .dp .orr .r11 .r11 (.shifted .r11 .lsl 8),
-   .dp .and .r10 .r10 (.reg .r11), .dp .orr .r3 .r3 (.reg .r10),
-   .dp .add .lr .lr (.imm 4), .cmp .r9 (.imm 252), .dp .add .r9 .r9 (.imm 4)]
+/-- Row `r` of PITABLE, its entries `8 r … 8 r + 7`: `r3` is 1 iff the index
+in `r12` (below 256) is one of them (`(r12 ^ 8 r) - 8` is negative exactly
+then), and each of the row's two words, at `lr + 8 r` and `lr + 8 r + 4`,
+times that bit, is added to its column's register, `r9` and `r10`. -/
+def piRow (r : Nat) : List Instr :=
+  [.dp .eor .r3 .r12 (.imm (BitVec.ofNat 32 (8 * r))), .dp .sub .r3 .r3 (.imm 8),
+   .mov .r3 (.shifted .r3 .lsr 31),
+   .ldr .r11 .lr (8 * r), .mla .r9 .r11 .r3 .r9, .ldr .r11 .lr (8 * r + 4), .mla .r10 .r11 .r3 .r10]
 
-/-- Byte `r12 & 3` of the word in `r3`, into `r12`: for each `k < 4`, byte
-`k` (`r3 >> 8k`) under a mask that is `0x00ffffff` exactly when `r12 & 3` (in
-`lr`) is `k` (`((lr ^ k) - 1) >> 8`), ORed together, then the low byte. -/
+/-- The index's word of the two of its row, by bit 2 of the index, then
+byte `r12 & 3` of that word, shifted right by 8 if bit 0 is set and by 16 if
+bit 1 is, into `r12`: each choice between `a` and `b` by a bit is
+`(b - a) * bit + a`. -/
 def piSelect : List Instr :=
-  [.dp .and .lr .r12 (.imm 3),
-   .dp .sub .r10 .lr (.imm 1), .mov .r10 (.shifted .r10 .lsr 8), .dp .and .r12 .r10 (.reg .r3),
-   .dp .eor .r10 .lr (.imm 1), .dp .sub .r10 .r10 (.imm 1), .mov .r10 (.shifted .r10 .lsr 8),
-   .dp .and .r10 .r10 (.shifted .r3 .lsr 8), .dp .orr .r12 .r12 (.reg .r10),
-   .dp .eor .r10 .lr (.imm 2), .dp .sub .r10 .r10 (.imm 1), .mov .r10 (.shifted .r10 .lsr 8),
-   .dp .and .r10 .r10 (.shifted .r3 .lsr 16), .dp .orr .r12 .r12 (.reg .r10),
-   .dp .eor .r10 .lr (.imm 3), .dp .sub .r10 .r10 (.imm 1), .mov .r10 (.shifted .r10 .lsr 8),
-   .dp .and .r10 .r10 (.shifted .r3 .lsr 24), .dp .orr .r12 .r12 (.reg .r10),
-   .dp .and .r12 .r12 (.imm 255)]
+  [.mov .r3 (.shifted .r12 .lsl 29), .mov .r3 (.shifted .r3 .lsr 31),
+   .dp .sub .r10 .r10 (.reg .r9), .mla .r9 .r10 .r3 .r9,
+   .dp .and .r3 .r12 (.imm 1), .mov .r10 (.shifted .r9 .lsr 8),
+   .dp .sub .r10 .r10 (.reg .r9), .mla .r9 .r10 .r3 .r9,
+   .mov .r3 (.shifted .r12 .lsl 30), .mov .r3 (.shifted .r3 .lsr 31), .mov .r10 (.shifted .r9 .lsr 16),
+   .dp .sub .r10 .r10 (.reg .r9), .mla .r9 .r10 .r3 .r9,
+   .dp .and .r12 .r9 (.imm 255)]
 
-/-- `r12 := PITABLE[r12 & 255]`, by a scan of the whole table, four entries
-(one word) at a time, the first entry's number in `r9` and its address in
-`lr`, then a selection of the byte among the four. Clobbers `r3`, `r9`–`r11`
-and `lr`. -/
+/-- `r12 := PITABLE[r12 & 255]`, by a visit of the whole table, the table's
+address in `lr`, then a choice of the byte among the eight of the index's
+row. Clobbers `r3`, `r9`–`r11` and `lr`. -/
 def piLookup : Prog isa :=
-  .seq (.block (mask .r12 8 ++ ([imm .r3 0, .adrSym .lr piSym, .mov .r9 (.imm 0)] : List Instr)))
-    (.seq (.loop (.block piBody) .ne) (.block piSelect))
+  .block (mask .r12 8 ++ ([.adrSym .lr piSym, imm .r9 0, imm .r10 0] : List Instr) ++
+    (List.range 32).flatMap piRow ++ piSelect)
 
 def copyKey : List Instr :=
   [.dp .add .lr .r4 (.reg .r0), .ldrb .r12 .lr 0,

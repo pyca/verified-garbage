@@ -1,19 +1,79 @@
 module
 
-import VerifiedGarbage.Proof.AesCcm.PPC64LE.Exit
 import VerifiedGarbage.Proof.AesCcm.PPC64LE.Ctrs
 import VerifiedGarbage.Proof.AesCcm.PPC64LE.Mac
-public import VerifiedGarbage.Proof.AesCcm.PPC64LE.Tag
-import VerifiedGarbage.Proof.AesCcm.PPC64LE.Crypt
+public import VerifiedGarbage.Proof.AesCcm.PPC64LE.Crypt
 import VerifiedGarbage.Proof.AesCcm.BytesAt
 import VerifiedGarbage.Proof.AesCcm.Mac
 import VerifiedGarbage.Proof.Cmac.Spec
 import VerifiedGarbage.Proof.Cmac.Frame
 public import VerifiedGarbage.Impl.AesCcm.PPC64LE
-public import VerifiedGarbage.Proof.AesCcm.PPC64LE.Absorb
+public import VerifiedGarbage.Proof.AesCcm.PPC64LE.Header
 public import VerifiedGarbage.Proof.AesCcm.PPC64LE.Entry
 public import VerifiedGarbage.Proof.AesCcm.PPC64LE.Env
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Spill
+
+/-! ### `AesCcm.PPC64LE.Exit`, which this module and modules that import it used -/
+
+section
+
+/-!
+# AES-CCM on PPC64LE: the exit
+
+Untrusted: everything here is checked by Lean. `restore` reloads the return
+address and our caller's registers from the slots the entry filled at
+`W + 128` (`exit_wp`), `r14`, the base, last.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.AesCcm.PPC64LE
+
+open VG VG.PPC64LE VG.Impl.AesCcm.PPC64LE
+open VG.PPC64LE.Spill (Saved restoreCode restore_wp)
+open VG.Proof.ChaCha20Poly1305.PPC64LE (wp_ld wp_mtlr)
+
+theorem saved_sub : ∀ p ∈ saved, p ∈ savedL := fun _ hp => List.mem_cons_of_mem _ hp
+
+theorem other_of_preserved : ∀ r ∈ preserved, r ∉ saved.map Prod.fst → r ∈ otherRegs := by decide
+
+theorem saved_ne_r0 : ∀ p ∈ saved, p.1 ≠ .r0 := by decide
+
+/-- `restore`: our caller's registers and return address back, for `s₀` the
+state at the entry. -/
+theorem exit_wp {c : Cx} {s₀ s : State} (E : Env c s) (sv : Saved c.W (saveG s₀) savedL s.mem)
+    (hsp : s.sp = s₀.sp) (ho : ∀ r ∈ otherRegs, s.gpr r = s₀.gpr r) :
+    WP isa (.block restore) s fun s' => abiPreserved s₀ s' ∧ s'.mem = s.mem ∧ s'.gpr .r3 = s.gpr .r3 := by
+  unfold restore
+  simp only [List.cons_append, List.nil_append]
+  refine wp_ld (a := c.W + BitVec.ofNat 64 lrO) (by decide) (by decide) (by rw [E.r14])
+    (E.perm.wR (by decide)) fun s₁ u₁ => wp_mtlr fun s₂ u₂ => ?_
+  change WP isa (.block (restoreCode .r14 saved)) s₂ _
+  have m₂ : s₂.mem = s.mem := by rw [u₂.mem, u₁.mem]
+  have g₂ : ∀ r, r ≠ .r0 → s₂.gpr r = s.gpr r := fun r h => by rw [u₂.gpr, u₁.other _ h]
+  have sv₂ : Saved c.W (saveG s₀) saved s₂.mem := by rw [m₂]; exact sv.sub saved_sub
+  refine WP.mono (restore_wp (b := .r14) (B := c.W) (by decide) (by rw [g₂ _ (by decide), E.r14]) (by decide)
+    (by decide) (fun p hp => by
+      have := saved_bound p hp
+      rw [u₂.rd, u₂.wr, u₁.rd, u₁.wr]
+      exact E.perm.wR (by omega_using [this])) sv₂) fun s' R => ?_
+  have lr₂ : s₂.lr = s₀.lr := by
+    rw [u₂.lr, u₁.gpr, sv (.r0, lrO) List.mem_cons_self]
+    simp [saveG, State.write]
+  refine ⟨⟨fun r hr => ?_, by rw [R.sp, u₂.sp, u₁.sp, hsp], by rw [R.lr, lr₂]⟩, by rw [R.mem, m₂],
+    by rw [R.other _ (by decide), g₂ _ (by decide)]⟩
+  by_cases hs : r ∈ saved.map Prod.fst
+  · obtain ⟨p, hp, rfl⟩ := List.mem_map.mp hs
+    rw [R.gpr p hp]
+    simp [saveG, State.write, saved_ne_r0 p hp]
+  · have hr0 : r ≠ .r0 := fun h => by subst h; exact absurd hr (by decide)
+    rw [R.other r hs, g₂ r hr0, ho r (other_of_preserved r hr hs)]
+
+end VG.Proof.AesCcm.PPC64LE
+
+end
+
+end
 
 /-!
 # AES-CCM on PPC64LE: `vg_aes_ccm_seal`
@@ -57,14 +117,13 @@ theorem c0_mut (c : Cx) : ∀ r ∈ [(⟨c.W + BitVec.ofNat 64 48, 16⟩ : Regio
 theorem ctrR_mut (c : Cx) {y : Nat} (hy : y = 0 ∨ y = 96) : ∀ r ∈ ctrR c.W y, ∃ r' ∈ mutR c, Region.Sub r r' := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl
+  rcases hr with rfl | rfl
   · exact sub_lo (by decide)
   · exact sub_lo (by omega_using [hy])
-  · exact sub_hi (by decide) (by decide)
 
 /-- A part of `W` missing the regions `rs` the pieces write in `W`. -/
 theorem w_keep {c : Cx} (L : Lay c) {rs : List (Nat × Nat)} {d k : Nat}
-    (h : ∀ q ∈ rs, (d + k ≤ q.1 ∨ q.1 + q.2 ≤ d) ∧ q.1 + q.2 ≤ 2560) (hd : d + k ≤ 2560) :
+    (h : ∀ q ∈ rs, (d + k ≤ q.1 ∨ q.1 + q.2 ≤ d) ∧ q.1 + q.2 ≤ 448) (hd : d + k ≤ 448) :
     ∀ r ∈ rs.map (fun q => (⟨c.W + BitVec.ofNat 64 q.1, q.2⟩ : Region)),
       (⟨c.W + BitVec.ofNat 64 d, k⟩ : Region).Disjoint r := by
   intro r hr
@@ -73,7 +132,7 @@ theorem w_keep {c : Cx} (L : Lay c) {rs : List (Nat × Nat)} {d k : Nat}
 
 /-- A buffer missing `W` is kept by the regions `rs` in `W`. -/
 theorem bufW_keep {c : Cx} {s : State} {P : Addr} {len : Nat} (hP : Buf c s P len) {rs : List (Nat × Nat)}
-    (h : ∀ q ∈ rs, q.1 + q.2 ≤ 2560) :
+    (h : ∀ q ∈ rs, q.1 + q.2 ≤ 448) :
     ∀ r ∈ rs.map (fun q => (⟨c.W + BitVec.ofNat 64 q.1, q.2⟩ : Region)), (⟨P, len⟩ : Region).Disjoint r := by
   intro r hr
   obtain ⟨q, hq, rfl⟩ := List.mem_map.mp hr
@@ -83,10 +142,10 @@ theorem c0_list (W : Addr) : [(⟨W + BitVec.ofNat 64 48, 16⟩ : Region)] =
     [(48, 16)].map (fun q => (⟨W + BitVec.ofNat 64 q.1, q.2⟩ : Region)) := rfl
 
 theorem macR_list (W : Addr) (y : Nat) : macR W y =
-    [(y, 16), (32, 16), (384, 2176)].map (fun q => (⟨W + BitVec.ofNat 64 q.1, q.2⟩ : Region)) := rfl
+    [(y, 16), (32, 16), (384, 64)].map (fun q => (⟨W + BitVec.ofNat 64 q.1, q.2⟩ : Region)) := rfl
 
 theorem ctrR_list (W : Addr) (y : Nat) : ctrR W y =
-    [(64, 16), (y, 16), (384, 2048)].map (fun q => (⟨W + BitVec.ofNat 64 q.1, q.2⟩ : Region)) := rfl
+    [(64, 16), (y, 16)].map (fun q => (⟨W + BitVec.ofNat 64 q.1, q.2⟩ : Region)) := rfl
 
 /-- Our caller's registers, kept in their slots by writes to `mutR`. -/
 theorem saved_mut {c : Cx} (L : Lay c) {g : Reg → BitVec 64} {m m' : Mem} (hf : Frame (mutR c) m m')

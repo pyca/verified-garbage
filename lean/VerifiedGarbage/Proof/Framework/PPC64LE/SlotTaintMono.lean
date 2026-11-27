@@ -33,7 +33,7 @@ private theorem ite_t {α : Type} {c : Prop} [Decidable c] (h : c) {a b : α} :
 /-- `τ` and `σ` know the same about memory, and `σ` has at least the public
 registers and slots of `τ`. -/
 def leR (τ σ : T) : Bool :=
-  τ.regs.subset σ.regs && τ.slots.all (σ.slots.contains ·) && τ.lens == σ.lens &&
+  τ.regs.subset σ.regs && slotsLe τ.slots σ.slots && τ.lens == σ.lens &&
     decide (τ.bases = σ.bases)
 
 /-- `τ` with the registers `r` and slots `sl`. -/
@@ -50,7 +50,7 @@ structure LeR (τ σ : T) : Prop where
   shape : σ = upd τ σ.regs σ.slots
 
 theorem leR_iff {τ σ : T} : leR τ σ = true ↔ LeR τ σ := by
-  simp only [leR, Bool.and_eq_true, List.all_eq_true, List.contains_iff_mem, beq_iff_eq,
+  simp only [leR, slotsLe_eq, Bool.and_eq_true, List.all_eq_true, List.contains_iff_mem, beq_iff_eq,
     decide_eq_true_eq]
   constructor
   · rintro ⟨⟨⟨hr, hs⟩, hl⟩, hb⟩
@@ -70,7 +70,7 @@ theorem LeR.trans {a b c : T} (h₁ : LeR a b) (h₂ : LeR b c) : LeR a c where
 
 theorem le_of_le_leR {m τ σ : T} (hm : le m τ = true) (h : LeR τ σ) : le m σ = true := by
   rw [h.shape]
-  simp only [le, upd, Bool.and_eq_true, beq_iff_eq, List.all_eq_true, List.contains_iff_mem] at hm ⊢
+  simp only [le, slotsLe_eq, upd, Bool.and_eq_true, beq_iff_eq, List.all_eq_true, List.contains_iff_mem] at hm ⊢
   obtain ⟨⟨⟨hr, hl⟩, hb⟩, hs⟩ := hm
   exact ⟨⟨⟨RegSet.subset_trans hr h.regs, hl⟩, hb⟩, fun x hx => h.slots x (hs x hx)⟩
 
@@ -161,7 +161,7 @@ theorem step_upd (hr : τ.regs.subset r = true) (hsl : Sub τ.slots sl) (i : Ins
   have and_imp : ∀ {a b : Reg}, (pub τ a && pub τ b) = true → (pub (upd τ r sl) a && pub (upd τ r sl) b) = true :=
     and_upd hr
   cases i with
-  | push | pop | alloc | free | bctrl | lxvd2x | stxvd2x => simp only [step, reduceCtorEq] at hs
+  | push | pop | alloc | free | bctrl | lxvd2x | stxvd2x | dcbz => simp only [step, reduceCtorEq] at hs
   | vop _ | mtvsrd _ _ =>
     simp only [step, Option.some.injEq] at hs ⊢; subst hs
     exact ⟨_, rfl, ⟨hr, hsl, rfl⟩⟩
@@ -265,10 +265,10 @@ instance : VG.Taint.Frame slotTaint where
   R_right _ := leR_iff.mpr (LeR.refl _)
   le_R hm h := le_of_le_leR hm (leR_iff.mp h)
   step {τ σ τ'} i h hs := by
-    have hs : step τ i = some τ' := stepK_eq ▸ hs
+    have hs : step τ i = some τ' := (slotTaint_step τ i).symm.trans hs
     have h := leR_iff.mp h
-    show ∃ σ', stepK σ i = some σ' ∧ _
-    rw [stepK_eq, h.shape]
+    show ∃ σ', slotTaint.step σ i = some σ' ∧ _
+    rw [slotTaint_step σ i, h.shape]
     obtain ⟨σ', h₁, h₂⟩ := step_upd h.regs h.slots i hs
     exact ⟨σ', h₁, leR_iff.mpr h₂⟩
   condPub {τ σ} c h hc := by
@@ -309,5 +309,7 @@ instance : VG.Taint.Frame slotTaint where
   ret_keeps _ _ h _ := h
   push_keeps _ _ _ h _ := h
   pop_keeps _ _ _ h _ := h
+
+kernel_fn VG.Taint.checkSum slotTaint, VG.Taint.checkSumLe slotTaint, VG.Taint.keepsSum slotTaint
 
 end VG.PPC64LE

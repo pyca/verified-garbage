@@ -14,7 +14,8 @@ block is kept by the caller.
   scratch = x5)` XORs the bytes of `data` into the state from byte `pos`, a
   lane (8 bytes) at a time where the position is at a lane and at least 8
   bytes are left, and a byte at a time otherwise, permuting the state
-  whenever a block is complete, and returns the position after them.
+  whenever a block is complete, and returns the position after them. Whole
+  blocks go to the backend's function for them, if it has one (`tryBlocks`).
 * `pad(state = x0, rate = x1, pos = x2, suffix = x3, scratch = x4)` XORs
   the suffix into byte `pos` and `0x80` into byte `rate - 1`, and permutes
   the state.
@@ -92,21 +93,29 @@ def absorbBodyWith (c : Callee) : Prog isa :=
   (.seq (.ite (.zero .x .x10) (.block absorbWord) (.block absorbByte))
     (.ite (.zero .x .x9) (.seq (.block [.movz .x .x22 0 0]) (permuteAtWith c)) (.block [])))
 
+/-- All the whole blocks of the data left, by the backend's function for them
+(`Callee.blocks`), where the position is at the start of a block and at least
+a block is left (`x24 ≥ x21`, as their difference is then non-negative). -/
+def tryBlocks (c : Callee) : Prog isa :=
+  match c.blocks with
+  | none => .block []
+  | some (n, code) =>
+    .ite (.nonzero .x .x22) (.block [])
+      (.seq (.block [.sub .x .x9 .x24 .x21, .lsr .x .x9 .x9 63])
+      (.ite (.nonzero .x .x9) (.block [])
+        (.seq (.block [mov .x0 .x19, mov .x1 .x21, mov .x2 .x23, mov .x3 .x24, mov .x4 .x20])
+        (.seq (.call n code) (.block [.sub .x .x9 .x24 .x0, .add .x .x23 .x23 .x9, mov .x24 .x0])))))
+
 /-- `absorb`, but for saving `x30`. -/
 def absorbMainWith (c : Callee) : Prog isa :=
   .seq (.block setup)
-  (.seq (.ite (.zero .x .x24) (.block []) (.loop (absorbBodyWith c) (.nonzero .x .x24)))
-    (.block (mov .x0 .x22 :: restore)))
+  (.seq (tryBlocks c)
+  (.seq (.ite (.zero .x .x24) (.block []) (.loop (.seq (absorbBodyWith c) (tryBlocks c)) (.nonzero .x .x24)))
+    (.block (mov .x0 .x22 :: restore))))
 
-/-- The general absorb loop, including its single link-register frame. -/
-def absorbGenericWith (c : Callee) : Prog isa :=
-  .frame (.push .x30) (absorbMainWith c) (.pop .x30)
-
-/-- A backend may replace absorb as a whole while retaining the same contract. -/
+/-- `absorb`, including its single link-register frame. -/
 def absorbWith (c : Callee) : Prog isa :=
-  match c.absorbOverride with
-  | some code => code
-  | none => absorbGenericWith c
+  .frame (.push .x30) (absorbMainWith c) (.pop .x30)
 
 /-! ## `pad` -/
 
@@ -143,9 +152,5 @@ def squeezeMainWith (c : Callee) : Prog isa :=
     (.block (mov .x0 .x22 :: restore)))
 
 def squeezeWith (c : Callee) : Prog isa := .frame (.push .x30) (squeezeMainWith c) (.pop .x30)
-
-def absorb : Prog isa := absorbWith .scalar
-def pad : Prog isa := padWith .scalar
-def squeeze : Prog isa := squeezeWith .scalar
 
 end VG.Impl.Sha3.AArch64.Stream

@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Ecdsa.Verify.X86
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombCT
 public import VerifiedGarbage.Impl.Ecdsa.P256.X86Comb
 public import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P256
 public import Aesop.BuiltinRules
@@ -12,6 +13,7 @@ import VerifiedGarbage.Proof.Ecdsa.X86.CombStagesCT
 import VerifiedGarbage.Proof.Weierstrass.WinLay
 import VerifiedGarbage.Proof.Weierstrass.X86.TComb
 meta import VerifiedGarbage.Impl.Ecdsa.Verify.X86
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombCT
 meta import VerifiedGarbage.Impl.Ecdsa.P256.X86Comb
 meta import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P256
 meta import Aesop.BuiltinRules
@@ -45,12 +47,6 @@ open VG.Impl.Ecdsa.Verify.X86
 
 def vFrontCode : Prog isa := Impl.Ecdsa.Verify.X86.Cfg.combFront p256Comb
 materialize_code vFrontCode
-
-/-- The front starts at the function's entry: its arguments public, the
-fourth the base of the working space, and the calls' stack below. -/
-def vFrontτ : VG.X86.Taint.T :=
-  { regs := .ofList [.esp], flags := false, lens := [8192], argLen := 20, argBases := [(16, 0)],
-    room := 20 }
 
 theorem vFront_rel : RelCT isa (VG.X86.Taint.Agree vFrontτ) vFrontCode (fun _ _ => True) :=
   RelCT.taint (A := taint) _ (fun _ _ h => h) (by taint_decide)

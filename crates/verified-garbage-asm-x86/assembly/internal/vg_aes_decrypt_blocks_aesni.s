@@ -204,57 +204,201 @@ vg_aes_decrypt_blocks_aesni:
 	jmp 25f
 24:
 25:
-	test edi, edi
-	je 211f
-213:
+	cmp edi, 3
+	jb 211f
 	movdqu xmm0, XMMWORD PTR [esi]
+	movdqu xmm1, XMMWORD PTR [esi+16]
+	movdqu xmm2, XMMWORD PTR [esi+32]
 	movdqu xmm6, XMMWORD PTR [edx+224]
 	pxor xmm0, xmm6
+	pxor xmm1, xmm6
+	pxor xmm2, xmm6
 	cmp ecx, 10
-	je 214f
+	je 213f
 	cmp ecx, 12
-	je 216f
+	je 215f
 	movdqu xmm6, XMMWORD PTR [edx+208]
 	aesdec xmm0, xmm6
+	aesdec xmm1, xmm6
+	aesdec xmm2, xmm6
 	movdqu xmm6, XMMWORD PTR [edx+192]
 	aesdec xmm0, xmm6
-	jmp 217f
+	aesdec xmm1, xmm6
+	aesdec xmm2, xmm6
+	jmp 216f
+215:
 216:
-217:
 	movdqu xmm6, XMMWORD PTR [edx+176]
 	aesdec xmm0, xmm6
+	aesdec xmm1, xmm6
+	aesdec xmm2, xmm6
 	movdqu xmm6, XMMWORD PTR [edx+160]
 	aesdec xmm0, xmm6
-	jmp 215f
+	aesdec xmm1, xmm6
+	aesdec xmm2, xmm6
+	jmp 214f
+213:
 214:
-215:
 	movdqu xmm6, XMMWORD PTR [edx+144]
 	aesdec xmm0, xmm6
+	aesdec xmm1, xmm6
+	aesdec xmm2, xmm6
 	movdqu xmm6, XMMWORD PTR [edx+128]
 	aesdec xmm0, xmm6
+	aesdec xmm1, xmm6
+	aesdec xmm2, xmm6
 	movdqu xmm6, XMMWORD PTR [edx+112]
 	aesdec xmm0, xmm6
+	aesdec xmm1, xmm6
+	aesdec xmm2, xmm6
 	movdqu xmm6, XMMWORD PTR [edx+96]
 	aesdec xmm0, xmm6
+	aesdec xmm1, xmm6
+	aesdec xmm2, xmm6
 	movdqu xmm6, XMMWORD PTR [edx+80]
 	aesdec xmm0, xmm6
+	aesdec xmm1, xmm6
+	aesdec xmm2, xmm6
 	movdqu xmm6, XMMWORD PTR [edx+64]
 	aesdec xmm0, xmm6
+	aesdec xmm1, xmm6
+	aesdec xmm2, xmm6
 	movdqu xmm6, XMMWORD PTR [edx+48]
 	aesdec xmm0, xmm6
+	aesdec xmm1, xmm6
+	aesdec xmm2, xmm6
 	movdqu xmm6, XMMWORD PTR [edx+32]
 	aesdec xmm0, xmm6
+	aesdec xmm1, xmm6
+	aesdec xmm2, xmm6
 	movdqu xmm6, XMMWORD PTR [edx+16]
 	aesdec xmm0, xmm6
+	aesdec xmm1, xmm6
+	aesdec xmm2, xmm6
 	movdqu xmm6, XMMWORD PTR [eax]
 	aesdeclast xmm0, xmm6
+	aesdeclast xmm1, xmm6
+	aesdeclast xmm2, xmm6
 	movdqu XMMWORD PTR [esi], xmm0
-	add esi, 16
-	sub edi, 1
-	jne 213b
+	movdqu XMMWORD PTR [esi+16], xmm1
+	movdqu XMMWORD PTR [esi+32], xmm2
+	add esi, 48
+	sub edi, 3
 	jmp 212f
 211:
 212:
+	test edi, 2
+	je 217f
+	movdqu xmm3, XMMWORD PTR [esi]
+	movdqu xmm4, XMMWORD PTR [esi+16]
+	movdqu xmm6, XMMWORD PTR [edx+224]
+	pxor xmm3, xmm6
+	pxor xmm4, xmm6
+	cmp ecx, 10
+	je 219f
+	cmp ecx, 12
+	je 221f
+	movdqu xmm6, XMMWORD PTR [edx+208]
+	aesdec xmm3, xmm6
+	aesdec xmm4, xmm6
+	movdqu xmm6, XMMWORD PTR [edx+192]
+	aesdec xmm3, xmm6
+	aesdec xmm4, xmm6
+	jmp 222f
+221:
+222:
+	movdqu xmm6, XMMWORD PTR [edx+176]
+	aesdec xmm3, xmm6
+	aesdec xmm4, xmm6
+	movdqu xmm6, XMMWORD PTR [edx+160]
+	aesdec xmm3, xmm6
+	aesdec xmm4, xmm6
+	jmp 220f
+219:
+220:
+	movdqu xmm6, XMMWORD PTR [edx+144]
+	aesdec xmm3, xmm6
+	aesdec xmm4, xmm6
+	movdqu xmm6, XMMWORD PTR [edx+128]
+	aesdec xmm3, xmm6
+	aesdec xmm4, xmm6
+	movdqu xmm6, XMMWORD PTR [edx+112]
+	aesdec xmm3, xmm6
+	aesdec xmm4, xmm6
+	movdqu xmm6, XMMWORD PTR [edx+96]
+	aesdec xmm3, xmm6
+	aesdec xmm4, xmm6
+	movdqu xmm6, XMMWORD PTR [edx+80]
+	aesdec xmm3, xmm6
+	aesdec xmm4, xmm6
+	movdqu xmm6, XMMWORD PTR [edx+64]
+	aesdec xmm3, xmm6
+	aesdec xmm4, xmm6
+	movdqu xmm6, XMMWORD PTR [edx+48]
+	aesdec xmm3, xmm6
+	aesdec xmm4, xmm6
+	movdqu xmm6, XMMWORD PTR [edx+32]
+	aesdec xmm3, xmm6
+	aesdec xmm4, xmm6
+	movdqu xmm6, XMMWORD PTR [edx+16]
+	aesdec xmm3, xmm6
+	aesdec xmm4, xmm6
+	movdqu xmm6, XMMWORD PTR [eax]
+	aesdeclast xmm3, xmm6
+	aesdeclast xmm4, xmm6
+	movdqu XMMWORD PTR [esi], xmm3
+	movdqu XMMWORD PTR [esi+16], xmm4
+	add esi, 32
+	jmp 218f
+217:
+218:
+	test edi, 1
+	je 223f
+	movdqu xmm5, XMMWORD PTR [esi]
+	movdqu xmm6, XMMWORD PTR [edx+224]
+	pxor xmm5, xmm6
+	cmp ecx, 10
+	je 225f
+	cmp ecx, 12
+	je 227f
+	movdqu xmm6, XMMWORD PTR [edx+208]
+	aesdec xmm5, xmm6
+	movdqu xmm6, XMMWORD PTR [edx+192]
+	aesdec xmm5, xmm6
+	jmp 228f
+227:
+228:
+	movdqu xmm6, XMMWORD PTR [edx+176]
+	aesdec xmm5, xmm6
+	movdqu xmm6, XMMWORD PTR [edx+160]
+	aesdec xmm5, xmm6
+	jmp 226f
+225:
+226:
+	movdqu xmm6, XMMWORD PTR [edx+144]
+	aesdec xmm5, xmm6
+	movdqu xmm6, XMMWORD PTR [edx+128]
+	aesdec xmm5, xmm6
+	movdqu xmm6, XMMWORD PTR [edx+112]
+	aesdec xmm5, xmm6
+	movdqu xmm6, XMMWORD PTR [edx+96]
+	aesdec xmm5, xmm6
+	movdqu xmm6, XMMWORD PTR [edx+80]
+	aesdec xmm5, xmm6
+	movdqu xmm6, XMMWORD PTR [edx+64]
+	aesdec xmm5, xmm6
+	movdqu xmm6, XMMWORD PTR [edx+48]
+	aesdec xmm5, xmm6
+	movdqu xmm6, XMMWORD PTR [edx+32]
+	aesdec xmm5, xmm6
+	movdqu xmm6, XMMWORD PTR [edx+16]
+	aesdec xmm5, xmm6
+	movdqu xmm6, XMMWORD PTR [eax]
+	aesdeclast xmm5, xmm6
+	movdqu XMMWORD PTR [esi], xmm5
+	jmp 224f
+223:
+224:
 	mov esi, DWORD PTR [edx]
 	mov edi, DWORD PTR [edx+4]
 	ret

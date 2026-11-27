@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Sha512.X86_64.OneShot
 import VerifiedGarbage.Proof.Hmac.Generic.Implies
 import VerifiedGarbage.Proof.Framework.TaintBatch
 import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Framework.X86_64.InstrBits
 meta import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Variant
 meta import VerifiedGarbage.Proof.Sha512.X86_64.Shared
 meta import VerifiedGarbage.Proof.Sha512.X86_64.Stream.Init
@@ -15,6 +16,7 @@ meta import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 meta import VerifiedGarbage.Proof.Hmac.Generic.Implies
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Framework.KernelRfl
+meta import VerifiedGarbage.Proof.Framework.X86_64.InstrBits
 public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 public import VerifiedGarbage.Proof.Sha512.X86_64.Shared
 public import VerifiedGarbage.Proof.Sha512.X86_64.Stream.Init
@@ -56,7 +58,7 @@ implementation `v` of the compression function, named with its suffix
 function compressing two blocks at once: the rest are that one's). Its
 instances call `init`'s code as the internal `vg_<alg>_init_core`: the
 function exported as `vg_<alg>_init` also clears what it leaves
-(`Proof.Sha512.X86_64.init512Reg`), which its callers, which clear their own,
+(`Proof.Sha512.X86_64.init512_scrubbed`), which its callers, which clear their own,
 do not need. -/
 def hash (I : Spec.Hmac.Instance) (D : Nat) (initN : String) (iv : Spec.Sha512.HashValue) (v : Compress) :
     Hash where
@@ -70,6 +72,7 @@ def hash (I : Spec.Hmac.Instance) (D : Nat) (initN : String) (iv : Spec.Sha512.H
   updN := "vg_sha512_update_scratch" ++ v.baseSuffix
   finN := "vg_sha512_finalize_scratch" ++ v.baseSuffix
   hmacInitN := s!"vg_hmac_{I.rust}_init_scratch" ++ v.suffix
+  hmacInitAnyN := s!"vg_hmac_{I.rust}_init_any_scratch" ++ v.suffix
   hmacFinN := s!"vg_hmac_{I.rust}_finalize_scratch" ++ v.baseSuffix
   iterN := s!"vg_pbkdf2_hmac_{I.rust}_iterate" ++ v.baseSuffix
   compBoth := match v.pair with
@@ -80,7 +83,7 @@ def hash (I : Spec.Hmac.Instance) (D : Nat) (initN : String) (iv : Spec.Sha512.H
 implementation that uses `so` bytes of scratch space. -/
 def coreHS (so D : Nat) : Hash :=
   ⟨Proof.Sha512.X86_64.Stream.paramsS so, D, Hash.wOf (Proof.Sha512.X86_64.Stream.paramsS so), "", .block [], "",
-    .block [], "", "", "", "", "", Proof.Pbkdf2.Md.X86_64.coreBoth⟩
+    .block [], "", "", "", "", "", Proof.Pbkdf2.Md.X86_64.coreBoth, ""⟩
 
 /-- The scratch space the implementations use. -/
 abbrev SoOk (so : Nat) : Prop := so = 0 ∨ so = 192 ∨ so = 1328
@@ -103,28 +106,28 @@ theorem coreOKS (so : Nat) (hso : SoOk so) (D : Nat) (hD : DOk D) : CoreOK (core
         mid := ⟨?_, ?_⟩
         restore := ⟨?_, ?_⟩ }
       hfin := ⟨⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩⟩
-      pbkMx := ?_
-      pbkSp := ?_
-      hinitMx := ?_
-      hinitSp := ?_
-      hinitNs := ?_
+      pbkMx := Code.noMx_of_bits (m := bMx + bSp) rfl ?_
+      pbkSp := Code.sp_of_bits (m := bMx + bSp) rfl ?_
+      hinitMx := Code.noMx_of_bits (m := bMx + bSp + bNs) rfl ?_
+      hinitSp := Code.sp_of_bits (m := bMx + bSp + bNs) rfl ?_
+      hinitNs := Code.noRsp_of_bits (m := bMx + bSp + bNs) rfl ?_
       hinitD := ?_
-      hfinMx := ?_
-      hfinSp := ?_
-      hfinNs := ?_
+      hfinMx := Code.noMx_of_bits (m := bMx + bSp + bNs) rfl ?_
+      hfinSp := Code.sp_of_bits (m := bMx + bSp + bNs) rfl ?_
+      hfinNs := Code.noRsp_of_bits (m := bMx + bSp + bNs) rfl ?_
       hfinD := ?_
       hinitXD := ?_
       hfinXD := ?_
       pbkXD := ?_
-      iterMx := ?_
-      iterSp := ?_
-      iterNs := ?_
+      iterMx := Code.noMx_of_bits (m := bMx + bSp + bNs) rfl ?_
+      iterSp := Code.sp_of_bits (m := bMx + bSp + bNs) rfl ?_
+      iterNs := Code.noRsp_of_bits (m := bMx + bSp + bNs) rfl ?_
       iterD := ?_
-      updMx := ?_
-      updNs := ?_
+      updMx := Code.noMx_of_bits (m := bMx + bNs) rfl ?_
+      updNs := Code.noRsp_of_bits (m := bMx + bNs) rfl ?_
       updD := ?_
-      finMx := ?_
-      finNs := ?_
+      finMx := Code.noMx_of_bits (m := bMx + bNs) rfl ?_
+      finNs := Code.noRsp_of_bits (m := bMx + bNs) rfl ?_
       finD := ?_
       fitI := ?_
       fitF := ?_
@@ -133,7 +136,7 @@ theorem coreOKS (so : Nat) (hso : SoOk so) (D : Nat) (hD : DOk D) : CoreOK (core
 
 theorem anyOKS (so : Nat) (hso : SoOk so) (D : Nat) (hD : DOk D) : Any.AnyOK (coreHS so D) := by
   rcases hso with rfl | rfl | rfl <;> rcases hD with rfl | rfl | rfl | rfl <;>
-    refine ⟨⟨?_, ?_⟩, ⟨?_, ?_⟩, ?_, ?_, ?_⟩
+    refine ⟨⟨?_, ?_⟩, ⟨?_, ?_⟩, ?_, ?_, ?_, ?_⟩
   taint_decide_all
 
 /-- The initial hash values of the family. -/
@@ -595,7 +598,7 @@ def sha384OK (v : Compress) : HashOK (sha384H v) :=
   ok (sha384C v) (sha384K v) rfl (fun _ => rfl) rfl rfl rfl (Or.inr (Or.inr (Or.inl rfl)))
 
 /-- SHA-384 with the implementation `v` of the compression function. -/
-def sha384 (v : Compress) (stream : List StreamFn := []) : MdHash :=
+def sha384 (v : Compress) : MdHash :=
   MdHash.of (I := Spec.Hmac.sha384I) (sha384OK v) (sha384C v) (sha384K v)
     ⟨Spec.Mgf1.sha384, by simp [mdHashes], fun _ => rfl, rfl⟩ rfl
     1328 (sha384OK v.uniform) rfl
@@ -611,7 +614,7 @@ def sha384 (v : Compress) (stream : List StreamFn := []) : MdHash :=
       show (sha384H v).W + 192 < 509
       rcases sha384W v with h | h | h <;> omega_using [h])
     (sha384_satPF (hashW v))
-    v.suffix v.features stream
+    v.suffix v.features
 
 /-! ## SHA-512 -/
 
@@ -763,7 +766,7 @@ def sha512OK (v : Compress) : HashOK (sha512H v) :=
   ok (sha512C v) (sha512K v) rfl (fun _ => (List.take_of_length_le (Nat.le_of_eq (Proof.Sha512.md.digest_length _))).symm) rfl rfl rfl (Or.inr (Or.inr (Or.inr rfl)))
 
 /-- SHA-512 with the implementation `v` of the compression function. -/
-def sha512 (v : Compress) (stream : List StreamFn := []) : MdHash :=
+def sha512 (v : Compress) : MdHash :=
   MdHash.of (I := Spec.Hmac.sha512I) (sha512OK v) (sha512C v) (sha512K v)
     ⟨Spec.Mgf1.sha512, by simp [mdHashes], fun _ => rfl, rfl⟩ rfl
     1328 (sha512OK v.uniform) rfl
@@ -779,7 +782,7 @@ def sha512 (v : Compress) (stream : List StreamFn := []) : MdHash :=
       show (sha512H v).W + 192 < 509
       rcases sha512W v with h | h | h <;> omega_using [h])
     (sha512_satPF (hashW v))
-    v.suffix v.features stream
+    v.suffix v.features
 
 /-! ## SHA-512/224 -/
 
@@ -931,7 +934,7 @@ def sha512_224OK (v : Compress) : HashOK (sha512_224H v) :=
   ok (sha512_224C v) (sha512_224K v) rfl (fun _ => rfl) rfl rfl rfl (Or.inl rfl)
 
 /-- SHA-512/224 with the implementation `v` of the compression function. -/
-def sha512_224 (v : Compress) (stream : List StreamFn := []) : MdHash :=
+def sha512_224 (v : Compress) : MdHash :=
   MdHash.of (I := Spec.Hmac.sha512_224I) (sha512_224OK v) (sha512_224C v) (sha512_224K v)
     ⟨Spec.Mgf1.sha512_224, by simp [mdHashes], fun _ => rfl, rfl⟩ rfl
     1328 (sha512_224OK v.uniform) rfl
@@ -947,7 +950,7 @@ def sha512_224 (v : Compress) (stream : List StreamFn := []) : MdHash :=
       show (sha512_224H v).W + 192 < 509
       rcases sha512_224W v with h | h | h <;> omega_using [h])
     (sha512_224_satPF (hashW v))
-    v.suffix v.features stream
+    v.suffix v.features
 
 /-! ## SHA-512/256 -/
 
@@ -1099,7 +1102,7 @@ def sha512_256OK (v : Compress) : HashOK (sha512_256H v) :=
   ok (sha512_256C v) (sha512_256K v) rfl (fun _ => rfl) rfl rfl rfl (Or.inr (Or.inl rfl))
 
 /-- SHA-512/256 with the implementation `v` of the compression function. -/
-def sha512_256 (v : Compress) (stream : List StreamFn := []) : MdHash :=
+def sha512_256 (v : Compress) : MdHash :=
   MdHash.of (I := Spec.Hmac.sha512_256I) (sha512_256OK v) (sha512_256C v) (sha512_256K v)
     ⟨Spec.Mgf1.sha512_256, by simp [mdHashes], fun _ => rfl, rfl⟩ rfl
     1328 (sha512_256OK v.uniform) rfl
@@ -1115,6 +1118,6 @@ def sha512_256 (v : Compress) (stream : List StreamFn := []) : MdHash :=
       show (sha512_256H v).W + 192 < 509
       rcases sha512_256W v with h | h | h <;> omega_using [h])
     (sha512_256_satPF (hashW v))
-    v.suffix v.features stream
+    v.suffix v.features
 
 end VG.Proof.Pbkdf2.Md.X86_64.Sha512

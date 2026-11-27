@@ -3346,6 +3346,28 @@ vg_rsa_oaep_decrypt_precomputed_umaal:
 	ldr r11, [sp, #44]
 	ldr lr, [sp, #52]
 	ldr r12, [sp], #56
+	sub sp, sp, #3680
+	add r12, sp, #0
+	mov r2, #0
+	mov r3, #115
+2100:
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 2100b
+	add sp, sp, #3680
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_rsa_oaep_encrypt_precomputed_umaal:
@@ -5993,6 +6015,28 @@ vg_rsa_oaep_encrypt_precomputed_umaal:
 	ldr r11, [sp, #44]
 	ldr lr, [sp, #52]
 	ldr r12, [sp], #56
+	sub sp, sp, #288
+	add r12, sp, #0
+	mov r2, #0
+	mov r3, #9
+288:
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 288b
+	add sp, sp, #288
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_rsa_oaep_decrypt_precomputed:
@@ -9337,6 +9381,28 @@ vg_rsa_oaep_decrypt_precomputed:
 	ldr r11, [sp, #44]
 	ldr lr, [sp, #52]
 	ldr r12, [sp], #56
+	sub sp, sp, #3680
+	add r12, sp, #0
+	mov r2, #0
+	mov r3, #115
+2100:
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 2100b
+	add sp, sp, #3680
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_rsa_oaep_encrypt_precomputed:
@@ -11984,4 +12050,26 @@ vg_rsa_oaep_encrypt_precomputed:
 	ldr r11, [sp, #44]
 	ldr lr, [sp, #52]
 	ldr r12, [sp], #56
+	sub sp, sp, #288
+	add r12, sp, #0
+	mov r2, #0
+	mov r3, #9
+288:
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 288b
+	add sp, sp, #288
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr

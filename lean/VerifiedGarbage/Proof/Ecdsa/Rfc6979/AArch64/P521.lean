@@ -1,19 +1,35 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Curve
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Hash
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.TableSat
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Scrub
 public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
-import VerifiedGarbage.Proof.Ecdsa.AArch64.P521.Tables
+import VerifiedGarbage.Proof.Ecdsa.AArch64.P521.Contract
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.P521.Verified
 import VerifiedGarbage.Proof.Ecdsa.AArch64.P521.Lit
 import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
-meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Curve
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Hash
 meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.TableSat
 meta import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
-meta import VerifiedGarbage.Proof.Ecdsa.AArch64.P521.Tables
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.P521.Contract
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.P521.Verified
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.P521.Lit
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
+public import VerifiedGarbage.Impl.Ecdsa.AArch64.VerifyHash
+public import VerifiedGarbage.Impl.Ecdsa.Verify.P521.AArch64
+public import VerifiedGarbage.Impl.AArch64Instrs
+public import VerifiedGarbage.Spec.Ecdsa.Verify.P521
+public import VerifiedGarbage.Impl.Ecdsa.P521.AArch64
+public import VerifiedGarbage.Impl.Ecdh.P256.AArch64
+public import VerifiedGarbage.Impl.Ecdh.P521.AArch64
+public import VerifiedGarbage.Impl.Weierstrass.AArch64.Forward
+public import VerifiedGarbage.Impl.Weierstrass.AArch64.TCombJ
+public import VerifiedGarbage.Proof.Variants.MdHash.AArch64
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubProved
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointVerified
+public import VerifiedGarbage.Proof.EcKey.AArch64.Scrub
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-!
 # Deterministic ECDSA on AArch64: P-521
@@ -64,5 +80,51 @@ theorem p521T_verified (hL : Weierstrass.Law Spec.P521.curve) (hI : Weierstrass.
   have hsat := sat_one (T := Spec.Ecdsa.Rfc6979.Curves.p521) h.1 Proof.Ecdsa.AArch64.P521.satMem h.2
     (by rw [Proof.Ecdsa.AArch64.P521.p521_combWords_length]; decide) Proof.Ecdsa.AArch64.P521.satMem_held (by decide) rfl
   exact signT_verified ⟨rfl, by decide, by decide⟩ rfl rfl h.1 hsat
+
+/-! ## What the scrubbed functions clear
+
+The registers the tails of `vg_ecdsa_p521_sign` and `vg_ecdsa_p521_verify`
+clear, and what `Scrub.verifiedScrubbedAll` needs of their code
+(`Scrub.scrubSide`): evaluated here, by the kernel, so that the emitter
+works out nothing. -/
+
+/-- No instruction of `vg_ecdsa_p521_sign_k` writes PSTATE.DIT, and it calls
+nothing indirectly. -/
+theorem p521_core_side :
+    AArch64.Scrub.sideAll (fun i => !i.writesDit)
+      Impl.Ecdsa.AArch64.signP521 = true := by
+  lit_decide
+
+/-- `vg_ecdsa_p521_sign` as emitted, cleanup included
+(`Impl.Ecdsa.Rfc6979.AArch64.Fn.p521`), with the tables of every hash
+function: it meets its contract in constant time and returns without secret
+residue. What the cleanup needs of the code is evaluated here, once, with
+nothing in the place of `vg_ecdsa_p521_sign_k`, whose own is evaluated
+apart. -/
+theorem p521Sign_scrubbed (hL : Weierstrass.Law Spec.P521.curve) (hI : Weierstrass.AArch64.InvSounds) (hT : Weierstrass.CombOkW Spec.P521.curve 7 83 Impl.P521.p521Comb7 Impl.P521.p521Comb7Start) :
+    VerifiedScrubbed AArch64.target
+      (Impl.Ecdsa.Rfc6979.AArch64.Fn.p521 Proof.Variants.MdHash.AArch64.hashes)
+      (specK Spec.Ecdsa.Rfc6979.Curves.p521 Impl.Ecdsa.AArch64.p521.combConsts
+        Proof.Variants.MdHash.AArch64.variants)
+      32 :=
+  Scrub.sign_scrubbed (R := p521 hL hI hT)
+    (p521T_verified hL hI hT _ ⟨Scrub.variants_ok, of_decide_eq_true (by kernel_rfl)⟩)
+    rfl p521_core_side
+    (by kernel_rfl) (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
+
+/-- `vg_ecdsa_p521_verify` as emitted, cleanup included
+(`Impl.Ecdsa.Verify.AArch64.Fn.verifyHashP521`): it meets its contract in
+constant time and returns without secret residue. What the cleanup needs of
+the code (`Scrub.scrubSide`) is evaluated here, by the kernel. -/
+theorem p521Verify (hL : Weierstrass.Law Spec.P521.curve) (hO : Weierstrass.PrimeOrder Spec.P521.curve)
+    (hI : Weierstrass.AArch64.InvSounds)
+    (hT : Weierstrass.CombOkW Spec.P521.curve 7 83 Impl.P521.p521Comb7 Impl.P521.p521Comb7Start) :
+    VerifiedScrubbed AArch64.target Impl.Ecdsa.Verify.AArch64.Fn.verifyHashP521
+      (Spec.Ecdsa.P521.inst.verifyHashContract (AArch64.abi.withConsts Impl.Ecdsa.AArch64.p521.combConsts) 80) 32 :=
+  AArch64.Scrub.verifiedScrubbedAll (api := Spec.Ecdsa.P521.verifyHashApi)
+    { code := Impl.Ecdsa.AArch64.VerifyHash.verifyHash Spec.Ecdsa.P521.inst.curve.len true
+        Impl.Ecdsa.Verify.AArch64.verifyP521
+      verified := Proof.Ecdsa.Verify.AArch64.P521.verifyHash_verified hL hO hI hT } _
+    (Proof.EcKey.AArch64.Scrub.verifyHashOk_consts _ _ _) (by dsimp only; lit_decide)
 
 end VG.Proof.Ecdsa.Rfc6979.AArch64

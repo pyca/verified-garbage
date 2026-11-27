@@ -73,5 +73,11 @@ def verifyMessageCachedApi (p : Params) (module name : String) : Api where
     message, context string and signature, and on argument addresses and lengths."
   safety := ["`*tr` must equal SHAKE256(`*pk`, 64 bytes).", keyScratchSafety]
 
+/-- `vg_mldsa44_verify_message_cached` on every target. -/
+def verifyMessageCached44Api : Api := verifyMessageCachedApi mlDsa44 "mldsa44" "ML-DSA-44"
+/-- `vg_mldsa65_verify_message_cached` on every target. -/
+def verifyMessageCached65Api : Api := verifyMessageCachedApi mlDsa65 "mldsa65" "ML-DSA-65"
+/-- `vg_mldsa87_verify_message_cached` on every target. -/
+def verifyMessageCached87Api : Api := verifyMessageCachedApi mlDsa87 "mldsa87" "ML-DSA-87"
 
 end VG.Spec.MlDsa

@@ -8,6 +8,8 @@
 ///
 /// It runs `vg_cmac_aes_init`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 304 bytes, and aligned for `u64`.
@@ -28,6 +30,8 @@ pub unsafe fn vg_cmac_aes_init_auto(_dit: verified_garbage_cpu::Dit<'_>, state: 
 ///
 /// It runs `vg_cmac_aes_absorb`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 304 bytes, and aligned for `u64`.
@@ -47,6 +51,8 @@ pub unsafe fn vg_cmac_aes_absorb_auto(_dit: verified_garbage_cpu::Dit<'_>, state
 /// Contract: `VG.Spec.Cmac.aesFinishContract`. Constant time: only the pointers, `rounds` and `count` may affect timing, not the state.
 ///
 /// It runs `vg_cmac_aes_finish`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///

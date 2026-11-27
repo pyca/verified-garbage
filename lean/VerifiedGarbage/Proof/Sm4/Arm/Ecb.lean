@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Sm4.Arm.Group
 public import VerifiedGarbage.Spec.Sm4.Contract
 public import VerifiedGarbage.Proof.Sm4.Contract
-public import VerifiedGarbage.Proof.Sm4.Arm.Keys
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Contract

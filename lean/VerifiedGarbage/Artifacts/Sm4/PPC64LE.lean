@@ -1,27 +1,31 @@
 module
 
-public import VerifiedGarbage.Proof.Sm4.PPC64LE.KeyVerified
-public import VerifiedGarbage.Proof.Sm4.PPC64LE.Verified
-public import VerifiedGarbage.Proof.Sm4.PPC64LE.PreparedVerified
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.PPC64LE.Print
+public import VerifiedGarbage.TCB.PPC64LE.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Sm4.Contract
+import VerifiedGarbage.Proof.Sm4.PPC64LE.KeyVerified
+import VerifiedGarbage.Proof.Sm4.PPC64LE.Verified
+import VerifiedGarbage.Proof.Sm4.PPC64LE.PreparedVerified
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Sm4.PPC64LE.Scrub
 import VerifiedGarbage.Proof.Sm4.PPC64LE.Lit
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # SM4 on PPC64LE -/
 
-@[expose] public section
-
 namespace VG.Artifacts.Sm4.PPC64LE
 
-def artifacts : List Artifact := [
+public def artifacts : List (Artifact PPC64LE.target) := [
   Spec.Sm4.expandKeyApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratchWiped 3248 .r5 402 Impl.Sm4.PPC64LE.expandKey
-    verified := Proof.Sm4.PPC64LE.expandKey_framed },
+    code := Impl.Sm4.PPC64LE.Fn.expandKey
+    verified := Proof.Sm4.PPC64LE.Scrub.expandKey_scrubbed },
   Spec.Sm4.ecbEncryptApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratchWiped 3248 .r6 402 (Impl.Sm4.PPC64LE.ecb .encrypt)
-    verified := Proof.Sm4.PPC64LE.ecb_framed .encrypt },
+    code := Impl.Sm4.PPC64LE.Fn.ecbEncrypt
+    verified := Proof.Sm4.PPC64LE.Scrub.ecbEncrypt_scrubbed },
   Spec.Sm4.ecbDecryptApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratchWiped 3248 .r6 402 (Impl.Sm4.PPC64LE.ecb .decrypt)
-    verified := Proof.Sm4.PPC64LE.ecb_framed .decrypt }]
+    code := Impl.Sm4.PPC64LE.Fn.ecbDecrypt
+    verified := Proof.Sm4.PPC64LE.Scrub.ecbDecrypt_scrubbed }]
+
+spec_apis artifacts
 
 end VG.Artifacts.Sm4.PPC64LE

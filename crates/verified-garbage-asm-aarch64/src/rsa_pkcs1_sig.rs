@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.RsaPkcs1Sig.signPrecomputedContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, `hash`, the contents of `n` and `e` and the first `2 * ⌈n_len / 8⌉` words of `pre` (the modulus' values), not on `digest`, the private key or the rest of `pre`.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of `out_len` bytes.
@@ -300,7 +302,17 @@ b 255f
 cbnz x13, 257b
 .inst 0xd2800000
 255:
-.inst 0x910003f0,0xf9403a13,0xf9403e1e,0x911203ff,0xd65f03c0
+.inst 0x910003f0,0xf9403a13,0xf9403e1e,0x911203ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004
+.inst 0xd2800005,0xd2800006,0xd2800007,0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c
+.inst 0xd280000d,0xd280000e,0xd280000f,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402
+.inst 0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412
+.inst 0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a
+.inst 0x6f00e41b,0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f,0x11000000,0xd10503ff
+.inst 0xd13fc3ff,0x6f00e41f,0x910003e9,0xd280088a
+258:
+.inst 0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x91010129,0xd100054a
+cbnz x10, 258b
+.inst 0x3d80013f,0x3d80053f,0x3d80093f,0x913fc3ff,0x910503ff,0xd65f03c0
 .p2align 6",
         vg_rsa_private_checked_precomputed = sym super::rsa::vg_rsa_private_checked_precomputed::vg_rsa_private_checked_precomputed,
     )
@@ -313,6 +325,8 @@ cbnz x13, 257b
 /// This entry point also takes `pre`, the `pre_len` words written by `vg_rsa_public_precompute` for `n` (returning 1). With those values, it returns exactly the result specified above. If `pre` does not hold those values, the result is unspecified; memory safety and the timing guarantee still apply. Timing may additionally depend on the contents of `pre`.
 ///
 /// Contract: `VG.Spec.RsaPkcs1Sig.verifyPrecomputedContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -602,7 +616,15 @@ b 21f
 20:
 .inst 0xd2800000
 21:
-.inst 0xd65f03c0
+.inst 0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005,0xd2800006,0xd2800007,0xd2800008
+.inst 0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d,0xd280000e,0xd280000f,0xd2800010
+.inst 0xd2800011,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416
+.inst 0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41f,0xea01003f,0x11000000,0xd12183ff
+.inst 0x6f00e41f,0x910003e9,0xd280042a
+259:
+.inst 0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x91010129,0xd100054a
+cbnz x10, 259b
+.inst 0x3d80013f,0x3d80053f,0x912183ff,0xd65f03c0
 .p2align 6",
         vg_rsa_public_precomputed_checked = sym super::rsa::vg_rsa_public_precomputed_checked::vg_rsa_public_precomputed_checked,
     )
@@ -615,6 +637,8 @@ b 21f
 /// This entry point also takes `pre`, the `pre_len` words written by `vg_rsa_public_precompute` for `n` (returning 1). With those values, it writes and returns exactly what is specified above. If `pre` does not hold those values, what it writes and returns is unspecified; memory safety still applies.
 ///
 /// Contract: `VG.Spec.RsaPkcs1Sig.recoverPrecomputedContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -922,7 +946,15 @@ b 21f
 cbnz x13, 262b
 .inst 0xd2800000
 21:
-.inst 0xd65f03c0
+.inst 0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005,0xd2800006,0xd2800007,0xd2800008
+.inst 0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d,0xd280000e,0xd280000f,0xd2800010
+.inst 0xd2800011,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416
+.inst 0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41f,0xea01003f,0x11000000,0xd12183ff
+.inst 0x6f00e41f,0x910003e9,0xd280042a
+263:
+.inst 0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x91010129,0xd100054a
+cbnz x10, 263b
+.inst 0x3d80013f,0x3d80053f,0x912183ff,0xd65f03c0
 .p2align 6",
         vg_rsa_public_precomputed_checked = sym super::rsa::vg_rsa_public_precomputed_checked::vg_rsa_public_precomputed_checked,
     )

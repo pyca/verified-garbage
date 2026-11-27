@@ -1,24 +1,25 @@
 module
 
-public import VerifiedGarbage.Proof.AesOfb.Arm.Verified
-public import VerifiedGarbage.Proof.AesOfb.Arm.Final
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.Arm.Print
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Ofb.Contract
+public import VerifiedGarbage.Spec.Ofb.Final
+import VerifiedGarbage.Proof.Aes.Arm.Scrub
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # AES-OFB (NIST SP 800-38A §6.4) on ARMv7 -/
 
-@[expose] public section
-
 namespace VG.Artifacts.AesOfb.Arm
 
-open VG.Proof.AesOfb.Arm
-
-def artifacts : List Artifact := [
+public def artifacts : List (Artifact Arm.target) := [
   Spec.Ofb.aesApi.artifact Arm.target {
-    code := Impl.AesOfb.Arm.crypt
-    verified := Proof.AesOfb.keyed crypt_verified },
+    code := Impl.Aes.Arm.Fn.ofb
+    verified := Proof.Aes.Arm.Fn.ofb },
   Spec.Ofb.aesFinalApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratchWiped 56 2 10 Impl.AesOfb.Arm.cryptFinal
-    verified := Proof.AesOfb.final_keyed cryptFinal_framed }]
+    code := Impl.Aes.Arm.Fn.ofbFinal
+    verified := Proof.Aes.Arm.Fn.ofbFinal }]
+
+spec_apis artifacts
 
 end VG.Artifacts.AesOfb.Arm

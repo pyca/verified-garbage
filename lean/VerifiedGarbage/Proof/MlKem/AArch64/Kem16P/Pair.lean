@@ -24,6 +24,7 @@ specification. The PRF outputs stay in their buffers (`PrfBufs`).
 @[expose] public section
 
 namespace VG.Proof.MlKem.AArch64.Kem16P
+variable {sha3 : Bool}
 
 open VG VG.AArch64 VG.Proof.MlKem.AArch64 VG.Impl.MlKem.AArch64
 open VG.Proof.Sha3.AArch64.Neon (PairAt pairR)
@@ -36,15 +37,15 @@ open VG.Spec.Sha3 (stateAt bytesAt)
 open VG.Spec.MlKem
 open VG.Proof.MlKem
 
-def beginPCode (L : KemLay) (sd bt sb ss a b N₀ m oa ob : Nat) (w16 : Bool := false) : Prog isa :=
+def beginPCode (sha3 : Bool) (L : KemLay) (sd bt sb ss a b N₀ m oa ob : Nat) (w16 : Bool := false) : Prog isa :=
   .seq (.block (Impl.MlKem.AArch64.Paired.init sb ss a b L.k))
-    (.seq (.seq (Impl.MlKem.AArch64.Kem16P.stepP sd bt N₀ m 0)
-      (.seq (Impl.MlKem.AArch64.Kem16P.stepP sd bt N₀ m 1) (Impl.MlKem.AArch64.Kem16P.stepP sd bt N₀ m 2)))
+    (.seq (.seq (Impl.MlKem.AArch64.Kem16P.stepP sha3 sd bt N₀ m 0)
+      (.seq (Impl.MlKem.AArch64.Kem16P.stepP sha3 sd bt N₀ m 1) (Impl.MlKem.AArch64.Kem16P.stepP sha3 sd bt N₀ m 2)))
       (.seq (.block Impl.MlKem.AArch64.Rej8.rejConsts) (initialCode oa ob w16)))
 
 theorem pairP_iff (sb ss off sd bt : Nat) (L : KemLay) (a N₀ m : Nat) (s : State) (Q : State → Prop) :
-    WP isa (Impl.MlKem.AArch64.Kem16P.pairP sb ss off sd bt L a N₀ m) s Q ↔
-    WP isa (.seq (beginPCode L sd bt sb ss a (a+1) N₀ m (off+1024*a) (off+1024*(a+1)) true) (finishCode true)) s Q := by
+    WP isa (Impl.MlKem.AArch64.Kem16P.pairP sha3 sb ss off sd bt L a N₀ m) s Q ↔
+    WP isa (.seq (beginPCode sha3 L sd bt sb ss a (a+1) N₀ m (off+1024*a) (off+1024*(a+1)) true) (finishCode sha3 true)) s Q := by
   simp only [Impl.MlKem.AArch64.Kem16P.pairP, beginPCode, initialCode, finishCode, seqs]
   simp only [WP.seq_iff (M := isa)]
 
@@ -96,49 +97,49 @@ theorem beginP_ok {w16 : Bool} (L : KemLay) (sd bt : Nat) {s : State}
     (h : Paired.BeginInput sb ss oa ob p seed outA outB table s) (hh : PrfInput p outA outB table st R B₀ s)
     (hR : st + BitVec.ofNat 64 sd = R) (hsd : sd % 8 = 0) (hsd' : sd + 32 ≤ 32768)
     (hB : st + BitVec.ofNat 64 (Impl.MlKem.AArch64.Kem16P.bufOff bt N₀) = B₀) :
-    WP isa (beginPCode L sd bt sb ss a b N₀ m oa ob w16) s
+    WP isa (beginPCode sha3 L sd bt sb ss a b N₀ m oa ob w16) s
       (BeginPPostW w16 (seedState s.mem seed a L.k) (seedState s.mem seed b L.k) p outA outB table st R B₀ N₀ m s) := by
   have ctx := h.context
-  have combined := WP.mono_syms (startP_ok (a := a) (b := b) (m := m) L sd bt hN hbo hss hsb h8b h.ptr h.seedPtr
+  obtain combined := WP.mono_syms (startP_ok (sha3 := sha3) (a := a) (b := b) (m := m) L sd bt hN hbo hss hsb h8b h.ptr h.seedPtr
     h.readable h.separate hh.lay hh.h28 hR hsd hsd' hB)
     (R := fun u => WP isa (.seq (.block Impl.MlKem.AArch64.Rej8.rejConsts) (initialCode oa ob w16)) u
       (BeginPPostW w16 (seedState s.mem seed a L.k) (seedState s.mem seed b L.k) p outA outB table st R B₀ N₀ m s))
     (fun u ⟨ku, fu, svu, u19, pu, buA, buB, pfu⟩ sy => by
-      have cu : Context p outA outB table u := Context.frameP ctx ku.rd ku.wr fu hh.tS hh.tF hh.tB
+      obtain cu : Context p outA outB table u := Context.frameP ctx ku.rd ku.wr fu hh.tS hh.tF hh.tB
       refine WP.seq (WP.mono_syms (Rej8.constants_ok u (by
         rw [u19]; exact Noise.inScratch cu.scratch (by decide) (by decide)))
         fun v ⟨kv, cv, mv, tv⟩ syv => ?_)
-      have fv : Frame [⟨p+1408,8⟩] u.mem v.mem := by
+      obtain fv : Frame [⟨p+1408,8⟩] u.mem v.mem := by
         rw [mv,u19]
         exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ 8)
-      have fvBig : Frame (stepWrites p outA outB) u.mem v.mem := fv.sub (by
+      obtain fvBig : Frame (stepWrites p outA outB) u.mem v.mem := fv.sub (by
         intro r hr; simp only [List.mem_singleton] at hr; subst r
         exact ⟨⟨p,2048⟩,by simp [stepWrites],Offset.sub_base p (by decide)⟩)
-      have ctv := cu.frame kv.rd kv.wr fvBig
-      have v19 : v.gpr .x19=p := (kv.get .x19).trans u19
-      have v28 : v.gpr .x28=s.gpr .x28 := (kv.get .x28).trans (ku.get .x28)
-      have v16 : v.gpr .x16=table := by rw [tv,syv,sy,h.symbol]
-      have streamA : ∀i<504,v.mem ((p+400)+BitVec.ofNat 64 i)=shakeStream (seedState s.mem seed a L.k) i := by
+      obtain ctv := cu.frame kv.rd kv.wr fvBig
+      obtain v19 : v.gpr .x19=p := (kv.get .x19).trans u19
+      obtain v28 : v.gpr .x28=s.gpr .x28 := (kv.get .x28).trans (ku.get .x28)
+      obtain v16 : v.gpr .x16=table := by rw [tv,syv,sy,h.symbol]
+      obtain streamA : ∀i<504,v.mem ((p+400)+BitVec.ofNat 64 i)=shakeStream (seedState s.mem seed a L.k) i := by
         intro i hi
-        have hd : ∀r∈[Region.mk (p+1408) 8],(Region.mk (p+400) 504).Disjoint r := by
+        obtain hd : ∀r∈[Region.mk (p+1408) 8],(Region.mk (p+400) 504).Disjoint r := by
           intro r hr; simp only [List.mem_singleton] at hr; subst r
           exact (Offset.disjoint p (d := 400) (e := 1408) (n := 504) (k := 8) (by decide) (by decide) (by decide))
         exact (fv.bytes hd (by change 504≤2^64; decide) hi).trans (buA.byte hi)
-      have streamB : ∀i<504,v.mem ((p+904)+BitVec.ofNat 64 i)=shakeStream (seedState s.mem seed b L.k) i := by
+      obtain streamB : ∀i<504,v.mem ((p+904)+BitVec.ofNat 64 i)=shakeStream (seedState s.mem seed b L.k) i := by
         intro i hi
-        have hd : ∀r∈[Region.mk (p+1408) 8],(Region.mk (p+904) 504).Disjoint r := by
+        obtain hd : ∀r∈[Region.mk (p+1408) 8],(Region.mk (p+904) 504).Disjoint r := by
           intro r hr; simp only [List.mem_singleton] at hr; subst r
           exact (Offset.disjoint p (d := 904) (e := 1408) (n := 504) (k := 8) (by decide) (by decide) (by decide))
         exact (fv.bytes hd (by change 504≤2^64; decide) hi).trans (buB.byte hi)
-      have ea := ctv.envW (w16 := w16) (N := 168) (off := 400) v16 (by decide) (by decide) (Or.inl rfl) streamA
-      have eb := ctv.envW (w16 := w16) (N := 168) (off := 904) v16 (by decide) (by decide) (Or.inr rfl) streamB
-      have pv := pair_frame pu fv (by
+      obtain ea := ctv.envW (w16 := w16) (N := 168) (off := 400) v16 (by decide) (by decide) (Or.inl rfl) streamA
+      obtain eb := ctv.envW (w16 := w16) (N := 168) (off := 904) v16 (by decide) (by decide) (Or.inr rfl) streamB
+      obtain pv := pair_frame pu fv (by
         simp only [List.mem_singleton,forall_eq]
         exact Offset.base_disjoint p (by decide) (by decide))
-      have svv := svu.frame fv (by
+      obtain svv := svu.frame fv (by
         simp only [List.mem_singleton,forall_eq]
         exact Offset.disjoint p (by decide) (by decide) (by decide))
-      have pars := initial_ok hoa hob
+      obtain pars := initial_ok hoa hob
         (by rw [v19,v28,h.outLeft]; exact ea)
         (by rw [v19,v28,h.outRight]; exact eb) cv
         (by rw [v19]; exact ctv.scratch)
@@ -147,31 +148,31 @@ theorem beginP_ok {w16 : Bool} (L : KemLay) (sd bt : Nat) {s : State}
         (by rw [v28,h.outLeft,h.outRight]; exact ctv.apart)
         (by intro mask hm; rw [v19,v16]; exact ctv.tableScratch.sub_left (Rej8.table_sub table hm))
       refine WP.mono pars fun t ht' => ?_
-      have ft : Frame (initialRegions p outA outB) v.mem t.mem := by
+      obtain ft : Frame (initialRegions p outA outB) v.mem t.mem := by
         simpa only [v19,v28,h.outLeft,h.outRight] using ht'.frame
-      have ftBig : Frame (stepWrites p outA outB) v.mem t.mem := ft.sub (by
+      obtain ftBig : Frame (stepWrites p outA outB) v.mem t.mem := ft.sub (by
         intro r hr; simp only [initialRegions,List.mem_cons,List.not_mem_nil,or_false] at hr
         rcases hr with rfl | rfl | rfl | rfl
         · exact ⟨_,by simp [stepWrites],fun _ h => h⟩
         · exact ⟨_,by simp [stepWrites],fun _ h => h⟩
         · exact ⟨⟨p,2048⟩,by simp [stepWrites],Offset.sub_base p (by decide)⟩
         · exact ⟨⟨p,2048⟩,by simp [stepWrites],Offset.sub_base p (by decide)⟩)
-      have ctt := ctv.frame ht'.keep.rd ht'.keep.wr ftBig
-      have pt := pair_frame pv ft (by
+      obtain ctt := ctv.frame ht'.keep.rd ht'.keep.wr ftBig
+      obtain pt := pair_frame pv ft (by
         intro r hr; simp only [initialRegions,List.mem_cons,List.not_mem_nil,or_false] at hr
         rcases hr with rfl | rfl | rfl | rfl
         · exact ctx.farA.sub_left (Region.sub_prefix (by decide : 400≤2048))
         · exact ctx.farB.sub_left (Region.sub_prefix (by decide : 400≤2048))
         · exact Offset.base_disjoint p (by decide) (by decide)
         · exact Offset.base_disjoint p (by decide) (by decide))
-      have svt := svv.frame ft (by
+      obtain svt := svv.frame ft (by
         intro r hr; simp only [initialRegions,List.mem_cons,List.not_mem_nil,or_false] at hr
         rcases hr with rfl | rfl | rfl | rfl
         · exact ctx.farA.sub_left (Offset.sub_base p (by decide))
         · exact ctx.farB.sub_left (Offset.sub_base p (by decide))
         · exact Offset.disjoint p (by decide) (by decide) (by decide)
         · exact Offset.disjoint p (by decide) (by decide) (by decide))
-      have fut : Frame (stepWrites p outA outB) u.mem t.mem := fvBig.trans ftBig
+      obtain fut : Frame (stepWrites p outA outB) u.mem t.mem := fvBig.trans ftBig
       refine ⟨((ku.trans kv).trans ht'.keep).mono (by simp [beginRegs3,Paired.initialRegs,List.append_assoc]),
         ((fu.mono (by simp [startWritesP, startWrites, pairWritesP, pairWrites3, stepWrites])).trans
           (fut.mono (fun r hr => List.mem_append_left _ (List.mem_append_left _ hr)))),svt,
@@ -212,14 +213,14 @@ theorem pairPCode_ok {w16 : Bool} (L : KemLay) (sd bt : Nat) {s : State}
     (hR : st + BitVec.ofNat 64 sd = R) (hsd : sd % 8 = 0) (hsd' : sd + 32 ≤ 32768)
     (hB : st + BitVec.ofNat 64 (Impl.MlKem.AArch64.Kem16P.bufOff bt N₀) = B₀)
     (h24 : s.gpr .x24 = 0 ∨ s.gpr .x24 = 1) :
-    WP isa (.seq (beginPCode L sd bt sb ss a (a+1) N₀ m oa ob w16) (finishCode w16)) s
+    WP isa (.seq (beginPCode sha3 L sd bt sb ss a (a+1) N₀ m oa ob w16) (finishCode sha3 w16)) s
       (PairPPostW w16 (seedState s.mem seed a L.k) (seedState s.mem seed (a+1) L.k) p outA outB st R B₀ N₀ m s) := by
-  refine WP.seq (WP.mono_syms (beginP_ok L sd bt hN hbo hss hsb h8b hoa hob h hh hR hsd hsd' hB) fun u hu sy => ?_)
+  refine WP.seq (WP.mono_syms (beginP_ok (sha3 := sha3) L sd bt hN hbo hss hsb h8b hoa hob h hh hR hsd hsd' hB) fun u hu sy => ?_)
   let initial : State := { s with mem := u.mem }
-  have hk : Keep pairWorkingRegs initial u :=
+  obtain hk : Keep pairWorkingRegs initial u :=
     let k := hu.keep.mono (rs' := pairWorkingRegs) (by decide)
     ⟨k.gpr, k.rd, k.wr, k.sp, k.vcs⟩
-  refine WP.mono (finish_ok (initial := initial) hk (Frame.refl _ _) hu.saved hu.progress
+  refine WP.mono (finish_ok (sha3 := sha3) (initial := initial) hk (Frame.refl _ _) hu.saved hu.progress
     (by rw [sy]; exact h.symbol) hu.flag (hu.keep.get .x24) h24) fun t ht => ?_
   have fut : Frame (stepWrites p outA outB) u.mem t.mem := ht.frame
   refine ⟨⟨ht.keep.gpr, ht.keep.rd, ht.keep.wr, ht.keep.sp, ht.keep.vcs⟩,
@@ -248,8 +249,8 @@ theorem PairPPostW.outcome {w16 : Bool} {s t : State} {p seed a b st R B₀ : Ad
     (hk : 0<k) (hk256 : k≤256)
     (h : PairPPostW w16 (seedState s.mem seed i k) (seedState s.mem seed i' k) p a b st R B₀ N₀ m s t) :
     PairPOutcomeW w16 (seedBytes s.mem seed i k) (seedBytes s.mem seed i' k) p a b st R B₀ N₀ m s t := by
-  have ra := Paired.accepted_result hk hk256 h.left
-  have rb := Paired.accepted_result hk hk256 h.right
+  obtain ra := Paired.accepted_result hk hk256 h.left
+  obtain rb := Paired.accepted_result hk hk256 h.right
   refine ⟨h.keep,h.frame,h.reducedLeft,h.reducedRight,?_,?_,?_,h.prf⟩
   · rcases ra with ⟨_,ha⟩|⟨_,ha⟩
     · exact Or.inr ha

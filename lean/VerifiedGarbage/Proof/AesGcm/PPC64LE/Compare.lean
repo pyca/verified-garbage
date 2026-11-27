@@ -166,7 +166,7 @@ section
 variable {V : Reg → BitVec 64} {sp : Addr}
 
 /-- A copy of `tl` bytes from `S` to `W + d`, which holds 16 zero bytes. -/
-theorem padCopy_ok {s : State} (he : Env V sp s) {S : Addr} {d tl : Nat} (hd : d + 16 ≤ 2560) (h1 : 1 ≤ tl)
+theorem padCopy_ok {s : State} (he : Env V sp s) {S : Addr} {d tl : Nat} (hd : d + 16 ≤ 288) (h1 : 1 ≤ tl)
     (h16 : tl ≤ 16) (hSr : Covers [⟨S, tl⟩] (s.rd ++ s.wr))
     (hSd : (⟨S, tl⟩ : Region).Disjoint ⟨V .r31 + BitVec.ofNat 64 d, 16⟩)
     (hz : bytesAt s.mem (V .r31 + BitVec.ofNat 64 d) 16 = zeros 16) (hr3 : s.gpr .r3 = S)
@@ -192,8 +192,8 @@ theorem recv_ok {s : State} (he : Env V sp s) {tl : Nat} (h19 : V .r19 = BitVec.
       Frame [⟨V .r31 + BitVec.ofNat 64 256, 16⟩] s.mem s'.mem ∧
       (∀ r, r ≠ .r0 → r ≠ .r3 → r ≠ .r4 → r ≠ .r5 → r ≠ .r6 → s'.gpr r = s.gpr r) ∧ Keeps' s s' := by
   have h20 := he.fr .r20 (by decide); have h19' := he.fr .r19 (by decide); have h31 := he.r31
-  have w₀ := he.perm.wW (show 256 + 8 ≤ 2560 by decide)
-  have w₁ := he.perm.wW (show 264 + 8 ≤ 2560 by decide)
+  have w₀ := he.perm.wW (show 256 + 8 ≤ 288 by decide)
+  have w₁ := he.perm.wW (show 264 + 8 ≤ 288 by decide)
   have h₁ : WP isa (.block [.li .r0 0, .store .d .r0 .r31 rO, .store .d .r0 .r31 (rO + 8), mov .r3 .r20,
       .addi .r4 .r31 rO, mov .r5 .r19]) s fun s₁ =>
       s₁.mem = (s.mem.writeW (V .r31 + BitVec.ofNat 64 256) (0 : BitVec 64)).writeW
@@ -222,10 +222,10 @@ theorem cmpTail_ok {s : State} (he : Env V sp s) :
         bytesAt s.mem (V .r31 + BitVec.ofNat 64 256) 16 then 1 else 0) ∧
       (∀ r, r ≠ .r3 → r ≠ .r4 → r ≠ .r5 → s'.gpr r = s.gpr r) ∧ Keeps s s' := by
   have h31 := he.r31
-  have r₀ := he.perm.wR (show 272 + 8 ≤ 2560 by decide)
-  have r₁ := he.perm.wR (show 256 + 8 ≤ 2560 by decide)
-  have r₂ := he.perm.wR (show 280 + 8 ≤ 2560 by decide)
-  have r₃ := he.perm.wR (show 264 + 8 ≤ 2560 by decide)
+  have r₀ := he.perm.wR (show 272 + 8 ≤ 288 by decide)
+  have r₁ := he.perm.wR (show 256 + 8 ≤ 288 by decide)
+  have r₂ := he.perm.wR (show 280 + 8 ≤ 288 by decide)
+  have r₃ := he.perm.wR (show 264 + 8 ≤ 288 by decide)
   have hrun : WP isa (.block cmpTail) s fun s' =>
       s'.gpr .r3 = BitVec.ofNat 64 1 - (((s.mem.readW (V .r31 + BitVec.ofNat 64 272) 64 ^^^
           s.mem.readW (V .r31 + BitVec.ofNat 64 256) 64) |||
@@ -258,8 +258,8 @@ theorem cmp_ok {s : State} (he : Env V sp s) {o : Nat} (ho : o = 0 ∨ o = 112) 
       Frame [⟨V .r31 + BitVec.ofNat 64 272, 16⟩] s.mem s'.mem ∧
       (∀ r, r ≠ .r0 → r ≠ .r3 → r ≠ .r4 → r ≠ .r5 → r ≠ .r6 → s'.gpr r = s.gpr r) ∧ Keeps' s s' := by
   have h19' := he.fr .r19 (by decide); have h31 := he.r31
-  have w₀ := he.perm.wW (show 272 + 8 ≤ 2560 by decide)
-  have w₁ := he.perm.wW (show 280 + 8 ≤ 2560 by decide)
+  have w₀ := he.perm.wW (show 272 + 8 ≤ 288 by decide)
+  have w₁ := he.perm.wW (show 280 + 8 ≤ 288 by decide)
   have o₀ : o < 2 ^ 15 := by omega_using [ho]
   have h₁ : WP isa (.block [.li .r0 0, .store .d .r0 .r31 vO, .store .d .r0 .r31 (vO + 8), .addi .r3 .r31 o,
       .addi .r4 .r31 vO, mov .r5 .r19]) s fun s₁ =>

@@ -5,7 +5,7 @@ import VerifiedGarbage.Proof.MlKem1024.X86.CompressEncode
 import VerifiedGarbage.Proof.MlKem1024.X86.DecodeDecompress
 public import VerifiedGarbage.Impl.MlKem1024.X86.Kem
 public import VerifiedGarbage.Spec.MlKem.Contract1024
-public import VerifiedGarbage.Proof.MlKem1024.Contract
+public import VerifiedGarbage.Proof.MlKem.Compress1024
 
 /-!
 # ML-KEM-1024 on x86 (32-bit): the parameter set

@@ -1,39 +1,36 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.AArch64.InvBatch
-public import VerifiedGarbage.Proof.Bignum.AArch64.PcVerified
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowBase
-public import VerifiedGarbage.Proof.Rsa.AArch64.CvVerified
-public import VerifiedGarbage.Proof.Rsa.AArch64.CkVerified
-public import VerifiedGarbage.Proof.Rsa.AArch64.RdVerified
-public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightMont
-public import VerifiedGarbage.Proof.Bignum.AArch64.MulFixedCallMont
-public import VerifiedGarbage.Proof.Bignum.AArch64.PrivPreVerified
-import Mathlib.Tactic.Finiteness.Attr
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.AArch64.Print
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Rsa.Contract
+public import VerifiedGarbage.Spec.Rsa.PrivatePrecompute
+public import VerifiedGarbage.Spec.Rsa.RecoverDet
+import VerifiedGarbage.Proof.Rsa.AArch64.InvBatch
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Rsa.AArch64.Fn
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # RSA (RFC 8017) on AArch64 -/
 
-@[expose] public section
-
 namespace VG.Artifacts.Rsa.AArch64
 
-def artifacts : List Artifact := [
+public def artifacts : List (Artifact AArch64.target) := [
   Spec.Rsa.publicPrecomputeApi.artifact AArch64.target {
-    code := Impl.Rsa.AArch64.Precompute.code Proof.Bignum.AArch64.Mont.base.mm
-    verified := Proof.Bignum.AArch64.precompute_verified _ },
+    code := Impl.Rsa.AArch64.Fn.publicPrecompute
+    verified := Proof.Rsa.AArch64.Fn.publicPrecompute },
   Spec.Rsa.privatePrecomputeApi.artifact AArch64.target {
-    code := Impl.Rsa.AArch64.PrivPre.code Proof.Bignum.AArch64.Mont.base.mm
-    verified := Proof.Bignum.AArch64.PrivPre.privPre_verified _ },
+    code := Impl.Rsa.AArch64.Fn.privatePrecompute
+    verified := Proof.Rsa.AArch64.Fn.privatePrecompute },
   Spec.Rsa.crtValuesApi.artifact AArch64.target {
-    code := Impl.Rsa.AArch64.Keys.CrtValues.code
-    verified := Proof.Rsa.AArch64.cv_verified },
+    code := Impl.Rsa.AArch64.Fn.crtValues
+    verified := Proof.Rsa.AArch64.Fn.crtValues },
   Spec.Rsa.recoverPrimesDetApi.artifact AArch64.target {
-    code := Impl.Rsa.AArch64.RecoverDet.code
-    verified := Proof.Rsa.AArch64.Rd.rd_verified },
+    code := Impl.Rsa.AArch64.Fn.recoverPrimesDet
+    verified := Proof.Rsa.AArch64.Fn.recoverPrimesDet },
   Spec.Rsa.checkKeyApi.artifact AArch64.target {
-    code := Impl.Rsa.AArch64.CheckKey.code
-    verified := Proof.Rsa.AArch64.ck_verified }]
+    code := Impl.Rsa.AArch64.Fn.checkKey
+    verified := Proof.Rsa.AArch64.Fn.checkKey }]
+
+spec_apis artifacts
 
 end VG.Artifacts.Rsa.AArch64

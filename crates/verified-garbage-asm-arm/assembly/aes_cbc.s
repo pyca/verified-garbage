@@ -20,13 +20,31 @@ vg_aes_cbc_encrypt:
 	mov r0, r4
 	movw r1, #2176
 	movt r1, #0
-	bl {vg_zeroize}
+	bl {vg_zeroize_core}
 	mov r0, r5
 	mov r1, r6
 	ldr r5, [sp, #4]
 	ldr r6, [sp, #8]
 	ldr lr, [sp, #12]
 	ldr r4, [sp], #16
+	sub sp, sp, #32
+	add r12, sp, #0
+	mov r2, #0
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	add sp, sp, #32
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_aes_cbc_decrypt:
@@ -45,11 +63,29 @@ vg_aes_cbc_decrypt:
 	mov r0, r4
 	movw r1, #2176
 	movt r1, #0
-	bl {vg_zeroize}
+	bl {vg_zeroize_core}
 	mov r0, r5
 	mov r1, r6
 	ldr r5, [sp, #4]
 	ldr r6, [sp, #8]
 	ldr lr, [sp, #12]
 	ldr r4, [sp], #16
+	sub sp, sp, #32
+	add r12, sp, #0
+	mov r2, #0
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	add sp, sp, #32
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr

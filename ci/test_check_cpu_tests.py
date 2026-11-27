@@ -103,7 +103,8 @@ class LintTests(unittest.TestCase):
             self.assertIn("group x: lib path 'a::' is not a path", cpu_tests.lint(MATRIX.read_text()))
 
     def test_a_repeated_value_of_vg_cpu_features_is_an_error(self):
-        text = MATRIX.read_text().replace("\nneon | chacha20 poly1305\n", "\nneon | chacha20 poly1305\nneon | cpu\n", 1)
+        line = "\nneon | chacha20 poly1305 aes_gcm aes_siv aes_ccm aes_ocb aes_ecb aes_cbc aes_ofb aes_cfb aes_cfb8 aes_ctr aes_xts cmac sm4_gcm\n"
+        text = MATRIX.read_text().replace(line, line + "neon | cpu\n", 1)
         self.assertEqual(cpu_tests.lint(text), ["native: VG_CPU_FEATURES=neon twice"])
 
 

@@ -1,4 +1,6 @@
 module
+
+public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.PrepareCall
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.ModulusPolicyCT
 
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.StageCT
@@ -62,7 +64,7 @@ theorem returned_next {q : Bool} {c : Checks} (d : CandidatePublic) (s : State)
   rw [← hcount]
   exact ht
 
-theorem phaseTest_ct (M : Mont) (R : R2Impl M) (K : Kernel) {Φ : CandidatePublic → State → Prop}
+theorem phaseTest_ct (M : Mont) (R : Preparation M) (K : Kernel) {Φ : CandidatePublic → State → Prop}
     {prep next : Prog isa} (q : Bool) (c : Checks) (I : CandidateP → Prop)
     (hodd : ∀ d s, OuterValue q d s → I d.p → d.p.phaseValue q % 2 = 1)
     (hprep : RelCT isa (Two Φ) prep (Two fun d s => OuterValue q d s ∧ I d.p))
@@ -87,7 +89,7 @@ theorem phaseTest_ct (M : Mont) (R : R2Impl M) (K : Kernel) {Φ : CandidatePubli
     (two_taint [] (pins_nil _) (by taint_decide))
   exact two_map (fun d : CandidatePublic => d.after q c) (fun d s h => ⟨returned_next d s ⟨h.1.1, h.2⟩, h.1.2⟩) hnext
 
-theorem testP_ct (M : Mont) (R : R2Impl M) (K : Kernel) :
+theorem testP_ct (M : Mont) (R : Preparation M) (K : Kernel) :
     RelCT isa (Two OuterState) (testP M.mm R.code K.run) fun _ _ => True := by
   unfold testP
   refine (phaseTest_ct M R K false .rest (fun _ => True)

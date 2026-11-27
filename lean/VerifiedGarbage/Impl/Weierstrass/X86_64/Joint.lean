@@ -48,6 +48,10 @@ structure Cfg where
   (`prepB`), which the processor mispredicts: with BMI2, for the
   generator's digits of width nine. -/
   recodeB : Bool := false
+  /-- Whether the additions' calls (`pts`) run the end of the addition
+  (`PointOps.tailCall`) inline rather than as a call: only for the proofs,
+  whose code is the emitted code's with its calls inlined at every depth. -/
+  flat : Bool := false
 
 /-- The scalars' digits for width nine, by the recoding without branches on the scalars' bits. -/
 def prepB (c : Cfg) (u v : Nat) : Prog isa :=
@@ -59,33 +63,33 @@ def prep (c : Cfg) (u v : Nat) : Prog isa :=
   .seq (if c.gw=9 then FastNaf.prepN16 c.K.M.n u c.gBits else FastNaf.prepN c.K.M.n u c.gBits 7)
     (FastNaf.prepN c.K.M.n v c.K.bits 5)
 
-/-- `R = R + E`, `E`'s `Z²` and `Z³` at `selected`. -/
-def cachedAdd (c : Cfg) : Prog isa :=
+/-- `R = R + E`, `E`'s `Z²` and `Z³` at `selected`. The ending `fin` may be shared. -/
+def cachedAdd (c : Cfg) (fin : Prog isa := PointOps.tailBody c.K c.dbl) : Prog isa :=
   match c.pts with
-  | some C => PointOps.addCachedCall C c.K c.selected c.dbl
-  | none => PointOps.addCachedBody c.K c.selected c.dbl
+  | some C => PointOps.addCachedCall C c.K c.selected c.dbl c.flat
+  | none => PointOps.addCachedBody c.K c.selected c.dbl fin
 
 /-- `R = R + E`, `E` affine. -/
-def fixedAdd (c : Cfg) : Prog isa :=
+def fixedAdd (c : Cfg) (fin : Prog isa := PointOps.tailBody c.K c.dbl) : Prog isa :=
   match c.pts with
-  | some C => PointOps.addAffineCall C c.K c.dbl
-  | none => PointOps.addAffineBody c.K c.dbl
+  | some C => PointOps.addAffineCall C c.K c.dbl c.flat
+  | none => PointOps.addAffineBody c.K c.dbl fin
 
-def cachedDigit (c : Cfg) : Prog isa :=
+def cachedDigit (c : Cfg) (fin : Prog isa := PointOps.tailBody c.K c.dbl) : Prog isa :=
   .seq (.block (Naf.digitRead c.K)) <|
-    .ite .e (.block []) (.seq (Naf.signedCachedEntry c.K c.cache c.selected) (cachedAdd c))
+    .ite .e (.block []) (.seq (Naf.signedCachedEntry c.K c.cache c.selected) (cachedAdd c fin))
 
 /-- The generator's digit `rbx`, zero-extended into `r8`, and its test. -/
 def fixedRead (c : Cfg) : List Instr :=
   if c.gw=9 then [.movzx16 .r8 (FastNaf.tbl16 c.gBits),.alu .test .r8 (.reg .r8)]
   else Naf.digitRead {c.K with bits := c.gBits}
 
-def fixedDigit (c : Cfg) : Prog isa :=
+def fixedDigit (c : Cfg) (fin : Prog isa := PointOps.tailBody c.K c.dbl) : Prog isa :=
   .seq (.block (fixedRead c)) <|
     .ite .e (.block []) (.seq (if c.gw=9 then fixedEntryW c.K c.tsym else fixedEntry c.K c.tsym)
-      (fixedAdd c))
+      (fixedAdd c fin))
 
-def digits (c : Cfg) : Prog isa := .seq (cachedDigit c) (fixedDigit c)
+def digits (c : Cfg) (fin : Prog isa := PointOps.tailBody c.K c.dbl) : Prog isa := .seq (cachedDigit c fin) (fixedDigit c fin)
 
 /-- The loop's first value of the counter `rbx`. -/
 def top (c : Cfg) : Nat := if c.peel then 64*c.K.M.n else 64*c.K.M.n+1
@@ -97,12 +101,14 @@ def guardDouble (c : Cfg) (double : Prog isa) : Prog isa :=
   if c.peel then double
   else .seq (.block [.alu .cmp .rbx (.imm (BitVec.ofNat 32 (64*c.K.M.n)))]) (.ite .e (.block []) double)
 
-def step (c : Cfg) (double : Prog isa) : Prog isa :=
+def step (c : Cfg) (double : Prog isa)
+    (fin : Prog isa := PointOps.tailBody c.K c.dbl) : Prog isa :=
   .seq (.block [.alu .sub .rbx (.imm 1)]) <|
-    .seq (guardDouble c double) (.seq (digits c) (.block [.alu .test .rbx (.reg .rbx)]))
+    .seq (guardDouble c double) (.seq (digits c fin) (.block [.alu .test .rbx (.reg .rbx)]))
 
-def run (c : Cfg) (double : Prog isa) : Prog isa :=
-  if c.peel then .seq (digits c) (.loop (step c double) .ne) else .loop (step c double) .ne
+def run (c : Cfg) (double : Prog isa)
+    (fin : Prog isa := PointOps.tailBody c.K c.dbl) : Prog isa :=
+  if c.peel then .seq (digits c fin) (.loop (step c double fin) .ne) else .loop (step c double fin) .ne
 
 /-- The cache of the eight entries' `Z²` and `Z³`. -/
 def cacheCode (c : Cfg) : Prog isa :=
@@ -117,7 +123,7 @@ def cacheE (c : Cfg) : List FOp :=
 /-- A step of `tableCall`: `R = R + E` (a call of `C`'s `jac_add_cached`),
 stored in entry `rbx`. -/
 def tableCallStep (c : Cfg) (C : Impl.Weierstrass.PointOps.Curve) : Prog isa :=
-  .seq (PointOps.addCachedCall C c.K c.selected c.dbl)
+  .seq (PointOps.addCachedCall C c.K c.selected c.dbl c.flat)
     (.block (Naf.tableStore c.K ++ [.alu .add .rbx (.imm 1),.alu .cmp .rbx (.imm 8)]))
 
 /-- The table of `Q`'s odd multiples `Naf.table` builds, by calls of `C`'s
@@ -141,8 +147,9 @@ def tableCode (c : Cfg) : Prog isa :=
   | some C => tableCall c C
   | none => Naf.table c.K c.dbl
 
-def window (c : Cfg) (double : Prog isa) : Prog isa :=
+def window (c : Cfg) (double : Prog isa)
+    (fin : Prog isa := PointOps.tailBody c.K c.dbl) : Prog isa :=
   .seq (tableCode c) <| .seq (cacheCode c) <|
-    .seq (.block (Jacobian.infinity c.K c.K.R ++ [.mov32 .rbx (.imm (BitVec.ofNat 32 (top c)))])) (run c double)
+    .seq (.block (Jacobian.infinity c.K c.K.R ++ [.mov32 .rbx (.imm (BitVec.ofNat 32 (top c)))])) (run c double fin)
 
 end VG.Impl.Weierstrass.X86_64.Joint

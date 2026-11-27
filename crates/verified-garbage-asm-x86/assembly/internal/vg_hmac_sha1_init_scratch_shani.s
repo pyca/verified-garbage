@@ -14,10 +14,10 @@ vg_hmac_sha1_init_scratch_shani:
 	mov ebx, DWORD PTR [esp+4]
 	mov esi, DWORD PTR [esp+8]
 	push ebx
-	call {vg_sha1_init}
+	call {vg_sha1_init_core}
 	pop eax
 	push esi
-	call {vg_sha1_init}
+	call {vg_sha1_init_core}
 	pop eax
 	mov ecx, 909522486
 	mov DWORD PTR [ebx+20], ecx

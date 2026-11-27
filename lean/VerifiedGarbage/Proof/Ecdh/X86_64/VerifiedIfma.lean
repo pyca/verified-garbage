@@ -1,5 +1,6 @@
 module
 
+import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
 public import VerifiedGarbage.Proof.EcKey.X86_64.Scrub.Out
 public import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
 public import VerifiedGarbage.Proof.Framework.Registration
@@ -14,7 +15,8 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 import VerifiedGarbage.Proof.P256.X86_64.WinJac
 import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
 import VerifiedGarbage.Proof.Ecdh.X86_64.LitIfma
-public import VerifiedGarbage.Proof.Ecdh.X86_64.Contract
+import VerifiedGarbage.Proof.Framework.KernelRfl
+public import VerifiedGarbage.Proof.Ecdh.X86_64.Verified
 public import VerifiedGarbage.Proof.Ecdh.X86_64.WinJac
 public import VerifiedGarbage.Impl.Ecdh.P256.X86_64.Ifma
 import VerifiedGarbage.Proof.Framework.LitShare
@@ -27,8 +29,8 @@ meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 meta import VerifiedGarbage.Proof.P256.X86_64.WinJac
 meta import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
 meta import VerifiedGarbage.Proof.Ecdh.X86_64.LitIfma
+meta import VerifiedGarbage.Proof.Framework.KernelRfl
 meta import VerifiedGarbage.Proof.Ecdh.X86_64.Verified
-meta import VerifiedGarbage.Proof.Ecdh.X86_64.Contract
 meta import VerifiedGarbage.Proof.Ecdh.X86_64.WinJac
 meta import VerifiedGarbage.Impl.Ecdh.P256.X86_64.Ifma
 meta import VerifiedGarbage.Proof.Framework.LitShare
@@ -39,8 +41,6 @@ import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.X86_64.Lit
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
-public import VerifiedGarbage.Proof.Ecdh.X86_64.Verified
-
 import VerifiedGarbage.Proof.Ecdh.X86_64.WinJacOdd
 public import VerifiedGarbage.Proof.P256.X86_64.Ifma.EcdhLoop
 import VerifiedGarbage.Proof.Weierstrass.X86_64.MxcsrInline
@@ -108,7 +108,8 @@ theorem mulQP256Ifma_ok (hI : Weierstrass.X86_64.InvSounds) (hL : Weierstrass.La
       (show p256x.mont 1 < p256x.C.p from Nat.mod_lt _ (by decide))
       (show Weierstrass.toM p256x.C.p (2 ^ (64 * p256x.n)) (p256x.mont 1) = 1 by
         rw [toM_cmont (p256x_ok hI)]; rfl)
-      (by decide) (by decide) (by decide) (noR12_of_all digitSel_r12) (noR12_of_all negY_r12) hP hkJ hs hM hF)
+      (by decide) (by decide) (by decide) (noR12_of_all digitSel_r12) (noR12_of_all negY_r12) hP hkJ hs hM hF
+      (by kernel_rfl))
 
 /-- What the multiplication writes keeps the constants, `d` and the flag (`MulW`). -/
 theorem mulQP256Ifma_w (hI : Weierstrass.X86_64.InvSounds) :
@@ -153,7 +154,7 @@ theorem ecdh_ct_ifma : ConstantTime isa ecdhX86_64.pre ecdhX86_64.pub exchangeP2
 /-! ## The contract with 16 bytes of stack
 
 The code uses 8, for its calls' return address; clearing the vector registers at the level `evex`
-(`X86_64.Scrub.withScrubAll`) needs 16. -/
+(`Impl.Scrub.X86_64.scrubAll`) needs 16. -/
 
 /-- A contract with stack asks more than the same with none. -/
 theorem pre_stack0_of {sig : Sig} {pre : Curry (sig.words abi.ptrBits) (Mem → Prop)}
@@ -221,5 +222,26 @@ theorem ecdh_verified_ifma (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstr
       (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P256.inst X86_64.abi 16) :=
   Verified.of_inline_ct (by lit_decide) (ecdh_x86_ifma hL hI hO hK) ecdh_ct_ifma implies16
     (fun _ h => clear_of_pre16 h) ecdh_patch16
+
+/-! ## Without secret residue -/
+
+theorem exchangeIfma_codeSp : exchangeP256Ifma.all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
+
+/-- `vg_ecdh_p256_ifma` as emitted (`Impl.Ecdh.X86_64.Fn.exchangeP256Ifma`), its cleanup
+included, meets its contract in constant time and returns without secret residue. -/
+theorem exchangeIfma_scrubbed (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.X86_64.InvSounds)
+    (hO : Weierstrass.PrimeOrder Spec.P256.curve) (hK : Weierstrass.KilledByN Spec.P256.curve) :
+    VerifiedScrubbed X86_64.target Impl.Ecdh.X86_64.Fn.exchangeP256Ifma
+      (Spec.Ecdh.P256.exchangeApi.contract X86_64.abi 16) 32 :=
+  X86_64.Scrub.verifiedScrubbedAll (api := Spec.Ecdh.P256.exchangeApi)
+    { code := exchangeP256Ifma
+      stack := 16
+      verified := ecdh_verified_ifma hL hI hO hK
+      spSafe := exchangeIfma_codeSp } .evex (VG.Proof.EcKey.X86_64.Scrub.exchangeOut _ _)
+
+theorem exchangeIfma_spSafe :
+    Impl.Ecdh.X86_64.Fn.exchangeP256Ifma.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  X86_64.Scrub.scrubKs_spSafe exchangeIfma_codeSp
 
 end VG.Proof.Ecdh.X86_64

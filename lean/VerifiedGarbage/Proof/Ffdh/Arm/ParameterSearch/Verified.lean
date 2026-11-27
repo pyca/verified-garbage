@@ -1,13 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterBackend
-public import VerifiedGarbage.Spec.Ffdh.GenerationContract
 public import VerifiedGarbage.Impl.Ffdh.Arm.ParameterSearch
 public import VerifiedGarbage.TCB.Arm.Target
-public import VerifiedGarbage.Spec.Ffdh.SievedContract
+public import VerifiedGarbage.Proof.Ffdh.ParameterPublic
 import VerifiedGarbage.Proof.Ffdh.SievedBounds
-public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Function
-public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Public
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import Mathlib.Algebra.GroupWithZero.Basic
 import Mathlib.Algebra.GroupWithZero.Nat
@@ -15,22 +12,594 @@ public import VerifiedGarbage.Proof.Framework.Arm.CallF
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Bounds
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Sig
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Incoming
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Push
+public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Start
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.CallLay
 import VerifiedGarbage.Proof.Bignum.Arm.PcDimensions
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Sat
 import VerifiedGarbage.Proof.Bignum.Octets
-import VerifiedGarbage.Proof.Ffdh.GenerationBounds
-import Mathlib.Algebra.Group.Nat.Defs
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CTEntry
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CTLoop
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CTFinish
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Body
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Widen
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTBase
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Start
+public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Finish
+public import VerifiedGarbage.Proof.Framework.Arm.Frame
+public import VerifiedGarbage.Proof.Framework.Covers
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Push
+public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.State
+import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Step
+import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.LoopGuard
+import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CompareResult
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Framework.Arm.Inline
+public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidatePre
+public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CTBranch
+meta import VerifiedGarbage.Impl.Ffdh.Arm.ParameterSearch
+meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CTState
+import VerifiedGarbage.Proof.Ffdh.Arm.Block
+import VerifiedGarbage.Proof.Bignum.Arm.StackCT
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTAddresses
+
+/-! ### `Ffdh.Arm.ParameterSearch.CTEntry`, which only this module used -/
+
+section
+
+/-! Native entry reads fixed public stack positions and writes fixed controller fields. -/
+
+@[expose] public section
+namespace VG.Proof.Ffdh.Arm.ParameterSearch
+open VG VG.Arm VG.Proof.Ffdh.Arm VG.Proof.Bignum.Arm
+open VG.Proof.Ffdh.Arm.KeySearch (Two two_post ControlAddress controlStore_ct entryCopy_ct)
+
+def EntryPointer (p : SearchParams) (s : State) : Prop := s.gpr .r4 = p.control
+
+private theorem entry_pointer (p : SearchParams) (s : State) (h : SearchStart p s) :
+    WP isa (.block [.ldrSp .r4 44]) s (EntryPointer p) := by
+  refine wp_load_incoming .r4 (h.incoming.incoming 5 (by decide)) (by decide)
+    (fun t value _ _ => WP.block_nil ?_)
+  simpa only [EntryPointer, incomingValue] using value
+
+private def entryCopies : List (Nat × Nat) := [(24, 8), (28, 9), (32, 10), (36, 11), (40, 12)]
+
+private theorem copies_ct (copies : List (Nat × Nat)) : RelCT isa ControlAddress
+    (.block (copies.flatMap (fun e => [.ldrSp .r3 e.1, VG.Impl.Ffdh.Arm.ParameterSearch.stf .r3 e.2]))) ControlAddress := by
+  induction copies with
+  | nil => exact RelCT.block_nil (fun _ _ h => h)
+  | cons e rest ih => exact RelCT.block_append ((entryCopy_ct e.1 e.2).seq ih)
+
+private theorem entry_tail_ct : RelCT isa ControlAddress
+    (.block (VG.Impl.Ffdh.Arm.ParameterSearch.entry.drop 1)) (fun _ _ => True) := by
+  have stores : RelCT isa ControlAddress (.block [VG.Impl.Ffdh.Arm.ParameterSearch.stf .r0 5,
+      VG.Impl.Ffdh.Arm.ParameterSearch.stf .r2 6, VG.Impl.Ffdh.Arm.ParameterSearch.stf .r3 7]) ControlAddress :=
+    RelCT.block_append ((controlStore_ct .r0 40).seq
+      (RelCT.block_append ((controlStore_ct .r2 48).seq (controlStore_ct .r3 56))))
+  have zero : RelCT isa ControlAddress (.block [.mov .r3 (.imm 0), VG.Impl.Ffdh.Arm.ParameterSearch.stf .r3 4])
+      (fun _ _ => True) := by
+    apply RelCT.taint (A := taint) (Taint.ofRegs [.r4]) _ (by taint_decide)
+    intro s t h
+    exact Taint.agree_ofRegs (fun r hr => by obtain rfl := List.mem_singleton.mp hr; exact h.1)
+  change RelCT isa _ (.block (([VG.Impl.Ffdh.Arm.ParameterSearch.stf .r0 5,
+    VG.Impl.Ffdh.Arm.ParameterSearch.stf .r2 6, VG.Impl.Ffdh.Arm.ParameterSearch.stf .r3 7] ++
+    entryCopies.flatMap (fun e => [.ldrSp .r3 e.1, VG.Impl.Ffdh.Arm.ParameterSearch.stf .r3 e.2])) ++
+    [.mov .r3 (.imm 0), VG.Impl.Ffdh.Arm.ParameterSearch.stf .r3 4])) _
+  exact RelCT.block_append ((RelCT.block_append (stores.seq (copies_ct entryCopies))).seq zero)
+
+theorem entry_ct : RelCT isa (Two SearchStart) (.block VG.Impl.Ffdh.Arm.ParameterSearch.entry) (fun _ _ => True) := by
+  have load : RelCT isa (Two SearchStart) (.block [.ldrSp .r4 44]) (fun _ _ => True) :=
+    (loadStack_ct .r4 44).mono (fun _ _ ⟨_, _, _, sp⟩ => sp) (fun _ _ _ => trivial)
+  change RelCT isa _ (.block ([.ldrSp .r4 44] ++ VG.Impl.Ffdh.Arm.ParameterSearch.entry.drop 1)) _
+  refine RelCT.block_append (RelCT.seq (two_post load entry_pointer) ?_)
+  exact entry_tail_ct.mono (fun _ _ ⟨_, hs, ht, sp⟩ => ⟨hs.trans ht.symm, sp⟩) (fun _ _ _ => trivial)
+
+def initialPoint (p : SearchParams) : SearchPoint := ⟨p, 0, p.attempts⟩
+
+theorem entry_ready (p : SearchParams) (s : State) (h : SearchStart p s) :
+    WP isa (.block VG.Impl.Ffdh.Arm.ParameterSearch.entry) s (LiveCT (initialPoint p)) :=
+  WP.mono h.entry fun _ ⟨live, _⟩ => live
+
+end VG.Proof.Ffdh.Arm.ParameterSearch
+
+end
+
+end
+
+/-! ### `Ffdh.Arm.ParameterSearch.CTFinish`, which only this module used -/
+
+section
+
+/-! The return path writes a fixed public consumption pointer and reads fixed saved-register offsets. -/
+
+@[expose] public section
+namespace VG.Proof.Ffdh.Arm.ParameterSearch
+open VG VG.Arm VG.Proof.Ffdh.Arm VG.Proof.Bignum.Arm
+open VG.Proof.Ffdh.Arm.KeySearch (Two two_taint two_post lowWord)
+
+def FinishPointer (p : SearchParams) (s : State) : Prop := s.gpr .r4 = p.control ∧ s.gpr .r1 = p.c.usedPtr
+
+private theorem finish_pointer (p : SearchParams) (s : State) (h : DoneCT p s) :
+    WP isa (.block [VG.Impl.Ffdh.Arm.ParameterSearch.ldf .r1 6]) s (FinishPointer p) := by
+  obtain ⟨_, done⟩ := h
+  have pointer := done.usedPtr
+  have context := done.buffers.controller
+  unfold VG.Impl.Ffdh.Arm.ParameterSearch.ldf lowWord FinishPointer at *
+  ffrun [context.addr (by decide : 6 < 16), context.read (by decide : 6 < 16), pointer]
+  exact context.ptr
+
+theorem finish_ct : RelCT isa (Two DoneCT) (.block VG.Impl.Ffdh.Arm.ParameterSearch.finish) (fun _ _ => True) := by
+  change RelCT isa _ (.block ([VG.Impl.Ffdh.Arm.ParameterSearch.ldf .r1 6] ++
+    ([VG.Impl.Ffdh.Arm.ParameterSearch.ldf .r2 4, VG.Impl.Ffdh.Arm.ParameterSearch.ldf .r0 13,
+      .mov .r3 (.imm 0), .str .r2 .r1 0, .str .r3 .r1 4] ++
+      finishRestoreSlots.map (fun e => Instr.ldrSp e.1 e.2)))) _
+  refine RelCT.block_append (RelCT.seq (two_post (two_taint [.r4] done_pins (by taint_decide)) finish_pointer) ?_)
+  refine RelCT.block_append (RelCT.seq (relCT_keep_sp
+    (two_taint [.r4, .r1] (fun _ _ _ hs ht r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact hs.1.trans ht.1.symm
+      · exact hs.2.trans ht.2.symm) (by taint_decide)) (fun _ _ ⟨_, _, _, sp⟩ => sp)) ?_)
+  exact (stackLoads_ct finishRestoreSlots).mono (fun _ _ h => h) (fun _ _ _ => trivial)
+
+end VG.Proof.Ffdh.Arm.ParameterSearch
+
+end
+
+end
+
+/-! ### `Ffdh.Arm.ParameterSearch.CTLoop`, which only this module used -/
+
+section
+
+/-! The complete native loop's timing depends only on its public entropy tape and u64 budget. -/
+
+@[expose] public section
+namespace VG.Proof.Ffdh.Arm.ParameterSearch
+open VG VG.Arm
+open VG.Proof.Ffdh.Arm.KeySearch (Two two_piece two_post two_taint)
+
+theorem iteration_ct (backend : VG.Proof.Ffdh.Arm.ParameterBackend) :
+    RelCT isa (Two LiveCT) (VG.Impl.Ffdh.Arm.ParameterSearch.iteration (.call backend.candidateName backend.candidate))
+      (fun _ _ => True) := by
+  unfold VG.Impl.Ffdh.Arm.ParameterSearch.iteration
+  refine RelCT.seq (two_piece [.r4] live_pins (by taint_decide) budget_ready) ?_
+  refine RelCT.seq (two_post (branch_ct backend) (branch_ready backend)) ?_
+  exact two_taint [.r4] (fun _ _ _ hs ht r hr => by
+    obtain rfl := List.mem_singleton.mp hr
+    exact (branch_pointer hs).trans (branch_pointer ht).symm) (by taint_decide)
+
+def CTStep (q : SearchPoint) (s : State) : Prop :=
+  if continues q then isa.eval .eq s = some true ∧ LiveCT (nextPoint q) s
+  else isa.eval .eq s = some false
+
+theorem ct_step (backend : VG.Proof.Ffdh.Arm.ParameterBackend) (q : SearchPoint) (s : State) (h : LiveCT q s) :
+    WP isa (VG.Impl.Ffdh.Arm.ParameterSearch.iteration (.call backend.candidateName backend.candidate)) s (CTStep q) := by
+  unfold VG.Impl.Ffdh.Arm.ParameterSearch.iteration
+  refine WP.seq (WP.mono (budget_ready q s h) fun u ready => ?_)
+  refine WP.seq (WP.mono (branch_ready backend q u ready) fun t result => ?_)
+  by_cases again : continues q
+  · simp only [BranchCT, again, ite_true] at result
+    refine WP.mono (result.1.loop_guard result.2) ?_
+    rintro t ⟨⟨flag, state⟩, _⟩
+    simpa only [CTStep, again, ite_true] using (show isa.eval .eq t = some true ∧ LiveCT (nextPoint q) t from ⟨flag, state⟩)
+  · simp only [BranchCT, again, ite_false] at result
+    obtain ⟨_, finished⟩ := result
+    refine WP.mono finished.loop_guard ?_
+    rintro t ⟨⟨flag, _⟩, _⟩
+    simpa only [CTStep, again, ite_false] using flag
+
+private def LoopPair (n : Nat) (s t : State) : Prop :=
+  ∃ q : SearchPoint, n = q.remaining + 1 ∧ LiveCT q s ∧ LiveCT q t ∧ s.sp = t.sp
+
+private theorem iteration_pair (backend : VG.Proof.Ffdh.Arm.ParameterBackend) (n : Nat) :
+    RelCT isa (LoopPair n) (VG.Impl.Ffdh.Arm.ParameterSearch.iteration (.call backend.candidateName backend.candidate)) fun s t =>
+      isa.eval .eq s = isa.eval .eq t ∧ (isa.eval .eq s = some false → True) ∧
+        (isa.eval .eq s = some true → ∃ m < n, LoopPair m s t) := by
+  have wp (q : SearchPoint) (s : State) (h : n = q.remaining + 1 ∧ LiveCT q s) :
+      WP isa (VG.Impl.Ffdh.Arm.ParameterSearch.iteration (.call backend.candidateName backend.candidate)) s fun t =>
+        n = q.remaining + 1 ∧ CTStep q t :=
+    WP.mono (ct_step backend q s h.2) (fun _ result => ⟨h.1, result⟩)
+  have ct := two_post ((iteration_ct backend).mono
+    (fun _ _ ⟨q, hs, ht, sp⟩ => ⟨q, hs.2, ht.2, sp⟩) (fun _ _ h => h)) wp
+  refine ct.mono (fun _ _ ⟨q, measure, hs, ht, sp⟩ => ⟨q, ⟨measure, hs⟩, ⟨measure, ht⟩, sp⟩) ?_
+  rintro s t ⟨q, ⟨measure, hs⟩, ⟨_, ht⟩, sp⟩
+  by_cases again : continues q
+  · simp only [CTStep, again, ite_true] at hs ht
+    refine ⟨hs.1.trans ht.1.symm, fun _ => trivial, fun _ => ?_⟩
+    refine ⟨(nextPoint q).remaining + 1, ?_, nextPoint q, rfl, hs.2, ht.2, sp⟩
+    have positive := again.1
+    change q.remaining - 1 + 1 < n
+    omega_using [measure, positive]
+  · simp only [CTStep, again, ite_false] at hs ht
+    exact ⟨hs.trans ht.symm, fun _ => trivial, fun next => absurd (next.symm.trans hs) (by decide)⟩
+
+theorem loop_ct (backend : VG.Proof.Ffdh.Arm.ParameterBackend) : RelCT isa (Two LiveCT)
+    (.loop (VG.Impl.Ffdh.Arm.ParameterSearch.iteration (.call backend.candidateName backend.candidate)) .eq) (fun _ _ => True) := by
+  intro s t traceS traceT u v ⟨q, hs, ht, sp⟩ runS runT
+  exact RelCT.loop (M := isa)
+    (body := VG.Impl.Ffdh.Arm.ParameterSearch.iteration (.call backend.candidateName backend.candidate)) (c := .eq)
+    (Q := fun _ _ => True) LoopPair (iteration_pair backend) (q.remaining + 1)
+    _ _ _ _ _ _ ⟨q, rfl, hs, ht, sp⟩ runS runT
+
+end VG.Proof.Ffdh.Arm.ParameterSearch
+
+end
+
+end
+
+/-! ### `Ffdh.Arm.ParameterSearch.Public`, which only this module used -/
+
+section
+
+/-! Read all search parameters and persistent policy from the existing public ARMv7 signature. -/
+
+@[expose] public section
+namespace VG.Proof.Ffdh.Arm.ParameterSearch
+open VG VG.Arm VG.Proof.Mont
+
+structure SearchAbi (p : SearchParams) (s : State) : Prop extends
+    VG.Proof.Ffdh.Arm.ParameterCandidate.CandidateAbi p.c s where
+  control : stackArg s 5 = p.control
+  counter : s.mem.readW (State.addr p.control) 64 = BitVec.ofNat 64 p.attempts
+  widthPolicy : s.mem.readW (off (State.addr p.control) 8) 64 = BitVec.ofNat 64 p.c.length
+  entropyPolicy : s.mem.readW (off (State.addr p.control) 16) 64 = BitVec.ofNat 64 (Spec.Ffdh.parameterEntropy p.c.bits)
+
+theorem searchPublic (s : State) (pre : (Proof.Ffdh.sievedParameterSearchAskedContract abi 280).pre s) :
+    ∃ p, SearchAbi p s := by
+  sig_pre [Proof.Ffdh.sievedParameterSearchAskedContract, Spec.Ffdh.parameterSearchSig,
+    abi, argRegs, reduceClassify, Loc.val, State.addr] at pre
+  obtain ⟨_, _, _, _, outUsed, outTape, outScratch, outControl, _, usedTape, usedScratch, usedControl, _,
+    tapeScratch, tapeControl, scratchControl, _, _, _, _, _, _, _, _,
+    outFit, usedFit, tapeFit, scratchFit, controlFit, lower, upper, width, generator, space,
+    attemptsBound, widthPolicy, entropyPolicy, tapeBound⟩ := pre
+  let rb := Spec.Rsa.bytesAt s.mem (State.addr (stackArg s 1)) (stackArg s 2).toNat
+  have rbLength : rb.length = (stackArg s 2).toNat := VG.Proof.Bignum.bytesAt_length _ _ _
+  let q : VG.Proof.Ffdh.Arm.ParameterCandidate.CandidateParams := {
+    out := s.gpr .r0, usedPtr := s.gpr .r2, tape := stackArg s 1, base := stackArg s 3
+    bits := (s.gpr .r3).toNat, generator := (stackArg s 0).toNat, capacity := (stackArg s 4).toNat, bytes := rb
+    minBits := lower, maxBits := upper, generatorAllowed := generator
+    space := by rw [← width]; exact space
+    scratchFits := by simpa only [Nat.mul_comm 8] using scratchFit
+    outputFits := by rw [← width]; exact outFit
+    usedFits := usedFit
+    tapeFits := by rw [rbLength]; exact tapeFit
+    tapeCount := by rw [rbLength]; exact (stackArg s 2).isLt
+    outputUsed := by rw [← width]; exact outUsed
+    outputScratch := by rw [← width]; simpa only [Nat.mul_comm 8, State.addr] using outScratch
+    outputTape := by rw [← width, rbLength]; exact outTape
+    usedScratch := by simpa only [Nat.mul_comm 8, State.addr] using usedScratch
+    usedTape := by rw [rbLength]; exact usedTape
+    tapeScratch := by rw [rbLength]; simpa only [Nat.mul_comm 8, State.addr] using tapeScratch }
+  let p : SearchParams := {
+    candidate := q, control := stackArg s 5,
+    attempts := (s.mem.readW (State.addr (stackArg s 5)) 64).toNat
+    attemptsBound := attemptsBound
+    tapeBound := by rw [rbLength]; exact tapeBound
+    controlFits := controlFit
+    controlOutput := by
+      change (⟨State.addr (stackArg s 5), 128⟩ : Region).Disjoint
+        ⟨State.addr (s.gpr .r0), ((s.gpr .r3).toNat + 7) / 8⟩
+      rw [← width]
+      exact outControl.symm
+    controlUsed := usedControl.symm
+    controlScratch := by simpa only [Nat.mul_comm 8, State.addr] using scratchControl.symm
+    controlTape := by rw [rbLength]; exact tapeControl.symm }
+  refine ⟨p, ⟨?_, rfl, ?_, ?_, ?_⟩⟩
+  · refine ⟨rfl, ?_, rfl, ?_, ?_, rfl, ?_, rfl, ?_, ?_⟩
+    · change s.gpr .r1 = BitVec.ofNat 32 (((s.gpr .r3).toNat + 7) / 8)
+      rw [← width, BitVec.ofNat_toNat, BitVec.setWidth_eq]
+    · simp only [p, q, BitVec.ofNat_toNat, BitVec.setWidth_eq]
+    · simp only [p, q, BitVec.ofNat_toNat, BitVec.setWidth_eq]
+    · change stackArg s 2 = BitVec.ofNat 32 rb.length
+      rw [rbLength, BitVec.ofNat_toNat, BitVec.setWidth_eq]
+    · simp only [p, q, BitVec.ofNat_toNat, BitVec.setWidth_eq]
+    · change Spec.Rsa.bytesAt s.mem (State.addr (stackArg s 1)) rb.length = rb
+      rw [rbLength]
+  · simp only [p, BitVec.ofNat_toNat, BitVec.setWidth_eq]
+  · change s.mem.readW (off (State.addr (stackArg s 5)) 8) 64 =
+      BitVec.ofNat 64 (((s.gpr .r3).toNat + 7) / 8)
+    rw [← width]
+    exact widthPolicy
+  · exact entropyPolicy
+
+end VG.Proof.Ffdh.Arm.ParameterSearch
+
+end
+
+end
+
+/-! ### `Ffdh.Arm.ParameterSearch.Function`, which only this module used -/
+
+section
+
+/-! ### `Ffdh.Arm.ParameterSearch.Widen`, which this module and modules that import it used -/
+
+section
+
+/-! The search runs without permission to overwrite its saved registers; widening restores caller permissions. -/
+
+@[expose] public section
+namespace VG.Proof.Ffdh.Arm.ParameterSearch
+open VG VG.Arm
+
+theorem SearchBuffers.withRegions {p : SearchParams} {s : State} {rd wr : List Region}
+    (h : SearchBuffers p s) (reads : Covers (s.rd ++ s.wr) (rd ++ wr))
+    (writes : ∀ r ∈ s.wr, r ∈ wr) : SearchBuffers p (s.withRegions rd wr) :=
+  ⟨⟨⟨h.controller.space.1, writes _ h.controller.space.2⟩, h.controller.ptr⟩,
+    ⟨h.output.1, writes _ h.output.2⟩, ⟨h.used.1, writes _ h.used.2⟩,
+    ⟨h.scratch.1, writes _ h.scratch.2⟩, reads _ _ h.tapeRead, h.tapeBytes,
+    reads _ _ h.stack, h.below, h.stackSeparate⟩
+
+theorem SearchDone.withRegions {p : SearchParams} {result : Spec.Ffdh.ParameterSearchResult}
+    {s : State} {rd wr : List Region} (h : SearchDone p result s)
+    (reads : Covers (s.rd ++ s.wr) (rd ++ wr)) (writes : ∀ r ∈ s.wr, r ∈ wr) :
+    SearchDone p result (s.withRegions rd wr) :=
+  ⟨h.buffers.withRegions reads writes, h.usedBound, h.usedPtr, h.used, h.status, h.policy, h.output⟩
+
+theorem SearchStart.withRegions {p : SearchParams} {s : State} {rd wr : List Region}
+    (h : SearchStart p s) (reads : Covers (s.rd ++ s.wr) (rd ++ wr))
+    (writes : ∀ r ∈ s.wr, r ∈ wr) : SearchStart p (s.withRegions rd wr) := by
+  refine ⟨h.storage.withRegions reads writes, ⟨?_, h.incoming.separate⟩,
+    h.out, h.used, h.bits, h.counter, h.width, h.entropy⟩
+  intro i hi
+  have old := h.incoming.incoming i hi
+  exact ⟨old.fits, reads _ _ old.readable, old.word⟩
+
+end VG.Proof.Ffdh.Arm.ParameterSearch
+
+end
+
+end
+
+/-! ### `Ffdh.Arm.ParameterSearch.Body`, which this module and modules that import it used -/
+
+section
+
+/-! ### `Ffdh.Arm.ParameterSearch.Loop`, which only this module used -/
+
+section
+
+/-! Total correctness of the native safe-prime search loop, with its full u64 attempt measure. -/
+
+@[expose] public section
+namespace VG.Proof.Ffdh.Arm.ParameterSearch
+open VG VG.Arm VG.Proof.X25519.Arm
+
+def SearchInvariant (p : SearchParams) (start : State) (expected : Spec.Ffdh.ParameterSearchResult)
+    (n : Nat) (s : State) : Prop :=
+  ∃ used remaining, n = remaining + 1 ∧ SearchLive p used remaining s ∧
+    expected = p.tail used remaining ∧ Rest searchClobbers start s
+
+def SearchFinished (p : SearchParams) (start : State) (expected : Spec.Ffdh.ParameterSearchResult)
+    (s : State) : Prop := SearchDone p expected s ∧ Rest searchClobbers start s
+
+theorem iteration (backend : VG.Proof.Ffdh.Arm.ParameterBackend)
+    {p : SearchParams} {start s : State} {expected : Spec.Ffdh.ParameterSearchResult} {n : Nat}
+    (inv : SearchInvariant p start expected n s) :
+    WP isa (VG.Impl.Ffdh.Arm.ParameterSearch.iteration (.call backend.candidateName backend.candidate)) s fun t =>
+      (isa.eval .eq t = some false ∧ SearchFinished p start expected t) ∨
+      (isa.eval .eq t = some true ∧ ∃ m < n, SearchInvariant p start expected m t) := by
+  obtain ⟨used, remaining, measure, h, same, initialRest⟩ := inv
+  have done : ∀ t, SearchDone p expected t → Rest searchClobbers start t →
+      WP isa (.block [VG.Impl.Ffdh.Arm.ParameterSearch.ldf .r9 13, .cmp .r9 (.imm 4)]) t fun t =>
+        (isa.eval .eq t = some false ∧ SearchFinished p start expected t) ∨
+        (isa.eval .eq t = some true ∧ ∃ m < n, SearchInvariant p start expected m t) := by
+    intro t finished rest
+    refine WP.mono finished.loop_guard ?_
+    rintro u ⟨⟨flag, result⟩, restU⟩
+    exact Or.inl ⟨flag, result, rest.trans (restU.mono (by simp [searchClobbers]))⟩
+  unfold VG.Impl.Ffdh.Arm.ParameterSearch.iteration
+  refine WP.seq (WP.mono h.budget_guard fun u ⟨⟨liveU, flag, _⟩, restU⟩ => ?_)
+  have restSU : Rest searchClobbers start u := initialRest.trans (restU.mono (by simp [searchClobbers]))
+  apply WP.seq
+  refine WP.ite _ (by change some u.z = _; rw [flag]) ?_ ?_
+  · intro zero
+    have zero' := of_decide_eq_true zero
+    refine WP.mono liveU.exhausted ?_
+    rintro t ⟨finished, restT⟩
+    have result : expected = .exhausted used := by rw [same, zero']; rfl
+    rw [← result] at finished
+    exact done t finished (restSU.trans restT)
+  · intro nonzero
+    have positive : 0 < remaining := Nat.pos_of_ne_zero (of_decide_eq_false nonzero)
+    refine WP.mono (liveU.step backend positive) ?_
+    rintro t ⟨classified, restT⟩
+    have restST := restSU.trans restT
+    cases result : candidateResult p used with
+    | none =>
+      simp only [Classified, result] at classified
+      rw [← same] at classified
+      exact done t classified restST
+    | some pair =>
+      obtain ⟨prime, rand⟩ := pair
+      cases prime with
+      | some prime =>
+        simp only [Classified, result] at classified
+        rw [← same] at classified
+        exact done t classified restST
+      | none =>
+        simp only [Classified, result] at classified
+        refine WP.mono (classified.1.loop_guard classified.2) ?_
+        rintro q ⟨⟨flagQ, liveQ⟩, restQ⟩
+        refine Or.inr ⟨flagQ, remaining, by omega_using [measure], used + candidateUsed p used, remaining - 1,
+          by omega_using [positive], liveQ, same.trans (p.tail_reject positive result),
+          restST.trans (restQ.mono (by simp [searchClobbers]))⟩
+
+theorem loop (backend : VG.Proof.Ffdh.Arm.ParameterBackend)
+    {p : SearchParams} {start s : State} {expected : Spec.Ffdh.ParameterSearchResult} {n : Nat}
+    (inv : SearchInvariant p start expected n s) :
+    WP isa (.loop (VG.Impl.Ffdh.Arm.ParameterSearch.iteration (.call backend.candidateName backend.candidate)) .eq)
+      s (SearchFinished p start expected) :=
+  WP.loop (M := isa)
+    (body := VG.Impl.Ffdh.Arm.ParameterSearch.iteration (.call backend.candidateName backend.candidate)) (c := .eq)
+    (Q := SearchFinished p start expected) (SearchInvariant p start expected)
+    (fun _ _ h => iteration backend h) n s inv
+
+end VG.Proof.Ffdh.Arm.ParameterSearch
+
+end
+
+end
+
+/-! The complete native search body preserves its caller's registers and writes only its buffers and outgoing stack. -/
+
+-- Formerly `VerifiedGarbage/Proof/Ffdh/Arm/ParameterSearch/Stack.lean`, which only this module imported.
+section
+
+/-! The full parameter search uses 24 saved bytes and 24 outgoing bytes above the 232-byte candidate. -/
+
+section
+namespace VG.Proof.Ffdh.Arm.ParameterSearch
+open VG VG.Arm
+
+theorem iteration_stack (backend : VG.Proof.Ffdh.Arm.ParameterBackend) :
+    FrameStack.armStack (VG.Impl.Ffdh.Arm.ParameterSearch.iteration
+      (.call backend.candidateName backend.candidate)) ≤ 256 := by
+  have bound := backend.candidateStack
+  simp only [VG.Impl.Ffdh.Arm.ParameterSearch.iteration,
+    VG.Impl.Ffdh.Arm.ParameterSearch.candidateStep, VG.Impl.Ffdh.Arm.ParameterSearch.candidateRun,
+    VG.Impl.Ffdh.Arm.ParameterSearch.classify, VG.Impl.Ffdh.Arm.ParameterSearch.short,
+    VG.Impl.Ffdh.Arm.ParameterSearch.exhausted, VG.Impl.Ffdh.Arm.ParameterSearch.zeroOut,
+    VG.Impl.Ffdh.Arm.ParameterSearch.request, VG.Impl.Ffdh.Arm.ParameterSearch.select,
+    VG.Impl.Ffdh.Arm.Domain.GenerateKey.zeros,
+    FrameStack.armStack, Bool.false_eq_true, ite_true, ite_false, Nat.zero_max, Nat.max_zero]
+  omega
+
+end VG.Proof.Ffdh.Arm.ParameterSearch
+end
+
+end
+
+@[expose] public section
+namespace VG.Proof.Ffdh.Arm.ParameterSearch
+open VG VG.Arm VG.Proof.X25519.Arm
+
+def bodyClobbers : List Reg := [.r0, .r1, .r2, .r3, .r4, .r9, .r10, .r11, .r12, .lr]
+
+theorem body_ok (backend : VG.Proof.Ffdh.Arm.ParameterBackend)
+    {p : SearchParams} {s : State} (h : SearchStart p s) :
+    WP isa (VG.Impl.Ffdh.Arm.ParameterSearch.body (.call backend.candidateName backend.candidate)) s fun t =>
+      SearchDone p (p.tail 0 p.attempts) t ∧ Rest bodyClobbers s t := by
+  unfold VG.Impl.Ffdh.Arm.ParameterSearch.body
+  refine WP.seq (WP.mono h.entry fun u ⟨live, rest⟩ => ?_)
+  have inv : SearchInvariant p u (p.tail 0 p.attempts) (p.attempts + 1) u :=
+    ⟨0, p.attempts, rfl, live, rfl, Rest.refl _ _⟩
+  refine WP.mono (loop backend inv) ?_
+  rintro t ⟨finished, restT⟩
+  exact ⟨finished, (rest.mono (by simp [bodyClobbers])).trans (restT.mono (by simp [bodyClobbers, searchClobbers]))⟩
+
+theorem body_run (backend : VG.Proof.Ffdh.Arm.ParameterBackend)
+    {p : SearchParams} {s : State} (h : SearchStart p s) :
+    ∃ tr t, Exec isa (VG.Impl.Ffdh.Arm.ParameterSearch.body (.call backend.candidateName backend.candidate)) s tr t ∧
+      SearchDone p (p.tail 0 p.attempts) t ∧ Rest bodyClobbers s t ∧
+      Frame (s.wr ++ [FrameStack.belowA s.sp 256]) s.mem t.mem := by
+  obtain ⟨tr, t, run, done, rest⟩ := body_ok backend h
+  have bound : FrameStack.armStack (VG.Impl.Ffdh.Arm.ParameterSearch.body
+      (.call backend.candidateName backend.candidate)) ≤ 256 := by
+    simpa only [VG.Impl.Ffdh.Arm.ParameterSearch.body, FrameStack.armStack, Nat.zero_max] using iteration_stack backend
+  have fit : 256 ≤ s.sp.toNat := h.storage.below
+  exact ⟨tr, t, run, done, rest, FrameStack.Frame.belowA_mono (FrameStack.Exec.frameSp run (Nat.le_trans bound fit)) bound fit⟩
+
+end VG.Proof.Ffdh.Arm.ParameterSearch
+
+end
+
+end
+
+/-! ### `Ffdh.Arm.ParameterSearch.Push`, which this module and modules that import it used -/
+
+section
+
+/-! The parameter search reuses the established ARMv7 24-byte saved-register frame. -/
+
+@[expose] public section
+namespace VG.Proof.Ffdh.Arm.ParameterSearch
+open VG VG.Arm
+
+abbrev searchPushed (s : State) : State := pushed [.r4, .r9, .r10, .r11, .r12, .lr] s
+
+def bodyState (s : State) : State := (searchPushed s).withRegions
+  (⟨State.addr (searchPushed s).sp, 24⟩ :: s.rd) s.wr
+
+theorem push_saved (s : State) (fit : 24 ≤ s.sp.toNat) :
+    Spill.Saved (bodyState s).mem (State.addr (bodyState s).sp) s.gpr savedSlots := by
+  exact VG.Proof.Ffdh.Arm.KeySearch.push_saved s fit
+
+theorem body_writes (s : State) : Covers (bodyState s).wr (searchPushed s).wr :=
+  Covers.of_mem fun _ member => List.mem_cons_of_mem _ member
+
+theorem body_reads (s : State) :
+    Covers ((bodyState s).rd ++ (bodyState s).wr) ((searchPushed s).rd ++ (searchPushed s).wr) := by
+  apply Covers.of_mem
+  intro r member
+  change r ∈ (⟨State.addr (searchPushed s).sp, 24⟩ :: s.rd) ++ s.wr at member
+  simp only [List.mem_append, List.mem_cons] at member
+  rcases member with (rfl | read) | write
+  · exact List.mem_append_right _ (List.mem_cons_self)
+  · exact List.mem_append_left _ read
+  · exact List.mem_append_right _ (List.mem_cons_of_mem _ write)
+
+end VG.Proof.Ffdh.Arm.ParameterSearch
+
+end
+
+end
+
+/-! Execute the full native function while keeping its saved frame read-only during search. -/
+
+@[expose] public section
+namespace VG.Proof.Ffdh.Arm.ParameterSearch
+open VG VG.Arm VG.Proof.Mont VG.Proof.X25519.Arm
+
+structure FunctionInput (p : SearchParams) (s : State) : Prop where
+  stackFits : 280 ≤ s.sp.toNat
+  start : SearchStart p (bodyState s)
+  savedWrites : ∀ r ∈ s.wr, (⟨State.addr (bodyState s).sp, 24⟩ : Region).Disjoint r
+
+theorem function_body (backend : VG.Proof.Ffdh.Arm.ParameterBackend)
+    {p : SearchParams} {s : State} (h : FunctionInput p s) :
+    WP isa (VG.Impl.Ffdh.Arm.ParameterSearch.body (.call backend.candidateName backend.candidate))
+      (searchPushed s) (FinishInput p s (p.tail 0 p.attempts)) := by
+  obtain ⟨tr, t, run, done, rest, frame⟩ := body_run backend h.start
+  have fit : 24 ≤ s.sp.toNat := by have := h.stackFits; omega_using [this]
+  have saved : Spill.Saved t.mem (State.addr t.sp) s.gpr savedSlots := by
+    rw [rest.sp]
+    apply (push_saved s fit).frame (lo := 0) (hi := 24) (by decide) frame
+    intro r member
+    have separate : (⟨State.addr (bodyState s).sp, 24⟩ : Region).Disjoint r := by
+      rcases List.mem_append.mp member with original | below
+      · exact h.savedWrites r original
+      · obtain rfl := List.mem_singleton.mp below
+        have below : 256 ≤ (bodyState s).sp.toNat := h.start.storage.below
+        rw [FrameStack.belowA, FrameStack.addr_sub' below]
+        exact VG.Offset.base_disjoint_below _ (by decide : 256 + 24 ≤ 2 ^ 64)
+    simpa only [BitVec.add_zero, Nat.sub_zero] using separate
+  have widened := Exec.widen run (body_reads s) (body_writes s)
+  have runWide : Exec isa (VG.Impl.Ffdh.Arm.ParameterSearch.body (.call backend.candidateName backend.candidate))
+      (searchPushed s) tr (t.withRegions (searchPushed s).rd (searchPushed s).wr) := by
+    simpa only [bodyState, State.withRegions_withRegions, State.withRegions_self] using widened
+  refine ⟨tr, _, runWide, ?_⟩
+  refine ⟨done.withRegions ?_ ?_, saved, rest.sp, fit, ?_⟩
+  · rw [rest.rd, rest.wr]
+    exact body_reads s
+  · intro r member
+    rw [rest.wr] at member
+    exact List.mem_cons_of_mem _ member
+  · intro r member
+    exact rest.gpr r (by cases r <;> simp_all [bodyClobbers])
+
+theorem function_ok (backend : VG.Proof.Ffdh.Arm.ParameterBackend)
+    {p : SearchParams} {s : State} (h : FunctionInput p s) :
+    WP isa (VG.Impl.Ffdh.Arm.ParameterSearch.code (.call backend.candidateName backend.candidate)) s
+      fun t => abiPreserved s t ∧ ResultPost p (p.tail 0 p.attempts) t := by
+  unfold VG.Impl.Ffdh.Arm.ParameterSearch.code
+  refine WP.frame (by decide) (by change 24 ≤ s.sp.toNat; have := h.stackFits; omega_using [this]) (by decide) ?_
+  rw [WP.seq_iff]
+  exact WP.mono (function_body backend h) fun _ input => finish_ok input
+
+end VG.Proof.Ffdh.Arm.ParameterSearch
+
+end
+
+end
 
 /-! ### `Ffdh.Arm.ParameterSearch.Input`, which only this module used -/
 
@@ -54,16 +623,16 @@ def writeRegions (p : SearchParams) : List Region :=
     ⟨State.addr p.c.base, 8 * p.c.capacity⟩, ⟨State.addr p.control, 128⟩]
 
 structure SearchLayout (p : SearchParams) (s : State) : Prop where
-  stackFits : 232 ≤ s.sp.toNat
+  stackFits : 280 ≤ s.sp.toNat
   argsFits : s.sp.toNat + 24 ≤ 2 ^ 32
   reads : s.rd = readRegions p s.sp
   writes : s.wr = writeRegions p
   controlArgs : (⟨State.addr p.control, 128⟩ : Region).Disjoint ⟨State.addr s.sp, 24⟩
-  stackSeparate : ∀ r ∈ writeRegions p ++ readRegions p s.sp, (FrameStack.belowA s.sp 232).Disjoint r
+  stackSeparate : ∀ r ∈ writeRegions p ++ readRegions p s.sp, (FrameStack.belowA s.sp 280).Disjoint r
 
 theorem searchLayout {p : SearchParams} {s : State}
-    (pre : (Spec.Ffdh.sievedParameterSearchContract abi 232).pre s) (args : SearchAbi p s) : SearchLayout p s := by
-  sig_pre [Spec.Ffdh.sievedParameterSearchContract, Spec.Ffdh.parameterSearchSig,
+    (pre : (Proof.Ffdh.sievedParameterSearchAskedContract abi 280).pre s) (args : SearchAbi p s) : SearchLayout p s := by
+  sig_pre [Proof.Ffdh.sievedParameterSearchAskedContract, Spec.Ffdh.parameterSearchSig,
     abi, argRegs, reduceClassify, Loc.val, State.addr] at pre
   obtain ⟨stackFit, argFit, rd, wr, _, _, _, _, _, _, _, _, _, _, _, _, _, controlArgs,
     stackOut, stackUsed, stackTape, stackScratch, stackControl, stackArgs, _⟩ := pre
@@ -74,7 +643,7 @@ theorem searchLayout {p : SearchParams} {s : State}
   have capNat : (stackArg s 4).toNat = p.c.capacity := by
     rw [args.capacity, BitVec.toNat_ofNat, Nat.mod_eq_of_lt p.capacity_fits]
   have argStart : stackArgAddr s 0 = State.addr s.sp := by simp [stackArgAddr]
-  have reserved : s.sp.setWidth 64 - 232#64 = State.addr (s.sp - 232#32) :=
+  have reserved : s.sp.setWidth 64 - 280#64 = State.addr (s.sp - 280#32) :=
     (FrameStack.addr_sub' stackFit).symm
   rw [args.out, args.used, args.base, args.control, widthNat, capNat, Nat.mul_comm p.c.capacity 8] at wr
   rw [args.tape, tapeNat, argStart] at rd
@@ -134,7 +703,7 @@ theorem pushed_arguments {p : SearchParams} {s : State}
     ⟨_, List.mem_append_left _ (by rw [h.reads]; simp [readRegions]), Region.contains_self _ _⟩
   have pushedFrame : Frame [FrameStack.belowA s.sp 24] s.mem (bodyState s).mem :=
     FrameStack.pushed_frameA (rs := [.r4, .r9, .r10, .r11, .r12, .lr]) (by omega : 24 ≤ s.sp.toNat)
-  have savedSub : (FrameStack.belowA s.sp 24).Sub (FrameStack.belowA s.sp 232) :=
+  have savedSub : (FrameStack.belowA s.sp 24).Sub (FrameStack.belowA s.sp 280) :=
     FrameStack.belowA_sub (by decide) fit
   have argsSaved : (⟨State.addr s.sp, 24⟩ : Region).Disjoint (FrameStack.belowA s.sp 24) :=
     ((h.stackSeparate _ (by simp [readRegions])).sub_left savedSub).symm
@@ -194,7 +763,7 @@ theorem SearchLayout.push_word {p : SearchParams} {s : State} (h : SearchLayout 
   have frame : Frame [FrameStack.belowA s.sp 24] s.mem (bodyState s).mem :=
     FrameStack.pushed_frameA (rs := [.r4, .r9, .r10, .r11, .r12, .lr]) (by change 24 ≤ s.sp.toNat; have := h.stackFits; omega)
   have separate := (h.stackSeparate ⟨State.addr p.control, 128⟩ (by simp [writeRegions])).sub_left
-    (FrameStack.belowA_sub (by decide : 24 ≤ 232) h.stackFits)
+    (FrameStack.belowA_sub (by decide : 24 ≤ 280) h.stackFits)
   exact frame.readW (r := ⟨State.addr p.control, 128⟩)
     (Offset.contains_base _ (by omega : 8 * j + 8 ≤ 128) (by omega))
     (by intro r hr; obtain rfl := List.mem_singleton.mp hr; exact separate.symm) (by decide)
@@ -205,7 +774,7 @@ theorem SearchLayout.push_bytes {p : SearchParams} {s : State} (h : SearchLayout
   have frame : Frame [FrameStack.belowA s.sp 24] s.mem (bodyState s).mem :=
     FrameStack.pushed_frameA (rs := [.r4, .r9, .r10, .r11, .r12, .lr]) (by change 24 ≤ s.sp.toNat; have := h.stackFits; omega)
   have separate := (h.stackSeparate ⟨State.addr p.c.tape, p.c.bytes.length⟩
-    (by simp [readRegions])).sub_left (FrameStack.belowA_sub (by decide : 24 ≤ 232) h.stackFits)
+    (by simp [readRegions])).sub_left (FrameStack.belowA_sub (by decide : 24 ≤ 280) h.stackFits)
   exact (VG.Proof.Bignum.Arm.rsa_bytes_frame frame (by have := p.c.tapeCount; omega)
     (by intro r hr; obtain rfl := List.mem_singleton.mp hr; exact separate.symm)).trans args.bytes
 
@@ -219,12 +788,12 @@ namespace VG.Proof.Ffdh.Arm.ParameterSearch
 open VG VG.Arm VG.Proof.Bignum.Arm
 
 theorem searchInput {p : SearchParams} {s : State}
-    (pre : (Spec.Ffdh.sievedParameterSearchContract abi 232).pre s) (args : SearchAbi p s) : FunctionInput p s := by
+    (pre : (Proof.Ffdh.sievedParameterSearchAskedContract abi 280).pre s) (args : SearchAbi p s) : FunctionInput p s := by
   have layout := searchLayout pre args
   have fit := layout.stackFits
-  have savedSub : (⟨State.addr (bodyState s).sp, 24⟩ : Region).Sub (FrameStack.belowA s.sp 232) :=
+  have savedSub : (⟨State.addr (bodyState s).sp, 24⟩ : Region).Sub (FrameStack.belowA s.sp 280) :=
     FrameStack.belowA_sub (by decide) fit
-  have belowSub : (FrameStack.belowA (bodyState s).sp 208).Sub (FrameStack.belowA s.sp 232) :=
+  have belowSub : (FrameStack.belowA (bodyState s).sp 256).Sub (FrameStack.belowA s.sp 280) :=
     FrameStack.belowA_inner (by decide) fit
   have storage : SearchBuffers p ((bodyState s).setReg .r4 p.control) := by
     refine ⟨⟨⟨p.controlFits, ?_⟩, ?_⟩, ⟨p.c.outputFits, ?_⟩, ⟨p.c.usedFits, ?_⟩,
@@ -241,7 +810,7 @@ theorem searchInput {p : SearchParams} {s : State}
     · refine ⟨_, List.mem_append_left _ (List.mem_cons_of_mem _ ?_), Region.contains_self _ _⟩
       rw [layout.reads]; simp [readRegions]
     · exact ⟨_, List.mem_append_left _ (List.mem_cons_self), Region.contains_self _ _⟩
-    · change 208 ≤ (s.sp - 24#32).toNat
+    · change 256 ≤ (s.sp - 24#32).toNat
       rw [FrameStack.sub_toNat' (by omega_using [fit] : 24 ≤ s.sp.toNat)]
       omega_using [fit]
     · intro r member
@@ -281,9 +850,9 @@ namespace VG.Proof.Ffdh.Arm.ParameterSearch
 open VG VG.Arm
 
 theorem correct (backend : VG.Proof.Ffdh.Arm.ParameterBackend) (s : State)
-    (pre : (Spec.Ffdh.sievedParameterSearchContract abi 232).pre s) :
+    (pre : (Proof.Ffdh.sievedParameterSearchAskedContract abi 280).pre s) :
     ∃ tr t, Exec isa (VG.Impl.Ffdh.Arm.ParameterSearch.code (.call backend.candidateName backend.candidate)) s tr t ∧
-      abiPreserved s t ∧ (Spec.Ffdh.sievedParameterSearchContract abi 232).post s t := by
+      abiPreserved s t ∧ (Proof.Ffdh.sievedParameterSearchAskedContract abi 280).post s t := by
   obtain ⟨p, args⟩ := searchPublic s pre
   obtain ⟨tr, t, run, abiOk, result⟩ := function_ok backend (searchInput pre args)
   have widthNat : (s.gpr .r1).toNat = p.c.length := by
@@ -303,13 +872,13 @@ theorem correct (backend : VG.Proof.Ffdh.Arm.ParameterBackend) (s : State)
   have bytes := args.bytes
   simp only [State.addr] at bytes attemptsNat
   refine ⟨tr, t, run, abiOk, ?_⟩
-  sig_post [Spec.Ffdh.sievedParameterSearchContract, Spec.Ffdh.parameterSearchSig,
+  sig_post [Proof.Ffdh.sievedParameterSearchAskedContract, Spec.Ffdh.parameterSearchSig,
     abi, argRegs, reduceClassify, Loc.val, State.addr]
   rw [BitVec.setWidth_append_eq_right]
   simp only [args.out, args.used, args.tape, args.control, widthNat, bitsNat, genNat, tapeNat, bytes, attemptsNat]
   rw [← same]
   refine ⟨?_, result.output, result.used, _, result.policy,
-    by rw [same]; exact SievedGeneration.search_requests _ _ _ _⟩
+    by rw [same]; exact SievedGeneration.search_asked _ _ _ _⟩
   rw [result.status, BitVec.toNat_ofNat, Nat.mod_eq_of_lt statusFits]
 
 end VG.Proof.Ffdh.Arm.ParameterSearch
@@ -377,11 +946,11 @@ namespace VG.Proof.Ffdh.Arm.ParameterSearch
 open VG VG.Arm
 
 theorem constantTime (backend : VG.Proof.Ffdh.Arm.ParameterBackend) :
-    ConstantTime isa (Spec.Ffdh.sievedParameterSearchContract abi 232).pre (Spec.Ffdh.sievedParameterSearchContract abi 232).pub
+    ConstantTime isa (Proof.Ffdh.sievedParameterSearchAskedContract abi 280).pre (Proof.Ffdh.sievedParameterSearchAskedContract abi 280).pub
       (VG.Impl.Ffdh.Arm.ParameterSearch.code (.call backend.candidateName backend.candidate)) := by
   intro s t traceS traceT u v hs ht pub runS runT
   obtain ⟨p, args⟩ := searchPublic s hs
-  sig_pub [Spec.Ffdh.sievedParameterSearchContract, Spec.Ffdh.parameterSearchSig,
+  sig_pub [Proof.Ffdh.sievedParameterSearchAskedContract, Spec.Ffdh.parameterSearchSig,
     abi, argRegs, reduceClassify, Loc.val, State.addr] at pub
   obtain ⟨sp, leak, p0, p1, p2, p3, p4, p5, p6, p7, p8, p9⟩ := pub
   obtain ⟨bytes, policy⟩ := List.append_inj leak (by
@@ -419,7 +988,7 @@ theorem constantTime (backend : VG.Proof.Ffdh.Arm.ParameterBackend) :
 
 theorem verified (backend : VG.Proof.Ffdh.Arm.ParameterBackend) :
     Verified target (VG.Impl.Ffdh.Arm.ParameterSearch.code (.call backend.candidateName backend.candidate))
-      (Spec.Ffdh.sievedParameterSearchContract abi 232) :=
+      (Proof.Ffdh.sievedParameterSearchAskedContract abi 280) :=
   ⟨correct backend, constantTime backend, search_sat⟩
 
 end VG.Proof.Ffdh.Arm.ParameterSearch

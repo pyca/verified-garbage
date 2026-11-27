@@ -3,9 +3,65 @@
 //! `assembly/triple_des_cfb8.s`.
 #![allow(dead_code)]
 
+/// The CPU features `vg_triple_des_cfb8_encrypt_ssse3` requires (`Artifact.features`).
+pub const VG_TRIPLE_DES_CFB8_ENCRYPT_SSSE3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3);
+
 /// Triple DES-CFB8 encryption (NIST SP 800-38A §6.3, with 8-bit segments; FIPS 46-3), in place: replaces the `len` bytes `P#₁ … P#ₙ` at `data` with `C#ⱼ = P#ⱼ ⊕ MSB₈(CIPH_K(Iⱼ))`, where `I₁` is the block at `*iv` and `Iⱼ₊₁` is `Iⱼ` without its first byte, followed by `C#ⱼ`, and `*iv` with `Iₙ₊₁` (leaving it unchanged if `len = 0`), so that a further call continues the message. `CIPH_K` is Triple DES encryption under the schedule written by `vg_triple_des_expand_key`.
 ///
 /// Contract: `VG.Spec.TripleDes.cfb8EncryptContract`. Constant time: only the pointers and `len` may affect timing, not the schedule, the input block or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// The function may overwrite the arguments on the stack, as the calling convention lets it.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 384 bytes.
+/// * `iv` must be valid for reads and writes of 8 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `iv` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 996 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `ssse3` target feature.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_triple_des_cfb8_encrypt_ssse3(schedule: *const [u8; 384], iv: *mut [u8; 8], data: *mut u8, len: usize) {
+    core::arch::naked_asm!(
+        r#".base64 "jaQkLPz//4uEJNgDAACJRCQEi4Qk3AMAAIlEJAiLhCTgAwAAiUQkDIuEJOQDAACJRCQQieCDwBiJRCQUi0QkFImYiAMAAImwjAMAAIm4kAMAAImolAMAAInHi3QkCIsGiYegAwAAi0YEiYekAwAA"
+call 2f
+2:
+mov eax, DWORD PTR [esp]
+.byte 0x81, 192
+.long {VG_TRIPLE_DES_SSSE3} - 2b
+.base64 "WYkHi0QkBInCgcL4AAAAif6DxjC5EAAAAA=="
+20:
+.base64 "iyjB7QaD5T+J64sowe0KgeUAPwAACeuLKMHtDoHlAAADAAnri2gEwc0OgeUAADwACeuLaATBzRKB5QAAAD8J64HLQEBAQIkeiyjB7QSB5QA/AACJ64sog+U/CeuLKMHtCIHlAAA/AAnri2gEwc0MgeUAAAA/CeuBy0BAQECJXgSLKsHtBoPlP4nriyrB7QqB5QA/AAAJ64sqwe0OgeUAAAMACeuLagTBzQ6B5QAAPAAJ64tqBMHNEoHlAAAAPwnrgctAQEBAiZ6AAAAAiyrB7QSB5QA/AACJ64sqg+U/CeuLKsHtCIHlAAA/AAnri2oEwc0MgeUAAAA/CeuBy0BAQECJnoQAAACLqAABAADB7QaD5T+J64uoAAEAAMHtCoHlAD8AAAnri6gAAQAAwe0OgeUAAAMACeuLqAQBAADBzQ6B5QAAPAAJ64uoBAEAAMHNEoHlAAAAPwnrgctAQEBAiZ4AAQAAi6gAAQAAwe0EgeUAPwAAieuLqAABAACD5T8J64uoAAEAAMHtCIHlAAA/AAnri6gEAQAAwc0MgeUAAAA/CeuBy0BAQECJngQBAACDwAiD6giDxgiD6QE="
+jne 20b
+.base64 "i0QkDImHmAMAAItEJBCJh5wDAACFwA=="
+je 21f
+23:
+.base64 "i7eYAwAAi6+cAwAAi4egAwAAiUcIi4ekAwAAiUcMix+LdwiLTwwPzg/JifDB6AQxyCUPDw8PMcHByBwxxonwwegQMcgl//8AADHBwcgQMcaJyMHoAjHwJTMzMzMxxsHIHjHBicjB6Agx8CX/AP8AMcbByBgxwYnw0egxyCVVVVVVMcHByB8xxtHO0clmD27G8w9/RyBmD275if2DxTC6AwAAAA=="
+24:
+.base64 "uQgAAAA="
+25:
+.base64 "8w9/fxBmD3DHAGYPctcCZg9z0B5mD2L48w9vM2YP2/7zD351AGYP7/7zD29zEPMPb1NQZg84ANfzD2+bkAAAAGYPOADf8w9vi9AAAABmDzgAz/MPb6MQAQAAZg84AOdmD/7+8w9va0BmDzgA72YP7+rzD2+DgAAAAGYPOADHZg/vw/MPb5PAAAAAZg84ANdmD+/R8w9viwABAABmDzgAz2YP78xmD/7+8w9vWzBmDzgA32YP7+vzD29jcGYPOADnZg/vxPMPb5uwAAAAZg84AN9mD+/a8w9vo/AAAABmDzgA52YP7+FmD/7+8w9vSyBmDzgAz2YP783zD29TYGYPOADXZg/v0PMPb4OgAAAAZg84AMdmD+/Y8w9vq+AAAABmDzgA72YP7+XzD2+zIAEAAGYP287zD2+zMAEAAGYP29bzD2+zQAEAAGYP297zD2+zUAEAAGYP2+ZmD+/KZg/v3GYP78tmD3DB4WYP78FmD2/oZg9z1QfzD2+zYAEAAGYP2+5mD2/QZg9z0g/zD2+zcAEAAGYP29ZmD+/qZg9v4GYPc9QQ8w9vs4ABAABmD9vmZg9v2GYPc9MX8w9vs5ABAABmD9veZg/v42YP7+xmD2/IZg9z0RvzD2+zoAEAAGYP285mD3PQHvMPb7OwAQAAZg/bxmYP78jzD29/IGYP7/lmD+/98w9/fyBmD3DHAGYPctcCZg9z0B5mD2L48w9vM2YP2/7zD351CGYP7/7zD29zEPMPb1NQZg84ANfzD2+bkAAAAGYPOADf8w9vi9AAAABmDzgAz/MPb6MQAQAAZg84AOdmD/7+8w9va0BmDzgA72YP7+rzD2+DgAAAAGYPOADHZg/vw/MPb5PAAAAAZg84ANdmD+/R8w9viwABAABmDzgAz2YP78xmD/7+8w9vWzBmDzgA32YP7+vzD29jcGYPOADnZg/vxPMPb5uwAAAAZg84AN9mD+/a8w9vo/AAAABmDzgA52YP7+FmD/7+8w9vSyBmDzgAz2YP783zD29TYGYPOADXZg/v0PMPb4OgAAAAZg84AMdmD+/Y8w9vq+AAAABmDzgA72YP7+XzD2+zIAEAAGYP287zD2+zMAEAAGYP29bzD2+zQAEAAGYP297zD2+zUAEAAGYP2+ZmD+/KZg/v3GYP78tmD3DB4WYP78FmD2/oZg9z1QfzD2+zYAEAAGYP2+5mD2/QZg9z0g/zD2+zcAEAAGYP29ZmD+/qZg9v4GYPc9QQ8w9vs4ABAABmD9vmZg9v2GYPc9MX8w9vs5ABAABmD9veZg/v42YP7+xmD2/IZg9z0RvzD2+zoAEAAGYP285mD3PQHvMPb7OwAQAAZg/bxmYP78jzD29/EGYP7/lmD+/9g8UQg+kB"
+jne 25b
+.base64 "8w9vRyDzD39/IGYPb/iD6gE="
+jne 24b
+.base64 "8w9/fxCLdyCLTxDBzh/ByR+J8NHoMcglVVVVVTHBwcgfMcaJyMHoCDHwJf8A/wAxxsHIGDHBicjB6AIx8CUzMzMzMcbByB4xwYnwwegQMcgl//8AADHBwcgQMcaJ8MHoBDHIJQ8PDw8xwcHIHDHGD84PyYl3CIlPDIu3mAMAAIuvnAMAAA+2Bg+2TwgxyIgGD7aHoQMAAIiHoAMAAA+2h6IDAACIh6EDAAAPtoejAwAAiIeiAwAAD7aHpAMAAIiHowMAAA+2h6UDAACIh6QDAAAPtoemAwAAiIelAwAAD7aHpwMAAIiHpgMAAA+2BoiHpwMAAIPGAYPtAYm3mAMAAImvnAMAAA=="
+jne 23b
+jmp 22f
+21:
+22:
+.base64 "i3QkCIuHoAMAAIkGi4ekAwAAiUYEi5+IAwAAi7eMAwAAi6+UAwAAi7+QAwAAZg/vwLkAAAAA8w9/RCQY8w9/RCQo8w9/RCQ48w9/RCRI8w9/RCRY8w9/RCRo8w9/RCR48w9/hCSIAAAA8w9/hCSYAAAA8w9/hCSoAAAA8w9/hCS4AAAA8w9/hCTIAAAA8w9/hCTYAAAA8w9/hCToAAAA8w9/hCT4AAAA8w9/hCQIAQAA8w9/hCQYAQAA8w9/hCQoAQAA8w9/hCQ4AQAA8w9/hCRIAQAA8w9/hCRYAQAA8w9/hCRoAQAA8w9/hCR4AQAA8w9/hCSIAQAA8w9/hCSYAQAA8w9/hCSoAQAA8w9/hCS4AQAA8w9/hCTIAQAA8w9/hCTYAQAA8w9/hCToAQAA8w9/hCT4AQAA8w9/hCQIAgAA8w9/hCQYAgAA8w9/hCQoAgAA8w9/hCQ4AgAA8w9/hCRIAgAA8w9/hCRYAgAA8w9/hCRoAgAA8w9/hCR4AgAA8w9/hCSIAgAA8w9/hCSYAgAA8w9/hCSoAgAA8w9/hCS4AgAA8w9/hCTIAgAA8w9/hCTYAgAA8w9/hCToAgAA8w9/hCT4AgAA8w9/hCQIAwAA8w9/hCQYAwAA8w9/hCQoAwAA8w9/hCQ4AwAA8w9/hCRIAwAA8w9/hCRYAwAA8w9/hCRoAwAA8w9/hCR4AwAA8w9/hCSIAwAA8w9/hCSYAwAA8w9/hCSoAwAA8w9/hCS4AwAAjaQk1AMAAI2kJBz8//+5AAAAAIlMJBCJTCQUiUwkGIlMJByJTCQgiUwkJImMJNgDAACJjCTcAwAAiYwk4AMAAI2kJOQDAAC4AAAAALoAAAAAMclmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/8M="
+.p2align 6"#,
+        VG_TRIPLE_DES_SSSE3 = sym super::consts::VG_TRIPLE_DES_SSSE3,
+    )
+}
+
+/// Triple DES-CFB8 encryption (NIST SP 800-38A §6.3, with 8-bit segments; FIPS 46-3), in place: replaces the `len` bytes `P#₁ … P#ₙ` at `data` with `C#ⱼ = P#ⱼ ⊕ MSB₈(CIPH_K(Iⱼ))`, where `I₁` is the block at `*iv` and `Iⱼ₊₁` is `Iⱼ` without its first byte, followed by `C#ⱼ`, and `*iv` with `Iₙ₊₁` (leaving it unchanged if `len = 0`), so that a further call continues the message. `CIPH_K` is Triple DES encryption under the schedule written by `vg_triple_des_expand_key`.
+///
+/// Contract: `VG.Spec.TripleDes.cfb8EncryptContract`. Constant time: only the pointers and `len` may affect timing, not the schedule, the input block or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -29,15 +85,71 @@ jne 22b
 jmp 21f
 20:
 21:
-.base64 "i3QkCIuHoAMAAIkGi4ekAwAAiUYEi5+IAwAAi7eMAwAAi6+UAwAAi7+QAwAAuQAAAACJTCQYiUwkHIlMJCCJTCQkiUwkKIlMJCyJTCQwiUwkNIlMJDiJTCQ8iUwkQIlMJESJTCRIiUwkTIlMJFCJTCRUiUwkWIlMJFyJTCRgiUwkZIlMJGiJTCRsiUwkcIlMJHSJTCR4iUwkfImMJIAAAACJjCSEAAAAiYwkiAAAAImMJIwAAACJjCSQAAAAiYwklAAAAImMJJgAAACJjCScAAAAiYwkoAAAAImMJKQAAACJjCSoAAAAiYwkrAAAAImMJLAAAACJjCS0AAAAiYwkuAAAAImMJLwAAACJjCTAAAAAiYwkxAAAAImMJMgAAACJjCTMAAAAiYwk0AAAAImMJNQAAACJjCTYAAAAiYwk3AAAAImMJOAAAACJjCTkAAAAiYwk6AAAAImMJOwAAACJjCTwAAAAiYwk9AAAAImMJPgAAACJjCT8AAAAiYwkAAEAAImMJAQBAACJjCQIAQAAiYwkDAEAAImMJBABAACJjCQUAQAAiYwkGAEAAImMJBwBAACJjCQgAQAAiYwkJAEAAImMJCgBAACJjCQsAQAAiYwkMAEAAImMJDQBAACJjCQ4AQAAiYwkPAEAAImMJEABAACJjCREAQAAiYwkSAEAAImMJEwBAACJjCRQAQAAiYwkVAEAAImMJFgBAACJjCRcAQAAiYwkYAEAAImMJGQBAACJjCRoAQAAiYwkbAEAAImMJHABAACJjCR0AQAAiYwkeAEAAImMJHwBAACJjCSAAQAAiYwkhAEAAImMJIgBAACJjCSMAQAAiYwkkAEAAImMJJQBAACJjCSYAQAAiYwknAEAAImMJKABAACJjCSkAQAAiYwkqAEAAImMJKwBAACJjCSwAQAAiYwktAEAAImMJLgBAACJjCS8AQAAiYwkwAEAAImMJMQBAACJjCTIAQAAiYwkzAEAAImMJNABAACJjCTUAQAAiYwk2AEAAImMJNwBAACJjCTgAQAAiYwk5AEAAImMJOgBAACJjCTsAQAAiYwk8AEAAImMJPQBAACJjCT4AQAAiYwk/AEAAImMJAACAACJjCQEAgAAiYwkCAIAAImMJAwCAACJjCQQAgAAiYwkFAIAAImMJBgCAACJjCQcAgAAiYwkIAIAAImMJCQCAACJjCQoAgAAiYwkLAIAAImMJDACAACJjCQ0AgAAiYwkOAIAAImMJDwCAACJjCRAAgAAiYwkRAIAAImMJEgCAACJjCRMAgAAiYwkUAIAAImMJFQCAACJjCRYAgAAiYwkXAIAAImMJGACAACJjCRkAgAAiYwkaAIAAImMJGwCAACJjCRwAgAAiYwkdAIAAImMJHgCAACJjCR8AgAAiYwkgAIAAImMJIQCAACJjCSIAgAAiYwkjAIAAImMJJACAACJjCSUAgAAiYwkmAIAAImMJJwCAACJjCSgAgAAiYwkpAIAAImMJKgCAACJjCSsAgAAiYwksAIAAImMJLQCAACJjCS4AgAAiYwkvAIAAImMJMACAACJjCTEAgAAiYwkyAIAAImMJMwCAACJjCTQAgAAiYwk1AIAAImMJNgCAACJjCTcAgAAiYwk4AIAAImMJOQCAACJjCToAgAAiYwk7AIAAImMJPACAACJjCT0AgAAiYwk+AIAAImMJPwCAACJjCQAAwAAiYwkBAMAAImMJAgDAACJjCQMAwAAiYwkEAMAAImMJBQDAACJjCQYAwAAiYwkHAMAAImMJCADAACJjCQkAwAAiYwkKAMAAImMJCwDAACJjCQwAwAAiYwkNAMAAImMJDgDAACJjCQ8AwAAiYwkQAMAAImMJEQDAACJjCRIAwAAiYwkTAMAAImMJFADAACJjCRUAwAAiYwkWAMAAImMJFwDAACJjCRgAwAAiYwkZAMAAImMJGgDAACJjCRsAwAAiYwkcAMAAImMJHQDAACJjCR4AwAAiYwkfAMAAImMJIADAACJjCSEAwAAiYwkiAMAAImMJIwDAACJjCSQAwAAiYwklAMAAImMJJgDAACJjCScAwAAiYwkoAMAAImMJKQDAACJjCSoAwAAiYwkrAMAAImMJLADAACJjCS0AwAAiYwkuAMAAImMJLwDAACJjCTAAwAAiYwkxAMAAI2kJMgDAADD"
+.base64 "i3QkCIuHoAMAAIkGi4ekAwAAiUYEi5+IAwAAi7eMAwAAi6+UAwAAi7+QAwAAZg/vwLkAAAAA8w9/RCQY8w9/RCQo8w9/RCQ48w9/RCRI8w9/RCRY8w9/RCRo8w9/RCR48w9/hCSIAAAA8w9/hCSYAAAA8w9/hCSoAAAA8w9/hCS4AAAA8w9/hCTIAAAA8w9/hCTYAAAA8w9/hCToAAAA8w9/hCT4AAAA8w9/hCQIAQAA8w9/hCQYAQAA8w9/hCQoAQAA8w9/hCQ4AQAA8w9/hCRIAQAA8w9/hCRYAQAA8w9/hCRoAQAA8w9/hCR4AQAA8w9/hCSIAQAA8w9/hCSYAQAA8w9/hCSoAQAA8w9/hCS4AQAA8w9/hCTIAQAA8w9/hCTYAQAA8w9/hCToAQAA8w9/hCT4AQAA8w9/hCQIAgAA8w9/hCQYAgAA8w9/hCQoAgAA8w9/hCQ4AgAA8w9/hCRIAgAA8w9/hCRYAgAA8w9/hCRoAgAA8w9/hCR4AgAA8w9/hCSIAgAA8w9/hCSYAgAA8w9/hCSoAgAA8w9/hCS4AgAA8w9/hCTIAgAA8w9/hCTYAgAA8w9/hCToAgAA8w9/hCT4AgAA8w9/hCQIAwAA8w9/hCQYAwAA8w9/hCQoAwAA8w9/hCQ4AwAA8w9/hCRIAwAA8w9/hCRYAwAA8w9/hCRoAwAA8w9/hCR4AwAA8w9/hCSIAwAA8w9/hCSYAwAA8w9/hCSoAwAA8w9/hCS4AwAAjaQkyAMAAI2kJCj8//+5AAAAAIkMJIlMJASJTCQIiUwkDIlMJBCJTCQUiUwkGIlMJByJTCQgiUwkJI2kJNgDAAC4AAAAALoAAAAAMclmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/8M="
 .p2align 6"#,
         vg_triple_des_encrypt_block = sym super::triple_des::vg_triple_des_encrypt_block::vg_triple_des_encrypt_block,
+    )
+}
+
+/// The CPU features `vg_triple_des_cfb8_decrypt_ssse3` requires (`Artifact.features`).
+pub const VG_TRIPLE_DES_CFB8_DECRYPT_SSSE3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3);
+
+/// Triple DES-CFB8 decryption (NIST SP 800-38A §6.3, with 8-bit segments; FIPS 46-3), in place: replaces the `len` bytes `C#₁ … C#ₙ` at `data` with `P#ⱼ = C#ⱼ ⊕ MSB₈(CIPH_K(Iⱼ))`, where `I₁` is the block at `*iv` and `Iⱼ₊₁` is `Iⱼ` without its first byte, followed by `C#ⱼ`, and `*iv` with `Iₙ₊₁` (leaving it unchanged if `len = 0`), so that a further call continues the message. `CIPH_K` is Triple DES encryption under the schedule written by `vg_triple_des_expand_key`.
+///
+/// Contract: `VG.Spec.TripleDes.cfb8DecryptContract`. Constant time: only the pointers and `len` may affect timing, not the schedule, the input block or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// The function may overwrite the arguments on the stack, as the calling convention lets it.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 384 bytes.
+/// * `iv` must be valid for reads and writes of 8 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `iv` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 996 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `ssse3` target feature.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_triple_des_cfb8_decrypt_ssse3(schedule: *const [u8; 384], iv: *mut [u8; 8], data: *mut u8, len: usize) {
+    core::arch::naked_asm!(
+        r#".base64 "jaQkLPz//4uEJNgDAACJRCQEi4Qk3AMAAIlEJAiLhCTgAwAAiUQkDIuEJOQDAACJRCQQieCDwBiJRCQUi0QkFImYiAMAAImwjAMAAIm4kAMAAImolAMAAInHi3QkCIsGiYegAwAAi0YEiYekAwAA"
+call 2f
+2:
+mov eax, DWORD PTR [esp]
+.byte 0x81, 192
+.long {VG_TRIPLE_DES_SSSE3} - 2b
+.base64 "WYkHi0QkBInCgcL4AAAAif6DxjC5EAAAAA=="
+20:
+.base64 "iyjB7QaD5T+J64sowe0KgeUAPwAACeuLKMHtDoHlAAADAAnri2gEwc0OgeUAADwACeuLaATBzRKB5QAAAD8J64HLQEBAQIkeiyjB7QSB5QA/AACJ64sog+U/CeuLKMHtCIHlAAA/AAnri2gEwc0MgeUAAAA/CeuBy0BAQECJXgSLKsHtBoPlP4nriyrB7QqB5QA/AAAJ64sqwe0OgeUAAAMACeuLagTBzQ6B5QAAPAAJ64tqBMHNEoHlAAAAPwnrgctAQEBAiZ6AAAAAiyrB7QSB5QA/AACJ64sqg+U/CeuLKsHtCIHlAAA/AAnri2oEwc0MgeUAAAA/CeuBy0BAQECJnoQAAACLqAABAADB7QaD5T+J64uoAAEAAMHtCoHlAD8AAAnri6gAAQAAwe0OgeUAAAMACeuLqAQBAADBzQ6B5QAAPAAJ64uoBAEAAMHNEoHlAAAAPwnrgctAQEBAiZ4AAQAAi6gAAQAAwe0EgeUAPwAAieuLqAABAACD5T8J64uoAAEAAMHtCIHlAAA/AAnri6gEAQAAwc0MgeUAAAA/CeuBy0BAQECJngQBAACDwAiD6giDxgiD6QE="
+jne 20b
+.base64 "i0QkDImHmAMAAItEJBCJh5wDAACFwA=="
+je 21f
+23:
+.base64 "i7eYAwAAi6+cAwAAi4egAwAAiUcIi4ekAwAAiUcMix+LdwiLTwwPzg/JifDB6AQxyCUPDw8PMcHByBwxxonwwegQMcgl//8AADHBwcgQMcaJyMHoAjHwJTMzMzMxxsHIHjHBicjB6Agx8CX/AP8AMcbByBgxwYnw0egxyCVVVVVVMcHByB8xxtHO0clmD27G8w9/RyBmD275if2DxTC6AwAAAA=="
+24:
+.base64 "uQgAAAA="
+25:
+.base64 "8w9/fxBmD3DHAGYPctcCZg9z0B5mD2L48w9vM2YP2/7zD351AGYP7/7zD29zEPMPb1NQZg84ANfzD2+bkAAAAGYPOADf8w9vi9AAAABmDzgAz/MPb6MQAQAAZg84AOdmD/7+8w9va0BmDzgA72YP7+rzD2+DgAAAAGYPOADHZg/vw/MPb5PAAAAAZg84ANdmD+/R8w9viwABAABmDzgAz2YP78xmD/7+8w9vWzBmDzgA32YP7+vzD29jcGYPOADnZg/vxPMPb5uwAAAAZg84AN9mD+/a8w9vo/AAAABmDzgA52YP7+FmD/7+8w9vSyBmDzgAz2YP783zD29TYGYPOADXZg/v0PMPb4OgAAAAZg84AMdmD+/Y8w9vq+AAAABmDzgA72YP7+XzD2+zIAEAAGYP287zD2+zMAEAAGYP29bzD2+zQAEAAGYP297zD2+zUAEAAGYP2+ZmD+/KZg/v3GYP78tmD3DB4WYP78FmD2/oZg9z1QfzD2+zYAEAAGYP2+5mD2/QZg9z0g/zD2+zcAEAAGYP29ZmD+/qZg9v4GYPc9QQ8w9vs4ABAABmD9vmZg9v2GYPc9MX8w9vs5ABAABmD9veZg/v42YP7+xmD2/IZg9z0RvzD2+zoAEAAGYP285mD3PQHvMPb7OwAQAAZg/bxmYP78jzD29/IGYP7/lmD+/98w9/fyBmD3DHAGYPctcCZg9z0B5mD2L48w9vM2YP2/7zD351CGYP7/7zD29zEPMPb1NQZg84ANfzD2+bkAAAAGYPOADf8w9vi9AAAABmDzgAz/MPb6MQAQAAZg84AOdmD/7+8w9va0BmDzgA72YP7+rzD2+DgAAAAGYPOADHZg/vw/MPb5PAAAAAZg84ANdmD+/R8w9viwABAABmDzgAz2YP78xmD/7+8w9vWzBmDzgA32YP7+vzD29jcGYPOADnZg/vxPMPb5uwAAAAZg84AN9mD+/a8w9vo/AAAABmDzgA52YP7+FmD/7+8w9vSyBmDzgAz2YP783zD29TYGYPOADXZg/v0PMPb4OgAAAAZg84AMdmD+/Y8w9vq+AAAABmDzgA72YP7+XzD2+zIAEAAGYP287zD2+zMAEAAGYP29bzD2+zQAEAAGYP297zD2+zUAEAAGYP2+ZmD+/KZg/v3GYP78tmD3DB4WYP78FmD2/oZg9z1QfzD2+zYAEAAGYP2+5mD2/QZg9z0g/zD2+zcAEAAGYP29ZmD+/qZg9v4GYPc9QQ8w9vs4ABAABmD9vmZg9v2GYPc9MX8w9vs5ABAABmD9veZg/v42YP7+xmD2/IZg9z0RvzD2+zoAEAAGYP285mD3PQHvMPb7OwAQAAZg/bxmYP78jzD29/EGYP7/lmD+/9g8UQg+kB"
+jne 25b
+.base64 "8w9vRyDzD39/IGYPb/iD6gE="
+jne 24b
+.base64 "8w9/fxCLdyCLTxDBzh/ByR+J8NHoMcglVVVVVTHBwcgfMcaJyMHoCDHwJf8A/wAxxsHIGDHBicjB6AIx8CUzMzMzMcbByB4xwYnwwegQMcgl//8AADHBwcgQMcaJ8MHoBDHIJQ8PDw8xwcHIHDHGD84PyYl3CIlPDIu3mAMAAIuvnAMAAA+2h6EDAACIh6ADAAAPtoeiAwAAiIehAwAAD7aHowMAAIiHogMAAA+2h6QDAACIh6MDAAAPtoelAwAAiIekAwAAD7aHpgMAAIiHpQMAAA+2h6cDAACIh6YDAAAPtgaIh6cDAAAPtgYPtk8IMciIBoPGAYPtAYm3mAMAAImvnAMAAA=="
+jne 23b
+jmp 22f
+21:
+22:
+.base64 "i3QkCIuHoAMAAIkGi4ekAwAAiUYEi5+IAwAAi7eMAwAAi6+UAwAAi7+QAwAAZg/vwLkAAAAA8w9/RCQY8w9/RCQo8w9/RCQ48w9/RCRI8w9/RCRY8w9/RCRo8w9/RCR48w9/hCSIAAAA8w9/hCSYAAAA8w9/hCSoAAAA8w9/hCS4AAAA8w9/hCTIAAAA8w9/hCTYAAAA8w9/hCToAAAA8w9/hCT4AAAA8w9/hCQIAQAA8w9/hCQYAQAA8w9/hCQoAQAA8w9/hCQ4AQAA8w9/hCRIAQAA8w9/hCRYAQAA8w9/hCRoAQAA8w9/hCR4AQAA8w9/hCSIAQAA8w9/hCSYAQAA8w9/hCSoAQAA8w9/hCS4AQAA8w9/hCTIAQAA8w9/hCTYAQAA8w9/hCToAQAA8w9/hCT4AQAA8w9/hCQIAgAA8w9/hCQYAgAA8w9/hCQoAgAA8w9/hCQ4AgAA8w9/hCRIAgAA8w9/hCRYAgAA8w9/hCRoAgAA8w9/hCR4AgAA8w9/hCSIAgAA8w9/hCSYAgAA8w9/hCSoAgAA8w9/hCS4AgAA8w9/hCTIAgAA8w9/hCTYAgAA8w9/hCToAgAA8w9/hCT4AgAA8w9/hCQIAwAA8w9/hCQYAwAA8w9/hCQoAwAA8w9/hCQ4AwAA8w9/hCRIAwAA8w9/hCRYAwAA8w9/hCRoAwAA8w9/hCR4AwAA8w9/hCSIAwAA8w9/hCSYAwAA8w9/hCSoAwAA8w9/hCS4AwAAjaQk1AMAAI2kJBz8//+5AAAAAIlMJBCJTCQUiUwkGIlMJByJTCQgiUwkJImMJNgDAACJjCTcAwAAiYwk4AMAAI2kJOQDAAC4AAAAALoAAAAAMclmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/8M="
+.p2align 6"#,
+        VG_TRIPLE_DES_SSSE3 = sym super::consts::VG_TRIPLE_DES_SSSE3,
     )
 }
 
 /// Triple DES-CFB8 decryption (NIST SP 800-38A §6.3, with 8-bit segments; FIPS 46-3), in place: replaces the `len` bytes `C#₁ … C#ₙ` at `data` with `P#ⱼ = C#ⱼ ⊕ MSB₈(CIPH_K(Iⱼ))`, where `I₁` is the block at `*iv` and `Iⱼ₊₁` is `Iⱼ` without its first byte, followed by `C#ⱼ`, and `*iv` with `Iₙ₊₁` (leaving it unchanged if `len = 0`), so that a further call continues the message. `CIPH_K` is Triple DES encryption under the schedule written by `vg_triple_des_expand_key`.
 ///
 /// Contract: `VG.Spec.TripleDes.cfb8DecryptContract`. Constant time: only the pointers and `len` may affect timing, not the schedule, the input block or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -61,7 +173,7 @@ jne 22b
 jmp 21f
 20:
 21:
-.base64 "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"
+.base64 "i3QkCIuHoAMAAIkGi4ekAwAAiUYEi5+IAwAAi7eMAwAAi6+UAwAAi7+QAwAAZg/vwLkAAAAA8w9/RCQY8w9/RCQo8w9/RCQ48w9/RCRI8w9/RCRY8w9/RCRo8w9/RCR48w9/hCSIAAAA8w9/hCSYAAAA8w9/hCSoAAAA8w9/hCS4AAAA8w9/hCTIAAAA8w9/hCTYAAAA8w9/hCToAAAA8w9/hCT4AAAA8w9/hCQIAQAA8w9/hCQYAQAA8w9/hCQoAQAA8w9/hCQ4AQAA8w9/hCRIAQAA8w9/hCRYAQAA8w9/hCRoAQAA8w9/hCR4AQAA8w9/hCSIAQAA8w9/hCSYAQAA8w9/hCSoAQAA8w9/hCS4AQAA8w9/hCTIAQAA8w9/hCTYAQAA8w9/hCToAQAA8w9/hCT4AQAA8w9/hCQIAgAA8w9/hCQYAgAA8w9/hCQoAgAA8w9/hCQ4AgAA8w9/hCRIAgAA8w9/hCRYAgAA8w9/hCRoAgAA8w9/hCR4AgAA8w9/hCSIAgAA8w9/hCSYAgAA8w9/hCSoAgAA8w9/hCS4AgAA8w9/hCTIAgAA8w9/hCTYAgAA8w9/hCToAgAA8w9/hCT4AgAA8w9/hCQIAwAA8w9/hCQYAwAA8w9/hCQoAwAA8w9/hCQ4AwAA8w9/hCRIAwAA8w9/hCRYAwAA8w9/hCRoAwAA8w9/hCR4AwAA8w9/hCSIAwAA8w9/hCSYAwAA8w9/hCSoAwAA8w9/hCS4AwAAjaQkyAMAAI2kJCj8//+5AAAAAIkMJIlMJASJTCQIiUwkDIlMJBCJTCQUiUwkGIlMJByJTCQgiUwkJI2kJNgDAAC4AAAAALoAAAAAMclmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/8M="
 .p2align 6"#,
         vg_triple_des_encrypt_block = sym super::triple_des::vg_triple_des_encrypt_block::vg_triple_des_encrypt_block,
     )

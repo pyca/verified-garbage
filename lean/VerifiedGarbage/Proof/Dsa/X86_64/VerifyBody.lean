@@ -1,14 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.VerifyCompute
-import VerifiedGarbage.Proof.Dsa.X86_64.AcceptedSpec
+import Mathlib.Tactic.Convert
+public import VerifiedGarbage.Proof.Dsa.X86_64.AcceptedSpec
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.Dsa.SizeBounds
-import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Dsa.SignVerify
 import VerifiedGarbage.Proof.Dsa.Arithmetic
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
-import Mathlib.Tactic.Convert
 public import VerifiedGarbage.Impl.Dsa.X86_64.SignVerify
 import VerifiedGarbage.Proof.Dsa.X86_64.Result
 

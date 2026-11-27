@@ -13,7 +13,8 @@ open VG.Arm
 /-- P-384 as the code has it, its field multiplications by
 `vg_p384_mul_mod_<p|n>_umaal` if `u`. -/
 def p384With (u : Bool) : Cfg :=
-  ⟨6, Spec.P384.curve, Impl.Weierstrass.Mont.p384p, Impl.Weierstrass.Mont.p384n, some Impl.Weierstrass.Mul.p384, u⟩
+  ⟨6, Spec.P384.curve, Impl.Weierstrass.Mont.p384p, Impl.Weierstrass.Mont.p384n, some Impl.Weierstrass.Mul.p384, u,
+    "VG_P384_FRAME_CONSTS"⟩
 
 /-- P-384 as the code has it. -/
 def p384 : Cfg := p384With false
@@ -29,5 +30,14 @@ def mulP384 : Prog isa := mulP384With false
 
 /-- `vg_p384_mul_umaal`. -/
 def mulP384U : Prog isa := mulP384With true
+
+/-- `vg_p384_mul_public`, or with `u` `vg_p384_mul_public_umaal`. -/
+def mulPubP384With (u : Bool) : Prog isa := (p384With u).pubFn
+
+/-- `vg_p384_mul_public`. -/
+def mulPubP384 : Prog isa := mulPubP384With false
+
+/-- `vg_p384_mul_public_umaal`. -/
+def mulPubP384U : Prog isa := mulPubP384With true
 
 end VG.Impl.Ecdsa.Arm

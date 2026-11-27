@@ -1,13 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86.PrivReleaseTail
-public import VerifiedGarbage.Proof.Rsa.X86.PrivReleaseArgs
 public import VerifiedGarbage.Proof.Rsa.SuccessBits32
-
 import VerifiedGarbage.Proof.Rsa.X86.PrivCompareBuffer
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Mont.X86.Instr
+
 /-! # Compare the public re-exponentiation before releasing any private bytes -/
 
 -- Formerly `VerifiedGarbage/Proof/Rsa/X86/PrivCompareArgs.lean`, which only this module imported.

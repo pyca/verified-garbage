@@ -9,8 +9,8 @@ doesn't have yet), BASE uses its own `bench/` crate, and HEAD's other
 benchmarks show as new. Their benchmark
 binaries are run on this machine `--rounds` times each (keeping the fastest
 time of each benchmark on each side, if more than one): one round, with a
-short warm-up and measurement, is the default, since the check fails only
-on a slowdown of more than `--threshold`, far beyond the noise between two
+short warm-up and measurement, is the default. The default slowdown
+threshold is far beyond the noise between two
 runs of the same code (in an A/A run on CI, with two rounds of 0.2 s and
 0.5 s: 99% of benchmarks within 3%, the largest 12%).
 
@@ -27,18 +27,22 @@ When BASE runs its own `bench/` crate, whose benchmarks need not be HEAD's,
 each side runs all of its benchmarks at once, alternately, as before.
 
 The benchmarks still over the threshold after the rounds run again, base
-and head alternately, `--confirm` more times each: a slowdown fails only if
+and head alternately, `--confirm` more times each: a slowdown is flagged only if
 it is still there in the fastest time of every run.
 
 Writes a Markdown table of the results to stdout (and appends it to
-`--summary`, e.g. `$GITHUB_STEP_SUMMARY`), and exits with status 1 if any
-verified-garbage benchmark got slower by more than `--threshold`. If BASE
+`--summary`, e.g. `$GITHUB_STEP_SUMMARY`), and, with `--json`, a results
+file of every time measured (`ci/bench_report.py`'s format, which its page
+charts; `--meta KEY=VALUE` adds fields of the run). If BASE
 does not exist, HEAD runs alone, next to OpenSSL and aws-lc-rs.
 
 OpenSSL's and aws-lc-rs's code is the same on both sides, so their
 benchmarks are only a reference point for HEAD's times, not part of the
 comparison: they run once, with HEAD's binary, with `--openssl` or when BASE
-does not exist; and only without `VG_CPU_FEATURES`, which does not change
+does not exist (with `--reference-copies`, also from the copies of
+`FRESH_COPIES`' groups, keeping the fastest as HEAD's do: for numbers that
+compare the libraries, where one run of theirs beside the fastest of eight
+of HEAD's would favour HEAD); and only without `VG_CPU_FEATURES`, which does not change
 their code either, unless `--openssl-with-features` asks for them under it
 too (`OPENSSL_ia32cap` in the environment then masks their own x86 CPU
 features, and `OPENSSL_armcap` replaces their AArch64 ones: OpenSSL and
@@ -118,11 +122,14 @@ import argparse
 import json
 import os
 import pathlib
+import platform
 import re
 import shutil
 import subprocess
 import sys
+import time
 
+import bench_report
 from bench_arches import NAMES, QUOTED, bench_catalog
 
 # Criterion filters (regexes over benchmark ids, which are
@@ -389,15 +396,16 @@ def matching_groups(groups, patterns):
     return {g: n for g, n in groups.items() if any(r.fullmatch(g) for r in regexes)}
 
 
-def planned_seconds(groups, sides, rounds, copies, references):
+def planned_seconds(groups, sides, rounds, copies, references, reference_copies=False):
     """How long measuring `groups` (by benchmark count) takes, in seconds:
     `rounds` runs of each of `sides` sides, `copies - 1` more of each for
-    the groups of FRESH_COPIES, and one of each of `references` libraries."""
+    the groups of FRESH_COPIES, and one of each of `references` libraries
+    (with `reference_copies`, as many more of each for those groups)."""
     total = 0
     for group, n in groups.items():
         runs = sides * rounds + references
         if copies > 1 and FRESH_COPIES.match(group):
-            runs += sides * (copies - 1)
+            runs += (sides + (references if reference_copies else 0)) * (copies - 1)
         total += n * runs * SECONDS_PER_RUN
     return total
 
@@ -499,7 +507,21 @@ def cpu_model():
             return None
         return out or None
     m = re.search(r"^model name\s*:\s*(.+)$", cpuinfo, re.M)
-    return m[1].strip() if m else None
+    if m:
+        return m[1].strip()
+    # Arm's /proc/cpuinfo names only the parts' numbers; lscpu names them.
+    try:
+        out = subprocess.run(["lscpu"], capture_output=True, text=True, check=True).stdout
+    except (OSError, subprocess.CalledProcessError):
+        return None
+    return lscpu_model(out)
+
+
+def lscpu_model(out):
+    """The CPU model `lscpu` printed in `out` (the first, on a machine of
+    several kinds of core), or None."""
+    m = re.search(r"^Model name\s*:\s*(.+)$", out, re.M)
+    return m[1].strip() if m and m[1].strip() != "-" else None
 
 
 def not_measured(cpu_features, lacking, model):
@@ -541,6 +563,8 @@ def main():
     p.add_argument("--measurement-time", type=float, default=0.3)
     p.add_argument("--openssl", action="store_true",
                    help="also run OpenSSL's and aws-lc-rs's benchmarks, for reference")
+    p.add_argument("--reference-copies", action="store_true",
+                   help="run them from the copies too, keeping the fastest, as head's: for comparing the libraries")
     p.add_argument("--openssl-with-features", action="store_true",
                    help="run them even under VG_CPU_FEATURES (with --openssl, or without a base)")
     p.add_argument("--work-dir", type=pathlib.Path, default=pathlib.Path("bench-compare"))
@@ -551,7 +575,11 @@ def main():
                    help="fail before measuring if the estimate is longer (0: no limit)")
     p.add_argument("--shard", default="", help="i/n: only the i-th of n shares of the benchmarks")
     p.add_argument("--arch", choices=EXECUTABLES, help="fail unless the binaries are this architecture's")
+    p.add_argument("--json", type=pathlib.Path, help="write a results file (ci/bench_report.py's format) here")
+    p.add_argument("--meta", action="append", metavar="KEY=VALUE",
+                   help="a field of the run in the results file (repeatable)")
     args = p.parse_args()
+    meta = bench_report.parse_meta(args.meta)
     shard, shards = map(int, (args.shard or "1/1").split("/"))
     if not 1 <= shard <= shards:
         p.error("--shard must be i/n with 1 <= i <= n")
@@ -590,7 +618,7 @@ def main():
     with_references = (args.openssl or binaries["base"] is None) and (not cpu_features or args.openssl_with_features)
     measured = {g: listed[g] for g in (groups if groups is not None else listed)}
     seconds = planned_seconds(measured, sum(b is not None for b in binaries.values()), args.rounds, args.copies,
-                              len(REFERENCES) if with_references else 0)
+                              len(REFERENCES) if with_references else 0, args.reference_copies)
     if args.budget_minutes and seconds > args.budget_minutes * 60:
         message = over_budget(measured, seconds, args.budget_minutes)
         print(f"::error::{message}")
@@ -615,6 +643,7 @@ def main():
                         modules_of(side, bench), unit, bench)
             for bench_id, t in times.items():
                 into[side].setdefault(bench_id, []).append(t)
+                samples[side].setdefault(bench_id, []).append(t)
 
     def keep_fastest(runs):
         for side, times in runs.items():
@@ -622,6 +651,8 @@ def main():
                 best[side][bench_id] = min(*ts, best[side].get(bench_id, ts[0]))
 
     best = {"base": {}, "head": {}}
+    # Every time measured of each benchmark, for the results file.
+    samples = {"base": {}, "head": {}}
     rounds = units(selected, owner)
     try:
         for r in range(args.rounds):
@@ -639,6 +670,9 @@ def main():
             with args.summary.open("a") as f:
                 f.write(report)
         return 0
+
+    if not best["head"] and (measured or shards == 1):
+        sys.exit("No verified-garbage benchmark timings were recorded for head")
 
     # The groups that depend on where the kernel puts their table run again
     # from fresh copies of each binary, alternately, and keep the fastest
@@ -690,6 +724,18 @@ def main():
             print(name, file=sys.stderr)
             references[library] = run(binaries["head"], args.work_dir.resolve() / library, library, args, head,
                                        modules["head"], groups)
+        # With --reference-copies, they get the same draws as head: the
+        # fastest of the copies, for the groups that head ran from copies.
+        for c in range(1, args.copies if args.reference_copies and copied else 0):
+            print(f"references: copy {c + 1}/{args.copies} of {len(copied)} group(s)", file=sys.stderr)
+            copy = fresh_copy(binaries["head"], c)
+            try:
+                for library, times in references.items():
+                    again = run(str(copy), work / f"{library}-copy-{c}", library, args, head, modules["head"], copied)
+                    for bench_id, t in again.items():
+                        times[bench_id] = min(t, times.get(bench_id, t))
+            finally:
+                copy.unlink()
 
     title = ", ".join([*([f"VG_CPU_FEATURES={cpu_features}"] if cpu_features else []),
                        *([f"shard {shard}/{shards}"] if shards > 1 else [])])
@@ -699,8 +745,9 @@ def main():
     lines = [
         f"## Benchmarks ({title})" if title else "## Benchmarks",
         "",
-        f"{runs} on this runner; a slowdown of more than {args.threshold:.0%} fails."
-        + (" OpenSSL (through rust-openssl) and aws-lc-rs ran once, for reference"
+        f"{runs} on this runner. Slowdowns of more than {args.threshold:.0%} are flagged."
+        + (" OpenSSL (through rust-openssl) and aws-lc-rs ran "
+           + ("as head did, from the same copies" if args.reference_copies and copied else "once, for reference")
            + (f", with OPENSSL_ia32cap={ia32cap}" if ia32cap
               else f", with OPENSSL_armcap={armcap}" if armcap
               else ", with all of this CPU's features" if cpu_features else "") + "." if with_references
@@ -774,7 +821,27 @@ def main():
     if args.summary:
         with args.summary.open("a") as f:
             f.write(report)
-    return 1 if regressions else 0
+    if args.json:
+        commits = {side: bench_report.commit_of(base if side == "base" else head) for side in best}
+        results = [bench_report.record(primitive, VG, size, t, samples[side].get((primitive, size)), side,
+                                       commits[side])
+                   for side in ("base", "head") for (primitive, size), t in sorted(best[side].items(), key=lambda kv: bench_key(kv[0]))]
+        # The references ran with head's binary.
+        results += [bench_report.record(primitive, library, size, t, side="head", commit=commits["head"])
+                    for library, times in references.items()
+                    for (primitive, size), t in sorted(times.items(), key=lambda kv: bench_key(kv[0]))]
+        context = {
+            "arch": args.arch or bench_report.arch_name(),
+            "cpu": cpu_model(),
+            "cpu_features": cpu_features,
+            "os": platform.system(),
+            "shard": args.shard or None,
+            "rounds": args.rounds,
+            "date": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+            **meta,
+        }
+        args.json.write_text(json.dumps(bench_report.document(context, results), indent=1) + "\n")
+    return 0
 
 
 if __name__ == "__main__":

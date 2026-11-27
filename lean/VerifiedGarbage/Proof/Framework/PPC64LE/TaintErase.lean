@@ -46,8 +46,9 @@ theorem checkBlock_eraseImm (τ : taint.T) (is : List isa.Instr) :
   induction is generalizing τ with
   | nil => rfl
   | cons i is ih =>
-    show (step τ i.eraseImm).bind _ = (step τ i).bind _
-    exact congr (congrArg Option.bind (step_eraseImm τ i)) (funext ih)
+    refine (VG.Taint.checkBlock_cons (A := taint) τ _ _).trans (Eq.trans ?_ (VG.Taint.checkBlock_cons (A := taint) τ i is).symm)
+    rw [taint_step τ i.eraseImm, taint_step τ i, step_eraseImm τ i]
+    exact congrArg (Option.bind _) (funext ih)
 
 theorem checkChunks_eraseImm {chunkSize : Nat} (τ : taint.T) (is : List isa.Instr) (ms : List taint.T) :
     taint.checkChunks chunkSize τ (is.map Instr.eraseImm) ms = taint.checkChunks chunkSize τ is ms := by

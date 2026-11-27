@@ -1,19 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.RISCV64.CTBase
+public import VerifiedGarbage.Proof.Dsa.RISCV64.CTParams
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Framework.RISCV64.Taint
-import VerifiedGarbage.Proof.Dsa.RISCV64.CTKey
-public import VerifiedGarbage.Proof.Dsa.RISCV64.CTParams
-import VerifiedGarbage.Proof.Dsa.RISCV64.CTBodyA
 import VerifiedGarbage.Proof.Dsa.RISCV64.CTBodyB
 import VerifiedGarbage.Proof.Dsa.RISCV64.VerifyBody
-meta import VerifiedGarbage.Proof.Dsa.RISCV64.CTBase
+meta import VerifiedGarbage.Proof.Dsa.RISCV64.CTParams
 meta import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Taint
-meta import VerifiedGarbage.Proof.Dsa.RISCV64.CTKey
-meta import VerifiedGarbage.Proof.Dsa.RISCV64.CTParams
-meta import VerifiedGarbage.Proof.Dsa.RISCV64.CTBodyA
 meta import VerifiedGarbage.Proof.Dsa.RISCV64.CTBodyB
 meta import VerifiedGarbage.Proof.Dsa.RISCV64.VerifyBody
 
@@ -70,18 +64,18 @@ theorem body_rel' {Φ : VD → State → Prop} (runB : ∀ v s, Φ v s → WP is
   refine chain_cons runB (m := 50) (by decide) (two_taint _ (pinsB9 hsem) (by taint_decide)) ?_
   refine chain_cons runB (m := 53) (by decide) (two_taint _ (pinsB50 hsem) (by taint_decide)) ?_
   refine chain_cons runB (m := 63) (by decide) (two_taint _ (pinsB53 hsem) (by taint_decide)) ?_
-  refine chain_cons runB (m := 104) (by decide) (two_taint _ (pinsB63 hsem) (by taint_decide)) ?_
-  refine chain_cons runB (m := 106) (by decide) (two_taint _ (pinsB104 hsem) (by taint_decide)) ?_
-  refine chain_cons runB (m := 108) (by decide) (two_taint _ (pinsB106 hsem) (by taint_decide)) ?_
-  refine chain_cons runB (m := 154) (by decide) (two_taint _ (pinsB108 hsem) (by taint_decide)) ?_
-  refine chain_cons runB (m := 157) (by decide) (two_taint _ (pinsB154 hsem) (by taint_decide)) ?_
-  refine chain_cons runB (m := 161) (by decide) (two_taint _ (pinsB157 hsem) (by taint_decide)) ?_
-  refine chain_cons runB (m := 169) (by decide) (two_taint _ (pinsB161 hsem) (by taint_decide)) ?_
-  refine chain_cons runB (m := 330) (by decide) (two_taint _ (pinsB169 hsem) (by taint_decide)) ?_
-  refine chain_cons runB (m := 341) (by decide) (two_taint _ (pinsB330 hsem) (by taint_decide)) ?_
-  refine chain_cons runB (m := 344) (by decide) (two_taint _ (pinsB341 hsem) (by taint_decide)) ?_
-  refine chain_cons runB (m := 350) (by decide) (two_taint _ (pinsB344 hsem) (by taint_decide)) ?_
-  exact two_taint _ (pinsB350 hsem) (by taint_decide)
+  refine chain_cons runB (m := 66) (by decide) (two_taint _ (pinsB63 hsem) (by taint_decide)) ?_
+  refine chain_cons runB (m := 68) (by decide) (two_taint _ (pinsB66 hsem) (by taint_decide)) ?_
+  refine chain_cons runB (m := 70) (by decide) (two_taint _ (pinsB68 hsem) (by taint_decide)) ?_
+  refine chain_cons runB (m := 116) (by decide) (two_taint _ (pinsB70 hsem) (by taint_decide)) ?_
+  refine chain_cons runB (m := 119) (by decide) (two_taint _ (pinsB116 hsem) (by taint_decide)) ?_
+  refine chain_cons runB (m := 123) (by decide) (two_taint _ (pinsB119 hsem) (by taint_decide)) ?_
+  refine chain_cons runB (m := 131) (by decide) (two_taint _ (pinsB123 hsem) (by taint_decide)) ?_
+  refine chain_cons runB (m := 292) (by decide) (two_taint _ (pinsB131 hsem) (by taint_decide)) ?_
+  refine chain_cons runB (m := 303) (by decide) (two_taint _ (pinsB292 hsem) (by taint_decide)) ?_
+  refine chain_cons runB (m := 306) (by decide) (two_taint _ (pinsB303 hsem) (by taint_decide)) ?_
+  refine chain_cons runB (m := 312) (by decide) (two_taint _ (pinsB306 hsem) (by taint_decide)) ?_
+  exact two_taint _ (pinsB312 hsem) (by taint_decide)
 
 theorem map_toNat_inj : ∀ {l₁ l₂ : List Byte}, l₁.map (·.toNat) = l₂.map (·.toNat) → l₁ = l₂
   | [], [], _ => rfl

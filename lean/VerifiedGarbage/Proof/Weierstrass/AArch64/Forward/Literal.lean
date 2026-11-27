@@ -12,7 +12,6 @@ public import VerifiedGarbage.Proof.Framework.Bswap
 public import VerifiedGarbage.Proof.Mont.AArch64.Words
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Certificate
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Scalar
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Tree
 
 public meta section
 

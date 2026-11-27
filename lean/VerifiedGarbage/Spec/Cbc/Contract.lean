@@ -28,7 +28,9 @@ Each takes a `scratch` buffer of working space, room for that of
 bytes more (eight blocks, e.g. of ciphertext that decryption in place must
 keep until it has decrypted the block after each). On return each byte of
 `scratch` is unchanged or zero (`Zeroize.scrubbed`), so that nothing the
-function computed is left there. `stack` is the number of
+function computed is left there, and which of them are zero reveals nothing:
+two runs that agree on what is public, and on the bytes of `scratch` on entry,
+leave the same bytes there (`aesScratchOut`). `stack` is the number of
 bytes of stack below the stack pointer that an implementation's calls and
 frames use (see `Sig.contract`).
 -/
@@ -85,6 +87,14 @@ def aesDecryptContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
       Zeroize.scrubbed m m' scratch 2176)
     (stack := stack)
 
+/-- What `vg_aes_cbc_encrypt` and `vg_aes_cbc_decrypt` leave that is public: the
+bytes of `scratch`, in two runs that agree on them on entry (`Zeroize.left`). The
+contracts say that each is unchanged or zero; this, that which are zero depends
+on nothing secret. -/
+def aesScratchOut : PublicOut aesSig where
+  given _ := fun _schedule _rounds _iv _data _n scratch m => Zeroize.left m scratch 2176
+  out _ := fun _schedule _rounds _iv _data _n scratch _m m' _ => Zeroize.left m' scratch 2176
+
 /-- The `# Safety` items of the functions of the AES modes whose contracts
 leave `scratch` unspecified. -/
 def aesSafety : List String := [
@@ -102,6 +112,7 @@ def aesEncryptApi : Api where
   name := "vg_aes_cbc_encrypt"
   sig := aesSig
   contracts := some fun A stack => aesEncryptContract A stack
+  publicOut := some aesScratchOut
   summary := "AES-CBC encryption (NIST SP 800-38A §6.2) of whole blocks, in place: replaces the \
     `n` 16-byte blocks `P₁ … Pₙ` at `data` with `Cⱼ = CIPH_K(Pⱼ ⊕ Cⱼ₋₁)`, where `C₀` is the \
     block at `*iv`, and `*iv` with `Cₙ` (leaving it unchanged if `n = 0`), so that a further \
@@ -118,6 +129,7 @@ def aesDecryptApi : Api where
   name := "vg_aes_cbc_decrypt"
   sig := aesSig
   contracts := some fun A stack => aesDecryptContract A stack
+  publicOut := some aesScratchOut
   summary := "AES-CBC decryption (NIST SP 800-38A §6.2) of whole blocks, in place: replaces the \
     `n` 16-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = CIPH⁻¹_K(Cⱼ) ⊕ Cⱼ₋₁`, where `C₀` is the \
     block at `*iv`, and `*iv` with `Cₙ`, the last block at `data` on entry (leaving it \

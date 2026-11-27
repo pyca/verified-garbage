@@ -6,48 +6,9 @@ public import VerifiedGarbage.Spec.X25519
 /-!
 # X25519: x86-64 implementation
 
-`vg_x25519(out = rdi, scalar = rsi, point = rdx, scratch = rcx)`.
-
-A field element is four 64-bit words `x0 + 2⁶⁴ x1 + 2¹²⁸ x2 + 2¹⁹² x3`,
-any number below `2²⁵⁶`, standing for its residue modulo `p = 2²⁵⁵ - 19`;
-only the result is reduced fully. Every element lives in the working space,
-at a constant offset from its base, which is in `rdi` once the arguments are
-read (`out` then in `rsi`):
-
-* `[0, 48)`: the saved `rbx, rbp, r12–r15`;
-* `x1, x2, z2, x3, z3` and the ladder's temporaries, 32 bytes each (`X1`, …);
-* `swap` (a word, 0 or 1) and the bits of the clamped scalar `k` (`BITS`,
-  byte `t` is bit `t` of `k`).
-
-The arithmetic (registers `rax, rdx, rcx, rbp, r8–r15`), whose
-multiplications (`mul`, `sqr`, and `mulSmallAdd` by `a24`) are the
-`Field` `baseline`; the rest of the code takes them as a parameter
-(`x25519With`), so that `vg_x25519_adx` (`X86_64/Adx.lean`) is this code with
-other multiplications:
-
-* `mul`: the 512-bit product, row by row (`r8–r15`, with the carry of a row
-  in `rbp`), then `lo + 38 hi` (as `2²⁵⁶ ≡ 38`), whose carry word `c` is
-  folded in as `38 c`, and a last carry of that as 38 more;
-* `add`, `sub`: with carries (borrows), each carry folded in (subtracted) as
-  38, twice; `addCmov` and `subCmov`, the ladder's, once, which is enough when an
-  operand is at most `2p`, as products are;
-* `sqr`: the products `a_i a_j` for `i < j` once, as rows of `mul`, then
-  doubled, and the squares `a_i²` added; reduced as `mul`;
-* `mulSmallAdd`: an element plus another by a one-word constant (`a24`),
-  folded as for `mul`;
-* `cswap`: with the mask `-swap`, as RFC 7748 §5 describes (once, after
-  the ladder); `mux`: with `cmove`, choosing the point an iteration doubles;
-* `freeze`: the full reduction of the result, by folding bit 255 in as 19,
-  then selecting `x + 19 - 2²⁵⁵` with a mask if it is not negative.
-
-The ladder is s2n-bignum's `curve25519_x25519`'s (`step`): RFC 7748 §5's,
-but with no swap of the points in its iterations, over the bits of `k` from
-254 down to 0 (the counter `rbx`, which indexes `BITS`), and the
-inversion `z2^(p-2)` is by Bernstein–Yang divsteps (`invertDS`), a call of
-`vg_gf25519_r64_invert` (`invertCall`).
-
-The only branches are on the loop counters, and every address is a pointer
-plus a constant or a counter, so only the pointers can affect timing.
+`vg_x25519(out = rdi, scalar = rsi, point = rdx, scratch = rcx)`, on four-word
+field elements in a working space of 4096 bytes: the scalar's bits spread to a
+byte each, the Montgomery ladder of RFC 7748 §5, and the inversion by divsteps.
 -/
 
 @[expose] public section
@@ -109,18 +70,6 @@ def carry38 : List Instr :=
     .alu .adc .r11 (.imm 0), .alu .sbb .rax (.reg .rax), .alu .and .rax (.imm 38),
     .alu .add .r8 (.reg .rax)]
 
-/-- `r8–r11 += rax`, for `rax < 2⁶³`, with bit 255 of `r8–r11` taken out and
-added back as 19 (`2²⁵⁵ ≡ 19`), using `m` for the mask: the sum, below
-`2²⁵⁵ + 2⁶⁴`, cannot carry out, so a product reduced this way is at most `2p`,
-as `addL` and `subL` need. -/
-def carry19 (m : Reg) : List Instr :=
-  [.shift .shl .r11 1, .alu .sbb m (.reg m), .shift .shr .r11 1, .alu .and m (.imm 19),
-    .alu .add .rax (.reg m), .alu .add .r8 (.reg .rax), .alu .adc .r9 (.imm 0),
-    .alu .adc .r10 (.imm 0), .alu .adc .r11 (.imm 0)]
-
-/-- `r8–r11 += 38 rbp`, with `rcx = 38`, at most `2p`. -/
-def fold : List Instr := [.mov .rax (.reg .rbp), .mul .rcx] ++ carry19 .rbp
-
 /-- `[rdi + o] = a, b, c, d`. -/
 def stores (o : Nat) (a b c d : Reg) : List Instr :=
   [.store (sc o) a, .store (sc (o + 8)) b, .store (sc (o + 16)) c, .store (sc (o + 24)) d]
@@ -133,60 +82,134 @@ def loads (o : Nat) (a b c d : Reg) : List Instr :=
   [.mov a (.mem (sc o)), .mov b (.mem (sc (o + 8))), .mov c (.mem (sc (o + 16))),
     .mov d (.mem (sc (o + 24)))]
 
-/-- `r8–r11 = r8–r11 + 38 r12–r15` with the carry word in `rbp`, folded. -/
-def reduce : List Instr :=
-  [.mov32 .rcx (.imm 38), .mov32 .rbp (.imm 0)] ++
-    ((List.range 4).flatMap fun j => mulStep (t j) .rbp .rcx (.reg (t (4 + j)))) ++ fold
+/-- `xor r, r` on the low halves: `r = 0`. -/
+def zero (r : Reg) : Instr := .alu32 .xor r (.reg r)
+
+/-- `t1:t0 = [rdi + a] · b`. -/
+def prod2 (t0 t1 b : Reg) (a : Nat) : List Instr :=
+  [.mov .rax (.mem (sc a)), .mul b, .mov t0 (.reg .rax), .mov t1 (.reg .rdx)]
+
+/-- `t1:t0 += [rdi + a] · b`, where the sum cannot carry out. -/
+def acc2 (t0 t1 b : Reg) (a : Nat) : List Instr :=
+  [.mov .rax (.mem (sc a)), .mul b, .alu .add t0 (.reg .rax), .alu .adc t1 (.reg .rdx)]
+
+/-- `t2:t1:t0 += [rdi + a] · b`: a product added to the three words of a
+column of products. -/
+def acc3 (t0 t1 t2 b : Reg) (a : Nat) : List Instr :=
+  acc2 t0 t1 b a ++ [.alu .adc t2 (.imm 0)]
+
+/-- `t1:t0 += 38 h + 2⁶⁴ c` (with `rcx = 38`), for the carry `c` that the mask
+`rbp` holds (`sub`, into the product's high half, which is at most 37), the
+carry out of it then the mask (`sbb`). -/
+def redStep (t0 t1 h : Reg) : List Instr :=
+  [.mov .rax (.reg h), .mul .rcx, .alu .sub .rdx (.reg .rbp), .alu .add t0 (.reg .rax),
+    .alu .adc t1 (.reg .rdx), .alu .sbb .rbp (.reg .rbp)]
+
+/-- `r8–r11 + 2²⁵⁶ r12 = r8–r11 + 38 · r12–r15`: each `38 h_i` (`rdx:rax`)
+added at its two words, with the carry out of them kept as a mask in `rbp`
+for the next (`redStep`). -/
+def reduceLoC : List Instr :=
+  [.mov32 .rcx (.imm 38),
+    .mov .rax (.reg .r12), .mul .rcx, .alu .add .r8 (.reg .rax), .alu .adc .r9 (.reg .rdx),
+    .alu .sbb .rbp (.reg .rbp)] ++
+    redStep .r9 .r10 .r13 ++ redStep .r10 .r11 .r14 ++
+    [.mov .rax (.reg .r15), .mul .rcx, .alu .sub .rdx (.reg .rbp), .alu .add .r11 (.reg .rax),
+      .alu .adc .rdx (.imm 0), .mov .r12 (.reg .rdx)]
+
+/-- `r8–r11 + 2²⁵⁶ r12` (`r12` small) folded at bit 255: bit 255 shifted out
+into CF (`shl`) and in as `q = 2 r12 + bit 255` (`adc`), `r11` shifted back
+(`shr`), and `19 q` added, where the sum is below `2²⁵⁵ + 19 q`. -/
+def fold19X : List Instr :=
+  [.shift .shl .r11 1, .alu .adc .r12 (.reg .r12), .shift .shr .r11 1, .imul3 .rax .r12 19,
+    .alu .add .r8 (.reg .rax), .alu .adc .r9 (.imm 0), .alu .adc .r10 (.imm 0),
+    .alu .adc .r11 (.imm 0)]
+
+/-- `r8–r11 = r8–r11 + 38 · r12–r15`, at most `2p`. -/
+def reduceC : List Instr := reduceLoC ++ fold19X
+
+/-- `r8–r12` doubled. -/
+def dbl5 : List Instr :=
+  [.alu .add .r8 (.reg .r8), .alu .adc .r9 (.reg .r9), .alu .adc .r10 (.reg .r10),
+    .alu .adc .r11 (.reg .r11), .alu .adc .r12 (.reg .r12)]
+
+/-- `r8–r11 = 2 · (r8–r11 + 38 · r12–r15)`: doubled before the fold at bit 255, five
+instructions rather than an addition. -/
+def reduceC2 : List Instr := reduceLoC ++ dbl5 ++ fold19X
+
+/-- A column of products: each `[rdi + a] · b` of `ps` added to `t2:t1:t0`. -/
+def accCol (t0 t1 t2 : Reg) (ps : List (Reg × Nat)) : List Instr :=
+  ps.flatMap fun p => acc3 t0 t1 t2 p.1 p.2
+
+/-- `r8–r15 = [a] · [b]`: `b` in `r14, r15, rcx, rbp`, and the products
+`a_i b_j` column by column (`i + j`), each added to the three words of its
+column (`accCol`), the two highest in the registers of `b₀` and `b₁`, which
+the columns before them used last. -/
+def mulProd (a b : Nat) : List Instr :=
+  loads b .r14 .r15 .rcx .rbp ++
+    prod2 .r8 .r9 .r14 a ++ [zero .r10] ++ [zero .r11] ++ acc2 .r9 .r10 .r15 a ++
+    accCol .r9 .r10 .r11 [(.r14, a + 8)] ++
+    [zero .r12] ++ accCol .r10 .r11 .r12 [(.rcx, a), (.r15, a + 8), (.r14, a + 16)] ++
+    [zero .r13] ++ accCol .r11 .r12 .r13 [(.rbp, a), (.rcx, a + 8), (.r15, a + 16), (.r14, a + 24)] ++
+    [zero .r14] ++ accCol .r12 .r13 .r14 [(.rbp, a + 8), (.rcx, a + 16), (.r15, a + 24)] ++
+    [zero .r15] ++ accCol .r13 .r14 .r15 [(.rbp, a + 16), (.rcx, a + 24)] ++
+    acc2 .r14 .r15 .rbp (a + 24)
 
 /-- `[o] = [a] · [b]` (`o` may be `a` or `b`). -/
-def mul (o a b : Nat) : List Instr :=
-  zero4 ++ row a b 0 ++ row a b 1 ++ row a b 2 ++ row a b 3 ++ reduce ++ store4 o
+def mul (o a b : Nat) : List Instr := mulProd a b ++ reduceC ++ store4 o
 
-/-- `r9–r12 = a₀ · (a₁, a₂, a₃)`, a row of `mul`. -/
-def sq1 (a : Nat) : List Instr :=
-  [.mov .rcx (.mem (sc a)), .mov32 .rbp (.imm 0), .mov32 .r9 (.imm 0), .mov32 .r10 (.imm 0),
-    .mov32 .r11 (.imm 0)] ++
-    mulStep .r9 .rbp .rcx (.mem (sc (a + 8))) ++ mulStep .r10 .rbp .rcx (.mem (sc (a + 16))) ++
-    mulStep .r11 .rbp .rcx (.mem (sc (a + 24))) ++ [.mov .r12 (.reg .rbp)]
+/-- `[o] = 2 · [a] · [b]`. -/
+def mul2 (o a b : Nat) : List Instr := mulProd a b ++ reduceC2 ++ store4 o
 
-/-- `r11–r13 = r11–r12 + a₁ · (a₂, a₃)`. -/
-def sq2 (a : Nat) : List Instr :=
-  [.mov .rcx (.mem (sc (a + 8))), .mov32 .rbp (.imm 0)] ++
-    mulStep .r11 .rbp .rcx (.mem (sc (a + 16))) ++ mulStep .r12 .rbp .rcx (.mem (sc (a + 24))) ++
-    [.mov .r13 (.reg .rbp)]
+/-- `r9–r14 = Σ a_i a_j` (`i < j`), column by column, with `a₁, a₂, a₃` in
+`rcx, rbp, r15`. -/
+def sqrCross (a : Nat) : List Instr :=
+  [.mov .rcx (.mem (sc (a + 8))), .mov .rbp (.mem (sc (a + 16))), .mov .r15 (.mem (sc (a + 24)))] ++
+    prod2 .r9 .r10 .rcx a ++ [zero .r11] ++ [zero .r12] ++ [zero .r13] ++
+    acc2 .r10 .r11 .rbp a ++
+    accCol .r11 .r12 .r13 [(.r15, a), (.rbp, a + 8)] ++
+    [zero .r14] ++ accCol .r12 .r13 .r14 [(.r15, a + 8)] ++
+    acc2 .r13 .r14 .r15 (a + 16)
 
-/-- `r13–r14 = r13 + a₂ a₃`. -/
-def sq3 (a : Nat) : List Instr :=
-  [.mov .rcx (.mem (sc (a + 16))), .mov32 .rbp (.imm 0)] ++
-    mulStep .r13 .rbp .rcx (.mem (sc (a + 24))) ++ [.mov .r14 (.reg .rbp)]
+/-- `r9–r15 = 2 · r9–r14`. -/
+def sqrDbl : List Instr :=
+  [zero .r15, .alu .add .r9 (.reg .r9), .alu .adc .r10 (.reg .r10), .alu .adc .r11 (.reg .r11),
+    .alu .adc .r12 (.reg .r12), .alu .adc .r13 (.reg .r13), .alu .adc .r14 (.reg .r14),
+    .alu .adc .r15 (.reg .r15)]
 
-/-- `r9–r15 = 2 · r9–r14`, and `r8 = rbp = 0`. -/
-def sqDbl : List Instr :=
-  [.mov32 .r15 (.imm 0), .mov32 .r8 (.imm 0), .alu .add .r9 (.reg .r9),
-    .alu .adc .r10 (.reg .r10), .alu .adc .r11 (.reg .r11), .alu .adc .r12 (.reg .r12),
-    .alu .adc .r13 (.reg .r13), .alu .adc .r14 (.reg .r14), .alu .adc .r15 (.reg .r15),
-    .mov32 .rbp (.imm 0)]
+/-- `t1:t0 += [rdi + d]² + c`, for the carry `c` that the mask `rcx` holds, set
+again by doubling the mask (`add`). -/
+def diagAdd (t0 t1 : Reg) (d : Nat) : List Instr :=
+  [.mov .rax (.mem (sc d)), .mul .rax, .alu .add .rcx (.reg .rcx), .alu .adc t0 (.reg .rax),
+    .alu .adc t1 (.reg .rdx)]
 
-/-- `t + 2⁶⁴ u + 2¹²⁸ rbp = t + 2⁶⁴ u + rbp + [d]²`: a square added at the
-words `t`, `u`, the carry word `rbp` in and out. -/
-def diag (t u : Reg) (d : Nat) : List Instr :=
-  [.mov .rax (.mem (sc d)), .mul .rax, .alu .add .rax (.reg .rbp), .alu .adc .rdx (.imm 0),
-    .alu .add t (.reg .rax), .alu .adc u (.reg .rdx), .mov32 .rbp (.imm 0),
-    .alu .adc .rbp (.imm 0)]
+/-- `r8–r15 = r9–r15 · 2⁶⁴ + Σ a_i² 2¹²⁸ⁱ`: the squares added two words at a
+time, the carry between them kept as a mask in `rcx` (`sbb`) across the next
+`mul` (`diagAdd`). -/
+def sqrDiag (a : Nat) : List Instr :=
+  prod2 .r8 .rbp .rax a ++
+    [.mov .rax (.mem (sc (a + 8))), .mul .rax, .alu .add .r9 (.reg .rbp), .alu .adc .r10 (.reg .rax),
+      .alu .adc .r11 (.reg .rdx)] ++ [.alu .sbb .rcx (.reg .rcx)] ++
+    diagAdd .r12 .r13 (a + 16) ++ [.alu .sbb .rcx (.reg .rcx)] ++ diagAdd .r14 .r15 (a + 24)
 
-/-- `[o] = [a]²`: the products `a_i a_j` (`i < j`) into `r9–r14` (by `a₀`,
-then `a₁`, then `a₂`, as rows of `mul`), doubled into `r9–r15`, then the
-squares `a_i²` added at `r8 + 2i` (`diag`), and reduced as in `mul`. -/
-def sqr (o a : Nat) : List Instr :=
-  sq1 a ++ sq2 a ++ sq3 a ++ sqDbl ++ diag .r8 .r9 a ++ diag .r10 .r11 (a + 8) ++
-    diag .r12 .r13 (a + 16) ++ diag .r14 .r15 (a + 24) ++ reduce ++ store4 o
+/-- `r8–r15 = [a]²`. -/
+def sqrProd (a : Nat) : List Instr := sqrCross a ++ sqrDbl ++ sqrDiag a
 
-/-- `[o] = [b] + k · [a]`, for a constant `k < 2³¹`: `[b]` into `r8–r11`, then
-`k · [a]` added word by word, and the carry word folded. -/
+/-- `[o] = [a]²`: the products `a_i a_j` (`i < j`) into `r9–r14`
+(`sqrCross`), doubled into `r9–r15`, then the squares `a_i²` added
+(`sqrDiag`), and reduced as in `mul`. -/
+def sqr (o a : Nat) : List Instr := sqrProd a ++ reduceC ++ store4 o
+
+/-- `[o] = 2 · [a]²`. -/
+def sqr2 (o a : Nat) : List Instr := sqrProd a ++ reduceC2 ++ store4 o
+
+/-- `[o] = [b] + k · [a]`, for a constant `k < 2³¹`: `k · [a]` into
+`r8–r12`, a word of it at a time, `[b]` added, and `r12` folded at bit 255. -/
 def mulSmallAdd (o b a : Nat) (k : BitVec 32) : List Instr :=
-  loads b .r8 .r9 .r10 .r11 ++ [.mov32 .rcx (.imm k), .mov32 .rbp (.imm 0)] ++
-    ((List.range 4).flatMap fun j => mulStep (t j) .rbp .rcx (.mem (sc (a + 8 * j)))) ++
-    [.mov32 .rcx (.imm 38)] ++ fold ++ store4 o
+  [.mov32 .rcx (.imm k)] ++ prod2 .r8 .r9 .rcx a ++ [zero .r10] ++ [zero .r11] ++ [zero .r12] ++
+    acc2 .r9 .r10 .rcx (a + 8) ++ acc2 .r10 .r11 .rcx (a + 16) ++ acc2 .r11 .r12 .rcx (a + 24) ++
+    [.alu .add .r8 (.mem (sc b)), .alu .adc .r9 (.mem (sc (b + 8))),
+      .alu .adc .r10 (.mem (sc (b + 16))), .alu .adc .r11 (.mem (sc (b + 24))),
+      .alu .adc .r12 (.imm 0)] ++ fold19X ++ store4 o
 
 /-- `[o] = [a] + [b]`. -/
 def add (o a b : Nat) : List Instr :=
@@ -290,68 +313,14 @@ structure Field where
   `_adx` for BMI2 and ADX's). -/
   suffix : String := ""
 
-/-- The baseline's: `mul`, `sqr` and `mulSmallAdd`, and a product doubled by `add`. -/
+/-- The baseline's: `mul`, `sqr` and `mulSmallAdd`, and `mul2` and `sqr2`, which double in the
+reduction. -/
 def baseline : Field where
   mul := mul
   sqr := sqr
   a24add o b a := mulSmallAdd o b a a24
-  mul2 o a b := mul o a b ++ add o o o
-  sqr2 o a := sqr o a ++ add o o o
-
-/-! ## The ladder -/
-
-/-- `[o] = [y]` if ZF is set, else `[x]`: both into `r8–r11` and
-`r12–r15`, `cmove` word by word, and stored (s2n-bignum's `mux_4`, but for
-its registers); no flag changes. -/
-def mux (o x y : Nat) : List Instr :=
-  loads x .r8 .r9 .r10 .r11 ++ loads y .r12 .r13 .r14 .r15 ++
-  [.cmov .e .r8 (.reg .r12), .cmov .e .r9 (.reg .r13), .cmov .e .r10 (.reg .r14),
-    .cmov .e .r11 (.reg .r15)] ++ store4 o
-
-/-- The bit `t = rbx - 1` of the scalar for an iteration: `k_t` from `BITS`,
-compared with `swap` (ZF set if they are equal) and stored as the new `swap`. -/
-def bitCmp : List Instr :=
-  [.alu .sub .rbx (.imm 1), .movzx8 .rax { base := .rdi, index := some .rbx, disp := BITS },
-    .alu .cmp .rax (.mem (sc SWAP)), .store (sc SWAP) .rax]
-
-/-- One iteration of the ladder, for the bit `t = rbx - 1`, as the
-iteration of s2n-bignum's `curve25519_x25519` (the order of its operations,
-and of their sharing of slots): no swap of the points, which keep RFC 7748
-§5's `(x_2, z_2)` and `(x_3, z_3)` in their slots, but `mux` choosing the
-point to double, `(x_3, z_3)` if `swap ≠ k_t`. The sums and differences of
-both points come first (`dm = x_3 - z_3` in `B`, `sn = x_2 + z_2` in `A`,
-`dn = x_2 - z_2` in `z_2`'s slot, `sm = x_3 + z_3` in `z_3`'s), then
-`dmsn = sn · dm` (in `C`), the bit, the differences `d` (in `D`) and sums
-`s` (in `x_2`'s slot) of the doubled point, and the rest of the addition
-(`dnsm = sm · dn`, then `(dmsn ± dnsm)²`) interleaved with the doubling's
-(`d²`, `s²`, `p = s² - d²`, `x_2 = s² d²` and `z_2 = p (s² + a24 p)`), so
-that independent multiplications are next to each other. The sums and
-differences fold once (`addCmov`, `subCmov`): `z_2`, `z_3` and the other
-subtrahends are products, at most `2p`. -/
-def step (F : Field) : List Instr :=
-  subCmov B X3 Z3 ++ addCmov A X2 Z2 ++ subCmov Z2 X2 Z2 ++ addCmov Z3 X3 Z3 ++
-  F.mul C A B ++ bitCmp ++ mux D B Z2 ++ mux X2 Z3 A ++
-  F.mul X3 Z3 Z2 ++ F.sqr D D ++ subCmov Z3 C X3 ++ F.sqr X2 X2 ++ addCmov X3 C X3 ++
-  F.sqr Z3 Z3 ++ subCmov C X2 D ++ F.sqr X3 X3 ++ F.a24add Z2 X2 C ++
-  F.mul X2 X2 D ++ F.mul Z3 Z3 X1 ++ F.mul Z2 C Z2 ++ [.alu .cmp .rbx (.imm 3)]
-
-/-- A doubling of `(x_2, z_2)` in place: `s = x_2 + z_2`, `d = x_2 - z_2`,
-`p = s² - d²`, then `x_2 = s² d²` and `z_2 = p (s² + a24 p)`. -/
-def dbl (F : Field) : List Instr :=
-  addCmov A X2 Z2 ++ subCmov B X2 Z2 ++ F.sqr A A ++ F.sqr B B ++ subCmov C A B ++
-  F.a24add Z2 A C ++ F.mul X2 A B ++ F.mul Z2 C Z2
-
-/-- The iterations for bits 2, 1 and 0, which clamping clears, as
-s2n-bignum's: each doubles the point the swap chooses and leaves the swap
-clear, so the point is chosen once (`mux`, ZF set if `swap = 0`) and doubled
-three times, and `swap` is cleared, which leaves `lastSwap` nothing to swap. -/
-def tail (F : Field) : List Instr :=
-  [.mov .rax (.mem (sc SWAP)), .alu .cmp .rax (.imm 0)] ++ mux X2 X3 X2 ++ mux Z2 Z3 Z2 ++
-    dbl F ++ dbl F ++ dbl F ++ [.mov32 .rax (.imm 0), .store (sc SWAP) .rax]
-
-/-- The iterations for `t` from 254 down to 3, then `tail`. -/
-def ladder (F : Field) : Prog isa :=
-  .seq (.block [.mov32 .rbx (.imm 255)]) (.seq (.loop (.block (step F)) .ne) (.block (tail F)))
+  mul2 := mul2
+  sqr2 := sqr2
 
 /-- `[rdi + 8 rbx + BITS + j]`: bit `j` of byte `rbx` of the scalar. -/
 def bitAt (j : Nat) : MemOp :=
@@ -370,6 +339,81 @@ def bits : Prog isa :=
     [.alu .add .rbx (.imm 1), .alu .cmp .rbx (.imm 32)])) .ne)
     (.block [.mov32 .rax (.imm 0), .store8 (sc BITS) .rax, .store8 (sc (BITS + 1)) .rax,
       .store8 (sc (BITS + 2)) .rax, .mov32 .rax (.imm 1), .store8 (sc (BITS + 254)) .rax]))
+
+/-! ## The ladder
+
+Swapping `(x₂, z₂)` with `(x₃, z₃)` before RFC 7748's formulas exchanges
+`(A, B) = (x₂ + z₂, x₂ - z₂)` with `(C, D) = (x₃ + z₃, x₃ - z₃)`, and so `DA`
+with `CB`: their sum stays, and their difference, which is only squared,
+changes its sign. So an iteration computes `A`, `B`, `C`, `D` and the two
+products of the state as it is, and selects only the operands of the doubling,
+`U` from `A` and `C` and `V` from `B` and `D`. The bit it selects by is the
+difference of the scalar's bits `t` and `t + 1`, which are bytes of `BITS`:
+there is no `swap` to keep.
+
+The last three bits are zero (the scalar is clamped), and so the last three
+iterations double the same point, and nothing reads their other results:
+`ladder` selects that point once, by bit 3, and doubles it. -/
+
+/-- The operands of the doubling. -/
+def DU : Nat := 352
+def DV : Nat := 384
+
+/-- `ZF` is whether the bits `t` and `t + 1` of the scalar are equal, with
+`t - d` in `rbx`. -/
+def bitsDiffer (d : Nat) : List Instr :=
+  [.movzx8 .rax { base := .rdi, index := some .rbx, disp := ((BITS + d : Nat) : Int) },
+    .movzx8 .rcx { base := .rdi, index := some .rbx, disp := ((BITS + d + 1 : Nat) : Int) },
+    .alu .xor .rax (.reg .rcx)]
+
+/-- `a, b, c, d = [rdi + x]` if `ZF` is set, else `[rdi + y]`. -/
+def choose (x y : Nat) (a b c d : Reg) : List Instr :=
+  [.mov a (.mem (sc x)), .cmov .ne a (.mem (sc y)),
+    .mov b (.mem (sc (x + 8))), .cmov .ne b (.mem (sc (y + 8))),
+    .mov c (.mem (sc (x + 16))), .cmov .ne c (.mem (sc (y + 16))),
+    .mov d (.mem (sc (x + 24))), .cmov .ne d (.mem (sc (y + 24)))]
+
+/-- `[o] = [x]` and `[p] = [y]` if `ZF` is set, else `[o] = [x']` and
+`[p] = [y']`. -/
+def choose2 (o x x' p y y' : Nat) : List Instr :=
+  choose x x' .r8 .r9 .r10 .r11 ++ choose y y' .r12 .r13 .r14 .r15 ++
+    store4 o ++ stores p .r12 .r13 .r14 .r15
+
+/-- An iteration but for its counter, for the bit `t = rbx + 2`. The doubling
+starts first, up to its multiplication by `a24`, as its operations wait for
+each other longest; the differential addition's and the last products of both
+alternate after it. -/
+def iter (F : Field) : List Instr :=
+  subCmov D X3 Z3 ++ addCmov A X2 Z2 ++ addCmov C X3 Z3 ++ subCmov B X2 Z2 ++
+    bitsDiffer 2 ++ choose2 DU A C DV B D ++
+    F.mul D D A ++ F.sqr DV DV ++ F.sqr DU DU ++ subCmov A DU DV ++ F.mul C C B ++
+    F.a24add B DU A ++ subCmov Z3 D C ++ F.mul X2 DU DV ++ addCmov D D C ++
+    F.sqr Z3 Z3 ++ F.mul Z2 A B ++ F.sqr X3 D ++ F.mul Z3 X1 Z3
+
+/-- `(X2, Z2)` doubled, but for the counter. -/
+def double (F : Field) : List Instr :=
+  addCmov A X2 Z2 ++ subCmov B X2 Z2 ++ F.sqr A A ++ F.sqr B B ++ subCmov C A B ++
+    F.mul X2 A B ++ F.a24add A A C ++ F.mul Z2 C A
+
+/-- Counts `rbx` down. -/
+def countDown : List Instr := [.alu .sub .rbx (.imm 1)]
+
+/-- Before the loop: bit 255, which clamping clears, and the counter, for the
+bits 254 down to 3. -/
+def ladderStart : List Instr :=
+  [.mov32 .rax (.imm 0), .store8 (sc (BITS + 255)) .rax, .mov32 .rbx (.imm 252)]
+
+/-- After the loop: the point that bit 3 chooses, and the counter of its
+doublings. -/
+def ladderPoint : List Instr :=
+  [.movzx8 .rax (sc (BITS + 3)), .alu .test .rax (.reg .rax)] ++ choose2 X2 X2 X3 Z2 Z2 Z3 ++
+    [.mov32 .rbx (.imm 3)]
+
+/-- The ladder: 252 iterations and three doublings. The result is in `X2` and
+`Z2`, and `SWAP` still 0. -/
+def ladder (F : Field) : Prog isa :=
+  .seq (.block ladderStart) (.seq (.loop (.block (iter F ++ countDown)) .ne)
+    (.seq (.block ladderPoint) (.loop (.block (double F ++ countDown)) .ne)))
 
 /-! ## Encoding and decoding -/
 

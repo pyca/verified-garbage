@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.St
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Words
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Math
 import VerifiedGarbage.Proof.Rsa.Arm.KeyBits
-import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Words
+import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.St
 import VerifiedGarbage.Proof.Rsa.Arm.KeyWord
 import VerifiedGarbage.Proof.Rsa.Arm.RdTwos
 import VerifiedGarbage.Proof.Rsa.TwosMath

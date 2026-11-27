@@ -13,19 +13,13 @@ import VerifiedGarbage.Proof.Framework.Block
 meta import VerifiedGarbage.Proof.Framework.Block
 
 /-!
-# ML-KEM on AArch64: `vg_mlkem768_encaps` and `vg_mlkem1024_encaps`
+# ML-KEM on AArch64: `encaps`, its contract and its layout
 
-Correctness is the prologue, `m`, `H(ek)`, `G(m ‖ H(ek))` and `ρ` (`a_ok`),
-the matrix (`matrix_ok`), then `ŷ`, `u` and `v` (`encrypt_ok`) and the
-epilogue (`c_ok`).
-
-Constant time up to `ρ`, relating two runs from states that agree on the
-pointers and on `ρ`: the first and last phases by the taint analysis, the
-matrix by `matrix_rct`.
-
-The proof is stated once for a well-formed parameter set, with the taint
-analyses of its code (`EnTaints`) decided on each; the end of this file is
-ML-KEM-768's instance (and `Proof/MlKem1024/AArch64/Encaps.lean` ML-KEM-1024's).
+The contract of `encaps` on AArch64 (`encapsAArch64`), where its arguments
+and the buffers of `scratch` are (`enL`, `offs`, `pre_of`), what it
+encapsulates (`ekE`, `mE`, `gE`, `rhoE`), the arguments of K-PKE.Encrypt
+(`encArgs`, `ekT_eq`), and a state satisfying the precondition (`sat`), for
+the functions of `Kem16/` and `Kem16P/`.
 -/
 
 @[expose] public section
@@ -81,7 +75,7 @@ def enL (P : KemLay) : Layout where
   len b := [P.ekLen, 32, 32, P.ctLen, P.scl].getD b 0
   slot k := [0, 2, 3, 4].getD k 4
 
-/-- The offsets of the buffers `a_ok` places in `scratch`, proved once. -/
+/-- The offsets of the buffers of the first phase in `scratch`, proved once. -/
 theorem offs (hP : P.Wf) : MB + 32 ≤ SV P ∧ RB + 32 ≤ SV P ∧ HB + 32 ≤ SV P ∧ SB + 32 ≤ SV P ∧
     WK + 640 ≤ SV P ∧ KEM.ST + 200 ≤ SV P ∧ SV P + 48 ≤ P.scl ∧ 384 * P.k + 32 ≤ P.ekLen ∧
     P.ekLen < 65536 := by
@@ -122,143 +116,7 @@ abbrev gE (P : KemLay) (s₀ : State) : List Byte × List Byte := G (mE s₀ ++ 
 /-- `ρ`. -/
 abbrev rhoE (P : KemLay) (s₀ : State) : List Byte := ekRho P.params (ekE P s₀)
 
-/-- After the first phase. -/
-structure AfterA (P : KemLay) (s₀ s : State) : Prop where
-  kb : KB P (enL P) s₀ s
-  x24 : s.gpr .x24 = 1
-  key : bytesAt s.mem (kA s₀ 2) 32 = (gE P s₀).1
-  r : bytesAt s.mem (sA (enL P) s₀ RB) 32 = (gE P s₀).2
-  m : bytesAt s.mem (sA (enL P) s₀ MB) 32 = mE s₀
-  rho : bytesAt s.mem (sA (enL P) s₀ SB) 32 = rhoE P s₀
-
-theorem a_ok {s₀ : State} (hp : Pre P (enL P) s₀) : WP isa (P.enAWith keccak.callee) s₀ (AfterA P s₀) := by
-  have hw := hp.wf
-  -- the prologue and `m`
-  refine WP.seq ?_
-  rw [WP.block_append_iff]
-  refine WP.mono (prologue_ok hp) fun s₁ h₁ => ?_
-  refine WP.mono (KeyGen.copy_ok (S := kA s₀ 1) (D := kA s₀ 4) (so := 0) (dO := MB) (by decide) (by decide)
-    (by decide) (by decide) (hp.args.rdisj (by enk) (by enk) (by enk) (hp.fs (by lom)) (by enk)
-      (by decide)) (by rw [h₁.keep.get .x1 (by decide)]; rfl) h₁.kb.x28
-    (cov_r hp h₁.kb (b := 1) (by enk) (by enk)) (cov_s hp h₁.kb (by lom)))
-    fun s₂ ⟨k₂, f₂, b₂⟩ => ?_
-  have kb₂ := h₁.kb.frame k₂ f₂ (by decide) fun r hr => by
-    rw [List.mem_singleton.mp hr]; exact safe_scr hp (by enk)
-  have m₂ : bytesAt s₂.mem (sA (enL P) s₀ MB) 32 = mE s₀ := by
-    rw [show sA (enL P) s₀ MB = kA s₀ 4 + BitVec.ofNat 64 MB from rfl, b₂,
-      h₁.kb.ro_bytes (b := 1) (by enk) (by enk), ptr_zero]
-  have x24₂ : s₂.gpr .x24 = 1 := by rw [k₂.get .x24, h₁.x24]
-  -- `H(ek)`
-  refine WP.seq (WP.mono (hashWith_ok keccak (hsetup hp kb₂ (by decide : 136 ∈ Spec.Sha3.rates)) (sfx := 6) (by decide)
-    (ins := [⟨.x25, 0, P.ekLen⟩]) (outs := [⟨.x28, HB, 32⟩]) (by simp)
-    (fun p hp' => by
-      rw [List.mem_singleton.mp hp']
-      exact pieceOk (k := 0) hp kb₂ (by decide) (by enk) (.inl (by enk)) (by enk) (by enk))
-    (fun p hp' => by
-      rw [List.mem_singleton.mp hp']
-      exact pieceOk (k := 3) hp kb₂ (by decide) (by enk) (.inr (by decide)) (by decide) (by enk))
-    (List.pairwise_singleton _ _)) fun s₃ ⟨k₃, o₃⟩ => ?_)
-  have kb₃ := kb₂.hash hp k₃ fun p hp' => by
-    rw [List.mem_singleton.mp hp']
-    exact ⟨3, HB, 32, rfl, by decide, by enk, by enk, .inr (.inr (by enk))⟩
-  have hek : bytesAt s₂.mem (s₂.gpr .x25 + BitVec.ofNat 64 0) P.ekLen = ekE P s₀ := by
-    rw [kb₂.x25, ptr_zero]
-    exact kb₂.ro (b := 0) (by enk)
-  have h₃ : bytesAt s₃.mem (sA (enL P) s₀ HB) 32 = H (ekE P s₀) := by
-    obtain ⟨o, -⟩ := o₃
-    simp only [List.map_cons, List.map_nil, List.flatten_cons, List.flatten_nil, List.append_nil, pbytes,
-      e28 kb₂] at o
-    rw [hek] at o
-    rw [o, H_eq]; rfl
-  have k₃' := k₃
-  simp only [VG.Proof.MlKem.AArch64.STr, VG.Proof.MlKem.AArch64.WKr, preg, List.map_cons, List.map_nil,
-    kb₂.x28, kb₂.sp] at k₃'
-  have m₃ : bytesAt s₃.mem (sA (enL P) s₀ MB) 32 = mE s₀ := by
-    rw [bytesAt_frame k₃'.frame (fun r hr => by
-      rcases mem4 hr with rfl | rfl | rfl | rfl
-      · exact sdisj hp (by enk) (by enk) (by decide)
-      · exact sdisj hp (by enk) (by enk) (by decide)
-      · exact below_R hp hp.scb (by enk)
-      · exact sdisj hp (by enk) (by enk) (by decide)) (by decide)]
-    exact m₂
-  -- `G(m ‖ H(ek))`
-  refine WP.seq (WP.mono (hashWith_ok keccak (hsetup hp kb₃ (by decide : 72 ∈ Spec.Sha3.rates)) (sfx := 6) (by decide)
-    (ins := [⟨.x28, MB, 32⟩, ⟨.x28, HB, 32⟩]) (outs := [⟨.x26, 0, 32⟩, ⟨.x28, RB, 32⟩]) (by simp)
-    (fun p hp' => by
-      rcases mem2' hp' with rfl | rfl
-      · exact pieceOk (k := 3) hp kb₃ (by decide) (by enk) (.inr (by decide)) (by decide) (by enk)
-      · exact pieceOk (k := 3) hp kb₃ (by decide) (by enk) (.inr (by decide)) (by decide) (by enk))
-    (fun p hp' => by
-      rcases mem2' hp' with rfl | rfl
-      · exact pieceOk (k := 1) hp kb₃ (by decide) (by enk) (.inl (by enk)) (by decide) (by enk)
-      · exact pieceOk (k := 3) hp kb₃ (by decide) (by enk) (.inr (by decide)) (by decide) (by enk))
-    (by
-      refine List.pairwise_pair.mpr ?_
-      simp only [preg, kb₃.x26, e28 kb₃]
-      exact hp.args.rdisj (by enk) (by enk) (by enk) (by enk) (by enk) (by enk)))
-    fun s₄ ⟨k₄, o₄⟩ => ?_)
-  have kb₄ := kb₃.hash hp k₄ fun p hp' => by
-    rcases mem2' hp' with rfl | rfl
-    · exact ⟨1, 0, 32, rfl, by decide, by enk, by enk, .inl (by enk)⟩
-    · exact ⟨3, RB, 32, rfl, by decide, by enk, by enk, .inr (.inr (by enk))⟩
-  have msg : (List.map (pbytes s₃) [⟨.x28, MB, 32⟩, ⟨.x28, HB, 32⟩]).flatten = mE s₀ ++ H (ekE P s₀) := by
-    simp only [List.map_cons, List.map_nil, List.flatten_cons, List.flatten_nil, List.append_nil, pbytes,
-      e28 kb₃]
-    rw [m₃, h₃]
-  obtain ⟨o₁, o₂, -⟩ := o₄
-  rw [msg] at o₁ o₂
-  have hG := G_eq (mE s₀ ++ H (ekE P s₀))
-  have key₄ : bytesAt s₄.mem (kA s₀ 2) 32 = (gE P s₀).1 := by
-    have e : kA s₀ 2 = s₃.gpr .x26 + BitVec.ofNat 64 0 := by rw [kb₃.x26, ptr_zero]; rfl
-    rw [e, o₁]; show _ = (G (mE s₀ ++ H (ekE P s₀))).1; rw [hG]; rfl
-  have r₄ : bytesAt s₄.mem (sA (enL P) s₀ RB) 32 = (gE P s₀).2 := by
-    rw [← e28 kb₃, o₂]; show _ = (G (mE s₀ ++ H (ekE P s₀))).2; rw [hG]; rfl
-  have k₄' := k₄
-  simp only [VG.Proof.MlKem.AArch64.STr, VG.Proof.MlKem.AArch64.WKr, preg, List.map_cons, List.map_nil,
-    kb₃.x28, kb₃.x26, kb₃.sp] at k₄'
-  have m₄ : bytesAt s₄.mem (sA (enL P) s₀ MB) 32 = mE s₀ := by
-    rw [bytesAt_frame k₄'.frame (fun r hr => by
-      rcases mem5 hr with rfl | rfl | rfl | rfl | rfl
-      · exact sdisj hp (by enk) (by enk) (by decide)
-      · exact sdisj hp (by enk) (by enk) (by decide)
-      · exact below_R hp hp.scb (by enk)
-      · exact hp.args.rdisj (by enk) (by enk) (by enk) (by enk) (by enk) (by enk)
-      · exact sdisj hp (by enk) (by enk) (by decide)) (by decide)]
-    exact m₃
-  -- `ρ`
-  refine WP.mono (KeyGen.copy_ok (S := kA s₀ 0) (D := kA s₀ 4) (so := 384 * P.k) (dO := SB) (by decide)
-    (by decide) (by lom) (by decide) (hp.args.rdisj (by enk) (by enk) (by enk)
-      (hp.fs (by lom)) (by enk) (by enk)) kb₄.x25 kb₄.x28 (cov_r hp kb₄ (b := 0) (by enk)
-      (by enk)) (cov_s hp kb₄ (by lom)))
-    fun s₅ ⟨k₅, f₅, b₅⟩ => ?_
-  have kb₅ := kb₄.frame k₅ f₅ (by decide) fun r hr => by
-    rw [List.mem_singleton.mp hr]; exact safe_scr hp (by enk)
-  have far₅ : ∀ {o l : Nat}, o + l ≤ SV P + 48 → (o + l ≤ SB ∨ SB + 32 ≤ o) →
-      bytesAt s₅.mem (sA (enL P) s₀ o) l = bytesAt s₄.mem (sA (enL P) s₀ o) l := fun f h => by
-    refine bytesAt_frame f₅ (fun r hr => ?_) (by lom)
-    rw [List.mem_singleton.mp hr]
-    exact sdisj hp f (by lom) h
-  refine ⟨kb₅, by rw [k₅.get .x24, k₄.cs _ (by decide) (by decide), k₃.cs _ (by decide) (by decide), x24₂], ?_,
-    by rw [far₅ (o := RB) (l := 32) (by lom) (by decide)]; exact r₄,
-    by rw [far₅ (o := MB) (l := 32) (by lom) (by decide)]; exact m₄, ?_⟩
-  · rw [bytesAt_frame f₅ (fun r hr => by
-      rw [List.mem_singleton.mp hr]
-      exact (hp.args.disj 2 (by enk) 4 (by enk) (by decide) (by enk)).sub_right
-        (R.sub (hp.fs (by lom)))) (by decide)]
-    exact key₄
-  · rw [show sA (enL P) s₀ SB = kA s₀ 4 + BitVec.ofNat 64 SB from rfl, b₅,
-      kb₄.ro_bytes (b := 0) (by enk) (by enk),
-      ← bytesAt_slice _ _ (show 384 * P.k + 32 ≤ P.ekLen from Nat.le_refl _)]
-    rfl
-
 /-! ## `ŷ`, `u`, `v` and the epilogue -/
-
-/-- What the function leaves. -/
-structure Done (P : KemLay) (s₀ : State) (mB : Mem) (v : BitVec 64) (s : State) : Prop where
-  abi : abiPreserved s₀ s
-  x0 : s.gpr .x0 = v
-  key : bytesAt s.mem (kA s₀ 2) 32 = (gE P s₀).1
-  ct : bytesAt s.mem (kA s₀ 3) P.ctLen = KPke.ct P.params (aM P (enL P) s₀ mB) (ekE P s₀) (mE s₀) (gE P s₀).2
 
 theorem encArgs : EncArgs P (enL P) 0 0 2 0 :=
   ⟨by decide, by enk, by simp [enL], by decide, by enk, by simp [enL], .inl (by enk)⟩
@@ -293,148 +151,11 @@ theorem key_far {s₀ : State} (hp : Pre P (enL P) s₀) {r : Region}
     · exact hb
     · exact hs (b := 3) (by decide) (by decide) (by decide) (by simp [enL])
 
-theorem c_ok {s₀ : State} (hp : Pre P (enL P) s₀) (hc : Calls P) {uA sB : State} (hA : AfterA P s₀ uA)
-    (hB : BInv P (enL P) s₀ uA.mem (rhoE P s₀) (P.k * P.k) sB) :
-    WP isa (P.enCWith keccak.callee) sB (Done P s₀ sB.mem (sB.gpr .x24)) := by
-  have hw := hp.wf
-  have fbw : ∀ {o l : Nat}, o + l ≤ SV P + 48 → (o + l ≤ SB + 32 ∨ SB + 34 ≤ o) → (o + l ≤ AH) →
-      (o + l ≤ SS ∨ SS + 2048 ≤ o) → ∀ r ∈ bW P (enL P) s₀, (R (kA s₀) (enL P).sc o l).Disjoint r :=
-    fun f h1 h2 h3 r hr => by
-      rcases mem4 hr with rfl | rfl | rfl | rfl
-      · exact sdisj hp f (by lom) h1
-      · exact sdisj hp f (by lom) (.inl h2)
-      · exact sdisj hp f (by lom) h3
-      · exact below_R hp hp.scb (hp.fs f)
-  have r : bytesAt sB.mem (sA (enL P) s₀ RB) 32 = (gE P s₀).2 := by
-    rw [bytesAt_frame hB.fr (fbw (o := RB) (l := 32) (by lom) (by decide) (by decide) (by decide))
-      (by decide)]
-    exact hA.r
-  have m : bytesAt sB.mem (sA (enL P) s₀ MB) 32 = mE s₀ := by
-    rw [bytesAt_frame hB.fr (fbw (o := MB) (l := 32) (by lom) (by decide) (by decide) (by decide))
-      (by decide)]
-    exact hA.m
-  have key : bytesAt sB.mem (kA s₀ 2) 32 = (gE P s₀).1 := by
-    rw [bytesAt_frame hB.fr (fun r hr => key_far hp (.inl hr)) (by decide)]; exact hA.key
-  have e0 : EInv P (enL P) s₀ 2 0 sB.mem sB.mem (sB.gpr .x24) (gE P s₀).2 (mE s₀) 0 0 sB :=
-    ⟨hB.kb, rfl, r, m, fun i hi j hj => ⟨hB.reduced hi hj, rfl⟩, fun _ h => absurd h (Nat.not_lt_zero _),
-      fun _ h => absurd h (Nat.not_lt_zero _), Frame.refl _ _⟩
-  refine WP.seq (WP.mono (encrypt_ok hp hc encArgs (T := ekT (ekE P s₀)) (ekT_eq s₀) e0) fun s₁ ⟨e₁, v₁⟩ => ?_)
-  refine WP.mono (epilogue_ok hp e₁.kb) fun s' ⟨abi, x0, hm⟩ => ⟨abi, by rw [x0, e₁.x24], ?_, ?_⟩
-  · rw [hm, bytesAt_frame e₁.fr (fun r hr => key_far hp (.inr hr)) (by decide)]; exact key
-  · rw [hm]
-    exact ct_at (U := fun i => compressEncode P.du (KPke.encU P.params (aM P (enL P) s₀ sB.mem) (gE P s₀).2 i))
-      (fun i hi => by have := e₁.u i hi; rwa [Nat.zero_add] at this) (by rwa [Nat.zero_add] at v₁)
-
-/-! ## Correctness -/
-
-theorem post_of {s₀ sB s' : State} {mA : Mem} (hB : BInv P (enL P) s₀ mA (rhoE P s₀) (P.k * P.k) sB)
-    (hD : Done P s₀ sB.mem (sB.gpr .x24) s') : (encapsAArch64 P).post s₀ s' := by
-  show Outcome (fun iters => encapsInternal P.params iters (bytesAt s₀.mem (s₀.gpr .x0) P.ekLen)
-    (bytesAt s₀.mem (s₀.gpr .x1) 32)) ((s'.gpr .x0).setWidth 32)
-    (bytesAt s'.mem (s₀.gpr .x2) 32, bytesAt s'.mem (s₀.gpr .x3) P.ctLen)
-  have key : bytesAt s'.mem (s₀.gpr .x2) 32 = (gE P s₀).1 := hD.key
-  have ct : bytesAt s'.mem (s₀.gpr .x3) P.ctLen =
-      KPke.ct P.params (aM P (enL P) s₀ sB.mem) (ekE P s₀) (mE s₀) (gE P s₀).2 := hD.ct
-  rw [key, ct, hD.x0]
-  rcases hB.outcome with ⟨h1, hs⟩ | ⟨h0, i, hi, j, hj, hn⟩
-  · rw [h1]
-    refine .inl ⟨rfl, 280, ?_⟩
-    show encapsInternal P.params 280 (ekE P s₀) (mE s₀) = _
-    rw [KPke.encapsInternal_eq, KPke.kpkeEncrypt_some (p := P.params) ⟨rfl, rfl⟩ (a := aM P (enL P) s₀ sB.mem)
-      fun i hi j hj => hs i hi j hj]
-    rfl
-  · rw [h0]
-    refine .inr ⟨rfl, ?_⟩
-    show encapsInternal P.params 280 (ekE P s₀) (mE s₀) = none
-    rw [KPke.encapsInternal_eq, KPke.kpkeEncrypt_none (p := P.params) hi hj hn]
-    rfl
-
-theorem correct (hP : P.Wf) (hc : Calls P) {s₀ : State} (hs : (encapsAArch64 P).pre s₀) :
-    WP isa (P.encapsWith keccak.callee) s₀ fun s' => abiPreserved s₀ s' ∧ (encapsAArch64 P).post s₀ s' := by
-  have hp := pre_of hP hs
-  exact WP.seq (WP.mono (a_ok hp) fun _ hA => WP.seq (WP.mono
-    (matrix_ok hp (BInv.zero hA.kb hA.x24 hA.rho)) fun _ hB =>
-    WP.mono (c_ok hp hc hA hB) fun _ hD => ⟨hD.abi, post_of hB hD⟩))
-
-/-! ## Constant time -/
-
-/-- The taint analyses of `P`'s code, decided for each parameter set: the
-code before and after the matrix (with the Keccak functions `keccak`), and
-the arguments of each `sample_ntt`. -/
-structure EnTaints (P : KemLay) (keccak : VG.Proof.Sha3.AArch64.Permutation) : Prop where
-  a : ∃ h, (VectorTaint.taint.check (VectorTaint.ofRegs [.x0, .x1, .x2, .x3, .x4])
-    (P.enAWith keccak.callee) h).isSome = true
-  c : ∃ h, (VectorTaint.taint.check (VectorTaint.ofRegs [.x25, .x26, .x27, .x28])
-    (P.enCWith keccak.callee) h).isSome = true
-  setup : SetupTaint P
-
-/-- Two runs from states the contract relates. -/
-abbrev Pub3 (P : KemLay) (σ₁ σ₂ : State) : Prop :=
-  (encapsAArch64 P).pre σ₁ ∧ (encapsAArch64 P).pre σ₂ ∧ (encapsAArch64 P).pub σ₁ σ₂
-
-theorem Pub3.two (hP : P.Wf) {σ₁ σ₂ : State} (h : Pub3 P σ₁ σ₂) : Two P (enL P) σ₁ σ₂ :=
-  ⟨pre_of hP h.1, pre_of hP h.2.1, h.2.2.2.2.2.2.1, h.2.2.2.2.2.2.2.1⟩
-
-theorem Pub3.rho {σ₁ σ₂ : State} (h : Pub3 P σ₁ σ₂) : rhoE P σ₁ = rhoE P σ₂ :=
-  map_toNat_inj h.2.2.2.2.2.2.2.2
-
-theorem b_rct (hP : P.Wf) (ht : EnTaints P keccak) :
-    RelCT isa (fun s₁ s₂ => True ∧ ∃ σ₁ σ₂, Pub3 P σ₁ σ₂ ∧ AfterA P σ₁ s₁ ∧ AfterA P σ₂ s₂)
-      (P.kemMatrixWith keccak.callee)
-    fun s₁ s₂ => ∃ σ₁ σ₂ m₁ m₂, Pub3 P σ₁ σ₂ ∧ BInv P (enL P) σ₁ m₁ (rhoE P σ₁) (P.k * P.k) s₁ ∧
-      BInv P (enL P) σ₂ m₂ (rhoE P σ₁) (P.k * P.k) s₂ := by
-  refine RelCT.mono (RelCT.exists_ (P := fun (x : State × State × Mem × Mem) s₁ s₂ =>
-      Pub3 P x.1 x.2.1 ∧ BInv P (enL P) x.1 x.2.2.1 (rhoE P x.1) 0 s₁ ∧
-        BInv P (enL P) x.2.1 x.2.2.2 (rhoE P x.1) 0 s₂)
-      fun x => ?_)
-    (fun s₁ s₂ ⟨_, σ₁, σ₂, hpub, a₁, a₂⟩ => ⟨(σ₁, σ₂, s₁.mem, s₂.mem), hpub, BInv.zero a₁.kb a₁.x24 a₁.rho,
-      BInv.zero a₂.kb a₂.x24 (by rw [a₂.rho, hpub.rho])⟩) fun _ _ h => h
-  by_cases hpub : Pub3 P x.1 x.2.1
-  · exact RelCT.mono (matrix_rct ht.setup (hpub.two hP)) (fun _ _ h => h.2)
-      fun _ _ h => ⟨x.1, x.2.1, x.2.2.1, x.2.2.2, hpub, h⟩
-  · exact RelCT.of_false fun _ _ h => hpub h.1
-
-theorem c_rct (hP : P.Wf) (ht : EnTaints P keccak) :
-    RelCT isa (fun s₁ s₂ => ∃ σ₁ σ₂ m₁ m₂, Pub3 P σ₁ σ₂ ∧ BInv P (enL P) σ₁ m₁ (rhoE P σ₁) (P.k * P.k) s₁ ∧
-      BInv P (enL P) σ₂ m₂ (rhoE P σ₁) (P.k * P.k) s₂) (P.enCWith keccak.callee) fun _ _ => True :=
-  VectorTaint.relCT (Taint.ofRegs [.x25, .x26, .x27, .x28])
-    (fun s₁ s₂ ⟨σ₁, σ₂, m₁, m₂, hpub, b₁, b₂⟩ =>
-    agree_of (by rw [b₁.kb.sp, b₂.kb.sp, (hpub.two hP).sp]) fun r hr => by
-      rcases mem4 hr with rfl | rfl | rfl | rfl
-      · rw [b₁.kb.x25, b₂.kb.x25]; exact hpub.2.2.1
-      · rw [b₁.kb.x26, b₂.kb.x26]; exact hpub.2.2.2.2.1
-      · rw [b₁.kb.x27, b₂.kb.x27]; exact hpub.2.2.2.2.2.1
-      · rw [b₁.kb.x28, b₂.kb.x28]; exact hpub.2.2.2.2.2.2.1) ht.c.choose_spec
-
-theorem ct (hP : P.Wf) (ht : EnTaints P keccak) :
-    ConstantTime isa (encapsAArch64 P).pre (encapsAArch64 P).pub (P.encapsWith keccak.callee) :=
-  RelCT.constantTime (Q := fun _ _ => True) (RelCT.seq
-    ((VectorTaint.relCT (Taint.ofRegs [.x0, .x1, .x2, .x3, .x4]) (fun _ _ h =>
-      agree_of h.2.2.2.2.2.2.2.1 (by
-        obtain ⟨-, -, e0, e1, e2, e3, e4, -, -⟩ := h
-        simp [e0, e1, e2, e3, e4])) ht.a.choose_spec).wpDep (F := fun σ s => AfterA P σ s)
-      fun _ _ h => ⟨a_ok (pre_of hP h.1), a_ok (pre_of hP h.2.1)⟩)
-    (RelCT.seq (b_rct hP ht) (c_rct hP ht)))
-
-theorem encaps_correct (hP : P.Wf) (hc : Calls P) {s : State} (hs : (encapsAArch64 P).pre s) :
-    ∃ t s', Exec isa (P.encapsWith keccak.callee) s t s' ∧ abiPreserved s s' ∧ (encapsAArch64 P).post s s' :=
-  correct hP hc hs
-
 /-! ## ML-KEM-768 -/
 
 theorem calls768 : Calls lay768 :=
   ⟨fun h0 h1 h2 h3 hd => compressEncode_call h0 h1 h2 h3 (by rcases hd with rfl | rfl <;> decide),
     fun h0 h1 h2 h3 hd => decodeDecompress_call h0 h1 h2 h3 (by rcases hd with rfl | rfl <;> decide)⟩
-
-theorem setupTaint768 : SetupTaint lay768 := by
-  intro i hi j hj
-  change i < 3 at hi
-  change j < 3 at hj
-  rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2) with rfl | rfl | rfl <;>
-  rcases (by omega_using [hj] : j = 0 ∨ j = 1 ∨ j = 2) with rfl | rfl | rfl <;>
-  exact ⟨_, by taint_decide⟩
-
-theorem taints768 : EnTaints lay768 keccak := ⟨keccak.mlkemEnATaint, keccak.mlkemEnCTaint, setupTaint768⟩
 
 /-- A state satisfying the precondition. -/
 def sat : State where
@@ -444,15 +165,5 @@ def sat : State where
   mem _ := 0
   rd := [⟨0x1000, 1184⟩, ⟨0x2000, 32⟩]
   wr := [⟨0x3000, 32⟩, ⟨0x4000, 1088⟩, ⟨0x10000, 32768⟩]
-
-theorem encaps_correctWith (s : State) (hs : (encapsAArch64 lay768).pre s) :
-    ∃ t s', Exec isa (encapsWith keccak.callee) s t s' ∧ abiPreserved s s' ∧ (encapsAArch64 lay768).post s s' :=
-  encaps_correct KeyGen.wf768 calls768 hs
-
-theorem encaps_verifiedWith :
-    Verified AArch64.target (encapsWith keccak.callee) (Proof.MlKem.Scrubbed.encapsBodyContract AArch64.abi 16) :=
-  Verified.of_correct (encaps_correctWith (keccak := keccak)) (ct KeyGen.wf768 taints768) (by
-    mlkem_implies [Proof.MlKem.Scrubbed.encapsBodyContract, Spec.MlKem.encapsSig, encapsAArch64, lay768, KemLay.params,
-      Spec.MlKem.mlKem768, KemLay.ekLen, KemLay.ctLen, AArch64.abi, AArch64.argRegs] [sat] using sat)
 
 end VG.Proof.MlKem.AArch64.Encaps

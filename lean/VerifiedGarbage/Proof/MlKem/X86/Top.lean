@@ -245,6 +245,16 @@ theorem stkD {N : Nat} (hN : N + 16 ≤ Y.stk) : (below (E1 s₀) N).Disjoint (b
   rw [E1_eq]
   exact below_inner hN hp.sp
 
+/-- A buffer lies apart from a leaf's frame. -/
+theorem frameD : (frameR s₀).Disjoint (b.rgn s₀) := by
+  obtain ⟨h₁, -, -⟩ := Lay.ok_iff.mp hb
+  exact ((hp.stk_a _ h₁).sub_left hp.frame_sub).sub_right (sub hp hb)
+
+/-- A buffer keeps its bytes across a leaf's pop. -/
+theorem leafKeep {m m' : Mem} (hm : Frame [frameR s₀] m m') :
+    ∀ i < b.len, m' (b.addr s₀ + BitVec.ofNat 64 i) = m (b.addr s₀ + BitVec.ofNat 64 i) :=
+  leaf_keep hm (frameD hp hb) (by show b.len ≤ 2 ^ 64; have := fit hp hb; omega_arith)
+
 theorem disj {c : Buf} (hc : Y.ok c = true) (hs : Y.sep b c = true) : (b.rgn s₀).Disjoint (c.rgn s₀) := by
   obtain ⟨hb₁, hb₂, hb₃⟩ := Lay.ok_iff.mp hb
   obtain ⟨hc₁, hc₂, hc₃⟩ := Lay.ok_iff.mp hc
@@ -391,5 +401,12 @@ theorem argEa {i : Nat} : (s.gpr .esp + BitVec.ofNat 32 (20 + 4 * i)).setWidth 6
   rw [h.esp]; exact P0_argAddr s₀ i
 
 end Ctx
+
+/-- An argument's buffer keeps its bytes across a leaf's pop. -/
+theorem argKeep {Y : Lay} {s₀ : State} (hp : TPre Y s₀) {m m' : Mem} (hm : Frame [frameR s₀] m m') {k l : Nat}
+    (hb : Y.ok ⟨k, 0, l⟩ = true) :
+    Spec.Sha3.bytesAt m' ((arg s₀ k).setWidth 64) l = Spec.Sha3.bytesAt m ((arg s₀ k).setWidth 64) l := by
+  have := Proof.MlKem.bytesAt_congr (Buf.leafKeep hp hb hm)
+  simpa only [Buf.addr, Buf.ptr, BitVec.add_zero] using this
 
 end VG.Proof.MlKem.X86.Top

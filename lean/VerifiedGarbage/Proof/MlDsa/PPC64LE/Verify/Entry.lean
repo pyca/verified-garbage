@@ -277,7 +277,8 @@ theorem entryV_wp {σ : State} (h : EPre p L (K + 1 + 48) X σ) :
   refine entry_wp (name := name) (F := eF off len) (R := fun _ r => (r.setWidth 32 = 1 ∧ ∃ b, vv p σ b = some true) ∨
       (r.setWidth 32 = 0 ∧ vv p σ minBounds ≠ some true)) hv.1 (by omega_using [hd, hK]) (eMv_ok ho hl) (eF_ok off len)
     (by have := h.stk; omega_using [this]) h.hd96
-    (kpre_to (cs_kpre h hL hoff (by omega_using [hl]) (by omega_using [ho]) (hc σ h))) cv cw fun s' hq => ?_
+    (kpre_to (cs_kpre h hL hoff (by omega_using [hl]) (by omega_using [ho]) (hc σ h))) cv cw (fun s' hq => ?_)
+    fun _ _ _ _ h => h
   have q := hq
   generalize hτ : cs p off len σ = τ at q
   sig_post [Proof.MlDsa.verifyWithCacheContract, Proof.MlDsa.verifyWithCacheSig, Spec.MlDsa.verifySig, PPC64LE.abi,

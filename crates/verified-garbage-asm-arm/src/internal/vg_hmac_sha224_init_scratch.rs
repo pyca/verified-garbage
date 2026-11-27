@@ -27,9 +27,9 @@ mov r6, r2
 mov r7, r3
 mov r11, r12
 mov r0, r4
-bl {vg_sha224_init}
+bl {vg_sha224_init_core}
 mov r0, r5
-bl {vg_sha224_init}
+bl {vg_sha224_init_core}
 movw r1, #13878
 movt r1, #13878
 str r1, [r4, #32]
@@ -133,7 +133,7 @@ ldr r10, [r11, #184]
 ldr lr, [r11, #188]
 ldr r11, [r11, #192]
 bx lr",
-        vg_sha224_init = sym crate::sha256::vg_sha224_init,
+        vg_sha224_init_core = sym crate::ecdsa_brainpoolp256r1::vg_sha224_init_core::vg_sha224_init_core,
         vg_sha256_compress = sym crate::sha256::vg_sha256_compress::vg_sha256_compress,
     )
 }

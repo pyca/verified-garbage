@@ -7,6 +7,8 @@ public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Selftest.Contract
 public import VerifiedGarbage.Impl.Scrub.X86_64
 public import VerifiedGarbage.TCB.X86_64.Residue
+public import VerifiedGarbage.TCB.Registration
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-! # Pipeline self-test: x86-64 proof -/
 
@@ -46,14 +48,14 @@ def sat : State where
 /-! ## Without secret residue
 
 `add` writes only `rax`, the result, and the flags, which depend on the
-arguments; the clearing that follows it (`Impl.Scrub.X86_64.scrub`) is one
+arguments; the clearing that follows it (`Impl.Scrub.X86_64.scrubWith`) is one
 `xor r11d, r11d`, whose flags are known. It writes no memory: the
-postcondition says the memory is unchanged, so `X86_64.Scrub.scrubReg`,
+postcondition says the memory is unchanged, so `X86_64.Scrub.verifiedScrubbedAll`,
 which needs it to read only the buffers (`PostOut`), does not apply, and
 the proof is direct. -/
 
 /-- `add`, then the clearing. -/
-def addScrubbed : Prog isa := Impl.Scrub.X86_64.scrub .sse 64 [] [] [.r11] [] [] Impl.Selftest.X86_64.add
+def addScrubbed : Prog isa := Impl.Scrub.X86_64.scrubWith .sse 64 [] [] [.r11] [] [] Impl.Selftest.X86_64.add
 
 theorem addScrubbed_run (s : State) : ∃ s', Exec isa addScrubbed s [] s' ∧
     (∀ r, s'.gpr r = if r = .r11 then 0 else if r = .rax then s.gpr .rdi + s.gpr .rsi else s.gpr r) ∧
@@ -96,13 +98,22 @@ theorem addScrubbed_noResidue :
   obtain ⟨hrd, hwr, hg, hax, -, -, -, -, hx, hy, hz, hyH, hzH, hmx, hm⟩ := ho
   have hdi := hg .rdi (by decide)
   have hsi := hg .rsi (by decide)
-  refine ⟨by rw [r₁, r₂, hrd], by rw [w₁, w₂, hwr], fun r hr => ?_, ?_, by rw [c₁, c₂], by rw [z₁, z₂],
+  refine ⟨⟨by rw [r₁, r₂, hrd], by rw [w₁, w₂, hwr], fun r hr => ?_, ?_, by rw [c₁, c₂], by rw [z₁, z₂],
     by rw [f₁, f₂], by rw [o₁, o₂], by rw [x₁, x₂, hx], by rw [y₁, y₂, hy], by rw [h₁, h₂, hz],
-    by rw [yH₁, yH₂, hyH], by rw [zH₁, zH₂, hzH], by rw [mx₁, mx₂, hmx], fun x hx' => ?_⟩
+    by rw [yH₁, yH₂, hyH], by rw [zH₁, zH₂, hzH], by rw [mx₁, mx₂, hmx], fun x hx' => ?_⟩,
+    by rw [c₁]; exact Option.some_ne_none _, by rw [z₁]; exact Option.some_ne_none _,
+    by rw [f₁]; exact Option.some_ne_none _, by rw [o₁]; exact Option.some_ne_none _⟩
   · rw [g₁, g₂, hdi, hsi, hg r hr]
   · have hax' : s₁.gpr .rax = s₂.gpr .rax := by simpa using hax
     rw [g₁, g₂, hdi, hsi, hax']
   · rw [m₁, m₂]
     exact hm x (by rw [← r₁, ← w₁]; exact hx')
+
+
+/-- `addScrubbed` returns its result as the calling convention requires: the System V
+AMD64 psABI has no rule for any result (`X86_64.abi.retExt`). -/
+theorem addScrubbed_retAbi :
+    RetAbi X86_64.target addScrubbed (Spec.Selftest.addContract X86_64.abi) :=
+  fun ty _ h => by cases ty <;> cases h
 
 end VG.Proof.Selftest.X86_64

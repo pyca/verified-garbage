@@ -8,6 +8,8 @@
 ///
 /// It runs `vg_camellia_cfb128_encrypt`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 272 bytes.
@@ -28,6 +30,8 @@ pub unsafe fn vg_camellia_cfb128_encrypt_auto(_dit: verified_garbage_cpu::Dit<'_
 /// Contract: `VG.Spec.Camellia.cfbDecryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the subkeys, the chaining value or the data.
 ///
 /// It runs `vg_camellia_cfb128_decrypt`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -50,6 +54,8 @@ pub unsafe fn vg_camellia_cfb128_decrypt_auto(_dit: verified_garbage_cpu::Dit<'_
 ///
 /// It runs `vg_camellia_cfb128_encrypt_final`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 272 bytes.
@@ -70,6 +76,8 @@ pub unsafe fn vg_camellia_cfb128_encrypt_final_auto(_dit: verified_garbage_cpu::
 /// Contract: `VG.Spec.Camellia.cfbDecryptFinalContract`. Constant time: only the pointers, `rounds` and `len` may affect timing, not the subkeys, the chaining value or the data.
 ///
 /// It runs `vg_camellia_cfb128_decrypt_final`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///

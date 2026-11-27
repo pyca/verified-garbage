@@ -17,7 +17,6 @@ import VerifiedGarbage.Proof.Framework.Arm.Reduce
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.Arm.SubRow
 import VerifiedGarbage.Proof.Bignum.Arm.SelectAliasRow
-import VerifiedGarbage.Proof.Bignum.Arm.CopyWords
 
 /-! # The array operations of `inverse` on ARMv7, at `k + 1` (or `k`) words -/
 

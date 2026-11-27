@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.Scrub.X86_64.Fn
 public import VerifiedGarbage.Impl.Ed25519.X86_64.PublicKey
 
 /-!
@@ -40,3 +41,13 @@ def keyPair (dn : String) (dg : Prog isa) (pn : String) (pk : Prog isa) : Prog i
     (.pop .rax 3)
 
 end VG.Impl.Ed25519.X86_64.KeyPair
+
+namespace VG.Impl.Ed25519.X86_64.KeyPair.Fn
+
+open VG.X86_64
+open VG.Impl.Scrub.X86_64 (scrubAll)
+
+/-- `vg_ed25519_key_pair`, calling the digest `dg` and the public key `pk`, its vector registers cleared at the level `lv`, as emitted: its code, then its cleanup. -/
+def keyPair (lv : VG.Impl.Scrub.X86_64.VecLevel) (dn : String) (dg : Prog isa) (pn : String) (pk : Prog isa) : Prog isa := scrubAll lv 0 1632 (_root_.VG.Impl.Ed25519.X86_64.KeyPair.keyPair dn dg pn pk)
+
+end VG.Impl.Ed25519.X86_64.KeyPair.Fn

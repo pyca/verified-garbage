@@ -24,7 +24,31 @@ permutations again.
 
 namespace VG
 
-materialize_table Impl.CmacTripleDes.AArch64.sTable 256
+namespace Proof.CmacTripleDes.AArch64
+
+/-- The table's bytes as numbers: a table of numbers is packed in one
+(`materialize_table`), in which the kernel reads a byte by a shift, where it
+walks a table of `BitVec 8`, a list, to each of the 256 bytes that the
+block's code loads (33,000 steps for the block's literal). -/
+def sTableN (k : Nat) : Nat := (Impl.CmacTripleDes.AArch64.sTable k).toNat
+
+end Proof.CmacTripleDes.AArch64
+
+materialize_table Proof.CmacTripleDes.AArch64.sTableN 256
+
+namespace Impl.CmacTripleDes.AArch64
+
+/-- The table registers' bytes, read in the packed table (`sTableN.lit`). -/
+noncomputable def sTable.lit (k : Nat) : BitVec 8 :=
+  BitVec.ofNat 8 (Proof.CmacTripleDes.AArch64.sTableN.lit k)
+
+theorem sTable.lit_eq : sTable = sTable.lit := by
+  funext k
+  rw [sTable.lit, ← Proof.CmacTripleDes.AArch64.sTableN.lit_eq, Proof.CmacTripleDes.AArch64.sTableN,
+    BitVec.ofNat_toNat, BitVec.setWidth_eq]
+
+end Impl.CmacTripleDes.AArch64
+
 materialize_value Impl.CmacTripleDes.AArch64.pGroups
 materialize_value Impl.CmacTripleDes.AArch64.ipCode
 materialize_value Impl.CmacTripleDes.AArch64.fpCode

@@ -112,6 +112,20 @@ theorem entry_layout {bytes count : Nat} {σ s : State} (h : EntryPre bytes coun
   entry_layout_covers h hb ho (by rw [hr, hw]; exact Covers.refl _)
     (by rw [hw]; exact Covers.refl _) hsp h25 h26 h28
 
+/-- A slot that a frame saves a register in, `offset` bytes below the entry's
+stack pointer, is in the `N` bytes below it. -/
+theorem slot_sub {σ s : State} {offset N : Nat} (ho : 16 + offset ≤ N) (hN : N < 2 ^ 64)
+    (hsp : s.sp = σ.sp - BitVec.ofNat 64 offset) :
+    ∀ R ∈ [(⟨s.sp - 16, 16⟩ : Region)], ∃ R' ∈ [below σ.sp N], Region.Sub R R' := by
+  intro R hR
+  simp only [List.mem_singleton] at hR
+  subst hR
+  refine ⟨_, List.mem_singleton_self _, fun a ha => ?_⟩
+  have h1 := below_below σ.sp offset 16
+  have h2 := below_sub (sp := σ.sp) (a := 16 + offset) (b := N) ho hN
+  rw [hsp] at ha
+  exact h2 a (h1 a ha)
+
 theorem frame_guards {bytes count : Nat} {σ s : State} (h : EntryPre bytes count σ)
     {offset : Nat} (ho : offset ≤ 64) (hr : s.wr = σ.wr)
     (hsp : s.sp = σ.sp - BitVec.ofNat 64 offset) :

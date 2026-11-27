@@ -7,13 +7,6 @@ import VerifiedGarbage.Proof.X448.X86_64.Inv
 import VerifiedGarbage.Proof.Ed448.X86_64.VerifyLoop
 import VerifiedGarbage.Proof.Ed448.X86_64.BaseConst
 import VerifiedGarbage.Proof.Framework.Block
-import Mathlib.Algebra.Order.Field.Basic
-import Mathlib.Tactic.Positivity.Finset
-import Mathlib.Tactic.NormNum.Prime
-import Mathlib.Tactic.ContinuousFunctionalCalculus
-import Mathlib.Data.Sym.Sym2.Init
-import Mathlib.Tactic.NormNum.GCD
-import Mathlib.Data.Nat.Totient
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.Sig
 

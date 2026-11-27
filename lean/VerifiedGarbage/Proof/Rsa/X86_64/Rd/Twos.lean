@@ -3,8 +3,7 @@ module
 public import VerifiedGarbage.Proof.Rsa.X86_64.Rd.Pieces
 public import VerifiedGarbage.Proof.Rsa.RecoverDet
 import VerifiedGarbage.Proof.Rsa.X86_64.Loops
-import VerifiedGarbage.Proof.Rsa.X86_64.Div
-import VerifiedGarbage.Proof.Rsa.X86_64.Inv
+import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
 import VerifiedGarbage.Proof.Framework.Omega

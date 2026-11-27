@@ -6,13 +6,11 @@ import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Sha3.AArch64.Permute
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Rotate
 
 @[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Sample.Rej4
 open VG VG.AArch64
-open VG.Proof.Sha3.AArch64.Neon
 open VG.Proof.MlKem.AArch64 (Only only_write wp_add)
 open VG.Impl.MlDsa.AArch64.Sample.Rej4 (tailAdd)
 

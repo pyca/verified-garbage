@@ -6,7 +6,9 @@
 ///
 /// Contract: `VG.Spec.Cfb.aesEncryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule, the chaining value or the data.
 ///
-/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_cfb128_encrypt_aesni` if the CPU supports its features (`VG_AES_CFB128_ENCRYPT_AESNI_FEATURES`); or else `vg_aes_cfb128_encrypt`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_cfb128_encrypt_aesni` if the CPU supports its features (`VG_AES_CFB128_ENCRYPT_AESNI_FEATURES`); `vg_aes_cfb128_encrypt_ssse3` if the CPU supports its features (`VG_AES_CFB128_ENCRYPT_SSSE3_FEATURES`); or else `vg_aes_cfb128_encrypt`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -33,6 +35,11 @@ pub unsafe fn vg_aes_cfb128_encrypt_auto(_dit: verified_garbage_cpu::Dit<'_>, sc
         {
             return crate::aes_cfb::vg_aes_cfb128_encrypt_aesni;
         }
+        if const { verified_garbage_cpu::target_contains(crate::aes_cfb::VG_AES_CFB128_ENCRYPT_SSSE3_FEATURES) }
+            || cpu.contains(crate::aes_cfb::VG_AES_CFB128_ENCRYPT_SSSE3_FEATURES)
+        {
+            return crate::aes_cfb::vg_aes_cfb128_encrypt_ssse3;
+        }
         crate::aes_cfb::vg_aes_cfb128_encrypt
     }
     /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
@@ -58,7 +65,9 @@ pub unsafe fn vg_aes_cfb128_encrypt_auto(_dit: verified_garbage_cpu::Dit<'_>, sc
 ///
 /// Contract: `VG.Spec.Cfb.aesDecryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule, the chaining value or the data.
 ///
-/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_cfb128_decrypt_aesni` if the CPU supports its features (`VG_AES_CFB128_DECRYPT_AESNI_FEATURES`); or else `vg_aes_cfb128_decrypt`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_cfb128_decrypt_aesni` if the CPU supports its features (`VG_AES_CFB128_DECRYPT_AESNI_FEATURES`); `vg_aes_cfb128_decrypt_ssse3` if the CPU supports its features (`VG_AES_CFB128_DECRYPT_SSSE3_FEATURES`); or else `vg_aes_cfb128_decrypt`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -69,7 +78,7 @@ pub unsafe fn vg_aes_cfb128_encrypt_auto(_dit: verified_garbage_cpu::Dit<'_>, sc
 /// * `rounds` must be 10, 12 or 14.
 /// * The contents of `scratch` on return are unspecified.
 /// * `iv`, `data` and `scratch` must not overlap each other, `schedule` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `iv`, `data` and `scratch` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `schedule`, `iv`, `data` and `scratch` may overlap the return address on the stack or the 1108 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_aes_cfb128_decrypt_auto(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
@@ -84,6 +93,11 @@ pub unsafe fn vg_aes_cfb128_decrypt_auto(_dit: verified_garbage_cpu::Dit<'_>, sc
             || cpu.contains(crate::aes_cfb::VG_AES_CFB128_DECRYPT_AESNI_FEATURES)
         {
             return crate::aes_cfb::vg_aes_cfb128_decrypt_aesni;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::aes_cfb::VG_AES_CFB128_DECRYPT_SSSE3_FEATURES) }
+            || cpu.contains(crate::aes_cfb::VG_AES_CFB128_DECRYPT_SSSE3_FEATURES)
+        {
+            return crate::aes_cfb::vg_aes_cfb128_decrypt_ssse3;
         }
         crate::aes_cfb::vg_aes_cfb128_decrypt
     }
@@ -110,7 +124,9 @@ pub unsafe fn vg_aes_cfb128_decrypt_auto(_dit: verified_garbage_cpu::Dit<'_>, sc
 ///
 /// Contract: `VG.Spec.Cfb.aesEncryptFinalContract`. Constant time: only the pointers, `rounds` and `len` may affect timing, not the key schedule, the chaining value or the data.
 ///
-/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_cfb128_encrypt_final_aesni` if the CPU supports its features (`VG_AES_CFB128_ENCRYPT_FINAL_AESNI_FEATURES`); or else `vg_aes_cfb128_encrypt_final`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_cfb128_encrypt_final_aesni` if the CPU supports its features (`VG_AES_CFB128_ENCRYPT_FINAL_AESNI_FEATURES`); `vg_aes_cfb128_encrypt_final_ssse3` if the CPU supports its features (`VG_AES_CFB128_ENCRYPT_FINAL_SSSE3_FEATURES`); or else `vg_aes_cfb128_encrypt_final`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -137,6 +153,11 @@ pub unsafe fn vg_aes_cfb128_encrypt_final_auto(_dit: verified_garbage_cpu::Dit<'
         {
             return crate::aes_cfb::vg_aes_cfb128_encrypt_final_aesni;
         }
+        if const { verified_garbage_cpu::target_contains(crate::aes_cfb::VG_AES_CFB128_ENCRYPT_FINAL_SSSE3_FEATURES) }
+            || cpu.contains(crate::aes_cfb::VG_AES_CFB128_ENCRYPT_FINAL_SSSE3_FEATURES)
+        {
+            return crate::aes_cfb::vg_aes_cfb128_encrypt_final_ssse3;
+        }
         crate::aes_cfb::vg_aes_cfb128_encrypt_final
     }
     /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
@@ -162,7 +183,9 @@ pub unsafe fn vg_aes_cfb128_encrypt_final_auto(_dit: verified_garbage_cpu::Dit<'
 ///
 /// Contract: `VG.Spec.Cfb.aesDecryptFinalContract`. Constant time: only the pointers, `rounds` and `len` may affect timing, not the key schedule, the chaining value or the data.
 ///
-/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_cfb128_decrypt_final_aesni` if the CPU supports its features (`VG_AES_CFB128_DECRYPT_FINAL_AESNI_FEATURES`); or else `vg_aes_cfb128_decrypt_final`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_cfb128_decrypt_final_aesni` if the CPU supports its features (`VG_AES_CFB128_DECRYPT_FINAL_AESNI_FEATURES`); `vg_aes_cfb128_decrypt_final_ssse3` if the CPU supports its features (`VG_AES_CFB128_DECRYPT_FINAL_SSSE3_FEATURES`); or else `vg_aes_cfb128_decrypt_final`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -173,7 +196,7 @@ pub unsafe fn vg_aes_cfb128_encrypt_final_auto(_dit: verified_garbage_cpu::Dit<'
 /// * `rounds` must be 10, 12 or 14.
 /// * The contents of `scratch` on return are unspecified.
 /// * `iv`, `data` and `scratch` must not overlap each other, `schedule` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `iv`, `data` and `scratch` may overlap the return address on the stack or the 100 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `schedule`, `iv`, `data` and `scratch` may overlap the return address on the stack or the 1184 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_aes_cfb128_decrypt_final_auto(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 272]) {
@@ -188,6 +211,11 @@ pub unsafe fn vg_aes_cfb128_decrypt_final_auto(_dit: verified_garbage_cpu::Dit<'
             || cpu.contains(crate::aes_cfb::VG_AES_CFB128_DECRYPT_FINAL_AESNI_FEATURES)
         {
             return crate::aes_cfb::vg_aes_cfb128_decrypt_final_aesni;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::aes_cfb::VG_AES_CFB128_DECRYPT_FINAL_SSSE3_FEATURES) }
+            || cpu.contains(crate::aes_cfb::VG_AES_CFB128_DECRYPT_FINAL_SSSE3_FEATURES)
+        {
+            return crate::aes_cfb::vg_aes_cfb128_decrypt_final_ssse3;
         }
         crate::aes_cfb::vg_aes_cfb128_decrypt_final
     }

@@ -1,6 +1,6 @@
 module
 
-
+import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
 public import VerifiedGarbage.Proof.EcKey.X86_64.Scrub.Out
 public import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
 public import VerifiedGarbage.Proof.Framework.Registration
@@ -8,7 +8,7 @@ meta import VerifiedGarbage.Proof.EcKey.X86_64.Scrub.Out
 meta import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
 meta import VerifiedGarbage.Proof.Framework.Registration
 meta import VerifiedGarbage.Spec.EcKey.P521
-import VerifiedGarbage.Proof.EcKey.Compressed.X86_64.DecompressMain
+public import VerifiedGarbage.Proof.EcKey.Compressed.X86_64.DecompressMain
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.InverseVerified
 public import VerifiedGarbage.Spec.EcKey.P521
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.InverseLit
@@ -23,8 +23,7 @@ meta import VerifiedGarbage.Impl.EcKey.Compressed.X86_64.Decompress
 meta import VerifiedGarbage.Impl.Ecdsa.P521.X86_64
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.InverseVerified
 public import VerifiedGarbage.Impl.EcKey.Compressed.X86_64.Decompress
-public import VerifiedGarbage.Proof.EcKey.Compressed.X86_64.DecompressContract
-meta import VerifiedGarbage.Proof.EcKey.Compressed.X86_64.DecompressContract
+meta import VerifiedGarbage.Proof.EcKey.Compressed.X86_64.DecompressMain
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
 meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
 public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
@@ -91,29 +90,23 @@ theorem verified (hL : Law Spec.P521.curve) (hI : InvSounds) (adx : Bool) :
 
 /-! ## Without secret residue -/
 
-/-- The granules of its stack that `vg_ec_p521_decompress_public_key` (or its
-`_adx` variant) must wipe on return, from the residue analysis
-(`X86_64.RScrub.keepFor`). -/
-def scrubKs : Bool → List Nat
-  | false => keep_for% Spec.EcKey.P521.inst.decompressPublicKeyApi.sig 8 (code false) []
-  | true => keep_for% Spec.EcKey.P521.inst.decompressPublicKeyApi.sig 8 (code true) []
+theorem codeSp (adx : Bool) : (code adx).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  cases adx <;> sp_safe
 
-theorem scrubOk (adx : Bool) : ∃ h : VG.Taint.Hint X86_64.RTaint.FT,
-    (VG.Taint.check X86_64.RTaint.rtaint (X86_64.RScrub.init Spec.EcKey.P521.inst.decompressPublicKeyApi.sig 8 [])
-      (code adx) h).any (X86_64.RScrub.resOkB · 8 (scrubKs adx) (Impl.Scrub.X86_64.chunks 8)) = true := by
-  cases adx <;> exact X86_64.RScrub.Analysed.ok_of _ (by taint_decide)
+/-- `vg_ec_p521_decompress_public_key`, or its `_adx` variant, as emitted (`Impl.EcKey.Compressed.X86_64.Fn.decompress`), its cleanup
+included, meets its contract in constant time and returns without secret residue. -/
+theorem scrubbed (hL : Law Spec.P521.curve) (hI : InvSounds) (adx : Bool) :
+    VerifiedScrubbed target (Impl.EcKey.Compressed.X86_64.Fn.decompress (Inverse.cfg adx))
+      (Spec.EcKey.P521.inst.decompressPublicKeyApi.contract abi 8) 32 := by
+  cases adx <;>
+  exact X86_64.Scrub.verifiedScrubbedAll (api := Spec.EcKey.P521.inst.decompressPublicKeyApi)
+    { code := code _
+      verified := verified hL hI _
+      stack := 8
+      spSafe := codeSp _ } .sse (EcKey.X86_64.Scrub.decompressOut _ _)
 
-/-- `vg_ec_p521_decompress_public_key`, or its `_adx` variant, followed by
-`Impl.Scrub.X86_64.scrubTail` (`X86_64.RScrub.withScrub`): it returns without
-secret residue. -/
-def scrubReg (hL : Law Spec.P521.curve) (hI : InvSounds) (adx : Bool) :
-    Registration Spec.EcKey.P521.inst.decompressPublicKeyApi target :=
-  X86_64.RScrub.withScrub {
-    suffix := if adx then "_adx" else ""
-    code := code adx
-    verified := verified hL hI adx
-    stack := 8 }
-    (EcKey.X86_64.Scrub.decompressOut _ _) [] (X86_64.RScrub.pubOk_nil _)
-    (some ⟨scrubKs adx, scrubOk adx⟩)
+theorem spSafe (adx : Bool) :
+    (Impl.EcKey.Compressed.X86_64.Fn.decompress (Inverse.cfg adx)).all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  X86_64.Scrub.scrubKs_spSafe (codeSp adx)
 
 end VG.Proof.EcKey.Compressed.X86_64.P521Decompress

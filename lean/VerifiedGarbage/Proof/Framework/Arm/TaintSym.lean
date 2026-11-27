@@ -39,8 +39,8 @@ namespace Taint
 def AgreeS (L : List String) (τ : T) (s₁ s₂ : State) : Prop :=
   Agree τ s₁ s₂ ∧ ∀ n ∈ L, s₁.syms n = s₂.syms n
 
-/-- `stepKD`, with the address of a static of `L` public. -/
-def stepS (L : List String) (τ : T) (i : Instr) : Option T := stepKD τ (i.symMov L)
+/-- `stepKeep`, with the address of a static of `L` public. -/
+def stepS (L : List String) (τ : T) (i : Instr) : Option T := stepKeep τ (i.symMov L)
 
 theorem stepS_sound {L : List String} {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State}
     (ha : AgreeS L τ s₁ s₂) (hs : stepS L τ i = some τ') (e₁ : exec i s₁ = some s₁')
@@ -48,6 +48,7 @@ theorem stepS_sound {L : List String} {τ τ' : T} {i : Instr} {s₁ s₂ s₁' 
   have hsy : ∀ n ∈ L, s₁'.syms n = s₂'.syms n := fun n hn => by
     rw [exec_syms e₁, exec_syms e₂]; exact ha.2 n hn
   unfold stepS at hs
+  rw [stepKeep_eq] at hs
   by_cases hl : ∃ d n, i = .adrSym d n ∧ n ∈ L
   · obtain ⟨d, n, rfl, hn⟩ := hl
     simp only [Instr.symMov, hn, ↓reduceIte] at hs
@@ -61,7 +62,7 @@ theorem stepS_sound {L : List String} {τ τ' : T} {i : Instr} {s₁ s₂ s₁' 
       cases i <;> simp only [Instr.symMov]
       rename_i d n
       exact ite_eq_right_of_eq_false _ _ (eq_false fun hn => hl ⟨d, n, rfl, hn⟩)
-    rw [e] at hs
+    rw [e, ← taintS_step] at hs
     exact ⟨(taintS.step_sound ha.1 hs e₁ e₂).1, (taintS.step_sound ha.1 hs e₁ e₂).2, hsy⟩
 
 end Taint
@@ -100,6 +101,8 @@ def taintSym (L : List String) : VG.Taint isa where
   pop := taintS.pop
   pop_sound _ h := by cases h
 
+kernel_fn fun (L : List String) => VG.Taint.check (taintSym L)
+
 open VG.Taint in
 instance (L : List String) : LeFrame (taintSym L) where
   le_trans := LeFrame.le_trans (A := taintS)
@@ -132,4 +135,10 @@ instance (L : List String) : LeFrame (taintSym L) where
   push_keeps _ _ _ _ hs := by cases hs
   pop_keeps _ _ _ _ hs := by cases hs
 
+kernel_fn fun (L : List String) => VG.Taint.checkSum (taintSym L)
+kernel_fn fun (L : List String) => VG.Taint.checkSumLe (taintSym L)
+kernel_fn fun (L : List String) => VG.Taint.keepsSum (taintSym L)
+
+kernel_fn fun (L : List String) => VG.Taint.checkSum (taintSym L)
+kernel_fn fun (L : List String) => VG.Taint.checkSumLe (taintSym L)
 end VG.Arm

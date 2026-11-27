@@ -8,14 +8,12 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.TaintSumGeneric
 import VerifiedGarbage.Proof.Sha3.AArch64.Sums
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Rotate
 import VerifiedGarbage.Proof.Framework.Covers
 
 @[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Sample.Rej4
 open VG VG.AArch64
-open VG.Proof.Sha3.AArch64.Neon
 open VG.Impl.MlDsa.AArch64.Sample.Rej4 (oBuf oSave saved)
 open VG.Proof.Sha3 (iterF)
 

@@ -1,8 +1,8 @@
 module
--- separate module: the inverse's proof is split in a chain of modules, so that a change rebuilds only the modules after it
 
+-- separate module: the inverse's proof is split in a chain of modules, so that a change rebuilds only the modules after it
 public import VerifiedGarbage.Proof.Rsa.X86_64.InvB.Start
-import VerifiedGarbage.Proof.Rsa.X86_64.Inv
+import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
 import VerifiedGarbage.Proof.Rsa.X86_64.Loops
 import VerifiedGarbage.Proof.Bignum.X86_64.Row
 import VerifiedGarbage.Proof.Divstep.Tc

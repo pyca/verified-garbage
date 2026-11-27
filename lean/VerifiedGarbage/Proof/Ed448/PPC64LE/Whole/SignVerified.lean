@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.PPC64LE.Whole.SignCT
-import VerifiedGarbage.Proof.Ed448.PPC64LE.Whole.SignCached
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 public import VerifiedGarbage.Proof.Framework.Scratch
 public import VerifiedGarbage.Proof.Ed448.WholeLocal
@@ -147,6 +146,8 @@ theorem signCached_framed (hl : Proof.Ed448.BaseLadder2Ok) :
     (pre := Proof.Ed448.WholeLocal.signCachedPre PPC64LE.abi.ptrBits)
     (post := Proof.Ed448.WholeLocal.signCachedPost PPC64LE.abi.ptrBits) (wa := true) (stack := 48) (bytes := 576)
     (m := 0) (signCached_verified hl) (by decide) (by decide) (Proof.Ed448.WholeLocal.signCachedPre_local _)
-    (Proof.Ed448.WholeLocal.signCachedPost_local _) signFrameSat_pre
+    (Proof.Ed448.WholeLocal.signCachedPost_local _)
+    (fun vs m m₁ m₂ r hl _ => Proof.Ed448.WholeLocal.signCachedPostOut_local _ vs m m₁ m₂ r hl)
+    signFrameSat_pre
 
 end VG.Proof.Ed448.PPC64LE.Whole

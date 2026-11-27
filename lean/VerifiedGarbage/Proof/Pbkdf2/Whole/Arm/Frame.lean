@@ -1,6 +1,7 @@
 module
 
 import VerifiedGarbage.Proof.Pbkdf2.Scratch
+public import VerifiedGarbage.Impl.Hmac.Stream.Arm
 public import VerifiedGarbage.Proof.Framework.Arm.StackScratch
 public import VerifiedGarbage.Proof.Pbkdf2.Contract
 public import VerifiedGarbage.Spec.Pbkdf2.Generic
@@ -27,9 +28,7 @@ namespace VG.Proof.Pbkdf2.Whole.Arm
 
 open VG.Arm
 
-/-- The bytes of `pbkdf2`'s frame: its copy of its three stack arguments, the
-saved registers and the working space, rounded up to a multiple of 32. -/
-def pbkFrame (I : Spec.Hmac.Instance) : Nat := (12 + 8 + 8 * I.pbkdf2Scratch + 31) / 32 * 32
+export VG.Impl.Hmac.Stream.Arm (pbkFrame)
 
 theorem pbkFramed {I : Spec.Hmac.Instance} {c : Prog isa} {bytes : Nat}
     (h : Verified Arm.target c (Proof.Pbkdf2.Instance.pbkdf2ScratchContract I Arm.abi 24))
@@ -41,7 +40,8 @@ theorem pbkFramed {I : Spec.Hmac.Instance} {c : Prog isa} {bytes : Nat}
     (n := I.pbkdf2Scratch) (pre := Spec.Pbkdf2.pbkdf2Pre I.S Arm.abi.ptrBits)
     (post := Spec.Pbkdf2.pbkdf2Post I.S Arm.abi.ptrBits) (wa := true) (stack := 24) (m := 3) h
     rfl rfl rfl hb
-    (Pbkdf2.pbkdf2Pre_local I.S _) (Pbkdf2.pbkdf2Post_local I.S _) hsat
+    (Pbkdf2.pbkdf2Pre_local I.S _) (Pbkdf2.pbkdf2Post_local I.S _)
+    (fun vs mm m₁ m₂ r hl _ hb h => Pbkdf2.pbkdf2PostOut_local I.S _ vs mm m₁ m₂ r hl hb h) hsat
 
 /-- A state satisfying `pbkdf2`'s precondition without the working space: an
 empty password, salt and output, and `c = 1`; the stack arguments `1, 0x1200,

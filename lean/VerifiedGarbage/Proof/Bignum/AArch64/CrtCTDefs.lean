@@ -375,4 +375,20 @@ def PPre (p : PPhasePub) (s : State) : Prop :=
 /-- `pPhase M.mm` is constant time. -/
 def PPhaseCT (M : Mont) : Prop := RelCT isa (Two PPre) (seqs (pPhase M.mm)) fun _ _ => True
 
+/-- A piece whose only public input is `x0`. -/
+theorem x0_ct {α : Type} {Φ : α → State → Prop} (f : α → Addr) (h : ∀ a s, Φ a s → s.gpr .x0 = f a)
+    {c : Prog isa} {hc : VG.Taint.Hint VG.AArch64.Taint.T}
+    (hT : (taint.check (Taint.ofRegs [.x0]) c hc).isSome = true) : RelCT isa (Two Φ) c fun _ _ => True :=
+  two_taint [.x0] (pins_x0B f h) hT
+
+/-- A count-down loop's condition after iteration `j` of `n`. -/
+theorem eval_nz_count {t : State} {r : Reg} {j n : Nat} (hj : j < n) (h : (t.gpr r).toNat ≠ 0 ↔ j + 1 ≠ n) :
+    isa.eval (.nonzero .x r) t = some (decide (j + 1 < n)) := by
+  rw [VG.Proof.MlKem.AArch64.eval_nonzero]
+  congr 1
+  have e : (t.gpr r != 0) = true ↔ (t.gpr r).toNat ≠ 0 := by
+    rw [bne_iff_ne, ne_eq, ne_eq, ← BitVec.toNat_inj]; exact Iff.rfl
+  rw [Bool.eq_iff_iff, e, h, decide_eq_true_iff]
+  omega_arith
+
 end VG.Proof.Bignum.AArch64

@@ -1,13 +1,12 @@
 module
+
 public import VerifiedGarbage.Impl.Bignum.AArch64.Square
 public import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
-
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareRaw
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareRedc
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareFinish
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareLayout
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareCross
-import VerifiedGarbage.Proof.Bignum.AArch64.SquareDiagonalLoop
 
 /-! Structural public state used by the constant-time composition. -/
 

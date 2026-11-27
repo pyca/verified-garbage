@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Weierstrass.Slots
 public import VerifiedGarbage.Proof.Weierstrass.Rcb
-public import Mathlib.Logic.Function.Basic
+public import VerifiedGarbage.Proof.Framework.FunUpdate
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
@@ -45,9 +45,9 @@ def FOp.rename (σ : Nat → Nat) : FOp → FOp
 /-- The operation on an environment: the output slot gets the product, sum
 or difference of the inputs' values. -/
 def FOp.run {F : Type _} [Lean.Grind.CommRing F] : FOp → (Nat → F) → Nat → F
-  | .mul o a b, e => Function.update e o (e a * e b)
-  | .add o a b, e => Function.update e o (e a + e b)
-  | .sub o a b, e => Function.update e o (e a - e b)
+  | .mul o a b, e => Fun.update e o (e a * e b)
+  | .add o a b, e => Fun.update e o (e a + e b)
+  | .sub o a b, e => Fun.update e o (e a - e b)
 
 end VG.Impl.Weierstrass
 
@@ -157,7 +157,7 @@ theorem FOp.run_rename {F : Type _} [Lean.Grind.CommRing F] (σ : Nat → Nat) (
     (fun y => (op.rename σ).run e (σ y)) = op.run (fun y => e (σ y)) := by
   funext y
   have hy : σ y = σ op.out ↔ y = op.out := ⟨h y, fun h => h ▸ rfl⟩
-  cases op <;> simp only [FOp.rename, FOp.run, FOp.out, Function.update_apply] at hy ⊢ <;>
+  cases op <;> simp only [FOp.rename, FOp.run, FOp.out, Fun.update_apply] at hy ⊢ <;>
     simp only [hy]
 
 theorem runOps_rename {F : Type _} [Lean.Grind.CommRing F] (σ : Nat → Nat) :
@@ -289,7 +289,7 @@ theorem runOps_of_not_out {F : Type _} [Lean.Grind.CommRing F] {x : Nat} :
   | op :: ops, e, h => by
     rw [runOps_cons, runOps_of_not_out ops _ fun op' hop => h op' (by simp [hop])]
     have hx : x ≠ op.out := fun hx => h op (List.mem_cons_self ..) hx.symm
-    cases op <;> exact Function.update_of_ne hx _ _
+    cases op <;> exact Fun.update_of_ne hx _ _
 
 /-- `ops` read only slots of `V` or written by an earlier operation. -/
 def readsOk : List FOp → List Nat → Bool

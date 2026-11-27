@@ -88,36 +88,36 @@ theorem tailN_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z)
         Arrays B w [2, 3, o] s.mem t.mem) ∧
       Keep tailRegs s t := by
   have hnw := hs.nowrap
-  have sl : ∀ j < n, slot w j + 8 * (w + 2) ≤ Z := fun j hj => by
+  obtain sl : ∀ j < n, slot w j + 8 * (w + 2) ≤ Z := fun j hj => by
     have := Nat.mul_le_mul_right (8 * (w + 2)) (show j + 1 ≤ n by omega_using [hj])
     rw [Nat.add_mul, Nat.one_mul] at this
     unfold slot at hZ ⊢; omega_using [this, hZ]
-  have sp : ∀ {j k}, j ≠ k → slot w j + 8 * (w + 2) ≤ slot w k ∨ slot w k + 8 * (w + 2) ≤ slot w j :=
+  obtain sp : ∀ {j k}, j ≠ k → slot w j + 8 * (w + 2) ≤ slot w k ∨ slot w k + 8 * (w + 2) ≤ slot w j :=
     fun h => slot_sep h
-  have s0 := sl 0 (by omega_arith)
-  have s2 := sl 2 (by omega_arith)
-  have s3 := sl 3 (by omega_arith)
-  have sa := sl a ha
-  have sb := sl b hb
-  have so := sl o ho
-  have p20 := sp (show (2 : Nat) ≠ 0 by decide)
-  have p23 := sp (show (2 : Nat) ≠ 3 by decide)
-  have p30 := sp (show (3 : Nat) ≠ 0 by decide)
-  have p2a := sp (Ne.symm ha2)
-  have p2b := sp (Ne.symm hb2)
-  have p2o := sp (Ne.symm ho2)
-  have p3o := sp (Ne.symm ho3)
-  have al := slot_al w
+  obtain s0 := sl 0 (by omega_arith)
+  obtain s2 := sl 2 (by omega_arith)
+  obtain s3 := sl 3 (by omega_arith)
+  obtain sa := sl a ha
+  obtain sb := sl b hb
+  obtain so := sl o ho
+  obtain p20 := sp (show (2 : Nat) ≠ 0 by decide)
+  obtain p23 := sp (show (2 : Nat) ≠ 3 by decide)
+  obtain p30 := sp (show (3 : Nat) ≠ 0 by decide)
+  obtain p2a := sp (Ne.symm ha2)
+  obtain p2b := sp (Ne.symm hb2)
+  obtain p2o := sp (Ne.symm ho2)
+  obtain p3o := sp (Ne.symm ho3)
+  obtain al := slot_al w
   unfold tail
   -- The accumulator := 0, and the rounds' count.
   refine WP.seq (WP.mono (zeroAcc_ok (w := w) (dA := slot w 2) hs i5 it0 (al 2) hw' (by omega_arith))
     fun s₂ ⟨hz, out₂, j1, c0, k₂'⟩ => ?_)
-  have hs₂' := hs.congr k₂'.2.2
-  have g₂' : ∀ r ∈ [Reg.a2, .a3, .a4, .a5, .a6, .a7, .t0, .t1], s₂.gpr r = s.gpr r := fun r hr =>
+  obtain hs₂' := hs.congr k₂'.2.2
+  obtain g₂' : ∀ r ∈ [Reg.a2, .a3, .a4, .a5, .a6, .a7, .t0, .t1], s₂.gpr r = s.gpr r := fun r hr =>
     k₂'.gpr (by revert r hr; decide)
-  have v₂ : ∀ {j}, j < n → j ≠ 2 → wordsVal s₂.mem B (slot w j) w = wordsVal s.mem B (slot w j) w :=
+  obtain v₂ : ∀ {j}, j < n → j ≠ 2 → wordsVal s₂.mem B (slot w j) w = wordsVal s.mem B (slot w j) w :=
     fun hj hne => out₂.wordsVal (by have := sp hne; omega_arith) (by have := sl _ hj; omega_arith)
-  have m0₂ : Mont.word s₂.mem B (slot w 0) = Mont.word s.mem B (slot w 0) :=
+  obtain m0₂ : Mont.word s₂.mem B (slot w 0) = Mont.word s.mem B (slot w 0) :=
     out₂.word (by omega_arith) (by omega_arith)
   -- The rounds.
   refine WP.seq (WP.mono (rounds_ok (w := w) (da := slot w a) (dA := slot w 2) (dB := slot w b) (dM := slot w 0) hs₂'
@@ -132,15 +132,15 @@ theorem tailN_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z)
   rw [v₂ ha ha2, v₂ hb hb2] at teq
   rw [wordsVal_succ_top] at tlt teq
   -- `a6` and `a7` back at the temporary and `m`.
-  have g₃' : ∀ r ∈ [Reg.a2, .a5, .t0], s₃'.gpr r = s.gpr r := fun r hr => by
+  obtain g₃' : ∀ r ∈ [Reg.a2, .a5, .t0], s₃'.gpr r = s.gpr r := fun r hr => by
     rw [k₃.gpr (by revert r hr; decide), g₂' r (by revert r hr; decide)]
   refine WP.seq ?_
   unfold restoreSubMod64
   refine WP.seq (WP.block_append (WP.mono (restoreBases_ok (s := s₃') (B := B) (w := w)
     (by rw [g₃' .a5 (by decide), i5]) (by rw [g₃' .t0 (by decide), it0])) fun s₃ ⟨⟨r6, r7, rm⟩, kr⟩ => ?_))
   rw [← rm] at tlt teq out₃
-  have hs₃ := hs₂'.congr (k₃.trans kr).2.2
-  have g₃ : ∀ r ∈ [Reg.a2, .a5, .a6, .a7, .t0], s₃.gpr r = s.gpr r := fun r hr => by
+  obtain hs₃ := hs₂'.congr (k₃.trans kr).2.2
+  obtain g₃ : ∀ r ∈ [Reg.a2, .a5, .a6, .a7, .t0], s₃.gpr r = s.gpr r := fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl
     · rw [kr.gpr (by decide), g₃' .a2 (by decide)]
@@ -148,7 +148,7 @@ theorem tailN_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z)
     · rw [r6, i6]
     · rw [r7, i7]
     · rw [kr.gpr (by decide), g₃' .t0 (by decide)]
-  have v₃ : ∀ {j}, j < n → j ≠ 2 → wordsVal s₃.mem B (slot w j) w = wordsVal s.mem B (slot w j) w :=
+  obtain v₃ : ∀ {j}, j < n → j ≠ 2 → wordsVal s₃.mem B (slot w j) w = wordsVal s.mem B (slot w j) w :=
     fun hj hne => (out₃.wordsVal (by have := sp hne; omega_arith) (by have := sl _ hj; omega_arith)).trans
       (v₂ hj hne)
   -- `T - m`.
@@ -158,10 +158,10 @@ theorem tailN_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z)
     (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith))
     fun s₄ ⟨⟨c, hc, hD, h20⟩, out₄, k₄⟩ => ?_)
   rw [v₃ (by omega_arith) (by decide)] at hD
-  have hs₄ := hs₃.congr k₄.2.2
-  have g₄ : ∀ r ∈ [Reg.a2, .a5, .a6, .t0], s₄.gpr r = s.gpr r := fun r hr => by
+  obtain hs₄ := hs₃.congr k₄.2.2
+  obtain g₄ : ∀ r ∈ [Reg.a2, .a5, .a6, .t0], s₄.gpr r = s.gpr r := fun r hr => by
     rw [k₄.gpr (by revert r hr; decide), g₃ r (by revert r hr; decide)]
-  have accA : wordsVal s₄.mem B (slot w 2) w = wordsVal s₃.mem B (slot w 2) w :=
+  obtain accA : wordsVal s₄.mem B (slot w 2) w = wordsVal s₃.mem B (slot w 2) w :=
     out₄.wordsVal (by omega_arith) (by omega_arith)
   -- The selection.
   refine WP.mono (selectAcc64_ok (w := w) (dA := slot w 2) (dT := slot w 3) (dO := slot w o)
@@ -171,9 +171,9 @@ theorem tailN_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z)
     (al 2) (al 3) (al o) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith))
     fun t ⟨hv, out₅, k₅⟩ => ?_
   rw [accA] at hv
-  have hM := wordsVal_lt s.mem B (slot w 0) w
-  have hM0 : 0 < wordsVal s.mem B (slot w 0) w := by omega_arith
-  have hres : wordsVal t.mem B (slot w o) w =
+  obtain hM := wordsVal_lt s.mem B (slot w 0) w
+  obtain hM0 : 0 < wordsVal s.mem B (slot w 0) w := by omega_arith
+  obtain hres : wordsVal t.mem B (slot w o) w =
       (wordsVal s₃.mem B (slot w 2) w + 2 ^ (64 * w) * ((Mont.word s₃.mem B (slot w 2 + 8 * w)).toNat +
         2 ^ 64 * 0)) % wordsVal s.mem B (slot w 0) w := by
     rw [hv, ← VG.Proof.Bignum.csub_result hM (wordsVal_lt _ _ _ _) hc (wordsVal_lt _ _ _ _)
@@ -189,8 +189,8 @@ theorem tailN_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z)
     exact Arrays.of_outside (j := o) (by simp) out₅ (Nat.le_refl _) (by omega_arith)
   · have k := (((((k₂'.trans k₃).trans kr).trans k₄).trans k₅).mono
       (rs' := .a6 :: .a7 :: tailRegs) (by decide))
-    have e6 : t.gpr .a6 = s.gpr .a6 := by rw [k₅.gpr (by decide), g₄ .a6 (by decide)]
-    have e7 : t.gpr .a7 = s.gpr .a7 := by
+    obtain e6 : t.gpr .a6 = s.gpr .a6 := by rw [k₅.gpr (by decide), g₄ .a6 (by decide)]
+    obtain e7 : t.gpr .a7 = s.gpr .a7 := by
       rw [k₅.gpr (by decide), k₄.gpr (by decide), g₃ .a7 (by decide)]
     exact keep_of_cons (keep_of_cons k e6) e7
 

@@ -1,11 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Pbkdf2CT
+public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.HmacInit
 public import VerifiedGarbage.Proof.Pbkdf2.Contract
 public import VerifiedGarbage.Proof.Hmac.Contract
-public import VerifiedGarbage.Proof.Pbkdf2.AArch64.IterateCT
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.HmacFin
-public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.HmacInit
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubSide
+import VerifiedGarbage.Proof.Framework.AArch64.ScrubProved
+public import VerifiedGarbage.Impl.Pbkdf2.Md.AnyKey.AArch64
+public import VerifiedGarbage.Impl.MdStream.AArch64.OneShot
 
 /-!
 # HMAC and PBKDF2-HMAC over any Merkle–Damgård hash function on AArch64: the functions, verified
@@ -35,7 +37,7 @@ open VG.Proof.Pbkdf2.AArch64 (iterK iterImp)
 
 /-- `H` without the functions it calls: its own code. -/
 def core (H : Hash) : Hash :=
-  ⟨H.P, H.D, H.W, "", .block [], "", .block [], "", .block [], "", .block [], "", "", ""⟩
+  ⟨H.P, H.D, H.W, "", .block [], "", .block [], "", .block [], "", .block [], "", "", "", ""⟩
 
 /-! ## How deeply frames nest -/
 
@@ -65,6 +67,221 @@ theorem iterate_fdepth (hc : H.compC.noFrames = true) : H.iterate.aarch64Depth �
   omega_using []
 
 end
+
+/-! ## A test of every instruction, from the own code's and the callees'
+
+A test of every instruction of one of our functions and of what it calls
+(`Scrub.sideAll`: the cleanup of the functions as emitted needs that none
+writes PSTATE.DIT, and that nothing is called indirectly) holds if it holds
+of the own code (`core H`) and of the hash function's code it calls. -/
+
+section
+open VG.AArch64.Scrub (sideAll)
+variable {p : Instr → Bool} {H : Hash}
+
+theorem hmacInit_side (h0 : sideAll p (core H).hmacInit = true) (hi : sideAll p H.initC = true)
+    (hc : sideAll p H.compC = true) : sideAll p H.hmacInit = true := by
+  simp only [core, Hash.hmacInit, Hash.stream, Hash.initKeys, Hash.keyLoop,
+    Impl.Pbkdf2.Md.AArch64.Stream.callInit, Impl.MdStream.AArch64.compressAt,
+    Impl.MdStream.AArch64.compressWith, sideAll, Bool.and_eq_true] at h0 ⊢
+  revert h0
+  repeat' (first | exact id | exact fun _ => hi | exact fun _ => hc | refine And.imp ?_ ?_)
+
+theorem hmacFin_side (h0 : sideAll p (core H).hmacFin = true) (hf : sideAll p H.finC = true)
+    (hc : sideAll p H.compC = true) : sideAll p H.hmacFin = true := by
+  simp only [core, Hash.hmacFin, Hash.stream, Impl.Pbkdf2.Md.AArch64.Stream.callFin,
+    Impl.MdStream.AArch64.compressAt, Impl.MdStream.AArch64.compressWith, sideAll, Bool.and_eq_true] at h0 ⊢
+  revert h0
+  repeat' (first | exact id | exact fun _ => hf | exact fun _ => hc | refine And.imp ?_ ?_)
+
+theorem pbkdf2_side (h0 : sideAll p (core H).pbkdf2 = true) (hi : sideAll p H.initC = true)
+    (hu : sideAll p H.updC = true) (hf : sideAll p H.finC = true) (hc : sideAll p H.compC = true) :
+    sideAll p H.pbkdf2 = true := by
+  simp only [core, Hash.pbkdf2, Hash.key, Hash.hashKey, Hash.setup, Hash.block, Hash.outLen, Hash.outLoop,
+    Hash.hmacInit, Hash.hmacFin, Hash.iterate, Impl.Pbkdf2.AArch64.iterate, Impl.Pbkdf2.AArch64.main,
+    Impl.Pbkdf2.AArch64.body, Impl.Pbkdf2.AArch64.compressBlock, Hash.stream, Hash.initKeys, Hash.keyLoop,
+    Impl.Pbkdf2.Md.AArch64.Stream.callInit, Impl.Pbkdf2.Md.AArch64.Stream.callFin,
+    Impl.MdStream.AArch64.compressAt, Impl.MdStream.AArch64.compressWith, sideAll, Bool.and_eq_true] at h0 ⊢
+  revert h0
+  repeat' first
+    | exact id
+    | exact fun _ => hi
+    | exact fun _ => hu
+    | exact fun _ => hf
+    | exact fun _ => hc
+    | refine And.imp ?_ ?_
+
+theorem hmacInitAny_side (h0 : sideAll p (core H).hmacInitAny = true) (hi : sideAll p H.initC = true)
+    (hu : sideAll p H.updC = true) (hf : sideAll p H.finC = true) (hc : sideAll p H.compC = true) :
+    sideAll p H.hmacInitAny = true := by
+  simp only [core, Hash.hmacInitAny, Hash.key, Hash.hashKey, Hash.hmacInit, Hash.stream, Hash.initKeys,
+    Hash.keyLoop, Impl.Pbkdf2.Md.AArch64.Stream.callInit, Impl.MdStream.AArch64.compressAt,
+    Impl.MdStream.AArch64.compressWith, sideAll, Bool.and_eq_true] at h0 ⊢
+  revert h0
+  repeat' first
+    | exact id
+    | exact fun _ => hi
+    | exact fun _ => hu
+    | exact fun _ => hf
+    | exact fun _ => hc
+    | refine And.imp ?_ ?_
+
+/-- The shared streaming `update` (`Impl.MdStream.AArch64.update`) over a
+compression function, from its own code's and the compression function's. -/
+theorem mdUpdate_side (P : Impl.MdStream.AArch64.Params) (n : String) {c : Prog isa}
+    (h0 : sideAll p (Impl.MdStream.AArch64.update P "" (.block [])) = true) (hc : sideAll p c = true) :
+    sideAll p (Impl.MdStream.AArch64.update P n c) = true := by
+  simp only [Impl.MdStream.AArch64.update, Impl.MdStream.AArch64.updateMain, Impl.MdStream.AArch64.updateBody,
+    Impl.MdStream.AArch64.compressN, Impl.MdStream.AArch64.compressWith, sideAll, Bool.and_eq_true] at h0 ⊢
+  revert h0
+  repeat' first
+    | exact id
+    | exact fun _ => hc
+    | refine And.imp ?_ ?_
+
+/-- The shared streaming `finalize`, likewise. -/
+theorem mdFinalize_side (P : Impl.MdStream.AArch64.Params) (n : String) {c : Prog isa}
+    (h0 : sideAll p (Impl.MdStream.AArch64.finalize P "" (.block [])) = true) (hc : sideAll p c = true) :
+    sideAll p (Impl.MdStream.AArch64.finalize P n c) = true := by
+  simp only [Impl.MdStream.AArch64.finalize, Impl.MdStream.AArch64.finalizeMain,
+    Impl.MdStream.AArch64.finalizeBody, Impl.MdStream.AArch64.compressAt, Impl.MdStream.AArch64.compressWith,
+    sideAll, Bool.and_eq_true] at h0 ⊢
+  revert h0
+  repeat' first
+    | exact id
+    | exact fun _ => hc
+    | refine And.imp ?_ ?_
+
+/-- The shared one-shot digest (`Impl.MdStream.AArch64.OneShot.digest`), likewise. -/
+theorem mdDigest_side (P : Impl.MdStream.AArch64.Params) (init : Prog isa) (n : String) {c : Prog isa}
+    (h0 : sideAll p (Impl.MdStream.AArch64.OneShot.digest P init "" (.block [])) = true)
+    (hc : sideAll p c = true) : sideAll p (Impl.MdStream.AArch64.OneShot.digest P init n c) = true := by
+  simp only [Impl.MdStream.AArch64.OneShot.digest, Impl.MdStream.AArch64.OneShot.body,
+    Impl.MdStream.AArch64.OneShot.whole, Impl.MdStream.AArch64.OneShot.tail,
+    Impl.MdStream.AArch64.OneShot.compressBuf, Impl.MdStream.AArch64.OneShot.compressWith, sideAll,
+    Bool.and_eq_true] at h0 ⊢
+  revert h0
+  repeat' first
+    | exact id
+    | exact fun _ => hc
+    | refine And.imp ?_ ?_
+
+/-- What the cleanup of the functions as emitted needs of every instruction
+(`Scrub.verifiedScrubbedOf`): that it does not write PSTATE.DIT. -/
+abbrev noDit : Instr → Bool := fun i => !i.writesDit
+
+/-- `noDit` of the own code of a hash function's HMAC and PBKDF2 functions
+(`core H`), which calls nothing indirectly: evaluated by the kernel, once for
+each hash function. -/
+structure CoreSide (C : Hash) : Prop where
+  init : sideAll noDit C.hmacInit = true
+  fin : sideAll noDit C.hmacFin = true
+  any : sideAll noDit C.hmacInitAny = true
+  pbk : sideAll noDit C.pbkdf2 = true
+
+/-- `noDit` of the code of a hash function that HMAC and PBKDF2 call, which
+calls nothing indirectly: evaluated by the kernel where each implementation
+is listed (`Proof/Variants/MdHash/AArch64.lean`). -/
+structure CalleeSide (H : Hash) : Prop where
+  comp : sideAll noDit H.compC = true
+  init : sideAll noDit H.initC = true
+  upd : sideAll noDit H.updC = true
+  fin : sideAll noDit H.finC = true
+
+end
+
+section
+open VG.AArch64.Scrub (sideAll)
+open VG.Impl.StackScratch.AArch64
+
+private theorem stores_noDit (n : Nat) : ∀ i ∈ wipePairStores n, noDit i = true := by
+  intro i hi
+  simp only [wipePairStores, List.mem_map] at hi
+  obtain ⟨k, -, rfl⟩ := hi
+  rfl
+
+private theorem chunk_noDit (o j n : Nat) : ∀ i ∈ wipePairChunk o j n, noDit i = true := by
+  intro i hi
+  rcases List.mem_cons.mp hi with rfl | h
+  · rfl
+  · exact stores_noDit _ _ h
+
+private theorem chunks_noDit (o n : Nat) : ∀ i ∈ wipePairChunks o n, noDit i = true := by
+  intro i hi
+  unfold wipePairChunks at hi
+  rcases List.mem_append.mp hi with h | h
+  · obtain ⟨j, -, hj⟩ := List.mem_flatMap.mp h
+    exact chunk_noDit _ _ _ _ hj
+  · split at h
+    · exact absurd h List.not_mem_nil
+    · exact chunk_noDit _ _ _ _ h
+
+/-- The instructions that wipe a function's working space write no PSTATE.DIT. -/
+theorem wipe_noDit (words : Nat) : ∀ i ∈ wipe words, noDit i = true := by
+  intro i hi
+  unfold wipe wipeAt at hi
+  rcases List.mem_cons.mp hi with rfl | h
+  · rfl
+  rcases List.mem_append.mp h with h | h
+  · exact chunks_noDit _ _ _ h
+  · split at h
+    · exact absurd h List.not_mem_nil
+    · rcases List.mem_singleton.mp h with rfl
+      rfl
+
+/-- `noDit` of code in a frame of its own that it wipes (`withStackScratchWiped`). -/
+theorem sideAll_withStackScratchWiped {bytes words : Nat} {r : Reg} {c : Prog isa}
+    (hc : sideAll noDit c = true) : sideAll noDit (withStackScratchWiped bytes r words c) = true := by
+  refine Scrub.sideAll_withStackScratch rfl rfl rfl ?_
+  simp only [sideAll, Bool.and_eq_true, Code.allInstrs_eq, instrs, List.all_eq_true]
+  exact ⟨hc, wipe_noDit words⟩
+
+end
+
+/-- How deeply the frames of the shared streaming functions nest: one, their
+own, over a compression function that has none. -/
+theorem mdUpdate_depth (P : Impl.MdStream.AArch64.Params) (n : String) (c : Prog isa)
+    (h : (Impl.MdStream.AArch64.updateMain P n c).aarch64Depth = 0) :
+    (Impl.MdStream.AArch64.update P n c).aarch64Depth ≤ 1 := by
+  simp only [Impl.MdStream.AArch64.update, Code.aarch64Depth, h, Instr.frameUnits, Nat.zero_add, Nat.le_refl]
+
+theorem mdFinalize_depth (P : Impl.MdStream.AArch64.Params) (n : String) (c : Prog isa)
+    (h : (Impl.MdStream.AArch64.finalizeMain P n c).aarch64Depth = 0) :
+    (Impl.MdStream.AArch64.finalize P n c).aarch64Depth ≤ 1 := by
+  simp only [Impl.MdStream.AArch64.finalize, Code.aarch64Depth, h, Instr.frameUnits, Nat.zero_add, Nat.le_refl]
+
+/-- The frames of code whose own nest at most once, in a frame of `F` bytes,
+fit in `16 + F` bytes of stack. -/
+theorem depth_frame_le {F : Nat} {r : Reg} {c : Prog isa} (h : c.aarch64Depth ≤ 1) :
+    16 * (Impl.StackScratch.AArch64.withStackScratch F r c).aarch64Depth ≤ 16 + F := by
+  rw [Scrub.depth_withStackScratch]; omega
+
+/-- The frame of the shared one-shot digest is its only one, over an `init`
+and a compression function that have none. -/
+theorem mdDigest_depth (P : Impl.MdStream.AArch64.Params) (init : Prog isa) (n : String) (c : Prog isa)
+    (hi : init.aarch64Depth = 0) (hc : c.noFrames = true) :
+    16 * (Impl.MdStream.AArch64.OneShot.digest P init n c).aarch64Depth ≤
+      Impl.MdStream.AArch64.OneShot.frameBytes P := by
+  simp only [Impl.MdStream.AArch64.OneShot.digest, Impl.MdStream.AArch64.OneShot.body,
+    Impl.MdStream.AArch64.OneShot.whole, Impl.MdStream.AArch64.OneShot.tail,
+    Impl.MdStream.AArch64.OneShot.compressBuf, Impl.MdStream.AArch64.OneShot.compressWith,
+    Impl.MdStream.AArch64.OneShot.copyTail, Impl.MdStream.AArch64.OneShot.bytesTail, Code.aarch64Depth, hi,
+    fdepth_of_noFrames hc, Instr.frameUnits, Nat.max_self, Nat.zero_add]
+  exact Nat.mul_div_le _ _
+
+theorem hmacInitAny_fdepth {H : Hash} (hi : H.initC.aarch64Depth ≤ 1) (hu : H.updC.aarch64Depth ≤ 1)
+    (hf : H.finC.aarch64Depth ≤ 1) (hc : H.compC.noFrames = true) : H.hmacInitAny.aarch64Depth ≤ 1 := by
+  have h1 := hmacInit_fdepth hi hc
+  simp only [Hash.hmacInitAny, Hash.key, Hash.hashKey, Code.aarch64Depth, Nat.max_le, Nat.zero_le, hi, hu, hf,
+    h1, and_self]
+
+theorem pbkdf2_fdepth {H : Hash} (hi : H.initC.aarch64Depth ≤ 1) (hu : H.updC.aarch64Depth ≤ 1)
+    (hf : H.finC.aarch64Depth ≤ 1) (hc : H.compC.noFrames = true) : H.pbkdf2.aarch64Depth ≤ 1 := by
+  have h1 := hmacInit_fdepth hi hc
+  have h2 := hmacFin_fdepth hf hc
+  have h3 := iterate_fdepth (H := H) hc
+  simp only [Hash.pbkdf2, Hash.key, Hash.hashKey, Hash.setup, Hash.block, Hash.outLen, Hash.outLoop,
+    Code.aarch64Depth, Nat.max_le, Nat.zero_le, hi, hu, hf, h1, h2, h3, and_self]
 
 /-! ## The taint checks, which look only at the own code -/
 

@@ -2,10 +2,16 @@ module
 
 import VerifiedGarbage.TCB.Rust
 meta import VerifiedGarbage.TCB.Rust
+import VerifiedGarbageTest.RenderOnly
+meta import VerifiedGarbageTest.RenderOnly
 import VerifiedGarbage.TCB.X86_64.Target
 meta import VerifiedGarbage.TCB.X86_64.Target
 import VerifiedGarbage.TCB.X86_64.Print
 meta import VerifiedGarbage.TCB.X86_64.Print
+import VerifiedGarbage.Spec.MdHashTable
+meta import VerifiedGarbage.Spec.MdHashTable
+import VerifiedGarbage.Spec.HmacTable
+meta import VerifiedGarbage.Spec.HmacTable
 import VerifiedGarbage.Proof.Framework.Semantics
 meta import VerifiedGarbage.Proof.Framework.Semantics
 import VerifiedGarbage.Proof.Framework.Sig
@@ -33,7 +39,17 @@ statics of the interface's type.
 namespace VG.Test.FnTablesX86_64
 open VG VG.X86_64
 
-def sig : Sig := { params := [("t", .table 2)], ret := some .u64 }
+/-- The interface `TestFns`: its tables' data is what their function returns. -/
+def iface : TableIface where
+  name := "TestFns"
+  words := 2
+  fns := 1
+  tables := [("VG_TEST_FNS_A", [1]), ("VG_TEST_FNS_B", [2])]
+
+/-- The function's signature, its table of the interface `I`. -/
+def sigOf (I : TableIface) : Sig := { params := [("t", .table I)], ret := some .u64 }
+
+def sig : Sig := sigOf iface
 
 def tA : FnTable := { name := "VG_TEST_FNS_A", iface := "TestFns", fns := ["vg_test_fn_a"], data := [1] }
 def tB : FnTable := { name := "VG_TEST_FNS_B", iface := "TestFns", fns := ["vg_test_fn_b"], data := [2] }
@@ -64,7 +80,7 @@ theorem pre_facts {s : State} (h : contract.pre s) :
           s.mem.readW (s.gpr .rdi + 8) 64 = 1) ∨
         (s.mem.readW (s.gpr .rdi) 64 = s.syms "vg_test_fn_b" ∧
           s.mem.readW (s.gpr .rdi + 8) 64 = 2)) := by
-  sig_pre [contract, sig, tables, Abi.withTables, abi, argRegs, stackBelow, tA, tB, FnTable.words,
+  sig_pre [contract, sig, sigOf, iface, tables, Abi.withTables, abi, argRegs, stackBelow, tA, tB, FnTable.words,
     Abi.tableHeld, Sig.wordIndex, Sig.lists, Sig.tableRegion, BitVec.setWidth_eq] at h
   obtain ⟨hsp, ⟨p, hp, T, hT, hh⟩, hd, hrd, hwr, -⟩ := h
   simp only [Option.map_some, List.getD_cons_zero, Option.some.injEq] at hp
@@ -147,7 +163,7 @@ theorem run {s : State} (h : contract.pre s) :
 /-- The address called, from the public data. -/
 theorem pub_tr {s₁ s₂ : State} (h₁ : contract.pre s₁) (_h₂ : contract.pre s₂) (hp : contract.pub s₁ s₂) :
     tr s₁ = tr s₂ := by
-  sig_pub [contract, sig, tables, Abi.withTables, abi, argRegs, tA, tB, FnTable.words, Abi.tableHeld,
+  sig_pub [contract, sig, sigOf, iface, tables, Abi.withTables, abi, argRegs, tA, tB, FnTable.words, Abi.tableHeld,
     Sig.wordIndex] at hp
   obtain ⟨hsp, ha, hb, ht, hdi⟩ := hp
   have ht := ht _ _ rfl rfl
@@ -195,35 +211,69 @@ theorem verified : Verified target code contract := by
       refine Mem.readW_writeW_sep (fun x hx hx' => ?_) (by decide)
       simp only [Nat.reduceDiv] at hx hx'
       bv_omega
-    · sig_post [contract, sig, tables, Abi.withTables, abi, argRegs]
+    · sig_post [contract, sig, sigOf, iface, tables, Abi.withTables, abi, argRegs]
       exact hv
   · obtain ⟨v, e', -⟩ := run h
     exact (Exec.det e e').1
   · refine ⟨sat, ?_⟩
-    sig_pre [contract, sig, tables, Abi.withTables, abi, argRegs, stackBelow, tA, tB, FnTable.words,
+    sig_pre [contract, sig, sigOf, iface, tables, Abi.withTables, abi, argRegs, stackBelow, tA, tB, FnTable.words,
       Abi.tableHeld, Sig.wordIndex, Sig.lists, Sig.tableRegion, BitVec.setWidth_eq, sat]
     exact ⟨by decide, ⟨_, rfl, _, .inl rfl, by decide⟩, fun _ => by decide,
       Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide), by decide⟩
 
-def artifact : Artifact where
-  target := .of target
-  module := "test"
-  name := "vg_test_fn_tables"
-  sig := sig
-  doc := "Returns the word of data of its table, which the table's function returns.\n\n# Safety\n\n"
+/-- The artifact, for the signature whose table is of the interface `TestFns`
+with another name, number of functions or tables: its contract, which none of
+those is part of, is the same. -/
+def artifactOf (name : String) (fns : Nat) (ifaceTables : List (String × List (BitVec 64))) :
+    EmitArtifact where
+  target := .of (renderOnly target) emitter
+  api := { module := "test", name := "vg_test_fn_tables", safety := []
+           sig := sigOf { name := name, words := 2, fns := fns, tables := ifaceTables }
+           summary := "Returns the word of data of its table, which the table's function returns." }
   tables := tables
   code := code
   contract := contract
-  verified := verified
+  verified := renderOnly_verified verified
   stack := 8
+  ofSig := ⟨fun _ _ => True, fun t m _ r => r = m.readW (t + 8) 64, none, rfl⟩
 
-def prepared : Rust.Prepared := .of (.of artifact)
-def internals : List Rust.Internal := Rust.internalsOf [prepared]
+def artifact : EmitArtifact := artifactOf iface.name iface.fns iface.tables
+
+/-- The contract of the empty function taking a table, of no tables: it says
+nothing of the table. -/
+def untabledContract : Contract isa := sig.contract abi (post := fun _ _ _ _ => True)
+
+theorem untabledVerified : Verified target (.block []) untabledContract := by
+  refine ⟨fun s h => ⟨[], s, .block rfl, ⟨fun _ _ => rfl, rfl, rfl⟩, trivial⟩,
+    .of_leakage (fun _ => []) (fun s t s' _ e => by cases e with | block e => cases e; rfl)
+      (fun _ _ _ _ _ => rfl), sat, ?_⟩
+  sig_pre [untabledContract, sig, sigOf, iface, abi, argRegs, stackBelow, Sig.lists, Sig.tableRegion, sat]
+  exact ⟨Region.disjoint_of_sep (by decide), by decide⟩
+
+/-- An artifact that lists no tables for its table parameter. -/
+def untabled : EmitArtifact where
+  target := .of (renderOnly target) emitter
+  api := { module := "test", name := "vg_test_fn_untabled", sig := sig, safety := []
+           summary := "Does nothing." }
+  code := .block []
+  contract := untabledContract
+  verified := renderOnly_verified untabledVerified
+
+/-- The artifact `a`, and the internal functions its code calls. -/
+def linked (a : EmitArtifact) : Rust.Linked a.target :=
+  let ps : List (Rust.Prepared a.target) := [.of a.toArtifact]
+  .of ps (Rust.internalsOf ps)
+
+/-- `checkFnTables` of the artifact `a`, whose functions are `l`'s. -/
+def checked (a : EmitArtifact) (l : Rust.Linked a.target) : Except String Unit := do
+  Rust.checkFnTables l (← Rust.checkAllFnTables a.target.name [a]) (.of a.toArtifact)
 
 /-- The rendering: the indirect call is its instruction alone (`call r11`,
 `41 FF D3`, after `mov r11, [rdi]`, `4C 8B 1F`), and the documentation says
 what `t` must be. -/
 def expected : String := "/// Returns the word of data of its table, which the table's function returns.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -259,7 +309,7 @@ pub static VG_TEST_FNS_A: super::TestFns = super::TestFns {
 };
 "
 
-#guard Rust.fnTableFile (.of target) tA [] (fun n => s!"test::{n}") == expectedA
+#guard Rust.fnTableFile (.of target emitter) tA [] (fun n => s!"test::{n}") == expectedA
 #guard ((Rust.fnTablesMod "x86_64" (Rust.fnTables [artifact]) fun _ => []).splitOn
   "pub struct TestFns {\n    fns: [*const (); 1],\n    data: [usize; 1],\n}").length == 2
 -- Each table's items are re-exported by name: its static, and its features' constant if any.
@@ -269,12 +319,113 @@ pub static VG_TEST_FNS_A: super::TestFns = super::TestFns {
   "pub use vg_test_fns_a::{VG_TEST_FNS_A, VG_TEST_FNS_A_FEATURES};\n").length == 2
 
 -- Both functions the indirect call may reach are emitted, as internal functions.
-#guard internals.map (·.name) == ["vg_test_fn_a", "vg_test_fn_b"]
-#guard (Rust.checkCalls [prepared] internals prepared) matches .ok _
-#guard (Rust.checkFnTables [prepared] internals prepared) matches .ok _
-#guard (Rust.checkFeatures prepared) matches .ok _
+#guard (linked artifact).hs.map (·.name) == ["vg_test_fn_a", "vg_test_fn_b"]
+#guard (Rust.checkCalls (linked artifact)) matches .ok _
+#guard (checked artifact (linked artifact)) matches .ok _
+#guard (Rust.checkFeatures (T := artifact.target) (.of artifact.toArtifact)) matches .ok _
+-- Nor is the indirect call checked unless they are.
+#guard (Rust.checkCalls (T := artifact.target) (.of [.of artifact.toArtifact] [])) matches .error _
 -- A table naming a function that is not emitted is refused.
-#guard (Rust.checkFnTables [prepared] [] prepared) matches .error _
+#guard (checked artifact (.of [.of artifact.toArtifact] [])) matches .error _
+
+/-! ## The interface the signature names
+
+The signature, not the registration, says which tables the function takes
+(`TableIface`, `Rust.checkFnTable`). -/
+
+/-- The error that `checkFnTables` reports of `a`, or nothing. -/
+def refusal (a : EmitArtifact) : String :=
+  match checked a (linked a) with
+  | .ok _ => ""
+  | .error e => e
+
+#guard refusal artifact == ""
+-- The registration's tables are of as many words, but of another interface.
+#guard refusal (artifactOf "MdHash" 1 iface.tables) ==
+  "x86_64: vg_test_fn_tables's parameter `t`: the table of functions VG_TEST_FNS_A is of the \
+    interface TestFns, not MdHash"
+-- They have another number of functions, so their data is elsewhere.
+#guard refusal (artifactOf "TestFns" 0 iface.tables) ==
+  "x86_64: vg_test_fn_tables's parameter `t`: the table of functions VG_TEST_FNS_A is not of the \
+    2 words, the first 0 of them functions', of TestFns"
+-- The data of one is not the interface's, or another of its tables'.
+#guard refusal (artifactOf "TestFns" 1 [("VG_TEST_FNS_A", [1]), ("VG_TEST_FNS_B", [3])]) ==
+  "x86_64: vg_test_fn_tables's parameter `t`: the data of the table of functions VG_TEST_FNS_B \
+    does not start with that of a table of TestFns of its name"
+#guard refusal (artifactOf "TestFns" 1 [("VG_TEST_FNS_A", [2]), ("VG_TEST_FNS_B", [1])]) ==
+  "x86_64: vg_test_fn_tables's parameter `t`: the data of the table of functions VG_TEST_FNS_A \
+    does not start with that of a table of TestFns of its name"
+-- The interface has no table of the name of one, with a suffix or not.
+#guard refusal (artifactOf "TestFns" 1 [("VG_TEST_FNS_A", [1])]) ==
+  "x86_64: vg_test_fn_tables's parameter `t`: VG_TEST_FNS_B is not the name of a table of \
+    functions of TestFns"
+#guard refusal (artifactOf "TestFns" 1 []) ==
+  "x86_64: vg_test_fn_tables's parameter `t`: VG_TEST_FNS_A is not the name of a table of \
+    functions of TestFns"
+-- The registration lists no tables for the parameter.
+#guard refusal untabled ==
+  "x86_64: vg_test_fn_untabled lists no tables of functions for its parameter `t`"
+
+/-- Whether `T` is a table of the interface of the parameter `p`. -/
+def isTableOf (p : Param) (T : FnTable) : Bool :=
+  match p with
+  | .table I => (Rust.checkFnTable I T).isOk
+  | _ => false
+
+def isMdHashTable : FnTable → Bool := isTableOf VG.Spec.MdHashTable.param
+def isHmacTable : FnTable → Bool := isTableOf VG.Spec.HmacTable.param
+
+/-- A table of no functions and of eleven words, as one of `MdHash`, that name
+no hash function. -/
+def opaqueTable (name iface : String) : FnTable where
+  name := name
+  iface := iface
+  fns := []
+  data := List.replicate 11 (-1)
+
+/-- A table of `MdHash` named `name`, of the data of the hash function at the
+index `i`, whose digest has `len` octets. -/
+def mdTable (name : String) (i len : Nat) : FnTable where
+  name := name
+  iface := "MdHash"
+  fns := ["init", "update", "finalize", "compress", "digest"]
+  data := [i, len, 64, 8, 112, 1].map (BitVec.ofNat 64)
+
+#guard isMdHashTable (mdTable "VG_MD_HASH_SHA256" 3 32) &&
+  isMdHashTable (mdTable "VG_MD_HASH_SHA256_SHANI" 3 32) &&
+  isMdHashTable (mdTable "VG_MD_HASH_SHA512" 5 64) &&
+  isMdHashTable (mdTable "VG_MD_HASH_SHA512_SHA512" 5 64) &&
+  isMdHashTable (mdTable "VG_MD_HASH_SHA512_256" 7 32) &&
+  isMdHashTable (mdTable "VG_MD_HASH_SHA512_256_SHA512" 7 32)
+-- An index out of range, that of another hash function, or another digest length.
+#guard !isMdHashTable (mdTable "VG_MD_HASH_SHA256" (2 ^ 64 - 1) 32) &&
+  !isMdHashTable (mdTable "VG_MD_HASH_SHA256" 14 32) &&
+  !isMdHashTable (mdTable "VG_MD_HASH_SHA256" 2 32) &&
+  !isMdHashTable (mdTable "VG_MD_HASH_SHA256" 3 28) &&
+  !isMdHashTable (mdTable "VG_MD_HASH_SHA512_256" 5 64) &&
+  !isMdHashTable (mdTable "VG_MD_HASH_SHA512_256_SHA512" 5 64)
+-- A name of no hash function, and the shape or interface of another table.
+#guard !isMdHashTable (mdTable "VG_MD_HASH_SHA257" 3 32) &&
+  !isMdHashTable (mdTable "VG_MD_HASH_SHA256SHANI" 3 32) &&
+  !isMdHashTable { mdTable "VG_MD_HASH_SHA256" 3 32 with iface := "Hmac" } &&
+  !isMdHashTable { mdTable "VG_MD_HASH_SHA256" 3 32 with data := [3, 32] } &&
+  !isMdHashTable (opaqueTable "VG_MD_HASH_SHA256" "MdHash") &&
+  !isMdHashTable (opaqueTable "VG_OPAQUE_HASH" "OpaqueHash")
+
+/-- A table of `Hmac` named `name`, of the data `data`. -/
+def hmacTable (name : String) (data : List (BitVec 64)) : FnTable where
+  name := name
+  iface := "Hmac"
+  fns := ["init", "update", "finalize"]
+  data := data
+
+#guard isHmacTable (hmacTable "VG_HMAC_SHA512_224" [6, 28, 128]) &&
+  isHmacTable (hmacTable "VG_HMAC_SHA256_SHANI" [3, 32, 64])
+-- Another block size, an index out of range, and a hash function without an HMAC.
+#guard !isHmacTable (hmacTable "VG_HMAC_SHA256" [3, 32, 128]) &&
+  !isHmacTable (hmacTable "VG_HMAC_SHA256" [14, 32, 64]) &&
+  !isHmacTable (hmacTable "VG_HMAC_SHA3_256" [9, 32, 0]) &&
+  !isHmacTable (mdTable "VG_MD_HASH_SHA256" 3 32)
 
 /-! ## The instruction -/
 

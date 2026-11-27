@@ -113,22 +113,23 @@ def lanes8 (f : Nat → List Instr) : List Instr := (List.range 8).flatMap f
 
 /-- One round, with `L` at `l`, `R` at `r` and its key at `kp`, which moves
 on to the next round's key. -/
-def round (l r : Nat) : List Instr :=
-  ([.ldr u7 kp 0, .ldr .lr kp 4] : List Instr) ++
-  lanes8 (step1 r) ++ g8 ++ lanes8 step2 ++ g8 ++ lanes8 step3 ++ g8 ++ lanes8 (step4 l) ++
-  ([.dp .add kp kp (.imm 8)] : List Instr)
+def round (l r : Nat) : Prog isa :=
+  .seq (.block (([.ldr u7 kp 0, .ldr .lr kp 4] : List Instr) ++ lanes8 (step1 r)))
+    (.seq g8Call (.seq (.block (lanes8 step2))
+      (.seq g8Call (.seq (.block (lanes8 step3))
+        (.seq g8Call (.block (lanes8 (step4 l) ++ [.dp .add kp kp (.imm 8)])))))))
 
 /-- Two rounds, the second with the halves the other way round, and whether
 `kp` is at the table's end. -/
-def roundPair : List Instr :=
-  round (arrSlot 0) (arrSlot 2) ++ round (arrSlot 2) (arrSlot 0) ++
-  ([.dp .sub t0 kp (.reg sb), .cmp t0 (.imm (BitVec.ofNat 32 (4 * tableEnd)))] : List Instr)
+def roundPair : Prog isa :=
+  .seq (round (arrSlot 0) (arrSlot 2)) (.seq (round (arrSlot 2) (arrSlot 0))
+    (.block [.dp .sub t0 kp (.reg sb), .cmp t0 (.imm (BitVec.ofNat 32 (4 * tableEnd)))]))
 
 /-- `kp := ` the address of slot `k`. -/
 def kpAt (k : Nat) : Instr := .dp .add kp sb (.imm (BitVec.ofNat 32 (4 * k)))
 
 /-- The sixteen rounds, with `kp` from the table's start to its end. -/
-def rounds : Prog isa := .seq (.block [kpAt tableSlot]) (.loop (.block roundPair) .ne)
+def rounds : Prog isa := .seq (.block [kpAt tableSlot]) (.loop roundPair .ne)
 
 /-! ## Eight blocks -/
 

@@ -1,10 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLoop
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseFlags
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseZInit
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseAdd
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseZInit
 import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Mem
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseZ
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
@@ -573,7 +572,7 @@ open VG.Impl.MlDsa.AArch64.Call (Ptr Arg callAt)
 open VG.Proof.MlDsa.Arith (polyRegion)
 
 theorem addNorm_callee (S : Nat) : CalleeOk S VG.Impl.MlDsa.AArch64.Optimized.Response.addNorm
-    (addNormContract abi) := ⟨addNorm_verified.1,addNorm_verified.2.1,Nat.zero_le _⟩
+    (addNormContract abi) := CalleeOk.of_ct addNorm_verified.1 addNorm_verified.2.1 (by lit_decide) (fun _ _ h => h) (Nat.zero_le _)
 
 abbrev addNormArgs (y cs : Ptr) (B : Nat) : List (Reg × Arg) :=
   [(.x0,.ptr y),(.x1,.ptr cs),(.x2,.imm B)]

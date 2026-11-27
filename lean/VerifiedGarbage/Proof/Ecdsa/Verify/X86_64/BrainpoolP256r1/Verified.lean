@@ -1,29 +1,35 @@
 module
 
+public import VerifiedGarbage.Spec.Ecdsa.Verify.BrainpoolP256r1
+public import VerifiedGarbage.TCB.Registration
+import VerifiedGarbage.Proof.EcKey.X86_64.Scrub.Out
+import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
 public import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Main
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.CombGeneral
 import VerifiedGarbage.Proof.Ecdsa.X86_64.CombLays
 import VerifiedGarbage.Proof.BrainpoolP256r1.Comb7
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.BrainpoolP256r1.Contract
 import VerifiedGarbage.Proof.Ecdsa.X86_64.BrainpoolP256r1.Verified
 public import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Front
 import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
+public import VerifiedGarbage.Proof.Framework.X86_64.CallInlineN
+import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.BrainpoolP256r1.Lit
 public import VerifiedGarbage.Impl.Ecdsa.Verify.BrainpoolP256r1.X86_64
 import VerifiedGarbage.Proof.Framework.LitShare
 import VerifiedGarbage.Proof.Ecdsa.X86_64.BrainpoolP256r1.Lit
 import VerifiedGarbage.Proof.Weierstrass.WinLay
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Main
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.BrainpoolP256r1.Contract
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.BrainpoolP256r1.Verified
 meta import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Front
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 meta import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
+meta import VerifiedGarbage.Proof.Framework.X86_64.CallInlineN
+meta import VerifiedGarbage.Proof.Framework.KernelRfl
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.BrainpoolP256r1.Lit
 meta import VerifiedGarbage.Impl.Ecdsa.Verify.BrainpoolP256r1.X86_64
 meta import VerifiedGarbage.Proof.Framework.LitShare
@@ -39,6 +45,192 @@ import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.EraseChecks
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.EraseChecks
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Impl.Ecdsa.BrainpoolP256r1.X86_64
+public import VerifiedGarbage.Proof.Framework.ConstMem
+public import VerifiedGarbage.TCB.Sig
+public import VerifiedGarbage.Spec.Ecdsa.BrainpoolP256r1
+public import VerifiedGarbage.Spec.Ecdsa.Verify.Generic
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Weierstrass.TCombWords
+meta import VerifiedGarbage.TCB.X86_64.Target
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Impl.Ecdsa.BrainpoolP256r1.X86_64
+meta import VerifiedGarbage.Proof.Framework.ConstMem
+meta import VerifiedGarbage.TCB.Sig
+meta import VerifiedGarbage.Spec.Ecdsa.BrainpoolP256r1
+meta import VerifiedGarbage.Spec.Ecdsa.Verify.Generic
+meta import VerifiedGarbage.Proof.Framework.GetElem
+meta import VerifiedGarbage.Proof.Weierstrass.TCombWords
+
+/-! ### `Ecdsa.Verify.X86_64.BrainpoolP256r1.Contract`, which only this module used -/
+
+section
+
+/-!
+# ECDSA verification over brainpoolP256r1 on x86-64: the contract the proof is written against
+
+The facts of `Proof.Ecdsa.verifyContract Spec.Ecdsa.BrainpoolP256r1.inst` for x86-64, under the
+calling convention with the comb's tables (`Abi.withConsts brainpoolp256r1S.combConsts`),
+by name: `vg_ecdsa_brainpoolp256r1_verify(public = rdi, digest = rsi, sig = rdx,
+scratch = rcx)`, the result in `eax`, and the tables at the address of the
+static `VG_BRAINPOOLP256R1_COMB` (`TblHeld`: held there, not wrapping around,
+and apart from the regions written). Only the pointers and the tables'
+address are public here: the proof shows that nothing else affects timing,
+although the contract would let the contents of the three buffers.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Ecdsa.Verify.X86_64.BrainpoolP256r1
+
+open VG VG.X86_64 Spec.Weierstrass Spec.Ecdsa
+open VG.Impl.Ecdsa.X86_64 (brainpoolp256r1S brainpoolp256r1Comb)
+
+/-- The words of the comb's tables. -/
+abbrev bpW : List (BitVec 64) := brainpoolp256r1S.combWords brainpoolp256r1Comb
+
+theorem bp_combConsts : brainpoolp256r1S.combConsts = [("VG_BRAINPOOLP256R1_COMB", bpW)] := rfl
+
+/-- The comb's tables at the static `VG_BRAINPOOLP256R1_COMB`, held, not wrapping around,
+and apart from the regions `wr`. -/
+def TblHeld (s : State) (wr : List Region) : Prop :=
+  (∀ i < bpW.length, s.mem.readW (s.syms "VG_BRAINPOOLP256R1_COMB" + BitVec.ofNat 64 (8 * i)) 64 = bpW.getD i 0) ∧
+  (s.syms "VG_BRAINPOOLP256R1_COMB").toNat + 8 * bpW.length ≤ 2 ^ 64 ∧
+  ∀ r ∈ wr, Region.Disjoint ⟨s.syms "VG_BRAINPOOLP256R1_COMB", 8 * bpW.length⟩ r
+
+theorem bp_tbl_len : Impl.BrainpoolP256r1.comb7.length = 37 := by decide
+
+theorem bp_tbl_lenH : ∀ j < 37, (Impl.BrainpoolP256r1.comb7.getD j []).length = 64 := by decide +kernel
+
+/-- `bpW` has `37 · 64 · 8` words. -/
+theorem bpW_length : bpW.length = 18944 :=
+  (Proof.Weierstrass.tcombWords_length (n := brainpoolp256r1S.n) (R := brainpoolp256r1S.R) (p := brainpoolp256r1S.C.p)
+    (H := 64) (tbl := Impl.BrainpoolP256r1.comb7) bp_tbl_len bp_tbl_lenH).trans rfl
+
+theorem constRegions_single (f : String → BitVec 64) (n : String) (w : List (BitVec 64)) :
+    Abi.constRegions f [(n, w)] = [⟨f n, 8 * w.length⟩] := rfl
+
+/-- The tables' region, `8 · 18944` bytes at the static's address. The proofs
+rewrite with this rather than unfold `Abi.constRegions`: the kernel evaluates
+closed arithmetic such as `8 * bpW.length` when it compares two forms of
+it, which would build the tables' 18944 words. -/
+theorem bp_constRegions (f : String → BitVec 64) :
+    Abi.constRegions f [("VG_BRAINPOOLP256R1_COMB", bpW)] = [⟨f "VG_BRAINPOOLP256R1_COMB", 151552⟩] := by
+  rw [constRegions_single, bpW_length]
+
+/-- The memory of the contracts' witnesses: the tables at `0x100000`
+(irreducible: unfolding it in a definitional check would evaluate the
+tables). -/
+@[irreducible] def satMem : Mem := constMem 0x100000 bpW
+
+theorem satMem_held : ∀ i < bpW.length,
+    satMem.readW (0x100000 + BitVec.ofNat 64 (8 * i)) 64 = bpW.getD i 0 := by
+  unfold satMem
+  exact constMem_held _ _ (by rw [bpW_length]; omega_using [])
+
+/-- Whether the signature at `sig` of the hash at `digest` is valid for the
+public key at `pk`, as the specification says. -/
+abbrev vf (m : Mem) (pk digest sig : Addr) : Bool :=
+  verify Spec.BrainpoolP256r1.curve (bytesAt m pk 65) (hashToInt Spec.BrainpoolP256r1.curve (bytesAt m digest 32)) (bytesAt m sig 64)
+
+def verifyX86_64 : Contract X86_64.isa where
+  pre s :=
+    let pk : Region := ⟨s.gpr .rdi, 65⟩
+    let digest : Region := ⟨s.gpr .rsi, 32⟩
+    let sig : Region := ⟨s.gpr .rdx, 64⟩
+    let scratch : Region := ⟨s.gpr .rcx, 8192⟩
+    let ret : Region := ⟨s.gpr .rsp, 8⟩
+    s.rd = [pk, digest, sig, ⟨s.syms "VG_BRAINPOOLP256R1_COMB", 8 * bpW.length⟩] ∧ s.wr = [scratch] ∧
+      pk.Disjoint scratch ∧ digest.Disjoint scratch ∧ sig.Disjoint scratch ∧ ret.Disjoint scratch ∧
+      (s.gpr .rcx).toNat + 8192 ≤ 2 ^ 64 ∧ TblHeld s [scratch, ret]
+  post s s' := (s'.gpr .rax).setWidth 32 = if vf s.mem (s.gpr .rdi) (s.gpr .rsi) (s.gpr .rdx) then 1 else 0
+  pub s₁ s₂ := s₁.gpr .rsp = s₂.gpr .rsp ∧ s₁.gpr .rdi = s₂.gpr .rdi ∧ s₁.gpr .rsi = s₂.gpr .rsi ∧
+    s₁.gpr .rdx = s₂.gpr .rdx ∧ s₁.gpr .rcx = s₂.gpr .rcx ∧ s₁.syms "VG_BRAINPOOLP256R1_COMB" = s₂.syms "VG_BRAINPOOLP256R1_COMB"
+
+/-- A state satisfying the precondition. -/
+def satState : State where
+  gpr r := match r with
+    | .rdi => 0x1000 | .rsi => 0x2000 | .rdx => 0x3000 | .rcx => 0x8000
+    | .rsp => 0x20000 | _ => 0
+  cf := none
+  zf := none
+  sf := none
+  of := none
+  mem := satMem
+  rd := [⟨0x1000, 65⟩, ⟨0x2000, 32⟩, ⟨0x3000, 64⟩, ⟨0x100000, 151552⟩]
+  wr := [⟨0x8000, 8192⟩]
+  syms _ := 0x100000
+
+/-- The shared contract's precondition, from its facts. -/
+theorem spec_pre {s : State}
+    (hrd : s.rd = [⟨s.gpr .rdi, 65⟩, ⟨s.gpr .rsi, 32⟩, ⟨s.gpr .rdx, 64⟩,
+      ⟨s.syms "VG_BRAINPOOLP256R1_COMB", 8 * bpW.length⟩])
+    (hw : s.wr = [⟨s.gpr .rcx, 8192⟩])
+    (h1 : Region.Disjoint ⟨s.gpr .rdi, 65⟩ ⟨s.gpr .rcx, 8192⟩)
+    (h2 : Region.Disjoint ⟨s.gpr .rsi, 32⟩ ⟨s.gpr .rcx, 8192⟩)
+    (h3 : Region.Disjoint ⟨s.gpr .rdx, 64⟩ ⟨s.gpr .rcx, 8192⟩)
+    (r1 : Region.Disjoint ⟨s.gpr .rsp, 8⟩ ⟨s.gpr .rdi, 65⟩) (r2 : Region.Disjoint ⟨s.gpr .rsp, 8⟩ ⟨s.gpr .rsi, 32⟩)
+    (r3 : Region.Disjoint ⟨s.gpr .rsp, 8⟩ ⟨s.gpr .rdx, 64⟩) (r4 : Region.Disjoint ⟨s.gpr .rsp, 8⟩ ⟨s.gpr .rcx, 8192⟩)
+    (f0 : (s.gpr .rdi).toNat + 65 ≤ 2 ^ 64) (f1 : (s.gpr .rsi).toNat + 32 ≤ 2 ^ 64)
+    (f2 : (s.gpr .rdx).toNat + 64 ≤ 2 ^ 64) (f3 : (s.gpr .rcx).toNat + 8192 ≤ 2 ^ 64)
+    (ht : TblHeld s [⟨s.gpr .rcx, 8192⟩, ⟨s.gpr .rsp, 8⟩])
+    (hal : (s.syms "VG_BRAINPOOLP256R1_COMB").toNat % 64 = 0) :
+    (Proof.Ecdsa.verifyContract Spec.Ecdsa.BrainpoolP256r1.inst (X86_64.abi.withConsts brainpoolp256r1S.combConsts)).pre s := by
+  sig_pre [Spec.Ecdsa.BrainpoolP256r1.inst, Proof.Ecdsa.verifyContract, Proof.Ecdsa.verifySig,
+    Spec.BrainpoolP256r1.curve, Spec.Ecdsa.scratchWords, X86_64.abi, X86_64.argRegs, bp_combConsts,
+    Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow]
+  obtain ⟨held, fit, hdw⟩ := ht
+  exact ⟨by rw [hrd]; rfl, held, fit, by rw [hw]; exact fun r hr => hdw r (by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢; simp [hr]),
+    hdw _ (by simp), hal, by rw [hrd]; rfl, hw, h1, h2, h3, r1, r2, r3, r4, f0, f1, f2, f3⟩
+
+theorem sat_spec : (Proof.Ecdsa.verifyContract Spec.Ecdsa.BrainpoolP256r1.inst (X86_64.abi.withConsts brainpoolp256r1S.combConsts)).pre
+    satState := by
+  have hl := bpW_length
+  have held : ∀ i < bpW.length, satState.mem.readW (satState.syms "VG_BRAINPOOLP256R1_COMB" +
+      BitVec.ofNat 64 (8 * i)) 64 = bpW.getD i 0 := satMem_held
+  refine spec_pre (by rw [hl]; rfl) rfl (Region.disjoint_of_sep (by decide))
+    (Region.disjoint_of_sep (by decide)) (Region.disjoint_of_sep (by decide))
+    (Region.disjoint_of_sep (by decide)) (Region.disjoint_of_sep (by decide))
+    (Region.disjoint_of_sep (by decide)) (Region.disjoint_of_sep (by decide))
+    (by decide) (by decide) (by decide) (by decide) ⟨held, ?_, ?_⟩ (by decide)
+  all_goals rw [hl]
+  · decide
+  · simp only [List.mem_cons, List.not_mem_nil, or_false]
+    rintro r (rfl | rfl) <;> exact Region.disjoint_of_sep (by decide)
+
+theorem implies :
+    verifyX86_64.Implies (Proof.Ecdsa.verifyContract Spec.Ecdsa.BrainpoolP256r1.inst (X86_64.abi.withConsts brainpoolp256r1S.combConsts)) where
+  pre s h := by
+    sig_pre [Spec.Ecdsa.BrainpoolP256r1.inst, Proof.Ecdsa.verifyContract, Proof.Ecdsa.verifySig,
+      Spec.BrainpoolP256r1.curve, Spec.Ecdsa.scratchWords, X86_64.abi, X86_64.argRegs, bp_combConsts,
+      Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow] at h
+    obtain ⟨hd, hheld, hfit, hdw, hdr, -, ht, hw, h1, h2, h3, -, -, -, r4, -, -, -, f4⟩ := h
+    refine ⟨?_, hw, h1, h2, h3, r4, f4, hheld, hfit, fun r hr => ?_⟩
+    · rw [← List.take_append_drop (s.rd.length - 1) s.rd, ht, hd]; rfl
+    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact hdw _ (by rw [hw]; simp)
+      · exact hdr
+  post := by
+    sig_implies_post [Spec.Ecdsa.BrainpoolP256r1.inst, Proof.Ecdsa.verifyContract,
+      Proof.Ecdsa.verifySig, Spec.BrainpoolP256r1.curve, Spec.Ecdsa.scratchWords, X86_64.abi,
+      X86_64.argRegs, bp_combConsts, Abi.withConsts, verifyX86_64, vf]
+  pub s₁ s₂ _ _ h := by
+    sig_pub [Spec.Ecdsa.BrainpoolP256r1.inst, Proof.Ecdsa.verifyContract, Proof.Ecdsa.verifySig,
+      Spec.BrainpoolP256r1.curve, Spec.Ecdsa.scratchWords, X86_64.abi, X86_64.argRegs, bp_combConsts,
+      Abi.withConsts] at h
+    obtain ⟨h0, hs, -, h1, h2, h3, h4⟩ := h
+    exact ⟨h0, h1, h2, h3, h4, hs⟩
+  sat := ⟨satState, sat_spec⟩
+
+end VG.Proof.Ecdsa.Verify.X86_64.BrainpoolP256r1
+
+end
+
+end
 
 /-!
 # ECDSA verification over brainpoolP256r1 on x86-64: `Verified`
@@ -82,20 +274,27 @@ def verifyBrainpoolP256r1Erased : Prog isa := Code.erase verifyBrainpoolP256r1
 
 materialize_shared verifyBrainpoolP256r1Erased
 
-theorem verify_inlineOk : verifyBrainpoolP256r1.InlineOk = true :=
-  Code.inlineOk_of_erase (show verifyBrainpoolP256r1Erased.InlineOk = true by lit_decide)
+/-- `InlineOkN`, calls nested two deep (`vg_brainpoolp256r1_comb_g` calls
+`vg_brainpoolp256r1_add_complete`). -/
+theorem verify_inlineOk : verifyBrainpoolP256r1.InlineOkN 2 = true := by lit_decide
+
+/-- The verification inlined at every depth is `verifyGW` with the comb
+inline, the code the proofs run. -/
+theorem verify_inlineAll : verifyBrainpoolP256r1.inlineAll =
+    (Impl.Ecdsa.Verify.X86_64.Cfg.verifyGW brainpoolp256r1S (brainpoolp256r1S.gMulG brainpoolp256r1Comb)).inline := by kernel_rfl
 
 theorem verify_x86 (hL : Weierstrass.Law Spec.BrainpoolP256r1.curve) (hI : Weierstrass.X86_64.InvSounds) (s : State) (hs : verifyX86_64.pre s) :
-    ∃ t s', Exec isa verifyBrainpoolP256r1.inline s t s' ∧ abiPreserved s s' ∧ verifyX86_64.post s s' := by
+    ∃ t s', Exec isa verifyBrainpoolP256r1.inlineAll s t s' ∧ abiPreserved s s' ∧ verifyX86_64.post s s' := by
   obtain ⟨t, s', he, hsv, hpost⟩ := verifyG_ok (brainpoolp256r1S_ok hI) hL (by decide) brainpoolp256r1S_comb
-    (Proof.BrainpoolP256r1.combOk7 hL) rfl (pre_of hs)
+    (Proof.BrainpoolP256r1.combOk7 hL) rfl (pre_of hs) (by decide) (by decide)
+  rw [← verify_inlineAll] at he
   have hok := verify_inlineOk
-  have hsp := Code.clobbers_rsp_of_inlineOk hok
-  have hmx : verifyBrainpoolP256r1.inline.allInstrs (fun i => !loadsMxcsr i) = true := by
-    rw [Code.allInstrs_inline]
+  have hsp := Code.clobbers_rsp_of_inlineOkN hok
+  have hmx : verifyBrainpoolP256r1.inlineAll.allInstrs (fun i => !loadsMxcsr i) = true := by
+    apply Code.allInstrs_inlineAll
     exact Code.allInstrs_of_erase (fun i => by rw [Instr.loadsMxcsr_erase])
       (show verifyBrainpoolP256r1Erased.allInstrs _ = true by lit_decide)
-  have F := (Exec.regions he (Code.noCalls_inline hok)).2.2
+  have F := (Exec.regions he (Code.noCalls_inlineAll hok)).2.2
   obtain ⟨-, hwr, -, -, -, hrs, -⟩ := hs
   refine ⟨t, s', he, abiPreserved_of_exec hmx he
     ⟨fun r hr => ?_, ?_⟩, hpost⟩
@@ -128,10 +327,10 @@ theorem verify_ct : ConstantTime isa verifyX86_64.pre verifyX86_64.pub verifyBra
       · exact h0, fun n hn => by simp only [List.mem_singleton] at hn; subst hn; exact hsy⟩)
     rfl (by taint_decide)
 
-/-- `satState` satisfies the precondition with 8 bytes of stack. -/
-theorem sat_spec8 :
+/-- `satState` satisfies the precondition with 16 bytes of stack. -/
+theorem sat_spec16 :
     (Proof.Ecdsa.verifyContract Spec.Ecdsa.BrainpoolP256r1.inst
-      (X86_64.abi.withConsts brainpoolp256r1S.combConsts) 8).pre satState := by
+      (X86_64.abi.withConsts brainpoolp256r1S.combConsts) 16).pre satState := by
   have held : ∀ i < bpW.length, satState.mem.readW (satState.syms "VG_BRAINPOOLP256R1_COMB" +
       BitVec.ofNat 64 (8 * i)) 64 = bpW.getD i 0 := satMem_held
   sig_pre [Spec.Ecdsa.BrainpoolP256r1.inst, Proof.Ecdsa.verifyContract, Proof.Ecdsa.verifySig,
@@ -140,27 +339,45 @@ theorem sat_spec8 :
   sig_and_intros
   all_goals first | exact Region.disjoint_of_sep (by decide) | rfl | exact held | decide
 
-/-- The contract with 8 bytes of stack, for the calls' return address. -/
-theorem implies8 : verifyX86_64.Implies
-    (Proof.Ecdsa.verifyContract Spec.Ecdsa.BrainpoolP256r1.inst (X86_64.abi.withConsts brainpoolp256r1S.combConsts) 8) :=
-  implies.stack8 ⟨satState, sat_spec8⟩
+/-- The contract with 16 bytes of stack, for the calls' return addresses
+(`vg_brainpoolp256r1_comb_g` calls `vg_brainpoolp256r1_add_complete`). -/
+theorem implies16 : verifyX86_64.Implies
+    (Proof.Ecdsa.verifyContract Spec.Ecdsa.BrainpoolP256r1.inst (X86_64.abi.withConsts brainpoolp256r1S.combConsts) 16) :=
+  implies.stack16 ⟨satState, sat_spec16⟩
 
 theorem verify_verified (hL : Weierstrass.Law Spec.BrainpoolP256r1.curve) (hI : Weierstrass.X86_64.InvSounds) :
     Verified X86_64.target verifyBrainpoolP256r1
-      (Proof.Ecdsa.verifyContract Spec.Ecdsa.BrainpoolP256r1.inst (X86_64.abi.withConsts brainpoolp256r1S.combConsts) 8) :=
-  Verified.of_inline_ct verify_inlineOk (verify_x86 hL hI) verify_ct implies8
-    (fun _ h => Sig.clear_of_pre_consts h) fun _ _ _ _ _ hp => hp
+      (Proof.Ecdsa.verifyContract Spec.Ecdsa.BrainpoolP256r1.inst (X86_64.abi.withConsts brainpoolp256r1S.combConsts) 16) :=
+  Verified.of_inlineAll_ct verify_inlineOk (by decide) (verify_x86 hL hI) verify_ct implies16
+    (fun _ h => Sig.clearN_of_pre_consts (d := 1) h) fun _ _ _ _ _ hp => hp
 
 /-- `vg_ecdsa_brainpoolp256r1_verify`, taking the hash function's output: the
 verification above, run on the `len` bytes of the hash (`verifyHash_verified_cons`). -/
 theorem verifyHash_verified (hL : Weierstrass.Law Spec.BrainpoolP256r1.curve) (hI : Weierstrass.X86_64.InvSounds) :
     Verified X86_64.target
       (Impl.Ecdsa.X86_64.VerifyHash.verifyHash Spec.Ecdsa.BrainpoolP256r1.inst.curve.len false verifyBrainpoolP256r1)
-      (Spec.Ecdsa.BrainpoolP256r1.inst.verifyHashContract (X86_64.abi.withConsts brainpoolp256r1S.combConsts) 96) :=
+      (Spec.Ecdsa.BrainpoolP256r1.inst.verifyHashContract (X86_64.abi.withConsts brainpoolp256r1S.combConsts) 104) :=
   Proof.Ecdsa.Verify.X86_64.Hash.verifyHash_verified_cons Proof.Ecdsa.Verify.brainpoolP256r1_len (by decide)
     (verify_verified hL hI) (Code.all_of_spTest (by lit_decide)) (by lit_decide) (by taint_decide)
-    (Proof.Ecdsa.Verify.X86_64.Hash.hashSat_cons (by decide) sat_spec8 (by decide) fun r hr => by
+    (Proof.Ecdsa.Verify.X86_64.Hash.hashSat_cons (by decide) sat_spec16 (by decide) fun r hr => by
       simp only [satState, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl <;> exact Region.disjoint_of_sep (by decide))
+
+theorem verifyHash_codeSp : (Impl.Ecdsa.X86_64.VerifyHash.verifyHash Spec.Ecdsa.BrainpoolP256r1.inst.curve.len false Impl.Ecdsa.Verify.X86_64.verifyBrainpoolP256r1).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
+
+/-- `vg_ecdsa_brainpoolp256r1_verify` as emitted (`Impl.Ecdsa.X86_64.VerifyHash.Fn.verifyHash`), its cleanup included,
+meets its contract in constant time and returns without secret residue. -/
+theorem verifyHash_scrubbed (hL : Weierstrass.Law Spec.BrainpoolP256r1.curve) (hI : Weierstrass.X86_64.InvSounds) :
+    VerifiedScrubbed X86_64.target (Impl.Ecdsa.X86_64.VerifyHash.Fn.verifyHash Spec.Ecdsa.BrainpoolP256r1.inst.curve.len false Impl.Ecdsa.Verify.X86_64.verifyBrainpoolP256r1 104)
+      (Spec.Ecdsa.BrainpoolP256r1.verifyHashApi.contract (X86_64.abi.withConsts Impl.Ecdsa.X86_64.brainpoolp256r1S.combConsts) 104) 32 :=
+  X86_64.Scrub.verifiedScrubbedAll (api := Spec.Ecdsa.BrainpoolP256r1.verifyHashApi)
+    { code := Impl.Ecdsa.X86_64.VerifyHash.verifyHash Spec.Ecdsa.BrainpoolP256r1.inst.curve.len false Impl.Ecdsa.Verify.X86_64.verifyBrainpoolP256r1
+      stack := 104
+      verified := verifyHash_verified hL hI
+      spSafe := verifyHash_codeSp } .sse (VG.Proof.EcKey.X86_64.Scrub.verifyHashOut_consts 104 Spec.Ecdsa.BrainpoolP256r1.inst Impl.Ecdsa.X86_64.brainpoolp256r1S.combConsts)
+
+theorem verifyHash_spSafe : (Impl.Ecdsa.X86_64.VerifyHash.Fn.verifyHash Spec.Ecdsa.BrainpoolP256r1.inst.curve.len false Impl.Ecdsa.Verify.X86_64.verifyBrainpoolP256r1 104).all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  X86_64.Scrub.scrubKs_spSafe verifyHash_codeSp
 
 end VG.Proof.Ecdsa.Verify.X86_64.BrainpoolP256r1

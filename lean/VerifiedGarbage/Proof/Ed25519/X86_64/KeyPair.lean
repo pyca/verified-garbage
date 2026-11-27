@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Spec.Ed25519.KeyPair
 public import VerifiedGarbage.Impl.Ed25519.X86_64.KeyPair
-public import VerifiedGarbage.Proof.Ed25519.X86_64.PublicKey.Expanded
 public import VerifiedGarbage.Proof.Sha512.X86_64.OneShot
 public import VerifiedGarbage.Proof.Sha512.X86_64.Variant
 public import VerifiedGarbage.Proof.Framework.X86_64.CallFrame
@@ -14,7 +13,6 @@ import VerifiedGarbage.Proof.Framework.X86_64.Syms
 import VerifiedGarbage.Proof.Ed25519.X86_64.PublicKey.Base
 meta import VerifiedGarbage.Spec.Ed25519.KeyPair
 meta import VerifiedGarbage.Impl.Ed25519.X86_64.KeyPair
-meta import VerifiedGarbage.Proof.Ed25519.X86_64.PublicKey.Expanded
 meta import VerifiedGarbage.Proof.Sha512.X86_64.OneShot
 meta import VerifiedGarbage.Proof.Sha512.X86_64.Variant
 meta import VerifiedGarbage.Proof.Framework.X86_64.CallFrame
@@ -24,6 +22,255 @@ meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
 meta import VerifiedGarbage.Proof.Framework.X86_64.Syms
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.PublicKey.Base
+public import VerifiedGarbage.Proof.Ed25519.X86_64.PublicKey.Verified
+public import VerifiedGarbage.Proof.Ed25519.Contract
+import VerifiedGarbage.Proof.Ed25519.Expanded
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.PublicKey.Verified
+meta import VerifiedGarbage.Proof.Ed25519.Contract
+meta import VerifiedGarbage.Proof.Ed25519.Expanded
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBasePrecomputedVerified
+meta import VerifiedGarbage.Proof.Framework.ConstMem
+
+/-! ### `Ed25519.X86_64.PublicKey.Expanded`, which only this module used -/
+
+section
+
+/-! # Ed25519 public-key derivation from the seed's SHA-512 digest (x86-64)
+
+`publicKeyExpanded` is `pkBodyFrom pkCopyExpanded` in its frame: the digest at the second
+argument is copied to `scratch + 1568`, where `pkBodyFrom` reads it. The rest is proven by
+`bodyFrom_ok` and `bodyFrom_pk_ct`. -/
+
+@[expose] public section
+
+namespace VG.Proof.Ed25519.X86_64.PublicKey
+
+variable {bs : VG.Prog VG.X86_64.isa} [VG.Proof.Ed25519.X86_64.EdBase bs] {fs : String}
+
+open VG VG.X86_64 VG.Impl.Ed25519.X86_64
+open VG.Proof.Ed25519 (bytesAt_of_words publicKey_of_sha512_eq sha512_length)
+
+variable {L : Lay} {g : Reg → BitVec 64} {mx : BitVec 32} {m₀ : Mem}
+
+theorem seed_contains (hL : L.Ok) (h64 : L.seedLen = 64) {i : Nat} (hi : i < 8) :
+    L.SEED.Contains (L.seed + BitVec.ofNat 64 (8 * i)) 8 := by
+  have hn := hL.ns
+  show Region.Contains ⟨L.seed, L.seedLen⟩ _ 8
+  rw [h64] at hn ⊢
+  have := Offset.contains L.seed (d := 8 * i) (n := 8) (e := 0) (k := 64) (by omega_using []) (by omega_using [hi]) (by decide)
+  simpa only [BitVec.ofNat_eq_ofNat, BitVec.add_zero] using this
+
+/-- The words of the digest are those of the caller's memory. -/
+theorem seed_word (hL : L.Ok) (h64 : L.seedLen = 64) {t : State} (hc : Ctx L g mx m₀ t) {i : Nat}
+    (hi : i < 8) :
+    t.mem.readW (L.seed + BitVec.ofNat 64 (8 * i)) 64 = m₀.readW (L.seed + BitVec.ofNat 64 (8 * i)) 64 := by
+  refine hc.frame.readW (r := L.SEED) (seed_contains hL h64 hi) ?_ (by decide)
+  intro r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl
+  · exact hL.os.symm
+  · exact hL.sc
+  · exact hL.ks.symm
+
+/-- Code that writes only caller-saved registers and a word of `scratch`. -/
+theorem Ctx.storeScr (hL : L.Ok) {t t' : State} (hc : Ctx L g mx m₀ t) {e : Nat} (he : e + 8 ≤ 8192)
+    (hrd : t'.rd = t.rd) (hwr : t'.wr = t.wr) (hmx : t'.mxcsr = t.mxcsr) (hsy : t'.syms = t.syms)
+    (hg : ∀ r ∈ calleeSaved, t'.gpr r = t.gpr r)
+    (hf : Frame [⟨L.scr + BitVec.ofNat 64 e, 8⟩] t.mem t'.mem) : Ctx L g mx m₀ t' := by
+  have keep : ∀ d, 48 ≤ d → d + 8 ≤ 72 →
+      t'.mem.readW (L.B + BitVec.ofNat 64 d) 64 = t.mem.readW (L.B + BitVec.ofNat 64 d) 64 :=
+    fun d h₁ h₂ => hf.readW (Region.contains_self _ _) (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact hL.stk_scr (d := d) (n := 8) (by omega_using [h₂]) he) (by decide)
+  exact ⟨hrd.trans hc.rd, hwr.trans hc.wr, (hg .rsp (by decide)).trans hc.rsp,
+    fun r hr hr' => (hg r hr).trans (hc.cs r hr hr'), by rw [hmx]; exact hc.mx,
+    (keep 48 (by omega_using []) (by omega_using [])).trans hc.pScr, (keep 56 (by omega_using []) (by omega_using [])).trans hc.pSeed,
+    (keep 64 (by omega_using []) (by omega_using [])).trans hc.pOut,
+    hc.frame.trans (Frame.sub hf fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact ⟨L.SCR, by simp, Offset.sub_base _ he⟩), by rw [hsy]; exact hc.sym, hc.held⟩
+
+/-- The pointers of the copy, from the frame. -/
+theorem copyPtrs_ok {t : State} (hc : Ctx L g mx m₀ t) :
+    WP isa (.block pkCopyPtrs) t fun t' => Ctx L g mx m₀ t' ∧ t'.gpr .rax = L.seed ∧ t'.gpr .rcx = L.scr := by
+  have h56 := hc.inFr (d := 56) (by omega_using []) (by omega_using [])
+  have h48 := hc.inFr (d := 48) (by omega_using []) (by omega_using [])
+  apply WP.of_runBlock
+  simp only [pkCopyPtrs, fSeed, fScratch, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
+    State.load64, ea_stk, RegUpd.gpr_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.mem_setReg,
+    hc.rsp, add_add, Nat.reduceAdd, h56, h48, ite_true, Option.map_some, Option.some.injEq,
+    exists_eq_left', hc.pSeed, hc.pScr, reduceCtorEq, ite_false]
+  exact ⟨hc.regs rfl rfl rfl rfl rfl (by cs_tac), trivial, trivial⟩
+
+/-- One word of the digest: loaded at `rax + 8 i`, stored at `rcx + 1568 + 8 i`. -/
+theorem copy_word (hL : L.Ok) (h64 : L.seedLen = 64) {t : State} (hc : Ctx L g mx m₀ t)
+    (ha : t.gpr .rax = L.seed) (hs : t.gpr .rcx = L.scr) (i : Nat) (hi : i < 8) :
+    WP isa (.block [.mov .rdx (.mem { base := .rax, disp := ((8 * i : Nat) : Int) }),
+        .store { base := .rcx, disp := ((digestAt + 8 * i : Nat) : Int) } .rdx]) t
+      fun t' => Ctx L g mx m₀ t' ∧ t'.gpr .rax = L.seed ∧ t'.gpr .rcx = L.scr ∧
+        t'.mem = t.mem.writeW (L.scr + BitVec.ofNat 64 (1568 + 8 * i))
+          (m₀.readW (L.seed + BitVec.ofNat 64 (8 * i)) 64) := by
+  have hl : InRegions (t.rd ++ t.wr) (L.seed + BitVec.ofNat 64 (8 * i)) 8 :=
+    ⟨L.SEED, by rw [hc.rd]; simp, seed_contains hL h64 hi⟩
+  have hw : InRegions t.wr (L.scr + BitVec.ofNat 64 (1568 + 8 * i)) 8 :=
+    ⟨L.SCR, by rw [hc.wr]; simp, Offset.contains_base _ (by omega_using [hi]) (by have := hL.nc; omega_using [hi])⟩
+  have hf : Frame [⟨L.scr + BitVec.ofNat 64 (1568 + 8 * i), 8⟩] t.mem
+      (t.mem.writeW (L.scr + BitVec.ofNat 64 (1568 + 8 * i)) (m₀.readW (L.seed + BitVec.ofNat 64 (8 * i)) 64)) :=
+    (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
+  apply WP.of_runBlock
+  simp only [digestAt, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, State.load64,
+    State.store64, ea_base, ha, hs, hl, hw, ite_true, RegUpd.gpr_setReg, RegUpd.rd_setReg,
+    RegUpd.wr_setReg, RegUpd.mem_setReg, Option.map_some, reduceCtorEq, ite_false,
+    Option.some.injEq, exists_eq_left']
+  rw [seed_word hL h64 hc hi]
+  exact ⟨hc.storeScr hL (e := 1568 + 8 * i) (by omega_using [hi]) rfl rfl rfl rfl (by cs_tac) hf, trivial, trivial, rfl⟩
+
+/-- The digest's first `k` words copied. -/
+theorem copy_prefix (hL : L.Ok) (h64 : L.seedLen = 64) (k : Nat) (hk : k ≤ 8) {t : State}
+    (hc : Ctx L g mx m₀ t) (ha : t.gpr .rax = L.seed) (hs : t.gpr .rcx = L.scr) :
+    WP isa (.block ((List.range k).flatMap fun i =>
+        [.mov .rdx (.mem { base := .rax, disp := ((8 * i : Nat) : Int) }),
+          .store { base := .rcx, disp := ((digestAt + 8 * i : Nat) : Int) } .rdx])) t
+      fun t' => Ctx L g mx m₀ t' ∧ t'.gpr .rax = L.seed ∧ t'.gpr .rcx = L.scr ∧ ∀ j < k,
+        t'.mem.readW (L.scr + BitVec.ofNat 64 (1568 + 8 * j)) 64 =
+          m₀.readW (L.seed + BitVec.ofNat 64 (8 * j)) 64 := by
+  induction k with
+  | zero => exact WP.of_runBlock ⟨t, rfl, hc, ha, hs, fun _ h => absurd h (Nat.not_lt_zero _)⟩
+  | succ k ih =>
+    rw [List.range_succ, List.flatMap_append, WP.block_append_iff]
+    refine WP.mono (ih (by omega_using [hk])) fun u ⟨hu, hua, hus, hw⟩ => ?_
+    simp only [List.flatMap_cons, List.flatMap_nil, List.append_nil]
+    refine WP.mono (copy_word hL h64 hu hua hus k (by omega_using [hk])) fun w ⟨hw', hwa, hws, hm⟩ =>
+      ⟨hw', hwa, hws, fun j hj => ?_⟩
+    rw [hm]
+    rcases Nat.lt_succ_iff_lt_or_eq.mp hj with hj | rfl
+    · rw [Mem.readW_writeW_sep (Offset.sep L.scr (d := 1568 + 8 * j) (n := 8) (e := 1568 + 8 * k) (k := 8)
+        (by omega_using [hj]) (by omega_arith) (by omega_using [hk])) (by decide)]
+      exact hw j hj
+    · exact Mem.readW_writeW_self64 _ _ _
+
+/-- `pkCopyExpanded` leaves the caller's 64 bytes at `seed` at `scratch + 1568`. -/
+theorem copy_ok (hL : L.Ok) (h64 : L.seedLen = 64) {t : State} (hc : Ctx L g mx m₀ t) :
+    WP isa pkCopyExpanded t fun t' => Ctx L g mx m₀ t' ∧
+      Spec.Sha512.bytesAt t'.mem (L.scr + BitVec.ofNat 64 1568) 64 = Spec.Ed25519.bytesAt m₀ L.seed 64 := by
+  refine WP.seq (WP.mono (copyPtrs_ok hc) fun u ⟨hu, ha, hs⟩ => ?_)
+  refine WP.mono (copy_prefix hL h64 8 (Nat.le_refl _) hu ha hs) fun w ⟨hw, _, _, hwd⟩ => ⟨hw, ?_⟩
+  refine bytesAt_of_words fun k hk => ?_
+  rw [add_add]
+  exact hwd k hk
+
+/-! ## The expanded-key entry point -/
+
+/-- Derivation from the seed's digest at `rsi`. -/
+def pkLocalE : Contract isa := pkLocalWith 64
+  (fun s => ∃ seed : List Byte, seed.length = 32 ∧
+    Spec.Ed25519.bytesAt s.mem (s.gpr .rsi) 64 = Spec.Sha512.sha512 seed)
+  (fun s s' => ∀ seed : List Byte, seed.length = 32 →
+    Spec.Ed25519.bytesAt s.mem (s.gpr .rsi) 64 = Spec.Sha512.sha512 seed →
+    Spec.Ed25519.bytesAt s'.mem (s.gpr .rdi) 32 = Spec.Ed25519.publicKey seed)
+
+theorem expanded_seed {s : State} (h : pkLocalE.pre s) :
+    ∃ seed : List Byte, seed.length = 32 ∧
+      Spec.Ed25519.bytesAt s.mem (lay 64 s).seed 64 = Spec.Sha512.sha512 seed := by
+  rcases h with ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, hk, _⟩
+  exact hk
+
+/-- The bytes of a region apart from a frame are what they were once the
+frame's bytes are lost. -/
+private theorem bytes_lost {F : Region} {m m' : Mem} (f : Frame [F] m m') {p : Addr} {n : Nat}
+    (hd : (⟨p, n⟩ : Region).Disjoint F) : Spec.Ed25519.bytesAt m' p n = Spec.Ed25519.bytesAt m p n := by
+  simp only [Spec.Ed25519.bytesAt]
+  exact List.map_congr_left fun i hi => lost_byte f hd (List.mem_range.mp hi)
+
+theorem publicKeyExpanded_ok {s : State} (h : pkLocalE.pre s) :
+    WP isa (publicKeyExpanded bs fs) s fun s' => abiPreserved s s' ∧ pkLocalE.post s s' := by
+  have hL := lay_ok h (by decide)
+  have hc := push_ctx h
+  obtain ⟨seed, -, hE⟩ := expanded_seed h
+  refine WP.frame (rs := pushRs) (by decide) (by decide) (by decide) (by show 8 * 7 ≤ _; have := h.1; omega_using [this])
+    (WP.mono (bodyFrom_ok hL (copy_ok hL rfl hc) hE)
+      fun u ⟨hu, ho⟩ => ⟨hu.rsp.trans hc.rsp.symm, hu.wr.trans hc.wr.symm, fun m uk fm => ?_⟩)
+  -- The pop loses the frame's 56 bytes, in the stack below `rsp`.
+  obtain hF : Region.Sub ⟨s.gpr .rsp - BitVec.ofNat 64 (8 * pushRs.length), 8 * pushRs.length⟩ (lay 64 s).STK :=
+    Offset.sub_below _ (by decide) (by decide)
+  dsimp only
+  refine ⟨?_, ?_⟩
+  · have hrsp : (popped .rax pushRs.length u).gpr .rsp = s.gpr .rsp := by
+      rw [popped_rsp, hu.rsp, show pushRs.length = 7 from rfl, pop_rsp, lay_ret]
+    refine ⟨fun r hr => ?_, ?_, by rw [popped_mxcsr, hu.mx]⟩
+    · by_cases hr' : r = .rsp
+      · subst hr'; exact hrsp
+      · rw [popped_gpr _ _ _ hr' (ne_cs hr (by decide)), hu.cs r hr hr']
+    · rw [fm.readW (r := (lay 64 s).RET) (by rw [Lay.RET, lay_ret]; exact Region.contains_self _ _) (fun r hr => by
+        rw [List.mem_singleton.mp hr, Lay.RET, lay_ret]
+        exact (Offset.base_disjoint_below (s.gpr .rsp) (n := 72) (k := 8) (by decide)).sub_right hF) (by decide)]
+      refine hu.frame.readW (r := (lay 64 s).RET) ?_ ?_ (by decide)
+      · rw [Lay.RET, lay_ret]; exact Region.contains_self _ _
+      · intro r hr
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl | rfl
+        · exact hL.ro
+        · exact hL.rc
+        · exact Offset.disjoint_base _ (by omega_using []) (by omega_using [])
+  · intro seed' _ hE'
+    show Spec.Ed25519.bytesAt m (lay 64 s).out 32 = _
+    rw [bytes_lost fm (hL.ko.symm.sub_right hF), ho]
+    exact publicKey_of_sha512_eq (hE.symm.trans hE')
+
+theorem copy_ct : RelCT isa (Two fun L _ => L.seedLen = 64) pkCopyExpanded (Two fun _ _ => True) := by
+  have p : RelCT isa (Two fun L _ => L.seedLen = 64) (.block pkCopyPtrs)
+      (Two fun L t => L.seedLen = 64 ∧ t.gpr .rax = L.seed ∧ t.gpr .rcx = L.scr) :=
+    two_blk [.rsp] rspOnly (by taint_decide) fun _ _ _ _ _ _ hc h64 =>
+      WP.mono (copyPtrs_ok hc) fun _ ⟨hc', ha, hs⟩ => ⟨hc', h64, ha, hs⟩
+  have w : RelCT isa (Two fun L t => L.seedLen = 64 ∧ t.gpr .rax = L.seed ∧ t.gpr .rcx = L.scr)
+      (.block pkCopyWords) (Two fun _ _ => True) := by
+    refine two_blk [.rsp, .rax, .rcx] (fun L t₁ t₂ _ _ _ _ _ _ c₁ c₂ a₁ a₂ r hr => ?_) (by taint_decide)
+      fun _ _ _ _ _ hL hc ⟨h64, ha, hs⟩ =>
+        WP.mono (copy_prefix hL h64 8 (Nat.le_refl _) hc ha hs) fun _ ⟨hc', _⟩ => ⟨hc', trivial⟩
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    · exact rsp_two c₁ c₂
+    · exact a₁.2.1.trans a₂.2.1.symm
+    · exact a₁.2.2.trans a₂.2.2.symm
+  exact p.seq w
+
+theorem publicKeyExpanded_ct :
+    ConstantTime isa pkLocalE.pre pkLocalE.pub (publicKeyExpanded bs fs) :=
+  bodyFrom_pk_ct (by decide) copy_ct fun _ _ => rfl
+
+/-! ## The comb's tables in memory, for the witnesses of callers, and the stack -/
+
+/-- The comb's tables at `0x100000`, zeros below. -/
+@[irreducible] def satMemPE : Mem := fun a =>
+  if 0x100000 ≤ a.toNat then constMem 0x100000 combWords a else 0
+
+theorem satMemPE_held : ∀ i < combWordCount,
+    satMemPE.readW (0x100000 + BitVec.ofNat 64 (8 * i)) 64 = combWords.getD i 0 := by
+  intro i hi
+  rw [← constMem_held (0x100000 : Addr) combWords
+    (by rw [Proof.Ed25519.X86_64.combWords_length]; simp only [combWordCount]; omega_using []) i
+    (by rw [Proof.Ed25519.X86_64.combWords_length]; exact hi)]
+  refine Mem.readW_congr fun b hb => ?_
+  unfold satMemPE
+  rw [ite_eq_left_of_eq_true _ _ (eq_true ?_)]
+  rw [show (0x100000 : Addr) = BitVec.ofNat 64 0x100000 from rfl, Offset.add_add, ← BitVec.ofNat_add,
+    BitVec.toNat_ofNat]
+  simp only [combWordCount] at hi
+  omega_using [hi, hb]
+
+/-- No instruction writes `rsp` but the frame's push and pop. -/
+theorem publicKeyExpanded_spSafe :
+    (publicKeyExpanded bs fs).all (fun i => !isa.writesSp i) = true := by
+  have hb : bs.all (fun i => !isa.writesSp i) = true := base_spSafe
+  simp only [publicKeyExpanded, pkBodyFrom, pkCopyExpanded, pkCopyPtrs, pkCopyWords, Code.all, hb,
+    Bool.true_and]
+  decide
+
+end VG.Proof.Ed25519.X86_64.PublicKey
+
+end
+
+end
 
 /-!
 # Ed25519 key-pair derivation on x86-64
@@ -522,6 +769,13 @@ theorem body_ok {s : State} (h : Pre s) {dn pn : String} :
   refine WP.seq (WP.mono (pkArgs_ok hc) fun t' ⟨hc', hm, hdi, hsi, hdx⟩ => ?_)
   exact pk_ok bs fs h hc' hdi hsi hdx (by rw [hm]; exact hE)
 
+/-- The bytes of a region apart from a frame are what they were once the
+frame's bytes are lost. -/
+private theorem bytes_lost {F R : Region} {m m' : Mem} (f : Frame [F] m m') (hd : R.Disjoint F) :
+    Spec.Ed25519.bytesAt m' R.base R.len = Spec.Ed25519.bytesAt m R.base R.len := by
+  simp only [Spec.Ed25519.bytesAt]
+  exact List.map_congr_left fun i hi => lost_byte f hd (List.mem_range.mp hi)
+
 theorem keyPair_ok {s : State} (hs : spec.pre s) {dn pn : String} :
     WP isa (keyPair dn (dgCode c) pn (publicKeyExpanded bs fs)) s fun s' =>
       abiPreserved s s' ∧ spec.post s s' := by
@@ -529,7 +783,17 @@ theorem keyPair_ok {s : State} (hs : spec.pre s) {dn pn : String} :
   have hc₀ := push_ctx h
   refine WP.frame (rs := pushRs) (by decide) (by decide) (by decide)
     (by show 24 ≤ _; have := h.sp; omega_using [this])
-    (WP.mono (body_ok c bs fs h) fun u ⟨hu, hE, hO⟩ => ⟨hu.rsp.trans hc₀.rsp.symm, hu.wr.trans hc₀.wr.symm, ?_, ?_⟩)
+    (WP.mono (body_ok c bs fs h) fun u ⟨hu, hE, hO⟩ => ⟨hu.rsp.trans hc₀.rsp.symm, hu.wr.trans hc₀.wr.symm,
+      fun m uk fm => ?_⟩)
+  -- The pop loses the frame's 24 bytes, in the stack below `rsp`, apart from
+  -- the outputs and the return address.
+  replace fm : Frame [⟨s.gpr .rsp - BitVec.ofNat 64 24, 24⟩] u.mem m := fm
+  obtain hF : Region.Sub ⟨s.gpr .rsp - BitVec.ofNat 64 24, 24⟩ (STK s) := by
+    exact Offset.sub_below _ (by decide) (by decide)
+  replace hE := (bytes_lost (R := EXP s) fm (h.ke.symm.sub_right hF)).trans hE
+  replace hO := (bytes_lost (R := OUT s) fm (h.ko.symm.sub_right hF)).trans hO
+  dsimp only
+  refine ⟨?_, ?_⟩
   · have hrsp : (popped .rax pushRs.length u).gpr .rsp = s.gpr .rsp := by
       rw [popped_rsp, hu.rsp, sp_eq s]
       exact add_add _ _ _
@@ -537,7 +801,8 @@ theorem keyPair_ok {s : State} (hs : spec.pre s) {dn pn : String} :
     · by_cases hr' : r = .rsp
       · subst hr'; exact hrsp
       · rw [popped_gpr _ _ _ hr' (PublicKey.ne_cs hr (by decide)), hu.cs r hr hr']
-    · rw [popped_mem]
+    · rw [fm.readW (r := ⟨s.gpr .rsp, 8⟩) (Region.contains_self _ _) (fun r hr => by
+        rw [List.mem_singleton.mp hr]; exact Offset.base_disjoint_below _ (by decide)) (by decide)]
       refine hu.frame.readW (r := ⟨s.gpr .rsp, 8⟩) (Region.contains_self _ _) (fun r hr => ?_) (by decide)
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl
@@ -559,39 +824,43 @@ structure Pub (s₁ s₂ : State) : Prop where
   dx : s₁.gpr .rdx = s₂.gpr .rdx
   cx : s₁.gpr .rcx = s₂.gpr .rcx
   sy : s₁.syms combSym = s₂.syms combSym
+  mx : s₁.mxcsr = s₂.mxcsr
 
 theorem pub_of {s₁ s₂ : State} (h : spec.pub s₁ s₂) : Pub s₁ s₂ := by
-  sig_pub [Spec.Ed25519.keyPairContract, Spec.Ed25519.keyPairSig, Spec.Ed25519.scratchWords,
+  sig_pub_keep [Spec.Ed25519.keyPairContract, Spec.Ed25519.keyPairSig, Spec.Ed25519.scratchWords,
     X86_64.abi, X86_64.argRegs, Proof.Ed25519.X86_64.combConsts_eq, Abi.withConsts] at h
-  obtain ⟨h0, hs, h1, h2, h3, h4⟩ := h
-  exact ⟨h0, h1, h2, h3, h4, hs⟩
+  obtain ⟨h0, hm, hs, h1, h2, h3, h4⟩ := h
+  exact ⟨h0, h1, h2, h3, h4, hs, hm⟩
 
 /-- Two runs between the push and the pop, from entry states that agree, each with `Φ`. -/
 def Rel (Φ : State → State → Prop) (a b : State) : Prop :=
-  ∃ s₁ s₂, Pre s₁ ∧ Pre s₂ ∧ Pub s₁ s₂ ∧ Ctx s₁ a ∧ Ctx s₂ b ∧ Φ s₁ a ∧ Φ s₂ b
+  ∃ s₁ s₂, Pre s₁ ∧ Pre s₂ ∧ Pub s₁ s₂ ∧ Ctx s₁ a ∧ Ctx s₂ b ∧ Φ s₁ a ∧ Φ s₂ b ∧ a.mxcsr = b.mxcsr
 
-theorem rel_wp {c : Prog isa} {Φ Ψ : State → State → Prop} (hct : RelCT isa (Rel Φ) c fun _ _ => True)
+theorem rel_wp {c : Prog isa} {Φ Ψ : State → State → Prop} (hmx : MxDet c)
+    (hct : RelCT isa (Rel Φ) c fun _ _ => True)
     (hw : ∀ s t, Pre s → Ctx s t → Φ s t → WP isa c t fun t' => Ctx s t' ∧ Ψ s t') :
     RelCT isa (Rel Φ) c (Rel Ψ) := by
   intro a b ta tb a' b' hp e₁ e₂
   obtain ⟨ht, -⟩ := hct _ _ _ _ _ _ hp e₁ e₂
-  obtain ⟨s₁, s₂, h₁, h₂, hp', c₁, c₂, f₁, f₂⟩ := hp
+  obtain ⟨s₁, s₂, h₁, h₂, hp', c₁, c₂, f₁, f₂, hm⟩ := hp
   obtain ⟨_, u₁, x₁, y₁⟩ := hw s₁ a h₁ c₁ f₁
   obtain ⟨_, u₂, x₂, y₂⟩ := hw s₂ b h₂ c₂ f₂
+  have hm' := hmx _ _ _ _ _ e₁ (ht ▸ e₂) hm
   obtain ⟨-, rfl⟩ := Exec.det e₁ x₁
   obtain ⟨-, rfl⟩ := Exec.det e₂ x₂
-  exact ⟨ht, s₁, s₂, h₁, h₂, hp', y₁.1, y₂.1, y₁.2, y₂.2⟩
+  exact ⟨ht, s₁, s₂, h₁, h₂, hp', y₁.1, y₂.1, y₁.2, y₂.2, hm'⟩
 
 theorem rel_rsp {Φ : State → State → Prop} {a b : State} (h : Rel Φ a b) : a.gpr .rsp = b.gpr .rsp := by
-  obtain ⟨_, _, _, _, hp, c₁, c₂, _⟩ := h
+  obtain ⟨_, _, _, _, hp, c₁, c₂, -⟩ := h
   rw [c₁.rsp, c₂.rsp, B, B, K, K, hp.sp]
 
 /-- A block that addresses memory only through `rsp`. -/
 theorem rel_block {is : List Instr} {Φ Ψ : State → State → Prop}
     {hc : VG.Taint.Hint VG.X86_64.Taint.T} (h : (taint.check (Taint.ofRegs [.rsp]) (.block is) hc).isSome = true)
+    (hmx : MxDet (.block is))
     (hw : ∀ s t, Pre s → Ctx s t → Φ s t → WP isa (.block is) t fun t' => Ctx s t' ∧ Ψ s t') :
     RelCT isa (Rel Φ) (.block is) (Rel Ψ) :=
-  rel_wp (RelCT.taint (A := taint) (Taint.ofRegs [.rsp]) (fun _ _ hr => Taint.agree_ofRegs fun r hr' => by
+  rel_wp hmx (RelCT.taint (A := taint) (Taint.ofRegs [.rsp]) (fun _ _ hr => Taint.agree_ofRegs fun r hr' => by
     simp only [List.mem_singleton] at hr'; subst hr'; exact rel_rsp hr) h) hw
 
 abbrev Φ₀ (s t : State) : Prop := t.gpr .rdx = s.gpr .rdx ∧ t.gpr .rsi = s.gpr .rsi
@@ -606,29 +875,30 @@ theorem body_ct {dn pn : String} :
     RelCT isa (Rel Φ₀) (.seq (.block digestArgs) (.seq (.call dn (dgCode c)) (.seq (.block pkArgs)
       (.call pn (publicKeyExpanded bs fs))))) fun _ _ => True := by
   have b₁ : RelCT isa (Rel Φ₀) (.block digestArgs) (Rel Φ₁) :=
-    rel_block (by taint_decide) fun _ _ _ hc ⟨hdx, hsi⟩ =>
+    rel_block (by taint_decide) (MxDet.of_noLoad (by decide)) fun _ _ _ hc ⟨hdx, hsi⟩ =>
       WP.mono (digestArgs_ok hc hdx hsi) fun _ ⟨hc', a, b, d⟩ => ⟨hc', a, b, d⟩
   have b₂ : RelCT isa (Rel Φ₁) (.call dn (dgCode c)) (Rel Φ₂) := by
-    refine rel_wp (RelCT.callEx (dg_verified c).1 (dg_verified c).2.1 fun a b hr => ?_)
+    refine rel_wp (MxDet.of_noLoad (Proof.Sha512.X86_64.OneShot.mxcsr Proof.Sha512.X86_64.OneShot.code512 _
+      c.mxcsr)) (RelCT.callEx (dg_verified c).1 (dg_verified c).2.1 fun a b hr => ?_)
       fun s _ h hc ⟨hdi, hsi, hdx⟩ => digest_ok c h hc hdi hsi hdx
-    obtain ⟨s₁, s₂, h₁, h₂, hp, c₁, c₂, ⟨d₁, i₁, x₁⟩, ⟨d₂, i₂, x₂⟩⟩ := hr
+    obtain ⟨s₁, s₂, h₁, h₂, hp, c₁, c₂, ⟨d₁, i₁, x₁⟩, ⟨d₂, i₂, x₂⟩, hm⟩ := hr
     refine ⟨_, _, _, _, dg_pre h₁ c₁ d₁ i₁ x₁, dg_pre h₂ c₂ d₂ i₂ x₂, ?_, (dg_cov h₁ c₁).1, (dg_cov h₁ c₁).2,
-      (dg_cov h₂ c₂).1, (dg_cov h₂ c₂).2, rel_rsp (Φ := fun _ _ => True) ⟨s₁, s₂, h₁, h₂, hp, c₁, c₂, trivial, trivial⟩⟩
+      (dg_cov h₂ c₂).1, (dg_cov h₂ c₂).2, rel_rsp (Φ := fun _ _ => True) ⟨s₁, s₂, h₁, h₂, hp, c₁, c₂, trivial, trivial, hm⟩⟩
     sig_pub [Spec.Sha512.digestContract, Spec.Sha512.digestSig, Spec.Sha512.digestPost, X86_64.abi,
       X86_64.argRegs]
     rw [rsp8 c₁, rsp8 c₂, d₁, d₂, i₁, i₂, x₁, x₂, K, K, hp.sp, hp.dx, hp.si]
-    exact ⟨rfl, rfl, rfl, rfl⟩
+    exact ⟨rfl, hm, rfl, rfl, rfl⟩
   have b₃ : RelCT isa (Rel Φ₂) (.block pkArgs) (Rel Φ₃) :=
-    rel_block (by taint_decide) fun _ _ _ hc hE =>
+    rel_block (by taint_decide) (MxDet.of_noLoad (by decide)) fun _ _ _ hc hE =>
       WP.mono (pkArgs_ok hc) fun _ ⟨hc', hm, a, b, d⟩ => ⟨hc', by rw [Φ₂, hm]; exact hE, a, b, d⟩
   have b₄ : RelCT isa (Rel Φ₃) (.call pn (publicKeyExpanded bs fs)) fun _ _ => True := by
     refine RelCT.callEx (k := PublicKey.pkLocalE)
       (fun _ h => PublicKey.publicKeyExpanded_ok (bs := bs) (fs := fs) h)
       (PublicKey.publicKeyExpanded_ct (bs := bs) (fs := fs)) fun a b hr => ?_
-    obtain ⟨s₁, s₂, h₁, h₂, hp, c₁, c₂, ⟨e₁, d₁, i₁, x₁⟩, ⟨e₂, d₂, i₂, x₂⟩⟩ := hr
+    obtain ⟨s₁, s₂, h₁, h₂, hp, c₁, c₂, ⟨e₁, d₁, i₁, x₁⟩, ⟨e₂, d₂, i₂, x₂⟩, hm⟩ := hr
     refine ⟨_, _, _, _, pk_pre h₁ c₁ d₁ i₁ x₁ e₁, pk_pre h₂ c₂ d₂ i₂ x₂ e₂, ?_, (pk_cov h₁ c₁).1,
       (pk_cov h₁ c₁).2, (pk_cov h₂ c₂).1, (pk_cov h₂ c₂).2,
-      rel_rsp (Φ := fun _ _ => True) ⟨s₁, s₂, h₁, h₂, hp, c₁, c₂, trivial, trivial⟩⟩
+      rel_rsp (Φ := fun _ _ => True) ⟨s₁, s₂, h₁, h₂, hp, c₁, c₂, trivial, trivial, hm⟩⟩
     simp only [PublicKey.pkLocalE, PublicKey.pkLocalWith, State.withRegions_gpr, ce_syms, ce_rsp c₁, ce_rsp c₂,
       State.callEntry_gpr _ (show Reg.rdi ≠ .rsp by decide), State.callEntry_gpr _ (show Reg.rsi ≠ .rsp by decide),
       State.callEntry_gpr _ (show Reg.rdx ≠ .rsp by decide), d₁, d₂, i₁, i₂, x₁, x₂, c₁.sym, c₂.sym, K, hp.sp,
@@ -643,7 +913,7 @@ theorem keyPair_ct {dn pn : String} :
   rintro _ _ ⟨s₁, s₂, ⟨h₁, h₂, hp⟩, rfl, rfl⟩
   exact ⟨s₁, s₂, pre_of h₁, pre_of h₂, pub_of hp, push_ctx (pre_of h₁), push_ctx (pre_of h₂),
     ⟨pushed_gpr _ _ (by decide), pushed_gpr _ _ (by decide)⟩,
-    ⟨pushed_gpr _ _ (by decide), pushed_gpr _ _ (by decide)⟩⟩
+    ⟨pushed_gpr _ _ (by decide), pushed_gpr _ _ (by decide)⟩, by rw [pushed_mxcsr, pushed_mxcsr, (pub_of hp).mx]⟩
 
 /-! ## A witness, and the artifact's obligations -/
 

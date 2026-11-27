@@ -1,11 +1,10 @@
 module
 
-import VerifiedGarbage.Proof.Blowfish.AArch64.EcbMain
+public import VerifiedGarbage.Proof.Blowfish.AArch64.EcbMain
 public import VerifiedGarbage.Proof.Blowfish.AArch64.ConstantTime
 public import VerifiedGarbage.Proof.Blowfish.Scratch
 import VerifiedGarbage.Proof.Framework.AArch64.Inline
 public import VerifiedGarbage.Proof.Blowfish.AArch64.Batch
-public import VerifiedGarbage.Proof.Blowfish.AArch64.Copy
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Blowfish.AArch64.Lit

@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Dsa.Arm.Prime.Mr1
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.Arm.Prime.TaintD
-import VerifiedGarbage.Proof.Dsa.Arm.Prime.Mont7
+import VerifiedGarbage.Proof.Dsa.Arm.Prime.Mont8
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.St
 import VerifiedGarbage.Proof.Dsa.Arm.Prime.Vals
 

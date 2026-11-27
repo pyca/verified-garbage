@@ -20,7 +20,8 @@ by a call of `vg_<curve>_mul`:
 * `pointsG d`: the table of `u`'s bits, `[u]G` by `gMulG d` from `d`'s
   tables, saved to `U` and `R` reset to `O`; then `[v]Q` by `mulVA`, and
   `[u]G + [v]Q` by the complete addition, into `R`: `Cfg.points` with
-  `gMulG d` in place of `gMul` and `mulVA` in place of `mulV`.
+  `gMulG d` in place of `gMul`, `mulVA` in place of `mulV` and the sum a
+  call of `vg_<curve>_add_complete` (`sumC`).
 * `verifyG d`: `Cfg.verify` with the points by `pointsG d`.
 
 The comb's tables are the static `d.tsym`, which the configuration declares
@@ -40,24 +41,40 @@ variable (c : Impl.Ecdsa.X86_64.Cfg)
 
 /-- `[v]Q`, into `R`, by the window method for any `a`: `v + offset J` and its
 bits (`winPrep`), then `windowA` on `Q` (at ECDH's `PX`, `PY`), with
-`3 b R mod p` (`B3P`) for its complete additions. -/
+`3 b R mod p` put in `PT` for its complete additions, calls of
+`vg_<curve>_add_complete` (`Cfg.addCompleteFn`). -/
 def mulVA : Prog isa :=
-  .seq (c.winPrep (c.sl V)) (WinCfg.windowA (c.winCfg Impl.Ecdh.X86_64.PX Impl.Ecdh.X86_64.PY B3P))
+  .seq (c.winPrep (c.sl V))
+    (WinCfg.windowA (c.winCfg Impl.Ecdh.X86_64.PX Impl.Ecdh.X86_64.PY B3P)
+      (c.mont (3 * c.C.b)) c.addCompleteFn)
 
-/-- `[u]G + [v]Q`, into `R`, from `u` and `v`, `[u]G` by the comb of `d` and
-`[v]Q` by `mulVA`. -/
-def pointsG (d : CombData) : Prog isa :=
-  .seq (bits (c.sl U) (bitsAt c.n 0) (8 * c.n)) <| .seq (c.gMulG d) <| .seq (.block (save c)) <|
-  .seq (mulVA c) (sum c)
+/-- `R = R + U`, by a call of `vg_<curve>_add_complete` (`Cfg.addComplete`,
+`D = R + T`): `U` to `T` and `3 b R mod p` to `PT`, where it reads them, the
+call, and `D` to `R`. -/
+def sumC : Prog isa :=
+  .seq (.block (copy c.n (c.sl TX) (c.sl UX) ++ copy c.n (c.sl TY) (c.sl UY) ++
+      copy c.n (c.sl TZ) (c.sl UZ) ++ setConst c.n (c.sl PT) (c.mont (3 * c.C.b)))) <|
+  .seq (.call c.addCompleteFn c.addComplete)
+    (.block (copy c.n (c.sl RX) (c.sl DX) ++ copy c.n (c.sl RY) (c.sl DY) ++ copy c.n (c.sl RZ) (c.sl DZ)))
 
-/-- Everything after the checks of the key, the points by `pointsG d`. -/
-def backG (d : CombData) : Prog isa :=
-  .seq (scalars c) <| .seq c.nPow <| .seq (uv c) <| .seq (pointsG c d) (tail c)
+/-- `[u]G + [v]Q`, into `R`, from `u` and `v`, `[u]G` by `gm`, `[v]Q` by
+`mulVA` and their sum by `sumC`. -/
+def pointsGW (gm : Prog isa) : Prog isa :=
+  .seq (bits (c.sl U) (bitsAt c.n 0) (8 * c.n)) <| .seq gm <| .seq (.block (save c)) <|
+  .seq (mulVA c) (sumC c)
 
-/-- `vg_ecdsa_<curve>_verify`, `[u]G` by the comb of `d`. -/
-def verifyG (d : CombData) : Prog isa :=
+/-- Everything after the checks of the key, the points by `pointsGW gm`. -/
+def backGW (gm : Prog isa) : Prog isa :=
+  .seq (scalars c) <| .seq c.nPow <| .seq (uv c) <| .seq (pointsGW c gm) (tail c)
+
+/-- `vg_ecdsa_<curve>_verify`, `[u]G` by `gm`. -/
+def verifyGW (gm : Prog isa) : Prog isa :=
   .seq (.block (args c)) <| .seq (Impl.Ecdh.X86_64.Cfg.prefix' c (some D)) <| .seq (.block (loadS c)) <|
-  .seq (.block (Impl.Ecdh.X86_64.Cfg.peer c)) <| .seq (Impl.Ecdh.X86_64.Cfg.check c) (backG c d)
+  .seq (.block (Impl.Ecdh.X86_64.Cfg.peer c)) <| .seq (Impl.Ecdh.X86_64.Cfg.check c) (backGW c gm)
+
+/-- `vg_ecdsa_<curve>_verify`, `[u]G` by a call of the signature's comb of
+`d`, `vg_<curve>_comb_g` (`Cfg.gMulGC`). -/
+def verifyG (d : CombData) : Prog isa := verifyGW c (c.gMulGC d)
 
 end Cfg
 

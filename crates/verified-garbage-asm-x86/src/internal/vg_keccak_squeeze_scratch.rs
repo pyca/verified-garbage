@@ -22,7 +22,19 @@ jmp 24f
 call {vg_keccak_f1600}
 .base64 "WFg="
 24:
-.base64 "i40QAgAAi5UUAgAAD7YBiAaDwQGJjRACAACJlRQCAACDxgGD7wE="
+.base64 "i40QAgAAi5UUAgAAicgp2IPACDnC"
+jb 25f
+.base64 "g/8I"
+jb 27f
+.base64 "8w9+AWYP1gaDwQiJjRACAACJlRQCAACDxgiD7wg="
+jmp 28f
+27:
+.base64 "D7YBiAaDwQGJjRACAACJlRQCAACDxgGD7wE="
+28:
+jmp 26f
+25:
+.base64 "D7YBiAaDwQGJjRACAACJlRQCAACDxgGD7wE="
+26:
 jne 22b
 jmp 21f
 20:

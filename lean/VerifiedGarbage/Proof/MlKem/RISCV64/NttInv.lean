@@ -1,14 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.RISCV64.Ntt
-public import VerifiedGarbage.Proof.MlKem.RISCV64.Lazy
 import VerifiedGarbage.Proof.MlKem.RISCV64.Add
 import VerifiedGarbage.Proof.Framework.RISCV64.Run
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import all Init.Data.Nat.Bitwise.Basic
 meta import VerifiedGarbage.Proof.MlKem.RISCV64.Ntt
-meta import VerifiedGarbage.Proof.MlKem.RISCV64.Lazy
 meta import VerifiedGarbage.Proof.MlKem.RISCV64.Add
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Run
 meta import VerifiedGarbage.Proof.Framework.Contract

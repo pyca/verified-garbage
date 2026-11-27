@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Weierstrass.X86.FieldTiming
 public import VerifiedGarbage.Proof.Weierstrass.X86.Pow
 import VerifiedGarbage.Proof.Weierstrass.X86.JacAdd
-import VerifiedGarbage.Proof.Weierstrass.X86.TCombScan
+import VerifiedGarbage.Proof.Weierstrass.X86.TCombOne
 
 /-! Public lookup addresses and counters alongside equal field environments. -/
 

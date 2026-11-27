@@ -8,8 +8,8 @@ public import VerifiedGarbage.Impl.Sm4.Planes
 
 `expandKey(key = r3, schedule = r4, scratch = r5)`: `vg_sm4_expand_key`
 with its working space in the scratch buffer (`Layers.lean`, moved to
-`r8`), which the artifact allocates on the stack. As on x86-64 and AArch64
-(`Impl/Sm4/AArch64/ExpandKey.lean`): the bitsliced rounds of ECB, with `L'`
+`r8`), which the artifact allocates on the stack. As on x86-64
+(`Impl/Sm4/X86_64/ExpandKey.lean`): the bitsliced rounds of ECB, with `L'`
 for `L` and a table of `CK`'s planes for the round keys, run the key
 schedule on sixteen copies of `MK ⊕ FK`; after every four rounds `fromBs`
 puts the state's words in the tail buffer as a block, whose 64-bit words
@@ -18,6 +18,9 @@ stored byte-reversed (`stdbrx`) are the schedule's next 16 bytes.
 Only `r3`, `r4` (the schedule), `r8`, `r10` (the round key's entry), `r11`
 (the table's end), `r12` (the byte-reversed stores' index) and the loop test
 (`t0`) hold public values; no address and no branch depends on anything else.
+
+`vg_sm4_expand_key` and `vg_sm4_gcm_init` call it as one function,
+`vg_sm4_expand_key_core` (`expandKeyCall`, `Impl/Sm4Gcm/PPC64LE.lean`).
 -/
 
 @[expose] public section
@@ -55,5 +58,18 @@ def expandKey : Prog isa :=
   .seq (.block ([movR sb .r5] ++ saveRegs ++ setSlots keyMasks ++ ckTable ++ loadHalf 0 ++
       loadHalf 1 ++ toBs ++ slotAddr .r11 tableEnd ++ slotAddr kr tableSlot))
     (.seq (.loop (.block keyBody) (.nonzero .d t0)) (.block restoreRegs))
+
+/-- The slot of `vg_sm4_expand_key`'s working space that keeps the return
+address, past the code's 402 (`slots`): 404 slots in all, a 16-byte
+multiple. -/
+def keyLr : Nat := slots
+
+/-- `vg_sm4_expand_key`'s body: a call of `vg_sm4_expand_key_core`
+(`expandKey`), which `vg_sm4_gcm_init` calls too, with the return address
+kept in the working space's slot `keyLr` (at `r5`, which `expandKey` does not
+write). -/
+def expandKeyCall : Prog isa :=
+  .seq (.block [.mflr .r0, .store .d .r0 .r5 (8 * keyLr)])
+    (.seq (.call "vg_sm4_expand_key_core" expandKey) (.block [.load .d .r0 .r5 (8 * keyLr), .mtlr .r0]))
 
 end VG.Impl.Sm4.PPC64LE

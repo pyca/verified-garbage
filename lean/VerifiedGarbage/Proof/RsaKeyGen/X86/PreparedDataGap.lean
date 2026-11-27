@@ -2,8 +2,69 @@ module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.PrepareData
 public import VerifiedGarbage.Proof.Framework.Semantics
-import VerifiedGarbage.Proof.RsaKeyGen.X86.PreparedGaps
-import VerifiedGarbage.Proof.RsaKeyGen.X86.PreparedGeometry
+public import VerifiedGarbage.Proof.MillerRabin.X86.Context
+public import VerifiedGarbage.Proof.Mont.Words32
+import VerifiedGarbage.Proof.MillerRabin.X86.WorkspaceFrame
+
+/-! ### `RsaKeyGen.X86.PreparedGeometry`, which this module and modules that import it used -/
+
+section
+
+/-! # Complete padded-array bounds for candidate preparation -/
+
+@[expose] public section
+namespace VG.Proof.RsaKeyGen.X86.Prepared
+open VG VG.Proof.MillerRabin.X86
+
+theorem paddedBefore (g : Geometry) {i j : Nat} (index : i < j) :
+    g.array i + 8 * (g.w + 2) ≤ g.array j := by
+  have step := Nat.mul_le_mul_right (8 * (g.w + 2)) index
+  unfold Geometry.array Proof.Rsa.Mont.arrAt Proof.Rsa.Mont.hdrBytes
+  rw [Nat.succ_mul] at step
+  omega_using [step]
+
+theorem paddedFit {g : Geometry} (v : g.Valid) {j : Nat} (index : j < 28) :
+    g.array j + 8 * (g.w + 2) ≤ g.L := Nat.le_trans (paddedBefore g index) v.arraysFit
+
+end VG.Proof.RsaKeyGen.X86.Prepared
+
+end
+
+end
+
+/-! ### `RsaKeyGen.X86.PreparedGaps`, which this module and modules that import it used -/
+
+section
+
+/-! # The header gap can hold secret preparation data without changing public metadata -/
+
+@[expose] public section
+namespace VG.Proof.RsaKeyGen.X86.Prepared
+open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.MillerRabin.X86 VG.Proof.Mont.X86.Rt
+
+theorem keepGaps {g : Geometry} (v : g.Valid) {s t : State} (C : Context g s)
+    {rs : List Reg} (K : Keeps rs s t) (base : .edi ∉ rs)
+    {ranges : List (Nat × Nat)} (O : Outs g.W ranges s.mem t.mem)
+    (header : ∀ r ∈ ranges, (128 ≤ r.1 ∧ r.1 + r.2 ≤ 224) ∨ 256 ≤ r.1) : Context g t := by
+  have F := WorkspaceFrame.of_outs C.ws.nowrap O
+  have read {d : Nat} (fit : d + 4 ≤ 256)
+      (apart : ∀ r ∈ ranges, d + 4 ≤ r.1 ∨ r.1 + r.2 ≤ d) : w32 t.mem g.W d = w32 s.mem g.W d :=
+    congrArg BitVec.toNat (F.read32 (Nat.le_trans fit v.headerFit) apart)
+  refine ⟨C.ws.of_keeps K, ?_, ?_, ?_, ?_⟩
+  · rw [PtrAt, K.1 .edi base]; exact C.base
+  · rw [read (by decide) (fun r mem => by have := header r mem; omega_using [this])]
+    exact C.width
+  · rw [read (by decide) (fun r mem => by have := header r mem; omega_using [this])]
+    exact C.stride
+  · intro j index
+    rw [read (by omega_using [index]) (fun r mem => by have := header r mem; omega_using [index, this])]
+    exact C.pointers j index
+
+end VG.Proof.RsaKeyGen.X86.Prepared
+
+end
+
+end
 
 /-! # Secret witness bookkeeping occupies the free prepared-header gap -/
 

@@ -10,7 +10,7 @@ import VerifiedGarbage.Proof.Framework.PlainSimp
 /-!
 # X448 on x86 (32-bit): copying field elements
 
-Equal or disjoint source and destination slots preserve the original limbs.
+Equal or disjoint source and destination slots preserve the original words.
 -/
 
 @[expose] public section
@@ -20,7 +20,7 @@ namespace VG.Proof.X448.X86
 open VG VG.X86 VG.Impl.X448.X86 VG.Proof.X448.Radix16
 
 theorem copyStep_ok {s : State} {base : Addr} (hs : Scr s base) {o a i : Nat}
-    (ho : o + 112 ≤ 8192) (ha : a + 112 ≤ 8192) (hi : i < 28) :
+    (ho : o + 56 ≤ 8192) (ha : a + 56 ≤ 8192) (hi : i < 14) :
     WP isa (.block [ld .eax (a + 4 * i), st .eax (o + 4 * i)]) s fun t =>
       t.mem = s.mem.writeW (off base (o + 4 * i)) (word s.mem base (a + 4 * i)) ∧ Keeps clob s t := by
   refine load_ok hs (by omega_using [ha, hi]) fun t ht => ?_
@@ -29,16 +29,16 @@ theorem copyStep_ok {s : State} {base : Addr} (hs : Scr s base) {o a i : Nat}
   · exact (ht.rest (by decide)).trans (hu.rest _)
 
 theorem copy_ok {s : State} {base : Addr} (hs : Scr s base) {o a : Nat}
-    (ho : o + 112 ≤ 8192) (ha : a + 112 ≤ 8192)
-    (hsep : o = a ∨ o + 112 ≤ a ∨ a + 112 ≤ o) :
+    (ho : o + 56 ≤ 8192) (ha : a + 56 ≤ 8192)
+    (hsep : o = a ∨ o + 56 ≤ a ∨ a + 56 ≤ o) :
     WP isa (.block (copy o a)) s fun t =>
-      (∀ i < 28, limbs t.mem base o i = limbs s.mem base a i) ∧
-      Outside base o 112 s.mem t.mem ∧ Keeps clob s t := by
+      (∀ i < 14, limbs t.mem base o i = limbs s.mem base a i) ∧
+      Outside base o 56 s.mem t.mem ∧ Keeps clob s t := by
   let inv := fun n (t : State) =>
     (∀ i < n, limbs t.mem base o i = limbs s.mem base a i) ∧
-    (∀ i, n ≤ i → i < 28 → limbs t.mem base a i = limbs s.mem base a i) ∧
-    Outside base o 112 s.mem t.mem ∧ Keeps clob s t
-  have st : ∀ n t, n < 28 → inv n t →
+    (∀ i, n ≤ i → i < 14 → limbs t.mem base a i = limbs s.mem base a i) ∧
+    Outside base o 56 s.mem t.mem ∧ Keeps clob s t
+  have st : ∀ n t, n < 14 → inv n t →
       WP isa (.block [ld .eax (a + 4 * n), st .eax (o + 4 * n)]) t (inv (n + 1)) := by
     intro n t hn ⟨tf, ta, tm, tk⟩
     refine WP.mono (copyStep_ok (hs.of_keeps tk (by decide)) ho ha hn) fun u ⟨um, uk⟩ => ?_
@@ -55,7 +55,7 @@ theorem copy_ok {s : State} {base : Addr} (hs : Scr s base) {o a : Nat}
       change (word u.mem base (a + 4 * i)).toNat = _
       rw [out.word (by rcases hsep with h | h | h <;> omega_arith) (by omega_using [ha, hi'])]
       exact ta i (by omega_using [hi]) hi'
-  refine WP.mono (wp_range_flatMap (M := isa) (N := 28) inv st 28 (by decide) s ?_)
+  refine WP.mono (wp_range_flatMap (M := isa) (N := 14) inv st 14 (by decide) s ?_)
     fun t ⟨tf, _, tm, tk⟩ => ⟨tf, tm, tk⟩
   exact ⟨fun _ hi => by omega, fun _ _ _ => rfl, Outside.refl _ _ _ _, Keeps.refl _ _⟩
 

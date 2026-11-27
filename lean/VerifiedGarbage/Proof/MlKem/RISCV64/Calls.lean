@@ -1,8 +1,7 @@
 module
 
 public import VerifiedGarbage.TCB.RISCV64.Target
-import VerifiedGarbage.Proof.MlKem.RISCV64.HashTop
-public import VerifiedGarbage.Proof.MlKem.RISCV64.Prims
+public import VerifiedGarbage.Proof.MlKem.RISCV64.HashTop
 public import VerifiedGarbage.Proof.MlKem.RISCV64.Ntt
 public import VerifiedGarbage.Proof.MlKem.RISCV64.Cbd2
 public import VerifiedGarbage.Proof.MlKem.RISCV64.Decode12

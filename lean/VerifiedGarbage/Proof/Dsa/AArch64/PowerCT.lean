@@ -10,13 +10,9 @@ import VerifiedGarbage.Proof.Dsa.AArch64.Frame
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.TaintBatch
-meta import VerifiedGarbage.Proof.Dsa.AArch64.ProductCT
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTExp
 meta import VerifiedGarbage.Impl.Dsa.Layout
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTDefs
-meta import VerifiedGarbage.Proof.Dsa.AArch64.EncodePower
-meta import VerifiedGarbage.Proof.Dsa.AArch64.Exponent
-meta import VerifiedGarbage.Proof.Dsa.AArch64.Frame
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.TaintBatch

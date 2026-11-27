@@ -1,40 +1,41 @@
 module
 
-public import VerifiedGarbage.Proof.AesCfb.AArch64.Verified
-public import VerifiedGarbage.Proof.AesCfb.AArch64.Caller
-public import VerifiedGarbage.Proof.AesCfb.AArch64.Final
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.AArch64.Print
-import VerifiedGarbage.Proof.AesCfb.AArch64.Body
-public import VerifiedGarbage.Proof.Variants.AesBlocks.AArch64
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Cfb.Contract
+public import VerifiedGarbage.Spec.Cfb.Final
+import VerifiedGarbage.Proof.AesCfb.AArch64.Final
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Variants.AesCfb.AArch64
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # AES-CFB128 (NIST SP 800-38A §6.3) on AArch64 -/
-
-@[expose] public section
 
 namespace VG.Artifacts.AesCfb.AArch64
 
 open VG.Proof.AesCfb.AArch64
 
-def artifacts : List Artifact :=
-  VG.Proof.Variants.AesBlocks.AArch64.variants.flatMap fun (v : Proof.Aes.AArch64.BlocksImpl) => [
+public def artifacts : List (Artifact AArch64.target) :=
+  VG.Proof.Variants.AesCfb.AArch64.variants.flatMap fun (v : CfbImpl) => [
     Spec.Cfb.aesEncryptApi.artifact AArch64.target {
       suffix := v.suffix
-      code := Impl.AesCfb.AArch64.encrypt v.enc
-      verified := Proof.AesCfb.encrypt_keyed (encrypt_verified v) },
+      code := Impl.AesCfb.AArch64.Fn.encrypt v.enc
+      verified := Proof.AesCfb.AArch64.Final.encrypt_scrubbed v.blocks },
     Spec.Cfb.aesDecryptApi.artifact AArch64.target {
       suffix := v.suffix
-      code := Caller.decrypt v
-      verified := Proof.AesCfb.decrypt_keyed (Caller.verified v)
-      written := Caller.written v
-      writtenOk := Caller.written_ok v },
+      code := Impl.AesCfb.AArch64.Fn.decrypt v.dec
+      verified := Proof.AesCfb.AArch64.Final.decrypt_scrubbed v
+      written := v.written
+      writtenOk := Proof.AesCfb.AArch64.Final.decrypt_written v },
     Spec.Cfb.aesEncryptFinalApi.artifact AArch64.target {
       suffix := v.suffix
-      code := Impl.StackScratch.AArch64.withStackScratchWiped 64 .x6 8 (Final.encryptCode v)
-      verified := Proof.AesCfb.encryptFinal_keyed (Final.encryptFinal_framed v) },
+      code := Impl.AesCfb.AArch64.Fn.encryptFinal v.enc v.suffix
+      verified := Proof.AesCfb.AArch64.Final.encryptFinal_scrubbed v.blocks },
     Spec.Cfb.aesDecryptFinalApi.artifact AArch64.target {
       suffix := v.suffix
-      code := Impl.StackScratch.AArch64.withStackScratchWiped 64 .x6 8 (Final.decryptCode v)
-      verified := Proof.AesCfb.decryptFinal_keyed (Final.decryptFinal_framed v) }]
+      code := Impl.AesCfb.AArch64.Fn.decryptFinal v.enc v.suffix v.dec
+      verified := Proof.AesCfb.AArch64.Final.decryptFinal_scrubbed v }]
+
+spec_apis artifacts
 
 end VG.Artifacts.AesCfb.AArch64

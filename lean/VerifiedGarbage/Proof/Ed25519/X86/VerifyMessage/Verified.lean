@@ -7,9 +7,6 @@ public import VerifiedGarbage.Proof.Ed25519.X86.Whole.Reduce
 public import VerifiedGarbage.Proof.Framework.X86.RelCT
 import VerifiedGarbage.Proof.Framework.OffsetBelow
 import VerifiedGarbage.Proof.Framework.X86.Syms
-import VerifiedGarbage.Proof.Sha512.X86.Stream.Finalize
-import VerifiedGarbage.Proof.Ed25519.X86.ScalarVerified
-import VerifiedGarbage.Proof.Ed25519.X86.VerifyVerified
 import VerifiedGarbage.Proof.Sha512.X86.Stream.Init
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
 import VerifiedGarbage.Proof.Framework.KernelRfl
@@ -20,9 +17,6 @@ meta import VerifiedGarbage.Proof.Ed25519.X86.Whole.Reduce
 meta import VerifiedGarbage.Proof.Framework.X86.RelCT
 meta import VerifiedGarbage.Proof.Framework.OffsetBelow
 meta import VerifiedGarbage.Proof.Framework.X86.Syms
-meta import VerifiedGarbage.Proof.Sha512.X86.Stream.Finalize
-meta import VerifiedGarbage.Proof.Ed25519.X86.ScalarVerified
-meta import VerifiedGarbage.Proof.Ed25519.X86.VerifyVerified
 meta import VerifiedGarbage.Proof.Sha512.X86.Stream.Init
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.Framework.KernelRfl
@@ -255,7 +249,7 @@ variable {L : Lay} {g₁ g₂ : Reg → BitVec 32} {m₁ m₂ : Mem}
 
 theorem init_call_ct (hL : L.Ok) :
     RelCT isa (Two L g₁ g₂ m₁ m₂ (OutArgs L [.caller 4 0]))
-      (.call Spec.Sha512.init512Api.name (Impl.Sha512.X86.Stream.init Spec.Sha512.H0_512))
+      (.call (Spec.Sha512.init512Api.name ++ "_core") (Impl.Sha512.X86.Stream.init Spec.Sha512.H0_512))
       (Two L g₁ g₂ m₁ m₂ fun _ => True) := by
   apply call_ct hL (Proof.Sha512.X86.Stream.init_verified _).1
     (Proof.Sha512.X86.Stream.init_verified _).2.1 Whole.init_nosp (by rw [Whole.init_stack]; decide)
@@ -739,14 +733,23 @@ theorem verifyMessage_ok {s : State} (h : verifyMessageLocal.pre s) :
     (by simp only [List.length_replicate]; omega_using [hb]) body_nosp
     (WP.mono (body_ok (push_ctx h) hL (lay_arguments h) (entry_tbl h).1
       (by rw [show (pushed (List.replicate 64 .eax) s).syms = s.syms from pushRegs_syms s _]; rfl))
-      fun u ⟨hu, ho⟩ => ?_)
+      fun u ⟨hu, ho⟩ m v fl => ?_)
+  simp only [List.length_replicate] at fl
+  obtain hb256 : 256 ≤ (s.gpr .esp).toNat := by omega_using [hb]
   refine ⟨⟨fun r hr => ?_, ?_⟩, ?_⟩
-  · by_cases he : r = .esp
+  · show (popped Reg.edx (List.replicate 64 Reg.eax).length u).gpr r = s.gpr r
+    by_cases he : r = .esp
     · subst r
       rw [popped_esp, hu.esp, List.length_replicate]
       exact BitVec.sub_add_cancel _ _
     · rw [popped_gpr _ _ _ he (by intro e; subst r; simp [calleeSaved] at hr), hu.cs r hr he]
-  · rw [popped_mem]
+  · show m.readW _ 32 = _
+    rw [fl.readW (r := (lay s).RET) (by rw [lay_ret h]; exact Region.contains_self _ _) (fun r hr => by
+      rw [List.mem_singleton.mp hr, lay_ret h]
+      change Region.Disjoint ⟨(s.gpr .esp).setWidth 64, 4⟩
+        ⟨(s.gpr .esp - BitVec.ofNat 32 256).setWidth 64, 256⟩
+      rw [Taint.sub_setWidth hb256]
+      exact (Offset.below_disjoint _ (by decide)).symm) (by decide)]
     refine hu.frame.readW (r := (lay s).RET) ?_ ?_ (by decide)
     · rw [lay_ret h]; exact Region.contains_self _ _
     · simp only [Lay.outputs, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false]
@@ -755,7 +758,8 @@ theorem verifyMessage_ok {s : State} (h : verifyMessageLocal.pre s) :
       · change (lay s).RET.Disjoint (lay s).STK
         rw [lay_ret h, lay_stack h]
         exact (Offset.below_disjoint _ (by decide)).symm
-  · change (popped .edx (List.replicate 64 .eax).length u).gpr .eax = _
+  · unfold verifyMessageLocal
+    dsimp only
     rw [popped_gpr _ _ _ (by decide) (by decide)]
     exact ho
 

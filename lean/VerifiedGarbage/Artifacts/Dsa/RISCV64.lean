@@ -1,51 +1,51 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.RISCV64.DeriveVerified
-public import VerifiedGarbage.Proof.Dsa.RISCV64.RSVerified
-public import VerifiedGarbage.Proof.Dsa.RISCV64.ValidatePrivateVerified
-public import VerifiedGarbage.Proof.Dsa.RISCV64.GKVerified
-public import VerifiedGarbage.Proof.Dsa.RISCV64.ValidateVerified
-public import VerifiedGarbage.Proof.Dsa.RISCV64.PrevalidatedVerified
-public import VerifiedGarbage.Proof.Dsa.RISCV64.ParameterSearchInit
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.RISCV64.Print
-public import VerifiedGarbage.Proof.Dsa.RISCV64.PSearch.Instances
-public import VerifiedGarbage.Proof.Variants.MillerRabin.RISCV64
+public import VerifiedGarbage.TCB.RISCV64.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Dsa.Derive
+public import VerifiedGarbage.Spec.Dsa.PrevalidatedSign
+public import VerifiedGarbage.Spec.Dsa.Generate
+public import VerifiedGarbage.Spec.Dsa.Prevalidated
+public import VerifiedGarbage.Spec.Dsa.ParameterSearchContract
+import VerifiedGarbage.Proof.Dsa.RISCV64.Fn
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Variants.MillerRabin.RISCV64
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # DSA (FIPS 186-4) on RISC-V -/
 
-@[expose] public section
-
 namespace VG.Artifacts.Dsa.RISCV64
 
-open VG Proof.Dsa.RISCV64.PSearch
-
-def artifacts : List Artifact := [
+public def artifacts : List (Artifact RISCV64.target) := [
   Spec.Dsa.deriveKeyApi.artifact RISCV64.target {
-    code := Impl.Dsa.RISCV64.Derive.derive
-    verified := Proof.Dsa.RISCV64.deriveKey_verified },
+    code := Impl.Dsa.RISCV64.Fn.deriveKey
+    verified := Proof.Dsa.RISCV64.Fn.deriveKey },
   Spec.Dsa.validatePrivateKeyApi.artifact RISCV64.target {
-    code := Impl.Dsa.RISCV64.PrevalidatedSign.validate
-    verified := Proof.Dsa.RISCV64.validatePrivate_verified },
+    code := Impl.Dsa.RISCV64.Fn.validatePrivateKey
+    verified := Proof.Dsa.RISCV64.Fn.validatePrivateKey },
   Spec.Dsa.randomSignPrevalidatedApi.artifact RISCV64.target {
-    code := Impl.Dsa.RISCV64.PrevalidatedSign.randomSign
-    verified := Proof.Dsa.RISCV64.randomSignPre_verified },
+    code := Impl.Dsa.RISCV64.Fn.randomSignPrevalidated
+    verified := Proof.Dsa.RISCV64.Fn.randomSignPrevalidated },
   Spec.Dsa.generateKeyApi.artifact RISCV64.target {
-    code := Impl.Dsa.RISCV64.Generate.code
-    verified := Proof.Dsa.RISCV64.generateKey_verified },
+    code := Impl.Dsa.RISCV64.Fn.generateKey
+    verified := Proof.Dsa.RISCV64.Fn.generateKey },
   Spec.Dsa.validatePublicKeyApi.artifact RISCV64.target {
-    code := Impl.Dsa.RISCV64.Prevalidated.validate
-    verified := Proof.Dsa.RISCV64.validate_verified },
+    code := Impl.Dsa.RISCV64.Fn.validatePublicKey
+    verified := Proof.Dsa.RISCV64.Fn.validatePublicKey },
   Spec.Dsa.verifyPrevalidatedApi.artifact RISCV64.target {
-    code := Impl.Dsa.RISCV64.Prevalidated.verify
-    verified := Proof.Dsa.RISCV64.prevalidated_verified },
+    code := Impl.Dsa.RISCV64.Fn.verifyPrevalidated
+    verified := Proof.Dsa.RISCV64.Fn.verifyPrevalidated },
   Spec.Dsa.parameterInitApi.artifact RISCV64.target {
-    code := Impl.Dsa.RISCV64.ParameterSearch.init
-    verified := Proof.Dsa.RISCV64.init_verified }] ++
-  (VG.Proof.Variants.MillerRabin.RISCV64.variants.flatMap fun (v : Proof.MillerRabin.RISCV64.RoundImpl) => [
+    code := Impl.Dsa.RISCV64.Fn.parameterInit
+    verified := Proof.Dsa.RISCV64.Fn.parameterInit
+    publicOutOk := Proof.Dsa.RISCV64.Fn.parameterInit_public }] ++
+  Proof.Variants.MillerRabin.RISCV64.variants.map fun (v : Proof.MillerRabin.RISCV64.RoundImpl) =>
     Spec.Dsa.parameterSearchApi.artifact RISCV64.target {
       suffix := v.suffix
-      code := Impl.Dsa.RISCV64.ParameterSearch.code (gen1 v) (gen2 v) (gen3 v)
-      verified := params_verified v }])
+      code := Impl.Dsa.RISCV64.Fn.parameterSearch v.suffix v.code
+      verified := Proof.Dsa.RISCV64.Fn.parameterSearch v
+      publicOutOk := Proof.Dsa.RISCV64.Fn.parameterSearch_public v }
+
+spec_apis artifacts
 
 end VG.Artifacts.Dsa.RISCV64

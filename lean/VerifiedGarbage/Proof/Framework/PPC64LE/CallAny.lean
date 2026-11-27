@@ -160,13 +160,24 @@ theorem Exec.frameAny {c : Prog isa} {s s' : State} {t : List Leak} (h : Exec is
     rwa [w₁, p₁, m₁] at this
   | @frame i _ b s₀ s₁ s₂ _ _ hp _ hq ih =>
     simp only [sdepth] at hd ⊢
-    obtain ⟨p₁, -, f₀, r, w₁, hr⟩ := push_any hp
-    rw [pop_mem hq]
+    obtain ⟨p₁, h32, f₀, r, w₁, hr⟩ := push_any hp
+    obtain ⟨n, hn, f₂⟩ := pop_mem hq
+    rw [w₁, List.head?_cons, Option.some.injEq] at hn
+    have hr₂ := hr
+    rw [hn, p₁] at hr₂
+    rw [p₁] at f₂
     have f₁ := ih (by omega_using [hd])
     rw [w₁, p₁] at f₁
     have hsub : Region.Sub (below s₀.sp i.frameBytes) (below s₀.sp (i.frameBytes + sdepth b)) :=
       below_sub (by omega_using []) hd
-    refine Frame.trans (f₀.sub fun r' hr' => ?_) (Frame.sub f₁ fun r' hr' => ?_)
+    -- The pop's released frame: the push's header and the region above it.
+    have hfr : Region.Sub ⟨s₀.sp - BitVec.ofNat 64 i.frameBytes, n + 32⟩ (below s₀.sp i.frameBytes) :=
+      Region.sub_frame (Region.sub_prefix (Nat.le_of_lt h32)) hr₂
+    refine Frame.trans (Frame.trans (f₀.sub fun r' hr' => ?_) (Frame.sub f₁ fun r' hr' => ?_))
+      (f₂.sub fun r' hr' => ?_)
+    rotate_left 2
+    · simp only [List.mem_singleton] at hr'; subst hr'
+      exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _), fun x hx => hsub x (hfr x hx)⟩
     · simp only [List.mem_singleton] at hr'; subst hr'
       exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _), hsub⟩
     · simp only [List.cons_append, List.mem_cons, List.mem_append, List.not_mem_nil, or_false] at hr'
@@ -233,7 +244,8 @@ theorem WP.narrowAny {c : Prog isa} {s : State} {rd wr : List Region} {P : State
 /-- `WP.frameReg` for a body with any frames. -/
 theorem WP.frameRegAny {r : Reg} {main : Prog isa} {s₀ : State} {Q : State → Prop}
     (hsp : 48 ≤ s₀.sp.toNat) (hd : ∀ R ∈ s₀.wr, Region.Disjoint ⟨s₀.sp - 48 + 32, 16⟩ R)
-    (hmain : WP isa main (framed r s₀) fun s₂ => Q { s₂.write r (s₀.gpr r) with sp := s₀.sp })
+    (hmain : WP isa main (framed r s₀) fun s₂ => ∀ m u, Frame [⟨s₀.sp - 48, 48⟩] s₂.mem m →
+      Q { s₂.write r (s₀.gpr r) with sp := s₀.sp, mem := m, unknowns := u })
     (hn : sdepth main + 48 < 2 ^ 64) :
     WP isa (.frame (.push r) main (.pop r)) s₀ Q := by
   refine WP.frame hsp (WP.narrowAny (rd := s₀.rd) (wr := s₀.wr) hmain ?_ ?_ ?_ (by omega_using [hn]))
@@ -257,6 +269,7 @@ theorem WP.frameRegAny {r : Reg} {main : Prog isa} {s₀ : State} {Q : State →
       simp only [pushed] at hrd
       subst hrd
       rfl
-    rw [e]; exact hq
+    intro m u f
+    rw [e]; exact hq m u f
 
 end VG.PPC64LE

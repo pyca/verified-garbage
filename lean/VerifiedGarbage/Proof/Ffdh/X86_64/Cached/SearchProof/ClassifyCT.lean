@@ -1,22 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Cached.SearchProof.AttemptCT
-import VerifiedGarbage.Proof.Ffdh.X86_64.Cached.SearchProof.LeafCT
 import VerifiedGarbage.Proof.Ffdh.X86_64.Cached.SearchProof.Classify
-import VerifiedGarbage.Proof.Ffdh.X86_64.Cached.SearchProof.Rejects
 import VerifiedGarbage.Proof.Ffdh.X86_64.Cached.SearchProof.Live
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.RsaKeyGen.Hdr
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.Cached.SearchProof.AttemptCT
-meta import VerifiedGarbage.Proof.Ffdh.X86_64.Cached.SearchProof.LeafCT
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.Cached.SearchProof.Classify
-meta import VerifiedGarbage.Proof.Ffdh.X86_64.Cached.SearchProof.Rejects
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.Cached.SearchProof.Live
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.RsaKeyGen.Hdr
-import Mathlib.Algebra.Group.Nat.Defs
 
 /-! # The attempt's classification branches on its status alone -/
 

@@ -19,7 +19,7 @@ each, so these are not generic over them.
 
 ## The working space
 
-`work` (`W`, 2560 bytes): `[0, 16)` the tag `seal` computes, which it then
+`work` (`W`, 448 bytes): `[0, 16)` the tag `seal` computes, which it then
 copies to `tag`, `[32, 48)` a block `B`: `B₀`, the first block of the
 associated data or a last block padded with zeros, `[48, 64)` the counter
 block `Ctr₀`, `[64, 80)` the counter block passed to `vg_aes_ctr32`,
@@ -27,8 +27,8 @@ block `Ctr₀`, `[64, 80)` the counter block passed to `vg_aes_ctr32`,
 `[128, 216)` our caller's `r14`–`r23` and our return address, `[216, 248)`
 the address and length of the associated data, the length of the nonce and
 the address of `tag`, `[256, 288)` the two tags `open` compares, padded with
-zeros, and `[384, 2560)` the working space of the functions called
-(`vg_cmac_aes_update` needs 2176 bytes). A call (`bl`) stores nothing in
+zeros, and `[384, 448)` the working space of `vg_cmac_aes_update`
+(`vg_aes_ctr32` needs none). A call (`bl`) stores nothing in
 memory, so no stack is used but the frame.
 
 ## Registers
@@ -224,7 +224,7 @@ def mac (y : Nat) : Prog isa :=
 /-- The arguments of `vg_aes_ctr32` but the data and the number of blocks:
 the key schedule, the rounds, the counter block at `W + 64` and the working
 space. -/
-def ctrArgs : List Instr := [mov .r3 .r16, mov .r4 .r17, .addi .r5 .r14 c1O, .addi .r8 .r14 scrO]
+def ctrArgs : List Instr := [mov .r3 .r16, mov .r4 .r17, .addi .r5 .r14 c1O]
 
 /-- `Yᵣ ⊕ CIPH_K(Ctr₀)` at `W + y`, by `vg_aes_ctr32` on it with a copy of
 `Ctr₀` (which it increments). -/

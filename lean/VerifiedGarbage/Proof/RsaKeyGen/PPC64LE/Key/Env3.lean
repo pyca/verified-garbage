@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Rsa.PPC64LE.CvBytes
 import VerifiedGarbage.Proof.Bignum.ByteWords
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Rsa.PPC64LE.InvCall
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.InvLaw
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.Seqs
 public import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Key.Env
@@ -27,8 +28,10 @@ open VG VG.PPC64LE VG.Proof.Mont VG.Proof.Bignum VG.Proof.Bignum.PPC64LE VG.Proo
 open VG.Impl.Rsa.PPC64LE.Keys (seqs copy sub3 aM aNM aZero aT1 aT3 aT4 sOdd sB sC)
 open VG.Impl.Rsa.PPC64LE.CrtValues (load)
 open VG.Impl.RsaKeyGen.PPC64LE.Key (nArr aDv aOne invOf)
+open VG.Impl.Rsa.PPC64LE.CrtValues (invCall)
+open VG.Proof.Rsa.PPC64LE.CrtValues (invCall_ok)
 open VG.Proof.Rsa.KeyWorkspace (arr S num slot)
-open VG.Proof.Rsa.PPC64LE (InvLaw invBatchArrs)
+open VG.Proof.Rsa.PPC64LE (InvLaw invBatchArrs invBatchRegs)
 
 /-- The arrays `invOf` writes. -/
 abbrev invOfArrs : List Nat := [0, 1, 2, 3, 4, 5, 6, 7, aM, aNM, aT1, VG.Impl.Rsa.PPC64LE.Keys.aT2, aT3, aT4]
@@ -37,7 +40,7 @@ section
 variable {s : State} {B : Addr} {Z w : Nat} {V F : Nat → Nat}
 
 theorem invOf_eq (a m : Nat) (k : List Instr) : invOf a m k =
-    .seq (copy aM m) (.seq (copy 0 a) (.seq (.block k) VG.Impl.Rsa.PPC64LE.InvBatch.inverse)) := rfl
+    .seq (copy aM m) (.seq (copy 0 a) (.seq (.block k) invCall)) := rfl
 
 /-- What a width block does: `r11 := n`, and nothing else. -/
 def Width (k : List Instr) (s : State) (n : Nat) : Prop :=
@@ -71,15 +74,15 @@ theorem invOfE [InvLaw] (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) (hw : 10 �
     simp only [invOfArrs, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
     obtain ⟨n0, -, -, -, -, -, -, -, nM, -⟩ := hn
     rw [k3.arrs j hj]; simp [upd, n0, nM]
-  refine WP.mono (InvLaw.inverse_ok h3 (by decide) nArr_le hw e11 hn1 hnw hfit v0 han vM hmn odd) fun u ⟨hu, ku, kr, v⟩ => ⟨hu, ?_, ?_, ?_⟩
+  refine WP.mono (invCall_ok h3 (by decide) nArr_le hw e11 hn1 hnw hfit v0 han vM hmn odd) fun u ⟨hu, ku, kr, v⟩ => ⟨hu, ?_, ?_, ?_⟩
   · obtain ⟨g, dv, lt⟩ := v gt
     refine ⟨fun j => num u.mem B w j, ?_, fun j hj hn => ?_, g, dv, lt⟩
     · refine k3.step ku (fit_of h3) (V' := fun j => num u.mem B w j) (fun j hj hn => ?_) (fun j _ => rfl)
         (fun _ _ _ => rfl) (fun d hd => by simp at hd) (fun hj => absurd hj (by decide))
       rw [← k3.arrs j hj]
       exact ku.num (fun x hx e => hn (e ▸ hx)) (by decide) (fit_of h3 j hj)
-    · have sub : ∀ x ∈ invBatchArrs, x ∈ invOfArrs := by decide
-      have hn' : j ∉ invBatchArrs := fun hm' => hn (sub j hm')
+    · have sub : ∀ x ∈ aNM :: invBatchArrs, x ∈ invOfArrs := by decide
+      have hn' : j ∉ aNM :: invBatchArrs := fun hm' => hn (sub j hm')
       show num u.mem B w j = V j
       rw [ku.num (fun x hx e => hn' (by rw [← e]; exact hx)) (by decide) (fit_of h3 j hj), vO j hj hn]
   · exact ((f1.trans f2).trans (m3 ▸ KK.refl B w t2.mem)).trans (KK.of ku (by decide) (by decide))

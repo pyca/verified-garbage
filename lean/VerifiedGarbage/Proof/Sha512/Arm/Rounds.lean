@@ -108,7 +108,7 @@ def _root_.VG.Impl.Sha512.Arm.Op.term : Op → Word64.Term
 
 theorem evalOps_term (x : BitVec 64) (ops : List Op) :
     evalOps x ops = Word64.evalOps x (ops.map Op.term) := by
-  have e : (fun a (o : Op) => a ^^^ o.eval x) = fun a o => a ^^^ o.term.eval x :=
+  obtain e : (fun a (o : Op) => a ^^^ o.eval x) = fun a o => a ^^^ o.term.eval x :=
     funext fun _ => funext fun o => by cases o <;> rfl
   rw [evalOps, Word64.evalOps, List.foldl_map, e]
 
@@ -542,13 +542,13 @@ theorem wp_ch {f g N : Nat} {B : BitVec 32} {e : BitVec 64} (hN : N ≤ 4096) (h
   refine wp_ld1 (B := B) (by omega_using [hN, hg]) (by rw [o₁.gpr _ (by decide), hb]) (by rw [o₁.wr]; exact (hR g hg).1)
     fun s₂ o₂ v₂ => ?_
   refine wp_eor1 fun s₃ o₃ v₃ => wp_and1 fun s₄ o₄ v₄ => wp_eor1 fun s₅ o₅ v₅ => ?_
-  have O₅ := (((o₁.trans o₂).trans o₃).trans o₄).trans o₅
+  obtain O₅ := (((o₁.trans o₂).trans o₃).trans o₄).trans o₅
   refine wp_ld1 (B := B) (by omega_using [hN, hf]) (by rw [O₅.gpr _ (by decide), hb]) (by rw [O₅.wr]; exact (hR f hf).2)
     fun s₆ o₆ v₆ => ?_
   refine wp_ld1 (B := B) (by omega_using [hN, hg]) (by rw [o₆.gpr _ (by decide), O₅.gpr _ (by decide), hb])
     (by rw [o₆.wr, O₅.wr]; exact (hR g hg).2) fun s₇ o₇ v₇ => ?_
   refine wp_eor1 fun s₈ o₈ v₈ => wp_and1 fun s₉ o₉ v₉ => wp_eor1 fun s₁₀ o₁₀ v₁₀ => ?_
-  have O := (((((O₅.trans o₆).trans o₇).trans o₈).trans o₉).trans o₁₀)
+  obtain O := (((((O₅.trans o₆).trans o₇).trans o₈).trans o₉).trans o₁₀)
   refine k s₁₀ (O.mono (by decide)) ?_ ?_
   all_goals
     simp (disch := decide) only [o₁₀.gpr, o₉.gpr, o₈.gpr, o₇.gpr, o₆.gpr, o₅.gpr, o₄.gpr, o₃.gpr,
@@ -579,7 +579,7 @@ theorem wp_maj {b c N : Nat} {B : BitVec 32} {a : BitVec 64} (hN : N ≤ 4096) (
     (by simp only [o₉.wr, o₈.wr, o₇.wr, o₆.wr, o₅.wr, o₄.wr, o₃.wr, o₂.wr, o₁.wr]; exact (hR c hc).2)
     fun s₁₀ o₁₀ v₁₀ => ?_
   refine wp_and1 fun s₁₁ o₁₁ v₁₁ => wp_orr1 fun s₁₂ o₁₂ v₁₂ => ?_
-  have O := (((((((((((o₁.trans o₂).trans o₃).trans o₄).trans o₅).trans o₆).trans o₇).trans o₈).trans
+  obtain O := (((((((((((o₁.trans o₂).trans o₃).trans o₄).trans o₅).trans o₆).trans o₇).trans o₈).trans
     o₉).trans o₁₀).trans o₁₁).trans o₁₂)
   refine k s₁₂ (O.mono (by decide)) ?_ ?_
   all_goals
@@ -619,13 +619,13 @@ theorem wp_loadW {i o N : Nat} {Bb B : BitVec 32} (hN : N ≤ 4096) (ho : o + 8 
   refine wp_ldr (by omega_using [hio]) (by rw [hbb]) hin fun s₁ u₁ => ?_
   refine wp_ldr (by omega_using [hio]) (by rw [u₁.other _ (by decide), hbb]) (by rw [u₁.rd, u₁.wr]; exact hin')
     fun s₀ u₀ => ?_
-  have o₁ : Only [X0, X1] s s₀ := (Only.of_upd u₁).trans (Only.of_upd u₀)
-  have p₁ : Pair s₀ X0 X1 (rd64 s.mem Bb i) := by
+  obtain o₁ : Only [X0, X1] s s₀ := (Only.of_upd u₁).trans (Only.of_upd u₀)
+  obtain p₁ : Pair s₀ X0 X1 (rd64 s.mem Bb i) := by
     refine ⟨?_, ?_⟩
     · rw [u₀.other _ (by decide), u₁.gpr, lo_rd64]
     · rw [u₀.gpr, u₁.mem, hi_rd64]
   refine wp_rev fun s₂ u₂ => wp_rev fun s₃ u₃ => ?_
-  have O := (o₁.trans (Only.of_upd u₂)).trans (Only.of_upd u₃)
+  obtain O := (o₁.trans (Only.of_upd u₂)).trans (Only.of_upd u₃)
   refine wp_st (B := B) (x := rev (lo (rd64 s.mem Bb i)) ++ rev (hi (rd64 s.mem Bb i))) (by omega_using [hN, ho])
     (by rw [O.gpr _ (by decide), hb]) ⟨?_, ?_⟩ (by rw [O.wr]; exact (hR o ho).1)
     (by rw [O.wr]; exact (hR o ho).2) fun s₄ u₄ => k s₄ ?_
@@ -645,28 +645,28 @@ theorem wp_expandW {o2 o7 o15 o16 N : Nat} {B : BitVec 32} (hN : N ≤ 4096) (h2
   refine wp_ld (by decide) (by decide) (by omega_using [hN, h2]) hb (hR o2 h2).1 (hR o2 h2).2 fun s₁ o₁ p₁ => ?_
   refine wp_sig (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) p₁
     fun s₂ o₂ p₂ => ?_
-  have O₂ := o₁.trans o₂
+  obtain O₂ := o₁.trans o₂
   refine wp_ld (by decide) (by decide) (by omega_using [hN, h7]) (by rw [O₂.gpr _ (by decide), hb])
     (by rw [O₂.wr]; exact (hR o7 h7).1) (by rw [O₂.wr]; exact (hR o7 h7).2) fun s₃ o₃ p₃ => ?_
   refine wp_add64 (by decide) (by decide) (p₂.of_only o₃ (by decide) (by decide)) p₃
     fun s₄ o₄ p₄ => ?_
-  have O₄ := (O₂.trans o₃).trans o₄
+  obtain O₄ := (O₂.trans o₃).trans o₄
   refine wp_ld (by decide) (by decide) (by omega_using [hN, h15]) (by rw [O₄.gpr _ (by decide), hb])
     (by rw [O₄.wr]; exact (hR o15 h15).1) (by rw [O₄.wr]; exact (hR o15 h15).2) fun s₅ o₅ p₅ => ?_
   refine wp_sig (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) p₅
     fun s₆ o₆ p₆ => ?_
   refine wp_add64 (by decide) (by decide) ((p₄.of_only o₅ (by decide) (by decide)).of_only o₆
     (by decide) (by decide)) p₆ fun s₇ o₇ p₇ => ?_
-  have O₇ := ((O₄.trans o₅).trans o₆).trans o₇
+  obtain O₇ := ((O₄.trans o₅).trans o₆).trans o₇
   refine wp_ld (by decide) (by decide) (by omega_using [hN, h16]) (by rw [O₇.gpr _ (by decide), hb])
     (by rw [O₇.wr]; exact (hR o16 h16).1) (by rw [O₇.wr]; exact (hR o16 h16).2) fun s₈ o₈ p₈ => ?_
   refine wp_add64 (by decide) (by decide) (p₇.of_only o₈ (by decide) (by decide)) p₈
     fun s₉ o₉ p₉ => ?_
-  have O₉ := (O₇.trans o₈).trans o₉
+  obtain O₉ := (O₇.trans o₈).trans o₉
   refine wp_st (by omega_using [hN, h16]) (by rw [O₉.gpr _ (by decide), hb]) p₉ (by rw [O₉.wr]; exact (hR o16 h16).1)
     (by rw [O₉.wr]; exact (hR o16 h16).2) fun s₁₀ u₁₀ => k s₁₀ ?_
   rw [O₉.mem] at u₁₀
-  have e : ∀ m : Mem, m = s.mem → evalOps (rd64 m B o2) ssig1 + rd64 m B o7 +
+  obtain e : ∀ m : Mem, m = s.mem → evalOps (rd64 m B o2) ssig1 + rd64 m B o7 +
       evalOps (rd64 m B o15) ssig0 + rd64 m B o16 = Spec.Sha512.ssig1 (rd64 s.mem B o2) +
       rd64 s.mem B o7 + Spec.Sha512.ssig0 (rd64 s.mem B o15) + rd64 s.mem B o16 := by
     rintro m rfl; rw [ssig1_eq, ssig0_eq]
@@ -708,8 +708,8 @@ theorem wp_roundW {a b c d e f g h w : Nat} {k : BitVec 64} {B V : BitVec 32}
     fun s₃ o₃ p₃ => ?_
   refine wp_add64 (by decide) (by decide) ((p₁.of_only o₂ (by decide) (by decide)).of_only o₃
     (by decide) (by decide)) p₃ fun s₄ o₄ p₄ => ?_
-  have O₄ := ((o₁.trans o₂).trans o₃).trans o₄
-  have p₂' := (p₂.of_only o₃ (by decide) (by decide)).of_only o₄ (by decide) (by decide)
+  obtain O₄ := ((o₁.trans o₂).trans o₃).trans o₄
+  obtain p₂' := (p₂.of_only o₃ (by decide) (by decide)).of_only o₄ (by decide) (by decide)
   refine wp_ch (N := 64) (by omega_using []) hf hg (by rw [O₄.wr]; exact hRV) (by rw [O₄.gpr _ (by decide), h3])
     p₂' fun s₅ o₅ v₅ v₅' => ?_
   rw [O₄.mem] at v₅ v₅'
@@ -718,38 +718,38 @@ theorem wp_roundW {a b c d e f g h w : Nat} {k : BitVec 64} {B V : BitVec 32}
   refine wp_const64 (x := k) (by decide) fun s₇ o₇ p₇ => ?_
   refine wp_add64 (by decide) (by decide) (p₆.of_only o₇ (by decide) (by decide)) p₇
     fun s₈ o₈ p₈ => ?_
-  have O₈ := (((O₄.trans o₅).trans o₆).trans o₇).trans o₈
+  obtain O₈ := (((O₄.trans o₅).trans o₆).trans o₇).trans o₈
   refine wp_ld (by decide) (by decide) (by omega_using [hw]) (by rw [O₈.gpr _ (by decide), h0])
     (by rw [O₈.wr]; exact (hRB w hw).1) (by rw [O₈.wr]; exact (hRB w hw).2) fun s₉ o₉ p₉ => ?_
   rw [O₈.mem] at p₉
   refine wp_add64 (by decide) (by decide) (p₈.of_only o₉ (by decide) (by decide)) p₉
     fun s₁₀ o₁₀ p₁₀ => ?_
-  have O₁₀ := (O₈.trans o₉).trans o₁₀
+  obtain O₁₀ := (O₈.trans o₉).trans o₁₀
   -- e' = d + T₁
   refine wp_ld (by decide) (by decide) (by omega_using [hd]) (by rw [O₁₀.gpr _ (by decide), h3])
     (by rw [O₁₀.wr]; exact (hRV d hd).1) (by rw [O₁₀.wr]; exact (hRV d hd).2) fun s₁₁ o₁₁ p₁₁ => ?_
   rw [O₁₀.mem] at p₁₁
   refine wp_add64 (by decide) (by decide) p₁₁ (p₁₀.of_only o₁₁ (by decide) (by decide))
     fun s₁₂ o₁₂ p₁₂ => ?_
-  have O₁₂ := (O₁₀.trans o₁₁).trans o₁₂
+  obtain O₁₂ := (O₁₀.trans o₁₁).trans o₁₂
   -- a' = T₁ + Σ₀(a) + Maj(a, b, c)
   refine wp_ld (by decide) (by decide) (by omega_using [ha]) (by rw [O₁₂.gpr _ (by decide), h3])
     (by rw [O₁₂.wr]; exact (hRV a ha).1) (by rw [O₁₂.wr]; exact (hRV a ha).2) fun s₁₃ o₁₃ p₁₃ => ?_
   rw [O₁₂.mem] at p₁₃
   refine wp_sig (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) p₁₃
     fun s₁₄ o₁₄ p₁₄ => ?_
-  have p₁₀' := ((p₁₀.of_only o₁₁ (by decide) (by decide)).of_only o₁₂ (by decide) (by decide)).of_only
+  obtain p₁₀' := ((p₁₀.of_only o₁₁ (by decide) (by decide)).of_only o₁₂ (by decide) (by decide)).of_only
     o₁₃ (by decide) (by decide) |>.of_only o₁₄ (by decide) (by decide)
   refine wp_add64 (by decide) (by decide) p₁₀' p₁₄ fun s₁₅ o₁₅ p₁₅ => ?_
-  have O₁₅ := ((O₁₂.trans o₁₃).trans o₁₄).trans o₁₅
-  have p₁₃' := (p₁₃.of_only o₁₄ (by decide) (by decide)).of_only o₁₅ (by decide) (by decide)
+  obtain O₁₅ := ((O₁₂.trans o₁₃).trans o₁₄).trans o₁₅
+  obtain p₁₃' := (p₁₃.of_only o₁₄ (by decide) (by decide)).of_only o₁₅ (by decide) (by decide)
   refine wp_maj (N := 64) (by omega_using []) hb hc (by rw [O₁₅.wr]; exact hRV) (by rw [O₁₅.gpr _ (by decide), h3])
     p₁₃' fun s₁₆ o₁₆ v₁₆ v₁₆' => ?_
   rw [O₁₅.mem] at v₁₆ v₁₆'
   refine wp_add64 (by decide) (by decide) (p₁₅.of_only o₁₆ (by decide) (by decide)) ⟨v₁₆, v₁₆'⟩
     fun s₁₇ o₁₇ p₁₇ => ?_
-  have O₁₇ := (O₁₅.trans o₁₆).trans o₁₇
-  have p₁₂' := (((((p₁₂.of_only o₁₃ (by decide) (by decide)).of_only o₁₄ (by decide) (by decide)).of_only
+  obtain O₁₇ := (O₁₅.trans o₁₆).trans o₁₇
+  obtain p₁₂' := (((((p₁₂.of_only o₁₃ (by decide) (by decide)).of_only o₁₄ (by decide) (by decide)).of_only
     o₁₅ (by decide) (by decide)).of_only o₁₆ (by decide) (by decide)).of_only o₁₇ (by decide) (by decide))
   -- Store them.
   refine wp_st (by omega_using [hh]) (by rw [O₁₇.gpr _ (by decide), h3]) p₁₇ (by rw [O₁₇.wr]; exact (hRV h hh).1)
@@ -915,16 +915,16 @@ theorem round_ok {st scr : BitVec 32} {H : HashValue} {M : Block} {s₀ s : Stat
     (c : Ctx st scr s) (hI : RInv st scr H M s₀ t s) (ht : t < 80) (s₁ : State)
     (w₁ : Wrote temps s s₁ (write64 s.mem scr (wOff t) (W M t))) :
     WP isa (.block (round t)) s₁ (RInv st scr H M s₀ (t + 1)) := by
-  have c₁ := c.of_wrote w₁ (by decide) (by decide)
+  obtain c₁ := c.of_wrote w₁ (by decide) (by decide)
   have fitV := c.fitV
   have fitS := c.fitS
   let v := Spec.Sha512.rounds H M t
   try rewrite [show Spec.Sha512.rounds H M t = v from rfl] at *
   have hv : v = Spec.Sha512.rounds H M t := rfl
-  have hvar : ∀ k (hk : k < 8), rd64 s₁.mem scr (vOff t k) = v[k] := fun k hk => by
+  obtain hvar : ∀ k (hk : k < 8), rd64 s₁.mem scr (vOff t k) = v[k] := fun k hk => by
     rw [w₁.mem, rd64_write64_ne _ _ (by have := wOff_lt' t; omega_using [fitV, this]) (by have := vOff_lt' t k; omega_using [fitV, this])
       (.inr (vw_sep t k t)), hI.vars k hk]
-  have hw : rd64 s₁.mem scr (wOff t) = W M t := by
+  obtain hw : rd64 s₁.mem scr (wOff t) = W M t := by
     rw [w₁.mem, rd64_write64_self _ _ (by have := wOff_lt' t; omega_using [fitV, this])]
   rw [← List.append_nil (round t)]
   unfold round
@@ -933,10 +933,10 @@ theorem round_ok {st scr : BitVec 32} {H : HashValue} {M : Block} {s₀ s : Stat
     (fun o ho => c₁.wV o (by omega_using [ho])) c₁.r3 c₁.r3 fun s₂ w₂ => WP.block_nil ?_
   rw [hvar 0 (by omega_using []), hvar 1 (by omega_using []), hvar 2 (by omega_using []), hvar 3 (by omega_using []), hvar 4 (by omega_using []),
     hvar 5 (by omega_using []), hvar 6 (by omega_using []), hvar 7 (by omega_using []), hw] at w₂
-  have hnext : Spec.Sha512.rounds H M (t + 1) = roundKW v (Spec.Sha512.K t) (W M t) := by
+  obtain hnext : Spec.Sha512.rounds H M (t + 1) = roundKW v (Spec.Sha512.K t) (W M t) := by
     rw [rounds_succ, round_eq]
-  have v3 := vOff_lt' t 3
-  have v7 := vOff_lt' t 7
+  obtain v3 := vOff_lt' t 3
+  obtain v7 := vOff_lt' t 7
   refine ⟨fun k hk => ?_, fun j hj hj' => ?_, fun k hk => ?_, fun r hr => ?_, ?_,
     ?_, ?_, ?_⟩
   · rw [w₂.mem, hnext]
@@ -980,9 +980,9 @@ theorem round_ok {st scr : BitVec 32} {H : HashValue} {M : Block} {s₀ s : Stat
   · rw [w₂.wr, w₁.wr, hI.wr]
   · rw [w₂.sp, w₁.sp, hI.sp]
   · rw [w₂.mem, w₁.mem]
-    have w := wOff_lt t
-    have v3 := vOff_lt t 3
-    have v7 := vOff_lt t 7
+    obtain w := wOff_lt t
+    obtain v3 := vOff_lt t 3
+    obtain v7 := vOff_lt t 7
     exact frame_write64 (N := 192) (frame_write64 (N := 192) (frame_write64 (N := 192) hI.frame (by simp)
       (by omega_using [fitV]) (wOff_lt t) _) (by simp) (by omega_using [fitV]) (by omega_using [v7]) _) (by simp) (by omega_using [fitV]) (by omega_using [v3]) _
 
@@ -1006,7 +1006,7 @@ theorem step_ok {st scr bk : BitVec 32} {H : HashValue} {M : Block} {s₀ s : St
     (c₀ : Ctx st scr s₀) (hB : BlkCtx scr bk s₀) (hM : Raw bk M s₀.mem)
     (hI : RInv st scr H M s₀ t s) (ht : t < 80) :
     WP isa (.block (schedule t ++ round t)) s (RInv st scr H M s₀ (t + 1)) := by
-  have c := c₀.of_rinv hI
+  obtain c := c₀.of_rinv hI
   by_cases h16 : t < 16
   · unfold schedule; simp only [h16, ↓reduceIte]
     refine wp_loadW (N := 224) (by omega_using []) (wOff_lt' t) (by omega_using [h16]) c.wV c.r3
@@ -1016,13 +1016,13 @@ theorem step_ok {st scr bk : BitVec 32} {H : HashValue} {M : Block} {s₀ s : St
       hM t h16] at w₁
     exact (w₁.mono' (by decide))
   · unfold schedule; simp only [h16, ↓reduceIte]
-    have e : ∀ i, 1 ≤ i → i ≤ 16 → rd64 s.mem scr (wOff (t + 16 - i)) = W M (t - i) :=
+    obtain e : ∀ i, 1 ≤ i → i ≤ 16 → rd64 s.mem scr (wOff (t + 16 - i)) = W M (t - i) :=
       fun i hi hi' => by
         rw [show wOff (t + 16 - i) = wOff (t - i) by simp only [wOff]; omega_using [h16, hi']]
         exact hI.win _ (by omega_using [h16, hi]) (by omega_using [hi'])
     refine wp_expandW (N := 224) (by omega_using []) (wOff_lt' _) (wOff_lt' _) (wOff_lt' _) (wOff_lt' _) c.wV
       c.r3 fun s₁ w₁ => round_ok c hI ht s₁ ?_
-    have e16 : rd64 s.mem scr (wOff t) = W M (t - 16) := by
+    obtain e16 : rd64 s.mem scr (wOff t) = W M (t - 16) := by
       rw [← e 16 (by omega_using []) (by omega_using []), show t + 16 - 16 = t by omega_using []]
     rw [show t + 14 = t + 16 - 2 by omega_using [], show t + 9 = t + 16 - 7 by omega_using [],
       show t + 1 = t + 16 - 15 by omega_using [], e 2 (by omega_using []) (by omega_using []), e 7 (by omega_using []) (by omega_using []),

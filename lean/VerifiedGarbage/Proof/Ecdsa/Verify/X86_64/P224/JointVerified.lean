@@ -1,52 +1,50 @@
 module
 
+public import VerifiedGarbage.Spec.Ecdsa.Verify.P224
+public import VerifiedGarbage.TCB.Registration
+import VerifiedGarbage.Proof.EcKey.X86_64.Scrub.Out
+import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
 public import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Hash
 import VerifiedGarbage.Proof.Ecdsa.Verify.Curves
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Hash
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.Curves
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P224.Contract
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P224.JointCT
 public import VerifiedGarbage.Impl.Ecdsa.Verify.P224.X86_64
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvSpec
 public import VerifiedGarbage.Proof.Weierstrass.CombW
 public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
+public import VerifiedGarbage.Proof.Framework.X86_64.CallInlineN
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
-
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P224.JointErased
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P224.JointCT
 import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P224.JointLit
 import Batteries.Data.List.Lemmas
 import VerifiedGarbage.Proof.Framework.LitShare
 import VerifiedGarbage.Impl.P224.X86_64.Joint
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointFrame
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointMain
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P224.JointChecks
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Main
-import Mathlib.Data.Finset.Card
-import Mathlib.Data.Nat.Find
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P224.JointContract
 import VerifiedGarbage.Proof.P224.X86_64.JointLayout
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P224.Contract
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P224.JointCT
 meta import VerifiedGarbage.Impl.Ecdsa.Verify.P224.X86_64
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.InvSpec
 meta import VerifiedGarbage.Proof.Weierstrass.CombW
 meta import VerifiedGarbage.Proof.Framework.X86_64.CallInline
+meta import VerifiedGarbage.Proof.Framework.X86_64.CallInlineN
 meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P224.JointErased
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P224.JointCT
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P224.JointLit
 meta import Batteries.Data.List.Lemmas
 meta import VerifiedGarbage.Proof.Framework.LitShare
 meta import VerifiedGarbage.Impl.P224.X86_64.Joint
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointFrame
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointMain
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P224.JointChecks
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Main
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P224.JointContract
 meta import VerifiedGarbage.Proof.P224.X86_64.JointLayout
+
 /-!
 # ECDSA verification over P-224 on x86-64: `Verified`
 
@@ -70,7 +68,7 @@ section
 namespace VG.Proof.P224.X86_64
 open VG VG.Impl.P224.X86_64 VG.Proof.Ecdsa.Verify.X86_64
 
-theorem joint_frame_layout : JointFrameLayout p224v publicJoint := by
+theorem joint_frame_layout : JointFrameLayout p224v publicJointF := by
   constructor
   · unfold VG.Proof.Ecdsa.X86_64.FixedOk
     decide +kernel
@@ -96,7 +94,7 @@ open VG.Proof.Ecdsa.X86_64 VG.Proof.P224.X86_64 VG.Proof.Weierstrass VG.Proof.We
 theorem jointVerify_p224_ok (hL : Law Spec.P224.curve)
     (hT : CombOkW Spec.P224.curve 7 37 Impl.P224.p224Comb7 Impl.P224.p224Comb7Start)
     (hI : InvSounds) {s : State} (hp : VPre p224v s) :
-    WP isa (Impl.Ecdsa.Verify.X86_64.Cfg.jointVerify p224v publicJoint (Joint.jacDouble publicJoint.K)).inline s
+    WP isa (Impl.Ecdsa.Verify.X86_64.Cfg.jointVerify p224v publicJointF (jointDouble publicJointF.K)).inline s
       fun t => (∀ r∈Cfg.saved.map Prod.fst,t.gpr r=s.gpr r) ∧ VPost p224v s t := by
   have hc := p224v_ok hI
   refine jointVerify_ok hc.toBaseCfgOk hL rfl (by decide +kernel) (by decide +kernel) hp ?_
@@ -160,8 +158,8 @@ def verifyK₀ : Contract isa :=
     post := verifyX86_64.post
     pub := (Proof.Ecdsa.verifyContract Spec.Ecdsa.P224.inst (X86_64.abi.withConsts p224.combConsts)).pub }
 
-theorem sat_spec8 :
-    (Proof.Ecdsa.verifyContract Spec.Ecdsa.P224.inst (X86_64.abi.withConsts p224.combConsts) 8).pre satState := by
+theorem sat_spec16 :
+    (Proof.Ecdsa.verifyContract Spec.Ecdsa.P224.inst (X86_64.abi.withConsts p224.combConsts) 16).pre satState := by
   have held : ∀ i < p224W.length, satState.mem.readW (satState.syms "VG_P224_COMB" +
       BitVec.ofNat 64 (8 * i)) 64 = p224W.getD i 0 := satMem_held
   sig_pre [Spec.Ecdsa.P224.inst, Proof.Ecdsa.verifyContract, Proof.Ecdsa.verifySig,
@@ -170,11 +168,12 @@ theorem sat_spec8 :
   sig_and_intros
   all_goals first | exact Region.disjoint_of_sep (by decide) | rfl | exact held | decide
 
-/-- The contract with 8 bytes of stack, for the calls' return address. -/
-theorem implies8 :
-    verifyK₀.Implies (Proof.Ecdsa.verifyContract Spec.Ecdsa.P224.inst (X86_64.abi.withConsts p224.combConsts) 8) :=
-  ⟨fun _ hs => Sig.pre_stack0 hs, fun s s' hs hp => implies.post s s' (Sig.pre_stack0 hs) hp,
-    fun _ _ _ _ hp => hp, ⟨satState, sat_spec8⟩⟩
+/-- The contract with 16 bytes of stack, for the calls' return addresses
+(the additions call the end of the addition). -/
+theorem implies16 :
+    verifyK₀.Implies (Proof.Ecdsa.verifyContract Spec.Ecdsa.P224.inst (X86_64.abi.withConsts p224.combConsts) 16) :=
+  ⟨fun _ hs => Sig.pre_stack0_16 hs, fun s s' hs hp => implies.post s s' (Sig.pre_stack0_16 hs) hp,
+    fun _ _ _ _ hp => hp, ⟨satState, sat_spec16⟩⟩
 
 section
 variable (hL : Weierstrass.Law Spec.P224.curve)
@@ -183,26 +182,49 @@ variable (hL : Weierstrass.Law Spec.P224.curve)
 include hL hT hI
 
 theorem jointVerify_x86 (s : State) (hs : verifyX86_64.pre s) :
-    ∃ t s',Exec isa jointVerifyP224.inline s t s' ∧ abiPreserved s s' ∧ verifyX86_64.post s s' :=
-  verify_abi_of_wp hs (jointVerify_p224_ok hL hT hI (pre_of hs))
-    (by rw [Code.allInstrs_inline]; exact jointVerifyP224_rspMxcsr) (Code.noCalls_inline jointVerifyP224_inlineOk)
+    ∃ t s',Exec isa jointVerifyP224.inlineAll s t s' ∧ abiPreserved s s' ∧ verifyX86_64.post s s' := by
+  rw [jointVerifyP224_inlineAll]
+  exact verify_abi_of_wp hs (jointVerify_p224_ok hL hT hI (pre_of hs))
+    (by rw [← jointVerifyP224_inlineAll]; exact Code.allInstrs_inlineAll jointVerifyP224_rspMxcsr)
+    (by rw [← jointVerifyP224_inlineAll]; exact Code.noCalls_inlineAll jointVerifyP224_inlineOk)
 
 theorem jointVerify_verified : Verified X86_64.target jointVerifyP224
-    (Proof.Ecdsa.verifyContract Spec.Ecdsa.P224.inst (X86_64.abi.withConsts p224.combConsts) 8) :=
-  Verified.of_inline (k₀ := verifyK₀) jointVerifyP224_inlineOk (fun s hs => jointVerify_x86 hL hT hI s (implies.pre _ hs))
-    (jointVerify_ct hL hT hI) implies8 (fun _ h => Sig.clear_of_pre_consts h) (fun _ _ _ _ _ hp => hp)
-    fun s₁ s₂ h₁ h₂ hp => (implies.pub s₁ s₂ (Sig.pre_stack0 h₁) (Sig.pre_stack0 h₂) hp).1
+    (Proof.Ecdsa.verifyContract Spec.Ecdsa.P224.inst (X86_64.abi.withConsts p224.combConsts) 16) :=
+  Verified.of_inlineAll (k₀ := verifyK₀) jointVerifyP224_inlineOk (by decide)
+    (fun s hs => jointVerify_x86 hL hT hI s (implies.pre _ hs))
+    (by rw [jointVerifyP224_inlineAll]; exact jointVerify_ct hL hT hI) implies16
+    (fun _ h => Sig.clearN_of_pre_consts (d := 1) h) (fun _ _ _ _ _ hp => hp)
+    fun s₁ s₂ h₁ h₂ hp => (implies.pub s₁ s₂ (Sig.pre_stack0_16 h₁) (Sig.pre_stack0_16 h₂) hp).1
 
 /-- `vg_ecdsa_p224_verify`, taking the hash function's output: `jointVerify_verified`,
 run on the `len` bytes of the hash (`verifyHash_verified_cons`). -/
 theorem verifyHash_verified : Verified X86_64.target
     (Impl.Ecdsa.X86_64.VerifyHash.verifyHash Spec.Ecdsa.P224.inst.curve.len false jointVerifyP224)
-    (Spec.Ecdsa.P224.inst.verifyHashContract (X86_64.abi.withConsts p224.combConsts) 96) :=
+    (Spec.Ecdsa.P224.inst.verifyHashContract (X86_64.abi.withConsts p224.combConsts) 104) :=
   Hash.verifyHash_verified_cons Proof.Ecdsa.Verify.p224_len (by decide) (jointVerify_verified hL hT hI)
     (Code.all_of_spTest (by lit_decide)) (by lit_decide) (by taint_decide)
-    (Hash.hashSat_cons (by decide) sat_spec8 (by decide) fun r hr => by
+    (Hash.hashSat_cons (by decide) sat_spec16 (by decide) fun r hr => by
       simp only [satState, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl <;> exact Region.disjoint_of_sep (by decide))
+
+omit hL hT hI in
+theorem verifyHash_codeSp : (Impl.Ecdsa.X86_64.VerifyHash.verifyHash Spec.Ecdsa.P224.inst.curve.len false Impl.Ecdsa.Verify.X86_64.jointVerifyP224).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
+
+/-- `vg_ecdsa_p224_verify` as emitted (`Impl.Ecdsa.X86_64.VerifyHash.Fn.verifyHash`), its cleanup included,
+meets its contract in constant time and returns without secret residue. -/
+theorem verifyHash_scrubbed :
+    VerifiedScrubbed X86_64.target (Impl.Ecdsa.X86_64.VerifyHash.Fn.verifyHash Spec.Ecdsa.P224.inst.curve.len false Impl.Ecdsa.Verify.X86_64.jointVerifyP224 104)
+      (Spec.Ecdsa.P224.verifyHashApi.contract (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p224.combConsts) 104) 32 :=
+  X86_64.Scrub.verifiedScrubbedAll (api := Spec.Ecdsa.P224.verifyHashApi)
+    { code := Impl.Ecdsa.X86_64.VerifyHash.verifyHash Spec.Ecdsa.P224.inst.curve.len false Impl.Ecdsa.Verify.X86_64.jointVerifyP224
+      stack := 104
+      verified := verifyHash_verified hL hT hI
+      spSafe := verifyHash_codeSp } .sse (VG.Proof.EcKey.X86_64.Scrub.verifyHashOut_consts 104 Spec.Ecdsa.P224.inst Impl.Ecdsa.X86_64.p224.combConsts)
+
+omit hL hT hI in
+theorem verifyHash_spSafe : (Impl.Ecdsa.X86_64.VerifyHash.Fn.verifyHash Spec.Ecdsa.P224.inst.curve.len false Impl.Ecdsa.Verify.X86_64.jointVerifyP224 104).all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  X86_64.Scrub.scrubKs_spSafe verifyHash_codeSp
 
 end
 end VG.Proof.Ecdsa.Verify.X86_64.P224

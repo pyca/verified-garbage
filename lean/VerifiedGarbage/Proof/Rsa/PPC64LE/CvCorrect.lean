@@ -275,7 +275,7 @@ theorem cv_correct [InvLaw] (s : State) (h : cvP.pre s) :
   obtain ⟨-, hrd, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, dn, -, -, -, -, -, -, -, wn,
     -⟩ := id h
   obtain ⟨-, -, -, hk, hk'⟩ := pre_scr h
-  unfold code
+  unfold Impl.Rsa.PPC64LE.CrtValues.code
   refine WP.seq (WP.mono (entry_ok h) fun s1 ⟨b1, a1, k1⟩ => ?_)
   have hc : ∀ i < cvK s, (⟨s.gpr .r9, cvK s⟩ : Region).Contains (off (s.gpr .r9) i) 1 := fun i hi =>
     Offset.contains_base _ (by omega_arith) (by omega_arith)

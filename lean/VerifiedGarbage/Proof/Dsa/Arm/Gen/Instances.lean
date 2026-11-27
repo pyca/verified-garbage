@@ -1,20 +1,22 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.Arm.Gen.Verified
-public import VerifiedGarbage.Proof.Dsa.Arm.Gen.Hash
+public import VerifiedGarbage.Proof.Dsa.ParameterPublic
+public import VerifiedGarbage.Proof.Dsa.Arm.Prime.Verified
+public import VerifiedGarbage.Proof.Bignum.Arm.DoubleBackend
+public import VerifiedGarbage.Proof.Dsa.Arm.Gen.QPart
 public import VerifiedGarbage.Proof.Sha1.Arm.Stream.Md
 public import VerifiedGarbage.Proof.Sha256.Arm.Stream.Md
 public import VerifiedGarbage.Proof.Sha256.Arm.Compress
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.KernelRfl
-public import VerifiedGarbage.Proof.Dsa.Arm.Prime.Verified
-public import VerifiedGarbage.Proof.Dsa.Arm.PowVerified
+public import VerifiedGarbage.Proof.Dsa.Arm.Gen.GPart
 public import VerifiedGarbage.Proof.MillerRabin.Arm.Backend
+public import VerifiedGarbage.Proof.Variants.MillerRabin.Arm
+public import VerifiedGarbage.Proof.Variants.DsaArithmetic.Arm
 public import VerifiedGarbage.Impl.Dsa.Arm.Generate
 public import VerifiedGarbage.Impl.Dsa.Arm.ProbablePrime
+public import VerifiedGarbage.Impl.Dsa.Arm.Fn
 public import VerifiedGarbage.Proof.Framework.Arm.CallF
-import Mathlib.Data.Nat.Basic
-import Mathlib.Order.Basic
 
 /-! ### `Dsa.Arm.Gen.HashInst`, which only this module used -/
 
@@ -139,7 +141,45 @@ theorem z_wl : ∀ c ∈ witnessLoad ++ witnessFix, armStack c = 0 := by decide
 
 theorem z_le {c : Prog isa} {B : Nat} (h : armStack c = 0) : armStack c ≤ B := h ▸ Nat.zero_le _
 
-theorem body_stack (name : String) (round : Prog isa) : armStack (body name round) ≤ armStack round := by
+/-- `R² mod c` and the forms of 1 and −1, within the stacks of the product `op`
+and the doubling `dbl`. -/
+theorem montA_stack {op : Nat → Nat → Nat → Prog isa} {dbl : Prog isa} {B : Nat}
+    (hop : ∀ o a b, armStack (op o a b) ≤ B) (hdbl : armStack dbl ≤ B) :
+    armStack (VG.Impl.RsaKeyGen.Arm.Candidate.montA op dbl) ≤ B := by
+  unfold VG.Impl.RsaKeyGen.Arm.Candidate.montA
+  refine seqs_le _ fun c hc => ?_
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hc
+  rcases hc with rfl | rfl | rfl | rfl | rfl | rfl | rfl
+  · exact z_le (by decide)
+  · exact z_le (by decide)
+  · exact z_le (by decide)
+  · have h1 : armStack VG.Impl.Bignum.Arm.r2Init = 0 := by decide
+    have h3 : armStack (.block VG.Impl.Bignum.Arm.r2SquareCount : Prog isa) = 0 := by decide
+    have h4 : armStack (.block VG.Impl.Bignum.Arm.doubleCount : Prog isa) = 0 := by decide
+    have := hop 4 4 4
+    simp only [VG.Impl.Bignum.Arm.r2WithDbl, VG.Impl.Bignum.Arm.DoubleCall.loop, VG.Impl.Bignum.Arm.r2SquaresWith,
+      VG.Impl.Bignum.Arm.r2SquareStepWith, armStack] at h3 h4 ⊢
+    omega_using [h1, h3, h4, this, hdbl]
+  · exact z_le (by decide)
+  · exact z_le (by decide)
+  · exact z_le (by decide)
+
+theorem montB_stack {op : Nat → Nat → Nat → Prog isa} {B : Nat} (hop : ∀ o a b, armStack (op o a b) ≤ B) :
+    armStack (VG.Impl.RsaKeyGen.Arm.Candidate.montB op) ≤ B := by
+  unfold VG.Impl.RsaKeyGen.Arm.Candidate.montB
+  refine seqs_le _ fun c hc => ?_
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hc
+  rcases hc with rfl | rfl | rfl | rfl | rfl | rfl
+  · exact z_le (by decide)
+  · exact z_le (by decide)
+  · exact hop 1 1 4
+  · exact z_le (by decide)
+  · exact z_le (by decide)
+  · exact z_le (by decide)
+
+theorem body_stack (name : String) (round : Prog isa) {op : Nat → Nat → Nat → Prog isa} {dbl : Prog isa} {B : Nat}
+    (hop : ∀ o a b, armStack (op o a b) ≤ B) (hdbl : armStack dbl ≤ B) :
+    armStack (body name round op dbl) ≤ max (armStack round) B := by
   unfold body
   refine seqs_le _ fun c hc => ?_
   simp only [List.mem_append, List.mem_singleton] at hc
@@ -153,8 +193,8 @@ theorem body_stack (name : String) (round : Prog isa) : armStack (body name roun
   rcases hc with rfl | hc | rfl | rfl | rfl | rfl
   · exact z_le (by decide)
   · exact z_le (z_exp c hc)
-  · exact z_le (by decide)
-  · exact z_le (by decide)
+  · exact Nat.le_trans (montA_stack hop hdbl) (Nat.le_max_right _ _)
+  · exact Nat.le_trans (montB_stack hop) (Nat.le_max_right _ _)
   · unfold millerRabin mrBody
     simp only [armStack, seqs, Nat.zero_max, Nat.max_zero]
     refine seqs_le _ fun c hc => ?_
@@ -166,9 +206,9 @@ theorem body_stack (name : String) (round : Prog isa) : armStack (body name roun
       rcases hc with rfl | rfl | rfl | rfl | rfl | rfl
       · exact z_le (by decide)
       · exact z_le (by decide)
+      · exact Nat.le_trans (hop 5 1 4) (Nat.le_max_right _ _)
       · exact z_le (by decide)
-      · exact z_le (by decide)
-      · exact Nat.le_refl _
+      · exact Nat.le_max_left _ _
       · exact z_le (by decide)
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hc
       rcases hc with rfl | rfl
@@ -176,10 +216,11 @@ theorem body_stack (name : String) (round : Prog isa) : armStack (body name roun
       · exact z_le (by decide)
   · exact z_le (by decide)
 
-theorem code_stack (name : String) (round : Prog isa) :
-    armStack (code name round) ≤ 88 + armStack round := by
-  have := body_stack name round
-  simp only [code, armStack, List.length_cons, List.length_nil, Nat.zero_max, Nat.max_zero]
+theorem code_stack (name : String) (round : Prog isa) {op : Nat → Nat → Nat → Prog isa} {dbl : Prog isa} {B : Nat}
+    (hop : ∀ o a b, armStack (op o a b) ≤ B) (hdbl : armStack dbl ≤ B) :
+    armStack (code name round op dbl) ≤ 88 + max (armStack round) B := by
+  have := body_stack name round hop hdbl
+  simp only [Impl.Dsa.Arm.ProbablePrime.code, armStack, List.length_cons, List.length_nil, Nat.zero_max, Nat.max_zero]
   omega_using [this]
 
 end VG.Proof.Dsa.Arm.Prime
@@ -208,37 +249,35 @@ open VG.Impl.Mont.Arm.Dynamic (modS baseS expS resS contextBytes)
 open VG.Impl.Dsa.Arm.ProbablePrime (keyOff keyWords)
 open VG.Impl.Rsa.Arm.Keys (ptr)
 
-/-- The probable-prime test over the round `v`, which tests q and p. -/
-def primeName (v : RoundImpl) : String :=
-  "vg_dsa_probable_prime" ++ v.suffix
+variable {umaal : Bool}
 
-/-- The geometry of `(pLen, qLen)`, hashing with `G`, testing with the round `v`. -/
-def geo (pLen qLen : Nat) (G : Hash) (v : RoundImpl) : Geo where
-  pLen := pLen
-  qLen := qLen
-  e := (8 * pLen - 8 * qLen) / 32 + 1
-  G := G
-  qName := primeName v
-  qCode := Impl.Dsa.Arm.ProbablePrime.code v.name v.code
-  pName := primeName v
-  pCode := Impl.Dsa.Arm.ProbablePrime.code v.name v.code
-  powName := Impl.Dsa.Arm.Pow.name (pLen / 8) ((8 * pLen - 8 * qLen) / 32 + 1)
-  powCode := Impl.Dsa.Arm.Pow.body (pLen / 8) ((8 * pLen - 8 * qLen) / 32 + 1)
-  powMod := modS (pLen / 8)
-  powBase := baseS (pLen / 8)
-  powExp := expS (pLen / 8)
-  powRes := resS (pLen / 8)
-  checkName := "vg_dsa_check_parameters"
-  checkCode := VG.Impl.Dsa.Arm.Generate.checkParameters
+/-- The geometry of `(pLen, qLen)`, hashing with `G`, testing with the round `v`
+(`Impl.Dsa.Arm.Fn.geo`). -/
+def geo (umaal : Bool) (pLen qLen : Nat) (G : Hash) (v : RoundImpl) : Geo :=
+  Impl.Dsa.Arm.Fn.geo umaal pLen qLen G v.suffix v.code v.mont.callOp.op v.mont.dbl
+
+/-- The stack of a call of the shared product: its eight-byte frame and the product's own. -/
+theorem callOp_stack (b : Proof.Bignum.Arm.MontBackend) (o a c : Nat) :
+    FrameStack.armStack (b.callOp.op o a c) ≤ 48 := by
+  have := b.stackOk
+  simp only [Proof.Bignum.Arm.MontBackend.callOp, Impl.Bignum.Arm.MontCall.op, FrameStack.armStack]
+  omega_using [this]
+
+/-- The stack of a call of the shared doubling: its eight-byte frame and the doubling's own. -/
+theorem dbl_stack (b : Proof.Bignum.Arm.MontBackend) : FrameStack.armStack b.dbl ≤ 48 := by
+  have := b.dblOk.1
+  simp only [Proof.Bignum.Arm.MontBackend.dbl, Impl.Bignum.Arm.MontCall.op, FrameStack.armStack]
+  omega_using [this]
 
 theorem primeOk (v : RoundImpl) (bits : Nat) (hb : bits ∈ Impl.Dsa.Arm.ProbablePrime.sizes := by decide) :
-    PrimeOk bits (Impl.Dsa.Arm.ProbablePrime.code v.name v.code) :=
-  ⟨VG.Proof.Dsa.Arm.Prime.prime_verified v,
-    (VG.Proof.Dsa.Arm.Prime.code_stack v.name v.code).trans (by have := v.stack; omega_using [this]), hb⟩
+    PrimeOk bits (Impl.Dsa.Arm.ProbablePrime.code v.name v.code v.mont.callOp.op v.mont.dbl) :=
+  ⟨VG.Proof.Dsa.Arm.Prime.prime_verified v v.mont.callOp v.mont.callDbl,
+    Nat.le_trans (VG.Proof.Dsa.Arm.Prime.code_stack v.name v.code (callOp_stack v.mont) (dbl_stack v.mont))
+      (by have := v.stack; omega_using [this]), hb⟩
 
 theorem powOk (n e : Nat) (hn : 0 < n := by decide) (hn48 : n ≤ 48 := by decide) (he : 0 < e := by decide)
-    (hen : e ≤ 2 * n := by decide) (hs : FrameStack.armStack (Impl.Dsa.Arm.Pow.body n e) ≤ 176 := by decide) :
-    PowOk n e (Impl.Dsa.Arm.Pow.body n e) :=
+    (hen : e ≤ 2 * n := by decide) (hs : FrameStack.armStack (Impl.Dsa.Arm.Pow.body umaal n e) ≤ 224 := by decide) :
+    PowOk n e (Impl.Dsa.Arm.Pow.body umaal n e) :=
   ⟨Proof.Dsa.Arm.Pow.powArm_correct hn hn48 he hen, Proof.Dsa.Arm.Pow.powArm_ct n e hn hn48, hs⟩
 
 /-- A geometry's proofs, from its facts that do not depend on the call. -/
@@ -248,15 +287,16 @@ theorem genOk {g : Geo} {HO : HashOk g.G} {n pL qL : Nat} {G : GP} (hex : ∃ σ
     (gq : g.qLen = qL) (hk4 : 4 * g.G.k = qL) (hH : ∀ m, HO.H m = Spec.Dsa.seedHash (8 * qL) m)
     (hsize : keyOff + 8 * keyWords (8 * pL) ≤ wa pL) (hsizeq : keyOff + 8 * keyWords (8 * qL) ≤ wa pL)
     (hb8 : 8 * qL / 8 ≤ wa pL) (hlen : ∀ bs, 8 * (Spec.Dsa.seedHash (8 * qL) bs).length = 8 * qL)
-    (hck : g.checkCode = VG.Impl.Dsa.Arm.Generate.checkParameters) (hn : 8 * n = pL) (hpm : g.powMod = modS n)
+    (hck : g.checkCode = VG.Impl.Dsa.Arm.Generate.checkParameters umaal) (hn : 8 * n = pL) (hpm : g.powMod = modS n)
     (hpb : g.powBase = baseS n) (hpe : g.powExp = expS n) (hpr : g.powRes = resS n)
     (hctx : contextBytes n ≤ wa pL) (he4 : 4 * g.e ≤ 8 * n) (he0 : 0 < g.e)
     (he : 8 * pL - 8 * qL + 1 ≤ 32 * g.e) : GenOk G g HO n := by
   obtain ⟨σ, pre, rfl⟩ := hex
   subst hp hq
   exact {
-    okq, okp, certs, gcerts, pow, hk4, hH, hsize, hsizeq, hb8, hlen, hck, hn, hpm, hpb, hpe, hpr, hctx, he4,
+    okq, okp, certs, gcerts, pow, hk4, hH, hsize, hsizeq, hb8, hlen, hn, hpm, hpb, hpe, hpr, hctx, he4,
     he0, he
+    hck := ⟨_, hck⟩
     hlq := pre.lens
     hp := gp
     hq := gq
@@ -282,11 +322,11 @@ theorem gStepCerts {g : Geo} (pL n e : Nat) (hp : g.pLen = pL) (he : g.e = e) (h
   rw [← hp, ← hm, ← hb, ← hx, ← hr, ← he] at *
   exact ⟨mod, base, exp, res, st⟩
 
-def geo1 (v : RoundImpl) : Geo := geo 128 20 sha1 v
-def geo2 (v : RoundImpl) : Geo := geo 256 32 sha256 v
-def geo3 (v : RoundImpl) : Geo := geo 384 32 sha256 v
+def geo1 (umaal : Bool) (v : RoundImpl) : Geo := geo umaal 128 20 sha1 v
+def geo2 (umaal : Bool) (v : RoundImpl) : Geo := geo umaal 256 32 sha256 v
+def geo3 (umaal : Bool) (v : RoundImpl) : Geo := geo umaal 384 32 sha256 v
 
-theorem certs1 (v : RoundImpl) : GStepCerts (geo1 v) :=
+theorem certs1 (v : RoundImpl) : GStepCerts (geo1 umaal v) :=
   gStepCerts 128 16 28 rfl rfl rfl rfl rfl rfl
     ⟨VG.Taint.hintOfSize VG.Arm.taint 4096 (Taint.ofRegs [.r7, .r8, .r9])
       (copyN (scr 128 .r0 (sA + modS 16)) (ptr .r1 aP) 128), by kernel_rfl⟩
@@ -298,7 +338,7 @@ theorem certs1 (v : RoundImpl) : GStepCerts (geo1 v) :=
       (copyN (ptr .r0 aG) (scr 128 .r1 (sA + resS 16)) 128), by kernel_rfl⟩
     ⟨VG.Taint.hintOfSize VG.Arm.taint 4096 (Taint.ofRegs [.r7, .r8, .r9]) (storeBE 128 aG sG 128), by kernel_rfl⟩
 
-theorem certs2 (v : RoundImpl) : GStepCerts (geo2 v) :=
+theorem certs2 (v : RoundImpl) : GStepCerts (geo2 umaal v) :=
   gStepCerts 256 32 57 rfl rfl rfl rfl rfl rfl
     ⟨VG.Taint.hintOfSize VG.Arm.taint 4096 (Taint.ofRegs [.r7, .r8, .r9])
       (copyN (scr 256 .r0 (sA + modS 32)) (ptr .r1 aP) 256), by kernel_rfl⟩
@@ -310,7 +350,7 @@ theorem certs2 (v : RoundImpl) : GStepCerts (geo2 v) :=
       (copyN (ptr .r0 aG) (scr 256 .r1 (sA + resS 32)) 256), by kernel_rfl⟩
     ⟨VG.Taint.hintOfSize VG.Arm.taint 4096 (Taint.ofRegs [.r7, .r8, .r9]) (storeBE 256 aG sG 256), by kernel_rfl⟩
 
-theorem certs3 (v : RoundImpl) : GStepCerts (geo3 v) :=
+theorem certs3 (v : RoundImpl) : GStepCerts (geo3 umaal v) :=
   gStepCerts 384 48 89 rfl rfl rfl rfl rfl rfl
     ⟨VG.Taint.hintOfSize VG.Arm.taint 4096 (Taint.ofRegs [.r7, .r8, .r9])
       (copyN (scr 384 .r0 (sA + modS 48)) (ptr .r1 aP) 384), by kernel_rfl⟩
@@ -322,10 +362,10 @@ theorem certs3 (v : RoundImpl) : GStepCerts (geo3 v) :=
       (copyN (ptr .r0 aG) (scr 384 .r1 (sA + resS 48)) 384), by kernel_rfl⟩
     ⟨VG.Taint.hintOfSize VG.Arm.taint 4096 (Taint.ofRegs [.r7, .r8, .r9]) (storeBE 384 aG sG 384), by kernel_rfl⟩
 
-def geoOk1 (v : RoundImpl) : GeoOk (geo1 v) 128 20 where
+def geoOk1 (umaal : Bool) (v : RoundImpl) : GeoOk (geo1 umaal v) 128 20 where
   HO := sha1Ok
   n := 16
-  ok _ hex hp hq := genOk hex hp hq (primeOk v 160) (primeOk v 1024) pArithCerts_128 (certs1 v) (powOk 16 28)
+  ok _ hex hp hq := genOk hex hp hq (primeOk v 160) (primeOk v 1024) pArithCerts_128 (certs1 v) (powOk 16 28 (hs := by cases umaal <;> decide))
     rfl rfl rfl (fun _ => rfl) (by decide) (by decide) (by decide) (fun bs => by
       show 8 * (Spec.Sha1.hash bs).length = _; rw [sha1_length]) rfl rfl rfl rfl rfl rfl (by decide)
     (by exact (by decide : 4 * 28 ≤ 8 * 16)) (by exact (by decide : 0 < 28))
@@ -333,10 +373,10 @@ def geoOk1 (v : RoundImpl) : GeoOk (geo1 v) 128 20 where
   hlb := by exact (by decide : Proof.Sha1.md.lenBytes 20 =
     [0, 0, 0, 0, 0, 0, BitVec.ofNat 8 (8 * 20 / 256), BitVec.ofNat 8 (8 * 20 % 256)])
 
-def geoOk2 (v : RoundImpl) : GeoOk (geo2 v) 256 32 where
+def geoOk2 (umaal : Bool) (v : RoundImpl) : GeoOk (geo2 umaal v) 256 32 where
   HO := sha256Ok
   n := 32
-  ok _ hex hp hq := genOk hex hp hq (primeOk v 256) (primeOk v 2048) pArithCerts_256 (certs2 v) (powOk 32 57)
+  ok _ hex hp hq := genOk hex hp hq (primeOk v 256) (primeOk v 2048) pArithCerts_256 (certs2 v) (powOk 32 57 (hs := by cases umaal <;> decide))
     rfl rfl rfl (fun _ => rfl) (by decide) (by decide) (by decide) (fun bs => by
       show 8 * (Spec.Sha256.hash bs).length = _; rw [sha256_length]) rfl rfl rfl rfl rfl rfl (by decide)
     (by exact (by decide : 4 * 57 ≤ 8 * 32)) (by exact (by decide : 0 < 57))
@@ -344,10 +384,10 @@ def geoOk2 (v : RoundImpl) : GeoOk (geo2 v) 256 32 where
   hlb := by exact (by decide : Proof.Sha256.md.lenBytes 32 =
     [0, 0, 0, 0, 0, 0, BitVec.ofNat 8 (8 * 32 / 256), BitVec.ofNat 8 (8 * 32 % 256)])
 
-def geoOk3 (v : RoundImpl) : GeoOk (geo3 v) 384 32 where
+def geoOk3 (umaal : Bool) (v : RoundImpl) : GeoOk (geo3 umaal v) 384 32 where
   HO := sha256Ok
   n := 48
-  ok _ hex hp hq := genOk hex hp hq (primeOk v 256) (primeOk v 3072) pArithCerts_384 (certs3 v) (powOk 48 89)
+  ok _ hex hp hq := genOk hex hp hq (primeOk v 256) (primeOk v 3072) pArithCerts_384 (certs3 v) (powOk 48 89 (hs := by cases umaal <;> decide))
     rfl rfl rfl (fun _ => rfl) (by decide) (by decide) (by decide) (fun bs => by
       show 8 * (Spec.Sha256.hash bs).length = _; rw [sha256_length]) rfl rfl rfl rfl rfl rfl (by decide)
     (by exact (by decide : 4 * 89 ≤ 8 * 48)) (by exact (by decide : 0 < 89))
@@ -355,9 +395,16 @@ def geoOk3 (v : RoundImpl) : GeoOk (geo3 v) 384 32 where
   hlb := by exact (by decide : Proof.Sha256.md.lenBytes 32 =
     [0, 0, 0, 0, 0, 0, BitVec.ofNat 8 (8 * 32 / 256), BitVec.ofNat 8 (8 * 32 % 256)])
 
+/-- The pairs the parameter search is emitted for, best first: the arithmetic and the
+Miller–Rabin round for the same CPUs. Any other pair needs the features of one of these,
+which runs both with them. -/
+def searchPairs : List (Proof.Variants.DsaArithmetic.Arm.Variant × RoundImpl) :=
+  Proof.Variants.DsaArithmetic.Arm.variants.flatMap fun a =>
+    Proof.Variants.MillerRabin.Arm.variants.filterMap fun r => if a.suffix == r.suffix then some (a, r) else none
+
 /-- `vg_dsa_parameter_search` over the round `v` meets its contract. -/
 theorem search_params (v : RoundImpl) :
-    Verified target (code (geo1 v) (geo2 v) (geo3 v)) (Spec.Dsa.parameterSearchContract abi 304) :=
-  search_verified (geoOk1 v) (geoOk2 v) (geoOk3 v)
+    Verified target (code (geo1 umaal v) (geo2 umaal v) (geo3 umaal v)) (Proof.Dsa.parameterSearchAskedContract abi 352) :=
+  search_verified (geoOk1 umaal v) (geoOk2 umaal v) (geoOk3 umaal v)
 
 end VG.Proof.Dsa.Arm.Gen

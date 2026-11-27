@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Rsa.AArch64.InvLaw
 public import VerifiedGarbage.Proof.Rsa.AArch64.CvMain
 import VerifiedGarbage.Proof.Rsa.AArch64.CvFail
-import VerifiedGarbage.Proof.Bignum.AArch64.KeepLanes
+import VerifiedGarbage.Proof.Bignum.AArch64.KeepLanesSame
 import VerifiedGarbage.Proof.Rsa.AArch64.CodeLit
 import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Bignum.AArch64.HdrPairs
@@ -15,7 +15,6 @@ import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Offset
-public import Mathlib.Algebra.Group.Nat.Defs
 
 /-!
 # `vg_rsa_crt_values` on AArch64: correctness
@@ -390,7 +389,7 @@ theorem cvCode_correct [InvLaw] (s : State) (h : cvA.pre s) :
           forall_eq_or_imp, forall_eq]
         exact ⟨rfl, bytesAt_zero z2, bytesAt_zero z3, bytesAt_zero z1⟩⟩
   · have hv : Spec.Rsa.modulusValid (cvIn s).N (s.gpr .x7).toNat = true := by simpa using hb
-    refine WP.mono (WP.keepLanes (.x0 :: mmRegs) [.x19, .x20, .x21, .x22, .x23, .x24, .x25, .x26, .x27, .x28, .x30]
+    refine WP.mono (WP.keepLanesS (.x0 :: mmRegs) [.x19, .x20, .x21, .x22, .x23, .x24, .x25, .x26, .x27, .x28, .x30]
       (cvMain_ok hpre hv) (by lit_decide) (by lit_decide) (by lit_decide) (by lit_decide)) fun t ⟨⟨X, hX, b1, b2, b3, hax, _⟩, kt⟩ =>
       ⟨abiPreserved_of_keep ((kk.trans kt).mono (by decide)), ?_⟩
     have := cvWritten_of (m := t.mem) (dp := s.gpr .x0) (dq := s.gpr .x2) (qi := s.gpr .x4)

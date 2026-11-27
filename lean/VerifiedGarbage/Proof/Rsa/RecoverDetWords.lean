@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Rsa.RecoverDetModel
 public import VerifiedGarbage.Proof.Bignum.ShiftStages
 import VerifiedGarbage.Proof.Framework.Omega
-import Mathlib.Data.Nat.GCD.Basic
 
 -- separate module: target-independent, for every architecture's `recover_primes_det` by words
 
@@ -36,11 +35,11 @@ open VG.Proof.Bignum.ShiftStages
 
 /-- After `i` halvings from `(N, x₂, x₃)`. -/
 theorem twos_at {b N x₂ x₃ : Nat} (pos : 0 < N) (hx₃ : x₃ < 2 ^ b) : ∀ i,
-    (twoStep b)^[i] (N, x₂, x₃) = (N / 2 ^ min i (tz N), x₂ / 2 ^ min i (tz (Nat.gcd N x₂)),
+    iterN (twoStep b) i (N, x₂, x₃) = (N / 2 ^ min i (tz N), x₂ / 2 ^ min i (tz (Nat.gcd N x₂)),
       x₃ * 2 ^ min i (tz (Nat.gcd N x₂)) % 2 ^ b)
-  | 0 => by simp [Nat.mod_eq_of_lt hx₃]
+  | 0 => by simp [iterN_zero, Nat.mod_eq_of_lt hx₃]
   | i + 1 => by
-    rw [Function.iterate_succ_apply', twos_at pos hx₃ i]
+    rw [iterN_succ', twos_at pos hx₃ i]
     have hN0 : N ≠ 0 := by omega_using [pos]
     have hg0 : Nat.gcd N x₂ ≠ 0 := Nat.gcd_ne_zero_left hN0
     have tle : tz (Nat.gcd N x₂) ≤ tz N := (dvd_iff hN0 _).mp
@@ -76,7 +75,7 @@ theorem twos_at {b N x₂ x₃ : Nat} (pos : 0 < N) (hx₃ : x₃ < 2 ^ b) : ∀
           · exact (dvd_iff hx0 _).mp (Nat.dvd_trans ((dvd_iff hg0 _).mpr (Nat.le_refl _)) (Nat.gcd_dvd_right N x₂))
           · refine (dvd_iff hg0 _).mp (Nat.dvd_gcd ((dvd_iff hN0 _).mpr ?_) ((dvd_iff hx0 _).mpr (Nat.le_refl _)))
             -- `tz x₂ ≤ tz N`: else `2^(t + 1)` divides both.
-            by_contra c
+            refine Classical.byContradiction fun c => ?_
             have : 2 ^ (t + 1) ∣ Nat.gcd N x₂ :=
               Nat.dvd_gcd ((dvd_iff hN0 _).mpr (by omega_using [hi, hj])) ((dvd_iff hx0 _).mpr (by
                 have := (dvd_iff hx0 t).mp (Nat.dvd_trans ((dvd_iff hg0 _).mpr (by omega_using [ht])) (Nat.gcd_dvd_right N x₂))
@@ -98,7 +97,7 @@ theorem twos_at {b N x₂ x₃ : Nat} (pos : 0 < N) (hx₃ : x₃ < 2 ^ b) : ∀
 
 /-- The halvings in closed form. -/
 theorem twos_closed {b N x₂ x₃ k : Nat} (pos : 0 < N) (hk : N < 2 ^ k) (hx₃ : x₃ < 2 ^ b) :
-    (twoStep b)^[k] (N, x₂, x₃) = (N / 2 ^ tz N, x₂ / 2 ^ tz (Nat.gcd N x₂),
+    iterN (twoStep b) k (N, x₂, x₃) = (N / 2 ^ tz N, x₂ / 2 ^ tz (Nat.gcd N x₂),
       x₃ * 2 ^ tz (Nat.gcd N x₂) % 2 ^ b) := by
   have hN0 : N ≠ 0 := by omega_using [pos]
   have hg0 : Nat.gcd N x₂ ≠ 0 := Nat.gcd_ne_zero_left hN0

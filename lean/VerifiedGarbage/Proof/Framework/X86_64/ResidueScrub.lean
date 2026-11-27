@@ -3,6 +3,9 @@ module
 public import VerifiedGarbage.Proof.Framework.X86_64.ScrubChecks
 public import VerifiedGarbage.Proof.Framework.X86_64.ResidueTaintSound
 public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.Taint
+public import VerifiedGarbage.Proof.Framework.LitHidden
 public meta import Lean.Meta.Eval
 public meta import Lean.Elab.Term
 import VerifiedGarbage.Proof.Framework.X86_64.Inline
@@ -23,7 +26,7 @@ writable buffers hold their addresses (`spAux`) (`init_agree`). If the
 analysis of its code ends with the window as it started, the window's bytes the analysis cannot show
 equal in both runs are those `sec` lists; `scrub` then need wipe only the
 16-byte granules that hold them (`keepOf`), and `resOk_of_check` gives
-`Verified.scrub` the rest (`Scrub.ResOk`).
+`Verified.scrubWith` the rest (`Scrub.ResOk`).
 -/
 
 @[expose] public section
@@ -43,6 +46,7 @@ def wrInfo : List (String × Param) → Nat → List (Nat × Nat)
   | (_, .slice m _ _) :: ps, w => (if m then [(w, 0)] else []) ++ wrInfo ps (w + 2)
   | (_, .slices ..) :: ps, w => wrInfo ps (w + 2)
   | (_, .table _) :: ps, w => wrInfo ps (w + 1)
+  | (_, .inOutSlice ..) :: ps, w => (w + 1, 0) :: wrInfo ps (w + 3)
 
 /-- The argument registers holding the address of writable buffer `i`, `i + 1`, …. -/
 def basesAux : List (Nat × Nat) → Nat → List (Reg × Nat × Nat)
@@ -76,11 +80,46 @@ def spAux : List (Nat × Nat) → Nat → List (Nat × Nat × Nat)
   | q :: qs, i =>
     (if argRegs.length ≤ q.1 then [(8 * (q.1 - argRegs.length), i, 0)] else []) ++ spAux qs (i + 1)
 
+/-- The bytes of `pubs` (`(i, o, n)`: the `n` bytes at offset `o` of writable
+buffer `i`), as a bit mask for each of `n` buffers. -/
+def pbInit (n : Nat) (pubs : List (Nat × Nat × Nat)) : List Nat :=
+  (List.range n).map fun i => pubs.foldl (fun b sl => if sl.1 = i then bset b sl.2.1 sl.2.2 else b) 0
+
+theorem pbInit_bit {n : Nat} {pubs : List (Nat × Nat × Nat)} {i k : Nat}
+    (h : (pbGet (pbInit n pubs) i).testBit k = true) :
+    ∃ sl ∈ pubs, sl.1 = i ∧ sl.2.1 ≤ k ∧ k < sl.2.1 + sl.2.2 := by
+  have fold : ∀ (l : List (Nat × Nat × Nat)) (b : Nat),
+      (l.foldl (fun b sl => if sl.1 = i then bset b sl.2.1 sl.2.2 else b) b).testBit k = true →
+      b.testBit k = true ∨ ∃ sl ∈ l, sl.1 = i ∧ sl.2.1 ≤ k ∧ k < sl.2.1 + sl.2.2 := by
+    intro l
+    induction l with
+    | nil => exact fun b h => .inl h
+    | cons sl l ih =>
+      intro b h
+      rcases ih _ h with h | ⟨q, hq, h⟩
+      · dsimp only at h
+        split at h
+        · rename_i h0
+          rw [testBit_bset, Bool.or_eq_true, Bool.and_eq_true, decide_eq_true_eq, decide_eq_true_eq] at h
+          rcases h with h | h
+          · exact .inl h
+          · exact .inr ⟨sl, List.mem_cons_self, h0, h⟩
+        · exact .inl h
+      · exact .inr ⟨q, List.mem_cons_of_mem _ hq, h⟩
+  rw [pbGet_eq, pbInit, List.getD_eq_getElem?_getD, List.getElem?_map] at h
+  by_cases hi : i < n
+  · rw [List.getElem?_range hi, Option.map_some, Option.getD_some] at h
+    rcases fold pubs 0 h with h | h
+    · simp only [Nat.zero_testBit, Bool.false_eq_true] at h
+    · exact h
+  · rw [List.getElem?_eq_none (by rw [List.length_range]; omega_using [hi]), Option.map_none, Option.getD_none] at h
+    simp only [Nat.zero_testBit, Bool.false_eq_true] at h
+
 /-- Where the analysis of a function of signature `sig` starts. -/
 def init (sig : Sig) (stack : Nat) (pubs : List (Nat × Nat × Nat) := []) : FT :=
   let ws := wrInfo sig.params 0
-  let t : Taint.T := ⟨allRegs, true, ws.map (·.2), basesAux ws 0, pubs, .empty, allX⟩
-  ⟨true, t, 0, 0, stack, [], [], [], none, [], [], 8 * nStack sig, saOf sig, spAux ws 0⟩
+  let t : Taint.T := ⟨allRegs, true, ws.map (·.2), basesAux ws 0, [], .empty, allX⟩
+  ⟨true, t, 0, 0, stack, 0, [], [], none, [], [], 8 * nStack sig, saOf sig, spAux ws 0, pbInit ws.length pubs⟩
 
 /-- The writable buffers. -/
 def wrOf (ps : List (String × Param)) (vs : List (BitVec 64)) : List Region :=
@@ -92,7 +131,7 @@ theorem wr_info : ∀ (ps : List (String × Param)) (vs : List (BitVec 64)) (w :
     ∀ i (h : i < (wrInfo ps w).length), w ≤ ((wrInfo ps w)[i]).1 ∧ ((wrInfo ps w)[i].1 - w) < vs.length ∧
       ((wrOf ps vs).getD i ⟨0, 0⟩).base = vs.getD ((wrInfo ps w)[i].1 - w) 0
   | [], vs, w, _ => ⟨by simp [wrOf, Sig.bufs, wrInfo], fun i h => by simp [wrInfo] at h⟩
-  | (_, p) :: ps, vs, w, hl => by
+  | (name, p) :: ps, vs, w, hl => by
     cases p with
     | int ty pb =>
       obtain ⟨v, vs, rfl⟩ : ∃ v vs', vs = v :: vs' := by
@@ -204,6 +243,31 @@ theorem wr_info : ∀ (ps : List (String × Param)) (vs : List (BitVec 64)) (w :
       simp only [wrOf, Sig.bufs] at c ⊢
       rw [c, show (wrInfo ps (w + 1))[i].1 - w = (wrInfo ps (w + 1))[i].1 - (w + 1) + 1 by omega_using [a]]
       simp
+
+    | inOutSlice e dstName lenName =>
+      obtain ⟨src, dst, l, vs, rfl⟩ : ∃ src dst l rest, vs = src :: dst :: l :: rest := by
+        match vs with
+        | [] | [_] | [_, _] => simp [Param.words] at hl
+        | src :: dst :: l :: rest => exact ⟨src, dst, l, rest, rfl⟩
+      have hl' : vs.length = (ps.flatMap (·.2.words 64)).length := by
+        simp only [List.flatMap_cons, Param.words, List.length_append, List.length_cons, List.length_nil] at hl ⊢
+        omega_using [hl]
+      obtain ⟨h1, h2⟩ := wr_info ps vs (w + 3) hl'
+      have hwr : wrOf ((name, Param.inOutSlice e dstName lenName) :: ps) (src :: dst :: l :: vs) =
+          ⟨dst, l.toNat * e.size⟩ :: wrOf ps vs := by
+        by_cases h : src = dst <;> simp [wrOf, Sig.bufs, h]
+      rw [hwr]
+      refine ⟨by simpa [wrInfo] using (List.Forall₂.cons (R := fun (r : Region) l => l ≤ r.len) (a := ⟨dst, l.toNat * e.size⟩) (b := 0) (Nat.zero_le _) h1), fun i h => ?_⟩
+      cases i with
+      | zero => simp [wrInfo]
+      | succ i =>
+        have hi : i < (wrInfo ps (w + 3)).length := by simpa [wrInfo] using h
+        obtain ⟨a, b, c⟩ := h2 i hi
+        simp only [wrInfo, List.getElem_cons_succ, List.getD_cons_succ]
+        refine ⟨by omega_using [a], by simp; omega_using [b], ?_⟩
+        rw [c, show (wrInfo ps (w + 3))[i].1 - w =
+          (wrInfo ps (w + 3))[i].1 - (w + 3) + 1 + 1 + 1 by omega_using [a]]
+        simp
 
 theorem basesAux_mem : ∀ {qs : List (Nat × Nat)} {i : Nat} {p : Reg × Nat × Nat}, p ∈ basesAux qs i →
     ∃ j, ∃ h : j < qs.length, argRegs[qs[j].1]? = some p.1 ∧ p.2 = (i + j, 0)
@@ -519,8 +583,7 @@ theorem init_agree (hA : ScrubAbi A) {pubs : List (Nat × Nat × Nat)} (hfit : p
     · exact (hdis r hr).2 h0
   have hrsp := (s₁.gpr .rsp).isLt
   refine ⟨⟨⟨fun r _ => hgr r, fun _ => ⟨hcf, hzf, hsf, hof⟩⟩, fun _ => hwr, wf₁, wf₂,
-      fun sl h => by simp only [pubsFit, List.all_eq_true, decide_eq_true_eq] at hfit; exact hfit sl h,
-      fun sl h k h1 h2 => hag sl h k h1 h2, noLo, fun r _ => (by rw [hx])⟩,
+      fun _ h => (by cases h), fun _ h => (by cases h), noLo, fun r _ => (by rw [hx])⟩,
     hgr .rsp, hu, hwr, ?_, Nat.zero_le _, ?_, (by simp [init]; omega_using []), fun _ h => absurd h (Nat.not_lt_zero _), ?_,
     fun _ h => (by cases h), List.Pairwise.nil, fun _ h => (by cases h), ?_, fun _ h => (by cases h),
     ⟨fun _ h => (by cases h), fun _ _ h => (by cases h), fun _ h => (by cases h), (init_sp hA h₁).1⟩,
@@ -528,7 +591,12 @@ theorem init_agree (hA : ScrubAbi A) {pubs : List (Nat × Nat × Nat)} (hfit : p
     fun _ h => absurd h (Nat.not_lt_zero _),
     fun h => by have := (pre_argArea hA h₁).1 (by simp only [init] at h; omega_using [h]); simp only [init]; omega_using [this],
     fun k hk r hr => by rw [aa_init]; exact (pre_argArea hA h₁).2 k hk r hr,
-    (init_sa hA hp).2, (init_sa hA hp).1, (init_sp hA h₁).2⟩
+    (init_sa hA hp).2, (init_sa hA hp).1, (init_sp hA h₁).2, ?_⟩
+  rotate_right
+  · intro i k hk
+    obtain ⟨sl, hsl, rfl, h1, h2⟩ := pbInit_bit hk
+    simp only [pubsFit, List.all_eq_true, decide_eq_true_eq] at hfit
+    exact ⟨by have := hfit sl hsl; simp only [init]; omega_using [h2, this], hag sl hsl k h1 h2⟩
   · intro h
     rw [h] at hF
     exact List.eq_nil_of_length_eq_zero (forall₂_length hF)
@@ -549,29 +617,109 @@ theorem init_agree (hA : ScrubAbi A) {pubs : List (Nat × Nat × Nat)} (hfit : p
 it started, and every byte of it `sec` lists in a granule `ks` lists. -/
 def resOkB (τ : FT) (stack : Nat) (ks cs : List Nat) : Bool :=
   τ.ok && τ.room == stack && τ.depth == 0 &&
-    (List.range stack).all fun j => cov ks cs j || !τ.sec.any fun p => decide (p.1 ≤ j ∧ j < p.1 + p.2)
+    (List.range stack).all fun j => cov ks cs j || !τ.sec.testBit j
 
-/-- `resOkB`, checking only the bytes that `sec` lists (usually a few
-intervals) rather than every byte of the window (`stack` of them, a few
-seconds in the kernel for thousands). -/
+/-- The granules `wipe ks cs` may zero, as offsets from the bottom of the
+`cs.sum` bytes and widths. -/
+def granules : List Nat → List (Nat × Nat)
+  | [] => []
+  | b :: bs => ((List.range (b / 16)).map fun t => (bs.sum + b % 16 + 16 * t, 16)) ++
+    (if b % 16 = 8 then [(bs.sum, 8)] else []) ++ granules bs
+
+/-- The bytes of the granules `gs` that `ks` lists, as a bit mask. -/
+def covMask (ks : List Nat) (gs : List (Nat × Nat)) : Nat :=
+  gs.foldr (fun g m => bif KList.any ks (Nat.beq g.1) then bset m g.1 g.2 else m) 0
+
+theorem covMask_bit {ks : List Nat} : ∀ {gs : List (Nat × Nat)} {j : Nat}, (covMask ks gs).testBit j = true →
+    ∃ g ∈ gs, g.1 ∈ ks ∧ g.1 ≤ j ∧ j < g.1 + g.2
+  | [], j, h => by simp only [covMask, List.foldr_nil, Nat.zero_testBit, Bool.false_eq_true] at h
+  | g :: gs, j, h => by
+    have h' : (bif KList.any ks (Nat.beq g.1) then bset (covMask ks gs) g.1 g.2 else covMask ks gs).testBit j =
+        true := h
+    cases hk : KList.any ks (Nat.beq g.1) with
+    | false =>
+      rw [hk, Bool.cond_false] at h'
+      obtain ⟨g', hg', r⟩ := covMask_bit h'
+      exact ⟨g', List.mem_cons_of_mem _ hg', r⟩
+    | true =>
+      rw [hk, Bool.cond_true, testBit_bset, Bool.or_eq_true] at h'
+      rcases h' with h' | h'
+      · obtain ⟨g', hg', r⟩ := covMask_bit h'
+        exact ⟨g', List.mem_cons_of_mem _ hg', r⟩
+      · rw [Bool.and_eq_true, decide_eq_true_eq, decide_eq_true_eq] at h'
+        rw [KList.any_eq, List.any_eq_true] at hk
+        obtain ⟨x, hx, e⟩ := hk
+        exact ⟨g, List.mem_cons_self, Nat.eq_of_beq_eq_true e ▸ hx, h'.1, h'.2⟩
+
+theorem granules_le : ∀ {cs : List Nat} {g : Nat × Nat}, g ∈ granules cs → g.1 + g.2 ≤ cs.sum
+  | [], g, h => by simp only [granules, List.not_mem_nil] at h
+  | b :: bs, g, h => by
+    simp only [granules, List.mem_append, List.mem_map, List.mem_range] at h
+    rw [List.sum_cons]
+    rcases h with (⟨t, ht, rfl⟩ | h) | h
+    · show bs.sum + b % 16 + 16 * t + 16 ≤ b + bs.sum
+      omega
+    · split at h
+      · rw [List.mem_singleton] at h
+        subst h
+        show bs.sum + 8 ≤ b + bs.sum
+        omega
+      · exact absurd h List.not_mem_nil
+    · have := granules_le h
+      omega
+
+/-- `wipe ks cs` zeroes the bytes of a granule that `ks` lists. -/
+theorem cov_of_granule {ks : List Nat} : ∀ {cs : List Nat} {g : Nat × Nat} {j : Nat}, g ∈ granules cs →
+    g.1 ∈ ks → g.1 ≤ j → j < g.1 + g.2 → cov ks cs j = true
+  | [], g, j, h, _, _, _ => by simp only [granules, List.not_mem_nil] at h
+  | b :: bs, g, j, h, hk, h₁, h₂ => by
+    simp only [granules, List.mem_append, List.mem_map, List.mem_range] at h
+    rw [cov]
+    rcases h with (⟨t, ht, rfl⟩ | h) | h
+    · replace h₁ : bs.sum + b % 16 + 16 * t ≤ j := h₁
+      replace h₂ : j < bs.sum + b % 16 + 16 * t + 16 := h₂
+      rw [ite_eq_right (by omega), Bool.and_eq_true, decide_eq_true_eq]
+      refine ⟨by omega, ?_⟩
+      rw [covC, ite_eq_right (by omega),
+        show bs.sum + b % 16 + 16 * ((j - bs.sum - b % 16) / 16) = bs.sum + b % 16 + 16 * t by omega]
+      exact List.contains_iff_mem.mpr hk
+    · split at h
+      · rename_i h8
+        rw [List.mem_singleton] at h
+        subst h
+        replace h₁ : bs.sum ≤ j := h₁
+        replace h₂ : j < bs.sum + 8 := h₂
+        rw [ite_eq_right (by omega), Bool.and_eq_true, decide_eq_true_eq]
+        refine ⟨by omega, ?_⟩
+        rw [covC, ite_eq_left (by omega), Bool.and_eq_true, beq_iff_eq]
+        exact ⟨h8, List.contains_iff_mem.mpr hk⟩
+      · exact absurd h List.not_mem_nil
+    · have hle := granules_le h
+      rw [ite_eq_left (by omega)]
+      exact cov_of_granule h hk h₁ h₂
+
+/-- `resOkB`, as one comparison of bit masks: the bytes that `sec` lists,
+among the bytes of the granules that `ks` lists (`covMask`), rather than a
+question of `cov` for every byte of the window (`stack` of them), or for
+every byte `sec` lists, each a walk of `ks` (half a second in the kernel for
+a function whose frame holds five hundred secret bytes). -/
 def resOkF (τ : FT) (stack : Nat) (ks cs : List Nat) : Bool :=
   τ.ok && τ.room == stack && τ.depth == 0 &&
-    τ.sec.all fun p => (List.range' p.1 p.2).all fun j => !decide (j < stack) || cov ks cs j
+    bsub (Nat.mod τ.sec (Nat.pow 2 stack)) (covMask ks (granules cs))
 
 theorem resOkB_of_resOkF {τ : FT} {stack : Nat} {ks cs : List Nat} (h : resOkF τ stack ks cs = true) :
     resOkB τ stack ks cs = true := by
-  simp only [resOkF, Bool.and_eq_true, List.all_eq_true, List.mem_range'_1, Bool.or_eq_true,
-    Bool.not_eq_true', decide_eq_false_iff_not, Nat.not_lt] at h
+  simp only [resOkF, Bool.and_eq_true] at h
   obtain ⟨⟨⟨ho, hr⟩, hd⟩, hs⟩ := h
   simp only [resOkB, ho, hr, hd, Bool.true_and, List.all_eq_true, List.mem_range, Bool.or_eq_true,
-    Bool.not_eq_true', List.any_eq_false, decide_eq_true_eq]
+    Bool.not_eq_true']
   intro j hj
-  by_cases hc : cov ks cs j = true
-  · exact .inl hc
-  · refine .inr fun p hp hin => hc ?_
-    rcases hs p hp j hin with h | h
-    · omega
-    · exact h
+  cases hb : τ.sec.testBit j
+  · exact .inr rfl
+  · have hm : (τ.sec % 2 ^ stack).testBit j = true := by
+      rw [Nat.testBit_mod_two_pow, hb, decide_eq_true hj]; rfl
+    obtain ⟨g, hg, hk, h₁, h₂⟩ := covMask_bit (bsub_bit hs hm)
+    exact .inl (cov_of_granule hg hk h₁ h₂)
 
 /-- `(o.any (resOkF · stack ks cs))` gives `resOkB`'s. -/
 theorem any_resOkB {o : Option FT} {stack : Nat} {ks cs : List Nat}
@@ -594,9 +742,9 @@ theorem resOk_of_check {c : Prog isa} {ks cs : List Nat} {pubs : List (Nat × Na
     | none => rw [h'] at hc; cases hc
     | some τf => rw [h'] at hc; exact ⟨τf, rfl, hc⟩
   simp only [resOkB, Bool.and_eq_true, beq_iff_eq, List.all_eq_true, List.mem_range, Bool.or_eq_true,
-    Bool.not_eq_true', List.any_eq_false, decide_eq_true_eq] at hb
+    Bool.not_eq_true'] at hb
   obtain ⟨⟨⟨hok, hroom⟩, hdep⟩, hcov⟩ := hb
-  intro s₁ s₂ t₁ t₂ u₁ u₂ h₁ h₂ hp ho hu e₁ e₂ x hx hw
+  intro s₁ s₂ t₁ t₂ u₁ u₂ h₁ h₂ hp ho hu _ e₁ e₂ x hx hw
   obtain ⟨-, ha⟩ := VG.Taint.check_sound (A := rtaint) hτ (init_agree hA hfit hpub h₁ h₂ ho hp hu) e₁ e₂
   have inv := ha hok
   obtain ⟨hcor, -, -⟩ := hv
@@ -617,10 +765,10 @@ theorem resOk_of_check {c : Prog isa} {ks cs : List Nat} {pubs : List (Nat × Na
     · rfl
     · exact absurd ⟨hcs ▸ hx, by rw [hcs, hJ]; exact h'⟩ hw
   have hns : ¬ InSec τf.sec j := by
-    rintro ⟨p, hp, h1, h2⟩
+    intro hin
     rcases hcov j hj with h | h
     · rw [hcj] at h; cases h
-    · exact h p hp ⟨h1, h2⟩
+    · rw [show τf.sec.testBit j = true from hin] at h; cases h
   have hfree : ∀ r ∈ u₁.wr, ¬ r.Contains (RTaint.wa u₁ τf j) 1 := by
     intro r hr hc
     rw [hwr] at hr
@@ -635,40 +783,13 @@ end
 
 /-! ## The granules to wipe -/
 
-/-- The granules `wipe ks cs` may zero, as offsets from the bottom of the
-`cs.sum` bytes and widths. -/
-def granules : List Nat → List (Nat × Nat)
-  | [] => []
-  | b :: bs => ((List.range (b / 16)).map fun t => (bs.sum + b % 16 + 16 * t, 16)) ++
-    (if b % 16 = 8 then [(bs.sum, 8)] else []) ++ granules bs
-
 /-- The granules of `wipe _ cs` that hold a byte `sec` lists. -/
-def keepOf (sec : List (Nat × Nat)) (cs : List Nat) : List Nat :=
-  (granules cs).filterMap fun g =>
-    if (List.range g.2).any (fun k => sec.any fun p => decide (p.1 ≤ g.1 + k ∧ g.1 + k < p.1 + p.2)) then
-      some g.1 else none
+def keepOf (sec : Nat) (cs : List Nat) : List Nat :=
+  (granules cs).filterMap fun g => if (sec >>> g.1) % 2 ^ g.2 ≠ 0 then some g.1 else none
 
 /-! ## Registrations -/
 
-/-- `resOk_of_check` for a registration. -/
-theorem resOk_reg {api : Api} (r : Registration api target) (ks : List Nat) {pubs : List (Nat × Nat × Nat)}
-    (hfit : pubsFit api.sig pubs = true) (hpub : PubOk r.contract pubs) {h : VG.Taint.Hint FT}
-    (hc : (VG.Taint.check rtaint (init api.sig r.stack pubs) r.code h).any (resOkB · r.stack ks (chunks r.stack)) = true) :
-    ResOk r.code r.contract r.stack ks (chunks r.stack) := by
-  obtain ⟨pre, post, leak, e⟩ := r.ofSig
-  have hv := r.verified
-  have hp := hpub
-  rw [e] at hv hp ⊢
-  exact resOk_of_check (ScrubAbi.of r.consts api.sig r.tables api.pubMode) hv (chunks_sum r.stack) hfit hp hc
-
 theorem pubOk_nil (k : Contract isa) : PubOk k [] := fun _ _ _ _ _ _ _ h => absurd h List.not_mem_nil
-
-/-- `resOk_reg`, with no bytes of the buffers known public, from the analysis
-ending as `resOkF` checks (which the kernel evaluates faster than `resOkB`). -/
-theorem resOk_reg0 {api : Api} (r : Registration api target) (ks : List Nat) {h : VG.Taint.Hint FT}
-    (hc : (VG.Taint.check rtaint (init api.sig r.stack) r.code h).any (resOkF · r.stack ks (chunks r.stack)) = true) :
-    ResOk r.code r.contract r.stack ks (chunks r.stack) :=
-  resOk_reg r ks (pubs := []) rfl (pubOk_nil _) (any_resOkB hc)
 
 /-- The granules of `r.stack` bytes of stack that `scrub` must wipe after
 the code `code` of signature `sig`, from the analysis (none if it fails,
@@ -677,69 +798,6 @@ def keepFor (sig : Sig) (stack : Nat) (code : Prog isa) (pubs : List (Nat × Nat
   match VG.Taint.hint rtaint 256 (init sig stack pubs) code with
   | some (τ, _) => keepOf τ.sec (chunks stack)
   | none => []
-
-theorem mxClassFrom_ok : ∀ (c : Prog isa) (k : List (String × Prog isa × Unit × Option MxC)),
-    (∀ e ∈ k, e.2.2.2 = mxClass e.2.1) →
-      (mxClassFrom c k).1 = mxClass c ∧ ∀ e ∈ (mxClassFrom c k).2, e.2.2.2 = mxClass e.2.1
-  | .block _, _, hk => ⟨rfl, hk⟩
-  | .seq a b, k, hk => by
-    obtain ⟨ha, ka⟩ := mxClassFrom_ok a k hk
-    obtain ⟨hb, kb⟩ := mxClassFrom_ok b _ ka
-    simp only [mxClassFrom, mxClass, ← ha, ← hb]
-    split
-    · exact ⟨rfl, hk⟩
-    · cases hx : (mxClassFrom a k).1 with
-      | none => exact ⟨rfl, ka⟩
-      | some x =>
-        cases hy : (mxClassFrom b (mxClassFrom a k).2).1 with
-        | none => exact ⟨rfl, kb⟩
-        | some y => exact ⟨rfl, kb⟩
-  | .ite _ t e, k, hk => by
-    obtain ⟨ha, ka⟩ := mxClassFrom_ok t k hk
-    obtain ⟨hb, kb⟩ := mxClassFrom_ok e _ ka
-    simp only [mxClassFrom, mxClass, ← ha, ← hb]
-    cases hx : (mxClassFrom t k).1 with
-    | none => exact ⟨rfl, ka⟩
-    | some x =>
-      cases hy : (mxClassFrom e (mxClassFrom t k).2).1 with
-      | none => exact ⟨rfl, kb⟩
-      | some y => exact ⟨rfl, kb⟩
-  | .loop b _, k, hk => mxClassFrom_ok b k hk
-  | .call n b, k, hk =>
-    Code.memoCall_ok (n := n) (run := fun _ => mxClassFrom b k) (spec := fun c _ => mxClass c) hk (mxClassFrom_ok b k hk)
-  | .frame i b j, k, hk => by
-    obtain ⟨hb, kb⟩ := mxClassFrom_ok b k hk
-    simp only [mxClassFrom, mxClass]
-    split
-    · exact ⟨hb, kb⟩
-    · exact ⟨rfl, hk⟩
-  | .icall i n b nx, k, hk => by
-    obtain ⟨ha, ka⟩ := Code.memoCall_ok (n := n) (run := fun _ => mxClassFrom b k) (spec := fun c _ => mxClass c) hk
-      (mxClassFrom_ok b k hk)
-    obtain ⟨hb, kb⟩ := mxClassFrom_ok nx _ ka
-    simp only [mxClassFrom, mxClass]
-    split
-    · exact ⟨rfl, hk⟩
-    · simp only [← ha, ← hb]
-      cases hx : (Code.memoCall n b () k fun _ => mxClassFrom b k).1 with
-      | none => exact ⟨rfl, ka⟩
-      | some x =>
-        cases hy : (mxClassFrom nx (Code.memoCall n b () k fun _ => mxClassFrom b k).2).1 with
-        | none => exact ⟨rfl, kb⟩
-        | some y => exact ⟨rfl, kb⟩
-
-theorem mxClassOnce_eq (c : Prog isa) : mxClassOnce c = mxClass c :=
-  (mxClassFrom_ok c [] fun _ h => by cases h).1
-
-/-- The level `scrub` clears the vector registers at for `code`: `pxor` if
-nothing in it writes bits 511:128 of a vector register, else `vpxor`
-(`Instr.vecLevelR`: whatever it does to MXCSR, which `withScrub` asks of
-separately). -/
-def levelFor (code : Prog isa) : VecLevel :=
-  if levelLeROnce VecLevel.sse.level code then .sse else .avx
-
-theorem levelFor_ne (code : Prog isa) : levelFor code ≠ .evex := by
-  unfold levelFor; split <;> exact VecLevel.noConfusion
 
 /-- The residue analysis of the code `code` of signature `sig`, whose frames
 and calls use `stack` bytes, from `init` with the bytes `pubs` of its buffers
@@ -759,63 +817,11 @@ theorem Analysed.ok_of {sig : Sig} {stack : Nat} {pubs : List (Nat × Nat × Nat
       (VG.Taint.check rtaint (init sig stack pubs) code h).any (resOkB · stack ks (chunks stack)) = true :=
   ⟨h, any_resOkB hc⟩
 
-/-- `r`, returning without secret residue (`scrubRegM`), given the residue
-analysis of its code (`Analysed`) and if `scrub`'s side conditions hold (code
-that loads MXCSR leaving in it a function of MXCSR on entry, `mxClass`, as
-Intel's MCDT prologue and epilogue do);
-otherwise `r` itself, which then has no proof (`Registration.residue`), as
-the emitter allows only of what `ci/residue_allowlist.txt` lists. A caller
-generic over the implementations of a function (`Generic/`) takes the
-analysis of each of its instances from the implementation, `none` for one
-the analysis does not handle. -/
-def withScrub {api : Api} (r : Registration api target)
-    (hpost : PostOut r.contract (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits))
-    (pubs : List (Nat × Nat × Nat)) (hpub : PubOk r.contract pubs)
-    (a : Option (Analysed api.sig r.stack pubs r.code)) : Registration api target :=
-  match a with
-  | none => r
-  | some a =>
-    let v := levelFor r.code
-    if hfit : pubsFit api.sig pubs = true then
-    if hd : r.code.x86_64Depth ≤ r.stack then
-    if hst : r.stack + 8 < 2 ^ 64 then
-    if h8 : r.stack % 8 = 0 then
-    if hlv : levelLeROnce v.level r.code = true then
-    if hmx : (mxClassOnce r.code).isSome = true then
-    if hrb : api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits ≤ 32 ∨
-        api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits = 64 then
-    if hw : r.written = [] then
-      scrubRegM r v a.ks hd hst h8 ((Code.allOnce_eq _ r.code).symm.trans hlv) (mxClassOnce_eq r.code ▸ hmx) hrb hpost
-        (by obtain ⟨_, hc⟩ := a.ok; exact resOk_reg r a.ks hfit hpub hc) hw (levelFor_ne _)
-    else r else r else r else r else r else r else r else r
-
-/-- `withScrub`, for code whose two runs leave the same bytes in its stack
-but the granules `ks` (`hres`), proven of the code rather than by the
-residue analysis (as `X86_64.Scrub.resOk_of_leaves` gives it from what the
-code leaves run by run): `r` followed by the clearing of those granules,
-returning without secret residue (`scrubRegM`), if `scrub`'s side
-conditions hold; otherwise `r` itself, which then has no proof. -/
-def withScrubRes {api : Api} (r : Registration api target)
-    (hpost : PostOut r.contract (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits))
-    (ks : List Nat) (hres : ResOk r.code r.contract r.stack ks (chunks r.stack)) : Registration api target :=
-  let v := levelFor r.code
-  if hd : r.code.x86_64Depth ≤ r.stack then
-  if hst : r.stack + 8 < 2 ^ 64 then
-  if h8 : r.stack % 8 = 0 then
-  if hlv : r.code.allOnce (fun i => decide (i.vecLevelR ≤ v.level)) = true then
-  if hmx : (mxClassOnce r.code).isSome = true then
-  if hrb : api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits ≤ 32 ∨
-      api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits = 64 then
-  if hw : r.written = [] then
-    scrubRegM r v ks hd hst h8 ((Code.allOnce_eq _ r.code).symm.trans hlv) (mxClassOnce_eq r.code ▸ hmx) hrb hpost
-      hres hw (levelFor_ne _)
-  else r else r else r else r else r else r else r
-
 end VG.X86_64.RScrub
 
 /-- `keep_for% sig stack code`: `RScrub.keepFor sig stack code`, computed in
 compiled code, as a literal (for the kernel, which then checks it with the
-analysis, `RScrub.resOk_reg`, rather than computing it too). -/
+analysis rather than computing it too). -/
 syntax "keep_for% " term:max term:max term:max (term:max)? : term
 
 open Lean Elab Term Meta in
@@ -826,6 +832,6 @@ elab_rules : term
     | none => elabTerm (← `(VG.X86_64.RScrub.keepFor $sig $stack $code)) none
   synthesizeSyntheticMVarsNoPostponing
   let e ← instantiateMVars e
-  let v ← unsafe evalExpr (List Nat) (← inferType e) e
+  let v ← unsafe VG.Lit.evalOnce (List Nat) (← inferType e) e
   return toExpr v
 

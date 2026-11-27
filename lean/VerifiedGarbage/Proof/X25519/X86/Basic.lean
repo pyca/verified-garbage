@@ -112,8 +112,8 @@ theorem frameWiden {m m' : Mem} {x : BitVec 32} {o n o' n' : Nat} (hf : Frame [s
   hf.sub fun _ hr => ⟨_, List.mem_singleton_self _, List.mem_singleton.mp hr ▸ sub_sub hx h₁ h₂ hn⟩
 
 /-- The 8 bytes below `esp`, where a call of a function of the working space
-(`vg_ed25519_r32_point_add`, `vg_gf25519_r32_pow250`) puts its argument and
-return address. -/
+(`vg_ed25519_r32_point_add`) puts its argument and return address, and the
+addition chain's calls (`Field32.pow250Call`) their return address. -/
 abbrev callStk (s : State) : Region := ⟨(s.gpr .esp - BitVec.ofNat 32 8).setWidth 64, 8⟩
 
 /-- The code's view of the working space: `edi` points at it, it is

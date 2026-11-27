@@ -8,6 +8,8 @@
 ///
 /// It runs `vg_aes_ccm_seal`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 240 bytes.
@@ -19,7 +21,7 @@
 /// * `tag_len` must be 4, 6, 8, 10, 12, 14 or 16, and `nonce_len` from 7 to 13 (Appendix A.1).
 /// * `len` must be less than `2^(8 * (15 - nonce_len))` (Appendix A.1).
 /// * `data` and `tag` must not overlap each other, `schedule`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the 2688 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the 576 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_aes_ccm_seal_auto(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut u8, tag_len: usize) {
@@ -33,6 +35,8 @@ pub unsafe fn vg_aes_ccm_seal_auto(_dit: verified_garbage_cpu::Dit<'_>, schedule
 ///
 /// It runs `vg_aes_ccm_open`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 240 bytes.
@@ -44,7 +48,7 @@ pub unsafe fn vg_aes_ccm_seal_auto(_dit: verified_garbage_cpu::Dit<'_>, schedule
 /// * `tag_len` must be 4, 6, 8, 10, 12, 14 or 16, and `nonce_len` from 7 to 13 (Appendix A.1).
 /// * `len` must be less than `2^(8 * (15 - nonce_len))` (Appendix A.1).
 /// * `data` must not overlap `schedule`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the 2688 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the 576 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_aes_ccm_open_auto(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {

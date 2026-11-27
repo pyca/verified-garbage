@@ -61,6 +61,26 @@ vg_aes_cfb8_encrypt:
 	ld %r18, 2096(%r19)
 	ld %r19, 2104(%r19)
 	mtlr %r0
+	li %r0, 0
+	li %r3, 0
+	li %r4, 0
+	li %r5, 0
+	li %r6, 0
+	li %r7, 0
+	li %r9, 0
+	li %r10, 0
+	li %r11, 0
+	li %r12, 0
+	vxor %v0, %v0, %v0
+	vxor %v1, %v1, %v1
+	vxor %v2, %v2, %v2
+	vxor %v3, %v3, %v3
+	vxor %v4, %v4, %v4
+	vxor %v5, %v5, %v5
+	vxor %v6, %v6, %v6
+	vxor %v7, %v7, %v7
+	vxor %v8, %v8, %v8
+	vxor %v19, %v19, %v19
 	blr
 
 vg_aes_cfb8_decrypt:
@@ -120,4 +140,24 @@ vg_aes_cfb8_decrypt:
 	ld %r18, 2096(%r19)
 	ld %r19, 2104(%r19)
 	mtlr %r0
+	li %r0, 0
+	li %r3, 0
+	li %r4, 0
+	li %r5, 0
+	li %r6, 0
+	li %r7, 0
+	li %r9, 0
+	li %r10, 0
+	li %r11, 0
+	li %r12, 0
+	vxor %v0, %v0, %v0
+	vxor %v1, %v1, %v1
+	vxor %v2, %v2, %v2
+	vxor %v3, %v3, %v3
+	vxor %v4, %v4, %v4
+	vxor %v5, %v5, %v5
+	vxor %v6, %v6, %v6
+	vxor %v7, %v7, %v7
+	vxor %v8, %v8, %v8
+	vxor %v19, %v19, %v19
 	blr

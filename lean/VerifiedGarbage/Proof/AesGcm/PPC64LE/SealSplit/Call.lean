@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.SealSplit.Input
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.SealFused
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.SplitBlocks.Verified
-public import VerifiedGarbage.Proof.Gcm.SplitBlocksContract
+public import VerifiedGarbage.Proof.AesGcm.PPC64LE.SplitBlocks.Contract
 import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
 import VerifiedGarbage.Proof.Framework.PPC64LE.Run
 import VerifiedGarbage.Proof.Framework.Sig
@@ -65,7 +65,7 @@ def reads (s : State) : List Region :=
   [⟨s.gpr .r3,256⟩,⟨s.gpr .r7,(s.gpr .r8).toNat*16⟩,⟨s.sp+96,8⟩]
 def writes (s : State) : List Region :=
   [⟨s.gpr .r5,16⟩,⟨s.gpr .r6,16⟩,⟨s.gpr .r9,(s.gpr .r10).toNat*16⟩,
-    ⟨s.mem.readW (s.sp+96) 64,2112⟩]
+    ⟨s.mem.readW (s.sp+96) 64,704⟩]
 
 structure Config (s : State) : Prop where
   pre : (Proof.Gcm.encryptBlocksSplitContract PPC64LE.abi).pre (s.callEntry.withRegions (reads s) (writes s))

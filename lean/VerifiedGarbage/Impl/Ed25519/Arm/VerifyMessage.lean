@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.Arm.Verify
+public import VerifiedGarbage.Impl.Scrub.Arm
 public import VerifiedGarbage.Impl.Ed25519.Arm.Whole.Setup
 public import VerifiedGarbage.Impl.Ed25519.Arm.Whole.Entry
 public import VerifiedGarbage.Impl.Ed25519.Arm.Whole.Wipe
@@ -22,7 +23,7 @@ def messageArgs (count : Nat) : List Instr :=
 def finalizeArgs (n : Nat) (b : Bool) : List Instr :=
   setup [(.r0,.caller 4 0),(.r2,if b then .caller 2 n else .const n),(.r3,.const 0)]
     [.frame 184,.caller 4 192]
-def init : Prog isa := callWith initArgs Spec.Sha512.init512Api.name
+def init : Prog isa := callWith initArgs (Spec.Sha512.init512Api.name ++ "_core")
   (Sha512.Arm.Stream.init Spec.Sha512.H0_512)
 def update (args : List Instr) : Prog isa :=
   callWith args "vg_sha512_update_scratch" Sha512.Arm.Stream.update
@@ -36,9 +37,21 @@ def reduceArgs : List Instr :=
 def extendChallenge : List Instr := zeroWords 38 8
 def equationArgs : List Instr :=
   setup [(.r0,.caller 0 0),(.r1,.caller 3 0),(.r2,.frame 120),(.r3,.caller 4 0)] []
-def body : Prog isa :=
+def body (umaal : Bool) : Prog isa :=
   .seq hash (.seq (callWith reduceArgs "vg_ed25519_scalar_reduce" scalarReduce)
-    (.seq (.block extendChallenge) (callWith equationArgs "vg_ed25519_verify_equation" verifyEquation)))
-def code : Prog isa := wrap 5 body
+    (.seq (.block extendChallenge)
+      (callWith equationArgs ("vg_ed25519_verify_equation" ++ suffix umaal) (verifyEquation umaal))))
+def code (umaal : Bool) : Prog isa := wrap 5 (body umaal)
 
 end VG.Impl.Ed25519.Arm.VerifyMessage
+
+namespace VG.Impl.Ed25519.Arm.Fn
+
+open VG.Arm VG.Impl.Scrub.Arm
+
+/-- `vg_ed25519_verify`, with either product of the field (`umaal`), then the 280 bytes of
+stack its contract reserves zeroed and the registers a callee may change, but the result,
+and the flags set to constants. -/
+def verify (umaal : Bool) : Prog isa := scrubAll 32 280 (VerifyMessage.code umaal)
+
+end VG.Impl.Ed25519.Arm.Fn

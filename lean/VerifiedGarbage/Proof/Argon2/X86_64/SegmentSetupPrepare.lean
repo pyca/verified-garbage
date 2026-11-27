@@ -3,13 +3,10 @@ module
 public import VerifiedGarbage.Impl.Argon2.X86_64.SegmentSetup
 public import VerifiedGarbage.Impl.Argon2.X86_64.FillSegment
 public import VerifiedGarbage.Impl.Argon2.X86_64.FillBlock
-import VerifiedGarbage.Proof.Argon2.X86_64.FillKernelSpec
+public import VerifiedGarbage.Proof.Argon2.X86_64.DependentWord
 public import VerifiedGarbage.Impl.Argon2.X86_64.RandomSource
 public import VerifiedGarbage.Proof.Argon2.Matrix
-import VerifiedGarbage.Proof.Argon2.X86_64.FillKernelStable
-public import VerifiedGarbage.Proof.Argon2.X86_64.AddressCacheMeta
-public import VerifiedGarbage.Proof.Argon2.X86_64.AddressCallsStage
-import VerifiedGarbage.Proof.Argon2.X86_64.ClearBlock
+public import VerifiedGarbage.Proof.Argon2.X86_64.AddressCacheWord
 public import VerifiedGarbage.Proof.Argon2.AddressInput
 public import VerifiedGarbage.Proof.Argon2.X86_64.Initialize
 import VerifiedGarbage.Proof.Argon2.X86_64.AddressHeaderWords
@@ -18,13 +15,245 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Proof.Argon2.Contract
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.Argon2.X86_64.AddressCacheWord
-public import VerifiedGarbage.Proof.Argon2.X86_64.FillKernel
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Argon2.Dimensions
 public import VerifiedGarbage.Proof.Argon2.FillStep
-import VerifiedGarbage.Proof.Argon2.X86_64.DependentWord
 public import VerifiedGarbage.Proof.Argon2.Segment
+public import VerifiedGarbage.Impl.Argon2.X86_64.ClearBlock
+public import VerifiedGarbage.Proof.Framework.Covers
+import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Impl.Argon2.X86_64.MemoryInit
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.Semantics
+import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Copy
+import VerifiedGarbage.Proof.Framework.AddrArith
+
+/-! ### `Argon2.X86_64.FillKernelStable`, which this module and modules that import it used -/
+
+section
+
+/-! Register-only helpers retain the filling allocation and position invariants. -/
+
+@[expose] public section
+
+namespace VG.Proof.Argon2.X86_64.FillKernel
+
+open VG VG.X86_64
+
+theorem Ready.of_keeps {p : Spec.Argon2.Params} {pass lane slice index : Nat} {s t : State}
+    (h : Ready p pass lane slice index s) (k : Divide.Keeps ReferenceMap.changed s t) :
+    Ready p pass lane slice index t := by
+  refine ⟨h.layout.of_keeps k, h.bounds, h.position.of_keeps k, ?_, ?_⟩
+  · rw [k.mem, k.regs .rbp (by decide)]; exact h.passWord
+  · rw [k.mem, k.regs .rbp (by decide)]; exact h.lanesWord
+
+end VG.Proof.Argon2.X86_64.FillKernel
+
+end
+
+end
+
+/-! ### `Argon2.X86_64.ClearBlock`, which this module and modules that import it used -/
+
+section
+
+/-! ### `Argon2.X86_64.MemoryInitClear`, which this module and modules that import it used -/
+
+section
+
+/-! # Zeroing the Argon2 matrix, independently of its initial contents -/
+
+@[expose] public section
+
+namespace VG.Proof.Argon2.X86_64.MemoryInit
+
+open VG VG.X86_64 VG.Impl.Argon2.X86_64.MemoryInit
+
+def clearMem (m : Mem) (p : Addr) : Nat → Mem
+  | 0 => m
+  | n + 1 => (clearMem m p n).writeW (p + BitVec.ofNat 64 (8 * n)) (0 : BitVec 64)
+
+theorem clearMem_frame (m : Mem) (p : Addr) (n : Nat) (bound : 8 * n < 2 ^ 64) :
+    Frame [⟨p, 8 * n⟩] m (clearMem m p n) := by
+  induction n with
+  | zero => exact Frame.refl _ _
+  | succ n ih =>
+    have smaller : Frame [⟨p, 8 * (n + 1)⟩] m (clearMem m p n) :=
+      (ih (by omega_using [bound])).sub (by
+        intro r hr; simp only [List.mem_singleton] at hr; subst r
+        exact ⟨_, List.mem_singleton_self _, Region.sub_prefix (by omega_using [])⟩)
+    exact smaller.writeW (List.mem_singleton_self _) (0 : BitVec 64)
+      (Offset.contains_base _ (by omega_using []) (by omega_using [bound]))
+
+theorem clearMem_word (m : Mem) (p : Addr) (n j : Nat)
+    (bound : 8 * n < 2 ^ 64) (hj : j < n) :
+    (clearMem m p n).readW (p + BitVec.ofNat 64 (8 * j)) 64 = 0 := by
+  induction n with
+  | zero => omega
+  | succ n ih =>
+    rw [clearMem]
+    by_cases eq : j = n
+    · subst j; exact Mem.readW_writeW_self64 _ _ _
+    · rw [Mem.readW_writeW_sep ?_ (by decide)]
+      · exact ih (by omega_using [bound]) (by omega_using [hj, eq])
+      · exact Offset.sep p (by omega_using [eq]) (by omega_using [bound, hj]) (by omega_using [bound])
+
+theorem clearWord_ok (s : State) (hw : InRegions s.wr (s.gpr .r14) 8) :
+    WP isa (.block clearWord) s fun t =>
+      t.mem = s.mem.writeW (s.gpr .r14) (s.gpr .rcx) ∧
+      t.gpr .r14 = s.gpr .r14 + 8 ∧ t.gpr .rax = s.gpr .rax - 1 ∧
+      t.zf = some (s.gpr .rax - 1 == 0) ∧
+      (∀ r, r ≠ .rax → r ≠ .r14 → t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr := by
+  apply WP.of_runBlock
+  simp only [clearWord, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
+    State.store64, execAlu, HPrime.ea_at, BitVec.add_zero,
+    RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg,
+    RegUpd.gpr_arithFlags, RegUpd.mem_arithFlags, RegUpd.rd_arithFlags,
+    RegUpd.wr_arithFlags, RegUpd.zf_arithFlags, RegUpd.zf_setReg,
+    show (BitVec.signExtend 64 (8 : BitVec 32)) = 8 from rfl,
+    show (BitVec.signExtend 64 (1 : BitVec 32)) = 1 from rfl,
+    hw, reduceCtorEq, ite_true, ite_false,
+    Option.bind_some, Option.some.injEq, exists_eq_left']
+  exact ⟨trivial, trivial, trivial, trivial,
+    fun r h1 h2 => by simp only [h1, h2, ite_false], trivial, trivial⟩
+
+structure ClearI (s₀ : State) (p : Addr) (n j : Nat) (s : State) : Prop where
+  bound : j ≤ n
+  destination : s.gpr .r14 = p + BitVec.ofNat 64 (8 * j)
+  count : s.gpr .rax = BitVec.ofNat 64 (n - j)
+  zero : s.gpr .rcx = 0
+  other : ∀ r, r ≠ .rax → r ≠ .r14 → s.gpr r = s₀.gpr r
+  rd : s.rd = s₀.rd
+  wr : s.wr = s₀.wr
+  mem : s.mem = clearMem s₀.mem p j
+
+theorem clearLoop_ok (s₀ : State) (p : Addr) (n : Nat) (lo : 1 ≤ n)
+    (bound : 8 * n < 2 ^ 64) (dst : s₀.gpr .r14 = p)
+    (count : s₀.gpr .rax = BitVec.ofNat 64 n) (zero : s₀.gpr .rcx = 0)
+    (write : ∀ j < n, InRegions s₀.wr (p + BitVec.ofNat 64 (8 * j)) 8) :
+    WP isa (.loop (.block clearWord) .ne) s₀ (ClearI s₀ p n n) := by
+  refine WP.loop (M := isa) (fun k s => ∃ j, k = n - j ∧ j < n ∧ ClearI s₀ p n j s)
+    ?_ n s₀ ⟨0, by omega_using [], lo, by omega_using [], by simpa using dst, by simpa only [Nat.sub_zero] using count,
+      zero, fun _ _ _ => rfl, rfl, rfl, rfl⟩
+  rintro k s ⟨j, rfl, hj, h⟩
+  have hw : InRegions s.wr (s.gpr .r14) 8 := by
+    rw [h.wr, h.destination]; exact write j hj
+  refine (clearWord_ok s hw).mono ?_
+  rintro t ⟨memT, dstT, countT, zfT, otherT, rdT, wrT⟩
+  have nextCount : BitVec.ofNat 64 (n - j) - 1 = BitVec.ofNat 64 (n - (j + 1)) := by
+    rw [show (1 : Addr) = BitVec.ofNat 64 1 from rfl, Offset.ofNat_sub_ofNat (by omega_using [hj])]
+    congr 1
+  have next : ClearI s₀ p n (j + 1) t := by
+    refine ⟨by omega_using [hj], ?_, ?_, (otherT _ (by decide) (by decide)).trans h.zero,
+      fun r h1 h2 => (otherT r h1 h2).trans (h.other r h1 h2),
+      rdT.trans h.rd, wrT.trans h.wr, ?_⟩
+    · rw [dstT, h.destination, BitVec.add_assoc, show (8 : Addr) = BitVec.ofNat 64 8 from rfl, ← BitVec.ofNat_add]
+      congr 2
+    · rw [countT, h.count, nextCount]
+    · rw [memT, h.mem, h.destination, h.zero]; rfl
+  have zf : t.zf = some (decide (n - (j + 1) = 0)) := by
+    rw [zfT, h.count, nextCount]
+    congr 1
+    rw [Bool.eq_iff_iff, beq_iff_eq, decide_eq_true_iff]
+    constructor
+    · intro eq
+      have num := congrArg BitVec.toNat eq
+      simpa only [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [bound] : n - (j + 1) < 2 ^ 64),
+        show (0 : Addr).toNat = 0 from rfl] using num
+    · intro eq; rw [eq]; rfl
+  by_cases done : j + 1 = n
+  · refine .inl ⟨?_, done ▸ next⟩
+    simp only [eval, zf, show n - (j + 1) = 0 by omega_using [done], decide_true,
+      Option.map_some, Bool.not_true]
+  · refine .inr ⟨?_, n - (j + 1), by omega_using [hj], j + 1, rfl, by omega_using [hj, done], next⟩
+    simp only [eval, zf, show n - (j + 1) ≠ 0 by omega_using [hj, done], decide_false,
+      Option.map_some, Bool.not_false]
+
+end VG.Proof.Argon2.X86_64.MemoryInit
+
+end
+
+end
+
+/-! Zero every word, preserving the enclosing loop's registers and memory. -/
+
+@[expose] public section
+
+namespace VG.Proof.Argon2.X86_64.ClearBlock
+
+open VG VG.X86_64 VG.Spec.Argon2 VG.Impl.Argon2.X86_64.ClearBlock
+
+theorem word_ok (s : State) (i : Nat)
+    (hw : InRegions s.wr (off (s.gpr .rdi) (8 * i)) 8) :
+    WP isa (.block (Impl.Argon2.X86_64.ClearBlock.word i)) s fun t =>
+      t.mem = s.mem.writeW (off (s.gpr .rdi) (8 * i)) (s.gpr .rax) ∧
+      t.gpr = s.gpr ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.mxcsr = s.mxcsr := by
+  apply WP.of_runBlock
+  simp only [Impl.Argon2.X86_64.ClearBlock.word, runBlock_cons, runStep_some, runBlock_nil,
+    exec, State.store64, ea_at, hw, ite_true, Option.some.injEq, exists_eq_left']
+  exact ⟨trivial, trivial, trivial, trivial, trivial⟩
+
+theorem prefix_ok (n : Nat) (hn : n ≤ 128) (s : State) (zero : s.gpr .rax = 0)
+    (write : Covers [⟨s.gpr .rdi, 1024⟩] s.wr) :
+    WP isa (.block (words n)) s fun t =>
+      t.mem = MemoryInit.clearMem s.mem (s.gpr .rdi) n ∧
+      t.gpr = s.gpr ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.mxcsr = s.mxcsr := by
+  induction n with
+  | zero => exact WP.block_nil ⟨rfl, rfl, rfl, rfl, rfl⟩
+  | succ n ih =>
+    simp only [words, List.range_succ, List.flatMap_append, List.flatMap_cons,
+      List.flatMap_nil, List.append_nil]
+    apply WP.block_append
+    refine (ih (by omega_using [hn])).mono ?_
+    rintro a ⟨mem, regs, rd, wr, mx⟩
+    have hw : InRegions a.wr (off (a.gpr .rdi) (8 * n)) 8 := by
+      rw [regs, wr]
+      exact write _ _ ⟨⟨s.gpr .rdi, 1024⟩, by simp,
+        Offset.contains_base _ (d := 8 * n) (n := 8) (k := 1024) (by omega_using [hn]) (by omega_using [hn])⟩
+    refine (word_ok a n hw).mono ?_
+    rintro t ⟨mem', regs', rd', wr', mx'⟩
+    refine ⟨?_, regs'.trans regs, rd'.trans rd, wr'.trans wr, mx'.trans mx⟩
+    rw [mem', regs, zero, mem]
+    rfl
+
+theorem zero_ok (s : State) : WP isa (.block [.mov .rax (.imm 0)]) s fun t =>
+    t.gpr .rax = 0 ∧ (∀ r, r ≠ .rax → t.gpr r = s.gpr r) ∧
+    t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.mxcsr = s.mxcsr := by
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
+    Option.map_some, Option.some.injEq, exists_eq_left', RegUpd.gpr_setReg, ite_true]
+  refine ⟨rfl, ?_, rfl, rfl, rfl, rfl⟩
+  intro r hr
+  exact ite_eq_right hr
+
+theorem code_ok (s : State) (write : Covers [⟨s.gpr .rdi, 1024⟩] s.wr) :
+    WP isa code s fun t => blockAt t.mem (s.gpr .rdi) = zeroBlock ∧
+      Frame [⟨s.gpr .rdi, 1024⟩] s.mem t.mem ∧ CopyKeeps s t ∧ t.mxcsr = s.mxcsr := by
+  unfold code
+  refine WP.seq ((zero_ok s).mono ?_)
+  rintro a ⟨zero, regs, mem, rd, wr, mx⟩
+  have dest : a.gpr .rdi = s.gpr .rdi := regs .rdi (by decide)
+  have write' : Covers [⟨a.gpr .rdi, 1024⟩] a.wr := by rw [dest, wr]; exact write
+  refine (prefix_ok 128 (by decide) a zero write').mono ?_
+  rintro t ⟨mem', regs', rd', wr', mx'⟩
+  have cleared : t.mem = MemoryInit.clearMem s.mem (s.gpr .rdi) 128 := by
+    rw [mem', mem, dest]
+  refine ⟨?_, ?_, ⟨fun r hr => (congrFun regs' r).trans (regs r hr), rd'.trans rd, wr'.trans wr⟩,
+    mx'.trans mx⟩
+  · rw [cleared]
+    apply Vector.ext
+    intro i hi
+    change (blockAt _ _)[(⟨i, hi⟩ : Fin 128)] = zeroBlock[(⟨i, hi⟩ : Fin 128)]
+    rw [blockAt_get, MemoryInit.clearMem_word _ _ 128 i (by decide) hi]
+    simp only [zeroBlock, Fin.getElem_fin, Vector.getElem_replicate]
+  · rw [cleared]
+    exact MemoryInit.clearMem_frame _ _ 128 (by decide)
+
+end VG.Proof.Argon2.X86_64.ClearBlock
+
+end
+
+end
 
 /-! ### `Argon2.X86_64.FillSegment`, which only this module used -/
 
@@ -116,7 +345,7 @@ theorem value_kept {s t : State} (keeps : CopyKeeps s t)
     (i : Nat) (hi : i < 7) : value t i = value s i := by
   unfold value
   rw [keeps.1 .rbx (by decide), keeps.1 .r14 (by decide), keeps.1 .rbp (by decide)]
-  have read : t.mem.readW (off (s.gpr .rbp) (frameOffset i)) 64 =
+  obtain read : t.mem.readW (off (s.gpr .rbp) (frameOffset i)) 64 =
       s.mem.readW (off (s.gpr .rbp) (frameOffset i)) 64 :=
     hf.readW (r := ⟨s.gpr .rbp, 272⟩)
       (Offset.contains_base _ (offset_bound i hi)
@@ -139,17 +368,17 @@ theorem prefix_ok (n : Nat) (hn : n ≤ 7) (s : State)
     apply WP.block_append
     refine (ih (by omega_using [hn])).mono ?_
     rintro a ⟨mem, frame, keeps, mx⟩
-    have dest : a.gpr .rdi = s.gpr .rdi := keeps.1 .rdi (by decide)
-    have read : InRegions (a.rd ++ a.wr) (off (a.gpr .rbp) (frameOffset n)) 8 := by
+    obtain dest : a.gpr .rdi = s.gpr .rdi := keeps.1 .rdi (by decide)
+    obtain read : InRegions (a.rd ++ a.wr) (off (a.gpr .rbp) (frameOffset n)) 8 := by
       rw [keeps.2.1, keeps.2.2, keeps.1 .rbp (by decide)]
       exact offset_read s n reads
-    have writable : InRegions a.wr (off (a.gpr .rdi) (8 * n)) 8 := by
+    obtain writable : InRegions a.wr (off (a.gpr .rdi) (8 * n)) 8 := by
       rw [dest, keeps.2.2]
       exact write _ _ ⟨⟨s.gpr .rdi, 1024⟩, by simp,
         Offset.contains_base _ (d := 8 * n) (n := 8) (k := 1024) (by omega_using [hn]) (by omega_using [hn])⟩
     refine (field_ok a n read writable).mono ?_
     rintro t ⟨mem', keeps', mx'⟩
-    have value' := value_kept keeps frame sep n (by omega_using [hn])
+    obtain value' := value_kept keeps frame sep n (by omega_using [hn])
     refine ⟨?_, ?_, keeps.trans keeps', mx'.trans mx⟩
     · rw [mem', dest, value', mem]
       rfl
@@ -235,21 +464,21 @@ theorem clearAt_ok (s : State) (h : Ready s) (offset : Nat) (bound : offset + 10
   refine WP.seq ((pointer_ok s offset h.frameRead).mono ?_)
   rintro a ⟨dest, keeps⟩
   rw [displacement_eq offset (by omega_using [bound])] at dest
-  have write : Covers [⟨a.gpr .rdi, 1024⟩] a.wr := by
+  obtain write : Covers [⟨a.gpr .rdi, 1024⟩] a.wr := by
     rw [dest, keeps.wr]; exact work_cover s h offset 1024 bound
   refine (ClearBlock.code_ok a write).mono ?_
   rintro t ⟨zero, frame, tk, mx⟩
-  have regs : ∀ r ∈ calleeSaved, t.gpr r = s.gpr r := by
+  obtain regs : ∀ r ∈ calleeSaved, t.gpr r = s.gpr r := by
     intro r hr
-    have ne : r ≠ .rax ∧ r ≠ .rdi := by
+    obtain ne : r ≠ .rax ∧ r ≠ .rdi := by
       simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
     exact (tk.1 r ne.1).trans (keeps.regs r (by simpa only [List.mem_cons, List.not_mem_nil, or_false] using ne.2))
-  have rd := tk.2.1.trans keeps.rd
-  have wr := tk.2.2.trans keeps.wr
-  have hf : Frame [⟨off (work s) offset, 1024⟩] s.mem t.mem := by
+  obtain rd := tk.2.1.trans keeps.rd
+  obtain wr := tk.2.2.trans keeps.wr
+  obtain hf : Frame [⟨off (work s) offset, 1024⟩] s.mem t.mem := by
     rw [dest, keeps.mem] at frame; exact frame
-  have bigger : Frame (stageWrites s offset) s.mem t.mem :=
+  obtain bigger : Frame (stageWrites s offset) s.mem t.mem :=
     hf.mono (by
       intro r hr
       simp only [List.mem_singleton] at hr
@@ -304,9 +533,9 @@ theorem Cleared.stable {s t : State} {offset : Nat} (h : Cleared s t offset)
 theorem stable_of_frame {s t : State} (h : Ready s)
     (regs : ∀ r ∈ calleeSaved, t.gpr r = s.gpr r) (rd : t.rd = s.rd) (wr : t.wr = s.wr)
     (frame : Frame [⟨work s, 8192⟩] s.mem t.mem) (mx : t.mxcsr = s.mxcsr) : Stable s t := by
-  have bp := regs .rbp (by simp [calleeSaved])
-  have sp := regs .rsp (by simp [calleeSaved])
-  have work' : work t = work s := by
+  obtain bp := regs .rbp (by simp [calleeSaved])
+  obtain sp := regs .rsp (by simp [calleeSaved])
+  obtain work' : work t = work s := by
     unfold work
     rw [bp, frame_word h frame 248 (by decide)]
   refine ⟨⟨?_, ?_, ?_, ?_, ?_⟩, work', regs, rd, wr, frame, mx⟩
@@ -325,7 +554,7 @@ theorem Stable.reads {s t : State} (h : Stable s t)
 theorem Stable.words {s t : State} {p : Params} {pass lane slice counter : Nat} (ready : Ready s) (h : Stable s t)
     (words : AddressHeader.Words p pass lane slice counter s) :
     AddressHeader.Words p pass lane slice counter t := by
-  have bp := h.regs .rbp (by simp [calleeSaved])
+  obtain bp := h.regs .rbp (by simp [calleeSaved])
   have read (d : Nat) (hd : d + 8 ≤ 272) :
       t.mem.readW (off (t.gpr .rbp) d) 64 = s.mem.readW (off (s.gpr .rbp) d) 64 := by
     rw [bp]; exact frame_word ready h.frame d hd
@@ -376,9 +605,9 @@ theorem prepare_layout_ok (s : State) (h : Ready s)
   intro a inputClear
   refine WP.seq ((clearAt_ok a inputClear.ready 7168 (by decide)).mono ?_)
   intro b zeroClear
-  have stableB := (inputClear.stable (by decide)).trans (zeroClear.stable (by decide))
-  have inputZero : blockAt b.mem (off (work s) 5120) = zeroBlock := by
-    have kept := FillCompress.block_frame zeroClear.frame (p := off (work s) 5120) (by
+  obtain stableB := (inputClear.stable (by decide)).trans (zeroClear.stable (by decide))
+  obtain inputZero : blockAt b.mem (off (work s) 5120) = zeroBlock := by
+    obtain kept := FillCompress.block_frame zeroClear.frame (p := off (work s) 5120) (by
       intro r hr
       simp only [List.mem_singleton] at hr
       subst r
@@ -388,22 +617,22 @@ theorem prepare_layout_ok (s : State) (h : Ready s)
   refine WP.seq ((pointer_ok b 5120 zeroClear.ready.frameRead).mono ?_)
   rintro c ⟨dest, keeps⟩
   rw [displacement_eq 5120 (by decide)] at dest
-  have stableC := stableB.trans (pointer_stable zeroClear.ready keeps)
-  have dest' : c.gpr .rdi = off (work s) 5120 := by rw [dest, stableB.work_eq]
-  have write : Covers [⟨c.gpr .rdi, 1024⟩] c.wr := by
+  obtain stableC := stableB.trans (pointer_stable zeroClear.ready keeps)
+  obtain dest' : c.gpr .rdi = off (work s) 5120 := by rw [dest, stableB.work_eq]
+  obtain write : Covers [⟨c.gpr .rdi, 1024⟩] c.wr := by
     rw [dest, keeps.wr]; exact work_cover b zeroClear.ready 5120 1024 (by decide)
-  have sep : (⟨c.gpr .rbp, 272⟩ : Region).Disjoint ⟨c.gpr .rdi, 1024⟩ := by
+  obtain sep : (⟨c.gpr .rbp, 272⟩ : Region).Disjoint ⟨c.gpr .rdi, 1024⟩ := by
     rw [dest', stableC.regs .rbp (by simp [calleeSaved])]
     exact h.frameWork.sub_right (Offset.sub_base _ (by decide))
-  have zero : blockAt c.mem (c.gpr .rdi) = zeroBlock := by rw [dest', keeps.mem]; exact inputZero
+  obtain zero : blockAt c.mem (c.gpr .rdi) = zeroBlock := by rw [dest', keeps.mem]; exact inputZero
   refine (AddressHeader.code_ok c (stableC.reads reads) write sep zero).mono ?_
   rintro t ⟨input, frame, tk, mx⟩
-  have regs : ∀ r ∈ calleeSaved, t.gpr r = c.gpr r := by
+  obtain regs : ∀ r ∈ calleeSaved, t.gpr r = c.gpr r := by
     intro r hr
     apply tk.1
     simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
-  have frame' : Frame [⟨work c, 8192⟩] c.mem t.mem := by
+  obtain frame' : Frame [⟨work c, 8192⟩] c.mem t.mem := by
     apply frame.sub
     intro r hr
     simp only [List.mem_singleton] at hr
@@ -411,7 +640,7 @@ theorem prepare_layout_ok (s : State) (h : Ready s)
     refine ⟨⟨work c, 8192⟩, by simp, ?_⟩
     rw [dest', stableC.work_eq]
     exact Offset.sub_base _ (by decide)
-  have stableT := stableC.trans (stable_of_frame stableC.ready regs tk.2.1 tk.2.2 frame' mx)
+  obtain stableT := stableC.trans (stable_of_frame stableC.ready regs tk.2.1 tk.2.2 frame' mx)
   refine ⟨stableT, ?_, ?_⟩
   · have kept := FillCompress.block_frame frame (p := off (work s) 7168) (by
       intro r hr
@@ -528,15 +757,15 @@ theorem code_ok [CompressImpl] (p : Params) (pass lane slice counter : Nat) (s :
   unfold code
   refine WP.seq ((prepare_ok p pass lane slice counter s h reads words).mono ?_)
   intro a prepared
-  have zero : blockAt a.mem (off (work a) 7168) = zeroBlock := by
+  obtain zero : blockAt a.mem (off (work a) 7168) = zeroBlock := by
     rw [prepared.stable.work_eq]; exact prepared.zero
-  have input : blockAt a.mem (off (work a) 5120) = Proof.Argon2.addressInput p pass lane slice counter := by
+  obtain input : blockAt a.mem (off (work a) 5120) = Proof.Argon2.addressInput p pass lane slice counter := by
     rw [prepared.stable.work_eq]; exact prepared.input
   refine (calls_ok p pass lane slice counter a prepared.stable.ready zero input).mono ?_
   rintro t ⟨generated, mx⟩
   have frame := generated.frame
   rw [writes, prepared.stable.work_eq, prepared.stable.regs .rsp (by simp [calleeSaved])] at frame
-  have firstFrame : Frame (writes s) s.mem a.mem :=
+  obtain firstFrame : Frame (writes s) s.mem a.mem :=
     prepared.stable.frame.mono (by
       intro r hr
       simp only [List.mem_singleton] at hr
@@ -584,10 +813,10 @@ theorem save_ready (s : State) (h : AddressCalls.Ready s)
     (hw : InRegions s.wr (off (s.gpr .rbp) 8) 8) : WP isa (.block save) s (Saved s) := by
   refine (save_ok s hw).mono ?_
   rintro t ⟨mem, regs, rd, wr, mx⟩
-  have work' : AddressCalls.work t = AddressCalls.work s := by
+  obtain work' : AddressCalls.work t = AddressCalls.work s := by
     unfold AddressCalls.work
     rw [regs, mem, Mem.readW_writeW_sep (Offset.sep _ (by decide) (by decide) (by decide)) (by decide)]
-  have ready : AddressCalls.Ready t := by
+  obtain ready : AddressCalls.Ready t := by
     constructor
     · rw [rd, wr, regs]; exact h.frameRead
     · rw [work', wr]; exact h.workWrite
@@ -665,11 +894,11 @@ theorem selected_ok [CompressImpl] (p : Params) (pass lane slice old : Nat) (s :
   unfold select
   refine WP.seq ((check_ok s (h.reads 8 (by simp))).mono ?_)
   rintro a ⟨value, flag, keeps⟩
-  have stableA := check_stable h.layout keeps
+  obtain stableA := check_stable h.layout keeps
   refine WP.ite (decide (counter (s.gpr .r15) = s.mem.readW (off (s.gpr .rbp) 8) 64))
     (by simp only [eval, flag]) ?_ ?_
   · intro same
-    have equal := of_decide_eq_true same
+    obtain equal := of_decide_eq_true same
     apply WP.of_runBlock
     simp only [runBlock_nil, Option.some.injEq, exists_eq_left']
     refine ⟨?_, stableA.ready, stableA.work_eq, stableA.regs, keeps.rd, keeps.wr,
@@ -678,27 +907,27 @@ theorem selected_ok [CompressImpl] (p : Params) (pass lane slice old : Nat) (s :
     · rw [keeps.mem]; exact Frame.refl _ _
     · rw [stableA.regs .rbp (by simp [calleeSaved]), keeps.mem]; exact equal.symm
   · intro _
-    have write : InRegions a.wr (off (a.gpr .rbp) 8) 8 := by
+    obtain write : InRegions a.wr (off (a.gpr .rbp) 8) 8 := by
       rw [keeps.wr, stableA.regs .rbp (by simp [calleeSaved])]; exact h.write
     refine WP.seq ((save_ready a stableA.ready write).mono ?_)
     intro b saved
-    have words : AddressHeader.Words p pass lane slice (wanted s) b := by
+    obtain words : AddressHeader.Words p pass lane slice (wanted s) b := by
       apply saved.words (stableA.words h.layout h.words)
       rw [value, counter_nat]; rfl
-    have reads : ∀ d ∈ [0, 8, 72, 112, 240], InRegions (b.rd ++ b.wr) (off (b.gpr .rbp) d) 8 := by
+    obtain reads : ∀ d ∈ [0, 8, 72, 112, 240], InRegions (b.rd ++ b.wr) (off (b.gpr .rbp) d) 8 := by
       rw [saved.rd, saved.wr, saved.regs]; exact stableA.reads h.reads
     refine (AddressCalls.code_ok p pass lane slice (wanted s) b saved.ready reads words).mono ?_
     rintro t ⟨generated, mx⟩
-    have workB : AddressCalls.work b = AddressCalls.work s := saved.work_eq.trans stableA.work_eq
+    obtain workB : AddressCalls.work b = AddressCalls.work s := saved.work_eq.trans stableA.work_eq
     have regsB (r : Reg) (hr : r ∈ calleeSaved) : b.gpr r = s.gpr r :=
       (congrFun saved.regs r).trans (stableA.regs r hr)
-    have regs : ∀ r ∈ calleeSaved, t.gpr r = s.gpr r :=
+    obtain regs : ∀ r ∈ calleeSaved, t.gpr r = s.gpr r :=
       fun r hr => (generated.regs r hr).trans (regsB r hr)
-    have firstFrame : Frame (writes s) s.mem b.mem := by
+    obtain firstFrame : Frame (writes s) s.mem b.mem := by
       have frame := saved.frame
       rw [stableA.regs .rbp (by simp [calleeSaved]), keeps.mem] at frame
       exact frame.mono (by intro r hr; simp only [List.mem_singleton] at hr; subst r; simp [writes])
-    have finalFrame : Frame (writes s) b.mem t.mem := by
+    obtain finalFrame : Frame (writes s) b.mem t.mem := by
       have frame := generated.frame
       rw [AddressCalls.writes, workB, regsB .rsp (by simp [calleeSaved])] at frame
       exact frame.mono (by
@@ -745,8 +974,8 @@ theorem Done.frame_word {s t : State} {p : Params} {pass lane slice index : Nat}
     (d : Nat) (bound : d + 8 ≤ 272) (separate : d + 8 ≤ 16 ∨ 24 ≤ d) :
     t.mem.readW (off (t.gpr .rbp) d) 64 = s.mem.readW (off (s.gpr .rbp) d) 64 := by
   rw [done.regs .rbp (by simp [calleeSaved])]
-  have sub : Region.Sub ⟨off (s.gpr .rbp) d, 8⟩ ⟨s.gpr .rbp, 272⟩ := Offset.sub_base _ bound
-  have currentSub : Region.Sub ⟨current s p lane slice index, 1024⟩ ⟨matrix s, p.blocks * 1024⟩ :=
+  obtain sub : Region.Sub ⟨off (s.gpr .rbp) d, 8⟩ ⟨s.gpr .rbp, 272⟩ := Offset.sub_base _ bound
+  obtain currentSub : Region.Sub ⟨current s p lane slice index, 1024⟩ ⟨matrix s, p.blocks * 1024⟩ :=
     cell_sub p _ h.bounds.lanesPositive h.bounds.laneBound
       (Proof.Argon2.column_lt p h.bounds.lanesPositive h.bounds.sliceBound h.bounds.indexBound)
   exact done.frame.readW (r := ⟨off (s.gpr .rbp) d, 8⟩) (Region.contains_self _ _) (by
@@ -761,10 +990,10 @@ theorem Done.frame_word {s t : State} {p : Params} {pass lane slice index : Nat}
 theorem Done.retains {s t : State} {p : Params} {pass lane slice index : Nat}
     (h : Ready p pass lane slice index s) (done : Done s t p pass lane slice index) :
     Ready p pass lane slice index t := by
-  have bp := done.regs .rbp (by simp [calleeSaved])
-  have sp := done.regs .rsp (by simp [calleeSaved])
-  have matrix' : matrix t = matrix s := done.frame_word h 232 (by decide) (by decide)
-  have work' : work t = work s := done.frame_word h 248 (by decide) (by decide)
+  obtain bp := done.regs .rbp (by simp [calleeSaved])
+  obtain sp := done.regs .rsp (by simp [calleeSaved])
+  obtain matrix' : matrix t = matrix s := done.frame_word h 232 (by decide) (by decide)
+  obtain work' : work t = work s := done.frame_word h 248 (by decide) (by decide)
   refine ⟨?_, h.bounds, ?_, (done.frame_word h 0 (by decide) (by decide)).trans h.passWord,
     (done.frame_word h 184 (by decide) (by decide)).trans h.lanesWord⟩
   · constructor
@@ -886,7 +1115,7 @@ theorem code_ok (s : State)
   unfold code
   refine WP.seq ((kind_ok s kindRead).mono ?_)
   rintro a ⟨i, id, ka⟩
-  have read : InRegions (a.rd ++ a.wr) (off (a.gpr .rbp) 0) 8 := by
+  obtain read : InRegions (a.rd ++ a.wr) (off (a.gpr .rbp) 0) 8 := by
     rw [ka.rd, ka.wr, ka.regs .rbp (by decide)]; exact passRead
   refine WP.seq ((pass_ok a read).mono ?_)
   rintro b ⟨zero, kb⟩
@@ -914,7 +1143,7 @@ theorem value_spec (s : State) (p : Spec.Argon2.Params) (pass slice : Nat)
     (sliceWord : s.gpr .r14 = BitVec.ofNat 64 slice)
     (passBound : pass < 2 ^ 64) (sliceBound : slice < 2 ^ 64) :
     value s = (BitVec.ofBool (Spec.Argon2.independent p pass slice)).setWidth 64 := by
-  have passZero : BitVec.ofNat 64 pass = 0#64 ↔ pass = 0 := ReferenceMap.word_zero pass passBound
+  obtain passZero : BitVec.ofNat 64 pass = 0#64 ↔ pass = 0 := ReferenceMap.word_zero pass passBound
   unfold value
   rw [kindWord, passWord, sliceWord, masks,
     ReferenceMap.word_nat slice sliceBound]
@@ -960,17 +1189,17 @@ theorem code_ok [CompressImpl] (p : Params) (pass lane slice old : Nat) (s : Sta
   intro a selected
   refine (word_ok a selected.layout).mono ?_
   rintro t ⟨random, keeps⟩
-  have regs : ∀ r ∈ calleeSaved, t.gpr r = s.gpr r := by
+  obtain regs : ∀ r ∈ calleeSaved, t.gpr r = s.gpr r := by
     intro r hr
-    have ne : r ∉ [Reg.rcx, .rax, .rdi] := by
+    obtain ne : r ∉ [Reg.rcx, .rax, .rdi] := by
       simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
     exact (keeps.regs r ne).trans (selected.regs r hr)
-  have bp := keeps.regs .rbp (by decide)
-  have sp := keeps.regs .rsp (by decide)
-  have work' : AddressCalls.work t = AddressCalls.work a := by
+  obtain bp := keeps.regs .rbp (by decide)
+  obtain sp := keeps.regs .rsp (by decide)
+  obtain work' : AddressCalls.work t = AddressCalls.work a := by
     unfold AddressCalls.work; rw [bp, keeps.mem]
-  have layout : AddressCalls.Ready t := by
+  obtain layout : AddressCalls.Ready t := by
     constructor
     · rw [keeps.rd, keeps.wr, bp]; exact selected.layout.frameRead
     · rw [work', keeps.wr]; exact selected.layout.workWrite
@@ -1000,7 +1229,7 @@ theorem Selected.frame_word {s t : State} {p : Params} {pass lane slice : Nat}
     (d : Nat) (bound : d + 8 ≤ 272) (separate : d + 8 ≤ 8 ∨ 16 ≤ d) :
     t.mem.readW (off (t.gpr .rbp) d) 64 = s.mem.readW (off (s.gpr .rbp) d) 64 := by
   rw [h.regs .rbp (by simp [calleeSaved])]
-  have sub : Region.Sub ⟨off (s.gpr .rbp) d, 8⟩ ⟨s.gpr .rbp, 272⟩ := Offset.sub_base _ bound
+  obtain sub : Region.Sub ⟨off (s.gpr .rbp) d, 8⟩ ⟨s.gpr .rbp, 272⟩ := Offset.sub_base _ bound
   exact h.frame.readW (r := ⟨off (s.gpr .rbp) d, 8⟩) (Region.contains_self _ _) (by
     intro r hr
     simp only [writes, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -1034,10 +1263,10 @@ open VG VG.X86_64 VG.Spec.Argon2
 theorem Selected.filling_ready {s t : State} {p : Params} {pass lane slice index : Nat}
     (cacheLayout : AddressCalls.Ready s) (h : FillKernel.Ready p pass lane slice index s)
     (done : Selected s t p pass lane slice) : FillKernel.Ready p pass lane slice index t := by
-  have bp := done.regs .rbp (by simp [calleeSaved])
-  have sp := done.regs .rsp (by simp [calleeSaved])
-  have matrix' : FillKernel.matrix t = FillKernel.matrix s := done.frame_word cacheLayout 232 (by decide) (by decide)
-  have work' : FillKernel.work t = FillKernel.work s := done.frame_word cacheLayout 248 (by decide) (by decide)
+  obtain bp := done.regs .rbp (by simp [calleeSaved])
+  obtain sp := done.regs .rsp (by simp [calleeSaved])
+  obtain matrix' : FillKernel.matrix t = FillKernel.matrix s := done.frame_word cacheLayout 232 (by decide) (by decide)
+  obtain work' : FillKernel.work t = FillKernel.work s := done.frame_word cacheLayout 248 (by decide) (by decide)
   refine ⟨?_, h.bounds, ?_, (done.frame_word cacheLayout 0 (by decide) (by decide)).trans h.passWord,
     (done.frame_word cacheLayout 184 (by decide) (by decide)).trans h.lanesWord⟩
   · constructor
@@ -1063,11 +1292,11 @@ theorem Selected.represents {s t : State} {p : Params} {pass lane slice index : 
     (done : Selected s t p pass lane slice) (blocks : Array Block)
     (represented : Proof.Argon2.Represents s.mem (FillKernel.matrix s) p.blocks blocks) :
     Proof.Argon2.Represents t.mem (FillKernel.matrix t) p.blocks blocks := by
-  have base : FillKernel.matrix t = FillKernel.matrix s := done.frame_word cacheLayout 232 (by decide) (by decide)
+  obtain base : FillKernel.matrix t = FillKernel.matrix s := done.frame_word cacheLayout 232 (by decide) (by decide)
   rw [base]
   refine ⟨represented.size, ?_⟩
   intro k hk
-  have kept : blockAt t.mem (Proof.Argon2.matrixCell (FillKernel.matrix s) k) =
+  obtain kept : blockAt t.mem (Proof.Argon2.matrixCell (FillKernel.matrix s) k) =
       blockAt s.mem (Proof.Argon2.matrixCell (FillKernel.matrix s) k) := by
     apply FillCompress.block_frame done.frame
     intro r hr
@@ -1110,10 +1339,10 @@ theorem Invariant.ready {p : Params} {pass lane slice old : Nat} {s : State}
     (h : Invariant p pass lane slice old s) : Ready p pass lane slice old s := by
   refine ⟨h.layout, h.reads, h.write, h.words, ?_⟩
   intro same
-  have word : BitVec.ofNat 64 (wanted s) = BitVec.ofNat 64 old := by
+  obtain word : BitVec.ofNat 64 (wanted s) = BitVec.ofNat 64 old := by
     unfold wanted
     rw [← counter_nat]; exact same.trans h.words.counterWord
-  have equal := (ReferenceMap.word_eq _ _ (wanted_bound s) h.bound).mp word
+  obtain equal := (ReferenceMap.word_eq _ _ (wanted_bound s) h.bound).mp word
   rcases h.cached with zero | cached
   · exfalso
     exact counter_ne_zero _ (same.trans (h.words.counterWord.trans (by rw [zero]; rfl)))
@@ -1123,7 +1352,7 @@ theorem Invariant.ready {p : Params} {pass lane slice old : Nat} {s : State}
 theorem Selected.invariant {s t : State} {p : Params} {pass lane slice old : Nat}
     (ready : Ready p pass lane slice old s) (h : Selected s t p pass lane slice) :
     Invariant p pass lane slice (wanted s) t := by
-  have bp := h.regs .rbp (by simp [calleeSaved])
+  obtain bp := h.regs .rbp (by simp [calleeSaved])
   refine ⟨h.layout, ?_, ?_, h.words ready, wanted_bound s, Or.inr ?_⟩
   · rw [h.rd, h.wr, bp]; exact ready.reads
   · rw [h.wr, bp]; exact ready.write
@@ -1134,9 +1363,9 @@ theorem Invariant.of_state {p : Params} {pass lane slice old : Nat} {s t : State
     (regs : ∀ r ∈ [Reg.rsp, .rbp, .rbx, .r14], t.gpr r = s.gpr r)
     (mem : t.mem = s.mem) (rd : t.rd = s.rd) (wr : t.wr = s.wr) :
     Invariant p pass lane slice old t := by
-  have bp := regs .rbp (by simp)
-  have sp := regs .rsp (by simp)
-  have work : AddressCalls.work t = AddressCalls.work s := by
+  obtain bp := regs .rbp (by simp)
+  obtain sp := regs .rsp (by simp)
+  obtain work : AddressCalls.work t = AddressCalls.work s := by
     unfold AddressCalls.work; rw [mem, bp]
   refine ⟨?_, ?_, ?_, ?_, h.bound, ?_⟩
   · constructor
@@ -1182,9 +1411,9 @@ theorem Ready.of_keeps {p : Params} {pass lane slice index old : Nat} {s t : Sta
     (h : Ready p pass lane slice index old s) (k : Divide.Keeps ReferenceMap.changed s t) :
     Ready p pass lane slice index old t := by
   refine ⟨h.filling.of_keeps k, h.cache.of_keeps k, ?_⟩
-  have matrix : FillKernel.matrix t = FillKernel.matrix s := by
+  obtain matrix : FillKernel.matrix t = FillKernel.matrix s := by
     unfold FillKernel.matrix; rw [k.mem, k.regs .rbp (by decide)]
-  have work : AddressCalls.work t = AddressCalls.work s := by
+  obtain work : AddressCalls.work t = AddressCalls.work s := by
     unfold AddressCalls.work; rw [k.mem, k.regs .rbp (by decide)]
   rw [matrix, work]; exact h.matrixWork
 
@@ -1250,7 +1479,7 @@ theorem state_ok (s : State) (p : Params) (pass lane slice index : Nat)
   refine (code_spec_ok s p pass lane slice index h state represented dependent).mono ?_
   rintro t ⟨random, keeps⟩
   refine ⟨random, h.of_keeps keeps, ?_, keeps⟩
-  have base : FillKernel.matrix t = FillKernel.matrix s := by
+  obtain base : FillKernel.matrix t = FillKernel.matrix s := by
     unfold FillKernel.matrix; rw [keeps.mem, keeps.regs .rbp (by decide)]
   rw [keeps.mem, base]; exact represented
 
@@ -1286,9 +1515,9 @@ theorem independent_ok [CompressImpl] (s : State) (p : Params) (pass lane slice 
     WP isa Impl.Argon2.X86_64.AddressCache.code s (Done s · p pass lane slice index state) := by
   refine (AddressCache.code_ok p pass lane slice old s h.cache.ready).mono ?_
   intro t done
-  have base : FillKernel.matrix t = FillKernel.matrix s :=
+  obtain base : FillKernel.matrix t = FillKernel.matrix s :=
     done.selected.frame_word h.cache.layout 232 (by decide) (by decide)
-  have nextReady : Ready p pass lane slice index (AddressCache.wanted s) t := by
+  obtain nextReady : Ready p pass lane slice index (AddressCache.wanted s) t := by
     refine ⟨done.selected.filling_ready h.cache.layout h.filling,
       done.selected.invariant h.cache.ready, ?_⟩
     rw [base, done.selected.work_eq]; exact h.matrixWork
@@ -1323,9 +1552,9 @@ theorem code_ok [CompressImpl] (s : State) (p : Params) (pass lane slice index o
   unfold Impl.Argon2.X86_64.RandomSource.code
   refine WP.seq ((prepare_ok s p pass lane slice index old h).mono ?_)
   rintro a ⟨flag, keeps⟩
-  have next := h.of_keeps keeps
-  have representedA : Proof.Argon2.Represents a.mem (FillKernel.matrix a) p.blocks state.memory := by
-    have base : FillKernel.matrix a = FillKernel.matrix s := by
+  obtain next := h.of_keeps keeps
+  obtain representedA : Proof.Argon2.Represents a.mem (FillKernel.matrix a) p.blocks state.memory := by
+    obtain base : FillKernel.matrix a = FillKernel.matrix s := by
       unfold FillKernel.matrix; rw [keeps.mem, keeps.regs .rbp (by decide)]
     rw [base, keeps.mem]; exact represented
   have finish {t : State} (done : Done a t p pass lane slice index state) :
@@ -1333,7 +1562,7 @@ theorem code_ok [CompressImpl] (s : State) (p : Params) (pass lane slice index o
     refine ⟨done.random, done.ready, done.represented, ?_, done.rd.trans keeps.rd,
       done.wr.trans keeps.wr, ?_, done.mxcsr.trans (ctl_eq_of keeps.mxcsr)⟩
     · intro r hr
-      have ne : r ∉ ReferenceMap.changed := by
+      obtain ne : r ∉ ReferenceMap.changed := by
         simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
       exact (done.regs r hr).trans (keeps.regs r ne)
@@ -1343,12 +1572,12 @@ theorem code_ok [CompressImpl] (s : State) (p : Params) (pass lane slice index o
       exact frame
   refine WP.ite (!independent p pass slice) (by simp only [eval, flag]) ?_ ?_
   · intro mode
-    have dependent : independent p pass slice = false := by
+    obtain dependent : independent p pass slice = false := by
       cases eq : independent p pass slice <;> simp_all
     exact (dependent_ok a p pass lane slice index old next state representedA dependent).mono
       (fun _ done => finish done)
   · intro mode
-    have independent : independent p pass slice = true := by
+    obtain independent : independent p pass slice = true := by
       cases eq : independent p pass slice <;> simp_all
     exact (independent_ok a p pass lane slice index old next state representedA independent).mono
       (fun _ done => finish done)
@@ -1376,7 +1605,7 @@ theorem Done.frame_word {s t : State} {p : Params} {pass lane slice index old : 
     (d : Nat) (bound : d + 8 ≤ 272) (separate : d + 8 ≤ 8 ∨ 16 ≤ d) :
     t.mem.readW (off (t.gpr .rbp) d) 64 = s.mem.readW (off (s.gpr .rbp) d) 64 := by
   rw [done.regs .rbp (by simp [calleeSaved])]
-  have sub : Region.Sub ⟨off (s.gpr .rbp) d, 8⟩ ⟨s.gpr .rbp, 272⟩ := Offset.sub_base _ bound
+  obtain sub : Region.Sub ⟨off (s.gpr .rbp) d, 8⟩ ⟨s.gpr .rbp, 272⟩ := Offset.sub_base _ bound
   exact done.frame.readW (r := ⟨off (s.gpr .rbp) d, 8⟩) (Region.contains_self _ _) (by
     intro r hr
     simp only [writes, AddressCache.writes, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -1399,10 +1628,10 @@ open VG VG.X86_64 VG.Spec.Argon2
 theorem Ready.after_fill {p : Params} {pass lane slice index old : Nat} {s t : State}
     (h : Ready p pass lane slice index old s) (done : FillKernel.Done s t p pass lane slice index) :
     Ready p pass lane slice index old t := by
-  have bp := done.regs .rbp (by simp [calleeSaved])
-  have sp := done.regs .rsp (by simp [calleeSaved])
-  have base : FillKernel.matrix t = FillKernel.matrix s := done.frame_word h.filling 232 (by decide) (by decide)
-  have work : AddressCalls.work t = AddressCalls.work s := done.frame_word h.filling 248 (by decide) (by decide)
+  obtain bp := done.regs .rbp (by simp [calleeSaved])
+  obtain sp := done.regs .rsp (by simp [calleeSaved])
+  obtain base : FillKernel.matrix t = FillKernel.matrix s := done.frame_word h.filling 232 (by decide) (by decide)
+  obtain work : AddressCalls.work t = AddressCalls.work s := done.frame_word h.filling 248 (by decide) (by decide)
   refine ⟨done.retains h.filling, ?_, ?_⟩
   · refine ⟨?_, ?_, ?_, ?_, h.cache.bound, ?_⟩
     · constructor
@@ -1424,12 +1653,12 @@ theorem Ready.after_fill {p : Params} {pass lane slice index old : Nat} {s t : S
       · exact Or.inl zero
       · apply Or.inr
         rw [work]
-        have kept : blockAt t.mem (off (AddressCalls.work s) 6144) =
+        obtain kept : blockAt t.mem (off (AddressCalls.work s) 6144) =
             blockAt s.mem (off (AddressCalls.work s) 6144) := by
           apply FillCompress.block_frame done.frame
           intro r hr
           simp only [FillKernel.writes, List.mem_cons, List.not_mem_nil, or_false] at hr
-          have cacheSub : Region.Sub ⟨off (AddressCalls.work s) 6144, 1024⟩ ⟨AddressCalls.work s, 8192⟩ :=
+          obtain cacheSub : Region.Sub ⟨off (AddressCalls.work s) 6144, 1024⟩ ⟨AddressCalls.work s, 8192⟩ :=
             Offset.sub_base _ (by decide)
           rcases hr with rfl | rfl | rfl | rfl
           · exact (h.matrixWork.symm.sub_left cacheSub).sub_right
@@ -1512,12 +1741,12 @@ theorem code_ok [CompressImpl] (s : State) (p : Params) (pass lane slice index o
   refine WP.seq ((RandomSource.code_ok s p pass lane slice index old h state represented).mono ?_)
   intro a source
   obtain ⟨counter, ready⟩ := source.ready
-  have baseA : FillKernel.matrix a = FillKernel.matrix s := source.frame_word h 232 (by decide) (by decide)
-  have workA : AddressCalls.work a = AddressCalls.work s := source.frame_word h 248 (by decide) (by decide)
+  obtain baseA : FillKernel.matrix a = FillKernel.matrix s := source.frame_word h 232 (by decide) (by decide)
+  obtain workA : AddressCalls.work a = AddressCalls.work s := source.frame_word h 248 (by decide) (by decide)
   refine (FillKernel.code_spec_ok a p pass lane slice index ready.filling state source.represented source.random).mono ?_
   rintro t ⟨done, matrix⟩
-  have baseT : FillKernel.matrix t = FillKernel.matrix a := done.frame_word ready.filling 232 (by decide) (by decide)
-  have workT : AddressCalls.work t = AddressCalls.work a := done.frame_word ready.filling 248 (by decide) (by decide)
+  obtain baseT : FillKernel.matrix t = FillKernel.matrix a := done.frame_word ready.filling 232 (by decide) (by decide)
+  obtain workT : AddressCalls.work t = AddressCalls.work a := done.frame_word ready.filling 248 (by decide) (by decide)
   refine ⟨⟨counter, ready.after_fill done⟩, ?_, baseT.trans baseA, workT.trans workA, ?_,
     done.rd.trans source.rd, done.wr.trans source.wr, ?_, done.mxcsr.trans source.mxcsr⟩
   · rw [baseT]; exact matrix
@@ -1567,9 +1796,9 @@ theorem advance_nat_ok (s : State) (p : Params) (pass lane slice index : Nat)
       t.cf = decide (index + 1 < p.segmentLen) ∧ Divide.Keeps [.r15] s t := by
   refine (advance_ok s).mono ?_
   rintro t ⟨value, flag, keeps⟩
-  have added : s.gpr .r15 + 1 = BitVec.ofNat 64 (index + 1) := by
+  obtain added : s.gpr .r15 + 1 = BitVec.ofNat 64 (index + 1) := by
     rw [h.position.index, BitVec.ofNat_add]; rfl
-  have endBound : p.segmentLen < 2 ^ 64 := Nat.lt_of_le_of_lt h.bounds.segment_le_lane
+  obtain endBound : p.segmentLen < 2 ^ 64 := Nat.lt_of_le_of_lt h.bounds.segment_le_lane
     (Nat.lt_trans h.bounds.laneLength_bound (by decide))
   have indexBound := h.bounds.indexBound
   refine ⟨value.trans added, ?_, keeps⟩
@@ -1580,10 +1809,10 @@ theorem next_ready {p : Params} {pass lane slice index old : Nat} {s t : State}
     (h : RandomSource.Ready p pass lane slice index old s)
     (k : Divide.Keeps [.r15] s t) (value : t.gpr .r15 = BitVec.ofNat 64 (index + 1))
     (active : index + 1 < p.segmentLen) : RandomSource.Ready p pass lane slice (index + 1) old t := by
-  have bp := k.regs .rbp (by decide)
-  have sp := k.regs .rsp (by decide)
-  have base : FillKernel.matrix t = FillKernel.matrix s := by unfold FillKernel.matrix; rw [k.mem, bp]
-  have work : AddressCalls.work t = AddressCalls.work s := by unfold AddressCalls.work; rw [k.mem, bp]
+  obtain bp := k.regs .rbp (by decide)
+  obtain sp := k.regs .rsp (by decide)
+  obtain base : FillKernel.matrix t = FillKernel.matrix s := by unfold FillKernel.matrix; rw [k.mem, bp]
+  obtain work : AddressCalls.work t = AddressCalls.work s := by unfold AddressCalls.work; rw [k.mem, bp]
   have kernelWork : FillKernel.work t = FillKernel.work s := work
   refine ⟨?_, h.cache.of_state (by
     intro r hr
@@ -1681,9 +1910,9 @@ theorem body_ok [CompressImpl] (s : State) (p : Params) (pass lane slice index o
   obtain ⟨counter, ready⟩ := filled.ready
   refine (advance_nat_ok a p pass lane slice index ready.filling).mono ?_
   rintro t ⟨value, cf, keeps⟩
-  have bp := keeps.regs .rbp (by decide)
-  have base : FillKernel.matrix t = FillKernel.matrix a := by unfold FillKernel.matrix; rw [keeps.mem, bp]
-  have work : AddressCalls.work t = AddressCalls.work a := by unfold AddressCalls.work; rw [keeps.mem, bp]
+  obtain bp := keeps.regs .rbp (by decide)
+  obtain base : FillKernel.matrix t = FillKernel.matrix a := by unfold FillKernel.matrix; rw [keeps.mem, bp]
+  obtain work : AddressCalls.work t = AddressCalls.work a := by unfold AddressCalls.work; rw [keeps.mem, bp]
   refine ⟨?_, base.trans filled.matrix, work.trans filled.work, ?_, keeps.rd.trans filled.rd,
     keeps.wr.trans filled.wr, ?_, (ctl_eq_of keeps.mxcsr).trans filled.mxcsr, ?_, ?_, ?_, ?_, ?_, ?_, cf, ?_⟩
   · rw [keeps.mem, base]; exact filled.represented
@@ -1693,7 +1922,7 @@ theorem body_ok [CompressImpl] (s : State) (p : Params) (pass lane slice index o
       (keeps.regs .r14 (by decide)).trans ready.filling.position.slice, value⟩
   · rw [keeps.mem]; exact filled.frame
   · intro r hr ne
-    have outside : r ∉ [Reg.r15] := by simp only [List.mem_cons, List.not_mem_nil, or_false]; exact ne
+    obtain outside : r ∉ [Reg.r15] := by simp only [List.mem_cons, List.not_mem_nil, or_false]; exact ne
     exact (keeps.regs r outside).trans (filled.regs r hr)
   · exact ready.filling.layout.of_preserved bp (keeps.regs .rsp (by decide)) base work keeps.rd keeps.wr
   · exact ⟨counter, ready.cache.of_state (by
@@ -1773,7 +2002,7 @@ theorem loop_ok [CompressImpl] (count : Nat) (s : State) (p : Params) (pass lane
       · simp only [eval, done.cf, last, Nat.lt_irrefl, decide_false]
       · exact done.finished last
     | succ n =>
-      have active : index + 1 < p.segmentLen := by omega_using [endIndex]
+      obtain active : index + 1 < p.segmentLen := by omega_using [endIndex]
       obtain ⟨nextCounter, nextReady⟩ := done.next active
       obtain ⟨restTrace, t, restRun, finished⟩ := ih a (index + 1) nextCounter nextReady
         (fillBlock p pass slice lane index state) done.represented (by omega_using []) (by omega_using [endIndex])
@@ -1826,11 +2055,11 @@ theorem Ready.activate {p : Params} {pass lane slice index old : Nat} {s : State
 
 theorem Parameters.segment_bound {p : Params} {pass lane slice : Nat} (h : Parameters p pass lane slice) :
     2 ≤ p.segmentLen ∧ p.segmentLen < 2 ^ 64 := by
-  have minimum := Proof.Argon2.segmentLen_ge_two p h.lanesPositive h.memoryMinimum
-  have le : p.segmentLen ≤ p.blocks := by
-    have blocks := Proof.Argon2.blocks_lanes p h.lanesPositive
-    have segments := Proof.Argon2.laneLen_segments p h.lanesPositive
-    have laneLe : p.laneLen ≤ p.blocks := by rw [blocks]; exact Nat.le_mul_of_pos_left _ h.lanesPositive
+  obtain minimum := Proof.Argon2.segmentLen_ge_two p h.lanesPositive h.memoryMinimum
+  obtain le : p.segmentLen ≤ p.blocks := by
+    obtain blocks := Proof.Argon2.blocks_lanes p h.lanesPositive
+    obtain segments := Proof.Argon2.laneLen_segments p h.lanesPositive
+    obtain laneLe : p.laneLen ≤ p.blocks := by rw [blocks]; exact Nat.le_mul_of_pos_left _ h.lanesPositive
     omega_using [segments, laneLe]
   exact ⟨minimum, Nat.lt_of_le_of_lt le
     (Nat.lt_trans (Nat.lt_of_le_of_lt (Proof.Argon2.blocks_le_memory p) h.memoryBound) (by decide))⟩
@@ -1838,9 +2067,9 @@ theorem Parameters.segment_bound {p : Params} {pass lane slice : Nat} (h : Param
 theorem Ready.of_keeps {p : Params} {pass lane slice index old : Nat} {s t : State}
     (h : Ready p pass lane slice index old s) (k : Divide.Keeps ReferenceMap.changed s t) :
     Ready p pass lane slice index old t := by
-  have bp := k.regs .rbp (by decide)
-  have base : FillKernel.matrix t = FillKernel.matrix s := by unfold FillKernel.matrix; rw [k.mem, bp]
-  have work : AddressCalls.work t = AddressCalls.work s := by unfold AddressCalls.work; rw [k.mem, bp]
+  obtain bp := k.regs .rbp (by decide)
+  obtain base : FillKernel.matrix t = FillKernel.matrix s := by unfold FillKernel.matrix; rw [k.mem, bp]
+  obtain work : AddressCalls.work t = AddressCalls.work s := by unfold AddressCalls.work; rw [k.mem, bp]
   refine ⟨h.parameters, h.layout.of_preserved bp (k.regs .rsp (by decide)) base work k.rd k.wr,
     h.cache.of_keeps k, ?_, h.position.of_keeps k, ?_⟩
   · rw [base, work]; exact h.matrixWork
@@ -1912,10 +2141,10 @@ theorem index_ok (s : State) (pass slice : Nat)
   unfold index
   refine WP.seq ((first_ok s hr).mono ?_)
   rintro a ⟨flag, keeps⟩
-  have firstFlag : a.zf = decide (pass = 0 ∧ slice = 0) := by
+  obtain firstFlag : a.zf = decide (pass = 0 ∧ slice = 0) := by
     rw [flag, passWord, sliceWord]
-    have passZero : BitVec.ofNat 64 pass = 0#64 ↔ pass = 0 := ReferenceMap.word_zero pass passBound
-    have sliceZero : BitVec.ofNat 64 slice = 0#64 ↔ slice = 0 := ReferenceMap.word_zero slice sliceBound
+    obtain passZero : BitVec.ofNat 64 pass = 0#64 ↔ pass = 0 := ReferenceMap.word_zero pass passBound
+    obtain sliceZero : BitVec.ofNat 64 slice = 0#64 ↔ slice = 0 := ReferenceMap.word_zero slice sliceBound
     simp only [passZero, sliceZero]
   refine WP.ite (decide (pass = 0 ∧ slice = 0)) (by simp only [eval, firstFlag]) ?_ ?_
   · intro mode
@@ -1968,10 +2197,10 @@ theorem Ready.of_state {p : Params} {pass lane slice : Nat} {s t : State}
     (h : Ready p pass lane slice s)
     (regs : ∀ r ∈ [Reg.rbp, .rsp, .rbx, .r12, .r13, .r14], t.gpr r = s.gpr r)
     (mem : t.mem = s.mem) (rd : t.rd = s.rd) (wr : t.wr = s.wr) : Ready p pass lane slice t := by
-  have bp := regs .rbp (by simp)
-  have sp := regs .rsp (by simp)
-  have base : FillKernel.matrix t = FillKernel.matrix s := by unfold FillKernel.matrix; rw [mem, bp]
-  have work : AddressCalls.work t = AddressCalls.work s := by unfold AddressCalls.work; rw [mem, bp]
+  obtain bp := regs .rbp (by simp)
+  obtain sp := regs .rsp (by simp)
+  obtain base : FillKernel.matrix t = FillKernel.matrix s := by unfold FillKernel.matrix; rw [mem, bp]
+  obtain work : AddressCalls.work t = AddressCalls.work s := by unfold AddressCalls.work; rw [mem, bp]
   refine ⟨h.parameters, h.layout.of_preserved bp sp base work rd wr, ?_, ?_, ?_, ?_, ?_,
     (regs .r12 (by simp)).trans h.laneLength, (regs .r13 (by simp)).trans h.segmentLength, ?_⟩
   · constructor
@@ -1996,9 +2225,9 @@ theorem Ready.of_state {p : Params} {pass lane slice : Nat} {s t : State}
 
 theorem Ready.saved {p : Params} {pass lane slice : Nat} {s t : State}
     (h : Ready p pass lane slice s) (saved : AddressCache.Saved s t) : Ready p pass lane slice t := by
-  have bp := congrFun saved.regs Reg.rbp
-  have sp := congrFun saved.regs Reg.rsp
-  have base : FillKernel.matrix t = FillKernel.matrix s := saved.read 232 (by decide) (by decide)
+  obtain bp := congrFun saved.regs Reg.rbp
+  obtain sp := congrFun saved.regs Reg.rsp
+  obtain base : FillKernel.matrix t = FillKernel.matrix s := saved.read 232 (by decide) (by decide)
   refine ⟨h.parameters, h.layout.of_preserved bp sp base saved.work_eq saved.rd saved.wr,
     saved.ready, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [saved.rd, saved.wr, bp]; exact h.reads
@@ -2035,22 +2264,22 @@ theorem reset_ok (s : State) (p : Params) (pass lane slice : Nat) (h : Ready p p
   unfold reset
   refine WP.seq ((register_ok s .rax 0).mono ?_)
   rintro a ⟨value, keeps⟩
-  have next := h.of_state (by
+  obtain next := h.of_state (by
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> exact keeps.regs _ (by decide)) keeps.mem keeps.rd keeps.wr
   refine (AddressCache.save_ready a next.addressLayout next.write).mono ?_
   intro t saved
   obtain ⟨old, words⟩ := next.words
-  have matrixA : FillKernel.matrix a = FillKernel.matrix s := by
+  obtain matrixA : FillKernel.matrix a = FillKernel.matrix s := by
     unfold FillKernel.matrix; rw [keeps.mem, keeps.regs .rbp (by decide)]
-  have workA : AddressCalls.work a = AddressCalls.work s := by
+  obtain workA : AddressCalls.work a = AddressCalls.work s := by
     unfold AddressCalls.work; rw [keeps.mem, keeps.regs .rbp (by decide)]
   refine ⟨next.saved saved, saved.words words value,
     (saved.read 232 (by decide) (by decide)).trans matrixA, saved.work_eq.trans workA,
     ?_, saved.rd.trans keeps.rd, saved.wr.trans keeps.wr, ?_, saved.mxcsr.trans keeps.mxcsr⟩
   · intro r hr
-    have ne : r ∉ [Reg.rax] := by
+    obtain ne : r ∉ [Reg.rax] := by
       simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
     exact (congrFun saved.regs r).trans (keeps.regs r ne)
@@ -2086,26 +2315,26 @@ theorem prepare_ok (s : State) (p : Params) (pass lane slice : Nat) (h : Ready p
     (Nat.lt_trans h.parameters.passBound (by decide))
     (Nat.lt_trans h.parameters.sliceBound (by decide))).mono ?_
   rintro t ⟨value, keeps⟩
-  have core := reset.ready.of_state (by
+  obtain core := reset.ready.of_state (by
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> exact keeps.regs _ (by decide)) keeps.mem keeps.rd keeps.wr
-  have cacheA : AddressCache.Invariant p pass lane slice 0 a :=
+  obtain cacheA : AddressCache.Invariant p pass lane slice 0 a :=
     ⟨reset.ready.addressLayout, reset.ready.reads, reset.ready.write, reset.words, by decide, Or.inl rfl⟩
-  have cache := cacheA.of_state (by
+  obtain cache := cacheA.of_state (by
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl <;> exact keeps.regs _ (by decide)) keeps.mem keeps.rd keeps.wr
-  have base : FillKernel.matrix t = FillKernel.matrix a := by
+  obtain base : FillKernel.matrix t = FillKernel.matrix a := by
     unfold FillKernel.matrix; rw [keeps.mem, keeps.regs .rbp (by decide)]
-  have work : AddressCalls.work t = AddressCalls.work a := by
+  obtain work : AddressCalls.work t = AddressCalls.work a := by
     unfold AddressCalls.work; rw [keeps.mem, keeps.regs .rbp (by decide)]
   refine ⟨⟨core.parameters, core.layout, cache, core.matrixWork,
     ⟨cache.words.laneWord, core.laneLength, core.segmentLength, cache.words.sliceWord, value⟩, core.lanesWord⟩,
     base.trans reset.matrix, work.trans reset.work, ?_, keeps.rd.trans reset.rd,
     keeps.wr.trans reset.wr, ?_, keeps.mxcsr.trans reset.mxcsr⟩
   · intro r hr ne
-    have outside : r ∉ [Reg.rcx, .r15] := by
+    obtain outside : r ∉ [Reg.rcx, .r15] := by
       simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp_all
     exact (keeps.regs r outside).trans (reset.regs r hr)

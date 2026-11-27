@@ -8,7 +8,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
 import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
 public import VerifiedGarbage.Impl.Ffdh.Arm.Checks
 public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
-import VerifiedGarbage.Proof.Ffdh.Arm.Checks
+import VerifiedGarbage.Proof.Ffdh.Arm.CheckFlag
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 
 /-! Constant-width tests of an operand against zero and one. -/

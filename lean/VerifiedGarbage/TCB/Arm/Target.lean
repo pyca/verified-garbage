@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.TCB.Arm.Isa
 public import VerifiedGarbage.TCB.Artifact
+public import VerifiedGarbage.TCB.Arm.Residue
 
 /-!
 # The 32-bit ARM target (AAPCS)
@@ -109,6 +110,12 @@ def abi : Abi isa where
   rd s := s.rd
   wr s := s.wr
   ret s := s.gpr .r1 ++ s.gpr .r0
+  -- AAPCS §6.4: a 32-bit result fills `r0`, and nothing is required of `r1`
+  -- (`ret`'s upper half); a 64-bit one fills `r0` and `r1`.
+  retExt
+    | .u32 => none
+    | .u64 => none
+    | .usize => none
   sym := some fun s name => (s.syms name).setWidth 64
 
 /-- Reducible, as an `abbrev` would be, but not inlined: an `abbrev` is compiled into
@@ -119,5 +126,6 @@ would see one per registration module rather than this one (`Rust.printsAs`). -/
   isa := isa
   abiPreserved := abiPreserved
   abi := abi
+  noResidue := some NoResidue
 
 end VG.Arm

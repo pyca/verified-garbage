@@ -8,6 +8,8 @@
 ///
 /// It runs `vg_x448_exchange`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of 56 bytes.
@@ -30,6 +32,8 @@ pub unsafe fn vg_x448_exchange_auto(_dit: verified_garbage_cpu::Dit<'_>, out: *m
 ///
 /// It runs `vg_x448_base`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of 56 bytes.
@@ -37,7 +41,7 @@ pub unsafe fn vg_x448_exchange_auto(_dit: verified_garbage_cpu::Dit<'_>, out: *m
 /// * `scratch` must be valid for reads and writes of 8192 bytes.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other or `scalar` (distinct Rust objects never do).
-/// * None of `out`, `scalar` and `scratch` may wrap around the end of the address space (no Rust object does).
+/// * None of `out`, `scalar` and `scratch` may overlap the 96 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_x448_base_auto(_dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 56], scalar: *const [u8; 56], scratch: *mut [u64; 1024]) {

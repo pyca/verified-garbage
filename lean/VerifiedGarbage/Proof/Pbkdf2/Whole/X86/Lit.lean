@@ -39,6 +39,7 @@ def fnsOf (I : Spec.Hmac.Instance) (M : Impl.Pbkdf2.Md.X86.Hash) : Fns where
   H := M.st
   W := I.scratch
   hiN := s!"vg_hmac_{I.rust}_init_scratch"
+  hiAnyN := s!"vg_hmac_{I.rust}_init_any_scratch"
   hiC := M.hmacInit
   hfN := s!"vg_hmac_{I.rust}_finalize_scratch"
   hfC := M.hmacFin

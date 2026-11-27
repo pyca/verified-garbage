@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Rc2.cbcInitContract`. Constant time: only the pointers, `key_len`, `effective_bits` and `iv_len` may affect timing, not the key or the IV.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `key` must be valid for reads of `key_len` bytes.
@@ -44,7 +46,8 @@ b 21f
 .inst 0xa90e4611,0xa90f4611,0xa9104611,0xa9114611,0xa9124611,0xa9134611,0xa9144611,0xa9154611
 .inst 0xa9164611,0xa9174611,0xa9184611,0xa9194611,0xa91a4611,0xa91b4611,0xa91c4611,0xa91d4611
 .inst 0xa91e4611,0xa91f4611,0x910803f0,0xa9004611,0xa9014611,0xa9024611,0xa9034611,0x910903ff
-.inst 0xd65f03c0
+.inst 0xd2800003,0xd2800008,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403,0xd10943ff,0x6f00e41f
+.inst 0x910003e9,0x3d80013f,0x910943ff,0xd65f03c0
 .p2align 6",
         vg_rc2_expand_key = sym super::rc2::vg_rc2_expand_key::vg_rc2_expand_key,
     )

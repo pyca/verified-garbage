@@ -1,8 +1,120 @@
 module
 
-public import VerifiedGarbage.Proof.AesCcm.Rounds
 import VerifiedGarbage.Proof.AesGcm.Scratch
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Spec.Ccm.Contract
+public import VerifiedGarbage.Proof.Framework.PostMono
+
+/-! ### `AesCcm.Rounds`, which this module and modules that import it used -/
+
+section
+
+/-!
+# AES-CCM: the contracts on the key schedule they are given
+
+Not trusted: the contracts that the proofs of `vg_aes_ccm_seal` and
+`vg_aes_ccm_open` are written against, for the cipher of the key schedule
+and the number of rounds they are given (`Spec.Ccm.ctxCiph`), whatever key
+that schedule came from. The shared contracts in `Spec/` are stated for
+every AES key whose schedule is in memory with its number of rounds
+(`Spec.Aes.KeySchedule`), and follow from these (`Verified.post_mono`): with
+the schedule of a key and its rounds, the cipher of the schedule is AES with
+that key (`Spec.Ccm.ctxCiph_eq`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.AesCcm
+
+open VG.Spec
+open VG.Spec.Ccm
+
+/-- For `rounds` of 10, 12 or 14, with the key schedule in the first
+`16 (rounds + 1)` bytes at `schedule`: the `len` bytes at `data` are
+encrypted, with the nonce at `nonce` and the `aad_len` bytes of associated
+data at `aad` (`encryptWith`), and the encrypted MAC of `tag_len` bytes is
+at `tag`. -/
+def sealRoundsPost (pb : Nat) : sealSig.Post pb :=
+  fun schedule rounds nonce nonceLen aad aadLen data len tag tagLen m m' _ =>
+    (rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14) →
+    encryptWith (ctxCiph m schedule rounds.toNat) tagLen.toNat
+        (Aes.bytesAt m nonce nonceLen.toNat) (Aes.bytesAt m data len.toNat)
+        (Aes.bytesAt m aad aadLen.toNat) =
+      (Aes.bytesAt m' data len.toNat, Aes.bytesAt m' tag tagLen.toNat)
+
+/-- For `rounds` of 10, 12 or 14, a MAC length `tag_len`, a nonce of
+`nonce_len` bytes and `len` bytes of payload that Appendix A.1 allows, with
+the key schedule in the first `16 (rounds + 1)` bytes at `schedule`:
+encrypts the `len` bytes at `data` in place, with the nonce at `nonce` and
+the `aad_len` bytes of associated data at `aad` (`encryptWith`), and writes
+the encrypted MAC of `tag_len` bytes to `tag`. -/
+def sealRoundsContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  sealSig.contract A (pre := sealPre A.ptrBits) (post := sealRoundsPost A.ptrBits)
+    (writeArgs := true)
+    (stack := stack)
+
+/-- For `rounds` of 10, 12 or 14, with the key schedule in the first
+`16 (rounds + 1)` bytes at `schedule` and the received tag (the encrypted
+MAC) the `tag_len` bytes at `tag`: if the MAC is right for the `len` bytes of
+encrypted payload at `data`, the nonce at `nonce` and the `aad_len` bytes of
+associated data at `aad` (`decryptWith`), the result is 1 and the payload is
+at `data`; otherwise the result is 0 and zeros are at `data`. -/
+def openRoundsPost (pb : Nat) : openSig.Post pb :=
+  fun schedule rounds nonce nonceLen aad aadLen data len tag tagLen m m' r =>
+    (rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14) →
+    match decryptWith (ctxCiph m schedule rounds.toNat) tagLen.toNat
+        (Aes.bytesAt m nonce nonceLen.toNat) (Aes.bytesAt m data len.toNat)
+        (Aes.bytesAt m aad aadLen.toNat) (Aes.bytesAt m tag tagLen.toNat) with
+    | some pt => r = 1 ∧ Aes.bytesAt m' data len.toNat = pt
+    | none => r = 0 ∧ Aes.bytesAt m' data len.toNat = zeros len.toNat
+
+/-- For `rounds` of 10, 12 or 14, a MAC length `tag_len`, a nonce of
+`nonce_len` bytes and `len` bytes of payload that Appendix A.1 allows, with
+the key schedule in the first `16 (rounds + 1)` bytes at `schedule` and the
+received tag (the encrypted MAC) the `tag_len` bytes at `tag`: if the MAC is
+right for the `len` bytes of encrypted payload at `data`, the nonce at
+`nonce` and the `aad_len` bytes of associated data at `aad` (`decryptWith`),
+returns 1 and leaves the payload at `data`; otherwise returns 0 and leaves
+zeros at `data`. May leak which (`decryptWith`'s outcome). -/
+def openRoundsContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  openSig.contract A (pre := openPre A.ptrBits) (post := openRoundsPost A.ptrBits)
+    (writeArgs := true)
+    (stack := stack)
+    (leak := some (openLeak A.ptrBits))
+
+theorem rounds_of_keySchedule {mem : Mem} {p : Addr} {r : Nat} {key : List Byte}
+    (h : Spec.Aes.KeySchedule mem p r key) : r = 10 ∨ r = 12 ∨ r = 14 := by
+  obtain ⟨hl, hr, -⟩ := h
+  rw [hr]
+  rcases hl with h | h | h <;> rw [h] <;> decide
+
+/-- `Spec.Ccm.sealContract` from `sealRoundsContract`. -/
+theorem seal_keyed {T : Target} {c : Prog T.isa} {A : Abi T.isa} {stack : Nat}
+    (h : Verified T c (sealRoundsContract A stack)) : Verified T c (Spec.Ccm.sealContract A stack) :=
+  h.post_mono fun _ _ _ _ _ _ _ _ _ _ _ _ _ hp key hk => by
+    dsimp only [sealRoundsPost, Spec.Ccm.sealPost] at hp ⊢
+    have h' := hp (rounds_of_keySchedule hk)
+    obtain ⟨-, hr, hw⟩ := hk
+    rw [hr] at hw h'
+    rw [ctxCiph_eq hw] at h'
+    exact h'
+
+/-- `Spec.Ccm.openContract` from `openRoundsContract`. -/
+theorem open_keyed {T : Target} {c : Prog T.isa} {A : Abi T.isa} {stack : Nat}
+    (h : Verified T c (openRoundsContract A stack)) : Verified T c (Spec.Ccm.openContract A stack) :=
+  h.post_mono fun _ _ _ _ _ _ _ _ _ _ _ _ _ hp key hk => by
+    dsimp only [openRoundsPost, Spec.Ccm.openPost] at hp ⊢
+    have h' := hp (rounds_of_keySchedule hk)
+    obtain ⟨-, hr, hw⟩ := hk
+    rw [hr] at hw h'
+    rw [ctxCiph_eq hw] at h'
+    exact h'
+
+end VG.Proof.AesCcm
+
+end
+
+end
 
 /-!
 # AES-CCM with its working space as an argument
@@ -10,8 +122,8 @@ import VerifiedGarbage.Proof.Framework.Omega
 `vg_aes_ccm_seal` and `vg_aes_ccm_open` keep their working space in a frame
 of their own (`Verified.stackArgScratch`), around code proved with the
 working space as a last argument: `sealScratchContract` and
-`openScratchContract` are the shared contracts with a 2560-byte `work`
-buffer appended, whatever it holds.
+`openScratchContract` are the shared contracts with a `work` buffer of `n`
+words appended, whatever it holds.
 
 The frame also holds a copy of the arguments passed on the stack, which
 needs the pre- and postconditions, and `open`'s leak, to read the memory on
@@ -28,33 +140,33 @@ namespace VG.Proof.AesCcm
 open VG.Spec.Ccm
 open VG.Proof.AesGcm (bytesAt_congr agree_of)
 
-/-- `vg_aes_ccm_seal` with `work: *mut [u64; 320]`. -/
-def sealScratchSig : Sig where
+/-- `vg_aes_ccm_seal` with `work: *mut [u64; n]` (320 words but on PPC64LE). -/
+def sealScratchSig (n : Nat := 320) : Sig where
   params := [("schedule", .array false .u8 240), ("rounds", .int .usize true),
     ("nonce", .slice false .u8 "nonce_len"), ("aad", .slice false .u8 "aad_len"),
     ("data", .slice true .u8 "len"), ("tag", .slice true .u8 "tag_len"),
-    ("work", .array true .u64 320)]
+    ("work", .array true .u64 n)]
 
 /-- `sealRoundsContract`, whatever `work` is. -/
-def sealScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  sealScratchSig.contract A
+def sealScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) (n : Nat := 320) : Contract M :=
+  (sealScratchSig n).contract A
     (pre := fun sch rounds nonce nonceLen aad aadLen data len tag tagLen _work =>
       sealPre A.ptrBits sch rounds nonce nonceLen aad aadLen data len tag tagLen)
     (post := fun sch rounds nonce nonceLen aad aadLen data len tag tagLen _work =>
       sealRoundsPost A.ptrBits sch rounds nonce nonceLen aad aadLen data len tag tagLen)
     (writeArgs := true) (stack := stack)
 
-/-- `vg_aes_ccm_open` with `work: *mut [u64; 320]`. -/
-def openScratchSig : Sig where
+/-- `vg_aes_ccm_open` with `work: *mut [u64; n]` (320 words but on PPC64LE). -/
+def openScratchSig (n : Nat := 320) : Sig where
   params := [("schedule", .array false .u8 240), ("rounds", .int .usize true),
     ("nonce", .slice false .u8 "nonce_len"), ("aad", .slice false .u8 "aad_len"),
     ("data", .slice true .u8 "len"), ("tag", .slice false .u8 "tag_len"),
-    ("work", .array true .u64 320)]
+    ("work", .array true .u64 n)]
   ret := some .u32
 
 /-- `openRoundsContract`, whatever `work` is. -/
-def openScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  openScratchSig.contract A
+def openScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) (n : Nat := 320) : Contract M :=
+  (openScratchSig n).contract A
     (pre := fun sch rounds nonce nonceLen aad aadLen data len tag tagLen _work =>
       openPre A.ptrBits sch rounds nonce nonceLen aad aadLen data len tag tagLen)
     (post := fun sch rounds nonce nonceLen aad aadLen data len tag tagLen _work =>
@@ -155,6 +267,50 @@ theorem sealPost_local : ∀ vs m₁ m₂ m' r, vs.length = (sealSig.words pb).l
   rw [e₁, e₂, e₃, e₄]
   exact h hr
 
+/-- `sealRoundsPost` reads the memory on return only within the buffers. -/
+theorem sealPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (sealSig.words pb).length →
+    Curry.apply (sealSig.words pb) (sealPre pb) vs m →
+    (∀ b ∈ Sig.bufs sealSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (sealSig.words pb) (sealRoundsPost pb) vs m m₁ r →
+      Curry.apply (sealSig.words pb) (sealRoundsPost pb) vs m m₂ r := by
+  intro vs m m₁ m₂ r hlen _ hb h
+  obtain ⟨sch, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 9) hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨rd, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨nonce, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨nl, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨aad, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨al, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨data, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨len, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨tag, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨tl, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero hlen
+  simp only [sealSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+    forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
+    ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb] (sealRoundsPost pb) _
+    m m₁ r at h
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
+    ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb] (sealRoundsPost pb) _
+    m m₂ r
+  dsimp only [Curry.apply, sealRoundsPost, ArgWord.ofRaw, IntTy.bits] at h ⊢
+  intro hr
+  obtain ⟨-, -, -, e₄, e₅⟩ := inputs_local (pb := pb) (le14 hr)
+    (agree_of hb.1) (agree_of hb.2.1) (agree_of hb.2.2.1) (agree_of hb.2.2.2.1)
+    (agree_of hb.2.2.2.2)
+  rw [e₄, e₅]
+  exact h hr
+
 theorem openPre_local : ∀ vs m₁ m₂, vs.length = (openSig.words pb).length →
     (∀ b ∈ Sig.bufs openSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
     Curry.apply (openSig.words pb) (openPre pb) vs m₁ →
@@ -208,6 +364,50 @@ theorem openPost_local : ∀ vs m₁ m₂ m' r, vs.length = (openSig.words pb).l
     (agree_of hb.1) (agree_of hb.2.1) (agree_of hb.2.2.1) (agree_of hb.2.2.2.1)
     (agree_of hb.2.2.2.2)
   rw [e₁, e₂, e₃, e₄, e₅]
+  exact h hr
+
+/-- `openRoundsPost` reads the memory on return only within the buffers. -/
+theorem openPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (openSig.words pb).length →
+    Curry.apply (openSig.words pb) (openPre pb) vs m →
+    (∀ b ∈ Sig.bufs openSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (openSig.words pb) (openRoundsPost pb) vs m m₁ r →
+      Curry.apply (openSig.words pb) (openRoundsPost pb) vs m m₂ r := by
+  intro vs m m₁ m₂ r hlen _ hb h
+  obtain ⟨sch, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 9) hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨rd, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨nonce, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨nl, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨aad, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨al, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨data, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨len, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨tag, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨tl, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero hlen
+  simp only [openSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+    forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
+    ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb] (openRoundsPost pb) _
+    m m₁ r at h
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
+    ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb] (openRoundsPost pb) _
+    m m₂ r
+  dsimp only [Curry.apply, openRoundsPost, ArgWord.ofRaw, IntTy.bits] at h ⊢
+  intro hr
+  obtain ⟨-, -, -, e₄, -⟩ := inputs_local (pb := pb) (le14 hr)
+    (agree_of hb.1) (agree_of hb.2.1) (agree_of hb.2.2.1) (agree_of hb.2.2.2.1)
+    (agree_of hb.2.2.2.2)
+  rw [e₄]
   exact h hr
 
 theorem openLeak_local : ∀ vs m₁ m₂, vs.length = (openSig.words pb).length →

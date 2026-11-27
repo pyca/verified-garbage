@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.X25519.X86_64.Small
 import VerifiedGarbage.Proof.X25519.X86_64.Sqr
-public import Mathlib.Logic.Function.Basic
+public import VerifiedGarbage.Proof.Framework.FunUpdate
 import VerifiedGarbage.Proof.X25519.X86_64.AddSub
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.PlainSimp
@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Framework.PlainSimp
 # X25519 on x86-64: the working space as slots
 
 The working space as 128 slots of 32 bytes (`E`), each read as a field
-element: each field operation updates one slot (`Function.update`) and the
+element: each field operation updates one slot (`Fun.update`) and the
 swap two, so that a sequence of operations is a chain of updates that `simp`
 evaluates at any slot. The ladder's variables and temporaries are in the slots
 2–19 (bytes 64–639), so the field operations change no byte outside `[64,
@@ -33,11 +33,11 @@ theorem Outside.mono {base : Addr} {o n o' n' : Nat} {m m' : Mem} (h : Outside b
 
 theorem E_update {base : Addr} {m m' : Mem} {o : Fin 128}
     (h : Outside base (32 * o.val) 32 m m') :
-    E m' base = Function.update (E m base) o (F m' base (32 * o.val)) := by
+    E m' base = Fun.update (E m base) o (F m' base (32 * o.val)) := by
   funext i
   by_cases hi : i = o
   · subst hi; simp [E]
-  · rw [Function.update_of_ne hi]
+  · rw [Fun.update_of_ne hi]
     simp only [E, F]
     have : i.val ≠ o.val := fun h' => hi (Fin.ext h')
     rw [h.fe (by omega_arith) (by omega_arith)]
@@ -54,6 +54,9 @@ theorem Keep.trans {base : Addr} {s₁ s₂ s₃ : State} (h₁ : Keep base s₁
     Keep base s₁ s₃ :=
   ⟨fun r hr => (h₂.gpr r hr).trans (h₁.gpr r hr), h₂.rd.trans h₁.rd, h₂.wr.trans h₁.wr,
     h₁.mem.trans h₂.mem⟩
+
+theorem Keep.refl (base : Addr) (s : State) : Keep base s s :=
+  ⟨fun _ _ => rfl, rfl, rfl, Outside.refl _ _ _ _⟩
 
 theorem Keep.scr {base : Addr} {s s' : State} (h : Keep base s s') (hs : Scr s base) : Scr s' base :=
   ⟨(h.gpr _ (by decide)).trans hs.rdi, h.wr ▸ hs.wr, hs.nowrap⟩
@@ -98,22 +101,12 @@ theorem Op.trans {base : Addr} {o : Nat} {s t u : State} (h : Op base o s t) (k 
     Op base o s u :=
   ⟨fun r hr => (k.gpr r hr).trans (h.gpr r hr), k.rd.trans h.rd, k.wr.trans h.wr, h.mem.trans k.mem⟩
 
-/-- A field operation into `[o]`, then `[o] = [o] + [o]`. -/
-theorem dbl_after {code : List Instr} {s : State} {base : Addr} (hs : Scr s base) {o : Nat}
-    (ho : Slot o) {v : Spec.X25519.Fe}
-    (h : WP isa (.block code) s fun s' => Op base o s s' ∧ F s'.mem base o = v) :
-    WP isa (.block (code ++ add o o o)) s fun s' => Op base o s s' ∧ F s'.mem base o = v + v := by
-  rw [WP.block_append_iff]
-  refine WP.mono h fun t ⟨ht, et⟩ => ?_
-  refine WP.mono (add_ok (ht.scr hs) ho ho ho) fun u ⟨hu, eu⟩ => ⟨ht.trans hu, ?_⟩
-  rw [eu, et]
-
 theorem baseline_ok : FieldOk baseline where
   mul hs _ _ _ ho ha hb := mul_ok hs ho ha hb
   sqr hs _ _ ho ha := sqr_ok hs ho ha
   a24add hs _ _ _ ho hb ha := mulA24Add_ok hs ho hb ha
-  mul2 hs _ _ _ ho ha hb := dbl_after hs ho (mul_ok hs ho ha hb)
-  sqr2 hs _ _ ho ha := dbl_after hs ho (sqr_ok hs ho ha)
+  mul2 hs _ _ _ ho ha hb := mul2_ok hs ho ha hb
+  sqr2 hs _ _ ho ha := sqr2_ok hs ho ha
   mulB hs _ _ _ ho ha hb := mulBnd_ok hs ho ha hb
   sqrB hs _ _ ho ha := sqrBnd_ok hs ho ha
 
@@ -124,15 +117,13 @@ variable {fld : Field} (hf : FieldOk fld)
 /-- Environments: the working space's slots. -/
 abbrev Env := Fin 128 → Spec.X25519.Fe
 
-def opMul (o a b : Fin 128) (e : Env) : Env := Function.update e o (e a * e b)
-def opAdd (o a b : Fin 128) (e : Env) : Env := Function.update e o (e a + e b)
-def opSub (o a b : Fin 128) (e : Env) : Env := Function.update e o (e a - e b)
+def opMul (o a b : Fin 128) (e : Env) : Env := Fun.update e o (e a * e b)
+def opAdd (o a b : Fin 128) (e : Env) : Env := Fun.update e o (e a + e b)
+def opSub (o a b : Fin 128) (e : Env) : Env := Fun.update e o (e a - e b)
 def opA24Add (o b a : Fin 128) (e : Env) : Env :=
-  Function.update e o (e b + Spec.X25519.a24 * e a)
-def opMux (o x y : Fin 128) (zf : Bool) (e : Env) : Env :=
-  Function.update e o (if zf then e y else e x)
+  Fun.update e o (e b + Spec.X25519.a24 * e a)
 def opSwap (x y : Fin 128) (sw : Bool) (e : Env) : Env :=
-  Function.update (Function.update e x (if sw then e y else e x)) y (if sw then e x else e y)
+  Fun.update (Fun.update e x (if sw then e y else e x)) y (if sw then e x else e y)
 
 /-- A slot of the ladder's: 2 to 19. -/
 abbrev LSlot (o : Fin 128) : Prop := 2 ≤ o.val ∧ o.val < 20
@@ -155,7 +146,6 @@ theorem cswapE {s : State} {base : Addr} (hs : Scr s base) (x y : Fin 128) (hx :
   rw [E_update o₂, E_update o₁]
   simp only [F, f₁, fy]
   cases sw <;> rfl
-
 
 /-! ## The ladder's operations, with the bytes they write
 
@@ -202,17 +192,5 @@ theorem a24AddEB {s : State} {base : Addr} (hs : Scr s base) (o b a : Fin 128) (
         Outside base (32 * o.val) 32 s.mem s'.mem :=
   WP.mono (hf.a24add hs (by omega_arith) (by omega_arith) (by omega_arith)) fun _ ⟨h, e⟩ =>
     ⟨h.keep (by omega) (by omega), by rw [E_update h.mem, e]; rfl, h.mem⟩
-
-theorem muxEB {s : State} {base : Addr} (hs : Scr s base) (o x y : Fin 128) (ho : LSlot o)
-    {zf : Bool} (hz : s.zf = some zf) :
-    WP isa (.block (mux (32 * o.val) (32 * x.val) (32 * y.val))) s fun s' =>
-      Keep base s s' ∧ E s'.mem base = opMux o x y zf (E s.mem base) ∧
-        Outside base (32 * o.val) 32 s.mem s'.mem ∧
-        fe s'.mem base (32 * o.val) =
-          (if zf then fe s.mem base (32 * y.val) else fe s.mem base (32 * x.val)) ∧
-        s'.zf = s.zf :=
-  WP.mono (mux_ok hs (by omega_arith) (by omega_arith) (by omega_arith) hz) fun _ ⟨h, f, z⟩ =>
-    ⟨h.keep (by omega) (by omega), by rw [E_update h.mem]; simp only [F, f]; cases zf <;> rfl,
-      h.mem, f, z⟩
 
 end VG.Proof.X25519.X86_64

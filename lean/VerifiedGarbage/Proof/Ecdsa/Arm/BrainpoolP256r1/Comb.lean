@@ -6,15 +6,13 @@ public import VerifiedGarbage.Impl.NatPairs
 public import VerifiedGarbage.Spec.Ecdsa.BrainpoolP256r1
 public import VerifiedGarbage.Proof.Ecdsa.Arm.Layout
 public import VerifiedGarbage.Proof.Ecdsa.Arm.Main
-public import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP256r1.Contract
+public import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP256r1.Verified
 public import VerifiedGarbage.Impl.Ecdsa.BrainpoolP256r1.ArmComb
 public import VerifiedGarbage.Proof.Framework.Arm.StackScratchConsts
 public import VerifiedGarbage.Proof.Weierstrass.Law
-import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP256r1.Verified
-import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP256r1.CombGenerator
+public import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP256r1.CombGenerator
 import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP256r1.CombLit
 import VerifiedGarbage.Proof.Ecdsa.Arm.SavedAbi
-public import VerifiedGarbage.Proof.BrainpoolP256r1.Arm.Comb
 public import VerifiedGarbage.Proof.Ecdsa.Contract
 import VerifiedGarbage.Proof.Weierstrass.Arm.TCombConsts
 import VerifiedGarbage.Proof.Framework.Arm.TaintSym
@@ -22,7 +20,6 @@ import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.PlainSimp
-import Mathlib.Logic.Function.Basic
 meta import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP256r1.Verified
 meta import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP256r1.CombLit
 meta import VerifiedGarbage.Proof.Framework.Arm.TaintSym
@@ -47,28 +44,34 @@ open VG VG.Arm VG.Impl.Ecdsa.Arm VG.Impl.Weierstrass.Arm
 open VG.Proof.Weierstrass VG.Proof.Weierstrass.Arm.TComb
 open VG.Proof.Ecdsa.Arm
 
+/-- The tables signing reads: the comb's, and the setup's constants. -/
+abbrev combSignK (u : Bool) : List (String × List (BitVec 64)) := brainpoolp256r1CombConsts ++ (brainpoolp256r1With u).constsK
+
 def combSignPre (u : Bool) (s : State) : Prop :=
-  Pre (brainpoolp256r1With u) s (constRegs brainpoolp256r1CombConsts s) ∧ ConstsOk brainpoolp256r1CombConsts 0 s
+  Pre (brainpoolp256r1With u) s (constRegs (combSignK u) s) ∧ ConstsOk (combSignK u) 0 s
 
-def combSignPub (s t : State) : Prop := signArm.pub s t ∧ s.syms brainpoolp256r1Comb.tsym=t.syms brainpoolp256r1Comb.tsym
+def combSignPub (u : Bool) (s t : State) : Prop :=
+  signArm.pub s t ∧ s.syms brainpoolp256r1Comb.tsym=t.syms brainpoolp256r1Comb.tsym ∧ s.syms (brainpoolp256r1With u).constSym=t.syms (brainpoolp256r1With u).constSym
 
-theorem combSign_ct : ConstantTime isa (combSignPre false) combSignPub signBrainpoolP256r1Comb := by
-  refine VG.Taint.constantTime (A := taintSym [brainpoolp256r1Comb.tsym]) τ₁ ?_ (by native_taint_decide)
-  intro s t hs ht pub
-  exact ⟨agree₁ (agree₀ hs.1 ht.1 pub.1),fun n hn => by
-    obtain rfl := List.mem_singleton.mp hn
-    exact pub.2⟩
+theorem combSign_agree {u : Bool} {s t : State} (hs : combSignPre u s) (ht : combSignPre u t)
+    (pub : combSignPub u s t) :
+    VG.Arm.Taint.Agree τ₁ s t ∧ ∀ n ∈ [brainpoolp256r1Comb.tsym,(brainpoolp256r1With u).constSym], s.syms n = t.syms n :=
+  ⟨agree₁ (agree₀ hs.1 ht.1 pub.1),fun n hn => by
+    simp only [List.mem_cons,List.not_mem_nil,or_false] at hn
+    rcases hn with rfl|rfl
+    exacts [pub.2.1,pub.2.2]⟩
 
-theorem combSignU_ct : ConstantTime isa (combSignPre true) combSignPub signBrainpoolP256r1CombU := by
-  refine VG.Taint.constantTime (A := taintSymU [brainpoolp256r1Comb.tsym]) τ₁ ?_ (by taint_decide)
-  intro s t hs ht pub
-  exact ⟨agree₁ (agree₀ hs.1 ht.1 pub.1),fun n hn => by
-    obtain rfl := List.mem_singleton.mp hn
-    exact pub.2⟩
+theorem combSign_ct : ConstantTime isa (combSignPre false) (combSignPub false) signBrainpoolP256r1Comb :=
+  VG.Taint.constantTime (A := taintSym [brainpoolp256r1Comb.tsym,(brainpoolp256r1With false).constSym]) τ₁
+    (fun _ _ hs ht pub => combSign_agree hs ht pub) (by native_taint_decide)
+
+theorem combSignU_ct : ConstantTime isa (combSignPre true) (combSignPub true) signBrainpoolP256r1CombU :=
+  VG.Taint.constantTime (A := taintSymU [brainpoolp256r1Comb.tsym,(brainpoolp256r1With true).constSym]) τ₁
+    (fun _ _ hs ht pub => combSign_agree hs ht pub) (by taint_decide)
 
 theorem combSign_ok (hC : Law Spec.BrainpoolP256r1.curve) {u : Bool} {s₀ : State} (hp : combSignPre u s₀) :
     WP isa (signBrainpoolP256r1CombWith u) s₀ fun t => SignKeep (brainpoolp256r1With u) s₀ t ∧ SignPost (brainpoolp256r1With u) s₀ t := by
-  have member : (brainpoolp256r1Comb.tsym,brainpoolp256r1CombWords)∈brainpoolp256r1CombConsts := List.mem_singleton_self _
+  have member : (brainpoolp256r1Comb.tsym,brainpoolp256r1CombWords)∈combSignK u := List.mem_cons_self
   have ht := tableMem_of_consts hp.2 member
   have hd := table_disjoint_of_consts hp.2 member
     (show scR s₀∈s₀.wr by rw [hp.1.wr]; simp)

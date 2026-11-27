@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Gcm.initContract`. The key context is `VG.Spec.Gcm.KeyRepr`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `key` must be valid for reads of `key_len` bytes.
@@ -23,7 +25,7 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_init(key: *const u8, key_len: usize, 
 call {vg_aes_expand_key_scratch}
 .base64 "gUIjOFkOIzxZDiMwVAYjNFQGSoXOhRMGBAaTBgkPBUeTBwQg"
 call {vg_aes_ctr32}
-.base64 "IoMDNAMIgzSDCAM5AwmDOYMJAzoDCoM6gwoDOwMLgzuDCwM8AwyDPIMMAz0DDYM9gw2DMAMOEwEBIRMBAX+CgA=="
+.base64 "IoMDNAMIgzSDCAM5AwmDOYMJAzoDCoM6gwoDOwMLgzuDCwM8AwyDPIMMAz0DDYM9gw2DMAMOEwEBIRMBAX+BQhMBAYFBEQqDIzBTACM0UwAjOFMAIzxTACMwUwIjNFMCIzhTAiM8UwIjMFMEIzRTBCM4UwQjPFMEIzBTBiM0UwYjOFMGIzxTBiMwUwgjNFMIIzhTCCM8UwgjMFMKIzRTCiM4UwojPFMKIzBTDCM0UwwjOFMMIzxTDCMwUw4jNFMOIzhTDiM8Uw4jMFMQIzRTECM4UxAjPFMQIzBTEiM0UxIjOFMSIzxTEiMwUxQjNFMUIzhTFCM8UxQjMFMWIzRTFiM4UxYjPFMWIzBTGCM0UxgjOFMYIzxTGCMwUxojNFMaIzhTGiM8UxojMFMcIzRTHCM4UxwjPFMcIzBTHiM0Ux4jOFMeIzxTHiMwUyAjNFMgIzhTICM8UyAjMFMiIzRTIiM4UyIjPFMiIzBTJCM0UyQjOFMkIzxTJCMwUyYjNFMmIzhTJiM8UyYjMFMoIzRTKCM4UygjPFMoIzBTKiM0UyojOFMqIzxTKiMwUywjNFMsIzhTLCM8UywjMFMuIzRTLiM4Uy4jPFMuIzBTMCM0UzAjOFMwIzxTMCMwUzIjNFMyIzhTMiM8UzIjMFM0IzRTNCM4UzQjPFM0IzBTNiM0UzYjOFM2IzxTNiMwUzgjNFM4IzhTOCM8UzgjMFM6IzRTOiM4UzojPFM6IzBTPCM0UzwjOFM8IzxTPCMwUz4jNFM+IzhTPiM8Uz4jMFNAIzRTQCM4U0AjPFNAIzBTQiM0U0IjOFNCIzxTQiMwU0QjNFNEIzhTRCM8U0QjMFNGIzRTRiM4U0YjPFNGIzBTSCM0U0gjOFNIIzxTSCMwU0ojNFNKIzhTSiM8U0ojMFNMIzRTTCM4U0wjPFNMIzBTTiM0U04jOFNOIzxTTiMwU1AjNFNQIzhTUCM8U1AjMFNSIzRTUiM4U1IjPFNSIzBTVCM0U1QjOFNUIzxTVCMwU1YjNFNWIzhTViM8U1YjMFNYIzRTWCM4U1gjPFNYIzBTWiM0U1ojOFNaIzxTWiMwU1wjNFNcIzhTXCM8U1wjMFNeIzRTXiM4U14jPFNeIzBTYCM0U2AjOFNgIzxTYCMwU2IjNFNiIzhTYiM8U2IjMFNkIzRTZCM4U2QjPFNkIzBTZiM0U2YjOFNmIzxTZiMwU2gjNFNoIzhTaCM8U2gjMFNqIzRTaiM4U2ojPFNqIzBTbCM0U2wjOFNsIzxTbCMwU24jNFNuIzhTbiM8U24jMFNwIzRTcCM4U3AjPFNwIzBTciM0U3IjOFNyIzxTciMwU3QjNFN0IzhTdCM8U3QjMFN2IzRTdiM4U3YjPFN2IzBTeCM0U3gjOFN4IzxTeCMwU3ojNFN6IzhTeiM8U3ojMFN8IzRTfCM4U3wjPFN8IzBTfiM0U34jOFN+IzxTfgFxCoMjMFMAIzRTACM4UwAjPFMAIzBTAiM0UwIjOFMCIzxTAiMwUwQjNFMEIzhTBCM8UwQjMFMGIzRTBiM4UwYjPFMGIzBTCCM0UwgjOFMIIzxTCCMwUwojNFMKIzhTCiM8UwojMFMMIzRTDCM4UwwjPFMMIzBTDiM0Uw4jOFMOIzxTDiMwUxAjNFMQIzhTECM8UxAjMFMSIzRTEiM4UxIjPFMSIzBTFCM0UxQjOFMUIzxTFCMwUxYjNFMWIzhTFiM8UxYjMFMYIzRTGCM4UxgjPFMYIzBTGiM0UxojOFMaIzxTGiMwUxwjNFMcIzhTHCM8UxwjMFMeIzRTHiM4Ux4jPFMeEwEBIEEBEwEBfwFFgUUBRoFGAUeBRwFIgUiBQgFDgUMBToFOAU+BT4KA"
 .option pop"#,
         vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
@@ -35,6 +37,8 @@ call {vg_aes_ctr32}
 /// The function checks no length: GCM requires a nonce of 1 to `2^61 - 1` bytes (§5.2.1.1), which the caller must check.
 ///
 /// Contract: `VG.Spec.Gcm.streamInitContract`. The streaming state is `J₀`, the GHASH accumulator, a partial block, the next counter block and a keystream block (`VG.Spec.Gcm.StreamRepr`). Constant time: only the pointers and `nonce_len` may affect timing, not the key context or the nonce.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -113,7 +117,7 @@ j 21f
 20:
 .base64 "g0IKACOAVACDQhoAo4BUAINCKgAjgVQAg0I6AKOBVACDQkoAI4JUAINCWgCjglQAg0JqACODVACDQnoAo4NUAINCigAjhFQAg0KaAKOEVACDQqoAI4VUAINCugCjhVQAgUIjhlQAgUKjhlQAgUIjh1QAhUKjh1QA"
 21:
-.base64 "g7IEACO4VAKD4oQAI6xUAgPFxABiBYPC1ADCAjNlVQCDwuQAogIzZVUAg8L0ADNlVQAFBZNShQEjjlQCk1IFAaOOVAKTUoUAI49UApNSBQCjj1QCgUIjuFQAI7xUACKDAzQDCIM0gwgDOQMJgzmDCQM6AwqDOoMKAzsDC4M7gwsDPAMMgzyDDAM9Aw2DPYMNgzADDhMBASETAQF/goA="
+.base64 "g7IEACO4VAKD4oQAI6xUAgPFxABiBYPC1ADCAjNlVQCDwuQAogIzZVUAg8L0ADNlVQAFBZNShQEjjlQCk1IFAaOOVAKTUoUAI49UApNSBQCjj1QCgUIjuFQAI7xUACKDAzQDCIM0gwgDOQMJgzmDCQM6AwqDOoMKAzsDC4M7gwsDPAMMgzyDDAM9Aw2DPYMNgzADDhMBASETAQF/gUITAQGBQREKgyMwUwAjNFMAIzhTACM8UwAjMFMCIzRTAiM4UwIjPFMCIzBTBCM0UwQjOFMEIzxTBCMwUwYjNFMGIzhTBiM8UwYjMFMIIzRTCCM4UwgjPFMIIzBTCiM0UwojOFMKIzxTCiMwUwwjNFMMIzhTDCM8UwwjMFMOIzRTDiM4Uw4jPFMOIzBTECM0UxAjOFMQIzxTECMwUxIjNFMSIzhTEiM8UxIjMFMUIzRTFCM4UxQjPFMUIzBTFiM0UxYjOFMWIzxTFiMwUxgjNFMYIzhTGCM8UxgjMFMaIzRTGiM4UxojPFMaIzBTHCM0UxwjOFMcIzxTHCMwUx4jNFMeIzhTHiM8Ux4jMFMgIzRTICM4UyAjPFMgIzBTIiM0UyIjOFMiIzxTIiMwUyQjNFMkIzhTJCM8UyQjMFMmIzRTJiM4UyYjPFMmIzBTKCM0UygjOFMoIzxTKCMwUyojNFMqIzhTKiM8UyojMFMsIzRTLCM4UywjPFMsIzBTLiM0Uy4jOFMuIzxTLiMwUzAjNFMwIzhTMCM8UzAjMFMyIzRTMiM4UzIjPFMyIzBTNCM0UzQjOFM0IzxTNCMwUzYjNFM2IzhTNiM8UzYjMFM4IzRTOCM4UzgjPFM4IzBTOiM0UzojOFM6IzxTOiMwUzwjNFM8IzhTPCM8UzwjMFM+IzRTPiM4Uz4jPFM+IzBTQCM0U0AjOFNAIzxTQCMwU0IjNFNCIzhTQiM8U0IjMFNEIzRTRCM4U0QjPFNEIzBTRiM0U0YjOFNGIzxTRiMwU0gjNFNIIzhTSCM8U0gjMFNKIzRTSiM4U0ojPFNKIzBTTCM0U0wjOFNMIzxTTCMwU04jNFNOIzhTTiM8U04jMFNQIzRTUCM4U1AjPFNQIzBTUiM0U1IjOFNSIzxTUiMwU1QjNFNUIzhTVCM8U1QjMFNWIzRTViM4U1YjPFNWIzBTWCM0U1gjOFNYIzxTWCMwU1ojNFNaIzhTWiM8U1ojMFNcIzRTXCM4U1wjPFNcIzBTXiM0U14jOFNeIzxTXiMwU2AjNFNgIzhTYCM8U2AjMFNiIzRTYiM4U2IjPFNiIzBTZCM0U2QjOFNkIzxTZCMwU2YjNFNmIzhTZiM8U2YjMFNoIzRTaCM4U2gjPFNoIzBTaiM0U2ojOFNqIzxTaiMwU2wjNFNsIzhTbCM8U2wjMFNuIzRTbiM4U24jPFNuIzBTcCM0U3AjOFNwIzxTcCMwU3IjNFNyIzhTciM8U3IjMFN0IzRTdCM4U3QjPFN0IzBTdiM0U3YjOFN2IzxTdiMwU3gjNFN4IzhTeCM8U3gjMFN6IzRTeiM4U3ojPFN6IzBTfCM0U3wjOFN8IzxTfCMwU34jNFN+IzhTfiM8U34TAQGBQREKgyMwUwAjNFMAIzhTACM8UwAjMFMCIzRTAiM4UwIjPFMCIzBTBCM0UwQjOFMEIzxTBCMwUwYjNFMGIzhTBiM8UwYjMFMIIzRTCCM4UwgjPFMIIzBTCiM0UwojOFMKIzxTCiMwUwwjNFMMIzhTDCM8UwwjMFMOIzRTDiM4Uw4jPFMOIzBTECM0UxAjOFMQIzxTECMwUxIjNFMSIzhTEiM8UxIjMFMUIzRTFCM4UxQjPFMUIzBTFiM0UxYjOFMWIzxTFiMwUxgjNFMYIzhTGCM8UxgjMFMaIzRTGiM4UxojPFMaIzBTHCM0UxwjOFMcIzxTHCMwUx4jNFMeIzhTHiM8Ux4jMFMgIzRTICM4UyAjPFMgIzBTIiM0UyIjOFMiIzxTIiMwUyQjNFMkIzhTJCM8UyQjMFMmIzRTJiM4UyYjPFMmIzBTKCM0UygjOFMoIzxTKCMwUyojNFMqIzhTKiM8UyojMFMsIzRTLCM4UywjPFMsIzBTLiM0Uy4jOFMuIzxTLiMwUzAjNFMwIzhTMCM8UzAjMFMyIzRTMiM4UzIjPFMyIzBTNCM0UzQjOFM0IzxTNCMwUzYjNFM2IzhTNiM8UzYjMFM4IzRTOCM4UzgjPFM4IzBTOiM0UzojOFM6IzxTOiMwUzwjNFM8IzhTPCM8UzwjMFM+IzRTPiM4Uz4jPFM+IzBTQCM0U0AjOFNAIzxTQCMwU0IjNFNCIzhTQiM8U0IjMFNEIzRTRCM4U0QjPFNEIzBTRiM0U0YjOFNGIzxTRiMwU0gjNFNIIzhTSCM8U0gjMFNKIzRTSiM4U0ojPFNKIzBTTCM0U0wjOFNMIzxTTCMwU04jNFNOIzhTTiM8U04jMFNQIzRTUCM4U1AjPFNQIzBTUiM0U1IjOFNSIzxTUiMwU1QjNFNUIzhTVCM8U1QjMFNWIzRTViM4U1YjPFNWIzBTWCM0U1gjOFNYIzxTWCMwU1ojNFNaIzhTWiM8U1ojMFNcIzRTXCM4U1wjPFNcIzBTXiM0U14jOFNeIzxTXiMwU2AjNFNgIzhTYCM8U2AjMFNiIzRTYiM4U2IjPFNiIzBTZCM0U2QjOFNkIzxTZCMwU2YjNFNmIzhTZiM8U2YjMFNoIzRTaCM4U2gjPFNoIzBTaiM0U2ojOFNqIzxTaiMwU2wjNFNsIzhTbCM8U2wjMFNuIzRTbiM4U24jPFNuIzBTcCM0U3AjOFNwIzxTcCMwU3IjNFNyIzhTciM8U3IjMFN0IzRTdCM4U3QjPFN0IzBTdiM0U3YjOFN2IzxTdiMwU3gjNFN4IzhTeCM8U3gjMFN6IzRTeiM4U3ojPFN6IzBTfCM0U3wjOFN8IzxTfCMwU34jNFN+IzhTfiM8U35ZcQqDIzBTACM0UwAjOFMAIzxTACMwUwIjNFMCIzhTAiM8UwIjMFMEIzRTBCM4UwQjPFMEIzBTBiM0UwZlYUEBEwEBf0EBEwEBf4FFAUaBRgFHgUcBSIFIgUIBQ4FDAU6BTgFPgU8BRYKA"
 .option pop"#,
         vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
     )
@@ -122,6 +126,8 @@ j 21f
 /// Absorbs additional data into an incremental AES-GCM encryption or decryption: with the key context `*ctx`, if the streaming state `*state` represents a message with `aad_len` bytes (modulo 2⁶⁴) of additional data and no text yet, it then represents that message with the `len` bytes at `data` appended to its additional data. All of the additional data comes before the text (§7.1 step 5): after text, the state represents no message.
 ///
 /// Contract: `VG.Spec.Gcm.streamAadContract`. Constant time: only the pointers, `aad_len` and `len` may affect timing, not the key context, the state or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -181,32 +187,62 @@ j 214f
 j 21f
 20:
 21:
-.base64 "IoMDNAMIgzSDCAM5AwmDOYMJAzoDCoM6gwoDOwMLgzuDCwM8AwyDPIMMAz0DDYM9gw2DMAMOEwEBIRMBAX+CgA=="
+.base64 "IoMDNAMIgzSDCAM5AwmDOYMJAzoDCoM6gwoDOwMLgzuDCwM8AwyDPIMMAz0DDYM9gw2DMAMOEwEBIRMBAX+BQhMBAYFBEQqDIzBTACM0UwAjOFMAIzxTACMwUwIjNFMCIzhTAiM8UwIjMFMEIzRTBCM4UwQjPFMEIzBTBiM0UwYjOFMGIzxTBiMwUwgjNFMIIzhTCCM8UwgjMFMKIzRTCiM4UwojPFMKIzBTDCM0UwwjOFMMIzxTDCMwUw4jNFMOIzhTDiM8Uw4jMFMQIzRTECM4UxAjPFMQIzBTEiM0UxIjOFMSIzxTEiMwUxQjNFMUIzhTFCM8UxQjMFMWIzRTFiM4UxYjPFMWIzBTGCM0UxgjOFMYIzxTGCMwUxojNFMaIzhTGiM8UxojMFMcIzRTHCM4UxwjPFMcIzBTHiM0Ux4jOFMeIzxTHiMwUyAjNFMgIzhTICM8UyAjMFMiIzRTIiM4UyIjPFMiIzBTJCM0UyQjOFMkIzxTJCMwUyYjNFMmIzhTJiM8UyYjMFMoIzRTKCM4UygjPFMoIzBTKiM0UyojOFMqIzxTKiMwUywjNFMsIzhTLCM8UywjMFMuIzRTLiM4Uy4jPFMuIzBTMCM0UzAjOFMwIzxTMCMwUzIjNFMyIzhTMiM8UzIjMFM0IzRTNCM4UzQjPFM0IzBTNiM0UzYjOFM2IzxTNiMwUzgjNFM4IzhTOCM8UzgjMFM6IzRTOiM4UzojPFM6IzBTPCM0UzwjOFM8IzxTPCMwUz4jNFM+IzhTPiM8Uz4jMFNAIzRTQCM4U0AjPFNAIzBTQiM0U0IjOFNCIzxTQiMwU0QjNFNEIzhTRCM8U0QjMFNGIzRTRiM4U0YjPFNGIzBTSCM0U0gjOFNIIzxTSCMwU0ojNFNKIzhTSiM8U0ojMFNMIzRTTCM4U0wjPFNMIzBTTiM0U04jOFNOIzxTTiMwU1AjNFNQIzhTUCM8U1AjMFNSIzRTUiM4U1IjPFNSIzBTVCM0U1QjOFNUIzxTVCMwU1YjNFNWIzhTViM8U1YjMFNYIzRTWCM4U1gjPFNYIzBTWiM0U1ojOFNaIzxTWiMwU1wjNFNcIzhTXCM8U1wjMFNeIzRTXiM4U14jPFNeIzBTYCM0U2AjOFNgIzxTYCMwU2IjNFNiIzhTYiM8U2IjMFNkIzRTZCM4U2QjPFNkIzBTZiM0U2YjOFNmIzxTZiMwU2gjNFNoIzhTaCM8U2gjMFNqIzRTaiM4U2ojPFNqIzBTbCM0U2wjOFNsIzxTbCMwU24jNFNuIzhTbiM8U24jMFNwIzRTcCM4U3AjPFNwIzBTciM0U3IjOFNyIzxTciMwU3QjNFN0IzhTdCM8U3QjMFN2IzRTdiM4U3YjPFN2IzBTeCM0U3gjOFN4IzxTeCMwU3ojNFN6IzhTeiM8U3ojMFN8IzRTfCM4U3wjPFN8IzBTfiM0U34jOFN+IzxTfhMBAYFBEQqDIzBTACM0UwAjOFMAIzxTACMwUwIjNFMCIzhTAiM8UwIjMFMEIzRTBCM4UwQjPFMEIzBTBiM0UwYjOFMGIzxTBiMwUwgjNFMIIzhTCCM8UwgjMFMKIzRTCiM4UwojPFMKIzBTDCM0UwwjOFMMIzxTDCMwUw4jNFMOIzhTDiM8Uw4jMFMQIzRTECM4UxAjPFMQIzBTEiM0UxIjOFMSIzxTEiMwUxQjNFMUIzhTFCM8UxQjMFMWIzRTFiM4UxYjPFMWIzBTGCM0UxgjOFMYIzxTGCMwUxojNFMaIzhTGiM8UxojMFMcIzRTHCM4UxwjPFMcIzBTHiM0Ux4jOFMeIzxTHiMwUyAjNFMgIzhTICM8UyAjMFMiIzRTIiM4UyIjPFMiIzBTJCM0UyQjOFMkIzxTJCMwUyYjNFMmIzhTJiM8UyYjMFMoIzRTKCM4UygjPFMoIzBTKiM0UyojOFMqIzxTKiMwUywjNFMsIzhTLCM8UywjMFMuIzRTLiM4Uy4jPFMuIzBTMCM0UzAjOFMwIzxTMCMwUzIjNFMyIzhTMiM8UzIjMFM0IzRTNCM4UzQjPFM0IzBTNiM0UzYjOFM2IzxTNiMwUzgjNFM4IzhTOCM8UzgjMFM6IzRTOiM4UzojPFM6IzBTPCM0UzwjOFM8IzxTPCMwUz4jNFM+IzhTPiM8Uz4jMFNAIzRTQCM4U0AjPFNAIzBTQiM0U0IjOFNCIzxTQiMwU0QjNFNEIzhTRCM8U0QjMFNGIzRTRiM4U0YjPFNGIzBTSCM0U0gjOFNIIzxTSCMwU0ojNFNKIzhTSiM8U0ojMFNMIzRTTCM4U0wjPFNMIzBTTiM0U04jOFNOIzxTTiMwU1AjNFNQIzhTUCM8U1AjMFNSIzRTUiM4U1IjPFNSIzBTVCM0U1QjOFNUIzxTVCMwU1YjNFNWIzhTViM8U1YjMFNYIzRTWCM4U1gjPFNYIzBTWiM0U1ojOFNaIzxTWiMwU1wjNFNcIzhTXCM8U1wjMFNeIzRTXiM4U14jPFNeIzBTYCM0U2AjOFNgIzxTYCMwU2IjNFNiIzhTYiM8U2IjMFNkIzRTZCM4U2QjPFNkIzBTZiM0U2YjOFNmIzxTZiMwU2gjNFNoIzhTaCM8U2gjMFNqIzRTaiM4U2ojPFNqIzBTbCM0U2wjOFNsIzxTbCMwU24jNFNuIzhTbiM8U24jMFNwIzRTcCM4U3AjPFNwIzBTciM0U3IjOFNyIzxTciMwU3QjNFN0IzhTdCM8U3QjMFN2IzRTdiM4U3YjPFN2IzBTeCM0U3gjOFN4IzxTeCMwU3ojNFN6IzhTeiM8U3ojMFN8IzRTfCM4U3wjPFN8IzBTfiM0U34jOFN+IzxTfllxCoMjMFMAIzRTACM4UwAjPFMAIzBTAiM0UwIjOFMCIzxTAiMwUwQjNFMEIzhTBCM8UwQjMFMGIzRTBmVhQQETAQF/QQETAQF/gUUBRoFGAUeBRwFIgUiBQgFDgUMBToFOAU+BTwFFgoA="
 .option pop"#,
         vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
     )
 }
 
-/// Encrypts the next piece of the text of an incremental AES-GCM encryption (NIST SP 800-38D §7.1): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and the ciphertext of exactly `text_len` bytes of plaintext so far, encrypts the `len` bytes at `data` in place, as the continuation of that plaintext, and the state then represents the message with them appended.
+/// Writes to `*bk` the bitsliced form of the key context `*ctx` of `vg_aes_gcm_init`: at byte `64*j`, for `j` from 0 to 14, its 16 bytes at byte `16*j` (the round keys of its key schedule) bitsliced, as `VG.Spec.Gcm.SlicedKeyAt` defines, and at byte 960 the 36 words derived from its hash subkey `H` (its bytes 240 to 255) that GHASH's integer multiplications read (`VG.Spec.Gcm.SlicedRepr`), as the `*_bitsliced` functions require for that key context. It reads only `*ctx` and writes only `*bk`. The key context and the buffer are secret: only the pointers may affect timing.
 ///
-/// The function checks no length: GCM requires at most `2^36 - 32` bytes of text and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
+/// Contract: `VG.Spec.Gcm.bitsliceContract`.
 ///
-/// Contract: `VG.Spec.Gcm.streamEncryptContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `len` may affect timing, not the key context, the state or the data.
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes, and aligned for `u64`.
+/// * `bk` must be valid for reads and writes of 1248 bytes, and aligned for `u64`.
+/// * `bk` must not overlap `ctx` (distinct Rust objects never do).
+/// * Neither `ctx` nor `bk` may overlap the 2048 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_aes_gcm_bitslice(ctx: *const [u64; 32], bk: *mut [u64; 156]) {
+    core::arch::naked_asm!(
+        r#".option push
+.option arch, +m, +c
+.base64 "EwEBgUERCoayh50H4ZsjsIcUI7SXFCO4JxUjvDcVI7BHFyO0VxcjuGcXI7x3FyOwhxkjtJcZI7inGSO8txm3UlVVm4JSVYISN1NVVRsDU1UCExNTAwKz4mIAI7BXGrcyMzObgjIzghI3MzMzGwMzMwITE1MDArPiYgAjtFcatxIPD5uC8vCCEjcTDw8bA/PwAhMTUwMCs+JiACO4Vxq3Av8Am4LyD4ISNwP/ABsD8w8CExNTAwKz4mIAI7xXGsFi/TKCEkFjfTMCExNTAwKz4mIAI7BXHLcCAACBIoISNwMAAH0zAhMTUwMCs+JiACO0Vxy3Av8Am4LyD4ISNwMAAAEjAhMTUwMCs+JiACOwVyDBcoEighJBcwEjAhMTUwMCs+JiACO0VyC3Ev8P/TKCEjcT/w99MwITE1MDArPiYgAjuFcgtwL/AIEighI3A/8AASMCExNTAwKz4mIAI7xXIKqGLoe5RZOSRQAWlROGB3iFBQ=="
+20:
+.base64 "A0QFAINCFQCiAjNkVACDQiUAwgIzZFQAg0I1AOICM2RUAANDRQCDQlUAogIzY1MAg0JlAMICM2NTAINCdQDiAjNjUwACEzNkZAADSoUAg0KVAKICM2paAINCpQDCAjNqWgCDQrUA4gIzaloAA0PFAINC1QCiAjNjUwCDQuUAwgIzY1MAg0L1AOICM2NTAAITM2pqAKKEIomiidKKUovSiwOzhxuTUoQAs8JCAbPyYgAzSloAogIzRFQAk9KEALPCUgGz8mIAs8paAKICs8RUAJNSiQCzwmIBs/JiADNLWwCiAjNJWQCT0okAs8JyAbPyYgCzy1sAogKzyVkAA7MHHJNSBAGzwkIBs/JiADNKWgDCAjNEVACT0gQBs8JSAbPyYgCzyloAwgKzxFQAk1IJAbPCYgGz8mIAM0tbAMICM0lZAJPSCQGzwnIBs/JiALPLWwDCArPJWQADs4cck1IEArPCQgGz8mIAM0paAIISM0RUAJPSBAKzwlIBs/JiALPKWgCCErPEVACTUgkCs8JiAbPyYgAzS1sAghIzSVkAk9IJArPCcgGz8mIAs8tbAIISs8lZAAOzBxuTUkQAs8JCAbPyYgAzSloAkgIzRFQAk9JEALPCUgGz8mIAs8paAJICs8RUAJNSSQCzwmIBs/JiADNLWwCSAjNJWQCT0kkAs8JyAbPyYgCzy1sAkgKzyVkAA7OHGpNSJACzwiIBs/JiADNJWQCKAjNEVACT0iQAs8IyAbPyYgCzyVkAigKzxFQAk1IqALPCYgGz8mIAM0tbAIoCM0paAJPSKgCzwnIBs/JiALPLWwCKArPKWgADswcak1IUALPCkgCz8mIAs8RUAIYCM0RUAJNSGQCzwjIBs/JiALPJWQCGAjNJWQCTUhoAs8JSAbPyYgCzyloAhgIzSloAk1IbALPCcgGz8mIAs8tbAIYCM0tbAADiBOYjOCYBIzw2ASMwRgMjNFYDIzhmAyM8dgNBFRMGBvz9FQ=="
+bnez a1, 20b
+.base64 "E4UHQLqFEwaABw=="
+21:
+.base64 "gzIFACOwVQAhBaEFfRY="
+bnez a2, 21b
+.base64 "E4UGD5MMBzwDQwUAIgODQhUAM2NTACIDg0IlADNjUwAiA4NCNQAzY1MAIgODQkUAM2NTACIDg0JVADNjUwAiA4NCZQAzY1MAIgODQnUAM2NTAINDhQCiA4NClQCz41MAogODQqUAs+NTAKIDg0K1ALPjUwCiA4NCxQCz41MAogODQtUAs+NTAKIDg0LlALPjUwCiA4NC9QCz41MANxQRERsEFBECFLcSERGbghIRFpSTFBQAExkkAJMZNAATX/MDk9/zA5MeEwCzzv4BhgOzw+MBkx//A7PO/gGTH+8Ds87+AZMfnwOzzv4BM85+ABOfDgITXw8Ck98OArNC/wEzeI8AI7AMATN4nwAjtAwBM3gvASO4DAEzeD8BI7wMATP4jwAjsAwDM/ifACO0DAMz+C8BI7gMAzP4PwEjvAwDM/iCACOwDAUz+JIAI7QMBTP4IgEjuAwFM/gyASO8DAUTnwMCE18PApPfAwKzQv8BM3iPACOwDAczeJ8AI7QMBzN4LwEjuAwHM3g/ASO8DAcz+I8AI7AMCTP4nwAjtAwJM/gvASO4DAkz+D8BI7wMCTP4ggAjsAwLM/iSACO0DAsz+CIBI7gMCzP4MgEjvAwLEx8OAhNfDwKTXw4Cs0L/ATN4jwAjsAwNM3ifACO0DA0zeC8BI7gMDTN4PwEjvAwNM/iPACOwDA8z+J8AI7QMDzP4LwEjuAwPM/g/ASO8DA8z+IIAI7AMETP4kgAjtAwRM/giASO4DBEz+DIBI7wMEQO0BxSDtIcUA7kHFYO5hxUDugcWg7qHFgO7BxeDu4cXA7wHGIO8hxgDvQcZg72HGUEBEwEBf4FCEwEBgUERCoMjMFMAIzRTACM4UwAjPFMAIzBTAiM0UwIjOFMCIzxTAiMwUwQjNFMEIzhTBCM8UwQjMFMGIzRTBiM4UwYjPFMGIzBTCCM0UwgjOFMIIzxTCCMwUwojNFMKIzhTCiM8UwojMFMMIzRTDCM4UwwjPFMMIzBTDiM0Uw4jOFMOIzxTDiMwUxAjNFMQIzhTECM8UxAjMFMSIzRTEiM4UxIjPFMSIzBTFCM0UxQjOFMUIzxTFCMwUxYjNFMWIzhTFiM8UxYjMFMYIzRTGCM4UxgjPFMYIzBTGiM0UxojOFMaIzxTGiMwUxwjNFMcIzhTHCM8UxwjMFMeIzRTHiM4Ux4jPFMeIzBTICM0UyAjOFMgIzxTICMwUyIjNFMiIzhTIiM8UyIjMFMkIzRTJCM4UyQjPFMkIzBTJiM0UyYjOFMmIzxTJiMwUygjNFMoIzhTKCM8UygjMFMqIzRTKiM4UyojPFMqIzBTLCM0UywjOFMsIzxTLCMwUy4jNFMuIzhTLiM8Uy4jMFMwIzRTMCM4UzAjPFMwIzBTMiM0UzIjOFMyIzxTMiMwUzQjNFM0IzhTNCM8UzQjMFM2IzRTNiM4UzYjPFM2IzBTOCM0UzgjOFM4IzxTOCMwUzojNFM6IzhTOiM8UzojMFM8IzRTPCM4UzwjPFM8IzBTPiM0Uz4jOFM+IzxTPiMwU0AjNFNAIzhTQCM8U0AjMFNCIzRTQiM4U0IjPFNCIzBTRCM0U0QjOFNEIzxTRCMwU0YjNFNGIzhTRiM8U0YjMFNIIzRTSCM4U0gjPFNIIzBTSiM0U0ojOFNKIzxTSiMwU0wjNFNMIzhTTCM8U0wjMFNOIzRTTiM4U04jPFNOIzBTUCM0U1AjOFNQIzxTUCMwU1IjNFNSIzhTUiM8U1IjMFNUIzRTVCM4U1QjPFNUIzBTViM0U1YjOFNWIzxTViMwU1gjNFNYIzhTWCM8U1gjMFNaIzRTWiM4U1ojPFNaIzBTXCM0U1wjOFNcIzxTXCMwU14jNFNeIzhTXiM8U14jMFNgIzRTYCM4U2AjPFNgIzBTYiM0U2IjOFNiIzxTYiMwU2QjNFNkIzhTZCM8U2QjMFNmIzRTZiM4U2YjPFNmIzBTaCM0U2gjOFNoIzxTaCMwU2ojNFNqIzhTaiM8U2ojMFNsIzRTbCM4U2wjPFNsIzBTbiM0U24jOFNuIzxTbiMwU3AjNFNwIzhTcCM8U3AjMFNyIzRTciM4U3IjPFNyIzBTdCM0U3QjOFN0IzxTdCMwU3YjNFN2IzhTdiM8U3YjMFN4IzRTeCM4U3gjPFN4IzBTeiM0U3ojOFN6IzxTeiMwU3wjNFN8IzhTfCM8U3wjMFN+IzRTfiM4U34jPFN+QQETAQF/gUUBRoFGAUeBRwFIgUiBQgFDgUMBToFOAU+BTwFFgoA="
+.option pop"#,
+    )
+}
+
+/// `vg_aes_gcm_stream_encrypt` with the bitsliced form of the key context at `*bk` (`VG.Spec.Gcm.CtxSlicedRepr`), which it may read instead of computing it. Computes the same result as `vg_aes_gcm_stream_encrypt`. The buffer is secret, as the key context is: it may not affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.streamEncryptBitslicedContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads of 256 bytes, and aligned for `u64`.
 /// * `state` must be valid for reads and writes of 80 bytes, and aligned for `u64`.
 /// * `data` must be valid for reads and writes of `len` bytes.
+/// * `bk` must be valid for reads of 1248 bytes, and aligned for `u64`.
 /// * `rounds` must be 10, 12 or 14.
-/// * `state` and `data` must not overlap each other or `ctx` (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `data` may overlap the 4608 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * `*bk` must be what `vg_aes_gcm_bitslice` wrote for the same key context (the contract's precondition: `VG.Spec.Gcm.CtxSlicedRepr` of `bk` and the key context).
+/// * `state` and `data` must not overlap each other, `ctx` or `bk` (distinct Rust objects never do).
+/// * None of `ctx`, `state`, `data` and `bk` may overlap the 4624 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_encrypt(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_encrypt_bitsliced(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize, bk: *const [u64; 156]) {
     core::arch::naked_asm!(
         r#".option push
 .option arch, +m, +c
-.base64 "EwEBgRMBAd+KiCOwiAgjtJgII7goCSO8OAkjsEgLI7RYCyO4aAsjvHgLI7CIDSO0mA0juKgNI7y4DSOwGA5GhLKEKomuiTaNuo2+jEKMZoriihP7/QA="
+.base64 "EwEBgRMBAd6KghODggAjsGIAxoOKiIO4CAAjsIgII7SYCCO4KAkjvDgJI7BICyO0WAsjuGgLI7x4CyOwiA0jtJgNI7ioDSO8uA0jsBgORoSyhCqJrok2jbqNvoxCjJ6LZoriihP7/QA="
 beqz s5, 20f
 beqz s6, 22f
 .base64 "QUYzBmZBk9ZKAA=="
@@ -227,16 +263,16 @@ bnez a2, 28b
 j 23f
 22:
 23:
-.base64 "0oYT10oAk/f6ADOI+kBCmr6K"
+.base64 "0oYT10oAk/f6ADOI+kBCmr6KNog="
 beqz a4, 29f
-.base64 "SoXOhROGBAOTBwQg"
-call {vg_aes_ctr32}
+.base64 "XoXOhROGBAOTBwQg"
+call {vg_aes_ctr32_bs_to}
 j 210f
 29:
 210:
 beqz s5, 211f
-.base64 "gUIjsFQEI7RUBJOGBAQFR0qFzoUThgQDkwcEIA=="
-call {vg_aes_ctr32}
+.base64 "gUIjsFQEI7RUBJOGBAQFR16FzoUThgQDkwcEIA=="
+call {vg_aes_ctr32_bs}
 .base64 "E4UEBNKFVoY="
 213:
 .base64 "g8IFAINGBQCzwtIAI4BVAAUFhQV9Fg=="
@@ -312,33 +348,34 @@ j 222f
 j 215f
 214:
 215:
-.base64 "IoMDNAMIgzSDCAM5AwmDOYMJAzoDCoM6gwoDOwMLgzuDCwM8AwyDPIMMAz0DDYM9gw2DMAMOEwEBIRMBAX+CgA=="
+.base64 "IoMDNAMIgzSDCAM5AwmDOYMJAzoDCoM6gwoDOwMLgzuDCwM8AwyDPIMMAz0DDYM9gw2DMAMOEwEBIhMBAX+BQhMBAYFBEQqDIzBTACM0UwAjOFMAIzxTACMwUwIjNFMCIzhTAiM8UwIjMFMEIzRTBCM4UwQjPFMEIzBTBiM0UwYjOFMGIzxTBiMwUwgjNFMIIzhTCCM8UwgjMFMKIzRTCiM4UwojPFMKIzBTDCM0UwwjOFMMIzxTDCMwUw4jNFMOIzhTDiM8Uw4jMFMQIzRTECM4UxAjPFMQIzBTEiM0UxIjOFMSIzxTEiMwUxQjNFMUIzhTFCM8UxQjMFMWIzRTFiM4UxYjPFMWIzBTGCM0UxgjOFMYIzxTGCMwUxojNFMaIzhTGiM8UxojMFMcIzRTHCM4UxwjPFMcIzBTHiM0Ux4jOFMeIzxTHiMwUyAjNFMgIzhTICM8UyAjMFMiIzRTIiM4UyIjPFMiIzBTJCM0UyQjOFMkIzxTJCMwUyYjNFMmIzhTJiM8UyYjMFMoIzRTKCM4UygjPFMoIzBTKiM0UyojOFMqIzxTKiMwUywjNFMsIzhTLCM8UywjMFMuIzRTLiM4Uy4jPFMuIzBTMCM0UzAjOFMwIzxTMCMwUzIjNFMyIzhTMiM8UzIjMFM0IzRTNCM4UzQjPFM0IzBTNiM0UzYjOFM2IzxTNiMwUzgjNFM4IzhTOCM8UzgjMFM6IzRTOiM4UzojPFM6IzBTPCM0UzwjOFM8IzxTPCMwUz4jNFM+IzhTPiM8Uz4jMFNAIzRTQCM4U0AjPFNAIzBTQiM0U0IjOFNCIzxTQiMwU0QjNFNEIzhTRCM8U0QjMFNGIzRTRiM4U0YjPFNGIzBTSCM0U0gjOFNIIzxTSCMwU0ojNFNKIzhTSiM8U0ojMFNMIzRTTCM4U0wjPFNMIzBTTiM0U04jOFNOIzxTTiMwU1AjNFNQIzhTUCM8U1AjMFNSIzRTUiM4U1IjPFNSIzBTVCM0U1QjOFNUIzxTVCMwU1YjNFNWIzhTViM8U1YjMFNYIzRTWCM4U1gjPFNYIzBTWiM0U1ojOFNaIzxTWiMwU1wjNFNcIzhTXCM8U1wjMFNeIzRTXiM4U14jPFNeIzBTYCM0U2AjOFNgIzxTYCMwU2IjNFNiIzhTYiM8U2IjMFNkIzRTZCM4U2QjPFNkIzBTZiM0U2YjOFNmIzxTZiMwU2gjNFNoIzhTaCM8U2gjMFNqIzRTaiM4U2ojPFNqIzBTbCM0U2wjOFNsIzxTbCMwU24jNFNuIzhTbiM8U24jMFNwIzRTcCM4U3AjPFNwIzBTciM0U3IjOFNyIzxTciMwU3QjNFN0IzhTdCM8U3QjMFN2IzRTdiM4U3YjPFN2IzBTeCM0U3gjOFN4IzxTeCMwU3ojNFN6IzhTeiM8U3ojMFN8IzRTfCM4U3wjPFN8IzBTfiM0U34jOFN+IzxTfhMBAYFBEQqDIzBTACM0UwAjOFMAIzxTACMwUwIjNFMCIzhTAiM8UwIjMFMEIzRTBCM4UwQjPFMEIzBTBiM0UwYjOFMGIzxTBiMwUwgjNFMIIzhTCCM8UwgjMFMKIzRTCiM4UwojPFMKIzBTDCM0UwwjOFMMIzxTDCMwUw4jNFMOIzhTDiM8Uw4jMFMQIzRTECM4UxAjPFMQIzBTEiM0UxIjOFMSIzxTEiMwUxQjNFMUIzhTFCM8UxQjMFMWIzRTFiM4UxYjPFMWIzBTGCM0UxgjOFMYIzxTGCMwUxojNFMaIzhTGiM8UxojMFMcIzRTHCM4UxwjPFMcIzBTHiM0Ux4jOFMeIzxTHiMwUyAjNFMgIzhTICM8UyAjMFMiIzRTIiM4UyIjPFMiIzBTJCM0UyQjOFMkIzxTJCMwUyYjNFMmIzhTJiM8UyYjMFMoIzRTKCM4UygjPFMoIzBTKiM0UyojOFMqIzxTKiMwUywjNFMsIzhTLCM8UywjMFMuIzRTLiM4Uy4jPFMuIzBTMCM0UzAjOFMwIzxTMCMwUzIjNFMyIzhTMiM8UzIjMFM0IzRTNCM4UzQjPFM0IzBTNiM0UzYjOFM2IzxTNiMwUzgjNFM4IzhTOCM8UzgjMFM6IzRTOiM4UzojPFM6IzBTPCM0UzwjOFM8IzxTPCMwUz4jNFM+IzhTPiM8Uz4jMFNAIzRTQCM4U0AjPFNAIzBTQiM0U0IjOFNCIzxTQiMwU0QjNFNEIzhTRCM8U0QjMFNGIzRTRiM4U0YjPFNGIzBTSCM0U0gjOFNIIzxTSCMwU0ojNFNKIzhTSiM8U0ojMFNMIzRTTCM4U0wjPFNMIzBTTiM0U04jOFNOIzxTTiMwU1AjNFNQIzhTUCM8U1AjMFNSIzRTUiM4U1IjPFNSIzBTVCM0U1QjOFNUIzxTVCMwU1YjNFNWIzhTViM8U1YjMFNYIzRTWCM4U1gjPFNYIzBTWiM0U1ojOFNaIzxTWiMwU1wjNFNcIzhTXCM8U1wjMFNeIzRTXiM4U14jPFNeIzBTYCM0U2AjOFNgIzxTYCMwU2IjNFNiIzhTYiM8U2IjMFNkIzRTZCM4U2QjPFNkIzBTZiM0U2YjOFNmIzxTZiMwU2gjNFNoIzhTaCM8U2gjMFNqIzRTaiM4U2ojPFNqIzBTbCM0U2wjOFNsIzxTbCMwU24jNFNuIzhTbiM8U24jMFNwIzRTcCM4U3AjPFNwIzBTciM0U3IjOFNyIzxTciMwU3QjNFN0IzhTdCM8U3QjMFN2IzRTdiM4U3YjPFN2IzBTeCM0U3gjOFN4IzxTeCMwU3ojNFN6IzhTeiM8U3ojMFN8IzRTfCM4U3wjPFN8IzBTfiM0U34jOFN+IzxTfhlxCoMjMFMAIzRTACM4UwAjPFMAIzBTAiM0UwIjOFMCIzxTAiMwUwQjNFMEIzhTBCM8UwQjMFMGIzRTBiM4UwYjPFMGCWFBARMBAX9BARMBAX+BRQFGgUYBR4FHAUiBSIFCAUOBQwFOgU4BT4FPAUWCgA=="
 .option pop"#,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_aes_ctr32_bs_to = sym super::aes::vg_aes_ctr32_bs_to::vg_aes_ctr32_bs_to,
+        vg_aes_ctr32_bs = sym super::aes::vg_aes_ctr32_bs::vg_aes_ctr32_bs,
         vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
     )
 }
 
-/// Decrypts the next piece of the text of an incremental AES-GCM decryption (NIST SP 800-38D §7.2): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext so far, decrypts the `len` bytes of ciphertext at `data` in place, as the continuation of that ciphertext, and the state then represents the message with them appended. The plaintext is not authenticated until `vg_aes_gcm_stream_verify` has returned 1.
+/// `vg_aes_gcm_stream_decrypt` with the bitsliced form of the key context at `*bk` (`VG.Spec.Gcm.CtxSlicedRepr`), which it may read instead of computing it. Computes the same result as `vg_aes_gcm_stream_decrypt`. The buffer is secret, as the key context is: it may not affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.streamDecryptBitslicedContract`.
 ///
-/// The function checks no length: GCM requires at most `2^36 - 32` bytes of text and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
-///
-/// Contract: `VG.Spec.Gcm.streamDecryptContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `len` may affect timing, not the key context, the state or the data.
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads of 256 bytes, and aligned for `u64`.
 /// * `state` must be valid for reads and writes of 80 bytes, and aligned for `u64`.
 /// * `data` must be valid for reads and writes of `len` bytes.
+/// * `bk` must be valid for reads of 1248 bytes, and aligned for `u64`.
 /// * `rounds` must be 10, 12 or 14.
-/// * `state` and `data` must not overlap each other or `ctx` (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `data` may overlap the 4608 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * `*bk` must be what `vg_aes_gcm_bitslice` wrote for the same key context (the contract's precondition: `VG.Spec.Gcm.CtxSlicedRepr` of `bk` and the key context).
+/// * `state` and `data` must not overlap each other, `ctx` or `bk` (distinct Rust objects never do).
+/// * None of `ctx`, `state`, `data` and `bk` may overlap the 4624 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_decrypt(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_decrypt_bitsliced(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize, bk: *const [u64; 156]) {
     core::arch::naked_asm!(
         r#".option push
 .option arch, +m, +c
-.base64 "EwEBgRMBAd+KiCOwiAgjtJgII7goCSO8OAkjsEgLI7RYCyO4aAsjvHgLI7CIDSO0mA0juKgNI7y4DSOwGA5GhLKEKomuiTaNuo2+jEKM"
+.base64 "EwEBgRMBAd6KghODggAjsGIAxoOKiIO4CAAjsIgII7SYCCO4KAkjvDgJI7BICyO0WAsjuGgLI7x4CyOwiA0jtJgNI7ioDSO8uA0jsBgORoSyhCqJrok2jbqNvoxCjJ6L"
 beqz s8, 20f
 beqz s11, 22f
 j 23f
@@ -425,16 +462,16 @@ bnez a2, 231b
 j 226f
 225:
 226:
-.base64 "0oYT10oAk/f6ADOI+kBCmr6K"
+.base64 "0oYT10oAk/f6ADOI+kBCmr6KNog="
 beqz a4, 232f
-.base64 "SoXOhROGBAOTBwQg"
-call {vg_aes_ctr32}
+.base64 "XoXOhROGBAOTBwQg"
+call {vg_aes_ctr32_bs_to}
 j 233f
 232:
 233:
 beqz s5, 234f
-.base64 "gUIjsFQEI7RUBJOGBAQFR0qFzoUThgQDkwcEIA=="
-call {vg_aes_ctr32}
+.base64 "gUIjsFQEI7RUBJOGBAQFR16FzoUThgQDkwcEIA=="
+call {vg_aes_ctr32_bs}
 .base64 "E4UEBNKFVoY="
 236:
 .base64 "g8IFAINGBQCzwtIAI4BVAAUFhQV9Fg=="
@@ -445,32 +482,35 @@ j 235f
 j 224f
 223:
 224:
-.base64 "IoMDNAMIgzSDCAM5AwmDOYMJAzoDCoM6gwoDOwMLgzuDCwM8AwyDPIMMAz0DDYM9gw2DMAMOEwEBIRMBAX+CgA=="
+.base64 "IoMDNAMIgzSDCAM5AwmDOYMJAzoDCoM6gwoDOwMLgzuDCwM8AwyDPIMMAz0DDYM9gw2DMAMOEwEBIhMBAX+BQhMBAYFBEQqDIzBTACM0UwAjOFMAIzxTACMwUwIjNFMCIzhTAiM8UwIjMFMEIzRTBCM4UwQjPFMEIzBTBiM0UwYjOFMGIzxTBiMwUwgjNFMIIzhTCCM8UwgjMFMKIzRTCiM4UwojPFMKIzBTDCM0UwwjOFMMIzxTDCMwUw4jNFMOIzhTDiM8Uw4jMFMQIzRTECM4UxAjPFMQIzBTEiM0UxIjOFMSIzxTEiMwUxQjNFMUIzhTFCM8UxQjMFMWIzRTFiM4UxYjPFMWIzBTGCM0UxgjOFMYIzxTGCMwUxojNFMaIzhTGiM8UxojMFMcIzRTHCM4UxwjPFMcIzBTHiM0Ux4jOFMeIzxTHiMwUyAjNFMgIzhTICM8UyAjMFMiIzRTIiM4UyIjPFMiIzBTJCM0UyQjOFMkIzxTJCMwUyYjNFMmIzhTJiM8UyYjMFMoIzRTKCM4UygjPFMoIzBTKiM0UyojOFMqIzxTKiMwUywjNFMsIzhTLCM8UywjMFMuIzRTLiM4Uy4jPFMuIzBTMCM0UzAjOFMwIzxTMCMwUzIjNFMyIzhTMiM8UzIjMFM0IzRTNCM4UzQjPFM0IzBTNiM0UzYjOFM2IzxTNiMwUzgjNFM4IzhTOCM8UzgjMFM6IzRTOiM4UzojPFM6IzBTPCM0UzwjOFM8IzxTPCMwUz4jNFM+IzhTPiM8Uz4jMFNAIzRTQCM4U0AjPFNAIzBTQiM0U0IjOFNCIzxTQiMwU0QjNFNEIzhTRCM8U0QjMFNGIzRTRiM4U0YjPFNGIzBTSCM0U0gjOFNIIzxTSCMwU0ojNFNKIzhTSiM8U0ojMFNMIzRTTCM4U0wjPFNMIzBTTiM0U04jOFNOIzxTTiMwU1AjNFNQIzhTUCM8U1AjMFNSIzRTUiM4U1IjPFNSIzBTVCM0U1QjOFNUIzxTVCMwU1YjNFNWIzhTViM8U1YjMFNYIzRTWCM4U1gjPFNYIzBTWiM0U1ojOFNaIzxTWiMwU1wjNFNcIzhTXCM8U1wjMFNeIzRTXiM4U14jPFNeIzBTYCM0U2AjOFNgIzxTYCMwU2IjNFNiIzhTYiM8U2IjMFNkIzRTZCM4U2QjPFNkIzBTZiM0U2YjOFNmIzxTZiMwU2gjNFNoIzhTaCM8U2gjMFNqIzRTaiM4U2ojPFNqIzBTbCM0U2wjOFNsIzxTbCMwU24jNFNuIzhTbiM8U24jMFNwIzRTcCM4U3AjPFNwIzBTciM0U3IjOFNyIzxTciMwU3QjNFN0IzhTdCM8U3QjMFN2IzRTdiM4U3YjPFN2IzBTeCM0U3gjOFN4IzxTeCMwU3ojNFN6IzhTeiM8U3ojMFN8IzRTfCM4U3wjPFN8IzBTfiM0U34jOFN+IzxTfhMBAYFBEQqDIzBTACM0UwAjOFMAIzxTACMwUwIjNFMCIzhTAiM8UwIjMFMEIzRTBCM4UwQjPFMEIzBTBiM0UwYjOFMGIzxTBiMwUwgjNFMIIzhTCCM8UwgjMFMKIzRTCiM4UwojPFMKIzBTDCM0UwwjOFMMIzxTDCMwUw4jNFMOIzhTDiM8Uw4jMFMQIzRTECM4UxAjPFMQIzBTEiM0UxIjOFMSIzxTEiMwUxQjNFMUIzhTFCM8UxQjMFMWIzRTFiM4UxYjPFMWIzBTGCM0UxgjOFMYIzxTGCMwUxojNFMaIzhTGiM8UxojMFMcIzRTHCM4UxwjPFMcIzBTHiM0Ux4jOFMeIzxTHiMwUyAjNFMgIzhTICM8UyAjMFMiIzRTIiM4UyIjPFMiIzBTJCM0UyQjOFMkIzxTJCMwUyYjNFMmIzhTJiM8UyYjMFMoIzRTKCM4UygjPFMoIzBTKiM0UyojOFMqIzxTKiMwUywjNFMsIzhTLCM8UywjMFMuIzRTLiM4Uy4jPFMuIzBTMCM0UzAjOFMwIzxTMCMwUzIjNFMyIzhTMiM8UzIjMFM0IzRTNCM4UzQjPFM0IzBTNiM0UzYjOFM2IzxTNiMwUzgjNFM4IzhTOCM8UzgjMFM6IzRTOiM4UzojPFM6IzBTPCM0UzwjOFM8IzxTPCMwUz4jNFM+IzhTPiM8Uz4jMFNAIzRTQCM4U0AjPFNAIzBTQiM0U0IjOFNCIzxTQiMwU0QjNFNEIzhTRCM8U0QjMFNGIzRTRiM4U0YjPFNGIzBTSCM0U0gjOFNIIzxTSCMwU0ojNFNKIzhTSiM8U0ojMFNMIzRTTCM4U0wjPFNMIzBTTiM0U04jOFNOIzxTTiMwU1AjNFNQIzhTUCM8U1AjMFNSIzRTUiM4U1IjPFNSIzBTVCM0U1QjOFNUIzxTVCMwU1YjNFNWIzhTViM8U1YjMFNYIzRTWCM4U1gjPFNYIzBTWiM0U1ojOFNaIzxTWiMwU1wjNFNcIzhTXCM8U1wjMFNeIzRTXiM4U14jPFNeIzBTYCM0U2AjOFNgIzxTYCMwU2IjNFNiIzhTYiM8U2IjMFNkIzRTZCM4U2QjPFNkIzBTZiM0U2YjOFNmIzxTZiMwU2gjNFNoIzhTaCM8U2gjMFNqIzRTaiM4U2ojPFNqIzBTbCM0U2wjOFNsIzxTbCMwU24jNFNuIzhTbiM8U24jMFNwIzRTcCM4U3AjPFNwIzBTciM0U3IjOFNyIzxTciMwU3QjNFN0IzhTdCM8U3QjMFN2IzRTdiM4U3YjPFN2IzBTeCM0U3gjOFN4IzxTeCMwU3ojNFN6IzhTeiM8U3ojMFN8IzRTfCM4U3wjPFN8IzBTfiM0U34jOFN+IzxTfhlxCoMjMFMAIzRTACM4UwAjPFMAIzBTAiM0UwIjOFMCIzxTAiMwUwQjNFMEIzhTBCM8UwQjMFMGIzRTBiM4UwYjPFMGCWFBARMBAX9BARMBAX+BRQFGgUYBR4FHAUiBSIFCAUOBQwFOgU4BT4FPAUWCgA=="
 .option pop"#,
         vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_aes_ctr32_bs_to = sym super::aes::vg_aes_ctr32_bs_to::vg_aes_ctr32_bs_to,
+        vg_aes_ctr32_bs = sym super::aes::vg_aes_ctr32_bs::vg_aes_ctr32_bs,
     )
 }
 
-/// Finishes an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7.1 steps 5–6, §7.2 steps 6–7): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, writes its 128-bit tag to `*tag`. A shorter tag is the first bytes of this one; to check a received tag, use `vg_aes_gcm_stream_verify`.
+/// `vg_aes_gcm_stream_finish` with the bitsliced form of the key context at `*bk` (`VG.Spec.Gcm.CtxSlicedRepr`), which it may read instead of computing it. Computes the same result as `vg_aes_gcm_stream_finish`. The buffer is secret, as the key context is: it may not affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.streamFinishBitslicedContract`.
 ///
-/// Contract: `VG.Spec.Gcm.streamFinishContract`. Constant time: only the pointers, `rounds`, `aad_len` and `text_len` may affect timing, not the key context or the state.
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads of 256 bytes, and aligned for `u64`.
 /// * `state` must be valid for reads and writes of 80 bytes, and aligned for `u64`.
 /// * `tag` must be valid for reads and writes of 16 bytes.
+/// * `bk` must be valid for reads of 1248 bytes, and aligned for `u64`.
 /// * `rounds` must be 10, 12 or 14.
 /// * The contents of `state` on return are unspecified.
-/// * `state` and `tag` must not overlap each other or `ctx` (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `tag` may overlap the 4608 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * `*bk` must be what `vg_aes_gcm_bitslice` wrote for the same key context (the contract's precondition: `VG.Spec.Gcm.CtxSlicedRepr` of `bk` and the key context).
+/// * `state` and `tag` must not overlap each other, `ctx` or `bk` (distinct Rust objects never do).
+/// * None of `ctx`, `state`, `tag` and `bk` may overlap the 4608 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_finish(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_finish_bitsliced(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16], bk: *const [u64; 156]) {
     core::arch::naked_asm!(
         r#".option push
 .option arch, +m, +c
-.base64 "EwEBgRMBAd8KiCMwiAgjNJgIIzgoCSM8OAkjMEgLIzRYCyM4aAsjPHgLIzCIDSM0mA0jOKgNIzy4DSMwGA5ChLKEKomuiTaNuo2+jA=="
+.base64 "EwEBgRMBAd+KiMKDRogjMIgIIzSYCCM4KAkjPDgJIzBICyM0WAsjOGgLIzx4CyMwiA0jNJgNIzioDSM8uA0jMBgOQoSyhCqJrok2jbqNvoyeiw=="
 beqz s11, 20f
 .base64 "E/v9AA=="
 j 21f
@@ -489,34 +529,36 @@ j 23f
 23:
 .base64 "aopuixMVOgCTFTsAk1KFAyMAVAaTUgUDowBUBpNShQIjAVQGk1IFAqMBVAaTUoUBIwJUBpNSBQGjAlQGk1KFACMDVAaTUgUAowNUBpPShQMjBFQGk9IFA6MEVAaT0oUCIwVUBpPSBQKjBVQGk9KFASMGVAaT0gUBowZUBpPShQAjB1QGk9IFAKMHVAYTBQkPk4UEARMGBAaFRhMHBCA="
 call {vg_ghash}
-.base64 "g7IEASMwVACDsoQBIzRUAEqFzoUmhqKGBUeTBwQg"
-call {vg_aes_ctr32}
-.base64 "g0IEACOAXACDQhQAo4BcAINCJAAjgVwAg0I0AKOBXACDQkQAI4JcAINCVACjglwAg0JkACODXACDQnQAo4NcAINChAAjhFwAg0KUAKOEXACDQqQAI4VcAINCtACjhVwAg0LEACOGXACDQtQAo4ZcAINC5AAjh1wAg0L0AKOHXAAigwM0AwiDNIMIAzkDCYM5gwkDOgMKgzqDCgM7AwuDO4MLAzwDDIM8gwwDPQMNgz2DDYMwAw4TAQEhEwEBf4KA"
+.base64 "g7IEASMwVACDsoQBIzRUAF6FzoUmhqKGBUeTBwQg"
+call {vg_aes_ctr32_bs}
+.base64 "g0IEACOAXACDQhQAo4BcAINCJAAjgVwAg0I0AKOBXACDQkQAI4JcAINCVACjglwAg0JkACODXACDQnQAo4NcAINChAAjhFwAg0KUAKOEXACDQqQAI4VcAINCtACjhVwAg0LEACOGXACDQtQAo4ZcAINC5AAjh1wAg0L0AKOHXAAigwM0AwiDNIMIAzkDCYM5gwkDOgMKgzqDCgM7AwuDO4MLAzwDDIM8gwwDPQMNgz2DDYMwAw4TAQEhEwEBf4FCEwEBgUERCoMjMFMAIzRTACM4UwAjPFMAIzBTAiM0UwIjOFMCIzxTAiMwUwQjNFMEIzhTBCM8UwQjMFMGIzRTBiM4UwYjPFMGIzBTCCM0UwgjOFMIIzxTCCMwUwojNFMKIzhTCiM8UwojMFMMIzRTDCM4UwwjPFMMIzBTDiM0Uw4jOFMOIzxTDiMwUxAjNFMQIzhTECM8UxAjMFMSIzRTEiM4UxIjPFMSIzBTFCM0UxQjOFMUIzxTFCMwUxYjNFMWIzhTFiM8UxYjMFMYIzRTGCM4UxgjPFMYIzBTGiM0UxojOFMaIzxTGiMwUxwjNFMcIzhTHCM8UxwjMFMeIzRTHiM4Ux4jPFMeIzBTICM0UyAjOFMgIzxTICMwUyIjNFMiIzhTIiM8UyIjMFMkIzRTJCM4UyQjPFMkIzBTJiM0UyYjOFMmIzxTJiMwUygjNFMoIzhTKCM8UygjMFMqIzRTKiM4UyojPFMqIzBTLCM0UywjOFMsIzxTLCMwUy4jNFMuIzhTLiM8Uy4jMFMwIzRTMCM4UzAjPFMwIzBTMiM0UzIjOFMyIzxTMiMwUzQjNFM0IzhTNCM8UzQjMFM2IzRTNiM4UzYjPFM2IzBTOCM0UzgjOFM4IzxTOCMwUzojNFM6IzhTOiM8UzojMFM8IzRTPCM4UzwjPFM8IzBTPiM0Uz4jOFM+IzxTPiMwU0AjNFNAIzhTQCM8U0AjMFNCIzRTQiM4U0IjPFNCIzBTRCM0U0QjOFNEIzxTRCMwU0YjNFNGIzhTRiM8U0YjMFNIIzRTSCM4U0gjPFNIIzBTSiM0U0ojOFNKIzxTSiMwU0wjNFNMIzhTTCM8U0wjMFNOIzRTTiM4U04jPFNOIzBTUCM0U1AjOFNQIzxTUCMwU1IjNFNSIzhTUiM8U1IjMFNUIzRTVCM4U1QjPFNUIzBTViM0U1YjOFNWIzxTViMwU1gjNFNYIzhTWCM8U1gjMFNaIzRTWiM4U1ojPFNaIzBTXCM0U1wjOFNcIzxTXCMwU14jNFNeIzhTXiM8U14jMFNgIzRTYCM4U2AjPFNgIzBTYiM0U2IjOFNiIzxTYiMwU2QjNFNkIzhTZCM8U2QjMFNmIzRTZiM4U2YjPFNmIzBTaCM0U2gjOFNoIzxTaCMwU2ojNFNqIzhTaiM8U2ojMFNsIzRTbCM4U2wjPFNsIzBTbiM0U24jOFNuIzxTbiMwU3AjNFNwIzhTcCM8U3AjMFNyIzRTciM4U3IjPFNyIzBTdCM0U3QjOFN0IzxTdCMwU3YjNFN2IzhTdiM8U3YjMFN4IzRTeCM4U3gjPFN4IzBTeiM0U3ojOFN6IzxTeiMwU3wjNFN8IzhTfCM8U3wjMFN+IzRTfiM4U34jPFN+EwEBgUERCoMjMFMAIzRTACM4UwAjPFMAIzBTAiM0UwIjOFMCIzxTAiMwUwQjNFMEIzhTBCM8UwQjMFMGIzRTBiM4UwYjPFMGIzBTCCM0UwgjOFMIIzxTCCMwUwojNFMKIzhTCiM8UwojMFMMIzRTDCM4UwwjPFMMIzBTDiM0Uw4jOFMOIzxTDiMwUxAjNFMQIzhTECM8UxAjMFMSIzRTEiM4UxIjPFMSIzBTFCM0UxQjOFMUIzxTFCMwUxYjNFMWIzhTFiM8UxYjMFMYIzRTGCM4UxgjPFMYIzBTGiM0UxojOFMaIzxTGiMwUxwjNFMcIzhTHCM8UxwjMFMeIzRTHiM4Ux4jPFMeIzBTICM0UyAjOFMgIzxTICMwUyIjNFMiIzhTIiM8UyIjMFMkIzRTJCM4UyQjPFMkIzBTJiM0UyYjOFMmIzxTJiMwUygjNFMoIzhTKCM8UygjMFMqIzRTKiM4UyojPFMqIzBTLCM0UywjOFMsIzxTLCMwUy4jNFMuIzhTLiM8Uy4jMFMwIzRTMCM4UzAjPFMwIzBTMiM0UzIjOFMyIzxTMiMwUzQjNFM0IzhTNCM8UzQjMFM2IzRTNiM4UzYjPFM2IzBTOCM0UzgjOFM4IzxTOCMwUzojNFM6IzhTOiM8UzojMFM8IzRTPCM4UzwjPFM8IzBTPiM0Uz4jOFM+IzxTPiMwU0AjNFNAIzhTQCM8U0AjMFNCIzRTQiM4U0IjPFNCIzBTRCM0U0QjOFNEIzxTRCMwU0YjNFNGIzhTRiM8U0YjMFNIIzRTSCM4U0gjPFNIIzBTSiM0U0ojOFNKIzxTSiMwU0wjNFNMIzhTTCM8U0wjMFNOIzRTTiM4U04jPFNOIzBTUCM0U1AjOFNQIzxTUCMwU1IjNFNSIzhTUiM8U1IjMFNUIzRTVCM4U1QjPFNUIzBTViM0U1YjOFNWIzxTViMwU1gjNFNYIzhTWCM8U1gjMFNaIzRTWiM4U1ojPFNaIzBTXCM0U1wjOFNcIzxTXCMwU14jNFNeIzhTXiM8U14jMFNgIzRTYCM4U2AjPFNgIzBTYiM0U2IjOFNiIzxTYiMwU2QjNFNkIzhTZCM8U2QjMFNmIzRTZiM4U2YjPFNmIzBTaCM0U2gjOFNoIzxTaCMwU2ojNFNqIzhTaiM8U2ojMFNsIzRTbCM4U2wjPFNsIzBTbiM0U24jOFNuIzxTbiMwU3AjNFNwIzhTcCM8U3AjMFNyIzRTciM4U3IjPFNyIzBTdCM0U3QjOFN0IzxTdCMwU3YjNFN2IzhTdiM8U3YjMFN4IzRTeCM4U3gjPFN4IzBTeiM0U3ojOFN6IzxTeiMwU3wjNFN8IzhTfCM8U3wjMFN+IzRTfiM4U34jPFN+WXEKgyMwUwAjNFMAIzhTACM8UwAjMFMCIzRTAiM4UwIjPFMCIzBTBCM0UwQjOFMEIzxTBCMwUwYjNFMGZWFBARMBAX9BARMBAX+BRQFGgUYBR4FHAUiBSIFCAUOBQwFOgU4BT4FPAUWCgA=="
 .option pop"#,
         vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_aes_ctr32_bs = sym super::aes::vg_aes_ctr32_bs::vg_aes_ctr32_bs,
     )
 }
 
-/// Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is between 4 and 16 and the received tag is the first `tag_len` bytes of the message's 128-bit tag, and 0 otherwise. The tags are compared without a branch.
+/// `vg_aes_gcm_stream_verify` with the bitsliced form of the key context at `*bk` (`VG.Spec.Gcm.CtxSlicedRepr`), which it may read instead of computing it. Computes the same result as `vg_aes_gcm_stream_verify`. The buffer is secret, as the key context is: it may not affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.streamVerifyBitslicedContract`.
 ///
-/// Contract: `VG.Spec.Gcm.streamVerifyContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `tag_len` may affect timing, not the key context, the state or the tags.
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads of 256 bytes, and aligned for `u64`.
 /// * `state` must be valid for reads and writes of 80 bytes, and aligned for `u64`.
 /// * `tag` must be valid for reads of `tag_len` bytes.
+/// * `bk` must be valid for reads of 1248 bytes, and aligned for `u64`.
 /// * `rounds` must be 10, 12 or 14.
 /// * The contents of `state` on return are unspecified.
-/// * `state` must not overlap `ctx` or `tag` (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `tag` may overlap the 4608 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * `*bk` must be what `vg_aes_gcm_bitslice` wrote for the same key context (the contract's precondition: `VG.Spec.Gcm.CtxSlicedRepr` of `bk` and the key context).
+/// * `state` must not overlap `ctx`, `tag` or `bk` (distinct Rust objects never do).
+/// * None of `ctx`, `state`, `tag` and `bk` may overlap the 4624 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_verify(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_verify_bitsliced(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize, bk: *const [u64; 156]) -> u32 {
     core::arch::naked_asm!(
         r#".option push
 .option arch, +m, +c
-.base64 "EwEBgRMBAd+KiCOwiAgjtJgII7goCSO8OAkjsEgLI7RYCyO4aAsjvHgLI7CIDSO0mA0juKgNI7y4DSOwGA5GhLKEKomuiTaNuo2+jEKMgUqTUiwA"
+.base64 "EwEBgRMBAd6KghODggAjsGIAxoOKiIO4CAAjsIgII7SYCCO4KAkjvDgJI7BICyO0WAsjuGgLI7x4CyOwiA0jtJgNI7ioDSO8uA0jsBgORoSyhCqJrok2jbqNvoxCjJ6LgUqTUiwA"
 beqz t0, 20f
 .base64 "k1JMAA=="
 beqz t0, 22f
@@ -556,8 +598,8 @@ j 212f
 212:
 .base64 "aopuixMVOgCTFTsAk1KFAyMAVAaTUgUDowBUBpNShQIjAVQGk1IFAqMBVAaTUoUBIwJUBpNSBQGjAlQGk1KFACMDVAaTUgUAowNUBpPShQMjBFQGk9IFA6MEVAaT0oUCIwVUBpPSBQKjBVQGk9KFASMGVAaT0gUBowZUBpPShQAjB1QGk9IFAKMHVAYTBQkPk4UEARMGBAaFRhMHBCA="
 call {vg_ghash}
-.base64 "g7IEASMwVACDsoQBIzRUAEqFzoUmhqKGBUeTBwQg"
-call {vg_aes_ctr32}
+.base64 "g7IEASMwVACDsoQBIzRUAF6FzoUmhqKGBUeTBwQg"
+call {vg_aes_ctr32_bs}
 .base64 "gUIjOFQQIzxUECKFkwUEEWKG"
 214:
 .base64 "g0IFACOAVQAFBYUFfRY="
@@ -567,18 +609,16 @@ j 27f
 26:
 .base64 "AUU="
 27:
-.base64 "IoMDNAMIgzSDCAM5AwmDOYMJAzoDCoM6gwoDOwMLgzuDCwM8AwyDPIMMAz0DDYM9gw2DMAMOEwEBIRMBAX+CgA=="
+.base64 "IoMDNAMIgzSDCAM5AwmDOYMJAzoDCoM6gwoDOwMLgzuDCwM8AwyDPIMMAz0DDYM9gw2DMAMOEwEBIhMBAX+BQhMBAYFBEQqDIzBTACM0UwAjOFMAIzxTACMwUwIjNFMCIzhTAiM8UwIjMFMEIzRTBCM4UwQjPFMEIzBTBiM0UwYjOFMGIzxTBiMwUwgjNFMIIzhTCCM8UwgjMFMKIzRTCiM4UwojPFMKIzBTDCM0UwwjOFMMIzxTDCMwUw4jNFMOIzhTDiM8Uw4jMFMQIzRTECM4UxAjPFMQIzBTEiM0UxIjOFMSIzxTEiMwUxQjNFMUIzhTFCM8UxQjMFMWIzRTFiM4UxYjPFMWIzBTGCM0UxgjOFMYIzxTGCMwUxojNFMaIzhTGiM8UxojMFMcIzRTHCM4UxwjPFMcIzBTHiM0Ux4jOFMeIzxTHiMwUyAjNFMgIzhTICM8UyAjMFMiIzRTIiM4UyIjPFMiIzBTJCM0UyQjOFMkIzxTJCMwUyYjNFMmIzhTJiM8UyYjMFMoIzRTKCM4UygjPFMoIzBTKiM0UyojOFMqIzxTKiMwUywjNFMsIzhTLCM8UywjMFMuIzRTLiM4Uy4jPFMuIzBTMCM0UzAjOFMwIzxTMCMwUzIjNFMyIzhTMiM8UzIjMFM0IzRTNCM4UzQjPFM0IzBTNiM0UzYjOFM2IzxTNiMwUzgjNFM4IzhTOCM8UzgjMFM6IzRTOiM4UzojPFM6IzBTPCM0UzwjOFM8IzxTPCMwUz4jNFM+IzhTPiM8Uz4jMFNAIzRTQCM4U0AjPFNAIzBTQiM0U0IjOFNCIzxTQiMwU0QjNFNEIzhTRCM8U0QjMFNGIzRTRiM4U0YjPFNGIzBTSCM0U0gjOFNIIzxTSCMwU0ojNFNKIzhTSiM8U0ojMFNMIzRTTCM4U0wjPFNMIzBTTiM0U04jOFNOIzxTTiMwU1AjNFNQIzhTUCM8U1AjMFNSIzRTUiM4U1IjPFNSIzBTVCM0U1QjOFNUIzxTVCMwU1YjNFNWIzhTViM8U1YjMFNYIzRTWCM4U1gjPFNYIzBTWiM0U1ojOFNaIzxTWiMwU1wjNFNcIzhTXCM8U1wjMFNeIzRTXiM4U14jPFNeIzBTYCM0U2AjOFNgIzxTYCMwU2IjNFNiIzhTYiM8U2IjMFNkIzRTZCM4U2QjPFNkIzBTZiM0U2YjOFNmIzxTZiMwU2gjNFNoIzhTaCM8U2gjMFNqIzRTaiM4U2ojPFNqIzBTbCM0U2wjOFNsIzxTbCMwU24jNFNuIzhTbiM8U24jMFNwIzRTcCM4U3AjPFNwIzBTciM0U3IjOFNyIzxTciMwU3QjNFN0IzhTdCM8U3QjMFN2IzRTdiM4U3YjPFN2IzBTeCM0U3gjOFN4IzxTeCMwU3ojNFN6IzhTeiM8U3ojMFN8IzRTfCM4U3wjPFN8IzBTfiM0U34jOFN+IzxTfhMBAYFBEQqDIzBTACM0UwAjOFMAIzxTACMwUwIjNFMCIzhTAiM8UwIjMFMEIzRTBCM4UwQjPFMEIzBTBiM0UwYjOFMGIzxTBiMwUwgjNFMIIzhTCCM8UwgjMFMKIzRTCiM4UwojPFMKIzBTDCM0UwwjOFMMIzxTDCMwUw4jNFMOIzhTDiM8Uw4jMFMQIzRTECM4UxAjPFMQIzBTEiM0UxIjOFMSIzxTEiMwUxQjNFMUIzhTFCM8UxQjMFMWIzRTFiM4UxYjPFMWIzBTGCM0UxgjOFMYIzxTGCMwUxojNFMaIzhTGiM8UxojMFMcIzRTHCM4UxwjPFMcIzBTHiM0Ux4jOFMeIzxTHiMwUyAjNFMgIzhTICM8UyAjMFMiIzRTIiM4UyIjPFMiIzBTJCM0UyQjOFMkIzxTJCMwUyYjNFMmIzhTJiM8UyYjMFMoIzRTKCM4UygjPFMoIzBTKiM0UyojOFMqIzxTKiMwUywjNFMsIzhTLCM8UywjMFMuIzRTLiM4Uy4jPFMuIzBTMCM0UzAjOFMwIzxTMCMwUzIjNFMyIzhTMiM8UzIjMFM0IzRTNCM4UzQjPFM0IzBTNiM0UzYjOFM2IzxTNiMwUzgjNFM4IzhTOCM8UzgjMFM6IzRTOiM4UzojPFM6IzBTPCM0UzwjOFM8IzxTPCMwUz4jNFM+IzhTPiM8Uz4jMFNAIzRTQCM4U0AjPFNAIzBTQiM0U0IjOFNCIzxTQiMwU0QjNFNEIzhTRCM8U0QjMFNGIzRTRiM4U0YjPFNGIzBTSCM0U0gjOFNIIzxTSCMwU0ojNFNKIzhTSiM8U0ojMFNMIzRTTCM4U0wjPFNMIzBTTiM0U04jOFNOIzxTTiMwU1AjNFNQIzhTUCM8U1AjMFNSIzRTUiM4U1IjPFNSIzBTVCM0U1QjOFNUIzxTVCMwU1YjNFNWIzhTViM8U1YjMFNYIzRTWCM4U1gjPFNYIzBTWiM0U1ojOFNaIzxTWiMwU1wjNFNcIzhTXCM8U1wjMFNeIzRTXiM4U14jPFNeIzBTYCM0U2AjOFNgIzxTYCMwU2IjNFNiIzhTYiM8U2IjMFNkIzRTZCM4U2QjPFNkIzBTZiM0U2YjOFNmIzxTZiMwU2gjNFNoIzhTaCM8U2gjMFNqIzRTaiM4U2ojPFNqIzBTbCM0U2wjOFNsIzxTbCMwU24jNFNuIzhTbiM8U24jMFNwIzRTcCM4U3AjPFNwIzBTciM0U3IjOFNyIzxTciMwU3QjNFN0IzhTdCM8U3QjMFN2IzRTdiM4U3YjPFN2IzBTeCM0U3gjOFN4IzxTeCMwU3ojNFN6IzhTeiM8U3ojMFN8IzRTfCM4U3wjPFN8IzBTfiM0U34jOFN+IzxTfhlxCoMjMFMAIzRTACM4UwAjPFMAIzBTAiM0UwIjOFMCIzxTAiMwUwQjNFMEIzhTBCM8UwQjMFMGIzRTBiM4UwYjPFMGCWFBARMBAX9BARMBAX+BRQFGgUYBR4FHAUiBSIFCAUOBQwFOgU4BT4FPASWCgA=="
 .option pop"#,
         vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_aes_ctr32_bs = sym super::aes::vg_aes_ctr32_bs::vg_aes_ctr32_bs,
     )
 }
 
-/// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the `len` bytes at `data` in place, under the IV the `nonce_len` bytes at `nonce`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`. A shorter tag is the first bytes of this one.
+/// `vg_aes_gcm_seal` with the bitsliced form of the key context at `*bk` (`VG.Spec.Gcm.CtxSlicedRepr`), which it may read instead of computing it. Computes the same result as `vg_aes_gcm_seal`. The buffer is secret, as the key context is: it may not affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealBitslicedContract`.
 ///
-/// The function checks no length. GCM is secure only for a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of data and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must ensure; and a nonce must never be used twice with the same key.
-///
-/// Contract: `VG.Spec.Gcm.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key context, the nonce, the additional data or the data.
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -587,15 +627,17 @@ j 27f
 /// * `aad` must be valid for reads of `aad_len` bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
 /// * `tag` must be valid for reads and writes of 16 bytes.
+/// * `bk` must be valid for reads of 1248 bytes, and aligned for `u64`.
 /// * `rounds` must be 10, 12 or 14.
-/// * `data` and `tag` must not overlap each other, `ctx`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the 4624 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * `*bk` must be what `vg_aes_gcm_bitslice` wrote for the same key context (the contract's precondition: `VG.Spec.Gcm.CtxSlicedRepr` of `bk` and the key context).
+/// * `data` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `bk` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `data`, `tag` and `bk` may overlap the 4640 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_aes_gcm_seal(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_seal_bitsliced(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16], bk: *const [u64; 156]) {
     core::arch::naked_asm!(
         r#".option push
 .option arch, +m, +c
-.base64 "EwEBgRMBAd6KghODAn8DMwMiI7BiABODAgEjtGIACoMDM4MAIzCDCCM0kwgjOCMJIzwzCSMwQwsjNFMLIzhjCyM8cwsjMIMNIzSTDSM4ow0jPLMNIzATDhqEKomuiZMEBAEyiraKtot49D6NIzgED8aNCoODPAMAE4ZK/w=="
+.base64 "EwEBgRMBAd2KghODAn8DMwMjI7BiABODAn8DM4MjI7RiABODggEjuGIACoMDMwMBIzCDCCM0kwgjOCMJIzwzCSMwQwsjNFMLIzhjCyM8cwsjMIMNIzSTDSM4ow0jPLMNIzATDhqEKomuiZMEBAEyiraKtot49D6NIzgED8aNCoODPAMAE4ZK/w=="
 beqz a2, 20f
 .base64 "gUIjsFQAI7RUAAFL"
 beqz s5, 22f
@@ -717,7 +759,7 @@ call {vg_ghash}
 j 238f
 237:
 238:
-.base64 "AzoED+6KAUs="
+.base64 "ioODu4MAAzoED+6KAUs="
 beqz s5, 240f
 beqz s6, 242f
 .base64 "QUYzBmZBk9ZKAA=="
@@ -738,16 +780,16 @@ bnez a2, 248b
 j 243f
 242:
 243:
-.base64 "0oYT10oAk/f6ADOI+kBCmr6K"
+.base64 "0oYT10oAk/f6ADOI+kBCmr6KNog="
 beqz a4, 249f
-.base64 "SoXOhROGBAOTBwQg"
-call {vg_aes_ctr32}
+.base64 "XoXOhROGBAOTBwQg"
+call {vg_aes_ctr32_bs_to}
 j 250f
 249:
 250:
 beqz s5, 251f
-.base64 "gUIjsFQEI7RUBJOGBAQFR0qFzoUThgQDkwcEIA=="
-call {vg_aes_ctr32}
+.base64 "gUIjsFQEI7RUBJOGBAQFR16FzoUThgQDkwcEIA=="
+call {vg_aes_ctr32_bs}
 .base64 "E4UEBNKFVoY="
 253:
 .base64 "g8IFAINGBQCzwtIAI4BVAAUFhQV9Fg=="
@@ -817,20 +859,19 @@ j 271f
 271:
 .base64 "aopuixMVOgCTFTsAk1KFAyMAVAaTUgUDowBUBpNShQIjAVQGk1IFAqMBVAaTUoUBIwJUBpNSBQGjAlQGk1KFACMDVAaTUgUAowNUBpPShQMjBFQGk9IFA6MEVAaT0oUCIwVUBpPSBQKjBVQGk9KFASMGVAaT0gUBowZUBpPShQAjB1QGk9IFAKMHVAYTBQkPk4UEARMGBAaFRhMHBCA="
 call {vg_ghash}
-.base64 "g7IEASMwVACDsoQBIzRUAEqFzoUmhqKGBUeTBwQg"
-call {vg_aes_ctr32}
-.base64 "g0IEACOAXACDQhQAo4BcAINCJAAjgVwAg0I0AKOBXACDQkQAI4JcAINCVACjglwAg0JkACODXACDQnQAo4NcAINChAAjhFwAg0KUAKOEXACDQqQAI4VcAINCtACjhVwAg0LEACOGXACDQtQAo4ZcAINC5AAjh1wAg0L0AKOHXAAigwM0AwiDNIMIAzkDCYM5gwkDOgMKgzqDCgM7AwuDO4MLAzwDDIM8gwwDPQMNgz2DDYMwAw4TAQEiEwEBf4KA"
+.base64 "g7IEASMwVACDsoQBIzRUAF6FzoUmhqKGBUeTBwQg"
+call {vg_aes_ctr32_bs}
+.base64 "g0IEACOAXACDQhQAo4BcAINCJAAjgVwAg0I0AKOBXACDQkQAI4JcAINCVACjglwAg0JkACODXACDQnQAo4NcAINChAAjhFwAg0KUAKOEXACDQqQAI4VcAINCtACjhVwAg0LEACOGXACDQtQAo4ZcAINC5AAjh1wAg0L0AKOHXAAigwM0AwiDNIMIAzkDCYM5gwkDOgMKgzqDCgM7AwuDO4MLAzwDDIM8gwwDPQMNgz2DDYMwAw4TAQEjEwEBf4FCEwEBgUERCoMjMFMAIzRTACM4UwAjPFMAIzBTAiM0UwIjOFMCIzxTAiMwUwQjNFMEIzhTBCM8UwQjMFMGIzRTBiM4UwYjPFMGIzBTCCM0UwgjOFMIIzxTCCMwUwojNFMKIzhTCiM8UwojMFMMIzRTDCM4UwwjPFMMIzBTDiM0Uw4jOFMOIzxTDiMwUxAjNFMQIzhTECM8UxAjMFMSIzRTEiM4UxIjPFMSIzBTFCM0UxQjOFMUIzxTFCMwUxYjNFMWIzhTFiM8UxYjMFMYIzRTGCM4UxgjPFMYIzBTGiM0UxojOFMaIzxTGiMwUxwjNFMcIzhTHCM8UxwjMFMeIzRTHiM4Ux4jPFMeIzBTICM0UyAjOFMgIzxTICMwUyIjNFMiIzhTIiM8UyIjMFMkIzRTJCM4UyQjPFMkIzBTJiM0UyYjOFMmIzxTJiMwUygjNFMoIzhTKCM8UygjMFMqIzRTKiM4UyojPFMqIzBTLCM0UywjOFMsIzxTLCMwUy4jNFMuIzhTLiM8Uy4jMFMwIzRTMCM4UzAjPFMwIzBTMiM0UzIjOFMyIzxTMiMwUzQjNFM0IzhTNCM8UzQjMFM2IzRTNiM4UzYjPFM2IzBTOCM0UzgjOFM4IzxTOCMwUzojNFM6IzhTOiM8UzojMFM8IzRTPCM4UzwjPFM8IzBTPiM0Uz4jOFM+IzxTPiMwU0AjNFNAIzhTQCM8U0AjMFNCIzRTQiM4U0IjPFNCIzBTRCM0U0QjOFNEIzxTRCMwU0YjNFNGIzhTRiM8U0YjMFNIIzRTSCM4U0gjPFNIIzBTSiM0U0ojOFNKIzxTSiMwU0wjNFNMIzhTTCM8U0wjMFNOIzRTTiM4U04jPFNOIzBTUCM0U1AjOFNQIzxTUCMwU1IjNFNSIzhTUiM8U1IjMFNUIzRTVCM4U1QjPFNUIzBTViM0U1YjOFNWIzxTViMwU1gjNFNYIzhTWCM8U1gjMFNaIzRTWiM4U1ojPFNaIzBTXCM0U1wjOFNcIzxTXCMwU14jNFNeIzhTXiM8U14jMFNgIzRTYCM4U2AjPFNgIzBTYiM0U2IjOFNiIzxTYiMwU2QjNFNkIzhTZCM8U2QjMFNmIzRTZiM4U2YjPFNmIzBTaCM0U2gjOFNoIzxTaCMwU2ojNFNqIzhTaiM8U2ojMFNsIzRTbCM4U2wjPFNsIzBTbiM0U24jOFNuIzxTbiMwU3AjNFNwIzhTcCM8U3AjMFNyIzRTciM4U3IjPFNyIzBTdCM0U3QjOFN0IzxTdCMwU3YjNFN2IzhTdiM8U3YjMFN4IzRTeCM4U3gjPFN4IzBTeiM0U3ojOFN6IzxTeiMwU3wjNFN8IzhTfCM8U3wjMFN+IzRTfiM4U34jPFN+EwEBgUERCoMjMFMAIzRTACM4UwAjPFMAIzBTAiM0UwIjOFMCIzxTAiMwUwQjNFMEIzhTBCM8UwQjMFMGIzRTBiM4UwYjPFMGIzBTCCM0UwgjOFMIIzxTCCMwUwojNFMKIzhTCiM8UwojMFMMIzRTDCM4UwwjPFMMIzBTDiM0Uw4jOFMOIzxTDiMwUxAjNFMQIzhTECM8UxAjMFMSIzRTEiM4UxIjPFMSIzBTFCM0UxQjOFMUIzxTFCMwUxYjNFMWIzhTFiM8UxYjMFMYIzRTGCM4UxgjPFMYIzBTGiM0UxojOFMaIzxTGiMwUxwjNFMcIzhTHCM8UxwjMFMeIzRTHiM4Ux4jPFMeIzBTICM0UyAjOFMgIzxTICMwUyIjNFMiIzhTIiM8UyIjMFMkIzRTJCM4UyQjPFMkIzBTJiM0UyYjOFMmIzxTJiMwUygjNFMoIzhTKCM8UygjMFMqIzRTKiM4UyojPFMqIzBTLCM0UywjOFMsIzxTLCMwUy4jNFMuIzhTLiM8Uy4jMFMwIzRTMCM4UzAjPFMwIzBTMiM0UzIjOFMyIzxTMiMwUzQjNFM0IzhTNCM8UzQjMFM2IzRTNiM4UzYjPFM2IzBTOCM0UzgjOFM4IzxTOCMwUzojNFM6IzhTOiM8UzojMFM8IzRTPCM4UzwjPFM8IzBTPiM0Uz4jOFM+IzxTPiMwU0AjNFNAIzhTQCM8U0AjMFNCIzRTQiM4U0IjPFNCIzBTRCM0U0QjOFNEIzxTRCMwU0YjNFNGIzhTRiM8U0YjMFNIIzRTSCM4U0gjPFNIIzBTSiM0U0ojOFNKIzxTSiMwU0wjNFNMIzhTTCM8U0wjMFNOIzRTTiM4U04jPFNOIzBTUCM0U1AjOFNQIzxTUCMwU1IjNFNSIzhTUiM8U1IjMFNUIzRTVCM4U1QjPFNUIzBTViM0U1YjOFNWIzxTViMwU1gjNFNYIzhTWCM8U1gjMFNaIzRTWiM4U1ojPFNaIzBTXCM0U1wjOFNcIzxTXCMwU14jNFNeIzhTXiM8U14jMFNgIzRTYCM4U2AjPFNgIzBTYiM0U2IjOFNiIzxTYiMwU2QjNFNkIzhTZCM8U2QjMFNmIzRTZiM4U2YjPFNmIzBTaCM0U2gjOFNoIzxTaCMwU2ojNFNqIzhTaiM8U2ojMFNsIzRTbCM4U2wjPFNsIzBTbiM0U24jOFNuIzxTbiMwU3AjNFNwIzhTcCM8U3AjMFNyIzRTciM4U3IjPFNyIzBTdCM0U3QjOFN0IzxTdCMwU3YjNFN2IzhTdiM8U3YjMFN4IzRTeCM4U3gjPFN4IzBTeiM0U3ojOFN6IzxTeiMwU3wjNFN8IzhTfCM8U3wjMFN+IzRTfiM4U34jPFN+dXEKgyMwUwAjNFMAIzhTACM8UwAjMFMCIzRTAiM4UwIjPFMCIzBTBCM0UwQjOFMEIzxTBCMwUwYjNFMGIzhTBiM8UwYjMFMIIzRTCElhQQETAQF/QQETAQF/gUUBRoFGAUeBRwFIgUiBQgFDgUMBToFOAU+BTwFFgoA="
 .option pop"#,
         vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_aes_ctr32_bs_to = sym super::aes::vg_aes_ctr32_bs_to::vg_aes_ctr32_bs_to,
+        vg_aes_ctr32_bs = sym super::aes::vg_aes_ctr32_bs::vg_aes_ctr32_bs,
     )
 }
 
-/// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is between 4 and 16 and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unchanged. The tags are compared without a branch.
+/// `vg_aes_gcm_open` with the bitsliced form of the key context at `*bk` (`VG.Spec.Gcm.CtxSlicedRepr`), which it may read instead of computing it. Computes the same result as `vg_aes_gcm_open`. The buffer is secret, as the key context is: it may not affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openBitslicedContract`.
 ///
-/// The function checks no other length: GCM requires a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of ciphertext and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
-///
-/// Contract: `VG.Spec.Gcm.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths, `tag_len` and whether the function returns 1 or 0 may affect timing, not the key context, the nonce, the additional data, the data or the tag.
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -839,15 +880,17 @@ call {vg_aes_ctr32}
 /// * `aad` must be valid for reads of `aad_len` bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
 /// * `tag` must be valid for reads of `tag_len` bytes.
+/// * `bk` must be valid for reads of 1248 bytes, and aligned for `u64`.
 /// * `rounds` must be 10, 12 or 14.
-/// * `data` must not overlap `ctx`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the 4640 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * `*bk` must be what `vg_aes_gcm_bitslice` wrote for the same key context (the contract's precondition: `VG.Spec.Gcm.CtxSlicedRepr` of `bk` and the key context).
+/// * `data` must not overlap `ctx`, `nonce`, `aad`, `tag`, `bk` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `data`, `tag` and `bk` may overlap the 4640 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_aes_gcm_open(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_open_bitsliced(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize, bk: *const [u64; 156]) -> u32 {
     core::arch::naked_asm!(
         r#".option push
 .option arch, +m, +c
-.base64 "EwEBgRMBAd2KghODAn8DMwMjI7BiABODAn8DM4MjI7RiABODggEjuGIACoMDMwMBIzCDCCM0kwgjOCMJIzwzCSMwQwsjNFMLIzhjCyM8cwsjMIMNIzSTDSM4ow0jPLMNIzATDhqEKomuiZMEBAEyiraKtot49D6NIzgED8aNCoODPAMAAzyDAIFKk1IsAA=="
+.base64 "EwEBgRMBAd2KghODAn8DMwMjI7BiABODAn8DM4MjI7RiABODAn8DMwMkI7hiABODAgIjvGIACoMDM4MBIzCDCCM0kwgjOCMJIzwzCSMwQwsjNFMLIzhjCyM8cwsjMIMNIzSTDSM4ow0jPLMNIzATDhqEKomuiZMEBAEyiraKtot49D6NIzgED8aNCoODPAMAAzyDAIFKk1IsAA=="
 beqz t0, 20f
 .base64 "k1JMAA=="
 beqz t0, 22f
@@ -987,7 +1030,7 @@ call {vg_ghash}
 j 246f
 245:
 246:
-.base64 "AzoED+6KAUs="
+.base64 "ioODuwMBAzoED+6KAUs="
 beqz s5, 248f
 beqz s6, 250f
 .base64 "QUYzBmZBk9ZKAA=="
@@ -1046,8 +1089,8 @@ j 265f
 265:
 .base64 "aopuixMVOgCTFTsAk1KFAyMAVAaTUgUDowBUBpNShQIjAVQGk1IFAqMBVAaTUoUBIwJUBpNSBQGjAlQGk1KFACMDVAaTUgUAowNUBpPShQMjBFQGk9IFA6MEVAaT0oUCIwVUBpPSBQKjBVQGk9KFASMGVAaT0gUBowZUBpPShQAjB1QGk9IFAKMHVAYTBQkPk4UEARMGBAaFRhMHBCA="
 call {vg_ghash}
-.base64 "g7IEASM4VAaDsoQBIzxUBkqFzoUmhpMGBAcFR5MHBCA="
-call {vg_aes_ctr32}
+.base64 "g7IEASM4VAaDsoQBIzxUBl6FzoUmhpMGBAcFR5MHBCA="
+call {vg_aes_ctr32_bs}
 .base64 "gUIjMFQQIzRUEGaFkwUEEGKG"
 267:
 .base64 "g0IFACOAVQAFBYUFfRY="
@@ -1079,16 +1122,16 @@ bnez a2, 279b
 j 274f
 273:
 274:
-.base64 "0oYT10oAk/f6ADOI+kBCmr6K"
+.base64 "0oYT10oAk/f6ADOI+kBCmr6KNog="
 beqz a4, 280f
-.base64 "SoXOhROGBAOTBwQg"
-call {vg_aes_ctr32}
+.base64 "XoXOhROGBAOTBwQg"
+call {vg_aes_ctr32_bs_to}
 j 281f
 280:
 281:
 beqz s5, 282f
-.base64 "gUIjsFQEI7RUBJOGBAQFR0qFzoUThgQDkwcEIA=="
-call {vg_aes_ctr32}
+.base64 "gUIjsFQEI7RUBJOGBAQFR16FzoUThgQDkwcEIA=="
+call {vg_aes_ctr32_bs}
 .base64 "E4UEBNKFVoY="
 284:
 .base64 "g8IFAINGBQCzwtIAI4BVAAUFhQV9Fg=="
@@ -1107,65 +1150,17 @@ j 27f
 26:
 .base64 "AUU="
 27:
-.base64 "IoMDNAMIgzSDCAM5AwmDOYMJAzoDCoM6gwoDOwMLgzuDCwM8AwyDPIMMAz0DDYM9gw2DMAMOEwEBIxMBAX+CgA=="
+.base64 "IoMDNAMIgzSDCAM5AwmDOYMJAzoDCoM6gwoDOwMLgzuDCwM8AwyDPIMMAz0DDYM9gw2DMAMOEwEBIxMBAX+BQhMBAYFBEQqDIzBTACM0UwAjOFMAIzxTACMwUwIjNFMCIzhTAiM8UwIjMFMEIzRTBCM4UwQjPFMEIzBTBiM0UwYjOFMGIzxTBiMwUwgjNFMIIzhTCCM8UwgjMFMKIzRTCiM4UwojPFMKIzBTDCM0UwwjOFMMIzxTDCMwUw4jNFMOIzhTDiM8Uw4jMFMQIzRTECM4UxAjPFMQIzBTEiM0UxIjOFMSIzxTEiMwUxQjNFMUIzhTFCM8UxQjMFMWIzRTFiM4UxYjPFMWIzBTGCM0UxgjOFMYIzxTGCMwUxojNFMaIzhTGiM8UxojMFMcIzRTHCM4UxwjPFMcIzBTHiM0Ux4jOFMeIzxTHiMwUyAjNFMgIzhTICM8UyAjMFMiIzRTIiM4UyIjPFMiIzBTJCM0UyQjOFMkIzxTJCMwUyYjNFMmIzhTJiM8UyYjMFMoIzRTKCM4UygjPFMoIzBTKiM0UyojOFMqIzxTKiMwUywjNFMsIzhTLCM8UywjMFMuIzRTLiM4Uy4jPFMuIzBTMCM0UzAjOFMwIzxTMCMwUzIjNFMyIzhTMiM8UzIjMFM0IzRTNCM4UzQjPFM0IzBTNiM0UzYjOFM2IzxTNiMwUzgjNFM4IzhTOCM8UzgjMFM6IzRTOiM4UzojPFM6IzBTPCM0UzwjOFM8IzxTPCMwUz4jNFM+IzhTPiM8Uz4jMFNAIzRTQCM4U0AjPFNAIzBTQiM0U0IjOFNCIzxTQiMwU0QjNFNEIzhTRCM8U0QjMFNGIzRTRiM4U0YjPFNGIzBTSCM0U0gjOFNIIzxTSCMwU0ojNFNKIzhTSiM8U0ojMFNMIzRTTCM4U0wjPFNMIzBTTiM0U04jOFNOIzxTTiMwU1AjNFNQIzhTUCM8U1AjMFNSIzRTUiM4U1IjPFNSIzBTVCM0U1QjOFNUIzxTVCMwU1YjNFNWIzhTViM8U1YjMFNYIzRTWCM4U1gjPFNYIzBTWiM0U1ojOFNaIzxTWiMwU1wjNFNcIzhTXCM8U1wjMFNeIzRTXiM4U14jPFNeIzBTYCM0U2AjOFNgIzxTYCMwU2IjNFNiIzhTYiM8U2IjMFNkIzRTZCM4U2QjPFNkIzBTZiM0U2YjOFNmIzxTZiMwU2gjNFNoIzhTaCM8U2gjMFNqIzRTaiM4U2ojPFNqIzBTbCM0U2wjOFNsIzxTbCMwU24jNFNuIzhTbiM8U24jMFNwIzRTcCM4U3AjPFNwIzBTciM0U3IjOFNyIzxTciMwU3QjNFN0IzhTdCM8U3QjMFN2IzRTdiM4U3YjPFN2IzBTeCM0U3gjOFN4IzxTeCMwU3ojNFN6IzhTeiM8U3ojMFN8IzRTfCM4U3wjPFN8IzBTfiM0U34jOFN+IzxTfhMBAYFBEQqDIzBTACM0UwAjOFMAIzxTACMwUwIjNFMCIzhTAiM8UwIjMFMEIzRTBCM4UwQjPFMEIzBTBiM0UwYjOFMGIzxTBiMwUwgjNFMIIzhTCCM8UwgjMFMKIzRTCiM4UwojPFMKIzBTDCM0UwwjOFMMIzxTDCMwUw4jNFMOIzhTDiM8Uw4jMFMQIzRTECM4UxAjPFMQIzBTEiM0UxIjOFMSIzxTEiMwUxQjNFMUIzhTFCM8UxQjMFMWIzRTFiM4UxYjPFMWIzBTGCM0UxgjOFMYIzxTGCMwUxojNFMaIzhTGiM8UxojMFMcIzRTHCM4UxwjPFMcIzBTHiM0Ux4jOFMeIzxTHiMwUyAjNFMgIzhTICM8UyAjMFMiIzRTIiM4UyIjPFMiIzBTJCM0UyQjOFMkIzxTJCMwUyYjNFMmIzhTJiM8UyYjMFMoIzRTKCM4UygjPFMoIzBTKiM0UyojOFMqIzxTKiMwUywjNFMsIzhTLCM8UywjMFMuIzRTLiM4Uy4jPFMuIzBTMCM0UzAjOFMwIzxTMCMwUzIjNFMyIzhTMiM8UzIjMFM0IzRTNCM4UzQjPFM0IzBTNiM0UzYjOFM2IzxTNiMwUzgjNFM4IzhTOCM8UzgjMFM6IzRTOiM4UzojPFM6IzBTPCM0UzwjOFM8IzxTPCMwUz4jNFM+IzhTPiM8Uz4jMFNAIzRTQCM4U0AjPFNAIzBTQiM0U0IjOFNCIzxTQiMwU0QjNFNEIzhTRCM8U0QjMFNGIzRTRiM4U0YjPFNGIzBTSCM0U0gjOFNIIzxTSCMwU0ojNFNKIzhTSiM8U0ojMFNMIzRTTCM4U0wjPFNMIzBTTiM0U04jOFNOIzxTTiMwU1AjNFNQIzhTUCM8U1AjMFNSIzRTUiM4U1IjPFNSIzBTVCM0U1QjOFNUIzxTVCMwU1YjNFNWIzhTViM8U1YjMFNYIzRTWCM4U1gjPFNYIzBTWiM0U1ojOFNaIzxTWiMwU1wjNFNcIzhTXCM8U1wjMFNeIzRTXiM4U14jPFNeIzBTYCM0U2AjOFNgIzxTYCMwU2IjNFNiIzhTYiM8U2IjMFNkIzRTZCM4U2QjPFNkIzBTZiM0U2YjOFNmIzxTZiMwU2gjNFNoIzhTaCM8U2gjMFNqIzRTaiM4U2ojPFNqIzBTbCM0U2wjOFNsIzxTbCMwU24jNFNuIzhTbiM8U24jMFNwIzRTcCM4U3AjPFNwIzBTciM0U3IjOFNyIzxTciMwU3QjNFN0IzhTdCM8U3QjMFN2IzRTdiM4U3YjPFN2IzBTeCM0U3gjOFN4IzxTeCMwU3ojNFN6IzhTeiM8U3ojMFN8IzRTfCM4U3wjPFN8IzBTfiM0U34jOFN+IzxTfnVxCoMjMFMAIzRTACM4UwAjPFMAIzBTAiM0UwIjOFMCIzxTAiMwUwQjNFMEIzhTBCM8UwQjMFMGIzRTBiM4UwYjPFMGIzBTCCM0UwhJYUEBEwEBf0EBEwEBf4FFAUaBRgFHgUcBSIFIgUIBQ4FDAU6BTgFPgU8BJYKA"
 .option pop"#,
         vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_aes_ctr32_bs = sym super::aes::vg_aes_ctr32_bs::vg_aes_ctr32_bs,
+        vg_aes_ctr32_bs_to = sym super::aes::vg_aes_ctr32_bs_to::vg_aes_ctr32_bs_to,
     )
 }
 
-/// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag), out of place, of a plaintext in pieces: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the concatenation of the `src_count` slices that `src` lists (each an address and a length, in bytes), under the IV the `nonce_len` bytes at `nonce`, writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_aes_gcm_seal` with the plaintext gathered from `src`. A shorter tag is the first bytes of this one.
+/// `vg_aes_gcm_open_to` with the bitsliced form of the key context at `*bk` (`VG.Spec.Gcm.CtxSlicedRepr`), which it may read instead of computing it. Computes the same result as `vg_aes_gcm_open_to`. The buffer is secret, as the key context is: it may not affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openToBitslicedContract`.
 ///
-/// The function checks no length. GCM is secure only for a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of data and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must ensure; and a nonce must never be used twice with the same key.
-///
-/// Contract: `VG.Spec.Gcm.sealGatherContract`. Constant time: only the pointers, `rounds`, the lengths, `src_count` and where the slices are (their addresses and lengths) may affect timing, not the key context, the nonce, the additional data or the data.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads of 256 bytes, and aligned for `u64`.
-/// * `nonce` must be valid for reads of `nonce_len` bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `src` must be valid for reads of `2 * size_of::<usize>() * src_count` bytes, and each slice it lists for reads of its length in bytes.
-/// * `dst` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads and writes of 16 bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * The slices `src` lists must be `len` bytes long in all.
-/// * `dst` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `src`, the slices `src` lists or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the 4640 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_aes_gcm_seal_gather(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
-    core::arch::naked_asm!(
-        r#".option push
-.option arch, +m, +c
-.base64 "QREG5IqCA7MCAiOwYgA6j76PQofGhwO4AgGDuIIB"
-beqz a5, 20f
-22:
-.base64 "g0IHAANOFwAiDrPiwgEDTicAQg6z4sIBA043AGIOs+LCAYNORwADTlcAIg6z7s4BA05nAEIOs+7OAQNOdwBiDrPuzgGCHrPi0gEDQ4cAA06XACIOM2PDAQNOpwBCDjNjwwEDTrcAYg4zY8MBg07HAANO1wAiDrPuzgEDTucAQg6z7s4BA073AGIOs+7OAYIeM2PTAUEH"
-beqz t1, 23f
-25:
-.base64 "g8MCACMAeACFAgUIfRM="
-bnez t1, 25b
-j 24f
-23:
-24:
-.base64 "/Rc="
-bnez a5, 22b
-j 21f
-20:
-21:
-.base64 "eof+h4qCA7gCAQ=="
-call {vg_aes_gcm_seal}
-.base64 "omBBAYKA"
-.option pop"#,
-        vg_aes_gcm_seal = sym super::gcm::vg_aes_gcm_seal,
-    )
-}
-
-/// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD), out of place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is between 4 and 16 and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `src` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then written the plaintext to the `dst_len = len` bytes at `dst`; otherwise returns 0, having written zeros to them: `vg_aes_gcm_open` with the ciphertext read from `src` and the plaintext written to `dst`. `src` is not written, and `dst` is a buffer of its own: it overlaps no other buffer, `src` included. The tags are compared without a branch.
-///
-/// The function checks no other length: GCM requires a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of ciphertext and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
-///
-/// Contract: `VG.Spec.Gcm.openToContract`. Constant time but for the result: only the pointers, `rounds`, the lengths, `tag_len` and whether the function returns 1 or 0 may affect timing, not the key context, the nonce, the additional data, the data or the tag.
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1175,16 +1170,18 @@ call {vg_aes_gcm_seal}
 /// * `src` must be valid for reads of `len` bytes.
 /// * `dst` must be valid for reads and writes of `dst_len` bytes.
 /// * `tag` must be valid for reads of `tag_len` bytes.
+/// * `bk` must be valid for reads of 1248 bytes, and aligned for `u64`.
 /// * `rounds` must be 10, 12 or 14.
 /// * `dst_len` must equal `len`.
-/// * `dst` must not overlap `ctx`, `nonce`, `aad`, `src`, `tag` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the 4656 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * `*bk` must be what `vg_aes_gcm_bitslice` wrote for the same key context (the contract's precondition: `VG.Spec.Gcm.CtxSlicedRepr` of `bk` and the key context).
+/// * `dst` must not overlap `ctx`, `nonce`, `aad`, `src`, `tag`, `bk` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `src`, `dst`, `tag` and `bk` may overlap the 4656 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_aes_gcm_open_to(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_open_to_bitsliced(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize, bk: *const [u64; 156]) -> u32 {
     core::arch::naked_asm!(
         r#".option push
 .option arch, +m, +c
-.base64 "EwEBgRMBAdyKghODAn8DMwMkI7BiABODAn8DM4MkI7RiABODAn8DMwMlI7hiABODAn8DM4MlI7xiABODggIjsGICCoMDMwMCIzCDCCM0kwgjOCMJIzwzCSMwQwsjNFMLIzhjCyM8cwsjMIMNIzSTDSM4ow0jPLMNIzATDhqEKomuiZMEBAEyiraKtot49D6NIzgED8aNCoODPAMBAzyDAYMzAwCzgwNBIzx0DoFKk1IsAA=="
+.base64 "EwEBgRMBAdyKghODAn8DMwMkI7BiABODAn8DM4MkI7RiABODAn8DMwMlI7hiABODAn8DM4MlI7xiABODAn8DMwMmI7BiAhODAgMjtGICCoMDM4MCIzCDCCM0kwgjOCMJIzwzCSMwQwsjNFMLIzhjCyM8cwsjMIMNIzSTDSM4ow0jPLMNIzATDhqEKomuiZMEBAEyiraKtot49D6NIzgED8aNCoODPAMBAzyDAYMzAwCzgwNBIzx0DoFKk1IsAA=="
 beqz t0, 20f
 .base64 "k1JMAA=="
 beqz t0, 22f
@@ -1324,7 +1321,7 @@ call {vg_ghash}
 j 246f
 245:
 246:
-.base64 "AzoED+6KAUs="
+.base64 "ioODuwMCAzoED+6KAUs="
 beqz s5, 248f
 beqz s6, 250f
 .base64 "QUYzBmZBk9ZKAA=="
@@ -1383,8 +1380,8 @@ j 265f
 265:
 .base64 "aopuixMVOgCTFTsAk1KFAyMAVAaTUgUDowBUBpNShQIjAVQGk1IFAqMBVAaTUoUBIwJUBpNSBQGjAlQGk1KFACMDVAaTUgUAowNUBpPShQMjBFQGk9IFA6MEVAaT0oUCIwVUBpPSBQKjBVQGk9KFASMGVAaT0gUBowZUBpPShQAjB1QGk9IFAKMHVAYTBQkPk4UEARMGBAaFRhMHBCA="
 call {vg_ghash}
-.base64 "g7IEASM4VAaDsoQBIzxUBkqFzoUmhpMGBAcFR5MHBCA="
-call {vg_aes_ctr32}
+.base64 "g7IEASM4VAaDsoQBIzxUBl6FzoUmhpMGBAcFR5MHBCA="
+call {vg_aes_ctr32_bs}
 .base64 "gUIjMFQQIzRUEGaFkwUEEGKG"
 267:
 .base64 "g0IFACOAVQAFBYUFfRY="
@@ -1418,14 +1415,14 @@ j 274f
 274:
 .base64 "s4ZMAVKIE9dKAJP3+gCziPpARpq+ig=="
 beqz a4, 280f
-.base64 "SoXOhROGBAOTBwQg"
-call {vg_aes_ctr32_to}
+.base64 "XoXOhROGBAOTBwQg"
+call {vg_aes_ctr32_bs_to}
 j 281f
 280:
 281:
 beqz s5, 282f
-.base64 "gUIjsFQEI7RUBJOGBAQFR0qFzoUThgQDkwcEIA=="
-call {vg_aes_ctr32}
+.base64 "gUIjsFQEI7RUBJOGBAQFR16FzoUThgQDkwcEIA=="
+call {vg_aes_ctr32_bs}
 .base64 "E4UEBNKFM4dMAVaG"
 284:
 .base64 "g8IFAINGBQCzwtIAIwBXAAUFhQUFB30W"
@@ -1456,10 +1453,600 @@ j 288f
 287:
 288:
 286:
-.base64 "IoMDNAMIgzSDCAM5AwmDOYMJAzoDCoM6gwoDOwMLgzuDCwM8AwyDPIMMAz0DDYM9gw2DMAMOEwEBJBMBAX+CgA=="
+.base64 "IoMDNAMIgzSDCAM5AwmDOYMJAzoDCoM6gwoDOwMLgzuDCwM8AwyDPIMMAz0DDYM9gw2DMAMOEwEBJBMBAX+BQhMBAYFBEQqDIzBTACM0UwAjOFMAIzxTACMwUwIjNFMCIzhTAiM8UwIjMFMEIzRTBCM4UwQjPFMEIzBTBiM0UwYjOFMGIzxTBiMwUwgjNFMIIzhTCCM8UwgjMFMKIzRTCiM4UwojPFMKIzBTDCM0UwwjOFMMIzxTDCMwUw4jNFMOIzhTDiM8Uw4jMFMQIzRTECM4UxAjPFMQIzBTEiM0UxIjOFMSIzxTEiMwUxQjNFMUIzhTFCM8UxQjMFMWIzRTFiM4UxYjPFMWIzBTGCM0UxgjOFMYIzxTGCMwUxojNFMaIzhTGiM8UxojMFMcIzRTHCM4UxwjPFMcIzBTHiM0Ux4jOFMeIzxTHiMwUyAjNFMgIzhTICM8UyAjMFMiIzRTIiM4UyIjPFMiIzBTJCM0UyQjOFMkIzxTJCMwUyYjNFMmIzhTJiM8UyYjMFMoIzRTKCM4UygjPFMoIzBTKiM0UyojOFMqIzxTKiMwUywjNFMsIzhTLCM8UywjMFMuIzRTLiM4Uy4jPFMuIzBTMCM0UzAjOFMwIzxTMCMwUzIjNFMyIzhTMiM8UzIjMFM0IzRTNCM4UzQjPFM0IzBTNiM0UzYjOFM2IzxTNiMwUzgjNFM4IzhTOCM8UzgjMFM6IzRTOiM4UzojPFM6IzBTPCM0UzwjOFM8IzxTPCMwUz4jNFM+IzhTPiM8Uz4jMFNAIzRTQCM4U0AjPFNAIzBTQiM0U0IjOFNCIzxTQiMwU0QjNFNEIzhTRCM8U0QjMFNGIzRTRiM4U0YjPFNGIzBTSCM0U0gjOFNIIzxTSCMwU0ojNFNKIzhTSiM8U0ojMFNMIzRTTCM4U0wjPFNMIzBTTiM0U04jOFNOIzxTTiMwU1AjNFNQIzhTUCM8U1AjMFNSIzRTUiM4U1IjPFNSIzBTVCM0U1QjOFNUIzxTVCMwU1YjNFNWIzhTViM8U1YjMFNYIzRTWCM4U1gjPFNYIzBTWiM0U1ojOFNaIzxTWiMwU1wjNFNcIzhTXCM8U1wjMFNeIzRTXiM4U14jPFNeIzBTYCM0U2AjOFNgIzxTYCMwU2IjNFNiIzhTYiM8U2IjMFNkIzRTZCM4U2QjPFNkIzBTZiM0U2YjOFNmIzxTZiMwU2gjNFNoIzhTaCM8U2gjMFNqIzRTaiM4U2ojPFNqIzBTbCM0U2wjOFNsIzxTbCMwU24jNFNuIzhTbiM8U24jMFNwIzRTcCM4U3AjPFNwIzBTciM0U3IjOFNyIzxTciMwU3QjNFN0IzhTdCM8U3QjMFN2IzRTdiM4U3YjPFN2IzBTeCM0U3gjOFN4IzxTeCMwU3ojNFN6IzhTeiM8U3ojMFN8IzRTfCM4U3wjPFN8IzBTfiM0U34jOFN+IzxTfhMBAYFBEQqDIzBTACM0UwAjOFMAIzxTACMwUwIjNFMCIzhTAiM8UwIjMFMEIzRTBCM4UwQjPFMEIzBTBiM0UwYjOFMGIzxTBiMwUwgjNFMIIzhTCCM8UwgjMFMKIzRTCiM4UwojPFMKIzBTDCM0UwwjOFMMIzxTDCMwUw4jNFMOIzhTDiM8Uw4jMFMQIzRTECM4UxAjPFMQIzBTEiM0UxIjOFMSIzxTEiMwUxQjNFMUIzhTFCM8UxQjMFMWIzRTFiM4UxYjPFMWIzBTGCM0UxgjOFMYIzxTGCMwUxojNFMaIzhTGiM8UxojMFMcIzRTHCM4UxwjPFMcIzBTHiM0Ux4jOFMeIzxTHiMwUyAjNFMgIzhTICM8UyAjMFMiIzRTIiM4UyIjPFMiIzBTJCM0UyQjOFMkIzxTJCMwUyYjNFMmIzhTJiM8UyYjMFMoIzRTKCM4UygjPFMoIzBTKiM0UyojOFMqIzxTKiMwUywjNFMsIzhTLCM8UywjMFMuIzRTLiM4Uy4jPFMuIzBTMCM0UzAjOFMwIzxTMCMwUzIjNFMyIzhTMiM8UzIjMFM0IzRTNCM4UzQjPFM0IzBTNiM0UzYjOFM2IzxTNiMwUzgjNFM4IzhTOCM8UzgjMFM6IzRTOiM4UzojPFM6IzBTPCM0UzwjOFM8IzxTPCMwUz4jNFM+IzhTPiM8Uz4jMFNAIzRTQCM4U0AjPFNAIzBTQiM0U0IjOFNCIzxTQiMwU0QjNFNEIzhTRCM8U0QjMFNGIzRTRiM4U0YjPFNGIzBTSCM0U0gjOFNIIzxTSCMwU0ojNFNKIzhTSiM8U0ojMFNMIzRTTCM4U0wjPFNMIzBTTiM0U04jOFNOIzxTTiMwU1AjNFNQIzhTUCM8U1AjMFNSIzRTUiM4U1IjPFNSIzBTVCM0U1QjOFNUIzxTVCMwU1YjNFNWIzhTViM8U1YjMFNYIzRTWCM4U1gjPFNYIzBTWiM0U1ojOFNaIzxTWiMwU1wjNFNcIzhTXCM8U1wjMFNeIzRTXiM4U14jPFNeIzBTYCM0U2AjOFNgIzxTYCMwU2IjNFNiIzhTYiM8U2IjMFNkIzRTZCM4U2QjPFNkIzBTZiM0U2YjOFNmIzxTZiMwU2gjNFNoIzhTaCM8U2gjMFNqIzRTaiM4U2ojPFNqIzBTbCM0U2wjOFNsIzxTbCMwU24jNFNuIzhTbiM8U24jMFNwIzRTcCM4U3AjPFNwIzBTciM0U3IjOFNyIzxTciMwU3QjNFN0IzhTdCM8U3QjMFN2IzRTdiM4U3YjPFN2IzBTeCM0U3gjOFN4IzxTeCMwU3ojNFN6IzhTeiM8U3ojMFN8IzRTfCM4U3wjPFN8IzBTfiM0U34jOFN+IzxTfjVxCoMjMFMAIzRTACM4UwAjPFMAIzBTAiM0UwIjOFMCIzxTAiMwUwQjNFMEIzhTBCM8UwQjMFMGIzRTBiM4UwYjPFMGIzBTCCM0UwgjOFMIIzxTCA1hQQETAQF/QQETAQF/gUUBRoFGAUeBRwFIgUiBQgFDgUMBToFOAU+BTwElgoA="
 .option pop"#,
         vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
-        vg_aes_ctr32_to = sym super::aes::vg_aes_ctr32_to::vg_aes_ctr32_to,
+        vg_aes_ctr32_bs = sym super::aes::vg_aes_ctr32_bs::vg_aes_ctr32_bs,
+        vg_aes_ctr32_bs_to = sym super::aes::vg_aes_ctr32_bs_to::vg_aes_ctr32_bs_to,
     )
 }
+
+/// `vg_aes_gcm_seal_gather` with the bitsliced form of the key context at `*bk` (`VG.Spec.Gcm.CtxSlicedRepr`), which it may read instead of computing it. Computes the same result as `vg_aes_gcm_seal_gather`. The buffer is secret, as the key context is: it may not affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealGatherBitslicedContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes, and aligned for `u64`.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `src` must be valid for reads of `2 * size_of::<usize>() * src_count` bytes, and each slice it lists for reads of its length in bytes.
+/// * `dst` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * `bk` must be valid for reads of 1248 bytes, and aligned for `u64`.
+/// * `rounds` must be 10, 12 or 14.
+/// * The slices `src` lists must be `len` bytes long in all.
+/// * `*bk` must be what `vg_aes_gcm_bitslice` wrote for the same key context (the contract's precondition: `VG.Spec.Gcm.CtxSlicedRepr` of `bk` and the key context).
+/// * `dst` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `bk` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst`, `tag` and `bk` may overlap the 4672 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_aes_gcm_seal_gather_bitsliced(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16], bk: *const [u64; 156]) {
+    core::arch::naked_asm!(
+        r#".option push
+.option arch, +m, +c
+.base64 "EwEBgRMBAdyKghODAn8DMwMkI7BiABODAn8DM4MkI7RiABODAn8DMwMlI7hiABODAn8DM4MlI7xiABODggIjsGICCoMDMwMCIzCDCCM0kwgjOCMJIzwzCSMwQwsjNFMLIzhjCyM8cwsjMIMNIzSTDSM4ow0jPLMNIzATDhqEKomuiZMEBAEyiraKtot49D6NIzgED8aNCoODPAMBQowjMBQRgzIDACM4VA6DPYMAgUIjPFQOE4ZK/w=="
+beqz a2, 20f
+.base64 "gUIjsFQAI7RUAAFL"
+beqz s5, 22f
+beqz s6, 24f
+.base64 "QUYzBmZBk9ZKAA=="
+bnez a3, 26f
+.base64 "s4bKQP2S"
+bnez a3, 28f
+j 29f
+28:
+.base64 "VoY="
+29:
+j 27f
+26:
+27:
+.base64 "k4UEAtqVUoUymrOKykAymw=="
+210:
+.base64 "g0IFACOAVQAFBYUFfRY="
+bnez a2, 210b
+.base64 "kwYL/w=="
+beqz a3, 211f
+j 212f
+211:
+.base64 "EwUJD6aFE4YEAoVGEwcEIA=="
+call {vg_ghash}
+212:
+j 25f
+24:
+25:
+.base64 "UoaT1koAk/f6ADOI+kBCmr6K"
+beqz a3, 213f
+.base64 "EwUJD6aFEwcEIA=="
+call {vg_ghash}
+j 214f
+213:
+214:
+beqz s5, 215f
+.base64 "UoWThQQCVoY="
+217:
+.base64 "g0IFACOAVQAFBYUFfRY="
+bnez a2, 217b
+j 216f
+215:
+216:
+j 23f
+22:
+23:
+.base64 "E/v7AA=="
+beqz s6, 218f
+.base64 "gUIjMFQGIzRUBhOFBAKTBQQGWoY="
+220:
+.base64 "g0IFACOAVQAFBYUFfRY="
+bnez a2, 220b
+.base64 "EwUJD6aFEwYEBoVGEwcEIA=="
+call {vg_ghash}
+j 219f
+218:
+219:
+.base64 "AUpeixMVOgCTFTsAk1KFAyMAVAaTUgUDowBUBpNShQIjAVQGk1IFAqMBVAaTUoUBIwJUBpNSBQGjAlQGk1KFACMDVAaTUgUAowNUBpPShQMjBFQGk9IFA6MEVAaT0oUCIwVUBpPSBQKjBVQGk9KFASMGVAaT0gUBowZUBpPShQAjB1QGk9IFAKMHVAYTBQkPpoUTBgQGhUYTBwQg"
+call {vg_ghash}
+j 21f
+20:
+.base64 "g0IKACOAVACDQhoAo4BUAINCKgAjgVQAg0I6AKOBVACDQkoAI4JUAINCWgCjglQAg0JqACODVACDQnoAo4NUAINCigAjhFQAg0KaAKOEVACDQqoAI4VUAINCugCjhVQAgUIjhlQAgUKjhlQAgUIjh1QAhUKjh1QA"
+21:
+.base64 "g7IEACO4VAKD4oQAI6xUAgPFxABiBYPC1ADCAjNlVQCDwuQAogIzZVUAg8L0ADNlVQAFBZNShQEjjlQCk1IFAaOOVAKTUoUAI49UApNSBQCjj1QCgUIjuFQAI7xUAAM6hA7qigFL"
+beqz s5, 221f
+beqz s6, 223f
+.base64 "QUYzBmZBk9ZKAA=="
+bnez a3, 225f
+.base64 "s4bKQP2S"
+bnez a3, 227f
+j 228f
+227:
+.base64 "VoY="
+228:
+j 226f
+225:
+226:
+.base64 "k4UEAtqVUoUymrOKykAymw=="
+229:
+.base64 "g0IFACOAVQAFBYUFfRY="
+bnez a2, 229b
+.base64 "kwYL/w=="
+beqz a3, 230f
+j 231f
+230:
+.base64 "EwUJD5OFBAEThgQChUYTBwQg"
+call {vg_ghash}
+231:
+j 224f
+223:
+224:
+.base64 "UoaT1koAk/f6ADOI+kBCmr6K"
+beqz a3, 232f
+.base64 "EwUJD5OFBAETBwQg"
+call {vg_ghash}
+j 233f
+232:
+233:
+beqz s5, 234f
+.base64 "UoWThQQCVoY="
+236:
+.base64 "g0IFACOAVQAFBYUFfRY="
+bnez a2, 236b
+j 235f
+234:
+235:
+j 222f
+221:
+222:
+.base64 "E3v9AA=="
+beqz s6, 237f
+.base64 "gUIjMFQGIzRUBhOFBAKTBQQGWoY="
+239:
+.base64 "g0IFACOAVQAFBYUFfRY="
+bnez a2, 239b
+.base64 "EwUJD5OFBAETBgQGhUYTBwQg"
+call {vg_ghash}
+j 238f
+237:
+238:
+.base64 "ioODu4MBAzMEEA=="
+beqz t1, 240f
+242:
+.base64 "A0oMAANOHAAiDjNqygEDTiwAQg4zasoBA048AGIOM2rKAYNOTAADTlwAIg6z7s4BA05sAEIOs+7OAQNOfABiDrPuzgGCHjNq2gGDSowAA06cACIOs+rKAQNOrABCDrPqygEDTrwAYg6z6soBg07MAANO3AAiDrPuzgEDTuwAQg6z7s4BA078AGIOs+7OAYIes+raAUEMgzKEDxP78gCDPAQPlpyzjExB1pIjPFQO"
+beqz s5, 243f
+beqz s6, 245f
+.base64 "QUYzBmZBk9ZKAA=="
+bnez a3, 247f
+.base64 "s4bKQP2S"
+bnez a3, 249f
+j 250f
+249:
+.base64 "VoY="
+250:
+j 248f
+247:
+248:
+.base64 "E4UEBFqV0oUzh0wBMpqzispA"
+251:
+.base64 "g8IFAINGBQCzwtIAIwBXAAUFhQUFB30W"
+bnez a2, 251b
+j 246f
+245:
+246:
+.base64 "s4ZMAVKIE9dKAJP3+gCziPpARpq+ig=="
+beqz a4, 252f
+.base64 "XoXOhROGBAOTBwQg"
+call {vg_aes_ctr32_bs_to}
+j 253f
+252:
+253:
+beqz s5, 254f
+.base64 "gUIjsFQEI7RUBJOGBAQFR16FzoUThgQDkwcEIA=="
+call {vg_aes_ctr32_bs}
+.base64 "E4UEBNKFM4dMAVaG"
+256:
+.base64 "g8IFAINGBQCzwtIAIwBXAAUFhQUFB30W"
+bnez a2, 256b
+j 255f
+254:
+255:
+j 244f
+243:
+244:
+.base64 "AzMEEH0TIzBkEA=="
+bnez t1, 242b
+j 241f
+240:
+241:
+.base64 "AzoED+6KAUs="
+beqz s5, 257f
+beqz s6, 259f
+.base64 "QUYzBmZBk9ZKAA=="
+bnez a3, 261f
+.base64 "s4bKQP2S"
+bnez a3, 263f
+j 264f
+263:
+.base64 "VoY="
+264:
+j 262f
+261:
+262:
+.base64 "k4UEAtqVUoUymrOKykAymw=="
+265:
+.base64 "g0IFACOAVQAFBYUFfRY="
+bnez a2, 265b
+.base64 "kwYL/w=="
+beqz a3, 266f
+j 267f
+266:
+.base64 "EwUJD5OFBAEThgQChUYTBwQg"
+call {vg_ghash}
+267:
+j 260f
+259:
+260:
+.base64 "UoaT1koAk/f6ADOI+kBCmr6K"
+beqz a3, 268f
+.base64 "EwUJD5OFBAETBwQg"
+call {vg_ghash}
+j 269f
+268:
+269:
+beqz s5, 270f
+.base64 "UoWThQQCVoY="
+272:
+.base64 "g0IFACOAVQAFBYUFfRY="
+bnez a2, 272b
+j 271f
+270:
+271:
+j 258f
+257:
+258:
+.base64 "E/v9AA=="
+beqz s6, 273f
+.base64 "gUIjMFQGIzRUBhOFBAKTBQQGWoY="
+275:
+.base64 "g0IFACOAVQAFBYUFfRY="
+bnez a2, 275b
+.base64 "EwUJD5OFBAETBgQGhUYTBwQg"
+call {vg_ghash}
+j 274f
+273:
+274:
+.base64 "aopuixMVOgCTFTsAk1KFAyMAVAaTUgUDowBUBpNShQIjAVQGk1IFAqMBVAaTUoUBIwJUBpNSBQGjAlQGk1KFACMDVAaTUgUAowNUBpPShQMjBFQGk9IFA6MEVAaT0oUCIwVUBpPSBQKjBVQGk9KFASMGVAaT0gUBowZUBpPShQAjB1QGk9IFAKMHVAYTBQkPk4UEARMGBAaFRhMHBCA="
+call {vg_ghash}
+.base64 "g7IEASMwVACDsoQBIzRUAF6FzoUmhqKGBUeTBwQg"
+call {vg_aes_ctr32_bs}
+.base64 "CoODPAMBg0IEACOAXACDQhQAo4BcAINCJAAjgVwAg0I0AKOBXACDQkQAI4JcAINCVACjglwAg0JkACODXACDQnQAo4NcAINChAAjhFwAg0KUAKOEXACDQqQAI4VcAINCtACjhVwAg0LEACOGXACDQtQAo4ZcAINC5AAjh1wAg0L0AKOHXAAigwM0AwiDNIMIAzkDCYM5gwkDOgMKgzqDCgM7AwuDO4MLAzwDDIM8gwwDPQMNgz2DDYMwAw4TAQEkEwEBf4FCEwEBgUERCoMjMFMAIzRTACM4UwAjPFMAIzBTAiM0UwIjOFMCIzxTAiMwUwQjNFMEIzhTBCM8UwQjMFMGIzRTBiM4UwYjPFMGIzBTCCM0UwgjOFMIIzxTCCMwUwojNFMKIzhTCiM8UwojMFMMIzRTDCM4UwwjPFMMIzBTDiM0Uw4jOFMOIzxTDiMwUxAjNFMQIzhTECM8UxAjMFMSIzRTEiM4UxIjPFMSIzBTFCM0UxQjOFMUIzxTFCMwUxYjNFMWIzhTFiM8UxYjMFMYIzRTGCM4UxgjPFMYIzBTGiM0UxojOFMaIzxTGiMwUxwjNFMcIzhTHCM8UxwjMFMeIzRTHiM4Ux4jPFMeIzBTICM0UyAjOFMgIzxTICMwUyIjNFMiIzhTIiM8UyIjMFMkIzRTJCM4UyQjPFMkIzBTJiM0UyYjOFMmIzxTJiMwUygjNFMoIzhTKCM8UygjMFMqIzRTKiM4UyojPFMqIzBTLCM0UywjOFMsIzxTLCMwUy4jNFMuIzhTLiM8Uy4jMFMwIzRTMCM4UzAjPFMwIzBTMiM0UzIjOFMyIzxTMiMwUzQjNFM0IzhTNCM8UzQjMFM2IzRTNiM4UzYjPFM2IzBTOCM0UzgjOFM4IzxTOCMwUzojNFM6IzhTOiM8UzojMFM8IzRTPCM4UzwjPFM8IzBTPiM0Uz4jOFM+IzxTPiMwU0AjNFNAIzhTQCM8U0AjMFNCIzRTQiM4U0IjPFNCIzBTRCM0U0QjOFNEIzxTRCMwU0YjNFNGIzhTRiM8U0YjMFNIIzRTSCM4U0gjPFNIIzBTSiM0U0ojOFNKIzxTSiMwU0wjNFNMIzhTTCM8U0wjMFNOIzRTTiM4U04jPFNOIzBTUCM0U1AjOFNQIzxTUCMwU1IjNFNSIzhTUiM8U1IjMFNUIzRTVCM4U1QjPFNUIzBTViM0U1YjOFNWIzxTViMwU1gjNFNYIzhTWCM8U1gjMFNaIzRTWiM4U1ojPFNaIzBTXCM0U1wjOFNcIzxTXCMwU14jNFNeIzhTXiM8U14jMFNgIzRTYCM4U2AjPFNgIzBTYiM0U2IjOFNiIzxTYiMwU2QjNFNkIzhTZCM8U2QjMFNmIzRTZiM4U2YjPFNmIzBTaCM0U2gjOFNoIzxTaCMwU2ojNFNqIzhTaiM8U2ojMFNsIzRTbCM4U2wjPFNsIzBTbiM0U24jOFNuIzxTbiMwU3AjNFNwIzhTcCM8U3AjMFNyIzRTciM4U3IjPFNyIzBTdCM0U3QjOFN0IzxTdCMwU3YjNFN2IzhTdiM8U3YjMFN4IzRTeCM4U3gjPFN4IzBTeiM0U3ojOFN6IzxTeiMwU3wjNFN8IzhTfCM8U3wjMFN+IzRTfiM4U34jPFN+EwEBgUERCoMjMFMAIzRTACM4UwAjPFMAIzBTAiM0UwIjOFMCIzxTAiMwUwQjNFMEIzhTBCM8UwQjMFMGIzRTBiM4UwYjPFMGIzBTCCM0UwgjOFMIIzxTCCMwUwojNFMKIzhTCiM8UwojMFMMIzRTDCM4UwwjPFMMIzBTDiM0Uw4jOFMOIzxTDiMwUxAjNFMQIzhTECM8UxAjMFMSIzRTEiM4UxIjPFMSIzBTFCM0UxQjOFMUIzxTFCMwUxYjNFMWIzhTFiM8UxYjMFMYIzRTGCM4UxgjPFMYIzBTGiM0UxojOFMaIzxTGiMwUxwjNFMcIzhTHCM8UxwjMFMeIzRTHiM4Ux4jPFMeIzBTICM0UyAjOFMgIzxTICMwUyIjNFMiIzhTIiM8UyIjMFMkIzRTJCM4UyQjPFMkIzBTJiM0UyYjOFMmIzxTJiMwUygjNFMoIzhTKCM8UygjMFMqIzRTKiM4UyojPFMqIzBTLCM0UywjOFMsIzxTLCMwUy4jNFMuIzhTLiM8Uy4jMFMwIzRTMCM4UzAjPFMwIzBTMiM0UzIjOFMyIzxTMiMwUzQjNFM0IzhTNCM8UzQjMFM2IzRTNiM4UzYjPFM2IzBTOCM0UzgjOFM4IzxTOCMwUzojNFM6IzhTOiM8UzojMFM8IzRTPCM4UzwjPFM8IzBTPiM0Uz4jOFM+IzxTPiMwU0AjNFNAIzhTQCM8U0AjMFNCIzRTQiM4U0IjPFNCIzBTRCM0U0QjOFNEIzxTRCMwU0YjNFNGIzhTRiM8U0YjMFNIIzRTSCM4U0gjPFNIIzBTSiM0U0ojOFNKIzxTSiMwU0wjNFNMIzhTTCM8U0wjMFNOIzRTTiM4U04jPFNOIzBTUCM0U1AjOFNQIzxTUCMwU1IjNFNSIzhTUiM8U1IjMFNUIzRTVCM4U1QjPFNUIzBTViM0U1YjOFNWIzxTViMwU1gjNFNYIzhTWCM8U1gjMFNaIzRTWiM4U1ojPFNaIzBTXCM0U1wjOFNcIzxTXCMwU14jNFNeIzhTXiM8U14jMFNgIzRTYCM4U2AjPFNgIzBTYiM0U2IjOFNiIzxTYiMwU2QjNFNkIzhTZCM8U2QjMFNmIzRTZiM4U2YjPFNmIzBTaCM0U2gjOFNoIzxTaCMwU2ojNFNqIzhTaiM8U2ojMFNsIzRTbCM4U2wjPFNsIzBTbiM0U24jOFNuIzxTbiMwU3AjNFNwIzhTcCM8U3AjMFNyIzRTciM4U3IjPFNyIzBTdCM0U3QjOFN0IzxTdCMwU3YjNFN2IzhTdiM8U3YjMFN4IzRTeCM4U3gjPFN4IzBTeiM0U3ojOFN6IzxTeiMwU3wjNFN8IzhTfCM8U3wjMFN+IzRTfiM4U34jPFN+NXEKgyMwUwAjNFMAIzhTACM8UwAjMFMCIzRTAiM4UwIjPFMCIzBTBCM0UwQjOFMEIzxTBCMwUwYjNFMGIzhTBiM8UwYjMFMIIzRTCCM4UwgjPFMIDWFBARMBAX9BARMBAX+BRQFGgUYBR4FHAUiBSIFCAUOBQwFOgU4BT4FPAUWCgA=="
+.option pop"#,
+        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
+        vg_aes_ctr32_bs_to = sym super::aes::vg_aes_ctr32_bs_to::vg_aes_ctr32_bs_to,
+        vg_aes_ctr32_bs = sym super::aes::vg_aes_ctr32_bs::vg_aes_ctr32_bs,
+    )
+}
+
+/// `vg_aes_gcm_seal_contiguous` with the bitsliced form of the key context at `*bk` (`VG.Spec.Gcm.CtxSlicedRepr`), which it may read instead of computing it. Computes the same result as `vg_aes_gcm_seal_contiguous`. The buffer is secret, as the key context is: it may not affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealContiguousBitslicedContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes, and aligned for `u64`.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `src` must be valid for reads of `len` bytes, and `dst` for reads and writes of `len` bytes. The two pointers must be identical or their regions disjoint.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * `bk` must be valid for reads of 1248 bytes, and aligned for `u64`.
+/// * `rounds` must be 10, 12 or 14.
+/// * `*bk` must be what `vg_aes_gcm_bitslice` wrote for the same key context (the contract's precondition: `VG.Spec.Gcm.CtxSlicedRepr` of `bk` and the key context).
+/// * `dst` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `src` when distinct from `dst`, `bk` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `src` when distinct from `dst`, `dst`, `tag` and `bk` may overlap the 4656 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_aes_gcm_seal_contiguous_bitsliced(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, dst: *mut u8, len: usize, tag: *mut [u8; 16], bk: *const [u64; 156]) {
+    core::arch::naked_asm!(
+        r#".option push
+.option arch, +m, +c
+.base64 "EwEBgRMBAdyKghODAn8DMwMkI7BiABODAn8DM4MkI7RiABODAn8DMwMlI7hiABODggIjvGIACoMDM4MBIzCDCCM0kwgjOCMJIzwzCSMwQwsjNFMLIzhjCyM8cwsjMIMNIzSTDSM4ow0jPLMNIzATDhqEKomuiZMEBAEyiraKtot49D6NIzgED8aNCoODPIMARoyDPQMAE4ZK/w=="
+beqz a2, 20f
+.base64 "gUIjsFQAI7RUAAFL"
+beqz s5, 22f
+beqz s6, 24f
+.base64 "QUYzBmZBk9ZKAA=="
+bnez a3, 26f
+.base64 "s4bKQP2S"
+bnez a3, 28f
+j 29f
+28:
+.base64 "VoY="
+29:
+j 27f
+26:
+27:
+.base64 "k4UEAtqVUoUymrOKykAymw=="
+210:
+.base64 "g0IFACOAVQAFBYUFfRY="
+bnez a2, 210b
+.base64 "kwYL/w=="
+beqz a3, 211f
+j 212f
+211:
+.base64 "EwUJD6aFE4YEAoVGEwcEIIqCA7UCARMFBTw="
+call {vg_ghash_prepared}
+212:
+j 25f
+24:
+25:
+.base64 "UoaT1koAk/f6ADOI+kBCmr6K"
+beqz a3, 213f
+.base64 "EwUJD6aFEwcEIIqCA7UCARMFBTw="
+call {vg_ghash_prepared}
+j 214f
+213:
+214:
+beqz s5, 215f
+.base64 "UoWThQQCVoY="
+217:
+.base64 "g0IFACOAVQAFBYUFfRY="
+bnez a2, 217b
+j 216f
+215:
+216:
+j 23f
+22:
+23:
+.base64 "E/v7AA=="
+beqz s6, 218f
+.base64 "gUIjMFQGIzRUBhOFBAKTBQQGWoY="
+220:
+.base64 "g0IFACOAVQAFBYUFfRY="
+bnez a2, 220b
+.base64 "EwUJD6aFEwYEBoVGEwcEIIqCA7UCARMFBTw="
+call {vg_ghash_prepared}
+j 219f
+218:
+219:
+.base64 "AUpeixMVOgCTFTsAk1KFAyMAVAaTUgUDowBUBpNShQIjAVQGk1IFAqMBVAaTUoUBIwJUBpNSBQGjAlQGk1KFACMDVAaTUgUAowNUBpPShQMjBFQGk9IFA6MEVAaT0oUCIwVUBpPSBQKjBVQGk9KFASMGVAaT0gUBowZUBpPShQAjB1QGk9IFAKMHVAYTBQkPpoUTBgQGhUYTBwQgioIDtQIBEwUFPA=="
+call {vg_ghash_prepared}
+j 21f
+20:
+.base64 "g0IKACOAVACDQhoAo4BUAINCKgAjgVQAg0I6AKOBVACDQkoAI4JUAINCWgCjglQAg0JqACODVACDQnoAo4NUAINCigAjhFQAg0KaAKOEVACDQqoAI4VUAINCugCjhVQAgUIjhlQAgUKjhlQAgUIjh1QAhUKjh1QA"
+21:
+.base64 "g7IEACO4VAKD4oQAI6xUAgPFxABiBYPC1ADCAjNlVQCDwuQAogIzZVUAg8L0ADNlVQAFBZNShQEjjlQCk1IFAaOOVAKTUoUAI49UApNSBQCjj1QCgUIjuFQAI7xUAAM6hA7qigFL"
+beqz s5, 221f
+beqz s6, 223f
+.base64 "QUYzBmZBk9ZKAA=="
+bnez a3, 225f
+.base64 "s4bKQP2S"
+bnez a3, 227f
+j 228f
+227:
+.base64 "VoY="
+228:
+j 226f
+225:
+226:
+.base64 "k4UEAtqVUoUymrOKykAymw=="
+229:
+.base64 "g0IFACOAVQAFBYUFfRY="
+bnez a2, 229b
+.base64 "kwYL/w=="
+beqz a3, 230f
+j 231f
+230:
+.base64 "EwUJD5OFBAEThgQChUYTBwQgioIDtQIBEwUFPA=="
+call {vg_ghash_prepared}
+231:
+j 224f
+223:
+224:
+.base64 "UoaT1koAk/f6ADOI+kBCmr6K"
+beqz a3, 232f
+.base64 "EwUJD5OFBAETBwQgioIDtQIBEwUFPA=="
+call {vg_ghash_prepared}
+j 233f
+232:
+233:
+beqz s5, 234f
+.base64 "UoWThQQCVoY="
+236:
+.base64 "g0IFACOAVQAFBYUFfRY="
+bnez a2, 236b
+j 235f
+234:
+235:
+j 222f
+221:
+222:
+.base64 "E3v9AA=="
+beqz s6, 237f
+.base64 "gUIjMFQGIzRUBhOFBAKTBQQGWoY="
+239:
+.base64 "g0IFACOAVQAFBYUFfRY="
+bnez a2, 239b
+.base64 "EwUJD5OFBAETBgQGhUYTBwQgioIDtQIBEwUFPA=="
+call {vg_ghash_prepared}
+j 238f
+237:
+238:
+.base64 "ioODuwMBAzoED+6KAUuzDExBIziED5MCEA8="
+bltu s5, t0, 240f
+.base64 "s4ZMAVKIE9dKAJP3+gCziPpARpq+ig=="
+beqz a4, 242f
+.base64 "XoXOhROGBAOTBwQg"
+call {vg_aes_ctr32_bs_to}
+j 243f
+242:
+243:
+beqz s5, 244f
+.base64 "gUIjsFQEI7RUBJOGBAQFR16FzoUThgQDkwcEIA=="
+call {vg_aes_ctr32_bs}
+.base64 "E4UEBNKFM4dMAVaG"
+246:
+.base64 "g8IFAINGBQCzwtIAIwBXAAUFhQUFB30W"
+bnez a2, 246b
+j 245f
+244:
+245:
+.base64 "AzoED+6KAUs="
+beqz s5, 247f
+beqz s6, 249f
+.base64 "QUYzBmZBk9ZKAA=="
+bnez a3, 251f
+.base64 "s4bKQP2S"
+bnez a3, 253f
+j 254f
+253:
+.base64 "VoY="
+254:
+j 252f
+251:
+252:
+.base64 "k4UEAtqVUoUymrOKykAymw=="
+255:
+.base64 "g0IFACOAVQAFBYUFfRY="
+bnez a2, 255b
+.base64 "kwYL/w=="
+beqz a3, 256f
+j 257f
+256:
+.base64 "EwUJD5OFBAEThgQChUYTBwQgioIDtQIBEwUFPA=="
+call {vg_ghash_prepared}
+257:
+j 250f
+249:
+250:
+.base64 "UoaT1koAk/f6ADOI+kBCmr6K"
+beqz a3, 258f
+.base64 "EwUJD5OFBAETBwQgioIDtQIBEwUFPA=="
+call {vg_ghash_prepared}
+j 259f
+258:
+259:
+beqz s5, 260f
+.base64 "UoWThQQCVoY="
+262:
+.base64 "g0IFACOAVQAFBYUFfRY="
+bnez a2, 262b
+j 261f
+260:
+261:
+j 248f
+247:
+248:
+.base64 "E/v9AA=="
+beqz s6, 263f
+.base64 "gUIjMFQGIzRUBhOFBAKTBQQGWoY="
+265:
+.base64 "g0IFACOAVQAFBYUFfRY="
+bnez a2, 265b
+.base64 "EwUJD5OFBAETBgQGhUYTBwQgioIDtQIBEwUFPA=="
+call {vg_ghash_prepared}
+j 264f
+263:
+264:
+.base64 "aopuixMVOgCTFTsAk1KFAyMAVAaTUgUDowBUBpNShQIjAVQGk1IFAqMBVAaTUoUBIwJUBpNSBQGjAlQGk1KFACMDVAaTUgUAowNUBpPShQMjBFQGk9IFA6MEVAaT0oUCIwVUBpPSBQKjBVQGk9KFASMGVAaT0gUBowZUBpPShQAjB1QGk9IFAKMHVAYTBQkPk4UEARMGBAaFRhMHBCCKggO1AgETBQU8"
+call {vg_ghash_prepared}
+.base64 "g7IEASMwVACDsoQBIzRUAF6FzoUmhqKGBUeTBwQg"
+call {vg_aes_ctr32_bs}
+j 241f
+240:
+.base64 "gUIjMFQQIzRUECM4VBAjPFQQIzBUEiM0VBIjOFQSIzxUEiMwVBQjNFQUIzhUFCM8VBQjMFQWIzRUFiM4VBYjPFQWIzBUGCM0VBgjOFQYIzxUGCMwVBojNFQaIzhUGiM8VBojMFQcIzRUHCM4VBwjPFQcIzBUHiM0VB4jOFQeIzxUHl6FzoUmhpMGBBATh/oAEYMFB5MHBCA="
+call {vg_aes_ctr32_bs}
+beqz s5, 266f
+.base64 "EwUEEdKFYodWhrPi5QCT8nIA"
+beqz t0, 268f
+270:
+.base64 "g8IFAINGBQCzwtIAIwBXAAUFhQUFB30W"
+bnez a2, 270b
+j 269f
+268:
+.base64 "k1c2AB2K"
+beqz a5, 271f
+273:
+.base64 "g7IFABRhs8LSACMwVwAhBaEFIQf9Fw=="
+bnez a5, 273b
+j 272f
+271:
+272:
+beqz a2, 274f
+276:
+.base64 "g8IFAINGBQCzwtIAIwBXAAUFhQUFB30W"
+bnez a2, 276b
+j 275f
+274:
+275:
+269:
+j 267f
+266:
+267:
+.base64 "AzoED+6KAUs="
+beqz s5, 277f
+beqz s6, 279f
+.base64 "QUYzBmZBk9ZKAA=="
+bnez a3, 281f
+.base64 "s4bKQP2S"
+bnez a3, 283f
+j 284f
+283:
+.base64 "VoY="
+284:
+j 282f
+281:
+282:
+.base64 "k4UEAtqVUoUymrOKykAymw=="
+285:
+.base64 "g0IFACOAVQAFBYUFfRY="
+bnez a2, 285b
+.base64 "kwYL/w=="
+beqz a3, 286f
+j 287f
+286:
+.base64 "EwUJD5OFBAEThgQChUYTBwQgioIDtQIBEwUFPA=="
+call {vg_ghash_prepared}
+287:
+j 280f
+279:
+280:
+.base64 "UoaT1koAk/f6ADOI+kBCmr6K"
+beqz a3, 288f
+.base64 "EwUJD5OFBAETBwQgioIDtQIBEwUFPA=="
+call {vg_ghash_prepared}
+j 289f
+288:
+289:
+beqz s5, 290f
+.base64 "UoWThQQCVoY="
+292:
+.base64 "g0IFACOAVQAFBYUFfRY="
+bnez a2, 292b
+j 291f
+290:
+291:
+j 278f
+277:
+278:
+.base64 "E/v9AA=="
+beqz s6, 293f
+.base64 "gUIjMFQGIzRUBhOFBAKTBQQGWoY="
+295:
+.base64 "g0IFACOAVQAFBYUFfRY="
+bnez a2, 295b
+.base64 "EwUJD5OFBAETBgQGhUYTBwQgioIDtQIBEwUFPA=="
+call {vg_ghash_prepared}
+j 294f
+293:
+294:
+.base64 "aopuixMVOgCTFTsAk1KFAyMAVAaTUgUDowBUBpNShQIjAVQGk1IFAqMBVAaTUoUBIwJUBpNSBQGjAlQGk1KFACMDVAaTUgUAowNUBpPShQMjBFQGk9IFA6MEVAaT0oUCIwVUBpPSBQKjBVQGk9KFASMGVAaT0gUBowZUBpPShQAjB1QGk9IFAKMHVAYTBQkPk4UEARMGBAaFRhMHBCCKggO1AgETBQU8"
+call {vg_ghash_prepared}
+.base64 "g7IEAQMzBBCzwmIAIzBUAIOyhAEDM4QQs8JiACM0VAA="
+241:
+.base64 "CoODPIMAg0IEACOAXACDQhQAo4BcAINCJAAjgVwAg0I0AKOBXACDQkQAI4JcAINCVACjglwAg0JkACODXACDQnQAo4NcAINChAAjhFwAg0KUAKOEXACDQqQAI4VcAINCtACjhVwAg0LEACOGXACDQtQAo4ZcAINC5AAjh1wAg0L0AKOHXAAigwM0AwiDNIMIAzkDCYM5gwkDOgMKgzqDCgM7AwuDO4MLAzwDDIM8gwwDPQMNgz2DDYMwAw4TAQEkEwEBf4FCEwEBgUERCoMjMFMAIzRTACM4UwAjPFMAIzBTAiM0UwIjOFMCIzxTAiMwUwQjNFMEIzhTBCM8UwQjMFMGIzRTBiM4UwYjPFMGIzBTCCM0UwgjOFMIIzxTCCMwUwojNFMKIzhTCiM8UwojMFMMIzRTDCM4UwwjPFMMIzBTDiM0Uw4jOFMOIzxTDiMwUxAjNFMQIzhTECM8UxAjMFMSIzRTEiM4UxIjPFMSIzBTFCM0UxQjOFMUIzxTFCMwUxYjNFMWIzhTFiM8UxYjMFMYIzRTGCM4UxgjPFMYIzBTGiM0UxojOFMaIzxTGiMwUxwjNFMcIzhTHCM8UxwjMFMeIzRTHiM4Ux4jPFMeIzBTICM0UyAjOFMgIzxTICMwUyIjNFMiIzhTIiM8UyIjMFMkIzRTJCM4UyQjPFMkIzBTJiM0UyYjOFMmIzxTJiMwUygjNFMoIzhTKCM8UygjMFMqIzRTKiM4UyojPFMqIzBTLCM0UywjOFMsIzxTLCMwUy4jNFMuIzhTLiM8Uy4jMFMwIzRTMCM4UzAjPFMwIzBTMiM0UzIjOFMyIzxTMiMwUzQjNFM0IzhTNCM8UzQjMFM2IzRTNiM4UzYjPFM2IzBTOCM0UzgjOFM4IzxTOCMwUzojNFM6IzhTOiM8UzojMFM8IzRTPCM4UzwjPFM8IzBTPiM0Uz4jOFM+IzxTPiMwU0AjNFNAIzhTQCM8U0AjMFNCIzRTQiM4U0IjPFNCIzBTRCM0U0QjOFNEIzxTRCMwU0YjNFNGIzhTRiM8U0YjMFNIIzRTSCM4U0gjPFNIIzBTSiM0U0ojOFNKIzxTSiMwU0wjNFNMIzhTTCM8U0wjMFNOIzRTTiM4U04jPFNOIzBTUCM0U1AjOFNQIzxTUCMwU1IjNFNSIzhTUiM8U1IjMFNUIzRTVCM4U1QjPFNUIzBTViM0U1YjOFNWIzxTViMwU1gjNFNYIzhTWCM8U1gjMFNaIzRTWiM4U1ojPFNaIzBTXCM0U1wjOFNcIzxTXCMwU14jNFNeIzhTXiM8U14jMFNgIzRTYCM4U2AjPFNgIzBTYiM0U2IjOFNiIzxTYiMwU2QjNFNkIzhTZCM8U2QjMFNmIzRTZiM4U2YjPFNmIzBTaCM0U2gjOFNoIzxTaCMwU2ojNFNqIzhTaiM8U2ojMFNsIzRTbCM4U2wjPFNsIzBTbiM0U24jOFNuIzxTbiMwU3AjNFNwIzhTcCM8U3AjMFNyIzRTciM4U3IjPFNyIzBTdCM0U3QjOFN0IzxTdCMwU3YjNFN2IzhTdiM8U3YjMFN4IzRTeCM4U3gjPFN4IzBTeiM0U3ojOFN6IzxTeiMwU3wjNFN8IzhTfCM8U3wjMFN+IzRTfiM4U34jPFN+EwEB1gqDIzBTACM0UwAjOFMAIzxTACMwUwIjNFMCIzhTAiM8UwIjMFMEIzRTBCM4UwQjPFMEIzBTBiM0UwYjOFMGIzxTBiMwUwgjNFMIIzhTCCM8UwgjMFMKIzRTCiM4UwojPFMKIzBTDCM0UwwjOFMMIzxTDCMwUw4jNFMOIzhTDiM8Uw4jMFMQIzRTECM4UxAjPFMQIzBTEiM0UxIjOFMSIzxTEiMwUxQjNFMUIzhTFCM8UxQjMFMWIzRTFiM4UxYjPFMWIzBTGCM0UxgjOFMYIzxTGCMwUxojNFMaIzhTGiM8UxojMFMcIzRTHCM4UxwjPFMcIzBTHiM0Ux4jOFMeIzxTHiMwUyAjNFMgIzhTICM8UyAjMFMiIzRTIiM4UyIjPFMiIzBTJCM0UyQjOFMkIzxTJCMwUyYjNFMmIzhTJiM8UyYjMFMoIzRTKCM4UygjPFMoEwEBKkEBEwEBf4FFAUaBRgFHgUcBSIFIgUIBQ4FDAU6BTgFPgU8BRYKA"
+.option pop"#,
+        vg_ghash_prepared = sym super::gcm::vg_ghash_prepared::vg_ghash_prepared,
+        vg_aes_ctr32_bs_to = sym super::aes::vg_aes_ctr32_bs_to::vg_aes_ctr32_bs_to,
+        vg_aes_ctr32_bs = sym super::aes::vg_aes_ctr32_bs::vg_aes_ctr32_bs,
+    )
+}
+
+#[rustfmt::skip]
+#[path = "internal/vg_ghash_prepared.rs"]
+pub(crate) mod vg_ghash_prepared;

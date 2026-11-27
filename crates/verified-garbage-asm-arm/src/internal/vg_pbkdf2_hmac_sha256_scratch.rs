@@ -34,7 +34,7 @@ beq 20f
 movw r12, #1156
 add r4, r11, r12
 mov r0, r4
-bl {vg_sha256_init}
+bl {vg_sha256_init_core}
 mov r0, r4
 mov r1, r8
 mov r7, r9
@@ -196,7 +196,7 @@ ldr r10, [r11, #856]
 ldr lr, [r11, #860]
 ldr r11, [r11, #864]
 bx lr",
-        vg_sha256_init = sym crate::sha256::vg_sha256_init,
+        vg_sha256_init_core = sym crate::sha256::vg_sha256_init_core::vg_sha256_init_core,
         vg_sha256_update_scratch = sym crate::sha256::vg_sha256_update_scratch::vg_sha256_update_scratch,
         vg_sha256_finalize_scratch = sym crate::sha256::vg_sha256_finalize_scratch::vg_sha256_finalize_scratch,
         vg_hmac_sha256_init_scratch = sym crate::hmac_sha256::vg_hmac_sha256_init_scratch::vg_hmac_sha256_init_scratch,

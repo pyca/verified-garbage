@@ -598,11 +598,7 @@ theorem code_correct {vs : List MVar} {gs : List MVar} (hok : OK vs gs) (s : Sta
   unfold verSpec
   sig_post [Spec.RsaPss.verifyPrecomputedMdTableContract, Spec.RsaPss.verifyPrecomputedMdTableSig,
     Spec.MdHashTable.param, Abi.withTables, abi, argRegs, stackArgs_eight, List.append_eq]
-  intro H' G' hH' hG' hc
-  rw [hH] at hH'
-  rw [hG] at hG'
-  cases hH'
-  cases hG'
+  refine ⟨_, _, hH, hG, fun hc => ?_⟩
   rw [hr hc]
   unfold vOut
   split <;> rfl

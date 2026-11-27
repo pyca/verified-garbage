@@ -7,7 +7,7 @@ public import VerifiedGarbage.TCB.X86.Isa
 
 **Trusted.** The bytes of each straight-line instruction of the model
 (`Instr`), and of the return: what the printer (`Print.lean`) emits, as
-`.byte <bytes>`, in place of the instruction's text, so that what runs is
+as bytes (`Line.code`), in place of the instruction's text, so that what runs is
 these bytes, not the assembler's reading of a mnemonic. The branches (`jcc`,
 `jmp`), the call and the address of a static (`symPush`), whose bytes
 depend on where their target is, are still printed as text for the
@@ -39,6 +39,11 @@ text, so the bytes are those it produced:
 printer reports as unencodable (`Printer.unencodable`) and the emitter
 refuses (`Rust.checkEncodable`), rather than truncating it; and for
 `symPush`, which is text.
+
+A field is placed by a product, `v * 2 ^ k` (the value `v` from bit `k` up),
+not by a shift, `v <<< k`: the two are equal, and the compiled shift of
+natural numbers goes through Lean's big numbers even when they are small
+(a quarter of the time of encoding x86-64's instructions, measured).
 -/
 
 @[expose] public section
@@ -62,7 +67,7 @@ def le (n v : Nat) : List Nat := (List.range n).map fun i => (v >>> (8 * i)) % 2
 def i8 (v : Int) : Nat := (v % 256).toNat
 
 /-- ModR/M with `mod = 11`: `reg` (bits 5–3), `rm` (2–0). -/
-def rr (regField rm : Nat) : List Nat := [0xC0 ||| regField <<< 3 ||| rm]
+def rr (regField rm : Nat) : List Nat := [0xC0 ||| regField * 2 ^ 3 ||| rm]
 
 /-- ModR/M, SIB and displacement of `[base + disp]` with `reg` field
 `regField`, `disp` a signed displacement: the shortest form (see the module
@@ -72,11 +77,11 @@ def memSigned (regField : Nat) (base : Reg) (disp : Int) : Option (List Nat) :=
     let b := reg base
     let sib := if base == .esp then [0x24] else []
     if disp == 0 ∧ base != .ebp then
-      some ([regField <<< 3 ||| b] ++ sib)
+      some ([regField * 2 ^ 3 ||| b] ++ sib)
     else if -128 ≤ disp ∧ disp < 128 then
-      some ([0x40 ||| regField <<< 3 ||| b] ++ sib ++ [i8 disp])
+      some ([0x40 ||| regField * 2 ^ 3 ||| b] ++ sib ++ [i8 disp])
     else
-      some ([0x80 ||| regField <<< 3 ||| b] ++ sib ++ le 4 (disp % 2 ^ 32).toNat)
+      some ([0x80 ||| regField * 2 ^ 3 ||| b] ++ sib ++ le 4 (disp % 2 ^ 32).toNat)
   else none
 
 /-- `[base + disp]` of a `MemOp`. -/
@@ -117,13 +122,21 @@ def XOp.encode : XOp → Option (List Nat)
       | .sha1msg1 => [0x0F, 0x38, 0xC9] | .sha1msg2 => [0x0F, 0x38, 0xCA]
       | .sha1nexte => [0x0F, 0x38, 0xC8] | .aesdec => [0x66, 0x0F, 0x38, 0xDE]
       | .aesdeclast => [0x66, 0x0F, 0x38, 0xDF] | .aesimc => [0x66, 0x0F, 0x38, 0xDB]
+      -- "PADDB/PADDW/PADDD/PADDQ" (66 0F FD /r), "PSUBB/PSUBW/PSUBD" (66 0F F9
+      -- /r), "PACKSSWB/PACKSSDW" (66 0F 6B /r), "PUNPCKLBW/PUNPCKLWD/PUNPCKLDQ/
+      -- PUNPCKLQDQ" (66 0F 61 /r), "PUNPCKHBW/PUNPCKHWD/PUNPCKHDQ/PUNPCKHQDQ"
+      -- (66 0F 69 /r).
+      | .paddw => [0x66, 0x0F, 0xFD] | .psubw => [0x66, 0x0F, 0xF9]
+      | .packssdw => [0x66, 0x0F, 0x6B] | .punpcklwd => [0x66, 0x0F, 0x61]
+      | .punpckhwd => [0x66, 0x0F, 0x69]
     some (opc ++ rr (xreg d) (xreg s))
   -- "PSLLD/PSLLQ" (66 0F 72 /6 ib, 66 0F 73 /6 ib), "PSRLD/PSRLQ" (66 0F 72 /2
-  -- ib, 66 0F 73 /2 ib), "PSLLDQ" (66 0F 73 /7 ib), "PSRLDQ" (66 0F 73 /3 ib).
+  -- ib, 66 0F 73 /2 ib), "PSLLDQ" (66 0F 73 /7 ib), "PSRLDQ" (66 0F 73 /3 ib),
+  -- "PSRAW/PSRAD/PSRAQ" (66 0F 71 /4 ib).
   | .shift op d n =>
     let (o, digit) := match op with
       | .pslld => (0x72, 6) | .psrld => (0x72, 2) | .psllq => (0x73, 6) | .psrlq => (0x73, 2)
-      | .pslldq => (0x73, 7) | .psrldq => (0x73, 3)
+      | .pslldq => (0x73, 7) | .psrldq => (0x73, 3) | .psraw => (0x71, 4)
     some ([0x66, 0x0F, o] ++ rr digit (xreg d) ++ [n.toNat])
   | .pshufd d s o => some ([0x66, 0x0F, 0x70] ++ rr (xreg d) (xreg s) ++ [o.toNat])
   | .pshuflw d s o => some ([0xF2, 0x0F, 0x70] ++ rr (xreg d) (xreg s) ++ [o.toNat])
@@ -207,6 +220,10 @@ def Instr.encode : Instr → Option (List (List Nat))
   | .movdquStore m r => (mem (xreg r) m).map fun b => [[0xF3, 0x0F, 0x7F] ++ b]
   | .movqLoad d m => (mem (xreg d) m).map fun b => [[0xF3, 0x0F, 0x7E] ++ b]
   | .movqStore m r => (mem (xreg r) m).map fun b => [[0x66, 0x0F, 0xD6] ++ b]
+  -- The loads of a table an instruction carries: `movdquLoad`'s and
+  -- `movqLoad`'s bytes, through the base register.
+  | .movdquTbl d m .. => (mem (xreg d) m).map fun b => [[0xF3, 0x0F, 0x6F] ++ b]
+  | .movqTbl d m .. => (mem (xreg d) m).map fun b => [[0xF3, 0x0F, 0x7E] ++ b]
   | .xop op => op.encode.map ([·])
   | .mop op => op.encode.map ([·])
   -- "MOVQ" (`NP 0F 7F /r`, a store from an MMX register).
@@ -215,6 +232,9 @@ def Instr.encode : Instr → Option (List (List Nat))
   -- "EMMS" (`NP 0F 77`), "PMULUDQ" (`66 0F F4 /r`).
   | .emms => some [[0x0F, 0x77]]
   | .pmuludq d s => some [[0x66, 0x0F, 0xF4] ++ rr (xreg d) (xreg s)]
+  -- "PMULLW" (66 0F D5 /r), "PMULHW" (66 0F E5 /r).
+  | .pmullw d s => some [[0x66, 0x0F, 0xD5] ++ rr (xreg d) (xreg s)]
+  | .pmulhw d s => some [[0x66, 0x0F, 0xE5] ++ rr (xreg d) (xreg s)]
   -- Intel's MCDT prologue and epilogue (`Isa.lean`): `lea esp, [esp-12]`,
   -- "STMXCSR" (`0F AE /3`), `mov r32, imm32`, `mov [esp], r32`, "LDMXCSR"
   -- (`0F AE /2`), "LFENCE" (`0F AE E8`); then `lfence`, `ldmxcsr`, `lea`.
@@ -233,14 +253,5 @@ def Instr.encode : Instr → Option (List (List Nat))
 
 /-- `ret` ("RET", `C3`). -/
 def retBytes : List Nat := [0xC3]
-
-/-- `b` as two hexadecimal digits, after `0x`. -/
-def hex8 (b : Nat) : String :=
-  ("0x".push (Nat.digitChar (b % 256 / 16))).push (Nat.digitChar (b % 16))
-
-/-- The assembler directive emitting the bytes `bs`: `.byte` of each, as
-two hexadecimal digits, separated by commas alone (the form the emitter
-joins and packs, `Rust.pushLine`). -/
-def byteLine (bs : List Nat) : String := ".byte " ++ ",".intercalate (bs.map hex8)
 
 end VG.X86

@@ -1101,58 +1101,7 @@ vg_ecdh_p384:
 	and edx, ecx
 	xor eax, edx
 	mov DWORD PTR [edi+2172], eax
-	mov eax, DWORD PTR [edi+1888]
-	mov DWORD PTR [edi+736], eax
-	mov eax, DWORD PTR [edi+1892]
-	mov DWORD PTR [edi+740], eax
-	mov eax, DWORD PTR [edi+1896]
-	mov DWORD PTR [edi+744], eax
-	mov eax, DWORD PTR [edi+1900]
-	mov DWORD PTR [edi+748], eax
-	mov eax, DWORD PTR [edi+1904]
-	mov DWORD PTR [edi+752], eax
-	mov eax, DWORD PTR [edi+1908]
-	mov DWORD PTR [edi+756], eax
-	mov eax, DWORD PTR [edi+1912]
-	mov DWORD PTR [edi+760], eax
-	mov eax, DWORD PTR [edi+1916]
-	mov DWORD PTR [edi+764], eax
-	mov eax, DWORD PTR [edi+1920]
-	mov DWORD PTR [edi+768], eax
-	mov eax, DWORD PTR [edi+1924]
-	mov DWORD PTR [edi+772], eax
-	mov eax, DWORD PTR [edi+1928]
-	mov DWORD PTR [edi+776], eax
-	mov eax, DWORD PTR [edi+1932]
-	mov DWORD PTR [edi+780], eax
-	mov eax, DWORD PTR [edi+2128]
-	mov DWORD PTR [edi+784], eax
-	mov eax, DWORD PTR [edi+2132]
-	mov DWORD PTR [edi+788], eax
-	mov eax, DWORD PTR [edi+2136]
-	mov DWORD PTR [edi+792], eax
-	mov eax, DWORD PTR [edi+2140]
-	mov DWORD PTR [edi+796], eax
-	mov eax, DWORD PTR [edi+2144]
-	mov DWORD PTR [edi+800], eax
-	mov eax, DWORD PTR [edi+2148]
-	mov DWORD PTR [edi+804], eax
-	mov eax, DWORD PTR [edi+2152]
-	mov DWORD PTR [edi+808], eax
-	mov eax, DWORD PTR [edi+2156]
-	mov DWORD PTR [edi+812], eax
-	mov eax, DWORD PTR [edi+2160]
-	mov DWORD PTR [edi+816], eax
-	mov eax, DWORD PTR [edi+2164]
-	mov DWORD PTR [edi+820], eax
-	mov eax, DWORD PTR [edi+2168]
-	mov DWORD PTR [edi+824], eax
-	mov eax, DWORD PTR [edi+2172]
-	mov DWORD PTR [edi+828], eax
-	push edi
-	call {vg_p384_mul}
-	pop eax
-	mov edi, DWORD PTR [esp+16]
+	call {vg_p384_window}
 	mov eax, DWORD PTR [edi+304]
 	mov DWORD PTR [edi+1456], eax
 	mov eax, DWORD PTR [edi+308]
@@ -1427,5 +1376,23 @@ vg_ecdh_p384:
 	mov esi, DWORD PTR [edx+4]
 	mov ebp, DWORD PTR [edx+12]
 	mov edi, DWORD PTR [edx+8]
+	pxor xmm0, xmm0
+	mov ecx, 0
+	lea esp, [esp-28]
+	movdqu XMMWORD PTR [esp], xmm0
+	mov DWORD PTR [esp+16], ecx
+	mov DWORD PTR [esp+20], ecx
+	mov DWORD PTR [esp+24], ecx
+	lea esp, [esp+28]
+	mov edx, 0
+	xor ecx, ecx
+	pxor xmm0, xmm0
+	pxor xmm1, xmm1
+	pxor xmm2, xmm2
+	pxor xmm3, xmm3
+	pxor xmm4, xmm4
+	pxor xmm5, xmm5
+	pxor xmm6, xmm6
+	pxor xmm7, xmm7
 	ret
 	.p2align 6

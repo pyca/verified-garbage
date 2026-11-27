@@ -17,6 +17,9 @@ meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointLit
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointLitAdx
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointLitAdx
 public import VerifiedGarbage.Impl.Ecdsa.Verify.P384.X86_64
+public import VerifiedGarbage.Proof.Framework.X86_64.CallInlineN
+import VerifiedGarbage.Proof.Framework.KernelRfl
+meta import VerifiedGarbage.Proof.Framework.KernelRfl
 meta import VerifiedGarbage.Impl.Ecdsa.Verify.P384.X86_64
 
 /-!
@@ -39,8 +42,18 @@ def jointVerifyP384Erased : Prog isa := Code.erase jointVerifyP384
 
 materialize_shared jointVerifyP384Erased
 
-theorem jointVerifyP384_inlineOk : jointVerifyP384.InlineOk = true :=
-  Code.inlineOk_of_erase (show jointVerifyP384Erased.InlineOk = true by lit_decide)
+/-- `InlineOkN`, calls nested two deep (the additions call the end of the
+addition, `vg_p384_jac_add_tail`). -/
+theorem jointVerifyP384_inlineOk : jointVerifyP384.InlineOkN 2 = true :=
+  Code.inlineOkN_of_erase (show jointVerifyP384Erased.InlineOkN 2 = true by lit_decide)
+
+/-- The code the proofs run: `jointVerifyP384` with the additions' end inline
+(`publicJointF`), which is `jointVerifyP384` inlined at every depth. -/
+abbrev jointVerifyP384F : Prog isa :=
+  Cfg.jointVerify Impl.P384.X86_64.p384v Impl.P384.X86_64.publicJointF
+    (Impl.P384.X86_64.jointDouble Impl.P384.X86_64.publicJointF.K)
+
+theorem jointVerifyP384_inlineAll : jointVerifyP384.inlineAll = jointVerifyP384F.inline := by kernel_rfl
 
 theorem jointVerifyP384_rspMxcsr :
     jointVerifyP384.allInstrs (fun i => !Taint.clobbers i .rsp && !loadsMxcsr i) = true :=
@@ -51,8 +64,18 @@ def jointVerifyP384AdxErased : Prog isa := Code.erase jointVerifyP384Adx
 
 materialize_shared jointVerifyP384AdxErased
 
-theorem jointVerifyP384Adx_inlineOk : jointVerifyP384Adx.InlineOk = true :=
-  Code.inlineOk_of_erase (show jointVerifyP384AdxErased.InlineOk = true by lit_decide)
+/-- `InlineOkN`, calls nested two deep (the additions call the end of the
+addition, `vg_p384_jac_add_tail`). -/
+theorem jointVerifyP384Adx_inlineOk : jointVerifyP384Adx.InlineOkN 2 = true :=
+  Code.inlineOkN_of_erase (show jointVerifyP384AdxErased.InlineOkN 2 = true by lit_decide)
+
+/-- The code the proofs run: `jointVerifyP384Adx` with the additions' end inline
+(`publicJointAdxF`), which is `jointVerifyP384Adx` inlined at every depth. -/
+abbrev jointVerifyP384AdxF : Prog isa :=
+  Cfg.jointVerify Impl.P384.X86_64.p384vx Impl.P384.X86_64.publicJointAdxF
+    (Impl.P384.X86_64.jointDoubleAdx Impl.P384.X86_64.publicJointAdxF.K)
+
+theorem jointVerifyP384Adx_inlineAll : jointVerifyP384Adx.inlineAll = jointVerifyP384AdxF.inline := by kernel_rfl
 
 theorem jointVerifyP384Adx_rspMxcsr :
     jointVerifyP384Adx.allInstrs (fun i => !Taint.clobbers i .rsp && !loadsMxcsr i) = true :=

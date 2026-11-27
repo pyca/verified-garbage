@@ -13,18 +13,31 @@ open VG.Arm
 /-- brainpoolP384r1 as the code has it, its field multiplications by
 `vg_brainpoolp384r1_mul_mod_<p|n>_umaal` if `u`. -/
 def brainpoolp384r1With (u : Bool) : Cfg :=
-  ⟨6, Spec.BrainpoolP384r1.curve, Impl.Weierstrass.Mont.brainpoolp384r1p, Impl.Weierstrass.Mont.brainpoolp384r1n, none, u⟩
+  ⟨6, Spec.BrainpoolP384r1.curve, Impl.Weierstrass.Mont.brainpoolp384r1p, Impl.Weierstrass.Mont.brainpoolp384r1n,
+    some Impl.Weierstrass.Mul.brainpoolp384r1, u, "VG_BRAINPOOLP384R1_FRAME_CONSTS"⟩
 
 /-- brainpoolP384r1 as the code has it. -/
 def brainpoolp384r1 : Cfg := brainpoolp384r1With false
 
-/-- `vg_ecdsa_brainpoolp384r1_sign`, or with `u` `vg_ecdsa_brainpoolp384r1_sign_umaal`. -/
-def signBrainpoolP384r1With (u : Bool) : Prog isa := (brainpoolp384r1With u).sign
-
 /-- `vg_ecdsa_brainpoolp384r1_sign`. -/
-def signBrainpoolP384r1 : Prog isa := signBrainpoolP384r1With false
+def signBrainpoolP384r1 : Prog isa := brainpoolp384r1.sign
 
-/-- `vg_ecdsa_brainpoolp384r1_sign_umaal`. -/
-def signBrainpoolP384r1U : Prog isa := signBrainpoolP384r1With true
+/-- `vg_brainpoolp384r1_mul`, or with `u` `vg_brainpoolp384r1_mul_umaal`. -/
+def mulBrainpoolP384r1With (u : Bool) : Prog isa := (brainpoolp384r1With u).mulFn
+
+/-- `vg_brainpoolp384r1_mul`. -/
+def mulBrainpoolP384r1 : Prog isa := mulBrainpoolP384r1With false
+
+/-- `vg_brainpoolp384r1_mul_umaal`. -/
+def mulBrainpoolP384r1U : Prog isa := mulBrainpoolP384r1With true
+
+/-- `vg_brainpoolp384r1_mul_public`, or with `u` `vg_brainpoolp384r1_mul_public_umaal`. -/
+def mulPubBrainpoolP384r1With (u : Bool) : Prog isa := (brainpoolp384r1With u).pubFn
+
+/-- `vg_brainpoolp384r1_mul_public`. -/
+def mulPubBrainpoolP384r1 : Prog isa := mulPubBrainpoolP384r1With false
+
+/-- `vg_brainpoolp384r1_mul_public_umaal`. -/
+def mulPubBrainpoolP384r1U : Prog isa := mulPubBrainpoolP384r1With true
 
 end VG.Impl.Ecdsa.Arm

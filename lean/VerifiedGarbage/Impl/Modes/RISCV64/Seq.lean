@@ -107,35 +107,50 @@ def wordAt (w : Bool) : Loc → Bool
   | .dat => w
   | _ => true
 
-/-- Load the word at `off` into `d` (through `tmp` when a byte at a time). -/
-def loadW (w : Bool) (l : Loc) (d tmp : Reg) (off : Nat) : List Instr :=
-  if wordAt w l then [.load .w d (c.loc l).1 ((c.loc l).2 + off)]
-  else loadLE32 d tmp (c.loc l).1 ((c.loc l).2 + off)
+end Core
 
-/-- Store the low word of `v` at `off` (through `tmp` when a byte at a time). -/
-def storeW (w : Bool) (l : Loc) (v tmp : Reg) (off : Nat) : List Instr :=
-  if wordAt w l then [.store .w v (c.loc l).1 ((c.loc l).2 + off)]
-  else storeLE32 v tmp (c.loc l).1 ((c.loc l).2 + off)
+/-- Base register and displacement of each area. -/
+abbrev Locs := Loc → Reg × Nat
+
+/-- Load the word at `off` of area `l` (at `L l`) into `d` (through `tmp`
+when a byte at a time). -/
+def loadWAt (L : Locs) (w : Bool) (l : Loc) (d tmp : Reg) (off : Nat) : List Instr :=
+  if Core.wordAt w l then [.load .w d (L l).1 ((L l).2 + off)]
+  else loadLE32 d tmp (L l).1 ((L l).2 + off)
+
+/-- Store the low word of `v` at `off` of area `l` (through `tmp` when a
+byte at a time). -/
+def storeWAt (L : Locs) (w : Bool) (l : Loc) (v tmp : Reg) (off : Nat) : List Instr :=
+  if Core.wordAt w l then [.store .w v (L l).1 ((L l).2 + off)]
+  else storeLE32 v tmp (L l).1 ((L l).2 + off)
 
 /-- An operation's code, through `t0`, `t1` and `t2`: a word is read and
-written as `loadW` and `storeW` do, its sources before its destination. -/
-def opCode (w : Bool) (o : Op) : List Instr :=
-  if o.inc then incAt (c.loc o.dst).1 ((c.loc o.dst).2 + o.dOff)
-  else if o.inc32 then inc32At (c.loc o.dst).1 ((c.loc o.dst).2 + o.dOff)
+written as `loadWAt` and `storeWAt` do, its sources before its destination. -/
+def opCodeAt (L : Locs) (w : Bool) (o : Op) : List Instr :=
+  if o.inc then incAt (L o.dst).1 ((L o.dst).2 + o.dOff)
+  else if o.inc32 then inc32At (L o.dst).1 ((L o.dst).2 + o.dOff)
   else if o.wide then
-    c.loadW w o.src .t0 .t2 o.sOff ++
+    loadWAt L w o.src .t0 .t2 o.sOff ++
       (match o.xr with
        | none => []
-       | some (l, off) => c.loadW w l .t1 .t2 off ++ [.logic .xor .t0 .t0 .t1]) ++
-      c.storeW w o.dst .t0 .t2 o.dOff
+       | some (l, off) => loadWAt L w l .t1 .t2 off ++ [.logic .xor .t0 .t0 .t1]) ++
+      storeWAt L w o.dst .t0 .t2 o.dOff
   else
-    ([.load .b .t0 (c.loc o.src).1 ((c.loc o.src).2 + o.sOff)] : List Instr) ++
+    ([.load .b .t0 (L o.src).1 ((L o.src).2 + o.sOff)] : List Instr) ++
       (match o.xr with
        | none => []
-       | some (l, off) => [.load .b .t1 (c.loc l).1 ((c.loc l).2 + off), .logic .xor .t0 .t0 .t1]) ++
-      [.store .b .t0 (c.loc o.dst).1 ((c.loc o.dst).2 + o.dOff)]
+       | some (l, off) => [.load .b .t1 (L l).1 ((L l).2 + off), .logic .xor .t0 .t0 .t1]) ++
+      [.store .b .t0 (L o.dst).1 ((L o.dst).2 + o.dOff)]
 
-def opsCode (w : Bool) (os : List Op) : List Instr := os.flatMap (c.opCode w)
+/-- The operations' code with the areas at `L`. -/
+def opsCodeAt (L : Locs) (w : Bool) (os : List Op) : List Instr := os.flatMap (opCodeAt L w)
+
+namespace Core
+
+variable (c : Core)
+
+/-- The operations' code, with the areas at `c.loc`. -/
+def opsCode (w : Bool) (os : List Op) : List Instr := opsCodeAt c.loc w os
 
 /-! ## The function -/
 

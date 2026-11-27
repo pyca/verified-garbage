@@ -57,13 +57,11 @@ theorem ld_ok {s : State} {t b : Reg} {off : Nat} {v : BitVec 64} (hb : b ≠ .r
   exact ⟨by simp, fun r a => by simp [a], ⟨rfl, rfl, rfl, rfl, rfl⟩⟩
 
 /-- The head of the entry: `W`, the stack argument at `sp + off`, into `r12`. -/
-theorem oneA_ok {s₀ : State} {off : Nat} {W : Addr} (hoff : off = 104 ∨ off = 112)
+theorem oneA_at {s₀ : State} {off : Nat} {W : Addr} (ho4 : off % 4 = 0) (ho15 : off < 2 ^ 15)
     (hWi : InRegions (s₀.rd ++ s₀.wr) (s₀.sp + BitVec.ofNat 64 off) 8)
     (hWv : s₀.mem.readW (s₀.sp + BitVec.ofNat 64 off) 64 = W) :
     WP isa (.block [.addSp .r12 0, .load .d .r12 .r12 off]) s₀ fun sA =>
       sA.gpr .r12 = W ∧ (∀ r, r ≠ .r12 → sA.gpr r = s₀.gpr r) ∧ Keeps s₀ sA := by
-  have ho4 : off % 4 = 0 := by omega_using [hoff]
-  have ho15 : off < 2 ^ 15 := by omega_using [hoff]
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, addr, State.load, State.write, Size.bytes,
     hWi, ho4, ho15, Proof.Gcm.PPC64LE.read_8, hWv, Option.bind_some, Option.map_some, Option.some.injEq,
@@ -71,20 +69,25 @@ theorem oneA_ok {s₀ : State} {off : Nat} {W : Addr} (hoff : off = 104 ∨ off 
     and_self, implies_true, BitVec.setWidth_eq, BitVec.add_zero]
   exact ⟨trivial, fun r a => by simp [a], ⟨rfl, rfl, rfl, rfl, rfl⟩⟩
 
-theorem one1_wp {s₀ : State} {off : Nat} {W T : Addr} (hoff : off = 104 ∨ off = 112)
-    (hW : Covers [⟨W, 2560⟩] s₀.wr) (hWi : InRegions (s₀.rd ++ s₀.wr) (s₀.sp + BitVec.ofNat 64 off) 8)
+theorem oneA_ok {s₀ : State} {off : Nat} {W : Addr} (hoff : off = 104 ∨ off = 112)
+    (hWi : InRegions (s₀.rd ++ s₀.wr) (s₀.sp + BitVec.ofNat 64 off) 8)
+    (hWv : s₀.mem.readW (s₀.sp + BitVec.ofNat 64 off) 64 = W) :
+    WP isa (.block [.addSp .r12 0, .load .d .r12 .r12 off]) s₀ fun sA =>
+      sA.gpr .r12 = W ∧ (∀ r, r ≠ .r12 → sA.gpr r = s₀.gpr r) ∧ Keeps s₀ sA :=
+  oneA_at (by omega_using [hoff]) (by omega_using [hoff]) hWi hWv
+
+theorem one1_at {s₀ : State} {off : Nat} {W T : Addr} {n : Nat} (ho4 : off % 4 = 0) (ho15 : off < 2 ^ 15)
+    (hW : Covers [⟨W, n⟩] s₀.wr) (hWi : InRegions (s₀.rd ++ s₀.wr) (s₀.sp + BitVec.ofNat 64 off) 8)
     (hWv : s₀.mem.readW (s₀.sp + BitVec.ofNat 64 off) 64 = W)
     (hTi : InRegions (s₀.rd ++ s₀.wr) (s₀.sp + BitVec.ofNat 64 96) 8)
     (hTv : s₀.mem.readW (s₀.sp + BitVec.ofNat 64 96) 64 = T)
-    (hTd : (⟨s₀.sp + BitVec.ofNat 64 96, 8⟩ : Region).Disjoint (savedR W)) :
+    (hTd : (⟨s₀.sp + BitVec.ofNat 64 96, 8⟩ : Region).Disjoint (savedR W)) (hn : 248 ≤ n := by decide) :
     WP isa (.block (oneEntry off)) s₀ (SO1 W T s₀) := by
-  have ho4 : off % 4 = 0 := by omega_using [hoff]
-  have ho15 : off < 2 ^ 15 := by omega_using [hoff]
   simp only [oneEntry]
   refine WP.block_append (WP.block_append ?_)
-  have hA := oneA_ok hoff hWi hWv
+  have hA := oneA_at ho4 ho15 hWi hWv
   refine WP.mono hA fun sA ⟨a12, gA, kA⟩ => ?_
-  refine WP.mono (save_ok (b := .r12) (by decide) (by rw [a12, kA.wr]; exact hW))
+  refine WP.mono (save_ok (b := .r12) (n := n) (by decide) (by rw [a12, kA.wr]; exact hW) hn)
     fun s₂ ⟨hg, h31, hk, hsv, hf⟩ => ?_
   rw [a12] at h31 hsv hf
   have e : ∀ r, r ≠ .r0 → r ≠ .r12 → r ≠ .r31 → s₂.gpr r = s₀.gpr r := fun r a b c => by rw [hg r a c, gA r b]
@@ -132,6 +135,15 @@ theorem one1_wp {s₀ : State} {off : Nat} {W T : Addr} (hoff : off = 104 ∨ of
   · rw [bk.mem]
     exact hsv.congr (fun p hp => (gA p.1 (by revert hp; revert p; decide)).symm) kA.lr.symm
   · rw [bk.mem, ← kA.mem]; exact hf
+
+theorem one1_wp {s₀ : State} {off : Nat} {W T : Addr} {n : Nat} (hoff : off = 104 ∨ off = 112)
+    (hW : Covers [⟨W, n⟩] s₀.wr) (hWi : InRegions (s₀.rd ++ s₀.wr) (s₀.sp + BitVec.ofNat 64 off) 8)
+    (hWv : s₀.mem.readW (s₀.sp + BitVec.ofNat 64 off) 64 = W)
+    (hTi : InRegions (s₀.rd ++ s₀.wr) (s₀.sp + BitVec.ofNat 64 96) 8)
+    (hTv : s₀.mem.readW (s₀.sp + BitVec.ofNat 64 96) 64 = T)
+    (hTd : (⟨s₀.sp + BitVec.ofNat 64 96, 8⟩ : Region).Disjoint (savedR W)) (hn : 248 ≤ n := by decide) :
+    WP isa (.block (oneEntry off)) s₀ (SO1 W T s₀) :=
+  one1_at (by omega_using [hoff]) (by omega_using [hoff]) hW hWi hWv hTi hTv hTd hn
 
 /-- After a step that changes no register the entry set but `r19` (and `r0`). -/
 theorem SO1.keep {W T : Addr} {s₀ s₁ s₂ : State} (h1 : SO1 W T s₀ s₁) (hg : ∀ r, r ≠ .r0 → r ≠ .r19 → s₂.gpr r = s₁.gpr r)

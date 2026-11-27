@@ -107,14 +107,12 @@ def outputs : Prog isa :=
 def fail : Prog isa :=
   .seq (.block [.mov .ecx (.imm 0), .store (sc accOff) .ecx]) (.seq outputs (ret 2))
 
-/-- `y = g^x mod p` (slot 12), its range and, with q, `y^q mod p = 1` as the acceptance; x and y
-written, and `3 − 2 flag` returned. -/
+/-- `y = g^x mod p` (slot 12) and its range, `1 < y < p − 1`, as the acceptance; x and y
+written, and `3 − 2 flag` returned. With q, `y^q mod p = 1` is not computed: y is a power of
+the generator, whose order the valid domain's `g^q mod p = 1` bounds. -/
 def tail : Prog isa :=
   .seq (powP 10 13) <| .seq (copy (sl 6) (sl 12) n1) <| .seq (rangeMask 12) <|
   .seq (.block [.store (sc accOff) .ecx]) <|
-  .seq (.block qTest) <|
-  .seq (.ite .e (.block []) (.seq (powP 12 16) (.seq (equal (sl 6) (sl 3) n1)
-    (.block [.alu .and .ecx (.mem (sc accOff)), .store (sc accOff) .ecx])))) <|
   .seq outputs
     (.block [.alu .add .eax (.reg .eax), .mov .ecx (.imm 3), .alu .sub .ecx (.reg .eax), .mov .eax (.reg .ecx)])
 

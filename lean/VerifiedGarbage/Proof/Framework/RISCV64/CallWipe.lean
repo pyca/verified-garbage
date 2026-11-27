@@ -749,7 +749,16 @@ theorem cw_wp {name zname : String} {body zcode : Prog isa} {zst : Nat}
   have ha0 : (cwRestore g).gpr .a0 = c'.gpr .a0 := by
     rw [cwRestore, RegUpd.gpr_write_of_ne _ _ (by decide), RegUpd.gpr_write_self, hspg]
     exact h16g
-  refine ⟨⟨fun q hq => ?_, ?_, ?_⟩, ?_, hz0⟩
+  -- The `free` loses the frame's bytes, which lie apart from the buffers.
+  intro m u f
+  have hspR : (cwRestore g).sp = s.sp - BitVec.ofNat 64 32 := by
+    rw [cwRestore, RegUpd.sp_write, RegUpd.sp_write, cwZ1, RegUpd.sp_write, hspg]
+  have f' : Frame [⟨s.sp - BitVec.ofNat 64 32, 32⟩] (cwRestore g).mem m := f
+  have hfr : ∀ b ∈ Sig.bufs sig.params (regArgs sig s), ∀ x, b.1.Contains x 1 →
+      m x = (cwRestore g).mem x := fun b hb x hx => f' x fun R hR hc => by
+    simp only [List.mem_singleton] at hR; subst hR
+    exact hout' b hb 32 32 (Nat.le_refl _) (by omega_using []) x hx hc
+  refine ⟨⟨fun q hq => ?_, ?_, ?_⟩, ?_, ?_⟩
   · -- The callee-saved registers.
     obtain ⟨h₀, -, ht, hra'⟩ := preserved_args q hq
     show (cwRestore g).gpr q = s.gpr q
@@ -757,18 +766,24 @@ theorem cw_wp {name zname : String} {body zcode : Prog isa} {zst : Nat}
       RegUpd.gpr_write_of_ne _ _ ht]
     exact hcsg q hq
   · show (cwRestore g).sp + BitVec.ofNat 64 32 = s.sp
-    rw [cwRestore, RegUpd.sp_write, RegUpd.sp_write, cwZ1, RegUpd.sp_write, hspg, BitVec.sub_add_cancel]
+    rw [hspR, BitVec.sub_add_cancel]
   · exact hra
   · -- The postcondition, which reads the memory on return only within the buffers apart from the array.
     rw [post_regs' hk]
-    show Curry.apply _ post (regArgs sig s) s.mem (cwRestore g).mem (((cwRestore g).gpr .a0).setWidth _)
+    show Curry.apply _ post (regArgs sig s) s.mem m (((cwRestore g).gpr .a0).setWidth _)
     rw [ha0]
     refine hout c'.mem _ _ (fun b hb hbA x hx => ?_) hc'.2.2.2.2.2.2.2
-    refine (hfc x fun R hR hc => ?_).symm
+    refine ((hfr b hb x hx).trans (hfc x fun R hR hc => ?_)).symm
     rcases List.mem_cons.mp hR with rfl | hR
     · exact hbA x hx (Region.sub_prefix hn x hc)
     · simp only [List.mem_singleton] at hR; subst hR
       exact hout' b hb (stack + 32) (stack + 32) (Nat.le_refl _) (Nat.le_refl _) x hx hc
+  · -- The array, a buffer, is zero.
+    refine Eq.trans ?_ hz0
+    simp only [Spec.Zeroize.bytesAt]
+    refine List.map_congr_left fun i hi => ?_
+    exact hfr _ harr _ (Offset.contains_base _ (by omega_using [hn, List.mem_range.mp hi])
+      (by omega_using [hn31, List.mem_range.mp hi]))
 
 /-- The caller's public data is the first function's at its entry. -/
 theorem cw_bodyPub (hk : (sig.words abi.ptrBits).length ≤ 8) (hl : Sig.noLists sig.params = true)

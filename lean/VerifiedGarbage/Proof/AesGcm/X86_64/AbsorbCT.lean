@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Absorb
-import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks
 import VerifiedGarbage.Proof.AesGcm.X86_64.Ghash1
 import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
 import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
@@ -11,7 +10,6 @@ import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Absorb
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Ghash1
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Arith

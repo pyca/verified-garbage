@@ -1,29 +1,31 @@
 module
 
-public import VerifiedGarbage.Proof.Seed.Arm.FbVerified
-public import VerifiedGarbage.Proof.Seed.Arm.FbFinalVerified
-public import VerifiedGarbage.Impl.Seed.Arm.FbFinal
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.Arm.Print
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Seed.Cfb
+public import VerifiedGarbage.Spec.Seed.CfbFinal
+import VerifiedGarbage.Proof.Seed.Arm.Scrub
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # SEED-CFB128 on ARMv7 -/
 
-@[expose] public section
-
 namespace VG.Artifacts.SeedCfb.Arm
 
-def artifacts : List Artifact := [
+public def artifacts : List (Artifact Arm.target) := [
   Spec.Seed.cfbEncryptApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratchWiped 80 0 18 Impl.Seed.Arm.cfbEncrypt
-    verified := Proof.Seed.Arm.cfbEncrypt_framed },
+    code := Impl.Seed.Arm.Fn.cfbEncrypt
+    verified := Proof.Seed.Arm.Fn.cfbEncrypt },
   Spec.Seed.cfbDecryptApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratchWiped 80 0 18 Impl.Seed.Arm.cfbDecrypt
-    verified := Proof.Seed.Arm.cfbDecrypt_framed },
+    code := Impl.Seed.Arm.Fn.cfbDecrypt
+    verified := Proof.Seed.Arm.Fn.cfbDecrypt },
   Spec.Seed.cfbEncryptFinalApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratchWiped 80 0 18 Impl.Seed.Arm.cfbEncryptFinal
-    verified := Proof.Seed.Arm.cfbEncryptFinal_framed },
+    code := Impl.Seed.Arm.Fn.cfbEncryptFinal
+    verified := Proof.Seed.Arm.Fn.cfbEncryptFinal },
   Spec.Seed.cfbDecryptFinalApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratchWiped 80 0 18 Impl.Seed.Arm.cfbDecryptFinal
-    verified := Proof.Seed.Arm.cfbDecryptFinal_framed }]
+    code := Impl.Seed.Arm.Fn.cfbDecryptFinal
+    verified := Proof.Seed.Arm.Fn.cfbDecryptFinal }]
+
+spec_apis artifacts
 
 end VG.Artifacts.SeedCfb.Arm

@@ -1,23 +1,27 @@
 module
 
-public import VerifiedGarbage.Proof.Camellia.RISCV64.ModesVerified
-public import VerifiedGarbage.Proof.Camellia.RISCV64.CtrFinal
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.RISCV64.Print
+public import VerifiedGarbage.TCB.RISCV64.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Camellia.Ctr
+public import VerifiedGarbage.Spec.Camellia.CtrFinal
+import VerifiedGarbage.Proof.Camellia.RISCV64.Scrub
+import VerifiedGarbage.Impl.Camellia.RISCV64.Fn
+import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.Camellia.RISCV64.ModesLit
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # Camellia-CTR on RISC-V -/
 
-@[expose] public section
-
 namespace VG.Artifacts.CamelliaCtr.RISCV64
 
-def artifacts : List Artifact := [
+public def artifacts : List (Artifact RISCV64.target) := [
   Spec.Camellia.ctrApi.artifact RISCV64.target {
-    code := Impl.Camellia.RISCV64.ctr
-    verified := Proof.Camellia.RISCV64.Modes.ctr_verified },
+    code := Impl.Camellia.RISCV64.Fn.ctr
+    verified := Proof.Camellia.RISCV64.Scrub.ctr_scrubbed },
   Spec.Camellia.ctrFinalApi.artifact RISCV64.target {
-    code := Impl.StackScratch.RISCV64.withStackScratchWiped 80 .a5 10 Impl.Camellia.RISCV64.ctrFinal
-    verified := Proof.Camellia.RISCV64.CtrFinal.ctrFinal_framed }]
+    code := Impl.Camellia.RISCV64.Fn.ctrFinal
+    verified := Proof.Camellia.RISCV64.Scrub.ctrFinal_scrubbed }]
+
+spec_apis artifacts
 
 end VG.Artifacts.CamelliaCtr.RISCV64

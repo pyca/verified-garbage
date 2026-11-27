@@ -109,18 +109,25 @@ theorem restore_run (s : State)
 /-- The postcondition of a leaf whose body satisfies `B`. -/
 def LeafPost (B : State → Prop) (s₀ s' : State) : Prop :=
   abiPreserved s₀ s' ∧ s'.rd = s₀.rd ∧ s'.wr = s₀.wr ∧
-    ∃ s, B s ∧ s'.mem = s.mem ∧ s'.gpr .eax = s.gpr .eax
+    ∃ s, B s ∧ Frame [frameR s₀] s.mem s'.mem ∧ s'.gpr .eax = s.gpr .eax
+
+/-- What a leaf's postcondition keeps of its body's memory: every region
+apart from its frame. -/
+theorem leaf_keep {s₀ : State} {m m' : Mem} (hm : Frame [frameR s₀] m m') {r : Region}
+    (hd : (frameR s₀).Disjoint r) (hr : r.len ≤ 2 ^ 64) :
+    ∀ i < r.len, m' (r.base + BitVec.ofNat 64 i) = m (r.base + BitVec.ofNat 64 i) :=
+  fun _ hi => hm.bytes (R := r) (fun q hq => by rw [List.mem_singleton.mp hq]; exact hd.symm) hr hi
 
 theorem leafFinal_ok {s₀ s : State} {W : List Region} {B : State → Prop}
     (hE : 16 ≤ (E0 s₀).toNat)
-    (hW : ∀ r ∈ W, (frameR s₀).Disjoint r ∧ (retR s₀).Disjoint r) (h : LeafEnd s₀ W s) (hb : B s) :
-    LeafPost B s₀ (leafFinal s) := by
+    (hW : ∀ r ∈ W, (frameR s₀).Disjoint r ∧ (retR s₀).Disjoint r) (h : LeafEnd s₀ W s) (hb : B s)
+    {m : Mem} (fl : Frame [frameR s₀] s.mem m) (u : Nat → BitVec 32) :
+    LeafPost B s₀ { leafFinal s with mem := m, unknowns := u } := by
   have hwf : ∀ i (hi : i < 4), s.mem.readW ((s.gpr .esp + BitVec.ofNat 32 (4 * i)).setWidth 64) 32 =
       s₀.gpr (saveRegs[3 - i]'(by simp [saveRegs]; omega_using [])) := fun i hi => by
     rw [h.esp, h.frame.readW (frame_contains s₀ hE hi) (fun r hr => (hW r hr).1) (by decide),
       frame_word s₀ hE hi]
-  have hm : (leafFinal s).mem = s.mem := by simp [leafFinal, State.setReg]
-  refine ⟨⟨fun r hr => ?_, ?_⟩, ?_, ?_, s, hb, hm, ?_⟩
+  refine ⟨⟨fun r hr => ?_, ?_⟩, ?_, ?_, s, hb, fl, ?_⟩
   · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl
     · rw [leafFinal, popped, popReg_last _ (by decide) 3]
@@ -141,7 +148,15 @@ theorem leafFinal_ok {s₀ s : State} {W : List Region} {B : State → Prop}
       simp only [State.setReg, show Reg.esp ≠ Reg.ebp by decide, show Reg.esp ≠ Reg.edi by decide,
         show Reg.esp ≠ Reg.esi by decide, ite_false, h.esp, P0_esp]
       rw [show BitVec.ofNat 32 (4 * 4) = 16 from rfl, BitVec.sub_add_cancel]
-  · rw [hm, h.frame.readW (Region.contains_self _ _) (fun r hr => (hW r hr).2) (by decide)]
+  · show m.readW _ 32 = _
+    rw [fl.readW (r := retR s₀) (Region.contains_self _ _) (fun r hr => by
+        rw [List.mem_singleton.mp hr]
+        intro a h₁ h₂
+        simp only [Region.Contains] at h₁ h₂
+        rw [VG.X86.Taint.sub_setWidth hE] at h₂
+        have := (E0 s₀).isLt
+        bv_omega) (by decide),
+      h.frame.readW (Region.contains_self _ _) (fun r hr => (hW r hr).2) (by decide)]
     have hf := pushed_frame (rs := saveRegs) (s := s₀) (by decide) (by rw [saveRegs_len]; exact hE)
     rw [saveRegs_len] at hf
     refine hf.readW (Region.contains_self _ _) ?_ (by decide)
@@ -171,7 +186,8 @@ theorem leaf {body : Prog isa} {B : State → State → Prop} (W : State → Lis
     Piece Pre Pub (fun s₀ s => s = s₀) (fun s₀ s' => LeafPost (B s₀) s₀ s') (leaf body) := by
   refine Piece.frame (by decide) (by decide) (by decide) (fun i hi => ?_)
     (fun s₀ s h₀ e => by rw [e]; exact (hE s₀ h₀).1)
-    (fun s₀ s₀' s s' h₀ h₀' hp e e' => by rw [e, e']; exact hpub _ _ h₀ h₀' hp) ?_
+    (fun s₀ s₀' s s' h₀ h₀' hp e e' => by rw [e, e']; exact hpub _ _ h₀ h₀' hp) E0
+    (fun s₀ s _ e => by rw [e]) ?_
   · have e : VG.instrs (Code.seq body (.block restore)) = VG.instrs body ++ restore := rfl
     rw [e, List.mem_append] at hi
     rcases hi with hi | hi
@@ -181,11 +197,16 @@ theorem leaf {body : Prog isa} {B : State → State → Prop} (W : State → Lis
   refine Piece.seq (hb.mono (fun s₀ s _ ⟨s₁, e₁, e₂⟩ => e₁ ▸ e₂) fun _ _ _ h => h) ?_
   refine Piece.taint [.esp] (fun s₀ s h₀ ⟨he, hb'⟩ => ?_) ?_ (by taint_decide)
   · have hE' := hE s₀ h₀
-    refine (restore_run s fun i hi => ?_).mono fun s' e => ?_
+    refine (restore_run s fun i hi => ?_).mono fun s' e m u fl => ?_
     · rw [he.rd, he.wr, he.esp, P0_wr]
       exact ⟨frameR s₀, List.mem_append_right _ (List.mem_cons_self ..),
         frame_contains s₀ hE'.1 (by omega_using [hi])⟩
-    · rw [show saveRegs.length = 4 from rfl, e]; exact leafFinal_ok hE'.1 (hW s₀ h₀) he hb'
+    · have hm : s'.mem = s.mem := by
+        have := congrArg State.mem e
+        simpa [leafFinal, State.setReg] using this
+      rw [show saveRegs.length = 4 from rfl, e]
+      rw [hm] at fl
+      exact leafFinal_ok hE'.1 (hW s₀ h₀) he hb' fl u
   · intro s₀ s₀' s s' h₀ h₀' hp ⟨e, _⟩ ⟨e', _⟩ r hr
     simp only [List.mem_singleton] at hr
     subst hr

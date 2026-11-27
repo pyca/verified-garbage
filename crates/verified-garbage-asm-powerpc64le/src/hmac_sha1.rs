@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Hmac.Instance.initAnyKeyContract` of `VG.Spec.Hmac.sha1I`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `inner` must be valid for reads and writes of 84 bytes.
@@ -61,7 +63,7 @@ b 212f
 bl {vg_sha1_update_scratch}
 .base64 "oACV6rAA1eq4APXqwAAV68gANeuoALXqIAAB6DAAITimAwh84AEhOA=="
 21:
-.base64 "IACATg=="
+.base64 "AAAAOMH9IfggAIE5AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhAAAz4SAAM+FAADPhYAAz4YAAM+GgADPhwAAz4eAAM+IAAjDnsBwx8gACMOewHDHyAAIw57AcMfAAADPgIAAz4EAAM+BgADPggAAz4KAAM+DAADPg4AAz4QAAM+EgADPhQAAz4WAAM+GAADPhoAAz4cAAM+HgADPiAAAz4iAAM+JAADPiYAAz4QAIhOAAAYDgAAIA4AACgOAAAwDgAAOA4AAAAOQAAIDkAAEA5AABgOQAAgDkgAIBO"
 20:
 .base64 "Uf4h+CAA4TimAgh80f8h+CAAAfg4AYf6QAGn+kgBx/pQAef6WAEH+2ABJ/sAAKc6AADDOgAA5DoAAAY7AAAlO9AAhzoAAHQ4"
 bl {vg_sha1_init}
@@ -71,7 +73,7 @@ bl {vg_sha1_update_scratch}
 bl {vg_sha1_finalize_scratch}
 .base64 "AAB2OAAAlzgkAbU4FADAOAAA9Tg4AZXqSAHV6lAB9epYARXrYAE160ABteo="
 bl {vg_hmac_sha1_init_scratch}
-.base64 "IAAB6DAAITimAwh8IACBOQAAYDkAAGz5CABs+RAAbPkYAGz5IABs+SgAbPkwAGz5OABs+UAAbPlIAGz5UABs+VgAbPlgAGz5aABs+XAAbPl4AGz5gABs+YgAbPmQAGz5mABs+aAAbPmoAGz5sABs+bgAbPnAAGz5yABs+dAAbPnYAGz54ABs+egAbPnwAGz5+ABs+QABbPkIAWz5EAFs+RgBbPkgAWz5KAFs+TABbPk4AWz5QAFs+UgBbPlQAWz5WAFs+WABbPmwASE4"
+.base64 "IAAB6DAAITimAwh8IACBOQAAADgAAAz4CAAM+BAADPgYAAz4IAAM+CgADPgwAAz4OAAM+EAADPhIAAz4UAAM+FgADPhgAAz4aAAM+HAADPh4AAz4gAAM+IgADPiQAAz4mAAM+KAADPioAAz4sAAM+LgADPjAAAz4yAAM+NAADPjYAAz44AAM+OgADPjwAAz4+AAM+AABDPgIAQz4EAEM+BgBDPggAQz4KAEM+DABDPg4AQz4QAEM+EgBDPhQAQz4WAEM+GABDPiwASE4"
 b 21b"#,
         vg_sha1_init = sym super::sha1::vg_sha1_init,
         vg_sha1_update_scratch = sym super::sha1::vg_sha1_update_scratch::vg_sha1_update_scratch,
@@ -83,6 +85,8 @@ b 21b"#,
 /// Finishes an HMAC-SHA-1 computation: if, for a 64-byte key `K₀` and a text of fewer than 2⁶⁴ − 64 bytes, the SHA-1 streaming state `*inner` represents `(K₀ ⊕ ipad) ‖ text`, of `count` bytes, and `*outer` represents `K₀ ⊕ opad`, writes the HMAC-SHA-1 of the text under `K₀` (20 bytes) to `*out`.
 ///
 /// Contract: `VG.Spec.Hmac.Instance.finalizeContract` of `VG.Spec.Hmac.sha1I`. Constant time: only the pointers and `count` may affect timing, not the states.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -101,7 +105,7 @@ bl {vg_sha1_finalize_scratch}
 bl {vg_sha1_update_scratch}
 .base64 "AAB0OFQAgDjQALU4AADVOA=="
 bl {vg_sha1_finalize_scratch}
-.base64 "0AAVgQAAF5HUABWBBAAXkdgAFYEIABeR3AAVgQwAF5HgABWBEAAXkaAAleqwANXquAD16sAAFevIADXrqAC16iAAAegwACE4pgMIfOABITggAIBO""#,
+.base64 "0AAVgQAAF5HUABWBBAAXkdgAFYEIABeR3AAVgQwAF5HgABWBEAAXkaAAleqwANXquAD16sAAFevIADXrqAC16iAAAegwACE4pgMIfOABITgAAAA4wf0h+CAAgTkAAAz4CAAM+BAADPgYAAz4IAAM+CgADPgwAAz4OAAM+EAADPhIAAz4UAAM+FgADPhgAAz4aAAM+HAADPh4AAz4gACMOewHDHyAAIw57AcMfIAAjDnsBwx8AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhAAAz4SAAM+FAADPhYAAz4YAAM+GgADPhwAAz4eAAM+IAADPiIAAz4kAAM+JgADPhAAiE4AABgOAAAgDgAAKA4AADAOAAA4DgAAAA5AAAgOQAAQDkAAGA5AACAOSAAgE4=""#,
         vg_sha1_finalize_scratch = sym super::sha1::vg_sha1_finalize_scratch::vg_sha1_finalize_scratch,
         vg_sha1_update_scratch = sym super::sha1::vg_sha1_update_scratch::vg_sha1_update_scratch,
     )
@@ -110,6 +114,14 @@ bl {vg_sha1_finalize_scratch}
 #[rustfmt::skip]
 #[path = "internal/vg_hmac_sha1_finalize_scratch.rs"]
 pub(crate) mod vg_hmac_sha1_finalize_scratch;
+
+#[rustfmt::skip]
+#[path = "internal/vg_hmac_sha1_init_any_scratch.rs"]
+pub(crate) mod vg_hmac_sha1_init_any_scratch;
+
+#[rustfmt::skip]
+#[path = "internal/vg_hmac_sha1_init_core.rs"]
+pub(crate) mod vg_hmac_sha1_init_core;
 
 #[rustfmt::skip]
 #[path = "internal/vg_hmac_sha1_init_scratch.rs"]

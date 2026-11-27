@@ -2841,20 +2841,22 @@ vg_argon2_blake2b_avx512_g_avx512:
 	vpxor xmm14, xmm14, xmm14
 	vpxor xmm15, xmm15, xmm15
 	xor r11d, r11d
-	lea rsp, [rsp-344]
-	vmovdqu YMMWORD PTR [rsp+312], ymm0
-	vmovdqu YMMWORD PTR [rsp+280], ymm0
-	vmovdqu YMMWORD PTR [rsp+248], ymm0
-	vmovdqu YMMWORD PTR [rsp+216], ymm0
-	vmovdqu YMMWORD PTR [rsp+184], ymm0
-	vmovdqu YMMWORD PTR [rsp+152], ymm0
-	vmovdqu YMMWORD PTR [rsp+120], ymm0
-	vmovdqu YMMWORD PTR [rsp+88], ymm0
-	vmovdqu YMMWORD PTR [rsp+56], ymm0
-	vmovdqu YMMWORD PTR [rsp+24], ymm0
-	movdqu XMMWORD PTR [rsp+8], xmm0
+	lea rsp, [rsp-8]
 	mov QWORD PTR [rsp], r11
-	lea rsp, [rsp+344]
+	lea rsp, [rsp-336]
+	vmovdqu YMMWORD PTR [rsp+304], ymm0
+	vmovdqu YMMWORD PTR [rsp+272], ymm0
+	vmovdqu YMMWORD PTR [rsp+240], ymm0
+	vmovdqu YMMWORD PTR [rsp+208], ymm0
+	vmovdqu YMMWORD PTR [rsp+176], ymm0
+	vmovdqu YMMWORD PTR [rsp+144], ymm0
+	vmovdqu YMMWORD PTR [rsp+112], ymm0
+	vmovdqu YMMWORD PTR [rsp+80], ymm0
+	vmovdqu YMMWORD PTR [rsp+48], ymm0
+	vmovdqu YMMWORD PTR [rsp+16], ymm0
+	movdqu XMMWORD PTR [rsp], xmm0
+	lea rsp, [rsp+336]
+	lea rsp, [rsp+8]
 	xor eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -2863,7 +2865,6 @@ vg_argon2_blake2b_avx512_g_avx512:
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -5704,20 +5705,22 @@ vg_argon2_blake2b_avx2_g_avx512:
 	vpxor xmm14, xmm14, xmm14
 	vpxor xmm15, xmm15, xmm15
 	xor r11d, r11d
-	lea rsp, [rsp-344]
-	vmovdqu YMMWORD PTR [rsp+312], ymm0
-	vmovdqu YMMWORD PTR [rsp+280], ymm0
-	vmovdqu YMMWORD PTR [rsp+248], ymm0
-	vmovdqu YMMWORD PTR [rsp+216], ymm0
-	vmovdqu YMMWORD PTR [rsp+184], ymm0
-	vmovdqu YMMWORD PTR [rsp+152], ymm0
-	vmovdqu YMMWORD PTR [rsp+120], ymm0
-	vmovdqu YMMWORD PTR [rsp+88], ymm0
-	vmovdqu YMMWORD PTR [rsp+56], ymm0
-	vmovdqu YMMWORD PTR [rsp+24], ymm0
-	movdqu XMMWORD PTR [rsp+8], xmm0
+	lea rsp, [rsp-8]
 	mov QWORD PTR [rsp], r11
-	lea rsp, [rsp+344]
+	lea rsp, [rsp-336]
+	vmovdqu YMMWORD PTR [rsp+304], ymm0
+	vmovdqu YMMWORD PTR [rsp+272], ymm0
+	vmovdqu YMMWORD PTR [rsp+240], ymm0
+	vmovdqu YMMWORD PTR [rsp+208], ymm0
+	vmovdqu YMMWORD PTR [rsp+176], ymm0
+	vmovdqu YMMWORD PTR [rsp+144], ymm0
+	vmovdqu YMMWORD PTR [rsp+112], ymm0
+	vmovdqu YMMWORD PTR [rsp+80], ymm0
+	vmovdqu YMMWORD PTR [rsp+48], ymm0
+	vmovdqu YMMWORD PTR [rsp+16], ymm0
+	movdqu XMMWORD PTR [rsp], xmm0
+	lea rsp, [rsp+336]
+	lea rsp, [rsp+8]
 	xor eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -5726,7 +5729,6 @@ vg_argon2_blake2b_avx2_g_avx512:
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -8567,20 +8569,22 @@ vg_argon2_blake2b_avx2_g_avx2:
 	vpxor xmm14, xmm14, xmm14
 	vpxor xmm15, xmm15, xmm15
 	xor r11d, r11d
-	lea rsp, [rsp-344]
-	vmovdqu YMMWORD PTR [rsp+312], ymm0
-	vmovdqu YMMWORD PTR [rsp+280], ymm0
-	vmovdqu YMMWORD PTR [rsp+248], ymm0
-	vmovdqu YMMWORD PTR [rsp+216], ymm0
-	vmovdqu YMMWORD PTR [rsp+184], ymm0
-	vmovdqu YMMWORD PTR [rsp+152], ymm0
-	vmovdqu YMMWORD PTR [rsp+120], ymm0
-	vmovdqu YMMWORD PTR [rsp+88], ymm0
-	vmovdqu YMMWORD PTR [rsp+56], ymm0
-	vmovdqu YMMWORD PTR [rsp+24], ymm0
-	movdqu XMMWORD PTR [rsp+8], xmm0
+	lea rsp, [rsp-8]
 	mov QWORD PTR [rsp], r11
-	lea rsp, [rsp+344]
+	lea rsp, [rsp-336]
+	vmovdqu YMMWORD PTR [rsp+304], ymm0
+	vmovdqu YMMWORD PTR [rsp+272], ymm0
+	vmovdqu YMMWORD PTR [rsp+240], ymm0
+	vmovdqu YMMWORD PTR [rsp+208], ymm0
+	vmovdqu YMMWORD PTR [rsp+176], ymm0
+	vmovdqu YMMWORD PTR [rsp+144], ymm0
+	vmovdqu YMMWORD PTR [rsp+112], ymm0
+	vmovdqu YMMWORD PTR [rsp+80], ymm0
+	vmovdqu YMMWORD PTR [rsp+48], ymm0
+	vmovdqu YMMWORD PTR [rsp+16], ymm0
+	movdqu XMMWORD PTR [rsp], xmm0
+	lea rsp, [rsp+336]
+	lea rsp, [rsp+8]
 	xor eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -8589,7 +8593,6 @@ vg_argon2_blake2b_avx2_g_avx2:
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -11414,31 +11417,48 @@ vg_argon2:
 	pop rbp
 	pop rbx
 	pxor xmm0, xmm0
+	pxor xmm1, xmm1
+	pxor xmm2, xmm2
+	pxor xmm3, xmm3
+	pxor xmm4, xmm4
+	pxor xmm5, xmm5
+	pxor xmm6, xmm6
+	pxor xmm7, xmm7
+	pxor xmm8, xmm8
+	pxor xmm9, xmm9
+	pxor xmm10, xmm10
+	pxor xmm11, xmm11
+	pxor xmm12, xmm12
+	pxor xmm13, xmm13
+	pxor xmm14, xmm14
+	pxor xmm15, xmm15
 	xor r11d, r11d
-	lea rsp, [rsp-344]
-	movdqu XMMWORD PTR [rsp+328], xmm0
-	movdqu XMMWORD PTR [rsp+312], xmm0
-	movdqu XMMWORD PTR [rsp+296], xmm0
-	movdqu XMMWORD PTR [rsp+280], xmm0
-	movdqu XMMWORD PTR [rsp+264], xmm0
-	movdqu XMMWORD PTR [rsp+248], xmm0
-	movdqu XMMWORD PTR [rsp+232], xmm0
-	movdqu XMMWORD PTR [rsp+216], xmm0
-	movdqu XMMWORD PTR [rsp+200], xmm0
-	movdqu XMMWORD PTR [rsp+184], xmm0
-	movdqu XMMWORD PTR [rsp+168], xmm0
-	movdqu XMMWORD PTR [rsp+152], xmm0
-	movdqu XMMWORD PTR [rsp+136], xmm0
-	movdqu XMMWORD PTR [rsp+120], xmm0
-	movdqu XMMWORD PTR [rsp+104], xmm0
-	movdqu XMMWORD PTR [rsp+88], xmm0
-	movdqu XMMWORD PTR [rsp+72], xmm0
-	movdqu XMMWORD PTR [rsp+56], xmm0
-	movdqu XMMWORD PTR [rsp+40], xmm0
-	movdqu XMMWORD PTR [rsp+24], xmm0
-	movdqu XMMWORD PTR [rsp+8], xmm0
+	lea rsp, [rsp-8]
 	mov QWORD PTR [rsp], r11
-	lea rsp, [rsp+344]
+	lea rsp, [rsp-336]
+	movdqu XMMWORD PTR [rsp+320], xmm0
+	movdqu XMMWORD PTR [rsp+304], xmm0
+	movdqu XMMWORD PTR [rsp+288], xmm0
+	movdqu XMMWORD PTR [rsp+272], xmm0
+	movdqu XMMWORD PTR [rsp+256], xmm0
+	movdqu XMMWORD PTR [rsp+240], xmm0
+	movdqu XMMWORD PTR [rsp+224], xmm0
+	movdqu XMMWORD PTR [rsp+208], xmm0
+	movdqu XMMWORD PTR [rsp+192], xmm0
+	movdqu XMMWORD PTR [rsp+176], xmm0
+	movdqu XMMWORD PTR [rsp+160], xmm0
+	movdqu XMMWORD PTR [rsp+144], xmm0
+	movdqu XMMWORD PTR [rsp+128], xmm0
+	movdqu XMMWORD PTR [rsp+112], xmm0
+	movdqu XMMWORD PTR [rsp+96], xmm0
+	movdqu XMMWORD PTR [rsp+80], xmm0
+	movdqu XMMWORD PTR [rsp+64], xmm0
+	movdqu XMMWORD PTR [rsp+48], xmm0
+	movdqu XMMWORD PTR [rsp+32], xmm0
+	movdqu XMMWORD PTR [rsp+16], xmm0
+	movdqu XMMWORD PTR [rsp], xmm0
+	lea rsp, [rsp+336]
+	lea rsp, [rsp+8]
 	xor eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -11447,6 +11467,5 @@ vg_argon2:
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 	.p2align 6

@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Blake2.initSContract`. The streaming state is the hash state followed by a buffered last block (`VG.Spec.Blake2.Repr`). Constant time: only the pointers, `outlen` and `keylen` may affect timing, not the key.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 96 bytes.
@@ -26,7 +28,7 @@ bne %cr0, 22b
 b 21f
 20:
 21:
-.base64 "IACATg==""#,
+.base64 "AACgOAAAwDgAACA5AABAOQAAgDkgAIBO""#,
     )
 }
 
@@ -34,17 +36,19 @@ b 21f
 ///
 /// Contract: `VG.Spec.Blake2.updateSContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 96 bytes.
 /// * `data` must be valid for reads of `len` bytes.
 /// * `count` must be the exact length of the data so far (the key block included), and `count + len` less than 2⁶⁴.
 /// * `state` must not overlap `data` (distinct Rust objects never do).
-/// * Neither `state` nor `data` may overlap the 656 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `data` may overlap the 240 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_blake2s_update(state: *mut [u8; 96], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
-        r#".base64 "of0h+CAA4TimAgh80f8h+CAAAfgAAkf7CAJn+xACh/sYAqf7IALH+ygC5/sAAEM7AABnOwAAhTsAAKY7AADkO///3zs/ACA5OEjefwEA3jsAAD8o"
+        r#".base64 "Qf8h+CAA4TimAgh80f8h+CAAAfhoAEf7cABn+3gAh/uAAKf7iADH+5AA5/sAAEM7AABnOwAAhTsAAKY7AADkO///3zs/ACA5OEjefwEA3jsAAD8o"
 beq %cr0, 20f
 b 21f
 20:
@@ -104,7 +108,7 @@ b 216f
 b 23f
 22:
 23:
-.base64 "AAJb6xACm+sYArvrIALb6ygC++sIAnvrIAAB6DAAITimAwh8YAIhOCAAgE4=""#,
+.base64 "aABb63gAm+uAALvriADb65AA++twAHvrIAAB6DAAITimAwh8wAAhOAAAADgR/yH4IACBOQAADPgIAAz4EAAM+BgADPggAAz4KAAM+DAADPg4AAz4QAAM+EgADPhQAAz4WAAM+GAADPhoAAz4cAAM+HgADPiAAAz4iAAM+JAADPiYAAz4oAAM+KgADPiwAAz4uAAM+MAADPjIAAz48AAhOAAAYDgAAIA4AACgOAAAwDgAAOA4AAAAOQAAIDkAAEA5AABgOQAAgDkgAIBO""#,
         vg_blake2s_compress = sym super::blake2s::vg_blake2s_compress::vg_blake2s_compress,
     )
 }
@@ -113,6 +117,8 @@ b 23f
 ///
 /// Contract: `VG.Spec.Blake2.finalizeSContract`. Constant time: only the pointers and `count` may affect timing, not the state.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 96 bytes.
@@ -120,11 +126,11 @@ b 23f
 /// * `count` must be the exact length of the data (the key block included), less than 2⁶⁴.
 /// * The contents of `state` on return are unspecified.
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
-/// * Neither `state` nor `out` may overlap the 656 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `out` may overlap the 240 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_blake2s_finalize(state: *mut [u8; 96], count: u64, out: *mut [u8; 32]) {
     core::arch::naked_asm!(
-        r#".base64 "of0h+CAAwTimAgh80f8h+CAAAfgAAkb7CAJm+xAChvsYAqb7IALG+ygC5vsAAEM7AABmOwAAhTsAAOQ7///fOz8AIDk4SN5/AQDeOwAAPyg="
+        r#".base64 "Qf8h+CAAwTimAgh80f8h+CAAAfhoAEb7cABm+3gAhvuAAKb7iADG+5AA5vsAAEM7AABmOwAAhTsAAOQ7///fOz8AIDk4SN5/AQDeOwAAPyg="
 beq %cr0, 20f
 b 21f
 20:
@@ -140,7 +146,7 @@ b 23f
 23:
 .base64 "AAB6OCAAmjgBAKA4AADfOAEA4DgAABs5"
 bl {vg_blake2s_compress}
-.base64 "AAA66QAAPPkIADrpCAA8+RAAOukQADz5GAA66RgAPPkAAlvrEAKb6xgCu+sgAtvrKAL76wgCe+sgAAHoMAAhOKYDCHxgAiE4IACATg==""#,
+.base64 "AAA66QAAPPkIADrpCAA8+RAAOukQADz5GAA66RgAPPloAFvreACb64AAu+uIANvrkAD763AAe+sgAAHoMAAhOKYDCHzAACE4AAAAOBH/IfggAIE5AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhAAAz4SAAM+FAADPhYAAz4YAAM+GgADPhwAAz4eAAM+IAADPiIAAz4kAAM+JgADPigAAz4qAAM+LAADPi4AAz4wAAM+MgADPjwACE4AABgOAAAgDgAAKA4AADAOAAA4DgAAAA5AAAgOQAAQDkAAGA5AACAOSAAgE4=""#,
         vg_blake2s_compress = sym super::blake2s::vg_blake2s_compress::vg_blake2s_compress,
     )
 }

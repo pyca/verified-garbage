@@ -12,7 +12,8 @@ it with a buffer of its own on the stack, `save`, of 80 bytes, passed in
 `a5`: the return address and the caller's callee-saved registers, then a
 block of the code's own. It is AES-CTR's final function's
 (`Impl/AesCtr/RISCV64/Final.lean`) with Camellia's arguments, around calls
-of `vg_camellia_ctr` (`Impl.Camellia.RISCV64.ctr`), which keeps its own
+of `vg_camellia_ctr`'s code, as the internal `vg_camellia_ctr_core` (`Impl.Camellia.RISCV64.ctr`;
+the exported `vg_camellia_ctr` also clears what it leaves), which keeps its own
 working space on the stack below:
 
 1. the registers saved in `save` (AES-CFB's final functions' slots,
@@ -68,12 +69,12 @@ def ctrFinalTailArgs : List Instr :=
 /-- The partial last block: the output block `CIPH_K(Tₙ₊₁)` in the block of
 `save`, and its first `u` bytes XORed into the data. -/
 def ctrFinalTail : Prog isa :=
-  .seq (.block ctrFinalTailArgs) (.seq (.call "vg_camellia_ctr" ctr)
+  .seq (.block ctrFinalTailArgs) (.seq (.call "vg_camellia_ctr_core" ctr)
     (.seq (.block tailKey) (.loop (.block xorStep) (.nonzero .s3))))
 
 /-- `vg_camellia_ctr_final`. -/
 def ctrFinal : Prog isa :=
-  .seq (.block ctrFinalSetup) (.seq (.call "vg_camellia_ctr" ctr)
+  .seq (.block ctrFinalSetup) (.seq (.call "vg_camellia_ctr_core" ctr)
     (.seq (.ite (.zero .s3) (.block []) ctrFinalTail) (.block finalRestore)))
 
 end VG.Impl.Camellia.RISCV64

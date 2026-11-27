@@ -31,7 +31,7 @@ jmp 23f
 23:
 .base64 "SIPoAUjB6D8="
 21:
-.base64 "icBFMcBFMclFMdLD"
+.base64 "Zg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//icAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
     )
 }

@@ -14,6 +14,8 @@ byte, as the x86 code does. The source pointer is in `r11` and its end in
 namespace VG.Impl.Dsa.Arm
 open VG VG.Arm VG.Impl.Mont.Arm VG.Impl.Mont.Arm.Dynamic
 
+variable (umaal : Bool)
+
 /-- Double the residue while carrying a public counter from `r1` to `r0`.
 The addition does not use `r1`; conditional subtraction does not use `r0`. -/
 def countedDouble (n : Nat) : Prog isa :=
@@ -53,8 +55,8 @@ def modulusMinus (n amount : Nat) : Prog isa :=
 slot: the first multiplication encodes one operand, the second removes that
 factor of R while multiplying. -/
 def ordinaryMul (n : Nat) : Prog isa :=
-  .seq (mul (contextMod n) invO (accS n) (prodS n) (baseS n) (rrS n))
-    (mul (contextMod n) invO (accS n) (resS n) (expS n) (prodS n))
+  .seq (mul umaal (contextMod n) invO (accS n) (prodS n) (baseS n) (rrS n))
+    (mul umaal (contextMod n) invO (accS n) (resS n) (expS n) (prodS n))
 
 /-- Add reduced ordinary integers in the base and exponent slots. -/
 def ordinaryAdd (n : Nat) : Prog isa :=

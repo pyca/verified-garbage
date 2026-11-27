@@ -1,6 +1,7 @@
 module
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Impl.Scrub.AArch64.Writes
 
 import VerifiedGarbage.Proof.Framework.AArch64.Inline
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
@@ -12,28 +13,6 @@ import VerifiedGarbage.Proof.Framework.AArch64.Reduce
 @[expose] public section
 
 namespace VG.AArch64
-
-/-- Destination of an AdvSIMD instruction. -/
-def VOp.dst : VOp → VReg
-  | .mov d .. | .movi0 d | .dup _ d .. | .ins _ d .. | .dupS d .. => d
-  | .logic _ d .. | .not d .. | .add _ d .. | .sub _ d .. | .shift _ _ d .. => d
-  | .cmp _ _ d .. | .addv _ d _ | .uaddlv _ d _ => d
-  | .ext d .. | .rev _ d .. | .perm _ _ d .. | .tbl d .. => d
-  | .dupE _ d .. | .insE _ d .. | .cmeq _ d .. | .bsel _ d .. | .tblN _ _ d .. => d
-  | .umull _ d .. | .umlal _ d .. | .mul d .. | .mla d .. | .mls d .. => d
-  | .umullH _ d .. | .umlalH _ d .. => d
-  | .sqdmulh d .. | .umin d .. | .mulH _ d .. | .mulHE _ d .. | .pmull _ d .. => d
-  | .aese d .. | .aesd d .. | .aesmc d .. | .aesimc d .. => d
-  | .sha1 _ d .. | .sha1h d .. | .sha1su0 d .. | .sha1su1 d .. => d
-  | .sha256h d .. | .sha256h2 d .. | .sha256su0 d .. | .sha256su1 d .. => d
-  | .sha512h d .. | .sha512h2 d .. | .sha512su0 d .. | .sha512su1 d .. => d
-  | .eor3 d .. | .bcax d .. | .rax1 d .. | .xar d .. | .xarS d .. => d
-
-/-- The vector register an instruction writes, if any. -/
-def vdstOf : Instr → Option VReg
-  | .vop op => some op.dst
-  | .ldrq d .. | .ldrqTbl d .. => some d
-  | _ => none
 
 theorem VOp.eval_dst {op : VOp} {s : State} {d : VReg} {v : BitVec 128}
     (h : op.eval s = some (d, v)) : d = op.dst := by
@@ -47,7 +26,7 @@ theorem VOp.eval_dst {op : VOp} {s : State} {d : VReg} {v : BitVec 128}
     simp only [reduceVOpEval] at h
     split at h <;> simp only [Option.some.injEq, Prod.mk.injEq, reduceCtorEq] at h
     exact h.1.symm
-  case dupS | dupE | insE | shift | ext | tblN | xar | xarS | mulH | mulHE | addv | uaddlv =>
+  case dupS | dupE | insE | shift | ext | tblN | xar | xarS | mulH | mulHE | addv | uaddlv | sm3tt =>
     exact (Prod.mk.inj (Option.some.inj (Option.ite_none_right_eq_some.mp h).2)).1.symm
   all_goals exact (Prod.mk.inj (Option.some.inj h)).1.symm
 
@@ -55,45 +34,45 @@ theorem exec_vec {i : Instr} {r : VReg} {s s' : State}
     (hi : vdstOf i ≠ some r) (h : exec i s = some s') : s'.v r = s.v r := by
   cases i with
   | str sz t n off | strb t n off | strq t n off =>
-    simp only [exec, Option.bind_eq_some_iff, State.store] at h
+    simp only [reduceExec, Option.bind_eq_some_iff, State.store] at h
     obtain ⟨a, -, h⟩ := h
     split at h <;> cases h; rfl
   | strSp t off =>
-    simp only [exec] at h
+    simp only [reduceExec] at h
     split at h <;> [skip; cases h]
     simp only [State.store] at h
     split at h <;> cases h; rfl
   | ldr sz t n off | ldrb t n off =>
-    simp only [exec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at h
+    simp only [reduceExec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at h
     obtain ⟨a, -, v, -, rfl⟩ := h
     rfl
   | ldrq t n off =>
-    simp only [exec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at h
+    simp only [reduceExec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at h
     obtain ⟨a, -, v, -, rfl⟩ := h
     have ht : r ≠ t := fun e => hi (by simp [vdstOf, e])
     simp only [State.setV, ht, ite_false]
   | ldrqTbl t n off name ws =>
-    simp only [exec] at h
+    simp only [reduceExec] at h
     split at h <;> [skip; cases h]
     cases h
     have ht : r ≠ t := fun e => hi (by simp [vdstOf, e])
     simp only [State.setV, ht, ite_false]
   | vop op =>
-    simp only [exec, Option.map_eq_some_iff] at h
+    simp only [reduceExec, Option.map_eq_some_iff] at h
     obtain ⟨⟨d, v⟩, hd, rfl⟩ := h
     have ht : r ≠ d := fun e => hi (by simp [vdstOf, ← VOp.eval_dst hd, e])
     simp only [State.setV, ht, ite_false]
   | ldrSp t off =>
-    simp only [exec] at h
+    simp only [reduceExec] at h
     split at h <;> [skip; cases h]
     obtain ⟨v, -, rfl⟩ := Option.map_eq_some_iff.mp h
     rfl
   | ccmp sz n imm nzcv cond =>
-    simp only [exec] at h
+    simp only [reduceExec] at h
     split at h <;> [skip; cases h]
     simp only [Option.some.injEq] at h; subst h
     split <;> rfl
-  | push _ | pop _ | alloc _ | free _ | blr _ => simp only [exec, reduceCtorEq] at h
+  | push _ | pop _ | alloc _ | free _ | blr _ => simp only [reduceExec, reduceCtorEq] at h
   | ldp t1 t2 n off => obtain ⟨_, _, rfl⟩ := exec_ldp_eq h; rfl
   | stp t1 t2 n off => obtain ⟨_, rfl⟩ := exec_stp_eq h; rfl
   | logicRor _ _ _ _ _ _ | bicRor _ _ _ _ _ | extr _ _ _ _ _ | addSp _ _ | addImm _ _ _ _

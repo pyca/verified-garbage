@@ -2,24 +2,54 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtCompareProduct
 public import VerifiedGarbage.Proof.Framework.RelCT
-import VerifiedGarbage.Proof.Bignum.Arm.EqualBuffersCT
 import VerifiedGarbage.Proof.Bignum.Arm.StageCT
 import VerifiedGarbage.Proof.Bignum.Arm.StackCT
-import VerifiedGarbage.Proof.Bignum.Arm.CrtCompareArgs
 import VerifiedGarbage.Proof.Framework.Arm.Taint
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Bignum.Arm.CrtCompareProduct
 meta import VerifiedGarbage.Proof.Framework.RelCT
-meta import VerifiedGarbage.Proof.Bignum.Arm.EqualBuffersCT
 meta import VerifiedGarbage.Proof.Bignum.Arm.StageCT
 meta import VerifiedGarbage.Proof.Bignum.Arm.StackCT
-meta import VerifiedGarbage.Proof.Bignum.Arm.CrtCompareArgs
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Impl.Bignum.Arm.EqualBuffers
+import VerifiedGarbage.Proof.Framework.Mem
+meta import VerifiedGarbage.Impl.Bignum.Arm.EqualBuffers
+meta import VerifiedGarbage.Proof.Framework.Mem
+
+/-! ### `Bignum.Arm.EqualBuffersCT`, which only this module used -/
+
+section
+
+/-! # Multiword equality reveals only pointers and length -/
+
+@[expose] public section
+
+namespace VG.Proof.Bignum.Arm
+open VG VG.Arm VG.Impl.Bignum.Arm
+
+theorem equalBuffers_ct : ConstantTime isa (fun _ => True)
+    (fun s t => s.gpr .r0 = t.gpr .r0 ∧ s.gpr .r10 = t.gpr .r10 ∧ s.gpr .r12 = t.gpr .r12 ∧ s.gpr .lr = t.gpr .lr) equalBuffers := by
+  refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r0, .r10, .r12, .lr]) ?_ (by taint_decide)
+  intro s t _ _ h
+  apply Taint.agree_ofRegs
+  intro r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl
+  · exact h.1
+  · exact h.2.1
+  · exact h.2.2.1
+  · exact h.2.2.2
+
+end VG.Proof.Bignum.Arm
+
+end
+
+end
 
 /-! # CRT factor validation does not reveal the factors or product -/
 

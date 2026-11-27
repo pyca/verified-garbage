@@ -1,11 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.RISCV64.VerifyFront
-public import VerifiedGarbage.Proof.Dsa.RISCV64.CheckKey
+public import VerifiedGarbage.Proof.Dsa.RISCV64.VerifyFn
+public import VerifiedGarbage.Proof.Dsa.RISCV64.VerifyComb
 public import VerifiedGarbage.Impl.Dsa.RISCV64.Prevalidated
 public import VerifiedGarbage.Spec.Dsa.Prevalidated
 import VerifiedGarbage.Proof.Dsa.RISCV64.ValidateFn
-import VerifiedGarbage.Proof.Dsa.RISCV64.VerifyFn
 import VerifiedGarbage.Proof.Dsa.SizeBounds
 import VerifiedGarbage.Proof.Framework.Omega
 
@@ -84,6 +83,6 @@ theorem prevalidated_correct (s : State) (h : vpContract.pre s) :
     WP.mono (WP.rdwr main) fun t ⟨⟨⟨hp, hra⟩, hpost⟩, _, _, hsp⟩ => ⟨⟨hp, hsp, hra⟩, hpost⟩
   unfold Prevalidated.verify
   exact verifyLike_ok (X := Prevalidated.setup) (V := True)
-    (fun hL hs hr h2 hd hk hV hrest _ => setup_ok hL hs hr h2 hd hk (hV trivial) hrest) hp fun _ => hK
+    (fun hL hs hr _ h2 hd hk hV hrest _ => setup_ok hL hs hr h2 hd hk (hV trivial) hrest) hp fun _ => hK
 
 end VG.Proof.Dsa.RISCV64

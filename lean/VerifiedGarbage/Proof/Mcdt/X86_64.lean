@@ -15,6 +15,12 @@ meta import VerifiedGarbage.Spec.Mcdt
 meta import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 meta import VerifiedGarbage.Proof.MlKem.X86_64.Rel
 meta import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.X86_64.ResidueTaintSound
+import VerifiedGarbage.Proof.Framework.X86_64.Syms
+import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
+import VerifiedGarbage.Proof.Framework.X86_64.ScrubChunks
+import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # Entering Intel's MXCSR mitigation of MCDT on x86-64: the proofs
@@ -26,7 +32,8 @@ constant time with MXCSR public, as the contract makes it: it branches on
 whether MXCSR held `0x1FBF` (`head_rel`), and otherwise its addresses are
 `rsp`'s.
 
-`enterReg` registers it, returning without secret residue.
+`enter_scrubbed` is the theorem its registration binds: it returns without
+secret residue.
 
 `enter_mxcsr` proves what the contract cannot name, of every run of its
 code in the model: MXCSR then holds the value it held on entry, but for its
@@ -88,17 +95,38 @@ theorem head_ok {s : State} (w0 : InRegions s.wr (s.gpr .rsp) 4) (w8 : InRegions
   xrun [head, ea_slot, w0, w8, l0, Mem.readW_writeW_self32, RegUpd.mxcsr_setReg, RegUpd.mxcsr_setFlags,
     sub_beq]
 
+/-- The memory after the frame's body, from `m` with the slot at `S` and
+MXCSR `x`: the slot zeroed, then MXCSR stored in it, and `flagged x` unless
+`x` is `0x1FBF`. -/
+def slotW (m : Mem) (S : Addr) (x : BitVec 32) : Mem :=
+  if x = 0x1FBF then (m.writeW S ((0 : BitVec 32).setWidth 64)).writeW S x
+  else ((m.writeW S ((0 : BitVec 32).setWidth 64)).writeW S x).writeW S (flagged x)
+
+/-- `slotW` leaves the bytes of the slot as functions of `S` and `x` alone. -/
+theorem slotW_slot (m₁ m₂ : Mem) {S y : Addr} (x : BitVec 32) (hy : (y - S).toNat < 8) :
+    slotW m₁ S x y = slotW m₂ S x y := by
+  have hy' : ((y - S).toNat < 64 / 8) = True := eq_true hy
+  unfold slotW
+  split <;> simp only [Mem.writeW, Mem.write, hy', ↓reduceIte]
+
+/-- `slotW` writes only the slot. -/
+theorem slotW_frame {m : Mem} {S : Addr} {F : Region} (x : BitVec 32) (h0 : F.Contains S 4)
+    (h8 : F.Contains S 8) : Frame [F] m (slotW m S x) := by
+  have f1 : Frame [F] m ((m.writeW S ((0 : BitVec 32).setWidth 64)).writeW S x) :=
+    ((Frame.refl _ _).writeW (List.mem_singleton_self _) _ h8).writeW (List.mem_singleton_self _) _ h0
+  unfold slotW
+  split
+  · exact f1
+  · exact f1.writeW (List.mem_singleton_self _) _ h0
+
 /-- The frame's body, from a state whose 8 bytes at `rsp` are writable. -/
 theorem body_ok {s : State} {F : Region} (hF : F ∈ s.wr) (h0 : F.Contains (s.gpr .rsp) 4)
     (h8 : F.Contains (s.gpr .rsp) 8) :
     WP isa body s fun s' => (s'.mxcsr = flagged s.mxcsr ∧ s'.gpr .rax = res s.mxcsr ∧
-      Frame [F] s.mem s'.mem) ∧ Keep [.rax, .rdx] s s' := by
+      s'.mem = slotW s.mem (s.gpr .rsp) s.mxcsr) ∧ Keep [.rax, .rdx] s s' := by
   have w0 : InRegions s.wr (s.gpr .rsp) 4 := ⟨F, hF, h0⟩
   have w8 : InRegions s.wr (s.gpr .rsp) 8 := ⟨F, hF, h8⟩
   have l0 : InRegions (s.rd ++ s.wr) (s.gpr .rsp) 4 := ⟨F, List.mem_append_right _ hF, h0⟩
-  have f1 : Frame [F] s.mem ((s.mem.writeW (s.gpr .rsp) ((0 : BitVec 32).setWidth 64)).writeW
-      (s.gpr .rsp) s.mxcsr) :=
-    ((Frame.refl _ _).writeW (List.mem_singleton_self _) _ h8).writeW (List.mem_singleton_self _) _ h0
   unfold body
   refine WP.seq (WP.mono (head_ok w0 w8 l0) fun t ⟨⟨hmx, hzf, hax, hm⟩, k1⟩ => ?_)
   have tsp : t.gpr .rsp = s.gpr .rsp := k1.gpr (by decide)
@@ -110,7 +138,7 @@ theorem body_ok {s : State} {F : Region} (hF : F ∈ s.wr) (h0 : F.Contains (s.g
     refine WP.ite true (by simp [eval, hzf, hf]) (fun _ => ?_) (fun h => nomatch h)
     refine WP.mono (WP.keep [.rax, .rdx] (Q := fun u => u.mxcsr = t.mxcsr ∧ u.gpr .rax = 1 ∧ u.mem = t.mem)
       (by xrun [RegUpd.mxcsr_setReg]) rfl) fun u ⟨⟨hu, hua, hum⟩, k2⟩ => ⟨⟨by rw [hu, hmx, hfl], by rw [hua, hr],
-        by rw [hum, hm]; exact f1⟩, (k1.trans k2).mono (by decide)⟩
+        by rw [hum, hm, slotW]; simp only [hf, ↓reduceIte]⟩, (k1.trans k2).mono (by decide)⟩
   · have hx := xor_beq s.mxcsr
     have hax32 : (t.gpr .rax).setWidth 32 = s.mxcsr := by rw [hax]; exact RegUpd.setWidth_setWidth_32 _
     refine WP.ite false (by simp only [eval, hzf, beq_eq_false_iff_ne.mpr hf]) (fun h => nomatch h) (fun _ => ?_)
@@ -121,7 +149,7 @@ theorem body_ok {s : State} {F : Region} (hF : F ∈ s.wr) (h0 : F.Contains (s.g
         u.mem = t.mem.writeW (t.gpr .rsp) (flagged s.mxcsr)) (by
           xrun [raise, answer, List.cons_append, List.nil_append, ea_slot, tw0, tl0, hax32, Mem.readW_writeW_self32,
             flagged_hi', execCmov, eval, hx, hr, RegUpd.mxcsr_setReg, RegUpd.mxcsr_setFlags, flagged]) rfl)
-        fun u ⟨⟨hu, hua, hum⟩, k2⟩ => ⟨⟨hu, hua, by rw [hum, hm, tsp]; exact f1.writeW (List.mem_singleton_self _) _ h0⟩,
+        fun u ⟨⟨hu, hua, hum⟩, k2⟩ => ⟨⟨hu, hua, by rw [hum, hm, tsp, slotW]; simp only [hf, ↓reduceIte]⟩,
           (k1.trans k2).mono (by decide)⟩
     · have hr : res s.mxcsr = 0 := by simp only [res, hg, ite_false]
       rw [decide_eq_false hg] at hx
@@ -129,7 +157,7 @@ theorem body_ok {s : State} {F : Region} (hF : F ∈ s.wr) (h0 : F.Contains (s.g
         u.mem = t.mem.writeW (t.gpr .rsp) (flagged s.mxcsr)) (by
           xrun [raise, answer, List.cons_append, List.nil_append, ea_slot, tw0, tl0, hax32, Mem.readW_writeW_self32,
             flagged_hi', execCmov, eval, hx, hr, RegUpd.mxcsr_setReg, RegUpd.mxcsr_setFlags, flagged]) rfl)
-        fun u ⟨⟨hu, hua, hum⟩, k2⟩ => ⟨⟨hu, hua, by rw [hum, hm, tsp]; exact f1.writeW (List.mem_singleton_self _) _ h0⟩,
+        fun u ⟨⟨hu, hua, hum⟩, k2⟩ => ⟨⟨hu, hua, by rw [hum, hm, tsp, slotW]; simp only [hf, ↓reduceIte]⟩,
           (k1.trans k2).mono (by decide)⟩
 
 /-- Two 8-byte regions, the second just below the first. -/
@@ -161,19 +189,81 @@ theorem enter_wp (s : State) (hS : 8 ≤ (s.gpr .rsp).toNat) :
   refine WP.frame (by decide) (by decide) (by decide) (by rw [hSdef]; simpa using hS) ?_
   refine WP.mono (body_ok hF h0 h8) fun t ⟨⟨hmx, hax, hm⟩, hk⟩ => ?_
   have tsp : t.gpr .rsp = S - 8 := by rw [hk.gpr (by decide), s1sp]
-  refine ⟨by rw [tsp, s1sp], by rw [hk.2.2], ?_⟩
-  have fr : Frame [F] s.mem t.mem := pf.trans hm
+  refine ⟨by rw [tsp, s1sp], by rw [hk.2.2], fun m u fm => ?_⟩
+  have fr : Frame [F] s.mem t.mem := pf.trans (hm ▸ slotW_frame _ h0 h8)
+  -- The `pop` loses the frame's bytes, which are `F`'s.
+  rw [hSdef] at fm
+  have fr' : Frame [F] s.mem m := fr.trans fm
+  dsimp only
   refine ⟨by rw [popped_mxcsr, hmx, pushed_mxcsr], ?_, ⟨fun r hr => ?_, ?_⟩, ?_, ?_⟩
   · rw [popped_gpr _ _ _ (by decide) (by decide), hax, pushed_mxcsr]
   · have hrc : r ≠ .rcx := by intro h; subst h; simp [calleeSaved] at hr
     by_cases hsp : r = .rsp
     · subst hsp; rw [popped_rsp, tsp, hSdef]; exact BitVec.sub_add_cancel S 8
     · rw [popped_gpr _ _ _ hsp hrc, hk.gpr (by cases r <;> simp_all [calleeSaved]), pushed_gpr _ _ hsp]
-  · rw [popped_mem, hSdef]
-    exact fr.readW (r := ⟨S, 8⟩) (Region.contains_self _ _) (fun r hr => by
+  · rw [hSdef]
+    exact fr'.readW (r := ⟨S, 8⟩) (Region.contains_self _ _) (fun r hr => by
       rw [List.mem_singleton] at hr; subst hr; exact disj8 S) (by decide)
   · rw [popped_rd, hk.2.1, pushed_rd]
   · rw [popped_wr, hk.2.2, pushed_wr]; rfl
+
+/-- No instruction of the release of a frame. -/
+def notRelease : Instr → Bool
+  | .pop .. | .free _ => false
+  | _ => true
+
+theorem pop_release {j : Instr} {s₁ s₂ s' : State} (hj : notRelease j = true)
+    (hq : isa.pop j s₁ s₂ = some s') : False := by
+  cases j <;> simp only [notRelease, Bool.false_eq_true] at hj <;>
+    simp only [isa, pop, reduceCtorEq] at hq
+
+/-- The frame's body, which releases no frame, keeps the unknowns. -/
+theorem body_unk {s s' : State} {t : List Leak} (h : Exec isa body s t s') : s'.unknowns = s.unknowns :=
+  Exec.keep (fun s : State => s.unknowns) (ok := fun i => notRelease i = true)
+    (fun _ he => VG.X86_64.exec_unknowns he)
+    (fun hj _ hq _ => (pop_release hj hq).elim)
+    (fun i hi => List.all_eq_true.mp (by decide : (instrs body).all notRelease = true) i hi)
+    (.inl (by decide)) h
+
+/-- `enter_wp`, with the registers `vg_mcdt_enter` keeps (all but `rax`,
+`rcx` and `rdx`) and its memory: the stack, as the frame's body leaves it,
+the 8 bytes below `rsp` (`slotW`), whose bytes the frame's pop then loses
+(`lose`, with the two unknowns it takes). -/
+theorem enter_wpX (s : State) (hS : 8 ≤ (s.gpr .rsp).toNat) :
+    WP isa enter s fun t => t.mxcsr = flagged s.mxcsr ∧ t.gpr .rax = res s.mxcsr ∧
+      t.gpr .rsp = s.gpr .rsp ∧ (∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .rdx → t.gpr r = s.gpr r) ∧
+      t.rd = s.rd ∧ t.wr = s.wr ∧
+      t.mem = lose (slotW (pushed [.rax] s).mem (s.gpr .rsp - 8) s.mxcsr) (s.gpr .rsp - 8) 8 s.unknowns ∧
+      t.unknowns = fun n => s.unknowns (n + 2) := by
+  generalize hSdef : s.gpr .rsp = S at *
+  let F : Region := ⟨S - 8, 8⟩
+  have s1sp : (pushed [.rax] s).gpr .rsp = S - 8 := by rw [pushed_rsp, hSdef]; rfl
+  have hF : F ∈ (pushed [.rax] s).wr := by
+    rw [pushed_wr, hSdef]; exact List.mem_cons_self
+  have h0' : F.Contains (S - 8) 4 := by
+    simp only [F, Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega
+  have h8' : F.Contains (S - 8) 8 := by
+    simp only [F, Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega
+  have h0 : F.Contains ((pushed [.rax] s).gpr .rsp) 4 := by rw [s1sp]; exact h0'
+  have h8 : F.Contains ((pushed [.rax] s).gpr .rsp) 8 := by rw [s1sp]; exact h8'
+  unfold enter
+  refine WP.frameMem (by decide) (by decide) (by decide) (by rw [hSdef]; simpa using hS) ?_
+  obtain ⟨tr, t, he, ⟨hmx, hax, hm⟩, hk⟩ := body_ok hF h0 h8
+  have hu : t.unknowns = s.unknowns := (body_unk he).trans rfl
+  refine ⟨tr, t, he, ?_⟩
+  have tsp : t.gpr .rsp = S - 8 := by rw [hk.gpr (by decide), s1sp]
+  refine ⟨by rw [tsp, s1sp], by rw [hk.2.2], ?_⟩
+  dsimp only [released]
+  refine ⟨by rw [popped_mxcsr, hmx, pushed_mxcsr], ?_, ?_, fun r h1 h2 h3 => ?_, ?_, ?_, ?_, ?_⟩
+  · rw [popped_gpr _ _ _ (by decide) (by decide), hax, pushed_mxcsr]
+  · rw [popped_rsp, tsp]; exact BitVec.sub_add_cancel S 8
+  · by_cases hsp : r = .rsp
+    · subst hsp; rw [popped_rsp, tsp, hSdef]; exact BitVec.sub_add_cancel S 8
+    · rw [popped_gpr _ _ _ hsp h2, hk.gpr (by simp [h1, h3]), pushed_gpr _ _ hsp]
+  · rw [popped_rd, hk.2.1, pushed_rd]
+  · rw [popped_wr, hk.2.2, pushed_wr]; rfl
+  · rw [hm, s1sp, pushed_mxcsr, tsp, hu, List.length_singleton]
+  · rw [hu, List.length_singleton]
 
 /-- MXCSR after `vg_mcdt_enter` is `0x1FBF` exactly when its control bits
 on entry are the default, `0x1F80`'s. -/
@@ -261,39 +351,114 @@ def sat : State where
   rd := []
   wr := []
 
+/-- `vg_mcdt_enter` against `contract`: its runs keep what the calling
+convention preserves. -/
+theorem enter_correct : ∀ s, contract.pre s → ∃ t s', Exec isa enter s t s' ∧ abiPreserved s s' ∧
+    contract.post s s' := by
+  intro s hp
+  obtain ⟨tr, t, he, hmx, -, hg, -⟩ := enter_wp s hp.2.2
+  exact ⟨tr, t, he, ⟨hg.1, hg.2, by rw [hmx, flagged_ctl]⟩, trivial⟩
+
+/-- `vg_mcdt_enter` is constant time, with `rsp` and MXCSR public. -/
+theorem enter_ct : ConstantTime isa contract.pre contract.pub enter := by
+  refine RelCT.constantTime (Q := fun _ _ => True) ?_
+  unfold enter body
+  refine RelCT.frame (R := fun _ _ => True) (fun _ _ h => h.2.2.1) ?_
+  refine RelCT.seq head_rel (RelCT.ite (fun x y h => by simp only [eval, h.2]) ?_ ?_) <;>
+  · exact taintRel [.rsp] (fun x y h r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; subst hr; exact h.1.1) (by taint_decide)
+
+theorem pre_of : ∀ s, (Spec.Mcdt.enterContract abi 8).pre s → contract.pre s := by
+  sig_implies_pre [Spec.Mcdt.enterContract, Spec.Mcdt.enterSig, contract, abi, argRegs]
+
 theorem verified : Verified target enter (Spec.Mcdt.enterContract abi 8) := by
-  apply Verified.of_correct (k := contract)
-  · intro s hp
-    obtain ⟨tr, t, he, hmx, -, hg, -⟩ := enter_wp s hp.2.2
-    exact ⟨tr, t, he, ⟨hg.1, hg.2, by rw [hmx, flagged_ctl]⟩, trivial⟩
-  · refine RelCT.constantTime (Q := fun _ _ => True) ?_
-    unfold enter body
-    refine RelCT.frame (R := fun _ _ => True) (fun _ _ h => h.2.2.1) ?_
-    refine RelCT.seq head_rel (RelCT.ite (fun x y h => by simp only [eval, h.2]) ?_ ?_) <;>
-    · exact taintRel [.rsp] (fun x y h r hr => by
-        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; subst hr; exact h.1.1) (by taint_decide)
+  apply Verified.of_correct (k := contract) enter_correct enter_ct
   · exact {
-      pre := by sig_implies_pre [Spec.Mcdt.enterContract, Spec.Mcdt.enterSig, Abi.withMode, contract, abi,
-        argRegs]
+      pre := pre_of
       -- Both postconditions are `True`.
       post := fun _ _ _ _ => trivial
       pub := by
         intro s₁ s₂ _ _ h
-        sig_pub [Spec.Mcdt.enterContract, Spec.Mcdt.enterSig, Abi.withMode, abi, argRegs] at h
-        sig_split h
-        exact ⟨by with_reducible assumption, BitVec.eq_of_toNat_eq (by with_reducible assumption)⟩
-      sat := by sig_implies_sat [Spec.Mcdt.enterContract, Spec.Mcdt.enterSig, Abi.withMode, contract, abi,
+        sig_pub_keep [Spec.Mcdt.enterContract, Spec.Mcdt.enterSig, abi, argRegs] at h
+        exact h
+      sat := by sig_implies_sat [Spec.Mcdt.enterContract, Spec.Mcdt.enterSig, contract, abi,
         argRegs] [sat] using sat }
 
 theorem enterOut : Scrub.PostOut (Spec.Mcdt.enterContract abi 8) (Spec.Mcdt.enterSig.retBits 64) :=
-  Scrub.postOut_of_local (leak := none) (Scrub.ScrubAbi.plain.mode true) fun vs _ _ _ _ hlen _ h => by
+  Scrub.postOut_of_local (leak := none) Scrub.ScrubAbi.plain fun vs _ _ _ _ hlen _ h => by
     obtain rfl := List.eq_nil_of_length_eq_zero hlen
     exact h
 
-/-- `vg_mcdt_enter`, its registers and its 8 bytes of stack cleared before
-it returns (`RScrub.withScrubAllR`, which follows MXCSR through the code:
-every `ldmxcsr` loads what two runs agree on). -/
-def enterReg : Registration Spec.Mcdt.enterApi X86_64.target :=
-  RScrub.withScrubAllR { code := enter, stack := 8, verified := verified } enterOut
+/-- `vg_mcdt_enter` as emitted, `enterCall`: `enter`, then its cleanup
+(`scrubTail`), which clears only the registers `enter` writes and wipes its
+8 bytes of stack, every call of it the same code (`Rust.checkCalls`), meets
+its contract in constant time and returns without secret residue: every
+`ldmxcsr` in it loads what two runs agree on. -/
+theorem enter_scrubbed :
+    VerifiedScrubbed X86_64.target Impl.Mcdt.X86_64.enterCall (Spec.Mcdt.enterContract abi 8) 32 := by
+  have e : Impl.Mcdt.X86_64.enterCall = Impl.Scrub.X86_64.scrubWith .sse 32 (Scrub.xsFor false [0])
+      (Impl.Scrub.X86_64.psOf [0]) [.rcx, .rdx] [0] [8] enter .avx := by kernel_rfl
+  rw [e]
+  have h := Scrub.scrubSideG_ok (api := Spec.Mcdt.enterApi) { code := enter, stack := 8, verified := verified }
+    .sse .avx false [0] [8] [.rcx, .rdx] (by lit_decide) enterOut (RScrub.resOk_allC _ _ (by decide) rfl)
+    (by decide)
+  exact ⟨h.1, h.2, fun ty _ h => by cases ty <;> cases h⟩
+
+theorem enter_spSafe : Impl.Mcdt.X86_64.enterCall.all (fun i => !X86_64.isa.writesSp i) = true := by
+  sp_safe
+
+/-! ## Its effect on MXCSR and its result, as its `Api` states them (`Api.mode`) -/
+
+/-- `scrubTail` keeps MXCSR and the low half of `rax`. -/
+theorem scrubTail_keep {s s' : State} {t : List Leak}
+    (h : Exec isa Impl.Mcdt.X86_64.scrubTail s t s') :
+    s'.mxcsr = s.mxcsr ∧ (s'.gpr .rax).setWidth 32 = (s.gpr .rax).setWidth 32 := by
+  refine ⟨Exec.mxcsr (by decide +kernel) h, ?_⟩
+  unfold Impl.Mcdt.X86_64.scrubTail at h
+  obtain ⟨s₁, t₁, h₁, t₂, h⟩ : ∃ s₁ t₁, Exec isa (.block [.xop (.bin .pxor .xmm0 .xmm0),
+      .alu32 .xor .r11 (.reg .r11)]) s t₁ s₁ ∧ ∃ t₂, Exec isa _ s₁ t₂ s' := by
+    cases h with | seq a b => exact ⟨_, _, a, _, b⟩
+  obtain ⟨s₂, t₂, h₂, t₃, h⟩ : ∃ s₂ t₂, Exec isa (.block []) s₁ t₂ s₂ ∧ ∃ t₃, Exec isa _ s₂ t₃ s' := by
+    cases h with | seq a b => exact ⟨_, _, a, _, b⟩
+  obtain ⟨s₃, t₃, h₃, t₄, h₄⟩ : ∃ s₃ t₃, Exec isa (.frame (.alloc 8) (.seq (.block
+      [.store Impl.Mcdt.X86_64.slot .r11]) (.block [])) (.free 8)) s₂ t₃ s₃ ∧
+      ∃ t₄, Exec isa (.block [.mov32 .rax (.reg .rax), .alu32 .xor .rcx (.reg .rcx),
+        .alu32 .xor .rdx (.reg .rdx)]) s₃ t₄ s' := by
+    cases h with | seq a b => exact ⟨_, _, a, _, b⟩
+  have r₁ : s₁.gpr .rax = s.gpr .rax := Exec.gpr (by decide +kernel) h₁
+  have r₂ : s₂.gpr .rax = s₁.gpr .rax := Exec.gpr (by decide +kernel) h₂
+  have r₃ : s₃.gpr .rax = s₂.gpr .rax := Exec.gpr (by decide +kernel) h₃
+  have r₄ : (s'.gpr .rax).setWidth 32 = (s₃.gpr .rax).setWidth 32 := by
+    rw [Exec.block_iff] at h₄
+    simp only [execBlock, isa, exec, readSrc32, Option.map_some, execAlu32, Option.bind_some, Option.some.injEq,
+      Prod.mk.injEq] at h₄
+    obtain ⟨rfl, -⟩ := h₄
+    simp [State.setReg32, State.setReg, BitVec.setWidth_setWidth_of_le]
+  rw [r₄, r₃, r₂, r₁]
+
+/-- What every run of `vg_mcdt_enter` as emitted does to MXCSR, and its
+result (`enter_mxcsr`, which its cleanup keeps). -/
+theorem enter_mode : ∀ q, Spec.Mcdt.enterApi.mode = some q → ∀ s t s',
+    (Spec.Mcdt.enterContract abi 8).pre s → Exec isa Impl.Mcdt.X86_64.enterCall s t s' →
+      q (abi.mode s) (abi.mode s') (abi.ret s') := by
+  intro q hq s t s' hs h
+  obtain rfl := Option.some.inj hq
+  obtain ⟨s₁, t₁, t₂, h₁, h₂⟩ : ∃ s₁ t₁ t₂, Exec isa enter s t₁ s₁ ∧
+      Exec isa Impl.Mcdt.X86_64.scrubTail s₁ t₂ s' := by
+    unfold Impl.Mcdt.X86_64.enterCall at h
+    cases h with | seq a b => exact ⟨_, _, _, a, b⟩
+  obtain ⟨hm, hr⟩ := enter_mxcsr (pre_of s hs).2.2 h₁
+  obtain ⟨km, kr⟩ := scrubTail_keep h₂
+  have e : (flagged s.mxcsr).setWidth 64 = (s.mxcsr.setWidth 64 &&& 0xFFFF) ||| 0x3F := by
+    simp only [flagged]; rw [BitVec.setWidth_or, BitVec.setWidth_and]; rfl
+  refine ⟨?_, ?_⟩
+  · simp only [abi, km, hm, e]
+  · simp only [abi, km, hm, kr, hr]
+    by_cases f : flagged s.mxcsr = 0x1FBF
+    · rw [f]; rfl
+    · have : ¬ (flagged s.mxcsr).setWidth 64 = (0x1FBF : BitVec 64) := fun g => f (by
+        have := congrArg (·.setWidth 32) g
+        simpa [BitVec.setWidth_setWidth_of_le] using this)
+      rw [ite_eq_right f, ite_eq_right this]; rfl
 
 end VG.Proof.Mcdt.X86_64

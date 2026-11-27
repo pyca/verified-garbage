@@ -17,7 +17,7 @@ import VerifiedGarbage.Proof.AesSiv.AArch64.CmacOf
 # AES-SIV on AArch64: a step of S2V over the associated data
 
 After the CMAC of a component into the working space (`cmacOf_wp`), the code
-doubles `D` (at `W + 2560`) in place and XORs the CMAC into it, so `D` is
+doubles `D` (at `W + dOff`) in place and XORs the CMAC into it, so `D` is
 then `dbl(D) ⊕ CMAC(S)` (`Spec.Siv.s2vStep`); then it moves to the next
 descriptor and counts one fewer left (`adStep_wp`).
 -/
@@ -33,9 +33,8 @@ variable {D W : Addr}
 
 /-- `adStep`: `dbl(D)` in place with the CMAC state XORed into it, then the
 descriptor pointer advanced by 16 and the count decremented. -/
-theorem adStep_wp {s : State} (h19 : s.gpr .x19 = W) (hD : D = W + BitVec.ofNat 64 dOff)
-    (hDw : (⟨D, 16⟩ : Region) ∈ s.wr) (hWw : (⟨W, 2560⟩ : Region) ∈ s.wr)
-    (hDW : (⟨D, 16⟩ : Region).Disjoint ⟨W, 2560⟩) (wD : D.toNat + 16 ≤ 2 ^ 64) (_wW : W.toNat + 2560 ≤ 2 ^ 64) :
+theorem adStep_wp {Nw : Nat} {s : State} (h19 : s.gpr .x19 = W) (hD : D = W + BitVec.ofNat 64 dOff)
+    (hWw : (⟨W, 272 + Nw⟩ : Region) ∈ s.wr) (hNw : Nw ≤ 2176) :
     WP isa (.block adStep) s fun s' =>
       (∀ r, r ≠ .x9 → r ≠ .x10 → r ≠ .x11 → r ≠ .x12 → r ≠ .x24 → r ≠ .x25 → s'.gpr r = s.gpr r) ∧
       s'.gpr .x24 = s.gpr .x24 + BitVec.ofNat 64 16 ∧ s'.gpr .x25 = s.gpr .x25 - BitVec.ofNat 64 1 ∧
@@ -45,12 +44,10 @@ theorem adStep_wp {s : State} (h19 : s.gpr .x19 = W) (hD : D = W + BitVec.ofNat 
           (Spec.Aes.bytesAt s.mem (W + BitVec.ofNat 64 128) 16) ∧
       Frame [⟨D, 16⟩] s.mem s'.mem := by
   subst hD
-  have inD (d : Nat) (hd : d + 8 ≤ 16) : InRegions s.wr (W + BitVec.ofNat 64 dOff + BitVec.ofNat 64 d) 8 :=
-    ⟨_, hDw, Offset.contains_base _ hd (by omega_using [hd])⟩
-  have inD' (d : Nat) (hd : d + 8 ≤ 16) : InRegions s.wr (W + BitVec.ofNat 64 (dOff + d)) 8 := by
-    rw [← Offset.add_add]; exact inD d hd
-  have inW (d : Nat) (hd : d + 8 ≤ 2560) : InRegions s.wr (W + BitVec.ofNat 64 d) 8 :=
-    ⟨_, hWw, Offset.contains_base W hd (by omega_using [hd])⟩
+  have inW (d : Nat) (hd : d + 8 ≤ 272 + Nw) : InRegions s.wr (W + BitVec.ofNat 64 d) 8 :=
+    ⟨_, hWw, Offset.contains_base W hd (by omega_using [hd, hNw])⟩
+  have inD' (d : Nat) (hd : d + 8 ≤ 16) : InRegions s.wr (W + BitVec.ofNat 64 (dOff + d)) 8 :=
+    inW _ (by simp only [dOff]; omega)
   have rr {a : Addr} (h : InRegions s.wr a 8) : InRegions (s.rd ++ s.wr) a 8 :=
     let ⟨r, hr, hc⟩ := h; ⟨r, List.mem_append_right _ hr, hc⟩
   rw [adStep, List.append_assoc, WP.block_append_iff]
@@ -65,17 +62,18 @@ theorem adStep_wp {s : State} (h19 : s.gpr .x19 = W) (hD : D = W + BitVec.ofNat 
     (by rw [h19₁]) (by rw [h19₁, Offset.add_add]) (by rw [h19₁]) (by rw [h19₁, Offset.add_add])
     ⟨by decide, by decide, by decide, by decide, by decide, by decide⟩
     (by rw [rd₁, wr₁]; exact rr (inD' 0 (by decide))) (by rw [rd₁, wr₁, Offset.add_add]; exact rr (inD' 8 (by decide)))
-    (by rw [rd₁, wr₁]; exact rr (inW 128 (by decide)))
-    (by rw [rd₁, wr₁, Offset.add_add]; exact rr (inW 136 (by decide)))
+    (by rw [rd₁, wr₁]; exact rr (inW 128 (by have := sivOffs; omega)))
+    (by rw [rd₁, wr₁, Offset.add_add]; exact rr (inW 136 (by have := sivOffs; omega)))
     (by rw [wr₁]; exact inD' 0 (by decide)) (by rw [wr₁, Offset.add_add]; exact inD' 8 (by decide))
   refine WP.of_runBlock ⟨s₂, by rw [← xor2_eq] at run₂; exact run₂, ?_⟩
   refine WP.of_runBlock ⟨_, by
     simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLT, runBlock_cons, runStep_some, runBlock_nil, exec,
       Size.bits, State.read, gpr_write, BitVec.setWidth_eq]
     rfl, ?_⟩
-  have dW {d n : Nat} (hd : d + n ≤ 2560) (r : Region) (hr : r ∈ [(⟨W + BitVec.ofNat 64 dOff, 16⟩ : Region)]) :
+  have dW {d n : Nat} (hd : d + n ≤ 256) (r : Region) (hr : r ∈ [(⟨W + BitVec.ofNat 64 dOff, 16⟩ : Region)]) :
       (⟨W + BitVec.ofNat 64 d, n⟩ : Region).Disjoint r := by
-    simp only [List.mem_singleton] at hr; subst hr; exact hDW.symm.sub_left (Offset.sub_base W hd)
+    simp only [List.mem_singleton] at hr; subst hr
+    exact Offset.disjoint W (.inl (by simp only [dOff]; omega)) (by omega) (by simp only [dOff]; omega)
   refine ⟨fun r a b c d e f => by
       simp only [gpr_write, e, f, ite_false]
       rw [g₂ r a b, g₁ r a b c d], by simp [gpr_write, g₂ .x24 (by decide) (by decide),

@@ -6,7 +6,9 @@
 ///
 /// Contract: `VG.Spec.Sm4.Gcm.initContract`. The key context is `VG.Spec.Sm4.Gcm.KeyRepr`. Constant time: only the pointers may affect timing, not the key.
 ///
-/// It runs `vg_sm4_gcm_init`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_sm4_gcm_init_ctr32_sm4` if the CPU supports its features (`VG_SM4_GCM_INIT_CTR32_SM4_FEATURES`); or else `vg_sm4_gcm_init`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -17,8 +19,37 @@
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_sm4_gcm_init_auto(_dit: verified_garbage_cpu::Dit<'_>, key: *const [u8; 16], ctx: *mut [u64; 32]) {
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::sm4_gcm::vg_sm4_gcm_init(key, ctx) }
+    /// The type of the implementations.
+    type Impl = unsafe extern "C" fn(key: *const [u8; 16], ctx: *mut [u64; 32]);
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        if const { verified_garbage_cpu::target_contains(crate::sm4_gcm::VG_SM4_GCM_INIT_CTR32_SM4_FEATURES) }
+            || cpu.contains(crate::sm4_gcm::VG_SM4_GCM_INIT_CTR32_SM4_FEATURES)
+        {
+            return crate::sm4_gcm::vg_sm4_gcm_init_ctr32_sm4;
+        }
+        crate::sm4_gcm::vg_sm4_gcm_init
+    }
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "C" fn first(key: *const [u8; 16], ctx: *mut [u64; 32]) {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(key, ctx) }
+    }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(key, ctx) }
 }
 
 /// SM4-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag; RFC 8998 §3.5.1): with the key context `*ctx` that `vg_sm4_gcm_init` wrote, encrypts the `len` bytes at `data` in place, under the IV the `nonce_len` bytes at `nonce`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`. A shorter tag is the first bytes of this one.
@@ -27,7 +58,9 @@ pub unsafe fn vg_sm4_gcm_init_auto(_dit: verified_garbage_cpu::Dit<'_>, key: *co
 ///
 /// Contract: `VG.Spec.Sm4.Gcm.sealContract`. Constant time: only the pointers and the lengths may affect timing, not the key context, the nonce, the additional data or the data.
 ///
-/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_sm4_gcm_seal_aes` if the CPU supports its features (`VG_SM4_GCM_SEAL_AES_FEATURES`); or else `vg_sm4_gcm_seal`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_sm4_gcm_seal_ctr32_sm4_ghash_aes` if the CPU supports its features (`VG_SM4_GCM_SEAL_CTR32_SM4_GHASH_AES_FEATURES`); `vg_sm4_gcm_seal_ctr32_sm4` if the CPU supports its features (`VG_SM4_GCM_SEAL_CTR32_SM4_FEATURES`); `vg_sm4_gcm_seal_ghash_aes` if the CPU supports its features (`VG_SM4_GCM_SEAL_GHASH_AES_FEATURES`); or else `vg_sm4_gcm_seal`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -37,7 +70,7 @@ pub unsafe fn vg_sm4_gcm_init_auto(_dit: verified_garbage_cpu::Dit<'_>, key: *co
 /// * `data` must be valid for reads and writes of `len` bytes.
 /// * `tag` must be valid for reads and writes of 16 bytes.
 /// * `data` and `tag` must not overlap each other, `ctx`, `nonce` or `aad` (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the 4048 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the 4064 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_sm4_gcm_seal_auto(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
@@ -48,10 +81,20 @@ pub unsafe fn vg_sm4_gcm_seal_auto(_dit: verified_garbage_cpu::Dit<'_>, ctx: *co
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if const { verified_garbage_cpu::target_contains(crate::sm4_gcm::VG_SM4_GCM_SEAL_AES_FEATURES) }
-            || cpu.contains(crate::sm4_gcm::VG_SM4_GCM_SEAL_AES_FEATURES)
+        if const { verified_garbage_cpu::target_contains(crate::sm4_gcm::VG_SM4_GCM_SEAL_CTR32_SM4_GHASH_AES_FEATURES) }
+            || cpu.contains(crate::sm4_gcm::VG_SM4_GCM_SEAL_CTR32_SM4_GHASH_AES_FEATURES)
         {
-            return crate::sm4_gcm::vg_sm4_gcm_seal_aes;
+            return crate::sm4_gcm::vg_sm4_gcm_seal_ctr32_sm4_ghash_aes;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::sm4_gcm::VG_SM4_GCM_SEAL_CTR32_SM4_FEATURES) }
+            || cpu.contains(crate::sm4_gcm::VG_SM4_GCM_SEAL_CTR32_SM4_FEATURES)
+        {
+            return crate::sm4_gcm::vg_sm4_gcm_seal_ctr32_sm4;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::sm4_gcm::VG_SM4_GCM_SEAL_GHASH_AES_FEATURES) }
+            || cpu.contains(crate::sm4_gcm::VG_SM4_GCM_SEAL_GHASH_AES_FEATURES)
+        {
+            return crate::sm4_gcm::vg_sm4_gcm_seal_ghash_aes;
         }
         crate::sm4_gcm::vg_sm4_gcm_seal
     }
@@ -80,7 +123,9 @@ pub unsafe fn vg_sm4_gcm_seal_auto(_dit: verified_garbage_cpu::Dit<'_>, ctx: *co
 ///
 /// Contract: `VG.Spec.Sm4.Gcm.openContract`. Constant time but for the result: only the pointers, the lengths, `tag_len` and whether the function returns 1 or 0 may affect timing, not the key context, the nonce, the additional data, the data or the tag.
 ///
-/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_sm4_gcm_open_aes` if the CPU supports its features (`VG_SM4_GCM_OPEN_AES_FEATURES`); or else `vg_sm4_gcm_open`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_sm4_gcm_open_ctr32_sm4_ghash_aes` if the CPU supports its features (`VG_SM4_GCM_OPEN_CTR32_SM4_GHASH_AES_FEATURES`); `vg_sm4_gcm_open_ctr32_sm4` if the CPU supports its features (`VG_SM4_GCM_OPEN_CTR32_SM4_FEATURES`); `vg_sm4_gcm_open_ghash_aes` if the CPU supports its features (`VG_SM4_GCM_OPEN_GHASH_AES_FEATURES`); or else `vg_sm4_gcm_open`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -90,7 +135,7 @@ pub unsafe fn vg_sm4_gcm_seal_auto(_dit: verified_garbage_cpu::Dit<'_>, ctx: *co
 /// * `data` must be valid for reads and writes of `len` bytes.
 /// * `tag` must be valid for reads of `tag_len` bytes.
 /// * `data` must not overlap `ctx`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the 4048 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the 4080 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_sm4_gcm_open_auto(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
@@ -101,10 +146,20 @@ pub unsafe fn vg_sm4_gcm_open_auto(_dit: verified_garbage_cpu::Dit<'_>, ctx: *co
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if const { verified_garbage_cpu::target_contains(crate::sm4_gcm::VG_SM4_GCM_OPEN_AES_FEATURES) }
-            || cpu.contains(crate::sm4_gcm::VG_SM4_GCM_OPEN_AES_FEATURES)
+        if const { verified_garbage_cpu::target_contains(crate::sm4_gcm::VG_SM4_GCM_OPEN_CTR32_SM4_GHASH_AES_FEATURES) }
+            || cpu.contains(crate::sm4_gcm::VG_SM4_GCM_OPEN_CTR32_SM4_GHASH_AES_FEATURES)
         {
-            return crate::sm4_gcm::vg_sm4_gcm_open_aes;
+            return crate::sm4_gcm::vg_sm4_gcm_open_ctr32_sm4_ghash_aes;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::sm4_gcm::VG_SM4_GCM_OPEN_CTR32_SM4_FEATURES) }
+            || cpu.contains(crate::sm4_gcm::VG_SM4_GCM_OPEN_CTR32_SM4_FEATURES)
+        {
+            return crate::sm4_gcm::vg_sm4_gcm_open_ctr32_sm4;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::sm4_gcm::VG_SM4_GCM_OPEN_GHASH_AES_FEATURES) }
+            || cpu.contains(crate::sm4_gcm::VG_SM4_GCM_OPEN_GHASH_AES_FEATURES)
+        {
+            return crate::sm4_gcm::vg_sm4_gcm_open_ghash_aes;
         }
         crate::sm4_gcm::vg_sm4_gcm_open
     }
@@ -133,7 +188,9 @@ pub unsafe fn vg_sm4_gcm_open_auto(_dit: verified_garbage_cpu::Dit<'_>, ctx: *co
 ///
 /// Contract: `VG.Spec.Sm4.Gcm.streamEncryptContract`. Constant time: only the pointers, `aad_len`, `text_len` and `len` may affect timing, not the key context, the state or the data.
 ///
-/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_sm4_gcm_stream_encrypt_aes` if the CPU supports its features (`VG_SM4_GCM_STREAM_ENCRYPT_AES_FEATURES`); or else `vg_sm4_gcm_stream_encrypt`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_sm4_gcm_stream_encrypt_ctr32_sm4_ghash_aes` if the CPU supports its features (`VG_SM4_GCM_STREAM_ENCRYPT_CTR32_SM4_GHASH_AES_FEATURES`); `vg_sm4_gcm_stream_encrypt_ctr32_sm4` if the CPU supports its features (`VG_SM4_GCM_STREAM_ENCRYPT_CTR32_SM4_FEATURES`); `vg_sm4_gcm_stream_encrypt_ghash_aes` if the CPU supports its features (`VG_SM4_GCM_STREAM_ENCRYPT_GHASH_AES_FEATURES`); or else `vg_sm4_gcm_stream_encrypt`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -141,7 +198,7 @@ pub unsafe fn vg_sm4_gcm_open_auto(_dit: verified_garbage_cpu::Dit<'_>, ctx: *co
 /// * `state` must be valid for reads and writes of 80 bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
 /// * `state` and `data` must not overlap each other or `ctx` (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `data` may overlap the 4032 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `state` and `data` may overlap the 4048 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_sm4_gcm_stream_encrypt_auto(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
@@ -152,10 +209,20 @@ pub unsafe fn vg_sm4_gcm_stream_encrypt_auto(_dit: verified_garbage_cpu::Dit<'_>
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if const { verified_garbage_cpu::target_contains(crate::sm4_gcm::VG_SM4_GCM_STREAM_ENCRYPT_AES_FEATURES) }
-            || cpu.contains(crate::sm4_gcm::VG_SM4_GCM_STREAM_ENCRYPT_AES_FEATURES)
+        if const { verified_garbage_cpu::target_contains(crate::sm4_gcm::VG_SM4_GCM_STREAM_ENCRYPT_CTR32_SM4_GHASH_AES_FEATURES) }
+            || cpu.contains(crate::sm4_gcm::VG_SM4_GCM_STREAM_ENCRYPT_CTR32_SM4_GHASH_AES_FEATURES)
         {
-            return crate::sm4_gcm::vg_sm4_gcm_stream_encrypt_aes;
+            return crate::sm4_gcm::vg_sm4_gcm_stream_encrypt_ctr32_sm4_ghash_aes;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::sm4_gcm::VG_SM4_GCM_STREAM_ENCRYPT_CTR32_SM4_FEATURES) }
+            || cpu.contains(crate::sm4_gcm::VG_SM4_GCM_STREAM_ENCRYPT_CTR32_SM4_FEATURES)
+        {
+            return crate::sm4_gcm::vg_sm4_gcm_stream_encrypt_ctr32_sm4;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::sm4_gcm::VG_SM4_GCM_STREAM_ENCRYPT_GHASH_AES_FEATURES) }
+            || cpu.contains(crate::sm4_gcm::VG_SM4_GCM_STREAM_ENCRYPT_GHASH_AES_FEATURES)
+        {
+            return crate::sm4_gcm::vg_sm4_gcm_stream_encrypt_ghash_aes;
         }
         crate::sm4_gcm::vg_sm4_gcm_stream_encrypt
     }
@@ -184,7 +251,9 @@ pub unsafe fn vg_sm4_gcm_stream_encrypt_auto(_dit: verified_garbage_cpu::Dit<'_>
 ///
 /// Contract: `VG.Spec.Sm4.Gcm.streamDecryptContract`. Constant time: only the pointers, `aad_len`, `text_len` and `len` may affect timing, not the key context, the state or the data.
 ///
-/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_sm4_gcm_stream_decrypt_aes` if the CPU supports its features (`VG_SM4_GCM_STREAM_DECRYPT_AES_FEATURES`); or else `vg_sm4_gcm_stream_decrypt`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_sm4_gcm_stream_decrypt_ctr32_sm4_ghash_aes` if the CPU supports its features (`VG_SM4_GCM_STREAM_DECRYPT_CTR32_SM4_GHASH_AES_FEATURES`); `vg_sm4_gcm_stream_decrypt_ctr32_sm4` if the CPU supports its features (`VG_SM4_GCM_STREAM_DECRYPT_CTR32_SM4_FEATURES`); `vg_sm4_gcm_stream_decrypt_ghash_aes` if the CPU supports its features (`VG_SM4_GCM_STREAM_DECRYPT_GHASH_AES_FEATURES`); or else `vg_sm4_gcm_stream_decrypt`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -192,7 +261,7 @@ pub unsafe fn vg_sm4_gcm_stream_encrypt_auto(_dit: verified_garbage_cpu::Dit<'_>
 /// * `state` must be valid for reads and writes of 80 bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
 /// * `state` and `data` must not overlap each other or `ctx` (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `data` may overlap the 4032 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `state` and `data` may overlap the 4048 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_sm4_gcm_stream_decrypt_auto(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
@@ -203,10 +272,20 @@ pub unsafe fn vg_sm4_gcm_stream_decrypt_auto(_dit: verified_garbage_cpu::Dit<'_>
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if const { verified_garbage_cpu::target_contains(crate::sm4_gcm::VG_SM4_GCM_STREAM_DECRYPT_AES_FEATURES) }
-            || cpu.contains(crate::sm4_gcm::VG_SM4_GCM_STREAM_DECRYPT_AES_FEATURES)
+        if const { verified_garbage_cpu::target_contains(crate::sm4_gcm::VG_SM4_GCM_STREAM_DECRYPT_CTR32_SM4_GHASH_AES_FEATURES) }
+            || cpu.contains(crate::sm4_gcm::VG_SM4_GCM_STREAM_DECRYPT_CTR32_SM4_GHASH_AES_FEATURES)
         {
-            return crate::sm4_gcm::vg_sm4_gcm_stream_decrypt_aes;
+            return crate::sm4_gcm::vg_sm4_gcm_stream_decrypt_ctr32_sm4_ghash_aes;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::sm4_gcm::VG_SM4_GCM_STREAM_DECRYPT_CTR32_SM4_FEATURES) }
+            || cpu.contains(crate::sm4_gcm::VG_SM4_GCM_STREAM_DECRYPT_CTR32_SM4_FEATURES)
+        {
+            return crate::sm4_gcm::vg_sm4_gcm_stream_decrypt_ctr32_sm4;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::sm4_gcm::VG_SM4_GCM_STREAM_DECRYPT_GHASH_AES_FEATURES) }
+            || cpu.contains(crate::sm4_gcm::VG_SM4_GCM_STREAM_DECRYPT_GHASH_AES_FEATURES)
+        {
+            return crate::sm4_gcm::vg_sm4_gcm_stream_decrypt_ghash_aes;
         }
         crate::sm4_gcm::vg_sm4_gcm_stream_decrypt
     }
@@ -233,7 +312,9 @@ pub unsafe fn vg_sm4_gcm_stream_decrypt_auto(_dit: verified_garbage_cpu::Dit<'_>
 ///
 /// Contract: `VG.Spec.Sm4.Gcm.streamFinishContract`. Constant time: only the pointers, `aad_len` and `text_len` may affect timing, not the key context or the state.
 ///
-/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_sm4_gcm_stream_finish_aes` if the CPU supports its features (`VG_SM4_GCM_STREAM_FINISH_AES_FEATURES`); or else `vg_sm4_gcm_stream_finish`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_sm4_gcm_stream_finish_ctr32_sm4_ghash_aes` if the CPU supports its features (`VG_SM4_GCM_STREAM_FINISH_CTR32_SM4_GHASH_AES_FEATURES`); `vg_sm4_gcm_stream_finish_ctr32_sm4` if the CPU supports its features (`VG_SM4_GCM_STREAM_FINISH_CTR32_SM4_FEATURES`); `vg_sm4_gcm_stream_finish_ghash_aes` if the CPU supports its features (`VG_SM4_GCM_STREAM_FINISH_GHASH_AES_FEATURES`); or else `vg_sm4_gcm_stream_finish`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -242,7 +323,7 @@ pub unsafe fn vg_sm4_gcm_stream_decrypt_auto(_dit: verified_garbage_cpu::Dit<'_>
 /// * `tag` must be valid for reads and writes of 16 bytes.
 /// * The contents of `state` on return are unspecified.
 /// * `state` and `tag` must not overlap each other or `ctx` (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `tag` may overlap the 4032 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `state` and `tag` may overlap the 4048 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_sm4_gcm_stream_finish_auto(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
@@ -253,10 +334,20 @@ pub unsafe fn vg_sm4_gcm_stream_finish_auto(_dit: verified_garbage_cpu::Dit<'_>,
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if const { verified_garbage_cpu::target_contains(crate::sm4_gcm::VG_SM4_GCM_STREAM_FINISH_AES_FEATURES) }
-            || cpu.contains(crate::sm4_gcm::VG_SM4_GCM_STREAM_FINISH_AES_FEATURES)
+        if const { verified_garbage_cpu::target_contains(crate::sm4_gcm::VG_SM4_GCM_STREAM_FINISH_CTR32_SM4_GHASH_AES_FEATURES) }
+            || cpu.contains(crate::sm4_gcm::VG_SM4_GCM_STREAM_FINISH_CTR32_SM4_GHASH_AES_FEATURES)
         {
-            return crate::sm4_gcm::vg_sm4_gcm_stream_finish_aes;
+            return crate::sm4_gcm::vg_sm4_gcm_stream_finish_ctr32_sm4_ghash_aes;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::sm4_gcm::VG_SM4_GCM_STREAM_FINISH_CTR32_SM4_FEATURES) }
+            || cpu.contains(crate::sm4_gcm::VG_SM4_GCM_STREAM_FINISH_CTR32_SM4_FEATURES)
+        {
+            return crate::sm4_gcm::vg_sm4_gcm_stream_finish_ctr32_sm4;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::sm4_gcm::VG_SM4_GCM_STREAM_FINISH_GHASH_AES_FEATURES) }
+            || cpu.contains(crate::sm4_gcm::VG_SM4_GCM_STREAM_FINISH_GHASH_AES_FEATURES)
+        {
+            return crate::sm4_gcm::vg_sm4_gcm_stream_finish_ghash_aes;
         }
         crate::sm4_gcm::vg_sm4_gcm_stream_finish
     }
@@ -283,7 +374,9 @@ pub unsafe fn vg_sm4_gcm_stream_finish_auto(_dit: verified_garbage_cpu::Dit<'_>,
 ///
 /// Contract: `VG.Spec.Sm4.Gcm.streamVerifyContract`. Constant time: only the pointers, `aad_len`, `text_len` and `tag_len` may affect timing, not the key context, the state or the tags.
 ///
-/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_sm4_gcm_stream_verify_aes` if the CPU supports its features (`VG_SM4_GCM_STREAM_VERIFY_AES_FEATURES`); or else `vg_sm4_gcm_stream_verify`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_sm4_gcm_stream_verify_ctr32_sm4_ghash_aes` if the CPU supports its features (`VG_SM4_GCM_STREAM_VERIFY_CTR32_SM4_GHASH_AES_FEATURES`); `vg_sm4_gcm_stream_verify_ctr32_sm4` if the CPU supports its features (`VG_SM4_GCM_STREAM_VERIFY_CTR32_SM4_FEATURES`); `vg_sm4_gcm_stream_verify_ghash_aes` if the CPU supports its features (`VG_SM4_GCM_STREAM_VERIFY_GHASH_AES_FEATURES`); or else `vg_sm4_gcm_stream_verify`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -292,7 +385,7 @@ pub unsafe fn vg_sm4_gcm_stream_finish_auto(_dit: verified_garbage_cpu::Dit<'_>,
 /// * `tag` must be valid for reads of `tag_len` bytes.
 /// * The contents of `state` on return are unspecified.
 /// * `state` must not overlap `ctx` or `tag` (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `tag` may overlap the 4032 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `state` and `tag` may overlap the 4048 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_sm4_gcm_stream_verify_auto(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
@@ -303,10 +396,20 @@ pub unsafe fn vg_sm4_gcm_stream_verify_auto(_dit: verified_garbage_cpu::Dit<'_>,
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if const { verified_garbage_cpu::target_contains(crate::sm4_gcm::VG_SM4_GCM_STREAM_VERIFY_AES_FEATURES) }
-            || cpu.contains(crate::sm4_gcm::VG_SM4_GCM_STREAM_VERIFY_AES_FEATURES)
+        if const { verified_garbage_cpu::target_contains(crate::sm4_gcm::VG_SM4_GCM_STREAM_VERIFY_CTR32_SM4_GHASH_AES_FEATURES) }
+            || cpu.contains(crate::sm4_gcm::VG_SM4_GCM_STREAM_VERIFY_CTR32_SM4_GHASH_AES_FEATURES)
         {
-            return crate::sm4_gcm::vg_sm4_gcm_stream_verify_aes;
+            return crate::sm4_gcm::vg_sm4_gcm_stream_verify_ctr32_sm4_ghash_aes;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::sm4_gcm::VG_SM4_GCM_STREAM_VERIFY_CTR32_SM4_FEATURES) }
+            || cpu.contains(crate::sm4_gcm::VG_SM4_GCM_STREAM_VERIFY_CTR32_SM4_FEATURES)
+        {
+            return crate::sm4_gcm::vg_sm4_gcm_stream_verify_ctr32_sm4;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::sm4_gcm::VG_SM4_GCM_STREAM_VERIFY_GHASH_AES_FEATURES) }
+            || cpu.contains(crate::sm4_gcm::VG_SM4_GCM_STREAM_VERIFY_GHASH_AES_FEATURES)
+        {
+            return crate::sm4_gcm::vg_sm4_gcm_stream_verify_ghash_aes;
         }
         crate::sm4_gcm::vg_sm4_gcm_stream_verify
     }
@@ -336,6 +439,8 @@ pub unsafe fn vg_sm4_gcm_stream_verify_auto(_dit: verified_garbage_cpu::Dit<'_>,
 /// Contract: `VG.Spec.Gcm.streamInitContract` (AES-GCM's, which reads only the hash subkey of the key context). The streaming state is `J₀`, the GHASH accumulator, a partial block, the next counter block and a keystream block (`VG.Spec.Gcm.StreamRepr`). Constant time: only the pointers and `nonce_len` may affect timing, not the key context or the nonce.
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_sm4_gcm_stream_init_aes` if the CPU supports its features (`VG_SM4_GCM_STREAM_INIT_AES_FEATURES`); or else `vg_sm4_gcm_stream_init`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -385,6 +490,8 @@ pub unsafe fn vg_sm4_gcm_stream_init_auto(_dit: verified_garbage_cpu::Dit<'_>, c
 /// Contract: `VG.Spec.Gcm.streamAadContract` (AES-GCM's, which reads only the hash subkey of the key context). Constant time: only the pointers, `aad_len` and `len` may affect timing, not the key context, the state or the data.
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_sm4_gcm_stream_aad_aes` if the CPU supports its features (`VG_SM4_GCM_STREAM_AAD_AES_FEATURES`); or else `vg_sm4_gcm_stream_aad`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///

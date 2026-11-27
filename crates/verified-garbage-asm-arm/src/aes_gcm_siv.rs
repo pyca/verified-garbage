@@ -9,6 +9,8 @@
 ///
 /// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 240 bytes.
@@ -18,7 +20,7 @@
 /// * `tag` must be valid for reads and writes of 16 bytes.
 /// * `rounds` must be 10 or 14.
 /// * `data` and `tag` must not overlap each other, `schedule`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the 3800 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the 3808 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_gcm_siv_seal(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
@@ -528,6 +530,29 @@ ldr r10, [r11, #152]
 ldr lr, [r11, #160]
 ldr r11, [r11, #156]
 add sp, sp, #3792
+sub sp, sp, #3808
+add r12, sp, #0
+mov r2, #0
+mov r3, #119
+234:
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+add r12, r12, #32
+subs r3, r3, #1
+bne 234b
+add sp, sp, #3808
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
         vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
@@ -541,6 +566,8 @@ bx lr",
 ///
 /// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 240 bytes.
@@ -550,7 +577,7 @@ bx lr",
 /// * `tag` must be valid for reads of 16 bytes.
 /// * `rounds` must be 10 or 14.
 /// * `data` must not overlap `schedule`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the 3800 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the 3808 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_gcm_siv_open(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
@@ -1097,6 +1124,28 @@ ldr r10, [r11, #152]
 ldr lr, [r11, #160]
 ldr r11, [r11, #156]
 add sp, sp, #3792
+sub sp, sp, #3808
+add r12, sp, #0
+mov r2, #0
+mov r3, #119
+237:
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+add r12, r12, #32
+subs r3, r3, #1
+bne 237b
+add sp, sp, #3808
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
         vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,

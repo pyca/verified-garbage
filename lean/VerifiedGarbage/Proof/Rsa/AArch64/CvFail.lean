@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.AArch64.CvStore
-import VerifiedGarbage.Proof.Bignum.AArch64.PubFail
+import VerifiedGarbage.Proof.Bignum.AArch64.PcMain
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec

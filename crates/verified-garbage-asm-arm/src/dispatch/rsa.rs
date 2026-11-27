@@ -8,6 +8,8 @@
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_rsa_crt_values_umaal` if it is compiled (`any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd")`) and the CPU supports its features (`VG_RSA_CRT_VALUES_UMAAL_FEATURES`); or else `vg_rsa_crt_values`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `dp` must be valid for reads and writes of `dp_len` bytes.
@@ -69,6 +71,8 @@ pub unsafe fn vg_rsa_crt_values_auto(_dit: verified_garbage_cpu::Dit<'_>, dp: *m
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_rsa_recover_primes_det_umaal` if it is compiled (`any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd")`) and the CPU supports its features (`VG_RSA_RECOVER_PRIMES_DET_UMAAL_FEATURES`); or else `vg_rsa_recover_primes_det`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `p` must be valid for reads and writes of `p_len` bytes.
@@ -127,6 +131,8 @@ pub unsafe fn vg_rsa_recover_primes_det_auto(_dit: verified_garbage_cpu::Dit<'_>
 /// Contract: `VG.Spec.Rsa.checkKeyContract`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the private key.
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_rsa_check_key_umaal` if it is compiled (`any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd")`) and the CPU supports its features (`VG_RSA_CHECK_KEY_UMAAL_FEATURES`); or else `vg_rsa_check_key`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -190,6 +196,8 @@ pub unsafe fn vg_rsa_check_key_auto(_dit: verified_garbage_cpu::Dit<'_>, n: *con
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_rsa_private_precompute_umaal` if it is compiled (`any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd")`) and the CPU supports its features (`VG_RSA_PRIVATE_PRECOMPUTE_UMAAL_FEATURES`); or else `vg_rsa_private_precompute`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `pre` must be valid for reads and writes of `8 * pre_len` bytes.
@@ -204,7 +212,7 @@ pub unsafe fn vg_rsa_check_key_auto(_dit: verified_garbage_cpu::Dit<'_>, n: *con
 /// * `scratch_len` must be at least `16 * n_len + 32`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `pre` and `scratch` must not overlap each other, `n`, `p`, `q` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `pre`, `n`, `p`, `q` and `scratch` may overlap the 168 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `pre`, `n`, `p`, `q` and `scratch` may overlap the 216 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_rsa_private_precompute_auto(_dit: verified_garbage_cpu::Dit<'_>, pre: *mut u64, pre_len: usize, n: *const u8, n_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
@@ -248,6 +256,8 @@ pub unsafe fn vg_rsa_private_precompute_auto(_dit: verified_garbage_cpu::Dit<'_>
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_rsa_public_precompute_umaal` if it is compiled (`any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd")`) and the CPU supports its features (`VG_RSA_PUBLIC_PRECOMPUTE_UMAAL_FEATURES`); or else `vg_rsa_public_precompute`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `pre` must be valid for reads and writes of `8 * pre_len` bytes.
@@ -258,7 +268,7 @@ pub unsafe fn vg_rsa_private_precompute_auto(_dit: verified_garbage_cpu::Dit<'_>
 /// * `scratch_len` must be at least `8 * ⌈n_len / 8⌉ + 48`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `pre` and `scratch` must not overlap each other, `n` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `pre`, `n` and `scratch` may overlap the 56 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `pre`, `n` and `scratch` may overlap the 104 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_rsa_public_precompute_auto(_dit: verified_garbage_cpu::Dit<'_>, pre: *mut u64, pre_len: usize, n: *const u8, n_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {

@@ -1,6 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Curve
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.X86_64.InstrBits
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Scrub
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Reduce
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.TableSat
 public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.P224.Verified
@@ -11,7 +15,7 @@ import VerifiedGarbage.Proof.Framework.OmegaLit
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TComb
 meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.TableSat
 meta import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
-meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Curve
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Reduce
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P224.Verified
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P224.Lit
 meta import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
@@ -49,6 +53,11 @@ theorem coreK_p224 : coreK Impl.Ecdsa.X86_64.p224 = Proof.Ecdsa.X86_64.P224.sign
 theorem p224_blk : RfcT (cfgC Impl.Ecdsa.X86_64.p224 false 0) := by rfcT_decide
 
 
+/-- The tests of the instructions of `signP224`: one walk of it, and one
+match for each instruction (`Proof/Framework/X86_64/InstrBits.lean`). -/
+theorem p224_bits : Impl.Ecdsa.X86_64.signP224.allInstrs (hasBits (bMx + bSp + bNs)) = true := by
+  lit_decide
+
 /-- P-224, with the group law `hL`, the comb's tables `hT` and the inversions'
 soundness `hI`. -/
 def p224 (hL : Weierstrass.Law Spec.P224.curve)
@@ -64,11 +73,11 @@ def p224 (hL : Weierstrass.Law Spec.P224.curve)
   sh_eq := Proof.Ecdsa.X86_64.P224.p224_sh
   coreN := "vg_ecdsa_p224_sign_k"
   coreC := Impl.Ecdsa.X86_64.signP224
-  coreX := by rw [coreK_p224]; exact Proof.Ecdsa.X86_64.P224.sign_call_x86 hL hT hI
+  coreX := by rw [coreK_p224]; exact fun s h hc => Proof.Ecdsa.X86_64.P224.sign_call_x86 hL hT hI s h hc.hole_of_holeN2
   coreCT := by rw [coreK_p224]; exact Proof.Ecdsa.X86_64.P224.sign_ct
-  coreNs := by lit_decide
-  coreSp := by lit_decide
-  coreMx := by lit_decide
+  coreNs := Code.noRsp_of_bits rfl p224_bits
+  coreSp := Code.sp_of_bits rfl p224_bits
+  coreMx := Code.noMx_of_bits rfl p224_bits
   coreD := by lit_decide
   blk := p224_blk
 
@@ -83,5 +92,29 @@ theorem p224T_verified (hL : Weierstrass.Law Spec.P224.curve)
   have hsat := sat_one (T := Spec.Ecdsa.Rfc6979.Curves.p224) h.1 Proof.Ecdsa.X86_64.P224.satMem h.2
     (by rw [Proof.Ecdsa.X86_64.P224.p224W_length]; decide) Proof.Ecdsa.X86_64.P224.satMem_held (by decide) rfl
   exact signT_verified ⟨rfl, by decide, by decide⟩ rfl h.1 hsat
+
+
+/-! ## The function as emitted -/
+
+theorem p224_stub (hL : Weierstrass.Law Spec.P224.curve) (hT : Weierstrass.CombOkW Spec.P224.curve 7 37 Impl.P224.p224Comb7 Impl.P224.p224Comb7Start) (hI : Weierstrass.X86_64.InvSounds) : SignStub (p224 hL hT hI) Spec.Ecdsa.Rfc6979.Curves.p224.tries := by
+  dsimp only [SignStub, cfgS, cfgT, p224]; exact ⟨by lit_decide, by lit_decide⟩
+
+/-- `vg_ecdsa_p224_sign`, with the tables of `vs`, as emitted (`Impl.Ecdsa.Rfc6979.X86_64.Fn.sign`), its
+cleanup included, meets its contract in constant time and returns without secret residue. -/
+theorem p224T_scrubbed (hL : Weierstrass.Law Spec.P224.curve) (hT : Weierstrass.CombOkW Spec.P224.curve 7 37 Impl.P224.p224Comb7 Impl.P224.p224Comb7Start) (hI : Weierstrass.X86_64.InvSounds) (vs : List Proof.Pbkdf2.Md.X86_64.MdHash) (h : OK vs ∧ "VG_P224_COMB" ∉ Proof.HmacTable.X86_64.names vs)
+    (hu : ∀ w ∈ vs, Proof.HmacTable.X86_64.HmacUp w) :
+    VerifiedScrubbed X86_64.target (Impl.Ecdsa.Rfc6979.X86_64.Fn.sign (cfgT (p224 hL hT hI) Spec.Ecdsa.Rfc6979.Curves.p224.tries vs))
+      (specK Spec.Ecdsa.Rfc6979.Curves.p224 Impl.Ecdsa.X86_64.p224.combConsts vs) 32 :=
+  sign_scrubbed (api := Spec.Ecdsa.Rfc6979.Curves.p224SignApi)
+    { tables := [("hmac", Proof.HmacTable.X86_64.tables vs)]
+      code := signCodeT (p224 hL hT hI) Spec.Ecdsa.Rfc6979.Curves.p224.tries vs
+      verified := p224T_verified hL hT hI vs h
+      spSafe := signCode_sp _ _ _ }
+    (signOut _ Impl.Ecdsa.X86_64.p224.combConsts _ _) rfl rfl hu (p224_stub hL hT hI)
+
+theorem p224T_spSafe (hL : Weierstrass.Law Spec.P224.curve) (hT : Weierstrass.CombOkW Spec.P224.curve 7 37 Impl.P224.p224Comb7 Impl.P224.p224Comb7Start) (hI : Weierstrass.X86_64.InvSounds) (vs : List Proof.Pbkdf2.Md.X86_64.MdHash) :
+    (Impl.Ecdsa.Rfc6979.X86_64.Fn.sign (cfgT (p224 hL hT hI) Spec.Ecdsa.Rfc6979.Curves.p224.tries vs)).all
+      (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  X86_64.Scrub.scrubKs_spSafe (signCode_sp _ _ _)
 
 end VG.Proof.Ecdsa.Rfc6979.X86_64

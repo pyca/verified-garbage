@@ -61,7 +61,7 @@ def candidateSlots : List Nat := [0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40]
 
 def candidateRegions (p : CandidateParams) (sp : BitVec 32) : List Region :=
   [⟨State.addr p.out, p.length⟩, ⟨State.addr p.base, 8 * p.capacity⟩,
-    FrameStack.belowA sp 56, ⟨State.addr (sp + 40#32), 28⟩]
+    FrameStack.belowA sp 104, ⟨State.addr (sp + 40#32), 28⟩]
 
 structure CandidateContext (p : CandidateParams) (consumed : Nat) (s : State) : Prop where
   saved : SavedFrame (candidateValues p consumed) candidateSlots s
@@ -71,14 +71,14 @@ structure CandidateContext (p : CandidateParams) (consumed : Nat) (s : State) : 
   tapeRead : InRegions (s.rd ++ s.wr) (State.addr p.tape) p.bytes.length
   tapeBytes : Spec.Rsa.bytesAt s.mem (State.addr p.tape) p.bytes.length = p.bytes
   consumedBound : consumed ≤ p.bytes.length
-  stackBelow : 56 ≤ s.sp.toNat
+  stackBelow : 104 ≤ s.sp.toNat
   stackOutput : (⟨State.addr s.sp, 72⟩ : Region).Disjoint ⟨State.addr p.out, p.length⟩
   stackUsed : (⟨State.addr s.sp, 72⟩ : Region).Disjoint ⟨State.addr p.usedPtr, 8⟩
   stackScratch : (⟨State.addr s.sp, 72⟩ : Region).Disjoint ⟨State.addr p.base, 8 * p.capacity⟩
   stackTape : (⟨State.addr s.sp, 72⟩ : Region).Disjoint ⟨State.addr p.tape, p.bytes.length⟩
-  belowOutput : (FrameStack.belowA s.sp 56).Disjoint ⟨State.addr p.out, p.length⟩
-  belowUsed : (FrameStack.belowA s.sp 56).Disjoint ⟨State.addr p.usedPtr, 8⟩
-  belowScratch : (FrameStack.belowA s.sp 56).Disjoint ⟨State.addr p.base, 8 * p.capacity⟩
-  belowTape : (FrameStack.belowA s.sp 56).Disjoint ⟨State.addr p.tape, p.bytes.length⟩
+  belowOutput : (FrameStack.belowA s.sp 104).Disjoint ⟨State.addr p.out, p.length⟩
+  belowUsed : (FrameStack.belowA s.sp 104).Disjoint ⟨State.addr p.usedPtr, 8⟩
+  belowScratch : (FrameStack.belowA s.sp 104).Disjoint ⟨State.addr p.base, 8 * p.capacity⟩
+  belowTape : (FrameStack.belowA s.sp 104).Disjoint ⟨State.addr p.tape, p.bytes.length⟩
 
 end VG.Proof.Ffdh.Arm.ParameterCandidate

@@ -1,4 +1,6 @@
 module
+
+public import VerifiedGarbage.Proof.MillerRabin.AArch64.Contract
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrSq
 public import VerifiedGarbage.Impl.MillerRabin.AArch64.Round
 public import VerifiedGarbage.Proof.MillerRabin.Contract
@@ -6,12 +8,62 @@ public import VerifiedGarbage.Proof.MillerRabin.AArch64.CallerSave
 import VerifiedGarbage.Proof.MillerRabin.AArch64.CallerContext
 import VerifiedGarbage.Proof.MillerRabin.AArch64.CallerRestore
 import VerifiedGarbage.Proof.MillerRabin.AArch64.Correct
-import VerifiedGarbage.Proof.MillerRabin.AArch64.CallerKept
 import VerifiedGarbage.Proof.MillerRabin.AArch64.Prepared
 import VerifiedGarbage.Proof.Bignum.AArch64.MontFnVerified
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.MillerRabin.Keeps
+
+/-! ### `MillerRabin.AArch64.CallerKept`, which this module and modules that import it used -/
+
+section
+
+/-! # Recover the caller's header and padding after the prepared round -/
+
+@[expose] public section
+
+namespace VG.Proof.MillerRabin.AArch64.Caller
+
+open VG VG.Proof.Bignum VG.Impl.Bignum VG.Impl.Bignum.Public
+
+theorem kept_header {B : Addr} {n w j : Nat} {m m' : Mem}
+    (h : Proof.MillerRabin.Round.Keeps Proof.MillerRabin.Round.compact B n w m m')
+    (hn : 32 ≤ n) (hj : j < 32) (he : j ∉ [23, 26, 29, 30, 1]) :
+    word m' B (8 * j) = word m B (8 * j) := by
+  apply keeps_word h (by omega_arith)
+  · intro k hk
+    have hne : j ≠ k := fun hEq => he (hEq ▸ hk)
+    omega_arith
+  · simp only [Proof.MillerRabin.Round.compact, List.mem_cons, List.not_mem_nil, or_false]
+    rintro i (rfl | rfl | rfl | rfl | rfl) <;>
+      left <;> simp only [Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes] <;> omega_arith
+  · left
+    simp only [Proof.MillerRabin.Round.compact, Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes]
+    omega_arith
+
+theorem kept_padding {B : Addr} {n w d : Nat} {m m' : Mem}
+    (h : Proof.MillerRabin.Round.Keeps Proof.MillerRabin.Round.compact B n w m m')
+    (hn : pad w + 16 ≤ 8 * n) (hd : d ≤ 8) :
+    word m' B (pad w + d) = word m B (pad w + d) := by
+  apply keeps_word h (by omega_arith)
+  · simp only [Proof.MillerRabin.Round.compact, List.mem_cons, List.not_mem_nil, or_false]
+    rintro i (rfl | rfl | rfl | rfl | rfl) <;>
+      right <;> simp only [pad, slot, hdrBytes, aOne] <;> omega_arith
+  · simp only [Proof.MillerRabin.Round.compact, List.mem_cons, List.not_mem_nil, or_false]
+    rintro i (rfl | rfl | rfl | rfl | rfl)
+    all_goals simp only [Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes, pad, slot, hdrBytes, aOne]
+    all_goals omega_arith
+  · left
+    simp only [Proof.MillerRabin.Round.compact, Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes,
+      pad, slot, hdrBytes, aOne]
+    omega_arith
+
+end VG.Proof.MillerRabin.AArch64.Caller
+
+end
+
+end
 
 /-! ### `MillerRabin.AArch64.CallerSaved`, which only this module used -/
 
@@ -56,13 +108,14 @@ open VG.Impl.MillerRabin.AArch64 VG.Impl.MillerRabin.AArch64.Caller
 open VG.Proof.MlKem.AArch64 (Keep)
 open VG.Proof.Bignum.AArch64.MontFn (numAt_eq)
 
-theorem call_ok (M : Mont) (name : String) (hnf : (round M.mm).noFrames = true)
+theorem call_ok {R : Prog isa} (hR : ∀ s, roundContract.pre s → ∃ tr t, Exec isa R s tr t ∧ abiPreserved s t ∧ roundContract.post s t)
+    (name : String) (hnf : R.noFrames = true)
     {s : State} {B : Addr} {Z w c bm b : Nat}
     (hc : MrCtx s B Z w c bm) (he : ECtx s.mem B w c)
     (h4 : 4 ≤ w) (h128 : w ≤ 128) (hEZ : slot w aE + 8 * (w + 2) ≤ Z)
     (ho : c % 2 = 1) (h3 : 3 ≤ c)
     (hx : wv s.mem B (slot w aXm) w = b % c * 2 ^ (64 * w) % c) :
-    WP isa (call name (round M.mm)) s fun t =>
+    WP isa (call name R) s fun t =>
       t.gpr .x0 = B ∧ abiPreserved s t ∧
       Frame [⟨B, 8 * (32 + 28 * (w + 2))⟩] s.mem t.mem ∧
       ∃ m : Mem, Proof.MillerRabin.Round.Keeps Proof.MillerRabin.Round.compact B (32 + 28 * (w + 2)) w
@@ -118,7 +171,7 @@ theorem call_ok (M : Mont) (name : String) (hnf : (round M.mm).noFrames = true)
         (by have := hc.ws.scr.nowrap; omega_arith)
     · exact Offset.contains_base B (by simp only [pad, n, slot, hdrBytes, aOne]; omega_arith)
         (by have := hc.ws.scr.nowrap; omega_arith)
-  refine WP.seq (WP.callV (round_correct M) hpre (Covers.right hcover) hcover ?_ hnf)
+  refine WP.seq (WP.callV hR hpre (Covers.right hcover) hcover ?_ hnf)
   intro v hrd hwr hsp hf hregs hnever hvcs hp
   change roundPost e (v.withRegions [] [⟨B, 8 * n⟩]) at hp
   unfold roundPost at hp

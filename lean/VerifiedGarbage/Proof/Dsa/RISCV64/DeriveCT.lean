@@ -1,21 +1,19 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.RISCV64.ParamsCT
-public import VerifiedGarbage.Proof.Dsa.RISCV64.DeriveFront
+public import VerifiedGarbage.Proof.Dsa.RISCV64.DeriveFn
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 public meta import VerifiedGarbage.Proof.Bignum.RISCV64.Run
-import VerifiedGarbage.Proof.Dsa.RISCV64.DeriveFn
 import VerifiedGarbage.Proof.Bignum.RISCV64.PubCorrect
 import VerifiedGarbage.Proof.Framework.Flat
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Dsa.RISCV64.ParamsCT
-meta import VerifiedGarbage.Proof.Dsa.RISCV64.DeriveFront
+meta import VerifiedGarbage.Proof.Dsa.RISCV64.DeriveFn
 meta import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Taint
-meta import VerifiedGarbage.Proof.Dsa.RISCV64.DeriveFn
 meta import VerifiedGarbage.Proof.Bignum.RISCV64.PubCorrect
 meta import VerifiedGarbage.Proof.Framework.Flat
 meta import VerifiedGarbage.Proof.Framework.Offset
@@ -122,7 +120,7 @@ theorem frontD : ∀ v s, C0d v s → WP isa (.block Derive.entry) s (P0 v) := b
     dsrc (by rw [hrd]; simp) dPS (s.gpr .a3).isLt (Nat.le_refl _) k.2.1 k.2.2
   exact ⟨⟨hL, F.regs, F.scr, hK, dsrc (by rw [hrd]; simp) dXS (s.gpr .a6).isLt (Nat.le_refl _) k.2.1 k.2.2,
     src_nil (Nat.zero_min _), hK.bytes F.out (by simp only [dlayOf] at hZ ⊢; omega_using [hZ]),
-    (by simp only [vdD, dlayOf]; omega_using [hkl]), (fun h => nomatch h), fun o ho => by cases ho; exact F.outw⟩,
+    (by simp only [vdD, dlayOf]; omega_using [hkl]), (fun h => nomatch h), (fun o ho => by cases ho; exact F.outw), F.sigw⟩,
     F.lens.trans (congrArg _ (Nat.zero_min _).symm)⟩
 
 theorem outD : ∀ v s, C0d v s → v.out = some (oOf v) := by

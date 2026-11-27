@@ -1,23 +1,24 @@
 module
 
-public import VerifiedGarbage.Proof.AesCcm.Arm.Frame
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.Arm.Print
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Ccm.Contract
+import VerifiedGarbage.Proof.AesCcm.Arm.Scrub
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # AES-CCM (NIST SP 800-38C) on ARMv7 -/
 
-@[expose] public section
-
 namespace VG.Artifacts.AesCcm.Arm
 
-open VG.Proof.AesCcm.Arm
-
-def artifacts : List Artifact := [
+public def artifacts : List (Artifact Arm.target) := [
   Spec.Ccm.sealApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratch 2592 6 Impl.AesCcm.Arm.«seal»
-    verified := Proof.AesCcm.seal_keyed seal_framed },
+    code := Impl.AesCcm.Arm.Fn.«seal»
+    verified := Proof.AesCcm.Arm.Fn.«seal» },
   Spec.Ccm.openApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratch 2592 6 Impl.AesCcm.Arm.«open»
-    verified := Proof.AesCcm.open_keyed open_framed }]
+    code := Impl.AesCcm.Arm.Fn.«open»
+    verified := Proof.AesCcm.Arm.Fn.«open» }]
+
+spec_apis artifacts
 
 end VG.Artifacts.AesCcm.Arm

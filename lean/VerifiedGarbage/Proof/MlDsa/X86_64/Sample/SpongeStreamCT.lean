@@ -1,13 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.SpongeStream
-public import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Squeeze
-import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Absorb
-import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Pad
+public import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Pad
 import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.SpongeStream
-meta import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Squeeze
-meta import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Absorb
 meta import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Pad
 meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 

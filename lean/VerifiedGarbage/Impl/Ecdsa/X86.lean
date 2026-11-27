@@ -26,7 +26,8 @@ curves), from the code of `Impl/Weierstrass/X86.lean`, as on x86-64
 2. the bits of `k`, `p - 2` and `n - 2` are expanded into tables;
 3. `R = [k]G` by the ladder from `R = O = (0 : 1 : 0)` (for coordinates of
    at most 6 words, calling the point functions,
-   `Impl/Weierstrass/X86/LadderP.lean`), then
+   `Impl/Weierstrass/X86/LadderP.lean`), or, for a curve with a comb's
+   tables (`CombData`), by the comb (`Impl/Weierstrass/X86/TComb.lean`), then
    `x = X Z^(p-2)` (Montgomery's form left by a multiplication by 1) and
    `r = x mod n` (a conditional subtraction, as `x < p < 2n`);
 4. `s = k^(n-2) (e + r d) mod n`, in Montgomery form modulo `n`, then left;
@@ -134,12 +135,16 @@ the ladder's calls of the point functions read it again from
 (`Impl/Weierstrass/X86/LadderP.lean`). -/
 abbrev Args.ao (A : Args) : Nat := 4 + 4 * A.sc
 
-/-- A fixed-base comb's digit width, affine tables, offset point and symbol. -/
+/-- A fixed-base comb's digit width, affine tables, offset point and symbol,
+and which comb reads them: the one with Booth's digits and Jacobian mixed
+additions (`TCombJ.lean`: for `a = -3`, and scalars of as many bits as the
+order of `G`), or the one by complete additions (`TComb.lean`: any curve). -/
 structure CombData where
   w : Nat
   tbl : List (List (Nat × Nat))
   start : Nat × Nat
   tsym : String
+  jac : Bool := true
 
 /-- A curve as the code has it: `n` words, its parameters, the functions
 of its arithmetic modulo `p` and `n` (`SP`, `SN`), and an optional
@@ -176,7 +181,6 @@ def MP' : Mod where
   mo := c.sl MP
   tmp := c.sl TMP
   minv := BitVec.ofNat 64 (minv c.C.p)
-  red := Mont.X86.p256RedChoice c.n c.C.p
 def MN' : Mod := { n := c.n, mo := c.sl MN, tmp := c.sl TMP, minv := BitVec.ofNat 64 (minv c.C.n) }
 
 def pt (x y z : Nat) : Pt := ⟨c.sl x, c.sl y, c.sl z⟩
@@ -219,6 +223,12 @@ def combCfg (d : CombData) : TCombCfg where
 
 def combWords (d : CombData) : List (BitVec 64) := tcombWords c.n c.R c.C.p d.tbl
 
+/-- Whether the curve has the comb with Booth's digits and Jacobian additions. -/
+def combJac : Bool :=
+  match c.comb with
+  | none => false
+  | some d => d.jac
+
 def combConsts : List (String × List (BitVec 64)) :=
   match c.comb with
   | none => []
@@ -231,12 +241,23 @@ def tableAddr : Prog isa :=
   | none => .block []
   | some d => .frame (.symPush .eax d.tsym) (.block []) (.pop .ecx 1)
 
-/-- The fixed-base multiplication, after setup saved the table pointer. -/
+/-- The curve's comb, with what its addition reads in `EM` (`b`, or `3b` for
+the complete addition): the code of `vg_<curve>_comb`. -/
+def combBody (d : CombData) : Prog isa :=
+  if d.jac then .seq (.block (setConst c.n (c.sl EM) (c.mont c.C.b))) (c.combCfg d).combJ
+  else .seq (.block (setConst c.n (c.sl EM) (c.mont (3 * c.C.b)))) (c.combCfg d).comb
+
+/-- The name of the internal function of the curve's comb. -/
+def combName : String := s!"vg_{c.SP.curve}_comb"
+
+/-- The fixed-base multiplication, after setup saved the table pointer: the
+ladder, or a call of the curve's comb (`combBody`), an internal function that
+the public key, the signature and verification share. It keeps the working
+space in `edi`, as its caller has it, and takes no argument. -/
 def gMul : Prog isa :=
   match c.comb with
   | none => ladder c.ladderCfg c.SP
-  | some d => .seq (.block (setConst c.n (c.sl EM) (c.mont c.C.b)))
-      (c.combCfg d).combJ
+  | some d => .call c.combName (c.combBody d)
 
 def powP : PowCfg := ⟨c.MP', c.sl ACC, c.sl PT, c.sl RZ, c.sl ONEP, bitsAt c.n 1, 64 * c.n⟩
 def powN : PowCfg := ⟨c.MN', c.sl ACC, c.sl PT, c.sl KM, c.sl ONEN, bitsAt c.n 2, 64 * c.n⟩
@@ -245,10 +266,10 @@ def invP : InvCfg := InvCfg.ofMod c.MP' c.SP (c.sl ACC) (c.sl RZ) (invAt c.n) c.
 def invN : InvCfg := InvCfg.ofMod c.MN' c.SN (c.sl ACC) (c.sl KM) (invAt c.n) c.C.n
 
 /-- Batched divsteps invert 256-bit field elements. -/
-def pPow : Prog isa := if c.n = 4 ∧ c.C.len = 32 then c.invP.inv else powField c.powP c.SP c.C.p
+def pPow : Prog isa := if c.n = 4 ∧ c.C.len = 32 then .call (c.SP.fn "inv") c.invP.inv else powField c.powP c.SP c.C.p
 
 /-- Batched divsteps invert 256-bit scalars. -/
-def nPow : Prog isa := if c.n = 4 ∧ c.C.len = 32 then c.invN.inv else powScalar c.powN c.SN c.C.n
+def nPow : Prog isa := if c.n = 4 ∧ c.C.len = 32 then .call (c.SN.fn "inv") c.invN.inv else powScalar c.powN c.SN c.C.n
 
 /-- The callee-saved registers, and where they are saved. -/
 def saved : List (Reg × Nat) := [(.ebx, 0), (.esi, 4), (.edi, 8), (.ebp, 12)]

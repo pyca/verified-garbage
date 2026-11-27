@@ -11,7 +11,7 @@ e, e_len, d, d_len, input, input_len, p, p_len, q, q_len, dp, dp_len, dq,
 dq_len, qinv, qinv_len, scratch, scratch_len)`, the last nineteen on the
 stack. As on AArch64 (`Impl/RsaPkcs1Enc/AArch64/Decrypt.lean`), with
 `vg_rsa_private_checked` (`priv`, by its name `privN`; for
-`vg_rsa_pkcs1_decrypt_precomputed`, `vg_rsa_private_checked_precomputed`,
+`vg_rsa_pkcs1_decrypt_precomputed_body`, `vg_rsa_private_checked_precomputed`,
 given the key's precomputed values `pre`, our arguments 23 and 24) and SHA-256's and
 HMAC-SHA-256's functions (`H`), it runs draft-irtf-cfrg-rsa-guidance-10 §7.2:
 
@@ -345,7 +345,7 @@ def body (pc : Bool) (privN : String) (priv : Prog isa) : Prog isa :=
     (.seq (.block dCopy) (.seq Bignum.Arm.copyBytes (.seq (hashD H) (.seq (kdkMac H) (.seq (clLoop H)
     (.seq (amLoop H) (.seq alPart selPart))))))))))
 
-/-- `vg_rsa_pkcs1_decrypt`; with `pc`, `vg_rsa_pkcs1_decrypt_precomputed`,
+/-- `vg_rsa_pkcs1_decrypt`; with `pc`, `vg_rsa_pkcs1_decrypt_precomputed_body`,
 calling `vg_rsa_private_checked_precomputed` with `pre` and `pre_len` too. -/
 def code (pc : Bool) (privN : String) (priv : Prog isa) : Prog isa := wrap frameBytes (body H pc privN priv)
 

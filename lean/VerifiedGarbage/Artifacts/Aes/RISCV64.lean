@@ -1,19 +1,23 @@
 module
 
-public import VerifiedGarbage.Proof.Aes.RISCV64.Frame
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.RISCV64.Print
+public import VerifiedGarbage.TCB.RISCV64.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Aes.Contract
+import VerifiedGarbage.Proof.Aes.RISCV64.Scrub
+import VerifiedGarbage.Impl.Aes.RISCV64.Fn
+import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.Aes.RISCV64.CodeLit
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # AES (FIPS 197) on RISC-V -/
 
-@[expose] public section
-
 namespace VG.Artifacts.Aes.RISCV64
 
-def artifacts : List Artifact := [
+public def artifacts : List (Artifact RISCV64.target) := [
   Spec.Aes.expandKeyApi.artifact RISCV64.target {
-    code := Impl.StackScratch.RISCV64.withStackScratchWiped 512 .a3 64 Impl.Aes.RISCV64.expandKey
-    verified := Proof.Aes.RISCV64.expandKey_framed }]
+    code := Impl.Aes.RISCV64.Fn.expandKey
+    verified := Proof.Aes.RISCV64.Scrub.expandKey_scrubbed }]
+
+spec_apis artifacts
 
 end VG.Artifacts.Aes.RISCV64

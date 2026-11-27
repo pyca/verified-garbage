@@ -397,6 +397,35 @@ vg_cast5_ofb:
 	stp x17, x17, [x16, #80]
 	str x17, [sp, #96]
 	add sp, sp, #112
+	movz x4, #0, lsl #0
+	movz x6, #0, lsl #0
+	movz x7, #0, lsl #0
+	movz x10, #0, lsl #0
+	movz x13, #0, lsl #0
+	movz x14, #0, lsl #0
+	movz x15, #0, lsl #0
+	movi v0.2d, #0
+	movi v1.2d, #0
+	movi v2.2d, #0
+	movi v3.2d, #0
+	movi v4.2d, #0
+	movi v5.2d, #0
+	movi v16.2d, #0
+	movi v17.2d, #0
+	movi v18.2d, #0
+	movi v19.2d, #0
+	tst x4, x4
+	sub sp, sp, #112
+	movi v31.2d, #0
+	add x9, sp, #0
+	str q31, [x9, #0]
+	str q31, [x9, #16]
+	str q31, [x9, #32]
+	str q31, [x9, #48]
+	str q31, [x9, #64]
+	str q31, [x9, #80]
+	str q31, [x9, #96]
+	add sp, sp, #112
 	ret
 	.p2align 6
 
@@ -807,6 +836,35 @@ vg_cast5_ofb_final:
 	stp x17, x17, [x16, #64]
 	stp x17, x17, [x16, #80]
 	str x17, [sp, #96]
+	add sp, sp, #112
+	movz x4, #0, lsl #0
+	movz x6, #0, lsl #0
+	movz x7, #0, lsl #0
+	movz x10, #0, lsl #0
+	movz x13, #0, lsl #0
+	movz x14, #0, lsl #0
+	movz x15, #0, lsl #0
+	movi v0.2d, #0
+	movi v1.2d, #0
+	movi v2.2d, #0
+	movi v3.2d, #0
+	movi v4.2d, #0
+	movi v5.2d, #0
+	movi v16.2d, #0
+	movi v17.2d, #0
+	movi v18.2d, #0
+	movi v19.2d, #0
+	tst x4, x4
+	sub sp, sp, #112
+	movi v31.2d, #0
+	add x9, sp, #0
+	str q31, [x9, #0]
+	str q31, [x9, #16]
+	str q31, [x9, #32]
+	str q31, [x9, #48]
+	str q31, [x9, #64]
+	str q31, [x9, #80]
+	str q31, [x9, #96]
 	add sp, sp, #112
 	ret
 	.p2align 6

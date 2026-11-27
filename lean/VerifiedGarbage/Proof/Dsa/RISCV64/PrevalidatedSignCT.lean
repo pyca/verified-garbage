@@ -7,8 +7,7 @@ public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 public meta import VerifiedGarbage.Proof.Bignum.RISCV64.Run
 import VerifiedGarbage.Proof.Dsa.RISCV64.PrevalidatedCT
-import VerifiedGarbage.Proof.Dsa.RISCV64.SignCT
-import VerifiedGarbage.Proof.Dsa.RISCV64.CheckKey
+import VerifiedGarbage.Proof.Dsa.RISCV64.VerifyComb
 import VerifiedGarbage.Proof.Dsa.PackedBytes
 import VerifiedGarbage.Proof.Dsa.Encoding
 import VerifiedGarbage.Proof.Bignum.Octets
@@ -17,8 +16,7 @@ import VerifiedGarbage.Proof.Framework.Flat
 meta import VerifiedGarbage.Proof.Dsa.RISCV64.SignCTB
 meta import VerifiedGarbage.Proof.Dsa.RISCV64.PrevalidatedSignFn
 meta import VerifiedGarbage.Proof.Dsa.RISCV64.PrevalidatedCT
-meta import VerifiedGarbage.Proof.Dsa.RISCV64.SignCT
-meta import VerifiedGarbage.Proof.Dsa.RISCV64.CheckKey
+meta import VerifiedGarbage.Proof.Dsa.RISCV64.VerifyComb
 meta import VerifiedGarbage.Proof.Dsa.PackedBytes
 meta import VerifiedGarbage.Proof.Dsa.Encoding
 meta import VerifiedGarbage.Proof.Bignum.Octets
@@ -250,7 +248,7 @@ theorem pinsTsp6 : Pins (At C0sp FTsp 6) [.s6] :=
     obtain ⟨_, _, u₁, -, e₁, e₂⟩ := exec_seqL_append.mp e
     have h₁ : u₁.gpr .s6 = v.L.S := (at_sem (Φ := C0sp) (F := FTsp) (n := 1) (M := P0)
       (fun _ _ h => WP.of_flat (c := .block Sign.entry) rfl (frontSp _ _ h)) ⟨s₀, _, h₀, e₁⟩).1.regs.s6
-    exact ⟨(Exec.gpr_callFree s6_keptsp e₂ rfl).trans h₁, trivial⟩
+    exact ⟨(Exec.gpr s6_keptsp e₂).trans h₁, trivial⟩
 
 theorem signPre_rel : RelCT isa (Two C0sp) PrevalidatedSign.sign fun _ _ => True := by
   refine chain_start (chain_cons runTsp (m := 1) (by decide) ?_ ?_)

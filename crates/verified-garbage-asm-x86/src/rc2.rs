@@ -3,9 +3,64 @@
 //! `assembly/rc2.s`.
 #![allow(dead_code)]
 
+/// The CPU features `vg_rc2_cbc_init_ssse3` requires (`Artifact.features`).
+pub const VG_RC2_CBC_INIT_SSSE3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3);
+
 /// Starts RC2-CBC without padding (RFC 2268, NIST SP 800-38A §6.2), in either direction: checks that `key_len` is in 1..=128, then that `effective_bits` is in 1..=1024, then that `iv_len` is 8, and returns 1, 2 or 3 respectively for the first that is not (`VG.Spec.Rc2.Error.code`). Otherwise writes to `*ctx` the context with the key schedule of the `key_len` bytes at `key` with `effective_bits` effective key bits (`VG.Spec.Rc2.expandKey`), the `iv_len` bytes at `iv` as the chaining value, and no pending input (`VG.Spec.Rc2.contextAt`), and returns 0. Continue with `vg_rc2_cbc_encrypt_chained` or `vg_rc2_cbc_decrypt_chained` on the schedule at the start of `*ctx` and the chaining value at `ctx + 128`. Effective bits are independent of the supplied key length.
 ///
 /// Contract: `VG.Spec.Rc2.cbcInitContract`. Constant time: only the pointers, `key_len`, `effective_bits` and `iv_len` may affect timing, not the key or the IV.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// The function may overwrite the arguments on the stack, as the calling convention lets it.
+///
+/// # Safety
+///
+/// * `key` must be valid for reads of `key_len` bytes.
+/// * `iv` must be valid for reads of `iv_len` bytes.
+/// * `ctx` must be valid for reads and writes of 144 bytes.
+/// * If the function returns nonzero, the contents of `ctx` on return are unspecified.
+/// * `ctx` must not overlap `key` or `iv` (distinct Rust objects never do).
+/// * None of `key`, `iv` and `ctx` may overlap the arguments on the stack, overlap the return address on the stack or the 636 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `ssse3` target feature.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_rc2_cbc_init_ssse3(key: *const u8, key_len: usize, effective_bits: usize, iv: *const u8, iv_len: usize, ctx: *mut [u8; 144]) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "jaQkoP3//4uEJGQCAACJRCQEi4QkaAIAAIlEJAiLhCRsAgAAiUQkDIuEJHACAACJRCQQi4QkdAIAAIlEJBSLhCR4AgAAiUQkGIngg8AgiUQkHLgBAAAAi0wkCIPpAYH5gAAAAA=="
+jae 20f
+.base64 "uAIAAACLTCQMg+kBgfkABAAA"
+jae 22f
+.base64 "uAMAAACLTCQUg/kI"
+jne 24f
+.base64 "uAAAAAA="
+jmp 25f
+24:
+25:
+jmp 23f
+22:
+23:
+jmp 21f
+20:
+21:
+.base64 "hcA="
+jne 26f
+.base64 "i0QkEItMJBiLEImRgAAAAItQBImRhAAAAItEJByJmAACAACJsAQCAACJw4nOi1QkDItMJAiLRCQEU1ZSUVA="
+call {vg_rc2_expand_key_ssse3}
+.base64 "WFhYWFiLswQCAACLmwACAAC4AAAAAA=="
+jmp 27f
+26:
+27:
+.base64 "jaQkYAIAAGYP78C5AAAAAI2kJIT9///zD38EJPMPf0QkEPMPf0QkIPMPf0QkMPMPf0QkQPMPf0QkUPMPf0QkYPMPf0QkcPMPf4QkgAAAAPMPf4QkkAAAAPMPf4QkoAAAAPMPf4QksAAAAPMPf4QkwAAAAPMPf4Qk0AAAAPMPf4Qk4AAAAPMPf4Qk8AAAAPMPf4QkAAEAAPMPf4QkEAEAAPMPf4QkIAEAAPMPf4QkMAEAAPMPf4QkQAEAAPMPf4QkUAEAAPMPf4QkYAEAAPMPf4QkcAEAAPMPf4QkgAEAAPMPf4QkkAEAAPMPf4QkoAEAAPMPf4QksAEAAPMPf4QkwAEAAPMPf4Qk0AEAAPMPf4Qk4AEAAPMPf4Qk8AEAAPMPf4QkAAIAAPMPf4QkEAIAAPMPf4QkIAIAAPMPf4QkMAIAAPMPf4QkQAIAAPMPf4QkUAIAAPMPf4QkYAIAAImMJHACAACJjCR0AgAAiYwkeAIAAI2kJHwCAAC6AAAAADHJZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7//D"
+.p2align 6"#,
+        vg_rc2_expand_key_ssse3 = sym super::rc2::vg_rc2_expand_key_ssse3::vg_rc2_expand_key_ssse3,
+    )
+}
+
+/// Starts RC2-CBC without padding (RFC 2268, NIST SP 800-38A §6.2), in either direction: checks that `key_len` is in 1..=128, then that `effective_bits` is in 1..=1024, then that `iv_len` is 8, and returns 1, 2 or 3 respectively for the first that is not (`VG.Spec.Rc2.Error.code`). Otherwise writes to `*ctx` the context with the key schedule of the `key_len` bytes at `key` with `effective_bits` effective key bits (`VG.Spec.Rc2.expandKey`), the `iv_len` bytes at `iv` as the chaining value, and no pending input (`VG.Spec.Rc2.contextAt`), and returns 0. Continue with `vg_rc2_cbc_encrypt_chained` or `vg_rc2_cbc_decrypt_chained` on the schedule at the start of `*ctx` and the chaining value at `ctx + 128`. Effective bits are independent of the supplied key length.
+///
+/// Contract: `VG.Spec.Rc2.cbcInitContract`. Constant time: only the pointers, `key_len`, `effective_bits` and `iv_len` may affect timing, not the key or the IV.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -44,7 +99,7 @@ call {vg_rc2_expand_key}
 jmp 27f
 26:
 27:
-.base64 "uQAAAACJTCQgiUwkJIlMJCiJTCQsiUwkMIlMJDSJTCQ4iUwkPIlMJECJTCREiUwkSIlMJEyJTCRQiUwkVIlMJFiJTCRciUwkYIlMJGSJTCRoiUwkbIlMJHCJTCR0iUwkeIlMJHyJjCSAAAAAiYwkhAAAAImMJIgAAACJjCSMAAAAiYwkkAAAAImMJJQAAACJjCSYAAAAiYwknAAAAImMJKAAAACJjCSkAAAAiYwkqAAAAImMJKwAAACJjCSwAAAAiYwktAAAAImMJLgAAACJjCS8AAAAiYwkwAAAAImMJMQAAACJjCTIAAAAiYwkzAAAAImMJNAAAACJjCTUAAAAiYwk2AAAAImMJNwAAACJjCTgAAAAiYwk5AAAAImMJOgAAACJjCTsAAAAiYwk8AAAAImMJPQAAACJjCT4AAAAiYwk/AAAAImMJAABAACJjCQEAQAAiYwkCAEAAImMJAwBAACJjCQQAQAAiYwkFAEAAImMJBgBAACJjCQcAQAAiYwkIAEAAImMJCQBAACJjCQoAQAAiYwkLAEAAImMJDABAACJjCQ0AQAAiYwkOAEAAImMJDwBAACJjCRAAQAAiYwkRAEAAImMJEgBAACJjCRMAQAAiYwkUAEAAImMJFQBAACJjCRYAQAAiYwkXAEAAImMJGABAACJjCRkAQAAiYwkaAEAAImMJGwBAACJjCRwAQAAiYwkdAEAAImMJHgBAACJjCR8AQAAiYwkgAEAAImMJIQBAACJjCSIAQAAiYwkjAEAAImMJJABAACJjCSUAQAAiYwkmAEAAImMJJwBAACJjCSgAQAAiYwkpAEAAImMJKgBAACJjCSsAQAAiYwksAEAAImMJLQBAACJjCS4AQAAiYwkvAEAAImMJMABAACJjCTEAQAAiYwkyAEAAImMJMwBAACJjCTQAQAAiYwk1AEAAImMJNgBAACJjCTcAQAAiYwk4AEAAImMJOQBAACJjCToAQAAiYwk7AEAAImMJPABAACJjCT0AQAAiYwk+AEAAImMJPwBAACJjCQAAgAAiYwkBAIAAImMJAgCAACJjCQMAgAAiYwkEAIAAImMJBQCAACJjCQYAgAAiYwkHAIAAImMJCACAACJjCQkAgAAiYwkKAIAAImMJCwCAACJjCQwAgAAiYwkNAIAAImMJDgCAACJjCQ8AgAAiYwkQAIAAImMJEQCAACJjCRIAgAAiYwkTAIAAImMJFACAACJjCRUAgAAiYwkWAIAAImMJFwCAACNpCRgAgAAww=="
+.base64 "jaQkYAIAAGYP78C5AAAAAI2kJIj9///zD38EJPMPf0QkEPMPf0QkIPMPf0QkMPMPf0QkQPMPf0QkUPMPf0QkYPMPf0QkcPMPf4QkgAAAAPMPf4QkkAAAAPMPf4QkoAAAAPMPf4QksAAAAPMPf4QkwAAAAPMPf4Qk0AAAAPMPf4Qk4AAAAPMPf4Qk8AAAAPMPf4QkAAEAAPMPf4QkEAEAAPMPf4QkIAEAAPMPf4QkMAEAAPMPf4QkQAEAAPMPf4QkUAEAAPMPf4QkYAEAAPMPf4QkcAEAAPMPf4QkgAEAAPMPf4QkkAEAAPMPf4QkoAEAAPMPf4QksAEAAPMPf4QkwAEAAPMPf4Qk0AEAAPMPf4Qk4AEAAPMPf4Qk8AEAAPMPf4QkAAIAAPMPf4QkEAIAAPMPf4QkIAIAAPMPf4QkMAIAAPMPf4QkQAIAAPMPf4QkUAIAAPMPf4QkYAIAAImMJHACAACJjCR0AgAAjaQkeAIAALoAAAAAMclmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/8M="
 .p2align 6"#,
         vg_rc2_expand_key = sym super::rc2::vg_rc2_expand_key::vg_rc2_expand_key,
     )
@@ -61,3 +116,7 @@ pub(crate) mod vg_rc2_encrypt_block;
 #[rustfmt::skip]
 #[path = "internal/vg_rc2_expand_key.rs"]
 pub(crate) mod vg_rc2_expand_key;
+
+#[rustfmt::skip]
+#[path = "internal/vg_rc2_expand_key_ssse3.rs"]
+pub(crate) mod vg_rc2_expand_key_ssse3;

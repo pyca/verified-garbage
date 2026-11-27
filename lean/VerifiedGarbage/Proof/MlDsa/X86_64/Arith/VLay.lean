@@ -1,12 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.Arith.VectorNtt
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VMem
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VMem
 public import VerifiedGarbage.Proof.MlKem.X86_64.VLay
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Ntt
 public import VerifiedGarbage.Proof.MlDsa.Arith.Mem
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Table
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VLanes
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 

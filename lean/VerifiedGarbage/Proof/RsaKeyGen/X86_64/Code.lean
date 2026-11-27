@@ -102,36 +102,36 @@ theorem kEntry_ok {s : State} {B : Addr} (hB : stackArg s 3 = B)
       hw 5 (by decide), hw kOut (by decide), hw kLen (by decide), hw kUsedP (by decide), hw kE (by decide),
       hw kElen (by decide), hw kP (by decide)]
     exact kEntryMem_facts _ _ _ _ _ _ _ _ _ _ _ _ _ _
-  have ha₁ : ∀ i < 4, InRegions (t₁.rd ++ t₁.wr) (stackArgAddr s i) 8 := fun i hi => by
+  obtain ha₁ : ∀ i < 4, InRegions (t₁.rd ++ t₁.wr) (stackArgAddr s i) 8 := fun i hi => by
     rw [k₁.2.1, k₁.2.2]; exact ha i hi
-  have hw₁ : ∀ i < 32, InRegions t₁.wr (off B (8 * i)) 8 := fun i hi => by rw [k₁.2.2]; exact hw i hi
-  have hsp₁ : t₁.gpr .rsp = s.gpr .rsp := k₁.gpr (by decide)
+  obtain hw₁ : ∀ i < 32, InRegions t₁.wr (off B (8 * i)) 8 := fun i hi => by rw [k₁.2.2]; exact hw i hi
+  obtain hsp₁ : t₁.gpr .rsp = s.gpr .rsp := k₁.gpr (by decide)
   -- `p_len`.
   refine WP.mono (WP.keep [.rax] (Q := fun t => t.gpr .r11 = B ∧
       t.mem = t₁.mem.writeW (off B (8 * kPlen)) (stackArg s 0)) (by
     xrun [State.ea, hdr11, hsp₁, show s.gpr .rsp + BitVec.ofInt 64 8 = stackArgAddr s 0 from rfl, ha₁ 0 (by decide),
       hsep _ ho₁ 0 (by decide), h11, hdrOff, hw₁ kPlen (by decide)]) rfl) fun t₂ ⟨⟨h11₂, hm₂⟩, k₂⟩ => ?_
-  have ho₂ : Outside B 0 (8 * 32) s.mem t₂.mem := by rw [hm₂]; exact Outside.store_hdr ho₁ (by decide) (by decide) _
-  have ha₂ : ∀ i < 4, InRegions (t₂.rd ++ t₂.wr) (stackArgAddr s i) 8 := fun i hi => by
+  obtain ho₂ : Outside B 0 (8 * 32) s.mem t₂.mem := by rw [hm₂]; exact Outside.store_hdr ho₁ (by decide) (by decide) _
+  obtain ha₂ : ∀ i < 4, InRegions (t₂.rd ++ t₂.wr) (stackArgAddr s i) 8 := fun i hi => by
     rw [k₂.2.1, k₂.2.2]; exact ha₁ i hi
-  have hw₂ : ∀ i < 32, InRegions t₂.wr (off B (8 * i)) 8 := fun i hi => by rw [k₂.2.2]; exact hw₁ i hi
-  have hsp₂ : t₂.gpr .rsp = s.gpr .rsp := (k₂.gpr (by decide)).trans hsp₁
+  obtain hw₂ : ∀ i < 32, InRegions t₂.wr (off B (8 * i)) 8 := fun i hi => by rw [k₂.2.2]; exact hw₁ i hi
+  obtain hsp₂ : t₂.gpr .rsp = s.gpr .rsp := (k₂.gpr (by decide)).trans hsp₁
   -- `rand`.
   refine WP.mono (WP.keep [.rax] (Q := fun t => t.gpr .r11 = B ∧
       t.mem = t₂.mem.writeW (off B (8 * kRand)) (stackArg s 1)) (by
     xrun [State.ea, hdr11, hsp₂, show s.gpr .rsp + BitVec.ofInt 64 16 = stackArgAddr s 1 from rfl, ha₂ 1 (by decide),
       hsep _ ho₂ 1 (by decide), h11₂, hdrOff, hw₂ kRand (by decide)]) rfl) fun t₃ ⟨⟨h11₃, hm₃⟩, k₃⟩ => ?_
-  have ho₃ : Outside B 0 (8 * 32) s.mem t₃.mem := by rw [hm₃]; exact Outside.store_hdr ho₂ (by decide) (by decide) _
-  have ha₃ : ∀ i < 4, InRegions (t₃.rd ++ t₃.wr) (stackArgAddr s i) 8 := fun i hi => by
+  obtain ho₃ : Outside B 0 (8 * 32) s.mem t₃.mem := by rw [hm₃]; exact Outside.store_hdr ho₂ (by decide) (by decide) _
+  obtain ha₃ : ∀ i < 4, InRegions (t₃.rd ++ t₃.wr) (stackArgAddr s i) 8 := fun i hi => by
     rw [k₃.2.1, k₃.2.2]; exact ha₂ i hi
-  have hw₃ : ∀ i < 32, InRegions t₃.wr (off B (8 * i)) 8 := fun i hi => by rw [k₃.2.2]; exact hw₂ i hi
-  have hsp₃ : t₃.gpr .rsp = s.gpr .rsp := (k₃.gpr (by decide)).trans hsp₂
+  obtain hw₃ : ∀ i < 32, InRegions t₃.wr (off B (8 * i)) 8 := fun i hi => by rw [k₃.2.2]; exact hw₂ i hi
+  obtain hsp₃ : t₃.gpr .rsp = s.gpr .rsp := (k₃.gpr (by decide)).trans hsp₂
   -- `rand_len`, and the base into `rdi`.
   refine WP.mono (WP.keep [.rax, .rdi] (Q := fun t => t.gpr .rdi = B ∧
       t.mem = t₃.mem.writeW (off B (8 * kRandLen)) (stackArg s 2)) (by
     xrun [State.ea, hdr11, hsp₃, show s.gpr .rsp + BitVec.ofInt 64 24 = stackArgAddr s 2 from rfl, ha₃ 2 (by decide),
       hsep _ ho₃ 2 (by decide), h11₃, hdrOff, hw₃ kRandLen (by decide)]) rfl) fun t ⟨⟨hdi, hm⟩, k⟩ => ?_
-  have hs : ∀ {i j : Nat} {x : BitVec 64}, word t₁.mem B (8 * j) = x → i ≠ j → i < 32 → j < 32 →
+  obtain hs : ∀ {i j : Nat} {x : BitVec 64}, word t₁.mem B (8 * j) = x → i ≠ j → i < 32 → j < 32 →
       j ≠ kPlen → j ≠ kRand → j ≠ kRandLen → word t.mem B (8 * j) = x := fun {i j x} h _ _ hj h1 h2 h3 => by
     rw [hm, hm₃, hm₂]
     exact word_skip (word_skip (word_skip h (Ne.symm h1) (by decide) hj) (Ne.symm h2) (by decide) hj)
@@ -217,19 +217,19 @@ theorem kctx_of {s : State} (h : candPre s) : KCtx s := by
     dRo, dRu, dRe, dRp, dRr, dRs, dRa, wO, wU, wE, wP, wR, wS, hk, hl1, hl8, hpl, hsl⟩ := h
   obtain ⟨hk1, hk2, hk8⟩ := hk
   unfold Spec.Rsa.scratchWords at hsl
-  have hs : Scr s (arg s 3) ((arg s 4).toNat * 8) := Scr.of_mem (by rw [hwr]; simp) wS
+  obtain hs : Scr s (arg s 3) ((arg s 4).toNat * 8) := Scr.of_mem (by rw [hwr]; simp) wS
   have hn := hs.nowrap
-  have ha : ∀ i < 4, InRegions (s.rd ++ s.wr) (stackArgAddr s i) 8 := fun i hi =>
+  obtain ha : ∀ i < 4, InRegions (s.rd ++ s.wr) (stackArgAddr s i) 8 := fun i hi =>
     ⟨⟨stackArgAddr s 0, 40⟩, by rw [hrd]; simp,
       by rw [stackArgAddr_add s i]; exact Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])⟩
-  have hsep : ∀ m', Outside (arg s 3) 0 (8 * 32) s.mem m' → ∀ i < 3, m'.readW (stackArgAddr s i) 64 = stackArg s i :=
+  obtain hsep : ∀ m', Outside (arg s 3) 0 (8 * 32) s.mem m' → ∀ i < 3, m'.readW (stackArgAddr s i) 64 = stackArg s i :=
     fun m' ho i hi => Mem.readW_congr fun b hb => ho _ (Or.inr (by
       have := out_scr dsa.symm (contains_byte (stackArgAddr s 0) (i := 8 * i + b) (by omega_using [hi, hb]) (by omega_using []))
       rw [stackArgAddr_add s i, BitVec.add_assoc, BitVec.ofNat_add_ofNat]; omega_using [hsl, this]))
-  have he := src_of_region (s := s) (B := arg s 3) (Z := (arg s 4).toNat * 8) (by rw [hrd]; simp) (by omega_using []) des
-  have hp := src_of_region (s := s) (B := arg s 3) (Z := (arg s 4).toNat * 8) (by rw [hrd]; simp) (by omega_using []) dps
-  have hr := src_of_region (s := s) (B := arg s 3) (Z := (arg s 4).toNat * 8) (by rw [hrd]; simp) (by omega_using []) drs
-  have ho : OutUp s (arg s 3) ((arg s 4).toNat * 8) (s.gpr .rdi) (s.gpr .rdx) (s.gpr .rsi).toNat := by
+  obtain he := src_of_region (s := s) (B := arg s 3) (Z := (arg s 4).toNat * 8) (by rw [hrd]; simp) (by omega_using []) des
+  obtain hp := src_of_region (s := s) (B := arg s 3) (Z := (arg s 4).toNat * 8) (by rw [hrd]; simp) (by omega_using []) dps
+  obtain hr := src_of_region (s := s) (B := arg s 3) (Z := (arg s 4).toNat * 8) (by rw [hrd]; simp) (by omega_using []) drs
+  obtain ho : OutUp s (arg s 3) ((arg s 4).toNat * 8) (s.gpr .rdi) (s.gpr .rdx) (s.gpr .rsi).toNat := by
     refine ⟨⟨⟨s.gpr .rdx, 8⟩, by rw [hwr]; simp, ?_⟩, fun b hb => out_scr dUs (contains_byte _ (by omega_using [hb]) (by omega_using [])),
       fun j hj => ⟨_, by rw [hwr]; exact List.mem_cons_self .., contains_byte _ (by omega_using [hj]) (by omega_using [])⟩,
       fun j hj => out_scr dOs (contains_byte _ (by omega_using [hj]) (by omega_using [])), fun j hj b hb he => ?_⟩
@@ -242,7 +242,7 @@ theorem kctx_of {s : State} (h : candPre s) : KCtx s := by
       (by rw [← hh]; exact contains_byte _ (by omega_using [hi]) (by omega_using [])),
     fun i hi j hj hh => dOr _ (contains_byte (s.gpr .rdi) (i := j) (by omega_using [hj]) (by omega_using []))
       (by rw [← hh]; exact contains_byte _ (by omega_using [hi]) (by omega_using [])), fun b hb => ?_⟩
-  have hc := contains_byte (s.gpr .rsp) (i := b) (len := 8) (by omega_using [hb]) (by omega_using [])
+  obtain hc := contains_byte (s.gpr .rsp) (i := b) (len := 8) (by omega_using [hb]) (by omega_using [])
   exact ⟨out_scr dRs hc, fun c hc' he => dRu _ hc (by rw [he]; exact contains_byte _ (by omega_using [hc']) (by omega_using [])),
     fun j hj he => dRo _ hc (by rw [he]; exact contains_byte _ (by omega_using [hj]) (by omega_using []))⟩
 
@@ -269,16 +269,16 @@ theorem front_ok {s t₁ : State} (c : KCtx s) (he : EntryPost s t₁ (arg s 3))
   have hZ := c.hZ
   have hk1 := c.k1
   have hk2 := c.k2
-  have hs₁ := hs.congr he.keep.2.2
+  obtain hs₁ := hs.congr he.keep.2.2
   refine WP.seq (WP.mono (zeroOut_ok (k := (s.gpr .rsi).toNat) hs₁ he.rdi (by omega_using [hZ, hk1]) (by omega_using [hk1]) (by omega_using [hk2]) he.out
     (by rw [he.len, BitVec.ofNat_toNat, BitVec.setWidth_eq]) (fun j hj => by rw [he.keep.2.2]; exact c.ou.outw j hj))
     fun t₂ ⟨hz₂, hf₂, k₂⟩ => ?_)
-  have hs₂ := hs₁.congr k₂.2.2
-  have hw₂ : ∀ i < 32, word t₂.mem (arg s 3) (8 * i) = word t₁.mem (arg s 3) (8 * i) := fun i hi =>
+  obtain hs₂ := hs₁.congr k₂.2.2
+  obtain hw₂ : ∀ i < 32, word t₂.mem (arg s 3) (8 * i) = word t₁.mem (arg s 3) (8 * i) := fun i hi =>
     Mem.readW_congr fun b hb => hf₂ _ fun j hj he' => by
       have := c.ou.outZ j hj; rw [← he', ofs_off _ (by omega_using [hi, hb])] at this; omega_using [hZ, hk1, hi, hb, this]
-  have hdi₂ : t₂.gpr .rdi = arg s 3 := (k₂.gpr (by decide)).trans he.rdi
-  have hl₂ : ∀ i < 32, InRegions (t₂.rd ++ t₂.wr) (off (arg s 3) (8 * i)) 8 := fun i hi => hs₂.ld (by omega_using [hZ, hk1, hi])
+  obtain hdi₂ : t₂.gpr .rdi = arg s 3 := (k₂.gpr (by decide)).trans he.rdi
+  obtain hl₂ : ∀ i < 32, InRegions (t₂.rd ++ t₂.wr) (off (arg s 3) (8 * i)) 8 := fun i hi => hs₂.ld (by omega_using [hZ, hk1, hi])
   refine WP.mono (WP.keep [.rax, .rcx] (Q := fun t => t.cf = some (decide ((arg s 2).toNat < (s.gpr .rsi).toNat)) ∧
       t.mem = t₂.mem) (by
     xrun [State.ea, hdr, hdi₂, hdrOff, hl₂ kRandLen (by decide), hl₂ kLen (by decide), hw₂ kRandLen (by decide),
@@ -306,16 +306,16 @@ theorem mainCtx_of {s t₁ t₃ : State} {w : Nat} (c : KCtx s) (he : EntryPost 
   have hk1 := c.k1
   have hk2 := c.k2
   have hk8 := c.k8
-  have k13 : Keep [.r11, .rax, .rdi, .rsi, .rcx] s t₃ := (he.keep.trans h.keep).mono (by decide)
-  have hs₃ := hs.congr k13.2.2
-  have hdi₃ : t₃.gpr .rdi = arg s 3 := (h.keep.gpr (by decide)).trans he.rdi
-  have hrs : ∀ i < 32, word t₃.mem (arg s 3) (8 * i) = word t₁.mem (arg s 3) (8 * i) := fun i hi => h.word c hi
-  have hhi : ∀ x, 8 * 32 ≤ ofs (arg s 3) x → (∀ j < (s.gpr .rsi).toNat, x ≠ s.gpr .rdi + BitVec.ofNat 64 j) →
+  obtain k13 : Keep [.r11, .rax, .rdi, .rsi, .rcx] s t₃ := (he.keep.trans h.keep).mono (by decide)
+  obtain hs₃ := hs.congr k13.2.2
+  obtain hdi₃ : t₃.gpr .rdi = arg s 3 := (h.keep.gpr (by decide)).trans he.rdi
+  obtain hrs : ∀ i < 32, word t₃.mem (arg s 3) (8 * i) = word t₁.mem (arg s 3) (8 * i) := fun i hi => h.word c hi
+  obtain hhi : ∀ x, 8 * 32 ≤ ofs (arg s 3) x → (∀ j < (s.gpr .rsi).toNat, x ≠ s.gpr .rdi + BitVec.ofNat 64 j) →
       t₃.mem x = s.mem x := fun x hx hx' => by
     rw [h.frame x hx', he.frame x (Or.inr (by omega_using [hx]))]
-  have ho₃ : OutUp t₃ (arg s 3) ((arg s 4).toNat * 8) (s.gpr .rdi) (s.gpr .rdx) (s.gpr .rsi).toNat :=
+  obtain ho₃ : OutUp t₃ (arg s 3) ((arg s 4).toNat * 8) (s.gpr .rdi) (s.gpr .rdx) (s.gpr .rsi).toNat :=
     c.ou.congr k13.2.2
-  have hsrc : ∀ {p : Addr} {bs : List Byte}, Src s (arg s 3) ((arg s 4).toNat * 8) p bs →
+  obtain hsrc : ∀ {p : Addr} {bs : List Byte}, Src s (arg s 3) ((arg s 4).toNat * 8) p bs →
       (∀ i < bs.length, ∀ j < (s.gpr .rsi).toNat, p + BitVec.ofNat 64 i ≠ s.gpr .rdi + BitVec.ofNat 64 j) →
       Src t₃ (arg s 3) ((arg s 4).toNat * 8) p bs := fun {p bs} h hd =>
     VG.Proof.RsaKeyGen.X86_64.Src.congr' h (fun i hi => hhi _ (by have := h.out i hi; omega_using [hZ, hk1, this]) (hd i hi)) k13.2.1 k13.2.2

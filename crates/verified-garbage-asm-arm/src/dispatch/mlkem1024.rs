@@ -8,6 +8,8 @@
 ///
 /// It runs `vg_mlkem1024_check_ek`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `ek` must be valid for reads of 1568 bytes.
@@ -24,6 +26,8 @@ pub unsafe fn vg_mlkem1024_check_ek_auto(_dit: verified_garbage_cpu::Dit<'_>, ek
 /// Contract: `VG.Spec.MlKem1024.keyGenContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (the last 32 bytes of the encapsulation key), but not on anything else of the seed or the keys.
 ///
 /// It runs `vg_mlkem1024_keygen`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -47,6 +51,8 @@ pub unsafe fn vg_mlkem1024_keygen_auto(_dit: verified_garbage_cpu::Dit<'_>, seed
 /// Contract: `VG.Spec.MlKem1024.encapsContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (the last 32 bytes of `*ek`), but not on anything else of the key, on the randomness or on the outputs.
 ///
 /// It runs `vg_mlkem1024_encaps`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -72,6 +78,8 @@ pub unsafe fn vg_mlkem1024_encaps_auto(_dit: verified_garbage_cpu::Dit<'_>, ek: 
 /// Contract: `VG.Spec.MlKem1024.encapsHContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (the last 32 bytes of `*ek`), but not on anything else of the key, on its hash, on the randomness or on the outputs.
 ///
 /// It runs `vg_mlkem1024_encaps_h`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -99,6 +107,8 @@ pub unsafe fn vg_mlkem1024_encaps_h_auto(_dit: verified_garbage_cpu::Dit<'_>, ek
 /// Contract: `VG.Spec.MlKem1024.decapsContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (bytes 3072–3103 of `*dk`), but not on anything else of the key, on the ciphertext, or on whether it was rejected.
 ///
 /// It runs `vg_mlkem1024_decaps`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///

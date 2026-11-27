@@ -1,12 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Md
-import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Digest
+public import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Digest
 public import VerifiedGarbage.Proof.MdStream.AArch64.OneShot
 public import VerifiedGarbage.Proof.Framework.AArch64.Inline
 public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 public import VerifiedGarbage.Impl.Sha256.AArch64.Stream
 public import VerifiedGarbage.Proof.Sha256.AArch64.Contract
+public import VerifiedGarbage.Proof.Framework.AArch64.ModeSim
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubSide
 import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Init
 import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Framework.Offset
@@ -92,25 +93,26 @@ structure Compress where
   noFrames : code.noFrames = true
   /-- Current streaming wrappers require untouched callee-saved SIMD registers. -/
   keepsV : code.allInstrs keepsV = true
+  /-- It never reads or writes PSTATE.DIT, so its callers' runs agree from any mode
+  (`ConstantTime.withDit`). -/
+  noDit : code.all (fun i => !i.touchesDit) = true
+  /-- No instruction of it writes PSTATE.DIT, and it calls nothing indirectly:
+  what the cleanup of the functions that call it needs of its code
+  (`Scrub.verifiedScrubbedOf`). -/
+  side : Scrub.sideAll (fun i => !i.writesDit) code = true
   suffix : String
   features : List String
   updateCT : ConstantTime isa (updK (P := Stream.params) md).pre
     (updK (P := Stream.params) md).pub (update Stream.params name code)
   finalizeCT : ConstantTime isa (finK (P := Stream.params) md).pre
     (finK (P := Stream.params) md).pub (finalize Stream.params name code)
-  updateKeeps : ((instrs (updateMain Stream.params name code)).all fun i =>
-    untouched.all fun r => !clobbers i r) = true
-  finalizeKeeps : ((instrs (finalizeMain Stream.params name code)).all fun i =>
-    untouched.all fun r => !clobbers i r) = true
   updateDepth : (updateMain Stream.params name code).aarch64Depth = 0
   finalizeDepth : (finalizeMain Stream.params name code).aarch64Depth = 0
-  /-- SHA-224's `finalize`, writing its 28-byte digest: as `finalizeCT`,
-  `finalizeKeeps` and `finalizeDepth`. -/
+  /-- SHA-224's `finalize`, writing its 28-byte digest: as `finalizeCT` and
+  `finalizeDepth`. -/
   finalize224CT : ConstantTime isa (finKD (P := Impl.Sha256.AArch64.Stream.params224) md 28).pre
     (finKD (P := Impl.Sha256.AArch64.Stream.params224) md 28).pub
     (finalize Impl.Sha256.AArch64.Stream.params224 name code)
-  finalize224Keeps : ((instrs (finalizeMain Impl.Sha256.AArch64.Stream.params224 name code)).all fun i =>
-    untouched.all fun r => !clobbers i r) = true
   finalize224Depth : (finalizeMain Impl.Sha256.AArch64.Stream.params224 name code).aarch64Depth = 0
   /-- The one-shot digests of SHA-256 and SHA-224. -/
   oneShot256 : OneShotCT Impl.Sha256.AArch64.Stream.out256 32 Spec.Sha256.H0 name code
@@ -192,14 +194,14 @@ def finalize224 : Prog isa := Impl.MdStream.AArch64.finalize Impl.Sha256.AArch64
 theorem callee : CalleeOk (P := Stream.params) md v.code := ⟨v.verified.1, v.noFrames, v.keepsV⟩
 
 theorem update_verified : Verified AArch64.target v.update Proof.Sha256.updateAArch64 := by
-  have h := MdStream.AArch64.Update.verified Stream.dims v.callee v.updateCT v.updateKeeps
+  have h := MdStream.AArch64.Update.verified Stream.dims v.callee v.updateCT
     (by rw [v.updateDepth]; decide)
   exact h.of_implies ⟨fun _ h => h, fun _ _ _ h iv m hr hc => h iv m hr hc,
     fun _ _ _ _ h => h, h.2.2⟩
 
 theorem finalize_verified : Verified AArch64.target v.finalize Proof.Sha256.finalizeAArch64 := by
   have h := MdStream.AArch64.Finalize.verified Stream.dims Stream.shape v.callee v.finalizeCT
-    v.finalizeKeeps (by rw [v.finalizeDepth]; decide)
+    (by rw [v.finalizeDepth]; decide)
   exact h.of_implies ⟨fun _ h => h, fun _ _ _ h iv m hr hc => h iv m hr trivial hc,
     fun _ _ _ _ h => h, h.2.2⟩
 
@@ -207,7 +209,7 @@ theorem finalize224_verified :
     Verified AArch64.target v.finalize224 (finKD (P := Impl.Sha256.AArch64.Stream.params224) md 28) :=
   MdStream.AArch64.Finalize.verifiedD (P := Impl.Sha256.AArch64.Stream.params224)
     ⟨Stream.dims.1, Stream.dims.2, Stream.dims.3, Stream.dims.4⟩ Stream.shape224
-    (v.callee.withOut _) v.finalize224CT v.finalize224Keeps (by rw [v.finalize224Depth]; decide)
+    (v.callee.withOut _) v.finalize224CT (by rw [v.finalize224Depth]; decide)
 
 /-- The one-shot digest with the digest code `o` (writing `D` bytes), from `iv`. -/
 theorem oneShot_verified {o : List Instr} {D : Nat} {iv : Spec.Sha256.HashValue} (hD : D ≤ 64)

@@ -144,11 +144,11 @@ def products : Prog isa :=
 
 /-- In the P space, with `R² mod p` in array 24, the power of the number at
 `r12` (`p_len` octets) by the `q_len` octets at `r24`, into array 4, by
-four-bit windows (`ModExp.powWin`, constant time: its table entries are read
-by a masked scan). -/
+four-bit windows (`powWin`, the function `vg_bignum_pow_win`, constant time: its
+table entries are read by a masked scan). -/
 def powP : Prog isa :=
   .seq (.block (getP .r6)) (.seq (loadArr 4) (.seq (copy 1 24)
-    (.seq (.block ([.addi .r30 .r24 0] ++ getQ .r31 ++ minv)) (.seq ModExp.powWin
+    (.seq (.block ([.addi .r30 .r24 0] ++ getQ .r31)) (.seq powWin
       (.block [.addi .r31 .r23 0])))))
 
 /-- The joint table `T_(i + 4 j) = g^i y^j R mod p` for `i, j < 4`, in arrays

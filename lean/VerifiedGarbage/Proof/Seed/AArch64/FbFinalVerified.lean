@@ -38,8 +38,8 @@ meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 
 `cfbEncryptFinal_wp`, `cfbDecryptFinal_wp`, `ofbFinal_wp`: the modes' CFB and
 OFB over a message's last piece (`Proof.Modes.AArch64.fbFinal_wp`) over SEED
-encryption's core (`fbCoreSpec`), with the IV's address in `x25`, kept in
-`v31` around the core, as for the whole-block functions (`FbVerified.lean`),
+encryption's one-block core (`fbCoreSpec`), with the IV's address in `x25`,
+which it does not write, as for the whole-block functions (`FbVerified.lean`),
 and the specification's results (`Proof.Modes.cfbEncFinal_of_bytes`, …,
 `Proof.Modes.ofbFinal_of_bytes`).
 `cfbEncryptFinal_verified`, …: each is correct and constant time, by the

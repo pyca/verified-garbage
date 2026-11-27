@@ -12,6 +12,7 @@ public import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-!
 # AVX-512 VAES counter mode: the counter blocks and the data
@@ -162,11 +163,11 @@ theorem xor1Z_ok (t : XReg) (base : Reg) (b : XReg) (d : Nat) (s : State) (hb8 :
     rw [pick4_lanes (fun i => v.extractLsb' (128 * i) 128) hl]
     exact load512_lane _ _ hl
   rw [WP.block_cons_iff]
-  refine ⟨s₁, by simp only [isa, exec, State.load512, ea_at, hin', ite_true, Option.map_some]; rfl, ?_⟩
+  refine ⟨s₁, by simp only [isa, reduceExec, State.load512, ea_at, hin', ite_true, Option.map_some]; rfl, ?_⟩
   rw [WP.block_cons_iff]; refine ⟨s₂, rfl, ?_⟩
   rw [WP.block_cons_iff]
   have hst : isa.exec (.vmovdqu32Store (at_ base d) b) s₂ = some (s₂.setMem (s.mem.writeW a (s₂.zmm b))) := by
-    simp only [isa, exec, State.store512_eq, ea_at, s₂, s₁, ZOp.exec_gpr, State.setZ_gpr, ZOp.exec_wr,
+    simp only [isa, reduceExec, State.store512_eq, ea_at, s₂, s₁, ZOp.exec_gpr, State.setZ_gpr, ZOp.exec_wr,
       State.setZ_wr, ZOp.exec_mem, State.setZ_mem, hin, ite_true, a]
   refine ⟨_, hst, WP.block_nil ?_⟩
   have z₂ : ∀ l < 4, s₂.zlane b l = s.zlane b l ^^^ s.mem.readW (a + BitVec.ofNat 64 (16 * l)) 128 :=

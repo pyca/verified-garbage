@@ -56,7 +56,7 @@ theorem callee {c : Prog isa} (hv : Verified X86_64.target c (Proof.X448.x448Con
     sig_post [Proof.X448.x448Contract, Proof.X448.x448Sig, X86_64.abi, X86_64.argRegs] at h
     exact h
   pub s₁ s₂ h := by
-    obtain ⟨qsp, q0, q1, q2, q3⟩ := h
+    obtain ⟨qsp, q0, q1, q2, q3, q4⟩ := h
     sig_pub [Proof.X448.x448Contract, Proof.X448.x448Sig, X86_64.abi, X86_64.argRegs]
     sig_reduce [Proof.X448.x448Contract, Proof.X448.x448Sig, X86_64.abi, X86_64.argRegs]
     sig_and_intros

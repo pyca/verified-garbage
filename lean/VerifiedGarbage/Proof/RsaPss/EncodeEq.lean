@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPss.EncBytes
-import VerifiedGarbage.Proof.RsaPss.Encoding
 import VerifiedGarbage.Proof.RsaPss.CtPad
 import VerifiedGarbage.Proof.RsaPss.MgfBytes
 import VerifiedGarbage.Proof.Framework.GetElem

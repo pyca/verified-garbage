@@ -1,7 +1,179 @@
 module
+
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.PrfUsing
 public import VerifiedGarbage.Impl.MlKem.AArch64.FixedHash
 import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.ShapesCorrect
+public import VerifiedGarbage.Proof.MlKem.Scrubbed
+public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Top
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Common
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Encaps
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Top
+import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Hole
+
+/-! ### `MlKem.AArch64.Hybrid.Final`, which the modules that import this one used -/
+
+section
+
+/-!
+# The hashing encapsulations meet `Proof.MlKem.Scrubbed.encapsBodyContract` with 128 bytes of stack
+
+As `Optimized/Contracts.lean` and `ContractSat.lean`, for the stack of the
+x3 calls.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.MlKem.AArch64.Hybrid
+
+open VG VG.AArch64 VG.Impl.MlKem.AArch64 VG.Proof.MlKem.AArch64
+open VG.Proof.MlKem.AArch64.Optimized
+open VG.Proof.MlKem.AArch64.FixedHash (fixedHash)
+open VG.Proof.MlKem
+
+/-! ## ML-KEM-768 -/
+
+theorem encapsS768_base : (encapsAArch64S lay768).Implies (Proof.MlKem.Scrubbed.encapsBodyContract abi 128) := by
+  mlkem_implies [Proof.MlKem.Scrubbed.encapsBodyContract, Spec.MlKem.encapsSig, encapsAArch64S, encapsAArch64, lay768,
+      KemLay.params, Spec.MlKem.mlKem768, KemLay.ekLen, KemLay.ctLen, AArch64.abi, AArch64.argRegs]
+      [VG.Proof.MlKem.AArch64.Encaps.sat] using VG.Proof.MlKem.AArch64.Encaps.sat
+
+def encapsH768Base := Proof.MlKem.Scrubbed.encapsBodyContract (abi.withConsts constants) 128
+
+/-- The contract of the body over the permutation `n` it calls by the address
+in `d8`. -/
+def encapsH768Contract (n : String) := Proof.Sha3.AArch64.Contract.d8 n encapsH768Base
+
+theorem encapsH768_entry {s : State} (h : encapsH768Base.pre s) :
+    (entryContractS (encapsAArch64S lay768)).pre s := by
+  unfold encapsH768Base Proof.MlKem.Scrubbed.encapsBodyContract constants at h
+  have hp := (pre_consts.mp h)
+  exact ⟨encapsS768_base.pre _ hp.1,hp.2⟩
+
+theorem encapsH768_post {s t : State} (h : encapsH768Base.pre s)
+    (hp : (encapsAArch64S lay768).post s t) : encapsH768Base.post s t := by
+  unfold encapsH768Base Proof.MlKem.Scrubbed.encapsBodyContract constants at h ⊢
+  have hh := pre_consts.mp h
+  exact encapsS768_base.post (stripConsts constants s) t hh.1 hp
+
+theorem encapsH768_pub {s t : State} (hs : encapsH768Base.pre s) (ht : encapsH768Base.pre t)
+    (hp : encapsH768Base.pub s t) : (entryContractS (encapsAArch64S lay768)).pub s t := by
+  unfold encapsH768Base Proof.MlKem.Scrubbed.encapsBodyContract constants at hs ht hp
+  have hsp := pre_consts.mp hs
+  have htp := pre_consts.mp ht
+  have hpp := pub_consts.mp hp
+  exact ⟨encapsS768_base.pub (stripConsts constants s) (stripConsts constants t) hsp.1 htp.1 hpp.1,hpp.2⟩
+
+theorem encapsH768_baseSat : encapsH768Base.pre (addTables VG.Proof.MlKem.AArch64.Encaps.sat) := by
+  unfold encapsH768Base Proof.MlKem.Scrubbed.encapsBodyContract constants
+  apply pre_consts.mpr
+  constructor
+  · change (Proof.MlKem.Scrubbed.encapsBodyContract abi 128).pre (stripConsts constants (addTables VG.Proof.MlKem.AArch64.Encaps.sat))
+    rw [strip_addTables]
+    sig_pre [Spec.MlKem.encapsSig,abi,argRegs]
+    and_intros
+    all_goals first
+     | rfl
+     | decide
+     | exact Region.disjoint_of_sep (by decide)
+  · change ConstsOk constants 128 (addTables VG.Proof.MlKem.AArch64.Encaps.sat)
+    refine ⟨?_,tableMem_held,?_,?_⟩
+    · rfl
+    · intro r hr
+      rw [constants_regions] at hr
+      rcases hr with _|⟨_,_|⟨_,_|⟨_,_|⟨_,_|h⟩⟩⟩⟩
+      all_goals first
+       | contradiction
+       | (refine ⟨by decide,?_,?_⟩
+          · intro q hq
+            change q∈VG.Proof.MlKem.AArch64.Encaps.sat.wr at hq
+            simp only [VG.Proof.MlKem.AArch64.Encaps.sat,List.mem_cons,List.not_mem_nil,or_false] at hq
+            rcases hq with rfl|rfl|rfl <;> exact Region.disjoint_of_sep (by decide)
+          · intro q hq
+            change q∈[below (0x100000:Addr) 128] at hq
+            rw [List.mem_singleton.mp hq]
+            exact Region.disjoint_of_sep (by decide))
+    · intro r hr
+      rw [constants_regions] at hr
+      rcases hr with _|⟨_,_|⟨_,_|⟨_,_|⟨_,_|h⟩⟩⟩⟩
+      all_goals first | contradiction | decide
+
+/-! ## ML-KEM-1024 -/
+
+theorem encapsS1024_base :
+    (encapsAArch64S Impl.MlKem1024.AArch64.lay1024).Implies (Proof.MlKem.Scrubbed.encaps1024BodyContract abi 128) := by
+  mlkem_implies [Proof.MlKem.Scrubbed.encaps1024BodyContract, Spec.MlKem1024.encapsSig, encapsAArch64S, encapsAArch64,
+      Impl.MlKem1024.AArch64.lay1024, KemLay.params, Spec.MlKem.mlKem1024, KemLay.ekLen, KemLay.ctLen,
+      AArch64.abi, AArch64.argRegs] [VG.Proof.MlKem1024.AArch64.Encaps.sat]
+      using VG.Proof.MlKem1024.AArch64.Encaps.sat
+
+def encapsH1024Base := Proof.MlKem.Scrubbed.encaps1024BodyContract (abi.withConsts constants) 128
+
+/-- The contract of the body over the permutation `n` it calls by the address
+in `d8`. -/
+def encapsH1024Contract (n : String) := Proof.Sha3.AArch64.Contract.d8 n encapsH1024Base
+
+theorem encapsH1024_entry {s : State} (h : encapsH1024Base.pre s) :
+    (entryContractS (encapsAArch64S Impl.MlKem1024.AArch64.lay1024)).pre s := by
+  unfold encapsH1024Base Proof.MlKem.Scrubbed.encaps1024BodyContract constants at h
+  have hp := (pre_consts.mp h)
+  exact ⟨encapsS1024_base.pre _ hp.1,hp.2⟩
+
+theorem encapsH1024_post {s t : State} (h : encapsH1024Base.pre s)
+    (hp : (encapsAArch64S Impl.MlKem1024.AArch64.lay1024).post s t) : encapsH1024Base.post s t := by
+  unfold encapsH1024Base Proof.MlKem.Scrubbed.encaps1024BodyContract constants at h ⊢
+  have hh := pre_consts.mp h
+  exact encapsS1024_base.post (stripConsts constants s) t hh.1 hp
+
+theorem encapsH1024_pub {s t : State} (hs : encapsH1024Base.pre s) (ht : encapsH1024Base.pre t)
+    (hp : encapsH1024Base.pub s t) :
+    (entryContractS (encapsAArch64S Impl.MlKem1024.AArch64.lay1024)).pub s t := by
+  unfold encapsH1024Base Proof.MlKem.Scrubbed.encaps1024BodyContract constants at hs ht hp
+  have hsp := pre_consts.mp hs
+  have htp := pre_consts.mp ht
+  have hpp := pub_consts.mp hp
+  exact ⟨encapsS1024_base.pub (stripConsts constants s) (stripConsts constants t) hsp.1 htp.1 hpp.1,hpp.2⟩
+
+theorem encapsH1024_baseSat : encapsH1024Base.pre (addTables VG.Proof.MlKem1024.AArch64.Encaps.sat) := by
+  unfold encapsH1024Base Proof.MlKem.Scrubbed.encaps1024BodyContract constants
+  apply pre_consts.mpr
+  constructor
+  · change (Proof.MlKem.Scrubbed.encaps1024BodyContract abi 128).pre
+      (stripConsts constants (addTables VG.Proof.MlKem1024.AArch64.Encaps.sat))
+    rw [strip_addTables]
+    sig_pre [Spec.MlKem1024.encapsSig,abi,argRegs]
+    and_intros
+    all_goals first
+     | rfl
+     | decide
+     | exact Region.disjoint_of_sep (by decide)
+  · change ConstsOk constants 128 (addTables VG.Proof.MlKem1024.AArch64.Encaps.sat)
+    refine ⟨?_,tableMem_held,?_,?_⟩
+    · rfl
+    · intro r hr
+      rw [constants_regions] at hr
+      rcases hr with _|⟨_,_|⟨_,_|⟨_,_|⟨_,_|h⟩⟩⟩⟩
+      all_goals first
+       | contradiction
+       | (refine ⟨by decide,?_,?_⟩
+          · intro q hq
+            change q∈VG.Proof.MlKem1024.AArch64.Encaps.sat.wr at hq
+            simp only [VG.Proof.MlKem1024.AArch64.Encaps.sat,List.mem_cons,List.not_mem_nil,or_false] at hq
+            rcases hq with rfl|rfl|rfl <;> exact Region.disjoint_of_sep (by decide)
+          · intro q hq
+            change q∈[below (0x100000:Addr) 128] at hq
+            rw [List.mem_singleton.mp hq]
+            exact Region.disjoint_of_sep (by decide))
+    · intro r hr
+      rw [constants_regions] at hr
+      rcases hr with _|⟨_,_|⟨_,_|⟨_,_|⟨_,_|h⟩⟩⟩⟩
+      all_goals first | contradiction | decide
+
+end VG.Proof.MlKem.AArch64.Hybrid
+
+end
+
+end
+
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.FixedHash
 open VG VG.AArch64 VG.Impl.MlKem.AArch64 VG.Proof.MlKem.AArch64.Kem
@@ -10,15 +182,16 @@ open VG VG.AArch64 VG.Impl.MlKem.AArch64 VG.Proof.MlKem.AArch64.Kem
 def prfHash (c : Impl.Sha3.AArch64.Callee) : Prog isa :=
  Impl.MlKem.AArch64.FixedHash.code c .x28 KEM.ST KEM.WK 136 31
  [⟨.x28,KEM.RB,33⟩] [⟨.x28,KEM.PB,128⟩]
-theorem prfHash_valid (v : Proof.Sha3.AArch64.Permutation) : PrfHashValid (prfHash v.callee) := by
- intro s hs hi ho
+theorem prfHash_valid (v : Proof.Sha3.AArch64.Permutation) : PrfHashValid (prfHash v.callee) v.callee.name := by
+ intro s hs hd hi ho
  simpa only [prfHash,List.map_cons,List.map_nil,List.flatten_cons,List.flatten_nil,List.append_nil,pbytes]
-  using prf768_correct v hs (by decide) (by decide) hi ho (by simp)
+  using prf768_correct v hs hd (by decide) (by decide) hi ho (by simp)
 
 /-- `PRF₂` and `SamplePolyCBD₂`, with the polynomial stored with 16 bits. -/
 def prfW (c : Impl.Sha3.AArch64.Callee) : Nat→Nat→Prog isa :=
  fun N off => Impl.MlKem.AArch64.Optimized.prfCbdUsing (prfHash c) N off
 
-theorem prfW_valid (v : Proof.Sha3.AArch64.Permutation) {P : KemLay} {L : Layout} : PrfValidW P L (prfW v.callee) :=
+theorem prfW_valid (v : Proof.Sha3.AArch64.Permutation) {P : KemLay} {L : Layout} :
+    PrfValidW P L (prfW v.callee) v.callee.name :=
  prf_using_validW (prfHash_valid v)
 end VG.Proof.MlKem.AArch64.FixedHash

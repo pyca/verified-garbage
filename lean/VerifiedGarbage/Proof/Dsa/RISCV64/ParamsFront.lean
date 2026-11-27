@@ -80,12 +80,13 @@ structure PFront (s t : State) : Prop where
   regs : Regs t (playOf s) (s.gpr .a0) 0
   scr : ScrL t (playOf s)
   lens : word t.mem (s.gpr .a4) hLens = pack (playOf s).pl (playOf s).ql 0 0
+  sigw : word t.mem (s.gpr .a4) hSig = 0
   sav : ∀ i < 13, word t.mem (s.gpr .a4) (saveOff i) = s.gpr (saved i)
   out : Outside (s.gpr .a4) 0 256 s.mem t.mem
 
 /-- `entry`: `scratch` into `s6`, the callee-saved registers and `ra` saved in
-its header, the domain into `s11`, `ra := 0` and the lengths into the
-header. Memory changes only in the header. -/
+its header, the domain into `s11`, `ra := 0`, and the lengths and `ra` into
+the header. Memory changes only in the header. -/
 theorem pfront_ok_of {s : State} (hL : (playOf s).Ok) (hwr : s.wr = [⟨s.gpr .a4, (s.gpr .a5).toNat * 8⟩])
     (nw : (s.gpr .a4).toNat + (s.gpr .a5).toNat * 8 ≤ 2 ^ 64) (alS : (s.gpr .a4).toNat % 8 = 0) :
     WP isa (.block Params.entry) s fun t => PFront s t ∧ Keep pentryRegs s t := by
@@ -117,12 +118,16 @@ theorem pfront_ok_of {s : State} (hL : (playOf s).Ok) (hwr : s.wr = [⟨s.gpr .a
   obtain ⟨_, hal16⟩ := ScrL.hdr hs₂ hL (d := 16) (by decide) (by decide)
   have hal16' : (off (s.gpr .a4) 16).toNat % 8 = 0 := hal16
   have hst16 : InRegions s₂.wr (off (s.gpr .a4) 16) 8 := hs₂.st (d := 16) (by simp only [playOf] at hZ ⊢; omega_using [hZ])
+  obtain ⟨_, hal32⟩ := ScrL.hdr hs₂ hL (d := 32) (by decide) (by decide)
+  have hal32' : (off (s.gpr .a4) 32).toNat % 8 = 0 := hal32
+  have hst32 : InRegions s₂.wr (off (s.gpr .a4) 32) 8 := hs₂.st (d := 32) (by simp only [playOf] at hZ ⊢; omega_using [hZ])
   have hpk := pack_entry0 (s.gpr .a2) (s.gpr .a3) hpl hql
   refine WP.mono (WP.keep [.s11, .ra, .t3] (Q := fun t =>
-      t.mem = s₂.mem.writeW (off (s.gpr .a4) 16) (pack (s.gpr .a2).toNat (s.gpr .a3).toNat 0 0) ∧
+      t.mem = (s₂.mem.writeW (off (s.gpr .a4) 16) (pack (s.gpr .a2).toNat (s.gpr .a3).toNat 0 0)).writeW
+        (off (s.gpr .a4) 32) (0 : BitVec 64) ∧
       t.gpr .s11 = s.gpr .a0 ∧ t.gpr .ra = 0) (by
         brun [hS₂.s6, e .a0 (by decide) (by decide), e .a2 (by decide) (by decide),
-          e .a3 (by decide) (by decide), hLens, hst16, hal16', hpk, exec_li_zero,
+          e .a3 (by decide) (by decide), hLens, hSig, hst16, hal16', hst32, hal32', hpk, exec_li_zero,
           exec_shift_d (show 16 < 64 by decide), BitVec.add_zero]) (by decide) (by rfl))
     fun t ⟨⟨mt, t11, tra⟩, kt⟩ => ?_
   have k := k12.trans kt
@@ -131,19 +136,24 @@ theorem pfront_ok_of {s : State} (hL : (playOf s).Ok) (hwr : s.wr = [⟨s.gpr .a
   have hnw : (s.gpr .a4).toNat + 256 ≤ 2 ^ 64 := by simp only [playOf] at hZ; omega_using [nw, hZ]
   have w16 := writeW_outside s₂.mem (s.gpr .a4) (d := 16) (pack (s.gpr .a2).toNat (s.gpr .a3).toNat 0 0)
     (by omega_using [])
+  have w32 := writeW_outside (s₂.mem.writeW (off (s.gpr .a4) 16) (pack (s.gpr .a2).toNat (s.gpr .a3).toNat 0 0))
+    (s.gpr .a4) (d := 32) (0 : BitVec 64) (by omega_using [])
   have hlen : word t.mem (s.gpr .a4) hLens = pack (playOf s).pl (playOf s).ql 0 0 := by
-    rw [mt]; exact word_writeW_self _ _ _ _
+    rw [mt, w32.word (by simp only [hLens]; omega_using []) (by simp only [hLens]; omega_using [])]
+    exact word_writeW_self _ _ _ _
   have hlen' : word t.mem (playOf s).S hLens = pack (playOf s).pl (playOf s).ql 0 0 := hlen
   have f1 : Outside (s.gpr .a4) 128 104 s₁.mem s₂.mem :=
     VG.Proof.Bignum.frame_outside (base := s.gpr .a4) (d := 128) (len := 104) hS₂.frame (by omega_using [])
   refine ⟨⟨⟨(kt.gpr (by decide)).trans hS₂.s6, t11, tra, by rw [hlen']; exact pack_pl hp16 hq16 (by decide) (by decide),
-    by rw [hlen']; exact pack_ql hp16 hq16 (by decide) (by decide)⟩, hscr t k.2.2, hlen, fun i hi => ?_, ?_⟩,
+    by rw [hlen']; exact pack_ql hp16 hq16 (by decide) (by decide)⟩, hscr t k.2.2, hlen, ?_, fun i hi => ?_, ?_⟩,
     k.mono (by decide)⟩
-  · rw [mt, w16.word (by simp only [saveOff]; omega_using []) (by simp only [saveOff]; omega_using [hi])]
+  · rw [mt]; exact word_writeW_self _ _ _ _
+  · rw [mt, w32.word (by simp only [saveOff]; omega_using []) (by simp only [saveOff]; omega_using [hi]), w16.word (by simp only [saveOff]; omega_using []) (by simp only [saveOff]; omega_using [hi])]
     show s₂.mem.readW (s.gpr .a4 + BitVec.ofNat 64 (saveOff i)) 64 = _
     rw [saveOff_eq, hS₂.saved i hi]
     exact k1.gpr fun h => saved_ne_t2 i hi (List.mem_singleton.mp h)
   · rw [mt, ← m1]
-    exact (f1.mono (Nat.zero_le _) (by omega_using [])).trans (w16.mono (Nat.zero_le _) (by omega_using []))
+    exact ((f1.mono (Nat.zero_le _) (by omega_using [])).trans (w16.mono (Nat.zero_le _) (by omega_using []))).trans
+      (w32.mono (Nat.zero_le _) (by omega_using []))
 
 end VG.Proof.Dsa.RISCV64

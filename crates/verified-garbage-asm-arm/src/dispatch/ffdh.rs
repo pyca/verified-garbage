@@ -6,6 +6,8 @@
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_ffdh_generate_key_precompute_umaal` if it is compiled (`any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd")`) and the CPU supports its features (`VG_FFDH_GENERATE_KEY_PRECOMPUTE_UMAAL_FEATURES`); or else `vg_ffdh_generate_key_precompute`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads and writes of `8 * ctx_len` bytes.
@@ -59,6 +61,8 @@ pub unsafe fn vg_ffdh_generate_key_precompute_auto(_dit: verified_garbage_cpu::D
 /// Generate a finite-field Diffie–Hellman key pair using a reusable public five-tooth comb context and the existing vettedKeySearch rejection policy. Returns 1 with a key pair, 3 when a budget is exhausted, or 0 to request entropy. On 0, discard used bytes, preserve the suffix and extend it to state[3] bytes before calling again. On 0 and 3 both outputs are zero. Entropy consumption, retry budgets and statuses are unchanged. Contract: VG.Spec.Ffdh.cachedKeySearchContract. Timing may depend on the public domain, pointers, lengths, controller policy and sequence of attempt statuses, not otherwise on private scalar bytes.
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_ffdh_generate_key_search_cached_umaal` if it is compiled (`any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd")`) and the CPU supports its features (`VG_FFDH_GENERATE_KEY_SEARCH_CACHED_UMAAL_FEATURES`); or else `vg_ffdh_generate_key_search_cached`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -123,6 +127,8 @@ pub unsafe fn vg_ffdh_generate_key_search_cached_auto(_dit: verified_garbage_cpu
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_ffdh_derive_public_umaal` if it is compiled (`any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd")`) and the CPU supports its features (`VG_FFDH_DERIVE_PUBLIC_UMAAL_FEATURES`); or else `vg_ffdh_derive_public`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `y` must be valid for reads and writes of `y_len` bytes.
@@ -181,6 +187,8 @@ pub unsafe fn vg_ffdh_derive_public_auto(_dit: verified_garbage_cpu::Dit<'_>, y:
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_ffdh_check_domain_umaal` if it is compiled (`any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd")`) and the CPU supports its features (`VG_FFDH_CHECK_DOMAIN_UMAAL_FEATURES`); or else `vg_ffdh_check_domain`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `domain` must be valid for reads of `domain_len` bytes.
@@ -190,7 +198,7 @@ pub unsafe fn vg_ffdh_derive_public_auto(_dit: verified_garbage_cpu::Dit<'_>, y:
 /// * `scratch_len` must be at least `16 * p_len + 32`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `scratch` must not overlap `domain` or the arguments on the stack (distinct Rust objects never do).
-/// * Neither `domain` nor `scratch` may overlap the 128 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * Neither `domain` nor `scratch` may overlap the 176 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_ffdh_check_domain_auto(_dit: verified_garbage_cpu::Dit<'_>, domain: *const u8, domain_len: usize, p_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
@@ -234,6 +242,8 @@ pub unsafe fn vg_ffdh_check_domain_auto(_dit: verified_garbage_cpu::Dit<'_>, dom
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_ffdh_check_private_umaal` if it is compiled (`any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd")`) and the CPU supports its features (`VG_FFDH_CHECK_PRIVATE_UMAAL_FEATURES`); or else `vg_ffdh_check_private`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `domain` must be valid for reads of `domain_len` bytes.
@@ -248,7 +258,7 @@ pub unsafe fn vg_ffdh_check_domain_auto(_dit: verified_garbage_cpu::Dit<'_>, dom
 /// * `scratch_len` must be at least `16 * p_len + 32`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `scratch` must not overlap `domain`, `y`, `x` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `domain`, `y`, `x` and `scratch` may overlap the 128 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `domain`, `y`, `x` and `scratch` may overlap the 176 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_ffdh_check_private_auto(_dit: verified_garbage_cpu::Dit<'_>, domain: *const u8, domain_len: usize, p_len: usize, y: *const u8, y_len: usize, x: *const u8, x_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
@@ -291,6 +301,8 @@ pub unsafe fn vg_ffdh_check_private_auto(_dit: verified_garbage_cpu::Dit<'_>, do
 /// Contract: `VG.Spec.Ffdh.checkPublicContract`. Timing may depend on the pointers, the lengths, the domain and y.
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_ffdh_check_public_umaal` if it is compiled (`any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd")`) and the CPU supports its features (`VG_FFDH_CHECK_PUBLIC_UMAAL_FEATURES`); or else `vg_ffdh_check_public`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -347,6 +359,8 @@ pub unsafe fn vg_ffdh_check_public_auto(_dit: verified_garbage_cpu::Dit<'_>, dom
 /// Contract: `VG.Spec.Ffdh.exchangeContract`. Timing may depend on the pointers, the lengths, the domain, y and the value returned, not otherwise on x; the exponentiation may run over all `x_len` bytes of x, leading zeros included.
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_ffdh_exchange_umaal` if it is compiled (`any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd")`) and the CPU supports its features (`VG_FFDH_EXCHANGE_UMAAL_FEATURES`); or else `vg_ffdh_exchange`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -406,6 +420,8 @@ pub unsafe fn vg_ffdh_exchange_auto(_dit: verified_garbage_cpu::Dit<'_>, out: *m
 ///
 /// It runs `vg_ffdh_key_generation_init`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 128 bytes.
@@ -417,9 +433,11 @@ pub unsafe fn vg_ffdh_key_generation_init_auto(_dit: verified_garbage_cpu::Dit<'
     unsafe { crate::ffdh::vg_ffdh_key_generation_init(state, p_len) }
 }
 
-/// Initialize native finite-field Diffie–Hellman parameter generation. Validates 512..=8192 bits and generator 2 or 5. Returns 1 and initializes the controller's attempt limit, output width, entropy budget and first entropy request; returns 0 and clears those four words on invalid parameters. The remaining state words are private workspace. Contract: `VG.Spec.Ffdh.parameterInitContract`.
+/// Initialize native finite-field Diffie–Hellman parameter generation. Validates 512..=8192 bits and generator 2 or 5. Returns 1 and initializes the controller's attempt limit, output width, entropy budget and first entropy request; returns 0 and clears those four words on invalid parameters. The remaining state words are private workspace. Contract: `VG.Spec.Ffdh.parameterInitContract`. Timing, and the length of the first tape (`VG.Spec.Ffdh.parameterInitOut`), may depend on `bits` and `generator`.
 ///
 /// It runs `vg_ffdh_parameter_generation_init`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -432,9 +450,11 @@ pub unsafe fn vg_ffdh_parameter_generation_init_auto(_dit: verified_garbage_cpu:
     unsafe { crate::ffdh::vg_ffdh_parameter_generation_init(state, bits, generator) }
 }
 
-/// Run native finite-field Diffie–Hellman parameter generation, with RSA's trial-division sieve. The routine owns candidate retries, attempt limits, witness selection, primality rounds and entropy budgets. Initialize with `vg_ffdh_parameter_generation_init`. Returns 1 with the probable safe prime in `out`, 3 when a bound is exhausted, or 0 only when it needs more entropy. On 0, discard `used` bytes of `rand`, preserve its remaining suffix and extend that suffix to at least `state[3]` bytes before calling again. `state[1]` is the output width and `state[2]` the maximum tape length. The output is zero for 0 and 3. Accepted p and q pass the full 64/128 independent witness counts. Contract: `VG.Spec.Ffdh.sievedParameterSearchContract`. Timing may depend on the public tape and the first four controller words.
+/// Run native finite-field Diffie–Hellman parameter generation, with RSA's trial-division sieve. The routine owns candidate retries, attempt limits, witness selection, primality rounds and entropy budgets. Initialize with `vg_ffdh_parameter_generation_init`. Returns 1 with the probable safe prime in `out`, 3 when a bound is exhausted, or 0 only when it needs more entropy. On 0, discard `used` bytes of `rand`, preserve its remaining suffix and extend that suffix to at least `state[3]` bytes before calling again. `state[1]` is the output width and `state[2]` the maximum tape length. The output is zero for 0 and 3. Accepted p and q pass the full 64/128 independent witness counts. Contract: `VG.Spec.Ffdh.sievedParameterSearchContract`. Timing, and the length of the next tape (`VG.Spec.Ffdh.sievedParameterSearchOut`), may depend on the public tape and the first four controller words, not on the rest of `state` or on what `scratch` holds.
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_ffdh_generate_parameters_umaal` if it is compiled (`any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd")`) and the CPU supports its features (`VG_FFDH_GENERATE_PARAMETERS_UMAAL_FEATURES`); or else `vg_ffdh_generate_parameters`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -448,7 +468,7 @@ pub unsafe fn vg_ffdh_parameter_generation_init_auto(_dit: verified_garbage_cpu:
 /// * `scratch_len` must be at least `16 * out_len + 32`.
 /// * The last twelve controller words and the scratch contents are private workspace.
 /// * `out`, `used`, `scratch` and `state` must not overlap each other, `rand` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `used`, `rand`, `scratch` and `state` may overlap the 232 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `out`, `used`, `rand`, `scratch` and `state` may overlap the 280 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_ffdh_generate_parameters_auto(_dit: verified_garbage_cpu::Dit<'_>, out: *mut u8, out_len: usize, used: *mut [u64; 1], bits: usize, generator: u32, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 16]) -> u32 {

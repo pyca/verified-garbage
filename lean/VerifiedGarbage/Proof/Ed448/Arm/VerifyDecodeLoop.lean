@@ -28,6 +28,8 @@ open VG.Impl.X448.Arm (slot ACC copy)
 open VG.Spec.Ed448 (bytesAt decodePoint)
 open VG.Proof.X25519.Arm (wp_mov wp_subs op2_reg)
 
+variable {fv : Bool}
+
 /-- Writes only in the working space below `VBITS` (from the saved registers on) or in the
 multiplication's area. -/
 abbrev DFrame (base : Addr) (m m' : Mem) : Prop := Outside2 base 32 3072 ACC 512 m m'
@@ -116,7 +118,7 @@ theorem vnext_ok (s : State) :
 theorem vdecodeBody_ok (hR : RecoverOk) {s : State} {base q : Addr} (hs : Scr s base)
     (hb : BoundedEnv s.mem base) (hin : DecIn s base q .r12)
     (h10 : E s.mem base 10 = 1) (h11 : E s.mem base 11 = Spec.Ed448.d) :
-    WP isa vdecodeBody s fun t =>
+    WP isa (vdecodeBody fv) s fun t =>
       Keeps (.r8 :: .r10 :: .r11 :: workRegs) s t ∧ DFrame base s.mem t.mem ∧
       BoundedEnv t.mem base ∧
       t.gpr .r12 = s.gpr .r8 ∧ t.gpr .r8 = s.gpr .r0 ∧ t.z = (s.gpr .r8 - s.gpr .r0 == 0) ∧
@@ -172,7 +174,7 @@ with `Z` set. -/
 theorem vdecode_ok (hR : RecoverOk) {s : State} {base qR qA : Addr} (hs : Scr s base)
     (hb : BoundedEnv s.mem base) (inR : DecIn s base qR .r12) (inA : DecIn s base qA .r8)
     (h10 : E s.mem base 10 = 1) (h11 : E s.mem base 11 = Spec.Ed448.d) :
-    WP isa vdecode s fun t =>
+    WP isa (vdecode fv) s fun t =>
       Keeps (.r8 :: .r10 :: .r11 :: workRegs) s t ∧ DFrame base s.mem t.mem ∧
       BoundedEnv t.mem base ∧
       BadUpd ((decodePoint (bytesAt s.mem qR 57)).isSome ∧ (decodePoint (bytesAt s.mem qA 57)).isSome)
@@ -228,7 +230,7 @@ theorem copyFrom_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedEnv
     {a : Nat} (ha1 : 2880 ≤ a) (ha2 : a + 112 ≤ 3584) (hba : Bounded s.mem base a) :
     WP isa (.block (copy (slot o.val) a)) s fun t =>
       Keep base s t ∧ BoundedEnv t.mem base ∧
-      E t.mem base = Function.update (E s.mem base) o (F s.mem base a) := by
+      E t.mem base = Fun.update (E s.mem base) o (F s.mem base a) := by
   have sep : slot o.val + 112 ≤ a := by have := o.isLt; simp only [slot]; omega_using [ha1]
   refine WP.mono (copy_ok hs (Nat.le_trans (slot_bound o) (by decide)) (by omega_using [ha2]) (Or.inr (Or.inl sep)))
     fun t ⟨tf, tm, tk⟩ => ?_
@@ -253,8 +255,8 @@ theorem vR_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedEnv s.mem
     fun i hi => limbs_mid ku.mem (by decide) (by decide) hi
   refine WP.mono (copyFrom_ok (ku.scr hs) bu 9 (by decide) (by decide) (fun i hi => by rw [ly i hi]; exact hy i hi))
     fun t ⟨kt, bt, et⟩ => ⟨ku.trans kt, bt, ?_, ?_, fun i h8 h9 => ?_⟩
-  · rw [et, Function.update_of_ne (by decide), eu, Function.update_self]
-  · rw [et, Function.update_self]; exact congrArg Proof.X448.toFe (valN_congr ly)
-  · rw [et, Function.update_of_ne h9, eu, Function.update_of_ne h8]
+  · rw [et, Fun.update_of_ne (by decide), eu, Fun.update_self]
+  · rw [et, Fun.update_self]; exact congrArg Proof.X448.toFe (valN_congr ly)
+  · rw [et, Fun.update_of_ne h9, eu, Fun.update_of_ne h8]
 
 end VG.Proof.Ed448.Arm

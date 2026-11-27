@@ -1,26 +1,19 @@
 module
 
+import VerifiedGarbage.Proof.Framework.X86_64.ScrubFillG
+
+public import VerifiedGarbage.Proof.Dsa.ParameterPublic
 public import VerifiedGarbage.Impl.Dsa.X86_64.ParameterSearch
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.RefillContract
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CodeSafety
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CodeDepth
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.HashDepth
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.HashSafety
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeCall
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Hashes
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeTest
-public import VerifiedGarbage.Proof.Dsa.X86_64.ProbablePrime.Verified
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Variant
 public import VerifiedGarbage.Proof.Variants.MillerRabin.X86_64.Base
 public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 public import VerifiedGarbage.Proof.Framework.X86_64.Depth
 public import VerifiedGarbage.TCB.X86_64.Target
-public import VerifiedGarbage.TCB.Emit
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Entry
 public import VerifiedGarbage.Spec.Dsa.Generate
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.HashVariants
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.RoundCode
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ValidateDepth
-import Mathlib.Data.Nat.Basic
 import VerifiedGarbage.Proof.Framework.X86_64.CallFrame
 import VerifiedGarbage.Proof.RsaOaep.X86_64.Stack
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
@@ -30,26 +23,20 @@ import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Lit
 import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit
 import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
 import VerifiedGarbage.Impl.Dsa.X86_64.Generation.SeedSearch
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CandidateDepth
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PowerDepth
 import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CandidateSafety
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PowerSafety
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ValidateSafety
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.FrameAlloc
-import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
+public import VerifiedGarbage.Proof.Framework.X86_64.FrameAlloc
+public import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.Call
-import Mathlib.Algebra.Group.Nat.Defs
-import Aesop.BuiltinRules
+public import Aesop.BuiltinRules
 import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeometryTape
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Context
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.EntrySave
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.RefillAttempt
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.RefillCorrect
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.RefillWidths
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.RefillAttempt
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.RefillWidths
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.RefillABI
 import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hashes.Sha1
 import VerifiedGarbage.Proof.Variants.MdHash.X86_64.Sha256
 public import VerifiedGarbage.Proof.MillerRabin.X86_64.Backend
@@ -59,6 +46,1074 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.ParametersCT
 public import VerifiedGarbage.Spec.Dsa.Derive
 public import VerifiedGarbage.Proof.Dsa.Contract
 public import VerifiedGarbage.Proof.Framework.QualifiedName
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.PAttempt
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Subgroup
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Hash
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.PHash
+import VerifiedGarbage.Proof.RsaOaep.X86_64.Mgf
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Validate
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.GeneratorStep
+public import VerifiedGarbage.Proof.Dsa.X86_64.ProbablePrime.CT
+public import VerifiedGarbage.Proof.MillerRabin.X86_64.Kernel
+public import VerifiedGarbage.Proof.Dsa.X86_64.ProbablePrime.Params
+public import VerifiedGarbage.Impl.Dsa.X86_64.ProbablePrime
+import VerifiedGarbage.Proof.Framework.Sig
+public import VerifiedGarbage.Proof.Dsa.ModPowContract
+public import VerifiedGarbage.Proof.Dsa.ProbablePrimeContract
+import VerifiedGarbage.Proof.Dsa.BitLengthBounds
+import VerifiedGarbage.Proof.Dsa.Arithmetic
+import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.PrimeBytes
+public import VerifiedGarbage.Impl.Bignum.X86_64
+import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+
+/-! ### `Dsa.X86_64.Generation.CodeDepth`, which only this module used -/
+
+section
+
+/-! # Compositional bounds for stack use below the persistent search frame -/
+
+@[expose] public section
+namespace VG.Proof.Dsa.X86_64.Generation
+open VG VG.X86_64
+
+def generationDepth (c : Prog isa) : Prop := c.x86_64Depth ≤ 128
+
+theorem generationDepth.seq {a b : Prog isa} (ha : generationDepth a) (hb : generationDepth b) :
+    generationDepth (.seq a b) := Nat.max_le.mpr ⟨ha, hb⟩
+
+theorem generationDepth.ite {a b : Prog isa} (ha : generationDepth a) (hb : generationDepth b) (cc : Cond) :
+    generationDepth (.ite cc a b) := Nat.max_le.mpr ⟨ha, hb⟩
+
+theorem generationDepth.block (is : List Instr) : generationDepth (.block is) := by
+  change 0 ≤ 128
+  decide
+
+/-- What code around the probable-prime calls may use below the frame: a
+call's return address and the 184 bytes of the test's stack. -/
+def callerDepth (c : Prog isa) : Prop := c.x86_64Depth ≤ 192
+
+theorem callerDepth.of {c : Prog isa} (h : generationDepth c) : callerDepth c :=
+  Nat.le_trans h (by decide)
+
+theorem callerDepth.seq {a b : Prog isa} (ha : callerDepth a) (hb : callerDepth b) :
+    callerDepth (.seq a b) := Nat.max_le.mpr ⟨ha, hb⟩
+
+theorem callerDepth.ite {a b : Prog isa} (ha : callerDepth a) (hb : callerDepth b) (cc : Cond) :
+    callerDepth (.ite cc a b) := Nat.max_le.mpr ⟨ha, hb⟩
+
+theorem generation_depth_seqs (l : List (Prog isa)) :
+    (Impl.Bignum.X86_64.seqs l).x86_64Depth = l.foldr (fun c n => max c.x86_64Depth n) 0 := by
+  induction l with
+  | nil => rfl
+  | cons a l ih =>
+    cases l with
+    | nil => simp only [Impl.Bignum.X86_64.seqs, List.foldr_cons, List.foldr_nil, Nat.max_zero]
+    | cons b l => simp only [Impl.Bignum.X86_64.seqs, Code.x86_64Depth, List.foldr_cons] at ih ⊢; rw [ih]
+
+end VG.Proof.Dsa.X86_64.Generation
+
+end
+
+end
+
+/-! ### `Dsa.X86_64.ProbablePrime.Verified`, which only this module used -/
+
+section
+
+/-! ### `Dsa.X86_64.Generation.RoundCode`, which this module and modules that import it used -/
+
+section
+
+/-! # Instruction safety and stack use of the shared Miller–Rabin backend -/
+
+@[expose] public section
+namespace VG.Proof.Dsa.X86_64.Generation
+open VG VG.X86_64 VG.Proof.MillerRabin.X86_64
+
+theorem roundCode_safe (v : RoundImpl) : generationSafe (Kernel.called v).run := by
+  exact (show generationSafe (.block Impl.MillerRabin.X86_64.Caller.save) from rfl).seq
+    ((generationSafe.call_of v.ctl v.spSafe v.name).seq
+      (show generationSafe (.block Impl.MillerRabin.X86_64.Caller.restore) from rfl))
+
+/-- The call of the round never touches MXCSR. -/
+theorem roundCode_noMx (v : RoundImpl) : (Kernel.called v).run.allInstrs (fun i => !touchesMxcsr i) = true := by
+  simp only [Kernel.called, VG.Impl.MillerRabin.X86_64.Caller.call, Code.allInstrs, v.noMx,
+    Bool.true_and]
+  decide
+
+theorem roundCode_depth (v : RoundImpl) : generationDepth (Kernel.called v).run := by
+  change max 0 (max (v.code.x86_64Depth + 8) 0) ≤ 128
+  simp only [Nat.zero_max, Nat.max_zero]
+  have hd := v.depth
+  change v.code.x86_64Depth ≤ 120 at hd
+  omega_using [hd]
+
+theorem inlineMul_depth (v : RoundImpl) (o a b : Nat) : generationDepth (v.inlineMont.mm o a b) := by
+  unfold generationDepth
+  rw [v.inlineDepth]
+  exact Nat.zero_le _
+
+end VG.Proof.Dsa.X86_64.Generation
+
+end
+
+end
+
+/-! ### `Dsa.X86_64.ProbablePrime.Correct`, which only this module used -/
+
+section
+
+/-! # The probable-prime test meets its contract's functional part -/
+
+@[expose] public section
+namespace VG.Proof.Dsa.X86_64.ProbablePrime
+open VG VG.X86_64 VG.X86_64.Spill VG.Proof.Bignum VG.Proof.Bignum.X86_64
+open VG.Impl.Dsa.X86_64.ProbablePrime VG.Impl.Dsa.Generation.Layout VG.Proof.MillerRabin.X86_64
+
+/-- No byte of `ws` but those of the test's scratch ranges is in a region the test changes. -/
+theorem keeps_of_frame {bits : Nat} (hb : Supported bits) {s : State} (A : PrimeABI bits s) {m : Mem}
+    (hf : Frame (changed bits s) s.mem m) :
+    Proof.Dsa.ModPow.Keeps (s.gpr .rdi) (s.gpr .rsi).toNat (layout bits).scratch s.mem m := by
+  intro i hi hout
+  have hw := A.wsBound
+  have hlen : len bits ≤ 384 := by rcases hb with rfl | rfl | rfl | rfl | rfl <;> decide
+  have h1 := hout (witness, len bits) (by simp [layout])
+  have h2 := hout (arithmetic, arithmeticBytes) (by simp [layout])
+  have hc : (wsRegion s).Contains (s.gpr .rdi + BitVec.ofNat 64 i) 1 :=
+    Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi, hw])
+  apply hf
+  intro r hr hx
+  simp only [changed, List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl | rfl
+  · have hd := Offset.disjoint (s.gpr .rdi) (d := i) (n := 1) (e := arithmetic) (k := arithmeticBytes)
+      (by simp only at h2; omega_using [h2]) (by omega_using [hi, hw]) (by have : arithmetic + arithmeticBytes ≤ 2 ^ 64 := (by decide); omega_using [this])
+    exact hd _ (Region.contains_self _ _) hx
+  · have hd := Offset.disjoint (s.gpr .rdi) (d := i) (n := 1) (e := witness) (k := len bits)
+      (by simp only at h1; omega_using [h1]) (by omega_using [hi, hw])
+      (by have : witness + 384 ≤ 2 ^ 64 := (by decide); have := hlen; omega_arith)
+    exact hd _ (Region.contains_self _ _) hx
+  · exact (A.stackWs.sub_left (below_frame_sub s)) _ hx hc
+  · have hs := frame_stack_sub s (d := 0) (n := 56) (by decide)
+    simp only [off, BitVec.add_zero] at hs
+    exact A.stackWs _ (hs _ hx) hc
+  · exact A.wsUsed _ hc hx
+
+theorem correct (M : Mont) (K : Kernel) (S : VG.Proof.Dsa.X86_64.Generation.Preparation M)
+    (ctl : ctlOk (code M.mm K.run S.code) = true) (s : State) (pre : contract.pre s) :
+    ∃ trace t, Exec isa (code M.mm K.run S.code) s trace t ∧ abiPreserved s t ∧ contract.post s t := by
+  obtain ⟨hb, A⟩ := primeABI_of pre
+  have hwl : witness + len (s.gpr .r9).toNat ≤ domainCheck := by
+    rcases hb with h | h | h | h | h <;> rw [h] <;> decide
+  have hl : 56 ≤ (s.gpr .rsp).toNat := by have : 184 ≤ (s.gpr .rsp).toNat := A.stackLower; omega_using [this]
+  have hs := frame_stack_sub s (d := 0) (n := 56) (by decide)
+  simp only [off, BitVec.add_zero] at hs
+  obtain ⟨trace, f, he, hsp, hpost⟩ := alloc_frame_ok (bytes := 56) (by decide) hl
+    (Q := fun f => f.gpr .rsp = s.gpr .rsp ∧ BodyPost (s.gpr .r9).toNat s f)
+    (WP.mono (body_ok M K S hb A) fun t ⟨h1, h2, _, hp⟩ => ⟨h1, h2, fun m u fm => ⟨freeState_rsp h1, by
+      obtain ⟨hr, hu, hm, hg⟩ := hp
+      refine ⟨hr, fun b rest h => ?_, hm.trans (fm.sub fun r hr => ?_), fun r hr' => ?_⟩
+      · refine (fm.readW (r := ⟨s.gpr .r8, 8⟩) (Region.contains_self _ _) (fun r hr => ?_) (by decide)).trans
+          (hu b rest h)
+        simp only [List.mem_singleton] at hr; subst hr
+        exact (A.stackUsed.sub_left hs).symm
+      · simp only [List.mem_singleton] at hr; subst hr
+        exact ⟨⟨frameSp s, 56⟩, by simp [changed], fun _ h => h⟩
+      · have : r ≠ .rsp := by revert r; decide
+        simp only [freeState, State.setReg, this, ite_false]
+        exact hg r hr'⟩⟩)
+  obtain ⟨hrax, hused, hframe, hgpr⟩ := hpost
+  refine ⟨trace, f, he, ⟨?_, ?_, VG.X86_64.Exec.ctl ctl he⟩, ?_⟩
+  · intro r hr
+    by_cases h : r = .rsp
+    · subst h; exact hsp
+    · exact hgpr r (by revert r; decide)
+  · apply hframe.readW (r := ⟨s.gpr .rsp, 8⟩) (Region.contains_self _ _) _ (by decide)
+    intro r hr
+    simp only [changed, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl | rfl
+    · exact A.retWs.sub_right (ws_sub A (by decide))
+    · exact A.retWs.sub_right (ws_sub A hwl)
+    · exact (Offset.base_disjoint_below _ (by decide)).sub_right (below_frame_sub s)
+    · have hs := frame_stack_sub s (d := 0) (n := 56) (by decide)
+      simp only [off, BitVec.add_zero] at hs
+      exact (Offset.base_disjoint_below _ (by decide)).sub_right hs
+    · exact A.retUsed
+  · sig_post [contract, Proof.Dsa.ProbablePrime.sizedContract, Proof.Dsa.ProbablePrime.sizedSig, abi,
+      argRegs]
+    refine ⟨?_, keeps_of_frame hb A hframe, fun b rest h => ?_⟩
+    · rw [hrax]
+      have st : ∀ o : Option (Bool × Spec.RsaKeyGen.Rand),
+          (BitVec.setWidth 32 (BitVec.ofNat 64 (Proof.Dsa.ProbablePrime.status o))).toNat =
+            Proof.Dsa.ProbablePrime.status o := by
+        intro o
+        rcases o with _ | ⟨_ | _, _⟩ <;> rfl
+      exact st _
+    · simp only [Spec.Rsa.wordsAt, List.range_one, List.map_cons, List.map_nil, Nat.mul_zero]
+      rw [show s.gpr .r8 + BitVec.ofNat 64 0 = s.gpr .r8 from BitVec.add_zero _, hused b rest h]
+
+end VG.Proof.Dsa.X86_64.ProbablePrime
+
+end
+
+end
+
+/-! ### `Dsa.X86_64.ProbablePrime.Satisfiable`, which only this module used -/
+
+section
+
+/-! # A state meets the probable-prime test's precondition
+
+An all-ones candidate of 160 bits at its offset of a working space of 5120
+words, and an empty tape. -/
+
+@[expose] public section
+namespace VG.Proof.Dsa.X86_64.ProbablePrime
+open VG VG.X86_64 VG.Impl.Dsa.X86_64.ProbablePrime
+
+def satBase : Addr := 0x100000
+
+def satMemory (bits : Nat) : Mem := fun a =>
+  if (a - (satBase + BitVec.ofNat 64 (candidate bits))).toNat < bits / 8 then 0xFF#8 else 0
+
+def satState (bits : Nat) : State where
+  gpr r := match r with
+    | .rdi => 0x100000 | .rsi => 5120 | .rdx => 0x200000 | .rcx => 0
+    | .r8 => 0x300000 | .r9 => BitVec.ofNat 64 bits | .rsp => 0x400000 | _ => 0
+  cf := none
+  zf := none
+  sf := none
+  of := none
+  mem := satMemory bits
+  rd := [⟨0x200000, 0⟩]
+  wr := [⟨0x100000, 40960⟩, ⟨0x300000, 8⟩]
+
+theorem foldl_ones : ∀ (n acc : Nat),
+    (List.replicate n (0xFF#8)).foldl (fun x b => 256 * x + b.toNat) acc = acc * 256 ^ n + (256 ^ n - 1)
+  | 0, acc => by simp
+  | n + 1, acc => by
+    rw [List.replicate_succ, List.foldl_cons, foldl_ones n, Nat.pow_succ]
+    have ff : (0xFF#8).toNat = 255 := rfl
+    rw [ff]
+    have pos : 0 < 256 ^ n := Nat.pow_pos (by decide)
+    generalize 256 ^ n = p at *
+    obtain ⟨q, rfl⟩ : ∃ q, p = q + 1 := ⟨p - 1, by omega_using [pos]⟩
+    grind
+
+theorem sat_candidate {bits : Nat} (hb : Supported bits) :
+    candidateOf bits (satState bits) = 2 ^ bits - 1 := by
+  have hl : bits / 8 ≤ 384 := by rcases hb with rfl | rfl | rfl | rfl | rfl <;> decide
+  have bytes : Spec.Rsa.bytesAt (satMemory bits) (satBase + BitVec.ofNat 64 (candidate bits)) (bits / 8) =
+      List.replicate (bits / 8) 0xFF#8 := by
+    unfold Spec.Rsa.bytesAt
+    apply List.ext_getElem (by simp)
+    intro i hi _
+    simp only [List.getElem_map, List.getElem_range, List.getElem_replicate]
+    simp only [List.length_map, List.length_range] at hi
+    unfold satMemory
+    rw [VG.Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hl, hi])]
+    exact ite_eq_left hi
+  change Spec.Dsa.decodeBE (Spec.Rsa.bytesAt (satMemory bits) (satBase + BitVec.ofNat 64 (candidate bits))
+    (bits / 8)) = _
+  rw [bytes, VG.Proof.Dsa.decodeBE_os2ip]
+  unfold Spec.Rsa.os2ip
+  rw [foldl_ones, Nat.zero_mul, Nat.zero_add]
+  rw [show (256 : Nat) = 2 ^ 8 by rfl, ← Nat.pow_mul, show 8 * (bits / 8) = bits by
+    rcases hb with rfl | rfl | rfl | rfl | rfl <;> decide]
+
+theorem sat_odd {bits : Nat} (hb : Supported bits) : candidateOf bits (satState bits) % 2 = 1 := by
+  rw [sat_candidate hb]
+  have : 2 ^ bits % 2 = 0 := by
+    rw [show bits = (bits - 1) + 1 by rcases hb with rfl | rfl | rfl | rfl | rfl <;> decide, Nat.pow_succ]; omega_using []
+  have := Nat.two_pow_pos bits
+  omega_arith
+
+theorem sat_length {bits : Nat} (hb : Supported bits) :
+    Spec.Dsa.bitLength (candidateOf bits (satState bits)) = bits := by
+  rw [sat_candidate hb]
+  have low : 1 ≤ bits := by rcases hb with rfl | rfl | rfl | rfl | rfl <;> decide
+  have half : 2 ^ bits = 2 ^ (bits - 1) * 2 := by
+    rw [← Nat.pow_succ]; congr 1; omega_using [low]
+  have pos := Nat.two_pow_pos (bits - 1)
+  exact (VG.Proof.Dsa.bitLength_iff_bounds (by omega_using [low])).mpr ⟨by omega_using [half], by omega_using [half, pos]⟩
+
+theorem satisfiable : ∃ s, contract.pre s := by
+  refine ⟨satState 160, ?_⟩
+  sig_pre [contract, Proof.Dsa.ProbablePrime.sizedContract, Proof.Dsa.ProbablePrime.sizedSig, abi, argRegs]
+  sig_and_intros
+  all_goals first
+    | exact sat_odd (bits := 160) (Or.inl rfl)
+    | exact sat_length (bits := 160) (Or.inl rfl)
+    | exact Region.disjoint_of_sep (by decide +kernel)
+    | decide +kernel
+
+end VG.Proof.Dsa.X86_64.ProbablePrime
+
+end
+
+end
+
+/-! ### `Dsa.X86_64.Generation.PrimeSafety`, which only this module used -/
+
+section
+
+/-! # The probable-prime policy inherits instruction safety from shared arithmetic -/
+
+@[expose] public section
+namespace VG.Proof.Dsa.X86_64.Generation
+open VG VG.X86_64 VG.Impl.Dsa.X86_64.Generation VG.Impl.Bignum.X86_64
+
+theorem primeSetup_safe (mul : Nat → Nat → Nat → Prog isa)
+    (hm : ∀ o a b, generationSafe (mul o a b)) : generationSafe (primeSetup mul) := by
+  unfold generationSafe at hm ⊢
+  simp only [primeSetup, primeR2, Impl.Dsa.X86_64.Arithmetic.constants,
+    Impl.Ffdh.X86_64.ParameterCandidate.prepareConstants,
+    R2Words.choice, R2Words.fast, R2Words.old, VG.Impl.Bignum.X86_64.Public.R2Squares.run,
+    VG.Impl.Bignum.X86_64.Public.R2Squares.init, VG.Impl.Bignum.X86_64.Public.R2Squares.next, seqs, generationOk, hm]
+  rfl
+
+theorem millerRabin_safe (mul : Nat → Nat → Nat → Prog isa) (round : Prog isa)
+    (hm : ∀ o a b, generationSafe (mul o a b)) (hr : generationSafe round) :
+    generationSafe (millerRabin mul round) := by
+  unfold generationSafe at hm hr ⊢
+  simp only [millerRabin, primeIteration, drawRound, sampleRound,
+    Impl.Ffdh.X86_64.ParameterCandidate.witnessRound, seqs, generationOk, hm, hr]
+  rfl
+
+theorem probablePrime_safe (mul : Nat → Nat → Nat → Prog isa) (round : Prog isa)
+    (hm : ∀ o a b, generationSafe (mul o a b)) (hr : generationSafe round) :
+    generationSafe (probablePrime mul round) := by
+  exact (show generationSafe (seqs Impl.RsaKeyGen.X86_64.Candidate.trial) by
+    unfold generationSafe; decide +kernel).seq
+    (((primeSetup_safe mul hm).seq (millerRabin_safe mul round hm hr)).ite
+      (show generationSafe (.block [.mov32 .rax (.imm 3), .store (hdr Impl.RsaKeyGen.X86_64.Candidate.kStat) .rax]) from rfl) _)
+
+theorem primeBytes_noMx (mul : Nat → Nat → Nat → Prog isa) (round : Prog isa)
+    (hm : ∀ o a b, (mul o a b).allInstrs (fun i => !touchesMxcsr i) = true)
+    (hr : round.allInstrs (fun i => !touchesMxcsr i) = true) :
+    (primeBytes mul round).allInstrs (fun i => !touchesMxcsr i) = true := by
+  simp only [primeBytes, loadPadded, probablePrime, primeSetup, primeR2, Impl.Dsa.X86_64.Arithmetic.constants,
+    Impl.Ffdh.X86_64.ParameterCandidate.prepareConstants,
+    R2Words.choice, R2Words.fast, R2Words.old, VG.Impl.Bignum.X86_64.Public.R2Squares.run,
+    VG.Impl.Bignum.X86_64.Public.R2Squares.init, VG.Impl.Bignum.X86_64.Public.R2Squares.next,
+    millerRabin, primeIteration, drawRound, sampleRound, Impl.Ffdh.X86_64.ParameterCandidate.witnessRound,
+    seqs, Code.allInstrs, Bool.and_eq_true, hm, hr, and_true, true_and]
+  and_intros <;> lit_decide
+
+theorem primeBytes_safe (mul : Nat → Nat → Nat → Prog isa) (round : Prog isa)
+    (hm : ∀ o a b, generationSafe (mul o a b)) (hr : generationSafe round) :
+    generationSafe (primeBytes mul round) :=
+  (show generationSafe (loadPadded 0 20 18) from rfl).seq (probablePrime_safe mul round hm hr)
+
+end VG.Proof.Dsa.X86_64.Generation
+
+end
+
+end
+
+/-! ### `Dsa.X86_64.Generation.PrimeDepth`, which only this module used -/
+
+section
+
+/-! # The probable-prime policy inherits stack bounds from shared arithmetic -/
+
+@[expose] public section
+namespace VG.Proof.Dsa.X86_64.Generation
+open VG VG.X86_64 VG.Impl.Dsa.X86_64.Generation VG.Impl.Bignum.X86_64
+
+theorem primeSetup_depth (mul : Nat → Nat → Nat → Prog isa)
+    (hm : ∀ o a b, generationDepth (mul o a b)) : generationDepth (primeSetup mul) := by
+  unfold generationDepth at hm ⊢
+  simp only [primeSetup, primeR2, Impl.Dsa.X86_64.Arithmetic.constants,
+    Impl.Ffdh.X86_64.ParameterCandidate.prepareConstants,
+    R2Words.choice, R2Words.fast, R2Words.old, VG.Impl.Bignum.X86_64.Public.R2Squares.run,
+    VG.Impl.Bignum.X86_64.Public.R2Squares.init, VG.Impl.Bignum.X86_64.Public.R2Squares.next, seqs, Code.x86_64Depth, Nat.max_le]
+  and_intros
+  all_goals first | exact hr | apply hm | exact (show 0 ≤ 128 by decide)
+
+theorem millerRabin_depth (mul : Nat → Nat → Nat → Prog isa) (round : Prog isa)
+    (hm : ∀ o a b, generationDepth (mul o a b)) (hr : generationDepth round) :
+    generationDepth (millerRabin mul round) := by
+  unfold generationDepth at hm hr ⊢
+  simp only [millerRabin, primeIteration, drawRound, sampleRound,
+    Impl.Ffdh.X86_64.ParameterCandidate.witnessRound, seqs, Code.x86_64Depth, Nat.max_le]
+  and_intros
+  all_goals first | exact hr | apply hm | exact (show 0 ≤ 128 by decide)
+
+theorem probablePrime_depth (mul : Nat → Nat → Nat → Prog isa) (round : Prog isa)
+    (hm : ∀ o a b, generationDepth (mul o a b)) (hr : generationDepth round) :
+    generationDepth (probablePrime mul round) := by
+  exact (show generationDepth (seqs Impl.RsaKeyGen.X86_64.Candidate.trial) by
+    unfold generationDepth; decide +kernel).seq
+    (((primeSetup_depth mul hm).seq (millerRabin_depth mul round hm hr)).ite
+      (show generationDepth (.block [.mov32 .rax (.imm 3), .store (hdr Impl.RsaKeyGen.X86_64.Candidate.kStat) .rax]) by exact (show 0 ≤ 128 by decide)) _)
+
+theorem primeBytes_depth (mul : Nat → Nat → Nat → Prog isa) (round : Prog isa)
+    (hm : ∀ o a b, generationDepth (mul o a b)) (hr : generationDepth round) :
+    generationDepth (primeBytes mul round) :=
+  (show generationDepth (loadPadded 0 20 18) by exact (show 0 ≤ 128 by decide)).seq (probablePrime_depth mul round hm hr)
+
+end VG.Proof.Dsa.X86_64.Generation
+
+end
+
+end
+
+/-! # `vg_dsa_probable_prime` on x86-64 is verified
+
+For each Miller–Rabin round implementation: the test multiplies with the
+round's inlined arithmetic and calls the shared round. -/
+
+-- Formerly `VerifiedGarbage/Proof/Dsa/X86_64/ProbablePrime/Safety.lean`, which only this module imported.
+section
+
+/-! # The probable-prime test neither loads MXCSR nor writes `rsp` but in its frame -/
+
+@[expose] public section
+namespace VG.Proof.Dsa.X86_64.ProbablePrime
+open VG VG.X86_64 VG.Impl.Dsa.X86_64.ProbablePrime
+open VG.Proof.Dsa.X86_64.Generation (generationSafe generationDepth)
+
+theorem code_safe (mul : Nat → Nat → Nat → Prog isa) (round : Prog isa)
+    (hm : ∀ o a b, generationSafe (mul o a b)) (hr : generationSafe round) :
+    generationSafe (code mul round) := by
+  have hs : generationSafe setup := rfl
+  have hb := hs.seq ((VG.Proof.Dsa.X86_64.Generation.primeBytes_safe mul round hm hr).seq
+    ((show generationSafe (.block exit) from rfl).seq (show generationSafe (.block restoreRegisters) from rfl)))
+  have hb' : generationSafe (.seq setup
+      (Impl.Bignum.X86_64.seqs [Impl.Dsa.X86_64.Generation.primeBytes mul round,
+        .block exit, .block restoreRegisters])) := hb
+  unfold generationSafe at hb'
+  change ((true && _) && true) = true
+  rw [hb']; rfl
+
+theorem code_noMx (mul : Nat → Nat → Nat → Prog isa) (round : Prog isa)
+    (hm : ∀ o a b, (mul o a b).allInstrs (fun i => !touchesMxcsr i) = true)
+    (hr : round.allInstrs (fun i => !touchesMxcsr i) = true) :
+    (code mul round).allInstrs (fun i => !touchesMxcsr i) = true := by
+  simp only [Impl.Dsa.X86_64.ProbablePrime.code, Impl.Bignum.X86_64.seqs, Code.allInstrs,
+    VG.Proof.Dsa.X86_64.Generation.primeBytes_noMx mul round hm hr, Bool.true_and]
+  lit_decide
+
+theorem code_depth (mul : Nat → Nat → Nat → Prog isa) (round : Prog isa)
+    (hm : ∀ o a b, generationDepth (mul o a b)) (hr : generationDepth round) :
+    (code mul round).x86_64Depth ≤ 184 := by
+  have hp := VG.Proof.Dsa.X86_64.Generation.primeBytes_depth mul round hm hr
+  unfold generationDepth at hp
+  simp only [Impl.Dsa.X86_64.ProbablePrime.code, setup, Impl.Bignum.X86_64.seqs, sizedWorkspace, Code.x86_64Depth, Instr.frameBytes,
+    Nat.zero_max, Nat.max_zero]
+  exact Nat.add_le_add_right hp 56
+
+end VG.Proof.Dsa.X86_64.ProbablePrime
+end
+
+end
+
+@[expose] public section
+namespace VG.Proof.Dsa.X86_64.ProbablePrime
+open VG VG.X86_64 VG.Proof.MillerRabin.X86_64
+
+open VG.Impl.Dsa.X86_64.ProbablePrime
+
+private def prepareStub : Prog isa :=
+  Impl.Dsa.X86_64.Generation.primeSetup (fun _ _ _ => .call "mm" (.block []))
+
+private theorem prepare_stub :
+    VG.X86_64.Scrub.stubCalleeG prepareStub 0 (fun _ => 0) 8 = true := by lit_decide
+
+private theorem prepare_side (v : RoundImpl) :
+    VG.X86_64.Scrub.calleeSide (Impl.Dsa.X86_64.Generation.primeSetup v.inlineMont.mm)
+      v.level.level 8 = true := by
+  apply VG.X86_64.Scrub.calleeSide_of_fillG (n := fun _ => 0) ?_ (Nat.zero_le _) prepare_stub
+  have hm := v.inlineSide
+  unfold prepareStub
+  fill_gen
+
+private theorem prepare_depth (v : RoundImpl) :
+    (Impl.Dsa.X86_64.Generation.primeSetup v.inlineMont.mm).x86_64Depth ≤ 8 := by
+  have h := prepare_side v
+  simp only [VG.X86_64.Scrub.calleeSide_eq, Bool.and_eq_true, decide_eq_true_eq] at h
+  exact h.1.1
+
+private theorem code_ok_prepare (mul : Nat → Nat → Nat → Prog isa) (round a b : Prog isa)
+    (h : Generation.generationOk a = Generation.generationOk b) :
+    Generation.generationOk (Impl.Dsa.X86_64.ProbablePrime.code mul round a) = Generation.generationOk (Impl.Dsa.X86_64.ProbablePrime.code mul round b) := by
+  simp only [Impl.Dsa.X86_64.ProbablePrime.code, Impl.Bignum.X86_64.seqs, Impl.Dsa.X86_64.Generation.primeBytes,
+    Impl.Dsa.X86_64.Generation.probablePrime, Generation.generationOk]
+  rw [h]
+
+private theorem code_instrs_prepare (p : Instr → Bool) (mul : Nat → Nat → Nat → Prog isa)
+    (round a b : Prog isa) (h : a.allInstrs p = b.allInstrs p) :
+    (Impl.Dsa.X86_64.ProbablePrime.code mul round a).allInstrs p = (Impl.Dsa.X86_64.ProbablePrime.code mul round b).allInstrs p := by
+  simp only [Impl.Dsa.X86_64.ProbablePrime.code, Impl.Bignum.X86_64.seqs, Impl.Dsa.X86_64.Generation.primeBytes,
+    Impl.Dsa.X86_64.Generation.probablePrime, Code.allInstrs]
+  rw [h]
+
+private theorem code_depth_prepare (mul : Nat → Nat → Nat → Prog isa) (round prepare : Prog isa)
+    (hm : ∀ o a b, Generation.generationDepth (mul o a b))
+    (hr : Generation.generationDepth round) (hp : Generation.generationDepth prepare) :
+    (Impl.Dsa.X86_64.ProbablePrime.code mul round prepare).x86_64Depth ≤ 184 := by
+  have htrial : Generation.generationDepth (Impl.Bignum.X86_64.seqs Impl.RsaKeyGen.X86_64.Candidate.trial) := by
+    unfold Generation.generationDepth; decide +kernel
+  have hpp : Generation.generationDepth (Impl.Dsa.X86_64.Generation.probablePrime mul round prepare) :=
+    htrial.seq ((hp.seq (Generation.millerRabin_depth mul round hm hr)).ite
+      (Generation.generationDepth.block _) _)
+  have hpbytes : Generation.generationDepth (Impl.Dsa.X86_64.Generation.primeBytes mul round prepare) :=
+    (show Generation.generationDepth (Impl.Dsa.X86_64.Generation.loadPadded 0 20 18) from by
+      change 0 ≤ 128; decide).seq hpp
+  unfold Generation.generationDepth at hpbytes
+  simp only [Impl.Dsa.X86_64.ProbablePrime.code, setup, Impl.Bignum.X86_64.seqs, sizedWorkspace, Code.x86_64Depth, Instr.frameBytes,
+    Nat.zero_max, Nat.max_zero]
+  exact Nat.add_le_add_right hpbytes 56
+
+/-- The test's code with the round implementation `v`. -/
+abbrev testCode (v : RoundImpl) : Prog isa :=
+  Impl.Dsa.X86_64.ProbablePrime.code v.inlineMont.mm (Kernel.called v).run
+    (Generation.Preparation.forRound v).code
+
+theorem testCode_safe (v : RoundImpl) :
+    VG.Proof.Dsa.X86_64.Generation.generationSafe (testCode v) := by
+  have hm := fun o a b => Generation.generationSafe_of_allInstrs (v.inlineSafe o a b)
+  have hp := Generation.primeSetup_safe v.inlineMont.mm hm
+  have hs : Generation.generationSafe (Generation.Preparation.forRound v).code := by
+    unfold Generation.Preparation.forRound
+    split
+    · exact hp
+    · exact hp.call _
+  unfold Generation.generationSafe at hs hp ⊢
+  rw [code_ok_prepare _ _ _ _ (hs.trans hp.symm)]
+  exact code_safe _ _ hm (Generation.roundCode_safe v)
+
+theorem testCode_noMx (v : RoundImpl) :
+    (testCode v).allInstrs (fun i => !touchesMxcsr i) = true := by
+  have he : (Generation.Preparation.forRound v).code.allInstrs (fun i => !touchesMxcsr i) =
+      (Impl.Dsa.X86_64.Generation.primeSetup v.inlineMont.mm).allInstrs (fun i => !touchesMxcsr i) := by
+    unfold Generation.Preparation.forRound
+    split <;> rfl
+  rw [code_instrs_prepare _ _ _ _ _ he]
+  exact code_noMx _ _ v.inlineNoMx (Generation.roundCode_noMx v)
+
+theorem testCode_depth (v : RoundImpl) : (testCode v).x86_64Depth ≤ 184 := by
+  apply code_depth_prepare _ _ _ (Generation.inlineMul_depth v) (Generation.roundCode_depth v)
+  unfold Generation.generationDepth Generation.Preparation.forRound
+  split
+  · change (Impl.Dsa.X86_64.Generation.primeSetup v.inlineMont.mm).x86_64Depth ≤ 128
+    have h := prepare_depth v; omega
+  · change (Impl.Dsa.X86_64.Generation.primeSetup v.inlineMont.mm).x86_64Depth + 8 ≤ 128
+    have h := prepare_depth v; omega
+
+theorem verified (v : RoundImpl) : Verified target (testCode v) contract :=
+  ⟨correct v.inlineMont (Kernel.called v) (Generation.Preparation.forRound v) (testCode_safe v).mx,
+    code_ct _ _ (Generation.TimedPreparation.forRound v), satisfiable⟩
+
+/-- The test with the round implementation `v`, as parameter generation
+calls it. -/
+def primeTest (v : RoundImpl) : VG.Proof.Dsa.X86_64.Generation.PrimeTest where
+  name := "vg_dsa_probable_prime" ++ v.suffix
+  code := testCode v
+  verified := verified v
+  safe := testCode_safe v
+  noMx := testCode_noMx v
+  depth := testCode_depth v
+
+end VG.Proof.Dsa.X86_64.ProbablePrime
+
+end
+
+end
+
+/-! ### `Dsa.X86_64.Generation.HashVariants`, which only this module used -/
+
+section
+
+/-! # Select the SHA-1 and SHA-256 stream implementations for DSA generation -/
+
+@[expose] public section
+namespace VG.Proof.Dsa.X86_64.Generation
+open VG VG.Proof.Pbkdf2.Md.X86_64
+
+theorem sha1_of_name (v : MdHash) (h : v.mgf.G.rust = "sha1") : v.mgf.G = Spec.Mgf1.sha1 := by
+  have hm := v.mgf.mem
+  simp only [mdHashes, List.mem_cons, List.not_mem_nil, or_false] at hm
+  rcases hm with hm | hm | hm | hm | hm | hm | hm | hm
+  all_goals rw [hm] at h
+  all_goals first | exact hm | contradiction
+
+theorem sha256_of_name (v : MdHash) (h : v.mgf.G.rust = "sha256") : v.mgf.G = Spec.Mgf1.sha256 := by
+  have hm := v.mgf.mem
+  simp only [mdHashes, List.mem_cons, List.not_mem_nil, or_false] at hm
+  rcases hm with hm | hm | hm | hm | hm | hm | hm | hm
+  all_goals rw [hm] at h
+  all_goals first | exact hm | contradiction
+
+theorem hashCode_size (v : MdHash) (x : List (BitVec 8)) : (v.mgf.G.hash x).length = v.H.D := by
+  rw [v.mgf.hash, v.ok.hash, List.length_take, MdStream.Md.hash, v.ok.md.digest_length]
+  exact Nat.min_eq_left v.ok.hDN
+
+def generationHashes (v1 v256 : MdHash) (h1 : v1.mgf.G.rust = "sha1")
+    (h256 : v256.mgf.G.rust = "sha256") : GenerationHashes where
+  sha1 := v1.H.stream
+  sha256 := v256.H.stream
+  h1 := v1.ok.stream
+  h256 := v256.ok.stream
+  hash1 x := by rw [← sha1_of_name v1 h1]; exact v1.mgf.hash x
+  hash256 x := by rw [← sha256_of_name v256 h256]; exact v256.mgf.hash x
+  size1 x := by rw [← sha1_of_name v1 h1]; exact hashCode_size v1 x
+  size256 x := by rw [← sha256_of_name v256 h256]; exact hashCode_size v256 x
+  width1 := by
+    change v1.H.D = 20
+    rw [← v1.mgf.len, sha1_of_name v1 h1]
+    rfl
+  width256 := by
+    change v256.H.D = 32
+    rw [← v256.mgf.len, sha256_of_name v256 h256]
+    rfl
+
+end VG.Proof.Dsa.X86_64.Generation
+
+end
+
+end
+
+/-! ### `Dsa.X86_64.Generation.PowerDepth`, which only this module used -/
+
+section
+
+/-! # Stack bound for public generator exponentiation -/
+
+@[expose] public section
+namespace VG.Proof.Dsa.X86_64.Generation
+open VG VG.X86_64 VG.Impl.Dsa.X86_64 VG.Impl.Dsa.X86_64.Generation VG.Impl.Bignum.X86_64
+open VG.Impl.Rsa.X86_64
+
+theorem generatorPower_depth (sq : Prog isa) (mul : Nat → Nat → Nat → Prog isa)
+    (hs : generationDepth sq) (hm : ∀ o a b, generationDepth (mul o a b)) :
+    generationDepth (generatorPower sq mul) := by
+  unfold generationDepth at hs hm ⊢
+  unfold generatorPower Core.publicPow PublicPower.power PublicPower.powerCore
+    PublicPower.encodedPower PublicPower.expLoop PublicPower.byte PublicPower.window
+    PublicPower.squares PublicPower.squaresInit PublicPower.squaresNext
+    PublicPower.applyWindow Arithmetic.encodePower Arithmetic.constants
+    Crt.tabBuild Crt.tabBuildN Crt.toEnt Crt.copyArr R2Words.choice R2Words.fast R2Words.old VG.Impl.Bignum.X86_64.Public.R2Squares.run
+    VG.Impl.Bignum.X86_64.Public.R2Squares.init VG.Impl.Bignum.X86_64.Public.R2Squares.next
+  -- one pass: a `rw` for each node of the code read the whole goal again
+  simp only [generation_depth_seqs, Code.x86_64Depth, List.foldr_append, List.foldr_cons, List.foldr_nil,
+    Nat.max_le]
+  and_intros
+  all_goals first | exact hs | apply hm | exact (show 0 ≤ 128 by decide)
+
+theorem generatorPowerFresh_depth (sq : Prog isa) (mul : Nat → Nat → Nat → Prog isa)
+    (hs : generationDepth sq) (hm : ∀ o a b, generationDepth (mul o a b)) (len : Nat) :
+    generationDepth (generatorPowerFresh sq mul len) :=
+  (show generationDepth (generatorModulus len) by exact (show 0 ≤ 128 by decide)).seq (generatorPower_depth sq mul hs hm)
+
+theorem generatorStep_depth (sq : Prog isa) (mul : Nat → Nat → Nat → Prog isa)
+    (hs : generationDepth sq) (hm : ∀ o a b, generationDepth (mul o a b)) (len : Nat) :
+    generationDepth (generatorStep sq mul len) := by
+  have test : generationDepth (.block [.alu .test .rax (.reg .rax)]) := by exact (show 0 ≤ 128 by decide)
+  have retry : generationDepth (.block (stackStatus 3)) := by exact (show 0 ≤ 128 by decide)
+  have success : generationDepth (.block (stackStatus 1)) := by exact (show 0 ≤ 128 by decide)
+  have run := (show generationDepth (.block generatorInput) by exact (show 0 ≤ 128 by decide)).seq
+    (generatorPowerFresh_depth sq mul hs hm len)
+  exact (show generationDepth (generatorRangeFromFrame len false) by exact (show 0 ≤ 128 by decide)).seq
+    (test.seq (retry.ite (run.seq
+      ((show generationDepth (generatorRangeFromFrame len true) by exact (show 0 ≤ 128 by decide)).seq
+        (test.seq (retry.ite success .e)))) .e))
+
+end VG.Proof.Dsa.X86_64.Generation
+
+end
+
+end
+
+/-! ### `Dsa.X86_64.Generation.ValidateDepth`, which only this module used -/
+
+section
+
+/-! # Stack bound for the final domain validator -/
+
+@[expose] public section
+namespace VG.Proof.Dsa.X86_64.Generation
+open VG VG.X86_64 VG.Impl.Dsa.X86_64 VG.Impl.Dsa.X86_64.Generation VG.Impl.Bignum.X86_64
+open VG.Impl.Rsa.X86_64
+
+
+variable {checkName : String}
+
+theorem checkParameters_depth_bound (sq : Prog isa) (mul : Nat → Nat → Nat → Prog isa)
+    {n : Nat} (hs : sq.x86_64Depth ≤ n) (hm : ∀ o a b, (mul o a b).x86_64Depth ≤ n) :
+    (Generate.checkParameters sq mul).x86_64Depth ≤ n := by
+  unfold Generate.checkParameters Checks.signingKey Checks.publicPrefix Core.reduce
+    Arithmetic.reduce Arithmetic.reduceSetup Arithmetic.reduceByte Arithmetic.reduceStep
+    Core.publicPow PublicPower.power PublicPower.powerCore
+    PublicPower.encodedPower PublicPower.expLoop PublicPower.byte PublicPower.window
+    PublicPower.squares PublicPower.squaresInit PublicPower.squaresNext
+    PublicPower.applyWindow Arithmetic.encodePower Arithmetic.constants
+    Crt.tabBuild Crt.tabBuildN Crt.toEnt Crt.copyArr R2Words.choice R2Words.fast R2Words.old VG.Impl.Bignum.X86_64.Public.R2Squares.run
+    VG.Impl.Bignum.X86_64.Public.R2Squares.init VG.Impl.Bignum.X86_64.Public.R2Squares.next
+  -- one pass: a `rw` for each node of the code read the whole goal again
+  simp only [generation_depth_seqs, Code.x86_64Depth, List.foldr_append, List.foldr_cons, List.foldr_nil,
+    Nat.max_le]
+  and_intros
+  all_goals first | exact hs | apply hm | exact (Nat.zero_le n)
+
+theorem validate_depth (sq : Prog isa) (mul : Nat → Nat → Nat → Prog isa)
+    (hc : generationDepth (.call checkName (Generate.checkParameters sq mul))) (pLen qLen : Nat) :
+    generationDepth (validate (checkName := checkName) sq mul pLen qLen) := by
+  exact ((generationDepth.block _).seq hc).seq
+    ((generationDepth.block _).seq ((generationDepth.block _).ite (generationDepth.block _) .e))
+
+end VG.Proof.Dsa.X86_64.Generation
+
+end
+
+end
+
+/-! ### `Dsa.X86_64.Generation.CandidateDepth`, which only this module used -/
+
+section
+
+/-! ### `Dsa.X86_64.Generation.HashDepth`, which this module and modules that import it used -/
+
+section
+
+/-! # Seed hashing fits the reserved stack below the persistent frame -/
+
+@[expose] public section
+namespace VG.Proof.Dsa.X86_64.Generation
+open VG VG.X86_64 VG.Impl.Dsa.X86_64.Generation
+open VG.Impl.Pbkdf2.Md.X86_64 (Stream)
+
+structure HashDepth (H : Stream) : Prop where
+  init : H.initC.x86_64Depth ≤ 120
+  update : H.updC.x86_64Depth ≤ 120
+  finish : H.finC.x86_64Depth ≤ 120
+
+theorem viaSlot_depth (d : Nat) (n : String) (c : Prog isa) :
+    (viaSlot d n c).x86_64Depth = c.x86_64Depth + 8 := by
+  simp only [viaSlot, Code.icalls, Code.x86_64Depth, Nat.zero_max, Nat.max_zero]
+
+theorem hashLabelI_depth {H : Stream} (h : HashDepth H) (o : Nat) :
+    generationDepth (hashLabelI H o) := by
+  simp only [generationDepth, hashLabelI, Impl.Mgf1.X86_64.seqs, Code.x86_64Depth, viaSlot_depth, Nat.max_le]
+  exact ⟨by decide, Nat.add_le_add_right h.init 8, by decide,
+    Nat.add_le_add_right h.update 8, by decide, Nat.add_le_add_right h.finish 8⟩
+
+theorem hashLabel_depth {H : Stream} (h : HashDepth H) (o : Nat) :
+    generationDepth (Impl.RsaOaep.X86_64.hashLabel H o) := by
+  simp only [generationDepth, Impl.RsaOaep.X86_64.hashLabel, Impl.Mgf1.X86_64.seqs,
+    Code.x86_64Depth, Nat.max_le]
+  exact ⟨by decide, Nat.add_le_add_right h.init 8, by decide,
+    Nat.add_le_add_right h.update 8, by decide, Nat.add_le_add_right h.finish 8⟩
+
+private theorem seedAddUnrolled_depth (n : Nat) : generationDepth (seedAddUnrolled n) := by
+  induction n with
+  | zero => exact generationDepth.block _
+  | succ n ih => exact (generationDepth.block _).seq ih
+
+theorem seedAdd_depth (n : Nat) : generationDepth (seedAdd n) := by
+  unfold seedAdd
+  split
+  · exact seedAddUnrolled_depth n
+  · unfold seedAddTail
+    split <;> exact Nat.zero_le _
+
+theorem seedHashAt_depth {H1 H256 : Stream} (h1 : HashDepth H1) (h256 : HashDepth H256) (len : Nat) :
+    generationDepth (seedHashAt H1 H256 len) := by
+  unfold seedHashAt
+  split <;> first | exact hashLabelI_depth h1 _ | exact hashLabelI_depth h256 _
+
+theorem pHashOne_depth {H : Stream} (h : HashDepth H) (len count j : Nat) :
+    generationDepth (pHashOne H len count j) :=
+  ((generationDepth.block _).seq ((seedAdd_depth len).seq (hashLabelI_depth h _))).seq
+    ((generationDepth.block _).seq (by unfold generationDepth; decide +kernel))
+
+theorem pHashPrefix_depth {H : Stream} (h : HashDepth H) (len count k : Nat) :
+    generationDepth (pHashPrefix H len count k) := by
+  induction k with
+  | zero => exact generationDepth.block _
+  | succ k ih => exact ih.seq (pHashOne_depth h len count k)
+
+theorem pHashes_depth {H : Stream} (h : HashDepth H) (len count : Nat) :
+    generationDepth (pHashes H len count) := pHashPrefix_depth h len count (count + 1)
+
+end VG.Proof.Dsa.X86_64.Generation
+
+end
+
+end
+
+/-! # Stack bounds for subgroup candidates and prime search -/
+
+@[expose] public section
+namespace VG.Proof.Dsa.X86_64.Generation
+open VG VG.X86_64 VG.Impl.Dsa.X86_64.Generation VG.Impl.Bignum.X86_64
+open VG.Impl.Pbkdf2.Md.X86_64 (Stream)
+
+theorem primeCall_depth (prime : Prog isa) (hp : callerDepth prime) (bits : Nat) :
+    callerDepth (primeCall prime bits) := by
+  unfold callerDepth at hp ⊢
+  simp only [primeCall, primeCallResult, primeCallStatus, Code.x86_64Depth, Nat.max_le, Nat.zero_le,
+    and_true, true_and]
+  exact hp
+
+theorem qCandidate_depth {H1 H256 : Stream} (h1 : HashDepth H1) (h256 : HashDepth H256) (len : Nat) :
+    generationDepth (qCandidate H1 H256 len) := by
+  exact (seedHashAt_depth h1 h256 len).seq ((show generationDepth (.block qArgs) by exact (show 0 ≤ 128 by decide)).seq
+    (show generationDepth Impl.Ffdh.X86_64.ParameterCandidate.shape by exact (show 0 ≤ 128 by decide)))
+
+theorem subgroup_depth {H1 H256 : Stream} (h1 : HashDepth H1) (h256 : HashDepth H256)
+    (prime : Prog isa) (hp : callerDepth prime) (len : Nat) :
+    callerDepth (subgroup H1 H256 prime len) :=
+  (callerDepth.of (qCandidate_depth h1 h256 len)).seq (primeCall_depth prime hp _)
+
+theorem pConstruct_depth {H : Stream} (h : HashDepth H) (pLen qLen : Nat) :
+    generationDepth (pConstruct H pLen qLen) := by
+  exact ((pHashes_depth h _ _).seq (show generationDepth (pShape qLen _ pLen) by exact (show 0 ≤ 128 by decide))).seq
+    ((show generationDepth (.block workspaceBase) by exact (show 0 ≤ 128 by decide)).seq
+      ((show generationDepth (workspace (pLen / 8)) by exact (show 0 ≤ 128 by decide)).seq
+        (show generationDepth (candidateFromFrame pLen qLen) by exact (show 0 ≤ 128 by decide))))
+
+theorem pTest_depth (prime : Prog isa) (hp : callerDepth prime) (pLen : Nat) :
+    callerDepth (pTest prime pLen) := by
+  unfold pTest
+  exact (callerDepth.of (generationDepth.block _)).seq
+    ((callerDepth.of (generationDepth.block _)).ite (primeCall_depth prime hp _) _)
+
+theorem pAttempt_depth {H1 H256 : Stream} (h1 : HashDepth H1) (h256 : HashDepth H256)
+    (prime : Prog isa) (hp : callerDepth prime) (pLen qLen : Nat) :
+    callerDepth (pAttempt H1 H256 prime pLen qLen) := by
+  have hh : HashDepth (if qLen = 20 then H1 else H256) := by split <;> with_reducible assumption
+  exact (callerDepth.of (generationDepth.block _)).seq
+    (((callerDepth.of (pConstruct_depth hh pLen qLen)).seq (pTest_depth prime hp pLen)).seq
+      (callerDepth.of (generationDepth.block _)))
+
+end VG.Proof.Dsa.X86_64.Generation
+
+end
+
+end
+
+/-! ### `Dsa.X86_64.Generation.ValidateSafety`, which only this module used -/
+
+section
+
+/-! ### `Dsa.X86_64.Generation.PowerSafety`, which this module and modules that import it used -/
+
+section
+
+/-! # Public generator exponentiation preserves stack and MXCSR control state -/
+
+@[expose] public section
+namespace VG.Proof.Dsa.X86_64.Generation
+open VG VG.X86_64 VG.Impl.Dsa.X86_64 VG.Impl.Dsa.X86_64.Generation VG.Impl.Bignum.X86_64
+open VG.Impl.Rsa.X86_64
+
+theorem generatorPower_safe (sq : Prog isa) (mul : Nat → Nat → Nat → Prog isa)
+    (hs : generationSafe sq) (hm : ∀ o a b, generationSafe (mul o a b)) :
+    generationSafe (generatorPower sq mul) := by
+  unfold generationSafe at hs hm ⊢
+  unfold generatorPower Core.publicPow PublicPower.power PublicPower.powerCore
+    PublicPower.encodedPower PublicPower.expLoop PublicPower.byte PublicPower.window
+    PublicPower.squares PublicPower.squaresInit PublicPower.squaresNext
+    PublicPower.applyWindow Arithmetic.encodePower Arithmetic.constants
+    Crt.tabBuild Crt.tabBuildN R2Words.choice R2Words.fast R2Words.old VG.Impl.Bignum.X86_64.Public.R2Squares.run
+    VG.Impl.Bignum.X86_64.Public.R2Squares.init VG.Impl.Bignum.X86_64.Public.R2Squares.next
+  -- one pass: a `rw` for each node of the code read the whole goal again
+  simp only [generationOk_seqs, generationOk, List.all_append, List.all_cons, hs, hm]
+  rfl
+
+theorem generatorPowerFresh_safe (sq : Prog isa) (mul : Nat → Nat → Nat → Prog isa)
+    (hs : generationSafe sq) (hm : ∀ o a b, generationSafe (mul o a b)) (len : Nat) :
+    generationSafe (generatorPowerFresh sq mul len) :=
+  (show generationSafe (generatorModulus len) from rfl).seq (generatorPower_safe sq mul hs hm)
+
+theorem generatorStep_safe (sq : Prog isa) (mul : Nat → Nat → Nat → Prog isa)
+    (hs : generationSafe sq) (hm : ∀ o a b, generationSafe (mul o a b)) (len : Nat) :
+    generationSafe (generatorStep sq mul len) := by
+  have test : generationSafe (.block [.alu .test .rax (.reg .rax)]) := rfl
+  have retry : generationSafe (.block (stackStatus 3)) := rfl
+  have success : generationSafe (.block (stackStatus 1)) := rfl
+  have run := (show generationSafe (.block generatorInput) from rfl).seq
+    (generatorPowerFresh_safe sq mul hs hm len)
+  exact (show generationSafe (generatorRangeFromFrame len false) from rfl).seq
+    (test.seq (retry.ite (run.seq
+      ((show generationSafe (generatorRangeFromFrame len true) from rfl).seq
+        (test.seq (retry.ite success .e)))) .e))
+
+end VG.Proof.Dsa.X86_64.Generation
+
+end
+
+end
+
+/-! # The final domain validator preserves stack and MXCSR control state -/
+
+@[expose] public section
+namespace VG.Proof.Dsa.X86_64.Generation
+open VG VG.X86_64 VG.Impl.Dsa.X86_64 VG.Impl.Dsa.X86_64.Generation VG.Impl.Bignum.X86_64
+open VG.Impl.Rsa.X86_64
+
+
+variable {checkName : String}
+
+theorem checkParameters_safe (sq : Prog isa) (mul : Nat → Nat → Nat → Prog isa)
+    (hs : generationSafe sq) (hm : ∀ o a b, generationSafe (mul o a b)) :
+    generationSafe (Generate.checkParameters sq mul) := by
+  unfold generationSafe at hs hm ⊢
+  unfold Generate.checkParameters Checks.signingKey Checks.publicPrefix Core.reduce
+    Arithmetic.reduce Arithmetic.reduceSetup Arithmetic.reduceByte Arithmetic.reduceStep
+    Core.publicPow PublicPower.power PublicPower.powerCore
+    PublicPower.encodedPower PublicPower.expLoop PublicPower.byte PublicPower.window
+    PublicPower.squares PublicPower.squaresInit PublicPower.squaresNext
+    PublicPower.applyWindow Arithmetic.encodePower Arithmetic.constants
+    Crt.tabBuild Crt.tabBuildN R2Words.choice R2Words.fast R2Words.old VG.Impl.Bignum.X86_64.Public.R2Squares.run
+    VG.Impl.Bignum.X86_64.Public.R2Squares.init VG.Impl.Bignum.X86_64.Public.R2Squares.next
+  -- one pass: a `rw` for each node of the code read the whole goal again
+  simp only [generationOk_seqs, generationOk, List.all_append, List.all_cons, hs, hm]
+  rfl
+
+theorem validate_safe (sq : Prog isa) (mul : Nat → Nat → Nat → Prog isa)
+    (hs : generationSafe sq) (hm : ∀ o a b, generationSafe (mul o a b)) (pLen qLen : Nat) :
+    generationSafe (validate (checkName := checkName) sq mul pLen qLen) := by
+  unfold validate
+  refine .seq (.seq ?_ ((checkParameters_safe sq mul hs hm).call checkName)) (.seq ?_ ?_)
+  all_goals rfl
+
+end VG.Proof.Dsa.X86_64.Generation
+
+end
+
+end
+
+/-! ### `Dsa.X86_64.Generation.CandidateSafety`, which only this module used -/
+
+section
+
+/-! ### `Dsa.X86_64.Generation.HashSafety`, which this module and modules that import it used -/
+
+section
+
+/-! # Instruction safety of every seed hash and wrapped-seed contribution -/
+
+@[expose] public section
+namespace VG.Proof.Dsa.X86_64.Generation
+open VG VG.X86_64 VG.Impl.Dsa.X86_64.Generation
+open VG.Impl.Pbkdf2.Md.X86_64 (Stream)
+
+structure HashSafety (H : Stream) : Prop where
+  init : generationSafe H.initC
+  update : generationSafe H.updC
+  finish : generationSafe H.finC
+
+theorem hashLabel_safe {H : Stream} (h : HashSafety H) (o : Nat) :
+    generationSafe (Impl.RsaOaep.X86_64.hashLabel H o) := by
+  unfold Impl.RsaOaep.X86_64.hashLabel Impl.Mgf1.X86_64.seqs
+  repeat' apply generationSafe.seq
+  all_goals first | exact h.init.call _ | exact h.update.call _ | exact h.finish.call _ | rfl
+
+/-- The call by a frame word's address, of a function that restores MXCSR
+and writes `rsp` only in its frames. -/
+theorem viaSlot_safe {d : Nat} {n : String} {c : Prog isa} (hc : generationSafe c) :
+    generationSafe (viaSlot d n c) := by
+  unfold viaSlot
+  refine (show generationSafe (.block [.mov .rax (.mem (Impl.Mgf1.X86_64.sp d))]) from rfl).seq ?_
+  change ((!loadsMxcsr (.callr .rax) && !isa.writesSp (.callr .rax)) &&
+    (ctlOk c && c.all (fun i => !isa.writesSp i)) && generationOk (.block [])) = true
+  rw [hc.mx, hc.sp]; rfl
+
+theorem hashLabelI_safe {H : Stream} (h : HashSafety H) (o : Nat) :
+    generationSafe (hashLabelI H o) := by
+  unfold hashLabelI Impl.Mgf1.X86_64.seqs
+  repeat' (first | exact viaSlot_safe h.update | exact viaSlot_safe h.finish | apply generationSafe.seq)
+  all_goals first | exact h.init.call _ | rfl
+
+private theorem seedAddUnrolled_safe (n : Nat) : generationSafe (seedAddUnrolled n) := by
+  induction n with
+  | zero => rfl
+  | succ n ih => exact (show generationSafe (.block (seedAddByte n)) from rfl).seq ih
+
+theorem seedAdd_safe (n : Nat) : generationSafe (seedAdd n) := by
+  unfold seedAdd
+  split
+  · exact seedAddUnrolled_safe n
+  · unfold seedAddTail
+    split <;> rfl
+
+theorem seedHashAt_safe {H1 H256 : Stream} (h1 : HashSafety H1) (h256 : HashSafety H256) (len : Nat) :
+    generationSafe (seedHashAt H1 H256 len) := by
+  unfold seedHashAt
+  split <;> first | exact hashLabelI_safe h1 _ | exact hashLabelI_safe h256 _
+
+theorem pHashOne_safe {H : Stream} (h : HashSafety H) (len count j : Nat) :
+    generationSafe (pHashOne H len count j) := by
+  exact ((show generationSafe (.block (seedInputArgs j)) from rfl).seq
+    ((seedAdd_safe len).seq (hashLabelI_safe h _))).seq
+    ((show generationSafe (.block (hashCopyArgs len count j)) from rfl).seq (by unfold generationSafe; decide +kernel))
+
+theorem pHashPrefix_safe {H : Stream} (h : HashSafety H) (len count k : Nat) :
+    generationSafe (pHashPrefix H len count k) := by
+  induction k with
+  | zero => rfl
+  | succ k ih => exact ih.seq (pHashOne_safe h len count k)
+
+theorem pHashes_safe {H : Stream} (h : HashSafety H) (len count : Nat) :
+    generationSafe (pHashes H len count) := pHashPrefix_safe h len count (count + 1)
+
+end VG.Proof.Dsa.X86_64.Generation
+
+end
+
+end
+
+/-! # Instruction safety of subgroup candidates and bounded prime search -/
+
+@[expose] public section
+namespace VG.Proof.Dsa.X86_64.Generation
+open VG VG.X86_64 VG.Impl.Dsa.X86_64.Generation VG.Impl.Bignum.X86_64
+open VG.Impl.Pbkdf2.Md.X86_64 (Stream)
+
+theorem primeCall_safe (prime : Prog isa) (hp : generationSafe prime) (bits : Nat) :
+    generationSafe (primeCall prime bits) :=
+  (show generationSafe (.block (primeCallArgs bits)) from rfl).seq
+    (hp.seq (show generationSafe primeCallResult from rfl))
+
+theorem qCandidate_safe {H1 H256 : Stream} (h1 : HashSafety H1) (h256 : HashSafety H256) (len : Nat) :
+    generationSafe (qCandidate H1 H256 len) := by
+  exact (seedHashAt_safe h1 h256 len).seq ((show generationSafe (.block qArgs) from rfl).seq
+    (show generationSafe Impl.Ffdh.X86_64.ParameterCandidate.shape from rfl))
+
+theorem subgroup_safe {H1 H256 : Stream} (h1 : HashSafety H1) (h256 : HashSafety H256)
+    (prime : Prog isa) (hp : generationSafe prime) (len : Nat) :
+    generationSafe (subgroup H1 H256 prime len) :=
+  (qCandidate_safe h1 h256 len).seq (primeCall_safe prime hp _)
+
+theorem pConstruct_safe {H : Stream} (h : HashSafety H) (pLen qLen : Nat) :
+    generationSafe (pConstruct H pLen qLen) := by
+  exact ((pHashes_safe h _ _).seq (show generationSafe (pShape qLen _ pLen) from rfl)).seq
+    ((show generationSafe (.block workspaceBase) from rfl).seq
+      ((show generationSafe (workspace (pLen / 8)) from rfl).seq
+        (show generationSafe (candidateFromFrame pLen qLen) from rfl)))
+
+theorem pTest_safe (prime : Prog isa) (hp : generationSafe prime) (pLen : Nat) :
+    generationSafe (pTest prime pLen) := by
+  unfold pTest
+  apply generationSafe.seq (show generationSafe (.block candidateWidth) from rfl)
+  exact generationSafe.ite (show generationSafe (.block (stackStatus 3)) from rfl) (primeCall_safe prime hp _) _
+
+theorem pAttempt_safe {H1 H256 : Stream} (h1 : HashSafety H1) (h256 : HashSafety H256)
+    (prime : Prog isa) (hp : generationSafe prime) (pLen qLen : Nat) :
+    generationSafe (pAttempt H1 H256 prime pLen qLen) := by
+  have hh : HashSafety (if qLen = 20 then H1 else H256) := by split <;> with_reducible assumption
+  exact (show generationSafe (.block pAttemptArgs) from rfl).seq
+    (((pConstruct_safe hh pLen qLen).seq (pTest_safe prime hp pLen)).seq
+      (show generationSafe (.block searchReturn) from rfl))
+
+end VG.Proof.Dsa.X86_64.Generation
+
+end
+
+end
 
 /-! ### `Dsa.X86_64.Generation.SharedChecker`, which only this module used -/
 
@@ -365,7 +1420,8 @@ theorem backend_safe (v1 v256 : MdHash) (v : RoundImpl) (pBytes : Nat) :
     generationSafe (backendCode (checkName := checkName) v1.H.stream v256.H.stream v pBytes) :=
   code_safe (checkName := checkName) (hashCode_safe v1) (hashCode_safe v256) _ _ _
     (generationSafe_of_allInstrs (arith.inlineSafe _ _ _))
-    (fun o a b => generationSafe_of_allInstrs (arith.inlineSafe o a b)) ((ProbablePrime.testCode_safe v).call _) _ _
+    (fun o a b => generationSafe_of_allInstrs (arith.inlineSafe o a b)) (viaSlot_safe (ProbablePrime.testCode_safe v))
+    _ _
 
 theorem backend_depth (v1 v256 : MdHash) (v : RoundImpl) (pBytes : Nat) :
     (backendCode (checkName := checkName) v1.H.stream v256.H.stream v pBytes).x86_64Depth ≤ 568 :=
@@ -373,7 +1429,8 @@ theorem backend_depth (v1 v256 : MdHash) (v : RoundImpl) (pBytes : Nat) :
     (inlineMul_depth arith _ _ _) (inlineMul_depth arith) (by
       have := (ProbablePrime.primeTest v).depth
       have : ProbablePrime.stack = 184 := rfl
-      change (ProbablePrime.primeTest v).code.x86_64Depth + 8 ≤ 192
+      show (viaSlot primeSlot _ (ProbablePrime.primeTest v).code).x86_64Depth ≤ 192
+      rw [viaSlot_depth]
       omega_arith) (by
       have h := checkParameters_depth_bound arith.inlineMont.toS.mm arith.inlineMont.mm
         (n := 0) (by rw [VG.Proof.Bignum.X86_64.Mont.toS, arith.inlineDepth])
@@ -389,7 +1446,8 @@ def RefillCTObligation : Prop :=
   ∀ (checkName : String) (H : GenerationHashes) (M : VG.Proof.Bignum.X86_64.Mont)
     (Sq : VG.Proof.Bignum.X86_64.MontS) (T : PrimeTest) (pBytes : Nat),
     (pBytes = 128 ∨ pBytes = 256 ∨ pBytes = 384) →
-    ConstantTime isa (Refill.contract pBytes abi 568).pre (Refill.contract pBytes abi 568).pub
+    ConstantTime isa (Refill.contractF (fnNames H.sha1 H.sha256 T (Spec.Dsa.generationQLen pBytes)) pBytes abi 568).pre
+      (Refill.contractF (fnNames H.sha1 H.sha256 T (Spec.Dsa.generationQLen pBytes)) pBytes abi 568).pub
       (Refill.code (checkName := checkName) H.sha1 H.sha256 Sq.mm M.mm T.run pBytes
         (Spec.Dsa.generationQLen pBytes))
 
@@ -401,20 +1459,26 @@ theorem refill_verified (ct : RefillCTObligation) (H : GenerationHashes) (M : VG
     (depth : (Refill.code (checkName := checkName) H.sha1 H.sha256 Sq.mm M.mm T.run pBytes
       (Spec.Dsa.generationQLen pBytes)).x86_64Depth ≤ 568) :
     Verified target (Refill.code (checkName := checkName) H.sha1 H.sha256 Sq.mm M.mm T.run pBytes
-      (Spec.Dsa.generationQLen pBytes)) (Refill.contract pBytes abi 568) :=
+      (Spec.Dsa.generationQLen pBytes))
+      (Refill.contractF (fnNames H.sha1 H.sha256 T (Spec.Dsa.generationQLen pBytes)) pBytes abi 568) :=
   ⟨Refill.refill_correct (checkName := checkName) H M Sq T
       (by
-        intro _ _ _ hm hin seed hlen hseed h1 _ h16 hu
-        exact refillAttempt_ok H M Sq T hm hin seed hlen hseed h1 h16 hu)
+        intro _ _ _ hm hy hin seed hlen hseed h1 _ h16 hu
+        exact refillAttempt_ok H M Sq T hm hin seed hlen hseed h1 h16 hu hy)
       pBytes _ rfl safe.sp depth safe.mx,
     ct checkName H M Sq T pBytes hp,
-    RefillWidths.refill_sat (S := 504) hp (by decide)⟩
+    let ⟨s, h, a, b, c⟩ := RefillWidths.refill_satFns (S := 504) hp (by decide)
+      (fnNames H.sha1 H.sha256 T (Spec.Dsa.generationQLen pBytes)).upd
+      (fnNames H.sha1 H.sha256 T (Spec.Dsa.generationQLen pBytes)).fin
+      (fnNames H.sha1 H.sha256 T (Spec.Dsa.generationQLen pBytes)).prime
+    ⟨s, h, a, b, c⟩⟩
 
 theorem backend_verified (ct : RefillCTObligation) (v1 v256 : MdHash) (v : RoundImpl)
     (h1 : v1.mgf.G.rust = "sha1") (h256 : v256.mgf.G.rust = "sha256") (pBytes : Nat)
     (hp : pBytes = 128 ∨ pBytes = 256 ∨ pBytes = 384) :
     Verified target (backendCode (checkName := checkName) v1.H.stream v256.H.stream v pBytes)
-      (Refill.contract pBytes abi 568) :=
+      (Refill.contractF (fnNames v1.H.stream v256.H.stream (VG.Proof.Dsa.X86_64.ProbablePrime.primeTest v)
+        (Spec.Dsa.generationQLen pBytes)) pBytes abi 568) :=
   refill_verified (checkName := checkName) ct (generationHashes v1 v256 h1 h256) arith.inlineMont
     arith.inlineMont.toS (VG.Proof.Dsa.X86_64.ProbablePrime.primeTest v) pBytes hp
     (backend_safe v1 v256 v pBytes) (backend_depth v1 v256 v pBytes)
@@ -428,13 +1492,15 @@ private def sha256Witness : MdHash := VG.Proof.Variants.MdHash.X86_64.Sha256.var
 
 theorem sha1_verified (ct : RefillCTObligation) (h : MdHash) (v : RoundImpl) (hh : h.mgf.G.rust = "sha1") :
     Verified target (backendCode (checkName := checkName) h.H.stream h.H.stream v 128)
-      (Refill.contract 128 abi 568) :=
+      (Refill.contractF ⟨h.H.stream.updN, h.H.stream.finN, (VG.Proof.Dsa.X86_64.ProbablePrime.primeTest v).name⟩
+        128 abi 568) :=
   backend_verified (checkName := checkName) ct h sha256Witness v hh rfl 128 (.inl rfl)
 
 theorem sha256_verified (ct : RefillCTObligation) (h : MdHash) (v : RoundImpl) (hh : h.mgf.G.rust = "sha256")
     (pBytes : Nat) (hp : pBytes = 256 ∨ pBytes = 384) :
     Verified target (backendCode (checkName := checkName) h.H.stream h.H.stream v pBytes)
-      (Refill.contract pBytes abi 568) := by
+      (Refill.contractF ⟨h.H.stream.updN, h.H.stream.finN, (VG.Proof.Dsa.X86_64.ProbablePrime.primeTest v).name⟩
+        pBytes abi 568) := by
   rcases hp with rfl | rfl
   · exact backend_verified (checkName := checkName) ct sha1Witness h v rfl hh 256 (.inr (.inl rfl))
   · exact backend_verified (checkName := checkName) ct sha1Witness h v rfl hh 384 (.inr (.inr rfl))
@@ -453,22 +1519,44 @@ theorem single_depth (h : MdHash) (v : RoundImpl) (pBytes : Nat) :
 def body (h : MdHash) (v : RoundImpl) (p : Nat) : Prog isa :=
   backendCode (checkName := SharedChecker.name) h.H.stream h.H.stream v p
 
-/-- The name the function for width `p` is emitted as, its hash tagged `tag`. -/
-def name (tag : String) (h : MdHash) (v : RoundImpl) (p : Nat) : String :=
-  s!"vg_dsa_parameter_search_{8 * p}" ++ qualifiedName "" [(tag, h.suffix), ("mr", v.suffix)]
+/-- The name the function for width `p` is emitted as: every implementation
+of its hash and of its prime test shares it, since it calls them by the
+addresses its caller passes (`Impl.Dsa.X86_64.ParameterSearch.fnAddrs`). -/
+def name (p : Nat) : String := s!"vg_dsa_parameter_search_{8 * p}"
+
+/-- The functions whose addresses the search with the hashes `v1` (width
+128) and `v256` (256 and 384) and Miller–Rabin `v` passes to its width's
+function, which its contract makes public. -/
+def fns (v1 v256 : MdHash) (v : RoundImpl) : List String :=
+  [v1.H.stream.updN, v1.H.stream.finN, (VG.Proof.Dsa.X86_64.ProbablePrime.primeTest v).name,
+    v256.H.stream.updN, v256.H.stream.finN]
+
+/-- The addresses of the hash `h`'s `update` and `finalize` and of
+Miller–Rabin `v`'s test, in `rax`, `r10` and `r11`. -/
+def addrs (h : MdHash) (v : RoundImpl) : List Instr :=
+  Impl.Dsa.X86_64.ParameterSearch.fnAddrs h.H.stream.updN h.H.stream.finN
+    (VG.Proof.Dsa.X86_64.ProbablePrime.primeTest v).name
+
+theorem contractF_fn (N : FnNames) (p S : Nat) :
+    RefillWidths.FnContract N.upd N.fin N.prime p S (Refill.contractF N p abi S) :=
+  ⟨fun _ h a b c => ⟨h, a, b, c⟩, fun _ _ h => h, fun _ _ h a b c => ⟨h, a, b, c⟩⟩
 
 /-- `vg_dsa_parameter_search` with the hashes `v1` (width 128) and `v256`
 (256 and 384) and Miller–Rabin `v`. -/
 def searchCode (v1 v256 : MdHash) (v : RoundImpl) : Prog isa :=
-  Impl.Dsa.X86_64.ParameterSearch.widths (name "sha1" v1 v 128) (name "sha256" v256 v 256)
-    (name "sha256" v256 v 384) (body v1 v 128) (body v256 v 256) (body v256 v 384)
+  Impl.Dsa.X86_64.ParameterSearch.widths (addrs v1 v) (addrs v256 v) (addrs v256 v) (name 128) (name 256)
+    (name 384) (body v1 v 128) (body v256 v 256) (body v256 v 384)
 
 theorem searchCode_verified (ct : RefillCTObligation) (v1 v256 : MdHash) (v : RoundImpl)
     (h1 : v1.mgf.G.rust = "sha1") (h256 : v256.mgf.G.rust = "sha256") :
-    Verified target (searchCode v1 v256 v) (Spec.Dsa.parameterSearchContract abi 632) :=
+    Verified target (searchCode v1 v256 v) (Proof.Dsa.parameterSearchAskedContract (abi.withFns (fns v1 v256 v)) 632) :=
   RefillWidths.refillWidths_verified 568 (by decide)
     (sha1_verified ct v1 v h1) (sha256_verified ct v256 v h256 256 (.inl rfl))
     (sha256_verified ct v256 v h256 384 (.inr rfl))
+    (contractF_fn ⟨v1.H.stream.updN, v1.H.stream.finN, _⟩ 128 568)
+    (contractF_fn ⟨v256.H.stream.updN, v256.H.stream.finN, _⟩ 256 568)
+    (contractF_fn ⟨v256.H.stream.updN, v256.H.stream.finN, _⟩ 384 568)
+    (by simp) (by simp) (by simp)
     (single_safe v1 v 128) (single_safe v256 v 256) (single_safe v256 v 384)
     (single_depth v1 v 128) (single_depth v256 v 256) (single_depth v256 v 384)
 

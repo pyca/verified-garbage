@@ -6,6 +6,10 @@ public import VerifiedGarbage.Proof.Framework.InstancePriority
 public meta import VerifiedGarbage.Proof.Framework.InstancePriority
 public import VerifiedGarbage.Proof.Framework.Omega
 public meta import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Framework.FastNames
+public meta import VerifiedGarbage.Proof.Framework.FastNames
+public import VerifiedGarbage.Proof.Framework.FastOps
+public meta import VerifiedGarbage.Proof.Framework.FastOps
 
 /-!
 # Index bounds without rewriting every hypothesis
@@ -27,6 +31,8 @@ rules here are tried before them, in this order:
   (`omega_arith_once`), e.g. `v[k + 8]` from `k < 8`.
 
 If they fail, core's rules run as before.
+
+`FastNames` and `FastOps` are imported for the modules that import this one.
 -/
 
 public meta section

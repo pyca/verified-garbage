@@ -2,10 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedSearchPlanCT
 
+import VerifiedGarbage.Proof.Framework.X86_64.Syms
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextSuccess
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedSubgroup
 import Mathlib.Algebra.GroupWithZero.Nat
-import Mathlib.Algebra.NeZero
 /-! # Status inspection preserves the seed phase inputs -/
 
 -- Formerly `VerifiedGarbage/Proof/Dsa/X86_64/Generation/SeedSubgroupResultCT.lean`, which only this module imported.
@@ -37,20 +37,20 @@ def SeedPublic.afterSubgroup (p : SeedPublic) : SeedPublic :=
       | none => exact p.bound
       | some res => exact Nat.sub_le _ _ }
 
-def SeedSubgroupAfter (n pLen qLen : Nat) (p : SeedPublic) (s : State) : Prop :=
+def SeedSubgroupAfter (N : FnNames) (n pLen qLen : Nat) (p : SeedPublic) (s : State) : Prop :=
   (∃ W, GenerationMemory p.context W s ∧ W 19 = p.subgroupStatus) ∧
-  (p.subgroupStatus = 1 → SeedPrimeBefore n pLen qLen p.afterSubgroup s)
+  (p.subgroupStatus = 1 → SeedPrimeBefore N n pLen qLen p.afterSubgroup s)
 
 theorem seedSubgroup_after (H : GenerationHashes) (T : PrimeTest)
     {n pLen qLen : Nat} {p : SeedPublic} {s : State}
-    (h : SeedBefore n qLen p s) (hp : p.context.geo.pLen = pLen) :
+    (h : SeedBefore (fnNames H.sha1 H.sha256 T qLen) n qLen p s) (hp : p.context.geo.pLen = pLen) :
     WP isa (.seq (.block (Impl.Dsa.X86_64.Generation.seedArguments qLen))
       (Impl.Dsa.X86_64.Generation.subgroup H.sha1 H.sha256 T.run qLen)) s
-      (SeedSubgroupAfter n pLen qLen p) := by
-  obtain ⟨⟨W, hm, h1, h16, h10⟩, seed, hf, hw, he⟩ := h
-  have step := seedSubgroup_ok H T hm p.seed p.length seed h1 h16 p.bound
+      (SeedSubgroupAfter (fnNames H.sha1 H.sha256 T qLen) n pLen qLen p) := by
+  obtain ⟨⟨W, hm, h1, h16, h10⟩, seed, hf, hw, he, hy⟩ := h
   subst qLen
-  refine WP.mono step fun t ⟨used', status, bound, ht, bytes, fail, result, ff, rd, wr⟩ => ?_
+  have step := seedSubgroup_ok H T hm p.seed p.length seed h1 h16 p.bound hy
+  refine WP.mono_syms step fun t ⟨used', status, bound, ht, bytes, fail, result, ff, rd, wr⟩ ty => ?_
   have statusEq : status = p.subgroupStatus := by
     cases hr : p.subgroupResult with
     | none => simpa [SeedPublic.subgroupStatus, hr] using fail hr
@@ -66,7 +66,7 @@ theorem seedSubgroup_after (H : GenerationHashes) (T : PrimeTest)
     | some res =>
       obtain ⟨b, rest⟩ := res
       simpa [SeedPublic.afterSubgroup, hr] using (result b rest hr).2
-  refine ⟨⟨⟨_, ht, ?_, ?_, ?_⟩, seed.frame ff rd wr, ?_, wr.trans hw, rfl⟩, hp, bytes⟩
+  refine ⟨⟨⟨_, ht, ?_, ?_, ?_⟩, seed.frame ff rd wr, ?_, wr.trans hw, rfl, hy.congr ty⟩, hp, bytes⟩
   · simpa [seedWords, upd, SeedPublic.afterSubgroup] using h1
   · simp [upd, cursor]
   · simpa [seedWords, upd, SeedPublic.afterSubgroup] using h10
@@ -82,23 +82,23 @@ namespace VG.Proof.Dsa.X86_64.Generation
 open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 open VG.Proof.RsaOaep.X86_64 VG.Proof.MlKem.X86_64
 
-theorem seedBefore_congr {n qLen : Nat} {p : SeedPublic} {s t : State}
-    (h : SeedBefore n qLen p s) (hm : t.mem = s.mem) (hk : Keep [.rax] s t) :
-    SeedBefore n qLen p t := by
-  obtain ⟨⟨W, hW, h1, h16, h10⟩, seed, hf, hw, he⟩ := h
+theorem seedBefore_congr {N : FnNames} {n qLen : Nat} {p : SeedPublic} {s t : State}
+    (h : SeedBefore N n qLen p s) (hm : t.mem = s.mem) (hk : Keep [.rax] s t) (hy : t.syms = s.syms) :
+    SeedBefore N n qLen p t := by
+  obtain ⟨⟨W, hW, h1, h16, h10⟩, seed, hf, hw, he, hn⟩ := h
   exact ⟨⟨W, hW.congr hm hk, h1, h16, h10⟩,
     seed.frame (by rw [hm]; exact Frame.refl _ _) hk.2.1 hk.2.2,
-    hf.congr (hk.gpr (by decide)) hk.2.2, hk.2.2.trans hw, he⟩
+    hf.congr (hk.gpr (by decide)) hk.2.2, hk.2.2.trans hw, he, hn.congr hy⟩
 
-theorem seedPrimeBefore_congr {n pLen qLen : Nat} {p : SeedPublic} {s t : State}
-    (h : SeedPrimeBefore n pLen qLen p s) (hm : t.mem = s.mem) (hk : Keep [.rax] s t) :
-    SeedPrimeBefore n pLen qLen p t :=
-  ⟨seedBefore_congr h.1 hm hk, h.2.1, hm ▸ h.2.2⟩
+theorem seedPrimeBefore_congr {N : FnNames} {n pLen qLen : Nat} {p : SeedPublic} {s t : State}
+    (h : SeedPrimeBefore N n pLen qLen p s) (hm : t.mem = s.mem) (hk : Keep [.rax] s t)
+    (hy : t.syms = s.syms) : SeedPrimeBefore N n pLen qLen p t :=
+  ⟨seedBefore_congr h.1 hm hk hy, h.2.1, hm ▸ h.2.2⟩
 
-theorem seedSubgroupAfter_congr {n pLen qLen : Nat} {p : SeedPublic} {s t : State}
-    (h : SeedSubgroupAfter n pLen qLen p s) (hm : t.mem = s.mem) (hk : Keep [.rax] s t) :
-    SeedSubgroupAfter n pLen qLen p t := by
+theorem seedSubgroupAfter_congr {N : FnNames} {n pLen qLen : Nat} {p : SeedPublic} {s t : State}
+    (h : SeedSubgroupAfter N n pLen qLen p s) (hm : t.mem = s.mem) (hk : Keep [.rax] s t)
+    (hy : t.syms = s.syms) : SeedSubgroupAfter N n pLen qLen p t := by
   obtain ⟨⟨W, hW, hs⟩, next⟩ := h
-  exact ⟨⟨W, hW.congr hm hk, hs⟩, fun ha => seedPrimeBefore_congr (next ha) hm hk⟩
+  exact ⟨⟨W, hW.congr hm hk, hs⟩, fun ha => seedPrimeBefore_congr (next ha) hm hk hy⟩
 
 end VG.Proof.Dsa.X86_64.Generation

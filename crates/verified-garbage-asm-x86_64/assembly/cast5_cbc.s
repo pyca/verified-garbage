@@ -572,6 +572,7 @@ vg_cast5_cbc_encrypt_chained:
 	mov r13, QWORD PTR [r9+192]
 	mov r14, QWORD PTR [r9+200]
 	mov r15, QWORD PTR [r9+208]
+	pxor xmm0, xmm0
 	mov r11d, 0
 	lea rsp, [rsp+240]
 	pxor xmm0, xmm0
@@ -591,23 +592,26 @@ vg_cast5_cbc_encrypt_chained:
 	pxor xmm14, xmm14
 	pxor xmm15, xmm15
 	xor r11d, r11d
-	lea rsp, [rsp-240]
-	movdqu XMMWORD PTR [rsp+224], xmm0
-	movdqu XMMWORD PTR [rsp+208], xmm0
-	movdqu XMMWORD PTR [rsp+192], xmm0
-	movdqu XMMWORD PTR [rsp+176], xmm0
-	movdqu XMMWORD PTR [rsp+160], xmm0
-	movdqu XMMWORD PTR [rsp+144], xmm0
-	movdqu XMMWORD PTR [rsp+128], xmm0
-	movdqu XMMWORD PTR [rsp+112], xmm0
-	movdqu XMMWORD PTR [rsp+96], xmm0
-	movdqu XMMWORD PTR [rsp+80], xmm0
-	movdqu XMMWORD PTR [rsp+64], xmm0
-	movdqu XMMWORD PTR [rsp+48], xmm0
-	movdqu XMMWORD PTR [rsp+32], xmm0
-	movdqu XMMWORD PTR [rsp+16], xmm0
-	movdqu XMMWORD PTR [rsp], xmm0
-	lea rsp, [rsp+240]
+	lea rsp, [rsp-8]
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp-232]
+	movdqu XMMWORD PTR [rsp+216], xmm0
+	movdqu XMMWORD PTR [rsp+200], xmm0
+	movdqu XMMWORD PTR [rsp+184], xmm0
+	movdqu XMMWORD PTR [rsp+168], xmm0
+	movdqu XMMWORD PTR [rsp+152], xmm0
+	movdqu XMMWORD PTR [rsp+136], xmm0
+	movdqu XMMWORD PTR [rsp+120], xmm0
+	movdqu XMMWORD PTR [rsp+104], xmm0
+	movdqu XMMWORD PTR [rsp+88], xmm0
+	movdqu XMMWORD PTR [rsp+72], xmm0
+	movdqu XMMWORD PTR [rsp+56], xmm0
+	movdqu XMMWORD PTR [rsp+40], xmm0
+	movdqu XMMWORD PTR [rsp+24], xmm0
+	movdqu XMMWORD PTR [rsp+8], xmm0
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp+232]
+	lea rsp, [rsp+8]
 	xor eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -616,7 +620,6 @@ vg_cast5_cbc_encrypt_chained:
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -1220,6 +1223,7 @@ vg_cast5_cbc_decrypt_chained:
 	mov r13, QWORD PTR [r9+192]
 	mov r14, QWORD PTR [r9+200]
 	mov r15, QWORD PTR [r9+208]
+	pxor xmm0, xmm0
 	mov r11d, 0
 	lea rsp, [rsp+240]
 	pxor xmm0, xmm0
@@ -1239,23 +1243,26 @@ vg_cast5_cbc_decrypt_chained:
 	pxor xmm14, xmm14
 	pxor xmm15, xmm15
 	xor r11d, r11d
-	lea rsp, [rsp-240]
-	movdqu XMMWORD PTR [rsp+224], xmm0
-	movdqu XMMWORD PTR [rsp+208], xmm0
-	movdqu XMMWORD PTR [rsp+192], xmm0
-	movdqu XMMWORD PTR [rsp+176], xmm0
-	movdqu XMMWORD PTR [rsp+160], xmm0
-	movdqu XMMWORD PTR [rsp+144], xmm0
-	movdqu XMMWORD PTR [rsp+128], xmm0
-	movdqu XMMWORD PTR [rsp+112], xmm0
-	movdqu XMMWORD PTR [rsp+96], xmm0
-	movdqu XMMWORD PTR [rsp+80], xmm0
-	movdqu XMMWORD PTR [rsp+64], xmm0
-	movdqu XMMWORD PTR [rsp+48], xmm0
-	movdqu XMMWORD PTR [rsp+32], xmm0
-	movdqu XMMWORD PTR [rsp+16], xmm0
-	movdqu XMMWORD PTR [rsp], xmm0
-	lea rsp, [rsp+240]
+	lea rsp, [rsp-8]
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp-232]
+	movdqu XMMWORD PTR [rsp+216], xmm0
+	movdqu XMMWORD PTR [rsp+200], xmm0
+	movdqu XMMWORD PTR [rsp+184], xmm0
+	movdqu XMMWORD PTR [rsp+168], xmm0
+	movdqu XMMWORD PTR [rsp+152], xmm0
+	movdqu XMMWORD PTR [rsp+136], xmm0
+	movdqu XMMWORD PTR [rsp+120], xmm0
+	movdqu XMMWORD PTR [rsp+104], xmm0
+	movdqu XMMWORD PTR [rsp+88], xmm0
+	movdqu XMMWORD PTR [rsp+72], xmm0
+	movdqu XMMWORD PTR [rsp+56], xmm0
+	movdqu XMMWORD PTR [rsp+40], xmm0
+	movdqu XMMWORD PTR [rsp+24], xmm0
+	movdqu XMMWORD PTR [rsp+8], xmm0
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp+232]
+	lea rsp, [rsp+8]
 	xor eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -1264,6 +1271,5 @@ vg_cast5_cbc_decrypt_chained:
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 	.p2align 6

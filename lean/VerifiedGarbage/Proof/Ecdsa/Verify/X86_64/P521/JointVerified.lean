@@ -1,20 +1,22 @@
 module
 
+public import VerifiedGarbage.Spec.Ecdsa.Verify.P521
+public import VerifiedGarbage.TCB.Registration
+import VerifiedGarbage.Proof.EcKey.X86_64.Scrub.Out
+import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
 public import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Hash
 import VerifiedGarbage.Proof.Ecdsa.Verify.Curves
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Hash
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.Curves
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P521.Contract
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P521.JointCT
 public import VerifiedGarbage.Impl.Ecdsa.Verify.P521.X86_64
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvSpec
 public import VerifiedGarbage.Proof.Weierstrass.CombW
 public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
-
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P521.JointErased
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P521.JointCT
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P521.JointLitAdx
 import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P521.JointLit
@@ -22,23 +24,19 @@ import Batteries.Data.List.Lemmas
 import VerifiedGarbage.Proof.Framework.LitShare
 import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldErase
 import VerifiedGarbage.Impl.P521.X86_64.Joint
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointFrame
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointMain
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P521.JointChecks
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Main
-import Mathlib.Data.Finset.Card
-import Mathlib.Data.Nat.Find
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.VerifiedAdx
 import VerifiedGarbage.Proof.P521.X86_64.JointLayout
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.Verified
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P521.Contract
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P521.JointCT
 meta import VerifiedGarbage.Impl.Ecdsa.Verify.P521.X86_64
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.InvSpec
 meta import VerifiedGarbage.Proof.Weierstrass.CombW
 meta import VerifiedGarbage.Proof.Framework.X86_64.CallInline
 meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P521.JointErased
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P521.JointCT
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P521.JointLitAdx
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P521.JointLit
@@ -46,13 +44,13 @@ meta import Batteries.Data.List.Lemmas
 meta import VerifiedGarbage.Proof.Framework.LitShare
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldErase
 meta import VerifiedGarbage.Impl.P521.X86_64.Joint
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointFrame
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointMain
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P521.JointChecks
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Main
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.VerifiedAdx
 meta import VerifiedGarbage.Proof.P521.X86_64.JointLayout
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.Verified
+
 /-!
 # ECDSA verification over P-521 on x86-64: `Verified`
 
@@ -256,6 +254,44 @@ theorem verifyHash_verified_adx : Verified X86_64.target
     (Hash.hashSat_cons (by decide) sat_spec8 (by decide) fun r hr => by
       simp only [satState, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl <;> exact Region.disjoint_of_sep (by decide))
+
+omit hL hT hI in
+theorem verifyHash_codeSp : (Impl.Ecdsa.X86_64.VerifyHash.verifyHash Spec.Ecdsa.P521.inst.curve.len true Impl.Ecdsa.Verify.X86_64.jointVerifyP521).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
+
+/-- `vg_ecdsa_p521_verify` as emitted (`Impl.Ecdsa.X86_64.VerifyHash.Fn.verifyHash`), its cleanup included,
+meets its contract in constant time and returns without secret residue. -/
+theorem verifyHash_scrubbed :
+    VerifiedScrubbed X86_64.target (Impl.Ecdsa.X86_64.VerifyHash.Fn.verifyHash Spec.Ecdsa.P521.inst.curve.len true Impl.Ecdsa.Verify.X86_64.jointVerifyP521)
+      (Spec.Ecdsa.P521.verifyHashApi.contract (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p521.combConsts) 96) 32 :=
+  X86_64.Scrub.verifiedScrubbedAll (api := Spec.Ecdsa.P521.verifyHashApi)
+    { code := Impl.Ecdsa.X86_64.VerifyHash.verifyHash Spec.Ecdsa.P521.inst.curve.len true Impl.Ecdsa.Verify.X86_64.jointVerifyP521
+      stack := 96
+      verified := verifyHash_verified hL hT hI
+      spSafe := verifyHash_codeSp } .sse (VG.Proof.EcKey.X86_64.Scrub.verifyHashOut_consts 96 Spec.Ecdsa.P521.inst Impl.Ecdsa.X86_64.p521.combConsts)
+
+omit hL hT hI in
+theorem verifyHash_spSafe : (Impl.Ecdsa.X86_64.VerifyHash.Fn.verifyHash Spec.Ecdsa.P521.inst.curve.len true Impl.Ecdsa.Verify.X86_64.jointVerifyP521).all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  X86_64.Scrub.scrubKs_spSafe verifyHash_codeSp
+
+omit hL hT hI in
+theorem verifyHashAdx_codeSp : (Impl.Ecdsa.X86_64.VerifyHash.verifyHash Spec.Ecdsa.P521.inst.curve.len true Impl.Ecdsa.Verify.X86_64.jointVerifyP521Adx).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
+
+/-- `vg_ecdsa_p521_verify_adx` as emitted (`Impl.Ecdsa.X86_64.VerifyHash.Fn.verifyHash`), its cleanup included,
+meets its contract in constant time and returns without secret residue. -/
+theorem verifyHashAdx_scrubbed :
+    VerifiedScrubbed X86_64.target (Impl.Ecdsa.X86_64.VerifyHash.Fn.verifyHash Spec.Ecdsa.P521.inst.curve.len true Impl.Ecdsa.Verify.X86_64.jointVerifyP521Adx)
+      (Spec.Ecdsa.P521.verifyHashApi.contract (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p521.combConsts) 96) 32 :=
+  X86_64.Scrub.verifiedScrubbedAll (api := Spec.Ecdsa.P521.verifyHashApi)
+    { code := Impl.Ecdsa.X86_64.VerifyHash.verifyHash Spec.Ecdsa.P521.inst.curve.len true Impl.Ecdsa.Verify.X86_64.jointVerifyP521Adx
+      stack := 96
+      verified := verifyHash_verified_adx hL hT hI
+      spSafe := verifyHashAdx_codeSp } .sse (VG.Proof.EcKey.X86_64.Scrub.verifyHashOut_consts 96 Spec.Ecdsa.P521.inst Impl.Ecdsa.X86_64.p521.combConsts)
+
+omit hL hT hI in
+theorem verifyHashAdx_spSafe : (Impl.Ecdsa.X86_64.VerifyHash.Fn.verifyHash Spec.Ecdsa.P521.inst.curve.len true Impl.Ecdsa.Verify.X86_64.jointVerifyP521Adx).all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  X86_64.Scrub.scrubKs_spSafe verifyHashAdx_codeSp
 
 end
 end VG.Proof.Ecdsa.Verify.X86_64.P521

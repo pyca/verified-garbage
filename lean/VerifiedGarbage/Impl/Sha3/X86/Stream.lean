@@ -11,13 +11,18 @@ XORed into it as they arrive (see `VG.Spec.Sha3.Repr`); the position in the
 block is kept by the caller. Every argument is on the stack (cdecl).
 
 * `absorb(state, rate, pos, data, len, scratch)` XORs the bytes of `data`
-  into the state one at a time, from byte `pos`, permuting the state
-  whenever a block is complete, and returns the position after them.
+  into the state, from byte `pos`, permuting the state whenever a block is
+  complete, and returns the position after them.
 * `pad(state, rate, pos, suffix, scratch)` XORs the suffix into byte `pos`
   and `0x80` into byte `rate - 1`, and permutes the state.
 * `squeeze(state, rate, pos, out, outlen, scratch)` copies the state to `out`
-  one byte at a time from byte `pos`, permuting it whenever a block has been
-  used up and more output is needed, and returns the position after them.
+  from byte `pos`, permuting it whenever a block has been used up and more
+  output is needed, and returns the position after them.
+
+A turn of `absorb`'s loop or of `squeeze`'s takes eight bytes where the
+block has eight left and so has `data` or `out` (`turn`): two `movq` through
+`xmm0`, with `xmm1` for the state's eight bytes XORed in `absorb`. Otherwise
+it takes one byte, as every turn did.
 
 The permutation is called (`vg_keccak_f1600`, `Impl.Sha3.X86.permute`) with
 the first 512 bytes of `scratch` as its scratch space. Each call pushes its
@@ -29,17 +34,19 @@ two arguments (`scratch`, then `state`) in a frame of its own, popped (into
 bytes of it left), save their caller's values of those registers in
 `scratch[512..528)`, and keep `state + pos` (the address of the next byte of
 the state) and `rate` in `scratch[528..536)`: loaded into `ecx` and `edx`,
-and stored back, around each byte stored. The constant-time analysis cannot
-tell where a byte of the state or of `out` is, so it forgets that any memory
-is public after such a store, and relearns it from the stores back; and it
+and stored back, around each store of data or output. The constant-time
+analysis cannot tell where a byte of the state or of `out` is, so it forgets
+that any memory is public after such a store, and relearns it from the
+stores back; and it
 cannot follow the arguments on the stack across a call. For the same
 reasons `pad` keeps `scratch` in `esi` across its call (saving its caller's
 `ebx` and `esi` in `scratch[512..520)`), and reads its arguments before its
 stores. A byte of `data` is XORed with the (little-endian) word at `state +
 pos`, whose low byte is that byte of the state (the word lies within the
 state: `pos < rate ≤ 168`). Values the analysis must know to be public are
-loaded from memory with `mov`. Every address and branch depends only on
-`esp`, the pointers, `rate`, `pos` and the lengths.
+loaded from memory with `mov`; the data and the state's bytes of a turn of
+eight are only ever in the XMM registers. Every address and branch depends
+only on `esp`, the pointers, `rate`, `pos` and the lengths.
 -/
 
 @[expose] public section
@@ -92,6 +99,25 @@ def storeVars : List Instr :=
 /-- Advance to the next byte of data or output. -/
 def step : List Instr := [.alu .add .esi (.imm 1), .alu .sub .edi (.imm 1)]
 
+/-- The position after eight bytes, and `rate`, stored back. -/
+def storeVars8 : List Instr :=
+  [.alu .add .ecx (.imm 8), .store (at_ .ebp pOff) .ecx, .store (at_ .ebp rOff) .edx]
+
+/-- Advance by eight bytes of data or output. -/
+def step8 : List Instr := [.alu .add .esi (.imm 8), .alu .sub .edi (.imm 8)]
+
+/-- Set CF if fewer than eight bytes are left in the block: `rate < pos + 8`,
+with `state + pos` in `ecx` and `rate` in `edx`. -/
+def room8 : List Instr :=
+  [.mov .eax (.reg .ecx), .alu .sub .eax (.reg .ebx), .alu .add .eax (.imm 8), .alu .cmp .edx (.reg .eax)]
+
+/-- A turn, after `loadVars`: `w`, of eight bytes, where the block has eight
+bytes left and so has the data or the output (`edi`); `b`, of one byte,
+otherwise. -/
+def turn (b w : List Instr) : Prog isa :=
+  .seq (.block room8)
+    (.ite .b (.block b) (.seq (.block [.alu .cmp .edi (.imm 8)]) (.ite .b (.block b) (.block w))))
+
 /-- Set ZF if the position (`ecx - ebx`) is `rate` (`edx`). -/
 def atEnd : List Instr := [.mov .eax (.reg .ecx), .alu .sub .eax (.reg .ebx), .alu .cmp .eax (.reg .edx)]
 
@@ -105,9 +131,15 @@ def next : Prog isa :=
 def absorbByte : List Instr :=
   [.movzx8 .eax (at_ .esi 0), .alu .xor .eax (.mem (at_ .ecx 0)), .store8 (at_ .ecx 0) .al]
 
+/-- XOR the eight bytes of data at `esi` into the state at `ecx`. -/
+def absorbWord : List Instr :=
+  [.movqLoad .xmm0 (at_ .esi 0), .movqLoad .xmm1 (at_ .ecx 0), .xop (.bin .pxor .xmm0 .xmm1),
+    .movqStore (at_ .ecx 0) .xmm0]
+
 def absorbBody : Prog isa :=
-  .seq (.block (loadVars ++ absorbByte ++ storeVars ++ step ++ atEnd))
-    (.seq next (.block [.alu .test .edi (.reg .edi)]))
+  .seq (.block loadVars)
+    (.seq (turn (absorbByte ++ storeVars ++ step) (absorbWord ++ storeVars8 ++ step8))
+      (.seq (.block atEnd) (.seq next (.block [.alu .test .edi (.reg .edi)]))))
 
 def absorb : Prog isa :=
   .seq (.block setup) (.seq (.ite .e (.block []) (.loop absorbBody .ne)) (.block epilogue))
@@ -134,9 +166,13 @@ def pad : Prog isa :=
 /-- Copy the byte of the state at `ecx` to `out` at `esi`. -/
 def squeezeByte : List Instr := [.movzx8 .eax (at_ .ecx 0), .store8 (at_ .esi 0) .al]
 
+/-- Copy the eight bytes of the state at `ecx` to `out` at `esi`. -/
+def squeezeWord : List Instr := [.movqLoad .xmm0 (at_ .ecx 0), .movqStore (at_ .esi 0) .xmm0]
+
 def squeezeBody : Prog isa :=
   .seq (.block (loadVars ++ atEnd))
-    (.seq next (.block (loadVars ++ squeezeByte ++ storeVars ++ step)))
+    (.seq next (.seq (.block loadVars)
+      (turn (squeezeByte ++ storeVars ++ step) (squeezeWord ++ storeVars8 ++ step8))))
 
 def squeeze : Prog isa :=
   .seq (.block setup) (.seq (.ite .e (.block []) (.loop squeezeBody .ne)) (.block epilogue))

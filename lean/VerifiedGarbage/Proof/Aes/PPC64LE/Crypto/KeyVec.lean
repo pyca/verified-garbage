@@ -65,7 +65,7 @@ theorem stepRot_ok (d t : VReg) (s : State) (hd : d ≠ .v0 ∧ d ≠ .v3 ∧ d 
       u.vpr d = pfx (s.vpr d) ^^^ (sboxV (permSelf (s.vpr t) (s.vpr .v5)) ^^^ s.vpr .v8) ∧
         Local [] [.v0, .v3, d] s u := by
   rw [Impl.Aes.PPC64LE.Crypto.stepRot, WP.block_append_iff, WP.block_append_iff]
-  have h1 : WP isa (.block [.vop (.perm .v0 t t .v5), .vop (.sbox .v0 .v0), .vop (.logic .xor .v0 .v0 .v8)]) s
+  obtain h1 : WP isa (.block [.vop (.perm .v0 t t .v5), .vop (.sbox .v0 .v0), .vop (.logic .xor .v0 .v0 .v8)]) s
       fun u => u.vpr .v0 = sboxV (permSelf (s.vpr t) (s.vpr .v5)) ^^^ s.vpr .v8 ∧ Local [] [.v0] s u := by
     apply WP.of_runBlock
     simp only [runBlock_cons, runStep_some, runBlock_nil, reduceExec, reduceVOpEval, Option.map_some,
@@ -85,7 +85,7 @@ theorem stepSub_ok (d t : VReg) (s : State) (hd : d ≠ .v0 ∧ d ≠ .v3 ∧ d 
     WP isa (.block (Impl.Aes.PPC64LE.Crypto.stepSub d t)) s fun u =>
       u.vpr d = pfx (s.vpr d) ^^^ sboxV (permSelf (s.vpr t) (s.vpr .v6)) ∧ Local [] [.v0, .v3, d] s u := by
   rw [Impl.Aes.PPC64LE.Crypto.stepSub, WP.block_append_iff, WP.block_append_iff]
-  have h1 : WP isa (.block [.vop (.perm .v0 t t .v6), .vop (.sbox .v0 .v0)]) s
+  obtain h1 : WP isa (.block [.vop (.perm .v0 t t .v6), .vop (.sbox .v0 .v0)]) s
       fun u => u.vpr .v0 = sboxV (permSelf (s.vpr t) (s.vpr .v6)) ∧ Local [] [.v0] s u := by
     apply WP.of_runBlock
     simp only [runBlock_cons, runStep_some, runBlock_nil, reduceExec, reduceVOpEval, Option.map_some,
@@ -134,7 +134,7 @@ theorem storeKey_ok (d : VReg) (s : State) (h12 : s.gpr .r12 = 0)
     WP isa (.block (Impl.Aes.PPC64LE.Crypto.storeKey d)) s fun u =>
       u.mem = s.mem.write (s.gpr .r5) 16 (s.vpr d) ∧ u.gpr .r5 = s.gpr .r5 + 16#64 ∧
         Keep [.r5] s u ∧ (∀ r, r ≠ .v9 → u.vpr r = s.vpr r) := by
-  have hw' : InRegions s.wr (s.gpr .r5 + s.gpr .r12) 16 := by rw [h12]; simpa using hw
+  obtain hw' : InRegions s.wr (s.gpr .r5 + s.gpr .r12) 16 := by rw [h12]; simpa using hw
   apply WP.of_runBlock
   simp only [Impl.Aes.PPC64LE.Crypto.storeKey, runBlock_cons, runStep_some, exec_sldoi8]
   rw [exec_stxvd2x .v9 .r5 .r12 _ (by decide) (by simpa only [wr_writeV, gpr_writeV] using hw')]
@@ -168,10 +168,10 @@ theorem rotRound_ok (d t : VReg) (s : State) (hd : d ≠ .v0 ∧ d ≠ .v3 ∧ d
   rw [Impl.Aes.PPC64LE.Crypto.rotRound, WP.block_append_iff, WP.block_append_iff, WP.block_append_iff]
   refine WP.mono (rcSplat_ok s hc hk) fun u₁ ⟨hR, l₁⟩ => ?_
   refine WP.mono (rcStep_ok u₁) fun u₂ ⟨h6, l₂⟩ => ?_
-  have l₁₂ := l₁.trans l₂
+  obtain l₁₂ := l₁.trans l₂
   refine WP.mono (stepRot_ok d t u₂ ⟨hd.1, hd.2.1, hd.2.2.1, hd.2.2.2.1⟩
     ((l₁₂.v _ (by decide)).trans hk.zero)) fun u₃ ⟨h3, l₃⟩ => ?_
-  have l₁₃ := l₁₂.trans l₃
+  obtain l₁₃ := l₁₂.trans l₃
   refine WP.mono (storeKey_ok d u₃ ((l₁₃.keep.gpr (by decide)).trans hk.r12)
     (by rw [l₁₃.keep.2.2, l₁₃.keep.gpr (by decide)]; exact hw)) fun u ⟨hm, h5, hk5, hv⟩ => ?_
   refine ⟨?_, u₂.vpr .v8, fun i hi => by rw [l₂.v _ (by simp)]; exact hR i hi, ?_, ?_, ?_, ?_, ?_⟩
@@ -256,18 +256,18 @@ theorem vstep4 {base s : State} {P S : Addr} {r : Nat} (hc : KeyConfig base P S 
     (by rw [h.out]; exact schedule_wr hc h.keep (by omega_using [hr]))) fun u ⟨h6, R, hR, o⟩ => ?_
   refine WP.mono (subi4_ok u) fun v hv => ?_
   subst hv
-  have lw := Local.write u .r4 (u.gpr .r4 - BitVec.ofNat 64 1)
-  have hkey : Rk (W base.mem P 4) (4 * (r + 1)) (u.vpr .v1) := by
+  obtain lw := Local.write u .r4 (u.gpr .r4 - BitVec.ofNat 64 1)
+  obtain hkey : Rk (W base.mem P 4) (4 * (r + 1)) (u.vpr .v1) := by
     rw [o.key, show 4 * (r + 1) = 4 * r + 4 by omega_using []]
     refine step_rk h.key (rot_temp h.key hR) ?_
-    have e := rot_next (m := base.mem) (P := P) (nk := 4) (j := 4 * r) (by decide) (by omega_using [])
+    obtain e := rot_next (m := base.mem) (P := P) (nk := 4) (j := 4 * r) (by decide) (by omega_using [])
     rwa [show 4 * r + 4 - 1 = 4 * r + 3 by omega_using [], show 4 * r / 4 + 1 = r + 1 by omega_using []] at e
-  have lk : Keep ([.r0, .r5, .r6, .r8] ++ [.r4]) s (u.write .r4 (u.gpr .r4 - BitVec.ofNat 64 1)) :=
+  obtain lk : Keep ([.r0, .r5, .r6, .r8] ++ [.r4]) s (u.write .r4 (u.gpr .r4 - BitVec.ofNat 64 1)) :=
     o.keep.trans lw.keep
-  have lv : ∀ x, x ≠ .v0 → x ≠ .v3 → x ≠ .v8 → x ≠ .v9 → x ≠ .v1 →
+  obtain lv : ∀ x, x ≠ .v0 → x ≠ .v3 → x ≠ .v8 → x ≠ .v9 → x ≠ .v1 →
       (u.write .r4 (u.gpr .r4 - BitVec.ofNat 64 1)).vpr x = s.vpr x := fun x a b c d e => by
     rw [lw.v x (by simp)]; exact o.v x a b c d e
-  have hcst : VConst (u.write .r4 (u.gpr .r4 - BitVec.ofNat 64 1)) :=
+  obtain hcst : VConst (u.write .r4 (u.gpr .r4 - BitVec.ofNat 64 1)) :=
     h.cst.of_keep lk (by simp) fun x hx => by
       rcases hx with rfl | rfl | rfl | rfl <;> exact lv _ (by decide) (by decide) (by decide) (by decide) (by decide)
   refine ⟨by omega_using [hr], (h.keep.trans lk).mono (by simp [keyGprs]), hcst, ?_, ?_, ?_, ?_, ?_, ?_⟩
@@ -285,14 +285,14 @@ theorem vstep4 {base s : State} {P S : Addr} {r : Nat} (hc : KeyConfig base P S 
 
 theorem loop128_ok {base s : State} {P S : Addr} (hc : KeyConfig base P S 16) (h : VInv4 base P S 0 s) :
     WP isa (.loop (.block Impl.Aes.PPC64LE.Crypto.body128) (.nonzero .d .r4)) s (VInv4 base P S 10) := by
-  have step : ∀ j t, j+1 ≤ 10 → VInv4 base P S j t →
+  obtain step : ∀ j t, j+1 ≤ 10 → VInv4 base P S j t →
       WP isa (.block Impl.Aes.PPC64LE.Crypto.body128) t (VInv4 base P S (j+1)) :=
     fun _ _ hj ht => vstep4 hc ht (by omega_using [hj])
-  have test : ∀ j t, j ≤ 10 → VInv4 base P S j t →
+  obtain test : ∀ j t, j ≤ 10 → VInv4 base P S j t →
       (10-j < 1 → eval (.nonzero .d .r4) t = some false) ∧
       (1 ≤ 10-j → eval (.nonzero .d .r4) t = some true) := by
     intro j t hj ht
-    have he := eval_nonzero_ofNat' t .r4 (by omega_using []) ht.left
+    obtain he := eval_nonzero_ofNat' t .r4 (by omega_using []) ht.left
     change eval (.nonzero .d .r4) t = some (decide (10-j ≠ 0)) at he
     constructor
     · intro hl
@@ -303,7 +303,7 @@ theorem loop128_ok {base s : State} {P S : Addr} (hc : KeyConfig base P S 16) (h
       simp only [ne_eq, show ¬10-j = 0 by omega_using [hl], not_false_eq_true, decide_true]
   refine WP.mono (WP.chunk_loop (by decide) (by omega_using []) h step test) ?_
   rintro t ⟨j, hj, he, ht⟩
-  have hje : j = 10 := by omega_using [hj, he]
+  obtain hje : j = 10 := by omega_using [hj, he]
   exact hje ▸ ht
 
 /-! ## 32-byte keys -/
@@ -332,7 +332,7 @@ theorem keyA_next {base s u : State} {P : Addr} {i : Nat} {R : BitVec 128}
     Rk (W base.mem P 8) (8 * i + 8) (u.vpr .v1) := by
   rw [o.key]
   refine step_rk hA (by simpa only [show 8 * i + 4 + 3 = 8 * i + 8 - 1 by omega_using []] using rot_temp hB hR) ?_
-  have e := rot_next (m := base.mem) (P := P) (nk := 8) (j := 8 * i) (by decide) (by omega_using [])
+  obtain e := rot_next (m := base.mem) (P := P) (nk := 8) (j := 8 * i) (by decide) (by omega_using [])
   rwa [show 8 * i / 8 + 1 = i + 1 by omega_using []] at e
 
 theorem vstep8 {base s : State} {P S : Addr} {i : Nat} (hc : KeyConfig base P S 32) (h : VInv8 base P S i s)
@@ -340,29 +340,29 @@ theorem vstep8 {base s : State} {P S : Addr} {i : Nat} (hc : KeyConfig base P S 
   rw [Impl.Aes.PPC64LE.Crypto.body256, WP.block_append_iff, List.append_assoc, WP.block_append_iff]
   refine WP.mono (rotRound_ok .v1 .v2 s (by decide) (by decide) h.cst h.rcon
     (by rw [h.out]; exact schedule_wr hc h.keep (by omega_using [hi]))) fun u ⟨h6, R, hR, o⟩ => ?_
-  have hA := keyA_next h.keyA h.keyB hR o
-  have hku : Keep keyGprs base u := (h.keep.trans o.keep).mono (by simp [keyGprs])
-  have hcu : VConst u := h.cst.of_keep o.keep (by simp) fun x hx => by
+  obtain hA := keyA_next h.keyA h.keyB hR o
+  obtain hku : Keep keyGprs base u := (h.keep.trans o.keep).mono (by simp [keyGprs])
+  obtain hcu : VConst u := h.cst.of_keep o.keep (by simp) fun x hx => by
     rcases hx with rfl | rfl | rfl | rfl <;> exact o.v _ (by decide) (by decide) (by decide) (by decide) (by decide)
-  have h5u : u.gpr .r5 = S + BitVec.ofNat 64 (32 * i + 48) := by
+  obtain h5u : u.gpr .r5 = S + BitVec.ofNat 64 (32 * i + 48) := by
     rw [o.out, h.out, Offset.add_add]
-  have hgu : Good u.mem S (W base.mem P 8) (8 * i + 12) := by
+  obtain hgu : Good u.mem S (W base.mem P 8) (8 * i + 12) := by
     rw [o.mem, h.out, show 32 * i + 32 = 4 * (8 * i + 8) by omega_using []]
     exact store_good h.good hA (by omega_using [hi])
-  have hfu : Frame [⟨S, 240⟩] base.mem u.mem := by
+  obtain hfu : Frame [⟨S, 240⟩] base.mem u.mem := by
     rw [o.mem, h.out]
     exact h.frame.write (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi]))
   refine WP.mono (subRound_ok .v2 .v1 u (by decide) hcu (by rw [h5u]; exact schedule_wr hc hku (by omega_using [hi])))
     fun w ⟨o', h6'⟩ => ?_
-  have hB : Rk (W base.mem P 8) (8 * (i + 1) + 4) (w.vpr .v2) := by
+  obtain hB : Rk (W base.mem P 8) (8 * (i + 1) + 4) (w.vpr .v2) := by
     rw [o'.key, show 8 * (i + 1) + 4 = 8 * i + 4 + 8 by omega_using [],
       o.v .v2 (by decide) (by decide) (by decide) (by decide) (by decide)]
     refine step_rk h.keyB (by simpa only [show 8 * i + 8 + 3 = 8 * i + 4 + 8 - 1 by omega_using []] using sub_temp hA) ?_
     exact sub_next (by omega_using [])
   refine WP.mono (subi4_ok w) fun v hv => ?_
   subst hv
-  have lw := Local.write w .r4 (w.gpr .r4 - BitVec.ofNat 64 1)
-  have hkw := o'.keep.trans lw.keep
+  obtain lw := Local.write w .r4 (w.gpr .r4 - BitVec.ofNat 64 1)
+  obtain hkw := o'.keep.trans lw.keep
   refine ⟨by omega_using [hi], (hku.trans hkw).mono (by simp [keyGprs]), hcu.of_keep hkw (by simp) fun x hx => by
       rw [lw.v x (by simp)]
       rcases hx with rfl | rfl | rfl | rfl <;> exact o'.v _ (by decide) (by decide) (by decide) (by decide) (by decide),
@@ -388,14 +388,14 @@ theorem loop256_ok {base s : State} {P S : Addr} (hc : KeyConfig base P S 32) (h
     WP isa (.seq (.loop (.block Impl.Aes.PPC64LE.Crypto.body256) (.nonzero .d .r4))
       (.block (Impl.Aes.PPC64LE.Crypto.rotRound .v1 .v2))) s
       (fun t => Keep keyGprs base t ∧ Good t.mem S (W base.mem P 8) 60) := by
-  have step : ∀ j t, j+1 ≤ 6 → VInv8 base P S j t →
+  obtain step : ∀ j t, j+1 ≤ 6 → VInv8 base P S j t →
       WP isa (.block Impl.Aes.PPC64LE.Crypto.body256) t (VInv8 base P S (j+1)) :=
     fun _ _ hj ht => vstep8 hc ht (by omega_using [hj])
-  have test : ∀ j t, j ≤ 6 → VInv8 base P S j t →
+  obtain test : ∀ j t, j ≤ 6 → VInv8 base P S j t →
       (6-j < 1 → eval (.nonzero .d .r4) t = some false) ∧
       (1 ≤ 6-j → eval (.nonzero .d .r4) t = some true) := by
     intro j t hj ht
-    have he := eval_nonzero_ofNat' t .r4 (by omega_using []) ht.left
+    obtain he := eval_nonzero_ofNat' t .r4 (by omega_using []) ht.left
     change eval (.nonzero .d .r4) t = some (decide (6-j ≠ 0)) at he
     constructor
     · intro hl
@@ -405,7 +405,7 @@ theorem loop256_ok {base s : State} {P S : Addr} (hc : KeyConfig base P S 32) (h
       rw [he]
       simp only [ne_eq, show ¬6-j = 0 by omega_using [hl], not_false_eq_true, decide_true]
   refine WP.seq (WP.mono (WP.chunk_loop (by decide) (by omega_using []) h step test) fun t ⟨j, hj, he, ht'⟩ => ?_)
-  have ht : VInv8 base P S 6 t := (show j = 6 by omega_using [hj, he]) ▸ ht'
+  obtain ht : VInv8 base P S 6 t := (show j = 6 by omega_using [hj, he]) ▸ ht'
   refine WP.mono (rotRound_ok .v1 .v2 t (by decide) (by decide) ht.cst ht.rcon
     (by rw [ht.out]; exact schedule_wr hc ht.keep (by omega_using []))) fun u ⟨_, R, hR, o⟩ => ?_
   refine ⟨(ht.keep.trans o.keep).mono (by simp [keyGprs]), ?_⟩
@@ -418,7 +418,7 @@ theorem loadKey_ok (d : VReg) (p : Reg) (s : State) (hp : p ≠ .r0) (h12 : s.gp
     (hr : InRegions (s.rd ++ s.wr) (s.gpr p) 16) :
     WP isa (.block (Impl.Aes.PPC64LE.Crypto.loadKey d p)) s fun t =>
       t.vpr d = s.mem.read (s.gpr p) 16 ∧ Local [] [d] s t := by
-  have hr' : InRegions (s.rd ++ s.wr) (s.gpr p + s.gpr .r12) 16 := by rw [h12]; simpa using hr
+  obtain hr' : InRegions (s.rd ++ s.wr) (s.gpr p + s.gpr .r12) 16 := by rw [h12]; simpa using hr
   apply WP.of_runBlock
   rw [Impl.Aes.PPC64LE.Crypto.loadKey, runBlock_cons, exec_lxvd2x d p .r12 s hp hr', runStep_some, runBlock_cons,
     exec_sldoi8, runStep_some, runBlock_nil]
@@ -457,19 +457,19 @@ theorem vecSetup_ok {base s : State} {P S : Addr} {nk : Nat} (hc : KeyConfig bas
     (h7 : s.gpr .r7 = BitVec.ofNat 64 (4 * nk)) (hg : Good s.mem S (W base.mem P nk) nk)
     (hf : Frame [⟨S, 240⟩] base.mem s.mem) :
     WP isa (.block Impl.Aes.PPC64LE.Crypto.vecSetup) s (VStart base P S nk) := by
-  have hS : InRegions (s.rd ++ s.wr) S 16 := by
-    have e := Offset.contains_base S (d := 0) (n := 16) (k := 240) (by decide) (by decide)
+  obtain hS : InRegions (s.rd ++ s.wr) S 16 := by
+    obtain e := Offset.contains_base S (d := 0) (n := 16) (k := 240) (by decide) (by decide)
     rw [BitVec.add_zero] at e
     rw [hk.2.1, hk.2.2]
     exact ⟨⟨S, 240⟩, List.mem_append_right _ hc.schedule, e⟩
-  have hS16 : InRegions (s.rd ++ s.wr) (S + BitVec.ofNat 64 16) 16 := by
+  obtain hS16 : InRegions (s.rd ++ s.wr) (S + BitVec.ofNat 64 16) 16 := by
     rw [hk.2.1, hk.2.2]
     exact ⟨⟨S, 240⟩, List.mem_append_right _ hc.schedule, Offset.contains_base S (by decide) (by decide)⟩
   rw [Impl.Aes.PPC64LE.Crypto.vecSetup]
   iterate 8 rw [WP.block_append_iff]
   -- `r11 = S`, `r12 = 0`
   let s₁ := (s.write .r11 (s.gpr .r5 - s.gpr .r7)).write .r12 0#64
-  have e₁ : s₁.gpr .r11 = S := by
+  obtain e₁ : s₁.gpr .r11 = S := by
     simp only [s₁, RegUpd.gpr_write, reduceCtorEq, ite_false, ite_true, h5, h7]
     exact BitVec.add_sub_cancel _ _
   refine WP.mono (gprs_ok _ s s₁ [.r11, .r12] (by
@@ -477,7 +477,7 @@ theorem vecSetup_ok {base s : State} {P S : Addr} {nk : Nat} (hc : KeyConfig bas
         ite_true])
     ((Local.write _ _ _).trans (Local.write _ _ _))) fun u₁ ⟨hu₁, l₁⟩ => ?_
   subst hu₁
-  have r12₁ : s₁.gpr .r12 = 0 := by simp only [s₁, RegUpd.gpr_write_self]; rfl
+  obtain r12₁ : s₁.gpr .r12 = 0 := by simp only [s₁, RegUpd.gpr_write_self]; rfl
   refine WP.mono (loadKey_ok .v1 .r11 s₁ (by decide) r12₁ (by rw [e₁, l₁.keep.2.1, l₁.keep.2.2]; exact hS))
     fun u₂ ⟨hv1, l₂⟩ => ?_
   let s₃ := u₂.write .r10 (u₂.gpr .r11 + BitVec.ofNat 64 16)
@@ -486,9 +486,9 @@ theorem vecSetup_ok {base s : State} {P S : Addr} {nk : Nat} (hc : KeyConfig bas
         ne_eq, reduceCtorEq, not_false_eq_true, and_self, ite_true])
     (Local.write _ _ _)) fun u₃ ⟨hu₃, l₃⟩ => ?_
   subst hu₃
-  have e₃ : s₃.gpr .r10 = S + BitVec.ofNat 64 16 := by
+  obtain e₃ : s₃.gpr .r10 = S + BitVec.ofNat 64 16 := by
     simp only [s₃, RegUpd.gpr_write_self, l₂.keep.gpr (by simp), e₁]
-  have l₁₃ := (l₁.trans l₂).trans l₃
+  obtain l₁₃ := (l₁.trans l₂).trans l₃
   refine WP.mono (loadKey_ok .v2 .r10 s₃ (by decide) ((l₂.trans l₃).keep.gpr (by simp) |>.trans r12₁)
     (by rw [e₃, l₁₃.keep.2.1, l₁₃.keep.2.2]; exact hS16)) fun u₄ ⟨hv2, l₄⟩ => ?_
   refine WP.mono (vector_step (.vop (.logic .xor .v4 .v4 .v4)) .v4 _ u₄ rfl) fun u₅ ⟨hz, o₅⟩ => ?_
@@ -501,12 +501,12 @@ theorem vecSetup_ok {base s : State} {P S : Addr} {nk : Nat} (hc : KeyConfig bas
       simp only [runBlock_cons, runStep_some, runBlock_nil, reduceExec, show (1 : Nat) < 2^15 by decide,
         ite_true]) (Local.write _ _ _)) fun u ⟨hu, l₉⟩ => ?_
   subst hu
-  have L := (((((((l₁.trans l₂).trans l₃).trans l₄).trans (Local.of_vector o₅)).trans l₆).trans l₇).trans l₈).trans l₉
+  obtain L := (((((((l₁.trans l₂).trans l₃).trans l₄).trans (Local.of_vector o₅)).trans l₆).trans l₇).trans l₈).trans l₉
   have hm : (u₈.write .r6 (BitVec.ofNat 64 1)).mem = s.mem := L.mem
-  have hv1' : (u₈.write .r6 (BitVec.ofNat 64 1)).vpr .v1 = s.mem.read S 16 := by
+  obtain hv1' : (u₈.write .r6 (BitVec.ofNat 64 1)).vpr .v1 = s.mem.read S 16 := by
     rw [l₉.v _ (by simp), l₈.v _ (by simp), l₇.v _ (by simp), l₆.v _ (by simp), o₅.v _ (by simp), l₄.v _ (by simp),
       l₃.v _ (by simp), hv1, e₁, l₁.mem]
-  have hv2' : (u₈.write .r6 (BitVec.ofNat 64 1)).vpr .v2 = s.mem.read (S + BitVec.ofNat 64 16) 16 := by
+  obtain hv2' : (u₈.write .r6 (BitVec.ofNat 64 1)).vpr .v2 = s.mem.read (S + BitVec.ofNat 64 16) 16 := by
     rw [l₉.v _ (by simp), l₈.v _ (by simp), l₇.v _ (by simp), l₆.v _ (by simp), o₅.v _ (by simp), hv2, e₃,
       (l₁.trans (l₂.trans l₃)).mem]
   refine ⟨(hk.trans L.keep).mono (by simp [keyGprs]), ⟨?_, ?_, ?_, ?_, ?_⟩, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
@@ -521,7 +521,7 @@ theorem vecSetup_ok {base s : State} {P S : Addr} {nk : Nat} (hc : KeyConfig bas
   · rw [L.keep.gpr (by simp)]; exact h7
   · rw [RegUpd.gpr_write_self]; rfl
   · rw [hv1']
-    have e := load_rk (j := 0) hg (by omega_using [h3]) (by omega_using [h3])
+    obtain e := load_rk (j := 0) hg (by omega_using [h3]) (by omega_using [h3])
     rwa [Nat.mul_zero, BitVec.add_zero] at e
   · intro h8
     subst h8

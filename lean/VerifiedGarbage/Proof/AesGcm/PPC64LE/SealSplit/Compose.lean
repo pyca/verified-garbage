@@ -29,12 +29,12 @@ theorem prepared_ok [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum
             Spec.Aes.bytesAt t.mem (stackArg (prepared s) 0) 16)) := by
   have lay := layout_pre s hs
   refine sealStages_wp (entry_access s hs) (extra := [⟨(prepared s).sp+96,8⟩]) ?_
-    (fun s₁ s₂ h1 oa rd wr L hd h28 hv hab => ?_)
+    (fun s₁ s₂ h1 oa rd wr L _ hd h28 hv hab => ?_)
   · intro r hr
     rw [List.mem_singleton] at hr
     subst r
     rw [prepared_work]
-    exact ((lay.stackApart (workR s) (by simp)).symm.sub_left (Lay.wSub (d := 128) (n := 120) (by decide))).sub_right
+    exact ((lay.stackApart (workR s) (by simp)).symm.sub_left (Offset.sub_base _ (d := 128) (n := 120) (by decide))).sub_right
       (Offset.sub_base _ (by decide))
   · refine WP.mono (body_ok L oa.env hd (source_layout hs h1 oa rd wr) h28 hv
       (length_bytesAt _ _ _).symm hab) fun t ht => ?_

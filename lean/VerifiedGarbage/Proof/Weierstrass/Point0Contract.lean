@@ -40,7 +40,7 @@ namespace VG.Impl.Weierstrass.Point
 
 /-- Algorithm 9 of Renes, Costello and Batina (doubling, `a = 0`), in its
 stated order, on the coordinates of `(X : Y : Z)`, for `b3 = 3b`. -/
-def rcbDbl0 {p : Nat} [NeZero p] (b3 X Y Z : Fin p) : Fin p × Fin p × Fin p :=
+def rcbDbl0 {p : Nat} (b3 X Y Z : Fin p) : Fin p × Fin p × Fin p :=
   let t0 := Y * Y
   let Z3 := t0 + t0
   let Z3 := Z3 + Z3
@@ -64,7 +64,7 @@ def rcbDbl0 {p : Nat} [NeZero p] (b3 X Y Z : Fin p) : Fin p × Fin p × Fin p :=
 /-- Algorithm 8 of Renes, Costello and Batina (mixed addition, `a = 0`), in
 its stated order, on the coordinates of `(X1 : Y1 : Z1)` and `(X2 : Y2 : 1)`,
 for `b3 = 3b`. -/
-def rcbAdd0m {p : Nat} [NeZero p] (b3 X1 Y1 Z1 X2 Y2 : Fin p) : Fin p × Fin p × Fin p :=
+def rcbAdd0m {p : Nat} (b3 X1 Y1 Z1 X2 Y2 : Fin p) : Fin p × Fin p × Fin p :=
   let t0 := X1 * X2
   let t1 := Y1 * Y2
   let t3 := X2 + Y2

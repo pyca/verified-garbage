@@ -85,4 +85,36 @@ theorem CrtShared.after_q {s t : State} {g : CrtGeometry} {bs : Fin 7 → List B
   exact h.after_frame (crt_workspace_frame h.buffers.workspace h.buffers.storageFits (by simp [crtRegions]) frame) rest
     (h.main.congr mainEq) (h.p.congr pEq) layout (mainEq.number h.buffers.context.arraysFit (by decide))
 
+
+/-- `crt_workspace_frame`, with writes below the stack too. -/
+theorem crt_workspace_frameB {s : State} {g : CrtGeometry} {child : BitVec 32} {m m' : Mem}
+    (ws : Workspace s g.base g.size) (fits : totalBytes g.words ≤ g.size)
+    (member : (⟨State.addr child, 8 * workspaceWords g.words⟩ : Region) ∈ crtRegions g.base (workspaceWords g.words) g.words)
+    (frame : Frame [⟨State.addr child, 8 * workspaceWords g.words⟩, ⟨off (State.addr s.sp) 48, 4⟩,
+      FrameStack.belowA s.sp 48] m m') :
+    Frame (crtLiveMutable g s.sp) m m' := by
+  apply frame.sub
+  intro r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl
+  · exact ⟨_, by simp [crtLiveMutable], crt_region_sub_workspace ws fits member⟩
+  · exact ⟨⟨off (State.addr s.sp) 48, 4⟩, by simp [crtLiveMutable], fun _ h => h⟩
+  · exact ⟨FrameStack.belowA s.sp 48, by simp [crtLiveMutable], fun _ h => h⟩
+
+/-- `CrtShared.acceptance_after_workspace`, with writes below the stack too. -/
+theorem CrtShared.acceptance_after_workspaceB {s t : State} {g : CrtGeometry} {bs : Fin 7 → List Byte}
+    {child : BitVec 32} {rs : List Reg} (h : CrtShared g bs s)
+    (member : (⟨State.addr child, 8 * workspaceWords g.words⟩ : Region) ∈ crtRegions g.base (workspaceWords g.words) g.words)
+    (frame : Frame [⟨State.addr child, 8 * workspaceWords g.words⟩, FrameStack.belowA s.sp 48] s.mem t.mem)
+    (rest : Rest rs s t) :
+    t.mem.readW (off (State.addr t.sp) 48) 32 = s.mem.readW (off (State.addr s.sp) 48) 32 := by
+  have eq : WorkspaceEq (State.addr s.sp) 112 s.mem t.mem := WorkspaceEq.of_frame (by decide) frame (by
+    intro r hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact h.stack.separate.sub_right (crt_region_sub_workspace h.buffers.workspace h.buffers.storageFits member)
+    · exact (belowA_disjoint_from (n := 112) h.stack.belowFit (by decide)).symm)
+  rw [rest.sp]
+  exact eq.word (d := 48) (bits := 32) (by decide)
+
 end VG.Proof.Bignum.Arm

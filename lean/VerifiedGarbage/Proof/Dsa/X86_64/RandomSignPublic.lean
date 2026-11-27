@@ -1,7 +1,7 @@
 module
-public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignInputs
-public import VerifiedGarbage.Proof.Dsa.SignContractWith
 
+public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignEnv
+public import VerifiedGarbage.Proof.Dsa.SignContractWith
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignCode
 import VerifiedGarbage.Proof.Dsa.X86_64.PublicSlices
 import VerifiedGarbage.Proof.Framework.Omega

@@ -23,7 +23,8 @@ builds each function's code once.
 
 namespace VG
 
-materialize_code Impl.X448.Arm.mulFn
+materialize_code Proof.X448.Arm.mulFnPlain := Impl.X448.Arm.mulFn false
+materialize_code Proof.X448.Arm.mulFnUmaal := Impl.X448.Arm.mulFn true
 materialize_code Impl.X448.Arm.addFn
 materialize_code Impl.X448.Arm.subFn
 materialize_code Impl.X448.Arm.mulA24Fn

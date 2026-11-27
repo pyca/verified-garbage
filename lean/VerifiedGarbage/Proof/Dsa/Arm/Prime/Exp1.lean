@@ -1,7 +1,8 @@
 module
 
+public import VerifiedGarbage.Proof.Rsa.Iterate
 public import VerifiedGarbage.Proof.Dsa.Arm.Prime.Stage
-import VerifiedGarbage.Proof.Dsa.Arm.Prime.Ops
+import VerifiedGarbage.Proof.Dsa.Arm.Prime.TaintD
 import VerifiedGarbage.Proof.Dsa.Arm.Prime.Taint5
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.St
 import VerifiedGarbage.Proof.Dsa.Arm.Prime.Vals
@@ -9,7 +10,7 @@ import VerifiedGarbage.Proof.Dsa.Arm.Prime.Vals
 /-! # A candidate on ARMv7: the exponent of 2 in `c − 1` (`halving_vp`)
 
 `HS P E k`: after `k` halvings of `c − 1`, the array `aHm` holds the first
-of `halveStep^[k] (c − 1, 0)`, the header word `sTc` its second and `sCnt`
+of `iterN halveStep k (c − 1, 0)`, the header word `sTc` its second and `sCnt`
 the halvings left, `8 out_len − k`. After `8 out_len` of them, `sTc` is the
 exponent of 2 in `c − 1` (`hv_done`).
 -/
@@ -20,11 +21,11 @@ namespace VG.Proof.Dsa.Arm.Prime
 open VG VG.Arm VG.Proof.Mont VG.Impl.Rsa.Arm.Keys VG.Impl.RsaKeyGen.Arm.Candidate VG.Proof.Rsa.Arm.Keys
 open VG.Proof.X25519.Arm VG.Proof.Bignum.Arm
 open VG.Proof.Rsa.Arm.Recover (VP)
-open VG.Proof.Rsa (b2n halveStep)
+open VG.Proof.Rsa (b2n halveStep iterN iterN_succ')
 open VG.Impl.RsaKeyGen.Arm.Key (notS)
 
 /-- `(m, t)` after `k` halvings of `c − 1`. -/
-def hv (P : CP) (σ : State) (k : Nat) : Nat × Nat := halveStep^[k] (cv P σ - 1, 0)
+def hv (P : CP) (σ : State) (k : Nat) : Nat × Nat := iterN halveStep k (cv P σ - 1, 0)
 
 def AH (P : CP) (k : Nat) (σ : State) : Nat → Nat := upd (A3 P σ) aHm (hv P σ k).1
 abbrev LH : List Nat := aHm :: L3
@@ -42,17 +43,17 @@ theorem hv_le (σ : State) (k : Nat) : (hv P σ k).2 ≤ k := by
   induction k with
   | zero => exact Nat.le_of_eq rfl
   | succ k ih =>
-    show (halveStep^[k + 1] (cv P σ - 1, 0)).2 ≤ k + 1
-    rw [Function.iterate_succ_apply']
-    have ih' : (halveStep^[k] (cv P σ - 1, 0)).2 ≤ k := ih
-    generalize halveStep^[k] (cv P σ - 1, 0) = st at ih' ⊢
+    show (iterN halveStep (k + 1) (cv P σ - 1, 0)).2 ≤ k + 1
+    rw [iterN_succ']
+    have ih' : (iterN halveStep k (cv P σ - 1, 0)).2 ≤ k := ih
+    generalize iterN halveStep k (cv P σ - 1, 0) = st at ih' ⊢
     unfold halveStep
     split
     · show st.2 + 1 ≤ k + 1; omega_using [ih']
     · show st.2 ≤ k + 1; omega_using [ih']
 
 theorem hv_succ (σ : State) (k : Nat) : hv P σ (k + 1) = halveStep (hv P σ k) := by
-  rw [hv, Function.iterate_succ_apply']; rfl
+  rw [hv, iterN_succ']; rfl
 
 /-- After `8 out_len` halvings: `(m, t)` with `c − 1 = 2^t m`, `m` odd. -/
 theorem hv_done (σ : State) (pre : In P σ) :

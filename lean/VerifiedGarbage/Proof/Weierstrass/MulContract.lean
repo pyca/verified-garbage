@@ -8,7 +8,7 @@ public import VerifiedGarbage.Proof.Weierstrass.MulBaseContract
 
 Not trusted: what one function for each
 curve of `curves` (so far P-192, P-224, P-256, P-384, P-521, secp256k1,
-brainpoolP256r1, brainpoolP384r1 and brainpoolP512r1) computes, on the working space where the x86-64 code of the curve's
+brainpoolP256r1, brainpoolP320r1, brainpoolP384r1 and brainpoolP512r1) computes, on the working space where the x86-64 code of the curve's
 ECDSA signature and verification, public key derivation and ECDH keeps its
 numbers, so that all of them can call one copy of the multiplication instead
 of repeating it:

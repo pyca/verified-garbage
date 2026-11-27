@@ -5,7 +5,6 @@ public import VerifiedGarbage.Spec.Ffdh.CachedKeyGenerationContract
 public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Ffdh.CachedSat
 meta import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Spec.Ffdh.CachedKeyGenerationContract
 meta import VerifiedGarbage.TCB.PPC64LE.Target
 
 /-! # The cached key search's contract is its shared callable contract (PPC64LE) -/

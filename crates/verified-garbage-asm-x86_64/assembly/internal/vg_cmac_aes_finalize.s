@@ -52,6 +52,7 @@ vg_cmac_aes_finalize:
 	mov rdx, r9
 	add rdx, 2048
 	mov r8d, 1
+	add r9, 512
 	call {vg_aes_ctr32}
 	ret
 	.p2align 6

@@ -1,14 +1,13 @@
 module
 
 public import VerifiedGarbage.Impl.AesXts.PPC64LEUnit
-public import VerifiedGarbage.Proof.AesXts.PPC64LE.Unit.Contract
+public import VerifiedGarbage.Proof.AesXts.PPC64LE.Unit.Dec
 public import VerifiedGarbage.Spec.Xts.Contract
 public import VerifiedGarbage.TCB.PPC64LE.Target
 import VerifiedGarbage.Proof.AesXts.PPC64LE.Unit.CT
 import VerifiedGarbage.Proof.AesXts.PPC64LE.Verified
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
-import VerifiedGarbage.Proof.AesXts.PPC64LE.Unit.Dec
 
 /-!
 # XTS-AES of data units on PPC64LE: `Verified`

@@ -1,42 +1,43 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP256r1.Comb -- shake: keep (proof binding in exposed artifacts)
-public import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.BrainpoolP256r1.Comb -- shake: keep (proof binding in exposed artifacts)
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.TCB.Registration
 public import VerifiedGarbage.Spec.Ecdsa.Verify.BrainpoolP256r1
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.Impl.Ecdsa.Arm.VerifyHash
-public import VerifiedGarbage.TCB.Arm.Print
-public import VerifiedGarbage.Proof.BrainpoolP256r1.Arm.Law
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.BrainpoolP256r1Comb
+public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
+import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP256r1.Comb
+import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.BrainpoolP256r1.Comb
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP256r1.Scrub
+import VerifiedGarbage.Impl.Ecdsa.Arm.VerifyHash
+import VerifiedGarbage.Impl.Ecdsa.BrainpoolP256r1.ArmFn
+import VerifiedGarbage.Proof.BrainpoolP256r1.Arm.Law
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.BrainpoolP256r1Comb
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # ECDSA over brainpoolP256r1 (FIPS 186-5) on ARMv7 -/
-
-@[expose] public section
 
 namespace VG.Artifacts.EcdsaBrainpoolP256r1.Arm
 
 open VG.Proof.BrainpoolP256r1.Arm (hasLaw)
-open VG.Proof.Ecdsa.Rfc6979.Arm (signCodeT brainpoolp256r1CombCurve brainpoolp256r1T_verified brainpoolp256r1CombCurveU brainpoolp256r1UT_verified)
-open VG.Proof.HmacTable.Arm (tables vars)
 
-def artifacts : List Artifact := [
+public def artifacts : List (Artifact Arm.target) := [
   Spec.Ecdsa.BrainpoolP256r1.verifyHashApi.artifact Arm.target {
-    code := Impl.Ecdsa.Arm.VerifyHash.verifyHash Spec.Ecdsa.BrainpoolP256r1.inst.curve.len false
-      Impl.Ecdsa.Arm.verifyBrainpoolP256r1Comb
-    verified := Proof.Ecdsa.Verify.Arm.BrainpoolP256r1.verifyHash_verified hasLaw.law },
+    code := Impl.Ecdsa.Arm.Fn.verifyBrainpoolP256r1
+    verified := Proof.Ecdsa.Arm.Fn.verifyBrainpoolP256r1 hasLaw.law },
   Spec.Ecdsa.BrainpoolP256r1.verifyHashApi.artifact Arm.target {
     suffix := "_umaal"
-    code := Impl.Ecdsa.Arm.VerifyHash.verifyHash Spec.Ecdsa.BrainpoolP256r1.inst.curve.len false
-      Impl.Ecdsa.Arm.verifyBrainpoolP256r1CombU
-    verified := Proof.Ecdsa.Verify.Arm.BrainpoolP256r1.verifyHashU_verified hasLaw.law },
+    code := Impl.Ecdsa.Arm.Fn.verifyBrainpoolP256r1U
+    verified := Proof.Ecdsa.Arm.Fn.verifyBrainpoolP256r1U hasLaw.law },
   Spec.Ecdsa.Rfc6979.Curves.brainpoolp256r1SignApi.artifact Arm.target {
-    tables := [("hmac", tables vars)]
-    code := signCodeT (brainpoolp256r1CombCurve hasLaw.law) Spec.Ecdsa.Rfc6979.Curves.brainpoolp256r1.tries vars
-    verified := brainpoolp256r1T_verified hasLaw.law },
+    tables := [("hmac", Proof.HmacTable.Arm.tables Proof.HmacTable.Arm.vars)]
+    code := Impl.Ecdsa.Arm.Fn.signBrainpoolP256r1 (Proof.HmacTable.Arm.fnsOf Proof.HmacTable.Arm.vars)
+    verified := Proof.Ecdsa.Arm.Fn.signBrainpoolP256r1 hasLaw.law },
   Spec.Ecdsa.Rfc6979.Curves.brainpoolp256r1SignApi.artifact Arm.target {
     suffix := "_umaal"
-    tables := [("hmac", tables vars)]
-    code := signCodeT (brainpoolp256r1CombCurveU hasLaw.law) Spec.Ecdsa.Rfc6979.Curves.brainpoolp256r1.tries vars
-    verified := brainpoolp256r1UT_verified hasLaw.law }]
+    tables := [("hmac", Proof.HmacTable.Arm.tables Proof.HmacTable.Arm.vars)]
+    code := Impl.Ecdsa.Arm.Fn.signBrainpoolP256r1U (Proof.HmacTable.Arm.fnsOf Proof.HmacTable.Arm.vars)
+    verified := Proof.Ecdsa.Arm.Fn.signBrainpoolP256r1U hasLaw.law }]
+
+spec_apis artifacts
 
 end VG.Artifacts.EcdsaBrainpoolP256r1.Arm

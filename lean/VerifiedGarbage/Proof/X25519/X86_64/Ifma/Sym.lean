@@ -730,7 +730,7 @@ theorem sstep_ok {s₀ : State} (hc : Ctx s₀) {σ σ' : Sym} {s : State}
       exact ⟨r, List.mem_append_right _ hr, hc⟩
     refine ⟨s.setV .l256 d ((s.mem.readW (s₀.gpr .rdi + BitVec.ofNat 64 o) 256).extractLsb' 0 128)
       ((s.mem.readW (s₀.gpr .rdi + BitVec.ofNat 64 o) 256).extractLsb' 128 128),
-      by simp only [exec, ea, State.load256, hin, ite_true, Option.map_some], ?_, hs⟩
+      by simp only [reduceExec, ea, State.load256, hin, ite_true, Option.map_some], ?_, hs⟩
     refine h.set (hv_of (fun k hk => ?_) (fun r hr k hk => by rw [qw_load' _ _ _ _ _ rfl hk, ite_eq_right hr]))
       (vm_setV h.eq _ _ _ _) rfl rfl
     rw [qw_load' _ _ _ _ _ rfl hk, ite_eq_left rfl]
@@ -756,7 +756,7 @@ theorem sstep_ok {s₀ : State} (hc : Ctx s₀) {σ σ' : Sym} {s : State}
       rw [ymm_eq_qw, T.val, h.reg r 3 (by decide), h.reg r 2 (by decide), h.reg r 1 (by decide),
         h.reg r 0 (by decide)]
     refine ⟨{ s with mem := s.mem.writeW (s₀.gpr .rdi + BitVec.ofNat 64 o) (s.ymm r) },
-      by simp only [exec, ea, State.store256, hin, ite_true],
+      by simp only [reduceExec, ea, State.store256, hin, ite_true],
       ⟨fun r' k hk => h.reg r' k hk, ?_, ?_, fun r' k hk => h.hreg r' k hk⟩,
       fun e he => ?_⟩
     · rw [← h.eq]; rfl

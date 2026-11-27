@@ -1,10 +1,9 @@
 module
+
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTiming
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeStore
-
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTableTiming
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowState
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowLoad
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
 import VerifiedGarbage.Proof.Framework.Block
 

@@ -4,7 +4,9 @@
 
 /// Ed448 public-key derivation (RFC 8032 §5.2.5): writes the 57-byte public key to `*out`, from the 57-byte private key at `seed`, including SHAKE256 and pruning. Contract: `VG.Spec.Ed448.publicKeyContract`. Constant time: only pointers may affect timing.
 ///
-/// It runs `vg_ed448_public_key`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_ed448_public_key_umaal` if it is compiled (`any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd")`) and the CPU supports its features (`VG_ED448_PUBLIC_KEY_UMAAL_FEATURES`); or else `vg_ed448_public_key`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -18,13 +20,45 @@
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_ed448_public_key_auto(_dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 57], seed: *const [u8; 57], scratch: *mut [u64; 1024]) {
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::ed448::vg_ed448_public_key(out, seed, scratch) }
+    /// The type of the implementations.
+    type Impl = unsafe extern "C" fn(out: *mut [u8; 57], seed: *const [u8; 57], scratch: *mut [u64; 1024]);
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
+        if const { verified_garbage_cpu::target_contains(crate::ed448::VG_ED448_PUBLIC_KEY_UMAAL_FEATURES) }
+            || cpu.contains(crate::ed448::VG_ED448_PUBLIC_KEY_UMAAL_FEATURES)
+        {
+            return crate::ed448::vg_ed448_public_key_umaal;
+        }
+        crate::ed448::vg_ed448_public_key
+    }
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "C" fn first(out: *mut [u8; 57], seed: *const [u8; 57], scratch: *mut [u64; 1024]) {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(out, seed, scratch) }
+    }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(out, seed, scratch) }
 }
 
 /// Ed448 signing (RFC 8032 §5.2.6): writes the 114-byte signature to `*out`, for the `len` bytes at `message`, the `ctxlen` bytes of context at `context` and the 57-byte private key at `seed`, using its cached public key at `pk`. Includes all hashing, pruning and scalar/group operations. Uses Ed448 with a context, not Ed448ph (no prehash); the context is empty for plain Ed448. Contract: `VG.Spec.Ed448.signCachedContract`. Constant time: only pointers and the context and message lengths may affect timing, not any buffer contents.
 ///
-/// It runs `vg_ed448_sign_cached`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_ed448_sign_cached_umaal` if it is compiled (`any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd")`) and the CPU supports its features (`VG_ED448_SIGN_CACHED_UMAAL_FEATURES`); or else `vg_ed448_sign_cached`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -43,13 +77,45 @@ pub unsafe fn vg_ed448_public_key_auto(_dit: verified_garbage_cpu::Dit<'_>, out:
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_ed448_sign_cached_auto(_dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 114], seed: *const [u8; 57], pk: *const [u8; 57], context: *const u8, ctxlen: usize, message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::ed448::vg_ed448_sign_cached(out, seed, pk, context, ctxlen, message, len, scratch) }
+    /// The type of the implementations.
+    type Impl = unsafe extern "C" fn(out: *mut [u8; 114], seed: *const [u8; 57], pk: *const [u8; 57], context: *const u8, ctxlen: usize, message: *const u8, len: usize, scratch: *mut [u64; 1024]);
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
+        if const { verified_garbage_cpu::target_contains(crate::ed448::VG_ED448_SIGN_CACHED_UMAAL_FEATURES) }
+            || cpu.contains(crate::ed448::VG_ED448_SIGN_CACHED_UMAAL_FEATURES)
+        {
+            return crate::ed448::vg_ed448_sign_cached_umaal;
+        }
+        crate::ed448::vg_ed448_sign_cached
+    }
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "C" fn first(out: *mut [u8; 114], seed: *const [u8; 57], pk: *const [u8; 57], context: *const u8, ctxlen: usize, message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(out, seed, pk, context, ctxlen, message, len, scratch) }
+    }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(out, seed, pk, context, ctxlen, message, len, scratch) }
 }
 
 /// Ed448 verification (RFC 8032 §5.2.7): returns 1 if the 114-byte signature at `signature` verifies for the 57-byte public key at `pk`, the `ctxlen` bytes of context at `context` and the `len` bytes at `message`, and 0 otherwise (always 0 for a context longer than 255 bytes). Uses Ed448 with a context, not Ed448ph (no prehash). Checks canonical point encodings, S < L, and the cofactored equation `[4][S]B = [4]R + [4][k]A` with the challenge k = SHAKE256(dom4(0, C) || R || A || M, 114) reduced modulo L. No additional subgroup or small-order check is imposed. Contract: `VG.Spec.Ed448.verifyContract`. Not constant time: timing may depend on the public key, context, message and signature.
 ///
-/// It runs `vg_ed448_verify`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_ed448_verify_umaal` if it is compiled (`any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd")`) and the CPU supports its features (`VG_ED448_VERIFY_UMAAL_FEATURES`); or else `vg_ed448_verify`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -64,6 +130,36 @@ pub unsafe fn vg_ed448_sign_cached_auto(_dit: verified_garbage_cpu::Dit<'_>, out
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_ed448_verify_auto(_dit: verified_garbage_cpu::Dit<'_>, pk: *const [u8; 57], context: *const u8, ctxlen: usize, message: *const u8, len: usize, signature: *const [u8; 114], scratch: *mut [u64; 1024]) -> u32 {
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::ed448::vg_ed448_verify(pk, context, ctxlen, message, len, signature, scratch) }
+    /// The type of the implementations.
+    type Impl = unsafe extern "C" fn(pk: *const [u8; 57], context: *const u8, ctxlen: usize, message: *const u8, len: usize, signature: *const [u8; 114], scratch: *mut [u64; 1024]) -> u32;
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
+        if const { verified_garbage_cpu::target_contains(crate::ed448::VG_ED448_VERIFY_UMAAL_FEATURES) }
+            || cpu.contains(crate::ed448::VG_ED448_VERIFY_UMAAL_FEATURES)
+        {
+            return crate::ed448::vg_ed448_verify_umaal;
+        }
+        crate::ed448::vg_ed448_verify
+    }
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "C" fn first(pk: *const [u8; 57], context: *const u8, ctxlen: usize, message: *const u8, len: usize, signature: *const [u8; 114], scratch: *mut [u64; 1024]) -> u32 {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(pk, context, ctxlen, message, len, signature, scratch) }
+    }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(pk, context, ctxlen, message, len, signature, scratch) }
 }

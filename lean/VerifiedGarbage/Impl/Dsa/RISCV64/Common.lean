@@ -35,8 +35,11 @@ of `subMod64`, which reads it, sees the whole number.
 
 The addresses stay in registers that no arithmetic writes: `s6` keeps `S`,
 `s11` the key and `ra` the signature (or the nonce), so they are public
-throughout. The lengths, and the digest's address, are in the P space's
-header (`hLens`, `hDigest`), which no arithmetic writes either; the
+throughout. Each entry also keeps `ra`'s value in the header (`hSig`),
+and the code loads it into `ra` again after each call of
+`vg_bignum_pow_win`.
+The lengths, and the digest's address, are in the P space's header
+(`hLens`, `hDigest`), which no arithmetic writes either; the
 callee-saved registers and `ra` are saved there too, in words 16–28.
 
 `checkKey` checks the public part of the key as PPC64LE's does, on public
@@ -65,6 +68,11 @@ def hDigest : Nat := 8
 
 /-- The header's byte offset of the lengths. -/
 def hLens : Nat := 16
+
+/-- The header's byte offset of `ra`'s value (the signature's, the nonce's
+or x's address, or 0), which the code loads into `ra` again after each
+call. -/
+def hSig : Nat := 32
 
 /-- `rd := p_len`. -/
 def getP (rd : Reg) : List Instr := [.load .d rd .s6 hLens, .shift .sll .d rd rd 48, .shift .srl .d rd rd 48]
@@ -251,11 +259,13 @@ def elemRange : Prog isa :=
     (.seq (eqMask .a2 4 7) (.block (clear ++ [.addi .a0 .a1 0] ++ unmask)))))))
 
 /-- In the P space, with p in array 0 and `R² mod p` in array 24: `a0 := 0`
-exactly when array 4's q-th power modulo p is 1 (`powWin` over q's octets,
-compared with 1 in array 7). -/
+exactly when array 4's q-th power modulo p is 1 (a call of
+`vg_bignum_pow_win` over q's octets, after which `ra` is loaded again from
+`hSig`; compared with 1 in array 7). -/
 def elemOrder : Prog isa :=
   .seq (copy 1 24) (.seq (.block (ptrQ ++ [.addi .s9 .s7 0, .addi .s10 .s8 0]))
-    (.seq ModExp.powWin (.seq PublicChecked.one (.seq (eqMask .a0 4 7) (.block unmask)))))
+    (.seq ModExp.powWinFn (.seq (.block [.load .d .ra .s6 hSig])
+      (.seq PublicChecked.one (.seq (eqMask .a0 4 7) (.block unmask))))))
 
 /-- The number at `s7` (`p_len` octets, in `s8`) into array 4, then `a0 := 0`
 exactly when it is above 1, below p, and its q-th power modulo p is 1. -/

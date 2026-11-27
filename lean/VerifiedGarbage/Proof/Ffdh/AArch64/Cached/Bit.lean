@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.BitMath
 public import VerifiedGarbage.Impl.Ffdh.AArch64.Cached.Comb
 public import VerifiedGarbage.Proof.Bignum.AArch64.Run
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
@@ -8,6 +7,42 @@ import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Ffdh.CombBitBytes
+import VerifiedGarbage.Proof.Framework.PowLit
+import Mathlib.Tactic.SplitIfs
+
+/-! ### `Ffdh.AArch64.Cached.BitMath`, which this module and modules that import it used -/
+
+section
+
+/-! Width-guard and byte-extraction arithmetic for the public comb indices. -/
+@[expose] public section
+namespace VG.Proof.Ffdh.AArch64.Cached
+open VG VG.AArch64
+
+theorem sign_sub {a b : Nat} (ha : a<2^63) (hb : b<2^63) :
+ ((BitVec.ofNat 64 a - BitVec.ofNat 64 b) >>> 63) =
+ (if a<b then 1#64 else 0#64) := by
+ apply BitVec.eq_of_toNat_eq
+ simp only [BitVec.toNat_ushiftRight,BitVec.toNat_sub,BitVec.toNat_ofNat,Nat.shiftRight_eq_div_pow]
+ rw [Nat.mod_eq_of_lt (by omega_using [ha] : a<2^64),Nat.mod_eq_of_lt (by omega_using [hb] : b<2^64)]
+ split_ifs with h
+ · change ((2^64-b+a)%2^64)/2^63=1
+   rw [Nat.mod_eq_of_lt (by omega_using [ha, h])]
+   omega_using [hb, h]
+ · change ((2^64-b+a)%2^64)/2^63=0
+   have eq : 2^64-b+a=2^64+(a-b) := by omega_using [ha, h]
+   rw [eq,Nat.add_mod_left,Nat.mod_eq_of_lt (by omega_using [ha])]
+   omega_using [ha]
+
+theorem byte_bit : ∀ (b : Byte), ∀ n<8,
+ ((BitVec.ofNat 64 b.toNat >>> n) &&& 1#64).toNat = b.toNat / 2^n % 2 := by
+ decide +kernel
+
+end VG.Proof.Ffdh.AArch64.Cached
+
+end
+
+end
 
 /-! ### `Ffdh.AArch64.Cached.BitLoad`, which only this module used -/
 

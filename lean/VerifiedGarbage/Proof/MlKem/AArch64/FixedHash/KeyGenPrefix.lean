@@ -8,15 +8,16 @@ namespace VG.Proof.MlKem.AArch64.KeyGen
 open VG VG.AArch64 VG.Impl.MlKem.AArch64 VG.Impl.MlKem.AArch64.KG VG.Spec.MlKem
 open VG.Spec.Sha3 (bytesAt)
 variable {P : KemLay}
-theorem g_using_ok (hash : FixedHash.HashFn)
- (hG : FixedHash.HashCorrect hash .x28 ST WK 72 6
-  [⟨.x25,0,32⟩,⟨.x28,BK,1⟩] [⟨.x28,SB,32⟩,⟨.x28,SG,32⟩]) {s₀ : State} (hp : Pre P s₀) {s : State} (h : AfterPro P s₀ s) :
+theorem g_using_ok (hash : FixedHash.HashFn) {n : String}
+ (hG : FixedHash.HashCorrect hash n .x28 ST WK 72 6
+  [⟨.x25,0,32⟩,⟨.x28,BK,1⟩] [⟨.x28,SB,32⟩,⟨.x28,SG,32⟩]) {s₀ : State} (hp : Pre P s₀) {s : State} (h : AfterPro P s₀ s)
+ (hd : Proof.Sha3.AArch64.D8 n s) :
     WP isa (FixedHashCallers.kgGUsing hash) s (AfterA P s₀) := by
   have hw := hp.wf
   have f : ∀ {o l : Nat}, o + l ≤ 960 → o + l ≤ kL P 3 := fun h => by simp only [kL]; lom
   have e : ∀ o, s.gpr .x28 + BitVec.ofNat 64 o = kA s₀ 3 + BitVec.ofNat 64 o := fun o => by
     rw [h.kb.x28]
-  refine WP.mono (hG (hsetup hp h.kb (by decide : 72 ∈ Spec.Sha3.rates)) (by decide) (by simp)
+  refine WP.mono (hG (hsetup hp h.kb (by decide : 72 ∈ Spec.Sha3.rates)) hd (by decide) (by simp)
     (fun p hp' => ?_) (fun p hp' => ?_) ?_) fun s' ⟨k', o'⟩ => ?_
   · rcases mem2' hp' with rfl | rfl
     · exact pieceOk (b := 0) hp h.kb (by decide) (by kl) (by decide) (by decide) (by decide)
@@ -43,9 +44,10 @@ theorem g_using_ok (hash : FixedHash.HashFn)
   · rw [o₁, KPke.kgRho, hG]; rfl
   · rw [o₂, KPke.kgSigma, hG]; rfl
 
- theorem a_using_ok (hash : FixedHash.HashFn)
- (hG : FixedHash.HashCorrect hash .x28 ST WK 72 6
+ theorem a_using_ok (hash : FixedHash.HashFn) {n : String}
+ (hG : FixedHash.HashCorrect hash n .x28 ST WK 72 6
   [⟨.x25,0,32⟩,⟨.x28,BK,1⟩] [⟨.x28,SB,32⟩,⟨.x28,SG,32⟩])
- {s₀ : State} (hp : Pre P s₀) : WP isa (FixedHashCallers.kgAUsing hash P) s₀ (AfterA P s₀) :=
- WP.seq (WP.mono (prologue_ok hp) fun _ h=>g_using_ok hash hG hp h)
+ {s₀ : State} (hp : Pre P s₀) (hd : Proof.Sha3.AArch64.D8 n s₀) :
+ WP isa (FixedHashCallers.kgAUsing hash P) s₀ (AfterA P s₀) :=
+ WP.seq (WP.mono_syms (prologue_ok hp) fun _ h sy=>g_using_ok hash hG hp h (hd.of h.kb.vcs sy))
 end VG.Proof.MlKem.AArch64.KeyGen

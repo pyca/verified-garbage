@@ -1,0 +1,20 @@
+module
+
+public import VerifiedGarbage.Spec.Ecdsa.Verify.Generic
+public import VerifiedGarbage.Spec.Ecdsa.BrainpoolP320r1
+
+/-!
+# ECDSA signature verification over brainpoolP320r1: the contracts, on every target
+
+**Trusted** (as every file in `Spec/`). `vg_ecdsa_brainpoolp320r1_verify`, in the
+module `ecdsa_brainpoolp320r1`, for brainpoolP320r1's `Ecdsa.Instance`.
+-/
+
+@[expose] public section
+
+namespace VG.Spec.Ecdsa.BrainpoolP320r1
+
+/-- `vg_ecdsa_brainpoolp320r1_verify` on every target, taking the hash function's output. -/
+def verifyHashApi : Api := inst.verifyHashApi
+
+end VG.Spec.Ecdsa.BrainpoolP320r1

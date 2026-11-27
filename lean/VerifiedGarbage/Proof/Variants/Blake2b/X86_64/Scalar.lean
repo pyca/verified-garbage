@@ -60,31 +60,36 @@ open VG.X86_64
 /-! ## Without secret residue
 
 `vg_blake2b_update` and `vg_blake2b_finalize` over this backend, followed by
-`Impl.Scrub.X86_64.scrubTail`, which wipes the registers and the granules of
-their stack that the residue analysis of their code (`X86_64.RTaint`) finds
-may hold secrets (`Blake2.X86_64.updateBReg`). -/
+their cleanup (`Impl.Blake2.X86_64.Fn.update`, `Fn.finalize`): what it needs
+of their code, evaluated here once, the runs of granules of their stack that
+the residue analysis (`X86_64.RTaint`) finds may hold secrets, and its other
+conditions (`X86_64.Scrub.SelScrub`). -/
 
 /-- `vg_blake2b_update`'s code. -/
 abbrev updateCode : Prog isa :=
   Impl.StackScratch.X86_64.withStackScratch 584 .r8 (Impl.Blake2.X86_64.Stream.update Spec.Blake2.b)
 
-def updateKs : List Nat := keep_for% Spec.Blake2.updateBApi.sig (8 + 584) updateCode []
-
 theorem updateOk : ∃ h : VG.Taint.Hint RTaint.FT,
-    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Blake2.updateBApi.sig (8 + 584) []) updateCode
-      h).any (RScrub.resOkB · (8 + 584) updateKs (Impl.Scrub.X86_64.chunks (8 + 584))) = true :=
-  RScrub.Analysed.ok_of updateKs (by taint_decide)
+    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Blake2.updateBApi.sig (8 + 584) []) updateCode h).any
+      (RScrub.resOkB · (8 + 584) (Impl.Scrub.X86_64.runKs [(8, 37)]) (Impl.Scrub.X86_64.chunksA (8 + 584))) = true :=
+  Scrub.SelScrub.ok_of [(8, 37)] (by taint_decide)
+
+theorem updateSide : Scrub.scrubSideG updateCode (8 + 584) 0 .sse true (Impl.Scrub.X86_64.runKs [(8, 37)])
+    (Impl.Scrub.X86_64.chunksA (8 + 584)) (Impl.Scrub.X86_64.gsAll (Impl.Scrub.X86_64.runKs [(8, 37)])) [] = true := by
+  lit_decide
 
 /-- `vg_blake2b_finalize`'s code. -/
 abbrev finalizeCode : Prog isa :=
   Impl.StackScratch.X86_64.withStackScratch 584 .rcx (Impl.Blake2.X86_64.Stream.finalize Spec.Blake2.b)
 
-def finalizeKs : List Nat := keep_for% Spec.Blake2.finalizeBApi.sig (8 + 584) finalizeCode []
-
 theorem finalizeOk : ∃ h : VG.Taint.Hint RTaint.FT,
-    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Blake2.finalizeBApi.sig (8 + 584) []) finalizeCode
-      h).any (RScrub.resOkB · (8 + 584) finalizeKs (Impl.Scrub.X86_64.chunks (8 + 584))) = true :=
-  RScrub.Analysed.ok_of finalizeKs (by taint_decide)
+    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Blake2.finalizeBApi.sig (8 + 584) []) finalizeCode h).any
+      (RScrub.resOkB · (8 + 584) (Impl.Scrub.X86_64.runKs [(8, 9), (200, 5)]) (Impl.Scrub.X86_64.chunksA (8 + 584))) = true :=
+  Scrub.SelScrub.ok_of [(8, 9), (200, 5)] (by taint_decide)
+
+theorem finalizeSide : Scrub.scrubSideG finalizeCode (8 + 584) 0 .sse true (Impl.Scrub.X86_64.runKs [(8, 9), (200, 5)])
+    (Impl.Scrub.X86_64.chunksA (8 + 584)) (Impl.Scrub.X86_64.gsAll (Impl.Scrub.X86_64.runKs [(8, 9), (200, 5)])) [] = true := by
+  lit_decide
 
 end Scrub
 
@@ -92,6 +97,8 @@ def variant : Proof.Blake2.X86_64.Backend where
   suffix := ""
   features := []
   code := Impl.Blake2.X86_64.compress Spec.Blake2.b
+  level := .sse
+  side := by change VG.X86_64.Scrub.calleeSide (Impl.Blake2.X86_64.compress Spec.Blake2.b) _ 0 = true; lit_decide
   callee := Proof.Blake2.X86_64.Stream.calleeB
   verified := Proof.Blake2.X86_64.compressB_verified
   spSafe := Code.all_of_spTest (by lit_decide)
@@ -115,7 +122,7 @@ def variant : Proof.Blake2.X86_64.Backend where
   finalizeDepth := by
     change (Impl.Blake2.X86_64.Stream.finalize Spec.Blake2.b).x86_64Depth ≤ 8
     lit_decide
-  updateRes := some ⟨updateKs, updateOk⟩
-  finalizeRes := some ⟨finalizeKs, finalizeOk⟩
+  updScrub := ⟨.sse, [(8, 37)], updateOk, updateSide⟩
+  finScrub := ⟨.sse, [(8, 9), (200, 5)], finalizeOk, finalizeSide⟩
 
 end VG.Proof.Variants.Blake2b.X86_64.Scalar

@@ -20,9 +20,10 @@ section
 
 /-! # The products of the `pmuludq` kernel
 
-`quadLastMul` (four products), `pairMul` (two) and `single`
-(one), stated on the state they leave (`SseOnly`: only `xmm0` to `xmm5`
-change, and `eax` for `single`) and on the sums' lanes (`Sums`): the
+`turn` (four products, in any registers apart from the sums' and the
+digits'), `pairMul` (two) and `single` (one), stated on the state they leave
+(`SseOnly`: of the registers, only `xmm0` to `xmm5` and `xmm7` change, and
+`eax` for `single`) and on the sums' lanes (`Sums`): the
 products added to `xmm0` modulo `2⁶⁴`, their high words to `xmm1`. Each
 product is of the words at the same offset from `esi` and from `edi`
 (`pw`).
@@ -38,7 +39,7 @@ open VG VG.X86 VG.X86.RegUpd VG.Impl.Mont.X86 VG.Impl.Mont.X86.Sse2
 theorem ea_setXmm (s : State) (r : XReg) (v : BitVec 128) (m : MemOp) : (s.setXmm r v).ea m = s.ea m := rfl
 theorem mcdt_setXmm (s : State) (r : XReg) (v : BitVec 128) : (s.setXmm r v).mcdt = s.mcdt := rfl
 theorem mcdt_setReg (s : State) (r : Reg) (v : BitVec 32) : (s.setReg r v).mcdt = s.mcdt := rfl
-/-- Only `xmm0` to `xmm5` changed. -/
+/-- Only `xmm0` to `xmm5` and `xmm7` changed. -/
 structure SseOnly (s t : State) : Prop where
   gpr : t.gpr = s.gpr
   mem : t.mem = s.mem
@@ -48,7 +49,6 @@ structure SseOnly (s t : State) : Prop where
   zf : t.zf = s.zf
   mcdt : t.mcdt = s.mcdt
   x6 : t.xmm .xmm6 = s.xmm .xmm6
-  x7 : t.xmm .xmm7 = s.xmm .xmm7
 
 /-! ## The sums -/
 
@@ -97,25 +97,45 @@ theorem dword_read128 (m : Mem) (a : Addr) {j : Nat} (hj : j < 4) :
     (dword (m.readW a 128) j).toNat = (m.readW (a + BitVec.ofNat 64 (4 * j)) 32).toNat := by
   rw [dword_readW m a hj]
 
-/-! ## `quadLastMul` -/
+/-! ## `turn` -/
 
-theorem quadLastMul_run (s : State) (hm : 0 < s.mcdt)
-    (h1 : InRegions (s.rd ++ s.wr) (s.ea (at_ .esi 0)) 16) (h2 : InRegions (s.rd ++ s.wr) (s.ea (at_ .edi 0)) 16) :
-    ∃ t, runBlock isa quadLastMul s = some t ∧ SseOnly s t ∧
+/-- A turn's three registers: apart from each other, from the sums' and from the digits'. -/
+structure TurnRegs (e o y : XReg) : Prop where
+  eo : e ≠ o
+  ey : e ≠ y
+  oy : o ≠ y
+  e0 : e ≠ .xmm0
+  e1 : e ≠ .xmm1
+  e6 : e ≠ .xmm6
+  o0 : o ≠ .xmm0
+  o1 : o ≠ .xmm1
+  o6 : o ≠ .xmm6
+  y0 : y ≠ .xmm0
+  y1 : y ≠ .xmm1
+  y6 : y ≠ .xmm6
+
+/-- A turn, in any registers and at any offset from the pointers: the products of the two
+16-byte reads' even doublewords, and of their odd ones, into the sums. -/
+theorem turn_run (s : State) (hm : 0 < s.mcdt) {e o y : XReg} (R : TurnRegs e o y) (d : Nat)
+    (h1 : InRegions (s.rd ++ s.wr) (s.ea (at_ .esi d)) 16) (h2 : InRegions (s.rd ++ s.wr) (s.ea (at_ .edi d)) 16) :
+    ∃ t, runBlock isa (turn e o y d) s = some t ∧ SseOnly s t ∧
       t.xmm .xmm0 = XBinOp.eval .paddq (XBinOp.eval .paddq (s.xmm .xmm0)
-        (pmuludq (s.mem.readW (s.ea (at_ .esi 0)) 128) (s.mem.readW (s.ea (at_ .edi 0)) 128)))
-        (pmuludq (shufDwords (s.mem.readW (s.ea (at_ .esi 0)) 128) 0x31)
-          (shufDwords (s.mem.readW (s.ea (at_ .edi 0)) 128) 0x31)) ∧
+        (pmuludq (s.mem.readW (s.ea (at_ .esi d)) 128) (s.mem.readW (s.ea (at_ .edi d)) 128)))
+        (pmuludq (shufDwords (s.mem.readW (s.ea (at_ .esi d)) 128) 0x31)
+          (XShiftOp.eval .psrlq (s.mem.readW (s.ea (at_ .edi d)) 128) 32)) ∧
       t.xmm .xmm1 = XBinOp.eval .paddq (XBinOp.eval .paddq (s.xmm .xmm1) (XShiftOp.eval .psrlq
-        (pmuludq (s.mem.readW (s.ea (at_ .esi 0)) 128) (s.mem.readW (s.ea (at_ .edi 0)) 128)) 32))
-        (XShiftOp.eval .psrlq (pmuludq (shufDwords (s.mem.readW (s.ea (at_ .esi 0)) 128) 0x31)
-          (shufDwords (s.mem.readW (s.ea (at_ .edi 0)) 128) 0x31)) 32) := by
-  simp only [quadLastMul, acc, List.cons_append, List.nil_append, runBlock_cons, reduceExec, State.load128, h1, h2,
+        (pmuludq (s.mem.readW (s.ea (at_ .esi d)) 128) (s.mem.readW (s.ea (at_ .edi d)) 128)) 32))
+        (XShiftOp.eval .psrlq (pmuludq (shufDwords (s.mem.readW (s.ea (at_ .esi d)) 128) 0x31)
+          (XShiftOp.eval .psrlq (s.mem.readW (s.ea (at_ .edi d)) 128) 32)) 32) := by
+  obtain ⟨eo, ey, oy, e0, e1, e6, o0, o1, o6, y0, y1, y6⟩ := R
+  simp only [turn, acc, List.cons_append, List.nil_append, runBlock_cons, reduceExec, State.load128, h1, h2,
     Option.map_some, runStep_some, XOp.exec, ↓reduceIte, Option.some.injEq, exists_eq_left',
-    rd_setXmm, wr_setXmm, mem_setXmm, ea_setXmm, mcdt_setXmm, hm, xmm_setXmm, reduceCtorEq, runBlock_nil]
-  refine ⟨⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_, ?_⟩ <;>
+    rd_setXmm, wr_setXmm, mem_setXmm, ea_setXmm, mcdt_setXmm, hm, xmm_setXmm, runBlock_nil,
+    eo, eo.symm, ey, ey.symm, oy, oy.symm, e0, e0.symm, e1.symm, o0, o0.symm, o1, o1.symm, y0.symm,
+    y1.symm, reduceCtorEq]
+  refine ⟨⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_, ?_⟩ <;>
     simp only [xmm_setXmm, reduceCtorEq, ↓reduceIte, gpr_setXmm, mem_setXmm, rd_setXmm, wr_setXmm,
-      cf_setXmm, zf_setXmm, mcdt_setXmm]
+      cf_setXmm, zf_setXmm, mcdt_setXmm, e6.symm, o6.symm, y6.symm]
 
 theorem dword_shuf31_0 (a : BitVec 128) : dword (shufDwords a 0x31) 0 = dword a 1 := by
   rw [dword_shufDwords _ _ (by decide)]; rfl
@@ -123,15 +143,16 @@ theorem dword_shuf31_0 (a : BitVec 128) : dword (shufDwords a 0x31) 0 = dword a 
 theorem dword_shuf31_2 (a : BitVec 128) : dword (shufDwords a 0x31) 2 = dword a 3 := by
   rw [dword_shufDwords _ _ (by decide)]; rfl
 
-/-- The four products of `quadLastMul`, for `esi` at `x` and `edi` at `y`. -/
-theorem quadLast_sums {s t : State} {S H : Nat} (hs : Sums (s.xmm .xmm0) (s.xmm .xmm1) S H)
+/-- The four products of a turn, of the 16 bytes at `x` and at `y`. -/
+theorem turn_sums {s t : State} {S H : Nat} (hs : Sums (s.xmm .xmm0) (s.xmm .xmm1) S H)
     (hH : H + 4 * 2 ^ 32 < 2 ^ 64) {x y : Addr}
     (h0 : t.xmm .xmm0 = XBinOp.eval .paddq (XBinOp.eval .paddq (s.xmm .xmm0)
       (pmuludq (s.mem.readW x 128) (s.mem.readW y 128)))
-      (pmuludq (shufDwords (s.mem.readW x 128) 0x31) (shufDwords (s.mem.readW y 128) 0x31)))
+      (pmuludq (shufDwords (s.mem.readW x 128) 0x31) (XShiftOp.eval .psrlq (s.mem.readW y 128) 32)))
     (h1 : t.xmm .xmm1 = XBinOp.eval .paddq (XBinOp.eval .paddq (s.xmm .xmm1) (XShiftOp.eval .psrlq
       (pmuludq (s.mem.readW x 128) (s.mem.readW y 128)) 32))
-      (XShiftOp.eval .psrlq (pmuludq (shufDwords (s.mem.readW x 128) 0x31) (shufDwords (s.mem.readW y 128) 0x31)) 32)) :
+      (XShiftOp.eval .psrlq (pmuludq (shufDwords (s.mem.readW x 128) 0x31)
+        (XShiftOp.eval .psrlq (s.mem.readW y 128) 32)) 32)) :
     Sums (t.xmm .xmm0) (t.xmm .xmm1)
       (S + pw s.mem x y + pw s.mem (x + 8) (y + 8) + pw s.mem (x + 4) (y + 4) + pw s.mem (x + 12) (y + 12))
       (H + pw s.mem x y / 2 ^ 32 + pw s.mem (x + 8) (y + 8) / 2 ^ 32 + pw s.mem (x + 4) (y + 4) / 2 ^ 32 +
@@ -141,9 +162,9 @@ theorem quadLast_sums {s t : State} {S H : Nat} (hs : Sums (s.xmm .xmm0) (s.xmm 
     (dword (s.mem.readW y 128) 0).toNat) (y := 2 ^ 32) (by decide) |>.2 (by have := word_mul_lt (dword (s.mem.readW x 128) 0) (dword (s.mem.readW y 128) 0); omega_using [this])
   have q2 := Nat.div_lt_iff_lt_mul (k := 2 ^ 32) (x := (dword (s.mem.readW x 128) 2).toNat *
     (dword (s.mem.readW y 128) 2).toNat) (y := 2 ^ 32) (by decide) |>.2 (by have := word_mul_lt (dword (s.mem.readW x 128) 2) (dword (s.mem.readW y 128) 2); omega_using [this])
-  have a2 := a1.addMul (u := shufDwords (s.mem.readW x 128) 0x31) (v := shufDwords (s.mem.readW y 128) 0x31) (by omega_using [hH, q0, q2])
+  have a2 := a1.addMul (u := shufDwords (s.mem.readW x 128) 0x31) (v := XShiftOp.eval .psrlq (s.mem.readW y 128) 32) (by omega_using [hH, q0, q2])
   rw [h0, h1]
-  rw [dword_shuf31_0, dword_shuf31_0, dword_shuf31_2, dword_shuf31_2] at a2
+  rw [dword_shuf31_0, dword_psrlq_0, dword_shuf31_2, dword_psrlq_2] at a2
   simp only [dword_read128 _ _ (show 0 < 4 by decide),
     dword_read128 _ _ (show 1 < 4 by decide), dword_read128 _ _ (show 2 < 4 by decide),
     dword_read128 _ _ (show 3 < 4 by decide), Nat.mul_zero, BitVec.ofNat_eq_ofNat, BitVec.add_zero,
@@ -168,7 +189,7 @@ theorem pairMul_run (s : State) (hm : 0 < s.mcdt)
   simp only [pairMul, acc, List.cons_append, List.nil_append, runBlock_cons, reduceExec, State.load64, h1, h2,
     Option.map_some, runStep_some, XOp.exec, ↓reduceIte, Option.some.injEq, exists_eq_left',
     rd_setXmm, wr_setXmm, mem_setXmm, ea_setXmm, mcdt_setXmm, hm, xmm_setXmm, reduceCtorEq, runBlock_nil]
-  refine ⟨⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_, ?_⟩ <;>
+  refine ⟨⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_, ?_⟩ <;>
     simp only [xmm_setXmm, reduceCtorEq, ↓reduceIte, gpr_setXmm, mem_setXmm, rd_setXmm, wr_setXmm,
       cf_setXmm, zf_setXmm, mcdt_setXmm]
 
@@ -213,19 +234,19 @@ theorem single_run (s : State) (hm : 0 < s.mcdt)
     (h1 : InRegions (s.rd ++ s.wr) (s.ea (at_ .esi 0)) 4) (h2 : InRegions (s.rd ++ s.wr) (s.ea (at_ .edi 0)) 4) :
     ∃ t, runBlock isa single s = some t ∧ t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.mcdt = s.mcdt ∧
       (∀ r, r ≠ .eax → t.gpr r = s.gpr r) ∧
-      t.xmm .xmm6 = s.xmm .xmm6 ∧ t.xmm .xmm7 = s.xmm .xmm7 ∧
+      t.xmm .xmm6 = s.xmm .xmm6 ∧
       t.xmm .xmm0 = XBinOp.eval .paddq (s.xmm .xmm0)
         (singleP (s.mem.readW (s.ea (at_ .esi 0)) 32) (s.mem.readW (s.ea (at_ .edi 0)) 32)) ∧
       t.xmm .xmm1 = XBinOp.eval .paddq (s.xmm .xmm1) (XShiftOp.eval .psrlq
         (singleP (s.mem.readW (s.ea (at_ .esi 0)) 32) (s.mem.readW (s.ea (at_ .edi 0)) 32)) 32) := by
   have ea2 : ∀ v : BitVec 32, (s.setReg .eax v).ea (at_ .edi 0) = s.ea (at_ .edi 0) := fun _ => rfl
   have ea2' : ∀ (v : BitVec 32) (x : BitVec 128),
-      ((s.setReg .eax v).setXmm .xmm2 x).ea (at_ .edi 0) = s.ea (at_ .edi 0) := fun _ _ => rfl
+      ((s.setReg .eax v).setXmm .xmm7 x).ea (at_ .edi 0) = s.ea (at_ .edi 0) := fun _ _ => rfl
   simp only [single, acc, List.cons_append, List.nil_append, runBlock_cons, reduceExec, readSrc, State.load32, h1,
     Option.map_some, runStep_some, XOp.exec, ↓reduceIte, Option.some.injEq, exists_eq_left',
     rd_setXmm, wr_setXmm, mem_setXmm, rd_setReg, wr_setReg, mem_setReg, ea2', h2, mcdt_setXmm, mcdt_setReg, hm,
     xmm_setXmm, xmm_setReg, reduceCtorEq, runBlock_nil, gpr_setXmm, gpr_setReg_self]
-  refine ⟨trivial, trivial, trivial, trivial, fun r hr => ?_, trivial, trivial, rfl, rfl⟩
+  refine ⟨trivial, trivial, trivial, trivial, fun r hr => ?_, trivial, rfl, rfl⟩
   simp only [gpr_setXmm, gpr_setReg_of_ne _ _ hr]
 
 theorem single_sums {s t : State} {S H : Nat} (hs : Sums (s.xmm .xmm0) (s.xmm .xmm1) S H)
@@ -247,9 +268,10 @@ end
 /-! # The products of a column: `dot`
 
 `dot` adds `Σ X_j Y_j` over `j < n` to the sums (`Sums`), for numbers `X`
-and `Y` at offsets `x` and `y` of the working space (`dsum`): four products
-at a time while a fifth word follows (`quadBody`), then four (`quadLast`),
-two (`pair`) and one (`single`), counted down by `ebp`, the bytes left.
+and `Y` at offsets `x` and `y` of the working space (`dsum`): eight products
+at a time while eight words remain (`quadBody`, two turns), then four
+(`quadLast`), two (`pair`) and one (`single`), counted down by `ebp`, the
+bytes left.
 -/
 
 @[expose] public section
@@ -340,6 +362,20 @@ theorem wp_movX {d : Reg} {src : Src} {v : BitVec 32} (h : readSrc s src = some 
     WP isa (.block (.mov d src :: is)) s Q :=
   cons (s' := s.setReg d v) (by simp only [exec, h, Option.map_some]) (k _ (Upd.setReg _ _ _) rfl rfl)
 
+/-- A move, which keeps CF too. -/
+theorem wp_movC {d : Reg} {src : Src} {v : BitVec 32} (h : readSrc s src = some v)
+    (k : ∀ t, Upd s t d v → t.cf = s.cf → t.mcdt = s.mcdt → t.xmm = s.xmm → WP isa (.block is) t Q) :
+    WP isa (.block (.mov d src :: is)) s Q :=
+  cons (s' := s.setReg d v) (by simp only [exec, h, Option.map_some]) (k _ (Upd.setReg _ _ _) rfl rfl rfl)
+
+/-- An SSE operation between registers: only the XMM registers change. -/
+theorem wp_xopX (op : XOp)
+    (k : ∀ t, t.gpr = s.gpr → t.mem = s.mem → t.rd = s.rd → t.wr = s.wr → t.mcdt = s.mcdt →
+      t.xmm = (op.exec s).xmm → WP isa (.block is) t Q) :
+    WP isa (.block (.xop op :: is)) s Q :=
+  cons rfl (k _ (by cases op <;> rfl) (by cases op <;> rfl) (by cases op <;> rfl) (by cases op <;> rfl)
+    (by cases op <;> rfl) rfl)
+
 end
 
 /-! ## The loop's invariant -/
@@ -357,7 +393,6 @@ structure DotI (s0 : State) (W : Addr) (L x y n S H j : Nat) (t : State) : Prop 
   mem : t.mem = s0.mem
   mcdt : t.mcdt = s0.mcdt
   x6 : t.xmm .xmm6 = s0.xmm .xmm6
-  x7 : t.xmm .xmm7 = s0.xmm .xmm7
 
 /-- What the products need: both numbers' `n` words within the working space
 (if there are any),
@@ -426,11 +461,11 @@ theorem DotI.step {s0 t u : State} {W : Addr} {L x y n S H j : Nat} (I : DotI s0
     (sums : Sums (u.xmm .xmm0) (u.xmm .xmm1) (S + dsum s0.mem W x y j + rsum (dprod s0.mem W x y) j i)
       (H + dhigh s0.mem W x y j + rsum (fun k => dprod s0.mem W x y k / 2 ^ 32) j i))
     (keep : ∀ r, r ≠ .eax → r ≠ .esi → r ≠ .edi → r ≠ .ebp → u.gpr r = t.gpr r) (rd : u.rd = t.rd)
-    (wr : u.wr = t.wr) (mem : u.mem = t.mem) (mcdt : u.mcdt = t.mcdt) (x6 : u.xmm .xmm6 = t.xmm .xmm6)
-    (x7 : u.xmm .xmm7 = t.xmm .xmm7) : DotI s0 W L x y n S H (j + i) u := by
+    (wr : u.wr = t.wr) (mem : u.mem = t.mem) (mcdt : u.mcdt = t.mcdt) (x6 : u.xmm .xmm6 = t.xmm .xmm6) :
+    DotI s0 W L x y n S H (j + i) u := by
   have hn := I.ws.nowrap
   refine ⟨hi, ws, ?_, ?_, ?_, ?_, ⟨fun r hr => ?_, by rw [rd, I.keep.2.1], by rw [wr, I.keep.2.2]⟩,
-    by rw [mem, I.mem], by rw [mcdt, I.mcdt], by rw [x6, I.x6], by rw [x7, I.x7]⟩
+    by rw [mem, I.mem], by rw [mcdt, I.mcdt], by rw [x6, I.x6]⟩
   · rw [PtrAt, esi, ptr_add I.esi, toNat_ofNat_lt (by omega_arith)]; omega_arith
   · rw [PtrAt, edi, ptr_add I.edi, toNat_ofNat_lt (by omega_arith)]; omega_arith
   · rw [cnt, I.cnt, sub_ofNat (by omega_arith)]; congr 1; omega_arith
@@ -450,58 +485,85 @@ theorem rsum_two (f : Nat → Nat) (j : Nat) : rsum f j 2 = f j + f (j + 1) := b
 theorem ea_w {t : State} {W : Addr} {L : Nat} (hw : Ws t W L) {r : Reg} {x j : Nat} (hp : PtrAt t W r (x + 4 * j))
     {d : Nat} (hd : x + 4 * j + d < L) : t.ea (at_ r d) = off W (x + 4 * j + d) := ea_ptr hw hp hd
 
-/-- Four products, the loop's body, while a fifth word follows. -/
-theorem quad_ok {s0 t : State} {W : Addr} {L x y n S H j : Nat} (E : DotEnv s0 L x y n H)
-    (I : DotI s0 W L x y n S H j t) (hj : j + 5 ≤ n) :
-    WP isa (.block quadBody) t fun u =>
-      DotI s0 W L x y n S H (j + 4) u ∧ u.cf = some (decide (4 * (n - (j + 4)) < 20)) := by
+theorem SseOnly.refl (s : State) : SseOnly s s := ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩
+
+theorem SseOnly.trans {s t u : State} (h₁ : SseOnly s t) (h₂ : SseOnly t u) : SseOnly s u :=
+  ⟨by rw [h₂.gpr, h₁.gpr], by rw [h₂.mem, h₁.mem], by rw [h₂.rd, h₁.rd], by rw [h₂.wr, h₁.wr], by rw [h₂.cf, h₁.cf],
+    by rw [h₂.zf, h₁.zf], by rw [h₂.mcdt, h₁.mcdt], by rw [h₂.x6, h₁.x6]⟩
+
+theorem ea_of_gpr {s t : State} (h : t.gpr = s.gpr) (m : MemOp) : t.ea m = s.ea m := by
+  rw [State.ea, State.ea, h]
+
+/-- A turn `d` bytes from the invariant's pointers, the products from `k` on, in a state `v`
+whose sums have those below `k` and where only XMM registers differ from the invariant's
+(the turns before it of a loop's body): the sums with the four products more. -/
+theorem turn_ok {s0 t v : State} {W : Addr} {L x y n S H j : Nat} (E : DotEnv s0 L x y n H)
+    (I : DotI s0 W L x y n S H j t) {e o r : XReg} (R : TurnRegs e o r) {d k : Nat} (hk : 4 * k = 4 * j + d)
+    (hn : k + 4 ≤ n) (O : SseOnly t v)
+    (hs : Sums (v.xmm .xmm0) (v.xmm .xmm1) (S + dsum s0.mem W x y k) (H + dhigh s0.mem W x y k)) :
+    ∃ u, runBlock isa (turn e o r d) v = some u ∧ SseOnly t u ∧
+      Sums (u.xmm .xmm0) (u.xmm .xmm1) (S + dsum s0.mem W x y (k + 4)) (H + dhigh s0.mem W x y (k + 4)) := by
   have xr := E.xr.resolve_left (by omega_arith)
   have yr := E.yr.resolve_left (by omega_arith)
-  have hm : 0 < t.mcdt := I.mcdt ▸ E.mcdt
-  have ex0 := ea_w I.ws I.esi (d := 0) (by omega_arith)
-  have ey0 := ea_w I.ws I.edi (d := 0) (by omega_arith)
-  rw [quadBody]
-  obtain ⟨t1, run1, o1, a1, b1⟩ := quadLastMul_run t hm
-    (by rw [ex0]; exact ws_read I.ws (by omega_arith)) (by rw [ey0]; exact ws_read I.ws (by omega_arith))
-  refine WP.block_append (WP.of_runBlock ⟨t1, run1, ?_⟩)
-  refine wp_advCmp fun u esi edi ebp oth cf mem rd wr mcdt xmm => ?_
-  have hl := dhigh_le s0.mem W x y j
+  obtain ex : v.ea (at_ .esi d) = off W (x + 4 * k) := by
+    rw [ea_of_gpr O.gpr, ea_w I.ws I.esi (d := d) (by omega_arith)]; congr 1; omega_arith
+  obtain ey : v.ea (at_ .edi d) = off W (y + 4 * k) := by
+    rw [ea_of_gpr O.gpr, ea_w I.ws I.edi (d := d) (by omega_arith)]; congr 1; omega_arith
+  obtain ⟨u, run, o1, a1, b1⟩ := turn_run v (by rw [O.mcdt, I.mcdt]; exact E.mcdt) R d
+    (by rw [ex, O.rd, O.wr]; exact ws_read I.ws (by omega_arith))
+    (by rw [ey, O.rd, O.wr]; exact ws_read I.ws (by omega_arith))
+  refine ⟨u, run, O.trans o1, ?_⟩
+  have hl := dhigh_le s0.mem W x y k
   have hH := E.hH
-  have s1 := quadLast_sums I.sums (by omega_arith) a1 b1
-  rw [ex0, ey0, Nat.add_zero, Nat.add_zero, off_4, off_4, off_8, off_8, off_12, off_12, I.mem, pw_d0,
-    pw_d _ _ _ _ _ 8 (j + 2) (by omega_arith), pw_d _ _ _ _ _ 4 (j + 1) (by omega_arith),
-    pw_d _ _ _ _ _ 12 (j + 3) (by omega_arith)] at s1
-  have I' := I.step 4 (by omega_arith) (I.ws.of_wr (by rw [wr, o1.wr])) (by rw [esi, o1.gpr]; rfl) (by rw [edi, o1.gpr]; rfl)
-    (by rw [ebp, o1.gpr]; rfl) E.hn (by rw [xmm, rsum_four, rsum_four]; refine s1.of_eq ?_ ?_ <;> omega_arith)
-    (fun r h0 h1 h2 h3 => by rw [oth r h1 h2 h3, o1.gpr]) (by rw [rd, o1.rd]) (by rw [wr, o1.wr])
-    (by rw [mem, o1.mem]) (by rw [mcdt, o1.mcdt]) (by rw [xmm, o1.x6]) (by rw [xmm, o1.x7])
+  have s1 := turn_sums hs (by omega_arith) a1 b1
+  rw [ex, ey, off_8, off_8, off_4, off_4, off_12, off_12, O.mem, I.mem,
+    pw_d0, pw_d _ _ _ _ k 8 (k + 2) (by omega_arith), pw_d _ _ _ _ k 4 (k + 1) (by omega_arith),
+    pw_d _ _ _ _ k 12 (k + 3) (by omega_arith)] at s1
+  refine s1.of_eq ?_ ?_
+  · rw [dsum_add, rsum_four]; omega_arith
+  · rw [dhigh_add, rsum_four]; omega_arith
+
+/-- The registers of the turns: the first of a body's (and the last four products'), and its second. -/
+theorem turnRegsA : TurnRegs .xmm2 .xmm4 .xmm3 := by constructor <;> decide
+theorem turnRegsB : TurnRegs .xmm5 .xmm7 .xmm3 := by constructor <;> decide
+
+/-- Eight products, the loop's body, while eight words remain. -/
+theorem quad_ok {s0 t : State} {W : Addr} {L x y n S H j : Nat} (E : DotEnv s0 L x y n H)
+    (I : DotI s0 W L x y n S H j t) (hj : j + 8 ≤ n) :
+    WP isa (.block quadBody) t fun u =>
+      DotI s0 W L x y n S H (j + 8) u ∧ u.cf = some (decide (4 * (n - (j + 8)) < 32)) := by
+  obtain ⟨t1, run1, o1, s1⟩ := turn_ok E I turnRegsA (d := 0) (k := j) rfl (by omega_arith) (SseOnly.refl t) I.sums
+  obtain ⟨t2, run2, o2, s2⟩ := turn_ok E I turnRegsB (d := 16) (k := j + 4) (by omega_arith) (by omega_arith) o1 s1
+  rw [quadBody, List.append_assoc, List.append_assoc]
+  refine WP.block_append (WP.of_runBlock ⟨t1, run1, ?_⟩)
+  refine WP.block_append (WP.of_runBlock ⟨t2, run2, ?_⟩)
+  refine wp_advCmp fun u esi edi ebp oth cf mem rd wr mcdt xmm => ?_
+  rw [show j + 4 + 4 = j + 8 by omega_arith] at s2
+  obtain s2' := s2.of_eq (S' := S + dsum s0.mem W x y j + rsum (dprod s0.mem W x y) j 8)
+    (H' := H + dhigh s0.mem W x y j + rsum (fun k => dprod s0.mem W x y k / 2 ^ 32) j 8)
+    (by rw [dsum_add, Nat.add_assoc]) (by rw [dhigh_add, Nat.add_assoc])
+  have I' := I.step 8 hj (I.ws.of_wr (by rw [wr, o2.wr])) (by rw [esi, o2.gpr]; rfl) (by rw [edi, o2.gpr]; rfl)
+    (by rw [ebp, o2.gpr]; rfl) E.hn (by rw [xmm]; exact s2')
+    (fun r h0 h1 h2 h3 => by rw [oth r h1 h2 h3, o2.gpr]) (by rw [rd, o2.rd]) (by rw [wr, o2.wr])
+    (by rw [mem, o2.mem]) (by rw [mcdt, o2.mcdt]) (by rw [xmm, o2.x6])
   refine ⟨I', ?_⟩
   rw [cf, ← ebp, I'.cnt, toNat_ofNat_lt (by have := E.hn; omega_arith)]; rfl
 
-/-- The last four products. -/
+/-- Four products more. -/
 theorem quadLast_ok {s0 t : State} {W : Addr} {L x y n S H j : Nat} (E : DotEnv s0 L x y n H)
     (I : DotI s0 W L x y n S H j t) (hj : j + 4 ≤ n) :
     WP isa (.block quadLast) t (DotI s0 W L x y n S H (j + 4)) := by
-  have xr := E.xr.resolve_left (by omega_arith)
-  have yr := E.yr.resolve_left (by omega_arith)
-  have hm : 0 < t.mcdt := I.mcdt ▸ E.mcdt
-  have ex0 := ea_w I.ws I.esi (d := 0) (by omega_arith)
-  have ey0 := ea_w I.ws I.edi (d := 0) (by omega_arith)
+  obtain ⟨t1, run1, o1, s1⟩ := turn_ok E I turnRegsA (d := 0) (k := j) rfl hj (SseOnly.refl t) I.sums
   rw [quadLast]
-  obtain ⟨t1, run1, o1, a1, b1⟩ := quadLastMul_run t hm
-    (by rw [ex0]; exact ws_read I.ws (by omega_arith)) (by rw [ey0]; exact ws_read I.ws (by omega_arith))
   refine WP.block_append (WP.of_runBlock ⟨t1, run1, ?_⟩)
   refine wp_adv fun u esi edi ebp oth mem rd wr mcdt xmm => ?_
-  have hl := dhigh_le s0.mem W x y j
-  have hH := E.hH
-  have s1 := quadLast_sums I.sums (by omega_arith) a1 b1
-  rw [ex0, ey0, Nat.add_zero, Nat.add_zero, off_8, off_8, off_4, off_4, off_12, off_12, I.mem, pw_d0,
-    pw_d _ _ _ _ _ 8 (j + 2) (by omega_arith), pw_d _ _ _ _ _ 4 (j + 1) (by omega_arith),
-    pw_d _ _ _ _ _ 12 (j + 3) (by omega_arith)] at s1
-  exact I.step 4 (by omega_arith) (I.ws.of_wr (by rw [wr, o1.wr])) (by rw [esi, o1.gpr]; rfl) (by rw [edi, o1.gpr]; rfl)
-    (by rw [ebp, o1.gpr]; rfl) E.hn (by rw [xmm, rsum_four, rsum_four]; refine s1.of_eq ?_ ?_ <;> omega_arith)
+  obtain s1' := s1.of_eq (S' := S + dsum s0.mem W x y j + rsum (dprod s0.mem W x y) j 4)
+    (H' := H + dhigh s0.mem W x y j + rsum (fun k => dprod s0.mem W x y k / 2 ^ 32) j 4)
+    (by rw [dsum_add, Nat.add_assoc]) (by rw [dhigh_add, Nat.add_assoc])
+  exact I.step 4 hj (I.ws.of_wr (by rw [wr, o1.wr])) (by rw [esi, o1.gpr]; rfl) (by rw [edi, o1.gpr]; rfl)
+    (by rw [ebp, o1.gpr]; rfl) E.hn (by rw [xmm]; exact s1')
     (fun r h0 h1 h2 h3 => by rw [oth r h1 h2 h3, o1.gpr]) (by rw [rd, o1.rd]) (by rw [wr, o1.wr])
-    (by rw [mem, o1.mem]) (by rw [mcdt, o1.mcdt]) (by rw [xmm, o1.x6]) (by rw [xmm, o1.x7])
+    (by rw [mem, o1.mem]) (by rw [mcdt, o1.mcdt]) (by rw [xmm, o1.x6])
 
 /-- Two products. -/
 theorem twin_ok {s0 t : State} {W : Addr} {L x y n S H j : Nat} (E : DotEnv s0 L x y n H)
@@ -525,7 +587,7 @@ theorem twin_ok {s0 t : State} {W : Addr} {L x y n S H j : Nat} (E : DotEnv s0 L
   exact I.step 2 (by omega_arith) (I.ws.of_wr (by rw [wr, o1.wr])) (by rw [esi, o1.gpr]; rfl) (by rw [edi, o1.gpr]; rfl)
     (by rw [ebp, o1.gpr]; rfl) E.hn (by rw [xmm, rsum_two, rsum_two]; refine s1.of_eq ?_ ?_ <;> omega_arith)
     (fun r h0 h1 h2 h3 => by rw [oth r h1 h2 h3, o1.gpr]) (by rw [rd, o1.rd]) (by rw [wr, o1.wr])
-    (by rw [mem, o1.mem]) (by rw [mcdt, o1.mcdt]) (by rw [xmm, o1.x6]) (by rw [xmm, o1.x7])
+    (by rw [mem, o1.mem]) (by rw [mcdt, o1.mcdt]) (by rw [xmm, o1.x6])
 
 /-- What `dot` leaves: the sums of the products `j < n`, and what stays. -/
 structure DotPost (s0 : State) (W : Addr) (x y n S H : Nat) (u : State) : Prop where
@@ -534,7 +596,6 @@ structure DotPost (s0 : State) (W : Addr) (x y n S H : Nat) (u : State) : Prop w
   mem : u.mem = s0.mem
   mcdt : u.mcdt = s0.mcdt
   x6 : u.xmm .xmm6 = s0.xmm .xmm6
-  x7 : u.xmm .xmm7 = s0.xmm .xmm7
 
 /-- The last product. -/
 theorem one_ok {s0 t : State} {W : Addr} {L x y n S H j : Nat} (E : DotEnv s0 L x y n H)
@@ -545,9 +606,9 @@ theorem one_ok {s0 t : State} {W : Addr} {L x y n S H j : Nat} (E : DotEnv s0 L 
   have hm : 0 < t.mcdt := I.mcdt ▸ E.mcdt
   have ex0 := ea_w I.ws I.esi (d := 0) (by omega_arith)
   have ey0 := ea_w I.ws I.edi (d := 0) (by omega_arith)
-  obtain ⟨u, run, mu, rdu, wru, mcu, gu, u6, u7, a, b⟩ :=
+  obtain ⟨u, run, mu, rdu, wru, mcu, gu, u6, a, b⟩ :=
     single_run t hm (by rw [ex0]; exact ws_read I.ws (by omega_arith)) (by rw [ey0]; exact ws_read I.ws (by omega_arith))
-  refine WP.of_runBlock ⟨u, run, ?_, ⟨fun r hr => ?_, ?_, ?_⟩, ?_, ?_, ?_, ?_⟩
+  refine WP.of_runBlock ⟨u, run, ?_, ⟨fun r hr => ?_, ?_, ?_⟩, ?_, ?_, ?_⟩
   · have hl := dhigh_le s0.mem W x y j
     have hH := E.hH
     have s1 := single_sums I.sums (by omega_arith) a b
@@ -561,16 +622,15 @@ theorem one_ok {s0 t : State} {W : Addr} {L x y n S H j : Nat} (E : DotEnv s0 L 
   · rw [mu, I.mem]
   · rw [mcu, I.mcdt]
   · rw [u6, I.x6]
-  · rw [u7, I.x7]
 
 theorem DotI.done {s0 t : State} {W : Addr} {L x y n S H : Nat} (I : DotI s0 W L x y n S H n t) :
-    DotPost s0 W x y n S H t := ⟨I.sums, I.keep, I.mem, I.mcdt, I.x6, I.x7⟩
+    DotPost s0 W x y n S H t := ⟨I.sums, I.keep, I.mem, I.mcdt, I.x6⟩
 
 /-- The invariant through an instruction that changes only flags. -/
 theorem DotI.of_same {s0 t t' : State} {W : Addr} {L x y n S H j : Nat} (I : DotI s0 W L x y n S H j t)
     (hg : t'.gpr = t.gpr) (hm : t'.mem = t.mem) (hr : t'.rd = t.rd) (hw : t'.wr = t.wr) (hc : t'.mcdt = t.mcdt)
     (hx : t'.xmm = t.xmm) : DotI s0 W L x y n S H j t' := by
-  refine ⟨I.hi, I.ws.of_wr hw, ?_, ?_, ?_, ?_, ⟨fun r hr => ?_, ?_, ?_⟩, ?_, ?_, ?_, ?_⟩
+  refine ⟨I.hi, I.ws.of_wr hw, ?_, ?_, ?_, ?_, ⟨fun r hr => ?_, ?_, ?_⟩, ?_, ?_, ?_⟩
   · rw [PtrAt, hg]; exact I.esi
   · rw [PtrAt, hg]; exact I.edi
   · rw [hg]; exact I.cnt
@@ -581,7 +641,6 @@ theorem DotI.of_same {s0 t t' : State} {W : Addr} {L x y n S H j : Nat} (I : Dot
   · rw [hm]; exact I.mem
   · rw [hc]; exact I.mcdt
   · rw [hx]; exact I.x6
-  · rw [hx]; exact I.x7
 
 /-- `cmp ebp, c` on the invariant: CF is `4 (n - j) < c`. -/
 theorem wp_cmpCnt {s0 t : State} {W : Addr} {L x y n S H j : Nat} (I : DotI s0 W L x y n S H j t) (hn : 4 * n < 2 ^ 32)
@@ -600,26 +659,26 @@ theorem eval_b_of_ae {u : State} {b : Bool} (h : isa.eval .ae u = some (!b)) : i
   | none => rw [hc] at h; cases h
   | some v => rw [hc, Option.map_some, Option.some.injEq] at h; rw [Bool.not_inj h]
 
-/-- Four products at a time while at least five words remain. -/
+/-- Eight products at a time while at least eight words remain. -/
 theorem quads_ok {s0 t : State} {W : Addr} {L x y n S H j : Nat} (E : DotEnv s0 L x y n H)
-    (I : DotI s0 W L x y n S H j t) (hc : isa.eval .ae t = some (!decide (4 * (n - j) < 20))) :
+    (I : DotI s0 W L x y n S H j t) (hc : isa.eval .ae t = some (!decide (4 * (n - j) < 32))) :
     WP isa (.ite .ae (.loop (.block quadBody) .ae) (.block [])) t
-      fun u => ∃ j, DotI s0 W L x y n S H j u ∧ n < j + 5 := by
+      fun u => ∃ j, DotI s0 W L x y n S H j u ∧ n < j + 8 := by
   have hi := I.hi
-  by_cases h5 : n < j + 5
+  by_cases h5 : n < j + 8
   · exact WP.ite false (by rw [hc, decide_eq_true (by omega_arith)]; rfl)
       (fun h => absurd h (by decide)) fun _ => WP.block_nil ⟨j, I, h5⟩
   refine WP.ite true (by rw [hc, decide_eq_false (by omega_arith)]; rfl) (fun _ => ?_)
     (fun h => absurd h (by decide))
-  refine WP.loop (M := isa) (fun m u => ∃ j, m = n - j ∧ j + 5 ≤ n ∧ DotI s0 W L x y n S H j u) ?_ (n - j) t
+  refine WP.loop (M := isa) (fun m u => ∃ j, m = n - j ∧ j + 8 ≤ n ∧ DotI s0 W L x y n S H j u) ?_ (n - j) t
     ⟨j, rfl, by omega_arith, I⟩
   rintro m u ⟨j, rfl, hj, J⟩
   refine WP.mono (quad_ok E J hj) fun v ⟨J', cv⟩ => ?_
-  have hv : isa.eval .ae v = some (!decide (4 * (n - (j + 4)) < 20)) := by
+  have hv : isa.eval .ae v = some (!decide (4 * (n - (j + 8)) < 32)) := by
     show v.cf.map _ = _; rw [cv]; rfl
-  by_cases h : n < j + 4 + 5
-  · exact .inl ⟨by rw [hv, decide_eq_true (by omega_arith)]; rfl, j + 4, J', h⟩
-  · exact .inr ⟨by rw [hv, decide_eq_false (by omega_arith)]; rfl, n - (j + 4), by omega_arith, j + 4, rfl, by omega_arith, J'⟩
+  by_cases h : n < j + 8 + 8
+  · exact .inl ⟨by rw [hv, decide_eq_true (by omega_arith)]; rfl, j + 8, J', h⟩
+  · exact .inr ⟨by rw [hv, decide_eq_false (by omega_arith)]; rfl, n - (j + 8), by omega_arith, j + 8, rfl, by omega_arith, J'⟩
 
 /-- `dot`: the products `X_j Y_j`, `j < n`, added to the sums, for
 `esi = W + x`, `edi = W + y` and `ebp = 4 n`. -/
@@ -629,9 +688,9 @@ theorem dot_ok {s0 : State} {W : Addr} {L x y n S H : Nat} (E : DotEnv s0 L x y 
     WP isa dot s0 (DotPost s0 W x y n S H) := by
   have hn := E.hn
   have I0 : DotI s0 W L x y n S H 0 s0 := ⟨Nat.zero_le _, hw, by simpa using hx, by simpa using hy,
-    by simpa using hbp, by simpa [dsum, dhigh, rsum] using hs, Keeps.refl _ _, rfl, rfl, rfl, rfl⟩
+    by simpa using hbp, by simpa [dsum, dhigh, rsum] using hs, Keeps.refl _ _, rfl, rfl, rfl⟩
   simp only [dot, seqs]
-  refine WP.seq (wp_cmpCnt I0 hn (c := 20) (by decide) fun t1 I1 c1 => WP.block_nil ?_)
+  refine WP.seq (wp_cmpCnt I0 hn (c := 32) (by decide) fun t1 I1 c1 => WP.block_nil ?_)
   refine WP.seq (WP.mono (quads_ok E I1 c1) fun t2 ⟨j, I2, h2⟩ => ?_)
   refine WP.seq (wp_cmpCnt I2 hn (c := 16) (by decide) fun t3 I3 c3 => WP.block_nil ?_)
   refine WP.seq (WP.mono (Q := fun u => ∃ j, DotI s0 W L x y n S H j u ∧ n < j + 4) ?_

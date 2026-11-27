@@ -1,8 +1,8 @@
 module
-import VerifiedGarbage.Proof.Dsa.X86.CallerSlice
+
+import VerifiedGarbage.Proof.Dsa.X86.PackedKeyBuffers
 public import VerifiedGarbage.Proof.Dsa.X86.CallerBuffer
 public import VerifiedGarbage.Spec.Dsa.Generate
-import VerifiedGarbage.Proof.Dsa.X86.PackedKeyBuffers
 
 /-! # Packed p||q||g identifies the generation specification's domain -/
 

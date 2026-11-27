@@ -1,13 +1,21 @@
 module
 
+public import VerifiedGarbage.Impl.AesCbc.AArch64.Fn
+public import VerifiedGarbage.TCB.Registration
 public import VerifiedGarbage.Proof.AesCbc.Wipe
 public import VerifiedGarbage.Proof.AesCbc.AArch64.Caller
 public import VerifiedGarbage.Proof.AesCbc.AArch64.Decrypt.Verified
+public import VerifiedGarbage.Proof.AesCbc.AArch64.Neon.Verified
 public import VerifiedGarbage.Proof.Framework.AArch64.CallWipe
 public import VerifiedGarbage.Proof.Zeroize.AArch64Wide
 import VerifiedGarbage.Proof.AesEcb.AArch64
 import VerifiedGarbage.Proof.Framework.AArch64.Depth
+import VerifiedGarbage.Proof.Framework.AArch64.Clears
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubAll
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubAllW
+public import VerifiedGarbage.Proof.Framework.AArch64.SideFill
+import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-!
 # AES-CBC on AArch64, zeroing the scratch it writes
@@ -17,17 +25,25 @@ writes its `scratch` buffer (all but the ones with the Cryptographic
 Extension: the encryption, `Encrypt.code`, and the decryptions in seven
 independent states, `Decrypt.code` with SHA-3's `eor3` and `Decrypt.codeAes`) is called by `callWipe`, as the internal function
 `vg_aes_cbc_{en,de}crypt_unwiped<suffix>`, which then zeroes the whole of
-`scratch` with `vg_zeroize`. Each implementation meets its contract and
-leaves each byte of `scratch` unchanged or zero (`*_scrubbed`), which is
-the contract of `Spec/Cbc/` (`*_verified`).
+`scratch` with `vg_zeroize`. Each implementation is proven against a contract
+that says which bytes of `scratch` it leaves zero, all of them or none, and the
+others as they were (`*_verified`, `wipedContract`). So as emitted (`*_wipes`) it
+meets the contract of `Spec/Cbc/`, that each byte of `scratch` is unchanged or
+zero (`*_scrubbed`), and which bytes are zero is public (`*_public`).
 
-Which are emitted, for each implementation `v` of the blocks functions
-(`encryptRegs`, `decryptRegs`): for encryption, the Cryptographic
-Extension's loop (`Caller.encrypt`), which writes no `scratch`, where `v` is
-the Cryptographic Extension's, and the call wiping `scratch` otherwise; for
-decryption, none where `v` writes nothing in `scratch` (the Cryptographic
-Extension's decryptions are their own artifacts), and the call wiping
-`scratch` otherwise.
+The functions as emitted are definitions in `Impl/`
+(`Impl.AesCbc.AArch64.Fn`). The encryption with the Cryptographic Extension
+(`Fn.encryptAes`) has no frames and writes nothing in `scratch`: its cleanup
+only clears the registers it writes (`encryptAes_wipes`,
+`encryptAes_written`); its decryptions are their own functions
+(`Decrypt.codeC_scrubbed`, `Decrypt.codeAesC_scrubbed`). An implementation
+that writes in `scratch` is a `CbcImpl`: the code of its encryption and of
+its decryption, which the emitted functions call, then wipe `scratch`, then
+clear the registers they may write and zero their 32 bytes of stack
+(`Fn.encrypt`, `Fn.decryptWiped`; `encryptWiped_scrubbed`,
+`decryptWiped_scrubbed`). `CbcImpl.blocks` is the one calling the blocks
+functions of a `BlocksImpl`, and `CbcImpl.neon` the one whose decryption is
+in AdvSIMD registers (`Neon.decrypt`).
 -/
 
 @[expose] public section
@@ -37,9 +53,8 @@ namespace VG.Proof.AesCbc.AArch64.Wiped
 open VG VG.AArch64 VG.Proof.Aes.AArch64 VG.Proof.AesCbc.Wipe
 
 /-- A call of `name`, whose code is `body`, then of `vg_zeroize` on the
-2176 bytes of `scratch`. -/
-def wiped (name : String) (body : Prog isa) : Prog isa :=
-  Impl.CallWipe.AArch64.callWipe .x5 2176 name body "vg_zeroize" Impl.Zeroize.AArch64.zeroizeWide
+2176 bytes of `scratch` (`Impl.AesCbc.AArch64.Fn.wiped`). -/
+abbrev wiped (name : String) (body : Prog isa) : Prog isa := Impl.AesCbc.AArch64.Fn.wiped name body
 
 /-- `vg_aes_cbc_encrypt<suffix>`, wiping `scratch`. -/
 def encrypt (v : BlocksImpl) : Prog isa :=
@@ -66,11 +81,12 @@ theorem wiped_verified {P : Spec.Cbc.aesSig.Post 64} {name : String} {body : Pro
         ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
       Curry.apply (Spec.Cbc.aesSig.words 64) P vs m m₁ x → Curry.apply (Spec.Cbc.aesSig.words 64) P vs m m₂ x) :
     Verified target (wiped name body)
-      (Spec.Cbc.aesSig.contract abi (pre 64) (scrubbedPost 64 P) false 32 none) :=
+      (Spec.Cbc.aesSig.contract abi (pre 64) (wipedPost 64 P fun i => decide (i < 2176)) false 32 none) :=
   Verified.callWipe' (ps₁ := [("schedule", .array false .u8 240), ("rounds", .int .usize true),
       ("iv", .array true .u8 16), ("data", .slice true (.array .u8 16) "n")]) (ps₂ := [])
     (nm := "scratch") (e := .u64) (k := 272) (n := 2176) (i := 5) h Proof.Zeroize.AArch64.wideVerified
-    (by decide) rfl rfl rfl (by decide) (by decide) (by rw [hd]) AesEcb.AArch64.zeroize_depth
+    (by decide) rfl rfl rfl (by decide) (by decide) (by rw [hd]) Proof.Zeroize.AArch64.wide_noDit
+    AesEcb.AArch64.zeroize_depth
     (Nat.zero_le _) (pre_local 64) hpost hout (Wipe.wiped 64 P) (sat _)
 
 theorem encrypt_depth (v : BlocksImpl) : (Caller.encrypt v).aarch64Depth = 0 := by
@@ -85,25 +101,15 @@ theorem decrypt_depth (v : BlocksImpl) : (Impl.AesCbc.AArch64.decrypt v.dec).aar
     Impl.AesCbc.AArch64.decGroup, Impl.AesCbc.AArch64.decBody,
     Code.aarch64Depth, AesEcb.AArch64.depth_of_noFrames v.decNoFrames, Nat.max_self]
 
-theorem encrypt_scrubbed (v : BlocksImpl) :
-    Verified target (encrypt v)
-      (Spec.Cbc.aesSig.contract abi (pre 64) (scrubbedPost 64 (encPost 64)) false 32 none) :=
+theorem encrypt_verified (v : BlocksImpl) :
+    Verified target (encrypt v) (wipedContract encPost (fun i => decide (i < 2176)) abi 32) :=
   wiped_verified (Proof.AesCbc.encrypt_keyed (Caller.verified v)) (encrypt_depth v)
     (encPost_local 64) (encPost_out 64)
 
-theorem decrypt_scrubbed (v : BlocksImpl) :
-    Verified target (decrypt v)
-      (Spec.Cbc.aesSig.contract abi (pre 64) (scrubbedPost 64 (decPost 64)) false 32 none) :=
+theorem decrypt_verified (v : BlocksImpl) :
+    Verified target (decrypt v) (wipedContract decPost (fun i => decide (i < 2176)) abi 32) :=
   wiped_verified (Proof.AesCbc.decrypt_keyed (Proof.AesCbc.AArch64.decrypt_verified v))
     (decrypt_depth v) (decPost_local 64) (decPost_out 64)
-
-theorem encrypt_verified (v : BlocksImpl) :
-    Verified target (encrypt v) (Spec.Cbc.aesEncryptContract abi 32) :=
-  encrypt_scrubbed v
-
-theorem decrypt_verified (v : BlocksImpl) :
-    Verified target (decrypt v) (Spec.Cbc.aesDecryptContract abi 32) :=
-  decrypt_scrubbed v
 
 theorem args_length : ∀ s vals,
     abi.args ((Spec.Cbc.aesSig.words abi.ptrBits).map (·.bits abi.ptrBits)) = some vals →
@@ -112,54 +118,220 @@ theorem args_length : ∀ s vals,
   obtain rfl := Option.some.inj (hv.symm.trans (rfl : abi.args _ = some (regArgs Spec.Cbc.aesSig)))
   exact regArgs_length Spec.Cbc.aesSig s (by decide)
 
-/-- With the Cryptographic Extension, encryption writes nothing in `scratch`. -/
-theorem encrypt_free_scrubbed (v : BlocksImpl) (h : v.enc.name = "vg_aes_encrypt_blocks_aes") :
-    Verified target (Caller.encrypt v)
-      (Spec.Cbc.aesSig.contract abi (pre 64) (scrubbedPost 64 (encPost 64)) false 0 none) :=
-  Verified.cbc_of_unwritten (Proof.AesCbc.encrypt_keyed (Caller.verified v))
-    (fun s t s' hs he => by
-      have hw := Caller.written_ok v s t s' hs he
-      rwa [Caller.written, ite_eq_left h] at hw)
-    args_length
-
 /-- The decryption with SHA-3's `eor3` writes nothing in `scratch`. -/
-theorem decryptSha3_scrubbed :
+theorem decryptSha3_verified :
     Verified target Impl.AesCbc.AArch64.Decrypt.code
-      (Spec.Cbc.aesSig.contract abi (pre 64) (scrubbedPost 64 (decPost 64)) false 0 none) :=
+      (wipedContract decPost (fun _ => false) abi 0) :=
   Verified.cbc_of_unwritten (Proof.AesCbc.decrypt_keyed Proof.AesCbc.AArch64.Decrypt.verified)
     Proof.AesCbc.AArch64.Decrypt.written args_length
 
 /-- The decryption with the Cryptographic Extension, in seven independent
 states, writes nothing in `scratch`. -/
-theorem decryptAes_scrubbed :
+theorem decryptAes_verified :
     Verified target Impl.AesCbc.AArch64.Decrypt.codeAes
-      (Spec.Cbc.aesSig.contract abi (pre 64) (scrubbedPost 64 (decPost 64)) false 0 none) :=
+      (wipedContract decPost (fun _ => false) abi 0) :=
   Verified.cbc_of_unwritten (Proof.AesCbc.decrypt_keyed Proof.AesCbc.AArch64.Decrypt.verifiedAes)
     Proof.AesCbc.AArch64.Decrypt.writtenAes args_length
 
-/-- The implementation of `vg_aes_cbc_encrypt` over `v` that is emitted (see
-the module's documentation). -/
-def encryptRegs (v : BlocksImpl) : List (Registration Spec.Cbc.aesEncryptApi target) :=
-  if h : v.enc.name = "vg_aes_encrypt_blocks_aes" then [{
-    suffix := v.suffix
-    code := Caller.encrypt v
-    verified := encrypt_free_scrubbed v h
-    written := Caller.written v
-    writtenOk := Caller.written_ok v }]
-  else [{
-    suffix := v.suffix
-    code := encrypt v
-    stack := 32
-    verified := encrypt_verified v }]
+/-- `decryptSha3_verified`, with the vector registers it leaves cleared. -/
+theorem decryptSha3C_verified :
+    Verified target Proof.AesCbc.AArch64.Decrypt.codeC
+      (wipedContract decPost (fun _ => false) abi 0) :=
+  Clears.Verified.withClears decryptSha3_verified (by decide)
 
-/-- The implementation of `vg_aes_cbc_decrypt` over `v` that is emitted, if
-any (see the module's documentation). -/
-def decryptRegs (v : BlocksImpl) : List (Registration Spec.Cbc.aesDecryptApi target) :=
-  if v.free then []
-  else [{
-    suffix := v.suffix
-    code := decrypt v
-    stack := 32
-    verified := decrypt_verified v }]
+/-- `decryptAes_verified`, with the vector registers it leaves cleared. -/
+theorem decryptAesC_verified :
+    Verified target Proof.AesCbc.AArch64.Decrypt.codeAesC
+      (wipedContract decPost (fun _ => false) abi 0) :=
+  Clears.Verified.withClears decryptAes_verified (by decide)
+
+/-- `vg_aes_cbc_decrypt_neon`: the decryption in AdvSIMD registers, wiping
+`scratch`. -/
+def decryptNeon : Prog isa :=
+  wiped "vg_aes_cbc_decrypt_unwiped_neon" Impl.AesCbc.AArch64.Neon.decrypt
+
+theorem decryptNeon_verified :
+    Verified target decryptNeon (wipedContract decPost (fun i => decide (i < 2176)) abi 32) :=
+  wiped_verified (Proof.AesCbc.decrypt_keyed Proof.AesCbc.AArch64.Neon.verified)
+    (AesEcb.AArch64.depth_of_noFrames Proof.AesCbc.AArch64.Neon.decrypt_noFrames)
+    (decPost_local 64) (decPost_out 64)
+
+/-! ## Without secret residue -/
+
+theorem encryptOk : Scrub.ScrubAllOk (wipedContract encPost (fun i => decide (i < 2176)) abi 32) 32
+    (Spec.Cbc.aesSig.retBits abi.ptrBits) :=
+  Scrub.scrubAllOk_regs (by decide) (by decide) (Nat.le_refl _) (wipedPost_ret _ _ _ (encPost_ret _))
+
+/-- `encryptOk` for the code without frames (`encryptAes_wipes`). -/
+theorem encryptOk0 : Scrub.ScrubAllOk (wipedContract encPost (fun _ => false) abi 0) 0
+    (Spec.Cbc.aesSig.retBits abi.ptrBits) :=
+  Scrub.scrubAllOk_regs0 (by decide) (wipedPost_ret _ _ _ (encPost_ret _))
+
+theorem decryptOk : Scrub.ScrubAllOk (wipedContract decPost (fun i => decide (i < 2176)) abi 32) 32
+    (Spec.Cbc.aesSig.retBits abi.ptrBits) :=
+  Scrub.scrubAllOk_regs (by decide) (by decide) (Nat.le_refl _) (wipedPost_ret _ _ _ (decPost_ret _))
+
+/-! ## The functions, as emitted -/
+
+/-- `vg_aes_cbc_encrypt_aes` as emitted (`Impl.AesCbc.AArch64.Fn.encryptAes`):
+the code with the AES instructions, which has no frames and writes nothing in
+`scratch`, with the registers it writes cleared. -/
+theorem encryptAes_wipes :
+    VerifiedScrubbed target Impl.AesCbc.AArch64.Fn.encryptAes (wipedContract encPost (fun _ => false) abi 0) 0 :=
+  Scrub.verifiedScrubbedOf0
+    (Verified.cbc_of_unwritten (Proof.AesCbc.encrypt_keyed Proof.AesCbc.AArch64.Encrypt.verified)
+      Proof.AesCbc.AArch64.Encrypt.written args_length)
+    encryptOk0 (by kernel_rfl) (by kernel_rfl) (.inl rfl)
+
+theorem encryptAes_scrubbed :
+    VerifiedScrubbed target Impl.AesCbc.AArch64.Fn.encryptAes (Spec.Cbc.aesEncryptContract abi 0) 0 :=
+  encrypt_imp encryptAes_wipes id
+
+theorem encryptAes_public :
+    Spec.Cbc.aesScratchOut.Of abi Impl.AesCbc.AArch64.Fn.encryptAes (Spec.Cbc.aesEncryptContract abi 0) :=
+  scratch_public encryptAes_wipes
+
+/-- It writes nothing in `scratch`. -/
+theorem encryptAes_written : ∀ s t s', (Proof.AesCbc.encryptRoundsContract AArch64.abi).pre s →
+    Exec isa Impl.AesCbc.AArch64.Fn.encryptAes s t s' →
+      Sig.writtenWithin AArch64.abi Spec.Cbc.aesSig [("scratch", 0)] s s' :=
+  Scrub.written_scrubOf0 (.inl rfl) Proof.AesCbc.AArch64.Encrypt.written
+
+/-- An implementation of AES-CBC that writes in `scratch`: the code of its
+encryption and of its decryption, which `vg_aes_cbc_encrypt<suffix>` and
+`vg_aes_cbc_decrypt<suffix>` call, then wipe `scratch`
+(`Impl.AesCbc.AArch64.Fn.encrypt`, `decryptWiped`). -/
+structure CbcImpl where
+  suffix : String
+  enc : Prog isa
+  encOk : Verified target (wiped ("vg_aes_cbc_encrypt_unwiped" ++ suffix) enc)
+    (wipedContract encPost (fun i => decide (i < 2176)) abi 32)
+  encSide : Scrub.sideAll (fun i => !i.writesDit) enc = true
+  encDepth : enc.aarch64Depth = 0
+  dec : Prog isa
+  decOk : Verified target (wiped ("vg_aes_cbc_decrypt_unwiped" ++ suffix) dec)
+    (wipedContract decPost (fun i => decide (i < 2176)) abi 32)
+  decSide : Scrub.sideAll (fun i => !i.writesDit) dec = true
+  decDepth : dec.aarch64Depth = 0
+
+theorem encrypt_side (b : Impl.Aes.AArch64.Blocks)
+    (h : Scrub.sideAll (fun i => !i.writesDit) b.code = true) :
+    Scrub.sideAll (fun i => !i.writesDit) (Impl.AesCbc.AArch64.encrypt b) = true := by
+  rcases b with ⟨n, code, cl, sc⟩
+  have e : Impl.AesCbc.AArch64.encrypt ⟨n, code, cl, sc⟩ =
+      Code.fillCalls n code (Impl.AesCbc.AArch64.encrypt ⟨"", .block [], cl, sc⟩) := by kernel_rfl
+  rw [e]
+  exact Scrub.sideAll_fillCalls h (by kernel_rfl)
+
+theorem decrypt_side (b : Impl.Aes.AArch64.Blocks)
+    (h : Scrub.sideAll (fun i => !i.writesDit) b.code = true) :
+    Scrub.sideAll (fun i => !i.writesDit) (Impl.AesCbc.AArch64.decrypt b) = true := by
+  rcases b with ⟨n, code, cl, sc⟩
+  have e : Impl.AesCbc.AArch64.decrypt ⟨n, code, cl, sc⟩ =
+      Code.fillCalls n code (Impl.AesCbc.AArch64.decrypt ⟨"", .block [], cl, sc⟩) := by kernel_rfl
+  rw [e]
+  exact Scrub.sideAll_fillCalls h (by kernel_rfl)
+
+/-- The functions calling the blocks functions of `v`. -/
+def CbcImpl.blocks (v : BlocksImpl) (h : v.enc.name ≠ "vg_aes_encrypt_blocks_aes") : CbcImpl where
+  suffix := v.suffix
+  enc := Impl.AesCbc.AArch64.encrypt v.enc
+  encOk := by
+    have := encrypt_verified v
+    rwa [encrypt, Caller.encrypt, ite_eq_right h] at this
+  encSide := encrypt_side v.enc (Scrub.sideAll_noDit_of_calleeSide v.encScrub)
+  encDepth := by
+    have := encrypt_depth v
+    rwa [Caller.encrypt, ite_eq_right h] at this
+  dec := Impl.AesCbc.AArch64.decrypt v.dec
+  decOk := decrypt_verified v
+  decSide := decrypt_side v.dec (Scrub.sideAll_noDit_of_calleeSide v.decScrub)
+  decDepth := decrypt_depth v
+
+/-- The implementation in AdvSIMD registers: the encryption calling its
+blocks function, and its own decryption (`Impl.AesCbc.AArch64.Neon.decrypt`). -/
+def CbcImpl.neon (v : BlocksImpl) (h : v.enc.name ≠ "vg_aes_encrypt_blocks_aes") (hs : v.suffix = "_neon") :
+    CbcImpl where
+  suffix := v.suffix
+  enc := Impl.AesCbc.AArch64.encrypt v.enc
+  encOk := (CbcImpl.blocks v h).encOk
+  encSide := (CbcImpl.blocks v h).encSide
+  encDepth := (CbcImpl.blocks v h).encDepth
+  dec := Impl.AesCbc.AArch64.Neon.decrypt
+  decOk := by rw [hs]; exact decryptNeon_verified
+  decSide := by kernel_rfl
+  decDepth := Proof.Aes.AArch64.depth_of_noFrames Proof.AesCbc.AArch64.Neon.decrypt_noFrames
+
+private theorem wiped_scrubbed {k : Contract isa} {name : String} {body : Prog isa}
+    (hv : Verified target (wiped name body) k) (hok : Scrub.ScrubAllOk k 32 0)
+    (hs : Scrub.sideAll (fun i => !i.writesDit) body = true) (hd : body.aarch64Depth = 0) :
+    VerifiedScrubbed target (Impl.Scrub.AArch64.scrubOf 32 0 (wiped name body)) k 0 :=
+  Scrub.verifiedScrubbedOfFill (n := name) (e := Impl.AesCbc.AArch64.Fn.wiped "" (.block [])) hv hok
+    (by kernel_rfl) hs hd (by kernel_rfl) (by decide)
+    (Nat.le_of_ble_eq_true (by kernel_rfl)) (.inl rfl)
+
+/-- `vg_aes_cbc_encrypt<suffix>` over `v`, as emitted. -/
+theorem encryptWiped_wipes (v : CbcImpl) :
+    VerifiedScrubbed target (Impl.AesCbc.AArch64.Fn.encrypt v.suffix v.enc)
+      (wipedContract encPost (fun i => decide (i < 2176)) abi 32) 0 :=
+  wiped_scrubbed v.encOk encryptOk v.encSide v.encDepth
+
+theorem encryptWiped_scrubbed (v : CbcImpl) :
+    VerifiedScrubbed target (Impl.AesCbc.AArch64.Fn.encrypt v.suffix v.enc)
+      (Spec.Cbc.aesEncryptContract abi 32) 0 :=
+  encrypt_imp (encryptWiped_wipes v) id
+
+theorem encryptWiped_public (v : CbcImpl) :
+    Spec.Cbc.aesScratchOut.Of abi (Impl.AesCbc.AArch64.Fn.encrypt v.suffix v.enc)
+      (Spec.Cbc.aesEncryptContract abi 32) :=
+  scratch_public (encryptWiped_wipes v)
+
+/-- `vg_aes_cbc_decrypt<suffix>` over `v`, as emitted. -/
+theorem decryptWiped_wipes (v : CbcImpl) :
+    VerifiedScrubbed target (Impl.AesCbc.AArch64.Fn.decryptWiped v.suffix v.dec)
+      (wipedContract decPost (fun i => decide (i < 2176)) abi 32) 0 :=
+  wiped_scrubbed v.decOk decryptOk v.decSide v.decDepth
+
+theorem decryptWiped_scrubbed (v : CbcImpl) :
+    VerifiedScrubbed target (Impl.AesCbc.AArch64.Fn.decryptWiped v.suffix v.dec)
+      (Spec.Cbc.aesDecryptContract abi 32) 0 :=
+  decrypt_imp (decryptWiped_wipes v) id
+
+theorem decryptWiped_public (v : CbcImpl) :
+    Spec.Cbc.aesScratchOut.Of abi (Impl.AesCbc.AArch64.Fn.decryptWiped v.suffix v.dec)
+      (Spec.Cbc.aesDecryptContract abi 32) :=
+  scratch_public (decryptWiped_wipes v)
+
+/-- The function as its registration binds it. -/
+theorem _root_.VG.Proof.AesCbc.AArch64.Decrypt.codeC_wipes :
+    VerifiedScrubbed target Impl.AesCbc.AArch64.Fn.decrypt (wipedContract decPost (fun _ => false) abi 0) 0 :=
+  ⟨Proof.AesCbc.AArch64.Wiped.decryptSha3C_verified,
+    Proof.AesCbc.AArch64.Decrypt.codeC_noResidue _, fun ty _ h => by cases ty <;> cases h⟩
+
+/-- The function as its registration binds it: it meets its contract in constant time and returns
+without secret residue. -/
+theorem _root_.VG.Proof.AesCbc.AArch64.Decrypt.codeC_scrubbed :
+    VerifiedScrubbed target Impl.AesCbc.AArch64.Fn.decrypt (Spec.Cbc.aesDecryptContract abi 0) 0 :=
+  decrypt_imp Proof.AesCbc.AArch64.Decrypt.codeC_wipes id
+
+theorem _root_.VG.Proof.AesCbc.AArch64.Decrypt.codeC_public :
+    Spec.Cbc.aesScratchOut.Of abi Impl.AesCbc.AArch64.Fn.decrypt (Spec.Cbc.aesDecryptContract abi 0) :=
+  scratch_public Proof.AesCbc.AArch64.Decrypt.codeC_wipes
+
+/-- The function as its registration binds it. -/
+theorem _root_.VG.Proof.AesCbc.AArch64.Decrypt.codeAesC_wipes :
+    VerifiedScrubbed target Impl.AesCbc.AArch64.Fn.decryptAes (wipedContract decPost (fun _ => false) abi 0) 0 :=
+  ⟨Proof.AesCbc.AArch64.Wiped.decryptAesC_verified,
+    Proof.AesCbc.AArch64.Decrypt.codeAesC_noResidue _, fun ty _ h => by cases ty <;> cases h⟩
+
+/-- The function as its registration binds it: it meets its contract in constant time and returns
+without secret residue. -/
+theorem _root_.VG.Proof.AesCbc.AArch64.Decrypt.codeAesC_scrubbed :
+    VerifiedScrubbed target Impl.AesCbc.AArch64.Fn.decryptAes (Spec.Cbc.aesDecryptContract abi 0) 0 :=
+  decrypt_imp Proof.AesCbc.AArch64.Decrypt.codeAesC_wipes id
+
+theorem _root_.VG.Proof.AesCbc.AArch64.Decrypt.codeAesC_public :
+    Spec.Cbc.aesScratchOut.Of abi Impl.AesCbc.AArch64.Fn.decryptAes (Spec.Cbc.aesDecryptContract abi 0) :=
+  scratch_public Proof.AesCbc.AArch64.Decrypt.codeAesC_wipes
 
 end VG.Proof.AesCbc.AArch64.Wiped

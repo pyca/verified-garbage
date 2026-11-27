@@ -84,7 +84,7 @@ theorem finish_ok [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.F
     subst r
     exact lay.slotData.symm.sub_left (Offset.sub_base _ (by omega_using []))
   refine WP.seq (WP.mono (WP.with_rdwr (whole_ok L he hd lay hR hv)) fun t ⟨hw,rdt,wrt,_⟩ => ?_)
-  have mid := whole_done L hdU lay.bound hv hw habU
+  have mid := whole_done L (s := u) (lay.kern.of_eq hk.2.2) hdU lay.bound hv hw habU
   refine WP.mono (finishWhole_ok L mid (hd.of_eq rdt wrt) hR hv ha hn) fun z hz => ?_
   have hz' : BodyOutWith V sp R (Spec.Gcm.ctxH s.mem (V .r29)) a u.mem
       ((Input.blocks s.mem S (V .r27) (V .r23).toNat count).flatMap Spec.Gcm.toBytes ++

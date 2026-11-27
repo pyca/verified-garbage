@@ -69,35 +69,35 @@ theorem select3_ok {s : State} (h : Bx L s B Z len N) {o a b : Ref} {k : Bool} (
       Keeps [.eax, .ebx, .edx, .ebp] s t := by
   have hn := h.nowrap
   have hpos := h.ws.kw_pos
-  have hw := kw_bound h.ws.lenLe
-  have ke := kw_eq len
+  obtain hw := kw_bound h.ws.lenLe
+  obtain ke := kw_eq len
   have hZ := h.halfZ
-  have ro := rv_ge (kw len) o
+  obtain ro := rv_ge (kw len) o
   rw [show ptr L .edi o .eax = ptr L .edi o .eax ++ [] from (List.append_nil _).symm]
   simp only [List.append_assoc]
   refine WP.seq (ptr_ok h.ws h.slots hZ (by decide) (by decide) (by decide) (by decide) (by intro e; cases e)
     (by omega) fun u₁ K₁ m₁ p₁ => ?_)
-  have h₁ : Bx L u₁ B Z len N := h.keep K₁ (by decide) (by decide) (by rw [m₁]; exact Outside.refl _ _ _ _) ro hoz
+  obtain h₁ : Bx L u₁ B Z len N := h.keep K₁ (by decide) (by decide) (by rw [m₁]; exact Outside.refl _ _ _ _) ro hoz
   refine ptr_ok h₁.ws h₁.slots hZ (by decide) (by decide) (by decide) (by decide) (by intro e; cases e)
     (by omega) fun u₂ K₂ m₂ p₂ => ?_
-  have h₂ : Bx L u₂ B Z len N := h₁.keep K₂ (by decide) (by decide) (by rw [m₂]; exact Outside.refl _ _ _ _) ro hoz
+  obtain h₂ : Bx L u₂ B Z len N := h₁.keep K₂ (by decide) (by decide) (by rw [m₂]; exact Outside.refl _ _ _ _) ro hoz
   refine nBytes_ok h₂.ws.ws.workspace h₂.slots hZ (by omega_using [hw]) (e := 0) (by decide) fun u₃ K₃ m₃ c₃ => ?_
-  have h₃ : Bx L u₃ B Z len N := h₂.keep K₃ (by decide) (by decide) (by rw [m₃]; exact Outside.refl _ _ _ _) ro hoz
+  obtain h₃ : Bx L u₃ B Z len N := h₂.keep K₃ (by decide) (by decide) (by rw [m₃]; exact Outside.refl _ _ _ _) ro hoz
   refine ptr_ok h₃.ws h₃.slots hZ (by decide) (by decide) (by decide) (by decide) (fun _ => hoh)
     (by omega) fun u K₄ m₄ p₄ => WP.block_nil ?_
-  have K : Keeps [.eax, .ebx, .edx, .ebp, .edi] s u :=
+  obtain K : Keeps [.eax, .ebx, .edx, .ebp, .edi] s u :=
     (((K₁.mono (by decide)).trans (K₂.mono (by decide))).trans (K₃.mono (by decide))).trans (K₄.mono (by decide))
-  have m : u.mem = s.mem := by rw [m₄, m₃, m₂, m₁]
+  obtain m : u.mem = s.mem := by rw [m₄, m₃, m₂, m₁]
   refine WP.seq (WP.mono (select3LoopX_ok (h.ws.rt.of_keeps K) k (N := nw len) (by omega) haz hbz hoz soa sob
     (by rw [PtrAt, K₄.1 _ (by decide), K₃.1 _ (by decide), K₂.1 _ (by decide)]; exact p₁)
     (by rw [PtrAt, K₄.1 _ (by decide), K₃.1 _ (by decide)]; exact p₂) p₄
     (by rw [K₄.1 _ (by decide), c₃]; omega_using [ke]) (by rw [K.1 _ (by decide)]; exact hk)) fun t ⟨O, V, Kt⟩ => ?_)
   rw [m] at O V
-  have KK : Keeps [.eax, .ebx, .edx, .ebp, .edi] s t := K.trans Kt
-  have O0 : Outside B 0 Z s.mem t.mem := O.mono (Nat.zero_le _) (by omega_using [hoz])
+  obtain KK : Keeps [.eax, .ebx, .edx, .ebp, .edi] s t := K.trans Kt
+  obtain O0 : Outside B 0 Z s.mem t.mem := O.mono (Nat.zero_le _) (by omega_using [hoz])
   unfold restoreEdi
   refine wp_movS (h.ws.wsArg.keep KK (by decide) O0).readSrc fun t₁ U _ => WP.block_nil ?_
-  have K' : Keeps [.eax, .ebx, .edx, .ebp] s t₁ :=
+  obtain K' : Keeps [.eax, .ebx, .edx, .ebp] s t₁ :=
     VG.Proof.Bignum.X86.PublicRt.Keeps.drop_edi (rs := [.eax, .ebx, .edx, .ebp])
       (KK.trans (U.keeps.mono (by decide))) (U.gpr.trans (RtWs.edi_eq h.ws).symm)
   refine ⟨h.keep K' (by decide) (by decide) (by rw [U.mem]; exact O) ro hoz, by rw [U.mem]; exact O, ?_, K'⟩
@@ -114,9 +114,9 @@ theorem borrowMask_ok {s : State} (h : Bx L s B Z len N) {src : Ref} (hsh : src.
     WP isa (.block (borrowMask L src ++ is)) s Q := by
   have hn := h.nowrap
   have hZ := h.halfZ
-  have ke := kw_eq len
-  have rs := rv_ge (kw len) src
-  have r1 : rv (kw len) { src with half := 1 } = rv (kw len) src + 4 * nw len := by
+  obtain ke := kw_eq len
+  obtain rs := rv_ge (kw len) src
+  obtain r1 : rv (kw len) { src with half := 1 } = rv (kw len) src + 4 * nw len := by
     rw [rv_half1 _ _ hsh]
   simp only [borrowMask, List.append_assoc]
   refine ptr_ok h.ws h.slots hZ (r := .ebx) (t := .edx) (x := { src with half := 1 }) (by decide)
@@ -124,22 +124,22 @@ theorem borrowMask_ok {s : State} (h : Bx L s B Z len N) {src : Ref} (hsh : src.
   rw [r1] at p₂
   simp only [List.cons_append, List.nil_append]
   refine wp_movS (readSrc_ptr (h.ws.rt.of_keeps K₂) p₂ (d := 0) (by omega_using [hsz])) fun s₃ U₃ _ => ?_
-  have hc₃ : s₃.gpr .ecx = cmask c := by rw [U₃.other _ (by decide), K₂.1 _ (by decide)]; exact hc
+  obtain hc₃ : s₃.gpr .ecx = cmask c := by rw [U₃.other _ (by decide), K₂.1 _ (by decide)]; exact hc
   refine VG.Proof.Bignum.X86.PublicRt.wp_carry hc₃ fun s₄ U₄ cf₄ => ?_
   refine wp_sbbS rfl cf₄ fun s₅ U₅ cf₅ => ?_
   refine wp_sbbS rfl cf₅ fun s₆ U₆ _ => ?_
   refine wp_logicS (.inr rfl) rfl fun s₇ U₇ => ?_
   refine wp_movS rfl fun s₈ U₈ _ => ?_
-  have K₈ : Keeps [.eax, .ebx, .ecx, .edx] s s₈ :=
+  obtain K₈ : Keeps [.eax, .ebx, .ecx, .edx] s s₈ :=
     ((((((K₂.mono (by decide)).trans (U₃.keeps.mono (by decide))).trans (U₄.keeps.mono (by decide))).trans
       (U₅.keeps.mono (by decide))).trans (U₆.keeps.mono (by decide))).trans (U₇.keeps.mono (by decide))).trans
       (U₈.keeps.mono (by decide))
-  have m₈ : s₈.mem = s.mem := by rw [U₈.mem, U₇.mem, U₆.mem, U₅.mem, U₄.mem, U₃.mem, m₂]
+  obtain m₈ : s₈.mem = s.mem := by rw [U₈.mem, U₇.mem, U₆.mem, U₅.mem, U₄.mem, U₃.mem, m₂]
   refine k s₈ (h.keep K₈ (by decide) (by decide) (by rw [m₈]; exact Outside.refl _ _ _ _) rs hsz) K₈ m₈ ?_
   have e7 := U₇.gpr
   simp only [reduceCtorEq, ite_false] at e7
   rw [U₈.gpr, e7, U₆.gpr, Mont.X86.mask_val]
-  have t₃ : (s₃.gpr .eax).toNat = w32 s.mem B (rv (kw len) src + 4 * nw len) := by
+  obtain t₃ : (s₃.gpr .eax).toNat = w32 s.mem B (rv (kw len) src + 4 * nw len) := by
     rw [U₃.gpr, m₂, Nat.add_zero]
   rw [U₄.other _ (by decide), t₃]
   simp [cmask]
@@ -161,10 +161,10 @@ theorem csub_ok {s : State} (h : Bx L s B Z len N) {src o : Ref} (hsh : src.half
       Keeps [.eax, .ebx, .ecx, .edx, .ebp] s u := by
   have hn := h.nowrap
   have hZ := h.halfZ
-  have ke := kw_eq len
-  have rs := rv_ge (kw len) src
-  have rt := rv_ge (kw len) tmp
-  have r1 : rv (kw len) { src with half := 1 } = rv (kw len) src + 4 * nw len := by
+  obtain ke := kw_eq len
+  obtain rs := rv_ge (kw len) src
+  obtain rt := rv_ge (kw len) tmp
+  obtain r1 : rv (kw len) { src with half := 1 } = rv (kw len) src + 4 * nw len := by
     rw [rv_half1 _ _ hsh]
   unfold VG.Impl.Rsa.X86.InvBatchRt.csub
   -- The difference, `n` words.
@@ -176,24 +176,24 @@ theorem csub_ok {s : State} (h : Bx L s B Z len N) {src o : Ref} (hsh : src.half
   -- The mask: all ones where the top word does not borrow.
   rw [show borrowMask L src = borrowMask L src ++ [] from (List.append_nil _).symm]
   refine WP.seq (borrowMask_ok H₁ hsh hsz hc fun s₈ H₈ K₈ m₈ mask => WP.block_nil ?_)
-  have topw : w32 s₁.mem B (rv (kw len) src + 4 * nw len) = w32 s.mem B (rv (kw len) src + 4 * nw len) :=
+  obtain topw : w32 s₁.mem B (rv (kw len) src + 4 * nw len) = w32 s.mem B (rv (kw len) src + 4 * nw len) :=
     O₁.w32 (by omega_using [hts, ke]) (by omega_using [hsz, hn])
   rw [topw] at mask
   -- The arithmetic.
-  have T₁ : val32 s₁.mem B (rv (kw len) src) (nw len) = val32 s.mem B (rv (kw len) src) (nw len) :=
+  obtain T₁ : val32 s₁.mem B (rv (kw len) src) (nw len) = val32 s.mem B (rv (kw len) src) (nw len) :=
     O₁.val32 (by omega_using [hts, ke]) (by omega_using [hsz, hn])
-  have hval : (if (!decide (w32 s.mem B (rv (kw len) src + 4 * nw len) < c.toNat))
+  obtain hval : (if (!decide (w32 s.mem B (rv (kw len) src + 4 * nw len) < c.toNat))
       then val32 s₁.mem B (rv (kw len) tmp) (nw len) else val32 s.mem B (rv (kw len) src) (nw len)) =
       val32 s.mem B (rv (kw len) src) (nw len + 1) % m := by
-    have hmX : m < 2 ^ (32 * nw len) := hm ▸ val32_lt _ _ _ _
-    have A := csub_arith (T := val32 s.mem B (rv (kw len) src) (nw len)) (D := val32 s₁.mem B (rv (kw len) tmp) (nw len))
+    obtain hmX : m < 2 ^ (32 * nw len) := hm ▸ val32_lt _ _ _ _
+    obtain A := csub_arith (T := val32 s.mem B (rv (kw len) src) (nw len)) (D := val32 s₁.mem B (rv (kw len) tmp) (nw len))
       (top := w32 s.mem B (rv (kw len) src + 4 * nw len)) (b := c) hmX (val32_lt _ _ _ _)
       (by rw [← val32_succ]; exact hV) (by rw [← hm]; exact V₁)
     rw [val32_succ s.mem B (rv (kw len) src) (nw len), ← A]
     by_cases hb : w32 s.mem B (rv (kw len) src + 4 * nw len) < c.toNat
     · simp only [hb, decide_true, Bool.not_true, Bool.false_eq_true, ite_false, ite_true]
     · simp only [hb, decide_false, Bool.not_false, ite_true, ite_false]
-  have KK : Keeps [.eax, .ebx, .ecx, .edx, .ebp] s s₈ := (K₁.mono (by decide)).trans (K₈.mono (by decide))
+  obtain KK : Keeps [.eax, .ebx, .ecx, .edx, .ebp] s s₈ := (K₁.mono (by decide)).trans (K₈.mono (by decide))
   by_cases ho : o = src
   · subst ho
     rw [ite_eq_left_of_eq_true _ _ (eq_self o)]

@@ -40,7 +40,7 @@ vg_triple_des_cfb8_encrypt:
 	mov r0, r4
 	add r1, r8, #48
 	mov r2, #1
-	bl {vg_triple_des_ecb_encrypt}
+	bl {vg_triple_des_ecb_encrypt_core}
 	ldrb r9, [r6, #0]
 	ldrb r10, [r8, #48]
 	eor r9, r9, r10
@@ -80,8 +80,12 @@ vg_triple_des_cfb8_encrypt:
 	ldr r11, [r8, #28]
 	ldr lr, [r8, #32]
 	ldr r8, [r8, #16]
-	add r12, sp, #8
+	add sp, sp, #64
+	sub sp, sp, #1088
+	add r12, sp, #0
 	mov r2, #0
+	mov r3, #34
+23:
 	str r2, [r12, #0]
 	str r2, [r12, #4]
 	str r2, [r12, #8]
@@ -90,13 +94,16 @@ vg_triple_des_cfb8_encrypt:
 	str r2, [r12, #20]
 	str r2, [r12, #24]
 	str r2, [r12, #28]
-	str r2, [r12, #32]
-	str r2, [r12, #36]
-	str r2, [r12, #40]
-	str r2, [r12, #44]
-	str r2, [r12, #48]
-	str r2, [r12, #52]
-	add sp, sp, #64
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 23b
+	add sp, sp, #1088
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_triple_des_cfb8_decrypt:
@@ -135,7 +142,7 @@ vg_triple_des_cfb8_decrypt:
 	mov r0, r4
 	add r1, r8, #48
 	mov r2, #1
-	bl {vg_triple_des_ecb_encrypt}
+	bl {vg_triple_des_ecb_encrypt_core}
 	ldrb r9, [r8, #41]
 	strb r9, [r8, #40]
 	ldrb r9, [r8, #42]
@@ -175,8 +182,12 @@ vg_triple_des_cfb8_decrypt:
 	ldr r11, [r8, #28]
 	ldr lr, [r8, #32]
 	ldr r8, [r8, #16]
-	add r12, sp, #8
+	add sp, sp, #64
+	sub sp, sp, #1088
+	add r12, sp, #0
 	mov r2, #0
+	mov r3, #34
+23:
 	str r2, [r12, #0]
 	str r2, [r12, #4]
 	str r2, [r12, #8]
@@ -185,11 +196,14 @@ vg_triple_des_cfb8_decrypt:
 	str r2, [r12, #20]
 	str r2, [r12, #24]
 	str r2, [r12, #28]
-	str r2, [r12, #32]
-	str r2, [r12, #36]
-	str r2, [r12, #40]
-	str r2, [r12, #44]
-	str r2, [r12, #48]
-	str r2, [r12, #52]
-	add sp, sp, #64
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 23b
+	add sp, sp, #1088
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr

@@ -8,6 +8,8 @@
 ///
 /// It runs `vg_triple_des_expand_key`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `key` must be valid for reads of `key_len` bytes.
@@ -28,12 +30,14 @@ pub unsafe fn vg_triple_des_expand_key_auto(_dit: verified_garbage_cpu::Dit<'_>,
 ///
 /// It runs `vg_triple_des_ecb_encrypt`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 384 bytes.
 /// * `data` must be valid for reads and writes of `8 * n` bytes.
 /// * `data` must not overlap `schedule` (distinct Rust objects never do).
-/// * Neither `schedule` nor `data` may overlap the 1024 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * Neither `schedule` nor `data` may overlap the 1040 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_triple_des_ecb_encrypt_auto(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 384], data: *mut [u8; 8], n: usize) {
@@ -47,12 +51,14 @@ pub unsafe fn vg_triple_des_ecb_encrypt_auto(_dit: verified_garbage_cpu::Dit<'_>
 ///
 /// It runs `vg_triple_des_ecb_decrypt`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 384 bytes.
 /// * `data` must be valid for reads and writes of `8 * n` bytes.
 /// * `data` must not overlap `schedule` (distinct Rust objects never do).
-/// * Neither `schedule` nor `data` may overlap the 1024 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * Neither `schedule` nor `data` may overlap the 1040 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_triple_des_ecb_decrypt_auto(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 384], data: *mut [u8; 8], n: usize) {

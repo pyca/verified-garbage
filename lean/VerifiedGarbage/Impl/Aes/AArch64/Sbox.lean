@@ -1,21 +1,17 @@
 module
-public import VerifiedGarbage.Impl.Aes.Circuit
-public import VerifiedGarbage.TCB.AArch64.Isa
-import VerifiedGarbage.Impl.Aes.AArch64.Alloc
-meta import VerifiedGarbage.Impl.Aes.AArch64.Alloc
-public meta import VerifiedGarbage.TCB.AArch64.Isa
 
+public import VerifiedGarbage.Impl.Aes.AArch64.Alloc
+meta import VerifiedGarbage.Impl.Aes.AArch64.Alloc
 
 /-!
-# The bitsliced AES S-box on AArch64
+# Bit slices on AArch64: registers, short forms, and the AES S-box
 
-The circuit `Circuit.sbox` on the eight words of the bitsliced state
-(`q j` holds bit `j` of 64 bytes), in place, with the temporaries in
-`x14`–`x17` and `x19`–`x27`, all ones in `x28`, and spilling to the first
-slots of the scratch buffer at `x5`: the code that `compile` allocates for
-it. It is written out (and `#guard` checks that it is what `compile`
-produces) so that the kernel, which evaluates the code in the proofs, does
-not have to run the allocator.
+The registers of eight 64-bit slices (`q j`), the scratch buffer's base
+(`sb`), short forms of the instructions on them and on slots of the buffer,
+and the circuit `Circuit.sbox` on the slices (bit `j` of 64 bytes is in
+`q j`), in place, spilling to slots of the scratch buffer: the code
+`compile` allocates for it, written out (`#guard` checks that it is that) so
+that the kernel need not run the allocator.
 -/
 
 @[expose] public section
@@ -24,7 +20,7 @@ namespace VG.Impl.Aes.AArch64
 
 open VG.AArch64 VG.Impl.Aes.Circuit
 
-/-- The registers of the bitsliced state: word `j` is in `q j`. -/
+/-- The slices. -/
 def q : Nat → Reg
   | 0 => .x6 | 1 => .x7 | 2 => .x8 | 3 => .x9
   | 4 => .x10 | 5 => .x11 | 6 => .x12 | _ => .x13
@@ -32,62 +28,72 @@ def q : Nat → Reg
 /-- The scratch buffer's base. -/
 def sb : Reg := .x5
 
-/-- The register of all ones during the S-box. -/
+/-- Temporaries. -/
+def t0 : Reg := .x21
+def t1 : Reg := .x22
+def t2 : Reg := .x23
+def u7 : Reg := .x24
+
+/-- The address of a round key. -/
+def kp : Reg := .x1
+
+/-- All ones, while a circuit runs. -/
 def ones : Reg := .x28
 
-/-- The registers the S-box may use for its temporaries. -/
+/-- The registers circuits may use besides the slices. -/
 def sboxFree : List Reg :=
   [.x14, .x15, .x16, .x17, .x19, .x20, .x21, .x22, .x23, .x24, .x25, .x26, .x27]
 
-/-- The slots the S-box spills to. -/
+/-- The slots circuits may spill to. -/
 def spillSlots : List Nat := List.range 48
 
-/-- The circuit's input `xᵢ` and output `sᵢ` are bit `7 - i`. -/
-def sboxIns : List (Nat × Reg) := (List.range 8).map fun i => (x i, q (7 - i))
-def sboxOuts : List (Nat × Reg) := (List.range 8).map fun i => (s i, q (7 - i))
+def sboxIns : List (Nat × Reg) := (List.range 8).map fun i => (x i, q i)
+def sboxOuts : List (Nat × Reg) := (List.range 8).map fun i => (s i, q i)
 
-/-! Short forms of the instructions, on slots of `sb`. -/
+/-! Short forms. -/
+
 def movR (d n : Reg) : Instr := .addImm .x d n 0
 def eorR (d n m : Reg) : Instr := .logic .eor .x d n m
 def andR (d n m : Reg) : Instr := .logic .and .x d n m
 def orrR (d n m : Reg) : Instr := .logic .orr .x d n m
-def ldS (d : Reg) (k : Nat) : Instr := .ldr .x d sb (8 * k)
+def rorI (d n : Reg) (k : Nat) : Instr := .ror .x d n k
+def lsrI (d n : Reg) (k : Nat) : Instr := .lsr .x d n k
 def stS (k : Nat) (r : Reg) : Instr := .str .x r sb (8 * k)
+def ldS (r : Reg) (k : Nat) : Instr := .ldr .x r sb (8 * k)
 
-/-- The S-box on the state in `q 0 … q 7`, in place. -/
+/-- The S-box on the slices in `q 0 … q 7`, in place. -/
 def sboxCode : List Instr := [
-  .movz .x ones 0 0, .subImm .x ones ones 1, eorR .x14 .x10 .x8, eorR .x15 .x13 .x7,
-  eorR .x16 .x13 .x10, eorR .x17 .x13 .x8, eorR .x11 .x12 .x11, eorR .x19 .x11 .x6,
-  eorR .x10 .x19 .x10, eorR .x20 .x15 .x14, eorR .x21 .x19 .x13, eorR .x7 .x19 .x7,
-  eorR .x22 .x7 .x17, eorR .x9 .x9 .x20, eorR .x8 .x9 .x8, eorR .x9 .x9 .x12, eorR .x12 .x8 .x6,
-  eorR .x23 .x8 .x11, eorR .x24 .x9 .x16, eorR .x25 .x6 .x24, eorR .x26 .x23 .x24,
-  eorR .x27 .x23 .x17, eorR .x11 .x11 .x24, stS 0 .x27, eorR .x27 .x15 .x11, eorR .x13 .x13 .x11,
-  stS 1 .x13, andR .x13 .x20 .x8, stS 2 .x20, andR .x20 .x22 .x12, eorR .x20 .x20 .x13, stS 3 .x22,
-  andR .x22 .x10 .x6, eorR .x22 .x22 .x13, andR .x13 .x15 .x11, stS 4 .x15, andR .x15 .x7 .x19,
-  eorR .x15 .x15 .x13, stS 5 .x7, andR .x7 .x21 .x25, eorR .x7 .x7 .x13, andR .x13 .x16 .x24,
-  stS 6 .x16, andR .x16 .x14 .x26, eorR .x16 .x16 .x13, stS 7 .x14, andR .x14 .x17 .x23,
-  eorR .x14 .x14 .x13, eorR .x20 .x20 .x16, eorR .x22 .x22 .x14, eorR .x15 .x15 .x16,
-  eorR .x7 .x7 .x14, eorR .x20 .x20 .x9, ldS .x9 0, eorR .x22 .x22 .x9, eorR .x15 .x15 .x27,
-  ldS .x27 1, eorR .x7 .x7 .x27, eorR .x27 .x20 .x22, andR .x20 .x20 .x15, eorR .x9 .x7 .x20,
-  andR .x14 .x27 .x9, eorR .x14 .x14 .x22, eorR .x16 .x15 .x7, eorR .x22 .x22 .x20,
-  andR .x22 .x22 .x16, eorR .x22 .x22 .x7, eorR .x15 .x15 .x22, eorR .x16 .x9 .x22,
-  andR .x7 .x7 .x16, eorR .x15 .x7 .x15, eorR .x9 .x9 .x7, andR .x9 .x14 .x9, eorR .x27 .x27 .x9,
-  eorR .x9 .x27 .x15, eorR .x7 .x14 .x22, eorR .x16 .x14 .x27, eorR .x20 .x22 .x15,
-  eorR .x13 .x7 .x9, andR .x8 .x20 .x8, andR .x12 .x15 .x12, andR .x6 .x22 .x6, andR .x11 .x16 .x11,
-  andR .x19 .x27 .x19, andR .x25 .x14 .x25, andR .x24 .x7 .x24, andR .x26 .x13 .x26,
-  andR .x23 .x9 .x23, stS 1 .x12, ldS .x12 2, andR .x20 .x20 .x12, ldS .x12 3, andR .x15 .x15 .x12,
-  andR .x22 .x22 .x10, ldS .x10 4, andR .x16 .x16 .x10, ldS .x10 5, andR .x27 .x27 .x10,
-  andR .x14 .x14 .x21, ldS .x21 6, andR .x7 .x7 .x21, ldS .x21 7, andR .x13 .x13 .x21,
-  andR .x9 .x9 .x17, eorR .x7 .x7 .x13, eorR .x22 .x15 .x22, eorR .x27 .x25 .x27,
-  eorR .x20 .x20 .x15, eorR .x15 .x6 .x16, eorR .x6 .x6 .x25, eorR .x23 .x26 .x23,
-  eorR .x8 .x8 .x11, eorR .x24 .x24 .x26, eorR .x13 .x13 .x9, eorR .x16 .x16 .x27,
-  eorR .x15 .x15 .x8, eorR .x9 .x19 .x7, eorR .x11 .x11 .x24, eorR .x7 .x7 .x15,
-  eorR .x14 .x14 .x15, eorR .x23 .x23 .x9, eorR .x20 .x20 .x9, eorR .x19 .x19 .x11,
-  eorR .x14 .x14 .x23, ldS .x9 1, eorR .x9 .x9 .x20, eorR .x11 .x11 .x20, eorR .x16 .x16 .x23,
-  eorR .x16 .x16 .x28, eorR .x27 .x27 .x7, eorR .x27 .x27 .x28, eorR .x7 .x19 .x14,
-  eorR .x10 .x8 .x9, eorR .x9 .x6 .x9, eorR .x8 .x22 .x14, eorR .x12 .x19 .x10, eorR .x12 .x12 .x28,
-  eorR .x13 .x13 .x7, eorR .x13 .x13 .x28, stS 1 .x13, movR .x13 .x11, ldS .x11 1, movR .x7 .x16,
-  movR .x6 .x27]
+  .movz .x .x28 0 0, .subImm .x .x28 .x28 1, eorR .x8 .x11 .x8, eorR .x14 .x8 .x7,
+  eorR .x15 .x14 .x12, eorR .x6 .x14 .x6, eorR .x9 .x15 .x9, eorR .x9 .x9 .x13,
+  eorR .x16 .x9 .x8, eorR .x17 .x16 .x6, eorR .x11 .x17 .x11, eorR .x19 .x6 .x13,
+  eorR .x20 .x17 .x10, eorR .x21 .x17 .x15, eorR .x22 .x11 .x13, eorR .x23 .x20 .x22,
+  andR .x24 .x20 .x17, eorR .x25 .x16 .x10, eorR .x10 .x9 .x10, eorR .x9 .x20 .x9,
+  andR .x26 .x22 .x15, andR .x27 .x25 .x9, eorR .x7 .x25 .x7, eorR .x26 .x27 .x26, stS 0 .x17,
+  andR .x17 .x23 .x21, eorR .x27 .x27 .x17, eorR .x17 .x21 .x7, stS 1 .x20, eorR .x20 .x25 .x11,
+  stS 2 .x25, andR .x25 .x19 .x7, stS 3 .x19, andR .x19 .x20 .x17, eorR .x25 .x27 .x25,
+  eorR .x27 .x27 .x19, andR .x19 .x6 .x10, stS 4 .x7, andR .x7 .x13 .x14, eorR .x25 .x25 .x24,
+  eorR .x27 .x27 .x19, eorR .x24 .x24 .x7, eorR .x19 .x26 .x19, eorR .x7 .x22 .x12,
+  eorR .x25 .x25 .x8, eorR .x24 .x24 .x26, andR .x26 .x11 .x12, eorR .x24 .x24 .x7,
+  eorR .x19 .x19 .x26, eorR .x26 .x11 .x14, eorR .x19 .x19 .x26, eorR .x27 .x27 .x16,
+  eorR .x16 .x25 .x27, andR .x26 .x24 .x25, eorR .x7 .x27 .x26, eorR .x26 .x19 .x26,
+  andR .x26 .x26 .x16, eorR .x24 .x24 .x19, eorR .x26 .x27 .x26, eorR .x25 .x25 .x26,
+  andR .x13 .x26 .x13, eorR .x16 .x7 .x26, andR .x27 .x27 .x16, eorR .x25 .x27 .x25,
+  andR .x22 .x25 .x22, eorR .x27 .x7 .x27, andR .x7 .x24 .x7, eorR .x19 .x19 .x7,
+  andR .x15 .x25 .x15, andR .x27 .x19 .x27, eorR .x27 .x27 .x24, eorR .x24 .x19 .x27,
+  andR .x20 .x24 .x20, eorR .x7 .x19 .x26, andR .x10 .x7 .x10, andR .x24 .x24 .x17,
+  andR .x23 .x27 .x23, andR .x6 .x7 .x6, eorR .x6 .x6 .x20, andR .x21 .x27 .x21,
+  eorR .x27 .x27 .x25, eorR .x7 .x7 .x27, eorR .x20 .x13 .x20, eorR .x25 .x26 .x25,
+  andR .x26 .x26 .x14, eorR .x24 .x24 .x21, eorR .x10 .x24 .x10, andR .x9 .x7 .x9,
+  eorR .x24 .x24 .x9, eorR .x24 .x24 .x26, eorR .x15 .x15 .x26, andR .x12 .x25 .x12,
+  andR .x25 .x25 .x11, eorR .x24 .x24 .x12, ldS .x12 2, andR .x7 .x7 .x12, ldS .x12 4,
+  andR .x12 .x19 .x12, eorR .x7 .x7 .x23, eorR .x21 .x21 .x12, ldS .x12 1, andR .x12 .x27 .x12,
+  ldS .x11 3, andR .x19 .x19 .x11, eorR .x12 .x7 .x12, eorR .x21 .x21 .x15, eorR .x20 .x20 .x12,
+  eorR .x12 .x12 .x19, eorR .x12 .x12 .x28, ldS .x11 0, andR .x27 .x27 .x11, eorR .x8 .x20 .x25,
+  eorR .x24 .x24 .x27, eorR .x6 .x6 .x7, eorR .x6 .x6 .x21, eorR .x6 .x6 .x28,
+  eorR .x11 .x21 .x12, eorR .x9 .x12 .x9, eorR .x9 .x9 .x28, eorR .x15 .x9 .x15,
+  eorR .x9 .x9 .x8, eorR .x19 .x6 .x19, eorR .x19 .x19 .x28, eorR .x19 .x19 .x22,
+  eorR .x9 .x9 .x10, eorR .x9 .x9 .x28, eorR .x15 .x15 .x27, eorR .x19 .x19 .x23,
+  eorR .x10 .x19 .x13, movR .x7 .x12, stS 0 .x9, movR .x9 .x24, ldS .x12 0, movR .x13 .x15]
 
 #guard sboxCode == compile sb sbox sboxIns sboxOuts sboxFree ones spillSlots
 

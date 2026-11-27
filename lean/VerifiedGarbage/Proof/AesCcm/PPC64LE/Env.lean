@@ -16,7 +16,7 @@ public meta import VerifiedGarbage.TCB.PPC64LE.Isa
 # AES-CCM on PPC64LE: where everything is
 
 Untrusted: everything here is checked by Lean. The public values of a call
-(`Cx`): the key schedule (240 bytes at `K`), the working space (2560 bytes at
+(`Cx`): the key schedule (240 bytes at `K`), the working space (448 bytes at
 `W`), the data (`n` bytes at `D`), the associated data (`al` bytes at `A`),
 the tag (`tl` bytes at `T`), the rounds, the tag length and the nonce
 length; what the precondition says of them (`Lay`); what a state may access
@@ -53,13 +53,13 @@ structure Cx where
 /-- What the precondition says of the public values. -/
 structure Lay (c : Cx) : Prop where
   kw : c.K.toNat + 240 ≤ 2 ^ 64
-  ww : c.W.toNat + 2560 ≤ 2 ^ 64
+  ww : c.W.toNat + 448 ≤ 2 ^ 64
   dw : c.D.toNat + c.n ≤ 2 ^ 64
   aw : c.A.toNat + c.al ≤ 2 ^ 64
-  k_w : (⟨c.K, 240⟩ : Region).Disjoint ⟨c.W, 2560⟩
+  k_w : (⟨c.K, 240⟩ : Region).Disjoint ⟨c.W, 448⟩
   k_d : (⟨c.K, 240⟩ : Region).Disjoint ⟨c.D, c.n⟩
-  d_w : (⟨c.D, c.n⟩ : Region).Disjoint ⟨c.W, 2560⟩
-  a_w : (⟨c.A, c.al⟩ : Region).Disjoint ⟨c.W, 2560⟩
+  d_w : (⟨c.D, c.n⟩ : Region).Disjoint ⟨c.W, 448⟩
+  a_w : (⟨c.A, c.al⟩ : Region).Disjoint ⟨c.W, 448⟩
   a_d : (⟨c.A, c.al⟩ : Region).Disjoint ⟨c.D, c.n⟩
   rounds : c.R = 10 ∨ c.R = 12 ∨ c.R = 14
   n_lt : c.n < 2 ^ 64
@@ -71,13 +71,13 @@ structure Lay (c : Cx) : Prop where
   h13 : c.nl ≤ 13
   hn : c.n < 256 ^ (15 - c.nl)
   tw : c.T.toNat + c.tl ≤ 2 ^ 64
-  t_w : (⟨c.T, c.tl⟩ : Region).Disjoint ⟨c.W, 2560⟩
+  t_w : (⟨c.T, c.tl⟩ : Region).Disjoint ⟨c.W, 448⟩
   t_d : (⟨c.T, c.tl⟩ : Region).Disjoint ⟨c.D, c.n⟩
 
 /-- What a state may access. -/
 structure Perm (c : Cx) (s : State) : Prop where
   k : Covers [⟨c.K, 240⟩] (s.rd ++ s.wr)
-  w : Covers [⟨c.W, 2560⟩] s.wr
+  w : Covers [⟨c.W, 448⟩] s.wr
   d : Covers [⟨c.D, c.n⟩] s.wr
   a : Covers [⟨c.A, c.al⟩] (s.rd ++ s.wr)
   t : Covers [⟨c.T, c.tl⟩] (s.rd ++ s.wr)
@@ -145,33 +145,33 @@ theorem Env.of_pk {c : Cx} {s s' : State} (h : Env c s) (k : PK s s') : Env c s'
 
 namespace Lay
 
-theorem wSub {W : Addr} {d n : Nat} (h : d + n ≤ 2560) : Region.Sub ⟨W + BitVec.ofNat 64 d, n⟩ ⟨W, 2560⟩ :=
+theorem wSub {W : Addr} {d n : Nat} (h : d + n ≤ 448) : Region.Sub ⟨W + BitVec.ofNat 64 d, n⟩ ⟨W, 448⟩ :=
   Offset.sub_base _ h
 
 variable {c : Cx} (L : Lay c)
 include L
 
 /-- Parts of `W` are disjoint. -/
-theorem w_w {a n d k : Nat} (h : a + n ≤ d ∨ d + k ≤ a) (ha : a + n ≤ 2560) (hd : d + k ≤ 2560) :
+theorem w_w {a n d k : Nat} (h : a + n ≤ d ∨ d + k ≤ a) (ha : a + n ≤ 448) (hd : d + k ≤ 448) :
     (⟨c.W + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨c.W + BitVec.ofNat 64 d, k⟩ :=
   Offset.disjoint _ h (by have := L.ww; omega_using [ha]) (by have := L.ww; omega_using [hd])
 
 omit L in
 /-- `W` and a part of it. -/
-theorem w0_w {n d k : Nat} (h : n ≤ d) (hd : d + k ≤ 2560) :
+theorem w0_w {n d k : Nat} (h : n ≤ d) (hd : d + k ≤ 448) :
     (⟨c.W, n⟩ : Region).Disjoint ⟨c.W + BitVec.ofNat 64 d, k⟩ :=
   Offset.base_disjoint _ h (by omega_using [hd])
 
-theorem k_w' {d k : Nat} (hd : d + k ≤ 2560) : (⟨c.K, 240⟩ : Region).Disjoint ⟨c.W + BitVec.ofNat 64 d, k⟩ :=
+theorem k_w' {d k : Nat} (hd : d + k ≤ 448) : (⟨c.K, 240⟩ : Region).Disjoint ⟨c.W + BitVec.ofNat 64 d, k⟩ :=
   L.k_w.sub_right (wSub hd)
 
-theorem d_w' {d k : Nat} (hd : d + k ≤ 2560) : (⟨c.D, c.n⟩ : Region).Disjoint ⟨c.W + BitVec.ofNat 64 d, k⟩ :=
+theorem d_w' {d k : Nat} (hd : d + k ≤ 448) : (⟨c.D, c.n⟩ : Region).Disjoint ⟨c.W + BitVec.ofNat 64 d, k⟩ :=
   L.d_w.sub_right (wSub hd)
 
-theorem a_w' {d k : Nat} (hd : d + k ≤ 2560) : (⟨c.A, c.al⟩ : Region).Disjoint ⟨c.W + BitVec.ofNat 64 d, k⟩ :=
+theorem a_w' {d k : Nat} (hd : d + k ≤ 448) : (⟨c.A, c.al⟩ : Region).Disjoint ⟨c.W + BitVec.ofNat 64 d, k⟩ :=
   L.a_w.sub_right (wSub hd)
 
-theorem wrapW {d : Nat} (hd : d < 2560) : (c.W + BitVec.ofNat 64 d).toNat = c.W.toNat + d := by
+theorem wrapW {d : Nat} (hd : d < 448) : (c.W + BitVec.ofNat 64 d).toNat = c.W.toNat + d := by
   have := L.ww
   rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by omega_using [hd]), Nat.mod_eq_of_lt (by omega_using [hd, this])]
 
@@ -184,16 +184,16 @@ namespace Perm
 variable {c : Cx} {s : State} (P : Perm c s)
 include P
 
-theorem wW {d n : Nat} (h : d + n ≤ 2560) : InRegions s.wr (c.W + BitVec.ofNat 64 d) n :=
+theorem wW {d n : Nat} (h : d + n ≤ 448) : InRegions s.wr (c.W + BitVec.ofNat 64 d) n :=
   in_off P.w h (by decide)
 
-theorem wC {d n : Nat} (h : d + n ≤ 2560) : Covers [⟨c.W + BitVec.ofNat 64 d, n⟩] s.wr :=
+theorem wC {d n : Nat} (h : d + n ≤ 448) : Covers [⟨c.W + BitVec.ofNat 64 d, n⟩] s.wr :=
   covers_off P.w h (by decide)
 
-theorem wCR {d n : Nat} (h : d + n ≤ 2560) : Covers [⟨c.W + BitVec.ofNat 64 d, n⟩] (s.rd ++ s.wr) :=
+theorem wCR {d n : Nat} (h : d + n ≤ 448) : Covers [⟨c.W + BitVec.ofNat 64 d, n⟩] (s.rd ++ s.wr) :=
   Covers.right (P.wC h)
 
-theorem wR {d n : Nat} (h : d + n ≤ 2560) : InRegions (s.rd ++ s.wr) (c.W + BitVec.ofNat 64 d) n :=
+theorem wR {d n : Nat} (h : d + n ≤ 448) : InRegions (s.rd ++ s.wr) (c.W + BitVec.ofNat 64 d) n :=
   P.wCR h _ _ ⟨_, List.mem_singleton_self _, Region.contains_self _ _⟩
 
 end Perm
@@ -205,7 +205,7 @@ structure Buf (c : Cx) (s : State) (P : Addr) (len : Nat) : Prop where
   rd : Covers [⟨P, len⟩] (s.rd ++ s.wr)
   lt : len < 2 ^ 64
   wrap : P.toNat + len ≤ 2 ^ 64
-  w : (⟨P, len⟩ : Region).Disjoint ⟨c.W, 2560⟩
+  w : (⟨P, len⟩ : Region).Disjoint ⟨c.W, 448⟩
 
 namespace Buf
 
@@ -233,7 +233,7 @@ theorem take {k : Nat} (hk : k ≤ len) : Buf c s P k where
   wrap := by have := h.wrap; omega_using [hk, this]
   w := h.w.sub_left (Region.sub_prefix hk)
 
-theorem wd {d k : Nat} (hd : d + k ≤ 2560) : (⟨P, len⟩ : Region).Disjoint ⟨c.W + BitVec.ofNat 64 d, k⟩ :=
+theorem wd {d k : Nat} (hd : d + k ≤ 448) : (⟨P, len⟩ : Region).Disjoint ⟨c.W + BitVec.ofNat 64 d, k⟩ :=
   h.w.sub_right (Lay.wSub hd)
 
 end Buf
@@ -256,9 +256,9 @@ structure Slots (c : Cx) (m : Mem) : Prop where
   nlen : m.readW (c.W + BitVec.ofNat 64 232) 64 = BitVec.ofNat 64 c.nl
   tag : m.readW (c.W + BitVec.ofNat 64 240) 64 = c.T
 
-/-- The parts of `W` the pieces write: `[0, 112)` and `[256, 2560)`. -/
+/-- The parts of `W` the pieces write: `[0, 112)` and `[256, 448)`. -/
 abbrev wLo (W : Addr) : Region := ⟨W, 112⟩
-abbrev wHi (W : Addr) : Region := ⟨W + BitVec.ofNat 64 256, 2304⟩
+abbrev wHi (W : Addr) : Region := ⟨W + BitVec.ofNat 64 256, 192⟩
 
 /-- What the pieces may change: those parts of `W` and the data. -/
 abbrev mutR (c : Cx) : List Region := [wLo c.W, wHi c.W, ⟨c.D, c.n⟩]
@@ -268,7 +268,7 @@ theorem sub_lo {c : Cx} {d k : Nat} (h : d + k ≤ 112) :
     ∃ r' ∈ mutR c, Region.Sub ⟨c.W + BitVec.ofNat 64 d, k⟩ r' :=
   ⟨wLo c.W, by simp, Offset.sub_base _ h⟩
 
-theorem sub_hi {c : Cx} {d k : Nat} (h₁ : 256 ≤ d) (h₂ : d + k ≤ 2560) :
+theorem sub_hi {c : Cx} {d k : Nat} (h₁ : 256 ≤ d) (h₂ : d + k ≤ 448) :
     ∃ r' ∈ mutR c, Region.Sub ⟨c.W + BitVec.ofNat 64 d, k⟩ r' :=
   ⟨wHi c.W, by simp, Offset.sub _ h₁ (by omega_using [h₂])⟩
 

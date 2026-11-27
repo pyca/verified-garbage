@@ -138,7 +138,7 @@ theorem f_correct {s : State} (hp : fK.pre s) :
     subst hr
     rw [hfr] at hc
     exact ⟨_, List.mem_append_right _ (by rw [hp, pushed_wr]; exact List.mem_cons_self), hc⟩
-  intro s' hrd' hwr' hcs hf _ ⟨s₃, _, hg₃, hpost⟩
+  intro s' hrd' hwr' hcs hf _ ⟨s₃, _, hg₃, hpost⟩ mm uu fl
   have hpop := popReg_eq s' .ecx 2
   set q := popped .ecx 2 s' with hq
   have eq : q.gpr .esp = s.gpr .esp := by
@@ -167,37 +167,47 @@ theorem f_correct {s : State} (hp : fK.pre s) :
   have hwrq : q.wr = s.wr := by
     show s'.wr.tail = _; rw [hwr', hp, pushed_wr]; rfl
   -- The frame and the call change only the 12 bytes below `esp`.
-  have hmem : Frame [below (s.gpr .esp) 12] s.mem q.mem := by
-    show Frame _ s.mem (popReg s' .ecx 2).mem
-    rw [(popReg_rest s' .ecx 2).1]
-    refine Frame.trans (Frame.sub (pushed_frame (s := s₂) (by decide) hn) fun r hr => ?_)
-      (Frame.sub hf fun r hr => ?_)
-    · simp only [List.mem_singleton] at hr; subst hr
-      exact ⟨_, List.mem_singleton_self _, by rw [e₂]; exact below_sub (by simp) h12⟩
-    · simp only [List.nil_append, List.mem_singleton] at hr; subst hr
-      refine ⟨_, List.mem_singleton_self _, ?_⟩
-      rw [ep]
-      exact below_inner (k := 8) (by decide) h12
-  have harg : q.mem.readW (q.ea ⟨.esp, 4⟩) 32 = arg s 0 := by
+  have hmem : Frame [below (s.gpr .esp) 12] s.mem mm := by
+    have f₁ : Frame [below (s.gpr .esp) 12] s.mem s'.mem := by
+      refine Frame.trans (Frame.sub (pushed_frame (s := s₂) (by decide) hn) fun r hr => ?_)
+        (Frame.sub hf fun r hr => ?_)
+      · simp only [List.mem_singleton] at hr; subst hr
+        exact ⟨_, List.mem_singleton_self _, by rw [e₂]; exact below_sub (by simp) h12⟩
+      · simp only [List.nil_append, List.mem_singleton] at hr; subst hr
+        refine ⟨_, List.mem_singleton_self _, ?_⟩
+        rw [ep]
+        exact below_inner (k := 8) (by decide) h12
+    refine f₁.trans (Frame.sub fl fun r hr => ?_)
+    simp only [List.mem_singleton] at hr; subst hr
+    exact ⟨_, List.mem_singleton_self _, by
+      show (below (s.gpr .esp) (4 * 2)).Sub _; exact below_sub (by decide) h12⟩
+  have harg : mm.readW (q.ea ⟨.esp, 4⟩) 32 = arg s 0 := by
     rw [show q.ea ⟨.esp, 4⟩ = argAddr s 0 by simp only [State.ea, eq]; rfl]
     refine hmem.readW (r := ⟨argAddr s 0, 4⟩) (Region.contains_self _ _) ?_ (by decide)
     simp only [List.mem_singleton]
     rintro r rfl
     rw [show argAddr s 0 = addr (s.gpr .esp) 4 from rfl, addr_eq (by omega)]
     exact above_below h12 (by omega)
-  change WP isa _ q _
+  set q' : State := { q with mem := mm, unknowns := uu } with hq'
+  have eq' : q'.gpr .esp = s.gpr .esp := eq
+  have hrdq' : q'.rd = s.rd := hrdq
+  have hwrq' : q'.wr = s.wr := hwrq
+  have hcsq' : ∀ r ∈ calleeSaved, q'.gpr r = s.gpr r := hcs'
+  have hsum' : q'.gpr .eax = arg s 1 + arg s 2 := hsum
+  have harg' : q'.mem.readW (q'.ea ⟨.esp, 4⟩) 32 = arg s 0 := harg
+  change WP isa _ q' _
   refine wp_movm ?_ (wp_store (a := (out s).base) ?_ ?_ (WP.block_nil ⟨fun r hr => ?_, ?_⟩))
-  · rw [show q.ea ⟨.esp, 4⟩ = argAddr s 0 by simp only [State.ea, eq]; rfl, hrdq, hwrq]
+  · rw [show q'.ea ⟨.esp, 4⟩ = argAddr s 0 by simp only [State.ea, eq']; rfl, hrdq', hwrq']
     exact args_in (n := 3) hrd hfit 0 (by omega)
   · simp only [State.ea, State.setReg, ite_true, out, BitVec.add_zero]
-    exact congrArg _ harg
-  · exact ⟨out s, by simp [State.setReg, hwrq, hwr], Region.contains_self _ _⟩
+    exact congrArg _ harg'
+  · exact ⟨out s, by simp [State.setReg, hwrq', hwr], Region.contains_self _ _⟩
   · have hc : r ≠ .ecx := by rintro rfl; simp [calleeSaved] at hr
     simp only [State.setReg, hc, ite_false]
-    exact hcs' r hr
+    exact hcsq' r hr
   · show (Mem.writeW _ _ _).readW _ 32 = _
     rw [Mem.readW_writeW_self32]
-    simp only [State.setReg, show (Reg.eax = Reg.ecx) = False by decide, ite_false, hsum]
+    simp only [State.setReg, show (Reg.eax = Reg.ecx) = False by decide, ite_false, hsum']
 
 theorem f_verified_correct : ∀ s, fK.pre s →
     ∃ t s', Exec isa f s t s' ∧ abiPreserved s s' ∧ fK.post s s' := by

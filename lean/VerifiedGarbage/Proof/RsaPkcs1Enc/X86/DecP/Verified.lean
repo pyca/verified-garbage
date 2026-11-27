@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.Contract
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86.DecP.Body
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86.DecVerified
 public import VerifiedGarbage.Proof.Rsa.PreKey
@@ -14,7 +15,7 @@ import VerifiedGarbage.Proof.Rsa.X86.PrivStackSafety
 /-!
 # RSAES-PKCS1-v1_5 decryption on x86, given `pre`: verified
 
-`vg_rsa_pkcs1_decrypt_precomputed`, calling `vg_rsa_private_checked_precomputed`:
+`vg_rsa_pkcs1_decrypt_precomputed_body`, calling `vg_rsa_private_checked_precomputed`:
 its entry (`in_of_preP`), the frames around the body (`wrap_ok`, `wrap_ct`),
 and a state that meets its contract, with a real key (`satisfiablePre`):
 verified (`decryptPrecomputed_verified`).
@@ -31,7 +32,7 @@ open VG.Proof.Rsa.X86.PrivChecked (CrtImpl CrtPImpl privCodeP crtPBaseline)
 open VG.Proof.Rsa.PreKey (keyIn keyMem key_pre_of)
 
 /-- The contract, with the stack of `vg_rsa_pkcs1_decrypt`. -/
-abbrev specP : Contract isa := Spec.RsaPkcs1Enc.decryptPrecomputedContract abi stackBytes
+abbrev specP : Contract isa := Proof.RsaPkcs1Enc.decryptPrecomputedBodyContract abi stackBytes
 
 /-- `vg_rsa_pkcs1_decrypt`'s layout, of the state narrowed to its permissions. -/
 theorem ok_narrow {P : EP} {pre : BitVec 32} {L : Nat} {σ : State} (h : (P.layP pre L).Ok σ) :
@@ -72,8 +73,8 @@ theorem ep_layP (s : State) (pre : BitVec 32) (L : Nat) :
 
 theorem in_of_preP {s : State} (h : specP.pre s) :
     InP (ep s) (arg s 23) (arg s 24).toNat (entered frameBytes s) := by
-  sig_pre [Spec.RsaPkcs1Enc.decryptPrecomputedContract, Spec.RsaPkcs1Enc.decryptPrecomputedSig,
-    Spec.RsaPkcs1Enc.decryptSig, abi, argSlots, argVal, argBytes, stackBelow] at h
+  sig_pre [Proof.RsaPkcs1Enc.decryptPrecomputedBodyContract, Proof.RsaPkcs1Enc.decryptPrecomputedBodySig,
+    Proof.RsaPkcs1Enc.decryptSig, abi, argSlots, argVal, argBytes, stackBelow] at h
   -- The lengths the contract states equal, rewritten in the precondition before it is split: a rewrite
   -- of a fact among the hundred it splits into replaces the fact in a context of that size.
   obtain ⟨olk, ilk, dpl, qil, dql⟩ : (arg s 1).toNat = (arg s 4).toNat ∧ (arg s 10).toNat = (arg s 4).toNat ∧
@@ -191,8 +192,8 @@ abbrev decryptCodeP (v : Backend) (c : CrtImpl) (w : CrtPImpl) : Prog isa :=
 
 theorem specP_sp {s : State} (h : specP.pre s) :
     stackBytes ≤ (s.gpr .esp).toNat ∧ (s.gpr .esp).toNat + 4 ≤ 2 ^ 32 := by
-  sig_pre [Spec.RsaPkcs1Enc.decryptPrecomputedContract, Spec.RsaPkcs1Enc.decryptPrecomputedSig,
-    Spec.RsaPkcs1Enc.decryptSig, abi, argSlots, argVal, argBytes, stackBelow] at h
+  sig_pre [Proof.RsaPkcs1Enc.decryptPrecomputedBodyContract, Proof.RsaPkcs1Enc.decryptPrecomputedBodySig,
+    Proof.RsaPkcs1Enc.decryptSig, abi, argSlots, argVal, argBytes, stackBelow] at h
   obtain ⟨hsp, hsa, -⟩ := h
   exact ⟨hsp, by omega_using [hsa]⟩
 
@@ -204,7 +205,7 @@ theorem code_okP (v : Backend) (c : CrtImpl) (w : CrtPImpl) {s : State} (h : spe
   have hb := (bodyP_vp (P := ep s) (pre := arg s 23) (L := (arg s 24).toNat) v c w).wp _ _ (entered_stateP h)
   refine WP.mono (wrap_ok (F := frameBytes) (by decide) (bodyP_noSp v c w) hsp hfit (W := (ep s).lay.W)
     (Q := fun r m => Res (ep s) (entered frameBytes s) m r) (fun r hr => ?_)
-    (WP.mono hb fun u hu => ⟨hu.1.2.frame, hu.2⟩)) fun t ⟨abi, res⟩ => ⟨abi, ?_⟩
+    (WP.mono hb fun u hu => ⟨hu.1.2.frame, hu.2⟩) (fun r m m' fl hres => ?_)) fun t ⟨abi, res⟩ => ⟨abi, ?_⟩
   · have ok := hin.ok
     rw [ep_layP] at ok
     rw [save_eq (argv := (ep s).argvP (arg s 23) (arg s 24).toNat) (ro := (ep s).roP (arg s 23) (arg s 24).toNat)
@@ -214,9 +215,22 @@ theorem code_okP (v : Backend) (c : CrtImpl) (w : CrtPImpl) {s : State} (h : spe
     exact ⟨ok.save_apart r hr, ok.ret_apart r hr⟩
   · have ok := hin.ok
     rw [ep_layP] at ok
+    obtain F' := release_frame (argv := (ep s).argvP (arg s 23) (arg s 24).toNat) (ro := (ep s).roP (arg s 23) (arg s 24).toNat) (rw := (ep s).rw) (C := 3448) fl
+    obtain hO := VG.Proof.Rsa.rsa_bytes_frame F' (src := ((ep s).out.setWidth 64)) (k := (ep s).K)
+      (by show (arg s 4).toNat < 2 ^ 64; have := (arg s 4).isLt; omega_using [this])
+      (fun q hq => by rw [List.mem_singleton.mp hq]; exact (ok.stk (ep s).OUT (by simp [layOf])).symm)
+    obtain hM := VG.Proof.Rsa.wordsAt_frame F' (p := ((ep s).ml.setWidth 64)) (n := 1) (by decide)
+      (fun q hq => by rw [List.mem_singleton.mp hq]; exact (ok.stk (ep s).ML (by simp [layOf])).symm)
+    have key : ∀ o, Proof.RsaPkcs1Enc.writtenMsgEnd m ((ep s).out.setWidth 64) ((ep s).ml.setWidth 64) (ep s).K r o →
+        Proof.RsaPkcs1Enc.writtenMsgEnd m' ((ep s).out.setWidth 64) ((ep s).ml.setWidth 64) (ep s).K r o := fun o => by
+      cases o <;> simp only [Proof.RsaPkcs1Enc.writtenMsgEnd] <;> rw [hO, hM] <;> exact id
+    unfold Res at hres ⊢
+    exact key _ hres
+  · have ok := hin.ok
+    rw [ep_layP] at ok
     have ro := fun {R : Region} (hR : R ∈ (ep s).roP (arg s 23) (arg s 24).toNat) => entered_ro hsp ok hR
-    sig_post [Spec.RsaPkcs1Enc.decryptPrecomputedContract, Spec.RsaPkcs1Enc.decryptPrecomputedSig,
-      Spec.RsaPkcs1Enc.decryptSig, abi, argSlots, argVal, argBytes]
+    sig_post [Proof.RsaPkcs1Enc.decryptPrecomputedBodyContract, Proof.RsaPkcs1Enc.decryptPrecomputedBodySig,
+      Proof.RsaPkcs1Enc.decryptSig, abi, argSlots, argVal, argBytes]
     unfold Res at res
     rw [show dB (ep s) (entered frameBytes s) = _ from ro (R := (ep s).D) (by simp),
       show cB (ep s) (entered frameBytes s) = _ from ro (R := (ep s).INP) (by simp),
@@ -231,8 +245,8 @@ theorem code_okP (v : Backend) (c : CrtImpl) (w : CrtPImpl) {s : State} (h : spe
 /-- Two entry states with the same public data have the same public parameters, and the same `pre`. -/
 theorem ep_eqP {s₁ s₂ : State} (hp : specP.pub s₁ s₂) :
     ep s₁ = ep s₂ ∧ arg s₁ 23 = arg s₂ 23 ∧ arg s₁ 24 = arg s₂ 24 := by
-  sig_pub [Spec.RsaPkcs1Enc.decryptPrecomputedContract, Spec.RsaPkcs1Enc.decryptPrecomputedSig,
-    Spec.RsaPkcs1Enc.decryptSig, abi, argSlots, argVal, argBytes] at hp
+  sig_pub [Proof.RsaPkcs1Enc.decryptPrecomputedBodyContract, Proof.RsaPkcs1Enc.decryptPrecomputedBodySig,
+    Proof.RsaPkcs1Enc.decryptSig, abi, argSlots, argVal, argBytes] at hp
   obtain ⟨hsp, hl, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20,
     a21, a22, a23, a24⟩ := hp
   obtain ⟨hne, -⟩ := List.append_inj hl (by simp [Proof.RsaPkcs1Sig.bytesAt_len, a4, a6])
@@ -249,8 +263,8 @@ theorem code_ctP (v : Backend) (c : CrtImpl) (w : CrtPImpl) :
   intro s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp e₁ e₂
   obtain ⟨hep, h23, h24⟩ := ep_eqP hp
   have hsp : s₁.gpr .esp = s₂.gpr .esp := by
-    sig_pub [Spec.RsaPkcs1Enc.decryptPrecomputedContract, Spec.RsaPkcs1Enc.decryptPrecomputedSig,
-      Spec.RsaPkcs1Enc.decryptSig, abi, argSlots, argVal, argBytes] at hp
+    sig_pub [Proof.RsaPkcs1Enc.decryptPrecomputedBodyContract, Proof.RsaPkcs1Enc.decryptPrecomputedBodySig,
+      Proof.RsaPkcs1Enc.decryptSig, abi, argSlots, argVal, argBytes] at hp
     exact hp.1
   refine (wrap_ct (F := frameBytes) (bodyP_noSp v c w) (P := fun a b => a = s₁ ∧ b = s₂)
     (fun a b h => by rw [h.1, h.2]; exact hsp) ?_ s₁ s₂ t₁ t₂ s₁' s₂' ⟨rfl, rfl⟩ e₁ e₂).1
@@ -296,7 +310,7 @@ theorem preState_key : Spec.Rsa.privatePrecompute (Spec.Rsa.bytesAt preState.mem
     show (bif _ then _ else _) = _
     rw [hs, Bool.cond_false, ha, Bool.cond_true]
 
-theorem satisfiablePre : ∃ s, (Spec.RsaPkcs1Enc.decryptPrecomputedContract abi stackBytes).pre s := by
+theorem satisfiablePre : ∃ s, (Proof.RsaPkcs1Enc.decryptPrecomputedBodyContract abi stackBytes).pre s := by
   have a3 : arg preState 3 = 0x2000 := by decide
   have p3 : BitVec.setWidth 64 (arg preState 3) = 0x2000 := by rw [a3]; decide
   have a11 : arg preState 11 = 0x4200 := by decide
@@ -316,8 +330,8 @@ theorem satisfiablePre : ∃ s, (Spec.RsaPkcs1Enc.decryptPrecomputedContract abi
   have e : argAddr preState 0 = 0x20004 := by decide
   have esp : preState.gpr .esp = 0x20000 := rfl
   refine ⟨preState, ?_⟩
-  sig_pre [Spec.RsaPkcs1Enc.decryptPrecomputedContract, Spec.RsaPkcs1Enc.decryptPrecomputedSig,
-    Spec.RsaPkcs1Enc.decryptSig, abi, argSlots, argVal, argBytes, stackBelow, e, esp,
+  sig_pre [Proof.RsaPkcs1Enc.decryptPrecomputedBodyContract, Proof.RsaPkcs1Enc.decryptPrecomputedBodySig,
+    Proof.RsaPkcs1Enc.decryptSig, abi, argSlots, argVal, argBytes, stackBelow, e, esp,
     stackBytes, frameBytes, Spec.Rsa.lenValid, Spec.Rsa.scratchWords, Spec.Rsa.privatePrecomputedWords]
   sig_and_intros
   rotate_right
@@ -335,7 +349,7 @@ theorem codeP_sp (v : Backend) (c : CrtImpl) (w : CrtPImpl) :
     (decryptCodeP v c w).all (fun i => !isa.writesSp i) = true :=
   Proof.Rsa.X86.PrivChecked.noSp_allStack (codeP_noSp v c w)
 
-/-- `vg_rsa_pkcs1_decrypt_precomputed` with the backend `v`, calling
+/-- `vg_rsa_pkcs1_decrypt_precomputed_body` with the backend `v`, calling
 `vg_rsa_private_checked_precomputed` over `c` and `vg_rsa_private_crt_precomputed`. -/
 theorem decryptPrecomputed_verified (v : Backend) (c : CrtImpl) :
     Verified target (decryptCodeP v c crtPBaseline) specP :=

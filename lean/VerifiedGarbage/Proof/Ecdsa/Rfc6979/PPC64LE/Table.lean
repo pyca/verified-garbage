@@ -53,8 +53,23 @@ def cfgT (R : RfcCurve) (tries : Nat) (vs : List HVar) : Cfg where
 /-- `vg_ecdsa_<curve>_sign`. -/
 def signCodeT (R : RfcCurve) (tries : Nat) (vs : List HVar) : Prog isa := (cfgT R tries vs).sign
 
-/-- The stack it uses. -/
-def stackT : Nat := 736
+/-- The stack its contract gives it: its frames' 640 bytes and the 144
+bytes below them that the table's functions may use (HMAC's `init` for a key
+of any length, `Hash.initAny`, for a key longer than a block, which it never
+passes: the proof needs only 96 of them, `rfcPPC_pre_mono`). -/
+def stackT : Nat := 784
+
+/-- The precondition with `N` bytes of stack gives it with the 736 the
+proof is written against. -/
+theorem rfcPPC_pre_mono {I : Proof.Ecdsa.Rfc6979.Instance} {TF : State → Prop} {ns : List String}
+    {cs : List (String × List (BitVec 64))} {N : Nat} (hN : 736 ≤ N) {s : State}
+    (h : (rfcPPC I N TF ns cs).pre s) : (rfcPPC I 736 TF ns cs).pre s := by
+  obtain ⟨hrd, hwr, od, og, oc, dc, gc, ko, kd, kg, kc, no, nd, ng, nc, hsp, nt, tout, tsc, tstk, tf, held, tbl⟩ := h
+  have hsub : Region.Sub (below s.sp 736) (below s.sp N) := below_sub hN (by have := s.sp.isLt; omega_using [hsp, this])
+  exact ⟨hrd, hwr, od, og, oc, dc, gc, ko.sub_left hsub, kd.sub_left hsub, kg.sub_left hsub, kc.sub_left hsub,
+    no, nd, ng, nc, by omega_using [hsp, hN], nt, tout, tsc, tstk.sub_left hsub, tf, held, fun t ht =>
+      let ⟨a, b, c, d, e⟩ := tbl t ht
+      ⟨a, b, c, d.sub_left hsub, e⟩⟩
 
 /-! ## The variants -/
 
@@ -185,7 +200,8 @@ theorem signT_ok (hC : CurveT R T) {s : State} (h : (tabK R T vs).pre s) :
   obtain ⟨w, -, hw, hp⟩ := h
   unfold signCodeT
   rw [cfgT_eq hC vs hw]
-  refine WP.mono (sign_ok (P := hashOf hC vs w hw) (ns := names vs) hp.1) fun s' ⟨hab, hpost⟩ => ⟨hab, ?_⟩
+  refine WP.mono (sign_ok (P := hashOf hC vs w hw) (ns := names vs) (rfcPPC_pre_mono (by decide) hp.1))
+    fun s' ⟨hab, hpost⟩ => ⟨hab, ?_⟩
   intro w' _ hw' hp'
   obtain ⟨hG, hH⟩ := same_hash hw hw' (hp'.2.symm.trans hp.2)
   rw [hG, hH]
@@ -213,7 +229,8 @@ theorem signT_ct (hC : CurveT R T) (B : RfcT (cfgC R.w R.Q R.big R.sh R.C.E.curv
     · exact this.1
     · exact this.2.1
     · exact this.2.2
-  exact sign_ct (P := hashOf hC vs w hw) B hns s₁ s₂ t₁ t₂ s₁' s₂' p₁.1 p₂.1 hpub e₁ e₂
+  exact sign_ct (P := hashOf hC vs w hw) B hns s₁ s₂ t₁ t₂ s₁' s₂' (rfcPPC_pre_mono (by decide) p₁.1)
+    (rfcPPC_pre_mono (by decide) p₂.1) hpub e₁ e₂
 
 end VG.Proof.Ecdsa.Rfc6979.PPC64LE
 
@@ -255,18 +272,18 @@ theorem preW_of {w : HVar} (hv : w ∈ vs) (hO : OK vs) {s : State}
     (dc : Region.Disjoint ⟨s.gpr .r4, T.ecdsa.curve.len⟩ ⟨s.gpr .r7, 8192⟩)
     (gc : Region.Disjoint ⟨s.gpr .r5, w.H.D⟩ ⟨s.gpr .r7, 8192⟩)
     (ct : Region.Disjoint ⟨s.gpr .r7, 8192⟩ ⟨s.gpr .r8, 48⟩)
-    (ko : (below s.sp 736).Disjoint ⟨s.gpr .r3, 2 * T.ecdsa.curve.len⟩)
-    (kd : (below s.sp 736).Disjoint ⟨s.gpr .r4, T.ecdsa.curve.len⟩)
-    (kg : (below s.sp 736).Disjoint ⟨s.gpr .r5, w.H.D⟩)
-    (kc : (below s.sp 736).Disjoint ⟨s.gpr .r7, 8192⟩)
-    (kt : (below s.sp 736).Disjoint ⟨s.gpr .r8, 48⟩)
+    (ko : (below s.sp 784).Disjoint ⟨s.gpr .r3, 2 * T.ecdsa.curve.len⟩)
+    (kd : (below s.sp 784).Disjoint ⟨s.gpr .r4, T.ecdsa.curve.len⟩)
+    (kg : (below s.sp 784).Disjoint ⟨s.gpr .r5, w.H.D⟩)
+    (kc : (below s.sp 784).Disjoint ⟨s.gpr .r7, 8192⟩)
+    (kt : (below s.sp 784).Disjoint ⟨s.gpr .r8, 48⟩)
     (no : (s.gpr .r3).toNat + 2 * T.ecdsa.curve.len ≤ 2 ^ 64) (nd : (s.gpr .r4).toNat + T.ecdsa.curve.len ≤ 2 ^ 64)
-    (ng : (s.gpr .r5).toNat + w.H.D ≤ 2 ^ 64) (nc : (s.gpr .r7).toNat + 8192 ≤ 2 ^ 64) (hsp : 736 ≤ s.sp.toNat)
+    (ng : (s.gpr .r5).toNat + w.H.D ≤ 2 ^ 64) (nc : (s.gpr .r7).toNat + 8192 ≤ 2 ^ 64) (hsp : 784 ≤ s.sp.toNat)
     (nt : (s.gpr .r8).toNat + 48 ≤ 2 ^ 64)
     (held : Abi.constsHeld s.mem s.syms R.C.cs)
     (fit : ∀ t ∈ Abi.constRegions s.syms R.C.cs, t.base.toNat + t.len ≤ 2 ^ 64 ∧
       t.Disjoint ⟨s.gpr .r3, 2 * T.ecdsa.curve.len⟩ ∧ t.Disjoint ⟨s.gpr .r7, 8192⟩ ∧
-      (below s.sp 736).Disjoint t ∧ t.base.toNat % 64 = 0)
+      (below s.sp 784).Disjoint t ∧ t.base.toNat % 64 = 0)
     (hheld : HeldW w s) (hpw : (names vs).Pairwise fun f g => f ≠ g → s.syms f ≠ s.syms g) :
     PreW R T vs w s := by
   have hh := held_tableOf hheld
@@ -581,6 +598,95 @@ theorem sat_one (hO : OK vs) {n : String} {W : List (BitVec 64)} (m₀ : Mem) (h
        exact Region.disjoint_of_sep (by
          simp only [Region.sep, Bool.and_eq_true, Bool.or_eq_true, decide_eq_true_eq]; bv_omega))
 
+
+/-- `symT`, with a second table of constants, `n₂`, at `0x200000`. -/
+def symT2 (vs : List HVar) (n₂ : String) (n : String) : Addr :=
+  if n ∈ names vs then symsOf (names vs) n else if n = n₂ then 0x200000 else 0x100000
+
+/-- `satT`, with the addresses of `symT2`. -/
+def satT2 (vs : List HVar) (n₂ : String) (w : HVar) (m₀ : Mem) (Q : Nat) (Tr : List Region) : State where
+  gpr r := match r with
+    | .r3 => 0x1000 | .r4 => 0x2000 | .r5 => 0x3000 | .r6 => BitVec.ofNat 64 w.H.D | .r7 => 0x8000
+    | .r8 => 0x300000 | _ => 0
+  lr := 0
+  sp := 0x20000
+  mem := put6 m₀ 0x300000 (symT2 vs n₂ w.initN) (symT2 vs n₂ w.H.updN) (symT2 vs n₂ w.finN)
+    (BitVec.ofNat 64 (Spec.HashTable.index w.G)) (BitVec.ofNat 64 w.G.len)
+    (BitVec.ofNat 64 (Spec.HmacTable.blockSize w.G))
+  rd := [⟨0x2000, Q⟩, ⟨0x3000, w.H.D⟩, ⟨0x300000, 48⟩] ++ Tr
+  wr := [⟨0x1000, 2 * Q⟩, ⟨0x8000, 8192⟩]
+  syms := symT2 vs n₂
+
+theorem satT2_held (vs : List HVar) (n₂ : String) (w : HVar) (m₀ : Mem) (Q : Nat) (Tr : List Region) :
+    Abi.tableHeld 64 (satT2 vs n₂ w m₀ Q Tr).mem 0x300000
+      (FnTable.words isa (satT2 vs n₂ w m₀ Q Tr) (tableOf w)) :=
+  put6_held (ws := [symT2 vs n₂ w.initN, symT2 vs n₂ w.H.updN, symT2 vs n₂ w.finN,
+    BitVec.ofNat 64 (Spec.HashTable.index w.G), BitVec.ofNat 64 w.G.len,
+    BitVec.ofNat 64 (Spec.HmacTable.blockSize w.G)]) rfl
+
+theorem symT2_distinct {vs : List HVar} {n₂ : String} (hl : (names vs).length < 2 ^ 32) :
+    (names vs).Pairwise fun f g => f ≠ g → symT2 vs n₂ f ≠ symT2 vs n₂ g :=
+  (symsOf_distinct hl).imp_of_mem fun {f g} hf hg h hne => by
+    simp only [symT2, hf, hg, ite_true]; exact h hne
+
+theorem constRegions_symT2 (vs : List HVar) (n₁ n₂ : String) (W₁ W₂ : List (BitVec 64)) (hna₁ : n₁ ∉ names vs)
+    (hna₂ : n₂ ∉ names vs) (hne : n₁ ≠ n₂) :
+    Abi.constRegions (fun name => symT2 vs n₂ name) [(n₁, W₁), (n₂, W₂)] =
+      [⟨0x100000, 8 * W₁.length⟩, ⟨0x200000, 8 * W₂.length⟩] := by
+  simp only [Abi.constRegions, List.map_cons, List.map_nil, symT2, hna₁, hna₂, hne, ite_false, ite_true]
+
+/-- A state meeting the contract with two tables of constants: `W₁`, which
+the memory `m₀` holds at `0x100000`, and `W₂`, at `0x200000`. -/
+theorem sat_two (hO : OK vs) {n₁ n₂ : String} {W₁ W₂ : List (BitVec 64)} (m₀ : Mem) (hna₁ : n₁ ∉ names vs)
+    (hna₂ : n₂ ∉ names vs) (hne : n₁ ≠ n₂) (hW₁ : 8 * W₁.length ≤ 0x100000) (hW₂ : 8 * W₂.length ≤ 0x100000)
+    (hheld₁ : ∀ i < W₁.length, m₀.readW (0x100000 + BitVec.ofNat 64 (8 * i)) 64 = W₁.getD i 0)
+    (hheld₂ : ∀ i < W₂.length, m₀.readW (0x200000 + BitVec.ofNat 64 (8 * i)) 64 = W₂.getD i 0)
+    (hQ : T.ecdsa.curve.len ≤ 66) (hsw : T.scratchWords = 1024) :
+    ∃ s, (specK T [(n₁, W₁), (n₂, W₂)] vs).pre s := by
+  obtain ⟨w, hv⟩ := List.exists_mem_of_ne_nil vs hO.2.2.1
+  have hw := hO.2.2.2 w hv
+  refine ⟨satT2 vs n₂ w m₀ T.ecdsa.curve.len [⟨0x100000, 8 * W₁.length⟩, ⟨0x200000, 8 * W₂.length⟩], ?_⟩
+  sig_pre [Spec.Ecdsa.Rfc6979.TableInstance.signContract, Spec.Ecdsa.Rfc6979.TableInstance.signSig,
+    Spec.HmacTable.param, Spec.HmacTable.wordCount, Spec.HmacTable.fns, Abi.withTables, Sig.wordIndex,
+    PPC64LE.abi, PPC64LE.argRegs, Abi.withConsts, stackBelow, stackT, String.reduceEq, Option.map_some,
+    List.getD_cons_succ, List.getD_cons_zero, Option.some.injEq, exists_eq_left', hsw, tableRegion_eq,
+    List.append_nil, names_eq]
+  have hD : w.H.D ≤ 64 := by
+    have h := hw.2.1
+    simp only [shapes, List.mem_cons, Prod.mk.injEq, List.not_mem_nil, or_false] at h
+    omega_using [h]
+  have hDn : (BitVec.ofNat 64 w.H.D).toNat = w.H.D := by rw [BitVec.toNat_ofNat]; omega_using [hD]
+  have hsym₁ : symT2 vs n₂ n₁ = 0x100000 := by simp only [symT2, hna₁, hne, ite_false]
+  have hsym₂ : symT2 vs n₂ n₂ = 0x200000 := by simp only [symT2, hna₂, ite_false, ite_true]
+  have hG : Spec.HmacTable.hashAt 64 (satT2 vs n₂ w m₀ T.ecdsa.curve.len
+      [⟨0x100000, 8 * W₁.length⟩, ⟨0x200000, 8 * W₂.length⟩]).mem 0x300000 = some w.G :=
+    hashAt_tableOf (held_tableOf (satT2_held vs n₂ w m₀ _ _)).2.1
+  simp only [hsw, hDn, satT2] at hG ⊢
+  sig_and_intros
+  all_goals try (intro c hc; simp only [List.mem_cons, List.not_mem_nil, or_false] at hc; rcases hc with rfl | rfl)
+  all_goals try (intro t ht; rw [constRegions_symT2 vs n₁ n₂ W₁ W₂ hna₁ hna₂ hne] at ht; simp only [List.mem_cons, List.not_mem_nil, or_false] at ht; rcases ht with rfl | rfl)
+  all_goals first
+    | decide
+    | rfl
+    | (intro i hi; dsimp only at hi ⊢; rw [hsym₁, put6_below (by bv_omega)]; exact hheld₁ i hi)
+    | (intro i hi; dsimp only at hi ⊢; rw [hsym₂, put6_below (by bv_omega)]; exact hheld₂ i hi)
+    | exact ⟨tableOf w, List.mem_map_of_mem hv, satT2_held vs n₂ w m₀ _ _⟩
+    | (rw [List.append_eq, List.append_nil]; exact symT2_distinct hO.2.1)
+    | exact (constRegions_symT2 vs n₁ n₂ W₁ W₂ hna₁ hna₂ hne).symm
+    | (show (1048576 : BitVec 64).toNat % 64 = 0; decide)
+    | (show (2097152 : BitVec 64).toNat % 64 = 0; decide)
+    | (refine ⟨show (1048576 : BitVec 64).toNat + 8 * W₁.length ≤ 2 ^ 64 by bv_omega, ?_, ?_, ?_⟩ <;>
+       exact Region.disjoint_of_sep (by
+         simp only [Region.sep, Bool.and_eq_true, Bool.or_eq_true, decide_eq_true_eq]; bv_omega))
+    | (refine ⟨show (2097152 : BitVec 64).toNat + 8 * W₂.length ≤ 2 ^ 64 by bv_omega, ?_, ?_, ?_⟩ <;>
+       exact Region.disjoint_of_sep (by
+         simp only [Region.sep, Bool.and_eq_true, Bool.or_eq_true, decide_eq_true_eq]; bv_omega))
+    | (intro H hH
+       obtain rfl := Option.some.inj (hH.symm.trans hG)
+       exact ⟨w.len.symm, by rw [hw.hmac]; rfl⟩)
+    | exact Region.disjoint_of_sep (by
+        simp only [Region.sep, Bool.and_eq_true, Bool.or_eq_true, decide_eq_true_eq]; bv_omega)
+    | bv_omega
 /-- `vg_ecdsa_<curve>_sign`, with the tables of `vs`, meets
 `TableInstance.signContract` (given a state that meets it). -/
 theorem signT_verified (hC : CurveT R T) (B : RfcT (cfgC R.w R.Q R.big R.sh R.C.E.curve.n))

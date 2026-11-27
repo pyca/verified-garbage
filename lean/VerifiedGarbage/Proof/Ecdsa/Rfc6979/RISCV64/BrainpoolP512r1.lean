@@ -9,7 +9,13 @@ import VerifiedGarbage.Proof.Framework.RISCV64.CallAny
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.RISCV64.TableSat
 public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
 public import VerifiedGarbage.Proof.Framework.TaintBatch
+public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
+public import VerifiedGarbage.Impl.Ecdsa.Rfc6979.RISCV64.Fn
+public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.RISCV64.Scrub
+public import VerifiedGarbage.Proof.Variants.MdHash.RISCV64
 import VerifiedGarbage.Proof.Weierstrass.RISCV64.BrainpoolP512r1Order.Lit
+import VerifiedGarbage.Proof.Framework.KernelRfl
 meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.RISCV64.Common
 meta import VerifiedGarbage.Proof.Ecdsa.RISCV64.BrainpoolP512r1.Sign
 meta import VerifiedGarbage.Spec.Ecdsa.BrainpoolP512r1
@@ -20,6 +26,12 @@ meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.RISCV64.TableSat
 meta import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Weierstrass.RISCV64.BrainpoolP512r1Order.Lit
+meta import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
+meta import VerifiedGarbage.Impl.Ecdsa.Rfc6979.RISCV64.Fn
+meta import VerifiedGarbage.Proof.Framework.Registration
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.RISCV64.Scrub
+meta import VerifiedGarbage.Proof.Variants.MdHash.RISCV64
+meta import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-!
 # Deterministic ECDSA on RISC-V: brainpoolp512r1's kit
@@ -156,5 +168,34 @@ theorem verifiedT (hL : VG.Proof.Weierstrass.Law Spec.BrainpoolP512r1.curve) (vs
     Verified RISCV64.target (signCodeT (curveT hL) Spec.Ecdsa.Rfc6979.Curves.brainpoolp512r1.tries vs)
       (specK Spec.Ecdsa.Rfc6979.Curves.brainpoolp512r1 (kit hL).K vs) := by
   exact signT_spec ⟨rfl, by decide, by decide⟩ (checksT hL) rfl h (sat_nil h (by decide) rfl)
+
+/-! ## The function, as emitted
+
+`vg_ecdsa_brainpoolp512r1_sign` as emitted, cleanup included
+(`Impl.Ecdsa.Rfc6979.RISCV64.Fn.brainpoolp512r1`), with the tables of the hash functions
+of `Proof.Variants.MdHash.RISCV64.variants`: the theorem its registration file
+binds. What the cleanup needs of the code with nothing in the place of HMAC's
+functions (`RISCV64.Scrub.scrubSide`) is evaluated here, by the kernel; that
+of the hash functions, where each is defined (`HVar.scrub`). -/
+
+section
+
+open VG.Proof.Variants.MdHash.RISCV64 (variants fns)
+
+/-- What the cleanup needs of the code, with nothing in the place of HMAC's
+functions. -/
+theorem stub_side : RISCV64.Scrub.scrubSide
+    (Impl.Ecdsa.Rfc6979.RISCV64.Fn.brainpoolp512r1Cfg Proof.Ecdsa.Rfc6979.RISCV64.Scrub.stubFns).sign 512 32 [] = true := by
+  lit_decide
+
+/-- `vg_ecdsa_brainpoolp512r1_sign` as emitted, for the curve's group law `hL`: it meets
+its contract in constant time and returns without secret residue. -/
+theorem sign_scrubbed (hL : VG.Proof.Weierstrass.Law Spec.BrainpoolP512r1.curve) :
+    VerifiedScrubbed RISCV64.target (Impl.Ecdsa.Rfc6979.RISCV64.Fn.brainpoolp512r1 fns)
+      (specK Spec.Ecdsa.Rfc6979.Curves.brainpoolp512r1 (kit hL).K variants) 32 :=
+  Proof.Ecdsa.Rfc6979.RISCV64.Scrub.sign_scrubbed Impl.Ecdsa.Rfc6979.RISCV64.Fn.brainpoolp512r1Cfg
+    (verifiedT hL variants Proof.Ecdsa.Rfc6979.RISCV64.Scrub.variants_ok) rfl stub_side
+
+end
 
 end VG.Proof.Ecdsa.Rfc6979.RISCV64.BrainpoolP512r1

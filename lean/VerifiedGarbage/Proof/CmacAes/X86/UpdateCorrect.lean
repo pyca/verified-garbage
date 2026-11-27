@@ -1,11 +1,25 @@
 module
 
 public import VerifiedGarbage.Proof.CmacAes.X86.UpdateLoop
+public import VerifiedGarbage.Proof.Aes.X86.Chain
+import VerifiedGarbage.Proof.Framework.X86.Exec
+import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.X86.Reduce
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # AES-CMAC on x86: `vg_cmac_aes_update` is correct
+
+The chaining by calls (`updateCalls`), for any implementation of
+`vg_aes_ctr32_to`, and the chaining around any chain (`updateChain`), which
+shares its prologue and epilogue and their invariant (`LInv`): between them
+the memory changes only within the chain's bytes of the scratch buffer, and
+the chaining value is in a register (`Chain.mid_wp`), until it is stored in
+the state.
 -/
 
 @[expose] public section
@@ -80,10 +94,92 @@ theorem mid_wp {s₀ : State} (hp : UPre s₀) {s₁ : State} (h : LInv s₀ 0 s
   · refine WP.ite false (by rw [ev]; simp [hn]) (fun h => by cases h) fun _ => ?_
     exact loop_ok v hp (by omega_using [hn]) h
 
-theorem update_wp {s₀ : State} (h0 : updateX86.pre s₀) :
-    WP isa (update v.callee) s₀ fun s' => abiPreserved s₀ s' ∧ updateX86.post s₀ s' := by
+theorem updateCalls_wp {s₀ : State} (h0 : updateX86.pre s₀) :
+    WP isa (updateCalls v.callee) s₀ fun s' => abiPreserved s₀ s' ∧ updateX86.post s₀ s' := by
   have hp := UPre.of h0
   exact WP.seq (WP.mono (prologue_wp hp) fun s₁ ⟨h₁, hz⟩ =>
     WP.seq (WP.mono (mid_wp v hp h₁ hz) fun _ h₂ => epilogue_wp hp h₂))
+
+/-! ## Around a chain -/
+
+open VG.Proof.Aes.X86.AesNi (st st_ext getD_st getD_ofFn byte_xor)
+open VG.Proof.Aes.X86.Chain (ChainOk Env pxor cmac_ok st_readW st_getD of_ok)
+
+/-- `pxor` of two registers is §4.2's `⊕` of their bytes. -/
+theorem st_pxor (a d : BitVec 128) :
+    (Vector.ofFn fun i : Fin 16 => (Spec.Cmac.xor (st a).toList (st d).toList).getD i 0) = st (pxor a d) := by
+  apply st_ext
+  intro i hi
+  rw [getD_ofFn hi, Proof.Cmac.getD_xor (by simp) (by simpa using hi), st_getD a hi, st_getD d hi, getD_st _ hi]
+  exact (byte_xor a d i).symm
+
+theorem env_of {s₀ : State} (hp : UPre s₀) {s : State} (h : LInv s₀ 0 s) :
+    Env (W s₀) (R s₀) (St s₀) (Dp s₀) (N s₀) (S s₀) s := by
+  have big := UPre.big_of h.frame
+  have ha : ∀ i, argAddr s i = argAddr s₀ i := fun i => by simp only [argAddr, h.esp]
+  have hrw : s.rd ++ s.wr = s₀.rd ++ s₀.wr := by rw [h.rd, h.wr]
+  have arg' : ∀ {i : Nat}, i < 6 → arg s i = arg s₀ i := fun hi => by
+    show s.mem.readW (argAddr s _) 32 = _
+    rw [ha]; exact hp.arg_keep big hi
+  exact {
+    a0 := arg' (by decide), a1 := (arg' (by decide)).trans (arg_ofNat s₀ 1)
+    a2 := arg' (by decide), a3 := arg' (by decide), a4 := (arg' (by decide)).trans (arg_ofNat s₀ 4)
+    a5 := arg' (by decide)
+    argIn := fun i hi => by rw [hrw, ha]; exact hp.arg_in hi
+    argScr := fun i hi => by rw [ha]; exact hp.args_scr.sub_left (hp.arg_sub hi)
+    rounds := hp.rounds, schFit := hp.sch_fit, sch := by rw [hrw, hp.rd]; simp
+    schScr := hp.sch_scr, scrFit := hp.scr_fit, scr := by rw [h.wr, hp.wr]; simp
+    iv := by rw [h.wr, hp.wr]; simp
+    ivScr := hp.st_scr, datFit := hp.data_fit, dat := by rw [hrw, hp.rd]; simp
+    datScr := hp.data_scr }
+
+theorem chainMid_wp {c : Impl.Aes.X86.Chain} (hc : ChainOk c) {s₀ : State} (hp : UPre s₀) {s₁ : State}
+    (h : LInv s₀ 0 s₁) (hn : 0 < N s₀) :
+    WP isa (c.mid Impl.Aes.X86.Chain.cmac) s₁ (LInv s₀ (N s₀)) := by
+  have hle := hc.le
+  have hs : Proof.Aes.X86.Chain.sched (W s₀) (R s₀) s₁.mem = Proof.Aes.X86.Chain.sched (W s₀) (R s₀) s₀.mem :=
+    UPre.sched_bytes hp (UPre.big_of h.frame)
+  have wsub : Region.Sub ⟨(S s₀).setWidth 64, c.written⟩ ⟨(S s₀).setWidth 64, 2064⟩ :=
+    Region.sub_prefix (by omega_using [hle])
+  refine WP.mono (Proof.Aes.X86.Chain.mid_wp (w := none) hc cmac_ok (env_of hp h) (fun hw => nomatch hw) hn (I := fun k x m =>
+    Frame [stR s₀, ⟨(S s₀).setWidth 64, 2064⟩, stkR s₀] (savedMem s₀) m ∧
+      (st x).toList = Spec.Cmac.chain (ciph s₀) (Spec.Aes.bytesAt s₀.mem ((St s₀).setWidth 64) 16) ((blks s₀).take k))
+    ⟨h.frame, by rw [st_readW]; exact h.state⟩ (fun hI hf => ⟨hI.1.trans (hf.sub fun r hr => ?_), hI.2⟩)
+    (fun hk hI hE => ⟨hI.1, ?_⟩)) fun t ⟨x, m', hI, hf, hm', esi, esp, rd, wr⟩ =>
+      ⟨esi, esp.trans h.esp, rd.trans h.rd, wr.trans h.wr, ?_, ?_⟩
+  · simp only [List.mem_singleton] at hr; subst hr
+    exact ⟨⟨(S s₀).setWidth 64, 2064⟩, by simp, wsub⟩
+  · rename_i k x e m
+    rw [hs] at hE
+    rw [take_succ_blks s₀ hk, Proof.Cmac.chain_append, Proof.Cmac.chain_single, ← hI.2,
+      ← UPre.block_bytes hp (UPre.big_of hI.1) hk, ← st_readW, hE]
+    exact congrArg (fun x => (Spec.Aes.cipher (R s₀) _ x).toList) (st_pxor _ _).symm
+  · rw [hm']
+    exact hI.1.writeW (r := stR s₀) List.mem_cons_self _ (Region.contains_self _ _)
+  · rw [hm', ← st_readW, Mem.readW_writeW_self _ _ 16 _ (by decide)]
+    exact hI.2
+
+theorem updateChain_wp {c : Impl.Aes.X86.Chain} (hc : ChainOk c) {s₀ : State} (h0 : updateX86.pre s₀) :
+    WP isa (updateChain c) s₀ fun s' => abiPreserved s₀ s' ∧ updateX86.post s₀ s' := by
+  have hp := UPre.of h0
+  refine WP.seq (WP.mono (prologue_wp hp) fun s₁ ⟨h₁, hz⟩ => WP.seq (WP.mono ?_ fun _ h₂ => epilogue_wp hp h₂))
+  have ev : isa.eval .e s₁ = some (decide (N s₀ = 0)) := by
+    show VG.X86.eval .e s₁ = _; rw [eval_e, hz]
+  by_cases hn : N s₀ = 0
+  · refine WP.ite true (by rw [ev]; simp [hn]) (fun _ => WP.block_nil ?_) (fun h => by cases h)
+    rw [hn]; exact h₁
+  · exact WP.ite false (by rw [ev]; simp [hn]) (fun h => by cases h) fun _ =>
+      chainMid_wp hc hp h₁ (by omega_using [hn])
+
+theorem update_cases (c : Impl.Aes.X86.Ctr32) :
+    (∃ k, Impl.Aes.X86.Chain.of c.name = some k ∧ update c = updateChain k) ∨ update c = updateCalls c :=
+  Proof.Aes.X86.Chain.choose_cases _ _ _
+
+/-- `vg_cmac_aes_update` over `v`, whichever chaining it is. -/
+theorem update_wp {s₀ : State} (h0 : updateX86.pre s₀) :
+    WP isa (update v.callee) s₀ fun s' => abiPreserved s₀ s' ∧ updateX86.post s₀ s' := by
+  rcases update_cases v.callee with ⟨c, h, e⟩ | e <;> rw [e]
+  · exact updateChain_wp (of_ok h) h0
+  · exact updateCalls_wp v h0
 
 end VG.Proof.CmacAes.X86

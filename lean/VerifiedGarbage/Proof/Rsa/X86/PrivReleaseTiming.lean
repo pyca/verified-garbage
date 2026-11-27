@@ -1,10 +1,39 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86.PrivReleaseTail
-public import VerifiedGarbage.Proof.Rsa.X86.PrivLoopTiming
 import VerifiedGarbage.Proof.Rsa.X86.PrivMasks
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Impl.Rsa.X86.PrivChecked
+public import VerifiedGarbage.Proof.Framework.X86.RelCT
+
+/-! ### `Rsa.X86.PrivLoopTiming`, which this module and modules that import it used -/
+
+section
+
+/-! # Comparison and candidate erasure disclose only public addresses and length -/
+
+@[expose] public section
+namespace VG.Proof.Rsa.X86.PrivChecked
+open VG VG.X86 VG.Impl.Rsa.X86.PrivChecked VG.Proof.Dsa.X86
+
+def loopTaint : VG.X86.Taint.T := τr [.esp, .esi, .edi, .ecx]
+
+theorem compareBytes_relCT : RelCT isa (VG.X86.Taint.Agree loopTaint) compareBytes
+    (VG.X86.Taint.Agree loopTaint) := by
+  apply checkedProgramChange (hint := VG.Taint.hintOf taint loopTaint compareBytes) rfl
+  rfl
+
+theorem releaseLoop_relCT : RelCT isa (VG.X86.Taint.Agree loopTaint) releaseLoop
+    (VG.X86.Taint.Agree loopTaint) := by
+  apply checkedProgramChange (hint := VG.Taint.hintOf taint loopTaint releaseLoop) rfl
+  rfl
+
+end VG.Proof.Rsa.X86.PrivChecked
+
+end
+
+end
 
 /-! # Masking and erasure traces do not depend on the private acceptance decision -/
 

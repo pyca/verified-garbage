@@ -12,6 +12,7 @@
 ))]
 
 mod brainpoolp256r1;
+mod brainpoolp320r1;
 mod brainpoolp384r1;
 mod brainpoolp512r1;
 mod p192;

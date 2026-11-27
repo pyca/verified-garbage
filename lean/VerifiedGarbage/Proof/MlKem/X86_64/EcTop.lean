@@ -1,11 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.EcBase
-import VerifiedGarbage.Proof.MlKem.X86_64.KgCT
+import VerifiedGarbage.Proof.MlKem.X86_64.EncTop
 import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.MlKem.X86_64.EcBase
-meta import VerifiedGarbage.Proof.MlKem.X86_64.KgCT
+meta import VerifiedGarbage.Proof.MlKem.X86_64.EncTop
 meta import VerifiedGarbage.Proof.Framework.KernelRfl
 meta import VerifiedGarbage.Proof.Framework.Offset
 

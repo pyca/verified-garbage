@@ -17,7 +17,7 @@ open VG VG.Arm VG.Impl.Ed25519.Arm VG.Proof.X25519.Arm
 abbrev scalarFinishClob : List Reg := [.r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12]
 
 theorem scalarFinish_ok {b p : BitVec 32} {s : State} (hc : Ctx b s)
-    (hl : Lim s.mem (State.addr b) SR) (hp : s.mem.readW (State.addr b + 32) 32 = p)
+    (hl : Lim s.mem (State.addr b) SR) (hp : s.gpr .r8 = p)
     (hfit : p.toNat + 32 ≤ 2 ^ 32) (hw : (⟨State.addr p, 32⟩ : Region) ∈ s.wr)
     (hsep : (⟨State.addr p, 32⟩ : Region).Disjoint ⟨State.addr b, 8192⟩)
     {g : Reg → BitVec 32} (hs : ScalarSaved (State.addr b) g s.mem) :
@@ -27,7 +27,7 @@ theorem scalarFinish_ok {b p : BitVec 32} {s : State} (hc : Ctx b s)
       Spec.Ed25519.bytesAt t.mem (State.addr p) 32 = Spec.Ed25519.encodeLE 32 (V s.mem (State.addr b) SR) := by
   rw [scalarFinish, List.append_assoc]
   simp only [List.cons_append, List.nil_append]
-  refine ldr0_ok hc (by decide) fun u hu => ?_
+  refine wp_mov (op2_reg _ _) fun u hu => ?_
   have hcu := hc.of_rest (hu.rest (ws := [.r12]) (by decide)) (by decide)
   refine WP.append (packField_ok (p := p) (a := SR) (dst := 0) hcu (by decide) (hu.mem ▸ hl) (by decide)
     (hu.gpr.trans hp) (by omega_using [hfit])

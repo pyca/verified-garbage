@@ -77,7 +77,7 @@ theorem extract_cat (a b c d : BitVec 8) :
     (a ++ b ++ c ++ d).extractLsb' 0 8 = d ∧ (a ++ b ++ c ++ d).extractLsb' 8 8 = c ∧
       (a ++ b ++ c ++ d).extractLsb' 16 8 = b ∧ (a ++ b ++ c ++ d).extractLsb' 24 8 = a := by
   refine ⟨?_, ?_, ?_, ?_⟩ <;> apply BitVec.eq_of_getLsbD_eq <;> intro i hi <;>
-    simp (disch := omega) only [BitVec.getLsbD_extractLsb', BitVec.getLsbD_append, hi, decide_true,
+    simp (disch := omega_arith) only [BitVec.getLsbD_extractLsb', BitVec.getLsbD_append, hi, decide_true,
       Bool.true_and, ite_eq_left, ite_eq_right] <;>
     exact congrArg _ (by omega_using [])
 
@@ -86,7 +86,7 @@ theorem rot_cat (a b c d : BitVec 8) : (a ++ b ++ c ++ d).rotateRight 8 = d ++ a
   have hi' : i < 32 := hi
   simp only [BitVec.getLsbD_rotateRight, BitVec.getLsbD_append, hi', decide_true, Bool.true_and]
   rcases (by omega_using [] : i < 8 ∨ (8 ≤ i ∧ i < 16) ∨ (16 ≤ i ∧ i < 24) ∨ 24 ≤ i) with h | h | h | h <;>
-    simp (disch := omega) only [↓ite_eq_left, ↓ite_eq_right] <;>
+    simp (disch := omega_arith) only [↓ite_eq_left, ↓ite_eq_right] <;>
     exact congrArg _ (by omega_using [])
 
 theorem wv_cat (a b c d : BitVec 8) : wv (a ++ b ++ c ++ d) = [d, c, b, a] := by

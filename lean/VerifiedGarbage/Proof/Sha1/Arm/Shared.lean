@@ -66,6 +66,7 @@ theorem update : Verified Arm.target
   Arm.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 20) (stack := 0) (bytes := 176) (m := 2)
     updateScratch (by decide) (by decide) (by decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Sha1.updatePost_local _)
+    (fun vs mm m₁ m₂ r hl _ hb h => Proof.Sha1.updatePostOut_local _ vs mm m₁ m₂ r hl hb h)
     (by implies_sat [Spec.Sha1.updateContract, Spec.Sha1.updateSig, Arm.abi, Arm.argRegs,
         Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
       [updateFrameSat, MdStream.Arm.Update.sat, Impl.Sha1.Arm.Stream.params, Arm.stackArg,
@@ -81,6 +82,7 @@ theorem finalize : Verified Arm.target
   Arm.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 20) (stack := 0) (bytes := 176) (m := 1)
     finalizeScratch (by decide) (by decide) (by decide) (by decide)
     (fun _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Sha1.finalizePost_local _)
+    (fun vs mm m₁ m₂ r hl _ hb h => Proof.Sha1.finalizePostOut_local _ vs mm m₁ m₂ r hl hb h)
     (by implies_sat [Spec.Sha1.finalizeContract, Spec.Sha1.finalizeSig, Arm.abi, Arm.argRegs,
         Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
       [finalizeFrameSat, MdStream.Arm.Finalize.satBase, Arm.stackArg, Arm.stackArgAddr, Mem.readW,

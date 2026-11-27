@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 /-!
 # P-521's field on RISC-V, for `vg_p521_mul` and its callers
 
-The facts the proofs of `vg_p521_mul` (`Proof/Ecdsa/RISCV64/P521/Window.lean`)
+The facts the proofs of `vg_p521_mul` (`Proof/Ecdsa/RISCV64/P521/MulVerified.lean`)
 and its callers share: P-521's field functions meet the contracts by register
 (`field_ok`), and `R = 2⁵⁷⁶` is a unit modulo `p` (`unit`).
 -/

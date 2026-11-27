@@ -5,7 +5,7 @@ public import VerifiedGarbage.Spec.MlDsa.PkTr
 public import VerifiedGarbage.Proof.MlKem.X86_64.TopBase
 public import VerifiedGarbage.Proof.MlKem.X86_64.Rel
 public import VerifiedGarbage.Proof.MlKem.X86_64.FragHash
-public import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Base
+public import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Call
 import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Seeds
 import VerifiedGarbage.Proof.MlKem.X86_64.Lit
 import VerifiedGarbage.Proof.Framework.Sig
@@ -15,7 +15,7 @@ meta import VerifiedGarbage.Spec.MlDsa.PkTr
 meta import VerifiedGarbage.Proof.MlKem.X86_64.TopBase
 meta import VerifiedGarbage.Proof.MlKem.X86_64.Rel
 meta import VerifiedGarbage.Proof.MlKem.X86_64.FragHash
-meta import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Base
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Call
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Seeds
 meta import VerifiedGarbage.Proof.MlKem.X86_64.Lit
 meta import VerifiedGarbage.Proof.Framework.Sig

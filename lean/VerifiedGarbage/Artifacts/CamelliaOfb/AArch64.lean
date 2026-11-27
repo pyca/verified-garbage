@@ -1,24 +1,30 @@
 module
 
-public import VerifiedGarbage.Proof.Camellia.AArch64.FbVerified
-public import VerifiedGarbage.Proof.Camellia.AArch64.FbFinalVerified
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.AArch64.Print
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Camellia.Ofb
+public import VerifiedGarbage.Spec.Camellia.OfbFinal
+import VerifiedGarbage.Impl.Camellia.AArch64.Fn
+import VerifiedGarbage.Proof.Camellia.AArch64.FbVerified
+import VerifiedGarbage.Proof.Camellia.AArch64.FbFinalVerified
+import VerifiedGarbage.Proof.Camellia.AArch64.Residue
+import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.Camellia.AArch64.FbLit
 import VerifiedGarbage.Proof.Camellia.AArch64.FbFinalLit
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # Camellia-OFB on AArch64 -/
 
-@[expose] public section
-
 namespace VG.Artifacts.CamelliaOfb.AArch64
 
-def artifacts : List Artifact := [
+public def artifacts : List (Artifact AArch64.target) := [
   Spec.Camellia.ofbApi.artifact AArch64.target {
-    code := Impl.StackScratch.AArch64.withStackScratchWiped 3344 .x5 418 Impl.Camellia.AArch64.ofb
-    verified := Proof.Camellia.AArch64.ofb_framed },
+    code := Impl.Camellia.AArch64.Fn.ofb
+    verified := Proof.Camellia.AArch64.Residue.ofbCode_scrubbed },
   Spec.Camellia.ofbFinalApi.artifact AArch64.target {
-    code := Impl.StackScratch.AArch64.withStackScratchWiped 3344 .x5 418 Impl.Camellia.AArch64.ofbFinal
-    verified := Proof.Camellia.AArch64.ofbFinal_framed }]
+    code := Impl.Camellia.AArch64.Fn.ofbFinal
+    verified := Proof.Camellia.AArch64.Residue.ofbFinalCode_scrubbed }]
+
+spec_apis artifacts
 
 end VG.Artifacts.CamelliaOfb.AArch64

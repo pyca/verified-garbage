@@ -3,7 +3,7 @@ module
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JointDigitTiming
 public import VerifiedGarbage.Proof.Weierstrass.JacMul
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointCachedDigit
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafCacheEntryFields
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointCachedEntry
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.RegFieldTiming
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
 import VerifiedGarbage.Proof.Weierstrass.PointContract
@@ -13,7 +13,6 @@ import VerifiedGarbage.Proof.Mont.X86_64.Wide
 import VerifiedGarbage.Proof.Weierstrass.CombLay
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
-import VerifiedGarbage.Proof.Weierstrass.X86_64.NafCacheEntryPoint
 import VerifiedGarbage.Proof.Weierstrass.X86_64.PointFieldTiming
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.Naf
 public import VerifiedGarbage.Proof.Framework.RelCT
@@ -96,7 +95,8 @@ theorem jointCachedSum_relCT {c : Joint.Cfg} {C : Curve} {base : Addr} {size : N
     RelCT isa (FieldPair c.K.M base size C.p (·∈jointSlots c) (cachedSlots c.K.M.n c.K.E c.selected++jointLive c) E)
       (Joint.cachedAdd c).inline
       (fun s t => ∃ E',FieldPair c.K.M base size C.p (·∈jointSlots c) (jointLive c) E' s t) := by
-  refine jointAdd_relCT_dispatch (body := PointOps.addCachedBody c.K c.selected c.dbl) rfl (fun _ => rfl)
+  refine jointAdd_relCT_dispatch (body := PointOps.addCachedBody c.K c.selected c.dbl) rfl
+    (fun C' hp => by simp only [hL.calls.flat C' hp]; rfl)
     (fun C' hp => (hL.calls.ok C' hp).1) ?_
   have sl : ∀ x∈(rcbW c.K.S c.K.D++rcbR c.K.S c.K.R c.K.E)++[c.selected,c.selected+8*c.K.M.n],x∈jointSlots c := by intro x hx; jslots
   have vr : ∀ x∈rcbR c.K.S c.K.R c.K.E++[c.selected,c.selected+8*c.K.M.n],x∈cachedSlots c.K.M.n c.K.E c.selected++jointLive c := by intro x hx; jslots

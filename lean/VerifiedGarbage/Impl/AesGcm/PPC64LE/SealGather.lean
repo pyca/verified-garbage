@@ -32,8 +32,9 @@ namespace VG.Impl.AesGcm.PPC64LE.SealGather
 open VG.PPC64LE
 open VG.Impl.AesGcm.PPC64LE (mov)
 
-/-- `vg_aes_gcm_seal`, in its frame. -/
-def sealCode : Prog isa := Impl.StackScratch.PPC64LE.withStackScratchArgs 2672 1 Impl.AesGcm.PPC64LE.SealFused.seal
+/-- `vg_aes_gcm_seal`, in its frame, which `vg_aes_gcm_seal_gather` calls as the internal
+`vg_aes_gcm_seal_core`: the exported function is followed by the scrub tail. -/
+def sealCode : Prog isa := Impl.StackScratch.PPC64LE.withStackScratchArgs 1264 1 Impl.AesGcm.PPC64LE.SealFused.seal
 
 /-- The arguments the gathering overwrites, and our return address, into the
 frame (`r12` its address); `tag` into the call's stack argument; `src`,
@@ -56,7 +57,7 @@ def ret : List Instr := [.addSp .r12 0, .load .d .r0 .r12 152, .mtlr .r0]
 /-- Copy every piece and seal the contiguous result. -/
 def body : Prog isa :=
   .seq Gather.PPC64LE.gather
-    (.seq (.block callArgs) (.seq (.call "vg_aes_gcm_seal" sealCode) (.block ret)))
+    (.seq (.block callArgs) (.seq (.call "vg_aes_gcm_seal_core" sealCode) (.block ret)))
 
 /-- The common gather frame and argument saves. -/
 def withBody (main : Prog isa) : Prog isa :=

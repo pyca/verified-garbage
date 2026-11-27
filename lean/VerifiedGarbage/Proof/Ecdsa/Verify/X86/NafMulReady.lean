@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafMulSetup
 public import VerifiedGarbage.Proof.Weierstrass.WinLay
 public import VerifiedGarbage.Proof.Weierstrass.X86.Ladder
 public import VerifiedGarbage.Proof.Weierstrass.X86.NafFinish
-public import VerifiedGarbage.Proof.Weierstrass.X86.NafLayout
+public import VerifiedGarbage.Proof.Weierstrass.X86.NafTable
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafAddShared
 
 @[expose] public section

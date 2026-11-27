@@ -1,31 +1,31 @@
 module
 
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.RISCV64.Verified
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.RISCV64.Gather.Verified
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.RISCV64.Print
-import VerifiedGarbage.Spec.ChaCha20Poly1305.OutOfPlace
+public import VerifiedGarbage.TCB.RISCV64.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.ChaCha20Poly1305.Contract
+public import VerifiedGarbage.Spec.ChaCha20Poly1305.OutOfPlace
+import VerifiedGarbage.Proof.ChaCha20Poly1305.RISCV64.Scrub
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # ChaCha20-Poly1305 (RFC 8439 §2.8) on RISC-V -/
 
-@[expose] public section
-
 namespace VG.Artifacts.ChaCha20Poly1305.RISCV64
 
-def artifacts : List Artifact := [
+public def artifacts : List (Artifact RISCV64.target) := [
   Spec.ChaCha20Poly1305.sealApi.artifact RISCV64.target {
-    code := Impl.StackScratch.RISCV64.withStackScratchWiped 624 .a7 78
-      (Impl.ChaCha20Poly1305.RISCV64.inPlace Impl.ChaCha20Poly1305.RISCV64.«seal»)
-    verified := Proof.ChaCha20Poly1305.RISCV64.seal_framed },
+    code := Impl.ChaCha20Poly1305.RISCV64.Fn.«seal»
+    verified := Proof.ChaCha20Poly1305.RISCV64.Scrub.seal_scrubbed },
   Spec.ChaCha20Poly1305.openZeroApi.artifact RISCV64.target {
-    code := Impl.StackScratch.RISCV64.withStackScratchWiped 624 .a7 78
-      (Impl.ChaCha20Poly1305.RISCV64.inPlace Impl.ChaCha20Poly1305.RISCV64.«open»)
-    verified := Proof.ChaCha20Poly1305.RISCV64.open_framed },
+    code := Impl.ChaCha20Poly1305.RISCV64.Fn.«open»
+    verified := Proof.ChaCha20Poly1305.RISCV64.Scrub.open_scrubbed },
   Spec.ChaCha20Poly1305.openToApi.artifact RISCV64.target {
-    code := Impl.StackScratch.RISCV64.withStackScratchArgsWiped 640 1 78 Impl.ChaCha20Poly1305.RISCV64.openTo
-    verified := Proof.ChaCha20Poly1305.RISCV64.openTo_framed },
+    code := Impl.ChaCha20Poly1305.RISCV64.Fn.openTo
+    verified := Proof.ChaCha20Poly1305.RISCV64.Scrub.openTo_scrubbed },
   Spec.ChaCha20Poly1305.sealGatherApi.artifact RISCV64.target {
-    code := Impl.ChaCha20Poly1305.RISCV64.SealGather.sealGather
-    verified := Proof.ChaCha20Poly1305.RISCV64.Gather.sealGather_verified }]
+    code := Impl.ChaCha20Poly1305.RISCV64.Fn.sealGather
+    verified := Proof.ChaCha20Poly1305.RISCV64.Scrub.sealGather_scrubbed }]
+
+spec_apis artifacts
 
 end VG.Artifacts.ChaCha20Poly1305.RISCV64

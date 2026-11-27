@@ -136,10 +136,11 @@ def keyGen : Prog isa :=
   (.seq (.call "vg_chacha20_block" Impl.ChaCha20.PPC64LE.block)
     (.block (copyWords 0 keyOff 4)))
 
-/-- The Poly1305 state for the one-time key, at `ctx[0, 128)`. -/
+/-- The Poly1305 state for the one-time key, at `ctx[0, 128)`, by `vg_poly1305_init`'s code,
+called as the internal `vg_poly1305_init_core`. -/
 def polyInit : Prog isa :=
   .seq (.block [mov .r3 .r24, .addi .r4 .r24 keyOff])
-    (.call "vg_poly1305_init" Impl.Poly1305.PPC64LE.init)
+    (.call "vg_poly1305_init_core" Impl.Poly1305.PPC64LE.init)
 
 /-- `vg_poly1305_blocks`, in its frame. -/
 def blocksCode : Prog isa :=

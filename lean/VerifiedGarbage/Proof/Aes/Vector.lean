@@ -22,7 +22,7 @@ theorem mul_eq : aesMul = Spec.Aes.mul := rfl
 /-- Both square and multiply `b²`, `b⁴`, …, `b¹²⁸` in the same order: unfolded
 to the same term (no evaluation left for the kernel). -/
 theorem inv_eq (b : BitVec 8) : aesInv b = Spec.Aes.inv b := by
-  simp only [aesInv, Spec.Aes.inv, Spec.Aes.pow, List.range_succ,
+  simp only [aesInv, Spec.Aes.inv_eq_pow, Spec.Aes.pow, List.range_succ,
     List.range_zero, List.nil_append, List.foldl_append, List.foldl_cons, List.foldl_nil, mul_eq,
     ite_true, ite_false, Nat.testBit_eq_decide_div_mod_eq, Nat.reducePow, Nat.reduceDiv, Nat.reduceMod,
     Nat.reduceEqDiff, decide_true, decide_false, Bool.false_eq_true]

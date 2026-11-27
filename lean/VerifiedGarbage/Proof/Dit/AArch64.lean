@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.TCB.Registration
 public import VerifiedGarbage.Impl.Dit.AArch64
 meta import VerifiedGarbage.Impl.Dit.AArch64
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
@@ -12,6 +13,8 @@ public import VerifiedGarbage.Proof.Framework.AArch64.Taint
 meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
 public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+import VerifiedGarbage.Proof.Framework.AArch64.Residue
+meta import VerifiedGarbage.Proof.Framework.AArch64.Residue
 public import VerifiedGarbage.Proof.Framework.Block
 meta import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.Framework.Contract
@@ -39,7 +42,8 @@ the same proofs cover all three.
 `enter_dit` and `clear_dit` prove what the contracts cannot name, the
 functions' effect on PSTATE.DIT, of every run of their code in the model:
 after `vg_dit_enter` (or a variant), PSTATE.DIT is 1, and `x0` is 1 if it was 1 on entry
-and 0 if it was 0; after `vg_dit_clear`, it is 0.
+and 0 if it was 0; after `vg_dit_clear`, it is 0. `enter_mode` and the rest say
+so as their `Api`s do (`Api.mode`).
 -/
 
 @[expose] public section
@@ -147,7 +151,7 @@ def sat : State where
   wr := []
 
 /-- `vg_dit_enter`'s contract as it is proven: `contract`, with PSTATE.DIT
-public too, as `Spec.Dit.enterContract` makes it (`Abi.withMode`). -/
+public too, as the calling convention makes it. -/
 def enterK : Contract isa := { contract with pub s t := s.sp = t.sp ∧ s.dit = t.dit }
 
 /-- `vg_dit_enter`, or a variant with barriers `bars`, against its contract,
@@ -170,17 +174,15 @@ theorem enterWith_verified (bars : List Barrier)
   · exact ConstantTime.of_leakage (fun s => [.branch (!s.dit)]) (fun _ _ _ _ h => enter_leak h)
       fun _ _ _ _ h => by rw [h.2]
   · exact {
-      pre := by sig_implies_pre [Spec.Dit.enterContract, Spec.Dit.enterSig, Abi.withMode, enterK,
+      pre := by sig_implies_pre [Spec.Dit.enterContract, Spec.Dit.enterSig, enterK,
         contract, abi, argRegs]
       -- Both postconditions are `True`.
       post := fun _ _ _ _ => trivial
       pub := by
         intro s₁ s₂ _ _ h
-        sig_pub [Spec.Dit.enterContract, Spec.Dit.enterSig, Abi.withMode, abi, argRegs] at h
-        sig_split h
-        refine ⟨by with_reducible assumption, ?_⟩
-        cases h₁ : s₁.dit <;> cases h₂ : s₂.dit <;> simp_all
-      sat := by sig_implies_sat [Spec.Dit.enterContract, Spec.Dit.enterSig, Abi.withMode, enterK,
+        sig_pub_keep [Spec.Dit.enterContract, Spec.Dit.enterSig, abi, argRegs] at h
+        exact h
+      sat := by sig_implies_sat [Spec.Dit.enterContract, Spec.Dit.enterSig, enterK,
         contract, abi, argRegs] [sat] using sat }
 
 theorem enter_verified : Verified target enter (Spec.Dit.enterContract abi) :=
@@ -210,5 +212,88 @@ theorem clear_verified : Verified target clear (Spec.Dit.clearContract abi) := b
       post := fun _ _ _ _ => trivial
       pub := by sig_implies_pub [Spec.Dit.clearContract, Spec.Dit.clearSig, contract, abi, argRegs]
       sat := by sig_implies_sat [Spec.Dit.clearContract, Spec.Dit.clearSig, contract, abi, argRegs] [sat] using sat }
+
+/-! ## Returning without secret residue
+
+The functions read no memory, so what they leave is a function of the
+registers and PSTATE.DIT on entry (`Residue.noResidue_of_blind`). -/
+
+theorem enter_noResidue (k : Contract isa) (r : Nat) : NoResidue enter k r :=
+  Residue.noResidue_of_blind (by decide) k r
+
+theorem enterDsb_noResidue (k : Contract isa) (r : Nat) : NoResidue enterDsb k r :=
+  Residue.noResidue_of_blind (by decide) k r
+
+theorem enterSb_noResidue (k : Contract isa) (r : Nat) : NoResidue enterSb k r :=
+  Residue.noResidue_of_blind (by decide) k r
+
+theorem clear_noResidue (k : Contract isa) (r : Nat) : NoResidue clear k r :=
+  Residue.noResidue_of_blind (by decide) k r
+
+/-- The function as its registration binds it: it meets its contract in constant time and returns
+without secret residue. -/
+theorem _root_.VG.Proof.Dit.AArch64.enter_scrubbed :
+    VerifiedScrubbed AArch64.target Impl.Dit.AArch64.enter
+      (Spec.Dit.enterContract AArch64.abi) 32 :=
+  ⟨Proof.Dit.AArch64.enter_verified,
+    Proof.Dit.AArch64.enter_noResidue _ _, fun ty _ h => by cases ty <;> cases h⟩
+
+/-- The function as its registration binds it: it meets its contract in constant time and returns
+without secret residue. -/
+theorem _root_.VG.Proof.Dit.AArch64.enterDsb_scrubbed :
+    VerifiedScrubbed AArch64.target Impl.Dit.AArch64.enterDsb
+      (Spec.Dit.enterContract AArch64.abi) 32 :=
+  ⟨Proof.Dit.AArch64.enterDsb_verified,
+    Proof.Dit.AArch64.enterDsb_noResidue _ _, fun ty _ h => by cases ty <;> cases h⟩
+
+/-- The function as its registration binds it: it meets its contract in constant time and returns
+without secret residue. -/
+theorem _root_.VG.Proof.Dit.AArch64.enterSb_scrubbed :
+    VerifiedScrubbed AArch64.target Impl.Dit.AArch64.enterSb
+      (Spec.Dit.enterContract AArch64.abi) 32 :=
+  ⟨Proof.Dit.AArch64.enterSb_verified,
+    Proof.Dit.AArch64.enterSb_noResidue _ _, fun ty _ h => by cases ty <;> cases h⟩
+
+/-- The function as its registration binds it: it meets its contract in constant time and returns
+without secret residue. -/
+theorem _root_.VG.Proof.Dit.AArch64.clear_scrubbed :
+    VerifiedScrubbed AArch64.target Impl.Dit.AArch64.clear
+      (Spec.Dit.clearContract AArch64.abi) 0 :=
+  ⟨Proof.Dit.AArch64.clear_verified,
+    Proof.Dit.AArch64.clear_noResidue _ _, fun ty _ h => by cases ty <;> cases h⟩
+
+/-! ## Their effect on the mode, as their `Api`s state it (`Api.mode`) -/
+
+theorem enterWith_mode {k : Contract isa} (bars : List Barrier) :
+    ∀ q, Spec.Dit.enterApi.mode = some q → ∀ s t s', k.pre s → Exec isa (enterWith bars) s t s' →
+      q (abi.mode s) (abi.mode s') (abi.ret s') := by
+  intro q hq s t s' _ he
+  obtain rfl := Option.some.inj hq
+  obtain ⟨hd, hr⟩ := enter_dit he
+  simp only [abi, hd, hr]
+  cases s.dit <;> simp
+
+theorem enter_mode {k : Contract isa} :
+    ∀ q, Spec.Dit.enterApi.mode = some q → ∀ s t s', k.pre s → Exec isa enter s t s' →
+      q (abi.mode s) (abi.mode s') (abi.ret s') :=
+  enterWith_mode []
+
+theorem enterDsb_mode {k : Contract isa} :
+    ∀ q, Spec.Dit.enterApi.mode = some q → ∀ s t s', k.pre s → Exec isa enterDsb s t s' →
+      q (abi.mode s) (abi.mode s') (abi.ret s') :=
+  enterWith_mode [.dsbSy, .isb]
+
+theorem enterSb_mode {k : Contract isa} :
+    ∀ q, Spec.Dit.enterApi.mode = some q → ∀ s t s', k.pre s → Exec isa enterSb s t s' →
+      q (abi.mode s) (abi.mode s') (abi.ret s') :=
+  enterWith_mode [.sb]
+
+theorem clear_mode {k : Contract isa} :
+    ∀ q, Spec.Dit.clearApi.mode = some q → ∀ s t s', k.pre s → Exec isa clear s t s' →
+      q (abi.mode s) (abi.mode s') (abi.ret s') := by
+  intro q hq s t s' _ he
+  obtain rfl := Option.some.inj hq
+  simp only [abi, clear_dit he]
+  rfl
 
 end VG.Proof.Dit.AArch64

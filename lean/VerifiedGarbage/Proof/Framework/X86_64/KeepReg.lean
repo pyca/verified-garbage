@@ -3,6 +3,7 @@ public import VerifiedGarbage.Proof.Framework.X86_64.Taint
 
 import VerifiedGarbage.Proof.Framework.X86_64.Inline
 import VerifiedGarbage.Proof.Framework.X86_64.Masked
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-!
 # Registers kept through SSE registers
@@ -33,7 +34,7 @@ def writesVec : Instr → Bool
   | .zop _
   | .vmovdqu32Load .. | .vbroadcasti32x4 .. | .vbroadcasti32x4H .. | .zbcst .. | .vpbroadcastdZ .. | .zbcstd .. | .vpmadd52Load ..
   | .eop _ | .evLoad .. | .evMadd52Load .. | .kLoad .. | .kLoad8 ..
-  | .e5op _ | .evBroadcastLoad .. | .e5InsertLoad .. => true
+  | .e5op _ | .evMaskAddQ .. | .evBroadcastLoad .. | .e5InsertLoad .. => true
   | _ => false
 
 /-- What is known of `r` after an instruction. -/
@@ -54,26 +55,29 @@ def runC (r : Reg) (is : List Instr) (ok : Bool) (xs : Nat) : Abs := is.foldl (s
 /-- `is.foldl (step r) ⟨ok, ⟨xs⟩⟩`, for the kernel: it looks at what is
 known before each instruction, so that it computes each step's value before
 the next (the fold would leave a term as deep as the block, too deep for the
-kernel in a long one). Compiled code runs `runC` (Lean's compiler does not
-compile `List.rec`). -/
+kernel in a long one). The set of SSE registers is handed on as the numeral
+it is (`RegSet.force` says how `Nat.casesOn` of its successor has it): the
+term a step leaves is one application deeper at every instruction while an
+SSE register holds the value, and the kernel would evaluate it through all
+of them each time it reads it; with numerals, equal states are also equal
+terms, whose steps the kernel finds again. Compiled code runs `runC` (Lean's
+compiler does not compile `List.rec`). -/
 @[implemented_by runC] noncomputable def run (r : Reg) (is : List Instr) : Bool → Nat → Abs :=
   List.rec (fun ok xs => ⟨ok, ⟨xs⟩⟩)
     (fun i _ ih ok xs =>
       let g := fun a : Abs => ih a.ok a.xs.bits
-      bif ok then (bif Nat.beq xs 0 then g (step r ⟨true, ⟨0⟩⟩ i) else g (step r ⟨true, ⟨xs⟩⟩ i))
-      else (bif Nat.beq xs 0 then g (step r ⟨false, ⟨0⟩⟩ i) else g (step r ⟨false, ⟨xs⟩⟩ i))) is
+      Nat.casesOn (motive := fun _ => Abs) (Nat.succ xs)
+        (bif ok then g (step r ⟨true, ⟨xs⟩⟩ i) else g (step r ⟨false, ⟨xs⟩⟩ i))
+        (fun n => bif ok then g (step r ⟨true, ⟨n⟩⟩ i) else g (step r ⟨false, ⟨n⟩⟩ i))) is
 
 theorem run_eq (r : Reg) : ∀ (is : List Instr) (a : Abs), run r is a.ok a.xs.bits = is.foldl (step r) a
   | [], _ => rfl
   | i :: is, ⟨ok, ⟨xs⟩⟩ => by
     have e : ∀ b : Abs, run r is b.ok b.xs.bits = is.foldl (step r) b := run_eq r is
-    show (bif ok then (bif Nat.beq xs 0 then run r is (step r ⟨true, ⟨0⟩⟩ i).ok (step r ⟨true, ⟨0⟩⟩ i).xs.bits
-        else run r is (step r ⟨true, ⟨xs⟩⟩ i).ok (step r ⟨true, ⟨xs⟩⟩ i).xs.bits)
-      else (bif Nat.beq xs 0 then run r is (step r ⟨false, ⟨0⟩⟩ i).ok (step r ⟨false, ⟨0⟩⟩ i).xs.bits
-        else run r is (step r ⟨false, ⟨xs⟩⟩ i).ok (step r ⟨false, ⟨xs⟩⟩ i).xs.bits)) = _
+    show (bif ok then run r is (step r ⟨true, ⟨xs⟩⟩ i).ok (step r ⟨true, ⟨xs⟩⟩ i).xs.bits
+      else run r is (step r ⟨false, ⟨xs⟩⟩ i).ok (step r ⟨false, ⟨xs⟩⟩ i).xs.bits) = _
     rw [List.foldl_cons]
-    cases ok <;> cases h : Nat.beq xs 0 <;> simp only [Bool.cond_true, Bool.cond_false, e] <;>
-      rw [Nat.eq_of_beq_eq_true h]
+    cases ok <;> simp only [Bool.cond_true, Bool.cond_false, e]
 
 /-- What is known of `r` after `c`, from `a`; a loop's body must keep what
 is known on entry. Calls and frames are not followed. -/
@@ -97,7 +101,7 @@ the SSE registers. -/
 theorem step_xs {r : Reg} {i : Instr} (h : writesVec i = false) (a : Abs) : (step r a i).xs = a.xs := by
   unfold step
   split
-  · simp [writesVec] at h
+  · cases h
   · cases _ == r <;> rfl
   · simp only [h, Bool.cond_false]
 
@@ -152,20 +156,20 @@ theorem exec_xmm {i : Instr} (hw : writesVec i = false) {s s' : State} (h : exec
   cases hd : Taint.dstOf i with
   | some d => exact (Taint.exec_nonstore_xmm hd h).2.2.2.1
   | none =>
-    cases i <;> simp only [Taint.dstOf, reduceCtorEq, writesVec, Bool.true_eq_false] at hd hw
+    cases i <;> first | (cases hd; done) | (cases hw; done) | skip
     all_goals first
-      | (simp only [exec, reduceCtorEq] at h; done)
-      | (simp only [exec, Option.some.injEq] at h; subst h; rfl)
+      | (simp only [reduceExec, reduceCtorEq] at h; done)
+      | (simp only [reduceExec, Option.some.injEq] at h; subst h; rfl)
       | (obtain ⟨_, rfl⟩ := State.storeMasked512_eq h; rfl)
       | (obtain ⟨_, rfl⟩ := State.storeMasked512B_eq h; rfl)
-      | (simp only [exec, State.store64, State.store32, State.store8, State.store16, State.store128, State.store512,
+      | (simp only [reduceExec, State.store64, State.store32, State.store8, State.store16, State.store128, State.store512,
           State.store256] at h
          split at h <;> cases h; rfl)
       | (rename_i len _ _; cases len <;>
-          (simp only [exec, State.store128, State.store256] at h; split at h <;> cases h; rfl))
-      | (simp only [exec, Option.bind_eq_some_iff] at h; obtain ⟨_, _, h⟩ := h
+          (simp only [reduceExec, State.store128, State.store256] at h; split at h <;> cases h; rfl))
+      | (simp only [reduceExec, Option.bind_eq_some_iff] at h; obtain ⟨_, _, h⟩ := h
          split at h <;> cases h; rfl)
-      | (simp only [exec, execMulx] at h; split at h
+      | (simp only [reduceExec, execMulx] at h; split at h
          · cases h
          · simp only [Option.map_eq_some_iff] at h; obtain ⟨_, _, rfl⟩ := h; rfl)
 
@@ -186,7 +190,7 @@ theorem step_holds {r : Reg} {v : BitVec 64} {a : Abs} {i : Instr} {s s' : State
   case xop op =>
     cases op
     case movq x q =>
-      simp only [exec, XOp.exec, Option.some.injEq] at h
+      simp only [reduceExec, XOp.exec, Option.some.injEq] at h
       subst h
       simp only [step]
       refine ⟨fun ho => ha.1 ho, fun y hy => ?_⟩
@@ -205,7 +209,7 @@ theorem step_holds {r : Reg} {v : BitVec 64} {a : Abs} {i : Instr} {s s' : State
           exact ha.2 y ((RegSet.mem_insert.mp hy).resolve_left hyx)
     all_goals exact other_holds h ha
   case movqR d x =>
-    simp only [exec, Option.some.injEq] at h
+    simp only [reduceExec, Option.some.injEq] at h
     subst h
     simp only [step]
     by_cases hd : d = r

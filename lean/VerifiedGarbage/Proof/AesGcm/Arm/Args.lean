@@ -1,7 +1,7 @@
 module
-public import VerifiedGarbage.Proof.AesGcm.Arm.Callee
-public import VerifiedGarbage.Proof.AesGcm.Arm.Contract
 
+public import VerifiedGarbage.Proof.AesGcm.Arm.Env
+public import VerifiedGarbage.Proof.AesGcm.Arm.Contract
 import VerifiedGarbage.Proof.AesGcm.Arm.Entry
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Arm.Contract

@@ -33,7 +33,7 @@ P-256 as the proof's curve (`p256`): scalars of 4 64-bit words, the order
 correct (given the group law) and constant time against its contract
 (`coreK` at P-256's sizes). Its seven-bit comb reads the same immutable
 table as public-key generation and verification, using four bytes of stack
-for position-independent addressing, within the 20 its calls use.
+for position-independent addressing, within the 24 the call of its comb uses.
 -/
 
 @[expose] public section
@@ -55,7 +55,7 @@ private theorem core_pre_256 {s : State} (h : (coreK p256Comb).pre s) : CombSign
     ht⟩ := h
   exact ⟨⟨rd, wr, oc, od, og, ok, dc, gc, kc, ao, ac, ro, rc, no, nd, ng, nk, nc, sp, lo, so, ss⟩, ht, ds, gs, ks⟩
 
-private theorem core_pub_256 {s t : State} (h : (coreK p256Comb).pub s t) : CombSignPub s t := by
+private theorem core_pub_256 {s t : State} (h : (coreK p256Comb).pub s t) : CombSignPub p256d s t := by
   obtain ⟨he, a0, a1, a2, a3, a4, sy⟩ := h
   refine ⟨he, ?_, sy ("VG_P256_COMB", p256W) (by rw [p256Comb_consts]; simp)⟩
   intro j hj
@@ -65,6 +65,9 @@ private theorem core_pub_256 {s t : State} (h : (coreK p256Comb).pub s t) : Comb
   | 2, _ => exact a2
   | 3, _ => exact a3
   | 4, _ => exact a4
+
+/-- The taint checks and instruction facts of the curve's blocks. -/
+theorem p256_blk : RfcT (cfgC p256Comb false 0) := by rfcT_decide
 
 /-- P-256, with the group law `hL`. -/
 def p256 (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.X86.Inv.InvSounds) : RfcCurve where
@@ -84,7 +87,7 @@ def p256 (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.X86.Inv.InvSou
       intro d hd
       have he : p256d = d := Option.some.inj hd
       rw [← he]; exact p256Comb_shape
-    obtain ⟨tr, t, he, ha, hp⟩ := signComb_ok (p256Comb_ok hI) hL (p256Comb_tables hL) co p256Comb_am3 rfl signComb_spG
+    obtain ⟨tr, t, he, ha, hp⟩ := signComb_ok (p256Comb_ok hI) hL (p256Comb_tables hL) co rfl signComb_spG
       signComb_spTail (core_pre_256 h)
     refine ⟨tr, t, he, ha, ?_⟩
     simp only [coreK, coreSigOf, SignPost, ptr, BitVec.setWidth_append_eq_right] at hp ⊢
@@ -95,11 +98,12 @@ def p256 (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.X86.Inv.InvSou
     cases r <;> exact hp
   coreCT := by
     intro s t tr₁ tr₂ s' t' hs ht hp
-    exact signComb_ct (p256Comb_ok hI) hL (p256Comb_tables hL) p256Comb_shape p256Comb_am3 signComb_spMul
+    exact signComb_ct (d := p256d) (p256Comb_ok hI) hL (p256Comb_tables hL) rfl p256Comb_shape (p256Comb_gMul hL hI)
+      p256SignCT signComb_spMul
       s t tr₁ tr₂ s' t' (core_pre_256 hs) (core_pre_256 ht) (core_pub_256 hp)
-  coreNs := NoSp.of_all (by lit_decide)
-  coreStack := by lit_decide
-  blk := by rfcT_decide
+  coreNs := by exact signComb_sp.1
+  coreStack := by exact signComb_sp.2
+  blk := p256_blk
 
 /-- `vg_ecdsa_p256_sign`, with the tables of `vs`. -/
 theorem p256T_verified (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.X86.Inv.InvSounds)

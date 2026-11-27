@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Ed25519.Arm.FnLit
 public import VerifiedGarbage.Impl.Ed25519.Arm.PointAccumulate
-public import VerifiedGarbage.Impl.Ed25519.Arm.PointBatch
 public import VerifiedGarbage.Impl.Ed25519.Arm.PointEncode
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.Mem
@@ -10,7 +9,6 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.Taint
 meta import VerifiedGarbage.Proof.Ed25519.Arm.FnLit
 meta import VerifiedGarbage.Impl.Ed25519.Arm.PointAccumulate
-meta import VerifiedGarbage.Impl.Ed25519.Arm.PointBatch
 meta import VerifiedGarbage.Impl.Ed25519.Arm.PointEncode
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.Mem
@@ -26,20 +24,20 @@ that contains them read rather than build each field multiplication again. -/
 
 namespace VG.Impl.Ed25519.Arm
 
-materialize_code Point16.addCall
-materialize_code Point16.doubleCall
-materialize_code power250
-materialize_code invert
-materialize_code rootPower
+materialize_code addCallPlain := Point16.addCall false
+materialize_code addCallUmaal := Point16.addCall true
+materialize_code doubleCallPlain := Point16.doubleCall false
+materialize_code doubleCallUmaal := Point16.doubleCall true
+materialize_code invertPlain := invert false
+materialize_code invertUmaal := invert true
+materialize_code rootPowerPlain := rootPower false
+materialize_code rootPowerUmaal := rootPower true
 
 end VG.Impl.Ed25519.Arm
 
 namespace VG.Impl.Ed25519.Arm
-materialize_code prepareBatch
-materialize_code accumulate16
-materialize_code pointEncode
-materialize_code powers32CT := pointPowers 1632 32 true
-materialize_code powers16CT := pointPowers 1632 16 true
+materialize_code pointEncodePlain := pointEncode false
+materialize_code pointEncodeUmaal := pointEncode true
 materialize_code identityCT := constPoint Spec.Ed25519.identity
 materialize_code basePointCT := constPoint Spec.Ed25519.basePoint
 end VG.Impl.Ed25519.Arm

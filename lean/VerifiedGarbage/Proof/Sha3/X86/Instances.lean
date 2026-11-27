@@ -6,8 +6,6 @@ public import VerifiedGarbage.Impl.Sha3.X86.Instances
 public import VerifiedGarbage.Spec.Sha3.Instances
 public import VerifiedGarbage.Proof.Framework.X86.Call
 import VerifiedGarbage.Proof.Sha3.X86.Stream.Absorb
-import VerifiedGarbage.Proof.Sha3.X86.Stream.Pad
-import VerifiedGarbage.Proof.Sha3.X86.Stream.Squeeze
 import VerifiedGarbage.Proof.Sha3.X86.Shared
 public import VerifiedGarbage.Proof.Framework.X86.AllocFrame
 import VerifiedGarbage.Proof.Framework.X86.Wp
@@ -19,15 +17,12 @@ import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Sha3.X86.Lit
 import VerifiedGarbage.Proof.Framework.Block
-
 meta import VerifiedGarbage.Proof.Sha3.X86.Permute
 meta import VerifiedGarbage.Proof.Sha3.Instances
 meta import VerifiedGarbage.Impl.Sha3.X86.Instances
 meta import VerifiedGarbage.Spec.Sha3.Instances
 meta import VerifiedGarbage.Proof.Framework.X86.Call
 meta import VerifiedGarbage.Proof.Sha3.X86.Stream.Absorb
-meta import VerifiedGarbage.Proof.Sha3.X86.Stream.Pad
-meta import VerifiedGarbage.Proof.Sha3.X86.Stream.Squeeze
 meta import VerifiedGarbage.Proof.Sha3.X86.Shared
 meta import VerifiedGarbage.Proof.Framework.X86.AllocFrame
 meta import VerifiedGarbage.Proof.Framework.X86.Wp
@@ -71,7 +66,7 @@ theorem setWidth_toNat (x : BitVec 32) : (x.setWidth 64).toNat = x.toNat := by
 /-- Offset `d` of a frame of `B` bytes below `e`. -/
 theorem addr_frame {e : BitVec 32} {B d : Nat} (hB : B ≤ e.toNat) (hd : d ≤ B) :
     addr (e - BitVec.ofNat 32 B) d = e.setWidth 64 - BitVec.ofNat 64 (B - d) := by
-  have h := Offset.sub_ofNat_eq e (a := B - d) (b := B) (by omega_using [])
+  obtain h := Offset.sub_ofNat_eq e (a := B - d) (b := B) (by omega_using [])
   rw [show B - (B - d) = d by omega_using [hd]] at h
   rw [addr, ← h, Taint.sub_setWidth (by omega_using [hB])]
 
@@ -115,9 +110,9 @@ theorem store_step {B : Nat} {u₀ : State} {E : BitVec 32} {vs : List (BitVec 3
     (k : ∀ u', ArgInv B u₀ E vs (n + 1) u' → WP isa (.block is) u' Q) :
     WP isa (.block (.store (at_ (4 * n)) .eax :: is)) u Q := by
   have hf := hR.fit
-  have ha : addr E (4 * n) = E.setWidth 64 + BitVec.ofNat 64 (4 * n) :=
+  obtain ha : addr E (4 * n) = E.setWidth 64 + BitVec.ofNat 64 (4 * n) :=
     addr_eq (by have := hR.fit; omega_using [hn, hf])
-  have hc : (⟨E.setWidth 64, B⟩ : Region).Contains (addr E (4 * n)) 4 := by
+  obtain hc : (⟨E.setWidth 64, B⟩ : Region).Contains (addr E (4 * n)) 4 := by
     rw [ha]; exact Offset.contains_base _ (by omega_using [hn]) (by omega_using [hn, hf])
   refine wp_stm hI.esp ⟨_, by rw [hI.wr]; exact hfr, hc⟩ fun u' hu => k u' ?_
   refine ⟨by rw [hu.gpr]; exact hI.esp, fun r hr => by rw [hu.gpr]; exact hI.gpr r hr,
@@ -146,9 +141,9 @@ theorem copy_step {B : Nat} {u₀ : State} {E : BitVec 32} {vs : List (BitVec 32
     (hvn : vs.getD n 0 = u₀.mem.readW (addr E (B + 4 + 4 * j)) 32) {is : List Instr}
     {Q : State → Prop} (k : ∀ u', ArgInv B u₀ E vs (n + 1) u' → WP isa (.block is) u' Q) :
     WP isa (.block (copy B j n ++ is)) u Q := by
-  have hrd : u.rd ++ u.wr = u₀.rd ++ u₀.wr := by rw [hI.rd, hI.wr]
+  obtain hrd : u.rd ++ u.wr = u₀.rd ++ u₀.wr := by rw [hI.rd, hI.wr]
   refine Wp.wp_ldm hI.esp (by rw [hrd]; exact hin) fun u₁ hu => ?_
-  have hm : u.mem.readW (addr E (B + 4 + 4 * j)) 32 = u₀.mem.readW (addr E (B + 4 + 4 * j)) 32 := by
+  obtain hm : u.mem.readW (addr E (B + 4 + 4 * j)) 32 = u₀.mem.readW (addr E (B + 4 + 4 * j)) 32 := by
     rw [addr_eq (by omega_using [hj])]
     refine hI.frame.readW (r := ⟨E.setWidth 64 + BitVec.ofNat 64 (B + 4 + 4 * j), 4⟩)
       (Region.contains_self _ _) (fun r hr => ?_) (by decide)
@@ -173,7 +168,7 @@ theorem buf_step {B : Nat} {u₀ : State} {E : BitVec 32} {vs : List (BitVec 32)
     {Q : State → Prop} (k : ∀ u', ArgInv B u₀ E vs (n + 1) u' → WP isa (.block is) u' Q) :
     WP isa (.block (buf d n ++ is)) u Q :=
   Wp.wp_mov fun _ hu => Wp.wp_addi fun _ hu₂ => by
-    have h₁ := upd_inv hI hu
+    obtain h₁ := upd_inv hI hu
     refine store_step (upd_inv h₁ hu₂) hfr hR hn ?_ hvn k
     rw [hu₂.gpr, hu.gpr, hI.esp]
 
@@ -208,8 +203,8 @@ theorem entry_frame {B S : Nat} {u₀ : State} {e E : BitVec 32} {vs : List (Bit
     (hS : B + 4 ≤ S) (he : S ≤ e.toNat) :
     Frame [⟨e.setWidth 64 - BitVec.ofNat 64 S, S⟩] u₀.mem t.callEntry.mem := by
   rw [State.callEntry_mem]
-  have hEb : E.setWidth 64 = e.setWidth 64 - BitVec.ofNat 64 B := by rw [hE]; exact frame_base (by omega_using [hS, he])
-  have f₁ : Frame [⟨e.setWidth 64 - BitVec.ofNat 64 S, S⟩] u₀.mem t.mem :=
+  obtain hEb : E.setWidth 64 = e.setWidth 64 - BitVec.ofNat 64 B := by rw [hE]; exact frame_base (by omega_using [hS, he])
+  obtain f₁ : Frame [⟨e.setWidth 64 - BitVec.ofNat 64 S, S⟩] u₀.mem t.mem :=
     hI.frame.sub fun r hr => by
       rw [List.mem_singleton.mp hr, hEb]
       exact ⟨_, List.mem_singleton_self _, Offset.sub_below _ (by omega_using [hS]) (by omega_using [hS])⟩
@@ -335,17 +330,17 @@ theorem update_args {rate : Nat} {s : State} (hs : (updateX86 rate).pre s) :
     WP isa (.block (updateArgs rate)) (allocFrame 24 s)
       (ArgInv 24 (allocFrame 24 s) (s.gpr .esp - BitVec.ofNat 32 24) (updVs rate s) 6) := by
   obtain ⟨-, p2, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, e40, efit, -⟩ := hs
-  have hR : Room 24 (s.gpr .esp - BitVec.ofNat 32 24) := ⟨by rw [sub_toNat (by omega_using [e40])]; omega_using [efit]⟩
-  have hfr : (⟨(s.gpr .esp - BitVec.ofNat 32 24).setWidth 64, 24⟩ : Region) ∈ (allocFrame 24 s).wr := by
+  obtain hR : Room 24 (s.gpr .esp - BitVec.ofNat 32 24) := ⟨by rw [sub_toNat (by omega_using [e40])]; omega_using [efit]⟩
+  obtain hfr : (⟨(s.gpr .esp - BitVec.ofNat 32 24).setWidth 64, 24⟩ : Region) ∈ (allocFrame 24 s).wr := by
     rw [allocFrame_wr]; exact List.mem_cons_self
-  have hargs : (⟨argAddr s 0, 20⟩ : Region) ∈ (allocFrame 24 s).rd ++ (allocFrame 24 s).wr := by
+  obtain hargs : (⟨argAddr s 0, 20⟩ : Region) ∈ (allocFrame 24 s).rd ++ (allocFrame 24 s).wr := by
     simp [p2]
-  have cin : ∀ j, j < 5 → InRegions ((allocFrame 24 s).rd ++ (allocFrame 24 s).wr)
+  obtain cin : ∀ j, j < 5 → InRegions ((allocFrame 24 s).rd ++ (allocFrame 24 s).wr)
       (addr (s.gpr .esp - BitVec.ofNat 32 24) (24 + 4 + 4 * j)) 4 := fun j hj => by
     rw [addr_arg s rfl]; exact arg_in (by omega_using [hj]) (by omega_using [efit]) hargs
-  have cval : ∀ j, (allocFrame 24 s).mem.readW (addr (s.gpr .esp - BitVec.ofNat 32 24) (24 + 4 + 4 * j)) 32 =
+  obtain cval : ∀ j, (allocFrame 24 s).mem.readW (addr (s.gpr .esp - BitVec.ofNat 32 24) (24 + 4 + 4 * j)) 32 =
       arg s j := fun j => by rw [addr_arg s rfl]; rfl
-  have cj : ∀ j, j < 5 → (s.gpr .esp - BitVec.ofNat 32 24).toNat + 24 + 4 + 4 * j + 4 ≤ 2 ^ 32 :=
+  obtain cj : ∀ j, j < 5 → (s.gpr .esp - BitVec.ofNat 32 24).toNat + 24 + 4 + 4 * j + 4 ≤ 2 ^ 32 :=
     fun j hj => by rw [sub_toNat (by omega_using [e40])]; omega_using [efit, hj]
   rw [updateArgs_eq]
   exact copy_step (vs := updVs rate s) (ArgInv.start (allocFrame_esp _ _)) hfr hR (by decide) (cj 0 (by decide))
@@ -364,8 +359,8 @@ theorem update_entry {rate : Nat} {s t : State} (hs : (updateX86 rate).pre s)
       arg t.callEntry 2 = arg s 1 ∧ arg t.callEntry 3 = arg s 2 ∧ arg t.callEntry 4 = arg s 3 ∧
       arg t.callEntry 5 = arg s 4 := by
   obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, e40, efit, -⟩ := hs
-  have hR : Room 24 (s.gpr .esp - BitVec.ofNat 32 24) := ⟨by rw [sub_toNat (by omega_using [e40])]; omega_using [efit]⟩
-  have hE4 : 4 ≤ (s.gpr .esp - BitVec.ofNat 32 24).toNat := by rw [sub_toNat (by omega_using [e40])]; omega_using [e40]
+  obtain hR : Room 24 (s.gpr .esp - BitVec.ofNat 32 24) := ⟨by rw [sub_toNat (by omega_using [e40])]; omega_using [efit]⟩
+  obtain hE4 : 4 ≤ (s.gpr .esp - BitVec.ofNat 32 24).toNat := by rw [sub_toNat (by omega_using [e40])]; omega_using [e40]
   exact ⟨entry_arg hI hE4 hR (by decide) (i := 0) (by decide),
     entry_arg hI hE4 hR (by decide) (i := 1) (by decide),
     entry_arg hI hE4 hR (by decide) (i := 2) (by decide),
@@ -380,21 +375,21 @@ theorem update_pre {rate : Nat} (hr : rate ∈ rates) {s t : State} (hs : (updat
       Covers (updRd s ++ updWr s) (t.rd ++ t.wr) ∧ Covers (updWr s) t.wr := by
   obtain ⟨a0, a1, a2, a3, a4, a5⟩ := update_entry hs hI
   obtain ⟨p1, p2, d1, d2, d3, -, -, -, -, -, -, d10, d11, d12, f1, f2, f3, e40, efit, hpos⟩ := hs
-  have hrt := rate_lt hr
-  have eA := entry_argAddr hI.esp
-  have eSp := entry_esp hI.esp
+  obtain hrt := rate_lt hr
+  obtain eA := entry_argAddr hI.esp
+  obtain eSp := entry_esp hI.esp
   rw [ret_eq] at eSp
-  have hfb : (s.gpr .esp - BitVec.ofNat 32 24).setWidth 64 =
+  obtain hfb : (s.gpr .esp - BitVec.ofNat 32 24).setWidth 64 =
       (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 24 := frame_base (by omega_using [e40])
-  have hrb : (s.gpr .esp - BitVec.ofNat 32 (24 + 4)).setWidth 64 =
+  obtain hrb : (s.gpr .esp - BitVec.ofNat 32 (24 + 4)).setWidth 64 =
       (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 28 := frame_base (by omega_using [e40])
-  have hsb : (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 28 - (12 : BitVec 64) =
+  obtain hsb : (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 28 - (12 : BitVec 64) =
       (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 40 := by
     rw [show (12 : BitVec 64) = BitVec.ofNat 64 12 from rfl, BitVec.sub_sub, ← BitVec.ofNat_add]
-  have sA := in_stack (s.gpr .esp) (a := 24) (k := 24) (S := 40) (by decide) (by decide)
-  have sR := in_stack (s.gpr .esp) (a := 28) (k := 4) (S := 40) (by decide) (by decide)
-  have sS := in_stack (s.gpr .esp) (a := 40) (k := 12) (S := 40) (by decide) (by decide)
-  have hrate : (BitVec.ofNat 32 rate).toNat = rate := toNat_ofNat32 (by omega_using [hrt])
+  obtain sA := in_stack (s.gpr .esp) (a := 24) (k := 24) (S := 40) (by decide) (by decide)
+  obtain sR := in_stack (s.gpr .esp) (a := 28) (k := 4) (S := 40) (by decide) (by decide)
+  obtain sS := in_stack (s.gpr .esp) (a := 40) (k := 12) (S := 40) (by decide) (by decide)
+  obtain hrate : (BitVec.ofNat 32 rate).toNat = rate := toNat_ofNat32 (by omega_using [hrt])
   refine ⟨?_, covers_self fun r hr => ?_, covers_self fun r hr => ?_⟩
   · simp only [Proof.Sha3.absorbX86, updRd, updWr, State.withRegions_rd, State.withRegions_wr,
       State.withRegions_gpr, arg_withRegions, argAddr_withRegions, a0, a1, a2, a3, a4, a5, eA, eSp,
@@ -416,25 +411,25 @@ theorem update_correct {rate : Nat} (hr : rate ∈ rates) {s : State} (hs : (upd
     WP isa (update rate) s fun s' => abiPreserved s s' ∧ (updateX86 rate).post s s' := by
   have hs' := hs
   obtain ⟨-, -, -, -, -, -, -, -, d7, -, d9, d10, d11, -, -, -, -, e40, -, -⟩ := hs'
-  have hrt := rate_lt hr
+  obtain hrt := rate_lt hr
   unfold update
   refine WP.frameAlloc (by decide) (by decide) (by decide) (by omega_using [e40])
     (nosp_seq (updateArgs_nosp rate) (nosp_call absorb_nosp)) ?_
   refine WP.seq (WP.mono (update_args hs) fun t hI => ?_)
   obtain ⟨a0, a1, a2, a3, a4, -⟩ := update_entry hs hI
   obtain ⟨hpre, hc, hw⟩ := update_pre hr hs hI
-  have hfb : (s.gpr .esp - BitVec.ofNat 32 24).setWidth 64 =
+  obtain hfb : (s.gpr .esp - BitVec.ofNat 32 24).setWidth 64 =
       (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 24 := frame_base (by omega_using [e40])
-  have sA := in_stack (s.gpr .esp) (a := 24) (k := 24) (S := 40) (by decide) (by decide)
-  have hrate : (BitVec.ofNat 32 rate).toNat = rate := toNat_ofNat32 (by omega_using [hrt])
+  obtain sA := in_stack (s.gpr .esp) (a := 24) (k := 24) (S := 40) (by decide) (by decide)
+  obtain hrate : (BitVec.ofNat 32 rate).toNat = rate := toNat_ofNat32 (by omega_using [hrt])
   refine WP.call (k := Proof.Sha3.absorbX86) Stream.Absorb.absorb_verified.1 absorb_nosp
     (by rw [absorb_stack, hI.esp, sub_toNat (by omega_using [e40])]; omega_using [e40]) hpre hc hw
     fun s' _ _ hcs hf _ ⟨s₂, hm₂, hg₂, hpost⟩ => ?_
   -- After the call, and the frame's freeing.
-  have stk := stack_below (e := s.gpr .esp) (S := 40) (by omega_using [e40])
-  have fall : Frame [⟨(arg s 0).setWidth 64, 200⟩, ⟨(arg s 4).setWidth 64, 640⟩,
+  obtain stk := stack_below (e := s.gpr .esp) (S := 40) (by omega_using [e40])
+  obtain fall : Frame [⟨(arg s 0).setWidth 64, 200⟩, ⟨(arg s 4).setWidth 64, 640⟩,
       ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 40, 40⟩] s.mem s'.mem := by
-    have f₁ := hI.frame.sub (rs' := [⟨(arg s 0).setWidth 64, 200⟩, ⟨(arg s 4).setWidth 64, 640⟩,
+    obtain f₁ := hI.frame.sub (rs' := [⟨(arg s 0).setWidth 64, 200⟩, ⟨(arg s 4).setWidth 64, 640⟩,
         ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 40, 40⟩]) fun r hr => by
       rw [List.mem_singleton.mp hr, hfb]
       exact ⟨⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 40, 40⟩, by simp, sA⟩
@@ -448,15 +443,21 @@ theorem update_correct {rate : Nat} (hr : rate ∈ rates) {s : State} (hs : (upd
     · refine ⟨⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 40, 40⟩, by simp, ?_⟩
       rw [absorb_stack, hI.esp, stk]
       exact below_inner (by decide) (by omega_using [e40])
-  have ef := entry_frame (S := 40) hI rfl (by decide) (by omega_using [e40])
+  obtain ef := entry_frame (S := 40) hI rfl (by decide) (by omega_using [e40])
   rw [allocFrame_mem] at ef
+  intro mm vv fl
+  change Frame [⟨(s.gpr .esp - BitVec.ofNat 32 24).setWidth 64, 24⟩] s'.mem mm at fl
+  rw [hfb] at fl
   refine ⟨⟨fun r hr => ?_, ?_⟩, fun msg hm hp => ?_, ?_⟩
-  · by_cases h : r = .esp
+  · show (freed 24 s').gpr r = s.gpr r
+    by_cases h : r = .esp
     · subst h
       rw [freed_esp, hcs .esp (by simp [calleeSaved]), hI.esp]; exact BitVec.sub_add_cancel _ _
     · have hne : r ≠ .eax := by rintro rfl; simp [calleeSaved] at hr
       rw [freed_gpr _ _ h, hcs r hr, hI.gpr r hne, allocFrame_gpr _ _ h]
-  · rw [freed_mem]
+  · show mm.readW _ 32 = _
+    rw [fl.readW (r := ⟨(s.gpr .esp).setWidth 64, 4⟩) (Region.contains_self _ _) (fun r hr => by
+      rw [List.mem_singleton.mp hr]; exact Offset.base_disjoint_below _ (by decide)) (by decide)]
     refine fall.readW (r := ⟨(s.gpr .esp).setWidth 64, 4⟩) (Region.contains_self _ _) (fun r hr => ?_)
       (by decide)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -466,16 +467,21 @@ theorem update_correct {rate : Nat} (hr : rate ∈ rates) {s : State} (hs : (upd
     · exact Offset.base_disjoint_below _ (by decide)
   · simp only [Proof.Sha3.absorbX86, arg_withRegions, State.withRegions_mem, a0, a1, a2, a3, a4,
       hrate] at hpost
-    have hst : stateAt t.callEntry.mem ((arg s 0).setWidth 64) = stateAt s.mem ((arg s 0).setWidth 64) :=
+    obtain hst : stateAt t.callEntry.mem ((arg s 0).setWidth 64) = stateAt s.mem ((arg s 0).setWidth 64) :=
       stateAt_frame ef fun r hr => by rw [List.mem_singleton.mp hr]; exact d10.symm
-    have hd : bytesAt t.callEntry.mem ((arg s 2).setWidth 64) (arg s 3).toNat =
+    obtain hd : bytesAt t.callEntry.mem ((arg s 2).setWidth 64) (arg s 3).toNat =
         bytesAt s.mem ((arg s 2).setWidth 64) (arg s 3).toNat :=
       bytesAt_frame ef (fun r hr => by rw [List.mem_singleton.mp hr]; exact d11.symm)
         (by have := (arg s 3).isLt; omega_using [])
     have := hpost.1 msg (by unfold Spec.Sha3.Repr; rw [hst]; exact hm) hp
     rw [hd, hm₂] at this
-    rw [freed_mem]; exact this
+    show Spec.Sha3.Repr mm _ _ _
+    unfold Spec.Sha3.Repr
+    rw [stateAt_frame fl fun r hr => by
+      rw [List.mem_singleton.mp hr]; exact (d10.sub_left sA).symm]
+    exact this
   · simp only [Proof.Sha3.absorbX86, arg_withRegions, a0, a1, a2, a3, a4, hrate] at hpost
+    show ((freed 24 s').gpr .eax).toNat = _
     rw [freed_gpr _ _ (by decide), ← hg₂ .eax (by decide)]
     exact hpost.2
 
@@ -490,7 +496,7 @@ theorem update_ct {rate : Nat} (hr : rate ∈ rates) {h : VG.Taint.Hint VG.X86.T
     ConstantTime isa (updateX86 rate).pre (updateX86 rate).pub (update rate) := by
   intro σ₁ σ₂ t₁ t₂ σ₁' σ₂' p₁ p₂ hp e₁ e₂
   obtain ⟨hsp, ha⟩ := hp
-  have hP : RelCT isa (fun a b => a = σ₁ ∧ b = σ₂) (update rate) fun _ _ => True := by
+  obtain hP : RelCT isa (fun a b => a = σ₁ ∧ b = σ₂) (update rate) fun _ _ => True := by
     unfold update
     refine RelCT.frameAlloc (R := fun _ _ => True) (RelCT.seq (Q := fun _ _ => True)
       (RelCT.wp (F₁ := updInv rate σ₁) (F₂ := updInv rate σ₂)
@@ -502,8 +508,8 @@ theorem update_ct {rate : Nat} (hr : rate ∈ rates) {h : VG.Taint.Hint VG.X86.T
       (updRd σ₁) (updWr σ₁) (fun a b ⟨_, ha', hb'⟩ => ?_)
     obtain ⟨q1, q2, q3⟩ := update_pre hr p₁ ha'
     obtain ⟨r1, r2, r3⟩ := update_pre hr p₂ hb'
-    have er : updRd σ₂ = updRd σ₁ := by simp only [updRd, ha 2 (by decide), ha 3 (by decide)]
-    have ew : updWr σ₂ = updWr σ₁ := by simp only [updWr, ha 0 (by decide), ha 4 (by decide), hsp]
+    obtain er : updRd σ₂ = updRd σ₁ := by simp only [updRd, ha 2 (by decide), ha 3 (by decide)]
+    obtain ew : updWr σ₂ = updWr σ₁ := by simp only [updWr, ha 0 (by decide), ha 4 (by decide), hsp]
     rw [er, ew] at r1 r2
     rw [ew] at r3
     obtain ⟨x0, x1, x2, x3, x4, x5⟩ := update_entry p₁ ha'
@@ -537,13 +543,13 @@ def updSat : State where
   wr := [⟨0x1000, 200⟩, ⟨0x3000, 640⟩, ⟨0x4004, 20⟩]
 
 theorem updSat_pre {rate : Nat} (hr : rate ∈ rates) : (updateX86 rate).pre updSat := by
-  have a0 : arg updSat 0 = 0x1000 := by decide
-  have a1 : arg updSat 1 = 0 := by decide
-  have a2 : arg updSat 2 = 0x2000 := by decide
-  have a3 : arg updSat 3 = 0 := by decide
-  have a4 : arg updSat 4 = 0x3000 := by decide
-  have e : argAddr updSat 0 = 0x4004 := by decide
-  have h0 : 0 < rate := by simp [rates] at hr; omega_using [hr]
+  obtain a0 : arg updSat 0 = 0x1000 := by decide
+  obtain a1 : arg updSat 1 = 0 := by decide
+  obtain a2 : arg updSat 2 = 0x2000 := by decide
+  obtain a3 : arg updSat 3 = 0 := by decide
+  obtain a4 : arg updSat 4 = 0x3000 := by decide
+  obtain e : argAddr updSat 0 = 0x4004 := by decide
+  obtain h0 : 0 < rate := by simp [rates] at hr; omega_using [hr]
   simp only [updateX86, a0, a1, a2, a3, a4, e]
   refine ⟨rfl, rfl, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, by decide, by decide, by decide,
     by decide, by decide, h0⟩ <;>
@@ -551,23 +557,23 @@ theorem updSat_pre {rate : Nat} (hr : rate ∈ rates) : (updateX86 rate).pre upd
 
 theorem update_verified {rate : Nat} (hr : rate ∈ rates)
     (hct : ConstantTime isa (updateX86 rate).pre (updateX86 rate).pub (update rate)) :
-    Verified X86.target (update rate) (Spec.Sha3.updateContract X86.abi rate 40) :=
+    Verified X86.target (update rate) (Proof.Sha3.updateScratchContract X86.abi rate 40) :=
   (show Verified X86.target (update rate) (updateX86 rate) from
     ⟨fun s hs => (update_correct hr hs).elim fun t ⟨s', he, h⟩ => ⟨t, s', he, h.1, h.2⟩, hct,
       ⟨updSat, updSat_pre hr⟩⟩).of_implies
-    { pre := by implies_pre [Spec.Sha3.updateContract, Spec.Sha3.updateSig, Spec.Sha3.updatePre,
-          Spec.Sha3.updatePost, updateX86, X86.abi, X86.argSlots, X86.argVal, X86.argBytes,
+    { pre := by implies_pre [Proof.Sha3.updateScratchContract, Proof.Sha3.updateScratchSig, Proof.Sha3.updateScratchPre,
+          Proof.Sha3.updateScratchPost, updateX86, X86.abi, X86.argSlots, X86.argVal, X86.argBytes,
           Shared.setWidth_append32]
-      post := by implies_post [Spec.Sha3.updateContract, Spec.Sha3.updateSig, Spec.Sha3.updatePre,
-          Spec.Sha3.updatePost, updateX86, X86.abi, X86.argSlots, X86.argVal, X86.argBytes,
+      post := by implies_post [Proof.Sha3.updateScratchContract, Proof.Sha3.updateScratchSig, Proof.Sha3.updateScratchPre,
+          Proof.Sha3.updateScratchPost, updateX86, X86.abi, X86.argSlots, X86.argVal, X86.argBytes,
           Shared.setWidth_append32]
-      pub := by implies_pub [Spec.Sha3.updateContract, Spec.Sha3.updateSig, Spec.Sha3.updatePre,
-          Spec.Sha3.updatePost, updateX86, X86.abi, X86.argSlots, X86.argVal, X86.argBytes,
+      pub := by implies_pub [Proof.Sha3.updateScratchContract, Proof.Sha3.updateScratchSig, Proof.Sha3.updateScratchPre,
+          Proof.Sha3.updateScratchPost, updateX86, X86.abi, X86.argSlots, X86.argVal, X86.argBytes,
           Shared.setWidth_append32]
       sat := ⟨updSat, by
-        have h0 : 0 < rate := by simp [rates] at hr; omega_using [hr]
-        sig_pre [Spec.Sha3.updateContract, Spec.Sha3.updateSig, Spec.Sha3.updatePre,
-          Spec.Sha3.updatePost, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, updSat, updSatMem,
+        obtain h0 : 0 < rate := by simp [rates] at hr; omega_using [hr]
+        sig_pre [Proof.Sha3.updateScratchContract, Proof.Sha3.updateScratchSig, Proof.Sha3.updateScratchPre,
+          Proof.Sha3.updateScratchPost, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, updSat, updSatMem,
           X86.arg, X86.argAddr, Mem.readW, Mem.read]
         sig_and_intros
         all_goals first
@@ -578,27 +584,27 @@ theorem update_verified {rate : Nat} (hr : rate ∈ rates)
 
 theorem update_sha3_224 :
     Verified X86.target (update Spec.Sha3.hashSha3_224.rate)
-      (Spec.Sha3.updateContract X86.abi Spec.Sha3.hashSha3_224.rate 40) :=
+      (Proof.Sha3.updateScratchContract X86.abi Spec.Sha3.hashSha3_224.rate 40) :=
   update_verified (by decide) (update_ct (by decide) (by taint_decide))
 
 theorem update_sha3_256 :
     Verified X86.target (update Spec.Sha3.hashSha3_256.rate)
-      (Spec.Sha3.updateContract X86.abi Spec.Sha3.hashSha3_256.rate 40) :=
+      (Proof.Sha3.updateScratchContract X86.abi Spec.Sha3.hashSha3_256.rate 40) :=
   update_verified (by decide) (update_ct (by decide) (by taint_decide))
 
 theorem update_sha3_384 :
     Verified X86.target (update Spec.Sha3.hashSha3_384.rate)
-      (Spec.Sha3.updateContract X86.abi Spec.Sha3.hashSha3_384.rate 40) :=
+      (Proof.Sha3.updateScratchContract X86.abi Spec.Sha3.hashSha3_384.rate 40) :=
   update_verified (by decide) (update_ct (by decide) (by taint_decide))
 
 theorem update_sha3_512 :
     Verified X86.target (update Spec.Sha3.hashSha3_512.rate)
-      (Spec.Sha3.updateContract X86.abi Spec.Sha3.hashSha3_512.rate 40) :=
+      (Proof.Sha3.updateScratchContract X86.abi Spec.Sha3.hashSha3_512.rate 40) :=
   update_verified (by decide) (update_ct (by decide) (by taint_decide))
 
 theorem update_shake128 :
     Verified X86.target (update Spec.Sha3.xofShake128.rate)
-      (Spec.Sha3.updateContract X86.abi Spec.Sha3.xofShake128.rate 40) :=
+      (Proof.Sha3.updateScratchContract X86.abi Spec.Sha3.xofShake128.rate 40) :=
   update_verified (by decide) (update_ct (by decide) (by taint_decide))
 
 /-- Two regions below `p`, apart. -/
@@ -650,18 +656,18 @@ def xpInv (rate : Nat) (σ t : State) : Prop :=
 theorem xof_args {X : Xof} {s : State} (hs : (xofFinX86 X).pre s) :
     WP isa (.block (xofPadArgs X.rate)) (allocFrame 660 s) (xpInv X.rate s) := by
   obtain ⟨-, p2, -, -, -, -, e676, efit, -⟩ := hs
-  have hR : Room 660 (s.gpr .esp - BitVec.ofNat 32 660) := ⟨by rw [sub_toNat (by omega_using [e676])]; omega_using [efit]⟩
-  have hfr : (⟨(s.gpr .esp - BitVec.ofNat 32 660).setWidth 64, 660⟩ : Region) ∈ (allocFrame 660 s).wr := by
+  obtain hR : Room 660 (s.gpr .esp - BitVec.ofNat 32 660) := ⟨by rw [sub_toNat (by omega_using [e676])]; omega_using [efit]⟩
+  obtain hfr : (⟨(s.gpr .esp - BitVec.ofNat 32 660).setWidth 64, 660⟩ : Region) ∈ (allocFrame 660 s).wr := by
     rw [allocFrame_wr]; exact List.mem_cons_self
-  have hargs : (⟨argAddr s 0, 8⟩ : Region) ∈ (allocFrame 660 s).rd ++ (allocFrame 660 s).wr := by
+  obtain hargs : (⟨argAddr s 0, 8⟩ : Region) ∈ (allocFrame 660 s).rd ++ (allocFrame 660 s).wr := by
     simp [p2]
-  have cin : ∀ j, j < 2 → InRegions ((allocFrame 660 s).rd ++ (allocFrame 660 s).wr)
+  obtain cin : ∀ j, j < 2 → InRegions ((allocFrame 660 s).rd ++ (allocFrame 660 s).wr)
       (addr (s.gpr .esp - BitVec.ofNat 32 660) (660 + 4 + 4 * j)) 4 := fun j hj => by
     rw [addr_arg s rfl]; exact arg_in (by omega_using [hj]) (by omega_using [efit]) hargs
-  have cval : ∀ j, (allocFrame 660 s).mem.readW
+  obtain cval : ∀ j, (allocFrame 660 s).mem.readW
       (addr (s.gpr .esp - BitVec.ofNat 32 660) (660 + 4 + 4 * j)) 32 = arg s j := fun j => by
     rw [addr_arg s rfl]; rfl
-  have cj : ∀ j, j < 2 → (s.gpr .esp - BitVec.ofNat 32 660).toNat + 660 + 4 + 4 * j + 4 ≤ 2 ^ 32 :=
+  obtain cj : ∀ j, j < 2 → (s.gpr .esp - BitVec.ofNat 32 660).toNat + 660 + 4 + 4 * j + 4 ≤ 2 ^ 32 :=
     fun j hj => by rw [sub_toNat (by omega_using [e676])]; omega_using [efit, hj]
   rw [xofPadArgs_eq]
   exact copy_step (vs := xpVs X.rate s) (ArgInv.start (allocFrame_esp _ _)) hfr hR (by decide)
@@ -677,8 +683,8 @@ theorem xof_entry {rate : Nat} {s t : State} (e676 : 676 ≤ (s.gpr .esp).toNat)
     arg t.callEntry 0 = arg s 0 ∧ arg t.callEntry 1 = BitVec.ofNat 32 rate ∧
       arg t.callEntry 2 = arg s 1 ∧ arg t.callEntry 3 = BitVec.ofNat 32 0x1f ∧
       arg t.callEntry 4 = s.gpr .esp - BitVec.ofNat 32 660 + BitVec.ofNat 32 20 := by
-  have hR : Room 660 (s.gpr .esp - BitVec.ofNat 32 660) := ⟨by rw [sub_toNat (by omega_using [e676])]; omega_using [efit]⟩
-  have hE4 : 4 ≤ (s.gpr .esp - BitVec.ofNat 32 660).toNat := by rw [sub_toNat (by omega_using [e676])]; omega_using [e676]
+  obtain hR : Room 660 (s.gpr .esp - BitVec.ofNat 32 660) := ⟨by rw [sub_toNat (by omega_using [e676])]; omega_using [efit]⟩
+  obtain hE4 : 4 ≤ (s.gpr .esp - BitVec.ofNat 32 660).toNat := by rw [sub_toNat (by omega_using [e676])]; omega_using [e676]
   exact ⟨entry_arg hI hE4 hR (by decide) (i := 0) (by decide),
     entry_arg hI hE4 hR (by decide) (i := 1) (by decide),
     entry_arg hI hE4 hR (by decide) (i := 2) (by decide),
@@ -696,33 +702,33 @@ theorem xof_pre {X : Xof} (hr : X.rate ∈ rates) {s t : State} (hs : (xofFinX86
       Covers ([] ++ xpWr s) (t.rd ++ t.wr) ∧ Covers (xpWr s) t.wr := by
   obtain ⟨p1, p2, -, -, d3, f1, e676, efit, hpos⟩ := hs
   obtain ⟨a0, a1, a2, -, a4⟩ := xof_entry e676 efit hI
-  have hrt := rate_lt hr
-  have eA := entry_argAddr hI.esp
-  have eSp := entry_esp hI.esp
+  obtain hrt := rate_lt hr
+  obtain eA := entry_argAddr hI.esp
+  obtain eSp := entry_esp hI.esp
   rw [ret_eq] at eSp
-  have hfb : (s.gpr .esp - BitVec.ofNat 32 660).setWidth 64 =
+  obtain hfb : (s.gpr .esp - BitVec.ofNat 32 660).setWidth 64 =
       (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 660 := frame_base (by omega_using [e676])
-  have hsc : (s.gpr .esp - BitVec.ofNat 32 660 + BitVec.ofNat 32 20).setWidth 64 =
+  obtain hsc : (s.gpr .esp - BitVec.ofNat 32 660 + BitVec.ofNat 32 20).setWidth 64 =
       (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 640 := scr_eq (s.gpr .esp) (by omega_using [e676]) (by decide)
-  have hrb : (s.gpr .esp - BitVec.ofNat 32 (660 + 4)).setWidth 64 =
+  obtain hrb : (s.gpr .esp - BitVec.ofNat 32 (660 + 4)).setWidth 64 =
       (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 664 := frame_base (by omega_using [e676])
-  have hsb : (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 664 - (12 : BitVec 64) =
+  obtain hsb : (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 664 - (12 : BitVec 64) =
       (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 676 := by
     rw [show (12 : BitVec 64) = BitVec.ofNat 64 12 from rfl, BitVec.sub_sub, ← BitVec.ofNat_add]
-  have sA := in_stack (s.gpr .esp) (a := 660) (k := 20) (S := 676) (by decide) (by decide)
-  have sC := in_stack (s.gpr .esp) (a := 640) (k := 640) (S := 676) (by decide) (by decide)
-  have sR := in_stack (s.gpr .esp) (a := 664) (k := 4) (S := 676) (by decide) (by decide)
-  have sS := in_stack (s.gpr .esp) (a := 676) (k := 12) (S := 676) (by decide) (by decide)
-  have hrate : (BitVec.ofNat 32 X.rate).toNat = X.rate := toNat_ofNat32 (by omega_using [hrt])
-  have hP : (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 640 =
+  obtain sA := in_stack (s.gpr .esp) (a := 660) (k := 20) (S := 676) (by decide) (by decide)
+  obtain sC := in_stack (s.gpr .esp) (a := 640) (k := 640) (S := 676) (by decide) (by decide)
+  obtain sR := in_stack (s.gpr .esp) (a := 664) (k := 4) (S := 676) (by decide) (by decide)
+  obtain sS := in_stack (s.gpr .esp) (a := 676) (k := 12) (S := 676) (by decide) (by decide)
+  obtain hrate : (BitVec.ofNat 32 X.rate).toNat = X.rate := toNat_ofNat32 (by omega_using [hrt])
+  obtain hP : (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 640 =
       (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 660 + BitVec.ofNat 64 20 :=
     Offset.sub_ofNat_eq _ (by decide)
-  have hQ : (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 664 =
+  obtain hQ : (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 664 =
       (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 676 + BitVec.ofNat 64 12 :=
     Offset.sub_ofNat_eq _ (by decide)
-  have hpl : ((s.gpr .esp).setWidth 64 - BitVec.ofNat 64 676).toNat = (s.gpr .esp).toNat - 676 := by
+  obtain hpl : ((s.gpr .esp).setWidth 64 - BitVec.ofNat 64 676).toNat = (s.gpr .esp).toNat - 676 := by
     rw [← frame_base (by omega_using [e676]), setWidth_toNat, sub_toNat (by omega_using [e676])]
-  have hw : ∀ r ∈ xpWr s, ∃ r' ∈ t.wr, ∃ off, r.base = r'.base + BitVec.ofNat 64 off ∧
+  obtain hw : ∀ r ∈ xpWr s, ∃ r' ∈ t.wr, ∃ off, r.base = r'.base + BitVec.ofNat 64 off ∧
       off + r.len ≤ r'.len := by
     intro r hr
     rw [hI.wr, allocFrame_wr, p2]
@@ -751,28 +757,28 @@ theorem xof_correct {X : Xof} (hX : xofSponge X) (hr : X.rate ∈ rates) {s : St
     WP isa (xofFinalize X.rate) s fun s' => abiPreserved s s' ∧ (xofFinX86 X).post s s' := by
   have hs' := hs
   obtain ⟨-, -, -, d2, d3, -, e676, efit, -⟩ := hs'
-  have hrt := rate_lt hr
+  obtain hrt := rate_lt hr
   unfold xofFinalize
   refine WP.frameAlloc (by decide) (by decide) (by decide) (by omega_using [e676])
     (nosp_seq (xofPadArgs_nosp _) (nosp_call pad_nosp)) ?_
   refine WP.seq (WP.mono (xof_args hs) fun t hI => ?_)
   obtain ⟨a0, a1, a2, a3, -⟩ := xof_entry e676 efit hI
   obtain ⟨hpre, hc, hw⟩ := xof_pre hr hs hI
-  have hfb : (s.gpr .esp - BitVec.ofNat 32 660).setWidth 64 =
+  obtain hfb : (s.gpr .esp - BitVec.ofNat 32 660).setWidth 64 =
       (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 660 := frame_base (by omega_using [e676])
-  have hsc : (s.gpr .esp - BitVec.ofNat 32 660 + BitVec.ofNat 32 20).setWidth 64 =
+  obtain hsc : (s.gpr .esp - BitVec.ofNat 32 660 + BitVec.ofNat 32 20).setWidth 64 =
       (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 640 := scr_eq (s.gpr .esp) (by omega_using [e676]) (by decide)
-  have sA := in_stack (s.gpr .esp) (a := 660) (k := 20) (S := 676) (by decide) (by decide)
-  have sF := in_stack (s.gpr .esp) (a := 660) (k := 660) (S := 676) (by decide) (by decide)
-  have sC := in_stack (s.gpr .esp) (a := 640) (k := 640) (S := 676) (by decide) (by decide)
-  have hrate : (BitVec.ofNat 32 X.rate).toNat = X.rate := toNat_ofNat32 (by omega_using [hrt])
+  obtain sA := in_stack (s.gpr .esp) (a := 660) (k := 20) (S := 676) (by decide) (by decide)
+  obtain sF := in_stack (s.gpr .esp) (a := 660) (k := 660) (S := 676) (by decide) (by decide)
+  obtain sC := in_stack (s.gpr .esp) (a := 640) (k := 640) (S := 676) (by decide) (by decide)
+  obtain hrate : (BitVec.ofNat 32 X.rate).toNat = X.rate := toNat_ofNat32 (by omega_using [hrt])
   refine WP.call (k := Proof.Sha3.padX86) Stream.Pad.pad_verified.1 pad_nosp
     (by rw [pad_stack, hI.esp, sub_toNat (by omega_using [e676])]; omega_using [e676]) hpre hc hw
     fun s' _ _ hcs hf _ ⟨s₂, hm₂, _, hpost⟩ => ?_
-  have stk := stack_below (e := s.gpr .esp) (S := 676) (by omega_using [e676])
-  have fall : Frame [⟨(arg s 0).setWidth 64, 200⟩,
+  obtain stk := stack_below (e := s.gpr .esp) (S := 676) (by omega_using [e676])
+  obtain fall : Frame [⟨(arg s 0).setWidth 64, 200⟩,
       ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 676, 676⟩] s.mem s'.mem := by
-    have f₁ := hI.frame.sub (rs' := [⟨(arg s 0).setWidth 64, 200⟩,
+    obtain f₁ := hI.frame.sub (rs' := [⟨(arg s 0).setWidth 64, 200⟩,
         ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 676, 676⟩]) fun r hr => by
       rw [List.mem_singleton.mp hr, hfb]
       exact ⟨⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 676, 676⟩, by simp, sF⟩
@@ -786,16 +792,22 @@ theorem xof_correct {X : Xof} (hX : xofSponge X) (hr : X.rate ∈ rates) {s : St
     · refine ⟨⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 676, 676⟩, by simp, ?_⟩
       rw [pad_stack, hI.esp, stk]
       exact below_inner (by decide) (by omega_using [e676])
-  have ef := entry_frame (S := 676) hI rfl (by decide) (by omega_using [e676])
+  obtain ef := entry_frame (S := 676) hI rfl (by decide) (by omega_using [e676])
   rw [allocFrame_mem] at ef
-  have hsuf : (BitVec.ofNat 32 0x1f).setWidth 8 = Spec.Sha3.shakeSuffix := by decide
+  obtain hsuf : (BitVec.ofNat 32 0x1f).setWidth 8 = Spec.Sha3.shakeSuffix := by decide
+  intro mm vv fl
+  change Frame [⟨(s.gpr .esp - BitVec.ofNat 32 660).setWidth 64, 660⟩] s'.mem mm at fl
+  rw [hfb] at fl
   refine ⟨⟨fun r hr => ?_, ?_⟩, fun msg hm hp => ?_⟩
-  · by_cases h : r = .esp
+  · show (freed 660 s').gpr r = s.gpr r
+    by_cases h : r = .esp
     · subst h
       rw [freed_esp, hcs .esp (by simp [calleeSaved]), hI.esp]; exact BitVec.sub_add_cancel _ _
     · have hne : r ≠ .eax := by rintro rfl; simp [calleeSaved] at hr
       rw [freed_gpr _ _ h, hcs r hr, hI.gpr r hne, allocFrame_gpr _ _ h]
-  · rw [freed_mem]
+  · show mm.readW _ 32 = _
+    rw [fl.readW (r := ⟨(s.gpr .esp).setWidth 64, 4⟩) (Region.contains_self _ _) (fun r hr => by
+      rw [List.mem_singleton.mp hr]; exact Offset.base_disjoint_below _ (by decide)) (by decide)]
     refine fall.readW (r := ⟨(s.gpr .esp).setWidth 64, 4⟩) (Region.contains_self _ _) (fun r hr => ?_)
       (by decide)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -804,18 +816,22 @@ theorem xof_correct {X : Xof} (hX : xofSponge X) (hr : X.rate ∈ rates) {s : St
     · exact Offset.base_disjoint_below _ (by decide)
   · simp only [Proof.Sha3.padX86, arg_withRegions, State.withRegions_mem, a0, a1, a2, a3,
       hrate, hsuf] at hpost
-    have hst : stateAt t.callEntry.mem ((arg s 0).setWidth 64) = stateAt s.mem ((arg s 0).setWidth 64) :=
+    obtain hst : stateAt t.callEntry.mem ((arg s 0).setWidth 64) = stateAt s.mem ((arg s 0).setWidth 64) :=
       stateAt_frame ef fun r hr => by rw [List.mem_singleton.mp hr]; exact d3.symm
     have := hpost msg (by unfold Spec.Sha3.Repr; rw [hst]; exact hm) hp
     rw [hm₂] at this
-    rw [freed_mem]; exact xofRepr_pad hX this
+    show XofRepr mm _ _ _ _ _ _
+    unfold XofRepr
+    rw [stateAt_frame fl fun r hr => by
+      rw [List.mem_singleton.mp hr]; exact (d3.sub_left sF).symm]
+    exact xofRepr_pad hX this
 
 theorem xof_ct {X : Xof} (hr : X.rate ∈ rates) {h : VG.Taint.Hint VG.X86.Taint.T}
     (hb : (taint.check (τr [.esp]) (.block (xofPadArgs X.rate)) h).isSome = true) :
     ConstantTime isa (xofFinX86 X).pre (xofFinX86 X).pub (xofFinalize X.rate) := by
   intro σ₁ σ₂ t₁ t₂ σ₁' σ₂' p₁ p₂ hp e₁ e₂
   obtain ⟨hsp, ha⟩ := hp
-  have hP : RelCT isa (fun a b => a = σ₁ ∧ b = σ₂) (xofFinalize X.rate) fun _ _ => True := by
+  obtain hP : RelCT isa (fun a b => a = σ₁ ∧ b = σ₂) (xofFinalize X.rate) fun _ _ => True := by
     unfold xofFinalize
     refine RelCT.frameAlloc (R := fun _ _ => True) (RelCT.seq (Q := fun _ _ => True)
       (RelCT.wp (F₁ := xpInv X.rate σ₁) (F₂ := xpInv X.rate σ₂)
@@ -827,7 +843,7 @@ theorem xof_ct {X : Xof} (hr : X.rate ∈ rates) {h : VG.Taint.Hint VG.X86.Taint
       [] (xpWr σ₁) (fun a b ⟨_, ha', hb'⟩ => ?_)
     obtain ⟨q1, q2, q3⟩ := xof_pre hr p₁ ha'
     obtain ⟨r1, r2, r3⟩ := xof_pre hr p₂ hb'
-    have ew : xpWr σ₂ = xpWr σ₁ := by simp only [xpWr, ha 0 (by decide), hsp]
+    obtain ew : xpWr σ₂ = xpWr σ₁ := by simp only [xpWr, ha 0 (by decide), hsp]
     rw [ew] at r1 r2 r3
     obtain ⟨x0, x1, x2, x3, x4⟩ := xof_entry p₁.2.2.2.2.2.2.1 p₁.2.2.2.2.2.2.2.1 ha'
     obtain ⟨y0, y1, y2, y3, y4⟩ := xof_entry p₂.2.2.2.2.2.2.1 p₂.2.2.2.2.2.2.2.1 hb'
@@ -857,10 +873,10 @@ def xofSat : State where
   wr := [⟨0x1000, 200⟩, ⟨0x4004, 8⟩]
 
 theorem xofSat_pre {X : Xof} (hr : X.rate ∈ rates) : (xofFinX86 X).pre xofSat := by
-  have a0 : arg xofSat 0 = 0x1000 := by decide
-  have a1 : arg xofSat 1 = 0 := by decide
-  have e : argAddr xofSat 0 = 0x4004 := by decide
-  have h0 : 0 < X.rate := by simp [rates] at hr; omega_using [hr]
+  obtain a0 : arg xofSat 0 = 0x1000 := by decide
+  obtain a1 : arg xofSat 1 = 0 := by decide
+  obtain e : argAddr xofSat 0 = 0x4004 := by decide
+  obtain h0 : 0 < X.rate := by simp [rates] at hr; omega_using [hr]
   simp only [xofFinX86, a0, a1, e]
   refine ⟨rfl, rfl, ?_, ?_, ?_, by decide, by decide, by decide, h0⟩ <;>
   · exact Region.disjoint_of_sep (by decide)
@@ -881,7 +897,7 @@ theorem xofFinalize_verified {X : Xof} (hX : xofSponge X) (hr : X.rate ∈ rates
           Spec.Sha3.xofFinalizePre, Spec.Sha3.xofFinalizePost, xofFinX86, X86.abi, X86.argSlots,
           X86.argVal, X86.argBytes]
       sat := ⟨xofSat, by
-        have h0 : 0 < X.rate := by simp [rates] at hr; omega_using [hr]
+        obtain h0 : 0 < X.rate := by simp [rates] at hr; omega_using [hr]
         sig_pre [Spec.Sha3.xofFinalizeContract, Spec.Sha3.xofFinalizeSig, Spec.Sha3.xofFinalizePre,
           Spec.Sha3.xofFinalizePost, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, xofSat,
           xofSatMem, X86.arg, X86.argAddr, Mem.readW, Mem.read]
@@ -955,18 +971,18 @@ def xsInv (rate : Nat) (σ t : State) : Prop :=
 theorem xs_args {X : Xof} {s : State} (hs : (xofSqzX86 X).pre s) :
     WP isa (.block (xofSqueezeArgs X.rate)) (allocFrame 664 s) (xsInv X.rate s) := by
   obtain ⟨-, p2, -, -, -, -, -, -, -, -, -, e680, efit, -⟩ := hs
-  have hR : Room 664 (s.gpr .esp - BitVec.ofNat 32 664) := ⟨by rw [sub_toNat (by omega_using [e680])]; omega_using [efit]⟩
-  have hfr : (⟨(s.gpr .esp - BitVec.ofNat 32 664).setWidth 64, 664⟩ : Region) ∈ (allocFrame 664 s).wr := by
+  obtain hR : Room 664 (s.gpr .esp - BitVec.ofNat 32 664) := ⟨by rw [sub_toNat (by omega_using [e680])]; omega_using [efit]⟩
+  obtain hfr : (⟨(s.gpr .esp - BitVec.ofNat 32 664).setWidth 64, 664⟩ : Region) ∈ (allocFrame 664 s).wr := by
     rw [allocFrame_wr]; exact List.mem_cons_self
-  have hargs : (⟨argAddr s 0, 16⟩ : Region) ∈ (allocFrame 664 s).rd ++ (allocFrame 664 s).wr := by
+  obtain hargs : (⟨argAddr s 0, 16⟩ : Region) ∈ (allocFrame 664 s).rd ++ (allocFrame 664 s).wr := by
     simp [p2]
-  have cin : ∀ j, j < 4 → InRegions ((allocFrame 664 s).rd ++ (allocFrame 664 s).wr)
+  obtain cin : ∀ j, j < 4 → InRegions ((allocFrame 664 s).rd ++ (allocFrame 664 s).wr)
       (addr (s.gpr .esp - BitVec.ofNat 32 664) (664 + 4 + 4 * j)) 4 := fun j hj => by
     rw [addr_arg s rfl]; exact arg_in (by omega_using [hj]) (by omega_using [efit]) hargs
-  have cval : ∀ j, (allocFrame 664 s).mem.readW
+  obtain cval : ∀ j, (allocFrame 664 s).mem.readW
       (addr (s.gpr .esp - BitVec.ofNat 32 664) (664 + 4 + 4 * j)) 32 = arg s j := fun j => by
     rw [addr_arg s rfl]; rfl
-  have cj : ∀ j, j < 4 → (s.gpr .esp - BitVec.ofNat 32 664).toNat + 664 + 4 + 4 * j + 4 ≤ 2 ^ 32 :=
+  obtain cj : ∀ j, j < 4 → (s.gpr .esp - BitVec.ofNat 32 664).toNat + 664 + 4 + 4 * j + 4 ≤ 2 ^ 32 :=
     fun j hj => by rw [sub_toNat (by omega_using [e680])]; omega_using [efit, hj]
   rw [xofSqueezeArgs_eq]
   exact copy_step (vs := xsVs X.rate s) (ArgInv.start (allocFrame_esp _ _)) hfr hR (by decide)
@@ -983,8 +999,8 @@ theorem xs_entry {rate : Nat} {s t : State} (e680 : 680 ≤ (s.gpr .esp).toNat)
     arg t.callEntry 0 = arg s 0 ∧ arg t.callEntry 1 = BitVec.ofNat 32 rate ∧
       arg t.callEntry 2 = arg s 1 ∧ arg t.callEntry 3 = arg s 2 ∧ arg t.callEntry 4 = arg s 3 ∧
       arg t.callEntry 5 = s.gpr .esp - BitVec.ofNat 32 664 + BitVec.ofNat 32 24 := by
-  have hR : Room 664 (s.gpr .esp - BitVec.ofNat 32 664) := ⟨by rw [sub_toNat (by omega_using [e680])]; omega_using [efit]⟩
-  have hE4 : 4 ≤ (s.gpr .esp - BitVec.ofNat 32 664).toNat := by rw [sub_toNat (by omega_using [e680])]; omega_using [e680]
+  obtain hR : Room 664 (s.gpr .esp - BitVec.ofNat 32 664) := ⟨by rw [sub_toNat (by omega_using [e680])]; omega_using [efit]⟩
+  obtain hE4 : 4 ≤ (s.gpr .esp - BitVec.ofNat 32 664).toNat := by rw [sub_toNat (by omega_using [e680])]; omega_using [e680]
   exact ⟨entry_arg hI hE4 hR (by decide) (i := 0) (by decide),
     entry_arg hI hE4 hR (by decide) (i := 1) (by decide),
     entry_arg hI hE4 hR (by decide) (i := 2) (by decide),
@@ -998,25 +1014,25 @@ theorem xs_pre {X : Xof} (hr : X.rate ∈ rates) {s t : State} (hs : (xofSqzX86 
       Covers ([] ++ xsWr s) (t.rd ++ t.wr) ∧ Covers (xsWr s) t.wr := by
   obtain ⟨p1, p2, d1, -, -, -, -, d6, d7, f1, f2, e680, efit, hpos⟩ := hs
   obtain ⟨a0, a1, a2, a3, a4, a5⟩ := xs_entry e680 efit hI
-  have hrt := rate_lt hr
-  have eA := entry_argAddr hI.esp
-  have eSp := entry_esp hI.esp
+  obtain hrt := rate_lt hr
+  obtain eA := entry_argAddr hI.esp
+  obtain eSp := entry_esp hI.esp
   rw [ret_eq] at eSp
-  have hfb : (s.gpr .esp - BitVec.ofNat 32 664).setWidth 64 =
+  obtain hfb : (s.gpr .esp - BitVec.ofNat 32 664).setWidth 64 =
       (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 664 := frame_base (by omega_using [e680])
-  have hsc : (s.gpr .esp - BitVec.ofNat 32 664 + BitVec.ofNat 32 24).setWidth 64 =
+  obtain hsc : (s.gpr .esp - BitVec.ofNat 32 664 + BitVec.ofNat 32 24).setWidth 64 =
       (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 640 := scr_eq (s.gpr .esp) (by omega_using [e680]) (by decide)
-  have hrb : (s.gpr .esp - BitVec.ofNat 32 (664 + 4)).setWidth 64 =
+  obtain hrb : (s.gpr .esp - BitVec.ofNat 32 (664 + 4)).setWidth 64 =
       (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 668 := frame_base (by omega_using [e680])
-  have hsb : (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 668 - (12 : BitVec 64) =
+  obtain hsb : (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 668 - (12 : BitVec 64) =
       (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 680 := by
     rw [show (12 : BitVec 64) = BitVec.ofNat 64 12 from rfl, BitVec.sub_sub, ← BitVec.ofNat_add]
-  have sA := in_stack (s.gpr .esp) (a := 664) (k := 24) (S := 680) (by decide) (by decide)
-  have sC := in_stack (s.gpr .esp) (a := 640) (k := 640) (S := 680) (by decide) (by decide)
-  have sR := in_stack (s.gpr .esp) (a := 668) (k := 4) (S := 680) (by decide) (by decide)
-  have sS := in_stack (s.gpr .esp) (a := 680) (k := 12) (S := 680) (by decide) (by decide)
-  have hrate : (BitVec.ofNat 32 X.rate).toNat = X.rate := toNat_ofNat32 (by omega_using [hrt])
-  have hw : ∀ r ∈ xsWr s, ∃ r' ∈ t.wr, ∃ off, r.base = r'.base + BitVec.ofNat 64 off ∧
+  obtain sA := in_stack (s.gpr .esp) (a := 664) (k := 24) (S := 680) (by decide) (by decide)
+  obtain sC := in_stack (s.gpr .esp) (a := 640) (k := 640) (S := 680) (by decide) (by decide)
+  obtain sR := in_stack (s.gpr .esp) (a := 668) (k := 4) (S := 680) (by decide) (by decide)
+  obtain sS := in_stack (s.gpr .esp) (a := 680) (k := 12) (S := 680) (by decide) (by decide)
+  obtain hrate : (BitVec.ofNat 32 X.rate).toNat = X.rate := toNat_ofNat32 (by omega_using [hrt])
+  obtain hw : ∀ r ∈ xsWr s, ∃ r' ∈ t.wr, ∃ off, r.base = r'.base + BitVec.ofNat 64 off ∧
       off + r.len ≤ r'.len := by
     intro r hr
     rw [hI.wr, allocFrame_wr, p2]
@@ -1047,28 +1063,28 @@ theorem xs_correct {X : Xof} (hr : X.rate ∈ rates) {s : State} (hs : (xofSqzX8
     WP isa (xofSqueeze X.rate) s fun s' => abiPreserved s s' ∧ (xofSqzX86 X).post s s' := by
   have hs' := hs
   obtain ⟨-, -, -, -, -, d4, -, d6, d7, -, -, e680, efit, -⟩ := hs'
-  have hrt := rate_lt hr
+  obtain hrt := rate_lt hr
   unfold xofSqueeze
   refine WP.frameAlloc (by decide) (by decide) (by decide) (by omega_using [e680])
     (nosp_seq (xofSqueezeArgs_nosp _) (nosp_call squeeze_nosp)) ?_
   refine WP.seq (WP.mono (xs_args hs) fun t hI => ?_)
   obtain ⟨a0, a1, a2, a3, a4, -⟩ := xs_entry e680 efit hI
   obtain ⟨hpre, hc, hw⟩ := xs_pre hr hs hI
-  have hfb : (s.gpr .esp - BitVec.ofNat 32 664).setWidth 64 =
+  obtain hfb : (s.gpr .esp - BitVec.ofNat 32 664).setWidth 64 =
       (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 664 := frame_base (by omega_using [e680])
-  have hsc : (s.gpr .esp - BitVec.ofNat 32 664 + BitVec.ofNat 32 24).setWidth 64 =
+  obtain hsc : (s.gpr .esp - BitVec.ofNat 32 664 + BitVec.ofNat 32 24).setWidth 64 =
       (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 640 := scr_eq (s.gpr .esp) (by omega_using [e680]) (by decide)
-  have sA := in_stack (s.gpr .esp) (a := 664) (k := 24) (S := 680) (by decide) (by decide)
-  have sF := in_stack (s.gpr .esp) (a := 664) (k := 664) (S := 680) (by decide) (by decide)
-  have sC := in_stack (s.gpr .esp) (a := 640) (k := 640) (S := 680) (by decide) (by decide)
-  have hrate : (BitVec.ofNat 32 X.rate).toNat = X.rate := toNat_ofNat32 (by omega_using [hrt])
+  obtain sA := in_stack (s.gpr .esp) (a := 664) (k := 24) (S := 680) (by decide) (by decide)
+  obtain sF := in_stack (s.gpr .esp) (a := 664) (k := 664) (S := 680) (by decide) (by decide)
+  obtain sC := in_stack (s.gpr .esp) (a := 640) (k := 640) (S := 680) (by decide) (by decide)
+  obtain hrate : (BitVec.ofNat 32 X.rate).toNat = X.rate := toNat_ofNat32 (by omega_using [hrt])
   refine WP.call (k := Proof.Sha3.squeezeX86) Stream.Squeeze.squeeze_verified.1 squeeze_nosp
     (by rw [squeeze_stack, hI.esp, sub_toNat (by omega_using [e680])]; omega_using [e680]) hpre hc hw
     fun s' _ _ hcs hf _ ⟨s₂, hm₂, hg₂, hpost⟩ => ?_
-  have stk := stack_below (e := s.gpr .esp) (S := 680) (by omega_using [e680])
-  have fall : Frame [⟨(arg s 0).setWidth 64, 200⟩, ⟨(arg s 2).setWidth 64, (arg s 3).toNat⟩,
+  obtain stk := stack_below (e := s.gpr .esp) (S := 680) (by omega_using [e680])
+  obtain fall : Frame [⟨(arg s 0).setWidth 64, 200⟩, ⟨(arg s 2).setWidth 64, (arg s 3).toNat⟩,
       ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 680, 680⟩] s.mem s'.mem := by
-    have f₁ := hI.frame.sub (rs' := [⟨(arg s 0).setWidth 64, 200⟩,
+    obtain f₁ := hI.frame.sub (rs' := [⟨(arg s 0).setWidth 64, 200⟩,
         ⟨(arg s 2).setWidth 64, (arg s 3).toNat⟩,
         ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 680, 680⟩]) fun r hr => by
       rw [List.mem_singleton.mp hr, hfb]
@@ -1084,22 +1100,28 @@ theorem xs_correct {X : Xof} (hr : X.rate ∈ rates) {s : State} (hs : (xofSqzX8
     · refine ⟨⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 680, 680⟩, by simp, ?_⟩
       rw [squeeze_stack, hI.esp, stk]
       exact below_inner (by decide) (by omega_using [e680])
-  have ef := entry_frame (S := 680) hI rfl (by decide) (by omega_using [e680])
+  obtain ef := entry_frame (S := 680) hI rfl (by decide) (by omega_using [e680])
   rw [allocFrame_mem] at ef
-  have hst : stateAt t.callEntry.mem ((arg s 0).setWidth 64) = stateAt s.mem ((arg s 0).setWidth 64) :=
+  obtain hst : stateAt t.callEntry.mem ((arg s 0).setWidth 64) = stateAt s.mem ((arg s 0).setWidth 64) :=
     stateAt_frame ef fun r hr => by rw [List.mem_singleton.mp hr]; exact d6.symm
   simp only [Proof.Sha3.squeezeX86, arg_withRegions, State.withRegions_mem, a0, a1, a2, a3, a4,
     hrate, hst] at hpost
   obtain ⟨h1, h2, h3⟩ := hpost
   rw [hm₂] at h1 h3
   rw [hg₂ .eax (by decide)] at h2 h3
+  intro mm vv fl
+  change Frame [⟨(s.gpr .esp - BitVec.ofNat 32 664).setWidth 64, 664⟩] s'.mem mm at fl
+  rw [hfb] at fl
   refine ⟨⟨fun r hr => ?_, ?_⟩, fun msg n hR => ?_, ?_⟩
-  · by_cases h : r = .esp
+  · show (freed 664 s').gpr r = s.gpr r
+    by_cases h : r = .esp
     · subst h
       rw [freed_esp, hcs .esp (by simp [calleeSaved]), hI.esp]; exact BitVec.sub_add_cancel _ _
     · have hne : r ≠ .eax := by rintro rfl; simp [calleeSaved] at hr
       rw [freed_gpr _ _ h, hcs r hr, hI.gpr r hne, allocFrame_gpr _ _ h]
-  · rw [freed_mem]
+  · show mm.readW _ 32 = _
+    rw [fl.readW (r := ⟨(s.gpr .esp).setWidth 64, 4⟩) (Region.contains_self _ _) (fun r hr => by
+      rw [List.mem_singleton.mp hr]; exact Offset.base_disjoint_below _ (by decide)) (by decide)]
     refine fall.readW (r := ⟨(s.gpr .esp).setWidth 64, 4⟩) (Region.contains_self _ _) (fun r hr => ?_)
       (by decide)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -1107,16 +1129,23 @@ theorem xs_correct {X : Xof} (hr : X.rate ∈ rates) {s : State} (hs : (xofSqzX8
     · exact d4
     · exact hs.2.2.2.2.2.2.1
     · exact Offset.base_disjoint_below _ (by decide)
-  · rw [freed_mem, freed_gpr _ _ (by decide)]
+  · show bytesAt mm _ _ = _ ∧ XofRepr mm _ _ ((freed 664 s').gpr .eax).toNat _ _ _
+    rw [freed_gpr _ _ (by decide), bytesAt_frame fl (fun r hr => by
+      rw [List.mem_singleton.mp hr]; exact (d7.sub_left sF).symm)
+      (by have := (arg s 3).isLt; omega_using [])]
+    unfold XofRepr
+    rw [stateAt_frame fl fun r hr => by
+      rw [List.mem_singleton.mp hr]; exact (d6.sub_left sF).symm]
     exact xofRepr_squeeze hR h1 h3
-  · rw [freed_gpr _ _ (by decide)]; exact h2
+  · show ((freed 664 s').gpr .eax).toNat ≤ _
+    rw [freed_gpr _ _ (by decide)]; exact h2
 
 theorem xs_ct {X : Xof} (hr : X.rate ∈ rates) {h : VG.Taint.Hint VG.X86.Taint.T}
     (hb : (taint.check (τr [.esp]) (.block (xofSqueezeArgs X.rate)) h).isSome = true) :
     ConstantTime isa (xofSqzX86 X).pre (xofSqzX86 X).pub (xofSqueeze X.rate) := by
   intro σ₁ σ₂ t₁ t₂ σ₁' σ₂' p₁ p₂ hp e₁ e₂
   obtain ⟨hsp, ha⟩ := hp
-  have hP : RelCT isa (fun a b => a = σ₁ ∧ b = σ₂) (xofSqueeze X.rate) fun _ _ => True := by
+  obtain hP : RelCT isa (fun a b => a = σ₁ ∧ b = σ₂) (xofSqueeze X.rate) fun _ _ => True := by
     unfold xofSqueeze
     refine RelCT.frameAlloc (R := fun _ _ => True) (RelCT.seq (Q := fun _ _ => True)
       (RelCT.wp (F₁ := xsInv X.rate σ₁) (F₂ := xsInv X.rate σ₂)
@@ -1128,7 +1157,7 @@ theorem xs_ct {X : Xof} (hr : X.rate ∈ rates) {h : VG.Taint.Hint VG.X86.Taint.
       [] (xsWr σ₁) (fun a b ⟨_, ha', hb'⟩ => ?_)
     obtain ⟨q1, q2, q3⟩ := xs_pre hr p₁ ha'
     obtain ⟨r1, r2, r3⟩ := xs_pre hr p₂ hb'
-    have ew : xsWr σ₂ = xsWr σ₁ := by
+    obtain ew : xsWr σ₂ = xsWr σ₁ := by
       simp only [xsWr, ha 0 (by decide), ha 2 (by decide), ha 3 (by decide), hsp]
     rw [ew] at r1 r2 r3
     obtain ⟨x0, x1, x2, x3, x4, x5⟩ := xs_entry p₁.2.2.2.2.2.2.2.2.2.2.2.1 p₁.2.2.2.2.2.2.2.2.2.2.2.2.1 ha'
@@ -1160,11 +1189,11 @@ def xsSat : State where
   wr := [⟨0x1000, 200⟩, ⟨0x2000, 0⟩, ⟨0x4004, 16⟩]
 
 theorem xsSat_pre {X : Xof} : (xofSqzX86 X).pre xsSat := by
-  have a0 : arg xsSat 0 = 0x1000 := by decide
-  have a1 : arg xsSat 1 = 0 := by decide
-  have a2 : arg xsSat 2 = 0x2000 := by decide
-  have a3 : arg xsSat 3 = 0 := by decide
-  have e : argAddr xsSat 0 = 0x4004 := by decide
+  obtain a0 : arg xsSat 0 = 0x1000 := by decide
+  obtain a1 : arg xsSat 1 = 0 := by decide
+  obtain a2 : arg xsSat 2 = 0x2000 := by decide
+  obtain a3 : arg xsSat 3 = 0 := by decide
+  obtain e : argAddr xsSat 0 = 0x4004 := by decide
   simp only [xofSqzX86, a0, a1, a2, a3, e]
   refine ⟨rfl, rfl, ?_, ?_, ?_, ?_, ?_, ?_, ?_, by decide, by decide, by decide, by decide,
     Nat.zero_le _⟩ <;>
@@ -1290,18 +1319,18 @@ def fsInv (H : Spec.Sha3.HashFn) (s t : State) : Prop :=
 theorem fp_args {H : Spec.Sha3.HashFn} {s : State} (hs : (finX86 H).pre s) :
     WP isa (.block (finPadArgs H.rate)) (allocFrame 664 s) (fpInv H.rate s) := by
   obtain ⟨-, p2, -, -, -, -, -, -, -, -, -, e680, efit, -⟩ := hs
-  have hR : Room 664 (s.gpr .esp - BitVec.ofNat 32 664) := ⟨by rw [sub_toNat (by omega_using [e680])]; omega_using [efit]⟩
-  have hfr : (⟨(s.gpr .esp - BitVec.ofNat 32 664).setWidth 64, 664⟩ : Region) ∈ (allocFrame 664 s).wr := by
+  obtain hR : Room 664 (s.gpr .esp - BitVec.ofNat 32 664) := ⟨by rw [sub_toNat (by omega_using [e680])]; omega_using [efit]⟩
+  obtain hfr : (⟨(s.gpr .esp - BitVec.ofNat 32 664).setWidth 64, 664⟩ : Region) ∈ (allocFrame 664 s).wr := by
     rw [allocFrame_wr]; exact List.mem_cons_self
-  have hargs : (⟨argAddr s 0, 12⟩ : Region) ∈ (allocFrame 664 s).rd ++ (allocFrame 664 s).wr := by
+  obtain hargs : (⟨argAddr s 0, 12⟩ : Region) ∈ (allocFrame 664 s).rd ++ (allocFrame 664 s).wr := by
     simp [p2]
-  have cin : ∀ j, j < 3 → InRegions ((allocFrame 664 s).rd ++ (allocFrame 664 s).wr)
+  obtain cin : ∀ j, j < 3 → InRegions ((allocFrame 664 s).rd ++ (allocFrame 664 s).wr)
       (addr (s.gpr .esp - BitVec.ofNat 32 664) (664 + 4 + 4 * j)) 4 := fun j hj => by
     rw [addr_arg s rfl]; exact arg_in (by omega_using [hj]) (by omega_using [efit]) hargs
-  have cval : ∀ j, (allocFrame 664 s).mem.readW
+  obtain cval : ∀ j, (allocFrame 664 s).mem.readW
       (addr (s.gpr .esp - BitVec.ofNat 32 664) (664 + 4 + 4 * j)) 32 = arg s j := fun j => by
     rw [addr_arg s rfl]; rfl
-  have cj : ∀ j, j < 3 → (s.gpr .esp - BitVec.ofNat 32 664).toNat + 664 + 4 + 4 * j + 4 ≤ 2 ^ 32 :=
+  obtain cj : ∀ j, j < 3 → (s.gpr .esp - BitVec.ofNat 32 664).toNat + 664 + 4 + 4 * j + 4 ≤ 2 ^ 32 :=
     fun j hj => by rw [sub_toNat (by omega_using [e680])]; omega_using [efit, hj]
   rw [finPadArgs_eq]
   exact copy_step (vs := fpVs H.rate s) (ArgInv.start (allocFrame_esp _ _)) hfr hR (by decide)
@@ -1317,8 +1346,8 @@ theorem fp_entry {rate : Nat} {s t : State} (e680 : 680 ≤ (s.gpr .esp).toNat)
     arg t.callEntry 0 = arg s 0 ∧ arg t.callEntry 1 = BitVec.ofNat 32 rate ∧
       arg t.callEntry 2 = arg s 1 ∧ arg t.callEntry 3 = BitVec.ofNat 32 0x06 ∧
       arg t.callEntry 4 = s.gpr .esp - BitVec.ofNat 32 664 + BitVec.ofNat 32 24 := by
-  have hR : Room 664 (s.gpr .esp - BitVec.ofNat 32 664) := ⟨by rw [sub_toNat (by omega_using [e680])]; omega_using [efit]⟩
-  have hE4 : 4 ≤ (s.gpr .esp - BitVec.ofNat 32 664).toNat := by rw [sub_toNat (by omega_using [e680])]; omega_using [e680]
+  obtain hR : Room 664 (s.gpr .esp - BitVec.ofNat 32 664) := ⟨by rw [sub_toNat (by omega_using [e680])]; omega_using [efit]⟩
+  obtain hE4 : 4 ≤ (s.gpr .esp - BitVec.ofNat 32 664).toNat := by rw [sub_toNat (by omega_using [e680])]; omega_using [e680]
   exact ⟨entry_arg hI hE4 hR (by decide) (i := 0) (by decide),
     entry_arg hI hE4 hR (by decide) (i := 1) (by decide),
     entry_arg hI hE4 hR (by decide) (i := 2) (by decide),
@@ -1331,25 +1360,25 @@ theorem fp_pre {H : Spec.Sha3.HashFn} (hr : H.rate ∈ rates) {s t : State} (hs 
       Covers ([] ++ fpWr s) (t.rd ++ t.wr) ∧ Covers (fpWr s) t.wr := by
   obtain ⟨p1, p2, -, -, -, -, -, d6, -, f1, -, e680, efit, hpos⟩ := hs
   obtain ⟨a0, a1, a2, -, a4⟩ := fp_entry e680 efit hI
-  have hrt := rate_lt hr
-  have eA := entry_argAddr hI.esp
-  have eSp := entry_esp hI.esp
+  obtain hrt := rate_lt hr
+  obtain eA := entry_argAddr hI.esp
+  obtain eSp := entry_esp hI.esp
   rw [ret_eq] at eSp
-  have hfb : (s.gpr .esp - BitVec.ofNat 32 664).setWidth 64 =
+  obtain hfb : (s.gpr .esp - BitVec.ofNat 32 664).setWidth 64 =
       (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 664 := frame_base (by omega_using [e680])
-  have hsc : (s.gpr .esp - BitVec.ofNat 32 664 + BitVec.ofNat 32 24).setWidth 64 =
+  obtain hsc : (s.gpr .esp - BitVec.ofNat 32 664 + BitVec.ofNat 32 24).setWidth 64 =
       (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 640 := scr_eq (s.gpr .esp) (by omega_using [e680]) (by decide)
-  have hrb : (s.gpr .esp - BitVec.ofNat 32 (664 + 4)).setWidth 64 =
+  obtain hrb : (s.gpr .esp - BitVec.ofNat 32 (664 + 4)).setWidth 64 =
       (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 668 := frame_base (by omega_using [e680])
-  have hsb : (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 668 - (12 : BitVec 64) =
+  obtain hsb : (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 668 - (12 : BitVec 64) =
       (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 680 := by
     rw [show (12 : BitVec 64) = BitVec.ofNat 64 12 from rfl, BitVec.sub_sub, ← BitVec.ofNat_add]
-  have sA := in_stack (s.gpr .esp) (a := 664) (k := 20) (S := 680) (by decide) (by decide)
-  have sC := in_stack (s.gpr .esp) (a := 640) (k := 640) (S := 680) (by decide) (by decide)
-  have sR := in_stack (s.gpr .esp) (a := 668) (k := 4) (S := 680) (by decide) (by decide)
-  have sS := in_stack (s.gpr .esp) (a := 680) (k := 12) (S := 680) (by decide) (by decide)
-  have hrate : (BitVec.ofNat 32 H.rate).toNat = H.rate := toNat_ofNat32 (by omega_using [hrt])
-  have hw : ∀ r ∈ fpWr s, ∃ r' ∈ t.wr, ∃ off, r.base = r'.base + BitVec.ofNat 64 off ∧
+  obtain sA := in_stack (s.gpr .esp) (a := 664) (k := 20) (S := 680) (by decide) (by decide)
+  obtain sC := in_stack (s.gpr .esp) (a := 640) (k := 640) (S := 680) (by decide) (by decide)
+  obtain sR := in_stack (s.gpr .esp) (a := 668) (k := 4) (S := 680) (by decide) (by decide)
+  obtain sS := in_stack (s.gpr .esp) (a := 680) (k := 12) (S := 680) (by decide) (by decide)
+  obtain hrate : (BitVec.ofNat 32 H.rate).toNat = H.rate := toNat_ofNat32 (by omega_using [hrt])
+  obtain hw : ∀ r ∈ fpWr s, ∃ r' ∈ t.wr, ∃ off, r.base = r'.base + BitVec.ofNat 64 off ∧
       off + r.len ≤ r'.len := by
     intro r hr
     rw [hI.wr, allocFrame_wr, p2]
@@ -1379,8 +1408,8 @@ theorem arg_apart {s : State} {j n S : Nat} (hj : 4 * j + 4 ≤ n)
     {R : Region} (hd : Region.Disjoint ⟨argAddr s 0, n⟩ R) :
     ∀ r ∈ [R, (⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 S, S⟩ : Region)],
       Region.Disjoint ⟨argAddr s j, 4⟩ r := by
-  have e0 : argAddr s 0 = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 4 := addr_eq (by omega_using [hj, hfit])
-  have ej : argAddr s j = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 (4 + 4 * j) := addr_eq (by omega_using [hj, hfit])
+  obtain e0 : argAddr s 0 = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 4 := addr_eq (by omega_using [hj, hfit])
+  obtain ej : argAddr s j = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 (4 + 4 * j) := addr_eq (by omega_using [hj, hfit])
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
@@ -1393,24 +1422,24 @@ theorem fp_call {H : Spec.Sha3.HashFn} (hr : H.rate ∈ rates) {s t : State} (hs
     WP isa (.call "vg_keccak_pad_scratch" Impl.Sha3.X86.Stream.pad) t (AfterPad H s) := by
   have hs' := hs
   obtain ⟨-, -, -, d4, -, -, -, d6, -, -, -, e680, efit, -⟩ := hs'
-  have hrt := rate_lt hr
+  obtain hrt := rate_lt hr
   obtain ⟨a0, a1, a2, a3, -⟩ := fp_entry e680 efit hI
   obtain ⟨hpre, hc, hw⟩ := fp_pre hr hs hI
-  have hfb : (s.gpr .esp - BitVec.ofNat 32 664).setWidth 64 =
+  obtain hfb : (s.gpr .esp - BitVec.ofNat 32 664).setWidth 64 =
       (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 664 := frame_base (by omega_using [e680])
-  have hsc : (s.gpr .esp - BitVec.ofNat 32 664 + BitVec.ofNat 32 24).setWidth 64 =
+  obtain hsc : (s.gpr .esp - BitVec.ofNat 32 664 + BitVec.ofNat 32 24).setWidth 64 =
       (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 640 := scr_eq (s.gpr .esp) (by omega_using [e680]) (by decide)
-  have sA := in_stack (s.gpr .esp) (a := 664) (k := 20) (S := 680) (by decide) (by decide)
-  have sF := in_stack (s.gpr .esp) (a := 664) (k := 664) (S := 680) (by decide) (by decide)
-  have sC := in_stack (s.gpr .esp) (a := 640) (k := 640) (S := 680) (by decide) (by decide)
-  have hrate : (BitVec.ofNat 32 H.rate).toNat = H.rate := toNat_ofNat32 (by omega_using [hrt])
+  obtain sA := in_stack (s.gpr .esp) (a := 664) (k := 20) (S := 680) (by decide) (by decide)
+  obtain sF := in_stack (s.gpr .esp) (a := 664) (k := 664) (S := 680) (by decide) (by decide)
+  obtain sC := in_stack (s.gpr .esp) (a := 640) (k := 640) (S := 680) (by decide) (by decide)
+  obtain hrate : (BitVec.ofNat 32 H.rate).toNat = H.rate := toNat_ofNat32 (by omega_using [hrt])
   refine WP.call (k := Proof.Sha3.padX86) Stream.Pad.pad_verified.1 pad_nosp
     (by rw [pad_stack, hI.esp, sub_toNat (by omega_using [e680])]; omega_using [e680]) hpre hc hw
     fun s' hrd hwr hcs hf _ ⟨s₂, hm₂, _, hpost⟩ => ?_
-  have stk := stack_below (e := s.gpr .esp) (S := 680) (by omega_using [e680])
-  have fall : Frame [⟨(arg s 0).setWidth 64, 200⟩,
+  obtain stk := stack_below (e := s.gpr .esp) (S := 680) (by omega_using [e680])
+  obtain fall : Frame [⟨(arg s 0).setWidth 64, 200⟩,
       ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 680, 680⟩] s.mem s'.mem := by
-    have f₁ := hI.frame.sub (rs' := [⟨(arg s 0).setWidth 64, 200⟩,
+    obtain f₁ := hI.frame.sub (rs' := [⟨(arg s 0).setWidth 64, 200⟩,
         ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 680, 680⟩]) fun r hr => by
       rw [List.mem_singleton.mp hr, hfb]
       exact ⟨⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 680, 680⟩, by simp, sF⟩
@@ -1424,9 +1453,9 @@ theorem fp_call {H : Spec.Sha3.HashFn} (hr : H.rate ∈ rates) {s t : State} (hs
     · refine ⟨⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 680, 680⟩, by simp, ?_⟩
       rw [pad_stack, hI.esp, stk]
       exact below_inner (by decide) (by omega_using [e680])
-  have ef := entry_frame (S := 680) hI rfl (by decide) (by omega_using [e680])
+  obtain ef := entry_frame (S := 680) hI rfl (by decide) (by omega_using [e680])
   rw [allocFrame_mem] at ef
-  have hsuf : (BitVec.ofNat 32 0x06).setWidth 8 = Spec.Sha3.sha3Suffix := by decide
+  obtain hsuf : (BitVec.ofNat 32 0x06).setWidth 8 = Spec.Sha3.sha3Suffix := by decide
   refine ⟨by rw [hcs .esp (by simp [calleeSaved]), hI.esp], fun r hr h => ?_, by rw [hrd, hI.rd]; rfl,
     by rw [hwr, hI.wr], fall, fun j hj => ?_, fun msg hm hp => ?_⟩
   · have hne : r ≠ .eax := by rintro rfl; simp [calleeSaved] at hr
@@ -1435,7 +1464,7 @@ theorem fp_call {H : Spec.Sha3.HashFn} (hr : H.rate ∈ rates) {s t : State} (hs
       (arg_apart (by omega_using [hj]) (by omega_using [e680]) (by omega_using [efit]) d4) (by decide)
   · simp only [Proof.Sha3.padX86, arg_withRegions, State.withRegions_mem, a0, a1, a2, a3,
       hrate, hsuf] at hpost
-    have hst : stateAt t.callEntry.mem ((arg s 0).setWidth 64) = stateAt s.mem ((arg s 0).setWidth 64) :=
+    obtain hst : stateAt t.callEntry.mem ((arg s 0).setWidth 64) = stateAt s.mem ((arg s 0).setWidth 64) :=
       stateAt_frame ef fun r hr => by rw [List.mem_singleton.mp hr]; exact d6.symm
     have := hpost msg (by unfold Spec.Sha3.Repr; rw [hst]; exact hm) hp
     rw [hm₂] at this; exact this
@@ -1445,18 +1474,18 @@ theorem fs_args {H : Spec.Sha3.HashFn} {s u : State} (hs : (finX86 H).pre s)
     WP isa (.block (finSqzArgs H.rate H.len)) u
       (ArgInv 664 u (s.gpr .esp - BitVec.ofNat 32 664) (fsVs H.rate H.len s) 6) := by
   obtain ⟨-, p2, -, -, -, -, -, -, -, -, -, e680, efit, -⟩ := hs
-  have hR : Room 664 (s.gpr .esp - BitVec.ofNat 32 664) := ⟨by rw [sub_toNat (by omega_using [e680])]; omega_using [efit]⟩
-  have hfr : (⟨(s.gpr .esp - BitVec.ofNat 32 664).setWidth 64, 664⟩ : Region) ∈ u.wr := by
+  obtain hR : Room 664 (s.gpr .esp - BitVec.ofNat 32 664) := ⟨by rw [sub_toNat (by omega_using [e680])]; omega_using [efit]⟩
+  obtain hfr : (⟨(s.gpr .esp - BitVec.ofNat 32 664).setWidth 64, 664⟩ : Region) ∈ u.wr := by
     rw [hA.wr, allocFrame_wr]; exact List.mem_cons_self
-  have hargs : (⟨argAddr s 0, 12⟩ : Region) ∈ u.rd ++ u.wr := by
+  obtain hargs : (⟨argAddr s 0, 12⟩ : Region) ∈ u.rd ++ u.wr := by
     rw [hA.wr, allocFrame_wr, p2]; simp
-  have cin : ∀ j, j < 3 → InRegions (u.rd ++ u.wr)
+  obtain cin : ∀ j, j < 3 → InRegions (u.rd ++ u.wr)
       (addr (s.gpr .esp - BitVec.ofNat 32 664) (664 + 4 + 4 * j)) 4 := fun j hj => by
     rw [addr_arg s rfl]; exact arg_in (by omega_using [hj]) (by omega_using [efit]) hargs
-  have cval : ∀ j, j < 3 → u.mem.readW
+  obtain cval : ∀ j, j < 3 → u.mem.readW
       (addr (s.gpr .esp - BitVec.ofNat 32 664) (664 + 4 + 4 * j)) 32 = arg s j := fun j hj => by
     rw [addr_arg s rfl]; exact hA.args j hj
-  have cj : ∀ j, j < 3 → (s.gpr .esp - BitVec.ofNat 32 664).toNat + 664 + 4 + 4 * j + 4 ≤ 2 ^ 32 :=
+  obtain cj : ∀ j, j < 3 → (s.gpr .esp - BitVec.ofNat 32 664).toNat + 664 + 4 + 4 * j + 4 ≤ 2 ^ 32 :=
     fun j hj => by rw [sub_toNat (by omega_using [e680])]; omega_using [efit, hj]
   rw [finSqzArgs_eq]
   exact copy_step (vs := fsVs H.rate H.len s) (ArgInv.start hA.esp) hfr hR (by decide)
@@ -1476,8 +1505,8 @@ theorem fs_entry {H : Spec.Sha3.HashFn} {s u t : State} (e680 : 680 ≤ (s.gpr .
       arg t.callEntry 2 = BitVec.ofNat 32 0 ∧ arg t.callEntry 3 = arg s 2 ∧
       arg t.callEntry 4 = BitVec.ofNat 32 H.len ∧
       arg t.callEntry 5 = s.gpr .esp - BitVec.ofNat 32 664 + BitVec.ofNat 32 24 := by
-  have hR : Room 664 (s.gpr .esp - BitVec.ofNat 32 664) := ⟨by rw [sub_toNat (by omega_using [e680])]; omega_using [efit]⟩
-  have hE4 : 4 ≤ (s.gpr .esp - BitVec.ofNat 32 664).toNat := by rw [sub_toNat (by omega_using [e680])]; omega_using [e680]
+  obtain hR : Room 664 (s.gpr .esp - BitVec.ofNat 32 664) := ⟨by rw [sub_toNat (by omega_using [e680])]; omega_using [efit]⟩
+  obtain hE4 : 4 ≤ (s.gpr .esp - BitVec.ofNat 32 664).toNat := by rw [sub_toNat (by omega_using [e680])]; omega_using [e680]
   exact ⟨entry_arg hI hE4 hR (by decide) (i := 0) (by decide),
     entry_arg hI hE4 hR (by decide) (i := 1) (by decide),
     entry_arg hI hE4 hR (by decide) (i := 2) (by decide),
@@ -1492,26 +1521,26 @@ theorem fs_pre {H : Spec.Sha3.HashFn} (hr : H.rate ∈ rates) (hl : H.len < 2 ^ 
       Covers ([] ++ fsWr H.len s) (t.rd ++ t.wr) ∧ Covers (fsWr H.len s) t.wr := by
   obtain ⟨p1, p2, d1, -, -, -, -, d6, d7, f1, f2, e680, efit, -⟩ := hs
   obtain ⟨a0, a1, a2, a3, a4, a5⟩ := fs_entry e680 efit hI
-  have hrt := rate_lt hr
-  have eA := entry_argAddr hI.esp
-  have eSp := entry_esp hI.esp
+  obtain hrt := rate_lt hr
+  obtain eA := entry_argAddr hI.esp
+  obtain eSp := entry_esp hI.esp
   rw [ret_eq] at eSp
-  have hfb : (s.gpr .esp - BitVec.ofNat 32 664).setWidth 64 =
+  obtain hfb : (s.gpr .esp - BitVec.ofNat 32 664).setWidth 64 =
       (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 664 := frame_base (by omega_using [e680])
-  have hsc : (s.gpr .esp - BitVec.ofNat 32 664 + BitVec.ofNat 32 24).setWidth 64 =
+  obtain hsc : (s.gpr .esp - BitVec.ofNat 32 664 + BitVec.ofNat 32 24).setWidth 64 =
       (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 640 := scr_eq (s.gpr .esp) (by omega_using [e680]) (by decide)
-  have hrb : (s.gpr .esp - BitVec.ofNat 32 (664 + 4)).setWidth 64 =
+  obtain hrb : (s.gpr .esp - BitVec.ofNat 32 (664 + 4)).setWidth 64 =
       (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 668 := frame_base (by omega_using [e680])
-  have hsb : (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 668 - (12 : BitVec 64) =
+  obtain hsb : (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 668 - (12 : BitVec 64) =
       (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 680 := by
     rw [show (12 : BitVec 64) = BitVec.ofNat 64 12 from rfl, BitVec.sub_sub, ← BitVec.ofNat_add]
-  have sA := in_stack (s.gpr .esp) (a := 664) (k := 24) (S := 680) (by decide) (by decide)
-  have sC := in_stack (s.gpr .esp) (a := 640) (k := 640) (S := 680) (by decide) (by decide)
-  have sR := in_stack (s.gpr .esp) (a := 668) (k := 4) (S := 680) (by decide) (by decide)
-  have sS := in_stack (s.gpr .esp) (a := 680) (k := 12) (S := 680) (by decide) (by decide)
-  have hrate : (BitVec.ofNat 32 H.rate).toNat = H.rate := toNat_ofNat32 (by omega_using [hrt])
-  have hlen : (BitVec.ofNat 32 H.len).toNat = H.len := toNat_ofNat32 (by omega_using [hl])
-  have hw : ∀ r ∈ fsWr H.len s, ∃ r' ∈ t.wr, ∃ off, r.base = r'.base + BitVec.ofNat 64 off ∧
+  obtain sA := in_stack (s.gpr .esp) (a := 664) (k := 24) (S := 680) (by decide) (by decide)
+  obtain sC := in_stack (s.gpr .esp) (a := 640) (k := 640) (S := 680) (by decide) (by decide)
+  obtain sR := in_stack (s.gpr .esp) (a := 668) (k := 4) (S := 680) (by decide) (by decide)
+  obtain sS := in_stack (s.gpr .esp) (a := 680) (k := 12) (S := 680) (by decide) (by decide)
+  obtain hrate : (BitVec.ofNat 32 H.rate).toNat = H.rate := toNat_ofNat32 (by omega_using [hrt])
+  obtain hlen : (BitVec.ofNat 32 H.len).toNat = H.len := toNat_ofNat32 (by omega_using [hl])
+  obtain hw : ∀ r ∈ fsWr H.len s, ∃ r' ∈ t.wr, ∃ off, r.base = r'.base + BitVec.ofNat 64 off ∧
       off + r.len ≤ r'.len := by
     intro r hr
     rw [hI.wr, hA.wr, allocFrame_wr, p2]
@@ -1543,7 +1572,7 @@ theorem fin_correct {H : Spec.Sha3.HashFn} (hH : hashSponge H) (hr : H.rate ∈ 
     WP isa (finalize H.rate H.len) s fun s' => abiPreserved s s' ∧ (finX86 H).post s s' := by
   have hs' := hs
   obtain ⟨-, -, -, -, -, d4, d5, d6, d7, -, -, e680, efit, -⟩ := hs'
-  have hrt := rate_lt hr
+  obtain hrt := rate_lt hr
   unfold finalize
   refine WP.frameAlloc (by decide) (by decide) (by decide) (by omega_using [e680]) (finalize_nosp _ _) ?_
   refine WP.seq (WP.mono (fp_args hs) fun t hI => ?_)
@@ -1551,26 +1580,26 @@ theorem fin_correct {H : Spec.Sha3.HashFn} (hH : hashSponge H) (hr : H.rate ∈ 
   refine WP.seq (WP.mono (fs_args hs hA) fun t₂ hI₂ => ?_)
   obtain ⟨a0, a1, a2, a3, a4, -⟩ := fs_entry e680 efit hI₂
   obtain ⟨hpre, hc, hw⟩ := fs_pre hr hl hs hA hI₂
-  have hfb : (s.gpr .esp - BitVec.ofNat 32 664).setWidth 64 =
+  obtain hfb : (s.gpr .esp - BitVec.ofNat 32 664).setWidth 64 =
       (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 664 := frame_base (by omega_using [e680])
-  have hsc : (s.gpr .esp - BitVec.ofNat 32 664 + BitVec.ofNat 32 24).setWidth 64 =
+  obtain hsc : (s.gpr .esp - BitVec.ofNat 32 664 + BitVec.ofNat 32 24).setWidth 64 =
       (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 640 := scr_eq (s.gpr .esp) (by omega_using [e680]) (by decide)
-  have sA := in_stack (s.gpr .esp) (a := 664) (k := 24) (S := 680) (by decide) (by decide)
-  have sF := in_stack (s.gpr .esp) (a := 664) (k := 664) (S := 680) (by decide) (by decide)
-  have sC := in_stack (s.gpr .esp) (a := 640) (k := 640) (S := 680) (by decide) (by decide)
-  have hrate : (BitVec.ofNat 32 H.rate).toNat = H.rate := toNat_ofNat32 (by omega_using [hrt])
-  have hlen : (BitVec.ofNat 32 H.len).toNat = H.len := toNat_ofNat32 (by omega_using [hl])
+  obtain sA := in_stack (s.gpr .esp) (a := 664) (k := 24) (S := 680) (by decide) (by decide)
+  obtain sF := in_stack (s.gpr .esp) (a := 664) (k := 664) (S := 680) (by decide) (by decide)
+  obtain sC := in_stack (s.gpr .esp) (a := 640) (k := 640) (S := 680) (by decide) (by decide)
+  obtain hrate : (BitVec.ofNat 32 H.rate).toNat = H.rate := toNat_ofNat32 (by omega_using [hrt])
+  obtain hlen : (BitVec.ofNat 32 H.len).toNat = H.len := toNat_ofNat32 (by omega_using [hl])
   refine WP.call (k := Proof.Sha3.squeezeX86) Stream.Squeeze.squeeze_verified.1 squeeze_nosp
     (by rw [squeeze_stack, hI₂.esp, sub_toNat (by omega_using [e680])]; omega_using [e680]) hpre hc hw
     fun s' _ _ hcs hf _ ⟨s₂, hm₂, _, hpost⟩ => ?_
-  have stk := stack_below (e := s.gpr .esp) (S := 680) (by omega_using [e680])
-  have fall : Frame [⟨(arg s 0).setWidth 64, 200⟩, ⟨(arg s 2).setWidth 64, H.len⟩,
+  obtain stk := stack_below (e := s.gpr .esp) (S := 680) (by omega_using [e680])
+  obtain fall : Frame [⟨(arg s 0).setWidth 64, 200⟩, ⟨(arg s 2).setWidth 64, H.len⟩,
       ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 680, 680⟩] s.mem s'.mem := by
-    have f₀ := hA.frame.mono (rs' := [⟨(arg s 0).setWidth 64, 200⟩, ⟨(arg s 2).setWidth 64, H.len⟩,
+    obtain f₀ := hA.frame.mono (rs' := [⟨(arg s 0).setWidth 64, 200⟩, ⟨(arg s 2).setWidth 64, H.len⟩,
         ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 680, 680⟩]) fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl <;> simp
-    have f₁ := hI₂.frame.sub (rs' := [⟨(arg s 0).setWidth 64, 200⟩, ⟨(arg s 2).setWidth 64, H.len⟩,
+    obtain f₁ := hI₂.frame.sub (rs' := [⟨(arg s 0).setWidth 64, 200⟩, ⟨(arg s 2).setWidth 64, H.len⟩,
         ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 680, 680⟩]) fun r hr => by
       rw [List.mem_singleton.mp hr, hfb]
       exact ⟨⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 680, 680⟩, by simp, sF⟩
@@ -1585,14 +1614,20 @@ theorem fin_correct {H : Spec.Sha3.HashFn} (hH : hashSponge H) (hr : H.rate ∈ 
     · refine ⟨⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 680, 680⟩, by simp, ?_⟩
       rw [squeeze_stack, hI₂.esp, stk]
       exact below_inner (by decide) (by omega_using [e680])
-  have ef := entry_frame (S := 680) hI₂ rfl (by decide) (by omega_using [e680])
+  obtain ef := entry_frame (S := 680) hI₂ rfl (by decide) (by omega_using [e680])
+  intro mm vv fl
+  change Frame [⟨(s.gpr .esp - BitVec.ofNat 32 664).setWidth 64, 664⟩] s'.mem mm at fl
+  rw [hfb] at fl
   refine ⟨⟨fun r hr => ?_, ?_⟩, fun msg hm hp => ?_⟩
-  · by_cases h : r = .esp
+  · show (freed 664 s').gpr r = s.gpr r
+    by_cases h : r = .esp
     · subst h
       rw [freed_esp, hcs .esp (by simp [calleeSaved]), hI₂.esp]; exact BitVec.sub_add_cancel _ _
     · have hne : r ≠ .eax := by rintro rfl; simp [calleeSaved] at hr
       rw [freed_gpr _ _ h, hcs r hr, hI₂.gpr r hne, hA.gpr r hr h]
-  · rw [freed_mem]
+  · show mm.readW _ 32 = _
+    rw [fl.readW (r := ⟨(s.gpr .esp).setWidth 64, 4⟩) (Region.contains_self _ _) (fun r hr => by
+      rw [List.mem_singleton.mp hr]; exact Offset.base_disjoint_below _ (by decide)) (by decide)]
     refine fall.readW (r := ⟨(s.gpr .esp).setWidth 64, 4⟩) (Region.contains_self _ _) (fun r hr => ?_)
       (by decide)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -1602,9 +1637,12 @@ theorem fin_correct {H : Spec.Sha3.HashFn} (hH : hashSponge H) (hr : H.rate ∈ 
     · exact Offset.base_disjoint_below _ (by decide)
   · simp only [Proof.Sha3.squeezeX86, arg_withRegions, State.withRegions_mem, a0, a1, a2, a3, a4,
       hrate, hlen] at hpost
-    have hst : stateAt t₂.callEntry.mem ((arg s 0).setWidth 64) = stateAt u.mem ((arg s 0).setWidth 64) :=
+    obtain hst : stateAt t₂.callEntry.mem ((arg s 0).setWidth 64) = stateAt u.mem ((arg s 0).setWidth 64) :=
       stateAt_frame ef fun r hr => by rw [List.mem_singleton.mp hr]; exact d6.symm
-    rw [freed_mem, ← hm₂, hpost.1, hst, hA.pad msg hm hp]
+    show bytesAt mm _ _ = _
+    rw [bytesAt_frame fl (fun r hr => by
+      rw [List.mem_singleton.mp hr]; exact (d7.sub_left sF).symm) (by omega_using [hl]),
+      ← hm₂, hpost.1, hst, hA.pad msg hm hp]
     exact digest_of_pad hH rfl
 
 theorem fin_ct {H : Spec.Sha3.HashFn} (hr : H.rate ∈ rates) (hl : H.len < 2 ^ 15)
@@ -1614,7 +1652,7 @@ theorem fin_ct {H : Spec.Sha3.HashFn} (hr : H.rate ∈ rates) (hl : H.len < 2 ^ 
     ConstantTime isa (finX86 H).pre (finX86 H).pub (finalize H.rate H.len) := by
   intro σ₁ σ₂ t₁ t₂ σ₁' σ₂' p₁ p₂ hp e₁ e₂
   obtain ⟨hsp, ha⟩ := hp
-  have hP : RelCT isa (fun a b => a = σ₁ ∧ b = σ₂) (finalize H.rate H.len) fun _ _ => True := by
+  obtain hP : RelCT isa (fun a b => a = σ₁ ∧ b = σ₂) (finalize H.rate H.len) fun _ _ => True := by
     unfold finalize
     refine RelCT.frameAlloc (R := fun _ _ => True) (RelCT.seq (Q := fun _ _ => True)
       (RelCT.wp (F₁ := fpInv H.rate σ₁) (F₂ := fpInv H.rate σ₂)
@@ -1628,7 +1666,7 @@ theorem fin_ct {H : Spec.Sha3.HashFn} (hr : H.rate ∈ rates) (hl : H.len < 2 ^ 
       fun a b ⟨_, ha', hb'⟩ => ⟨fp_call hr p₁ ha', fp_call hr p₂ hb'⟩) ?_
     · obtain ⟨q1, q2, q3⟩ := fp_pre hr p₁ ha'
       obtain ⟨r1, r2, r3⟩ := fp_pre hr p₂ hb'
-      have ew : fpWr σ₂ = fpWr σ₁ := by simp only [fpWr, ha 0 (by decide), hsp]
+      obtain ew : fpWr σ₂ = fpWr σ₁ := by simp only [fpWr, ha 0 (by decide), hsp]
       rw [ew] at r1 r2 r3
       obtain ⟨x0, x1, x2, x3, x4⟩ := fp_entry p₁.2.2.2.2.2.2.2.2.2.2.2.1 p₁.2.2.2.2.2.2.2.2.2.2.2.2.1 ha'
       obtain ⟨y0, y1, y2, y3, y4⟩ := fp_entry p₂.2.2.2.2.2.2.2.2.2.2.2.1 p₂.2.2.2.2.2.2.2.2.2.2.2.2.1 hb'
@@ -1650,7 +1688,7 @@ theorem fin_ct {H : Spec.Sha3.HashFn} (hr : H.rate ∈ rates) (hl : H.len < 2 ^ 
       [] (fsWr H.len σ₁) (fun a b ⟨_, ⟨u₁, hA₁, ha'⟩, ⟨u₂, hA₂, hb'⟩⟩ => ?_)
     obtain ⟨q1, q2, q3⟩ := fs_pre hr hl p₁ hA₁ ha'
     obtain ⟨r1, r2, r3⟩ := fs_pre hr hl p₂ hA₂ hb'
-    have ew : fsWr H.len σ₂ = fsWr H.len σ₁ := by
+    obtain ew : fsWr H.len σ₂ = fsWr H.len σ₁ := by
       simp only [fsWr, ha 0 (by decide), ha 2 (by decide), hsp]
     rw [ew] at r1 r2 r3
     obtain ⟨x0, x1, x2, x3, x4, x5⟩ :=
@@ -1697,10 +1735,10 @@ theorem fin_verified {H : Spec.Sha3.HashFn} (hH : hashSponge H) (hr : H.rate ∈
 macro "fin_x86" hH:term:max len:term:max : term => `(fin_verified $hH (by decide) (by decide)
   (fin_ct (by decide) (by decide) (by taint_decide) (by taint_decide))
   ⟨finSat $len, by
-    have a0 : arg (finSat $len) 0 = 0x1000 := by decide
-    have a1 : arg (finSat $len) 1 = 0 := by decide
-    have a2 : arg (finSat $len) 2 = 0x2000 := by decide
-    have e : argAddr (finSat $len) 0 = 0x4004 := by decide
+    obtain a0 : arg (finSat $len) 0 = 0x1000 := by decide
+    obtain a1 : arg (finSat $len) 1 = 0 := by decide
+    obtain a2 : arg (finSat $len) 2 = 0x2000 := by decide
+    obtain e : argAddr (finSat $len) 0 = 0x4004 := by decide
     simp only [finX86, a0, a1, a2, e]
     refine ⟨rfl, rfl, ?_, ?_, ?_, ?_, ?_, ?_, ?_, by decide, by decide, by decide, by decide,
       by decide⟩ <;>

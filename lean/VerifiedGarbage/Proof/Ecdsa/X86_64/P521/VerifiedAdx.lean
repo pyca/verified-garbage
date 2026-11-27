@@ -1,9 +1,9 @@
 module
 
-import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.Verified
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.Verified
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.Layout
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.Contract
 public import VerifiedGarbage.Proof.Ecdsa.Contract
+import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.P521.X86_64.TaintSumsAdx
 import VerifiedGarbage.Proof.Ecdsa.X86_64.RspMxcsr
 import VerifiedGarbage.Proof.P521.Prime
@@ -15,7 +15,6 @@ import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.LitAdx
 import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldErase
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.Verified
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.Layout
-meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.Contract
 meta import VerifiedGarbage.Proof.P521.X86_64.TaintSumsAdx
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.RspMxcsr
 meta import VerifiedGarbage.Proof.P521.Prime
@@ -85,7 +84,7 @@ theorem p521x_ok (hI : InvSounds) : CfgOk p521x where
   sh := by rw [p521x_sh]; decide
   comb d h := by cases h; exact ⟨by decide, by decide, by decide⟩
   inv _ := ⟨by decide, @hI _ _ (by
-    show Nat.Prime Spec.P521.curve.p
+    show IsPrime Spec.P521.curve.p
     rw [show Spec.P521.curve.p =
       6864797660130609714981900799081393217269435300143305409394463459185543183397656052122559640661454554977296311391480858037121987999716643812574028291115057151
       by decide +kernel]
@@ -95,7 +94,7 @@ theorem p521x_ok (hI : InvSounds) : CfgOk p521x where
   window_am3 := fun _ => by unfold AM3; decide +kernel
   comb_am3 := fun _ _ => by unfold AM3; decide +kernel
   am3 := by unfold AM3; decide +kernel
-  even h := absurd h (by decide)
+  even _ h := absurd h (by decide)
   inverse _ := ⟨by decide, rfl⟩
 
 theorem p521x_tbls (hT : CombOkW Spec.P521.curve 7 83 Impl.P521.p521Comb7 Impl.P521.p521Comb7Start) :
@@ -115,16 +114,25 @@ theorem pre_of_x {s : State} (h : signX86_64.pre s) : Pre p521x s := by
     rcases hr with h | h <;> simp [h]
 
 /-- `InlineOk`, checked once for every theorem that needs it. -/
-theorem sign_inlineOk_adx : signP521Adx.InlineOk = true := by lit_decide
+theorem sign_inlineOk_adx : signP521Adx.InlineOkN 2 = true := by lit_decide
+
+theorem p521x_mulBase : MulBaseOkI p521x :=
+  ⟨fun _ => ⟨_, rfl, by decide⟩, fun h => absurd h (by decide)⟩
+
+theorem sign_inlineAll_adx : signP521Adx.inlineAll = signI p521x := by kernel_rfl
 
 theorem sign_x86_adx (hL : Law Spec.P521.curve)
     (hT : CombOkW Spec.P521.curve 7 83 Impl.P521.p521Comb7 Impl.P521.p521Comb7Start)
     (hI : InvSounds) (s : State)
     (hs : signX86_64.pre s) :
-    ∃ t s', Exec isa signP521Adx.inline s t s' ∧ abiPreserved s s' ∧ signX86_64.post s s' := by
-  obtain ⟨t, s', he, hsv, hpost⟩ := sign_ok (c := p521x) (p521x_ok hI).toBaseCfgOk hL (p521x_tbls hT) (pre_of_x hs)
-  obtain ⟨hsp, hmx⟩ := rsp_mxcsr (c := signP521Adx) (by lit_decide)
-  have F := (Exec.regions he (Code.noCalls_inline sign_inlineOk_adx)).2.2
+    ∃ t s', Exec isa signP521Adx.inlineAll s t s' ∧ abiPreserved s s' ∧ signX86_64.post s s' := by
+  obtain ⟨t, s', he, hsv, hpost⟩ := sign_okI (c := p521x) (p521x_ok hI).toBaseCfgOk hL (p521x_tbls hT)
+    (pre_of_x hs) p521x_mulBase
+  rw [← sign_inlineAll_adx] at he
+  have hsp := Code.clobbers_rsp_of_inlineOkN sign_inlineOk_adx
+  have hmx : signP521Adx.inlineAll.allInstrs (fun i => !loadsMxcsr i) = true := by
+    exact Code.allInstrs_inlineAll (by lit_decide)
+  have F := (Exec.regions he (Code.noCalls_inlineAll sign_inlineOk_adx)).2.2
   obtain ⟨-, hwr, -, -, -, -, -, -, -, hro, hrs, -, -, -⟩ := hs
   refine ⟨t, s', he, abiPreserved_of_exec hmx he
     ⟨fun r hr => ?_, ?_⟩, hpost⟩
@@ -163,9 +171,9 @@ theorem sign_ct_adx : ConstantTime isa signX86_64.pre signX86_64.pub signP521Adx
 /-- `sign_call_x86` with BMI2 and ADX. -/
 theorem sign_call_x86_adx (hL : Law Spec.P521.curve)
     (hT : CombOkW Spec.P521.curve 7 83 Impl.P521.p521Comb7 Impl.P521.p521Comb7Start)
-    (hI : InvSounds) (s : State) (hs : signX86_64.pre s) (hc : Clear (hole (s.gpr .rsp)) s) :
+    (hI : InvSounds) (s : State) (hs : signX86_64.pre s) (hc : Clear (holeN (s.gpr .rsp) 2) s) :
     ∃ t s', Exec isa signP521Adx s t s' ∧ abiPreserved s s' ∧ signX86_64.post s s' :=
-  ok_of_inline (k := signX86_64) sign_inlineOk_adx (sign_x86_adx hL hT hI)
+  ok_of_inlineAll (k := signX86_64) sign_inlineOk_adx (by decide) (sign_x86_adx hL hT hI)
     (fun s b hv u hs hc hp => post_patch s b hv u hs hc hp) s ⟨hs, hc⟩
 
 end VG.Proof.Ecdsa.X86_64.P521

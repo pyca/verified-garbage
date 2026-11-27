@@ -164,8 +164,8 @@ structure State where
   /-- Regions the code may read and write. -/
   wr : List Region
   /-- Values the model does not know, used in order: the return address each
-  call leaves in `ra`, and what a call may leave in `t0`–`t6` (see
-  `TCB/Code.lean`). -/
+  call leaves in `ra`, what a call may leave in `t0`–`t6` (see
+  `TCB/Code.lean`), and what a released frame's bytes hold (`lose`). -/
   unknowns : Nat → BitVec 64 := fun _ => 0
   /-- The address of each `static` the code can name (`lla`), by name. -/
   syms : String → BitVec 64 := fun _ => 0
@@ -497,8 +497,9 @@ wrap around the address space (`sp < 16`).
 `alloc bytes` is `addi sp, sp, -bytes` alone: the `bytes` bytes of the frame
 become a writable region, at the head of `wr`, which it does not write: like
 the 8 bytes of `push`'s frame that it does not write, they hold what memory
-held there before, below the stack pointer, where the contract says nothing
-of them (`Abi.reserved`). Faults unless `bytes` is a multiple of 16 with
+held there before, below the stack pointer: bytes of which the contract says
+nothing (`Abi.reserved`), or those of a frame the function released, which
+are `lose`'s, so a proof cannot know them either. Faults unless `bytes` is a multiple of 16 with
 `0 < bytes ≤ 4064`, or if the frame would wrap around the address space
 (`sp < bytes`). Below 2048, `-bytes` is an encodable immediate, and so is
 `bytes` for `free`. From 2048 on, `alloc` is two instructions, `addi sp, sp,
@@ -521,21 +522,48 @@ def push : Instr → State → Option State
     else none
   | _, _ => none
 
+/-- The memory once the `n` bytes at `a`, a released frame, are below the
+stack pointer (psABI, "Integer Calling Convention": "Procedures must not
+rely upon the persistence of stack-allocated data whose addresses lie below
+the stack pointer"): anything that runs on the stack between two
+instructions (a signal handler) may have written them, and the code can
+assume nothing of them. Each byte either keeps its value or
+takes one the model does not know, as the unknowns say: for the doubleword
+`j` of the frame, the bytes of `u (2 * j)` say which of its bytes are
+replaced (those not zero), and the bytes of `u (2 * j + 1)` are what
+replaces them. A byte may keep its value, so what a function leaves in a
+frame it releases may be left there (`NoResidue`, whose two runs share
+their unknowns, still tells apart a frame that holds a secret). -/
+def lose (m : Mem) (a : Addr) (n : Nat) (u : Nat → BitVec 64) : Mem :=
+  fun x =>
+    let d := (x - a).toNat
+    if d < n then
+      if (u (2 * (d / 8))).extractLsb' (8 * (d % 8)) 8 = 0 then m x
+      else (u (2 * (d / 8) + 1)).extractLsb' (8 * (d % 8)) 8
+    else m x
+
 /-- The pop of a frame: "Load and Store Instructions" (`ld rd, 8(sp)`), then
 "Integer Register-Immediate Instructions" (`addi sp, sp, 16`). Faults unless
 the stack pointer and the writable regions are those the push left (`s₁`),
 whose head is the frame; it removes that region. `free bytes` is `addi sp,
 sp, bytes` alone (or the two `addi`s of `push`'s `alloc`), likewise for the
-frame of `alloc bytes`. -/
+frame of `alloc bytes`. The released frame's bytes are then below the stack
+pointer, and are `lose`'s: the next of the state's `unknowns`, two for each
+doubleword of the frame, say what each holds. -/
 def pop : Instr → State → State → Option State
   | .pop r, s₁, s₂ =>
     if s₂.sp = s₁.sp ∧ s₂.wr = s₁.wr ∧ s₁.wr.head? = some ⟨s₁.sp, 16⟩ then
-      some { s₂.write r (s₂.mem.read (s₂.sp + 8) 8) with sp := s₂.sp + 16, wr := s₂.wr.tail }
+      some { s₂.write r (s₂.mem.read (s₂.sp + 8) 8) with
+        sp := s₂.sp + 16, wr := s₂.wr.tail, mem := lose s₂.mem s₂.sp 16 s₂.unknowns,
+        unknowns := fun n => s₂.unknowns (n + 4) }
     else none
   | .free bytes, s₁, s₂ =>
     if 0 < bytes ∧ bytes ≤ 4064 ∧ bytes % 16 = 0 ∧
         s₂.sp = s₁.sp ∧ s₂.wr = s₁.wr ∧ s₁.wr.head? = some ⟨s₁.sp, bytes⟩ then
-      some { s₂ with sp := s₂.sp + BitVec.ofNat 64 bytes, wr := s₂.wr.tail }
+      some { s₂ with
+        sp := s₂.sp + BitVec.ofNat 64 bytes, wr := s₂.wr.tail,
+        mem := lose s₂.mem s₂.sp bytes s₂.unknowns,
+        unknowns := fun n => s₂.unknowns (n + bytes / 4) }
     else none
   | _, _, _ => none
 
@@ -572,5 +600,7 @@ abbrev isa : ISA where
   icall := icall
   -- A function's symbol, as a static's (`lla`).
   fnAddr s name := s.syms name
+  ptrEq := withPtrEq
+  ptrEqDec := withPtrEqDecEq withPtrEq (fun _ _ _ _ => rfl)
 
 end VG.RISCV64

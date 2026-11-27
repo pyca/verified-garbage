@@ -1,24 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.GenerateKeyCheck
+public import VerifiedGarbage.Proof.Dsa.AArch64.GenerateKeyCorrect
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Dsa.AArch64.GenerateKeyCorrect
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Dsa.AArch64.GenerateKeyBlockCT
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomPrepareCT
-public import VerifiedGarbage.Proof.Dsa.AArch64.GenerateKeyPublic
 import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-import VerifiedGarbage.Proof.Dsa.AArch64.GenerateKeyGenerate
-import VerifiedGarbage.Proof.Dsa.AArch64.GenerateKeyDerivePre
-import VerifiedGarbage.Proof.Dsa.AArch64.DeriveVerified
-import VerifiedGarbage.Proof.Dsa.AArch64.DeriveCheckedVerified
-import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCallLayout
 import VerifiedGarbage.Proof.Dsa.AArch64.ParametersVerified
+import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCallMemory
 public import VerifiedGarbage.Proof.Dsa.Contract
 import VerifiedGarbage.Proof.Dsa.AArch64.RandomSampleAgreement
-import VerifiedGarbage.Proof.Dsa.AArch64.GenerateKeySampled
-import VerifiedGarbage.Proof.Dsa.AArch64.GenerateKeyDeriveCall
 import VerifiedGarbage.Proof.Dsa.RandomTraceResult
 import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignSingleCT
 import VerifiedGarbage.Proof.Dsa.AArch64.RandomSample
@@ -26,6 +17,166 @@ import VerifiedGarbage.Proof.Dsa.AArch64.RandomMemory
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignFinishAgreement
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Impl.Dsa.AArch64.GenerateKey
+public import VerifiedGarbage.Proof.Framework.RelCT
+import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
+import Aesop.BuiltinRules
+import VerifiedGarbage.Proof.Dsa.AArch64.Run
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Impl.Dsa.AArch64.GenerateKey
+meta import VerifiedGarbage.Proof.Framework.RelCT
+meta import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
+meta import Aesop.BuiltinRules
+meta import VerifiedGarbage.Proof.Dsa.AArch64.Run
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
+
+/-! ### `Dsa.AArch64.GenerateKeyBlockCT`, which only this module used -/
+
+section
+
+/-! # Key generation's straight-line pieces: only the stack pointer is public in them -/
+
+@[expose] public section
+namespace VG.Proof.Dsa.AArch64
+open VG VG.AArch64 VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Proof.MlKem.AArch64
+open VG.Impl.Dsa.AArch64
+
+theorem keygen_head_ct : RelCT isa (fun s t => s.sp = t.sp)
+    (.block (GenerateKey.entry ++ GenerateKey.checkArgs)) (fun _ _ => True) :=
+  (two_taint (Φ := fun (B : Addr) s => s.sp = B) [] (by intro _ _ _ _ _ _ h; cases h) (by taint_decide)).mono
+    (fun s _ h => ⟨s.sp, rfl, h.symm, h⟩) (fun _ _ _ => trivial)
+
+theorem keygen_testCheck_ct : RelCT isa (fun s t => s.sp = t.sp)
+    (.block [.ldrSp .x30 RandomSign.oLink, .logic .orr .w .x0 .x0 .x0]) (fun _ _ => True) :=
+  (two_taint (Φ := fun (B : Addr) s => s.sp = B) [] (by intro _ _ _ _ _ _ h; cases h) (by taint_decide)).mono
+    (fun s _ h => ⟨s.sp, rfl, h.symm, h⟩) (fun _ _ _ => trivial)
+
+theorem keygen_storeStatus_ct : RelCT isa (fun s t => s.sp = t.sp)
+    (.block (Random.store Random.oStatus .x0 ++ ([.subImm .x .x4 .x0 1] : List Instr))) (fun _ _ => True) :=
+  (two_taint (Φ := fun (B : Addr) s => s.sp = B) [] (by intro _ _ _ _ _ _ h; cases h) (by taint_decide)).mono
+    (fun s _ h => ⟨s.sp, rfl, h.symm, h⟩) (fun _ _ _ => trivial)
+
+theorem keygen_deriveArgs_ct : RelCT isa (fun s t => s.sp = t.sp)
+    (.block GenerateKey.deriveArgs) (fun _ _ => True) :=
+  (two_taint (Φ := fun (B : Addr) s => s.sp = B) [] (by intro _ _ _ _ _ _ h; cases h) (by taint_decide)).mono
+    (fun s _ h => ⟨s.sp, rfl, h.symm, h⟩) (fun _ _ _ => trivial)
+
+theorem keygen_keepStatus_ct : RelCT isa (fun s t => s.sp = t.sp)
+    (.block GenerateKey.keepStatus) (fun _ _ => True) :=
+  (two_taint (Φ := fun (B : Addr) s => s.sp = B) [] (by intro _ _ _ _ _ _ h; cases h) (by taint_decide)).mono
+    (fun s _ h => ⟨s.sp, rfl, h.symm, h⟩) (fun _ _ _ => trivial)
+
+end VG.Proof.Dsa.AArch64
+
+end
+
+end
+
+/-! ### `Dsa.AArch64.GenerateKeyPublic`, which only this module used -/
+
+section
+
+/-! # Key generation's public inputs, and what its leak fixes -/
+
+@[expose] public section
+namespace VG.Proof.Dsa.AArch64
+open VG VG.AArch64 VG.Proof.Bignum VG.Proof.Bignum.AArch64
+open VG.Impl.Dsa.AArch64
+
+structure KeygenPublicAgree (s t : State) : Prop where
+  sp : s.sp = t.sp
+  regs : ∀ r ∈ argRegs, s.gpr r = t.gpr r
+  args : ∀ i < 3, stackArg s i = stackArg t i
+  params : (keygenInput s).params = (keygenInput t).params
+
+theorem KeygenPublicAgree.base {s t : State} (h : KeygenPublicAgree s t) : randomBase s = randomBase t := by
+  unfold randomBase
+  rw [h.sp]
+
+theorem KeygenPublicAgree.pLen {s t : State} (h : KeygenPublicAgree s t) :
+    (keygenInput s).pLen = (keygenInput t).pLen :=
+  congrArg BitVec.toNat (h.regs .x5 (by decide))
+
+theorem KeygenPublicAgree.qLen {s t : State} (h : KeygenPublicAgree s t) :
+    (keygenInput s).qLen = (keygenInput t).qLen :=
+  congrArg BitVec.toNat (h.regs .x6 (by decide))
+
+theorem KeygenPublicAgree.checked {s t : State} (h : KeygenPublicAgree s t) : keygenChecked s = keygenChecked t := by
+  unfold keygenChecked
+  rw [h.pLen, h.qLen, h.params]
+
+theorem KeygenPublicAgree.qBytes {s t : State} (h : KeygenPublicAgree s t) : keygenQBytes s = keygenQBytes t := by
+  unfold keygenQBytes
+  rw [h.pLen, h.qLen, h.params]
+
+theorem keygen_public_related {extra : Nat} {s t : State}
+    (h : (Spec.Dsa.generateKeyContract abi (extra + 256)).pub s t) :
+    KeygenPublicAgree s t ∧ (keygenResult s).status = (keygenResult t).status ∧
+      (keygenResult s).used = (keygenResult t).used ∧ (keygenResult s).trace = (keygenResult t).trace := by
+  sig_pub [Spec.Dsa.generateKeyContract, Spec.Dsa.generateKeySig, abi, argRegs, keygenStackArgs] at h
+  simp only [List.getD_cons_succ, List.getD_cons_zero] at h
+  obtain ⟨hsp, hleak, hdi, hsi, hdx, hcx, h8, h9, h6, h7, a0, a1, a2⟩ := h
+  have hregs : ∀ r ∈ argRegs, s.gpr r = t.gpr r := by
+    intro r hr
+    simp only [argRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+    exacts [hdi, hsi, hdx, hcx, h8, h9, h6, h7]
+  have hargs : ∀ i < 3, stackArg s i = stackArg t i := by
+    intro i hi
+    have hc : i = 0 ∨ i = 1 ∨ i = 2 := by omega_using [hi]
+    rcases hc with rfl | rfl | rfl
+    exacts [a0, a1, a2]
+  change ((keygenInput s).params.map (·.toNat) ++ [(keygenResult s).status, (keygenResult s).used] ++
+      (keygenResult s).trace) = ((keygenInput t).params.map (·.toNat) ++
+      [(keygenResult t).status, (keygenResult t).used] ++ (keygenResult t).trace) at hleak
+  rw [List.append_assoc, List.append_assoc] at hleak
+  have hlen : ((keygenInput s).params.map (·.toNat)).length = ((keygenInput t).params.map (·.toNat)).length := by
+    simp only [keygenInput, List.length_map, bytesAt_length, h8]
+  obtain ⟨hp, hrest⟩ := List.append_inj hleak hlen
+  have hp' := (List.map_inj_right (fun _ _ h => BitVec.toNat_inj.1 h)).1 hp
+  simp only [List.cons_append, List.nil_append, List.cons.injEq] at hrest
+  exact ⟨⟨hsp, hregs, hargs, hp'⟩, hrest⟩
+
+theorem keygen_sample_trace_le (q fuel : Nat) (rand : List Byte) :
+    ∀ x ∈ (Spec.Dsa.Random.sample q fuel rand).trace, x ≤ 4 := by
+  induction fuel generalizing rand with
+  | zero => simp [Spec.Dsa.Random.sample]
+  | succ fuel ih =>
+    rw [Spec.Dsa.Random.sample]
+    split
+    · simp
+    · dsimp only
+      split
+      · simp
+      · split
+        · simp
+        · intro x hx
+          simp only [List.mem_cons] at hx
+          rcases hx with rfl | hx
+          · decide
+          · exact ih _ x hx
+
+/-- The sampler's trace is the result's trace without the derivation's mark. -/
+theorem keygen_draw_trace {extra : Nat} {s : State} (h : GenerateKeyABI extra s) (hc : keygenChecked s = true) :
+    (keygenResult s).trace.filter (fun x => decide (x ≤ 4)) = (keygenDraw s).trace := by
+  have hle := keygen_sample_trace_le (Spec.Dsa.decodeBE (keygenQBytes s)) 128 (keygenInput s).rand
+  rw [keygen_result_checked h hc]
+  cases (keygenDraw s).scalar with
+  | none => exact List.filter_eq_self.mpr fun x hx => decide_eq_true (hle x hx)
+  | some k =>
+    dsimp only
+    rw [List.filter_append, List.filter_eq_self.mpr fun x hx => decide_eq_true (hle x hx)]
+    split <;> exact List.append_nil _
+
+end VG.Proof.Dsa.AArch64
+
+end
+
+end
 
 /-! ### `Dsa.AArch64.GenerateKeyGenerateCT`, which only this module used -/
 
@@ -54,7 +205,7 @@ def KeygenCheckRelated (v : Backend) (a b : State) : Prop :=
 
 theorem keygen_check_ct (v : Backend) : RelCT isa (KeygenCheckRelated v)
     (.call (keygenCheckName v) (Generate.checkParameters v.mul)) (fun _ _ => True) := by
-  apply VG.AArch64.RelCT.callEx v.parametersVerified.1 v.parametersVerified.2.1
+  apply VG.AArch64.RelCT.callExDit v.parametersVerified.1 v.parametersVerified.2.1 v.parametersNoDit (fun _ _ h => h)
   intro a b ⟨s, t, hs, ht, ha, hb, ⟨a1, a2, a3, a4, a5, a6⟩, ⟨b1, b2, b3, b4, b5, b6⟩, hp⟩
   obtain ⟨hca, hwa⟩ := keygen_check_covers hs ha.rd ha.wr
   obtain ⟨hcb, hwb⟩ := keygen_check_covers ht hb.rd hb.wr
@@ -88,7 +239,7 @@ def KeygenDeriveRelated (v : Backend) (a b : State) : Prop :=
 
 theorem keygen_derive_ct (v : Backend) : RelCT isa (KeygenDeriveRelated v)
     (.call (keygenDeriveName v) (Generate.deriveChecked v.mul)) (fun _ _ => True) := by
-  apply VG.AArch64.RelCT.callEx v.deriveCheckedVerified.1 v.deriveCheckedVerified.2.1
+  apply VG.AArch64.RelCT.callExDit v.deriveCheckedVerified.1 v.deriveCheckedVerified.2.1 v.deriveCheckedNoDit (fun _ _ h => h)
   intro a b ⟨s, t, hs, ht, _, _, ha, hb, ⟨a1, a2, a3, a4, a5, a6, a7, a8, aw⟩, ⟨b1, b2, b3, b4, b5, b6, b7, b8, bw⟩, hp, hst,
     hcs, hct⟩
   obtain ⟨hca, hwa⟩ := keygen_derive_covers hs ha.rd ha.wr
@@ -102,7 +253,7 @@ theorem keygen_derive_ct (v : Backend) : RelCT isa (KeygenDeriveRelated v)
   have hB : stackArg (b.callEntry.withRegions (keygenDeriveRd t) (keygenDeriveWr t)) 0 = stackArg t 2 :=
     (random_call_stackArg hb.sp _ _ 0).trans bw
   sig_pub [Spec.Dsa.deriveKeyDomainCheckedContract, Spec.Dsa.deriveKeySig, abi, argRegs, deriveStackArgs]
-  simp only [hA, hB, List.getD_cons_succ, List.getD_cons_zero]
+  simp only [stackArg_withDit, hA, hB, List.getD_cons_succ, List.getD_cons_zero]
   rw [a3, a4, a5, a6, a7, a8, b3, b4, b5, b6, b7, b8,
     keygen_bytes_params ha, keygen_bytes_params hb, a1, a2, b1, b2, ha.sp, hb.sp]
   refine ⟨by rw [hp.base], ?_, hp.regs .x0 (by decide), hp.regs .x1 (by decide), hp.regs .x3 (by decide),

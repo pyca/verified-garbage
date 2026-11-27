@@ -15,12 +15,14 @@ Its aims are, in order:
 2. Correctness
 3. Performance
 
-It targets x86 (i686 with SSE2), x86-64, ARMv7, ARM64 and PPC64LE
+It targets x86 (i686 with SSE2), x86-64, ARMv7, ARM64, PPC64LE
 (little-endian 64-bit PowerPC, `powerpc64le-unknown-linux-gnu`'s baseline,
-POWER8).
+POWER8) and RISC-V (RV64GC). The tables of [algorithms](#algorithms) say what
+each has.
 
 The crate refuses to build for configurations its ISA models do not
-describe: big-endian ARM, ARM64 and PowerPC, x32, x86 or x86-64 without SSE2 (e.g.
+describe: big-endian ARM, ARM64, PowerPC and RISC-V, RISC-V without the M or C
+extension, x32, x86 or x86-64 without SSE2 (e.g.
 `i586-*`, `x86_64-unknown-none`, the UEFI targets), ARM64 without NEON
 (`aarch64-unknown-none-softfloat`), and Apple's 32-bit ARM targets, which do
 not use AAPCS. Rust has no `cfg` for some other assumptions, so they are
@@ -36,6 +38,42 @@ yours to keep:
 * Only ARMv7 and later are supported on 32-bit ARM; older targets
   (`arm-*`, `armv5te-*`, …) are rejected only because the code does not
   assemble for them.
+
+## Usage
+
+```sh
+cargo add verified-garbage
+```
+
+```rust
+use verified_garbage::aead::chacha20poly1305::ChaCha20Poly1305;
+use verified_garbage::hashes::sha256::Sha256;
+
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let digest: [u8; 32] = Sha256::digest(b"hello world");
+
+    let key = [0; 32]; // a secret, random key
+    let nonce = [0; 12]; // never used twice with the same key
+    let aead = ChaCha20Poly1305::new(&key);
+    let mut data = *b"a message";
+    let tag = aead.encrypt_in_place(&nonce, &digest, &mut data)?;
+    aead.decrypt_in_place(&nonce, &digest, &mut data, &tag)?;
+    assert_eq!(&data, b"a message");
+    Ok(())
+}
+```
+
+It needs Rust 1.95 or later. Its Cargo features are:
+
+* `std` (on by default): detects the CPU's features at run time on every
+  architecture. Without it, AArch64 uses only those the code is compiled for.
+* `alloc` (on with `std`): the algorithms that allocate (Argon2, scrypt, RSA,
+  DSA and FFDH), without `std`.
+* `cpu-features-env`: the environment variable `VG_CPU_FEATURES` restricts the
+  CPU features used, for testing.
+
+[`rustls-verified-garbage`](crates/rustls-verified-garbage/) is a rustls
+provider built on it.
 
 ## Algorithms
 
@@ -293,7 +331,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ SM4</td>
 
 <td>✅</td>
 
@@ -339,7 +377,7 @@ yours to keep:
 
 <td>✅ AES-NI, VAES, AVX2</td>
 
-<td>✅ AES, PMULL</td>
+<td>✅ AES, PMULL, NEON</td>
 
 <td>✅</td>
 
@@ -363,7 +401,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ SSSE3</td>
 
 <td>✅</td>
 
@@ -541,7 +579,7 @@ yours to keep:
 
 <td>✅ NEON</td>
 
-<td>✅</td>
+<td>✅ umaal</td>
 
 <td>✅</td>
 
@@ -589,7 +627,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ SSSE3</td>
 
 <td>✅</td>
 
@@ -609,7 +647,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ SSSE3</td>
 
 <td>✅</td>
 
@@ -629,7 +667,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ SSSE3</td>
 
 <td>✅</td>
 
@@ -669,7 +707,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ SSSE3</td>
 
 <td>✅</td>
 
@@ -685,7 +723,7 @@ yours to keep:
 
 <td>✅ AES-NI, VAES, AVX-512F, AVX2</td>
 
-<td>✅ AES, PMULL, SHA extensions</td>
+<td>✅ AES, PMULL, SHA extensions, NEON</td>
 
 <td>✅</td>
 
@@ -705,7 +743,7 @@ yours to keep:
 
 <td>✅ AES-NI, VAES, AVX2</td>
 
-<td>✅ AES, PMULL</td>
+<td>✅ AES, PMULL, NEON</td>
 
 <td>✅</td>
 
@@ -725,7 +763,7 @@ yours to keep:
 
 <td>✅ AES-NI, VAES, AVX2</td>
 
-<td>✅ AES, PMULL</td>
+<td>✅ AES, PMULL, NEON</td>
 
 <td>✅</td>
 
@@ -745,7 +783,7 @@ yours to keep:
 
 <td>✅ AES-NI, VAES, AVX2</td>
 
-<td>✅ AES, PMULL</td>
+<td>✅ AES, PMULL, NEON</td>
 
 <td>✅</td>
 
@@ -765,7 +803,7 @@ yours to keep:
 
 <td>✅ AES-NI, VAES, AVX2</td>
 
-<td>✅ AES, PMULL</td>
+<td>✅ AES, PMULL, NEON</td>
 
 <td>✅</td>
 
@@ -785,7 +823,7 @@ yours to keep:
 
 <td>✅ AES-NI, VAES, AVX2</td>
 
-<td>✅ AES, PMULL</td>
+<td>✅ AES, PMULL, NEON</td>
 
 <td>✅</td>
 
@@ -805,7 +843,7 @@ yours to keep:
 
 <td>✅ AES-NI, VAES, PCLMULQDQ, VPCLMULQDQ, AVX-512F, AVX-512BW, AVX2</td>
 
-<td>✅ AES, PMULL</td>
+<td>✅ AES, PMULL, NEON</td>
 
 <td>✅</td>
 
@@ -829,7 +867,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ SSSE3</td>
 
 <td>✅</td>
 
@@ -849,7 +887,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ SSSE3</td>
 
 <td>✅</td>
 
@@ -869,7 +907,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ SSSE3</td>
 
 <td>✅</td>
 
@@ -889,7 +927,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ SSSE3</td>
 
 <td>✅</td>
 
@@ -909,7 +947,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ AES-NI</td>
 
 <td>✅</td>
 
@@ -929,7 +967,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ AES-NI</td>
 
 <td>✅</td>
 
@@ -949,7 +987,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ AES-NI</td>
 
 <td>✅</td>
 
@@ -969,7 +1007,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ AES-NI</td>
 
 <td>✅</td>
 
@@ -989,7 +1027,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ AES-NI</td>
 
 <td>✅</td>
 
@@ -1009,7 +1047,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ SSSE3</td>
 
 <td>✅</td>
 
@@ -1029,7 +1067,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ SSSE3</td>
 
 <td>✅</td>
 
@@ -1049,7 +1087,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ SSSE3</td>
 
 <td>✅</td>
 
@@ -1069,7 +1107,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ SSSE3</td>
 
 <td>✅</td>
 
@@ -1189,7 +1227,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ SSSE3</td>
 
 <td>✅</td>
 
@@ -1209,7 +1247,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ SSSE3</td>
 
 <td>✅</td>
 
@@ -1229,7 +1267,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ AES-NI</td>
 
 <td>✅</td>
 
@@ -1249,7 +1287,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ AES-NI</td>
 
 <td>✅</td>
 
@@ -1269,7 +1307,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ AES-NI</td>
 
 <td>✅</td>
 
@@ -1289,7 +1327,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ AES-NI</td>
 
 <td>✅</td>
 
@@ -1305,11 +1343,11 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ SM4</td>
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ AES-NI</td>
 
 <td>✅</td>
 
@@ -1325,11 +1363,11 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ SM4</td>
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ AES-NI</td>
 
 <td>✅</td>
 
@@ -1345,11 +1383,11 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ SM4</td>
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ AES-NI</td>
 
 <td>✅</td>
 
@@ -1365,11 +1403,11 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ SM4</td>
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ AES-NI</td>
 
 <td>✅</td>
 
@@ -1385,11 +1423,11 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ SM4</td>
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ AES-NI</td>
 
 <td>✅</td>
 
@@ -1431,7 +1469,7 @@ yours to keep:
 
 <td>✅ AES-NI</td>
 
-<td>✅ AES, PMULL</td>
+<td>✅ AES, PMULL, NEON</td>
 
 <td>✅</td>
 
@@ -1451,7 +1489,7 @@ yours to keep:
 
 <td>✅ AES-NI, VAES, PCLMULQDQ, VPCLMULQDQ, AVX2</td>
 
-<td>✅ AES, PMULL, SHA extensions</td>
+<td>✅ AES, PMULL, SHA extensions, NEON</td>
 
 <td>✅</td>
 
@@ -1471,7 +1509,7 @@ yours to keep:
 
 <td>✅ AES-NI, VAES, PCLMULQDQ, VPCLMULQDQ, AVX-512F, AVX-512BW, AVX2</td>
 
-<td>✅ AES, PMULL, SHA extensions</td>
+<td>✅ AES, PMULL, SHA extensions, NEON</td>
 
 <td>✅</td>
 
@@ -1491,7 +1529,7 @@ yours to keep:
 
 <td>✅ AES-NI, VAES, AVX2</td>
 
-<td>✅ AES, PMULL</td>
+<td>✅ AES, PMULL, NEON</td>
 
 <td>✅</td>
 
@@ -1511,7 +1549,7 @@ yours to keep:
 
 <td>✅ AES-NI, VAES, AVX2</td>
 
-<td>✅ AES, PMULL</td>
+<td>✅ AES, PMULL, NEON</td>
 
 <td>✅</td>
 
@@ -1533,7 +1571,7 @@ yours to keep:
 
 <td>✅ SVE2, NEON</td>
 
-<td>✅</td>
+<td>✅ umaal</td>
 
 <td>✅ SSSE3</td>
 
@@ -1551,11 +1589,11 @@ yours to keep:
 
 <td>✅ PCLMULQDQ, VPCLMULQDQ, AVX2</td>
 
-<td>✅ AES, PMULL</td>
+<td>✅ AES, PMULL, SM4</td>
 
 <td>✅</td>
 
-<td>✅ PCLMULQDQ</td>
+<td>✅ AES-NI, PCLMULQDQ</td>
 
 <td>✅</td>
 
@@ -1642,6 +1680,26 @@ yours to keep:
 <td>✅</td>
 
 <td>✅</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+</tr>
+
+<tr>
+
+<td>HKDF</td>
+
+<td>✅</td>
+
+<td>✅ SHA extensions, SHA512, AVX-512F, AVX-512VL, AVX2, BMI1, BMI2</td>
+
+<td>✅ SHA extensions</td>
+
+<td>✅</td>
+
+<td>✅ SHA extensions</td>
 
 <td>✅</td>
 
@@ -1963,6 +2021,26 @@ yours to keep:
 
 <tr>
 
+<td>ECDH brainpoolP320r1</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+<td>✅ umaal</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+</tr>
+
+<tr>
+
 <td>ECDH brainpoolP384r1</td>
 
 <td>✅</td>
@@ -2011,7 +2089,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ umaal</td>
 
 <td>✅</td>
 
@@ -2091,7 +2169,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ umaal</td>
 
 <td>✅</td>
 
@@ -2171,7 +2249,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ umaal</td>
 
 <td>✅</td>
 
@@ -2210,6 +2288,26 @@ yours to keep:
 <tr>
 
 <td>ECDSA brainpoolP256r1</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+<td>✅ umaal</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+</tr>
+
+<tr>
+
+<td>ECDSA brainpoolP320r1</td>
 
 <td>✅</td>
 
@@ -2277,7 +2375,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ umaal</td>
 
 <td>✅</td>
 
@@ -2357,7 +2455,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ umaal</td>
 
 <td>✅</td>
 
@@ -2397,7 +2495,7 @@ yours to keep:
 
 <td>✅ SHA extensions</td>
 
-<td>✅</td>
+<td>✅ umaal</td>
 
 <td>✅</td>
 
@@ -2417,7 +2515,7 @@ yours to keep:
 
 <td>✅ SHA extensions</td>
 
-<td>✅</td>
+<td>✅ umaal</td>
 
 <td>✅</td>
 
@@ -2727,7 +2825,7 @@ The tables are generated from the code by `ci/algorithms_table.py`.
 
 * **Spec landed**: the algorithm's specification, transcribed from its
   standard, is in `lean/VerifiedGarbage/Spec/`.
-* **x86-64**, **ARM64**, **ARMv7**, **x86**, **PPC64LE**: ✅ when verified assembly and a
+* **x86-64**, **ARM64**, **ARMv7**, **x86**, **PPC64LE**, **RISC-V**: ✅ when verified assembly and a
   public Rust API exist on that architecture, followed by the instruction
   set extensions of its other implementations, if it has any (e.g. SHA
   extensions, AVX2). They are detected at run time, and CPUs without them

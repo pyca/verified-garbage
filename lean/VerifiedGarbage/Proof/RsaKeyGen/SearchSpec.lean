@@ -207,13 +207,12 @@ theorem search_available_lt (L : Nat) (eB pB : Rand) (remaining : Nat) (r : Rand
       · intro k a h; cases h
 termination_by r.length
 
-/-- The code's request after any search is one the contract allows. -/
+/-- The code's request after any search is `Asked`. -/
 theorem search_requests (L : Nat) (eB pB : Rand) (remaining : Nat) (r : Rand) :
-    (primeSearch L eB pB remaining r).Requests (primeEntropy L)
-      (requested L (primeSearch L eB pB remaining r)) :=
-  Entropy.requested_requests fun k a h => by
+    Asked L (primeSearch L eB pB remaining r) (requested L (primeSearch L eB pB remaining r)) :=
+  ⟨Entropy.requested_requests fun k a h => by
     have hlt := search_available_lt L eB pB remaining r k a h
-    exact Entropy.request_valid (by unfold primeEntropy at hlt; omega_using [hlt]) hlt
+    exact Entropy.request_valid (by unfold primeEntropy at hlt; omega_using [hlt]) hlt, rfl⟩
 
 /-! ## What the trace says -/
 

@@ -1,10 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Representation
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TailBank
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TailBank
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TableMemory
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InnerBank
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TailTraversal
 import VerifiedGarbage.Proof.MlDsa.KeyGen.Poly
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TraversalCorrect
 import VerifiedGarbage.Proof.MlDsa.Arith.Mem

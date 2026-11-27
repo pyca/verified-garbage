@@ -1,25 +1,28 @@
 module
 
 public import VerifiedGarbage.TCB.RISCV64.Target
-public import VerifiedGarbage.Proof.Md5.RISCV64.Shared
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.RISCV64.Print
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Md5.Contract
+import VerifiedGarbage.Proof.Md5.RISCV64.Scrub
+import VerifiedGarbage.Impl.Md5.RISCV64.Fn
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # MD5 (RFC 1321) on RISC-V -/
 
-@[expose] public section
-
 namespace VG.Artifacts.Md5.RISCV64
 
-def artifacts : List Artifact := [
+public def artifacts : List (Artifact RISCV64.target) := [
   Spec.Md5.initApi.artifact RISCV64.target {
-    code := Impl.Md5.RISCV64.Stream.init
-    verified := Proof.Md5.RISCV64.Shared.init },
+    code := Impl.Md5.RISCV64.Fn.init
+    verified := Proof.Md5.RISCV64.init_scrubbed },
   Spec.Md5.updateApi.artifact RISCV64.target {
-    code := Impl.Md5.RISCV64.Stream.update
-    verified := Proof.Md5.RISCV64.Shared.update },
+    code := Impl.Md5.RISCV64.Fn.update
+    verified := Proof.Md5.RISCV64.update_scrubbed },
   Spec.Md5.finalizeApi.artifact RISCV64.target {
-    code := Impl.Md5.RISCV64.Stream.finalize
-    verified := Proof.Md5.RISCV64.Shared.finalize }]
+    code := Impl.Md5.RISCV64.Fn.finalize
+    verified := Proof.Md5.RISCV64.finalize_scrubbed }]
+
+spec_apis artifacts
 
 end VG.Artifacts.Md5.RISCV64

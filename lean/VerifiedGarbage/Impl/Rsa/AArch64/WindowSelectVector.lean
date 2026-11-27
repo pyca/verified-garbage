@@ -1,7 +1,6 @@
 module
 public import VerifiedGarbage.Impl.Bignum.AArch64.Core
 public import VerifiedGarbage.Impl.Bignum.CrtLayout
-public import VerifiedGarbage.Impl.Rsa.AArch64.WindowFive
 
 
 /-! The measured full-scan SIMD selector: four vector accumulators select
@@ -10,9 +9,8 @@ public import VerifiedGarbage.Impl.Rsa.AArch64.WindowFive
 @[expose] public section
 namespace VG.Impl.Rsa.AArch64.WindowSelectVector
 open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64
-open VG.Impl.Bignum.Crt VG.Impl.Rsa.AArch64.Crt
+open VG.Impl.Bignum.Crt
 open VG.Impl.Bignum.Public hiding sI sBit sV
-open VG.Impl.Rsa.AArch64
 def accs : List VReg := [.v16,.v17,.v18,.v19]
 /-- One full-table row, with a secret comparison mask and public addresses. -/
 def inner : List Instr :=

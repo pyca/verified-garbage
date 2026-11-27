@@ -1,12 +1,64 @@
 module
 
 public import VerifiedGarbage.Impl.Ecdsa.BrainpoolP512r1.Arm
+import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP512r1.MulLit
 public import VerifiedGarbage.Proof.Ecdsa.Arm.Layout
-import VerifiedGarbage.Proof.Weierstrass.Arm.MontBrainpoolP512r1
 import VerifiedGarbage.Proof.BrainpoolP512r1.Point
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Weierstrass.Arm.MontFn
+import VerifiedGarbage.Proof.Framework.Arm.Taint
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.Arm.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
+public meta import VerifiedGarbage.Proof.Weierstrass.Arm.MontFn
+
+/-! ### `Weierstrass.Arm.MontBrainpoolP512r1`, which this module and modules that import it used -/
+
+section
+
+/-!
+# Montgomery arithmetic modulo brainpoolP512r1's `p` and `n`, as functions, on 32-bit ARM: verified
+
+brainpoolP512r1's moduli, in eight 64-bit words, are ones the functions support
+(`ModOk`), so each of their functions meets the contract of its `Api`, as
+the other curves' do (`MontVerified.lean`). Apart from the other curves', so
+that adding them rebuilds none of their proofs.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Weierstrass.Arm.Mont
+
+open VG VG.Arm VG.Impl.Weierstrass.Arm.Mont Impl.Weierstrass.Mont
+
+theorem brainpoolp512r1p_ok : ModOk brainpoolp512r1p.k brainpoolp512r1p.m where
+  n3 := by decide
+  n9 := by decide
+  m_lt := by decide +kernel
+  inv := by decide +kernel
+  red := by decide +kernel
+
+theorem brainpoolp512r1n_ok : ModOk brainpoolp512r1n.k brainpoolp512r1n.m where
+  n3 := by decide
+  n9 := by decide
+  m_lt := by decide +kernel
+  inv := by decide +kernel
+  red := by decide +kernel
+
+end VG.Proof.Weierstrass.Arm.Mont
+
+end
+
+end
 
 /-! # brainpoolP512r1's configuration for public keys and ECDH on Arm -/
 
@@ -49,7 +101,8 @@ theorem brainpoolp512r1_ok : CfgOk brainpoolp512r1 where
   sh := by rw [brainpoolp512r1_sh]; decide
   fp := ⟨rfl, rfl, Mont.brainpoolp512r1p_ok, rfl⟩
   fn := ⟨rfl, rfl, Mont.brainpoolp512r1n_ok, rfl⟩
-  mulNf := fun _ h => nomatch h
+  mulNf := fun _ _ => Impl.Ecdsa.Arm.mulBrainpoolP512r1_noFrames
+  pubNf := fun _ _ => Impl.Ecdsa.Arm.mulPubBrainpoolP512r1_noFrames
 
 
 /-- brainpoolp512r1 with its field multiplications by `vg_brainpoolp512r1_mul_mod_<p|n>_umaal`:
@@ -76,7 +129,8 @@ theorem brainpoolp512r1u_ok : CfgOk (brainpoolp512r1With true) where
     rw [show (brainpoolp512r1With true).sh = 0 from Nat.sub_eq_zero_of_le h]; decide
   fp := ⟨rfl, rfl, Mont.brainpoolp512r1p_ok, rfl⟩
   fn := ⟨rfl, rfl, Mont.brainpoolp512r1n_ok, rfl⟩
-  mulNf := fun _ h => nomatch h
+  mulNf := fun _ _ => Impl.Ecdsa.Arm.mulBrainpoolP512r1U_noFrames
+  pubNf := fun _ _ => Impl.Ecdsa.Arm.mulPubBrainpoolP512r1U_noFrames
 
 /-- Either configuration. -/
 theorem brainpoolp512r1With_ok (u : Bool) : CfgOk (brainpoolp512r1With u) := by

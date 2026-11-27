@@ -50,6 +50,15 @@ structure CrtImpl where
   ctP : ConstantTime isa crtContractP.clear.pre crtContractP.pub codeP
   nospP : NoSp codeP
   spSafeP : codeP.all (fun i => !isa.writesSp i) = true
+  /-- The level of `codeP`'s vector instructions. -/
+  level : Impl.Scrub.X86_64.VecLevel
+  /-- What the cleanup of a function that calls `codeP` needs of it, at that
+  level, with its 8 bytes of stack (`X86_64.Scrub.calleeSide`), evaluated
+  here, once. -/
+  sideP : X86_64.Scrub.calleeSide codeP level.level 8 = true
+  /-- At the level `sse`, what the cleanup at that level of a caller that
+  runs AVX functions through tables needs of `codeP` (`X86_64.Scrub.upCallee`). -/
+  upP : level = .sse → X86_64.Scrub.upCallee codeP 8 = true
   /-- The CPU features it is chosen only with, besides those its code
   requires (`Registration.extra` of the functions that call it). -/
   extra : List String := []

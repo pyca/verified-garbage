@@ -1,22 +1,37 @@
 module
 
-public import VerifiedGarbage.Proof.TripleDes.X86.FbVerified
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.X86.Print
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.TripleDes.Cfb8
+import VerifiedGarbage.Proof.TripleDes.X86.Scrub
+import VerifiedGarbage.Impl.TripleDes.X86.Fn
+import VerifiedGarbage.Proof.TripleDes.X86.Ssse3Verified
+import VerifiedGarbage.Impl.TripleDes.X86.Ssse3
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.TripleDes.X86.Ssse3Lit
 import VerifiedGarbage.Proof.TripleDes.X86.FbLit
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # Triple DES-CFB8 on x86 -/
 
-@[expose] public section
-
 namespace VG.Artifacts.TripleDesCfb8.X86
 
-def artifacts : List Artifact := [
+public def artifacts : List (Artifact X86.target) := [
   Spec.TripleDes.cfb8EncryptApi.artifact X86.target {
-    code := Impl.StackScratch.X86.withStackScratchWiped 968 4 236 Impl.TripleDes.X86.cfb8Encrypt
-    verified := Proof.TripleDes.X86.Fb.cfb8Encrypt_framed },
+    suffix := "_ssse3"
+    code := Impl.TripleDes.X86.Ssse3.Fn.cfb8Encrypt
+    verified := Proof.TripleDes.X86.Ssse3.cfb8Encrypt_scrubbed },
+  Spec.TripleDes.cfb8EncryptApi.artifact X86.target {
+    code := Impl.TripleDes.X86.Fn.cfb8Encrypt
+    verified := Proof.TripleDes.X86.Scrub.cfb8Encrypt_scrubbed },
   Spec.TripleDes.cfb8DecryptApi.artifact X86.target {
-    code := Impl.StackScratch.X86.withStackScratchWiped 968 4 236 Impl.TripleDes.X86.cfb8Decrypt
-    verified := Proof.TripleDes.X86.Fb.cfb8Decrypt_framed }]
+    suffix := "_ssse3"
+    code := Impl.TripleDes.X86.Ssse3.Fn.cfb8Decrypt
+    verified := Proof.TripleDes.X86.Ssse3.cfb8Decrypt_scrubbed },
+  Spec.TripleDes.cfb8DecryptApi.artifact X86.target {
+    code := Impl.TripleDes.X86.Fn.cfb8Decrypt
+    verified := Proof.TripleDes.X86.Scrub.cfb8Decrypt_scrubbed }]
+
+spec_apis artifacts
 
 end VG.Artifacts.TripleDesCfb8.X86

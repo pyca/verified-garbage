@@ -1,9 +1,7 @@
 module
 
 -- separate module: it builds in parallel with `Scan`, `Check` and `Finish`, which `Post` also needs.
-
 public import VerifiedGarbage.Proof.RsaPss.RISCV64.Mid
-public import VerifiedGarbage.Proof.RsaOaep.RISCV64.Mgf
 public import VerifiedGarbage.Proof.RsaOaep.RISCV64.MgfT
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Mem

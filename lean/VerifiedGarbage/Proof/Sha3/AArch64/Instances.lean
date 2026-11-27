@@ -8,6 +8,7 @@ public import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
 public import VerifiedGarbage.Impl.Sha3.AArch64.Instances
 public import VerifiedGarbage.Spec.Sha3.Instances
 import VerifiedGarbage.Proof.Framework.Prologue
+import VerifiedGarbage.Proof.Sha3.PostOut
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Block
@@ -21,6 +22,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.Taint
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Absorb
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Pad
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Squeeze
+meta import VerifiedGarbage.Proof.Sha3.PostOut
 meta import VerifiedGarbage.Proof.Sha3.Instances
 meta import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
 meta import VerifiedGarbage.Impl.Sha3.AArch64.Instances
@@ -122,7 +124,6 @@ theorem updateState_gpr (rate : Nat) (s : State) (r : Reg) :
 @[simp] theorem updateState_rd (rate : Nat) (s : State) : (updateState rate s).rd = s.rd := rfl
 @[simp] theorem updateState_wr (rate : Nat) (s : State) : (updateState rate s).wr = s.wr := rfl
 @[simp] theorem updateState_sp (rate : Nat) (s : State) : (updateState rate s).sp = s.sp := rfl
-@[simp] theorem updateState_v (rate : Nat) (s : State) : (updateState rate s).v = s.v := rfl
 
 theorem preserved_ne : ∀ r ∈ preserved, r ≠ .x1 ∧ r ≠ .x2 ∧ r ≠ .x3 ∧ r ≠ .x4 ∧ r ≠ .x5 := by decide
 
@@ -141,8 +142,8 @@ def updateSat : State :=
 
 theorem update_verified' (v : Permutation) {rate : Nat} (hr : rate ∈ rates) :
     Verified AArch64.target (update v.callee rate) (updateAArch64 rate) := by
-  have h0 : 0 < rate := by simp [rates] at hr; omega_using [hr]
-  have hv : Verified AArch64.target (Impl.Sha3.AArch64.Stream.absorbWith v.callee)
+  obtain h0 : 0 < rate := by simp [rates] at hr; omega_using [hr]
+  obtain hv : Verified AArch64.target (Impl.Sha3.AArch64.Stream.absorbWith v.callee)
       Proof.Sha3.absorbAArch64 :=
     Verified.of_correct (Stream.Absorb.absorb_correct v) (Stream.Absorb.absorb_ct v)
       (Contract.Implies.refl absorb_sat)
@@ -168,18 +169,18 @@ theorem update_verified' (v : Permutation) {rate : Nat} (hr : rate ∈ rates) :
     exact ⟨p1, trivial, p2, p3, p4, p5, p6⟩
 
 theorem update_verified (v : Permutation) {rate : Nat} (hr : rate ∈ rates) :
-    Verified AArch64.target (update v.callee rate) (Spec.Sha3.updateContract AArch64.abi rate 16) := by
-  have h0 : 0 < rate := by simp [rates] at hr; omega_using [hr]
+    Verified AArch64.target (update v.callee rate) (Proof.Sha3.updateScratchContract AArch64.abi rate 16) := by
+  obtain h0 : 0 < rate := by simp [rates] at hr; omega_using [hr]
   refine (update_verified' v hr).of_implies
-    { pre := by sig_implies_pre [Spec.Sha3.updateContract, Spec.Sha3.updateSig, Spec.Sha3.updatePre,
-          Spec.Sha3.updatePost, updateAArch64, AArch64.abi, AArch64.argRegs]
-      post := by sig_implies_post [Spec.Sha3.updateContract, Spec.Sha3.updateSig,
-          Spec.Sha3.updatePre, Spec.Sha3.updatePost, updateAArch64, AArch64.abi, AArch64.argRegs]
-      pub := by sig_implies_pub [Spec.Sha3.updateContract, Spec.Sha3.updateSig, Spec.Sha3.updatePre,
-          Spec.Sha3.updatePost, updateAArch64, AArch64.abi, AArch64.argRegs]
+    { pre := by sig_implies_pre [Proof.Sha3.updateScratchContract, Proof.Sha3.updateScratchSig, Proof.Sha3.updateScratchPre,
+          Proof.Sha3.updateScratchPost, updateAArch64, AArch64.abi, AArch64.argRegs]
+      post := by sig_implies_post [Proof.Sha3.updateScratchContract, Proof.Sha3.updateScratchSig,
+          Proof.Sha3.updateScratchPre, Proof.Sha3.updateScratchPost, updateAArch64, AArch64.abi, AArch64.argRegs]
+      pub := by sig_implies_pub [Proof.Sha3.updateScratchContract, Proof.Sha3.updateScratchSig, Proof.Sha3.updateScratchPre,
+          Proof.Sha3.updateScratchPost, updateAArch64, AArch64.abi, AArch64.argRegs]
       sat := ?_ }
   refine ⟨updateSat, ?_⟩
-  sig_pre [Spec.Sha3.updateContract, Spec.Sha3.updateSig, Spec.Sha3.updatePre, Spec.Sha3.updatePost,
+  sig_pre [Proof.Sha3.updateScratchContract, Proof.Sha3.updateScratchSig, Proof.Sha3.updateScratchPre, Proof.Sha3.updateScratchPost,
     AArch64.abi, AArch64.argRegs, updateSat, Stream.Absorb.sat]
   sig_and_intros
   all_goals first
@@ -187,6 +188,39 @@ theorem update_verified (v : Permutation) {rate : Nat} (hr : rate ∈ rates) :
     | decide
     | exact Region.disjoint_of_sep (by decide)
     | exact h0
+
+/-! ## `absorb`: `update` with its working space on the stack -/
+
+/-- A state satisfying `updateContract`'s precondition (with no data), with
+656 bytes of stack. -/
+def absorbSat : State := { updateSat with wr := [⟨0x1000, 200⟩] }
+
+theorem absorbSat_pre {rate : Nat} (h0 : 0 < rate) :
+    ∃ s, (Spec.Sha3.updateContract AArch64.abi rate 656).pre s := by
+  refine ⟨absorbSat, ?_⟩
+  sig_pre [Spec.Sha3.updateContract, Spec.Sha3.updateSig, Spec.Sha3.updatePre, Spec.Sha3.updatePost,
+    AArch64.abi, AArch64.argRegs, absorbSat, updateSat, Stream.Absorb.sat]
+  sig_and_intros
+  all_goals first
+    | rfl
+    | decide
+    | exact Region.disjoint_of_sep (by decide)
+    | exact h0
+
+/-- `vg_<f>_update`: `update`, with its working space `scratch` in a frame of
+640 bytes on the stack (`withStackScratch`), which `update`'s contract with
+`scratch` (`Sig.scratchContract`, by `rfl` `updateScratchContract`) proves
+(`Verified.stackScratch`): nothing is left in the caller's memory. -/
+theorem absorb_verified (v : Permutation) {rate : Nat} (hr : rate ∈ rates) :
+    Verified AArch64.target
+      (absorb v.callee rate)
+      (Spec.Sha3.updateContract AArch64.abi rate 656) :=
+  AArch64.Verified.stackScratch (sig := Spec.Sha3.updateSig) (nm := "scratch") (e := .u64) (n := 80)
+    (pre := Spec.Sha3.updatePre rate AArch64.abi.ptrBits)
+    (post := Spec.Sha3.updatePost rate AArch64.abi.ptrBits) (wa := true) (stack := 16) (bytes := 640)
+    (update_verified v hr) (by decide) (by decide)
+    (fun vs m m₁ m₂ r hl _ hb h => Proof.Sha3.PostOut.updatePost_out rate _ vs m m₁ m₂ r hl hb h)
+    (absorbSat_pre (by simp [rates] at hr; omega_using [hr]))
 
 /-! ## SHAKE's `finalize` -/
 
@@ -226,7 +260,6 @@ theorem xofPadState_gpr (rate : Nat) (s : State) (r : Reg) :
 @[simp] theorem xofPadState_rd (rate : Nat) (s : State) : (xofPadState rate s).rd = s.rd := rfl
 @[simp] theorem xofPadState_wr (rate : Nat) (s : State) : (xofPadState rate s).wr = s.wr := rfl
 @[simp] theorem xofPadState_sp (rate : Nat) (s : State) : (xofPadState rate s).sp = s.sp := rfl
-@[simp] theorem xofPadState_v (rate : Nat) (s : State) : (xofPadState rate s).v = s.v := rfl
 
 theorem pad_sat : ∃ s, Proof.Sha3.padAArch64.pre s := by
   implies_sat [Proof.Sha3.padAArch64, rates] [Stream.Pad.sat] using Stream.Pad.sat
@@ -239,12 +272,12 @@ theorem xofPad_verified' (v : Permutation) {X : Xof} (hX : xofSponge X) (hr : X.
     Verified AArch64.target
       (.seq (.block (xofPadArgs X.rate)) (Impl.Sha3.AArch64.Stream.padWith v.callee))
       (xofPadAArch64 X) := by
-  have h0 : 0 < X.rate := by simp [rates] at hr; omega_using [hr]
-  have hv : Verified AArch64.target (Impl.Sha3.AArch64.Stream.padWith v.callee)
+  obtain h0 : 0 < X.rate := by simp [rates] at hr; omega_using [hr]
+  obtain hv : Verified AArch64.target (Impl.Sha3.AArch64.Stream.padWith v.callee)
       Proof.Sha3.padAArch64 :=
     Verified.of_correct (Stream.Pad.pad_correct v) (Stream.Pad.pad_ct v)
       (Contract.Implies.refl pad_sat)
-  have hsuf : (BitVec.ofNat 64 0x1f).setWidth 8 = Spec.Sha3.shakeSuffix := by decide
+  obtain hsuf : (BitVec.ofNat 64 0x1f).setWidth 8 = Spec.Sha3.shakeSuffix := by decide
   refine Verified.of_prologue hv (xofPadState X.rate)
     (fun s _ => xofPadArgs_run (by have := rate_lt hr; omega_using [this]) s)
     (fun s hs => ?_) (fun s s' _ ha => ?_) (fun s s' _ hq => ?_) (fun s₁ s₂ _ _ hp => ?_)
@@ -272,7 +305,7 @@ theorem xofPad_verified (v : Permutation) {X : Xof} (hX : xofSponge X) (hr : X.r
     Verified AArch64.target
       (.seq (.block (xofPadArgs X.rate)) (Impl.Sha3.AArch64.Stream.padWith v.callee))
       (xofFinalizeScratchContract AArch64.abi X 16) := by
-  have h0 : 0 < X.rate := by simp [rates] at hr; omega_using [hr]
+  obtain h0 : 0 < X.rate := by simp [rates] at hr; omega_using [hr]
   refine (xofPad_verified' v hX hr).of_implies
     { pre := by sig_implies_pre [VG.Proof.Sha3.Instances.xofFinalizeScratchContract,
           VG.Proof.Sha3.Instances.xofFinalizeScratchSig, Spec.Sha3.xofFinalizePre,
@@ -301,11 +334,12 @@ def xofFinalizeSat : State := { xofPadSat with wr := [⟨0x1000, 200⟩] }
 theorem xofFinalize_verified (v : Permutation) {X : Xof} (hX : xofSponge X) (hr : X.rate ∈ rates) :
     Verified AArch64.target (xofFinalize v.callee X.rate)
       (Spec.Sha3.xofFinalizeContract AArch64.abi X (16 + 640)) := by
-  have h0 : 0 < X.rate := by simp [rates] at hr; omega_using [hr]
+  obtain h0 : 0 < X.rate := by simp [rates] at hr; omega_using [hr]
   refine AArch64.Verified.stackScratch (sig := Spec.Sha3.xofFinalizeSig) (nm := "scratch")
     (e := .u64) (n := 80) (pre := Spec.Sha3.xofFinalizePre X AArch64.abi.ptrBits)
     (post := Spec.Sha3.xofFinalizePost X AArch64.abi.ptrBits) (wa := true) (stack := 16)
-    (bytes := 640) (xofPad_verified v hX hr) (by decide) (by decide) ⟨xofFinalizeSat, ?_⟩
+    (bytes := 640) (xofPad_verified v hX hr) (by decide) (by decide)
+    (fun vs m m₁ m₂ r hl _ => VG.Proof.Sha3.Instances.xofFinalizePostOut_local _ X vs m m₁ m₂ r hl) ⟨xofFinalizeSat, ?_⟩
   sig_pre [Spec.Sha3.xofFinalizeContract, Spec.Sha3.xofFinalizeSig, Spec.Sha3.xofFinalizePre,
     Spec.Sha3.xofFinalizePost, AArch64.abi, AArch64.argRegs, xofFinalizeSat, xofPadSat,
     Stream.Pad.sat]
@@ -352,7 +386,7 @@ theorem xofSqueeze_verified' (v : Permutation) {X : Xof} (hr : X.rate ∈ rates)
     Verified AArch64.target
       (.seq (.block (updateArgs X.rate)) (Impl.Sha3.AArch64.Stream.squeezeWith v.callee))
       (xofSqueezeAArch64 X) := by
-  have hv : Verified AArch64.target (Impl.Sha3.AArch64.Stream.squeezeWith v.callee)
+  obtain hv : Verified AArch64.target (Impl.Sha3.AArch64.Stream.squeezeWith v.callee)
       Proof.Sha3.squeezeAArch64 :=
     Verified.of_correct (Stream.Squeeze.squeeze_correct v) (Stream.Squeeze.squeeze_ct v)
       (Contract.Implies.refl squeeze_sat)
@@ -413,7 +447,8 @@ theorem xofSqueeze_verified (v : Permutation) {X : Xof} (hr : X.rate ∈ rates) 
   refine AArch64.Verified.stackScratch (sig := Spec.Sha3.xofSqueezeSig) (nm := "scratch")
     (e := .u64) (n := 80) (pre := Spec.Sha3.xofSqueezePre X AArch64.abi.ptrBits)
     (post := Spec.Sha3.xofSqueezePost X AArch64.abi.ptrBits) (wa := true) (stack := 16)
-    (bytes := 640) (xofSqueezeS_verified v hr) (by decide) (by decide) ⟨xofSqueezeTopSat, ?_⟩
+    (bytes := 640) (xofSqueezeS_verified v hr) (by decide) (by decide)
+    (fun vs m m₁ m₂ r hl _ => VG.Proof.Sha3.Instances.xofSqueezePostOut_local _ X vs m m₁ m₂ r hl) ⟨xofSqueezeTopSat, ?_⟩
   sig_pre [Spec.Sha3.xofSqueezeContract, Spec.Sha3.xofSqueezeSig, Spec.Sha3.xofSqueezePre,
     Spec.Sha3.xofSqueezePost, AArch64.abi, AArch64.argRegs, xofSqueezeTopSat, xofSqueezeSat,
     Stream.Squeeze.sat]
@@ -486,10 +521,10 @@ theorem finPad_ok {rate : Nat} (hr : rate < 2 ^ 16) {s : State} (hw : ⟨s.gpr .
       t.gpr .x21 = s.gpr .x3 ∧ t.gpr .x2 = s.gpr .x1 ∧ t.gpr .x1 = BitVec.ofNat 64 rate ∧
       t.gpr .x3 = BitVec.ofNat 64 0x06 ∧ t.gpr .x4 = s.gpr .x3 ∧
       ∀ r ∈ preserved, r ≠ .x19 → r ≠ .x20 → r ≠ .x21 → t.gpr r = s.gpr r := by
-  have h1 := in_scr (s := s) (d := 664) (by omega_using []) hw
-  have h2 := in_scr (s := s) (d := 640) (by omega_using []) hw
-  have h3 := in_scr (s := s) (d := 648) (by omega_using []) hw
-  have h4 := in_scr (s := s) (d := 656) (by omega_using []) hw
+  obtain h1 := in_scr (s := s) (d := 664) (by omega_using []) hw
+  obtain h2 := in_scr (s := s) (d := 640) (by omega_using []) hw
+  obtain h3 := in_scr (s := s) (d := 648) (by omega_using []) hw
+  obtain h4 := in_scr (s := s) (d := 656) (by omega_using []) hw
   unfold finPadArgs
   refine wcons (exec_str_x (by decide) h1) (wcons (exec_str_x (by decide) h2)
     (wcons (exec_str_x (by decide) h3) (wcons (exec_str_x (by decide) h4) (wcons exec_mov
@@ -499,7 +534,7 @@ theorem finPad_ok {rate : Nat} (hr : rate < 2 ^ 16) {s : State} (hw : ⟨s.gpr .
     RegUpd.v_write, BitVec.setWidth_eq, reduceCtorEq, ite_true, ite_false]
   iterate 13 refine ⟨by first | trivial | rfl, ?_⟩
   intro r hr h19 h20 h21
-  have hne : r ≠ .x1 ∧ r ≠ .x2 ∧ r ≠ .x3 ∧ r ≠ .x4 := by revert r; decide
+  obtain hne : r ≠ .x1 ∧ r ≠ .x2 ∧ r ≠ .x3 ∧ r ≠ .x4 := by revert r; decide
   simp only [h19, h20, h21, hne.1, hne.2.1, hne.2.2.1, hne.2.2.2, ite_false]
 
 theorem gpr_ce (t : State) (rd wr : List Region) {r : Reg} (h : r ∉ linkRegs := by decide) :
@@ -513,7 +548,7 @@ theorem finPad_pre {st op sc K : Addr} {len rate : Nat} (hL : Lay st op sc K len
     (h2 : (t.gpr .x2).toNat < rate) (h4 : t.gpr .x4 = sc) (hsp : t.sp = K + 16)
     (h16 : 16 ≤ t.sp.toNat) :
     Proof.Sha3.padAArch64.pre (t.callEntry.withRegions [] [⟨st, 200⟩, ⟨sc, 640⟩]) := by
-  have hK : t.sp - 16 = K := by rw [hsp]; exact BitVec.add_sub_cancel _ _
+  obtain hK : t.sp - 16 = K := by rw [hsp]; exact BitVec.add_sub_cancel _ _
   simp (disch := decide) only [Proof.Sha3.padAArch64, gpr_ce, State.withRegions_sp,
     State.callEntry_sp, State.withRegions_rd, State.withRegions_wr, h0, h1, h4, hK, toNat_rate hr]
   exact ⟨trivial, trivial, hL.st_sc.sub_right (sub_prefix sc (by omega_using [])), h16, hL.stk_st,
@@ -548,7 +583,7 @@ theorem finPadCall (v : Permutation) {st op sc K : Addr} {len rate : Nat} (hL : 
       Kept t u ∧ Frame [⟨st, 200⟩, ⟨sc, 640⟩, ⟨K, 16⟩] t.mem u.mem ∧
       ∀ msg, Repr t.mem st rate msg → (t.gpr .x2).toNat = msg.length % rate →
         stateAt u.mem st = Spec.Sha3.absorb rate (Spec.Sha3.pad rate Spec.Sha3.sha3Suffix msg) := by
-  have hK : t.sp - BitVec.ofNat 64 16 = K := by rw [hsp]; exact BitVec.add_sub_cancel _ _
+  obtain hK : t.sp - BitVec.ofNat 64 16 = K := by rw [hsp]; exact BitVec.add_sub_cancel _ _
   refine WP.callFV (k := Proof.Sha3.padAArch64) (Stream.Pad.pad_correct v) (rd := [])
     (wr := [⟨st, 200⟩, ⟨sc, 640⟩]) (finPad_pre hL hr h0 h1 h2 h4 hsp h16) (finPad_cov hwr).1
     (finPad_cov hwr).2
@@ -567,8 +602,8 @@ theorem finSqz_pre {st op sc K : Addr} {len rate : Nat} (hL : Lay st op sc K len
     (h5 : t.gpr .x5 = sc) (hsp : t.sp = K + 16) (h16 : 16 ≤ t.sp.toNat) :
     Proof.Sha3.squeezeAArch64.pre
       (t.callEntry.withRegions [] [⟨st, 200⟩, ⟨op, len⟩, ⟨sc, 640⟩]) := by
-  have hK : t.sp - 16 = K := by rw [hsp]; exact BitVec.add_sub_cancel _ _
-  have hl' : (BitVec.ofNat 64 len).toNat = len := by
+  obtain hK : t.sp - 16 = K := by rw [hsp]; exact BitVec.add_sub_cancel _ _
+  obtain hl' : (BitVec.ofNat 64 len).toNat = len := by
     rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hl])]
   simp (disch := decide) only [Proof.Sha3.squeezeAArch64, gpr_ce, State.withRegions_sp,
     State.callEntry_sp, State.withRegions_rd, State.withRegions_wr, h0, h1, h2, h3, h4, h5, hK,
@@ -600,8 +635,8 @@ theorem finSqzCall (v : Permutation) {st op sc K : Addr} {len rate : Nat} (hL : 
         (Impl.Sha3.AArch64.Stream.squeezeWith v.callee)) t fun u =>
       Kept t u ∧ Frame [⟨st, 200⟩, ⟨op, len⟩, ⟨sc, 640⟩, ⟨K, 16⟩] t.mem u.mem ∧
       bytesAt u.mem op len = Spec.Sha3.squeezeFrom rate (stateAt t.mem st) 0 len := by
-  have hK : t.sp - BitVec.ofNat 64 16 = K := by rw [hsp]; exact BitVec.add_sub_cancel _ _
-  have hl' : (BitVec.ofNat 64 len).toNat = len := by
+  obtain hK : t.sp - BitVec.ofNat 64 16 = K := by rw [hsp]; exact BitVec.add_sub_cancel _ _
+  obtain hl' : (BitVec.ofNat 64 len).toNat = len := by
     rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hl])]
   refine WP.callFV (k := Proof.Sha3.squeezeAArch64) (Stream.Squeeze.squeeze_correct v) (rd := [])
     (wr := [⟨st, 200⟩, ⟨op, len⟩, ⟨sc, 640⟩])
@@ -630,7 +665,7 @@ theorem finSqz_ok {rate len : Nat} (hr : rate < 2 ^ 16) (hl : len < 2 ^ 16) (s :
   iterate 11 refine ⟨by first | trivial | rfl, ?_⟩
   intro r hr
   obtain ⟨h1, h2, h3, h4, h5⟩ := preserved_ne r hr
-  have h0 : r ≠ .x0 := by revert r; decide
+  obtain h0 : r ≠ .x0 := by revert r; decide
   simp only [h0, h1, h2, h3, h4, h5, ite_false]
 
 /-- After `finRestore`, from a state with `x21` = `sc`. -/
@@ -672,14 +707,14 @@ theorem finBody_correct (v : Permutation) {H : Spec.Sha3.HashFn} (hH : hashSpong
   obtain ⟨hL, hsp⟩ := lay_of_pre hp
   obtain ⟨p1, p2, -, -, -, p6, -, -, -, p10⟩ := hp
   generalize s.sp - 16 = K at hL hsp
-  have hr16 : H.rate < 2 ^ 16 := by have := rate_lt hr; omega_using [this]
-  have hw : ⟨s.gpr .x3, 672⟩ ∈ s.wr := by rw [p2]; simp
+  obtain hr16 : H.rate < 2 ^ 16 := by have := rate_lt hr; omega_using [this]
+  obtain hw : ⟨s.gpr .x3, 672⟩ ∈ s.wr := by rw [p2]; simp
   -- The four saved words, beyond what the calls use.
-  have hslot : ∀ d, 640 ≤ d → d + 8 ≤ 672 →
+  obtain hslot : ∀ d, 640 ≤ d → d + 8 ≤ 672 →
       ∀ r ∈ [(⟨s.gpr .x0, 200⟩ : Region), ⟨s.gpr .x2, H.len⟩, ⟨s.gpr .x3, 640⟩, ⟨K, 16⟩],
         Region.Disjoint ⟨s.gpr .x3 + BitVec.ofNat 64 d, 8⟩ r := by
     intro d h1 h2 r hr
-    have hsub : Region.Sub ⟨s.gpr .x3 + BitVec.ofNat 64 d, 8⟩ ⟨s.gpr .x3, 672⟩ :=
+    obtain hsub : Region.Sub ⟨s.gpr .x3 + BitVec.ofNat 64 d, 8⟩ ⟨s.gpr .x3, 672⟩ :=
       Offset.sub_base _ (by omega_using [h2])
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
@@ -694,47 +729,47 @@ theorem finBody_correct (v : Permutation) {H : Spec.Sha3.HashFn} (hH : hashSpong
     fun u ⟨uk, uf, upad⟩ => ?_)
   refine WP.seq (WP.mono (finSqz_ok hr16 hl u) fun w ⟨wrd, wwr, wsp, wv, wmem, w0, w1, w2, w3,
     w4, w5, wpr⟩ => ?_)
-  have u19 : u.gpr .x19 = s.gpr .x0 := by rw [uk.gpr .x19 (by decide) (by decide), t19]
-  have u20 : u.gpr .x20 = s.gpr .x2 := by rw [uk.gpr .x20 (by decide) (by decide), t20]
-  have u21 : u.gpr .x21 = s.gpr .x3 := by rw [uk.gpr .x21 (by decide) (by decide), t21]
+  obtain u19 : u.gpr .x19 = s.gpr .x0 := by rw [uk.gpr .x19 (by decide) (by decide), t19]
+  obtain u20 : u.gpr .x20 = s.gpr .x2 := by rw [uk.gpr .x20 (by decide) (by decide), t20]
+  obtain u21 : u.gpr .x21 = s.gpr .x3 := by rw [uk.gpr .x21 (by decide) (by decide), t21]
   refine WP.seq (WP.mono (finSqzCall v hL hr hl (by rw [wwr, uk.wr, twr, p2]) (by rw [w0, u19]) w1
     w2 (by rw [w3, u20]) w4 (by rw [w5, u21]) (by rw [wsp, uk.sp, tsp, hsp])
     (by rw [wsp, uk.sp, tsp]; exact p6))
     fun x ⟨xk, xf, xout⟩ => ?_)
-  have x21 : x.gpr .x21 = s.gpr .x3 := by
+  obtain x21 : x.gpr .x21 = s.gpr .x3 := by
     rw [xk.gpr .x21 (by decide) (by decide), wpr .x21 (by decide), u21]
-  have hin : ∀ d, d + 8 ≤ 672 → InRegions (x.rd ++ x.wr) (s.gpr .x3 + BitVec.ofNat 64 d) 8 :=
+  obtain hin : ∀ d, d + 8 ≤ 672 → InRegions (x.rd ++ x.wr) (s.gpr .x3 + BitVec.ofNat 64 d) 8 :=
     fun d hd => in_scr' hd (by rw [xk.wr, wwr, uk.wr, twr]; exact hw)
   refine WP.mono (finRestore_ok x21 (hin 664 (by omega_using [])) (hin 640 (by omega_using [])) (hin 648 (by omega_using []))
     (hin 656 (by omega_using []))) fun y ⟨yrd, ywr, ysp, yv, ymem, y30, y19, y20, y21, yoth⟩ => ?_
-  have fx : Frame [⟨s.gpr .x0, 200⟩, ⟨s.gpr .x2, H.len⟩, ⟨s.gpr .x3, 640⟩, ⟨K, 16⟩] t.mem x.mem := by
+  obtain fx : Frame [⟨s.gpr .x0, 200⟩, ⟨s.gpr .x2, H.len⟩, ⟨s.gpr .x3, 640⟩, ⟨K, 16⟩] t.mem x.mem := by
     refine (uf.mono fun r hr => ?_).trans (wmem ▸ xf)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
     rcases hr with rfl | rfl | rfl <;> simp
-  have slot : ∀ d, 640 ≤ d → d + 8 ≤ 672 →
+  obtain slot : ∀ d, 640 ≤ d → d + 8 ≤ 672 →
       x.mem.readW (s.gpr .x3 + BitVec.ofNat 64 d) 64 = t.mem.readW (s.gpr .x3 + BitVec.ofNat 64 d) 64 :=
     fun d h1 h2 => readW_frame fx (hslot d h1 h2)
-  have sep : ∀ a b, 640 ≤ a → a + 8 ≤ 672 → 640 ≤ b → b + 8 ≤ 672 → a ≠ b → a % 8 = 0 → b % 8 = 0 →
+  obtain sep : ∀ a b, 640 ≤ a → a + 8 ≤ 672 → 640 ≤ b → b + 8 ≤ 672 → a ≠ b → a % 8 = 0 → b % 8 = 0 →
       Mem.Sep (s.gpr .x3 + BitVec.ofNat 64 a) (64 / 8) (s.gpr .x3 + BitVec.ofNat 64 b) (64 / 8) :=
     fun a b _ _ _ _ hab ha hb => Offset.sep _ (by omega_using [hab, ha, hb]) (by omega_arith) (by omega_arith)
-  have t664 : t.mem.readW (s.gpr .x3 + BitVec.ofNat 64 664) 64 = s.gpr .x30 := by
+  obtain t664 : t.mem.readW (s.gpr .x3 + BitVec.ofNat 64 664) 64 = s.gpr .x30 := by
     rw [tmem, Mem.readW_writeW_sep (sep 664 656 (by omega_using []) (by omega_using []) (by omega_using []) (by omega_using []) (by omega_using [])
         (by omega_using []) (by omega_using [])) (by decide),
       Mem.readW_writeW_sep (sep 664 648 (by omega_using []) (by omega_using []) (by omega_using []) (by omega_using []) (by omega_using [])
         (by omega_using []) (by omega_using [])) (by decide),
       Mem.readW_writeW_sep (sep 664 640 (by omega_using []) (by omega_using []) (by omega_using []) (by omega_using []) (by omega_using [])
         (by omega_using []) (by omega_using [])) (by decide), Mem.readW_writeW_self64]
-  have t640 : t.mem.readW (s.gpr .x3 + BitVec.ofNat 64 640) 64 = s.gpr .x19 := by
+  obtain t640 : t.mem.readW (s.gpr .x3 + BitVec.ofNat 64 640) 64 = s.gpr .x19 := by
     rw [tmem, Mem.readW_writeW_sep (sep 640 656 (by omega_using []) (by omega_using []) (by omega_using []) (by omega_using []) (by omega_using [])
         (by omega_using []) (by omega_using [])) (by decide),
       Mem.readW_writeW_sep (sep 640 648 (by omega_using []) (by omega_using []) (by omega_using []) (by omega_using []) (by omega_using [])
         (by omega_using []) (by omega_using [])) (by decide), Mem.readW_writeW_self64]
-  have t648 : t.mem.readW (s.gpr .x3 + BitVec.ofNat 64 648) 64 = s.gpr .x20 := by
+  obtain t648 : t.mem.readW (s.gpr .x3 + BitVec.ofNat 64 648) 64 = s.gpr .x20 := by
     rw [tmem, Mem.readW_writeW_sep (sep 648 656 (by omega_using []) (by omega_using []) (by omega_using []) (by omega_using []) (by omega_using [])
         (by omega_using []) (by omega_using [])) (by decide), Mem.readW_writeW_self64]
-  have t656 : t.mem.readW (s.gpr .x3 + BitVec.ofNat 64 656) 64 = s.gpr .x21 := by
+  obtain t656 : t.mem.readW (s.gpr .x3 + BitVec.ofNat 64 656) 64 = s.gpr .x21 := by
     rw [tmem, Mem.readW_writeW_self64]
-  have ft : Frame [⟨s.gpr .x3, 672⟩] s.mem t.mem := by
+  obtain ft : Frame [⟨s.gpr .x3, 672⟩] s.mem t.mem := by
     rw [tmem]
     refine Frame.writeW (Frame.writeW (Frame.writeW (Frame.writeW (Frame.refl _ _)
       (List.mem_singleton_self _) _ ?_) (List.mem_singleton_self _) _ ?_)
@@ -753,7 +788,7 @@ theorem finBody_correct (v : Permutation) {H : Spec.Sha3.HashFn} (hH : hashSpong
   · rw [yv, xk.v r hr, wv, uk.v r hr, tv]
   · have hst : stateAt t.mem (s.gpr .x0) = stateAt s.mem (s.gpr .x0) :=
       stateAt_frame ft (by intro r hr; simp only [List.mem_singleton] at hr; subst hr; exact hL.st_sc)
-    have hpad := upad msg (by unfold Spec.Sha3.Repr; rw [hst]; exact hm) (by rw [t2]; exact hpos)
+    obtain hpad := upad msg (by unfold Spec.Sha3.Repr; rw [hst]; exact hm) (by rw [t2]; exact hpos)
     show bytesAt y.mem (s.gpr .x2) H.len = H.digest msg
     rw [ymem, xout, wmem, hpad]
     exact digest_of_pad hH rfl
@@ -820,8 +855,8 @@ theorem finBody_ct (v : Permutation) {H : Spec.Sha3.HashFn} (hr : H.rate ∈ rat
     ConstantTime isa (finAArch64 H).pre (finAArch64 H).pub (finBody v.callee H.rate H.len) := by
   intro σ₁ σ₂ t₁ t₂ σ₁' σ₂' p₁ p₂ hp e₁ e₂
   obtain ⟨q0, q1, q2, q3, qsp⟩ := hp
-  have hr16 : H.rate < 2 ^ 16 := by have := rate_lt hr; omega_using [this]
-  have hP : RelCT isa (fun a b => a = σ₁ ∧ b = σ₂) (finBody v.callee H.rate H.len)
+  obtain hr16 : H.rate < 2 ^ 16 := by have := rate_lt hr; omega_using [this]
+  obtain hP : RelCT isa (fun a b => a = σ₁ ∧ b = σ₂) (finBody v.callee H.rate H.len)
       fun _ _ => True := by
     unfold finBody
     refine RelCT.seq (RelCT.wp (F₁ := G1 H.rate σ₁) (F₂ := G1 H.rate σ₂)
@@ -840,7 +875,7 @@ theorem finBody_ct (v : Permutation) {H : Spec.Sha3.HashFn} (hr : H.rate ∈ rat
       obtain ⟨hL₂, hs₂⟩ := lay_of_pre p₂
       obtain ⟨a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11⟩ := ha
       obtain ⟨b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11⟩ := hb
-      have pb := finPad_pre hL₂ hr b3 b4 (by rw [b5]; exact p₂.2.2.2.2.2.2.2.2.2) b7
+      obtain pb := finPad_pre hL₂ hr b3 b4 (by rw [b5]; exact p₂.2.2.2.2.2.2.2.2.2) b7
         (by rw [b11, ← hs₂]) (by rw [b11]; exact p₂.2.2.2.2.2.1)
       rw [← q0, ← q3] at pb
       refine ⟨finPad_pre hL₁ hr a3 a4 (by rw [a5]; exact p₁.2.2.2.2.2.2.2.2.2) a7
@@ -866,7 +901,7 @@ theorem finBody_ct (v : Permutation) {H : Spec.Sha3.HashFn} (hr : H.rate ∈ rat
       obtain ⟨hL₂, hs₂⟩ := lay_of_pre p₂
       obtain ⟨a1, a2, a3, a4, a5, a6, a7, a8, a9, a10⟩ := ha
       obtain ⟨b1, b2, b3, b4, b5, b6, b7, b8, b9, b10⟩ := hb
-      have pb := finSqz_pre hL₂ hr hl b3 b4 b5 b6 b7 b8 (by rw [b10, ← hs₂])
+      obtain pb := finSqz_pre hL₂ hr hl b3 b4 b5 b6 b7 b8 (by rw [b10, ← hs₂])
         (by rw [b10]; exact p₂.2.2.2.2.2.1)
       rw [← q0, ← q2, ← q3] at pb
       refine ⟨finSqz_pre hL₁ hr hl a3 a4 a5 a6 a7 a8 (by rw [a10, ← hs₁])
@@ -917,7 +952,7 @@ theorem finalize_verified (v : Permutation) {H : Spec.Sha3.HashFn} (hH : hashSpo
     (n := 84) (pre := Spec.Sha3.finalizePre H AArch64.abi.ptrBits)
     (post := Spec.Sha3.finalizePost H AArch64.abi.ptrBits) (wa := true) (stack := 16)
     (bytes := 672) (finBody_verified v hH hr hl hct hsat hsat') (by exact (by decide : 3 < 8))
-    (by decide) hsat''
+    (by decide) (fun vs m m₁ m₂ r hl _ => VG.Proof.Sha3.Instances.finalizePostOut_local _ H vs m m₁ m₂ r hl) hsat''
 
 /-- A state satisfying `finAArch64`'s precondition. -/
 def finSat (len : Nat) : State :=
@@ -932,8 +967,14 @@ macro "fin_ct" v:term : term => `(finBody_ct $v (by decide) (by decide) (by tain
 
 theorem update_sha3_224 (v : Permutation) :
     Verified AArch64.target (update v.callee Spec.Sha3.hashSha3_224.rate)
-      (Spec.Sha3.updateContract AArch64.abi Spec.Sha3.hashSha3_224.rate 16) :=
+      (Proof.Sha3.updateScratchContract AArch64.abi Spec.Sha3.hashSha3_224.rate 16) :=
   update_verified v (by decide)
+
+theorem absorb_sha3_224 (v : Permutation) :
+    Verified AArch64.target
+      (absorb v.callee Spec.Sha3.hashSha3_224.rate)
+      (Spec.Sha3.updateContract AArch64.abi Spec.Sha3.hashSha3_224.rate 656) :=
+  absorb_verified v (by decide)
 
 theorem finalize_sha3_224 (v : Permutation) :
     Verified AArch64.target
@@ -950,8 +991,14 @@ theorem finalize_sha3_224 (v : Permutation) :
 
 theorem update_sha3_256 (v : Permutation) :
     Verified AArch64.target (update v.callee Spec.Sha3.hashSha3_256.rate)
-      (Spec.Sha3.updateContract AArch64.abi Spec.Sha3.hashSha3_256.rate 16) :=
+      (Proof.Sha3.updateScratchContract AArch64.abi Spec.Sha3.hashSha3_256.rate 16) :=
   update_verified v (by decide)
+
+theorem absorb_sha3_256 (v : Permutation) :
+    Verified AArch64.target
+      (absorb v.callee Spec.Sha3.hashSha3_256.rate)
+      (Spec.Sha3.updateContract AArch64.abi Spec.Sha3.hashSha3_256.rate 656) :=
+  absorb_verified v (by decide)
 
 theorem finalize_sha3_256 (v : Permutation) :
     Verified AArch64.target
@@ -968,8 +1015,14 @@ theorem finalize_sha3_256 (v : Permutation) :
 
 theorem update_sha3_384 (v : Permutation) :
     Verified AArch64.target (update v.callee Spec.Sha3.hashSha3_384.rate)
-      (Spec.Sha3.updateContract AArch64.abi Spec.Sha3.hashSha3_384.rate 16) :=
+      (Proof.Sha3.updateScratchContract AArch64.abi Spec.Sha3.hashSha3_384.rate 16) :=
   update_verified v (by decide)
+
+theorem absorb_sha3_384 (v : Permutation) :
+    Verified AArch64.target
+      (absorb v.callee Spec.Sha3.hashSha3_384.rate)
+      (Spec.Sha3.updateContract AArch64.abi Spec.Sha3.hashSha3_384.rate 656) :=
+  absorb_verified v (by decide)
 
 theorem finalize_sha3_384 (v : Permutation) :
     Verified AArch64.target
@@ -986,8 +1039,14 @@ theorem finalize_sha3_384 (v : Permutation) :
 
 theorem update_sha3_512 (v : Permutation) :
     Verified AArch64.target (update v.callee Spec.Sha3.hashSha3_512.rate)
-      (Spec.Sha3.updateContract AArch64.abi Spec.Sha3.hashSha3_512.rate 16) :=
+      (Proof.Sha3.updateScratchContract AArch64.abi Spec.Sha3.hashSha3_512.rate 16) :=
   update_verified v (by decide)
+
+theorem absorb_sha3_512 (v : Permutation) :
+    Verified AArch64.target
+      (absorb v.callee Spec.Sha3.hashSha3_512.rate)
+      (Spec.Sha3.updateContract AArch64.abi Spec.Sha3.hashSha3_512.rate 656) :=
+  absorb_verified v (by decide)
 
 theorem finalize_sha3_512 (v : Permutation) :
     Verified AArch64.target
@@ -1004,8 +1063,14 @@ theorem finalize_sha3_512 (v : Permutation) :
 
 theorem update_shake128 (v : Permutation) :
     Verified AArch64.target (update v.callee Spec.Sha3.xofShake128.rate)
-      (Spec.Sha3.updateContract AArch64.abi Spec.Sha3.xofShake128.rate 16) :=
+      (Proof.Sha3.updateScratchContract AArch64.abi Spec.Sha3.xofShake128.rate 16) :=
   update_verified v (by decide)
+
+theorem absorb_shake128 (v : Permutation) :
+    Verified AArch64.target
+      (absorb v.callee Spec.Sha3.xofShake128.rate)
+      (Spec.Sha3.updateContract AArch64.abi Spec.Sha3.xofShake128.rate 656) :=
+  absorb_verified v (by decide)
 
 theorem finalize_shake128 (v : Permutation) :
     Verified AArch64.target (xofFinalize v.callee Spec.Sha3.xofShake128.rate)

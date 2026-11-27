@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.EcKey.Instance.compressPublicKeyContract`. The input is public: timing may depend on the pointers and the contents of `public`.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety
@@ -38,7 +40,7 @@ call {vg_p192_add_mod_p}
 call {vg_p192_add_mod_p}
 .base64 "WFhYWLgwBAAAubgDAAC6GAQAAFBRUlc="
 call {vg_p192_sub_mod_p}
-.base64 "WFhYWIuXGAQAAAuXHAQAAAuXIAQAAAuXJAQAAAuXKAQAAAuXLAQAALkAAAAAKdEZ0oPy/4uHYAQAACHQiYdgBAAAi49gBAAAi4cAAQAAi5dwAwAAMcIhyjHQiYfQAwAAi4cEAQAAi5d0AwAAMcIhyjHQiYfUAwAAi4cIAQAAi5d4AwAAMcIhyjHQiYfYAwAAi4cMAQAAi5d8AwAAMcIhyjHQiYfcAwAAi4cQAQAAi5eAAwAAMcIhyjHQiYfgAwAAi4cUAQAAi5eEAwAAMcIhyjHQiYfkAwAAi4cYAQAAi5eIAwAAMcIhyjHQiYdIBAAAi4ccAQAAi5eMAwAAMcIhyjHQiYdMBAAAi4cgAQAAi5eQAwAAMcIhyjHQiYdQBAAAi4ckAQAAi5eUAwAAMcIhyjHQiYdUBAAAi4coAQAAi5eYAwAAMcIhyjHQiYdYBAAAi4csAQAAi5ecAwAAMcIhyjHQiYdcBAAAi49gBAAAi1wkBIuHoAMAAIPgAYPIAiHIiAOLh1gDAAAhyA/IiUMVi4dcAwAAIcgPyIlDEYuHYAMAACHID8iJQw2Lh2QDAAAhyA/IiUMJi4doAwAAIcgPyIlDBYuHbAMAACHID8iJQwGJyIPgAYn6ixqLcgSLagyLegjD"
+.base64 "WFhYWIuXGAQAAAuXHAQAAAuXIAQAAAuXJAQAAAuXKAQAAAuXLAQAALkAAAAAKdEZ0oPy/4uHYAQAACHQiYdgBAAAi49gBAAAi4cAAQAAi5dwAwAAMcIhyjHQiYfQAwAAi4cEAQAAi5d0AwAAMcIhyjHQiYfUAwAAi4cIAQAAi5d4AwAAMcIhyjHQiYfYAwAAi4cMAQAAi5d8AwAAMcIhyjHQiYfcAwAAi4cQAQAAi5eAAwAAMcIhyjHQiYfgAwAAi4cUAQAAi5eEAwAAMcIhyjHQiYfkAwAAi4cYAQAAi5eIAwAAMcIhyjHQiYdIBAAAi4ccAQAAi5eMAwAAMcIhyjHQiYdMBAAAi4cgAQAAi5eQAwAAMcIhyjHQiYdQBAAAi4ckAQAAi5eUAwAAMcIhyjHQiYdUBAAAi4coAQAAi5eYAwAAMcIhyjHQiYdYBAAAi4csAQAAi5ecAwAAMcIhyjHQiYdcBAAAi49gBAAAi1wkBIuHoAMAAIPgAYPIAiHIiAOLh1gDAAAhyA/IiUMVi4dcAwAAIcgPyIlDEYuHYAMAACHID8iJQw2Lh2QDAAAhyA/IiUMJi4doAwAAIcgPyIlDBYuHbAMAACHID8iJQwGJyIPgAYn6ixqLcgSLagyLeghmD+/AuQAAAACNZCTk8w9/BCSJTCQQiUwkFIlMJBiNZCQcugAAAAAxyWYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ww=="
 .p2align 6"#,
         vg_p192_mul_mod_p = sym super::ec_p192::vg_p192_mul_mod_p::vg_p192_mul_mod_p,
         vg_p192_add_mod_p = sym super::ec_p192::vg_p192_add_mod_p::vg_p192_add_mod_p,
@@ -49,6 +51,8 @@ call {vg_p192_sub_mod_p}
 /// Validate and decompress a P-192 public key (SEC 1 §2.3.4, SP 800-56A §5.6.2.3.3): reads `02` or `03` followed by `x` in 24 bytes, most significant first; checks `x` below the field prime and recovers a coordinate `y` satisfying the curve equation with even parity for `02`, odd for `03`. Writes `04` followed by `x` and `y` in 24 bytes each and returns 1. If no such finite point exists, writes 49 zero bytes and returns 0. Rejects infinity and hybrid encodings. The curve has cofactor one, so no subgroup multiplication is required.
 ///
 /// Contract: `VG.Spec.EcKey.Instance.decompressPublicKeyContract`. The input is public: timing may depend on the pointers and the contents of `public`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -75,18 +79,280 @@ call {vg_p192_mul_mod_p}
 call {vg_p192_add_mod_p}
 .base64 "WFhYWLgABAAAudADAAC6MAQAAFBRUlc="
 call {vg_p192_add_mod_p}
-.base64 "WFhYWLgAAAAAiYdgAQAAuAAAAMCJh2QBAAC4/////4mHaAEAALj/////iYdsAQAAuP////+Jh3ABAAC4////P4mHdAEAAL4YAAAA"
+.base64 "WFhYWIuHMAQAAImH+AIAAIuHNAQAAImH/AIAAIuHOAQAAImHAAMAAIuHPAQAAImHBAMAAIuHQAQAAImHCAMAAIuHRAQAAImHDAMAAIuHMAQAAImHEAMAAIuHNAQAAImHFAMAAIuHOAQAAImHGAMAAIuHPAQAAImHHAMAAIuHQAQAAImHIAMAAIuHRAQAAImHJAMAAIuH+AIAAImHYAEAAIuH/AIAAImHZAEAAIuHAAMAAImHaAEAAIuHBAMAAImHbAEAAIuHCAMAAImHcAEAAIuHDAMAAImHdAEAAL4BAAAA"
 20:
-.base64 "g+4BifgB8A+2gGABAACJ8wHbAdsB2wH7icKD4gGIk4gRAACJwtHqg+IBiJOJEQAAicLB6gKD4gGIk4oRAACJwsHqA4PiAYiTixEAAInCweoEg+IBiJOMEQAAicLB6gWD4gGIk40RAACJwsHqBoPiAYiTjhEAAInCweoHg+IBiJOPEQAAhfY="
+.base64 "g+4BuPgCAAC5+AIAALr4AgAAUFFSVw=="
+call {vg_p192_mul_mod_p}
+.base64 "WFhYWIX2"
 jne 20b
-.base64 "i4e4AAAAiYf4AgAAi4e8AAAAiYf8AgAAi4fAAAAAiYcAAwAAi4fEAAAAiYcEAwAAi4fIAAAAiYcIAwAAi4fMAAAAiYcMAwAAvsAAAAA="
+.base64 "i4f4AgAAiYe4AwAAi4f8AgAAiYe8AwAAi4cAAwAAiYfAAwAAi4cEAwAAiYfEAwAAi4cIAwAAiYfIAwAAi4cMAwAAiYfMAwAAuGABAAC5+AIAALr4AgAAUFFSVw=="
+call {vg_p192_mul_mod_p}
+.base64 "WFhYWIuH+AIAAImHeAEAAIuH/AIAAImHfAEAAIuHAAMAAImHgAEAAIuHBAMAAImHhAEAAIuHCAMAAImHiAEAAIuHDAMAAImHjAEAALi4AwAAufgCAAC6+AIAAFBRUlc="
+call {vg_p192_mul_mod_p}
+.base64 "WFhYWIuH+AIAAImHaAIAAIuH/AIAAImHbAIAAIuHAAMAAImHcAIAAIuHBAMAAImHdAIAAIuHCAMAAImHeAIAAIuHDAMAAImHfAIAALi4AwAAufgCAAC6+AIAAFBRUlc="
+call {vg_p192_mul_mod_p}
+.base64 "WFhYWIuH+AIAAImHgAIAAIuH/AIAAImHhAIAAIuHAAMAAImHiAIAAIuHBAMAAImHjAIAAIuHCAMAAImHkAIAAIuHDAMAAImHlAIAALi4AwAAufgCAAC6+AIAAFBRUlc="
+call {vg_p192_mul_mod_p}
+.base64 "WFhYWIuH+AIAAImHmAIAAIuH/AIAAImHnAIAAIuHAAMAAImHoAIAAIuHBAMAAImHpAIAAIuHCAMAAImHqAIAAIuHDAMAAImHrAIAALi4AwAAufgCAAC6+AIAAFBRUlc="
+call {vg_p192_mul_mod_p}
+.base64 "WFhYWIuH+AIAAImHsAIAAIuH/AIAAImHtAIAAIuHAAMAAImHuAIAAIuHBAMAAImHvAIAAIuHCAMAAImHwAIAAIuHDAMAAImHxAIAALi4AwAAufgCAAC6+AIAAFBRUlc="
+call {vg_p192_mul_mod_p}
+.base64 "WFhYWIuH+AIAAImHyAIAAIuH/AIAAImHzAIAAIuHAAMAAImH0AIAAIuHBAMAAImH1AIAAIuHCAMAAImH2AIAAIuHDAMAAImH3AIAALi4AwAAufgCAAC6+AIAAFBRUlc="
+call {vg_p192_mul_mod_p}
+.base64 "WFhYWIuH+AIAAImH4AIAAIuH/AIAAImH5AIAAIuHAAMAAImH6AIAAIuHBAMAAImH7AIAAIuHCAMAAImH8AIAAIuHDAMAAImH9AIAAIuH4AIAAImH+AIAAIuH5AIAAImH/AIAAIuH6AIAAImHAAMAAIuH7AIAAImHBAMAAIuH8AIAAImHCAMAAIuH9AIAAImHDAMAAL4EAAAA"
 21:
 .base64 "g+4BuPgCAAC5+AIAALr4AgAAUFFSVw=="
 call {vg_p192_mul_mod_p}
-.base64 "WFhYWLgwBAAAufgCAAC6EAMAAFBRUlc="
-call {vg_p192_mul_mod_p}
-.base64 "WFhYWIn4AfAPtoCIEQAAuQAAAAApwYuH+AIAAIuXEAMAADHCIcox0ImH+AIAAIuH/AIAAIuXFAMAADHCIcox0ImH/AIAAIuHAAMAAIuXGAMAADHCIcox0ImHAAMAAIuHBAMAAIuXHAMAADHCIcox0ImHBAMAAIuHCAMAAIuXIAMAADHCIcox0ImHCAMAAIuHDAMAAIuXJAMAADHCIcox0ImHDAMAAIX2"
+.base64 "WFhYWIX2"
 jne 21b
+.base64 "uOACAAC5+AIAALr4AgAAUFFSVw=="
+call {vg_p192_mul_mod_p}
+.base64 "WFhYWL4EAAAA"
+22:
+.base64 "g+4BuPgCAAC5+AIAALr4AgAAUFFSVw=="
+call {vg_p192_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 22b
+.base64 "uOACAAC5+AIAALr4AgAAUFFSVw=="
+call {vg_p192_mul_mod_p}
+.base64 "WFhYWL4EAAAA"
+23:
+.base64 "g+4BuPgCAAC5+AIAALr4AgAAUFFSVw=="
+call {vg_p192_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 23b
+.base64 "uOACAAC5+AIAALr4AgAAUFFSVw=="
+call {vg_p192_mul_mod_p}
+.base64 "WFhYWL4EAAAA"
+24:
+.base64 "g+4BuPgCAAC5+AIAALr4AgAAUFFSVw=="
+call {vg_p192_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 24b
+.base64 "uOACAAC5+AIAALr4AgAAUFFSVw=="
+call {vg_p192_mul_mod_p}
+.base64 "WFhYWL4EAAAA"
+25:
+.base64 "g+4BuPgCAAC5+AIAALr4AgAAUFFSVw=="
+call {vg_p192_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 25b
+.base64 "uOACAAC5+AIAALr4AgAAUFFSVw=="
+call {vg_p192_mul_mod_p}
+.base64 "WFhYWL4EAAAA"
+26:
+.base64 "g+4BuPgCAAC5+AIAALr4AgAAUFFSVw=="
+call {vg_p192_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 26b
+.base64 "uOACAAC5+AIAALr4AgAAUFFSVw=="
+call {vg_p192_mul_mod_p}
+.base64 "WFhYWL4EAAAA"
+27:
+.base64 "g+4BuPgCAAC5+AIAALr4AgAAUFFSVw=="
+call {vg_p192_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 27b
+.base64 "uOACAAC5+AIAALr4AgAAUFFSVw=="
+call {vg_p192_mul_mod_p}
+.base64 "WFhYWL4EAAAA"
+28:
+.base64 "g+4BuPgCAAC5+AIAALr4AgAAUFFSVw=="
+call {vg_p192_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 28b
+.base64 "uOACAAC5+AIAALr4AgAAUFFSVw=="
+call {vg_p192_mul_mod_p}
+.base64 "WFhYWL4EAAAA"
+29:
+.base64 "g+4BuPgCAAC5+AIAALr4AgAAUFFSVw=="
+call {vg_p192_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 29b
+.base64 "uOACAAC5+AIAALr4AgAAUFFSVw=="
+call {vg_p192_mul_mod_p}
+.base64 "WFhYWL4EAAAA"
+210:
+.base64 "g+4BuPgCAAC5+AIAALr4AgAAUFFSVw=="
+call {vg_p192_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 210b
+.base64 "uOACAAC5+AIAALr4AgAAUFFSVw=="
+call {vg_p192_mul_mod_p}
+.base64 "WFhYWL4EAAAA"
+211:
+.base64 "g+4BuPgCAAC5+AIAALr4AgAAUFFSVw=="
+call {vg_p192_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 211b
+.base64 "uOACAAC5+AIAALr4AgAAUFFSVw=="
+call {vg_p192_mul_mod_p}
+.base64 "WFhYWL4EAAAA"
+212:
+.base64 "g+4BuPgCAAC5+AIAALr4AgAAUFFSVw=="
+call {vg_p192_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 212b
+.base64 "uOACAAC5+AIAALr4AgAAUFFSVw=="
+call {vg_p192_mul_mod_p}
+.base64 "WFhYWL4EAAAA"
+213:
+.base64 "g+4BuPgCAAC5+AIAALr4AgAAUFFSVw=="
+call {vg_p192_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 213b
+.base64 "uOACAAC5+AIAALr4AgAAUFFSVw=="
+call {vg_p192_mul_mod_p}
+.base64 "WFhYWL4EAAAA"
+214:
+.base64 "g+4BuPgCAAC5+AIAALr4AgAAUFFSVw=="
+call {vg_p192_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 214b
+.base64 "uOACAAC5+AIAALr4AgAAUFFSVw=="
+call {vg_p192_mul_mod_p}
+.base64 "WFhYWL4EAAAA"
+215:
+.base64 "g+4BuPgCAAC5+AIAALr4AgAAUFFSVw=="
+call {vg_p192_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 215b
+.base64 "uOACAAC5+AIAALr4AgAAUFFSVw=="
+call {vg_p192_mul_mod_p}
+.base64 "WFhYWL4EAAAA"
+216:
+.base64 "g+4BuPgCAAC5+AIAALr4AgAAUFFSVw=="
+call {vg_p192_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 216b
+.base64 "uOACAAC5+AIAALr4AgAAUFFSVw=="
+call {vg_p192_mul_mod_p}
+.base64 "WFhYWL4EAAAA"
+217:
+.base64 "g+4BuPgCAAC5+AIAALr4AgAAUFFSVw=="
+call {vg_p192_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 217b
+.base64 "uOACAAC5+AIAALr4AgAAUFFSVw=="
+call {vg_p192_mul_mod_p}
+.base64 "WFhYWL4EAAAA"
+218:
+.base64 "g+4BuPgCAAC5+AIAALr4AgAAUFFSVw=="
+call {vg_p192_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 218b
+.base64 "uOACAAC5+AIAALr4AgAAUFFSVw=="
+call {vg_p192_mul_mod_p}
+.base64 "WFhYWL4EAAAA"
+219:
+.base64 "g+4BuPgCAAC5+AIAALr4AgAAUFFSVw=="
+call {vg_p192_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 219b
+.base64 "uOACAAC5+AIAALr4AgAAUFFSVw=="
+call {vg_p192_mul_mod_p}
+.base64 "WFhYWL4EAAAA"
+220:
+.base64 "g+4BuPgCAAC5+AIAALr4AgAAUFFSVw=="
+call {vg_p192_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 220b
+.base64 "uOACAAC5+AIAALr4AgAAUFFSVw=="
+call {vg_p192_mul_mod_p}
+.base64 "WFhYWL4EAAAA"
+221:
+.base64 "g+4BuPgCAAC5+AIAALr4AgAAUFFSVw=="
+call {vg_p192_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 221b
+.base64 "uOACAAC5+AIAALr4AgAAUFFSVw=="
+call {vg_p192_mul_mod_p}
+.base64 "WFhYWL4EAAAA"
+222:
+.base64 "g+4BuPgCAAC5+AIAALr4AgAAUFFSVw=="
+call {vg_p192_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 222b
+.base64 "uOACAAC5+AIAALr4AgAAUFFSVw=="
+call {vg_p192_mul_mod_p}
+.base64 "WFhYWL4EAAAA"
+223:
+.base64 "g+4BuPgCAAC5+AIAALr4AgAAUFFSVw=="
+call {vg_p192_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 223b
+.base64 "uOACAAC5+AIAALr4AgAAUFFSVw=="
+call {vg_p192_mul_mod_p}
+.base64 "WFhYWL4EAAAA"
+224:
+.base64 "g+4BuPgCAAC5+AIAALr4AgAAUFFSVw=="
+call {vg_p192_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 224b
+.base64 "uOACAAC5+AIAALr4AgAAUFFSVw=="
+call {vg_p192_mul_mod_p}
+.base64 "WFhYWL4EAAAA"
+225:
+.base64 "g+4BuPgCAAC5+AIAALr4AgAAUFFSVw=="
+call {vg_p192_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 225b
+.base64 "uOACAAC5+AIAALr4AgAAUFFSVw=="
+call {vg_p192_mul_mod_p}
+.base64 "WFhYWL4EAAAA"
+226:
+.base64 "g+4BuPgCAAC5+AIAALr4AgAAUFFSVw=="
+call {vg_p192_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 226b
+.base64 "uOACAAC5+AIAALr4AgAAUFFSVw=="
+call {vg_p192_mul_mod_p}
+.base64 "WFhYWL4EAAAA"
+227:
+.base64 "g+4BuPgCAAC5+AIAALr4AgAAUFFSVw=="
+call {vg_p192_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 227b
+.base64 "uOACAAC5+AIAALr4AgAAUFFSVw=="
+call {vg_p192_mul_mod_p}
+.base64 "WFhYWL4EAAAA"
+228:
+.base64 "g+4BuPgCAAC5+AIAALr4AgAAUFFSVw=="
+call {vg_p192_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 228b
+.base64 "uOACAAC5+AIAALr4AgAAUFFSVw=="
+call {vg_p192_mul_mod_p}
+.base64 "WFhYWL4EAAAA"
+229:
+.base64 "g+4BuPgCAAC5+AIAALr4AgAAUFFSVw=="
+call {vg_p192_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 229b
+.base64 "uOACAAC5+AIAALr4AgAAUFFSVw=="
+call {vg_p192_mul_mod_p}
+.base64 "WFhYWL4EAAAA"
+230:
+.base64 "g+4BuPgCAAC5+AIAALr4AgAAUFFSVw=="
+call {vg_p192_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 230b
+.base64 "uOACAAC5+AIAALr4AgAAUFFSVw=="
+call {vg_p192_mul_mod_p}
+.base64 "WFhYWL4EAAAA"
+231:
+.base64 "g+4BuPgCAAC5+AIAALr4AgAAUFFSVw=="
+call {vg_p192_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 231b
+.base64 "uOACAAC5+AIAALr4AgAAUFFSVw=="
+call {vg_p192_mul_mod_p}
+.base64 "WFhYWL4+AAAA"
+232:
+.base64 "g+4BuPgCAAC5+AIAALr4AgAAUFFSVw=="
+call {vg_p192_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 232b
 .base64 "uKAAAAC5+AIAALqgAwAAUFFSVw=="
 call {vg_p192_mul_mod_p}
 .base64 "WFhYWLigAwAAuYgAAAC6uAMAAFBRUlc="
@@ -97,7 +363,7 @@ call {vg_p192_mul_mod_p}
 call {vg_p192_mul_mod_p}
 .base64 "WFhYWLgwBAAAuRgEAAC60AMAAFBRUlc="
 call {vg_p192_sub_mod_p}
-.base64 "WFhYWIuX0AMAAAuX1AMAAAuX2AMAAAuX3AMAAAuX4AMAAAuX5AMAALkAAAAAKdEZ0oPy/4uHYAQAACHQiYdgBAAAi4egAwAAi49AAwAAMcGD4QG6AAAAACnKidGJyoPCAbgAAAAAKdCJwouHYAQAACHQiYdgBAAAi49gBAAAi1wkBLgEAAAAIciIA4uHWAMAACHID8iJQxWLh1wDAAAhyA/IiUMRi4dgAwAAIcgPyIlDDYuHZAMAACHID8iJQwmLh2gDAAAhyA/IiUMFi4dsAwAAIcgPyIlDAYuHoAMAACHID8iJQy2Lh6QDAAAhyA/IiUMpi4eoAwAAIcgPyIlDJYuHrAMAACHID8iJQyGLh7ADAAAhyA/IiUMdi4e0AwAAIcgPyIlDGYnIg+ABifqLGotyBItqDIt6CMM="
+.base64 "WFhYWIuX0AMAAAuX1AMAAAuX2AMAAAuX3AMAAAuX4AMAAAuX5AMAALkAAAAAKdEZ0oPy/4uHYAQAACHQiYdgBAAAi4egAwAAi49AAwAAMcGD4QG6AAAAACnKidGJyoPCAbgAAAAAKdCJwouHYAQAACHQiYdgBAAAi49gBAAAi1wkBLgEAAAAIciIA4uHWAMAACHID8iJQxWLh1wDAAAhyA/IiUMRi4dgAwAAIcgPyIlDDYuHZAMAACHID8iJQwmLh2gDAAAhyA/IiUMFi4dsAwAAIcgPyIlDAYuHoAMAACHID8iJQy2Lh6QDAAAhyA/IiUMpi4eoAwAAIcgPyIlDJYuHrAMAACHID8iJQyGLh7ADAAAhyA/IiUMdi4e0AwAAIcgPyIlDGYnIg+ABifqLGotyBItqDIt6CGYP78C5AAAAAI1kJOTzD38EJIlMJBCJTCQUiUwkGI1kJBy6AAAAADHJZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7//D"
 .p2align 6"#,
         vg_p192_mul_mod_p = sym super::ec_p192::vg_p192_mul_mod_p::vg_p192_mul_mod_p,
         vg_p192_add_mod_p = sym super::ec_p192::vg_p192_add_mod_p::vg_p192_add_mod_p,

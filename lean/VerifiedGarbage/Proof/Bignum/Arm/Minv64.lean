@@ -1,8 +1,7 @@
 module
-public import VerifiedGarbage.Impl.Bignum.Arm.Minv64
-public import VerifiedGarbage.Proof.Bignum.Arm.Newton64
 
-import VerifiedGarbage.Proof.Bignum.Arm.Minv64Steps
+public import VerifiedGarbage.Impl.Bignum.Arm.Minv64
+public import VerifiedGarbage.Proof.Bignum.Arm.Minv64Steps
 import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.Bignum.Words
 import VerifiedGarbage.Proof.Framework.Block

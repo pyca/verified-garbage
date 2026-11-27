@@ -1,21 +1,24 @@
 module
 
-public import VerifiedGarbage.Proof.Cast5.Arm.ModesVerified
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.Arm.Print
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Cast5.Cbc
+import VerifiedGarbage.Proof.Cast5.Arm.Scrub
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # CAST5-CBC on ARMv7 -/
 
-@[expose] public section
-
 namespace VG.Artifacts.Cast5Cbc.Arm
 
-def artifacts : List Artifact := [
+public def artifacts : List (Artifact Arm.target) := [
   Spec.Cast5.cbcEncryptChainedApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratchWiped 328 1 78 Impl.Cast5.Arm.cbcEncryptChained
-    verified := Proof.Cast5.cbcEncryptChained_keyed Proof.Cast5.Arm.cbcEncryptChained_framed },
+    code := Impl.Cast5.Arm.Fn.cbcEncryptChained
+    verified := Proof.Cast5.Arm.Fn.cbcEncryptChained },
   Spec.Cast5.cbcDecryptChainedApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratchWiped 328 1 78 Impl.Cast5.Arm.cbcDecryptChained
-    verified := Proof.Cast5.cbcDecryptChained_keyed Proof.Cast5.Arm.cbcDecryptChained_framed }]
+    code := Impl.Cast5.Arm.Fn.cbcDecryptChained
+    verified := Proof.Cast5.Arm.Fn.cbcDecryptChained }]
+
+spec_apis artifacts
 
 end VG.Artifacts.Cast5Cbc.Arm

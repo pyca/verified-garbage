@@ -1,9 +1,13 @@
 module
 
+public import VerifiedGarbage.Proof.Ed25519.Arm.CombCall
+
 public import VerifiedGarbage.Impl.Ed25519.Arm.ScalarBase
+import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
 meta import VerifiedGarbage.Impl.Ed25519.Arm.ScalarBase
-public import VerifiedGarbage.Proof.Ed25519.Arm.CombLoop
-meta import VerifiedGarbage.Proof.Ed25519.Arm.CombLoop
+meta import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
+public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTMul
+meta import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTMul
 import VerifiedGarbage.Proof.Framework.Arm.TaintSym
 meta import VerifiedGarbage.Proof.Framework.Arm.TaintSym
 public import VerifiedGarbage.Proof.Framework.Arm.StackScratchConsts
@@ -13,14 +17,10 @@ meta import VerifiedGarbage.Proof.Framework.ConstMem
 import VerifiedGarbage.Proof.Framework.Arm.Syms
 meta import VerifiedGarbage.Proof.Framework.Arm.Syms
 import VerifiedGarbage.Proof.Ed25519.CombDigits
-import VerifiedGarbage.Proof.Ed25519.Arm.PointFromScalar
-meta import VerifiedGarbage.Proof.Ed25519.Arm.PointFromScalar
 import VerifiedGarbage.Proof.Ed25519.Arm.PointEncode
 meta import VerifiedGarbage.Proof.Ed25519.Arm.PointEncode
 import VerifiedGarbage.Proof.Ed25519.Arm.InitFields
 meta import VerifiedGarbage.Proof.Ed25519.Arm.InitFields
-public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTFrom
-meta import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTFrom
 public import VerifiedGarbage.TCB.Arm.Target
 meta import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarFinish
@@ -30,10 +30,8 @@ meta import VerifiedGarbage.Proof.Ed25519.Arm.ScalarCodec
 public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTLit
 meta import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTLit
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
-public import VerifiedGarbage.Proof.Ed25519.Arm.PointKeep
+public import VerifiedGarbage.Proof.Framework.Arm.Scrub
 meta import VerifiedGarbage.Proof.Framework.Arm.Contract
-import VerifiedGarbage.Proof.Ed25519.Arm.LrSlot
-meta import VerifiedGarbage.Proof.Ed25519.Arm.LrSlot
 import VerifiedGarbage.Proof.Framework.TaintSum
 meta import VerifiedGarbage.Proof.Framework.TaintSum
 import VerifiedGarbage.Proof.Ed25519.Arm.Points
@@ -48,10 +46,8 @@ import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Ed25519.Arm.FieldMemory
 import VerifiedGarbage.Proof.Ed25519.Arm.FnCall
-import VerifiedGarbage.Proof.Ed25519.Arm.MulFnFinal
+import VerifiedGarbage.Proof.Ed25519.Arm.FieldProg
 import VerifiedGarbage.Proof.Ed25519.Arm.PointAffine
-import VerifiedGarbage.Proof.Ed25519.Arm.PointMulBody
-import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTBody
 import VerifiedGarbage.Proof.Ed25519.Bytes
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Arm.Call
@@ -59,14 +55,12 @@ import VerifiedGarbage.Proof.Framework.Arm.Lit
 import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.X25519.Arm.AddSub
-import VerifiedGarbage.Proof.X25519.Arm.Cswap
+import VerifiedGarbage.Proof.X25519.Arm.Mul
+import VerifiedGarbage.Proof.X25519.Arm.Invert
 meta import VerifiedGarbage.Proof.Ed25519.Arm.FieldMemory
 meta import VerifiedGarbage.Proof.Ed25519.Arm.FnCall
-meta import VerifiedGarbage.Proof.Ed25519.Arm.MulFnFinal
+meta import VerifiedGarbage.Proof.Ed25519.Arm.FieldProg
 meta import VerifiedGarbage.Proof.Ed25519.Arm.PointAffine
-meta import VerifiedGarbage.Proof.Ed25519.Arm.PointMulBody
-meta import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTBody
 meta import VerifiedGarbage.Proof.Ed25519.Bytes
 meta import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Framework.Arm.Call
@@ -75,12 +69,32 @@ meta import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
 meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
 meta import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.X25519.Arm.AddSub
-meta import VerifiedGarbage.Proof.X25519.Arm.Cswap
+meta import VerifiedGarbage.Proof.X25519.Arm.Mul
+meta import VerifiedGarbage.Proof.X25519.Arm.Invert
 public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Ed25519.Arm.PointKeep
 meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Ed25519.Contract
+meta import VerifiedGarbage.Spec.Ed25519.Contract
+
+/-! ### `Ed25519.Arm.ScalarBaseCTFrom`, which this module and modules that import it used -/
+
+section
+
+/-! Public scalar pointers remain public across point preparation. -/
+
+@[expose] public section
+
+namespace VG.Proof.Ed25519.Arm
+open VG VG.Arm VG.Impl.Ed25519.Arm VG.Proof.X25519.Arm
+
+def pointFromPrepareCT : Prog isa :=
+  .seq (.block [.str .r12 .r0 52]) (fieldCode false [.const 16 Spec.Ed25519.d])
+
+end VG.Proof.Ed25519.Arm
+
+end
+
+end
 
 /-! Merged from `Proof.Ed25519.Arm.ScalarBaseEngine`. -/
 
@@ -90,6 +104,8 @@ section
 /-! All input scalar bits, exact point multiplication, and canonical encoding compose. -/
 namespace VG.Proof.Ed25519.Arm
 open VG VG.Arm VG.Impl.Ed25519.Arm VG.Proof.X25519.Arm
+
+variable {umaal : Bool}
 
 def encodedValue (p : Spec.Ed25519.Point) : Nat :=
   (p.Y * Spec.X25519.pow p.Z (Spec.X25519.P - 2)).val +
@@ -103,7 +119,7 @@ theorem scalarBaseEngine_ok {s : State} {base ptr T : BitVec 32} (hc : Ctx base 
     (hr : ∀ i < 32, InRegions (s.rd ++ s.wr) (State.addr ptr + BitVec.ofNat 64 i) 1)
     (hsep : (⟨State.addr ptr, 32⟩ : Region).Disjoint ⟨State.addr base, 8192⟩)
     (hT : TblAt s T) (hsym : s.syms combSym = T) (apart : (TBL T).Disjoint ⟨State.addr base, 8192⟩) :
-    WP isa scalarBaseEngine s fun t => PointKeep base s t ∧ Lim t.mem (State.addr base) FR ∧
+    WP isa (scalarBaseEngine umaal) s fun t => CombKeep base s t ∧ Lim t.mem (State.addr base) FR ∧
       V t.mem (State.addr base) FR = encodedValue
         (Spec.Ed25519.pointMul (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem (State.addr ptr) 32)) Spec.Ed25519.basePoint) := by
   have fa : (FA base).Sub ⟨State.addr base, 8192⟩ := Offset.sub_base _ (by decide)
@@ -120,10 +136,10 @@ theorem scalarBaseEngine_ok {s : State} {base ptr T : BitVec 32} (hc : Ctx base 
   have hTa : TblAt a T := hT.of_frame (by rw [ak.rest.rd, ak.rest.wr]) ak.frame fun r hr => by
     rw [List.mem_singleton.mp hr]; exact apart.sub_right fa
   rw [WP.seq_iff]
-  refine WP.mono (combMultiply_ok hca al up hfit ur hsep hTa (by rw [sya]; exact hsym) apart)
+  refine WP.mono (combMultiply_ok hca al up hfit ur (.inl hsep) hTa (by rw [sya]; exact hsym) apart)
     fun v ⟨vk, vl, vrep⟩ => ?_
   refine WP.mono (pointEncode_ok (vk.ctx hca) vl) fun t ⟨tk, tl, tv⟩ => ?_
-  refine ⟨(PointKeep.of_keep ak).trans (vk.trans (PointKeep.of_ikeep tk)), tl, ?_⟩
+  refine ⟨(PointKeep.of_keep ak).toCombKeep.trans (vk.trans (PointKeep.of_ikeep tk).toCombKeep), tl, ?_⟩
   change V t.mem (State.addr base) FR = encodedValue (point (env v.mem base) 0 1 2 3) at tv
   rw [tv, ← uv]
   have hm := pointMul_rep (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt a.mem (State.addr ptr) 32))
@@ -140,6 +156,8 @@ section
 namespace VG.Proof.Ed25519.Arm
 open VG VG.Arm VG.Impl.Ed25519.Arm VG.Proof.X25519.Arm
 
+variable {umaal : Bool}
+
 def BaseCTPre (b p T : BitVec 32) (s : State) : Prop :=
   Ctx b s ∧ s.gpr .r12 = p ∧ p.toNat + 32 ≤ 2 ^ 32 ∧
     (∀ i < 32, InRegions (s.rd ++ s.wr) (State.addr p + BitVec.ofNat 64 i) 1) ∧
@@ -147,7 +165,11 @@ def BaseCTPre (b p T : BitVec 32) (s : State) : Prop :=
     TblAt s T ∧ s.syms combSym = T ∧ (TBL T).Disjoint ⟨State.addr b, 8192⟩
 
 /-- What the comb needs, in each run. -/
-def CombCTPre (b p T : BitVec 32) (s : State) : Prop := BaseCTPre b p T s ∧ AllLim s.mem b
+def CombCTPre (b p T : BitVec 32) (s : State) : Prop :=
+  (Ctx b s ∧ s.gpr .r12 = p ∧ p.toNat + 32 ≤ 2 ^ 32 ∧
+    (∀ i < 32, InRegions (s.rd ++ s.wr) (State.addr p + BitVec.ofNat 64 i) 1) ∧
+    CombInputOk b p ∧ TblAt s T ∧ s.syms combSym = T ∧
+    (TBL T).Disjoint ⟨State.addr b, 8192⟩) ∧ AllLim s.mem b
 
 /-- Each run's loop state, from its own start. -/
 def CombRun (b T : BitVec 32) (j : Nat) (s : State) : Prop :=
@@ -161,28 +183,32 @@ def initFieldsCT : Prog isa := .block initFields
 
 materialize_code initFieldsCT
 materialize_code combPrepare
-materialize_code combStep
+materialize_code combStepPlain := combStep false
+materialize_code combStepUmaal := combStep true
 
 /-- A step from public `r0`, counter `r11` and table address: the digits only reach masks. -/
 theorem combStep_ct (b T : BitVec 32) (j : Nat) :
-    CT (fun x y => CombRun b T j x ∧ CombRun b T j y) combStep (fun _ _ => True) := by
-  apply RelCT.taint (A := taintSym [combSym]) (Taint.ofRegs [.r0, .r11]) _ (by native_taint_decide)
-  rintro x y ⟨⟨_, _, _, _, hx⟩, ⟨_, _, _, _, hy⟩⟩
-  refine ⟨Taint.agree_ofRegs fun r hr => ?_, fun n hn => ?_⟩
-  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl
-    · exact hx.ctx.r0.trans hy.ctx.r0.symm
-    · exact hx.r11.trans hy.r11.symm
-  · rw [List.mem_singleton.mp hn, hx.syms, hy.syms]
+    CT (fun x y => CombRun b T j x ∧ CombRun b T j y) (combStep umaal) (fun _ _ => True) := by
+  cases umaal <;>
+    [apply RelCT.taint (A := taintSym [combSym]) (Taint.ofRegs [.r0, .r11]) _ (by native_taint_decide);
+      apply RelCT.taint (A := taintSymU [combSym]) (Taint.ofRegs [.r0, .r11]) _ (by taint_decide)]
+  all_goals
+    rintro x y ⟨⟨_, _, _, _, hx⟩, ⟨_, _, _, _, hy⟩⟩
+    refine ⟨Taint.agree_ofRegs fun r hr => ?_, fun n hn => ?_⟩
+    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact hx.ctx.r0.trans hy.ctx.r0.symm
+      · exact hx.r11.trans hy.r11.symm
+    · rw [List.mem_singleton.mp hn, hx.syms, hy.syms]
 
 theorem combLoop_ct (b T : BitVec 32) :
-    CT (fun x y => CombRun b T 0 x ∧ CombRun b T 0 y) (.loop combStep .ne)
+    CT (fun x y => CombRun b T 0 x ∧ CombRun b T 0 y) (.loop (combStep umaal) .ne)
       (fun x y => Ctx b x ∧ Ctx b y) := by
   refine (RelCT.loop (M := isa) (Q := fun x y => Ctx b x ∧ Ctx b y)
     (fun n x y => 0 < n ∧ n ≤ 64 ∧ CombRun b T (64 - n) x ∧ CombRun b T (64 - n) y)
     (fun n => ?_) 64).mono (fun x y h => ⟨by decide, le_rfl, by simpa using h⟩) fun _ _ h => h
   by_cases hn : 0 < n ∧ n ≤ 64
-  · have step : ∀ x, CombRun b T (64 - n) x → WP isa combStep x (StepPost b T (64 - n)) :=
+  · have step : ∀ x, CombRun b T (64 - n) x → WP isa (combStep umaal) x (StepPost b T (64 - n)) :=
       fun x ⟨s₀, p, S, E, h⟩ => WP.mono (combStep_ok E h (by omega_using [hn])) fun t ⟨e, h'⟩ => ⟨e, s₀, p, S, E, h'⟩
     refine ((combStep_ct b T (64 - n)).wp (F₁ := StepPost b T (64 - n)) (F₂ := StepPost b T (64 - n))
       (fun x y h => ⟨step x h.1, step y h.2⟩)).mono
@@ -199,8 +225,8 @@ theorem combLoop_ct (b T : BitVec 32) :
       · rw [show 64 - (n - 1) = 64 - n + 1 by omega_using [hn]]; exact rv
   · exact RelCT.of_false fun x y h => hn ⟨h.1, h.2.1⟩
 
-theorem combMultiply_ct (b p T : BitVec 32) :
-    CT (fun x y => CombCTPre b p T x ∧ CombCTPre b p T y) combMultiply
+theorem combMultiplyInline_ct (b p T : BitVec 32) :
+    CT (fun x y => CombCTPre b p T x ∧ CombCTPre b p T y) (combMultiplyInline umaal)
       (fun x y => Ctx b x ∧ Ctx b y) := by
   have hp : CT (fun x y => CombCTPre b p T x ∧ CombCTPre b p T y) combPrepare
       (fun x y => CombRun b T 0 x ∧ CombRun b T 0 y) := by
@@ -214,12 +240,91 @@ theorem combMultiply_ct (b p T : BitVec 32) :
     · intro s ⟨⟨hc, hp, hf, hr, hsep, hT, hsym, apart⟩, hl⟩
       exact WP.mono (combPrepare_ok hc hl hp hf hr hsep hT hsym apart) fun w ⟨_, E, I⟩ =>
         ⟨w, _, _, E, I⟩
-  rw [combMultiply]
+  rw [combMultiplyInline]
   exact RelCT.seq hp (combLoop_ct b T)
+
+/-- Public inputs while the call's veneer has replaced `r12`. -/
+def CombFnCTPre (b p T : BitVec 32) (s : State) : Prop :=
+  Ctx b s ∧ s.mem.readW (State.addr b + BitVec.ofNat 64 combInput) 32 = p ∧ p.toNat + 32 ≤ 2 ^ 32 ∧
+    (∀ i < 32, InRegions (s.rd ++ s.wr) (State.addr p + BitVec.ofNat 64 i) 1) ∧
+    CombInputOk b p ∧
+    TblAt s T ∧ s.syms combSym = T ∧ (TBL T).Disjoint ⟨State.addr b, 8192⟩ ∧ AllLim s.mem b
+
+def combEnterCT : Prog isa :=
+  .block (scratchAddr combReturn ++ [.str .lr .r12 0, .ldr .r12 .r0 combInput])
+def combLeaveCT : Prog isa := .block (scratchAddr combReturn ++ [.ldr .lr .r12 0])
+materialize_code combEnterCT
+materialize_code combLeaveCT
+
+theorem combMultiplyFn_ct (b p T : BitVec 32) :
+    CT (fun x y => CombFnCTPre b p T x ∧ CombFnCTPre b p T y) (combMultiplyFn umaal)
+      (fun x y => Ctx b x ∧ Ctx b y) := by
+  have enter : CT (fun x y => CombFnCTPre b p T x ∧ CombFnCTPre b p T y) combEnterCT
+      (fun x y => CombCTPre b p T x ∧ CombCTPre b p T y) := by
+    apply ctBoth
+    · apply ctRegs [.r0] _ (by native_taint_decide)
+      intro x y h r hr
+      rw [List.mem_singleton.mp hr]; exact h.1.1.r0.trans h.2.1.r0.symm
+    · intro s ⟨hc, hp, hf, hr, hs, ht, hy, ha, hl⟩
+      refine WP.mono_syms (combEnter_ok hc hp) fun u ⟨ur, uf, _, up⟩ syu => ?_
+      have sub : ∀ r ∈ [combReturnRegion b], r.Sub ⟨State.addr b, 8192⟩ := by
+        intro r hr; rw [List.mem_singleton.mp hr]; exact Offset.sub_base _ (by decide)
+      refine ⟨⟨hc.of_rest ur (by decide), up, hf, ?_, hs, ?_, by rw [syu]; exact hy, ha⟩,
+        combTemp_lim (.inr rfl) uf hl⟩
+      · rw [ur.rd, ur.wr]; exact hr
+      · exact ht.of_frame (by rw [ur.rd, ur.wr]) uf fun r hr => ha.sub_right (sub r hr)
+  have leave : CT (fun x y => Ctx b x ∧ Ctx b y) combLeaveCT (fun x y => Ctx b x ∧ Ctx b y) := by
+    apply ctBoth
+    · apply ctRegs [.r0] _ (by native_taint_decide)
+      intro x y h r hr
+      rw [List.mem_singleton.mp hr]; exact h.1.r0.trans h.2.r0.symm
+    · intro s hc
+      exact WP.mono (combLeave_ok hc) fun _ ⟨hr, _, _⟩ => hc.of_rest hr (by decide)
+  exact RelCT.seq enter (RelCT.seq (combMultiplyInline_ct b p T) leave)
+
+theorem combMultiply_ct (b p T : BitVec 32) :
+    CT (fun x y => CombCTPre b p T x ∧ CombCTPre b p T y) (combMultiply umaal)
+      (fun x y => Ctx b x ∧ Ctx b y) := by
+  have spill : CT (fun x y => CombCTPre b p T x ∧ CombCTPre b p T y) (.block [.str .r12 .r0 combInput])
+      (fun x y => CombFnCTPre b p T x.callEntry ∧ CombFnCTPre b p T y.callEntry) := by
+    apply ctBoth
+    · apply ctRegs [.r0] _ (by native_taint_decide)
+      intro x y h r hr
+      rw [List.mem_singleton.mp hr]; exact h.1.1.1.r0.trans h.2.1.1.r0.symm
+    · intro s ⟨⟨hc, hp, hf, hr, hs, ht, hy, ha⟩, hl⟩
+      refine WP.mono_syms (combStore_ok hc .r12 combInput (by decide) (by decide)) fun u ⟨ur, uf, um⟩ syu => ?_
+      have sub : ∀ r ∈ [(⟨State.addr b + BitVec.ofNat 64 combInput, 4⟩ : Region)], r.Sub ⟨State.addr b, 8192⟩ := by
+        intro r hr; rw [List.mem_singleton.mp hr]; exact Offset.sub_base _ (by decide)
+      have ce : Rest powersClob u u.callEntry := ⟨fun r hr => State.callEntry_gpr _ (by
+        revert hr; cases r <;> decide), rfl, rfl, rfl⟩
+      have hcu := hc.of_rest ur (by decide)
+      have tu : TblAt u T := ht.of_frame (by rw [ur.rd, ur.wr]) uf fun r hr => ha.sub_right (sub r hr)
+      refine ⟨hcu.of_rest ce (by decide), ?_, hf, ?_, hs, ⟨tu.fit, tu.rd, tu.words⟩, ?_, ha,
+        combTemp_lim (.inl rfl) uf hl⟩
+      · rw [State.callEntry_mem, um, Mem.readW_writeW_self32, hp]
+      · rw [State.callEntry_rd, State.callEntry_wr, ur.rd, ur.wr]; exact hr
+      · change u.syms combSym = T; rw [syu]; exact hy
+  have retState {a b c : State} (h : isa.ret a b = some c) : b = c := by
+    change (if b.gpr .lr = a.gpr .lr then some b else none) = some c at h
+    split at h
+    · exact Option.some.inj h
+    · cases h
+  refine RelCT.seq spill ?_
+  intro x y tx ty u v hp ex ey
+  cases ex with
+  | call cx ex rx =>
+    cases ey with
+    | call cy ey ry =>
+      rw [call_callEntry, Option.some.injEq] at cx cy
+      subst cx; subst cy
+      obtain ⟨ht, hq⟩ := combMultiplyFn_ct b p T _ _ _ _ _ _ hp ex ey
+      obtain rfl := retState rx
+      obtain rfl := retState ry
+      exact ⟨by simpa only [isa, List.map_nil, List.nil_append, List.append_nil] using ht, hq⟩
 
 theorem scalarBaseEngine_ct (base ptr T : BitVec 32) :
     CT (fun x y => BaseCTPre base ptr T x ∧ BaseCTPre base ptr T y)
-      scalarBaseEngine (fun _ _ => True) := by
+      (scalarBaseEngine umaal) (fun _ _ => True) := by
   have hi : CT (fun x y => BaseCTPre base ptr T x ∧ BaseCTPre base ptr T y) initFieldsCT
       (fun x y => CombCTPre base ptr T x ∧ CombCTPre base ptr T y) := by
     apply ctBoth
@@ -231,16 +336,17 @@ theorem scalarBaseEngine_ct (base ptr T : BitVec 32) :
     · intro s ⟨hc, hp, hfit, hr, hsep, hT, hsym, apart⟩
       have fa : (FA base).Sub ⟨State.addr base, 8192⟩ := Offset.sub_base _ (by decide)
       refine WP.mono_syms (initFields_rest hc) fun a ⟨ak, ar, al, _⟩ sya => ⟨⟨ak.ctx hc,
-        (ar.gpr _ (by decide)).trans hp, hfit, by rw [ak.rest.rd, ak.rest.wr]; exact hr, hsep, ?_,
+        (ar.gpr _ (by decide)).trans hp, hfit, by rw [ak.rest.rd, ak.rest.wr]; exact hr, .inl hsep, ?_,
         by rw [sya]; exact hsym, apart⟩, al⟩
       exact hT.of_frame (by rw [ak.rest.rd, ak.rest.wr]) ak.frame fun r hr => by
         rw [List.mem_singleton.mp hr]; exact apart.sub_right fa
-  have he : CT (fun x y => Ctx base x ∧ Ctx base y) pointEncode (fun _ _ => True) := by
-    apply ctRegs [.r0] _ (by native_taint_decide)
-    intro x y h r hr
-    rw [List.mem_singleton] at hr
-    subst r
-    exact h.1.r0.trans h.2.r0.symm
+  have he : CT (fun x y => Ctx base x ∧ Ctx base y) (pointEncode umaal) (fun _ _ => True) := by
+    cases umaal <;> [apply ctRegs [.r0] _ (by native_taint_decide); apply ctRegsU [.r0] _ (by taint_decide)]
+    all_goals
+      intro x y h r hr
+      rw [List.mem_singleton] at hr
+      subst r
+      exact h.1.r0.trans h.2.r0.symm
   exact RelCT.seq hi (RelCT.seq (combMultiply_ct base ptr T) he)
 
 end VG.Proof.Ed25519.Arm
@@ -347,6 +453,8 @@ section
 namespace VG.Proof.Ed25519.Arm
 open VG VG.Arm VG.Impl.Ed25519.Arm VG.Proof.X25519.Arm
 
+variable {umaal : Bool}
+
 def BaseWrapCTPre (b p out T : BitVec 32) (s : State) : Prop :=
   scalarBaseLocal.pre s ∧ s.gpr .r0 = out ∧ s.gpr .r1 = p ∧ s.gpr .r2 = b ∧ s.syms combSym = T
 
@@ -382,7 +490,7 @@ theorem scalarBaseSetup_ct (b p out T : BitVec 32) :
 
 theorem scalarBaseWork_ct (b p out T : BitVec 32) :
     CT (fun x y => BaseWorkCTPre b p out T x ∧ BaseWorkCTPre b p out T y)
-      scalarBaseEngine (fun x y => BaseFinishCTPre b out x ∧ BaseFinishCTPre b out y) := by
+      (scalarBaseEngine umaal) (fun x y => BaseFinishCTPre b out x ∧ BaseFinishCTPre b out y) := by
   apply ctBoth
   · exact (scalarBaseEngine_ct b p T).mono (fun _ _ h => ⟨h.1.1, h.2.1⟩) (fun _ _ h => h)
   · intro s ⟨⟨hc, hp, hf, hr, hsep, hT, hsym, apart⟩, ho⟩
@@ -415,12 +523,12 @@ theorem scalarBaseFinish_ct (b out : BitVec 32) :
   · exact h.1.1.trans h.2.1.symm
   · exact h.1.2.trans h.2.2.symm
 
-theorem scalarBase_ct : ConstantTime isa scalarBaseLocal.pre scalarBaseLocal.pub scalarBase := by
+theorem scalarBase_ct : ConstantTime isa scalarBaseLocal.pre scalarBaseLocal.pub (scalarBase umaal) := by
   have hct (b p out T : BitVec 32) :
-      CT (fun x y => BaseWrapCTPre b p out T x ∧ BaseWrapCTPre b p out T y) scalarBase (fun _ _ => True) :=
+      CT (fun x y => BaseWrapCTPre b p out T x ∧ BaseWrapCTPre b p out T y) (scalarBase umaal) (fun _ _ => True) :=
     RelCT.seq (scalarBaseSetup_ct b p out T)
       (RelCT.seq (scalarBaseWork_ct b p out T) (scalarBaseFinish_ct b out))
-  intro s t tx ty u v hs ht ⟨_, h0, h1, h2, hT⟩ ex ey
+  intro s t tx ty a v hs ht ⟨_, h0, h1, h2, hT⟩ ex ey
   exact (hct (s.gpr .r2) (s.gpr .r1) (s.gpr .r0) (s.syms combSym) _ _ _ _ _ _
     ⟨⟨hs, rfl, rfl, rfl, rfl⟩, ⟨ht, h0.symm, h1.symm, h2.symm, hT.symm⟩⟩ ex ey).1
 
@@ -483,8 +591,10 @@ end
 namespace VG.Proof.Ed25519.Arm
 open VG VG.Arm VG.Impl.Ed25519.Arm VG.Proof.X25519.Arm
 
+variable {umaal : Bool}
+
 theorem scalarBase_correct {s : State} (h : ScalarBasePre s) :
-    WP isa scalarBase s fun t => abiPreserved s t ∧ scalarBaseLocal.post s t := by
+    WP isa (scalarBase umaal) s fun t => abiPreserved s t ∧ scalarBaseLocal.post s t := by
   refine WP.seq (WP.mono_syms (scalarBaseSetup_ok h) fun u ⟨hcu, pu, su, ou, lu, ku, fu⟩ syu => ?_)
   have input : (⟨State.addr (s.gpr .r1), 32⟩ : Region) ∈ s.rd ++ s.wr := by rw [h.rd]; simp
   refine WP.seq (WP.mono (scalarBaseEngine_ok hcu pu h.f1
@@ -493,8 +603,8 @@ theorem scalarBase_correct {s : State} (h : ScalarBasePre s) :
     fun v ⟨kv, lv, vv⟩ => ?_)
   have sv : ScalarSaved (State.addr (s.gpr .r2)) s.gpr v.mem :=
     su.frame kv.frame fun r hr i hi => by
-      simp only [pointRegions, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl <;> exact Offset.disjoint _ (.inl (by omega_using [hi])) (by omega_using [hi]) (by decide)
+      simp only [combRegions, combReturnRegion, combReturn, pointRegions, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl <;> exact Offset.disjoint _ (.inl (by omega_using [hi])) (by omega_using [hi]) (by decide)
   have ov : v.mem.readW (State.addr (s.gpr .r2) + BitVec.ofNat 64 48) 32 = s.gpr .r0 :=
     (kv.word 48 (.inl rfl) (by decide)).trans ou
   refine WP.mono (scalarBaseFinish_ok (kv.ctx hcu) lv ov h.f0
@@ -527,7 +637,8 @@ end
 /-! Merged from `Proof.Ed25519.Arm.ScalarBaseLit`. -/
 section
 namespace VG.Impl.Ed25519.Arm
-materialize_code scalarBase
+materialize_code scalarBasePlain := scalarBase false
+materialize_code scalarBaseUmaal := scalarBase true
 end VG.Impl.Ed25519.Arm
 end
 
@@ -535,6 +646,8 @@ end
 preserves the ABI, and keeps all scalar bytes secret. -/
 namespace VG.Proof.Ed25519.Arm
 open VG VG.Arm VG.Impl.Ed25519.Arm
+
+variable {umaal : Bool}
 
 theorem combWords_length : combWords.length = 64 * 192 := by simp [combWords]
 
@@ -570,7 +683,47 @@ def baseSatState : State where
   syms _ := 0x100000
 
 theorem scalarBase_ok (s : State) (hs : scalarBaseLocal.pre s) :
-    ∃ t s', Exec isa scalarBase s t s' ∧ abiPreserved s s' ∧ scalarBaseLocal.post s s' :=
+    ∃ t s', Exec isa (scalarBase umaal) s t s' ∧ abiPreserved s s' ∧ scalarBaseLocal.post s s' :=
   scalarBase_correct (ScalarBasePre.of hs)
 
 end VG.Proof.Ed25519.Arm
+
+/-! ## The shape of the field's code
+
+What the cleanup of a function that multiplies in the field needs of its code
+(`Code.noFrames`, `armStack`, `noIcall`) depends only on its shape, which is
+the same with either product (`umaal`) but where the product is chosen
+(`mulIn`, `mulFn`): so these lemmas state it once for both, and each caller
+proves its own shape for any `umaal` from them, rather than evaluating each
+variant's code again. -/
+
+@[expose] public section
+
+namespace VG.Proof.Ed25519.Arm.Shape
+
+open VG VG.Arm VG.Arm.FrameStack VG.Impl.Ed25519.Arm
+
+theorem mulIn (umaal : Bool) (o a b : Nat) : (mulIn umaal o a b).noFrames = true ∧
+    armStack (mulIn umaal o a b) = 0 ∧ noIcall (mulIn umaal o a b) = true := by
+  cases umaal <;> simp only [Impl.Ed25519.Arm.mulIn, mulBodyU, Impl.X25519.Arm.mulAt, Code.noFrames,
+    armStack, noIcall, Bool.and_self, Bool.false_eq_true, ↓reduceIte, Nat.max_self, and_self]
+
+theorem mulFn (umaal : Bool) : (mulFn umaal).noFrames = true ∧
+    armStack (mulFn umaal) = 0 ∧ noIcall (mulFn umaal) = true := by
+  cases umaal <;> simp only [Impl.Ed25519.Arm.mulFn, mulBodyU, mulBody, Code.noFrames, armStack, noIcall,
+    Bool.and_self, Bool.false_eq_true, ↓reduceIte, Nat.max_self, and_self]
+
+theorem fieldCode (umaal : Bool) (ops : List FieldOp) : (fieldCode umaal ops).noFrames = true ∧
+    armStack (fieldCode umaal ops) = 0 ∧ noIcall (fieldCode umaal ops) = true := by
+  induction ops with
+  | nil => exact ⟨rfl, rfl, rfl⟩
+  | cons op ops ih =>
+    obtain ⟨h1, h2, h3⟩ := ih
+    obtain ⟨m1, m2, m3⟩ := mulFn umaal
+    cases op <;> simp only [Impl.Ed25519.Arm.fieldCode, FieldOp.code, mulCall, Code.noFrames, armStack,
+      noIcall, h1, h2, h3, m1, m2, m3, (mulIn umaal _ _ _).1, (mulIn umaal _ _ _).2.1, (mulIn umaal _ _ _).2.2,
+      Bool.and_self, Nat.max_self, and_self]
+
+end VG.Proof.Ed25519.Arm.Shape
+
+end

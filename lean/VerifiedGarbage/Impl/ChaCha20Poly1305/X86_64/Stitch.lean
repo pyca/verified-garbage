@@ -873,8 +873,8 @@ def cryptArgsO : List Instr :=
 bytes, as `open` does; otherwise the whole chunks decrypted and absorbed by
 `bulkO` (or, below 512 bytes, the first 448 absorbed by `wholeO`), then the
 rest absorbed and decrypted. Then the keystream is wiped:
-past `fold` bytes `ctx[672, 800)`, where `twoKs` stores the block of the last
-bytes too (`wipeL`). -/
+past `fold` bytes all of `ctx[672, 1248)`, where `twoKs`, `fourKs` and the
+tails store their own too (`wipeL`), as `cryptS` does. -/
 def cryptO (x : ChaCha20.X86_64.Callee) (b : Poly1305.X86_64.Blocks) : Prog isa :=
   .seq (.block [.alu .cmp .r13 (.imm (BitVec.ofNat 32 (x.fold + 1)))])
   (.seq (.ite .b
@@ -887,7 +887,7 @@ def cryptO (x : ChaCha20.X86_64.Callee) (b : Poly1305.X86_64.Blocks) : Prog isa 
       (.seq (macPadLengths b .rbx .rbp)
       (decRest x))))))
   (.seq (.block (anchor .rsi 128))
-  (.seq (wipeL x.fold 192)
+  (.seq (wipeL x.fold 512)
   (.seq (.block [.alu .add .rdx (.imm 64)]) (zeroKs x.wide)))))
 
 /-- `open`, with Poly1305 inside the kernel for the whole chunks, up to the

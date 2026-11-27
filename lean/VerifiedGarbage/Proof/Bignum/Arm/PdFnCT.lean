@@ -1,4 +1,5 @@
 module
+public import VerifiedGarbage.Proof.Bignum.Arm.CallOp
 public import VerifiedGarbage.Proof.Bignum.Arm.PdInput
 public import VerifiedGarbage.Impl.Bignum.Arm.PdFn
 
@@ -14,10 +15,10 @@ import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm
 
-theorem pdFn_ct {base dst np ep xp : BitVec 32} {len k eLen N R : Nat} {eb xb1 xb2 : List Byte} :
+theorem pdFn_ct (A : CallOp) {base dst np ep xp : BitVec 32} {len k eLen N R : Nat} {eb xb1 xb2 : List Byte} :
     RelCT isa (fun s t => PdFnInput base dst np ep xp len k eLen N R eb xb1 s ∧
       PdFnInput base dst np ep xp len k eLen N R eb xb2 t ∧ s.sp = t.sp)
-      PdFn.code (fun _ _ => True) := by
+      (PdFn.code A.op) (fun _ _ => True) := by
   unfold PdFn.code
   apply RelCT.frame (fun _ _ h => h.2.2)
   intro s t tr1 tr2 u v hp e1 e2
@@ -39,7 +40,7 @@ theorem pdFn_ct {base dst np ep xp : BitVec 32} {len k eLen N R : Nat} {eb xb1 x
       obtain ⟨-, rfl⟩ := Exec.det entry1 run1
       obtain ⟨-, rfl⟩ := Exec.det entry2 run2
       have body := relCT_keep_sp
-        (pdBody_ct (base := base) (dst := dst) (np := np) (ep := ep) (xp := xp)
+        (pdBody_ct A (base := base) (dst := dst) (np := np) (ep := ep) (xp := xp)
           (len := len) (k := k) (eLen := eLen) (N := N) (R := R) (eb := eb) (xb1 := xb1) (xb2 := xb2))
         (fun _ _ h => h.2.2)
       have restore : RelCT isa (fun s t => s.sp = t.sp) (.block PcFn.restore) (fun s t => s.sp = t.sp) :=

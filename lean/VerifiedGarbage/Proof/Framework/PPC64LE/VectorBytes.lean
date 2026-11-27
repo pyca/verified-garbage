@@ -62,7 +62,7 @@ theorem vbyte_xor' (a b : BitVec 128) (i : Nat) : vbyte (a ^^^ b) i = vbyte a i 
   simp only [vbyte, BitVec.getLsbD_extractLsb', BitVec.getLsbD_xor, hj, decide_true, Bool.true_and]
 
 theorem exec_mtvsrd {s : State} {d : VReg} {n : Reg} :
-    exec (.mtvsrd d n) s = some { s.writeV d (s.gpr n ++ s.unknowns 0) with
+    exec (.mtvsrd d n) s = some { s.writeV d (s.gpr n ++ s.undef (s.unknowns 0) (s.gpr n) (s.vpr d)) with
       unknowns := fun i => s.unknowns (i + 1) } := rfl
 
 theorem exec_mfvsrd {s : State} {d : Reg} {n : VReg} :

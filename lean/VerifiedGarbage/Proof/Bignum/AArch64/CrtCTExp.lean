@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorBody
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTGPow
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtExp
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtBuild
@@ -12,11 +13,10 @@ import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Bignum.Math
-import Mathlib.Order.RelClasses
-import Mathlib.Tactic.Finiteness.Attr
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorBody
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTGPow
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtExp
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtBuild
@@ -29,13 +29,194 @@ meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
 meta import VerifiedGarbage.Proof.Bignum.Math
-meta import Mathlib.Order.RelClasses
-meta import Mathlib.Tactic.Finiteness.Attr
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
 import VerifiedGarbage.Proof.Bignum.CrtMath
 meta import VerifiedGarbage.Proof.Bignum.CrtMath
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorSetup
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorSetup
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorLoop
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorLoop
+
+/-! ### `Bignum.AArch64.CrtWindowVectorStepCT`, which this module and modules that import it used -/
+
+section
+
+/-! A vector tile leaks only public addresses; the table digit remains secret. -/
+
+@[expose] public section
+namespace VG.Proof.Bignum.AArch64.WindowVector
+open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64 VG.Proof.Bignum
+open VG.Impl.Rsa.AArch64.Crt
+
+/-- The selection's hypotheses for a table of `n` entries: `SelP` of
+`CrtCTExp.lean` at 16, and of `CrtWindowTableCT.lean` at 32. -/
+def SelPn (n : Nat) (p : XPub) (s : State) : Prop :=
+  ∃ (minv : BitVec 64) (X Xc v : Nat), CExpCtx s (off p.B p.o) p.wx minv X Xc n ∧ 2 ≤ p.wx ∧ p.wx < 2 ^ 30 ∧
+    v < n ∧ word s.mem (off p.B p.o) (8 * Crt.sTab) = off (off p.B p.o) (slot p.wx 8) ∧
+    word s.mem (off p.B p.o) (8 * Crt.sNib) = BitVec.ofNat 64 v
+
+def StepPre (n : Nat) (q : XPub × Nat) (s : State) : Prop :=
+  ∃ mi X Xc v, CExpCtx s (off q.1.B q.1.o) q.1.wx mi X Xc n ∧
+    word s.mem (off q.1.B q.1.o) (8 * Crt.sTab) = off (off q.1.B q.1.o) (slot q.1.wx 8) ∧
+    s.gpr .x6 = BitVec.ofNat 64 (8 * (q.1.wx + 2)) ∧
+    s.gpr .x17 = off (off q.1.B q.1.o) (slot q.1.wx Crt.aT + 64 * q.2) ∧
+    s.v .v22 = dup2 (BitVec.ofNat 64 v) ∧ s.v .v24 = dup2 1
+
+def ScanPins (n : Nat) (q : XPub × Nat) (s : State) : Prop :=
+  s.gpr .x16 = off (off q.1.B q.1.o) (slot q.1.wx 8 + 64 * q.2) ∧
+  s.gpr .x6 = BitVec.ofNat 64 (8 * (q.1.wx + 2)) ∧
+  s.gpr .x14 = BitVec.ofNat 64 n ∧
+  s.gpr .x17 = off (off q.1.B q.1.o) (slot q.1.wx Crt.aT + 64 * q.2)
+
+theorem step_pins (n : Nat) : Pins (StepPre n) [.x0,.x17] := by
+  intro q s t hs ht r hr
+  obtain ⟨_,_,_,_,cs,_,_,ps,_⟩ := hs
+  obtain ⟨_,_,_,_,ct,_,_,pt,_⟩ := ht
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl
+  · exact cs.good.x0.trans ct.good.x0.symm
+  · exact ps.trans pt.symm
+
+theorem scan_pins (n : Nat) : Pins (ScanPins n) [.x16,.x6,.x14,.x17] := by
+  intro q s t hs ht r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl
+  · exact hs.1.trans ht.1.symm
+  · exact hs.2.1.trans ht.2.1.symm
+  · exact hs.2.2.1.trans ht.2.2.1.symm
+  · exact hs.2.2.2.trans ht.2.2.2.symm
+
+theorem step_ct {n : Nat} (hN : n = 16 ∨ n = 32) :
+    RelCT isa (Two (StepPre n)) (rawStep n) (fun _ _ => True) := by
+  rcases hN with rfl | rfl
+  · unfold rawStep
+    refine RelCT.seq (two_piece (Ψ := ScanPins 16) [.x0,.x17] (step_pins 16) (by taint_decide) ?_)
+      (two_taint [.x16,.x6,.x14,.x17] (scan_pins 16) (by taint_decide))
+    rintro q s ⟨mi,X,Xc,v,hc,ht,h6,h17,h22,h24⟩
+    exact WP.mono (startScan_ok (by decide) hc ht h17 h22 h24) fun u ⟨h14,h0,_,ku⟩ =>
+      ⟨by simpa using h0.ptr, (ku.gpr .x6 (by decide)).trans h6, h14,
+        (ku.gpr .x17 (by decide)).trans h17⟩
+  · unfold rawStep
+    refine RelCT.seq (two_piece (Ψ := ScanPins 32) [.x0,.x17] (step_pins 32) (by taint_decide) ?_)
+      (two_taint [.x16,.x6,.x14,.x17] (scan_pins 32) (by taint_decide))
+    rintro q s ⟨mi,X,Xc,v,hc,ht,h6,h17,h22,h24⟩
+    exact WP.mono (startScan_ok (by decide) hc ht h17 h22 h24) fun u ⟨h14,h0,_,ku⟩ =>
+      ⟨by simpa using h0.ptr, (ku.gpr .x6 (by decide)).trans h6, h14,
+        (ku.gpr .x17 (by decide)).trans h17⟩
+
+end VG.Proof.Bignum.AArch64.WindowVector
+
+end
+
+end
+
+/-! ### `Bignum.AArch64.CrtWindowVectorCT`, which this module and modules that import it used -/
+
+section
+
+/-! The number of tiles and all table addresses depend only on public widths. -/
+
+@[expose] public section
+namespace VG.Proof.Bignum.AArch64.WindowVector
+open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64 VG.Proof.Bignum
+open VG.Impl.Rsa.AArch64.Crt
+open VG.Proof.MlKem.AArch64 (Keep eval_nonzero ne_zero_iff eval_zero eq_zero_iff)
+
+def LoopPre (n : Nat) (p : XPub) (j : Nat) (s : State) : Prop :=
+  ∃ s₀ mi X Xc v, LoopInv n s₀ (off p.B p.o) p.wx mi X Xc v j s ∧
+    8 ≤ p.wx ∧ p.wx < 2 ^ 30 ∧ v < n ∧
+    s.gpr .x13 = BitVec.ofNat 64 (p.wx / 8 - j)
+
+theorem loopPre_step {n : Nat} {p : XPub} {j : Nat} {s : State} (h : LoopPre n p j s) : StepPre n (p,j) s := by
+  obtain ⟨_,mi,X,Xc,v,hI,_⟩ := h
+  exact ⟨mi,X,Xc,v,hI.ctx,hI.tab,hI.stride,hI.ptr,hI.digit,hI.one⟩
+
+theorem loop_ct {n : Nat} (hN : n = 16 ∨ n = 32) :
+    RelCT isa (Two fun p s => 0 < p.wx / 8 ∧ LoopPre n p 0 s)
+    (.loop (rawStep n) (.nonzero .x .x13))
+    (Two fun (p : XPub) s => s.gpr .x0 = off p.B p.o) := by
+  apply two_loop (Φ := LoopPre n) (fun p : XPub => p.wx / 8)
+    (two_map id (fun _ _ h => loopPre_step h.2) (step_ct hN))
+  rintro p j s hj ⟨s₀,mi,X,Xc,v,hI,hw,hw',hv,h13⟩
+  refine WP.mono ((rawStep_wp _ _ _).mpr (loopStep_ok hN hv (by omega_using [hj]) hI)) fun t ⟨ht,hc⟩ => ?_
+  have h13' : t.gpr .x13 = BitVec.ofNat 64 (p.wx / 8 - (j + 1)) := by
+    rw [hc,h13]
+    apply BitVec.eq_of_toNat_eq
+    rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
+    omega_using [hj]
+  have hz : (t.gpr .x13).toNat ≠ 0 ↔ j + 1 ≠ p.wx / 8 := by
+    rw [h13', BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show p.wx / 8 - (j + 1) < 2 ^ 64 by omega_using [hw'])]
+    omega_using [hj]
+  exact ⟨eval_nz_count hj hz, fun _ => ⟨s₀,mi,X,Xc,v,ht,hw,hw',hv,h13'⟩,
+    fun _ => ht.ctx.good.x0⟩
+
+def BlockPreN (n : Nat) (p : XPub) (s : State) : Prop := SelPn n p s ∧ 8 ≤ p.wx
+
+theorem setup_ready {n : Nat} {p : XPub} {s : State} (h : BlockPreN n p s) :
+    WP isa (.block setup) s fun t => 0 < p.wx / 8 ∧ LoopPre n p 0 t := by
+  obtain ⟨⟨mi,X,Xc,v,hc,_,hw',hv,ht,hN⟩,hw⟩ := h
+  refine WP.mono (setup_ok hc hw' hN) fun u ⟨⟨h6,h13,h17,h22,h24,hm⟩,ku⟩ => ?_
+  have ctx := hc.of_win (by rw [hm]; exact Frm.refl _ _ _) ku.wr (ku.gpr .x0 (by decide))
+  refine ⟨by omega_using [hw], u,mi,X,Xc,v,?_,hw,hw',hv,by simpa using h13⟩
+  exact ⟨ctx,by rw [hm]; exact ht,h6,by simpa using h17,h22,h24,
+    Outside.refl _ _ _ _,fun _ h => by omega,Keep.refl _ _⟩
+
+theorem blockedN_ct {n : Nat} (hN : n = 16 ∨ n = 32) : RelCT isa (Two (BlockPreN n))
+    (VG.Impl.Rsa.AArch64.WindowSelectVector.blocked n) (fun _ _ => True) := by
+  rw [blocked_eq]
+  refine RelCT.seq (two_piece (Ψ := fun p s => 0 < p.wx / 8 ∧ LoopPre n p 0 s) [.x0]
+    (pins_x0B (fun p : XPub => off p.B p.o)
+      (fun _ _ ⟨⟨_,_,_,_,hc,_⟩,_⟩ => hc.good.x0)) (by taint_decide)
+    (fun _ _ h => setup_ready h)) ?_
+  refine RelCT.seq (loop_ct hN) ?_
+  rcases hN with rfl | rfl <;>
+  · exact x0_ct (fun p : XPub => off p.B p.o) (fun _ _ h => h) (by taint_decide)
+structure GuardCtx (n : Nat) (p : XPub) (s : State) : Prop where
+  sel : SelPn n p s
+  width : s.gpr .x3 = BitVec.ofNat 64 (p.wx / 8)
+  rem : s.gpr .x4 = BitVec.ofNat 64 (p.wx % 8)
+
+theorem guard_ready {n : Nat} {p : XPub} {s : State} (h : SelPn n p s) :
+    WP isa (.block guard) s (GuardCtx n p) := by
+  obtain ⟨mi,X,Xc,v,hc,hw,hw',hv,ht,hN⟩ := h
+  refine WP.mono (guard_ok hc hw') fun u ⟨⟨hm,h3,h4⟩,ku⟩ => ?_
+  exact ⟨⟨mi,X,Xc,v,hc.of_win (by rw [hm]; exact Frm.refl _ _ _) ku.wr
+    (ku.gpr .x0 (by decide)),hw,hw',hv,hm ▸ ht,hm ▸ hN⟩,h3,h4⟩
+
+theorem guard_width {n : Nat} {p : XPub} {s : State} (h : GuardCtx n p s)
+    (ht : isa.eval (.nonzero .x .x3) s = some true) : 8 ≤ p.wx := by
+  obtain ⟨_,_,_,_,_,_,hw',_⟩ := h.sel
+  rw [eval_nonzero,h.width,ne_zero_iff,BitVec.toNat_ofNat,
+    Nat.mod_eq_of_lt (show p.wx / 8 < 2 ^ 64 by omega_using [hw'])] at ht
+  have := of_decide_eq_true (Option.some.inj ht)
+  omega_using [this]
+
+/-- The selection leaks the same in runs with the same workspace, as its
+`fallback` does. -/
+theorem select_ct {n : Nat} (hN : n = 16 ∨ n = 32) {fallback : Prog isa}
+    (hf : RelCT isa (Two (SelPn n)) fallback (fun _ _ => True)) :
+    RelCT isa (Two (SelPn n)) (VG.Impl.Rsa.AArch64.WindowSelectVector.select n fallback) (fun _ _ => True) := by
+  unfold VG.Impl.Rsa.AArch64.WindowSelectVector.select
+  refine RelCT.seq (two_piece (Ψ := GuardCtx n) [.x0]
+    (pins_x0B (fun p : XPub => off p.B p.o) (fun _ _ ⟨_,_,_,_,hc,_⟩ => hc.good.x0))
+    (by taint_decide) (fun _ _ h => guard_ready h)) ?_
+  refine two_ite (Φ := GuardCtx n) ?_ ?_ ?_
+  · intro p s t hs ht
+    rw [eval_nonzero,eval_nonzero,hs.width,ht.width]
+  · refine two_ite ?_ ?_ ?_
+    · intro p s t hs ht
+      rw [eval_zero,eval_zero,hs.1.rem,ht.1.rem]
+    · exact two_map id (fun _ _ h => ⟨h.1.1.sel,guard_width h.1.1 h.1.2⟩) (blockedN_ct hN)
+    · exact two_map id (fun _ _ h => h.1.1.sel) hf
+  · exact two_map id (fun _ _ h => h.1.sel) hf
+
+end VG.Proof.Bignum.AArch64.WindowVector
+
+end
+
+end
 
 /-!
 # RSA with the CRT on AArch64: the exponentiation is constant time
@@ -58,12 +239,6 @@ namespace VG.Proof.Bignum.AArch64
 open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64 VG.Impl.Bignum.Public VG.Impl.Rsa.AArch64.Crt
 open VG.Proof.Bignum
 open VG.Proof.MlKem.AArch64 (Keep)
-
-/-- A piece whose only public input is `x0`. -/
-theorem x0_ct {α : Type} {Φ : α → State → Prop} (f : α → Addr) (h : ∀ a s, Φ a s → s.gpr .x0 = f a)
-    {c : Prog isa} {hc : VG.Taint.Hint VG.AArch64.Taint.T}
-    (hT : (taint.check (Taint.ofRegs [.x0]) c hc).isSome = true) : RelCT isa (Two Φ) c fun _ _ => True :=
-  two_taint [.x0] (pins_x0B f h) hT
 
 /-- The prime's workspace of `p` and its context, as the steps' bounds need it. -/
 def XCtx (p : XPub) (s : State) : Prop :=
@@ -227,7 +402,7 @@ theorem crtWin_ct (M : Mont) :
     RelCT isa (Two fun (q : XPub × Nat) s => q.2 < 2 ∧ WinI q.1 q.2 s) (seqs (expWin M.mm))
       fun _ _ => True := by
   rw [expWin_eq]
-  refine RelCT.seqs_append (by simp) (by simp [tabSelect_eq]) ?_
+  refine RelCT.seqs_append (by simp) (by simp) ?_
   have sq : RelCT isa (Two fun (q : XPub × Nat) s => WinQ q.1 s) (M.mm aY aY aY)
       (Two fun (q : XPub × Nat) s => WinQ q.1 s) :=
     two_post (two_map (fun q : XPub × Nat => q.1.ws) (fun _ _ h => h.goodW) (M.ct (by unfold MmUse; decide)))
@@ -246,11 +421,13 @@ theorem crtWin_ct (M : Mont) :
   · simp only [seqs]
     exact RelCT.seq sq0 (RelCT.seq sq (RelCT.seq sq (RelCT.seq sq winMid_ct)))
   -- The selection, `Y := Y T` and the count.
-  refine RelCT.seqs_append (by simp [tabSelect_eq]) (by simp) ?_
+  refine RelCT.seqs_append (by simp) (by simp) ?_
   refine RelCT.seq (two_post (Ψ := fun (q : XPub × Nat) s => WinT q.1 s)
-    (two_map (fun q : XPub × Nat => q.1) (fun _ _ h => h.1) tabSel_ct) fun q s h => ?_) ?_
+    (two_map (fun q : XPub × Nat => q.1) (fun _ _ h => h.1)
+      (WindowVector.select_ct (Or.inl rfl) tabSel_ct)) fun q s h => ?_) ?_
   · obtain ⟨⟨minv, X, Xc, v, hc, hw, hw', hv, ht, hN⟩, minv', X', Xc', hc₂, htab, -, -⟩ := h
-    refine WP.mono (tabSel_ok hc hw hw' hv ht hN) fun t ⟨hc', hT, _, _⟩ => ⟨minv, X, Xc, hc', ?_, hw, hw'⟩
+    refine WP.mono (WindowVector.select_ok (Or.inl rfl) (fun hu tab nib => tabSel_ok hu hw hw' hv tab nib)
+      hc hw' hv ht hN) fun t ⟨hc', hT, _, _⟩ => ⟨minv, X, Xc, hc', ?_, hw, hw'⟩
     have hX : X' = X := hc₂.n.symm.trans hc.n
     rw [hT, ← hX]; exact htab.lt _ hv
   simp only [seqs]

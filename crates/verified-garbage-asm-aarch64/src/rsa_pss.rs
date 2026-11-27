@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.RsaPss.signPrecomputedMdTableContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, the contents of `n` and `e`, the first `2 * ⌈n_len / 8⌉` words of `pre` (the modulus' values), and which tables `hash` and `mgf1` are, not on the private key, the rest of `pre`, the digest or the salt.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of `out_len` bytes.
@@ -119,7 +121,17 @@ cbnz x13, 219b
 .inst 0xd2800000,0xf94033f3,0xf94037f4
 21:
 .inst 0x910003f0,0xf9403a15,0xf9403e16,0xf9404217,0xf9404618,0xf9404a19,0xf9404e1a,0xf940521b
-.inst 0xf940561c,0xf9405a1e,0x910543ff,0xd65f03c0
+.inst 0xf940561c,0xf9405a1e,0x910543ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005
+.inst 0xd2800006,0xd2800007,0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d
+.inst 0xd280000e,0xd280000f,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403
+.inst 0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413
+.inst 0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b
+.inst 0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f,0x11000000,0xd13803ff,0x6f00e41f
+.inst 0x910003e9,0xd280070a
+220:
+.inst 0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x91010129,0xd100054a
+cbnz x10, 220b
+.inst 0x913803ff,0xd65f03c0
 .p2align 6",
         vg_rsa_pss_sha512_256_encode = sym super::rsa_pss::vg_rsa_pss_sha512_256_encode::vg_rsa_pss_sha512_256_encode,
         vg_rsa_pss_sha512_224_encode = sym super::rsa_pss::vg_rsa_pss_sha512_224_encode::vg_rsa_pss_sha512_224_encode,
@@ -136,6 +148,8 @@ cbnz x13, 219b
 /// RSASSA-PSS signature verification (RFC 8017 §8.1.2) with the hash function of the table `hash` and MGF1 with that of the table `mgf1`, of a signature of a digest of the former. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero), the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits) and `pre`, the `pre_len` words written by `vg_rsa_public_precompute` for `n` (returning 1), returns 1 if `sig` (`n_len` bytes, most significant first) is an RSASSA-PSS signature of the `digest_len`-byte digest `digest` with a salt of `salt_len` bytes, or of any length if `any_salt_len` is not zero (BoringSSL's `RSA_PSS_SALTLEN_AUTO`); and 0 if it is not, or if `n` is not such a modulus, `e` is not such a number, or `sig` is not below `n`. If `pre` does not hold those values, the result is unspecified; memory safety and the timing guarantee still apply.
 ///
 /// Contract: `VG.Spec.RsaPss.verifyPrecomputedMdTableContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, `salt_len`, `any_salt_len`, the contents of `n`, `e` and `pre`, and which tables `hash` and `mgf1` are, not on the digest, the signature or anything computed from them but the result.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -225,7 +239,17 @@ b 21f
 .inst 0xd2800000
 21:
 .inst 0x910003f0,0xf9403213,0xf9403614,0xf9403a15,0xf9403e16,0xf9404217,0xf9404618,0xf9404a19
-.inst 0xf9404e1a,0xf940521b,0xf940561c,0xf9405a1e,0x910543ff,0xd65f03c0
+.inst 0xf9404e1a,0xf940521b,0xf940561c,0xf9405a1e,0x910543ff,0xd2800001,0xd2800002,0xd2800003
+.inst 0xd2800004,0xd2800005,0xd2800006,0xd2800007,0xd2800008,0xd2800009,0xd280000a,0xd280000b
+.inst 0xd280000c,0xd280000d,0xd280000e,0xd280000f,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401
+.inst 0x6f00e402,0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411
+.inst 0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419
+.inst 0x6f00e41a,0x6f00e41b,0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f,0x11000000
+.inst 0xd10f03ff,0x6f00e41f,0x910003e9,0xd28001ea
+216:
+.inst 0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x91010129,0xd100054a
+cbnz x10, 216b
+.inst 0x910f03ff,0xd65f03c0
 .p2align 6",
         vg_rsa_public_precomputed_checked = sym super::rsa::vg_rsa_public_precomputed_checked::vg_rsa_public_precomputed_checked,
         vg_rsa_pss_sha512_256_check_encoding = sym super::rsa_pss::vg_rsa_pss_sha512_256_check_encoding::vg_rsa_pss_sha512_256_check_encoding,

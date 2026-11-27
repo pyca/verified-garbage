@@ -44,7 +44,7 @@ open VG.Impl.Modes.X86_64 (xorByte)
 /-- `vg_camellia_ctr`'s code, with its working space on the stack: called as an
 internal function of its own, `vg_camellia_ctr_core`, rather than as
 `vg_camellia_ctr`, which also clears what it leaves
-(`Proof.Camellia.X86_64.Scrub.ctrReg`). -/
+(`Proof.Camellia.X86_64.Scrub.ctr_scrubbed`). -/
 def ctrFramed : Prog isa := Impl.StackScratch.X86_64.withStackScratchWiped 3280 .r9 409 ctr
 
 /-- The arguments to their registers, `r13` and `r14` the data after the

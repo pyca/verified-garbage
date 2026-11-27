@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.ChaCha20.initContract`. The streaming state is opaque (`VG.Spec.ChaCha20.keyAt`, `VG.Spec.ChaCha20.restAt`). Constant time: only the pointers may affect timing, not the key or the nonce.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 768 bytes.
@@ -17,7 +19,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_chacha20_init(state: *mut [u64; 96], key: *const [u8; 32], nonce: *const [u8; 16]) {
     core::arch::naked_asm!(
-        r#".base64 "i0QkBItMJAjzD28J8w9vURCLVCQM8w9vArkAAAAAKwq6AQAAAIPaAAHJEdIByRHSAckR0gHJEdIByRHSAckR0vMPf0gQ8w9/UCDzD39AMImIgAAAAImQhAAAALlleHBhiQi5bmQgM4lIBLkyLWJ5iUgIuXRlIGuJSAzD"
+        r#".base64 "i0QkBItMJAjzD28J8w9vURCLVCQM8w9vArkAAAAAKwq6AQAAAIPaAAHJEdIByRHSAckR0gHJEdIByRHSAckR0vMPf0gQ8w9/UCDzD39AMImIgAAAAImQhAAAALlleHBhiQi5bmQgM4lIBLkyLWJ5iUgIuXRlIGuJSAy4AAAAALoAAAAAMclmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/8M="
 .p2align 6"#,
     )
 }
@@ -25,6 +27,8 @@ pub(crate) unsafe extern "C" fn vg_chacha20_init(state: *mut [u64; 96], key: *co
 /// Restarts a ChaCha20 keystream with the same key: makes the streaming state `*state` represent the whole keystream of its key for the 16-byte nonce `*nonce` (as `vg_chacha20_init` does), discarding what was left of the previous one.
 ///
 /// Contract: `VG.Spec.ChaCha20.setNonceContract`. Constant time: only the pointers may affect timing, not the key or the nonce.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -35,7 +39,7 @@ pub(crate) unsafe extern "C" fn vg_chacha20_init(state: *mut [u64; 96], key: *co
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_chacha20_set_nonce(state: *mut [u64; 96], nonce: *const [u8; 16]) {
     core::arch::naked_asm!(
-        r#".base64 "i0QkBItUJAjzD28CuQAAAAArCroBAAAAg9oAAckR0gHJEdIByRHSAckR0gHJEdIByRHS8w9/QDCJiIAAAACJkIQAAAC5ZXhwYYkIuW5kIDOJSAS5Mi1ieYlICLl0ZSBriUgMww=="
+        r#".base64 "i0QkBItUJAjzD28CuQAAAAArCroBAAAAg9oAAckR0gHJEdIByRHSAckR0gHJEdIByRHS8w9/QDCJiIAAAACJkIQAAAC5ZXhwYYkIuW5kIDOJSAS5Mi1ieYlICLl0ZSBriUgMuAAAAAC6AAAAADHJZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7//D"
 .p2align 6"#,
     )
 }
@@ -46,6 +50,8 @@ pub const VG_CHACHA20_APPLY_SSSE3_FEATURES: verified_garbage_cpu::Features = ver
 /// Applies a ChaCha20 keystream (RFC 8439 §2.4), encrypting or decrypting: if at least `len` bytes are left of the keystream that the streaming state `*state` represents, XORs the next `len` of them into the `len` bytes at `data`, keeps the rest in `*state`, and returns 1. Otherwise (the block counter would pass 2³² − 1) returns 0, and leaves the bytes at `data` and the keystream unchanged.
 ///
 /// Contract: `VG.Spec.ChaCha20.applyContract`. Constant time: only the pointers, `len` and the number of bytes of keystream left in `*state` (`VG.Spec.ChaCha20.leftAt`: 64 × (2³² − `c`) for the initial block counter `c`, less the bytes applied since) may affect timing, not the key, the nonce, the keystream or the data. The function may leak that number.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -103,7 +109,7 @@ jmp 21f
 20:
 .base64 "uAAAAAA="
 21:
-.base64 "ww=="
+.base64 "Zg/vwI1kJODzD38EJPMPf0QkEI1kJCC6AAAAADHJZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7//D"
 .p2align 6"#,
         vg_chacha20_xor_ssse3 = sym super::chacha20::vg_chacha20_xor_ssse3::vg_chacha20_xor_ssse3,
         vg_chacha20_block = sym super::chacha20::vg_chacha20_block::vg_chacha20_block,
@@ -113,6 +119,8 @@ jmp 21f
 /// Applies a ChaCha20 keystream (RFC 8439 §2.4), encrypting or decrypting: if at least `len` bytes are left of the keystream that the streaming state `*state` represents, XORs the next `len` of them into the `len` bytes at `data`, keeps the rest in `*state`, and returns 1. Otherwise (the block counter would pass 2³² − 1) returns 0, and leaves the bytes at `data` and the keystream unchanged.
 ///
 /// Contract: `VG.Spec.ChaCha20.applyContract`. Constant time: only the pointers, `len` and the number of bytes of keystream left in `*state` (`VG.Spec.ChaCha20.leftAt`: 64 × (2³² − `c`) for the initial block counter `c`, less the bytes applied since) may affect timing, not the key, the nonce, the keystream or the data. The function may leak that number.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -169,7 +177,7 @@ jmp 21f
 20:
 .base64 "uAAAAAA="
 21:
-.base64 "ww=="
+.base64 "Zg/vwI1kJODzD38EJPMPf0QkEI1kJCC6AAAAADHJZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7//D"
 .p2align 6"#,
         vg_chacha20_xor = sym super::chacha20::vg_chacha20_xor::vg_chacha20_xor,
         vg_chacha20_block = sym super::chacha20::vg_chacha20_block::vg_chacha20_block,
@@ -179,6 +187,14 @@ jmp 21f
 #[rustfmt::skip]
 #[path = "internal/vg_chacha20_block.rs"]
 pub(crate) mod vg_chacha20_block;
+
+#[rustfmt::skip]
+#[path = "internal/vg_chacha20_poly1305_seal_core.rs"]
+pub(crate) mod vg_chacha20_poly1305_seal_core;
+
+#[rustfmt::skip]
+#[path = "internal/vg_chacha20_poly1305_seal_core_ssse3.rs"]
+pub(crate) mod vg_chacha20_poly1305_seal_core_ssse3;
 
 #[rustfmt::skip]
 #[path = "internal/vg_chacha20_xor.rs"]

@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Aes.X86.Callee
+public import VerifiedGarbage.Impl.Aes.X86.Chain
 
 /-!
 # AES-CMAC: x86 (32-bit) implementation
@@ -31,7 +32,12 @@ caller's `ebx`, `esi`, `edi` and `ebp`.
 * `update` keeps only the pointer to the next block (`esi`) across the
   calls, and reloads its other arguments from the stack; it stops when the
   pointer reaches `data + 16 n`. Each block, the counter block is `C ⊕ Mᵢ`
-  and the state, zeroed, receives `CIPH_K(C ⊕ Mᵢ)`.
+  and the state, zeroed, receives `CIPH_K(C ⊕ Mᵢ)`. Over an implementation
+  of `vg_aes_ctr32_to` whose cipher it can run in place (`Chain.of`: AES-NI
+  and SSSE3) it makes no call (`updateChain`): the keys are set up once, the
+  chaining value stays in `xmm0` for all the blocks, loaded from the state
+  once and stored once, and each block is XORed into it and enciphered
+  there.
 * `finalize` forms `Mₙ` in the counter block: `Mₙ* ⊕ K1` for a complete
   block, else `Mₙ*` copied a byte at a time onto zeros, `0x80` after it, and
   XORed with `K2`. It XORs in the chaining value and calls `vg_aes_ctr32_to`
@@ -136,8 +142,20 @@ def advance : List Instr :=
 /-- One block. -/
 def body (c : Impl.Aes.X86.Ctr32) : Prog isa := .seq (.block chainIn) (.seq (ctrCall c) (.block advance))
 
-def update (c : Impl.Aes.X86.Ctr32) : Prog isa :=
+/-- The chaining by calls of `c`, a block a call. -/
+def updateCalls (c : Impl.Aes.X86.Ctr32) : Prog isa :=
   .seq (.block setup) (.seq (.ite .e (.block []) (.loop (body c) .ne)) (.block (restore 5)))
+
+/-- The chaining around a chain (`Impl/Aes/X86/Chain.lean`), the chaining value
+in `xmm0` for all the blocks. It uses no stack, and of the scratch buffer only
+what the chain writes and the 16 bytes where it saves the registers. -/
+def updateChain (c : Impl.Aes.X86.Chain) : Prog isa :=
+  .seq (.block setup) (.seq (.ite .e (.block []) (c.mid Impl.Aes.X86.Chain.cmac)) (.block (restore 5)))
+
+/-- `vg_cmac_aes_update` over `c`: the chaining around its chain if it has one
+(`Chain.choose`); otherwise the chaining by calls of `c`. -/
+def update (c : Impl.Aes.X86.Ctr32) : Prog isa :=
+  Impl.Aes.X86.Chain.choose c.name updateChain (updateCalls c)
 
 /-! ## `vg_cmac_aes_finalize` -/
 

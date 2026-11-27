@@ -1,14 +1,14 @@
 module
 
+import Batteries.Logic
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedFieldTiming
 import VerifiedGarbage.Proof.P256.EcdhDouble.Verified
 public import VerifiedGarbage.Proof.P256.VerifyAllocated.MixedHead
 public import VerifiedGarbage.Proof.P256.VerifyAllocated.MixedTail
 public import VerifiedGarbage.Proof.P256.VerifyAllocated.JacTail
 public import VerifiedGarbage.Proof.P256.VerifyAllocated.CachedHead
-import Mathlib.Data.Nat.Prime.Defs
 public import VerifiedGarbage.Proof.P256.EcdhDouble.Certificate
-public import VerifiedGarbage.Proof.P256.Linear.WeakCertificate
+public import VerifiedGarbage.Proof.P256.EcdhDouble.Verified
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.CachedAddField
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticJacHead
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticJacTail
@@ -20,9 +20,7 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticTableT
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256Bounds
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
 import VerifiedGarbage.Proof.Weierstrass.JacInplace
-import Mathlib.Tactic.ClearExcept
 import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
-import VerifiedGarbage.Proof.P256.EcdhDouble.Field
 import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedState
 
 /-! ## `AllocatedPointFrame` -/
@@ -169,8 +167,8 @@ private theorem mixedFull_values (E : Nat → Fe C) :
   have hren := runOps_rename (rcbσ K.S K.R K.E K.D) N (jacMixedInit K.S K.R E)
     (fun op hop => apart.inj ((show ∀ op∈N,op.out<9 by decide) op hop))
   rw [jacMixedInit_rename apart] at hren
-  exact (congrArg₂ Prod.mk (congrFun hren 6)
-    (congrArg₂ Prod.mk (congrFun hren 7) (congrFun hren 8))).trans
+  exact (congr (congrArg Prod.mk (congrFun hren 6))
+    (congr (congrArg Prod.mk (congrFun hren 7)) (congrFun hren 8))).trans
     (jacMixedN_run (fun i => E (rcbσ K.S K.R K.E K.D i)))
 
 theorem mixedTail_ok (raw : RawCorrect) {base : Addr} {V : List Nat} {E : Nat → Fe C} {s : State}
@@ -206,25 +204,8 @@ theorem double_field_ok {base : Addr} {E : Nat → Fe C} {s : State}
     WP isa VG.Impl.P256.EcdhDouble.program s fun t =>
       Frame base Proof.P256.VerifyAllocated.work s t ∧ Inv K.M base 8192 C.p Sl (jointLive cfg)
         (runOps (operations .doubleRR) E) t := by
-  refine WP.mono (Proof.P256.EcdhDouble.Certificate.refine hi.scr
-    (Proof.P256.EcdhDouble.raw_ok JointLayout.layout.lay JointLayout.layout.aligned
-      (by decide +kernel) Proof.P256.EcdhDouble.Verified.linear129
-      Proof.P256.EcdhDouble.Verified.linear38 (unitMod_pow_two (by decide) _)
-      (by decide +kernel) hi)) fun t ⟨u,⟨_,hu⟩,ho,hk⟩ => ⟨hk,?_⟩
-  have hs := hk.scr allocatedRegs_x0 hi.scr
-  have hm := hi.mod.unch hk.unch
-    (show ∀ w∈Proof.P256.VerifyAllocated.work,K.M.mo+8*K.M.n≤w.1 ∨ w.1+w.2≤K.M.mo by decide)
-    hi.scr.nowrap
-  apply (hu.congr_env (Proof.P256.EcdhDouble.result_of E (by decide +kernel))).of_observed hs hm
-  intro x hx i him
-  apply ho (x+8*i) ((show ∀ x∈jointLive cfg,∀ i<4,
-    Proof.P256.VerifyAllocated.observe .doubleRR (x+8*i) by decide +kernel) x hx i him)
-  · have ha := JointLayout.layout.aligned.sl x (hi.sl x hx)
-    omega_using [ha]
-  · have hb := JointLayout.layout.lay.le x (hi.sl x hx)
-    change i<4 at him
-    change x+32≤8192 at hb
-    omega_using [him, hb]
+  exact Proof.P256.EcdhDouble.program_ok rfl JointLayout.layout.lay JointLayout.layout.aligned
+    (by decide +kernel) (by decide +kernel) (by decide +kernel) (by decide +kernel) hi
 
 theorem double_ok (hC : Law C) (ha : AM3 C)
     {base : Addr} {E : Nat → Fe C} {s : State}

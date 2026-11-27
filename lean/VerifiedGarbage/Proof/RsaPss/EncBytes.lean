@@ -1,14 +1,44 @@
 module
+
 public import VerifiedGarbage.Proof.Mgf1.Basic
 public import VerifiedGarbage.Spec.RsaPss
-
-import VerifiedGarbage.Proof.RsaPss.Encoding
 import VerifiedGarbage.Proof.RsaPss.Params
 import VerifiedGarbage.Proof.RsaPss.CtPad
 import VerifiedGarbage.Proof.RsaPss.MgfBytes
 import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.PlainSimp
+
+/-! ### `RsaPss.Encoding`, which this module and modules that import it used -/
+
+section
+
+/-!
+# EMSA-PSS: clearing the leftmost bits
+
+`clearTop` keeps the length of the octets it clears (`clearTop_length`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.RsaPss
+
+open Spec Spec.RsaPss
+
+open Mgf1 (Hash xorBytes mgf1)
+open Proof.Mgf1 (Valid xorBytes_length xorBytes_xorBytes mgf1_length)
+
+/-! ## Clearing the leftmost bits -/
+
+theorem clearTop_length (z : Nat) : ∀ bs : List Byte, (clearTop z bs).length = bs.length
+  | [] => rfl
+  | _ :: _ => rfl
+
+end VG.Proof.RsaPss
+
+end
+
+end
 
 /-!
 # EMSA-PSS: the encoding, a byte at a time

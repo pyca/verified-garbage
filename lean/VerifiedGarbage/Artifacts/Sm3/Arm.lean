@@ -1,24 +1,27 @@
 module
 
-public import VerifiedGarbage.Proof.Sm3.Arm.Shared
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.Arm.Print
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Sm3.Contract
+import VerifiedGarbage.Proof.Sm3.Arm.Scrub
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # SM3 (GB/T 32905-2016) on ARMv7 -/
 
-@[expose] public section
-
 namespace VG.Artifacts.Sm3.Arm
 
-def artifacts : List Artifact := [
+public def artifacts : List (Artifact Arm.target) := [
   Spec.Sm3.initApi.artifact Arm.target {
-    code := Impl.Sm3.Arm.Stream.init
-    verified := Proof.Sm3.Arm.Shared.init },
+    code := Impl.Sm3.Arm.Fn.init
+    verified := Proof.Sm3.Arm.Fn.init },
   Spec.Sm3.updateApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratch 168 2 Impl.Sm3.Arm.Stream.update
-    verified := Proof.Sm3.Arm.Shared.update },
+    code := Impl.Sm3.Arm.Fn.update
+    verified := Proof.Sm3.Arm.Fn.update },
   Spec.Sm3.finalizeApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratch 168 1 Impl.Sm3.Arm.Stream.finalize
-    verified := Proof.Sm3.Arm.Shared.finalize }]
+    code := Impl.Sm3.Arm.Fn.finalize
+    verified := Proof.Sm3.Arm.Fn.finalize }]
+
+spec_apis artifacts
 
 end VG.Artifacts.Sm3.Arm

@@ -12,6 +12,12 @@ meta import VerifiedGarbage.Proof.Blake2.AArch64.Stream.Lit
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Impl.Scrub.AArch64
+meta import VerifiedGarbage.Impl.Scrub.AArch64
+import VerifiedGarbage.Proof.Framework.AArch64.ResidueTaint
+meta import VerifiedGarbage.Proof.Framework.AArch64.ResidueTaint
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 
 /-!
 # Streaming BLAKE2 on AArch64: constant time
@@ -34,15 +40,15 @@ theorem init_agree {w : Nat} {P : Params w} {s₁ s₂ : State} (hpub : (initAAr
   simp only [AArch64.Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl <;> assumption
 
-theorem update_agree {w : Nat} {P : Params w} {s₁ s₂ : State} (hpub : (updateAArch64 P).pub s₁ s₂) :
+theorem update_agree {w W : Nat} {P : Params w} {s₁ s₂ : State} (hpub : (updateAArch64 P W).pub s₁ s₂) :
     AArch64.Taint.Agree (AArch64.Taint.ofRegs [.x0, .x1, .x2, .x3, .x4]) s₁ s₂ := by
   obtain ⟨p1, p2, p3, p4, p5, hsp⟩ := hpub
   refine ⟨hsp, fun r hr => ?_⟩
   simp only [AArch64.Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl <;> assumption
 
-theorem finalize_agree {w : Nat} {P : Params w} {s₁ s₂ : State}
-    (hpub : (finalizeAArch64 P).pub s₁ s₂) :
+theorem finalize_agree {w W : Nat} {P : Params w} {s₁ s₂ : State}
+    (hpub : (finalizeAArch64 P W).pub s₁ s₂) :
     AArch64.Taint.Agree (AArch64.Taint.ofRegs [.x0, .x1, .x2, .x3]) s₁ s₂ := by
   obtain ⟨p1, p2, p3, p4, hsp⟩ := hpub
   refine ⟨hsp, fun r hr => ?_⟩
@@ -62,24 +68,34 @@ theorem initS_ct : ConstantTime isa (initAArch64 s).pre (initAArch64 s).pub
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3])
     (fun _ _ _ _ hp => init_agree hp) (by taint_decide)
 
-theorem updateB_ct : ConstantTime isa (updateAArch64 b).pre (updateAArch64 b).pub
+theorem updateB_ct {W : Nat} : ConstantTime isa (updateAArch64 b W).pre (updateAArch64 b W).pub
     (Impl.Blake2.AArch64.Stream.update b) :=
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3, .x4])
     (fun _ _ _ _ hp => update_agree hp) (by taint_decide)
 
-theorem updateS_ct : ConstantTime isa (updateAArch64 s).pre (updateAArch64 s).pub
+theorem updateS_ct {W : Nat} : ConstantTime isa (updateAArch64 s W).pre (updateAArch64 s W).pub
     (Impl.Blake2.AArch64.Stream.update s) :=
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3, .x4])
     (fun _ _ _ _ hp => update_agree hp) (by taint_decide)
 
-theorem finalizeB_ct : ConstantTime isa (finalizeAArch64 b).pre (finalizeAArch64 b).pub
+theorem finalizeB_ct {W : Nat} : ConstantTime isa (finalizeAArch64 b W).pre (finalizeAArch64 b W).pub
     (Impl.Blake2.AArch64.Stream.finalize b) :=
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3])
     (fun _ _ _ _ hp => finalize_agree hp) (by taint_decide)
 
-theorem finalizeS_ct : ConstantTime isa (finalizeAArch64 s).pre (finalizeAArch64 s).pub
+theorem finalizeS_ct {W : Nat} : ConstantTime isa (finalizeAArch64 s W).pre (finalizeAArch64 s W).pub
     (Impl.Blake2.AArch64.Stream.finalize s) :=
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3])
     (fun _ _ _ _ hp => finalize_agree hp) (by taint_decide)
+
+/-- BLAKE2s's `init`, with `x9` cleared, returns without secret residue. -/
+theorem initSCleared_noResidue (k : Contract isa) :
+    NoResidue (Impl.Scrub.AArch64.withClears [.x9] [] none (Impl.Blake2.AArch64.Stream.init s)) k 0 :=
+  RTaint.noResidue_of_check ⟨_, by taint_decide⟩ k
+
+/-- BLAKE2b's `init`, with `x9` cleared, returns without secret residue. -/
+theorem initBCleared_noResidue (k : Contract isa) :
+    NoResidue (Impl.Scrub.AArch64.withClears [.x9] [] none (Impl.Blake2.AArch64.Stream.init b)) k 0 :=
+  RTaint.noResidue_of_check ⟨_, by taint_decide⟩ k
 
 end VG.Proof.Blake2.AArch64.Stream

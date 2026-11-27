@@ -1,14 +1,17 @@
 module
-public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Fin4
-public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Top2
+public import VerifiedGarbage.Proof.Bignum.Arm.CallOp
+public import VerifiedGarbage.Proof.Bignum.Arm.DoubleBackend
 
-import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Top3
+public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Front
+public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Top3
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Fin5
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.MillerRabin.Arm.Run
-import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Trial
+import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Taint4
+import VerifiedGarbage.Proof.Framework.Arm.Frame
+import VerifiedGarbage.Proof.Rsa.BytesFrame
 
 /-! # A candidate on ARMv7: a call's result (`cand_ok`)
 
@@ -77,15 +80,15 @@ theorem CIn.xCovers (h : CIn s) {σ : State} (pre : In (mkP s) σ) : Covers (xRe
       rw [pre.endM]; exact Nat.le_trans (arr_mono (show mBase + 8 ≤ nArr by decide)) pre.fits
 
 /-- The body's run, widened to the caller's regions. -/
-theorem body_wide [VG.Proof.Rsa.Arm.Keys.InvLaw] (v : RoundImpl) (h : CIn s) :
-    ∃ tr w t, Exec isa (body v.name v.code) (pcPushed s) tr (w.withRegions s.rd (pcPushed s).wr) ∧
-      Exec isa (body v.name v.code) (sx s) tr w ∧
+theorem body_wide [VG.Proof.Rsa.Arm.Keys.InvLaw] (v : RoundImpl) (M : CallOp) (D : CallDbl) (h : CIn s) :
+    ∃ tr w t, Exec isa (body v.name v.code M.op D.dbl) (pcPushed s) tr (w.withRegions s.rd (pcPushed s).wr) ∧
+      Exec isa (body v.name v.code M.op D.dbl) (sx s) tr w ∧
       In (mkP s) t ∧ t.sp = (mkP s).sp ∧
       t.mem = (pcPushed s).mem.writeW (off (State.addr (mkP s).sp) 48) (s.gpr .r0) ∧
       RF (mkP s) (In (mkP s)) (stR (mkP s)) (outR (mkP s)) (usedR (mkP s)) t w := by
   obtain ⟨tr1, t, e1, pre, st, rt, wt, mt⟩ := entry_ok h
-  obtain ⟨tr2, w, e2, rf⟩ := (candBody_vp v).wp t t ⟨pre, ⟨pre, rfl, rfl, rfl, Frame.refl _ _⟩⟩
-  have run : Exec isa (body v.name v.code) (sx s) (tr1 ++ tr2) w := Exec.seq e1 e2
+  obtain ⟨tr2, w, e2, rf⟩ := (candBody_vp v M D).wp t t ⟨pre, ⟨pre, rfl, rfl, rfl, Frame.refl _ _⟩⟩
+  have run : Exec isa (body v.name v.code M.op D.dbl) (sx s) (tr1 ++ tr2) w := Exec.seq e1 e2
   have cov := h.xCovers pre
   have run' := Exec.widen (rd := s.rd) (wr := (pcPushed s).wr) run (Covers.append (Covers.refl _) cov) cov
   simp only [State.withRegions_withRegions] at run'
@@ -104,14 +107,14 @@ theorem slot_disj {σ : State} (pre : In (mkP s) σ) {lo n : Nat} (h1 : 4 ≤ lo
   · exact Offset.disjoint_base _ (by omega_using [h1]) (by omega_using [h2])
 
 /-- A call's result. -/
-theorem cand_ok [VG.Proof.Rsa.Arm.Keys.InvLaw] (v : RoundImpl) (h : CIn s) :
-    WP isa (code v.name v.code) s fun t => abiPreserved s t ∧ CPost s t := by
+theorem cand_ok [VG.Proof.Rsa.Arm.Keys.InvLaw] (v : RoundImpl) (M : CallOp) (D : CallDbl) (h : CIn s) :
+    WP isa (code v.name v.code M.op D.dbl) s fun t => abiPreserved s t ∧ CPost s t := by
   have spLo := h.spLo; have spHi := h.spHi
   have spN : (s.sp - BitVec.ofNat 32 56).toNat = s.sp.toNat - 56 := FrameStack.sub_toNat' (by omega_using [spLo])
-  unfold code
+  unfold Impl.RsaKeyGen.Arm.Candidate.code
   refine WP.frame (by decide) (by simp only [List.length_cons, List.length_nil]; omega_using [spLo]) (by decide) ?_
   rw [WP.seq_iff]
-  obtain ⟨tr, w, t, run', -, pre, st, mt, ⟨_, bk, r0, outs, used⟩⟩ := body_wide v h
+  obtain ⟨tr, w, t, run', -, pre, st, mt, ⟨_, bk, r0, outs, used⟩⟩ := body_wide v M D h
   refine WP.mono (Q := fun x => x = w.withRegions s.rd (pcPushed s).wr) ⟨tr, _, run', rfl⟩ ?_
   rintro _ rfl
   have wsp : w.sp = s.sp - BitVec.ofNat 32 56 := bk.sp.trans st
@@ -149,12 +152,16 @@ theorem cand_ok [VG.Proof.Rsa.Arm.Keys.InvLaw] (v : RoundImpl) (h : CIn s) :
     refine ⟨_, List.mem_append_right _ m, ?_⟩
     rw [State.withRegions_sp, wsp]; exact Region.contains_self _ _
   refine WP.mono (pc_restore_ok _ s.gpr fit read (by rw [State.withRegions_sp, wsp]; exact saved)) ?_
-  rintro t' ⟨restored, memT, restT⟩
+  rintro t' ⟨restored, memT, restT⟩ lm lu hfl
+  obtain fsub : Region.Sub ⟨State.addr (s.sp - BitVec.ofNat 32 56), 56⟩ (cF s) := by
+    rw [FrameStack.addr_sub' (by omega_using [spLo])]
+    exact Offset.sub_below _ (by decide) (by decide)
   have ret : t'.gpr .r0 = w.gpr .r0 := restT.gpr .r0 (by simp [pcCalleeSaved])
   have rc := res_c h mt
   refine ⟨⟨?_, ?_⟩, ?_, ?_, ?_⟩
   · intro r hr
     have ne : r ≠ .r12 := by intro he; subst r; simp [preserved] at hr
+    dsimp only
     rw [popped_gpr ne]
     simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
@@ -167,12 +174,26 @@ theorem cand_ok [VG.Proof.Rsa.Arm.Keys.InvLaw] (v : RoundImpl) (h : CIn s) :
     · exact restored (.r10, 40) (by simp [pcCalleeSaved])
     · exact restored (.r11, 44) (by simp [pcCalleeSaved])
     · exact restored (.lr, 52) (by simp [pcCalleeSaved])
-  · rw [popped_sp, restT.sp, State.withRegions_sp, wsp]
+  · dsimp only
+    rw [popped_sp, restT.sp, State.withRegions_sp, wsp]
     exact BitVec.sub_add_cancel _ _
-  · rw [popped_gpr (by decide : Reg.r0 ≠ .r12), ret, r0]; unfold stR; rw [rc]
-  · rw [popped_mem, memT, State.withRegions_mem]
+  · dsimp only
+    rw [popped_gpr (by decide : Reg.r0 ≠ .r12), ret, r0]; unfold stR; rw [rc]
+  · dsimp only
+    rw [VG.Proof.Rsa.rsa_bytes_frame (src := State.addr (s.gpr .r0)) (k := (s.gpr .r1).toNat) hfl
+      (by have := (s.gpr .r1).isLt; omega_using [])
+      (fun r hr => by obtain rfl := List.mem_singleton.mp hr; exact h.Fo.symm.sub_right fsub),
+      memT, State.withRegions_mem]
     exact outs.trans (by unfold outR; rw [rc]; rfl)
-  · rw [popped_mem, memT, State.withRegions_mem]
+  · dsimp only
+    have same : Spec.Rsa.wordsAt lm (State.addr (s.gpr .r2)) 1 = Spec.Rsa.wordsAt t'.mem (State.addr (s.gpr .r2)) 1 := by
+      unfold Spec.Rsa.wordsAt
+      apply List.map_congr_left
+      intro j hj
+      have bound : j < 1 := List.mem_range.mp hj
+      exact hfl.readW (r := cU s) (Offset.contains_base _ (by omega_using [bound]) (by omega_using [bound]))
+        (fun r hr => by obtain rfl := List.mem_singleton.mp hr; exact h.Fu.symm.sub_right fsub) (by decide)
+    rw [same, memT, State.withRegions_mem]
     exact used.trans (by unfold usedR; rw [rc]; rfl)
 
 end

@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFrame
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejWideStep
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejLoopState
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejPhase
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejGuard

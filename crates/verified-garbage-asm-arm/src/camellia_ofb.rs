@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Camellia.ofbContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the subkeys, the chaining value or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 272 bytes.
@@ -14,14 +16,14 @@
 /// * `data` must be valid for reads and writes of `16 * n` bytes.
 /// * `rounds` must be 18 (for a key of 16 bytes) or 24 (for one of 24 or 32).
 /// * `iv` and `data` must not overlap each other, `schedule` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `iv` and `data` may overlap the 2904 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `schedule`, `iv` and `data` may overlap the 2832 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_camellia_ofb(schedule: *const [u8; 272], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
-        r"sub sp, sp, #88
+        r"sub sp, sp, #2816
 add r12, sp, #0
 str lr, [r12, #8]
-ldr lr, [sp, #88]
+ldr lr, [sp, #2816]
 str lr, [r12, #0]
 add lr, sp, #12
 str lr, [r12, #4]
@@ -52,12 +54,19 @@ ldr r9, [r5, #12]
 str r9, [r8, #52]
 cmp r7, #0
 beq 20f
+mov r0, r4
+mov r1, r11
+add r2, r8, #72
+bl {vg_camellia_ecb_encrypt_keys}
 22:
 mov r0, r4
 mov r1, r11
 add r2, r8, #40
 mov r3, #1
-bl {vg_camellia_ecb_encrypt}
+add r12, r8, #72
+push {{r12, lr}}
+bl {vg_camellia_ecb_keyed}
+ldr r12, [sp], #8
 ldr r9, [r6, #0]
 ldr r10, [r8, #40]
 eor r9, r9, r10
@@ -97,8 +106,12 @@ ldr r10, [r8, #24]
 ldr r11, [r8, #28]
 ldr lr, [r8, #32]
 ldr r8, [r8, #16]
-add r12, sp, #12
+add sp, sp, #2816
+sub sp, sp, #2832
+add r12, sp, #0
 mov r2, #0
+mov r3, #88
+23:
 str r2, [r12, #0]
 str r2, [r12, #4]
 str r2, [r12, #8]
@@ -107,25 +120,31 @@ str r2, [r12, #16]
 str r2, [r12, #20]
 str r2, [r12, #24]
 str r2, [r12, #28]
-str r2, [r12, #32]
-str r2, [r12, #36]
-str r2, [r12, #40]
-str r2, [r12, #44]
-str r2, [r12, #48]
-str r2, [r12, #52]
-str r2, [r12, #56]
-str r2, [r12, #60]
-str r2, [r12, #64]
-str r2, [r12, #68]
-add sp, sp, #88
+add r12, r12, #32
+subs r3, r3, #1
+bne 23b
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+add sp, sp, #2832
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
-        vg_camellia_ecb_encrypt = sym super::camellia::vg_camellia_ecb_encrypt,
+        vg_camellia_ecb_encrypt_keys = sym super::camellia::vg_camellia_ecb_encrypt_keys::vg_camellia_ecb_encrypt_keys,
+        vg_camellia_ecb_keyed = sym super::camellia::vg_camellia_ecb_keyed::vg_camellia_ecb_keyed,
     )
 }
 
 /// Camellia-OFB encryption or decryption (NIST SP 800-38A §6.4, RFC 3713 §2.3) of the last piece of a message, of any length, in place: XORs the `len` bytes at `data` with the output blocks `Oⱼ = CIPH_K(Oⱼ₋₁)`, where `O₀` is the block at `*iv`, a partial last block `Pₙ*` of `u` bytes with `MSB_u(Oₙ)`, and replaces `*iv` with the last output block used, `Oₙ` (leaving it unchanged if `len = 0`): so that a further call continues the message if `len` is a multiple of 16, and otherwise keystream, to be wiped, after which the message must end. `CIPH_K` is Camellia encryption with `rounds` rounds under the subkeys at `schedule`, as `vg_camellia_expand_key` writes them.
 ///
 /// Contract: `VG.Spec.Camellia.ofbFinalContract`. Constant time: only the pointers, `rounds` and `len` may affect timing, not the subkeys, the chaining value or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -134,7 +153,7 @@ bx lr",
 /// * `data` must be valid for reads and writes of `len` bytes.
 /// * `rounds` must be 18 (for a key of 16 bytes) or 24 (for one of 24 or 32).
 /// * `iv` and `data` must not overlap each other, `schedule` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `iv` and `data` may overlap the 2904 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `schedule`, `iv` and `data` may overlap the 2912 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_camellia_ofb_final(schedule: *const [u8; 272], rounds: usize, iv: *mut [u8; 16], data: *mut u8, len: usize) {
     core::arch::naked_asm!(
@@ -177,7 +196,7 @@ mov r0, r4
 mov r1, r11
 add r2, r8, #40
 mov r3, #1
-bl {vg_camellia_ecb_encrypt}
+bl {vg_camellia_ecb_encrypt_core}
 lsr r9, r7, #4
 cmp r9, #0
 beq 23f
@@ -233,8 +252,12 @@ ldr r10, [r8, #24]
 ldr r11, [r8, #28]
 ldr lr, [r8, #32]
 ldr r8, [r8, #16]
-add r12, sp, #12
+add sp, sp, #88
+sub sp, sp, #2912
+add r12, sp, #0
 mov r2, #0
+mov r3, #91
+26:
 str r2, [r12, #0]
 str r2, [r12, #4]
 str r2, [r12, #8]
@@ -243,18 +266,17 @@ str r2, [r12, #16]
 str r2, [r12, #20]
 str r2, [r12, #24]
 str r2, [r12, #28]
-str r2, [r12, #32]
-str r2, [r12, #36]
-str r2, [r12, #40]
-str r2, [r12, #44]
-str r2, [r12, #48]
-str r2, [r12, #52]
-str r2, [r12, #56]
-str r2, [r12, #60]
-str r2, [r12, #64]
-str r2, [r12, #68]
-add sp, sp, #88
+add r12, r12, #32
+subs r3, r3, #1
+bne 26b
+add sp, sp, #2912
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
-        vg_camellia_ecb_encrypt = sym super::camellia::vg_camellia_ecb_encrypt,
+        vg_camellia_ecb_encrypt_core = sym super::camellia::vg_camellia_ecb_encrypt_core::vg_camellia_ecb_encrypt_core,
     )
 }

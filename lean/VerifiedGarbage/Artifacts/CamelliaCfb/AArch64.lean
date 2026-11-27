@@ -1,30 +1,36 @@
 module
 
-public import VerifiedGarbage.Proof.Camellia.AArch64.FbVerified
-public import VerifiedGarbage.Proof.Camellia.AArch64.FbFinalVerified
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.AArch64.Print
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Camellia.Cfb
+public import VerifiedGarbage.Spec.Camellia.CfbFinal
+import VerifiedGarbage.Impl.Camellia.AArch64.Fn
+import VerifiedGarbage.Proof.Camellia.AArch64.FbVerified
+import VerifiedGarbage.Proof.Camellia.AArch64.FbFinalVerified
+import VerifiedGarbage.Proof.Camellia.AArch64.Residue
+import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.Camellia.AArch64.FbLit
 import VerifiedGarbage.Proof.Camellia.AArch64.FbFinalLit
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # Camellia-CFB128 on AArch64 -/
 
-@[expose] public section
-
 namespace VG.Artifacts.CamelliaCfb.AArch64
 
-def artifacts : List Artifact := [
+public def artifacts : List (Artifact AArch64.target) := [
   Spec.Camellia.cfbEncryptApi.artifact AArch64.target {
-    code := Impl.StackScratch.AArch64.withStackScratchWiped 3344 .x5 418 Impl.Camellia.AArch64.cfbEncrypt
-    verified := Proof.Camellia.AArch64.cfbEncrypt_framed },
+    code := Impl.Camellia.AArch64.Fn.cfbEncrypt
+    verified := Proof.Camellia.AArch64.Residue.cfbEncryptCode_scrubbed },
   Spec.Camellia.cfbDecryptApi.artifact AArch64.target {
-    code := Impl.StackScratch.AArch64.withStackScratchWiped 3344 .x5 418 Impl.Camellia.AArch64.cfbDecrypt
-    verified := Proof.Camellia.AArch64.cfbDecrypt_framed },
+    code := Impl.Camellia.AArch64.Fn.cfbDecrypt
+    verified := Proof.Camellia.AArch64.Residue.cfbDecryptCode_scrubbed },
   Spec.Camellia.cfbEncryptFinalApi.artifact AArch64.target {
-    code := Impl.StackScratch.AArch64.withStackScratchWiped 3344 .x5 418 Impl.Camellia.AArch64.cfbEncryptFinal
-    verified := Proof.Camellia.AArch64.cfbEncryptFinal_framed },
+    code := Impl.Camellia.AArch64.Fn.cfbEncryptFinal
+    verified := Proof.Camellia.AArch64.Residue.cfbEncryptFinalCode_scrubbed },
   Spec.Camellia.cfbDecryptFinalApi.artifact AArch64.target {
-    code := Impl.StackScratch.AArch64.withStackScratchWiped 3344 .x5 418 Impl.Camellia.AArch64.cfbDecryptFinal
-    verified := Proof.Camellia.AArch64.cfbDecryptFinal_framed }]
+    code := Impl.Camellia.AArch64.Fn.cfbDecryptFinal
+    verified := Proof.Camellia.AArch64.Residue.cfbDecryptFinalCode_scrubbed }]
+
+spec_apis artifacts
 
 end VG.Artifacts.CamelliaCfb.AArch64

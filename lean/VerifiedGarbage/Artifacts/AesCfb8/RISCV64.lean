@@ -1,24 +1,26 @@
 module
 
-public import VerifiedGarbage.Proof.AesCfb8.RISCV64.Verified
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.RISCV64.Print
+public import VerifiedGarbage.TCB.RISCV64.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Cfb8.Contract
+import VerifiedGarbage.Proof.Aes.RISCV64.Scrub
+import VerifiedGarbage.Impl.Aes.RISCV64.Fn
+import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.AesCfb8.RISCV64.Lit
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # AES-CFB8 (NIST SP 800-38A §6.3) on RISC-V -/
 
-@[expose] public section
-
 namespace VG.Artifacts.AesCfb8.RISCV64
 
-open VG.Proof.AesCfb8.RISCV64
-
-def artifacts : List Artifact := [
+public def artifacts : List (Artifact RISCV64.target) := [
   Spec.Cfb8.aesEncryptApi.artifact RISCV64.target {
-    code := Impl.AesCfb8.RISCV64.encrypt
-    verified := Proof.AesCfb8.encrypt_keyed encrypt_verified },
+    code := Impl.Aes.RISCV64.Fn.cfb8Encrypt
+    verified := Proof.Aes.RISCV64.Scrub.cfb8Encrypt_scrubbed },
   Spec.Cfb8.aesDecryptApi.artifact RISCV64.target {
-    code := Impl.AesCfb8.RISCV64.decrypt
-    verified := Proof.AesCfb8.decrypt_keyed decrypt_verified }]
+    code := Impl.Aes.RISCV64.Fn.cfb8Decrypt
+    verified := Proof.Aes.RISCV64.Scrub.cfb8Decrypt_scrubbed }]
+
+spec_apis artifacts
 
 end VG.Artifacts.AesCfb8.RISCV64

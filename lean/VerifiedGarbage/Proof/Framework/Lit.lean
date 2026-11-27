@@ -41,6 +41,11 @@ open Lean Meta Elab Command
 
 namespace Lit
 
+/-- `evalExpr`, the compiler making no constant of the closed subterms of `e`: evaluated once,
+each would only cost its compilation and a look-up by its name. -/
+meta unsafe def evalOnce (α : Type) (ty e : Expr) : MetaM α :=
+  withOptions (·.setBool `compiler.extract_closed false) <| evalExpr α ty e
+
 /-- The functions `materialize_code` has materialized, whose literals the
 literals of their callers refer to: each `N` with a theorem `N.lit_eq`, in the
 modules of this project (`VerifiedGarbage…`) and the current one. They are
@@ -61,21 +66,28 @@ meta def litNames (env : Environment) : Array Name := Id.run do
 
 /-- Replaces each body of a call in `e` (a literal `Code`) that is the literal of a
 materialized function by a free variable, returning the abstracted literal and the
-functions, in the order of the free variables. -/
-meta partial def abstractCalls (lits : Array (Name × Expr)) (e : Expr) :
-    StateT (Array Name) MetaM Expr := do
-  if e.isAppOfArity ``Code.call 4 then
-    let body := e.appArg!
-    for (g, v) in lits do
-      if body == v then
-        let gs ← get
-        let i := (gs.findIdx? (· == g)).getD gs.size
-        if i == gs.size then set (gs.push g)
-        return mkApp (e.appFn!) (.bvar (1000000 + i))
+functions, in the order of the free variables. Each distinct subterm is visited
+once (with the calls in it replaced, in the state). -/
+meta partial def abstractCalls (lits : Std.HashMap Expr Name) (e : Expr) :
+    StateT (Std.HashMap Expr Expr × Array Name) MetaM Expr := do
+  -- A block contains instructions, with no callee positions to abstract.
+  if e.isAppOfArity ``Code.block 3 then return e
   match e with
-  | .app f a => return .app (← abstractCalls lits f) (← abstractCalls lits a)
+  | .app f a =>
+    if let some e' := (← get).1[e]? then return e'
+    let e' ← match (if e.isAppOfArity ``Code.call 4 then lits[a]? else none) with
+      | some g => do
+        let gs := (← get).2
+        let i := (gs.findIdx? (· == g)).getD gs.size
+        if i == gs.size then modify fun (m, gs) => (m, gs.push g)
+        pure (mkApp f (.bvar (1000000 + i)))
+      | none => do
+        let f' ← abstractCalls lits f
+        let a' ← abstractCalls lits a
+        pure (.app f' a')
+    modify fun (m, gs) => (m.insert e e', gs)
+    return e'
   | _ => return e
-
 
 /-- The literal `g.lit` written out in full: with the literal of each
 materialized function it calls (`h.lit`) replaced by its own, in turn. This is
@@ -197,21 +209,33 @@ meta partial def unfoldWhere (env : Environment) (p : Name → Bool) (e : Expr)
     | _ => none
 
 /-- The maximal closed subterms of `e` whose head is a definition that leads
-to constants with a literal (`reaches`), or one of them: the literal's own
-constant or another (`materialize_value N := c`, which `unfoldToLits`
-rewrites as an atom), given the names of the literals (`litNames`). -/
+to code with a literal (`reaches`), or one of them, given the names of the
+literals (`litNames`): to a constant with a literal, its own or another's
+(`materialize_value N := c`, which `unfoldToLits` rewrites as an atom), or
+to the head of an application with one (`materialize_code M := f a`, a
+template), as `unfoldToLits` unfolds to them. -/
 meta def reachingSubterms (names : Array Name) (e : Expr) : MetaM (Array Expr) := do
   let env ← getEnv
-  let targets := (litConsts env names ++ litAliases env names).foldl (fun s c => s.insert c) ({} : NameSet)
-  if targets.isEmpty then return #[]
   let mods := (← getEnv).header.moduleNames
-  let first := firstModuleOf env targets
+  let mut targets := (litConsts env names ++ litAliases env names).foldl (fun s c => s.insert c) ({} : NameSet)
+  -- The heads of the code with a literal that is an application
+  -- (`materialize_code M := f a`, a template): code that leads to one of
+  -- them alone (a generic function of a curve's configuration, whose pieces
+  -- have literals for that curve) is unfolded to them too.
+  for M in names do
+    let lhs ← lhsOf M
+    if let .const c _ := lhs.getAppFn then
+      if lhs.isApp && !lhs.hasLooseBVars && !targets.contains c && codeModule env mods c then
+        if let some (.defnInfo _) := env.find? c then targets := targets.insert c
+  if targets.isEmpty then return #[]
+  let targets' := targets
+  let first := firstModuleOf env targets'
   let mut memo : NameMap Bool := {}
   for u in e.getUsedConstants do
-    if !targets.contains u then
-      (_, memo) ← (reaches targets mods first u).run memo
+    if !targets'.contains u then
+      (_, memo) ← (reaches targets' mods first u).run memo
   let memo' := memo
-  let hit (c : Name) := targets.contains c || memo'.find? c == some true
+  let hit (c : Name) := targets'.contains c || memo'.find? c == some true
   unless e.getUsedConstants.any hit do return #[]
   let rec go (e : Expr) : StateM (Std.HashSet Expr × Array Expr) Unit := do
     if (← get).1.contains e then return
@@ -293,15 +317,29 @@ meta def unfoldToLits (N : Name) (x : Expr) (names? : Option (Array Name) := non
     (e.getUsedConstants.filter targets.contains).map fun c => (mkConst c, c)
   for (M, lhs) in atoms do
     if (e.find? (· == lhs)).isSome then items := items.push (lhs, M)
+  let mut argEq : Std.HashMap (Expr × Expr) Bool := {}
   for (M, lhs) in tpls do
     let found ← IO.mkRef (#[] : Array Expr)
     e.forEach fun t => do
       if isTplApp lhs t && t != lhs && !t.hasLooseBVars then found.modify (·.push t)
     for t in ← found.get do
+      if items.any (·.1 == t) then continue
       -- By the kernel's check (as the proof will be), which decides closed terms
-      -- (moduli, offsets) by evaluation, faster than `isDefEq`.
-      if !items.any (·.1 == t) && Kernel.isDefEqGuarded (← getEnv) {} t lhs then
-        items := items.push (t, M)
+      -- (moduli, offsets) by evaluation, faster than `isDefEq`; of the arguments,
+      -- since the kernel unfolds the two applications where an argument differs
+      -- and compares the code they build (0.4 s for a product of another modulus).
+      let mut same := true
+      for a in t.getAppArgs, b in lhs.getAppArgs do
+        let eq ← match argEq[(a, b)]? with
+          | some eq => pure eq
+          | none => do
+            let eq := a == b || Kernel.isDefEqGuarded (← getEnv) {} a b
+            argEq := argEq.insert (a, b) eq
+            pure eq
+        unless eq do
+          same := false
+          break
+      if same then items := items.push (t, M)
   if items.isEmpty then return none
   let ty ← inferType x
   let u ← getLevel ty
@@ -328,6 +366,834 @@ meta def unfoldToLits (N : Name) (x : Expr) (names? : Option (Array Name) := non
       (mkApp6 (mkConst ``congrArg [lvl, 1]) cty (mkSort 0) pat
         (mkConst (M ++ `lit)) motive (mkConst (M ++ `lit_eq))) prf
   return some (inst items.size none, prf)
+
+/-! ### Code in terms the kernel evaluates cheaply
+
+The kernel checks `N.lit_eq` by evaluating the code, and most of that is the
+functions of core that build lists. Compiled from their equations to `brecOn`
+and a matcher, `++` takes the kernel about 35 µs for each element it copies,
+and code copies an instruction once for every `++` above it; by the recursor
+(`appendK`) it takes 6. So `kernelTerm` gives for a closed term an equal one in
+which those functions are the ones below (`kernelPrims`), `a ++ b ++ c` copies
+each list once (`chain3`), and the arithmetic of `Nat` and the conditionals on
+it are the functions the kernel computes with, not the notation's instances of
+them. Each definition `c` of the project's code that reaches one of them, or of
+core's lists and arrays (`kernelLooks`), is declared again, privately, over
+the others declared so, with the proof that it is `c`: by congruence in the
+constants that differ, which the kernel checks without evaluating anything. The
+declarations serve the rest of the module. -/
+
+section Kernel
+
+section
+
+/-! The functions of core, by the recursors. -/
+
+variable {α β : Type}
+
+noncomputable def andK (a b : Bool) : Bool := Bool.rec false b a
+noncomputable def orK (a b : Bool) : Bool := Bool.rec b true a
+noncomputable def condK {α : Type} (c : Bool) (x y : α) : α := Bool.rec y x c
+/-- `r z`. (What a recursor gives in tail position the kernel evaluates deeper in its
+stack, and what a function unfolds to it does not: a function that goes through a list
+goes on with its rest by this, or by one of those above, however long the list is.) -/
+noncomputable def nextK (r : α → β) (z : α) : β := r z
+noncomputable def appendK (a b : List α) : List α := List.rec b (fun x _ r => x :: r) a
+noncomputable def mapK (f : α → β) (a : List α) : List β := List.rec [] (fun x _ r => f x :: r) a
+noncomputable def flattenK (a : List (List α)) : List α := List.rec [] (fun x _ r => appendK x r) a
+noncomputable def flatMapK (f : α → List β) (a : List α) : List β := List.rec [] (fun x _ r => appendK (f x) r) a
+noncomputable def consSomeK (o : Option β) (r : List β) : List β := Option.rec r (fun y => y :: r) o
+noncomputable def filterMapK (f : α → Option β) (a : List α) : List β :=
+  List.rec [] (fun x _ r => consSomeK (f x) r) a
+noncomputable def filterK (p : α → Bool) (a : List α) : List α :=
+  List.rec [] (fun x _ r => condK (p x) (x :: r) r) a
+noncomputable def anyK (a : List α) (p : α → Bool) : Bool := List.rec false (fun x _ r => orK (p x) r) a
+noncomputable def allK (a : List α) (p : α → Bool) : Bool := List.rec true (fun x _ r => andK (p x) r) a
+noncomputable def foldlK (f : α → β → α) (z : α) (a : List β) : α :=
+  List.rec (motive := fun _ => α → α) (fun z => z) (fun x _ r z => nextK r (f z x)) a z
+noncomputable def foldrK (f : α → β → β) (z : β) (a : List α) : β := List.rec z (fun x _ r => f x r) a
+noncomputable def reverseAuxK (a b : List α) : List α :=
+  List.rec (motive := fun _ => List α → List α) (fun b => b) (fun x _ r b => nextK r (x :: b)) a b
+noncomputable def concatK (a : List α) (y : α) : List α := List.rec [y] (fun x _ r => x :: r) a
+noncomputable def getOptK (a : List α) (i : Nat) : Option α :=
+  List.rec (motive := fun _ => Nat → Option α) (fun _ => none)
+    (fun x _ r i => Nat.rec (some x) (fun j _ => nextK r j) i) a i
+noncomputable def getK (a : List α) (i : Fin a.length) : α :=
+  List.rec (motive := fun a => (i : Nat) → i < a.length → α) (fun _ h => absurd h (Nat.not_lt_zero _))
+    (fun x _ r i => Nat.rec (motive := fun i => i < _ → α) (fun _ => x) (fun j _ h => r j (Nat.lt_of_succ_lt_succ h)) i) a i.1 i.2
+noncomputable def takeK (n : Nat) (a : List α) : List α :=
+  List.rec (motive := fun _ => Nat → List α) (fun _ => [])
+    (fun x _ r n => Nat.rec [] (fun m _ => x :: r m) n) a n
+noncomputable def dropK (n : Nat) (a : List α) : List α :=
+  List.rec (motive := fun _ => Nat → List α) (fun _ => [])
+    (fun x t r n => Nat.rec (x :: t) (fun m _ => nextK r m) n) a n
+noncomputable def setK (a : List α) (i : Nat) (y : α) : List α :=
+  List.rec (motive := fun _ => Nat → List α) (fun _ => [])
+    (fun x t r i => Nat.rec (y :: t) (fun j _ => x :: r j) i) a i
+noncomputable def replicateK (n : Nat) (x : α) : List α := Nat.rec [] (fun _ r => x :: r) n
+noncomputable def zipIdxK (a : List α) (n : Nat) : List (α × Nat) :=
+  List.rec (motive := fun _ => Nat → List (α × Nat)) (fun _ => []) (fun x _ r n => (x, n) :: r (Nat.add n 1)) a n
+noncomputable def rangeFromK (n k : Nat) : List Nat :=
+  Nat.rec (motive := fun _ => Nat → List Nat) (fun _ => []) (fun _ r k => k :: r (Nat.add k 1)) n k
+-- (Not `List.range.loop`, whose accumulator is a recursion as deep as the list is long.)
+noncomputable def rangeK (n : Nat) : List Nat := rangeFromK n 0
+end
+
+/-! Each is the function it is for. -/
+
+theorem appendK_eq : @List.append.{0} = @appendK := by
+  funext α a b; induction a with | nil => rfl | cons x a ih => exact congrArg (List.cons x) ih
+theorem mapK_eq : @List.map.{0, 0} = @mapK := by
+  funext α β f a; induction a with | nil => rfl | cons x a ih => exact congrArg (List.cons (f x)) ih
+theorem flattenK_eq : @List.flatten.{0} = @flattenK := by
+  funext α a; induction a with
+  | nil => rfl
+  | cons x a ih => rw [List.flatten_cons, ih]; exact congrFun (congrFun (congrFun appendK_eq α) x) _
+theorem flatMapK_eq : @List.flatMap.{0, 0} = @flatMapK := by
+  funext α β f a; induction a with
+  | nil => rfl
+  | cons x a ih => rw [List.flatMap_cons, ih]; exact congrFun (congrFun (congrFun appendK_eq β) (f x)) _
+theorem append_appendK {α : Type} (a b : List α) : a ++ b = appendK a b :=
+  congrFun (congrFun (congrFun appendK_eq α) a) b
+
+/-! `a ++ b ++ …`, which copies `a` again for every `++`, as `++` associates. -/
+
+def chain3 (α : Type) (a b c : List α) : List α := a ++ b ++ c
+noncomputable def chain3K (α : Type) (a b c : List α) : List α :=
+  appendK a (appendK b c)
+theorem chain3K_eq : chain3 = chain3K := by
+  funext α a b c; simp only [chain3, chain3K, ← append_appendK, List.append_assoc]
+def chain4 (α : Type) (a b c d : List α) : List α := a ++ b ++ c ++ d
+noncomputable def chain4K (α : Type) (a b c d : List α) : List α :=
+  appendK a (appendK b (appendK c d))
+theorem chain4K_eq : chain4 = chain4K := by
+  funext α a b c d; simp only [chain4, chain4K, ← append_appendK, List.append_assoc]
+def chain5 (α : Type) (a b c d e : List α) : List α := a ++ b ++ c ++ d ++ e
+noncomputable def chain5K (α : Type) (a b c d e : List α) : List α :=
+  appendK a (appendK b (appendK c (appendK d e)))
+theorem chain5K_eq : chain5 = chain5K := by
+  funext α a b c d e; simp only [chain5, chain5K, ← append_appendK, List.append_assoc]
+def chain6 (α : Type) (a b c d e f : List α) : List α := a ++ b ++ c ++ d ++ e ++ f
+noncomputable def chain6K (α : Type) (a b c d e f : List α) : List α :=
+  appendK a (appendK b (appendK c (appendK d (appendK e f))))
+theorem chain6K_eq : chain6 = chain6K := by
+  funext α a b c d e f; simp only [chain6, chain6K, ← append_appendK, List.append_assoc]
+def chain7 (α : Type) (a b c d e f g : List α) : List α := a ++ b ++ c ++ d ++ e ++ f ++ g
+noncomputable def chain7K (α : Type) (a b c d e f g : List α) : List α :=
+  appendK a (appendK b (appendK c (appendK d (appendK e (appendK f g)))))
+theorem chain7K_eq : chain7 = chain7K := by
+  funext α a b c d e f g; simp only [chain7, chain7K, ← append_appendK, List.append_assoc]
+def chain8 (α : Type) (a b c d e f g h : List α) : List α := a ++ b ++ c ++ d ++ e ++ f ++ g ++ h
+noncomputable def chain8K (α : Type) (a b c d e f g h : List α) : List α :=
+  appendK a (appendK b (appendK c (appendK d (appendK e (appendK f (appendK g h))))))
+theorem chain8K_eq : chain8 = chain8K := by
+  funext α a b c d e f g h; simp only [chain8, chain8K, ← append_appendK, List.append_assoc]
+theorem filterMapK_eq : @List.filterMap.{0, 0} = @filterMapK := by
+  funext α β f a; induction a with
+  | nil => rfl
+  | cons x a ih => rw [List.filterMap_cons, ih]; change _ = consSomeK (f x) (filterMapK f a); cases f x <;> rfl
+theorem filterK_eq : @List.filter.{0} = @filterK := by
+  funext α p a; induction a with
+  | nil => rfl
+  | cons x a ih => rw [List.filter_cons, ih]; simp only [filterK]; cases p x <;> rfl
+theorem anyK_eq : @List.any.{0} = @anyK := by
+  funext α a p; induction a with
+  | nil => rfl
+  | cons x a ih => rw [List.any_cons, ih]; simp only [anyK]; cases p x <;> rfl
+theorem allK_eq : @List.all.{0} = @allK := by
+  funext α a p; induction a with
+  | nil => rfl
+  | cons x a ih => rw [List.all_cons, ih]; simp only [allK]; cases p x <;> rfl
+theorem foldlK_eq : @List.foldl.{0, 0} = @foldlK := by
+  funext α β f z a; induction a generalizing z with | nil => rfl | cons x a ih => exact ih _
+theorem foldrK_eq : @List.foldr.{0, 0} = @foldrK := by
+  funext α β f z a; induction a with | nil => rfl | cons x a ih => exact congrArg (f x) ih
+theorem reverseAuxK_eq : @List.reverseAux.{0} = @reverseAuxK := by
+  funext α a b; induction a generalizing b with | nil => rfl | cons x a ih => exact ih _
+theorem concatK_eq : @List.concat.{0} = @concatK := by
+  funext α a y; induction a with | nil => rfl | cons x a ih => exact congrArg (List.cons x) ih
+theorem getOptK_eq : @List.get?Internal.{0} = @getOptK := by
+  funext α a i; induction a generalizing i with
+  | nil => rfl
+  | cons x a ih => cases i with | zero => rfl | succ i => exact ih i
+theorem getK_eq : @List.get.{0} = @getK := by
+  funext α a i; obtain ⟨i, h⟩ := i
+  induction a generalizing i with
+  | nil => exact absurd h (Nat.not_lt_zero _)
+  | cons x a ih => cases i with | zero => rfl | succ i => exact ih i _
+theorem takeK_eq : @List.take.{0} = @takeK := by
+  funext α n a; induction a generalizing n with
+  | nil => cases n <;> rfl
+  | cons x a ih => cases n with | zero => rfl | succ n => exact congrArg (List.cons x) (ih n)
+theorem dropK_eq : @List.drop.{0} = @dropK := by
+  funext α n a; induction a generalizing n with
+  | nil => cases n <;> rfl
+  | cons x a ih => cases n with | zero => rfl | succ n => exact ih n
+theorem setK_eq : @List.set.{0} = @setK := by
+  funext α a i y; induction a generalizing i with
+  | nil => rfl
+  | cons x a ih => cases i with | zero => rfl | succ i => exact congrArg (List.cons x) (ih i)
+theorem replicateK_eq : @List.replicate.{0} = @replicateK := by
+  funext α n x; induction n with | zero => rfl | succ n ih => exact congrArg (List.cons x) ih
+theorem zipIdxK_eq : @List.zipIdx.{0} = @zipIdxK := by
+  funext α a n; induction a generalizing n with
+  | nil => rfl
+  | cons x a ih => exact congrArg (List.cons (x, n)) (ih _)
+theorem rangeFromK_eq (n k : Nat) : rangeFromK n k = List.range' k n := by
+  induction n generalizing k with | zero => rfl | succ n ih => exact congrArg (List.cons k) (ih _)
+theorem rangeK_eq : List.range = rangeK := by
+  funext n; rw [rangeK, rangeFromK_eq, List.range_eq_range']
+
+/-! Conditionals on the comparison of `Nat`s, and on a `Bool`. -/
+
+def iteEq (α : Type) (a b : Nat) (x y : α) : α := ite (a = b) x y
+def iteLt (α : Type) (a b : Nat) (x y : α) : α := ite (a < b) x y
+def iteLe (α : Type) (a b : Nat) (x y : α) : α := ite (a ≤ b) x y
+def decideEq (a b : Nat) : Bool := decide (a = b)
+def decideLt (a b : Nat) : Bool := decide (a < b)
+def decideLe (a b : Nat) : Bool := decide (a ≤ b)
+noncomputable def iteEqK (α : Type) (a b : Nat) (x y : α) : α := Bool.rec y x (Nat.beq a b)
+noncomputable def iteLtK (α : Type) (a b : Nat) (x y : α) : α := Bool.rec y x (Nat.ble (Nat.succ a) b)
+noncomputable def iteLeK (α : Type) (a b : Nat) (x y : α) : α := Bool.rec y x (Nat.ble a b)
+theorem decideEq_eq : decideEq = Nat.beq := by
+  funext a b; show Nat.beq a b = _; rfl
+def ltK (a b : Nat) : Bool := Nat.ble (Nat.succ a) b
+theorem decideLt_eq : decideLt = ltK := by
+  funext a b; rfl
+theorem decideLe_eq : decideLe = Nat.ble := by
+  funext a b; rfl
+theorem iteEqK_eq : iteEq = iteEqK := by
+  funext α a b x y
+  show ite (a = b) x y = Bool.rec y x (decideEq a b)
+  simp only [decideEq]
+  by_cases h : a = b <;> simp [h]
+theorem iteLtK_eq : iteLt = iteLtK := by
+  funext α a b x y
+  show ite (a < b) x y = Bool.rec y x (decideLt a b)
+  simp only [decideLt]
+  by_cases h : a < b <;> simp [h]
+theorem iteLeK_eq : iteLe = iteLeK := by
+  funext α a b x y
+  show ite (a ≤ b) x y = Bool.rec y x (decideLe a b)
+  simp only [decideLe]
+  by_cases h : a ≤ b <;> simp [h]
+
+def diteEq (α : Type) (a b : Nat) (x : a = b → α) (y : ¬a = b → α) : α := dite (a = b) x y
+noncomputable def diteEqK (α : Type) (a b : Nat) (x : a = b → α) (y : ¬a = b → α) : α :=
+  Bool.rec (motive := fun c => Nat.beq a b = c → α) (fun h => y (Nat.ne_of_beq_eq_false h))
+    (fun h => x (Nat.eq_of_beq_eq_true h)) (Nat.beq a b) rfl
+theorem diteEqK_eq : diteEq = diteEqK := by
+  funext α a b x y
+  have key (c : Bool) (hc : Nat.beq a b = c) : diteEq α a b x y =
+      Bool.rec (motive := fun c => Nat.beq a b = c → α) (fun h => y (Nat.ne_of_beq_eq_false h))
+        (fun h => x (Nat.eq_of_beq_eq_true h)) c hc := by
+    cases c with
+    | true => exact dite_eq_left (Nat.eq_of_beq_eq_true hc)
+    | false => exact dite_eq_right (Nat.ne_of_beq_eq_false hc)
+  exact key _ rfl
+def beqNat (a b : Nat) : Bool := a == b
+theorem beqNat_eq : beqNat = Nat.beq := by
+  funext a b; show decide (a = b) = _; exact congrFun (congrFun decideEq_eq a) b
+def iteBool (α : Type) (c : Bool) (x y : α) : α := ite (c = true) x y
+noncomputable def iteBoolK (α : Type) (c : Bool) (x y : α) : α := Bool.rec y x c
+theorem iteBoolK_eq : iteBool = iteBoolK := by
+  funext α c x y; cases c <;> rfl
+noncomputable def notK (a : Bool) : Bool := Bool.rec true false a
+theorem notK_eq : not = notK := by funext a; cases a <;> rfl
+theorem condK_eq : @cond.{1} = @condK := by funext α c x y; cases c <;> rfl
+noncomputable def bindK {α β : Type} (o : Option α) (f : α → Option β) : Option β := Option.rec none f o
+theorem bindK_eq : @Option.bind.{0, 0} = @bindK := by funext α β o f; cases o <;> rfl
+noncomputable def optMapK {α β : Type} (f : α → β) (o : Option α) : Option β :=
+  Option.rec none (fun x => some (f x)) o
+theorem optMapK_eq : @Option.map.{0, 0} = @optMapK := by funext α β f o; cases o <;> rfl
+noncomputable def getDK {α : Type} (o : Option α) (d : α) : α := Option.rec d (fun x => x) o
+theorem getDK_eq : @Option.getD.{0} = @getDK := by funext α o d; cases o <;> rfl
+noncomputable def isSomeK {α : Type} (o : Option α) : Bool := Option.rec false (fun _ => true) o
+theorem isSomeK_eq : @Option.isSome.{0} = @isSomeK := by funext α o; cases o <;> rfl
+theorem andK_eq : and = andK := by funext a b; cases a <;> rfl
+theorem orK_eq : or = orK := by funext a b; cases a <;> rfl
+
+/-- The functions of core (and of the notations above) with one for the
+kernel, and the proof that it is the same. -/
+meta def kernelPrims : List (Name × Name × Name) :=
+  [(``List.append, ``appendK, ``appendK_eq), (``chain3, ``chain3K, ``chain3K_eq),
+    (``chain4, ``chain4K, ``chain4K_eq), (``chain5, ``chain5K, ``chain5K_eq),
+    (``chain6, ``chain6K, ``chain6K_eq), (``chain7, ``chain7K, ``chain7K_eq),
+    (``chain8, ``chain8K, ``chain8K_eq), (``List.map, ``mapK, ``mapK_eq),
+    (``List.flatten, ``flattenK, ``flattenK_eq), (``List.flatMap, ``flatMapK, ``flatMapK_eq),
+    (``List.filterMap, ``filterMapK, ``filterMapK_eq), (``List.filter, ``filterK, ``filterK_eq),
+    (``List.any, ``anyK, ``anyK_eq), (``List.all, ``allK, ``allK_eq),
+    (``List.foldl, ``foldlK, ``foldlK_eq), (``List.foldr, ``foldrK, ``foldrK_eq),
+    (``List.reverseAux, ``reverseAuxK, ``reverseAuxK_eq), (``List.concat, ``concatK, ``concatK_eq),
+    (``List.get?Internal, ``getOptK, ``getOptK_eq),
+    (``List.get, ``getK, ``getK_eq), (``List.take, ``takeK, ``takeK_eq), (``List.drop, ``dropK, ``dropK_eq),
+    (``List.set, ``setK, ``setK_eq), (``List.replicate, ``replicateK, ``replicateK_eq),
+    (``List.zipIdx, ``zipIdxK, ``zipIdxK_eq), (``List.range, ``rangeK, ``rangeK_eq),
+    (``diteEq, ``diteEqK, ``diteEqK_eq), (``iteEq, ``iteEqK, ``iteEqK_eq),
+    (``iteLt, ``iteLtK, ``iteLtK_eq), (``iteLe, ``iteLeK, ``iteLeK_eq),
+    (``iteBool, ``iteBoolK, ``iteBoolK_eq), (``decideEq, ``Nat.beq, ``decideEq_eq),
+    (``decideLt, ``ltK, ``decideLt_eq), (``decideLe, ``Nat.ble, ``decideLe_eq),
+    (``beqNat, ``Nat.beq, ``beqNat_eq), (``and, ``andK, ``andK_eq), (``or, ``orK, ``orK_eq),
+    (``not, ``notK, ``notK_eq), (``cond, ``condK, ``condK_eq), (``Option.bind, ``bindK, ``bindK_eq),
+    (``Option.map, ``optMapK, ``optMapK_eq), (``Option.getD, ``getDK, ``getDK_eq),
+    (``Option.isSome, ``isSomeK, ``isSomeK_eq)]
+
+/-- Whether `ls` are the levels at which a function of `kernelPrims` has one
+for the kernel. -/
+meta def primLevels (n : Name) (ls : List Level) : Bool :=
+  ls.all (· == if n == ``cond then Level.one else .zero)
+
+/-- The function of `Nat` the kernel computes with that a notation is. -/
+meta def natOps : List (Name × Name) :=
+  [(``HAdd.hAdd, ``Nat.add), (``HSub.hSub, ``Nat.sub), (``HMul.hMul, ``Nat.mul), (``HDiv.hDiv, ``Nat.div),
+    (``HMod.hMod, ``Nat.mod), (``HPow.hPow, ``Nat.pow), (``HAnd.hAnd, ``Nat.land), (``HOr.hOr, ``Nat.lor),
+    (``HXor.hXor, ``Nat.xor), (``HShiftLeft.hShiftLeft, ``Nat.shiftLeft),
+    (``HShiftRight.hShiftRight, ``Nat.shiftRight)]
+
+/-- The proposition of a comparison of `Nat`s, or that a `Bool` is true, and
+its usual instance: which it is, and what it compares. -/
+meta def comparison? (p inst : Expr) : Option (Name × Array Expr) :=
+  let i := inst.getAppFn.constName?
+  if p.isAppOfArity ``Eq 3 && (p.getArg! 0).isConstOf ``Nat && i == some ``instDecidableEqNat then
+    some (``Eq, #[p.getArg! 1, p.getArg! 2])
+  else if p.isAppOfArity ``LT.lt 4 && (p.getArg! 0).isConstOf ``Nat && i == some ``Nat.decLt then
+    some (``LT.lt, #[p.getArg! 2, p.getArg! 3])
+  else if p.isAppOfArity ``LE.le 4 && (p.getArg! 0).isConstOf ``Nat && i == some ``Nat.decLe then
+    some (``LE.le, #[p.getArg! 2, p.getArg! 3])
+  else if p.isAppOfArity ``Eq 3 && (p.getArg! 2).isConstOf ``Bool.true && i == some ``instDecidableEqBool then
+    some (``Bool, #[p.getArg! 1])
+  else none
+
+/-- The type of the elements, if `e` is `a ++ b` for lists (of a `Type`). -/
+meta def listAppend? (e : Expr) : Option Expr :=
+  if e.isAppOfArity ``HAppend.hAppend 6 then
+    match e.getArg! 0, e.getArg! 3 with
+    | .app (.const ``List [.zero]) α,
+      .app (.app (.const ``instHAppendOfAppend _) _) (.app (.const ``List.instAppend _) _) => some α
+    | _, _ => none
+  else none
+
+/-- `[a₁, …, aₙ]`, if `e` is `a₁ ++ … ++ aₙ` (before `bs`). -/
+meta partial def spine (e : Expr) (bs : List Expr) : List Expr :=
+  if (listAppend? e).isSome then spine (e.getArg! 4) (e.getArg! 5 :: bs) else e :: bs
+
+/-- The functions for `++` of three lists, and more. -/
+meta def chains : Array Name := #[``chain3, ``chain4, ``chain5, ``chain6, ``chain7, ``chain8]
+
+/-- `e` with the notations in it replaced by the functions they stand for at
+the instances they are at (`++` of lists, the arithmetic of `Nat`, a
+conditional on a comparison of `Nat`s): the same term, by unfolding. -/
+meta partial def unfoldNotation (e : Expr) : Expr :=
+  e.replace fun t =>
+    let f := t.getAppFn
+    let arg (i : Nat) := unfoldNotation (t.getArg! i)
+    -- An operand, as the numeral itself.
+    let num (i : Nat) : Expr :=
+      let a := t.getArg! i
+      if a.isAppOfArity ``OfNat.ofNat 3 && (a.getArg! 0).isConstOf ``Nat && (a.getArg! 1).isRawNatLit then a.getArg! 1
+      else unfoldNotation a
+    match f, t.getAppNumArgs with
+    | .const ``HAppend.hAppend _, 6 => do
+      let α ← listAppend? t
+      let l := spine t []
+      if l.length < 3 then none
+      let α := unfoldNotation α
+      let l := l.map unfoldNotation
+      -- Seven at a time, the first those before them.
+      let rec go (a : Expr) (bs : List Expr) (fuel : Nat) : Expr :=
+        match bs, fuel with
+        | [], _ | _, 0 => a
+        | [b], _ => mkApp3 (mkConst ``List.append [.zero]) α a b
+        | bs, fuel + 1 => go (mkAppN (mkConst (chains[(bs.take 7).length - 2]!)) (#[α, a] ++ (bs.take 7).toArray)) (bs.drop 7) fuel
+      return go l.head! l.tail! l.length
+    | .const ``HAppend.hAppend _, 4 =>
+      match t.getArg! 0, t.getArg! 3 with
+      | .app (.const ``List [.zero]) α,
+        .app (.app (.const ``instHAppendOfAppend _) _) (.app (.const ``List.instAppend _) _) =>
+        some (mkApp (mkConst ``List.append [.zero]) (unfoldNotation α))
+      | _, _ => none
+    | .const ``BEq.beq _, 2 =>
+      if (t.getArg! 0).isConstOf ``Nat && (t.getArg! 1).isAppOf ``instBEqOfDecidableEq then some (mkConst ``beqNat)
+      else none
+    | .const ``ite [.succ .zero], 5 =>
+      (comparison? (t.getArg! 1) (t.getArg! 2)).map fun (c, as) =>
+        let g := if c == ``Eq then ``iteEq else if c == ``LT.lt then ``iteLt else if c == ``LE.le then ``iteLe
+          else ``iteBool
+        mkAppN (mkConst g) (#[arg 0] ++ as.map unfoldNotation ++ #[arg 3, arg 4])
+    | .const ``dite [.succ .zero], 5 =>
+      match comparison? (t.getArg! 1) (t.getArg! 2) with
+      | some (``Eq, as) => some (mkAppN (mkConst ``diteEq) (#[arg 0] ++ as.map unfoldNotation ++ #[arg 3, arg 4]))
+      | _ => none
+    | .const ``Decidable.decide _, 2 =>
+      match comparison? (t.getArg! 0) (t.getArg! 1) with
+      | some (``Eq, as) => some (mkAppN (mkConst ``decideEq) (as.map unfoldNotation))
+      | some (``LT.lt, as) => some (mkAppN (mkConst ``decideLt) (as.map unfoldNotation))
+      | some (``LE.le, as) => some (mkAppN (mkConst ``decideLe) (as.map unfoldNotation))
+      | _ => none
+    | .const c _, 6 =>
+      if (t.getArg! 0).isConstOf ``Nat && (t.getArg! 1).isConstOf ``Nat then
+        (natOps.lookup c).map fun g => mkApp2 (mkConst g) (num 4) (num 5)
+      else none
+    | _, _ => none
+
+/-- Whether `kernelTerm` looks for the functions of `kernelPrims` in `c`: the
+project's code, and core's functions of lists and arrays (not of numbers,
+which the kernel computes with). -/
+meta def kernelLooks (env : Environment) (mods : Array Name) (c : Name) : Bool :=
+  if c.getRoot ∈ [`List, `Array, `Vector, `Option, `Id, `Fin, `Prod] then true else codeModule env mods c
+
+/-- The constants in `e`, with their levels. -/
+meta def constsOf (e : Expr) : MetaM (Array Expr) := do
+  let found ← IO.mkRef (({}, #[]) : Std.HashSet Expr × Array Expr)
+  e.forEach fun t => do
+    if t.isConst then
+      found.modify fun (s, out) => if s.contains t then (s, out) else (s.insert t, out.push t)
+  return (← found.get).2
+
+/-- What `kernelTerm` has found for each constant: the constant to use in its
+place and the proof that they are equal, or none. -/
+meta abbrev KernelM := StateT (Std.HashMap Expr (Option (Expr × Expr))) MetaM
+
+/-- `x`, which makes declarations, or `r` without them if the kernel rejects one. -/
+meta def declareOr {α : Type} (r : α) (x : MetaM α) : MetaM α := do
+  let env ← getEnv
+  try withOptions (Elab.async.set · false) x
+  catch _ =>
+    setEnv env
+    return r
+
+mutual
+
+/-- For a closed term `e`, the term with the constants that `kernelConst` has
+another for replaced by it, and a proof that they are equal; none if it has
+none of them. -/
+meta partial def kernelTerm (look : Name → Bool) (e : Expr) : KernelM (Option (Expr × Expr)) := do
+  let e₁ := unfoldNotation e
+  let mut items : Array (Expr × Expr × Expr) := #[]
+  for c in ← constsOf e₁ do
+    if let some it ← kernelConst look c then items := items.push (c, it)
+  if items.isEmpty then return none
+  let k := items.size
+  let idx : Std.HashMap Expr Nat := items.zipIdx.foldl (fun m ((c, _), i) => m.insert c i) {}
+  let put (f : Nat → Expr) : Expr := e₁.replace fun t => if t.isConst then idx[t]?.map f else none
+  let tys ← items.mapM fun (c, _, _) => inferType c
+  -- `e` as a function of the constants, at them: `e` (by unfolding the notations).
+  let xs ← (Array.range k).mapM fun _ => mkFVar <$> mkFreshFVarId
+  let F := tys.foldr (fun ty b => Expr.lam `x ty b .default) ((put (xs[·]!)).abstract xs)
+  let ety ← inferType e
+  let u ← getLevel ety
+  let mut l := F
+  let mut r := F
+  let mut prf := mkApp2 (mkConst ``Eq.refl [u]) ety e
+  for i in [0:k] do
+    let (c, c', p) := items[i]!
+    -- The type of the function of the constants after this one.
+    let B := (tys.extract (i + 1) k).foldr (fun ty b => mkForall `x .default ty b) ety
+    let v ← getLevel tys[i]!
+    let w ← getLevel B
+    prf := if i == 0 then mkApp6 (mkConst ``congrArg [v, w]) tys[i]! B c c' F p
+      else mkAppN (mkConst ``congr [v, w]) #[tys[i]!, B, l, r, c, c', prf, p]
+    l := mkApp l c
+    r := mkApp r c'
+  return some (put fun i => (items[i]!).2.1, prf)
+
+/-- The constant to use in place of the constant `c`, and the proof that they
+are equal. -/
+meta partial def kernelConst (look : Name → Bool) (c : Expr) : KernelM (Option (Expr × Expr)) := do
+  if let some r := (← get)[c]? then return r
+  modify (·.insert c none)
+  let .const n ls := c | return none
+  let r ← do
+    if let some (_, c', p) := kernelPrims.find? (·.1 == n) then
+      pure (if primLevels n ls then some (mkConst c', mkConst p) else none)
+    else
+      let env ← getEnv
+      if n matches .str _ "lit" then return none
+      unless look n do return none
+      let N := mkPrivateName env (ls.foldl (fun N l => N.str (toString l)) (`VG.Lit.kernel ++ n))
+      if env.contains N then pure (some (mkConst N, mkConst (N ++ `eq)))
+      else
+        let some (.defnInfo d) := env.find? n | return none
+        if d.type.getForallBody.isProp || ls.any (·.hasParam) then return none
+        -- (Code in a structure with proofs about it: the proofs are of the code as it is.)
+        if ← hasProofFields d.type.getForallBody.getAppFn then return none
+        -- (The kernel would compare two closed numbers by evaluating both.)
+        if d.type.isConstOf ``Nat then return none
+        let type := d.type.instantiateLevelParams d.levelParams ls
+        let some (v, p) ← kernelTerm look (d.value.instantiateLevelParams d.levelParams ls) | return none
+        declareOr none do
+          addDecl <| .defnDecl { d with name := N, levelParams := [], type, value := v, all := [N] }
+          addDecl <| .thmDecl {
+            name := N ++ `eq, levelParams := [], value := p
+            type := mkApp3 (mkConst ``Eq [← getLevel type]) type c (mkConst N) }
+          return some (mkConst N, mkConst (N ++ `eq))
+  modify (·.insert c r)
+  return r
+
+end
+
+/-- `kernelTerm` of `e : ty`, leaving the constants `stop` as they are, or `e` itself
+where there is none. The proof is a theorem named after `N`. -/
+meta def forKernel (N : Name) (ty e : Expr) (stop : Array Name := #[]) : MetaM (Expr × Expr) := do
+  let env ← getEnv
+  let mods := env.header.moduleNames
+  let u ← getLevel ty
+  let refl := (e, mkApp2 (mkConst ``Eq.refl [u]) ty e)
+  -- (The kernel would compare two closed numbers by evaluating both.)
+  if ty.isConstOf ``Nat then return refl
+  let some (e', q) ← (kernelTerm (fun c => kernelLooks env mods c && !stop.contains c) e).run' {}
+    | return refl
+  let name := mkPrivateName env (N ++ `kernel_eq)
+  if ← declareOr false do
+    addDecl <| .thmDecl { name, levelParams := [], type := mkApp3 (mkConst ``Eq [u]) ty e e', value := q }
+    return true
+  then return (e', mkConst name)
+  else return refl
+
+/-- For `v : ty` closed, `v` with the literals it reaches (`unfoldToLits`) as the
+kernel evaluates it cheaply (`kernelTerm`), and a proof that they are equal. -/
+meta def litTerm (N : Name) (ty v : Expr) : MetaM (Expr × Expr) := do
+  let (e, prf) ← match ← unfoldToLits N v with
+    | some r => pure r
+    | none => pure (v, mkApp2 (mkConst ``Eq.refl [1]) ty v)
+  let (e', q) ← forKernel N ty e
+  return (e', mkApp6 (mkConst ``Eq.trans [1]) ty v e e' prf q)
+
+/-- A proof of `v = N.lit`, for `v : ty` closed, which the kernel checks by
+evaluating `litTerm` of `v`. -/
+meta def litProof (N : Name) (ty v : Expr) : MetaM Expr := (·.2) <$> litTerm N ty v
+
+end Kernel
+
+/-! ### Analyses in terms the kernel evaluates cheaply
+
+A check the kernel evaluates at every instruction of every function (the
+taint analyses, `Code.allInstrs`, …) is a tower of wrappers: a matcher unfolds
+to `casesOn`, that to the recursor; `cond`, `&&` and `Option.bind` are
+matchers; `check` takes the analysis as an argument, a structure whose `step` it
+projects at every instruction. `kernel_fn f` declares, once, the function `f`
+(a closed term: a function applied to the analysis it is of,
+`Taint.check taint`) with all of these unfolded, all the way down
+(`specialTerm`), and that it is `f`, which the kernel checks by unfolding the
+two; `kernel_rw`, which `lit_decide` runs, rewrites `f` in a goal to it. Nothing
+else changes: what is evaluated, and in what order, are the function's own. -/
+
+/-- Whether `n` only wraps a recursor: a matcher or a `casesOn`. (`&&`,
+`Option.bind`, … are `kernelPrims`, functions of their own.) -/
+meta def isWrapper (env : Environment) (n : Name) : Bool :=
+  Lean.Meta.isMatcherCore env n || isCasesOnRecursor env n ||
+    (match n with | .str _ s => s.startsWith "_sparseCasesOn" | _ => false)
+
+/-- The size of `e` as a tree, up to `lim`. -/
+meta def treeSize (e : Expr) (lim : Nat) : Nat := Id.run do
+  let mut stack := [e]
+  let mut n := 0
+  while n < lim do
+    match stack with
+    | [] => return n
+    | x :: rest =>
+      n := n + 1
+      stack := match x with
+        | .app f a => f :: a :: rest
+        | .lam _ _ b _ | .mdata _ b | .proj _ _ b => b :: rest
+        | .letE _ _ v b _ => v :: b :: rest
+        | _ => rest
+  return n
+
+/-- `e` with its beta redexes reduced. -/
+meta partial def betaAll (e : Expr) : Expr :=
+  e.replace fun t => if t.isHeadBetaTarget then some (betaAll t.headBeta) else none
+
+/-- `e` with the wrappers unfolded, where that does not copy much (a matcher's
+alternative that several constructors share). The state is the wrappers'
+values, so unfolded. -/
+meta partial def unfoldWrappers (env : Environment) (e : Expr) : StateM (NameMap Expr) Expr := do
+  match e with
+  | .app .. =>
+    let f := e.getAppFn
+    let args ← e.getAppArgs.mapM (unfoldWrappers env)
+    match f with
+    | .const n ls =>
+      let e' := mkAppN f args
+      unless isWrapper env n do return e'
+      let some (.defnInfo d) := env.find? n | return e'
+      if args.size < d.value.getNumHeadLambdas then return e'
+      let v ← match (← get).find? n with
+        | some v => pure v
+        | none => do
+          let v ← unfoldWrappers env d.value
+          modify (·.insert n v)
+          pure v
+      let r := betaAll ((v.instantiateLevelParams d.levelParams ls).beta args)
+      return if treeSize r 4000 ≤ 2 * treeSize e' 4000 + 60 then r else e'
+    | .lam .. => unfoldWrappers env (f.beta e.getAppArgs)
+    | _ => return mkAppN (← unfoldWrappers env f) args
+  | .lam n t b bi => return .lam n t (← unfoldWrappers env b) bi
+  | .letE n t v b nd => return .letE n t (← unfoldWrappers env v) (← unfoldWrappers env b) nd
+  | .mdata _ b => unfoldWrappers env b
+  | .proj s i b => return .proj s i (← unfoldWrappers env b)
+  | _ => return e
+
+/-- Whether `specialConst` unfolds `c`: the project's definitions but the
+specifications', and core's functions of lists and options. -/
+meta def specialLooks (env : Environment) (mods : Array Name) (c : Name) : Bool :=
+  if c == ``List.length || c == ``Array.size || (c matches .str _ "ctorIdx") || (c matches .str _ "lit") then false
+  else if c.getRoot ∈ [`List, `Option, `Prod] then true
+  else match env.getModuleIdxFor? c with
+    | none => true
+    | some i => match mods[i.toNat]?.map (·.components) with
+      | some (`VerifiedGarbage :: k :: _) => k ∈ [`Impl, `Proof, `TCB]
+      | _ => false
+
+/-- The structures of functions a check takes as an argument. -/
+meta def staticTypes : List Name := [`VG.ISA, `VG.Taint, `VG.TaintCT]
+
+/-- For each parameter of the constant `n`, whether `specialConst` specializes
+the function to it: an analysis or an instance (`some true`), or a function,
+if it is a constant (`some false`). -/
+meta def staticParams (n : Name) : MetaM (Array (Option Bool)) := do
+  let mut ty := (← getConstInfo n).type
+  let mut out := #[]
+  while true do
+    match ty with
+    | .forallE _ d b bi =>
+      out := out.push <|
+        if bi.isInstImplicit || staticTypes.any (d.isAppOf ·) then some true
+        else if d.isForall && bi.isExplicit then some false else none
+      ty := b
+    | _ => break
+  return out
+
+/-- A projection of an analysis (`Taint.step A`) or of an instance, in `e`,
+reduced to the field. -/
+meta def reduceStatic (e : Expr) : MetaM Expr :=
+  Core.transform e (post := fun x => do
+    let .const n _ := x.getAppFn | return .done x
+    let .str S _ := n | return .done x
+    unless S ∈ [`VG.Taint, `VG.TaintCT] || (S.getRoot == `VG && isClass (← getEnv) S) do return .done x
+    let some p ← getProjectionFnInfo? n | return .done x
+    -- (Not the type of the taints.)
+    if (← getConstInfo n).type.getForallBody.isSort then return .done x
+    let args := x.getAppArgs
+    if args.size ≤ p.numParams then return .done x
+    let a := args[p.numParams]!
+    if a.hasLooseBVars then return .done x
+    let s ← whnfD a
+    unless s.isAppOf p.ctorName do return .done x
+    let v := s.getArg! (p.numParams + p.i)
+    return .visit (v.beta (args.extract (p.numParams + 1) args.size)))
+
+/-- What `specialTerm` has found for each function (applied to the analysis
+it is of): the function to use in its place and the proof that they are equal. -/
+meta structure Special where
+  found : Std.HashMap Expr (Option (Expr × Expr)) := {}
+  params : NameMap (Array (Option Bool)) := {}
+  wrappers : NameMap Expr := {}
+
+meta abbrev SpecialM := StateT Special MetaM
+
+/-- What `t` may be a function of: `f a₁ … aₖ`, with `aₖ` the last of the
+static arguments (`staticParams`) before any that is not closed, or of those
+before it, longest first; and `f`. -/
+meta def functionsOf (t : Expr) : SpecialM (List Expr) := do
+  let .const n _ := t.getAppFn | return []
+  if kernelPrims.any (·.1 == n) then return [t.getAppFn]
+  let ps ← match (← get).params.find? n with
+    | some ps => pure ps
+    | none => do
+      let ps ← staticParams n
+      modify fun s => { s with params := s.params.insert n ps }
+      pure ps
+  let args := t.getAppArgs
+  let mut out := [t.getAppFn]
+  for h : i in [0:args.size] do
+    if args[i].hasLooseBVars then break
+    if let some (some any) := ps[i]? then
+      if any || args[i].isConst then out := mkAppN t.getAppFn (args.extract 0 (i + 1)) :: out
+  return out
+
+/-- The last component of the name of the function that `kernel_fn` declares
+for `c`, the same in every module. -/
+meta def functionName (c : Expr) : Name :=
+  (c.getAppArgs.foldl (fun N a => match a.getAppFn with
+    | .const n _ => if n == ``List.nil then N else N ++ n
+    | _ => N) c.getAppFn.constName!) ++ `kernel
+
+/-- The function declared for `c` by a `kernel_fn` of this module, of one that
+defines a function or an argument of `c`, or of `Framework/Taint.lean`. -/
+meta def declared? (mods : Array Name) (c : Expr) : MetaM (Option (Expr × Expr)) := do
+  let env ← getEnv
+  let mut tried : List Name := []
+  for h in (c.getAppFn :: c.getAppArgs.toList.map (·.getAppFn)) do
+    let .const n _ := h | continue
+    let mod := match env.getModuleIdxFor? n with
+      | some i => mods[i.toNat]!
+      | none => env.mainModule
+    if tried.contains mod then continue
+    tried := mod :: tried
+    if let some r ← declaredIn? mod c then return some r
+  for mod in [env.mainModule, `VerifiedGarbage.Proof.Framework.Taint] do
+    unless tried.contains mod do
+      if let some r ← declaredIn? mod c then return some r
+  return none
+where
+  declaredIn? (mod : Name) (c : Expr) : MetaM (Option (Expr × Expr)) := do
+    let N := `VG.KernelFn ++ mod ++ functionName c
+    let some info := (← getEnv).find? (N ++ `eq) | return none
+    let (xs, _, ty) ← forallMetaTelescope info.type
+    let some (_, lhs, _) := ty.eq? | return none
+    unless lhs == c || (!xs.isEmpty && (← withReducible (isDefEq lhs c))) do return none
+    let xs ← xs.mapM instantiateMVars
+    return some (mkAppN (mkConst N) xs, mkAppN (mkConst (N ++ `eq)) xs)
+
+mutual
+
+/-- For a term `e`, the term with the wrappers in it unfolded, if `unfold`, and the
+functions that `specialConst` has another for replaced by it, and a proof that they are
+equal. -/
+meta partial def specialTerm (mods : Array Name) (e : Expr) (unfold : Bool) :
+    SpecialM (Option (Expr × Expr)) := do
+  let env ← getEnv
+  let e₁ ← reduceStatic (unfoldNotation e)
+  let e₁ ← if unfold then
+    let (e₁, ws) := (unfoldWrappers env e₁).run (← get).wrappers
+    modify fun s => { s with wrappers := ws }
+    pure e₁
+  else pure e₁
+  replaceFunctions (specialConst mods) e e₁
+
+/-- `e₁`, which is `e` by unfolding, with the functions in it replaced by those
+that `find` gives, and a proof that it is equal to `e`. The proofs in `e₁` stay as they
+are: what one states may name the function. -/
+meta partial def replaceFunctions (find : Expr → SpecialM (Option (Expr × Expr))) (e e₁ : Expr) :
+    SpecialM (Option (Expr × Expr)) := do
+  let mut items : Array (Expr × Expr × Expr) := #[]
+  let mut seen : Std.HashSet Expr := {}
+  let mut keys : Std.HashSet Expr := {}
+  let env ← getEnv
+  let isThm (n : Name) : Bool := wasOriginallyTheorem env n
+  let mut stack := #[e₁]
+  while !stack.isEmpty do
+    let t := stack.back!
+    stack := stack.pop
+    if seen.contains t then continue
+    seen := seen.insert t
+    match t with
+    | .app .. | .const .. =>
+      if let .const n _ := t.getAppFn then
+        if isThm n then continue
+      for c in ← functionsOf t do
+        if keys.contains c then
+          if items.any (·.1 == c) then break else continue
+        keys := keys.insert c
+        if let some it ← find c then
+          items := items.push (c, it)
+          break
+      unless t.getAppFn.isConst do stack := stack.push t.getAppFn
+      stack := stack ++ t.getAppArgs
+    | .lam _ _ b _ | .mdata _ b | .proj _ _ b => stack := stack.push b
+    | .letE _ _ v b _ => stack := (stack.push v).push b
+    | _ => pure ()
+  if items.isEmpty && e₁ == e then return none
+  let k := items.size
+  let idx : Std.HashMap Expr Nat := items.zipIdx.foldl (fun m ((c, _), i) => m.insert c i) {}
+  let heads : NameSet := items.foldl (fun s (c, _) => s.insert c.getAppFn.constName!) {}
+  let rec put (f : Nat → Expr) (t : Expr) : Expr := t.replace fun t =>
+    match t.getAppFn with
+    | .const n _ =>
+      if !heads.contains n then if isThm n then some t else none else
+        let args := t.getAppArgs
+        (List.range (args.size + 1)).findSome? fun j =>
+          (idx[mkAppN t.getAppFn (args.extract 0 (args.size - j))]?).map fun i =>
+            mkAppN (f i) ((args.extract (args.size - j) args.size).map (put f))
+    | _ => none
+  let tys ← items.mapM fun (c, _, _) => inferType c
+  let xs ← (Array.range k).mapM fun _ => mkFVar <$> mkFreshFVarId
+  let F := tys.foldr (fun ty b => Expr.lam `x ty b .default) ((put (xs[·]!) e₁).abstract xs)
+  let ety ← inferType e
+  let u ← getLevel ety
+  let mut l := F
+  let mut r := F
+  let mut prf := mkApp2 (mkConst ``Eq.refl [u]) ety e
+  for i in [0:k] do
+    let (c, c', p) := items[i]!
+    let B := (tys.extract (i + 1) k).foldr (fun ty b => mkForall `x .default ty b) ety
+    let v ← getLevel tys[i]!
+    let w ← getLevel B
+    prf := if i == 0 then mkApp6 (mkConst ``congrArg [v, w]) tys[i]! B c c' F p
+      else mkAppN (mkConst ``congr [v, w]) #[tys[i]!, B, l, r, c, c', prf, p]
+    l := mkApp l c
+    r := mkApp r c'
+  return some (put (fun i => (items[i]!).2.1) e₁, prf)
+
+/-- The function to use in place of `c`, and the proof that they are equal:
+one that core's lists have (`kernelPrims`), one that a `kernel_fn` declared, or
+one declared here. -/
+meta partial def specialConst (mods : Array Name) (c : Expr) : SpecialM (Option (Expr × Expr)) := do
+  if let some r := (← get).found[c]? then return r
+  modify fun s => { s with found := s.found.insert c none }
+  let r ← specialConst' mods c
+  modify fun s => { s with found := s.found.insert c r }
+  return r
+
+/-- `specialConst` of `c` that is met the first time. -/
+meta partial def specialConst' (mods : Array Name) (c : Expr) : SpecialM (Option (Expr × Expr)) := do
+  let .const n ls := c.getAppFn | return none
+  if c.isConst then
+    if let some (_, c', p) := kernelPrims.find? (·.1 == n) then
+      return if primLevels n ls then some (mkConst c', mkConst p) else none
+  let env ← getEnv
+  let mod ← getMainModule
+  if let some r ← declared? mods c then return some r
+  unless specialLooks env mods n && !isWrapper env n do return none
+  let some (.defnInfo d) := env.find? n | return none
+  if ls.any (·.hasParam) || (← isProjectionFn n) then return none
+  let ty ← inferType c
+  if ty.getForallBody.isSort || staticTypes.any (ty.getForallBody.isAppOf ·) then return none
+  if ← forallTelescope ty fun _ b => isProp b then return none
+  if ← hasProofFields ty.getForallBody.getAppFn then return none
+  let value := (d.value.instantiateLevelParams d.levelParams ls).beta c.getAppArgs
+  -- (Not the wrappers in a recursion, which may be over a list as long as a function's code:
+  -- what a recursor gives in tail position the kernel evaluates deeper in its stack, and
+  -- what a function unfolds to it does not.)
+  let recursive := (n matches .str _ "_f") || (value.find? fun t =>
+    t.isConst && (t.isConstOf ``List.rec || t.constName! matches .str _ "brecOn")).isSome
+  let some (v, p) ← specialTerm mods value !recursive | return none
+  let N := `VG.KernelFn ++ mod ++ functionName c
+  if (← getEnv).contains N then return none
+  let xs := (collectFVars {} c).fvarIds.map mkFVar
+  let cN := mkAppN (mkConst N) xs
+  let eq := mkApp3 (mkConst ``Eq [← getLevel ty]) ty c cN
+  declareOr none do
+    addDecl (forceExpose := true) <| .defnDecl { d with
+      name := N, levelParams := [], type := ← mkForallFVars xs ty, value := ← mkLambdaFVars xs v, all := [N] }
+    addDecl <| .thmDecl {
+      name := N ++ `eq, levelParams := [], type := ← mkForallFVars xs eq, value := ← mkLambdaFVars xs p }
+    return some (cN, mkAppN (mkConst (N ++ `eq)) xs)
+
+end
+
+/-- `kernel_fn f₁, f₂, …` declares each function `f` (or, for `f` that depends on
+`x`, `fun x => f`) as the kernel evaluates it cheaply (see above). -/
+elab "kernel_fn " ts:term,+ : command => liftTermElabM do
+  let mods := (← getEnv).header.moduleNames
+  for t in ts.getElems do
+    let e ← instantiateMVars (← Term.elabTermAndSynthesize t none)
+    if e.hasMVar then throwError "kernel_fn: {e} is not closed"
+    lambdaTelescope e fun _ b => do
+      if (← (specialConst mods b).run' {}).isNone then throwError "kernel_fn: {b} has nothing to unfold"
+
+open Tactic in
+/-- Rewrites the functions of the goal with a `kernel_fn` to it. -/
+elab "kernel_rw" : tactic => withMainContext do
+  let g ← getMainGoal
+  let tgt ← instantiateMVars (← g.getType)
+  let mods := (← getEnv).header.moduleNames
+  let find (c : Expr) : SpecialM (Option (Expr × Expr)) := do
+    if c.hasFVar || c.hasMVar then return none
+    declared? mods c
+  let some (tgt', p) ← (replaceFunctions find tgt tgt).run' {} | return
+  replaceMainGoal [← g.replaceTargetEq tgt' p]
 
 /-! ### Templates
 
@@ -415,7 +1281,7 @@ meta def materializeTemplate (N : Name) (f : Expr) : MetaM Unit := do
         throwError "materialize_template: a parameter is not a number: {x}"
     let inst ← synthInstance (mkApp (mkConst ``ToExpr [0]) body)
     let samples := tplSamples xs.size
-    let es ← samples.mapM fun s => unsafe evalExpr Expr (mkConst ``Expr)
+    let es ← samples.mapM fun s => unsafe evalOnce Expr (mkConst ``Expr)
       (mkApp3 (mkConst ``ToExpr.toExpr [0]) body inst (mkAppN f (Array.map mkNatLit s)))
     let (b, _) ← (antiUnify xs samples es).run {}
     addDecl (forceExpose := true) <| .defnDecl {
@@ -426,218 +1292,109 @@ meta def materializeTemplate (N : Name) (f : Expr) : MetaM Unit := do
     addDecl <| .thmDecl {
       name := N ++ `lit_eq, levelParams := [],
       type := mkApp3 (mkConst ``Eq [u]) ty f (mkConst (N ++ `lit)),
-      value := mkApp2 (mkConst ``Eq.refl [u]) ty f }
+      value := (← forKernel N ty f).2 }
 
-/-! ### Code with its appends flattened
+/-- What `codeToExprUnsafe` has converted: code, instructions and conditions
+(apart: one without arguments is a number, the same in both types), by the
+address of the value, which `c` keeps alive. -/
+meta structure CodeExprs where
+  code : Std.HashMap USize Expr := {}
+  instrs : Std.HashMap USize Expr := {}
+  conds : Std.HashMap USize Expr := {}
 
-The kernel checks `N.lit_eq` by evaluating the code, and code is built with
-`++` (`rowsF k m (r + 1) = rowsF k m r ++ rowF k m r`), nested to the left
-as often as not: each instruction of `a` in `(a ++ b) ++ c` is then rebuilt
-once for every `++` above it, time quadratic in the nesting (P-521's x86
-multiplication: 18 rows, each with 17 nested steps, 9 s). `flattenCode`
-proves, without evaluating anything, that the code is equal to the same code
-with each block's list written as `List.flatten [c₁, …, cₙ]` (its pieces,
-nested to the right), which the kernel then evaluates in time linear in its
-length (P-521's multiplication: under 1 s).
+/-- `toExpr c`, for `c : Code I C` evaluated, each part of `c` converted once
+however often it occurs (`c` keeps as one object what it evaluated once, and
+`ShareCommon` makes one of equal parts): written out, code has up to millions
+of instructions, a few thousand of them distinct, since each call holds the
+body of its callee. `toI` and `toC` are the `toExpr` of `I` and `C`, whose
+values the types here do not say. -/
+meta unsafe def codeToExprUnsafe (I C : Expr) (toI toC : NonScalar → Expr)
+    (c : Code NonScalar NonScalar) : Expr :=
+  go (ShareCommon.shareCommon' c) |>.run' {}
+where
+  instr (x : NonScalar) : StateM CodeExprs Expr := do
+    let k := ptrAddrUnsafe x
+    if let some e := (← get).instrs[k]? then return e
+    let e := toI x
+    modify fun s => { s with instrs := s.instrs.insert k e }
+    return e
+  cond (x : NonScalar) : StateM CodeExprs Expr := do
+    let k := ptrAddrUnsafe x
+    if let some e := (← get).conds[k]? then return e
+    let e := toC x
+    modify fun s => { s with conds := s.conds.insert k e }
+    return e
+  block (is : List NonScalar) : StateM CodeExprs Expr := do
+    let mut e := mkApp (mkConst ``List.nil [.zero]) I
+    let cons := mkApp (mkConst ``List.cons [.zero]) I
+    for i in is.reverse do
+      e := mkApp2 cons (← instr i) e
+    return mkApp3 (mkConst ``Code.block) I C e
+  go (c : Code NonScalar NonScalar) : StateM CodeExprs Expr := do
+    let k := ptrAddrUnsafe c
+    if let some e := (← get).code[k]? then return e
+    let e ← match c with
+      | .block is => block is
+      | .seq a b => pure <| mkApp4 (mkConst ``Code.seq) I C (← go a) (← go b)
+      | .ite b t e =>
+        pure <| mkApp5 (mkConst ``Code.ite) I C (← cond b) (← go t) (← go e)
+      | .loop b c => pure <| mkApp4 (mkConst ``Code.loop) I C (← go b) (← cond c)
+      | .call n b => pure <| mkApp4 (mkConst ``Code.call) I C (mkStrLit n) (← go b)
+      | .frame p b q =>
+        pure <| mkApp5 (mkConst ``Code.frame) I C (← instr p) (← go b) (← instr q)
+      | .icall i n b next =>
+        pure <| mkApp6 (mkConst ``Code.icall) I C (← instr i) (mkStrLit n) (← go b) (← go next)
+    modify fun s => { s with code := s.code.insert k e }
+    return e
 
-`materialize_flat_code` uses it; `materialize_code` does not. The unfolding
-runs `whnf` at the meta level, slower than the kernel, at every append and
-every decision: for code nested to the right, or that decides much at each
-step (selections of table entries, …), it costs more than it saves. -/
+/-- The values of the closed codes `codes : Code I C`, evaluated in compiled code
+(once: compiling an expression costs more than most of them), as literals
+(`codeToExprUnsafe`). -/
+meta def evalCodes (I C : Expr) (codes : Array Expr) : MetaM (Array Expr) := do
+  let toE (T : Expr) : MetaM Expr := do
+    return mkApp2 (mkConst ``ToExpr.toExpr [0]) T (← synthInstance (mkApp (mkConst ``ToExpr [0]) T))
+  let prod (a b : Expr) := mkApp2 (mkConst ``Prod [0, 0]) a b
+  let pair (α β a b : Expr) := mkApp4 (mkConst ``Prod.mk [0, 0]) α β a b
+  let eI ← mkArrow I (mkConst ``Expr)
+  let eC ← mkArrow C (mkConst ``Expr)
+  let code := mkApp2 (mkConst ``Code) I C
+  let ty := mkApp (mkConst ``List [0]) code
+  let (toI, toC, cs) ← unsafe evalOnce ((NonScalar → Expr) × (NonScalar → Expr) × List (Code NonScalar NonScalar))
+    (prod eI (prod eC ty)) (pair eI (prod eC ty) (← toE I) (pair eC ty (← toE C) (← mkListLit code codes.toList)))
+  return cs.toArray.map fun c => unsafe codeToExprUnsafe I C toI toC c
 
-theorem flat_app {α : Type} {a b : List α} {La Lb : List (List α)}
-    (ha : a = La.flatten) (hb : b = Lb.flatten) : a ++ b = (La ++ Lb).flatten := by
-  rw [ha, hb, List.flatten_append]
+/-- The value of the closed code `code : Code I C` as a literal (`evalCodes`). -/
+meta def evalCode (I C code : Expr) : MetaM Expr := return (← evalCodes I C #[code])[0]!
 
-theorem flat_nil {α : Type} : ([] : List α) = ([] : List (List α)).flatten := rfl
+/-- The literals of the functions materialized so far whose type is `ty`, written out in full
+(`expandLit`). -/
+meta def expandedLits (ty : Expr) : MetaM (Std.HashMap Expr Name) := do
+  let mut lits : Std.HashMap Expr Name := {}
+  let mut expanded : Std.HashMap Name Expr := {}
+  for g in litNames (← getEnv) do
+    if (← isDefEq (← inferType (← lhsOf g)) ty) then
+      let (e, m) ← (expandLit g).run expanded
+      expanded := m
+      lits := lits.insertIfNew e g
+  return lits
 
-theorem flat_leaf {α : Type} (l : List α) : l = [l].flatten := by
-  simp only [List.flatten_cons, List.flatten_nil, List.append_nil]
-
-theorem Code.block_congr {I C : Type} {l l' : List I} (h : l = l') :
-    (Code.block l : Code I C) = .block l' := h ▸ rfl
-theorem Code.seq_congr {I C : Type} {a a' b b' : Code I C} (ha : a = a') (hb : b = b') :
-    Code.seq a b = .seq a' b' := ha ▸ hb ▸ rfl
-theorem Code.ite_congr {I C : Type} {c : C} {a a' b b' : Code I C} (ha : a = a') (hb : b = b') :
-    Code.ite c a b = .ite c a' b' := ha ▸ hb ▸ rfl
-theorem Code.loop_congr {I C : Type} {c : C} {a a' : Code I C} (ha : a = a') :
-    Code.loop a c = .loop a' c := ha ▸ rfl
-theorem Code.frame_congr {I C : Type} {p q : I} {a a' : Code I C} (ha : a = a') :
-    Code.frame p a q = .frame p a' q := ha ▸ rfl
-
-/-- `++`, which `whnfNoAppend` never unfolds. -/
-meta def appendConsts : NameSet := NameSet.empty |>.insert ``HAppend.hAppend |>.insert ``Append.append
-  |>.insert ``List.append |>.insert ``instHAppendOfAppend |>.insert ``List.instAppend
-
-/-- `whnf`, but never through `++`: a list built with `++` is left an append. -/
-meta def whnfNoAppend (e : Expr) : MetaM Expr :=
-  withCanUnfoldPred (fun cfg ci => do
-    if appendConsts.contains ci.name then return false else canUnfoldDefault cfg ci) (whnf e)
-
-/-- `whnfNoAppend`, or `none` where it fails (a number past the threshold of
-`Nat.pow`'s evaluation, …): such a term is left for the kernel. Its messages
-(that threshold's warning) are dropped: it only looks ahead. -/
-meta def whnfNoAppend? (e : Expr) : MetaM (Option Expr) := do
-  let msgs := (← getThe Core.State).messages
-  let r ← tryCatchRuntimeEx (some <$> whnfNoAppend e) fun _ => pure none
-  modifyThe Core.State fun s => { s with messages := msgs }
-  return r
-
-/-- The elements of the cons prefix of `l`, and its tail. -/
-meta def consPrefix (l : Expr) : Array Expr × Expr := Id.run do
-  let mut xs := #[]
-  let mut t := l
-  while t.isAppOfArity ``List.cons 3 do
-    xs := xs.push (t.getArg! 1)
-    t := t.appArg!
-  return (xs, t)
-
-/-- What `flatList` and `flattenCode` have done so far: the calls of `whnf`
-(within a budget, past which they give up), and the deepest nesting of `++`
-to the left that they have undone. -/
-meta structure FlatState where
-  whnfs : Nat := 0
-  leftDepth : Nat := 0
-  /-- Whether a definition may build a list with `++` (memoized). -/
-  appends : NameMap Bool := {}
-
-meta abbrev FlatM := StateT FlatState MetaM
-
-/-- The calls of `whnf` `flattenCode` may make, a bound on its time. -/
-meta def flatBudget : Nat := 100000
-
-/-- The functions that build lists with `++`. -/
-meta def appendBuilders : NameSet := appendConsts |>.insert ``List.flatten |>.insert ``List.flatMap
-
-/-- Whether the definition `c` may build a list with `++`, directly or through
-the definitions it uses: a list whose term uses none is left to the kernel
-whole, without unfolding it at the meta level. -/
-meta partial def mayAppend (c : Name) : FlatM Bool := do
-  if appendBuilders.contains c then return true
-  if let some b := (← get).appends.find? c then return b
-  modify fun s => { s with appends := s.appends.insert c false }
-  let some (.defnInfo d) := (← getEnv).find? c | return false
-  let mut r := false
-  for v in d.value.getUsedConstants do
-    if ← mayAppend v then r := true; break
-  modify fun s => { s with appends := s.appends.insert c r }
-  return r
-
-/-- `whnfNoAppend?`, counted against the budget (an exception past it). -/
-meta def flatWhnf (e : Expr) : FlatM (Option Expr) := do
-  let s ← get
-  if s.whnfs ≥ flatBudget then throwError "flattenCode: over budget"
-  set { s with whnfs := s.whnfs + 1 }
-  whnfNoAppend? e
-
-/-- For a list `l : List α`, pieces `L`, a proof of `l = L.flatten` (by
-`flat_app`, `flat_leaf` and unfolding, which the kernel checks without
-evaluating the pieces), and the depth of `++` nested to the left in `l`.
-Below `depth` nested appends (a long chain nested to the right, which the
-kernel evaluates in linear time anyway), the list is one piece: the proof
-stays shallow enough for the kernel. -/
-meta partial def flatList (α : Expr) (l : Expr) (depth : Nat := 64) :
-    FlatM (Array Expr × Expr × Nat) := do
-  let lα := mkApp (mkConst ``List [0]) α
-  let toL (cs : Array Expr) : Expr :=
-    cs.foldr (fun c acc => mkApp3 (mkConst ``List.cons [0]) lα c acc)
-      (mkApp (mkConst ``List.nil [0]) lα)
-  let leaf (x : Expr) : Array Expr × Expr × Nat := (#[x], mkApp2 (mkConst ``flat_leaf) α x, 0)
-  if depth == 0 then return leaf l
-  let app (a b : Expr) : FlatM (Array Expr × Expr × Nat) := do
-    let (ca, pa, da) ← flatList α a (depth - 1)
-    let (cb, pb, db) ← flatList α b (depth - 1)
-    let d := max (da + 1) db
-    modify fun s => { s with leftDepth := max s.leftDepth d }
-    return (ca ++ cb, mkAppN (mkConst ``flat_app) #[α, a, b, toL ca, toL cb, pa, pb], d)
-  if (consPrefix l).2.isAppOfArity ``List.nil 1 then return leaf l
-  unless ← l.getUsedConstants.anyM mayAppend do return leaf l
-  let some w ← flatWhnf l | return leaf l
-  if w.isAppOfArity ``HAppend.hAppend 6 then return ← app (w.getArg! 4) (w.getArg! 5)
-  if w.isAppOfArity ``List.append 3 then return ← app (w.getArg! 1) (w.getArg! 2)
-  if w.isAppOfArity ``List.nil 1 then return (#[], mkApp (mkConst ``flat_nil) α, 0)
-  if w.isAppOfArity ``List.cons 3 then
-    let (xs, t) := consPrefix w
-    if t.isAppOfArity ``List.nil 1 then return leaf w
-    -- `x₁ :: … :: xₖ :: t` is `[x₁, …, xₖ] ++ t` (the kernel appends `k` elements).
-    let pre := xs.foldr (fun x acc => mkApp3 (mkConst ``List.cons [0]) α x acc)
-      (mkApp (mkConst ``List.nil [0]) α)
-    return ← app pre t
-  return leaf w
-
-/-- For code `c : Code I C`, the same code with each block's list flattened
-(`flatList`), and a proof of `c = c'`; the bodies of calls are left as they
-are (the literals of their callees, or code the kernel compares as it is).
-Code nested deeper than `depth` is left as it is, as `flatList` leaves lists. -/
-meta partial def flattenCode (I C : Expr) (c : Expr) (depth : Nat := 64) : FlatM (Expr × Expr) := do
-  let codeTy := mkApp2 (mkConst ``Code) I C
-  let refl (x : Expr) := (x, mkApp2 (mkConst ``Eq.refl [1]) codeTy x)
-  if depth == 0 then return refl c
-  let some w ← flatWhnf c | return refl c
-  match w.getAppFn.constName?, w.getAppNumArgs with
-  | some ``Code.block, 3 =>
-    let (cs, p, _) ← flatList I (w.getArg! 2)
-    let lI := mkApp (mkConst ``List [0]) I
-    let L := cs.foldr (fun x acc => mkApp3 (mkConst ``List.cons [0]) lI x acc)
-      (mkApp (mkConst ``List.nil [0]) lI)
-    let l' := mkApp2 (mkConst ``List.flatten [0]) I L
-    return (mkApp3 (mkConst ``Code.block) I C l',
-      mkAppN (mkConst ``Code.block_congr) #[I, C, w.getArg! 2, l', p])
-  | some ``Code.seq, 4 =>
-    let (a, pa) ← flattenCode I C (w.getArg! 2) (depth - 1)
-    let (b, pb) ← flattenCode I C (w.getArg! 3) (depth - 1)
-    return (mkApp4 (mkConst ``Code.seq) I C a b,
-      mkAppN (mkConst ``Code.seq_congr) #[I, C, w.getArg! 2, a, w.getArg! 3, b, pa, pb])
-  | some ``Code.ite, 5 =>
-    let (a, pa) ← flattenCode I C (w.getArg! 3) (depth - 1)
-    let (b, pb) ← flattenCode I C (w.getArg! 4) (depth - 1)
-    return (mkApp5 (mkConst ``Code.ite) I C (w.getArg! 2) a b,
-      mkAppN (mkConst ``Code.ite_congr) #[I, C, w.getArg! 2, w.getArg! 3, a, w.getArg! 4, b, pa, pb])
-  | some ``Code.loop, 4 =>
-    let (a, pa) ← flattenCode I C (w.getArg! 2) (depth - 1)
-    return (mkApp4 (mkConst ``Code.loop) I C a (w.getArg! 3),
-      mkAppN (mkConst ``Code.loop_congr) #[I, C, w.getArg! 3, w.getArg! 2, a, pa])
-  | some ``Code.frame, 5 =>
-    let (a, pa) ← flattenCode I C (w.getArg! 3) (depth - 1)
-    return (mkApp5 (mkConst ``Code.frame) I C (w.getArg! 2) a (w.getArg! 4),
-      mkAppN (mkConst ``Code.frame_congr) #[I, C, w.getArg! 2, w.getArg! 4, w.getArg! 3, a, pa])
-  | _, _ => return refl c
-
-/-- The depth of `++` nested to the left from which flattening pays: below
-it, the kernel's evaluation of the code as it is costs little more than its
-evaluation flattened, and the unfolding is extra work. -/
-meta def flatMinDepth : Nat := 4
-
-/-- `flattenCode`, if it pays (`flatMinDepth`) and stays within its budget. -/
-meta def flattenCode? (I C c : Expr) : MetaM (Option (Expr × Expr)) := do
-  let r ← tryCatch (some <$> (flattenCode I C c).run {}) fun _ => pure none
-  let some ((c', prf), s) := r | return none
-  if s.leftDepth < flatMinDepth then return none
-  return some (c', prf)
+/-- `abstractCalls` of `v`, a literal, for the functions materialized so far, whose literals
+are `lits` (`expandedLits`). -/
+meta def abstractToLits (lits : Std.HashMap Expr Name) (v : Expr) : MetaM (Expr × Array Name) := do
+  let (abs, (_, gs)) ← (abstractCalls lits v).run ({}, #[])
+  return (abs, gs)
 
 /-- Defines `N.lit`, the value of the closed code term `code` as a literal
 (calling the literals of the code materialized so far), and
 `N.lit_eq : code = N.lit`. -/
-meta def materialize (N : Name) (code : Expr) (flat : Bool := false) : MetaM Unit := do
+meta def materialize (N : Name) (code : Expr) : MetaM Unit := do
   let ty ← inferType code
   let codeTy ← whnfD ty
   unless codeTy.isAppOfArity ``Code 2 do
     throwError "materialize_code: {code} is not code: {ty}"
   let codeTy := mkApp2 (mkConst ``Code) (← whnfD codeTy.appFn!.appArg!) (← whnfD codeTy.appArg!)
-  let inst ← synthInstance (mkApp (mkConst ``ToExpr [0]) codeTy)
-  let eval (e : Expr) : MetaM Expr := unsafe evalExpr Expr (mkConst ``Expr)
-    (mkApp3 (mkConst ``ToExpr.toExpr [0]) codeTy inst e)
-  let v ← eval code
-  -- The code materialized so far, written out in full.
-  let mut lits : Array (Name × Expr) := #[]
-  let mut expanded : Std.HashMap Name Expr := {}
-  for g in litNames (← getEnv) do
-    let lhs ← lhsOf g
-    if (← isDefEq (← inferType lhs) ty) then
-      let (e, m) ← (expandLit g).run expanded
-      expanded := m
-      lits := lits.push (g, e)
-  let (abs, gs) ← (abstractCalls lits v).run #[]
+  let v ← evalCode codeTy.appFn!.appArg! codeTy.appArg! code
+  let (abs, gs) ← abstractToLits (← expandedLits ty) v
   let lhss ← gs.mapM lhsOf
   -- `abs` with the `i`-th callee (marked `.bvar (1000000 + i)`) replaced by `f i`.
   let inst (f : Nat → Expr) : Expr :=
@@ -649,26 +1406,18 @@ meta def materialize (N : Name) (code : Expr) (flat : Bool := false) : MetaM Uni
     name := N ++ `lit, levelParams := [], type := ty, value := litV
     hints := .abbrev, safety := .safe }
   let eqTy (rhs : Expr) := mkApp3 (mkConst ``Eq [1]) ty code rhs
-  -- If the code reaches literals: `code = e'` by unfolding (`unfoldToLits`),
-  -- and `e' = N.lit` by evaluation.
-  let I := codeTy.appFn!.appArg!
-  let C := codeTy.appArg!
+  -- If the code reaches literals: `code = e` by unfolding (`unfoldToLits`),
+  -- `e = e'` for the kernel (`kernelTerm`), and `e' = N.lit` by evaluation.
   if let some (e, prf) ← unfoldToLits N code then
-    -- `code = e` by unfolding, `e = e'` by flattening its blocks, and `e' = N.lit`
-    -- by evaluation.
-    let prf := match ← (if flat then flattenCode? I C e else pure none) with
-      | some (e', q) => mkApp6 (mkConst ``Eq.trans [1]) ty code e e' prf q
-      | none => prf
+    let (e', q) ← forKernel N ty e
     addDecl <| .thmDecl {
       name := N ++ `lit_eq, levelParams := [], type := eqTy (mkConst (N ++ `lit)),
-      value := ShareCommon.shareCommon' prf }
+      value := ShareCommon.shareCommon' (mkApp6 (mkConst ``Eq.trans [1]) ty code e e' prf q) }
     return
-  -- `code = code'` by flattening its blocks, `code' = abs[callees]` by evaluation,
-  -- then each callee rewritten to its literal.
-  let mut prf := match ← (if flat then flattenCode? I C code else pure none) with
-    | some (code', q) => mkApp6 (mkConst ``Eq.trans [1]) ty code code' (inst fun i => lhss[i]!) q
-        (mkApp2 (mkConst ``Eq.refl [1]) ty code')
-    | none => mkApp2 (mkConst ``Eq.refl [1]) ty code
+  -- `code = code'` for the kernel, `code' = abs[callees]` by evaluation, then each
+  -- callee rewritten to its literal. (The callees' code stays as it is, so that the
+  -- kernel need not evaluate it.)
+  let mut prf := (← forKernel N ty code (lhss.filterMap (·.getAppFn.constName?))).2
   for i in [0:gs.size] do
     -- The code with the literals of the first `i` callees, and `x` for the `i`-th.
     let motive := Expr.lam `x ty
@@ -777,9 +1526,9 @@ elab "materialize_table " id:ident n:num m:(num)? : command => liftTermElabM do
   -- A table of `Nat`s is packed in one number (`Lit.packed_eq`).
   if β == nat then
     let vals : List Nat ← match m with
-      | none => unsafe evalExpr (List Nat) (mkApp (mkConst ``List [0]) nat) (valsOf (mkConst f))
+      | none => unsafe evalOnce (List Nat) (mkApp (mkConst ``List [0]) nat) (valsOf (mkConst f))
       | some _ => do
-        let rows ← unsafe evalExpr (List (List Nat)) listTy (valsOf (mkConst f))
+        let rows ← unsafe evalOnce (List (List Nat)) listTy (valsOf (mkConst f))
         pure rows.flatten
     let w := max 1 (vals.foldl (fun w v => max w v.log2.succ) 0)
     let N := vals.foldr (fun v acc => v ||| (acc <<< w)) 0
@@ -809,7 +1558,7 @@ elab "materialize_table " id:ident n:num m:(num)? : command => liftTermElabM do
       value := prf }
     return
   let inst ← synthInstance (mkApp (mkConst ``ToExpr [0]) listTy)
-  let l ← unsafe evalExpr Expr (mkConst ``Expr) (mkApp3 (mkConst ``ToExpr.toExpr [0]) listTy inst
+  let l ← unsafe evalOnce Expr (mkConst ``Expr) (mkApp3 (mkConst ``ToExpr.toExpr [0]) listTy inst
     (valsOf (mkConst f)))
   let l := ShareCommon.shareCommon' l
   -- `valsOf f = l`: by evaluation, of `f` with the literals it reaches
@@ -845,14 +1594,12 @@ meta def materializeValue (N : Name) (v : Expr) : MetaM Unit := do
   let ty ← instantiateMVars (← inferType v)
   if ty.hasLevelParam || ty.hasMVar then throwError "materialize_value: {v} is universe polymorphic"
   let inst ← synthInstance (mkApp (mkConst ``ToExpr [0]) ty)
-  let l ← unsafe evalExpr Expr (mkConst ``Expr) (mkApp3 (mkConst ``ToExpr.toExpr [0]) ty inst v)
+  let l ← unsafe evalOnce Expr (mkConst ``Expr) (mkApp3 (mkConst ``ToExpr.toExpr [0]) ty inst v)
   addDecl (forceExpose := true) <| .defnDecl {
     name := N ++ `lit, levelParams := [], type := ty, value := ShareCommon.shareCommon' l
     hints := .abbrev, safety := .safe }
   -- By evaluation, of `v` with the literals it reaches (`unfoldToLits`) if any.
-  let prf ← match ← unfoldToLits N v with
-    | some (_, prf) => pure prf
-    | none => pure (mkApp2 (mkConst ``Eq.refl [1]) ty v)
+  let prf ← litProof N ty v
   addDecl <| .thmDecl {
     name := N ++ `lit_eq, levelParams := [], type := mkApp3 (mkConst ``Eq [1]) ty v (mkConst (N ++ `lit))
     value := ShareCommon.shareCommon' prf }
@@ -896,28 +1643,6 @@ elab_rules : command
     let e ← instantiateMVars (← Term.elabTermAndSynthesize t none)
     if e.hasMVar || e.hasFVar then throwError "materialize_code: {e} is not closed"
     materialize ((← getCurrNamespace) ++ id.getId) e
-
-open Lit in
-/-- `materialize_flat_code` is `materialize_code` for code whose blocks are
-built with `++` nested to the left (rows appended one by one, …), which the
-kernel's evaluation would rebuild once for every `++` above them: `N.lit_eq`
-goes through the code with each block flattened (`flattenCode`), which the
-kernel evaluates in time linear in its length. Elsewhere it costs more to
-unfold than it saves: the generators that decide much at each step, or
-nest their appends to the right. It can cost far more: 3DES's x86-64
-literals took 0.6 s with `materialize_code` and 40 s with it. Use it only
-where measuring the file shows it faster. -/
-syntax "materialize_flat_code " ident (" := " term)? : command
-
-open Lit in
-elab_rules : command
-  | `(materialize_flat_code $id:ident) => liftTermElabM do
-    let foo ← realizeGlobalConstNoOverloadWithInfo id
-    materialize foo (mkConst foo) (flat := true)
-  | `(materialize_flat_code $id:ident := $t) => liftTermElabM do
-    let e ← instantiateMVars (← Term.elabTermAndSynthesize t none)
-    if e.hasMVar || e.hasFVar then throwError "materialize_flat_code: {e} is not closed"
-    materialize ((← getCurrNamespace) ++ id.getId) e (flat := true)
 
 open Lit in
 /-- `materialize_template N := f x₁ … xₖ`, for code that is a function of
@@ -1054,7 +1779,8 @@ elab "rw_lit" : tactic => withMainContext do
     replaceMainGoal [← g.replaceTargetEq (tgt.replace fun t => if t == s then some s' else none) eqPrf]
 
 /-- `decide +kernel`, after rewriting the code constants of the goal to their
-literals (`rw_lit`). -/
-macro "lit_decide" : tactic => `(tactic| (rw_lit; decide +kernel))
+literals (`rw_lit`) and its functions to those the kernel evaluates cheaply
+(`kernel_rw`). -/
+macro "lit_decide" : tactic => `(tactic| (rw_lit; kernel_rw; decide +kernel))
 
 end VG

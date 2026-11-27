@@ -9,10 +9,9 @@ public import VerifiedGarbage.Proof.Framework.X86_64.ZFrame
 public import VerifiedGarbage.Proof.Framework.X86_64.ZLaneSse
 public import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Exec
 public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Spec
-public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Aes
-public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Gh48
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Loop
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Loop48
-public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Pair
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Pow
 import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Contract
@@ -22,15 +21,13 @@ import VerifiedGarbage.Proof.Framework.X86_64.Avx512
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.X86_64.Sse
 import VerifiedGarbage.Proof.Gcm.Short
-import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Keep
+import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Loop
 import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Loop48
 import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemMask
 import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Aes
 import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Base
-import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Gh
 import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Group
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Gh
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Pow
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchZTo.Base
 
 /-!
@@ -627,10 +624,8 @@ theorem grpM_ok {ix : Bool} {s₀ : State} (hp : Stitch.LPre ix s₀) (g : Nat �
       (fun a b hab hb l hl => by
         rw [i₂, o₂, e16, show 64 * (j + a) = 64 * j + 16 * (4 * a) by omega_using [], addr, oaddr]
         simp only [aregs, List.length_cons, List.length_nil] at hb
-        cases ix
-        · exact Offset.disjoint _ (Or.inr (by omega_using [hab])) (by omega_using [hc, hwd, hb, hl]) (by omega_using [hc, hwd, hab, hb])
-        · exact ((hp.d_w rfl).sub_left (Offset.sub_base _ (by omega_using [hc, hb, hl]))).sub_right
-            (Offset.sub_base _ (by omega_using [hc, hab, hb])))
+        exact hp.separate (.inr (by omega_using [hab])) (by omega_using [hc, hb, hl])
+          (by omega_using [hc, hab, hb]))
       (by simp only [aregs, List.length_cons, List.length_nil]; omega_using [hc, hrdx, hw]))
     fun s₃ ⟨b₃, fr₃, g₃, rd₃, wr₃, x₃, cp₃⟩ => ?_
   have hm₂ : s₂.mem = s.mem := by rw [f₂.mem, f₁.mem]
@@ -650,10 +645,7 @@ theorem grpM_ok {ix : Bool} {s₀ : State} (hp : Stitch.LPre ix s₀) (g : Nat �
       Region.Disjoint ⟨bAddr s₀ k, 16⟩ r := fun k hk hck r hr => by
     simp only [List.mem_singleton] at hr
     subst hr
-    cases ix
-    · intro a h₁ h₂
-      exact VG.Proof.Aes.X86_64.AesNi.run_sep hwd hk hc (by omega_using [hck]) h₁ h₂
-    · exact ((hp.d_w rfl).sub_left (Offset.sub_base _ (by omega_using [hk]))).sub_right (Offset.sub_base _ (by omega_using [hc]))
+    exact hp.separate (.inr (by omega_using [hck])) (by omega_using [hk]) (by omega_using [hc])
   -- The blocks written.
   have out₃ : ∀ k < c + 16, blockAt s₃.mem (Stitch.wAddr ix s₀ k) = ctb s₀ k := by
     intro k hk

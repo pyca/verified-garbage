@@ -1,29 +1,31 @@
 module
 
-public import VerifiedGarbage.Proof.Blowfish.Arm.FbVerified
-public import VerifiedGarbage.Proof.Blowfish.Arm.FbFinalVerified
-public import VerifiedGarbage.Impl.Blowfish.Arm.FbFinal
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.Arm.Print
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Blowfish.Cfb
+public import VerifiedGarbage.Spec.Blowfish.CfbFinal
+import VerifiedGarbage.Proof.Blowfish.Arm.Scrub
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # Blowfish-CFB64 on ARMv7 -/
 
-@[expose] public section
-
 namespace VG.Artifacts.BlowfishCfb.Arm
 
-def artifacts : List Artifact := [
+public def artifacts : List (Artifact Arm.target) := [
   Spec.Blowfish.cfbEncryptApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.Blowfish.Arm.cfbEncrypt
-    verified := Proof.Blowfish.Arm.cfbEncrypt_framed },
+    code := Impl.Blowfish.Arm.Fn.cfbEncrypt
+    verified := Proof.Blowfish.Arm.Fn.cfbEncrypt },
   Spec.Blowfish.cfbDecryptApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.Blowfish.Arm.cfbDecrypt
-    verified := Proof.Blowfish.Arm.cfbDecrypt_framed },
+    code := Impl.Blowfish.Arm.Fn.cfbDecrypt
+    verified := Proof.Blowfish.Arm.Fn.cfbDecrypt },
   Spec.Blowfish.cfbEncryptFinalApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.Blowfish.Arm.cfbEncryptFinal
-    verified := Proof.Blowfish.Arm.cfbEncryptFinal_framed },
+    code := Impl.Blowfish.Arm.Fn.cfbEncryptFinal
+    verified := Proof.Blowfish.Arm.Fn.cfbEncryptFinal },
   Spec.Blowfish.cfbDecryptFinalApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.Blowfish.Arm.cfbDecryptFinal
-    verified := Proof.Blowfish.Arm.cfbDecryptFinal_framed }]
+    code := Impl.Blowfish.Arm.Fn.cfbDecryptFinal
+    verified := Proof.Blowfish.Arm.Fn.cfbDecryptFinal }]
+
+spec_apis artifacts
 
 end VG.Artifacts.BlowfishCfb.Arm

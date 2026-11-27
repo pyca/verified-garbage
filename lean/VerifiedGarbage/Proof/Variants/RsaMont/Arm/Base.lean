@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Bignum.Arm.MontBackend
 public import VerifiedGarbage.Proof.Bignum.Arm.MontCallContract
 public import VerifiedGarbage.Proof.Bignum.Arm.MontCallCT
-public import VerifiedGarbage.Proof.Bignum.Arm.MontCallFn
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-! # The baseline callable Montgomery product and square -/
 
@@ -17,6 +17,8 @@ def variant : MontBackend where
   correct := montCallFn_ok
   rawCT := montCallFn_ct
   stackOk := by decide +kernel
+  mulOk := by lit_decide
+  callerOk := fun _ _ h => h
   suffix := ""
   features := []
 

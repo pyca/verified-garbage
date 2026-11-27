@@ -1,13 +1,11 @@
 module
--- separate module: its proofs (the candidate loop, about 2 s) build in parallel with `Core`'s, which `Loop` also imports
 
+-- separate module: its proofs (the candidate loop, about 2 s) build in parallel with `Core`'s, which `Loop` also imports
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Prep
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Steps
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Bytes
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Copy
 
 /-!
 # Deterministic ECDSA on x86-64: the candidate

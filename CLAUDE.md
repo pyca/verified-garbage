@@ -69,9 +69,16 @@ own changes are rebuilt either way, on top of the restored build.
   verified code with a contract in `Spec/`. That includes padding, partial
   blocks and segments, the order of absorb, pad and squeeze, constants
   (rates, suffixes, lengths), rejection sampling, the retry and outer loops
-  of key generation, comparing tags, and wiping output on failure. When the
-  verified functions cannot do what the API needs, never fill the gap in
-  Rust, even "for now" or on only some targets: add the verified function
+  of key generation, comparing tags, and wiping output on failure. It
+  includes the layout of a secret result: the verified function writes it
+  where the Rust code returns it, a result shorter than its buffer first,
+  zeros after it, so that the Rust code at most truncates over zeros.
+  The Rust code never moves secret bytes (`drain`, `copy_within`, ...) or
+  grows a buffer that holds them, which leaves copies the caller cannot
+  wipe (#6301); `ci/check_secret_residue.py` makes every such call in
+  `src/` say why it leaves nothing behind (`// NO-SECRET-RESIDUE: <why>`).
+  When the verified functions cannot do what the API needs, never fill the
+  gap in Rust, even "for now" or on only some targets: add the verified function
   first, in its own spec PR, then the implementation PR. If you find
   cryptography in Rust, do not extend it or copy it to a new algorithm or
   target. Move it into verified code and delete the Rust. Nothing checks
@@ -195,13 +202,15 @@ own changes are rebuilt either way, on top of the restored build.
   features of the algorithm's variants (and a variant that needs none, by
   its suffix): never describe an implementation's techniques there, or
   anywhere else that is not its code and proofs.
-* **x86-64 functions return without secret residue.** Every x86-64
-  artifact proves `NoResidue` (`TCB/X86_64/Residue.lean`;
-  `Registration.residue`, which `X86_64.Scrub.scrubReg` provides), but those
-  `ci/residue_allowlist.txt` lists. The list only shrinks: never add a line
-  (`ci/check_residue_allowlist.py`); the emitter refuses an unlisted function
-  without a proof, and a listed one that has one or no longer exists, so
-  converting a function removes its line (the `adding-a-primitive` skill).
+* **Functions return without secret residue.** Every artifact proves its
+  ISA's `NoResidue` (`TCB/<ISA>/Residue.lean`) as part of what its
+  registration proves (`verified :=` a `VerifiedScrubbed …`,
+  `TCB/Registration.lean`): there is no way to register a function without
+  it. The cleanup is part of
+  the function's code: the function as emitted, cleanup included, is a
+  definition in `Impl/`, one theorem in `Proof/` is about that definition,
+  and the registration file only binds the two, with no scrub wrapper,
+  register list or side condition in it (the `adding-a-primitive` skill).
 * The emitter runs compiled code, so it must be what the kernel checked:
   nothing the artifacts or the emitter use may carry `implemented_by`,
   `extern` or `export`, and nothing in `lean/VerifiedGarbage/` may declare a
@@ -225,9 +234,19 @@ own changes are rebuilt either way, on top of the restored build.
   (`Spec/Mcdt.lean`): the dispatcher of every function whose code has such
   an instruction runs it first (`Printer.mcdt`, "Dispatchers" in
   `TCB/Rust.lean`), so a new x86-64 function needs no sequence of its own.
+  Code that reaches such instructions only on some paths (large inputs) may
+  call `vg_mcdt_enter` itself on those paths instead, and run them only
+  where it returned 1 (`Rust.mcdtOpen`: the `else` of an `ite .e` right
+  after the call and `test eax, eax`, and the functions called there); its
+  dispatcher then does not, and the other paths pay nothing.
 * `TCB/` holds definitions only and imports only Lean core; lemmas go in
-  `Proof/`. `Spec/` and `Impl/` never import `Proof/`.
-  `ci/check_lean_imports.py` checks both.
+  `Proof/`. `Spec/` and `Impl/` never import `Proof/`. Nothing in
+  `lean/VerifiedGarbage/` imports the project's other libraries
+  (`VerifiedGarbageTest`, `VerifiedGarbageAuditBase`), and every library of
+  `lean/lakefile.toml` loads the audit records' plugin, but the plugin's own
+  and `AuditBase` (a module that wrote no records, unless named as one of
+  this project's, is trusted as Lean's). `ci/check_lean_imports.py` checks
+  all four.
 
 ## Skills
 
@@ -369,6 +388,12 @@ namespace VG.Proof.Md5.X86_64
 * `lake build` turns off Mathlib's style and tactic-analysis linters (the
   lakefile's `weak.` options), 5–8% of the build: never turn them back on
   in a module.
+* No two modules declare the same name, unless as the same theorem (same
+  statement): no module may import both, and `lake check` imports every
+  module together (`ci/lean_unique_decls.lean`, which CI runs on the whole
+  build). A target's declaration in a namespace that every target shares
+  ends in the target's name (`openToResRISCV64`); one only its own file
+  uses is `private`.
 * An exposed definition may not refer to a private declaration of its file,
   and the auxiliary declarations of a theorem's proof are private to it:
   a lemma another file uses is a top-level theorem, not a `where` lemma.
@@ -418,21 +443,36 @@ lemmas and tactics to use; read it before writing a proof:
   the lemmas of `Proof/Framework/<ISA>/RegUpd.lean` given their arguments,
   never `rfl`.
 * **What the kernel evaluates:** use `Nat` arithmetic (`RegSet`, not
-  `List Reg`). Code, tables and values it evaluates get a literal
+  `List Reg`; a bit mask of a region's public bytes, not a list of slots).
+  Code, tables and values it evaluates get a literal
   (`materialize_code`, `materialize_table`, `materialize_value`), checked
   with `lit_decide` or `taint_decide`, never `decide +kernel`, and every
   module that evaluates the code imports its `Lit` module, registration
   files too (nothing checks this: `ci/lit_imports.py` ranks the misses
-  that cost the build). Arithmetic it evaluates is in a closed term: with
+  that cost the build). A check of long code that `rw_lit` cannot
+  see, behind a structure with proofs (a registration's `r.code`, a
+  variant's functions), is `taint_decide_lit`'s or `lit_decide_lit`'s.
+  Arithmetic it evaluates is in a closed term: with
   a variable anywhere in the term it adds and shifts in unary. A checker's
-  environment is a list, not a function updated at every write. An equation
+  environment is a list or a tree, not a function updated at every write. An equation
   between code is `kernel_rfl`'s, never `decide +kernel`'s. A property
   of every instruction of code that calls verified functions follows from
   theirs (`NoSp.seq`, `NoSp.leaf`), and its registration's `spSafe` from it
   (`NoSp.spSafe`): never evaluate a wrapper with the code it calls. A
   function evaluated at every instruction matches on the instruction once
   (`spSafe` on x86 and x86-64 by `Code.all_of_spTest`, not
-  `Code.all_of_allInstrs`).
+  `Code.all_of_allInstrs`), with its cases closed (`inline_match%`). A check
+  that a family of functions all need is one declaration for the family, where
+  they share code that is not a literal, or run the same code from the same
+  taint (`taint_decide_ct_all`). A check that walks code is declared for the
+  kernel, after its definition, with `kernel_fn`. An
+  analysis's step gives a state that is evaluated, whose fields it does
+  not change are the terms they were (`Taint.forceT`, `keepBases`), but a
+  numeral wider than 64 bits it changed, left as a term (the kernel hashes
+  a numeral's low 64 bits): the kernel then finds again a step it has made
+  from the same state. A list it would walk at every step is asked through
+  a number that is a function of the list, which the kernel computes once
+  for a list (`Taint.slotMask`).
 * **Arithmetic side conditions:** finite facts by one `decide` on the
   bounded statement, not `interval_cases`; nested `if`s with
   `↓ite_eq_left`/`↓ite_eq_right`; ranges at offsets with `VG.Offset`, not
@@ -455,22 +495,28 @@ lemmas and tactics to use; read it before writing a proof:
   recursive result with a `dsimproc`; unfold a model's function on an
   instruction with its `dsimproc` (`reduceExec`, `Proof/Framework/<ISA>/Reduce.lean`),
   not by naming it in `simp`, which copies its `match`'s equation lemmas into
-  every module.
+  every module that does not see a module with them (`realize_eqns`).
 * **Elaboration:** ascribe instruction-list literals next to `++`; use
   `with_reducible assumption`; split a precondition of many facts with
   `sig_split` and `rename_i`, not one `obtain`; import `Proof/Framework/PowLit.lean` for
-  numeral exponents; prefer simprocs to `simp (config := {decide := true})`
-  on expensive facts; put tactic modules that import only core in
+  numeral exponents; `open` only what a file uses; prefer simprocs to
+  `simp (config := {decide := true})` on expensive facts; put tactic modules that import only core in
   `NativeTactics`, and keep Mathlib's interpreted tactics (`tauto`,
-  `nlinarith`) out of hot proofs. One call often takes most of a slow
+  `nlinarith`) out of hot proofs; set `compiler.extract_closed false` in a
+  module of large literals. One call often takes most of a slow
   proof: work repeated in every case of a split (`cases x <;> simp_all`),
   `simp (disch := omega)`, `omega` on a fact that is not linear, an
   alternative of `first` that fails slowly, an implicit argument left to
-  unification.
+  unification, a rewrite or `linarith` of every hypothesis (`at *`), a
+  tactic for a discharger on a goal with binders, `rw` by a definition that
+  is a `&&` of `decide`s. In a long proof, `obtain x : T := proof` rather than `have`
+  for a fact with a proof of its own: `have` keeps the proof in the
+  context, which every nested `by` shares again.
 * **Imports:** never `Mathlib.Tactic` or all of Mathlib; keep
   `IntervalCases`, `NormNum`, `Ring` and heavy algebra out of modules many
-  others import; a module of one target never imports another target's,
-  and a new file directly in `TCB/` is listed in `NativeTCB`
+  others import, and never `public import` Mathlib in one that many read; a
+  module of one target never imports another target's, and a new file
+  directly in `TCB/` is listed in `NativeTCB`
   (`ci/check_lean_imports.py`).
 
 ## Iterating on one proof
@@ -483,7 +529,7 @@ builds only it and what it imports, and after that only what changed
 see the `lean-profiling` skill):
 
 ```sh
-lake build --log-level=warning +VerifiedGarbage.Proof.Md5.X86_64.Compress
+lake build --log-level=warning +VerifiedGarbage.Proof.Rc2.AArch64.Cipher
 ```
 
 To check the artifact and regenerate its code, run `EmitOne.lean` on its
@@ -492,14 +538,18 @@ emitter's audits on its artifacts, and writes (or, with `--check`, compares)
 only its files under `crates/`, in seconds once the proofs are built:
 
 ```sh
-lake env lean --run EmitOne.lean Md5.X86_64
-lake env lean --run EmitOne.lean --check Md5.X86_64
+lake env lean --run EmitOne.lean Rc2.AArch64
+lake env lean --run EmitOne.lean --check Rc2.AArch64
 ```
 
-It refuses a file that is new or that other registration files also emit into
-(each table of constants has a file of its own, `consts/<name>.rs`, which it
-writes like any other); the full emitter handles those, and the checks below
-still run everything before pushing.
+When the files it would write might differ from what the full emitter
+writes (a new file, one other registration files also emit into, or internal
+functions declared elsewhere than on disk, since which module's file declares
+each depends on every registration file of the target), it says why and
+emits every registration file of the target instead, as `Emit.lean` does
+(slower, but exact). Each table of constants has a file of its own,
+`consts/<name>.rs`, which it writes like any other. The checks below still
+run everything before pushing.
 
 ## Checks to run before pushing
 

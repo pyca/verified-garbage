@@ -13,8 +13,6 @@ import VerifiedGarbage.Proof.Framework.Arm.Contract
 namespace VG.Proof.Rsa.Arm
 open VG VG.Arm VG.Impl.Rsa.Arm.PrivChecked VG.Proof.Bignum.Arm VG.Proof.Mont
 
-theorem freed_mem_eq (n : Nat) (s : State) : (freed n s).mem = s.mem := rfl
-
 def entered (s : State) : State := allocated frameBytes (pcPushed s)
 
 structure PrivFnInput (g : PrivGeometry) (bs : Fin 8 → List Byte) (s : State) : Prop where
@@ -38,10 +36,10 @@ theorem savedRegion_separate {g : PrivGeometry} (h : g.Valid) :
   simp only [bodyWrites, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
   · exact h.innerSaved.symm
-  · unfold PrivGeometry.savedRegion PrivGeometry.calleeRegion FrameStack.belowA
+  · unfold PrivGeometry.calleeRegion PrivGeometry.savedRegion FrameStack.belowA
     rw [h.stackBase, Offset.add_add]
-    exact Offset.disjoint_base _ (by decide : 56 ≤ 56 + frameBytes)
-      (by decide : 56 + frameBytes + 56 ≤ 2 ^ 64)
+    exact Offset.disjoint_base _ (by decide : 104 ≤ 104 + frameBytes)
+      (by decide : 104 + frameBytes + 56 ≤ 2 ^ 64)
   · exact h.stackOutput.sub_left h.savedSub
   · exact h.stackWorkspace.sub_left h.savedSub
 

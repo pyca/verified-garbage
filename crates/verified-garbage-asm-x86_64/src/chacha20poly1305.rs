@@ -4,11 +4,13 @@
 #![allow(dead_code)]
 
 /// The CPU features `vg_chacha20_poly1305_seal_ifma` requires (`Artifact.features`).
-pub const VG_CHACHA20_POLY1305_SEAL_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX2);
+pub const VG_CHACHA20_POLY1305_SEAL_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512IFMA);
 
 /// ChaCha20-Poly1305 encryption (RFC 8439 §2.8): with the key `*key` and the nonce `*nonce`, encrypts the `len` bytes at `data` in place and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`.
 ///
 /// Contract: `VG.Spec.ChaCha20Poly1305.sealContract`. Constant time: only the pointers and the lengths may affect timing, not the key, the nonce or the data. The block counter wraps around beyond 2³²-1 blocks of data (RFC 8439's `P_MAX`), which the caller must not exceed for the construction to be secure.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -19,24 +21,26 @@ pub const VG_CHACHA20_POLY1305_SEAL_IFMA_FEATURES: verified_garbage_cpu::Feature
 /// * `tag` must be valid for reads and writes of 16 bytes.
 /// * `data` and `tag` must not overlap each other, `key`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `key`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 1768 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx512f`, `avx`, `avx512ifma` and `avx2` target features.
+/// * The CPU must support the `avx`, `avx512f` and `avx512ifma` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_seal_ifma(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SI1kJPhIi0QkEEiJBCQ="
 call {vg_chacha20_poly1305_seal_body_ifma}
-.base64 "SI1kJAjD"
+.base64 "SI1kJAjF+e/AxfHvycXp79LF4e/bxdnv5MXR7+3Fye/2xcHv/8RBOe/AxEEx78nEQSnv0sRBIe/bxEEZ7+TEQRHv7cRBCe/2xEEB7/9FMdtIjWQk+EyJHCRIjaQkIPn//8X+f4QkwAYAAMX+f4QkoAYAAMX+f4QkgAYAAMX+f4QkYAYAAMX+f4QkQAYAAMX+f4QkIAYAAMX+f4QkAAYAAMX+f4Qk4AUAAMX+f4QkwAUAAMX+f4QkoAUAAMX+f4QkgAUAAMX+f4QkYAUAAMX+f4QkQAUAAMX+f4QkIAUAAMX+f4QkAAUAAMX+f4Qk4AQAAMX+f4QkwAQAAMX+f4QkoAQAAMX+f4QkgAQAAMX+f4QkYAQAAMX+f4QkQAQAAMX+f4QkIAQAAMX+f4QkAAQAAMX+f4Qk4AMAAMX+f4QkwAMAAMX+f4QkoAMAAMX+f4QkgAMAAMX+f4QkYAMAAMX+f4QkQAMAAMX+f4QkIAMAAMX+f4QkAAMAAMX+f4Qk4AIAAMX+f4QkwAIAAMX+f4QkoAIAAMX+f4QkgAIAAMX+f4QkYAIAAMX+f4QkQAIAAMX+f4QkIAIAAMX+f4QkAAIAAMX+f4Qk4AEAAMX+f4QkwAEAAMX+f4QkoAEAAMX+f4QkgAEAAMX+f4QkYAEAAMX+f4QkQAEAAMX+f4QkIAEAAMX+f4QkAAEAAMX+f4Qk4AAAAMX+f4QkwAAAAMX+f4QkoAAAAMX+f4QkgAAAAMX+f0QkYMX+f0QkQMX+f0QkIMX+fwQkSI2kJOAGAABIjWQkCDHAMckx0jH2Mf9FMcBFMclFMdLD"
 .p2align 6"#,
         vg_chacha20_poly1305_seal_body_ifma = sym super::chacha20::vg_chacha20_poly1305_seal_body_ifma::vg_chacha20_poly1305_seal_body_ifma,
     )
 }
 
 /// The CPU features `vg_chacha20_poly1305_open_ifma` requires (`Artifact.features`).
-pub const VG_CHACHA20_POLY1305_OPEN_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL | verified_garbage_cpu::feature::AVX512IFMA);
+pub const VG_CHACHA20_POLY1305_OPEN_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL | verified_garbage_cpu::feature::AVX512IFMA);
 
 /// ChaCha20-Poly1305 decryption (RFC 8439 §2.8): with the key `*key`, the nonce `*nonce` and the received tag `*tag`, returns 1 if the tag is that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, having decrypted the ciphertext in place; otherwise returns 0, and the `len` bytes at `data` are zeros. The tags are compared without a branch.
 ///
 /// Contract: `VG.Spec.ChaCha20Poly1305.openZeroContract`. Constant time but for the result: only the pointers, the lengths and whether the function returns 1 or 0 may affect timing, not the key, the nonce, the additional data, the tag or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -47,7 +51,7 @@ pub const VG_CHACHA20_POLY1305_OPEN_IFMA_FEATURES: verified_garbage_cpu::Feature
 /// * `tag` must be valid for reads of 16 bytes.
 /// * `data` must not overlap `key`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `key`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 1784 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx2`, `avx`, `avx512f`, `avx512vl` and `avx512ifma` target features.
+/// * The CPU must support the `avx`, `avx2`, `avx512f`, `avx512vl` and `avx512ifma` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_open_ifma(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
@@ -57,7 +61,7 @@ jb 20f
 call {vg_chacha20_poly1305_open_body_ifma}
 .base64 "QVpBWkFaZg/vwPMPf0QkGPMPf0QkKPMPf0QkOPMPf0QkSPMPf0QkWPMPf0QkaPMPf0QkePMPf4QkiAAAAPMPf4QkmAAAAPMPf4QkqAAAAPMPf4QkuAAAAPMPf4QkyAAAAPMPf4Qk2AAAAPMPf4Qk6AAAAPMPf4Qk+AAAAPMPf4QkCAEAAPMPf4QkGAEAAPMPf4QkKAEAAPMPf4QkOAEAAPMPf4QkSAEAAPMPf4QkWAEAAPMPf4QkaAEAAPMPf4QkeAEAAPMPf4QkiAEAAPMPf4QkmAEAAPMPf4QkqAEAAPMPf4QkuAEAAPMPf4QkyAEAAPMPf4Qk2AEAAPMPf4Qk6AEAAPMPf4Qk+AEAAPMPf4QkCAIAAPMPf4QkGAIAAPMPf4QkKAIAAPMPf4QkOAIAAPMPf4QkSAIAAPMPf4QkWAIAAPMPf4QkaAIAAPMPf4QkeAIAAPMPf4QkiAIAAPMPf4QkmAIAAPMPf4QkqAIAAEiNpCTABgAA"
 21:
-.base64 "ww=="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJPhMiRwkSI2kJBD5///F/n+EJNAGAADF/n+EJLAGAADF/n+EJJAGAADF/n+EJHAGAADF/n+EJFAGAADF/n+EJDAGAADF/n+EJBAGAADF/n+EJPAFAADF/n+EJNAFAADF/n+EJLAFAADF/n+EJJAFAADF/n+EJHAFAADF/n+EJFAFAADF/n+EJDAFAADF/n+EJBAFAADF/n+EJPAEAADF/n+EJNAEAADF/n+EJLAEAADF/n+EJJAEAADF/n+EJHAEAADF/n+EJFAEAADF/n+EJDAEAADF/n+EJBAEAADF/n+EJPADAADF/n+EJNADAADF/n+EJLADAADF/n+EJJADAADF/n+EJHADAADF/n+EJFADAADF/n+EJDADAADF/n+EJBADAADF/n+EJPACAADF/n+EJNACAADF/n+EJLACAADF/n+EJJACAADF/n+EJHACAADF/n+EJFACAADF/n+EJDACAADF/n+EJBACAADF/n+EJPABAADF/n+EJNABAADF/n+EJLABAADF/n+EJJABAADF/n+EJHABAADF/n+EJFABAADF/n+EJDABAADF/n+EJBABAADF/n+EJPAAAADF/n+EJNAAAADF/n+EJLAAAADF/n+EJJAAAADF/n9EJHDF/n9EJFDF/n9EJDDF/n9EJBDzD38EJEiNpCTwBgAASI1kJAiJwDHJMdIx9jH/RTHARTHJRTHSww=="
 20:
 .base64 "SI2kJED5//9Ii4QkyAYAAEiJRCQISIngSIPAGEiJRCQQTYnDSItEJBBMi1QkCEFTUEFS"
 call {vg_chacha20_poly1305_open_body_avx512vl}
@@ -70,11 +74,13 @@ jmp 21b
 }
 
 /// The CPU features `vg_chacha20_poly1305_open_to_ifma` requires (`Artifact.features`).
-pub const VG_CHACHA20_POLY1305_OPEN_TO_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL | verified_garbage_cpu::feature::AVX512IFMA);
+pub const VG_CHACHA20_POLY1305_OPEN_TO_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL | verified_garbage_cpu::feature::AVX512IFMA);
 
 /// ChaCha20-Poly1305 decryption (RFC 8439 §2.8), out of place: with the key `*key`, the nonce `*nonce` and the received tag `*tag`, returns 1 if the tag is that of the `len` bytes of ciphertext at `src` and the `aad_len` bytes of additional data at `aad`, having then written the plaintext to the `dst_len = len` bytes at `dst`; otherwise returns 0, having written zeros to them: `vg_chacha20_poly1305_open` with the ciphertext read from `src` and the plaintext written to `dst`. `src` is not written, and `dst` is a buffer of its own: it overlaps no other buffer, `src` included. The tags are compared without a branch.
 ///
 /// Contract: `VG.Spec.ChaCha20Poly1305.openToContract`. Constant time but for the result: only the pointers, the lengths and whether the function returns 1 or 0 may affect timing, not the key, the nonce, the additional data, the tag or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -88,7 +94,7 @@ pub const VG_CHACHA20_POLY1305_OPEN_TO_IFMA_FEATURES: verified_garbage_cpu::Feat
 /// * `len` must be at most `P_MAX`, 2³² − 1 blocks of 64 bytes (RFC 8439 §2.8).
 /// * `dst` must not overlap `key`, `nonce`, `aad`, `src`, `tag` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `key`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the return address on the stack or the 1800 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx2`, `avx`, `avx512f`, `avx512vl` and `avx512ifma` target features.
+/// * The CPU must support the `avx`, `avx2`, `avx512f`, `avx512vl` and `avx512ifma` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_open_to_ifma(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
@@ -98,7 +104,7 @@ jb 20f
 call {vg_chacha20_poly1305_open_body_ifma}
 .base64 "QVpBWkFaZg/vwPMPf0QkKPMPf0QkOPMPf0QkSPMPf0QkWPMPf0QkaPMPf0QkePMPf4QkiAAAAPMPf4QkmAAAAPMPf4QkqAAAAPMPf4QkuAAAAPMPf4QkyAAAAPMPf4Qk2AAAAPMPf4Qk6AAAAPMPf4Qk+AAAAPMPf4QkCAEAAPMPf4QkGAEAAPMPf4QkKAEAAPMPf4QkOAEAAPMPf4QkSAEAAPMPf4QkWAEAAPMPf4QkaAEAAPMPf4QkeAEAAPMPf4QkiAEAAPMPf4QkmAEAAPMPf4QkqAEAAPMPf4QkuAEAAPMPf4QkyAEAAPMPf4Qk2AEAAPMPf4Qk6AEAAPMPf4Qk+AEAAPMPf4QkCAIAAPMPf4QkGAIAAPMPf4QkKAIAAPMPf4QkOAIAAPMPf4QkSAIAAPMPf4QkWAIAAPMPf4QkaAIAAPMPf4QkeAIAAPMPf4QkiAIAAPMPf4QkmAIAAPMPf4QkqAIAAPMPf4QkuAIAAEiNpCTQBgAA"
 21:
-.base64 "ww=="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJPhMiRwkSI2kJAD5///F/n+EJOAGAADF/n+EJMAGAADF/n+EJKAGAADF/n+EJIAGAADF/n+EJGAGAADF/n+EJEAGAADF/n+EJCAGAADF/n+EJAAGAADF/n+EJOAFAADF/n+EJMAFAADF/n+EJKAFAADF/n+EJIAFAADF/n+EJGAFAADF/n+EJEAFAADF/n+EJCAFAADF/n+EJAAFAADF/n+EJOAEAADF/n+EJMAEAADF/n+EJKAEAADF/n+EJIAEAADF/n+EJGAEAADF/n+EJEAEAADF/n+EJCAEAADF/n+EJAAEAADF/n+EJOADAADF/n+EJMADAADF/n+EJKADAADF/n+EJIADAADF/n+EJGADAADF/n+EJEADAADF/n+EJCADAADF/n+EJAADAADF/n+EJOACAADF/n+EJMACAADF/n+EJKACAADF/n+EJIACAADF/n+EJGACAADF/n+EJEACAADF/n+EJCACAADF/n+EJAACAADF/n+EJOABAADF/n+EJMABAADF/n+EJKABAADF/n+EJIABAADF/n+EJGABAADF/n+EJEABAADF/n+EJCABAADF/n+EJAABAADF/n+EJOAAAADF/n+EJMAAAADF/n+EJKAAAADF/n+EJIAAAADF/n9EJGDF/n9EJEDF/n9EJCDF/n8EJEiNpCQABwAASI1kJAiJwDHJMdIx9jH/RTHARTHJRTHSww=="
 20:
 .base64 "SI2kJDD5//9Ii4Qk2AYAAEiJRCQISIuEJOAGAABIiUQkEEiLhCToBgAASIlEJBhIieBIg8AoSIlEJCBIi0QkIEyLVCQYTYnDTItEJAhBU1BBUg=="
 call {vg_chacha20_poly1305_open_body_avx512vl}
@@ -111,11 +117,13 @@ jmp 21b
 }
 
 /// The CPU features `vg_chacha20_poly1305_seal_gather_ifma` requires (`Artifact.features`).
-pub const VG_CHACHA20_POLY1305_SEAL_GATHER_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX2);
+pub const VG_CHACHA20_POLY1305_SEAL_GATHER_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512IFMA);
 
 /// ChaCha20-Poly1305 encryption (RFC 8439 §2.8), out of place, of a plaintext in pieces: with the key `*key` and the nonce `*nonce`, encrypts the concatenation of the `src_count` slices that `src` lists (each an address and a length, in bytes), writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_chacha20_poly1305_seal` with the plaintext gathered from `src`.
 ///
 /// Contract: `VG.Spec.ChaCha20Poly1305.sealGatherContract`. Constant time: only the pointers, the lengths, `src_count` and where the slices are (their addresses and lengths) may affect timing, not the key, the nonce, the additional data or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -129,7 +137,7 @@ pub const VG_CHACHA20_POLY1305_SEAL_GATHER_IFMA_FEATURES: verified_garbage_cpu::
 /// * `len` must be at most `P_MAX`, 2³² − 1 blocks of 64 bytes (RFC 8439 §2.8).
 /// * `dst` and `tag` must not overlap each other, `key`, `nonce`, `aad`, `src`, the slices `src` lists or the arguments on the stack (distinct Rust objects never do).
 /// * None of `key`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the return address on the stack or the 1880 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx512f`, `avx512ifma` and `avx2` target features.
+/// * The CPU must support the `avx`, `avx512f` and `avx512ifma` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_seal_gather_ifma(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
@@ -273,13 +281,13 @@ jmp 228f
 227:
 228:
 .base64 "SIt8JChIi3QkIEiLVCQYSItMJBBMi0QkOEyLTCRASItEJEhQ"
-call {vg_chacha20_poly1305_seal_ifma}
+call {vg_chacha20_poly1305_seal_ifma_core}
 .base64 "WFhYWFhYWA=="
 21:
-.base64 "ww=="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJPhMiRwkSI2kJLD4///F/n+EJDAHAADF/n+EJBAHAADF/n+EJPAGAADF/n+EJNAGAADF/n+EJLAGAADF/n+EJJAGAADF/n+EJHAGAADF/n+EJFAGAADF/n+EJDAGAADF/n+EJBAGAADF/n+EJPAFAADF/n+EJNAFAADF/n+EJLAFAADF/n+EJJAFAADF/n+EJHAFAADF/n+EJFAFAADF/n+EJDAFAADF/n+EJBAFAADF/n+EJPAEAADF/n+EJNAEAADF/n+EJLAEAADF/n+EJJAEAADF/n+EJHAEAADF/n+EJFAEAADF/n+EJDAEAADF/n+EJBAEAADF/n+EJPADAADF/n+EJNADAADF/n+EJLADAADF/n+EJJADAADF/n+EJHADAADF/n+EJFADAADF/n+EJDADAADF/n+EJBADAADF/n+EJPACAADF/n+EJNACAADF/n+EJLACAADF/n+EJJACAADF/n+EJHACAADF/n+EJFACAADF/n+EJDACAADF/n+EJBACAADF/n+EJPABAADF/n+EJNABAADF/n+EJLABAADF/n+EJJABAADF/n+EJHABAADF/n+EJFABAADF/n+EJDABAADF/n+EJBABAADF/n+EJPAAAADF/n+EJNAAAADF/n+EJLAAAADF/n+EJJAAAADF/n9EJHDF/n9EJFDF/n9EJDDF/n9EJBDzD38EJEiNpCRQBwAASI1kJAgxwDHJMdIx9jH/RTHARTHJRTHSww=="
 .p2align 6"#,
         vg_chacha20_poly1305_seal_split_ifma = sym super::chacha20::vg_chacha20_poly1305_seal_split_ifma::vg_chacha20_poly1305_seal_split_ifma,
-        vg_chacha20_poly1305_seal_ifma = sym super::chacha20poly1305::vg_chacha20_poly1305_seal_ifma,
+        vg_chacha20_poly1305_seal_ifma_core = sym super::chacha20::vg_chacha20_poly1305_seal_ifma_core::vg_chacha20_poly1305_seal_ifma_core,
     )
 }
 
@@ -289,6 +297,8 @@ pub const VG_CHACHA20_POLY1305_SEAL_AVX512VL_FEATURES: verified_garbage_cpu::Fea
 /// ChaCha20-Poly1305 encryption (RFC 8439 §2.8): with the key `*key` and the nonce `*nonce`, encrypts the `len` bytes at `data` in place and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`.
 ///
 /// Contract: `VG.Spec.ChaCha20Poly1305.sealContract`. Constant time: only the pointers and the lengths may affect timing, not the key, the nonce or the data. The block counter wraps around beyond 2³²-1 blocks of data (RFC 8439's `P_MAX`), which the caller must not exceed for the construction to be secure.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -458,7 +468,7 @@ call {vg_poly1305_blocks_avx512}
 call {vg_poly1305_finalize_scratch}
 .base64 "SYn/SYHvwAEAAEmLH0mLbwhNi28QTYt3GE2LZyhNi38gZg/vwPMPf0QkGPMPf0QkKPMPf0QkOPMPf0QkSPMPf0QkWPMPf0QkaPMPf0QkePMPf4QkiAAAAPMPf4QkmAAAAPMPf4QkqAAAAPMPf4QkuAAAAPMPf4QkyAAAAPMPf4Qk2AAAAPMPf4Qk6AAAAPMPf4Qk+AAAAPMPf4QkCAEAAPMPf4QkGAEAAPMPf4QkKAEAAPMPf4QkOAEAAPMPf4QkSAEAAPMPf4QkWAEAAPMPf4QkaAEAAPMPf4QkeAEAAPMPf4QkiAEAAPMPf4QkmAEAAPMPf4QkqAEAAPMPf4QkuAEAAPMPf4QkyAEAAPMPf4Qk2AEAAPMPf4Qk6AEAAPMPf4Qk+AEAAPMPf4QkCAIAAPMPf4QkGAIAAPMPf4QkKAIAAPMPf4QkOAIAAPMPf4QkSAIAAPMPf4QkWAIAAPMPf4QkaAIAAPMPf4QkeAIAAPMPf4QkiAIAAPMPf4QkmAIAAPMPf4QkqAIAAEiNpCTABgAA"
 21:
-.base64 "ww=="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJPhMiRwkSI2kJCD5///F/n+EJMAGAADF/n+EJKAGAADF/n+EJIAGAADF/n+EJGAGAADF/n+EJEAGAADF/n+EJCAGAADF/n+EJAAGAADF/n+EJOAFAADF/n+EJMAFAADF/n+EJKAFAADF/n+EJIAFAADF/n+EJGAFAADF/n+EJEAFAADF/n+EJCAFAADF/n+EJAAFAADF/n+EJOAEAADF/n+EJMAEAADF/n+EJKAEAADF/n+EJIAEAADF/n+EJGAEAADF/n+EJEAEAADF/n+EJCAEAADF/n+EJAAEAADF/n+EJOADAADF/n+EJMADAADF/n+EJKADAADF/n+EJIADAADF/n+EJGADAADF/n+EJEADAADF/n+EJCADAADF/n+EJAADAADF/n+EJOACAADF/n+EJMACAADF/n+EJKACAADF/n+EJIACAADF/n+EJGACAADF/n+EJEACAADF/n+EJCACAADF/n+EJAACAADF/n+EJOABAADF/n+EJMABAADF/n+EJKABAADF/n+EJIABAADF/n+EJGABAADF/n+EJEABAADF/n+EJCABAADF/n+EJAABAADF/n+EJOAAAADF/n+EJMAAAADF/n+EJKAAAADF/n+EJIAAAADF/n9EJGDF/n9EJEDF/n9EJCDF/n8EJEiNpCTgBgAASI1kJAgxwDHJMdIx9jH/RTHARTHJRTHSww=="
 29:
 jne 213f
 .base64 "SLgAAAAAAAAAAEi4AAAAAAAAAABIuAAAAAAAAAAASLgAAAAAAAAAAEi4AAAAAAAAAAC4AAAAAEiDwAE="
@@ -523,11 +533,13 @@ jmp 21b
 }
 
 /// The CPU features `vg_chacha20_poly1305_open_avx512vl` requires (`Artifact.features`).
-pub const VG_CHACHA20_POLY1305_OPEN_AVX512VL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL);
+pub const VG_CHACHA20_POLY1305_OPEN_AVX512VL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL);
 
 /// ChaCha20-Poly1305 decryption (RFC 8439 §2.8): with the key `*key`, the nonce `*nonce` and the received tag `*tag`, returns 1 if the tag is that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, having decrypted the ciphertext in place; otherwise returns 0, and the `len` bytes at `data` are zeros. The tags are compared without a branch.
 ///
 /// Contract: `VG.Spec.ChaCha20Poly1305.openZeroContract`. Constant time but for the result: only the pointers, the lengths and whether the function returns 1 or 0 may affect timing, not the key, the nonce, the additional data, the tag or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -538,7 +550,7 @@ pub const VG_CHACHA20_POLY1305_OPEN_AVX512VL_FEATURES: verified_garbage_cpu::Fea
 /// * `tag` must be valid for reads of 16 bytes.
 /// * `data` must not overlap `key`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `key`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 1784 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx2`, `avx`, `avx512f` and `avx512vl` target features.
+/// * The CPU must support the `avx`, `avx2`, `avx512f` and `avx512vl` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_open_avx512vl(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
@@ -548,7 +560,7 @@ jb 20f
 call {vg_chacha20_poly1305_open_body_avx512vl_large}
 .base64 "QVpBWkFaZg/vwPMPf0QkGPMPf0QkKPMPf0QkOPMPf0QkSPMPf0QkWPMPf0QkaPMPf0QkePMPf4QkiAAAAPMPf4QkmAAAAPMPf4QkqAAAAPMPf4QkuAAAAPMPf4QkyAAAAPMPf4Qk2AAAAPMPf4Qk6AAAAPMPf4Qk+AAAAPMPf4QkCAEAAPMPf4QkGAEAAPMPf4QkKAEAAPMPf4QkOAEAAPMPf4QkSAEAAPMPf4QkWAEAAPMPf4QkaAEAAPMPf4QkeAEAAPMPf4QkiAEAAPMPf4QkmAEAAPMPf4QkqAEAAPMPf4QkuAEAAPMPf4QkyAEAAPMPf4Qk2AEAAPMPf4Qk6AEAAPMPf4Qk+AEAAPMPf4QkCAIAAPMPf4QkGAIAAPMPf4QkKAIAAPMPf4QkOAIAAPMPf4QkSAIAAPMPf4QkWAIAAPMPf4QkaAIAAPMPf4QkeAIAAPMPf4QkiAIAAPMPf4QkmAIAAPMPf4QkqAIAAEiNpCTABgAA"
 21:
-.base64 "ww=="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJPhMiRwkSI2kJBD5///F/n+EJNAGAADF/n+EJLAGAADF/n+EJJAGAADF/n+EJHAGAADF/n+EJFAGAADF/n+EJDAGAADF/n+EJBAGAADF/n+EJPAFAADF/n+EJNAFAADF/n+EJLAFAADF/n+EJJAFAADF/n+EJHAFAADF/n+EJFAFAADF/n+EJDAFAADF/n+EJBAFAADF/n+EJPAEAADF/n+EJNAEAADF/n+EJLAEAADF/n+EJJAEAADF/n+EJHAEAADF/n+EJFAEAADF/n+EJDAEAADF/n+EJBAEAADF/n+EJPADAADF/n+EJNADAADF/n+EJLADAADF/n+EJJADAADF/n+EJHADAADF/n+EJFADAADF/n+EJDADAADF/n+EJBADAADF/n+EJPACAADF/n+EJNACAADF/n+EJLACAADF/n+EJJACAADF/n+EJHACAADF/n+EJFACAADF/n+EJDACAADF/n+EJBACAADF/n+EJPABAADF/n+EJNABAADF/n+EJLABAADF/n+EJJABAADF/n+EJHABAADF/n+EJFABAADF/n+EJDABAADF/n+EJBABAADF/n+EJPAAAADF/n+EJNAAAADF/n+EJLAAAADF/n+EJJAAAADF/n9EJHDF/n9EJFDF/n9EJDDF/n9EJBDzD38EJEiNpCTwBgAASI1kJAiJwDHJMdIx9jH/RTHARTHJRTHSww=="
 20:
 .base64 "SI2kJED5//9Ii4QkyAYAAEiJRCQISIngSIPAGEiJRCQQTYnDSItEJBBMi1QkCEFTUEFS"
 call {vg_chacha20_poly1305_open_body_avx512vl}
@@ -561,11 +573,13 @@ jmp 21b
 }
 
 /// The CPU features `vg_chacha20_poly1305_open_to_avx512vl` requires (`Artifact.features`).
-pub const VG_CHACHA20_POLY1305_OPEN_TO_AVX512VL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL);
+pub const VG_CHACHA20_POLY1305_OPEN_TO_AVX512VL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL);
 
 /// ChaCha20-Poly1305 decryption (RFC 8439 §2.8), out of place: with the key `*key`, the nonce `*nonce` and the received tag `*tag`, returns 1 if the tag is that of the `len` bytes of ciphertext at `src` and the `aad_len` bytes of additional data at `aad`, having then written the plaintext to the `dst_len = len` bytes at `dst`; otherwise returns 0, having written zeros to them: `vg_chacha20_poly1305_open` with the ciphertext read from `src` and the plaintext written to `dst`. `src` is not written, and `dst` is a buffer of its own: it overlaps no other buffer, `src` included. The tags are compared without a branch.
 ///
 /// Contract: `VG.Spec.ChaCha20Poly1305.openToContract`. Constant time but for the result: only the pointers, the lengths and whether the function returns 1 or 0 may affect timing, not the key, the nonce, the additional data, the tag or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -579,7 +593,7 @@ pub const VG_CHACHA20_POLY1305_OPEN_TO_AVX512VL_FEATURES: verified_garbage_cpu::
 /// * `len` must be at most `P_MAX`, 2³² − 1 blocks of 64 bytes (RFC 8439 §2.8).
 /// * `dst` must not overlap `key`, `nonce`, `aad`, `src`, `tag` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `key`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the return address on the stack or the 1800 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx2`, `avx`, `avx512f` and `avx512vl` target features.
+/// * The CPU must support the `avx`, `avx2`, `avx512f` and `avx512vl` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_open_to_avx512vl(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
@@ -589,7 +603,7 @@ jb 20f
 call {vg_chacha20_poly1305_open_body_avx512vl_large}
 .base64 "QVpBWkFaZg/vwPMPf0QkKPMPf0QkOPMPf0QkSPMPf0QkWPMPf0QkaPMPf0QkePMPf4QkiAAAAPMPf4QkmAAAAPMPf4QkqAAAAPMPf4QkuAAAAPMPf4QkyAAAAPMPf4Qk2AAAAPMPf4Qk6AAAAPMPf4Qk+AAAAPMPf4QkCAEAAPMPf4QkGAEAAPMPf4QkKAEAAPMPf4QkOAEAAPMPf4QkSAEAAPMPf4QkWAEAAPMPf4QkaAEAAPMPf4QkeAEAAPMPf4QkiAEAAPMPf4QkmAEAAPMPf4QkqAEAAPMPf4QkuAEAAPMPf4QkyAEAAPMPf4Qk2AEAAPMPf4Qk6AEAAPMPf4Qk+AEAAPMPf4QkCAIAAPMPf4QkGAIAAPMPf4QkKAIAAPMPf4QkOAIAAPMPf4QkSAIAAPMPf4QkWAIAAPMPf4QkaAIAAPMPf4QkeAIAAPMPf4QkiAIAAPMPf4QkmAIAAPMPf4QkqAIAAPMPf4QkuAIAAEiNpCTQBgAA"
 21:
-.base64 "ww=="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJPhMiRwkSI2kJAD5///F/n+EJOAGAADF/n+EJMAGAADF/n+EJKAGAADF/n+EJIAGAADF/n+EJGAGAADF/n+EJEAGAADF/n+EJCAGAADF/n+EJAAGAADF/n+EJOAFAADF/n+EJMAFAADF/n+EJKAFAADF/n+EJIAFAADF/n+EJGAFAADF/n+EJEAFAADF/n+EJCAFAADF/n+EJAAFAADF/n+EJOAEAADF/n+EJMAEAADF/n+EJKAEAADF/n+EJIAEAADF/n+EJGAEAADF/n+EJEAEAADF/n+EJCAEAADF/n+EJAAEAADF/n+EJOADAADF/n+EJMADAADF/n+EJKADAADF/n+EJIADAADF/n+EJGADAADF/n+EJEADAADF/n+EJCADAADF/n+EJAADAADF/n+EJOACAADF/n+EJMACAADF/n+EJKACAADF/n+EJIACAADF/n+EJGACAADF/n+EJEACAADF/n+EJCACAADF/n+EJAACAADF/n+EJOABAADF/n+EJMABAADF/n+EJKABAADF/n+EJIABAADF/n+EJGABAADF/n+EJEABAADF/n+EJCABAADF/n+EJAABAADF/n+EJOAAAADF/n+EJMAAAADF/n+EJKAAAADF/n+EJIAAAADF/n9EJGDF/n9EJEDF/n9EJCDF/n8EJEiNpCQABwAASI1kJAiJwDHJMdIx9jH/RTHARTHJRTHSww=="
 20:
 .base64 "SI2kJDD5//9Ii4Qk2AYAAEiJRCQISIuEJOAGAABIiUQkEEiLhCToBgAASIlEJBhIieBIg8AoSIlEJCBIi0QkIEyLVCQYTYnDTItEJAhBU1BBUg=="
 call {vg_chacha20_poly1305_open_body_avx512vl}
@@ -607,6 +621,8 @@ pub const VG_CHACHA20_POLY1305_SEAL_GATHER_AVX512VL_FEATURES: verified_garbage_c
 /// ChaCha20-Poly1305 encryption (RFC 8439 §2.8), out of place, of a plaintext in pieces: with the key `*key` and the nonce `*nonce`, encrypts the concatenation of the `src_count` slices that `src` lists (each an address and a length, in bytes), writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_chacha20_poly1305_seal` with the plaintext gathered from `src`.
 ///
 /// Contract: `VG.Spec.ChaCha20Poly1305.sealGatherContract`. Constant time: only the pointers, the lengths, `src_count` and where the slices are (their addresses and lengths) may affect timing, not the key, the nonce, the additional data or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -752,22 +768,24 @@ jmp 226f
 225:
 226:
 .base64 "SIt8JChIi3QkIEiLVCQYSItMJBBMi0QkOEyLTCRASItEJEhQ"
-call {vg_chacha20_poly1305_seal_avx512vl}
+call {vg_chacha20_poly1305_seal_avx512vl_core}
 .base64 "WFhYWFhYWA=="
 21:
-.base64 "ww=="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJPhMiRwkSI2kJLD4///F/n+EJDAHAADF/n+EJBAHAADF/n+EJPAGAADF/n+EJNAGAADF/n+EJLAGAADF/n+EJJAGAADF/n+EJHAGAADF/n+EJFAGAADF/n+EJDAGAADF/n+EJBAGAADF/n+EJPAFAADF/n+EJNAFAADF/n+EJLAFAADF/n+EJJAFAADF/n+EJHAFAADF/n+EJFAFAADF/n+EJDAFAADF/n+EJBAFAADF/n+EJPAEAADF/n+EJNAEAADF/n+EJLAEAADF/n+EJJAEAADF/n+EJHAEAADF/n+EJFAEAADF/n+EJDAEAADF/n+EJBAEAADF/n+EJPADAADF/n+EJNADAADF/n+EJLADAADF/n+EJJADAADF/n+EJHADAADF/n+EJFADAADF/n+EJDADAADF/n+EJBADAADF/n+EJPACAADF/n+EJNACAADF/n+EJLACAADF/n+EJJACAADF/n+EJHACAADF/n+EJFACAADF/n+EJDACAADF/n+EJBACAADF/n+EJPABAADF/n+EJNABAADF/n+EJLABAADF/n+EJJABAADF/n+EJHABAADF/n+EJFABAADF/n+EJDABAADF/n+EJBABAADF/n+EJPAAAADF/n+EJNAAAADF/n+EJLAAAADF/n+EJJAAAADF/n9EJHDF/n9EJFDF/n9EJDDF/n9EJBDzD38EJEiNpCRQBwAASI1kJAgxwDHJMdIx9jH/RTHARTHJRTHSww=="
 .p2align 6"#,
         vg_chacha20_poly1305_seal_split_avx512vl = sym super::chacha20::vg_chacha20_poly1305_seal_split_avx512vl::vg_chacha20_poly1305_seal_split_avx512vl,
-        vg_chacha20_poly1305_seal_avx512vl = sym super::chacha20poly1305::vg_chacha20_poly1305_seal_avx512vl,
+        vg_chacha20_poly1305_seal_avx512vl_core = sym super::chacha20::vg_chacha20_poly1305_seal_avx512vl_core::vg_chacha20_poly1305_seal_avx512vl_core,
     )
 }
 
 /// The CPU features `vg_chacha20_poly1305_seal_avx512` requires (`Artifact.features`).
-pub const VG_CHACHA20_POLY1305_SEAL_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F);
+pub const VG_CHACHA20_POLY1305_SEAL_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512F);
 
 /// ChaCha20-Poly1305 encryption (RFC 8439 §2.8): with the key `*key` and the nonce `*nonce`, encrypts the `len` bytes at `data` in place and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`.
 ///
 /// Contract: `VG.Spec.ChaCha20Poly1305.sealContract`. Constant time: only the pointers and the lengths may affect timing, not the key, the nonce or the data. The block counter wraps around beyond 2³²-1 blocks of data (RFC 8439's `P_MAX`), which the caller must not exceed for the construction to be secure.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -778,7 +796,7 @@ pub const VG_CHACHA20_POLY1305_SEAL_AVX512_FEATURES: verified_garbage_cpu::Featu
 /// * `tag` must be valid for reads and writes of 16 bytes.
 /// * `data` and `tag` must not overlap each other, `key`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `key`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 1768 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx2`, `avx` and `avx512f` target features.
+/// * The CPU must support the `avx`, `avx2` and `avx512f` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_seal_avx512(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
@@ -788,7 +806,7 @@ jb 20f
 call {vg_chacha20_poly1305_seal_body_avx512}
 .base64 "SI1kJAg="
 21:
-.base64 "ww=="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJPhMiRwkSI2kJCD5///F/n+EJMAGAADF/n+EJKAGAADF/n+EJIAGAADF/n+EJGAGAADF/n+EJEAGAADF/n+EJCAGAADF/n+EJAAGAADF/n+EJOAFAADF/n+EJMAFAADF/n+EJKAFAADF/n+EJIAFAADF/n+EJGAFAADF/n+EJEAFAADF/n+EJCAFAADF/n+EJAAFAADF/n+EJOAEAADF/n+EJMAEAADF/n+EJKAEAADF/n+EJIAEAADF/n+EJGAEAADF/n+EJEAEAADF/n+EJCAEAADF/n+EJAAEAADF/n+EJOADAADF/n+EJMADAADF/n+EJKADAADF/n+EJIADAADF/n+EJGADAADF/n+EJEADAADF/n+EJCADAADF/n+EJAADAADF/n+EJOACAADF/n+EJMACAADF/n+EJKACAADF/n+EJIACAADF/n+EJGACAADF/n+EJEACAADF/n+EJCACAADF/n+EJAACAADF/n+EJOABAADF/n+EJMABAADF/n+EJKABAADF/n+EJIABAADF/n+EJGABAADF/n+EJEABAADF/n+EJCABAADF/n+EJAABAADF/n+EJOAAAADF/n+EJMAAAADF/n+EJKAAAADF/n+EJIAAAADF/n9EJGDF/n9EJEDF/n9EJCDF/n8EJEiNpCTgBgAASI1kJAgxwDHJMdIx9jH/RTHARTHJRTHSww=="
 20:
 .base64 "SI1kJPhIi0QkEEiJBCQ="
 call {vg_chacha20_poly1305_seal_body_avx2}
@@ -801,11 +819,13 @@ jmp 21b
 }
 
 /// The CPU features `vg_chacha20_poly1305_open_avx512` requires (`Artifact.features`).
-pub const VG_CHACHA20_POLY1305_OPEN_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F);
+pub const VG_CHACHA20_POLY1305_OPEN_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512F);
 
 /// ChaCha20-Poly1305 decryption (RFC 8439 §2.8): with the key `*key`, the nonce `*nonce` and the received tag `*tag`, returns 1 if the tag is that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, having decrypted the ciphertext in place; otherwise returns 0, and the `len` bytes at `data` are zeros. The tags are compared without a branch.
 ///
 /// Contract: `VG.Spec.ChaCha20Poly1305.openZeroContract`. Constant time but for the result: only the pointers, the lengths and whether the function returns 1 or 0 may affect timing, not the key, the nonce, the additional data, the tag or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -816,7 +836,7 @@ pub const VG_CHACHA20_POLY1305_OPEN_AVX512_FEATURES: verified_garbage_cpu::Featu
 /// * `tag` must be valid for reads of 16 bytes.
 /// * `data` must not overlap `key`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `key`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 1784 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx2`, `avx` and `avx512f` target features.
+/// * The CPU must support the `avx`, `avx2` and `avx512f` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_open_avx512(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
@@ -826,7 +846,7 @@ jb 20f
 call {vg_chacha20_poly1305_open_body_avx512}
 .base64 "QVpBWkFaZg/vwPMPf0QkGPMPf0QkKPMPf0QkOPMPf0QkSPMPf0QkWPMPf0QkaPMPf0QkePMPf4QkiAAAAPMPf4QkmAAAAPMPf4QkqAAAAPMPf4QkuAAAAPMPf4QkyAAAAPMPf4Qk2AAAAPMPf4Qk6AAAAPMPf4Qk+AAAAPMPf4QkCAEAAPMPf4QkGAEAAPMPf4QkKAEAAPMPf4QkOAEAAPMPf4QkSAEAAPMPf4QkWAEAAPMPf4QkaAEAAPMPf4QkeAEAAPMPf4QkiAEAAPMPf4QkmAEAAPMPf4QkqAEAAPMPf4QkuAEAAPMPf4QkyAEAAPMPf4Qk2AEAAPMPf4Qk6AEAAPMPf4Qk+AEAAPMPf4QkCAIAAPMPf4QkGAIAAPMPf4QkKAIAAPMPf4QkOAIAAPMPf4QkSAIAAPMPf4QkWAIAAPMPf4QkaAIAAPMPf4QkeAIAAPMPf4QkiAIAAPMPf4QkmAIAAPMPf4QkqAIAAEiNpCTABgAA"
 21:
-.base64 "ww=="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJPhMiRwkSI2kJBD5///F/n+EJNAGAADF/n+EJLAGAADF/n+EJJAGAADF/n+EJHAGAADF/n+EJFAGAADF/n+EJDAGAADF/n+EJBAGAADF/n+EJPAFAADF/n+EJNAFAADF/n+EJLAFAADF/n+EJJAFAADF/n+EJHAFAADF/n+EJFAFAADF/n+EJDAFAADF/n+EJBAFAADF/n+EJPAEAADF/n+EJNAEAADF/n+EJLAEAADF/n+EJJAEAADF/n+EJHAEAADF/n+EJFAEAADF/n+EJDAEAADF/n+EJBAEAADF/n+EJPADAADF/n+EJNADAADF/n+EJLADAADF/n+EJJADAADF/n+EJHADAADF/n+EJFADAADF/n+EJDADAADF/n+EJBADAADF/n+EJPACAADF/n+EJNACAADF/n+EJLACAADF/n+EJJACAADF/n+EJHACAADF/n+EJFACAADF/n+EJDACAADF/n+EJBACAADF/n+EJPABAADF/n+EJNABAADF/n+EJLABAADF/n+EJJABAADF/n+EJHABAADF/n+EJFABAADF/n+EJDABAADF/n+EJBABAADF/n+EJPAAAADF/n+EJNAAAADF/n+EJLAAAADF/n+EJJAAAADF/n9EJHDF/n9EJFDF/n9EJDDF/n9EJBDzD38EJEiNpCTwBgAASI1kJAiJwDHJMdIx9jH/RTHARTHJRTHSww=="
 20:
 .base64 "SI2kJED5//9Ii4QkyAYAAEiJRCQISIngSIPAGEiJRCQQTYnDSItEJBBMi1QkCEFTUEFS"
 call {vg_chacha20_poly1305_open_body_avx2}
@@ -839,11 +859,13 @@ jmp 21b
 }
 
 /// The CPU features `vg_chacha20_poly1305_open_to_avx512` requires (`Artifact.features`).
-pub const VG_CHACHA20_POLY1305_OPEN_TO_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F);
+pub const VG_CHACHA20_POLY1305_OPEN_TO_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512F);
 
 /// ChaCha20-Poly1305 decryption (RFC 8439 §2.8), out of place: with the key `*key`, the nonce `*nonce` and the received tag `*tag`, returns 1 if the tag is that of the `len` bytes of ciphertext at `src` and the `aad_len` bytes of additional data at `aad`, having then written the plaintext to the `dst_len = len` bytes at `dst`; otherwise returns 0, having written zeros to them: `vg_chacha20_poly1305_open` with the ciphertext read from `src` and the plaintext written to `dst`. `src` is not written, and `dst` is a buffer of its own: it overlaps no other buffer, `src` included. The tags are compared without a branch.
 ///
 /// Contract: `VG.Spec.ChaCha20Poly1305.openToContract`. Constant time but for the result: only the pointers, the lengths and whether the function returns 1 or 0 may affect timing, not the key, the nonce, the additional data, the tag or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -857,7 +879,7 @@ pub const VG_CHACHA20_POLY1305_OPEN_TO_AVX512_FEATURES: verified_garbage_cpu::Fe
 /// * `len` must be at most `P_MAX`, 2³² − 1 blocks of 64 bytes (RFC 8439 §2.8).
 /// * `dst` must not overlap `key`, `nonce`, `aad`, `src`, `tag` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `key`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the return address on the stack or the 1800 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx2`, `avx` and `avx512f` target features.
+/// * The CPU must support the `avx`, `avx2` and `avx512f` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_open_to_avx512(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
@@ -867,7 +889,7 @@ jb 20f
 call {vg_chacha20_poly1305_open_body_avx512}
 .base64 "QVpBWkFaZg/vwPMPf0QkKPMPf0QkOPMPf0QkSPMPf0QkWPMPf0QkaPMPf0QkePMPf4QkiAAAAPMPf4QkmAAAAPMPf4QkqAAAAPMPf4QkuAAAAPMPf4QkyAAAAPMPf4Qk2AAAAPMPf4Qk6AAAAPMPf4Qk+AAAAPMPf4QkCAEAAPMPf4QkGAEAAPMPf4QkKAEAAPMPf4QkOAEAAPMPf4QkSAEAAPMPf4QkWAEAAPMPf4QkaAEAAPMPf4QkeAEAAPMPf4QkiAEAAPMPf4QkmAEAAPMPf4QkqAEAAPMPf4QkuAEAAPMPf4QkyAEAAPMPf4Qk2AEAAPMPf4Qk6AEAAPMPf4Qk+AEAAPMPf4QkCAIAAPMPf4QkGAIAAPMPf4QkKAIAAPMPf4QkOAIAAPMPf4QkSAIAAPMPf4QkWAIAAPMPf4QkaAIAAPMPf4QkeAIAAPMPf4QkiAIAAPMPf4QkmAIAAPMPf4QkqAIAAPMPf4QkuAIAAEiNpCTQBgAA"
 21:
-.base64 "ww=="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJPhMiRwkSI2kJAD5///F/n+EJOAGAADF/n+EJMAGAADF/n+EJKAGAADF/n+EJIAGAADF/n+EJGAGAADF/n+EJEAGAADF/n+EJCAGAADF/n+EJAAGAADF/n+EJOAFAADF/n+EJMAFAADF/n+EJKAFAADF/n+EJIAFAADF/n+EJGAFAADF/n+EJEAFAADF/n+EJCAFAADF/n+EJAAFAADF/n+EJOAEAADF/n+EJMAEAADF/n+EJKAEAADF/n+EJIAEAADF/n+EJGAEAADF/n+EJEAEAADF/n+EJCAEAADF/n+EJAAEAADF/n+EJOADAADF/n+EJMADAADF/n+EJKADAADF/n+EJIADAADF/n+EJGADAADF/n+EJEADAADF/n+EJCADAADF/n+EJAADAADF/n+EJOACAADF/n+EJMACAADF/n+EJKACAADF/n+EJIACAADF/n+EJGACAADF/n+EJEACAADF/n+EJCACAADF/n+EJAACAADF/n+EJOABAADF/n+EJMABAADF/n+EJKABAADF/n+EJIABAADF/n+EJGABAADF/n+EJEABAADF/n+EJCABAADF/n+EJAABAADF/n+EJOAAAADF/n+EJMAAAADF/n+EJKAAAADF/n+EJIAAAADF/n9EJGDF/n9EJEDF/n9EJCDF/n8EJEiNpCQABwAASI1kJAiJwDHJMdIx9jH/RTHARTHJRTHSww=="
 20:
 .base64 "SI2kJDD5//9Ii4Qk2AYAAEiJRCQISIuEJOAGAABIiUQkEEiLhCToBgAASIlEJBhIieBIg8AoSIlEJCBIi0QkIEyLVCQYTYnDTItEJAhBU1BBUg=="
 call {vg_chacha20_poly1305_open_body_avx2}
@@ -885,6 +907,8 @@ pub const VG_CHACHA20_POLY1305_SEAL_GATHER_AVX512_FEATURES: verified_garbage_cpu
 /// ChaCha20-Poly1305 encryption (RFC 8439 §2.8), out of place, of a plaintext in pieces: with the key `*key` and the nonce `*nonce`, encrypts the concatenation of the `src_count` slices that `src` lists (each an address and a length, in bytes), writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_chacha20_poly1305_seal` with the plaintext gathered from `src`.
 ///
 /// Contract: `VG.Spec.ChaCha20Poly1305.sealGatherContract`. Constant time: only the pointers, the lengths, `src_count` and where the slices are (their addresses and lengths) may affect timing, not the key, the nonce, the additional data or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1030,22 +1054,24 @@ jmp 226f
 225:
 226:
 .base64 "SIt8JChIi3QkIEiLVCQYSItMJBBMi0QkOEyLTCRASItEJEhQ"
-call {vg_chacha20_poly1305_seal_avx512}
+call {vg_chacha20_poly1305_seal_avx512_core}
 .base64 "WFhYWFhYWA=="
 21:
-.base64 "ww=="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJPhMiRwkSI2kJLD4///F/n+EJDAHAADF/n+EJBAHAADF/n+EJPAGAADF/n+EJNAGAADF/n+EJLAGAADF/n+EJJAGAADF/n+EJHAGAADF/n+EJFAGAADF/n+EJDAGAADF/n+EJBAGAADF/n+EJPAFAADF/n+EJNAFAADF/n+EJLAFAADF/n+EJJAFAADF/n+EJHAFAADF/n+EJFAFAADF/n+EJDAFAADF/n+EJBAFAADF/n+EJPAEAADF/n+EJNAEAADF/n+EJLAEAADF/n+EJJAEAADF/n+EJHAEAADF/n+EJFAEAADF/n+EJDAEAADF/n+EJBAEAADF/n+EJPADAADF/n+EJNADAADF/n+EJLADAADF/n+EJJADAADF/n+EJHADAADF/n+EJFADAADF/n+EJDADAADF/n+EJBADAADF/n+EJPACAADF/n+EJNACAADF/n+EJLACAADF/n+EJJACAADF/n+EJHACAADF/n+EJFACAADF/n+EJDACAADF/n+EJBACAADF/n+EJPABAADF/n+EJNABAADF/n+EJLABAADF/n+EJJABAADF/n+EJHABAADF/n+EJFABAADF/n+EJDABAADF/n+EJBABAADF/n+EJPAAAADF/n+EJNAAAADF/n+EJLAAAADF/n+EJJAAAADF/n9EJHDF/n9EJFDF/n9EJDDF/n9EJBDzD38EJEiNpCRQBwAASI1kJAgxwDHJMdIx9jH/RTHARTHJRTHSww=="
 .p2align 6"#,
         vg_chacha20_poly1305_seal_split_avx512 = sym super::chacha20::vg_chacha20_poly1305_seal_split_avx512::vg_chacha20_poly1305_seal_split_avx512,
-        vg_chacha20_poly1305_seal_avx512 = sym super::chacha20poly1305::vg_chacha20_poly1305_seal_avx512,
+        vg_chacha20_poly1305_seal_avx512_core = sym super::chacha20::vg_chacha20_poly1305_seal_avx512_core::vg_chacha20_poly1305_seal_avx512_core,
     )
 }
 
 /// The CPU features `vg_chacha20_poly1305_seal_avx2` requires (`Artifact.features`).
-pub const VG_CHACHA20_POLY1305_SEAL_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX);
+pub const VG_CHACHA20_POLY1305_SEAL_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
 
 /// ChaCha20-Poly1305 encryption (RFC 8439 §2.8): with the key `*key` and the nonce `*nonce`, encrypts the `len` bytes at `data` in place and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`.
 ///
 /// Contract: `VG.Spec.ChaCha20Poly1305.sealContract`. Constant time: only the pointers and the lengths may affect timing, not the key, the nonce or the data. The block counter wraps around beyond 2³²-1 blocks of data (RFC 8439's `P_MAX`), which the caller must not exceed for the construction to be secure.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1056,24 +1082,26 @@ pub const VG_CHACHA20_POLY1305_SEAL_AVX2_FEATURES: verified_garbage_cpu::Feature
 /// * `tag` must be valid for reads and writes of 16 bytes.
 /// * `data` and `tag` must not overlap each other, `key`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `key`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 1768 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx2` and `avx` target features.
+/// * The CPU must support the `avx` and `avx2` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_seal_avx2(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SI1kJPhIi0QkEEiJBCQ="
 call {vg_chacha20_poly1305_seal_body_avx2}
-.base64 "SI1kJAjD"
+.base64 "SI1kJAjF+e/AxfHvycXp79LF4e/bxdnv5MXR7+3Fye/2xcHv/8RBOe/AxEEx78nEQSnv0sRBIe/bxEEZ7+TEQRHv7cRBCe/2xEEB7/9FMdtIjWQk+EyJHCRIjaQkIPn//8X+f4QkwAYAAMX+f4QkoAYAAMX+f4QkgAYAAMX+f4QkYAYAAMX+f4QkQAYAAMX+f4QkIAYAAMX+f4QkAAYAAMX+f4Qk4AUAAMX+f4QkwAUAAMX+f4QkoAUAAMX+f4QkgAUAAMX+f4QkYAUAAMX+f4QkQAUAAMX+f4QkIAUAAMX+f4QkAAUAAMX+f4Qk4AQAAMX+f4QkwAQAAMX+f4QkoAQAAMX+f4QkgAQAAMX+f4QkYAQAAMX+f4QkQAQAAMX+f4QkIAQAAMX+f4QkAAQAAMX+f4Qk4AMAAMX+f4QkwAMAAMX+f4QkoAMAAMX+f4QkgAMAAMX+f4QkYAMAAMX+f4QkQAMAAMX+f4QkIAMAAMX+f4QkAAMAAMX+f4Qk4AIAAMX+f4QkwAIAAMX+f4QkoAIAAMX+f4QkgAIAAMX+f4QkYAIAAMX+f4QkQAIAAMX+f4QkIAIAAMX+f4QkAAIAAMX+f4Qk4AEAAMX+f4QkwAEAAMX+f4QkoAEAAMX+f4QkgAEAAMX+f4QkYAEAAMX+f4QkQAEAAMX+f4QkIAEAAMX+f4QkAAEAAMX+f4Qk4AAAAMX+f4QkwAAAAMX+f4QkoAAAAMX+f4QkgAAAAMX+f0QkYMX+f0QkQMX+f0QkIMX+fwQkSI2kJOAGAABIjWQkCDHAMckx0jH2Mf9FMcBFMclFMdLD"
 .p2align 6"#,
         vg_chacha20_poly1305_seal_body_avx2 = sym super::chacha20::vg_chacha20_poly1305_seal_body_avx2::vg_chacha20_poly1305_seal_body_avx2,
     )
 }
 
 /// The CPU features `vg_chacha20_poly1305_open_avx2` requires (`Artifact.features`).
-pub const VG_CHACHA20_POLY1305_OPEN_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX);
+pub const VG_CHACHA20_POLY1305_OPEN_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
 
 /// ChaCha20-Poly1305 decryption (RFC 8439 §2.8): with the key `*key`, the nonce `*nonce` and the received tag `*tag`, returns 1 if the tag is that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, having decrypted the ciphertext in place; otherwise returns 0, and the `len` bytes at `data` are zeros. The tags are compared without a branch.
 ///
 /// Contract: `VG.Spec.ChaCha20Poly1305.openZeroContract`. Constant time but for the result: only the pointers, the lengths and whether the function returns 1 or 0 may affect timing, not the key, the nonce, the additional data, the tag or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1084,24 +1112,26 @@ pub const VG_CHACHA20_POLY1305_OPEN_AVX2_FEATURES: verified_garbage_cpu::Feature
 /// * `tag` must be valid for reads of 16 bytes.
 /// * `data` must not overlap `key`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `key`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 1784 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx2` and `avx` target features.
+/// * The CPU must support the `avx` and `avx2` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_open_avx2(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJED5//9Ii4QkyAYAAEiJRCQISIngSIPAGEiJRCQQTYnDSItEJBBMi1QkCEFTUEFS"
 call {vg_chacha20_poly1305_open_body_avx2}
-.base64 "QVpBWkFaZg/vwPMPf0QkGPMPf0QkKPMPf0QkOPMPf0QkSPMPf0QkWPMPf0QkaPMPf0QkePMPf4QkiAAAAPMPf4QkmAAAAPMPf4QkqAAAAPMPf4QkuAAAAPMPf4QkyAAAAPMPf4Qk2AAAAPMPf4Qk6AAAAPMPf4Qk+AAAAPMPf4QkCAEAAPMPf4QkGAEAAPMPf4QkKAEAAPMPf4QkOAEAAPMPf4QkSAEAAPMPf4QkWAEAAPMPf4QkaAEAAPMPf4QkeAEAAPMPf4QkiAEAAPMPf4QkmAEAAPMPf4QkqAEAAPMPf4QkuAEAAPMPf4QkyAEAAPMPf4Qk2AEAAPMPf4Qk6AEAAPMPf4Qk+AEAAPMPf4QkCAIAAPMPf4QkGAIAAPMPf4QkKAIAAPMPf4QkOAIAAPMPf4QkSAIAAPMPf4QkWAIAAPMPf4QkaAIAAPMPf4QkeAIAAPMPf4QkiAIAAPMPf4QkmAIAAPMPf4QkqAIAAEiNpCTABgAAww=="
+.base64 "QVpBWkFaZg/vwPMPf0QkGPMPf0QkKPMPf0QkOPMPf0QkSPMPf0QkWPMPf0QkaPMPf0QkePMPf4QkiAAAAPMPf4QkmAAAAPMPf4QkqAAAAPMPf4QkuAAAAPMPf4QkyAAAAPMPf4Qk2AAAAPMPf4Qk6AAAAPMPf4Qk+AAAAPMPf4QkCAEAAPMPf4QkGAEAAPMPf4QkKAEAAPMPf4QkOAEAAPMPf4QkSAEAAPMPf4QkWAEAAPMPf4QkaAEAAPMPf4QkeAEAAPMPf4QkiAEAAPMPf4QkmAEAAPMPf4QkqAEAAPMPf4QkuAEAAPMPf4QkyAEAAPMPf4Qk2AEAAPMPf4Qk6AEAAPMPf4Qk+AEAAPMPf4QkCAIAAPMPf4QkGAIAAPMPf4QkKAIAAPMPf4QkOAIAAPMPf4QkSAIAAPMPf4QkWAIAAPMPf4QkaAIAAPMPf4QkeAIAAPMPf4QkiAIAAPMPf4QkmAIAAPMPf4QkqAIAAEiNpCTABgAAxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJPhMiRwkSI2kJBD5///F/n+EJNAGAADF/n+EJLAGAADF/n+EJJAGAADF/n+EJHAGAADF/n+EJFAGAADF/n+EJDAGAADF/n+EJBAGAADF/n+EJPAFAADF/n+EJNAFAADF/n+EJLAFAADF/n+EJJAFAADF/n+EJHAFAADF/n+EJFAFAADF/n+EJDAFAADF/n+EJBAFAADF/n+EJPAEAADF/n+EJNAEAADF/n+EJLAEAADF/n+EJJAEAADF/n+EJHAEAADF/n+EJFAEAADF/n+EJDAEAADF/n+EJBAEAADF/n+EJPADAADF/n+EJNADAADF/n+EJLADAADF/n+EJJADAADF/n+EJHADAADF/n+EJFADAADF/n+EJDADAADF/n+EJBADAADF/n+EJPACAADF/n+EJNACAADF/n+EJLACAADF/n+EJJACAADF/n+EJHACAADF/n+EJFACAADF/n+EJDACAADF/n+EJBACAADF/n+EJPABAADF/n+EJNABAADF/n+EJLABAADF/n+EJJABAADF/n+EJHABAADF/n+EJFABAADF/n+EJDABAADF/n+EJBABAADF/n+EJPAAAADF/n+EJNAAAADF/n+EJLAAAADF/n+EJJAAAADF/n9EJHDF/n9EJFDF/n9EJDDF/n9EJBDzD38EJEiNpCTwBgAASI1kJAiJwDHJMdIx9jH/RTHARTHJRTHSww=="
 .p2align 6"#,
         vg_chacha20_poly1305_open_body_avx2 = sym super::chacha20::vg_chacha20_poly1305_open_body_avx2::vg_chacha20_poly1305_open_body_avx2,
     )
 }
 
 /// The CPU features `vg_chacha20_poly1305_open_to_avx2` requires (`Artifact.features`).
-pub const VG_CHACHA20_POLY1305_OPEN_TO_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX);
+pub const VG_CHACHA20_POLY1305_OPEN_TO_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
 
 /// ChaCha20-Poly1305 decryption (RFC 8439 §2.8), out of place: with the key `*key`, the nonce `*nonce` and the received tag `*tag`, returns 1 if the tag is that of the `len` bytes of ciphertext at `src` and the `aad_len` bytes of additional data at `aad`, having then written the plaintext to the `dst_len = len` bytes at `dst`; otherwise returns 0, having written zeros to them: `vg_chacha20_poly1305_open` with the ciphertext read from `src` and the plaintext written to `dst`. `src` is not written, and `dst` is a buffer of its own: it overlaps no other buffer, `src` included. The tags are compared without a branch.
 ///
 /// Contract: `VG.Spec.ChaCha20Poly1305.openToContract`. Constant time but for the result: only the pointers, the lengths and whether the function returns 1 or 0 may affect timing, not the key, the nonce, the additional data, the tag or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1115,13 +1145,13 @@ pub const VG_CHACHA20_POLY1305_OPEN_TO_AVX2_FEATURES: verified_garbage_cpu::Feat
 /// * `len` must be at most `P_MAX`, 2³² − 1 blocks of 64 bytes (RFC 8439 §2.8).
 /// * `dst` must not overlap `key`, `nonce`, `aad`, `src`, `tag` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `key`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the return address on the stack or the 1800 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx2` and `avx` target features.
+/// * The CPU must support the `avx` and `avx2` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_open_to_avx2(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJDD5//9Ii4Qk2AYAAEiJRCQISIuEJOAGAABIiUQkEEiLhCToBgAASIlEJBhIieBIg8AoSIlEJCBIi0QkIEyLVCQYTYnDTItEJAhBU1BBUg=="
 call {vg_chacha20_poly1305_open_body_avx2}
-.base64 "QVpBWkFaZg/vwPMPf0QkKPMPf0QkOPMPf0QkSPMPf0QkWPMPf0QkaPMPf0QkePMPf4QkiAAAAPMPf4QkmAAAAPMPf4QkqAAAAPMPf4QkuAAAAPMPf4QkyAAAAPMPf4Qk2AAAAPMPf4Qk6AAAAPMPf4Qk+AAAAPMPf4QkCAEAAPMPf4QkGAEAAPMPf4QkKAEAAPMPf4QkOAEAAPMPf4QkSAEAAPMPf4QkWAEAAPMPf4QkaAEAAPMPf4QkeAEAAPMPf4QkiAEAAPMPf4QkmAEAAPMPf4QkqAEAAPMPf4QkuAEAAPMPf4QkyAEAAPMPf4Qk2AEAAPMPf4Qk6AEAAPMPf4Qk+AEAAPMPf4QkCAIAAPMPf4QkGAIAAPMPf4QkKAIAAPMPf4QkOAIAAPMPf4QkSAIAAPMPf4QkWAIAAPMPf4QkaAIAAPMPf4QkeAIAAPMPf4QkiAIAAPMPf4QkmAIAAPMPf4QkqAIAAPMPf4QkuAIAAEiNpCTQBgAAww=="
+.base64 "QVpBWkFaZg/vwPMPf0QkKPMPf0QkOPMPf0QkSPMPf0QkWPMPf0QkaPMPf0QkePMPf4QkiAAAAPMPf4QkmAAAAPMPf4QkqAAAAPMPf4QkuAAAAPMPf4QkyAAAAPMPf4Qk2AAAAPMPf4Qk6AAAAPMPf4Qk+AAAAPMPf4QkCAEAAPMPf4QkGAEAAPMPf4QkKAEAAPMPf4QkOAEAAPMPf4QkSAEAAPMPf4QkWAEAAPMPf4QkaAEAAPMPf4QkeAEAAPMPf4QkiAEAAPMPf4QkmAEAAPMPf4QkqAEAAPMPf4QkuAEAAPMPf4QkyAEAAPMPf4Qk2AEAAPMPf4Qk6AEAAPMPf4Qk+AEAAPMPf4QkCAIAAPMPf4QkGAIAAPMPf4QkKAIAAPMPf4QkOAIAAPMPf4QkSAIAAPMPf4QkWAIAAPMPf4QkaAIAAPMPf4QkeAIAAPMPf4QkiAIAAPMPf4QkmAIAAPMPf4QkqAIAAPMPf4QkuAIAAEiNpCTQBgAAxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJPhMiRwkSI2kJAD5///F/n+EJOAGAADF/n+EJMAGAADF/n+EJKAGAADF/n+EJIAGAADF/n+EJGAGAADF/n+EJEAGAADF/n+EJCAGAADF/n+EJAAGAADF/n+EJOAFAADF/n+EJMAFAADF/n+EJKAFAADF/n+EJIAFAADF/n+EJGAFAADF/n+EJEAFAADF/n+EJCAFAADF/n+EJAAFAADF/n+EJOAEAADF/n+EJMAEAADF/n+EJKAEAADF/n+EJIAEAADF/n+EJGAEAADF/n+EJEAEAADF/n+EJCAEAADF/n+EJAAEAADF/n+EJOADAADF/n+EJMADAADF/n+EJKADAADF/n+EJIADAADF/n+EJGADAADF/n+EJEADAADF/n+EJCADAADF/n+EJAADAADF/n+EJOACAADF/n+EJMACAADF/n+EJKACAADF/n+EJIACAADF/n+EJGACAADF/n+EJEACAADF/n+EJCACAADF/n+EJAACAADF/n+EJOABAADF/n+EJMABAADF/n+EJKABAADF/n+EJIABAADF/n+EJGABAADF/n+EJEABAADF/n+EJCABAADF/n+EJAABAADF/n+EJOAAAADF/n+EJMAAAADF/n+EJKAAAADF/n+EJIAAAADF/n9EJGDF/n9EJEDF/n9EJCDF/n8EJEiNpCQABwAASI1kJAiJwDHJMdIx9jH/RTHARTHJRTHSww=="
 .p2align 6"#,
         vg_chacha20_poly1305_open_body_avx2 = sym super::chacha20::vg_chacha20_poly1305_open_body_avx2::vg_chacha20_poly1305_open_body_avx2,
     )
@@ -1133,6 +1163,8 @@ pub const VG_CHACHA20_POLY1305_SEAL_GATHER_AVX2_FEATURES: verified_garbage_cpu::
 /// ChaCha20-Poly1305 encryption (RFC 8439 §2.8), out of place, of a plaintext in pieces: with the key `*key` and the nonce `*nonce`, encrypts the concatenation of the `src_count` slices that `src` lists (each an address and a length, in bytes), writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_chacha20_poly1305_seal` with the plaintext gathered from `src`.
 ///
 /// Contract: `VG.Spec.ChaCha20Poly1305.sealGatherContract`. Constant time: only the pointers, the lengths, `src_count` and where the slices are (their addresses and lengths) may affect timing, not the key, the nonce, the additional data or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1205,10 +1237,10 @@ jmp 21f
 20:
 21:
 .base64 "SIt8JChIi3QkIEiLVCQYSItMJBBMi0QkOEyLTCRASItEJEhQ"
-call {vg_chacha20_poly1305_seal_avx2}
-.base64 "WFhYWFhYWMM="
+call {vg_chacha20_poly1305_seal_avx2_core}
+.base64 "WFhYWFhYWMX578DF8e/Jxenv0sXh79vF2e/kxdHv7cXJ7/bFwe//xEE578DEQTHvycRBKe/SxEEh79vEQRnv5MRBEe/txEEJ7/bEQQHv/0Ux20iNZCT4TIkcJEiNpCSw+P//xf5/hCQwBwAAxf5/hCQQBwAAxf5/hCTwBgAAxf5/hCTQBgAAxf5/hCSwBgAAxf5/hCSQBgAAxf5/hCRwBgAAxf5/hCRQBgAAxf5/hCQwBgAAxf5/hCQQBgAAxf5/hCTwBQAAxf5/hCTQBQAAxf5/hCSwBQAAxf5/hCSQBQAAxf5/hCRwBQAAxf5/hCRQBQAAxf5/hCQwBQAAxf5/hCQQBQAAxf5/hCTwBAAAxf5/hCTQBAAAxf5/hCSwBAAAxf5/hCSQBAAAxf5/hCRwBAAAxf5/hCRQBAAAxf5/hCQwBAAAxf5/hCQQBAAAxf5/hCTwAwAAxf5/hCTQAwAAxf5/hCSwAwAAxf5/hCSQAwAAxf5/hCRwAwAAxf5/hCRQAwAAxf5/hCQwAwAAxf5/hCQQAwAAxf5/hCTwAgAAxf5/hCTQAgAAxf5/hCSwAgAAxf5/hCSQAgAAxf5/hCRwAgAAxf5/hCRQAgAAxf5/hCQwAgAAxf5/hCQQAgAAxf5/hCTwAQAAxf5/hCTQAQAAxf5/hCSwAQAAxf5/hCSQAQAAxf5/hCRwAQAAxf5/hCRQAQAAxf5/hCQwAQAAxf5/hCQQAQAAxf5/hCTwAAAAxf5/hCTQAAAAxf5/hCSwAAAAxf5/hCSQAAAAxf5/RCRwxf5/RCRQxf5/RCQwxf5/RCQQ8w9/BCRIjaQkUAcAAEiNZCQIMcAxyTHSMfYx/0UxwEUxyUUx0sM="
 .p2align 6"#,
-        vg_chacha20_poly1305_seal_avx2 = sym super::chacha20poly1305::vg_chacha20_poly1305_seal_avx2,
+        vg_chacha20_poly1305_seal_avx2_core = sym super::chacha20::vg_chacha20_poly1305_seal_avx2_core::vg_chacha20_poly1305_seal_avx2_core,
     )
 }
 
@@ -1218,6 +1250,8 @@ pub const VG_CHACHA20_POLY1305_SEAL_SSSE3_FEATURES: verified_garbage_cpu::Featur
 /// ChaCha20-Poly1305 encryption (RFC 8439 §2.8): with the key `*key` and the nonce `*nonce`, encrypts the `len` bytes at `data` in place and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`.
 ///
 /// Contract: `VG.Spec.ChaCha20Poly1305.sealContract`. Constant time: only the pointers and the lengths may affect timing, not the key, the nonce or the data. The block counter wraps around beyond 2³²-1 blocks of data (RFC 8439's `P_MAX`), which the caller must not exceed for the construction to be secure.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1234,7 +1268,7 @@ pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_seal_ssse3(key: *const
     core::arch::naked_asm!(
         r#".base64 "SI1kJPhIi0QkEEiJBCQ="
 call {vg_chacha20_poly1305_seal_body_ssse3}
-.base64 "SI1kJAjD"
+.base64 "SI1kJAhmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjWQk+EyJHCRIjaQkIPn///MPf4Qk0AYAAPMPf4QkwAYAAPMPf4QksAYAAPMPf4QkoAYAAPMPf4QkkAYAAPMPf4QkgAYAAPMPf4QkcAYAAPMPf4QkYAYAAPMPf4QkUAYAAPMPf4QkQAYAAPMPf4QkMAYAAPMPf4QkIAYAAPMPf4QkEAYAAPMPf4QkAAYAAPMPf4Qk8AUAAPMPf4Qk4AUAAPMPf4Qk0AUAAPMPf4QkwAUAAPMPf4QksAUAAPMPf4QkoAUAAPMPf4QkkAUAAPMPf4QkgAUAAPMPf4QkcAUAAPMPf4QkYAUAAPMPf4QkUAUAAPMPf4QkQAUAAPMPf4QkMAUAAPMPf4QkIAUAAPMPf4QkEAUAAPMPf4QkAAUAAPMPf4Qk8AQAAPMPf4Qk4AQAAPMPf4Qk0AQAAPMPf4QkwAQAAPMPf4QksAQAAPMPf4QkoAQAAPMPf4QkkAQAAPMPf4QkgAQAAPMPf4QkcAQAAPMPf4QkYAQAAPMPf4QkUAQAAPMPf4QkQAQAAPMPf4QkMAQAAPMPf4QkIAQAAPMPf4QkEAQAAPMPf4QkAAQAAPMPf4Qk8AMAAPMPf4Qk4AMAAPMPf4Qk0AMAAPMPf4QkwAMAAPMPf4QksAMAAPMPf4QkoAMAAPMPf4QkkAMAAPMPf4QkgAMAAPMPf4QkcAMAAPMPf4QkYAMAAPMPf4QkUAMAAPMPf4QkQAMAAPMPf4QkMAMAAPMPf4QkIAMAAPMPf4QkEAMAAPMPf4QkAAMAAPMPf4Qk8AIAAPMPf4Qk4AIAAPMPf4Qk0AIAAPMPf4QkwAIAAPMPf4QksAIAAPMPf4QkoAIAAPMPf4QkkAIAAPMPf4QkgAIAAPMPf4QkcAIAAPMPf4QkYAIAAPMPf4QkUAIAAPMPf4QkQAIAAPMPf4QkMAIAAPMPf4QkIAIAAPMPf4QkEAIAAPMPf4QkAAIAAPMPf4Qk8AEAAPMPf4Qk4AEAAPMPf4Qk0AEAAPMPf4QkwAEAAPMPf4QksAEAAPMPf4QkoAEAAPMPf4QkkAEAAPMPf4QkgAEAAPMPf4QkcAEAAPMPf4QkYAEAAPMPf4QkUAEAAPMPf4QkQAEAAPMPf4QkMAEAAPMPf4QkIAEAAPMPf4QkEAEAAPMPf4QkAAEAAPMPf4Qk8AAAAPMPf4Qk4AAAAPMPf4Qk0AAAAPMPf4QkwAAAAPMPf4QksAAAAPMPf4QkoAAAAPMPf4QkkAAAAPMPf4QkgAAAAPMPf0QkcPMPf0QkYPMPf0QkUPMPf0QkQPMPf0QkMPMPf0QkIPMPf0QkEPMPfwQkSI2kJOAGAABIjWQkCDHAMckx0jH2Mf9FMcBFMclFMdLD"
 .p2align 6"#,
         vg_chacha20_poly1305_seal_body_ssse3 = sym super::chacha20::vg_chacha20_poly1305_seal_body_ssse3::vg_chacha20_poly1305_seal_body_ssse3,
     )
@@ -1246,6 +1280,8 @@ pub const VG_CHACHA20_POLY1305_OPEN_SSSE3_FEATURES: verified_garbage_cpu::Featur
 /// ChaCha20-Poly1305 decryption (RFC 8439 §2.8): with the key `*key`, the nonce `*nonce` and the received tag `*tag`, returns 1 if the tag is that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, having decrypted the ciphertext in place; otherwise returns 0, and the `len` bytes at `data` are zeros. The tags are compared without a branch.
 ///
 /// Contract: `VG.Spec.ChaCha20Poly1305.openZeroContract`. Constant time but for the result: only the pointers, the lengths and whether the function returns 1 or 0 may affect timing, not the key, the nonce, the additional data, the tag or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1262,7 +1298,7 @@ pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_open_ssse3(key: *const
     core::arch::naked_asm!(
         r#".base64 "SI2kJED5//9Ii4QkyAYAAEiJRCQISIngSIPAGEiJRCQQTYnDSItEJBBMi1QkCEFTUEFS"
 call {vg_chacha20_poly1305_open_body_ssse3}
-.base64 "QVpBWkFaZg/vwPMPf0QkGPMPf0QkKPMPf0QkOPMPf0QkSPMPf0QkWPMPf0QkaPMPf0QkePMPf4QkiAAAAPMPf4QkmAAAAPMPf4QkqAAAAPMPf4QkuAAAAPMPf4QkyAAAAPMPf4Qk2AAAAPMPf4Qk6AAAAPMPf4Qk+AAAAPMPf4QkCAEAAPMPf4QkGAEAAPMPf4QkKAEAAPMPf4QkOAEAAPMPf4QkSAEAAPMPf4QkWAEAAPMPf4QkaAEAAPMPf4QkeAEAAPMPf4QkiAEAAPMPf4QkmAEAAPMPf4QkqAEAAPMPf4QkuAEAAPMPf4QkyAEAAPMPf4Qk2AEAAPMPf4Qk6AEAAPMPf4Qk+AEAAPMPf4QkCAIAAPMPf4QkGAIAAPMPf4QkKAIAAPMPf4QkOAIAAPMPf4QkSAIAAPMPf4QkWAIAAPMPf4QkaAIAAPMPf4QkeAIAAPMPf4QkiAIAAPMPf4QkmAIAAPMPf4QkqAIAAEiNpCTABgAAww=="
+.base64 "QVpBWkFaZg/vwPMPf0QkGPMPf0QkKPMPf0QkOPMPf0QkSPMPf0QkWPMPf0QkaPMPf0QkePMPf4QkiAAAAPMPf4QkmAAAAPMPf4QkqAAAAPMPf4QkuAAAAPMPf4QkyAAAAPMPf4Qk2AAAAPMPf4Qk6AAAAPMPf4Qk+AAAAPMPf4QkCAEAAPMPf4QkGAEAAPMPf4QkKAEAAPMPf4QkOAEAAPMPf4QkSAEAAPMPf4QkWAEAAPMPf4QkaAEAAPMPf4QkeAEAAPMPf4QkiAEAAPMPf4QkmAEAAPMPf4QkqAEAAPMPf4QkuAEAAPMPf4QkyAEAAPMPf4Qk2AEAAPMPf4Qk6AEAAPMPf4Qk+AEAAPMPf4QkCAIAAPMPf4QkGAIAAPMPf4QkKAIAAPMPf4QkOAIAAPMPf4QkSAIAAPMPf4QkWAIAAPMPf4QkaAIAAPMPf4QkeAIAAPMPf4QkiAIAAPMPf4QkmAIAAPMPf4QkqAIAAEiNpCTABgAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJPhMiRwkSI2kJBD5///zD3+EJOAGAADzD3+EJNAGAADzD3+EJMAGAADzD3+EJLAGAADzD3+EJKAGAADzD3+EJJAGAADzD3+EJIAGAADzD3+EJHAGAADzD3+EJGAGAADzD3+EJFAGAADzD3+EJEAGAADzD3+EJDAGAADzD3+EJCAGAADzD3+EJBAGAADzD3+EJAAGAADzD3+EJPAFAADzD3+EJOAFAADzD3+EJNAFAADzD3+EJMAFAADzD3+EJLAFAADzD3+EJKAFAADzD3+EJJAFAADzD3+EJIAFAADzD3+EJHAFAADzD3+EJGAFAADzD3+EJFAFAADzD3+EJEAFAADzD3+EJDAFAADzD3+EJCAFAADzD3+EJBAFAADzD3+EJAAFAADzD3+EJPAEAADzD3+EJOAEAADzD3+EJNAEAADzD3+EJMAEAADzD3+EJLAEAADzD3+EJKAEAADzD3+EJJAEAADzD3+EJIAEAADzD3+EJHAEAADzD3+EJGAEAADzD3+EJFAEAADzD3+EJEAEAADzD3+EJDAEAADzD3+EJCAEAADzD3+EJBAEAADzD3+EJAAEAADzD3+EJPADAADzD3+EJOADAADzD3+EJNADAADzD3+EJMADAADzD3+EJLADAADzD3+EJKADAADzD3+EJJADAADzD3+EJIADAADzD3+EJHADAADzD3+EJGADAADzD3+EJFADAADzD3+EJEADAADzD3+EJDADAADzD3+EJCADAADzD3+EJBADAADzD3+EJAADAADzD3+EJPACAADzD3+EJOACAADzD3+EJNACAADzD3+EJMACAADzD3+EJLACAADzD3+EJKACAADzD3+EJJACAADzD3+EJIACAADzD3+EJHACAADzD3+EJGACAADzD3+EJFACAADzD3+EJEACAADzD3+EJDACAADzD3+EJCACAADzD3+EJBACAADzD3+EJAACAADzD3+EJPABAADzD3+EJOABAADzD3+EJNABAADzD3+EJMABAADzD3+EJLABAADzD3+EJKABAADzD3+EJJABAADzD3+EJIABAADzD3+EJHABAADzD3+EJGABAADzD3+EJFABAADzD3+EJEABAADzD3+EJDABAADzD3+EJCABAADzD3+EJBABAADzD3+EJAABAADzD3+EJPAAAADzD3+EJOAAAADzD3+EJNAAAADzD3+EJMAAAADzD3+EJLAAAADzD3+EJKAAAADzD3+EJJAAAADzD3+EJIAAAADzD39EJHDzD39EJGDzD39EJFDzD39EJEDzD39EJDDzD39EJCDzD39EJBDzD38EJEiNpCTwBgAASI1kJAiJwDHJMdIx9jH/RTHARTHJRTHSww=="
 .p2align 6"#,
         vg_chacha20_poly1305_open_body_ssse3 = sym super::chacha20::vg_chacha20_poly1305_open_body_ssse3::vg_chacha20_poly1305_open_body_ssse3,
     )
@@ -1274,6 +1310,8 @@ pub const VG_CHACHA20_POLY1305_OPEN_TO_SSSE3_FEATURES: verified_garbage_cpu::Fea
 /// ChaCha20-Poly1305 decryption (RFC 8439 §2.8), out of place: with the key `*key`, the nonce `*nonce` and the received tag `*tag`, returns 1 if the tag is that of the `len` bytes of ciphertext at `src` and the `aad_len` bytes of additional data at `aad`, having then written the plaintext to the `dst_len = len` bytes at `dst`; otherwise returns 0, having written zeros to them: `vg_chacha20_poly1305_open` with the ciphertext read from `src` and the plaintext written to `dst`. `src` is not written, and `dst` is a buffer of its own: it overlaps no other buffer, `src` included. The tags are compared without a branch.
 ///
 /// Contract: `VG.Spec.ChaCha20Poly1305.openToContract`. Constant time but for the result: only the pointers, the lengths and whether the function returns 1 or 0 may affect timing, not the key, the nonce, the additional data, the tag or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1293,7 +1331,7 @@ pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_open_to_ssse3(key: *co
     core::arch::naked_asm!(
         r#".base64 "SI2kJDD5//9Ii4Qk2AYAAEiJRCQISIuEJOAGAABIiUQkEEiLhCToBgAASIlEJBhIieBIg8AoSIlEJCBIi0QkIEyLVCQYTYnDTItEJAhBU1BBUg=="
 call {vg_chacha20_poly1305_open_body_ssse3}
-.base64 "QVpBWkFaZg/vwPMPf0QkKPMPf0QkOPMPf0QkSPMPf0QkWPMPf0QkaPMPf0QkePMPf4QkiAAAAPMPf4QkmAAAAPMPf4QkqAAAAPMPf4QkuAAAAPMPf4QkyAAAAPMPf4Qk2AAAAPMPf4Qk6AAAAPMPf4Qk+AAAAPMPf4QkCAEAAPMPf4QkGAEAAPMPf4QkKAEAAPMPf4QkOAEAAPMPf4QkSAEAAPMPf4QkWAEAAPMPf4QkaAEAAPMPf4QkeAEAAPMPf4QkiAEAAPMPf4QkmAEAAPMPf4QkqAEAAPMPf4QkuAEAAPMPf4QkyAEAAPMPf4Qk2AEAAPMPf4Qk6AEAAPMPf4Qk+AEAAPMPf4QkCAIAAPMPf4QkGAIAAPMPf4QkKAIAAPMPf4QkOAIAAPMPf4QkSAIAAPMPf4QkWAIAAPMPf4QkaAIAAPMPf4QkeAIAAPMPf4QkiAIAAPMPf4QkmAIAAPMPf4QkqAIAAPMPf4QkuAIAAEiNpCTQBgAAww=="
+.base64 "QVpBWkFaZg/vwPMPf0QkKPMPf0QkOPMPf0QkSPMPf0QkWPMPf0QkaPMPf0QkePMPf4QkiAAAAPMPf4QkmAAAAPMPf4QkqAAAAPMPf4QkuAAAAPMPf4QkyAAAAPMPf4Qk2AAAAPMPf4Qk6AAAAPMPf4Qk+AAAAPMPf4QkCAEAAPMPf4QkGAEAAPMPf4QkKAEAAPMPf4QkOAEAAPMPf4QkSAEAAPMPf4QkWAEAAPMPf4QkaAEAAPMPf4QkeAEAAPMPf4QkiAEAAPMPf4QkmAEAAPMPf4QkqAEAAPMPf4QkuAEAAPMPf4QkyAEAAPMPf4Qk2AEAAPMPf4Qk6AEAAPMPf4Qk+AEAAPMPf4QkCAIAAPMPf4QkGAIAAPMPf4QkKAIAAPMPf4QkOAIAAPMPf4QkSAIAAPMPf4QkWAIAAPMPf4QkaAIAAPMPf4QkeAIAAPMPf4QkiAIAAPMPf4QkmAIAAPMPf4QkqAIAAPMPf4QkuAIAAEiNpCTQBgAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJPhMiRwkSI2kJAD5///zD3+EJPAGAADzD3+EJOAGAADzD3+EJNAGAADzD3+EJMAGAADzD3+EJLAGAADzD3+EJKAGAADzD3+EJJAGAADzD3+EJIAGAADzD3+EJHAGAADzD3+EJGAGAADzD3+EJFAGAADzD3+EJEAGAADzD3+EJDAGAADzD3+EJCAGAADzD3+EJBAGAADzD3+EJAAGAADzD3+EJPAFAADzD3+EJOAFAADzD3+EJNAFAADzD3+EJMAFAADzD3+EJLAFAADzD3+EJKAFAADzD3+EJJAFAADzD3+EJIAFAADzD3+EJHAFAADzD3+EJGAFAADzD3+EJFAFAADzD3+EJEAFAADzD3+EJDAFAADzD3+EJCAFAADzD3+EJBAFAADzD3+EJAAFAADzD3+EJPAEAADzD3+EJOAEAADzD3+EJNAEAADzD3+EJMAEAADzD3+EJLAEAADzD3+EJKAEAADzD3+EJJAEAADzD3+EJIAEAADzD3+EJHAEAADzD3+EJGAEAADzD3+EJFAEAADzD3+EJEAEAADzD3+EJDAEAADzD3+EJCAEAADzD3+EJBAEAADzD3+EJAAEAADzD3+EJPADAADzD3+EJOADAADzD3+EJNADAADzD3+EJMADAADzD3+EJLADAADzD3+EJKADAADzD3+EJJADAADzD3+EJIADAADzD3+EJHADAADzD3+EJGADAADzD3+EJFADAADzD3+EJEADAADzD3+EJDADAADzD3+EJCADAADzD3+EJBADAADzD3+EJAADAADzD3+EJPACAADzD3+EJOACAADzD3+EJNACAADzD3+EJMACAADzD3+EJLACAADzD3+EJKACAADzD3+EJJACAADzD3+EJIACAADzD3+EJHACAADzD3+EJGACAADzD3+EJFACAADzD3+EJEACAADzD3+EJDACAADzD3+EJCACAADzD3+EJBACAADzD3+EJAACAADzD3+EJPABAADzD3+EJOABAADzD3+EJNABAADzD3+EJMABAADzD3+EJLABAADzD3+EJKABAADzD3+EJJABAADzD3+EJIABAADzD3+EJHABAADzD3+EJGABAADzD3+EJFABAADzD3+EJEABAADzD3+EJDABAADzD3+EJCABAADzD3+EJBABAADzD3+EJAABAADzD3+EJPAAAADzD3+EJOAAAADzD3+EJNAAAADzD3+EJMAAAADzD3+EJLAAAADzD3+EJKAAAADzD3+EJJAAAADzD3+EJIAAAADzD39EJHDzD39EJGDzD39EJFDzD39EJEDzD39EJDDzD39EJCDzD39EJBDzD38EJEiNpCQABwAASI1kJAiJwDHJMdIx9jH/RTHARTHJRTHSww=="
 .p2align 6"#,
         vg_chacha20_poly1305_open_body_ssse3 = sym super::chacha20::vg_chacha20_poly1305_open_body_ssse3::vg_chacha20_poly1305_open_body_ssse3,
     )
@@ -1305,6 +1343,8 @@ pub const VG_CHACHA20_POLY1305_SEAL_GATHER_SSSE3_FEATURES: verified_garbage_cpu:
 /// ChaCha20-Poly1305 encryption (RFC 8439 §2.8), out of place, of a plaintext in pieces: with the key `*key` and the nonce `*nonce`, encrypts the concatenation of the `src_count` slices that `src` lists (each an address and a length, in bytes), writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_chacha20_poly1305_seal` with the plaintext gathered from `src`.
 ///
 /// Contract: `VG.Spec.ChaCha20Poly1305.sealGatherContract`. Constant time: only the pointers, the lengths, `src_count` and where the slices are (their addresses and lengths) may affect timing, not the key, the nonce, the additional data or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1371,16 +1411,18 @@ jmp 21f
 20:
 21:
 .base64 "SIt8JChIi3QkIEiLVCQYSItMJBBMi0QkOEyLTCRASItEJEhQ"
-call {vg_chacha20_poly1305_seal_ssse3}
-.base64 "WFhYWFhYWMM="
+call {vg_chacha20_poly1305_seal_ssse3_core}
+.base64 "WFhYWFhYWGYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ZkUP78BmRQ/vyWZFD+/SZkUP79tmRQ/v5GZFD+/tZkUP7/ZmRQ/v/0Ux20iNZCT4TIkcJEiNpCSw+P//8w9/hCRABwAA8w9/hCQwBwAA8w9/hCQgBwAA8w9/hCQQBwAA8w9/hCQABwAA8w9/hCTwBgAA8w9/hCTgBgAA8w9/hCTQBgAA8w9/hCTABgAA8w9/hCSwBgAA8w9/hCSgBgAA8w9/hCSQBgAA8w9/hCSABgAA8w9/hCRwBgAA8w9/hCRgBgAA8w9/hCRQBgAA8w9/hCRABgAA8w9/hCQwBgAA8w9/hCQgBgAA8w9/hCQQBgAA8w9/hCQABgAA8w9/hCTwBQAA8w9/hCTgBQAA8w9/hCTQBQAA8w9/hCTABQAA8w9/hCSwBQAA8w9/hCSgBQAA8w9/hCSQBQAA8w9/hCSABQAA8w9/hCRwBQAA8w9/hCRgBQAA8w9/hCRQBQAA8w9/hCRABQAA8w9/hCQwBQAA8w9/hCQgBQAA8w9/hCQQBQAA8w9/hCQABQAA8w9/hCTwBAAA8w9/hCTgBAAA8w9/hCTQBAAA8w9/hCTABAAA8w9/hCSwBAAA8w9/hCSgBAAA8w9/hCSQBAAA8w9/hCSABAAA8w9/hCRwBAAA8w9/hCRgBAAA8w9/hCRQBAAA8w9/hCRABAAA8w9/hCQwBAAA8w9/hCQgBAAA8w9/hCQQBAAA8w9/hCQABAAA8w9/hCTwAwAA8w9/hCTgAwAA8w9/hCTQAwAA8w9/hCTAAwAA8w9/hCSwAwAA8w9/hCSgAwAA8w9/hCSQAwAA8w9/hCSAAwAA8w9/hCRwAwAA8w9/hCRgAwAA8w9/hCRQAwAA8w9/hCRAAwAA8w9/hCQwAwAA8w9/hCQgAwAA8w9/hCQQAwAA8w9/hCQAAwAA8w9/hCTwAgAA8w9/hCTgAgAA8w9/hCTQAgAA8w9/hCTAAgAA8w9/hCSwAgAA8w9/hCSgAgAA8w9/hCSQAgAA8w9/hCSAAgAA8w9/hCRwAgAA8w9/hCRgAgAA8w9/hCRQAgAA8w9/hCRAAgAA8w9/hCQwAgAA8w9/hCQgAgAA8w9/hCQQAgAA8w9/hCQAAgAA8w9/hCTwAQAA8w9/hCTgAQAA8w9/hCTQAQAA8w9/hCTAAQAA8w9/hCSwAQAA8w9/hCSgAQAA8w9/hCSQAQAA8w9/hCSAAQAA8w9/hCRwAQAA8w9/hCRgAQAA8w9/hCRQAQAA8w9/hCRAAQAA8w9/hCQwAQAA8w9/hCQgAQAA8w9/hCQQAQAA8w9/hCQAAQAA8w9/hCTwAAAA8w9/hCTgAAAA8w9/hCTQAAAA8w9/hCTAAAAA8w9/hCSwAAAA8w9/hCSgAAAA8w9/hCSQAAAA8w9/hCSAAAAA8w9/RCRw8w9/RCRg8w9/RCRQ8w9/RCRA8w9/RCQw8w9/RCQg8w9/RCQQ8w9/BCRIjaQkUAcAAEiNZCQIMcAxyTHSMfYx/0UxwEUxyUUx0sM="
 .p2align 6"#,
-        vg_chacha20_poly1305_seal_ssse3 = sym super::chacha20poly1305::vg_chacha20_poly1305_seal_ssse3,
+        vg_chacha20_poly1305_seal_ssse3_core = sym super::chacha20::vg_chacha20_poly1305_seal_ssse3_core::vg_chacha20_poly1305_seal_ssse3_core,
     )
 }
 
 /// ChaCha20-Poly1305 encryption (RFC 8439 §2.8): with the key `*key` and the nonce `*nonce`, encrypts the `len` bytes at `data` in place and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`.
 ///
 /// Contract: `VG.Spec.ChaCha20Poly1305.sealContract`. Constant time: only the pointers and the lengths may affect timing, not the key, the nonce or the data. The block counter wraps around beyond 2³²-1 blocks of data (RFC 8439's `P_MAX`), which the caller must not exceed for the construction to be secure.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1396,7 +1438,7 @@ pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_seal(key: *const [u8; 
     core::arch::naked_asm!(
         r#".base64 "SI1kJPhIi0QkEEiJBCQ="
 call {vg_chacha20_poly1305_seal_body}
-.base64 "SI1kJAjD"
+.base64 "SI1kJAhmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjWQk+EyJHCRIjaQkIPn///MPf4Qk0AYAAPMPf4QkwAYAAPMPf4QksAYAAPMPf4QkoAYAAPMPf4QkkAYAAPMPf4QkgAYAAPMPf4QkcAYAAPMPf4QkYAYAAPMPf4QkUAYAAPMPf4QkQAYAAPMPf4QkMAYAAPMPf4QkIAYAAPMPf4QkEAYAAPMPf4QkAAYAAPMPf4Qk8AUAAPMPf4Qk4AUAAPMPf4Qk0AUAAPMPf4QkwAUAAPMPf4QksAUAAPMPf4QkoAUAAPMPf4QkkAUAAPMPf4QkgAUAAPMPf4QkcAUAAPMPf4QkYAUAAPMPf4QkUAUAAPMPf4QkQAUAAPMPf4QkMAUAAPMPf4QkIAUAAPMPf4QkEAUAAPMPf4QkAAUAAPMPf4Qk8AQAAPMPf4Qk4AQAAPMPf4Qk0AQAAPMPf4QkwAQAAPMPf4QksAQAAPMPf4QkoAQAAPMPf4QkkAQAAPMPf4QkgAQAAPMPf4QkcAQAAPMPf4QkYAQAAPMPf4QkUAQAAPMPf4QkQAQAAPMPf4QkMAQAAPMPf4QkIAQAAPMPf4QkEAQAAPMPf4QkAAQAAPMPf4Qk8AMAAPMPf4Qk4AMAAPMPf4Qk0AMAAPMPf4QkwAMAAPMPf4QksAMAAPMPf4QkoAMAAPMPf4QkkAMAAPMPf4QkgAMAAPMPf4QkcAMAAPMPf4QkYAMAAPMPf4QkUAMAAPMPf4QkQAMAAPMPf4QkMAMAAPMPf4QkIAMAAPMPf4QkEAMAAPMPf4QkAAMAAPMPf4Qk8AIAAPMPf4Qk4AIAAPMPf4Qk0AIAAPMPf4QkwAIAAPMPf4QksAIAAPMPf4QkoAIAAPMPf4QkkAIAAPMPf4QkgAIAAPMPf4QkcAIAAPMPf4QkYAIAAPMPf4QkUAIAAPMPf4QkQAIAAPMPf4QkMAIAAPMPf4QkIAIAAPMPf4QkEAIAAPMPf4QkAAIAAPMPf4Qk8AEAAPMPf4Qk4AEAAPMPf4Qk0AEAAPMPf4QkwAEAAPMPf4QksAEAAPMPf4QkoAEAAPMPf4QkkAEAAPMPf4QkgAEAAPMPf4QkcAEAAPMPf4QkYAEAAPMPf4QkUAEAAPMPf4QkQAEAAPMPf4QkMAEAAPMPf4QkIAEAAPMPf4QkEAEAAPMPf4QkAAEAAPMPf4Qk8AAAAPMPf4Qk4AAAAPMPf4Qk0AAAAPMPf4QkwAAAAPMPf4QksAAAAPMPf4QkoAAAAPMPf4QkkAAAAPMPf4QkgAAAAPMPf0QkcPMPf0QkYPMPf0QkUPMPf0QkQPMPf0QkMPMPf0QkIPMPf0QkEPMPfwQkSI2kJOAGAABIjWQkCDHAMckx0jH2Mf9FMcBFMclFMdLD"
 .p2align 6"#,
         vg_chacha20_poly1305_seal_body = sym super::chacha20::vg_chacha20_poly1305_seal_body::vg_chacha20_poly1305_seal_body,
     )
@@ -1405,6 +1447,8 @@ call {vg_chacha20_poly1305_seal_body}
 /// ChaCha20-Poly1305 decryption (RFC 8439 §2.8): with the key `*key`, the nonce `*nonce` and the received tag `*tag`, returns 1 if the tag is that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, having decrypted the ciphertext in place; otherwise returns 0, and the `len` bytes at `data` are zeros. The tags are compared without a branch.
 ///
 /// Contract: `VG.Spec.ChaCha20Poly1305.openZeroContract`. Constant time but for the result: only the pointers, the lengths and whether the function returns 1 or 0 may affect timing, not the key, the nonce, the additional data, the tag or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1420,7 +1464,7 @@ pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_open(key: *const [u8; 
     core::arch::naked_asm!(
         r#".base64 "SI2kJED5//9Ii4QkyAYAAEiJRCQISIngSIPAGEiJRCQQTYnDSItEJBBMi1QkCEFTUEFS"
 call {vg_chacha20_poly1305_open_body}
-.base64 "QVpBWkFaZg/vwPMPf0QkGPMPf0QkKPMPf0QkOPMPf0QkSPMPf0QkWPMPf0QkaPMPf0QkePMPf4QkiAAAAPMPf4QkmAAAAPMPf4QkqAAAAPMPf4QkuAAAAPMPf4QkyAAAAPMPf4Qk2AAAAPMPf4Qk6AAAAPMPf4Qk+AAAAPMPf4QkCAEAAPMPf4QkGAEAAPMPf4QkKAEAAPMPf4QkOAEAAPMPf4QkSAEAAPMPf4QkWAEAAPMPf4QkaAEAAPMPf4QkeAEAAPMPf4QkiAEAAPMPf4QkmAEAAPMPf4QkqAEAAPMPf4QkuAEAAPMPf4QkyAEAAPMPf4Qk2AEAAPMPf4Qk6AEAAPMPf4Qk+AEAAPMPf4QkCAIAAPMPf4QkGAIAAPMPf4QkKAIAAPMPf4QkOAIAAPMPf4QkSAIAAPMPf4QkWAIAAPMPf4QkaAIAAPMPf4QkeAIAAPMPf4QkiAIAAPMPf4QkmAIAAPMPf4QkqAIAAEiNpCTABgAAww=="
+.base64 "QVpBWkFaZg/vwPMPf0QkGPMPf0QkKPMPf0QkOPMPf0QkSPMPf0QkWPMPf0QkaPMPf0QkePMPf4QkiAAAAPMPf4QkmAAAAPMPf4QkqAAAAPMPf4QkuAAAAPMPf4QkyAAAAPMPf4Qk2AAAAPMPf4Qk6AAAAPMPf4Qk+AAAAPMPf4QkCAEAAPMPf4QkGAEAAPMPf4QkKAEAAPMPf4QkOAEAAPMPf4QkSAEAAPMPf4QkWAEAAPMPf4QkaAEAAPMPf4QkeAEAAPMPf4QkiAEAAPMPf4QkmAEAAPMPf4QkqAEAAPMPf4QkuAEAAPMPf4QkyAEAAPMPf4Qk2AEAAPMPf4Qk6AEAAPMPf4Qk+AEAAPMPf4QkCAIAAPMPf4QkGAIAAPMPf4QkKAIAAPMPf4QkOAIAAPMPf4QkSAIAAPMPf4QkWAIAAPMPf4QkaAIAAPMPf4QkeAIAAPMPf4QkiAIAAPMPf4QkmAIAAPMPf4QkqAIAAEiNpCTABgAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJPhMiRwkSI2kJBD5///zD3+EJOAGAADzD3+EJNAGAADzD3+EJMAGAADzD3+EJLAGAADzD3+EJKAGAADzD3+EJJAGAADzD3+EJIAGAADzD3+EJHAGAADzD3+EJGAGAADzD3+EJFAGAADzD3+EJEAGAADzD3+EJDAGAADzD3+EJCAGAADzD3+EJBAGAADzD3+EJAAGAADzD3+EJPAFAADzD3+EJOAFAADzD3+EJNAFAADzD3+EJMAFAADzD3+EJLAFAADzD3+EJKAFAADzD3+EJJAFAADzD3+EJIAFAADzD3+EJHAFAADzD3+EJGAFAADzD3+EJFAFAADzD3+EJEAFAADzD3+EJDAFAADzD3+EJCAFAADzD3+EJBAFAADzD3+EJAAFAADzD3+EJPAEAADzD3+EJOAEAADzD3+EJNAEAADzD3+EJMAEAADzD3+EJLAEAADzD3+EJKAEAADzD3+EJJAEAADzD3+EJIAEAADzD3+EJHAEAADzD3+EJGAEAADzD3+EJFAEAADzD3+EJEAEAADzD3+EJDAEAADzD3+EJCAEAADzD3+EJBAEAADzD3+EJAAEAADzD3+EJPADAADzD3+EJOADAADzD3+EJNADAADzD3+EJMADAADzD3+EJLADAADzD3+EJKADAADzD3+EJJADAADzD3+EJIADAADzD3+EJHADAADzD3+EJGADAADzD3+EJFADAADzD3+EJEADAADzD3+EJDADAADzD3+EJCADAADzD3+EJBADAADzD3+EJAADAADzD3+EJPACAADzD3+EJOACAADzD3+EJNACAADzD3+EJMACAADzD3+EJLACAADzD3+EJKACAADzD3+EJJACAADzD3+EJIACAADzD3+EJHACAADzD3+EJGACAADzD3+EJFACAADzD3+EJEACAADzD3+EJDACAADzD3+EJCACAADzD3+EJBACAADzD3+EJAACAADzD3+EJPABAADzD3+EJOABAADzD3+EJNABAADzD3+EJMABAADzD3+EJLABAADzD3+EJKABAADzD3+EJJABAADzD3+EJIABAADzD3+EJHABAADzD3+EJGABAADzD3+EJFABAADzD3+EJEABAADzD3+EJDABAADzD3+EJCABAADzD3+EJBABAADzD3+EJAABAADzD3+EJPAAAADzD3+EJOAAAADzD3+EJNAAAADzD3+EJMAAAADzD3+EJLAAAADzD3+EJKAAAADzD3+EJJAAAADzD3+EJIAAAADzD39EJHDzD39EJGDzD39EJFDzD39EJEDzD39EJDDzD39EJCDzD39EJBDzD38EJEiNpCTwBgAASI1kJAiJwDHJMdIx9jH/RTHARTHJRTHSww=="
 .p2align 6"#,
         vg_chacha20_poly1305_open_body = sym super::chacha20::vg_chacha20_poly1305_open_body::vg_chacha20_poly1305_open_body,
     )
@@ -1429,6 +1473,8 @@ call {vg_chacha20_poly1305_open_body}
 /// ChaCha20-Poly1305 decryption (RFC 8439 §2.8), out of place: with the key `*key`, the nonce `*nonce` and the received tag `*tag`, returns 1 if the tag is that of the `len` bytes of ciphertext at `src` and the `aad_len` bytes of additional data at `aad`, having then written the plaintext to the `dst_len = len` bytes at `dst`; otherwise returns 0, having written zeros to them: `vg_chacha20_poly1305_open` with the ciphertext read from `src` and the plaintext written to `dst`. `src` is not written, and `dst` is a buffer of its own: it overlaps no other buffer, `src` included. The tags are compared without a branch.
 ///
 /// Contract: `VG.Spec.ChaCha20Poly1305.openToContract`. Constant time but for the result: only the pointers, the lengths and whether the function returns 1 or 0 may affect timing, not the key, the nonce, the additional data, the tag or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1447,7 +1493,7 @@ pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_open_to(key: *const [u
     core::arch::naked_asm!(
         r#".base64 "SI2kJDD5//9Ii4Qk2AYAAEiJRCQISIuEJOAGAABIiUQkEEiLhCToBgAASIlEJBhIieBIg8AoSIlEJCBIi0QkIEyLVCQYTYnDTItEJAhBU1BBUg=="
 call {vg_chacha20_poly1305_open_body}
-.base64 "QVpBWkFaZg/vwPMPf0QkKPMPf0QkOPMPf0QkSPMPf0QkWPMPf0QkaPMPf0QkePMPf4QkiAAAAPMPf4QkmAAAAPMPf4QkqAAAAPMPf4QkuAAAAPMPf4QkyAAAAPMPf4Qk2AAAAPMPf4Qk6AAAAPMPf4Qk+AAAAPMPf4QkCAEAAPMPf4QkGAEAAPMPf4QkKAEAAPMPf4QkOAEAAPMPf4QkSAEAAPMPf4QkWAEAAPMPf4QkaAEAAPMPf4QkeAEAAPMPf4QkiAEAAPMPf4QkmAEAAPMPf4QkqAEAAPMPf4QkuAEAAPMPf4QkyAEAAPMPf4Qk2AEAAPMPf4Qk6AEAAPMPf4Qk+AEAAPMPf4QkCAIAAPMPf4QkGAIAAPMPf4QkKAIAAPMPf4QkOAIAAPMPf4QkSAIAAPMPf4QkWAIAAPMPf4QkaAIAAPMPf4QkeAIAAPMPf4QkiAIAAPMPf4QkmAIAAPMPf4QkqAIAAPMPf4QkuAIAAEiNpCTQBgAAww=="
+.base64 "QVpBWkFaZg/vwPMPf0QkKPMPf0QkOPMPf0QkSPMPf0QkWPMPf0QkaPMPf0QkePMPf4QkiAAAAPMPf4QkmAAAAPMPf4QkqAAAAPMPf4QkuAAAAPMPf4QkyAAAAPMPf4Qk2AAAAPMPf4Qk6AAAAPMPf4Qk+AAAAPMPf4QkCAEAAPMPf4QkGAEAAPMPf4QkKAEAAPMPf4QkOAEAAPMPf4QkSAEAAPMPf4QkWAEAAPMPf4QkaAEAAPMPf4QkeAEAAPMPf4QkiAEAAPMPf4QkmAEAAPMPf4QkqAEAAPMPf4QkuAEAAPMPf4QkyAEAAPMPf4Qk2AEAAPMPf4Qk6AEAAPMPf4Qk+AEAAPMPf4QkCAIAAPMPf4QkGAIAAPMPf4QkKAIAAPMPf4QkOAIAAPMPf4QkSAIAAPMPf4QkWAIAAPMPf4QkaAIAAPMPf4QkeAIAAPMPf4QkiAIAAPMPf4QkmAIAAPMPf4QkqAIAAPMPf4QkuAIAAEiNpCTQBgAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJPhMiRwkSI2kJAD5///zD3+EJPAGAADzD3+EJOAGAADzD3+EJNAGAADzD3+EJMAGAADzD3+EJLAGAADzD3+EJKAGAADzD3+EJJAGAADzD3+EJIAGAADzD3+EJHAGAADzD3+EJGAGAADzD3+EJFAGAADzD3+EJEAGAADzD3+EJDAGAADzD3+EJCAGAADzD3+EJBAGAADzD3+EJAAGAADzD3+EJPAFAADzD3+EJOAFAADzD3+EJNAFAADzD3+EJMAFAADzD3+EJLAFAADzD3+EJKAFAADzD3+EJJAFAADzD3+EJIAFAADzD3+EJHAFAADzD3+EJGAFAADzD3+EJFAFAADzD3+EJEAFAADzD3+EJDAFAADzD3+EJCAFAADzD3+EJBAFAADzD3+EJAAFAADzD3+EJPAEAADzD3+EJOAEAADzD3+EJNAEAADzD3+EJMAEAADzD3+EJLAEAADzD3+EJKAEAADzD3+EJJAEAADzD3+EJIAEAADzD3+EJHAEAADzD3+EJGAEAADzD3+EJFAEAADzD3+EJEAEAADzD3+EJDAEAADzD3+EJCAEAADzD3+EJBAEAADzD3+EJAAEAADzD3+EJPADAADzD3+EJOADAADzD3+EJNADAADzD3+EJMADAADzD3+EJLADAADzD3+EJKADAADzD3+EJJADAADzD3+EJIADAADzD3+EJHADAADzD3+EJGADAADzD3+EJFADAADzD3+EJEADAADzD3+EJDADAADzD3+EJCADAADzD3+EJBADAADzD3+EJAADAADzD3+EJPACAADzD3+EJOACAADzD3+EJNACAADzD3+EJMACAADzD3+EJLACAADzD3+EJKACAADzD3+EJJACAADzD3+EJIACAADzD3+EJHACAADzD3+EJGACAADzD3+EJFACAADzD3+EJEACAADzD3+EJDACAADzD3+EJCACAADzD3+EJBACAADzD3+EJAACAADzD3+EJPABAADzD3+EJOABAADzD3+EJNABAADzD3+EJMABAADzD3+EJLABAADzD3+EJKABAADzD3+EJJABAADzD3+EJIABAADzD3+EJHABAADzD3+EJGABAADzD3+EJFABAADzD3+EJEABAADzD3+EJDABAADzD3+EJCABAADzD3+EJBABAADzD3+EJAABAADzD3+EJPAAAADzD3+EJOAAAADzD3+EJNAAAADzD3+EJMAAAADzD3+EJLAAAADzD3+EJKAAAADzD3+EJJAAAADzD3+EJIAAAADzD39EJHDzD39EJGDzD39EJFDzD39EJEDzD39EJDDzD39EJCDzD39EJBDzD38EJEiNpCQABwAASI1kJAiJwDHJMdIx9jH/RTHARTHJRTHSww=="
 .p2align 6"#,
         vg_chacha20_poly1305_open_body = sym super::chacha20::vg_chacha20_poly1305_open_body::vg_chacha20_poly1305_open_body,
     )
@@ -1456,6 +1502,8 @@ call {vg_chacha20_poly1305_open_body}
 /// ChaCha20-Poly1305 encryption (RFC 8439 §2.8), out of place, of a plaintext in pieces: with the key `*key` and the nonce `*nonce`, encrypts the concatenation of the `src_count` slices that `src` lists (each an address and a length, in bytes), writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_chacha20_poly1305_seal` with the plaintext gathered from `src`.
 ///
 /// Contract: `VG.Spec.ChaCha20Poly1305.sealGatherContract`. Constant time: only the pointers, the lengths, `src_count` and where the slices are (their addresses and lengths) may affect timing, not the key, the nonce, the additional data or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1521,9 +1569,9 @@ jmp 21f
 20:
 21:
 .base64 "SIt8JChIi3QkIEiLVCQYSItMJBBMi0QkOEyLTCRASItEJEhQ"
-call {vg_chacha20_poly1305_seal}
-.base64 "WFhYWFhYWMM="
+call {vg_chacha20_poly1305_seal_core}
+.base64 "WFhYWFhYWGYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ZkUP78BmRQ/vyWZFD+/SZkUP79tmRQ/v5GZFD+/tZkUP7/ZmRQ/v/0Ux20iNZCT4TIkcJEiNpCSw+P//8w9/hCRABwAA8w9/hCQwBwAA8w9/hCQgBwAA8w9/hCQQBwAA8w9/hCQABwAA8w9/hCTwBgAA8w9/hCTgBgAA8w9/hCTQBgAA8w9/hCTABgAA8w9/hCSwBgAA8w9/hCSgBgAA8w9/hCSQBgAA8w9/hCSABgAA8w9/hCRwBgAA8w9/hCRgBgAA8w9/hCRQBgAA8w9/hCRABgAA8w9/hCQwBgAA8w9/hCQgBgAA8w9/hCQQBgAA8w9/hCQABgAA8w9/hCTwBQAA8w9/hCTgBQAA8w9/hCTQBQAA8w9/hCTABQAA8w9/hCSwBQAA8w9/hCSgBQAA8w9/hCSQBQAA8w9/hCSABQAA8w9/hCRwBQAA8w9/hCRgBQAA8w9/hCRQBQAA8w9/hCRABQAA8w9/hCQwBQAA8w9/hCQgBQAA8w9/hCQQBQAA8w9/hCQABQAA8w9/hCTwBAAA8w9/hCTgBAAA8w9/hCTQBAAA8w9/hCTABAAA8w9/hCSwBAAA8w9/hCSgBAAA8w9/hCSQBAAA8w9/hCSABAAA8w9/hCRwBAAA8w9/hCRgBAAA8w9/hCRQBAAA8w9/hCRABAAA8w9/hCQwBAAA8w9/hCQgBAAA8w9/hCQQBAAA8w9/hCQABAAA8w9/hCTwAwAA8w9/hCTgAwAA8w9/hCTQAwAA8w9/hCTAAwAA8w9/hCSwAwAA8w9/hCSgAwAA8w9/hCSQAwAA8w9/hCSAAwAA8w9/hCRwAwAA8w9/hCRgAwAA8w9/hCRQAwAA8w9/hCRAAwAA8w9/hCQwAwAA8w9/hCQgAwAA8w9/hCQQAwAA8w9/hCQAAwAA8w9/hCTwAgAA8w9/hCTgAgAA8w9/hCTQAgAA8w9/hCTAAgAA8w9/hCSwAgAA8w9/hCSgAgAA8w9/hCSQAgAA8w9/hCSAAgAA8w9/hCRwAgAA8w9/hCRgAgAA8w9/hCRQAgAA8w9/hCRAAgAA8w9/hCQwAgAA8w9/hCQgAgAA8w9/hCQQAgAA8w9/hCQAAgAA8w9/hCTwAQAA8w9/hCTgAQAA8w9/hCTQAQAA8w9/hCTAAQAA8w9/hCSwAQAA8w9/hCSgAQAA8w9/hCSQAQAA8w9/hCSAAQAA8w9/hCRwAQAA8w9/hCRgAQAA8w9/hCRQAQAA8w9/hCRAAQAA8w9/hCQwAQAA8w9/hCQgAQAA8w9/hCQQAQAA8w9/hCQAAQAA8w9/hCTwAAAA8w9/hCTgAAAA8w9/hCTQAAAA8w9/hCTAAAAA8w9/hCSwAAAA8w9/hCSgAAAA8w9/hCSQAAAA8w9/hCSAAAAA8w9/RCRw8w9/RCRg8w9/RCRQ8w9/RCRA8w9/RCQw8w9/RCQg8w9/RCQQ8w9/BCRIjaQkUAcAAEiNZCQIMcAxyTHSMfYx/0UxwEUxyUUx0sM="
 .p2align 6"#,
-        vg_chacha20_poly1305_seal = sym super::chacha20poly1305::vg_chacha20_poly1305_seal,
+        vg_chacha20_poly1305_seal_core = sym super::chacha20::vg_chacha20_poly1305_seal_core::vg_chacha20_poly1305_seal_core,
     )
 }

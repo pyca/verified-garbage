@@ -51,7 +51,7 @@ theorem wipeStoresAt_run (R : Region) (u : State) (off : Nat) (hR : R ∈ u.wr) 
     refine ⟨m'.writeW (u.gpr .rsp + BitVec.ofNat 64 (off + 8 * w)) (u.gpr .r11), ?_,
       hf.writeW (List.mem_singleton_self _) _ (hc w (by omega_using []))⟩
     rw [wipeStoresAt_succ, execBlock_append, he]
-    simp only [Option.bind_some, execBlock, isa, exec, State.store64, State.ea, BitVec.ofInt_natCast,
+    simp only [Option.bind_some, execBlock, isa, reduceExec, State.store64, State.ea, BitVec.ofInt_natCast,
       hin, ↓reduceIte, Option.map_some, addrs, List.map_cons, List.map_nil, List.append_nil,
       wipeAtTrace, List.range_succ, List.map_append]
 
@@ -67,7 +67,7 @@ theorem wipeAt_run (R : Region) (u : State) (off words : Nat) (hR : R ∈ u.wr)
   obtain ⟨m', he, hf⟩ := wipeStoresAt_run R (u.setReg32 .r11 0) off
     (by simpa [State.setReg32, State.setReg]) words (by rw [hsp]; exact hc)
   refine ⟨m', ?_, by simpa [State.setReg32, State.setReg] using hf⟩
-  simp only [wipeAt, execBlock, isa, exec, readSrc32, Option.map_some]
+  simp only [wipeAt, execBlock, isa, reduceExec, readSrc32, Option.map_some]
   rw [he, hsp]
   simp [addrs, srcAddrs]
 
@@ -98,7 +98,7 @@ theorem wipeStoresAtX_run (R : Region) (u : State) (off : Nat) (hR : R ∈ u.wr)
     refine ⟨m'.writeW (u.gpr .rsp + BitVec.ofNat 64 (off + 16 * w)) (u.xmm .xmm0), ?_,
       hf.writeW (List.mem_singleton_self _) _ (hc w (by omega_using []))⟩
     rw [wipeStoresAtX_succ, execBlock_append, he]
-    simp only [Option.bind_some, execBlock, isa, exec, State.store128, State.ea, BitVec.ofInt_natCast,
+    simp only [Option.bind_some, execBlock, isa, reduceExec, State.store128, State.ea, BitVec.ofInt_natCast,
       hin, ↓reduceIte, Option.map_some, addrs, List.map_cons, List.map_nil, List.append_nil,
       wipeAtXTrace, List.range_succ, List.map_append]
 
@@ -115,7 +115,7 @@ theorem wipeAtX_run (R : Region) (u : State) (off n : Nat) (hR : R ∈ u.wr)
   obtain ⟨m', he, hf⟩ := wipeStoresAtX_run R (u.setXmm .xmm0 0) off (by simpa [State.setXmm]) n
     (by simpa [State.setXmm] using hc)
   refine ⟨m', ?_, by simpa [State.setXmm] using hf⟩
-  simp only [wipeAtX, execBlock, isa, exec, hx]
+  simp only [wipeAtX, execBlock, isa, reduceExec, hx]
   rw [he]
   simp [addrs, State.setXmm]
 
@@ -231,7 +231,8 @@ theorem Verified.stackArgScratchWipedByPre (w : Wiper) {c : Prog isa}
         (setArgsTrace bytes (s.gpr .rsp - BitVec.ofNat 64 bytes) (nStack sig) ++
           (t ++ w.trace (s.gpr .rsp - BitVec.ofNat 64 bytes) (16 + 8 * nStack sig)))
         (popState bytes s u) ∧
-      abiPreserved s (popState bytes s u) ∧ (popState bytes s u).mem = u.mem ∧
+      abiPreserved s (popState bytes s u) ∧
+      Frame [⟨s.gpr .rsp - BitVec.ofNat 64 bytes, bytes⟩] u.mem (popState bytes s u).mem ∧
       (popState bytes s u).gpr .rax = s₃.gpr .rax := by
     intro s hs
     obtain ⟨t, s₃, he, ha, hq⟩ := hcor _ (narrowS_pre hk hb0 hb1 (fun vs m₁ m₂ hl hb _ => hpre vs m₁ m₂ hl hb) hs)
@@ -273,19 +274,24 @@ theorem Verified.stackArgScratchWipedByPre (w : Wiper) {c : Prog isa}
       (post := Curry.withScratch abi.ptrBits nm e n sig.params post) hk').mp hq
     obtain ⟨-, -, -, hargs, -⟩ := narrowS_facts (nm := nm) hk hb0 hb1 hs
     rw [hargs] at hq'
-    rw [hm, hrax]
+    rw [hrax]
     have h₃ := Eq.mp (congrFun (congrFun (congrFun (Curry.apply_withScratch abi.ptrBits nm e n
       sig.params post _ _ (allArgs_length sig s hk)) _) s₃.mem) _) hq'
     have h₄ := hpost _ _ _ _ _ (allArgs_length sig s hk) (narrowS_agree hk hb0 hb1 hs) h₃
     refine hpostOut _ _ _ _ _ (allArgs_length sig s hk) ((pre_args hk).mp hs).2.2.2.2.2.2
       (fun b hb' a ha' => ?_) h₄
-    exact (hfr a fun r hr => by
+    -- The memory on return: after the wipe, which writes only the buffer,
+    -- and the `free`, which loses only the frame.
+    exact ((hm a fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact hdisj s hs b hb' a ha').symm
+      exact frameArg_disjoint hk (by omega_using [hb0]) hs b (List.mem_append_left _ hb') a ha').trans
+      (hfr a fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact hdisj s hs b hb' a ha')).symm
   · obtain ⟨u₁, _, _, f₁, _, _, x₁, _⟩ := hrun s₁ h₁
     obtain ⟨u₂, _, _, f₂, _, _, x₂, _⟩ := hrun s₂ h₂
     rw [(Exec.det e₁ x₁).1, (Exec.det e₂ x₂).1]
-    have hsp₁₂ : s₁.gpr .rsp = s₂.gpr .rsp := ((pubL_args hk).mp hp).1.1
+    have hsp₁₂ : s₁.gpr .rsp = s₂.gpr .rsp := ((pubL_args hk).mp hp).1.1.1
     rw [hct _ _ _ _ _ _ (narrowS_pre hk hb0 hb1 (fun vs m₁ m₂ hl hb _ => hpre vs m₁ m₂ hl hb) h₁)
       (narrowS_pre hk hb0 hb1 (fun vs m₁ m₂ hl hb _ => hpre vs m₁ m₂ hl hb) h₂)
       (narrowS_pub hk hb0 hb1 h₁ h₂ hp hleak.toL) f₁ f₂, hsp₁₂]

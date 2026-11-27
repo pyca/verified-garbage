@@ -13,6 +13,7 @@ import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+import VerifiedGarbage.Proof.Framework.X86_64.ModeSim
 import VerifiedGarbage.Proof.Sm4.CtrCipher
 import VerifiedGarbage.Proof.Sm4.X86_64.Ctr32Lit
 import VerifiedGarbage.Proof.Sm4.X86_64.Lit
@@ -174,10 +175,11 @@ theorem ctr_rel {P : State → State → Prop}
     (h : ∀ s₁ s₂, P s₁ s₂ → ∃ K C D : Addr, ∃ n : Nat,
       CtrCall s₁ K C D n ∧ CtrCall s₂ K C D n ∧ s₁.gpr .rsp = s₂.gpr .rsp) :
     RelCT isa P (.call ctrFn.name ctrFn.code) fun _ _ => True := by
-  refine RelCT.callEx Proof.Sm4.X86_64.ctr32_framed.1 Proof.Sm4.X86_64.ctr32_framed.2.1 fun s₁ s₂ hp => ?_
+  refine RelCT.callEx (k := Contract.mxFree (Proof.Sm4.ctr32Contract X86_64.abi 3216)) Proof.Sm4.X86_64.ctr32_framed.1
+    (Contract.ct_mxFree (by lit_decide) Proof.Sm4.X86_64.ctr32_framed.2.1 fun _ _ h => h) fun s₁ s₂ hp => ?_
   obtain ⟨K, C, D, n, h₁, h₂, hsp⟩ := h s₁ s₂ hp
   refine ⟨_, _, _, _, h₁.pre, h₂.pre, ?_, h₁.reads, h₁.writes, h₂.reads, h₂.writes, hsp⟩
-  sig_pub [ctrK, Proof.Sm4.ctr32Contract, Proof.Sm4.ctr32Sig, X86_64.abi, X86_64.argRegs]
+  sig_pub [Contract.mxFree, ctrK, Proof.Sm4.ctr32Contract, Proof.Sm4.ctr32Sig, X86_64.abi, X86_64.argRegs]
   simp only [h₁.rdi, h₁.rsi, h₁.rdx, h₁.rcx, h₂.rdi, h₂.rsi, h₂.rdx, h₂.rcx, hsp]
   exact ⟨trivial, trivial, trivial, trivial, trivial⟩
 
@@ -245,11 +247,12 @@ theorem key_rel {P : State → State → Prop}
     (h : ∀ s₁ s₂, P s₁ s₂ → ∃ Kk Sc : Addr,
       KeyCall s₁ Kk Sc ∧ KeyCall s₂ Kk Sc ∧ s₁.gpr .rsp = s₂.gpr .rsp) :
     RelCT isa P (.call keyFn.name keyFn.code) fun _ _ => True := by
-  refine RelCT.callEx Proof.Sm4.X86_64.expandKey_framedU.1 Proof.Sm4.X86_64.expandKey_framedU.2.1
-    fun s₁ s₂ hp => ?_
+  refine RelCT.callEx (k := Contract.mxFree (Spec.Sm4.expandKeyContract X86_64.abi 3144))
+    Proof.Sm4.X86_64.expandKey_framedU.1
+    (Contract.ct_mxFree (by lit_decide) Proof.Sm4.X86_64.expandKey_framedU.2.1 fun _ _ h => h) fun s₁ s₂ hp => ?_
   obtain ⟨Kk, Sc, h₁, h₂, hsp⟩ := h s₁ s₂ hp
   refine ⟨_, _, _, _, h₁.pre, h₂.pre, ?_, h₁.reads, h₁.writes, h₂.reads, h₂.writes, hsp⟩
-  sig_pub [keyK, Spec.Sm4.expandKeyContract, Spec.Sm4.expandKeySig, X86_64.abi, X86_64.argRegs]
+  sig_pub [Contract.mxFree, keyK, Spec.Sm4.expandKeyContract, Spec.Sm4.expandKeySig, X86_64.abi, X86_64.argRegs]
   simp only [h₁.rdi, h₁.rsi, h₂.rdi, h₂.rsi, hsp]
   exact ⟨trivial, trivial, trivial⟩
 

@@ -13,7 +13,7 @@ meta import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 /-!
 # ML-DSA signing on PPC64LE: the loop leaks what `signLeakT` says
 
-As on 32-bit ARM (`Proof/MlDsa/Arm/Sign/PhaseLCT.lean`): two runs whose
+As on 32-bit ARM (`Proof/MlDsa/Arm/Sign/PhaseOCT.lean`): two runs whose
 remaining iterations leak the same (`LeakEq`) agree on the iteration's `c̃`
 (`leq_ct`), on whether it passes (`leq_pass`) and on its hint if it does
 (`leq_hints`), and, if it is rejected, on what the rest leaks (`leq_succ`);

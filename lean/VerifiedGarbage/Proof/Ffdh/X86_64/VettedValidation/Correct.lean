@@ -1,19 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.VettedValidation.Recognize
+public import VerifiedGarbage.Proof.Ffdh.X86_64.VettedValidation.Restore
 import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Backend
 public import VerifiedGarbage.Proof.Ffdh.X86_64.VettedValidation.Geometry
-
 import VerifiedGarbage.Proof.Ffdh.VettedValidation.Facts
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.X86_64.Abi
-import VerifiedGarbage.Proof.Ffdh.X86_64.VettedValidation.Entry
-import VerifiedGarbage.Proof.Ffdh.X86_64.VettedValidation.Restore
 import VerifiedGarbage.Proof.Ffdh.X86_64.VettedValidation.Scan
 import VerifiedGarbage.Proof.Ffdh.X86_64.VettedValidation.State
 import VerifiedGarbage.Proof.Framework.Covers
 public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Safety
 public import VerifiedGarbage.Spec.Ffdh.Contract
+
 /-! Recognition success is certified; every miss retains the complete selected validator. -/
 
 -- Formerly `VerifiedGarbage/Proof/Ffdh/X86_64/VettedValidation/Fallback.lean`, which only this module imported.

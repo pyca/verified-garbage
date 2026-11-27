@@ -103,7 +103,7 @@ theorem ladAdds_ok {L : LadderCfg} {C : Curve} {base : Addr} {size : Nat} (hL : 
     (hA : LadA L) (hp : UnitMod C.p (2 ^ (64 * L.M.n))) {E : Nat → Fe C} {s : State}
     (hI : Inv L.M base size C.p (· ∈ ladSlots L) (ladR L) E s) (a0 : Bool) {rest : Prog isa}
     {Q : State → Prop} (h : ∀ s', AddsPost L C base size E a0 s s' → WP isa rest s' Q) :
-    WP isa (.seq (fprogB L.M (ladDblOps L a0)) (.seq (fprogB L.M (ladAddOps L a0)) rest))
+    WP isa (.seq (fprogB L.M (ladDblOps L a0) true) (.seq (fprogB L.M (ladAddOps L a0) true) rest))
       s Q := by
   obtain ⟨N₁, N₂, h₁, h₂, e₁, e₂, r₁, r₂⟩ := ladOps C L a0
   rw [e₁, e₂]

@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Spec.Ffdh.Contract
 public import VerifiedGarbage.Spec.Ffdh.DerivePublicContract
 public import VerifiedGarbage.Spec.Ffdh.CachedKeyGenerationContract
-public import VerifiedGarbage.Spec.Ffdh.SievedContract
+public import VerifiedGarbage.Proof.Ffdh.ParameterPublic
 public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Mem
@@ -17,7 +17,7 @@ on return only within their outputs (`X86_64.Scrub.PostOut`): the checks not
 at all, `vg_ffdh_exchange` and `vg_ffdh_derive_public` the octets at `out`
 and `y` (`bytesAt_of`, `written_of`), the precomputation the words at `ctx`
 (`wordsAt_of`). Each implementation returns with its whole stack wiped
-(`X86_64.Scrub.withScrubAll`).
+(`Impl.Scrub.X86_64.scrubAll`).
 -/
 
 @[expose] public section
@@ -119,7 +119,7 @@ theorem generationPrecomputeOut (stack : Nat) (cs : List (String × List (BitVec
       exact h
 
 theorem sievedParameterSearchOut (stack : Nat) (cs : List (String × List (BitVec 64)) := []) :
-    PostOut (Spec.Ffdh.sievedParameterSearchContract (abi.withConsts cs) stack)
+    PostOut (Proof.Ffdh.sievedParameterSearchAskedContract (abi.withConsts cs) stack)
       (Spec.Ffdh.parameterSearchSig.retBits 64) :=
   postOut_of_local (leak := some _) (ScrubAbi.consts cs) fun
     | [out, outLen, _, _, _, _, _, _, _, _], m, m₁, m₂, r, _, hb, h => by

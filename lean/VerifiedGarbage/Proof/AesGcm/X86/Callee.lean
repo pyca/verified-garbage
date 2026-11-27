@@ -1,15 +1,177 @@
 module
 
 public import VerifiedGarbage.Proof.Gcm.X86.Ghash
-public import VerifiedGarbage.Proof.AesGcm.X86.CT
 public import VerifiedGarbage.Impl.AesGcm.X86
 import VerifiedGarbage.Proof.Gcm.Stream
 import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.Aes.X86.Variant
+public import VerifiedGarbage.Proof.Framework.X86.ScrubSide
 import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyArith
 import VerifiedGarbage.Proof.Aes.X86.AesNi.Lit
 import VerifiedGarbage.Proof.Aes.X86.VariantProof
 import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Framework.X86.RelCT
+
+/-! ### `AesGcm.X86.CT`, which this module and modules that import it used -/
+
+section
+
+/-!
+# AES-GCM on x86: constant time, piece by piece
+
+Untrusted: everything here is checked by Lean.
+
+`CT I c`: any two runs of `c` from states satisfying `I` leak the same
+trace. The AES-GCM pieces are proven constant time from their (public)
+preconditions: every precondition of a piece is about public values (the
+pointers, the lengths, `esp`), and what a piece computes from secrets is
+stated in its postcondition as an implication from the memory it started
+from, so the same `I` holds of both runs. The pieces are put together as the
+code is (`CT.seq` takes the precondition of the second piece from the
+correctness of the first, by determinism; `CT.ite` a condition that `I`
+determines); straight-line code and loops without calls are proven by the
+taint analysis, from the registers `I` pins (`CT.taint`), and each call in a
+frame of its arguments by the callee's own proof (`CT.callWith`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.AesGcm.X86
+
+open VG VG.X86
+
+/-- Two runs of `c` from states satisfying `I` leak the same trace. -/
+def CT (I : State → Prop) (c : Prog isa) : Prop :=
+  RelCT isa (fun s₁ s₂ => I s₁ ∧ I s₂) c fun _ _ => True
+
+namespace CT
+
+theorem mono {I I' : State → Prop} {c : Prog isa} (h : CT I c) (hi : ∀ s, I' s → I s) : CT I' c :=
+  RelCT.mono h (fun _ _ h => ⟨hi _ h.1, hi _ h.2⟩) fun _ _ _ => trivial
+
+theorem seq {I J : State → Prop} {c₁ c₂ : Prog isa} (h₁ : CT I c₁) (hw : ∀ s, I s → WP isa c₁ s J)
+    (h₂ : CT J c₂) : CT I (.seq c₁ c₂) :=
+  have h₁' : RelCT isa (fun a b => I a ∧ I b) c₁ fun a b => J a ∧ J b :=
+    RelCT.mono (RelCT.wp h₁ (F₁ := J) (F₂ := J) fun _ _ h => ⟨hw _ h.1, hw _ h.2⟩) (fun _ _ h => h)
+      fun _ _ h => h.2
+  RelCT.seq h₁' h₂
+
+theorem ite {I : State → Prop} {c : Cond} {t e : Prog isa} (b : Bool)
+    (hc : ∀ s, I s → isa.eval c s = some b) (ht : b = true → CT I t) (he : b = false → CT I e) :
+    CT I (.ite c t e) := by
+  refine RelCT.ite (fun s₁ s₂ h => by rw [hc _ h.1, hc _ h.2]) ?_ ?_
+  · cases b
+    · exact RelCT.of_false fun s₁ _ h => by rw [hc _ h.1.1] at h; simp at h
+    · exact RelCT.mono (ht rfl) (fun _ _ h => h.1) fun _ _ h => h
+  · cases b
+    · exact RelCT.mono (he rfl) (fun _ _ h => h.1) fun _ _ h => h
+    · exact RelCT.of_false fun s₁ _ h => by rw [hc _ h.1.1] at h; simp at h
+
+/-- Code the taint analysis proves constant time from the registers `rs`, on
+which any two states satisfying `I` agree. -/
+theorem taint {I : State → Prop} {c : Prog isa} (rs : List Reg)
+    (hr : ∀ s₁ s₂, I s₁ → I s₂ → ∀ r ∈ rs, s₁.gpr r = s₂.gpr r) {hc : Taint.Hint VG.X86.taint.T}
+    (h : (VG.X86.taint.check (τr rs) c hc).isSome = true) : CT I c :=
+  RelCT.taint (A := VG.X86.taint) (τr rs) (fun _ _ hp => agree_regs (hr _ _ hp.1 hp.2)) h
+
+/-- A call of verified code in a frame of its arguments. -/
+theorem callWith {I : State → Prop} {rs : List Reg} {n : String} {c : Prog isa} {k : Contract isa}
+    (hv : ∀ s, k.pre s → ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ k.post s s')
+    (hct : ConstantTime isa k.pre k.pub c) (rd wr : List Region)
+    (hP : ∀ s₁ s₂, I s₁ → I s₂ → CallPre k rs rd wr s₁ ∧ CallPre k rs rd wr s₂ ∧
+      s₁.gpr .esp = s₂.gpr .esp ∧
+      k.pub ((pushed rs s₁).callEntry.withRegions rd wr) ((pushed rs s₂).callEntry.withRegions rd wr)) :
+    CT I (.frame (.push rs) (.call n c) (.pop .eax rs.length)) :=
+  RelCT.callWith hv hct rd wr fun _ _ h => hP _ _ h.1 h.2
+
+theorem nil {I : State → Prop} : CT I (.block []) := RelCT.nil fun _ _ _ => trivial
+
+end CT
+
+/-- Constant time of a whole function, from `CT` for each value of what is
+public (`f`). -/
+theorem CT.constantTime {α : Sort _} {Pre : State → Prop} {Pub : State → State → Prop} {c : Prog isa}
+    (f : State → α) (hf : ∀ s₁ s₂, Pre s₁ → Pre s₂ → Pub s₁ s₂ → f s₁ = f s₂)
+    (h : ∀ a, CT (fun s => Pre s ∧ f s = a) c) : ConstantTime isa Pre Pub c :=
+  fun s₁ _ _ _ _ _ h₁ h₂ hp e₁ e₂ =>
+    (h (f s₁) _ _ _ _ _ _ ⟨⟨h₁, rfl⟩, ⟨h₂, (hf _ _ h₁ h₂ hp).symm⟩⟩ e₁ e₂).1
+
+/-! ## Pieces: correctness and constant time together
+
+`Pc P c Q`: from a state satisfying `P a`, `c` ends in one satisfying `Q a`,
+and any two runs from states satisfying `P a` and `P b` leak the same
+trace. The index `a` is what is secret about the run (the memory it starts
+from, say): it may differ between the two runs; everything `P` says of the
+registers the code branches on or addresses memory with must not depend on
+it. -/
+
+structure Pc {α : Sort _} (P : α → State → Prop) (c : Prog isa) (Q : α → State → Prop) : Prop where
+  wp : ∀ a s, P a s → WP isa c s (Q a)
+  ct : CT (fun s => ∃ a, P a s) c
+
+namespace Pc
+
+variable {α : Sort _}
+
+theorem mono {P P' Q Q' : α → State → Prop} {c : Prog isa} (h : Pc P c Q) (hp : ∀ a s, P' a s → P a s)
+    (hq : ∀ a s, Q a s → Q' a s) : Pc P' c Q' :=
+  ⟨fun a s hs => WP.mono (h.wp a s (hp a s hs)) (hq a), h.ct.mono fun _ ⟨a, h⟩ => ⟨a, hp a _ h⟩⟩
+
+theorem seq {P Q R : α → State → Prop} {c₁ c₂ : Prog isa} (h₁ : Pc P c₁ Q) (h₂ : Pc Q c₂ R) :
+    Pc P (.seq c₁ c₂) R :=
+  ⟨fun a s hs => WP.seq (WP.mono (h₁.wp a s hs) fun s' h => h₂.wp a s' h),
+    CT.seq h₁.ct (fun _ ⟨a, h⟩ => WP.mono (h₁.wp a _ h) fun _ h => ⟨a, h⟩) h₂.ct⟩
+
+/-- A piece proven on its own, with a precondition `I` that `P` implies and a
+postcondition relating the states before and after. -/
+theorem of {I : State → Prop} {R : State → State → Prop} {c : Prog isa}
+    (hw : ∀ s, I s → WP isa c s (R s)) (hct : CT I c) (P : α → State → Prop) (hP : ∀ a s, P a s → I s) :
+    Pc P c fun a s' => ∃ s, P a s ∧ R s s' :=
+  ⟨fun a s hs => WP.mono (hw s (hP a s hs)) fun _ h => ⟨s, hs, h⟩,
+    hct.mono fun _ ⟨a, h⟩ => hP a _ h⟩
+
+/-- A branch on a condition that `P` determines. -/
+theorem ite {P Q : α → State → Prop} {c : Cond} {t e : Prog isa} (b : Bool)
+    (hc : ∀ a s, P a s → isa.eval c s = some b) (ht : b = true → Pc P t Q) (he : b = false → Pc P e Q) :
+    Pc P (.ite c t e) Q := by
+  refine ⟨fun a s hs => WP.ite b (hc a s hs) (fun h => (ht h).wp a s hs) (fun h => (he h).wp a s hs), ?_⟩
+  exact CT.ite b (fun s ⟨a, h⟩ => hc a s h) (fun h => (ht h).ct) (fun h => (he h).ct)
+
+/-- Code the taint analysis proves constant time from the registers `rs`, on
+which `P` pins the same values whatever the index. -/
+theorem taint {P Q : α → State → Prop} {c : Prog isa} (rs : List Reg) (hw : ∀ a s, P a s → WP isa c s (Q a))
+    (hr : ∀ a b s₁ s₂, P a s₁ → P b s₂ → ∀ r ∈ rs, s₁.gpr r = s₂.gpr r) {hc : Taint.Hint VG.X86.taint.T}
+    (h : (VG.X86.taint.check (τr rs) c hc).isSome = true) : Pc P c Q :=
+  ⟨hw, CT.taint rs (fun _ _ ⟨a, h₁⟩ ⟨b, h₂⟩ => hr a b _ _ h₁ h₂) h⟩
+
+theorem nil {P : α → State → Prop} : Pc P (.block []) P :=
+  ⟨fun _ _ h => WP.block_nil h, CT.nil⟩
+
+/-- A piece indexed by `α`, in code indexed by `β`: the index of the piece
+from that of the code and the state it starts in. Its postcondition holds
+of the state the piece started in, which has the permissions of the one it
+ends in. -/
+theorem lift {β : Sort _} {P : α → State → Prop} {Q : α → State → Prop} {c : Prog isa} (h : Pc P c Q)
+    {P' : β → State → Prop} (f : β → State → α) (hP : ∀ b s, P' b s → P (f b s) s) :
+    Pc P' c fun b s' => ∃ s, P' b s ∧ Q (f b s) s' ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+  refine ⟨fun b s hs => ?_, h.ct.mono fun s ⟨b, hb⟩ => ⟨f b s, hP b s hb⟩⟩
+  obtain ⟨t, s', he, hq⟩ := h.wp _ s (hP b s hs)
+  exact ⟨t, s', he, s, hs, hq, Exec.rdwr he⟩
+
+/-- Correctness and constant time of a whole function. -/
+theorem constantTime {β : Sort _} {Pre : State → Prop} {Pub : State → State → Prop} {c : Prog isa}
+    {P : β → State → State → Prop} {Q : β → State → State → Prop} (f : State → β)
+    (hf : ∀ s₁ s₂, Pre s₁ → Pre s₂ → Pub s₁ s₂ → f s₁ = f s₂) (h : ∀ p, Pc (P p) c (Q p))
+    (hp : ∀ s, Pre s → P (f s) s s) : ConstantTime isa Pre Pub c :=
+  CT.constantTime f hf fun p => (h p).ct.mono fun s ⟨h₁, h₂⟩ => ⟨s, h₂ ▸ hp s h₁⟩
+
+end Pc
+
+end VG.Proof.AesGcm.X86
+
+end
+
+end
 
 /-!
 # AES-GCM on x86: the calls
@@ -79,23 +241,13 @@ structure GhashImpl where
   ct : ConstantTime isa Proof.Gcm.ghashX86.pre Proof.Gcm.ghashX86.pub fn.code
   nosp : NoSp fn.code
   spSafe : fn.code.all (fun i => !isa.writesSp i) = true
+  /-- Its code has no MMX instruction and makes no indirect call (`calleeOk`):
+  what the cleanup of every function that calls it needs of it, with its
+  stack (`X86.Scrub.calleeSide`), so that each proves only its own code,
+  whatever the implementation (`Proof/Framework/X86/ScrubCall.lean`). -/
+  scrub : calleeOk fn.code = true
   suffix : String
   features : List String
-
-namespace GhashImpl
-
-/-- `vg_ghash`, in the baseline ISA. -/
-def scalar : GhashImpl where
-  fn := ⟨"vg_ghash", Impl.Gcm.X86.ghash⟩
-  stack := by decide +kernel
-  ok := Proof.Gcm.X86.ghash_correct
-  ct := Proof.Gcm.X86.ghash_ct
-  nosp := NoSp.of_all (by decide +kernel)
-  spSafe := Code.all_of_spTest (by decide +kernel)
-  suffix := ""
-  features := []
-
-end GhashImpl
 
 /-- The implementations a set of AES-GCM functions calls: of
 `vg_aes_ctr32_to` with its `vg_aes_expand_key_scratch` (`Ctr32Impl`), and of
@@ -225,10 +377,12 @@ theorem gh_call (v : GcmImpl) {s : State} {H Y D S : BitVec 32} {n : Nat} (h : G
   rw [v.gh.stack] at f'
   have fE := callEntry_frame h.fit ghRegs_esp
   rw [show 4 * ghRegs.length + 4 = 24 from rfl] at fE
-  simp only [Proof.Gcm.ghashX86, arg_withRegions, State.withRegions_mem, a0, a1, a2, a3, hn, m₂] at post
+  simp only [Proof.Gcm.ghashX86, arg_withRegions, State.withRegions_mem, a0, a1, a2, a3, hn] at post
+  -- The pop loses the arguments' frame, below `esp`, apart from the buffers.
+  have fL : Frame [below (s.gpr .esp) 24] s₂.mem s'.mem := Frame.below_mono (wr := []) m₂ (by decide) h.esp
   refine ⟨rd', wr', cs', ?_, ?_⟩
   · exact f'.mono fun r hr => by simp only [List.cons_append, List.nil_append] at hr; simpa using hr
-  · rw [post, blockAt_frame fE (one_disj h.kh), blockAt_frame fE (one_disj h.ky),
+  · rw [blockAt_frame fL (one_disj h.ky), post, blockAt_frame fE (one_disj h.kh), blockAt_frame fE (one_disj h.ky),
       blocksAt_frame fE (one_disj h.kd) (by have := h.fD; omega_using [hn])]
 
 /-- Calls of `vg_ghash` with the same arguments and stack pointer in both
@@ -265,8 +419,9 @@ theorem toNat_rounds {R : Nat} (hR : R = 10 ∨ R = 12 ∨ R = 14) : (BitVec.ofN
   toNat_ofNat32 (by omega_using [hR])
 
 /-- What a call of `vg_aes_ctr32_to` in place needs: the key schedule at `K` for `R`
-rounds, the counter block at `C`, `n` blocks at `D` and working space at `S`. -/
-structure CtrCall (s : State) (K C D S : BitVec 32) (R n : Nat) : Prop where
+rounds, the counter block at `C`, `n` blocks at `D` and working space at `S`,
+of the `B` bytes the implementation uses (`Ctr32Impl.scr`). -/
+structure CtrCall (B : Nat) (s : State) (K C D S : BitVec 32) (R n : Nat) : Prop where
   eax : s.gpr .eax = K
   ecx : s.gpr .ecx = BitVec.ofNat 32 R
   edx : s.gpr .edx = C
@@ -277,37 +432,37 @@ structure CtrCall (s : State) (K C D S : BitVec 32) (R n : Nat) : Prop where
   esp : 32 ≤ (s.gpr .esp).toNat
   kc : (⟨w64 K, 240⟩ : Region).Disjoint ⟨w64 C, 16⟩
   kd : (⟨w64 K, 240⟩ : Region).Disjoint ⟨w64 D, 16 * n⟩
-  ks : (⟨w64 K, 240⟩ : Region).Disjoint ⟨w64 S, 2048⟩
+  ks : (⟨w64 K, 240⟩ : Region).Disjoint ⟨w64 S, B⟩
   cd : (⟨w64 C, 16⟩ : Region).Disjoint ⟨w64 D, 16 * n⟩
-  cs : (⟨w64 C, 16⟩ : Region).Disjoint ⟨w64 S, 2048⟩
-  ds : (⟨w64 D, 16 * n⟩ : Region).Disjoint ⟨w64 S, 2048⟩
+  cs : (⟨w64 C, 16⟩ : Region).Disjoint ⟨w64 S, B⟩
+  ds : (⟨w64 D, 16 * n⟩ : Region).Disjoint ⟨w64 S, B⟩
   bk : (below (s.gpr .esp) 32).Disjoint ⟨w64 K, 240⟩
   bc : (below (s.gpr .esp) 32).Disjoint ⟨w64 C, 16⟩
   bd : (below (s.gpr .esp) 32).Disjoint ⟨w64 D, 16 * n⟩
-  bs : (below (s.gpr .esp) 32).Disjoint ⟨w64 S, 2048⟩
+  bs : (below (s.gpr .esp) 32).Disjoint ⟨w64 S, B⟩
   fK : K.toNat + 240 ≤ 2 ^ 32
   fC : C.toNat + 16 ≤ 2 ^ 32
   fD : D.toNat + 16 * n ≤ 2 ^ 32
-  fS : S.toNat + 2048 ≤ 2 ^ 32
+  fS : S.toNat + B ≤ 2 ^ 32
   reads : Covers [⟨w64 K, 240⟩] (s.rd ++ s.wr)
-  writes : Covers [⟨w64 C, 16⟩, ⟨w64 D, 16 * n⟩, ⟨w64 S, 2048⟩] s.wr
+  writes : Covers [⟨w64 C, 16⟩, ⟨w64 D, 16 * n⟩, ⟨w64 S, B⟩] s.wr
 
 /-- What it leaves. -/
-structure CtrPost (s : State) (K C D S : BitVec 32) (R n : Nat) (s' : State) : Prop where
+structure CtrPost (B : Nat) (s : State) (K C D S : BitVec 32) (R n : Nat) (s' : State) : Prop where
   rd : s'.rd = s.rd
   wr : s'.wr = s.wr
   saved : ∀ r ∈ calleeSaved, s'.gpr r = s.gpr r
-  frame : Frame [⟨w64 C, 16⟩, ⟨w64 D, 16 * n⟩, ⟨w64 S, 2048⟩, below (s.gpr .esp) 32] s.mem s'.mem
+  frame : Frame [⟨w64 C, 16⟩, ⟨w64 D, 16 * n⟩, ⟨w64 S, B⟩, below (s.gpr .esp) 32] s.mem s'.mem
   out : blocksAt s'.mem (w64 D) n = ctr32 (aesWith R (bytesAt s.mem (w64 K) (16 * (R + 1))))
     (blockAt s.mem (w64 C)) (blocksAt s.mem (w64 D) n)
   ctr : blockAt s'.mem (w64 C) = Nat.repeat Spec.Gcm.inc32 n (blockAt s.mem (w64 C))
 
 abbrev ctrRd (E K : BitVec 32) : List Region := [⟨w64 K, 240⟩, below E 28]
-abbrev ctrWr (C D S : BitVec 32) (n : Nat) : List Region :=
-  [⟨w64 C, 16⟩, ⟨w64 D, 16 * n⟩, ⟨w64 S, 2048⟩]
+abbrev ctrWr (B : Nat) (C D S : BitVec 32) (n : Nat) : List Region :=
+  [⟨w64 C, 16⟩, ⟨w64 D, 16 * n⟩, ⟨w64 S, B⟩]
 
 namespace CtrCall
-variable {s : State} {K C D S : BitVec 32} {R n : Nat} (h : CtrCall s K C D S R n)
+variable {B : Nat} {s : State} {K C D S : BitVec 32} {R n : Nat} (h : CtrCall B s K C D S R n)
 include h
 
 theorem fit : 4 * ctrRegs.length + 4 ≤ (s.gpr .esp).toNat := by
@@ -330,7 +485,7 @@ theorem sub4 : Region.Sub ⟨(s.gpr .esp - BitVec.ofNat 32 32).setWidth 64, 4⟩
     rw [← VG.Offset.sub_add_eq]; rfl]
   exact this
 
-theorem callPre : CallPre Proof.Aes.ctr32X86 ctrRegs (ctrRd (s.gpr .esp) K) (ctrWr C D S n) s := by
+theorem callPre : CallPre (Proof.Aes.ctr32X86N B) ctrRegs (ctrRd (s.gpr .esp) K) (ctrWr B C D S n) s := by
   obtain ⟨a0, a1, a2, a3, a4, a5, a6⟩ := h.args
   have hR := toNat_rounds h.rounds
   have hn := toNat_ofNat32 h.n_lt
@@ -339,7 +494,7 @@ theorem callPre : CallPre Proof.Aes.ctr32X86 ctrRegs (ctrRd (s.gpr .esp) K) (ctr
   have eSp : (pushed ctrRegs s).callEntry.gpr .esp = s.gpr .esp - BitVec.ofNat 32 32 := by
     rw [callEntry_esp']; rfl
   refine ⟨?_, ?_, ?_⟩
-  · simp only [Proof.Aes.ctr32X86, State.withRegions_rd, State.withRegions_wr, State.withRegions_gpr,
+  · simp only [Proof.Aes.ctr32X86N, State.withRegions_rd, State.withRegions_wr, State.withRegions_gpr,
       arg_withRegions, argAddr_withRegions, a0, a1, a2, a3, a4, a5, a6, eA, eSp, hR, hn]
     refine ⟨trivial, trivial, h.kc, h.kd, h.ks, h.cd, h.cs, h.ds, h.bc.sub_left h.sub28,
       h.bd.sub_left h.sub28, h.bs.sub_left h.sub28, h.bc.sub_left h.sub4, h.bd.sub_left h.sub4,
@@ -360,21 +515,26 @@ theorem callPre : CallPre Proof.Aes.ctr32X86 ctrRegs (ctrRd (s.gpr .esp) K) (ctr
 
 end CtrCall
 
-theorem ctr_call (v : GcmImpl) {s : State} {K C D S : BitVec 32} {R n : Nat} (h : CtrCall s K C D S R n) :
-    WP isa (ctrCall v.callees) s (CtrPost s K C D S R n) := by
+/-- A call of `vg_aes_ctr32_to` in place, beside any other callees. -/
+theorem ctrOnly_call (c : Proof.Aes.X86.Ctr32Impl) {s : State} {K C D S : BitVec 32} {R n : Nat} (h : CtrCall c.scr s K C D S R n) :
+    WP isa (.frame (.push [.ebx, .ebp, .edi, .ebx, .edx, .ecx, .eax]) (.call c.callee.name c.callee.code)
+      (.pop .eax 7)) s (CtrPost c.scr s K C D S R n) := by
   have hR := toNat_rounds h.rounds
   have hn := toNat_ofNat32 h.n_lt
   have hR' : 16 * (R + 1) ≤ 240 := by rcases h.rounds with h' | h' | h' <;> omega_using [h']
-  unfold ctrCall
-  refine WP.callWith (rs := ctrRegs) (k := Proof.Aes.ctr32X86) v.ctr.ok v.ctr.nosp (by simp)
-    ctrRegs_esp (by rw [v.ctr.stack]; have := h.esp; simp only [List.length_cons, List.length_nil]; omega_using [this])
+  refine WP.callWith (rs := ctrRegs) (k := Proof.Aes.ctr32X86N c.scr) c.small.ok c.nosp (by simp)
+    ctrRegs_esp (by rw [c.stack]; have := h.esp; simp only [List.length_cons, List.length_nil]; omega_using [this])
     h.callPre fun s' rd' wr' cs' f' ⟨s₂, m₂, post⟩ => ?_
   obtain ⟨a0, a1, a2, a3, a4, -, -⟩ := h.args
-  rw [v.ctr.stack] at f'
+  rw [c.stack] at f'
   have fE := callEntry_frame h.fit ctrRegs_esp
   rw [show 4 * ctrRegs.length + 4 = 32 from rfl] at fE
   obtain ⟨hdata, hctr⟩ := post
-  simp only [arg_withRegions, State.withRegions_mem, a0, a1, a2, a3, a4, hR, hn, m₂] at hdata hctr
+  simp only [arg_withRegions, State.withRegions_mem, a0, a1, a2, a3, a4, hR, hn] at hdata hctr
+  -- The pop loses the arguments' frame, below `esp`, apart from the buffers.
+  have fL : Frame [below (s.gpr .esp) 32] s₂.mem s'.mem := Frame.below_mono (wr := []) m₂ (by decide) h.esp
+  rw [← blocksAt_frame fL (one_disj h.bd) (by have := h.fD; omega_using [hn])] at hdata
+  rw [← blockAt_frame fL (one_disj h.bc)] at hctr
   have eK := bytesAt_frame fE (p := w64 K) (n := 16 * (R + 1))
     (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
@@ -387,9 +547,10 @@ theorem ctr_call (v : GcmImpl) {s : State} {K C D S : BitVec 32} {R n : Nat} (h 
 
 /-- Calls of `vg_aes_ctr32_to` in place with the same arguments and stack pointer in
 both runs are constant time. -/
-theorem ctr_ct (v : GcmImpl) {I : State → Prop} {K C D S E : BitVec 32} {R n : Nat}
-    (h : ∀ s, I s → CtrCall s K C D S R n ∧ s.gpr .esp = E) : CT I (ctrCall v.callees) := by
-  refine CT.callWith v.ctr.ok v.ctr.ct (ctrRd E K) (ctrWr C D S n)
+theorem ctrOnly_ct (c : Proof.Aes.X86.Ctr32Impl) {I : State → Prop} {K C D S E : BitVec 32} {R n : Nat}
+    (h : ∀ s, I s → CtrCall c.scr s K C D S R n ∧ s.gpr .esp = E) : CT I (.frame (.push [.ebx, .ebp, .edi, .ebx, .edx, .ecx, .eax]) (.call c.callee.name c.callee.code)
+      (.pop .eax 7)) := by
+  refine CT.callWith c.small.ok c.small.ct (ctrRd E K) (ctrWr c.scr C D S n)
     fun s₁ s₂ i₁ i₂ => ?_
   obtain ⟨h₁, e₁⟩ := h s₁ i₁
   obtain ⟨h₂, e₂⟩ := h s₂ i₂
@@ -411,6 +572,64 @@ theorem ctr_ct (v : GcmImpl) {I : State → Prop} {K C D S E : BitVec 32} {R n :
   · rw [a4, b4]
   · rw [a5, b5]
   · rw [a6, b6]
+
+theorem ctr_call (v : GcmImpl) {s : State} {K C D S : BitVec 32} {R n : Nat} (h : CtrCall v.ctr.scr s K C D S R n) :
+    WP isa (ctrCall v.callees) s (CtrPost v.ctr.scr s K C D S R n) :=
+  ctrOnly_call v.ctr h
+
+theorem ctr_ct (v : GcmImpl) {I : State → Prop} {K C D S E : BitVec 32} {R n : Nat}
+    (h : ∀ s, I s → CtrCall v.ctr.scr s K C D S R n ∧ s.gpr .esp = E) : CT I (ctrCall v.callees) :=
+  ctrOnly_ct v.ctr h
+
+/-- A call with 2048 bytes of working space is one with the `B` first of them. -/
+theorem CtrCall.small {s : State} {K C D S : BitVec 32} {R n : Nat} (h : CtrCall 2048 s K C D S R n) {B : Nat}
+    (hB : B ≤ 2048) : CtrCall B s K C D S R n :=
+  have hs : Region.Sub ⟨w64 S, B⟩ ⟨w64 S, 2048⟩ := Region.sub_prefix hB
+  { eax := h.eax, ecx := h.ecx, edx := h.edx, ebx := h.ebx, edi := h.edi, ebp := h.ebp, rounds := h.rounds,
+    esp := h.esp, kc := h.kc, kd := h.kd, ks := h.ks.sub_right hs, cd := h.cd, cs := h.cs.sub_right hs,
+    ds := h.ds.sub_right hs, bk := h.bk, bc := h.bc, bd := h.bd, bs := h.bs.sub_right hs, fK := h.fK, fC := h.fC,
+    fD := h.fD, fS := by have := h.fS; omega_using [this, hB], reads := h.reads,
+    writes := fun a m ⟨r, hr, hc⟩ => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl
+      · exact h.writes a m ⟨_, List.mem_cons_self .., hc⟩
+      · exact h.writes a m ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), hc⟩
+      · refine h.writes a m ⟨⟨w64 S, 2048⟩, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_singleton_self _)), ?_⟩
+        simp only [Region.Contains] at hc ⊢
+        omega_using [hc, hB] }
+
+/-- What it leaves, in terms of the 2048 bytes. -/
+theorem CtrPost.big {B : Nat} {s s' : State} {K C D S : BitVec 32} {R n : Nat} (g : CtrPost B s K C D S R n s')
+    (hB : B ≤ 2048) : CtrPost 2048 s K C D S R n s' :=
+  { rd := g.rd, wr := g.wr, saved := g.saved, out := g.out, ctr := g.ctr,
+    frame := g.frame.sub fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl
+      · exact ⟨_, List.mem_cons_self .., fun _ h => h⟩
+      · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), fun _ h => h⟩
+      · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)), Region.sub_prefix hB⟩
+      · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_singleton_self _))),
+          fun _ h => h⟩ }
+
+theorem ctrOnly_call2048 (c : Proof.Aes.X86.Ctr32Impl) {s : State} {K C D S : BitVec 32} {R n : Nat}
+    (h : CtrCall 2048 s K C D S R n) :
+    WP isa (.frame (.push [.ebx, .ebp, .edi, .ebx, .edx, .ecx, .eax]) (.call c.callee.name c.callee.code)
+      (.pop .eax 7)) s (CtrPost 2048 s K C D S R n) :=
+  WP.mono (ctrOnly_call c (h.small c.scr_le)) fun _ g => g.big c.scr_le
+
+theorem ctrOnly_ct2048 (c : Proof.Aes.X86.Ctr32Impl) {I : State → Prop} {K C D S E : BitVec 32} {R n : Nat}
+    (h : ∀ s, I s → CtrCall 2048 s K C D S R n ∧ s.gpr .esp = E) :
+    CT I (.frame (.push [.ebx, .ebp, .edi, .ebx, .edx, .ecx, .eax]) (.call c.callee.name c.callee.code)
+      (.pop .eax 7)) :=
+  ctrOnly_ct c fun s hs => ⟨(h s hs).1.small c.scr_le, (h s hs).2⟩
+
+theorem ctr_call2048 (v : GcmImpl) {s : State} {K C D S : BitVec 32} {R n : Nat} (h : CtrCall 2048 s K C D S R n) :
+    WP isa (ctrCall v.callees) s (CtrPost 2048 s K C D S R n) :=
+  ctrOnly_call2048 v.ctr h
+
+theorem ctr_ct2048 (v : GcmImpl) {I : State → Prop} {K C D S E : BitVec 32} {R n : Nat}
+    (h : ∀ s, I s → CtrCall 2048 s K C D S R n ∧ s.gpr .esp = E) : CT I (ctrCall v.callees) :=
+  ctrOnly_ct2048 v.ctr h
 
 /-! ## `vg_aes_expand_key_scratch` -/
 
@@ -511,10 +730,15 @@ theorem key_call (v : GcmImpl) {s : State} {K C S : BitVec 32} {L : Nat} (h : Ke
   rw [v.ctr.expandStack] at f'
   have fE := callEntry_frame h.fit keyRegs_esp
   rw [show 4 * keyRegs.length + 4 = 20 from rfl] at fE
-  simp only [Proof.Aes.expandKeyX86, arg_withRegions, State.withRegions_mem, a0, a1, a2, hL, m₂] at post
+  simp only [Proof.Aes.expandKeyX86, arg_withRegions, State.withRegions_mem, a0, a1, a2, hL] at post
+  -- The pop loses the arguments' frame, below `esp`, apart from the buffers.
+  have fL : Frame [below (s.gpr .esp) 20] s₂.mem s'.mem := Frame.below_mono (wr := []) m₂ (by decide) h.esp
+  have hk : 16 * (Spec.Aes.rounds (L / 4) + 1) ≤ 240 := by rcases h.len with rfl | rfl | rfl <;> decide
   refine ⟨rd', wr', cs', ?_, ?_⟩
   · exact f'.mono fun r hr => by simp only [List.cons_append, List.nil_append] at hr; simpa using hr
-  · rw [post, bytesAt_frame fE (one_disj h.bk) (by rcases h.len with rfl | rfl | rfl <;> decide)]
+  · rw [bytesAt_frame fL (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact (h.bc.sub_right (Region.sub_prefix hk)).symm) (by omega_using [hk]), post, bytesAt_frame fE (one_disj h.bk) (by rcases h.len with rfl | rfl | rfl <;> decide)]
 
 /-- Calls of `vg_aes_expand_key_scratch` with the same arguments and stack pointer
 in both runs are constant time. -/

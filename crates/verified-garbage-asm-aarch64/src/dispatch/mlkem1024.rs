@@ -8,6 +8,8 @@
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_mlkem1024_keygen_x2_sha3_keccak_sha3` if the target's vendor is `apple` (or `VG_CPU_FEATURES` names every feature it needs) and the CPU supports its features (`VG_MLKEM1024_KEYGEN_X2_SHA3_KECCAK_SHA3_FEATURES`); `vg_mlkem1024_keygen_x2_sha3` if the CPU supports its features (`VG_MLKEM1024_KEYGEN_X2_SHA3_FEATURES`); or else `vg_mlkem1024_keygen`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `seed` must be valid for reads of 64 bytes.
@@ -17,7 +19,7 @@
 /// * `seed` must be random bytes from an approved RBG (FIPS 203 §3.3), or a seed so generated before.
 /// * `scratch` is working space: on return each of its bytes is unchanged or zero.
 /// * `ek`, `dk` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
-/// * None of `seed`, `ek`, `dk` and `scratch` may overlap the 160 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `seed`, `ek`, `dk` and `scratch` may overlap the 176 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_mlkem1024_keygen_auto(_dit: verified_garbage_cpu::Dit<'_>, seed: *const [u8; 64], ek: *mut [u8; 1568], dk: *mut [u8; 3168], scratch: *mut [u64; 6144]) -> u32 {
@@ -66,6 +68,8 @@ pub unsafe fn vg_mlkem1024_keygen_auto(_dit: verified_garbage_cpu::Dit<'_>, seed
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_mlkem1024_encaps_x2_sha3_keccak_sha3` if the target's vendor is `apple` (or `VG_CPU_FEATURES` names every feature it needs) and the CPU supports its features (`VG_MLKEM1024_ENCAPS_X2_SHA3_KECCAK_SHA3_FEATURES`); `vg_mlkem1024_encaps_x2_sha3` if the CPU supports its features (`VG_MLKEM1024_ENCAPS_X2_SHA3_FEATURES`); or else `vg_mlkem1024_encaps`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `ek` must be valid for reads of 1568 bytes.
@@ -77,7 +81,7 @@ pub unsafe fn vg_mlkem1024_keygen_auto(_dit: verified_garbage_cpu::Dit<'_>, seed
 /// * `m` must be fresh random bytes from an approved RBG (FIPS 203 §3.3).
 /// * `scratch` is working space: on return each of its bytes is unchanged or zero.
 /// * `key`, `ct` and `scratch` must not overlap each other, `ek` or `m` (distinct Rust objects never do).
-/// * None of `ek`, `m`, `key`, `ct` and `scratch` may overlap the 160 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `ek`, `m`, `key`, `ct` and `scratch` may overlap the 176 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_mlkem1024_encaps_auto(_dit: verified_garbage_cpu::Dit<'_>, ek: *const [u8; 1568], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1568], scratch: *mut [u64; 6144]) -> u32 {
@@ -126,6 +130,8 @@ pub unsafe fn vg_mlkem1024_encaps_auto(_dit: verified_garbage_cpu::Dit<'_>, ek: 
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_mlkem1024_encaps_h_x2_sha3_keccak_sha3` if the target's vendor is `apple` (or `VG_CPU_FEATURES` names every feature it needs) and the CPU supports its features (`VG_MLKEM1024_ENCAPS_H_X2_SHA3_KECCAK_SHA3_FEATURES`); `vg_mlkem1024_encaps_h_x2_sha3` if the CPU supports its features (`VG_MLKEM1024_ENCAPS_H_X2_SHA3_FEATURES`); or else `vg_mlkem1024_encaps_h`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `ek` must be valid for reads of 1568 bytes.
@@ -139,7 +145,7 @@ pub unsafe fn vg_mlkem1024_encaps_auto(_dit: verified_garbage_cpu::Dit<'_>, ek: 
 /// * `m` must be fresh random bytes from an approved RBG (FIPS 203 §3.3).
 /// * `scratch` is working space: on return each of its bytes is unchanged or zero.
 /// * `key`, `ct` and `scratch` must not overlap each other, `ek`, `h` or `m` (distinct Rust objects never do).
-/// * None of `ek`, `h`, `m`, `key`, `ct` and `scratch` may overlap the 160 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `ek`, `h`, `m`, `key`, `ct` and `scratch` may overlap the 176 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_mlkem1024_encaps_h_auto(_dit: verified_garbage_cpu::Dit<'_>, ek: *const [u8; 1568], h: *const [u8; 32], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1568], scratch: *mut [u64; 6144]) -> u32 {
@@ -188,6 +194,8 @@ pub unsafe fn vg_mlkem1024_encaps_h_auto(_dit: verified_garbage_cpu::Dit<'_>, ek
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_mlkem1024_decaps_x2_sha3_keccak_sha3` if the target's vendor is `apple` (or `VG_CPU_FEATURES` names every feature it needs) and the CPU supports its features (`VG_MLKEM1024_DECAPS_X2_SHA3_KECCAK_SHA3_FEATURES`); `vg_mlkem1024_decaps_x2_sha3` if the CPU supports its features (`VG_MLKEM1024_DECAPS_X2_SHA3_FEATURES`); or else `vg_mlkem1024_decaps`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `dk` must be valid for reads of 3168 bytes.
@@ -197,7 +205,7 @@ pub unsafe fn vg_mlkem1024_encaps_h_auto(_dit: verified_garbage_cpu::Dit<'_>, ek
 /// * `dk` must have been written by `vg_mlkem1024_keygen` (so that it passes the checks of FIPS 203 §7.3).
 /// * `scratch` is working space: on return each of its bytes is unchanged or zero.
 /// * `key` and `scratch` must not overlap each other, `dk` or `ct` (distinct Rust objects never do).
-/// * None of `dk`, `ct`, `key` and `scratch` may overlap the 160 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `dk`, `ct`, `key` and `scratch` may overlap the 176 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_mlkem1024_decaps_auto(_dit: verified_garbage_cpu::Dit<'_>, dk: *const [u8; 3168], ct: *const [u8; 1568], key: *mut [u8; 32], scratch: *mut [u64; 6144]) -> u32 {
@@ -245,6 +253,8 @@ pub unsafe fn vg_mlkem1024_decaps_auto(_dit: verified_garbage_cpu::Dit<'_>, dk: 
 /// Contract: `VG.Spec.MlKem1024.checkEkContract`. Constant time: only the pointer may affect timing.
 ///
 /// It runs `vg_mlkem1024_check_ek`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///

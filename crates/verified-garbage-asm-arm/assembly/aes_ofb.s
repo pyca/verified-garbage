@@ -22,6 +22,10 @@ vg_aes_ofb:
 	mov r10, r12
 	cmp r8, #0
 	beq 20f
+	mov r0, r4
+	mov r1, r5
+	mov r2, r10
+	bl {vg_aes_blocks_keys}
 22:
 	mov r0, r4
 	mov r1, r5
@@ -29,7 +33,7 @@ vg_aes_ofb:
 	mov r3, #1
 	mov r12, r10
 	push {r12, lr}
-	bl {vg_aes_encrypt_blocks}
+	bl {vg_aes_encrypt_blocks_keyed}
 	ldr r12, [sp], #8
 	ldr r12, [r7, #0]
 	ldr lr, [r6, #0]
@@ -61,6 +65,18 @@ vg_aes_ofb:
 	ldr r9, [r10, #2084]
 	ldr lr, [r10, #2092]
 	ldr r10, [r10, #2088]
+	sub sp, sp, #8
+	add r12, sp, #0
+	mov r2, #0
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	add sp, sp, #8
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_aes_ofb_final:
@@ -94,7 +110,7 @@ vg_aes_ofb_final:
 	add r7, r3, r12, lsl #4
 	mov lr, r10
 	push {r12, lr}
-	bl {vg_aes_ofb}
+	bl {vg_aes_ofb_entry}
 	ldr r12, [sp], #8
 	cmp r8, #0
 	beq 20f
@@ -131,8 +147,12 @@ vg_aes_ofb_final:
 	ldr r10, [r12, #24]
 	ldr r11, [r12, #28]
 	ldr lr, [r12, #32]
-	add r12, sp, #16
+	add sp, sp, #56
+	sub sp, sp, #72
+	add r12, sp, #0
 	mov r2, #0
+	mov r3, #2
+23:
 	str r2, [r12, #0]
 	str r2, [r12, #4]
 	str r2, [r12, #8]
@@ -141,7 +161,16 @@ vg_aes_ofb_final:
 	str r2, [r12, #20]
 	str r2, [r12, #24]
 	str r2, [r12, #28]
-	str r2, [r12, #32]
-	str r2, [r12, #36]
-	add sp, sp, #56
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 23b
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	add sp, sp, #72
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr

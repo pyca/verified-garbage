@@ -23,6 +23,8 @@ every instruction): the literal of the code (`materialize_code`,
 
 namespace VG
 
+materialize_code windowDoubleRD := (Impl.Ecdh.AArch64.P521Window.doubleBodiesFor Impl.Ecdsa.AArch64.p521).1
+materialize_code windowDoubleDR := (Impl.Ecdh.AArch64.P521Window.doubleBodiesFor Impl.Ecdsa.AArch64.p521).2
 materialize_code Impl.Ecdh.AArch64.exchangeP521
 
 end VG

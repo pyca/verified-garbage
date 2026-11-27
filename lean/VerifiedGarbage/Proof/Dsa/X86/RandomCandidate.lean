@@ -66,22 +66,22 @@ theorem rangeByte_ok {s₀ t₀ t : State} (A : RandomSignABI s₀) {cs : List B
     (I : RangeInv s₀ t₀ cs (k + 1) t) :
     WP isa (.block rangeByte) t fun u => RangeInv s₀ t₀ cs k u ∧ u.zf = some (decide (k = 0)) := by
   have hF : Random.frameBytes = 120 := rfl
-  have hql := rQBytes_le A
-  have hfit : rWidth s₀ ≤ (rQBytes s₀).length := VG.Proof.Dsa.significant_fits (rQBytes s₀)
-  have hq := I.ready.q A
+  obtain hql := rQBytes_le A
+  obtain hfit : rWidth s₀ ≤ (rQBytes s₀).length := VG.Proof.Dsa.significant_fits (rQBytes s₀)
+  obtain hq := I.ready.q A
   have hqfit := hq.fit
   have hrf := I.ready.rf
   unfold rangeByte borrow
   simp only [List.cons_append, List.nil_append]
   refine wp_subi fun t₁ u₁ _ _ => wp_subi fun t₂ u₂ _ _ => ?_
-  have e₂ : t₂.gpr .edx = t.gpr .esp + BitVec.ofNat 32 (drawPlace s₀ + k) := by
+  obtain e₂ : t₂.gpr .edx = t.gpr .esp + BitVec.ofNat 32 (drawPlace s₀ + k) := by
     rw [u₂.other _ (by decide), u₁.gpr, I.edx, show drawPlace s₀ + (k + 1) = drawPlace s₀ + k + 1 from rfl,
       ofNat_add_one_sub (by unfold drawPlace oNonce; omega_arith)]
-  have s₂ : t₂.gpr .esi = rQ s₀ + BitVec.ofNat 32 ((rQBytes s₀).length - rWidth s₀ + k) := by
+  obtain s₂ : t₂.gpr .esi = rQ s₀ + BitVec.ofNat 32 ((rQBytes s₀).length - rWidth s₀ + k) := by
     rw [u₂.gpr, u₁.other _ (by decide), I.esi, show (rQBytes s₀).length - rWidth s₀ + (k + 1) =
       (rQBytes s₀).length - rWidth s₀ + k + 1 from rfl, ofNat_add_one_sub (by omega_arith)]
-  have esp₂ : t₂.gpr .esp = t.gpr .esp := by rw [u₂.other _ (by decide), u₁.other _ (by decide)]
-  have hn := hnonce k hk
+  obtain esp₂ : t₂.gpr .esp = t.gpr .esp := by rw [u₂.other _ (by decide), u₁.other _ (by decide)]
+  obtain hn := hnonce k hk
   rw [← I.mem] at hn
   refine wp_load8 (a := off (rBase s₀) (drawPlace s₀ + k))
     (by rw [ea_at0, e₂]; exact hrf.ptr (by unfold argOff drawPlace oNonce; omega_arith))
@@ -89,7 +89,7 @@ theorem rangeByte_ok {s₀ t₀ t : State} (A : RandomSignABI s₀) {cs : List B
       rw [u₂.rd, u₁.rd, u₂.wr, u₁.wr]; exact h) fun t₃ u₃ _ _ => ?_
   rw [u₂.mem, u₁.mem, hn] at u₃
   refine wp_or fun t₄ u₄ => ?_
-  have hqi : (rQBytes s₀).length - rWidth s₀ + k < (rQBytes s₀).length := by omega_arith
+  obtain hqi : (rQBytes s₀).length - rWidth s₀ + k < (rQBytes s₀).length := by omega_arith
   refine wp_load8 (a := (rQ s₀).setWidth 64 + BitVec.ofNat 64 ((rQBytes s₀).length - rWidth s₀ + k))
     (by rw [ea_at0, u₄.other _ (by decide), u₃.other _ (by decide), s₂]; exact ptr_add (by omega_arith))
     (by rw [u₄.rd, u₃.rd, u₂.rd, u₁.rd, u₄.wr, u₃.wr, u₂.wr, u₁.wr]; exact hq.rd _ hqi)
@@ -98,36 +98,36 @@ theorem rangeByte_ok {s₀ t₀ t : State} (A : RandomSignABI s₀) {cs : List B
   refine wp_add fun t₆ u₆ _ => wp_sub fun t₇ u₇ _ => wp_shr (by decide) fun t₈ u₈ _ =>
     wp_mov fun t₉ u₉ => wp_subi fun t₁₀ u₁₀ _ z₁₀ => WP.block_nil ?_
   -- The values.
-  have hc := VG.Proof.Dsa.randomBorrow_le (cs.drop (k + 1)) ((qSig s₀).drop (k + 1))
-  have hcs' : k < cs.length := by omega_arith
-  have hqs' : k < (qSig s₀).length := by simp only [qSig, List.length_drop]; omega_arith
-  have hqk : (qSig s₀)[k] = (rQBytes s₀)[(rQBytes s₀).length - rWidth s₀ + k] := by
+  obtain hc := VG.Proof.Dsa.randomBorrow_le (cs.drop (k + 1)) ((qSig s₀).drop (k + 1))
+  obtain hcs' : k < cs.length := by omega_arith
+  obtain hqs' : k < (qSig s₀).length := by simp only [qSig, List.length_drop]; omega_arith
+  obtain hqk : (qSig s₀)[k] = (rQBytes s₀)[(rQBytes s₀).length - rWidth s₀ + k] := by
     simp only [qSig, List.getElem_drop]
-  have hdrop : ∀ (l : List Byte) (h : k < l.length), l.drop k = l[k] :: l.drop (k + 1) := fun l h => by
+  obtain hdrop : ∀ (l : List Byte) (h : k < l.length), l.drop k = l[k] :: l.drop (k + 1) := fun l h => by
     rw [List.drop_eq_getElem_cons h]
-  have hb : VG.Proof.Dsa.randomBorrow (cs.drop k) ((qSig s₀).drop k) =
+  obtain hb : VG.Proof.Dsa.randomBorrow (cs.drop k) ((qSig s₀).drop k) =
       if (cs[k]).toNat < ((qSig s₀)[k]).toNat + VG.Proof.Dsa.randomBorrow (cs.drop (k + 1)) ((qSig s₀).drop (k + 1))
       then 1 else 0 := by
     rw [hdrop cs hcs', hdrop (qSig s₀) hqs', VG.Proof.Dsa.randomBorrow]
-  have hcg : cs.getD k 0 = cs[k] := by
+  obtain hcg : cs.getD k 0 = cs[k] := by
     simp only [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hcs', Option.getD_some]
-  have eax₇ : t₇.gpr .eax = (cs[k].setWidth 32) - (((qSig s₀)[k]).setWidth 32 +
+  obtain eax₇ : t₇.gpr .eax = (cs[k].setWidth 32) - (((qSig s₀)[k]).setWidth 32 +
       BitVec.ofNat 32 (VG.Proof.Dsa.randomBorrow (cs.drop (k + 1)) ((qSig s₀).drop (k + 1)))) := by
     rw [u₇.gpr, u₆.gpr, u₆.other .eax (by decide), u₅.gpr, u₅.other .eax (by decide),
       u₅.other .ebx (by decide), u₄.other .eax (by decide), u₄.other .ebx (by decide), u₃.gpr,
       u₃.other .ebx (by decide), u₂.other .ebx (by decide), u₁.other .ebx (by decide), I.ebx, ← hcg, hqk]
-  have toOfNat : ∀ b : Byte, b.setWidth 32 = BitVec.ofNat 32 b.toNat := fun b => by
+  obtain toOfNat : ∀ b : Byte, b.setWidth 32 = BitVec.ofNat 32 b.toNat := fun b => by
     apply BitVec.eq_of_toNat_eq; rw [toNat_setWidth8, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]
   have hc' := hc
   rw [toOfNat, toOfNat, BitVec.ofNat_add_ofNat] at eax₇
-  have kk : Keeps [.eax, .ebx, .ecx, .edx, .esi, .edi, .ebp] t t₁₀ :=
+  obtain kk : Keeps [.eax, .ebx, .ecx, .edx, .esi, .edi, .ebp] t t₁₀ :=
     (((((((((u₁.keeps.mono (by decide)).trans (u₂.keeps.mono (by decide))).trans (u₃.keeps.mono (by decide))).trans
       (u₄.keeps.mono (by decide))).trans (u₅.keeps.mono (by decide))).trans (u₆.keeps.mono (by decide))).trans
       (u₇.keeps.mono (by decide))).trans (u₈.keeps.mono (by decide))).trans (u₉.keeps.mono (by decide))).trans
       (u₁₀.keeps.mono (by decide))
-  have hm : t₁₀.mem = t.mem := by
+  obtain hm : t₁₀.mem = t.mem := by
     rw [u₁₀.mem, u₉.mem, u₈.mem, u₇.mem, u₆.mem, u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem]
-  have edi₁₀ : t₁₀.gpr .edi = t.gpr .edi ||| cs[k].setWidth 32 := by
+  obtain edi₁₀ : t₁₀.gpr .edi = t.gpr .edi ||| cs[k].setWidth 32 := by
     rw [u₁₀.other _ (by decide), u₉.other _ (by decide), u₈.other _ (by decide), u₇.other _ (by decide),
       u₆.other _ (by decide), u₅.other _ (by decide), u₄.gpr, u₃.other _ (by decide), u₃.gpr,
       u₂.other _ (by decide), u₁.other _ (by decide), hcg]
@@ -161,7 +161,7 @@ theorem rangeByte_ok {s₀ t₀ t : State} (A : RandomSignABI s₀) {cs : List B
     exact congrArg some (decide_eq_decide.mpr (by omega_arith))
 
 theorem qSig_length {s₀ : State} : (qSig s₀).length = rWidth s₀ := by
-  have hfit : rWidth s₀ ≤ (rQBytes s₀).length := VG.Proof.Dsa.significant_fits (rQBytes s₀)
+  obtain hfit : rWidth s₀ ≤ (rQBytes s₀).length := VG.Proof.Dsa.significant_fits (rQBytes s₀)
   simp only [qSig, List.length_drop]; omega_arith
 
 /-- Whether the candidate `cs` is accepted: nonzero and below q. -/
@@ -176,24 +176,24 @@ theorem rangeFinish_ok {s₀ t₀ t : State} {cs : List Byte} (hcs : cs.length =
   unfold rangeFinish
   refine wp_movS rfl fun t₁ u₁ _ => wp_subS (src := .reg .edi) rfl fun t₂ u₂ c₂ => ?_
   refine wp_sbb_self c₂ fun t₃ u₃ => wp_and fun t₄ u₄ => wp_test fun t₅ f₅ z₅ => WP.block_nil ?_
-  have hb := VG.Proof.Dsa.randomBorrow_eq cs (qSig s₀) (by rw [hcs, qSig_length])
-  have hz : (t.gpr .edi = 0) ↔ Spec.Dsa.decodeBE cs = 0 := by
+  obtain hb := VG.Proof.Dsa.randomBorrow_eq cs (qSig s₀) (by rw [hcs, qSig_length])
+  obtain hz : (t.gpr .edi = 0) ↔ Spec.Dsa.decodeBE cs = 0 := by
     rw [VG.Proof.Dsa.decodeBE_eq_zero]; simpa only [List.drop_zero] using I.ediz
-  have edi : t₁.gpr .edi = t.gpr .edi := u₁.other _ (by decide)
-  have ebx₄ : t₄.gpr .ebx = (if accepts s₀ cs then 1 else 0) := by
+  obtain edi : t₁.gpr .edi = t.gpr .edi := u₁.other _ (by decide)
+  obtain ebx₄ : t₄.gpr .ebx = (if accepts s₀ cs then 1 else 0) := by
     rw [u₄.gpr, u₃.other _ (by decide), u₃.gpr, u₂.other _ (by decide), u₁.other _ (by decide), I.ebx,
       u₁.gpr, edi]
     simp only [List.drop_zero, hb]
     unfold accepts
-    have h0 : (0 < (t.gpr .edi).toNat) ↔ 0 < Spec.Dsa.decodeBE cs := by
+    obtain h0 : (0 < (t.gpr .edi).toNat) ↔ 0 < Spec.Dsa.decodeBE cs := by
       rw [Nat.pos_iff_ne_zero, Nat.pos_iff_ne_zero, ne_eq, ne_eq, ← hz]
       exact not_congr ⟨fun h => BitVec.eq_of_toNat_eq h, fun h => by rw [h]; rfl⟩
     by_cases hp : 0 < Spec.Dsa.decodeBE cs <;> by_cases hl : Spec.Dsa.decodeBE cs < Spec.Dsa.decodeBE (qSig s₀) <;>
       simp [hp, hl, h0]
-  have kk : Keeps [.eax, .ebx, .ecx, .edx, .esi, .edi, .ebp] t t₅ :=
+  obtain kk : Keeps [.eax, .ebx, .ecx, .edx, .esi, .edi, .ebp] t t₅ :=
     ((((u₁.keeps.mono (by decide)).trans (u₂.keeps.mono (by decide))).trans (u₃.keeps.mono (by decide))).trans
       (u₄.keeps.mono (by decide))).trans (f₅.keeps _)
-  have hm : t₅.mem = t.mem := by rw [f₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem]
+  obtain hm : t₅.mem = t.mem := by rw [f₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem]
   refine ⟨by rw [f₅.gpr]; exact ebx₄, ?_, hm.trans I.mem, I.ready.congr kk (by rw [hm]; exact Frame.refl _ _),
     I.keeps.trans kk⟩
   rw [z₅, ebx₄, BitVec.and_self]
@@ -204,30 +204,30 @@ theorem rangeInit_ok {s₀ t : State} (A : RandomSignABI s₀) (h : Ready s₀ t
     (hq : slot t.mem (rBase s₀) oQ = rQ s₀ + BitVec.ofNat 32 ((rQBytes s₀).length - rWidth s₀))
     (hw : slot t.mem (rBase s₀) oWidth = BitVec.ofNat 32 (rWidth s₀)) (hcs : cs.length = rWidth s₀) :
     WP isa (.block rangeInit) t fun u => RangeInv s₀ t cs (rWidth s₀) u ∧ u.mem = t.mem := by
-  have hql := rQBytes_le A
-  have hqn := rQBytes_length A
-  have hfit : rWidth s₀ ≤ (rQBytes s₀).length := VG.Proof.Dsa.significant_fits (rQBytes s₀)
+  obtain hql := rQBytes_le A
+  obtain hqn := rQBytes_length A
+  obtain hfit : rWidth s₀ ≤ (rQBytes s₀).length := VG.Proof.Dsa.significant_fits (rQBytes s₀)
   unfold rangeInit
   refine wp_movS rfl fun t₁ u₁ _ => wp_addi fun t₂ u₂ => ?_
-  have h₂ := (h.upd u₁ (by decide)).upd u₂ (by decide)
+  obtain h₂ := (h.upd u₁ (by decide)).upd u₂ (by decide)
   refine wp_addS (h₂.argSrc A (j := 6) (by decide)) fun t₃ u₃ _ => ?_
-  have h₃ := h₂.upd u₃ (by decide)
+  obtain h₃ := h₂.upd u₃ (by decide)
   refine wp_movS (v := rQ s₀ + BitVec.ofNat 32 ((rQBytes s₀).length - rWidth s₀))
     (by rw [h₃.rf.readSlot (by decide), u₃.mem, u₂.mem, u₁.mem]; exact congrArg some hq) fun t₄ u₄ _ => ?_
-  have h₄ := h₃.upd u₄ (by decide)
+  obtain h₄ := h₃.upd u₄ (by decide)
   refine wp_movS (v := BitVec.ofNat 32 (rWidth s₀))
     (by rw [h₄.rf.readSlot (by decide), u₄.mem, u₃.mem, u₂.mem, u₁.mem]; exact congrArg some hw)
     fun t₅ u₅ _ => wp_add fun t₆ u₆ _ => wp_movS rfl fun t₇ u₇ _ => wp_movS rfl fun t₈ u₈ _ =>
       WP.block_nil ?_
-  have k₈ : Keeps [.eax, .ebx, .ecx, .edx, .esi, .edi, .ebp] t t₈ :=
+  obtain k₈ : Keeps [.eax, .ebx, .ecx, .edx, .esi, .edi, .ebp] t t₈ :=
     (((((((u₁.keeps.mono (by decide)).trans (u₂.keeps.mono (by decide))).trans (u₃.keeps.mono (by decide))).trans
       (u₄.keeps.mono (by decide))).trans (u₅.keeps.mono (by decide))).trans (u₆.keeps.mono (by decide))).trans
       (u₇.keeps.mono (by decide))).trans (u₈.keeps.mono (by decide))
-  have m₈ : t₈.mem = t.mem := by
+  obtain m₈ : t₈.mem = t.mem := by
     rw [u₈.mem, u₇.mem, u₆.mem, u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem]
-  have hcsd : cs.drop (rWidth s₀) = [] := List.drop_eq_nil_of_le (by omega_arith)
-  have hqd : (qSig s₀).drop (rWidth s₀) = [] := List.drop_eq_nil_of_le (by rw [qSig_length])
-  have I₀ : RangeInv s₀ t cs (rWidth s₀) t₈ := by
+  obtain hcsd : cs.drop (rWidth s₀) = [] := List.drop_eq_nil_of_le (by omega_arith)
+  obtain hqd : (qSig s₀).drop (rWidth s₀) = [] := List.drop_eq_nil_of_le (by rw [qSig_length])
+  obtain I₀ : RangeInv s₀ t cs (rWidth s₀) t₈ := by
     refine ⟨h.congr k₈ (by rw [m₈]; exact Frame.refl _ _), m₈, ?_, ?_, ?_, ?_, ?_, ?_, k₈⟩
     · rw [u₈.other _ (by decide), u₇.other _ (by decide), u₆.other _ (by decide), u₅.other _ (by decide),
         u₄.other _ (by decide), u₃.gpr, u₂.gpr, u₁.gpr, k₈.1 .esp (by decide),
@@ -250,9 +250,9 @@ theorem inRange_ok {s₀ t : State} (A : RandomSignABI s₀) (h : Ready s₀ t) 
     WP isa inRange t fun u => u.gpr .ebx = (if accepts s₀ cs then 1 else 0) ∧
       u.zf = some (!accepts s₀ cs) ∧ u.mem = t.mem ∧ Ready s₀ u ∧
       Keeps [.eax, .ebx, .ecx, .edx, .esi, .edi, .ebp] t u := by
-  have hql := rQBytes_le A
-  have hqn := rQBytes_length A
-  have hfit : rWidth s₀ ≤ (rQBytes s₀).length := VG.Proof.Dsa.significant_fits (rQBytes s₀)
+  obtain hql := rQBytes_le A
+  obtain hqn := rQBytes_length A
+  obtain hfit : rWidth s₀ ≤ (rQBytes s₀).length := VG.Proof.Dsa.significant_fits (rQBytes s₀)
   unfold inRange
   refine WP.seq (WP.mono (rangeInit_ok A h hq hw hcs) fun t₈ ⟨I₀, _⟩ => ?_)
   -- The loop.
@@ -329,15 +329,15 @@ theorem copiedList_eq {b : Byte} {bs : List Byte} (mask : BitVec 32) :
 theorem masked_head (s₀ : State) (b : Byte) (hpos : 0 < rWidth s₀) :
     (b.setWidth 32 &&& maskValue (rLead s₀).toNat).setWidth 8 =
       b &&& BitVec.ofNat 8 (2 ^ ((rLead s₀).toNat.log2 + 1) - 1) := by
-  have hb : 0 < (rLead s₀).toNat := by
-    have hn := VG.Proof.Dsa.significant_nonzero (rQBytes s₀)
-    have hz : (rLead s₀).toNat ≠ 0 := by
+  obtain hb : 0 < (rLead s₀).toNat := by
+    obtain hn := VG.Proof.Dsa.significant_nonzero (rQBytes s₀)
+    obtain hz : (rLead s₀).toNat ≠ 0 := by
       intro he
-      have h0 : rWidth s₀ = 0 := hn.mpr (BitVec.eq_of_toNat_eq he)
+      obtain h0 : rWidth s₀ = 0 := hn.mpr (BitVec.eq_of_toNat_eq he)
       omega_using [hpos, h0]
     omega_using [hz]
-  have hlog : (rLead s₀).toNat.log2 + 1 ≤ 8 := by
-    have h := (Nat.log2_lt (by omega_using [hb])).mpr (rLead s₀).isLt
+  obtain hlog : (rLead s₀).toNat.log2 + 1 ≤ 8 := by
+    obtain h := (Nat.log2_lt (by omega_using [hb])).mpr (rLead s₀).isLt
     omega_using [h]
   rw [maskValue_eq _ hb (rLead s₀).isLt, BitVec.setWidth_and, BitVec.setWidth_setWidth_of_le _ (by decide),
     BitVec.setWidth_eq, BitVec.setWidth_ofNat_of_le (by decide)]
@@ -350,7 +350,7 @@ theorem copied_candidate (s₀ : State) {bs : List Byte} (hl : bs.length = rWidt
     cases bs with
     | nil => simp at hl; omega
     | cons b tl => exact ⟨b, tl, rfl⟩
-  have hw : tl.length + 1 = rWidth s₀ := by simpa using hl
+  obtain hw : tl.length + 1 = rWidth s₀ := by simpa using hl
   rw [← hw, copiedList_eq, masked_head s₀ b hpos, VG.Proof.Dsa.random_candidate_mask _ b tl hw]
 
 theorem accepts_candidate (s₀ : State) {bs : List Byte} (hl : bs.length = rWidth s₀) (hpos : 0 < rWidth s₀) :

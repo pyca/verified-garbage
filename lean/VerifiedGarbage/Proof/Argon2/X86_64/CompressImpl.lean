@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Argon2.X86_64.Taint
 public import VerifiedGarbage.Proof.Framework.X86_64.Call
 public import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
 public import VerifiedGarbage.Impl.Argon2.X86_64.Compressor
+public import VerifiedGarbage.Proof.Framework.X86_64.CalleeSide
 
 /-!
 # Implementations of G that the derivation calls
@@ -37,6 +38,11 @@ class CompressImpl where
   depth : code.depth = 0
   ctl : ctlOk code = true
   spSafe : code.all (fun i => !isa.writesSp i) = true
+  /-- The level of its vector instructions. -/
+  level : Impl.Scrub.X86_64.VecLevel
+  /-- What the cleanup of a function that calls it needs of its code, at
+  that level (`X86_64.Scrub.calleeSide`), evaluated here, once. -/
+  side : X86_64.Scrub.calleeSide code level.level 0 = true
 
 /-- MXCSR's control bits are those of a state with the same MXCSR. -/
 theorem ctl_eq_of {a b : BitVec 32} (h : a = b) : ctl a = ctl b := congrArg ctl h

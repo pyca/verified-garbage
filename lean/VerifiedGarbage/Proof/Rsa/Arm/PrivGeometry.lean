@@ -6,7 +6,8 @@ public import VerifiedGarbage.Proof.Rsa.Arm.PrivImpl
 
 The eight source buffers are n, e, input, p, q, dp, dq, and qInv. Stack
 arguments lie above the wrapper's two frames; each callee has a separate
-56-byte frame below the inner frame.
+56-byte frame below the inner frame, and the private CRT 48 bytes more
+for the calls it makes.
 -/
 
 @[expose] public section
@@ -38,9 +39,13 @@ def outputRegion (g : PrivGeometry) : Region := ⟨State.addr g.output, g.length
 def workspaceRegion (g : PrivGeometry) : Region := ⟨State.addr g.workspace, 8 * g.scratchLength⟩
 def innerRegion (g : PrivGeometry) : Region := ⟨State.addr g.stack, frameBytes⟩
 def savedRegion (g : PrivGeometry) : Region := ⟨State.addr g.stack + BitVec.ofNat 64 frameBytes, 56⟩
-def calleeRegion (g : PrivGeometry) : Region := FrameStack.belowA g.stack 56
+/-- The stack of a call: at most 104 bytes, the private CRT's frame and the
+Montgomery product it calls. -/
+def calleeRegion (g : PrivGeometry) : Region := FrameStack.belowA g.stack 104
 def argumentsRegion (g : PrivGeometry) : Region := ⟨State.addr g.stack + BitVec.ofNat 64 (frameBytes + 56), 64⟩
-def wholeStack (g : PrivGeometry) : Region := ⟨State.addr (g.stack - BitVec.ofNat 32 56), stackBytes⟩
+def wholeStack (g : PrivGeometry) : Region := ⟨State.addr (g.stack - BitVec.ofNat 32 104), stackBytes⟩
+/-- The private CRT's frame and the stack of the calls it makes from it. -/
+def crtCalleeRegion (g : PrivGeometry) : Region := FrameStack.belowA g.stack 104
 def temporary (g : PrivGeometry) : BitVec 32 := g.stack + BitVec.ofNat 32 oM
 def precomputation (g : PrivGeometry) : BitVec 32 := g.stack + BitVec.ofNat 32 oPre
 
@@ -66,6 +71,7 @@ structure Valid (g : PrivGeometry) : Prop where
   qFits : g.qLength < g.length
   space : Spec.Rsa.scratchWords g.length ≤ g.scratchLength
   stackLow : 56 ≤ g.stack.toNat
+  stackLow104 : 104 ≤ g.stack.toNat
   stackHigh : g.stack.toNat + frameBytes + 56 + 64 ≤ 2 ^ 32
   outputFit : g.output.toNat + g.length ≤ 2 ^ 32
   sourceFits : ∀ i, (g.sources i).toNat + g.sourceLength i ≤ 2 ^ 32

@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Sm3.initContract`. The streaming state is the hash value followed by a buffered partial block (`VG.Spec.Sm3.Repr`).
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 96 bytes.
@@ -16,7 +18,7 @@ pub(crate) unsafe extern "C" fn vg_sm3_init(state: *mut [u8; 96]) {
     core::arch::naked_asm!(
         r#".option push
 .option arch, +m, +c
-.base64 "txKAc5uC8mYjAFUAE9OCAKMAZQAT0wIBIwFlABPTggGjAWUAt7IUSZuCkisjAlUAE9OCAKMCZQAT0wIBIwNlABPTggGjA2UAt0IkF5uCci0jBFUAE9OCAKMEZQAT0wIBIwVlABPTggGjBWUAtwKK2puCAmAjBlUAE9OCAKMGZQAT0wIBIwdlABPTggGjB2UAtzJvqZuCwgsjCFUAE9OCAKMIZQAT0wIBIwllABPTggGjCWUAt0IxFpuCooojClUAE9OCAKMKZQAT0wIBIwtlABPTggGjC2UAt/KN45uC0uQjDFUAE9OCAKMMZQAT0wIBIw1lABPTggGjDWUAtxL7sJuC4uQjDlUAE9OCAKMOZQAT0wIBIw9lABPTggGjD2UAgoA="
+.base64 "txKAc5uC8mYjAFUAE9OCAKMAZQAT0wIBIwFlABPTggGjAWUAt7IUSZuCkisjAlUAE9OCAKMCZQAT0wIBIwNlABPTggGjA2UAt0IkF5uCci0jBFUAE9OCAKMEZQAT0wIBIwVlABPTggGjBWUAtwKK2puCAmAjBlUAE9OCAKMGZQAT0wIBIwdlABPTggGjB2UAtzJvqZuCwgsjCFUAE9OCAKMIZQAT0wIBIwllABPTggGjCWUAt0IxFpuCooojClUAE9OCAKMKZQAT0wIBIwtlABPTggGjC2UAt/KN45uC0uQjDFUAE9OCAKMMZQAT0wIBIw1lABPTggGjDWUAtxL7sJuC4uQjDlUAE9OCAKMOZQAT0wIBIw9lABPTggGjD2UAgUIBRYFFAUaBRgFHgUcBSIFIgUIBQ4FDAU6BTgFPgU+CgA=="
 .option pop"#,
     )
 }
@@ -24,6 +26,8 @@ pub(crate) unsafe extern "C" fn vg_sm3_init(state: *mut [u8; 96]) {
 /// Absorbs data into an SM3 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), it then represents that message followed by the `len` bytes at `data`.
 ///
 /// Contract: `VG.Spec.Sm3.updateContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -102,7 +106,7 @@ bnez s4, 22b
 j 21f
 20:
 21:
-.base64 "gzAJBYM0iQWDOYkGAzoJB4M6iQcDOwkIAzkJBklhgoA="
+.base64 "gzAJBYM0iQWDOYkGAzoJB4M6iQcDOwkIAzkJBklhgUJ1cQqDIzBTACM0UwAjOFMAIzxTACMwUwIjNFMCIzhTAiM8UwIjMFMEIzRTBCM4UwQjPFMEIzBTBiM0UwYjOFMGIzxTBiMwUwgjNFMISWEBRYFFAUaBRgFHgUcBSIFIgUIBQ4FDAU6BTgFPgU+CgA=="
 .option pop"#,
         vg_sm3_compress = sym super::sm3::vg_sm3_compress::vg_sm3_compress,
     )
@@ -111,6 +115,8 @@ j 21f
 /// Finishes an SM3 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), writes the SM3 hash value of that message (32 bytes) to `*out`.
 ///
 /// Contract: `VG.Spec.Sm3.finalizeContract`. Constant time: only the pointers and `count` may affect timing, not the state.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -149,7 +155,7 @@ j 27f
 call {vg_sm3_compress}
 .base64 "gUp9Gw=="
 beqz s6, 20b
-.base64 "A8MEAIPDFACiAzNjcwCDwyQAwgMzY3MAg8M0AOIDM2NzAJNTgwEjgHkAk1MDAaOAeQCTU4MAI4F5AJNTAwCjgXkAA8NEAIPDVACiAzNjcwCDw2QAwgMzY3MAg8N0AOIDM2NzAJNTgwEjgnkAk1MDAaOCeQCTU4MAI4N5AJNTAwCjg3kAA8OEAIPDlACiAzNjcwCDw6QAwgMzY3MAg8O0AOIDM2NzAJNTgwEjhHkAk1MDAaOEeQCTU4MAI4V5AJNTAwCjhXkAA8PEAIPD1ACiAzNjcwCDw+QAwgMzY3MAg8P0AOIDM2NzAJNTgwEjhnkAk1MDAaOGeQCTU4MAI4d5AJNTAwCjh3kAA8MEAYPDFAGiAzNjcwCDwyQBwgMzY3MAg8M0AeIDM2NzAJNTgwEjiHkAk1MDAaOIeQCTU4MAI4l5AJNTAwCjiXkAA8NEAYPDVAGiAzNjcwCDw2QBwgMzY3MAg8N0AeIDM2NzAJNTgwEjinkAk1MDAaOKeQCTU4MAI4t5AJNTAwCji3kAA8OEAYPDlAGiAzNjcwCDw6QBwgMzY3MAg8O0AeIDM2NzAJNTgwEjjHkAk1MDAaOMeQCTU4MAI415AJNTAwCjjXkAA8PEAYPD1AGiAzNjcwCDw+QBwgMzY3MAg8P0AeIDM2NzAJNTgwEjjnkAk1MDAaOOeQCTU4MAI495AJNTAwCjj3kAgzAJBYM0iQWDOYkGAzoJB4M6iQcDOwkIAzkJBklhgoA="
+.base64 "A8MEAIPDFACiAzNjcwCDwyQAwgMzY3MAg8M0AOIDM2NzAJNTgwEjgHkAk1MDAaOAeQCTU4MAI4F5AJNTAwCjgXkAA8NEAIPDVACiAzNjcwCDw2QAwgMzY3MAg8N0AOIDM2NzAJNTgwEjgnkAk1MDAaOCeQCTU4MAI4N5AJNTAwCjg3kAA8OEAIPDlACiAzNjcwCDw6QAwgMzY3MAg8O0AOIDM2NzAJNTgwEjhHkAk1MDAaOEeQCTU4MAI4V5AJNTAwCjhXkAA8PEAIPD1ACiAzNjcwCDw+QAwgMzY3MAg8P0AOIDM2NzAJNTgwEjhnkAk1MDAaOGeQCTU4MAI4d5AJNTAwCjh3kAA8MEAYPDFAGiAzNjcwCDwyQBwgMzY3MAg8M0AeIDM2NzAJNTgwEjiHkAk1MDAaOIeQCTU4MAI4l5AJNTAwCjiXkAA8NEAYPDVAGiAzNjcwCDw2QBwgMzY3MAg8N0AeIDM2NzAJNTgwEjinkAk1MDAaOKeQCTU4MAI4t5AJNTAwCji3kAA8OEAYPDlAGiAzNjcwCDw6QBwgMzY3MAg8O0AeIDM2NzAJNTgwEjjHkAk1MDAaOMeQCTU4MAI415AJNTAwCjjXkAA8PEAYPD1AGiAzNjcwCDw+QBwgMzY3MAg8P0AeIDM2NzAJNTgwEjjnkAk1MDAaOOeQCTU4MAI495AJNTAwCjj3kAgzAJBYM0iQWDOYkGAzoJB4M6iQcDOwkIAzkJBklhgUJ1cQqDIzBTACM0UwAjOFMAIzxTACMwUwIjNFMCIzhTAiM8UwIjMFMEIzRTBCM4UwQjPFMEIzBTBiM0UwYjOFMGIzxTBiMwUwgjNFMISWEBRYFFAUaBRgFHgUcBSIFIgUIBQ4FDAU6BTgFPgU+CgA=="
 .option pop"#,
         vg_sm3_compress = sym super::sm3::vg_sm3_compress::vg_sm3_compress,
     )

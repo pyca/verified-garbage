@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Checked
 public import VerifiedGarbage.Proof.Framework.AArch64.Taint
 public import VerifiedGarbage.Proof.Framework.AllBelow
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.FastEnv
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Tree
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Certificate
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.PlainSimp
 

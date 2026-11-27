@@ -56,64 +56,64 @@ theorem macW_ok {t : State} {base : Addr} {size : Nat} (hs : Scr t base size) {a
           w32 t.mem base (w + o)) / 2 ^ 32 ∧
       Keeps [.eax, .ebx, .edx] t u := by
   have hn := hs.nowrap
-  have eb : 4 * j + (b + d) = b + o := by omega_arith
-  have ew : 4 * (i + j) + (acc + d) = w + o := by omega_arith
+  obtain eb : 4 * j + (b + d) = b + o := by omega_arith
+  obtain ew : 4 * (i + j) + (acc + d) = w + o := by omega_arith
   simp only [macW]
   refine wp_movS (readSrc_sc hs hm) fun s₀ u₀ _ => ?_
-  have hs₀ := hs.of_keeps u₀.keeps (by decide)
-  have hecx₀ : s₀.gpr .ecx = s₀.gpr .edi + BitVec.ofNat 32 (4 * j) := by
+  obtain hs₀ := hs.of_keeps u₀.keeps (by decide)
+  obtain hecx₀ : s₀.gpr .ecx = s₀.gpr .edi + BitVec.ofNat 32 (4 * j) := by
     rw [u₀.other _ (by decide), u₀.other _ (by decide)]; exact hecx
   refine wp_movS (readSrc_regAt hs₀ hecx₀ (d := b + d) (by omega_arith)) fun s₁ u₁ _ => ?_
   refine wp_mul fun s₂ m₂ => ?_
-  have K₂ : Keeps [.eax, .edx] t s₂ := ((u₀.keeps.mono (by decide)).widen u₁.keeps).widen m₂.keeps
-  have hs₂ := hs.of_keeps K₂ (by decide)
-  have hp₂ : s₂.gpr .ebp = s₂.gpr .edi + BitVec.ofNat 32 (4 * (i + j)) := by
+  obtain K₂ : Keeps [.eax, .edx] t s₂ := ((u₀.keeps.mono (by decide)).widen u₁.keeps).widen m₂.keeps
+  obtain hs₂ := hs.of_keeps K₂ (by decide)
+  obtain hp₂ : s₂.gpr .ebp = s₂.gpr .edi + BitVec.ofNat 32 (4 * (i + j)) := by
     rw [K₂.1 _ (by decide), K₂.1 _ (by decide)]; exact hp
   refine wp_addS (readSrc_regAt hs₂ hp₂ (d := acc + d) (by omega_arith)) fun s₃ u₃ c₃ => ?_
   refine wp_adcS rfl c₃ fun s₄ u₄ c₄ => ?_
   refine wp_addS rfl fun s₅ u₅ c₅ => ?_
   refine wp_adcS rfl c₅ fun s₆ u₆ c₆ => ?_
-  have K₄ : Keeps [.eax, .edx] t s₄ := (K₂.widen u₃.keeps).widen u₄.keeps
-  have K₆ : Keeps [.eax, .edx] t s₆ := (K₄.widen u₅.keeps).widen u₆.keeps
-  have hs₆ := hs.of_keeps K₆ (by decide)
-  have hp₆ : s₆.gpr .ebp = s₆.gpr .edi + BitVec.ofNat 32 (4 * (i + j)) := by
+  obtain K₄ : Keeps [.eax, .edx] t s₄ := (K₂.widen u₃.keeps).widen u₄.keeps
+  obtain K₆ : Keeps [.eax, .edx] t s₆ := (K₄.widen u₅.keeps).widen u₆.keeps
+  obtain hs₆ := hs.of_keeps K₆ (by decide)
+  obtain hp₆ : s₆.gpr .ebp = s₆.gpr .edi + BitVec.ofNat 32 (4 * (i + j)) := by
     rw [K₆.1 _ (by decide), K₆.1 _ (by decide)]; exact hp
   refine wp_storeS (hs₆.ea_regAt hp₆ (d := acc + d) (by omega_arith))
     (hs₆.write (d := 4 * (i + j) + (acc + d)) (n := 4) (by omega_arith)) fun s₇ m₇ => ?_
   refine wp_movS rfl fun s₈ u₈ _ => WP.block_nil ?_
   -- The registers and memory along the way.
-  have m₂' : s₂.mem = t.mem := by rw [m₂.mem, u₁.mem, u₀.mem]
-  have m₄ : s₄.mem = t.mem := by rw [u₄.mem, u₃.mem, m₂']
-  have m₆ : s₆.mem = t.mem := by rw [u₆.mem, u₅.mem, m₄]
-  have eax₁ : s₁.gpr .eax = t.mem.readW (off base mult) 32 := by rw [u₁.other _ (by decide), u₀.gpr]
+  obtain m₂' : s₂.mem = t.mem := by rw [m₂.mem, u₁.mem, u₀.mem]
+  obtain m₄ : s₄.mem = t.mem := by rw [u₄.mem, u₃.mem, m₂']
+  obtain m₆ : s₆.mem = t.mem := by rw [u₆.mem, u₅.mem, m₄]
+  obtain eax₁ : s₁.gpr .eax = t.mem.readW (off base mult) 32 := by rw [u₁.other _ (by decide), u₀.gpr]
   have eax₂ := m₂.eax
   have edx₂ := m₂.edx
   rw [eax₁, u₁.gpr, u₀.mem, eb] at eax₂ edx₂
-  have ebx₂ : s₂.gpr .ebx = t.gpr .ebx := by
+  obtain ebx₂ : s₂.gpr .ebx = t.gpr .ebx := by
     rw [m₂.other _ (by decide) (by decide), u₁.other _ (by decide), u₀.other _ (by decide)]
-  have eax₃ : s₃.gpr .eax = s₂.gpr .eax + t.mem.readW (off base (w + o)) 32 := by
+  obtain eax₃ : s₃.gpr .eax = s₂.gpr .eax + t.mem.readW (off base (w + o)) 32 := by
     rw [u₃.gpr, m₂', ew]
   have edx₄ : s₄.gpr .edx = s₃.gpr .edx + 0 + (BitVec.ofBool _).setWidth 32 := u₄.gpr
-  have eax₄ : s₄.gpr .eax = s₃.gpr .eax := u₄.other _ (by decide)
-  have edx₃ : s₃.gpr .edx = s₂.gpr .edx := u₃.other _ (by decide)
-  have ebx₄ : s₄.gpr .ebx = t.gpr .ebx := by rw [u₄.other _ (by decide), u₃.other _ (by decide), ebx₂]
+  obtain eax₄ : s₄.gpr .eax = s₃.gpr .eax := u₄.other _ (by decide)
+  obtain edx₃ : s₃.gpr .edx = s₂.gpr .edx := u₃.other _ (by decide)
+  obtain ebx₄ : s₄.gpr .ebx = t.gpr .ebx := by rw [u₄.other _ (by decide), u₃.other _ (by decide), ebx₂]
   have eax₅ : s₅.gpr .eax = s₄.gpr .eax + s₄.gpr .ebx := u₅.gpr
   have edx₆ : s₆.gpr .edx = s₅.gpr .edx + 0 + (BitVec.ofBool _).setWidth 32 := u₆.gpr
-  have eax₆ : s₆.gpr .eax = s₅.gpr .eax := u₆.other _ (by decide)
-  have edx₅ : s₅.gpr .edx = s₄.gpr .edx := u₅.other _ (by decide)
-  have hpost := step_regs (t.mem.readW (off base (b + o)) 32) (t.mem.readW (off base mult) 32)
+  obtain eax₆ : s₆.gpr .eax = s₅.gpr .eax := u₆.other _ (by decide)
+  obtain edx₅ : s₅.gpr .edx = s₄.gpr .edx := u₅.other _ (by decide)
+  obtain hpost := step_regs (t.mem.readW (off base (b + o)) 32) (t.mem.readW (off base mult) 32)
     (t.mem.readW (off base (w + o)) 32) (t.gpr .ebx) _ _ rfl rfl
   rw [Nat.mul_comm (t.mem.readW (off base (b + o)) 32).toNat] at hpost
-  have ex₆ : s₆.gpr .eax = BitVec.ofNat 32 ((t.mem.readW (off base mult) 32).toNat *
+  obtain ex₆ : s₆.gpr .eax = BitVec.ofNat 32 ((t.mem.readW (off base mult) 32).toNat *
       (t.mem.readW (off base (b + o)) 32).toNat) + t.mem.readW (off base (w + o)) 32 + t.gpr .ebx := by
     rw [eax₆, eax₅, ebx₄, eax₄, eax₃, eax₂]
   have dx₆ := edx₆
   rw [edx₅, edx₄, edx₃, edx₂, ebx₄, eax₄, eax₃, eax₂, m₂', ew] at dx₆
-  have hx : s₆.gpr .eax = BitVec.ofNat 32 (w32 t.mem base mult * w32 t.mem base (b + o) +
+  obtain hx : s₆.gpr .eax = BitVec.ofNat 32 (w32 t.mem base mult * w32 t.mem base (b + o) +
       (t.gpr .ebx).toNat + w32 t.mem base (w + o)) := by
     apply BitVec.eq_of_toNat_eq
     rw [ex₆, hpost.1, BitVec.toNat_ofNat, Nat.add_right_comm]
-  have K₇ : Keeps [.eax, .edx] t s₇ := K₆.widen (m₇.keeps [])
+  obtain K₇ : Keeps [.eax, .edx] t s₇ := K₆.widen (m₇.keeps [])
   refine ⟨by rw [u₈.mem, m₇.mem, m₆, hx, ew], ?_, (K₇.mono (by decide)).widen u₈.keeps⟩
   rw [u₈.gpr, m₇.gpr, dx₆, hpost.2, Nat.add_right_comm]
 
@@ -137,23 +137,23 @@ theorem macW_inv {s t : State} {base : Addr} {size : Nat} (hs : Scr t base size)
       Keeps [.eax, .ebx, .edx] t u := by
   have hn := hs.nowrap
   refine WP.mono (macW_ok hs hecx hp hw hd (by omega_arith) (by omega_arith) hm) fun u ⟨mu, bu, Ku⟩ => ?_
-  have mk : w32 t.mem base mult = w32 s.mem base mult := O.w32 (by omega_arith) (by omega_arith)
-  have bk : w32 t.mem base (b + 4 * j) = w32 s.mem base (b + 4 * j) := O.w32 (by omega_arith) (by omega_arith)
-  have tk : w32 t.mem base (w + 4 * j) = w32 s.mem base (w + 4 * j) := O.w32 (by omega_arith) (by omega_arith)
+  obtain mk : w32 t.mem base mult = w32 s.mem base mult := O.w32 (by omega_arith) (by omega_arith)
+  obtain bk : w32 t.mem base (b + 4 * j) = w32 s.mem base (b + 4 * j) := O.w32 (by omega_arith) (by omega_arith)
+  obtain tk : w32 t.mem base (w + 4 * j) = w32 s.mem base (w + 4 * j) := O.w32 (by omega_arith) (by omega_arith)
   rw [mk, bk, tk] at mu bu
-  have W := writeW32_outside t.mem base (d := w + 4 * j)
+  obtain W := writeW32_outside t.mem base (d := w + 4 * j)
     (BitVec.ofNat 32 (w32 s.mem base mult * w32 s.mem base (b + 4 * j) + (t.gpr .ebx).toNat +
       w32 s.mem base (w + 4 * j))) (by omega_arith)
   rw [← mu] at W
   refine ⟨(O.mono (Nat.le_refl _) (by omega_arith)).trans (W.mono (by omega_arith) (by omega_arith)), ?_, Ku⟩
-  have hlow : val32 u.mem base w j = val32 t.mem base w j := W.val32 (by omega_arith) (by omega_arith)
-  have htop : w32 u.mem base (w + 4 * j) = (w32 s.mem base mult * w32 s.mem base (b + 4 * j) +
+  obtain hlow : val32 u.mem base w j = val32 t.mem base w j := W.val32 (by omega_arith) (by omega_arith)
+  obtain htop : w32 u.mem base (w + 4 * j) = (w32 s.mem base mult * w32 s.mem base (b + 4 * j) +
       (t.gpr .ebx).toNat + w32 s.mem base (w + 4 * j)) % 2 ^ 32 := by
     rw [mu, w32_write_self, BitVec.toNat_ofNat]
   rw [val32_succ, val32_succ, val32_succ, hlow, htop, bu, pow32_succ]
   generalize hxd : w32 s.mem base mult * w32 s.mem base (b + 4 * j) + (t.gpr .ebx).toNat +
     w32 s.mem base (w + 4 * j) = x at *
-  have hx := Nat.div_add_mod x (2 ^ 32)
+  obtain hx := Nat.div_add_mod x (2 ^ 32)
   generalize 2 ^ (32 * j) = P at *
   grind
 
@@ -188,15 +188,15 @@ theorem stepCtl_ok {t : State} {i j N : Nat}
   refine wp_movS rfl fun s₃ u₃ _ => ?_
   refine wp_addS rfl fun s₄ u₄ _ => ?_
   refine wp_cmpS rfl fun s₅ f₅ z₅ => WP.block_nil ?_
-  have K₅ : Keeps [.eax, .ecx, .ebp] t s₅ :=
+  obtain K₅ : Keeps [.eax, .ecx, .ebp] t s₅ :=
     (((((u₁.keeps.mono (rs' := [.eax, .ecx, .ebp]) (by decide)).widen u₂.keeps).widen u₃.keeps).widen
       u₄.keeps).widen (f₅.keeps []))
-  have edi₅ : s₅.gpr .edi = t.gpr .edi := K₅.1 _ (by decide)
-  have ecx₄ : s₄.gpr .ecx = t.gpr .edi + BitVec.ofNat 32 (4 * j) + 8 := by
+  obtain edi₅ : s₅.gpr .edi = t.gpr .edi := K₅.1 _ (by decide)
+  obtain ecx₄ : s₄.gpr .ecx = t.gpr .edi + BitVec.ofNat 32 (4 * j) + 8 := by
     rw [u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide), u₁.gpr, hecx]
-  have ebp₄ : s₄.gpr .ebp = t.gpr .edi + BitVec.ofNat 32 (4 * (i + j)) + 8 := by
+  obtain ebp₄ : s₄.gpr .ebp = t.gpr .edi + BitVec.ofNat 32 (4 * (i + j)) + 8 := by
     rw [u₄.other _ (by decide), u₃.other _ (by decide), u₂.gpr, u₁.other _ (by decide), hp]
-  have eax₄ : s₄.gpr .eax = t.gpr .edi + BitVec.ofNat 32 (4 * N) := by
+  obtain eax₄ : s₄.gpr .eax = t.gpr .edi + BitVec.ofNat 32 (4 * N) := by
     rw [u₄.gpr, u₃.gpr, u₂.other _ (by decide), u₁.other _ (by decide)]
   refine ⟨by rw [f₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem], by rw [edi₅, f₅.gpr, ecx₄, row2_ptr],
     by rw [edi₅, f₅.gpr, ebp₄, row2_ptr, Nat.add_assoc], by rw [z₅, ecx₄, eax₄, row2_zf _ hj hN32], K₅⟩
@@ -214,10 +214,10 @@ theorem mulRowW_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
       val32 u.mem base w (N + 2) = val32 s.mem base w (N + 2) + w32 s.mem base mult * val32 s.mem base b N ∧
       Keeps [.eax, .ebx, .ecx, .edx] s u := by
   have hn := hs.nowrap
-  have hN32 : 4 * N < 2 ^ 32 := by have := hs.size_lt; omega_arith
+  obtain hN32 : 4 * N < 2 ^ 32 := by have := hs.size_lt; omega_arith
   unfold mulRowW
   refine WP.seq (wp_movS rfl fun s₀ u₀ _ => wp_movS rfl fun s₁ u₁ _ => WP.block_nil ?_)
-  have k₁ : Keeps [.ebx, .ecx] s s₁ := (u₀.keeps.mono (by decide)).widen u₁.keeps
+  obtain k₁ : Keeps [.ebx, .ecx] s s₁ := (u₀.keeps.mono (by decide)).widen u₁.keeps
   -- The loop: `j` steps done.
   let I : Nat → State → Prop := fun j t =>
     Keeps [.eax, .ebx, .ecx, .edx, .ebp] s t ∧
@@ -226,7 +226,7 @@ theorem mulRowW_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
     Outside base w (4 * j) s.mem t.mem ∧
     val32 t.mem base w j + 2 ^ (32 * j) * (t.gpr .ebx).toNat =
       val32 s.mem base w j + w32 s.mem base mult * val32 s.mem base b j
-  have I₀ : I 0 s₁ := by
+  obtain I₀ : I 0 s₁ := by
     refine ⟨k₁.mono (by decide), ?_, ?_,
       by rw [u₁.mem, u₀.mem]; exact VG.Proof.Mont.Outside.refl _ _ _ _, ?_⟩
     · rw [u₁.gpr, u₁.other _ (by decide)]; exact (BitVec.add_zero _).symm
@@ -235,25 +235,25 @@ theorem mulRowW_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
   refine WP.seq (WP.mono (WP.loop (M := isa) (Q := I N)
     (fun m t => ∃ j, m = N - j ∧ j < N ∧ j % 2 = 0 ∧ I j t) ?_ N s₁ ⟨0, by omega_arith, hN, rfl, I₀⟩) ?_)
   · rintro m t ⟨j, rfl, hj, hj2, K, ecx, ebp, O, V⟩
-    have hj' : j + 2 ≤ N := by omega_arith
-    have ht := hs.of_keeps K (by decide)
+    obtain hj' : j + 2 ≤ N := by omega_arith
+    obtain ht := hs.of_keeps K (by decide)
     simp only [mulStepW, List.append_assoc]
     refine WP.block_append (WP.mono (macW_inv ht ecx ebp hw (Nat.add_zero _) hj hb hwN hsep hm hsm O V)
       fun t₁ ⟨O₁, V₁, K₁⟩ => ?_)
-    have ht₁ := ht.of_keeps K₁ (by decide)
-    have ecx₁ : t₁.gpr .ecx = t₁.gpr .edi + BitVec.ofNat 32 (4 * j) := by
+    obtain ht₁ := ht.of_keeps K₁ (by decide)
+    obtain ecx₁ : t₁.gpr .ecx = t₁.gpr .edi + BitVec.ofNat 32 (4 * j) := by
       rw [K₁.1 _ (by decide), K₁.1 _ (by decide)]; exact ecx
-    have ebp₁ : t₁.gpr .ebp = t₁.gpr .edi + BitVec.ofNat 32 (4 * (i + j)) := by
+    obtain ebp₁ : t₁.gpr .ebp = t₁.gpr .edi + BitVec.ofNat 32 (4 * (i + j)) := by
       rw [K₁.1 _ (by decide), K₁.1 _ (by decide)]; exact ebp
     refine WP.block_append (WP.mono (macW_inv ht₁ ecx₁ ebp₁ hw (j := j + 1) (by omega_arith) (by omega_arith) hb hwN hsep
       hm hsm O₁ V₁) fun t₂ ⟨O₂, V₂, K₂⟩ => ?_)
-    have ecx₂ : t₂.gpr .ecx = t₂.gpr .edi + BitVec.ofNat 32 (4 * j) := by
+    obtain ecx₂ : t₂.gpr .ecx = t₂.gpr .edi + BitVec.ofNat 32 (4 * j) := by
       rw [K₂.1 _ (by decide), K₂.1 _ (by decide)]; exact ecx₁
-    have ebp₂ : t₂.gpr .ebp = t₂.gpr .edi + BitVec.ofNat 32 (4 * (i + j)) := by
+    obtain ebp₂ : t₂.gpr .ebp = t₂.gpr .edi + BitVec.ofNat 32 (4 * (i + j)) := by
       rw [K₂.1 _ (by decide), K₂.1 _ (by decide)]; exact ebp₁
     refine WP.mono (stepCtl_ok ecx₂ ebp₂ hj' hN32) fun u ⟨mu, su, pu, zu, Ku⟩ => ?_
-    have ebx₂ : u.gpr .ebx = t₂.gpr .ebx := Ku.1 _ (by decide)
-    have I' : I (j + 2) u := by
+    obtain ebx₂ : u.gpr .ebx = t₂.gpr .ebx := Ku.1 _ (by decide)
+    obtain I' : I (j + 2) u := by
       refine ⟨K.trans ((K₁.trans K₂).mono (by decide) |>.widen Ku), su, pu, by rw [mu]; exact O₂, ?_⟩
       rw [mu, ebx₂]; exact V₂
     by_cases hjN : j + 2 = N
@@ -263,9 +263,9 @@ theorem mulRowW_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
   · intro t ⟨K, _, ebp, O, V⟩
     -- `ebp` moves back, and the carry word goes up.
     refine wp_subS rfl fun s₂ u₂ _ => ?_
-    have K₂ : Keeps [.eax, .ebx, .ecx, .edx, .ebp] s s₂ := K.widen u₂.keeps
-    have hs₂ := hs.of_keeps K₂ (by decide)
-    have hp₂ : s₂.gpr .ebp = s₂.gpr .edi + BitVec.ofNat 32 (4 * i) := by
+    obtain K₂ : Keeps [.eax, .ebx, .ecx, .edx, .ebp] s s₂ := K.widen u₂.keeps
+    obtain hs₂ := hs.of_keeps K₂ (by decide)
+    obtain hp₂ : s₂.gpr .ebp = s₂.gpr .edi + BitVec.ofNat 32 (4 * i) := by
       rw [u₂.gpr, ebp, u₂.other _ (by decide)]
       refine (BitVec.eq_sub_iff_add_eq.mpr ?_).symm
       rw [BitVec.add_assoc]
@@ -273,20 +273,20 @@ theorem mulRowW_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
       apply BitVec.eq_of_toNat_eq
       simp only [BitVec.toNat_add, BitVec.toNat_ofNat]
       omega_arith
-    have k₂ : Keeps [.eax, .ebx, .ecx, .edx] s s₂ :=
+    obtain k₂ : Keeps [.eax, .ebx, .ecx, .edx] s s₂ :=
       ⟨fun r hr => by
         by_cases hr' : r = .ebp
         · subst hr'; rw [hp₂, hp, K₂.1 _ (by decide)]
         · exact K₂.1 r (by simp_all), K₂.2⟩
     have mem₂ : s₂.mem = t.mem := u₂.mem
-    have ebx₂ : s₂.gpr .ebx = t.gpr .ebx := u₂.other _ (by decide)
-    have hhi : val32 s₂.mem base (w + 4 * N) 2 = val32 s.mem base (w + 4 * N) 2 := by
+    obtain ebx₂ : s₂.gpr .ebx = t.gpr .ebx := u₂.other _ (by decide)
+    obtain hhi : val32 s₂.mem base (w + 4 * N) 2 = val32 s.mem base (w + 4 * N) 2 := by
       rw [mem₂]; exact O.val32 (by omega_arith) (by omega_arith)
-    have hsplit : val32 s.mem base w (N + 2) =
+    obtain hsplit : val32 s.mem base w (N + 2) =
         val32 s.mem base w N + 2 ^ (32 * N) * val32 s.mem base (w + 4 * N) 2 := val32_append _ _ _ _ _
     rw [pow32_add, show 32 * 2 = 64 by rfl] at hlt
-    have hP : 0 < 2 ^ (32 * N) := Nat.two_pow_pos _
-    have hlt₁ : val32 s₂.mem base (w + 4 * N) 2 + (s₂.gpr .ebx).toNat < 2 ^ 64 := by
+    obtain hP : 0 < 2 ^ (32 * N) := Nat.two_pow_pos _
+    obtain hlt₁ : val32 s₂.mem base (w + 4 * N) 2 + (s₂.gpr .ebx).toNat < 2 ^ 64 := by
       rw [hhi, ebx₂]
       rw [hsplit] at hlt
       refine Nat.lt_of_mul_lt_mul_left (a := 2 ^ (32 * N)) ?_

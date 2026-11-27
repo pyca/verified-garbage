@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 
 `rrun [facts]` runs a block of the RC2 code symbolically (`mrun`), keeping
 16-bit loads as `Mem.readW` and byte stores as `Mem.writeW`, as the PPC64LE proofs' `rrun`
-(`Proof/Rc2/PPC64LE/Run.lean`) does; and the loops' conditions.
+(`Proof/Rc2/PPC64LE/Lookup.lean`) does; and the loops' conditions.
 -/
 
 @[expose] public section

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.Scrub.X86_64.Fn
 public import VerifiedGarbage.Impl.Ed448.X86_64.VerifyEquation
 public import VerifiedGarbage.Impl.Sha3.X86_64.Stream
 
@@ -144,3 +145,13 @@ def verifyFor (v : FieldVariant) : Prog isa :=
       (.block [.mov32 .rax (.imm 0)]))
 
 end VG.Impl.Ed448.X86_64.Verify
+
+namespace VG.Impl.Ed448.X86_64.Verify.Fn
+
+open VG.X86_64
+open VG.Impl.Scrub.X86_64 (scrubAll)
+
+/-- `vg_ed448_verify`, with the field arithmetic `v`, as emitted: its code, then its cleanup. -/
+def verify (v : Impl.Ed448.X86_64.FieldVariant) : Prog isa := scrubAll .sse 32 272 (_root_.VG.Impl.Ed448.X86_64.Verify.verifyFor v)
+
+end VG.Impl.Ed448.X86_64.Verify.Fn

@@ -5,10 +5,8 @@ import VerifiedGarbage.Proof.Framework.AArch64.TaintMono
 meta import VerifiedGarbage.Proof.Framework.AArch64.TaintMono
 import VerifiedGarbage.Proof.Framework.TaintSum
 meta import VerifiedGarbage.Proof.Framework.TaintSum
-
 import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
 meta import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
-
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.P521Literals
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.P521Literals
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.PubNafTiming
@@ -23,8 +21,6 @@ meta import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 import VerifiedGarbage.Proof.Ecdsa.Verify
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionArithmetic
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Rotate
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.FoldOk
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
 import VerifiedGarbage.Proof.Weierstrass.AArch64.NafSum
@@ -55,25 +51,7 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Mont.AArch64.Blocks
 meta import VerifiedGarbage.Proof.Mont.AArch64.Chain
-meta import VerifiedGarbage.Proof.Mont.AArch64.P256Square.Product
-meta import VerifiedGarbage.Proof.Mont.AArch64.P384Mul.Product
-meta import VerifiedGarbage.Proof.Mont.AArch64.P384Mul.Reduce
-meta import VerifiedGarbage.Proof.Mont.AArch64.P384Sqr.Square
-meta import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Function
-meta import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Product
-meta import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductCross0
-meta import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductCross1
-meta import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductCross2
-meta import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductCross3
-meta import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductDiag
-meta import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductDouble
-meta import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductLow
-meta import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductTop
-meta import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Reduction
-meta import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionArithmetic
-meta import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionBits
-meta import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionCorrect
-meta import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Rotate
+meta import VerifiedGarbage.Proof.Mont.AArch64.P256Square
 meta import VerifiedGarbage.Proof.Mont.AArch64.Rounds
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.AddConst
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Bits
@@ -89,10 +67,8 @@ meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Refine
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTableTiming
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowDouble
-meta import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowLoad
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowState
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.MontCall
-meta import VerifiedGarbage.Proof.Weierstrass.AArch64.MontCall521
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.MontFn384
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.NafDigit
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.NafPrep
@@ -107,7 +83,6 @@ meta import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.TableCoZ
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Window
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.SetConst
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombDigit
-meta import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombSelect
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombSelectV
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Window
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
@@ -145,36 +120,39 @@ taint_summary mulPSum : VectorTaint.taint (VectorTaint.ofRegs [.x0, .x1, .x2, .x
   (.call (Impl.Weierstrass.Mont.p521p.fn "mul")
     (Impl.Weierstrass.AArch64.Mont.mulFn 9 Impl.Weierstrass.Mont.p521p.m))
   keeping (VectorTaint.ofRegs [.x0, .x19, .x20])
+taint_summary prodPSum : VectorTaint.taint (VectorTaint.ofRegs [.x0, .x1, .x2, .x3])
+  (.call (Impl.Weierstrass.Mont.p521p.fn "prod") Impl.Weierstrass.AArch64.P521.prodFn)
+  keeping (VectorTaint.ofRegs [.x0, .x19, .x20])
+taint_summary sqrPSum : VectorTaint.taint (VectorTaint.ofRegs [.x0, .x1, .x2, .x3])
+  (.call (Impl.Weierstrass.Mont.p521p.fn "sqr") Impl.Weierstrass.AArch64.P521.sqrFn)
+  keeping (VectorTaint.ofRegs [.x0, .x19, .x20])
 taint_summary mulNSum : VectorTaint.taint (VectorTaint.ofRegs [.x0, .x1, .x2, .x3])
   (.call (Impl.Weierstrass.Mont.p521n.fn "mul")
     (Impl.Weierstrass.AArch64.Mont.mulFn 9 Impl.Weierstrass.Mont.p521n.m))
   keeping (VectorTaint.ofRegs [.x0, .x19, .x20])
-taint_summary sqrPSum : VectorTaint.taint (VectorTaint.ofRegs [.x0, .x1, .x2, .x3])
-  (.call (Impl.Weierstrass.Mont.p521p.fn "sqr") Impl.Weierstrass.AArch64.Mont.sqrFn521)
-  keeping (VectorTaint.ofRegs [.x0])
 
 taint_summary validateSum : VectorTaint.taint (VectorTaint.ofRegs [.x0])
   (Impl.Ecdh.AArch64.Cfg.validate p521)
   keeping (VectorTaint.ofRegs [.x0, .x19, .x20])
-  using mulPSum mulNSum sqrPSum
+  using mulPSum mulNSum prodPSum sqrPSum
 taint_summary scalarsSum : VectorTaint.taint (VectorTaint.ofRegs [.x0])
   (Impl.Ecdsa.Verify.AArch64.Cfg.scalars p521)
   keeping (VectorTaint.ofRegs [.x0, .x19, .x20])
-  using mulPSum mulNSum sqrPSum
+  using mulPSum mulNSum prodPSum sqrPSum
 taint_summary nPowSum : VectorTaint.taint (VectorTaint.ofRegs [.x0])
   p521.nPow
   keeping (VectorTaint.ofRegs [.x0, .x20])
-  using mulPSum mulNSum sqrPSum
+  using mulPSum mulNSum prodPSum sqrPSum
 taint_summary uvSum : VectorTaint.taint (VectorTaint.ofRegs [.x0])
   (Impl.Ecdsa.Verify.AArch64.Cfg.uv p521)
   keeping (VectorTaint.ofRegs [.x0, .x19, .x20])
-  using mulPSum mulNSum sqrPSum
+  using mulPSum mulNSum prodPSum sqrPSum
 
 /-- Constant time for the registers `rs`, by taint tracking, with the field
 functions' summaries. -/
 macro "reg_ct" rs:term : tactic => `(tactic|
   exact VG.Taint.constantTime_of_exists (A := VectorTaint.taint) (Taint.ofRegs $rs, RegSet.empty)
-    (fun _ _ _ _ h => VectorTaint.agree_initial h) (by taint_decide_sum [mulPSum, mulNSum, sqrPSum]))
+    (fun _ _ _ _ h => VectorTaint.agree_initial h) (by taint_decide_sum [mulPSum, mulNSum, prodPSum, sqrPSum]))
 
 /-- The window method's slots, which the public NAF uses. -/
 abbrev Kq := packedQ p521

@@ -1,11 +1,10 @@
 module
-public import VerifiedGarbage.Proof.Rsa.X86.PrivPrecomputeCall
-public import VerifiedGarbage.Proof.Rsa.PrivCheck
 
+public import VerifiedGarbage.Proof.Rsa.X86.PrivPublicCall
+public import VerifiedGarbage.Proof.Rsa.PrivCheck
 import VerifiedGarbage.Proof.Rsa.X86.PrivRetained
 import VerifiedGarbage.Proof.Rsa.PrivCheckLogic32
 import VerifiedGarbage.Proof.Rsa.X86.PrivTailContext
-import VerifiedGarbage.Proof.Rsa.X86.PrivPublicCall
 import VerifiedGarbage.Proof.Rsa.X86.PrivStackWord
 import VerifiedGarbage.Proof.Rsa.BytesFrame
 import VerifiedGarbage.Proof.Framework.Contract

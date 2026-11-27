@@ -6,7 +6,9 @@
 //! The generated dispatcher of every function whose code has an
 //! instruction Intel lists runs it first, and panics unless MXCSR then holds
 //! `0x1FBF` (`verified_garbage_cpu::mcdt_entered`; "Dispatchers" in
-//! `lean/VerifiedGarbage/TCB/Rust.lean`). This holds their tests.
+//! `lean/VerifiedGarbage/TCB/Rust.lean`), unless its code calls it itself
+//! before them (`Rust.mcdtOpen`: Poly1305's update and ChaCha20-Poly1305).
+//! This holds their tests.
 
 #![cfg(target_arch = "x86_64")]
 
@@ -32,6 +34,58 @@ mod tests {
             assert_eq!(unsafe { vg_mcdt_enter_auto(public(Why::Test)) }, 1);
             assert_eq!(mxcsr(), 0x1FBF);
         }
+    }
+
+    /// Poly1305's vector code calls `vg_mcdt_enter` itself, so its dispatcher
+    /// does not: where MXCSR's control bits are not the default (here with
+    /// FTZ set), `vg_mcdt_enter` returns 0 and the code absorbs every block
+    /// with the scalar code instead, giving the same tag, and leaves the
+    /// control bits as they were.
+    #[test]
+    #[allow(deprecated)]
+    fn poly1305_other_control_bits() {
+        let key = [7u8; 32];
+        let data = [0x5au8; 1024];
+        let tag = crate::poly1305::Poly1305::mac(&key, &data);
+        let saved = mxcsr();
+        // SAFETY: `ldmxcsr` of MXCSR with FTZ set, which no code of this test
+        // depends on; restored below.
+        unsafe { core::arch::x86_64::_mm_setcsr(saved | 0x8000) };
+        let other = crate::poly1305::Poly1305::mac(&key, &data);
+        let after = mxcsr();
+        // SAFETY: restores the MXCSR read above.
+        unsafe { core::arch::x86_64::_mm_setcsr(saved) };
+        assert_eq!(tag, other);
+        assert_eq!(after & 0xFFC0, (saved | 0x8000) & 0xFFC0);
+    }
+
+    /// So does ChaCha20-Poly1305's, through Poly1305's: where MXCSR's control
+    /// bits are not the default, sealing and opening give what they give
+    /// with the default ones, and leave the control bits as they were.
+    #[test]
+    #[allow(deprecated)]
+    fn chacha20poly1305_other_control_bits() {
+        let aead = crate::aead::chacha20poly1305::ChaCha20Poly1305::new(&[7u8; 32]);
+        let nonce = [3u8; 12];
+        let aad = [0x11u8; 600];
+        let mut ct = [0x5au8; 2048];
+        let tag = aead.encrypt_in_place(&nonce, &aad, &mut ct).unwrap();
+        let saved = mxcsr();
+        // SAFETY: `ldmxcsr` of MXCSR with FTZ set, which no code of this test
+        // depends on; restored below.
+        unsafe { core::arch::x86_64::_mm_setcsr(saved | 0x8000) };
+        let mut other = [0x5au8; 2048];
+        let other_tag = aead.encrypt_in_place(&nonce, &aad, &mut other);
+        let mut pt = other;
+        let opened = aead.decrypt_in_place(&nonce, &aad, &mut pt, &tag);
+        let after = mxcsr();
+        // SAFETY: restores the MXCSR read above.
+        unsafe { core::arch::x86_64::_mm_setcsr(saved) };
+        assert_eq!(other_tag.unwrap(), tag);
+        assert_eq!(other, ct);
+        assert!(opened.is_ok());
+        assert_eq!(pt, [0x5au8; 2048]);
+        assert_eq!(after & 0xFFC0, (saved | 0x8000) & 0xFFC0);
     }
 
     /// A dispatcher panics where `vg_mcdt_enter` reports that MXCSR is not

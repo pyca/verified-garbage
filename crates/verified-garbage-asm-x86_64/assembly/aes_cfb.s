@@ -64,7 +64,9 @@ vg_aes_cfb128_encrypt_vaes:
 	vpxor xmm13, xmm13, xmm13
 	vpxor xmm14, xmm14, xmm14
 	vpxor xmm15, xmm15, xmm15
+	xor r11d, r11d
 	lea rsp, [rsp-8]
+	mov QWORD PTR [rsp], r11
 	lea rsp, [rsp+8]
 	xor eax, eax
 	xor ecx, ecx
@@ -72,6 +74,7 @@ vg_aes_cfb128_encrypt_vaes:
 	xor esi, esi
 	xor edi, edi
 	xor r8d, r8d
+	xor r9d, r9d
 	xor r10d, r10d
 	ret
 	.p2align 6
@@ -204,7 +207,9 @@ vg_aes_cfb128_decrypt_vaes:
 	vpxor xmm13, xmm13, xmm13
 	vpxor xmm14, xmm14, xmm14
 	vpxor xmm15, xmm15, xmm15
+	xor r11d, r11d
 	lea rsp, [rsp-8]
+	mov QWORD PTR [rsp], r11
 	lea rsp, [rsp+8]
 	xor eax, eax
 	xor ecx, ecx
@@ -212,6 +217,7 @@ vg_aes_cfb128_decrypt_vaes:
 	xor esi, esi
 	xor edi, edi
 	xor r8d, r8d
+	xor r9d, r9d
 	xor r10d, r10d
 	ret
 	.p2align 6
@@ -285,17 +291,21 @@ vg_aes_cfb128_encrypt_final_vaes:
 	vpxor xmm14, xmm14, xmm14
 	vpxor xmm15, xmm15, xmm15
 	xor r11d, r11d
-	lea rsp, [rsp-80]
-	vmovdqu YMMWORD PTR [rsp+48], ymm0
-	vmovdqu YMMWORD PTR [rsp+16], ymm0
-	movdqu XMMWORD PTR [rsp], xmm0
-	lea rsp, [rsp+80]
+	lea rsp, [rsp-8]
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp-72]
+	vmovdqu YMMWORD PTR [rsp+40], ymm0
+	vmovdqu YMMWORD PTR [rsp+8], ymm0
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp+72]
+	lea rsp, [rsp+8]
 	xor eax, eax
 	xor ecx, ecx
 	xor edx, edx
 	xor esi, esi
 	xor edi, edi
 	xor r8d, r8d
+	xor r9d, r9d
 	xor r10d, r10d
 	ret
 	.p2align 6
@@ -369,17 +379,21 @@ vg_aes_cfb128_decrypt_final_vaes:
 	vpxor xmm14, xmm14, xmm14
 	vpxor xmm15, xmm15, xmm15
 	xor r11d, r11d
-	lea rsp, [rsp-80]
-	vmovdqu YMMWORD PTR [rsp+48], ymm0
-	vmovdqu YMMWORD PTR [rsp+16], ymm0
-	movdqu XMMWORD PTR [rsp], xmm0
-	lea rsp, [rsp+80]
+	lea rsp, [rsp-8]
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp-72]
+	vmovdqu YMMWORD PTR [rsp+40], ymm0
+	vmovdqu YMMWORD PTR [rsp+8], ymm0
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp+72]
+	lea rsp, [rsp+8]
 	xor eax, eax
 	xor ecx, ecx
 	xor edx, edx
 	xor esi, esi
 	xor edi, edi
 	xor r8d, r8d
+	xor r9d, r9d
 	xor r10d, r10d
 	ret
 	.p2align 6
@@ -444,7 +458,9 @@ vg_aes_cfb128_encrypt_aesni:
 	pxor xmm13, xmm13
 	pxor xmm14, xmm14
 	pxor xmm15, xmm15
+	xor r11d, r11d
 	lea rsp, [rsp-8]
+	mov QWORD PTR [rsp], r11
 	lea rsp, [rsp+8]
 	xor eax, eax
 	xor ecx, ecx
@@ -452,6 +468,7 @@ vg_aes_cfb128_encrypt_aesni:
 	xor esi, esi
 	xor edi, edi
 	xor r8d, r8d
+	xor r9d, r9d
 	xor r10d, r10d
 	ret
 	.p2align 6
@@ -584,7 +601,9 @@ vg_aes_cfb128_decrypt_aesni:
 	pxor xmm13, xmm13
 	pxor xmm14, xmm14
 	pxor xmm15, xmm15
+	xor r11d, r11d
 	lea rsp, [rsp-8]
+	mov QWORD PTR [rsp], r11
 	lea rsp, [rsp+8]
 	xor eax, eax
 	xor ecx, ecx
@@ -592,6 +611,7 @@ vg_aes_cfb128_decrypt_aesni:
 	xor esi, esi
 	xor edi, edi
 	xor r8d, r8d
+	xor r9d, r9d
 	xor r10d, r10d
 	ret
 	.p2align 6
@@ -665,19 +685,23 @@ vg_aes_cfb128_encrypt_final_aesni:
 	pxor xmm14, xmm14
 	pxor xmm15, xmm15
 	xor r11d, r11d
-	lea rsp, [rsp-80]
-	movdqu XMMWORD PTR [rsp+64], xmm0
-	movdqu XMMWORD PTR [rsp+48], xmm0
-	movdqu XMMWORD PTR [rsp+32], xmm0
-	movdqu XMMWORD PTR [rsp+16], xmm0
-	movdqu XMMWORD PTR [rsp], xmm0
-	lea rsp, [rsp+80]
+	lea rsp, [rsp-8]
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp-72]
+	movdqu XMMWORD PTR [rsp+56], xmm0
+	movdqu XMMWORD PTR [rsp+40], xmm0
+	movdqu XMMWORD PTR [rsp+24], xmm0
+	movdqu XMMWORD PTR [rsp+8], xmm0
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp+72]
+	lea rsp, [rsp+8]
 	xor eax, eax
 	xor ecx, ecx
 	xor edx, edx
 	xor esi, esi
 	xor edi, edi
 	xor r8d, r8d
+	xor r9d, r9d
 	xor r10d, r10d
 	ret
 	.p2align 6
@@ -751,19 +775,23 @@ vg_aes_cfb128_decrypt_final_aesni:
 	pxor xmm14, xmm14
 	pxor xmm15, xmm15
 	xor r11d, r11d
-	lea rsp, [rsp-80]
-	movdqu XMMWORD PTR [rsp+64], xmm0
-	movdqu XMMWORD PTR [rsp+48], xmm0
-	movdqu XMMWORD PTR [rsp+32], xmm0
-	movdqu XMMWORD PTR [rsp+16], xmm0
-	movdqu XMMWORD PTR [rsp], xmm0
-	lea rsp, [rsp+80]
+	lea rsp, [rsp-8]
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp-72]
+	movdqu XMMWORD PTR [rsp+56], xmm0
+	movdqu XMMWORD PTR [rsp+40], xmm0
+	movdqu XMMWORD PTR [rsp+24], xmm0
+	movdqu XMMWORD PTR [rsp+8], xmm0
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp+72]
+	lea rsp, [rsp+8]
 	xor eax, eax
 	xor ecx, ecx
 	xor edx, edx
 	xor esi, esi
 	xor edi, edi
 	xor r8d, r8d
+	xor r9d, r9d
 	xor r10d, r10d
 	ret
 	.p2align 6
@@ -813,6 +841,21 @@ vg_aes_cfb128_encrypt:
 	mov r14, QWORD PTR [r15+2096]
 	mov r15, QWORD PTR [r15+2104]
 	pxor xmm0, xmm0
+	pxor xmm1, xmm1
+	pxor xmm2, xmm2
+	pxor xmm3, xmm3
+	pxor xmm4, xmm4
+	pxor xmm5, xmm5
+	pxor xmm6, xmm6
+	pxor xmm7, xmm7
+	pxor xmm8, xmm8
+	pxor xmm9, xmm9
+	pxor xmm10, xmm10
+	pxor xmm11, xmm11
+	pxor xmm12, xmm12
+	pxor xmm13, xmm13
+	pxor xmm14, xmm14
+	pxor xmm15, xmm15
 	xor r11d, r11d
 	lea rsp, [rsp-8]
 	mov QWORD PTR [rsp], r11
@@ -825,7 +868,6 @@ vg_aes_cfb128_encrypt:
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -942,6 +984,21 @@ vg_aes_cfb128_decrypt:
 	mov r14, QWORD PTR [r15+2096]
 	mov r15, QWORD PTR [r15+2104]
 	pxor xmm0, xmm0
+	pxor xmm1, xmm1
+	pxor xmm2, xmm2
+	pxor xmm3, xmm3
+	pxor xmm4, xmm4
+	pxor xmm5, xmm5
+	pxor xmm6, xmm6
+	pxor xmm7, xmm7
+	pxor xmm8, xmm8
+	pxor xmm9, xmm9
+	pxor xmm10, xmm10
+	pxor xmm11, xmm11
+	pxor xmm12, xmm12
+	pxor xmm13, xmm13
+	pxor xmm14, xmm14
+	pxor xmm15, xmm15
 	xor r11d, r11d
 	lea rsp, [rsp-8]
 	mov QWORD PTR [rsp], r11
@@ -954,7 +1011,6 @@ vg_aes_cfb128_decrypt:
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -1011,14 +1067,32 @@ vg_aes_cfb128_encrypt_final:
 	mov r15, QWORD PTR [rax+40]
 	lea rsp, [rsp+64]
 	pxor xmm0, xmm0
+	pxor xmm1, xmm1
+	pxor xmm2, xmm2
+	pxor xmm3, xmm3
+	pxor xmm4, xmm4
+	pxor xmm5, xmm5
+	pxor xmm6, xmm6
+	pxor xmm7, xmm7
+	pxor xmm8, xmm8
+	pxor xmm9, xmm9
+	pxor xmm10, xmm10
+	pxor xmm11, xmm11
+	pxor xmm12, xmm12
+	pxor xmm13, xmm13
+	pxor xmm14, xmm14
+	pxor xmm15, xmm15
 	xor r11d, r11d
-	lea rsp, [rsp-80]
-	movdqu XMMWORD PTR [rsp+64], xmm0
-	movdqu XMMWORD PTR [rsp+48], xmm0
-	movdqu XMMWORD PTR [rsp+32], xmm0
-	movdqu XMMWORD PTR [rsp+16], xmm0
-	movdqu XMMWORD PTR [rsp], xmm0
-	lea rsp, [rsp+80]
+	lea rsp, [rsp-8]
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp-72]
+	movdqu XMMWORD PTR [rsp+56], xmm0
+	movdqu XMMWORD PTR [rsp+40], xmm0
+	movdqu XMMWORD PTR [rsp+24], xmm0
+	movdqu XMMWORD PTR [rsp+8], xmm0
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp+72]
+	lea rsp, [rsp+8]
 	xor eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -1027,7 +1101,6 @@ vg_aes_cfb128_encrypt_final:
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -1084,14 +1157,32 @@ vg_aes_cfb128_decrypt_final:
 	mov r15, QWORD PTR [rax+40]
 	lea rsp, [rsp+64]
 	pxor xmm0, xmm0
+	pxor xmm1, xmm1
+	pxor xmm2, xmm2
+	pxor xmm3, xmm3
+	pxor xmm4, xmm4
+	pxor xmm5, xmm5
+	pxor xmm6, xmm6
+	pxor xmm7, xmm7
+	pxor xmm8, xmm8
+	pxor xmm9, xmm9
+	pxor xmm10, xmm10
+	pxor xmm11, xmm11
+	pxor xmm12, xmm12
+	pxor xmm13, xmm13
+	pxor xmm14, xmm14
+	pxor xmm15, xmm15
 	xor r11d, r11d
-	lea rsp, [rsp-80]
-	movdqu XMMWORD PTR [rsp+64], xmm0
-	movdqu XMMWORD PTR [rsp+48], xmm0
-	movdqu XMMWORD PTR [rsp+32], xmm0
-	movdqu XMMWORD PTR [rsp+16], xmm0
-	movdqu XMMWORD PTR [rsp], xmm0
-	lea rsp, [rsp+80]
+	lea rsp, [rsp-8]
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp-72]
+	movdqu XMMWORD PTR [rsp+56], xmm0
+	movdqu XMMWORD PTR [rsp+40], xmm0
+	movdqu XMMWORD PTR [rsp+24], xmm0
+	movdqu XMMWORD PTR [rsp+8], xmm0
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp+72]
+	lea rsp, [rsp+8]
 	xor eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -1100,6 +1191,5 @@ vg_aes_cfb128_decrypt_final:
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 	.p2align 6

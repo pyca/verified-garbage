@@ -20,6 +20,8 @@ checks' mask true.
 namespace VG.Impl.Dsa.Arm.PrevalidatedSign
 open VG VG.Arm VG.Impl.Mont.Arm VG.Impl.Mont.Arm.Dynamic VG.Impl.Dsa.Layout
 
+variable (umaal : Bool)
+
 /-- `vg_dsa_validate_private_key(key, key_len, p_len, q_len, scratch,
 scratch_len)`: the domain checker's arguments, with the nonce at x. -/
 def validateEntry : List Instr :=
@@ -28,10 +30,10 @@ def validateEntry : List Instr :=
 def validateSized (pLen qLen : Nat) : Prog isa :=
   .seq (Shape.check pLen qLen)
     (.ite .eq (.block [.mov .r0 (.imm 0)])
-      (.seq (Validate.signingKey pLen qLen) (.seq (Validate.privateKey pLen qLen) (.block SignVerify.result))))
+      (.seq (Validate.signingKey umaal pLen qLen) (.seq (Validate.privateKey umaal pLen qLen) (.block SignVerify.result))))
 
 def validate : Prog isa := Core.sequence [
-  .block validateEntry, Generate.dispatch validateSized Generate.widths, .block Entry.restore]
+  .block validateEntry, Generate.dispatch (validateSized umaal) Generate.widths, .block Entry.restore]
 
 /-- Rebuild q−2 in this call's workspace and check the nonce's range;
 validation is a precondition on the immutable key bytes, never a flag
@@ -39,24 +41,27 @@ recovered from scratch. -/
 def compute (pLen qLen : Nat) : Prog isa := Core.sequence [
   Validate.minus qLen .q 2 qMinusTwo,
   Validate.range qLen .q (.input .nonce),
-  Core.sign pLen qLen,
+  Core.sign umaal pLen qLen,
   .seq (Validate.zero qLen (.local r) true) (Validate.zero qLen (.local s) true)]
 
 def body (pLen qLen : Nat) : Prog isa :=
-  .seq (compute pLen qLen)
+  .seq (compute umaal pLen qLen)
     (.seq (SignVerify.writeScalar qLen r false) (.seq (SignVerify.writeScalar qLen s true) (.block SignVerify.result)))
 
 def sized (pLen qLen : Nat) : Prog isa :=
-  .seq (Shape.check pLen qLen) (.ite .eq (Entry.failure true) (body pLen qLen))
+  .seq (Shape.check pLen qLen) (.ite .eq (Entry.failure true) (body umaal pLen qLen))
 
 /-- The signer's public-width dispatch, with its failure for unsupported widths. -/
 def dispatch : List (Nat × Nat) → Prog isa
   | [] => Entry.failure true
   | (pLen, qLen) :: rest =>
-    .seq (Entry.widthMatch pLen qLen) (.ite .eq (sized pLen qLen) (dispatch rest))
+    .seq (Entry.widthMatch pLen qLen) (.ite .eq (sized umaal pLen qLen) (dispatch rest))
+
+/-- The name of the signer, as a function the randomized signer calls. -/
+def signerName : String := "vg_dsa_sign_prevalidated" ++ suffix umaal
 
 /-- `vg_dsa_sign_prevalidated`, with `vg_dsa_sign`'s arguments. -/
 def sign : Prog isa := Core.sequence [
-  .block Entry.signEntry, dispatch Generate.widths, .block Entry.restore]
+  .block Entry.signEntry, dispatch umaal Generate.widths, .block Entry.restore]
 
 end VG.Impl.Dsa.Arm.PrevalidatedSign

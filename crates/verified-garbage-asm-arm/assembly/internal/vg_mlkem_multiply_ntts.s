@@ -271,63 +271,41 @@ vg_mlkem_multiply_ntts:
 	str r12, [r3, #508]
 	movw r8, #30198
 	movt r8, #2
+	movw r12, #62207
+	movt r12, #65535
 	mov r11, #128
 20:
-	ldr r4, [r1, #0]
 	ldr r5, [r1, #4]
-	ldr r6, [r2, #0]
 	ldr r7, [r2, #4]
 	mul r9, r5, r7
 	lsr r10, r9, #11
 	mul r10, r10, r8
 	lsr r10, r10, #18
-	sub r9, r9, r10
-	sub r9, r9, r10, lsl #8
-	sub r9, r9, r10, lsl #10
-	sub r9, r9, r10, lsl #11
-	sub r9, r9, #3328
-	sub r9, r9, #1
-	lsr r10, r9, #31
-	add r9, r9, r10
-	add r9, r9, r10, lsl #8
-	add r9, r9, r10, lsl #10
-	add r9, r9, r10, lsl #11
+	mla r9, r10, r12, r9
 	ldr r10, [r3, #0]
 	mul r9, r9, r10
-	mul r10, r4, r6
-	add r9, r10, r9
+	ldr r4, [r1, #0]
+	ldr r6, [r2, #0]
+	mla r9, r4, r6, r9
 	lsr r10, r9, #11
 	mul r10, r10, r8
 	lsr r10, r10, #18
-	sub r9, r9, r10
-	sub r9, r9, r10, lsl #8
-	sub r9, r9, r10, lsl #10
-	sub r9, r9, r10, lsl #11
-	sub r9, r9, #3328
-	sub r9, r9, #1
-	lsr r10, r9, #31
-	add r9, r9, r10
-	add r9, r9, r10, lsl #8
-	add r9, r9, r10, lsl #10
-	add r9, r9, r10, lsl #11
+	mla r9, r10, r12, r9
+	add r10, r9, r12
+	add r10, r10, #2147483648
+	lsr r10, r10, #31
+	mla r9, r10, r12, r9
 	str r9, [r0, #0]
 	mul r9, r4, r7
-	mul r10, r5, r6
-	add r9, r9, r10
+	mla r9, r5, r6, r9
 	lsr r10, r9, #11
 	mul r10, r10, r8
 	lsr r10, r10, #18
-	sub r9, r9, r10
-	sub r9, r9, r10, lsl #8
-	sub r9, r9, r10, lsl #10
-	sub r9, r9, r10, lsl #11
-	sub r9, r9, #3328
-	sub r9, r9, #1
-	lsr r10, r9, #31
-	add r9, r9, r10
-	add r9, r9, r10, lsl #8
-	add r9, r9, r10, lsl #10
-	add r9, r9, r10, lsl #11
+	mla r9, r10, r12, r9
+	add r10, r9, r12
+	add r10, r10, #2147483648
+	lsr r10, r10, #31
+	mla r9, r10, r12, r9
 	str r9, [r0, #4]
 	add r0, r0, #8
 	add r1, r1, #8

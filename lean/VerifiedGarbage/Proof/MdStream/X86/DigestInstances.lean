@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.MdStream.X86.Digest
 public import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Hashes
 public import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Sha1
-public import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Sha224
+public import VerifiedGarbage.Proof.Sha256.X86.Variants.Interface
 public import VerifiedGarbage.Spec.Sha1.Contract
 public import VerifiedGarbage.Spec.Sha512.Contract
 import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.AnyKeyCT
@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.MdStream.X86.Digest
 meta import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Hashes
 meta import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Sha1
-meta import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Sha224
+meta import VerifiedGarbage.Proof.Sha256.X86.Variants.Interface
 meta import VerifiedGarbage.Spec.Sha1.Contract
 meta import VerifiedGarbage.Spec.Sha512.Contract
 meta import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.AnyKeyCT

@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Blowfish.cbcEncryptChainedContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 4168 bytes.
@@ -155,7 +157,10 @@ b 23f
 .inst 0xf94040b3,0xf94044b4,0xf94048b5,0xf9404cb6,0xf94050b7,0xf94054b8,0xf94058b9,0xf9405cba
 .inst 0xf94060bb,0xf94064bc,0xd2800011,0x910003f0,0xa9004611,0xa9014611,0xa9024611,0xa9034611
 .inst 0xa9044611,0xa9054611,0xa9064611,0xa9074611,0xa9084611,0xa9094611,0xa90a4611,0xa90b4611
-.inst 0xa90c4611,0xa90d4611,0x910383ff,0xd65f03c0
+.inst 0xa90c4611,0xa90d4611,0x910383ff,0xd2800006,0xd2800007,0x6f00e400,0x6f00e401,0x6f00e404
+.inst 0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414
+.inst 0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41c,0x6f00e41d
+.inst 0x6f00e41e,0x6f00e41f,0xd65f03c0
 .p2align 6",
     )
 }
@@ -163,6 +168,8 @@ b 23f
 /// Blowfish-CBC decryption (NIST SP 800-38A §6.2, Schneier, FSE 1994) of whole blocks, in place: replaces the `n` 8-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = CIPH⁻¹_K(Cⱼ) ⊕ Cⱼ₋₁`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ`, the last block at `data` on entry (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH⁻¹_K` is Blowfish decryption under the schedule written by `vg_blowfish_expand_key`. No padding is removed.
 ///
 /// Contract: `VG.Spec.Blowfish.cbcDecryptChainedContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -327,7 +334,10 @@ b 23f
 .inst 0xf94040b3,0xf94044b4,0xf94048b5,0xf9404cb6,0xf94050b7,0xf94054b8,0xf94058b9,0xf9405cba
 .inst 0xf94060bb,0xf94064bc,0xd2800011,0x910003f0,0xa9004611,0xa9014611,0xa9024611,0xa9034611
 .inst 0xa9044611,0xa9054611,0xa9064611,0xa9074611,0xa9084611,0xa9094611,0xa90a4611,0xa90b4611
-.inst 0xa90c4611,0xa90d4611,0x910383ff,0xd65f03c0
+.inst 0xa90c4611,0xa90d4611,0x910383ff,0xd2800006,0xd2800008,0xd2800009,0x6f00e400,0x6f00e401
+.inst 0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413
+.inst 0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41c
+.inst 0x6f00e41d,0x6f00e41e,0x6f00e41f,0xd65f03c0
 .p2align 6",
     )
 }

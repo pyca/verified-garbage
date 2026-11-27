@@ -1,5 +1,8 @@
 module
 
+public import VerifiedGarbage.TCB.Registration
+import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
 public import VerifiedGarbage.Proof.EcKey.X86_64.Scrub.Out
 public import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
 public import VerifiedGarbage.Proof.Framework.Registration
@@ -12,7 +15,6 @@ meta import VerifiedGarbage.Impl.Ecdsa.X86_64.VerifyHash
 public import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Main
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P192.Contract
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P192.Verified
 public import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Front
@@ -25,7 +27,6 @@ import VerifiedGarbage.Proof.Framework.LitShare
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P192.Lit
 import VerifiedGarbage.Proof.Weierstrass.WinLay
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Main
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P192.Contract
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P192.Verified
 meta import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Front
@@ -47,6 +48,78 @@ import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.EraseChecks
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.EraseChecks
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.Ecdsa.P192
+public import VerifiedGarbage.Spec.Ecdsa.Verify.Generic
+import VerifiedGarbage.Proof.Framework.GetElem
+meta import VerifiedGarbage.TCB.X86_64.Target
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Spec.Ecdsa.P192
+meta import VerifiedGarbage.Spec.Ecdsa.Verify.Generic
+meta import VerifiedGarbage.Proof.Framework.GetElem
+
+/-! ### `Ecdsa.Verify.X86_64.P192.Contract`, which only this module used -/
+
+section
+
+/-!
+# ECDSA verification over p192 on x86-64: the contract the proof is written against
+
+The facts of `Proof.Ecdsa.verifyContract Spec.Ecdsa.P192.inst` for x86-64, by name:
+`vg_ecdsa_p192_verify(public = rdi, digest = rsi, sig = rdx, scratch = rcx)`,
+the result in `eax`. Only the pointers are public here: the proof shows that
+nothing else affects timing, although the contract would let the contents of
+the three buffers.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Ecdsa.Verify.X86_64.P192
+
+open VG VG.X86_64 Spec.Weierstrass Spec.Ecdsa
+
+/-- Whether the signature at `sig` of the hash at `digest` is valid for the
+public key at `pk`, as the specification says. -/
+abbrev vf (m : Mem) (pk digest sig : Addr) : Bool :=
+  verify Spec.P192.curve (bytesAt m pk 49) (hashToInt Spec.P192.curve (bytesAt m digest 24)) (bytesAt m sig 48)
+
+def verifyX86_64 : Contract X86_64.isa where
+  pre s :=
+    let pk : Region := ⟨s.gpr .rdi, 49⟩
+    let digest : Region := ⟨s.gpr .rsi, 24⟩
+    let sig : Region := ⟨s.gpr .rdx, 48⟩
+    let scratch : Region := ⟨s.gpr .rcx, 8192⟩
+    let ret : Region := ⟨s.gpr .rsp, 8⟩
+    s.rd = [pk, digest, sig] ∧ s.wr = [scratch] ∧ pk.Disjoint scratch ∧ digest.Disjoint scratch ∧
+      sig.Disjoint scratch ∧ ret.Disjoint scratch ∧ (s.gpr .rcx).toNat + 8192 ≤ 2 ^ 64
+  post s s' := (s'.gpr .rax).setWidth 32 = if vf s.mem (s.gpr .rdi) (s.gpr .rsi) (s.gpr .rdx) then 1 else 0
+  pub s₁ s₂ := s₁.gpr .rsp = s₂.gpr .rsp ∧ s₁.gpr .rdi = s₂.gpr .rdi ∧ s₁.gpr .rsi = s₂.gpr .rsi ∧
+    s₁.gpr .rdx = s₂.gpr .rdx ∧ s₁.gpr .rcx = s₂.gpr .rcx
+
+/-- A state satisfying the precondition. -/
+def satState : State where
+  gpr r := match r with
+    | .rdi => 0x1000 | .rsi => 0x2000 | .rdx => 0x3000 | .rcx => 0x8000
+    | .rsp => 0x20000 | _ => 0
+  cf := none
+  zf := none
+  sf := none
+  of := none
+  mem _ := 0
+  rd := [⟨0x1000, 49⟩, ⟨0x2000, 24⟩, ⟨0x3000, 48⟩]
+  wr := [⟨0x8000, 8192⟩]
+
+theorem implies : verifyX86_64.Implies (Proof.Ecdsa.verifyContract Spec.Ecdsa.P192.inst X86_64.abi) := by
+  sig_implies [Spec.Ecdsa.P192.inst, Proof.Ecdsa.verifyContract, Proof.Ecdsa.verifySig,
+    Spec.P192.curve, Spec.Ecdsa.scratchWords, X86_64.abi, X86_64.argRegs, verifyX86_64, vf]
+    [satState] using satState
+
+end VG.Proof.Ecdsa.Verify.X86_64.P192
+
+end
+
+end
 
 /-!
 # ECDSA verification over p192 on x86-64: `Verified`
@@ -85,7 +158,7 @@ theorem verify_inlineOk : verifyP192.InlineOk = true :=
 
 theorem verify_x86 (hL : Weierstrass.Law Spec.P192.curve) (hI : Weierstrass.X86_64.InvSounds) (s : State) (hs : verifyX86_64.pre s) :
     ∃ t s', Exec isa verifyP192.inline s t s' ∧ abiPreserved s s' ∧ verifyX86_64.post s s' := by
-  obtain ⟨t, s', he, hsv, hpost⟩ := verify_ok (p192_ok hI) hL p192_tbls (pre_of hs) p192_mulBase.2
+  obtain ⟨t, s', he, hsv, hpost⟩ := verify_ok (p192_ok hI) hL p192_tbls (pre_of hs) fun h => ⟨(p192_mulBase.2 h).1, (p192_mulBase.2 h).2.1 rfl⟩
   obtain ⟨hsp, hmx⟩ := rsp_mxcsr (c := verifyP192)
     (Code.rspMxcsr_of_erase (show verifyP192Erased.allInstrs _ = true by lit_decide))
   have F := (Exec.regions he (Code.noCalls_inline verify_inlineOk)).2.2
@@ -150,32 +223,27 @@ theorem verifyHash_verified (hL : Weierstrass.Law Spec.P192.curve) (hI : Weierst
       simp only [satState, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl <;> exact Region.disjoint_of_sep (by decide))
 
-
 /-! ## Without secret residue -/
 
 /-- `vg_ecdsa_p192_verify`'s code. -/
 abbrev verifyHashCode : Prog X86_64.isa :=
   Impl.Ecdsa.X86_64.VerifyHash.verifyHash Spec.Ecdsa.P192.inst.curve.len false verifyP192
 
-/-- The granules of its stack that `vg_ecdsa_p192_verify` wipes on return,
-from the residue analysis (`X86_64.RScrub.keepFor`): its inputs are public,
-but the analysis starts with none known public, so these are the granules its
-frames used. -/
-def scrubKs : List Nat := keep_for% Spec.Ecdsa.P192.verifyHashApi.sig 96 verifyHashCode []
+theorem verifyHash_codeSp : (Impl.Ecdsa.X86_64.VerifyHash.verifyHash Spec.Ecdsa.P192.inst.curve.len false Impl.Ecdsa.Verify.X86_64.verifyP192).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
 
-theorem scrubOk : ∃ h : VG.Taint.Hint X86_64.RTaint.FT,
-    (VG.Taint.check X86_64.RTaint.rtaint (X86_64.RScrub.init Spec.Ecdsa.P192.verifyHashApi.sig 96 [])
-      verifyHashCode h).any (X86_64.RScrub.resOkB · 96 scrubKs (Impl.Scrub.X86_64.chunks 96)) = true :=
-  X86_64.RScrub.Analysed.ok_of _ (by taint_decide)
+/-- `vg_ecdsa_p192_verify` as emitted (`Impl.Ecdsa.X86_64.VerifyHash.Fn.verifyHash`), its cleanup included,
+meets its contract in constant time and returns without secret residue. -/
+theorem verifyHash_scrubbed (hL : Weierstrass.Law Spec.P192.curve) (hI : Weierstrass.X86_64.InvSounds) :
+    VerifiedScrubbed X86_64.target (Impl.Ecdsa.X86_64.VerifyHash.Fn.verifyHash Spec.Ecdsa.P192.inst.curve.len false Impl.Ecdsa.Verify.X86_64.verifyP192)
+      (Spec.Ecdsa.P192.verifyHashApi.contract X86_64.abi 96) 32 :=
+  X86_64.Scrub.verifiedScrubbedAll (api := Spec.Ecdsa.P192.verifyHashApi)
+    { code := Impl.Ecdsa.X86_64.VerifyHash.verifyHash Spec.Ecdsa.P192.inst.curve.len false Impl.Ecdsa.Verify.X86_64.verifyP192
+      stack := 96
+      verified := verifyHash_verified hL hI
+      spSafe := verifyHash_codeSp } .sse (VG.Proof.EcKey.X86_64.Scrub.verifyHashOut _ _)
 
-/-- `vg_ecdsa_p192_verify`, followed by `Impl.Scrub.X86_64.scrubTail`
-(`X86_64.RScrub.withScrub`): it returns without secret residue. -/
-def scrubReg (hL : Weierstrass.Law Spec.P192.curve) (hI : Weierstrass.X86_64.InvSounds) :
-    Registration Spec.Ecdsa.P192.verifyHashApi X86_64.target :=
-  X86_64.RScrub.withScrub {
-    code := verifyHashCode
-    stack := 96
-    verified := verifyHash_verified hL hI }
-    (EcKey.X86_64.Scrub.verifyHashOut _ _) [] (X86_64.RScrub.pubOk_nil _) (some ⟨scrubKs, scrubOk⟩)
+theorem verifyHash_spSafe : (Impl.Ecdsa.X86_64.VerifyHash.Fn.verifyHash Spec.Ecdsa.P192.inst.curve.len false Impl.Ecdsa.Verify.X86_64.verifyP192).all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  X86_64.Scrub.scrubKs_spSafe verifyHash_codeSp
 
 end VG.Proof.Ecdsa.Verify.X86_64.P192

@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Rc4.initContract`. Constant time: only pointers and `key_len` may affect timing, not the key or key-dependent table indices.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `key` must be valid for reads of `key_len` bytes.
@@ -220,7 +222,10 @@ b 21f
 20:
 .inst 0x52800020
 21:
-.inst 0xd65f03c0
+.inst 0xd2800009,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e406
+.inst 0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416
+.inst 0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c,0x6f00e41d,0x6f00e41e
+.inst 0x6f00e41f,0x4e181d28,0x4e181d29,0x4e181d2a,0x4e181d2b,0x4e181d2c,0x4e181d2d,0xd65f03c0
 .p2align 6",
     )
 }
@@ -228,6 +233,8 @@ b 21f
 /// Continues raw RC4 encryption or decryption: XORs the next `len` stream bytes into `data` in place and preserves the next stream position in `*ctx` (`VG.Spec.Rc4.contextAt`). Empty input leaves the context unchanged. There is no nonce, padding, authentication, automatic discard or final output.
 ///
 /// Contract: `VG.Spec.Rc4.applyContract`. Constant time: only pointers, `len` and the initial PRGA index `i` (the public byte count modulo 256 for an initialized context) may affect timing. Key bytes, the permutation, `j`, keystream lookup indices and data remain secret. The function may leak `i`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -543,7 +550,11 @@ cbnz x2, 22b
 b 21f
 20:
 21:
-.inst 0xd65f03c0
+.inst 0xd2800004,0xd2800005,0xd2800006,0xd2800008,0xd280000c,0xd280000d,0x6f00e400,0x6f00e401
+.inst 0x6f00e402,0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411
+.inst 0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419
+.inst 0x6f00e41a,0x6f00e41b,0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0x4e181c89,0x4e181c8a
+.inst 0x4e181c8b,0x4e181c8e,0xd65f03c0
 .p2align 6",
     )
 }

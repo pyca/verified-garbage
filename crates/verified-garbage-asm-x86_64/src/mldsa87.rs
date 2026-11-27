@@ -374,7 +374,7 @@ call {vg_keccak_absorb_scratch}
 call {vg_keccak_pad_scratch}
 .base64 "SInfSIPHAL6IAAAAugAAAABMielIg8FAQbhAAAAASYnZSYHByAAAAA=="
 call {vg_keccak_squeeze_scratch}
-.base64 "RIn4TIu7cAMAAEyLs2gDAABMi6tgAwAATIujWAMAAEiLq1ADAABIi5tIAwAAxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbSI1kJODF/n8EJEiNZCQgicAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
+.base64 "RIn4TIu7cAMAAEyLs2gDAABMi6tgAwAATIujWAMAAEiLq1ADAABIi5tIAwAAxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbSI1kJPhMiRwkSI1kJOjzD39EJAhMiRwkSI1kJBhIjWQkCInAMckx0jH2Mf9FMcBFMclFMdLD"
 .p2align 6"#,
         vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
@@ -761,7 +761,7 @@ call {vg_keccak_absorb_scratch}
 call {vg_keccak_pad_scratch}
 .base64 "SInfSIPHAL6IAAAAugAAAABMielIg8FAQbhAAAAASYnZSYHByAAAAA=="
 call {vg_keccak_squeeze_scratch}
-.base64 "RIn4TIu7cAMAAEyLs2gDAABMi6tgAwAATIujWAMAAEiLq1ADAABIi5tIAwAAxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJODF/n8EJEiNZCQgicAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
+.base64 "RIn4TIu7cAMAAEyLs2gDAABMi6tgAwAATIujWAMAAEiLq1ADAABIi5tIAwAAxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJPhMiRwkSI1kJOjzD39EJAhMiRwkSI1kJBhIjWQkCInAMckx0jH2Mf9FMcBFMclFMdLD"
 .p2align 6"#,
         vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
@@ -1144,7 +1144,7 @@ call {vg_keccak_absorb_scratch}
 call {vg_keccak_pad_scratch}
 .base64 "SInfSIPHAL6IAAAAugAAAABMielIg8FAQbhAAAAASYnZSYHByAAAAA=="
 call {vg_keccak_squeeze_scratch}
-.base64 "RIn4TIu7cAMAAEyLs2gDAABMi6tgAwAATIujWAMAAEiLq1ADAABIi5tIAwAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJODzD39EJBDzD38EJEiNZCQgicAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
+.base64 "RIn4TIu7cAMAAEyLs2gDAABMi6tgAwAATIujWAMAAEiLq1ADAABIi5tIAwAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJPhMiRwkSI1kJOjzD39EJAhMiRwkSI1kJBhIjWQkCInAMckx0jH2Mf9FMcBFMclFMdLD"
 .p2align 6"#,
         vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
@@ -1183,7 +1183,7 @@ call {vg_keccak_absorb_scratch}
 call {vg_keccak_pad_scratch}
 .base64 "SInfSIPHAL6IAAAAugAAAABMielIg8EAQbhAAAAASYnZSYHByAAAAA=="
 call {vg_keccak_squeeze_scratch}
-.base64 "RIn4TIu7cAMAAEyLs2gDAABMi6tgAwAATIujWAMAAEiLq1ADAABIi5tIAwAAZg/vwEUx20iNZCTg8w9/RCQQ8w9/BCRIjWQkIDHAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
+.base64 "RIn4TIu7cAMAAEyLs2gDAABMi6tgAwAATIujWAMAAEiLq1ADAABIi5tIAwAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJPhMiRwkSI1kJOjzD39EJAhMiRwkSI1kJBhIjWQkCDHAMckx0jH2Mf9FMcBFMclFMdLD"
 .p2align 6"#,
         vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
@@ -1248,7 +1248,7 @@ call {vg_mldsa_ntt_avx2}
 20:
 .base64 "SIsGSIkHSIPHCEiDxghIg+kB"
 jne 20b
-.base64 "SYucJEgDAABJi6wkUAMAAE2LrCRgAwAATYu0JGgDAABNi7wkcAMAAE2LpCRYAwAAxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//SI1kJOBIjWQkIDHAMckx0jH2Mf9FMcBFMcnD"
+.base64 "SYucJEgDAABJi6wkUAMAAE2LrCRgAwAATYu0JGgDAABNi7wkcAMAAE2LpCRYAwAAxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJPhMiRwkSI1kJOjzD39EJAhMiRwkSI1kJBhIjWQkCDHAMckx0jH2Mf9FMcBFMclFMdLD"
 .p2align 6"#,
         vg_mldsa_unpack_t1 = sym super::mldsa44::vg_mldsa_unpack_t1::vg_mldsa_unpack_t1,
         vg_mldsa_ntt_avx2 = sym super::mldsa44::vg_mldsa_ntt_avx2::vg_mldsa_ntt_avx2,
@@ -1373,7 +1373,7 @@ call {vg_mldsa_ntt_avx2}
 20:
 .base64 "SIsGSIkHSIPHCEiDxghIg+kB"
 jne 20b
-.base64 "SYucJEgDAABJi6wkUAMAAE2LrCRgAwAATYu0JGgDAABNi7wkcAMAAE2LpCRYAwAAxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//SI1kJOBIjWQkIDHAMckx0jH2Mf9FMcBFMclFMdvD"
+.base64 "SYucJEgDAABJi6wkUAMAAE2LrCRgAwAATYu0JGgDAABNi7wkcAMAAE2LpCRYAwAAxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJPhMiRwkSI1kJOjzD39EJAhMiRwkSI1kJBhIjWQkCDHAMckx0jH2Mf9FMcBFMclFMdLD"
 .p2align 6"#,
         vg_mldsa_bit_unpack = sym super::mldsa44::vg_mldsa_bit_unpack::vg_mldsa_bit_unpack,
         vg_mldsa_ntt_avx2 = sym super::mldsa44::vg_mldsa_ntt_avx2::vg_mldsa_ntt_avx2,
@@ -1433,7 +1433,7 @@ call {vg_mldsa_ntt}
 20:
 .base64 "SIsGSIkHSIPHCEiDxghIg+kB"
 jne 20b
-.base64 "SYucJEgDAABJi6wkUAMAAE2LrCRgAwAATYu0JGgDAABNi7wkcAMAAE2LpCRYAwAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//SI1kJOBIjWQkIDHAMckx0jH2Mf9FMcBFMcnD"
+.base64 "SYucJEgDAABJi6wkUAMAAE2LrCRgAwAATYu0JGgDAABNi7wkcAMAAE2LpCRYAwAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJPhMiRwkSI1kJOjzD39EJAhMiRwkSI1kJBhIjWQkCDHAMckx0jH2Mf9FMcBFMclFMdLD"
 .p2align 6"#,
         vg_mldsa_unpack_t1 = sym super::mldsa44::vg_mldsa_unpack_t1::vg_mldsa_unpack_t1,
         vg_mldsa_ntt = sym super::mldsa44::vg_mldsa_ntt::vg_mldsa_ntt,
@@ -1554,7 +1554,7 @@ call {vg_mldsa_ntt}
 20:
 .base64 "SIsGSIkHSIPHCEiDxghIg+kB"
 jne 20b
-.base64 "SYucJEgDAABJi6wkUAMAAE2LrCRgAwAATYu0JGgDAABNi7wkcAMAAE2LpCRYAwAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//SI1kJOBIjWQkIDHAMckx0jH2Mf9FMcBFMclFMdvD"
+.base64 "SYucJEgDAABJi6wkUAMAAE2LrCRgAwAATYu0JGgDAABNi7wkcAMAAE2LpCRYAwAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJPhMiRwkSI1kJOjzD39EJAhMiRwkSI1kJBhIjWQkCDHAMckx0jH2Mf9FMcBFMclFMdLD"
 .p2align 6"#,
         vg_mldsa_bit_unpack = sym super::mldsa44::vg_mldsa_bit_unpack::vg_mldsa_bit_unpack,
         vg_mldsa_ntt = sym super::mldsa44::vg_mldsa_ntt::vg_mldsa_ntt,
@@ -1581,14 +1581,14 @@ pub const VG_MLDSA87_SIGN_AVX512_FEATURES: verified_garbage_cpu::Features = veri
 /// * `rnd` must be fresh random bytes (FIPS 204 §3.6.1), or 32 zero bytes for deterministic signing.
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
 /// * `sig` and `scratch` must not overlap each other, `sk`, `mu` or `rnd` (distinct Rust objects never do).
-/// * None of `sk`, `mu`, `rnd`, `sig` and `scratch` may overlap the return address on the stack or the 40 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `sk`, `mu`, `rnd`, `sig` and `scratch` may overlap the return address on the stack or the 152 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx512f`, `avx2` and `avx512vl` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa87_sign_avx512(sk: *const [u8; 4896], mu: *const [u8; 64], rnd: *const [u8; 32], sig: *mut [u8; 4627], scratch: *mut [u64; 18048]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "QbkAAAAA"
 call {vg_mldsa87_sign_with_cache_avx512}
-.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbSI1kJNjF/n9EJAhMiRwkSI1kJCiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbSI1kJPhMiRwkSI2kJHD////F/n9EJHDF/n9EJFDF/n9EJDDF/n9EJBDzD38EJEiNpCSQAAAASI1kJAiJwDHJMdIx9jH/RTHARTHJRTHSww=="
 .p2align 6"#,
         vg_mldsa87_sign_with_cache_avx512 = sym super::mldsa87::vg_mldsa87_sign_with_cache_avx512::vg_mldsa87_sign_with_cache_avx512,
     )
@@ -1615,14 +1615,14 @@ pub const VG_MLDSA87_SIGN_PREPARED_AVX512_FEATURES: verified_garbage_cpu::Featur
 /// * `rnd` must be fresh random bytes (FIPS 204 §3.6.1), or 32 zero bytes for deterministic signing.
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
 /// * `sig` and `scratch` must not overlap each other, `sk`, `mu` or `rnd` (distinct Rust objects never do).
-/// * None of `sk`, `mu`, `rnd`, `sig` and `scratch` may overlap the return address on the stack or the 40 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `sk`, `mu`, `rnd`, `sig` and `scratch` may overlap the return address on the stack or the 152 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx512f`, `avx2` and `avx512vl` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa87_sign_prepared_avx512(sk: *const [u8; 28448], mu: *const [u8; 64], rnd: *const [u8; 32], sig: *mut [u8; 4627], scratch: *mut [u64; 18048]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "QbkBAAAA"
 call {vg_mldsa87_sign_with_cache_avx512}
-.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbSI1kJNjF/n9EJAhMiRwkSI1kJCiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbSI1kJPhMiRwkSI2kJHD////F/n9EJHDF/n9EJFDF/n9EJDDF/n9EJBDzD38EJEiNpCSQAAAASI1kJAiJwDHJMdIx9jH/RTHARTHJRTHSww=="
 .p2align 6"#,
         vg_mldsa87_sign_with_cache_avx512 = sym super::mldsa87::vg_mldsa87_sign_with_cache_avx512::vg_mldsa87_sign_with_cache_avx512,
     )
@@ -1648,14 +1648,14 @@ pub const VG_MLDSA87_SIGN_AVX2_FEATURES: verified_garbage_cpu::Features = verifi
 /// * `rnd` must be fresh random bytes (FIPS 204 §3.6.1), or 32 zero bytes for deterministic signing.
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
 /// * `sig` and `scratch` must not overlap each other, `sk`, `mu` or `rnd` (distinct Rust objects never do).
-/// * None of `sk`, `mu`, `rnd`, `sig` and `scratch` may overlap the return address on the stack or the 40 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `sk`, `mu`, `rnd`, `sig` and `scratch` may overlap the return address on the stack or the 152 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `avx2` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa87_sign_avx2(sk: *const [u8; 4896], mu: *const [u8; 64], rnd: *const [u8; 32], sig: *mut [u8; 4627], scratch: *mut [u64; 18048]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "QbkAAAAA"
 call {vg_mldsa87_sign_with_cache_avx2}
-.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJNjF/n9EJAhMiRwkSI1kJCiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJPhMiRwkSI2kJHD////F/n9EJHDF/n9EJFDF/n9EJDDF/n9EJBDzD38EJEiNpCSQAAAASI1kJAiJwDHJMdIx9jH/RTHARTHJRTHSww=="
 .p2align 6"#,
         vg_mldsa87_sign_with_cache_avx2 = sym super::mldsa87::vg_mldsa87_sign_with_cache_avx2::vg_mldsa87_sign_with_cache_avx2,
     )
@@ -1682,14 +1682,14 @@ pub const VG_MLDSA87_SIGN_PREPARED_AVX2_FEATURES: verified_garbage_cpu::Features
 /// * `rnd` must be fresh random bytes (FIPS 204 §3.6.1), or 32 zero bytes for deterministic signing.
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
 /// * `sig` and `scratch` must not overlap each other, `sk`, `mu` or `rnd` (distinct Rust objects never do).
-/// * None of `sk`, `mu`, `rnd`, `sig` and `scratch` may overlap the return address on the stack or the 40 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `sk`, `mu`, `rnd`, `sig` and `scratch` may overlap the return address on the stack or the 152 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `avx2` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa87_sign_prepared_avx2(sk: *const [u8; 28448], mu: *const [u8; 64], rnd: *const [u8; 32], sig: *mut [u8; 4627], scratch: *mut [u64; 18048]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "QbkBAAAA"
 call {vg_mldsa87_sign_with_cache_avx2}
-.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJNjF/n9EJAhMiRwkSI1kJCiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJPhMiRwkSI2kJHD////F/n9EJHDF/n9EJFDF/n9EJDDF/n9EJBDzD38EJEiNpCSQAAAASI1kJAiJwDHJMdIx9jH/RTHARTHJRTHSww=="
 .p2align 6"#,
         vg_mldsa87_sign_with_cache_avx2 = sym super::mldsa87::vg_mldsa87_sign_with_cache_avx2::vg_mldsa87_sign_with_cache_avx2,
     )
@@ -1712,13 +1712,13 @@ call {vg_mldsa87_sign_with_cache_avx2}
 /// * `rnd` must be fresh random bytes (FIPS 204 §3.6.1), or 32 zero bytes for deterministic signing.
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
 /// * `sig` and `scratch` must not overlap each other, `sk`, `mu` or `rnd` (distinct Rust objects never do).
-/// * None of `sk`, `mu`, `rnd`, `sig` and `scratch` may overlap the return address on the stack or the 40 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `sk`, `mu`, `rnd`, `sig` and `scratch` may overlap the return address on the stack or the 152 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa87_sign(sk: *const [u8; 4896], mu: *const [u8; 64], rnd: *const [u8; 32], sig: *mut [u8; 4627], scratch: *mut [u64; 18048]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "QbkAAAAA"
 call {vg_mldsa87_sign_with_cache}
-.base64 "Zg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJNjzD39EJBjzD39EJAhMiRwkSI1kJCiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
+.base64 "Zg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJPhMiRwkSI2kJHD////zD3+EJIAAAADzD39EJHDzD39EJGDzD39EJFDzD39EJEDzD39EJDDzD39EJCDzD39EJBDzD38EJEiNpCSQAAAASI1kJAiJwDHJMdIx9jH/RTHARTHJRTHSww=="
 .p2align 6"#,
         vg_mldsa87_sign_with_cache = sym super::mldsa87::vg_mldsa87_sign_with_cache::vg_mldsa87_sign_with_cache,
     )
@@ -1742,13 +1742,13 @@ call {vg_mldsa87_sign_with_cache}
 /// * `rnd` must be fresh random bytes (FIPS 204 §3.6.1), or 32 zero bytes for deterministic signing.
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
 /// * `sig` and `scratch` must not overlap each other, `sk`, `mu` or `rnd` (distinct Rust objects never do).
-/// * None of `sk`, `mu`, `rnd`, `sig` and `scratch` may overlap the return address on the stack or the 40 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `sk`, `mu`, `rnd`, `sig` and `scratch` may overlap the return address on the stack or the 152 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa87_sign_prepared(sk: *const [u8; 28448], mu: *const [u8; 64], rnd: *const [u8; 32], sig: *mut [u8; 4627], scratch: *mut [u64; 18048]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "QbkBAAAA"
 call {vg_mldsa87_sign_with_cache}
-.base64 "Zg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJNjzD39EJBjzD39EJAhMiRwkSI1kJCiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
+.base64 "Zg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJPhMiRwkSI2kJHD////zD3+EJIAAAADzD39EJHDzD39EJGDzD39EJFDzD39EJEDzD39EJDDzD39EJCDzD39EJBDzD38EJEiNpCSQAAAASI1kJAiJwDHJMdIx9jH/RTHARTHJRTHSww=="
 .p2align 6"#,
         vg_mldsa87_sign_with_cache = sym super::mldsa87::vg_mldsa87_sign_with_cache::vg_mldsa87_sign_with_cache,
     )
@@ -1757,7 +1757,7 @@ call {vg_mldsa87_sign_with_cache}
 /// The CPU features `vg_mldsa87_sign_message_avx512` requires (`Artifact.features`).
 pub const VG_MLDSA87_SIGN_MESSAGE_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512VL);
 
-/// ML-DSA-87 signing, `ML-DSA.Sign(sk, M, ctx)` (FIPS 204 Algorithm 2) on the randomness `*rnd` (line 5): with the private key `*sk`, the `msg_len` bytes of the message at `msg` and the `ctx_len` bytes of the context string at `ctx`, writes the signature of the formatted message `M′ = 0 ‖ ctx_len ‖ ctx ‖ M` (line 10), `ML-DSA.Sign_internal(sk, M′, rnd)` (Algorithm 7), to `*sig`. Returns 1 on success. Returns 0 if a loop reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed. Returns 2 if `ctx_len` is greater than 255 (FIPS 204 returns the error indication `⊥`): `*sig` is then unspecified.
+/// ML-DSA-87 signing, `ML-DSA.Sign(sk, M, ctx)` (FIPS 204 Algorithm 2) on the randomness `*rnd` (line 5): with the private key `*sk`, the `msg_len` bytes of the message at `msg` and the `ctx_len` bytes of the context string at `ctx`, writes the signature of the formatted message `M′ = 0 ‖ ctx_len ‖ ctx ‖ M` (line 10), `ML-DSA.Sign_internal(sk, M′, rnd)` (Algorithm 7), to `*sig`. Returns 1 on success. Returns 0 if a loop reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed. Returns 2 if `ctx_len` is greater than 255 (FIPS 204 returns the error indication `⊥`): `*sig` is then unchanged.
 ///
 /// Contract: `VG.Spec.MlDsa.signMessageContract`. Constant time but for `ρ` and the rejection sampling: timing may depend on the pointers, on `msg_len` and `ctx_len`, on `ρ` (the first 32 bytes of `*sk`), on the number of iterations of the signing loop, the commitment hash of each and which validity check rejected it, and on the hint of the signature (`signMessageLeak`), but not on anything else of the key, the message, the context string or the randomness.
 ///
@@ -1775,7 +1775,7 @@ pub const VG_MLDSA87_SIGN_MESSAGE_AVX512_FEATURES: verified_garbage_cpu::Feature
 /// * `rnd` must be fresh random bytes (FIPS 204 §3.6.1), or 32 zero bytes for deterministic signing.
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
 /// * `sig` and `scratch` must not overlap each other, `sk`, `msg`, `ctx`, `rnd` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `sk`, `msg`, `ctx`, `rnd`, `sig` and `scratch` may overlap the return address on the stack or the 112 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `sk`, `msg`, `ctx`, `rnd`, `sig` and `scratch` may overlap the return address on the stack or the 224 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx512f`, `avx2` and `avx512vl` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa87_sign_message_avx512(sk: *const [u8; 4896], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, rnd: *const [u8; 32], sig: *mut [u8; 4627], scratch: *mut [u64; 18176]) -> u32 {
@@ -1801,7 +1801,7 @@ call {vg_keccak_squeeze_scratch}
 call {vg_mldsa87_sign_with_cache_avx512}
 .base64 "QVtBW0FbQVtBW0FbQVtBW0Fb"
 21:
-.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbSI1kJJDF/n9EJFDF/n9EJDDF/n9EJBDzD38EJEiNZCRwicAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbSI1kJPhMiRwkSI2kJCj////F/n+EJLgAAADF/n+EJJgAAADF/n9EJHjF/n9EJFjF/n9EJDjF/n9EJBjzD39EJAhMiRwkSI2kJNgAAABIjWQkCInAMckx0jH2Mf9FMcBFMclFMdLD"
 .p2align 6"#,
         vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
@@ -1832,7 +1832,7 @@ pub const VG_MLDSA87_SIGN_MESSAGE_PREPARED_AVX512_FEATURES: verified_garbage_cpu
 /// * `rnd` must be fresh random bytes (FIPS 204 §3.6.1), or 32 zero bytes for deterministic signing.
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
 /// * `sig` and `scratch` must not overlap each other, `sk`, `msg`, `ctx`, `rnd` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `sk`, `msg`, `ctx`, `rnd`, `sig` and `scratch` may overlap the return address on the stack or the 112 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `sk`, `msg`, `ctx`, `rnd`, `sig` and `scratch` may overlap the return address on the stack or the 224 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx512f`, `avx2` and `avx512vl` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa87_sign_message_prepared_avx512(sk: *const [u8; 28448], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, rnd: *const [u8; 32], sig: *mut [u8; 4627], scratch: *mut [u64; 18176]) -> u32 {
@@ -1858,7 +1858,7 @@ call {vg_keccak_squeeze_scratch}
 call {vg_mldsa87_sign_with_cache_avx512}
 .base64 "QVtBW0FbQVtBW0FbQVtBW0Fb"
 21:
-.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbSI1kJJDF/n9EJFDF/n9EJDDF/n9EJBDzD38EJEiNZCRwicAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbSI1kJPhMiRwkSI2kJCj////F/n+EJLgAAADF/n+EJJgAAADF/n9EJHjF/n9EJFjF/n9EJDjF/n9EJBjzD39EJAhMiRwkSI2kJNgAAABIjWQkCInAMckx0jH2Mf9FMcBFMclFMdLD"
 .p2align 6"#,
         vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
@@ -1870,7 +1870,7 @@ call {vg_mldsa87_sign_with_cache_avx512}
 /// The CPU features `vg_mldsa87_sign_message_avx2` requires (`Artifact.features`).
 pub const VG_MLDSA87_SIGN_MESSAGE_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
 
-/// ML-DSA-87 signing, `ML-DSA.Sign(sk, M, ctx)` (FIPS 204 Algorithm 2) on the randomness `*rnd` (line 5): with the private key `*sk`, the `msg_len` bytes of the message at `msg` and the `ctx_len` bytes of the context string at `ctx`, writes the signature of the formatted message `M′ = 0 ‖ ctx_len ‖ ctx ‖ M` (line 10), `ML-DSA.Sign_internal(sk, M′, rnd)` (Algorithm 7), to `*sig`. Returns 1 on success. Returns 0 if a loop reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed. Returns 2 if `ctx_len` is greater than 255 (FIPS 204 returns the error indication `⊥`): `*sig` is then unspecified.
+/// ML-DSA-87 signing, `ML-DSA.Sign(sk, M, ctx)` (FIPS 204 Algorithm 2) on the randomness `*rnd` (line 5): with the private key `*sk`, the `msg_len` bytes of the message at `msg` and the `ctx_len` bytes of the context string at `ctx`, writes the signature of the formatted message `M′ = 0 ‖ ctx_len ‖ ctx ‖ M` (line 10), `ML-DSA.Sign_internal(sk, M′, rnd)` (Algorithm 7), to `*sig`. Returns 1 on success. Returns 0 if a loop reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed. Returns 2 if `ctx_len` is greater than 255 (FIPS 204 returns the error indication `⊥`): `*sig` is then unchanged.
 ///
 /// Contract: `VG.Spec.MlDsa.signMessageContract`. Constant time but for `ρ` and the rejection sampling: timing may depend on the pointers, on `msg_len` and `ctx_len`, on `ρ` (the first 32 bytes of `*sk`), on the number of iterations of the signing loop, the commitment hash of each and which validity check rejected it, and on the hint of the signature (`signMessageLeak`), but not on anything else of the key, the message, the context string or the randomness.
 ///
@@ -1888,7 +1888,7 @@ pub const VG_MLDSA87_SIGN_MESSAGE_AVX2_FEATURES: verified_garbage_cpu::Features 
 /// * `rnd` must be fresh random bytes (FIPS 204 §3.6.1), or 32 zero bytes for deterministic signing.
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
 /// * `sig` and `scratch` must not overlap each other, `sk`, `msg`, `ctx`, `rnd` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `sk`, `msg`, `ctx`, `rnd`, `sig` and `scratch` may overlap the return address on the stack or the 112 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `sk`, `msg`, `ctx`, `rnd`, `sig` and `scratch` may overlap the return address on the stack or the 224 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `avx2` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa87_sign_message_avx2(sk: *const [u8; 4896], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, rnd: *const [u8; 32], sig: *mut [u8; 4627], scratch: *mut [u64; 18176]) -> u32 {
@@ -1914,7 +1914,7 @@ call {vg_keccak_squeeze_scratch}
 call {vg_mldsa87_sign_with_cache_avx2}
 .base64 "QVtBW0FbQVtBW0FbQVtBW0Fb"
 21:
-.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJJDF/n9EJFDF/n9EJDDF/n9EJBDzD38EJEiNZCRwicAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJPhMiRwkSI2kJCj////F/n+EJLgAAADF/n+EJJgAAADF/n9EJHjF/n9EJFjF/n9EJDjF/n9EJBjzD39EJAhMiRwkSI2kJNgAAABIjWQkCInAMckx0jH2Mf9FMcBFMclFMdLD"
 .p2align 6"#,
         vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
@@ -1945,7 +1945,7 @@ pub const VG_MLDSA87_SIGN_MESSAGE_PREPARED_AVX2_FEATURES: verified_garbage_cpu::
 /// * `rnd` must be fresh random bytes (FIPS 204 §3.6.1), or 32 zero bytes for deterministic signing.
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
 /// * `sig` and `scratch` must not overlap each other, `sk`, `msg`, `ctx`, `rnd` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `sk`, `msg`, `ctx`, `rnd`, `sig` and `scratch` may overlap the return address on the stack or the 112 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `sk`, `msg`, `ctx`, `rnd`, `sig` and `scratch` may overlap the return address on the stack or the 224 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `avx2` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa87_sign_message_prepared_avx2(sk: *const [u8; 28448], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, rnd: *const [u8; 32], sig: *mut [u8; 4627], scratch: *mut [u64; 18176]) -> u32 {
@@ -1971,7 +1971,7 @@ call {vg_keccak_squeeze_scratch}
 call {vg_mldsa87_sign_with_cache_avx2}
 .base64 "QVtBW0FbQVtBW0FbQVtBW0Fb"
 21:
-.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJJDF/n9EJFDF/n9EJDDF/n9EJBDzD38EJEiNZCRwicAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJPhMiRwkSI2kJCj////F/n+EJLgAAADF/n+EJJgAAADF/n9EJHjF/n9EJFjF/n9EJDjF/n9EJBjzD39EJAhMiRwkSI2kJNgAAABIjWQkCInAMckx0jH2Mf9FMcBFMclFMdLD"
 .p2align 6"#,
         vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
@@ -1980,7 +1980,7 @@ call {vg_mldsa87_sign_with_cache_avx2}
     )
 }
 
-/// ML-DSA-87 signing, `ML-DSA.Sign(sk, M, ctx)` (FIPS 204 Algorithm 2) on the randomness `*rnd` (line 5): with the private key `*sk`, the `msg_len` bytes of the message at `msg` and the `ctx_len` bytes of the context string at `ctx`, writes the signature of the formatted message `M′ = 0 ‖ ctx_len ‖ ctx ‖ M` (line 10), `ML-DSA.Sign_internal(sk, M′, rnd)` (Algorithm 7), to `*sig`. Returns 1 on success. Returns 0 if a loop reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed. Returns 2 if `ctx_len` is greater than 255 (FIPS 204 returns the error indication `⊥`): `*sig` is then unspecified.
+/// ML-DSA-87 signing, `ML-DSA.Sign(sk, M, ctx)` (FIPS 204 Algorithm 2) on the randomness `*rnd` (line 5): with the private key `*sk`, the `msg_len` bytes of the message at `msg` and the `ctx_len` bytes of the context string at `ctx`, writes the signature of the formatted message `M′ = 0 ‖ ctx_len ‖ ctx ‖ M` (line 10), `ML-DSA.Sign_internal(sk, M′, rnd)` (Algorithm 7), to `*sig`. Returns 1 on success. Returns 0 if a loop reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed. Returns 2 if `ctx_len` is greater than 255 (FIPS 204 returns the error indication `⊥`): `*sig` is then unchanged.
 ///
 /// Contract: `VG.Spec.MlDsa.signMessageContract`. Constant time but for `ρ` and the rejection sampling: timing may depend on the pointers, on `msg_len` and `ctx_len`, on `ρ` (the first 32 bytes of `*sk`), on the number of iterations of the signing loop, the commitment hash of each and which validity check rejected it, and on the hint of the signature (`signMessageLeak`), but not on anything else of the key, the message, the context string or the randomness.
 ///
@@ -1998,7 +1998,7 @@ call {vg_mldsa87_sign_with_cache_avx2}
 /// * `rnd` must be fresh random bytes (FIPS 204 §3.6.1), or 32 zero bytes for deterministic signing.
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
 /// * `sig` and `scratch` must not overlap each other, `sk`, `msg`, `ctx`, `rnd` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `sk`, `msg`, `ctx`, `rnd`, `sig` and `scratch` may overlap the return address on the stack or the 112 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `sk`, `msg`, `ctx`, `rnd`, `sig` and `scratch` may overlap the return address on the stack or the 224 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa87_sign_message(sk: *const [u8; 4896], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, rnd: *const [u8; 32], sig: *mut [u8; 4627], scratch: *mut [u64; 18176]) -> u32 {
     core::arch::naked_asm!(
@@ -2023,7 +2023,7 @@ call {vg_keccak_squeeze_scratch}
 call {vg_mldsa87_sign_with_cache}
 .base64 "QVtBW0FbQVtBW0FbQVtBW0Fb"
 21:
-.base64 "Zg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJJDzD39EJGDzD39EJFDzD39EJEDzD39EJDDzD39EJCDzD39EJBDzD38EJEiNZCRwicAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
+.base64 "Zg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJPhMiRwkSI2kJCj////zD3+EJMgAAADzD3+EJLgAAADzD3+EJKgAAADzD3+EJJgAAADzD3+EJIgAAADzD39EJHjzD39EJGjzD39EJFjzD39EJEjzD39EJDjzD39EJCjzD39EJBjzD39EJAhMiRwkSI2kJNgAAABIjWQkCInAMckx0jH2Mf9FMcBFMclFMdLD"
 .p2align 6"#,
         vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
@@ -2051,7 +2051,7 @@ call {vg_mldsa87_sign_with_cache}
 /// * `rnd` must be fresh random bytes (FIPS 204 §3.6.1), or 32 zero bytes for deterministic signing.
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
 /// * `sig` and `scratch` must not overlap each other, `sk`, `msg`, `ctx`, `rnd` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `sk`, `msg`, `ctx`, `rnd`, `sig` and `scratch` may overlap the return address on the stack or the 112 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `sk`, `msg`, `ctx`, `rnd`, `sig` and `scratch` may overlap the return address on the stack or the 224 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa87_sign_message_prepared(sk: *const [u8; 28448], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, rnd: *const [u8; 32], sig: *mut [u8; 4627], scratch: *mut [u64; 18176]) -> u32 {
     core::arch::naked_asm!(
@@ -2076,7 +2076,7 @@ call {vg_keccak_squeeze_scratch}
 call {vg_mldsa87_sign_with_cache}
 .base64 "QVtBW0FbQVtBW0FbQVtBW0Fb"
 21:
-.base64 "Zg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJJDzD39EJGDzD39EJFDzD39EJEDzD39EJDDzD39EJCDzD39EJBDzD38EJEiNZCRwicAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
+.base64 "Zg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJPhMiRwkSI2kJCj////zD3+EJMgAAADzD3+EJLgAAADzD3+EJKgAAADzD3+EJJgAAADzD3+EJIgAAADzD39EJHjzD39EJGjzD39EJFjzD39EJEjzD39EJDjzD39EJCjzD39EJBjzD39EJAhMiRwkSI2kJNgAAABIjWQkCInAMckx0jH2Mf9FMcBFMclFMdLD"
 .p2align 6"#,
         vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
@@ -2109,7 +2109,7 @@ pub(crate) unsafe extern "sysv64" fn vg_mldsa87_verify_avx512(pk: *const [u8; 25
     core::arch::naked_asm!(
         r#".base64 "QbgAAAAA"
 call {vg_mldsa87_verify_with_cache_avx512}
-.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbSI1kJNjF/n9EJAhMiRwkSI1kJCiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbSI1kJPhMiRwkSI1kJODF/n8EJEiNZCQgSI1kJAiJwDHJMdIx9jH/RTHARTHJRTHSww=="
 .p2align 6"#,
         vg_mldsa87_verify_with_cache_avx512 = sym super::mldsa87::vg_mldsa87_verify_with_cache_avx512::vg_mldsa87_verify_with_cache_avx512,
     )
@@ -2140,7 +2140,7 @@ pub(crate) unsafe extern "sysv64" fn vg_mldsa87_verify_prepared_avx512(pk: *cons
     core::arch::naked_asm!(
         r#".base64 "QbgBAAAA"
 call {vg_mldsa87_verify_with_cache_avx512}
-.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbSI1kJNjF/n9EJAhMiRwkSI1kJCiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbSI1kJPhMiRwkSI1kJODF/n8EJEiNZCQgSI1kJAiJwDHJMdIx9jH/RTHARTHJRTHSww=="
 .p2align 6"#,
         vg_mldsa87_verify_with_cache_avx512 = sym super::mldsa87::vg_mldsa87_verify_with_cache_avx512::vg_mldsa87_verify_with_cache_avx512,
     )
@@ -2170,7 +2170,7 @@ pub(crate) unsafe extern "sysv64" fn vg_mldsa87_verify_avx2(pk: *const [u8; 2592
     core::arch::naked_asm!(
         r#".base64 "QbgAAAAA"
 call {vg_mldsa87_verify_with_cache_avx2}
-.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJNjF/n9EJAhMiRwkSI1kJCiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJPhMiRwkSI1kJODF/n8EJEiNZCQgSI1kJAiJwDHJMdIx9jH/RTHARTHJRTHSww=="
 .p2align 6"#,
         vg_mldsa87_verify_with_cache_avx2 = sym super::mldsa87::vg_mldsa87_verify_with_cache_avx2::vg_mldsa87_verify_with_cache_avx2,
     )
@@ -2201,7 +2201,7 @@ pub(crate) unsafe extern "sysv64" fn vg_mldsa87_verify_prepared_avx2(pk: *const 
     core::arch::naked_asm!(
         r#".base64 "QbgBAAAA"
 call {vg_mldsa87_verify_with_cache_avx2}
-.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJNjF/n9EJAhMiRwkSI1kJCiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJPhMiRwkSI1kJODF/n8EJEiNZCQgSI1kJAiJwDHJMdIx9jH/RTHARTHJRTHSww=="
 .p2align 6"#,
         vg_mldsa87_verify_with_cache_avx2 = sym super::mldsa87::vg_mldsa87_verify_with_cache_avx2::vg_mldsa87_verify_with_cache_avx2,
     )
@@ -2227,7 +2227,7 @@ pub(crate) unsafe extern "sysv64" fn vg_mldsa87_verify(pk: *const [u8; 2592], mu
     core::arch::naked_asm!(
         r#".base64 "QbgAAAAA"
 call {vg_mldsa87_verify_with_cache}
-.base64 "Zg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJNjzD39EJBjzD39EJAhMiRwkSI1kJCiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
+.base64 "Zg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJPhMiRwkSI1kJODzD39EJBDzD38EJEiNZCQgSI1kJAiJwDHJMdIx9jH/RTHARTHJRTHSww=="
 .p2align 6"#,
         vg_mldsa87_verify_with_cache = sym super::mldsa87::vg_mldsa87_verify_with_cache::vg_mldsa87_verify_with_cache,
     )
@@ -2254,7 +2254,7 @@ pub(crate) unsafe extern "sysv64" fn vg_mldsa87_verify_prepared(pk: *const [u8; 
     core::arch::naked_asm!(
         r#".base64 "QbgBAAAA"
 call {vg_mldsa87_verify_with_cache}
-.base64 "Zg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJNjzD39EJBjzD39EJAhMiRwkSI1kJCiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
+.base64 "Zg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJPhMiRwkSI1kJODzD39EJBDzD38EJEiNZCQgSI1kJAiJwDHJMdIx9jH/RTHARTHJRTHSww=="
 .p2align 6"#,
         vg_mldsa87_verify_with_cache = sym super::mldsa87::vg_mldsa87_verify_with_cache::vg_mldsa87_verify_with_cache,
     )
@@ -2280,7 +2280,7 @@ pub const VG_MLDSA87_VERIFY_MESSAGE_CACHED_AVX512_FEATURES: verified_garbage_cpu
 /// * `*tr` must equal SHAKE256(`*pk`, 64 bytes).
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
 /// * `scratch` must not overlap `pk`, `msg`, `ctx`, `sig`, `tr` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `pk`, `msg`, `ctx`, `sig`, `scratch` and `tr` may overlap the return address on the stack or the 112 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `pk`, `msg`, `ctx`, `sig`, `scratch` and `tr` may overlap the return address on the stack or the 224 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx512f`, `avx2` and `avx512vl` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa87_verify_message_cached_avx512(pk: *const [u8; 2592], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 4627], scratch: *mut [u64; 18176], tr: *const [u8; 64]) -> u32 {
@@ -2306,7 +2306,7 @@ call {vg_keccak_squeeze_scratch}
 call {vg_mldsa87_verify_with_cache_avx512}
 .base64 "QVtBW0FbQVtBW0FbQVtBW0Fb"
 21:
-.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbSI1kJJDF/n9EJFDF/n9EJDDF/n9EJBDzD38EJEiNZCRwicAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbSI1kJPhMiRwkSI2kJCj////F/n+EJLgAAADF/n+EJJgAAADF/n9EJHjF/n9EJFjF/n9EJDjF/n9EJBjzD39EJAhMiRwkSI2kJNgAAABIjWQkCInAMckx0jH2Mf9FMcBFMclFMdLD"
 .p2align 6"#,
         vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
@@ -2336,7 +2336,7 @@ pub const VG_MLDSA87_VERIFY_MESSAGE_PREPARED_AVX512_FEATURES: verified_garbage_c
 /// * `*tr` must equal SHAKE256 of the public key that `*pk` begins with, 64 bytes.
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
 /// * `scratch` must not overlap `pk`, `msg`, `ctx`, `sig`, `tr` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `pk`, `msg`, `ctx`, `sig`, `scratch` and `tr` may overlap the return address on the stack or the 112 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `pk`, `msg`, `ctx`, `sig`, `scratch` and `tr` may overlap the return address on the stack or the 224 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx512f`, `avx2` and `avx512vl` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa87_verify_message_prepared_avx512(pk: *const [u8; 10784], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 4627], scratch: *mut [u64; 18176], tr: *const [u8; 64]) -> u32 {
@@ -2362,7 +2362,7 @@ call {vg_keccak_squeeze_scratch}
 call {vg_mldsa87_verify_with_cache_avx512}
 .base64 "QVtBW0FbQVtBW0FbQVtBW0Fb"
 21:
-.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbSI1kJJDF/n9EJFDF/n9EJDDF/n9EJBDzD38EJEiNZCRwicAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbSI1kJPhMiRwkSI2kJCj////F/n+EJLgAAADF/n+EJJgAAADF/n9EJHjF/n9EJFjF/n9EJDjF/n9EJBjzD39EJAhMiRwkSI2kJNgAAABIjWQkCInAMckx0jH2Mf9FMcBFMclFMdLD"
 .p2align 6"#,
         vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
@@ -2391,7 +2391,7 @@ pub const VG_MLDSA87_VERIFY_MESSAGE_CACHED_AVX2_FEATURES: verified_garbage_cpu::
 /// * `*tr` must equal SHAKE256(`*pk`, 64 bytes).
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
 /// * `scratch` must not overlap `pk`, `msg`, `ctx`, `sig`, `tr` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `pk`, `msg`, `ctx`, `sig`, `scratch` and `tr` may overlap the return address on the stack or the 112 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `pk`, `msg`, `ctx`, `sig`, `scratch` and `tr` may overlap the return address on the stack or the 224 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `avx2` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa87_verify_message_cached_avx2(pk: *const [u8; 2592], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 4627], scratch: *mut [u64; 18176], tr: *const [u8; 64]) -> u32 {
@@ -2417,7 +2417,7 @@ call {vg_keccak_squeeze_scratch}
 call {vg_mldsa87_verify_with_cache_avx2}
 .base64 "QVtBW0FbQVtBW0FbQVtBW0Fb"
 21:
-.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJJDF/n9EJFDF/n9EJDDF/n9EJBDzD38EJEiNZCRwicAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJPhMiRwkSI2kJCj////F/n+EJLgAAADF/n+EJJgAAADF/n9EJHjF/n9EJFjF/n9EJDjF/n9EJBjzD39EJAhMiRwkSI2kJNgAAABIjWQkCInAMckx0jH2Mf9FMcBFMclFMdLD"
 .p2align 6"#,
         vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
@@ -2447,7 +2447,7 @@ pub const VG_MLDSA87_VERIFY_MESSAGE_PREPARED_AVX2_FEATURES: verified_garbage_cpu
 /// * `*tr` must equal SHAKE256 of the public key that `*pk` begins with, 64 bytes.
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
 /// * `scratch` must not overlap `pk`, `msg`, `ctx`, `sig`, `tr` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `pk`, `msg`, `ctx`, `sig`, `scratch` and `tr` may overlap the return address on the stack or the 112 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `pk`, `msg`, `ctx`, `sig`, `scratch` and `tr` may overlap the return address on the stack or the 224 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `avx2` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa87_verify_message_prepared_avx2(pk: *const [u8; 10784], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 4627], scratch: *mut [u64; 18176], tr: *const [u8; 64]) -> u32 {
@@ -2473,7 +2473,7 @@ call {vg_keccak_squeeze_scratch}
 call {vg_mldsa87_verify_with_cache_avx2}
 .base64 "QVtBW0FbQVtBW0FbQVtBW0Fb"
 21:
-.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJJDF/n9EJFDF/n9EJDDF/n9EJBDzD38EJEiNZCRwicAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJPhMiRwkSI2kJCj////F/n+EJLgAAADF/n+EJJgAAADF/n9EJHjF/n9EJFjF/n9EJDjF/n9EJBjzD39EJAhMiRwkSI2kJNgAAABIjWQkCInAMckx0jH2Mf9FMcBFMclFMdLD"
 .p2align 6"#,
         vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
@@ -2499,7 +2499,7 @@ call {vg_mldsa87_verify_with_cache_avx2}
 /// * `*tr` must equal SHAKE256(`*pk`, 64 bytes).
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
 /// * `scratch` must not overlap `pk`, `msg`, `ctx`, `sig`, `tr` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `pk`, `msg`, `ctx`, `sig`, `scratch` and `tr` may overlap the return address on the stack or the 112 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `pk`, `msg`, `ctx`, `sig`, `scratch` and `tr` may overlap the return address on the stack or the 224 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa87_verify_message_cached(pk: *const [u8; 2592], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 4627], scratch: *mut [u64; 18176], tr: *const [u8; 64]) -> u32 {
     core::arch::naked_asm!(
@@ -2524,7 +2524,7 @@ call {vg_keccak_squeeze_scratch}
 call {vg_mldsa87_verify_with_cache}
 .base64 "QVtBW0FbQVtBW0FbQVtBW0Fb"
 21:
-.base64 "Zg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJJDzD39EJGDzD39EJFDzD39EJEDzD39EJDDzD39EJCDzD39EJBDzD38EJEiNZCRwicAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
+.base64 "Zg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJPhMiRwkSI2kJCj////zD3+EJMgAAADzD3+EJLgAAADzD3+EJKgAAADzD3+EJJgAAADzD3+EJIgAAADzD39EJHjzD39EJGjzD39EJFjzD39EJEjzD39EJDjzD39EJCjzD39EJBjzD39EJAhMiRwkSI2kJNgAAABIjWQkCInAMckx0jH2Mf9FMcBFMclFMdLD"
 .p2align 6"#,
         vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
@@ -2551,7 +2551,7 @@ call {vg_mldsa87_verify_with_cache}
 /// * `*tr` must equal SHAKE256 of the public key that `*pk` begins with, 64 bytes.
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
 /// * `scratch` must not overlap `pk`, `msg`, `ctx`, `sig`, `tr` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `pk`, `msg`, `ctx`, `sig`, `scratch` and `tr` may overlap the return address on the stack or the 112 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `pk`, `msg`, `ctx`, `sig`, `scratch` and `tr` may overlap the return address on the stack or the 224 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa87_verify_message_prepared(pk: *const [u8; 10784], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 4627], scratch: *mut [u64; 18176], tr: *const [u8; 64]) -> u32 {
     core::arch::naked_asm!(
@@ -2576,7 +2576,7 @@ call {vg_keccak_squeeze_scratch}
 call {vg_mldsa87_verify_with_cache}
 .base64 "QVtBW0FbQVtBW0FbQVtBW0Fb"
 21:
-.base64 "Zg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJJDzD39EJGDzD39EJFDzD39EJEDzD39EJDDzD39EJCDzD39EJBDzD38EJEiNZCRwicAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
+.base64 "Zg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJPhMiRwkSI2kJCj////zD3+EJMgAAADzD3+EJLgAAADzD3+EJKgAAADzD3+EJJgAAADzD3+EJIgAAADzD39EJHjzD39EJGjzD39EJFjzD39EJEjzD39EJDjzD39EJCjzD39EJBjzD39EJAhMiRwkSI2kJNgAAABIjWQkCInAMckx0jH2Mf9FMcBFMclFMdLD"
 .p2align 6"#,
         vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
@@ -2596,6 +2596,10 @@ pub(crate) mod vg_mldsa87_sign_with_cache_avx2;
 #[rustfmt::skip]
 #[path = "internal/vg_mldsa87_sign_with_cache_avx512.rs"]
 pub(crate) mod vg_mldsa87_sign_with_cache_avx512;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mldsa87_sign_with_cache_body.rs"]
+pub(crate) mod vg_mldsa87_sign_with_cache_body;
 
 #[rustfmt::skip]
 #[path = "internal/vg_mldsa87_verify_with_cache.rs"]

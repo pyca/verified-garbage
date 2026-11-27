@@ -18,7 +18,7 @@ public import VerifiedGarbage.Impl.AesGcm.PPC64LE
 # AES-GCM on PPC64LE: the pieces of `vg_aes_gcm_seal` and `vg_aes_gcm_open`
 
 Untrusted: everything here is checked by Lean. As on ARMv7
-(`Proof/AesGcm/Arm/OneShot.lean`): both keep a streaming state at `W + 16`;
+(`Proof/AesGcm/Arm/CTCrypt.lean`): both keep a streaming state at `W + 16`;
 `oneAad` writes `J₀` and absorbs the additional data, padded (`oneAad_ok`),
 `oneCrypt` runs counter mode over the data from the first counter block
 (`oneCrypt_ok`), and `oneTag o` absorbs the data as ciphertext, padded, then
@@ -39,17 +39,15 @@ open VG.Proof.Gcm (Absorbed Ctr lensBlock padded)
 theorem abs16_j0 {st w : Addr} : ∀ r ∈ absFrame st w 16, ∃ r' ∈ j0Frame st w, Region.Sub r r' :=
   fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl
+    rcases hr with rfl | rfl
     · exact ⟨_, List.mem_cons_self .., Lay.stSub (by decide)⟩
     · exact ⟨_, List.mem_cons_self .., Lay.stSub (by decide)⟩
-    · exact ⟨_, by simp, fun _ h => h⟩
 
 theorem t16_j0 {st w : Addr} : ∀ r ∈ tFrame st w 16, ∃ r' ∈ j0Frame st w, Region.Sub r r' :=
   fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl
+    rcases hr with rfl | rfl
     · exact ⟨_, List.mem_cons_self .., Lay.stSub (by decide)⟩
-    · exact ⟨_, by simp, fun _ h => h⟩
     · exact ⟨_, by simp, fun _ h => h⟩
 
 /-- A buffer apart from the state and `W` is apart from what `j0` writes. -/
@@ -57,9 +55,8 @@ theorem data_j0 {st w : Addr} {s : State} {D : Addr} {n : Nat} (hd : DataOk st w
     ∀ r ∈ j0Frame st w, (⟨D, n⟩ : Region).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl
+  rcases hr with rfl | rfl
   · exact hd.st
-  · exact hd.w.sub_right (Lay.wSub (by decide))
   · exact hd.w.sub_right (Lay.wSub (by decide))
 
 /-- After `oneAad`, from `m₀`: `J₀` of `iv`, the first counter block, and the
@@ -80,30 +77,27 @@ include L
 /-- The counter blocks are apart from what `absorb 16` and `flush 16` write. -/
 theorem stb_abs16 {d : Nat} (hd : d = 0 ∨ d = 48) :
     ∀ r ∈ absFrame (V .r30) (V .r31) 16, (⟨V .r30 + BitVec.ofNat 64 d, 16⟩ : Region).Disjoint r := by
+  refine (fun (_ : Lay (V .r29) (V .r30) (V .r31)) => ?_) L
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl
+  rcases hr with rfl | rfl
   · exact Lay.st_st (by omega_using [hd]) (by omega_using [hd]) (by decide)
   · exact Lay.st_st (by omega_using [hd]) (by omega_using [hd]) (by decide)
-  · exact L.st_w (by omega_using [hd]) (.inr ⟨by decide, by decide⟩)
 
 theorem stb_t16 {d : Nat} (hd : d = 0 ∨ d = 48) :
     ∀ r ∈ tFrame (V .r30) (V .r31) 16, (⟨V .r30 + BitVec.ofNat 64 d, 16⟩ : Region).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl
+  rcases hr with rfl | rfl
   · exact Lay.st_st (by omega_using [hd]) (by omega_using [hd]) (by decide)
   · exact L.st_w (by omega_using [hd]) (.inr ⟨by decide, by decide⟩)
-  · exact L.st_w (by omega_using [hd]) (.inr ⟨by decide, by decide⟩)
 
-/-- `oneAad`: `J₀` of the `n`-byte nonce at `Np`, then the additional data
-(`aad_len`, `r22`, bytes at `r21`) absorbed and padded. -/
-theorem oneAad_ok [VG.Proof.Gcm.PPC64LE.GhashLaw] {H : Block} {Np : Addr} {n : Nat} {s : State} (he : Env V sp s)
-    (hH : blockAt s.mem (V .r29 + BitVec.ofNat 64 240) = H) (h24 : s.gpr .r24 = Np)
-    (h25 : s.gpr .r25 = BitVec.ofNat 64 n) (h18 : V .r18 = BitVec.ofNat 64 n) (hN : DataOk (V .r30) (V .r31) s Np n)
-    (hA : DataOk (V .r30) (V .r31) s (V .r21) (V .r22).toNat) :
-    WP isa oneAad s (OA V sp H (bytesAt s.mem Np n) (bytesAt s.mem (V .r21) (V .r22).toNat) s.mem) := by
-  refine WP.seq (WP.mono (WP.with_rdwr (j0_ok L ⟨he, hH, h24, h25, h18, hN⟩)) fun s₂ ⟨jo, rd₂, wr₂, _⟩ => ?_)
+/-- Absorb and pad the additional data after nonce initialization. -/
+theorem aadAfterNonce_ok [VG.Proof.Gcm.PPC64LE.GhashLaw] {H : Block} {iv : List Byte}
+    {m : Mem} {s₂ : State} (jo : J0Out V sp H iv m s₂) (hA : DataOk (V .r30) (V .r31) s₂ (V .r21) (V .r22).toNat) :
+    WP isa (.seq (.block [mov .r24 .r21, mov .r25 .r22, .li .r26 0])
+      (.seq (absorb 16) (.seq (.block [.li .r0 15, .logic .and .r26 .r22 .r0]) (flush 16))))
+      s₂ (OA V sp H iv (bytesAt m (V .r21) (V .r22).toNat) m) := by
   have h21 := jo.env.fr .r21 (by decide)
   have h22 := jo.env.ofNat (r := .r22) (by decide)
   have h₃ : WP isa (.block [mov .r24 .r21, mov .r25 .r22, .li .r26 0]) s₂ fun s₃ =>
@@ -114,10 +108,10 @@ theorem oneAad_ok [VG.Proof.Gcm.PPC64LE.GhashLaw] {H : Block} {Np : Addr} {n : N
   refine WP.seq (WP.mono h₃ fun s₃ ⟨a24, a25, a26, g₃, k₃⟩ => ?_)
   have he₃ := jo.env.keep (fun r hr => g₃ r (by revert r; decide) (by revert r; decide) (by revert r; decide))
     k₃.sp k₃.rd k₃.wr
-  have hAm : bytesAt s₃.mem (V .r21) (V .r22).toNat = bytesAt s.mem (V .r21) (V .r22).toNat := by
+  have hAm : bytesAt s₃.mem (V .r21) (V .r22).toNat = bytesAt m (V .r21) (V .r22).toNat := by
     rw [k₃.mem]; exact bytesAt_frame jo.frame (data_j0 hA) (by have := hA.lt; omega_using [])
   have ai : AbsIn V sp 16 H [] (V .r21) (V .r22).toNat s₃ :=
-    ⟨he₃, a24, a25, by rw [a26]; rfl, hA.of_eq (k₃.rd.trans rd₂) (k₃.wr.trans wr₂), by rw [k₃.mem]; exact jo.hH⟩
+    ⟨he₃, a24, a25, by rw [a26]; rfl, hA.of_eq k₃.rd k₃.wr, by rw [k₃.mem]; exact jo.hH⟩
   refine WP.seq (WP.mono (absorb_ok L (.inr rfl) ai) fun s₄ ab => ?_)
   rw [hAm, List.nil_append] at ab
   have h22' := ab.env.fr .r22 (by decide)
@@ -131,7 +125,7 @@ theorem oneAad_ok [VG.Proof.Gcm.PPC64LE.GhashLaw] {H : Block} {Np : Addr} {n : N
   have he₅ := ab.env.keep (fun r hr => g₅ r (by revert r; decide) (by revert r; decide)) k₅.sp k₅.rd k₅.wr
   have hH₄ : blockAt s₄.mem (V .r29 + BitVec.ofNat 64 240) = H := by
     rw [blockAt_frame ab.frame (ctx_absFrame L (.inr rfl)), k₃.mem]; exact jo.hH
-  refine WP.mono (flush_ok L (yo := 16) (.inr rfl) (x := bytesAt s.mem (V .r21) (V .r22).toNat) (H := H)
+  refine WP.mono (flush_ok L (yo := 16) (.inr rfl) (x := bytesAt m (V .r21) (V .r22).toNat) (H := H)
     ⟨he₅, by rw [k₅.mem]; exact hH₄⟩ (by rw [a26', length_bytesAt])) fun s₆ fl => ?_
   have flf := fl.frame
   rw [k₅.mem] at flf
@@ -145,6 +139,16 @@ theorem oneAad_ok [VG.Proof.Gcm.PPC64LE.GhashLaw] {H : Block} {Np : Addr} {n : N
   · have := blk (d := 0) (.inl rfl); rw [BitVec.add_zero] at this; rw [this]; exact jo.j0
   · rw [blk (.inr rfl)]; exact jo.cb
   · exact (jo.frame.trans (abf.sub abs16_j0)).trans (flf.sub t16_j0)
+
+/-- `oneAad`: `J₀` of the `n`-byte nonce at `Np`, then the additional data
+(`aad_len`, `r22`, bytes at `r21`) absorbed and padded. -/
+theorem oneAad_ok [VG.Proof.Gcm.PPC64LE.GhashLaw] {H : Block} {Np : Addr} {n : Nat} {s : State} (he : Env V sp s)
+    (hH : blockAt s.mem (V .r29 + BitVec.ofNat 64 240) = H) (h24 : s.gpr .r24 = Np)
+    (h25 : s.gpr .r25 = BitVec.ofNat 64 n) (h18 : V .r18 = BitVec.ofNat 64 n) (hN : DataOk (V .r30) (V .r31) s Np n)
+    (hA : DataOk (V .r30) (V .r31) s (V .r21) (V .r22).toNat) :
+    WP isa oneAad s (OA V sp H (bytesAt s.mem Np n) (bytesAt s.mem (V .r21) (V .r22).toNat) s.mem) := by
+  refine WP.seq (WP.mono (WP.with_rdwr (j0_ok L ⟨he, hH, h24, h25, h18, hN⟩)) fun s₂ ⟨jo, rd₂, wr₂, _⟩ => ?_)
+  exact aadAfterNonce_ok L jo (hA.of_eq rd₂ wr₂)
 
 end
 
@@ -199,31 +203,28 @@ theorem padded_eq (a c : List Byte) :
 
 /-- The regions `oneTag o` writes. -/
 abbrev otFrame (st w : Addr) (o : Nat) : List Region :=
-  [⟨st, 48⟩, ⟨w + BitVec.ofNat 64 96, 16⟩, ⟨w + BitVec.ofNat 64 o, 16⟩, ⟨w + BitVec.ofNat 64 512, 2048⟩]
+  [⟨st, 48⟩, ⟨w + BitVec.ofNat 64 96, 16⟩, ⟨w + BitVec.ofNat 64 o, 16⟩]
 
 theorem abs_otSub {st w : Addr} {o : Nat} : ∀ r ∈ absFrame st w 16, ∃ r' ∈ otFrame st w o, Region.Sub r r' :=
   fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl
+    rcases hr with rfl | rfl
     · exact ⟨_, List.mem_cons_self .., Offset.sub_base _ (by decide)⟩
     · exact ⟨_, List.mem_cons_self .., Offset.sub_base _ (by decide)⟩
-    · exact ⟨⟨w + BitVec.ofNat 64 512, 2048⟩, by simp, Offset.sub _ (by decide) (by decide)⟩
 
 theorem t_otSub {st w : Addr} {o : Nat} : ∀ r ∈ tFrame st w 16, ∃ r' ∈ otFrame st w o, Region.Sub r r' :=
   fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl
+    rcases hr with rfl | rfl
     · exact ⟨_, List.mem_cons_self .., Offset.sub_base _ (by decide)⟩
     · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), fun _ h => h⟩
-    · exact ⟨⟨w + BitVec.ofNat 64 512, 2048⟩, by simp, Offset.sub _ (by decide) (by decide)⟩
 
 theorem tag_otSub {st w : Addr} {o : Nat} : ∀ r ∈ tagFrame st w o, ∃ r' ∈ otFrame st w o, Region.Sub r r' :=
   fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl
+    rcases hr with rfl | rfl | rfl
     · exact ⟨_, List.mem_cons_self .., Region.sub_prefix (by decide)⟩
     · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), fun _ h => h⟩
-    · exact ⟨_, by simp, fun _ h => h⟩
     · exact ⟨_, by simp, fun _ h => h⟩
 
 /-- After `oneTag o`, from `m₀`, for the tag of `a` and the bytes at `data`
@@ -249,11 +250,10 @@ theorem oneTag_ok [VG.Proof.Gcm.PPC64LE.GhashLaw] {o R : Nat} (ho : o = 0 ∨ o 
   have dC : ∀ r ∈ otFrame (V .r30) (V .r31) o, (⟨V .r29, 256⟩ : Region).Disjoint r := by
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl
+    rcases hr with rfl | rfl | rfl
     · exact L.cs.sub_right (Region.sub_prefix (by decide))
     · exact L.cw'.sub_right (Lay.wSub (by decide))
     · exact L.cw'.sub_right (Lay.wSub (by omega_using [ho]))
-    · exact L.cw'.sub_right (Lay.wSub (by decide))
   have dJ : ∀ r ∈ absFrame (V .r30) (V .r31) 16 ++ tFrame (V .r30) (V .r31) 16,
       (⟨V .r30, 16⟩ : Region).Disjoint r := by
     intro r hr

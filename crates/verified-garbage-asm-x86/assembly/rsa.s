@@ -14103,6 +14103,16 @@ vg_rsa_recover_primes_det:
 	mov ebp, DWORD PTR [edi+4]
 	mov esi, DWORD PTR [edi+8]
 	mov edi, DWORD PTR [edi+12]
+	mov edx, 0
+	xor ecx, ecx
+	pxor xmm0, xmm0
+	pxor xmm1, xmm1
+	pxor xmm2, xmm2
+	pxor xmm3, xmm3
+	pxor xmm4, xmm4
+	pxor xmm5, xmm5
+	pxor xmm6, xmm6
+	pxor xmm7, xmm7
 	ret
 	.p2align 6
 
@@ -23799,6 +23809,16 @@ vg_rsa_check_key:
 	mov ebp, DWORD PTR [edi+4]
 	mov esi, DWORD PTR [edi+8]
 	mov edi, DWORD PTR [edi+12]
+	mov edx, 0
+	xor ecx, ecx
+	pxor xmm0, xmm0
+	pxor xmm1, xmm1
+	pxor xmm2, xmm2
+	pxor xmm3, xmm3
+	pxor xmm4, xmm4
+	pxor xmm5, xmm5
+	pxor xmm6, xmm6
+	pxor xmm7, xmm7
 	ret
 	.p2align 6
 
@@ -31772,6 +31792,24 @@ vg_rsa_crt_values:
 	mov ebp, DWORD PTR [edi+4]
 	mov esi, DWORD PTR [edi+8]
 	mov edi, DWORD PTR [edi+12]
+	pxor xmm0, xmm0
+	mov ecx, 0
+	lea esp, [esp-52]
+	movdqu XMMWORD PTR [esp], xmm0
+	movdqu XMMWORD PTR [esp+16], xmm0
+	movdqu XMMWORD PTR [esp+32], xmm0
+	mov DWORD PTR [esp+48], ecx
+	lea esp, [esp+52]
+	mov edx, 0
+	xor ecx, ecx
+	pxor xmm0, xmm0
+	pxor xmm1, xmm1
+	pxor xmm2, xmm2
+	pxor xmm3, xmm3
+	pxor xmm4, xmm4
+	pxor xmm5, xmm5
+	pxor xmm6, xmm6
+	pxor xmm7, xmm7
 	ret
 	.p2align 6
 
@@ -32517,6 +32555,25 @@ vg_rsa_public_precompute:
 	mov ebp, DWORD PTR [edi+4]
 	mov esi, DWORD PTR [edi+8]
 	mov edi, DWORD PTR [edi+12]
+	pxor xmm0, xmm0
+	lea esp, [esp-96]
+	movdqu XMMWORD PTR [esp], xmm0
+	movdqu XMMWORD PTR [esp+16], xmm0
+	movdqu XMMWORD PTR [esp+32], xmm0
+	movdqu XMMWORD PTR [esp+48], xmm0
+	movdqu XMMWORD PTR [esp+64], xmm0
+	movdqu XMMWORD PTR [esp+80], xmm0
+	lea esp, [esp+96]
+	mov edx, 0
+	xor ecx, ecx
+	pxor xmm0, xmm0
+	pxor xmm1, xmm1
+	pxor xmm2, xmm2
+	pxor xmm3, xmm3
+	pxor xmm4, xmm4
+	pxor xmm5, xmm5
+	pxor xmm6, xmm6
+	pxor xmm7, xmm7
 	ret
 	.p2align 6
 
@@ -32537,7 +32594,7 @@ vg_rsa_private_precompute:
 	mov DWORD PTR [esp+16], eax
 	mov eax, DWORD PTR [esp+136]
 	mov DWORD PTR [esp+20], eax
-	call {vg_rsa_public_precompute}
+	call {vg_rsa_public_precompute_core}
 	mov DWORD PTR [esp+80], eax
 	mov eax, DWORD PTR [esp+100]
 	mov DWORD PTR [esp], eax
@@ -32722,5 +32779,32 @@ vg_rsa_private_precompute:
 	jne 22b
 	mov eax, DWORD PTR [esp+80]
 	lea esp, [esp+96]
+	pxor xmm0, xmm0
+	mov ecx, 0
+	lea esp, [esp-196]
+	movdqu XMMWORD PTR [esp], xmm0
+	movdqu XMMWORD PTR [esp+16], xmm0
+	movdqu XMMWORD PTR [esp+32], xmm0
+	movdqu XMMWORD PTR [esp+48], xmm0
+	movdqu XMMWORD PTR [esp+64], xmm0
+	movdqu XMMWORD PTR [esp+80], xmm0
+	movdqu XMMWORD PTR [esp+96], xmm0
+	movdqu XMMWORD PTR [esp+112], xmm0
+	movdqu XMMWORD PTR [esp+128], xmm0
+	movdqu XMMWORD PTR [esp+144], xmm0
+	movdqu XMMWORD PTR [esp+160], xmm0
+	movdqu XMMWORD PTR [esp+176], xmm0
+	mov DWORD PTR [esp+192], ecx
+	lea esp, [esp+196]
+	mov edx, 0
+	xor ecx, ecx
+	pxor xmm0, xmm0
+	pxor xmm1, xmm1
+	pxor xmm2, xmm2
+	pxor xmm3, xmm3
+	pxor xmm4, xmm4
+	pxor xmm5, xmm5
+	pxor xmm6, xmm6
+	pxor xmm7, xmm7
 	ret
 	.p2align 6

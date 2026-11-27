@@ -1,6 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.P256
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.X86_64.InstrBits
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Scrub
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.TableSat
 public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
 import VerifiedGarbage.Proof.Ecdsa.X86_64.VerifiedAdx
@@ -9,7 +12,6 @@ import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Lit
 import VerifiedGarbage.Proof.Framework.LitShare
 import VerifiedGarbage.Proof.Framework.OmegaLit
-meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.P256
 meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.TableSat
 meta import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.VerifiedAdx
@@ -18,6 +20,83 @@ meta import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.Lit
 meta import VerifiedGarbage.Proof.Framework.LitShare
 meta import VerifiedGarbage.Proof.Framework.OmegaLit
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Reduce
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.Verified
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Reduce
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.Verified
+
+/-! ### `Ecdsa.Rfc6979.X86_64.P256`, which only this module used -/
+
+section
+
+/-!
+# Deterministic ECDSA on x86-64: P-256
+
+P-256 as the proof's curve (`p256`): scalars of 4 words, the order `n` of
+exactly 256 bits with `2^256 < 2 n`, and `vg_ecdsa_p256_sign`, proven correct
+(given the group law and the comb's tables) and constant time against its
+contract (`coreK` at P-256's sizes, which is `Proof.Ecdsa.X86_64.signX86_64`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Ecdsa.Rfc6979.X86_64
+
+open VG VG.X86_64
+
+theorem p256_nBits : Spec.Ecdsa.nBits Spec.P256.curve = 256 := by
+  show Spec.P256.curve.n.log2 + 1 = 256
+  have h₁ : 255 ≤ Spec.P256.curve.n.log2 := (Nat.le_log2 (by decide +kernel)).mpr (by decide +kernel)
+  have h₂ : Spec.P256.curve.n.log2 < 256 := (Nat.log2_lt (by decide +kernel)).mpr (by decide +kernel)
+  omega_using [h₁, h₂]
+
+/-- `coreK` at P-256's sizes is `Proof.Ecdsa.X86_64.signX86_64` (by rewriting, as
+deciding it would evaluate the tables' length). -/
+theorem coreK_p256 : coreK Impl.Ecdsa.X86_64.p256 = Proof.Ecdsa.X86_64.signX86_64 := by
+  simp only [coreK, TblsOk, Proof.Ecdsa.X86_64.p256_combConsts, Abi.constRegions_cons,
+    Abi.constRegions_nil, Sig.forall_mem_const_single]
+  simp only [Abi.constsHeld, List.cons_append, List.nil_append, List.forall_mem_cons, List.not_mem_nil,
+    false_implies, implies_true, and_true, Proof.Ecdsa.X86_64.signX86_64, Proof.Ecdsa.X86_64.TblHeld]
+  rfl
+
+/-! ## The curve's blocks -/
+
+theorem p256_blk : RfcT (cfgC Impl.Ecdsa.X86_64.p256 false 0) := by rfcT_decide
+
+
+/-- The tests of the instructions of `signP256`: one walk of it, and one
+match for each instruction (`Proof/Framework/X86_64/InstrBits.lean`). -/
+theorem p256_bits : Impl.Ecdsa.X86_64.signP256.allInstrs (hasBits (bMx + bSp + bNs)) = true := by
+  lit_decide
+
+/-- P-256, with the group law `hL`, the comb's tables `hT` and the inversions'
+soundness `hI`. -/
+def p256 (hL : Weierstrass.Law Spec.P256.curve)
+    (hT : Weierstrass.CombOkW Spec.P256.curve 7 37 Impl.P256.p256Comb7 Impl.P256.p256Comb7Start)
+    (hI : Weierstrass.X86_64.InvSounds) : RfcCurve where
+  E := Impl.Ecdsa.X86_64.p256
+  inst := Spec.Ecdsa.P256.inst
+  curve := rfl
+  big := false
+  sizes := ⟨.inl rfl, .inl rfl, p256_nBits, by decide +kernel⟩
+  n_lt := by decide +kernel
+  sh := 0
+  sh_eq := Proof.Ecdsa.X86_64.p256_sh
+  coreN := "vg_ecdsa_p256_sign_k"
+  coreC := Impl.Ecdsa.X86_64.signP256
+  coreX := by rw [coreK_p256]; exact fun s h hc => Proof.Ecdsa.X86_64.sign_call_x86 hL hT hI s h hc.hole_of_holeN2
+  coreCT := by rw [coreK_p256]; exact Proof.Ecdsa.X86_64.sign_ct
+  coreNs := Code.noRsp_of_bits rfl p256_bits
+  coreSp := Code.sp_of_bits rfl p256_bits
+  coreMx := Code.noMx_of_bits rfl p256_bits
+  coreD := by lit_decide
+  blk := p256_blk
+
+end VG.Proof.Ecdsa.Rfc6979.X86_64
+
+end
+
+end
 
 /-!
 # Deterministic ECDSA on x86-64: P-256 with BMI2 and ADX
@@ -37,6 +116,11 @@ open VG VG.X86_64
 /-- `coreK` is the same for `p256x` as for `p256`, the same curve. -/
 theorem coreK_p256x : coreK Impl.Ecdsa.X86_64.p256x = Proof.Ecdsa.X86_64.signX86_64 := coreK_p256
 
+/-- The tests of the instructions of `signP256Adx`: one walk of it, and one
+match for each instruction (`Proof/Framework/X86_64/InstrBits.lean`). -/
+theorem p256x_bits : Impl.Ecdsa.X86_64.signP256Adx.allInstrs (hasBits (bMx + bSp + bNs)) = true := by
+  lit_decide
+
 /-- P-256 with BMI2 and ADX, with the group law `hL`, the comb's tables `hT`
 and the inversions' soundness `hI`. -/
 def p256x (hL : Weierstrass.Law Spec.P256.curve)
@@ -52,11 +136,11 @@ def p256x (hL : Weierstrass.Law Spec.P256.curve)
   sh_eq := Proof.Ecdsa.X86_64.p256_sh
   coreN := "vg_ecdsa_p256_sign_k" ++ "_adx"
   coreC := Impl.Ecdsa.X86_64.signP256Adx
-  coreX := by rw [coreK_p256x]; exact Proof.Ecdsa.X86_64.sign_call_x86_adx hL hT hI
+  coreX := by rw [coreK_p256x]; exact fun s h hc => Proof.Ecdsa.X86_64.sign_call_x86_adx hL hT hI s h hc.hole_of_holeN2
   coreCT := by rw [coreK_p256x]; exact Proof.Ecdsa.X86_64.sign_ct_adx
-  coreNs := by lit_decide
-  coreSp := by lit_decide
-  coreMx := by lit_decide
+  coreNs := Code.noRsp_of_bits rfl p256x_bits
+  coreSp := Code.sp_of_bits rfl p256x_bits
+  coreMx := Code.noMx_of_bits rfl p256x_bits
   coreD := by lit_decide
   blk := by exact p256_blk
 
@@ -79,5 +163,29 @@ theorem p256T_verified (adx : Bool) (hL : Weierstrass.Law Spec.P256.curve)
   cases adx
   · exact signT_verified ⟨rfl, by decide, by decide⟩ rfl h.1 hsat
   · exact signT_verified ⟨rfl, by decide, by decide⟩ rfl h.1 hsat
+
+
+/-! ## The function as emitted -/
+
+theorem p256_stub (adx : Bool) (hL : Weierstrass.Law Spec.P256.curve) (hT : Weierstrass.CombOkW Spec.P256.curve 7 37 Impl.P256.p256Comb7 Impl.P256.p256Comb7Start) (hI : Weierstrass.X86_64.InvSounds) : SignStub (p256Of adx hL hT hI) Spec.Ecdsa.Rfc6979.Curves.p256.tries := by
+  cases adx <;> (dsimp only [SignStub, cfgS, cfgT, p256Of, cond, p256, p256x]; exact ⟨by lit_decide, by lit_decide⟩)
+
+/-- `vg_ecdsa_p256_sign`, with the tables of `vs`, as emitted (`Impl.Ecdsa.Rfc6979.X86_64.Fn.sign`), its
+cleanup included, meets its contract in constant time and returns without secret residue. -/
+theorem p256T_scrubbed (adx : Bool) (hL : Weierstrass.Law Spec.P256.curve) (hT : Weierstrass.CombOkW Spec.P256.curve 7 37 Impl.P256.p256Comb7 Impl.P256.p256Comb7Start) (hI : Weierstrass.X86_64.InvSounds) (vs : List Proof.Pbkdf2.Md.X86_64.MdHash) (h : OK vs ∧ "VG_P256_COMB" ∉ Proof.HmacTable.X86_64.names vs)
+    (hu : ∀ w ∈ vs, Proof.HmacTable.X86_64.HmacUp w) :
+    VerifiedScrubbed X86_64.target (Impl.Ecdsa.Rfc6979.X86_64.Fn.sign (cfgT (p256Of adx hL hT hI) Spec.Ecdsa.Rfc6979.Curves.p256.tries vs))
+      (specK Spec.Ecdsa.Rfc6979.Curves.p256 Impl.Ecdsa.X86_64.p256.combConsts vs) 32 :=
+  sign_scrubbed (api := Spec.Ecdsa.Rfc6979.Curves.p256SignApi)
+    { tables := [("hmac", Proof.HmacTable.X86_64.tables vs)]
+      code := signCodeT (p256Of adx hL hT hI) Spec.Ecdsa.Rfc6979.Curves.p256.tries vs
+      verified := p256T_verified adx hL hT hI vs h
+      spSafe := signCode_sp _ _ _ }
+    (signOut _ Impl.Ecdsa.X86_64.p256.combConsts _ _) rfl rfl hu (p256_stub adx hL hT hI)
+
+theorem p256T_spSafe (adx : Bool) (hL : Weierstrass.Law Spec.P256.curve) (hT : Weierstrass.CombOkW Spec.P256.curve 7 37 Impl.P256.p256Comb7 Impl.P256.p256Comb7Start) (hI : Weierstrass.X86_64.InvSounds) (vs : List Proof.Pbkdf2.Md.X86_64.MdHash) :
+    (Impl.Ecdsa.Rfc6979.X86_64.Fn.sign (cfgT (p256Of adx hL hT hI) Spec.Ecdsa.Rfc6979.Curves.p256.tries vs)).all
+      (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  X86_64.Scrub.scrubKs_spSafe (signCode_sp _ _ _)
 
 end VG.Proof.Ecdsa.Rfc6979.X86_64

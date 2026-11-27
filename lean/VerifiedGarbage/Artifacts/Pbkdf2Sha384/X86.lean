@@ -1,27 +1,24 @@
 module
 
-public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Sha384
-public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Instances
-public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Frame
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Lit
 public import VerifiedGarbage.TCB.X86.Target
-public import VerifiedGarbage.Proof.Sha256.X86.Stream.Variant
-public import VerifiedGarbage.TCB.X86.Print
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Pbkdf2.Generic
+public import VerifiedGarbage.Spec.Hmac.Generic
+import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Scrub
+import VerifiedGarbage.Impl.Pbkdf2.Whole.X86.Fn
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Lit
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # PBKDF2-HMAC-SHA-384 (RFC 8018) on x86 -/
 
-@[expose] public section
-
 namespace VG.Artifacts.Pbkdf2Sha384.X86
 
-open VG.Proof.Pbkdf2.Stream.X86
-
-def artifacts : List Artifact := [
+public def artifacts : List (Artifact X86.target) := [
   Spec.Hmac.sha384I.pbkdf2Api.artifact X86.target {
-    code := Impl.StackScratch.X86.withStackScratch (Proof.Pbkdf2.Whole.X86.pbkFrame Spec.Hmac.sha384I) 7
-      Proof.Pbkdf2.Whole.X86.sha384F.pbkdf2
-    verified := Proof.Pbkdf2.Whole.X86.pbkFramed Proof.Pbkdf2.Whole.X86.sha384
-      Proof.Pbkdf2.Whole.X86.sha384_pbkFrameSat }]
+    code := Impl.Pbkdf2.Whole.X86.Fn.sha512 Proof.Pbkdf2.Whole.X86.sha384F
+    verified := Proof.Pbkdf2.Whole.X86.Scrub.sha384_scrubbed }]
+
+spec_apis artifacts
 
 end VG.Artifacts.Pbkdf2Sha384.X86

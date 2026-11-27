@@ -1,11 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.Rounds
-import VerifiedGarbage.Proof.AesGcm.X86.Gather.CT
 public import VerifiedGarbage.Proof.AesGcm.X86.Frame
 public import VerifiedGarbage.Impl.AesGcm.X86.SealGather
-public import VerifiedGarbage.Proof.AesGcm.X86.Gather.Callee
-public import VerifiedGarbage.Proof.AesGcm.X86.Gather.Contract
+public import VerifiedGarbage.Proof.AesGcm.X86.Gather.Loop
 import VerifiedGarbage.Proof.AesGcm.X86.Gather.Fn
 import VerifiedGarbage.Proof.Framework.X86.StackScratch
 public import VerifiedGarbage.Proof.Framework.X86.CallWith
@@ -34,17 +32,7 @@ public import VerifiedGarbage.TCB.Mem
 public import VerifiedGarbage.Impl.StackScratch.X86
 public import VerifiedGarbage.Proof.Framework.X86.Call
 
-/-!
-# AES-GCM one-shot encryption out of place, from a list of slices, x86: `Verified`
-
-Untrusted: everything here is checked by Lean. The shared contract of
-`vg_aes_gcm_seal_gather`, with the 2688 bytes of stack below the stack
-pointer that its frame and its call use (`Proof.AesGcm.sealGatherRoundsContract`),
-implies the one the proof is written against (`gatherX86`,
-`gather_implies`), and so the code, calling an instance of
-`vg_aes_gcm_seal` by its shared contract (`sealFn`), is `Verified` against
-it (`sealGather_verified`).
--/
+/-! The IA-32 machine contract implies the shared AES-GCM gather contract. -/
 
 @[expose] public section
 
@@ -53,11 +41,6 @@ set_option linter.unusedSimpArgs false
 namespace VG.Proof.AesGcm.X86.Gather
 
 open VG VG.X86 VG.Impl.AesGcm.X86.SealGather
-
-theorem sealGather_correct (F : SealFn) (s : State) (hs : gatherX86.pre s) :
-    ∃ t s', Exec isa (sealGather F.name F.code) s t s' ∧ abiPreserved s s' ∧ gatherX86.post s s' := by
-  obtain ⟨t, s', he, ha, hp⟩ := sealGather_wp F hs
-  exact ⟨t, s', he, ha, hp⟩
 
 theorem filter_true' (l : List Region) : l.filter (fun _ => true) = l := List.filter_eq_self.mpr (by simp)
 theorem filter_false' (l : List Region) : l.filter (fun _ => false) = [] := List.filter_eq_nil_iff.mpr (by simp)
@@ -81,7 +64,8 @@ theorem pairFacts_ro_w (l : List Region) (a : Region) :
       Function.comp_def, Bool.false_or, Sig.conj_append, ih, List.forall_mem_cons]
     simp [List.filterMap_cons, Sig.conj, Sig.conj_cons, filterMap_none']
 
-theorem gatherPre_of_spec {s : State} (h : (Proof.AesGcm.sealGatherRoundsContract X86.abi 2688).pre s) : gatherPre s := by
+theorem gatherPre_of_spec {N : Nat} {s : State} (h : (Proof.AesGcm.sealGatherRoundsContract X86.abi (N + 128)).pre s) :
+    gatherPre N s := by
   sig_pre [Proof.AesGcm.sealGatherRoundsContract, Spec.Gcm.sealGatherSig, Spec.Gcm.sealGatherPre, X86.abi] at h
   sig_split h
   simp only [List.filter_map, List.map_map, List.filterMap_map, List.map_nil, Function.comp_def,
@@ -100,14 +84,14 @@ theorem gatherPre_of_spec {s : State} (h : (Proof.AesGcm.sealGatherRoundsContrac
     ek, en, ea, ed, et, eds, els, earg, bk, bn, ba, bd, bt, bds, bls, barg, fl, ok, on, oa, od, ods, ol, w₁,
     by omega_using [w₂], hR, h⟩
 
-theorem gatherPost_of {s s' : State} (h : gatherPost s s') :
-    (Proof.AesGcm.sealGatherRoundsContract X86.abi 2688).post s s' := by
+theorem gatherPost_of {N : Nat} {s s' : State} (h : gatherPost s s') :
+    (Proof.AesGcm.sealGatherRoundsContract X86.abi (N + 128)).post s s' := by
   sig_post [Proof.AesGcm.sealGatherRoundsContract, Spec.Gcm.sealGatherSig, Proof.AesGcm.sealGatherRoundsPost, X86.abi, argVal,
     ↓reduceIte, Nat.reduceEqDiff, argBytes, Nat.reduceDiv, List.sum_cons, List.sum_nil, Nat.reduceAdd,
     Nat.reduceMul, sw32, toNat_w64]
   exact fun _ _ => h
 
-theorem gatherPub_of {s₁ s₂ : State} (hp : (Proof.AesGcm.sealGatherRoundsContract X86.abi 2688).pub s₁ s₂) :
+theorem gatherPub_of {N : Nat} {s₁ s₂ : State} (hp : (Proof.AesGcm.sealGatherRoundsContract X86.abi (N + 128)).pub s₁ s₂) :
     gatherPub s₁ s₂ := by
   sig_pub [Proof.AesGcm.sealGatherRoundsContract, Spec.Gcm.sealGatherSig, Spec.Gcm.sealGatherPre, X86.abi, argVal,
     ↓reduceIte, Nat.reduceEqDiff, argBytes, Nat.reduceDiv, List.sum_cons, List.sum_nil, Nat.reduceAdd,
@@ -133,54 +117,14 @@ def gatherSat : State where
   rd := [⟨0x1000, 256⟩, ⟨0x2000, 0⟩, ⟨0x2100, 0⟩, ⟨0x3000, 0⟩]
   wr := [⟨0x4000, 0⟩, ⟨0x5000, 16⟩, ⟨0x8004, 44⟩]
 
-theorem gatherSat_pre : ∃ s, (Proof.AesGcm.sealGatherRoundsContract X86.abi 2688).pre s := by
-  implies_sat [Proof.AesGcm.sealGatherRoundsContract, Spec.Gcm.sealGatherSig, Spec.Gcm.sealGatherPre,
+theorem gatherSat_pre {N : Nat} (hN : N = 768 ∨ N = 2560) :
+    ∃ s, (Proof.AesGcm.sealGatherRoundsContract X86.abi (N + 128)).pre s := by
+  rcases hN with rfl | rfl <;> implies_sat [Proof.AesGcm.sealGatherRoundsContract, Spec.Gcm.sealGatherSig, Spec.Gcm.sealGatherPre,
     X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     [gatherSat, X86.arg, X86.argAddr, Mem.readW, Mem.read] using gatherSat
 
-theorem gather_implies : gatherX86.Implies (Proof.AesGcm.sealGatherRoundsContract X86.abi 2688) :=
-  ⟨fun _ h => gatherPre_of_spec h, fun _ _ _ h => gatherPost_of h, fun _ _ _ _ h => gatherPub_of h, gatherSat_pre⟩
-
-theorem sealGather_verified (F : SealFn) :
-    Verified X86.target (sealGather F.name F.code) (Proof.AesGcm.sealGatherRoundsContract X86.abi 2688) :=
-  Verified.of_correct (k := gatherX86) (sealGather_correct F) (sealGather_ct F) gather_implies
-
-open VG.Impl.AesGcm.X86 VG.Impl.StackScratch.X86 in
-/-- The instance of `vg_aes_gcm_seal` calling the implementations `v`, with
-its working space in a frame of its own. -/
-def sealFn (v : GcmImpl) : SealFn where
-  name := Spec.Gcm.sealApi.name ++ v.suffix
-  code := withStackScratch 2604 9 («seal» v.callees)
-  verified := seal_framed v
-  noSp := by
-    have hs := NoSp.of_all (seal_noEsp v)
-    have ha : NoSp (.block (setArgs 2604 9) : Prog isa) := NoSp.of_all (by decide +kernel)
-    intro i hi
-    simp only [withStackScratch, instrs, List.mem_cons, List.mem_append, List.mem_singleton,
-      List.not_mem_nil, or_false] at hi
-    rcases hi with (rfl | hi | hi) | rfl
-    · rfl
-    · exact ha i hi
-    · exact hs i hi
-    · rfl
-  depth := by
-    have := seal_stackUse v
-    simp only [withStackScratch, stackUse, frameBytes, Nat.zero_max]
-    exact Nat.le_trans (Nat.add_le_add_right this 2604) (by decide)
-
-/-- No instruction of the code, or of the instance it calls, writes `esp`
-but its frames' push and pop. -/
-theorem sealGather_spSafe (v : GcmImpl) :
-    (sealGather (sealFn v).name (sealFn v).code).all (fun i => !X86.isa.writesSp i) = true := by
-  have hc : (sealFn v).code.all (fun i => !X86.isa.writesSp i) = true :=
-    withStackScratch_spSafe (bytes := 2604) (n := 9) (seal_spSafe v)
-  have he : (Code.block entry : Prog isa).all (fun i => !X86.isa.writesSp i) = true := by decide +kernel
-  have hg : gather.all (fun i => !X86.isa.writesSp i) = true := by decide +kernel
-  have hr : (Code.block restore : Prog isa).all (fun i => !X86.isa.writesSp i) = true := by decide +kernel
-  show (!X86.isa.writesSp (.alloc 48) && ((Code.block entry : Prog isa).all (fun i => !X86.isa.writesSp i) &&
-      (gather.all (fun i => !X86.isa.writesSp i) && ((sealFn v).code.all (fun i => !X86.isa.writesSp i) &&
-        (Code.block restore : Prog isa).all (fun i => !X86.isa.writesSp i)))) &&
-      !X86.isa.writesSp (.free 48)) = true
-  rw [he, hg, hc, hr]; rfl
+theorem gather_implies {N : Nat} (hN : N = 768 ∨ N = 2560) :
+    (gatherX86 N).Implies (Proof.AesGcm.sealGatherRoundsContract X86.abi (N + 128)) :=
+  ⟨fun _ h => gatherPre_of_spec h, fun _ _ _ h => gatherPost_of h, fun _ _ _ _ h => gatherPub_of h, gatherSat_pre hN⟩
 
 end VG.Proof.AesGcm.X86.Gather

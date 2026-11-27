@@ -24,6 +24,7 @@ structure PcPrepared (base dst src : BitVec 32) (len k : Nat) (s : State) : Prop
   input : PrecomputeInput base src len (Spec.Rsa.modulusWords k) k s
   buffers : PcBuffers base dst src len k s
   stack : PcStack base dst src len k s
+  call : CallStack base len s
 
 theorem PcBuffers.congr {base dst src : BitVec 32} {len k : Nat} {s t : State} {rs : List Reg}
     (h : PcBuffers base dst src len k s) (rest : Rest rs s t) : PcBuffers base dst src len k t :=
@@ -55,7 +56,7 @@ theorem pcPrepare_frame_ready (s : State) {base dst src : BitVec 32} {len k : Na
   refine ⟨?_, frameZ⟩
   refine ⟨⟨⟨h.workspace.congr rz.wr, ?_, ?_, ?_, ?_, ?_, stackZ.savedBase⟩,
     by have := h.minLength; omega_using [this], bytesFit, h.sourceFits, ?_, h.sourceSeparate, sourceZ, countZ, ?_, ?_⟩,
-    h.toPcBuffers.congr rz, stackZ⟩
+    h.toPcBuffers.congr rz, stackZ, h.call.of_rest rz⟩
   · rw [memZ]; exact layoutV
   · rw [memZ]; exact widthV
   · exact (restZ.gpr .r0 (by decide)).trans ptrV

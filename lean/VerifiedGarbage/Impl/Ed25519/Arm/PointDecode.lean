@@ -19,6 +19,6 @@ def canonicalY : Prog isa := .seq (.block (freeze 1)) (.block (wordsEqual (offse
 def pointDecodeLoad : Prog isa :=
   .seq (.block (unpackField (offset 1) 0 ++ splitYSign)) canonicalY
 
-def pointDecode : Prog isa := .seq pointDecodeLoad (.ite .eq recoverPoint recoverInvalid)
+def pointDecode (umaal : Bool) : Prog isa := .seq pointDecodeLoad (.ite .eq (recoverPoint umaal) recoverInvalid)
 
 end VG.Impl.Ed25519.Arm

@@ -22,6 +22,7 @@ meta import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.KernelRfl
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.MdStream.DigestScratch
 
 /-!
 # The one-shot SHA-512 family digests on x86-64
@@ -213,12 +214,26 @@ theorem verified {o : List Instr} {D : Nat} (c : Member o D) {iv : Spec.Sha512.H
   rcases c.hD with rfl | rfl | rfl | rfl <;>
   exact X86_64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := words) (stack := 8) (bytes := frame)
     h (by decide) (by decide) (by decide) hsp hdp
+    (fun vs m m₁ m₂ r hl hb h => Proof.MdStream.Digest.digestPostOut_local _ _ _ vs m m₁ m₂ r hl hb h)
     (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
 theorem spSafe {o : List Instr} {D : Nat} (c : Member o D) (iv : Spec.Sha512.HashValue) {f : Callee}
     (hs : f.code.all (fun i => !isa.writesSp i) = true) :
     (digest o iv f).all (fun i => !isa.writesSp i) = true :=
   X86_64.withStackScratch_spSafe (by decide) (by rw [OneShot.body_all, c.spSafe f hs, init_sp]; rfl)
+
+/-- The one-shot digest loads no MXCSR, if the compression doesn't. -/
+theorem mxcsr {o : List Instr} {D : Nat} (c : Member o D) (iv : Spec.Sha512.HashValue) {f : Callee}
+    (hm : f.code.allInstrs (fun i => !loadsMxcsr i) = true) :
+    (digest o iv f).allInstrs (fun i => !loadsMxcsr i) = true := by
+  have hb : (body o iv f).allInstrs (fun i => !loadsMxcsr i) = true := by
+    rw [OneShot.body_allInstrs, c.mxcsr f hm, init_mxcsr]; rfl
+  show (Impl.StackScratch.X86_64.withStackScratch _ .rcx (body o iv f)).allInstrs _ = true
+  generalize body o iv f = b at hb
+  rw [Code.allInstrs_eq] at hb ⊢
+  simp only [Impl.StackScratch.X86_64.withStackScratch, instrs, List.all_append, List.all_cons, List.all_nil, hb,
+    Bool.and_true]
+  rfl
 
 section
 open Impl.MdStream.X86_64 (out64 compressN compressAt compressWith)
@@ -440,6 +455,7 @@ theorem verifiedS {so : Nat} {o : List Instr} {D : Nat} (c : MemberS so o D) {iv
   rcases c.hso with rfl | rfl <;> rcases c.hD with rfl | rfl | rfl | rfl <;>
   exact X86_64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := wordsS _) (stack := 8) (bytes := _)
     h (by decide) (by decide) (by decide) hsp hdp
+    (fun vs m m₁ m₂ r hl hb h => Proof.MdStream.Digest.digestPostOut_local _ _ _ vs m m₁ m₂ r hl hb h)
     (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
 theorem spSafeS {so : Nat} {o : List Instr} {D : Nat} (c : MemberS so o D) (iv : Spec.Sha512.HashValue)

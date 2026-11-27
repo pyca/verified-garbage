@@ -29,4 +29,9 @@ emitted with each (the registration files that import this), and its
 dispatcher tries them in this order. -/
 def variants := [md5, sha1, sha224, sha256, sha384, sha512, sha512_224, sha512_256]
 
+/-- For each of the HMAC functions a function calls through its table, that
+function of each of `variants`: what the code that calls them through tables
+is given (`Impl.Ecdsa.Rfc6979.RISCV64.Fn`). -/
+def fns : Impl.Ecdsa.Rfc6979.RISCV64.Fns := Proof.HmacTable.RISCV64.fnsOf variants
+
 end VG.Proof.Variants.MdHash.RISCV64

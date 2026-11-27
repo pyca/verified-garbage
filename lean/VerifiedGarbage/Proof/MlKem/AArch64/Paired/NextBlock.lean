@@ -14,6 +14,7 @@ import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
 @[expose] public section
 
 namespace VG.Proof.MlKem.AArch64.Paired
+variable {sha3 : Bool}
 open VG VG.AArch64 VG.Proof.MlKem.AArch64
 open VG.Proof.Sha3.AArch64.Neon
 
@@ -33,18 +34,18 @@ theorem rate_frame {m m' : Mem} {p : Addr} {A : Spec.Sha3.State} {rs : List Regi
   rw [hf.readW hc hd (by decide)]
   exact h i hi
 
-def nextBlock : Prog isa := .seq (.block [.addImm .x .x20 .x19 400,.addImm .x .x21 .x19 904])
-  (.seq (Impl.Sha3.AArch64.Neon.X2.call true .x19 .x19 1536)
+def nextBlock (sha3 : Bool) : Prog isa := .seq (.block [.addImm .x .x20 .x19 400,.addImm .x .x21 .x19 904])
+  (.seq (Impl.Sha3.AArch64.Neon.X2.call sha3 .x19 .x19 1536)
     (.block (Impl.Sha3.AArch64.Neon.X2.squeeze 21 .x19 .x20 .x21 ++ Impl.MlKem.AArch64.Rej8.rejConsts)))
 
 def nextWrites (p : Addr) : List Region :=
   [pairR p,rateR21 (p+400),rateR21 (p+904),X2.callR (p+1536),⟨p+1408,8⟩]
 
-def nextRegs : List Reg := [.x0,.x1,.x6,.x7,.x9,.x16,.x17,.x20,.x21]
+def nextRegs : List Reg := X2.volatile++[.x20,.x21]
 
 theorem nextBlock_ok {s : State} {p : Addr} {A B : Spec.Sha3.State}
     (hp : s.gpr .x19=p) (hc : Covers [⟨p,2048⟩] s.wr) (pair : PairAt s.mem p A B) :
-    WP isa nextBlock s fun u => Keep nextRegs s u ∧ Frame [⟨p,2048⟩] s.mem u.mem ∧
+    WP isa (nextBlock sha3) s fun u => Keep nextRegs s u ∧ Frame [⟨p,2048⟩] s.mem u.mem ∧
       Frame (nextWrites p) s.mem u.mem ∧ u.gpr .x19=p ∧ PairAt u.mem p (Spec.Sha3.keccakF A) (Spec.Sha3.keccakF B) ∧
       Rate21 u.mem (p+400) (Spec.Sha3.keccakF A) ∧ Rate21 u.mem (p+904) (Spec.Sha3.keccakF B) ∧
       Rej8.Constants u ∧ u.gpr .x16=u.syms "VG_MLKEM_REJ_SHUFFLE" := by
@@ -54,7 +55,7 @@ theorem nextBlock_ok {s : State} {p : Addr} {A B : Spec.Sha3.State}
     refine wp_addImm (by decide) fun a ha ea => wp_addImm (by decide) fun b hb eb => wp_nil ?_
     exact ⟨(ha.trans hb).mono (by decide),by rw [hb.get .x20,ea,hp]; rfl,by rw [eb,ha.get .x19,hp]; rfl⟩
   refine WP.seq (WP.mono prep fun a ⟨ha,a20,a21⟩ => ?_)
-  have asq := squeezeBlock_ok (hp := (ha.get .x19).trans hp) (ha := a20) (hb := a21)
+  have asq := squeezeBlock_ok (sha3 := sha3) (hp := (ha.get .x19).trans hp) (ha := a20) (hb := a21)
     (hw := by rw [ha.get .x19,hp]) (hp1 := by decide) (hp6 := by decide) (hp7 := by decide)
     (ha6 := by decide) (ha7 := by decide) (hb6 := by decide) (hb7 := by decide)
     (hpc := by decide) (hac := by decide) (hbc := by decide)

@@ -49,13 +49,13 @@ theorem prfHead_ok {t : State} (hc : Post s R EM t) :
     WP isa (.block (fp :: scr .r9 sMsg ++ ([.load .d .r11 .r12 oI, .load .d .r8 .r12 oK] : List Instr))) t
       fun u => (u.mem = t.mem ∧ u.gpr .r9 = scA s sMsg ∧ u.gpr .r11 = sl s t oI ∧ u.gpr .r8 = s.gpr .r7) ∧
         Keep [.r12, .r9, .r11, .r8] t u := by
-  have c1 : oScr < 2 ^ 15 ∧ oScr % 4 = 0 := by decide
-  have c2 : oI < 2 ^ 15 ∧ oI % 4 = 0 := by decide
-  have c3 : oK < 2 ^ 15 ∧ oK % 4 = 0 := by decide
-  have c4 : sMsg < 2 ^ 15 := by decide
-  have i1 := slot_rd hc (d := oScr) (by decide) (by decide)
-  have i2 := slot_rd hc (d := oI) (by decide) (by decide)
-  have i3 := slot_rd hc (d := oK) (by decide) (by decide)
+  obtain c1 : oScr < 2 ^ 15 ∧ oScr % 4 = 0 := by decide
+  obtain c2 : oI < 2 ^ 15 ∧ oI % 4 = 0 := by decide
+  obtain c3 : oK < 2 ^ 15 ∧ oK % 4 = 0 := by decide
+  obtain c4 : sMsg < 2 ^ 15 := by decide
+  obtain i1 := slot_rd hc (d := oScr) (by decide) (by decide)
+  obtain i2 := slot_rd hc (d := oI) (by decide) (by decide)
+  obtain i3 := slot_rd hc (d := oK) (by decide) (by decide)
   refine VG.Proof.Bignum.PPC64LE.WP.keep _ ?_ rfl
   unfold scr
   prun [fp, exec_addSp0, hc.sp, c1, c2, c3, c4, i1, i2, i3, hc.sl.scr, hc.sl.k,
@@ -65,11 +65,11 @@ theorem prfUpdArgs_ok {t : State} (hc : Post s R EM t) {n : Nat} (hn : n < 2 ^ 1
     WP isa (.block (prfUpdArgs n)) t fun u => (u.mem = t.mem ∧ u.gpr .r3 = scA s sSt ∧
       u.gpr .r4 = BitVec.ofNat 64 64 ∧ u.gpr .r5 = scA s sMsg ∧ u.gpr .r6 = BitVec.ofNat 64 n ∧
       u.gpr .r7 = scA s sWork) ∧ Keep [.r12, .r3, .r4, .r5, .r6, .r7] t u := by
-  have c1 : oScr < 2 ^ 15 ∧ oScr % 4 = 0 := by decide
-  have c2 : sSt < 2 ^ 15 := by decide
-  have c3 : sMsg < 2 ^ 15 := by decide
-  have c4 : sWork < 2 ^ 15 := by decide
-  have i1 := slot_rd hc (d := oScr) (by decide) (by decide)
+  obtain c1 : oScr < 2 ^ 15 ∧ oScr % 4 = 0 := by decide
+  obtain c2 : sSt < 2 ^ 15 := by decide
+  obtain c3 : sMsg < 2 ^ 15 := by decide
+  obtain c4 : sWork < 2 ^ 15 := by decide
+  obtain i1 := slot_rd hc (d := oScr) (by decide) (by decide)
   refine VG.Proof.Bignum.PPC64LE.WP.keep _ ?_ rfl
   unfold prfUpdArgs scr
   prun [fp, exec_addSp0, hc.sp, c1, c2, c3, c4, hn, i1, hc.sl.scr, exec_addi (show Reg.r3 ≠ .r0 by decide) c2,
@@ -80,13 +80,13 @@ theorem prfFinArgs_ok {t : State} (hc : Post s R EM t) {n dst : Nat} (hn : 64 + 
       u.gpr .r4 = scA s sOuter ∧ u.gpr .r5 = BitVec.ofNat 64 (64 + n) ∧
       u.gpr .r6 = (sl s t oI <<< 5) + scA s dst ∧ u.gpr .r7 = scA s sWork) ∧
       Keep [.r12, .r3, .r4, .r5, .r6, .r10, .r7] t u := by
-  have c1 : oScr < 2 ^ 15 ∧ oScr % 4 = 0 := by decide
-  have c2 : oI < 2 ^ 15 ∧ oI % 4 = 0 := by decide
-  have c3 : sSt < 2 ^ 15 := by decide
-  have c4 : sOuter < 2 ^ 15 := by decide
-  have c5 : sWork < 2 ^ 15 := by decide
-  have i1 := slot_rd hc (d := oScr) (by decide) (by decide)
-  have i2 := slot_rd hc (d := oI) (by decide) (by decide)
+  obtain c1 : oScr < 2 ^ 15 ∧ oScr % 4 = 0 := by decide
+  obtain c2 : oI < 2 ^ 15 ∧ oI % 4 = 0 := by decide
+  obtain c3 : sSt < 2 ^ 15 := by decide
+  obtain c4 : sOuter < 2 ^ 15 := by decide
+  obtain c5 : sWork < 2 ^ 15 := by decide
+  obtain i1 := slot_rd hc (d := oScr) (by decide) (by decide)
+  obtain i2 := slot_rd hc (d := oI) (by decide) (by decide)
   refine VG.Proof.Bignum.PPC64LE.WP.keep _ ?_ rfl
   unfold prfFinArgs scr
   prun [fp, exec_addSp0, hc.sp, c1, c2, c3, c4, c5, hn, hd, i1, i2, hc.sl.scr,
@@ -97,9 +97,9 @@ theorem incrCL_ok {t : State} (hc : Post s R EM t) :
     WP isa (.block (incr [.li .r9 8])) t fun u =>
       (u.mem = t.mem.writeW (fb s + BitVec.ofNat 64 oI) (sl s t oI + 1) ∧
         u.gpr .r9 = BitVec.ofNat 64 8 - (sl s t oI + 1)) ∧ Keep [.r12, .r11, .r9] t u := by
-  have c2 : oI < 2 ^ 15 ∧ oI % 4 = 0 := by decide
-  have i2 := slot_rd hc (d := oI) (by decide) (by decide)
-  have o2 := slotOut (u := t) hc.wr (d := oI) (by decide) (by decide)
+  obtain c2 : oI < 2 ^ 15 ∧ oI % 4 = 0 := by decide
+  obtain i2 := slot_rd hc (d := oI) (by decide) (by decide)
+  obtain o2 := slotOut (u := t) hc.wr (d := oI) (by decide) (by decide)
   refine VG.Proof.Bignum.PPC64LE.WP.keep _ ?_ rfl
   unfold incr
   prun [fp, exec_addSp0, hc.sp, c2, i2, o2, exec_addi (show Reg.r11 ≠ .r0 by decide) (show 1 < 2 ^ 15 by decide)]
@@ -109,12 +109,12 @@ theorem incrAM_ok {t : State} (hc : Post s R EM t) :
     WP isa (.block (incr [.load .d .r9 .r12 oNB])) t fun u =>
       (u.mem = t.mem.writeW (fb s + BitVec.ofNat 64 oI) (sl s t oI + 1) ∧
         u.gpr .r9 = sl s t oNB - (sl s t oI + 1)) ∧ Keep [.r12, .r11, .r9] t u := by
-  have c2 : oI < 2 ^ 15 ∧ oI % 4 = 0 := by decide
-  have c3 : oNB < 2 ^ 15 ∧ oNB % 4 = 0 := by decide
-  have i2 := slot_rd hc (d := oI) (by decide) (by decide)
-  have i3 := slot_rd hc (d := oNB) (by decide) (by decide)
-  have o2 := slotOut (u := t) hc.wr (d := oI) (by decide) (by decide)
-  have e : ∀ v : BitVec 64, (t.mem.writeW (fb s + BitVec.ofNat 64 oI) v).readW (fb s + BitVec.ofNat 64 oNB) 64 =
+  obtain c2 : oI < 2 ^ 15 ∧ oI % 4 = 0 := by decide
+  obtain c3 : oNB < 2 ^ 15 ∧ oNB % 4 = 0 := by decide
+  obtain i2 := slot_rd hc (d := oI) (by decide) (by decide)
+  obtain i3 := slot_rd hc (d := oNB) (by decide) (by decide)
+  obtain o2 := slotOut (u := t) hc.wr (d := oI) (by decide) (by decide)
+  obtain e : ∀ v : BitVec 64, (t.mem.writeW (fb s + BitVec.ofNat 64 oI) v).readW (fb s + BitVec.ofNat 64 oNB) 64 =
       sl s t oNB := fun v =>
     Mem.readW_writeW_sep (Offset.sep _ (by decide) (by decide) (by decide)) (by decide)
   refine VG.Proof.Bignum.PPC64LE.WP.keep _ ?_ rfl
@@ -179,45 +179,45 @@ theorem prfBody_ok {label : List Nat} {len count : List Instr} {dst : Nat} {t : 
   have e₄ : H.FD = 32 := rfl
   -- The message.
   refine WP.seq (WP.mono (prfHead_ok hc) fun t₁ ⟨⟨m₁, x9, x11, x8⟩, k₁⟩ => ?_)
-  have hc₁ : Post s R EM t₁ := hc.regs k₁.rd k₁.wr k₁.sp m₁ fun r hr => k₁.gpr r (by revert r; decide)
+  obtain hc₁ : Post s R EM t₁ := hc.regs k₁.rd k₁.wr k₁.sp m₁ fun r hr => k₁.gpr r (by revert r; decide)
   rw [hctr] at x11
   refine WP.seq (WP.mono (hmsg t₁ hc₁ x9 x11 x8) fun t₂ ⟨⟨F₂, hm₂⟩, k₂'⟩ => ?_)
-  have hc₂ : Post s R EM t₂ := hc₁.step h k₂'.rd k₂'.wr k₂'.sp (fun r hr => k₂'.gpr r (by revert r; decide)) F₂
+  obtain hc₂ : Post s R EM t₂ := hc₁.step h k₂'.rd k₂'.wr k₂'.sp (fun r hr => k₂'.gpr r (by revert r; decide)) F₂
     fun r hr => by rw [List.mem_singleton.mp hr]; exact .inl (scSub (by decide))
-  have k₂ : ∀ a l, 1040 ≤ a → a + l ≤ scrBytes →
+  obtain k₂ : ∀ a l, 1040 ≤ a → a + l ≤ scrBytes →
       Spec.Rsa.bytesAt t₂.mem (scA s a) l = Spec.Rsa.bytesAt t.mem (scA s a) l := fun a l h₁ h₂ => by
     rw [bytes_frame F₂ (fun r hr => by
       rw [List.mem_singleton.mp hr]; exact scD h (.inr (by unfold sMsg; omega)) h₂ (by decide))
       (by unfold scrBytes at h₂; omega), m₁]
-  have sl₂ : ∀ d, d + 8 ≤ frameBytes → sl s t₂ d = sl s t d := fun d hd => by
+  obtain sl₂ : ∀ d, d + 8 ≤ frameBytes → sl s t₂ d = sl s t d := fun d hd => by
     show t₂.mem.readW _ 64 = t.mem.readW _ 64
     rw [F₂.readW (Region.contains_self _ _) (fun r hr => by
       rw [List.mem_singleton.mp hr]
       exact ((h.ks.sub_left (frame_sub s hd)).sub_right (sc_sub h)).sub_right (scSub (by decide))) (by decide), m₁]
   -- HMAC's `init` with `KDK`.
   refine WP.seq (WP.mono (macInitArgs_ok hc₂ (key := sKDK) (by decide)) fun t₃ ⟨⟨m₃, y3, y4, y5, y6, y7⟩, k₃⟩ => ?_)
-  have hc₃ : Post s R EM t₃ := hc₂.regs k₃.rd k₃.wr k₃.sp m₃ fun r hr => k₃.gpr r (by revert r; decide)
+  obtain hc₃ : Post s R EM t₃ := hc₂.regs k₃.rd k₃.wr k₃.sp m₃ fun r hr => k₃.gpr r (by revert r; decide)
   refine WP.seq (macInit_call h hc₃ (by decide) (by decide) y3 y4 y5 y6 y7 fun u hu hI hO hfu => ?_)
-  have hkd₃ : Spec.Sha256.bytesAt t₃.mem (scA s sKDK) 32 = kd := by
+  obtain hkd₃ : Spec.Sha256.bytesAt t₃.mem (scA s sKDK) 32 = kd := by
     show Spec.Rsa.bytesAt _ _ _ = _
     rw [m₃, k₂ _ _ (by decide) (by decide), hkd]
   rw [hkd₃] at hI hO
-  have hk0 : (Spec.Hmac.blockKey hH.SH.H kd).length = 64 :=
+  obtain hk0 : (Spec.Hmac.blockKey hH.SH.H kd).length = 64 :=
     blockKey_length (by rw [← hkd]; simp [Spec.Rsa.bytesAt])
-  have ku : ∀ a l, 1040 ≤ a → a + l ≤ scrBytes →
+  obtain ku : ∀ a l, 1040 ≤ a → a + l ≤ scrBytes →
       Spec.Rsa.bytesAt u.mem (scA s a) l = Spec.Rsa.bytesAt t₃.mem (scA s a) l := fun a l h₁ h₂ =>
     keep_call h (by decide) hfu h₂ fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl <;> exact scD h (.inr (by unfold sSt sOuter sWork at *; omega)) h₂ (by decide)
-  have slu : ∀ d, d + 8 ≤ frameBytes → sl s u d = sl s t₃ d := fun d hd =>
+  obtain slu : ∀ d, d + 8 ≤ frameBytes → sl s u d = sl s t₃ d := fun d hd =>
     slot_call h (by decide) hfu (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl <;> exact scSub (by decide)) hd
   -- `update` with the message.
   refine WP.seq (WP.mono (prfUpdArgs_ok hu (n := label.length + 4) (by omega))
     fun t₄ ⟨⟨m₄, z3, z4, z5, z6, z7⟩, k₄⟩ => ?_)
-  have hc₄ : Post s R EM t₄ := hu.regs k₄.rd k₄.wr k₄.sp m₄ fun r hr => k₄.gpr r (by revert r; decide)
-  have hmsg₄ : Spec.Rsa.bytesAt t₄.mem (scA s sMsg) (label.length + 4) = text := by
+  obtain hc₄ : Post s R EM t₄ := hu.regs k₄.rd k₄.wr k₄.sp m₄ fun r hr => k₄.gpr r (by revert r; decide)
+  obtain hmsg₄ : Spec.Rsa.bytesAt t₄.mem (scA s sMsg) (label.length + 4) = text := by
     rw [m₄, keep_call h (by decide) hfu (by unfold sMsg scrBytes; omega) (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl <;> exact scD h (.inr (by decide)) (by unfold sMsg scrBytes; omega) (by decide)),
@@ -227,37 +227,37 @@ theorem prfBody_ok {label : List Nat} {len count : List Instr} {dst : Nat} {t : 
     (scD h (.inr (by decide)) (by unfold sMsg scrBytes; omega) (by decide))
     (lowD h (by decide) (by unfold sMsg scrBytes; omega)) (scCovR h hc₄.wr (by unfold sMsg scrBytes; omega))
     fun t₅ hc₅ hI₅ hf₅ => ?_)
-  have hI₅' := hI₅ _ (by rw [m₄]; exact hI) (by rw [z4, Proof.RsaPkcs1Enc.PPC64LE.Dec.xorPad_length, hk0])
+  obtain hI₅' := hI₅ _ (by rw [m₄]; exact hI) (by rw [z4, Proof.RsaPkcs1Enc.PPC64LE.Dec.xorPad_length, hk0])
   rw [hmsg₄] at hI₅'
-  have hO₅ : hH.SH.Repr t₅.mem (scA s sOuter) (Spec.Hmac.xorPad (Spec.Hmac.blockKey hH.SH.H kd) Spec.Hmac.opad) := by
+  obtain hO₅ : hH.SH.Repr t₅.mem (scA s sOuter) (Spec.Hmac.xorPad (Spec.Hmac.blockKey hH.SH.H kd) Spec.Hmac.opad) := by
     refine hH.repr_keep hf₅ (by rw [xorPad_length, hk0]; rfl) (fun r hr => ?_) (by rw [m₄]; exact hO)
     simp only [List.mem_cons, List.not_mem_nil, or_false, List.cons_append, List.nil_append] at hr
     rcases hr with rfl | rfl | rfl
     · exact scD h (by decide) (by decide) (by decide)
     · exact scD h (by decide) (by decide) (by decide)
     · exact (lowD h (by decide) (by decide)).symm
-  have k₅ : ∀ a l, 1040 ≤ a → a + l ≤ scrBytes →
+  obtain k₅ : ∀ a l, 1040 ≤ a → a + l ≤ scrBytes →
       Spec.Rsa.bytesAt t₅.mem (scA s a) l = Spec.Rsa.bytesAt t₄.mem (scA s a) l := fun a l h₁ h₂ =>
     keep_call h (by decide) hf₅ h₂ fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl <;> exact scD h (.inr (by unfold sSt sWork at *; omega)) h₂ (by decide)
-  have sl₅ : ∀ d, d + 8 ≤ frameBytes → sl s t₅ d = sl s t₄ d := fun d hd =>
+  obtain sl₅ : ∀ d, d + 8 ≤ frameBytes → sl s t₅ d = sl s t₄ d := fun d hd =>
     slot_call h (by decide) hf₅ (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl <;> exact scSub (by decide)) hd
-  have ct₅ : sl s t₅ oI = BitVec.ofNat 64 i := by
+  obtain ct₅ : sl s t₅ oI = BitVec.ofNat 64 i := by
     rw [sl₅ _ (by decide)]; show t₄.mem.readW _ 64 = _
     rw [m₄]; refine (slu _ (by decide)).trans ?_; show t₃.mem.readW _ 64 = _
     rw [m₃]; exact (sl₂ _ (by decide)).trans hctr
   -- HMAC's `finalize` to the block.
   refine WP.seq (WP.mono (prfFinArgs_ok hc₅ (n := label.length + 4) (dst := dst) (by omega) hdst)
     fun t₆ ⟨⟨m₆, w3, w4, w5, w6, w7⟩, k₆⟩ => ?_)
-  have hc₆ : Post s R EM t₆ := hc₅.regs k₆.rd k₆.wr k₆.sp m₆ fun r hr => k₆.gpr r (by revert r; decide)
+  obtain hc₆ : Post s R EM t₆ := hc₅.regs k₆.rd k₆.wr k₆.sp m₆ fun r hr => k₆.gpr r (by revert r; decide)
   rw [ct₅, shl5 i dst] at w6
   refine WP.seq (macFin_call h hc₆ (o := dst + 32 * i) (by omega) hd2 w3 w4 w6 w7 fun t₇ hc₇ hmac hf₇ => ?_)
-  have hb₇ := hmac _ text hk0 (by rw [hk0, htl]; omega) (by rw [m₆]; exact hI₅') (by rw [w5, htl])
+  obtain hb₇ := hmac _ text hk0 (by rw [hk0, htl]; omega) (by rw [m₆]; exact hI₅') (by rw [w5, htl])
     (by rw [m₆]; exact hO₅)
-  have k₇ : ∀ a l, 1040 ≤ a → a + l ≤ scrBytes → (a + l ≤ dst + 32 * i ∨ dst + 32 * i + 32 ≤ a) →
+  obtain k₇ : ∀ a l, 1040 ≤ a → a + l ≤ scrBytes → (a + l ≤ dst + 32 * i ∨ dst + 32 * i + 32 ≤ a) →
       Spec.Rsa.bytesAt t₇.mem (scA s a) l = Spec.Rsa.bytesAt t₆.mem (scA s a) l := fun a l h₁ h₂ h₃ =>
     keep_call h (by decide) hf₇ h₂ fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -265,7 +265,7 @@ theorem prfBody_ok {label : List Nat} {len count : List Instr} {dst : Nat} {t : 
       · exact scD h (.inr (by unfold sSt at *; omega)) h₂ (by decide)
       · exact scD h (h₃.imp id fun h' => by rw [e₃]; omega) h₂ hd2
       · exact scD h (.inr (by unfold sWork at *; omega)) h₂ (by decide)
-  have sl₇ : ∀ d, d + 8 ≤ frameBytes → sl s t₇ d = sl s t₆ d := fun d hd =>
+  obtain sl₇ : ∀ d, d + 8 ≤ frameBytes → sl s t₇ d = sl s t₆ d := fun d hd =>
     slot_call h (by decide) hf₇ (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
@@ -273,22 +273,22 @@ theorem prfBody_ok {label : List Nat} {len count : List Instr} {dst : Nat} {t : 
       · exact scSub hd2
       · exact scSub (by decide)) hd
   -- The counter.
-  have nb₇ : sl s t₇ oNB = nbv := by
+  obtain nb₇ : sl s t₇ oNB = nbv := by
     rw [sl₇ _ (by decide)]; show t₆.mem.readW _ 64 = _
     rw [m₆]; refine (sl₅ _ (by decide)).trans ?_; show t₄.mem.readW _ 64 = _
     rw [m₄]; refine (slu _ (by decide)).trans ?_; show t₃.mem.readW _ 64 = _
     rw [m₃]; exact (sl₂ _ (by decide)).trans hnb
-  have ct₇ : sl s t₇ oI = BitVec.ofNat 64 i := by
+  obtain ct₇ : sl s t₇ oI = BitVec.ofNat 64 i := by
     rw [sl₇ _ (by decide)]; show t₆.mem.readW _ 64 = _
     rw [m₆]; exact ct₅
   refine WP.mono (hcount t₇ hc₇ nb₇) fun w ⟨⟨mw, xw⟩, kw⟩ => ?_
-  have Fw : Frame [⟨fb s + BitVec.ofNat 64 oI, 8⟩] t₇.mem w.mem := by
+  obtain Fw : Frame [⟨fb s + BitVec.ofNat 64 oI, 8⟩] t₇.mem w.mem := by
     rw [mw]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
-  have hcw := hc₇.step h kw.rd kw.wr kw.sp (fun r hr => kw.gpr r (by revert r; decide)) Fw
+  obtain hcw := hc₇.step h kw.rd kw.wr kw.sp (fun r hr => kw.gpr r (by revert r; decide)) Fw
     fun r hr => by rw [List.mem_singleton.mp hr]; exact .inr (.inr ⟨oI, Nat.le_refl _, show oI + 8 ≤ oLr by decide, rfl⟩)
-  have one : BitVec.ofNat 64 i + 1 = BitVec.ofNat 64 (i + 1) := by
+  obtain one : BitVec.ofNat 64 i + 1 = BitVec.ofNat 64 (i + 1) := by
     rw [show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl, BitVec.ofNat_add]
-  have kw' : ∀ a l, a + l ≤ scrBytes →
+  obtain kw' : ∀ a l, a + l ≤ scrBytes →
       Spec.Rsa.bytesAt w.mem (scA s a) l = Spec.Rsa.bytesAt t₇.mem (scA s a) l := fun a l h₂ =>
     bytes_frame Fw (fun r hr => by
       rw [List.mem_singleton.mp hr]
@@ -584,13 +584,13 @@ theorem clStart_ok {t : State} (hc : Post s R EM t) :
       sl s t₁ oNB = BitVec.ofNat 64 (((s.gpr .r7).toNat + 31) / 32) ∧ ∀ a l, a + l ≤ scrBytes →
         Spec.Rsa.bytesAt t₁.mem (scA s a) l = Spec.Rsa.bytesAt t.mem (scA s a) l := by
   have hk := h.k2
-  have c1 : oI < 2 ^ 15 ∧ oI % 4 = 0 := by decide
-  have c2 : oK < 2 ^ 15 ∧ oK % 4 = 0 := by decide
-  have c3 : oNB < 2 ^ 15 ∧ oNB % 4 = 0 := by decide
-  have i2 := slot_rd hc (d := oK) (by decide) (by decide)
-  have o1 := slotOut (u := t) hc.wr (d := oI) (by decide) (by decide)
-  have o3 := slotOut (u := t) hc.wr (d := oNB) (by decide) (by decide)
-  have rk : (t.mem.writeW (fb s + BitVec.ofNat 64 oI) (BitVec.ofNat 64 0)).readW (fb s + BitVec.ofNat 64 oK) 64 =
+  obtain c1 : oI < 2 ^ 15 ∧ oI % 4 = 0 := by decide
+  obtain c2 : oK < 2 ^ 15 ∧ oK % 4 = 0 := by decide
+  obtain c3 : oNB < 2 ^ 15 ∧ oNB % 4 = 0 := by decide
+  obtain i2 := slot_rd hc (d := oK) (by decide) (by decide)
+  obtain o1 := slotOut (u := t) hc.wr (d := oI) (by decide) (by decide)
+  obtain o3 := slotOut (u := t) hc.wr (d := oNB) (by decide) (by decide)
+  obtain rk : (t.mem.writeW (fb s + BitVec.ofNat 64 oI) (BitVec.ofNat 64 0)).readW (fb s + BitVec.ofNat 64 oK) 64 =
       s.gpr .r7 := by
     rw [Mem.readW_writeW_sep (Offset.sep _ (by decide) (by decide) (by decide)) (by decide)]; exact hc.sl.k
   refine WP.mono (VG.Proof.Bignum.PPC64LE.WP.keep [.r12, .r10] (Q := fun u =>
@@ -599,7 +599,7 @@ theorem clStart_ok {t : State} (hc : Post s R EM t) :
   · unfold clInit
     prun [fp, exec_addSp0, hc.sp, c1, c2, c3, i2, o1, o3, rk,
       exec_addi (show Reg.r10 ≠ .r0 by decide) (show 31 < 2 ^ 15 by decide)]
-  have F₁ : Frame [⟨fb s + BitVec.ofNat 64 oI, 8⟩, ⟨fb s + BitVec.ofNat 64 oNB, 8⟩] t.mem t₁.mem := by
+  obtain F₁ : Frame [⟨fb s + BitVec.ofNat 64 oI, 8⟩, ⟨fb s + BitVec.ofNat 64 oNB, 8⟩] t.mem t₁.mem := by
     rw [m₁]
     refine Frame.writeW (Frame.writeW (Frame.refl _ _) (List.mem_cons_self ..) _ ?_)
       (List.mem_cons_of_mem _ (List.mem_singleton_self _)) _ ?_ <;> exact Region.contains_self _ _
@@ -618,12 +618,12 @@ theorem amStart_ok {t : State} (hc : Post s R EM t)
       Post s R EM t₁ ∧ sl s t₁ oI = BitVec.ofNat 64 0 ∧
       sl s t₁ oNB = BitVec.ofNat 64 (((s.gpr .r7).toNat + 31) / 32) ∧ ∀ a l, a + l ≤ scrBytes →
         Spec.Rsa.bytesAt t₁.mem (scA s a) l = Spec.Rsa.bytesAt t.mem (scA s a) l := by
-  have c1 : oI < 2 ^ 15 ∧ oI % 4 = 0 := by decide
-  have o1 := slotOut (u := t) hc.wr (d := oI) (by decide) (by decide)
+  obtain c1 : oI < 2 ^ 15 ∧ oI % 4 = 0 := by decide
+  obtain o1 := slotOut (u := t) hc.wr (d := oI) (by decide) (by decide)
   refine WP.mono (VG.Proof.Bignum.PPC64LE.WP.keep [.r12, .r10] (Q := fun u =>
     u.mem = t.mem.writeW (fb s + BitVec.ofNat 64 oI) (BitVec.ofNat 64 0)) ?_ rfl) fun t₁ ⟨m₁, k₁⟩ => ?_
   · prun [fp, exec_addSp0, hc.sp, c1, o1]
-  have F₁ : Frame [⟨fb s + BitVec.ofNat 64 oI, 8⟩, ⟨fb s + BitVec.ofNat 64 oNB, 8⟩] t.mem t₁.mem := by
+  obtain F₁ : Frame [⟨fb s + BitVec.ofNat 64 oI, 8⟩, ⟨fb s + BitVec.ofNat 64 oNB, 8⟩] t.mem t₁.mem := by
     rw [m₁]; exact (Frame.refl _ _).writeW (List.mem_cons_self ..) _ (Region.contains_self _ _)
   refine ⟨hc.step h k₁.rd k₁.wr k₁.sp (fun r hr => k₁.gpr r (by revert r; decide)) F₁ (slots_safe (s := s)),
     ?_, ?_, fun a l ha => slots_scr h F₁ ha⟩
@@ -668,7 +668,7 @@ theorem amLoop_ok {t : State} {kd : List Byte} (hl : CLR s R EM kd t) : WP isa a
   have hk := h.k2
   have hk64 := h.k1
   refine WP.seq (WP.mono (amStart_ok h hl.post hl.nb) fun t₁ ⟨hc₁, ct₁, nb₁, kp₁⟩ => ?_)
-  have hN0 : 0 < ((s.gpr .r7).toNat + 31) / 32 := by omega_using [hk64]
+  obtain hN0 : 0 < ((s.gpr .r7).toNat + 31) / 32 := by omega_using [hk64]
   refine WP.mono (prfLoop_ok h (label := messageLabel) (len := amLen) (count := [.load .d .r9 .r12 oNB])
     (dst := sAM) (N := ((s.gpr .r7).toNat + 31) / 32) (C := BitVec.ofNat 64 (((s.gpr .r7).toNat + 31) / 32))
     (t₀ := t₁)

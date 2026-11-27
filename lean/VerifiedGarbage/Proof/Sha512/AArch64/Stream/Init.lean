@@ -8,6 +8,7 @@ public import VerifiedGarbage.Impl.Sha512.AArch64.Stream
 public import VerifiedGarbage.Proof.Framework.AArch64.Taint
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.AArch64.Residue
 
 /-!
 # Streaming SHA-512 on AArch64: `init`
@@ -117,5 +118,13 @@ theorem init_verified (iv : HashValue) :
     refine ⟨h.2, fun r hr => ?_⟩
     simp only [VG.AArch64.Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
     subst hr; exact h.1
+
+/-- The SHA-384 and SHA-512 initializations return without secret residue:
+they read no memory, so what they leave is a function of their arguments (`Residue.noResidue_of_blind`). -/
+theorem init_noResidue (iv : HashValue) (k : Contract isa) (r : Nat) : NoResidue (init iv) k r :=
+  Residue.noResidue_of_blind (by
+    simp only [init, Code.plainAll, List.all_flatMap, List.all_append, List.all_eq_true]
+    intro k _
+    simp [movImm64, Residue.blind, Residue.regOnly, Residue.isStore]) k r
 
 end VG.Proof.Sha512.AArch64.Stream

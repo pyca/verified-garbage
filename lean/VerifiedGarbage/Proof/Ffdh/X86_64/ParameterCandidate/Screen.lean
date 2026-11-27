@@ -4,6 +4,236 @@ public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Data
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Residue
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
+public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.PhaseData
+import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Shape
+import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Sieve
+import VerifiedGarbage.Proof.RsaKeyGen.Table
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.MillerRabin.X86_64.CallerStages
+public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Memory
+
+/-! ### `Ffdh.X86_64.ParameterCandidate.CheckGenerator`, which the modules that import this one used -/
+
+section
+
+/-! ### `Ffdh.X86_64.ParameterCandidate.Consume`, which the modules that import this one used -/
+
+section
+
+/-! # FFDH parameter generation on x86-64: consume the candidate's initial prefix -/
+
+@[expose] public section
+
+namespace VG.Proof.Ffdh.X86_64.ParameterCandidate
+
+open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public
+open VG.Impl.Ffdh.X86_64.ParameterCandidate
+open VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.Rsa.X86_64 VG.Proof.MlKem.X86_64
+
+theorem consumeCandidate_ok {p : CandidateP} {s : State}
+    (h : CandidateTape p 0 s) (hdi : s.gpr .rdi = p.B) (havail : p.k ≤ p.rand.length) :
+    WP isa (.block consumeCandidate) s fun t => CandidateTape p p.k t ∧
+      CandidateSaved p s.mem t.mem ∧ CandidateFrame p s.mem t.mem ∧ Keep mmRegs s t ∧
+      Spec.Rsa.bytesAt t.mem p.op p.k = Spec.Rsa.bytesAt s.mem p.op p.k := by
+  have hrd : ∀ j < 32, InRegions (s.rd ++ s.wr) (off p.B (8 * j)) 8 :=
+    fun j hj => h.base.scr.ld (by omega_using [hj, h.base.header_room])
+  have hwr : ∀ j < 32, InRegions s.wr (off p.B (8 * j)) 8 :=
+    fun j hj => h.base.scr.st (by omega_using [hj, h.base.header_room])
+  have hlen := h.base.hdr (oLen, BitVec.ofNat 64 p.k) (by simp [CandidateP.headers])
+  have hptr : word s.mem p.B (8 * oRandPtr) = p.rp := by simpa [off] using h.ptr
+  have hleft : word s.mem p.B (8 * oRandLeft) = BitVec.ofNat 64 p.rand.length := by simpa using h.left
+  have hsub : BitVec.ofNat 64 p.rand.length - BitVec.ofNat 64 p.k = BitVec.ofNat 64 (p.rand.length - p.k) :=
+    BitVec.ofNat_sub_ofNat_of_le _ _ (by omega_using [h.base.widths.2]) havail
+  refine WP.mono (WP.keep [.rax, .rcx] (Q := fun t => t.mem = advanceMem s.mem p.B p.rp p.k p.rand.length 0)
+    (by
+      xrun [consumeCandidate, advanceMem, State.ea, hdr, hdi, hdrOff, hlen, hptr, hleft,
+        hrd oLen (by decide), hrd oRandPtr (by decide), hrd oRandLeft (by decide),
+        hwr oRandPtr (by decide), hwr oRandLeft (by decide), hwr oUsed (by decide),
+        hdrStore_hdr _ _ _ (i := oRandPtr) (k := oRandLeft) (by decide) (by decide) (by decide), hsub]
+      simp only [Nat.zero_add, off]) rfl) fun t ⟨hm, k⟩ => ?_
+  have hf : Frm p.B [(8 * oRandPtr, 24)] s.mem t.mem := by rw [hm]; exact advanceMem_frame _ _ _ _ _ _
+  have hscr : InScr p.B p.Z s.mem t.mem := InScr.of_frm hf (by
+    intro r hr
+    simp only [List.mem_singleton] at hr
+    subst hr
+    change 120 ≤ p.Z
+    omega_using [h.base.header_room])
+  have hs : CandidateSaved p s.mem t.mem := by
+    intro j hj
+    exact hf.word_eq (by
+      intro r hr
+      simp only [List.mem_singleton] at hr
+      subst hr
+      left
+      change 8 * j + 8 ≤ 96
+      omega_using [hj]) (by omega_using [hj])
+  have hbase := h.base.keep (CandidateFrame.of_scr hscr) hs k ((k.gpr (by decide)).trans h.base.sp)
+  refine ⟨⟨hbase, havail, ?_, ?_, ?_⟩, hs, CandidateFrame.of_scr hscr, k.mono (by decide), h.base.output_eq hscr⟩
+  · rw [hm]; exact advanceMem_ptr _ _ _ _ _ _
+  · rw [hm]; exact advanceMem_left _ _ _ _ _ _
+  · rw [hm]; simpa only [Nat.zero_add] using advanceMem_used s.mem p.B p.rp p.k p.rand.length 0
+
+end VG.Proof.Ffdh.X86_64.ParameterCandidate
+
+end
+
+end
+
+/-! # FFDH parameter generation on x86-64: generator policy at the p phase
+
+The check accepts p only if, besides the generator's congruence, q =
+(p − 1)/2 is odd and neither 3, 5 nor 17 divides p or q, all of which the
+trial division of p and q that follows would reject: `congruent_sieved`. -/
+
+@[expose] public section
+
+namespace VG.Proof.Ffdh.X86_64.ParameterCandidate
+
+open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public
+open VG.Impl.Rsa.X86_64.Crt VG.Impl.Ffdh.X86_64.ParameterCandidate
+open VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.Rsa.X86_64 VG.Proof.MlKem.X86_64
+
+/-- What the generator check accepts: the generator's congruence (`screen`
+implies it) and `screen`. -/
+def CandidateP.congruent (p : CandidateP) : Bool :=
+  Spec.Ffdh.generationShape p.bits p.gen p.P && screen p.gen p.P
+
+private theorem fin2 : ∀ r < 255, r % 3 = 2 ∧ 2 ≤ r % 5 ∧ 2 ≤ r % 17 → r ∈ allowed2 := by
+  decide +kernel
+
+private theorem fin5 : ∀ r < 255, r % 3 = 2 ∧ (r % 5 = 2 ∨ r % 5 = 3) ∧ 2 ≤ r % 17 → r ∈ allowed5 := by
+  decide +kernel
+
+private theorem tab_small : VG.Impl.RsaKeyGen.tabEntry 0 = 3 ∧ VG.Impl.RsaKeyGen.tabEntry 1 = 5 ∧
+    VG.Impl.RsaKeyGen.tabEntry 5 = 17 := by
+  unfold VG.Impl.RsaKeyGen.tabEntry VG.Impl.RsaKeyGen.slots
+  rw [VG.Impl.RsaKeyGen.primes.lit_eq]
+  exact ⟨rfl, rfl, rfl⟩
+
+private theorem small_of_primeShape {v : Nat} (hv : 8161 < v) (ho : v % 2 = 1)
+    (h : Spec.Ffdh.primeShape v = true) : v % 3 ≠ 0 ∧ v % 5 ≠ 0 ∧ v % 17 ≠ 0 := by
+  rw [VG.Proof.Ffdh.ParameterCandidate.primeShape_sieve hv ho] at h
+  simp only [Bool.not_eq_eq_eq_not, Bool.not_true, List.any_eq_false, List.mem_range, beq_iff_eq] at h
+  obtain ⟨h3, h5, h17⟩ := tab_small
+  exact ⟨by simpa only [h3] using h 0 (by decide), by simpa only [h5] using h 1 (by decide),
+    by simpa only [h17] using h 5 (by decide)⟩
+
+private theorem odd_of_primeShape {v : Nat} (h : Spec.Ffdh.primeShape v = true) : v % 2 = 1 := by
+  unfold Spec.Ffdh.primeShape at h
+  exact beq_iff_eq.mp ((Bool.and_eq_true _ _).mp ((Bool.and_eq_true _ _).mp h).1).2
+
+/-- q = (p − 1)/2 is divisible by an odd s exactly when p ≡ 1 mod s. -/
+private theorem half3 {P : Nat} (h : P % 2 = 1) (hq : (P - 1) / 2 % 3 ≠ 0) : P % 3 ≠ 1 := by omega_using [h, hq]
+private theorem half5 {P : Nat} (h : P % 2 = 1) (hq : (P - 1) / 2 % 5 ≠ 0) : P % 5 ≠ 1 := by omega_using [h, hq]
+private theorem half17 {P : Nat} (h : P % 2 = 1) (hq : (P - 1) / 2 % 17 ≠ 0) : P % 17 ≠ 1 := by omega_using [h, hq]
+private theorem half2 {P : Nat} (h : P % 2 = 1) (hq : (P - 1) / 2 % 2 = 1) : P % 4 = 3 := by omega_using [h, hq]
+
+/-- A candidate with the generator's congruence whose p and q have the
+sieved shape passes `screen`. -/
+theorem screen_of_shape {bits generator P : Nat} (hgen : generator = 2 ∨ generator = 5)
+    (hodd : P % 2 = 1) (hP : 8161 < P) (hQ : 8161 < (P - 1) / 2)
+    (hs : Spec.Ffdh.generationShape bits generator P = true)
+    (hp : Spec.Ffdh.primeShape P = true) (hq : Spec.Ffdh.primeShape ((P - 1) / 2) = true) :
+    screen generator P = true := by
+  obtain ⟨p3, p5, p17⟩ := small_of_primeShape hP hodd hp
+  have qodd := odd_of_primeShape hq
+  obtain ⟨q3, q5, q17⟩ := small_of_primeShape hQ qodd hq
+  have e3 := half3 hodd q3
+  have e5 := half5 hodd q5
+  have e17 := half17 hodd q17
+  have e4 := half2 hodd qodd
+  have hr : P % 255 < 255 := Nat.mod_lt _ (by decide)
+  have m3 : P % 255 % 3 = P % 3 := Nat.mod_mod_of_dvd P (by decide)
+  have m5 : P % 255 % 5 = P % 5 := Nat.mod_mod_of_dvd P (by decide)
+  have m17 : P % 255 % 17 = P % 17 := Nat.mod_mod_of_dvd P (by decide)
+  rcases hgen with rfl | rfl
+  · have h24 : P % 24 = 11 := by
+      unfold Spec.Ffdh.generationShape at hs
+      simp only [Bool.and_eq_true, decide_eq_true_eq, beq_iff_eq, ite_true] at hs
+      exact hs.2
+    have h8 : P % 8 = 3 := by omega_using [h24]
+    have hscreen : screen 2 P = (decide (P % 8 = 3) && decide (P % 255 ∈ allowed2)) :=
+      ite_eq_left_of_eq_true _ _ (eq_true rfl)
+    rw [hscreen, h8, show decide ((3 : Nat) = 3) = true from rfl, Bool.true_and]
+    exact decide_eq_true <| fin2 (P % 255) hr ⟨by omega_using [m3, p3, e3], by omega_using [m5, p5, e5],
+      by omega_using [m17, p17, e17]⟩
+  · have h10 : P % 10 = 3 ∨ P % 10 = 7 := by
+      unfold Spec.Ffdh.generationShape at hs
+      simp only [Bool.and_eq_true, decide_eq_true_eq, beq_iff_eq, Bool.or_eq_true,
+        show ((5 : Nat) == 2) = false from rfl, Bool.false_eq_true, ite_false, true_and] at hs
+      exact hs.2
+    have hscreen : screen 5 P = (decide (P % 4 = 3) && decide (P % 255 ∈ allowed5)) :=
+      ite_eq_right_of_eq_false _ _ (eq_false (by decide))
+    rw [hscreen, e4, show decide ((3 : Nat) = 3) = true from rfl, Bool.true_and]
+    exact decide_eq_true <| fin5 (P % 255) hr ⟨by omega_using [m3, p3, e3], by omega_using [m5, h10],
+      by omega_using [m17, p17, e17]⟩
+
+/-- Rejecting by `screen` before the sieve rejects nothing the sieve accepts. -/
+theorem congruent_sieved {p : CandidateP} (hb : 512 ≤ p.bits) (hgen : p.gen = 2 ∨ p.gen = 5) :
+    ((p.congruent && p.sieved p.P) && p.sieved p.Q) =
+      ((Spec.Ffdh.generationShape p.bits p.gen p.P && p.sieved p.P) && p.sieved p.Q) := by
+  obtain ⟨hodd, hl, hu⟩ := VG.Proof.Ffdh.ParameterCandidate.candidate_shape (bits := p.bits) (by omega_using [hb])
+    (Spec.Rsa.os2ip p.prefix)
+  obtain ⟨hql, -⟩ := VG.Proof.Ffdh.ParameterCandidate.half_shape (by omega_using [hb]) hodd hl hu
+  have h13 : 2 ^ 13 ≤ 2 ^ (p.bits - 2) := Nat.pow_le_pow_right (by decide) (by omega_using [hb])
+  have h14 : 2 ^ 13 ≤ 2 ^ (p.bits - 1) := Nat.pow_le_pow_right (by decide) (by omega_using [hb])
+  change p.P % 2 = 1 at hodd
+  change 2 ^ (p.bits - 1) ≤ p.P at hl
+  change 2 ^ (p.bits - 2) ≤ (p.P - 1) / 2 at hql
+  unfold CandidateP.congruent
+  cases hs : Spec.Ffdh.generationShape p.bits p.gen p.P <;>
+    cases hsp : p.sieved p.P <;> cases hsq : p.sieved p.Q <;> simp only [Bool.false_and, Bool.true_and, Bool.and_false, Bool.and_true]
+  unfold CandidateP.sieved at hsp hsq
+  exact screen_of_shape hgen hodd (by omega_using [h14, hl]) (by unfold CandidateP.Q at hsq; omega_using [h13, hql]) hs
+    ((Bool.and_eq_true _ _).mp hsp).1 ((Bool.and_eq_true _ _).mp hsq).1
+
+theorem generatorCheck_state_ok {p : CandidateP} {used : Nat} {c : Checks} {s : State} {mi : BitVec 64}
+    (h : CandidateTape p used s)
+    (hg : Good s (off p.B 256) (p.Z - 256) (p.phaseWords false) mi)
+    (hp : PhaseHeader p false c s)
+    (hn : wv s.mem (off p.B 256) (slot (p.phaseWords false) aN) (p.phaseWords false) = p.P) :
+    WP isa (.seq (.block [.mov .rax (.mem (hdr sLink)), .mov .rdx (.mem (ws .rax oGen))]) generatorCheck) s
+      fun t => CandidateTape p used t ∧
+        Good t (off p.B 256) (p.Z - 256) (p.phaseWords false) mi ∧ PhaseHeader p false c t ∧
+        wv t.mem (off p.B 256) (slot (p.phaseWords false) aN) (p.phaseWords false) = p.P ∧
+        t.zf = some p.congruent ∧
+        t.mem = s.mem ∧ Keep mmRegs s t := by
+  have hgen := h.base.hdr (oGen, BitVec.ofNat 64 p.gen) (by simp [CandidateP.headers])
+  have hrd := h.base.scr.ld (show 8 * oGen + 8 ≤ p.Z by
+    change 88 ≤ p.Z
+    omega_using [h.base.header_room])
+  have hlinkrd := hg.scr.ld (show 8 * sLink + 8 ≤ p.Z - 256 by
+    have hz := (h.base.phase_dims false).z
+    change 136 ≤ p.Z - 256
+    unfold slot hdrBytes at hz
+    omega_using [hz])
+  refine WP.seq (WP.mono (WP.keep [.rax, .rdx] (Q := fun u =>
+    u.gpr .rdx = BitVec.ofNat 64 p.gen ∧ u.mem = s.mem)
+    (by xrun [State.ea, hdr, ws, hg.rdi, hdrOff, hp.link, hgen, hrd, hlinkrd]) rfl)
+    fun u ⟨⟨hdx, hm⟩, ku⟩ => ?_)
+  have hgu : Good u (off p.B 256) (p.Z - 256) (p.phaseWords false) mi :=
+    ⟨hg.scr.congr ku.2.2, (ku.gpr (by decide)).trans hg.rdi, by rw [hm]; exact hg.hdr⟩
+  have hbit : Spec.RsaKeyGen.bitLength p.P = p.bits :=
+    VG.Proof.Ffdh.ParameterCandidate.candidate_bitLength (by omega_using [h.base.bits1]) _ |>.1
+  refine WP.mono (generatorCheck_ok hgu (h.base.phase_dims false).z
+    (by omega_using [(h.base.phase_room false).1]) (by omega_using [(h.base.phase_room false).2.1])
+    h.base.bits1 h.base.bits2 (by rw [hm, hn]; exact hbit) h.base.gen hdx)
+    fun t ⟨hz, hmt, kt⟩ => ?_
+  have hmem : t.mem = s.mem := hmt.trans hm
+  have kk : Keep mmRegs s t := (ku.trans kt).mono (by decide)
+  have hf : CandidateFrame p s.mem t.mem := by rw [hmem]; exact CandidateFrame.refl _ _
+  have hh : ∀ j < 15, word t.mem p.B (8 * j) = word s.mem p.B (8 * j) := fun _ _ => by rw [hmem]
+  refine ⟨h.keep hf hh kk ((kk.gpr (by decide)).trans h.base.sp),
+    ⟨hg.scr.congr kk.2.2, (kk.gpr (by decide)).trans hg.rdi, by rw [hmem]; exact hg.hdr⟩,
+    ⟨by rw [hmem]; exact hp.bits, by rw [hmem]; exact hp.len,
+      by rw [hmem]; exact hp.checks, by rw [hmem]; exact hp.link⟩, by simpa only [hmem] using hn,
+    by simpa only [hm, hn, CandidateP.congruent] using hz, hmem, kk⟩
+
+end VG.Proof.Ffdh.X86_64.ParameterCandidate
+
+end
+
+end
 
 /-! # FFDH parameter candidates on x86-64: the screen on p's octets
 

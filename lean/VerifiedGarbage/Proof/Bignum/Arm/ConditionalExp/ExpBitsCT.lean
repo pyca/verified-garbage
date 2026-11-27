@@ -1,6 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.Bignum.Arm.ConditionalExp.ExpRoundCT
+public import VerifiedGarbage.Proof.Bignum.Arm.ConditionalExp.ExpRoundCT
 public import VerifiedGarbage.Proof.Bignum.Arm.ConditionalExp.ExpBits
 public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Bignum.Arm.StackCT
@@ -11,30 +11,31 @@ import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 
 namespace VG.Proof.Bignum.Arm.ConditionalExp
 
-variable {ok : Prop}
 open VG VG.Arm VG.Impl.Bignum.Arm
 open VG.Proof.Rsa.Mont (arrAt)
+variable {ok : Prop} {Q : State → Prop} {regions : List Region}
 
 theorem expBits_ct {base : BitVec 32} {len w M1 M2 x1 x2 E v : Nat}
-    (fit : arrAt w 3 + 32 ≤ 8 * len) (hv : v < 256) :
-    RelCT isa (fun s t => ExpBitState ok base len w M1 x1 E v 0 s ∧
-      ExpBitState ok base len w M2 x2 E v 0 t ∧ s.sp = t.sp) expBits (fun _ _ => True) := by
+    (K : TwoExp.Montgomery base len w Q regions) (ct : TwoExp.MontgomeryTiming K) (hv : v < 256) :
+    RelCT isa (fun s t => (ExpBitState ok base len w M1 x1 E v 0 s ∧ Q s) ∧
+      (ExpBitState ok base len w M2 x2 E v 0 t ∧ Q t) ∧ s.sp = t.sp) (expBitsWith K.op) (fun _ _ => True) := by
   let I := fun k (s t : State) => ∃ j, j + k = 8 ∧ 0 < k ∧
-    ExpBitState ok base len w M1 x1 E v j s ∧ ExpBitState ok base len w M2 x2 E v j t ∧ s.sp = t.sp
-  have step : ∀ k, RelCT isa (I k) expBitRound fun s t =>
+    (ExpBitState ok base len w M1 x1 E v j s ∧ Q s) ∧ (ExpBitState ok base len w M2 x2 E v j t ∧ Q t) ∧
+      s.sp = t.sp
+  have step : ∀ k, RelCT isa (I k) (expBitRoundWith K.op) fun s t =>
       isa.eval .ne s = isa.eval .ne t ∧ (isa.eval .ne s = some false → True) ∧
       (isa.eval .ne s = some true → ∃ m, m < k ∧ I m s t) := by
     intro k s t tr1 tr2 u z h e1 e2
-    obtain ⟨j, jk, hk, hs, ht, sp⟩ := h
+    obtain ⟨j, jk, hk, ⟨hs, qs⟩, ⟨ht, qt⟩, sp⟩ := h
     have hj : j < 8 := by omega_using [jk, hk]
     have hp : 2 ^ j ≤ 128 := Nat.pow_le_pow_right (by decide) (by omega_using [hj] : j ≤ 7)
     have valueFit : v * 2 ^ j < 2 ^ 32 := by have := Nat.mul_le_mul_left v hp; omega_using [hv, this]
-    have ct := relCT_keep_sp (expRound_ct (ok := ok) (base := base) (len := len) (w := w)
+    have ct' := relCT_keep_sp (expRound_ct (ok := ok) (base := base) (len := len) (w := w)
       (M1 := M1) (M2 := M2) (x1 := x1) (x2 := x2)
-      (E := E * 2 ^ j + v / 2 ^ (8 - j)) fit valueFit) (fun _ _ h => h.2.2)
-    obtain ⟨trace, sp'⟩ := ct s t tr1 tr2 u z ⟨⟨hs.power, hs.byte⟩, ⟨ht.power, ht.byte⟩, sp⟩ e1 e2
-    obtain ⟨_, _, run1, next1, zero1, _, _, _⟩ := expBitState_step s hs hv hj
-    obtain ⟨_, _, run2, next2, zero2, _, _, _⟩ := expBitState_step t ht hv hj
+      (E := E * 2 ^ j + v / 2 ^ (8 - j)) K ct valueFit) (fun _ _ h => h.2.2)
+    obtain ⟨trace, sp'⟩ := ct' s t tr1 tr2 u z ⟨⟨⟨hs.power, hs.byte⟩, qs⟩, ⟨⟨ht.power, ht.byte⟩, qt⟩, sp⟩ e1 e2
+    obtain ⟨_, _, run1, next1, q1, zero1, _, _, _⟩ := expBitState_step s K hs qs hv hj
+    obtain ⟨_, _, run2, next2, q2, zero2, _, _, _⟩ := expBitState_step t K ht qt hv hj
     obtain ⟨-, rfl⟩ := Exec.det e1 run1
     obtain ⟨-, rfl⟩ := Exec.det e2 run2
     refine ⟨trace, ?_, fun _ => trivial, ?_⟩
@@ -45,7 +46,7 @@ theorem expBits_ct {base : BitVec 32} {len w M1 M2 x1 x2 E v : Nat}
         intro last
         change some (!_ ) = some true at again
         simp only [zero1, last, decide_true, Bool.not_true, Option.some.injEq, Bool.false_eq_true] at again
-      exact ⟨k - 1, by omega_using [hk], j + 1, by omega_using [jk, hk], by omega_using [jk, hk, notLast], next1, next2, sp'⟩
+      exact ⟨k - 1, by omega_using [hk], j + 1, by omega_using [jk, hk], by omega_using [jk, hk, notLast], ⟨next1, q1⟩, ⟨next2, q2⟩, sp'⟩
   exact (RelCT.loop I step 8).mono
     (fun _ _ h => ⟨0, by decide, by decide, h.1, h.2.1, h.2.2⟩) (fun _ _ h => h)
 

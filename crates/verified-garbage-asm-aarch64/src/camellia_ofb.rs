@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Camellia.ofbContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the subkeys, the chaining value or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 272 bytes.
@@ -62,7 +64,10 @@ b 21f
 .inst 0xa91b4611,0xa91c4611,0xa91d4611,0xa91e4611,0xa91f4611,0x913003f0,0xa9004611,0xa9014611
 .inst 0xa9024611,0xa9034611,0xa9044611,0xa9054611,0xa9064611,0xa9074611,0xa9084611,0xa9094611
 .inst 0xa90a4611,0xa90b4611,0xa90c4611,0xa90d4611,0xa90e4611,0xa90f4611,0xa9104611,0x913443ff
-.inst 0xd65f03c0
+.inst 0xd2800006,0xd2800007,0xd2800008,0xd280000a,0xd280000b,0xd280000c,0x6f00e400,0x6f00e401
+.inst 0x6f00e402,0x6f00e403,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415
+.inst 0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c,0x6f00e41d
+.inst 0x6f00e41e,0x6f00e41f,0xd65f03c0
 .p2align 6",
         vg_camellia_prepare_encrypt_keys = sym super::camellia::vg_camellia_prepare_encrypt_keys::vg_camellia_prepare_encrypt_keys,
         vg_camellia_encrypt_prepared = sym super::camellia::vg_camellia_encrypt_prepared::vg_camellia_encrypt_prepared,
@@ -72,6 +77,8 @@ b 21f
 /// Camellia-OFB encryption or decryption (NIST SP 800-38A §6.4, RFC 3713 §2.3) of the last piece of a message, of any length, in place: XORs the `len` bytes at `data` with the output blocks `Oⱼ = CIPH_K(Oⱼ₋₁)`, where `O₀` is the block at `*iv`, a partial last block `Pₙ*` of `u` bytes with `MSB_u(Oₙ)`, and replaces `*iv` with the last output block used, `Oₙ` (leaving it unchanged if `len = 0`): so that a further call continues the message if `len` is a multiple of 16, and otherwise keystream, to be wiped, after which the message must end. `CIPH_K` is Camellia encryption with `rounds` rounds under the subkeys at `schedule`, as `vg_camellia_expand_key` writes them.
 ///
 /// Contract: `VG.Spec.Camellia.ofbFinalContract`. Constant time: only the pointers, `rounds` and `len` may affect timing, not the subkeys, the chaining value or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -137,7 +144,10 @@ b 21f
 .inst 0xa91b4611,0xa91c4611,0xa91d4611,0xa91e4611,0xa91f4611,0x913003f0,0xa9004611,0xa9014611
 .inst 0xa9024611,0xa9034611,0xa9044611,0xa9054611,0xa9064611,0xa9074611,0xa9084611,0xa9094611
 .inst 0xa90a4611,0xa90b4611,0xa90c4611,0xa90d4611,0xa90e4611,0xa90f4611,0xa9104611,0x913443ff
-.inst 0xd65f03c0
+.inst 0xd2800006,0xd2800007,0xd280000a,0xd280000b,0xd280000c,0x6f00e400,0x6f00e401,0x6f00e402
+.inst 0x6f00e403,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416
+.inst 0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c,0x6f00e41d,0x6f00e41e
+.inst 0x6f00e41f,0xd65f03c0
 .p2align 6",
         vg_camellia_prepare_encrypt_keys = sym super::camellia::vg_camellia_prepare_encrypt_keys::vg_camellia_prepare_encrypt_keys,
         vg_camellia_encrypt_prepared = sym super::camellia::vg_camellia_encrypt_prepared::vg_camellia_encrypt_prepared,

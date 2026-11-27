@@ -6,7 +6,9 @@
 ///
 /// Contract: `VG.Spec.TripleDes.cbcEncryptChainedContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
 ///
-/// It runs `vg_triple_des_cbc_encrypt_chained`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_triple_des_cbc_encrypt_chained_ssse3` if the CPU supports its features (`VG_TRIPLE_DES_CBC_ENCRYPT_CHAINED_SSSE3_FEATURES`); or else `vg_triple_des_cbc_encrypt_chained`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -16,12 +18,41 @@
 /// * `iv` must be valid for reads and writes of 8 bytes.
 /// * `data` must be valid for reads and writes of `8 * n` bytes.
 /// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
-/// * None of `schedule`, `iv` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 984 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `schedule`, `iv` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 996 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_triple_des_cbc_encrypt_chained_auto(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 384], iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::triple_des_cbc::vg_triple_des_cbc_encrypt_chained(schedule, iv, data, n) }
+    /// The type of the implementations.
+    type Impl = unsafe extern "C" fn(schedule: *const [u8; 384], iv: *mut [u8; 8], data: *mut [u8; 8], n: usize);
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        if const { verified_garbage_cpu::target_contains(crate::triple_des_cbc::VG_TRIPLE_DES_CBC_ENCRYPT_CHAINED_SSSE3_FEATURES) }
+            || cpu.contains(crate::triple_des_cbc::VG_TRIPLE_DES_CBC_ENCRYPT_CHAINED_SSSE3_FEATURES)
+        {
+            return crate::triple_des_cbc::vg_triple_des_cbc_encrypt_chained_ssse3;
+        }
+        crate::triple_des_cbc::vg_triple_des_cbc_encrypt_chained
+    }
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "C" fn first(schedule: *const [u8; 384], iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(schedule, iv, data, n) }
+    }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(schedule, iv, data, n) }
 }
 
 /// Triple DES-CBC decryption (NIST SP 800-38A §6.2, FIPS 46-3) of whole blocks, in place: replaces the `n` 8-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = CIPH⁻¹_K(Cⱼ) ⊕ Cⱼ₋₁`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ`, the last block at `data` on entry (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH⁻¹_K` is Triple DES decryption under the schedule written by `vg_triple_des_expand_key`. No padding is removed.
@@ -30,6 +61,8 @@ pub unsafe fn vg_triple_des_cbc_encrypt_chained_auto(_dit: verified_garbage_cpu:
 ///
 /// It runs `vg_triple_des_cbc_decrypt_chained`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety
@@ -38,7 +71,7 @@ pub unsafe fn vg_triple_des_cbc_encrypt_chained_auto(_dit: verified_garbage_cpu:
 /// * `iv` must be valid for reads and writes of 8 bytes.
 /// * `data` must be valid for reads and writes of `8 * n` bytes.
 /// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
-/// * None of `schedule`, `iv` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 984 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `schedule`, `iv` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 1248 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_triple_des_cbc_decrypt_chained_auto(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 384], iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {

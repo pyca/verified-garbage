@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
-public import VerifiedGarbage.Proof.AesGcm.Arm.Callee
+public import VerifiedGarbage.Proof.AesGcm.Arm.Env
 import VerifiedGarbage.Proof.AesGcm.Arm.Run
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
@@ -75,7 +75,7 @@ theorem argTaint {I : State → Prop} {c : Prog isa} (rs : List Reg) (n : Nat)
 theorem skip {I : State → Prop} : CT I (.block []) :=
   taint [] (fun _ _ _ _ _ h => by simp at h) (h := .block []) rfl
 
-theorem gh {I : State → Prop}
+theorem gh [VG.Proof.Gcm.Arm.GhashLaw] {I : State → Prop}
     (h : ∀ s₁ s₂, I s₁ → I s₂ → ∃ H Y D S : BitVec 32, ∃ n : Nat,
       GhCall s₁ H Y D S n ∧ GhCall s₂ H Y D S n ∧ s₁.sp = s₂.sp) : CT I ghFrame :=
   gh_rel fun _ _ hh => h _ _ hh.1 hh.2

@@ -74,6 +74,9 @@ def p384 : Curve := { curve := "p384", p := Spec.P384.p, k := 6, desc := "P-384"
 def brainpoolp256r1 : Curve :=
   { curve := "brainpoolp256r1", p := Spec.BrainpoolP256r1.p, k := 4, desc := "brainpoolP256r1" }
 
+def brainpoolp320r1 : Curve :=
+  { curve := "brainpoolp320r1", p := Spec.BrainpoolP320r1.p, k := 5, desc := "brainpoolP320r1" }
+
 def brainpoolp384r1 : Curve :=
   { curve := "brainpoolp384r1", p := Spec.BrainpoolP384r1.p, k := 6, desc := "brainpoolP384r1" }
 

@@ -85,13 +85,13 @@ theorem low1_ok {s : State} {v : Nat} (hv : v < 2 ^ 64) (h12 : s.gpr .r12 = BitV
   · rw [u₂.wr, u₁.wr]
 
 /-- The doubling loop, from `L_a` with `r12 = i / 2^a` even. -/
-theorem lNtzLoop_ok {W : Addr} {s : State} (h31 : s.gpr .r31 = W) (hw : Covers [⟨W, 2560⟩] s.wr) {l : Block}
+theorem lNtzLoop_ok {W : Addr} {s : State} (h31 : s.gpr .r31 = W) (hw : Covers [⟨W, 512⟩] s.wr) {l : Block}
     {i a : Nat} (hi' : i < 2 ^ 64) (hpos : 0 < i / 2 ^ a) (he : i / 2 ^ a % 2 = 0)
     (hntz : ntz i = a + ntz (i / 2 ^ a)) (h12 : s.gpr .r12 = BitVec.ofNat 64 (i / 2 ^ a))
     (hl : blockAtMem s.mem (W + BitVec.ofNat 64 lO) = lAt l a) :
     WP isa (.loop (.block (dbl .r31 lO lO ++ ([.lsr .d .r12 .r12 1] : List Instr) ++ low1)) (.zero .d .r5)) s
       (LNtzPost W l i s) := by
-  have wW : ∀ {d n : Nat}, d + n ≤ 2560 → InRegions s.wr (W + BitVec.ofNat 64 d) n := fun h =>
+  have wW : ∀ {d n : Nat}, d + n ≤ 512 → InRegions s.wr (W + BitVec.ofNat 64 d) n := fun h =>
     Proof.AesGcm.PPC64LE.in_off hw h (by decide)
   refine WP.loop (M := isa)
     (fun (k : Nat) (t : State) => ∃ j, k = i / 2 ^ j ∧ 0 < i / 2 ^ j ∧ i / 2 ^ j % 2 = 0 ∧
@@ -135,11 +135,11 @@ theorem lNtzLoop_ok {W : Addr} {s : State} (h31 : s.gpr .r31 = W) (hw : Covers [
     refine ⟨(eval_zero x5₃ (by omega_using [])).trans (by simp [hodd]), ⟨fr', ?_, g', sp', lr', rd', wr'⟩⟩
     rw [v', hntz', Proof.Ocb.ntz_odd (by omega_using [hodd])]
 
-theorem lNtz_ok {W : Addr} {s : State} (h31 : s.gpr .r31 = W) (hw : Covers [⟨W, 2560⟩] s.wr) {l : Block} {i : Nat}
+theorem lNtz_ok {W : Addr} {s : State} (h31 : s.gpr .r31 = W) (hw : Covers [⟨W, 512⟩] s.wr) {l : Block} {i : Nat}
     (hi : 0 < i) (hi' : i < 2 ^ 64) (h26 : s.gpr .r26 = BitVec.ofNat 64 i)
     (hl0 : blockAtMem s.mem (W + BitVec.ofNat 64 l0O) = lAt l 0) :
     WP isa lNtz s (LNtzPost W l i s) := by
-  have wW : ∀ {d n : Nat}, d + n ≤ 2560 → InRegions s.wr (W + BitVec.ofNat 64 d) n := fun h =>
+  have wW : ∀ {d n : Nat}, d + n ≤ 512 → InRegions s.wr (W + BitVec.ofNat 64 d) n := fun h =>
     Proof.AesGcm.PPC64LE.in_off hw h (by decide)
   unfold lNtz
   refine WP.seq (WP.block_append (WP.block_append (WP.mono (copy16_ok (s := s) (a := l0O) (d := lO) (by decide)

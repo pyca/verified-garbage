@@ -4,6 +4,7 @@ public import VerifiedGarbage.Impl.Weierstrass.X86_64.CachedJac
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldTiming
 
 import VerifiedGarbage.Proof.Weierstrass.X86_64.CachedJacOps
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.JacMixedTiming
 import VerifiedGarbage.Proof.Weierstrass.X86_64.PointFieldTiming
 import VerifiedGarbage.Proof.Weierstrass.PointContract
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JacAdd
@@ -24,10 +25,14 @@ structure CachedJacChecks (K : WinCfg) (p q o : Pt) (dst : Nat) (dbl : RcbSlots 
   zeroR : ScratchCT (.block (Jacobian.zeroTest K.M.n K.S.t5))
   copyP : ScratchCT (.block (copyPt K.M.n o p))
   copyQ : ScratchCT (.block (copyPt K.M.n o q))
-  head : ScratchCT (ForwardField.programB K.M (Impl.Weierstrass.X86_64.CachedJac.head K.M.n K.S p q dst)).inline
-  tail : ScratchCT (ForwardField.programB K.M (jacTail K.S p q o)).inline
+  head : ScratchCT (ForwardField.programB K.M (Impl.Weierstrass.X86_64.CachedJac.headZ K.M.n K.S p q o dst)).inline
+  tail : ScratchCT (ForwardField.programB K.M (jacEndTail K.S p q o)).inline
   double : ScratchCT (ForwardField.programB K.M (dbl K.S p o)).inline
   infinity : ScratchCT (.block (Jacobian.infinity K o))
+
+theorem CachedJacChecks.fin {K : WinCfg} {p q o : Pt} {dst : Nat} {dbl : RcbSlots → Pt → Pt → List FOp}
+    (h : CachedJacChecks K p q o dst dbl) : AddEndChecks K p q o dbl :=
+  ⟨h.zeroH, h.zeroR, h.tail, h.double, h.infinity⟩
 
 theorem cachedJacAdd_relCT {K : WinCfg} {base : Addr} {size m : Nat} [NeZero m]
     {Sl : Nat → Prop} (hL : Lay K.M size Sl)
@@ -69,34 +74,20 @@ theorem cachedJacAdd_relCT {K : WinCfg} {base : Addr} {size m : Nat} [NeZero m]
       apply RelCT.seq (fieldProgram_relCT hc.head (fun s hi =>
         WP.mono (CachedJac.head_ok hL hm hA h2a h3a hSl hi hV h2 h3)
           (fun _ ht => ht.2.1)))
-      have oldV : ∀ x∈V,x∈validAfter (Impl.Weierstrass.X86_64.CachedJac.head K.M.n K.S p q dst) V :=
+      have oldV : ∀ x∈V,x∈validAfter (Impl.Weierstrass.X86_64.CachedJac.headZ K.M.n K.S p q o dst) V :=
         fun x hx => (mem_validAfter _ _).mpr (Or.inl (by simp [hx]))
-      have subV : ∀ x∈[o.x,o.y,o.z]++V,x∈[o.x,o.y,o.z]++validAfter (Impl.Weierstrass.X86_64.CachedJac.head K.M.n K.S p q dst) V := by
+      have subV : ∀ x∈[o.x,o.y,o.z]++V,x∈[o.x,o.y,o.z]++validAfter (Impl.Weierstrass.X86_64.CachedJac.headZ K.M.n K.S p q o dst) V := by
         intro x hx
         rcases List.mem_append.mp hx with hx|hx
         · exact List.mem_append_left _ hx
         · exact List.mem_append_right _ (oldV x hx)
-      apply fieldBranch_relCT hL hm (a:=K.S.t3) (by
-        rw [mem_validAfter]; right; simp [Impl.Weierstrass.X86_64.CachedJac.head,FOp.out]) hc.zeroH
-      · intro _
-        apply fieldBranch_relCT hL hm (a:=K.S.t5) (by
-          rw [mem_validAfter]; right; simp [Impl.Weierstrass.X86_64.CachedJac.head,FOp.out]) hc.zeroR
-        · intro _
-          have hdSl : ∀ x∈rcbW K.S o++rcbR K.S p p,Sl x := by
-            intro x hx
-            rcases List.mem_append.mp hx with hx|hx
-            · exact hs x (List.mem_append_left _ hx)
-            · exact hs x (List.mem_append_right _ (rcbR_self_mem _ _ _ hx))
-          have hdV : ∀ x∈rcbR K.S p p,x∈validAfter (Impl.Weierstrass.X86_64.CachedJac.head K.M.n K.S p q dst) V :=
-            fun x hx => oldV x (hv x (rcbR_self_mem _ _ _ hx))
-          exact (doubleField_relCT hL hm hdSl hdV hds hc.double).mono
-            (fun _ _ h => h) (fun _ _ h => ⟨_,h.sub subV⟩)
-        · intro _
-          exact (infinity_relCT hL os hOne hc.infinity).mono
-            (fun _ _ h => h) (fun _ _ h => ⟨_,h.sub subV⟩)
-      · intro _
-        exact (fieldProgram_relCT hc.tail (fun s hi =>
-          WP.mono (CachedJac.tail_ok hL hm hA h2a h3a hSl hi hV h2 h3) (fun _ ht => ht.2.1))).mono
-          (fun _ _ h => h) (fun _ _ h => ⟨_,h⟩)
+      have hW : ∀ x ∈ endIns K.S o, x ∈ validAfter (Impl.Weierstrass.X86_64.CachedJac.headZ K.M.n K.S p q o dst) V := by
+        intro x hx
+        rw [mem_validAfter]
+        simp only [endIns,List.mem_cons,List.not_mem_nil,or_false] at hx
+        rcases hx with rfl | rfl | rfl | rfl | rfl <;>
+          simp [Impl.Weierstrass.X86_64.CachedJac.headZ,Impl.Weierstrass.X86_64.CachedJac.head,FOp.out]
+      exact (addEnd_relCT hL hm hc.fin hs hW (fun x hx => oldV x (hv x (rcbR_self_mem _ _ _ hx))) hOne hds).mono
+        (fun _ _ h => h) (fun _ _ ⟨_,h⟩ => ⟨_,h.sub subV⟩)
 
 end VG.Proof.Weierstrass.X86_64

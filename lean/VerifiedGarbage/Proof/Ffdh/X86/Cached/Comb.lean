@@ -5,14 +5,13 @@ public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Ctx
 public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.StageR
 public import VerifiedGarbage.Spec.Rsa.FixedBaseComb
 import VerifiedGarbage.Proof.Rsa.FixedBaseCombMont
+import VerifiedGarbage.Proof.Rsa.FixedBaseCombTable
 import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Frame
 import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Stage
-import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Prepare
-import VerifiedGarbage.Proof.Bignum.X86.CrtRt.WindowPower
 import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Loops
 import VerifiedGarbage.Proof.Ffdh.X86.Stages
-import VerifiedGarbage.Proof.Ffdh.X86.Ops
+public import VerifiedGarbage.Proof.Ffdh.X86.Ops
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Mont.X86.PowerInit
 import VerifiedGarbage.Proof.Framework.Offset
@@ -45,7 +44,7 @@ variable {Ex : List Region → List Region → Prop} {s : State} {base : Addr} {
   {args : Nat → BitVec 32}
 
 theorem combR_fit (h : In Ex base bytes len args s) : ∀ p ∈ combR len, p.1 + p.2 ≤ bytes := by
-  have F := stR_fit h (o := 0) (by decide)
+  obtain F := stR_fit h (o := 0) (by decide)
   have bl := h.bytes_lt
   have nd := h.need
   have en : CrtRt.need len = numBase + 28 * st len .wide := rfl
@@ -63,13 +62,13 @@ theorem counter_store (h : In Ex base bytes len args s) {d : Nat} (hd : d = rows
       In Ex base bytes len args u ∧ Outside base d 4 s.mem u.mem ∧ w32 u.mem base d = (s.gpr r).toNat ∧
       Keeps [] s u ∧ u.zf = s.zf := by
   have nb : numBase = 3336 := rfl
-  have hd' : d + 4 ≤ numBase := by rcases hd with rfl | rfl <;> simp only [rowsOff, iOff] <;> omega_using [nb]
+  obtain hd' : d + 4 ≤ numBase := by rcases hd with rfl | rfl <;> simp only [rowsOff, iOff] <;> omega_using [nb]
   have bl := h.bytes_lt
   have nd := h.need
   have en : CrtRt.need len = numBase + 28 * st len .wide := rfl
   refine wp_storeS (h.scratch.ea (d := d) (by omega_arith)) (h.scratch.write (d := d) (n := 4) (by omega_arith))
     fun u M => WP.block_nil ?_
-  have O : Outside base d 4 s.mem u.mem := by rw [M.mem]; exact writeW32_outside _ _ _ (by omega_arith)
+  obtain O : Outside base d 4 s.mem u.mem := by rw [M.mem]; exact writeW32_outside _ _ _ (by omega_arith)
   refine ⟨h.keep (M.keeps []) (by decide) (by decide) (O.mono (Nat.zero_le _) (by omega_arith)), O, ?_, M.keeps [],
     M.zf⟩
   rw [M.mem, w32_write_self]
@@ -83,10 +82,10 @@ theorem dec_ok (h : In Ex base bytes len args s) {i : Nat} (hi : 1 ≤ i) (hi' :
   have nb : numBase = 3336 := rfl
   refine wp_movS (readW_ok h (d := iOff) (by simp only [iOff]; omega_using [nb]) hI hi') fun s₁ U₁ _ =>
     wp_subZ rfl fun s₂ U₂ z₂ => ?_
-  have K₂ : Keeps [.eax] s s₂ := (U₁.keeps.mono (by decide)).widen U₂.keeps
-  have m₂ : s₂.mem = s.mem := by rw [U₂.mem, U₁.mem]
-  have sub : BitVec.ofNat 32 i - 1 = BitVec.ofNat 32 (i - 1) := VG.Proof.Mont.X86.Dynamic.counter_sub hi' hi
-  have v₂ : s₂.gpr .eax = BitVec.ofNat 32 (i - 1) := by rw [U₂.gpr, U₁.gpr, sub]
+  obtain K₂ : Keeps [.eax] s s₂ := (U₁.keeps.mono (by decide)).widen U₂.keeps
+  obtain m₂ : s₂.mem = s.mem := by rw [U₂.mem, U₁.mem]
+  obtain sub : BitVec.ofNat 32 i - 1 = BitVec.ofNat 32 (i - 1) := VG.Proof.Mont.X86.Dynamic.counter_sub hi' hi
+  obtain v₂ : s₂.gpr .eax = BitVec.ofNat 32 (i - 1) := by rw [U₂.gpr, U₁.gpr, sub]
   refine WP.mono (counter_store (h.regs K₂ m₂) (d := iOff) (.inr rfl) .eax) fun u ⟨I, O, W, K, z⟩ =>
     ⟨I, by rw [← m₂]; exact O, ?_, K₂.trans (K.mono (by decide)), ?_⟩
   · rw [W, v₂, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hi'])]
@@ -110,35 +109,35 @@ variable {Ex : List Region → List Region → Prop} {s : State} {base : Addr} {
 
 /-- The wide slots 9 to 19 through the comb's writes. -/
 theorem combR_sv (h : In Ex base bytes len args s) {sp : BitVec 32} {m m' : Mem}
-    (F : Frame (frameR base sp (combR len)) m m') (R : CallRoom sp base bytes) {j : Nat} (hj9 : 9 ≤ j)
+    (F : Frame (frameF base sp (combR len)) m m') (R : RoomF sp base bytes) {j : Nat} (hj9 : 9 ≤ j)
     (hj : j ≤ 19) : sv m' base len .wide j = sv m base len .wide j := by
   have := hi_fit (len := len) hj9 hj
-  have bw := bc_eq_cwc len .wide
+  obtain bw := bc_eq_cwc len .wide
   have est : st len .wide = 2 * bc len .wide + 32 := rfl
   have e9 : lo len (.slot .wide 9) = numBase + 9 * st len .wide := rfl
-  have t0 : te len .wide 0 = lo len (.slot .wide 20) := by simp [te]
-  have z0 : lo len (.slot .wide 0) = numBase := sl_zero len .wide
-  have T := h.table_fit .wide
-  have t16 : te len .wide 16 = te len .wide 0 + 16 * bc len .wide := by simp only [te]; omega_using []
+  obtain t0 : te len .wide 0 = lo len (.slot .wide 20) := by simp [te]
+  obtain z0 : lo len (.slot .wide 0) = numBase := sl_zero len .wide
+  obtain T := h.table_fit .wide
+  obtain t16 : te len .wide 16 = te len .wide 0 + 16 * bc len .wide := by simp only [te]; omega_using []
   have nb : numBase = 3336 := rfl
-  refine frameR_val32 F R h.scratch.nowrap (by omega_using [this, bw, t0, T, t16]) ?_ (combR_fit h)
+  refine frameF_val32 F R h.scratch.nowrap (by omega_using [this, bw, t0, T, t16]) ?_ (combR_fit h)
   intro p hp
   simp only [combR, stR, List.mem_cons, List.not_mem_nil, or_false] at hp
   rcases hp with rfl | rfl | rfl | rfl | rfl | rfl <;> simp only [rowsOff, iOff] <;> omega_arith
 
 /-- The header's words past the counters through the comb's writes. -/
 theorem combR_w32 (h : In Ex base bytes len args s) {sp : BitVec 32} {m m' : Mem}
-    (F : Frame (frameR base sp (combR len)) m m') (R : CallRoom sp base bytes) {d : Nat} (hd8 : 8 ≤ d)
+    (F : Frame (frameF base sp (combR len)) m m') (R : RoomF sp base bytes) {d : Nat} (hd8 : 8 ≤ d)
     (hd : d + 4 ≤ numBase) (hd4 : d % 4 = 0) (hr : d ≠ rowsOff) (hi : d ≠ iOff) :
     w32 m' base d = w32 m base d := by
-  have z0 : lo len (.slot .wide 0) = numBase := sl_zero len .wide
-  have t0 : te len .wide 0 = lo len (.slot .wide 20) := by simp [te]
+  obtain z0 : lo len (.slot .wide 0) = numBase := sl_zero len .wide
+  obtain t0 : te len .wide 0 = lo len (.slot .wide 20) := by simp [te]
   have e20 : lo len (.slot .wide 20) = numBase + 20 * st len .wide := rfl
   have nb : numBase = 3336 := rfl
   have hn := h.need
   have en : CrtRt.need len = numBase + 28 * st len .wide := rfl
   rw [← w32_val32_one, ← w32_val32_one]
-  refine frameR_val32 F R h.scratch.nowrap (by omega_using [hd, hn, en]) ?_ (combR_fit h)
+  refine frameF_val32 F R h.scratch.nowrap (by omega_using [hd, hn, en]) ?_ (combR_fit h)
   intro p hp
   simp only [combR, stR, List.mem_cons, List.not_mem_nil, or_false] at hp
   simp only [rowsOff, iOff] at hr hi
@@ -151,9 +150,24 @@ theorem ctx_val (C : CtxRd base bytes len args s) {sp : BitVec 32}
     {d N : Nat} (hd : d + 4 * N ≤ ctxBytes len) :
     val32 m' (ctxAddr args) d N = val32 m (ctxAddr args) d N := by
   refine val32_far F (fun r hr => ?_) (by have := C.span.fit; omega_using [hd, this])
-  have sub : Region.Sub ⟨off (ctxAddr args) d, 4 * N⟩ ⟨ctxAddr args, ctxBytes len⟩ := Offset.sub_base _ hd
+  obtain sub : Region.Sub ⟨off (ctxAddr args) d, 4 * N⟩ ⟨ctxAddr args, ctxBytes len⟩ := Offset.sub_base _ hd
   simp only [frameR, List.mem_cons, List.mem_map] at hr
   rcases hr with rfl | ⟨p, hp, rfl⟩
+  · exact hstk.sub_left sub
+  · exact (C.apart.sub_left sub).sub_right (Offset.sub_base _ (hws p hp))
+
+/-- The context through a stage's changes. -/
+theorem ctxF_val (C : CtxRd base bytes len args s) {sp : BitVec 32}
+    (hstk : Region.Disjoint ⟨ctxAddr args, ctxBytes len⟩ (below sp 96))
+    (hwide : Region.Disjoint ⟨ctxAddr args, ctxBytes len⟩ (below sp 176)) {ws : List (Nat × Nat)} {m m' : Mem}
+    (F : Frame (frameF base sp ws) m m') (hws : ∀ p ∈ ws, p.1 + p.2 ≤ bytes)
+    {d N : Nat} (hd : d + 4 * N ≤ ctxBytes len) :
+    val32 m' (ctxAddr args) d N = val32 m (ctxAddr args) d N := by
+  refine val32_far F (fun r hr => ?_) (by have := C.span.fit; omega_using [hd, this])
+  obtain sub : Region.Sub ⟨off (ctxAddr args) d, 4 * N⟩ ⟨ctxAddr args, ctxBytes len⟩ := Offset.sub_base _ hd
+  simp only [frameF, frameR, List.mem_cons, List.mem_map] at hr
+  rcases hr with rfl | rfl | ⟨p, hp, rfl⟩
+  · exact hwide.sub_left sub
   · exact hstk.sub_left sub
   · exact (C.apart.sub_left sub).sub_right (Offset.sub_base _ (hws p hp))
 
@@ -166,6 +180,8 @@ structure CombEnv (Ex : List Region → List Region → Prop) (base : Addr) (byt
     (args : Nat → BitVec 32) (P G x bits : Nat) (s₀ : State) : Prop where
   rd : CtxRd base bytes len args s₀
   stk : Region.Disjoint ⟨ctxAddr args, ctxBytes len⟩ (below (s₀.gpr .esp) 96)
+  wide : Region.Disjoint ⟨ctxAddr args, ctxBytes len⟩ (below (s₀.gpr .esp) 176)
+  room : RoomF (s₀.gpr .esp) base bytes
   ents : ∀ e < 32, val32 s₀.mem (ctxAddr args) (24 + bc len .wide * (2 + e)) (cwc len .wide) =
     Spec.Rsa.powMod G (Spec.Rsa.FixedBaseComb.exponent bits e) P * 2 ^ (8 * bc len .wide) % P
   x13 : sv s₀.mem base len .wide 13 = x
@@ -180,7 +196,7 @@ structure CombSt (Ex : List Region → List Region → Prop) (base : Addr) (byte
   lt : V < P
   rows : w32 u.mem base rowsOff = Spec.Rsa.FixedBaseComb.rows bits
   ctr : w32 u.mem base iOff = i
-  frame : Frame (frameR base (s₀.gpr .esp) (combR len)) s₀.mem u.mem
+  frame : Frame (frameF base (s₀.gpr .esp) (combR len)) s₀.mem u.mem
   keeps : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s₀ u
 
 section
@@ -200,16 +216,16 @@ theorem CombSt.ents {V i : Nat} {u : State} (E : CombEnv Ex base bytes len args 
     (S : CombSt Ex base bytes len args P bits s₀ V i u) {e : Nat} (he : e < 32) :
     val32 u.mem (ctxAddr args) (24 + bc len .wide * (2 + e)) (cwc len .wide) =
       Spec.Rsa.powMod G (Spec.Rsa.FixedBaseComb.exponent bits e) P * 2 ^ (8 * bc len .wide) % P := by
-  have bw := bc_eq_cwc len .wide
-  have row := Nat.mul_le_mul_left (bc len .wide) (show 2 + e + 1 ≤ 34 by omega_using [he])
+  obtain bw := bc_eq_cwc len .wide
+  obtain row := Nat.mul_le_mul_left (bc len .wide) (show 2 + e + 1 ≤ 34 by omega_using [he])
   rw [Nat.mul_add, Nat.mul_one] at row
-  rw [ctx_val E.rd E.stk S.frame (combR_fit S.inp) (by simp only [ctxBytes]; omega_using [bw, row])]
+  rw [ctxF_val E.rd E.stk E.wide S.frame (combR_fit S.inp) (by simp only [ctxBytes]; omega_using [bw, row])]
   exact E.ents e he
 
 theorem CombSt.x13 {V i : Nat} {u : State} (h₀ : In Ex base bytes len args s₀)
     (E : CombEnv Ex base bytes len args P G x bits s₀) (S : CombSt Ex base bytes len args P bits s₀ V i u) :
     sv u.mem base len .wide 13 = x := by
-  rw [combR_sv h₀ S.frame h₀.room (by decide) (by decide)]; exact E.x13
+  rw [combR_sv h₀ S.frame E.room (by decide) (by decide)]; exact E.x13
 
 end
 
@@ -223,9 +239,9 @@ variable {Ex : List Region → List Region → Prop} {base : Addr} {bytes len : 
 theorem mul_w32 {s : State} (h : In Ex base bytes len args s) {sp : BitVec 32} {m m' : Mem} {o : Nat}
     (F : Frame (frameR base sp (mulR len .wide o)) m m') (R : CallRoom sp base bytes) (ho : o ≤ 8) {d : Nat}
     (hd : d + 4 ≤ numBase) : w32 m' base d = w32 m base d := by
-  have f8 := h.slot_fit .wide (j := 8) (by decide)
+  obtain f8 := h.slot_fit .wide (j := 8) (by decide)
   have est : st len .wide = 2 * bc len .wide + 32 := rfl
-  have e1 : lo len (.slot .wide 1) = numBase + st len .wide := by simp [lo]
+  obtain e1 : lo len (.slot .wide 1) = numBase + st len .wide := by simp [lo]
   have eo : lo len (.slot .wide o) = numBase + o * st len .wide := rfl
   have e8 : lo len (.slot .wide 8) = numBase + 8 * st len .wide := rfl
   have := Nat.mul_le_mul_right (st len .wide) ho
@@ -242,7 +258,7 @@ theorem mul_w32 {s : State} (h : In Ex base bytes len args s) {sp : BitVec 32} {
 theorem mulR_combR {o : Nat} (ho : o ≤ 8) {sp : BitVec 32} {m m' : Mem}
     (F : Frame (frameR base sp (mulR len .wide o)) m m') : Frame (frameR base sp (combR len)) m m' := by
   have est : st len .wide = 2 * bc len .wide + 32 := rfl
-  have e1 : lo len (.slot .wide 1) = numBase + st len .wide := by simp [lo]
+  obtain e1 : lo len (.slot .wide 1) = numBase + st len .wide := by simp [lo]
   have eo : lo len (.slot .wide o) = numBase + o * st len .wide := rfl
   have := Nat.mul_le_mul_right (st len .wide) (show o + 1 ≤ 9 by omega_using [ho])
   rw [Nat.succ_mul] at this
@@ -262,7 +278,7 @@ theorem mulStep_ok {V i b : Nat} {u : State} (S : CombSt Ex base bytes len args 
   rw [S.esp] at F
   have F' := F
   rw [← S.esp] at F'
-  refine ⟨C, ?_, rfl, L, ?_, ?_, S.frame.trans (mulR_combR (by decide) F), S.keeps.trans (K.mono (by decide))⟩
+  refine ⟨C, ?_, rfl, L, ?_, ?_, S.frame.trans (frameF_of (mulR_combR (by decide) F)), S.keeps.trans (K.mono (by decide))⟩
   · rw [mulR_sv h F' h.room (o := 6) (j := 3) (by decide) (by decide) (by decide) (by decide) (by decide)]; exact S.one
   · rw [mul_w32 h F' h.room (by decide) (by simp only [rowsOff]; omega_using [nb])]; exact S.rows
   · rw [mul_w32 h F' h.room (by decide) (by simp only [iOff]; omega_using [nb])]; exact S.ctr
@@ -278,42 +294,42 @@ theorem digitSelect_ok {V i : Nat} {u : State} (E : CombEnv Ex base bytes len ar
   have nb : numBase = 3336 := rfl
   have wo : winOff = 4 := rfl
   have bl := h.bytes_lt
-  have f8 := h.slot_fit .wide (j := 8) (by decide)
-  have bw := bc_eq_cwc len .wide
+  obtain f8 := h.slot_fit .wide (j := 8) (by decide)
+  obtain bw := bc_eq_cwc len .wide
   have est : st len .wide = 2 * bc len .wide + 32 := rfl
   have e3 : lo len (.slot .wide 3) = numBase + 3 * st len .wide := rfl
   have e6 : lo len (.slot .wide 6) = numBase + 6 * st len .wide := rfl
   have e7 : lo len (.slot .wide 7) = numBase + 7 * st len .wide := rfl
   have e8 : lo len (.slot .wide 8) = numBase + 8 * st len .wide := rfl
-  have z0 : lo len (.slot .wide 0) = numBase := sl_zero len .wide
+  obtain z0 : lo len (.slot .wide 0) = numBase := sl_zero len .wide
   have sm := E.small
   refine WP.seq (WP.mono (digit_ok h hi S.ctr S.rows (by omega_using [hiR, sm])) fun t₁ ⟨I₁, O₁, W₁, K₁⟩ => ?_)
   rw [S.x13 h₀ E, teeth_digit] at W₁
-  have D32 := VG.Proof.Rsa.FixedBaseComb.digit_lt bits x (i - 1)
-  have Ct₁ : CtxRd base bytes len args t₁ := (S.rd E).keep K₁
+  obtain D32 := VG.Proof.Rsa.FixedBaseComb.digit_lt bits x (i - 1)
+  obtain Ct₁ : CtxRd base bytes len args t₁ := (S.rd E).keep K₁
   refine WP.mono (select_ok I₁ Ct₁ W₁ D32) fun t ⟨I, O, V7, K⟩ => ?_
-  have rd7 := Nat.mul_le_mul_left (bc len .wide)
+  obtain rd7 := Nat.mul_le_mul_left (bc len .wide)
     (show 2 + VG.Proof.Rsa.FixedBaseComb.digit bits x (i - 1) + 1 ≤ 34 by omega_using [D32])
   rw [Nat.mul_add, Nat.mul_one] at rd7
   -- The context did not change across the digit.
-  have ct : val32 t₁.mem (ctxAddr args) (24 + bc len .wide * (2 + VG.Proof.Rsa.FixedBaseComb.digit bits x (i - 1)))
+  obtain ct : val32 t₁.mem (ctxAddr args) (24 + bc len .wide * (2 + VG.Proof.Rsa.FixedBaseComb.digit bits x (i - 1)))
       (cwc len .wide) = val32 u.mem (ctxAddr args) (24 + bc len .wide * (2 + VG.Proof.Rsa.FixedBaseComb.digit bits x (i - 1)))
       (cwc len .wide) :=
     ctx_val (sp := u.gpr .esp) (S.rd E) (by rw [S.esp]; exact E.stk)
       (frameR_of_outside O₁ (by omega_using [wo]) (show (winOff, 4) ∈ [(winOff, 4)] from List.mem_singleton_self _))
       (by intro p hp; obtain rfl := List.mem_singleton.mp hp; simp only [winOff]; omega_using [f8, est])
       (by simp only [ctxBytes]; omega_using [bw, rd7])
-  have Fw : Frame (frameR base (u.gpr .esp) [(winOff, 4)]) u.mem t₁.mem :=
+  obtain Fw : Frame (frameR base (u.gpr .esp) [(winOff, 4)]) u.mem t₁.mem :=
     frameR_of_outside O₁ (by omega_using [wo]) (List.mem_singleton_self _)
-  have F7 : Frame (frameR base (u.gpr .esp) [(lo len (.slot .wide 7), bc len .wide)]) t₁.mem t.mem := by
+  obtain F7 : Frame (frameR base (u.gpr .esp) [(lo len (.slot .wide 7), bc len .wide)]) t₁.mem t.mem := by
     have := frameR_of_outside (sp := u.gpr .esp) O (by omega_using [nb, bl, f8, est, e7]) (List.mem_singleton_self _); exact this
-  have C₁ := S.ctx.keepF2 K₁ (by decide) (by decide) Fw
+  obtain C₁ := S.ctx.keepF2 K₁ (by decide) (by decide) Fw
     (by intro p hp; obtain rfl := List.mem_singleton.mp hp; simp only [winOff]; omega_using [f8, est])
     (by intro p hp; obtain rfl := List.mem_singleton.mp hp; exact .inr ⟨by simp only [winOff]; omega_using [],
       by simp only [winOff]; omega_using [nb]⟩)
-  have sp₁ : t₁.gpr .esp = u.gpr .esp := K₁.1 _ (by decide)
+  obtain sp₁ : t₁.gpr .esp = u.gpr .esp := K₁.1 _ (by decide)
   rw [← sp₁] at F7
-  have C := C₁.keepF2 K (by decide) (by decide) F7
+  obtain C := C₁.keepF2 K (by decide) (by decide) F7
     (by intro p hp; obtain rfl := List.mem_singleton.mp hp; dsimp only; omega_using [f8, est, e7, e8])
     (by intro p hp; obtain rfl := List.mem_singleton.mp hp; exact .inl (by dsimp only; omega_using [est, e7]))
   rw [sp₁] at F7
@@ -332,8 +348,8 @@ theorem digitSelect_ok {V i : Nat} {u : State} (E : CombEnv Ex base bytes len ar
   · have Fw' := Fw
     have F7' := F7
     rw [S.esp] at Fw' F7'
-    refine S.frame.trans ((frameR_widen (ws' := combR len) Fw' fun p hp => ?_).trans
-      (frameR_widen (ws' := combR len) F7' fun p hp => ?_))
+    refine S.frame.trans (frameF_of ((frameR_widen (ws' := combR len) Fw' fun p hp => ?_).trans
+      (frameR_widen (ws' := combR len) F7' fun p hp => ?_)))
     · exact ⟨(0, 8), by simp [combR, stR], by obtain rfl := List.mem_singleton.mp hp; simp only [winOff]; omega_using []⟩
     · exact ⟨(numBase, 9 * st len .wide), by simp [combR, stR], by
         obtain rfl := List.mem_singleton.mp hp; dsimp only; omega_using [est, e7]⟩
@@ -350,15 +366,15 @@ theorem decStep_ok {V i : Nat} {u : State} (S : CombSt Ex base bytes len args P 
   have est : st len .wide = 2 * bc len .wide + 32 := rfl
   have e3 : lo len (.slot .wide 3) = numBase + 3 * st len .wide := rfl
   have e6 : lo len (.slot .wide 6) = numBase + 6 * st len .wide := rfl
-  have bw := bc_eq_cwc len .wide
-  have z0 : lo len (.slot .wide 0) = numBase := sl_zero len .wide
-  have f8 := h.slot_fit .wide (j := 8) (by decide)
+  obtain bw := bc_eq_cwc len .wide
+  obtain z0 : lo len (.slot .wide 0) = numBase := sl_zero len .wide
+  obtain f8 := h.slot_fit .wide (j := 8) (by decide)
   have e8 : lo len (.slot .wide 8) = numBase + 8 * st len .wide := rfl
   have bl := h.bytes_lt
   refine WP.mono (dec_ok h hi hi' S.ctr) fun t ⟨I, O, W, K, z⟩ => ⟨?_, z⟩
-  have F : Frame (frameR base (u.gpr .esp) [(iOff, 4)]) u.mem t.mem :=
+  obtain F : Frame (frameR base (u.gpr .esp) [(iOff, 4)]) u.mem t.mem :=
     frameR_of_outside O (by simp only [iOff]; omega_using []) (List.mem_singleton_self _)
-  have C := S.ctx.keepF2 K (by decide) (by decide) F
+  obtain C := S.ctx.keepF2 K (by decide) (by decide) F
     (by intro p hp; obtain rfl := List.mem_singleton.mp hp; simp only [iOff]; have := h.bytes_lt
         have := h.need; have en : CrtRt.need len = numBase + 28 * st len .wide := rfl; omega_using [est, f8, e8])
     (by intro p hp; obtain rfl := List.mem_singleton.mp hp; exact .inr ⟨by simp only [iOff]; omega_using [],
@@ -368,7 +384,7 @@ theorem decStep_ok {V i : Nat} {u : State} (S : CombSt Ex base bytes len args P 
   · simp only [sv]; rw [O.val32 (.inr (by simp only [iOff]; omega_using [nb, e6])) (by omega_using [nb, est, e6, bw, f8, bl])]; exact S.acc
   · rw [O.w32 (by simp only [rowsOff, iOff]; omega_using []) (by simp only [rowsOff]; omega_using [])]; exact S.rows
   · rw [S.esp] at F
-    exact S.frame.trans (frameR_mono F (by simp [combR]))
+    exact S.frame.trans (frameF_of (frameR_mono F (by simp [combR])))
 
 end
 
@@ -395,16 +411,16 @@ theorem step_ok (E : CombEnv Ex base bytes len args P G x bits s₀) (h₀ : In 
   unfold Generate.step
   refine WP.seq (WP.mono (mulStep_ok S (b := 6) (.inl rfl) (by rw [S.acc]; exact S.lt)) fun t₁ ⟨V₁, e₁, S₁⟩ => ?_)
   rw [S.acc] at e₁
-  have v₁ : V₁ = enc len P G (2 * VG.Proof.Rsa.FixedBaseComb.high bits x i) :=
+  obtain v₁ : V₁ = enc len P G (2 * VG.Proof.Rsa.FixedBaseComb.high bits x i) :=
     VG.Proof.Rsa.FixedBaseComb.mont_square_encoded cp S₁.lt rfl e₁
   refine WP.seq (WP.mono (digitSelect_ok E h₀ S₁ hi hiR) fun t₃ ⟨S₃, T₃⟩ => ?_)
   refine WP.seq (WP.mono (mulStep_ok S₃ (b := 7) (.inr rfl) (by rw [T₃]; exact enc_lt (by omega_using [P1])))
     fun t₄ ⟨V₄, e₄, S₄⟩ => ?_)
   rw [T₃] at e₄
-  have v₄ : V₄ = enc len P G (2 * VG.Proof.Rsa.FixedBaseComb.high bits x i +
+  obtain v₄ : V₄ = enc len P G (2 * VG.Proof.Rsa.FixedBaseComb.high bits x i +
       Spec.Rsa.FixedBaseComb.exponent bits (VG.Proof.Rsa.FixedBaseComb.digit bits x (i - 1))) :=
     VG.Proof.Rsa.FixedBaseComb.mont_product_encoded cp S₄.lt v₁ rfl e₄
-  have hs := VG.Proof.Rsa.FixedBaseComb.high_step bits x (i - 1) (by omega_using [hi, hiR])
+  obtain hs := VG.Proof.Rsa.FixedBaseComb.high_step bits x (i - 1) (by omega_using [hi, hiR])
   rw [show i - 1 + 1 = i by omega_using [hi]] at hs
   rw [← hs] at v₄
   subst v₄
@@ -419,7 +435,7 @@ theorem loop_ok (E : CombEnv Ex base bytes len args P G x bits s₀) (h₀ : In 
       (Spec.Rsa.FixedBaseComb.rows bits) u) :
     WP isa (.loop Generate.step .ne) u
       (CombSt Ex base bytes len args P bits s₀ (enc len P G (VG.Proof.Rsa.FixedBaseComb.high bits x 0)) 0) := by
-  have r := Spec.Rsa.FixedBaseComb.rows bits
+  obtain r := Spec.Rsa.FixedBaseComb.rows bits
   refine WP.mono (VG.Proof.Bignum.X86.PublicRt.countLoop hR (fun j t =>
       CombSt Ex base bytes len args P bits s₀
         (enc len P G (VG.Proof.Rsa.FixedBaseComb.high bits x (Spec.Rsa.FixedBaseComb.rows bits - j)))
@@ -432,8 +448,22 @@ theorem loop_ok (E : CombEnv Ex base bytes len args P G x bits s₀) (h₀ : In 
   · rw [zv]; congr 1; exact decide_eq_decide.mpr (by omega_using [hj])
 
 
-/-- Slot 6 `g^x mod P` by the context's comb: the context of p, Montgomery one, the rows and the
-product with one. -/
+/-- `prepBasePre`'s ranges within a stage's. -/
+theorem baseR_inSt {s : State} (h : In Ex base bytes len args s) : InSt len 0 (baseR len .wide) := fun p hp => by
+  obtain ⟨p', hp', w⟩ : ∃ p' ∈ prepR len .wide, Within p p' := by
+    simp only [baseR, List.mem_cons, List.not_mem_nil, or_false] at hp
+    rcases hp with rfl | rfl | rfl | rfl | rfl | rfl
+    · exact ⟨(invOff, 4), by simp, Nat.le_refl _, Nat.le_refl _⟩
+    · exact ⟨(lo len (.slot .wide 0), bc len .wide), by simp, Nat.le_refl _, Nat.le_refl _⟩
+    · exact ⟨(lo len (.slot .wide 1), 3 * bc len .wide + 56), by simp, Nat.le_refl _, by dsimp only; omega⟩
+    · exact ⟨(lo len (.slot .wide 3), bc len .wide), by simp, Nat.le_refl _, Nat.le_refl _⟩
+    · exact ⟨(lo len (.slot .wide 4), bc len .wide), by simp, Nat.le_refl _, Nat.le_refl _⟩
+    · exact ⟨(lo len (.slot .wide 7), bc len .wide), by simp, Nat.le_refl _, Nat.le_refl _⟩
+  obtain ⟨q, hq, w'⟩ := prepR_in h .wide 0 p' hp'
+  exact ⟨q, hq, Nat.le_trans w'.1 w.1, Nat.le_trans w.2 w'.2⟩
+
+/-- The comb's start: p's context but for `R²` (p, one and the inverse), Montgomery one from the context's
+entry 0 in slot 6, and the row counters. -/
 theorem combHead_ok {s : State} (h : In Ex base bytes len args s) (E : CombEnv Ex base bytes len args P G x bits s)
     (hP : safeM (sv s.mem base len .wide 9) = P) (hR : 0 < Spec.Rsa.FixedBaseComb.rows bits)
     (hrows : w32 s.mem (ctxAddr args) 16 = Spec.Rsa.FixedBaseComb.rows bits) :
@@ -443,80 +473,95 @@ theorem combHead_ok {s : State} (h : In Ex base bytes len args s) (E : CombEnv E
   have bl := h.bytes_lt
   have nb : numBase = 3336 := rfl
   have est : st len .wide = 2 * bc len .wide + 32 := rfl
-  have bw := bc_eq_cwc len .wide
+  obtain bw := bc_eq_cwc len .wide
   have e3 : lo len (.slot .wide 3) = numBase + 3 * st len .wide := rfl
   have e6 : lo len (.slot .wide 6) = numBase + 6 * st len .wide := rfl
-  have z0 : lo len (.slot .wide 0) = numBase := sl_zero len .wide
-  have f8 := h.slot_fit .wide (j := 8) (by decide)
+  obtain z0 : lo len (.slot .wide 0) = numBase := sl_zero len .wide
+  obtain f8 := h.slot_fit .wide (j := 8) (by decide)
   have hn := h.need
   have en : CrtRt.need len = numBase + 28 * st len .wide := rfl
   have sm := E.small
-  have RR : 2 ^ (16 * bc len .wide) = 2 ^ (8 * bc len .wide) * 2 ^ (8 * bc len .wide) := by
-    rw [← Nat.pow_add]; congr 1; omega
+  have e8 : lo len (.slot .wide 8) = numBase + 8 * st len .wide := rfl
   unfold Generate.combHead
-  refine WP.seq (WP.mono (ctxP_ok h hP) fun s₁ ⟨C₁, one₁, R₁, F₁, _, K₁⟩ => ?_)
+  -- p's context but for `R²`: p, one and the inverse.
+  refine WP.seq (WP.mono (copyIn_ok h (j := 9) (d := 0) (by decide) (by decide) (by decide))
+    fun s₀ ⟨O₀, V₀, K₀⟩ => ?_)
+  obtain h₀ := h.keep K₀ (by decide) (by decide) (O₀.mono (Nat.zero_le _) (by omega))
+  obtain sp₀ : s₀.gpr .esp = s.gpr .esp := K₀.1 _ (by decide)
+  refine WP.seq (WP.mono (prepBasePre_ok h₀ .wide) fun s₁ ⟨h₁, F₁, M₁, one₁, I₁, K₁⟩ => ?_)
+  rw [V₀, hP] at M₁ I₁
+  rw [sp₀] at F₁
+  obtain C₁ : CtxOk Ex base bytes len args .wide P s₁ := ⟨h₁, M₁, hP ▸ safeM_gt _, hP ▸ safeM_odd _, I₁⟩
   have P1 := C₁.gt
-  have cp := C₁.coprime
-  refine WP.seq (WP.mono (cmul_ok C₁ (o := 6) (a := 4) (b := 3) (by decide) (by decide) (by decide)
-    (by decide) (by decide) (by decide) (by rw [one₁]; exact P1)) fun s₂ ⟨C₂, K₂, F₂, L₂, V₂⟩ => ?_)
-  have Y₂ : sv s₂.mem base len .wide 6 = 2 ^ (8 * bc len .wide) % P := by
-    have v := VG.Proof.Bignum.mont_cancel cp (o := sv s₂.mem base len .wide 6) (c := 2 ^ (8 * bc len .wide))
-      (by rw [V₂, R₁, one₁, Nat.mul_one, Nat.mod_mod, RR])
-    rwa [Nat.mod_eq_of_lt L₂] at v
-  have sp₁ : s₁.gpr .esp = s.gpr .esp := K₁.1 _ (by decide)
-  have F₂' := F₂
-  rw [sp₁] at F₂'
-  have F₁₂ : Frame (frameR base (s.gpr .esp) (combR len)) s.mem s₂.mem :=
-    (frameR_mono F₁ (by simp [combR])).trans (mulR_combR (by decide) F₂')
-  have one₂ : sv s₂.mem base len .wide 3 = 1 := by
-    rw [mulR_sv C₁.inp F₂ C₁.inp.room (o := 6) (j := 3) (by decide) (by decide) (by decide) (by decide)
-      (by decide)]; exact one₁
-  have K₁₂ : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s s₂ := K₁.trans (K₂.mono (by decide))
+  obtain K₀₁ : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s s₁ := (K₀.mono (by decide)).trans K₁
+  obtain F₀₁ : Frame (frameF base (s.gpr .esp) (combR len)) s.mem s₁.mem :=
+    (frameF_of (frameR_mono (stR_of_outside h (by decide) O₀ ⟨_, by simp, slot_in h .wide (j := 0) (by decide)⟩)
+      fun p hp => List.mem_cons_of_mem _ (List.mem_cons_of_mem _ hp))).trans
+      (frameF_of (frameR_mono (stR_widen F₁ (baseR_inSt h₀)) fun p hp =>
+        List.mem_cons_of_mem _ (List.mem_cons_of_mem _ hp)))
+  -- Montgomery one: the context's entry 0.
+  refine WP.seq (WP.mono (loadRow_ok h₁ (E.rd.keep K₀₁) (j := 2) (a := 6) (by decide) (by decide) (rowImm_idx _))
+    fun s₂ ⟨_, O₂, V₂, K₂⟩ => ?_)
+  obtain C₂ : CtxOk Ex base bytes len args .wide P s₂ := by
+    refine C₁.keepF (regs := [.eax, .ebx, .ecx, .edx, .ebp]) K₂ (by decide) (by decide)
+      (ws := [(lo len (.slot .wide 6), bc len .wide)]) (frameR_of_outside O₂ (by omega) (by simp)) ?_ ?_
+    · intro p hp; simp only [List.mem_singleton] at hp; subst hp; dsimp only; omega
+    · intro p hp; simp only [List.mem_singleton] at hp; subst hp; dsimp only; omega
+  obtain Y₂ : sv s₂.mem base len .wide 6 = Spec.Rsa.powMod G 0 P * 2 ^ (8 * bc len .wide) % P := by
+    obtain e0 := E.ents 0 (by decide)
+    rw [VG.Proof.Rsa.FixedBaseComb.exponent_zero] at e0
+    rw [V₂, ctxF_val E.rd E.stk E.wide F₀₁ (combR_fit h) (by simp only [ctxBytes]; omega)]
+    exact e0
+  obtain F₁₂ : Frame (frameF base (s.gpr .esp) (combR len)) s.mem s₂.mem :=
+    F₀₁.trans (frameF_of (frameR_mono (stR_of_outside h (by decide) O₂ ⟨_, by simp, slot_in h .wide (j := 6)
+      (by decide)⟩) fun p hp => List.mem_cons_of_mem _ (List.mem_cons_of_mem _ hp)))
+  obtain one₂ : sv s₂.mem base len .wide 3 = 1 := by rw [slotKeep h₁ (by decide) (by decide) O₂]; exact one₁
+  obtain K₁₂ : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s s₂ := K₀₁.trans (K₂.mono (by decide))
   have h₂ := C₂.inp
   -- The context's row count to the counters.
-  have rows₂ : w32 s₂.mem (ctxAddr args) 16 = Spec.Rsa.FixedBaseComb.rows bits := by
-    rw [← w32_val32_one, ctx_val E.rd E.stk F₁₂ (combR_fit h) (by simp only [ctxBytes]; omega), w32_val32_one]
+  obtain rows₂ : w32 s₂.mem (ctxAddr args) 16 = Spec.Rsa.FixedBaseComb.rows bits := by
+    rw [← w32_val32_one, ctxF_val E.rd E.stk E.wide F₁₂ (combR_fit h) (by simp only [ctxBytes]; omega), w32_val32_one]
     exact hrows
   have fit := E.rd.span.fit
-  have afit : (args ctxArg).toNat + ctxBytes len ≤ 2 ^ 32 := by
+  obtain afit : (args ctxArg).toNat + ctxBytes len ≤ 2 ^ 32 := by
     simp only [ctxAddr, byteAddr, BitVec.toNat_setWidth] at fit
     rw [Nat.mod_eq_of_lt (by have := (args ctxArg).isLt; omega)] at fit; omega
-  have a16 : addr (args ctxArg) 16 = off (ctxAddr args) 16 := addr_eq (by simp only [ctxBytes] at afit; omega)
+  obtain a16 : addr (args ctxArg) 16 = off (ctxAddr args) 16 := addr_eq (by simp only [ctxBytes] at afit; omega)
   refine wp_movS (h₂.arg (i := ctxArg) (by decide)) fun s₃ U₃ _ => ?_
-  have rd₃ : InRegions (s₃.rd ++ s₃.wr) (addr (args ctxArg) 16) 4 := by
+  obtain rd₃ : InRegions (s₃.rd ++ s₃.wr) (addr (args ctxArg) 16) 4 := by
     rw [a16]
     exact ((E.rd.keep (K₁₂.trans (U₃.keeps.mono (by decide)))).row (d := 16) (n := 4)
       (by simp only [ctxBytes]; omega)).read
   refine wp_movS (readSrc_mem U₃.gpr rd₃) fun s₄ U₄ _ => ?_
-  have v₄ : s₄.gpr .eax = BitVec.ofNat 32 (Spec.Rsa.FixedBaseComb.rows bits) := by
+  obtain v₄ : s₄.gpr .eax = BitVec.ofNat 32 (Spec.Rsa.FixedBaseComb.rows bits) := by
     rw [U₄.gpr, U₃.mem]
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega), ← rows₂, a16]
-  have K₂₄ : Keeps [.eax, .ecx] s₂ s₄ := (U₃.keeps.mono (by decide)).widen U₄.keeps
-  have m₂₄ : s₄.mem = s₂.mem := by rw [U₄.mem, U₃.mem]
-  have h₄ := h₂.regs K₂₄ m₂₄
+  obtain K₂₄ : Keeps [.eax, .ecx] s₂ s₄ := (U₃.keeps.mono (by decide)).widen U₄.keeps
+  obtain m₂₄ : s₄.mem = s₂.mem := by rw [U₄.mem, U₃.mem]
+  obtain h₄ := h₂.regs K₂₄ m₂₄
   show WP isa (.block ([.store (sc rowsOff) .eax] ++ [.store (sc iOff) .eax])) s₄ _
   refine WP.block_append (WP.mono (counter_store h₄ (d := rowsOff) (.inl rfl) .eax)
     fun s₅ ⟨I₅, O₅, W₅, K₅, _⟩ => ?_)
   refine WP.mono (counter_store I₅ (d := iOff) (.inr rfl) .eax) fun s₆ ⟨I₆, O₆, W₆, K₆, _⟩ => ?_
-  have K₄₆ : Keeps [] s₄ s₆ := K₅.trans K₆
-  have sp₄ : s₄.gpr .esp = s.gpr .esp := by rw [K₂₄.1 _ (by decide), K₁₂.1 _ (by decide)]
-  have sp₅ : s₅.gpr .esp = s.gpr .esp := by rw [K₅.1 _ (by decide), sp₄]
-  have Fr₅ : Frame (frameR base (s₄.gpr .esp) [(rowsOff, 4)]) s₄.mem s₅.mem :=
+  obtain K₄₆ : Keeps [] s₄ s₆ := K₅.trans K₆
+  obtain sp₄ : s₄.gpr .esp = s.gpr .esp := by rw [K₂₄.1 _ (by decide), K₁₂.1 _ (by decide)]
+  obtain sp₅ : s₅.gpr .esp = s.gpr .esp := by rw [K₅.1 _ (by decide), sp₄]
+  obtain Fr₅ : Frame (frameR base (s₄.gpr .esp) [(rowsOff, 4)]) s₄.mem s₅.mem :=
     frameR_of_outside O₅ (by simp only [rowsOff]; omega) (List.mem_singleton_self _)
-  have Fi₆ : Frame (frameR base (s₅.gpr .esp) [(iOff, 4)]) s₅.mem s₆.mem :=
+  obtain Fi₆ : Frame (frameR base (s₅.gpr .esp) [(iOff, 4)]) s₅.mem s₆.mem :=
     frameR_of_outside O₆ (by simp only [iOff]; omega) (List.mem_singleton_self _)
-  have C₅ := (C₂.regs K₂₄ m₂₄).keepF2 K₅ (by decide) (by decide) Fr₅
+  obtain C₅ := (C₂.regs K₂₄ m₂₄).keepF2 K₅ (by decide) (by decide) Fr₅
     (by intro p hp; obtain rfl := List.mem_singleton.mp hp; simp only [rowsOff]; omega)
     (by intro p hp; obtain rfl := List.mem_singleton.mp hp; exact .inr ⟨by simp only [rowsOff]; omega,
       by simp only [rowsOff]; omega⟩)
-  have C₆ := C₅.keepF2 K₆ (by decide) (by decide) Fi₆
+  obtain C₆ := C₅.keepF2 K₆ (by decide) (by decide) Fi₆
     (by intro p hp; obtain rfl := List.mem_singleton.mp hp; simp only [iOff]; omega)
     (by intro p hp; obtain rfl := List.mem_singleton.mp hp; exact .inr ⟨by simp only [iOff]; omega,
       by simp only [iOff]; omega⟩)
   rw [sp₄] at Fr₅
   rw [sp₅] at Fi₆
-  have keep6 : ∀ j, 3 ≤ j → j ≤ 8 → sv s₆.mem base len .wide j = sv s₂.mem base len .wide j := fun j hj3 hj => by
+  obtain keep6 : ∀ j, 3 ≤ j → j ≤ 8 → sv s₆.mem base len .wide j = sv s₂.mem base len .wide j := fun j hj3 hj => by
     have := Nat.mul_le_mul_right (st len .wide) hj3
     have := Nat.mul_le_mul_right (st len .wide) hj
     have e : lo len (.slot .wide j) = numBase + j * st len .wide := rfl
@@ -524,10 +569,9 @@ theorem combHead_ok {s : State} (h : In Ex base bytes len args s) (E : CombEnv E
     simp only [sv]
     rw [O₆.val32 (.inr (by simp only [iOff]; omega)) (by omega), O₅.val32 (.inr (by simp only [rowsOff]; omega))
       (by omega), m₂₄]
-  have acc₆ : sv s₆.mem base len .wide 6 =
+  obtain acc₆ : sv s₆.mem base len .wide 6 =
       enc len P G (VG.Proof.Rsa.FixedBaseComb.high bits x (Spec.Rsa.FixedBaseComb.rows bits)) := by
-    rw [keep6 6 (by decide) (by decide), Y₂, VG.Proof.Rsa.FixedBaseComb.high_top, enc, VG.Proof.Bignum.powMod_eq,
-      Nat.pow_zero, Nat.mod_eq_of_lt P1, Nat.one_mul]
+    rw [keep6 6 (by decide) (by decide), Y₂, VG.Proof.Rsa.FixedBaseComb.high_top]
   show CombSt Ex base bytes len args P bits s
       (enc len P G (VG.Proof.Rsa.FixedBaseComb.high bits x (Spec.Rsa.FixedBaseComb.rows bits)))
       (Spec.Rsa.FixedBaseComb.rows bits) s₆
@@ -537,7 +581,8 @@ theorem combHead_ok {s : State} (h : In Ex base bytes len args s) (E : CombEnv E
       Nat.mod_eq_of_lt (by omega)]
   · rw [W₆, K₅.1 _ (by decide), v₄, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
   · rw [m₂₄] at Fr₅
-    exact (F₁₂.trans (frameR_mono Fr₅ (by simp [combR]))).trans (frameR_mono Fi₆ (by simp [combR]))
+    exact (F₁₂.trans (frameF_of (frameR_mono Fr₅ (by simp [combR])))).trans
+      (frameF_of (frameR_mono Fi₆ (by simp [combR])))
 
 /-- Slot 6 `g^x mod P` by the context's comb: the context of p, Montgomery one, the rows and the
 product with one. -/
@@ -546,7 +591,7 @@ theorem comb_ok {s : State} (h : In Ex base bytes len args s) (E : CombEnv Ex ba
     (hrows : w32 s.mem (ctxAddr args) 16 = Spec.Rsa.FixedBaseComb.rows bits) :
     WP isa Generate.comb s fun u =>
       CtxOk Ex base bytes len args .wide P u ∧ sv u.mem base len .wide 6 = Spec.Rsa.powMod G x P ∧
-      sv u.mem base len .wide 3 = 1 ∧ Frame (frameR base (s.gpr .esp) (combR len)) s.mem u.mem ∧
+      sv u.mem base len .wide 3 = 1 ∧ Frame (frameF base (s.gpr .esp) (combR len)) s.mem u.mem ∧
       Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s u := by
   unfold Generate.comb
   refine WP.seq (WP.mono (combHead_ok h E hP hR hrows) fun s₆ S₆ => ?_)
@@ -556,12 +601,12 @@ theorem comb_ok {s : State} (h : In Ex base bytes len args s) (E : CombEnv Ex ba
   refine WP.mono (cmul_ok S₇.ctx (o := 6) (a := 6) (b := 3) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by rw [S₇.one]; exact P1)) fun u ⟨C, K, F, L, V⟩ => ⟨C, ?_, ?_, ?_, ?_⟩
   · rw [S₇.acc, S₇.one, Nat.mul_one, Nat.mod_mod, VG.Proof.Rsa.FixedBaseComb.high_zero bits x hx] at V
-    have v := VG.Proof.Bignum.mont_cancel cp V
-    have pl : Spec.Rsa.powMod G x P < P := by rw [VG.Proof.Bignum.powMod_eq]; exact Nat.mod_lt _ (by omega_using [P1])
+    obtain v := VG.Proof.Bignum.mont_cancel cp V
+    obtain pl : Spec.Rsa.powMod G x P < P := by rw [VG.Proof.Bignum.powMod_eq]; exact Nat.mod_lt _ (by omega_using [P1])
     rwa [Nat.mod_eq_of_lt L, Nat.mod_eq_of_lt pl] at v
   · rw [mulR_sv S₇.inp F S₇.inp.room (o := 6) (j := 3) (by decide) (by decide) (by decide) (by decide)
       (by decide)]; exact S₇.one
-  · rw [S₇.esp] at F; exact S₇.frame.trans (mulR_combR (by decide) F)
+  · rw [S₇.esp] at F; exact S₇.frame.trans (frameF_of (mulR_combR (by decide) F))
   · exact S₇.keeps.trans (K.mono (by decide))
 
 end

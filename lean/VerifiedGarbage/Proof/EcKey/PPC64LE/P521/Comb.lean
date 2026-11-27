@@ -1,6 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.EcKey.PPC64LE.P521.Contract
+public import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Setup
+public import VerifiedGarbage.Proof.EcKey.PPC64LE.CombAll
 public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Spec.EcKey.P521
 public import VerifiedGarbage.Impl.Ecdsa.P521.PPC64LEComb
@@ -16,7 +17,7 @@ import VerifiedGarbage.Proof.EcKey.PPC64LE.P521.CombLit
 import VerifiedGarbage.Proof.Framework.PPC64LE.Syms
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.EcKey.PPC64LE.P521.Contract
+meta import VerifiedGarbage.Proof.EcKey.PPC64LE.CombAll
 meta import VerifiedGarbage.Proof.Weierstrass.Law
 meta import VerifiedGarbage.Spec.EcKey.P521
 meta import VerifiedGarbage.Impl.Ecdsa.P521.PPC64LEComb
@@ -32,6 +33,55 @@ meta import VerifiedGarbage.Proof.EcKey.PPC64LE.P521.CombLit
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Syms
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Spec.EcKey.Generic
+public import VerifiedGarbage.Spec.P521
+public import VerifiedGarbage.TCB.PPC64LE.Isa
+public import VerifiedGarbage.Proof.Framework.PowLit
+meta import VerifiedGarbage.Spec.EcKey.Generic
+meta import VerifiedGarbage.Spec.P521
+meta import VerifiedGarbage.TCB.PPC64LE.Isa
+meta import VerifiedGarbage.Proof.Framework.PowLit
+
+/-! ### `EcKey.PPC64LE.P521.Contract`, which only this module used -/
+
+section
+
+/-!
+# P-521 public keys on PPC64LE: the contract the proof is written against
+
+The facts of `Spec.EcKey.P521.inst.publicKeyContract` for PPC64LE, by name:
+`vg_ec_p521_public_key(out, d, scratch)`, with the arguments in `r3`–`r5`
+and the result in `r3` (ELFv2).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.EcKey.PPC64LE.P521
+
+open VG VG.PPC64LE Spec.Weierstrass Spec.EcKey
+
+/-- The public key of the private key at `d`, as the specification computes it. -/
+abbrev pk (m : Mem) (d : Addr) : Option (Point Spec.P521.curve) :=
+  publicKey Spec.P521.curve (ofBytes (bytesAt m d 66))
+
+def pkPPC : Contract PPC64LE.isa where
+  pre s :=
+    let out : Region := ⟨s.gpr .r3, 133⟩
+    let d : Region := ⟨s.gpr .r4, 66⟩
+    let scratch : Region := ⟨s.gpr .r5, 8192⟩
+    s.rd = [d] ∧ s.wr = [out, scratch] ∧ out.Disjoint scratch ∧ d.Disjoint scratch ∧
+      (s.gpr .r3).toNat + 133 ≤ 2 ^ 64 ∧ (s.gpr .r4).toNat + 66 ≤ 2 ^ 64 ∧ (s.gpr .r5).toNat + 8192 ≤ 2 ^ 64
+  post s s' :=
+    match pk s.mem (s.gpr .r4) with
+    | some (.affine x y) => s'.gpr .r3 = 1 ∧ bytesAt s'.mem (s.gpr .r3) 133 = encodePoint (.affine x y)
+    | _ => s'.gpr .r3 = 0 ∧ bytesAt s'.mem (s.gpr .r3) 133 = List.replicate 133 0
+  pub s₁ s₂ := s₁.sp = s₂.sp ∧ s₁.gpr .r3 = s₂.gpr .r3 ∧ s₁.gpr .r4 = s₂.gpr .r4 ∧ s₁.gpr .r5 = s₂.gpr .r5
+
+end VG.Proof.EcKey.PPC64LE.P521
+
+end
+
+end
 
 /-!
 # P-521 public keys by the comb on PPC64LE: `Verified`
@@ -49,9 +99,20 @@ namespace VG.Proof.EcKey.PPC64LE.P521
 open VG VG.PPC64LE VG.Impl.Ecdsa.PPC64LE VG.Impl.Weierstrass.PPC64LE VG.Proof.Ecdsa.PPC64LE Spec.Weierstrass
 open VG.Proof.Weierstrass.PPC64LE.TComb
 
-theorem pre_of {s : State} (h : pkPPC.pre s) : PkPre p521 s := by
+/-- The tables of constants the public key reads: the comb's, and the setup's
+(`Cfg.constsK`). -/
+abbrev pkK : List (String × List (BitVec 64)) := p521CombConsts ++ p521.constsK
+
+theorem pkK_eq : pkK = [(p521Comb.tsym, p521CombWords), (p521.constSym, p521.constTbl)] := rfl
+
+theorem pre_of {s : State} (h : pkPPC.pre (stripConsts pkK s)) (hk : ConstsOk pkK 0 s) :
+    PkPre p521 s (constRegs pkK s) := by
   obtain ⟨h1, h2, h3, h4, h5, h6, h7⟩ := h
-  exact ⟨h1, h2, h3, h4, h5, h6, h7⟩
+  exact ⟨hk.rd_strip h1, h2, h3, h4, h5, h6, h7, 
+    tbl_of_consts hk (List.mem_append_right _ (List.mem_singleton_self _)) (hk.disjoint_wr
+      (List.mem_append_right _ (List.mem_singleton_self _)) (by
+        show (⟨s.gpr .r5, size⟩ : Region) ∈ (stripConsts pkK s).wr
+        rw [h2]; exact List.mem_cons_of_mem _ (List.mem_singleton_self _)))⟩
 
 theorem post_of {s s' : State} (h : PkPost p521 s s') : pkPPC.post s s' := by
   unfold PkPost at h
@@ -98,79 +159,95 @@ theorem pkPPC_implies : pkPPC.Implies (Spec.EcKey.P521.inst.publicKeyContract PP
           Spec.EcKey.Instance.publicKeySig, Spec.P521.curve, Spec.EcKey.scratchWords, pkPPC, pk, PPC64LE.abi,
           PPC64LE.argRegs] [satState] using satState }
 
-/-- The public key's contract with the table, as the proof states it. -/
-def pkPC : Contract isa where
-  pre s := pkPPC.pre (stripConsts p521CombConsts s) ∧ ConstsOk p521CombConsts 0 s
-  post := pkPPC.post
-  pub s₁ s₂ := pkPPC.pub s₁ s₂ ∧ s₁.syms p521Comb.tsym = s₂.syms p521Comb.tsym
+/-- The public key's contract with its tables, as the proof states it. -/
+abbrev pkPC : Contract isa := pkPPC.withTables pkK
 
 theorem combPk_ok (hL : Weierstrass.Law Spec.P521.curve) (s : State) (hs : pkPC.pre s) :
     ∃ t s', Exec isa Impl.EcKey.PPC64LE.publicKeyP521Comb s t s' ∧ abiPreserved s s' ∧ pkPC.post s s' := by
   obtain ⟨hp, hk⟩ := hs
-  have p := pre_of hp
-  have hpre : PkPre p521 s (constRegs p521CombConsts s) := by
-    refine ⟨?_, p.wr, p.out_sc, p.d_sc, p.out_fit, p.d_fit, p.sc_fit⟩
-    rw [← List.take_append_drop (s.rd.length - p521CombConsts.length) s.rd, hk.1]
-    exact congrArg (fun rs => rs ++ constRegs p521CombConsts s) p.rd
-  have member : (p521Comb.tsym, p521CombWords) ∈ p521CombConsts := List.mem_singleton_self _
-  have ht : TableMem s (s.syms p521Comb.tsym) p521CombWords :=
-    ⟨hk.fit member, ⟨_, List.mem_append_left _ (hk.mem_rd member), Region.contains_self _ _⟩,
-      fun i hi => hk.readW member hi⟩
-  have hd : Region.Disjoint ⟨s.syms p521Comb.tsym, 8 * p521CombWords.length⟩ ⟨s.gpr .r5, 8192⟩ :=
-    hk.disjoint_wr member (by rw [hpre.wr]; simp)
-  obtain ⟨t, s', he, K, hpost⟩ := publicKeyWith_ok p521_ok (by decide) hL hpre fun s₁ S₁ sy =>
-    Proof.P521.PPC64LE.comb_generator_ok hL S₁
-      (ht.unch (by rw [S₁.rk.rd, S₁.rk.wr]) S₁.whole (fun w hw => by
-        rw [List.mem_singleton] at hw; subst hw; decide) hd) (by rw [sy]) hd
-  exact ⟨t, s', he, ⟨K.saved, K.sp, K.lr⟩, post_of hpost⟩
+  obtain ⟨t, s', he, K, hpost⟩ := Tab.pk_okK p521_ok (by decide) hL
+    (Proof.P521.PPC64LE.comb_generator_ok hL) (pre_of hp hk) hk (List.mem_append_left _ (List.mem_singleton_self _))
+  exact ⟨t, s', he, K, post_of hpost⟩
 
 theorem combPk_ct : ConstantTime isa pkPC.pre pkPC.pub Impl.EcKey.PPC64LE.publicKeyP521Comb :=
-  VG.Taint.constantTime (A := vectorTaintSym [p521Comb.tsym]) (Taint.ofRegs [.r3, .r4, .r5])
+  VG.Taint.constantTime (A := vectorTaintSym [p521Comb.tsym, p521.constSym]) (Taint.ofRegs [.r3, .r4, .r5])
     (fun _ _ _ _ ⟨⟨hsp, h3, h4, h5⟩, sy⟩ => ⟨⟨hsp, fun r hr => by
       simp only [Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
       · exact h3
       · exact h4
-      · exact h5⟩, fun n hn => by simp only [List.mem_singleton] at hn; subst hn; exact sy⟩)
+      · exact h5⟩, fun n hn => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hn
+        rcases hn with rfl | rfl
+        · exact sy _ (List.mem_append_left _ (List.mem_singleton_self _))
+        · exact sy _ (List.mem_append_right _ (List.mem_singleton_self _))⟩)
     (by taint_decide)
 
-theorem combConsts_eq : p521CombConsts = [(p521Comb.tsym, p521CombWords)] := rfl
+/-- The memory of the witness with the tables: the comb's at `0x100000`,
+the setup's at `0x200000` (irreducible: unfolding it in a definitional check
+would evaluate the tables). -/
+@[irreducible] def pkSatMem2 : Mem := constMem2 0x100000 p521CombWords 0x200000 p521.constTbl
 
-/-- A state satisfying the precondition with the table. -/
-def combSatC : State :=
-  { satState with mem := Proof.P521.PPC64LE.combSatMem, rd := [⟨0x2000, 66⟩, ⟨0x100000, 764928⟩], syms := fun _ => 0x100000 }
+theorem pkSatMem2_held₁ : ∀ i < p521CombWords.length,
+    pkSatMem2.readW (0x100000 + BitVec.ofNat 64 (8 * i)) 64 = p521CombWords.getD i 0 := by
+  unfold pkSatMem2
+  exact constMem2_held₁ _ _ _ _ (by rw [Proof.P521.PPC64LE.comb_words_length]; decide) (by rw [constTbl_length]; decide)
 
-theorem combPk_sat : (Spec.EcKey.P521.inst.publicKeyContract (abi.withConsts p521CombConsts)).pre combSatC := by
-  have hl := Proof.P521.PPC64LE.comb_words_length
-  have held := Proof.P521.PPC64LE.combSatMem_held
-  rw [combConsts_eq]
-  obtain ⟨W, eW⟩ : ∃ W, p521CombWords = W := ⟨_, rfl⟩
-  rw [eW] at hl held ⊢
+theorem pkSatMem2_held₂ : ∀ i < p521.constTbl.length,
+    pkSatMem2.readW (0x200000 + BitVec.ofNat 64 (8 * i)) 64 = p521.constTbl.getD i 0 := by
+  unfold pkSatMem2
+  exact constMem2_held₂ _ _ _ _ (by rw [constTbl_length]; decide)
+
+/-- The addresses of the witness's tables. -/
+def pkSyms (n : String) : Addr := if n = p521.constSym then 0x200000 else 0x100000
+
+/-- A state satisfying the precondition with the tables. -/
+def combSatC : State where
+  gpr := satState.gpr
+  lr := satState.lr
+  sp := satState.sp
+  mem := pkSatMem2
+  rd := satState.rd ++ [⟨0x100000, 8 * 95616⟩, ⟨0x200000, 8 * (17 * 9)⟩]
+  wr := satState.wr
+  syms := pkSyms
+
+theorem combPk_sat : (Spec.EcKey.P521.inst.publicKeyContract (abi.withConsts pkK)).pre combSatC := by
+  have hl₁ := Proof.P521.PPC64LE.comb_words_length
+  have hl₂ := constTbl_length p521
+  have held₁ := pkSatMem2_held₁
+  have held₂ := pkSatMem2_held₂
+  rw [pkK_eq]
+  obtain ⟨W₁, eW₁⟩ : ∃ W, p521CombWords = W := ⟨_, rfl⟩
+  obtain ⟨W₂, eW₂⟩ : ∃ W, p521.constTbl = W := ⟨_, rfl⟩
+  rw [eW₁] at hl₁ held₁ ⊢
+  rw [eW₂] at hl₂ held₂ ⊢
   generalize e : combSatC = s
   sig_pre [Spec.EcKey.P521.inst, Spec.EcKey.Instance.publicKeyContract, Spec.EcKey.Instance.publicKeySig,
     Spec.P521.curve, Spec.EcKey.scratchWords, abi, argRegs, Abi.withConsts, Abi.constRegions, Abi.constsHeld,
     stackBelow]
   subst e
-  rw [hl]
-  refine ⟨rfl, fun i hi => held i (by rw [hl]; exact hi), by decide, fun r hr => ?_, by decide, ?_⟩
-  · change r ∈ [⟨0x1000, 133⟩, ⟨0x8000, 8192⟩] at hr
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rw [hl₁, hl₂]
+  refine ⟨rfl, fun i hi => ?_, fun i hi => ?_, by decide, fun r hr => ?_, by decide, fun r hr => ?_, by decide,
+    by decide, ?_⟩
+  · show pkSatMem2.readW (0x100000 + BitVec.ofNat 64 (8 * i)) 64 = _
+    exact held₁ i (by rw [hl₁]; exact hi)
+  · show pkSatMem2.readW (0x200000 + BitVec.ofNat 64 (8 * i)) 64 = _
+    exact held₂ i (by rw [hl₂]; exact hi)
+  · change r ∈ satState.wr at hr
+    simp only [satState, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl <;> exact Region.disjoint_of_sep (by decide)
+  · change r ∈ satState.wr at hr
+    simp only [satState, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl <;> exact Region.disjoint_of_sep (by decide)
   · repeat' apply And.intro
     all_goals first | exact Region.disjoint_of_sep (by decide) | decide | rfl
 
-theorem pkPC_implies : pkPC.Implies (Spec.EcKey.P521.inst.publicKeyContract (abi.withConsts p521CombConsts)) :=
-  { pre := fun _ hs => ⟨pkPPC_implies.pre _ (pre_consts.mp hs).1, (pre_consts.mp hs).2⟩
-    post := fun s s' hs hp => post_consts.mpr (pkPPC_implies.post (stripConsts p521CombConsts s) s'
-      (pre_consts.mp hs).1 hp)
-    pub := fun s₁ s₂ h₁ h₂ hp => ⟨pkPPC_implies.pub (stripConsts p521CombConsts s₁) (stripConsts p521CombConsts s₂)
-        (pre_consts.mp h₁).1 (pre_consts.mp h₂).1 (pub_consts.mp hp).1,
-      (pub_consts.mp hp).2 _ List.mem_cons_self⟩
-    sat := ⟨combSatC, combPk_sat⟩ }
+theorem pkPC_implies : pkPC.Implies (Spec.EcKey.P521.inst.publicKeyContract (abi.withConsts pkK)) :=
+  withTables_implies pkPPC_implies ⟨combSatC, combPk_sat⟩
 
 theorem combPk_verified (hL : Weierstrass.Law Spec.P521.curve) :
     Verified PPC64LE.target Impl.EcKey.PPC64LE.publicKeyP521Comb
-      (Spec.EcKey.P521.inst.publicKeyContract (PPC64LE.abi.withConsts p521CombConsts)) :=
+      (Spec.EcKey.P521.inst.publicKeyContract (PPC64LE.abi.withConsts pkK)) :=
   Verified.of_correct (combPk_ok hL) combPk_ct pkPC_implies
 
 end VG.Proof.EcKey.PPC64LE.P521

@@ -16,5 +16,7 @@ namespace VG
 
 materialize_code Impl.TripleDes.AArch64.BitsliceNeon.encrypt
 materialize_code Impl.TripleDes.AArch64.BitsliceNeon.decrypt
+materialize_code tdesBatchEncryptAArch64 := Impl.TripleDes.AArch64.BitsliceNeon.batch .encrypt
+materialize_code tdesBatchDecryptAArch64 := Impl.TripleDes.AArch64.BitsliceNeon.batch .decrypt
 
 end VG

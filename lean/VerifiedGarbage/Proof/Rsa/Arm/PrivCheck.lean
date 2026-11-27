@@ -1,12 +1,11 @@
 module
-public import VerifiedGarbage.Proof.Rsa.Arm.PrivPcCall
-public import VerifiedGarbage.Proof.Rsa.PrivCheck
 
+public import VerifiedGarbage.Proof.Rsa.Arm.PrivPdCall
+public import VerifiedGarbage.Proof.Rsa.PrivCheck
 import VerifiedGarbage.Proof.Rsa.Arm.PrivCheckFrame
 import VerifiedGarbage.Proof.Rsa.Arm.PrivCheckLogic
 import VerifiedGarbage.Proof.Rsa.Arm.PrivTailContext
 import VerifiedGarbage.Proof.Rsa.Arm.PrivStatusPreserved
-import VerifiedGarbage.Proof.Rsa.Arm.PrivPdCall
 import VerifiedGarbage.Proof.Rsa.BytesFrame
 import VerifiedGarbage.Proof.Bignum.Arm.PcDimensions
 

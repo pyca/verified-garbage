@@ -1,6 +1,5 @@
 module
 
-import VerifiedGarbage.Proof.Ed448.AArch64.Sparse.DigitLoads
 import VerifiedGarbage.Proof.Ed448.AArch64.Sparse.Magnitude
 import VerifiedGarbage.Proof.X448.AArch64.Weak.Counters
 import VerifiedGarbage.Proof.Ed448.AArch64.Window.Move

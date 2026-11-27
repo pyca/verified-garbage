@@ -82,11 +82,12 @@ def copyOut (slot j a : Nat) : Prog isa :=
 /-- The `w` limbs of the full array `j`, `x = l + h R`, modulo the narrow
 modulus into the narrow array 1, with `R² mod M` in array 4: `h` into array 1,
 `h R mod M`, its negation into array 6 (array 5 zero), `l` into array 5,
-`l mod M`, and the difference. Arrays 2 and 3 are the products' scratch. -/
-def reduceHalf (slot j : Nat) : Prog isa :=
-  .seq (clearOperandBuffer 72) (.seq (copyHigh slot j 1) (.seq (smallConst 7 1) (.seq (montOp 1 1 4)
+`l mod M`, and the difference. Arrays 2 and 3 are the products' scratch;
+`op` is the Montgomery product. -/
+def reduceHalf (slot j : Nat) (op : Nat → Nat → Nat → Prog isa := montOp) : Prog isa :=
+  .seq (clearOperandBuffer 72) (.seq (copyHigh slot j 1) (.seq (smallConst 7 1) (.seq (op 1 1 4)
     (.seq (clearOperandBuffer 104) (.seq (subModArray 6 5 1) (.seq (copyLow slot j 5)
-      (.seq (reduceOperand 5) (subModArray 1 5 6))))))))
+      (.seq (reduceOperandWith op 5) (subModArray 1 5 6))))))))
 
 def exponentArgs (exponentSlot : Nat) : List Instr := [.ldrSp .r1 exponentSlot, .ldrSp .r2 (exponentSlot + 4)]
 def narrowExpWith (phase : Prog isa) (exponentSlot : Nat) : Prog isa :=
@@ -98,9 +99,10 @@ def factorInput : Prog isa :=
 
 /-- `narrowPowerWith`, with the factor prepared by `prime` (`narrowPrime`, or
 one given its `R² mod p`). -/
-def narrowPowerOf (prime : Nat → Prog isa) (phase : Prog isa) (slot primeSlot exponentSlot : Nat) : Prog isa :=
+def narrowPowerOf (prime : Nat → Prog isa) (phase : Prog isa) (slot primeSlot exponentSlot : Nat)
+    (op : Nat → Nat → Nat → Prog isa := montOp) : Prog isa :=
   .seq factorInput (.seq (enterNarrow (primeSlot + 4)) (.seq (prime primeSlot) (.seq (copyOut slot 0 0)
-    (.seq (reduceHalf slot 1) (.seq (narrowExpWith phase exponentSlot) (copyOut slot 6 6))))))
+    (.seq (reduceHalf slot 1 op) (.seq (narrowExpWith phase exponentSlot) (copyOut slot 6 6))))))
 
 def narrowPowerWith (phase : Prog isa) (slot primeSlot exponentSlot : Nat) : Prog isa :=
   narrowPowerOf narrowPrime phase slot primeSlot exponentSlot

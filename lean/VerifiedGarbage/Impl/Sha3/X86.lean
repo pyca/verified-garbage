@@ -10,29 +10,41 @@ public import VerifiedGarbage.Impl.Sha512.X86
 `vg_keccak_f1600(state, scratch)`, cdecl: the arguments are at `[esp + 4]`
 and `[esp + 8]`.
 
-The same structure as the x86-64 and ARMv7 implementations, with each 64-bit
-lane a pair of 32-bit words, the low one first (as in memory:
-little-endian). With only seven usable registers, the lanes live in memory:
-`esi` points to `state` and `edi` to `scratch` throughout, `ebp` to the
-current round's constant, and `eax`, `edx` (a lane's low and high halves)
-and `ecx` are the temporaries. `scratch` (512 bytes) is laid out as:
+With only seven usable general registers, the lanes live in memory: `esi`
+points to `state` and `edi` to `scratch` throughout, and `ebp` to the
+current round's constant. A lane being worked on is the low quadword of an
+XMM register (SSE2: `movq` loads and stores it, `pxor`, `pandn`, `por`,
+`psllq` and `psrlq` work on it; what they leave in the registers' high
+quadwords is not used). `scratch` (512 bytes) is laid out as:
 
 * `[0, 200)`: a second state, which the rounds alternate with `state`: each
   round reads one (`src`) and writes the other (`dst`), so after the 24
   rounds the result is back in `state`;
 * `[200, 392)`: the 24 round constants, stored by the prologue;
 * `[392, 404)`: the saved `esi`, `edi` and `ebp` (`ebx` is never written);
-* `[408, 448)`: the five column parities `C[x]` (θ), and then the five lanes
-  `B[x]` of `π(ρ(θ(A)))` of the plane being computed;
 * `[448, 488)`: the five `D[x]`.
 
-A round computes `C` and then `D` into `scratch`; then, for each plane `y`
-of the output, the lanes `B[x]` of that plane, and stores
-`B[x] ⊕ (¬B[x+1] ∧ B[x+2])` (χ, and ι for lane 0) to `dst`, a half at a
-time. The model has no 64-bit rotation and no left shift: a lane rotated
-right by `32` is its halves swapped, which the loads do; one rotated right by
-`0 < m < 32` is each half rotated right by `m` (`ror`), with the `m` top bits
-of the two halves exchanged (masked with `and`, and exchanged with `xor`).
+A round computes the five column parities `C[x]` (θ) in registers and from
+them the five `D[x]`, which it stores in `scratch`; then, for each plane `y`
+of the output, the lanes `B[x]` of `π(ρ(θ(A)))` of that plane in registers
+(a lane of `src`, XORed with its `D` from memory, and rotated: two shifts
+of it and of a copy), and from them the plane's lanes
+`B[x] ⊕ (¬B[x+1] ∧ B[x+2])` (χ, and ι for lane 0), stored to `dst`: three
+through a copy of `B[x+1]`, and then two in `B[x+1]` itself.
+
+With eight XMM registers, every register is used again and again in a
+round, for a lane and for the temporaries (of a load from memory to XOR, of
+a rotation, of a copy in χ). Which one each use takes is not in the code of
+`round` but in a table it is given, a *plan*: the registers in the order
+the round takes them. The plans here (`planA`, `planB`, of the two rounds
+of an iteration) take, for a register that is written whole (by a load or a
+copy), the free one whose value is ready first in a model of the
+dependencies in which such a write waits for the register's old value, as
+it does where the processor keeps the registers' upper halves (Zen 4 after
+256-bit code, Zen 5 while they are not zero): the planes of a round then
+wait for each other less. A plan that takes a register still in use gives
+wrong code, which the proof would refuse: it evaluates the round built from
+the plan (`Proof/Sha3/X86/Permute.lean`).
 
 Every address is a pointer plus a constant or the round constant pointer,
 which only depends on the pointers, and the only branch is the round loop's,
@@ -53,90 +65,137 @@ open VG.Impl.Sha512.X86 (at_ lo hi)
 constant-time analysis), and `(a ++ b) ++ c` has it copy `a` twice. -/
 local infixr:65 " +++ " => HAppend.hAppend
 
-/-- The offset in `scratch` of `C[x]`, and then of `B[x]`. -/
-def cOff (x : Nat) : Nat := 408 + 8 * x
-
 /-- The offset in `scratch` of `D[x]`. -/
 def dOff (x : Nat) : Nat := 448 + 8 * x
 
-/-- The offsets of the halves of a lane loaded into `(eax, edx)`: swapped (the
-lane rotated by 32) if `sw`. -/
-def sLo (sw : Bool) : Nat := if sw then 4 else 0
-def sHi (sw : Bool) : Nat := if sw then 0 else 4
+/-- Entry `i` of a plan. -/
+def planAt (p : List XReg) (i : Nat) : XReg := p.getD i .xmm0
 
-/-- `(eax, edx) :=` the lane at `[b + o]`, its halves swapped if `sw`. -/
-def ld2 (sw : Bool) (b : Reg) (o : Nat) : List Instr :=
-  [.mov .eax (.mem (at_ b (o + sLo sw))), .mov .edx (.mem (at_ b (o + sHi sw)))]
+/-- `r ^= [b + o]`, loaded into `t`. -/
+def xorm (r : XReg) (b : Reg) (o : Nat) (t : XReg) : List Instr :=
+  [.movqLoad t (at_ b o), .xop (.bin .pxor r t)]
 
-/-- `(eax, edx) ^=` the lane at `[b + o]`, its halves swapped if `sw`. -/
-def xor2 (sw : Bool) (b : Reg) (o : Nat) : List Instr :=
-  [.alu .xor .eax (.mem (at_ b (o + sLo sw))), .alu .xor .edx (.mem (at_ b (o + sHi sw)))]
+/-- `r` rotated left by `n < 64` (nothing for `n = 0`), with `t` for its
+bits that leave at the top. -/
+def rol (r : XReg) (n : Nat) (t : XReg) : List Instr :=
+  if n = 0 then [] else
+    [.xop (.bin .movdqa t r), .xop (.shift .psllq r (BitVec.ofNat 8 n)),
+      .xop (.shift .psrlq t (BitVec.ofNat 8 (64 - n))), .xop (.bin .por r t)]
 
-/-- Store `(eax, edx)` as the lane at `[b + o]`. -/
-def st2 (b : Reg) (o : Nat) : List Instr := [.store (at_ b o) .eax, .store (at_ b (o + 4)) .edx]
+/-- `C[x]`, the XOR of column `x` of the state at `src`, in entry `5x` of
+the plan, through the four entries after it. -/
+def column (p : List XReg) (src : Reg) (x : Nat) : List Instr :=
+  .movqLoad (planAt p (5 * x)) (at_ src (8 * x)) ::
+    (List.range 4).flatMap fun y => xorm (planAt p (5 * x)) src (8 * (x + 5 * (y + 1))) (planAt p (5 * x + y + 1))
 
-/-- The mask of the top `m` bits of a word. -/
-def topMask (m : Nat) : BitVec 32 := BitVec.allOnes 32 <<< (32 - m)
+/-- `D[x] = ROTL¹(C[x + 1]) ⊕ C[x - 1]` for `x = 2k mod 5`, to `scratch`,
+through entries `25 + 2k` and `26 + 2k` of the plan. In this order of `x`,
+each `C` is last used early, and its register is free for what follows. -/
+def dcol (p : List XReg) (k : Nat) : List Instr :=
+  let x := 2 * k % 5
+  .xop (.bin .movdqa (planAt p (25 + 2 * k)) (planAt p (5 * ((x + 1) % 5)))) ::
+    (rol (planAt p (25 + 2 * k)) 1 (planAt p (26 + 2 * k)) +++
+      [.xop (.bin .pxor (planAt p (25 + 2 * k)) (planAt p (5 * ((x + 4) % 5)))),
+        .movqStore (at_ .edi (dOff x)) (planAt p (25 + 2 * k))])
 
-/-- Rotate the lane in `(eax, edx)` right by `m < 32`: rotate each half, and
-exchange their top `m` bits (with `ecx` as a temporary). -/
-def rot (m : Nat) : List Instr :=
-  if m = 0 then [] else
-    [.shift .ror .eax m, .shift .ror .edx m, .mov .ecx (.reg .eax), .alu .xor .ecx (.reg .edx),
-      .alu .and .ecx (.imm (topMask m)), .alu .xor .eax (.reg .ecx), .alu .xor .edx (.reg .ecx)]
+/-- Where plane `y`'s entries start in a plan: 19 for each plane, after the
+35 of θ. -/
+def planeAt (y : Nat) : Nat := 35 + 19 * y
 
-/-- `C[x] = A[x, 0] ⊕ … ⊕ A[x, 4]`, half `h` (`0` or `4`), from the state at `src`. -/
-def colHalf (src : Reg) (x h : Nat) : List Instr :=
-  [.mov .eax (.mem (at_ src (8 * x + h))), .alu .xor .eax (.mem (at_ src (8 * (x + 5) + h))),
-    .alu .xor .eax (.mem (at_ src (8 * (x + 10) + h))), .alu .xor .eax (.mem (at_ src (8 * (x + 15) + h))),
-    .alu .xor .eax (.mem (at_ src (8 * (x + 20) + h))), .store (at_ .edi (cOff x + h)) .eax]
+/-- `B[x]` of plane `y`: lane `piSrc x y` of the state at `src`, XORed with
+its `D`, and rotated, in entry `3x` of the plane, through the two entries
+after it (the second unused for the lane that is not rotated). -/
+def laneB (p : List XReg) (src : Reg) (x y : Nat) : List Instr :=
+  .movqLoad (planAt p (planeAt y + 3 * x)) (at_ src (8 * piSrc x y)) ::
+    (xorm (planAt p (planeAt y + 3 * x)) .edi (dOff ((x + 3 * y) % 5)) (planAt p (planeAt y + 3 * x + 1)) +++
+      rol (planAt p (planeAt y + 3 * x)) (rhoOff (piSrc x y)) (planAt p (planeAt y + 3 * x + 2)))
 
-def column (src : Reg) (x : Nat) : List Instr := colHalf src x 0 +++ colHalf src x 4
+/-- Lane `x` of plane `y` of the output, which `t` holds but for the round
+constant, to `dst`: for lane `(0, 0)`, after the round constant (ι),
+through entry 18 of the plane. -/
+def outB (p : List XReg) (dst : Reg) (x y : Nat) (t : XReg) : List Instr :=
+  (if x = 0 ∧ y = 0 then xorm t .ebp 0 (planAt p (planeAt y + 18)) else []) +++
+    [.movqStore (at_ dst (8 * (x + 5 * y))) t]
 
-/-- `D[x] = ROTR⁶³(C[x + 1]) ⊕ C[x - 1]`: the halves of `C[x + 1]` swapped
-(`ROTR³²`), rotated right by 31. -/
-def dcol (x : Nat) : List Instr :=
-  ld2 true .edi (cOff ((x + 1) % 5)) +++ rot 31 +++ xor2 false .edi (cOff ((x + 4) % 5)) +++
-    st2 .edi (dOff x)
+/-- `¬B[x + 1] ∧ B[x + 2] ⊕ B[x]` of plane `y` in a copy of `B[x + 1]`,
+entry `15 + i` of the plane; then `outB`. -/
+def chiCopy (p : List XReg) (dst : Reg) (y i x : Nat) : List Instr :=
+  [.xop (.bin .movdqa (planAt p (planeAt y + 15 + i)) (planAt p (planeAt y + 3 * ((x + 1) % 5)))),
+    .xop (.bin .pandn (planAt p (planeAt y + 15 + i)) (planAt p (planeAt y + 3 * ((x + 2) % 5)))),
+    .xop (.bin .pxor (planAt p (planeAt y + 15 + i)) (planAt p (planeAt y + 3 * x)))] +++
+    outB p dst x y (planAt p (planeAt y + 15 + i))
 
-/-- Whether the lane `j`'s rotation by ρ swaps its halves: `ROTLʳ` with
-`0 < r < 32` is `ROTR^(32 - r)` of the lane rotated by 32. -/
-def swp (j : Nat) : Bool := 0 < rhoOff j && rhoOff j < 32
+/-- The same in `B[x + 1]` itself, which is not used after it. -/
+def chiLast (p : List XReg) (dst : Reg) (y x : Nat) : List Instr :=
+  [.xop (.bin .pandn (planAt p (planeAt y + 3 * (x + 1))) (planAt p (planeAt y + 3 * ((x + 2) % 5)))),
+    .xop (.bin .pxor (planAt p (planeAt y + 3 * (x + 1))) (planAt p (planeAt y + 3 * x)))] +++
+    outB p dst x y (planAt p (planeAt y + 3 * (x + 1)))
 
-/-- The rest of the rotation, below 32. -/
-def rotAmt (j : Nat) : Nat :=
-  if rhoOff j = 0 then 0 else if rhoOff j < 32 then 32 - rhoOff j else 64 - rhoOff j
+/-- Plane `y` of the output: its five `B`, then lanes 1, 4 and 3 through
+copies, and lanes 0 and 2 in `B[1]` and `B[3]`. -/
+def plane (p : List XReg) (src dst : Reg) (y : Nat) : List Instr :=
+  (List.range 5).flatMap (fun x => laneB p src x y) +++
+    chiCopy p dst y 0 1 +++ chiCopy p dst y 1 4 +++ chiCopy p dst y 2 3 +++
+    chiLast p dst y 0 +++ chiLast p dst y 2
 
-/-- `B[x] = ROTL^ρ(A[piSrc x y] ⊕ D[(x + 3y) mod 5])` for plane `y`, stored in `scratch`. -/
-def laneB (src : Reg) (x y : Nat) : List Instr :=
-  ld2 (swp (piSrc x y)) src (8 * piSrc x y) +++
-    xor2 (swp (piSrc x y)) .edi (dOff ((x + 3 * y) % 5)) +++ rot (rotAmt (piSrc x y)) +++
-    st2 .edi (cOff x)
+/-- One round from `src` to `dst` but for the round constant pointer: the
+lanes. -/
+def lanes (p : List XReg) (src dst : Reg) : List Instr :=
+  (List.range 5).flatMap (column p src) +++ (List.range 5).flatMap (dcol p) +++
+    (List.range 5).flatMap (plane p src dst)
 
-/-- Half `h` of lane `(x, y)` of the output: `B[x] ⊕ (¬B[x+1] ∧ B[x+2])`, and
-for lane 0 the round constant at `ebp`, stored at `[dst + 8(x + 5y) + h]`.
-(`¬` is an XOR with all ones.) -/
-def chiHalf (dst : Reg) (x y h : Nat) : List Instr :=
-  [.mov .eax (.mem (at_ .edi (cOff ((x + 1) % 5) + h))), .alu .xor .eax (.imm (BitVec.allOnes 32)),
-    .alu .and .eax (.mem (at_ .edi (cOff ((x + 2) % 5) + h))),
-    .alu .xor .eax (.mem (at_ .edi (cOff x + h)))] +++
-    (if x = 0 ∧ y = 0 then [.alu .xor .eax (.mem (at_ .ebp h))] else []) +++
-    [.store (at_ dst (8 * (x + 5 * y) + h)) .eax]
+/-- One round from `src` to `dst` with the plan `p`; then advance to the
+next round constant. -/
+def round (p : List XReg) (src dst : Reg) : List Instr :=
+  lanes p src dst +++ [.alu .add .ebp (.imm 8)]
 
-def chi (dst : Reg) (x y : Nat) : List Instr := chiHalf dst x y 0 +++ chiHalf dst x y 4
+/-- The plan of an iteration's first round, in the order `round` takes its
+entries: five rows of five for the columns (`C[x]`, and the temporaries of
+its other four lanes); a row for `D` (the result and the rotation's
+temporary, for `x = 0, 2, 4, 1, 3`); and a row for each plane: three for
+each `B[x]` (the lane, the temporary of its `D`, the rotation's temporary),
+three for χ's copies, and the round constant's temporary. -/
+def planA : List XReg :=
+  [.xmm0, .xmm1, .xmm2, .xmm3, .xmm4,
+   .xmm5, .xmm6, .xmm7, .xmm1, .xmm2,
+   .xmm3, .xmm4, .xmm6, .xmm7, .xmm1,
+   .xmm2, .xmm4, .xmm6, .xmm7, .xmm1,
+   .xmm4, .xmm6, .xmm7, .xmm1, .xmm6,
+   .xmm7, .xmm1, .xmm6, .xmm1, .xmm5, .xmm7, .xmm2, .xmm1, .xmm0, .xmm6,
+   .xmm3, .xmm4, .xmm0, .xmm7, .xmm1, .xmm5, .xmm2, .xmm6, .xmm0, .xmm4, .xmm6, .xmm1, .xmm0, .xmm6, .xmm5,
+   .xmm6, .xmm1, .xmm5, .xmm6,
+   .xmm3, .xmm2, .xmm2, .xmm2, .xmm0, .xmm1, .xmm0, .xmm6, .xmm4, .xmm5, .xmm7, .xmm6, .xmm1, .xmm7, .xmm7,
+   .xmm4, .xmm6, .xmm7, .xmm0,
+   .xmm3, .xmm0, .xmm0, .xmm2, .xmm1, .xmm4, .xmm6, .xmm1, .xmm5, .xmm0, .xmm1, .xmm7, .xmm1, .xmm4, .xmm5,
+   .xmm4, .xmm7, .xmm5, .xmm0,
+   .xmm3, .xmm6, .xmm6, .xmm2, .xmm4, .xmm1, .xmm7, .xmm6, .xmm4, .xmm0, .xmm6, .xmm5, .xmm6, .xmm1, .xmm4,
+   .xmm1, .xmm5, .xmm4, .xmm0,
+   .xmm3, .xmm7, .xmm7, .xmm2, .xmm1, .xmm6, .xmm5, .xmm7, .xmm1, .xmm0, .xmm7, .xmm4, .xmm7, .xmm6, .xmm1,
+   .xmm6, .xmm4, .xmm1, .xmm0]
 
-/-- Plane `y` of the output. -/
-def plane (src dst : Reg) (y : Nat) : List Instr :=
-  (List.range 5).flatMap (fun x => laneB src x y) +++ (List.range 5).flatMap (fun x => chi dst x y)
-
-/-- One round from `src` to `dst`; then advance to the next round constant. -/
-def round (src dst : Reg) : List Instr :=
-  (List.range 5).flatMap (column src) +++ (List.range 5).flatMap dcol +++
-    (List.range 5).flatMap (plane src dst) +++ [.alu .add .ebp (.imm 8)]
+/-- The plan of an iteration's second round, whose registers hold what the
+first left. -/
+def planB : List XReg :=
+  [.xmm3, .xmm5, .xmm5, .xmm2, .xmm5,
+   .xmm6, .xmm7, .xmm2, .xmm4, .xmm7,
+   .xmm2, .xmm0, .xmm4, .xmm1, .xmm0,
+   .xmm4, .xmm1, .xmm1, .xmm1, .xmm1,
+   .xmm5, .xmm7, .xmm7, .xmm0, .xmm7,
+   .xmm1, .xmm0, .xmm7, .xmm0, .xmm6, .xmm1, .xmm4, .xmm0, .xmm3, .xmm7,
+   .xmm2, .xmm5, .xmm0, .xmm1, .xmm0, .xmm6, .xmm4, .xmm7, .xmm3, .xmm5, .xmm7, .xmm0, .xmm3, .xmm7, .xmm6,
+   .xmm7, .xmm0, .xmm6, .xmm7,
+   .xmm2, .xmm4, .xmm4, .xmm4, .xmm3, .xmm0, .xmm3, .xmm7, .xmm5, .xmm6, .xmm1, .xmm7, .xmm0, .xmm1, .xmm1,
+   .xmm5, .xmm7, .xmm1, .xmm0,
+   .xmm2, .xmm3, .xmm3, .xmm4, .xmm0, .xmm5, .xmm7, .xmm0, .xmm6, .xmm3, .xmm0, .xmm1, .xmm0, .xmm5, .xmm6,
+   .xmm5, .xmm1, .xmm6, .xmm0,
+   .xmm2, .xmm7, .xmm7, .xmm4, .xmm5, .xmm0, .xmm1, .xmm7, .xmm5, .xmm3, .xmm7, .xmm6, .xmm7, .xmm0, .xmm5,
+   .xmm0, .xmm6, .xmm5, .xmm0,
+   .xmm2, .xmm1, .xmm1, .xmm4, .xmm0, .xmm7, .xmm6, .xmm1, .xmm0, .xmm3, .xmm1, .xmm5, .xmm1, .xmm7, .xmm0,
+   .xmm7, .xmm5, .xmm0, .xmm0]
 
 /-- Two rounds, and set ZF after the last. -/
 def body : List Instr :=
-  round .esi .edi +++ round .edi .esi +++
+  round planA .esi .edi +++ round planB .edi .esi +++
     [.mov .eax (.reg .ebp), .alu .sub .eax (.reg .edi), .alu .cmp .eax (.imm 392)]
 
 /-- The callee-saved registers we use, and where they are saved. -/

@@ -1,21 +1,24 @@
 module
 
-public import VerifiedGarbage.Proof.Camellia.Arm.CbcVerified
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.Arm.Print
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Camellia.Cbc
+import VerifiedGarbage.Proof.Camellia.Arm.Scrub
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # Camellia-CBC on ARMv7 -/
 
-@[expose] public section
-
 namespace VG.Artifacts.CamelliaCbc.Arm
 
-def artifacts : List Artifact := [
+public def artifacts : List (Artifact Arm.target) := [
   Spec.Camellia.cbcEncryptChainedApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratchWiped 88 1 18 Impl.Camellia.Arm.cbcEncryptChained
-    verified := Proof.Camellia.Arm.cbcEncryptChained_framed },
+    code := Impl.Camellia.Arm.Fn.cbcEncrypt
+    verified := Proof.Camellia.Arm.Fn.cbcEncrypt },
   Spec.Camellia.cbcDecryptChainedApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratchWiped 88 1 18 Impl.Camellia.Arm.cbcDecryptChained
-    verified := Proof.Camellia.Arm.cbcDecryptChained_framed }]
+    code := Impl.Camellia.Arm.Fn.cbcDecrypt
+    verified := Proof.Camellia.Arm.Fn.cbcDecrypt }]
+
+spec_apis artifacts
 
 end VG.Artifacts.CamelliaCbc.Arm

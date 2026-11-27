@@ -1,7 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.DecompressMain
-import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.Candidate
+public import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.DecompressMain
 import VerifiedGarbage.Proof.Weierstrass.Sqrt
 public import VerifiedGarbage.Spec.EcKey.P256
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Verified
@@ -17,8 +16,6 @@ meta import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.Contract
 public import VerifiedGarbage.Impl.EcKey.Compressed.AArch64.Decompress
 public import VerifiedGarbage.Impl.EcKey.Compressed.Root
 public import VerifiedGarbage.Impl.Ecdsa.P256.AArch64
-public import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.DecompressContract
-public import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.DecompressMiddle
 public import VerifiedGarbage.Proof.Framework.AArch64.Inline
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
 
@@ -68,8 +65,8 @@ materialize_shared baseline := code
     Verified target code (Spec.EcKey.P256.inst.decompressPublicKeyContract abi 0) := by
   have hc := (p256_ok hI).toBaseCfgOk
   exact Verified.of_correct (decompress_correct p256 hc _
-    (candidateThree_correct hc (by decide +kernel) chain_ok)
-    (by lit_decide) (by lit_decide) (by lit_decide)) ct
+    (candidateThree_correct hc (rootCall_none (by decide +kernel)) (by decide +kernel) chain_ok)
+    (by lit_decide)) ct
     (decompress_implies Spec.EcKey.P256.inst _
       (Proof.Weierstrass.rootFacts_three_mod_four hL (by decide +kernel)) sat)
 

@@ -8,6 +8,9 @@ public import VerifiedGarbage.Proof.AesCfb.AArch64.Final
 public import VerifiedGarbage.Proof.Framework.Scratch
 public import VerifiedGarbage.Proof.Framework.AArch64.Spill
 public import VerifiedGarbage.Impl.StackScratch.AArch64
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubProved
+public import VerifiedGarbage.Proof.Aes.AArch64.ModesScrub
+import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.AesCtr.Ctr32
 import VerifiedGarbage.Proof.AesCtr.Spec
 import VerifiedGarbage.Proof.AesCbc.Spec
@@ -308,7 +311,7 @@ theorem sv_bytes {s₀ : State} (hp : CPre s₀) :
       simp only [List.mem_singleton] at hr; subst hr; exact hp.data_sv.sub_left (blk_sub s₀))⟩
 
 theorem whole_wp (v : Ctr32Impl) {s₀ : State} (hp : CPre s₀) {s : State} (h : Setup s₀ s) :
-    WP isa (.call ("vg_aes_ctr" ++ v.suffix) (crypt v.callee)) s (Whole AesCtr.ctrMode s₀) := by
+    WP isa (.call ("vg_aes_ctr" ++ v.suffix ++ "_core") (crypt v.callee)) s (Whole AesCtr.ctrMode s₀) := by
   obtain ⟨eW, eIv, eB⟩ := sv_bytes hp
   obtain ⟨hpre, hc, hw⟩ := whole_pre hp h
   refine WP.call (k := wholeK) (crypt_correct v) (rd := [fSch s₀]) (wr := [fIvR s₀, fBlk s₀, fScr s₀]) hpre
@@ -532,7 +535,7 @@ structure TCall (s₀ s : State) : Prop where
   out : bytesAt s.mem (cBk s₀) 16 = Spec.Cbc.aesWith (fR s₀) (fWk s₀) (Spec.Ctr.next (fIv0 s₀) (fN s₀))
 
 theorem tail_call_wp (v : Ctr32Impl) {s₀ : State} (hp : CPre s₀) {s : State} (h : TArgs s₀ s) :
-    WP isa (.call ("vg_aes_ctr" ++ v.suffix) (crypt v.callee)) s (TCall s₀) := by
+    WP isa (.call ("vg_aes_ctr" ++ v.suffix ++ "_core") (crypt v.callee)) s (TCall s₀) := by
   obtain ⟨hpre, hc, hw⟩ := tail_pre hp h
   have big := big_of (cW1_cW h.frame)
   have eW : bytesAt s.mem (fW s₀) (16 * (fR s₀ + 1)) = fWk s₀ :=
@@ -663,7 +666,7 @@ theorem tail_xor_wp {s₀ : State} (hp : CPre s₀) {s : State} (h : TCall s₀ 
   · rw [ite_eq_right hu, Proof.Cmac.bytesAt_frame d.frame ivT (by decide), mem₁, h.ctr, ← AesCtr.next_add]
 
 theorem final_mid_wp (v : Ctr32Impl) {s₀ : State} (hp : CPre s₀) {s : State} (h : Whole AesCtr.ctrMode s₀ s) :
-    WP isa (.ite (.zero .x .x23) (.block []) (finalTail ("vg_aes_ctr" ++ v.suffix) (crypt v.callee))) s
+    WP isa (.ite (.zero .x .x23) (.block []) (finalTail ("vg_aes_ctr" ++ v.suffix ++ "_core") (crypt v.callee))) s
       (Done s₀) := by
   by_cases hu : fU s₀ = 0
   · exact WP.ite true (by rw [eval_u h, decide_eq_true hu]) (fun _ => WP.block_nil (done_of_zero h hu))
@@ -767,7 +770,7 @@ theorem final_rel (v : Ctr32Impl) {s₀ s₀' : State} (h0 : ctrFinalAArch64.pre
       rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption)
     fun a b h => by obtain ⟨rfl, rfl⟩ := h; exact ⟨final_setup_wp hp, final_setup_wp hp'⟩
   -- The whole blocks.
-  have r₂ := (RelCT.callEx (k := wholeK) (n := "vg_aes_ctr" ++ v.suffix) (crypt_correct v) (crypt_ct v)
+  have r₂ := (RelCT.callEx (k := wholeK) (n := "vg_aes_ctr" ++ v.suffix ++ "_core") (crypt_correct v) (crypt_ct v)
     (P := fun a b => Setup s₀ a ∧ Setup s₀' b) fun a b ⟨ha, hb⟩ => by
       obtain ⟨pa, ca, wa⟩ := whole_pre hp ha
       obtain ⟨pb, cb, wb⟩ := whole_pre hp' hb
@@ -785,7 +788,7 @@ theorem final_rel (v : Ctr32Impl) {s₀ s₀' : State} (h0 : ctrFinalAArch64.pre
     fun a b h => ⟨whole_wp v hp h.1, whole_wp v hp' h.2⟩
   -- The partial last block.
   have tail (hu : fU s₀ ≠ 0) : RelCT isa (fun a b => Whole AesCtr.ctrMode s₀ a ∧ Whole AesCtr.ctrMode s₀' b)
-      (finalTail ("vg_aes_ctr" ++ v.suffix) (crypt v.callee)) fun a b => Done s₀ a ∧ Done s₀' b := by
+      (finalTail ("vg_aes_ctr" ++ v.suffix ++ "_core") (crypt v.callee)) fun a b => Done s₀ a ∧ Done s₀' b := by
     have hu' : fU s₀' ≠ 0 := qU ▸ hu
     have a₁ := taint_rel (P := fun a b => Whole AesCtr.ctrMode s₀ a ∧ Whole AesCtr.ctrMode s₀' b)
       (F₁ := TArgs s₀) (F₂ := TArgs s₀') [.x19, .x20, .x21, .x24, .x25] tailArgs_taint
@@ -799,7 +802,7 @@ theorem final_rel (v : Ctr32Impl) {s₀ s₀' : State} (h0 : ctrFinalAArch64.pre
         · rw [h.1.x24, h.2.x24, fS, fS, qS]
         · rw [h.1.x25, h.2.x25, fV, fV, qV])
       fun a b h => ⟨tail_args_wp hp h.1, tail_args_wp hp' h.2⟩
-    have a₂ := (RelCT.callEx (k := wholeK) (n := "vg_aes_ctr" ++ v.suffix) (crypt_correct v) (crypt_ct v)
+    have a₂ := (RelCT.callEx (k := wholeK) (n := "vg_aes_ctr" ++ v.suffix ++ "_core") (crypt_correct v) (crypt_ct v)
       (P := fun a b => TArgs s₀ a ∧ TArgs s₀' b) fun a b ⟨ha, hb⟩ => by
         obtain ⟨pa, ca, wa⟩ := tail_pre hp ha
         obtain ⟨pb, cb, wb⟩ := tail_pre hp' hb
@@ -826,7 +829,7 @@ theorem final_rel (v : Ctr32Impl) {s₀ s₀' : State} (h0 : ctrFinalAArch64.pre
       fun a b h => ⟨tail_xor_wp hp h.1 hu, tail_xor_wp hp' h.2 hu'⟩
     exact a₁.seq ((a₂.mono (fun _ _ h => h) fun _ _ h => h.2).seq a₃)
   have r₃ : RelCT isa (fun a b => Whole AesCtr.ctrMode s₀ a ∧ Whole AesCtr.ctrMode s₀' b)
-      (.ite (.zero .x .x23) (.block []) (finalTail ("vg_aes_ctr" ++ v.suffix) (crypt v.callee)))
+      (.ite (.zero .x .x23) (.block []) (finalTail ("vg_aes_ctr" ++ v.suffix ++ "_core") (crypt v.callee)))
       (fun a b => Done s₀ a ∧ Done s₀' b) := by
     refine RelCT.ite (fun a b h => by rw [eval_u h.1, eval_u h.2, qU]) ?_ ?_
     · refine RelCT.block_nil fun a b h => ?_
@@ -879,5 +882,78 @@ theorem cryptFinal_framed (v : Ctr32Impl) :
     (leak := some (finalLeak AArch64.abi.ptrBits))
     (stack := 0) (bytes := 80) (words := 10) (cryptFinal_verified v) (by decide) (by decide) (by decide)
     (finalPost_localOut _) frameSat_pre
+
+/-! ## The functions, as emitted
+
+`vg_aes_ctr` and `vg_aes_ctr_final` with their cleanup
+(`Impl.AesCtr.AArch64.Fn`), around an implementation `v` of `vg_aes_ctr32`:
+each meets its contract in constant time and returns without secret residue
+(`VerifiedScrubbed`), which is what its registration binds. What the cleanup
+needs of the code (`Scrub.scrubSide`) is proved of each function's own
+instructions here, once, with code that does nothing in the place of
+`vg_aes_ctr32`, and of each implementation where it is defined
+(`Ctr32Impl.scrub`). -/
+
+open VG.AArch64.Scrub
+
+private theorem crypt_all {p : Instr → Bool} (c : Impl.Aes.AArch64.Ctr32)
+    (h0 : sideAll p (crypt ⟨"", .block [], ⟨[], [], []⟩, 0⟩) = true) (hc : sideAll p c.code = true) :
+    sideAll p (crypt c) = true := by
+  simp only [crypt, Impl.AesCtr.AArch64.body, Impl.AesCbc.AArch64.whole, sideAll, Bool.and_eq_true] at h0 ⊢
+  simp only [h0, hc, and_self]
+
+private theorem cryptFinal_all {p : Instr → Bool} (c : Impl.Aes.AArch64.Ctr32) (sfx : String)
+    (h0 : sideAll p (Impl.StackScratch.AArch64.withStackScratchWiped 80 .x6 10
+      (cryptFinal ⟨"", .block [], ⟨[], [], []⟩, 0⟩ "")) = true) (hc : sideAll p c.code = true) :
+    sideAll p (Impl.StackScratch.AArch64.withStackScratchWiped 80 .x6 10 (cryptFinal c sfx)) = true := by
+  simp only [Impl.StackScratch.AArch64.withStackScratchWiped, Impl.StackScratch.AArch64.withStackScratch,
+    cryptFinal, final, finalTail, crypt, Impl.AesCtr.AArch64.body, Impl.AesCbc.AArch64.whole, sideAll,
+    Bool.and_eq_true] at h0 ⊢
+  simp only [h0, hc, and_self]
+
+private theorem crypt_own :
+    calleeSide (crypt ⟨"", .block [], ⟨[], [], []⟩, 0⟩) Impl.AesCtr.AArch64.Fn.cryptOwn = true := by
+  kernel_rfl
+
+private theorem cryptFinal_own :
+    calleeSide (Impl.StackScratch.AArch64.withStackScratchWiped 80 .x6 10 (cryptFinal ⟨"", .block [], ⟨[], [], []⟩, 0⟩ ""))
+      Impl.AesCtr.AArch64.Fn.cryptFinalOwn = true := by
+  kernel_rfl
+
+theorem crypt_side (v : Ctr32Impl) :
+    scrubSide (crypt v.callee) 0 0 (Impl.AesCtr.AArch64.Fn.cryptOwn.union v.callee.clear) [] = true := by
+  refine scrubSide_union0 ?_ (by decide)
+    (crypt_all v.callee (sideAll_union_left crypt_own) (sideAll_union_right v.scrub)) (by decide)
+  simp only [crypt, Impl.AesCtr.AArch64.body, Impl.AesCbc.AArch64.whole, Code.aarch64Depth,
+    Proof.Aes.AArch64.depth_of_noFrames v.noFrames]
+  decide
+
+theorem cryptFinal_side (v : Ctr32Impl) :
+    scrubSide (Impl.StackScratch.AArch64.withStackScratchWiped 80 .x6 10 (cryptFinal v.callee v.suffix)) 80 0
+      (Impl.AesCtr.AArch64.Fn.cryptFinalOwn.union v.callee.clear) [] = true := by
+  refine scrubSide_union (by decide) ?_ (by decide)
+    (cryptFinal_all v.callee v.suffix (sideAll_union_left cryptFinal_own) (sideAll_union_right v.scrub))
+    (by decide)
+  simp only [Impl.StackScratch.AArch64.withStackScratchWiped, Impl.StackScratch.AArch64.withStackScratch,
+    cryptFinal, final, finalTail, crypt, Impl.AesCtr.AArch64.body, Impl.AesCbc.AArch64.whole,
+    Code.aarch64Depth, Instr.frameUnits, Proof.Aes.AArch64.depth_of_noFrames v.noFrames]
+  decide
+
+/-- `vg_aes_ctr` as emitted, cleanup included. -/
+theorem crypt_scrubbed (v : Ctr32Impl) :
+    VerifiedScrubbed AArch64.target (Impl.AesCtr.AArch64.Fn.crypt v.callee)
+      (Spec.Ctr.aesContract AArch64.abi) 0 :=
+  verifiedScrubbedAll (api := Spec.Ctr.aesApi)
+    { code := crypt v.callee, verified := Proof.AesCtr.keyed (crypt_verified v) } _
+    Proof.Aes.AArch64.ModesScrub.ctrOk (crypt_side v)
+
+/-- `vg_aes_ctr_final` as emitted, cleanup included. -/
+theorem cryptFinal_scrubbed (v : Ctr32Impl) :
+    VerifiedScrubbed AArch64.target (Impl.AesCtr.AArch64.Fn.cryptFinal v.callee v.suffix)
+      (Spec.Ctr.aesFinalContract AArch64.abi 80) 0 :=
+  verifiedScrubbedAll (api := Spec.Ctr.aesFinalApi)
+    { code := Impl.StackScratch.AArch64.withStackScratchWiped 80 .x6 10 (cryptFinal v.callee v.suffix)
+      verified := Proof.AesCtr.final_keyed (cryptFinal_framed v) } _
+    Proof.Aes.AArch64.ModesScrub.ctrFinalOk (cryptFinal_side v)
 
 end VG.Proof.AesCtr.AArch64.Final

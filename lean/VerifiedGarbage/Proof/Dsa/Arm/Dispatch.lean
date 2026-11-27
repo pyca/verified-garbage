@@ -26,6 +26,8 @@ open VG.Proof.Ecdsa.Arm (mask32)
 open VG.Proof.X25519.Arm (Rest Upd Mupd wp_mov wp_movw wp_cmp wp_dp wp_strb op2_imm op2_reg dpVal eval_eq eval_ne)
 open VG.Proof.Zeroize (Prefix prefix_writeW prefix_spec)
 
+variable {umaal : Bool}
+
 /-! ## The widths -/
 
 theorem cmp_word {x : BitVec 32} {w : Nat} (hw : w < 2 ^ 32) :
@@ -67,8 +69,8 @@ theorem widthDispatch_ok (signing : Bool) (widths : List (Nat × Nat))
     (hs : Ws s base size) (hz : 120 ≤ size) (member : (pLen, qLen) ∈ widths)
     (bound : ∀ w ∈ widths, w.1 < 2 ^ 16 ∧ w.2 < 2 ^ 16)
     (hp : (hdr base s 100).toNat = pLen) (hq : (hdr base s 104).toNat = qLen)
-    (body : ∀ t, Rest [.r4, .r5] s t → t.mem = s.mem → WP isa (Entry.sized signing pLen qLen) t Q) :
-    WP isa (Entry.widthDispatch signing widths) s Q := by
+    (body : ∀ t, Rest [.r4, .r5] s t → t.mem = s.mem → WP isa (Entry.sized umaal signing pLen qLen) t Q) :
+    WP isa (Entry.widthDispatch umaal signing widths) s Q := by
   induction widths generalizing s with
   | nil => simp only [List.not_mem_nil] at member
   | cons w rest ih =>
@@ -90,7 +92,7 @@ theorem widthDispatch_ok (signing : Bool) (widths : List (Nat × Nat))
 /-! ## The domain's shape -/
 
 theorem sized_ok (signing : Bool) {s : State} {base : Addr} {size pLen qLen nP nQ P Q : Nat}
-    {post : State → Prop} (hs : Ws s base size) (hz : 4960 ≤ size) (wp : Width pLen nP) (wq : Width qLen nQ)
+    {post : State → Prop} (hs : Ws s base size) (hz : 12016 ≤ size) (wp : Width pLen nP) (wq : Width qLen nQ)
     (Rp : Ready s base (.input .p) pLen) (Rq : Ready s base (.input .q) qLen)
     (hP : operand base s (.input .p) pLen = P) (hQ : operand base s (.input .q) qLen = Q)
     (failure : ∀ t, ¬ shapeValid P Q → Rest coreClob s t → Outs base shapeRanges s.mem t.mem →
@@ -98,8 +100,8 @@ theorem sized_ok (signing : Bool) {s : State} {base : Addr} {size pLen qLen nP n
     (body : ∀ t, shapeValid P Q → maskW base t = BitVec.allOnes 32 →
       (hdr base t 112).toNat = min (hdr base s 108).toNat (qWidth Q) →
       Rest coreClob s t → Outs base shapeRanges s.mem t.mem →
-      WP isa (if signing then SignVerify.signBody pLen qLen else SignVerify.verifyBody pLen qLen) t post) :
-    WP isa (Entry.sized signing pLen qLen) s post := by
+      WP isa (if signing then SignVerify.signBody umaal pLen qLen else SignVerify.verifyBody umaal pLen qLen) t post) :
+    WP isa (Entry.sized umaal signing pLen qLen) s post := by
   unfold Entry.sized
   refine WP.seq (WP.mono (check_ok hs hz wp wq Rp Rq hP hQ) fun t ⟨Z, M, D, R, O⟩ => ?_)
   refine WP.ite t.z (eval_eq _) (fun ht => failure t (of_decide_eq_true (Z ▸ ht)) R O) (fun hf => ?_)

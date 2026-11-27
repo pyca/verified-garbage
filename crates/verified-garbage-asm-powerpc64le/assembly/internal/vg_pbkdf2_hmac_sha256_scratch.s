@@ -24,7 +24,7 @@ vg_pbkdf2_hmac_sha256_scratch:
 	addi %r6, %r4, 0
 	addi %r3, %r21, 880
 	addi %r4, %r21, 976
-	bl {vg_hmac_sha256_init}
+	bl {vg_hmac_sha256_init_core}
 	li %r12, 1
 	li %r11, 1232
 	stwbrx %r12, %r21, %r11

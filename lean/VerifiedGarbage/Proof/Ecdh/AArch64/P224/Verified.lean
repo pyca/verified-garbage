@@ -1,19 +1,113 @@
 module
 
+import VerifiedGarbage.Proof.Weierstrass.AArch64.P224Window
+
 public import VerifiedGarbage.Proof.Ecdh.AArch64.Main
-public import VerifiedGarbage.Proof.Ecdh.AArch64.P224.Contract
 import VerifiedGarbage.Proof.Ecdsa.AArch64.P224.Verified
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
 import VerifiedGarbage.Proof.Ecdh.AArch64.P224.Lit
 public import VerifiedGarbage.Impl.Ecdh.P224.AArch64
 import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
 meta import VerifiedGarbage.Proof.Ecdh.AArch64.Main
-meta import VerifiedGarbage.Proof.Ecdh.AArch64.P224.Contract
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.P224.Verified
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
 meta import VerifiedGarbage.Proof.Ecdh.AArch64.P224.Lit
 meta import VerifiedGarbage.Impl.Ecdh.P224.AArch64
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.EcKey.P224
+public import VerifiedGarbage.Spec.Ecdh.Generic
+import VerifiedGarbage.Proof.Framework.GetElem
+meta import VerifiedGarbage.TCB.AArch64.Target
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Spec.EcKey.P224
+meta import VerifiedGarbage.Spec.Ecdh.Generic
+meta import VerifiedGarbage.Proof.Framework.GetElem
+public import VerifiedGarbage.Proof.EcKey.AArch64.Scrub
+public import VerifiedGarbage.Spec.Ecdh.P224
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubProved
+import VerifiedGarbage.Proof.Ecdsa.AArch64.AbiOnce
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.AbiOnce
+
+/-! ### `Ecdh.AArch64.P224.Contract`, which only this module used -/
+
+section
+
+/-!
+# ECDH over P-224 on AArch64: the contract the proof is written against
+
+The facts of `Spec.Ecdh.P224.exchangeApi`'s contract for AArch64, by name:
+`vg_ecdh_p224(out = x0, d = x1, peer = x2, scratch = x3)`, the result in
+`w0`.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Ecdh.AArch64.P224
+
+open VG VG.AArch64 Spec.Weierstrass Spec.EcKey
+
+/-- The shared secret of the private key at `d` and the public key at
+`peer`, as the specification computes it. -/
+abbrev ex (m : Mem) (d peer : Addr) : Option (List Byte) :=
+  Spec.Ecdh.exchange Spec.P224.curve (ofBytes (bytesAt m d 28)) (bytesAt m peer 57)
+
+def ecdhAArch64 : Contract AArch64.isa where
+  pre s :=
+    let out : Region := ⟨s.gpr .x0, 28⟩
+    let d : Region := ⟨s.gpr .x1, 28⟩
+    let peer : Region := ⟨s.gpr .x2, 57⟩
+    let scratch : Region := ⟨s.gpr .x3, 8192⟩
+    s.rd = [d, peer] ∧ s.wr = [out, scratch] ∧ out.Disjoint scratch ∧ out.Disjoint d ∧
+      out.Disjoint peer ∧ d.Disjoint scratch ∧ peer.Disjoint scratch ∧
+      (s.gpr .x0).toNat + 28 ≤ 2 ^ 64 ∧ (s.gpr .x3).toNat + 8192 ≤ 2 ^ 64
+  post s s' :=
+    match ex s.mem (s.gpr .x1) (s.gpr .x2) with
+    | some z => (s'.gpr .x0).setWidth 32 = 1 ∧ bytesAt s'.mem (s.gpr .x0) 28 = z
+    | none => (s'.gpr .x0).setWidth 32 = 0 ∧ bytesAt s'.mem (s.gpr .x0) 28 = List.replicate 28 0
+  pub s₁ s₂ := s₁.gpr .x0 = s₂.gpr .x0 ∧ s₁.gpr .x1 = s₂.gpr .x1 ∧ s₁.gpr .x2 = s₂.gpr .x2 ∧
+    s₁.gpr .x3 = s₂.gpr .x3 ∧ s₁.sp = s₂.sp
+
+/-- A state satisfying the precondition. -/
+def satState : State where
+  gpr r := match r with
+    | .x0 => 0x1000 | .x1 => 0x2000 | .x2 => 0x3000 | .x3 => 0x8000 | _ => 0
+  sp := 0x20000
+  mem _ := 0
+  rd := [⟨0x2000, 28⟩, ⟨0x3000, 57⟩]
+  wr := [⟨0x1000, 28⟩, ⟨0x8000, 8192⟩]
+
+theorem implies :
+    ecdhAArch64.Implies (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P224.inst AArch64.abi) := by
+  exact
+    { pre := by
+        sig_implies_pre [Spec.EcKey.P224.inst, Spec.Ecdh.Instance.exchangeContract,
+          Spec.Ecdh.Instance.exchangeSig, Spec.P224.curve, Spec.EcKey.scratchWords, AArch64.abi,
+          AArch64.argRegs, ecdhAArch64, ex]
+      post := by
+        intro s s' _ h
+        sig_post [Spec.EcKey.P224.inst, Spec.Ecdh.Instance.exchangeContract,
+          Spec.Ecdh.Instance.exchangeSig, Spec.P224.curve, Spec.EcKey.scratchWords, AArch64.abi,
+          AArch64.argRegs, ecdhAArch64, ex]
+        simp only [ecdhAArch64, ex, Spec.P224.curve] at h
+        revert h
+        generalize Spec.Ecdh.exchange _ _ _ = q
+        rcases q with _ | z <;> exact id
+      pub := by
+        sig_implies_pub [Spec.EcKey.P224.inst, Spec.Ecdh.Instance.exchangeContract,
+          Spec.Ecdh.Instance.exchangeSig, Spec.P224.curve, Spec.EcKey.scratchWords, AArch64.abi,
+          AArch64.argRegs, ecdhAArch64, ex]
+      sat := by
+        sig_implies_sat [Spec.EcKey.P224.inst, Spec.Ecdh.Instance.exchangeContract,
+          Spec.Ecdh.Instance.exchangeSig, Spec.P224.curve, Spec.EcKey.scratchWords, AArch64.abi,
+          AArch64.argRegs, satState] [satState] using satState }
+
+end VG.Proof.Ecdh.AArch64.P224
+
+end
+
+end
 
 /-!
 # ECDH over P-224 on AArch64: `Verified`
@@ -40,10 +134,7 @@ theorem pre_of {s : State} (h : ecdhAArch64.pre s) : EPre p224 s := by
 
 theorem post_of {s s' : State} (h : EPost p224 s s') : ecdhAArch64.post s s' := by
   unfold EPost at h
-  show match ex s.mem (s.gpr .x1) (s.gpr .x2) with
-    | some z => (s'.gpr .x0).setWidth 32 = 1 ∧ Spec.EcKey.bytesAt s'.mem (s.gpr .x0) 28 = z
-    | none => (s'.gpr .x0).setWidth 32 = 0 ∧
-        Spec.EcKey.bytesAt s'.mem (s.gpr .x0) 28 = List.replicate 28 0
+  dsimp only [ecdhAArch64]
   revert h
   generalize hq : ex s.mem (s.gpr .x1) (s.gpr .x2) = q
   rw [show Spec.Ecdh.exchange p224.C (dk p224 s)
@@ -54,11 +145,9 @@ theorem ecdh_a64 (hL : Weierstrass.Law Spec.P224.curve) (hI : Weierstrass.AArch6
     ∃ t s', Exec isa exchangeP224 s t s' ∧ abiPreserved s s' ∧ ecdhAArch64.post s s' := by
   -- In steps: elaborated in one term, the unifier would compare P-224's
   -- terms before the literals' facts are known.
-  have hn : CallsKeep exchangeP224 := by lit_decide
-  have hu : KeepsUntouched exchangeP224 := by lit_decide
-  have hv : exchangeP224.allInstrs keepsV = true := by lit_decide
-  obtain ⟨t, s', he, hsv, hpost⟩ := exchange_ok (p224_ok hI) hL (pre_of hs)
-  exact ⟨t, s', he, abiPreserved_of he hn hu hv hsv, post_of hpost⟩
+  have ha : abiK exchangeP224 = true := by lit_decide
+  obtain ⟨t, s', he, hsv, hpost⟩ := exchangeWithWindow_ok windowCallP224 Weierstrass.AArch64.windowCallP224_ok (p224_ok hI) hL (pre_of hs)
+  exact ⟨t, s', he, abiPreserved_ofK he ha hsv, post_of hpost⟩
 
 theorem ecdh_ct : ConstantTime isa ecdhAArch64.pre ecdhAArch64.pub exchangeP224 :=
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3])
@@ -74,5 +163,16 @@ theorem ecdh_verified (hL : Weierstrass.Law Spec.P224.curve) (hI : Weierstrass.A
     Verified AArch64.target exchangeP224
       (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P224.inst AArch64.abi) :=
   Verified.of_correct (ecdh_a64 hL hI) ecdh_ct implies
+
+
+/-- ECDH over P-224 as it is emitted, its cleanup included
+(`Impl.Ecdh.AArch64.Fn.exchangeP224`), meets its contract in constant time and
+returns without secret residue. -/
+theorem exchange_scrubbed (hL : Weierstrass.Law Spec.P224.curve) (hI : Weierstrass.AArch64.InvSounds) :
+    VerifiedScrubbed AArch64.target VG.Impl.Ecdh.AArch64.Fn.exchangeP224
+      (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P224.inst AArch64.abi) 32 :=
+  VG.AArch64.Scrub.verifiedScrubbedAll (api := Spec.Ecdh.P224.exchangeApi)
+    { code := exchangeP224, verified := ecdh_verified hL hI } _
+    (VG.Proof.EcKey.AArch64.Scrub.exchangeOk _) (by dsimp only; lit_decide)
 
 end VG.Proof.Ecdh.AArch64.P224

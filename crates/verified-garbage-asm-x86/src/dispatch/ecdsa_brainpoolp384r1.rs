@@ -8,6 +8,8 @@
 ///
 /// It runs `vg_ecdsa_brainpoolp384r1_verify`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety
@@ -18,7 +20,7 @@
 /// * `scratch` must be valid for reads and writes of 8192 bytes.
 /// * The contents of `scratch` on return are unspecified; the caller may reuse or destroy them.
 /// * `scratch` must not overlap `public`, `digest` or `sig` (distinct Rust objects never do).
-/// * None of `public`, `digest`, `sig` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 136 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `public`, `digest`, `sig` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 132 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_ecdsa_brainpoolp384r1_verify_auto(_dit: verified_garbage_cpu::Dit<'_>, public: *const [u8; 97], digest: *const u8, digest_len: usize, sig: *const [u8; 96], scratch: *mut [u64; 1024]) -> u32 {
@@ -31,6 +33,8 @@ pub unsafe fn vg_ecdsa_brainpoolp384r1_verify_auto(_dit: verified_garbage_cpu::D
 /// Contract: `VG.Spec.Ecdsa.Rfc6979.TableInstance.signContract`. Constant time but for the number of candidates for `k` tried (almost always 1) and which table `hmac` is: timing may depend on the pointers, that number and the table, not otherwise on the key or the hash.
 ///
 /// It runs `vg_ecdsa_brainpoolp384r1_sign`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -45,7 +49,7 @@ pub unsafe fn vg_ecdsa_brainpoolp384r1_verify_auto(_dit: verified_garbage_cpu::D
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `hmac` is a table of HMAC over the hash function of the digest, which RFC 6979 uses: the one of `VG.Spec.Mgf1.hashes` at the index in its first word of data (the HMAC tables of this crate, `fn_tables`, say which they name).
 /// * `out` and `scratch` must not overlap each other, `d`, `digest` or `hmac` (distinct Rust objects never do).
-/// * None of `out`, `d`, `digest`, `scratch` and `hmac` may overlap the arguments on the stack, overlap the return address on the stack or the 588 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `out`, `d`, `digest`, `scratch` and `hmac` may overlap the arguments on the stack, overlap the return address on the stack or the 612 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * `hmac` must be the `as_ptr()` of one of the `Hmac` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
 #[allow(clippy::too_many_arguments)]
 #[inline]

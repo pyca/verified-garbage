@@ -2,20 +2,16 @@ module
 
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentMaskCall
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Depth
-import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Bits
-import VerifiedGarbage.Proof.MlDsa.AArch64.Round.MakeHint
 import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Unpack
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejNttCT
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejNttCT
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.ExpandMask
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Ball
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallInitial
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ResidentMask
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejNtt
 public import VerifiedGarbage.Proof.MlDsa.Sample.Rej4
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Prims
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ResidentRejSelected
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Top
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.CTLoop
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.AddSub
-public import VerifiedGarbage.Impl.MlDsa.AArch64.Arith.Mul
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.HighPack
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Arith.Neon.Ntt
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Pack.Hint
@@ -26,18 +22,25 @@ import VerifiedGarbage.Proof.MlDsa.Sign.Bounds
 import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.HintPack
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackVerified
 import VerifiedGarbage.Proof.MlDsa.AArch64.Round.NormLt
-import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.NttInv
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.AddSubVerified
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejSelected
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallSelected
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackVerified
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.BallDispatch
 import Std.Tactic.BVDecide.Normalize.Prop
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejOutcome
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejTailReadyTiming
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejPublic
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
 import VerifiedGarbage.TCB.Axioms
 import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Mul
+import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Arith
+import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Basic
+import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Power2Round
+import VerifiedGarbage.Proof.MlDsa.Round.Ones
+import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Arith.Common
+import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Lit
+import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Lit
 
 /-!
 # ML-DSA signing on AArch64: the primitives it calls
@@ -66,23 +69,13 @@ open VG.Spec.Sha3 (bytesAt)
 def primsWith (c : Impl.Sha3.AArch64.Callee) : Prims where
   suffix := c.suffix
   ntt := Impl.MlDsa.AArch64.Arith.Neon.ntt
-  invNtt := Impl.MlDsa.AArch64.Arith.Neon.nttInv
-  mul := Impl.MlDsa.AArch64.Arith.mul
-  mulAdd := Impl.MlDsa.AArch64.Arith.mulAdd
-  add := Impl.MlDsa.AArch64.Optimized.AddSub.code false
-  sub := Impl.MlDsa.AArch64.Optimized.AddSub.code true
   rej4 := Impl.MlDsa.AArch64.Optimized.ResidentRej.selected c.pairedSha3
   rejNTT := Impl.MlDsa.AArch64.Sample.rejNTTWith c
   expandMask := Impl.MlDsa.AArch64.Sample.expandMaskWith c
   pairedMask := c.pairedSha3
   expandMaskPair := Impl.MlDsa.AArch64.Optimized.ResidentMask.raw
   ball := Impl.MlDsa.AArch64.Optimized.Ball.selected c
-  highBits := Impl.MlDsa.AArch64.Round.highBits
   highPack := Impl.MlDsa.AArch64.Optimized.HighPack.code
-  lowBits := Impl.MlDsa.AArch64.Round.lowBits
-  normLt := Impl.MlDsa.AArch64.Round.normLt
-  makeHint := Impl.MlDsa.AArch64.Round.makeHint
-  simpleBitPack := Impl.MlDsa.AArch64.Optimized.KeygenPack.simple
   bitPack := Impl.MlDsa.AArch64.Optimized.KeygenPack.signed
   bitUnpack := Impl.MlDsa.AArch64.Pack.bitUnpack
   hintBitPack := Impl.MlDsa.AArch64.Pack.hintBitPack
@@ -163,19 +156,12 @@ theorem prims_okWith : PrimsOk (primsWith keccak.callee) signStack where
   ntt := by
     have h := Proof.MlDsa.AArch64.Arith.Neon.ntt_verified
     unfold Proof.MlDsa.nttContract at h ⊢
-    exact CalleeOk.of_verified (by decide) h (by decide) (by dsimp only [primsWith]; decide +kernel)
-  invNtt := by
-    have h := Proof.MlDsa.AArch64.Arith.Neon.nttInv_verified
-    unfold Proof.MlDsa.nttInvContract at h ⊢
-    exact CalleeOk.of_verified (by decide) h (by decide) (by dsimp only [primsWith]; decide +kernel)
-  mul := CalleeOk.of_verified (S := signStack) (by decide) Proof.MlDsa.AArch64.Arith.mul_verified (by decide) (by dsimp only [primsWith]; decide +kernel)
-  mulAdd := CalleeOk.of_verified (S := signStack) (by decide) Proof.MlDsa.AArch64.Arith.mulAdd_verified (by decide) (by dsimp only [primsWith]; decide +kernel)
-  add := CalleeOk.of_verified (S := signStack) (by decide) Proof.MlDsa.AArch64.Optimized.AddSub.add_verified (by decide) (by dsimp only [primsWith]; decide +kernel)
-  sub := CalleeOk.of_verified (S := signStack) (by decide) Proof.MlDsa.AArch64.Optimized.AddSub.sub_verified (by decide) (by dsimp only [primsWith]; decide +kernel)
+    exact CalleeOk.of_verified (by decide) h (by decide) (by dsimp only [primsWith]; decide +kernel) (by dsimp only [primsWith]; lit_decide)
   rej4 := CalleeOk.of_verified (S := signStack) (by decide)
     (Optimized.ResidentRej.selected_verified keccak.callee.pairedSha3) (by decide)
-    (by simp [primsWith,signStack,Optimized.ResidentRej.selected_depth])
-  rej4Ret := fun s₁ s₂ t₁ t₂ s₁' s₂' ⟨h₁,h₂,hp⟩ e₁ e₂ =>
+    (by simp [primsWith,signStack,Optimized.ResidentRej.selected_depth]) (VG.Proof.MlDsa.AArch64.Optimized.ResidentRej.selected_noDit _)
+  rej4Ret := RetPub.of_noDit (Optimized.ResidentRej.selected_noDit _) (fun _ d h => pre_withDit d h)
+    fun s₁ s₂ t₁ t₂ s₁' s₂' ⟨h₁,h₂,hp⟩ e₁ e₂ =>
     ⟨(Optimized.ResidentRej.selected_ct keccak.callee.pairedSha3) s₁ s₂ t₁ t₂ s₁' s₂'
       (rn4_pre s₁ h₁) (rn4_pre s₂ h₂) (by
         sig_pub [Proof.MlDsa.rejNTT4Contract,Proof.MlDsa.rejNTT4Sig,AArch64.abi,AArch64.argRegs] at hp
@@ -186,34 +172,26 @@ theorem prims_okWith : PrimsOk (primsWith keccak.callee) signStack where
     rw [rn4_ret h e] at h1
     exact Proof.MlDsa.Sample.rej4Res_max h1 hk (by decide)
   rejNTT := CalleeOk.of_verified (S := signStack) (by decide) (Proof.MlDsa.AArch64.Sample.rejNTT_verifiedWith keccak) (by decide)
-    (by simp [primsWith, signStack, Sample.rejNTT_depth keccak])
+    (by simp [primsWith, signStack, Sample.rejNTT_depth keccak]) (VG.Proof.MlDsa.AArch64.Sample.rejNTT_noDit keccak)
   expandMask := CalleeOk.of_verified (S := signStack) (by decide) (Proof.MlDsa.AArch64.Sample.expandMask_verifiedWith keccak) (by decide)
-    (by simp [primsWith, signStack, Sample.expandMask_depth keccak])
+    (by simp [primsWith, signStack, Sample.expandMask_depth keccak]) (VG.Proof.MlDsa.AArch64.Sample.expandMask_noDit keccak)
   expandMaskPair := Optimized.ResidentMask.pair_callee (by decide)
   ball := CalleeOk.of_verified (S := signStack) (by decide) (Proof.MlDsa.AArch64.Optimized.Ball.selected_verified keccak) (by decide)
-    (by simp [primsWith, signStack, Optimized.Ball.selected_depth keccak])
-  highBits := CalleeOk.of_verified (S := signStack) (by decide) Proof.MlDsa.AArch64.Round.highBits_verified (by decide)
-    (by dsimp only [primsWith]; decide +kernel)
+    (by simp [primsWith, signStack, Optimized.Ball.selected_depth keccak]) (VG.Proof.MlDsa.AArch64.Optimized.Ball.selected_noDit keccak)
   highPack := by
     intro g hg
     exact CalleeOk.of_verified (S := signStack) (by decide)
       (Optimized.HighPack.pack_verified (VG.Proof.MlDsa.AArch64.Round.isG_of_mem hg))
       (by decide) (by dsimp only [primsWith]; rcases VG.Proof.MlDsa.AArch64.Round.isG_of_mem hg with rfl | rfl <;> decide +kernel)
-  lowBits := CalleeOk.of_verified (S := signStack) (by decide) Proof.MlDsa.AArch64.Round.lowBits_verified (by decide)
-    (by dsimp only [primsWith]; decide +kernel)
-  normLt := CalleeOk.of_verified (S := signStack) (by decide) Proof.MlDsa.AArch64.Round.normLt_verified (by decide)
-    (by dsimp only [primsWith]; decide +kernel)
-  makeHint := CalleeOk.of_verified (S := signStack) (by decide) Proof.MlDsa.AArch64.Round.makeHint_verified (by decide)
-    (by dsimp only [primsWith]; decide +kernel)
-  simpleBitPack := CalleeOk.of_verified (S := signStack) (by decide) Proof.MlDsa.AArch64.Optimized.KeygenPack.simple_verified (by decide)
-    (by dsimp only [primsWith]; decide +kernel)
+      (by dsimp only [primsWith]; rcases VG.Proof.MlDsa.AArch64.Round.isG_of_mem hg with rfl | rfl <;> lit_decide)
   bitPack := CalleeOk.of_verified (S := signStack) (by decide) Proof.MlDsa.AArch64.Optimized.KeygenPack.signed_verified (by decide)
-    (by dsimp only [primsWith]; decide +kernel)
+    (by dsimp only [primsWith]; decide +kernel) (by dsimp only [primsWith]; lit_decide)
   bitUnpack := CalleeOk.of_verified (S := signStack) (by decide) Proof.MlDsa.AArch64.Pack.bitUnpack_verified (by decide)
-    (by dsimp only [primsWith]; decide +kernel)
+    (by dsimp only [primsWith]; decide +kernel) (by dsimp only [primsWith]; lit_decide)
   hintBitPack := CalleeOk.of_verified (S := signStack) (by decide) Proof.MlDsa.AArch64.Pack.hintBitPack_verified (by decide)
-    (by dsimp only [primsWith]; decide +kernel)
-  rejRet := fun s₁ s₂ t₁ t₂ s₁' s₂' ⟨h₁, h₂, hp⟩ e₁ e₂ =>
+    (by dsimp only [primsWith]; decide +kernel) (by dsimp only [primsWith]; lit_decide)
+  rejRet := RetPub.of_noDit (Sample.rejNTT_noDit keccak) (fun _ d h => pre_withDit d h)
+    fun s₁ s₂ t₁ t₂ s₁' s₂' ⟨h₁, h₂, hp⟩ e₁ e₂ =>
     ⟨(Proof.MlDsa.AArch64.Sample.rejNTT_verifiedWith keccak).2.1 s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp e₁ e₂,
       show _ = _ by rw [rn_ret h₁ e₁, rn_ret h₂ e₂, rn_pub s₁ s₂ hp]⟩
   rejMax := fun s t s' h e h1 => by
@@ -221,7 +199,8 @@ theorem prims_okWith : PrimsOk (primsWith keccak.callee) signStack where
     by_cases hf : (VG.Proof.MlDsa.Sample.rnFold [] (G (bytesAt s.mem (s.gpr .x0) 34) 1008)).length = 256
     · rw [rejNTTPoly_mono (show 1008 ≤ maxBounds.rejNTT by decide) (VG.Proof.MlDsa.Sample.rejNTT_some hf)]; rfl
     · rw [ifn hf] at h1; exact absurd h1.symm one_ne_zero32
-  ballRet := fun s₁ s₂ t₁ t₂ s₁' s₂' ⟨h₁, h₂, hp⟩ e₁ e₂ =>
+  ballRet := RetPub.of_noDit (Optimized.Ball.selected_noDit keccak) (fun _ d h => pre_withDit d h)
+    fun s₁ s₂ t₁ t₂ s₁' s₂' ⟨h₁, h₂, hp⟩ e₁ e₂ =>
     ⟨(Proof.MlDsa.AArch64.Optimized.Ball.selected_verified keccak).2.1 s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp e₁ e₂,
       show _ = _ by rw [sb_ret h₁ e₁, sb_ret h₂ e₂, (sb_pub s₁ s₂ hp).1, (sb_pub s₁ s₂ hp).2]⟩
   ballMax := fun s t s' h e h1 => by

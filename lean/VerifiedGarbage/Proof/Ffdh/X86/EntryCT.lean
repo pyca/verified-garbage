@@ -55,8 +55,9 @@ theorem entry_relCT (a : Args) :
     (checkedProgramChange (τ' := { argumentTaint with regs := .ofList [.esp, .edi, .eax] })
       (hint := .block []) rfl rfl)
 
+/-- The registers after a `free`: the frame's bytes are lost, its registers those of `freed`. -/
 theorem freed_of_pop {bytes : Nat} {s₁ s₂ s₃ : State} (h : isa.pop (.free bytes) s₁ s₂ = some s₃) :
-    s₃ = freed bytes s₂ := by
+    s₃.gpr = (freed bytes s₂).gpr := by
   simp only [isa, pop] at h
   split at h <;> [cases h; cases h]
   rfl
@@ -225,7 +226,7 @@ variable {a : Args} {n : Nat} {s : State} {Ex : List Region → List Region → 
 theorem WrapABI.frameWs (A : WrapABI a n s) :
     Region.Disjoint ⟨frameAt s, argsFrame⟩ ⟨wsBase a s, wsSize a s⟩ := by
   have low := A.stackLow
-  have st' : stack = 172 := rfl
+  have st' : stack = 252 := rfl
   have FA : frameAt s = (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 argsFrame :=
     VG.X86.Taint.sub_setWidth (by simp only [argsFrame]; omega_using [low, st'])
   exact A.belowScratch.sub_left (by rw [FA]; exact Offset.sub_below _ (by decide) (by decide))
@@ -234,7 +235,7 @@ theorem BodyAt.argsOk (A : WrapABI a n s) (B : BodyAt Ex a s f) {Out : List Regi
     (hOut : ∀ r ∈ Out, Region.Disjoint ⟨frameAt s, argsFrame⟩ r := by simp) :
     CrtRt.ArgsOk (narrowed (wsBase a s) (wsSize a s) f Out) := by
   have low := A.stackLow
-  have st' : stack = 172 := rfl
+  have st' : stack = 252 := rfl
   refine ⟨B.1.top, fun r hr => ?_⟩
   show Region.Disjoint ⟨(f.gpr .esp).setWidth 64, 76⟩ _
   rw [B.2.1]

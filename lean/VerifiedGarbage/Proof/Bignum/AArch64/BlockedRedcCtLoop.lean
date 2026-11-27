@@ -1,7 +1,6 @@
 module
-public import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcCtContext
 
-import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcCtRow
+public import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcCtRow
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareLayout
 
 @[expose] public section

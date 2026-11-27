@@ -932,29 +932,19 @@ vg_idea_cfb64_encrypt:
 	mov r13, QWORD PTR [r9+136]
 	mov r14, QWORD PTR [r9+144]
 	mov r15, QWORD PTR [r9+152]
+	pxor xmm0, xmm0
 	mov r11d, 0
-	mov QWORD PTR [rsp+8], r11
-	mov QWORD PTR [rsp+16], r11
-	mov QWORD PTR [rsp+24], r11
-	mov QWORD PTR [rsp+32], r11
-	mov QWORD PTR [rsp+40], r11
-	mov QWORD PTR [rsp+48], r11
-	mov QWORD PTR [rsp+56], r11
-	mov QWORD PTR [rsp+64], r11
-	mov QWORD PTR [rsp+72], r11
-	mov QWORD PTR [rsp+80], r11
-	mov QWORD PTR [rsp+88], r11
-	mov QWORD PTR [rsp+96], r11
-	mov QWORD PTR [rsp+104], r11
-	mov QWORD PTR [rsp+112], r11
-	mov QWORD PTR [rsp+120], r11
-	mov QWORD PTR [rsp+128], r11
-	mov QWORD PTR [rsp+136], r11
-	mov QWORD PTR [rsp+144], r11
-	mov QWORD PTR [rsp+152], r11
-	mov QWORD PTR [rsp+160], r11
-	mov QWORD PTR [rsp+168], r11
-	mov QWORD PTR [rsp+176], r11
+	movdqu XMMWORD PTR [rsp+8], xmm0
+	movdqu XMMWORD PTR [rsp+24], xmm0
+	movdqu XMMWORD PTR [rsp+40], xmm0
+	movdqu XMMWORD PTR [rsp+56], xmm0
+	movdqu XMMWORD PTR [rsp+72], xmm0
+	movdqu XMMWORD PTR [rsp+88], xmm0
+	movdqu XMMWORD PTR [rsp+104], xmm0
+	movdqu XMMWORD PTR [rsp+120], xmm0
+	movdqu XMMWORD PTR [rsp+136], xmm0
+	movdqu XMMWORD PTR [rsp+152], xmm0
+	movdqu XMMWORD PTR [rsp+168], xmm0
 	lea rsp, [rsp+184]
 	pxor xmm0, xmm0
 	pxor xmm1, xmm1
@@ -973,9 +963,11 @@ vg_idea_cfb64_encrypt:
 	pxor xmm14, xmm14
 	pxor xmm15, xmm15
 	xor r11d, r11d
-	lea rsp, [rsp-184]
-	mov QWORD PTR [rsp], r11
-	lea rsp, [rsp+184]
+	lea rsp, [rsp-8]
+	lea rsp, [rsp-176]
+	movdqu XMMWORD PTR [rsp], xmm0
+	lea rsp, [rsp+176]
+	lea rsp, [rsp+8]
 	xor eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -984,7 +976,6 @@ vg_idea_cfb64_encrypt:
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -1917,29 +1908,19 @@ vg_idea_cfb64_decrypt:
 	mov r13, QWORD PTR [r9+136]
 	mov r14, QWORD PTR [r9+144]
 	mov r15, QWORD PTR [r9+152]
+	pxor xmm0, xmm0
 	mov r11d, 0
-	mov QWORD PTR [rsp+8], r11
-	mov QWORD PTR [rsp+16], r11
-	mov QWORD PTR [rsp+24], r11
-	mov QWORD PTR [rsp+32], r11
-	mov QWORD PTR [rsp+40], r11
-	mov QWORD PTR [rsp+48], r11
-	mov QWORD PTR [rsp+56], r11
-	mov QWORD PTR [rsp+64], r11
-	mov QWORD PTR [rsp+72], r11
-	mov QWORD PTR [rsp+80], r11
-	mov QWORD PTR [rsp+88], r11
-	mov QWORD PTR [rsp+96], r11
-	mov QWORD PTR [rsp+104], r11
-	mov QWORD PTR [rsp+112], r11
-	mov QWORD PTR [rsp+120], r11
-	mov QWORD PTR [rsp+128], r11
-	mov QWORD PTR [rsp+136], r11
-	mov QWORD PTR [rsp+144], r11
-	mov QWORD PTR [rsp+152], r11
-	mov QWORD PTR [rsp+160], r11
-	mov QWORD PTR [rsp+168], r11
-	mov QWORD PTR [rsp+176], r11
+	movdqu XMMWORD PTR [rsp+8], xmm0
+	movdqu XMMWORD PTR [rsp+24], xmm0
+	movdqu XMMWORD PTR [rsp+40], xmm0
+	movdqu XMMWORD PTR [rsp+56], xmm0
+	movdqu XMMWORD PTR [rsp+72], xmm0
+	movdqu XMMWORD PTR [rsp+88], xmm0
+	movdqu XMMWORD PTR [rsp+104], xmm0
+	movdqu XMMWORD PTR [rsp+120], xmm0
+	movdqu XMMWORD PTR [rsp+136], xmm0
+	movdqu XMMWORD PTR [rsp+152], xmm0
+	movdqu XMMWORD PTR [rsp+168], xmm0
 	lea rsp, [rsp+184]
 	pxor xmm0, xmm0
 	pxor xmm1, xmm1
@@ -1958,9 +1939,11 @@ vg_idea_cfb64_decrypt:
 	pxor xmm14, xmm14
 	pxor xmm15, xmm15
 	xor r11d, r11d
-	lea rsp, [rsp-184]
-	mov QWORD PTR [rsp], r11
-	lea rsp, [rsp+184]
+	lea rsp, [rsp-8]
+	lea rsp, [rsp-176]
+	movdqu XMMWORD PTR [rsp], xmm0
+	lea rsp, [rsp+176]
+	lea rsp, [rsp+8]
 	xor eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -1969,7 +1952,6 @@ vg_idea_cfb64_decrypt:
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -2917,29 +2899,19 @@ vg_idea_cfb64_encrypt_final:
 	mov r13, QWORD PTR [r9+136]
 	mov r14, QWORD PTR [r9+144]
 	mov r15, QWORD PTR [r9+152]
+	pxor xmm0, xmm0
 	mov r11d, 0
-	mov QWORD PTR [rsp+8], r11
-	mov QWORD PTR [rsp+16], r11
-	mov QWORD PTR [rsp+24], r11
-	mov QWORD PTR [rsp+32], r11
-	mov QWORD PTR [rsp+40], r11
-	mov QWORD PTR [rsp+48], r11
-	mov QWORD PTR [rsp+56], r11
-	mov QWORD PTR [rsp+64], r11
-	mov QWORD PTR [rsp+72], r11
-	mov QWORD PTR [rsp+80], r11
-	mov QWORD PTR [rsp+88], r11
-	mov QWORD PTR [rsp+96], r11
-	mov QWORD PTR [rsp+104], r11
-	mov QWORD PTR [rsp+112], r11
-	mov QWORD PTR [rsp+120], r11
-	mov QWORD PTR [rsp+128], r11
-	mov QWORD PTR [rsp+136], r11
-	mov QWORD PTR [rsp+144], r11
-	mov QWORD PTR [rsp+152], r11
-	mov QWORD PTR [rsp+160], r11
-	mov QWORD PTR [rsp+168], r11
-	mov QWORD PTR [rsp+176], r11
+	movdqu XMMWORD PTR [rsp+8], xmm0
+	movdqu XMMWORD PTR [rsp+24], xmm0
+	movdqu XMMWORD PTR [rsp+40], xmm0
+	movdqu XMMWORD PTR [rsp+56], xmm0
+	movdqu XMMWORD PTR [rsp+72], xmm0
+	movdqu XMMWORD PTR [rsp+88], xmm0
+	movdqu XMMWORD PTR [rsp+104], xmm0
+	movdqu XMMWORD PTR [rsp+120], xmm0
+	movdqu XMMWORD PTR [rsp+136], xmm0
+	movdqu XMMWORD PTR [rsp+152], xmm0
+	movdqu XMMWORD PTR [rsp+168], xmm0
 	lea rsp, [rsp+184]
 	pxor xmm0, xmm0
 	pxor xmm1, xmm1
@@ -2958,9 +2930,11 @@ vg_idea_cfb64_encrypt_final:
 	pxor xmm14, xmm14
 	pxor xmm15, xmm15
 	xor r11d, r11d
-	lea rsp, [rsp-184]
-	mov QWORD PTR [rsp], r11
-	lea rsp, [rsp+184]
+	lea rsp, [rsp-8]
+	lea rsp, [rsp-176]
+	movdqu XMMWORD PTR [rsp], xmm0
+	lea rsp, [rsp+176]
+	lea rsp, [rsp+8]
 	xor eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -2969,7 +2943,6 @@ vg_idea_cfb64_encrypt_final:
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -3918,29 +3891,19 @@ vg_idea_cfb64_decrypt_final:
 	mov r13, QWORD PTR [r9+136]
 	mov r14, QWORD PTR [r9+144]
 	mov r15, QWORD PTR [r9+152]
+	pxor xmm0, xmm0
 	mov r11d, 0
-	mov QWORD PTR [rsp+8], r11
-	mov QWORD PTR [rsp+16], r11
-	mov QWORD PTR [rsp+24], r11
-	mov QWORD PTR [rsp+32], r11
-	mov QWORD PTR [rsp+40], r11
-	mov QWORD PTR [rsp+48], r11
-	mov QWORD PTR [rsp+56], r11
-	mov QWORD PTR [rsp+64], r11
-	mov QWORD PTR [rsp+72], r11
-	mov QWORD PTR [rsp+80], r11
-	mov QWORD PTR [rsp+88], r11
-	mov QWORD PTR [rsp+96], r11
-	mov QWORD PTR [rsp+104], r11
-	mov QWORD PTR [rsp+112], r11
-	mov QWORD PTR [rsp+120], r11
-	mov QWORD PTR [rsp+128], r11
-	mov QWORD PTR [rsp+136], r11
-	mov QWORD PTR [rsp+144], r11
-	mov QWORD PTR [rsp+152], r11
-	mov QWORD PTR [rsp+160], r11
-	mov QWORD PTR [rsp+168], r11
-	mov QWORD PTR [rsp+176], r11
+	movdqu XMMWORD PTR [rsp+8], xmm0
+	movdqu XMMWORD PTR [rsp+24], xmm0
+	movdqu XMMWORD PTR [rsp+40], xmm0
+	movdqu XMMWORD PTR [rsp+56], xmm0
+	movdqu XMMWORD PTR [rsp+72], xmm0
+	movdqu XMMWORD PTR [rsp+88], xmm0
+	movdqu XMMWORD PTR [rsp+104], xmm0
+	movdqu XMMWORD PTR [rsp+120], xmm0
+	movdqu XMMWORD PTR [rsp+136], xmm0
+	movdqu XMMWORD PTR [rsp+152], xmm0
+	movdqu XMMWORD PTR [rsp+168], xmm0
 	lea rsp, [rsp+184]
 	pxor xmm0, xmm0
 	pxor xmm1, xmm1
@@ -3959,9 +3922,11 @@ vg_idea_cfb64_decrypt_final:
 	pxor xmm14, xmm14
 	pxor xmm15, xmm15
 	xor r11d, r11d
-	lea rsp, [rsp-184]
-	mov QWORD PTR [rsp], r11
-	lea rsp, [rsp+184]
+	lea rsp, [rsp-8]
+	lea rsp, [rsp-176]
+	movdqu XMMWORD PTR [rsp], xmm0
+	lea rsp, [rsp+176]
+	lea rsp, [rsp+8]
 	xor eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -3970,6 +3935,5 @@ vg_idea_cfb64_decrypt_final:
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 	.p2align 6

@@ -1,12 +1,170 @@
 module
 
-public import VerifiedGarbage.Proof.Ed448.Arm.VerifyField
 import VerifiedGarbage.Proof.X448.Arm.Freeze
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.X448.Arm.Copy
 import VerifiedGarbage.Proof.X448.Arm.Carry
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Proof.Ed448.Arm.BaseStep
+public import VerifiedGarbage.Proof.X448.Arm.Square
+public import VerifiedGarbage.Impl.Ed448.Arm.VerifyEquation
+
+/-! ### `Ed448.Arm.VerifyField`, which this module and modules that import it used -/
+
+section
+
+/-!
+# Ed448 verification's equation on ARMv7: field programs
+
+The field programs of `vg_ed448_verify_equation` (`Impl/Ed448/Arm/
+VerifyEquation.lean`) as X448's slot operations (`FieldOp`), evaluated on the
+slots: the doubling and the addition at the slots they are used with (RFC 8032
+§5.2.4's formulas, as for base-point multiplication), and the steps of
+decoding. `VKeep` is what the checks and decoding may change: the field
+operations' registers, the counter `r11` and `BAD` (`r10`), and the working
+space from `SIGN` to the slots' end and from X448's `ACC`.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Ed448.Arm
+
+open VG VG.Arm VG.Impl.Ed448.Arm VG.Proof.X448.Arm
+open VG.Impl.X448.Arm (slot X2 ACC)
+
+/-! ## The frame -/
+
+structure VKeep (base : Addr) (s t : State) : Prop where
+  regs : Keeps (.r10 :: .r11 :: workRegs) s t
+  mem : Outside2 base 32 2848 ACC 512 s.mem t.mem
+
+theorem VKeep.trans {base : Addr} {s t u : State} (h : VKeep base s t) (h' : VKeep base t u) :
+    VKeep base s u := ⟨h.regs.trans h'.regs, h.mem.trans h'.mem⟩
+
+theorem VKeep.scr {base : Addr} {s t : State} (h : VKeep base s t) (hs : Scr s base) : Scr t base :=
+  hs.of_keeps h.regs (by decide)
+
+theorem Outside2.widen {base : Addr} {m m' : Mem} (h : Outside2 base 64 2816 ACC 512 m m') :
+    Outside2 base 32 2848 ACC 512 m m' :=
+  fun p h1 h2 => h p (by rcases h1 with h1 | h1 <;> [exact Or.inl (by omega_using [h1]); exact Or.inr (by omega_using [h1])]) h2
+
+theorem IKeep.toV {base : Addr} {s t : State} (h : IKeep base s t) : VKeep base s t :=
+  ⟨h.regs.mono (fun _ hr => List.mem_cons_of_mem _ hr), Outside2.widen h.mem⟩
+
+theorem Keep.toV {base : Addr} {s t : State} (h : Keep base s t) : VKeep base s t := IKeep.toV h.ikeep
+
+/-- What the comparisons may change: `VKeep`'s registers, and the slots and `ACC`. -/
+structure CKeep (base : Addr) (s t : State) : Prop where
+  regs : Keeps (.r10 :: .r11 :: workRegs) s t
+  mem : Outside2 base 64 2816 ACC 512 s.mem t.mem
+
+theorem CKeep.toV {base : Addr} {s t : State} (h : CKeep base s t) : VKeep base s t :=
+  ⟨h.regs, Outside2.widen h.mem⟩
+
+theorem CKeep.scr {base : Addr} {s t : State} (h : CKeep base s t) (hs : Scr s base) : Scr t base :=
+  hs.of_keeps h.regs (by decide)
+
+theorem CKeep.trans {base : Addr} {s t u : State} (h : CKeep base s t) (h' : CKeep base t u) :
+    CKeep base s u := ⟨h.regs.trans h'.regs, h.mem.trans h'.mem⟩
+
+theorem IKeep.toC {base : Addr} {s t : State} (h : IKeep base s t) : CKeep base s t :=
+  ⟨h.regs.mono (fun _ hr => List.mem_cons_of_mem _ hr), h.mem⟩
+
+theorem Keep.toC {base : Addr} {s t : State} (h : Keep base s t) : CKeep base s t := IKeep.toC h.ikeep
+
+/-! ## Operations and where they write -/
+
+def fdest : FieldOp → Index
+  | .mul o _ _ | .add o _ _ | .sub o _ _ | .mulSmall o _ | .copy o _ => o
+
+theorem fop_apply_keep (op : FieldOp) (e : Env) {i : Index} (h : fdest op ≠ i) :
+    op.apply e i = e i := by
+  cases op <;> exact Fun.update_of_ne (Ne.symm h) _ _
+
+theorem applyOps_keep (xs : List FieldOp) (e : Env) {i : Index} (h : i ∉ xs.map fdest) :
+    applyOps xs e i = e i := by
+  induction xs generalizing e with
+  | nil => rfl
+  | cons op rest ih =>
+    simp only [List.map_cons, List.mem_cons, not_or] at h
+    rw [applyOps, ih _ h.2, fop_apply_keep _ _ (Ne.symm h.1)]
+
+theorem applyOps_append (a b : List FieldOp) (e : Env) :
+    applyOps (a ++ b) e = applyOps b (applyOps a e) := by
+  induction a generalizing e with
+  | nil => rfl
+  | cons op rest ih => exact ih _
+
+/-! ## The programs -/
+
+def doubleF (x y z : Index) : List FieldOp := [
+  .add 12 x y, .mul 12 12 12, .mul 13 x x, .mul 14 y y, .add 15 13 14, .mul 16 z z,
+  .add 17 16 16, .sub 17 15 17, .sub 18 12 15, .mul x 18 17, .sub 19 13 14, .mul y 15 19,
+  .mul z 15 17]
+
+def addF (x y z : Index) : List FieldOp := [
+  .mul 12 2 z, .mul 13 12 12, .mul 14 0 x, .mul 15 21 y, .mul 16 11 14, .mul 16 16 15,
+  .sub 17 13 16, .add 18 13 16, .add 19 0 21, .add 20 x y, .mul 19 19 20, .mul 20 12 17,
+  .sub 19 19 14, .sub 19 19 15, .mul 3 20 19, .mul 20 12 18, .sub 19 15 14, .mul 4 20 19,
+  .mul 5 17 18]
+
+def decodeUVF (yo xo : Index) : List FieldOp :=
+  [.mul 12 yo yo, .sub 13 12 10, .mul 3 11 12, .sub 3 3 10, .mul 4 13 3, .mul 4 4 4,
+    .mul 5 13 13, .mul 5 5 13, .mul xo 5 3, .mul 12 xo 4]
+
+def decodeXF (xo : Index) : List FieldOp := [.mul xo xo 1, .mul 12 xo xo, .mul 12 3 12]
+
+def negXF (xo : Index) : List FieldOp := [.sub 12 xo xo, .sub 12 12 xo]
+
+theorem decodeUVF_impl (yo xo : Index) :
+    (decodeUVF yo xo).map FieldOp.impl = decodeUV yo.val xo.val := rfl
+theorem decodeXF_impl (xo : Index) : (decodeXF xo).map FieldOp.impl = decodeX xo.val := rfl
+theorem negXF_impl (xo : Index) : (negXF xo).map FieldOp.impl = negX xo.val := rfl
+
+/-! ## Their values -/
+
+theorem pt_congr' {e e' : Env} {a b c : Index} (ha : e' a = e a) (hb : e' b = e b) (hc : e' c = e c) :
+    pt e' a b c = pt e a b c := by
+  simp only [pt, ha, hb, hc]
+
+
+theorem doubleF_eval0 (e : Env) :
+    pt (applyOps (doubleF 0 21 2) e) 0 21 2 = Proof.Ed448.double (pt e 0 21 2) := rfl
+
+theorem doubleF_eval8 (e : Env) :
+    pt (applyOps (doubleF 8 9 10) e) 8 9 10 = Proof.Ed448.double (pt e 8 9 10) := rfl
+
+theorem doubleF_eval6 (e : Env) :
+    pt (applyOps (doubleF 6 7 1) e) 6 7 1 = Proof.Ed448.double (pt e 6 7 1) := rfl
+
+theorem doubleF_keep0 (e : Env) (i : Index)
+    (hi : 3 ≤ i.val ∧ i.val < 12 ∨ i.val = 1 ∨ i.val = 20) :
+    applyOps (doubleF 0 21 2) e i = e i := by
+  refine applyOps_keep _ _ ?_
+  revert i; decide
+
+theorem doubleF_keep8 (e : Env) (i : Index)
+    (hi : i.val < 8 ∨ i.val = 11 ∨ i.val = 20 ∨ i.val = 21) :
+    applyOps (doubleF 8 9 10) e i = e i := by
+  refine applyOps_keep _ _ ?_
+  revert i; decide
+
+theorem doubleF_keep6 (e : Env) (i : Index)
+    (hi : i.val = 0 ∨ (2 ≤ i.val ∧ i.val < 6) ∨ (8 ≤ i.val ∧ i.val < 12) ∨ i.val = 20 ∨ i.val = 21) :
+    applyOps (doubleF 6 7 1) e i = e i := by
+  refine applyOps_keep _ _ ?_
+  revert i; decide
+
+/-- The slots an addition writes, whatever its second point's. -/
+theorem addF_dest (x y z : Index) :
+    (addF x y z).map fdest = [12, 13, 14, 15, 16, 16, 17, 18, 19, 20, 19, 20, 19, 19, 3, 20, 19, 4, 5] := rfl
+
+end VG.Proof.Ed448.Arm
+
+end
+
+end
 
 /-!
 # Ed448 verification's equation on ARMv7: accumulating checks
@@ -68,7 +226,7 @@ theorem diffLimb_ok {s : State} {base : Addr} (hs : Scr s base) {a i : Nat} (ha 
   refine load_ok hs (by simp only [X2, slot]; omega_using [hi]) fun u hu => ?_
   refine load_ok (hs.of_upd hu (by decide) (by decide)) (by omega_using [ha, hi]) fun v hv => ?_
   refine VG.Proof.X25519.Arm.wp_dp (VG.Proof.X25519.Arm.op2_reg _ _) fun w hw => ?_
-  have x := xor_limb (x := word s.mem base (X2 + 4 * i)) (y := word s.mem base (a + 4 * i)) h1 h2
+  obtain x := xor_limb (x := word s.mem base (X2 + 4 * i)) (y := word s.mem base (a + 4 * i)) h1 h2
   refine WP.mono (orBad_ok (P := limbs s.mem base X2 i = limbs s.mem base a i)
     (by rw [hw.gpr, hv.other _ (by decide), hu.gpr, hv.gpr, hu.mem]; exact x.1)
     (by rw [hw.gpr, hv.other _ (by decide), hu.gpr, hv.gpr, hu.mem]; exact x.2))
@@ -121,15 +279,15 @@ theorem valN_inj {f g : Nat → Nat} :
   | 0, _, _, _, i, hi => absurd hi (Nat.not_lt_zero _)
   | n + 1, hf, hg, h, i, hi => by
     rw [valN_succ, valN_succ] at h
-    have lf := valN_lt (n := n) (fun j hj => hf j (by omega_using [hj]))
-    have lg := valN_lt (n := n) (fun j hj => hg j (by omega_using [hj]))
-    have hp : 0 < radix ^ n := Nat.pow_pos (by decide)
-    have e1 : f n = g n := by
+    obtain lf := valN_lt (n := n) (fun j hj => hf j (by omega_using [hj]))
+    obtain lg := valN_lt (n := n) (fun j hj => hg j (by omega_using [hj]))
+    obtain hp : 0 < radix ^ n := Nat.pow_pos (by decide)
+    obtain e1 : f n = g n := by
       have := congrArg (· / radix ^ n) h
       simp only [Nat.add_mul_div_left _ _ hp, Nat.div_eq_of_lt lf, Nat.div_eq_of_lt lg, Nat.zero_add] at this
       exact this
     rw [e1] at h
-    have e0 : valN f n = valN g n := by omega_using [h]
+    obtain e0 : valN f n = valN g n := by omega_using [h]
     rcases Nat.lt_succ_iff_lt_or_eq.mp hi with hi | rfl
     · exact valN_inj (fun j hj => hf j (by omega_using [hj])) (fun j hj => hg j (by omega_using [hj])) e0 i hi
     · exact e1
@@ -147,61 +305,61 @@ theorem eqSlots_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedEnv 
       CKeep base s t ∧ BoundedEnv t.mem base ∧ (∀ i : Index, i ≠ 1 → E t.mem base i = E s.mem base i) ∧
         BadUpd (E s.mem base a = E s.mem base b) (s.gpr .r10) (t.gpr .r10) ∧
         Keeps (.r10 :: workRegs) s t := by
-  have sa := slot_range a
-  have sb := slot_range b
+  obtain sa := slot_range a
+  obtain sb := slot_range b
   have hX2v : X2 = 192 := rfl
   have hA : ACC = 3584 := rfl
   have hX2 : X2 = slot (1 : Index).val := rfl
-  have s1a : slot a.val + 112 ≤ X2 ∨ X2 + 112 ≤ slot a.val := by rw [hX2]; exact slot_sep ha1
-  have s1b : slot b.val + 112 ≤ X2 ∨ X2 + 112 ≤ slot b.val := by rw [hX2]; exact slot_sep hb1
-  have sab := slot_sep hab
+  obtain s1a : slot a.val + 112 ≤ X2 ∨ X2 + 112 ≤ slot a.val := by rw [hX2]; exact slot_sep ha1
+  obtain s1b : slot b.val + 112 ≤ X2 ∨ X2 + 112 ≤ slot b.val := by rw [hX2]; exact slot_sep hb1
+  obtain sab := slot_sep hab
   unfold eqSlots
   simp only [List.append_assoc]
   -- slot 1 = slot a
   refine VG.Proof.X25519.Arm.WP.append (copy_ok hs (o := X2) (a := slot a.val) (by decide) (by omega_using [sa])
     (Or.inr (by omega_using [s1a]))) fun s1 ⟨f1, m1, k1⟩ => ?_
-  have hs1 := hs.of_keeps k1 (by decide)
-  have bd1 : Bounded s1.mem base X2 := fun i hi => by rw [f1 i hi]; exact hb a i hi
+  obtain hs1 := hs.of_keeps k1 (by decide)
+  obtain bd1 : Bounded s1.mem base X2 := fun i hi => by rw [f1 i hi]; exact hb a i hi
   refine VG.Proof.X25519.Arm.WP.append (freeze_ok hs1 bd1) fun s2 ⟨b2, v2, m2, k2⟩ => ?_
-  have hs2 := hs1.of_keeps k2 (by decide)
+  obtain hs2 := hs1.of_keeps k2 (by decide)
   -- slot a = slot 1
   refine VG.Proof.X25519.Arm.WP.append (copy_ok hs2 (o := slot a.val) (a := X2) (by omega_using [sa]) (by decide)
     (Or.inr (by omega_using [s1a]))) fun s3 ⟨f3, m3, k3⟩ => ?_
-  have hs3 := hs2.of_keeps k3 (by decide)
+  obtain hs3 := hs2.of_keeps k3 (by decide)
   -- slot 1 = slot b
   refine VG.Proof.X25519.Arm.WP.append (copy_ok hs3 (o := X2) (a := slot b.val) (by decide) (by omega_using [sb])
     (Or.inr (by omega_using [s1b]))) fun s4 ⟨f4, m4, k4⟩ => ?_
-  have hs4 := hs3.of_keeps k4 (by decide)
+  obtain hs4 := hs3.of_keeps k4 (by decide)
   -- what each stage leaves
-  have lb3 : ∀ i < 28, limbs s3.mem base (slot b.val) i = limbs s.mem base (slot b.val) i := by
+  obtain lb3 : ∀ i < 28, limbs s3.mem base (slot b.val) i = limbs s.mem base (slot b.val) i := by
     intro i hi
     rw [m3.limbs (by omega_using [sab]) (by omega_using [sb]) hi, m2.limbs s1b (by omega_using [sb, hA]) hi,
       m1.limbs (by omega_using [s1b]) (by omega_using [sb]) hi]
-  have bd4 : Bounded s4.mem base X2 := fun i hi => by rw [f4 i hi, lb3 i hi]; exact hb b i hi
+  obtain bd4 : Bounded s4.mem base X2 := fun i hi => by rw [f4 i hi, lb3 i hi]; exact hb b i hi
   refine VG.Proof.X25519.Arm.WP.append (freeze_ok hs4 bd4) fun s5 ⟨b5, v5, m5, k5⟩ => ?_
-  have hs5 := hs4.of_keeps k5 (by decide)
-  have la5 : ∀ i < 28, limbs s5.mem base (slot a.val) i = limbs s2.mem base X2 i := by
+  obtain hs5 := hs4.of_keeps k5 (by decide)
+  obtain la5 : ∀ i < 28, limbs s5.mem base (slot a.val) i = limbs s2.mem base X2 i := by
     intro i hi
     rw [m5.limbs s1a (by omega_using [sa, hA]) hi, m4.limbs (by omega_using [s1a]) (by omega_using [sa]) hi, f3 i hi]
-  have ba5 : Bounded s5.mem base (slot a.val) := fun i hi => by rw [la5 i hi]; exact b2 i hi
+  obtain ba5 : Bounded s5.mem base (slot a.val) := fun i hi => by rw [la5 i hi]; exact b2 i hi
   refine WP.mono (diffSlot_ok hs5 (by omega_using [sa]) b5 ba5) fun t ⟨tb, tm, tk⟩ => ?_
   -- the values
-  have fa : fe s5.mem base (slot a.val) = fe s.mem base (slot a.val) % Spec.X448.P := by
+  obtain fa : fe s5.mem base (slot a.val) = fe s.mem base (slot a.val) % Spec.X448.P := by
     rw [show fe s5.mem base (slot a.val) = fe s2.mem base X2 from valN_congr la5, v2]
     exact congrArg (· % Spec.X448.P) (valN_congr f1)
-  have fb : fe s5.mem base X2 = fe s.mem base (slot b.val) % Spec.X448.P := by
+  obtain fb : fe s5.mem base X2 = fe s.mem base (slot b.val) % Spec.X448.P := by
     rw [v5]; exact congrArg (· % Spec.X448.P) ((valN_congr f4).trans (valN_congr lb3))
   -- the other slots
-  have other : ∀ i : Index, i ≠ 1 → i ≠ a → ∀ j < 28,
+  obtain other : ∀ i : Index, i ≠ 1 → i ≠ a → ∀ j < 28,
       limbs t.mem base (slot i.val) j = limbs s.mem base (slot i.val) j := by
     intro i hi1 hia j hj
-    have si := slot_range i
-    have s1i : slot i.val + 112 ≤ X2 ∨ X2 + 112 ≤ slot i.val := by rw [hX2]; exact slot_sep hi1
-    have sai := slot_sep hia
+    obtain si := slot_range i
+    obtain s1i : slot i.val + 112 ≤ X2 ∨ X2 + 112 ≤ slot i.val := by rw [hX2]; exact slot_sep hi1
+    obtain sai := slot_sep hia
     rw [tm, m5.limbs s1i (by omega_using [hA, si]) hj, m4.limbs (by omega_using [s1i]) (by omega_using [si]) hj,
       m3.limbs (by omega_using [sai]) (by omega_using [si]) hj, m2.limbs s1i (by omega_using [hA, si]) hj,
       m1.limbs (by omega_using [s1i]) (by omega_using [si]) hj]
-  have kw : Keeps (.r10 :: workRegs) s t := by
+  obtain kw : Keeps (.r10 :: workRegs) s t := by
     refine (((k1.mono ?_).trans ((k2.mono ?_).trans ((k3.mono ?_).trans ((k4.mono ?_).trans
       (k5.mono ?_))))).trans (tk.mono ?_)) <;> intro r hr <;> revert r <;> decide
   refine ⟨⟨kw.mono (fun r hr => by revert r; decide), ?_⟩, fun i j hj => ?_, fun i hi => ?_, ?_, kw⟩

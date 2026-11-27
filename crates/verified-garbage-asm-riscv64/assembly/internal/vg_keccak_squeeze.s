@@ -7,14 +7,14 @@
 vg_keccak_squeeze:
 	.option push
 	.option arch, +m, +c
-	addi sp, sp, -560
+	addi sp, sp, -48
 	addi t0, sp, 0
-	sd ra, 512(t0)
-	sd s2, 520(t0)
-	sd s3, 528(t0)
-	sd s4, 536(t0)
-	sd s5, 544(t0)
-	sd s6, 552(t0)
+	sd ra, 0(t0)
+	sd s2, 8(t0)
+	sd s3, 16(t0)
+	sd s4, 24(t0)
+	sd s5, 32(t0)
+	sd s6, 40(t0)
 	addi s2, a0, 0
 	addi s3, a1, 0
 	addi s4, a2, 0
@@ -27,9 +27,11 @@ vg_keccak_squeeze:
 	j 24f
 23:
 	addi s4, zero, 0
+	addi sp, sp, -512
 	addi a0, s2, 0
 	addi a1, sp, 0
 	call {vg_keccak_f1600}
+	addi sp, sp, 512
 24:
 	add t2, s2, s4
 	or t1, t2, s4
@@ -82,12 +84,12 @@ vg_keccak_squeeze:
 21:
 	addi a0, s4, 0
 	addi t0, sp, 0
-	ld ra, 512(t0)
-	ld s2, 520(t0)
-	ld s3, 528(t0)
-	ld s4, 536(t0)
-	ld s5, 544(t0)
-	ld s6, 552(t0)
-	addi sp, sp, 560
+	ld ra, 0(t0)
+	ld s2, 8(t0)
+	ld s3, 16(t0)
+	ld s4, 24(t0)
+	ld s5, 32(t0)
+	ld s6, 40(t0)
+	addi sp, sp, 48
 	ret
 	.option pop

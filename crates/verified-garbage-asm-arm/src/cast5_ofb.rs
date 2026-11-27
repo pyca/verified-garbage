@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Cast5.ofbContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the subkeys, the chaining value or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 128 bytes.
@@ -55,7 +57,7 @@ add r2, r8, #40
 mov r3, #1
 add r12, r8, #56
 push {{r12, lr}}
-bl {vg_cast5_ecb_encrypt}
+bl {vg_cast5_ecb_encrypt_entry}
 ldr r12, [sp], #8
 ldr r9, [r6, #0]
 ldr r10, [r8, #40]
@@ -84,8 +86,12 @@ ldr r10, [r8, #24]
 ldr r11, [r8, #28]
 ldr lr, [r8, #32]
 ldr r8, [r8, #16]
-add r12, sp, #12
+add sp, sp, #328
+sub sp, sp, #336
+add r12, sp, #0
 mov r2, #0
+mov r3, #10
+23:
 str r2, [r12, #0]
 str r2, [r12, #4]
 str r2, [r12, #8]
@@ -94,85 +100,30 @@ str r2, [r12, #16]
 str r2, [r12, #20]
 str r2, [r12, #24]
 str r2, [r12, #28]
-str r2, [r12, #32]
-str r2, [r12, #36]
-str r2, [r12, #40]
-str r2, [r12, #44]
-str r2, [r12, #48]
-str r2, [r12, #52]
-str r2, [r12, #56]
-str r2, [r12, #60]
-str r2, [r12, #64]
-str r2, [r12, #68]
-str r2, [r12, #72]
-str r2, [r12, #76]
-str r2, [r12, #80]
-str r2, [r12, #84]
-str r2, [r12, #88]
-str r2, [r12, #92]
-str r2, [r12, #96]
-str r2, [r12, #100]
-str r2, [r12, #104]
-str r2, [r12, #108]
-str r2, [r12, #112]
-str r2, [r12, #116]
-str r2, [r12, #120]
-str r2, [r12, #124]
-str r2, [r12, #128]
-str r2, [r12, #132]
-str r2, [r12, #136]
-str r2, [r12, #140]
-str r2, [r12, #144]
-str r2, [r12, #148]
-str r2, [r12, #152]
-str r2, [r12, #156]
-str r2, [r12, #160]
-str r2, [r12, #164]
-str r2, [r12, #168]
-str r2, [r12, #172]
-str r2, [r12, #176]
-str r2, [r12, #180]
-str r2, [r12, #184]
-str r2, [r12, #188]
-str r2, [r12, #192]
-str r2, [r12, #196]
-str r2, [r12, #200]
-str r2, [r12, #204]
-str r2, [r12, #208]
-str r2, [r12, #212]
-str r2, [r12, #216]
-str r2, [r12, #220]
-str r2, [r12, #224]
-str r2, [r12, #228]
-str r2, [r12, #232]
-str r2, [r12, #236]
-str r2, [r12, #240]
-str r2, [r12, #244]
-str r2, [r12, #248]
-str r2, [r12, #252]
-str r2, [r12, #256]
-str r2, [r12, #260]
-str r2, [r12, #264]
-str r2, [r12, #268]
-str r2, [r12, #272]
-str r2, [r12, #276]
-str r2, [r12, #280]
-str r2, [r12, #284]
-str r2, [r12, #288]
-str r2, [r12, #292]
-str r2, [r12, #296]
-str r2, [r12, #300]
-str r2, [r12, #304]
-str r2, [r12, #308]
-add sp, sp, #328
+add r12, r12, #32
+subs r3, r3, #1
+bne 23b
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+add sp, sp, #336
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
-        vg_cast5_ecb_encrypt = sym super::cast5::vg_cast5_ecb_encrypt,
+        vg_cast5_ecb_encrypt_entry = sym super::cast5::vg_cast5_ecb_encrypt_entry::vg_cast5_ecb_encrypt_entry,
     )
 }
 
 /// CAST5-OFB encryption or decryption (NIST SP 800-38A §6.4, RFC 2144 §2) of the last piece of a message, of any length, in place: XORs the `len` bytes at `data` with the output blocks `Oⱼ = CIPH_K(Oⱼ₋₁)`, where `O₀` is the block at `*iv`, a partial last block `Pₙ*` of `u` bytes with `MSB_u(Oₙ)`, and replaces `*iv` with the last output block used, `Oₙ` (leaving it unchanged if `len = 0`): so that a further call continues the message if `len` is a multiple of 8, and otherwise keystream, to be wiped, after which the message must end. `CIPH_K` is CAST5 encryption with `rounds` rounds under the subkeys at `schedule`, as `vg_cast5_expand_key` writes them.
 ///
 /// Contract: `VG.Spec.Cast5.ofbFinalContract`. Constant time: only the pointers, `rounds` and `len` may affect timing, not the subkeys, the chaining value or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -222,7 +173,7 @@ add r2, r8, #40
 mov r3, #1
 add r12, r8, #56
 push {{r12, lr}}
-bl {vg_cast5_ecb_encrypt}
+bl {vg_cast5_ecb_encrypt_entry}
 ldr r12, [sp], #8
 lsr r9, r7, #3
 cmp r9, #0
@@ -267,8 +218,12 @@ ldr r10, [r8, #24]
 ldr r11, [r8, #28]
 ldr lr, [r8, #32]
 ldr r8, [r8, #16]
-add r12, sp, #12
+add sp, sp, #328
+sub sp, sp, #336
+add r12, sp, #0
 mov r2, #0
+mov r3, #10
+26:
 str r2, [r12, #0]
 str r2, [r12, #4]
 str r2, [r12, #8]
@@ -277,78 +232,21 @@ str r2, [r12, #16]
 str r2, [r12, #20]
 str r2, [r12, #24]
 str r2, [r12, #28]
-str r2, [r12, #32]
-str r2, [r12, #36]
-str r2, [r12, #40]
-str r2, [r12, #44]
-str r2, [r12, #48]
-str r2, [r12, #52]
-str r2, [r12, #56]
-str r2, [r12, #60]
-str r2, [r12, #64]
-str r2, [r12, #68]
-str r2, [r12, #72]
-str r2, [r12, #76]
-str r2, [r12, #80]
-str r2, [r12, #84]
-str r2, [r12, #88]
-str r2, [r12, #92]
-str r2, [r12, #96]
-str r2, [r12, #100]
-str r2, [r12, #104]
-str r2, [r12, #108]
-str r2, [r12, #112]
-str r2, [r12, #116]
-str r2, [r12, #120]
-str r2, [r12, #124]
-str r2, [r12, #128]
-str r2, [r12, #132]
-str r2, [r12, #136]
-str r2, [r12, #140]
-str r2, [r12, #144]
-str r2, [r12, #148]
-str r2, [r12, #152]
-str r2, [r12, #156]
-str r2, [r12, #160]
-str r2, [r12, #164]
-str r2, [r12, #168]
-str r2, [r12, #172]
-str r2, [r12, #176]
-str r2, [r12, #180]
-str r2, [r12, #184]
-str r2, [r12, #188]
-str r2, [r12, #192]
-str r2, [r12, #196]
-str r2, [r12, #200]
-str r2, [r12, #204]
-str r2, [r12, #208]
-str r2, [r12, #212]
-str r2, [r12, #216]
-str r2, [r12, #220]
-str r2, [r12, #224]
-str r2, [r12, #228]
-str r2, [r12, #232]
-str r2, [r12, #236]
-str r2, [r12, #240]
-str r2, [r12, #244]
-str r2, [r12, #248]
-str r2, [r12, #252]
-str r2, [r12, #256]
-str r2, [r12, #260]
-str r2, [r12, #264]
-str r2, [r12, #268]
-str r2, [r12, #272]
-str r2, [r12, #276]
-str r2, [r12, #280]
-str r2, [r12, #284]
-str r2, [r12, #288]
-str r2, [r12, #292]
-str r2, [r12, #296]
-str r2, [r12, #300]
-str r2, [r12, #304]
-str r2, [r12, #308]
-add sp, sp, #328
+add r12, r12, #32
+subs r3, r3, #1
+bne 26b
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+add sp, sp, #336
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
-        vg_cast5_ecb_encrypt = sym super::cast5::vg_cast5_ecb_encrypt,
+        vg_cast5_ecb_encrypt_entry = sym super::cast5::vg_cast5_ecb_encrypt_entry::vg_cast5_ecb_encrypt_entry,
     )
 }

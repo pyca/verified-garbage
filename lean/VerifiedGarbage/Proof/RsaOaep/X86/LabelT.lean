@@ -1,10 +1,9 @@
 module
 
-import VerifiedGarbage.Proof.RsaOaep.X86.Taint
+public import VerifiedGarbage.Proof.RsaOaep.X86.Mgf
 import VerifiedGarbage.Proof.RsaPss.X86.CtInit
 import VerifiedGarbage.Proof.RsaPss.X86.Base
 import VerifiedGarbage.Proof.Framework.X86.Syms
-public import VerifiedGarbage.Proof.RsaOaep.X86.Mgf
 
 /-!
 # RSAES-OAEP on x86: the label's hash with a table

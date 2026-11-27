@@ -46,6 +46,14 @@ called, and `[2176, 2224)` our caller's callee-saved registers.
   bytes from `vg_cmac_aes_subkeys`'s counter block to the end of its saved
   registers.
 
+Over an implementation of `vg_aes_ctr32` that is given its working space
+`c.scrOff` bytes into the scratch buffer of the functions called (the
+bitsliced one, 512), the first `c.scrOff` bytes of our scratch buffer are
+never touched: `vg_aes_expand_key_scratch` is given its working space as far
+into it too (`ekCall`). `initS`, `absorbS` (`X86_64/AbsorbF.lean`) and
+`finishS` are then `init`, `absorb` and `finish` given `scratch - 512`, with
+a scratch buffer of 1792 bytes.
+
 Only the pointers, the key length, `count` and `len` can affect timing: the
 branches are on them, and so are the number of bytes copied and of blocks
 chained.
@@ -68,7 +76,8 @@ def initSaved : List (Reg × Nat) := [(.rbx, sOff), (.rbp, sOff + 8), (.r12, sOf
 
 /-- Saves the registers, keeps the state in `rbx`, the scratch buffer in
 `rbp` and the rounds (`key_len / 4 + 6`) in `r12`, and sets up the arguments
-of `vg_aes_expand_key_scratch(key = rdi, key_len = rsi, schedule = rdx, scratch = rcx)`. -/
+of `vg_aes_expand_key_scratch(key = rdi, key_len = rsi, schedule = rdx, scratch = rcx)`
+(`ekCall` makes `rcx` its working space). -/
 def initPre : List Instr :=
   initSaved.map (fun (r, d) => .store (at_ .rcx d) r) ++
   [.mov .rbx (.reg .rdi), .mov .rbp (.reg .rcx), .mov .r12 (.reg .rdx), .shift .shr .r12 2,
@@ -85,9 +94,16 @@ def initPost : List Instr :=
    .mov .rbx (.mem (at_ .rbp sOff)), .mov .r12 (.mem (at_ .rbp (sOff + 16))),
    .mov .rbp (.mem (at_ .rbp (sOff + 8)))]
 
+/-- The call of `vg_aes_expand_key_scratch`, with its working space
+`c.scrOff` bytes into the scratch buffer in `rcx`, as `vg_aes_ctr32`'s is
+(`Impl.CmacAes.X86_64.ctrCall`). -/
+def ekCall (e : ExpandKey) (c : Ctr32) : Prog isa :=
+  if c.scrOff = 0 then .call e.name e.code
+  else .seq (.block [.alu .add .rcx (.imm (BitVec.ofNat 32 c.scrOff))]) (.call e.name e.code)
+
 def init (e : ExpandKey) (c : Ctr32) (sfx : String) : Prog isa :=
   .seq (.block initPre)
-    (.seq (.call e.name e.code)
+    (.seq (ekCall e c)
       (.seq (.block initMid) (.seq (.call ("vg_cmac_aes_subkeys" ++ sfx) (Impl.CmacAes.X86_64.subkeys c))
         (.block initPost))))
 
@@ -98,6 +114,12 @@ writes only its counter block and the registers it saves, at
 the end of our saved registers. -/
 def initF (e : ExpandKey) (c : Ctr32) (sfx : String) : Prog isa :=
   .seq (.block [.alu .sub .rcx (.imm (BitVec.ofNat 32 2048))]) (init e c sfx)
+
+/-- `init` over an implementation of `vg_aes_ctr32` that is given its working
+space 512 bytes into the scratch buffer (the bitsliced one), given
+`scratch - 512`: its scratch buffer is then 512 bytes smaller. -/
+def initS (e : ExpandKey) (c : Ctr32) (sfx : String) : Prog isa :=
+  .seq (.block [.alu .sub .rcx (.imm (BitVec.ofNat 32 512))]) (init e c sfx)
 
 /-! ## Copying bytes -/
 
@@ -215,5 +237,11 @@ def finPreF : Prog isa := .seq (.block finishPreF) lastLen
 space. -/
 def finishF (c : Ctr32) (sfx : String) : Prog isa :=
   .seq finPreF (.call ("vg_cmac_aes_finalize" ++ sfx) (Impl.CmacAes.X86_64.finalize c))
+
+/-- `finish` over an implementation of `vg_aes_ctr32` that is given its
+working space 512 bytes into the scratch buffer (the bitsliced one), given
+`scratch - 512`: its scratch buffer is then 512 bytes smaller. -/
+def finishS (c : Ctr32) (sfx : String) : Prog isa :=
+  .seq (.block [.alu .sub .r8 (.imm (BitVec.ofNat 32 512))]) (finish c sfx)
 
 end VG.Impl.CmacAes.Stream.X86_64

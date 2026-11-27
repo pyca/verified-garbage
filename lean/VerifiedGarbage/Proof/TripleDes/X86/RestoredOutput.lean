@@ -1,155 +1,157 @@
 module
 
-public import VerifiedGarbage.Proof.TripleDes.X86.Save
-public import VerifiedGarbage.Proof.Framework.Bswap
-import VerifiedGarbage.Proof.TripleDes.X86.WordStore
-import VerifiedGarbage.Proof.TripleDes.X86.Bytes
+public import VerifiedGarbage.Proof.TripleDes.X86.WordStore
+public import VerifiedGarbage.Proof.TripleDes.X86.Bytes
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Rc2.X86.Save
+public import VerifiedGarbage.Proof.TripleDes.X86.Sbox
+public import VerifiedGarbage.Impl.TripleDes.X86.Block
+public import VerifiedGarbage.Proof.Rc2.X86.KeySteps
 
-/-! ## `FinalPermutation` -/
+/-!
+# Saving and restoring the caller's registers in the working space on x86 (32-bit)
+
+`saveWithArg_ok`, `blockRestore_ok`: the code that Triple DES key expansion
+starts and ends with (`Impl.TripleDes.X86.saveWithArg`, `blockRestore`).
+-/
 
 @[expose] public section
 
-section
-
-namespace VG.Proof.TripleDes.X86
-open VG VG.X86 VG.X86.RegUpd VG.X86.Straight VG.Impl.TripleDes.X86
-open VG.Proof.Rc2.X86 (addr32)
-
-theorem fp_ok (s : State) :
-    ∃ s', runBlock isa (permuteCode Spec.TripleDes.fp 64 32 32 .eax .ebx .edi .esi .ecx) s = some s' ∧
-      s'.gpr .eax = (Spec.TripleDes.permute Spec.TripleDes.fp
-        (packedInput 64 32 (s.gpr .edi) (s.gpr .esi))).setWidth 32 ∧
-      s'.gpr .ebx = ((Spec.TripleDes.permute Spec.TripleDes.fp
-        (packedInput 64 32 (s.gpr .edi) (s.gpr .esi))) >>> 32).setWidth 32 ∧
-      s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.gpr .esp = s.gpr .esp ∧ s'.mem = s.mem ∧
-      (∀ r, ((instrs finalPermutation.lit).all fun op => op.dst != some r) = true →
-        s'.gpr r = s.gpr r) := by
-  obtain ⟨s', run, lo, hi, rd, wr, sp, mem, regs⟩ :=
-    fixedPermutation_ok Spec.TripleDes.fp (by decide) 32 32
-      (by decide) (by decide) (by decide) (by decide) (by decide)
-      .edi .esi .eax .ebx (instrs finalPermutation.lit) finalPermutation_check (by decide +kernel) s
-  have hcode : permuteCode Spec.TripleDes.fp 64 32 32 .eax .ebx .edi .esi .ecx = instrs finalPermutation.lit :=
-    congrArg instrs finalPermutation.lit_eq
-  exact ⟨s', (congrArg (fun is => runBlock isa is s) hcode).trans run,
-    lo, hi, rd, wr, sp, mem, regs⟩
-
-end VG.Proof.TripleDes.X86
-
-end
-
-/-! ## `FinalSave` -/
+/-! ## `Save` -/
 
 section
 
 namespace VG.Proof.TripleDes.X86
 open VG VG.X86 VG.X86.RegUpd VG.X86.Straight VG.Impl.TripleDes.X86
+open VG.Proof.Rc2.X86 (addr32 Keep)
 
-def finalMem (s : State) : Mem :=
-  (s.mem.writeW (wordAddr (s.gpr .ebp) 6) (s.gpr .eax)).writeW
-    (wordAddr (s.gpr .ebp) 7) (s.gpr .ebx)
+/-- The round-key pointer and the count of rounds left, words 4 and 5 of
+the working space. -/
+def roundKeyPtr (s : State) : BitVec 32 := s.mem.readW (wordAddr (s.gpr .ebp) 4) 32
+def roundCount (s : State) : BitVec 32 := s.mem.readW (wordAddr (s.gpr .ebp) 5) 32
 
-theorem finalStores_ok (s : State) (hok : Ok sboxCfg s) :
-    ∃ s', runBlock isa [.store (memOp .ebp 24) .eax, .store (memOp .ebp 28) .ebx] s = some s' ∧
-      s'.gpr = s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.mem = finalMem s := by
-  have h6 := hok.slotIn 6 (by decide)
-  have h7 := hok.slotIn 7 (by decide)
-  simp only [wordAddr, addr, sboxCfg] at h6 h7
-  refine ⟨{s with mem := finalMem s}, by
-    simp only [runBlock_cons, runStep_some, runBlock_nil, exec, State.store32, State.ea,
-      memOp, h6, h7, ite_true]
-    rfl, rfl, rfl, rfl, rfl⟩
+/-- The working space past the saved registers. -/
+def workRegion (s : State) : Region := ⟨addr32 (s.gpr .ebp) + BitVec.ofNat 64 16, 432⟩
 
-structure FinalSavePost (x : BitVec 64) (s s' : State) : Prop where
-  lo : s'.mem.readW (wordAddr (s.gpr .ebp) 6) 32 = x.setWidth 32
-  hi : s'.mem.readW (wordAddr (s.gpr .ebp) 7) 32 = (x >>> 32).setWidth 32
-  bp : s'.gpr .ebp = s.gpr .ebp
-  sp : s'.gpr .esp = s.gpr .esp
-  rd : s'.rd = s.rd
-  wr : s'.wr = s.wr
-  frame : Frame [workRegion s] s.mem s'.mem
+theorem counter_ptr_sep (s : State) (fit : (s.gpr .ebp).toNat + 512 ≤ 2 ^ 32) :
+    Mem.Sep (wordAddr (s.gpr .ebp) 5) 4 (wordAddr (s.gpr .ebp) 4) 4 := by
+  change Mem.Sep (addr (s.gpr .ebp) 20) 4 (addr (s.gpr .ebp) 16) 4
+  rw [addr_eq (by omega_using [fit]), addr_eq (by omega_using [fit])]
+  exact Offset.sep _ (by decide) (by decide) (by decide)
 
-theorem finalSave_ok (s : State) (hok : Ok sboxCfg s) :
-    WP isa (.block finalSave) s (FinalSavePost
-      (Spec.TripleDes.permute Spec.TripleDes.fp (s.gpr .esi ++ s.gpr .edi)) s) := by
-  rw [finalSave, WP.block_append_iff]
-  obtain ⟨s₁, run₁, lo₁, hi₁, rd₁, wr₁, sp₁, mem₁, regs₁⟩ := fp_ok s
-  refine WP.of_runBlock ⟨s₁, run₁, ?_⟩
-  have bp₁ := regs₁ .ebp (by decide +kernel)
-  obtain ⟨s₂, run₂, gpr₂, rd₂, wr₂, mem₂⟩ := finalStores_ok s₁ (hok.congr bp₁ bp₁ rd₁ wr₁)
-  have hsep : Mem.Sep (wordAddr (s.gpr .ebp) 6) 4 (wordAddr (s.gpr .ebp) 7) 4 := by
-    rw [wordAddr, wordAddr, addr_eq (by have h := hok.fit; change (s.gpr .ebp).toNat + 512 ≤ 2^32 at h; omega_using [h]),
-      addr_eq (by have h := hok.fit; change (s.gpr .ebp).toNat + 512 ≤ 2^32 at h; omega_using [h])]
-    exact Offset.sep _ (by decide) (by decide) (by decide)
-  have hm : s₂.mem = (s.mem.writeW (wordAddr (s.gpr .ebp) 6) (s₁.gpr .eax)).writeW
-      (wordAddr (s.gpr .ebp) 7) (s₁.gpr .ebx) := by rw [mem₂, finalMem, bp₁, mem₁]
-  refine WP.of_runBlock ⟨s₂, run₂, ⟨?_, ?_, by rw [gpr₂]; exact bp₁,
-    by rw [gpr₂]; exact sp₁, rd₂.trans rd₁, wr₂.trans wr₁, ?_⟩⟩
-  · rw [hm, Mem.readW_writeW_sep hsep (by decide), Mem.readW_writeW_self32, lo₁]
-    rfl
-  · rw [hm, Mem.readW_writeW_self32, hi₁]
-    rfl
-  · have h6 : (workRegion s).Contains (wordAddr (s.gpr .ebp) 6) 4 := by
-      rw [wordAddr, addr_eq (by have h := hok.fit; change (s.gpr .ebp).toNat + 512 ≤ 2^32 at h; omega_using [h])]
-      exact Offset.contains _ (by decide) (by decide) (by decide)
-    have h7 : (workRegion s).Contains (wordAddr (s.gpr .ebp) 7) 4 := by
-      rw [wordAddr, addr_eq (by have h := hok.fit; change (s.gpr .ebp).toNat + 512 ≤ 2^32 at h; omega_using [h])]
-      exact Offset.contains _ (by decide) (by decide) (by decide)
-    rw [hm]
-    exact ((Frame.refl _ _).writeW (List.mem_singleton_self _) _ h6).writeW
-      (List.mem_singleton_self _) _ h7
+def savedReg (i : Nat) : Reg := savedRegs.getD i .ebp
 
-end VG.Proof.TripleDes.X86
+def scratchArg (s : State) (slot : Nat) : BitVec 32 :=
+  s.mem.readW (wordAddr (s.gpr .esp) slot) 32
 
-end
+def Saved (original current : State) : Prop :=
+  ∀ i < 4, current.mem.readW (addr32 (current.gpr .ebp) + BitVec.ofNat 64 (4 * i)) 32 =
+    original.gpr (savedReg i)
 
-/-! ## `RestoredOutput` -/
+structure SavePost (slot : Nat) (original current : State) : Prop where
+  bp : current.gpr .ebp = scratchArg original slot
+  rd : current.rd = original.rd
+  wr : current.wr = original.wr
+  reg : ∀ r, r ≠ .eax → r ≠ .ebp → current.gpr r = original.gpr r
+  saved : Saved original current
+  frame : Frame [⟨addr32 (scratchArg original slot), 16⟩] original.mem current.mem
 
-section
+theorem saveWithArg_ok (s : State) (slot : Nat)
+    (harg : InRegions (s.rd ++ s.wr) (wordAddr (s.gpr .esp) slot) 4)
+    (fit : (scratchArg s slot).toNat + 512 ≤ 2 ^ 32)
+    (hw : ∀ i < 4, InRegions s.wr (addr32 (scratchArg s slot) + BitVec.ofNat 64 (4 * i)) 4) :
+    WP isa (.block (saveWithArg slot)) s (SavePost slot s) := by
+  have code : saveWithArg slot =
+      (([.mov .eax (.mem (memOp .esp (4 * slot)))] : List Instr) ++
+        VG.Proof.Rc2.X86.saveCode .eax savedReg 4) ++ [rr .ebp .eax] := by
+    unfold saveWithArg
+    congr 1
+  rw [code, WP.block_append_iff, WP.block_append_iff]
+  let s₀ := s.setReg .eax (scratchArg s slot)
+  have load : runBlock isa [.mov .eax (.mem (memOp .esp (4 * slot)))] s = some s₀ := by
+    have he : exec (.mov .eax (.mem (memOp .esp (4 * slot)))) s = some s₀ := by
+      simp only [exec, readSrc, State.load32, State.ea, memOp]
+      change (if InRegions (s.rd ++ s.wr) (wordAddr (s.gpr .esp) slot) 4 then
+        some (scratchArg s slot) else none).map (s.setReg .eax) = some s₀
+      rw [ite_eq_left harg, Option.map_some]
+    simp only [runBlock_cons, he, runStep_some, runBlock_nil]
+  refine WP.of_runBlock ⟨s₀, load, ?_⟩
+  have ptr₀ : s₀.gpr .eax = scratchArg s slot := gpr_setReg_self _ _ _
+  have hw₀ : ∀ i < 4, InRegions s₀.wr (addr32 (s₀.gpr .eax) + BitVec.ofNat 64 (4 * i)) 4 := by
+    rw [ptr₀]; exact hw
+  apply WP.mono (VG.Proof.Rc2.X86.saveCode_ok s₀ .eax savedReg 4 (by decide)
+    (by rw [ptr₀]; omega_using [fit]) hw₀)
+  intro s₁ h₁
+  refine WP.of_runBlock ⟨s₁.setReg .ebp (s₁.gpr .eax), by
+    simp only [runBlock_cons, runStep_some, runBlock_nil, exec, rr, readSrc, Option.map_some], ?_⟩
+  have ptr₁ : s₁.gpr .eax = scratchArg s slot := by rw [h₁.1]; exact ptr₀
+  refine ⟨ptr₁, h₁.2.1, h₁.2.2.1, ?_, ?_, ?_⟩
+  · intro r ha hb
+    rw [gpr_setReg_of_ne _ _ hb, h₁.1, gpr_setReg_of_ne _ _ ha]
+  · intro i hi
+    rw [gpr_setReg_self, mem_setReg, ptr₁, h₁.2.2.2, ptr₀]
+    rw [VG.Proof.Rc2.X86.saveMem_read _ _ _ 4 (by decide) i hi]
+    have hr : savedReg i ≠ .eax := by
+      have h : ∀ i < 4, savedReg i ≠ .eax := by decide
+      exact h i hi
+    exact gpr_setReg_of_ne _ _ hr
+  · rw [mem_setReg, h₁.2.2.2, ptr₀]
+    exact VG.Proof.Rc2.X86.saveMem_frame _ _ _ 4 (by decide)
 
-namespace VG.Proof.TripleDes.X86
-open VG VG.X86 VG.X86.RegUpd VG.X86.Straight VG.Impl.TripleDes.X86
-open VG.Proof.Rc2.X86 (addr32)
+structure RestorePost (original origin current : State) : Prop where
+  saved : ∀ r ∈ savedRegs, current.gpr r = original.gpr r
+  mem : current.mem = origin.mem
+  rd : current.rd = origin.rd
+  wr : current.wr = origin.wr
+  sp : current.gpr .esp = origin.gpr .esp
+  ptr : current.gpr .eax = origin.gpr .ebp
 
-def finalWord (s : State) : BitVec 64 :=
-  s.mem.readW (addr (s.gpr .eax) 28) 32 ++ s.mem.readW (addr (s.gpr .eax) 24) 32
+theorem blockRestore_ok (original s : State) (hsaved : Saved original s)
+    (fit : (s.gpr .ebp).toNat + 512 ≤ 2 ^ 32)
+    (hread : ∀ i < 4, InRegions (s.rd ++ s.wr)
+      (addr32 (s.gpr .ebp) + BitVec.ofNat 64 (4 * i)) 4) :
+    WP isa (.block blockRestore) s (RestorePost original s) := by
+  have code : blockRestore = ([rr .eax .ebp] : List Instr) ++
+      VG.Proof.Rc2.X86.restoreCode .eax savedReg (List.range 4) := by
+    unfold blockRestore
+    congr 1
+  rw [code, WP.block_append_iff]
+  let s₀ := s.setReg .eax (s.gpr .ebp)
+  refine WP.of_runBlock ⟨s₀, by
+    simp only [runBlock_cons, runStep_some, runBlock_nil, exec, rr, readSrc, Option.map_some]
+    rfl, ?_⟩
+  have hptr : s₀.gpr .eax = s.gpr .ebp := gpr_setReg_self _ _ _
+  have hregs : (List.range 4).map savedReg = savedRegs := by decide
+  have separate : ∀ i ∈ List.range 4, savedReg i ≠ .eax := by decide
+  have h := VG.Proof.Rc2.X86.restoreCode_ok s₀ .eax savedReg (List.range 4)
+    original.gpr (by rw [hptr]; omega_using [fit])
+    (fun i hi => by have := List.mem_range.mp hi; omega_using [this]) separate
+    (fun i hi => by rw [hptr]; exact hread i (List.mem_range.mp hi))
+    (fun i hi => by rw [hptr]; exact hsaved i (List.mem_range.mp hi))
+  rw [hregs] at h
+  apply WP.mono h
+  intro s₁ h₁
+  exact ⟨h₁.1, h₁.2.mem, h₁.2.rd, h₁.2.wr,
+    (h₁.2.reg .esp (by decide)).trans (gpr_setReg_of_ne s _ (by decide)),
+    (h₁.2.reg .eax (by decide)).trans hptr⟩
 
-theorem restoredOutput_ok (s : State) (fit : (dataArg s).toNat + 8 ≤ 2 ^ 32)
-    (harg : InRegions (s.rd ++ s.wr) (wordAddr (s.gpr .esp) 2) 4)
-    (hr : ∀ k ∈ [24, 28], InRegions (s.rd ++ s.wr) (addr (s.gpr .eax) k) 4)
-    (hw : ∀ i < 2, InRegions s.wr (wordAddr (dataArg s) i) 4) :
-    ∃ s', runBlock isa restoredOutput s = some s' ∧
-      s'.mem = s.mem.writeW (addr32 (dataArg s)) (byteRev64 (finalWord s)) ∧
-      s'.rd = s.rd ∧ s'.wr = s.wr ∧
-      (∀ r, r ≠ .eax → r ≠ .ecx → r ≠ .edx → s'.gpr r = s.gpr r) := by
-  have hw0 := hw 0 (by decide)
-  have hw1 := hw 1 (by decide)
-  have h24 := hr 24 (by decide)
-  have h28 := hr 28 (by decide)
-  simp only [wordAddr, addr, dataArg] at harg hw0 hw1
-  simp only [addr] at h24 h28
-  refine ⟨_, by
-    simp only [restoredOutput, rr, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
-      State.load32, State.store32, State.ea, memOp, harg, hw0, hw1, h24, h28, ite_true,
-      Option.map_some, gpr_setReg, mem_setReg, rd_setReg, wr_setReg,
-      reduceCtorEq, ite_false]
-    rfl, ?_, ?_, ?_, ?_⟩
-  · dsimp only [mem_setReg, gpr_setReg, reduceCtorEq, ite_true, ite_false]
-    have ha0 : (dataArg s + BitVec.ofNat 32 0).setWidth 64 = addr32 (dataArg s) := by simp [addr32]
-    have ha1 : (dataArg s + BitVec.ofNat 32 4).setWidth 64 = addr32 (dataArg s) + 4 := addr_eq (by omega_using [fit])
-    change (s.mem.writeW ((dataArg s + BitVec.ofNat 32 0).setWidth 64)
-      (bswap (s.mem.readW (addr (s.gpr .eax) 28) 32))).writeW
-      ((dataArg s + BitVec.ofNat 32 4).setWidth 64)
-      (bswap (s.mem.readW (addr (s.gpr .eax) 24) 32)) = _
-    rw [ha0, ha1, writeW_pair, bswapPair]
-    rfl
-  · rfl
-  · rfl
-  · intro r ha hc hd
-    simp only [gpr_setReg, ha, hc, hd, ite_false]
+theorem savedSlot_work_disjoint (s : State) (i : Nat) (hi : i < 4) :
+    (⟨addr32 (s.gpr .ebp) + BitVec.ofNat 64 (4 * i), 4⟩ : Region).Disjoint (workRegion s) :=
+  Offset.disjoint _ (by omega_using [hi]) (by omega_using [hi]) (by decide)
+
+theorem Saved.congr {original s t : State} (hs : Saved original s)
+    (hbase : t.gpr .ebp = s.gpr .ebp) (hf : Frame [workRegion s] s.mem t.mem) :
+    Saved original t := by
+  intro i hi
+  rw [hbase]
+  have hm := hf.readW (a := addr32 (s.gpr .ebp) + BitVec.ofNat 64 (4 * i)) (w := 32)
+    (r := ⟨addr32 (s.gpr .ebp) + BitVec.ofNat 64 (4 * i), 4⟩)
+    (Region.contains_self _ _) (fun q hq => by
+      obtain rfl := List.mem_singleton.mp hq
+      exact savedSlot_work_disjoint s i hi) (by decide)
+  exact hm.trans (hs i hi)
 
 end VG.Proof.TripleDes.X86
 

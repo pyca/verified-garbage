@@ -964,6 +964,30 @@ vg_blowfish_expand_key:
 	dup v13.2d, x16
 	dup v14.2d, x17
 	mov v15.16b, v27.16b
+	movz x6, #0, lsl #0
+	movz x8, #0, lsl #0
+	movz x13, #0, lsl #0
+	movi v0.2d, #0
+	movi v1.2d, #0
+	movi v4.2d, #0
+	movi v5.2d, #0
+	movi v6.2d, #0
+	movi v7.2d, #0
+	movi v16.2d, #0
+	movi v17.2d, #0
+	movi v18.2d, #0
+	movi v19.2d, #0
+	movi v20.2d, #0
+	movi v21.2d, #0
+	movi v22.2d, #0
+	movi v23.2d, #0
+	movi v24.2d, #0
+	movi v25.2d, #0
+	movi v26.2d, #0
+	movi v28.2d, #0
+	movi v29.2d, #0
+	movi v30.2d, #0
+	movi v31.2d, #0
 	ret
 	.p2align 6
 
@@ -2771,6 +2795,37 @@ vg_blowfish_ecb_encrypt:
 	stp x17, x17, [x16, #224]
 	stp x17, x17, [x16, #240]
 	add sp, sp, #256
+	movz x6, #0, lsl #0
+	movz x10, #0, lsl #0
+	movi v0.2d, #0
+	movi v1.2d, #0
+	movi v4.2d, #0
+	movi v5.2d, #0
+	movi v6.2d, #0
+	movi v7.2d, #0
+	movi v16.2d, #0
+	movi v17.2d, #0
+	movi v18.2d, #0
+	movi v19.2d, #0
+	movi v20.2d, #0
+	movi v21.2d, #0
+	movi v22.2d, #0
+	movi v23.2d, #0
+	movi v24.2d, #0
+	movi v25.2d, #0
+	movi v26.2d, #0
+	movi v28.2d, #0
+	movi v29.2d, #0
+	movi v30.2d, #0
+	movi v31.2d, #0
+	mov v8.d[1], x6
+	mov v9.d[1], x6
+	mov v10.d[1], x6
+	mov v11.d[1], x6
+	mov v12.d[1], x6
+	mov v13.d[1], x6
+	mov v14.d[1], x6
+	mov v15.d[1], x6
 	ret
 	.p2align 6
 
@@ -4578,5 +4633,36 @@ vg_blowfish_ecb_decrypt:
 	stp x17, x17, [x16, #224]
 	stp x17, x17, [x16, #240]
 	add sp, sp, #256
+	movz x6, #0, lsl #0
+	movz x10, #0, lsl #0
+	movi v0.2d, #0
+	movi v1.2d, #0
+	movi v4.2d, #0
+	movi v5.2d, #0
+	movi v6.2d, #0
+	movi v7.2d, #0
+	movi v16.2d, #0
+	movi v17.2d, #0
+	movi v18.2d, #0
+	movi v19.2d, #0
+	movi v20.2d, #0
+	movi v21.2d, #0
+	movi v22.2d, #0
+	movi v23.2d, #0
+	movi v24.2d, #0
+	movi v25.2d, #0
+	movi v26.2d, #0
+	movi v28.2d, #0
+	movi v29.2d, #0
+	movi v30.2d, #0
+	movi v31.2d, #0
+	mov v8.d[1], x6
+	mov v9.d[1], x6
+	mov v10.d[1], x6
+	mov v11.d[1], x6
+	mov v12.d[1], x6
+	mov v13.d[1], x6
+	mov v14.d[1], x6
+	mov v15.d[1], x6
 	ret
 	.p2align 6

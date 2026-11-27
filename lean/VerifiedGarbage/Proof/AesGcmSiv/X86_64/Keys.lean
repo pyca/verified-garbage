@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.GcmSiv.MulX
+public import VerifiedGarbage.Proof.GcmSiv.Spec
 public import VerifiedGarbage.Impl.AesGcmSiv.X86_64
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
 public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Env
@@ -8,7 +8,6 @@ import VerifiedGarbage.Proof.Gcm.X86_64.Bits
 import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Entry
 import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
 import VerifiedGarbage.Proof.AesGcm.X86_64.Env
-import VerifiedGarbage.Proof.GcmSiv.Spec
 import VerifiedGarbage.Proof.Cmac.Spec
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset

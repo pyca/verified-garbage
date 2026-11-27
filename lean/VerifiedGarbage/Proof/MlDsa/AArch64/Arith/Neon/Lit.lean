@@ -13,5 +13,4 @@ meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 
 namespace VG
 materialize_code Impl.MlDsa.AArch64.Arith.Neon.ntt
-materialize_code Impl.MlDsa.AArch64.Arith.Neon.nttInv
 end VG

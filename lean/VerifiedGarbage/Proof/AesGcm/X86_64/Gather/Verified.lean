@@ -1,19 +1,263 @@
 module
+
 public import VerifiedGarbage.Proof.Gcm.PrecomputedContract
 public import VerifiedGarbage.Impl.StackScratch.X86_64
 public import VerifiedGarbage.Proof.AesGcm.Rounds
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.SplitCT
-
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.FrontFast
 import VerifiedGarbage.Proof.AesGcm.X86_64.VerifiedP
 import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
 import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.CT
 import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
 import VerifiedGarbage.Proof.AesSiv.X86_64.Verified
 import VerifiedGarbage.Proof.AesGcm.ScratchGather
-import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.FrontCT
 public import Aesop.BuiltinRules
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.CopyCT
 public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.LoopCT
+import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.FrontFast
+meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.LoopCT
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.CopyCT
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.Impl.AesGcm.X86_64
+meta import VerifiedGarbage.Impl.AesGcm.X86_64.SealGather
+meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.TCB.X86_64.Isa
+meta import VerifiedGarbage.TCB.X86_64.State
+import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
+import VerifiedGarbage.Proof.AesGcm.X86_64.Run
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Avx512
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.Sse
+meta import VerifiedGarbage.Impl.Gcm.X86_64
+meta import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Rounds
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Loops
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Run
+meta import VerifiedGarbage.Proof.Cmac.Spec
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Range
+meta import VerifiedGarbage.Proof.Framework.RegSetOrder
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86_64.Avx512
+meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
+meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
+meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+meta import VerifiedGarbage.Proof.Framework.X86_64.Sse
+meta import VerifiedGarbage.Proof.Gcm.Ctr
+meta import VerifiedGarbage.Proof.Gcm.Spec
+meta import VerifiedGarbage.Proof.Gcm.Stream
+
+/-! ### `AesGcm.X86_64.Gather.FrontCT`, which only this module used -/
+
+section
+
+/-!
+# AES-GCM one-shot encryption out of place, from a list of slices, x86-64: constant time of the path of a TLS record's text
+
+Untrusted: everything here is checked by Lean. Two runs from entry states with
+the same public arguments and descriptors take the same path through
+`frontTest` (`frontTest_rel`) and, for a TLS record's text, through
+`frontFast` (`frontFast_rel`), whose addresses are public arguments or read
+from the descriptors (each load of an address split from its use, as
+`Gather/SplitCT.lean` does).
+-/
+
+@[expose] public section
+
+set_option linter.unusedSimpArgs false
+
+namespace VG.Proof.AesGcm.X86_64.Gather
+
+open VG VG.X86_64 VG.X86_64.RegUpd VG.Impl.AesGcm.X86_64 VG.Impl.AesGcm.X86_64.SealGather
+open VG.Proof.Gcm.X86_64.Stitch (CtxMode)
+open VG.Proof.ChaCha20Poly1305.X86_64.Gather (Eq2 TT rel_seq rel_ite rel_skip)
+open VG.Proof.AesGcm.X86_64 (rel_block_split)
+open VG.Proof.AesGcm.X86_64.Short (CopyPre)
+
+theorem frontLen_check : ∃ hc, (taint.check (Taint.ofRegs [.rsp]) (.block (frontLen 256)) hc).isSome = true :=
+  ⟨_, by simp only [frontLen]; taint_decide⟩
+
+theorem frontArgs_check : ∃ hc, (taint.check (Taint.ofRegs [.rsp]) (.block frontArgs) hc).isSome = true :=
+  ⟨_, by simp only [frontArgs]; taint_decide⟩
+
+theorem ldSrc_check : ∃ hc, (taint.check (Taint.ofRegs [.rsp]) (.block [.mov .r10 (.mem (at_ .rsp 8))]) hc).isSome =
+    true := ⟨_, by taint_decide⟩
+
+theorem frontSlice_check (long : Bool) : ∃ hc, (taint.check (Taint.ofRegs [.r10, .rsp])
+    (.block (frontSlice long).tail) hc).isSome = true := by
+  cases long <;>
+    exact ⟨_, by
+      simp only [frontSlice, List.cons_append, List.nil_append, List.tail, Bool.false_eq_true, ↓reduceIte, imm]
+      taint_decide⟩
+
+theorem fZero_check : ∃ hc, (taint.check (Taint.ofRegs []) (.block [.alu .test .r11 (.reg .r11)]) hc).isSome =
+    true := ⟨_, by taint_decide⟩
+
+theorem fastEntry_check : ∃ hc, (taint.check (Taint.ofRegs [.r11, .rsp]) (.block fastEntry.tail) hc).isSome = true :=
+  ⟨_, by simp only [fastEntry, gCtx, gRounds]; taint_decide⟩
+
+theorem fastLen2_check : ∃ hc, (taint.check (Taint.ofRegs [.r10]) (.block fastLen2) hc).isSome = true :=
+  ⟨_, by simp only [fastLen2]; taint_decide⟩
+
+theorem fastCopy_check : ∃ hc, (taint.check (Taint.ofRegs [.r10, .rsp]) (.block fastCopy) hc).isSome = true :=
+  ⟨_, by simp only [fastCopy]; taint_decide⟩
+
+theorem copy1_check : ∃ hc, (taint.check (Taint.ofRegs [.rsi, .rdi, .rcx, .r10])
+    (.loop (.block copy1Body) .ne) hc).isSome = true :=
+  ⟨_, by simp only [copy1Body, srcD, dstD]; taint_decide⟩
+
+theorem fastArgs1_check : ∃ hc, (taint.check (Taint.ofRegs [.rsp])
+    (.block [.mov32 .rcx (imm 12), .mov .r10 (.mem (at_ .rsp 8))]) hc).isSome = true :=
+  ⟨_, by taint_decide⟩
+
+theorem fastArgs2_check : ∃ hc, (taint.check (Taint.ofRegs [.r10, .rsp]) (.block fastArgs.tail.tail) hc).isSome =
+    true := ⟨_, by simp only [fastArgs]; taint_decide⟩
+
+section
+variable {s : State} (hp : FrontRead s)
+include hp
+
+/-- The first descriptor's address into `r10`, from a state `Same` as the entry. -/
+theorem ldSrc_ok {st : State} (hs : Same s st) :
+    WP isa (.block [.mov .r10 (.mem (at_ .rsp 8))]) st fun t => Same s t ∧ t.gpr .r10 = Src s := by
+  obtain ⟨a₀, e₀⟩ := same_a hp hs (i := 0) (by decide)
+  apply WP.of_runBlock
+  refine ⟨_, by xrun [a₀, e₀], ?_, by simp [gpr_setReg]⟩
+  exact hs.step (fun r _ b _ => by simp [gpr_setReg, b]) (by simp [mem_setReg]) (by simp [rd_setReg])
+    (by simp [wr_setReg])
+
+end
+
+section
+variable {M : CtxMode} {s : State} (hp : SG M s)
+include hp
+
+/-- The first descriptor's address into `r10` and `rcx` set, in a state of the fast path. -/
+theorem fastArgs1_ok {st : State} (h : FBase s st) :
+    WP isa (.block [.mov32 .rcx (imm 12), .mov .r10 (.mem (at_ .rsp 8))]) st fun t =>
+      t.gpr .r10 = Src s ∧ t.gpr .rsp = SP s := by
+  obtain ⟨a₀, e₀⟩ := fa_in hp h (i := 0) (by decide)
+  apply WP.of_runBlock
+  refine ⟨_, by xrun [a₀, e₀], by simp [gpr_setReg], by simp [gpr_setReg, h.rsp]⟩
+
+end
+
+section
+variable {s₀ s₀' : State} (hp : FrontRead s₀) (hp' : FrontRead s₀') (pb : Pub s₀ s₀')
+include hp hp' pb
+
+/-- The tests of `frontCore`, from two states `Same` as the entry states. -/
+theorem frontCore_eq2 (long : Bool) {σ₁ σ₂ : State} (S₁ : Same s₀ σ₁) (S₂ : Same s₀' σ₂) :
+    RelCT isa (Eq2 σ₁ σ₂) (frontCore long) TT := by
+  have sp : ∀ {a b : State}, Same s₀ a → Same s₀' b → a.gpr .rsp = b.gpr .rsp := fun A B => by
+    rw [same_rsp A, same_rsp B]; exact pb.rsp.symm
+  unfold frontCore
+  refine rel_seq (ChaCha20Poly1305.X86_64.Gather.rel_regs [.rsp] (by simp [sp S₁ S₂]) frontArgs_check)
+    (fArgs_ok hp S₁) (fArgs_ok hp' S₂) fun υ₁ υ₂ ⟨U₁, cf₁', r11₁⟩ ⟨U₂, cf₂', r11₂⟩ => ?_
+  refine rel_seq ?_ (fMid_wp hp long U₁ cf₁' r11₁) (fMid_wp hp' long U₂ cf₂' r11₂)
+    fun _ _ _ _ => ChaCha20Poly1305.X86_64.Gather.rel_regs [] (by simp) fZero_check
+  refine rel_ite (b := !decide ((stackArg s₀ 1 - 1#64).toNat < (2#64).toNat))
+    (by simp only [eval, cf₁', Option.map_some]) (by simp only [eval, cf₂', Option.map_some, pb.a 1 (by decide)])
+    (fun _ => rel_skip) fun _ => ?_
+  rw [show frontSlice long = [.mov .r10 (.mem (at_ .rsp 8))] ++ (frontSlice long).tail from rfl]
+  refine rel_block_split (rel_seq (ChaCha20Poly1305.X86_64.Gather.rel_regs [.rsp] (by simp [sp U₁ U₂]) ldSrc_check)
+    (ldSrc_ok hp U₁) (ldSrc_ok hp' U₂) fun ω₁ ω₂ ⟨W₁, r10₁⟩ ⟨W₂, r10₂⟩ => ?_)
+  exact ChaCha20Poly1305.X86_64.Gather.rel_regs [.r10, .rsp] (by simp [r10₁, r10₂, pb.src, sp W₁ W₂])
+    (frontSlice_check long)
+
+/-- The test, from two states `Same` as the entry states. -/
+theorem frontTest_eq2 (long : Bool) {σ₁ σ₂ : State} (S₁ : Same s₀ σ₁) (S₂ : Same s₀' σ₂) :
+    RelCT isa (Eq2 σ₁ σ₂) (frontTest long) TT := by
+  cases long
+  · simp only [frontTest, Bool.false_eq_true, ↓reduceIte]; exact frontCore_eq2 hp hp' pb false S₁ S₂
+  simp only [frontTest, ↓reduceIte]
+  refine rel_seq (ChaCha20Poly1305.X86_64.Gather.rel_regs [.rsp]
+      (by simp [same_rsp S₁, same_rsp S₂, pb.rsp]) frontLen_check) (fLen_ok hp S₁) (fLen_ok hp' S₂)
+    fun τ₁ τ₂ ⟨T₁, cf₁, _⟩ ⟨T₂, cf₂, _⟩ => ?_
+  exact rel_ite (b := decide ((stackArg s₀ 3).toNat < (256#64).toNat))
+    (by simp only [eval, cf₁]) (by simp only [eval, cf₂, pb.a 3 (by decide)]) (fun _ => rel_skip)
+    fun _ => frontCore_eq2 hp hp' pb true T₁ T₂
+
+/-- The test, in two runs from the entry states. -/
+theorem frontTest_rel (long : Bool) :
+    RelCT isa (fun s₁ s₂ => s₁ = s₀ ∧ s₂ = s₀') (frontTest long) fun s₁ s₂ =>
+      (Same s₀ s₁ ∧ s₁.zf = some (frontGo long s₀)) ∧ (Same s₀' s₂ ∧ s₂.zf = some (frontGo long s₀')) :=
+  pstep (F₁ := (· = s₀)) (F₂ := (· = s₀'))
+    (rel_of_eq2 fun _ _ h => by
+      obtain ⟨rfl, rfl⟩ := h; exact frontTest_eq2 hp hp' pb long (Same.refl _) (Same.refl _))
+    (fun _ h => by rw [h]; exact frontTest_wp hp long) (fun _ h => by rw [h]; exact frontTest_wp hp' long)
+
+
+end
+
+section
+variable {M : CtxMode} {s₀ s₀' : State} (hp : SG M s₀) (hp' : SG M s₀') (pb : Pub s₀ s₀')
+include hp hp' pb
+
+/-- The path of a TLS record's text, from two states `Same` as the entry states. -/
+theorem frontFast_eq2 (S : SplitFn M) {long : Bool} (hg : frontGo long s₀ = true) {σ₁ σ₂ : State}
+    (S₁ : Same s₀ σ₁) (S₂ : Same s₀' σ₂) : RelCT isa (Eq2 σ₁ σ₂) (frontFast S.fn) TT := by
+  have hg' : frontGo long s₀' = true := by rw [pb.eFront]; exact hg
+  obtain ⟨hn, hcnt, hsub⟩ := front_facts hp.frontRead hg
+  obtain ⟨hn', hcnt', hsub'⟩ := front_facts hp'.frontRead hg'
+  have ec := pb.cnt
+  unfold frontFast
+  refine rel_seq ?_ (fastEntry_ok hp S₁) (fastEntry_ok hp' S₂) fun τ₁ τ₂ ⟨F₁, r10₁, zf₁⟩ ⟨F₂, r10₂, zf₂⟩ => ?_
+  · rw [show fastEntry = .mov .r11 (.mem (at_ .rsp 48)) :: fastEntry.tail from rfl]
+    refine rel_wt [.rsp] (by simp) (fun _ _ h r hr => ?_) (fun _ _ h => ?_) fastEntry_check
+    · obtain ⟨rfl, rfl⟩ := h; simp only [List.mem_singleton] at hr; subst hr
+      rw [same_rsp S₁, same_rsp S₂]; exact pb.rsp.symm
+    · obtain ⟨rfl, rfl⟩ := h
+      obtain ⟨a₁, e₁⟩ := same_a hp.frontRead S₁ (i := 5) (by decide)
+      obtain ⟨a₂, e₂⟩ := same_a hp'.frontRead S₂ (i := 5) (by decide)
+      exact ⟨by rw [e₁, e₂]; exact pb.w.symm, a₁, a₂⟩
+  refine rel_seq ?_ (fastTail_wp hp hcnt hsub F₁ r10₁ zf₁) (fastTail_wp hp' hcnt' hsub' F₂ r10₂ zf₂)
+    fun υ₁ υ₂ ⟨G₁, O₁⟩ ⟨G₂, O₂⟩ => ?_
+  · refine rel_ite (b := decide (Cnt s₀ = 1)) (by simp only [eval, zf₁]) (by simp only [eval, zf₂, ec])
+      (fun _ => rel_skip) fun e => ?_
+    have hc : Cnt s₀ = 2 := by have : Cnt s₀ ≠ 1 := by simpa using e
+                               omega_arith
+    have hc' : Cnt s₀' = 2 := by rw [ec]; exact hc
+    refine rel_seq (ChaCha20Poly1305.X86_64.Gather.rel_regs [.r10] (by simp [r10₁, r10₂, pb.src]) fastLen2_check)
+      (fastLen2_ok hp hc F₁ r10₁) (fastLen2_ok hp' hc' F₂ r10₂) fun ω₁ ω₂ ⟨H₁, r10₁', cx₁, zf₁'⟩ ⟨H₂, r10₂', cx₂, zf₂'⟩ => ?_
+    have esl : sl s₀' 1 = sl s₀ 1 := pb.sl (by omega_arith)
+    refine rel_ite (b := decide (sl s₀ 1 = 0)) (by simp only [eval, zf₁']) (by simp only [eval, zf₂', esl])
+      (fun _ => rel_skip) fun e => ?_
+    have hgl := gl_two hp hc
+    have hgl' := gl_two hp' hc'
+    have hfl := fl_le hp
+    refine rel_seq (ChaCha20Poly1305.X86_64.Gather.rel_regs [.r10, .rsp]
+        (by simp [r10₁', r10₂', pb.src, H₁.rsp, H₂.rsp, SP, pb.rsp]) fastCopy_check)
+      (fastCopy_ok hp hc (by omega_arith) H₁ r10₁' cx₁) (fastCopy_ok hp' hc' (by rw [esl]; omega_arith) H₂ r10₂' cx₂)
+      fun ξ₁ ξ₂ ⟨_, P₁, i₁⟩ ⟨_, P₂, i₂⟩ => ?_
+    exact ChaCha20Poly1305.X86_64.Gather.rel_regs [.rsi, .rdi, .rcx, .r10]
+      (by simp [P₁.rsi, P₂.rsi, P₁.rdi, P₂.rdi, P₁.rcx, P₂.rcx, i₁, i₂, pb.sb (show 1 < Cnt s₀ by omega_arith), pb.dst,
+        pb.eFl, esl]) copy1_check
+  refine rel_seq ?_ (fastArgs_ok hp hn (by omega_arith) G₁ O₁) (fastArgs_ok hp' hn' (by omega_arith) G₂ O₂)
+    fun ω₁ ω₂ ⟨B₁, R₁⟩ ⟨B₂, R₂⟩ => splitCall_rel hp hp' pb S B₁ R₁ B₂ R₂
+  rw [show fastArgs = [.mov32 .rcx (imm 12), .mov .r10 (.mem (at_ .rsp 8))] ++ fastArgs.tail.tail from rfl]
+  refine rel_block_split (rel_seq (ChaCha20Poly1305.X86_64.Gather.rel_regs [.rsp]
+      (by simp [G₁.rsp, G₂.rsp, SP, pb.rsp]) fastArgs1_check) (fastArgs1_ok hp G₁) (fastArgs1_ok hp' G₂)
+    fun _ _ a b => ?_)
+  exact ChaCha20Poly1305.X86_64.Gather.rel_regs [.r10, .rsp] (by simp [a.1, b.1, a.2, b.2, pb.src, SP, pb.rsp])
+    fastArgs2_check
+
+end
+
+end VG.Proof.AesGcm.X86_64.Gather
+
+end
+
+end
 
 /-!
 # AES-GCM one-shot encryption out of place, from a list of slices, x86-64: `Verified`
@@ -261,7 +505,7 @@ theorem withFront_correct (inl : Bool) (s : State) (hs : (Proof.AesGcm.sealGathe
   have w : WP isa (withFront long Sp.fn (sealGather Sh.quick Sh.fast Sh.test Sh.code I.fn A.fn T.fn F.fn inl)) s
       (Done s) := by
     unfold withFront
-    exact WP.seq (WP.mono (frontTest_wp hp long) fun st ⟨S, zf⟩ =>
+    exact WP.seq (WP.mono (frontTest_wp hp.frontRead long) fun st ⟨S, zf⟩ =>
       WP.ite (frontGo long s) (by simp only [eval, zf]) (fun e => frontFast_wp hp Sp e S)
         (fun _ => sealGatherG_wp hp (go := Sh.go s) (fun _ h => Sh.quickWp hp _ h)
           (fun e st E r11 => Sh.fastWp hp e st E r11) (fun st h => Sh.testWp hp st h)
@@ -277,7 +521,7 @@ theorem withFront_ct (inl : Bool := false) :
   have hp' := SG.ofM h'
   have pb := Pub.of hq
   unfold withFront
-  refine RelCT.seq (frontTest_rel hp hp' pb long)
+  refine RelCT.seq (frontTest_rel hp.frontRead hp'.frontRead pb long)
     (RelCT.ite (fun _ _ h => by simp only [eval, h.1.2, h.2.2, pb.eFront]) ?_ ?_)
   · refine rel_of_eq2 fun σ₁ σ₂ ⟨⟨⟨S₁, z₁⟩, ⟨S₂, _⟩⟩, ev⟩ => ?_
     have e : frontGo long s₀ = true := by simp only [eval, z₁] at ev; simpa using ev
@@ -304,15 +548,22 @@ theorem gatherPre_of {s : State} (h : (Proof.AesGcm.sealGatherScratchContract X8
     filterMap_none', List.map_id', Sig.conj_cons, Sig.conj_append, Sig.conj_map, Bool.cond_false, Bool.cond_true,
     List.filterMap_cons, List.filterMap_nil, List.append_nil, List.nil_append, Sig.conj, Bool.true_or, Bool.or_true,
     Bool.false_or, Bool.or_false, List.cons_append, List.singleton_append, Sig.descRegion] at h
-  obtain ⟨w₁, w₂, rd, wr, ⟨kd, kt, kw, nd, nt, nw, ad, at_, aw, dt, dw, dds, ⟨dl, da⟩, tw, tds, ⟨tl, ta⟩, wds, wl, wa⟩,
-    rk, rn, ra, rdd, rt, rw, ⟨rds, ⟨rl, -⟩, bk, bn, ba, bd, bt, bw, bds, bl, -⟩, ok, on, oa, od, ot, ow, ⟨ods, ol⟩,
-    hr, hg⟩ := h
+  -- the conjuncts in one step each level (`sig_split`), not a `cases` for each of the fifty names
+  sig_split h
+  rename_i w₁ w₂ rd wr g₁ _ _ _ rdd rt rw g₂ ok on oa od ot ow g₃ hr
+  sig_split g₁
+  rename_i kd kt kw nd nt nw ad at_ aw dt dw dds dd tw tds tt wds wl
+  sig_split g₂
+  rename_i _ _ bk bn ba bd bt bw bds bl
+  obtain ⟨dl, da⟩ := dd
+  obtain ⟨tl, ta⟩ := tt
+  obtain ⟨ods, ol⟩ := g₃
   simp only [Proof.AesGcm.sealGatherPreM, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.ret, Proof.AesGcm.stkG,
     Proof.AesGcm.slicesG, Proof.AesGcm.rounds, VG.X86_64.below, CtxMode.base]
   simp only [show (2 * (64 / 8) : Nat) = 16 from rfl] at *
   exact ⟨rd, wr, kd, kt, kw, nd, nt, nw, ad, at_, aw, dds.symm, tds.symm, wds.symm,
-    fun r hr' => ⟨(dl r hr').symm, (tl r hr').symm, (wl r hr').symm⟩, dt, dw, tw, da, ta, wa, rdd, rt, rw,
-    bk, bn, ba, bds, bl, bd, bt, bw, ok, on, oa, ods, ol, od, ot, ow, w₁, w₂, hr, hg, trivial⟩
+    fun r hr' => ⟨(dl r hr').symm, (tl r hr').symm, (wl r hr').symm⟩, dt, dw, tw, da, ta, g₁, rdd, rt, rw,
+    bk, bn, ba, bds, bl, bd, bt, bw, ok, on, oa, ods, ol, od, ot, ow, w₁, w₂, hr, h, trivial⟩
 
 set_option linter.unusedSimpArgs false in
 theorem gatherPreP_of {s : State}
@@ -327,15 +578,21 @@ theorem gatherPreP_of {s : State}
     filterMap_none', List.map_id', Sig.conj_cons, Sig.conj_append, Sig.conj_map, Bool.cond_false, Bool.cond_true,
     List.filterMap_cons, List.filterMap_nil, List.append_nil, List.nil_append, Sig.conj, Bool.true_or, Bool.or_true,
     Bool.false_or, Bool.or_false, List.cons_append, List.singleton_append, Sig.descRegion] at h
-  obtain ⟨w₁, w₂, rd, wr, ⟨kd, kt, kw, nd, nt, nw, ad, at_, aw, dt, dw, dds, ⟨dl, da⟩, tw, tds, ⟨tl, ta⟩, wds, wl, wa⟩,
-    rk, rn, ra, rdd, rt, rw, ⟨rds, ⟨rl, -⟩, bk, bn, ba, bd, bt, bw, bds, bl, -⟩, ok, on, oa, od, ot, ow, ⟨ods, ol⟩,
-    hr, hg, hpw⟩ := h
+  sig_split h
+  rename_i w₁ w₂ rd wr g₁ _ _ _ rdd rt rw g₂ ok on oa od ot ow g₃ hr hg
+  sig_split g₁
+  rename_i kd kt kw nd nt nw ad at_ aw dt dw dds dd tw tds tt wds wl
+  sig_split g₂
+  rename_i _ _ bk bn ba bd bt bw bds bl
+  obtain ⟨dl, da⟩ := dd
+  obtain ⟨tl, ta⟩ := tt
+  obtain ⟨ods, ol⟩ := g₃
   simp only [Proof.AesGcm.sealGatherPreM, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.ret, Proof.AesGcm.stkG,
     Proof.AesGcm.slicesG, Proof.AesGcm.rounds, VG.X86_64.below, CtxMode.powers]
   simp only [show (2 * (64 / 8) : Nat) = 16 from rfl] at *
   exact ⟨rd, wr, kd, kt, kw, nd, nt, nw, ad, at_, aw, dds.symm, tds.symm, wds.symm,
-    fun r hr' => ⟨(dl r hr').symm, (tl r hr').symm, (wl r hr').symm⟩, dt, dw, tw, da, ta, wa, rdd, rt, rw,
-    bk, bn, ba, bds, bl, bd, bt, bw, ok, on, oa, ods, ol, od, ot, ow, w₁, w₂, hr, hg, hpw⟩
+    fun r hr' => ⟨(dl r hr').symm, (tl r hr').symm, (wl r hr').symm⟩, dt, dw, tw, da, ta, g₁, rdd, rt, rw,
+    bk, bn, ba, bds, bl, bd, bt, bw, ok, on, oa, ods, ol, od, ot, ow, w₁, w₂, hr, hg, h⟩
 
 
 theorem gatherPost_of {s s' : State} (h : Proof.AesGcm.sealGatherPostG s s') :
@@ -346,11 +603,11 @@ theorem gatherPost_of {s s' : State} (h : Proof.AesGcm.sealGatherPostG s s') :
 
 theorem gatherPub_of {s₁ s₂ : State} (hp : (Proof.AesGcm.sealGatherScratchContract X86_64.abi 4888).pub s₁ s₂) :
     Proof.AesGcm.sealGatherPub s₁ s₂ := by
-  sig_pub [Proof.AesGcm.sealGatherScratchContract, Proof.AesGcm.sealGatherScratchSig, Spec.Gcm.sealGatherPre,
+  sig_pub_keep [Proof.AesGcm.sealGatherScratchContract, Proof.AesGcm.sealGatherScratchSig, Spec.Gcm.sealGatherPre,
     X86_64.abi, X86_64.argRegs, stackArgs_six, List.append_eq] at hp
   simp only [List.getD_cons_succ, List.getD_cons_zero, Sig.descRegion] at hp
-  obtain ⟨q₇, q₁, q₂, q₃, q₄, q₅, q₆, a₀, a₁, a₂, a₃, a₄, a₅, hd⟩ := hp
-  exact ⟨q₁, q₂, q₃, q₄, q₅, q₆, q₇, a₀, a₁, a₂, a₃, a₄, a₅, fun i hi => hd i (by simpa using hi)⟩
+  obtain ⟨q₇, qMd, q₁, q₂, q₃, q₄, q₅, q₆, a₀, a₁, a₂, a₃, a₄, a₅, hd⟩ := hp
+  exact ⟨q₁, q₂, q₃, q₄, q₅, q₆, q₇, a₀, a₁, a₂, a₃, a₄, a₅, fun i hi => hd i (by simpa using hi), qMd⟩
 
 theorem gatherPostP_of {s s' : State} (h : Proof.AesGcm.sealGatherPostG s s') :
     (Proof.AesGcm.sealGatherPrecomputedScratchContract X86_64.abi 4888).post s s' := by
@@ -361,11 +618,11 @@ theorem gatherPostP_of {s s' : State} (h : Proof.AesGcm.sealGatherPostG s s') :
 theorem gatherPubP_of {s₁ s₂ : State}
     (hp : (Proof.AesGcm.sealGatherPrecomputedScratchContract X86_64.abi 4888).pub s₁ s₂) :
     Proof.AesGcm.sealGatherPub s₁ s₂ := by
-  sig_pub [Proof.AesGcm.sealGatherPrecomputedScratchContract, Proof.AesGcm.sealGatherPrecomputedScratchSig,
+  sig_pub_keep [Proof.AesGcm.sealGatherPrecomputedScratchContract, Proof.AesGcm.sealGatherPrecomputedScratchSig,
     Proof.Gcm.sealGatherPrecomputedPre, X86_64.abi, X86_64.argRegs, stackArgs_six, List.append_eq] at hp
   simp only [List.getD_cons_succ, List.getD_cons_zero, Sig.descRegion] at hp
-  obtain ⟨q₇, q₁, q₂, q₃, q₄, q₅, q₆, a₀, a₁, a₂, a₃, a₄, a₅, hd⟩ := hp
-  exact ⟨q₁, q₂, q₃, q₄, q₅, q₆, q₇, a₀, a₁, a₂, a₃, a₄, a₅, fun i hi => hd i (by simpa using hi)⟩
+  obtain ⟨q₇, qMd, q₁, q₂, q₃, q₄, q₅, q₆, a₀, a₁, a₂, a₃, a₄, a₅, hd⟩ := hp
+  exact ⟨q₁, q₂, q₃, q₄, q₅, q₆, q₇, a₀, a₁, a₂, a₃, a₄, a₅, fun i hi => hd i (by simpa using hi), qMd⟩
 
 /-- A state satisfying the precondition of `vg_aes_gcm_seal_gather` with its
 working space: no slices, no nonce, additional data or text; the tag at
@@ -453,7 +710,7 @@ theorem sealGather_framed (Sh : ShortFn CtxMode.base) (I : InitFn) (A : AadFn)
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackArgScratch 240 5 (sealGather Sh.quick Sh.fast Sh.test Sh.code I.fn A.fn T.fn F.fn))
       (Proof.AesGcm.sealGatherRoundsContract X86_64.abi 5128) :=
-  X86_64.Verified.stackArgScratchL (sig := Spec.Gcm.sealGatherSig) (nm := "scratch") (e := .u64) (n := 23)
+  X86_64.Verified.stackArgScratchL (hpostOut := fun vs m m₁ m₂ r hl _ hb _ => (Proof.AesGcm.sealGatherPostOut_local _) vs m m₁ m₂ r hl hb) (sig := Spec.Gcm.sealGatherSig) (nm := "scratch") (e := .u64) (n := 23)
     (pre := Spec.Gcm.sealGatherPre X86_64.abi.ptrBits) (post := Proof.AesGcm.sealGatherRoundsPost X86_64.abi.ptrBits)
     (wa := true) (stack := 4888) (bytes := 240) (sealGather_core Sh I A T F) (by decide) (by decide) (by decide)
     (sealGather_spAll Sh I A T F) (sealGather_xdepth Sh I A T F) (Proof.AesGcm.sealGatherPre_local _)
@@ -480,7 +737,7 @@ theorem sealGatherP_framed (Sh : ShortFn CtxMode.powers) (I : InitFn) (A : AadFn
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackArgScratch 240 5 (sealGather Sh.quick Sh.fast Sh.test Sh.code I.fn A.fn T.fn F.fn))
       (Proof.AesGcm.sealGatherPrecomputedRoundsContract X86_64.abi 5128) :=
-  X86_64.Verified.stackArgScratchL (sig := Proof.Gcm.sealGatherPrecomputedSig) (nm := "scratch") (e := .u64)
+  X86_64.Verified.stackArgScratchL (hpostOut := fun vs m m₁ m₂ r hl _ hb _ => (Proof.AesGcm.sealGatherPrecomputedPostOut_local _) vs m m₁ m₂ r hl hb) (sig := Proof.Gcm.sealGatherPrecomputedSig) (nm := "scratch") (e := .u64)
     (n := 23) (pre := Proof.Gcm.sealGatherPrecomputedPre X86_64.abi.ptrBits)
     (post := Proof.AesGcm.sealGatherRoundsPost X86_64.abi.ptrBits) (wa := true) (stack := 4888) (bytes := 240)
     (sealGatherP_core Sh I A T F) (by decide) (by decide) (by decide) (sealGather_spAll Sh I A T F)

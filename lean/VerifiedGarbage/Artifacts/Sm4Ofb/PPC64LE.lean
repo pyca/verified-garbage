@@ -1,26 +1,31 @@
 module
 
-public import VerifiedGarbage.Proof.Sm4.PPC64LE.ModesVerified
-public import VerifiedGarbage.Proof.Sm4.PPC64LE.ModesFrame
-public import VerifiedGarbage.Proof.Sm4.PPC64LE.FbFinalVerified
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.PPC64LE.Print
+public import VerifiedGarbage.TCB.PPC64LE.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Sm4.Ofb
+public import VerifiedGarbage.Spec.Sm4.OfbFinal
+import VerifiedGarbage.Proof.Sm4.PPC64LE.ModesVerified
+import VerifiedGarbage.Proof.Sm4.PPC64LE.ModesFrame
+import VerifiedGarbage.Proof.Sm4.PPC64LE.FbFinalVerified
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Sm4.PPC64LE.Scrub
 import VerifiedGarbage.Proof.Sm4.PPC64LE.ModesLit
 import VerifiedGarbage.Proof.Sm4.PPC64LE.FbFinalLit
 import VerifiedGarbage.Proof.Sm4.PPC64LE.Lit
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # SM4-OFB on PPC64LE -/
 
-@[expose] public section
-
 namespace VG.Artifacts.Sm4Ofb.PPC64LE
 
-def artifacts : List Artifact := [
+public def artifacts : List (Artifact PPC64LE.target) := [
   Spec.Sm4.ofbApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratchWiped 3296 .r7 408 Impl.Sm4.PPC64LE.ofb
-    verified := Proof.Sm4.PPC64LE.ofb_framed Proof.Sm4.PPC64LE.Modes.ofb_verified },
+    code := Impl.Sm4.PPC64LE.Fn.ofb
+    verified := Proof.Sm4.PPC64LE.Scrub.ofb_scrubbed },
   Spec.Sm4.ofbFinalApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratchWiped 3296 .r7 408 Impl.Sm4.PPC64LE.ofbFinal
-    verified := Proof.Sm4.PPC64LE.FbFinal.ofbFinal_framed }]
+    code := Impl.Sm4.PPC64LE.Fn.ofbFinal
+    verified := Proof.Sm4.PPC64LE.Scrub.ofbFinal_scrubbed }]
+
+spec_apis artifacts
 
 end VG.Artifacts.Sm4Ofb.PPC64LE

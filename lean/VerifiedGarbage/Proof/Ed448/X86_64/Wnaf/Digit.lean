@@ -1,20 +1,13 @@
 module
 
+import Mathlib.Basic.Logic.Basic
 public import VerifiedGarbage.Impl.Ed448.X86_64.Wnaf.Recode
 public import VerifiedGarbage.Proof.X448.X86_64.Basic
 public import VerifiedGarbage.Impl.Ed448.Wnaf
 public import VerifiedGarbage.Proof.Framework.Semantics
 import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import Mathlib.Data.Nat.Totient
-import Mathlib.Tactic.NormNum.GCD
-import Mathlib.Data.Sym.Sym2.Init
-import Mathlib.Tactic.ContinuousFunctionalCalculus
-import Mathlib.Tactic.NormNum.Prime
-import Mathlib.Tactic.Positivity.Finset
-import Mathlib.Algebra.Order.Field.Basic
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Spec.Ed448
 
 /-! The bounded word arithmetic implementing one public recoding step. -/

@@ -1,9 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.Arm.Prime.Trial
+public import VerifiedGarbage.Proof.Dsa.Arm.Prime.Taint4
 public import VerifiedGarbage.Proof.Dsa.Arm.Prime.Stage
 import VerifiedGarbage.Proof.Dsa.Generation.Trial
-import VerifiedGarbage.Proof.Dsa.Arm.Prime.Taint4
 import VerifiedGarbage.Proof.Dsa.Arm.Prime.Instr
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.St
 import VerifiedGarbage.Proof.Framework.RelCTAssoc

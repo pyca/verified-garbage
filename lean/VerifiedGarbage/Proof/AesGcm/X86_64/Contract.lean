@@ -227,16 +227,14 @@ def streamVerifyX86_64 (N : Nat := 2560) : Contract isa where
     s₁.gpr .rcx = s₂.gpr .rcx ∧ s₁.gpr .r8 = s₂.gpr .r8 ∧ s₁.gpr .r9 = s₂.gpr .r9 ∧ s₁.gpr .rsp = s₂.gpr .rsp ∧
     arg s₁ 0 = arg s₂ 0 ∧ arg s₁ 1 = arg s₂ 1
 
-/-- What `vg_aes_gcm_seal` and `vg_aes_gcm_open` both need, but for `tag` and
-the permissions: `(ctx = rdi, rounds = rsi, nonce = rdx, nonce_len = rcx,
-aad = r8, aad_len = r9, data = [rsp + 8], len = [rsp + 16], tag = [rsp + 24])`,
-`work` the `w`-th argument on the stack, and `n` arguments there, for a key
-context of `cl` bytes. -/
-def oneLay (cl w n : Nat) (s : State) : Prop :=
+/-- Memory layout for one-shot GCM with a key context of `cl` bytes and `n` stack
+arguments. The output pointer, byte length and work pointer occupy zero-based
+stack argument slots `id`, `il` and `w`. The tag and permissions are handled separately. -/
+def oneLay (cl w n : Nat) (s : State) (id : Nat := 0) (il : Nat := 1) : Prop :=
   let ctx : Region := ⟨s.gpr .rdi, cl⟩
   let nonce : Region := ⟨s.gpr .rdx, (s.gpr .rcx).toNat⟩
   let aad : Region := ⟨s.gpr .r8, (s.gpr .r9).toNat⟩
-  let data : Region := ⟨arg s 0, (arg s 1).toNat⟩
+  let data : Region := ⟨arg s id, (arg s il).toNat⟩
   let work : Region := ⟨arg s w, 2560⟩
   ctx.Disjoint data ∧ ctx.Disjoint work ∧ nonce.Disjoint data ∧ nonce.Disjoint work ∧
     aad.Disjoint data ∧ aad.Disjoint work ∧
@@ -245,7 +243,7 @@ def oneLay (cl w n : Nat) (s : State) : Prop :=
     (stk24 s).Disjoint ctx ∧ (stk24 s).Disjoint nonce ∧ (stk24 s).Disjoint aad ∧ (stk24 s).Disjoint data ∧
     (stk24 s).Disjoint work ∧
     (s.gpr .rdi).toNat + cl ≤ 2 ^ 64 ∧ (s.gpr .rdx).toNat + (s.gpr .rcx).toNat ≤ 2 ^ 64 ∧
-    (s.gpr .r8).toNat + (s.gpr .r9).toNat ≤ 2 ^ 64 ∧ (arg s 0).toNat + (arg s 1).toNat ≤ 2 ^ 64 ∧
+    (s.gpr .r8).toNat + (s.gpr .r9).toNat ≤ 2 ^ 64 ∧ (arg s id).toNat + (arg s il).toNat ≤ 2 ^ 64 ∧
     (arg s w).toNat + 2560 ≤ 2 ^ 64 ∧ 24 ≤ (s.gpr .rsp).toNat ∧ (s.gpr .rsp).toNat + 8 * (n + 1) ≤ 2 ^ 64 ∧
     rounds s
 

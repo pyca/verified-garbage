@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Inst
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Inv
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.SignCT
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Correct
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseOCT
 public import VerifiedGarbage.Proof.Framework.Contract
 
 /-!

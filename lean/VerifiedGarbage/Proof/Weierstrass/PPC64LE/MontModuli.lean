@@ -112,6 +112,20 @@ theorem brainpoolp256r1n_ok : ModOk brainpoolp256r1n.k brainpoolp256r1n.m where
   m_lt := by decide +kernel
   inv := by decide +kernel
 
+theorem brainpoolp320r1p_ok : ModOk brainpoolp320r1p.k brainpoolp320r1p.m where
+  n1 := by decide
+  n9 := by decide
+  m0 := by decide +kernel
+  m_lt := by decide +kernel
+  inv := by decide +kernel
+
+theorem brainpoolp320r1n_ok : ModOk brainpoolp320r1n.k brainpoolp320r1n.m where
+  n1 := by decide
+  n9 := by decide
+  m0 := by decide +kernel
+  m_lt := by decide +kernel
+  inv := by decide +kernel
+
 theorem brainpoolp384r1p_ok : ModOk brainpoolp384r1p.k brainpoolp384r1p.m where
   n1 := by decide
   n9 := by decide

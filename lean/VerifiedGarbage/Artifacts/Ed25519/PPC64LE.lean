@@ -1,28 +1,32 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.PPC64LE.KeyPair
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.PPC64LE.Print
-public import VerifiedGarbage.Proof.Ed25519.PPC64LE.Whole.SignVerified
-public import VerifiedGarbage.Proof.Ed25519.PPC64LE.Whole.VerifyMsgVerified
+public import VerifiedGarbage.TCB.PPC64LE.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Ed25519.KeyPair
+public import VerifiedGarbage.Spec.Ed25519.ExpandedSign
+public import VerifiedGarbage.Spec.Ed25519.Contract
+import VerifiedGarbage.Proof.Ed25519.PPC64LE.KeyPair
+import VerifiedGarbage.Proof.Ed25519.PPC64LE.Scrub
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Ed25519.PPC64LE.Whole.SignVerified
+import VerifiedGarbage.Proof.Ed25519.PPC64LE.Whole.VerifyMsgVerified
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # Ed25519 (RFC 8032) on PPC64LE -/
 
-@[expose] public section
-
 namespace VG.Artifacts.Ed25519.PPC64LE
 
-def artifacts : List Artifact := [
+public def artifacts : List (Artifact PPC64LE.target) := [
   Spec.Ed25519.keyPairApi.artifact PPC64LE.target {
-    code := Impl.Ed25519.PPC64LE.KeyPair.keyPair Spec.Sha512.digest512Api.name
-      Proof.Ed25519.PPC64LE.KeyPair.dgCode "vg_ed25519_public_key_expanded"
-      Impl.Ed25519.PPC64LE.Whole.publicKeyExpandedCode
-    verified := Proof.Ed25519.PPC64LE.KeyPair.verified },
+    code := Impl.Ed25519.PPC64LE.Fn.keyPair
+    verified := Proof.Ed25519.PPC64LE.Scrub.keyPair_scrubbed },
   Spec.Ed25519.signExpandedApi.artifact PPC64LE.target {
-    code := Impl.Ed25519.PPC64LE.Whole.signExpandedCode
-    verified := Proof.Ed25519.PPC64LE.Whole.signExpanded_framed },
+    code := Impl.Ed25519.PPC64LE.Fn.signExpanded
+    verified := Proof.Ed25519.PPC64LE.Scrub.signExpanded_scrubbed },
   Spec.Ed25519.verifyApi.artifact PPC64LE.target {
-    code := Impl.Ed25519.PPC64LE.Whole.verifyCode
-    verified := Proof.Ed25519.PPC64LE.Whole.verify_framed }]
+    code := Impl.Ed25519.PPC64LE.Fn.verify
+    verified := Proof.Ed25519.PPC64LE.Scrub.verify_scrubbed }]
+
+spec_apis artifacts
 
 end VG.Artifacts.Ed25519.PPC64LE

@@ -1,8 +1,7 @@
 module
 
-import VerifiedGarbage.Proof.TripleDes.X86_64.Key.Correct
+public import VerifiedGarbage.Proof.TripleDes.X86_64.Key.Correct
 public import VerifiedGarbage.Proof.TripleDes.Scratch
-public import VerifiedGarbage.Proof.TripleDes.X86_64.Key.Contract
 public import VerifiedGarbage.TCB.X86_64.Target
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset

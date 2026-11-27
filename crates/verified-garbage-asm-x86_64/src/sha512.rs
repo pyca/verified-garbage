@@ -16,7 +16,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_sha384_init(state: *mut [u8; 192]) {
     core::arch::naked_asm!(
-        r#".base64 "SLjYngXBXZ27y0iJB0i4B9V8NiopmmJIiUcISLgX3XAwWgFZkUiJRxBIuDlZDvfY7C8VSIlHGEi4MQvA/2cmM2dIiUcgSLgRFVhoh0q0jkiJRyhIuKeP+WQNLgzbSIlHMEi4pE/6vh1ItUdIiUc4McBFMdvD"
+        r#".base64 "SLjYngXBXZ27y0iJB0i4B9V8NiopmmJIiUcISLgX3XAwWgFZkUiJRxBIuDlZDvfY7C8VSIlHGEi4MQvA/2cmM2dIiUcgSLgRFVhoh0q0jkiJRyhIuKeP+WQNLgzbSIlHMEi4pE/6vh1ItUdIiUc4Zg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//McAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
     )
 }
@@ -34,7 +34,7 @@ pub(crate) unsafe extern "sysv64" fn vg_sha384_init(state: *mut [u8; 192]) {
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_sha512_init(state: *mut [u8; 192]) {
     core::arch::naked_asm!(
-        r#".base64 "SLgIybzzZ+YJakiJB0i4O6fKhIWuZ7tIiUcISLgr+JT+cvNuPEiJRxBIuPE2HV869U+lSIlHGEi40YLmrX9SDlFIiUcgSLgfbD4rjGgFm0iJRyhIuGu9Qfur2YMfSIlHMEi4eSF+ExnN4FtIiUc4McBFMdvD"
+        r#".base64 "SLgIybzzZ+YJakiJB0i4O6fKhIWuZ7tIiUcISLgr+JT+cvNuPEiJRxBIuPE2HV869U+lSIlHGEi40YLmrX9SDlFIiUcgSLgfbD4rjGgFm0iJRyhIuGu9Qfur2YMfSIlHMEi4eSF+ExnN4FtIiUc4Zg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//McAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
     )
 }
@@ -52,7 +52,7 @@ pub(crate) unsafe extern "sysv64" fn vg_sha512_init(state: *mut [u8; 192]) {
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_sha512_224_init(state: *mut [u8; 192]) {
     core::arch::naked_asm!(
-        r#".base64 "SLiiTVQZyDc9jEiJB0i41tTciWaZ4XNIiUcISLiCnP8yrrf6HUiJRxBIuM+fL1gU1Z1nSIlHGEi4qE3Ue2krbQ9IiUcgSLhCicQEc2/jd0iJRyhIuMg2HWqohZ0/SIlHMEi4oZLWka3mEhFIiUc4McBFMdvD"
+        r#".base64 "SLiiTVQZyDc9jEiJB0i41tTciWaZ4XNIiUcISLiCnP8yrrf6HUiJRxBIuM+fL1gU1Z1nSIlHGEi4qE3Ue2krbQ9IiUcgSLhCicQEc2/jd0iJRyhIuMg2HWqohZ0/SIlHMEi4oZLWka3mEhFIiUc4Zg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//McAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
     )
 }
@@ -70,7 +70,7 @@ pub(crate) unsafe extern "sysv64" fn vg_sha512_224_init(state: *mut [u8; 192]) {
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_sha512_256_init(state: *mut [u8; 192]) {
     core::arch::naked_asm!(
-        r#".base64 "SLgs9yv8lCExIkiJB0i4wmRMyKNfVZ9IiUcISLhRsVNva7iTI0iJRxBIuL3qQFkZdziWSIlHGEi44/+OqOI+KJZIiUcgSLiSOYZTJR5evkiJRyhIuKq4hSz8mQErSIlHMEi4oizFgdwttw5IiUc4McBFMdvD"
+        r#".base64 "SLgs9yv8lCExIkiJB0i4wmRMyKNfVZ9IiUcISLhRsVNva7iTI0iJRxBIuL3qQFkZdziWSIlHGEi44/+OqOI+KJZIiUcgSLiSOYZTJR5evkiJRyhIuKq4hSz8mQErSIlHMEi4oizFgdwttw5IiUc4Zg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//McAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
     )
 }
@@ -155,7 +155,7 @@ jmp 219f
 call {vg_sha512_compress_shani}
 .base64 "SIn7SYnPQb0AAAAAQbkAAAAASYPuAQ=="
 je 22b
-.base64 "SIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRBIi0MYSA/ISIlFGEiLQyBID8hIiUUgSItDKEgPyEiJRShJix9Ji28ITYtnEE2LbxhNi3cgTYt/KEiNZCQ4xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//SI1kJMBIjWQkQDHAMckx0jH2Mf9FMclFMdLD"
+.base64 "SIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRBIi0MYSA/ISIlFGEiLQyBID8hIiUUgSItDKEgPyEiJRShJix9Ji28ITYtnEE2LbxhNi3cgTYt/KEiNZCQ4xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//SI1kJPhIjWQkyEiNZCQ4SI1kJAgxwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_sha512_compress_shani = sym super::sha512::vg_sha512_compress_shani::vg_sha512_compress_shani,
     )
@@ -233,7 +233,7 @@ call {vg_sha512_compress_shani}
 215:
 .base64 "TIngSMHoPUgPyGZID274TIngSAHASAHASAHASA/IZkwPbsBmQQ9s+PMPb4OwAAAAZg/rx/MPf4OwAAAASIneSIPGQEiJ37oBAAAATIn5"
 call {vg_sha512_compress_shani}
-.base64 "SIn7SYnPSIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRBIi0MYSA/ISIlFGEiLQyBID8hIiUUgSItDKEgPyEiJRShmD+/A8w9/A/MPf0MQ8w9/QyDzD39DMPMPf0NA8w9/Q1DzD39DYPMPf0Nw8w9/g4AAAADzD3+DkAAAAPMPf4OgAAAA8w9/g7AAAABJix9Ji28ITYtnEE2LbxhNi3cgTYt/KEiNpCQIAQAAxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI2kJPD+///zD38EJEiNpCQQAQAAMcAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
+.base64 "SIn7SYnPSIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRBIi0MYSA/ISIlFGEiLQyBID8hIiUUgSItDKEgPyEiJRShmD+/A8w9/A/MPf0MQ8w9/QyDzD39DMPMPf0NA8w9/Q1DzD39DYPMPf0Nw8w9/g4AAAADzD3+DkAAAAPMPf4OgAAAA8w9/g7AAAABJix9Ji28ITYtnEE2LbxhNi3cgTYt/KEiNpCQIAQAAxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//SI1kJPhIjaQk+P7//0iNpCQIAQAASI1kJAgxwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_sha512_compress_shani = sym super::sha512::vg_sha512_compress_shani::vg_sha512_compress_shani,
     )
@@ -245,6 +245,8 @@ pub const VG_SHA384_FINALIZE_AVX2_FEATURES: verified_garbage_cpu::Features = ver
 /// Finishes a SHA-384 computation: if the streaming state `*state` represents a message of `count` bytes, hashed from the initial hash value of SHA-384 (as `vg_sha384_init` starts it), writes the SHA-384 digest of that message (48 bytes, `VG.Spec.Sha512.sha384`) to `*out`.
 ///
 /// Contract: `VG.Spec.Sha512.finalizeDigestContract` for `VG.Spec.Sha512.H0_384` and `VG.Spec.Sha512.sha384`. Constant time: only the pointers and `count` may affect timing, not the state.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -317,7 +319,7 @@ jmp 219f
 call {vg_sha512_compress_avx2}
 .base64 "SIn7SYnPQb0AAAAAQbkAAAAASYPuAQ=="
 je 22b
-.base64 "SIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRBIi0MYSA/ISIlFGEiLQyBID8hIiUUgSItDKEgPyEiJRShJi58wBQAASYuvOAUAAE2Lp0AFAABNi69IBQAATYu3UAUAAE2Lv1gFAABIjaQkaAUAAMM="
+.base64 "SIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRBIi0MYSA/ISIlFGEiLQyBID8hIiUUgSItDKEgPyEiJRShJi58wBQAASYuvOAUAAE2Lp0AFAABNi69IBQAATYu3UAUAAE2Lv1gFAABIjaQkaAUAAMX578DF8e/Jxenv0sXh79vF2e/kxdHv7cXJ7/bFwe//xEE578DEQTHvycRBKe/SxEEh79vEQRnv5MRBEe/txEEJ7/bEQQHv/0Ux20iNZCT4SI2kJJj6///F/n+EJPgAAADF/n+EJNgAAADF/n+EJLgAAADF/n+EJJgAAADF/n9EJHjF/n9EJFjF/n9EJDjF/n9EJBjzD39EJAhIjaQkaAUAAEiNZCQIMcAxyTHSMfYx/0UxwEUxyUUx0sM="
 .p2align 6"#,
         vg_sha512_compress_avx2 = sym super::sha512::vg_sha512_compress_avx2::vg_sha512_compress_avx2,
     )
@@ -329,6 +331,8 @@ pub const VG_SHA384_DIGEST_AVX2_FEATURES: verified_garbage_cpu::Features = verif
 /// Computes the SHA-384 digest of the `len` bytes at `data` (48 bytes, `VG.Spec.Sha512.sha384`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-384 computation with that message.
 ///
 /// Contract: `VG.Spec.Sha512.digestContract` for `VG.Spec.Sha512.sha384`. Constant time: only the pointers and `len` may affect timing, not the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -393,7 +397,7 @@ call {vg_sha512_compress_avx2}
 215:
 .base64 "TIngSMHoPUgPyGZID274TIngSAHASAHASAHASA/IZkwPbsBmQQ9s+PMPb4OwAAAAZg/rx/MPf4OwAAAASIneSIPGQEiJ37oBAAAATIn5"
 call {vg_sha512_compress_avx2}
-.base64 "SIn7SYnPSIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRBIi0MYSA/ISIlFGEiLQyBID8hIiUUgSItDKEgPyEiJRShmD+/A8w9/A/MPf0MQ8w9/QyDzD39DMPMPf0NA8w9/Q1DzD39DYPMPf0Nw8w9/g4AAAADzD3+DkAAAAPMPf4OgAAAA8w9/g7AAAABJi58wBQAASYuvOAUAAE2Lp0AFAABNi69IBQAATYu3UAUAAE2Lv1gFAABIjaQkOAYAAMM="
+.base64 "SIn7SYnPSIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRBIi0MYSA/ISIlFGEiLQyBID8hIiUUgSItDKEgPyEiJRShmD+/A8w9/A/MPf0MQ8w9/QyDzD39DMPMPf0NA8w9/Q1DzD39DYPMPf0Nw8w9/g4AAAADzD3+DkAAAAPMPf4OgAAAA8w9/g7AAAABJi58wBQAASYuvOAUAAE2Lp0AFAABNi69IBQAATYu3UAUAAE2Lv1gFAABIjaQkOAYAAMX578DF8e/Jxenv0sXh79vF2e/kxdHv7cXJ7/bFwe//xEE578DEQTHvycRBKe/SxEEh79vEQRnv5MRBEe/txEEJ7/bEQQHv/0Ux20iNZCT4SI2kJMj5///F/n+EJLgBAADF/n+EJJgBAADF/n+EJHgBAADF/n+EJFgBAADF/n+EJDgBAADF/n+EJBgBAADF/n+EJPgAAADF/n+EJNgAAADzD3+EJMgAAABIjaQkOAYAAEiNZCQIMcAxyTHSMfYx/0UxwEUxyUUx0sM="
 .p2align 6"#,
         vg_sha512_compress_avx2 = sym super::sha512::vg_sha512_compress_avx2::vg_sha512_compress_avx2,
     )
@@ -475,7 +479,7 @@ jmp 219f
 call {vg_sha512_compress}
 .base64 "SIn7SYnPQb0AAAAAQbkAAAAASYPuAQ=="
 je 22b
-.base64 "SIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRBIi0MYSA/ISIlFGEiLQyBID8hIiUUgSItDKEgPyEiJRShJi5/AAAAASYuvyAAAAE2Lp9AAAABNi6/YAAAATYu34AAAAE2Lv+gAAABIjaQk+AAAAGYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ZkUP78BmRQ/vyWZFD+/SZkUP79tmRQ/v5GZFD+/tZkUP7/ZmRQ/v/0Ux20iNpCQA////8w9/hCSAAAAA8w9/RCRw8w9/RCRg8w9/RCRQ8w9/RCRA8w9/RCQw8w9/RCQg8w9/RCQQ8w9/BCRIjaQkAAEAADHAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
+.base64 "SIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRBIi0MYSA/ISIlFGEiLQyBID8hIiUUgSItDKEgPyEiJRShJi5/AAAAASYuvyAAAAE2Lp9AAAABNi6/YAAAATYu34AAAAE2Lv+gAAABIjaQk+AAAAGYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ZkUP78BmRQ/vyWZFD+/SZkUP79tmRQ/v5GZFD+/tZkUP7/ZmRQ/v/0Ux20iNZCT4SI2kJAj////zD3+EJIgAAADzD39EJHjzD39EJGjzD39EJFjzD39EJEjzD39EJDjzD39EJCjzD39EJBjzD39EJAhIjaQk+AAAAEiNZCQIMcAxyTHSMfYx/0UxwEUxyUUx0sM="
 .p2align 6"#,
         vg_sha512_compress = sym super::sha512::vg_sha512_compress::vg_sha512_compress,
     )
@@ -549,7 +553,7 @@ call {vg_sha512_compress}
 215:
 .base64 "TIngSMHoPUgPyGZID274TIngSAHASAHASAHASA/IZkwPbsBmQQ9s+PMPb4OwAAAAZg/rx/MPf4OwAAAASIneSIPGQEiJ37oBAAAATIn5"
 call {vg_sha512_compress}
-.base64 "SIn7SYnPSIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRBIi0MYSA/ISIlFGEiLQyBID8hIiUUgSItDKEgPyEiJRShmD+/A8w9/A/MPf0MQ8w9/QyDzD39DMPMPf0NA8w9/Q1DzD39DYPMPf0Nw8w9/g4AAAADzD3+DkAAAAPMPf4OgAAAA8w9/g7AAAABJi5/AAAAASYuvyAAAAE2Lp9AAAABNi6/YAAAATYu34AAAAE2Lv+gAAABIjaQkyAEAAGYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ZkUP78BmRQ/vyWZFD+/SZkUP79tmRQ/v5GZFD+/tZkUP7/ZmRQ/v/0Ux20iNpCQw/v//8w9/hCRAAQAA8w9/hCQwAQAA8w9/hCQgAQAA8w9/hCQQAQAA8w9/hCQAAQAA8w9/hCTwAAAA8w9/hCTgAAAA8w9/hCTQAAAA8w9/BCRIjaQk0AEAADHAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
+.base64 "SIn7SYnPSIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRBIi0MYSA/ISIlFGEiLQyBID8hIiUUgSItDKEgPyEiJRShmD+/A8w9/A/MPf0MQ8w9/QyDzD39DMPMPf0NA8w9/Q1DzD39DYPMPf0Nw8w9/g4AAAADzD3+DkAAAAPMPf4OgAAAA8w9/g7AAAABJi5/AAAAASYuvyAAAAE2Lp9AAAABNi6/YAAAATYu34AAAAE2Lv+gAAABIjaQkyAEAAGYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ZkUP78BmRQ/vyWZFD+/SZkUP79tmRQ/v5GZFD+/tZkUP7/ZmRQ/v/0Ux20iNZCT4SI2kJDj+///zD3+EJEgBAADzD3+EJDgBAADzD3+EJCgBAADzD3+EJBgBAADzD3+EJAgBAADzD3+EJPgAAADzD3+EJOgAAADzD3+EJNgAAADzD3+EJMgAAABIjaQkyAEAAEiNZCQIMcAxyTHSMfYx/0UxwEUxyUUx0sM="
 .p2align 6"#,
         vg_sha512_compress = sym super::sha512::vg_sha512_compress::vg_sha512_compress,
     )
@@ -653,7 +657,7 @@ call {vg_sha512_compress_shani}
 226:
 .base64 "TYX2"
 jne 20b
-.base64 "SYsfSYtvCE2LZxBNi28YTYt3IE2LfyhIjWQkOMX578DF8e/Jxenv0sXh79vF2e/kxdHv7cXJ7/bFwe//xEE578DEQTHvycRBKe/SxEEh79vEQRnv5MRBEe/txEEJ7/bEQQHv/0iNZCTASI1kJEAxwDHJMdIx9jH/RTHARTHJRTHSww=="
+.base64 "SYsfSYtvCE2LZxBNi28YTYt3IE2LfyhIjWQkOMX578DF8e/Jxenv0sXh79vF2e/kxdHv7cXJ7/bFwe//xEE578DEQTHvycRBKe/SxEEh79vEQRnv5MRBEe/txEEJ7/bEQQHv/0iNZCT4SI1kJMhIjWQkOEiNZCQIMcAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_sha512_compress_shani = sym super::sha512::vg_sha512_compress_shani::vg_sha512_compress_shani,
     )
@@ -739,7 +743,7 @@ jmp 219f
 call {vg_sha512_compress_shani}
 .base64 "SIn7SYnPQb0AAAAAQbkAAAAASYPuAQ=="
 je 22b
-.base64 "SIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRBIi0MYSA/ISIlFGEiLQyBID8hIiUUgSItDKEgPyEiJRShIi0MwSA/ISIlFMEiLQzhID8hIiUU4SYsfSYtvCE2LZxBNi28YTYt3IE2LfyhIjWQkOMX578DF8e/Jxenv0sXh79vF2e/kxdHv7cXJ7/bFwe//xEE578DEQTHvycRBKe/SxEEh79vEQRnv5MRBEe/txEEJ7/bEQQHv/0iNZCTASI1kJEAxwDHJMdIx9jH/RTHJRTHSww=="
+.base64 "SIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRBIi0MYSA/ISIlFGEiLQyBID8hIiUUgSItDKEgPyEiJRShIi0MwSA/ISIlFMEiLQzhID8hIiUU4SYsfSYtvCE2LZxBNi28YTYt3IE2LfyhIjWQkOMX578DF8e/Jxenv0sXh79vF2e/kxdHv7cXJ7/bFwe//xEE578DEQTHvycRBKe/SxEEh79vEQRnv5MRBEe/txEEJ7/bEQQHv/0iNZCT4SI1kJMhIjWQkOEiNZCQIMcAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_sha512_compress_shani = sym super::sha512::vg_sha512_compress_shani::vg_sha512_compress_shani,
     )
@@ -817,7 +821,7 @@ call {vg_sha512_compress_shani}
 215:
 .base64 "TIngSMHoPUgPyGZID274TIngSAHASAHASAHASA/IZkwPbsBmQQ9s+PMPb4OwAAAAZg/rx/MPf4OwAAAASIneSIPGQEiJ37oBAAAATIn5"
 call {vg_sha512_compress_shani}
-.base64 "SIn7SYnPSIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRBIi0MYSA/ISIlFGEiLQyBID8hIiUUgSItDKEgPyEiJRShIi0MwSA/ISIlFMEiLQzhID8hIiUU4Zg/vwPMPfwPzD39DEPMPf0Mg8w9/QzDzD39DQPMPf0NQ8w9/Q2DzD39DcPMPf4OAAAAA8w9/g5AAAADzD3+DoAAAAPMPf4OwAAAASYsfSYtvCE2LZxBNi28YTYt3IE2LfyhIjaQkCAEAAMX578DF8e/Jxenv0sXh79vF2e/kxdHv7cXJ7/bFwe//xEE578DEQTHvycRBKe/SxEEh79vEQRnv5MRBEe/txEEJ7/bEQQHv/0Ux20iNpCTw/v//8w9/BCRIjaQkEAEAADHAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
+.base64 "SIn7SYnPSIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRBIi0MYSA/ISIlFGEiLQyBID8hIiUUgSItDKEgPyEiJRShIi0MwSA/ISIlFMEiLQzhID8hIiUU4Zg/vwPMPfwPzD39DEPMPf0Mg8w9/QzDzD39DQPMPf0NQ8w9/Q2DzD39DcPMPf4OAAAAA8w9/g5AAAADzD3+DoAAAAPMPf4OwAAAASYsfSYtvCE2LZxBNi28YTYt3IE2LfyhIjaQkCAEAAMX578DF8e/Jxenv0sXh79vF2e/kxdHv7cXJ7/bFwe//xEE578DEQTHvycRBKe/SxEEh79vEQRnv5MRBEe/txEEJ7/bEQQHv/0iNZCT4SI2kJPj+//9IjaQkCAEAAEiNZCQIMcAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_sha512_compress_shani = sym super::sha512::vg_sha512_compress_shani::vg_sha512_compress_shani,
     )
@@ -829,6 +833,8 @@ pub const VG_SHA512_UPDATE_AVX2_FEATURES: verified_garbage_cpu::Features = verif
 /// Absorbs data into a SHA-384, SHA-512, SHA-512/224 or SHA-512/256 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), it then represents that message followed by the `len` bytes at `data`.
 ///
 /// Contract: `VG.Spec.Sha512.updateContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -919,7 +925,7 @@ call {vg_sha512_compress_avx2}
 226:
 .base64 "TYX2"
 jne 20b
-.base64 "SYufMAUAAEmLrzgFAABNi6dABQAATYuvSAUAAE2Lt1AFAABNi79YBQAASI2kJGgFAADD"
+.base64 "SYufMAUAAEmLrzgFAABNi6dABQAATYuvSAUAAE2Lt1AFAABNi79YBQAASI2kJGgFAADF+e/AxfHvycXp79LF4e/bxdnv5MXR7+3Fye/2xcHv/8RBOe/AxEEx78nEQSnv0sRBIe/bxEEZ7+TEQRHv7cRBCe/2xEEB7/9FMdtIjWQk+EiNpCSY+v//xf5/hCT4AAAAxf5/hCTYAAAAxf5/hCS4AAAAxf5/hCSYAAAAxf5/RCR4xf5/RCRYxf5/RCQ4xf5/RCQY8w9/RCQISI2kJGgFAABIjWQkCDHAMckx0jH2Mf9FMcBFMclFMdLD"
 .p2align 6"#,
         vg_sha512_compress_avx2 = sym super::sha512::vg_sha512_compress_avx2::vg_sha512_compress_avx2,
     )
@@ -931,6 +937,8 @@ pub const VG_SHA512_FINALIZE_AVX2_FEATURES: verified_garbage_cpu::Features = ver
 /// Finishes a SHA-384, SHA-512, SHA-512/224 or SHA-512/256 computation: if the streaming state `*state` represents a message of `count` bytes, hashed from an initial hash value, writes the final hash value `H⁽ᴺ⁾` of that message (64 bytes) to `*out`. The SHA-512 digest is all of it; the SHA-384, SHA-512/224 and SHA-512/256 digests are its first 48, 28 and 32 bytes.
 ///
 /// Contract: `VG.Spec.Sha512.finalizeContract`. Constant time: only the pointers and `count` may affect timing, not the state.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1003,7 +1011,7 @@ jmp 219f
 call {vg_sha512_compress_avx2}
 .base64 "SIn7SYnPQb0AAAAAQbkAAAAASYPuAQ=="
 je 22b
-.base64 "SIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRBIi0MYSA/ISIlFGEiLQyBID8hIiUUgSItDKEgPyEiJRShIi0MwSA/ISIlFMEiLQzhID8hIiUU4SYufMAUAAEmLrzgFAABNi6dABQAATYuvSAUAAE2Lt1AFAABNi79YBQAASI2kJGgFAADD"
+.base64 "SIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRBIi0MYSA/ISIlFGEiLQyBID8hIiUUgSItDKEgPyEiJRShIi0MwSA/ISIlFMEiLQzhID8hIiUU4SYufMAUAAEmLrzgFAABNi6dABQAATYuvSAUAAE2Lt1AFAABNi79YBQAASI2kJGgFAADF+e/AxfHvycXp79LF4e/bxdnv5MXR7+3Fye/2xcHv/8RBOe/AxEEx78nEQSnv0sRBIe/bxEEZ7+TEQRHv7cRBCe/2xEEB7/9FMdtIjWQk+EiNpCSY+v//xf5/hCT4AAAAxf5/hCTYAAAAxf5/hCS4AAAAxf5/hCSYAAAAxf5/RCR4xf5/RCRYxf5/RCQ4xf5/RCQY8w9/RCQISI2kJGgFAABIjWQkCDHAMckx0jH2Mf9FMcBFMclFMdLD"
 .p2align 6"#,
         vg_sha512_compress_avx2 = sym super::sha512::vg_sha512_compress_avx2::vg_sha512_compress_avx2,
     )
@@ -1015,6 +1023,8 @@ pub const VG_SHA512_DIGEST_AVX2_FEATURES: verified_garbage_cpu::Features = verif
 /// Computes the SHA-512 digest of the `len` bytes at `data` (64 bytes, `VG.Spec.Sha512.sha512`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-512 computation with that message.
 ///
 /// Contract: `VG.Spec.Sha512.digestContract` for `VG.Spec.Sha512.sha512`. Constant time: only the pointers and `len` may affect timing, not the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1079,7 +1089,7 @@ call {vg_sha512_compress_avx2}
 215:
 .base64 "TIngSMHoPUgPyGZID274TIngSAHASAHASAHASA/IZkwPbsBmQQ9s+PMPb4OwAAAAZg/rx/MPf4OwAAAASIneSIPGQEiJ37oBAAAATIn5"
 call {vg_sha512_compress_avx2}
-.base64 "SIn7SYnPSIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRBIi0MYSA/ISIlFGEiLQyBID8hIiUUgSItDKEgPyEiJRShIi0MwSA/ISIlFMEiLQzhID8hIiUU4Zg/vwPMPfwPzD39DEPMPf0Mg8w9/QzDzD39DQPMPf0NQ8w9/Q2DzD39DcPMPf4OAAAAA8w9/g5AAAADzD3+DoAAAAPMPf4OwAAAASYufMAUAAEmLrzgFAABNi6dABQAATYuvSAUAAE2Lt1AFAABNi79YBQAASI2kJDgGAADD"
+.base64 "SIn7SYnPSIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRBIi0MYSA/ISIlFGEiLQyBID8hIiUUgSItDKEgPyEiJRShIi0MwSA/ISIlFMEiLQzhID8hIiUU4Zg/vwPMPfwPzD39DEPMPf0Mg8w9/QzDzD39DQPMPf0NQ8w9/Q2DzD39DcPMPf4OAAAAA8w9/g5AAAADzD3+DoAAAAPMPf4OwAAAASYufMAUAAEmLrzgFAABNi6dABQAATYuvSAUAAE2Lt1AFAABNi79YBQAASI2kJDgGAADF+e/AxfHvycXp79LF4e/bxdnv5MXR7+3Fye/2xcHv/8RBOe/AxEEx78nEQSnv0sRBIe/bxEEZ7+TEQRHv7cRBCe/2xEEB7/9FMdtIjWQk+EiNpCTI+f//xf5/hCS4AQAAxf5/hCSYAQAAxf5/hCR4AQAAxf5/hCRYAQAAxf5/hCQ4AQAAxf5/hCQYAQAAxf5/hCT4AAAAxf5/hCTYAAAA8w9/hCTIAAAASI2kJDgGAABIjWQkCDHAMckx0jH2Mf9FMcBFMclFMdLD"
 .p2align 6"#,
         vg_sha512_compress_avx2 = sym super::sha512::vg_sha512_compress_avx2::vg_sha512_compress_avx2,
     )
@@ -1179,7 +1189,7 @@ call {vg_sha512_compress}
 226:
 .base64 "TYX2"
 jne 20b
-.base64 "SYufwAAAAEmLr8gAAABNi6fQAAAATYuv2AAAAE2Lt+AAAABNi7/oAAAASI2kJPgAAABmD+/ARTHbSI2kJAD////zD3+EJJAAAADzD3+EJIAAAADzD39EJHDzD39EJGDzD39EJFDzD39EJEDzD39EJDDzD39EJCDzD39EJBDzD38EJEiNpCQAAQAAMcAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
+.base64 "SYufwAAAAEmLr8gAAABNi6fQAAAATYuv2AAAAE2Lt+AAAABNi7/oAAAASI2kJPgAAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjWQk+EiNpCQI////8w9/hCSIAAAA8w9/RCR48w9/RCRo8w9/RCRY8w9/RCRI8w9/RCQ48w9/RCQo8w9/RCQY8w9/RCQISI2kJPgAAABIjWQkCDHAMckx0jH2Mf9FMcBFMclFMdLD"
 .p2align 6"#,
         vg_sha512_compress = sym super::sha512::vg_sha512_compress::vg_sha512_compress,
     )
@@ -1261,7 +1271,7 @@ jmp 219f
 call {vg_sha512_compress}
 .base64 "SIn7SYnPQb0AAAAAQbkAAAAASYPuAQ=="
 je 22b
-.base64 "SIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRBIi0MYSA/ISIlFGEiLQyBID8hIiUUgSItDKEgPyEiJRShIi0MwSA/ISIlFMEiLQzhID8hIiUU4SYufwAAAAEmLr8gAAABNi6fQAAAATYuv2AAAAE2Lt+AAAABNi7/oAAAASI2kJPgAAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjaQkAP////MPf4QkgAAAAPMPf0QkcPMPf0QkYPMPf0QkUPMPf0QkQPMPf0QkMPMPf0QkIPMPf0QkEPMPfwQkSI2kJAABAAAxwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
+.base64 "SIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRBIi0MYSA/ISIlFGEiLQyBID8hIiUUgSItDKEgPyEiJRShIi0MwSA/ISIlFMEiLQzhID8hIiUU4SYufwAAAAEmLr8gAAABNi6fQAAAATYuv2AAAAE2Lt+AAAABNi7/oAAAASI2kJPgAAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjWQk+EiNpCQI////8w9/hCSIAAAA8w9/RCR48w9/RCRo8w9/RCRY8w9/RCRI8w9/RCQ48w9/RCQo8w9/RCQY8w9/RCQISI2kJPgAAABIjWQkCDHAMckx0jH2Mf9FMcBFMclFMdLD"
 .p2align 6"#,
         vg_sha512_compress = sym super::sha512::vg_sha512_compress::vg_sha512_compress,
     )
@@ -1335,7 +1345,7 @@ call {vg_sha512_compress}
 215:
 .base64 "TIngSMHoPUgPyGZID274TIngSAHASAHASAHASA/IZkwPbsBmQQ9s+PMPb4OwAAAAZg/rx/MPf4OwAAAASIneSIPGQEiJ37oBAAAATIn5"
 call {vg_sha512_compress}
-.base64 "SIn7SYnPSIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRBIi0MYSA/ISIlFGEiLQyBID8hIiUUgSItDKEgPyEiJRShIi0MwSA/ISIlFMEiLQzhID8hIiUU4Zg/vwPMPfwPzD39DEPMPf0Mg8w9/QzDzD39DQPMPf0NQ8w9/Q2DzD39DcPMPf4OAAAAA8w9/g5AAAADzD3+DoAAAAPMPf4OwAAAASYufwAAAAEmLr8gAAABNi6fQAAAATYuv2AAAAE2Lt+AAAABNi7/oAAAASI2kJMgBAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjaQkMP7///MPf4QkQAEAAPMPf4QkMAEAAPMPf4QkIAEAAPMPf4QkEAEAAPMPf4QkAAEAAPMPf4Qk8AAAAPMPf4Qk4AAAAPMPf4Qk0AAAAPMPfwQkSI2kJNABAAAxwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
+.base64 "SIn7SYnPSIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRBIi0MYSA/ISIlFGEiLQyBID8hIiUUgSItDKEgPyEiJRShIi0MwSA/ISIlFMEiLQzhID8hIiUU4Zg/vwPMPfwPzD39DEPMPf0Mg8w9/QzDzD39DQPMPf0NQ8w9/Q2DzD39DcPMPf4OAAAAA8w9/g5AAAADzD3+DoAAAAPMPf4OwAAAASYufwAAAAEmLr8gAAABNi6fQAAAATYuv2AAAAE2Lt+AAAABNi7/oAAAASI2kJMgBAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjWQk+EiNpCQ4/v//8w9/hCRIAQAA8w9/hCQ4AQAA8w9/hCQoAQAA8w9/hCQYAQAA8w9/hCQIAQAA8w9/hCT4AAAA8w9/hCToAAAA8w9/hCTYAAAA8w9/hCTIAAAASI2kJMgBAABIjWQkCDHAMckx0jH2Mf9FMcBFMclFMdLD"
 .p2align 6"#,
         vg_sha512_compress = sym super::sha512::vg_sha512_compress::vg_sha512_compress,
     )
@@ -1421,7 +1431,7 @@ jmp 219f
 call {vg_sha512_compress_shani}
 .base64 "SIn7SYnPQb0AAAAAQbkAAAAASYPuAQ=="
 je 22b
-.base64 "SIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRCLQxwPyIlFGEmLH0mLbwhNi2cQTYtvGE2LdyBNi38oSI1kJDjF+e/AxfHvycXp79LF4e/bxdnv5MXR7+3Fye/2xcHv/8RBOe/AxEEx78nEQSnv0sRBIe/bxEEZ7+TEQRHv7cRBCe/2xEEB7/9IjWQkwEiNZCRAMcAxyTHSMfYx/0UxyUUx0sM="
+.base64 "SIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRCLQxwPyIlFGEmLH0mLbwhNi2cQTYtvGE2LdyBNi38oSI1kJDjF+e/AxfHvycXp79LF4e/bxdnv5MXR7+3Fye/2xcHv/8RBOe/AxEEx78nEQSnv0sRBIe/bxEEZ7+TEQRHv7cRBCe/2xEEB7/9IjWQk+EiNZCTISI1kJDhIjWQkCDHAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 .p2align 6"#,
         vg_sha512_compress_shani = sym super::sha512::vg_sha512_compress_shani::vg_sha512_compress_shani,
     )
@@ -1499,7 +1509,7 @@ call {vg_sha512_compress_shani}
 215:
 .base64 "TIngSMHoPUgPyGZID274TIngSAHASAHASAHASA/IZkwPbsBmQQ9s+PMPb4OwAAAAZg/rx/MPf4OwAAAASIneSIPGQEiJ37oBAAAATIn5"
 call {vg_sha512_compress_shani}
-.base64 "SIn7SYnPSIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRCLQxwPyIlFGGYP78DzD38D8w9/QxDzD39DIPMPf0Mw8w9/Q0DzD39DUPMPf0Ng8w9/Q3DzD3+DgAAAAPMPf4OQAAAA8w9/g6AAAADzD3+DsAAAAEmLH0mLbwhNi2cQTYtvGE2LdyBNi38oSI2kJAgBAADF+e/AxfHvycXp79LF4e/bxdnv5MXR7+3Fye/2xcHv/8RBOe/AxEEx78nEQSnv0sRBIe/bxEEZ7+TEQRHv7cRBCe/2xEEB7/9FMdtIjaQk8P7///MPfwQkSI2kJBABAAAxwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
+.base64 "SIn7SYnPSIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRCLQxwPyIlFGGYP78DzD38D8w9/QxDzD39DIPMPf0Mw8w9/Q0DzD39DUPMPf0Ng8w9/Q3DzD3+DgAAAAPMPf4OQAAAA8w9/g6AAAADzD3+DsAAAAEmLH0mLbwhNi2cQTYtvGE2LdyBNi38oSI2kJAgBAADF+e/AxfHvycXp79LF4e/bxdnv5MXR7+3Fye/2xcHv/8RBOe/AxEEx78nEQSnv0sRBIe/bxEEZ7+TEQRHv7cRBCe/2xEEB7/9IjWQk+EiNpCT4/v//SI2kJAgBAABIjWQkCDHAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 .p2align 6"#,
         vg_sha512_compress_shani = sym super::sha512::vg_sha512_compress_shani::vg_sha512_compress_shani,
     )
@@ -1511,6 +1521,8 @@ pub const VG_SHA512_224_FINALIZE_AVX2_FEATURES: verified_garbage_cpu::Features =
 /// Finishes a SHA-512/224 computation: if the streaming state `*state` represents a message of `count` bytes, hashed from the initial hash value of SHA-512/224 (as `vg_sha512_224_init` starts it), writes the SHA-512/224 digest of that message (28 bytes, `VG.Spec.Sha512.sha512_224`) to `*out`.
 ///
 /// Contract: `VG.Spec.Sha512.finalizeDigestContract` for `VG.Spec.Sha512.H0_512_224` and `VG.Spec.Sha512.sha512_224`. Constant time: only the pointers and `count` may affect timing, not the state.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1583,7 +1595,7 @@ jmp 219f
 call {vg_sha512_compress_avx2}
 .base64 "SIn7SYnPQb0AAAAAQbkAAAAASYPuAQ=="
 je 22b
-.base64 "SIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRCLQxwPyIlFGEmLnzAFAABJi684BQAATYunQAUAAE2Lr0gFAABNi7dQBQAATYu/WAUAAEiNpCRoBQAAww=="
+.base64 "SIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRCLQxwPyIlFGEmLnzAFAABJi684BQAATYunQAUAAE2Lr0gFAABNi7dQBQAATYu/WAUAAEiNpCRoBQAAxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJPhIjaQkmPr//8X+f4Qk+AAAAMX+f4Qk2AAAAMX+f4QkuAAAAMX+f4QkmAAAAMX+f0QkeMX+f0QkWMX+f0QkOMX+f0QkGPMPf0QkCEiNpCRoBQAASI1kJAgxwDHJMdIx9jH/RTHARTHJRTHSww=="
 .p2align 6"#,
         vg_sha512_compress_avx2 = sym super::sha512::vg_sha512_compress_avx2::vg_sha512_compress_avx2,
     )
@@ -1595,6 +1607,8 @@ pub const VG_SHA512_224_DIGEST_AVX2_FEATURES: verified_garbage_cpu::Features = v
 /// Computes the SHA-512/224 digest of the `len` bytes at `data` (28 bytes, `VG.Spec.Sha512.sha512_224`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-512/224 computation with that message.
 ///
 /// Contract: `VG.Spec.Sha512.digestContract` for `VG.Spec.Sha512.sha512_224`. Constant time: only the pointers and `len` may affect timing, not the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1659,7 +1673,7 @@ call {vg_sha512_compress_avx2}
 215:
 .base64 "TIngSMHoPUgPyGZID274TIngSAHASAHASAHASA/IZkwPbsBmQQ9s+PMPb4OwAAAAZg/rx/MPf4OwAAAASIneSIPGQEiJ37oBAAAATIn5"
 call {vg_sha512_compress_avx2}
-.base64 "SIn7SYnPSIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRCLQxwPyIlFGGYP78DzD38D8w9/QxDzD39DIPMPf0Mw8w9/Q0DzD39DUPMPf0Ng8w9/Q3DzD3+DgAAAAPMPf4OQAAAA8w9/g6AAAADzD3+DsAAAAEmLnzAFAABJi684BQAATYunQAUAAE2Lr0gFAABNi7dQBQAATYu/WAUAAEiNpCQ4BgAAww=="
+.base64 "SIn7SYnPSIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRCLQxwPyIlFGGYP78DzD38D8w9/QxDzD39DIPMPf0Mw8w9/Q0DzD39DUPMPf0Ng8w9/Q3DzD3+DgAAAAPMPf4OQAAAA8w9/g6AAAADzD3+DsAAAAEmLnzAFAABJi684BQAATYunQAUAAE2Lr0gFAABNi7dQBQAATYu/WAUAAEiNpCQ4BgAAxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJPhIjaQkyPn//8X+f4QkuAEAAMX+f4QkmAEAAMX+f4QkeAEAAMX+f4QkWAEAAMX+f4QkOAEAAMX+f4QkGAEAAMX+f4Qk+AAAAMX+f4Qk2AAAAPMPf4QkyAAAAEiNpCQ4BgAASI1kJAgxwDHJMdIx9jH/RTHARTHJRTHSww=="
 .p2align 6"#,
         vg_sha512_compress_avx2 = sym super::sha512::vg_sha512_compress_avx2::vg_sha512_compress_avx2,
     )
@@ -1741,7 +1755,7 @@ jmp 219f
 call {vg_sha512_compress}
 .base64 "SIn7SYnPQb0AAAAAQbkAAAAASYPuAQ=="
 je 22b
-.base64 "SIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRCLQxwPyIlFGEmLn8AAAABJi6/IAAAATYun0AAAAE2Lr9gAAABNi7fgAAAATYu/6AAAAEiNpCT4AAAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI2kJAD////zD3+EJIAAAADzD39EJHDzD39EJGDzD39EJFDzD39EJEDzD39EJDDzD39EJCDzD39EJBDzD38EJEiNpCQAAQAAMcAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
+.base64 "SIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRCLQxwPyIlFGEmLn8AAAABJi6/IAAAATYun0AAAAE2Lr9gAAABNi7fgAAAATYu/6AAAAEiNpCT4AAAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJPhIjaQkCP////MPf4QkiAAAAPMPf0QkePMPf0QkaPMPf0QkWPMPf0QkSPMPf0QkOPMPf0QkKPMPf0QkGPMPf0QkCEiNpCT4AAAASI1kJAgxwDHJMdIx9jH/RTHARTHJRTHSww=="
 .p2align 6"#,
         vg_sha512_compress = sym super::sha512::vg_sha512_compress::vg_sha512_compress,
     )
@@ -1815,7 +1829,7 @@ call {vg_sha512_compress}
 215:
 .base64 "TIngSMHoPUgPyGZID274TIngSAHASAHASAHASA/IZkwPbsBmQQ9s+PMPb4OwAAAAZg/rx/MPf4OwAAAASIneSIPGQEiJ37oBAAAATIn5"
 call {vg_sha512_compress}
-.base64 "SIn7SYnPSIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRCLQxwPyIlFGGYP78DzD38D8w9/QxDzD39DIPMPf0Mw8w9/Q0DzD39DUPMPf0Ng8w9/Q3DzD3+DgAAAAPMPf4OQAAAA8w9/g6AAAADzD3+DsAAAAEmLn8AAAABJi6/IAAAATYun0AAAAE2Lr9gAAABNi7fgAAAATYu/6AAAAEiNpCTIAQAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI2kJDD+///zD3+EJEABAADzD3+EJDABAADzD3+EJCABAADzD3+EJBABAADzD3+EJAABAADzD3+EJPAAAADzD3+EJOAAAADzD3+EJNAAAADzD38EJEiNpCTQAQAAMcAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
+.base64 "SIn7SYnPSIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRCLQxwPyIlFGGYP78DzD38D8w9/QxDzD39DIPMPf0Mw8w9/Q0DzD39DUPMPf0Ng8w9/Q3DzD3+DgAAAAPMPf4OQAAAA8w9/g6AAAADzD3+DsAAAAEmLn8AAAABJi6/IAAAATYun0AAAAE2Lr9gAAABNi7fgAAAATYu/6AAAAEiNpCTIAQAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJPhIjaQkOP7///MPf4QkSAEAAPMPf4QkOAEAAPMPf4QkKAEAAPMPf4QkGAEAAPMPf4QkCAEAAPMPf4Qk+AAAAPMPf4Qk6AAAAPMPf4Qk2AAAAPMPf4QkyAAAAEiNpCTIAQAASI1kJAgxwDHJMdIx9jH/RTHARTHJRTHSww=="
 .p2align 6"#,
         vg_sha512_compress = sym super::sha512::vg_sha512_compress::vg_sha512_compress,
     )
@@ -1901,7 +1915,7 @@ jmp 219f
 call {vg_sha512_compress_shani}
 .base64 "SIn7SYnPQb0AAAAAQbkAAAAASYPuAQ=="
 je 22b
-.base64 "SIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRBIi0MYSA/ISIlFGEmLH0mLbwhNi2cQTYtvGE2LdyBNi38oSI1kJDjF+e/AxfHvycXp79LF4e/bxdnv5MXR7+3Fye/2xcHv/8RBOe/AxEEx78nEQSnv0sRBIe/bxEEZ7+TEQRHv7cRBCe/2xEEB7/9IjWQkwEiNZCRAMcAxyTHSMfYx/0UxyUUx0sM="
+.base64 "SIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRBIi0MYSA/ISIlFGEmLH0mLbwhNi2cQTYtvGE2LdyBNi38oSI1kJDjF+e/AxfHvycXp79LF4e/bxdnv5MXR7+3Fye/2xcHv/8RBOe/AxEEx78nEQSnv0sRBIe/bxEEZ7+TEQRHv7cRBCe/2xEEB7/9IjWQk+EiNZCTISI1kJDhIjWQkCDHAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 .p2align 6"#,
         vg_sha512_compress_shani = sym super::sha512::vg_sha512_compress_shani::vg_sha512_compress_shani,
     )
@@ -1979,7 +1993,7 @@ call {vg_sha512_compress_shani}
 215:
 .base64 "TIngSMHoPUgPyGZID274TIngSAHASAHASAHASA/IZkwPbsBmQQ9s+PMPb4OwAAAAZg/rx/MPf4OwAAAASIneSIPGQEiJ37oBAAAATIn5"
 call {vg_sha512_compress_shani}
-.base64 "SIn7SYnPSIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRBIi0MYSA/ISIlFGGYP78DzD38D8w9/QxDzD39DIPMPf0Mw8w9/Q0DzD39DUPMPf0Ng8w9/Q3DzD3+DgAAAAPMPf4OQAAAA8w9/g6AAAADzD3+DsAAAAEmLH0mLbwhNi2cQTYtvGE2LdyBNi38oSI2kJAgBAADF+e/AxfHvycXp79LF4e/bxdnv5MXR7+3Fye/2xcHv/8RBOe/AxEEx78nEQSnv0sRBIe/bxEEZ7+TEQRHv7cRBCe/2xEEB7/9FMdtIjaQk8P7///MPfwQkSI2kJBABAAAxwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
+.base64 "SIn7SYnPSIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRBIi0MYSA/ISIlFGGYP78DzD38D8w9/QxDzD39DIPMPf0Mw8w9/Q0DzD39DUPMPf0Ng8w9/Q3DzD3+DgAAAAPMPf4OQAAAA8w9/g6AAAADzD3+DsAAAAEmLH0mLbwhNi2cQTYtvGE2LdyBNi38oSI2kJAgBAADF+e/AxfHvycXp79LF4e/bxdnv5MXR7+3Fye/2xcHv/8RBOe/AxEEx78nEQSnv0sRBIe/bxEEZ7+TEQRHv7cRBCe/2xEEB7/9IjWQk+EiNpCT4/v//SI2kJAgBAABIjWQkCDHAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 .p2align 6"#,
         vg_sha512_compress_shani = sym super::sha512::vg_sha512_compress_shani::vg_sha512_compress_shani,
     )
@@ -1991,6 +2005,8 @@ pub const VG_SHA512_256_FINALIZE_AVX2_FEATURES: verified_garbage_cpu::Features =
 /// Finishes a SHA-512/256 computation: if the streaming state `*state` represents a message of `count` bytes, hashed from the initial hash value of SHA-512/256 (as `vg_sha512_256_init` starts it), writes the SHA-512/256 digest of that message (32 bytes, `VG.Spec.Sha512.sha512_256`) to `*out`.
 ///
 /// Contract: `VG.Spec.Sha512.finalizeDigestContract` for `VG.Spec.Sha512.H0_512_256` and `VG.Spec.Sha512.sha512_256`. Constant time: only the pointers and `count` may affect timing, not the state.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -2063,7 +2079,7 @@ jmp 219f
 call {vg_sha512_compress_avx2}
 .base64 "SIn7SYnPQb0AAAAAQbkAAAAASYPuAQ=="
 je 22b
-.base64 "SIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRBIi0MYSA/ISIlFGEmLnzAFAABJi684BQAATYunQAUAAE2Lr0gFAABNi7dQBQAATYu/WAUAAEiNpCRoBQAAww=="
+.base64 "SIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRBIi0MYSA/ISIlFGEmLnzAFAABJi684BQAATYunQAUAAE2Lr0gFAABNi7dQBQAATYu/WAUAAEiNpCRoBQAAxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJPhIjaQkmPr//8X+f4Qk+AAAAMX+f4Qk2AAAAMX+f4QkuAAAAMX+f4QkmAAAAMX+f0QkeMX+f0QkWMX+f0QkOMX+f0QkGPMPf0QkCEiNpCRoBQAASI1kJAgxwDHJMdIx9jH/RTHARTHJRTHSww=="
 .p2align 6"#,
         vg_sha512_compress_avx2 = sym super::sha512::vg_sha512_compress_avx2::vg_sha512_compress_avx2,
     )
@@ -2075,6 +2091,8 @@ pub const VG_SHA512_256_DIGEST_AVX2_FEATURES: verified_garbage_cpu::Features = v
 /// Computes the SHA-512/256 digest of the `len` bytes at `data` (32 bytes, `VG.Spec.Sha512.sha512_256`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-512/256 computation with that message.
 ///
 /// Contract: `VG.Spec.Sha512.digestContract` for `VG.Spec.Sha512.sha512_256`. Constant time: only the pointers and `len` may affect timing, not the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -2139,7 +2157,7 @@ call {vg_sha512_compress_avx2}
 215:
 .base64 "TIngSMHoPUgPyGZID274TIngSAHASAHASAHASA/IZkwPbsBmQQ9s+PMPb4OwAAAAZg/rx/MPf4OwAAAASIneSIPGQEiJ37oBAAAATIn5"
 call {vg_sha512_compress_avx2}
-.base64 "SIn7SYnPSIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRBIi0MYSA/ISIlFGGYP78DzD38D8w9/QxDzD39DIPMPf0Mw8w9/Q0DzD39DUPMPf0Ng8w9/Q3DzD3+DgAAAAPMPf4OQAAAA8w9/g6AAAADzD3+DsAAAAEmLnzAFAABJi684BQAATYunQAUAAE2Lr0gFAABNi7dQBQAATYu/WAUAAEiNpCQ4BgAAww=="
+.base64 "SIn7SYnPSIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRBIi0MYSA/ISIlFGGYP78DzD38D8w9/QxDzD39DIPMPf0Mw8w9/Q0DzD39DUPMPf0Ng8w9/Q3DzD3+DgAAAAPMPf4OQAAAA8w9/g6AAAADzD3+DsAAAAEmLnzAFAABJi684BQAATYunQAUAAE2Lr0gFAABNi7dQBQAATYu/WAUAAEiNpCQ4BgAAxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJPhIjaQkyPn//8X+f4QkuAEAAMX+f4QkmAEAAMX+f4QkeAEAAMX+f4QkWAEAAMX+f4QkOAEAAMX+f4QkGAEAAMX+f4Qk+AAAAMX+f4Qk2AAAAPMPf4QkyAAAAEiNpCQ4BgAASI1kJAgxwDHJMdIx9jH/RTHARTHJRTHSww=="
 .p2align 6"#,
         vg_sha512_compress_avx2 = sym super::sha512::vg_sha512_compress_avx2::vg_sha512_compress_avx2,
     )
@@ -2221,7 +2239,7 @@ jmp 219f
 call {vg_sha512_compress}
 .base64 "SIn7SYnPQb0AAAAAQbkAAAAASYPuAQ=="
 je 22b
-.base64 "SIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRBIi0MYSA/ISIlFGEmLn8AAAABJi6/IAAAATYun0AAAAE2Lr9gAAABNi7fgAAAATYu/6AAAAEiNpCT4AAAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI2kJAD////zD3+EJIAAAADzD39EJHDzD39EJGDzD39EJFDzD39EJEDzD39EJDDzD39EJCDzD39EJBDzD38EJEiNpCQAAQAAMcAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
+.base64 "SIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRBIi0MYSA/ISIlFGEmLn8AAAABJi6/IAAAATYun0AAAAE2Lr9gAAABNi7fgAAAATYu/6AAAAEiNpCT4AAAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJPhIjaQkCP////MPf4QkiAAAAPMPf0QkePMPf0QkaPMPf0QkWPMPf0QkSPMPf0QkOPMPf0QkKPMPf0QkGPMPf0QkCEiNpCT4AAAASI1kJAgxwDHJMdIx9jH/RTHARTHJRTHSww=="
 .p2align 6"#,
         vg_sha512_compress = sym super::sha512::vg_sha512_compress::vg_sha512_compress,
     )
@@ -2295,7 +2313,7 @@ call {vg_sha512_compress}
 215:
 .base64 "TIngSMHoPUgPyGZID274TIngSAHASAHASAHASA/IZkwPbsBmQQ9s+PMPb4OwAAAAZg/rx/MPf4OwAAAASIneSIPGQEiJ37oBAAAATIn5"
 call {vg_sha512_compress}
-.base64 "SIn7SYnPSIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRBIi0MYSA/ISIlFGGYP78DzD38D8w9/QxDzD39DIPMPf0Mw8w9/Q0DzD39DUPMPf0Ng8w9/Q3DzD3+DgAAAAPMPf4OQAAAA8w9/g6AAAADzD3+DsAAAAEmLn8AAAABJi6/IAAAATYun0AAAAE2Lr9gAAABNi7fgAAAATYu/6AAAAEiNpCTIAQAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI2kJDD+///zD3+EJEABAADzD3+EJDABAADzD3+EJCABAADzD3+EJBABAADzD3+EJAABAADzD3+EJPAAAADzD3+EJOAAAADzD3+EJNAAAADzD38EJEiNpCTQAQAAMcAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
+.base64 "SIn7SYnPSIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRBIi0MYSA/ISIlFGGYP78DzD38D8w9/QxDzD39DIPMPf0Mw8w9/Q0DzD39DUPMPf0Ng8w9/Q3DzD3+DgAAAAPMPf4OQAAAA8w9/g6AAAADzD3+DsAAAAEmLn8AAAABJi6/IAAAATYun0AAAAE2Lr9gAAABNi7fgAAAATYu/6AAAAEiNpCTIAQAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJPhIjaQkOP7///MPf4QkSAEAAPMPf4QkOAEAAPMPf4QkKAEAAPMPf4QkGAEAAPMPf4QkCAEAAPMPf4Qk+AAAAPMPf4Qk6AAAAPMPf4Qk2AAAAPMPf4QkyAAAAEiNpCTIAQAASI1kJAgxwDHJMdIx9jH/RTHARTHJRTHSww=="
 .p2align 6"#,
         vg_sha512_compress = sym super::sha512::vg_sha512_compress::vg_sha512_compress,
     )

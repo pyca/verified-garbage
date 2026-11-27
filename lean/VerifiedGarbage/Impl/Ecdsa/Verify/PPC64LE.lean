@@ -80,7 +80,7 @@ variable (c : Impl.Ecdsa.PPC64LE.Cfg)
 /-- The signature's setup, with verification's arguments, keeping `sig` in
 `r12`, and tables of bits. -/
 def prefix' : Prog isa :=
-  .seq (.block (c.setupWith Args.verify ++ [mov .r12 .r5])) <|
+  .seq (.seq (c.setupWith Args.verify) (.block [mov .r12 .r5])) <|
   .seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) <|
   .seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n)) <|
   .seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) (.block [])
@@ -182,7 +182,7 @@ def backWith (pts : Prog isa) : Prog isa :=
 /-- `vg_ecdsa_<curve>_verify`, with `pts` for `[u]G + [v]Q`. -/
 def verifyWith (pts : Prog isa) : Prog isa :=
   .seq (prefix' c) <| .seq (.block (loadS c)) <|
-  .seq (.block (Impl.Ecdh.PPC64LE.Cfg.peerAt c .r14)) <| .seq (Impl.Ecdh.PPC64LE.Cfg.validate c) (backWith c pts)
+  .seq (.block (Impl.Ecdh.PPC64LE.Cfg.peerAt c .r14)) <| .seq (Impl.Ecdh.PPC64LE.Cfg.valCall c) (backWith c pts)
 
 /-- Everything after the checks of the key. -/
 def back : Prog isa := backWith c (points c)

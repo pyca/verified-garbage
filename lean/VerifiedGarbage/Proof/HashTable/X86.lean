@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.RsaOaep.X86.Mgf
 public import VerifiedGarbage.Proof.RsaOaep.X86.Hashes.Md5
 public import VerifiedGarbage.Proof.RsaOaep.X86.Certs
-public import VerifiedGarbage.Proof.RsaPss.X86.Hashes.Sha1
-public import VerifiedGarbage.Proof.RsaPss.X86.Hashes.Sha224
-public import VerifiedGarbage.Proof.RsaPss.X86.Hashes.Sha256
-public import VerifiedGarbage.Proof.RsaPss.X86.Hashes.Sha512
 public import VerifiedGarbage.Proof.MdHashTable.X86.Tables
 public import VerifiedGarbage.Proof.HashTable.Basic
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.Entry
@@ -18,7 +14,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 
 section
 
-/-! # RSAES-OAEP on x86: SHA-1, with any backend, as RSASSA-PSS has them (`Proof/RsaPss/X86/Hashes/Sha1.lean`) -/
+/-! # RSAES-OAEP on x86: SHA-1, with any backend, as RSASSA-PSS has them (`Proof/MdHashTable/X86/Tables.lean`) -/
 
 @[expose] public section
 
@@ -40,7 +36,7 @@ end
 
 section
 
-/-! # RSAES-OAEP on x86: SHA-224, with any SHA-256 backend, as RSASSA-PSS has them (`Proof/RsaPss/X86/Hashes/Sha224.lean`) -/
+/-! # RSAES-OAEP on x86: SHA-224, with any SHA-256 backend, as RSASSA-PSS has them (`Proof/MdHashTable/X86/Tables.lean`) -/
 
 @[expose] public section
 
@@ -63,7 +59,7 @@ end
 
 section
 
-/-! # RSAES-OAEP on x86: SHA-256, with any backend, as RSASSA-PSS has them (`Proof/RsaPss/X86/Hashes/Sha256.lean`) -/
+/-! # RSAES-OAEP on x86: SHA-256, with any backend, as RSASSA-PSS has them (`Proof/MdHashTable/X86/Tables.lean`) -/
 
 @[expose] public section
 
@@ -86,7 +82,7 @@ end
 
 section
 
-/-! # RSAES-OAEP on x86: the SHA-512 family, as RSASSA-PSS has them (`Proof/RsaPss/X86/Hashes/Sha512.lean`) -/
+/-! # RSAES-OAEP on x86: the SHA-512 family, as RSASSA-PSS has them (`Proof/MdHashTable/X86/Tables.lean`) -/
 
 @[expose] public section
 

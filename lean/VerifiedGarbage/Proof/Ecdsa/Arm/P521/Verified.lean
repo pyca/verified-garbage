@@ -2,7 +2,6 @@ module
 
 import VerifiedGarbage.Proof.Ecdsa.Arm.P521.MulLit
 import VerifiedGarbage.Proof.Ecdsa.Arm.Main
-public import VerifiedGarbage.Proof.Ecdsa.Arm.P521.Contract
 import VerifiedGarbage.Proof.P521.Point
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
 public import VerifiedGarbage.Proof.Ecdsa.Arm.Layout
@@ -19,7 +18,6 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Ecdsa.Arm.P521.MulLit
 meta import VerifiedGarbage.Proof.Ecdsa.Arm.Main
-meta import VerifiedGarbage.Proof.Ecdsa.Arm.P521.Contract
 meta import VerifiedGarbage.Proof.P521.Point
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Proof.Ecdsa.Arm.Layout
@@ -39,6 +37,70 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
 public import VerifiedGarbage.Proof.Framework.Arm.TaintMono
 public meta import VerifiedGarbage.Proof.Framework.Arm.TaintMono
+public import VerifiedGarbage.Proof.Framework.Arm.TaintSym
+public meta import VerifiedGarbage.Proof.Framework.Arm.TaintSym
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Spec.Ecdsa.Generic
+public import VerifiedGarbage.Spec.P521
+public import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.GetElem
+meta import VerifiedGarbage.TCB.Arm.Target
+meta import VerifiedGarbage.Spec.Ecdsa.Generic
+meta import VerifiedGarbage.Spec.P521
+meta import VerifiedGarbage.Proof.Framework.PowLit
+meta import VerifiedGarbage.Proof.Framework.GetElem
+
+/-! ### `Ecdsa.Arm.P521.Contract`, which this module and modules that import it used -/
+
+section
+
+/-!
+# ECDSA over P-521 on 32-bit ARM: the contract the proof is written against
+
+The facts of `Proof.Ecdsa.Instance.signContract Spec.Ecdsa.P521.inst` for 32-bit ARM, by name:
+`vg_ecdsa_p521_sign(out, d, digest, k, scratch)`, with `out`, `d`, `digest`
+and `k` in `r0`–`r3` and `scratch` on the stack (AAPCS), the result in `r0`
+(the low word of `r1:r0`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Ecdsa.Arm.P521
+
+open VG VG.Arm Spec.Weierstrass Spec.Ecdsa
+
+/-- The signature of the arguments, as the specification computes it. -/
+abbrev sig (m : Mem) (d digest k : Addr) : Option (Nat × Nat) :=
+  signWith Spec.P521.curve (ofBytes (bytesAt m d 66)) (hashToInt Spec.P521.curve (bytesAt m digest 66))
+    (ofBytes (bytesAt m k 66))
+
+def signArm : Contract Arm.isa where
+  pre s :=
+    let out : Region := ⟨State.addr (s.gpr .r0), 132⟩
+    let d : Region := ⟨State.addr (s.gpr .r1), 66⟩
+    let digest : Region := ⟨State.addr (s.gpr .r2), 66⟩
+    let k : Region := ⟨State.addr (s.gpr .r3), 66⟩
+    let scratch : Region := ⟨State.addr (stackArg s 0), 8192⟩
+    let args : Region := ⟨State.addr s.sp, 4⟩
+    s.rd = [d, digest, k, args] ∧ s.wr = [out, scratch] ∧ out.Disjoint scratch ∧
+      d.Disjoint scratch ∧ digest.Disjoint scratch ∧ k.Disjoint scratch ∧
+      out.Disjoint args ∧ scratch.Disjoint args ∧
+      (s.gpr .r0).toNat + 132 ≤ 2 ^ 32 ∧ (s.gpr .r1).toNat + 66 ≤ 2 ^ 32 ∧ (s.gpr .r2).toNat + 66 ≤ 2 ^ 32 ∧
+      (s.gpr .r3).toNat + 66 ≤ 2 ^ 32 ∧ (stackArg s 0).toNat + 8192 ≤ 2 ^ 32 ∧ s.sp.toNat + 4 ≤ 2 ^ 32
+  post s s' :=
+    match sig s.mem (State.addr (s.gpr .r1)) (State.addr (s.gpr .r2)) (State.addr (s.gpr .r3)) with
+    | some rs => BitVec.setWidth 32 (s'.gpr .r1 ++ s'.gpr .r0) = 1 ∧
+      bytesAt s'.mem (State.addr (s.gpr .r0)) 132 = encode Spec.P521.curve rs
+    | none => BitVec.setWidth 32 (s'.gpr .r1 ++ s'.gpr .r0) = 0 ∧
+      bytesAt s'.mem (State.addr (s.gpr .r0)) 132 = List.replicate 132 0
+  pub s₁ s₂ := s₁.sp = s₂.sp ∧ s₁.gpr .r0 = s₂.gpr .r0 ∧ s₁.gpr .r1 = s₂.gpr .r1 ∧
+    s₁.gpr .r2 = s₂.gpr .r2 ∧ s₁.gpr .r3 = s₂.gpr .r3 ∧ stackArg s₁ 0 = stackArg s₂ 0
+
+end VG.Proof.Ecdsa.Arm.P521
+
+end
+
+end
 
 /-!
 # ECDSA over P-521 on 32-bit ARM: `Verified`
@@ -94,30 +156,7 @@ theorem p521_ok : CfgOk p521 where
   fp := ⟨rfl, rfl, Mont.p521p_ok, rfl⟩
   fn := ⟨rfl, rfl, Mont.p521n_ok, rfl⟩
   mulNf := fun _ _ => Impl.Ecdsa.Arm.mulP521_noFrames
-
-theorem pre_of {s : State} (h : signArm.pre s) : Pre p521 s := by
-  obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14⟩ := h
-  exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14⟩
-
-theorem sign_arm (hL : Weierstrass.Law Spec.P521.curve) (s : State) (hs : signArm.pre s) :
-    ∃ t s', Exec isa signP521 s t s' ∧ abiPreserved s s' ∧ signArm.post s s' := by
-  have hp := pre_of hs
-  obtain ⟨t, s', he, K, hpost⟩ := sign_ok p521_ok hL hp
-  refine ⟨t, s', he, ⟨fun r hr => ?_, K.sp⟩, ?_⟩
-  swap
-  · simp only [signArm, BitVec.setWidth_append_eq_right]
-    exact hpost
-  simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-  · exact K.saved (.r4, 0) (by decide)
-  · exact K.saved (.r5, 4) (by decide)
-  · exact K.saved (.r6, 8) (by decide)
-  · exact K.saved (.r7, 12) (by decide)
-  · exact K.saved (.r8, 16) (by decide)
-  · exact K.saved (.r9, 20) (by decide)
-  · exact K.saved (.r10, 24) (by decide)
-  · exact K.saved (.r11, 28) (by decide)
-  · exact K.saved (.lr, 32) (by decide)
+  pubNf := fun _ _ => Impl.Ecdsa.Arm.mulPubP521_noFrames
 
 /-- The taint analysis starts with the register arguments public, the stack
 argument too, and that word known to be the base address of `scratch`. -/
@@ -125,9 +164,9 @@ def τ₀ : VG.Arm.Taint.T :=
   { regs := .ofList [.r0, .r1, .r2, .r3], flags := false, lens := [132, 8192], argLen := 4,
     argBases := [(0, 1)] }
 
-theorem wf₀ {s : State} (h : signArm.pre s) : VG.Arm.Taint.Wf τ₀ s := by
-  have hp := pre_of h
-  refine ⟨fun _ => ⟨by simp [hp.wr, τ₀, p521, show Spec.P521.curve.len = 66 from rfl], ?_, ?_⟩,
+theorem wf₀_pre {u : Bool} {s : State} {extra : List Region} (hp : Pre (p521With u) s extra) :
+    VG.Arm.Taint.Wf τ₀ s := by
+  refine ⟨fun _ => ⟨by simp [hp.wr, τ₀, p521With, show Spec.P521.curve.len = 66 from rfl], ?_, ?_⟩,
     fun _ h => (List.not_mem_nil h).elim, fun _ => ⟨hp.sp_fit, ?_⟩, ?_⟩
   · simp only [hp.wr, List.pairwise_cons, List.mem_cons, List.not_mem_nil, or_false, forall_eq,
       List.Pairwise.nil, false_implies, implies_true, and_true]
@@ -154,28 +193,31 @@ theorem argByte_eq (s : State) (k : Nat) :
 /-! The functions modulo `p` as literals, for their summaries (the kernel would otherwise build
 their instructions once for the analysis and once for the frame). -/
 materialize_code mulModP := Mont.mulFnWith false p521.SP.k p521.SP.m
-materialize_code addModP := Mont.addFn p521.SP.k p521.SP.m
-materialize_code subModP := Mont.subFn p521.SP.k p521.SP.m
+materialize_code addModP := Mont.addFnWith false p521.SP.k p521.SP.m
+materialize_code subModP := Mont.subFnWith false p521.SP.k p521.SP.m
 
 /-! The constant-time analyses of the calls of the functions modulo `p`, from their arguments,
-each done once for every check of code that calls them (`taint_decide_sum`: signing, ECDH, the
-public key and its compression). They keep what is public of `r10` (which the callers keep `lr`
-in) and of the loops' counter `r11`: the functions write neither. The analysis is `taintS`'s,
+each done once for every check of code that calls them (`taint_decide_sum`: ECDH, and the
+public key's compression and decompression). They keep what is public of `r10` (which the callers
+keep `lr` in) and of the loops' counter `r11`: the functions write neither. The analysis is
+`taintC`'s, `taintS` with the address of the setup's table of constants public (`taintSym`),
 which has summaries (`Proof/Framework/Arm/TaintMono.lean`). -/
-taint_summary mulPSum : taintS (Taint.ofRegs [.r0, .r1, .r2, .r3])
+abbrev taintC : VG.Taint isa := taintSym [p521.constSym]
+
+taint_summary mulPSum : taintC (Taint.ofRegs [.r0, .r1, .r2, .r3])
   (.call (Mont.mulName false p521.SP) (Mont.mulFnWith false p521.SP.k p521.SP.m))
   keeping (Taint.ofRegs [.r10, .r11])
-taint_summary addPSum : taintS (Taint.ofRegs [.r0, .r1, .r2, .r3])
-  (.call (p521.SP.fn "add") (Mont.addFn p521.SP.k p521.SP.m))
+taint_summary addPSum : taintC (Taint.ofRegs [.r0, .r1, .r2, .r3])
+  (.call (Mont.addName false p521.SP) (Mont.addFnWith false p521.SP.k p521.SP.m))
   keeping (Taint.ofRegs [.r10, .r11])
-taint_summary subPSum : taintS (Taint.ofRegs [.r0, .r1, .r2, .r3])
-  (.call (p521.SP.fn "sub") (Mont.subFn p521.SP.k p521.SP.m))
+taint_summary subPSum : taintC (Taint.ofRegs [.r0, .r1, .r2, .r3])
+  (.call (Mont.subName false p521.SP) (Mont.subFnWith false p521.SP.k p521.SP.m))
   keeping (Taint.ofRegs [.r10, .r11])
 
 /-! The constant-time analysis of the call of `vg_p521_mul` from its argument and `r10`, done
-once for every check of code that calls it (signing, ECDH and the public key). It writes every
+once for every check of code that calls it (ECDH). It writes every
 register: its frame is empty. -/
-taint_summary mulSum : taintS (Taint.ofRegs [.r0, .r10])
+taint_summary mulSum : taintC (Taint.ofRegs [.r0, .r10])
   (.call (s!"vg_{Impl.Weierstrass.Mul.p521.curve}_mul" ++ if p521.umaal then "_umaal" else "")
     mulP521)
   keeping (Taint.ofRegs []) using mulPSum addPSum subPSum
@@ -190,11 +232,12 @@ theorem agree₁ {s t : State} (h : VG.Arm.Taint.Agree τ₀ s t) : VG.Arm.Taint
     fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim, .inl rfl,
     fun _ h => (List.not_mem_nil h).elim⟩ h
 
-theorem sign_ct : ConstantTime isa signArm.pre signArm.pub signP521 := by
-  refine VG.Taint.constantTime_of_exists (A := taintS) τ₁ ?_
-    (by taint_decide_sum [mulPSum, mulSum])
-  intro s t hs ht ⟨hsp, h0, h1, h2, h3, ha⟩
-  refine agree₁ ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun _ => ?_, wf₀ hs, wf₀ ht,
+/-- The taint analysis's start agrees in the two states. -/
+theorem agree₀ {u : Bool} {s t : State} {extraS extraT : List Region}
+    (hs : Pre (p521With u) s extraS) (ht : Pre (p521With u) t extraT) (pub : signArm.pub s t) :
+    VG.Arm.Taint.Agree τ₀ s t := by
+  obtain ⟨hsp, h0, h1, h2, h3, ha⟩ := pub
+  refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun _ => ?_, wf₀_pre hs, wf₀_pre ht,
     fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim,
     fun _ => hsp, fun k hk => ?_⟩
   · simp only [τ₀, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -203,7 +246,7 @@ theorem sign_ct : ConstantTime isa signArm.pre signArm.pub signP521 := by
     · exact h1
     · exact h2
     · exact h3
-  · rw [(pre_of hs).wr, (pre_of ht).wr]; simp only [outR, scR, ptr, scPtr, h0, ha]
+  · rw [hs.wr, ht.wr]; simp only [outR, scR, ptr, scPtr, h0, ha]
   · rw [argByte_eq, argByte_eq, Mem.readW_byte s.mem _ hk, Mem.readW_byte t.mem _ hk]
     exact congrArg (fun v : BitVec 32 => v.extractLsb' (8 * k) 8) ha
 

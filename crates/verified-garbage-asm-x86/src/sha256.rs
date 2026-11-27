@@ -10,6 +10,8 @@ pub const VG_SHA256_DIGEST_SHANI_FEATURES: verified_garbage_cpu::Features = veri
 ///
 /// Contract: `VG.Spec.Sha256.digestContract` for `VG.Spec.Sha256.hash`. Constant time: only the pointers and `len` may affect timing, not the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `data` must be valid for reads of `len` bytes.
@@ -21,7 +23,7 @@ pub const VG_SHA256_DIGEST_SHANI_FEATURES: verified_garbage_cpu::Features = veri
 pub(crate) unsafe extern "C" fn vg_sha256_digest_shani(data: *const u8, len: usize, out: *mut [u8; 32]) {
     core::arch::naked_asm!(
         r#".base64 "jaQkvP7//4uEJEgBAACJRCQEi4QkTAEAAIlEJAiLhCRQAQAAiUQkDIngg8AUiUQkEItEJBCJmKAAAACJsKQAAACJuKgAAACJqKwAAACJxYnvgcewAAAAVw=="
-call {vg_sha256_init}
+call {vg_sha256_init_core}
 .base64 "WLgAAAAAvgAAAACLTCQIi1QkBFVRUlBWVw=="
 call {vg_sha256_update_scratch_shani}
 .base64 "WFhYWFhYi0QkCLkAAAAAieqBwhABAABVUlFQVw=="
@@ -30,9 +32,9 @@ call {vg_sha256_finalize_scratch_shani}
 20:
 .base64 "iegByA+2kBABAACJ8AHIiBCDwQGD+SA="
 jne 20b
-.base64 "ieiLmKAAAACLsKQAAACLuKgAAACLqKwAAAC5AAAAAIlMJBSJTCQYiUwkHIlMJCCJTCQkiUwkKIlMJCyJTCQwiUwkNIlMJDiJTCQ8iUwkQIlMJESJTCRIiUwkTIlMJFCJTCRUiUwkWIlMJFyJTCRgiUwkZIlMJGiJTCRsiUwkcIlMJHSJTCR4iUwkfImMJIAAAACJjCSEAAAAiYwkiAAAAImMJIwAAACJjCSQAAAAiYwklAAAAImMJJgAAACJjCScAAAAiYwkoAAAAImMJKQAAACJjCSoAAAAiYwkrAAAAImMJLAAAACJjCS0AAAAiYwkuAAAAImMJLwAAACJjCTAAAAAiYwkxAAAAImMJMgAAACJjCTMAAAAiYwk0AAAAImMJNQAAACJjCTYAAAAiYwk3AAAAImMJOAAAACJjCTkAAAAiYwk6AAAAImMJOwAAACJjCTwAAAAiYwk9AAAAImMJPgAAACJjCT8AAAAiYwkAAEAAImMJAQBAACJjCQIAQAAiYwkDAEAAImMJBABAACJjCQUAQAAiYwkGAEAAImMJBwBAACJjCQgAQAAiYwkJAEAAImMJCgBAACJjCQsAQAAiYwkMAEAAImMJDQBAACJjCQ4AQAAiYwkPAEAAImMJEABAACNpCREAQAAww=="
+.base64 "ieiLmKAAAACLsKQAAACLuKgAAACLqKwAAABmD+/AuQAAAADzD39EJBTzD39EJCTzD39EJDTzD39EJETzD39EJFTzD39EJGTzD39EJHTzD3+EJIQAAADzD3+EJJQAAADzD3+EJKQAAADzD3+EJLQAAADzD3+EJMQAAADzD3+EJNQAAADzD3+EJOQAAADzD3+EJPQAAADzD3+EJAQBAADzD3+EJBQBAADzD3+EJCQBAADzD3+EJDQBAACNpCREAQAAjaQkjP7//7kAAAAAiQwkiUwkBIlMJAiJTCQMiUwkEIlMJBSJTCQYiUwkHIlMJCCJTCQkiUwkKIlMJCyJTCQwiUwkNIlMJDiJTCQ8iUwkQI2kJHQBAAC4AAAAALoAAAAAMclmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/8M="
 .p2align 6"#,
-        vg_sha256_init = sym super::sha256::vg_sha256_init,
+        vg_sha256_init_core = sym super::sha256::vg_sha256_init_core::vg_sha256_init_core,
         vg_sha256_update_scratch_shani = sym super::sha256::vg_sha256_update_scratch_shani::vg_sha256_update_scratch_shani,
         vg_sha256_finalize_scratch_shani = sym super::sha256::vg_sha256_finalize_scratch_shani::vg_sha256_finalize_scratch_shani,
     )
@@ -41,6 +43,8 @@ jne 20b
 /// Computes the SHA-256 digest of the `len` bytes at `data` (32 bytes, `VG.Spec.Sha256.hash`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-256 computation with that message.
 ///
 /// Contract: `VG.Spec.Sha256.digestContract` for `VG.Spec.Sha256.hash`. Constant time: only the pointers and `len` may affect timing, not the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -52,7 +56,7 @@ jne 20b
 pub(crate) unsafe extern "C" fn vg_sha256_digest(data: *const u8, len: usize, out: *mut [u8; 32]) {
     core::arch::naked_asm!(
         r#".base64 "jaQkvP7//4uEJEgBAACJRCQEi4QkTAEAAIlEJAiLhCRQAQAAiUQkDIngg8AUiUQkEItEJBCJmKAAAACJsKQAAACJuKgAAACJqKwAAACJxYnvgcewAAAAVw=="
-call {vg_sha256_init}
+call {vg_sha256_init_core}
 .base64 "WLgAAAAAvgAAAACLTCQIi1QkBFVRUlBWVw=="
 call {vg_sha256_update_scratch}
 .base64 "WFhYWFhYi0QkCLkAAAAAieqBwhABAABVUlFQVw=="
@@ -61,9 +65,9 @@ call {vg_sha256_finalize_scratch}
 20:
 .base64 "iegByA+2kBABAACJ8AHIiBCDwQGD+SA="
 jne 20b
-.base64 "ieiLmKAAAACLsKQAAACLuKgAAACLqKwAAAC5AAAAAIlMJBSJTCQYiUwkHIlMJCCJTCQkiUwkKIlMJCyJTCQwiUwkNIlMJDiJTCQ8iUwkQIlMJESJTCRIiUwkTIlMJFCJTCRUiUwkWIlMJFyJTCRgiUwkZIlMJGiJTCRsiUwkcIlMJHSJTCR4iUwkfImMJIAAAACJjCSEAAAAiYwkiAAAAImMJIwAAACJjCSQAAAAiYwklAAAAImMJJgAAACJjCScAAAAiYwkoAAAAImMJKQAAACJjCSoAAAAiYwkrAAAAImMJLAAAACJjCS0AAAAiYwkuAAAAImMJLwAAACJjCTAAAAAiYwkxAAAAImMJMgAAACJjCTMAAAAiYwk0AAAAImMJNQAAACJjCTYAAAAiYwk3AAAAImMJOAAAACJjCTkAAAAiYwk6AAAAImMJOwAAACJjCTwAAAAiYwk9AAAAImMJPgAAACJjCT8AAAAiYwkAAEAAImMJAQBAACJjCQIAQAAiYwkDAEAAImMJBABAACJjCQUAQAAiYwkGAEAAImMJBwBAACJjCQgAQAAiYwkJAEAAImMJCgBAACJjCQsAQAAiYwkMAEAAImMJDQBAACJjCQ4AQAAiYwkPAEAAImMJEABAACNpCREAQAAww=="
+.base64 "ieiLmKAAAACLsKQAAACLuKgAAACLqKwAAABmD+/AuQAAAADzD39EJBTzD39EJCTzD39EJDTzD39EJETzD39EJFTzD39EJGTzD39EJHTzD3+EJIQAAADzD3+EJJQAAADzD3+EJKQAAADzD3+EJLQAAADzD3+EJMQAAADzD3+EJNQAAADzD3+EJOQAAADzD3+EJPQAAADzD3+EJAQBAADzD3+EJBQBAADzD3+EJCQBAADzD3+EJDQBAACNpCREAQAAjaQkjP7//7kAAAAAiQwkiUwkBIlMJAiJTCQMiUwkEIlMJBSJTCQYiUwkHIlMJCCJTCQkiUwkKIlMJCyJTCQwiUwkNIlMJDiJTCQ8iUwkQI2kJHQBAAC4AAAAALoAAAAAMclmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/8M="
 .p2align 6"#,
-        vg_sha256_init = sym super::sha256::vg_sha256_init,
+        vg_sha256_init_core = sym super::sha256::vg_sha256_init_core::vg_sha256_init_core,
         vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch::vg_sha256_update_scratch,
         vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch::vg_sha256_finalize_scratch,
     )
@@ -76,6 +80,8 @@ pub const VG_SHA224_DIGEST_SHANI_FEATURES: verified_garbage_cpu::Features = veri
 ///
 /// Contract: `VG.Spec.Sha256.digestContract` for `VG.Spec.Sha256.sha224`. Constant time: only the pointers and `len` may affect timing, not the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `data` must be valid for reads of `len` bytes.
@@ -87,7 +93,7 @@ pub const VG_SHA224_DIGEST_SHANI_FEATURES: verified_garbage_cpu::Features = veri
 pub(crate) unsafe extern "C" fn vg_sha224_digest_shani(data: *const u8, len: usize, out: *mut [u8; 28]) {
     core::arch::naked_asm!(
         r#".base64 "jaQkvP7//4uEJEgBAACJRCQEi4QkTAEAAIlEJAiLhCRQAQAAiUQkDIngg8AUiUQkEItEJBCJmKAAAACJsKQAAACJuKgAAACJqKwAAACJxYnvgcewAAAAVw=="
-call {vg_sha224_init}
+call {vg_sha224_init_core}
 .base64 "WLgAAAAAvgAAAACLTCQIi1QkBFVRUlBWVw=="
 call {vg_sha256_update_scratch_shani}
 .base64 "WFhYWFhYi0QkCLkAAAAAieqBwhABAABVUlFQVw=="
@@ -96,9 +102,9 @@ call {vg_sha256_finalize_scratch_shani}
 20:
 .base64 "iegByA+2kBABAACJ8AHIiBCDwQGD+Rw="
 jne 20b
-.base64 "ieiLmKAAAACLsKQAAACLuKgAAACLqKwAAAC5AAAAAIlMJBSJTCQYiUwkHIlMJCCJTCQkiUwkKIlMJCyJTCQwiUwkNIlMJDiJTCQ8iUwkQIlMJESJTCRIiUwkTIlMJFCJTCRUiUwkWIlMJFyJTCRgiUwkZIlMJGiJTCRsiUwkcIlMJHSJTCR4iUwkfImMJIAAAACJjCSEAAAAiYwkiAAAAImMJIwAAACJjCSQAAAAiYwklAAAAImMJJgAAACJjCScAAAAiYwkoAAAAImMJKQAAACJjCSoAAAAiYwkrAAAAImMJLAAAACJjCS0AAAAiYwkuAAAAImMJLwAAACJjCTAAAAAiYwkxAAAAImMJMgAAACJjCTMAAAAiYwk0AAAAImMJNQAAACJjCTYAAAAiYwk3AAAAImMJOAAAACJjCTkAAAAiYwk6AAAAImMJOwAAACJjCTwAAAAiYwk9AAAAImMJPgAAACJjCT8AAAAiYwkAAEAAImMJAQBAACJjCQIAQAAiYwkDAEAAImMJBABAACJjCQUAQAAiYwkGAEAAImMJBwBAACJjCQgAQAAiYwkJAEAAImMJCgBAACJjCQsAQAAiYwkMAEAAImMJDQBAACJjCQ4AQAAiYwkPAEAAImMJEABAACNpCREAQAAww=="
+.base64 "ieiLmKAAAACLsKQAAACLuKgAAACLqKwAAABmD+/AuQAAAADzD39EJBTzD39EJCTzD39EJDTzD39EJETzD39EJFTzD39EJGTzD39EJHTzD3+EJIQAAADzD3+EJJQAAADzD3+EJKQAAADzD3+EJLQAAADzD3+EJMQAAADzD3+EJNQAAADzD3+EJOQAAADzD3+EJPQAAADzD3+EJAQBAADzD3+EJBQBAADzD3+EJCQBAADzD3+EJDQBAACNpCREAQAAjaQkjP7//7kAAAAAiQwkiUwkBIlMJAiJTCQMiUwkEIlMJBSJTCQYiUwkHIlMJCCJTCQkiUwkKIlMJCyJTCQwiUwkNIlMJDiJTCQ8iUwkQI2kJHQBAAC4AAAAALoAAAAAMclmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/8M="
 .p2align 6"#,
-        vg_sha224_init = sym super::sha256::vg_sha224_init,
+        vg_sha224_init_core = sym super::ecdsa_brainpoolp256r1::vg_sha224_init_core::vg_sha224_init_core,
         vg_sha256_update_scratch_shani = sym super::sha256::vg_sha256_update_scratch_shani::vg_sha256_update_scratch_shani,
         vg_sha256_finalize_scratch_shani = sym super::sha256::vg_sha256_finalize_scratch_shani::vg_sha256_finalize_scratch_shani,
     )
@@ -107,6 +113,8 @@ jne 20b
 /// Computes the SHA-224 digest of the `len` bytes at `data` (28 bytes, `VG.Spec.Sha256.sha224`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-224 computation with that message.
 ///
 /// Contract: `VG.Spec.Sha256.digestContract` for `VG.Spec.Sha256.sha224`. Constant time: only the pointers and `len` may affect timing, not the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -118,7 +126,7 @@ jne 20b
 pub(crate) unsafe extern "C" fn vg_sha224_digest(data: *const u8, len: usize, out: *mut [u8; 28]) {
     core::arch::naked_asm!(
         r#".base64 "jaQkvP7//4uEJEgBAACJRCQEi4QkTAEAAIlEJAiLhCRQAQAAiUQkDIngg8AUiUQkEItEJBCJmKAAAACJsKQAAACJuKgAAACJqKwAAACJxYnvgcewAAAAVw=="
-call {vg_sha224_init}
+call {vg_sha224_init_core}
 .base64 "WLgAAAAAvgAAAACLTCQIi1QkBFVRUlBWVw=="
 call {vg_sha256_update_scratch}
 .base64 "WFhYWFhYi0QkCLkAAAAAieqBwhABAABVUlFQVw=="
@@ -127,9 +135,9 @@ call {vg_sha256_finalize_scratch}
 20:
 .base64 "iegByA+2kBABAACJ8AHIiBCDwQGD+Rw="
 jne 20b
-.base64 "ieiLmKAAAACLsKQAAACLuKgAAACLqKwAAAC5AAAAAIlMJBSJTCQYiUwkHIlMJCCJTCQkiUwkKIlMJCyJTCQwiUwkNIlMJDiJTCQ8iUwkQIlMJESJTCRIiUwkTIlMJFCJTCRUiUwkWIlMJFyJTCRgiUwkZIlMJGiJTCRsiUwkcIlMJHSJTCR4iUwkfImMJIAAAACJjCSEAAAAiYwkiAAAAImMJIwAAACJjCSQAAAAiYwklAAAAImMJJgAAACJjCScAAAAiYwkoAAAAImMJKQAAACJjCSoAAAAiYwkrAAAAImMJLAAAACJjCS0AAAAiYwkuAAAAImMJLwAAACJjCTAAAAAiYwkxAAAAImMJMgAAACJjCTMAAAAiYwk0AAAAImMJNQAAACJjCTYAAAAiYwk3AAAAImMJOAAAACJjCTkAAAAiYwk6AAAAImMJOwAAACJjCTwAAAAiYwk9AAAAImMJPgAAACJjCT8AAAAiYwkAAEAAImMJAQBAACJjCQIAQAAiYwkDAEAAImMJBABAACJjCQUAQAAiYwkGAEAAImMJBwBAACJjCQgAQAAiYwkJAEAAImMJCgBAACJjCQsAQAAiYwkMAEAAImMJDQBAACJjCQ4AQAAiYwkPAEAAImMJEABAACNpCREAQAAww=="
+.base64 "ieiLmKAAAACLsKQAAACLuKgAAACLqKwAAABmD+/AuQAAAADzD39EJBTzD39EJCTzD39EJDTzD39EJETzD39EJFTzD39EJGTzD39EJHTzD3+EJIQAAADzD3+EJJQAAADzD3+EJKQAAADzD3+EJLQAAADzD3+EJMQAAADzD3+EJNQAAADzD3+EJOQAAADzD3+EJPQAAADzD3+EJAQBAADzD3+EJBQBAADzD3+EJCQBAADzD3+EJDQBAACNpCREAQAAjaQkjP7//7kAAAAAiQwkiUwkBIlMJAiJTCQMiUwkEIlMJBSJTCQYiUwkHIlMJCCJTCQkiUwkKIlMJCyJTCQwiUwkNIlMJDiJTCQ8iUwkQI2kJHQBAAC4AAAAALoAAAAAMclmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/8M="
 .p2align 6"#,
-        vg_sha224_init = sym super::sha256::vg_sha224_init,
+        vg_sha224_init_core = sym super::ecdsa_brainpoolp256r1::vg_sha224_init_core::vg_sha224_init_core,
         vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch::vg_sha256_update_scratch,
         vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch::vg_sha256_finalize_scratch,
     )
@@ -139,6 +147,8 @@ jne 20b
 ///
 /// Contract: `VG.Spec.Sha256.init224Contract`. The streaming state is the hash value followed by a buffered partial block (`VG.Spec.Sha256.ReprFrom`).
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 96 bytes.
@@ -147,7 +157,7 @@ jne 20b
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha224_init(state: *mut [u8; 96]) {
     core::arch::naked_asm!(
-        r#".base64 "i0QkBLnYngXBiQi5B9V8NolIBLkX3XAwiUgIuTlZDveJSAy5MQvA/4lIELkRFVhoiUgUuaeP+WSJSBi5pE/6volIHMM="
+        r#".base64 "i0QkBLnYngXBiQi5B9V8NolIBLkX3XAwiUgIuTlZDveJSAy5MQvA/4lIELkRFVhoiUgUuaeP+WSJSBi5pE/6volIHLgAAAAAugAAAAAxyWYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ww=="
 .p2align 6"#,
     )
 }
@@ -155,6 +165,8 @@ pub(crate) unsafe extern "C" fn vg_sha224_init(state: *mut [u8; 96]) {
 /// Starts a SHA-256 computation: makes the streaming state `*state` represent the empty message.
 ///
 /// Contract: `VG.Spec.Sha256.initContract`. The streaming state is the hash value followed by a buffered partial block (`VG.Spec.Sha256.Repr`).
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -164,7 +176,7 @@ pub(crate) unsafe extern "C" fn vg_sha224_init(state: *mut [u8; 96]) {
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha256_init(state: *mut [u8; 96]) {
     core::arch::naked_asm!(
-        r#".base64 "i0QkBLln5glqiQi5ha5nu4lIBLly8248iUgIuTr1T6WJSAy5f1IOUYlIELmMaAWbiUgUuavZgx+JSBi5Gc3gW4lIHMM="
+        r#".base64 "i0QkBLln5glqiQi5ha5nu4lIBLly8248iUgIuTr1T6WJSAy5f1IOUYlIELmMaAWbiUgUuavZgx+JSBi5Gc3gW4lIHLgAAAAAugAAAAAxyWYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ww=="
 .p2align 6"#,
     )
 }
@@ -176,6 +188,8 @@ pub const VG_SHA256_UPDATE_SHANI_FEATURES: verified_garbage_cpu::Features = veri
 ///
 /// Contract: `VG.Spec.Sha256.updateContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety
@@ -183,12 +197,12 @@ pub const VG_SHA256_UPDATE_SHANI_FEATURES: verified_garbage_cpu::Features = veri
 /// * `state` must be valid for reads and writes of 96 bytes.
 /// * `data` must be valid for reads of `len` bytes.
 /// * `state` must not overlap `data` (distinct Rust objects never do).
-/// * Neither `state` nor `data` may overlap the arguments on the stack, overlap the return address on the stack or the 656 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `data` may overlap the arguments on the stack, overlap the return address on the stack or the 208 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `ssse3` and `sha` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha256_update_shani(state: *mut [u8; 96], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
-        r#".base64 "jaQkhP3//4uEJIACAACJRCQEi4QkhAIAAIlEJAiLhCSIAgAAiUQkDIuEJIwCAACJRCQQi4QkkAIAAIlEJBSJ4IPAHIlEJBiLRCQYiVhwiXB0iXh4iWh8i1wkBItsJBCLdCQUi3wkCIPnPw=="
+        r#".base64 "jaQkRP///4uEJMAAAACJRCQEi4QkxAAAAIlEJAiLhCTIAAAAiUQkDIuEJMwAAACJRCQQi4Qk0AAAAIlEJBSJ4IPAHIlEJBiLRCQYiVhwiXB0iXh4iWh8i1wkBItsJBCLdCQUi3wkCIPnPw=="
 20:
 .base64 "hf8="
 je 21f
@@ -250,7 +264,7 @@ call {vg_sha256_compress_shani}
 .base64 "WFhYWLkBAAAAhck="
 220:
 jne 20b
-.base64 "i0QkGItYcItwdIt4eItofI2kJHwCAADD"
+.base64 "i0QkGItYcItwdIt4eItofI2kJLwAAABmD+/AjaQkMP////MPfwQk8w9/RCQQ8w9/RCQg8w9/RCQw8w9/RCRA8w9/RCRQ8w9/RCRg8w9/RCRw8w9/hCSAAAAA8w9/hCSQAAAA8w9/hCSgAAAA8w9/hCSwAAAA8w9/hCTAAAAAjaQk0AAAALgAAAAAugAAAAAxyWYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ww=="
 .p2align 6"#,
         vg_sha256_compress_shani = sym super::sha256::vg_sha256_compress_shani::vg_sha256_compress_shani,
     )
@@ -263,6 +277,8 @@ pub const VG_SHA256_FINALIZE_SHANI_FEATURES: verified_garbage_cpu::Features = ve
 ///
 /// Contract: `VG.Spec.Sha256.finalizeContract`. Constant time: only the pointers and `count` may affect timing, not the state.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety
@@ -271,12 +287,12 @@ pub const VG_SHA256_FINALIZE_SHANI_FEATURES: verified_garbage_cpu::Features = ve
 /// * `out` must be valid for reads and writes of 32 bytes.
 /// * The contents of `state` on return are unspecified.
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
-/// * Neither `state` nor `out` may overlap the arguments on the stack, overlap the return address on the stack or the 652 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `out` may overlap the arguments on the stack, overlap the return address on the stack or the 204 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `ssse3` and `sha` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha256_finalize_shani(state: *mut [u8; 96], count: u64, out: *mut [u8; 32]) {
     core::arch::naked_asm!(
-        r#".base64 "jaQkiP3//4uEJHwCAACJRCQEi4QkgAIAAIlEJAiLhCSEAgAAiUQkDIuEJIgCAACJRCQQieCDwBiJRCQUi0QkFIlYcIlwdIl4eIlofInFi1wkBItMJAiJjYAAAACLTCQMiY2EAAAAi0wkEImNiAAAAIt8JAiD5z+J2gH6uYAAAACISiCDxwG+AAAAAIP/OQ=="
+        r#".base64 "jaQkSP///4uEJLwAAACJRCQEi4QkwAAAAIlEJAiLhCTEAAAAiUQkDIuEJMgAAACJRCQQieCDwBiJRCQUi0QkFIlYcIlwdIl4eIlofInFi1wkBItMJAiJjYAAAACLTCQMiY2EAAAAi0wkEImNiAAAAIt8JAiD5z+J2gH6uYAAAACISiCDxwG+AAAAAIP/OQ=="
 jae 20f
 jmp 21f
 20:
@@ -307,7 +323,7 @@ jmp 29f
 call {vg_sha256_compress_shani}
 .base64 "WFhYWL8AAAAAg+4B"
 je 22b
-.base64 "i4WIAAAAiwsPyYkIi0sED8mJSASLSwgPyYlICItLDA/JiUgMi0sQD8mJSBCLSxQPyYlIFItLGA/JiUgYi0scD8mJSByLXXCLdXSLfXiLbXyNpCR4AgAAww=="
+.base64 "i4WIAAAAiwsPyYkIi0sED8mJSASLSwgPyYlICItLDA/JiUgMi0sQD8mJSBCLSxQPyYlIFItLGA/JiUgYi0scD8mJSByLXXCLdXSLfXiLbXyNpCS4AAAAZg/vwLkAAAAAjaQkNP////MPfwQk8w9/RCQQ8w9/RCQg8w9/RCQw8w9/RCRA8w9/RCRQ8w9/RCRg8w9/RCRw8w9/hCSAAAAA8w9/hCSQAAAA8w9/hCSgAAAA8w9/hCSwAAAAiYwkwAAAAImMJMQAAACJjCTIAAAAjaQkzAAAALgAAAAAugAAAAAxyWYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ww=="
 .p2align 6"#,
         vg_sha256_compress_shani = sym super::sha256::vg_sha256_compress_shani::vg_sha256_compress_shani,
     )
@@ -320,18 +336,20 @@ pub const VG_SHA224_FINALIZE_SHANI_FEATURES: verified_garbage_cpu::Features = ve
 ///
 /// Contract: `VG.Spec.Sha256.finalize224Contract`. Constant time: only the pointers and `count` may affect timing, not the state.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 96 bytes.
 /// * `out` must be valid for reads and writes of 28 bytes.
 /// * The contents of `state` on return are unspecified.
 /// * `state` and `out` must not overlap each other or the arguments on the stack (distinct Rust objects never do).
-/// * Neither `state` nor `out` may overlap the return address on the stack or the 652 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `out` may overlap the return address on the stack or the 204 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `ssse3` and `sha` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha224_finalize_shani(state: *mut [u8; 96], count: u64, out: *mut [u8; 28]) {
     core::arch::naked_asm!(
-        r#".base64 "jaQkiP3//4uEJHwCAACJRCQEi4QkgAIAAIlEJAiLhCSEAgAAiUQkDIuEJIgCAACJRCQQieCDwBiJRCQUi0QkFIlYcIlwdIl4eIlofInFi1wkBItMJAiJjYAAAACLTCQMiY2EAAAAi0wkEImNiAAAAIt8JAiD5z+J2gH6uYAAAACISiCDxwG+AAAAAIP/OQ=="
+        r#".base64 "jaQkSP///4uEJLwAAACJRCQEi4QkwAAAAIlEJAiLhCTEAAAAiUQkDIuEJMgAAACJRCQQieCDwBiJRCQUi0QkFIlYcIlwdIl4eIlofInFi1wkBItMJAiJjYAAAACLTCQMiY2EAAAAi0wkEImNiAAAAIt8JAiD5z+J2gH6uYAAAACISiCDxwG+AAAAAIP/OQ=="
 jae 20f
 jmp 21f
 20:
@@ -362,7 +380,7 @@ jmp 29f
 call {vg_sha256_compress_shani}
 .base64 "WFhYWL8AAAAAg+4B"
 je 22b
-.base64 "i4WIAAAAiwsPyYkIi0sED8mJSASLSwgPyYlICItLDA/JiUgMi0sQD8mJSBCLSxQPyYlIFItLGA/JiUgYi11wi3V0i314i218jaQkeAIAAMM="
+.base64 "i4WIAAAAiwsPyYkIi0sED8mJSASLSwgPyYlICItLDA/JiUgMi0sQD8mJSBCLSxQPyYlIFItLGA/JiUgYi11wi3V0i314i218jaQkuAAAAGYP78C5AAAAAI2kJDT////zD38EJPMPf0QkEPMPf0QkIPMPf0QkMPMPf0QkQPMPf0QkUPMPf0QkYPMPf0QkcPMPf4QkgAAAAPMPf4QkkAAAAPMPf4QkoAAAAPMPf4QksAAAAImMJMAAAACJjCTEAAAAiYwkyAAAAI2kJMwAAAC4AAAAALoAAAAAMclmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/8M="
 .p2align 6"#,
         vg_sha256_compress_shani = sym super::sha256::vg_sha256_compress_shani::vg_sha256_compress_shani,
     )
@@ -372,6 +390,8 @@ je 22b
 ///
 /// Contract: `VG.Spec.Sha256.updateContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety
@@ -379,11 +399,11 @@ je 22b
 /// * `state` must be valid for reads and writes of 96 bytes.
 /// * `data` must be valid for reads of `len` bytes.
 /// * `state` must not overlap `data` (distinct Rust objects never do).
-/// * Neither `state` nor `data` may overlap the arguments on the stack, overlap the return address on the stack or the 656 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `data` may overlap the arguments on the stack, overlap the return address on the stack or the 208 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha256_update(state: *mut [u8; 96], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
-        r#".base64 "jaQkhP3//4uEJIACAACJRCQEi4QkhAIAAIlEJAiLhCSIAgAAiUQkDIuEJIwCAACJRCQQi4QkkAIAAIlEJBSJ4IPAHIlEJBiLRCQYiVhwiXB0iXh4iWh8i1wkBItsJBCLdCQUi3wkCIPnPw=="
+        r#".base64 "jaQkRP///4uEJMAAAACJRCQEi4QkxAAAAIlEJAiLhCTIAAAAiUQkDIuEJMwAAACJRCQQi4Qk0AAAAIlEJBSJ4IPAHIlEJBiLRCQYiVhwiXB0iXh4iWh8i1wkBItsJBCLdCQUi3wkCIPnPw=="
 20:
 .base64 "hf8="
 je 21f
@@ -445,7 +465,7 @@ call {vg_sha256_compress}
 .base64 "WFhYWLkBAAAAhck="
 220:
 jne 20b
-.base64 "i0QkGItYcItwdIt4eItofI2kJHwCAADD"
+.base64 "i0QkGItYcItwdIt4eItofI2kJLwAAABmD+/AjaQkMP////MPfwQk8w9/RCQQ8w9/RCQg8w9/RCQw8w9/RCRA8w9/RCRQ8w9/RCRg8w9/RCRw8w9/hCSAAAAA8w9/hCSQAAAA8w9/hCSgAAAA8w9/hCSwAAAA8w9/hCTAAAAAjaQk0AAAALgAAAAAugAAAAAxyWYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ww=="
 .p2align 6"#,
         vg_sha256_compress = sym super::sha256::vg_sha256_compress::vg_sha256_compress,
     )
@@ -455,6 +475,8 @@ jne 20b
 ///
 /// Contract: `VG.Spec.Sha256.finalizeContract`. Constant time: only the pointers and `count` may affect timing, not the state.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety
@@ -463,11 +485,11 @@ jne 20b
 /// * `out` must be valid for reads and writes of 32 bytes.
 /// * The contents of `state` on return are unspecified.
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
-/// * Neither `state` nor `out` may overlap the arguments on the stack, overlap the return address on the stack or the 652 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `out` may overlap the arguments on the stack, overlap the return address on the stack or the 204 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha256_finalize(state: *mut [u8; 96], count: u64, out: *mut [u8; 32]) {
     core::arch::naked_asm!(
-        r#".base64 "jaQkiP3//4uEJHwCAACJRCQEi4QkgAIAAIlEJAiLhCSEAgAAiUQkDIuEJIgCAACJRCQQieCDwBiJRCQUi0QkFIlYcIlwdIl4eIlofInFi1wkBItMJAiJjYAAAACLTCQMiY2EAAAAi0wkEImNiAAAAIt8JAiD5z+J2gH6uYAAAACISiCDxwG+AAAAAIP/OQ=="
+        r#".base64 "jaQkSP///4uEJLwAAACJRCQEi4QkwAAAAIlEJAiLhCTEAAAAiUQkDIuEJMgAAACJRCQQieCDwBiJRCQUi0QkFIlYcIlwdIl4eIlofInFi1wkBItMJAiJjYAAAACLTCQMiY2EAAAAi0wkEImNiAAAAIt8JAiD5z+J2gH6uYAAAACISiCDxwG+AAAAAIP/OQ=="
 jae 20f
 jmp 21f
 20:
@@ -498,7 +520,7 @@ jmp 29f
 call {vg_sha256_compress}
 .base64 "WFhYWL8AAAAAg+4B"
 je 22b
-.base64 "i4WIAAAAiwsPyYkIi0sED8mJSASLSwgPyYlICItLDA/JiUgMi0sQD8mJSBCLSxQPyYlIFItLGA/JiUgYi0scD8mJSByLXXCLdXSLfXiLbXyNpCR4AgAAww=="
+.base64 "i4WIAAAAiwsPyYkIi0sED8mJSASLSwgPyYlICItLDA/JiUgMi0sQD8mJSBCLSxQPyYlIFItLGA/JiUgYi0scD8mJSByLXXCLdXSLfXiLbXyNpCS4AAAAZg/vwLkAAAAAjaQkNP////MPfwQk8w9/RCQQ8w9/RCQg8w9/RCQw8w9/RCRA8w9/RCRQ8w9/RCRg8w9/RCRw8w9/hCSAAAAA8w9/hCSQAAAA8w9/hCSgAAAA8w9/hCSwAAAAiYwkwAAAAImMJMQAAACJjCTIAAAAjaQkzAAAALgAAAAAugAAAAAxyWYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ww=="
 .p2align 6"#,
         vg_sha256_compress = sym super::sha256::vg_sha256_compress::vg_sha256_compress,
     )
@@ -508,17 +530,19 @@ je 22b
 ///
 /// Contract: `VG.Spec.Sha256.finalize224Contract`. Constant time: only the pointers and `count` may affect timing, not the state.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 96 bytes.
 /// * `out` must be valid for reads and writes of 28 bytes.
 /// * The contents of `state` on return are unspecified.
 /// * `state` and `out` must not overlap each other or the arguments on the stack (distinct Rust objects never do).
-/// * Neither `state` nor `out` may overlap the return address on the stack or the 652 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `out` may overlap the return address on the stack or the 204 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha224_finalize(state: *mut [u8; 96], count: u64, out: *mut [u8; 28]) {
     core::arch::naked_asm!(
-        r#".base64 "jaQkiP3//4uEJHwCAACJRCQEi4QkgAIAAIlEJAiLhCSEAgAAiUQkDIuEJIgCAACJRCQQieCDwBiJRCQUi0QkFIlYcIlwdIl4eIlofInFi1wkBItMJAiJjYAAAACLTCQMiY2EAAAAi0wkEImNiAAAAIt8JAiD5z+J2gH6uYAAAACISiCDxwG+AAAAAIP/OQ=="
+        r#".base64 "jaQkSP///4uEJLwAAACJRCQEi4QkwAAAAIlEJAiLhCTEAAAAiUQkDIuEJMgAAACJRCQQieCDwBiJRCQUi0QkFIlYcIlwdIl4eIlofInFi1wkBItMJAiJjYAAAACLTCQMiY2EAAAAi0wkEImNiAAAAIt8JAiD5z+J2gH6uYAAAACISiCDxwG+AAAAAIP/OQ=="
 jae 20f
 jmp 21f
 20:
@@ -549,7 +573,7 @@ jmp 29f
 call {vg_sha256_compress}
 .base64 "WFhYWL8AAAAAg+4B"
 je 22b
-.base64 "i4WIAAAAiwsPyYkIi0sED8mJSASLSwgPyYlICItLDA/JiUgMi0sQD8mJSBCLSxQPyYlIFItLGA/JiUgYi11wi3V0i314i218jaQkeAIAAMM="
+.base64 "i4WIAAAAiwsPyYkIi0sED8mJSASLSwgPyYlICItLDA/JiUgMi0sQD8mJSBCLSxQPyYlIFItLGA/JiUgYi11wi3V0i314i218jaQkuAAAAGYP78C5AAAAAI2kJDT////zD38EJPMPf0QkEPMPf0QkIPMPf0QkMPMPf0QkQPMPf0QkUPMPf0QkYPMPf0QkcPMPf4QkgAAAAPMPf4QkkAAAAPMPf4QkoAAAAPMPf4QksAAAAImMJMAAAACJjCTEAAAAiYwkyAAAAI2kJMwAAAC4AAAAALoAAAAAMclmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/8M="
 .p2align 6"#,
         vg_sha256_compress = sym super::sha256::vg_sha256_compress::vg_sha256_compress,
     )
@@ -570,6 +594,10 @@ pub(crate) mod vg_sha256_finalize_scratch;
 #[rustfmt::skip]
 #[path = "internal/vg_sha256_finalize_scratch_shani.rs"]
 pub(crate) mod vg_sha256_finalize_scratch_shani;
+
+#[rustfmt::skip]
+#[path = "internal/vg_sha256_init_core.rs"]
+pub(crate) mod vg_sha256_init_core;
 
 #[rustfmt::skip]
 #[path = "internal/vg_sha256_state_digest.rs"]

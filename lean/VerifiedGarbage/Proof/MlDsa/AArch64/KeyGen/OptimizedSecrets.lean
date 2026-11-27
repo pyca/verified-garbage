@@ -1,7 +1,6 @@
 module
-public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedSecretGroup
 
-import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedSecretTiming
+public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedSecretTiming
 
 @[expose] public section
 

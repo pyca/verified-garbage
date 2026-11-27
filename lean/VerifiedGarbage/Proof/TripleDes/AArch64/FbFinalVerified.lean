@@ -1,10 +1,8 @@
 module
 
-import VerifiedGarbage.Proof.TripleDes.AArch64.Link
-import VerifiedGarbage.Proof.TripleDes.AArch64.ModeCore
+public import VerifiedGarbage.Proof.TripleDes.AArch64.FbVerified
 import VerifiedGarbage.Proof.TripleDes.AArch64.BlockSum
 import VerifiedGarbage.Proof.Modes.AArch64.FbFinal
-public import VerifiedGarbage.Proof.TripleDes.AArch64.FbVerified
 import VerifiedGarbage.Proof.TripleDes.AArch64.FbFinalLit
 import VerifiedGarbage.Proof.TripleDes.AArch64.FbLit
 public import VerifiedGarbage.Impl.TripleDes.AArch64.FbFinal
@@ -19,11 +17,9 @@ import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 public import VerifiedGarbage.Proof.Framework.AArch64.VectorTaint
 import VerifiedGarbage.Proof.Framework.AArch64.Lit
-meta import VerifiedGarbage.Proof.TripleDes.AArch64.Link
-meta import VerifiedGarbage.Proof.TripleDes.AArch64.ModeCore
+meta import VerifiedGarbage.Proof.TripleDes.AArch64.FbVerified
 meta import VerifiedGarbage.Proof.TripleDes.AArch64.BlockSum
 meta import VerifiedGarbage.Proof.Modes.AArch64.FbFinal
-meta import VerifiedGarbage.Proof.TripleDes.AArch64.FbVerified
 meta import VerifiedGarbage.Proof.TripleDes.AArch64.FbFinalLit
 meta import VerifiedGarbage.Proof.TripleDes.AArch64.FbLit
 meta import VerifiedGarbage.Impl.TripleDes.AArch64.FbFinal

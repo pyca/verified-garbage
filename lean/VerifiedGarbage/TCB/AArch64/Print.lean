@@ -151,6 +151,8 @@ def VOp.asm : VOp → String
   | .mulHE op d n m i => s!"{op.name} {d.arr "8h"}, {n.arr "8h"}, v{m.index}.h[{i}]"
   | .pmull false d n m => s!"pmull {d.arr "1q"}, {n.arr "1d"}, {m.arr "1d"}"
   | .pmull true d n m => s!"pmull2 {d.arr "1q"}, {n.arr "2d"}, {m.arr "2d"}"
+  | .pmull8 false d n m => s!"pmull {d.arr "8h"}, {n.arr "8b"}, {m.arr "8b"}"
+  | .pmull8 true d n m => s!"pmull2 {d.arr "8h"}, {n.arr "16b"}, {m.arr "16b"}"
   | .aese d n => s!"aese {d.b}, {n.b}"
   | .aesd d n => s!"aesd {d.b}, {n.b}"
   | .aesmc d n => s!"aesmc {d.b}, {n.b}"
@@ -167,6 +169,15 @@ def VOp.asm : VOp → String
   | .sha512h2 d n m => s!"sha512h2 {d.q}, {n.q}, {m.arr "2d"}"
   | .sha512su0 d n => s!"sha512su0 {d.arr "2d"}, {n.arr "2d"}"
   | .sha512su1 d n m => s!"sha512su1 {d.arr "2d"}, {n.arr "2d"}, {m.arr "2d"}"
+  | .sm4e d n => s!"sm4e {d.arr "4s"}, {n.arr "4s"}"
+  | .sm4ekey d n m => s!"sm4ekey {d.arr "4s"}, {n.arr "4s"}, {m.arr "4s"}"
+  | .sm3ss1 d n m a => s!"sm3ss1 {d.arr "4s"}, {n.arr "4s"}, {m.arr "4s"}, {a.arr "4s"}"
+  | .sm3tt op d n m i =>
+    let name := match op with
+      | .tt1a => "sm3tt1a" | .tt1b => "sm3tt1b" | .tt2a => "sm3tt2a" | .tt2b => "sm3tt2b"
+    s!"{name} {d.arr "4s"}, {n.arr "4s"}, v{m.index}.s[{i}]"
+  | .sm3partw1 d n m => s!"sm3partw1 {d.arr "4s"}, {n.arr "4s"}, {m.arr "4s"}"
+  | .sm3partw2 d n m => s!"sm3partw2 {d.arr "4s"}, {n.arr "4s"}, {m.arr "4s"}"
   | .eor3 d n m a => s!"eor3 {d.b}, {n.b}, {m.b}, {a.b}"
   | .bcax d n m a => s!"bcax {d.b}, {n.b}, {m.b}, {a.b}"
   | .rax1 d n m => s!"rax1 {d.arr "2d"}, {n.arr "2d"}, {m.arr "2d"}"
@@ -251,12 +262,12 @@ def Instr.code (i : Instr) : List String :=
   | none => i.asm
 
 def printer : Printer isa where
-  instr := Instr.code
+  instr i := i.code.map .text
   branch c l := match c with
-    | .zero sz r => [s!"cbz {r.name sz}, {l}"]
-    | .nonzero sz r => [s!"cbnz {r.name sz}, {l}"]
+    | .zero sz r => [.text s!"cbz {r.name sz}, {l}"]
+    | .nonzero sz r => [.text s!"cbnz {r.name sz}, {l}"]
   jump l := s!"b {l}"
-  ret := ["// ret", instLine retWord]
+  ret := [.text "// ret", .text (instLine retWord)]
   call := "bl"
   -- The static's page and offset, in the syntax of the object format
   -- (`TCB/Rust.lean`); `asm` gives ELF's, for reading.
@@ -284,8 +295,9 @@ def printer : Printer isa where
 
 /-- What the emitter needs of the target (`Emitter`): its printer, its Rust `cfg`
 and ABI string, and how documentation names its calling convention's
-argument area and reserved memory (`abi`'s `argArea` and `reserved`). -/
-instance : Emitter isa where
+argument area and reserved memory (`abi`'s `argArea` and `reserved`). Every
+artifact of the target is emitted with it (`Emit.driver`). -/
+def emitter : Emitter isa where
   printer := printer
   -- `aarch64_be` targets are big-endian, and ILP32 ones (`aarch64-unknown-linux-gnu_ilp32`)
   -- have 32-bit pointers. The model's baseline includes AdvSIMD (NEON: see
@@ -296,5 +308,10 @@ instance : Emitter isa where
   argAreaDoc ws := if ws.length - argRegs.length = 0 then none else
     some ("the arguments on the stack", false)
   reservedDoc n := if n = 0 then none else some s!"the {n} bytes of stack below the stack pointer"
+  callBytes := 0
+  frameBytes
+    | .push _ => 16
+    | .alloc bytes => bytes
+    | _ => 0
 
 end VG.AArch64

@@ -1,28 +1,163 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.Arm.KcBodyW
-public import VerifiedGarbage.Proof.Rsa.Arm.KcCT
+public import VerifiedGarbage.Proof.Rsa.Arm.CckVerified
 public import VerifiedGarbage.Proof.Rsa.Arm.KdDivCT
-public import VerifiedGarbage.Proof.Rsa.Arm.KcTaintW
+public import VerifiedGarbage.Proof.Rsa.Arm.KdDivCall
+public import VerifiedGarbage.Proof.Framework.Subst
 import VerifiedGarbage.Proof.Rsa.Arm.InvParts
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-public import VerifiedGarbage.Proof.Rsa.Arm.KcBody
-public import VerifiedGarbage.Proof.Rsa.Arm.KcLoads
 import VerifiedGarbage.Proof.Rsa.Arm.CvFail
 import VerifiedGarbage.Proof.Rsa.Octets
-public import VerifiedGarbage.Proof.Rsa.Arm.KcShape
-import VerifiedGarbage.Proof.Rsa.KeyCheckWords
 public import VerifiedGarbage.Impl.Rsa.Arm.CheckKey
-public import VerifiedGarbage.Proof.Rsa.Arm.KcFn
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Bignum.Arm.UmaalArithmetic
-import VerifiedGarbage.Proof.Rsa.Arm.CkTaint
-import VerifiedGarbage.Proof.Rsa.Arm.CckVerified
-public import VerifiedGarbage.Proof.Rsa.Arm.KcFnCT
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Spec.Rsa.Contract
 meta import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Impl.Rsa.Arm.KeyCheck
+public import VerifiedGarbage.Proof.Framework.Arm.Taint
+public import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
+meta import VerifiedGarbage.Impl.Rsa.Arm.KeyCheck
+meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Rsa.Arm.KdDivCT
+meta import VerifiedGarbage.Proof.Rsa.Arm.KdDivCall
+meta import VerifiedGarbage.Proof.Framework.Mem
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+
+/-! ### `Rsa.Arm.CkTaint`, which only this module used -/
+
+section
+
+/-! # `vg_rsa_check_key` on ARMv7: the pieces that read the stack arguments
+
+The entry (from the arguments in `r0`–`r3` and on the stack) and the
+restore of the registers, checked by the taint analysis.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Rsa.Arm.CheckKey
+open VG VG.Arm VG.Impl.Rsa.Arm.KeyCheck
+
+theorem entry_taint : ∃ hc, (VG.Taint.check taint (argTaint [.r0, .r1, .r2, .r3] (4 * 14))
+    (entry (4 * 12) ([(0, aD), (2, aP), (4, aQ), (6, aDP), (8, aDQ), (10, aQI)].map
+      fun p => (4 * p.1, p.2))) hc).isSome = true :=
+  ⟨_, by taint_decide⟩
+
+theorem restore_taint : ∃ hc, (VG.Taint.check taint (argTaint [] (4 * 14)) (.block (restore (4 * 12))) hc).isSome =
+    true :=
+  ⟨_, by taint_decide⟩
+
+end VG.Proof.Rsa.Arm.CheckKey
+
+end
+
+end
+
+/-! ### `Rsa.Arm.KcTaintW`, which only this module used -/
+
+section
+
+/-! # The checks of a balanced RSA key on ARMv7: the pieces the taint analysis checks
+
+`keyBodyW` between its products and divisions by words (`KeyDiv.mulLo_ct`,
+`KeyDiv.divW_ct`), and those functions' own pieces for the arrays they are
+called on: each from `r8` and `n_len` in `r11` at the start, and `r7`–`r9`
+otherwise.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Rsa.Arm.KeyCheck
+open VG VG.Arm VG.Impl.Rsa.Arm.Keys VG.Impl.Rsa.Arm.KeyCheck
+open VG.Proof.Rsa.Arm.KeyDiv
+
+/-- The checks between the first product and the next: `p q = n`, `p - 1`, `q - 1`, `dP < p - 1`. -/
+abbrev chunkA : List (Prog isa) := eqA aVQ aN ++
+  [copy aM1 aP, .block (clrLow aM1), copy aM2 aQ, .block (clrLow aM2)] ++ ltA aDP aM1
+/-- `e dP mod (p - 1) = 1`, `dQ < q - 1`. -/
+abbrev chunkB : List (Prog isa) := eqA aVR aOne ++ ltA aDQ aM2
+/-- `e dQ mod (q - 1) = 1`, `qInv < p`. -/
+abbrev chunkC : List (Prog isa) := eqA aVR aOne ++ ltA aQI aP
+
+/-- `shape`, from `n_len` in `r11` and the stack arguments. -/
+theorem shape_taint : ∃ hc, (VG.Taint.check taint (argTaint [.r11] (4 * 14))
+    (.block (VG.Impl.Rsa.Arm.KeyDiv.shape4 12 20 28 36)) hc).isSome = true :=
+  ⟨_, by taint_decide⟩
+
+theorem startW_taint : ∃ hc, (VG.Taint.check taint (Taint.ofRegs [.r8, .r11]) startW hc).isSome = true :=
+  ⟨_, by taint_decide⟩
+
+theorem chunkA_taint :
+    ∃ hc, (VG.Taint.check taint (Taint.ofRegs [.r7, .r8, .r9]) (seqs chunkA) hc).isSome = true :=
+  ⟨_, by taint_decide⟩
+
+theorem chunkB_taint :
+    ∃ hc, (VG.Taint.check taint (Taint.ofRegs [.r7, .r8, .r9]) (seqs chunkB) hc).isSome = true :=
+  ⟨_, by taint_decide⟩
+
+theorem chunkC_taint :
+    ∃ hc, (VG.Taint.check taint (Taint.ofRegs [.r7, .r8, .r9]) (seqs chunkC) hc).isSome = true :=
+  ⟨_, by taint_decide⟩
+
+theorem divSetP_taint : ∃ hc, (VG.Taint.check taint (Taint.ofRegs [.r7, .r8, .r9])
+    (seqs [copy aVD aP, .block (VG.Impl.Rsa.Arm.KeyDiv.fixTop aVD)]) hc).isSome = true :=
+  ⟨_, by taint_decide⟩
+
+theorem divSetM1_taint : ∃ hc, (VG.Taint.check taint (Taint.ofRegs [.r7, .r8, .r9])
+    (seqs [copy aVD aM1, .block (VG.Impl.Rsa.Arm.KeyDiv.fixTop aVD)]) hc).isSome = true :=
+  ⟨_, by taint_decide⟩
+
+theorem divSetM2_taint : ∃ hc, (VG.Taint.check taint (Taint.ofRegs [.r7, .r8, .r9])
+    (seqs [copy aVD aM2, .block (VG.Impl.Rsa.Arm.KeyDiv.fixTop aVD)]) hc).isSome = true :=
+  ⟨_, by taint_decide⟩
+
+theorem chunk2_taint :
+    ∃ hc, (VG.Taint.check taint (Taint.ofRegs [.r7, .r8, .r9]) (seqs (eqA aVR aOne ++ ltA aD aN)) hc).isSome = true :=
+  ⟨_, by taint_decide⟩
+
+theorem chunk3_taint :
+    ∃ hc, (VG.Taint.check taint (Taint.ofRegs [.r7, .r8, .r9]) (seqs (eqA aVR aDP)) hc).isSome = true :=
+  ⟨_, by taint_decide⟩
+
+theorem chunk4_taint :
+    ∃ hc, (VG.Taint.check taint (Taint.ofRegs [.r7, .r8, .r9]) (seqs (eqA aVR aDQ)) hc).isSome = true :=
+  ⟨_, by taint_decide⟩
+
+theorem mulVQ_taint : MulTaint aVQ aP aQ :=
+  ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
+
+theorem mulT_taint : MulTaint aT aQI aQ :=
+  ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
+
+theorem mulDP_taint : MulTaint aA aE aDP (some 2) :=
+  ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
+
+theorem mulDQ_taint : MulTaint aA aE aDQ (some 2) :=
+  ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
+
+theorem divA_taint : DivTaint aA aVR aVD aVT aY aX (some 2) :=
+  ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
+    ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
+
+theorem divT_taint : DivTaint aT aVR aVD aVT aY aX :=
+  ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
+    ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
+
+theorem divD_taint : DivTaint aD aVR aVD aVT aY aX :=
+  ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
+    ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
+
+end VG.Proof.Rsa.Arm.KeyCheck
+
+end
+
+end
 
 /-! ### `Rsa.Arm.CkCorrect`, which only this module used -/
 
@@ -112,12 +247,19 @@ theorem key_result {g : Geo} {nb eb db pb qb dPb dQb qIb : List Byte} {c : Bool}
     rw [this, hv]
     rfl
 
+/-- Values below `P` stay so when one below `P` is put among them. -/
+private theorem upd_lt {A : Nat → Nat} {P : Nat} (hA : ∀ i, A i < P) (j : Nat) {x : Nat} (hx : x < P) :
+    ∀ i, upd A j x i < P := by
+  intro i
+  show (if i = j then x else A i) < P
+  split
+  · exact hx
+  · exact hA i
+
 theorem vals_lt {v : Vals} {P : Nat} (h0 : 0 < P) (hn : v.n < P) (he : v.e < P) (hp : v.p < P)
-    (hq : v.q < P) (hdP : v.dP < P) (hdQ : v.dQ < P) (hqI : v.qI < P) (hd : v.d < P) : ∀ j, vals v j < P := by
-  intro j
-  simp only [vals, upd]
-  repeat' split
-  all_goals assumption
+    (hq : v.q < P) (hdP : v.dP < P) (hdQ : v.dQ < P) (hqI : v.qI < P) (hd : v.d < P) : ∀ j, vals v j < P :=
+  upd_lt (upd_lt (upd_lt (upd_lt (upd_lt (upd_lt (upd_lt (upd_lt (fun _ => h0) aE he) aD hd) aP hp) aQ hq) aDP hdP)
+    aDQ hdQ) aQI hqI) aN hn
 
 /-- A number of at most `K` bytes, in `w` words. -/
 theorem os2ip_lt_words {bs : List Byte} {w : Nat} (h : bs.length ≤ 4 * w) :
@@ -482,7 +624,7 @@ theorem stw_divW {g : Geo} {σ s : State} {L : List Nat} {Mi : (Nat → Nat) →
     (hT : ∀ A, Mi A → VG.Proof.Rsa.Arm.KeyDiv.TopOk top g.w (A a))
     (hv : aVD ∈ L) (hz : aZ ∈ L) (hav : a ∉ [aVR, aVT, aY, aX]) (hw6 : 6 ≤ g.w)
     (hlive : ∀ j ∈ L, j = aVR ∨ j ∉ [aVR, aVT, aX, aY]) :
-    WP isa (VG.Impl.Rsa.Arm.KeyDiv.divW a aVR aVD aVT aY aX top) s (StW g σ (aVR :: L) (M1 g)) := by
+    WP isa (VG.Impl.Rsa.Arm.KeyDiv.divWC VG.Impl.Rsa.Arm.KeyCheck.divName a aVR aVD aVT aY aX top) s (StW g σ (aVR :: L) (M1 g)) := by
   obtain ⟨A, c, h0, hm'⟩ := h
   have hm := hMD A hm'
   have := h0.divW_ok (a := a) (r := aVR) (m := aVD) (t := aVT) (nm := aY) (u := aX) ha hv hz hm.1.1.1
@@ -501,16 +643,16 @@ theorem stw_divW {g : Geo} {σ s : State} {L : List Nat} {Mi : (Nat → Nat) →
 abbrev partsW : List (List (Prog isa)) :=
   [[startW], [VG.Impl.Rsa.Arm.KeyDiv.mulLo aVQ aP aQ], chunkA, [VG.Impl.Rsa.Arm.KeyDiv.mulLo aA aE aDP (some 2)],
     [copy aVD aM1, .block (VG.Impl.Rsa.Arm.KeyDiv.fixTop aVD)],
-    [VG.Impl.Rsa.Arm.KeyDiv.divW aA aVR aVD aVT aY aX (some 2)], chunkB,
+    [VG.Impl.Rsa.Arm.KeyDiv.divWC VG.Impl.Rsa.Arm.KeyCheck.divName aA aVR aVD aVT aY aX (some 2)], chunkB,
     [VG.Impl.Rsa.Arm.KeyDiv.mulLo aA aE aDQ (some 2)],
     [copy aVD aM2, .block (VG.Impl.Rsa.Arm.KeyDiv.fixTop aVD)],
-    [VG.Impl.Rsa.Arm.KeyDiv.divW aA aVR aVD aVT aY aX (some 2)], chunkC, [VG.Impl.Rsa.Arm.KeyDiv.mulLo aT aQI aQ],
+    [VG.Impl.Rsa.Arm.KeyDiv.divWC VG.Impl.Rsa.Arm.KeyCheck.divName aA aVR aVD aVT aY aX (some 2)], chunkC, [VG.Impl.Rsa.Arm.KeyDiv.mulLo aT aQI aQ],
     [copy aVD aP, .block (VG.Impl.Rsa.Arm.KeyDiv.fixTop aVD)],
-    [VG.Impl.Rsa.Arm.KeyDiv.divW aT aVR aVD aVT aY aX], eqA aVR aOne ++ ltA aD aN,
+    [VG.Impl.Rsa.Arm.KeyDiv.divWC VG.Impl.Rsa.Arm.KeyCheck.divName aT aVR aVD aVT aY aX], eqA aVR aOne ++ ltA aD aN,
     [copy aVD aM1, .block (VG.Impl.Rsa.Arm.KeyDiv.fixTop aVD)],
-    [VG.Impl.Rsa.Arm.KeyDiv.divW aD aVR aVD aVT aY aX], eqA aVR aDP,
+    [VG.Impl.Rsa.Arm.KeyDiv.divWC VG.Impl.Rsa.Arm.KeyCheck.divName aD aVR aVD aVT aY aX], eqA aVR aDP,
     [copy aVD aM2, .block (VG.Impl.Rsa.Arm.KeyDiv.fixTop aVD)],
-    [VG.Impl.Rsa.Arm.KeyDiv.divW aD aVR aVD aVT aY aX], eqA aVR aDQ]
+    [VG.Impl.Rsa.Arm.KeyDiv.divWC VG.Impl.Rsa.Arm.KeyCheck.divName aD aVR aVD aVT aY aX], eqA aVR aDQ]
 
 theorem keyBodyW_parts : keyBodyW = seqs partsW.flatten := by
   simp only [keyBodyW, crtChecksW, dChecksW, divK, partsW, chunkA, chunkB, chunkC, List.flatten_cons,
@@ -574,12 +716,12 @@ theorem divWPieceB {a : Nat} {top : Option Nat} {L : List Nat} {Mi : Geo → (Na
     (ha : a < nArr) (ha' : a ∈ L) (hv : aVD ∈ L) (hz : aZ ∈ L) (hav : a ∉ [aVR, aVT, aY, aX])
     (hlive : ∀ j ∈ L, j = aVR ∨ j ∉ [aVR, aVT, aX, aY]) (hMD : ∀ g A, Mi g A → MD g A)
     (hT : ∀ g A, 6 ≤ g.w → Mi g A → VG.Proof.Rsa.Arm.KeyDiv.TopOk top g.w (A a)) :
-    RelCT isa (LiftB Pub (FW (gf := gf) X L Mi)) (VG.Impl.Rsa.Arm.KeyDiv.divW a aVR aVD aVT aY aX top)
+    RelCT isa (LiftB Pub (FW (gf := gf) X L Mi)) (VG.Impl.Rsa.Arm.KeyDiv.divWC VG.Impl.Rsa.Arm.KeyCheck.divName a aVR aVD aVT aY aX top)
       (LiftB Pub (FW (gf := gf) X (aVR :: L) M1)) :=
   gPieceB hg (Pre := fun g s => 6 ≤ g.w ∧ VG.Proof.Rsa.Arm.KeyDiv.DivPre g.B g.Z g.w nArr aVD s a top)
     (fun g => by
       by_cases hw : 6 ≤ g.w
-      · exact (VG.Proof.Rsa.Arm.KeyDiv.divW_ct T ha (by decide) (by decide) (by decide) (by decide) (by decide)
+      · exact (VG.Proof.Rsa.Arm.KeyDiv.divWC_ct VG.Impl.Rsa.Arm.KeyCheck.divName T ha (by decide) (by decide) (by decide) (by decide) (by decide)
           (by decide) (fun e => hav (by simp [e])) (by decide) (by decide) (by decide) (by decide) (by decide)
           (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
           (by decide) hw).mono (fun _ _ h => ⟨h.1.2, h.2.2⟩) fun _ _ h => h
@@ -817,9 +959,17 @@ theorem check_key_verified :
     Verified target VG.Impl.Rsa.Arm.CheckKey.code (Spec.Rsa.checkKeyContract abi 0) :=
   ⟨ck_contract_correct, ck_contract_ct, ck_contract_sat⟩
 
-/-- `vg_rsa_check_key_umaal`. -/
+/-- A call runs as the call of the same code by another name. -/
+theorem call_rename_sim (n n' : String) (c : Prog isa) : Sim (M := isa) (.call n c) (.call n' c) := by
+  intro s t s' h
+  cases h with
+  | call p b q => exact .call p b q
+
+/-- `vg_rsa_check_key_umaal`: `code` with its rows by `umaal`, its divisions' steps called by
+their own name. -/
 theorem check_key_umaal_verified :
     Verified target VG.Impl.Rsa.Arm.CheckKey.codeU (Spec.Rsa.checkKeyContract abi 0) :=
-  VG.Proof.Bignum.Arm.umaalArithmetic_verified check_key_verified
+  (VG.Proof.Bignum.Arm.umaalArithmetic_verified check_key_verified).of_sim
+    fun h => Exec.subst (call_rename_sim _ _ _) h
 
 end VG.Proof.Rsa.Arm.CheckKey

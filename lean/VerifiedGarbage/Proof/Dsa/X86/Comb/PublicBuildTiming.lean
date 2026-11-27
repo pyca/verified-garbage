@@ -1,32 +1,25 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86.Comb.PublicColumnTiming
-public import VerifiedGarbage.Proof.Mont.X86.CombSubsets
+public import VerifiedGarbage.Proof.Mont.X86.CombBuild
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.Framework.X86.RelCT
 import VerifiedGarbage.Proof.Dsa.X86.Comb.SelectTable
 import VerifiedGarbage.Proof.Dsa.X86.Comb.PublicSelectTiming
-import VerifiedGarbage.Proof.Mont.X86.CombSubsetControl
 import VerifiedGarbage.Proof.Mont.X86.CombAccess
 import Init.Prelude
 public import VerifiedGarbage.Impl.Mont.X86.CombTable
 import VerifiedGarbage.Proof.Mont.Words32
 import VerifiedGarbage.Proof.Mont.X86.Words
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Rsa.FixedBaseCombSubset
-import VerifiedGarbage.Proof.Mont.X86.CombBuild
 import VerifiedGarbage.Proof.Bignum.Math
 meta import VerifiedGarbage.Impl.Dsa.X86.Comb
 meta import VerifiedGarbage.Proof.Mont.X86.DynamicTiming
 meta import VerifiedGarbage.Proof.Framework.X86.Taint
 meta import VerifiedGarbage.Proof.Framework.RelCT
-meta import VerifiedGarbage.Proof.Dsa.X86.Comb.PublicColumnTiming
 meta import VerifiedGarbage.Impl.Mont.X86.CombTable
 public import VerifiedGarbage.Proof.Mont.X86.ContextFrame
 meta import VerifiedGarbage.Proof.Mont.X86.ContextFrame
-meta import VerifiedGarbage.Proof.Dsa.X86.Comb.SelectTable
-import VerifiedGarbage.Proof.Mont.X86.CombStart
-meta import VerifiedGarbage.Proof.Mont.X86.CombStart
 
 /-! ### `Dsa.X86.Comb.PublicSubsetLoopTiming`, which only this module used -/
 

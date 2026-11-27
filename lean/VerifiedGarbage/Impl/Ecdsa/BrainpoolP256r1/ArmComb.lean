@@ -53,8 +53,14 @@ def publicKeyBrainpoolP256r1Comb : Prog VG.Arm.isa := publicKeyBrainpoolP256r1Co
 
 def publicKeyBrainpoolP256r1CombU : Prog VG.Arm.isa := publicKeyBrainpoolP256r1CombWith true
 
+/-- Verification's `[u]G`: `u` is in `K`'s slot, where `vg_brainpoolp256r1_mul` reads it
+(`Verify.Arm.Cfg.scalarAt`), so the table of its bits that the comb reads
+is made from it first. -/
+def verifyGeneratorBrainpoolP256r1With (u : Bool) : Prog VG.Arm.isa :=
+  .seq (Weierstrass.Arm.bits (brainpoolp256r1.sl K) (bitsAt brainpoolp256r1.n 0) (8 * brainpoolp256r1.n)) (Weierstrass.Arm.mulGeneratorBrainpoolP256r1With u)
+
 def verifyBrainpoolP256r1CombWith (u : Bool) : Prog VG.Arm.isa :=
-  Verify.Arm.Cfg.verifyWith (brainpoolp256r1With u) (Weierstrass.Arm.mulGeneratorBrainpoolP256r1With u)
+  Verify.Arm.Cfg.verifyWith (brainpoolp256r1With u) (verifyGeneratorBrainpoolP256r1With u)
 
 def verifyBrainpoolP256r1Comb : Prog VG.Arm.isa := verifyBrainpoolP256r1CombWith false
 

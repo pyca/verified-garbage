@@ -2,19 +2,17 @@ module
 
 public import VerifiedGarbage.Proof.Idea.Arm.ModeCore
 public import VerifiedGarbage.Proof.Idea.FbScratch
-public import VerifiedGarbage.Proof.Modes.Arm.SeqCT
+public import VerifiedGarbage.Proof.Modes.Arm.Cbc
 public import VerifiedGarbage.Spec.Idea.Cfb
 import VerifiedGarbage.Proof.Modes.Arm.OfbCfb
 import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
-import VerifiedGarbage.Proof.Modes.Arm.Cbc
 import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Idea.Arm.ModeCore
 meta import VerifiedGarbage.Proof.Idea.FbScratch
-meta import VerifiedGarbage.Proof.Modes.Arm.SeqCT
+meta import VerifiedGarbage.Proof.Modes.Arm.Cbc
 meta import VerifiedGarbage.Spec.Idea.Cfb
 meta import VerifiedGarbage.Proof.Modes.Arm.OfbCfb
 meta import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
-meta import VerifiedGarbage.Proof.Modes.Arm.Cbc
 meta import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract

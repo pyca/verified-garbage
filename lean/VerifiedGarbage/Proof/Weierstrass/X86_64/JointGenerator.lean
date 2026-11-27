@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointCachedEntry
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointFixedFields
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointFixedEntry
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JointFixedPoint
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JointFixedEntryW
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit

@@ -1,31 +1,31 @@
 module
 
-public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.AnyKeySha1
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.X86.Print
-public import VerifiedGarbage.Proof.Variants.Sha1.X86
-public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.AnyKeySha256
-public import VerifiedGarbage.Proof.Variants.Sha256.X86
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Hmac.Generic
+import VerifiedGarbage.Proof.Hmac.X86.Scrub
+import VerifiedGarbage.Impl.Hmac.X86
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Variants.Sha256.X86
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # HMAC-SHA-256 (RFC 2104) on x86 -/
 
-@[expose] public section
-
 namespace VG.Artifacts.HmacSha256.X86
 
-def artifacts : List Artifact :=
+public def artifacts : List (Artifact X86.target) :=
   VG.Proof.Variants.Sha256.X86.variants.flatMap fun (v : Proof.Sha256.X86.Variants.Backend) => [
     Spec.Hmac.sha256I.initAnyKeyApi.artifact X86.target {
       suffix := v.suffix
-      code := Proof.Pbkdf2.Whole.X86.initCode Spec.Hmac.sha256I v.M.hmacInit v.F
-      verified := Proof.Pbkdf2.Whole.X86.Any.sha256_initF v
-      spSafe := Proof.Pbkdf2.Whole.X86.Any.sha256_initSp v },
+      code := Impl.Hmac.X86.Fn.sha256Init v.M v.F
+      verified := Proof.Hmac.X86.Scrub.sha256_init_scrubbed v
+      spSafe := Proof.Hmac.X86.Scrub.sha256_initSp v },
     Spec.Hmac.sha256I.finalizeApi.artifact X86.target {
       suffix := v.suffix
-      code := Impl.StackScratch.X86.withStackScratch (Proof.Pbkdf2.Md.X86.finFrame Spec.Hmac.sha256I) 5
-        v.M.hmacFin
-      verified := Proof.Pbkdf2.Md.X86.finFramed v.hmacFin Proof.Hmac.sha256_local Proof.Pbkdf2.Md.X86.sha256_finFrameSat
-        (Proof.Pbkdf2.Md.X86.noEsp_of v.finalizeNoSp) v.finalizeStack
-      spSafe := Proof.Pbkdf2.Md.X86.withStackScratch_spSafe v.finSp }]
+      code := Impl.Hmac.X86.Fn.sha256Finalize v.M
+      verified := Proof.Hmac.X86.Scrub.sha256_fin_scrubbed v
+      spSafe := Proof.Hmac.X86.Scrub.sha256_finSp v }]
+
+spec_apis artifacts
 
 end VG.Artifacts.HmacSha256.X86

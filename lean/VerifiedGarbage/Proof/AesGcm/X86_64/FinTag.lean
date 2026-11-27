@@ -1,8 +1,8 @@
 module
+
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Ghash1
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Tag
-
-import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks
+import VerifiedGarbage.Proof.AesGcm.X86_64.Absorb
 import VerifiedGarbage.Proof.AesGcm.X86_64.Flush
 import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
 import VerifiedGarbage.Proof.Gcm.Be64

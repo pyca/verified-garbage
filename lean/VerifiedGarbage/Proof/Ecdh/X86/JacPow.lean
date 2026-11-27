@@ -1,10 +1,8 @@
 module
-public import VerifiedGarbage.Proof.Ecdh.X86.JacWrites
-public import VerifiedGarbage.Proof.Ecdsa.X86.Stages
-public import VerifiedGarbage.Proof.Ecdsa.X86.InvLays
 
-import VerifiedGarbage.Proof.Ecdsa.X86.Inv
-import VerifiedGarbage.Proof.Ecdh.X86.JacMul
+public import VerifiedGarbage.Proof.Ecdh.X86.JacMul
+public import VerifiedGarbage.Proof.Ecdsa.X86.Stages
+public import VerifiedGarbage.Proof.Ecdsa.X86.Inv
 
 /-! # Signed-window multiplication followed by affine conversion for x86 ECDH -/
 
@@ -35,6 +33,7 @@ structure JacPost (c : Cfg) (base : Addr) (k : Nat) (P : Point c.C) (s s' : Stat
 theorem jwinPow_ok (hc : CfgOk c) (h4 : c.n = 4) (hC : Law c.C) (ham3 : AM3 c.C)
     (hO : PrimeOrder c.C) (hn17 : c.C.n%32=17) (hn64 : 64≤c.C.n)
     {s₀ : State} {base : Addr} {s : State} (Kp : Keep c s₀ base s)
+    (hst : ∀ r ∈ s₀.wr, Region.Disjoint (below (s₀.gpr .esp) c.stk) r)
     (hsp₁ : SpOk (Impl.Ecdh.X86.Cfg.jwinMul c) c.stk) (hsp₂ : SpOk c.pPow c.stk)
     {P : Point c.C} (hP : onCurve c.C P = true) (hP0 : P≠.infinity)
     (hpx : sv c base s PX < c.C.p) (hpy : sv c base s PY < c.C.p)
@@ -57,7 +56,7 @@ theorem jwinPow_ok (hc : CfgOk c) (h4 : c.n = 4) (hC : Law c.C) (ham3 : AM3 c.C)
     by rw [K₅.2.2, Kp.wr], F₅, f₅, Kp.sp_lo⟩
   have rz₅ : wordsVal s₅.mem base (c.sl RZ) c.n < c.C.p :=
     L₅ (c.sl RZ) (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_singleton_self _)))
-  refine WP.seq (k₅.withSp hsp₂ (WP.mono (pPow_ok hc hs₅ M₅ rz₅
+  refine WP.seq (k₅.withSp hsp₂ (WP.mono (pPow_ok hc hs₅ (k₅.stack24 hst) k₅.sp24 hsp₂.1 M₅ rz₅
     F₅.onep (fun t ht => by
       change  t < 64 * c.n at ht
       change s₅.mem (off base (bitsAt c.n 1 + t)) = _

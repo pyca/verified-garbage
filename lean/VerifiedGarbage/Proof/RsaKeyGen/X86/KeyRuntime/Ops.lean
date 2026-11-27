@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Workspace
-import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Ops
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Scalar
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Half
 

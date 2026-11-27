@@ -1,10 +1,16 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdh.Arm.Main
-public import VerifiedGarbage.Proof.Ecdh.Arm.P224.Contract
+public import VerifiedGarbage.Proof.Framework.Arm.StackScratchConsts
+import VerifiedGarbage.Proof.Framework.Arm.TaintSym
+import VerifiedGarbage.Proof.Ecdsa.Arm.Setup
+public import VerifiedGarbage.Proof.Framework.ConstMem
+meta import VerifiedGarbage.Proof.Framework.Arm.StackScratchConsts
+meta import VerifiedGarbage.Proof.Framework.Arm.TaintSym
+meta import VerifiedGarbage.Proof.Ecdsa.Arm.Setup
+meta import VerifiedGarbage.Proof.Framework.ConstMem
 import VerifiedGarbage.Proof.Ecdsa.Arm.P224.Umaal
 import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
-import VerifiedGarbage.Proof.Ecdsa.Arm.P224.Verified
 public import VerifiedGarbage.Impl.Ecdh.P224.Arm
 public import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
@@ -17,8 +23,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
 meta import VerifiedGarbage.Proof.Ecdh.Arm.Main
-meta import VerifiedGarbage.Proof.Ecdh.Arm.P224.Contract
-meta import VerifiedGarbage.Proof.Ecdsa.Arm.P224.Verified
+meta import VerifiedGarbage.Proof.Ecdsa.Arm.P224.Umaal
 meta import VerifiedGarbage.Impl.Ecdh.P224.Arm
 meta import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
@@ -30,7 +35,68 @@ meta import VerifiedGarbage.Proof.Ecdsa.Arm.P224.Lit
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Ecdsa.Arm.SavedAbi
 meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Ecdsa.Arm.SavedAbi
+public import VerifiedGarbage.Spec.EcKey.Generic
+public import VerifiedGarbage.Spec.Ecdh
+public import VerifiedGarbage.Spec.P224
+public import VerifiedGarbage.TCB.Arm.Isa
+public import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.GetElem
+meta import VerifiedGarbage.Spec.EcKey.Generic
+meta import VerifiedGarbage.Spec.Ecdh
+meta import VerifiedGarbage.Spec.P224
+meta import VerifiedGarbage.TCB.Arm.Isa
+meta import VerifiedGarbage.Proof.Framework.PowLit
+meta import VerifiedGarbage.Proof.Framework.GetElem
+
+/-! ### `Ecdh.Arm.P224.Contract`, which only this module used -/
+
+section
+
+/-!
+# ECDH over P-224 on 32-bit ARM: the contract the proof is written against
+
+The facts of `Spec.Ecdh.P224.inst.exchangeContract` for 32-bit ARM, by
+name: `vg_ecdh_p224(out, d, peer, scratch)`, with the arguments in `r0`–`r3`
+(AAPCS), the result in `r0` (the low word of `r1:r0`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Ecdh.Arm.P224
+
+open VG VG.Arm Spec.Weierstrass Spec.EcKey
+
+/-- The shared secret of the private key at `d` and the public key at
+`peer`, as the specification computes it. -/
+abbrev ex (m : Mem) (d peer : Addr) : Option (List Byte) :=
+  Spec.Ecdh.exchange Spec.P224.curve (ofBytes (bytesAt m d 28)) (bytesAt m peer 57)
+
+def ecdhArm : Contract Arm.isa where
+  pre s :=
+    let out : Region := ⟨State.addr (s.gpr .r0), 28⟩
+    let d : Region := ⟨State.addr (s.gpr .r1), 28⟩
+    let peer : Region := ⟨State.addr (s.gpr .r2), 57⟩
+    let scratch : Region := ⟨State.addr (s.gpr .r3), 8192⟩
+    s.rd = [d, peer] ∧ s.wr = [out, scratch] ∧ out.Disjoint scratch ∧ d.Disjoint scratch ∧
+      peer.Disjoint scratch ∧ (s.gpr .r0).toNat + 28 ≤ 2 ^ 32 ∧ (s.gpr .r1).toNat + 28 ≤ 2 ^ 32 ∧
+      (s.gpr .r2).toNat + 57 ≤ 2 ^ 32 ∧ (s.gpr .r3).toNat + 8192 ≤ 2 ^ 32
+  post s s' :=
+    match ex s.mem (State.addr (s.gpr .r1)) (State.addr (s.gpr .r2)) with
+    | some z => BitVec.setWidth 32 (s'.gpr .r1 ++ s'.gpr .r0) = 1 ∧
+      bytesAt s'.mem (State.addr (s.gpr .r0)) 28 = z
+    | none => BitVec.setWidth 32 (s'.gpr .r1 ++ s'.gpr .r0) = 0 ∧
+      bytesAt s'.mem (State.addr (s.gpr .r0)) 28 = List.replicate 28 0
+  pub s₁ s₂ := s₁.sp = s₂.sp ∧ s₁.gpr .r0 = s₂.gpr .r0 ∧ s₁.gpr .r1 = s₂.gpr .r1 ∧
+    s₁.gpr .r2 = s₂.gpr .r2 ∧ s₁.gpr .r3 = s₂.gpr .r3
+
+end VG.Proof.Ecdh.Arm.P224
+
+end
+
+end
 
 /-!
 # ECDH over P-224 on 32-bit ARM: `Verified`
@@ -39,7 +105,7 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 registration file supplies: `Proof.P224.law`) gives the contract's
 postcondition; `r4`–`r11` and `lr` are restored and `sp` kept. Constant time
 by taint tracking from the arguments' registers, as for the public key
-(`Proof/EcKey/Arm/Verified.lean`): the only branches are on loop counters,
+(`Proof/EcKey/Arm/P256/Comb.lean`): the only branches are on loop counters,
 and every address is `r12` (`scratch`), `lr` (`out`) or `r2` (`peer`) plus a
 constant or a counter.
 -/
@@ -50,18 +116,19 @@ namespace VG.Proof.Ecdh.Arm.P224
 
 open VG VG.Arm VG.Impl.Ecdsa.Arm VG.Impl.Ecdh.Arm VG.Proof.Ecdsa.Arm VG.Proof.Ecdsa.Arm.P224 Spec.Weierstrass
 
-theorem pre_of {u : Bool} {s : State} (h : ecdhArm.pre s) : EPre (p224With u) s := by
+/-- The contract with the table of constants (`Cfg.constsK`), as the proof states it. -/
+abbrev ecdhAC (u : Bool) : Contract isa := ecdhArm.withTablesArm (p224With u).constsK
+
+theorem pre_of {u : Bool} {s : State} (h : ecdhArm.pre (stripConsts (p224With u).constsK s))
+    (hk : ConstsOk (p224With u).constsK 0 s) : EPre (p224With u) s (constRegs (p224With u).constsK s) := by
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9⟩ := h
-  exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9⟩
+  exact ⟨hk.rd_strip h1, h2, h3, h4, h5, h6, h7, h8, h9, tbl_of_consts hk (List.mem_singleton_self _)
+    (show (⟨ptr s .r3, 8192⟩ : Region) ∈ (stripConsts (p224With u).constsK s).wr by
+      rw [h2]; exact List.mem_cons_of_mem _ (List.mem_singleton_self _))⟩
 
 theorem post_of {u : Bool} {s s' : State} (h : EPost (p224With u) s s') : ecdhArm.post s s' := by
   unfold EPost at h
-  show match ex s.mem (State.addr (s.gpr .r1)) (State.addr (s.gpr .r2)) with
-    | some z => BitVec.setWidth 32 (s'.gpr .r1 ++ s'.gpr .r0) = 1 ∧
-        Spec.EcKey.bytesAt s'.mem (State.addr (s.gpr .r0)) 28 = z
-    | none => BitVec.setWidth 32 (s'.gpr .r1 ++ s'.gpr .r0) = 0 ∧
-        Spec.EcKey.bytesAt s'.mem (State.addr (s.gpr .r0)) 28 = List.replicate 28 0
-  rw [BitVec.setWidth_append_eq_right]
+  simp only [ecdhArm, BitVec.setWidth_append_eq_right]
   revert h
   generalize hq : ex s.mem (State.addr (s.gpr .r1)) (State.addr (s.gpr .r2)) = q
   rw [show Spec.Ecdh.exchange (p224With u).C (dk (p224With u) s)
@@ -69,22 +136,11 @@ theorem post_of {u : Bool} {s s' : State} (h : EPost (p224With u) s s') : ecdhAr
         ex s.mem (State.addr (s.gpr .r1)) (State.addr (s.gpr .r2)) from rfl, hq]
   rcases q with _ | z <;> exact id
 
-theorem ecdh_arm (hL : Weierstrass.Law Spec.P224.curve) (u : Bool) (s : State) (hs : ecdhArm.pre s) :
-    ∃ t s', Exec isa (exchangeP224With u) s t s' ∧ abiPreserved s s' ∧ ecdhArm.post s s' := by
-  have hp := pre_of (u := u) hs
-  obtain ⟨t, s', he, K, hpost⟩ := exchange_ok (p224With_ok u) hL hp
-  refine ⟨t, s', he, ⟨fun r hr => ?_, K.sp⟩, post_of hpost⟩
-  simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-  · exact K.saved (.r4, 0) (by decide)
-  · exact K.saved (.r5, 4) (by decide)
-  · exact K.saved (.r6, 8) (by decide)
-  · exact K.saved (.r7, 12) (by decide)
-  · exact K.saved (.r8, 16) (by decide)
-  · exact K.saved (.r9, 20) (by decide)
-  · exact K.saved (.r10, 24) (by decide)
-  · exact K.saved (.r11, 28) (by decide)
-  · exact K.saved (.lr, 32) (by decide)
+theorem ecdh_arm (hL : Weierstrass.Law Spec.P224.curve) (u : Bool) (s : State) (hs : (ecdhAC u).pre s) :
+    ∃ t s', Exec isa (exchangeP224With u) s t s' ∧ abiPreserved s s' ∧ (ecdhAC u).post s s' := by
+  obtain ⟨hp, hk⟩ := hs
+  obtain ⟨t, s', he, K, hpost⟩ := exchange_ok (p224With_ok u) hL (pre_of hp hk)
+  exact ⟨t, s', he, abi_of_saved K.saved K.sp, post_of hpost⟩
 
 /-- The taint analysis starts with the arguments' registers public. -/
 def τ₀ : VG.Arm.Taint.T := { regs := .ofList [.r0, .r1, .r2, .r3], flags := false }
@@ -106,11 +162,18 @@ theorem agree_τ₀ {s t : State} (h : ecdhArm.pub s t) : VG.Arm.Taint.Agree τ�
   · exact h2
   · exact h3
 
-theorem ecdh_ct : ConstantTime isa ecdhArm.pre ecdhArm.pub exchangeP224 :=
-  VG.Taint.constantTime (A := taint) τ₀ (fun _ _ _ _ h => agree_τ₀ h) (by native_taint_decide)
+/-- The taint analysis's start, and the table's address, agree in the two states. -/
+theorem agreeC {u : Bool} {s t : State} (h : (ecdhAC u).pub s t) :
+    VG.Arm.Taint.Agree τ₀ s t ∧ ∀ n ∈ (p224With u).constsK.map Prod.fst, s.syms n = t.syms n :=
+  ⟨agree_τ₀ h.1, withTablesArm_syms h⟩
 
-theorem ecdhU_ct : ConstantTime isa ecdhArm.pre ecdhArm.pub exchangeP224U :=
-  VG.Taint.constantTime (A := taintU) τ₀ (fun _ _ _ _ h => agree_τ₀ h) (by taint_decide)
+theorem ecdh_ct : ConstantTime isa (ecdhAC false).pre (ecdhAC false).pub exchangeP224 :=
+  VG.Taint.constantTime (A := taintSym [(p224With false).constSym]) τ₀ (fun _ _ _ _ h => agreeC h)
+    (by native_taint_decide)
+
+theorem ecdhU_ct : ConstantTime isa (ecdhAC true).pre (ecdhAC true).pub exchangeP224U :=
+  VG.Taint.constantTime (A := taintSymU [(p224With true).constSym]) τ₀ (fun _ _ _ _ h => agreeC h)
+    (by native_taint_decide)
 
 /-- A state satisfying the precondition. -/
 def satState : State where
@@ -125,10 +188,9 @@ def satState : State where
   rd := [⟨0x2000, 28⟩, ⟨0x3000, 57⟩]
   wr := [⟨0x1000, 28⟩, ⟨0x8000, 8192⟩]
 
-theorem ecdhWith_verified (hL : Weierstrass.Law Spec.P224.curve) (u : Bool)
-    (hct : ConstantTime isa ecdhArm.pre ecdhArm.pub (exchangeP224With u)) :
-    Verified Arm.target (exchangeP224With u) (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P224.inst Arm.abi) :=
-  Verified.of_correct (ecdh_arm hL u) hct
+/-- The contract as the proof states it implies the exchange's (without the table). -/
+theorem ecdhArm_implies :
+    ecdhArm.Implies (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P224.inst Arm.abi) :=
     { pre := by
         sig_implies_pre [Spec.EcKey.P224.inst, Spec.Ecdh.Instance.exchangeContract,
           Spec.Ecdh.Instance.exchangeSig, Spec.P224.curve, Spec.EcKey.scratchWords, ecdhArm, ex, Arm.abi,
@@ -152,12 +214,39 @@ theorem ecdhWith_verified (hL : Weierstrass.Law Spec.P224.curve) (u : Bool)
           Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
           [satState, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using satState }
 
+/-- `satState`, holding the table at `0x100000`. -/
+def satStateC (u : Bool) : State := { satState with
+  mem := constMem ((0x100000 : BitVec 32).setWidth 64) (p224With u).constTbl
+  syms := fun _ => 0x100000 }
+
+theorem satC (u : Bool) :
+    ∃ s, (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P224.inst (Arm.abi.withConsts (p224With u).constsK)).pre s :=
+  sat_consts (s := satStateC u)
+    (by cases u <;> sig_sat_check [Spec.EcKey.P224.inst, Spec.Ecdh.Instance.exchangeContract,
+          Spec.Ecdh.Instance.exchangeSig, Spec.P224.curve, Spec.EcKey.scratchWords, ecdhArm, ex, Arm.abi,
+          Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr])
+    (constsOk_tbl _ (T := 0x100000) rfl rfl (by cases u <;> decide) (by decide) (by cases u <;> decide)
+      (by cases u <;> decide))
+
+theorem ecdhAC_implies (u : Bool) :
+    (ecdhAC u).Implies
+      (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P224.inst (Arm.abi.withConsts (p224With u).constsK)) :=
+  withTables_implies ecdhArm_implies (satC u)
+
+theorem ecdhWith_verified (hL : Weierstrass.Law Spec.P224.curve) (u : Bool)
+    (hct : ConstantTime isa (ecdhAC u).pre (ecdhAC u).pub (exchangeP224With u)) :
+    Verified Arm.target (exchangeP224With u)
+      (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P224.inst (Arm.abi.withConsts (p224With u).constsK)) :=
+  Verified.of_correct (ecdh_arm hL u) hct (ecdhAC_implies u)
+
 theorem ecdh_verified (hL : Weierstrass.Law Spec.P224.curve) :
-    Verified Arm.target exchangeP224 (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P224.inst Arm.abi) :=
+    Verified Arm.target exchangeP224
+      (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P224.inst (Arm.abi.withConsts (p224With false).constsK)) :=
   ecdhWith_verified hL false ecdh_ct
 
 theorem ecdhU_verified (hL : Weierstrass.Law Spec.P224.curve) :
-    Verified Arm.target exchangeP224U (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P224.inst Arm.abi) :=
+    Verified Arm.target exchangeP224U
+      (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P224.inst (Arm.abi.withConsts (p224With true).constsK)) :=
   ecdhWith_verified hL true ecdhU_ct
 
 end VG.Proof.Ecdh.Arm.P224

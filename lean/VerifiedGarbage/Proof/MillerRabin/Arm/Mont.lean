@@ -1,13 +1,13 @@
 module
+
 public import VerifiedGarbage.Proof.MillerRabin.Arm.Base
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
-
 import VerifiedGarbage.Proof.MillerRabin.Arm.Ops
-import VerifiedGarbage.Proof.MillerRabin.Arm.Arithmetic
 import VerifiedGarbage.Proof.Bignum.Arm.Stack
 import VerifiedGarbage.Proof.Rsa.Arm.KcStart
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # The Miller–Rabin round on ARMv7: the key view's context, and Montgomery products
 
@@ -70,14 +70,15 @@ theorem KS.ctx_ok (h : KS P σ A live V ls s) (r0 : s.gpr .r0 = P.ws) {rest : Li
       r0]
   exact k t ht (ht.ws h7 r8 (by rw [r.gpr _ (by decide), e9])) rt mt
 
-/-- A Montgomery multiplication writes, of the key arrays, only its own two and its result's. -/
+/-- A Montgomery product writes, of the key arrays, only its own two and its result's, and
+of the rest only the bytes below the frame (a call's). -/
 theorem keep_of_mont (pre : In P σ) {o : Nat} {m m' : Mem}
-    (keeps : Proof.Rsa.Mont.Keeps (State.addr P.ws) P.len P.w o m m') (frame : Frame [P.rS] m m') :
-    Keep P.B P.W [2, 3, o] [] m m' := by
+    (keeps : Proof.Rsa.Mont.Keeps (State.addr P.ws) P.len P.w o m m') (frame : Frame [P.rS, P.rB] m m') :
+    KeepOff P [2, 3, o] [] m m' := by
   have fit := pre.fit
   have len := pre.len
   have hS := pre.S_eq
-  intro x hx
+  intro x hb hx
   by_cases hin : (x - State.addr P.ws).toNat < 8 * P.len
   · have ex : x = State.addr P.ws + BitVec.ofNat 64 (x - State.addr P.ws).toNat := by
       rw [BitVec.ofNat_toNat, BitVec.setWidth_eq, BitVec.add_comm, BitVec.sub_add_cancel]
@@ -99,11 +100,13 @@ theorem keep_of_mont (pre : In P σ) {o : Nat} {m m' : Mem}
     simp only [ofs] at hB h1
     rw [hB, hS] at h1
     omega_using [h1, this]
-  · refine frame x fun r hr hc => hin ?_
-    simp only [List.mem_singleton] at hr
-    subst hr
-    simp only [Region.Contains] at hc
-    omega_using [hc]
+  · refine frame x fun r hr hc => ?_
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · refine hin ?_
+      simp only [Region.Contains] at hc
+      omega_using [hc]
+    · exact hb hc
 
 end
 

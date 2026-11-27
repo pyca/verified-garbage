@@ -1,6 +1,8 @@
 module
 
 import VerifiedGarbage.Proof.Framework.X86_64.Inline
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
+public meta import VerifiedGarbage.Proof.Framework.UnfoldStep
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.X86_64.Taint
 public import VerifiedGarbage.TCB.X86_64.Target
@@ -269,115 +271,118 @@ and the unknowns changed as from `s`, and changes neither. -/
 theorem exec_patch (hc : Clear H s) (i : Instr) :
     exec i (s.patch H hv u) = (exec i s).map (State.patch H hv u) := by
   cases i with
-  | mov d src => simp only [exec, readSrc_patch hc, Option.map_map]; rfl
-  | mov32 d src => simp only [exec, readSrc32_patch hc, Option.map_map]; rfl
-  | movzx8 d m => simp only [exec, Option.map_map]; rw [show (s.patch H hv u).ea m = s.ea m from rfl, load8_patch hc]; rfl
-  | movzx16 d m => simp only [exec, Option.map_map]; rw [show (s.patch H hv u).ea m = s.ea m from rfl, load16_patch hc]; rfl
+  | mov d src => simp only [reduceExec, readSrc_patch hc, Option.map_map]; rfl
+  | mov32 d src => simp only [reduceExec, readSrc32_patch hc, Option.map_map]; rfl
+  | movzx8 d m => simp only [reduceExec, Option.map_map]; rw [show (s.patch H hv u).ea m = s.ea m from rfl, load8_patch hc]; rfl
+  | movzx16 d m => simp only [reduceExec, Option.map_map]; rw [show (s.patch H hv u).ea m = s.ea m from rfl, load16_patch hc]; rfl
   | store m r => exact store64_patch hc _ _
   | store32 m r => exact store32_patch hc _ _
   | store8 m r => exact store8_patch hc _ _
   | store16 m r => exact store16_patch hc _ _
   | alu op d src =>
-    simp only [exec, execAlu, readSrc_patch hc, bind_map_patch]
+    simp only [reduceExec, execAlu, readSrc_patch hc, bind_map_patch]
     congr 1; funext b; cases op <;> simp only [Option.map_some, Option.map_map] <;> rfl
   | alu32 op d src =>
-    simp only [exec, execAlu32, readSrc32_patch hc, bind_map_patch]
+    simp only [reduceExec, execAlu32, readSrc32_patch hc, bind_map_patch]
     congr 1; funext b; cases op <;> simp only [Option.map_some, Option.map_map] <;> rfl
-  | shift32 op d n => simp only [exec, execShift32]; split <;> [cases op <;> rfl; rfl]
-  | shift op d n => simp only [exec, execShift]; split <;> [cases op <;> rfl; rfl]
-  | shld d r n => simp only [exec, execShld]; split <;> rfl
-  | btr d n => simp only [exec, execBtr]; split <;> rfl
-  | rorx32 d r n => simp only [exec, execRorx32]; split <;> rfl
-  | rorx d r n => simp only [exec, execRorx]; split <;> rfl
+  | shift32 op d n => simp only [reduceExec, execShift32]; split <;> [cases op <;> rfl; rfl]
+  | shift op d n => simp only [reduceExec, execShift]; split <;> [cases op <;> rfl; rfl]
+  | shld d r n => simp only [reduceExec, execShld]; split <;> rfl
+  | btr d n => simp only [reduceExec, execBtr]; split <;> rfl
+  | rorx32 d r n => simp only [reduceExec, execRorx32]; split <;> rfl
+  | rorx d r n => simp only [reduceExec, execRorx]; split <;> rfl
   | movdquLoad d m =>
-    simp only [exec, Option.map_map]; rw [show (s.patch H hv u).ea m = s.ea m from rfl, load128_patch hc]; rfl
+    simp only [reduceExec, Option.map_map]; rw [show (s.patch H hv u).ea m = s.ea m from rfl, load128_patch hc]; rfl
   | movdquStore m r => exact store128_patch hc _ _
-  | xop op => simp only [exec, Option.map_some]; congr 1; cases op <;> rfl
-  | vop op => simp only [exec, Option.map_some]; congr 1; cases op <;> simp only [VOp.exec] <;> (try split) <;> rfl
+  | xop op => simp only [reduceExec, Option.map_some]; congr 1; cases op <;> rfl
+  | vop op => simp only [reduceExec, Option.map_some]; congr 1; cases op <;> simp only [VOp.exec] <;> (try split) <;> rfl
   | vmovdquLoad len d m =>
-    cases len <;> simp only [exec, Option.map_map] <;>
+    cases len <;> simp only [reduceExec, Option.map_map] <;>
       rw [show (s.patch H hv u).ea m = s.ea m from rfl] <;> simp only [load128_patch hc, load256_patch hc] <;> rfl
   | vmovdquStore len m r =>
     cases len
     · exact store128_patch hc _ _
     · exact store256_patch hc _ _
   | vbroadcasti128 d m =>
-    simp only [exec, Option.map_map]; rw [show (s.patch H hv u).ea m = s.ea m from rfl, load128_patch hc]; rfl
+    simp only [reduceExec, Option.map_map]; rw [show (s.patch H hv u).ea m = s.ea m from rfl, load128_patch hc]; rfl
   | vbinLoad op len d a m =>
-    cases len <;> simp only [exec, Option.map_map] <;>
+    cases len <;> simp only [reduceExec, Option.map_map] <;>
       rw [show (s.patch H hv u).ea m = s.ea m from rfl] <;> simp only [load128_patch hc, load256_patch hc] <;> rfl
-  | zop op => simp only [exec, Option.map_some]; congr 1; cases op <;> rfl
+  | zop op => simp only [reduceExec, Option.map_some]; congr 1; cases op <;> rfl
+  | evMaskAddQ _ d _ _ =>
+    simp only [reduceExec, Option.map_some]; congr 1
+    cases d <;> rfl
   | eop op =>
-    simp only [exec, Option.map_some]; congr 1
+    simp only [reduceExec, Option.map_some]; congr 1
     cases op <;> simp only [EOp.exec, State.setVy] <;> (try split) <;> rfl
   | e5op op =>
-    simp only [exec, Option.map_some]; congr 1
+    simp only [reduceExec, Option.map_some]; congr 1
     cases op <;> simp only [E5Op.exec, State.setVz] <;> (try split) <;> rfl
   | vmovdqu32Load d m =>
-    simp only [exec, Option.map_map]; rw [show (s.patch H hv u).ea m = s.ea m from rfl, load512_patch hc]; rfl
+    simp only [reduceExec, Option.map_map]; rw [show (s.patch H hv u).ea m = s.ea m from rfl, load512_patch hc]; rfl
   | vmovdqu32Store m r => exact store512_patch hc _ _
   | vbroadcasti32x4 d m =>
-    simp only [exec, Option.map_map]; rw [show (s.patch H hv u).ea m = s.ea m from rfl, load128_patch hc]; rfl
+    simp only [reduceExec, Option.map_map]; rw [show (s.patch H hv u).ea m = s.ea m from rfl, load128_patch hc]; rfl
   | vbroadcasti32x4H d m =>
-    simp only [exec, Option.map_map]; rw [show (s.patch H hv u).ea m = s.ea m from rfl, load128_patch hc]; rfl
+    simp only [reduceExec, Option.map_map]; rw [show (s.patch H hv u).ea m = s.ea m from rfl, load128_patch hc]; rfl
   | zbcst op d a m =>
-    simp only [exec, Option.map_map]; rw [show (s.patch H hv u).ea m = s.ea m from rfl, load64_patch hc]; rfl
+    simp only [reduceExec, Option.map_map]; rw [show (s.patch H hv u).ea m = s.ea m from rfl, load64_patch hc]; rfl
   | vpbroadcastdZ d m | zbcstd _ d _ m =>
-    simp only [exec, Option.map_map]; rw [show (s.patch H hv u).ea m = s.ea m from rfl, load32_patch hc]; rfl
+    simp only [reduceExec, Option.map_map]; rw [show (s.patch H hv u).ea m = s.ea m from rfl, load32_patch hc]; rfl
   | vpmadd52Load hi d a m =>
-    simp only [exec, Option.map_map]; rw [show (s.patch H hv u).ea m = s.ea m from rfl, load256_patch hc]; rfl
+    simp only [reduceExec, Option.map_map]; rw [show (s.patch H hv u).ea m = s.ea m from rfl, load256_patch hc]; rfl
   | evLoad d m =>
-    simp only [exec, Option.map_map]; rw [show (s.patch H hv u).ea m = s.ea m from rfl, load256_patch hc]
+    simp only [reduceExec, Option.map_map]; rw [show (s.patch H hv u).ea m = s.ea m from rfl, load256_patch hc]
     congr 1; funext v; cases d <;> rfl
   | evStore m r | e5ExtractStore m r _ => exact store256_patch hc _ _
   | evBroadcastLoad d m =>
-    simp only [exec, Option.map_map]; rw [show (s.patch H hv u).ea m = s.ea m from rfl, load64_patch hc]
+    simp only [reduceExec, Option.map_map]; rw [show (s.patch H hv u).ea m = s.ea m from rfl, load64_patch hc]
     congr 1; funext v; cases d <;> rfl
   | e5InsertLoad d a m n =>
-    simp only [exec, Option.map_map]; rw [show (s.patch H hv u).ea m = s.ea m from rfl, load256_patch hc]
+    simp only [reduceExec, Option.map_map]; rw [show (s.patch H hv u).ea m = s.ea m from rfl, load256_patch hc]
     congr 1; funext v; cases d <;> cases a <;> rfl
   | kLoad k d m =>
-    simp only [exec, Option.map_map]
+    simp only [reduceExec, Option.map_map]
     rw [show (s.patch H hv u).ea m = s.ea m from rfl, show (s.patch H hv u).gpr k = s.gpr k from rfl,
       loadMasked512_patch hc]; rfl
   | kStore m k r => exact storeMasked512_patch hc _ _ _
   | kLoad8 k d m =>
-    simp only [exec, Option.map_map]
+    simp only [reduceExec, Option.map_map]
     rw [show (s.patch H hv u).ea m = s.ea m from rfl, show (s.patch H hv u).gpr k = s.gpr k from rfl,
       loadMasked512B_patch hc]; rfl
   | kStore8 m k r => exact storeMasked512B_patch hc _ _ _
   | evMadd52Load hi d a m =>
-    simp only [exec, Option.map_map]; rw [show (s.patch H hv u).ea m = s.ea m from rfl, load256_patch hc]
+    simp only [reduceExec, Option.map_map]; rw [show (s.patch H hv u).ea m = s.ea m from rfl, load256_patch hc]
     congr 1; funext v; cases d <;> rfl
   | stmxcsr m => exact store32_patch hc _ _
   | ldmxcsr m =>
-    simp only [exec]; rw [show (s.patch H hv u).ea m = s.ea m from rfl, load32_patch hc, bind_map_patch]
+    simp only [reduceExec]; rw [show (s.patch H hv u).ea m = s.ea m from rfl, load32_patch hc, bind_map_patch]
     congr 1; funext v; split <;> rfl
   | mulx hi lo src =>
-    simp only [exec, execMulx]; cases src <;> simp only [readSrc_patch hc, Option.map_map] <;> rfl
+    simp only [reduceExec, execMulx]; cases src <;> simp only [readSrc_patch hc, Option.map_map] <;> rfl
   | adcx d src =>
-    simp only [exec, execAdcx]; cases src <;> simp only [readSrc_patch hc, bind_map_patch] <;>
+    simp only [reduceExec, execAdcx]; cases src <;> simp only [readSrc_patch hc, bind_map_patch] <;>
       first | rfl | (congr 1; funext b; simp only [Option.map_map]; rfl)
   | adox d src =>
-    simp only [exec, execAdox]; cases src <;> simp only [readSrc_patch hc, bind_map_patch] <;>
+    simp only [reduceExec, execAdox]; cases src <;> simp only [readSrc_patch hc, bind_map_patch] <;>
       first | rfl | (congr 1; funext b; simp only [Option.map_map]; rfl)
   | cmov cc d src =>
-    simp only [exec, execCmov]; cases src <;> simp only [readSrc_patch hc, bind_map_patch] <;>
+    simp only [reduceExec, execCmov]; cases src <;> simp only [readSrc_patch hc, bind_map_patch] <;>
       first | rfl | (congr 1; funext b; simp only [Option.map_map, Function.comp_def,
         apply_ite (State.patch H hv u), eval_patch]; rfl)
   | aluTbl op d m n ws =>
-    simp only [exec]
+    simp only [reduceExec]
     rw [show (s.patch H hv u).ea m = s.ea m from rfl, show (s.patch H hv u).syms = s.syms from rfl,
       show (s.patch H hv u).gpr = s.gpr from rfl]
     split
     · cases op <;> first | rfl | (simp only [execAluW, Option.map_map]; rfl)
     · rfl
   | vmovdquTbl d m n ws | movdquTbl d m n ws =>
-    simp only [exec]
+    simp only [reduceExec]
     rw [show (s.patch H hv u).ea m = s.ea m from rfl, show (s.patch H hv u).syms = s.syms from rfl,
       show (s.patch H hv u).gpr = s.gpr from rfl]
     split <;> rfl
-  | push | pop | alloc | free | callr => rfl
+  | push | pop | alloc | free | callr | callm => rfl
   | _ => rfl
 
 theorem addrs_patch (i : Instr) : addrs i (s.patch H hv u) = addrs i s := by
@@ -400,9 +405,15 @@ def Src.noRsp : Src → Bool
 /-- A vector operation that does not touch `rsp`: those of vector registers
 alone, and `vmovq` from a register but `rsp`. -/
 def VOp.rspFree : VOp → Bool
-  | .vbin .. | .vmovdqa .. | .vpbroadcastd .. | .vzeroupper => true
+  | .vbin .. | .vmovdqa .. | .vpbroadcastd .. | .vzeroupper | .vpshufd .. | .vinserti128 .. | .vextracti128 .. => true
   | .vmovq _ r => r != .rsp
   | _ => false
+
+/-- An `EVEX` operation that does not touch `rsp`: all but `vmovq` from
+`rsp`. -/
+def EOp.rspFree : EOp → Bool
+  | .vmovq _ r => r != .rsp
+  | _ => true
 
 /-- An instruction that neither reads nor writes `rsp`: those of the
 functions `Code.InlineOk` lets code call (a short list; the others are
@@ -410,8 +421,8 @@ functions `Code.InlineOk` lets code call (a short list; the others are
 def Instr.rspFree : Instr → Bool
   | .mov d src | .mov32 d src | .alu _ d src | .alu32 _ d src | .adcx d src | .adox d src
   | .cmov _ d src => d != .rsp && src.noRsp
-  | .store m r => m.noRsp && r != .rsp
-  | .shift _ d _ => d != .rsp
+  | .store m r | .store32 m r => m.noRsp && r != .rsp
+  | .shift _ d _ | .shift32 _ d _ | .shiftCl _ d => d != .rsp
   | .mul r => r != .rsp
   | .imul d r | .imul3 d r _ => d != .rsp && r != .rsp
   | .shld d r _ => d != .rsp && r != .rsp
@@ -429,7 +440,20 @@ def Instr.rspFree : Instr → Bool
   | .leaSym d _ => d != .rsp
   | .vop op => op.rspFree
   | .vbinLoad _ _ _ _ m | .vmovdquStore _ m _ => m.noRsp
+  | .zop _ => true
+  | .movdquTbl _ m .. | .vmovdquLoad _ _ m | .vmovdqu32Load _ m | .vmovdqu32Store m _
+    | .vbroadcasti32x4 _ m => m.noRsp
+  | .kLoad8 r _ m | .kStore8 m r _ => m.noRsp && r != .rsp
+  | .eop op => op.rspFree
+  | .evLoad _ m | .evStore m _ | .evMadd52Load _ _ _ m => m.noRsp
+  | .evCmpUq _ d .. => d != .rsp
+  | .evMaskAddQ k .. => k != .rsp
   | _ => false
+
+/-- `Instr.rspFree` unfolded on a constructor (see `unfoldStep?`). -/
+dsimproc reduceRspFree (Instr.rspFree _) := fun e => do
+  let some e' ← unfoldStep? e | return .continue
+  return .visit e'
 
 section
 variable {s : State} {x : BitVec 64}
@@ -490,6 +514,21 @@ theorem store16_setRsp (a : Addr) (v : BitVec 16) :
   simp only [State.store16, show (s.setReg .rsp x).wr = s.wr from rfl]
   by_cases h : InRegions s.wr a 2 <;> simp only [h, ite_true, ite_false, Option.map_some, Option.map_none] <;> rfl
 
+theorem store32_setRsp (a : Addr) (v : BitVec 32) :
+    (s.setReg .rsp x).store32 a v = (s.store32 a v).map (·.setReg .rsp x) := by
+  simp only [State.store32, show (s.setReg .rsp x).wr = s.wr from rfl]
+  by_cases h : InRegions s.wr a 4 <;> simp only [h, ite_true, ite_false, Option.map_some, Option.map_none] <;> rfl
+
+theorem store512_setRsp (a : Addr) (v : BitVec 512) :
+    (s.setReg .rsp x).store512 a v = (s.store512 a v).map (·.setReg .rsp x) := by
+  simp only [State.store512, show (s.setReg .rsp x).wr = s.wr from rfl]
+  by_cases h : InRegions s.wr a 64 <;> simp only [h, ite_true, ite_false, Option.map_some, Option.map_none] <;> rfl
+
+theorem storeMasked512B_setRsp (a : Addr) (k : BitVec 64) (v : BitVec 512) :
+    (s.setReg .rsp x).storeMasked512B a k v = (s.storeMasked512B a k v).map (·.setReg .rsp x) := by
+  simp only [State.storeMasked512B, show (s.setReg .rsp x).wr = s.wr from rfl]
+  split <;> rfl
+
 theorem store256_setRsp (a : Addr) (v : BitVec 256) :
     (s.setReg .rsp x).store256 a v = (s.store256 a v).map (·.setReg .rsp x) := by
   simp only [State.store256, show (s.setReg .rsp x).wr = s.wr from rfl]
@@ -501,68 +540,87 @@ theorem bind_map_setRsp {α : Type} (o : Option α) (f : α → Option State) :
     (o.bind f).map (·.setReg .rsp x) = o.bind fun a => (f a).map (·.setReg .rsp x) := by
   cases o <;> rfl
 
+theorem vy_setRsp (r : VReg) : (s.setReg .rsp x).vy r = s.vy r := by cases r <;> rfl
+
+theorem setVy_setRsp (r : VReg) (v : BitVec 256) :
+    (s.setReg .rsp x).setVy r v = (s.setVy r v).setReg .rsp x := by cases r <;> rfl
+
 /-- An instruction that does not touch `rsp` runs from `s` with another
 `rsp` as from `s`. -/
 theorem exec_setRsp {i : Instr} (hi : i.rspFree = true) :
     exec i (s.setReg .rsp x) = (exec i s).map (·.setReg .rsp x) := by
   cases i with
   | mov d src =>
-    simp only [Instr.rspFree, Bool.and_eq_true, bne_iff_ne, ne_eq] at hi
-    simp only [exec, readSrc_setRsp hi.2, Option.map_map, Function.comp_def, setReg_setRsp hi.1]
+    simp only [reduceRspFree, Bool.and_eq_true, bne_iff_ne, ne_eq] at hi
+    simp only [reduceExec, readSrc_setRsp hi.2, Option.map_map, Function.comp_def, setReg_setRsp hi.1]
   | mov32 d src =>
-    simp only [Instr.rspFree, Bool.and_eq_true, bne_iff_ne, ne_eq] at hi
-    simp only [exec, readSrc32_setRsp hi.2, Option.map_map, Function.comp_def, State.setReg32,
+    simp only [reduceRspFree, Bool.and_eq_true, bne_iff_ne, ne_eq] at hi
+    simp only [reduceExec, readSrc32_setRsp hi.2, Option.map_map, Function.comp_def, State.setReg32,
       setReg_setRsp hi.1]
   | alu op d src =>
-    simp only [Instr.rspFree, Bool.and_eq_true, bne_iff_ne, ne_eq] at hi
-    simp only [exec, execAlu, readSrc_setRsp hi.2, bind_map_setRsp, setRsp_gpr hi.1]
+    simp only [reduceRspFree, Bool.and_eq_true, bne_iff_ne, ne_eq] at hi
+    simp only [reduceExec, execAlu, readSrc_setRsp hi.2, bind_map_setRsp, setRsp_gpr hi.1]
     congr 1; funext b
     cases op <;> simp only [Option.map_some, Option.map_map, Function.comp_def, arithFlags_setRsp,
       setReg_setRsp hi.1] <;> rfl
   | alu32 op d src =>
-    simp only [Instr.rspFree, Bool.and_eq_true, bne_iff_ne, ne_eq] at hi
-    simp only [exec, execAlu32, readSrc32_setRsp hi.2, bind_map_setRsp, setRsp_gpr hi.1]
+    simp only [reduceRspFree, Bool.and_eq_true, bne_iff_ne, ne_eq] at hi
+    simp only [reduceExec, execAlu32, readSrc32_setRsp hi.2, bind_map_setRsp, setRsp_gpr hi.1]
     congr 1; funext b
     cases op <;> simp only [Option.map_some, Option.map_map, Function.comp_def, arithFlags_setRsp,
       State.setReg32, setReg_setRsp hi.1] <;> rfl
   | store m r =>
-    simp only [Instr.rspFree, Bool.and_eq_true, bne_iff_ne, ne_eq] at hi
-    simp only [exec, ea_setRsp hi.1, setRsp_gpr hi.2, store64_setRsp]
+    simp only [reduceRspFree, Bool.and_eq_true, bne_iff_ne, ne_eq] at hi
+    simp only [reduceExec, ea_setRsp hi.1, setRsp_gpr hi.2, store64_setRsp]
+  | store32 m r =>
+    simp only [reduceRspFree,Bool.and_eq_true,bne_iff_ne,ne_eq] at hi
+    simp only [reduceExec,ea_setRsp hi.1,setRsp_gpr hi.2,store32_setRsp]
+  | shiftCl op d =>
+    simp only [reduceRspFree,bne_iff_ne,ne_eq] at hi
+    simp only [reduceExec,execShiftCl,setRsp_gpr hi,setRsp_gpr (show Reg.rcx ≠ .rsp by decide),Option.map_some,
+      setFlags_setRsp,setReg_setRsp hi]
+    rfl
   | shift op d n =>
-    simp only [Instr.rspFree, bne_iff_ne, ne_eq] at hi
-    simp only [exec, execShift, setRsp_gpr hi]
+    simp only [reduceRspFree, bne_iff_ne, ne_eq] at hi
+    simp only [reduceExec, execShift, setRsp_gpr hi]
     split
     · cases op <;> simp only [Option.map_some, setFlags_setRsp, setReg_setRsp hi] <;> rfl
     · rfl
+  | shift32 op d n =>
+    simp only [reduceRspFree, bne_iff_ne, ne_eq] at hi
+    simp only [reduceExec, execShift32, setRsp_gpr hi]
+    split
+    · cases op <;> simp only [Option.map_some, setFlags_setRsp, State.setReg32, setReg_setRsp hi] <;> rfl
+    · rfl
   | mul r =>
-    simp only [Instr.rspFree, bne_iff_ne, ne_eq] at hi
-    simp only [exec, execMul, Option.map_some, setRsp_gpr hi, setRsp_gpr (show Reg.rax ≠ .rsp by decide),
+    simp only [reduceRspFree, bne_iff_ne, ne_eq] at hi
+    simp only [reduceExec, execMul, Option.map_some, setRsp_gpr hi, setRsp_gpr (show Reg.rax ≠ .rsp by decide),
       setFlags_setRsp, setReg_setRsp (show Reg.rax ≠ .rsp by decide),
       setReg_setRsp (show Reg.rdx ≠ .rsp by decide)]
   | imul d r =>
-    simp only [Instr.rspFree, Bool.and_eq_true, bne_iff_ne, ne_eq] at hi
-    simp only [exec, execImul, Option.map_some, setRsp_gpr hi.1, setRsp_gpr hi.2, setFlags_setRsp,
+    simp only [reduceRspFree, Bool.and_eq_true, bne_iff_ne, ne_eq] at hi
+    simp only [reduceExec, execImul, Option.map_some, setRsp_gpr hi.1, setRsp_gpr hi.2, setFlags_setRsp,
       setReg_setRsp hi.1]
   | imul3 d r k =>
-    simp only [Instr.rspFree, Bool.and_eq_true, bne_iff_ne, ne_eq] at hi
-    simp only [exec, execImul3, Option.map_some, setRsp_gpr hi.2, setFlags_setRsp,
+    simp only [reduceRspFree, Bool.and_eq_true, bne_iff_ne, ne_eq] at hi
+    simp only [reduceExec, execImul3, Option.map_some, setRsp_gpr hi.2, setFlags_setRsp,
       setReg_setRsp hi.1]
   | shld d r n =>
-    simp only [Instr.rspFree, Bool.and_eq_true, bne_iff_ne, ne_eq] at hi
-    simp only [exec, execShld, setRsp_gpr hi.1, setRsp_gpr hi.2]
+    simp only [reduceRspFree, Bool.and_eq_true, bne_iff_ne, ne_eq] at hi
+    simp only [reduceExec, execShld, setRsp_gpr hi.1, setRsp_gpr hi.2]
     split
     · simp only [Option.map_some, setFlags_setRsp, setReg_setRsp hi.1]
     · rfl
   | mulx hi' lo src =>
-    simp only [Instr.rspFree, Bool.and_eq_true, bne_iff_ne, ne_eq] at hi
-    simp only [exec, execMulx]
+    simp only [reduceRspFree, Bool.and_eq_true, bne_iff_ne, ne_eq] at hi
+    simp only [reduceExec, execMulx]
     cases src with
     | imm _ => rfl
     | _ => simp only [readSrc_setRsp hi.2, Option.map_map, Function.comp_def,
         setRsp_gpr (show Reg.rdx ≠ .rsp by decide), setReg_setRsp hi.1.1, setReg_setRsp hi.1.2]
   | adcx d src =>
-    simp only [Instr.rspFree, Bool.and_eq_true, bne_iff_ne, ne_eq] at hi
-    simp only [exec, execAdcx]
+    simp only [reduceRspFree, Bool.and_eq_true, bne_iff_ne, ne_eq] at hi
+    simp only [reduceExec, execAdcx]
     cases src with
     | imm _ => rfl
     | _ =>
@@ -570,8 +628,8 @@ theorem exec_setRsp {i : Instr} (hi : i.rspFree = true) :
       congr 1; funext b
       simp only [Option.map_map, Function.comp_def, setFlags_setRsp, setReg_setRsp hi.1]; rfl
   | adox d src =>
-    simp only [Instr.rspFree, Bool.and_eq_true, bne_iff_ne, ne_eq] at hi
-    simp only [exec, execAdox]
+    simp only [reduceRspFree, Bool.and_eq_true, bne_iff_ne, ne_eq] at hi
+    simp only [reduceExec, execAdox]
     cases src with
     | imm _ => rfl
     | _ =>
@@ -579,8 +637,8 @@ theorem exec_setRsp {i : Instr} (hi : i.rspFree = true) :
       congr 1; funext b
       simp only [Option.map_map, Function.comp_def, setFlags_setRsp, setReg_setRsp hi.1]; rfl
   | cmov cc d src =>
-    simp only [Instr.rspFree, Bool.and_eq_true, bne_iff_ne, ne_eq] at hi
-    simp only [exec, execCmov]
+    simp only [reduceRspFree, Bool.and_eq_true, bne_iff_ne, ne_eq] at hi
+    simp only [reduceExec, execCmov]
     cases src with
     | imm _ => rfl
     | _ =>
@@ -588,57 +646,101 @@ theorem exec_setRsp {i : Instr} (hi : i.rspFree = true) :
       congr 1; funext b
       simp only [Option.map_map, Function.comp_def, apply_ite (fun t : State => t.setReg .rsp x), setReg_setRsp hi.1]
   | movImm64 d v =>
-    simp only [Instr.rspFree, bne_iff_ne, ne_eq] at hi
-    simp only [exec, Option.map_some, setReg_setRsp hi]
+    simp only [reduceRspFree, bne_iff_ne, ne_eq] at hi
+    simp only [reduceExec, Option.map_some, setReg_setRsp hi]
   | bswap d =>
-    simp only [Instr.rspFree, bne_iff_ne, ne_eq] at hi
-    simp only [exec, Option.map_some, setRsp_gpr hi, setReg_setRsp hi]
+    simp only [reduceRspFree, bne_iff_ne, ne_eq] at hi
+    simp only [reduceExec, Option.map_some, setRsp_gpr hi, setReg_setRsp hi]
   | xop op =>
-    simp only [exec, Option.map_some]; congr 1
+    simp only [reduceExec, Option.map_some]; congr 1
     cases op with
     | movq d r =>
-      simp only [Instr.rspFree, bne_iff_ne, ne_eq] at hi
+      simp only [reduceRspFree, bne_iff_ne, ne_eq] at hi
       simp only [XOp.exec, setRsp_gpr hi]; rfl
     | _ => rfl
   | movqR d r =>
-    simp only [Instr.rspFree, bne_iff_ne, ne_eq] at hi
-    simp only [exec, Option.map_some, setReg_setRsp hi]; rfl
+    simp only [reduceRspFree, bne_iff_ne, ne_eq] at hi
+    simp only [reduceExec, Option.map_some, setReg_setRsp hi]; rfl
   | movdquLoad d m =>
-    simp only [Instr.rspFree] at hi
-    simp only [exec, Option.map_map]; rw [ea_setRsp hi]; rfl
+    simp only [reduceRspFree] at hi
+    simp only [reduceExec, Option.map_map]; rw [ea_setRsp hi]; rfl
   | movdquStore m r =>
-    simp only [Instr.rspFree] at hi
-    simp only [exec, ea_setRsp hi, store128_setRsp]; rfl
+    simp only [reduceRspFree] at hi
+    simp only [reduceExec, ea_setRsp hi, store128_setRsp]; rfl
   | movzx8 d m =>
-    simp only [Instr.rspFree, Bool.and_eq_true, bne_iff_ne, ne_eq] at hi
-    simp only [exec, Option.map_map]; rw [ea_setRsp hi.2]
+    simp only [reduceRspFree, Bool.and_eq_true, bne_iff_ne, ne_eq] at hi
+    simp only [reduceExec, Option.map_map]; rw [ea_setRsp hi.2]
     simp only [Function.comp_def, setReg_setRsp hi.1]; rfl
   | movzx16 d m =>
-    simp only [Instr.rspFree, Bool.and_eq_true, bne_iff_ne, ne_eq] at hi
-    simp only [exec, Option.map_map]; rw [ea_setRsp hi.2]
+    simp only [reduceRspFree, Bool.and_eq_true, bne_iff_ne, ne_eq] at hi
+    simp only [reduceExec, Option.map_map]; rw [ea_setRsp hi.2]
     simp only [Function.comp_def, setReg_setRsp hi.1]; rfl
   | store8 m r =>
-    simp only [Instr.rspFree, Bool.and_eq_true, bne_iff_ne, ne_eq] at hi
-    simp only [exec, ea_setRsp hi.1, setRsp_gpr hi.2, store8_setRsp]
+    simp only [reduceRspFree, Bool.and_eq_true, bne_iff_ne, ne_eq] at hi
+    simp only [reduceExec, ea_setRsp hi.1, setRsp_gpr hi.2, store8_setRsp]
   | store16 m r =>
-    simp only [Instr.rspFree, Bool.and_eq_true, bne_iff_ne, ne_eq] at hi
-    simp only [exec, ea_setRsp hi.1, setRsp_gpr hi.2, store16_setRsp]
+    simp only [reduceRspFree, Bool.and_eq_true, bne_iff_ne, ne_eq] at hi
+    simp only [reduceExec, ea_setRsp hi.1, setRsp_gpr hi.2, store16_setRsp]
   | leaSym d n =>
-    simp only [Instr.rspFree, bne_iff_ne, ne_eq] at hi
-    simp only [exec, Option.map_some, setReg_setRsp hi]; rfl
+    simp only [reduceRspFree, bne_iff_ne, ne_eq] at hi
+    simp only [reduceExec, Option.map_some, setReg_setRsp hi]; rfl
   | vop op =>
-    simp only [exec, Option.map_some]; congr 1
-    cases op <;> simp only [Instr.rspFree, VOp.rspFree, Bool.false_eq_true, bne_iff_ne, ne_eq] at hi
+    simp only [reduceExec, Option.map_some]; congr 1
+    cases op <;> simp only [reduceRspFree, VOp.rspFree, Bool.false_eq_true, bne_iff_ne, ne_eq] at hi
     case vmovq d r => simp only [VOp.exec, setRsp_gpr hi]; rfl
+    case vinserti128 d a b n => simp only [VOp.exec]; split <;> rfl
     all_goals rfl
   | vbinLoad op len d a m =>
-    simp only [Instr.rspFree] at hi
-    cases len <;> simp only [exec, Option.map_map] <;> rw [ea_setRsp hi] <;> rfl
+    simp only [reduceRspFree] at hi
+    cases len <;> simp only [reduceExec, Option.map_map] <;> rw [ea_setRsp hi] <;> rfl
   | vmovdquStore len m r =>
-    simp only [Instr.rspFree] at hi
+    simp only [reduceRspFree] at hi
     cases len
-    · simp only [exec, ea_setRsp hi, store128_setRsp]; rfl
-    · simp only [exec, ea_setRsp hi, store256_setRsp]; rfl
+    · simp only [reduceExec, ea_setRsp hi, store128_setRsp]; rfl
+    · simp only [reduceExec, ea_setRsp hi, store256_setRsp]; rfl
+  | eop op =>
+    simp only [reduceExec, Option.map_some]; congr 1
+    cases op <;> simp only [reduceRspFree, EOp.rspFree, bne_iff_ne, ne_eq] at hi
+    case vmovq d r => simp only [EOp.exec, setRsp_gpr hi, setVy_setRsp]
+    all_goals simp only [EOp.exec, vy_setRsp, setVy_setRsp]
+  | evCmpUq gt d a b =>
+    simp only [reduceRspFree, bne_iff_ne, ne_eq] at hi
+    simp only [reduceExec, Option.map_some, State.setReg32, setReg_setRsp hi]
+    rfl
+  | evMaskAddQ k d a b =>
+    simp only [reduceRspFree, bne_iff_ne, ne_eq] at hi
+    simp only [reduceExec, Option.map_some, setRsp_gpr hi, vy_setRsp, setVy_setRsp]
+  | evLoad d m =>
+    simp only [reduceRspFree] at hi
+    simp only [reduceExec, Option.map_map]; rw [ea_setRsp hi]
+    simp only [Function.comp_def, setVy_setRsp]; rfl
+  | evStore m r =>
+    simp only [reduceRspFree] at hi
+    simp only [reduceExec, ea_setRsp hi, vy_setRsp, store256_setRsp]
+  | evMadd52Load hi' d a m =>
+    simp only [reduceRspFree] at hi
+    simp only [reduceExec, Option.map_map]; rw [ea_setRsp hi]
+    simp only [Function.comp_def, vy_setRsp, setVy_setRsp]; rfl
+  | zop op =>
+    simp only [reduceExec,Option.map_some]; congr 1; cases op <;> rfl
+  | movdquTbl d m name ws =>
+    have hb : m.base ≠ .rsp := by
+      simp only [reduceRspFree,MemOp.noRsp,Bool.and_eq_true,bne_iff_ne,ne_eq] at hi
+      exact hi.1
+    simp only [reduceExec, ea_setRsp hi, setRsp_gpr hb, show (s.setReg .rsp x).syms = s.syms from rfl]
+    split <;> rfl
+  | vmovdquLoad len d m =>
+    cases len <;> simp only [reduceExec,ea_setRsp hi,Option.map_map] <;> rfl
+  | vmovdqu32Load d m | vbroadcasti32x4 d m =>
+    simp only [reduceExec,ea_setRsp hi,Option.map_map]; rfl
+  | vmovdqu32Store m r =>
+    simp only [reduceExec, ea_setRsp hi, store512_setRsp]; rfl
+  | kLoad8 r d m =>
+    simp only [reduceRspFree,Bool.and_eq_true,bne_iff_ne,ne_eq] at hi
+    simp only [reduceExec,ea_setRsp hi.1,setRsp_gpr hi.2,Option.map_map]; rfl
+  | kStore8 m r d =>
+    simp only [reduceRspFree,Bool.and_eq_true,bne_iff_ne,ne_eq] at hi
+    simp only [reduceExec,ea_setRsp hi.1,setRsp_gpr hi.2,storeMasked512B_setRsp]; rfl
   | _ => cases hi
 
 theorem srcAddrs_setRsp {src : Src} (h : src.noRsp = true) : srcAddrs (s.setReg .rsp x) src = srcAddrs s src := by
@@ -649,13 +751,21 @@ theorem srcAddrs_setRsp {src : Src} (h : src.noRsp = true) : srcAddrs (s.setReg 
 theorem addrs_setRsp {i : Instr} (hi : i.rspFree = true) : addrs i (s.setReg .rsp x) = addrs i s := by
   cases i
   case mov | mov32 | alu | alu32 | adcx | adox | cmov | mulx =>
-    simp only [Instr.rspFree, Bool.and_eq_true] at hi; simp only [addrs]; rw [srcAddrs_setRsp hi.2]
-  case store | store8 | store16 =>
-    simp only [Instr.rspFree, Bool.and_eq_true] at hi; simp only [addrs]; rw [ea_setRsp hi.1]
-  case movdquLoad | movdquStore | vbinLoad | vmovdquStore =>
-    simp only [Instr.rspFree] at hi; simp only [addrs]; rw [ea_setRsp hi]
+    simp only [reduceRspFree, Bool.and_eq_true] at hi; simp only [addrs]; rw [srcAddrs_setRsp hi.2]
+  case store | store32 | store8 | store16 =>
+    simp only [reduceRspFree, Bool.and_eq_true] at hi; simp only [addrs]; rw [ea_setRsp hi.1]
+  case movdquLoad | movdquStore | vbinLoad | vmovdquStore | evLoad | evStore | evMadd52Load | vmovdquLoad | vmovdqu32Load | vmovdqu32Store | vbroadcasti32x4 =>
+    simp only [reduceRspFree] at hi; simp only [addrs]; rw [ea_setRsp hi]
   case movzx8 | movzx16 =>
-    simp only [Instr.rspFree, Bool.and_eq_true] at hi; simp only [addrs]; rw [ea_setRsp hi.2]
+    simp only [reduceRspFree, Bool.and_eq_true] at hi; simp only [addrs]; rw [ea_setRsp hi.2]
+  case kLoad8 | kStore8 =>
+    simp only [reduceRspFree,Bool.and_eq_true,bne_iff_ne,ne_eq] at hi
+    simp only [addrs,ea_setRsp hi.1,setRsp_gpr hi.2]
+  case movdquTbl d m name ws =>
+    have hb : m.base ≠ .rsp := by
+      simp only [reduceRspFree,MemOp.noRsp,Bool.and_eq_true,bne_iff_ne,ne_eq] at hi
+      exact hi.1
+    simp only [addrs, ea_setRsp hi, setRsp_gpr hb]
   all_goals first | rfl | cases hi
 
 end
@@ -672,8 +782,10 @@ theorem srcAddrs_length (src : Src) (s s' : State) : (srcAddrs s src).length = (
   cases src <;> rfl
 
 theorem addrs_length (i : Instr) (s s' : State) : (addrs i s).length = (addrs i s').length := by
-  cases i <;> simp only [addrs, List.length_map, List.length_range, List.length_cons, List.length_nil] <;>
-    first | rfl | exact srcAddrs_length _ _ _
+  cases i <;> first
+    | rfl
+    | exact srcAddrs_length _ _ _
+    | simp only [addrs, List.length_map, List.length_range]
 
 /-- The number of addresses a block leaks. -/
 def blockLen (l : List Instr) : Nat := (l.map fun i => (addrs i State.zero).length).sum
@@ -732,7 +844,18 @@ theorem _root_.VG.Code.noCalls_inline {c : Prog isa} (h : c.InlineOk = true) : c
 /-- An instruction that neither reads nor writes `rsp` does not write it. -/
 theorem _root_.VG.X86_64.Instr.clobbers_rsp_of_rspFree {i : Instr} (h : i.rspFree = true) :
     Taint.clobbers i .rsp = false := by
-  cases i <;> (try cases h) <;> simp_all [Instr.rspFree, Taint.clobbers, Taint.dstOf, @eq_comm _ Reg.rsp]
+  have ne {d : Reg} (h : (d != .rsp) = true) : (some d == some Reg.rsp) = false := by
+    cases d <;> first | rfl | cases h
+  have ne' {d : Reg} (h : (d != .rsp) = true) : (Reg.rsp == d) = false := by
+    cases d <;> first | rfl | cases h
+  cases i <;> first
+    | (cases h; done)
+    | rfl
+    | exact ne h
+    | exact ne (Bool.and_eq_true_iff.mp h).1
+    | exact Bool.or_eq_false_iff.mpr
+        ⟨ne' (Bool.and_eq_true_iff.mp (Bool.and_eq_true_iff.mp h).1).1,
+          ne' (Bool.and_eq_true_iff.mp (Bool.and_eq_true_iff.mp h).1).2⟩
 
 /-- No instruction of inlined code writes `rsp`: what `Code.InlineOk` checks
 of the code outside the calls, and of the calls' instructions (`rspFree`). -/

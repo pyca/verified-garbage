@@ -1,9 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Argon2.X86_64.DeriveAbi
-meta import VerifiedGarbage.Proof.Argon2.X86_64.DeriveAbi
-public import VerifiedGarbage.Proof.Argon2.X86_64.DeriveFrame
-meta import VerifiedGarbage.Proof.Argon2.X86_64.DeriveFrame
+public import VerifiedGarbage.Proof.Argon2.X86_64.DeriveRegions
+meta import VerifiedGarbage.Proof.Argon2.X86_64.DeriveRegions
 public import VerifiedGarbage.Proof.Argon2.X86_64.DeriveLit
 meta import VerifiedGarbage.Proof.Argon2.X86_64.DeriveLit
 public import VerifiedGarbage.Proof.Argon2.X86_64.CompressImpl
@@ -16,22 +14,11 @@ public import VerifiedGarbage.Proof.Argon2.X86_64.MemoryInitLit
 meta import VerifiedGarbage.Proof.Argon2.X86_64.MemoryInitLit
 public import VerifiedGarbage.Proof.Argon2.X86_64.ParametersLit
 meta import VerifiedGarbage.Proof.Argon2.X86_64.ParametersLit
-meta import VerifiedGarbage.Proof.Argon2.X86_64.DeriveNormalize
 meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 public import VerifiedGarbage.Proof.Argon2.X86_64.InitialBodyReviewedState
 meta import VerifiedGarbage.Proof.Argon2.X86_64.InitialBodyReviewedState
-import VerifiedGarbage.Proof.Argon2.X86_64.DeriveSaved
-meta import VerifiedGarbage.Proof.Argon2.X86_64.DeriveSaved
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-public import VerifiedGarbage.Proof.Argon2.X86_64.Parameters
-meta import VerifiedGarbage.Proof.Argon2.X86_64.Parameters
-public import VerifiedGarbage.Proof.Argon2.X86_64.InitialBodyState
-meta import VerifiedGarbage.Proof.Argon2.X86_64.InitialBodyState
-public import VerifiedGarbage.Proof.Argon2.X86_64.DeriveRegions
-meta import VerifiedGarbage.Proof.Argon2.X86_64.DeriveRegions
-public import VerifiedGarbage.Proof.Argon2.X86_64.InitialBody
-meta import VerifiedGarbage.Proof.Argon2.X86_64.InitialBody
 import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Verified
 meta import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Verified
 import VerifiedGarbage.Proof.Blake2.X86_64.Stream.CT
@@ -45,21 +32,18 @@ public import VerifiedGarbage.Proof.Argon2.X86_64.ReduceBlockLit
 import VerifiedGarbage.Proof.Blake2.X86_64.Stream.Finalize
 import VerifiedGarbage.Proof.Blake2.X86_64.Stream.Update
 meta import VerifiedGarbage.Proof.Argon2.FillPositions
-meta import VerifiedGarbage.Proof.Argon2.References
+meta import VerifiedGarbage.Proof.Argon2.IterationsIndices
 meta import VerifiedGarbage.Proof.Argon2.X86_64.AddressCacheWord
-meta import VerifiedGarbage.Proof.Argon2.X86_64.ClearBlock
+meta import VerifiedGarbage.Proof.Argon2.X86_64.SegmentSetupPrepare
 meta import VerifiedGarbage.Proof.Argon2.X86_64.Compress
 meta import VerifiedGarbage.Proof.Argon2.X86_64.DivideCT
 meta import VerifiedGarbage.Proof.Argon2.X86_64.FillCompressLit
-meta import VerifiedGarbage.Proof.Argon2.X86_64.FillKernelStable
 meta import VerifiedGarbage.Proof.Argon2.X86_64.FillPointersLit
-meta import VerifiedGarbage.Proof.Argon2.X86_64.FillWriteCover
-meta import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Length
-meta import VerifiedGarbage.Proof.Argon2.X86_64.MemoryInitScale
+meta import VerifiedGarbage.Proof.Argon2.X86_64.FillCompressSetup
+meta import VerifiedGarbage.Proof.Argon2.X86_64.BlockAddress
 meta import VerifiedGarbage.Proof.Argon2.X86_64.ReduceBlockLit
 meta import VerifiedGarbage.Proof.Argon2.X86_64.ReferenceStart
-meta import VerifiedGarbage.Proof.Argon2.X86_64.Relative
-meta import VerifiedGarbage.Proof.Argon2.X86_64.Wrap
+meta import VerifiedGarbage.Proof.Argon2.X86_64.DependentWord
 meta import VerifiedGarbage.Proof.Blake2.X86_64.Compress
 meta import VerifiedGarbage.Proof.Blake2.X86_64.Stream.Finalize
 meta import VerifiedGarbage.Proof.Blake2.X86_64.Stream.Update
@@ -73,14 +57,11 @@ import VerifiedGarbage.Proof.Framework.X86_64.Lit
 import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 import VerifiedGarbage.Proof.Sha256.Stream
 meta import VerifiedGarbage.Proof.Argon2.Dimensions
-meta import VerifiedGarbage.Proof.Argon2.IterationsIndices
 meta import VerifiedGarbage.Proof.Argon2.Permutation
 meta import VerifiedGarbage.Proof.Argon2.Reference
 meta import VerifiedGarbage.Proof.Argon2.SegmentIndices
 meta import VerifiedGarbage.Proof.Argon2.Serialization
 meta import VerifiedGarbage.Proof.Argon2.X86_64.AddressHeaderWords
-meta import VerifiedGarbage.Proof.Argon2.X86_64.BlockAddress
-meta import VerifiedGarbage.Proof.Argon2.X86_64.DependentWord
 meta import VerifiedGarbage.Proof.Argon2.X86_64.FillCompress
 meta import VerifiedGarbage.Proof.Argon2.X86_64.FillLaneAdvance
 meta import VerifiedGarbage.Proof.Argon2.X86_64.FillWritePrefix
@@ -107,8 +88,7 @@ public import VerifiedGarbage.Spec.Argon2
 meta import VerifiedGarbage.Spec.Argon2
 public import VerifiedGarbage.Impl.Argon2.X86_64.AddressCache
 meta import VerifiedGarbage.Impl.Argon2.X86_64.AddressCache
-public import VerifiedGarbage.Proof.Argon2.X86_64.AddressCallsStage
-meta import VerifiedGarbage.Proof.Argon2.X86_64.AddressCallsStage
+public import VerifiedGarbage.Proof.Argon2.X86_64.AddressCacheWord
 public import VerifiedGarbage.Impl.Argon2.X86_64.MemoryInit
 meta import VerifiedGarbage.Impl.Argon2.X86_64.MemoryInit
 public import VerifiedGarbage.Proof.Framework.Covers
@@ -127,8 +107,7 @@ public import VerifiedGarbage.Proof.Framework.X86_64.Call
 meta import VerifiedGarbage.Proof.Framework.X86_64.Call
 public import VerifiedGarbage.Proof.Framework.X86_64.Frame
 meta import VerifiedGarbage.Proof.Framework.X86_64.Frame
-public import VerifiedGarbage.Proof.Argon2.X86_64.FillKernelArgs
-meta import VerifiedGarbage.Proof.Argon2.X86_64.FillKernelArgs
+public import VerifiedGarbage.Proof.Argon2.X86_64.DependentWord
 public import VerifiedGarbage.Impl.Argon2.X86_64.FillWrite
 meta import VerifiedGarbage.Impl.Argon2.X86_64.FillWrite
 public import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Init
@@ -1125,6 +1104,27 @@ theorem return_post {s t : State} (done : BodyDone s t) :
     X86_64.argRegs, X86_64.stackArg, X86_64.stackArgAddr, List.range, List.range.loop]
   exact post
 
+/-- `return_post`, whatever the released frame's bytes hold: the output lies
+outside it. -/
+theorem return_post_lost {s t : State} (h : AbiEnvironment s) (done : BodyDone s t) {m : Mem}
+    {u : Nat → BitVec 64} (fm : Frame [below (s.gpr .rsp) 320] t.mem m) :
+    (Spec.Argon2.deriveContract X86_64.abi 344).post s
+      { frameEnd t Impl.Argon2.X86_64.Derive.saved with mem := m, unknowns := u } := by
+  have mem : (abiOutput s, true) ∈ abiBuffers s ++ [(abiArguments s, false)] :=
+    List.mem_append_left _ (List.mem_append_right _
+      (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_singleton_self _))))
+  have hd : (abiOutput s).Disjoint (below (s.gpr .rsp) 320) := fun x h₁ h₂ =>
+    h.reserved _ (List.mem_cons_of_mem _ (List.mem_singleton_self _)) _ mem x
+      (below_sub (by decide) (by decide) x h₂) h₁
+  have post := done.post
+  sig_post [Spec.Argon2.deriveContract, Spec.Argon2.deriveSig, X86_64.abi,
+    X86_64.argRegs, X86_64.stackArg, X86_64.stackArgAddr, List.range, List.range.loop] at post
+  sig_post [Spec.Argon2.deriveContract, Spec.Argon2.deriveSig, X86_64.abi,
+    X86_64.argRegs, X86_64.stackArg, X86_64.stackArgAddr, List.range, List.range.loop]
+  rw [← post]
+  simp only [Spec.Blake2.bytesAt]
+  exact List.map_congr_left fun i hi => lost_byte fm hd (List.mem_range.mp hi)
+
 theorem code_wp [CompressImpl] (v : Proof.Blake2.X86_64.Backend) (name : String) (s : State)
     (pre : (Spec.Argon2.deriveContract X86_64.abi 344).pre s) :
     WP isa (Impl.Argon2.X86_64.Derive.code name (HPrime.hash v)) s fun t =>
@@ -1136,7 +1136,7 @@ theorem code_wp [CompressImpl] (v : Proof.Blake2.X86_64.Backend) (name : String)
     (by have space := h.stack; change 320 ≤ (s.gpr .rsp).toNat; omega_using [space])
   refine (body_ok v name s h).mono ?_
   intro t done
-  refine ⟨done.sp, done.wr, return_post done, ?_, ?_⟩
+  refine ⟨done.sp, done.wr, fun m u fm => ⟨return_post_lost h done fm, ?_, ?_⟩⟩
   · have restored := frame_restored s t Impl.Argon2.X86_64.Derive.saved (by decide) (by decide)
       (by have space := h.stack; change 320 ≤ (s.gpr .rsp).toNat; omega_using [space]) done.sp
       (fun j hj => done.saved h j hj)
@@ -1146,8 +1146,10 @@ theorem code_wp [CompressImpl] (v : Proof.Blake2.X86_64.Backend) (name : String)
     rcases member r hr with rfl | hr
     · exact stack
     · exact restored r hr
-  · rw [frameEnd_mem]
-    exact done.whole_frame h
+  · refine (done.whole_frame h).trans (fm.sub ?_)
+    intro r hr
+    simp only [List.mem_singleton] at hr; subst r
+    exact ⟨below (s.gpr .rsp) 344, by simp [wholeWrites], below_sub (by decide) (by decide)⟩
 
 end VG.Proof.Argon2.X86_64.Derive
 end

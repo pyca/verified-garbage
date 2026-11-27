@@ -818,6 +818,17 @@ vg_idea_cfb64_encrypt:
 	stp x17, x17, [x16, #176]
 	stp x17, x17, [x16, #192]
 	add sp, sp, #208
+	movz x3, #0, lsl #0
+	movz x4, #0, lsl #0
+	movz x6, #0, lsl #0
+	movz x7, #0, lsl #0
+	movz x8, #0, lsl #0
+	movz x9, #0, lsl #0
+	movz x10, #0, lsl #0
+	movz x11, #0, lsl #0
+	movz x12, #0, lsl #0
+	movz x13, #0, lsl #0
+	movz x14, #0, lsl #0
 	ret
 	.p2align 6
 
@@ -1637,6 +1648,17 @@ vg_idea_cfb64_decrypt:
 	stp x17, x17, [x16, #176]
 	stp x17, x17, [x16, #192]
 	add sp, sp, #208
+	movz x3, #0, lsl #0
+	movz x4, #0, lsl #0
+	movz x6, #0, lsl #0
+	movz x7, #0, lsl #0
+	movz x8, #0, lsl #0
+	movz x9, #0, lsl #0
+	movz x10, #0, lsl #0
+	movz x11, #0, lsl #0
+	movz x12, #0, lsl #0
+	movz x13, #0, lsl #0
+	movz x14, #0, lsl #0
 	ret
 	.p2align 6
 
@@ -2469,6 +2491,16 @@ vg_idea_cfb64_encrypt_final:
 	stp x17, x17, [x16, #176]
 	stp x17, x17, [x16, #192]
 	add sp, sp, #208
+	movz x3, #0, lsl #0
+	movz x4, #0, lsl #0
+	movz x6, #0, lsl #0
+	movz x7, #0, lsl #0
+	movz x9, #0, lsl #0
+	movz x10, #0, lsl #0
+	movz x11, #0, lsl #0
+	movz x12, #0, lsl #0
+	movz x13, #0, lsl #0
+	movz x14, #0, lsl #0
 	ret
 	.p2align 6
 
@@ -3303,5 +3335,15 @@ vg_idea_cfb64_decrypt_final:
 	stp x17, x17, [x16, #176]
 	stp x17, x17, [x16, #192]
 	add sp, sp, #208
+	movz x3, #0, lsl #0
+	movz x4, #0, lsl #0
+	movz x6, #0, lsl #0
+	movz x7, #0, lsl #0
+	movz x9, #0, lsl #0
+	movz x10, #0, lsl #0
+	movz x11, #0, lsl #0
+	movz x12, #0, lsl #0
+	movz x13, #0, lsl #0
+	movz x14, #0, lsl #0
 	ret
 	.p2align 6

@@ -1,4 +1,6 @@
 module
+
+public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.PrepareCall
 public import VerifiedGarbage.Proof.Bignum.X86_64.R2Impl
 public import VerifiedGarbage.Proof.MillerRabin.X86_64.Kernel
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.EntryCTData
@@ -16,7 +18,6 @@ meta import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.CandidateCT
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-import Mathlib.Algebra.Group.Nat.Defs
 
 /-! # FFDH parameter generation on x86-64: timing of the callable body -/
 
@@ -57,7 +58,7 @@ private theorem guard_full {s₁ s₂ : State}
   exact ⟨d, ⟨⟨⟨h₁.1.1.1, h₁.1.1.2.2.1, h₁.1.1.2.2.2⟩, h₁.1.1.2.1⟩, rfl⟩,
     ⟨⟨⟨h₂.1.1.1, h₂.1.1.2.2.1, h₂.1.1.2.2.2⟩, h₂.1.1.2.1⟩, rfl⟩⟩
 
-theorem body_ct (M : Mont) (R : R2Impl M) (K : Kernel) :
+theorem body_ct (M : Mont) (R : Preparation M) (K : Kernel) :
     RelCT isa (Two CR) (body M.mm R.code K.run) fun _ _ => True := by
   unfold body
   refine RelCT.seq (RelCT.block_append (RelCT.seq entry_ct

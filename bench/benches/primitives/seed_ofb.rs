@@ -24,7 +24,7 @@ pub fn bench(c: &mut Criterion) {
     use openssl::symm::{Cipher, Crypter, Mode};
     use verified_garbage::cipher::seed::SeedOfb;
 
-    use crate::{BenchDyn, OPENSSL, SIZES, VG};
+    use crate::{BenchDyn, OPENSSL, VG};
 
     // SEED is in OpenSSL 3's legacy provider; retain the default provider
     // for the other algorithms benchmarked by this process.
@@ -33,10 +33,21 @@ pub fn bench(c: &mut Criterion) {
     let key: [u8; 16] = core::array::from_fn(|i| (17 * i + 3) as u8);
     let iv = [0x3c; 16];
     let mut group = c.benchmark_group("seed-ofb");
-    for size in SIZES {
+    for size in [15, 16, 17, 64, 96, 112, 113, 256, 257, 1024, 16384] {
         group.throughput(Throughput::Bytes(size as u64));
         let data = vec![0x5a; size];
         let mut buffer = crate::InPlace::new(size, &data);
+        {
+            let ctx = SeedOfb::new(&key, &iv);
+            let mut checked = data.clone();
+            ctx.apply_keystream_final(&mut checked);
+            let mut reference = Crypter::new(cipher, Mode::Encrypt, &key, Some(&iv)).unwrap();
+            reference.pad(false);
+            let mut expected = vec![0; size + 16];
+            let n = reference.update(&data, &mut expected).unwrap();
+            let n = n + reference.finalize(&mut expected[n..]).unwrap();
+            assert_eq!(checked, expected[..n]);
+        }
         group.bench(BenchmarkId::new(VG, size), |b| {
             b.iter(|| {
                 let ctx = SeedOfb::new(black_box(&key), &black_box(iv));
@@ -58,6 +69,31 @@ pub fn bench(c: &mut Criterion) {
         });
     }
     group.finish();
+    let mut reused = c.benchmark_group("seed-ofb-reused");
+    for size in [16, 64, 96, 112, 128, 256, 1024, 16384] {
+        reused.throughput(Throughput::Bytes(size as u64));
+        let data = vec![0x5a; size];
+        let mut buffer = crate::InPlace::new(size, &data);
+        let mut ctx = SeedOfb::new(&key, &iv);
+        let mut reference = Crypter::new(cipher, Mode::Encrypt, &key, Some(&iv)).unwrap();
+        reference.pad(false);
+        let mut expected = vec![0; size + 16];
+        // Check consecutive chunks, including each mode's chaining state.
+        for _ in 0..2 {
+            let mut checked = data.clone();
+            ctx.apply_keystream(&mut checked).unwrap();
+            let n = reference.update(&data, &mut expected).unwrap();
+            assert_eq!(checked, expected[..n]);
+        }
+        reused.bench(BenchmarkId::new(VG, size), |b| {
+            b.iter(|| {
+                buffer.copy_from_slice(black_box(&data));
+                ctx.apply_keystream(black_box(&mut buffer)).unwrap();
+                black_box(&buffer);
+            })
+        });
+    }
+    reused.finish();
 }
 
 #[cfg(not(any(

@@ -1,5 +1,4 @@
 module
-import Mathlib.Tactic.Convert
 public import VerifiedGarbage.Impl.Dsa.AArch64.Checks
 public import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
 public import VerifiedGarbage.Proof.Framework.Contract
@@ -57,10 +56,10 @@ theorem oneScan_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64}
     constructor
     · intro h i hi hiw
       have hh := h (i - 1) (by omega_arith)
-      convert hh using 2 <;> omega_arith
+      rwa [show slot w aX + 8 + 8 * (i - 1) = slot w aX + 8 * i by omega_arith] at hh
     · intro h i hi
       have hh := h (i + 1) (by omega_arith) (by omega_arith)
-      convert hh using 2 <;> omega_arith
+      rwa [show slot w aX + 8 * (i + 1) = slot w aX + 8 + 8 * i by omega_arith] at hh
   rw [he, VG.Proof.Dsa.words_eq_one (by omega_arith)] at ht
   exact ⟨ht, htm.trans hm, (hk.trans hkt).mono (by decide)⟩
 

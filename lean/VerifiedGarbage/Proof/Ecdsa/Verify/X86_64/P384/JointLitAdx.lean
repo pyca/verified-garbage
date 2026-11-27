@@ -1,6 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.P384.X86_64.JointPartsLitAdx
+public import VerifiedGarbage.Proof.P384.X86_64.JointPartsLitAdx
 public import VerifiedGarbage.Impl.Ecdsa.Verify.P384.X86_64
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.P384Literals
 import VerifiedGarbage.Proof.Framework.Lit

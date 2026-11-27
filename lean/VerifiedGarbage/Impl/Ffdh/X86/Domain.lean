@@ -26,7 +26,8 @@ eighteen such arguments (`fill`), computed from its own: the length `p_len`
 rest zero. All of them are public.
 
 The wide slots used: p (9), g (10), q (11), y (12), x (13), one (14),
-`p − 1` (15), the scalar's bound (16), zero (17) and the result (19). Only
+`p − 1` (15), the scalar's bound (16), zero, then two for the generator's
+test (17), and the result (19). Only
 public values (the domain, a public value, the statuses the contracts
 release) choose branches.
 -/
@@ -120,17 +121,153 @@ local notation "n1" => one Ctx.wide
 def pSetup : Prog isa :=
   .seq (load (sl 9) n1 2 3) (.seq (setSmall (sl 14) n1 1) (chain .sbb (sl 15) (sl 9) (sl 14) n1))
 
+/-- Synthetic argument `i`, copied from the caller's frame: above this frame of 76 bytes and the return
+address. -/
+def copyArg (i : Nat) : List Instr := [.mov .eax (.mem (at_ .esp (84 + 4 * i))), .store (slotOp i) .eax]
+
+/-- `b`, called as `name`: in a frame of the synthetic arguments, copied from the caller's, for it to read. -/
+def argCall (name : String) (b : Prog isa) : Prog isa :=
+  .call name (.frame (.alloc argsFrame) (.seq (.block ((List.range 18).flatMap copyArg)) b) (.free argsFrame))
+
+/-- `prepare .wide`, called. -/
+def prepCall : Prog isa := argCall "vg_ffdh_prepare_wide" (prepare .wide)
+
+/-- `windowPower .wide`, called. -/
+def winCall : Prog isa := argCall "vg_ffdh_window_wide" (windowPower .wide)
+
+/-- `windowPowerWith .wide (lenCount 11)`, called: over x's public length, synthetic argument 11. -/
+def winTopCall : Prog isa := argCall "vg_ffdh_window_top_wide" (windowPowerWith .wide (lenCount 11))
+
 /-- The context of p: p in slot 0, one in slot 3, `R² mod p` in slot 4 and the inverse. -/
-def ctxP : Prog isa := .seq (copy (sl 9) (sl 0) n1) (prepare .wide)
+def ctxP : Prog isa := .seq (copy (sl 9) (sl 0) n1) prepCall
+
+/-! ### The context of a public modulus
+
+`prepare` reaches `2^(8 B + B / 8) mod M` by doubling one that many times, as it must for a modulus
+that is secret. A modulus of a domain is public, and where its top word is not zero, `2^(8 B − 32)` is
+below it: `32 + B / 8` doublings from there reach the same number (`seedTwo`), which the same six
+squares take to `R² mod M`. For any other modulus `powerTwoPub` is `powerTwo`. -/
+
+/-- `eax` points to the top word of the wide slot `j`; `edx` changes. -/
+def topPtr (j : Nat) : List Instr :=
+  ptrTo (sl j) .eax .edx ++ cntTo n1 .edx ++ [.alu .add .eax (.reg .edx), .alu .sub .eax (.imm 4)]
+
+/-- ZF: the top word of the modulus (slot 0) is zero. -/
+def topTest : Prog isa := .block (topPtr 0 ++ [.mov .eax (.mem (at_ .eax 0)), .alu .test .eax (.reg .eax)])
+
+/-- `2^(8 B + B / 8) mod M` in slot 4, for a modulus whose top word is not zero: `2^(8 B − 32)`, doubled
+`32 + B / 8` times. -/
+def seedTwo : Prog isa :=
+  .seq (zero (sl 4) n1) <|
+  .seq (.block (topPtr 4 ++ [.mov .ecx (.imm 1), .store (at_ .eax 0) .ecx] ++ widthC 0 .wide .esi ++
+    [.shift .shr .esi 3, .alu .add .esi (.imm 32)])) (.loop (doubleStep .wide) .ne)
+
+/-- `powerTwo .wide`, from `2^(8 B − 32)` where the modulus, which is public, is above it. -/
+def powerTwoPub : Prog isa := .seq topTest (.ite .e (powerTwo .wide) seedTwo)
+
+/-- `prepare .wide` for a public modulus: `prepBasePre`, `powerTwoPub`, and `prepare`'s six squares. -/
+def preparePub : Prog isa :=
+  .seq (prepBasePre .wide) (.seq powerTwoPub (VG.Impl.Mont.X86.Dynamic.repeatSquaresWith (mul .wide 4 4 4) 6))
+
+/-- `preparePub`, called. -/
+def prepPubCall : Prog isa := argCall "vg_ffdh_prepare_public_wide" preparePub
+
+/-- `ctxP` for a public p: a domain's, in the functions that check a domain or a key of one. -/
+def ctxPub : Prog isa := .seq (copy (sl 9) (sl 0) n1) prepPubCall
 
 /-- Slot 6 the number in slot `b` to the power of the number in slot `e`, modulo p. -/
 def powP (b e : Nat) : Prog isa :=
-  .seq ctxP (.seq (copy (sl b) (sl 5) n1) (.seq (copy (sl e) (sl 8) n1) (windowPower .wide)))
+  .seq ctxP (.seq (copy (sl b) (sl 5) n1) (.seq (copy (sl e) (sl 8) n1) winCall))
 
 /-- Slot 6 the number in slot `b` to the power of x (synthetic arguments 10 and 11), modulo p: x is
 loaded at the top of slot 8 and raised over its `x_len` public bytes only. -/
 def powTop (b : Nat) : Prog isa :=
-  .seq ctxP (.seq (copy (sl b) (sl 5) n1) (.seq (loadTop (sl 8) n1 10 11) (windowPowerWith .wide (lenCount 11))))
+  .seq ctxPub (.seq (copy (sl b) (sl 5) n1) (.seq (loadTop (sl 8) n1 10 11) winTopCall))
+
+/-! ### Powers of two
+
+Where the generator is two, which the domain makes public, `g^x mod p` needs no table of g's powers:
+a bit of x at a time from the top, the accumulator is squared, doubled modulo p, and the doubled one
+kept under the bit's mask (`ladderStep`). The bit's index is public; the bit and the accumulator are
+not, and neither an address nor a branch depends on them. -/
+
+/-- `eax :=` bit `esi` (public) of x (slot 13): 0 past the slot's words. -/
+def scalarBit : Prog isa :=
+  .seq (.block ([.mov .ecx (.reg .esi), .shift .shr .ecx 5, .alu .add .ecx (.reg .ecx), .alu .add .ecx (.reg .ecx)] ++
+      widthC 0 .wide .edx ++ [.alu .cmp .ecx (.reg .edx)]))
+    (.ite .b
+      (.seq (.block (ptrTo (sl 13) .ebp .edx ++ [.alu .add .ebp (.reg .ecx), .mov .eax (.mem (at_ .ebp 0)),
+          .mov .ecx (.reg .esi), .alu .and .ecx (.imm 31)]))
+        (([16, 8, 4, 2, 1].map fun b => (.seq (.block [.alu .test .ecx (.imm (BitVec.ofNat 32 b))])
+          (.ite .ne (.block [.shift .shr .eax b]) (.block [])) : Prog isa)).foldr .seq (.block [])))
+      (.block [.mov .eax (.imm 0)]))
+
+/-- The bit `eax` as a mask, all ones or zero, into the window word. -/
+def bitMask : List Instr :=
+  [.alu .and .eax (.imm 1), .mov .ecx (.imm 0), .alu .sub .ecx (.reg .eax), .store (sc winOff) .ecx]
+
+/-- One bit of x, `esi − 1`: the accumulator (slot 6) squared; twice that modulo p (slot 7), which
+replaces it where the bit is set; `esi` down one, ZF at bit 0. -/
+def ladderStep : Prog isa :=
+  .seq (square .wide) <| .seq (.block [.alu .sub .esi (.imm 1)]) <| .seq scalarBit <| .seq (.block bitMask) <|
+  .seq (addMod .wide 7 6 6) <| .seq (.block [.mov .ecx (.mem (sc winOff))]) <|
+  .seq (select (sl 7) (sl 6) n1) (.block [.alu .test .esi (.reg .esi)])
+
+/-- The bits of a number of the public length in argument `l`: `8 l`. -/
+def bitCount (l : Nat) : List Instr :=
+  [.mov .esi (.mem (argAt 0 l)), .alu .add .esi (.reg .esi), .alu .add .esi (.reg .esi), .alu .add .esi (.reg .esi)]
+
+/-- Two to the power of x (slot 13, of the public length in argument 11) modulo `M` into slot 6, with
+`R² mod M` in slot 4 and one in slot 3: Montgomery one, a `ladderStep` for each bit of x's bytes
+from the top, and the product with one. -/
+def ladderPower : Prog isa :=
+  .seq (mul .wide 6 4 3) <| .seq (.block (bitCount 11)) <| .seq (.loop ladderStep .ne) (mul .wide 6 6 3)
+
+/-- `ladderPower`, called. -/
+def ladderCall : Prog isa := argCall "vg_ffdh_ladder_two_wide" ladderPower
+
+/-! ### Powers to q, over its bytes from the first nonzero one
+
+q is `p_len` bytes of the domain, which the contracts of the functions that raise to it make public:
+`qScan` finds its first nonzero byte (the last one, if all are zero) and keeps that byte's address
+and the bytes from it on in two words of the header, and the power's callee takes them for its own
+arguments 10 and 11, x's, which these functions do not have. The power then runs over those bytes'
+windows only, as `powTop`'s over x's. -/
+
+/-- The header words of q's first nonzero byte's address and of the bytes from it on. -/
+def qpOff : Nat := 16
+def qlOff : Nat := 20
+
+/-- q's address (`esi`) and `p_len` (`ecx`). -/
+def qScanInit : List Instr := [.mov .esi (.mem (argAt 0 6)), .mov .ecx (.mem (argAt 0 7))]
+
+/-- One byte: if it is zero and more than one is left, on to the next (`eax` one, ZF clear); else `eax`
+zero and ZF set. -/
+def qScanStep : List Instr :=
+  [.movzx8 .eax ⟨.esi, 0⟩, .alu .add .eax (.imm 0xFFFFFFFF), .alu .sbb .eax (.reg .eax),
+    .alu .xor .eax (.imm 0xFFFFFFFF),
+    .mov .edx (.reg .ecx), .alu .add .edx (.imm 0xFFFFFFFE), .alu .sbb .edx (.reg .edx),
+    .alu .and .eax (.reg .edx), .alu .and .eax (.imm 1),
+    .alu .add .esi (.reg .eax), .alu .sub .ecx (.reg .eax), .alu .test .eax (.reg .eax)]
+
+/-- The address and the length to the header. -/
+def qScanEnd : List Instr := [.store (sc qpOff) .esi, .store (sc qlOff) .ecx]
+
+/-- q's first nonzero byte's address and the bytes from it on, into the header. -/
+def qScan : Prog isa := .seq (.block qScanInit) (.seq (.loop (.block qScanStep) .ne) (.block qScanEnd))
+
+/-- The callee's arguments 10 and 11 from the header's words. -/
+def setQ : List Instr :=
+  [.mov .eax (.mem (sc qpOff)), .store (slotOp 10) .eax, .mov .eax (.mem (sc qlOff)), .store (slotOp 11) .eax]
+
+/-- q's bytes from the first nonzero one loaded at the top of slot 8, and `windowPowerWith .wide` over
+their windows, called. -/
+def winQCall : Prog isa :=
+  argCall "vg_ffdh_window_q_wide"
+    (.seq (.block setQ) (.seq (loadTop (sl 8) n1 10 11) (windowPowerWith .wide (lenCount 11))))
+
+/-- Slot 6 the number in slot `b` to the power of q, modulo p, after `qScan`. -/
+def powQ (b : Nat) : Prog isa := .seq ctxPub (.seq (copy (sl b) (sl 5) n1) winQCall)
 
 /-- `ecx` all ones if `1 < [a] < p − 1`, else zero, through the mask word. -/
 def rangeMask (a : Nat) : Prog isa :=
@@ -153,6 +290,13 @@ def qTest : List Instr :=
 /-- `ecx` all ones if `[a] = [b]`, and the status of it. -/
 def eqStatus (a b : Nat) : Prog isa := .seq (equal (sl a) (sl b) n1) retMask
 
+/-- ZF clear exactly when g (slot 10) is two; slot 17 is two. -/
+def twoTest : Prog isa := .seq (setSmall (sl 17) n1 2) (.seq (equal (sl 10) (sl 17) n1) testMask)
+
+/-- Slot 6 `g^x mod p` for g in slot 10 and x both in slot 13 and at synthetic arguments 10 and 11: by
+`ladderCall` where g is two, else by `powTop`. -/
+def powTopG : Prog isa := .seq twoTest (.ite .e (powTop 10) (.seq ctxPub ladderCall))
+
 /-! ## `vg_ffdh_check_domain` -/
 
 namespace CheckDomain
@@ -165,12 +309,12 @@ def oddMask : List Instr :=
     [.mov .eax (.mem (at_ .eax 0)), .alu .and .eax (.imm 1), .mov .edx (.imm 0), .alu .sub .edx (.reg .eax),
       .alu .and .ecx (.reg .edx)]
 
-/-- `g^q mod p = 1`. -/
-def subgroup : Prog isa := .seq (powP 10 11) (eqStatus 6 3)
+/-- `g^q mod p = 1`, q raised over its bytes from the first nonzero one. -/
+def subgroup : Prog isa := .seq qScan (.seq (powQ 10) (eqStatus 6 3))
 
 /-- q divides `p − 1`: `(p − 1) R⁻¹ mod q` is zero, in the context of q. -/
 def divides : Prog isa :=
-  .seq (copy (sl 11) (sl 0) n1) <| .seq (prepare .wide) <| .seq (copy (sl 15) (sl 5) n1) <|
+  .seq (copy (sl 11) (sl 0) n1) <| .seq prepCall <| .seq (copy (sl 15) (sl 5) n1) <|
   .seq (mul .wide 6 5 3) <| .seq (zero (sl 17) n1) <| .seq (equal (sl 6) (sl 17) n1) <|
   .seq testMask (.ite .e (ret 0) subgroup)
 
@@ -201,11 +345,12 @@ namespace CheckPublic
 
 def args : Args := { dom := 0, dlen := 1, plen := 2, y := some 3, ws := 5 }
 
-/-- `1 < y < p − 1`, then `y^q mod p = 1` if there is a q. -/
+/-- `1 < y < p − 1`, then `y^q mod p = 1` if there is a q, raised over its bytes from the first
+nonzero one. -/
 def body : Prog isa :=
   .seq pSetup <| .seq (load (sl 12) n1 8 9) <| .seq (rangeMask 12) <|
   .seq testMask <| .ite .e (ret 0) <| .seq (.block qTest) <| .ite .e (ret 1) <|
-  .seq (load (sl 11) n1 6 7) (.seq (powP 12 11) (eqStatus 6 3))
+  .seq qScan (.seq (powQ 12) (eqStatus 6 3))
 
 def code : Prog isa := wrap args body
 
@@ -233,7 +378,7 @@ def scalarMask : Prog isa :=
 /-- `1 < y < p − 1` and `g^x mod p = y`, x raised over its `x_len` bytes; a power of the checked
 generator is in its subgroup. -/
 def pair : Prog isa :=
-  .seq (rangeMask 12) <| .seq (.block [.store (sc accOff) .ecx]) <| .seq (powTop 10) <|
+  .seq (rangeMask 12) <| .seq (.block [.store (sc accOff) .ecx]) <| .seq powTopG <|
   .seq (equal (sl 6) (sl 12) n1) (.seq (.block [.alu .and .ecx (.mem (sc accOff))]) retMask)
 
 def body : Prog isa :=
@@ -254,7 +399,7 @@ def args : Args := { out := some 0, dom := 2, dlen := 3, plen := 4, y := some 7,
 x is loaded at the top of slot 8 and raised over its `x_len` public bytes only. -/
 def body : Prog isa :=
   .seq pSetup <| .seq ctxP <| .seq (load (sl 5) n1 8 9) <| .seq (loadTop (sl 8) n1 10 11) <|
-  .seq (windowPowerWith .wide (lenCount 11)) <| .seq (rangeMask 6) <| .seq (.block [.store (sc accOff) .ecx]) <|
+  .seq winTopCall <| .seq (rangeMask 6) <| .seq (.block [.store (sc accOff) .ecx]) <|
   .seq (copy (sl 6) (sl 19) n1) exportResult
 
 def code : Prog isa := wrap args body

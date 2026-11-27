@@ -105,13 +105,13 @@ def signPSat (p : Params) (m : Mem) : State where
   wr := [⟨0xB000, p.sigLen⟩, ⟨0x10000, mScrLen p⟩]
 
 theorem signPrepared_sat {P : Prims} (C : PrimsOk P) {p : Params} (hp : p ∈ params) :
-    ∃ s, (preparedSignMessageContract p X86_64.abi 112).pre s := by
+    ∃ s, (preparedSignMessageContract p X86_64.abi 224).pre s := by
   have hsz : p.skLen < 0x10000 ∧ preparedSecretKeyBytes p < 0x7000 := by
     simp only [params, List.mem_cons, List.not_mem_nil, or_false] at hp
     rcases hp with rfl | rfl | rfl <;> decide
   obtain ⟨_, s', _, _, _, hk⟩ := prepareSecret_correct C hp _ (runSat_pre hsz.1 (by omega_using [hsz]))
   have hk' : PreparedSecretKey p (signPSat p s'.mem).mem 0x1000 :=
-    prepared_congr (patch_bytes (by simp only [BitVec.reduceToNat]; omega_using [hsz]) (by decide)) hk
+    Sign.prepared_congr (patch_bytes (by simp only [BitVec.reduceToNat]; omega_using [hsz]) (by decide)) hk
   refine ⟨signPSat p s'.mem, ?_⟩
   have a0 : stackArg (signPSat p s'.mem) 0 = 0xB000 := by
     rw [stackArg, show stackArgAddr (signPSat p s'.mem) 0 = 0x80008 from rfl]
@@ -167,7 +167,7 @@ theorem verifyPSat_tr {p : Params} {m : Mem} (hp : preparedPublicKeyBytes p < 0x
   rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by omega_using [hl, hi]), Option.getD_some]
 
 theorem verifyPrepared_sat {P : Prims} (C : PrimsOk P) {p : Params} (hp : p ∈ params) :
-    ∃ s, (preparedVerifyMessageContract p X86_64.abi 112).pre s := by
+    ∃ s, (preparedVerifyMessageContract p X86_64.abi 224).pre s := by
   have hsz : p.pkLen < 0x10000 ∧ preparedPublicKeyBytes p < 0x7000 := by
     simp only [params, List.mem_cons, List.not_mem_nil, or_false] at hp
     rcases hp with rfl | rfl | rfl <;> decide

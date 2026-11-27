@@ -1,55 +1,35 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
-public import VerifiedGarbage.Proof.P224.Comb7
-public import VerifiedGarbage.Impl.EcKey.P224.AArch64
-public import VerifiedGarbage.Proof.EcKey.AArch64.P224.Verified
-import Mathlib.Data.Finset.Card
-import Mathlib.Data.Nat.Find
-public import VerifiedGarbage.Proof.Framework.Registration
-public import Mathlib.Tactic.ClearExcept
-public import VerifiedGarbage.Proof.EcKey.AArch64.P224.Lit
-public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.EcKey.Compressed.Contract
 public import VerifiedGarbage.Spec.EcKey.P224
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-public import VerifiedGarbage.Impl.Ecdh.P224.AArch64
-public import VerifiedGarbage.Proof.EcKey.PublicKey
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.Flags
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.Lays
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.P224.Contract
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.Setup
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.SlotOps
-public import VerifiedGarbage.Proof.Ecdsa.Sign
-public import VerifiedGarbage.Proof.Framework.AArch64.Lit
-public import VerifiedGarbage.Proof.P224.Point
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Bytes
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Zero
-public import VerifiedGarbage.Proof.Weierstrass.CombCheckFast
-public import VerifiedGarbage.Proof.Weierstrass.MulContract
-public import VerifiedGarbage.TCB.AArch64.Print
-public import VerifiedGarbage.Proof.P224.AArch64.Law
-public import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.P224
-public import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.P224Decompress
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvInterface
+import VerifiedGarbage.Impl.EcKey.P224.AArch64
+import VerifiedGarbage.Proof.EcKey.AArch64.P224.Verified
+import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.P224
+import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.P224Decompress
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.P224.AArch64.Law
+import VerifiedGarbage.Proof.P224.Comb7
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # P-224 public keys (FIPS 186-5 §A.2) on AArch64 -/
-
-@[expose] public section
 
 namespace VG.Artifacts.EcP224.AArch64
 
 open VG.Proof.P224.AArch64 (hasLaw)
 
-def artifacts : List Artifact := [
+public def artifacts : List (Artifact AArch64.target) := [
   Spec.EcKey.P224.inst.compressPublicKeyApi.artifact AArch64.target {
-    code := Proof.EcKey.Compressed.AArch64.P224.code
-    verified := Proof.EcKey.Compressed.AArch64.P224.verified hasLaw.inv },
+    code := Impl.EcKey.AArch64.Fn.compressP224
+    verified := Proof.EcKey.Compressed.AArch64.P224.scrubbed hasLaw.inv },
   Spec.EcKey.P224.inst.decompressPublicKeyApi.artifact AArch64.target {
-    code := Proof.EcKey.Compressed.AArch64.P224Decompress.code
-    verified := Proof.EcKey.Compressed.AArch64.P224Decompress.verified hasLaw.law hasLaw.inv },
+    code := Impl.EcKey.AArch64.Fn.decompressP224
+    verified := Proof.EcKey.Compressed.AArch64.P224Decompress.scrubbed hasLaw.law hasLaw.inv },
   Spec.EcKey.P224.publicKeyApi.artifact AArch64.target {
-    code := Impl.EcKey.AArch64.publicKeyP224
-    verified := Proof.EcKey.AArch64.P224.pk_verified hasLaw.law hasLaw.inv (Proof.P224.combOk7 hasLaw.law) }]
+    code := Impl.EcKey.AArch64.Fn.publicKeyP224
+    verified := Proof.EcKey.AArch64.P224.pk_scrubbed hasLaw.law hasLaw.inv (Proof.P224.combOk7 hasLaw.law) }]
+
+spec_apis artifacts
 
 end VG.Artifacts.EcP224.AArch64

@@ -1,12 +1,10 @@
 module
 
 -- separate module: the kernel check of the tables (as `Proof/BrainpoolP256r1/Comb7.lean`, which four targets share) builds in parallel with the signature's proof, and other targets' combs can share it
-
 public import VerifiedGarbage.Impl.BrainpoolP384r1.CombTable7
-public import VerifiedGarbage.Proof.Weierstrass.CombCheckW
+public import VerifiedGarbage.Proof.Weierstrass.CombCheckFast
 public import VerifiedGarbage.Spec.BrainpoolP384r1
 import VerifiedGarbage.Proof.BrainpoolP384r1.Point
-import VerifiedGarbage.Proof.Weierstrass.CombCheckFast
 
 /-! # brainpoolP384r1: kernel-checked fixed-base comb table certificate -/
 

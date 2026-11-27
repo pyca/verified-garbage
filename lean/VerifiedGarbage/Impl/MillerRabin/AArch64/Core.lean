@@ -91,16 +91,20 @@ def mrSel : List (Prog isa) := [
     .block [.add .x .x2 .x2 .x11, .addImm .x .x10 .x10 1, .subImm .x .x3 .x10 16]]) (.nonzero .x .x3)]
 
 /-- One window, the digit `d` at the top of `kV`: four squarings, `T_d` into
-`aXm` by masks, `y := y T_d`; the flag `P := d ≠ 0 ? (y = 1 ∨ y = −1) : P`;
-then `kV := kV << 4` and `x3 := kBits := kBits − 1`. -/
-def mrWin (mul : Nat → Nat → Nat → Prog isa) : List (Prog isa) :=
+`aXm` by `sel` (the digit in `kG`), `y := y T_d`; the flag
+`P := d ≠ 0 ? (y = 1 ∨ y = −1) : P`; then `kV := kV << 4` and
+`x3 := kBits := kBits − 1`. -/
+def mrWinS (sel : List (Prog isa)) (mul : Nat → Nat → Nat → Prog isa) : List (Prog isa) :=
   mrSq mul ++ mrSq mul ++ mrSq mul ++ mrSq mul ++
-  [.block [ldh .x3 kV, .lsr .x .x3 .x3 60, sth .x3 kG]] ++ mrSel ++
+  [.block [ldh .x3 kV, .lsr .x .x3 .x3 60, sth .x3 kG]] ++ sel ++
   [mul aY aY aXm] ++ eqMask aRm1 ++ [.block [sth .x15 kG]] ++ eqMask aR1 ++
   [.block [ldh .x3 kV, .lsr .x .x3 .x3 60, movi .x4 1, .subs .x .x3 .x3 .x4, movi .x7 0, .subImm .x .x8 .x7 1,
     .csel .x .x6 .x8 .x7, ldh .x5 kG, .logic .orr .x .x15 .x15 .x5, .logic .and .x .x15 .x15 .x6,
     .logic .eor .x .x6 .x6 .x8, ldh .x4 kFlag, .logic .and .x .x4 .x4 .x6, .logic .orr .x .x4 .x4 .x15,
     sth .x4 kFlag, ldh .x3 kV, .lsl .x .x3 .x3 4, sth .x3 kV, ldh .x3 kBits, .subImm .x .x3 .x3 1, sth .x3 kBits]]
+
+/-- One window, `T_d` into `aXm` by masks (`mrSel`): for a secret candidate. -/
+def mrWin (mul : Nat → Nat → Nat → Prog isa) : List (Prog isa) := mrWinS mrSel mul
 
 /-- A squaring after the windows: `y := y²`, the flag or'ed with `y = −1`
 under the mask of `σ > j` (from `l`). -/
@@ -112,15 +116,18 @@ def mrLast (mul : Nat → Nat → Nat → Prog isa) (j : Nat) : List (Prog isa) 
       sth .x4 kFlag])]
 
 /-- The flag over the windows of `E`, its words from the top, 16 windows
-each, then three more squarings: `mrIteration`'s result. -/
-def mrExpLoop (mul : Nat → Nat → Nat → Prog isa) : List (Prog isa) := [
+(`win`) each, then three more squarings: `mrIteration`'s result. -/
+def mrExpLoopW (win : List (Prog isa)) (mul : Nat → Nat → Nat → Prog isa) : List (Prog isa) := [
   .block [ldh .x3 sW, sth .x3 kWords, movi .x3 0, sth .x3 kFlag],
   .loop (seqs [
     .block (ws ++ base aE .x16 ++ [ldh .x3 kWords, .subImm .x .x3 .x3 1, sth .x3 kWords, .lsl .x .x5 .x3 3,
       .add .x .x4 .x16 .x5, ld .x5 .x4, sth .x5 kV, movi .x6 16, sth .x6 kBits]),
-    .loop (seqs (mrWin mul)) (.nonzero .x .x3),
+    .loop (seqs win) (.nonzero .x .x3),
     .block [ldh .x3 kWords]]) (.nonzero .x .x3)] ++
   mrLast mul 1 ++ mrLast mul 2 ++ mrLast mul 3
+
+/-- `mrExpLoopW` with the masked window. -/
+def mrExpLoop (mul : Nat → Nat → Nat → Prog isa) : List (Prog isa) := mrExpLoopW (mrWin mul) mul
 
 /-- `[a]` into the entry whose base is in `kV` (`w` words). -/
 def toEnt (a : Nat) : List (Prog isa) := [.block (ws ++ base a .x16 ++ [ldh .x17 kV]), copyWords]
@@ -138,8 +145,12 @@ def tabBuild (mul : Nat → Nat → Nat → Prog isa) : List (Prog isa) :=
     [.block (nextEnt ++ [ldh .x3 kBits, .subImm .x .x3 .x3 1, sth .x3 kBits])])) (.nonzero .x .x3),
   copyA aY aR1]
 
-/-- One round from a prepared Montgomery witness: table and fixed windows. -/
+/-- One round from a prepared Montgomery witness: table and fixed windows `win`. -/
+def preparedRoundW (win : List (Prog isa)) (mul : Nat → Nat → Nat → Prog isa) : List (Prog isa) :=
+  tabBuild mul ++ mrExpLoopW win mul
+
+/-- One round from a prepared Montgomery witness, with the masked window. -/
 def preparedRound (mul : Nat → Nat → Nat → Prog isa) : List (Prog isa) :=
-  tabBuild mul ++ mrExpLoop mul
+  preparedRoundW (mrWin mul) mul
 
 end VG.Impl.RsaKeyGen.AArch64.Candidate

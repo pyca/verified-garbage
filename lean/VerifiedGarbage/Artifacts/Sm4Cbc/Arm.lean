@@ -1,22 +1,24 @@
 module
 
-public import VerifiedGarbage.Proof.Sm4.Arm.SerialCbcVerified
-public import VerifiedGarbage.Proof.Sm4.Arm.CbcBatchVerified
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.Arm.Print
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Sm4.Cbc
+import VerifiedGarbage.Proof.Sm4.Arm.Scrub
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # SM4-CBC on ARMv7 -/
 
-@[expose] public section
-
 namespace VG.Artifacts.Sm4Cbc.Arm
 
-def artifacts : List Artifact := [
+public def artifacts : List (Artifact Arm.target) := [
   Spec.Sm4.cbcEncryptChainedApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratchWiped 1520 0 378 Impl.Sm4.Arm.SerialCbc.encrypt
-    verified := Proof.Sm4.Arm.SerialCbcVerified.framed },
+    code := Impl.Sm4.Arm.Fn.cbcEncryptChained
+    verified := Proof.Sm4.Arm.Fn.cbcEncryptChained },
   Spec.Sm4.cbcDecryptChainedApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratchWiped 1520 0 378 Impl.Sm4.Arm.BatchCbc.decrypt
-    verified := Proof.Sm4.Arm.CbcBatchVerified.framed }]
+    code := Impl.Sm4.Arm.Fn.cbcDecryptChained
+    verified := Proof.Sm4.Arm.Fn.cbcDecryptChained }]
+
+spec_apis artifacts
 
 end VG.Artifacts.Sm4Cbc.Arm

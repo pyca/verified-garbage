@@ -54,7 +54,7 @@ theorem Pres.bind' {α : Type} {P : State → Prop} {o : Option α} {f : α → 
   obtain ⟨a, _, e⟩ := Option.bind_eq_some_iff.mp e; exact h a x e
 
 local macro "k0" : term => `(⟨rfl, rfl, rfl, fun _ => ⟨rfl, rfl⟩⟩)
-local macro "k1" : term => `(⟨rfl, rfl, rfl, fun h => absurd h (by decide)⟩)
+local macro "k1" : term => `(⟨rfl, rfl, rfl, fun h => absurd (show (1 : Nat) = 0 from h) (by decide)⟩)
 local macro "kk" : tactic => `(tactic| first | exact k0 | exact k1)
 local macro "pres_leaf" : tactic => `(tactic| first
   | exact Pres.none'
@@ -70,7 +70,7 @@ macro_rules
 
 theorem exec_pres (i : Instr) (s : State) (hi : i.vecLevel ≤ 1) :
     Pres (VKeep i.vecLevel s) (exec i s) := by
-  cases i <;> simp only [Instr.vecLevel, Nat.reduceLeDiff] at hi ⊢
+  cases i <;> first | exact absurd (show (2 : Nat) ≤ 1 from hi) (by decide) | skip
   case vop op => simp only [reduceExec]; rw [Taint.VOp.exec_eq]; exact Pres.some' k1
   case zop op => simp only [reduceExec]; rw [Taint.ZOp.exec_eq]; exact Pres.some' k1
   case xop op => simp only [reduceExec]; rw [Taint.XOp.exec_eq]; exact Pres.some' k0
@@ -183,12 +183,12 @@ theorem Exec.xmmKeep {c : Prog isa} (hc : ∀ i ∈ instrs c, Impl.Scrub.X86_64.
 1 is at level 0. -/
 theorem vecLevel_of_writesVec {i : Instr} (hw : Impl.Scrub.X86_64.writesVec i = false) (hl : i.vecLevel ≤ 1) :
     i.vecLevel = 0 := by
-  cases i <;> simp_all [Impl.Scrub.X86_64.writesVec, Instr.vecLevel]
+  cases i <;> first | rfl | (cases hw; done) | exact absurd (show (2 : Nat) ≤ 1 from hl) (by decide)
 
 /-! ## The vector registers alone -/
 
 theorem loadsMxcsr_eq {i : Instr} (h : loadsMxcsr i = true) : ∃ m, i = .ldmxcsr m := by
-  cases i <;> simp_all [loadsMxcsr]
+  cases i <;> first | (cases h; done) | exact ⟨_, rfl⟩
 
 theorem vecLevel_of_loads {i : Instr} (h : loadsMxcsr i = true) : i.vecLevel = 2 := by
   obtain ⟨m, rfl⟩ := loadsMxcsr_eq h; rfl

@@ -384,7 +384,7 @@ theorem callPre : CallPre Proof.Aes.ctr32X86 ctrRegs (ctrRd (s.gpr .esp) W) (ctr
   have eSp : (pushed ctrRegs s).callEntry.gpr .esp = s.gpr .esp - BitVec.ofNat 32 32 := by
     rw [callEntry_esp']; rfl
   refine ⟨?_, ?_, ?_⟩
-  · simp only [Proof.Aes.ctr32X86, State.withRegions_rd, State.withRegions_wr, State.withRegions_gpr,
+  · simp only [Proof.Aes.ctr32X86, Proof.Aes.ctr32X86N, State.withRegions_rd, State.withRegions_wr, State.withRegions_gpr,
       arg_withRegions, argAddr_withRegions, a0, a1, a2, a3, a4, a5, a6, eA, eSp, hR,
       show (1 : BitVec 32).toNat = 1 from rfl, Nat.mul_one]
     refine ⟨trivial, trivial, h.wc, h.wd, h.ws, h.cd, h.cs, h.ds, h.bc.sub_left h.sub28,
@@ -426,7 +426,13 @@ theorem ctr_call {s : State} {W C D S : BitVec 32} {R : Nat} (h : CtrPre s W C D
       exact (hd.sub_right (Region.sub_prefix hk)).symm) (by omega_using [hk, hn])
   obtain ⟨hdata, -⟩ := post
   simp only [arg_withRegions, State.withRegions_mem, a0, a1, a2, a3, a4, hR,
-    show (1 : BitVec 32).toNat = 1 from rfl, m₂] at hdata
+    show (1 : BitVec 32).toNat = 1 from rfl] at hdata
+  -- The pop loses the arguments' frame, below `esp`, apart from the block.
+  have fL : Frame [below (s.gpr .esp) 32] s₂.mem s'.mem := Frame.below_mono (wr := []) m₂ (by decide) h.esp
+  have lD : Spec.Gcm.blockAt s'.mem (D.setWidth 64) = Spec.Gcm.blockAt s₂.mem (D.setWidth 64) := by
+    rw [Spec.Gcm.blockAt, Spec.Gcm.blockAt, Proof.Cmac.bytesAt_frame fL (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact h.bd.symm) (by decide)]
   have one : ∀ m : Mem, Spec.Gcm.blocksAt m (D.setWidth 64) 1 = [Spec.Gcm.blockAt m (D.setWidth 64)] :=
     fun m => by simp [Spec.Gcm.blocksAt]
   have bD : Spec.Gcm.blockAt (pushed ctrRegs s).callEntry.mem (D.setWidth 64) = 0 := by
@@ -434,7 +440,7 @@ theorem ctr_call {s : State} {W C D S : BitVec 32} {R : Nat} (h : CtrPre s W C D
   rw [one, one, bD, Proof.Cmac.ctr32_one, List.cons.injEq] at hdata
   refine ⟨rd', wr', cs', ?_, ?_⟩
   · exact f'.mono fun r hr => by simp only [List.cons_append, List.nil_append] at hr; simpa using hr
-  · rw [Proof.Cmac.bytesAt_blockAt, hdata.1, Spec.Gcm.blockAt, keep h.bw hR' (Nat.le_refl _), keep h.bc (Nat.le_refl _) (by decide),
+  · rw [Proof.Cmac.bytesAt_blockAt, lD, hdata.1, Spec.Gcm.blockAt, keep h.bw hR' (Nat.le_refl _), keep h.bc (Nat.le_refl _) (by decide),
       Proof.Cmac.aesWith_bytes _ _ (Proof.Cmac.bytesAt_length _ _ _)]
 
 /-- Calls of `vg_aes_ctr32_to` in place on one block, with the same arguments and stack

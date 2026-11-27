@@ -1,13 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Sm4.X86.FbVerified
-import VerifiedGarbage.Proof.Modes.X86.Ctr
+import VerifiedGarbage.Proof.Modes.X86.Wide
 public import VerifiedGarbage.Proof.Sm4.Scratch
 import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
 import VerifiedGarbage.Proof.Sm4.X86.CtrLit
 public import VerifiedGarbage.Impl.Sm4.X86.Ctr
 meta import VerifiedGarbage.Proof.Sm4.X86.FbVerified
-meta import VerifiedGarbage.Proof.Modes.X86.Ctr
+meta import VerifiedGarbage.Proof.Modes.X86.Wide
 meta import VerifiedGarbage.Proof.Sm4.Scratch
 meta import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
 meta import VerifiedGarbage.Proof.Sm4.X86.CtrLit
@@ -29,7 +29,8 @@ def ctrPost (s s' : State) : Prop :=
 
 theorem ctr_wp_x86 {s₀ : State} (hp : (fbX86 ctrPost).pre s₀) :
     WP isa ctr s₀ fun s' => abiPreserved s₀ s' ∧ (fbX86 ctrPost).post s₀ s' :=
-  WP.mono (Modes.X86.ctr_wp (dirCoreSpec .encrypt) rfl (Fb.seqPre_of .encrypt rfl hp) (Fb.keyArgs_of .encrypt hp))
+  WP.mono (Modes.X86.ctrLevels_wp (dirCoreSpec .encrypt) rfl (by decide) (Fb.seqPre_of .encrypt rfl hp)
+    (Fb.keyArgs_of .encrypt hp))
     fun _ ⟨h1, h2, h3⟩ => by
       simp only [Proof.Modes.X86.blocks0, Proof.Modes.X86.iv0, Proof.Modes.X86.Dp, Proof.Modes.X86.P,
         Proof.Modes.X86.N, dirCore_ka, Nat.reduceAdd, data_eq, iv_eq, cipher_eq] at h2 h3

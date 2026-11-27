@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.MlDsa.X86.Verify.Base
 public import VerifiedGarbage.Proof.MlKem.X86.DecapsCmp
 import VerifiedGarbage.Proof.MlKem.X86.CheckEkBody
 import VerifiedGarbage.Proof.MlKem.X86.TopLocal
-import VerifiedGarbage.Proof.MlKem.X86.TopHash
 import VerifiedGarbage.Proof.MlKem.X86.TopSeq
 
 /-!

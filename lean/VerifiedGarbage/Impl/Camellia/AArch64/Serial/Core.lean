@@ -11,6 +11,9 @@ public import VerifiedGarbage.Impl.Modes.FbMode
 
 Keep the S-box in vector registers and the Feistel halves in scalar registers.
 The existing NEON table selection uses public loads and secret register indices.
+A round's word goes to a vector register for the lookup only: the rotations
+around the S-box (`rotateIn`, `rotateOut`) and the diffusion (`linear`) are
+in general-purpose registers, where each step takes a cycle.
 The buffer and total workspace retain the existing mode contract's allocation.
 -/
 
@@ -34,26 +37,61 @@ def quarterConstants : List Instr :=
   .movz .w .x15 128 0, .vop (.dup .b16 .v5 .x15),
   .movz .w .x15 192 0, .vop (.dup .b16 .v6 .x15)]
 
+/-! ## The rotations around the S-box
+
+`SBOX4[x] = SBOX1[x <<< 1]`, `SBOX2[x] = SBOX1[x] <<< 1` and
+`SBOX3[x] = SBOX1[x] >>> 1` (RFC 3713 §2.4.3): the bytes of a round's word
+that go through `SBOX4` (bytes 1 and 4, counting from the least significant)
+are rotated before the lookup, and those through `SBOX2` (3 and 6) and
+`SBOX3` (2 and 5) after it. A rotation of the whole word by one bit moves
+seven bits of every byte to their places, and a rotation by seven the bit
+that wraps around within the byte, so each is a few `and`s with a rotated
+operand in general-purpose registers, on the masks below. -/
+
+/-- The bytes that do not go through `SBOX4`. -/
+def keepIn : BitVec 64 := 0xffffff00ffff00ff
+/-- Bits 1–7 of the bytes of `SBOX4`. -/
+def inHigh : BitVec 64 := 0x000000fe0000fe00
+/-- Bit 0 of the bytes of `SBOX4`. -/
+def inLow : BitVec 64 := 0x0000000100000100
+/-- The bytes that go through neither `SBOX2` nor `SBOX3`. -/
+def keepOut : BitVec 64 := 0xff0000ff0000ffff
+/-- Bits 1–7 of the bytes of `SBOX2`. -/
+def outHigh : BitVec 64 := 0x00fe0000fe000000
+/-- Bit 0 of the bytes of `SBOX2`. -/
+def outLow : BitVec 64 := 0x0001000001000000
+/-- Bits 0–6 of the bytes of `SBOX3`. -/
+def downLow : BitVec 64 := 0x00007f00007f0000
+
+/-- The masks, in `x0`, `x3`, `x4`, `x9` and `x13`–`x15`. -/
 def maskConstants : List Instr :=
- imm .x15 0x000000ff0000ff00 ++ [.vop (.dup .d2 .v7 .x15)] ++
- imm .x13 0x00ff0000ff000000 ++ imm .x14 0x0000ff0000ff0000
+ imm .x0 keepIn ++ imm .x3 inHigh ++ imm .x4 inLow ++ imm .x9 keepOut ++
+ imm .x13 outHigh ++ imm .x14 outLow ++ imm .x15 downLow
 
 def constants : List Instr := loadSbox ++ quarterConstants ++ maskConstants
-
-/-- Rotate each selected byte, retaining all other bytes. -/
-def rotateSelected (mask : VReg) (sh : Nat) : List Instr :=
- [.vop (.shift .shl .b16 .v1 .v0 sh),
-  .vop (.shift .sri .b16 .v1 .v0 (8-sh)),
-  .vop (.bsel .bit .v0 .v1 mask)]
 
 def indices : List Instr :=
  [.vop (.logic .eor .v1 .v0 .v4), .vop (.logic .eor .v2 .v0 .v5),
   .vop (.logic .eor .v3 .v0 .v6)]
 
-def substitute : List Instr := [.vop (.dup .d2 .v0 .x10)] ++
- rotateSelected .v7 1 ++ indices ++ VG.Impl.Tbl.AArch64.select true ++
- [.vop (.dup .d2 .v3 .x13)] ++ rotateSelected .v3 1 ++
- [.vop (.dup .d2 .v3 .x14)] ++ rotateSelected .v3 7 ++ [.umov .x .x10 .v0 0]
+/-- Rotate the bytes of `SBOX4` in `x10` left by one bit. -/
+def rotateIn : List Instr :=
+ [.logic .and .x .x11 .x10 .x0, .logicRor .and .x .x12 .x3 .x10 63,
+  .logicRor .and .x .x16 .x4 .x10 7, .logic .orr .x .x11 .x11 .x12,
+  .logic .orr .x .x10 .x11 .x16]
+
+/-- Rotate the bytes of `SBOX2` in `x10` left by one bit and those of `SBOX3`
+right by one. Bit 7 of a byte of `SBOX3` is bit 0 of a byte of `SBOX4`
+fifteen bits up: `inLow` selects it before the rotation to its place. -/
+def rotateOut : List Instr :=
+ [.logic .and .x .x11 .x10 .x9, .logicRor .and .x .x12 .x13 .x10 63,
+  .logicRor .and .x .x16 .x14 .x10 7, .logicRor .and .x .x17 .x15 .x10 1,
+  .logicRor .and .x .x10 .x4 .x10 8, .logicRor .orr .x .x17 .x17 .x10 49,
+  .logic .orr .x .x11 .x11 .x12, .logic .orr .x .x11 .x11 .x16,
+  .logic .orr .x .x10 .x11 .x17]
+
+def substitute : List Instr := rotateIn ++ [.vop (.dup .d2 .v0 .x10)] ++
+ indices ++ VG.Impl.Tbl.AArch64.select true ++ [.umov .x .x10 .v0 0] ++ rotateOut
 
 def linear : List Instr := [
  .lsr .x .x11 .x10 32, .addImm .w .x12 .x10 0,

@@ -4,28 +4,30 @@ import VerifiedGarbage.Proof.Ecdsa.X86_64.Main
 import VerifiedGarbage.Proof.Ecdsa.X86_64.CombGeneral
 import VerifiedGarbage.Proof.Ecdsa.X86_64.CombLays
 import VerifiedGarbage.Proof.BrainpoolP384r1.Comb7
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.BrainpoolP384r1.Contract
 import VerifiedGarbage.Proof.BrainpoolP384r1.Point
 import VerifiedGarbage.Proof.BrainpoolP384r1.Prime
 public import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.MulBase
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.MulFn
 import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 import VerifiedGarbage.Proof.Ecdsa.X86_64.RspMxcsr
 import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
+public import VerifiedGarbage.Proof.Framework.X86_64.CallInlineN
+import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.Ecdsa.X86_64.BrainpoolP384r1.Lit
 public import VerifiedGarbage.Impl.Ecdsa.BrainpoolP384r1.X86_64
 public import VerifiedGarbage.Proof.Ecdsa.Contract
 import VerifiedGarbage.Proof.Framework.LitShare
 import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.Main
-meta import VerifiedGarbage.Proof.Ecdsa.X86_64.BrainpoolP384r1.Contract
 meta import VerifiedGarbage.Proof.BrainpoolP384r1.Point
 meta import VerifiedGarbage.Proof.BrainpoolP384r1.Prime
 meta import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
-meta import VerifiedGarbage.Proof.Ecdsa.X86_64.MulBase
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.MulFn
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.RspMxcsr
 meta import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
+meta import VerifiedGarbage.Proof.Framework.X86_64.CallInlineN
+meta import VerifiedGarbage.Proof.Framework.KernelRfl
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.BrainpoolP384r1.Lit
 meta import VerifiedGarbage.Impl.Ecdsa.BrainpoolP384r1.X86_64
 meta import VerifiedGarbage.Proof.Framework.LitShare
@@ -34,6 +36,69 @@ import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.X86_64.Lit
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
+public import VerifiedGarbage.Proof.Framework.X86_64.InstrBits
+public import VerifiedGarbage.Spec.Ecdsa.BrainpoolP384r1
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.Layout
+meta import VerifiedGarbage.Spec.Ecdsa.BrainpoolP384r1
+meta import VerifiedGarbage.TCB.X86_64.Target
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Ecdsa.Contract
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.Layout
+
+/-! ### `Ecdsa.X86_64.BrainpoolP384r1.Contract`, which only this module used -/
+
+section
+
+/-!
+# ECDSA over brainpoolP384r1 on x86-64: the contract the proof is written against
+
+The facts of `Proof.Ecdsa.Instance.signContract Spec.Ecdsa.BrainpoolP384r1.inst` for x86-64, by name:
+`vg_ecdsa_brainpoolp384r1_sign(out = rdi, d = rsi, digest = rdx, k = rcx, scratch = r8)`,
+the result in `eax`, with the comb's tables (`brainpoolp384r1S.combConsts`, the
+static `VG_BRAINPOOLP384R1_COMB`) readable where the calling convention says.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Ecdsa.X86_64.BrainpoolP384r1
+
+open VG VG.X86_64 Spec.Weierstrass Spec.Ecdsa
+
+/-- The signature of the arguments, as the specification computes it. -/
+abbrev sig (m : Mem) (d digest k : Addr) : Option (Nat × Nat) :=
+  signWith Spec.BrainpoolP384r1.curve (ofBytes (bytesAt m d 48)) (hashToInt Spec.BrainpoolP384r1.curve (bytesAt m digest 48))
+    (ofBytes (bytesAt m k 48))
+
+def signX86_64 : Contract X86_64.isa where
+  pre s :=
+    let out : Region := ⟨s.gpr .rdi, 96⟩
+    let d : Region := ⟨s.gpr .rsi, 48⟩
+    let digest : Region := ⟨s.gpr .rdx, 48⟩
+    let k : Region := ⟨s.gpr .rcx, 48⟩
+    let scratch : Region := ⟨s.gpr .r8, 8192⟩
+    let ret : Region := ⟨s.gpr .rsp, 8⟩
+    s.rd = [d, digest, k] ++ Abi.constRegions (fun n => s.syms n) Impl.Ecdsa.X86_64.brainpoolp384r1S.combConsts ∧
+      s.wr = [out, scratch] ∧ out.Disjoint scratch ∧
+      out.Disjoint d ∧ out.Disjoint digest ∧ out.Disjoint k ∧
+      d.Disjoint scratch ∧ digest.Disjoint scratch ∧ k.Disjoint scratch ∧
+      ret.Disjoint out ∧ ret.Disjoint scratch ∧
+      (s.gpr .rdi).toNat + 96 ≤ 2 ^ 64 ∧ (s.gpr .r8).toNat + 8192 ≤ 2 ^ 64 ∧
+      TblsHeld Impl.Ecdsa.X86_64.brainpoolp384r1S s [out, scratch, ret]
+  post s s' :=
+    match sig s.mem (s.gpr .rsi) (s.gpr .rdx) (s.gpr .rcx) with
+    | some rs => (s'.gpr .rax).setWidth 32 = 1 ∧ bytesAt s'.mem (s.gpr .rdi) 96 = encode Spec.BrainpoolP384r1.curve rs
+    | none => (s'.gpr .rax).setWidth 32 = 0 ∧ bytesAt s'.mem (s.gpr .rdi) 96 = List.replicate 96 0
+  pub s₁ s₂ := s₁.gpr .rsp = s₂.gpr .rsp ∧ s₁.gpr .rdi = s₂.gpr .rdi ∧ s₁.gpr .rsi = s₂.gpr .rsi ∧
+    s₁.gpr .rdx = s₂.gpr .rdx ∧ s₁.gpr .rcx = s₂.gpr .rcx ∧ s₁.gpr .r8 = s₂.gpr .r8 ∧
+    ∀ c ∈ Impl.Ecdsa.X86_64.brainpoolp384r1S.combConsts, s₁.syms c.1 = s₂.syms c.1
+
+end VG.Proof.Ecdsa.X86_64.BrainpoolP384r1
+
+end
+
+end
 
 /-! # brainpoolP384r1 signing on x86-64: correctness, memory safety and constant time
 
@@ -88,7 +153,7 @@ theorem brainpoolp384r1_ok (hI : InvSounds) : BaseCfgOk brainpoolp384r1 where
   sh := by rw [brainpoolp384r1_sh]; decide
   comb _ h := by cases h
   inv _ := ⟨by decide, @hI _ _ (by
-    show Nat.Prime Spec.BrainpoolP384r1.curve.p
+    show IsPrime Spec.BrainpoolP384r1.curve.p
     exact Proof.BrainpoolP384r1.p_prime),
     InvOk.ofMod (by decide +kernel) (by decide)⟩
   inv_n _ _ := ⟨@hI _ brainpoolp384r1.C.n_ne_zero Proof.BrainpoolP384r1.n_prime, InvOk.ofMod (by decide +kernel) (by decide)⟩
@@ -102,7 +167,7 @@ theorem brainpoolp384r1_tbls : CombTbls brainpoolp384r1 := fun _ h => by cases h
 /-- ECDH's, verification's and the public key's `[k]G` is a call of
 `vg_brainpoolp384r1_mul`, which calls no other function. -/
 theorem brainpoolp384r1_mulBase : MulBaseOk brainpoolp384r1 :=
-  ⟨fun h => absurd h (by decide), fun _ => ⟨.inr (.inl rfl), by lit_decide⟩⟩
+  ⟨fun h => absurd h (by decide), fun _ => ⟨.inr (.inl rfl), fun h => absurd h (by decide), fun _ => rfl⟩⟩
 
 theorem brainpoolp384r1S_sh : brainpoolp384r1S.sh = 0 := brainpoolp384r1_sh
 
@@ -133,7 +198,7 @@ theorem brainpoolp384r1S_ok (hI : InvSounds) : BaseCfgOk brainpoolp384r1S where
   sh := by rw [brainpoolp384r1S_sh]; decide
   comb _ h := by cases h
   inv _ := ⟨by decide, @hI _ _ (by
-    show Nat.Prime Spec.BrainpoolP384r1.curve.p
+    show IsPrime Spec.BrainpoolP384r1.curve.p
     exact Proof.BrainpoolP384r1.p_prime),
     InvOk.ofMod (by decide +kernel) (by decide)⟩
   inv_n _ _ := ⟨@hI _ brainpoolp384r1S.C.n_ne_zero Proof.BrainpoolP384r1.n_prime, InvOk.ofMod (by decide +kernel) (by decide)⟩
@@ -154,14 +219,26 @@ theorem pre_of {s : State} (h : signX86_64.pre s) : Pre brainpoolp384r1S s := by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hw ⊢
     rcases hw with h | h <;> simp [h])
 
+/-- `InlineOkN`, calls nested two deep (`vg_brainpoolp384r1_comb_g` calls
+`vg_brainpoolp384r1_add_complete`), checked once for every theorem that needs it. -/
+theorem sign_inlineOk : signBrainpoolP384r1.InlineOkN 2 = true := by lit_decide
+
+/-- The signature inlined at every depth is `signGW` with the comb inline,
+the code the proofs run. -/
+theorem sign_inlineAll : signBrainpoolP384r1.inlineAll =
+    (brainpoolp384r1S.signGW (brainpoolp384r1S.gMulG brainpoolp384r1Comb)).inline := by kernel_rfl
+
 theorem sign_x86 (hL : Law Spec.BrainpoolP384r1.curve)
     (hI : InvSounds) (s : State)
     (hs : signX86_64.pre s) :
-    ∃ t s', Exec isa signBrainpoolP384r1.inline s t s' ∧ abiPreserved s s' ∧ signX86_64.post s s' := by
+    ∃ t s', Exec isa signBrainpoolP384r1.inlineAll s t s' ∧ abiPreserved s s' ∧ signX86_64.post s s' := by
   obtain ⟨t, s', he, hsv, hpost⟩ := signG_ok (brainpoolp384r1S_ok hI) hL brainpoolp384r1S_comb
-    (Proof.BrainpoolP384r1.combOk7 hL) rfl (pre_of hs)
-  obtain ⟨hsp, hmx⟩ := rsp_mxcsr (c := signBrainpoolP384r1) (by lit_decide)
-  have F := (Exec.regions he (Code.noCalls_inline (by lit_decide))).2.2
+    (Proof.BrainpoolP384r1.combOk7 hL) rfl (pre_of hs) (by decide)
+  rw [← sign_inlineAll] at he
+  have hsp := Code.clobbers_rsp_of_inlineOkN sign_inlineOk
+  have hmx : signBrainpoolP384r1.inlineAll.allInstrs (fun i => !loadsMxcsr i) = true :=
+    Code.allInstrs_inlineAll (by lit_decide)
+  have F := (Exec.regions he (Code.noCalls_inlineAll sign_inlineOk)).2.2
   obtain ⟨-, hwr, -, -, -, -, -, -, -, hro, hrs, -, -, -⟩ := hs
   refine ⟨t, s', he, abiPreserved_of_exec hmx he
     ⟨fun r hr => ?_, ?_⟩, hpost⟩
@@ -207,17 +284,17 @@ theorem sign_ct : ConstantTime isa signX86_64.pre signX86_64.pub signBrainpoolP3
 
 /-- The output is apart from the calls' return address. -/
 theorem post_patch (s b : State) (hv : Mem) (u : Nat → BitVec 64) (hs : signX86_64.pre s)
-    (hc : Clear (hole (s.gpr .rsp)) s) (hp : signX86_64.post s b) :
-    signX86_64.post s (b.patch (hole (s.gpr .rsp)) hv u) := by
+    (hc : Clear (holeN (s.gpr .rsp) 2) s) (hp : signX86_64.post s b) :
+    signX86_64.post s (b.patch (holeN (s.gpr .rsp) 2) hv u) := by
   have hb := Clear.wr_bytes hc (p := s.gpr .rdi) (n := 96) (by rw [hs.2.1]; simp) (by decide)
   simpa only [signX86_64, State.patch_gpr, bytesAt_patch hb] using hp
 
 /-- The function with its calls, for a caller (RFC 6979's) that keeps its
-buffers off the 8 bytes below `rsp`. -/
+buffers off the 16 bytes below `rsp`. -/
 theorem sign_call_x86 (hL : Law Spec.BrainpoolP384r1.curve) (hI : InvSounds) (s : State) (hs : signX86_64.pre s)
-    (hc : Clear (hole (s.gpr .rsp)) s) :
+    (hc : Clear (holeN (s.gpr .rsp) 2) s) :
     ∃ t s', Exec isa signBrainpoolP384r1 s t s' ∧ abiPreserved s s' ∧ signX86_64.post s s' :=
-  ok_of_inline (k := signX86_64) (by lit_decide) (sign_x86 hL hI)
+  ok_of_inlineAll (k := signX86_64) sign_inlineOk (by decide) (sign_x86 hL hI)
     (fun s b hv u hs hc hp => post_patch s b hv u hs hc hp) s ⟨hs, hc⟩
 
 end VG.Proof.Ecdsa.X86_64.BrainpoolP384r1

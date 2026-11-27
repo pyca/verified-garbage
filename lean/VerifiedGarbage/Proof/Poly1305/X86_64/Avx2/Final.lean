@@ -3,8 +3,6 @@ public import Mathlib.Data.Nat.ModEq
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Mul
 
 import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Powers
-import Mathlib.Tactic.NormNum.Pow
-import Mathlib.Tactic.NormNum.Inv
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.Mem
 

@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Framework.X86_64.Taint
 import VerifiedGarbage.Proof.Framework.X86_64.Inline
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.X86_64.Depth
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-!
 # x86-64: code that restores MXCSR
@@ -131,7 +132,7 @@ theorem ea_writeMem (s : State) (x : Mem) (m : MemOp) : ({ s with mem := x } : S
 theorem save_exec {m : MemOp} {r : Reg} {s s' : State} {t : List Leak}
     (h : execBlock isa (mxcsrSave m r) s = some (s', t)) :
     s'.gpr r = (s.mxcsr &&& 0xFFFF).setWidth 64 ∧ s'.mxcsr = s.mxcsr := by
-  simp only [mxcsrSave, execBlock, isa, exec, State.store32] at h
+  simp only [mxcsrSave, execBlock, isa, reduceExec, State.store32] at h
   by_cases hw : InRegions s.wr (s.ea m) 4
   · have hl : InRegions (s.rd ++ s.wr) (s.ea m) 4 :=
       let ⟨r, hr, hc⟩ := hw; ⟨r, List.mem_append_right _ hr, hc⟩
@@ -146,7 +147,7 @@ theorem save_exec {m : MemOp} {r : Reg} {s s' : State} {t : List Leak}
 
 theorem restore_exec {m : MemOp} {r : Reg} {s s' : State} {t : List Leak}
     (h : execBlock isa (mxcsrRestore m r) s = some (s', t)) : s'.mxcsr = (s.gpr r).setWidth 32 := by
-  simp only [mxcsrRestore, execBlock, isa, exec, State.store32] at h
+  simp only [mxcsrRestore, execBlock, isa, reduceExec, State.store32] at h
   by_cases hw : InRegions s.wr (s.ea m) 4
   · have hl : InRegions (s.rd ++ s.wr) (s.ea m) 4 :=
       let ⟨r, hr, hc⟩ := hw; ⟨r, List.mem_append_right _ hr, hc⟩

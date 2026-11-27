@@ -163,22 +163,11 @@ def metaCut : Prog isa :=
     (.seq (.loop (.block [.alu .add .eax (.reg .eax), .alu .sub .edx (.imm 1)]) .ne)
       (.block [.alu .sub .eax (.imm 1), .store (sc tOff) .eax]))
 
-/-- `eax :=` bit `esi` (public) of x (slot 13): 0 past the slot's words. -/
-def bit : Prog isa :=
-  .seq (.block ([.mov .ecx (.reg .esi), .shift .shr .ecx 5, .alu .add .ecx (.reg .ecx), .alu .add .ecx (.reg .ecx)] ++
-      widthC 0 .wide .edx ++ [.alu .cmp .ecx (.reg .edx)]))
-    (.ite .b
-      (.seq (.block (ptrTo (sl 13) .ebp .edx ++ [.alu .add .ebp (.reg .ecx), .mov .eax (.mem (at_ .ebp 0)),
-          .mov .ecx (.reg .esi), .alu .and .ecx (.imm 31)]))
-        (seqs ([16, 8, 4, 2, 1].map fun b => .seq (.block [.alu .test .ecx (.imm (BitVec.ofNat 32 b))])
-          (.ite .ne (.block [.shift .shr .eax b]) (.block [])))))
-      (.block [.mov .eax (.imm 0)]))
-
 /-- Bit `row + j rows` of x into bit `j` of the digit, the window word. -/
 def tooth (j : Nat) : Prog isa :=
   .seq (.block ([.mov .esi (.mem (sc iOff)), .alu .sub .esi (.imm 1)] ++
       List.replicate j (.alu .add .esi (.mem (sc rowsOff)))))
-    (.seq bit (.block ([.alu .and .eax (.imm 1)] ++ List.replicate j (.alu .add .eax (.reg .eax)) ++
+    (.seq scalarBit (.block ([.alu .and .eax (.imm 1)] ++ List.replicate j (.alu .add .eax (.reg .eax)) ++
       [.alu .or .eax (.mem (sc winOff)), .store (sc winOff) .eax])))
 
 /-- The digit of row `iOff − 1` to the window word. -/
@@ -200,9 +189,11 @@ def step : Prog isa :=
     (.block [.mov .eax (.mem (sc iOff)), .alu .sub .eax (.imm 1), .store (sc iOff) .eax])
 
 /-- Slot 6 `g^x mod p` by the context's comb over its rows: Montgomery one, the rows from the
-top, and the product with one. -/
+top, and the product with one. The comb multiplies and squares only, so of p's context it needs p
+(slot 0), one (slot 3) and the inverse, which `prepBasePre` leaves, and not `R² mod p`; Montgomery one
+is the context's entry 0. -/
 def combHead : Prog isa :=
-  .seq ctxP <| .seq (mul .wide 6 4 3) <|
+  .seq (copy (sl 9) (sl 0) n1) <| .seq (prepBasePre .wide) <| .seq (loadRow (rowImm 2) 6) <|
   .block [.mov .ecx (.mem (argAt 0 ctxArg)), .mov .eax (.mem (at_ .ecx 16)), .store (sc rowsOff) .eax,
     .store (sc iOff) .eax]
 
@@ -212,9 +203,6 @@ def comb : Prog isa := .seq combHead (.seq (.loop step .ne) (mul .wide 6 6 3))
 def tail : Prog isa :=
   .seq comb <| .seq (copy (sl 6) (sl 12) n1) <| .seq (rangeMask 12) <|
   .seq (.block [.store (sc accOff) .ecx]) <|
-  .seq (.block qTest) <|
-  .seq (.ite .e (.block []) (.seq (powP 12 16) (.seq (equal (sl 6) (sl 3) n1)
-    (.block [.alu .and .ecx (.mem (sc accOff)), .store (sc accOff) .ecx])))) <|
   .seq GenerateKey.outputs
     (.block [.alu .add .eax (.reg .eax), .mov .ecx (.imm 3), .alu .sub .ecx (.reg .eax), .mov .eax (.reg .ecx)])
 

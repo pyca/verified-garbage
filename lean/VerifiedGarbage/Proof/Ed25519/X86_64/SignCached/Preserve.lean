@@ -1,7 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.Ed25519.X86_64.PublicKey.Base
-public import VerifiedGarbage.Proof.Ed25519.X86_64.PublicKey.Hash
+public import VerifiedGarbage.Proof.Ed25519.X86_64.PublicKey.Base
 import VerifiedGarbage.Proof.Framework.X86_64.Syms
 import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Lit
 import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit
@@ -10,18 +9,10 @@ public import VerifiedGarbage.Impl.Ed25519.X86_64.SignCached
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 public import VerifiedGarbage.Proof.Ed25519.X86_64.MulAddVerified
-public import VerifiedGarbage.Proof.Ed25519.X86_64.BaseCallee
 public import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarMain
 import VerifiedGarbage.Proof.Ed25519.Signing
 import VerifiedGarbage.Proof.Ed25519.VerifyBytes
 import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarVerified
-import Mathlib.Tactic.NormNum.Prime
-import Mathlib.Data.Nat.Totient
-import Mathlib.Tactic.Positivity.Finset
-import Mathlib.Algebra.Order.Field.Basic
-import Mathlib.Tactic.NormNum.GCD
-import Mathlib.Data.Sym.Sym2.Init
-import Mathlib.Tactic.ContinuousFunctionalCalculus
 import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.CombLit
 import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Lit
 import VerifiedGarbage.Proof.Framework.KernelRfl

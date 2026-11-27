@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.AesEcb.encryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 240 bytes.
@@ -65,13 +67,15 @@ b 213f
 b 21f
 20:
 21:
-.base64 "IACATg==""#,
+.base64 "AAAAOAAAwDgAAOA4AAAgOQAAQDkAAGA5AACAOcQEABDEDCEQxBRCEMQcYxDEJIQQxCylEMQ0xhDEPOcQxEQIEcSccxIgAIBO""#,
     )
 }
 
 /// AES-ECB decryption (NIST SP 800-38A §6.1) of whole blocks, in place: replaces each of the `n` 16-byte blocks at `data` with its decryption by AES (FIPS 197 §5.3, `INVCIPHER`) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (the forward cipher's schedule). No padding is removed. Each byte of `scratch` is unchanged or zero on return.
 ///
 /// Contract: `VG.Spec.AesEcb.decryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -131,6 +135,6 @@ b 213f
 b 21f
 20:
 21:
-.base64 "IACATg==""#,
+.base64 "AAAAOAAAwDgAAOA4AAAgOQAAQDkAAGA5AACAOcQEABDEDCEQxBRCEMQcYxDEJIQQxCylEMQ0xhDEPOcQxEQIEcSccxIgAIBO""#,
     )
 }

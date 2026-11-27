@@ -5,11 +5,11 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.CallLay
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Ctx
-import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Load
-import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Prepare
+import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Import
 import VerifiedGarbage.Proof.Bignum.X86.CrtRt.StageR
 import VerifiedGarbage.Proof.Ffdh.Domain
 import VerifiedGarbage.Proof.Ffdh.X86.Checks
+import VerifiedGarbage.Proof.Ffdh.X86.QPower
 public import VerifiedGarbage.Proof.Ffdh.X86.Ops
 public import VerifiedGarbage.Proof.Ffdh.X86.Stages
 public import VerifiedGarbage.Proof.Framework.RelCTChain
@@ -19,7 +19,7 @@ public import VerifiedGarbage.Proof.Framework.RelCTChain
 
 `body_ok`: for a valid domain, the status of `body` is 1 exactly when y is
 a valid public value (`publicValid`): `1 < y < p − 1` (`rangeMask`), and
-with q, `y^q mod p = 1` (`powP` and `eqStatus`). The body runs whatever the
+with q, `y^q mod p = 1` (`powQ` and `eqStatus`). The body runs whatever the
 domain, its powers modulo `safeM p`.
 -/
 
@@ -49,17 +49,19 @@ theorem YGeo.keep {rd wr : List Region} (Y : YGeo args base bytes len rd wr) {s 
 abbrev yv (m : Mem) (args : Nat → BitVec 32) (len : Nat) : Nat :=
   Spec.Rsa.os2ip (Spec.Rsa.bytesAt m (byteAddr (args 8)) len)
 
-/-- Bytes apart from the working space and the 96 bytes below `sp`, after a stage. -/
+/-- Bytes apart from the working space and the 176 bytes below `sp`, after a stage. -/
 theorem bytes_keep (h : In Ex base bytes len args s) {p : Addr} {n : Nat}
     (apart : Region.Disjoint ⟨p, n⟩ ⟨base, bytes⟩) (hn : n ≤ 2 ^ 64) {sp : BitVec 32}
-    (hb40 : Region.Disjoint ⟨p, n⟩ (below sp 96)) {m m' : Mem} (F : Frame (frameR base sp (fR len)) m m') :
+    (RF : RoomF sp base bytes) (hb40 : Region.Disjoint ⟨p, n⟩ (below sp 176)) {m m' : Mem}
+    (F : Frame (frameF base sp (fR len)) m m') :
     Spec.Rsa.bytesAt m' p n = Spec.Rsa.bytesAt m p n := by
   have fit := fR_fit h
   have bl := h.bytes_lt
   refine frame_bytes F (fun r hr => ?_) hn
-  rw [frameR, List.mem_cons, List.mem_map] at hr
-  rcases hr with rfl | ⟨q, hq, rfl⟩
+  rw [frameF, frameR, List.mem_cons, List.mem_cons, List.mem_map] at hr
+  rcases hr with rfl | rfl | ⟨q, hq, rfl⟩
   · exact hb40
+  · exact hb40.sub_right (VG.X86.below_sub (by decide) RF.low)
   · have := fit q hq
     exact apart.sub_right (Offset.sub_base _ (by omega_using [this]))
 
@@ -85,9 +87,9 @@ abbrev pubFront : List (Prog isa) :=
   [Impl.Ffdh.X86.pSetup, load (.slot .wide 12) (one .wide) 8 9, Impl.Ffdh.X86.rangeMask 12,
     Impl.Ffdh.X86.testMask]
 
-/-- The body with q: `y^q mod p = 1`. -/
+/-- The body with q: `y^q mod p = 1`, the power raised over q's bytes from its first nonzero one. -/
 abbrev pubQ : Prog isa :=
-  .seq (load (.slot .wide 11) (one .wide) 6 7) (.seq (Impl.Ffdh.X86.powP 12 11) (Impl.Ffdh.X86.eqStatus 6 3))
+  .seq Impl.Ffdh.X86.qScan (.seq (Impl.Ffdh.X86.powQ 12) (Impl.Ffdh.X86.eqStatus 6 3))
 
 theorem body_eq : Impl.Ffdh.X86.CheckPublic.body = Prog.chain pubFront (.ite .e (Impl.Ffdh.X86.ret 0)
     (.seq (.block Impl.Ffdh.X86.qTest) (.ite .e (Impl.Ffdh.X86.ret 1) pubQ))) := rfl
@@ -95,7 +97,7 @@ theorem body_eq : Impl.Ffdh.X86.CheckPublic.body = Prog.chain pubFront (.ite .e 
 /-- p, one, `p − 1` and y into slots 9, 14, 15 and 12, and ZF telling whether y is out of range. -/
 theorem front_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes len dlen s.rd s.wr)
     (Y : YGeo args base bytes len s.rd s.wr)
-    (hy40 : Region.Disjoint ⟨byteAddr (args 8), len⟩ (below (s.gpr .esp) 96)) :
+    (RF : RoomF (s.gpr .esp) base bytes) (hy40 : Region.Disjoint ⟨byteAddr (args 8), len⟩ (below (s.gpr .esp) 176)) :
     WP isa (Prog.chain pubFront (.block [])) s fun u => Step Ex base bytes len args s u ∧
       Gate u (¬ (yv s.mem args len < pm1 len (comp s.mem args len 0) ∧ 1 < yv s.mem args len)) ∧
       sv u.mem base len .wide 9 = comp s.mem args len 0 ∧ sv u.mem base len .wide 12 = yv s.mem args len := by
@@ -113,7 +115,7 @@ theorem front_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes l
   rw [argNum_comp, hP] at V9 V15
   have S₁ : Step Ex base bytes len args s u₁ := ⟨I₁, F₁, K₁⟩
   refine WP.seq (WP.mono (loadY_ok I₁ (Y.keep ⟨rfl, rfl⟩ K₁)) fun u₂ ⟨V₂, O₂, K₂⟩ => ?_)
-  rw [show yv u₁.mem args len = y by rw [yv, bytes_keep h Y.apart (by omega_using [yf]) hy40 F₁]; exact hY] at V₂
+  rw [show yv u₁.mem args len = y by rw [yv, bytes_keep h Y.apart (by omega_using [yf]) RF hy40 F₁]; exact hY] at V₂
   have S₂ : Step Ex base bytes len args u₁ u₂ := Step.slot I₁ (by decide) O₂ K₂
   have k₂ := kept_slot I₁ (a := 12) O₂
   refine WP.seq (WP.mono (rangeMask_ok S₂.inp (a := 12) (by decide)) fun u₃ ⟨I₃, e₃, O₃, K₃⟩ => ?_)
@@ -129,8 +131,8 @@ theorem front_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes l
 /-- `vg_ffdh_check_public`'s body: a status, `expected` for a valid domain. -/
 theorem body_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes len dlen s.rd s.wr)
     (Y : YGeo args base bytes len s.rd s.wr)
-    (hb40 : Region.Disjoint ⟨byteAddr (args 2), dlen⟩ (below (s.gpr .esp) 96))
-    (hy40 : Region.Disjoint ⟨byteAddr (args 8), len⟩ (below (s.gpr .esp) 96)) :
+    (RF : RoomF (s.gpr .esp) base bytes) (hb40 : Region.Disjoint ⟨byteAddr (args 2), dlen⟩ (below (s.gpr .esp) 176))
+    (hy40 : Region.Disjoint ⟨byteAddr (args 8), len⟩ (below (s.gpr .esp) 176)) :
     WP isa Impl.Ffdh.X86.CheckPublic.body s fun t => ∃ r, Res base len s r t ∧
       (Spec.Ffdh.domainValid len (domBytes s.mem args dlen) = true → r = expected len dlen s.mem args) := by
   have dl := G.dl
@@ -141,7 +143,7 @@ theorem body_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes le
   have iffP := VG.Proof.Ffdh.publicValid_eq (Spec.Ffdh.domainOf len (domBytes s.mem args dlen)) (yv s.mem args len)
   rw [← hp] at iffP
   rw [body_eq]
-  refine WP.chain_split (front_ok h G Y hy40) fun u₄ ⟨S, Gt, V9, V12⟩ => ?_
+  refine WP.chain_split (front_ok h G Y RF hy40) fun u₄ ⟨S, Gt, V9, V12⟩ => ?_
   generalize hP : comp s.mem args len 0 = p at iffP hp Gt V9
   generalize hY : yv s.mem args len = y at iffP Gt V12
   /- A valid domain's p is an odd number above one. -/
@@ -188,20 +190,20 @@ theorem body_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes le
     omega_using [dl, this]
   subst e3
   have G₅ := G.keep ⟨rfl, rfl⟩ S'.keeps
-  refine WP.seq (WP.mono (loadComp_ok S₅.inp G₅ (k := 2) (j := 11) (by decide) (by omega_using []) (by decide))
-    fun u₆ ⟨V₆, O₆, K₆⟩ => ?_)
-  rw [comp_keep h G hb40 S'.frame (by omega_using [])] at V₆
-  have S₆ : Step Ex base bytes len args u₅ u₆ := Step.slot S₅.inp (by decide) O₆ K₆
-  have k₆ := kept_slot S₅.inp (a := 11) O₆
+  refine WP.seq (WP.mono (QPower.qScan_ok S₅.inp G₅) fun u₆ ⟨S₆, Q₆, k₆⟩ => ?_)
+  have S'' := S'.trans S₆
   have nine₆ : sv u₆.mem base len .wide 9 = p := by rw [k₆.slot_eq, m₅, V9]
   have y₆ : sv u₆.mem base len .wide 12 = y := by rw [k₆.slot_eq, m₅, V12]
-  refine WP.seq (WP.mono (powP_ok S₆.inp (P := safeM p) (b := 12) (e := 11) (by decide) (by decide) (by decide)
-    (by decide) (by rw [nine₆])) fun u₇ ⟨C₇, Y₇, one₇, F₇, _, K₇⟩ => ?_)
-  rw [y₆, V₆] at Y₇
-  have S₇ : Step Ex base bytes len args u₆ u₇ := Step.ops S₆.inp F₇ K₇
+  have RF₆ := S''.room RF
+  refine WP.seq (WP.mono (QPower.powQ_ok S₆.inp (G.keep ⟨rfl, rfl⟩ S''.keeps) RF₆ (by rw [S''.esp]; exact hb40)
+    (P := safeM p) (b := 12) (by decide) (by decide) (by rw [nine₆])
+    (by rw [QPower.qBytes_keep h G RF hb40 S''.frame, ← QPower.qBytes_keep h G RF hb40 S'.frame]; exact Q₆))
+    fun u₇ ⟨C₇, Y₇, one₇, F₇, _, K₇⟩ => ?_)
+  rw [y₆, comp_keep h G RF hb40 S''.frame (k := 2) (by omega_using [])] at Y₇
+  have S₇ : Step Ex base bytes len args u₆ u₇ := Step.opsF S₆.inp RF₆ F₇ K₇
   refine WP.mono (eqStatus_res C₇.inp (a := 6) (b := 3) (by decide) (by decide)) fun t R => ?_
   rw [Y₇, one₇] at R
-  refine ⟨_, ((S'.trans S₆).trans S₇).res R, fun v => ?_⟩
+  refine ⟨_, (S''.trans S₇).res R, fun v => ?_⟩
   obtain ⟨gt, odd⟩ := pv v
   rw [safeM_of gt odd]
   have hq := comp_q (len := len) s.mem args

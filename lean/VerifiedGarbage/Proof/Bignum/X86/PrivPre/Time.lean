@@ -5,12 +5,150 @@ meta import VerifiedGarbage.Proof.Bignum.X86.CrtRt.TimeWindow
 public import VerifiedGarbage.Impl.Bignum.X86.PrivPre
 meta import VerifiedGarbage.Impl.Bignum.X86.PrivPre
 public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.TimeTop
-public import VerifiedGarbage.Proof.Bignum.X86.PrivPre.Fn
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
-import VerifiedGarbage.Proof.Bignum.X86.CrtResources
+import VerifiedGarbage.Proof.Bignum.X86.CrtInstalled
 import VerifiedGarbage.Proof.Bignum.X86.CrtRt.TimePower
 import VerifiedGarbage.Proof.Mont.X86.PowerInit
+public import VerifiedGarbage.Proof.Bignum.X86.PrivPre.Primes
+public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Top
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Bignum.X86.CrtSave
+
+/-! ### `Bignum.X86.PrivPre.Fn`, which this module and modules that import it used -/
+
+section
+
+/-! # The factors' values of an RSA private key on x86: the internal function
+
+`primes`, with `vg_rsa_private_crt`'s arguments and precondition
+(`primesContract`, `Proof.Rsa.privateCrtContract`'s but for its
+postcondition): it returns the low bit of the mask of `p q = n`, leaves
+`R_p² mod p` (`w_p = max(2, ⌈p_len / 8⌉)` words of 32 bits, twice) in the
+working space's wide slot 16 and `R_q² mod q` in 17, and changes no memory
+but the working space's and the stack's below the stack pointer
+(`primes_ok`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Bignum.X86.PrivPre
+
+open VG VG.X86 VG.X86.Spill VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Bignum.X86 VG.Proof.Mont
+open VG.Proof.Mont.X86 VG.Proof.Bignum.X86 VG.Proof.Bignum.X86.CrtRt
+open VG.Proof.Bignum.X86.Crt (componentValue componentArguments)
+open VG.Proof.Dsa.X86 (argumentPointer)
+open VG.Impl.Bignum.X86.PrivPre (primes primesBody)
+
+/-- What `primes` leaves (see the module docs). -/
+def primesPost (s t : State) : Prop :=
+  t.gpr .eax = BitVec.ofNat 32 (decide (componentValue s.mem (arg s) 6 * componentValue s.mem (arg s) 8 =
+    componentValue s.mem (arg s) 2)).toNat ∧
+  (xIn s.mem (arg s) (arg s 3).toNat % safeM (componentValue s.mem (arg s) 6) =
+      2 ^ fixB (arg s 3).toNat % safeM (componentValue s.mem (arg s) 6) →
+    val32 t.mem (argumentPointer s 16) (lo (arg s 3).toNat (.slot .wide 16))
+        (2 * Spec.Rsa.primeWords (arg s 7).toNat) =
+      2 ^ r2Exp (arg s 7).toNat % safeM (componentValue s.mem (arg s) 6)) ∧
+  (xIn s.mem (arg s) (arg s 3).toNat % safeM (componentValue s.mem (arg s) 8) =
+      2 ^ fixB (arg s 3).toNat % safeM (componentValue s.mem (arg s) 8) →
+    val32 t.mem (argumentPointer s 16) (lo (arg s 3).toNat (.slot .wide 17))
+        (2 * Spec.Rsa.primeWords (arg s 9).toNat) =
+      2 ^ r2Exp (arg s 9).toNat % safeM (componentValue s.mem (arg s) 8)) ∧
+  Frame [⟨argumentPointer s 16, (arg s 17).toNat * 8⟩, below (s.gpr .esp) 96] s.mem t.mem
+
+/-- `primes`' contract: `vg_rsa_private_crt`'s precondition and publics, and `primesPost`. -/
+def primesContract : Contract isa :=
+  { Proof.Rsa.privateCrtContract abi 96 with post := primesPost }
+
+theorem primes_ok {s : State} (A : CrtABI s) :
+    WP isa primes s fun t => primesPost s t ∧ abiPreserved s t := by
+  have low : 48 ≤ (arg s 17).toNat * 8 := by have := A.used; omega_using [this]
+  have high : (arg s 17).toNat * 8 ≤ 2 ^ 64 := by have := A.scratchBound; omega_using []
+  unfold primes
+  rw [entry_eq]
+  refine WP.seq (WP.mono (Crt.installed_ok A) fun u ⟨I, S, K, O⟩ => ?_)
+  have hI : RIn (argumentPointer s 16) ((arg s 17).toNat * 8) (arg s 3).toNat (arg s) u :=
+    In.ofInputs I (need_le A.lengths.1 A.scratchLength)
+      (by simp only [argumentPointer, BitVec.toNat_setWidth,
+        Nat.mod_eq_of_lt (Nat.lt_trans (arg s 16).isLt (by decide : 2 ^ 32 < 2 ^ 64))]) rfl
+  refine WP.seq (WP.mono (primesBody_ok hI) fun v ⟨F, V16, V17, eax, Kv⟩ => ?_)
+  have espu : u.gpr .esp = s.gpr .esp := K.1 _ (by decide)
+  have props := bodyR_props hI
+  -- The registers saved at bytes 32 to 48 of the working space are kept.
+  have Saved : Saved v.mem (off (argumentPointer s 16)) s.gpr Crt.savedRegisters := by
+    intro p hp
+    have B : 32 ≤ p.2 ∧ p.2 + 4 ≤ 48 := by
+      simp only [Crt.savedRegisters, List.mem_cons, List.not_mem_nil, or_false] at hp
+      rcases hp with rfl | rfl | rfl | rfl <;> decide
+    refine (F.readW (r := ⟨off (argumentPointer s 16) 32, 16⟩)
+      (Offset.contains _ B.1 (by omega_using [B]) (by decide)) ?_ (by decide)).trans (S p hp)
+    intro r hr
+    rcases List.mem_cons.mp hr with rfl | hr
+    · rw [espu]
+      have Z := I.room.apart
+      rw [espu] at Z
+      exact (Z.sub_right (Offset.sub_base _ (by omega_using [low]))).symm
+    · obtain ⟨q, hq, rfl⟩ := List.mem_map.mp hr
+      rcases (props q hq).2 with h48 | h32
+      · exact Offset.disjoint _ (.inl (by omega_using [h48])) (by omega_using []) (by have := (props q hq).1; omega_using [this])
+      · exact Offset.disjoint _ (.inr (by omega_using [h32])) (by omega_using []) (by have := (props q hq).1; omega_using [h32])
+  rw [espu] at F
+  have Whole : Frame [⟨argumentPointer s 16, (arg s 17).toNat * 8⟩, below (s.gpr .esp) 96] s.mem v.mem := by
+    have Start := VG.Proof.Bignum.outside_frame O (by omega_using [])
+    simp only [BitVec.add_zero] at Start
+    refine (Start.mono (by intro r hr; simp only [List.mem_singleton] at hr; subst r; simp)).trans
+      (F.sub fun r hr => ?_)
+    rcases List.mem_cons.mp hr with rfl | hr
+    · exact ⟨_, by simp, fun _ h => h⟩
+    · obtain ⟨q, hq, rfl⟩ := List.mem_map.mp hr
+      exact ⟨_, List.mem_cons_self .., Offset.sub_base _ (props q hq).1⟩
+  have Ret : v.mem.readW ((s.gpr .esp).setWidth 64) 32 = s.mem.readW ((s.gpr .esp).setWidth 64) 32 := by
+    apply Whole.readW (Region.contains_self _ 4) ?_ (by decide)
+    intro r hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact A.retScratch
+    · exact ret_zone40 A.stackLow
+  rw [restore_eq]
+  refine WP.mono (Crt.entryRestore_ok (I.scratch.of_keeps Kv (by decide) (by decide)) low Saved) fun t R => ?_
+  refine ⟨?_, restored_abi R ((Kv.1 _ (by decide)).trans (K.1 _ (by decide))) Ret⟩
+  have B (i : Nat) (hi : i ∈ componentArguments) :
+      Spec.Rsa.bytesAt u.mem (byteAddr (arg s i)) (arg s (i + 1)).toNat =
+        Spec.Rsa.bytesAt s.mem (byteAddr (arg s i)) (arg s (i + 1)).toNat := by
+    apply VG.Proof.Bignum.scratch_bytes O (by have := (arg s (i + 1)).isLt; omega_using [])
+    simp only [componentArguments, List.mem_cons, List.not_mem_nil, or_false] at hi
+    rcases hi with rfl | rfl | rfl | rfl | rfl | rfl | rfl
+    · exact A.nScratch
+    · exact A.inScratch
+    · exact A.pScratch
+    · exact A.qScratch
+    · exact A.dpScratch
+    · exact A.dqScratch
+    · exact A.qiScratch
+  have cv : ∀ i ∈ componentArguments, componentValue u.mem (arg s) i = componentValue s.mem (arg s) i :=
+    fun i hi => by simp only [componentValue]; rw [B i hi]
+  have xi : xIn u.mem (arg s) (arg s 3).toNat = xIn s.mem (arg s) (arg s 3).toNat := by
+    have e5 : (arg s 5).toNat = (arg s 3).toNat := by rw [hI.extra.inLen, BitVec.toNat_ofNat]; omega_using []
+    have := B 4 (by decide)
+    rw [e5] at this
+    simp only [xIn]
+    congr 1
+    apply Mem.read_congr
+    intro i hi
+    have L := congrArg (fun l => l[i]?) this
+    simpa [Spec.Rsa.bytesAt, List.getElem?_map, List.getElem?_range hi] using L
+  rw [cv 2 (by decide), cv 6 (by decide), cv 8 (by decide)] at eax
+  rw [xi] at V16 V17
+  rw [cv 6 (by decide)] at V16
+  rw [cv 8 (by decide)] at V17
+  refine ⟨by rw [R.other .eax (by decide)]; exact eax, by rw [R.mem]; exact V16, by rw [R.mem]; exact V17,
+    by rw [R.mem]; exact Whole⟩
+
+end VG.Proof.Bignum.X86.PrivPre
+
+end
+
+end
 
 /-! # The factors' values of an RSA private key on x86: constant time
 
@@ -146,20 +284,20 @@ theorem low_wst {c : Ctx} (W : WSt Ex base bytes len args sp c [3] 0 s) :
     WP isa (copy (.slot .wide 18) (.slot c 5) (one c)) s (WSt Ex base bytes len args sp c [3] 0) := by
   have h := W.run.1
   have bl := h.bytes_lt
-  have W18 := h.wide_fit (j := 18) (by decide)
-  have f8 := h.slot_fit c (j := 8) (by decide)
+  obtain W18 := h.wide_fit (j := 18) (by decide)
+  obtain f8 := h.slot_fit c (j := 8) (by decide)
   have estw : st len .wide = 2 * bc len .wide + 32 := rfl
   have est : st len c = 2 * bc len c + 32 := rfl
   have e9 : lo len (.slot .wide 9) = numBase + 9 * st len .wide := rfl
   have e18 : lo len (.slot .wide 18) = numBase + 18 * st len .wide := rfl
-  have bwc := bc_le_wide len c
-  have s58 : lo len (.slot c 5) + st len c ≤ lo len (.slot c 8) := sl_le c (by decide)
+  obtain bwc := bc_le_wide len c
+  obtain s58 : lo len (.slot c 5) + st len c ≤ lo len (.slot c 8) := sl_le c (by decide)
   have e5 : lo len (.slot c 5) = numBase + 5 * st len c := rfl
-  have top : lo len (.slot c 8) + st len c ≤ lo len (.slot .wide 9) := by
+  obtain top : lo len (.slot c 8) + st len c ≤ lo len (.slot .wide 9) := by
     cases c
     · exact sl_le .wide (by decide)
     · exact half_in_wide h (by decide)
-  have cb1 : cb len (one c) = bc len c := by simp [cb, one]
+  obtain cb1 : cb len (one c) = bc len c := by simp [cb, one]
   refine WP.mono (copy_ok h (x := .slot .wide 18) (d := .slot c 5) (one_ok c) (by rw [cb1]; omega_arith)
     (by rw [cb1]; omega_arith) (by rw [cb1]; exact .inl (by omega_arith))) fun u ⟨O, _, K⟩ => ?_
   rw [cb1] at O
@@ -177,8 +315,8 @@ theorem high_wst (W : WSt Ex base bytes len args sp .half [3] 0 s) :
   have h := W.run.1
   have bl := h.bytes_lt
   obtain ⟨cwle, cw8, bh, h0, h5, h8, sth, top⟩ := HalfLay.mk' h
-  have W18 := h.wide_fit (j := 18) (by decide)
-  have bhw := bc_le_wide len .half
+  obtain W18 := h.wide_fit (j := 18) (by decide)
+  obtain bhw := bc_le_wide len .half
   have estw : st len .wide = 2 * bc len .wide + 32 := rfl
   have e9 : lo len (.slot .wide 9) = numBase + 9 * st len .wide := rfl
   have e18 : lo len (.slot .wide 18) = numBase + 18 * st len .wide := rfl
@@ -200,18 +338,18 @@ theorem add445_wst (W : WSt Ex base bytes len args sp .half [5, 4, 3] 0 s) :
   have h := C.inp
   have nw := h.scratch.nowrap
   have bl := h.bytes_lt
-  have f8 := h.slot_fit .half (j := 8) (by decide)
+  obtain f8 := h.slot_fit .half (j := 8) (by decide)
   have est : st len .half = 2 * bc len .half + 32 := rfl
-  have e1 : lo len (.slot .half 1) = numBase + st len .half := by simp [lo]
+  obtain e1 : lo len (.slot .half 1) = numBase + st len .half := by simp [lo]
   have e3 : lo len (.slot .half 3) = numBase + 3 * st len .half := rfl
   have e4 : lo len (.slot .half 4) = numBase + 4 * st len .half := rfl
   have e8 : lo len (.slot .half 8) = numBase + 8 * st len .half := rfl
-  have bw := bc_eq_cwc len .half
-  have hM : 0 < M := by have := C.gt; omega_arith
+  obtain bw := bc_eq_cwc len .half
+  obtain hM : 0 < M := by have := C.gt; omega_arith
   refine WP.mono (addMod_ok h .half (o := 4) (a := 4) (b := 5) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by rw [C.mod]; exact Hk 4 (by simp)) (by rw [C.mod]; exact Hk 5 (by simp)))
     fun u ⟨F, V, K⟩ => ?_
-  have fit : ∀ p ∈ [(lo len (.slot .half 1), bc len .half + 4), (lo len (.slot .half 4), bc len .half)],
+  obtain fit : ∀ p ∈ [(lo len (.slot .half 1), bc len .half + 4), (lo len (.slot .half 4), bc len .half)],
       p.1 + p.2 ≤ bytes := by simp; omega_arith
   refine ⟨M, C.keepF K (by decide) (by decide) F fit (by simp; omega_arith), fun j hj => ?_,
     fun j hj => absurd hj (Nat.not_lt_zero _), A.keep K, (K.1 _ (by decide)).trans sp₀⟩
@@ -260,7 +398,7 @@ theorem fixMore_relCT {c : Ctx} (hc : CChecks c) {A : Nat} (hA : A + 8 * bc len 
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) hc.m443 (by simp) (by decide) (by decide)
     fun _ _ e K => (K.1 _ (by decide)).trans e) ?_
   refine taint_both (fun _ _ F₁ F₂ => FS.agree F₁ F₂) _ hc.step fun _ ⟨W, e⟩ => ?_
-  have hA' : A < 2 ^ 32 := by omega_arith
+  obtain hA' : A < 2 ^ 32 := by omega_arith
   refine WP.mono (fixStep_ok W.run.1 (A := A) (by rw [e, BitVec.toNat_ofNat]; omega_arith) hA)
     fun u ⟨K, m, esi, _, cf⟩ => ⟨⟨wstRegs W K m, BitVec.eq_of_toNat_eq (by rw [esi, BitVec.toNat_ofNat]; omega_arith)⟩, cf⟩
 
@@ -274,18 +412,18 @@ theorem dbl_relCT {c : Ctx} (hc : CChecks c) {N : Nat} (hN : 0 < N) (hN' : N < 2
     fun t ⟨⟨M, C, Hk, _, A, sp₀⟩, e⟩ => ?_
   have h := C.inp
   have nw := h.scratch.nowrap
-  have f8 := h.slot_fit c (j := 8) (by decide)
+  obtain f8 := h.slot_fit c (j := 8) (by decide)
   have est : st len c = 2 * bc len c + 32 := rfl
-  have e1 : lo len (.slot c 1) = numBase + st len c := by simp [lo]
-  have s34 : lo len (.slot c 3) + st len c ≤ lo len (.slot c 4) := sl_le c (by decide)
-  have s48 : lo len (.slot c 4) + st len c ≤ lo len (.slot c 8) := sl_le c (by decide)
+  obtain e1 : lo len (.slot c 1) = numBase + st len c := by simp [lo]
+  obtain s34 : lo len (.slot c 3) + st len c ≤ lo len (.slot c 4) := sl_le c (by decide)
+  obtain s48 : lo len (.slot c 4) + st len c ≤ lo len (.slot c 8) := sl_le c (by decide)
   have e3 : lo len (.slot c 3) = numBase + 3 * st len c := rfl
-  have bw := bc_eq_cwc len c
-  have hM : 0 < M := by have := C.gt; omega_arith
+  obtain bw := bc_eq_cwc len c
+  obtain hM : 0 < M := by have := C.gt; omega_arith
   refine WP.mono (doubleStep_ok h c (by rw [C.mod]; exact Hk 4 (by simp))) fun u ⟨F, V, esiu, zu, K⟩ => ?_
-  have fit : ∀ p ∈ [(lo len (.slot c 1), bc len c + 4), (lo len (.slot c 4), bc len c)], p.1 + p.2 ≤ bytes := by
+  obtain fit : ∀ p ∈ [(lo len (.slot c 1), bc len c + 4), (lo len (.slot c 4), bc len c)], p.1 + p.2 ≤ bytes := by
     simp; omega_arith
-  have sub : BitVec.ofNat 32 (N - j) - 1 = BitVec.ofNat 32 (N - (j + 1)) := by
+  obtain sub : BitVec.ofNat 32 (N - j) - 1 = BitVec.ofNat 32 (N - (j + 1)) := by
     rw [VG.Proof.Mont.X86.Dynamic.counter_sub (by omega_arith) (by omega_arith)]; congr 1
   refine ⟨⟨⟨M, C.keepF K (by decide) (by decide) F fit (by simp; omega_arith), fun k hk => ?_,
     fun k hk => absurd hk (Nat.not_lt_zero _), A.keep K, (K.1 _ (by decide)).trans sp₀⟩, by rw [esiu, e, sub]⟩, ?_⟩
@@ -307,8 +445,8 @@ theorem r2Fix_relCT {c : Ctx} (hc : CChecks c) {i : Nat} (hi : i < 18) (hL1 : 1 
     (hL : (args i).toNat ≤ len) (hS : ACheck (.block (fixStart i c))) (hup : len ≤ 1024) :
     RelCT isa (Both (WSt Ex base bytes len args sp c [3, 4] 0)) (r2Fix i c)
       (Both (WSt Ex base bytes len args sp c [3, 4] 0)) := by
-  have hb := bc_le hup c
-  have hA := fixA_le hL hup c
+  obtain hb := bc_le hup c
+  obtain hA := fixA_le hL hup c
   unfold r2Fix
   refine VG.RelCT.seq (taint_both (fun _ _ W₁ W₂ => W₁.agree W₂) _ hS fun _ W =>
     WP.mono (fixStart_ok W.run.1 hi c hL1 hL) fun u ⟨K, m, esi, _, cf⟩ =>
@@ -351,16 +489,16 @@ theorem r2Fix_relCT {c : Ctx} (hc : CChecks c) {i : Nat} (hi : i < 18) (hL1 : 1 
 theorem save4_run {c : Ctx} {o : Nat} (ho16 : 16 ≤ o) (ho : o ≤ 17) (R : Run Ex base bytes len args sp s) :
     WP isa (copy (.slot c 4) (.slot .wide o) (one c)) s (Run Ex base bytes len args sp) := by
   have h := R.1
-  have cb1 : cb len (one c) = bc len c := by simp [cb, one]
-  have fo := h.slot_fit .wide (j := o) (by omega_arith)
-  have f4 := h.slot_fit c (j := 4) (by decide)
+  obtain cb1 : cb len (one c) = bc len c := by simp [cb, one]
+  obtain fo := h.slot_fit .wide (j := o) (by omega_arith)
+  obtain f4 := h.slot_fit c (j := 4) (by decide)
   have est : st len c = 2 * bc len c + 32 := rfl
   have estw : st len .wide = 2 * bc len .wide + 32 := rfl
-  have bwc := bc_le_wide len c
-  have lo9 : lo len (.slot .wide 9) ≤ lo len (.slot .wide o) := by
+  obtain bwc := bc_le_wide len c
+  obtain lo9 : lo len (.slot .wide 9) ≤ lo len (.slot .wide o) := by
     have := Nat.mul_le_mul_right (st len .wide) (show 9 ≤ o by omega_arith)
     simp only [lo]; omega_arith
-  have h4o : lo len (.slot c 4) + bc len c ≤ lo len (.slot .wide o) :=
+  obtain h4o : lo len (.slot c 4) + bc len c ≤ lo len (.slot .wide o) :=
     Nat.le_trans (primeR_below h c (lo len (.slot c 4), bc len c) (by simp)).1 lo9
   refine WP.mono (copy_ok h (x := .slot c 4) (d := .slot .wide o) (one_ok c) (by rw [cb1]; omega_arith)
     (by rw [cb1]; omega_arith) (by rw [cb1]; exact .inr h4o)) fun u ⟨O, _, K⟩ => ?_
@@ -378,7 +516,7 @@ theorem primeIn_relCT {f i o : Nat} (hc : FChecks f i o) (hf9 : 9 ≤ f) (hf : f
     (ho16 : 16 ≤ o) (ho : o ≤ 17) (hL1 : 1 ≤ (args i).toNat) (hL : (args i).toNat ≤ len) (hup : len ≤ 1024)
     (c : Ctx) :
     RelCT isa (Both (Run Ex base bytes len args sp)) (primeIn f i o c) (Both (Run Ex base bytes len args sp)) := by
-  have cc := cChecks c
+  obtain cc := cChecks c
   unfold primeIn
   refine VG.RelCT.seq (taint_both (fun _ _ R₁ R₂ => R₁.agree R₂) _
     (hc.load c) fun _ R => load_run hf9 hf c R) ?_
@@ -406,13 +544,13 @@ variable {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32} {sp : BitVec
 theorem check_run (R : Run (CrtExtra base bytes len args) base bytes len args sp s) :
     WP isa check s (Run (CrtExtra base bytes len args) base bytes len args sp) := by
   have h := R.1
-  have f18 := h.slot_fit .wide (j := 18) (by decide)
+  obtain f18 := h.slot_fit .wide (j := 18) (by decide)
   have est : st len .wide = 2 * bc len .wide + 32 := rfl
   have e9 : lo len (.slot .wide 9) = numBase + 9 * st len .wide := rfl
   have e18 : lo len (.slot .wide 18) = numBase + 18 * st len .wide := rfl
   unfold check
   refine WP.seq (WP.mono (importComponents_ok h) fun u₁ ⟨O₁, n₁, _, p₁, q₁, _, _, _, K₁⟩ => ?_)
-  have R₁ := R.keep K₁ (O₁.mono (Nat.zero_le _) (by omega_arith))
+  obtain R₁ := R.keep K₁ (O₁.mono (Nat.zero_le _) (by omega_arith))
   exact WP.mono (pqCheck_ok R₁.1 n₁ p₁ q₁ (h.extra.positive 6 (by simp [componentArguments]))
     (h.extra.bounded 6 (by simp [componentArguments])) (h.extra.positive 8 (by simp [componentArguments]))
     (h.extra.bounded 8 (by simp [componentArguments])) (component_lt _ _ 6) (component_lt _ _ 8))
@@ -421,7 +559,7 @@ theorem check_run (R : Run (CrtExtra base bytes len args) base bytes len args sp
 /-- `primesBody`, from runs that agree. -/
 theorem primesBody_relCT :
     RelCT isa (Both (Run (CrtExtra base bytes len args) base bytes len args sp)) primesBody fun _ _ => True := by
-  have lens : ∀ {v : State}, Run (CrtExtra base bytes len args) base bytes len args sp v →
+  obtain lens : ∀ {v : State}, Run (CrtExtra base bytes len args) base bytes len args sp v →
       (1 ≤ (args 7).toNat ∧ (args 7).toNat ≤ len) ∧ (1 ≤ (args 9).toNat ∧ (args 9).toNat ≤ len) :=
     fun R => ⟨⟨R.1.extra.positive 6 (by simp [componentArguments]), R.1.extra.bounded 6 (by simp [componentArguments])⟩,
       ⟨R.1.extra.positive 8 (by simp [componentArguments]), R.1.extra.bounded 8 (by simp [componentArguments])⟩⟩
@@ -475,14 +613,14 @@ theorem body_relCT (sp : BitVec 32) :
   refine relCT_narrow (Pn := Both (Run (CrtExtra base bytes len args) base bytes len args sp))
     (fun s => s.rd ++ s.wr) (fun _ => narrowW base bytes len args) (fun s₁ s₂ ⟨S₁, S₂⟩ => ?_)
     primesBody_relCT
-  have cov : ∀ {s : State}, Side base bytes len args sp s → Covers (narrowW base bytes len args) s.wr := by
+  obtain cov : ∀ {s : State}, Side base bytes len args sp s → Covers (narrowW base bytes len args) s.wr := by
     intro s S
     rintro a n ⟨r, hr, hc⟩
     simp only [narrowW, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact Covers.one S.1.crt.outWrite a n ⟨_, List.mem_singleton_self _, hc⟩
     · exact ⟨_, S.1.scratch.wr, hc⟩
-  have wp : ∀ {s : State}, Side base bytes len args sp s →
+  obtain wp : ∀ {s : State}, Side base bytes len args sp s →
       ∃ F, WP isa primesBody (s.withRegions (s.rd ++ s.wr) (narrowW base bytes len args)) F :=
     fun S => ⟨_, primesBody_ok (side_in S)⟩
   exact ⟨Covers.append_left (Covers.refl _) (Covers.right (cov S₁)), cov S₁,
@@ -495,60 +633,60 @@ theorem primes_trace {s t : State} (A : TopABI s) (B : TopABI t)
     (args : ∀ i < 18, arg s i = arg t i) (SP : s.gpr .esp = t.gpr .esp)
     {tr ur : List Leak} {sf tf : State}
     (E : Exec isa primes s tr sf) (F : Exec isa primes t ur tf) : tr = ur := by
-  have A0 := args 0 (by decide)
-  have A1 := args 1 (by decide)
-  have A3 := args 3 (by decide)
-  have A8 := args 16 (by decide)
-  have A9 := args 17 (by decide)
-  have hb : (arg s 16).toNat = (argumentPointer s 16).toNat := (setWidth_toNat _).symm
+  obtain A0 := args 0 (by decide)
+  obtain A1 := args 1 (by decide)
+  obtain A3 := args 3 (by decide)
+  obtain A8 := args 16 (by decide)
+  obtain A9 := args 17 (by decide)
+  obtain hb : (arg s 16).toNat = (argumentPointer s 16).toNat := (setWidth_toNat _).symm
   cases E with
   | @seq _ _ _ u _ _ _ E1 Erest =>
     cases F with
     | @seq _ _ _ v _ _ _ F1 Frest =>
-      have T1 := (Crt.entry_relCT _ _ _ _ _ _
+      obtain T1 := (Crt.entry_relCT _ _ _ _ _ _
         ⟨SP, A8, (A.abi.stackArgument (by decide : 16 < 18)).readSrc,
           (B.abi.stackArgument (by decide : 16 < 18)).readSrc⟩ E1 F1).1
       obtain ⟨Is, _, Ks, _⟩ := wp_result (Crt.installed_ok A.abi) E1
       obtain ⟨It, _, Kt, _⟩ := wp_result (Crt.installed_ok B.abi) F1
-      have Iv : Crt.Inputs (argumentPointer s 16) ((arg s 17).toNat * 8) (arg s 3).toNat (arg s) v := by
-        have J := It.argsEq (fun i hi => (args i hi).symm)
+      obtain Iv : Crt.Inputs (argumentPointer s 16) ((arg s 17).toNat * 8) (arg s 3).toNat (arg s) v := by
+        obtain J := It.argsEq (fun i hi => (args i hi).symm)
         simpa only [argumentPointer, ← A8, ← A9, ← A3] using J
-      have need := need_le A.abi.lengths.1 A.abi.scratchLength
-      have espu : u.gpr .esp = s.gpr .esp := Ks.1 _ (by decide)
-      have espv : v.gpr .esp = s.gpr .esp := (Kt.1 _ (by decide)).trans SP.symm
-      have Su : Side (argumentPointer s 16) ((arg s 17).toNat * 8) (arg s 3).toNat (arg s) (s.gpr .esp) u := by
+      obtain need := need_le A.abi.lengths.1 A.abi.scratchLength
+      obtain espu : u.gpr .esp = s.gpr .esp := Ks.1 _ (by decide)
+      obtain espv : v.gpr .esp = s.gpr .esp := (Kt.1 _ (by decide)).trans SP.symm
+      obtain Su : Side (argumentPointer s 16) ((arg s 17).toNat * 8) (arg s 3).toNat (arg s) (s.gpr .esp) u := by
         refine ⟨In.ofInputs Is need hb rfl, espu, ?_, ?_⟩
         · rw [espu, ← A.abi.outLength]; exact args_apart A A.abi.retOut A.outArgs.symm
         · rw [espu]; exact args_apart A A.abi.retScratch A.abi.scratchArgs.symm
-      have Sv : Side (argumentPointer s 16) ((arg s 17).toNat * 8) (arg s 3).toNat (arg s) (s.gpr .esp) v := by
+      obtain Sv : Side (argumentPointer s 16) ((arg s 17).toNat * 8) (arg s 3).toNat (arg s) (s.gpr .esp) v := by
         refine ⟨In.ofInputs Iv need hb rfl, espv, ?_, ?_⟩
         · rw [espv]
-          have D := args_apart B B.abi.retOut B.outArgs.symm
+          obtain D := args_apart B B.abi.retOut B.outArgs.symm
           simp only [argumentPointer, ← A0, ← A1, ← SP] at D
           rw [← A.abi.outLength]; exact D
         · rw [espv]
-          have D := args_apart B B.abi.retScratch B.abi.scratchArgs.symm
+          obtain D := args_apart B B.abi.retScratch B.abi.scratchArgs.symm
           simp only [argumentPointer, ← A8, ← A9, ← SP] at D
           exact D
       cases Erest with
       | @seq _ _ _ w _ _ _ E2 E3 =>
         cases Frest with
         | @seq _ _ _ z _ _ _ F2 F3 =>
-          have T2 := (body_relCT (s.gpr .esp) _ _ _ _ _ _ ⟨Su, Sv⟩ E2 F2).1
+          obtain T2 := (body_relCT (s.gpr .esp) _ _ _ _ _ _ ⟨Su, Sv⟩ E2 F2).1
           obtain ⟨-, -, -, -, Ksu⟩ := wp_result (primesBody_ok Su.1) E2
           obtain ⟨-, -, -, -, Ktv⟩ := wp_result (primesBody_ok Sv.1) F2
-          have Agree : VG.X86.Taint.Agree (VG.Proof.Mont.X86.Dynamic.workspaceTaint false) w z :=
+          obtain Agree : VG.X86.Taint.Agree (VG.Proof.Mont.X86.Dynamic.workspaceTaint false) w z :=
             agree_regs (by
               intro r hr
               obtain rfl := List.mem_singleton.mp hr
               rw [Ksu.1 _ (by decide), Ktv.1 _ (by decide)]
               exact (Su.pair Sv).agree.rf.1 _ (by decide))
-          have T3 := (Crt.restore_relCT _ _ _ _ _ _ Agree E3 F3).1
+          obtain T3 := (Crt.restore_relCT _ _ _ _ _ _ Agree E3 F3).1
           rw [T1, T2, T3]
 
 theorem primes_constantTime : ConstantTime isa primesContract.pre primesContract.pub primes := by
   intro s t tr ur sf tf S T H E F
-  have Args := Crt.arguments H
+  obtain Args := Crt.arguments H
   exact primes_trace (topABI_of S) (topABI_of T) Args.2 Args.1 E F
 
 theorem primes_correct (s : State) (h : primesContract.pre s) :

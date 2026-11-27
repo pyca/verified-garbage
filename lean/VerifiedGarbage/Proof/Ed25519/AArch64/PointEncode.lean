@@ -2,9 +2,195 @@ module
 
 public import VerifiedGarbage.Impl.Ed25519.AArch64.PointEncode
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Divstep
-public import VerifiedGarbage.Proof.Ed25519.AArch64.CounterKeep
-import VerifiedGarbage.Proof.Ed25519.AArch64.Freeze
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Ed25519.AArch64.Ops
+public import VerifiedGarbage.Proof.Ed25519.Canonical64
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Field
+
+/-! ### `Ed25519.AArch64.CounterKeep`, which this module and modules that import it used -/
+
+section
+
+/-! Field programs which also use the public loop counter x19. -/
+
+@[expose] public section
+
+namespace VG.Proof.Ed25519.AArch64
+open VG VG.AArch64
+
+structure CounterKeep (base : Addr) (s t : State) : Prop where
+  gpr : ∀ r, r ∉ clob → r ≠ .x19 → t.gpr r = s.gpr r
+  rd : t.rd = s.rd
+  wr : t.wr = s.wr
+  sp : t.sp = s.sp
+  mem : Outside base 64 704 s.mem t.mem
+
+theorem CounterKeep.scr {base : Addr} {s t : State} (h : CounterKeep base s t) (hs : Scr s base) :
+    Scr t base := ⟨(h.gpr _ (by decide) (by decide)).trans hs.x0, h.wr ▸ hs.wr, hs.nowrap⟩
+
+theorem CounterKeep.trans {base : Addr} {s t u : State}
+    (h : CounterKeep base s t) (k : CounterKeep base t u) : CounterKeep base s u :=
+  ⟨fun r hr hb => (k.gpr r hr hb).trans (h.gpr r hr hb), k.rd.trans h.rd,
+    k.wr.trans h.wr, k.sp.trans h.sp, h.mem.trans k.mem⟩
+
+theorem CounterKeep.of_keeps {base : Addr} {s t : State} {rs : List Reg}
+    (h : Keeps rs s t) (hrs : ∀ r ∈ rs, r = .x19 ∨ r ∈ clob) : CounterKeep base s t := by
+  refine ⟨fun r hr hb => h.gpr r (fun hm => ?_), h.rd, h.wr, h.sp, ?_⟩
+  · rcases hrs r hm with h | h
+    · exact hb h
+    · exact hr h
+  · rw [h.mem]; exact Outside.refl _ _ _ _
+
+theorem Keep.of_keeps {base : Addr} {s t : State} {rs : List Reg}
+    (h : Keeps rs s t) (hrs : ∀ r ∈ rs, r ∈ clob) : Keep base s t :=
+  ⟨fun r hr => h.gpr r (fun hm => hr (hrs r hm)), h.rd, h.wr, h.sp,
+    by rw [h.mem]; exact Outside.refl _ _ _ _⟩
+
+theorem CounterKeep.of_keep {base : Addr} {s t : State} (h : Keep base s t) : CounterKeep base s t :=
+  ⟨fun r hr _ => h.gpr r hr, h.rd, h.wr, h.sp, h.mem⟩
+
+end VG.Proof.Ed25519.AArch64
+
+end
+
+end
+
+/-! ### `Ed25519.AArch64.Freeze`, which this module and modules that import it used -/
+
+section
+
+/-! Full reduction of four limbs to the canonical residue. -/
+
+@[expose] public section
+
+namespace VG.Proof.Ed25519.AArch64
+variable {large : Bool}
+
+open VG VG.AArch64 VG.Impl.Ed25519.AArch64 Word64
+open VG.Spec.X25519 (P)
+
+theorem freezeFold_ok (s : State) (hz : s.gpr .x10 = 0) (h19 : s.gpr .x11 = 19)
+    (hl : s.gpr .x2 = low63) :
+    WP isa (.block freezeFold) s fun t =>
+      val4 (t.gpr .x4) (t.gpr .x5) (t.gpr .x6) (t.gpr .x7) % P =
+        val4 (s.gpr .x4) (s.gpr .x5) (s.gpr .x6) (s.gpr .x7) % P ∧
+      val4 (t.gpr .x4) (t.gpr .x5) (t.gpr .x6) (t.gpr .x7) < 2 ^ 255 + 19 ∧
+      Keeps [.x4, .x5, .x6, .x7, .x8, .x3] s t := by
+  have hm (x : Word) : ((x >>> 63) * 19).toNat = 19 * (x.toNat / 2 ^ 63) := by
+    rw [BitVec.toNat_mul, BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow,
+      show (19 : Word).toNat = 19 from rfl, Nat.mul_comm]
+    exact Nat.mod_eq_of_lt (by have := x.isLt; omega_using [])
+  apply WP.of_runBlock
+  simp only [freezeFold, runBlock_cons, runStep_some, runBlock_nil, exec, read_x,
+    RegUpd.gpr_write, RegUpd.gpr_addWithCarry, RegUpd.c_addWithCarry,
+    BitVec.setWidth_eq, hz, h19, hl, show 63 < Size.x.bits from by decide,
+    ite_true, ite_false, reduceCtorEq, Option.some.injEq, exists_eq_left']
+  have H := fold_top (s.gpr .x4) (s.gpr .x5) (s.gpr .x6) (s.gpr .x7)
+    (s.gpr .x7 &&& low63) ((s.gpr .x7 >>> 63) * 19) (hm _) (and_low63 _)
+  refine ⟨?_, ?_, ⟨?_, rfl, rfl, rfl, rfl⟩⟩
+  · dsimp only [addCarry, carryOut, Size.bits] at H ⊢
+    exact H.1
+  · dsimp only [addCarry, carryOut, Size.bits] at H ⊢
+    exact H.2
+  · intro r hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+    simp only [RegUpd.gpr_write, RegUpd.gpr_addWithCarry, hr.1, hr.2.1,
+      hr.2.2.1, hr.2.2.2.1, hr.2.2.2.2.1, hr.2.2.2.2.2, ite_false]
+
+theorem freezeCandidate_ok (s : State) (hz : s.gpr .x10 = 0) (h19 : s.gpr .x11 = 19)
+    (hl : s.gpr .x2 = low63)
+    (hx : val4 (s.gpr .x4) (s.gpr .x5) (s.gpr .x6) (s.gpr .x7) < 2 ^ 255 + 19) :
+    WP isa (.block freezeCandidate) s fun t =>
+      t.gpr .x3 = mask (decide (P ≤ val4 (s.gpr .x4) (s.gpr .x5) (s.gpr .x6) (s.gpr .x7))) ∧
+      (P ≤ val4 (s.gpr .x4) (s.gpr .x5) (s.gpr .x6) (s.gpr .x7) →
+        val4 (t.gpr .x21) (t.gpr .x22) (t.gpr .x23) (t.gpr .x24) =
+          val4 (s.gpr .x4) (s.gpr .x5) (s.gpr .x6) (s.gpr .x7) - P) ∧
+      Keeps [.x21, .x22, .x23, .x24, .x8, .x3] s t := by
+  apply WP.of_runBlock
+  simp only [freezeCandidate, runBlock_cons, runStep_some, runBlock_nil, exec, read_x,
+    RegUpd.gpr_write, RegUpd.gpr_addWithCarry, RegUpd.c_addWithCarry,
+    BitVec.setWidth_eq, hz, h19, hl, show 63 < Size.x.bits from by decide,
+    ite_true, ite_false, reduceCtorEq, Option.some.injEq, exists_eq_left']
+  have H := add19_top (s.gpr .x4) (s.gpr .x5) (s.gpr .x6) (s.gpr .x7) hx
+  refine ⟨?_, ?_, ⟨?_, rfl, rfl, rfl, rfl⟩⟩
+  · dsimp only [addCarry, carryOut, Size.bits] at H ⊢
+    exact H.1
+  · dsimp only [addCarry, carryOut, Size.bits, low63] at H ⊢
+    exact H.2
+  · intro r hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+    simp only [RegUpd.gpr_write, RegUpd.gpr_addWithCarry, hr.1, hr.2.1,
+      hr.2.2.1, hr.2.2.2.1, hr.2.2.2.2.1, hr.2.2.2.2.2, ite_false]
+
+theorem select4_ok (s : State) {sw : Bool} (hm : s.gpr .x3 = mask sw) :
+    WP isa (.block select4) s fun t =>
+      val4 (t.gpr .x4) (t.gpr .x5) (t.gpr .x6) (t.gpr .x7) =
+        (if sw then val4 (s.gpr .x21) (s.gpr .x22) (s.gpr .x23) (s.gpr .x24)
+          else val4 (s.gpr .x4) (s.gpr .x5) (s.gpr .x6) (s.gpr .x7)) ∧
+      Keeps [.x4, .x5, .x6, .x7, .x21, .x22, .x23, .x24] s t := by
+  apply WP.of_runBlock
+  simp only [select4, List.flatMap_cons, List.flatMap_nil, List.cons_append, List.nil_append,
+    runBlock_cons, runStep_some, runBlock_nil, exec, read_x,
+    RegUpd.gpr_write, BitVec.setWidth_eq, hm, ite_true, ite_false, reduceCtorEq,
+    Option.some.injEq, exists_eq_left', xor_sel']
+  refine ⟨by cases sw <;> rfl, ⟨?_, rfl, rfl, rfl, rfl⟩⟩
+  intro r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+  simp only [RegUpd.gpr_write, hr.1, hr.2.1, hr.2.2.1, hr.2.2.2.1,
+    hr.2.2.2.2.1, hr.2.2.2.2.2.1, hr.2.2.2.2.2.2.1, hr.2.2.2.2.2.2.2, ite_false]
+
+/-- The result is the unique representative below p. -/
+theorem freeze_ok {s : State} {base : Addr} (hs : Scr s base large) {a : Nat} (ha : FieldRange a large) :
+    WP isa (.block (freeze a)) s fun t =>
+      val4 (t.gpr .x4) (t.gpr .x5) (t.gpr .x6) (t.gpr .x7) = fe s.mem base a % P ∧
+      Keeps [.x2, .x3, .x4, .x5, .x6, .x7, .x8, .x10, .x11, .x21, .x22, .x23, .x24] s t := by
+  have _hcap := workSize_le large
+  have _hmin := workSize_ge large
+  rw [freeze, List.append_assoc, List.append_assoc, List.append_assoc, List.append_assoc,
+    WP.block_append_iff]
+  refine WP.mono (fieldInit_ok s 19) fun s₀ ⟨hz, h19, k0⟩ => ?_
+  have hs₀ := hs.of_keeps k0 (by decide)
+  rw [WP.block_append_iff]
+  refine WP.mono (const64_ok s₀ .x2 low63) fun s₁ ⟨hl, k1⟩ => ?_
+  have hs₁ := hs₀.of_keeps k1 (by decide)
+  rw [WP.block_append_iff]
+  refine WP.mono (loads_ok hs₁ ha (by decide)) fun s₂ ⟨w4, w5, w6, w7, k2⟩ => ?_
+  have hz2 : s₂.gpr .x10 = 0 := (k2.gpr _ (by decide)).trans ((k1.gpr _ (by decide)).trans hz)
+  have h192 : s₂.gpr .x11 = 19 := (k2.gpr _ (by decide)).trans ((k1.gpr _ (by decide)).trans h19)
+  have hl2 : s₂.gpr .x2 = low63 := (k2.gpr _ (by decide)).trans hl
+  rw [WP.block_append_iff]
+  refine WP.mono (freezeFold_ok s₂ hz2 h192 hl2) fun s₃ ⟨e3, b3, k3⟩ => ?_
+  have hz3 := (k3.gpr .x10 (by decide)).trans hz2
+  have h193 := (k3.gpr .x11 (by decide)).trans h192
+  have hl3 := (k3.gpr .x2 (by decide)).trans hl2
+  rw [WP.block_append_iff]
+  refine WP.mono (freezeCandidate_ok s₃ hz3 h193 hl3 b3) fun s₄ ⟨m4, v4, k4⟩ => ?_
+  refine WP.mono (select4_ok s₄ m4) fun s₅ ⟨v5, k5⟩ => ?_
+  have K : Keeps [.x2, .x3, .x4, .x5, .x6, .x7, .x8, .x10, .x11, .x21, .x22, .x23, .x24] s s₅ :=
+    ((((k0.mono (by decide)).trans (k1.mono (by decide))).trans (k2.mono (by decide))).trans
+      (k3.mono (by decide))).trans (k4.mono (by decide)) |>.trans (k5.mono (by decide))
+  rw [k4.gpr .x4 (by decide), k4.gpr .x5 (by decide), k4.gpr .x6 (by decide),
+    k4.gpr .x7 (by decide)] at v5
+  rw [w4, w5, w6, w7, k1.mem, k0.mem] at e3
+  refine ⟨?_, K⟩
+  rw [v5, ← e3]
+  generalize val4 (s₃.gpr .x4) (s₃.gpr .x5) (s₃.gpr .x6) (s₃.gpr .x7) = x at b3 v4 ⊢
+  by_cases h : P ≤ x
+  · simp only [decide_eq_true h, ite_true]
+    rw [v4 h]
+    simp only [P] at h b3 ⊢
+    omega_using [h, b3]
+  · simp only [decide_eq_false h, Bool.false_eq_true, ite_false]
+    exact (Nat.mod_eq_of_lt (by omega_using [h])).symm
+
+end VG.Proof.Ed25519.AArch64
+
+end
+
+end
 
 /-! Merged from `Proof.Ed25519.AArch64.PointAffine`. -/
 

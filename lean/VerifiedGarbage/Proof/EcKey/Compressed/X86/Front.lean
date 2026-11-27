@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.EcKey.Compressed.X86.Setup
 public import VerifiedGarbage.Proof.Weierstrass.Words
 import VerifiedGarbage.Proof.Ecdh.X86.Peer
 public import VerifiedGarbage.Proof.Ecdh.X86.Validate
@@ -10,6 +9,111 @@ import VerifiedGarbage.Proof.Ecdsa.X86.Finish
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Weierstrass.Unch
 import VerifiedGarbage.Proof.Framework.X86.Exec
+public import VerifiedGarbage.Proof.EcKey.Compressed.X86.Contract
+import VerifiedGarbage.Proof.Weierstrass.X86.CallOps
+public import VerifiedGarbage.Impl.EcKey.Compressed.X86
+public import VerifiedGarbage.Proof.Ecdsa.X86.Fixed
+
+/-! ### `EcKey.Compressed.X86.Setup`, which only this module used -/
+
+section
+
+/-! # Shared stack arguments and scratch setup for x86 point conversion -/
+
+@[expose] public section
+namespace VG.Proof.EcKey.Compressed.X86
+
+open VG VG.X86 VG.Impl.Ecdsa.X86 VG.Proof.Ecdsa.X86
+open VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Weierstrass VG.Proof.Weierstrass.X86
+
+structure InputPre (c : Cfg) (len : Nat) (s : State) : Prop where
+  pk : (⟨ptr s 1, len⟩ : Region) ∈ s.rd ++ s.wr
+  ws : (⟨ptr s 2, size⟩ : Region) ∈ s.wr
+  disjoint : Region.Disjoint ⟨ptr s 1, len⟩ ⟨ptr s 2, size⟩
+  pk_fit : (arg s 1).toNat + len ≤ 2 ^ 32
+  ws_fit : (arg s 2).toNat + size ≤ 2 ^ 32
+  args : (⟨argAddr s 0, 12⟩ : Region) ∈ s.rd ++ s.wr
+  args_sc : Region.Disjoint ⟨argAddr s 0, 12⟩ ⟨ptr s 2, size⟩
+  sp_fit : (s.gpr .esp).toNat + 16 ≤ 2 ^ 32
+  sp_lo : c.stk ≤ (s.gpr .esp).toNat
+  stk_sc : Region.Disjoint ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 c.stk, c.stk⟩ ⟨ptr s 2, size⟩
+
+theorem args_idx {i : Nat} (hi : i ∈ Impl.EcKey.Compressed.X86.args.idx) : i < 3 := by
+  simp only [Impl.EcKey.Compressed.X86.args, Args.idx, List.mem_cons, List.not_mem_nil, or_false] at hi
+  omega_using [hi]
+
+theorem input_setup {c : Cfg} {len : Nat} {s : State}
+    (hp : InputPre c len s) (hlen : c.C.len ≤ len) :
+    SetupPre c Impl.EcKey.Compressed.X86.args s := by
+  have hfit := hp.pk_fit
+  have hi : ∀ e, e + 4 ≤ c.C.len → InRegions (s.rd ++ s.wr) (ptr s 1 + BitVec.ofNat 64 e) 4 :=
+    fun _ he => ⟨_, hp.pk, Offset.contains_base _ (by omega_using [hlen, he]) (by omega_using [hlen, hfit, he])⟩
+  have hd : Region.Disjoint ⟨ptr s 1, c.C.len⟩ ⟨ptr s 2, size⟩ :=
+    hp.disjoint.sub_left (by simpa using Region.sub_prefix hlen)
+  refine ⟨.inl rfl, hp.ws, ?_, ?_, ?_, hi, hi, hi, hd, hd, hd,
+    by change (arg s 1).toNat + c.C.len ≤ 2 ^ 32; have := hp.pk_fit; omega_using [hlen, hfit],
+    by change (arg s 1).toNat + c.C.len ≤ 2 ^ 32; have := hp.pk_fit; omega_using [hlen, hfit],
+    by change (arg s 1).toNat + c.C.len ≤ 2 ^ 32; have := hp.pk_fit; omega_using [hlen, hfit],
+    hp.ws_fit, ?_, hp.sp_lo, hp.stk_sc⟩
+  · intro i h
+    exact ⟨_, hp.args, arg_containsN (k := 3) (by have := hp.sp_fit; omega_using [this]) (args_idx h)⟩
+  · intro i h
+    exact hp.args_sc.sub_left (arg_subN (k := 3) (by have := hp.sp_fit; omega_using [this]) (args_idx h))
+  · intro i h
+    have := args_idx h
+    have := hp.sp_fit
+    omega_arith
+  · exact stkOk_of (Cfg.stk_ge c) hp.sp_lo
+      (by rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := hp.ws_fit; omega_using [])]; exact hp.ws_fit)
+      (by decide) hp.stk_sc
+
+theorem setup_fixed {c : Cfg} {s₀ s : State} {base : Addr}
+    (P : SetupPost c Impl.EcKey.Compressed.X86.args s₀ base s) : Fixed c base s₀.gpr s.mem :=
+  ⟨P.consts (MP, c.C.p) (by simp [Cfg.consts]), P.consts (MN, c.C.n) (by simp [Cfg.consts]),
+    P.consts (ZERO, 0) (by simp [Cfg.consts]), P.consts (ONE, 1) (by simp [Cfg.consts]),
+    (P.consts (ONEP, c.mont 1) (by simp [Cfg.consts])).trans (by simp only [Cfg.mont, Cfg.R, Nat.one_mul]),
+    P.consts (AP, c.mont c.C.a) (by simp [Cfg.consts]),
+    P.consts (B3P, c.mont (3 * c.C.b)) (by simp [Cfg.consts]),
+    P.consts (GX, c.mont c.C.gx) (by simp [Cfg.consts]),
+    P.consts (GY, c.mont c.C.gy) (by simp [Cfg.consts]),
+    P.consts (R2N, c.R * c.R % c.C.n) (by simp [Cfg.consts]),
+    P.consts (ONEN, c.R % c.C.n) (by simp [Cfg.consts]), P.saved, P.table⟩
+
+end VG.Proof.EcKey.Compressed.X86
+
+end
+
+end
+
+/-! ### `EcKey.Compressed.X86.Pre`, which the modules that import this one used -/
+
+section
+
+@[expose] public section
+namespace VG.Proof.EcKey.Compressed.X86
+
+open VG VG.X86 VG.Impl.Ecdsa.X86 VG.Proof.Ecdsa.X86
+open VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Weierstrass.X86
+
+theorem codec_input {c : Cfg} {inputLen outputLen : Nat} {s : State}
+    (h : codecPre inputLen outputLen false s) : InputPre c inputLen s := by
+  obtain ⟨hrd, hwr, _, _, hpk, _, hargs, _, _, _, hpf, hwf, hsp, hlo, _, hstk⟩ := h
+  have lo : c.stk ≤ (s.gpr .esp).toNat := Nat.le_trans (Cfg.stk_le c) hlo
+  have stk : Region.Disjoint ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 c.stk, c.stk⟩
+      ⟨ptr s 2, size⟩ := by
+    have sub := below_le_sub (sp := s.gpr .esp) (Cfg.stk_le c) hlo
+    change Region.Sub ⟨((s.gpr .esp) - BitVec.ofNat 32 c.stk).setWidth 64, c.stk⟩
+      ⟨((s.gpr .esp) - BitVec.ofNat 32 28).setWidth 64, 28⟩ at sub
+    rw [Taint.sub_setWidth lo, Taint.sub_setWidth hlo] at sub
+    exact hstk.sub_left sub
+  exact ⟨by rw [hrd, hwr]; simp, by rw [hwr]; simp, hpk, hpf, hwf,
+    by rw [hrd, hwr]; simp, hargs, hsp, lo, stk⟩
+
+end VG.Proof.EcKey.Compressed.X86
+
+end
+
+end
 
 /-! # Reuse 32-bit x86's existing EC setup and point validation -/
 

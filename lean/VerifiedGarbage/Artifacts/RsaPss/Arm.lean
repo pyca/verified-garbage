@@ -1,37 +1,41 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.Proof.RsaPss.Arm.Inst
-public import VerifiedGarbage.Proof.Rsa.Arm.PublicOfCrt
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.TCB.Registration
 public import VerifiedGarbage.Spec.RsaPss.MdTable
-public import VerifiedGarbage.TCB.Arm.Print
-public import VerifiedGarbage.Proof.Variants.RsaPrivateCrt.Arm
+import VerifiedGarbage.Proof.RsaPss.Arm.Fn
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.RsaPss.Arm.Inst
+import VerifiedGarbage.Proof.Rsa.Arm.PublicOfCrt
+import VerifiedGarbage.Proof.Variants.RsaPrivateCrt.Arm
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # RSASSA-PSS (RFC 8017) on ARMv7 -/
-
-@[expose] public section
 
 namespace VG.Artifacts.RsaPss.Arm
 
 open VG.Proof.Rsa.Arm (CrtImpl)
-open VG.Proof.RsaPss.Arm (OK signP_ok verify_ok)
+open VG.Proof.RsaPss.Arm (OK)
 
-def artifacts : List Artifact :=
+public def artifacts : List (Artifact Arm.target) :=
   VG.Proof.Variants.RsaPrivateCrt.Arm.variants.flatMap fun (v : CrtImpl) =>
     if h : OK Proof.MdHashTable.Arm.vars Proof.HashTable.Arm.vars then [
       Spec.RsaPss.signPrecomputedMdTableApi.artifact Arm.target {
         suffix := v.suffix
         tables := [("hash", Proof.MdHashTable.Arm.tables Proof.MdHashTable.Arm.vars),
           ("mgf1", Proof.HashTable.Arm.tables Proof.HashTable.Arm.vars)]
-        code := Proof.RsaPss.Arm.Sg.signCodeP Proof.MdHashTable.Arm.vars Proof.HashTable.Arm.vars v
-        verified := signP_ok h v },
+        code := Impl.RsaPss.Arm.Fn.signPrecomputed (Proof.MdHashTable.Arm.fnsOf Proof.MdHashTable.Arm.vars)
+          (Proof.HashTable.Arm.fnsOf Proof.HashTable.Arm.vars) (Proof.Rsa.Arm.privNameP v) (Proof.Rsa.Arm.privCodeP v)
+        verified := Proof.RsaPss.Arm.Fn.signPrecomputed h v },
       Spec.RsaPss.verifyPrecomputedMdTableApi.artifact Arm.target {
         suffix := v.suffix
         tables := [("hash", Proof.MdHashTable.Arm.tables Proof.MdHashTable.Arm.vars),
           ("mgf1", Proof.HashTable.Arm.tables Proof.HashTable.Arm.vars)]
-        code := Proof.RsaPss.Arm.Vf.verifyCode Proof.MdHashTable.Arm.vars Proof.HashTable.Arm.vars
-          (Proof.Rsa.Arm.pdOfCrt v)
-        verified := verify_ok h (Proof.Rsa.Arm.pdOfCrt v) }]
+        code := Impl.RsaPss.Arm.Fn.verifyPrecomputed (Proof.MdHashTable.Arm.fnsOf Proof.MdHashTable.Arm.vars)
+          (Proof.HashTable.Arm.fnsOf Proof.HashTable.Arm.vars) (Proof.Rsa.Arm.pdOfCrt v).name (Proof.Rsa.Arm.pdOfCrt v).code
+        verified := Proof.RsaPss.Arm.Fn.verifyPrecomputed h v }]
     else []
+
+spec_apis artifacts
 
 end VG.Artifacts.RsaPss.Arm

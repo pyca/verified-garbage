@@ -11,17 +11,13 @@ public import VerifiedGarbage.Proof.Weierstrass.Booth
 import VerifiedGarbage.Proof.Mont.X86_64.Wide
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
-public import VerifiedGarbage.Proof.Mont.X86_64.AddSubP
-public import VerifiedGarbage.Proof.Mont.X86_64.CsubR
-public import VerifiedGarbage.Proof.Mont.X86_64.MulF
 public import VerifiedGarbage.Proof.Mont.X86_64.Sub256
-public import VerifiedGarbage.Proof.Mont.X86_64.Sub384
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.MontCall
 public import VerifiedGarbage.Proof.Weierstrass.BytesLen
 public import VerifiedGarbage.Proof.Weierstrass.Pow
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.Bits
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.Blocks
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnB
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnN
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.MontWide8
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Bytes
 
 /-!
@@ -119,10 +115,12 @@ structure BaseCfgOk (c : Cfg) : Prop where
   even number of them, for its selection of 16 bytes at a time. -/
   window_am3 : c.windows = true → AM3 c.C
   comb_am3 : ∀ d, c.comb = some d → AM3 c.C
-  even : c.n ≤ 6 → c.n % 2 = 0
+  even : c.windows = true → c.n ≤ 6 → c.n % 2 = 0
   /-- With functions for the inversions (`Cfg.inverse`), up to nine words:
   divsteps modulo `p` and `n`. -/
   inverse : c.inverse.isSome = true → c.n ≤ 9 ∧ c.fastN = true
+  /-- The inversions that four-word curves share (`Cfg.inv4`) only for four words. -/
+  inv4_n : c.inv4 = true → c.n = 4 := by decide
 
 /-- Additional hypothesis for the optimized variable-base formulas. The
 general ladder and signing without a comb do not require `a = -3`. -/

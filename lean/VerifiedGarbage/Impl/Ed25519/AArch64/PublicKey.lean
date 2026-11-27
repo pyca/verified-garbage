@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Impl.Ed25519.AArch64.Whole.Entry
 public import VerifiedGarbage.Impl.Ed25519.AArch64.Whole.Setup
 public import VerifiedGarbage.Impl.Ed25519.AArch64.Whole.Wipe
-public import VerifiedGarbage.Impl.Ed25519.AArch64.ScalarBase
+public import VerifiedGarbage.Impl.Ed25519.AArch64.FixedBase
 
 @[expose] public section
 

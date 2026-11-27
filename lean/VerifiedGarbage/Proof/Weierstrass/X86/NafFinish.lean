@@ -1,7 +1,6 @@
 module
-public import VerifiedGarbage.Proof.Weierstrass.X86.NafEntry
 
-import VerifiedGarbage.Proof.Weierstrass.X86.NafSum
+public import VerifiedGarbage.Proof.Weierstrass.X86.NafSum
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Weierstrass.X86.TCombJSelect
 import VerifiedGarbage.Proof.Weierstrass.X86.JacState
@@ -362,7 +361,7 @@ theorem nafFinish_ok {F : Impl.Weierstrass.Mont.Modulus} {K : WinCfg} {C : Curve
     · have hz' : tmv C K.M.n base s K.R.z≠0 := fun he =>
         hz ((toM_eq_zero_iff hm (lt _ (by simp [jacCoords]))).mp he)
       simp only [hz,hz',↓reduceIte]
-  let E := Function.update (tmv C K.M.n base s) K.R.y
+  let E := Fun.update (tmv C K.M.n base s) K.R.y
     (if tmv C K.M.n base s K.R.z=0 then 1 else tmv C K.M.n base s K.R.y)
   have ia : Inv K.M base size C.p (·∈nafSlots K) (jacCoords K.R) E a :=
     (h.field.update hL.lay hAcc (sl _ (by simp [jacCoords])) pa la ey).sub
@@ -390,9 +389,9 @@ theorem nafFinish_ok {F : Impl.Weierstrass.Mont.Modulus} {K : WinCfg} {C : Curve
   have hzt : K.R.z≠K.S.t0 := by grind
   have hxz : K.R.x≠K.R.z := by grind
   have hyt : K.R.y≠K.S.t0 := by grind
-  simp only [TCombCfg.outOps,VG.Impl.Weierstrass.X86.WinCfg.tc,runOps,List.foldl_cons,List.foldl_nil,FOp.run,Function.update_apply,
+  simp only [TCombCfg.outOps,VG.Impl.Weierstrass.X86.WinCfg.tc,runOps,List.foldl_cons,List.foldl_nil,FOp.run,Fun.update_apply,
     hxt,hzt,hxz,hyt,hzy.symm,hxz.symm,hxt.symm,hxy.symm,ite_true,ite_false]
-  simp only [E,Function.update_of_ne hxy,Function.update_of_ne hzy,Function.update_self]
+  simp only [E,Fun.update_of_ne hxy,Fun.update_of_ne hzy,Fun.update_self]
   exact InvJ.out hC h.point
 
 end VG.Proof.Weierstrass.X86

@@ -2,29 +2,25 @@ module
 
 public import VerifiedGarbage.Proof.Gcm.RISCV64.Ghash
 public import VerifiedGarbage.Proof.AesGcm.RISCV64.CTBase
-public import VerifiedGarbage.Proof.AesGcm.RISCV64.Absorb
-import VerifiedGarbage.Proof.AesGcm.RISCV64.Flush
+public import VerifiedGarbage.Proof.AesGcm.RISCV64.Flush
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 import VerifiedGarbage.Proof.Framework.RISCV64.Steps
 import VerifiedGarbage.Proof.Framework.RISCV64.Run
 import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.AesGcm.RISCV64.CTBase
-meta import VerifiedGarbage.Proof.AesGcm.RISCV64.Absorb
 meta import VerifiedGarbage.Proof.AesGcm.RISCV64.Flush
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Run
 meta import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.AesGcm.RISCV64.Env
 public import VerifiedGarbage.Spec.Gcm
-import VerifiedGarbage.Proof.AesGcm.RISCV64.Ghash1
-meta import VerifiedGarbage.Proof.AesGcm.RISCV64.Ghash1
 public import VerifiedGarbage.Impl.AesGcm.RISCV64
 
 /-!
 # AES-GCM on RISC-V: `ghash1`, `absorb`, `flush` and `lens` are constant time
 
 Untrusted: everything here is checked by Lean. As on ARMv7
-(`Proof/AesGcm/Arm/CTAbsorb.lean`): the invariants fix the context, the
+(`Proof/AesGcm/Arm/CTCrypt.lean`): the invariants fix the context, the
 state, `W` (`EnvC`), the stack pointer, the data's address and length and
 the number of bytes absorbed so far modulo 16, and leave the rest
 existential.

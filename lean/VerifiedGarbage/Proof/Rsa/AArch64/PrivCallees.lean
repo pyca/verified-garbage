@@ -106,7 +106,7 @@ theorem crt_post {s s' : State} (h : (Proof.Rsa.privateCrtContract abi 0).post s
     List.append_eq] at h
   exact h
 
-theorem crt_pub {s₁ s₂ : State} (h : crtA.pub s₁ s₂) : (Proof.Rsa.privateCrtContract abi 0).pub s₁ s₂ := by
+theorem crt_pub {s₁ s₂ : State} (h : crtA.pub s₁ s₂) (hd : s₁.dit = s₂.dit) : (Proof.Rsa.privateCrtContract abi 0).pub s₁ s₂ := by
   sig_pub [Proof.Rsa.privateCrtContract, Proof.Rsa.privateCrtSig, abi, argRegs, stackArgs_ten,
     List.append_eq]
   obtain ⟨hr, hsp, ha, hn⟩ := h
@@ -115,7 +115,7 @@ theorem crt_pub {s₁ s₂ : State} (h : crtA.pub s₁ s₂) : (Proof.Rsa.privat
   simp only [argRegs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at hr
   obtain ⟨r0, r1, r2, r3, r4, r5, r6, r7⟩ := hr
   rw [hn]
-  simp only [List.getD_cons_succ, List.getD_cons_zero, hsp, r0, r1, r2, r3, r4, r5, r6, r7, a0, a1,
+  simp only [List.getD_cons_succ, List.getD_cons_zero, hsp, hd, r0, r1, r2, r3, r4, r5, r6, r7, a0, a1,
     a2, a3, a4, a5, a6, a7, a8, a9, and_self]
 
 /-! ## `vg_rsa_private_crt_precomputed` -/
@@ -181,13 +181,13 @@ theorem pc_post {s s' : State} (h : (Spec.Rsa.publicPrecomputeContract abi 0).po
   sig_post [Spec.Rsa.publicPrecomputeContract, Spec.Rsa.publicPrecomputeSig, abi, argRegs] at h
   exact h
 
-theorem pc_pub {s₁ s₂ : State} (h : pcA.pub s₁ s₂) : (Spec.Rsa.publicPrecomputeContract abi 0).pub s₁ s₂ := by
+theorem pc_pub {s₁ s₂ : State} (h : pcA.pub s₁ s₂) (hd : s₁.dit = s₂.dit) : (Spec.Rsa.publicPrecomputeContract abi 0).pub s₁ s₂ := by
   sig_pub [Spec.Rsa.publicPrecomputeContract, Spec.Rsa.publicPrecomputeSig, abi, argRegs]
   obtain ⟨hr, hsp, hn⟩ := h
   simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at hr
   obtain ⟨r0, r1, r2, r3, r4, r5⟩ := hr
   rw [hn]
-  simp only [hsp, r0, r1, r2, r3, r4, r5, and_self]
+  simp only [hsp, hd, r0, r1, r2, r3, r4, r5, and_self]
 
 /-! ## `vg_rsa_public_precomputed_checked` -/
 
@@ -247,7 +247,7 @@ theorem pd_post {s s' : State} (h : (Proof.Rsa.publicPrecomputedCheckedContract 
     stackArgs_two, List.append_eq] at h
   exact h
 
-theorem pd_pub {s₁ s₂ : State} (h : pdA.pub s₁ s₂) :
+theorem pd_pub {s₁ s₂ : State} (h : pdA.pub s₁ s₂) (hd : s₁.dit = s₂.dit) :
     (Proof.Rsa.publicPrecomputedCheckedContract abi 0).pub s₁ s₂ := by
   sig_pub [Proof.Rsa.publicPrecomputedCheckedContract, Proof.Rsa.publicPrecomputedSig, abi, argRegs,
     stackArgs_two, List.append_eq]
@@ -255,7 +255,7 @@ theorem pd_pub {s₁ s₂ : State} (h : pdA.pub s₁ s₂) :
   simp only [argRegs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at hr
   obtain ⟨r0, r1, r2, r3, r4, r5, r6, r7⟩ := hr
   rw [hw, he]
-  simp only [List.getD_cons_succ, List.getD_cons_zero, hsp, r0, r1, r2, r3, r4, r5, r6, r7, a0, a1,
+  simp only [List.getD_cons_succ, List.getD_cons_zero, hsp, hd, r0, r1, r2, r3, r4, r5, r6, r7, a0, a1,
     and_self]
 
 end VG.Proof.Rsa.AArch64

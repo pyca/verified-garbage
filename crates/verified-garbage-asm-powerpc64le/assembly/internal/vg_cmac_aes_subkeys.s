@@ -6,9 +6,9 @@
 
 vg_cmac_aes_subkeys:
 	mflr %r0
-	std %r0, 2080(%r6)
-	std %r14, 2064(%r6)
-	std %r15, 2072(%r6)
+	std %r0, 16(%r6)
+	std %r14, 0(%r6)
+	std %r15, 8(%r6)
 	or %r14, %r5, %r5
 	or %r15, %r6, %r6
 	li %r9, 0
@@ -16,7 +16,6 @@ vg_cmac_aes_subkeys:
 	std %r9, 8(%r5)
 	or %r5, %r14, %r14
 	li %r6, 1
-	or %r7, %r15, %r15
 	bl {vg_aes_encrypt_blocks}
 	li %r11, 0
 	ldbrx %r9, %r14, %r11
@@ -54,8 +53,8 @@ vg_cmac_aes_subkeys:
 	stdbrx %r9, %r14, %r11
 	li %r11, 24
 	stdbrx %r10, %r14, %r11
-	ld %r0, 2080(%r15)
-	ld %r14, 2064(%r15)
-	ld %r15, 2072(%r15)
+	ld %r0, 16(%r15)
+	ld %r14, 0(%r15)
+	ld %r15, 8(%r15)
 	mtlr %r0
 	blr

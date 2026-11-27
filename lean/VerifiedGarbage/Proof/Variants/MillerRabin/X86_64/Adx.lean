@@ -1,5 +1,6 @@
 module
 
+import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.MillerRabin.X86_64.Backend
 public import VerifiedGarbage.Impl.Bignum.X86_64.MontFnSpecialized
 public import VerifiedGarbage.Proof.Bignum.X86_64.MontFnAdxMont
@@ -126,6 +127,7 @@ namespace VG.Proof.Variants.MillerRabin.X86_64.Adx
 open VG VG.X86_64 VG.Proof.Bignum.X86_64 VG.Proof.MillerRabin.X86_64
 
 def arith : RoundArith where
+  arithSuffix := "_adx"
   mont := Mont.fnAdx
   inlineMont := Mont.fnAdxSpecialized
   inlineDepth := by
@@ -142,6 +144,12 @@ def arith : RoundArith where
     unfold Impl.Bignum.X86_64.MontFnSpecialized.mm
       Impl.Bignum.X86_64.MontFnSpecialized.body Impl.Bignum.X86_64.MontFnSpecialized.tiled
     split <;> rfl
+  inlineNoMx := by
+    intro o a b
+    change (Impl.Bignum.X86_64.MontFnSpecialized.mm o a b).allInstrs (fun i => !touchesMxcsr i) = true
+    unfold Impl.Bignum.X86_64.MontFnSpecialized.mm
+      Impl.Bignum.X86_64.MontFnSpecialized.body Impl.Bignum.X86_64.MontFnSpecialized.tiled
+    split <;> rfl
   mm := Impl.Bignum.X86_64.MontFn.call "vg_rsa_mont_mul_adx" Impl.Bignum.X86_64.MontFn.mulAdx
   mmOk := call_inlineOk (by decide +kernel)
   mmInline _ _ _ := rfl
@@ -150,6 +158,16 @@ def arith : RoundArith where
   arithSafe := by intro o a b; rfl
 
 
-def variant : RoundImpl := RoundImpl.ofArith arith (by decide +kernel) (by decide +kernel) "_adx" ["bmi2", "adx"]
+/-- What the cleanup of a caller needs of the specialized multiplication, at
+the level `k`. -/
+theorem inlineSide (k : Nat) (o a b : Nat) :
+    X86_64.Scrub.calleeSide (arith.inlineMont.mm o a b) k 0 = true := by
+  change X86_64.Scrub.calleeSide (Impl.Bignum.X86_64.MontFnSpecialized.mm o a b) k 0 = true
+  unfold Impl.Bignum.X86_64.MontFnSpecialized.mm
+    Impl.Bignum.X86_64.MontFnSpecialized.body Impl.Bignum.X86_64.MontFnSpecialized.tiled
+  split <;> rfl
+
+def variant : RoundImpl := RoundImpl.ofArith arith (by decide +kernel) (by decide +kernel) .sse (by lit_decide)
+  (by intro o a b; rfl) (by intro o a b; rfl) (inlineSide _) "_adx" ["bmi2", "adx"]
 
 end VG.Proof.Variants.MillerRabin.X86_64.Adx

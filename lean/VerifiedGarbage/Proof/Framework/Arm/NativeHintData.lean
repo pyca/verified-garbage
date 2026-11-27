@@ -9,7 +9,8 @@ meta import VerifiedGarbage.TCB.Arm.Isa
 
 /-! Executable ARMv7 taint operations for the compiled hint search
 (`native_taint_decide`), separated from their soundness proofs: a copy of
-`Arm.taint` (`Proof/Framework/Arm/Taint.lean`), field for field, whose hints
+`Arm.taint` (`Proof/Framework/Arm/Taint.lean`) and the domains that extend
+its step, field for field, whose hints
 are renamed to the checked domain's constructors and checked by the kernel
 like any other (`Taint.check`). A difference from `Arm.taint` can only make
 the check fail. -/
@@ -32,7 +33,26 @@ structure T where
   slots : List (Nat × Nat × Nat) := []
   argLen : Nat := 0
   argBases : List (Nat × Nat) := []
-  deriving DecidableEq, Lean.ToExpr
+  deriving DecidableEq
+
+/-- A taint as a term, as `Arm.Taint.T`'s: the bits of its set of registers,
+and the numbers of its bases and slots, are numerals as the checked domain's
+steps leave them. -/
+instance instToExprTRaw : Lean.ToExpr T where
+  toExpr t :=
+    let nat := Lean.mkRawNatLit
+    let tN := Lean.toTypeExpr Nat
+    let tR := Lean.toTypeExpr Reg
+    let pair (ta tb a b : Lean.Expr) := Lean.mkApp4 (.const ``Prod.mk [.zero, .zero]) ta tb a b
+    let list (ty : Lean.Expr) (es : List Lean.Expr) :=
+      es.foldr (fun a e => Lean.mkApp3 (.const ``List.cons [.zero]) ty a e) (Lean.mkApp (.const ``List.nil [.zero]) ty)
+    Lean.mkAppN (.const ``T.mk []) #[
+      Lean.mkApp2 (.const ``RegSet.mk []) tR (nat t.regs.bits), Lean.toExpr t.flags, Lean.toExpr t.lens,
+      list (Lean.toTypeExpr (Reg × Nat)) (t.bases.map fun p => pair tR tN (Lean.toExpr p.1) (nat p.2)),
+      list (Lean.toTypeExpr (Nat × Nat × Nat)) (t.slots.map fun s =>
+        pair tN (Lean.toTypeExpr (Nat × Nat)) (nat s.1) (pair tN tN (nat s.2.1) (nat s.2.2))),
+      Lean.toExpr t.argLen, Lean.toExpr t.argBases]
+  toTypeExpr := .const ``T []
 
 def pub (τ : T) (r : Reg) : Bool := τ.regs.mem r
 
@@ -177,7 +197,30 @@ def hintOps : VG.NativeHintOps isa where
   push _ _ := none
   pop _ _ := none
 
+/-- The step of `Arm.taintSym L` (`Arm/TaintSym.lean`: the address of a static
+of `L` is public) and, if `um`, of `Arm.taintU` and `Arm.taintSymU L`
+(`Arm/TaintUmaal.lean`: `umaal` makes the registers it writes secret). -/
+def stepX (um : Bool) (L : List String) (τ : T) : Instr → Option T
+  | .adrSym d n => some { τ with regs := set τ d (L.contains n), bases := kill τ d }
+  | .umaal lo hi _ _ =>
+    if um then
+      some { τ with
+        regs := (τ.regs.erase lo).erase hi
+        bases := τ.bases.filter fun p => p.1 != lo && p.1 != hi }
+    else none
+  | i => step τ i
+
+/-- The operations of `Arm.taintU` (with no statics), `Arm.taintSym` and
+`Arm.taintSymU`, which share `Arm.taint`'s domain and its other rules. -/
+def hintOpsX (um : Bool) (L : List String) : VG.NativeHintOps isa := { hintOps with step := stepX um L }
+
 end VG.NativeHints.Arm
+
+namespace VG.NativeHints.Arm.providerX
+/-- `provider`'s searches, for `hintOpsX`. -/
+def hintOfSize (um : Bool) (L : List String) := VG.NativeHintOps.hintOfSize (VG.NativeHints.Arm.hintOpsX um L)
+def hintWeakOfSize (um : Bool) (L : List String) := VG.NativeHintOps.hintWeakOfSize (VG.NativeHints.Arm.hintOpsX um L)
+end VG.NativeHints.Arm.providerX
 
 namespace VG.NativeHints.Arm.provider
 /-- An untrusted native hint; `Taint.check` still checks every interval. -/

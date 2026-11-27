@@ -10,10 +10,10 @@ public import VerifiedGarbage.Impl.Ffdh.Arm.Domain
 namespace VG.Impl.Ffdh.Arm.NormalizedPrepare
 open VG VG.Arm
 
-def code (op : Nat → Nat → Nat → Prog isa) : Prog isa :=
-  .seq VG.Impl.Bignum.Arm.PublicFn.prepare (VG.Impl.Bignum.Arm.NormalizedPrecompute.precompute op)
+def code (op : Nat → Nat → Nat → Prog isa) (dbl : Prog isa) : Prog isa :=
+  .seq VG.Impl.Bignum.Arm.PublicFn.prepare (VG.Impl.Bignum.Arm.NormalizedPrecompute.precompute op dbl)
 
-def prepareAt (op : Nat → Nat → Nat → Prog isa) (slot : Nat) : Prog isa :=
-  .seq (.block (VG.Impl.Ffdh.Arm.Domain.prepareArgs slot)) (code op)
+def prepareAt (op : Nat → Nat → Nat → Prog isa) (dbl : Prog isa) (slot : Nat) : Prog isa :=
+  .seq (.block (VG.Impl.Ffdh.Arm.Domain.prepareArgs slot)) (code op dbl)
 
 end VG.Impl.Ffdh.Arm.NormalizedPrepare

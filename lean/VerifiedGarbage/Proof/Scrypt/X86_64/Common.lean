@@ -8,6 +8,7 @@ import all Init.Data.Nat.Power2.Basic
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Sha256.Stream
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-!
 # scrypt on x86-64: common lemmas
@@ -114,6 +115,6 @@ theorem wp_xorm {is : List Instr} {s : State} {Q : State → Prop} {d : Reg} {m 
   refine Proof.MdStream.X86_64.WP.cons
     (s' := (arithFlags s (s.gpr d ^^^ s.mem.readW a 64) false false).setReg d _) ?_
     (k _ (Upd.flags _ _ _ _ _ _))
-  simp [exec, execAlu, readSrc, State.load64, ha, hin]
+  simp [reduceExec, execAlu, readSrc, State.load64, ha, hin]
 
 end VG.Proof.Scrypt.X86_64.BlockMix

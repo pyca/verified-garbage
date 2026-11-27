@@ -1,15 +1,17 @@
 module
 
+public import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.Alias
+public import VerifiedGarbage.Proof.AesGcm.X86_64.ScrubStub
+
 public import VerifiedGarbage.Proof.Gcm.PrecomputedContract
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Flag
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.Flagged
 public import VerifiedGarbage.Proof.Gcm.PreparedPowers
 public import VerifiedGarbage.Proof.AesGcm.Rounds
-public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Callee
+public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.BlkCall
 public import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Context
 import Mathlib.Data.List.Basic
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
 import VerifiedGarbage.Proof.Aes.X86_64.Lit
@@ -17,15 +19,20 @@ public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Callee
 public import VerifiedGarbage.Proof.Gcm.PreparedContract
 public import VerifiedGarbage.Proof.Gcm.OutOfPlaceContract
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.SplitCallee
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.Verified
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.FrontFast
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.StreamTo
 public import VerifiedGarbage.Proof.AesGcm.X86_64.VerifiedP
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Variant
 public import VerifiedGarbage.Proof.AesGcm.X86_64.GhashImpls
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Verified
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.Short
 public import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Ghash
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Pow
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Field48
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchR.Ok
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Piece
+meta import VerifiedGarbage.Impl.Gcm.X86_64.StitchR
+meta import VerifiedGarbage.Impl.Gcm.X86_64.StitchAvx8
+meta import VerifiedGarbage.Impl.Gcm.X86_64.StitchZHTo
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.OpenSplit.Seal
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Tab
 public import VerifiedGarbage.Proof.Gcm.Poly
 import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Bcast
@@ -39,21 +46,16 @@ import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Gcm.Stream
 import VerifiedGarbage.Proof.Gcm.Split
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchR.Ok
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.OkP
 import VerifiedGarbage.Proof.Framework.TacticTemplate
 import VerifiedGarbage.Proof.Framework.TaintBatch
 public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Verified
+public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamClrVerified
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Verified
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.SealCallee
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.VerifiedP
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Fn
 import VerifiedGarbage.Proof.AesGcm.X86_64.Short.SealFin
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Ok
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Ct
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Ok
 import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Ok
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.Short
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.StreamTo
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.Verified
 public import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
 public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
@@ -63,9 +65,6 @@ public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksVerifiedP
 public import VerifiedGarbage.Proof.Gcm.Prepared16Contract
 public import VerifiedGarbage.Impl.StackScratch.X86_64
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared16.Verified
-import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.OpenCT
-import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.SealSel
-import VerifiedGarbage.Proof.AesGcm.X86_64.Short.KsA
 public import VerifiedGarbage.Proof.AesGcm.ScratchSplit
 import VerifiedGarbage.Proof.AesGcm.ScratchPrepared16
 import VerifiedGarbage.Proof.AesGcm.Scratch
@@ -76,9 +75,7 @@ import VerifiedGarbage.Proof.AesGcm.X86_64.Split.Verified
 import VerifiedGarbage.Proof.AesGcm.ScratchPreparedTo
 public import VerifiedGarbage.Proof.AesGcm.ScratchPrepared16To
 public import VerifiedGarbage.Impl.AesGcm.X86_64.StreamTo
-import Mathlib.Data.List.Dedup
 import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.CT
-import VerifiedGarbage.Proof.AesGcm.ScratchTo
 public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Contract
 import VerifiedGarbage.Proof.AesSiv.X86_64.Verified
 import VerifiedGarbage.Proof.AesGcm.ScratchGather
@@ -87,7 +84,7 @@ public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared16.BlocksVerified
 public import VerifiedGarbage.Proof.AesGcm.X86_64.OpenTo.Verified
 public import VerifiedGarbage.Proof.AesGcm.X86_64.OpenToSplit.Verified
 public import VerifiedGarbage.Proof.AesGcm.X86_64.OpenSplit.Fn
-public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksToDec.Fn
+public import VerifiedGarbage.Proof.AesGcm.X86_64.OpenSplit.Prefix
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchToDec.Loop
 public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.DecTo
 public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Contract
@@ -121,9 +118,9 @@ theorem encSpecPrepared_pre {s : State} (h : encCallPre CtxMode.prepared s) :
     Proof.Gcm.streamCryptPowersPre, X86_64.abi, X86_64.argRegs, Proof.AesGcm.arg, Proof.AesGcm.args,
     Proof.AesGcm.ret, X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop,
     VG.X86_64.below]
-  sig_and_intros
-  all_goals simp only [Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.ret, X86_64.stackArg, X86_64.stackArgAddr,
+  simp only [Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.ret, X86_64.stackArg, X86_64.stackArgAddr,
     VG.X86_64.below, Nat.mul_one, Proof.AesGcm.rounds, CtxMode.prepared, CtxMode.preparedN, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowersRepr] at *
+  sig_and_intros
   all_goals with_reducible assumption
 
 theorem encSpecPrepared_post {s s' : State} (hR : Proof.AesGcm.rounds s)
@@ -137,7 +134,7 @@ theorem encSpecPrepared_post {s s' : State} (hR : Proof.AesGcm.rounds s)
 
 theorem encSpecPrepared_pub {s₁ s₂ : State} (h : encCallPub s₁ s₂) :
     (Proof.AesGcm.streamEncryptPreparedRoundsContract X86_64.abi 2608).pub s₁ s₂ := by
-  obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈⟩ := h
+  obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, aMd⟩ := h
   sig_pub [Proof.AesGcm.streamEncryptPreparedRoundsContract, Proof.Gcm.streamCryptPrecomputedSig, Proof.Gcm.streamCryptPrecomputedSig, X86_64.abi,
     X86_64.argRegs]
   sig_reduce [Proof.AesGcm.streamEncryptPreparedRoundsContract, Proof.Gcm.streamCryptPrecomputedSig, Proof.Gcm.streamCryptPrecomputedSig, X86_64.abi,
@@ -193,9 +190,9 @@ theorem toSpecPrepared_pre {s : State} (h : toPre CtxMode.prepared s) :
     Proof.Gcm.streamEncryptToPreparedPre, X86_64.abi, X86_64.argRegs, Proof.AesGcm.arg, Proof.AesGcm.args,
     Proof.AesGcm.ret, X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop,
     VG.X86_64.below]
-  sig_and_intros
-  all_goals simp only [Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.ret, X86_64.stackArg,
+  simp only [Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.ret, X86_64.stackArg,
     X86_64.stackArgAddr, VG.X86_64.below, Nat.mul_one, Proof.AesGcm.rounds, CtxMode.prepared, CtxMode.preparedN, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowersRepr] at *
+  sig_and_intros
   all_goals first
     | with_reducible assumption
     | omega
@@ -212,7 +209,7 @@ theorem toSpecPrepared_post {s s' : State} (hR : rounds s)
 
 theorem toSpecPrepared_pub {s₁ s₂ : State} (h : toPub s₁ s₂) :
     (Proof.Gcm.streamEncryptToPreparedContract X86_64.abi 4856).pub s₁ s₂ := by
-  obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, a₁₀⟩ := h
+  obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, a₁₀, aMd⟩ := h
   sig_pub [Proof.Gcm.streamEncryptToPreparedContract, Proof.Gcm.streamEncryptToPreparedSig, Proof.Gcm.streamEncryptToPrecomputedSig, X86_64.abi,
     X86_64.argRegs]
   sig_reduce [Proof.Gcm.streamEncryptToPreparedContract, Proof.Gcm.streamEncryptToPreparedSig, Proof.Gcm.streamEncryptToPrecomputedSig, X86_64.abi,
@@ -271,10 +268,10 @@ theorem splitSpecR_pre {s : State} (h : splitPreK CtxMode.prepared s) :
     Proof.Gcm.sealSplitPreparedPre, X86_64.abi, X86_64.argRegs, Proof.AesGcm.arg, Proof.AesGcm.args,
     Proof.AesGcm.ret, X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop,
     VG.X86_64.below]
-  sig_and_intros
-  all_goals simp only [Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.ret, X86_64.stackArg,
+  simp only [Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.ret, X86_64.stackArg,
     X86_64.stackArgAddr, VG.X86_64.below, Nat.mul_one, Proof.AesGcm.rounds, CtxMode.prepared, CtxMode.preparedN, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowersRepr,
     BitVec.setWidth_eq] at *
+  sig_and_intros
   all_goals first
     | with_reducible assumption
     | omega
@@ -290,7 +287,7 @@ theorem splitSpecR_post {M : CtxMode} {s s' : State}
 
 theorem splitSpecR_pub {s₁ s₂ : State} (h : splitPubK s₁ s₂) :
     (Proof.Gcm.sealSplitPreparedContract X86_64.abi 2672).pub s₁ s₂ := by
-  obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, a₁₀, a₁₁, a₁₂⟩ := h
+  obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, a₁₀, a₁₁, a₁₂, aMd⟩ := h
   sig_pub [Proof.Gcm.sealSplitPreparedContract, Proof.Gcm.sealSplitPreparedSig, Proof.Gcm.sealSplitPrecomputedSig,
     X86_64.abi, X86_64.argRegs]
   sig_reduce [Proof.Gcm.sealSplitPreparedContract, Proof.Gcm.sealSplitPreparedSig, Proof.Gcm.sealSplitPrecomputedSig,
@@ -831,7 +828,6 @@ end
 
 end
 
-
 /-!
 # AES-GCM's short path on x86-64: GHASH of the buffer, in the field
 
@@ -958,9 +954,9 @@ theorem sealSpecR_pre {s : State} (h : sealPreK CtxMode.prepared s) :
   sig_reduce [Proof.AesGcm.sealPreparedRoundsContract, Proof.Gcm.sealPrecomputedSig, Proof.Gcm.sealPrecomputedSig, Proof.Gcm.sealPowersPre,
     X86_64.abi, X86_64.argRegs, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.ret, X86_64.stackArg,
     X86_64.stackArgAddr, List.getD, List.range, List.range.loop, VG.X86_64.below]
-  sig_and_intros
-  all_goals simp only [Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.ret, X86_64.stackArg,
+  simp only [Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.ret, X86_64.stackArg,
     X86_64.stackArgAddr, VG.X86_64.below, Nat.mul_one, Proof.AesGcm.rounds, CtxMode.prepared, CtxMode.preparedN, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowersRepr] at *
+  sig_and_intros
   all_goals with_reducible assumption
 
 theorem sealSpecR_post {s s' : State} (hR : rounds s)
@@ -974,7 +970,7 @@ theorem sealSpecR_post {s s' : State} (hR : rounds s)
 
 theorem sealSpecR_pub {s₁ s₂ : State} (h : sealPubK s₁ s₂) :
     (Proof.AesGcm.sealPreparedRoundsContract X86_64.abi 2624).pub s₁ s₂ := by
-  obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, a₁₀⟩ := h
+  obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, a₁₀, aMd⟩ := h
   sig_pub [Proof.AesGcm.sealPreparedRoundsContract, Proof.Gcm.sealPrecomputedSig, Proof.Gcm.sealPrecomputedSig, X86_64.abi, X86_64.argRegs]
   sig_reduce [Proof.AesGcm.sealPreparedRoundsContract, Proof.Gcm.sealPrecomputedSig, Proof.Gcm.sealPrecomputedSig, X86_64.abi, X86_64.argRegs,
     X86_64.stackArg, X86_64.stackArgAddr, List.range, List.range.loop, Proof.AesGcm.arg]
@@ -1023,9 +1019,9 @@ theorem encSpecPrepared16_pre {s : State} (h : encCallPre CtxMode.prepared16 s) 
     Proof.Gcm.streamCryptPrepared16Pre, X86_64.abi, X86_64.argRegs, Proof.AesGcm.arg, Proof.AesGcm.args,
     Proof.AesGcm.ret, X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop,
     VG.X86_64.below]
-  sig_and_intros
-  all_goals simp only [Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.ret, X86_64.stackArg, X86_64.stackArgAddr,
+  simp only [Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.ret, X86_64.stackArg, X86_64.stackArgAddr,
     VG.X86_64.below, Nat.mul_one, Proof.AesGcm.rounds, CtxMode.prepared16, CtxMode.preparedN, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowers16Repr] at *
+  sig_and_intros
   all_goals with_reducible assumption
 
 theorem encSpecPrepared16_post {s s' : State} (hR : Proof.AesGcm.rounds s)
@@ -1039,7 +1035,7 @@ theorem encSpecPrepared16_post {s s' : State} (hR : Proof.AesGcm.rounds s)
 
 theorem encSpecPrepared16_pub {s₁ s₂ : State} (h : encCallPub s₁ s₂) :
     (Proof.AesGcm.streamEncryptPrepared16RoundsContract X86_64.abi 2608).pub s₁ s₂ := by
-  obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈⟩ := h
+  obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, aMd⟩ := h
   sig_pub [Proof.AesGcm.streamEncryptPrepared16RoundsContract, Proof.Gcm.streamCryptPrecomputedSig, Proof.Gcm.streamCryptPrecomputedSig, X86_64.abi,
     X86_64.argRegs]
   sig_reduce [Proof.AesGcm.streamEncryptPrepared16RoundsContract, Proof.Gcm.streamCryptPrecomputedSig, Proof.Gcm.streamCryptPrecomputedSig, X86_64.abi,
@@ -1095,9 +1091,9 @@ theorem toSpecPrepared16_pre {s : State} (h : toPre CtxMode.prepared16 s) :
     Proof.Gcm.streamEncryptToPrepared16Pre, X86_64.abi, X86_64.argRegs, Proof.AesGcm.arg, Proof.AesGcm.args,
     Proof.AesGcm.ret, X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop,
     VG.X86_64.below]
-  sig_and_intros
-  all_goals simp only [Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.ret, X86_64.stackArg,
+  simp only [Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.ret, X86_64.stackArg,
     X86_64.stackArgAddr, VG.X86_64.below, Nat.mul_one, Proof.AesGcm.rounds, CtxMode.prepared16, CtxMode.preparedN, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowers16Repr] at *
+  sig_and_intros
   all_goals first
     | with_reducible assumption
     | omega
@@ -1114,7 +1110,7 @@ theorem toSpecPrepared16_post {s s' : State} (hR : rounds s)
 
 theorem toSpecPrepared16_pub {s₁ s₂ : State} (h : toPub s₁ s₂) :
     (Proof.Gcm.streamEncryptToPrepared16Contract X86_64.abi 4856).pub s₁ s₂ := by
-  obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, a₁₀⟩ := h
+  obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, a₁₀, aMd⟩ := h
   sig_pub [Proof.Gcm.streamEncryptToPrepared16Contract, Proof.Gcm.streamEncryptToPreparedSig, Proof.Gcm.streamEncryptToPrecomputedSig, X86_64.abi,
     X86_64.argRegs]
   sig_reduce [Proof.Gcm.streamEncryptToPrepared16Contract, Proof.Gcm.streamEncryptToPreparedSig, Proof.Gcm.streamEncryptToPrecomputedSig, X86_64.abi,
@@ -1173,10 +1169,10 @@ theorem splitSpecR16_pre {s : State} (h : splitPreK CtxMode.prepared16 s) :
     Proof.Gcm.sealSplitPrepared16Pre, X86_64.abi, X86_64.argRegs, Proof.AesGcm.arg, Proof.AesGcm.args,
     Proof.AesGcm.ret, X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop,
     VG.X86_64.below]
-  sig_and_intros
-  all_goals simp only [Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.ret, X86_64.stackArg,
+  simp only [Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.ret, X86_64.stackArg,
     X86_64.stackArgAddr, VG.X86_64.below, Nat.mul_one, Proof.AesGcm.rounds, CtxMode.prepared16, CtxMode.preparedN, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowers16Repr,
     BitVec.setWidth_eq] at *
+  sig_and_intros
   all_goals first
     | with_reducible assumption
     | omega
@@ -1192,7 +1188,7 @@ theorem splitSpecR16_post {M : CtxMode} {s s' : State}
 
 theorem splitSpecR16_pub {s₁ s₂ : State} (h : splitPubK s₁ s₂) :
     (Proof.Gcm.sealSplitPrepared16Contract X86_64.abi 2672).pub s₁ s₂ := by
-  obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, a₁₀, a₁₁, a₁₂⟩ := h
+  obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, a₁₀, a₁₁, a₁₂, aMd⟩ := h
   sig_pub [Proof.Gcm.sealSplitPrepared16Contract, Proof.Gcm.sealSplitPreparedSig, Proof.Gcm.sealSplitPrecomputedSig,
     X86_64.abi, X86_64.argRegs]
   sig_reduce [Proof.Gcm.sealSplitPrepared16Contract, Proof.Gcm.sealSplitPreparedSig, Proof.Gcm.sealSplitPrecomputedSig,
@@ -1252,9 +1248,9 @@ theorem sealSpecR16_pre {s : State} (h : sealPreK CtxMode.prepared16 s) :
   sig_reduce [Proof.AesGcm.sealPrepared16RoundsContract, Proof.Gcm.sealPrecomputedSig, Proof.Gcm.sealPrecomputedSig, Proof.Gcm.sealPrepared16Pre,
     X86_64.abi, X86_64.argRegs, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.ret, X86_64.stackArg,
     X86_64.stackArgAddr, List.getD, List.range, List.range.loop, VG.X86_64.below]
-  sig_and_intros
-  all_goals simp only [Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.ret, X86_64.stackArg,
+  simp only [Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.ret, X86_64.stackArg,
     X86_64.stackArgAddr, VG.X86_64.below, Nat.mul_one, Proof.AesGcm.rounds, CtxMode.prepared16, CtxMode.preparedN, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowers16Repr] at *
+  sig_and_intros
   all_goals with_reducible assumption
 
 theorem sealSpecR16_post {s s' : State} (hR : rounds s)
@@ -1268,7 +1264,7 @@ theorem sealSpecR16_post {s s' : State} (hR : rounds s)
 
 theorem sealSpecR16_pub {s₁ s₂ : State} (h : sealPubK s₁ s₂) :
     (Proof.AesGcm.sealPrepared16RoundsContract X86_64.abi 2624).pub s₁ s₂ := by
-  obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, a₁₀⟩ := h
+  obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, a₁₀, aMd⟩ := h
   sig_pub [Proof.AesGcm.sealPrepared16RoundsContract, Proof.Gcm.sealPrecomputedSig, Proof.Gcm.sealPrecomputedSig, X86_64.abi, X86_64.argRegs]
   sig_reduce [Proof.AesGcm.sealPrepared16RoundsContract, Proof.Gcm.sealPrecomputedSig, Proof.Gcm.sealPrecomputedSig, X86_64.abi, X86_64.argRegs,
     X86_64.stackArg, X86_64.stackArgAddr, List.range, List.range.loop, Proof.AesGcm.arg]
@@ -1358,7 +1354,6 @@ namespace VG.Proof.AesGcm
 
 open VG.Spec.Gcm Proof.Gcm
 
-
 /-- `sealSplitPrepared16Contract`, whatever `work` is. -/
 def sealSplitPrepared16ScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   sealSplitPreparedScratchSig.contract A
@@ -1367,7 +1362,6 @@ def sealSplitPrepared16ScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) 
     (post := fun ctx rounds nonce nonceLen aad aadLen src srcLen dst len tag _work =>
       sealSplitPost A.ptrBits ctx rounds nonce nonceLen aad aadLen src srcLen dst len tag)
     (writeArgs := true) (stack := stack)
-
 
 variable (pb : Nat)
 
@@ -1399,7 +1393,6 @@ end VG.Proof.AesGcm
 end
 
 end
-
 
 /-! # Sixteen prepared powers: `seal_split` for a key context of `vg_aes_gcm_prepare16`
 
@@ -1464,7 +1457,6 @@ theorem splitFrameSatPrepared16_pre : ∃ s, (Proof.Gcm.sealSplitPrepared16Contr
        · next h => exfalso; bv_omega
        · rfl)
 
-
 section
 variable (v : GcmImpl) (B : BlkFn CtxMode.prepared16) (T : BlkToFn CtxMode.prepared16)
 
@@ -1480,7 +1472,7 @@ theorem sealSplitPrepared16_framed (hF : ShortFacts) (hz : ∀ n, v.onePass = so
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackArgScratch 2616 5 (SealSplit.«seal» (v.splitMidR (v.withBlk B) T.fn)))
       (Proof.Gcm.sealSplitPrepared16Contract X86_64.abi 2672) :=
-  X86_64.Verified.stackArgScratch (sig := Proof.Gcm.sealSplitPreparedSig) (nm := "work") (e := .u64)
+  X86_64.Verified.stackArgScratch (hpostOut := Proof.AesGcm.sealSplitPrecomputedPostOut_local _) (sig := Proof.Gcm.sealSplitPreparedSig) (nm := "work") (e := .u64)
     (n := 320) (pre := Proof.Gcm.sealSplitPrepared16Pre X86_64.abi.ptrBits)
     (post := Proof.Gcm.sealSplitPost X86_64.abi.ptrBits) (wa := true) (stack := 56)
     (bytes := 2616) (sealSplitPrepared16_core v B T hF hz) (by decide) (by decide) (by decide)
@@ -1565,7 +1557,7 @@ theorem streamToFrameSatPrepared16_pre : ∃ s, (Proof.Gcm.streamEncryptToPrepar
 theorem streamEncryptToPrepared16_framed (T : BlkToFn CtxMode.prepared16) (E : EncFn CtxMode.prepared16) :
     Verified X86_64.target (Impl.StackScratch.X86_64.withStackArgScratch 2232 3 (encrypt T.fn E.fn))
       (Proof.Gcm.streamEncryptToPrepared16Contract X86_64.abi 4856) :=
-  X86_64.Verified.stackArgScratch (sig := Proof.Gcm.streamEncryptToPreparedSig) (nm := "scratch")
+  X86_64.Verified.stackArgScratchPre (hpostOut := Proof.AesGcm.streamEncryptToPrecomputedPostOut_local _ _ (fun _ _ _ _ _ _ _ _ _ _ h => h.2.1)) (sig := Proof.Gcm.streamEncryptToPreparedSig) (nm := "scratch")
     (e := .u64) (n := 274) (pre := Proof.Gcm.streamEncryptToPrepared16Pre X86_64.abi.ptrBits)
     (post := Proof.Gcm.streamEncryptToPost X86_64.abi.ptrBits) (wa := true) (stack := 2624)
     (bytes := 2232) (streamEncryptToPrepared16_core T E) (by decide) (by decide) (by decide)
@@ -1625,11 +1617,11 @@ theorem gatherPostPrepared16_of {s s' : State} (h : Proof.AesGcm.sealGatherPostG
 theorem gatherPubPrepared16_of {s₁ s₂ : State}
     (hp : (Proof.AesGcm.sealGatherPrepared16ScratchContract X86_64.abi 4888).pub s₁ s₂) :
     Proof.AesGcm.sealGatherPub s₁ s₂ := by
-  sig_pub [Proof.AesGcm.sealGatherPrepared16ScratchContract, Proof.AesGcm.sealGatherPreparedScratchSig, Proof.AesGcm.sealGatherPrecomputedScratchSig,
+  sig_pub_keep [Proof.AesGcm.sealGatherPrepared16ScratchContract, Proof.AesGcm.sealGatherPreparedScratchSig, Proof.AesGcm.sealGatherPrecomputedScratchSig,
     Proof.Gcm.sealGatherPrepared16Pre, X86_64.abi, X86_64.argRegs, stackArgs_six, List.append_eq] at hp
   simp only [List.getD_cons_succ, List.getD_cons_zero, Sig.descRegion] at hp
-  obtain ⟨q₇, q₁, q₂, q₃, q₄, q₅, q₆, a₀, a₁, a₂, a₃, a₄, a₅, hd⟩ := hp
-  exact ⟨q₁, q₂, q₃, q₄, q₅, q₆, q₇, a₀, a₁, a₂, a₃, a₄, a₅, fun i hi => hd i (by simpa using hi)⟩
+  obtain ⟨q₇, qMd, q₁, q₂, q₃, q₄, q₅, q₆, a₀, a₁, a₂, a₃, a₄, a₅, hd⟩ := hp
+  exact ⟨q₁, q₂, q₃, q₄, q₅, q₆, q₇, a₀, a₁, a₂, a₃, a₄, a₅, fun i hi => hd i (by simpa using hi), qMd⟩
 
 theorem gatherSatPrepared16_pre : ∃ s, (Proof.AesGcm.sealGatherPrepared16ScratchContract X86_64.abi 4888).pre s := by
   refine ⟨gatherSatP, ?_⟩
@@ -1677,7 +1669,7 @@ theorem sealGatherPrepared16_framed (Sh : ShortFn CtxMode.prepared16) (I : InitF
       (Impl.StackScratch.X86_64.withStackArgScratch 240 5
         (withFront long Sp.fn (sealGather Sh.quick Sh.fast Sh.test Sh.code I.fn A.fn T.fn F.fn true)))
       (Proof.AesGcm.sealGatherPrepared16RoundsContract X86_64.abi 5128) :=
-  X86_64.Verified.stackArgScratchL (sig := Proof.Gcm.sealGatherPrecomputedSig) (nm := "scratch") (e := .u64)
+  X86_64.Verified.stackArgScratchL (hpostOut := fun vs m m₁ m₂ r hl _ hb _ => (Proof.AesGcm.sealGatherPrecomputedPostOut_local _) vs m m₁ m₂ r hl hb) (sig := Proof.Gcm.sealGatherPrecomputedSig) (nm := "scratch") (e := .u64)
     (n := 23) (pre := Proof.Gcm.sealGatherPrepared16Pre X86_64.abi.ptrBits)
     (post := Proof.AesGcm.sealGatherRoundsPost X86_64.abi.ptrBits) (wa := true) (stack := 4888) (bytes := 240)
     (sealGatherPrepared16_core Sh I A T F Sp long) (by decide) (by decide) (by decide)
@@ -1690,7 +1682,6 @@ end VG.Proof.AesGcm.X86_64.Gather
 end
 
 end
-
 
 /-!
 # AES-GCM on x86-64: the functions a variant's artifacts are built from
@@ -1759,11 +1750,6 @@ theorem StitchToName.okP : (n : StitchToName) →
 def GcmVariant.stitchTo (v : GcmVariant) : Option (StitchToCode Proof.Gcm.X86_64.Stitch.CtxMode.base) :=
   (v.stitch.bind (·.toPart)).map fun p => ⟨p.name.enc, p.name.full, p.name.ok _, p.piece⟩
 
-/-- The out-of-place loops a variant names for a key context of
-`vg_aes_gcm_init_precomputed`, with their proof. -/
-def GcmVariant.stitchToP (v : GcmVariant) : Option (StitchToCode Proof.Gcm.X86_64.Stitch.CtxMode.powers) :=
-  (v.stitch.bind (·.toPart)).bind fun p => p.pieceP.map fun q => ⟨p.name.encP, false, p.name.okP, q.enc⟩
-
 /-- The implementations a variant calls. -/
 def GcmVariant.impl (v : GcmVariant) : GcmImpl :=
   ⟨v.ctr, v.key, v.gh.impl, v.stitch.map StitchPart.impl, v.stitch.bind StitchPart.implP,
@@ -1821,10 +1807,6 @@ def GcmVariant.stitchToR (v : GcmVariant) : Option (StitchToCode Proof.Gcm.X86_6
 /-- The instance of `vg_aes_gcm_encrypt_blocks_to` of a variant. -/
 def blkTo (v : GcmVariant) : StreamTo.BlkToFn Proof.Gcm.X86_64.Stitch.CtxMode.base :=
   .ofBlocks ("vg_aes_gcm_encrypt_blocks_to" ++ v.impl.suffix) v.impl.blkB v.stitchTo
-
-/-- The instance of `vg_aes_gcm_encrypt_blocks_to_precomputed` of a variant. -/
-def blkToP (v : GcmVariant) : StreamTo.BlkToFn Proof.Gcm.X86_64.Stitch.CtxMode.powers :=
-  .ofBlocks ("vg_aes_gcm_encrypt_blocks_to_precomputed" ++ v.impl.suffix) v.impl.blkP v.stitchToP
 
 /-- The instance of `vg_aes_gcm_stream_encrypt` calling the implementations `v`. -/
 def encFn (v : GcmImpl) : StreamTo.EncFn Proof.Gcm.X86_64.Stitch.CtxMode.base :=
@@ -1954,7 +1936,7 @@ def sealFnP (v : GcmImpl) : Gather.SealFn Proof.Gcm.X86_64.Stitch.CtxMode.powers
 /-- The instance of `vg_aes_gcm_stream_init` calling the implementations `v`,
 as an internal function of its own, `vg_aes_gcm_stream_init<suffix>_core`:
 `vg_aes_gcm_stream_init` itself has a frame of its own size and clears it
-(`Scrub.streamInitReg`). -/
+(`Scrub.streamInit_scrubbed`). -/
 def initFn (v : GcmImpl) : Gather.InitFn :=
   .ofSpec ⟨Spec.Gcm.streamInitApi.name ++ v.gh.suffix ++ "_core",
       Impl.StackScratch.X86_64.withStackScratch 2568 .r8 (Impl.AesGcm.X86_64.streamInit v.callees)⟩
@@ -1962,21 +1944,20 @@ def initFn (v : GcmImpl) : Gather.InitFn :=
     (Gather.framedS_xdepth (streamInit_xdepth v)) (Gather.framedS_mx (streamInit_mx v))
 
 /-- The instance of `vg_aes_gcm_stream_aad` calling the implementations `v`,
-as `vg_aes_gcm_stream_aad<suffix>_core` (`Scrub.streamAadReg`). -/
+as `vg_aes_gcm_stream_aad<suffix>_core` (`Scrub.streamAad_scrubbed`). -/
 def aadFn (v : GcmImpl) : Gather.AadFn :=
   .ofSpec ⟨Spec.Gcm.streamAadApi.name ++ v.gh.suffix ++ "_core",
       Impl.StackScratch.X86_64.withStackScratch 2568 .r9 (Impl.AesGcm.X86_64.streamAad v.callees)⟩
     (streamAad_framed v) (X86_64.withStackScratch_spSafe (by decide) (streamAad_spSafe v))
     (Gather.framedS_xdepth (streamAad_xdepth v)) (Gather.framedS_mx (streamAad_mx v))
 
-/-- The instance of `vg_aes_gcm_stream_finish` calling the implementations `v`;
-over an implementation of `vg_aes_ctr32` that needs no working space, as an
-internal function of its own, `vg_aes_gcm_stream_finish<suffix>_core`:
-`vg_aes_gcm_stream_finish` itself then has a frame of its own size and clears
-it (`Scrub.streamFinishReg`). -/
+/-- The instance of `vg_aes_gcm_stream_finish` calling the implementations `v`,
+as an internal function of its own, `vg_aes_gcm_stream_finish<suffix>_core`:
+`vg_aes_gcm_stream_finish` itself clears its frame, which over an
+implementation of `vg_aes_ctr32` that needs no working space is of its own
+size (`Scrub.streamFinishF_scrubbed`). -/
 def finFn (v : GcmImpl) : Gather.FinFn :=
-  .ofSpec ⟨Spec.Gcm.streamFinishApi.name ++ v.ctr.suffix ++ v.gh.suffix ++
-      (if v.ctr.free.isSome then "_core" else ""),
+  .ofSpec ⟨Spec.Gcm.streamFinishApi.name ++ v.ctr.suffix ++ v.gh.suffix ++ "_core",
       Impl.StackScratch.X86_64.withStackArgScratch 2576 0 (Impl.AesGcm.X86_64.streamFinish v.callees)⟩
     (streamFinish_framed v) (X86_64.withStackArgScratch_spSafe (streamFinish_spSafe v))
     (StreamTo.framed_xdepth (streamFinish_xdepth v)) (StreamTo.framed_mx (streamFinish_mx v))
@@ -1991,16 +1972,6 @@ def toFn (v : GcmVariant) : Gather.ToFn Proof.Gcm.X86_64.Stitch.CtxMode.base :=
     (StreamTo.framed_xdepth (StreamTo.encrypt_xdepth (blkTo v) (encFn v.impl)))
     (StreamTo.framed_mx (StreamTo.encrypt_mx (blkTo v) (encFn v.impl)))
 
-/-- The instance of `vg_aes_gcm_stream_encrypt_to_precomputed` of a variant. -/
-def toFnP (v : GcmVariant) : Gather.ToFn Proof.Gcm.X86_64.Stitch.CtxMode.powers :=
-  .ofPowers ⟨"vg_aes_gcm_stream_encrypt_to_precomputed" ++ v.impl.suffix,
-      Impl.StackScratch.X86_64.withStackArgScratch 2232 3
-        (Impl.AesGcm.X86_64.StreamTo.encrypt (blkToP v).fn (encFnP v.impl).fn)⟩
-    (StreamTo.streamEncryptToP_framed (blkToP v) (encFnP v.impl))
-    (X86_64.withStackArgScratch_spSafe (StreamTo.encrypt_spAll (blkToP v) (encFnP v.impl)))
-    (StreamTo.framed_xdepth (StreamTo.encrypt_xdepth (blkToP v) (encFnP v.impl)))
-    (StreamTo.framed_mx (StreamTo.encrypt_mx (blkToP v) (encFnP v.impl)))
-
 /-- The instance of `vg_aes_gcm_seal_split` of a variant. -/
 def splitFn (v : GcmVariant) : Gather.SplitFn Proof.Gcm.X86_64.Stitch.CtxMode.base :=
   .ofBase ⟨"vg_aes_gcm_seal_split" ++ v.impl.suffix,
@@ -2011,33 +1982,145 @@ def splitFn (v : GcmVariant) : Gather.SplitFn Proof.Gcm.X86_64.Stitch.CtxMode.ba
     (StreamTo.framed_xdepth (Split.sealSplit_xdepth v.impl v.impl.blkB (blkTo v)))
     (StreamTo.framed_mx (Split.sealSplit_mx v.impl v.impl.blkB (blkTo v)))
 
-/-- The instance of `vg_aes_gcm_seal_split_precomputed` of a variant. -/
-def splitFnP (v : GcmVariant) : Gather.SplitFn Proof.Gcm.X86_64.Stitch.CtxMode.powers :=
-  .ofPowers ⟨"vg_aes_gcm_seal_split_precomputed" ++ v.impl.suffix,
-      Impl.StackScratch.X86_64.withStackArgScratch 2616 5
-        (Impl.AesGcm.X86_64.SealSplit.«seal» (v.impl.splitMid (v.impl.withBlk v.impl.blkP) (blkToP v).fn))⟩
-    (Split.sealSplitP_framed v.impl Short.shortFacts v.impl.blkP (blkToP v))
-    (X86_64.withStackArgScratch_spSafe (Split.sealSplit_spSafe v.impl v.impl.blkP (blkToP v)))
-    (StreamTo.framed_xdepth (Split.sealSplit_xdepth v.impl v.impl.blkP (blkToP v)))
-    (StreamTo.framed_mx (Split.sealSplit_mx v.impl v.impl.blkP (blkToP v)))
-
 /-- The short path of `vg_aes_gcm_seal_gather` of a variant: the text copied
 and sealed by `vg_aes_gcm_seal`, or sealed from its first slice by
 `vg_aes_gcm_seal_split`. -/
 def shortFn (v : GcmVariant) : Gather.ShortFn Proof.Gcm.X86_64.Stitch.CtxMode.base :=
   .ofBoth (sealFn v.impl) (splitFn v) (copyBelow_lt v) (splitFrom_pos v) (splitFrom_le v)
 
-/-- The short path of `vg_aes_gcm_seal_gather_precomputed` of a variant. -/
-def shortFnP (v : GcmVariant) : Gather.ShortFn Proof.Gcm.X86_64.Stitch.CtxMode.powers :=
-  .ofBoth (sealFnP v.impl) (splitFnP v) (copyBelow_lt v) (splitFrom_pos v) (splitFrom_le v)
-
 /-- Prepared whole-block implementations, propagated through all callers. -/
 def blkR (v : GcmVariant) : BlkFn Proof.Gcm.X86_64.Stitch.CtxMode.prepared :=
   v.impl.blkM v.stitchR ("vg_aes_gcm_encrypt_blocks_prepared" ++ v.impl.suffix)
     ("vg_aes_gcm_decrypt_blocks_prepared" ++ v.impl.suffix)
 
+/-- Direct counter mode for short prepared encryptions, with a fused loop for the rest. -/
+abbrev FusedShortOk (M : Proof.Gcm.X86_64.Stitch.CtxMode) :=
+  (∀ t, Proof.Gcm.X86_64.Stitch.SPreTo M t 2 → WP VG.X86_64.isa
+    Impl.Gcm.X86_64.StitchR.encToFromTwo t (Proof.Gcm.X86_64.Stitch.EPostTo t)) ∧
+  (∀ t, Proof.Gcm.X86_64.Stitch.SPreTo M t 5 → WP VG.X86_64.isa
+    Impl.Gcm.X86_64.StitchAvx8.encBuffers t (Proof.Gcm.X86_64.Stitch.EPostTo t))
+
+theorem vaesShortPiece : PieceTo Impl.Gcm.X86_64.StitchR.encToFromTwo true true 2 := by
+  refine ⟨?_, ?_, ?_, ?_, ?_, ⟨?_, ?_⟩⟩
+  taint_decide_all
+
+theorem aesniShortPiece : PieceTo Impl.Gcm.X86_64.StitchAvx8.encBuffers true true 5 := by
+  refine ⟨?_, ?_, ?_, ?_, ?_, ⟨?_, ?_⟩⟩
+  taint_decide_all
+
+def GcmVariant.shortBackend (v : GcmVariant) : Option StitchToName :=
+  (v.stitch.bind (·.toPart)).map (·.name)
+
+def StreamTo.BlkToFn.ofFull {M : Proof.Gcm.X86_64.Stitch.CtxMode} {p : Prog VG.X86_64.isa}
+    (name : String) (g : GhashImpl) (v : Proof.Aes.X86_64.Ctr32ToImpl)
+    {minimum : Nat} (cut : (minimum = 2 ∨ minimum = 5) ∨ minimum = 16)
+    (ok : ∀ t, Proof.Gcm.X86_64.Stitch.SPreTo M t minimum → WP VG.X86_64.isa p t (Proof.Gcm.X86_64.Stitch.EPostTo t))
+    (pc : PieceTo p true true minimum) : StreamTo.BlkToFn M := by
+  let code := Impl.AesGcm.X86_64.BlocksToDec.encryptPrepared ⟨v.callee.name,v.callee.code⟩ g.fn p true minimum
+  have sp : code.all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+    simp only [code, Impl.AesGcm.X86_64.BlocksToDec.encryptPrepared, Impl.AesGcm.X86_64.BlocksToDec.encryptShort,
+      Impl.AesGcm.X86_64.BlocksTo.stitchPart, Code.all, pc.spSafe, v.spSafe, g.spSafe]; rcases cut with (rfl | rfl) | rfl <;> decide +kernel
+  have mx : code.allInstrs (fun i => !VG.X86_64.loadsMxcsr i) = true := by
+    simp only [code, Impl.AesGcm.X86_64.BlocksToDec.encryptPrepared, Impl.AesGcm.X86_64.BlocksToDec.encryptShort,
+      Impl.AesGcm.X86_64.BlocksTo.stitchPart, Code.allInstrs, pc.mxcsr, v.mxcsr, g.mxcsr]; rcases cut with (rfl | rfl) | rfl <;> decide +kernel
+  refine ⟨⟨name,code⟩, fun s h => ?_, BlocksToDec.encryptPrepared_ct cut ok pc g v, VG.X86_64.SpSafe.of_all sp, ?_, mx, sp⟩
+  · obtain ⟨t,s',he,hg,hp⟩ := BlocksToDec.encryptPrepared_wp (BlocksTo.BT.ofM h) cut ok g v
+    exact ⟨t,s',he,VG.X86_64.abiPreserved_of_exec mx he hg,hp⟩
+  · simp only [code, Impl.AesGcm.X86_64.BlocksToDec.encryptPrepared, Impl.AesGcm.X86_64.BlocksToDec.encryptShort,
+      Impl.AesGcm.X86_64.BlocksTo.stitchPart, Code.x86_64Depth, pc.xdepth, v.noStack, g.noStack]; rcases cut with (rfl | rfl) | rfl <;> decide +kernel
+
+def StreamTo.BlkToFn.ofPreparedBlocks {M : Proof.Gcm.X86_64.Stitch.CtxMode}
+    (name : String) (g : GhashImpl) (v : Proof.Aes.X86_64.Ctr32ToImpl) (B : BlkFn M)
+    (backend : Option StitchToName) (fused : FusedShortOk M) (st : Option (StitchToCode M true)) : StreamTo.BlkToFn M :=
+  match st with
+  | some ⟨_,true,ok,pc⟩ =>
+    match backend with
+    | some .vaes => .ofFull name g v (Or.inl (Or.inl rfl)) fused.1 vaesShortPiece
+    | some .aesniAvx => .ofFull name g v (Or.inl (Or.inr rfl)) fused.2 aesniShortPiece
+    | _ => .ofFull name g v (Or.inr rfl) (fun t h => ok t h (Nat.mod_one _)) pc
+  | other => .ofBlocks name B other
+
+open VG.Impl.Scrub.X86_64 (VecLevel)
+
+/-- The level of the vector instructions of the loops named `n`. -/
+def StitchName.lv : StitchName → VecLevel
+  | .vaes => .avx
+  | .vaesAvx512 => .evex
+  | .aesniAvx => .avx
+
+/-- The level of the vector instructions of `v`'s own code: its loops'. -/
+def GcmVariant.own (v : GcmVariant) : VecLevel :=
+  match v.stitch with
+  | none => .sse
+  | some p => p.name.lv
+
+/-- The level of the cleanup of `v`'s functions. -/
+def GcmVariant.lv (v : GcmVariant) : VecLevel := v.impl.lv v.own
+
+/-- The level of the vector instructions of the out-of-place loops named `n`. -/
+def StitchToName.lv : StitchToName → VecLevel
+  | .vaes => .avx
+  | .vaesAvx512 => .evex
+  | .aesniAvx => .avx
+
+/-- The level of `v`'s out-of-place loops, if any. -/
+def GcmVariant.toLv (v : GcmVariant) : VecLevel :=
+  match v.stitch with
+  | some p => (p.toPart.map (·.name.lv)).getD .sse
+  | none => .sse
+
+/-- The out-of-place counter mode `vg_aes_gcm_open_to` of a variant decrypts
+with on the key context, in one pass and with no copy: that of its
+`vg_aes_ctr32` (`Ctr32Impl.ctrTo`). A variant with interleaved loops runs it
+only where its prepared key context holds fewer powers than they read,
+which the `vg_aes_gcm_prepare` its CPU runs never leaves. -/
+def GcmVariant.ctrTo (v : GcmVariant) : Proof.Aes.X86_64.Ctr32ToImpl := v.ctr.ctrTo
+
+/-- The level of the cleanup of `v`'s `seal_gather` on the key context:
+`lv`'s and its out-of-place loops'. -/
+def GcmVariant.lvG (v : GcmVariant) : VecLevel := (v.lv.join v.ctrTo.level).join v.toLv
+
+abbrev WideSealOk (M : Proof.Gcm.X86_64.Stitch.CtxMode) :=
+  ∀ t, Proof.Gcm.X86_64.Stitch.SPreTo M t 16 → WP VG.X86_64.isa
+    Impl.Gcm.X86_64.StitchZHTo.encR t (Proof.Gcm.X86_64.Stitch.EPostTo t)
+
+theorem wideSealPiece : PieceTo Impl.Gcm.X86_64.StitchZHTo.encR true true 16 := by
+  refine ⟨?_,?_,?_,?_,?_,⟨?_,?_⟩⟩
+  taint_decide_all
+
+theorem vaesSealTaint : BlocksTo.SealPieceCT Impl.Gcm.X86_64.StitchR.encToFromTwo := by
+  exact ⟨_, by taint_decide⟩
+
+theorem aesniSealTaint : BlocksTo.SealPieceCT Impl.Gcm.X86_64.StitchAvx8.encBuffers := by
+  exact ⟨_, by taint_decide⟩
+
+theorem wideSealTaint : BlocksTo.SealPieceCT Impl.Gcm.X86_64.StitchZHTo.encR := by
+  exact ⟨_, by taint_decide⟩
+
+def selectSealLeaf {M : Proof.Gcm.X86_64.Stitch.CtxMode} (v : GcmVariant) (name : String)
+    (supported : Bool) (short : FusedShortOk M) (wide : Option (PLift (WideSealOk M))) : Option (BlocksTo.SealFn M) :=
+  if supported then match v.shortBackend with
+  | some .vaes => some (.ofFull name v.gh.impl v.ctr.ctrTo (.inl (.inl rfl)) short.1 vaesShortPiece vaesSealTaint)
+  | some .aesniAvx => some (.ofFull name v.gh.impl v.ctr.ctrTo (.inl (.inr rfl)) short.2 aesniShortPiece aesniSealTaint)
+  | some .vaesAvx512 => wide.map fun ok => .ofFull name v.gh.impl v.ctr.ctrTo (.inr rfl) ok.down wideSealPiece wideSealTaint
+  | none => none
+  else none
+
+def sealLeafR (v : GcmVariant) : Option (BlocksTo.SealFn Proof.Gcm.X86_64.Stitch.CtxMode.prepared) :=
+  selectSealLeaf v ("vg_aes_gcm_seal_blocks_prepared" ++ v.impl.suffix) v.stitchToR.isSome
+    ⟨fun _ h => Proof.Gcm.X86_64.StitchR.encToFromTwo_ok 24 (by decide) h,
+     fun _ h => Proof.Gcm.X86_64.StitchAvx8.encBuffers_ok 24 (by decide) h⟩
+    (some ⟨fun t h => Proof.Gcm.X86_64.StitchZHTo.stitchToR_ok t h (Nat.mod_one _)⟩)
+
+def sealBlkR (v : GcmVariant) : BlkFn Proof.Gcm.X86_64.Stitch.CtxMode.prepared :=
+  match sealLeafR v with
+  | some f => if v.lvG.level ≤ v.lv.level then OneBlocks.withAlias (blkR v) f else blkR v
+  | none => blkR v
+
 def blkToR (v : GcmVariant) : StreamTo.BlkToFn Proof.Gcm.X86_64.Stitch.CtxMode.prepared :=
-  .ofBlocks ("vg_aes_gcm_encrypt_blocks_to_prepared" ++ v.impl.suffix) (blkR v) v.stitchToR
+  .ofPreparedBlocks ("vg_aes_gcm_encrypt_blocks_to_prepared" ++ v.impl.suffix) v.gh.impl v.ctr.ctrTo (blkR v) v.shortBackend
+    ⟨fun _ h => Proof.Gcm.X86_64.StitchR.encToFromTwo_ok 24 (by decide) h,
+     fun _ h => Proof.Gcm.X86_64.StitchAvx8.encBuffers_ok 24 (by decide) h⟩ v.stitchToR
 
 def encFnR (v : GcmVariant) : StreamTo.EncFn Proof.Gcm.X86_64.Stitch.CtxMode.prepared :=
   .ofPrepared ⟨Spec.Gcm.streamEncryptPreparedApi.name ++ v.impl.suffix,
@@ -2055,9 +2138,11 @@ def toFnR (v : GcmVariant) : Gather.ToFn Proof.Gcm.X86_64.Stitch.CtxMode.prepare
     (StreamTo.framed_xdepth (StreamTo.encrypt_xdepth (blkToR v) (encFnR v)))
     (StreamTo.framed_mx (StreamTo.encrypt_mx (blkToR v) (encFnR v)))
 
-/-- The instance of `vg_aes_gcm_seal_prepared` of a variant. -/
+/-- The instance of `vg_aes_gcm_seal_prepared` of a variant, as an internal
+function of its own, `vg_aes_gcm_seal_prepared<suffix>_core`: the function of
+that name returns without secret residue. -/
 def sealFnR (v : GcmVariant) : Gather.SealFn Proof.Gcm.X86_64.Stitch.CtxMode.prepared :=
-  .ofPrepared ⟨Spec.Gcm.sealPreparedApi.name ++ v.impl.suffix,
+  .ofPrepared ⟨Spec.Gcm.sealPreparedApi.name ++ v.impl.suffix ++ "_core",
       Impl.StackScratch.X86_64.withStackArgScratch 2600 3 (v.impl.sealCodeP (v.impl.withBlk (blkR v)))⟩
     (sealSelPrepared_framed v.impl (blkR v) Short.shortFacts)
     (X86_64.withStackArgScratch_spSafe (sealCodeP_spSafe v.impl (blkR v)))
@@ -2164,8 +2249,21 @@ def blkR16 (v : GcmVariant) : BlkFn Proof.Gcm.X86_64.Stitch.CtxMode.prepared16 :
   v.impl.blkM v.stitchR16 ("vg_aes_gcm_encrypt_blocks_prepared16" ++ v.impl.suffix)
     ("vg_aes_gcm_decrypt_blocks_prepared16" ++ v.impl.suffix)
 
+def sealLeafR16 (v : GcmVariant) : Option (BlocksTo.SealFn Proof.Gcm.X86_64.Stitch.CtxMode.prepared16) :=
+  selectSealLeaf v ("vg_aes_gcm_seal_blocks_prepared16" ++ v.impl.suffix) v.stitchToR16.isSome
+    ⟨fun _ h => Proof.Gcm.X86_64.StitchR.encToFromTwo_ok 8 (by decide) h,
+     fun _ h => Proof.Gcm.X86_64.StitchAvx8.encBuffers_ok 8 (by decide) h⟩
+    none
+
+def sealBlkR16 (v : GcmVariant) : BlkFn Proof.Gcm.X86_64.Stitch.CtxMode.prepared16 :=
+  match sealLeafR16 v with
+  | some f => if v.lvG.level ≤ v.lv.level then OneBlocks.withAlias (blkR16 v) f else blkR16 v
+  | none => blkR16 v
+
 def blkToR16 (v : GcmVariant) : StreamTo.BlkToFn Proof.Gcm.X86_64.Stitch.CtxMode.prepared16 :=
-  .ofBlocks ("vg_aes_gcm_encrypt_blocks_to_prepared16" ++ v.impl.suffix) (blkR16 v) v.stitchToR16
+  .ofPreparedBlocks ("vg_aes_gcm_encrypt_blocks_to_prepared16" ++ v.impl.suffix) v.gh.impl v.ctr.ctrTo (blkR16 v) v.shortBackend
+    ⟨fun _ h => Proof.Gcm.X86_64.StitchR.encToFromTwo_ok 8 (by decide) h,
+     fun _ h => Proof.Gcm.X86_64.StitchAvx8.encBuffers_ok 8 (by decide) h⟩ v.stitchToR16
 
 end Prepared16
 
@@ -2208,9 +2306,11 @@ def openFn (v : GcmImpl) : OpenTo.OpenFn Proof.Gcm.X86_64.Stitch.CtxMode.base :=
     (openSel_framed v Short.shortFacts) (X86_64.withStackArgScratch_spSafe (openCode_spSafe v v.blkB))
     (StreamTo.framed_xdepth (openCode_xdepth v v.blkB)) (StreamTo.framed_mx (openCode_mx v v.blkB))
 
-/-- The instance of `vg_aes_gcm_open_prepared` of a variant. -/
+/-- The instance of `vg_aes_gcm_open_prepared` of a variant, as an internal
+function of its own, `vg_aes_gcm_open_prepared<suffix>_core`: the function of
+that name returns without secret residue. -/
 def openFnR (v : GcmVariant) : OpenTo.OpenFn Proof.Gcm.X86_64.Stitch.CtxMode.prepared :=
-  .ofPrepared ⟨Spec.Gcm.openPreparedApi.name ++ v.impl.suffix,
+  .ofPrepared ⟨Spec.Gcm.openPreparedApi.name ++ v.impl.suffix ++ "_core",
       Impl.StackScratch.X86_64.withStackArgScratch 2608 4 (v.impl.openCodeP (v.impl.withBlk (blkR v)))⟩
     (openSelPrepared_framed v.impl (blkR v) Short.shortFacts)
     (X86_64.withStackArgScratch_spSafe (openCodeP_spSafe v.impl (blkR v)))
@@ -2264,13 +2364,6 @@ def openSplitFnR (v : GcmVariant) : OpenToSplit.OpenSplitFn Proof.Gcm.X86_64.Sti
   .of ("vg_aes_gcm_open_split_prepared" ++ v.impl.suffix) v.impl (blkR v) (blkToDecR v)
 
 /-! ## `vg_aes_gcm_open_to` in one pass -/
-
-/-- The out-of-place counter mode `vg_aes_gcm_open_to` of a variant decrypts
-with on the key context, in one pass and with no copy: that of its
-`vg_aes_ctr32` (`Ctr32Impl.ctrTo`). A variant with interleaved loops runs it
-only where its prepared key context holds fewer powers than they read,
-which the `vg_aes_gcm_prepare` its CPU runs never leaves. -/
-def GcmVariant.ctrTo (v : GcmVariant) : Proof.Aes.X86_64.Ctr32ToImpl := v.ctr.ctrTo
 
 /-- The instance of `vg_aes_gcm_decrypt_blocks_to` of a variant, for a key
 context of `vg_aes_gcm_init`: `vg_ghash` on the blocks at `src`, then `c`
@@ -2378,9 +2471,11 @@ theorem sealGatherPrepared_of_base {c : Prog X86_64.isa}
     (fun _ _ _ _ _ _ _ _ _ _ _ _ h => ⟨h.1, h.2.1⟩) Gather.gatherFrameSatPrepared_pre
 
 /-- The instance of `vg_aes_gcm_open_prepared` of an implementation that
-reads only the key context. -/
+reads only the key context, as an internal function of its own,
+`vg_aes_gcm_open_prepared<suffix>_core`: the function of that name returns
+without secret residue. -/
 def openFnW (v : GcmImpl) : OpenTo.OpenFn Proof.Gcm.X86_64.Stitch.CtxMode.prepared :=
-  .ofPrepared ⟨Spec.Gcm.openPreparedApi.name ++ v.suffix,
+  .ofPrepared ⟨Spec.Gcm.openPreparedApi.name ++ v.suffix ++ "_core",
       Impl.StackScratch.X86_64.withStackArgScratch 2608 4 (v.openCode v.callees)⟩
     (openPrepared_of_base (openSel_framed v Short.shortFacts))
     (X86_64.withStackArgScratch_spSafe (openCode_spSafe v v.blkB))
@@ -2460,7 +2555,7 @@ theorem sPreM_ofFlagged {s₀ : VG.X86_64.State} {lo : Nat} (h : SPreM Proof.Gcm
   c_k := h.c_k.sub_right (sub_1024 _)
   y_k := h.y_k.sub_right (sub_1024 _)
 
-theorem sPreTo_ofFlagged {s₀ : VG.X86_64.State} (h : SPreTo Proof.Gcm.X86_64.Stitch.CtxMode.flagged s₀) : SPreTo Proof.Gcm.X86_64.Stitch.CtxMode.prepared s₀ :=
+theorem sPreTo_ofFlagged {s₀ : VG.X86_64.State} {lo : Nat} (h : SPreTo Proof.Gcm.X86_64.Stitch.CtxMode.flagged s₀ lo) : SPreTo Proof.Gcm.X86_64.Stitch.CtxMode.prepared s₀ lo :=
   { h with
     k_in := inRegions_1024 h.k_in
     k_c := h.k_c.sub_left (sub_1024 _)
@@ -2532,10 +2627,13 @@ theorem openCodeF_mx (v : GcmVariant) : (openCodeF v).allInstrs (fun i => !VG.X8
   simp only [openCodeF, Impl.Gcm.X86_64.Flag.onFlag, Code.iteCold, Code.allInstrs, h₁, h₂, Bool.and_true]
   rfl
 
-/-- The registered `vg_aes_gcm_open_prepared` of a variant whose loops read
-the 48 powers, for `open_to` to call on a context whose powers are present. -/
+/-- `vg_aes_gcm_open_prepared` of a variant whose loops read the 48 powers,
+for `open_to` to call on a context whose powers are present, as an internal
+function of its own, `vg_aes_gcm_open_prepared<suffix>_core`, with the code
+as it was: the function of that name returns without secret residue
+(`openR_scrubbed`). -/
 def openFnF (v : GcmVariant) : OpenTo.OpenFn Proof.Gcm.X86_64.Stitch.CtxMode.flagged :=
-  .ofFlagged ⟨Spec.Gcm.openPreparedApi.name ++ v.impl.suffix, openCodeF v⟩ (openCodeF_verified v)
+  .ofFlagged ⟨Spec.Gcm.openPreparedApi.name ++ v.impl.suffix ++ "_core", openCodeF v⟩ (openCodeF_verified v)
     (openCodeF_spAll v) (openCodeF_xdepth v) (openCodeF_mx v)
 
 /-- `vg_aes_gcm_open_to_prepared`'s code on a context whose powers are
@@ -2598,22 +2696,30 @@ def StitchToCode.flagged {al : Bool} (c : StitchToCode Proof.Gcm.X86_64.Stitch.C
     StitchToCode Proof.Gcm.X86_64.Stitch.CtxMode.flagged al :=
   { c with ok := fun s hp hn => c.ok s (sPreTo_ofFlagged hp) hn }
 
+def sealLeafF (v : GcmVariant) : Option (BlocksTo.SealFn Proof.Gcm.X86_64.Stitch.CtxMode.flagged) :=
+  selectSealLeaf v ("vg_aes_gcm_seal_blocks_prepared" ++ v.impl.suffix) v.stitchToR.isSome
+    ⟨fun _ h => Proof.Gcm.X86_64.StitchR.encToFromTwo_ok 24 (by decide) (sPreTo_ofFlagged h),
+     fun _ h => Proof.Gcm.X86_64.StitchAvx8.encBuffers_ok 24 (by decide) (sPreTo_ofFlagged h)⟩
+    (some ⟨fun t h => Proof.Gcm.X86_64.StitchZHTo.stitchToR_ok t (sPreTo_ofFlagged h) (Nat.mod_one _)⟩)
+
 def blkToF (v : GcmVariant) : StreamTo.BlkToFn Proof.Gcm.X86_64.Stitch.CtxMode.flagged :=
-  .ofBlocks ("vg_aes_gcm_encrypt_blocks_to_prepared" ++ v.impl.suffix) (blkF v) (v.stitchToR.map StitchToCode.flagged)
+  .ofPreparedBlocks ("vg_aes_gcm_encrypt_blocks_to_prepared" ++ v.impl.suffix) v.gh.impl v.ctr.ctrTo (blkF v) v.shortBackend
+    ⟨fun _ h => Proof.Gcm.X86_64.StitchR.encToFromTwo_ok 24 (by decide) (sPreTo_ofFlagged h),
+     fun _ h => Proof.Gcm.X86_64.StitchAvx8.encBuffers_ok 24 (by decide) (sPreTo_ofFlagged h)⟩ (v.stitchToR.map StitchToCode.flagged)
 
 /-- `vg_aes_gcm_seal_prepared` of a variant whose loops read the 48 powers: by
 the flag, its code on the powers or its code on the key context. -/
-def sealCodeF (v : GcmVariant) : Prog VG.X86_64.isa :=
+def sealCodeF (v : GcmVariant) (B : BlkFn Proof.Gcm.X86_64.Stitch.CtxMode.prepared := blkR v) : Prog VG.X86_64.isa :=
   Impl.Gcm.X86_64.Flag.onFlag 48
-    (Impl.StackScratch.X86_64.withStackArgScratch 2600 3 (v.impl.sealCodeP (v.impl.withBlk (blkR v))))
+    (Impl.StackScratch.X86_64.withStackArgScratch 2600 3 (v.impl.sealCodeP (v.impl.withBlk B)))
     (Impl.StackScratch.X86_64.withStackArgScratch 2600 3 (v.impl.sealCode v.impl.callees))
 
-theorem sealCodeF_verified (v : GcmVariant) :
-    Verified X86_64.target (sealCodeF v) (VG.Proof.AesGcm.Flag.sealRoundsContractB 48 X86_64.abi 2624) :=
-  Flag.seal_onFlagB (sealSelPrepared_framed v.impl (blkR v) Short.shortFacts) (sealSel_framed v.impl Short.shortFacts)
+theorem sealCodeF_verified (v : GcmVariant) (B : BlkFn Proof.Gcm.X86_64.Stitch.CtxMode.prepared := blkR v) :
+    Verified X86_64.target (sealCodeF v B) (VG.Proof.AesGcm.Flag.sealRoundsContractB 48 X86_64.abi 2624) :=
+  Flag.seal_onFlagB (sealSelPrepared_framed v.impl B Short.shortFacts) (sealSel_framed v.impl Short.shortFacts)
 
-theorem sealCodeF_spAll (v : GcmVariant) : (sealCodeF v).all (fun i => !X86_64.isa.writesSp i) = true :=
-  VG.X86_64.onFlag_spSafe (X86_64.withStackArgScratch_spSafe (sealCodeP_spSafe v.impl (blkR v)))
+theorem sealCodeF_spAll (v : GcmVariant) (B : BlkFn Proof.Gcm.X86_64.Stitch.CtxMode.prepared := blkR v) : (sealCodeF v B).all (fun i => !X86_64.isa.writesSp i) = true :=
+  VG.X86_64.onFlag_spSafe (X86_64.withStackArgScratch_spSafe (sealCodeP_spSafe v.impl B))
     (X86_64.withStackArgScratch_spSafe (sealCode_spSafe v.impl v.impl.blkB))
 
 theorem sealCodeF_xdepth (v : GcmVariant) : (sealCodeF v).x86_64Depth ≤ 2624 := by
@@ -2672,8 +2778,13 @@ theorem streamEncryptCodeF_mx (v : GcmVariant) :
   simp only [streamEncryptCodeF, Impl.Gcm.X86_64.Flag.onFlag, Code.iteCold, Code.allInstrs, h₁, h₂, Bool.and_true]
   rfl
 
+/-- The instance of `vg_aes_gcm_stream_encrypt_prepared` of a variant whose
+loops read the 48 prepared powers, as an internal function of its own,
+`vg_aes_gcm_stream_encrypt_prepared<suffix>_core`, with the code as it was:
+the function of that name returns without secret residue
+(`streamEncryptR_scrubbed`). -/
 def encFnF (v : GcmVariant) : StreamTo.EncFn Proof.Gcm.X86_64.Stitch.CtxMode.flagged :=
-  .ofFlagged ⟨Spec.Gcm.streamEncryptPreparedApi.name ++ v.impl.suffix, streamEncryptCodeF v⟩
+  .ofFlagged ⟨Spec.Gcm.streamEncryptPreparedApi.name ++ v.impl.suffix ++ "_core", streamEncryptCodeF v⟩
     (streamEncryptCodeF_verified v) (streamEncryptCodeF_spAll v) (streamEncryptCodeF_xdepth v) (streamEncryptCodeF_mx v)
 
 def toFnF (v : GcmVariant) : Gather.ToFn Proof.Gcm.X86_64.Stitch.CtxMode.flagged :=
@@ -2685,8 +2796,12 @@ def toFnF (v : GcmVariant) : Gather.ToFn Proof.Gcm.X86_64.Stitch.CtxMode.flagged
     (StreamTo.framed_xdepth (StreamTo.encrypt_xdepth (blkToF v) (encFnF v)))
     (StreamTo.framed_mx (StreamTo.encrypt_mx (blkToF v) (encFnF v)))
 
+/-- `vg_aes_gcm_seal_prepared` of a variant whose loops read the 48 powers,
+as an internal function of its own, `vg_aes_gcm_seal_prepared<suffix>_core`,
+with the code as it was: the function of that name returns without secret
+residue (`sealR_scrubbed`). -/
 def sealFnF (v : GcmVariant) : Gather.SealFn Proof.Gcm.X86_64.Stitch.CtxMode.flagged :=
-  .ofFlagged ⟨Spec.Gcm.sealPreparedApi.name ++ v.impl.suffix, sealCodeF v⟩ (sealCodeF_verified v)
+  .ofFlagged ⟨Spec.Gcm.sealPreparedApi.name ++ v.impl.suffix ++ "_core", sealCodeF v⟩ (sealCodeF_verified v)
     (sealCodeF_spAll v) (sealCodeF_xdepth v) (sealCodeF_mx v)
 
 /-- `splitFrameSatP` with the 1032-byte context. -/
@@ -2779,8 +2894,8 @@ theorem sPreM_ofFlagged16 {s₀ : VG.X86_64.State} {lo : Nat}
   c_k := h.c_k.sub_right (sub_1024 _)
   y_k := h.y_k.sub_right (sub_1024 _)
 
-theorem sPreTo_ofFlagged16 {s₀ : VG.X86_64.State} (h : SPreTo (Proof.Gcm.X86_64.Stitch.CtxMode.flaggedT 16) s₀) :
-    SPreTo Proof.Gcm.X86_64.Stitch.CtxMode.prepared16 s₀ :=
+theorem sPreTo_ofFlagged16 {s₀ : VG.X86_64.State} {lo : Nat} (h : SPreTo (Proof.Gcm.X86_64.Stitch.CtxMode.flaggedT 16) s₀ lo) :
+    SPreTo Proof.Gcm.X86_64.Stitch.CtxMode.prepared16 s₀ lo :=
   { h with
     k_in := inRegions_1024 h.k_in
     k_c := h.k_c.sub_left (sub_1024 _)
@@ -2821,9 +2936,17 @@ def blkToDecF16 (v : GcmVariant) : BlkToDecFn (Proof.Gcm.X86_64.Stitch.CtxMode.f
 def openSplitFnF16 (v : GcmVariant) : OpenToSplit.OpenSplitFn (Proof.Gcm.X86_64.Stitch.CtxMode.flaggedT 16) :=
   .of ("vg_aes_gcm_open_split_prepared16" ++ v.impl.suffix) v.impl (blkF16 v) (blkToDecF16 v)
 
+def sealLeafF16 (v : GcmVariant) : Option (BlocksTo.SealFn (Proof.Gcm.X86_64.Stitch.CtxMode.flaggedT 16)) :=
+  selectSealLeaf v ("vg_aes_gcm_seal_blocks_prepared16" ++ v.impl.suffix) v.stitchToR16.isSome
+    ⟨fun _ h => Proof.Gcm.X86_64.StitchR.encToFromTwo_ok 8 (by decide) (sPreTo_ofFlagged16 h),
+     fun _ h => Proof.Gcm.X86_64.StitchAvx8.encBuffers_ok 8 (by decide) (sPreTo_ofFlagged16 h)⟩
+    none
+
 def blkToF16 (v : GcmVariant) : StreamTo.BlkToFn (Proof.Gcm.X86_64.Stitch.CtxMode.flaggedT 16) :=
-  .ofBlocks ("vg_aes_gcm_encrypt_blocks_to_prepared16" ++ v.impl.suffix) (blkF16 v)
-    (v.stitchToR16.map StitchToCode.flagged16)
+  .ofPreparedBlocks ("vg_aes_gcm_encrypt_blocks_to_prepared16" ++ v.impl.suffix) v.gh.impl v.ctr.ctrTo (blkF16 v)
+    v.shortBackend
+    ⟨fun _ h => Proof.Gcm.X86_64.StitchR.encToFromTwo_ok 8 (by decide) (sPreTo_ofFlagged16 h),
+     fun _ h => Proof.Gcm.X86_64.StitchAvx8.encBuffers_ok 8 (by decide) (sPreTo_ofFlagged16 h)⟩ (v.stitchToR16.map StitchToCode.flagged16)
 
 /-- `vg_aes_gcm_open_prepared` of a variant whose loops read 16 powers: by the
 count, its code on them or its code on the key context. -/
@@ -2863,10 +2986,13 @@ theorem openCodeF16_mx (v : GcmVariant) :
   simp only [openCodeF16, Impl.Gcm.X86_64.Flag.onFlag, Code.iteCold, Code.allInstrs, h₁, h₂, Bool.and_true]
   rfl
 
-/-- The registered `vg_aes_gcm_open_prepared` of a variant whose loops read
-16 powers, for `open_to` to call on a context whose count is at least 16. -/
+/-- `vg_aes_gcm_open_prepared` of a variant whose loops read 16 powers, for
+`open_to` to call on a context whose count is at least 16, as an internal
+function of its own, `vg_aes_gcm_open_prepared<suffix>_core`, with the code
+as it was: the function of that name returns without secret residue
+(`openR16_scrubbed`). -/
 def openFnF16 (v : GcmVariant) (r : R16 v) : OpenTo.OpenFn (Proof.Gcm.X86_64.Stitch.CtxMode.flaggedT 16) :=
-  .ofFlagged ⟨Spec.Gcm.openPreparedApi.name ++ v.impl.suffix, openCodeF16 v⟩ (openCodeF16_verified v r)
+  .ofFlagged ⟨Spec.Gcm.openPreparedApi.name ++ v.impl.suffix ++ "_core", openCodeF16 v⟩ (openCodeF16_verified v r)
     (openCodeF16_spAll v) (openCodeF16_xdepth v) (openCodeF16_mx v)
 
 /-- `vg_aes_gcm_open_to_prepared`'s code on a context whose count is at least
@@ -2918,18 +3044,18 @@ theorem openToCodeR16_onFlag_spAll (v : GcmVariant) (r : R16 v) :
 
 /-- `vg_aes_gcm_seal_prepared` of a variant whose loops read 16 powers: by the
 count, its code on them or its code on the key context. -/
-def sealCodeF16 (v : GcmVariant) : Prog VG.X86_64.isa :=
+def sealCodeF16 (v : GcmVariant) (B : BlkFn Proof.Gcm.X86_64.Stitch.CtxMode.prepared16 := blkR16 v) : Prog VG.X86_64.isa :=
   Impl.Gcm.X86_64.Flag.onFlag 16
-    (Impl.StackScratch.X86_64.withStackArgScratch 2600 3 (v.impl.sealCodeP (v.impl.withBlk (blkR16 v))))
+    (Impl.StackScratch.X86_64.withStackArgScratch 2600 3 (v.impl.sealCodeP (v.impl.withBlk B)))
     (Impl.StackScratch.X86_64.withStackArgScratch 2600 3 (v.impl.sealCode v.impl.callees))
 
-theorem sealCodeF16_verified (v : GcmVariant) (r : R16 v) :
-    Verified X86_64.target (sealCodeF16 v) (VG.Proof.AesGcm.Flag.sealRoundsContractB 16 X86_64.abi 2624) :=
-  Flag.seal_onFlag16B (sealSelPrepared16_framed v.impl (blkR16 v) Short.shortFacts r.short)
+theorem sealCodeF16_verified (v : GcmVariant) (r : R16 v) (B : BlkFn Proof.Gcm.X86_64.Stitch.CtxMode.prepared16 := blkR16 v) :
+    Verified X86_64.target (sealCodeF16 v B) (VG.Proof.AesGcm.Flag.sealRoundsContractB 16 X86_64.abi 2624) :=
+  Flag.seal_onFlag16B (sealSelPrepared16_framed v.impl B Short.shortFacts r.short)
     (sealSel_framed v.impl Short.shortFacts)
 
-theorem sealCodeF16_spAll (v : GcmVariant) : (sealCodeF16 v).all (fun i => !X86_64.isa.writesSp i) = true :=
-  VG.X86_64.onFlag_spSafe (X86_64.withStackArgScratch_spSafe (sealCodeP_spSafe v.impl (blkR16 v)))
+theorem sealCodeF16_spAll (v : GcmVariant) (B : BlkFn Proof.Gcm.X86_64.Stitch.CtxMode.prepared16 := blkR16 v) : (sealCodeF16 v B).all (fun i => !X86_64.isa.writesSp i) = true :=
+  VG.X86_64.onFlag_spSafe (X86_64.withStackArgScratch_spSafe (sealCodeP_spSafe v.impl B))
     (X86_64.withStackArgScratch_spSafe (sealCode_spSafe v.impl v.impl.blkB))
 
 theorem sealCodeF16_xdepth (v : GcmVariant) : (sealCodeF16 v).x86_64Depth ≤ 2624 := by
@@ -2989,10 +3115,89 @@ theorem streamEncryptCodeF16_mx (v : GcmVariant) :
   simp only [streamEncryptCodeF16, Impl.Gcm.X86_64.Flag.onFlag, Code.iteCold, Code.allInstrs, h₁, h₂, Bool.and_true]
   rfl
 
+/-- Whether `vg_aes_gcm_stream_encrypt_prepared` of a variant whose loops read
+16 powers clears the registers only on the paths that call
+(`streamEncryptClr`), as the variant on VAES and VPCLMULQDQ on 256-bit
+registers does, whose callees never touch the stack. -/
+def GcmVariant.streamF16Clr (v : GcmVariant) : Bool :=
+  v.stitch.any fun p => match p.name with
+    | .vaes => true
+    | _ => false
+
+/-- `streamEncryptCodeF16`, clearing the registers after each call
+(`streamEncryptClr`, at the level of 256-bit registers). -/
+def streamEncryptCodeF16C (v : GcmVariant) : Prog VG.X86_64.isa :=
+  Impl.Gcm.X86_64.Flag.onFlag 16
+    (Impl.StackScratch.X86_64.withStackArgScratch 2584 1
+      (Impl.AesGcm.X86_64.streamEncryptClr (v.impl.withBlk (blkR16 v)) .avx))
+    (Impl.StackScratch.X86_64.withStackArgScratch 2584 1 (Impl.AesGcm.X86_64.streamEncryptClr v.impl.callees .avx))
+
+/-- The code of `vg_aes_gcm_stream_encrypt_prepared` of a variant whose loops
+read 16 powers: `streamEncryptCodeF16C` where `GcmVariant.streamF16Clr` says
+so, else `streamEncryptCodeF16`. -/
+def streamEncryptCodeF16S (v : GcmVariant) : Prog VG.X86_64.isa :=
+  if v.streamF16Clr then streamEncryptCodeF16C v else streamEncryptCodeF16 v
+
+theorem streamEncryptCodeF16S_verified (v : GcmVariant) :
+    Verified X86_64.target (streamEncryptCodeF16S v)
+      (VG.Proof.AesGcm.Flag.streamEncryptRoundsContractB 16 X86_64.abi 2608) := by
+  unfold streamEncryptCodeF16S
+  split
+  · exact Flag.streamEncrypt_onFlag16B (streamEncryptClr16_framed .avx v.impl (blkR16 v))
+      (streamEncryptClrB_framed .avx v.impl v.impl.blkB)
+  · exact streamEncryptCodeF16_verified v
+
+theorem streamEncryptCodeF16S_spAll (v : GcmVariant) :
+    (streamEncryptCodeF16S v).all (fun i => !X86_64.isa.writesSp i) = true := by
+  unfold streamEncryptCodeF16S
+  split
+  · exact VG.X86_64.onFlag_spSafe (streamEncryptClr_spSafe .avx v.impl (blkR16 v))
+      (streamEncryptClr_spSafe .avx v.impl v.impl.blkB)
+  · exact streamEncryptCodeF16_spAll v
+
+theorem streamEncryptCodeF16S_xdepth (v : GcmVariant) : (streamEncryptCodeF16S v).x86_64Depth ≤ 2608 := by
+  unfold streamEncryptCodeF16S
+  split
+  · have h₁ := streamEncryptClr_xdepth .avx v.impl (blkR16 v)
+    have h₂ := streamEncryptClr_xdepth .avx v.impl v.impl.blkB
+    simp only [streamEncryptCodeF16C, Impl.Gcm.X86_64.Flag.onFlag, Code.iteCold, Code.x86_64Depth, Nat.max_le]
+    exact ⟨Nat.zero_le _, ⟨⟨⟨Nat.zero_le _, Nat.zero_le _⟩, h₁⟩, h₂⟩⟩
+  · exact streamEncryptCodeF16_xdepth v
+
+theorem streamEncryptCodeF16S_mx (v : GcmVariant) :
+    (streamEncryptCodeF16S v).allInstrs (fun i => !VG.X86_64.loadsMxcsr i) = true := by
+  unfold streamEncryptCodeF16S
+  split
+  · have h₁ := streamEncryptClr_mx .avx v.impl (blkR16 v)
+    have h₂ : (Impl.StackScratch.X86_64.withStackArgScratch 2584 1
+        (Impl.AesGcm.X86_64.streamEncryptClr v.impl.callees .avx)).allInstrs (fun i => !VG.X86_64.loadsMxcsr i) = true :=
+      streamEncryptClr_mx .avx v.impl v.impl.blkB
+    simp only [streamEncryptCodeF16C, Impl.Gcm.X86_64.Flag.onFlag, Code.iteCold, Code.allInstrs, h₁, h₂,
+      Bool.and_true]
+    rfl
+  · exact streamEncryptCodeF16_mx v
+
+/-- Whether `vg_aes_gcm_stream_encrypt_prepared` of a variant whose loops read
+16 powers calls whole-blocks functions that zero their working space before
+they return (`BlkFn.wipeW`), and clears only the scratch registers on return,
+as the variant on AES-NI and PCLMULQDQ in `VEX.128` does, whose loops leave
+the powers and the keystream there. -/
+def GcmVariant.streamF16Wipe (v : GcmVariant) : Bool :=
+  v.stitch.any fun p => match p.name with
+    | .aesniAvx => true
+    | _ => false
+
+/-- The instance of `vg_aes_gcm_stream_encrypt_prepared` of a variant whose
+loops read 16 powers; where that function is followed by the clearing of the
+scratch registers (`GcmVariant.streamF16Clr`, `GcmVariant.streamF16Wipe`), as
+an internal function of its own,
+`vg_aes_gcm_stream_encrypt_prepared<suffix>_core`, with the code as it was. -/
 def encFnF16 (v : GcmVariant) : StreamTo.EncFn (Proof.Gcm.X86_64.Stitch.CtxMode.flaggedT 16) :=
-  .ofFlagged ⟨Spec.Gcm.streamEncryptPreparedApi.name ++ v.impl.suffix, streamEncryptCodeF16 v⟩
-    (streamEncryptCodeF16_verified v) (streamEncryptCodeF16_spAll v) (streamEncryptCodeF16_xdepth v)
-    (streamEncryptCodeF16_mx v)
+  .ofFlagged ⟨Spec.Gcm.streamEncryptPreparedApi.name ++ v.impl.suffix ++
+        (if v.streamF16Clr || v.streamF16Wipe then "_core" else ""),
+      streamEncryptCodeF16S v⟩
+    (streamEncryptCodeF16S_verified v) (streamEncryptCodeF16S_spAll v) (streamEncryptCodeF16S_xdepth v)
+    (streamEncryptCodeF16S_mx v)
 
 def toFnF16 (v : GcmVariant) : Gather.ToFn (Proof.Gcm.X86_64.Stitch.CtxMode.flaggedT 16) :=
   .ofFlagged ⟨"vg_aes_gcm_stream_encrypt_to_prepared16" ++ v.impl.suffix,
@@ -3003,20 +3208,12 @@ def toFnF16 (v : GcmVariant) : Gather.ToFn (Proof.Gcm.X86_64.Stitch.CtxMode.flag
     (StreamTo.framed_xdepth (StreamTo.encrypt_xdepth (blkToF16 v) (encFnF16 v)))
     (StreamTo.framed_mx (StreamTo.encrypt_mx (blkToF16 v) (encFnF16 v)))
 
-/-- Whether `vg_aes_gcm_seal_prepared` of a variant whose loops read 16
-powers is followed by the clearing of its stack (`sealF16Reg`): that of the
-variant on VAES and VPCLMULQDQ on 256-bit registers. -/
-def GcmVariant.sealF16Scrubbed (v : GcmVariant) : Bool :=
-  v.stitch.any fun p => match p.name with
-    | .vaes => true
-    | _ => false
-
 /-- The instance of `vg_aes_gcm_seal_prepared` of a variant whose loops read
-16 powers; where that function is followed by the clearing of its stack
-(`GcmVariant.sealF16Scrubbed`), as an internal function of its own,
-`vg_aes_gcm_seal_prepared<suffix>_core`, with the code as it was. -/
+16 powers, as an internal function of its own,
+`vg_aes_gcm_seal_prepared<suffix>_core`, with the code as it was: the function
+of that name returns without secret residue (`sealR16_scrubbed`). -/
 def sealFnF16 (v : GcmVariant) (r : R16 v) : Gather.SealFn (Proof.Gcm.X86_64.Stitch.CtxMode.flaggedT 16) :=
-  .ofFlagged ⟨Spec.Gcm.sealPreparedApi.name ++ v.impl.suffix ++ (if v.sealF16Scrubbed then "_core" else ""),
+  .ofFlagged ⟨Spec.Gcm.sealPreparedApi.name ++ v.impl.suffix ++ "_core",
       sealCodeF16 v⟩ (sealCodeF16_verified v r)
     (sealCodeF16_spAll v) (sealCodeF16_xdepth v) (sealCodeF16_mx v)
 

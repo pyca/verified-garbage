@@ -23,14 +23,14 @@ open VG.AArch64 VG.Spec.Blake2
 /-- AArch64 contract for `compress(state = x0, blocks = x1, n = x2, t = x3,
 last = w4, scratch = x5)`: updates the state at `state` with the `n` blocks at
 `blocks`, block `i` with the counter `t + bb · i` and the final block flag if
-`last ≠ 0`. It reads the blocks and reads and writes the state and 512 bytes
+`last ≠ 0`. It reads the blocks and reads and writes the state and 56 bytes
 of scratch space, which do not overlap each other. The pointers, `n`, `t`
 and `last` are public. -/
 def compressAArch64 {w : Nat} (P : Params w) : Contract isa where
   pre s :=
     let state : Region := ⟨s.gpr .x0, 8 * (w / 8)⟩
     let blocks : Region := ⟨s.gpr .x1, blockBytes w * (s.gpr .x2).toNat⟩
-    let scratch : Region := ⟨s.gpr .x5, 512⟩
+    let scratch : Region := ⟨s.gpr .x5, 56⟩
     s.rd = [blocks] ∧ s.wr = [state, scratch] ∧
     state.Disjoint scratch ∧ blocks.Disjoint state ∧ blocks.Disjoint scratch
   post s s' := stateAt w s'.mem (s.gpr .x0) =

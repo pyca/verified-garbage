@@ -9,8 +9,9 @@ public import VerifiedGarbage.Proof.MlKem.X86.DecodeDecompress
 import VerifiedGarbage.Proof.MlKem.X86.TopCall
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.MlKem.X86.Table
-import VerifiedGarbage.Proof.MlKem.X86.TopPrim
+import VerifiedGarbage.Proof.MlKem.X86.Unpack
+import VerifiedGarbage.Impl.MlKem.X86.Ntt
+import VerifiedGarbage.Proof.MlKem.X86.Leaf
 public import VerifiedGarbage.Proof.MlKem.X86.TopKeep
 public import VerifiedGarbage.Impl.MlKem.X86.Kem
 public import VerifiedGarbage.Proof.MlKem.KPke
@@ -30,8 +31,6 @@ public import VerifiedGarbage.Proof.Sha256.X86.Lit
 public import VerifiedGarbage.Proof.Sha3.Arith
 public import VerifiedGarbage.Proof.Sha3.X86.Lit
 public import VerifiedGarbage.Proof.Sha3.X86.Stream.Absorb
-public import VerifiedGarbage.Proof.Sha3.X86.Stream.Pad
-public import VerifiedGarbage.Proof.Sha3.X86.Stream.Squeeze
 import VerifiedGarbage.Impl.MlKem.X86.CheckEk
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Offset
@@ -39,11 +38,8 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.X86.Lit
 import VerifiedGarbage.Proof.Framework.X86.Mmx
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
-import VerifiedGarbage.Proof.MlKem.X86.NttSetup
 import VerifiedGarbage.Proof.MlKem.X86.Red
-import VerifiedGarbage.Proof.MlKem.X86.TopHash
 import VerifiedGarbage.Proof.MlKem.X86.TopLocal
-import VerifiedGarbage.Proof.MlKem.X86.TopPrim2
 import VerifiedGarbage.Proof.Sha512.Spec
 
 /-! ### `MlKem.X86.TopSeq2`, which only this module used -/
@@ -98,15 +94,15 @@ theorem sample_call (da dO aa ao ca co : Nat)
       (callRet [.edx, .ecx, .eax] "vg_mlkem_sample_ntt" Impl.MlKem.X86.sampleNTT) := by
   simp only [Bool.and_eq_true] at hc
   obtain ⟨⟨⟨⟨⟨hD, hA'⟩, hC⟩, dDA⟩, dDC⟩, dAC⟩ := hc
-  have hA₁ := (Lay.okW_iff.mp hA').1
-  have hC₁ := (Lay.okW_iff.mp hC).1
-  have entry : ∀ s₀ s, TPre Y s₀ → A s₀ s →
+  obtain hA₁ := (Lay.okW_iff.mp hA').1
+  obtain hC₁ := (Lay.okW_iff.mp hC).1
+  obtain entry : ∀ s₀ s, TPre Y s₀ → A s₀ s →
       4 * [Reg.edx, Reg.ecx, Reg.eax].length + 4 ≤ (s.gpr .esp).toNat ∧
       arg (pushed [.edx, .ecx, .eax] s).callEntry 0 = Buf.ptr s₀ ⟨da, dO, 34⟩ ∧
       arg (pushed [.edx, .ecx, .eax] s).callEntry 1 = Buf.ptr s₀ ⟨aa, ao, 1024⟩ ∧
       arg (pushed [.edx, .ecx, .eax] s).callEntry 2 = Buf.ptr s₀ ⟨ca, co, 2048⟩ := fun s₀ s hp ha => by
     obtain ⟨h, hax, hcx, hdx⟩ := hA s₀ s hp ha
-    have fit : 4 * [Reg.edx, Reg.ecx, Reg.eax].length + 4 ≤ (s.gpr .esp).toNat := by
+    obtain fit : 4 * [Reg.edx, Reg.ecx, Reg.eax].length + 4 ≤ (s.gpr .esp).toNat := by
       have := ctx_E hp h (N := 72) (by omega_arith); simp only [List.length_cons, List.length_nil]; omega_arith
     refine ⟨fit, ?_, ?_, ?_⟩
     · rw [callEntry_arg fit (by decide) (by decide)]; exact hax
@@ -121,19 +117,19 @@ theorem sample_call (da dO aa ao ca co : Nat)
     (fun s₀ s s' hp ha h' e₃ fr post => ?_)
   · have h := (hA s₀ s hp ha).1
     obtain ⟨fit, a0, a1, a2⟩ := entry s₀ s hp ha
-    have hE' : 72 ≤ (E1 s₀).toNat := by rw [← h.esp]; exact ctx_E hp h (N := 72) (by omega_arith)
-    have eA : argAddr (pushed [.edx, .ecx, .eax] s).callEntry 0 = (E1 s₀ - BitVec.ofNat 32 12).setWidth 64 := by
+    obtain hE' : 72 ≤ (E1 s₀).toNat := by rw [← h.esp]; exact ctx_E hp h (N := 72) (by omega_arith)
+    obtain eA : argAddr (pushed [.edx, .ecx, .eax] s).callEntry 0 = (E1 s₀ - BitVec.ofNat 32 12).setWidth 64 := by
       rw [callEntry_argAddr0, h.esp]; rfl
-    have eSp : (pushed [.edx, .ecx, .eax] s).callEntry.gpr .esp = E1 s₀ - BitVec.ofNat 32 16 := by
+    obtain eSp : (pushed [.edx, .ecx, .eax] s).callEntry.gpr .esp = E1 s₀ - BitVec.ofNat 32 16 := by
       rw [callEntry_esp', h.esp]; rfl
-    have bD := Buf.stkD hp hD (N := 4 * 3 + 4 + 56) (by omega_arith)
-    have bA := Buf.stkD hp hA₁ (N := 4 * 3 + 4 + 56) (by omega_arith)
-    have bC := Buf.stkD hp hC₁ (N := 4 * 3 + 4 + 56) (by omega_arith)
+    obtain bD := Buf.stkD hp hD (N := 4 * 3 + 4 + 56) (by omega_arith)
+    obtain bA := Buf.stkD hp hA₁ (N := 4 * 3 + 4 + 56) (by omega_arith)
+    obtain bC := Buf.stkD hp hC₁ (N := 4 * 3 + 4 + 56) (by omega_arith)
     obtain ⟨rD₁, rD₂, rD₃⟩ := entry_regions hE' bD
     obtain ⟨rA₁, rA₂, rA₃⟩ := entry_regions hE' bA
     obtain ⟨rC₁, rC₂, rC₃⟩ := entry_regions hE' bC
     obtain ⟨rG₂, rG₃⟩ := entry_self (E := E1 s₀) (k := 3) (K := 56) hE'
-    have cv := covers_of (s := s) (n := 3) (rd := [Buf.rgn s₀ ⟨da, dO, 34⟩])
+    obtain cv := covers_of (s := s) (n := 3) (rd := [Buf.rgn s₀ ⟨da, dO, 34⟩])
       (wr := [Buf.rgn s₀ ⟨aa, ao, 1024⟩, Buf.rgn s₀ ⟨ca, co, 2048⟩] ++ [below (E1 s₀) 12])
       (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -154,20 +150,20 @@ theorem sample_call (da dO aa ao ca co : Nat)
       trivial, trivial, Buf.disj hp hD hA₁ dDA, Buf.disj hp hD hC₁ dDC, rD₁, Buf.disj hp hA₁ hC₁ dAC, rA₁,
       rC₁, rD₂, rA₂, rC₂, rG₂, rD₃, rA₃, rC₃, rG₃, Buf.fit hp hD, Buf.fit hp hA₁, Buf.fit hp hC₁⟩
   · have h := (hA s₀ s hp ha).1
-    have h' := (hA s₀' s' hp' ha').1
+    obtain h' := (hA s₀' s' hp' ha').1
     obtain ⟨fit, a0, -, -⟩ := entry s₀ s hp ha
     obtain ⟨fit', a0', -, -⟩ := entry s₀' s' hp' ha'
     obtain ⟨-, hax, hcx, hdx⟩ := hA s₀ s hp ha
     obtain ⟨-, hax', hcx', hdx'⟩ := hA s₀' s' hp' ha'
-    have hsp : s.gpr .esp = s'.gpr .esp := by rw [h.esp, h'.esp, hq.E1]
-    have hr : ∀ r ∈ [Reg.edx, Reg.ecx, Reg.eax], s.gpr r = s'.gpr r := by
+    obtain hsp : s.gpr .esp = s'.gpr .esp := by rw [h.esp, h'.esp, hq.E1]
+    obtain hr : ∀ r ∈ [Reg.edx, Reg.ecx, Reg.eax], s.gpr r = s'.gpr r := by
       intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
       · rw [hdx, hdx', hq.ptr hC₁]
       · rw [hcx, hcx', hq.ptr hA₁]
       · rw [hax, hax', hq.ptr hD]
-    have ek := @ent_keep Y s₀ s hp h [.edx, .ecx, .eax] (by decide) (by simp; omega_arith)
-    have ek' := @ent_keep Y s₀' s' hp' h' [.edx, .ecx, .eax] (by decide) (by simp; omega_arith)
+    obtain ek := @ent_keep Y s₀ s hp h [.edx, .ecx, .eax] (by decide) (by simp; omega_arith)
+    obtain ek' := @ent_keep Y s₀' s' hp' h' [.edx, .ecx, .eax] (by decide) (by simp; omega_arith)
     refine ⟨by simp only [Buf.rgn, hq.ptr hD], by simp only [Buf.rgn, hq.ptr hA₁, hq.ptr hC₁, hq.E1], ?_⟩
     generalize he : (pushed [.edx, .ecx, .eax] s).callEntry = e
     generalize he' : (pushed [.edx, .ecx, .eax] s').callEntry = e'
@@ -180,14 +176,17 @@ theorem sample_call (da dO aa ao ca co : Nat)
   · have h := (hA s₀ s hp ha).1
     obtain ⟨fit, a0, a1, -⟩ := entry s₀ s hp ha
     obtain ⟨s₂, m₂, g₂, post⟩ := post
-    have ek := @ent_keep Y s₀ s hp h [.edx, .ecx, .eax] (by decide) (by simp; omega_arith)
+    obtain ek := @ent_keep Y s₀ s hp h [.edx, .ecx, .eax] (by decide) (by simp; omega_arith)
     generalize he : (pushed [.edx, .ecx, .eax] s).callEntry = e at post
     sig_post [sampleNTTContract, sampleNTTSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at post
     subst he
-    simp only [arg_withRegions, a0, a1, m₂, setWidth_append32, g₂] at post
+    simp only [arg_withRegions, a0, a1, setWidth_append32, g₂] at post
     rw [bytesAt_congr (ek hD)] at post
+    -- The pop loses the arguments' frame, below `esp`, apart from the output.
+    have lk := lost_keep hp h (k := 3) (by omega_arith) m₂ hA₁
+    rw [← polyAt_congr lk] at post
     exact hQ s₀ s s' hp ha h' e₃ (fr_conv hp (a := 12) (N := 72) (by omega_arith) (by omega_arith)
-      (by rw [sample_stack] at fr; exact fr)) post.1 post.2
+      (by rw [sample_stack] at fr; exact fr)) (fun e => reduced_congr lk (post.1 e)) post.2
 
 theorem ce_nosp : NoSp Impl.MlKem.X86.compressEncode := NoSp.of_all (by decide +kernel)
 theorem ce_stack : stackUse Impl.MlKem.X86.compressEncode = 16 := by decide +kernel
@@ -253,17 +252,17 @@ theorem ce_call {nm : String} {c : Prog isa} {ws : List Nat} (F : CeFn c ws) (d 
       (callWith [.edi, .edx, .ecx, .eax] nm c) := by
   simp only [Bool.and_eq_true] at hc
   obtain ⟨⟨hF, hO⟩, dFO⟩ := hc
-  have hO₁ := (Lay.okW_iff.mp hO).1
-  have hd32 := F.width d hd
-  have hd' : d < 2 ^ 32 := by omega_arith
-  have entry : ∀ s₀ s, TPre Y s₀ → A s₀ s →
+  obtain hO₁ := (Lay.okW_iff.mp hO).1
+  obtain hd32 := F.width d hd
+  obtain hd' : d < 2 ^ 32 := by omega_arith
+  obtain entry : ∀ s₀ s, TPre Y s₀ → A s₀ s →
       4 * [Reg.edi, Reg.edx, Reg.ecx, Reg.eax].length + 4 ≤ (s.gpr .esp).toNat ∧
       arg (pushed [.edi, .edx, .ecx, .eax] s).callEntry 0 = Buf.ptr s₀ ⟨fa, fo, 1024⟩ ∧
       arg (pushed [.edi, .edx, .ecx, .eax] s).callEntry 1 = BitVec.ofNat 32 d ∧
       arg (pushed [.edi, .edx, .ecx, .eax] s).callEntry 2 = Buf.ptr s₀ ⟨oa, oo, 32 * d⟩ ∧
       arg (pushed [.edi, .edx, .ecx, .eax] s).callEntry 3 = BitVec.ofNat 32 (32 * d) := fun s₀ s hp ha => by
     obtain ⟨h, hax, hcx, hdx, hdi, -⟩ := hA s₀ s hp ha
-    have fit : 4 * [Reg.edi, Reg.edx, Reg.ecx, Reg.eax].length + 4 ≤ (s.gpr .esp).toNat := by
+    obtain fit : 4 * [Reg.edi, Reg.edx, Reg.ecx, Reg.eax].length + 4 ≤ (s.gpr .esp).toNat := by
       have := ctx_E hp h (N := 36) (by omega_arith); simp only [List.length_cons, List.length_nil]; omega_arith
     refine ⟨fit, ?_, ?_, ?_, ?_⟩
     · rw [callEntry_arg fit (by decide) (by decide)]; exact hax
@@ -279,17 +278,17 @@ theorem ce_call {nm : String} {c : Prog isa} {ws : List Nat} (F : CeFn c ws) (d 
     (fun s₀ s s' hp ha h' e₃ fr post => ?_)
   · obtain ⟨h, -, -, -, -, rF⟩ := hA s₀ s hp ha
     obtain ⟨fit, a0, a1, a2, a3⟩ := entry s₀ s hp ha
-    have hE' : 36 ≤ (E1 s₀).toNat := by rw [← h.esp]; exact ctx_E hp h (N := 36) (by omega_arith)
-    have eA : argAddr (pushed [.edi, .edx, .ecx, .eax] s).callEntry 0 = (E1 s₀ - BitVec.ofNat 32 16).setWidth 64 := by
+    obtain hE' : 36 ≤ (E1 s₀).toNat := by rw [← h.esp]; exact ctx_E hp h (N := 36) (by omega_arith)
+    obtain eA : argAddr (pushed [.edi, .edx, .ecx, .eax] s).callEntry 0 = (E1 s₀ - BitVec.ofNat 32 16).setWidth 64 := by
       rw [callEntry_argAddr0, h.esp]; rfl
-    have eSp : (pushed [.edi, .edx, .ecx, .eax] s).callEntry.gpr .esp = E1 s₀ - BitVec.ofNat 32 20 := by
+    obtain eSp : (pushed [.edi, .edx, .ecx, .eax] s).callEntry.gpr .esp = E1 s₀ - BitVec.ofNat 32 20 := by
       rw [callEntry_esp', h.esp]; rfl
-    have bF := Buf.stkD hp hF (N := 4 * 4 + 4 + 16) (by omega_arith)
-    have bO := Buf.stkD hp hO₁ (N := 4 * 4 + 4 + 16) (by omega_arith)
+    obtain bF := Buf.stkD hp hF (N := 4 * 4 + 4 + 16) (by omega_arith)
+    obtain bO := Buf.stkD hp hO₁ (N := 4 * 4 + 4 + 16) (by omega_arith)
     obtain ⟨rF₁, rF₂, rF₃⟩ := entry_regions hE' bF
     obtain ⟨rO₁, rO₂, rO₃⟩ := entry_regions hE' bO
     obtain ⟨rG₂, rG₃⟩ := entry_self (E := E1 s₀) (k := 4) (K := 16) hE'
-    have cv := covers_of (s := s) (n := 4) (rd := [Buf.rgn s₀ ⟨fa, fo, 1024⟩])
+    obtain cv := covers_of (s := s) (n := 4) (rd := [Buf.rgn s₀ ⟨fa, fo, 1024⟩])
       (wr := [Buf.rgn s₀ ⟨oa, oo, 32 * d⟩] ++ [below (E1 s₀) 16])
       (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -306,17 +305,17 @@ theorem ce_call {nm : String} {c : Prog isa} {ws : List Nat} (F : CeFn c ws) (d 
     subst he
     simp only [arg_withRegions, argAddr_withRegions, a0, a1, a2, a3, eA, eSp, toNat_ofNat32 hd',
       toNat_ofNat32 hd32]
-    have ek := @ent_keep Y s₀ s hp h [.edi, .edx, .ecx, .eax] (by decide) (by simp; omega_arith)
+    obtain ek := @ent_keep Y s₀ s hp h [.edi, .edx, .ecx, .eax] (by decide) (by simp; omega_arith)
     refine ⟨by rw [sub_toNat (by omega_arith)]; omega_arith, by rw [sub_toNat (by omega_arith)]; have := (E1 s₀).isLt; omega_arith,
       trivial, trivial, Buf.disj hp hF hO₁ dFO, rF₁, rO₁, rF₂, rO₂, rG₂, rF₃, rO₃, rG₃,
       Buf.fit hp hF, Buf.fit hp hO₁, hd, trivial, reduced_congr (ek hF) rF⟩
   · have h := (hA s₀ s hp ha).1
-    have h' := (hA s₀' s' hp' ha').1
+    obtain h' := (hA s₀' s' hp' ha').1
     obtain ⟨fit, -⟩ := entry s₀ s hp ha
     obtain ⟨-, hax, hcx, hdx, hdi, -⟩ := hA s₀ s hp ha
     obtain ⟨-, hax', hcx', hdx', hdi', -⟩ := hA s₀' s' hp' ha'
-    have hsp : s.gpr .esp = s'.gpr .esp := by rw [h.esp, h'.esp, hq.E1]
-    have hr : ∀ r ∈ [Reg.edi, Reg.edx, Reg.ecx, Reg.eax], s.gpr r = s'.gpr r := by
+    obtain hsp : s.gpr .esp = s'.gpr .esp := by rw [h.esp, h'.esp, hq.E1]
+    obtain hr : ∀ r ∈ [Reg.edi, Reg.edx, Reg.ecx, Reg.eax], s.gpr r = s'.gpr r := by
       intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl
       · rw [hdi, hdi']
@@ -335,12 +334,13 @@ theorem ce_call {nm : String} {c : Prog isa} {ws : List Nat} (F : CeFn c ws) (d 
   · have h := (hA s₀ s hp ha).1
     obtain ⟨fit, a0, a1, a2, a3⟩ := entry s₀ s hp ha
     obtain ⟨s₂, m₂, post⟩ := post
-    have ek := @ent_keep Y s₀ s hp h [.edi, .edx, .ecx, .eax] (by decide) (by simp; omega_arith)
+    obtain ek := @ent_keep Y s₀ s hp h [.edi, .edx, .ecx, .eax] (by decide) (by simp; omega_arith)
     generalize he : (pushed [.edi, .edx, .ecx, .eax] s).callEntry = e at post
     sig_post [ceCon, compressEncodeSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at post
     subst he
-    simp only [arg_withRegions, a0, a1, a2, a3, m₂, toNat_ofNat32 hd', toNat_ofNat32 hd32] at post
+    simp only [arg_withRegions, a0, a1, a2, a3, toNat_ofNat32 hd', toNat_ofNat32 hd32] at post
     rw [polyAt_congr (ek hF)] at post
+    replace post := (bytesAt_congr (lost_keep hp h (k := 4) (by omega_arith) m₂ hO₁)).trans post
     exact hQ s₀ s s' hp ha h' e₃ (fr_conv hp (a := 16) (N := 36) (by omega_arith) (by omega_arith)
       (by rw [F.stack] at fr; exact fr)) post
 
@@ -361,17 +361,17 @@ theorem dd_call {nm : String} {c : Prog isa} {ws : List Nat} (F : DdFn c ws) (d 
       (callWith [.edi, .edx, .ecx, .eax] nm c) := by
   simp only [Bool.and_eq_true] at hc
   obtain ⟨⟨hB, hF⟩, dBF⟩ := hc
-  have hF₁ := (Lay.okW_iff.mp hF).1
-  have hd32 := F.width d hd
-  have hd' : d < 2 ^ 32 := by omega_arith
-  have entry : ∀ s₀ s, TPre Y s₀ → A s₀ s →
+  obtain hF₁ := (Lay.okW_iff.mp hF).1
+  obtain hd32 := F.width d hd
+  obtain hd' : d < 2 ^ 32 := by omega_arith
+  obtain entry : ∀ s₀ s, TPre Y s₀ → A s₀ s →
       4 * [Reg.edi, Reg.edx, Reg.ecx, Reg.eax].length + 4 ≤ (s.gpr .esp).toNat ∧
       arg (pushed [.edi, .edx, .ecx, .eax] s).callEntry 0 = Buf.ptr s₀ ⟨ba, bo, 32 * d⟩ ∧
       arg (pushed [.edi, .edx, .ecx, .eax] s).callEntry 1 = BitVec.ofNat 32 (32 * d) ∧
       arg (pushed [.edi, .edx, .ecx, .eax] s).callEntry 2 = BitVec.ofNat 32 d ∧
       arg (pushed [.edi, .edx, .ecx, .eax] s).callEntry 3 = Buf.ptr s₀ ⟨fa, fo, 1024⟩ := fun s₀ s hp ha => by
     obtain ⟨h, hax, hcx, hdx, hdi⟩ := hA s₀ s hp ha
-    have fit : 4 * [Reg.edi, Reg.edx, Reg.ecx, Reg.eax].length + 4 ≤ (s.gpr .esp).toNat := by
+    obtain fit : 4 * [Reg.edi, Reg.edx, Reg.ecx, Reg.eax].length + 4 ≤ (s.gpr .esp).toNat := by
       have := ctx_E hp h (N := 36) (by omega_arith); simp only [List.length_cons, List.length_nil]; omega_arith
     refine ⟨fit, ?_, ?_, ?_, ?_⟩
     · rw [callEntry_arg fit (by decide) (by decide)]; exact hax
@@ -387,17 +387,17 @@ theorem dd_call {nm : String} {c : Prog isa} {ws : List Nat} (F : DdFn c ws) (d 
     (fun s₀ s s' hp ha h' e₃ fr post => ?_)
   · have h := (hA s₀ s hp ha).1
     obtain ⟨fit, a0, a1, a2, a3⟩ := entry s₀ s hp ha
-    have hE' : 36 ≤ (E1 s₀).toNat := by rw [← h.esp]; exact ctx_E hp h (N := 36) (by omega_arith)
-    have eA : argAddr (pushed [.edi, .edx, .ecx, .eax] s).callEntry 0 = (E1 s₀ - BitVec.ofNat 32 16).setWidth 64 := by
+    obtain hE' : 36 ≤ (E1 s₀).toNat := by rw [← h.esp]; exact ctx_E hp h (N := 36) (by omega_arith)
+    obtain eA : argAddr (pushed [.edi, .edx, .ecx, .eax] s).callEntry 0 = (E1 s₀ - BitVec.ofNat 32 16).setWidth 64 := by
       rw [callEntry_argAddr0, h.esp]; rfl
-    have eSp : (pushed [.edi, .edx, .ecx, .eax] s).callEntry.gpr .esp = E1 s₀ - BitVec.ofNat 32 20 := by
+    obtain eSp : (pushed [.edi, .edx, .ecx, .eax] s).callEntry.gpr .esp = E1 s₀ - BitVec.ofNat 32 20 := by
       rw [callEntry_esp', h.esp]; rfl
-    have bB := Buf.stkD hp hB (N := 4 * 4 + 4 + 16) (by omega_arith)
-    have bF := Buf.stkD hp hF₁ (N := 4 * 4 + 4 + 16) (by omega_arith)
+    obtain bB := Buf.stkD hp hB (N := 4 * 4 + 4 + 16) (by omega_arith)
+    obtain bF := Buf.stkD hp hF₁ (N := 4 * 4 + 4 + 16) (by omega_arith)
     obtain ⟨rB₁, rB₂, rB₃⟩ := entry_regions hE' bB
     obtain ⟨rF₁, rF₂, rF₃⟩ := entry_regions hE' bF
     obtain ⟨rG₂, rG₃⟩ := entry_self (E := E1 s₀) (k := 4) (K := 16) hE'
-    have cv := covers_of (s := s) (n := 4) (rd := [Buf.rgn s₀ ⟨ba, bo, 32 * d⟩])
+    obtain cv := covers_of (s := s) (n := 4) (rd := [Buf.rgn s₀ ⟨ba, bo, 32 * d⟩])
       (wr := [Buf.rgn s₀ ⟨fa, fo, 1024⟩] ++ [below (E1 s₀) 16])
       (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -418,12 +418,12 @@ theorem dd_call {nm : String} {c : Prog isa} {ws : List Nat} (F : DdFn c ws) (d 
       trivial, trivial, Buf.disj hp hB hF₁ dBF, rB₁, rF₁, rB₂, rF₂, rG₂, rB₃, rF₃, rG₃,
       Buf.fit hp hB, Buf.fit hp hF₁, hd, trivial⟩
   · have h := (hA s₀ s hp ha).1
-    have h' := (hA s₀' s' hp' ha').1
+    obtain h' := (hA s₀' s' hp' ha').1
     obtain ⟨fit, -⟩ := entry s₀ s hp ha
     obtain ⟨-, hax, hcx, hdx, hdi⟩ := hA s₀ s hp ha
     obtain ⟨-, hax', hcx', hdx', hdi'⟩ := hA s₀' s' hp' ha'
-    have hsp : s.gpr .esp = s'.gpr .esp := by rw [h.esp, h'.esp, hq.E1]
-    have hr : ∀ r ∈ [Reg.edi, Reg.edx, Reg.ecx, Reg.eax], s.gpr r = s'.gpr r := by
+    obtain hsp : s.gpr .esp = s'.gpr .esp := by rw [h.esp, h'.esp, hq.E1]
+    obtain hr : ∀ r ∈ [Reg.edi, Reg.edx, Reg.ecx, Reg.eax], s.gpr r = s'.gpr r := by
       intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl
       · rw [hdi, hdi', hq.ptr hF₁]
@@ -442,13 +442,14 @@ theorem dd_call {nm : String} {c : Prog isa} {ws : List Nat} (F : DdFn c ws) (d 
   · have h := (hA s₀ s hp ha).1
     obtain ⟨fit, a0, a1, a2, a3⟩ := entry s₀ s hp ha
     obtain ⟨s₂, m₂, post⟩ := post
-    have ek := @ent_keep Y s₀ s hp h [.edi, .edx, .ecx, .eax] (by decide) (by simp; omega_arith)
+    obtain ek := @ent_keep Y s₀ s hp h [.edi, .edx, .ecx, .eax] (by decide) (by simp; omega_arith)
     generalize he : (pushed [.edi, .edx, .ecx, .eax] s).callEntry = e at post
     sig_post [ddCon, decodeDecompressSig, X86.abi, X86.argSlots, X86.argVal,
       X86.argBytes] at post
     subst he
-    simp only [arg_withRegions, a0, a1, a2, a3, m₂, toNat_ofNat32 hd', toNat_ofNat32 hd32] at post
+    simp only [arg_withRegions, a0, a1, a2, a3, toNat_ofNat32 hd', toNat_ofNat32 hd32] at post
     rw [bytesAt_congr (ek hB)] at post
+    replace post := polyIs_congr (lost_keep hp h (k := 4) (by omega_arith) m₂ hF₁) post
     exact hQ s₀ s s' hp ha h' e₃ (fr_conv hp (a := 16) (N := 36) (by omega_arith) (by omega_arith)
       (by rw [F.stack] at fr; exact fr)) post
 
@@ -504,11 +505,11 @@ theorem mulC_piece (oa oo fa fo ga go sa so : Nat)
   · simp only [List.append_assoc]
     rw [← List.append_nil (ptrTo Y.sc .edi _)]
     refine ptrTo_ok hp h (Lay.okW_iff.mp h0).1 fun s₁ o₁ v₁ => ?_
-    have c₁ := h.only o₁ (by decide) (by decide)
+    obtain c₁ := h.only o₁ (by decide) (by decide)
     refine ptrTo_ok hp c₁ h1 fun s₂ o₂ v₂ => ?_
-    have c₂ := c₁.only o₂ (by decide) (by decide)
+    obtain c₂ := c₁.only o₂ (by decide) (by decide)
     refine ptrTo_ok hp c₂ h2 fun s₃ o₃ v₃ => ?_
-    have c₃ := c₂.only o₃ (by decide) (by decide)
+    obtain c₃ := c₂.only o₃ (by decide) (by decide)
     refine ptrTo_ok hp c₃ (Lay.okW_iff.mp h3).1 fun s₄ o₄ v₄ => WP.block_nil_iff.mpr ?_
     exact ⟨c₃.only o₄ (by decide) (by decide), o₄.mem.trans (o₃.mem.trans (o₂.mem.trans o₁.mem)),
       by rw [o₄.gpr _ (by decide), o₃.gpr _ (by decide), o₂.gpr _ (by decide), v₁],
@@ -544,9 +545,9 @@ theorem sampleC_piece (da dO aa ao ca co : Nat)
   · simp only [List.append_assoc]
     rw [← List.append_nil (ptrTo Y.sc .edx _)]
     refine ptrTo_ok hp h h0 fun s₁ o₁ v₁ => ?_
-    have c₁ := h.only o₁ (by decide) (by decide)
+    obtain c₁ := h.only o₁ (by decide) (by decide)
     refine ptrTo_ok hp c₁ (Lay.okW_iff.mp h1).1 fun s₂ o₂ v₂ => ?_
-    have c₂ := c₁.only o₂ (by decide) (by decide)
+    obtain c₂ := c₁.only o₂ (by decide) (by decide)
     refine ptrTo_ok hp c₂ (Lay.okW_iff.mp h2).1 fun s₃ o₃ v₃ => WP.block_nil_iff.mpr ?_
     exact ⟨c₂.only o₃ (by decide) (by decide), o₃.mem.trans (o₂.mem.trans o₁.mem),
       by rw [o₃.gpr _ (by decide), o₂.gpr _ (by decide), v₁], by rw [o₃.gpr _ (by decide), v₂], v₃⟩
@@ -579,11 +580,11 @@ theorem ceC_piece {nm : String} {c : Prog isa} {ws : List Nat} (F : CeFn c ws) (
       fun s₀ s₁ s' hp ⟨s, ha, _, m₁, _⟩ h' _ fr post => ?_)
   · simp only [List.append_assoc, List.cons_append, List.nil_append]
     refine ptrTo_ok hp h h0 fun s₁ o₁ v₁ => ?_
-    have c₁ := h.only o₁ (by decide) (by decide)
+    obtain c₁ := h.only o₁ (by decide) (by decide)
     refine wp_movi fun s₂ o₂ v₂ => ?_
-    have c₂ := c₁.only o₂ (by decide) (by decide)
+    obtain c₂ := c₁.only o₂ (by decide) (by decide)
     refine ptrTo_ok hp c₂ (Lay.okW_iff.mp h1).1 fun s₃ o₃ v₃ => ?_
-    have c₃ := c₂.only o₃ (by decide) (by decide)
+    obtain c₃ := c₂.only o₃ (by decide) (by decide)
     refine wp_movi fun s₄ o₄ v₄ => WP.block_nil_iff.mpr ?_
     exact ⟨c₃.only o₄ (by decide) (by decide), o₄.mem.trans (o₃.mem.trans (o₂.mem.trans o₁.mem)),
       by rw [o₄.gpr _ (by decide), o₃.gpr _ (by decide), o₂.gpr _ (by decide), v₁],
@@ -616,11 +617,11 @@ theorem ddC_piece {nm : String} {c : Prog isa} {ws : List Nat} (F : DdFn c ws) (
       fun s₀ s₁ s' hp ⟨s, ha, _, m₁, _⟩ h' _ fr post => ?_)
   · simp only [List.append_assoc, List.cons_append, List.nil_append]
     refine ptrTo_ok hp h h0 fun s₁ o₁ v₁ => ?_
-    have c₁ := h.only o₁ (by decide) (by decide)
+    obtain c₁ := h.only o₁ (by decide) (by decide)
     refine wp_movi fun s₂ o₂ v₂ => ?_
-    have c₂ := c₁.only o₂ (by decide) (by decide)
+    obtain c₂ := c₁.only o₂ (by decide) (by decide)
     refine wp_movi fun s₃ o₃ v₃ => ?_
-    have c₃ := c₂.only o₃ (by decide) (by decide)
+    obtain c₃ := c₂.only o₃ (by decide) (by decide)
     rw [← List.append_nil (ptrTo Y.sc .edi _)]
     refine ptrTo_ok hp c₃ (Lay.okW_iff.mp h1).1 fun s₄ o₄ v₄ => WP.block_nil_iff.mpr ?_
     exact ⟨c₃.only o₄ (by decide) (by decide), o₄.mem.trans (o₃.mem.trans (o₂.mem.trans o₁.mem)),
@@ -734,10 +735,10 @@ theorem bytes_catK {s₀ : State} (hp : TPre Y s₀) (m : Mem) {a o c : Nat} :
   | 0, h => absurd h (by simp [Lay.ok])
   | 1, _ => by simp only [Nat.mul_one]; rfl
   | n + 2, h => by
-    have hc : 0 < c := by
+    obtain hc : 0 < c := by
       simp only [Lay.ok, Bool.and_eq_true, decide_eq_true_eq] at h
       exact Nat.pos_of_mul_pos_right h.1.2
-    have e : c * (n + 2) = c * (n + 1) + c := Nat.mul_succ c (n + 1)
+    obtain e : c * (n + 2) = c * (n + 1) + c := Nat.mul_succ c (n + 1)
     rw [bytes_split hp m (o' := o + c * (n + 1)) (l₁ := c * (n + 1)) (l₂ := c) rfl e.symm
       (Lay.ok_sub h (Nat.mul_pos hc (Nat.succ_pos _)) (by omega_using [e]))
       (Lay.ok_sub h hc (by omega_using [e])),

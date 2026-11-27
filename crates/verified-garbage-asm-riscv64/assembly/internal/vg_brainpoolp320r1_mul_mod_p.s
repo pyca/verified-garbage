@@ -1,0 +1,929 @@
+// The functions of `src/internal/vg_brainpoolp320r1_mul_mod_p.rs` of `verified-garbage-asm-riscv64`, as text: generated from
+// Lean (`lean/VerifiedGarbage/TCB/Rust.lean`) with them, and not compiled.
+// Each instruction the printer encodes is here as its text, and in
+// `src/` as its machine code, which `lean/VerifiedGarbage/TCB/<ISA>/Encode.lean`
+// gives.
+
+vg_brainpoolp320r1_mul_mod_p:
+	.option push
+	.option arch, +m, +c
+	add t2, a0, a1
+	add t4, a0, a2
+	add t5, a0, a3
+	addi a3, a0, 2047
+	addi a3, a3, 1
+	beq t4, t5, 20f
+	ld t3, 0(t4)
+	ld t6, 8(t4)
+	ld a1, 16(t4)
+	ld a2, 24(t4)
+	ld a4, 32(t4)
+	sd t3, 1728(a3)
+	sd t6, 1736(a3)
+	sd a1, 1744(a3)
+	sd a2, 1752(a3)
+	sd a4, 1760(a3)
+	ld t3, 0(t5)
+	ld t6, 8(t5)
+	ld a1, 16(t5)
+	ld a2, 24(t5)
+	ld a4, 32(t5)
+	sd t3, 1768(a3)
+	sd t6, 1776(a3)
+	sd a1, 1784(a3)
+	sd a2, 1792(a3)
+	sd a4, 1800(a3)
+	addi a4, zero, 0
+	addi a5, zero, 0
+	addi a6, zero, 0
+	ld a1, 1728(a3)
+	ld a2, 1768(a3)
+	mul a7, a1, a2
+	mulhu t0, a1, a2
+	ld a1, 1736(a3)
+	ld a2, 1768(a3)
+	mul t3, a1, a2
+	mulhu t6, a1, a2
+	ld a1, 1728(a3)
+	ld a2, 1776(a3)
+	add a4, a4, a7
+	sltu a7, a4, a7
+	add t0, t0, a7
+	add a5, a5, t0
+	sltu t0, a5, t0
+	add a6, a6, t0
+	sd a4, 1816(a3)
+	addi a4, zero, 0
+	mul a7, a1, a2
+	mulhu t0, a1, a2
+	ld a1, 1744(a3)
+	ld a2, 1768(a3)
+	add a5, a5, t3
+	sltu t3, a5, t3
+	add t6, t6, t3
+	add a6, a6, t6
+	sltu t6, a6, t6
+	add a4, a4, t6
+	mul t3, a1, a2
+	mulhu t6, a1, a2
+	ld a1, 1736(a3)
+	ld a2, 1776(a3)
+	add a5, a5, a7
+	sltu a7, a5, a7
+	add t0, t0, a7
+	add a6, a6, t0
+	sltu t0, a6, t0
+	add a4, a4, t0
+	sd a5, 1824(a3)
+	addi a5, zero, 0
+	mul a7, a1, a2
+	mulhu t0, a1, a2
+	ld a1, 1728(a3)
+	ld a2, 1784(a3)
+	add a6, a6, t3
+	sltu t3, a6, t3
+	add t6, t6, t3
+	add a4, a4, t6
+	sltu t6, a4, t6
+	add a5, a5, t6
+	mul t3, a1, a2
+	mulhu t6, a1, a2
+	ld a1, 1752(a3)
+	ld a2, 1768(a3)
+	add a6, a6, a7
+	sltu a7, a6, a7
+	add t0, t0, a7
+	add a4, a4, t0
+	sltu t0, a4, t0
+	add a5, a5, t0
+	mul a7, a1, a2
+	mulhu t0, a1, a2
+	ld a1, 1744(a3)
+	ld a2, 1776(a3)
+	add a6, a6, t3
+	sltu t3, a6, t3
+	add t6, t6, t3
+	add a4, a4, t6
+	sltu t6, a4, t6
+	add a5, a5, t6
+	sd a6, 1832(a3)
+	addi a6, zero, 0
+	mul t3, a1, a2
+	mulhu t6, a1, a2
+	ld a1, 1736(a3)
+	ld a2, 1784(a3)
+	add a4, a4, a7
+	sltu a7, a4, a7
+	add t0, t0, a7
+	add a5, a5, t0
+	sltu t0, a5, t0
+	add a6, a6, t0
+	mul a7, a1, a2
+	mulhu t0, a1, a2
+	ld a1, 1728(a3)
+	ld a2, 1792(a3)
+	add a4, a4, t3
+	sltu t3, a4, t3
+	add t6, t6, t3
+	add a5, a5, t6
+	sltu t6, a5, t6
+	add a6, a6, t6
+	mul t3, a1, a2
+	mulhu t6, a1, a2
+	ld a1, 1760(a3)
+	ld a2, 1768(a3)
+	add a4, a4, a7
+	sltu a7, a4, a7
+	add t0, t0, a7
+	add a5, a5, t0
+	sltu t0, a5, t0
+	add a6, a6, t0
+	mul a7, a1, a2
+	mulhu t0, a1, a2
+	ld a1, 1752(a3)
+	ld a2, 1776(a3)
+	add a4, a4, t3
+	sltu t3, a4, t3
+	add t6, t6, t3
+	add a5, a5, t6
+	sltu t6, a5, t6
+	add a6, a6, t6
+	sd a4, 1840(a3)
+	addi a4, zero, 0
+	mul t3, a1, a2
+	mulhu t6, a1, a2
+	ld a1, 1744(a3)
+	ld a2, 1784(a3)
+	add a5, a5, a7
+	sltu a7, a5, a7
+	add t0, t0, a7
+	add a6, a6, t0
+	sltu t0, a6, t0
+	add a4, a4, t0
+	mul a7, a1, a2
+	mulhu t0, a1, a2
+	ld a1, 1736(a3)
+	ld a2, 1792(a3)
+	add a5, a5, t3
+	sltu t3, a5, t3
+	add t6, t6, t3
+	add a6, a6, t6
+	sltu t6, a6, t6
+	add a4, a4, t6
+	mul t3, a1, a2
+	mulhu t6, a1, a2
+	ld a1, 1728(a3)
+	ld a2, 1800(a3)
+	add a5, a5, a7
+	sltu a7, a5, a7
+	add t0, t0, a7
+	add a6, a6, t0
+	sltu t0, a6, t0
+	add a4, a4, t0
+	mul a7, a1, a2
+	mulhu t0, a1, a2
+	ld a1, 1760(a3)
+	ld a2, 1776(a3)
+	add a5, a5, t3
+	sltu t3, a5, t3
+	add t6, t6, t3
+	add a6, a6, t6
+	sltu t6, a6, t6
+	add a4, a4, t6
+	mul t3, a1, a2
+	mulhu t6, a1, a2
+	ld a1, 1752(a3)
+	ld a2, 1784(a3)
+	add a5, a5, a7
+	sltu a7, a5, a7
+	add t0, t0, a7
+	add a6, a6, t0
+	sltu t0, a6, t0
+	add a4, a4, t0
+	sd a5, 1848(a3)
+	addi a5, zero, 0
+	mul a7, a1, a2
+	mulhu t0, a1, a2
+	ld a1, 1744(a3)
+	ld a2, 1792(a3)
+	add a6, a6, t3
+	sltu t3, a6, t3
+	add t6, t6, t3
+	add a4, a4, t6
+	sltu t6, a4, t6
+	add a5, a5, t6
+	mul t3, a1, a2
+	mulhu t6, a1, a2
+	ld a1, 1736(a3)
+	ld a2, 1800(a3)
+	add a6, a6, a7
+	sltu a7, a6, a7
+	add t0, t0, a7
+	add a4, a4, t0
+	sltu t0, a4, t0
+	add a5, a5, t0
+	mul a7, a1, a2
+	mulhu t0, a1, a2
+	ld a1, 1760(a3)
+	ld a2, 1784(a3)
+	add a6, a6, t3
+	sltu t3, a6, t3
+	add t6, t6, t3
+	add a4, a4, t6
+	sltu t6, a4, t6
+	add a5, a5, t6
+	mul t3, a1, a2
+	mulhu t6, a1, a2
+	ld a1, 1752(a3)
+	ld a2, 1792(a3)
+	add a6, a6, a7
+	sltu a7, a6, a7
+	add t0, t0, a7
+	add a4, a4, t0
+	sltu t0, a4, t0
+	add a5, a5, t0
+	sd a6, 1856(a3)
+	addi a6, zero, 0
+	mul a7, a1, a2
+	mulhu t0, a1, a2
+	ld a1, 1744(a3)
+	ld a2, 1800(a3)
+	add a4, a4, t3
+	sltu t3, a4, t3
+	add t6, t6, t3
+	add a5, a5, t6
+	sltu t6, a5, t6
+	add a6, a6, t6
+	mul t3, a1, a2
+	mulhu t6, a1, a2
+	ld a1, 1760(a3)
+	ld a2, 1792(a3)
+	add a4, a4, a7
+	sltu a7, a4, a7
+	add t0, t0, a7
+	add a5, a5, t0
+	sltu t0, a5, t0
+	add a6, a6, t0
+	mul a7, a1, a2
+	mulhu t0, a1, a2
+	ld a1, 1752(a3)
+	ld a2, 1800(a3)
+	add a4, a4, t3
+	sltu t3, a4, t3
+	add t6, t6, t3
+	add a5, a5, t6
+	sltu t6, a5, t6
+	add a6, a6, t6
+	sd a4, 1864(a3)
+	addi a4, zero, 0
+	mul t3, a1, a2
+	mulhu t6, a1, a2
+	ld a1, 1760(a3)
+	ld a2, 1800(a3)
+	add a5, a5, a7
+	sltu a7, a5, a7
+	add t0, t0, a7
+	add a6, a6, t0
+	sltu t0, a6, t0
+	add a4, a4, t0
+	mul a7, a1, a2
+	mulhu t0, a1, a2
+	add a5, a5, t3
+	sltu t3, a5, t3
+	add t6, t6, t3
+	add a6, a6, t6
+	sltu t6, a6, t6
+	add a4, a4, t6
+	sd a5, 1872(a3)
+	addi a5, zero, 0
+	add a6, a6, a7
+	sltu a7, a6, a7
+	add t0, t0, a7
+	add a4, a4, t0
+	sltu t0, a4, t0
+	add a5, a5, t0
+	sd a6, 1880(a3)
+	addi a6, zero, 0
+	sd a4, 1888(a3)
+	addi a4, zero, 0
+	sd a5, 1896(a3)
+	addi a5, zero, 0
+	sd a6, 1904(a3)
+	addi a6, zero, 0
+	j 21f
+20:
+	ld t3, 0(t4)
+	ld t6, 8(t4)
+	ld a1, 16(t4)
+	ld a2, 24(t4)
+	ld a4, 32(t4)
+	sd t3, 1728(a3)
+	sd t6, 1736(a3)
+	sd a1, 1744(a3)
+	sd a2, 1752(a3)
+	sd a4, 1760(a3)
+	addi a4, zero, 0
+	addi a5, zero, 0
+	addi a6, zero, 0
+	ld a1, 1736(a3)
+	ld a2, 1728(a3)
+	mul a7, a1, a2
+	mulhu t0, a1, a2
+	ld a1, 1744(a3)
+	ld a2, 1728(a3)
+	sd a4, 1816(a3)
+	addi a4, zero, 0
+	mul t3, a1, a2
+	mulhu t6, a1, a2
+	ld a1, 1752(a3)
+	ld a2, 1728(a3)
+	add a5, a5, a7
+	sltu a7, a5, a7
+	add t0, t0, a7
+	add a6, a6, t0
+	sltu t0, a6, t0
+	add a4, a4, t0
+	sd a5, 1824(a3)
+	addi a5, zero, 0
+	mul a7, a1, a2
+	mulhu t0, a1, a2
+	ld a1, 1744(a3)
+	ld a2, 1736(a3)
+	add a6, a6, t3
+	sltu t3, a6, t3
+	add t6, t6, t3
+	add a4, a4, t6
+	sltu t6, a4, t6
+	add a5, a5, t6
+	sd a6, 1832(a3)
+	addi a6, zero, 0
+	mul t3, a1, a2
+	mulhu t6, a1, a2
+	ld a1, 1760(a3)
+	ld a2, 1728(a3)
+	add a4, a4, a7
+	sltu a7, a4, a7
+	add t0, t0, a7
+	add a5, a5, t0
+	sltu t0, a5, t0
+	add a6, a6, t0
+	mul a7, a1, a2
+	mulhu t0, a1, a2
+	ld a1, 1752(a3)
+	ld a2, 1736(a3)
+	add a4, a4, t3
+	sltu t3, a4, t3
+	add t6, t6, t3
+	add a5, a5, t6
+	sltu t6, a5, t6
+	add a6, a6, t6
+	sd a4, 1840(a3)
+	addi a4, zero, 0
+	mul t3, a1, a2
+	mulhu t6, a1, a2
+	ld a1, 1760(a3)
+	ld a2, 1736(a3)
+	add a5, a5, a7
+	sltu a7, a5, a7
+	add t0, t0, a7
+	add a6, a6, t0
+	sltu t0, a6, t0
+	add a4, a4, t0
+	mul a7, a1, a2
+	mulhu t0, a1, a2
+	ld a1, 1752(a3)
+	ld a2, 1744(a3)
+	add a5, a5, t3
+	sltu t3, a5, t3
+	add t6, t6, t3
+	add a6, a6, t6
+	sltu t6, a6, t6
+	add a4, a4, t6
+	sd a5, 1848(a3)
+	addi a5, zero, 0
+	mul t3, a1, a2
+	mulhu t6, a1, a2
+	ld a1, 1760(a3)
+	ld a2, 1744(a3)
+	add a6, a6, a7
+	sltu a7, a6, a7
+	add t0, t0, a7
+	add a4, a4, t0
+	sltu t0, a4, t0
+	add a5, a5, t0
+	mul a7, a1, a2
+	mulhu t0, a1, a2
+	ld a1, 1760(a3)
+	ld a2, 1752(a3)
+	add a6, a6, t3
+	sltu t3, a6, t3
+	add t6, t6, t3
+	add a4, a4, t6
+	sltu t6, a4, t6
+	add a5, a5, t6
+	sd a6, 1856(a3)
+	addi a6, zero, 0
+	mul t3, a1, a2
+	mulhu t6, a1, a2
+	add a4, a4, a7
+	sltu a7, a4, a7
+	add t0, t0, a7
+	add a5, a5, t0
+	sltu t0, a5, t0
+	add a6, a6, t0
+	sd a4, 1864(a3)
+	addi a4, zero, 0
+	add a5, a5, t3
+	sltu t3, a5, t3
+	add t6, t6, t3
+	add a6, a6, t6
+	sltu t6, a6, t6
+	add a4, a4, t6
+	sd a5, 1872(a3)
+	addi a5, zero, 0
+	sd a6, 1880(a3)
+	addi a6, zero, 0
+	sd a4, 1888(a3)
+	addi a4, zero, 0
+	sd a5, 1896(a3)
+	addi a5, zero, 0
+	sd a6, 1904(a3)
+	addi a6, zero, 0
+	addi a5, zero, 0
+	addi a4, zero, 0
+	srli a7, a5, 63
+	ld a5, 1816(a3)
+	slli a6, a5, 1
+	or a6, a6, a7
+	ld t3, 1728(a3)
+	mul t0, t3, t3
+	mulhu t3, t3, t3
+	add a6, a6, t0
+	sltu a7, a6, t0
+	add a6, a6, a4
+	sltu t0, a6, a4
+	add a4, a7, t0
+	sd a6, 1816(a3)
+	srli a7, a5, 63
+	ld a5, 1824(a3)
+	slli a6, a5, 1
+	or a6, a6, a7
+	add a6, a6, t3
+	sltu a7, a6, t3
+	add a6, a6, a4
+	sltu t0, a6, a4
+	add a4, a7, t0
+	sd a6, 1824(a3)
+	srli a7, a5, 63
+	ld a5, 1832(a3)
+	slli a6, a5, 1
+	or a6, a6, a7
+	ld t3, 1736(a3)
+	mul t0, t3, t3
+	mulhu t3, t3, t3
+	add a6, a6, t0
+	sltu a7, a6, t0
+	add a6, a6, a4
+	sltu t0, a6, a4
+	add a4, a7, t0
+	sd a6, 1832(a3)
+	srli a7, a5, 63
+	ld a5, 1840(a3)
+	slli a6, a5, 1
+	or a6, a6, a7
+	add a6, a6, t3
+	sltu a7, a6, t3
+	add a6, a6, a4
+	sltu t0, a6, a4
+	add a4, a7, t0
+	sd a6, 1840(a3)
+	srli a7, a5, 63
+	ld a5, 1848(a3)
+	slli a6, a5, 1
+	or a6, a6, a7
+	ld t3, 1744(a3)
+	mul t0, t3, t3
+	mulhu t3, t3, t3
+	add a6, a6, t0
+	sltu a7, a6, t0
+	add a6, a6, a4
+	sltu t0, a6, a4
+	add a4, a7, t0
+	sd a6, 1848(a3)
+	srli a7, a5, 63
+	ld a5, 1856(a3)
+	slli a6, a5, 1
+	or a6, a6, a7
+	add a6, a6, t3
+	sltu a7, a6, t3
+	add a6, a6, a4
+	sltu t0, a6, a4
+	add a4, a7, t0
+	sd a6, 1856(a3)
+	srli a7, a5, 63
+	ld a5, 1864(a3)
+	slli a6, a5, 1
+	or a6, a6, a7
+	ld t3, 1752(a3)
+	mul t0, t3, t3
+	mulhu t3, t3, t3
+	add a6, a6, t0
+	sltu a7, a6, t0
+	add a6, a6, a4
+	sltu t0, a6, a4
+	add a4, a7, t0
+	sd a6, 1864(a3)
+	srli a7, a5, 63
+	ld a5, 1872(a3)
+	slli a6, a5, 1
+	or a6, a6, a7
+	add a6, a6, t3
+	sltu a7, a6, t3
+	add a6, a6, a4
+	sltu t0, a6, a4
+	add a4, a7, t0
+	sd a6, 1872(a3)
+	srli a7, a5, 63
+	ld a5, 1880(a3)
+	slli a6, a5, 1
+	or a6, a6, a7
+	ld t3, 1760(a3)
+	mul t0, t3, t3
+	mulhu t3, t3, t3
+	add a6, a6, t0
+	sltu a7, a6, t0
+	add a6, a6, a4
+	sltu t0, a6, a4
+	add a4, a7, t0
+	sd a6, 1880(a3)
+	srli a7, a5, 63
+	ld a5, 1888(a3)
+	slli a6, a5, 1
+	or a6, a6, a7
+	add a6, a6, t3
+	sltu a7, a6, t3
+	add a6, a6, a4
+	sltu t0, a6, a4
+	add a4, a7, t0
+	sd a6, 1888(a3)
+21:
+	sd s6, 1728(a3)
+	sd s7, 1736(a3)
+	sd s8, 1744(a3)
+	sd s9, 1752(a3)
+	sd s10, 1760(a3)
+	sd s11, 1768(a3)
+	lui s6, 250346
+	addiw s6, s6, -1118
+	slli s6, s6, 32
+	lui a5, 174250
+	addiw a5, a5, -407
+	add s6, s6, a5
+	lui s7, 1035585
+	addiw s7, s7, 690
+	slli s7, s7, 32
+	lui a5, 990003
+	addiw a5, a5, -473
+	add s7, s7, a5
+	lui s8, 325932
+	addiw s8, s8, -1556
+	slli s8, s8, 32
+	lui a5, 493887
+	addiw a5, a5, -984
+	add s8, s8, a5
+	lui s9, 1022205
+	addiw s9, s9, -89
+	slli s9, s9, 32
+	lui a5, 1011521
+	addiw a5, a5, -529
+	add s9, s9, a5
+	lui s10, 922568
+	addiw s10, s10, -1953
+	slli s10, s10, 32
+	lui a5, 860190
+	addiw a5, a5, 101
+	add s10, s10, a5
+	lui s11, 865764
+	addiw s11, s11, 1824
+	slli s11, s11, 32
+	lui a5, 224197
+	addiw a5, a5, -73
+	add s11, s11, a5
+	ld t5, 1816(a3)
+	ld t6, 1824(a3)
+	ld t3, 1832(a3)
+	ld t4, 1840(a3)
+	ld a1, 1848(a3)
+	addi a2, zero, 0
+	mul t5, t5, s6
+	mulhu a4, t5, s7
+	addi a5, zero, 0
+	sltu a5, a5, t5
+	add a4, a4, a5
+	mul a5, t5, s8
+	mulhu a6, t5, s8
+	add a5, a5, a4
+	sltu a7, a5, a4
+	add a6, a6, a7
+	add t6, t6, a5
+	sltu a7, t6, a5
+	add a4, a6, a7
+	mul a5, t5, s9
+	mulhu a6, t5, s9
+	add a5, a5, a4
+	sltu a7, a5, a4
+	add a6, a6, a7
+	add t3, t3, a5
+	sltu a7, t3, a5
+	add a4, a6, a7
+	mul a5, t5, s10
+	mulhu a6, t5, s10
+	add a5, a5, a4
+	sltu a7, a5, a4
+	add a6, a6, a7
+	add t4, t4, a5
+	sltu a7, t4, a5
+	add a4, a6, a7
+	mul a5, t5, s11
+	mulhu a6, t5, s11
+	add a5, a5, a4
+	sltu a7, a5, a4
+	add a6, a6, a7
+	add a1, a1, a5
+	sltu a7, a1, a5
+	add a4, a6, a7
+	ld t5, 1856(a3)
+	add t5, t5, a4
+	sltu a7, t5, a4
+	add t5, t5, a2
+	sltu a2, t5, a2
+	add a2, a2, a7
+	mul t6, t6, s6
+	mulhu a4, t6, s7
+	addi a5, zero, 0
+	sltu a5, a5, t6
+	add a4, a4, a5
+	mul a5, t6, s8
+	mulhu a6, t6, s8
+	add a5, a5, a4
+	sltu a7, a5, a4
+	add a6, a6, a7
+	add t3, t3, a5
+	sltu a7, t3, a5
+	add a4, a6, a7
+	mul a5, t6, s9
+	mulhu a6, t6, s9
+	add a5, a5, a4
+	sltu a7, a5, a4
+	add a6, a6, a7
+	add t4, t4, a5
+	sltu a7, t4, a5
+	add a4, a6, a7
+	mul a5, t6, s10
+	mulhu a6, t6, s10
+	add a5, a5, a4
+	sltu a7, a5, a4
+	add a6, a6, a7
+	add a1, a1, a5
+	sltu a7, a1, a5
+	add a4, a6, a7
+	mul a5, t6, s11
+	mulhu a6, t6, s11
+	add a5, a5, a4
+	sltu a7, a5, a4
+	add a6, a6, a7
+	add t5, t5, a5
+	sltu a7, t5, a5
+	add a4, a6, a7
+	ld t6, 1864(a3)
+	add t6, t6, a4
+	sltu a7, t6, a4
+	add t6, t6, a2
+	sltu a2, t6, a2
+	add a2, a2, a7
+	mul t3, t3, s6
+	mulhu a4, t3, s7
+	addi a5, zero, 0
+	sltu a5, a5, t3
+	add a4, a4, a5
+	mul a5, t3, s8
+	mulhu a6, t3, s8
+	add a5, a5, a4
+	sltu a7, a5, a4
+	add a6, a6, a7
+	add t4, t4, a5
+	sltu a7, t4, a5
+	add a4, a6, a7
+	mul a5, t3, s9
+	mulhu a6, t3, s9
+	add a5, a5, a4
+	sltu a7, a5, a4
+	add a6, a6, a7
+	add a1, a1, a5
+	sltu a7, a1, a5
+	add a4, a6, a7
+	mul a5, t3, s10
+	mulhu a6, t3, s10
+	add a5, a5, a4
+	sltu a7, a5, a4
+	add a6, a6, a7
+	add t5, t5, a5
+	sltu a7, t5, a5
+	add a4, a6, a7
+	mul a5, t3, s11
+	mulhu a6, t3, s11
+	add a5, a5, a4
+	sltu a7, a5, a4
+	add a6, a6, a7
+	add t6, t6, a5
+	sltu a7, t6, a5
+	add a4, a6, a7
+	ld t3, 1872(a3)
+	add t3, t3, a4
+	sltu a7, t3, a4
+	add t3, t3, a2
+	sltu a2, t3, a2
+	add a2, a2, a7
+	mul t4, t4, s6
+	mulhu a4, t4, s7
+	addi a5, zero, 0
+	sltu a5, a5, t4
+	add a4, a4, a5
+	mul a5, t4, s8
+	mulhu a6, t4, s8
+	add a5, a5, a4
+	sltu a7, a5, a4
+	add a6, a6, a7
+	add a1, a1, a5
+	sltu a7, a1, a5
+	add a4, a6, a7
+	mul a5, t4, s9
+	mulhu a6, t4, s9
+	add a5, a5, a4
+	sltu a7, a5, a4
+	add a6, a6, a7
+	add t5, t5, a5
+	sltu a7, t5, a5
+	add a4, a6, a7
+	mul a5, t4, s10
+	mulhu a6, t4, s10
+	add a5, a5, a4
+	sltu a7, a5, a4
+	add a6, a6, a7
+	add t6, t6, a5
+	sltu a7, t6, a5
+	add a4, a6, a7
+	mul a5, t4, s11
+	mulhu a6, t4, s11
+	add a5, a5, a4
+	sltu a7, a5, a4
+	add a6, a6, a7
+	add t3, t3, a5
+	sltu a7, t3, a5
+	add a4, a6, a7
+	ld t4, 1880(a3)
+	add t4, t4, a4
+	sltu a7, t4, a4
+	add t4, t4, a2
+	sltu a2, t4, a2
+	add a2, a2, a7
+	mul a1, a1, s6
+	mulhu a4, a1, s7
+	addi a5, zero, 0
+	sltu a5, a5, a1
+	add a4, a4, a5
+	mul a5, a1, s8
+	mulhu a6, a1, s8
+	add a5, a5, a4
+	sltu a7, a5, a4
+	add a6, a6, a7
+	add t5, t5, a5
+	sltu a7, t5, a5
+	add a4, a6, a7
+	mul a5, a1, s9
+	mulhu a6, a1, s9
+	add a5, a5, a4
+	sltu a7, a5, a4
+	add a6, a6, a7
+	add t6, t6, a5
+	sltu a7, t6, a5
+	add a4, a6, a7
+	mul a5, a1, s10
+	mulhu a6, a1, s10
+	add a5, a5, a4
+	sltu a7, a5, a4
+	add a6, a6, a7
+	add t3, t3, a5
+	sltu a7, t3, a5
+	add a4, a6, a7
+	mul a5, a1, s11
+	mulhu a6, a1, s11
+	add a5, a5, a4
+	sltu a7, a5, a4
+	add a6, a6, a7
+	add t4, t4, a5
+	sltu a7, t4, a5
+	add a4, a6, a7
+	ld a1, 1888(a3)
+	add a1, a1, a4
+	sltu a7, a1, a4
+	add a1, a1, a2
+	sltu a2, a1, a2
+	add a2, a2, a7
+	ld s6, 1728(a3)
+	ld s7, 1736(a3)
+	ld s8, 1744(a3)
+	ld s9, 1752(a3)
+	ld s10, 1760(a3)
+	ld s11, 1768(a3)
+	addi a7, zero, 0
+	lui t0, 12991
+	addiw t0, t0, -690
+	slli t0, t0, 32
+	lui a6, 58573
+	addiw a6, a6, 473
+	add t0, t0, a6
+	add a5, t5, t0
+	sltu a0, a5, t0
+	add a5, a5, a7
+	sltu a7, a5, a7
+	add a7, a7, a0
+	sd a5, 0(t2)
+	lui t0, 722644
+	addiw t0, t0, 1556
+	slli t0, t0, 32
+	lui a6, 554689
+	addiw a6, a6, 983
+	add t0, t0, a6
+	add a5, t6, t0
+	sltu a0, a5, t0
+	add a5, a5, a7
+	sltu a7, a5, a7
+	add a7, a7, a0
+	sd a5, 8(t2)
+	lui t0, 26371
+	addiw t0, t0, 89
+	slli t0, t0, 32
+	lui a6, 37055
+	addiw a6, a6, 528
+	add t0, t0, a6
+	add a5, t3, t0
+	sltu a0, a5, t0
+	add a5, a5, a7
+	sltu a7, a5, a7
+	add a7, a7, a0
+	sd a5, 16(t2)
+	lui t0, 126008
+	addiw t0, t0, 1953
+	slli t0, t0, 32
+	lui a6, 188386
+	addiw a6, a6, -102
+	add t0, t0, a6
+	add a5, t4, t0
+	sltu a0, a5, t0
+	add a5, a5, a7
+	sltu a7, a5, a7
+	add a7, a7, a0
+	sd a5, 24(t2)
+	lui t0, 182812
+	addiw t0, t0, -1824
+	slli t0, t0, 32
+	lui a6, 824379
+	addiw a6, a6, 72
+	add t0, t0, a6
+	add a5, a1, t0
+	sltu a0, a5, t0
+	add a5, a5, a7
+	sltu a7, a5, a7
+	add a7, a7, a0
+	sd a5, 32(t2)
+	or a7, a7, a2
+	addi t0, zero, 0
+	sub t0, t0, a7
+	ld a5, 0(t2)
+	xor a5, a5, t5
+	and a5, a5, t0
+	xor a5, a5, t5
+	sd a5, 0(t2)
+	ld a5, 8(t2)
+	xor a5, a5, t6
+	and a5, a5, t0
+	xor a5, a5, t6
+	sd a5, 8(t2)
+	ld a5, 16(t2)
+	xor a5, a5, t3
+	and a5, a5, t0
+	xor a5, a5, t3
+	sd a5, 16(t2)
+	ld a5, 24(t2)
+	xor a5, a5, t4
+	and a5, a5, t0
+	xor a5, a5, t4
+	sd a5, 24(t2)
+	ld a5, 32(t2)
+	xor a5, a5, a1
+	and a5, a5, t0
+	xor a5, a5, a1
+	sd a5, 32(t2)
+	ret
+	.option pop

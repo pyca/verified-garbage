@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Mont.AArch64.Words
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafPrep
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafSubtract
 public import VerifiedGarbage.Proof.Weierstrass.FastNaf
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.FastNafStep
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.FastNafDigits
 import VerifiedGarbage.Proof.Weierstrass.AArch64.FastNafArith
 import VerifiedGarbage.Proof.Weierstrass.AArch64.FastNafExec
 import VerifiedGarbage.Proof.Weierstrass.AArch64.FastNafInit

@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Cast5.cbcEncryptChainedContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the subkeys, the chaining value or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 128 bytes.
@@ -257,7 +259,7 @@ j 256f
 bnez t2, 271b
 .base64 "CWE="
 21:
-.base64 "goA="
+.base64 "gUIZcQqDIzBTACM0UwAjOFMAIzxTACMwUwIjNFMCIzhTAiM8UwIjMFMEIzRTBCM4UwQjPFMEIzBTBiM0UwYjOFMGIzxTBglhAUWBRQFGgUYBR4FHAUiBSIFCAUOBQwFOgU4BT4FPgoA="
 .option pop"#,
         VG_CAST5_S1234 = sym super::consts::VG_CAST5_S1234,
     )
@@ -266,6 +268,8 @@ bnez t2, 271b
 /// CAST5-CBC decryption (NIST SP 800-38A §6.2, RFC 2144 §2) of whole blocks, in place: replaces the `n` 8-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = CIPH⁻¹_K(Cⱼ) ⊕ Cⱼ₋₁`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ`, the last block at `data` on entry (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH⁻¹_K` is CAST-128 decryption with `rounds` rounds under the subkeys written by `vg_cast5_expand_key`. No padding is removed.
 ///
 /// Contract: `VG.Spec.Cast5.cbcDecryptChainedContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the subkeys, the chaining value or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -517,7 +521,7 @@ j 256f
 bnez t2, 271b
 .base64 "CWE="
 21:
-.base64 "goA="
+.base64 "gUIZcQqDIzBTACM0UwAjOFMAIzxTACMwUwIjNFMCIzhTAiM8UwIjMFMEIzRTBCM4UwQjPFMEIzBTBiM0UwYjOFMGIzxTBglhAUWBRQFGgUYBR4FHAUiBSIFCAUOBQwFOgU4BT4FPgoA="
 .option pop"#,
         VG_CAST5_S1234 = sym super::consts::VG_CAST5_S1234,
     )

@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Scrypt.X86_64.Whole.Steps
 public import VerifiedGarbage.Proof.Pbkdf2.Contract
 import VerifiedGarbage.Proof.Scrypt.X86_64.DirectFill
+public import VerifiedGarbage.Proof.Framework.X86_64.CalleeSide
 public import VerifiedGarbage.Proof.Scrypt.X86_64.RoMixCT
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Contract
 public import VerifiedGarbage.Proof.Scrypt.X86_64.Common
@@ -63,8 +64,8 @@ theorem pbk_pub {s₁ s₂ : State} (h : pbkK.pub s₁ s₂) :
   sig_pub [Proof.Pbkdf2.pbkdf2ScratchContract, Proof.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, Spec.Hmac.sha256I, Spec.Hmac.sha256S,
     X86_64.abi, X86_64.argRegs, map_range2, List.append_eq]
   simp only [List.getD_cons_succ, List.getD_cons_zero]
-  obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9⟩ := h
-  exact ⟨h9, h1, h2, h3, h4, h5, h6, h7, h8⟩
+  obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, hm⟩ := h
+  exact ⟨h9, hm, h1, h2, h3, h4, h5, h6, h7, h8⟩
 
 variable {pbk : Prog isa} (hv : Verified X86_64.target pbk (Proof.Pbkdf2.Instance.pbkdf2ScratchContract Spec.Hmac.sha256I X86_64.abi 24))
 include hv
@@ -350,6 +351,11 @@ structure RMImpl where
   sp : code.all (fun i => !isa.writesSp i) = true
   noclob : ((instrs code).all fun i => !Taint.clobbers i .rsp) = true
   depth : code.depth ≤ 3
+  /-- The level of its vector instructions. -/
+  level : Impl.Scrub.X86_64.VecLevel
+  /-- What the cleanup of `vg_scrypt` needs of its code, at that level
+  (`X86_64.Scrub.calleeSide`), evaluated here, once. -/
+  side : X86_64.Scrub.calleeSide code level.level 8 = true
 
 theorem RMImpl.nosp (R : RMImpl) : NoSp R.code := by
   intro i hi
@@ -379,6 +385,8 @@ def RMImpl.sse2 : RMImpl where
   sp := Code.all_of_spTest (by lit_decide)
   noclob := by rw [← Code.allInstrs_eq]; lit_decide
   depth := by lit_decide
+  level := .sse
+  side := by lit_decide
 
 /-- ROMix with the scalar BlockMix. -/
 def RMImpl.scalar : RMImpl where
@@ -391,6 +399,8 @@ def RMImpl.scalar : RMImpl where
   sp := Code.all_of_spTest (by lit_decide)
   noclob := by rw [← Code.allInstrs_eq]; lit_decide
   depth := by lit_decide
+  level := .sse
+  side := by lit_decide
 
 theorem romix_sub (hL : L.Ok) {i : Nat} (hi : i < L.pp) :
     ∀ r ∈ ([] : List Region) ++ romixWr L i, ∃ R ∈ L.regions, Within r R := by

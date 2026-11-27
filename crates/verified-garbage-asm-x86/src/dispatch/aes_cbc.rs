@@ -6,7 +6,9 @@
 ///
 /// Contract: `VG.Spec.Cbc.aesEncryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule, the chaining value or the data.
 ///
-/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_cbc_encrypt_aesni` if the CPU supports its features (`VG_AES_CBC_ENCRYPT_AESNI_FEATURES`); or else `vg_aes_cbc_encrypt`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_cbc_encrypt_aesni` if the CPU supports its features (`VG_AES_CBC_ENCRYPT_AESNI_FEATURES`); `vg_aes_cbc_encrypt_ssse3` if the CPU supports its features (`VG_AES_CBC_ENCRYPT_SSSE3_FEATURES`); or else `vg_aes_cbc_encrypt`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -33,6 +35,11 @@ pub unsafe fn vg_aes_cbc_encrypt_auto(_dit: verified_garbage_cpu::Dit<'_>, sched
         {
             return crate::aes_cbc::vg_aes_cbc_encrypt_aesni;
         }
+        if const { verified_garbage_cpu::target_contains(crate::aes_cbc::VG_AES_CBC_ENCRYPT_SSSE3_FEATURES) }
+            || cpu.contains(crate::aes_cbc::VG_AES_CBC_ENCRYPT_SSSE3_FEATURES)
+        {
+            return crate::aes_cbc::vg_aes_cbc_encrypt_ssse3;
+        }
         crate::aes_cbc::vg_aes_cbc_encrypt
     }
     /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
@@ -58,7 +65,9 @@ pub unsafe fn vg_aes_cbc_encrypt_auto(_dit: verified_garbage_cpu::Dit<'_>, sched
 ///
 /// Contract: `VG.Spec.Cbc.aesDecryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule, the chaining value or the data.
 ///
-/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_cbc_decrypt_aesni` if the CPU supports its features (`VG_AES_CBC_DECRYPT_AESNI_FEATURES`); or else `vg_aes_cbc_decrypt`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_cbc_decrypt_aesni` if the CPU supports its features (`VG_AES_CBC_DECRYPT_AESNI_FEATURES`); `vg_aes_cbc_decrypt_ssse3` if the CPU supports its features (`VG_AES_CBC_DECRYPT_SSSE3_FEATURES`); or else `vg_aes_cbc_decrypt`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -69,7 +78,7 @@ pub unsafe fn vg_aes_cbc_encrypt_auto(_dit: verified_garbage_cpu::Dit<'_>, sched
 /// * `rounds` must be 10, 12 or 14.
 /// * On return each byte of `scratch` is unchanged or zero.
 /// * `iv`, `data` and `scratch` must not overlap each other, `schedule` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `iv`, `data` and `scratch` may overlap the return address on the stack or the 72 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `schedule`, `iv`, `data` and `scratch` may overlap the return address on the stack or the 1156 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_aes_cbc_decrypt_auto(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
@@ -84,6 +93,11 @@ pub unsafe fn vg_aes_cbc_decrypt_auto(_dit: verified_garbage_cpu::Dit<'_>, sched
             || cpu.contains(crate::aes_cbc::VG_AES_CBC_DECRYPT_AESNI_FEATURES)
         {
             return crate::aes_cbc::vg_aes_cbc_decrypt_aesni;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::aes_cbc::VG_AES_CBC_DECRYPT_SSSE3_FEATURES) }
+            || cpu.contains(crate::aes_cbc::VG_AES_CBC_DECRYPT_SSSE3_FEATURES)
+        {
+            return crate::aes_cbc::vg_aes_cbc_decrypt_ssse3;
         }
         crate::aes_cbc::vg_aes_cbc_decrypt
     }

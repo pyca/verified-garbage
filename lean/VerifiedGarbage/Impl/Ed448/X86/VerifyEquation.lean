@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Ed448.X86.ScalarBase
+public import VerifiedGarbage.Impl.Ed448.PublicTable
 
 /-!
 # Ed448 verification's equation on x86 (32-bit)
@@ -12,7 +13,7 @@ and `R` (the signature's first 57 bytes) decode, `S` (its last 57) is below
 otherwise.
 
 Field elements and their arithmetic are X448's on this target, as for
-base-point multiplication (`ScalarBase.lean`): twenty-eight 16-bit limbs in
+base-point multiplication (`ScalarBase.lean`): fourteen 32-bit words in
 the 128-byte slots of the working space, with `edi` the working space and
 `esi` the loop counter; the callee-saved registers are saved in the working
 space's first 16 bytes. The point formulas are the shared ones
@@ -24,10 +25,12 @@ check ORs into it a word that is 0 if and only if it passes. X448's full
 reduction works on slot 1 alone, which comparisons and decoding use.
 
 * The bits: byte `t` at `BITS` is bit `t` of `S`, and byte `t` at `KBITS` bit `t` of `k`, by
-  X448's `bitsLoop`.
+  X448's `bitsLoop`; then, once `A` is decoded, the bytes at `KBITS` are recoded in place into
+  `k`'s digits (`vrecode`), each zero or odd and below 16, which sum to `k` at the powers of two,
+  and those at `BITS` into `S`'s, each zero or odd and below 128.
 * `S < L`: its byte 56 is 0 and its low 448 bits plus `2^448 - L` (the
-  limbs `kLimb` of scalar reduction) do not carry out of 448 bits.
-* Decoding a point (RFC 8032 §5.2.3) at `esi` into the slots `xo` and `yo`: the twenty-eight limbs of `y`, which must be below `p`
+  words `kWord`) do not carry out of 448 bits.
+* Decoding a point (RFC 8032 §5.2.3) at `esi` into the slots `xo` and `yo`: the fourteen words of `y`, which must be below `p`
   (they are equal to their full reduction) with bits 448–454 of the encoding
   0; the sign bit to `SIGN`; `u = y² - 1`, `v = d y² - 1` (`decodeUV`), the
   candidate root `x = u³v (u⁵v³)^((p-3)/4)` (by `root`, X448's addition chain
@@ -36,17 +39,24 @@ reduction works on slot 1 alone, which comparisons and decoding use.
   if its low bit is not the sign bit.
 * `R` and then `A` are decoded into slots 6–7 by one loop (`vdecode`), whose
   pointer and count are words of the working space (`PCUR`, `CNT`), `R` kept
-  at `RX` and `RY` (`Z = 1` in slot 10). `A` is negated; slot 1, `Q`'s `Y`, is
-  set to 1 again, and `Q = [S]B + [k](-A)` computed from the
-  top bit down, as `[s]B` is: `Q` (slots 0–2) doubled, `B` (slots 8–10) added
-  and swapped into `Q` by bit `t` of `S`, then `-A` added and swapped in by
-  bit `t` of `k`.
+  at `RX` and `RY` (`Z = 1` in slot 10). `A` is negated, its odd multiples
+  `[1](-A), [3](-A), …, [15](-A)` are put in a table at `VTAB` (`vtable`), and
+  `Q = [S]B + [k](-A)` computed from the top bit down: `Q` (slots 0–2) doubled
+  for each of the 456 bits; where digit `t` of `S` is not zero, the affine multiple of `B` by it, of
+  the static `bSym` (`vbase` keeps its address at `BPTR`), loaded into slots 8–9 and added
+  (`addAff`); and, where digit `t` of `k` is not zero, the entry of `-A`'s
+  table for that digit loaded into slots 6, 7 and 21 and added: sliding
+  windows of seven bits on `S` and of four on `k`, in the same doublings. The signature and the
+  challenge are public (a verification may leak its inputs), so an
+  entry is only added where its digit is not zero, and loaded from the
+  digit's address: the branch and the address are on the digit, which is
+  loaded again from the working space where it is used.
 * `Q`'s `Y` is moved to slot 6 (slot 1 is used to compare), `R` copied
-  into slots 8–9 (`B` is no longer needed), `Q` and `R` doubled twice (a
+  into slots 8–9 (the static's entry is no longer needed), `Q` and `R` doubled twice (a
   loop, `vdouble`), and compared: `X_Q Z_R = X_R Z_Q` and `Y_Q Z_R = Y_R Z_Q`, fully reduced.
 
-The result is 1 if `BAD` is 0. Every address and branch depends only on the
-pointers.
+The result is 1 if `BAD` is 0. Every address depends only on the pointers
+and on the digits of `S` and `k`, and every branch on the pointers and on their bits.
 -/
 
 @[expose] public section
@@ -54,7 +64,7 @@ pointers.
 namespace VG.Impl.Ed448.X86
 
 open VG.X86
-open VG.Impl.X448.X86 (at_ sc ld st slot BITS bitsLoop TMP X2 Op ops cswap freeze copy pass sqn T0 T1 T2 T3
+open VG.Impl.X448.X86 (at_ sc ld st wordAt slot BITS bitsLoop X2 Op ops cswap freeze copy clearCarry sqn T0 T1 T2 T3
   T4 T5 T6 T7 restore)
 
 /-! ## The working space -/
@@ -71,47 +81,52 @@ def RY : Nat := 4224
 def PCUR : Nat := 4352
 def CNT : Nat := 4356
 
-/-- The bits of `k`, one per byte. -/
+/-- The static's address, while `Q` is computed. -/
+def BPTR : Nat := 4360
+
+/-- The bits of `k`, one per byte, and then its digits. -/
 def KBITS : Nat := 4608
+
+/-- The table of `[1](-A), [3](-A), …, [15](-A)`, above the digits: 384 bytes an entry, its `X`,
+`Y` and `Z` 128 bytes apart. -/
+def VTAB : Nat := 5120
 
 /-! ## Checks -/
 
 /-- `BAD |= r`. -/
 def orBad (r : Reg) : List Instr := [.alu .or r (.mem (sc BAD)), st r BAD]
 
-/-- `ecx |= ` limb `i` of slot 1 XORed with that of the slot at `a`. -/
+/-- `ecx |= ` word `i` of slot 1 XORed with that of the slot at `a`. -/
 def diffLimb (a i : Nat) : List Instr :=
   [ld .eax (X2 + 4 * i), .alu .xor .eax (.mem (sc (a + 4 * i))), .alu .or .ecx (.reg .eax)]
 
-/-- `BAD |= 0` exactly when slot 1 and the slot at `a` have the same limbs. -/
+/-- `BAD |= 0` exactly when slot 1 and the slot at `a` have the same words. -/
 def diffSlot (a : Nat) : List Instr :=
-  .mov .ecx (.imm 0) :: (List.range 28).flatMap (diffLimb a) ++ orBad .ecx
+  .mov .ecx (.imm 0) :: (List.range 14).flatMap (diffLimb a) ++ orBad .ecx
 
 /-- `BAD |= 0` exactly when the slots at `a` and `b` hold the same field
 element: the one at `a` fully reduced (in slot 1) and copied back, the one at
-`b` fully reduced in slot 1, and their limbs compared. -/
+`b` fully reduced in slot 1, and their words compared. -/
 def eqSlots (a b : Nat) : List Instr :=
   copy X2 a ++ freeze ++ copy a X2 ++ copy X2 b ++ freeze ++ diffSlot a
 
-/-- Limb `i` of the 56 bytes at `esi + src` into `eax`. -/
-def byteLimb (src i : Nat) : List Instr :=
-  [.movzx8 .eax (at_ .esi (src + 2 * i)), .movzx8 .edx (at_ .esi (src + 2 * i + 1)),
-    .shift .ror .edx 24, .alu .add .eax (.reg .edx)]
-
-/-- The twenty-eight limbs of the 56 bytes at `esi` into the slot at `o`. -/
+/-- The fourteen words of the 56 bytes at `esi` into the slot at `o`. -/
 def loadLimbs (o : Nat) : List Instr :=
-  (List.range 28).flatMap fun i => byteLimb 0 i ++ [st .eax (o + 4 * i)]
+  (List.range 14).flatMap fun i => [.mov .eax (.mem (wordAt .esi i)), st .eax (o + 4 * i)]
 
-/-- Limb `i` of `S`'s low 448 bits plus that of `2^448 - L`, into `TMP`. -/
+/-- Word `k` of `K = 2^448 - L` (`Impl/Ed448/X86/Scalar.lean`). -/
+def kWord (k : Nat) : Nat := kLimb (2 * k) + 65536 * kLimb (2 * k + 1)
+
+/-- Word `i` of `S`'s low 448 bits plus that of `2^448 - L`, and the carry. -/
 def sLimb (i : Nat) : List Instr :=
-  byteLimb 57 i ++ [.alu .add .eax (.imm (BitVec.ofNat 32 (kLimb i))), st .eax (TMP + 4 * i)]
+  [.mov .eax (.mem (at_ .esi (57 + 4 * i))), .alu .adc .eax (.imm (BitVec.ofNat 32 (kWord i)))]
 
 /-- `BAD |= 0` exactly when `S` (the signature's last 57 bytes, at
-`esi + 57`) is below `L`: the carry out of 448 bits of its low limbs plus
+`esi + 57`) is below `L`: the carry out of 448 bits of its low words plus
 `2^448 - L`, ORed with its byte 56. -/
 def sCheck : List Instr :=
-  (List.range 28).flatMap sLimb ++ pass TMP TMP ++
-    [.movzx8 .eax (at_ .esi 113), .alu .or .eax (.reg .ebx)] ++ orBad .eax
+  clearCarry ++ (List.range 14).flatMap sLimb ++
+    [.alu .sbb .ecx (.reg .ecx), .movzx8 .eax (at_ .esi 113), .alu .or .eax (.reg .ecx)] ++ orBad .eax
 
 /-! ## Decoding a point -/
 
@@ -141,21 +156,25 @@ def signByte : List Instr :=
   [.movzx8 .eax (at_ .esi 56), .mov .edx (.reg .eax), .shift .shr .edx 7, st .edx SIGN,
     .alu .and .eax (.imm 0x7f)]
 
-/-- The 57 bytes at `esi`: `y`'s limbs into slot `yo`, the sign bit to `SIGN`, and `BAD |= 0`
+/-- The 57 bytes at `esi`: `y`'s words into slot `yo`, the sign bit to `SIGN`, and `BAD |= 0`
 exactly when bits 448–454 are 0 and `y < p`. -/
 def decodeY (yo : Nat) : List Instr :=
   loadLimbs (slot yo) ++ signByte ++ orBad .eax ++ copy X2 (slot yo) ++ freeze ++ diffSlot (slot yo)
 
-/-- `edx = ⋁` the limbs of slot 1. -/
+/-- `edx = ⋁` the words of slot 1. -/
 def orLimbs : List Instr :=
-  ld .edx X2 :: (List.range 27).flatMap fun i => [.alu .or .edx (.mem (sc (X2 + 4 * (i + 1))))]
+  ld .edx X2 :: (List.range 13).flatMap fun i => [.alu .or .edx (.mem (sc (X2 + 4 * (i + 1))))]
+
+/-- `r = 1` if it is 0, else 0, with `eax`. -/
+def isZero (r : Reg) : List Instr :=
+  [.mov .eax (.imm 0), .alu .sub .eax (.reg r), .alu .sbb r (.reg r), .alu .add r (.imm 1)]
 
 /-- The sign, with `-x` in slot 12: `x` fully reduced in slot 1; `BAD |= 0`
 exactly when `x ≠ 0` or the sign bit is 0; then `x` swapped with `-x` by the
 mask of `x`'s low bit differing from the sign bit. -/
 def decodeSign (xo : Nat) : List Instr :=
   copy X2 (slot xo) ++ freeze ++ orLimbs ++
-    [.alu .sub .edx (.imm 1), .shift .shr .edx 31, .alu .and .edx (.mem (sc SIGN))] ++ orBad .edx ++
+    isZero .edx ++ [.alu .and .edx (.mem (sc SIGN))] ++ orBad .edx ++
     [ld .eax X2, .alu .and .eax (.imm 1), .alu .xor .eax (.mem (sc SIGN)), .mov .ebx (.imm 0),
       .alu .sub .ebx (.reg .eax)] ++ cswap (slot xo) (slot 12)
 
@@ -184,26 +203,170 @@ def vdecodeInit : List Instr :=
 and `R` at `RX` and `RY`. -/
 def vdecode : Prog isa := .seq (.block vdecodeInit) (.loop vdecodeBody .ne)
 
-/-- `R` into slots 8–9 (`B` is no longer needed). -/
+/-- `R` into slots 8–9 (the static's entry is no longer needed). -/
 def vR : List Instr := copy (slot 8) RX ++ copy (slot 9) RY
 
 /-! ## `[S]B + [k](-A)` -/
 
-/-- `ebx = -bit`, for bit `esi` of `S` (`hi = false`) or of `k` (`hi = true`). -/
-def vmask (hi : Bool) : List Instr :=
-  [.mov .ebp (.reg .edi), .alu .add .ebp (.reg .esi),
-    .movzx8 .eax (at_ .ebp (if hi then KBITS else BITS)), .alu .and .eax (.imm 1), .mov .ebx (.imm 0),
-    .alu .sub .ebx (.reg .eax)]
+/-- `T = Q + (x : y : z)` into slots 3–5 (the addition of `addOps`, with the second point in
+slots `x`, `y` and `z`). -/
+def addAtZ (x y z : Nat) : List FOp := [
+  .mul 12 2 z, .sqr 13 12, .mul 14 0 x, .mul 15 1 y, .mul 16 11 14, .mul 16 16 15,
+  .sub 17 13 16, .add 18 13 16, .add 19 0 1, .add 20 x y, .mul 19 19 20, .mul 20 12 17,
+  .sub 19 19 14, .sub 19 19 15, .mul 3 20 19, .mul 20 12 18, .sub 19 15 14, .mul 4 20 19,
+  .mul 5 17 18]
 
-/-- `T` (slots 3–5) swapped into `Q` (slots 0–2) by the mask `ebx`. -/
-def swapT : List Instr :=
-  cswap (slot 0) (slot 3) ++ cswap (slot 1) (slot 4) ++ cswap (slot 2) (slot 5)
+/-! ### The digits
 
-/-- One bit `t = esi - 1`, from the top. -/
+The 456 bits of a scalar, a byte each at `B`, are recoded in place, from the lowest, into 456 digits,
+each zero or odd and below `2^W` (`M = 2^W - 1` is below), that sum to the scalar weighted by the
+powers of two: a set bit that no window covers opens a
+window of `W` bits there, whose digit is those bits' value, and the other digits of the
+window are zero. Byte `t`, the bit, becomes the digit. The recoding reads one
+bit a step (`recBit`): `esi` counts the bits read, `ebx` holds the weight of the next bit in the
+window in hand (zero with none: 2, 4, … and then none again), `ecx` that window's digit so far
+and `eax` the address of that digit's byte, less `B`. With no window, the bit is the digit,
+so the byte stays, and opens a window if it is set; with one, the digit is zero and the bit, at
+its weight, is added to the window's digit, whose byte is stored again: the bytes below the bits
+read are those of their digits, and nothing is left to do after the last. `S` and `k` are public, and so
+are the digits: `k`'s at `KBITS` (`W = 4`) and `S`'s at `BITS` (`W = 7`). -/
+
+/-- The address of byte `esi`, less `B`, into `ebp`, the byte (the bit) into `edx`,
+and ZF set with no window in hand. -/
+def recHead (B : Nat) : List Instr :=
+  [.mov .ebp (.reg .edi), .alu .add .ebp (.reg .esi), .movzx8 .edx (at_ .ebp B),
+    .alu .cmp .ebx (.imm 0)]
+
+/-- No window in hand: the bit is the digit, so the byte stays; it is a window's first,
+with the weight 2 next, if it is set. -/
+def recOpen : List Instr :=
+  [.mov .ecx (.reg .edx), .mov .ebx (.reg .edx), .alu .add .ebx (.reg .ebx), .mov .eax (.reg .ebp)]
+
+/-- A window in hand: the bit is added to the window's digit at the weight `ebx` (under
+the mask of the bit), the digit of the bit is zero, the window's digit is stored again, and the
+weight doubles, and is none after the window's last. -/
+def recGrow (B M : Nat) : List Instr :=
+  [.alu .xor .edx (.imm 0xFFFFFFFF), .alu .add .edx (.imm 1), .alu .and .edx (.reg .ebx),
+    .alu .add .ecx (.reg .edx), .mov .edx (.imm 0), .store8 (at_ .ebp B) .dl,
+    .store8 (at_ .eax B) .cl, .alu .add .ebx (.reg .ebx), .alu .and .ebx (.imm (BitVec.ofNat 32 M))]
+
+/-- The next bit; ZF is set after bit 455. -/
+def recNext : List Instr := [.alu .add .esi (.imm 1), .alu .cmp .esi (.imm 456)]
+
+/-- One bit, of byte `esi`. -/
+def recBit (B M : Nat) : Prog isa :=
+  .seq (.block (recHead B)) (.seq (.ite .e (.block recOpen) (.block (recGrow B M))) (.block recNext))
+
+/-- No bit read, no window, and a window's address that is in the bytes. -/
+def recInit : List Instr :=
+  [.mov .esi (.imm 0), .mov .ebx (.imm 0), .mov .ecx (.imm 0), .mov .eax (.reg .edi)]
+
+/-- A scalar's digits in place of its bits, in the bytes at `B`, for windows of `W` bits and
+`M = 2^W - 1`. -/
+def vrecode (B M : Nat) : Prog isa := .seq (.block recInit) (.loop (recBit B M) .ne)
+
+/-! ### The table of `-A`'s odd multiples -/
+
+/-- The words of the slot at `a` to the fourteen words at `ebp + o`. -/
+def toEntry (o a : Nat) : List Instr :=
+  (List.range 14).flatMap fun i => [ld .eax (a + 4 * i), .store (at_ .ebp (o + 4 * i)) .eax]
+
+/-- The fourteen words at `ebp + a` to those of the slot at `o`. -/
+def fromEntry (o a : Nat) : List Instr :=
+  (List.range 14).flatMap fun i => [.mov .eax (.mem (at_ .ebp (a + 4 * i))), st .eax (o + 4 * i)]
+
+/-- `Q` (slots 0–2) to the entry at byte `esi` of the working space; then `esi` moved to the next
+entry, and ZF set after the last. -/
+def ventryStore : List Instr :=
+  [.mov .ebp (.reg .edi), .alu .add .ebp (.reg .esi)] ++ toEntry 0 (slot 0) ++ toEntry 128 (slot 1) ++
+    toEntry 256 (slot 2) ++
+    [.alu .add .esi (.imm 384), .alu .cmp .esi (.imm (BitVec.ofNat 32 (VTAB + 8 * 384)))]
+
+/-- `Q = -A` (slots 6, 7 and 10, whose `Z` is 1) and its copy's `Z` in slot 21. -/
+def vtableQ : List Op :=
+  [.copy (slot 0) (slot 6), .copy (slot 1) (slot 7), .copy (slot 2) (slot 10), .copy (slot 21) (slot 10)]
+
+/-- `T` (slots 3–5) into `Q` (slots 0–2), after an addition. -/
+def addTake (l : List FOp) : Prog isa := ops (l.map toOp ++ takeOps)
+
+/-- `Q = -A`, the table's first entry, and `[2](-A)` in slots 6, 7 and 21. -/
+def vtableInit : Prog isa :=
+  .seq (ops vtableQ) <|
+  .seq (.block ([.mov .esi (.imm (BitVec.ofNat 32 VTAB))] ++ ventryStore)) (field (doubleAt 6 7 21))
+
+/-- The next entry: `Q = Q + [2](-A)`, stored. -/
+def vtableStep : Prog isa := .seq (addTake (addAtZ 6 7 21)) (.block ventryStore)
+
+/-- `Q` the neutral point `(0 : 1 : 1)` again, from the 1 in slot 10. -/
+def vneutral : List Op :=
+  [.sub (slot 0) (slot 0) (slot 0), .copy (slot 1) (slot 10), .copy (slot 2) (slot 10)]
+
+/-- Entries `m < 8` of the table at `VTAB` are `[2m + 1](-A)`, for `-A` in slots 6, 7 and 10; `Q`
+is the neutral point after it. -/
+def vtable : Prog isa := .seq vtableInit <| .seq (.loop vtableStep .ne) (ops vneutral)
+
+/-! ### The static of `B`'s odd multiples -/
+
+/-- The static holding the affine points `[1]B, [3]B, …, [127]B`. -/
+def bSym : String := "VG_ED448_B_TABLE"
+
+/-- Word `i` (of 64 bits) of the static: entry `i / 14` takes 112 bytes, its `x` and then its `y`. -/
+def bWord (i : Nat) : BitVec 64 :=
+  let e := Impl.Ed448.PublicTable.entry (i / 14)
+  BitVec.ofNat 64 ((if i % 14 < 7 then e.1 else e.2).val / 2 ^ (64 * (i % 7)))
+
+/-- The words of the 64 entries. -/
+def bWords : List (BitVec 64) := (List.range (64 * 14)).map bWord
+
+/-- The static verification reads. -/
+def bConsts : List (String × List (BitVec 64)) := [(bSym, bWords)]
+
+/-- The static's address, obtained in a balanced four-byte CALL frame (`symPush`; the saved `eip` is
+popped into `ecx`), to `BPTR`. -/
+def vbase : Prog isa :=
+  .seq (.frame (.symPush .eax bSym) (.block []) (.pop .ecx 1)) (.block [st .eax BPTR])
+
+/-! ### The sum -/
+
+/-- Digit `esi` of those at `B` into `ecx`, and ZF clear exactly when it is not zero. -/
+def vdigit (B : Nat) : List Instr :=
+  [.mov .ebp (.reg .edi), .alu .add .ebp (.reg .esi), .movzx8 .ecx (at_ .ebp B),
+    .alu .cmp .ecx (.imm 0)]
+
+/-- `ebp` = the address of the entry of the odd digit `ecx` of the static, entry `(ecx - 1) / 2`:
+56 bytes a unit of `ecx - 1` (64 and 8 times it, by rotations). -/
+def vbaseAddr : List Instr :=
+  [.alu .sub .ecx (.imm 1), .shift .ror .ecx 29, .mov .eax (.reg .ecx), .shift .ror .ecx 29,
+    .alu .sub .ecx (.reg .eax), ld .ebp BPTR, .alu .add .ebp (.reg .ecx)]
+
+/-- The static's entry of the odd digit `ecx` into slots 8 and 9. -/
+def vbaseLoad : Prog isa := .seq (.block vbaseAddr) (.block (fromEntry (slot 8) 0 ++ fromEntry (slot 9) 56))
+
+/-- `Q = Q +` the static's entry of digit `esi` of `S`, if the digit is not zero. -/
+def vbaseIf : Prog isa :=
+  .seq (.block (vdigit BITS)) (.ite .ne (.seq vbaseLoad (ops (addAff 0 1 2))) (.block []))
+
+/-- `ebp` = the address of the entry of the odd digit `ecx`, entry `(ecx - 1) / 2`, less
+`VTAB - 192`: 192 bytes a unit of the digit (64 and 128 times it, by rotations). -/
+def ventryAddr : List Instr :=
+  [.shift .ror .ecx 26, .mov .ebp (.reg .ecx), .shift .ror .ecx 31, .alu .add .ebp (.reg .ecx),
+    .alu .add .ebp (.reg .edi)]
+
+/-- The entry of the odd digit `ecx` into slots 6, 7 and 21. -/
+def ventryLoad : List Instr :=
+  ventryAddr ++ fromEntry (slot 6) (VTAB - 192) ++ fromEntry (slot 7) (VTAB - 192 + 128) ++
+    fromEntry (slot 21) (VTAB - 192 + 256)
+
+/-- `Q = Q +` the table's entry of digit `esi` of `k`, if the digit is not zero. -/
+def vaddIf : Prog isa :=
+  .seq (.block (vdigit KBITS))
+    (.ite .ne (.seq (.block ventryLoad) (addTake (addAtZ 6 7 21))) (.block []))
+
+/-- One bit `t = esi - 1`, from the top: `Q` doubled, the entries of `S`'s digit and of `k`'s added,
+each if the digit is not zero, and the counter compared with zero. -/
 def vstep : Prog isa :=
-  .seq (.block [.alu .sub .esi (.imm 1)]) <| .seq (field (doubleAt 0 1 2)) <|
-  .seq (field (addAt 8 9)) <| .seq (.block (vmask false ++ swapT)) <|
-  .seq (field (addAt 6 7)) (.block (vmask true ++ swapT ++ [.alu .cmp .esi (.imm 0)]))
+  .seq (.block [.alu .sub .esi (.imm 1)]) <| .seq (field doubleOps) <| .seq vbaseIf <|
+  .seq vaddIf (.block [.alu .cmp .esi (.imm 0)])
 
 /-- The 456 bits, from 455 down to 0. -/
 def vloop : Prog isa := .seq (.block [.mov .esi (.imm 456)]) (.loop vstep .ne)
@@ -220,7 +383,7 @@ def vbits : Prog isa :=
 
 /-- After the bits: `BAD = 0`, the check of `S`, and the slots initialized as for base-point
 multiplication. -/
-def vinit : Prog isa := .seq (.block ([.mov .eax (.imm 0), st .eax BAD] ++ sCheck)) initSlots
+def vinit : Prog isa := .seq (.block ([.mov .eax (.imm 0), st .eax BAD] ++ sCheck)) (initSlots initVal)
 
 /-- The callee-saved registers saved, the bits of `S` and `k`, and `vinit`. -/
 def ventry : Prog isa := .seq (.block (save 16)) (.seq vbits vinit)
@@ -243,11 +406,13 @@ def vcmp : Prog isa :=
 callee-saved registers restored, and `eax = (BAD == 0)`. -/
 def vfinish : Prog isa :=
   .seq vdouble <| .seq (.block [.mov .esi (.imm 2)]) <| .seq (.loop vcmp .ne) <|
-  .block ([ld .ecx BAD, .alu .sub .ecx (.imm 1), .shift .shr .ecx 31] ++ restore ++ [.mov .eax (.reg .ecx)])
+  .block (ld .ecx BAD :: isZero .ecx ++ restore ++ [.mov .eax (.reg .ecx)])
 
-/-- After the decodings: `A` negated, `Q`, `R` copied back, and the comparison. -/
+/-- After the decodings: `A` negated, the digits, the static's address, the table of `-A`'s odd multiples, `Q`, `R`
+copied back, and the comparison. -/
 def vafter : Prog isa :=
-  .seq (field [.sub 6 0 6]) <| .seq (ops [.copy X2 (slot 10)]) <| .seq vloop <|
+  .seq (field [.sub 6 0 6]) <| .seq (vrecode KBITS 15) <| .seq (vrecode BITS 127) <| .seq vbase <|
+  .seq vtable <| .seq vloop <|
   .seq (ops [.copy (slot 6) X2]) <| .seq (.block vR) vfinish
 
 /-- `vg_ed448_verify_equation(pk = [esp + 4], signature = [esp + 8],

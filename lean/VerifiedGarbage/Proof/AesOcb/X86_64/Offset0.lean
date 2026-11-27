@@ -109,8 +109,9 @@ structure Off0Post (W : Addr) (o : Block) (s s' : State) : Prop where
   rd : s'.rd = s.rd
   wr : s'.wr = s.wr
 
-theorem offset0_ok {K W SP : Addr} (L : Lay K W SP) {s : State} (E : Env K W SP s) {v : Nat} (hv : v < 64)
-    (hbot : s.mem.readW (W + BitVec.ofNat 64 botO) 64 = BitVec.ofNat 64 v) :
+theorem offset0_ok {K W SP : Addr} {wn : Nat} (L : LayN K W SP wn) {s : State} (E : EnvN K W SP wn s) {v : Nat} (hv : v < 64)
+    (hbot : s.mem.readW (W + BitVec.ofNat 64 botO) 64 = BitVec.ofNat 64 v)
+    (hwn : 640 ≤ wn := by decide) (hwlt : wn < 2 ^ 64 := by decide) :
     ∃ s', runBlock isa offset0 s = some s' ∧
       Off0Post W ((stretch (blockAtMem s.mem (W + BitVec.ofNat 64 tmpO))).extractLsb' (64 - v) 128) s s' := by
   have h15 := E.r15
@@ -125,9 +126,9 @@ theorem offset0_ok {K W SP : Addr} (L : Lay K W SP) {s : State} (E : Env K W SP 
       s₁.gpr .rbx = BitVec.ofNat 64 v ∧
       (∀ r, r ≠ .rax → r ≠ .rdx → r ≠ .rcx → r ≠ .rbx → r ≠ .r8 → s₁.gpr r = s.gpr r) ∧
       s₁.mem = s.mem ∧ s₁.rd = s.rd ∧ s₁.wr = s.wr := by
-    have r₀ := E.perm.wR (show 112 + 8 ≤ 3584 by decide)
-    have r₁ := E.perm.wR (show 120 + 8 ≤ 3584 by decide)
-    have r₂ := E.perm.wR (show 256 + 8 ≤ 3584 by decide)
+    have r₀ := E.perm.wR6 hwn hwlt (show 112 + 8 ≤ 640 by decide)
+    have r₁ := E.perm.wR6 hwn hwlt (show 120 + 8 ≤ 640 by decide)
+    have r₂ := E.perm.wR6 hwn hwlt (show 256 + 8 ≤ 640 by decide)
     have rm := ror_mask (bswap64 (s.mem.readW (W + BitVec.ofNat 64 112) 64)) (a := 8) (by decide) (by decide)
     simp only [show 64 - 8 = 56 from rfl] at rm
     refine ⟨_, by orun [h15, r₀, r₁, r₂, hbot], ?_, ?_, fun r h1 h2 h3 h4 h5 => ?_, ?_, ?_, ?_⟩
@@ -175,10 +176,10 @@ theorem offset0_ok {K W SP : Addr} (L : Lay K W SP) {s : State} (E : Env K W SP 
       g₃ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide),
       g₂ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide),
       g₁ _ (by decide) (by decide) (by decide) (by decide) (by decide), h15]
-  have w₁₆ : InRegions s₇.wr (W + BitVec.ofNat 64 16) 8 := by rw [hwr₇]; exact E.perm.wW (by decide)
-  have w₂₄ : InRegions s₇.wr (W + BitVec.ofNat 64 24) 8 := by rw [hwr₇]; exact E.perm.wW (by decide)
-  have w₂₇₂ : InRegions s₇.wr (W + BitVec.ofNat 64 272) 8 := by rw [hwr₇]; exact E.perm.wW (by decide)
-  have w₂₈₀ : InRegions s₇.wr (W + BitVec.ofNat 64 280) 8 := by rw [hwr₇]; exact E.perm.wW (by decide)
+  have w₁₆ : InRegions s₇.wr (W + BitVec.ofNat 64 16) 8 := by rw [hwr₇]; exact E.perm.wW6 hwn hwlt (by decide)
+  have w₂₄ : InRegions s₇.wr (W + BitVec.ofNat 64 24) 8 := by rw [hwr₇]; exact E.perm.wW6 hwn hwlt (by decide)
+  have w₂₇₂ : InRegions s₇.wr (W + BitVec.ofNat 64 272) 8 := by rw [hwr₇]; exact E.perm.wW6 hwn hwlt (by decide)
+  have w₂₈₀ : InRegions s₇.wr (W + BitVec.ofNat 64 280) 8 := by rw [hwr₇]; exact E.perm.wW6 hwn hwlt (by decide)
   obtain ⟨s₈, run₈, m₈, g₈, rd₈, wr₈⟩ : ∃ s₈, runBlock isa [.bswap .rax, .bswap .rdx, st .r15 ofsO .rax,
       st .r15 (ofsO + 8) .rdx, st .r15 o0O .rax, st .r15 (o0O + 8) .rdx] s₇ = some s₈ ∧
       s₈.mem = (((s₇.mem.writeW (W + BitVec.ofNat 64 16) (bswap64 (s₇.gpr .rax))).writeW (W + BitVec.ofNat 64 24)
@@ -213,7 +214,7 @@ theorem offset0_ok {K W SP : Addr} (L : Lay K W SP) {s : State} (E : Env K W SP 
     rw [m₈, blockAtMem]
     rw [Proof.AesCcm.X86_64.bytesAt_frame (f272 _) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact L.w_w (a := 16) (n := 16) (d := 272) (k := 16) (.inl (by decide)) (by decide) (by decide)) (by decide)]
+      exact L.w_w6 hwn (a := 16) (n := 16) (d := 272) (k := 16) (.inl (by decide)) (by decide) (by decide)) (by decide)]
     rw [← blockAtMem, show W + BitVec.ofNat 64 24 = W + BitVec.ofNat 64 16 + BitVec.ofNat 64 8 from (addr8 W 16).symm,
       blockAtMem_store2, val]
   · show blockAtMem s₈.mem (W + BitVec.ofNat 64 272) = _

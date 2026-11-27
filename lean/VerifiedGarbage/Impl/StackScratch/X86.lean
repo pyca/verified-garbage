@@ -13,7 +13,8 @@ entry: a word standing for the return address, a copy of the function's
 arguments, and the address of the buffer, which is the rest of the frame.
 
 `withStackScratchWiped bytes n words c` is the same, but zeroes the first
-`words` doublewords of the buffer after its code (`wipe`), for a function
+`words` doublewords of the buffer after its code (`wipe`: 16 bytes at a time
+through a zeroed `xmm0`, the last doublewords through `ecx`), for a function
 whose working space may hold secrets that its caller would otherwise wipe.
 -/
 
@@ -43,8 +44,15 @@ def withStackScratch (bytes n : Nat) (c : Prog isa) : Prog isa :=
 def wipeStores (off words : Nat) : List Instr :=
   (List.range words).map fun k => .store ⟨.esp, off + 4 * k⟩ .ecx
 
-/-- Zeroes the `words` doublewords at `esp + off`, through `ecx`. -/
-def wipe (off words : Nat) : List Instr := .mov .ecx (.imm 0) :: wipeStores off words
+/-- `movdqu [esp + off + 16k], xmm0` for each `k < n`. -/
+def wipeStores16 (off n : Nat) : List Instr :=
+  (List.range n).map fun k => .movdquStore ⟨.esp, off + 16 * k⟩ .xmm0
+
+/-- Zeroes the `words` doublewords at `esp + off`: four at a time through
+`xmm0`, the last through `ecx`. -/
+def wipe (off words : Nat) : List Instr :=
+  .xop (.bin .pxor .xmm0 .xmm0) :: .mov .ecx (.imm 0) ::
+    (wipeStores16 off (words / 4) ++ wipeStores (off + 16 * (words / 4)) (words % 4))
 
 /-- `withStackScratch`, zeroing the first `words` doublewords of the buffer
 (at `esp + 8 + 4n`) after the code. -/

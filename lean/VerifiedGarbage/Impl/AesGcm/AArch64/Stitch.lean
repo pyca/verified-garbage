@@ -79,7 +79,7 @@ variable (c : Callees)
 /-- `runWithP`, the first bytes encrypted and hashed by the interleaved loop. -/
 def runWithS (tb : List Instr) (cl : Prog isa) : Prog isa :=
   .seq front
-  (.seq (stitched [] tb Gcm.AArch64.Stitch.enc)
+  (.seq (stitched [] tb Gcm.AArch64.Stitch.sealInPlace)
   (.seq (.block (whole ++ [.add .x .x23 .x23 .x9, mov .x27 .x23, .sub .x .x24 .x26 .x9, imm .x25 0]))
   (.seq (Tail.cryptAlT c)
   (.seq (.block ([mov .x23 .x27] ++ whole ++ [.sub .x .x24 .x26 .x9] ++ absSeg2 16))
@@ -243,10 +243,12 @@ def textOut : Prog isa :=
 def aadIn : Prog isa :=
   .seq (.block ([mov .x12 .x4] ++ atP .x11 b2O 0 ++ [mov .x13 .x24])) copy
 
-/-- The lengths block, at block 7 of `B₂`. -/
-def lensB : List Instr :=
-  [.lsl .x .x9 .x24 3, .rev .x9 .x9, .str .x .x9 .x19 (b2O + 112),
-    .lsl .x .x9 .x26 3, .rev .x9 .x9, .str .x .x9 .x19 (b2O + 120)]
+/-- Encode the AAD and ciphertext bit lengths at the given workspace offset. -/
+def lengthsAt (offset : Nat) : List Instr :=
+  [.lsl .x .x9 .x24 3, .rev .x9 .x9, .str .x .x9 .x19 offset,
+    .lsl .x .x9 .x26 3, .rev .x9 .x9, .str .x .x9 .x19 (offset + 8)]
+
+def lensB := lengthsAt (b2O + 112)
 
 /-- GHASH of `B₂` from zero, into `v16` (`Gcm.AArch64.Stitch.Y`). -/
 def shortGh : List Instr :=

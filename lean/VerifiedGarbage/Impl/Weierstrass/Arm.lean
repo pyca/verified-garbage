@@ -38,11 +38,17 @@ namespace VG.Impl.Weierstrass.Arm
 open VG.Arm VG.Impl.Mont VG.Impl.Mont.Arm VG.Impl.Weierstrass
 
 /-- The code of a field operation modulo `S`: a call of its function (with
-`u`, of the multiplication's `_umaal` variant). -/
-def opCode (S : Impl.Weierstrass.Mont.Modulus) (u : Bool := false) : FOp → Prog isa
-  | .mul o a b => Mont.mulCall S o a b u
-  | .add o a b => Mont.addCall S o a b
-  | .sub o a b => Mont.subCall S o a b
+`u`, of its `_umaal` variant), whose code is `mul`, `add` or `sub`. (Each list of operations
+computes the three once: `fprog`.) -/
+def opCodeOf (S : Impl.Weierstrass.Mont.Modulus) (u : Bool) (mul add sub : Prog isa) : FOp → Prog isa
+  | .mul o a b => Mont.callOp (Mont.mulName u S) mul o a b
+  | .add o a b => Mont.callOp (Mont.addName u S) add o a b
+  | .sub o a b => Mont.callOp (Mont.subName u S) sub o a b
+
+/-- The code of a field operation modulo `S`: a call of its function (with
+`u`, of its `_umaal` variant). -/
+def opCode (S : Impl.Weierstrass.Mont.Modulus) (u : Bool := false) (op : FOp) : Prog isa :=
+  opCodeOf S u (Mont.mulFnWith u S.k S.m) (Mont.addFnWith u S.k S.m) (Mont.subFnWith u S.k S.m) op
 
 /-- Programs one after the other. -/
 def progs : List (Prog isa) → Prog isa
@@ -52,7 +58,8 @@ def progs : List (Prog isa) → Prog isa
 
 /-- A straight-line sequence of field operations. -/
 def fprog (S : Impl.Weierstrass.Mont.Modulus) (ops : List FOp) (u : Bool := false) : Prog isa :=
-  progs (ops.map (opCode S u))
+  progs (ops.map (opCodeOf S u (Mont.mulFnWith u S.k S.m) (Mont.addFnWith u S.k S.m)
+    (Mont.subFnWith u S.k S.m)))
 
 /-- `[o] = [a]` if the mask `r10` is zero, `[b]` if it is all ones, `k`
 32-bit words, through `r4` and `r5`. -/
@@ -123,6 +130,26 @@ def bits (src dst nbytes : Nat) : Prog isa :=
   .seq (.block [.mov .r11 (.imm (BitVec.ofNat 32 nbytes))]) (.loop (.block (
     [decCounter, .dp .add .r4 wb (.reg .r11), .ldrb .r4 .r4 src, .dp .add .r5 wb (.shifted .r11 .lsl 3)] ++
     far .r5 dst ++ (List.range 8).flatMap (bitJ dst) ++ [testCounter])) .ne)
+
+/-- Word `j` of `copyTbl`'s slot: `[r9 + dst + 8 j] = [r10 + 8 j]`, its two
+halves through `r4` and `r5`. -/
+def copyWord (dst j : Nat) : List Instr :=
+  [.ldr .r4 .r10 (8 * j), .ldr .r5 .r10 (8 * j + 4), .str .r4 .r9 (dst + 8 * j), .str .r5 .r9 (dst + 8 * j + 4)]
+
+/-- One slot of `copyTbl`'s loop: its `n` 64-bit words, from `r10` to
+`r9 + dst`, straight-line, then both pointers on by the slot's `8 n` bytes. -/
+def copyTblBody (n dst : Nat) : List Instr :=
+  [decCounter] ++ (List.range n).flatMap (copyWord dst) ++
+    [.dp .add .r10 .r10 (.imm (BitVec.ofNat 32 (8 * n))), .dp .add .r9 .r9 (.imm (BitVec.ofNat 32 (8 * n))),
+      testCounter]
+
+/-- `[r12 + dst]`, `k` slots of `n` 64-bit words each, from the table of
+constants `sym` (`0 < k`): its address to `r10` (`adrSym`), `r9 = r12`, and
+a loop of `k` iterations (`r11`), each copying a slot, from the first up. In
+place of a run of immediates per word, as `setConst` writes them. -/
+def copyTbl (sym : String) (n k dst : Nat) : Prog isa :=
+  .seq (.block [.adrSym .r10 sym, .mov .r9 (.reg wb), .mov .r11 (.imm (BitVec.ofNat 32 k))])
+    (.loop (.block (copyTblBody n dst)) .ne)
 
 /-! ## Numbers as bytes -/
 

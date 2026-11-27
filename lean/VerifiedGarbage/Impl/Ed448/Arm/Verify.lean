@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Ed448.Arm.Shake
+public import VerifiedGarbage.Impl.Scrub.Arm
 public import VerifiedGarbage.Impl.Ed448.Arm.VerifyEquation
 
 /-!
@@ -69,15 +70,28 @@ def reduceArgs : List Instr := setup [(.r0, .frame K), (.r1, .frame HASH), (.r2,
 def equationArgs : List Instr :=
   setup [(.r0, .caller 0 0), (.r1, .caller 5 0), (.r2, .frame K), (.r3, scr 0)] []
 
-def body : Prog isa :=
+def body (u : Bool) : Prog isa :=
   .seq (.block hdr) <| .seq hash <|
   .seq (callWith reduceArgs "vg_ed448_scalar_reduce" Impl.Ed448.Arm.scalarReduce)
-    (callWith equationArgs "vg_ed448_verify_equation" Impl.Ed448.Arm.verifyEquation)
+    (callWith equationArgs ("vg_ed448_verify_equation" ++ Impl.X448.Arm.suffix u)
+      (Impl.Ed448.Arm.verifyEquation u))
 
 /-- `ctxlen < 256`: Z set exactly when `ctxlen >> 8 = 0`. -/
 def check : List Instr := [.mov .r12 (.shifted .r2 .lsr 8), .cmp .r12 (.imm 0)]
 
 /-- `vg_ed448_verify`. -/
-def code : Prog isa := .seq (.block check) (.ite .eq (wrap 6 body) (.block [.movw .r0 0]))
+def code (u : Bool) : Prog isa :=
+  .seq (.block check) (.ite .eq (wrap 6 (body u)) (.block [.movw .r0 0]))
 
 end VG.Impl.Ed448.Arm.Verify
+
+namespace VG.Impl.Ed448.Arm.Fn
+
+open VG.Arm VG.Impl.Scrub.Arm
+
+/-- `vg_ed448_verify`, with either multiplication of the field (`u`), then the 280 bytes
+of stack its contract reserves zeroed and the registers a callee may
+change, but the result, and the flags set to constants. -/
+def verify (u : Bool) : Prog isa := scrubAll 32 280 (Verify.code u)
+
+end VG.Impl.Ed448.Arm.Fn

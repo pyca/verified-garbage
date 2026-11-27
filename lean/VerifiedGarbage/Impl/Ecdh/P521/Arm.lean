@@ -11,7 +11,13 @@ namespace VG.Impl.Ecdh.Arm
 
 open VG.Arm
 
+/-- `vg_ecdh_p521`, or with `u` `vg_ecdh_p521_umaal`. -/
+def exchangeP521With (u : Bool) : Prog isa := Cfg.exchange (Impl.Ecdsa.Arm.p521With u)
+
 /-- `vg_ecdh_p521`. -/
-def exchangeP521 : Prog isa := Cfg.exchange Impl.Ecdsa.Arm.p521
+def exchangeP521 : Prog isa := exchangeP521With false
+
+/-- `vg_ecdh_p521_umaal`. -/
+def exchangeP521U : Prog isa := exchangeP521With true
 
 end VG.Impl.Ecdh.Arm

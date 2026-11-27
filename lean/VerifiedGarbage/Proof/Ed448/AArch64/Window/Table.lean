@@ -7,7 +7,7 @@ public import VerifiedGarbage.Proof.X448.AArch64.Mem
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 public import VerifiedGarbage.Proof.Ed448.AArch64.Window.Select
 public import VerifiedGarbage.Proof.X448.AArch64.Base.AddGen
-public import VerifiedGarbage.Proof.Ed448.AArch64.Window.Dbl
+public import VerifiedGarbage.Proof.Ed448.AArch64.Point56.AsFn
 import VerifiedGarbage.Proof.X448.AArch64.Fast.Weave
 public import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Call
 import VerifiedGarbage.Proof.Framework.KernelRfl

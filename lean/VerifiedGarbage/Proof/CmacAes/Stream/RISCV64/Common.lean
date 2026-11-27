@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.CmacAes.Stream.RISCV64
-public import VerifiedGarbage.Proof.CmacAes.RISCV64.Contract
+public import VerifiedGarbage.Proof.CmacAes.RISCV64.Subkeys
 public import VerifiedGarbage.Proof.Aes.RISCV64.ExpandKey
 public import VerifiedGarbage.Proof.Cmac.Stream
 public import VerifiedGarbage.Proof.Framework.Covers

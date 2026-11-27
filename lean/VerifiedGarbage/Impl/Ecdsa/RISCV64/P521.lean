@@ -1,8 +1,12 @@
 module
 
-public import VerifiedGarbage.Impl.Ecdsa.RISCV64.VerifyJ
+public import VerifiedGarbage.Impl.Ecdsa.RISCV64.VerifyComb
 public import VerifiedGarbage.Impl.Ecdh.P521.RISCV64
+public import VerifiedGarbage.Impl.Ecdsa.RISCV64.CombU
 public import VerifiedGarbage.Impl.Ecdh.RISCV64.Shr
+public import VerifiedGarbage.Impl.Ecdsa.RISCV64.VerifyHash
+public import VerifiedGarbage.Impl.Scrub.RISCV64
+public import VerifiedGarbage.Spec.Ecdsa.P521
 
 /-!
 # ECDSA over P-521 on RISC-V
@@ -10,7 +14,8 @@ public import VerifiedGarbage.Impl.Ecdh.RISCV64.Shr
 `vg_ecdsa_p521_sign(out, d, digest, k, scratch)`: P-256's and P-384's
 (`Impl/Ecdsa/RISCV64/Sign.lean`) on P-521's slots and functions, with its
 numbers of 66 bytes read and written by `loadLen` and `storeLen`
-(`Impl/Ecdh/RISCV64.lean`), and `[k]G` by the ladder, `vg_p521_mul`, for
+(`Impl/Ecdh/RISCV64.lean`), and `[k]G` by the comb, `vg_p521_mul_g`
+(`Impl/Ecdsa/RISCV64/CombU.lean`), for
 RFC 6979's signature with SHA-512 (`Impl/Ecdsa/Rfc6979/RISCV64.lean`), which
 calls it with SHA-512's 64-byte digest and a candidate's leftmost 66 bytes:
 `e` is the digest's number (its 512 bits are fewer than `n`'s 521), and `k`
@@ -21,8 +26,9 @@ them.
 `vg_ecdsa_p521_verify`: P-256's and P-384's (`Impl/Ecdsa/RISCV64/Verify.lean`)
 on P-521's slots and functions, with the key's coordinates, `r`, `s` and the
 digest's 66 bytes read by `loadLen`, `e` the digest's leftmost 521 bits,
-their number shifted right by 7 bits (`shrWords`), and `r mod n` by
-multiplications (`compareP521`).
+their number shifted right by 7 bits (`shrWords`), `[u]G + [v]Q` by the comb
+and windows (`VerifyComb.Cfg.joint`: `vg_p521_mul_g` and `vg_p521_mul`, then
+one complete addition), and `r mod n` by multiplications (`compareP521`).
 -/
 
 @[expose] public section
@@ -54,10 +60,10 @@ def signFinish : List Instr :=
     storeLen len (p521.sl RR) .s2 0 ++ storeLen len (p521.sl SS) .s2 len ++ Cfg.retCode p521
 
 /-- `vg_ecdsa_p521_sign(out = a0, d = a1, digest = a2, k = a3, scratch = a4)`,
-with `[k]G` by four-bit windows, `vg_p521_mul`. -/
+with `[k]G` by the comb, `vg_p521_mul_g`. -/
 def signP521 : Prog isa :=
   .seq (.block signSetup) <|
-  .seq (Cfg.tail p521 "vg_p521_mul" mulP521) <|
+  .seq (Cfg.tail p521 CombU.mulGP521Name CombU.mulGP521) <|
   .seq (.seq (addCall p521Order (p521.sl RR) (p521.sl XO) (p521.sl ZERO)) (Sign.Cfg.scalars p521 p521Order))
     (.block signFinish)
 
@@ -84,9 +90,28 @@ def verifyP521 : Prog isa :=
   .seq (Cfg.wsCall "vg_p521_check_point" checkP521) <|
   .seq (.block ((Sign.Cfg.nConsts p521).flatMap (fun (i, x) => setConst 9 (p521.sl i) x))) <|
   .seq (Verify.Cfg.uv p521 p521Order) <|
-  .seq (VerifyJ.Cfg.joint p521 Impl.Weierstrass.dblJ) <|
-  .seq (chainPow (Cfg.chainP p521) (p521.sl ONEP) p521.FP) <|
+  .seq (VerifyComb.Cfg.joint p521 "vg_p521_mul" mulP521 CombU.mulGP521Name CombU.mulGP521) <|
+  .seq (Ecdh.RISCV64.Cfg.invP p521) <|
   .seq (Cfg.affineCoord p521 XM XO RX) <|
   .seq compareP521 (.block (Verify.Cfg.finish p521))
 
 end VG.Impl.Ecdsa.RISCV64.P521
+
+/-! ## Verification as emitted
+
+`vg_ecdsa_p521_verify`: `VerifyHash.verifyHash` of the curve's verification,
+then its cleanup (`Impl.Scrub.RISCV64.scrubAll`): the caller-saved registers
+cleared but the 32 bits of its result, and the 80 bytes of stack its frames
+use zeroed, so that it returns without secret residue. -/
+
+namespace VG.Impl.Ecdsa.RISCV64.Fn
+
+open VG.RISCV64
+
+/-- `vg_ecdsa_p521_verify` as emitted. -/
+def verifyP521 : Prog isa :=
+  Impl.Scrub.RISCV64.scrubAll 32 80
+    (Impl.Ecdsa.RISCV64.VerifyHash.verifyHash Spec.Ecdsa.P521.inst.curve.len true
+      Impl.Ecdsa.RISCV64.P521.verifyP521)
+
+end VG.Impl.Ecdsa.RISCV64.Fn

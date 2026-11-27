@@ -51,21 +51,50 @@ theorem hbF_le {γ₂ : Nat} (h : γ₂ ∈ gamma2s) {a : Nat} (ha : a < q) : hb
 theorem hbM_mul {γ₂ : Nat} (h : γ₂ ∈ gamma2s) : hbM γ₂ * (2 * γ₂) = q - 1 := by
   rcases mem_gamma2s h with rfl | rfl <;> rfl
 
+/-- `a mod± 2γ₂`, from `a` as a multiple of `2γ₂` and a remainder in `(-γ₂, γ₂]`. -/
+theorem modPm_of {a e f : Int} {g : Nat} (h : a = e + ((2 * g : Nat) : Int) * f) (h₁ : -(g : Int) < e)
+    (h₂ : e ≤ g) : modPm a (2 * g) = e := by
+  simp only [modPm, h, Int.add_mul_emod_self_left, Nat.mul_div_cancel_left g (show 0 < 2 by decide)]
+  rcases Int.lt_or_le e 0 with hn | hn
+  · rw [← Int.add_emod_right, Int.emod_eq_of_lt (by omega_using [h₁]) (by omega_using [hn]),
+      ite_eq_left_of_eq_true _ _ (eq_true (by omega_using [h₁])), Int.add_sub_cancel]
+  · rw [Int.emod_eq_of_lt hn (by omega_using [h₁, h₂]),
+      ite_eq_right_of_eq_false _ _ (eq_false (by omega_using [h₂]))]
+
 /-- `Decompose(a)`: `(f mod m, a - (f mod m) · 2γ₂)`, less `q` when `f = m`. -/
 theorem decompose_eq {γ₂ : Nat} (h : γ₂ ∈ gamma2s) (r : Zq) :
     decompose γ₂ r = (((hbF γ₂ r.val % hbM γ₂ : Nat) : Int),
       (r.val : Int) - ((hbF γ₂ r.val % hbM γ₂ * (2 * γ₂) : Nat) : Int) -
         (if hbF γ₂ r.val = hbM γ₂ then (q : Int) else 0)) := by
-  have hr := r.isLt
-  by_cases hc : hbF γ₂ r.val = hbM γ₂
-  · rw [ite_eq_left_of_eq_true _ _ (eq_true hc)]
-    rcases mem_gamma2s h with rfl | rfl <;>
-    · simp only [decompose, modPm, hbF, hbM, q_eq] at *
-      split <;> split <;> simp only [Prod.mk.injEq] <;> omega_arith
-  · rw [ite_eq_right_of_eq_false _ _ (eq_false hc)]
-    rcases mem_gamma2s h with rfl | rfl <;>
-    · simp only [decompose, modPm, hbF, hbM, q_eq] at *
-      split <;> split <;> simp only [Prod.mk.injEq] <;> omega_arith
+  have hf := hbF_le h r.isLt
+  have hm := hbM_mul h
+  have hg : 0 < γ₂ := by rcases mem_gamma2s h with rfl | rfl <;> decide
+  -- `a + γ₂ - 1 = 2γ₂ f + s`
+  have hd : 2 * γ₂ * hbF γ₂ r.val + (r.val + γ₂ - 1) % (2 * γ₂) = r.val + γ₂ - 1 := Nat.div_add_mod _ _
+  have hs : (r.val + γ₂ - 1) % (2 * γ₂) < 2 * γ₂ := Nat.mod_lt _ (by omega_using [hg])
+  simp only [decompose]
+  generalize (r.val + γ₂ - 1) % (2 * γ₂) = s at hd hs
+  generalize hbF γ₂ r.val = f at *
+  generalize r.val = a at *
+  generalize hbM γ₂ = m at *
+  rw [Nat.mul_comm] at hd
+  have he : modPm a (2 * γ₂) = (a : Int) - ((f * (2 * γ₂) : Nat) : Int) := by
+    refine modPm_of (f := f) ?_ (by omega_using [hd, hs, hg]) (by omega_using [hd, hs, hg])
+    rw [← Int.natCast_mul, Nat.mul_comm f, Int.sub_add_cancel]
+  rw [he]
+  have hq : ((q - 1 : Nat) : Int) = (q : Int) - 1 := rfl
+  rw [Int.sub_sub_self, ← hq, ← hm]
+  by_cases hc : f = m
+  · subst hc
+    rw [ite_eq_left_of_eq_true _ _ (eq_true rfl), ite_eq_left_of_eq_true _ _ (eq_true rfl), Nat.mod_self,
+      Nat.zero_mul, hm, hq]
+    refine Prod.ext rfl ?_
+    show (a : Int) - ((q : Int) - 1) - 1 = a - ((0 : Nat) : Int) - q
+    omega_using []
+  · have hlt : f < m := by omega_using [hf, hc]
+    rw [ite_eq_right_of_eq_false _ _ (eq_false fun e => hc (Nat.eq_of_mul_eq_mul_right (by omega_using [hg]) (Int.natCast_inj.mp e))),
+      ite_eq_right_of_eq_false _ _ (eq_false hc), Nat.mod_eq_of_lt hlt, ← Int.natCast_ediv,
+      Nat.mul_div_cancel _ (by omega_using [hg]), Int.sub_zero]
 
 theorem highBits_eq {γ₂ : Nat} (h : γ₂ ∈ gamma2s) (r : Zq) :
     highBits γ₂ r = ((hbF γ₂ r.val % hbM γ₂ : Nat) : Int) := by
@@ -151,20 +180,35 @@ theorem useHint_eq {γ₂ : Nat} (h : γ₂ ∈ gamma2s) (b : Bool) (r : Zq) :
       else hbF γ₂ r.val + hbM γ₂ - 1) else hbF γ₂ r.val + hbM γ₂) % hbM γ₂ : Nat) : Int) := by
   have hr := r.isLt
   have hf := hbF_le h hr
+  have hm := hbM_mul h
+  have m0 : 0 < hbM γ₂ := by rcases mem_gamma2s h with rfl | rfl <;> decide
   unfold useHint
   rw [decompose_eq h]
   dsimp only
-  generalize r.val = a at hr hf ⊢
-  generalize hbF γ₂ a = f at hf ⊢
-  have hm : (q - 1) / (2 * γ₂) = hbM γ₂ := rfl
-  rw [hm]
-  rw [q_eq] at hr
-  have hq : ((q : Nat) : Int) = 8380417 := rfl
-  rw [hq]
-  rcases mem_gamma2s h with rfl | rfl
-  all_goals first | rw [hbM_88] at hf ⊢ | rw [hbM_32] at hf ⊢
-  all_goals cases b <;> simp only [Bool.false_eq_true, false_and, ↓reduceIte, true_and]
-  all_goals first | omega_arith | (repeat' split) <;> omega_arith
+  rw [show (q - 1) / (2 * γ₂) = hbM γ₂ from rfl]
+  generalize r.val = a at *
+  generalize hbF γ₂ a = f at *
+  generalize hbM γ₂ = m at *
+  cases b
+  · simp only [Bool.false_eq_true, false_and, ↓reduceIte, Nat.add_mod_right]
+  simp only [true_and, ↓reduceIte]
+  by_cases hc : f = m
+  · subst hc
+    rw [Nat.mod_self, Nat.zero_mul, hm]
+    simp only [↓reduceIte]
+    rw [ite_eq_right_of_eq_false _ _ (eq_false (by omega_using [hr])), ite_eq_left_of_eq_true _ _ (eq_true (by omega_using [hr])),
+      ite_eq_right_of_eq_false _ _ (eq_false (by omega_using [hr])), Nat.add_sub_assoc m0, Nat.add_mod_left,
+      Int.natCast_emod, ← Int.add_emod_right]
+    exact congrArg (· % (f : Int)) (by omega_using [m0])
+  · have hlt : f < m := by omega_using [hf, hc]
+    rw [Nat.mod_eq_of_lt hlt, ite_eq_right_of_eq_false _ _ (eq_false hc), Int.sub_zero]
+    by_cases hp : f * (2 * γ₂) < a
+    · rw [ite_eq_left_of_eq_true _ _ (eq_true (by omega_using [hp])), ite_eq_left_of_eq_true _ _ (eq_true hp),
+        Nat.add_right_comm, Nat.add_mod_right, Int.natCast_emod]
+      rfl
+    · rw [ite_eq_right_of_eq_false _ _ (eq_false (by omega_using [hp])), ite_eq_left_of_eq_true _ _ (eq_true (by omega_using [hp])),
+        ite_eq_right_of_eq_false _ _ (eq_false hp), Int.natCast_emod, ← Int.add_emod_right]
+      exact congrArg (· % (m : Int)) (by omega_using [m0])
 
 /-- `MakeHint(z, r)`: whether the `f mod m` of `r` and of `r + z` differ. -/
 theorem makeHint_eq {γ₂ : Nat} (h : γ₂ ∈ gamma2s) (z r : Zq) :

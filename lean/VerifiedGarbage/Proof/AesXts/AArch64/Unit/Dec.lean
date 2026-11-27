@@ -2,8 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.AesXts.AArch64.Unit.Enc
 import VerifiedGarbage.Proof.Cmac.Frame
-import VerifiedGarbage.Proof.AesXts.AArch64.Unit.Steps
-import VerifiedGarbage.Proof.AesXts.AArch64.Unit.Pre
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd

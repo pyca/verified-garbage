@@ -4,7 +4,7 @@ public import VerifiedGarbage.Spec.Dsa.Prevalidated
 public import VerifiedGarbage.Spec.Dsa.PrevalidatedSign
 public import VerifiedGarbage.Spec.Dsa.Generate
 public import VerifiedGarbage.Spec.Dsa.Derive
-public import VerifiedGarbage.Spec.Dsa.ParameterSearchContract
+public import VerifiedGarbage.Proof.Dsa.ParameterPublic
 public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
 import VerifiedGarbage.Proof.Ffdh.X86_64.Scrub
 
@@ -15,7 +15,7 @@ The postconditions of DSA's key and signature functions read the memory on
 return only within their outputs (`X86_64.Scrub.PostOut`): the validations
 and verification not at all, the others the octets at `out` and the word at
 `used` (`Ffdh.X86_64.Scrub.bytesAt_of`, `wordsAt_of`). Each implementation
-returns with its whole stack wiped (`X86_64.Scrub.withScrubAll`).
+returns with its whole stack wiped (`Impl.Scrub.X86_64.scrubAll`).
 -/
 
 @[expose] public section
@@ -85,7 +85,7 @@ theorem deriveKeyOut (stack : Nat) :
       · exact toNat_sw [] outLen
 
 theorem parameterSearchOut (stack : Nat) :
-    PostOut (Spec.Dsa.parameterSearchContract abi stack) (Spec.Dsa.parameterSearchSig.retBits 64) :=
+    PostOut (Proof.Dsa.parameterSearchAskedContract abi stack) (Spec.Dsa.parameterSearchSig.retBits 64) :=
   postOut_of_local (leak := some _) ScrubAbi.plain fun
     | [out, outLen, _, _, _, _, _, _], m, m₁, m₂, r, _, hb, h => by
       simp only [Spec.Dsa.parameterSearchSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,

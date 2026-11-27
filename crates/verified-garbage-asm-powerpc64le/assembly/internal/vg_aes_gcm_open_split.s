@@ -111,7 +111,6 @@ vg_aes_gcm_open_split:
 	addi %r4, %r30, 0
 	addi %r5, %r30, 32
 	li %r6, 1
-	addi %r7, %r31, 512
 	bl {vg_ghash}
 220:
 	b 213f
@@ -128,7 +127,6 @@ vg_aes_gcm_open_split:
 	beq %cr0, 221f
 	addi %r3, %r29, 240
 	addi %r4, %r30, 0
-	addi %r7, %r31, 512
 	bl {vg_ghash}
 	b 222f
 221:
@@ -174,7 +172,6 @@ vg_aes_gcm_open_split:
 	addi %r4, %r30, 0
 	addi %r5, %r31, 96
 	li %r6, 1
-	addi %r7, %r31, 512
 	bl {vg_ghash}
 	b 227f
 226:
@@ -192,7 +189,6 @@ vg_aes_gcm_open_split:
 	addi %r4, %r30, 0
 	addi %r5, %r31, 96
 	li %r6, 1
-	addi %r7, %r31, 512
 	bl {vg_ghash}
 	b 29f
 28:
@@ -265,7 +261,6 @@ vg_aes_gcm_open_split:
 	addi %r4, %r30, 16
 	addi %r5, %r30, 32
 	li %r6, 1
-	addi %r7, %r31, 512
 	bl {vg_ghash}
 239:
 	b 232f
@@ -282,7 +277,6 @@ vg_aes_gcm_open_split:
 	beq %cr0, 240f
 	addi %r3, %r29, 240
 	addi %r4, %r30, 16
-	addi %r7, %r31, 512
 	bl {vg_ghash}
 	b 241f
 240:
@@ -328,7 +322,6 @@ vg_aes_gcm_open_split:
 	addi %r4, %r30, 16
 	addi %r5, %r31, 96
 	li %r6, 1
-	addi %r7, %r31, 512
 	bl {vg_ghash}
 	b 246f
 245:
@@ -375,7 +368,6 @@ vg_aes_gcm_open_split:
 	or %r3, %r29, %r29
 	or %r4, %r28, %r28
 	addi %r5, %r30, 48
-	addi %r8, %r31, 512
 	bl {vg_aes_ctr32}
 	addi %r3, %r30, 64
 	or %r4, %r24, %r24
@@ -443,7 +435,6 @@ vg_aes_gcm_open_split:
 	addi %r4, %r30, 16
 	addi %r5, %r30, 32
 	li %r6, 1
-	addi %r7, %r31, 512
 	bl {vg_ghash}
 264:
 	b 257f
@@ -460,7 +451,6 @@ vg_aes_gcm_open_split:
 	beq %cr0, 265f
 	addi %r3, %r29, 240
 	addi %r4, %r30, 16
-	addi %r7, %r31, 512
 	bl {vg_ghash}
 	b 266f
 265:
@@ -513,7 +503,6 @@ vg_aes_gcm_open_split:
 	addi %r4, %r30, 16
 	addi %r5, %r31, 96
 	li %r6, 1
-	addi %r7, %r31, 512
 	bl {vg_ghash}
 	b 273f
 272:
@@ -531,7 +520,6 @@ vg_aes_gcm_open_split:
 	addi %r4, %r30, 16
 	addi %r5, %r31, 96
 	li %r6, 1
-	addi %r7, %r31, 512
 	bl {vg_ghash}
 	ld %r3, 16(%r30)
 	std %r3, 112(%r31)
@@ -542,7 +530,6 @@ vg_aes_gcm_open_split:
 	or %r5, %r30, %r30
 	addi %r6, %r31, 112
 	li %r7, 1
-	addi %r8, %r31, 512
 	bl {vg_aes_ctr32}
 	b 250f
 249:
@@ -592,7 +579,6 @@ vg_aes_gcm_open_split:
 	addi %r4, %r30, 16
 	addi %r5, %r30, 32
 	li %r6, 1
-	addi %r7, %r31, 512
 	bl {vg_ghash}
 285:
 	b 278f
@@ -609,7 +595,6 @@ vg_aes_gcm_open_split:
 	beq %cr0, 286f
 	addi %r3, %r29, 240
 	addi %r4, %r30, 16
-	addi %r7, %r31, 512
 	bl {vg_ghash}
 	b 287f
 286:
@@ -655,7 +640,6 @@ vg_aes_gcm_open_split:
 	addi %r4, %r30, 16
 	addi %r5, %r31, 96
 	li %r6, 1
-	addi %r7, %r31, 512
 	bl {vg_ghash}
 	b 292f
 291:
@@ -673,7 +657,6 @@ vg_aes_gcm_open_split:
 	addi %r4, %r30, 16
 	addi %r5, %r31, 96
 	li %r6, 1
-	addi %r7, %r31, 512
 	bl {vg_ghash}
 	ld %r3, 16(%r30)
 	std %r3, 112(%r31)
@@ -684,7 +667,6 @@ vg_aes_gcm_open_split:
 	or %r5, %r30, %r30
 	addi %r6, %r31, 112
 	li %r7, 1
-	addi %r8, %r31, 512
 	bl {vg_aes_ctr32}
 250:
 	li %r0, 0

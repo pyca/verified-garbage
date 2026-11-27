@@ -1,0 +1,131 @@
+// The functions of `src/internal/vg_p384_sub_mod_n_umaal.rs` of `verified-garbage-asm-arm`, as text: generated from
+// Lean (`lean/VerifiedGarbage/TCB/Rust.lean`) with them, and not compiled.
+// Each instruction the printer encodes is here as its text, and in
+// `src/` as its machine code, which `lean/VerifiedGarbage/TCB/<ISA>/Encode.lean`
+// gives.
+
+vg_p384_sub_mod_n_umaal:
+	mov r12, r0
+	str r4, [r12, #4008]
+	str r5, [r12, #4012]
+	str r6, [r12, #4016]
+	add r2, r12, r2
+	add r3, r12, r3
+	mov r6, #1
+	mov r5, #1
+	ldr r0, [r2, #0]
+	ldr r4, [r3, #0]
+	mvn r4, r4
+	umaal r4, r5, r0, r6
+	str r4, [r12, #3912]
+	ldr r0, [r2, #4]
+	ldr r4, [r3, #4]
+	mvn r4, r4
+	umaal r4, r5, r0, r6
+	str r4, [r12, #3916]
+	ldr r0, [r2, #8]
+	ldr r4, [r3, #8]
+	mvn r4, r4
+	umaal r4, r5, r0, r6
+	str r4, [r12, #3920]
+	ldr r0, [r2, #12]
+	ldr r4, [r3, #12]
+	mvn r4, r4
+	umaal r4, r5, r0, r6
+	str r4, [r12, #3924]
+	ldr r0, [r2, #16]
+	ldr r4, [r3, #16]
+	mvn r4, r4
+	umaal r4, r5, r0, r6
+	str r4, [r12, #3928]
+	ldr r0, [r2, #20]
+	ldr r4, [r3, #20]
+	mvn r4, r4
+	umaal r4, r5, r0, r6
+	str r4, [r12, #3932]
+	ldr r0, [r2, #24]
+	ldr r4, [r3, #24]
+	mvn r4, r4
+	umaal r4, r5, r0, r6
+	str r4, [r12, #3936]
+	ldr r0, [r2, #28]
+	ldr r4, [r3, #28]
+	mvn r4, r4
+	umaal r4, r5, r0, r6
+	str r4, [r12, #3940]
+	ldr r0, [r2, #32]
+	ldr r4, [r3, #32]
+	mvn r4, r4
+	umaal r4, r5, r0, r6
+	str r4, [r12, #3944]
+	ldr r0, [r2, #36]
+	ldr r4, [r3, #36]
+	mvn r4, r4
+	umaal r4, r5, r0, r6
+	str r4, [r12, #3948]
+	ldr r0, [r2, #40]
+	ldr r4, [r3, #40]
+	mvn r4, r4
+	umaal r4, r5, r0, r6
+	str r4, [r12, #3952]
+	ldr r0, [r2, #44]
+	ldr r4, [r3, #44]
+	mvn r4, r4
+	umaal r4, r5, r0, r6
+	str r4, [r12, #3956]
+	eor r6, r5, #1
+	mov r5, #0
+	add r1, r12, r1
+	ldr r4, [r12, #3912]
+	movw r0, #10611
+	movt r0, #52421
+	umaal r4, r5, r0, r6
+	str r4, [r1, #0]
+	ldr r4, [r12, #3916]
+	movw r0, #6506
+	movt r0, #60652
+	umaal r4, r5, r0, r6
+	str r4, [r1, #4]
+	ldr r4, [r12, #3920]
+	movw r0, #42874
+	movt r0, #18608
+	umaal r4, r5, r0, r6
+	str r4, [r1, #8]
+	ldr r4, [r12, #3924]
+	movw r0, #3506
+	movt r0, #22554
+	umaal r4, r5, r0, r6
+	str r4, [r1, #12]
+	ldr r4, [r12, #3928]
+	movw r0, #11743
+	movt r0, #62519
+	umaal r4, r5, r0, r6
+	str r4, [r1, #16]
+	ldr r4, [r12, #3932]
+	movw r0, #19841
+	movt r0, #51043
+	umaal r4, r5, r0, r6
+	str r4, [r1, #20]
+	ldr r4, [r12, #3936]
+	mvn r0, #0
+	umaal r4, r5, r0, r6
+	str r4, [r1, #24]
+	ldr r4, [r12, #3940]
+	umaal r4, r5, r0, r6
+	str r4, [r1, #28]
+	ldr r4, [r12, #3944]
+	umaal r4, r5, r0, r6
+	str r4, [r1, #32]
+	ldr r4, [r12, #3948]
+	umaal r4, r5, r0, r6
+	str r4, [r1, #36]
+	ldr r4, [r12, #3952]
+	umaal r4, r5, r0, r6
+	str r4, [r1, #40]
+	ldr r4, [r12, #3956]
+	umaal r4, r5, r0, r6
+	str r4, [r1, #44]
+	ldr r4, [r12, #4008]
+	ldr r5, [r12, #4012]
+	ldr r6, [r12, #4016]
+	bx lr

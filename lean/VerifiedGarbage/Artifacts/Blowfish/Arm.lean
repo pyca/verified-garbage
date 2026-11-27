@@ -1,24 +1,27 @@
 module
 
-public import VerifiedGarbage.Proof.Blowfish.Arm.Frame
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.Arm.Print
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Blowfish.Contract
+import VerifiedGarbage.Proof.Blowfish.Arm.Scrub
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # Blowfish on ARMv7 -/
 
-@[expose] public section
-
 namespace VG.Artifacts.Blowfish.Arm
 
-def artifacts : List Artifact := [
+public def artifacts : List (Artifact Arm.target) := [
   Spec.Blowfish.expandKeyApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withRegScratchWiped 64 .r3 12 Impl.Blowfish.Arm.expandKey
-    verified := Proof.Blowfish.Arm.expandKey_framed },
+    code := Impl.Blowfish.Arm.Fn.expandKey
+    verified := Proof.Blowfish.Arm.Fn.expandKey },
   Spec.Blowfish.ecbEncryptApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withRegScratchWiped 256 .r3 12 Impl.Blowfish.Arm.encrypt
-    verified := Proof.Blowfish.Arm.ecb_framed true },
+    code := Impl.Blowfish.Arm.Fn.ecbEncrypt
+    verified := Proof.Blowfish.Arm.Fn.ecbEncrypt },
   Spec.Blowfish.ecbDecryptApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withRegScratchWiped 256 .r3 12 Impl.Blowfish.Arm.decrypt
-    verified := Proof.Blowfish.Arm.ecb_framed false }]
+    code := Impl.Blowfish.Arm.Fn.ecbDecrypt
+    verified := Proof.Blowfish.Arm.Fn.ecbDecrypt }]
+
+spec_apis artifacts
 
 end VG.Artifacts.Blowfish.Arm

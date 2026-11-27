@@ -99,6 +99,8 @@ impl PublicKey {
         }
         let mut packed = Vec::with_capacity(3 * p.len() + q.len());
         for component in [p, q, g, y] {
+            // NO-SECRET-RESIDUE: the public key is public, and the capacity
+            // is reserved exactly.
             packed.extend_from_slice(component);
         }
         Ok(Self {
@@ -215,9 +217,9 @@ impl PrivateKey {
         if x.len() != q.len() {
             return Err(Error::Length);
         }
-        let mut packed = public.packed.clone();
-        packed.extend_from_slice(x);
-        Ok(Self::new(public, Secret(packed)))
+        // One allocation of the exact length, written once.
+        let packed = Secret([&public.packed[..], x].concat());
+        Ok(Self::new(public, packed))
     }
 
     /// The key of a public key and its packed private bytes, not yet validated.

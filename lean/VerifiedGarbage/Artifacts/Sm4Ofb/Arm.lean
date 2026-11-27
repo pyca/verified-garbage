@@ -1,23 +1,25 @@
 module
 
-public import VerifiedGarbage.Proof.Sm4.Arm.SerialOfbVerified
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.Arm.Print
-public import VerifiedGarbage.Proof.Sm4.Arm.FbFinalVerified
-public import VerifiedGarbage.Impl.Sm4.Arm.FbFinal
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Sm4.Ofb
+public import VerifiedGarbage.Spec.Sm4.OfbFinal
+import VerifiedGarbage.Proof.Sm4.Arm.Scrub
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # SM4-OFB on ARMv7 -/
 
-@[expose] public section
-
 namespace VG.Artifacts.Sm4Ofb.Arm
 
-def artifacts : List Artifact := [
+public def artifacts : List (Artifact Arm.target) := [
   Spec.Sm4.ofbApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratchWiped 1520 0 378 Impl.Sm4.Arm.SerialOfb.crypt
-    verified := Proof.Sm4.Arm.SerialOfbVerified.framed },
+    code := Impl.Sm4.Arm.Fn.ofb
+    verified := Proof.Sm4.Arm.Fn.ofb },
   Spec.Sm4.ofbFinalApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratchWiped 80 0 18 Impl.Sm4.Arm.ofbFinal
-    verified := Proof.Sm4.Arm.ofbFinal_framed }]
+    code := Impl.Sm4.Arm.Fn.ofbFinal
+    verified := Proof.Sm4.Arm.Fn.ofbFinal }]
+
+spec_apis artifacts
 
 end VG.Artifacts.Sm4Ofb.Arm

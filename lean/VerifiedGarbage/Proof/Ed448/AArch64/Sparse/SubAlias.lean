@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Sub
 public import VerifiedGarbage.Proof.X448.AArch64.Fast.Env
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.Block
@@ -77,7 +76,7 @@ theorem subAliasE {s:State} {base:Addr} (hs:Scr s base)
       VG.Proof.X448.AArch64.Fast.FKeep base s t ∧ VG.Proof.X448.AArch64.Fast.BEnv t.mem base ∧
       VG.Proof.X448.AArch64.Fast.Same base [o] s.mem t.mem ∧
       VG.Proof.X448.AArch64.Weak.E t.mem base=
-        Function.update (VG.Proof.X448.AArch64.Weak.E s.mem base) o
+        Fun.update (VG.Proof.X448.AArch64.Weak.E s.mem base) o
           (VG.Proof.X448.AArch64.Weak.E s.mem base a-VG.Proof.X448.AArch64.Weak.E s.mem base b) := by
   have sep (i j:VG.Proof.X448.AArch64.Weak.Index) :
       VG.Impl.X448.AArch64.slot i.val=VG.Impl.X448.AArch64.slot j.val ∨
@@ -107,7 +106,7 @@ theorem subAliasE {s:State} {base:Addr} (hs:Scr s base)
   · rw [tl i hi]
     exact VG.Proof.Curve448.AArch64.Fast.diff_bound ha i hi
   · rw [VG.Proof.X448.AArch64.Weak.E_update fm]
-    refine congrArg (Function.update _ o) ?_
+    refine congrArg (Fun.update _ o) ?_
     change VG.Proof.X448.toFe _=VG.Proof.X448.toFe _-VG.Proof.X448.toFe _
     rw [VG.Proof.X448.Wide.valN_congr tl]
     exact VG.Proof.Curve448.AArch64.Fast.diff_val hb'

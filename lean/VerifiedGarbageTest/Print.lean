@@ -27,19 +27,45 @@ up in review.
 
 namespace VG.Test
 
-/-- The lines of a printed function, a call shown as `<call name>`. -/
+/-- `n` as `k` lowercase hexadecimal digits, after `0x`. -/
+def hex (k n : Nat) : String :=
+  let ds := Nat.toDigits 16 (n % 16 ^ k)
+  "0x" ++ String.ofList (List.replicate (k - ds.length) '0' ++ ds)
+
+/-- The number whose bytes, the lowest first, are `bs`. -/
+def littleEndian (bs : List Nat) : Nat := bs.foldr (fun b v => b + 256 * v) 0
+
+/-- The lines of a printed function, a call shown as `<call name>`, and an
+instruction a printer emits as its machine code (`Line.code`) as two lines:
+its text in a comment, and the directive `dir` gives its bytes. -/
+def textWith (dir : List Nat → String) (ls : List Line) : List String :=
+  ls.flatMap fun
+    | .text s => [s]
+    | .call n => [s!"<call {n}>"]
+    | .sym s .page n => [s!"{s}<page {n}>"]
+    | .sym s .pageOff n => [s!"{s}<pageoff {n}>"]
+    | .sym s .ripRel n => [s!"{s}<riprel {n}>"]
+    | .sym s .x86PcRel n => [s!"{s}<pcrel {n}>"]
+    | .sym s .armPcRel n => [s!"{s}<armpcrel {n}>"]
+    | .sym s .ppcHa n => [s!"{s}<ppcha {n}>"]
+    | .sym s .ppcLo n => [s!"{s}<ppclo {n}>"]
+    | .sym s .bare n => [s!"{s}<sym {n}>"]
+    | .code asm bs => [s!"// {asm}", dir bs]
+
+/-- `textWith`, an encoded instruction's bytes as `.byte` of each (x86's). -/
 def text (ls : List Line) : List String :=
-  ls.map fun
-    | .text s => s
-    | .call n => s!"<call {n}>"
-    | .sym s .page n => s!"{s}<page {n}>"
-    | .sym s .pageOff n => s!"{s}<pageoff {n}>"
-    | .sym s .ripRel n => s!"{s}<riprel {n}>"
-    | .sym s .x86PcRel n => s!"{s}<pcrel {n}>"
-    | .sym s .armPcRel n => s!"{s}<armpcrel {n}>"
-    | .sym s .ppcHa n => s!"{s}<ppcha {n}>"
-    | .sym s .ppcLo n => s!"{s}<ppclo {n}>"
-    | .sym s .bare n => s!"{s}<sym {n}>"
+  textWith (fun bs => ".byte " ++ ",".intercalate (bs.map (hex 2))) ls
+
+/-- `textWith`, an encoded instruction's bytes as the `.long` of its
+little-endian word (PPC64LE's). -/
+def textLong (ls : List Line) : List String :=
+  textWith (fun bs => s!".long {hex 8 (littleEndian bs)}") ls
+
+/-- `textWith`, an encoded instruction's bytes as the `.insn` of its
+little-endian word, or of a compressed instruction's parcel (RISC-V's). -/
+def textInsn (ls : List Line) : List String :=
+  textWith (fun bs => if bs.length == 2 then s!".insn 2, {hex 4 (littleEndian bs)}"
+    else s!".insn 4, {hex 8 (littleEndian bs)}") ls
 
 open X86_64
 
@@ -69,10 +95,14 @@ def symState : X86.State :=
       s.mem.readW 4092 32 == 8192 && s.unknowns 0 == 8193 &&
       s.cf == some false && s.zf == some false && s.sf == some false && s.of == some false &&
       s.syms "VG_TABLE" == 12288 && s.wr == [⟨4092, 4⟩] &&
+      -- The release loses the frame's word (`lose`): the mask `8193` (bytes
+      -- 0x01, 0x20, 0, 0) replaces bytes 0 and 1 of `8192` by those of `8194`,
+      -- and bytes 2 and 3 keep theirs; it takes two unknowns, and a byte
+      -- outside the frame keeps its value.
       match X86.pop (.free 4) s s with
       | none => false
       | some t => t.gpr .esp == 4096 && t.gpr .eax == 12288 && t.wr.isEmpty &&
-          t.mem.readW 4092 32 == 8192
+          t.mem.readW 4092 32 == 8194 && t.unknowns 0 == 8195 && t.mem 4096 == 0
 
 -- The ModR/M /0 encoding follows Intel's register encoding, not an
 -- accidental order inferred by the assembler from the instruction text.
@@ -115,41 +145,70 @@ def sample : Prog isa :=
 
 /-! `Rust.badCall`: the first call that is not of the code it runs. -/
 
-/-- The printed code of the functions `f`, `g` and `k`, which calls `g`. -/
-def printedFG : String → Option (List Line)
-  | "f" => some (printer.function (.block [.mov .rax (.imm 1)]))
-  | "g" => some (printer.function (.block [.mov .rax (.imm 2)]))
-  | "k" => some (printer.function (.call "g" (.block [.mov .rax (.imm 2)])))
+/-- The code of the functions `f`, `g` and `k`, which calls `g`. -/
+def codeFG : String → Option (Prog isa)
+  | "f" => some (.block [.mov .rax (.imm 1)])
+  | "g" => some (.block [.mov .rax (.imm 2)])
+  | "k" => some (.call "g" (.block [.mov .rax (.imm 2)]))
   | _ => none
 
-/-- `Rust.badCall` on `calls`, whose first call of each function is compared
-with `printedFG` by printing it (as `Rust.printsAs` does unless it is the same
-value as the function's code). -/
-def badCallFG (calls : List (String × Prog isa)) : Option (String × Bool) :=
-  Rust.badCall printer (fun n => (printedFG n).map fun ls =>
-    match calls.find? (·.1 == n) with
-    | some (_, b) => printer.function b == ls
-    | none => true) calls
+/-- The first call of `c` that `Rust.badCall` refuses, of the functions `codeFG`. -/
+def badCallFG (c : Prog isa) : Option (String × Bool) :=
+  match Rust.badCall printer (fun n => (codeFG n).map fun c => ⟨(c, printer.function c), rfl⟩) c {} with
+  | .ok _ => none
+  | .error e => some e
+
+/-- Calls of `calls`, one after the other. -/
+def callsFG (calls : List (String × Prog isa)) : Prog isa :=
+  calls.foldr (fun (n, b) c => .seq (.call n b) c) (.block [])
 
 -- The same code written twice is two values in memory: the later call of
 -- `f` is compared by its printed code.
-#guard badCallFG
+#guard badCallFG (callsFG
   [("f", .block [.mov .rax (.imm 1)]), ("g", .block [.mov .rax (.imm 2)]),
-   ("f", .block [.mov .rax (.imm 1)])] == none
-#guard badCallFG [("h", .block [])] == some ("h", false)
-#guard badCallFG
-  [("f", .block [.mov .rax (.imm 1)]), ("g", .block [.mov .rax (.imm 1)])] == some ("g", true)
+   ("f", .block [.mov .rax (.imm 1)])]) == none
+#guard badCallFG (callsFG [("h", .block [])]) == some ("h", false)
+#guard badCallFG (callsFG
+  [("f", .block [.mov .rax (.imm 1)]), ("g", .block [.mov .rax (.imm 1)])]) == some ("g", true)
 -- A later call of a function whose first call is of its code.
-#guard badCallFG
-  [("f", .block [.mov .rax (.imm 1)]), ("f", .block [.mov .rax (.imm 2)])] == some ("f", true)
--- Calls nested in a call's code are in `Code.calls`: `k` prints as it should,
--- but the code its call of `g` runs does not.
-#guard badCallFG
-  (Code.calls (.seq (.call "k" (.call "g" (.block [.mov .rax (.imm 2)])))
-    (.call "f" (.block [.mov .rax (.imm 1)])) : Prog isa)) == none
-#guard badCallFG
-  (Code.calls (.call "k" (.call "g" (.block [.mov .rax (.imm 3)])) : Prog isa)) ==
+#guard badCallFG (callsFG
+  [("f", .block [.mov .rax (.imm 1)]), ("f", .block [.mov .rax (.imm 2)])]) == some ("f", true)
+-- Calls nested in a call's code: `k` prints as it should,
+-- but the code its call of `g` runs does not, at its first call or a later one.
+#guard badCallFG (.seq (.call "k" (.call "g" (.block [.mov .rax (.imm 2)])))
+  (.call "f" (.block [.mov .rax (.imm 1)]))) == none
+#guard badCallFG (.call "k" (.call "g" (.block [.mov .rax (.imm 3)]))) == some ("g", true)
+#guard badCallFG (.seq (.call "k" (.call "g" (.block [.mov .rax (.imm 2)])))
+  (.call "k" (.call "g" (.block [.mov .rax (.imm 3)])))) == some ("g", true)
+-- Every function that an indirect call may reach, which prints as its instruction alone,
+-- whichever of them it has.
+#guard badCallFG (.icall (.callr .r11) "f" (.block [.mov .rax (.imm 1)])
+  (.icall (.callr .r11) "g" (.block [.mov .rax (.imm 1)]) (.block []))) == some ("g", true)
+#guard badCallFG (.icall (.callr .r11) "f" (.block [.mov .rax (.imm 1)])
+  (.icall (.callr .r11) "h" (.block []) (.block []))) == some ("h", false)
+
+/-- `p`, a function whose code is an indirect call, of `f` or of `c`. -/
+def viaP (n : String) (c : Prog isa) : Prog isa :=
+  .call "p" (.icall (.callr .r11) "f" (.block [.mov .rax (.imm 1)]) (.icall (.callr .r11) n c (.block [])))
+
+/-- `badCallFG`, with `p` a function too. -/
+def badCallP (c : Prog isa) : Option (String × Bool) :=
+  match Rust.badCall printer (fun n =>
+      (if n == "p" then some (.block [.callr .r11]) else codeFG n).map fun c =>
+        ⟨(c, printer.function c), rfl⟩) c {} with
+  | .ok _ => none
+  | .error e => some e
+
+-- A later call of `p` prints as the first, but may reach another function: it is checked too.
+#guard badCallP (.seq (viaP "g" (.block [.mov .rax (.imm 2)])) (viaP "f" (.block [.mov .rax (.imm 1)]))) == none
+#guard badCallP (.seq (viaP "g" (.block [.mov .rax (.imm 2)])) (viaP "h" (.block []))) == some ("h", false)
+#guard badCallP (.seq (viaP "g" (.block [.mov .rax (.imm 2)])) (viaP "g" (.block [.mov .rax (.imm 3)]))) ==
   some ("g", true)
+
+/-! `Rust.newCalls`: the functions called, through every code of each. -/
+
+#guard Rust.callNames (callsFG [("k", .call "g" (.block [])), ("f", .block []), ("g", .block [])]) == ["k", "g", "f"]
+#guard Rust.callNames (.seq (viaP "g" (.block [])) (viaP "h" (.block []))) == ["p", "f", "g", "h"]
 
 /-- Every 32-bit instruction form. -/
 def sample32 : Prog isa := .block [
@@ -483,7 +542,7 @@ def samplePPC : Prog PPC64LE.isa :=
       .storeRev .d .r7 .r3 .r0,
       .mflr .r0, .mtlr .r0]) (.nonzero .w .r5)))
 
-#guard text (PPC64LE.printer.function samplePPC) == [
+#guard textLong (PPC64LE.printer.function samplePPC) == [
   "// cmpldi %cr0, %r5, 0", ".long 0x28250000",
   "beq %cr0, 20f",
   "b 21f",
@@ -569,7 +628,7 @@ def sampleRV : Prog RISCV64.isa :=
       .store .b .t0 .a0 2047, .store .h .t0 .a0 0, .store .w .t1 .a1 4, .store .d .t2 .a2 8,
       .addSp .a0 2047, .lla .s1 "VG_TABLE"]) (.nonzero .t6))))))
 
-#guard text (RISCV64.printer.function sampleRV) == [
+#guard textInsn (RISCV64.printer.function sampleRV) == [
   "beqz a5, 20f",
   "j 21f",
   "20:",
@@ -659,34 +718,28 @@ def sampleRV : Prog RISCV64.isa :=
 #guard Rust.template "bl" [.text ".inst 0x1", .text "20:", .text ".inst 0x2", .text ".inst 0x3",
     .call "vg_f", .text ".inst 0x4"] ==
   "        r\".inst 0x1\n20:\n.inst 0x2,0x3\nbl {vg_f}\n.inst 0x4\",\n"
--- Each run of consecutive encoded `.byte` lines (x86's), `.long` lines
--- (PPC64LE's, whose words are little-endian) and `.insn` lines (RISC-V's, a
--- word or a compressed instruction's parcel, little-endian) is one `.base64`
--- line of their bytes; another `.byte`, `.long` or `.insn` line (`symPush`'s)
--- is none of them, and ends a run.
-#guard Rust.template "call" ((List.range 18).map fun i => .text (X86.byteLine [i])) ==
+-- Each run of consecutive encoded instructions (`Line.code`) is one `.base64`
+-- line of their bytes; a line of text, a `.byte` or `.long` line among them
+-- (`symPush`'s), is none of them, and ends a run.
+#guard Rust.template "call" ((List.range 18).map fun i => .code "" [i]) ==
   "        " ++ Rust.literal ".base64 \"AAECAwQFBgcICQoLDA0ODxAR\"" ++ ",\n"
-#guard Rust.template "call" [.text ".byte 0x81, 199", .text (X86.byteLine [1, 2]),
-    .text (X86.byteLine [3]), .text ".long 1b - 2b", .text (X86.byteLine [3])] ==
+#guard Rust.template "call" [.text ".byte 0x81, 199", .code "" [1, 2],
+    .code "" [3], .text ".long 1b - 2b", .code "" [3]] ==
   "        " ++ Rust.literal ".byte 0x81, 199\n.base64 \"AQID\"\n.long 1b - 2b\n.base64 \"Aw==\"" ++
     ",\n"
-#guard Rust.template "bl" [.text (PPC64LE.longLine 0x28250000), .text (PPC64LE.longLine 0x7c642a14),
+-- PPC64LE's words are little-endian.
+#guard Rust.template "bl" [.code "" (PPC64LE.wordBytes 0x28250000), .code "" (PPC64LE.wordBytes 0x7c642a14),
     .text "beq %cr0, 20f"] ==
   "        " ++ Rust.literal ".base64 \"AAAlKBQqZHw=\"\nbeq %cr0, 20f" ++ ",\n"
-#guard Rust.byteLine? ".byte 0x81, 199" == none
-#guard Rust.byteLine? ".byte 0x81,0xc7" == some [0x81, 0xc7]
-#guard Rust.wordLine? ".long 0x28250000,0x00000001" == some [0, 0, 0x25, 0x28, 1, 0, 0, 0]
-#guard Rust.wordLine? ".long 0x1" == none
-#guard Rust.wordLine? ".long {VG_TABLE} - 2b" == none
-#guard Rust.template "call" [.text (RISCV64.insnLine 0x0125b823), .text (RISCV64.insnLine 0x0085b023),
+#guard PPC64LE.wordBytes 0x28250000 == [0, 0, 0x25, 0x28]
+-- RISC-V's are a word or a compressed instruction's parcel, little-endian.
+#guard Rust.template "call" [.code "" (RISCV64.insnBytes 0x0125b823), .code "" (RISCV64.insnBytes 0x0085b023),
     .text "bnez t3, 20b"] ==
   "        " ++ Rust.literal ".base64 \"I7glAYDh\"\nbnez t3, 20b" ++ ",\n"
-#guard Rust.insnLine? ".insn 4, 0x0125b823" == some [0x23, 0xb8, 0x25, 0x01]
-#guard Rust.insnLine? ".insn 2, 0xe180" == some [0x80, 0xe1]
-#guard Rust.insnLine? ".insn 4, 0xe180" == none
-#guard Rust.insnLine? ".insn 2, 0x0125b823" == none
-#guard Rust.insnLine? ".insn 4, 0x1" == none
-#guard Rust.insnLine? ".insn 4, 0x0125B823" == none
+#guard RISCV64.insnBytes 0x0125b823 == [0x23, 0xb8, 0x25, 0x01]
+#guard RISCV64.insnBytes 0x0085b023 == [0x80, 0xe1]
+-- Each byte is taken modulo 256.
+#guard Rust.base64 [256 + 0xfb, 0xff] == "+/8="
 -- RFC 4648's padding: none for whole groups of 3 bytes, `==` after 1, `=` after 2.
 #guard Rust.base64 [255, 255, 255] == "////"
 #guard Rust.base64 [0xfb] == "+w=="
@@ -711,7 +764,7 @@ def sampleRV : Prog RISCV64.isa :=
    "s3", "s4", "s5", "s6", "s7", "s8", "s9", "s10", "s11", "t3", "t4", "t5", "t6"]
 
 -- Frames: the push and pop of one register, and of a buffer, around a call.
-#guard text (RISCV64.printer.function
+#guard textInsn (RISCV64.printer.function
     (.frame (.push .ra) (.frame (.alloc 2032) (.call "vg_f" (.block [])) (.free 2032))
       (.pop .ra) : Prog RISCV64.isa)) == [
   "// addi sp, sp, -16", ".insn 2, 0x1141", "// sd ra, 8(sp)", ".insn 2, 0xe406", "// addi sp, sp, -2032", ".insn 4, 0x81010113", "<call vg_f>",
@@ -719,10 +772,10 @@ def sampleRV : Prog RISCV64.isa :=
 #guard Rust.line RISCV64.printer.call (.call "vg_f") == "        r\"call {vg_f}\",\n"
 -- A buffer of 2048 bytes or more: two `addi`s each way, of at most 2032
 -- bytes, the largest frame being 4064 bytes; 2047 bytes and less is one.
-#guard text (RISCV64.printer.function
+#guard textInsn (RISCV64.printer.function
     (.frame (.alloc 2048) (.call "vg_f" (.block [])) (.free 2048) : Prog RISCV64.isa)) == [
   "// addi sp, sp, -2032", ".insn 4, 0x81010113", "// addi sp, sp, -16", ".insn 2, 0x1141", "<call vg_f>", "// addi sp, sp, 16", ".insn 2, 0x0141", "// addi sp, sp, 2032", ".insn 4, 0x7f010113", "// ret", ".insn 2, 0x8082"]
-#guard text (RISCV64.printer.function
+#guard textInsn (RISCV64.printer.function
     (.frame (.alloc 4064) (.block [.addSp .a0 0]) (.free 4064) : Prog RISCV64.isa)) == [
   "// addi sp, sp, -2032", ".insn 4, 0x81010113", "// addi sp, sp, -2032", ".insn 4, 0x81010113", "// addi a0, sp, 0", ".insn 2, 0x850a", "// addi sp, sp, 2032", ".insn 4, 0x7f010113", "// addi sp, sp, 2032", ".insn 4, 0x7f010113",
   "// ret", ".insn 2, 0x8082"]
@@ -733,7 +786,7 @@ def sampleRV : Prog RISCV64.isa :=
 -- The address of a static (RISC-V): `lla` of its symbol, a `sym` operand,
 -- which the assembler expands to `auipc` and `addi`. `asm` gives the text
 -- `Rust.line` writes, for reading.
-#guard text (RISCV64.printer.function (.block [.lla .a5 "VG_TABLE"] : Prog RISCV64.isa)) == [
+#guard textInsn (RISCV64.printer.function (.block [.lla .a5 "VG_TABLE"] : Prog RISCV64.isa)) == [
   "lla a5, <sym VG_TABLE>", "// ret", ".insn 2, 0x8082"]
 #guard Rust.line RISCV64.printer.call (.sym "lla a5, " .bare "VG_TABLE") ==
   "        r\"lla a5, {VG_TABLE}\",\n"
@@ -761,7 +814,7 @@ def sampleRV : Prog RISCV64.isa :=
   ([".option push", ".option arch, +m, +c"], [".option pop"])
 #guard ["x86_64", "x86", "aarch64", "arm", "powerpc64le"].all (Rust.funcOptions · == ([], []))
 #guard match Artifacts.Ct.RISCV64.artifacts with
-  | [a] => ((Rust.function a (fun _ => "")).splitOn "naked_asm!(\n").getLast! == "        r#\".option push
+  | [a] => ((Rust.function (.of RISCV64.emitter a) (fun _ => "")).splitOn "naked_asm!(\n").getLast! == "        r#\".option push
 .option arch, +m, +c
 .base64 \"AUeziNVA\"
 beqz a7, 20f
@@ -778,7 +831,7 @@ j 23f
 23:
 .base64 \"fRcTVfcD\"
 21:
-.base64 \"goA=\"
+.base64 \"gUIBJYFFAUaBRgFHgUcBSIFIgUIBQ4FDAU6BTgFPgU+CgA==\"
 .option pop\"#,
     )
 }
@@ -800,18 +853,78 @@ def callSample : Prog X86_64.isa :=
     (.block [.mov .rax (.reg .rdx)]))
 
 #guard printer.function callSample == [
-  .text "// mov rdi, rbx", .text ".byte 0x48,0x89,0xdf", .call "vg_f",
-  .text "// mov rax, rdx", .text ".byte 0x48,0x89,0xd0", .text "// ret", .text ".byte 0xc3"]
+  .code "mov rdi, rbx" [0x48, 0x89, 0xdf], .call "vg_f",
+  .code "mov rax, rdx" [0x48, 0x89, 0xd0], .code "ret" [0xc3]]
 #guard AArch64.printer.function (.call "vg_f" (.block []) : Prog AArch64.isa) ==
   [.call "vg_f", .text "// ret", .text ".inst 0xd65f03c0"]
 #guard X86.printer.function (.call "vg_f" (.block []) : Prog X86.isa) ==
-  [.call "vg_f", .text "// ret", .text ".byte 0xc3"]
+  [.call "vg_f", .code "ret" [0xc3]]
 #guard Arm.printer.function (.call "vg_f" (.block []) : Prog Arm.isa) == [.call "vg_f", .text "bx lr"]
 #guard PPC64LE.printer.function (.call "vg_f" (.block []) : Prog PPC64LE.isa) ==
-  [.call "vg_f", .text "// blr", .text ".long 0x4e800020"]
+  [.call "vg_f", .code "blr" [0x20, 0x00, 0x80, 0x4e]]
 #guard Rust.line PPC64LE.printer.call (.call "vg_f") == "        r\"bl {vg_f}\",\n"
 
 #guard Rust.line printer.call (.call "vg_f") == "        r\"call {vg_f}\",\n"
+
+/-! ## Instructions MCDT affects after `vg_mcdt_enter`
+
+An instruction MCDT affects (`vpmuludq`) needs its dispatcher's
+`vg_mcdt_enter` (`Rust.needsMcdt`) unless it is in the code its own code runs
+only once a call of `vg_mcdt_enter` returned 1 (`Rust.mcdtOpen`): the `else`
+of an `ite` on `e` right after `test eax, eax`, which the printer lays out
+right after the `je` to the `then`, the code run when it returned 0. -/
+
+/-- An instruction MCDT affects. -/
+def mulq : Instr := .vop (.vbin .vpmuludq .l256 .xmm0 .xmm1 .xmm2)
+
+/-- `vg_mcdt_enter`, then `fb` if it returned 0 and `rest` if not. -/
+def guardSample (t : Instr) (c : Cond) (fb rest : Prog X86_64.isa) : Prog X86_64.isa :=
+  .seq (.call "vg_mcdt_enter" (.block [])) (.seq (.block [t]) (.ite c fb rest))
+
+def testEax : Instr := .alu32 .test .rax (.reg .rax)
+
+#guard !Rust.mcdtOpen printer (guardSample testEax .e (.block []) (.block [mulq]))
+-- What follows the `ite`, or the code run when it returned 0, may run without it.
+#guard Rust.mcdtOpen printer (.seq (guardSample testEax .e (.block []) (.block [mulq])) (.block [mulq]))
+#guard Rust.mcdtOpen printer (guardSample testEax .e (.block [mulq]) (.block []))
+-- Only `test eax, eax` and `je` test its result; only a call of `vg_mcdt_enter` enters.
+#guard Rust.mcdtOpen printer (guardSample testEax .ne (.block []) (.block [mulq]))
+#guard Rust.mcdtOpen printer (guardSample (.alu .test .rax (.reg .rax)) .e (.block []) (.block [mulq]))
+#guard Rust.mcdtOpen printer (guardSample (.alu32 .test .rdx (.reg .rdx)) .e (.block []) (.block [mulq]))
+#guard Rust.mcdtOpen printer
+  (.seq (.call "vg_f" (.block [])) (.seq (.block [testEax]) (.ite .e (.block []) (.block [mulq]))))
+-- Elsewhere, and in the functions it calls, as `Code.all` finds it.
+#guard Rust.mcdtOpen printer (.call "vg_g" (.block [mulq]))
+#guard !Rust.mcdtOpen printer (guardSample testEax .e (.block []) (.call "vg_g" (.block [mulq])))
+#guard !Rust.mcdtOpen printer callSample
+-- `Rust.mcdtOwn`: the same, with the functions called by name.
+#guard Rust.mcdtOwn printer (guardSample testEax .e (.block []) (.block [mulq])) == (false, ["vg_mcdt_enter"])
+#guard Rust.mcdtOwn printer (.seq (guardSample testEax .e (.block []) (.block [mulq])) (.block [mulq])) ==
+  (true, ["vg_mcdt_enter"])
+#guard (Rust.mcdtOwn printer (guardSample testEax .ne (.block []) (.block [mulq]))).1
+#guard Rust.mcdtOwn printer (guardSample testEax .ne (.call "vg_f" (.block [])) (.call "vg_g" (.block [mulq]))) ==
+  (false, ["vg_mcdt_enter", "vg_f", "vg_g"])
+#guard Rust.mcdtOwn printer (guardSample testEax .e (.call "vg_f" (.block [])) (.call "vg_g" (.block [mulq]))) ==
+  (false, ["vg_mcdt_enter", "vg_f"])
+#guard Rust.mcdtOwn printer (.frame (.push [.rbx]) (.icall (.callr .r11) "vg_f" (.block [mulq])
+  (.icall (.callr .r11) "vg_g" (.block []) (.block []))) (.pop .rbx 8)) == (false, ["vg_f", "vg_g"])
+/-- `f` calls `g`, which calls `h`, which has an instruction that counts; `k` calls a
+function there is not. -/
+def ownSample : Rust.ByName (Bool × List String) :=
+  ((((({} : Rust.ByName (Bool × List String)).insert "f" (false, ["g"])).insert "g" (false, ["h", "e"])).insert
+    "h" (true, [])).insert "e" (false, [])).insert "k" (false, ["l"])
+#guard (Rust.mcdtReach ownSample 9 ["f"] {}).1 && (Rust.mcdtReach ownSample 9 ["k"] {}).1
+#guard !(Rust.mcdtReach ownSample 9 ["e"] {}).1 && (Rust.mcdtReach ownSample 9 ["e", "g"] {}).1
+-- What it keeps of those gone through.
+#guard (Rust.mcdtReach ownSample 9 ["f"] {}).2.find? "g" == some true &&
+  (Rust.mcdtReach ownSample 9 ["f"] {}).2.find? "e" == some false
+-- Too deep: as if it had one.
+#guard !(Rust.mcdtReach ownSample 2 ["e"] {}).1 && (Rust.mcdtReach ownSample 1 ["e"] {}).1
+-- The printer lays out the code run when it returned 1 right after the `je`.
+#guard text (printer.function (guardSample testEax .e (.block [.mov .rax (.reg .rdx)]) (.block [mulq]))) == [
+  "<call vg_mcdt_enter>", "// test eax, eax", ".byte 0x85,0xc0", "je 20f",
+  "// vpmuludq ymm0, ymm1, ymm2", ".byte 0xc5,0xf5,0xf4,0xc2", "jmp 21f", "20:",
+  "// mov rax, rdx", ".byte 0x48,0x89,0xd0", "21:", "// ret", ".byte 0xc3"]
 #guard Rust.line Arm.printer.call (.call "vg_f") == "        r\"bl {vg_f}\",\n"
 #guard Rust.line printer.call (.text "mov rax, QWORD PTR [rdi]") ==
   "        r\"mov rax, QWORD PTR [rdi]\",\n"
@@ -870,7 +983,7 @@ instructions. -/
 -- whose address it leaves in the link register, `mflr` of it, then `addis`
 -- and `addi` of the high and low halves of the static's distance from label
 -- 2. `asm` gives the text `Rust.line` writes, for reading.
-#guard text (PPC64LE.printer.function (.block [.adrSym .r4 "VG_TABLE"] : Prog PPC64LE.isa)) == [
+#guard textLong (PPC64LE.printer.function (.block [.adrSym .r4 "VG_TABLE"] : Prog PPC64LE.isa)) == [
   "bcl 20, 31, 2f", "2:", "mflr %r4", "addis %r4, %r4, (<ppcha VG_TABLE>",
   "addi %r4, %r4, (<ppclo VG_TABLE>", "// blr", ".long 0x4e800020"]
 #guard Rust.line PPC64LE.printer.call (.sym "addis %r4, %r4, (" .ppcHa "VG_TABLE") ==
@@ -915,7 +1028,7 @@ instructions. -/
 
 -- Save the link register around a call (PPC64LE): through `r0`, in a frame
 -- with a back chain.
-#guard text (PPC64LE.printer.function
+#guard textLong (PPC64LE.printer.function
     (.seq (.block [.mflr .r0])
       (.seq (.frame (.push .r0) (.call "vg_f" (.block [])) (.pop .r0)) (.block [.mtlr .r0])) :
       Prog PPC64LE.isa)) == [
@@ -923,7 +1036,7 @@ instructions. -/
   "// addi %r1, %r1, 48", ".long 0x38210030", "// mtlr %r0", ".long 0x7c0803a6", "// blr", ".long 0x4e800020"]
 
 -- A buffer on the stack (PPC64LE): a frame of 112 bytes, the buffer above its 32-byte header.
-#guard text (PPC64LE.printer.function
+#guard textLong (PPC64LE.printer.function
     (.frame (.alloc 112) (.block [.addSp .r6 32]) (.free 112) : Prog PPC64LE.isa)) == [
   "// stdu %r1, -112(%r1)", ".long 0xf821ff91", "// addi %r6, %r1, 32", ".long 0x38c10020", "// addi %r1, %r1, 112", ".long 0x38210070", "// blr", ".long 0x4e800020"]
 
@@ -931,7 +1044,7 @@ instructions. -/
 
 /-! ## CPU features
 
-`Code.requires` collects what every instruction needs, through calls and
+`Code.requiresDedup` collects what every instruction needs, through calls and
 frames; `Rust.featureCheck` accepts exactly the declared set; the emitted
 `# Safety` item and constant list it. -/
 
@@ -947,12 +1060,30 @@ def featureSample : Code String Unit :=
     (.ite () (.loop (.call "vg_f" (.block ["pshufb"])) ())
       (.frame "push" (.block ["pblendw"]) "pop"))
 
-#guard featureSample.requires req == ["sha", "sha", "ssse3", "sse4.1"]
-#guard (Code.block ["mov", "add"] : Code String Unit).requires req == []
+/-! `Code.requiresDedup` goes through the code of each call once
+(`Code.distinctCalls`): each feature once.
+`Rust.ownFirstSome?` goes through the code but for its calls. -/
 
-/-! `Code.requiresDedup` and `Rust.firstSome?` go through the code of each
-call once (`Code.distinctCalls`): the features of `Code.requires` each once,
-and an instruction through any call. -/
+/-- An ISA of instructions named by strings, which require `req`: what the
+functions that go through the code of calls once need of an ISA (its
+`requires`, `ptrEq` and `ptrEqDec`). -/
+abbrev strIsa : ISA where
+  State := Unit
+  Instr := String
+  Cond := Unit
+  exec _ _ := none
+  addrs _ _ := []
+  eval _ _ := none
+  call _ := none
+  callAddrs _ := []
+  ret _ _ := none
+  retAddrs _ := []
+  writesSp _ := false
+  push _ _ := none
+  pop _ _ _ := none
+  requires := req
+  ptrEq := withPtrEq
+  ptrEqDec := withPtrEqDecEq withPtrEq (fun _ _ _ _ => rfl)
 
 /-- Calls of `f` and `g` nested in a call of `k`, and a later call of `f`
 whose code requires something else. -/
@@ -960,22 +1091,35 @@ def nestedSample : Code String Unit :=
   .seq (.call "k" (.seq (.block ["mov"]) (.call "g" (.call "f" (.block ["sha256rnds2"])))))
     (.seq (.call "f" (.block ["sha256rnds2"])) (.call "f" (.block ["pblendw"])))
 
-#guard Code.requiresDedup req featureSample == ["sha", "sse4.1", "ssse3"]
-#guard Code.requiresDedup req nestedSample == ["sha", "sse4.1"]
-#guard Code.requiresDedup req (Code.block ["mov", "add"] : Code String Unit) == []
+#guard Code.requiresDedup strIsa featureSample (fun _ => false) == ["sha", "sse4.1", "ssse3"]
+#guard Code.requiresDedup strIsa nestedSample (fun _ => false) == ["sha", "sse4.1"]
+#guard Code.requiresDedup strIsa (Code.block ["mov", "add"] : Code String Unit) (fun _ => false) == []
+
+/-- An indirect call that may reach `t`, whose code requires `sha`, or `u`,
+whose code calls a function requiring `sse4.1`. -/
+def icallSample : Code String Unit :=
+  .seq (.block ["mov"])
+    (.icall "call" "t" (.block ["sha256rnds2"])
+      (.icall "call" "u" (.call "v" (.block ["pblendw"])) (.block [])))
+
+-- A candidate of an indirect call counts as a call does (`Abi.withFns`), but
+-- for one of a table of functions (`Abi.withTables`), whose features the
+-- caller leaves out, with those of the functions it calls.
+#guard Code.requiresDedup strIsa icallSample (fun _ => false) == ["sha", "sse4.1"]
+#guard Code.requiresDedup strIsa icallSample (· == "t") == ["sse4.1"]
+#guard Code.requiresDedup strIsa icallSample (fun n => n == "t" || n == "u") == []
 -- The value of each call's code, but for a later call of a function whose
 -- value is the first call's.
-#guard Code.distinctCalls (Code.ownRequires req []) nestedSample.calls ==
+#guard Code.distinctCalls (M := strIsa) (Code.ownRequires req []) nestedSample.calls ==
   [[], [], ["sha"], ["sse4.1"]]
 
 /-- The instruction `bad`, which a printer cannot encode. -/
 def badInstr (i : String) : Option String := if i == "bad" then some i else none
 
-#guard Rust.firstSome? badInstr nestedSample == none
-#guard Rust.firstSome? badInstr (.seq nestedSample (.call "f" (.block ["bad"]))) == some "bad"
-#guard Rust.firstSome? badInstr
-  (.call "k" (.call "g" (.call "f" (.block ["bad"]))) : Code String Unit) == some "bad"
-#guard Rust.firstSome? badInstr (.frame "bad" (.block []) "pop" : Code String Unit) == some "bad"
+#guard Rust.ownFirstSome? badInstr nestedSample == none
+#guard Rust.ownFirstSome? badInstr (.seq nestedSample (.block ["mov", "bad"])) == some "bad"
+#guard Rust.ownFirstSome? badInstr (.seq nestedSample (.call "f" (.block ["bad"]))) == none
+#guard Rust.ownFirstSome? badInstr (.frame "bad" (.block []) "pop" : Code String Unit) == some "bad"
 
 /-- The error of a failed check. -/
 def err : Except String Unit → Option String
@@ -985,7 +1129,7 @@ def err : Except String Unit → Option String
 def safeDoc : String := "Does things.\n\n# Safety\n\n* `p` must be valid."
 
 #guard (Rust.featureCheck "f" "No safety requirements." [] []).toBool
-#guard (Rust.featureCheck "f" safeDoc (featureSample.requires req) ["sse4.1", "sha", "ssse3"]).toBool
+#guard (Rust.featureCheck "f" safeDoc ["sha", "sha", "ssse3", "sse4.1"] ["sse4.1", "sha", "ssse3"]).toBool
 -- An undeclared feature, an unneeded one, and a doc the item can't be added to.
 #guard err (Rust.featureCheck "f" safeDoc ["sha", "ssse3"] ["sha"]) ==
   some "f requires the CPU feature ssse3 but does not declare it"

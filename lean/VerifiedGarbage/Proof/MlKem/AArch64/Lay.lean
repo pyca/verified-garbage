@@ -25,8 +25,7 @@ contracts (`KemLay.Calls`). `lom` does the arithmetic on the offsets.
 
 Their code runs steps one after another (`seqs`): `WPs` and `RelCTs` are
 the weakest precondition and the constant time of such a list of steps, by
-an invariant over the steps of a loop (`WPs.range`, `WPs.matrix`, `RelCTs.matrix`)
-or over the products of a sum (`WPs.dot`).
+an invariant over the steps of a loop (`WPs.range`, `RelCTs.range`).
 -/
 
 @[expose] public section
@@ -118,11 +117,6 @@ theorem mul_succ_le {a i k : Nat} (hi : i < k) : a * i + a ≤ a * k := by
 theorem map_range_ne_nil {α : Type} {k : Nat} (hk : 1 ≤ k) (f : Nat → α) : (List.range k).map f ≠ [] := by
   simp only [ne_eq, List.map_eq_nil_iff, List.range_eq_nil]; omega_using [hk]
 
-theorem matrix_ne_nil {α : Type} {k : Nat} (hk : 1 ≤ k) {g : Nat → Nat → α} :
-    ((List.range k).flatMap fun i => (List.range k).map (g i)) ≠ [] := by
-  intro h
-  exact map_range_ne_nil hk (g 0) (List.flatMap_eq_nil_iff.mp h 0 (List.mem_range.mpr (by omega_using [hk])))
-
 /-- `WP` of running `cs` one after another. -/
 def WPs : List (Prog isa) → State → (State → Prop) → Prop
   | [], s, Q => Q s
@@ -161,38 +155,6 @@ theorem range {f : Nat → Prog isa} {I : Nat → State → Prop} :
     exact append (mono (range (fun i hi => hf i (by omega_using [hi])) h) fun s' h' =>
       single (hf n (by omega_using []) s' h'))
 
-/-- The `k²` steps of a matrix, row by row, by an invariant `I e` before
-entry `e = k i + j`. -/
-theorem matrix {k : Nat} {g : Nat → Nat → Prog isa} {I : Nat → State → Prop}
-    (hg : ∀ i < k, ∀ j < k, ∀ s, I (k * i + j) s → WP isa (g i j) s (I (k * i + j + 1))) :
-    ∀ {n : Nat}, n ≤ k → ∀ {s : State}, I 0 s →
-      WPs ((List.range n).flatMap fun i => (List.range k).map (g i)) s (I (k * n))
-  | 0, _, _, h => h
-  | n + 1, hn, _, h => by
-    rw [List.range_succ, List.flatMap_append, List.flatMap_singleton]
-    refine append (mono (matrix hg (by omega_using [hn]) h) fun s' h' => ?_)
-    have r := range (f := g n) (I := fun j => I (k * n + j)) (n := k)
-      (fun j hj s hs => hg n (by omega_using [hn]) j hj s hs) h'
-    rwa [← Nat.mul_succ] at r
-
-/-- A sum of `n` products into `tp` (`T`), each other one first into `pp`
-(`Q`), by an invariant `E`: after the steps, `tp` holds `v 0 + ⋯ + v (n - 1)`. -/
-theorem dot {tp pp : Nat} {term : Nat → Nat → List (Prog isa)} {E : State → Prop}
-    {T Q : State → Spec.MlKem.Poly → Prop} {v : Nat → Spec.MlKem.Poly} {N : Nat}
-    (h0 : ∀ s, E s → WPs (term 0 tp) s fun s' => E s' ∧ T s' (v 0))
-    (hj : ∀ j, 1 ≤ j → j < N → ∀ s a, E s → T s a →
-      WPs (term j pp) s fun s' => E s' ∧ T s' a ∧ Q s' (v j))
-    (hadd : ∀ s a b, E s → T s a → Q s b →
-      WP isa (addAt tp pp) s fun s' => E s' ∧ T s' (Spec.MlKem.add a b)) :
-    ∀ {n : Nat}, 1 ≤ n → n ≤ N → ∀ {s : State}, E s →
-      WPs (dotSteps tp pp term n) s fun s' => E s' ∧ T s' (KPke.foldK Spec.MlKem.add Spec.MlKem.zero v n)
-  | 1, _, _, _, h => h0 _ h
-  | n + 2, _, hn, _, h => by
-    rw [dotSteps, List.append_assoc]
-    refine append (mono (dot h0 hj hadd (n := n + 1) (by omega_using []) (by omega_using [hn]) h) fun s₁ ⟨e₁, t₁⟩ => ?_)
-    refine append (mono (hj (n + 1) (by omega_using []) (by omega_using [hn]) s₁ _ e₁ t₁) fun s₂ ⟨e₂, t₂, q₂⟩ => ?_)
-    exact single (hadd s₂ _ _ e₂ t₂ q₂)
-
 end WPs
 
 /-- Constant time of running `cs` one after another, through relations
@@ -220,16 +182,6 @@ theorem range {f : Nat → Prog isa} {I : Nat → State → State → Prop} :
   | n + 1, hf => by
     rw [List.range_succ, List.map_append]
     exact append (range fun i hi => hf i (by omega_using [hi])) ⟨_, hf n (by omega_using []), fun _ _ h => h⟩
-
-theorem matrix {k : Nat} {g : Nat → Nat → Prog isa} {I : Nat → State → State → Prop}
-    (hg : ∀ i < k, ∀ j < k, RelCT isa (I (k * i + j)) (g i j) (I (k * i + j + 1))) :
-    ∀ {n : Nat}, n ≤ k → RelCTs (I 0) ((List.range n).flatMap fun i => (List.range k).map (g i)) (I (k * n))
-  | 0, _ => fun _ _ h => h
-  | n + 1, hn => by
-    rw [List.range_succ, List.flatMap_append, List.flatMap_singleton]
-    have r := range (f := g n) (I := fun j => I (k * n + j)) (n := k) fun j hj => hg n (by omega_using [hn]) j hj
-    rw [Nat.add_zero, ← Nat.mul_succ] at r
-    exact append (matrix hg (by omega_using [hn])) r
 
 end RelCTs
 

@@ -23,8 +23,8 @@ meta import VerifiedGarbage.Proof.Framework.TaintBatch
 The generic proof (`Digest.lean`) at each hash function's streaming functions
 (`Proof/Pbkdf2/Stream/Arm/Hashes.lean`, `Sha256.lean`, `Sha224.lean`): the
 taint checks are evaluated by the kernel, states satisfy the contracts
-(`digestSat`, `digestFrameSat`), and the function runs in a frame of its own,
-which it wipes (`framed`).
+(`digestSat`, `digestFrameSat`), and the function runs in a frame of its own
+(`framed`), which the cleanup zeroes.
 -/
 
 @[expose] public section

@@ -63,12 +63,12 @@ def tailKey : List Instr := [.addi .t2 .s7 64]
 `save`, by a call of `vg_aes_ctr` on it, and its first `u` bytes XORed into
 the data. -/
 def finalTail : Prog isa :=
-  .seq (.block tailArgs) (.seq (.call "vg_aes_ctr" crypt)
+  .seq (.block tailArgs) (.seq (.call "vg_aes_ctr_core" crypt)
     (.seq (.block tailKey) (.loop (.block xorStep) (.nonzero .s3))))
 
 /-- `vg_aes_ctr_final`, calling `vg_aes_ctr`. -/
 def cryptFinal : Prog isa :=
-  .seq (.block finalSetup) (.seq (.call "vg_aes_ctr" crypt)
+  .seq (.block finalSetup) (.seq (.call "vg_aes_ctr_core" crypt)
     (.seq (.ite (.zero .s3) (.block []) finalTail) (.block finalRestore)))
 
 end VG.Impl.AesCtr.RISCV64

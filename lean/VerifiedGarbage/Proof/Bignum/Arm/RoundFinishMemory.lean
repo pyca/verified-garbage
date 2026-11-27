@@ -5,6 +5,136 @@ public import VerifiedGarbage.Proof.Mont.Words32
 import VerifiedGarbage.Proof.X25519.Arm.Instr
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Impl.Bignum.Arm.Round
+public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
+import VerifiedGarbage.Proof.Framework.Block
+
+/-! ### `Bignum.Arm.RoundFinish`, which the modules that import this one used -/
+
+section
+
+/-! ### `Bignum.Arm.RoundFinishSteps`, which this module and modules that import it used -/
+
+section
+
+/-! # Clear the high word and advance the Montgomery round's temporary state -/
+
+@[expose] public section
+
+namespace VG.Proof.Bignum.Arm
+open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
+open VG.Proof.X25519.Arm (Rest wp_ldr wp_str wp_mov wp_dp wp_subs op2_imm dpVal)
+
+theorem clearTop_ok (s : State) {base : BitVec 32} {size top : Nat}
+    (ws : Workspace s base size) (fit : top + 4 ≤ size)
+    (ptr : s.gpr .r0 = base + BitVec.ofNat 32 top) :
+    WP isa (.block clearTop) s fun t =>
+      t.mem = s.mem.writeW (off (State.addr base) top) (0 : BitVec 32) ∧
+      t.gpr .r0 = base + BitVec.ofNat 32 (top + 12) ∧ Rest [.r0, .r3] s t := by
+  unfold clearTop
+  refine wp_mov (op2_imm (by decide)) fun u hu => ?_
+  have wu := ws.congr hu.wr
+  have pu := (hu.other .r0 (by decide)).trans ptr
+  refine wp_str (a := off (State.addr base) top) (by decide) (wu.ea pu (by omega_using [fit]))
+    (wu.write fit) fun v hv => ?_
+  refine wp_dp (op2_imm (by decide)) fun t ht => WP.block_nil ?_
+  refine ⟨?_, ?_, ?_⟩
+  · rw [ht.mem, hv.mem, hu.mem, hu.gpr]
+  · rw [ht.gpr, dpVal, hv.gpr, pu]
+    change base + BitVec.ofNat 32 top + BitVec.ofNat 32 12 = _
+    rw [Offset.add_add]
+  · exact (hu.rest (by simp)).trans ((hv.rest _).trans (ht.rest (by simp)))
+
+theorem advanceOperand_ok (s : State) {base : BitVec 32} {size tmp : Nat}
+    (ws : Workspace s base size) (fit : tmp + 20 ≤ size)
+    (ptr : s.gpr .r0 = base + BitVec.ofNat 32 tmp) :
+    WP isa (.block advanceOperand) s fun t =>
+      t.mem = s.mem.writeW (off (State.addr base) (tmp + 16))
+        (s.mem.readW (off (State.addr base) (tmp + 16)) 32 + 4) ∧ Rest [.r4] s t := by
+  unfold advanceOperand
+  refine wp_ldr (by decide) (ws.ea ptr (by omega_using [fit])) (ws.read fit) fun u hu => ?_
+  refine wp_dp (op2_imm (by decide)) fun v hv => ?_
+  have wv := (ws.congr hu.wr).congr hv.wr
+  have pv := (hv.other .r0 (by decide)).trans ((hu.other .r0 (by decide)).trans ptr)
+  refine wp_str (by decide) (wv.ea pv (by omega_using [fit])) (wv.write fit) fun t ht => WP.block_nil ?_
+  refine ⟨?_, ?_⟩
+  · rw [ht.mem, hv.mem, hu.mem, hv.gpr, dpVal, hu.gpr]
+  · exact (hu.rest (by simp)).trans ((hv.rest (by simp)).trans (ht.rest _))
+
+theorem decrementRounds_ok (s : State) {base : BitVec 32} {size tmp : Nat}
+    (ws : Workspace s base size) (fit : tmp + 24 ≤ size)
+    (ptr : s.gpr .r0 = base + BitVec.ofNat 32 tmp) :
+    WP isa (.block decrementRounds) s fun t =>
+      t.mem = s.mem.writeW (off (State.addr base) (tmp + 20))
+        (s.mem.readW (off (State.addr base) (tmp + 20)) 32 - 1) ∧
+      t.z = (s.mem.readW (off (State.addr base) (tmp + 20)) 32 - 1 == 0) ∧ Rest [.lr] s t := by
+  unfold decrementRounds
+  refine wp_ldr (by decide) (ws.ea ptr (by omega_using [fit])) (ws.read fit) fun u hu => ?_
+  refine wp_subs (op2_imm (by decide)) fun v hv hz => ?_
+  have wv := (ws.congr hu.wr).congr hv.wr
+  have pv := (hv.other .r0 (by decide)).trans ((hu.other .r0 (by decide)).trans ptr)
+  refine wp_str_z (by decide) (wv.ea pv (by omega_using [fit])) (wv.write fit) fun t ht htz => WP.block_nil ?_
+  refine ⟨?_, ?_, ?_⟩
+  · rw [ht.mem, hv.mem, hu.mem, hv.gpr, hu.gpr]
+  · rw [htz, hz, hu.gpr]
+  · exact (hu.rest (by simp)).trans ((hv.rest (by simp)).trans (ht.rest _))
+
+end VG.Proof.Bignum.Arm
+
+end
+
+end
+
+/-! # Exact stores and public loop condition at the end of a Montgomery round -/
+
+@[expose] public section
+
+namespace VG.Proof.Bignum.Arm
+open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
+open VG.Proof.X25519.Arm (Rest)
+
+theorem roundFinish_ok (s : State) {base : BitVec 32} {size top tmp : Nat}
+    (ws : Workspace s base size) (fit : tmp + 24 ≤ size) (htmp : tmp = top + 12)
+    (ptr : s.gpr .r0 = base + BitVec.ofNat 32 top) :
+    WP isa (.block roundFinish) s fun t =>
+      t.mem = ((s.mem.writeW (off (State.addr base) top) (0 : BitVec 32)).writeW
+        (off (State.addr base) (tmp + 16)) (s.mem.readW (off (State.addr base) (tmp + 16)) 32 + 4)).writeW
+        (off (State.addr base) (tmp + 20)) (s.mem.readW (off (State.addr base) (tmp + 20)) 32 - 1) ∧
+      t.gpr .r0 = base + BitVec.ofNat 32 tmp ∧
+      t.z = (s.mem.readW (off (State.addr base) (tmp + 20)) 32 - 1 == 0) ∧
+      Rest [.r0, .r3, .r4, .lr] s t := by
+  have hn := ws.nowrap
+  rw [roundFinish, List.append_assoc]
+  apply WP.block_append_iff.mpr
+  refine WP.mono (clearTop_ok s ws (by omega_using [fit, htmp]) ptr) ?_
+  rintro u ⟨mem1, ptr1, keep1⟩
+  rw [← htmp] at ptr1
+  have wr1 := writeW32_outside s.mem (State.addr base) (d := top) (0 : BitVec 32) (by omega)
+  rw [← mem1] at wr1
+  have oldPtr := outside_read32 wr1 (d := tmp + 16) (by omega_using [htmp]) (by omega_using [fit, hn])
+  have oldCount := outside_read32 wr1 (d := tmp + 20) (by omega_using [htmp]) (by omega_using [fit, hn])
+  apply WP.block_append_iff.mpr
+  refine WP.mono (advanceOperand_ok u (ws.congr keep1.wr) (by omega_using [fit]) ptr1) ?_
+  rintro v ⟨mem2, keep2⟩
+  have wr2 := writeW32_outside u.mem (State.addr base) (d := tmp + 16)
+    (u.mem.readW (off (State.addr base) (tmp + 16)) 32 + 4) (by omega_using [fit, hn])
+  rw [← mem2] at wr2
+  have oldCount2 := (outside_read32 wr2 (d := tmp + 20) (by omega_using []) (by omega_using [fit, hn])).trans oldCount
+  refine WP.mono (decrementRounds_ok v ((ws.congr keep1.wr).congr keep2.wr) fit
+    ((keep2.gpr .r0 (by simp)).trans ptr1)) ?_
+  rintro t ⟨mem3, zero, keep3⟩
+  refine ⟨?_, ?_, ?_, ?_⟩
+  · rw [mem3, oldCount2, mem2, oldPtr, mem1]
+  · rw [keep3.gpr .r0 (by simp), keep2.gpr .r0 (by simp), ptr1]
+  · rw [zero, oldCount2]
+  · exact (keep1.mono (by simp_all)).trans
+      ((keep2.mono (by simp_all)).trans (keep3.mono (by simp_all)))
+
+end VG.Proof.Bignum.Arm
+
+end
+
+end
 
 /-! # The three finishing stores update only the high word and loop state -/
 

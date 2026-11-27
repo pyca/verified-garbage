@@ -41,6 +41,8 @@ set_option linter.unusedSimpArgs false
 
 namespace VG.Proof.AesGcm.X86
 
+variable {N B : Nat}
+
 variable {vg : GcmImpl}
 
 open VG VG.X86 VG.X86.RegUpd VG.Impl.AesGcm.X86 VG.WriteBytes
@@ -49,21 +51,22 @@ open VG.Spec.Gcm (Block blockAt blocksAt ghashFrom ghash blocks zeros padLen)
 open VG.Proof.Gcm (Absorbed lensBlock)
 
 /-- The regions `flush` and `lens` write. -/
-abbrev tFrame (St W SP : BitVec 32) (K yo : Nat) : List Region :=
-  [⟨w64 St + BitVec.ofNat 64 yo, 16⟩, ⟨w64 W + BitVec.ofNat 64 96, 16⟩, wsR W, below SP K]
+abbrev tFrame (N : Nat) (St W SP : BitVec 32) (K yo : Nat) : List Region :=
+  [⟨w64 St + BitVec.ofNat 64 yo, 16⟩, ⟨w64 W + BitVec.ofNat 64 96, 16⟩, wsR N W, below SP K]
 
 theorem gh_tFrame {St W SP : BitVec 32} {K yo : Nat} {m m' : Mem}
-    (h : Frame [⟨w64 St + BitVec.ofNat 64 yo, 16⟩, ⟨w64 W + BitVec.ofNat 64 512, 256⟩, below SP K] m m') :
-    Frame (tFrame St W SP K yo) m m' :=
+    (h : Frame [⟨w64 St + BitVec.ofNat 64 yo, 16⟩, ⟨w64 W + BitVec.ofNat 64 512, 256⟩, below SP K] m m')
+    (hN : 768 ≤ N := by wbig) :
+    Frame (tFrame N St W SP K yo) m m' :=
   h.sub fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · exact ⟨_, List.mem_cons_self .., fun _ h => h⟩
-    · exact ⟨wsR W, by simp, Offset.sub _ (by decide) (by decide)⟩
+    · exact ⟨wsR N W, by simp, Lay.wsIn (by decide) (by decide)⟩
     · exact ⟨below SP K, by simp, fun _ h => h⟩
 
 theorem t_tFrame {St W SP : BitVec 32} {K yo : Nat} {m m' : Mem}
-    (h : Frame [⟨w64 W + BitVec.ofNat 64 96, 16⟩] m m') : Frame (tFrame St W SP K yo) m m' :=
+    (h : Frame [⟨w64 W + BitVec.ofNat 64 96, 16⟩] m m') : Frame (tFrame N St W SP K yo) m m' :=
   h.mono fun r hr => by simp only [List.mem_singleton] at hr; subst hr; simp
 
 /-- The bytes at `p` after writing `xs` there: `xs`, then what was there. -/
@@ -75,7 +78,7 @@ theorem bytesAt_writeBytes_prefix (m : Mem) (p : Addr) (xs : List Byte) {n : Nat
   congr 1
   simp only [bytesAt]
   refine List.map_congr_left fun i hi => ?_
-  have hi := List.mem_range.mp hi
+  obtain hi := List.mem_range.mp hi
   simp only [writeBytes, BitVec.add_assoc, Offset.add_sub_cancel_left, BitVec.toNat_add, BitVec.toNat_ofNat]
   rw [Nat.mod_eq_of_lt (a := xs.length) (by omega_arith), Nat.mod_eq_of_lt (a := i) (by omega_arith),
     Nat.mod_eq_of_lt (by omega_arith)]
@@ -92,46 +95,46 @@ theorem store4_eq (m : Mem) (W : BitVec 32) (o : Nat) (a b c d : BitVec 32) :
 /-! ## `flush` -/
 
 /-- After `flush yo`: GHASH has absorbed the padding too, from `m₀`. -/
-structure FlOut (Ctx St W SP : BitVec 32) (K yo b : Nat) (m₀ : Mem) (s : State) : Prop where
-  env : Env Ctx St W SP s
+structure FlOut (N : Nat) (Ctx St W SP : BitVec 32) (K yo b : Nat) (m₀ : Mem) (s : State) : Prop where
+  env : Env N Ctx St W SP s
   abs : ∀ x : List Byte, x.length % 16 = b →
     Absorbed m₀ (w64 St + BitVec.ofNat 64 yo) (w64 St + BitVec.ofNat 64 32) (Hk m₀ Ctx) x →
     Absorbed s.mem (w64 St + BitVec.ofNat 64 yo) (w64 St + BitVec.ofNat 64 32) (Hk m₀ Ctx)
       (x ++ zeros (padLen x.length))
-  frame : Frame (tFrame St W SP K yo) m₀ s.mem
+  frame : Frame (tFrame N St W SP K yo) m₀ s.mem
 
 section
-variable {Ctx St W SP : BitVec 32} {K : Nat} (L : Lay Ctx St W SP K) {yo : Nat}
+variable {Ctx St W SP : BitVec 32} {K : Nat} (L : Lay N Ctx St W SP K) {yo : Nat}
 include L
 
 theorem ctx_tFrame (hyo : yo = 0 ∨ yo = 16) :
-    ∀ r ∈ tFrame St W SP K yo, (⟨w64 Ctx + BitVec.ofNat 64 240, 16⟩ : Region).Disjoint r := by
+    ∀ r ∈ tFrame N St W SP K yo, (⟨w64 Ctx + BitVec.ofNat 64 240, 16⟩ : Region).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
   · exact L.ctx_st (by decide) (by omega_arith)
   · exact L.ctx_w (by decide) (by decide)
-  · exact L.ctx_w (by decide) (by decide)
+  · exact L.ctx_ws (by decide)
   · exact (L.stk_ctx (by decide)).symm
 
 theorem slot_tFrame (hyo : yo = 0 ∨ yo = 16) {o : Nat} (h₁ : 112 ≤ o) (h₂ : o + 4 ≤ 240) :
-    ∀ r ∈ tFrame St W SP K yo, (⟨w64 W + BitVec.ofNat 64 o, 4⟩ : Region).Disjoint r := by
+    ∀ r ∈ tFrame N St W SP K yo, (⟨w64 W + BitVec.ofNat 64 o, 4⟩ : Region).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
   · exact (L.st_w (by omega_arith) (.inr ⟨by omega_arith, by omega_arith⟩)).symm
   · exact Lay.w_w (.inr (by omega_arith)) (by omega_arith) (by decide)
-  · exact Lay.w_w (.inl (by omega_arith)) (by omega_arith) (by decide)
+  · exact Lay.w_ws (by omega_arith)
   · exact (L.stk_w (by omega_arith)).symm
 
-theorem env_tFrame (hyo : yo = 0 ∨ yo = 16) {s s' : State} (he : Env Ctx St W SP s)
-    (hf : Frame (tFrame St W SP K yo) s.mem s'.mem)
+theorem env_tFrame (hyo : yo = 0 ∨ yo = 16) {s s' : State} (he : Env N Ctx St W SP s)
+    (hf : Frame (tFrame N St W SP K yo) s.mem s'.mem)
     (hbp : s'.gpr .ebp = s.gpr .ebp) (hsi : s'.gpr .esi = s.gpr .esi) (hsp : s'.gpr .esp = s.gpr .esp)
-    (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) : Env Ctx St W SP s' :=
+    (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) : Env N Ctx St W SP s' :=
   he.keep hbp hsi hsp hrd hwr (slot_frame hf (slot_tFrame L hyo (by decide) (by decide)))
 
 /-- `T` zeroed, and the pointers of the copy into it. -/
-theorem zeroT_ok {s : State} (he : Env Ctx St W SP s) :
+theorem zeroT_ok {s : State} (he : Env N Ctx St W SP s) :
     ∃ s', runBlock isa (zero4 tO ++ ([.mov .edi (.reg .esi), .alu .add .edi (imm 32), .mov .edx (.reg .ebp),
         .alu .add .edx (imm tO)] : List Instr)) s = some s' ∧
       s'.mem = Cmac.zero4 s.mem (w64 W + BitVec.ofNat 64 96) ∧ s'.gpr .edi = St + BitVec.ofNat 32 32 ∧
@@ -147,9 +150,9 @@ theorem zeroT_ok {s : State} (he : Env Ctx St W SP s) :
   all_goals rfl
 
 theorem flush_pc (hyo : yo = 0 ∨ yo = 16) {b : Nat} (hb : b < 16) :
-    Pc (fun (m₀ : Mem) s => (Env Ctx St W SP s ∧ slotv s.mem W bO = BitVec.ofNat 32 b) ∧ s.mem = m₀) (flush vg.callees yo)
-      (FlOut Ctx St W SP K yo b ·) := by
-  refine Pc.seq (Q := fun m₀ s => ((Env Ctx St W SP s ∧ slotv s.mem W bO = BitVec.ofNat 32 b) ∧ s.mem = m₀) ∧
+    Pc (fun (m₀ : Mem) s => (Env N Ctx St W SP s ∧ slotv s.mem W bO = BitVec.ofNat 32 b) ∧ s.mem = m₀) (flush vg.callees yo)
+      (FlOut N Ctx St W SP K yo b ·) := by
+  refine Pc.seq (Q := fun m₀ s => ((Env N Ctx St W SP s ∧ slotv s.mem W bO = BitVec.ofNat 32 b) ∧ s.mem = m₀) ∧
       s.zf = some (decide (b = 0)) ∧ s.gpr .ecx = BitVec.ofNat 32 b)
     (Pc.taint [.ebp] (fun m₀ s ⟨⟨he, hb'⟩, hm⟩ => WP.mono (test_ok L he .ecx bO (by decide) hb' (by omega_arith))
         fun s' ⟨zf, cx, g, m, rd, wr⟩ => ⟨⟨⟨he.keep (g _ (by decide)) (g _ (by decide)) (g _ (by decide)) rd wr
@@ -162,7 +165,7 @@ theorem flush_pc (hyo : yo = 0 ∨ yo = 16) {b : Nat} (hb : b < 16) :
     rw [Proof.Gcm.padLen_of_mod (by omega_arith), hm]; simpa [zeros] using ha
   · have h0 : b ≠ 0 := by simpa using hf
     -- `T` zeroed.
-    refine Pc.seq (Q := fun m₀ s => Env Ctx St W SP s ∧ s.mem = Cmac.zero4 m₀ (w64 W + BitVec.ofNat 64 96) ∧
+    refine Pc.seq (Q := fun m₀ s => Env N Ctx St W SP s ∧ s.mem = Cmac.zero4 m₀ (w64 W + BitVec.ofNat 64 96) ∧
         s.gpr .edi = St + BitVec.ofNat 32 32 ∧ s.gpr .edx = W + BitVec.ofNat 32 96 ∧
         s.gpr .ecx = BitVec.ofNat 32 b)
       (Pc.taint [.ebp, .esi] (fun m₀ s ⟨⟨⟨he, _⟩, hm⟩, _, cx⟩ => ?_)
@@ -172,12 +175,12 @@ theorem flush_pc (hyo : yo = 0 ∨ yo = 16) {b : Nat} (hb : b < 16) :
           · rw [h₁.1.1.1.ebp, h₂.1.1.1.ebp]
           · rw [h₁.1.1.1.esi, h₂.1.1.1.esi]) (by taint_decide)) ?_
     · obtain ⟨s', run, m, di, dx, g, rd, wr⟩ := zeroT_ok L he
-      have fz : Frame [⟨w64 W + BitVec.ofNat 64 96, 16⟩] s.mem s'.mem := by rw [m]; exact Cmac.frame_store4 _ _ _ _ _
+      obtain fz : Frame [⟨w64 W + BitVec.ofNat 64 96, 16⟩] s.mem s'.mem := by rw [m]; exact Cmac.frame_store4 _ _ _ _ _
       refine WP.of_runBlock ⟨s', run, env_tFrame L hyo he (t_tFrame fz) (g _ (by decide) (by decide) (by decide))
         (g _ (by decide) (by decide) (by decide)) (g _ (by decide) (by decide) (by decide)) rd wr, by rw [m, hm], di, dx,
         by rw [g _ (by decide) (by decide) (by decide), cx]⟩
     -- The copy.
-    refine Pc.seq (Q := fun m₀ s => Env Ctx St W SP s ∧
+    refine Pc.seq (Q := fun m₀ s => Env N Ctx St W SP s ∧
         s.mem = writeBytes (Cmac.zero4 m₀ (w64 W + BitVec.ofNat 64 96)) (w64 W + BitVec.ofNat 64 96)
           (bytesAt m₀ (w64 St + BitVec.ofNat 64 32) b))
       (Pc.taint [.edi, .edx, .ecx] (fun m₀ s ⟨he, hm, di, dx, cx⟩ => ?_)
@@ -188,20 +191,20 @@ theorem flush_pc (hyo : yo = 0 ∨ yo = 16) {b : Nat} (hb : b < 16) :
           · rw [h₁.2.2.2.1, h₂.2.2.2.1]
           · rw [h₁.2.2.2.2, h₂.2.2.2.2]) (by taint_decide)) ?_
     · have eS := L.aS (o := 32) (by decide)
-      have eT := L.aW (o := 96) (by decide)
-      have lp : LoopPre s (St + BitVec.ofNat 32 32) (W + BitVec.ofNat 32 96) b := by
+      obtain eT := L.aW (o := 96) (by decide)
+      obtain lp : LoopPre s (St + BitVec.ofNat 32 32) (W + BitVec.ofNat 32 96) b := by
         refine ⟨di, dx, cx, by omega_arith, by omega_arith, by rw [L.nS (by decide)]; have := L.fs; omega_arith,
-          by rw [L.nW (by decide)]; have := L.fw; omega_arith, by rw [eS]; exact covers_left (he.stC (by omega_arith)),
+          by rw [L.nW (by decide)]; have := L.fw; have := L.big; omega_arith, by rw [eS]; exact covers_left (he.stC (by omega_arith)),
           by rw [eT]; exact he.wC (by omega_arith), by rw [eS, eT]; exact L.st_w (a := 32) (n := b) (d := 96) (k := b) (by omega_arith) (.inr ⟨by decide, by omega_arith⟩)⟩
       refine WP.mono (copyLoop_ok s lp) fun s' c => ?_
       have cm := c.mem
       rw [eS, eT] at cm
-      have hS : bytesAt s.mem (w64 St + BitVec.ofNat 64 32) b = bytesAt m₀ (w64 St + BitVec.ofNat 64 32) b := by
+      obtain hS : bytesAt s.mem (w64 St + BitVec.ofNat 64 32) b = bytesAt m₀ (w64 St + BitVec.ofNat 64 32) b := by
         rw [hm]; exact bytesAt_frame (Cmac.frame_store4 _ _ _ _ _) (fun r hr => by
           simp only [List.mem_singleton] at hr; subst hr; exact L.st_w (by omega_arith) (.inr ⟨by decide, by decide⟩))
           (by omega_arith)
-      have hlen := length_bytesAt s.mem (w64 St + BitVec.ofNat 64 32) b
-      have fw : Frame [⟨w64 W + BitVec.ofNat 64 96, b⟩] s.mem s'.mem := by
+      obtain hlen := length_bytesAt s.mem (w64 St + BitVec.ofNat 64 32) b
+      obtain fw : Frame [⟨w64 W + BitVec.ofNat 64 96, b⟩] s.mem s'.mem := by
         rw [cm]; exact writeBytes_frame' _ hlen
       refine ⟨env_tFrame L hyo he (t_tFrame (fw.sub fun r hr => by
           simp only [List.mem_singleton] at hr; subst hr
@@ -210,38 +213,38 @@ theorem flush_pc (hyo : yo = 0 ∨ yo = 16) {b : Nat} (hb : b < 16) :
         (by decide)) (c.other _ (by decide) (by decide) (by decide) (by decide)) c.rd c.wr, ?_⟩
       rw [cm, hS, hm]
     -- The block absorbed.
-    have hP : ∀ s, Env Ctx St W SP s → s.gpr .ebp + BitVec.ofNat 32 96 = W + BitVec.ofNat 32 96 ∧
+    obtain hP : ∀ s, Env N Ctx St W SP s → s.gpr .ebp + BitVec.ofNat 32 96 = W + BitVec.ofNat 32 96 ∧
         (W + BitVec.ofNat 32 96).toNat + 16 ≤ 2 ^ 32 ∧ Covers [⟨w64 (W + BitVec.ofNat 32 96), 16⟩] (s.rd ++ s.wr) ∧
         (⟨w64 St + BitVec.ofNat 64 yo, 16⟩ : Region).Disjoint ⟨w64 (W + BitVec.ofNat 32 96), 16⟩ ∧
         (⟨w64 (W + BitVec.ofNat 32 96), 16⟩ : Region).Disjoint ⟨w64 W + BitVec.ofNat 64 512, 256⟩ ∧
         (below SP K).Disjoint ⟨w64 (W + BitVec.ofNat 32 96), 16⟩ := fun s he => by
       rw [L.aW (by decide)]
-      exact ⟨by rw [he.ebp], by rw [L.nW (by decide)]; have := L.fw; omega_arith, covers_left (he.wC (by decide)),
+      exact ⟨by rw [he.ebp], by rw [L.nW (by decide)]; have := L.fw; have := L.big; omega_arith, covers_left (he.wC (by decide)),
         L.st_w (by omega_arith) (.inr ⟨by decide, by decide⟩), Lay.w_w (.inl (by decide)) (by decide) (by decide),
         L.stk_w (by decide)⟩
-    refine Pc.mono (Pc.of (I := Env Ctx St W SP) (fun s he => ghash1_ok L hyo he .ebp 96 (.inr rfl)
+    refine Pc.mono (Pc.of (I := Env N Ctx St W SP) (fun s he => ghash1_ok L hyo he .ebp 96 (.inr rfl)
         (hP s he).1 (hP s he).2.1 (hP s he).2.2.1 (hP s he).2.2.2.1 (hP s he).2.2.2.2.1 (hP s he).2.2.2.2.2)
       (ghash1_ct L hyo .ebp 96 (.inr ⟨rfl, rfl⟩) fun s he => ⟨he, hP s he⟩) _ fun _ _ h => h.1)
       (fun _ _ h => h) fun m₀ s₂ ⟨s₁, ⟨_, hm⟩, g⟩ => ?_
     have go := g.out
     rw [L.aW (by decide)] at go
-    have fT : Frame [⟨w64 W + BitVec.ofNat 64 96, 16⟩] m₀ s₁.mem := by
+    obtain fT : Frame [⟨w64 W + BitVec.ofNat 64 96, 16⟩] m₀ s₁.mem := by
       rw [hm]
       exact (Cmac.frame_store4 _ _ _ _ _).trans (writeBytes_frame _ _ _ (by
         rw [length_bytesAt]; simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega_arith))
-    have hT : bytesAt s₁.mem (w64 W + BitVec.ofNat 64 96) 16 =
+    obtain hT : bytesAt s₁.mem (w64 W + BitVec.ofNat 64 96) 16 =
         bytesAt m₀ (w64 St + BitVec.ofNat 64 32) b ++ zeros (16 - b) := by
       rw [hm, bytesAt_writeBytes_prefix _ _ _ (by rw [length_bytesAt]; omega_arith) (by decide), length_bytesAt]
       congr 1
-      have z := zero4_bytes' m₀ (w64 W + BitVec.ofNat 64 96)
+      obtain z := zero4_bytes' m₀ (w64 W + BitVec.ofNat 64 96)
       rw [show (16 : Nat) = b + (16 - b) by omega_arith, bytesAt_add] at z
       have := congrArg (List.drop b) z
       rwa [List.drop_left' (length_bytesAt _ _ _), show b + (16 - b) = 16 by omega_arith, zeros, List.drop_replicate,
         show 16 - b = 16 - b from rfl] at this
-    have hY : blockAt s₁.mem (w64 St + BitVec.ofNat 64 yo) = blockAt m₀ (w64 St + BitVec.ofNat 64 yo) :=
+    obtain hY : blockAt s₁.mem (w64 St + BitVec.ofNat 64 yo) = blockAt m₀ (w64 St + BitVec.ofNat 64 yo) :=
       blockAt_frame fT fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact L.st_w (by omega_arith) (.inr ⟨by decide, by decide⟩)
-    have hH : blockAt s₁.mem (w64 Ctx + BitVec.ofNat 64 240) = Hk m₀ Ctx :=
+    obtain hH : blockAt s₁.mem (w64 Ctx + BitVec.ofNat 64 240) = Hk m₀ Ctx :=
       blockAt_frame fT fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact L.ctx_w (by decide) (by decide)
     refine ⟨g.env, fun x hx ha => ?_, (t_tFrame fT).trans (gh_tFrame g.frame)⟩
@@ -304,11 +307,11 @@ theorem lens_bytes (alo ahi tlo thi : BitVec 32) :
 end
 
 /-- After `lens yo`: the lengths block absorbed, from `m₀`. -/
-structure LensOut (Ctx St W SP : BitVec 32) (K yo : Nat) (aN tN : Nat) (m₀ : Mem) (s : State) : Prop where
-  env : Env Ctx St W SP s
+structure LensOut (N : Nat) (Ctx St W SP : BitVec 32) (K yo : Nat) (aN tN : Nat) (m₀ : Mem) (s : State) : Prop where
+  env : Env N Ctx St W SP s
   out : blockAt s.mem (w64 St + BitVec.ofNat 64 yo) =
     ghashFrom (Hk m₀ Ctx) (blockAt m₀ (w64 St + BitVec.ofNat 64 yo)) [Spec.Gcm.ofBytes (lensBlock aN tN)]
-  frame : Frame (tFrame St W SP K yo) m₀ s.mem
+  frame : Frame (tFrame N St W SP K yo) m₀ s.mem
 
 /-- The slots of the lengths. -/
 abbrev LensSlots (W : BitVec 32) (al ah tl th : Nat) (alo ahi tlo thi : BitVec 32) (m : Mem) : Prop :=
@@ -320,12 +323,12 @@ abbrev LensAt (yo al ah tl th : Nat) : Prop :=
     (yo = 16 ∧ al = alO ∧ ah = zO ∧ tl = lenO ∧ th = zO)
 
 section
-variable {Ctx St W SP : BitVec 32} {K : Nat} (L : Lay Ctx St W SP K)
+variable {Ctx St W SP : BitVec 32} {K : Nat} (L : Lay N Ctx St W SP K)
 include L
 
 /-- One `be64w`: the words at `W + lo`, `W + hi` shifted and byte-reversed into `W + o`. -/
-theorem be64w_ok {lo hi o : Nat} (hlo : lo + 4 ≤ 2560) (hhi : hi + 4 ≤ 2560) (ho : o + 8 ≤ 2560)
-    {vlo vhi : BitVec 32} {s : State} (he : Env Ctx St W SP s) (h1 : slotv s.mem W lo = vlo)
+theorem be64w_ok {lo hi o : Nat} (hlo : lo + 4 ≤ 768) (hhi : hi + 4 ≤ 768) (ho : o + 8 ≤ 768)
+    {vlo vhi : BitVec 32} {s : State} (he : Env N Ctx St W SP s) (h1 : slotv s.mem W lo = vlo)
     (h2 : slotv s.mem W hi = vhi) :
     ∃ s', runBlock isa (be64w lo hi o) s = some s' ∧
       s'.mem = (s.mem.writeW (w64 W + BitVec.ofNat 64 o)
@@ -335,14 +338,14 @@ theorem be64w_ok {lo hi o : Nat} (hlo : lo + 4 ≤ 2560) (hhi : hi + 4 ≤ 2560)
       s'.gpr .ebp = s.gpr .ebp ∧ s'.gpr .esi = s.gpr .esi ∧ s'.gpr .esp = s.gpr .esp ∧ s'.rd = s.rd ∧
       s'.wr = s.wr := by
   rw [slotv_eq] at h1 h2
-  have a1 := L.aW (o := lo) (by omega_arith)
-  have a2 := L.aW (o := hi) (by omega_arith)
-  have a3 := L.aW (o := o) (by omega_arith)
-  have a4 := L.aW (o := o + 4) (by omega_arith)
-  have i1 := he.wIn' (d := lo) (n := 4) hlo
-  have i2 := he.wIn' (d := hi) (n := 4) hhi
-  have i3 := he.wIn (d := o) (n := 4) (by omega_arith)
-  have i4 := he.wIn (d := o + 4) (n := 4) (by omega_arith)
+  obtain a1 := L.aW (o := lo) (by omega_arith)
+  obtain a2 := L.aW (o := hi) (by omega_arith)
+  obtain a3 := L.aW (o := o) (by omega_arith)
+  obtain a4 := L.aW (o := o + 4) (by omega_arith)
+  obtain i1 := he.wIn' (d := lo) (n := 4) hlo
+  obtain i2 := he.wIn' (d := hi) (n := 4) hhi
+  obtain i3 := he.wIn (d := o) (n := 4) (by omega_arith)
+  obtain i4 := he.wIn (d := o + 4) (n := 4) (by omega_arith)
   refine ⟨_, by xrun [be64w, he.ebp, a1, a2, a3, a4, i1, i2, i3, i4, h1, h2], ?_, ?_, ?_, ?_, ?_, ?_⟩
   · mems [add_ofNat_assoc]
   · regs []
@@ -351,7 +354,7 @@ theorem be64w_ok {lo hi o : Nat} (hlo : lo + 4 ≤ 2560) (hhi : hi + 4 ≤ 2560)
   all_goals rfl
 
 theorem lensT_ok {yo al ah tl th : Nat} (hc : LensAt yo al ah tl th) {alo ahi tlo thi : BitVec 32} {s : State}
-    (he : Env Ctx St W SP s) (hs : LensSlots W al ah tl th alo ahi tlo thi s.mem) :
+    (he : Env N Ctx St W SP s) (hs : LensSlots W al ah tl th alo ahi tlo thi s.mem) :
     ∃ s', runBlock isa (be64w al ah tO ++ be64w tl th (tO + 8)) s = some s' ∧
       s'.mem = Cmac.store4 s.mem (w64 W + BitVec.ofNat 64 96)
         (VG.X86.bswap (ahi + ahi + (ahi + ahi) + (ahi + ahi + (ahi + ahi)) + alo >>> 29))
@@ -361,14 +364,14 @@ theorem lensT_ok {yo al ah tl th : Nat} (hc : LensAt yo al ah tl th) {alo ahi tl
       s'.gpr .ebp = s.gpr .ebp ∧ s'.gpr .esi = s.gpr .esi ∧ s'.gpr .esp = s.gpr .esp ∧ s'.rd = s.rd ∧
       s'.wr = s.wr := by
   obtain ⟨h1, h2, h3, h4⟩ := hs
-  have hb : 144 ≤ al ∧ al + 4 ≤ 240 ∧ 144 ≤ ah ∧ ah + 4 ≤ 240 ∧ 144 ≤ tl ∧ tl + 4 ≤ 240 ∧ 144 ≤ th ∧
+  obtain hb : 144 ≤ al ∧ al + 4 ≤ 240 ∧ 144 ≤ ah ∧ ah + 4 ≤ 240 ∧ 144 ≤ tl ∧ tl + 4 ≤ 240 ∧ 144 ≤ th ∧
       th + 4 ≤ 240 := by
     rcases hc with ⟨_, rfl, rfl, rfl, rfl⟩ | ⟨_, rfl, rfl, rfl, rfl⟩ | ⟨_, rfl, rfl, rfl, rfl⟩ <;> decide
   obtain ⟨s₁, run₁, m₁, bp₁, si₁, sp₁, rd₁, wr₁⟩ := be64w_ok L (o := 96) (by omega_arith) (by omega_arith) (by decide) he h1 h2
-  have he₁ : Env Ctx St W SP s₁ := he.keep bp₁ si₁ sp₁ rd₁ wr₁ (by
+  obtain he₁ : Env N Ctx St W SP s₁ := he.keep bp₁ si₁ sp₁ rd₁ wr₁ (by
     rw [m₁, add_ofNat_assoc, readW_writeW_off (b := 100) _ _ _ (by decide) (by decide) (by decide),
       readW_writeW_off (b := 96) _ _ _ (by decide) (by decide) (by decide)])
-  have k : ∀ {o}, 144 ≤ o → o + 4 ≤ 240 → slotv s₁.mem W o = slotv s.mem W o := fun h₁ h₂ => by
+  obtain k : ∀ {o}, 144 ≤ o → o + 4 ≤ 240 → slotv s₁.mem W o = slotv s.mem W o := fun h₁ h₂ => by
     rw [slotv_eq, slotv_eq, m₁, add_ofNat_assoc, readW_writeW_off (b := 100) _ _ _ (by omega_arith) (by omega_arith) (by omega_arith),
       readW_writeW_off (b := 96) _ _ _ (by omega_arith) (by omega_arith) (by omega_arith)]
   obtain ⟨s₂, run₂, m₂, bp₂, si₂, sp₂, rd₂, wr₂⟩ := be64w_ok L (lo := tl) (hi := th) (o := 104) (by omega_arith) (by omega_arith) (by decide) he₁
@@ -380,56 +383,56 @@ theorem lensT_ok {yo al ah tl th : Nat} (hc : LensAt yo al ah tl th) {alo ahi tl
 
 
 /-- The block at `W + 96`, as a block `ghash1` absorbs. -/
-theorem t_gh {yo : Nat} (hyo : yo = 0 ∨ yo = 16) {s : State} (he : Env Ctx St W SP s) :
-    Env Ctx St W SP s ∧ s.gpr .ebp + BitVec.ofNat 32 96 = W + BitVec.ofNat 32 96 ∧
+theorem t_gh {yo : Nat} (hyo : yo = 0 ∨ yo = 16) {s : State} (he : Env N Ctx St W SP s) :
+    Env N Ctx St W SP s ∧ s.gpr .ebp + BitVec.ofNat 32 96 = W + BitVec.ofNat 32 96 ∧
       (W + BitVec.ofNat 32 96).toNat + 16 ≤ 2 ^ 32 ∧ Covers [⟨w64 (W + BitVec.ofNat 32 96), 16⟩] (s.rd ++ s.wr) ∧
       (⟨w64 St + BitVec.ofNat 64 yo, 16⟩ : Region).Disjoint ⟨w64 (W + BitVec.ofNat 32 96), 16⟩ ∧
       (⟨w64 (W + BitVec.ofNat 32 96), 16⟩ : Region).Disjoint ⟨w64 W + BitVec.ofNat 64 512, 256⟩ ∧
       (below SP K).Disjoint ⟨w64 (W + BitVec.ofNat 32 96), 16⟩ := by
   rw [L.aW (by decide)]
-  exact ⟨he, by rw [he.ebp], by rw [L.nW (by decide)]; have := L.fw; omega_arith, covers_left (he.wC (by decide)),
+  exact ⟨he, by rw [he.ebp], by rw [L.nW (by decide)]; have := L.fw; have := L.big; omega_arith, covers_left (he.wC (by decide)),
     L.st_w (by omega_arith) (.inr ⟨by decide, by decide⟩), Lay.w_w (.inl (by decide)) (by decide) (by decide),
     L.stk_w (by decide)⟩
 
 theorem lens_pc_aux {yo al ah tl th : Nat} (hyo : yo = 0 ∨ yo = 16) (hc : LensAt yo al ah tl th)
     {alo ahi tlo thi : BitVec 32} {hh : Taint.Hint VG.X86.taint.T}
     (ht : (VG.X86.taint.check (τr [.ebp]) (.block (be64w al ah tO ++ be64w tl th (tO + 8))) hh).isSome = true) :
-    Pc (fun (m₀ : Mem) s => (Env Ctx St W SP s ∧ LensSlots W al ah tl th alo ahi tlo thi s.mem) ∧ s.mem = m₀)
-      (lens vg.callees yo al ah tl th) (LensOut Ctx St W SP K yo (val64 alo ahi) (val64 tlo thi) ·) := by
-  refine Pc.seq (Q := fun m₀ s => Env Ctx St W SP s ∧ s.mem = Cmac.store4 m₀ (w64 W + BitVec.ofNat 64 96)
+    Pc (fun (m₀ : Mem) s => (Env N Ctx St W SP s ∧ LensSlots W al ah tl th alo ahi tlo thi s.mem) ∧ s.mem = m₀)
+      (lens vg.callees yo al ah tl th) (LensOut N Ctx St W SP K yo (val64 alo ahi) (val64 tlo thi) ·) := by
+  refine Pc.seq (Q := fun m₀ s => Env N Ctx St W SP s ∧ s.mem = Cmac.store4 m₀ (w64 W + BitVec.ofNat 64 96)
       (VG.X86.bswap (ahi + ahi + (ahi + ahi) + (ahi + ahi + (ahi + ahi)) + alo >>> 29))
       (VG.X86.bswap (alo + alo + (alo + alo) + (alo + alo + (alo + alo))))
       (VG.X86.bswap (thi + thi + (thi + thi) + (thi + thi + (thi + thi)) + tlo >>> 29))
       (VG.X86.bswap (tlo + tlo + (tlo + tlo) + (tlo + tlo + (tlo + tlo)))))
     (Pc.taint [.ebp] (fun m₀ s ⟨⟨he, hs⟩, hm⟩ => by
         obtain ⟨s', run, m, bp, si, sp, rd, wr⟩ := lensT_ok L hc he hs
-        have fT : Frame [⟨w64 W + BitVec.ofNat 64 96, 16⟩] s.mem s'.mem := by rw [m]; exact Cmac.frame_store4 _ _ _ _ _
+        obtain fT : Frame [⟨w64 W + BitVec.ofNat 64 96, 16⟩] s.mem s'.mem := by rw [m]; exact Cmac.frame_store4 _ _ _ _ _
         exact WP.of_runBlock ⟨s', run, env_tFrame L hyo he (t_tFrame fT) bp si sp rd wr, by rw [m, hm]⟩)
       (fun _ _ s₁ s₂ h₁ h₂ r hr => by
         simp only [List.mem_singleton] at hr; subst hr; rw [h₁.1.1.ebp, h₂.1.1.ebp]) ht) ?_
-  refine Pc.mono (Pc.of (I := Env Ctx St W SP) (fun s he => ghash1_ok L hyo he .ebp 96 (.inr rfl)
+  refine Pc.mono (Pc.of (I := Env N Ctx St W SP) (fun s he => ghash1_ok L hyo he .ebp 96 (.inr rfl)
       (t_gh L hyo he).2.1 (t_gh L hyo he).2.2.1 (t_gh L hyo he).2.2.2.1 (t_gh L hyo he).2.2.2.2.1
       (t_gh L hyo he).2.2.2.2.2.1 (t_gh L hyo he).2.2.2.2.2.2)
     (ghash1_ct L hyo .ebp 96 (.inr ⟨rfl, rfl⟩) fun s he => t_gh L hyo he) _ fun _ _ h => h.1)
     (fun _ _ h => h) fun m₀ s₂ ⟨s₁, ⟨_, hm⟩, g⟩ => ?_
   have go := g.out
   rw [L.aW (by decide)] at go
-  have fT : Frame [⟨w64 W + BitVec.ofNat 64 96, 16⟩] m₀ s₁.mem := by rw [hm]; exact Cmac.frame_store4 _ _ _ _ _
-  have hY : blockAt s₁.mem (w64 St + BitVec.ofNat 64 yo) = blockAt m₀ (w64 St + BitVec.ofNat 64 yo) :=
+  obtain fT : Frame [⟨w64 W + BitVec.ofNat 64 96, 16⟩] m₀ s₁.mem := by rw [hm]; exact Cmac.frame_store4 _ _ _ _ _
+  obtain hY : blockAt s₁.mem (w64 St + BitVec.ofNat 64 yo) = blockAt m₀ (w64 St + BitVec.ofNat 64 yo) :=
     blockAt_frame fT fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact L.st_w (by omega_arith) (.inr ⟨by decide, by decide⟩)
-  have hH : blockAt s₁.mem (w64 Ctx + BitVec.ofNat 64 240) = Hk m₀ Ctx :=
+  obtain hH : blockAt s₁.mem (w64 Ctx + BitVec.ofNat 64 240) = Hk m₀ Ctx :=
     blockAt_frame fT fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact L.ctx_w (by decide) (by decide)
-  have hT : blockAt s₁.mem (w64 W + BitVec.ofNat 64 96) =
+  obtain hT : blockAt s₁.mem (w64 W + BitVec.ofNat 64 96) =
       Spec.Gcm.ofBytes (lensBlock (val64 alo ahi) (val64 tlo thi)) := by
     rw [blockAt, hm, Cmac.bytesAt_store4, lens_bytes]
   refine ⟨g.env, ?_, (t_tFrame fT).trans (gh_tFrame g.frame)⟩
   rw [go, hY, hH, hT]
 
 theorem lens_pc {yo al ah tl th : Nat} (hc : LensAt yo al ah tl th) {alo ahi tlo thi : BitVec 32} :
-    Pc (fun (m₀ : Mem) s => (Env Ctx St W SP s ∧ LensSlots W al ah tl th alo ahi tlo thi s.mem) ∧ s.mem = m₀)
-      (lens vg.callees yo al ah tl th) (LensOut Ctx St W SP K yo (val64 alo ahi) (val64 tlo thi) ·) := by
+    Pc (fun (m₀ : Mem) s => (Env N Ctx St W SP s ∧ LensSlots W al ah tl th alo ahi tlo thi s.mem) ∧ s.mem = m₀)
+      (lens vg.callees yo al ah tl th) (LensOut N Ctx St W SP K yo (val64 alo ahi) (val64 tlo thi) ·) := by
   have hc' := hc
   rcases hc with ⟨rfl, rfl, rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl, rfl, rfl⟩
   · exact lens_pc_aux L (.inl rfl) hc' (by taint_decide)

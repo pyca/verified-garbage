@@ -19,7 +19,7 @@ theorem copyField_ok {F : Impl.Weierstrass.Mont.Modulus} {M : Mod} {base : Addr}
     {V : List Nat} {E : Nat → Fin m} {s : State}
     (hI : Inv M base size m Sl V E s) {o a : Nat} (ho : Sl o) (ha : a ∈ V) :
     WP isa (.block (copy (2 * M.n) o a)) s fun t =>
-      CKeep M base wk o s t ∧ Inv M base size m Sl (o :: V) (Function.update E o (E a)) t := by
+      CKeep M base wk o s t ∧ Inv M base size m Sl (o :: V) (Fun.update E o (E a)) t := by
   have hap : o ≤ a ∨ a + 8 * M.n ≤ o := by
     by_cases he : o = a
     · exact Or.inl (by omega_using [he])
@@ -44,7 +44,7 @@ theorem setField_ok {F : Impl.Weierstrass.Mont.Modulus} {M : Mod} {base : Addr} 
     (hR : m < 2 ^ (64 * M.n)) :
     WP isa (.block (setConst M.n o v)) s fun t =>
       CKeep M base wk o s t ∧ Inv M base size m Sl (o :: V)
-        (Function.update E o (toM m (2 ^ (64 * M.n)) v)) t := by
+        (Fun.update E o (toM m (2 ^ (64 * M.n)) v)) t := by
   refine WP.mono (setConst_ok hI.scr (hL.le o ho) (Nat.lt_trans hv hR))
     fun t ⟨he,hk,hO⟩ => ?_
   have hkeep : CKeep M base wk o s t :=
@@ -101,11 +101,11 @@ theorem copyPoint_ok {F : Impl.Weierstrass.Mont.Modulus} {M : Mod} {base : Addr}
   · intro x hx
     simp only [List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at hx ⊢
     grind
-  · simp only [Function.update_self,Function.update_of_ne hn.1.1,
-      Function.update_of_ne hn.1.2,Function.update_of_ne hn.2.1,
-      Function.update_of_ne (hqa q.y (by simp) o.x (by simp)),
-      Function.update_of_ne (hqa q.z (by simp) o.x (by simp)),
-      Function.update_of_ne (hqa q.z (by simp) o.y (by simp))]
+  · simp only [Fun.update_self,Fun.update_of_ne hn.1.1,
+      Fun.update_of_ne hn.1.2,Fun.update_of_ne hn.2.1,
+      Fun.update_of_ne (hqa q.y (by simp) o.x (by simp)),
+      Fun.update_of_ne (hqa q.z (by simp) o.x (by simp)),
+      Fun.update_of_ne (hqa q.z (by simp) o.y (by simp))]
 
 /-- The infinity branch writes a canonical nonzero y and zero z. -/
 theorem infinityPoint_ok {F : Impl.Weierstrass.Mont.Modulus} {K : WinCfg} {C : Spec.Weierstrass.Curve} {base : Addr} {size wk : Nat}
@@ -131,7 +131,7 @@ theorem infinityPoint_ok {F : Impl.Weierstrass.Mont.Modulus} {K : WinCfg} {C : S
   · intro x hx
     simp only [List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at hx ⊢
     grind
-  · rw [Function.update_self]
+  · rw [Fun.update_self]
     simp only [toM, Fin.ofNat_zero, Lean.Grind.Semiring.zero_mul]
 
 

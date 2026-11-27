@@ -32,8 +32,8 @@ open VG.Proof.AesGcm.AArch64 (Eq2 TT rel_seq rel_taint)
 
 /-- Code the taint analysis checks, from the registers `rs` the two runs
 agree on and those `Env` fixes. -/
-theorem rel_env {K W D : Addr} {R n : Nat} {SP : Addr} {σ₁ σ₂ : State} {c : Prog isa}
-    (E₁ : Env K W D R n SP σ₁) (E₂ : Env K W D R n SP σ₂) (rs : List Reg) (hr : ∀ r ∈ rs, σ₁.gpr r = σ₂.gpr r)
+theorem rel_env {T : Nat} {K W D : Addr} {R n : Nat} {SP : Addr} {σ₁ σ₂ : State} {c : Prog isa}
+    (E₁ : Env T K W D R n SP σ₁) (E₂ : Env T K W D R n SP σ₂) (rs : List Reg) (hr : ∀ r ∈ rs, σ₁.gpr r = σ₂.gpr r)
     (hc : ∃ h, (taint.check (Taint.ofRegs (rs ++ ([.x19, .x20, .x21, .x22, .x28] : List Reg))) c h).isSome = true) :
     RelCT isa (Eq2 σ₁ σ₂) c TT :=
   rel_taint _ (by rw [E₁.sp, E₂.sp]) (fun r hr' => by
@@ -50,20 +50,20 @@ theorem rel_env {K W D : Addr} {R n : Nat} {SP : Addr} {σ₁ σ₂ : State} {c 
 /-- A call of `vg_aes_encrypt_blocks` or `vg_aes_decrypt_blocks` on the same
 `k` blocks at `D'` in both runs. -/
 theorem callBlocks_rel {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State} {b : Impl.Aes.AArch64.Blocks}
-    (ok : ∀ s, (Proof.Aes.blocksAArch64 f).pre s →
-      ∃ t s', Exec isa b.code s t s' ∧ abiPreserved s s' ∧ (Proof.Aes.blocksAArch64 f).post s s')
-    (ct : ConstantTime isa (Proof.Aes.blocksAArch64 f).pre (Proof.Aes.blocksAArch64 f).pub b.code)
-    {K W D : Addr} {R n : Nat} {SP : Addr} (L : Lay K W) (hR : R = 10 ∨ R = 12 ∨ R = 14) {σ₁ σ₂ : State}
-    (E₁ : Env K W D R n SP σ₁) (E₂ : Env K W D R n SP σ₂) {args : List Instr} (rs : List Reg)
+    {M : Nat} (ok : ∀ s, (Proof.Aes.blocksAArch64With M f).pre s →
+      ∃ t s', Exec isa b.code s t s' ∧ abiPreserved s s' ∧ (Proof.Aes.blocksAArch64With M f).post s s')
+    (ct : ConstantTime isa (Proof.Aes.blocksAArch64With M f).pre (Proof.Aes.blocksAArch64With M f).pub b.code)
+    {T : Nat} (hM : M ≤ T - 512) {K W D : Addr} {R n : Nat} {SP : Addr} (L : Lay T K W) (hR : R = 10 ∨ R = 12 ∨ R = 14) {σ₁ σ₂ : State}
+    (E₁ : Env T K W D R n SP σ₁) (E₂ : Env T K W D R n SP σ₂) {args : List Instr} (rs : List Reg)
     (hr : ∀ r ∈ rs, σ₁.gpr r = σ₂.gpr r)
     (hc : ∃ h, (taint.check (Taint.ofRegs (rs ++ ([.x19, .x20, .x21, .x22, .x28] : List Reg)))
       (.block (args ++ ([Impl.AesGcm.AArch64.mov .x0 .x20, Impl.AesGcm.AArch64.mov .x1 .x22,
         Impl.AesGcm.AArch64.ptr .x4 .x19 scrO] : List Instr))) h).isSome = true)
-    {D' : Addr} {k : Nat} (a₁ : ArgsOk args σ₁ D' k) (a₂ : ArgsOk args σ₂ D' k) (d₁ : Dst K W σ₁ D' k)
-    (d₂ : Dst K W σ₂ D' k) : RelCT isa (Eq2 σ₁ σ₂) (callBlocks b args) TT := by
+    {D' : Addr} {k : Nat} (a₁ : ArgsOk args σ₁ D' k) (a₂ : ArgsOk args σ₂ D' k) (d₁ : Dst T K W σ₁ D' k)
+    (d₂ : Dst T K W σ₂ D' k) : RelCT isa (Eq2 σ₁ σ₂) (callBlocks b args) TT := by
   unfold callBlocks
   exact rel_seq (rel_env E₁ E₂ rs hr hc) (callArgs_ok L E₁ hR a₁ d₁) (callArgs_ok L E₂ hR a₂ d₂)
-    fun τ₁ τ₂ h₁ h₂ => blk_rel ok ct fun a b hab => by
+    fun τ₁ τ₂ h₁ h₂ => blk_relLe ok ct hM fun a b hab => by
       obtain ⟨rfl, rfl⟩ := hab
       exact ⟨K, D', _, R, k, h₁.1, h₂.1, by rw [h₁.2.2.1, h₂.2.2.1, E₁.sp, E₂.sp]⟩
 
@@ -94,19 +94,19 @@ theorem exec_keep {c : Prog isa} (rs : List Reg) (hk : c.allInstrs (keeps (RegSe
   simpa using this
 
 /-- An environment, after code without calls that writes none of its registers. -/
-theorem Env.exec {K W D : Addr} {R n : Nat} {SP : Addr} {s s' : State} {c : Prog isa} {t : List Leak}
-    (E : Env K W D R n SP s) (h : Exec isa c s t s')
+theorem Env.exec {T : Nat} {K W D : Addr} {R n : Nat} {SP : Addr} {s s' : State} {c : Prog isa} {t : List Leak}
+    (E : Env T K W D R n SP s) (h : Exec isa c s t s')
     (hk : c.allInstrs (keeps (RegSet.ofList [.x19, .x20, .x21, .x22, .x28])) = true) (hn : c.noCalls = true) :
-    Env K W D R n SP s' :=
+    Env T K W D R n SP s' :=
   let ⟨g, sp, rd, wr⟩ := exec_keep _ hk hn h
   E.keep g sp rd wr
 
 /-- Then: the next piece, in the environment, after code without calls
 that keeps it. -/
-theorem rel_seqEnv {K W D : Addr} {R n : Nat} {SP : Addr} {c₁ c₂ : Prog isa} {σ₁ σ₂ : State}
-    (E₁ : Env K W D R n SP σ₁) (E₂ : Env K W D R n SP σ₂) (h₁ : RelCT isa (Eq2 σ₁ σ₂) c₁ TT)
+theorem rel_seqEnv {T : Nat} {K W D : Addr} {R n : Nat} {SP : Addr} {c₁ c₂ : Prog isa} {σ₁ σ₂ : State}
+    (E₁ : Env T K W D R n SP σ₁) (E₂ : Env T K W D R n SP σ₂) (h₁ : RelCT isa (Eq2 σ₁ σ₂) c₁ TT)
     (hk : c₁.allInstrs (keeps (RegSet.ofList [.x19, .x20, .x21, .x22, .x28])) = true) (hn : c₁.noCalls = true)
-    (h₂ : ∀ τ₁ τ₂, Env K W D R n SP τ₁ → Env K W D R n SP τ₂ → RelCT isa (Eq2 τ₁ τ₂) c₂ TT) :
+    (h₂ : ∀ τ₁ τ₂, Env T K W D R n SP τ₁ → Env T K W D R n SP τ₂ → RelCT isa (Eq2 τ₁ τ₂) c₂ TT) :
     RelCT isa (Eq2 σ₁ σ₂) (.seq c₁ c₂) TT :=
   rel_seqE h₁ (fun _ _ h => E₁.exec h hk hn) (fun _ _ h => E₂.exec h hk hn) h₂
 

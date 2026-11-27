@@ -1,9 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.X448.X86_64.Swap
-public import Mathlib.Logic.Function.Basic
-public import VerifiedGarbage.Proof.X448.X86_64.Field
-import VerifiedGarbage.Proof.X448.X86_64.AddSub
+public import VerifiedGarbage.Proof.X448.X86_64.AddSub
+public import VerifiedGarbage.Proof.Framework.FunUpdate
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.PlainSimp
 
@@ -11,7 +9,7 @@ import VerifiedGarbage.Proof.Framework.PlainSimp
 # X448 on x86-64: the working space as slots
 
 The working space as 22 slots of 64 bytes (`E`), each read as a field
-element: each field operation updates one slot (`Function.update`) and the
+element: each field operation updates one slot (`Fun.update`) and the
 swap two, so that a sequence of operations is a chain of updates that `simp`
 evaluates at any slot. The field operations change no byte outside the slots
 and the product's words, `[64, 1648)`.
@@ -43,11 +41,11 @@ theorem slot_sep {i j : Index} (h : i ≠ j) :
 
 theorem E_update {base : Addr} {m m' : Mem} {o : Index}
     (h : Outside2 base (slot o.val) 56 ACC 112 m m') :
-    E m' base = Function.update (E m base) o (F m' base (slot o.val)) := by
+    E m' base = Fun.update (E m base) o (F m' base (slot o.val)) := by
   funext i
   by_cases hi : i = o
   · subst hi; simp [E]
-  · rw [Function.update_of_ne hi]
+  · rw [Fun.update_of_ne hi]
     have := slot_lt i
     simp only [ACC] at this
     show toFe (mv m' base (slot i.val) 7) = toFe (mv m base (slot i.val) 7)
@@ -111,12 +109,12 @@ theorem baseline_ok : FieldOk baseline where
 
 variable {fld : Field} (hf : FieldOk fld)
 
-def opMul (o a b : Index) (e : Env) : Env := Function.update e o (e a * e b)
-def opAdd (o a b : Index) (e : Env) : Env := Function.update e o (e a + e b)
-def opSub (o a b : Index) (e : Env) : Env := Function.update e o (e a - e b)
-def opA24 (o a : Index) (e : Env) : Env := Function.update e o (Spec.X448.a24 * e a)
+def opMul (o a b : Index) (e : Env) : Env := Fun.update e o (e a * e b)
+def opAdd (o a b : Index) (e : Env) : Env := Fun.update e o (e a + e b)
+def opSub (o a b : Index) (e : Env) : Env := Fun.update e o (e a - e b)
+def opA24 (o a : Index) (e : Env) : Env := Fun.update e o (Spec.X448.a24 * e a)
 def opSwap (x y : Index) (sw : Bool) (e : Env) : Env :=
-  Function.update (Function.update e x (if sw then e y else e x)) y (if sw then e x else e y)
+  Fun.update (Fun.update e x (if sw then e y else e x)) y (if sw then e x else e y)
 
 include hf in
 theorem mulE {s : State} {base : Addr} (hs : Scr s base) (o a b : Index) :
@@ -180,11 +178,11 @@ theorem cswapE {s : State} {base : Addr} (hs : Scr s base) (x y : Index) (hxy : 
   have ey : E s'.mem base y = if sw then E s.mem base x else E s.mem base y := by
     simp only [E, F, fe_sel fy]; cases sw <;> rfl
   by_cases hiy : i = y
-  · subst hiy; rw [opSwap, Function.update_self]; exact ey
-  · rw [opSwap, Function.update_of_ne hiy]
+  · subst hiy; rw [opSwap, Fun.update_self]; exact ey
+  · rw [opSwap, Fun.update_of_ne hiy]
     by_cases hix : i = x
-    · subst hix; rw [Function.update_self]; exact ex
-    · rw [Function.update_of_ne hix]
+    · subst hix; rw [Fun.update_self]; exact ex
+    · rw [Fun.update_of_ne hix]
       have hi := slot_lt i
       simp only [ACC] at hi
       show toFe (mv s'.mem base (slot i.val) 7) = toFe (mv s.mem base (slot i.val) 7)

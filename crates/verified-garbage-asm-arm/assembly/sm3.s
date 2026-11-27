@@ -29,6 +29,12 @@ vg_sm3_init:
 	movw r12, #3662
 	movt r12, #45307
 	str r12, [r0, #28]
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_sm3_update:
@@ -164,6 +170,31 @@ vg_sm3_update:
 	ldr r11, [r3, #132]
 	ldr lr, [r3, #136]
 	add sp, sp, #168
+	sub sp, sp, #168
+	add r12, sp, #0
+	mov r2, #0
+	mov r3, #5
+223:
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 223b
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	add sp, sp, #168
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_sm3_finalize:
@@ -268,4 +299,29 @@ vg_sm3_finalize:
 	ldr r11, [r3, #132]
 	ldr lr, [r3, #136]
 	add sp, sp, #168
+	sub sp, sp, #168
+	add r12, sp, #0
+	mov r2, #0
+	mov r3, #5
+28:
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 28b
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	add sp, sp, #168
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr

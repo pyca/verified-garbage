@@ -25,6 +25,9 @@ each operation instead of repeating it at every use:
   points by the curve's doubling;
 * `vg_<curve>_jac_add_affine(ws)`: the same for `Q` with `Z = 1`, by
   `jacAddAffine`, the mixed addition, which does not multiply by `Q`'s `Z`;
+  on x86-64 both additions end with a call of `vg_<curve>_jac_add_tail(ws)`,
+  their common end from `U₁`, `S₁`, `H`, `r` and `Z` (`jacEqual` for
+  `H = 0`, else `jacTail`), whose proof is theirs;
 * for a curve with `a = -3` only (no code for another curve has them),
   `vg_<curve>_proj_add_affine(ws)`: `O = P + Q` in projective coordinates
   (`(X : Y : Z)` for `(X / Z, Y / Z)`) for `Q` with `Z = 1`, by

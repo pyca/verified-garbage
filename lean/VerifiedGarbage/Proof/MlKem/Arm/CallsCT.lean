@@ -1,7 +1,6 @@
 module
-public import VerifiedGarbage.Proof.MlKem.Arm.Calls
 
-import VerifiedGarbage.Proof.MlKem.Arm.HashTop
+public import VerifiedGarbage.Proof.MlKem.Arm.Calls
 import VerifiedGarbage.Proof.MlKem.Arm.SampleCT
 import VerifiedGarbage.Proof.Framework.Arm.RelCT
 import VerifiedGarbage.Proof.Framework.Arm.Contract
@@ -9,7 +8,6 @@ import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.MlKem.Arm.Calls
-meta import VerifiedGarbage.Proof.MlKem.Arm.HashTop
 meta import VerifiedGarbage.Proof.MlKem.Arm.SampleCT
 meta import VerifiedGarbage.Proof.Framework.Arm.RelCT
 meta import VerifiedGarbage.Proof.Framework.Arm.Contract

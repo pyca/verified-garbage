@@ -6,10 +6,12 @@ import VerifiedGarbage.Proof.Sha1.Stream
 import VerifiedGarbage.Proof.Sha256.Scratch
 import VerifiedGarbage.Proof.Sha512.Stream
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Sha256.Stream
 import VerifiedGarbage.Proof.Framework.InstancePriority
 public import VerifiedGarbage.Proof.Framework.PowLit
 import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # HMAC's postconditions read memory only within the buffers
@@ -111,5 +113,34 @@ theorem finalizePost_local (hR : ReprLocal S) (hS : S.stateBytes < 2 ^ 64) : ∀
     fun p hp i hi => hp _ (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hS, hi]))
   intro k0 text h1 h2 hri hc hro
   exact h k0 text h1 h2 (hR (hs _ hb.1) hri) hc (hR (hs _ hb.2.1) hro)
+
+
+/-- `finalizePost` reads the memory on return only within the digest. -/
+theorem finalizePostOut_local : ∀ vs m m₁ m₂ r, vs.length = ((finalizeSig S).words pb).length →
+    (∀ b ∈ Sig.bufs (finalizeSig S).params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply ((finalizeSig S).words pb) (finalizePost S pb) vs m m₁ r →
+      Curry.apply ((finalizeSig S).words pb) (finalizePost S pb) vs m m₂ r := by
+  intro vs m m₁ m₂ r hlen hb h
+  obtain ⟨inn, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 3) hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨out, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨ot, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero hlen
+  simp only [finalizeSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+    forall_eq, Elem.size, Nat.mul_one] at hb
+  have ho : ∀ i < S.digestBytes, m₂ (ot + BitVec.ofNat 64 i) = m₁ (ot + BitVec.ofNat 64 i) :=
+    fun i hi => (hb.2.2 _ (by
+      simp only [Region.Contains]
+      rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat]
+      have := Nat.mod_le i (2 ^ 64)
+      omega_using [hi, this])).symm
+  intro k0 text h1 h2 hri hc hro
+  rw [show Spec.Sha256.bytesAt m₂ (ArgWord.addr.ofRaw ot) S.digestBytes =
+    Spec.Sha256.bytesAt m₁ ot S.digestBytes from Sha256.Stream.bytesAt_congr ho]
+  exact h k0 text h1 h2 hri hc hro
 
 end VG.Proof.Hmac

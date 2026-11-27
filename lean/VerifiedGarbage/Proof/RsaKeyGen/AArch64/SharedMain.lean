@@ -75,31 +75,31 @@ theorem sharedIter_ok (M : Mont) (R : VG.Proof.MillerRabin.AArch64.Kernel) {B : 
   have hZ := h.hZ
   have hnw := h.scr.nowrap
   have h256 := h.h256
-  have hEn : B.toNat + slot w aE + 8 * (w + 1) ≤ 2 ^ 64 := by omega_arith
-  have hEr : ∀ r ∈ sharedRoundRanges w, slot w aE + 8 * (w + 1) ≤ r.1 ∨ r.1 + r.2 ≤ slot w aE := fun r hr =>
+  obtain hEn : B.toNat + slot w aE + 8 * (w + 1) ≤ 2 ^ 64 := by omega_arith
+  obtain hEr : ∀ r ∈ sharedRoundRanges w, slot w aE + 8 * (w + 1) ≤ r.1 ∨ r.1 + r.2 ≤ slot w aE := fun r hr =>
     Or.inr (sharedRoundRanges_lt w r hr)
   obtain ⟨_, _, hwb⟩ := VG.Proof.RsaKeyGen.cand_bits (by omega_arith) hsh
-  have hres' := VG.Proof.RsaKeyGen.mrLoop_step c ch (Spec.Rsa.splitTwos (c - 1)).1 (Spec.Rsa.splitTwos (c - 1)).2
+  obtain hres' := VG.Proof.RsaKeyGen.mrLoop_step c ch (Spec.Rsa.splitTwos (c - 1)).1 (Spec.Rsa.splitTwos (c - 1)).2
     (8 * w) r i uni used hgo hwb (by omega_arith)
   simp only [seqs]
   refine WP.seq (WP.mono (iterHead_ok h hw128 hrl hul hlen hrlen hus) fun s₁ ⟨hz₁, hm₁, k₁⟩ => ?_)
   refine WP.seq (WP.ite (decide (r.length < used + 8 * w)) hz₁ (fun hb => ?_) (fun hb => ?_))
   · -- Out of octets: `kStat := 0`.
     simp only [decide_eq_true_eq] at hb
-    have hs₁ := h.scr.congr k₁.wr
+    obtain hs₁ := h.scr.congr k₁.wr
     refine WP.mono (WP.keep [.x3] (Q := fun t => t.mem = s₁.mem.writeW (off B (8 * kStat)) (BitVec.ofNat 64 0)) (by
       brun [(k₁.gpr .x0 (by decide)).trans h.x0, hdr_enc (show kStat < 32 by decide),
         hs₁.st (d := 8 * kStat) (by simp only [kStat, sFn]; omega_arith)]
       rfl) (by decide) (by decide) (by decide +kernel)) fun s₂ ⟨hm₂, k₂⟩ => ?_
-    have hf₂ : Frm B [(8 * kStat, 8)] s.mem s₂.mem := by
+    obtain hf₂ : Frm B [(8 * kStat, 8)] s.mem s₂.mem := by
       rw [hm₂, hm₁]
       exact Frm.of_outside (writeW_outside _ B _ (d := 8 * kStat) (by simp only [kStat, sFn]; omega_arith)) (by simp)
-    have hc₂ : MrCtx s₂ B Z w c bm := hc.of_frm hf₂ (by kmut) (k₁.trans k₂) (by decide) (VG.Proof.RsaKeyGen.HdrShapeC.hdrW rfl rfl) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl)
+    obtain hc₂ : MrCtx s₂ B Z w c bm := hc.of_frm hf₂ (by kmut) (k₁.trans k₂) (by decide) (VG.Proof.RsaKeyGen.HdrShapeC.hdrW rfl rfl) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl)
       (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl)
     refine WP.mono (statCmp_ok hc₂.ws (v := 0) (by decide) (by rw [hm₂, word_writeW_self]))
       fun t ⟨hz, hm, k⟩ => Or.inl ⟨hz.trans rfl, ?_⟩
-    have hres0 : res = none := hres.symm.trans (hres'.trans (VG.Proof.RsaKeyGen.ite_f (by omega_arith) _ _))
-    have hft : Frm B [(8 * kStat, 8)] s.mem t.mem :=
+    obtain hres0 : res = none := hres.symm.trans (hres'.trans (VG.Proof.RsaKeyGen.ite_f (by omega_arith) _ _))
+    obtain hft : Frm B [(8 * kStat, 8)] s.mem t.mem :=
       hf₂.trans (show Frm B [(8 * kStat, 8)] s₂.mem t.mem by rw [hm]; exact Frm.refl _ _ _)
     refine ⟨⟨⟨bm, hc.of_frm hft (by kmut) ((k₁.trans k₂).trans k) (by decide) (VG.Proof.RsaKeyGen.HdrShapeC.hdrW rfl rfl) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl)
         (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl)⟩,
@@ -110,9 +110,9 @@ theorem sharedIter_ok (M : Mont) (R : VG.Proof.MillerRabin.AArch64.Kernel) {B : 
     · exact hfrm.trans (hft.mono (by simp [sharedRoundRanges]))
   · -- A round.
     simp only [decide_eq_false_iff_not, Nat.not_lt] at hb
-    have hc₁ : MrCtx s₁ B Z w c bm := hc.of_frm (rs := []) (by rw [hm₁]; exact Frm.refl _ _ _) (by simp) k₁
+    obtain hc₁ : MrCtx s₁ B Z w c bm := hc.of_frm (rs := []) (by rw [hm₁]; exact Frm.refl _ _ _) (by simp) k₁
       (by decide) (by simp) (by simp) (by simp) (by simp) (by simp)
-    have hi61 : i < 2 ^ 61 := by
+    obtain hi61 : i < 2 ^ 61 := by
       have : 32 * i ≤ 8 * w * i := Nat.mul_le_mul_right _ (by omega_arith)
       omega_arith
     refine WP.mono (sharedRound_ok (rp := rp) (used := used) (r := r) (i := i) (uni := uni) (ch := ch) M R hw4 hw128 hEZ hc₁
@@ -125,15 +125,15 @@ theorem sharedIter_ok (M : Mont) (R : VG.Proof.MillerRabin.AArch64.Kernel) {B : 
       at hres' hc₂ hst₂ hcnt₂
     generalize Spec.RsaKeyGen.mrIteration c (Spec.Rsa.splitTwos (c - 1)).1 (Spec.Rsa.splitTwos (c - 1)).2 wt.1 = f
       at hres' hst₂ hcnt₂
-    have hfr : Frm B (sharedRoundRanges w) s.mem s₂.mem := by rw [← hm₁]; exact hfr₂
-    have hdrop : r.length - (r.drop (used + 8 * w)).length = used + 8 * w := by rw [List.length_drop]; omega_arith
-    have hk : Keep mmRegs s₀ s₂ := ((hkeep.trans k₁).trans k₂).mono (by decide)
+    obtain hfr : Frm B (sharedRoundRanges w) s.mem s₂.mem := by rw [← hm₁]; exact hfr₂
+    obtain hdrop : r.length - (r.drop (used + 8 * w)).length = used + 8 * w := by rw [List.length_drop]; omega_arith
+    obtain hk : Keep mmRegs s₀ s₂ := ((hkeep.trans k₁).trans k₂).mono (by decide)
     refine WP.mono (statCmp_ok hc₂.ws (v := if f then (if i + 1 < 17 ∨ uni + wt.2.toNat < ch then 4 else 1) else 3)
       (by split <;> (try split) <;> decide) hst₂) fun t ⟨hz, hm, k⟩ => ?_
-    have hct : MrCtx t B Z w c bm₂ := hc₂.of_frm (rs := [])
+    obtain hct : MrCtx t B Z w c bm₂ := hc₂.of_frm (rs := [])
       (by rw [hm]; exact Frm.refl _ _ _) (by simp) k (by decide) (by simp) (by simp) (by simp) (by simp) (by simp)
-    have hkt : Keep mmRegs s₀ t := (hk.trans k).mono (by decide)
-    have hft : Frm B (sharedRoundRanges w) s₀.mem t.mem := by rw [hm]; exact hfrm.trans hfr
+    obtain hkt : Keep mmRegs s₀ t := (hk.trans k).mono (by decide)
+    obtain hft : Frm B (sharedRoundRanges w) s₀.mem t.mem := by rw [hm]; exact hfrm.trans hfr
     cases f
     · -- Composite.
       refine Or.inl ⟨hz.trans rfl, ⟨⟨_, hct⟩, fun h0 => ?_, fun b rest h1 => ?_, hft, hkt⟩, fun h0 => ?_,
@@ -151,7 +151,7 @@ theorem sharedIter_ok (M : Mont) (R : VG.Proof.MillerRabin.AArch64.Kernel) {B : 
         subst h1b
         rw [List.length_drop]; omega_arith
     · obtain ⟨hI₂, hN₂⟩ := hcnt₂ rfl
-      have hu : (if wt.2 = true then 1 else 0) = wt.2.toNat := by cases wt.2 <;> rfl
+      obtain hu : (if wt.2 = true then 1 else 0) = wt.2.toNat := by cases wt.2 <;> rfl
       simp only [↓reduceIte, hu] at hres'
       by_cases hcnd : i + 1 < 17 ∨ uni + wt.2.toNat < ch
       · -- On to the next witness.
@@ -176,7 +176,7 @@ theorem sharedIter_ok (M : Mont) (R : VG.Proof.MillerRabin.AArch64.Kernel) {B : 
         · cases wt.2 <;> simp <;> omega_arith
         · exact hres'.symm.trans hres
       · -- Probably prime.
-        have hdone := VG.Proof.RsaKeyGen.mrLoop_done c ch (Spec.Rsa.splitTwos (c - 1)).1
+        obtain hdone := VG.Proof.RsaKeyGen.mrLoop_done c ch (Spec.Rsa.splitTwos (c - 1)).1
           (Spec.Rsa.splitTwos (c - 1)).2 (r.drop (used + 8 * w)) (i + 1) (uni + wt.2.toNat)
           (by intro h; exact hcnd (h.imp (fun h => by unfold Spec.RsaKeyGen.blindedChecks at h; omega_arith) id))
         refine Or.inl ⟨hz.trans (by simp [hcnd]), ⟨⟨_, hct⟩, fun h0 => ?_, fun b rest h1 => ?_, hft, hkt⟩,
@@ -216,11 +216,11 @@ theorem sharedInit_ok {B : Addr} {Z w c ch bm : Nat} {rp : Addr} {r : List Byte}
       h.scr.st (d := 8 * kI) (by simp only [kI, kElen, sFn]; omega_arith),
       h.scr.st (d := 8 * kUni) (by simp only [kUni, kP, sFn]; omega_arith)]
     rfl) (by decide) (by decide) (by decide +kernel)) fun s₁ ⟨hm₁, k₁⟩ => ?_
-  have hf₁ : Frm B [(8 * kI, 8), (8 * kUni, 8)] s.mem s₁.mem := by
+  obtain hf₁ : Frm B [(8 * kI, 8), (8 * kUni, 8)] s.mem s₁.mem := by
     rw [hm₁]
     exact (Frm.of_outside (writeW_outside _ B _ (d := 8 * kI) (by simp only [kI, kElen, sFn]; omega_arith)) (by simp)).trans
       (Frm.of_outside (writeW_outside _ B _ (d := 8 * kUni) (by simp only [kUni, kP, sFn]; omega_arith)) (by simp))
-  have sR2 : slot w aR2 + 8 * (w + 2) ≤ Z := by have := slot_lt (w := w) (show aR2 < 16 by decide); omega_arith
+  obtain sR2 : slot w aR2 + 8 * (w + 2) ≤ Z := by have := slot_lt (w := w) (show aR2 < 16 by decide); omega_arith
   refine ⟨⟨bm, hc.of_frm hf₁ (by kmut) k₁ (by decide) (VG.Proof.RsaKeyGen.HdrShapeC.hdrW rfl rfl) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl)
       (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl)⟩, hE.of_frm hf₁ (VG.Proof.RsaKeyGen.SlotShapeC.apartW1 rfl rfl) (by omega_arith), ?_, ?_, ?_, ?_, ?_, hsrc.congrK (InScr.of_frm hf₁ (by
         simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq, kI, kElen, kUni, kP, sFn]

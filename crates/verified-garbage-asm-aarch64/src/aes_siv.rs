@@ -10,25 +10,37 @@ pub const VG_AES_SIV_INIT_AES_FEATURES: verified_garbage_cpu::Features = verifie
 ///
 /// Contract: `VG.Spec.Siv.initContract`. The key context is `VG.Spec.Siv.KeyRepr`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `key` must be valid for reads of `key_len` bytes.
 /// * `ctx` must be valid for reads and writes of 512 bytes.
 /// * `key_len` must be 32, 48 or 64.
 /// * `ctx` must not overlap `key` (distinct Rust objects never do).
-/// * Neither `key` nor `ctx` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * Neither `key` nor `ctx` may overlap the 560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_siv_init_aes(key: *const u8, key_len: usize, ctx: *mut [u64; 64]) {
     core::arch::naked_asm!(
-        r".inst 0xd12803ff,0x910003e3,0xf9044073,0xf9044474,0xf9044875,0xf9044c76,0xf904507e,0x91000013
-.inst 0xd341fc34,0x91000055,0x91000076,0x91000281
+        r".inst 0xd108c3ff,0x910003e3,0xf9000073,0xf9000474,0xf9000875,0xf9000c76,0xf900107e,0x91000013
+.inst 0xd341fc34,0x91000055,0x91000076,0x91000281,0x9100c063
 bl {vg_aes_expand_key_scratch_aes}
-.inst 0x910002a0,0xd342fe81,0x91001821,0x9103c2a2,0x910002c3
+.inst 0x910002a0,0xd342fe81,0x91001821,0x9103c2a2,0x9100c2c3
 bl {vg_cmac_aes_subkeys_aes}
-.inst 0x8b140260,0x91000281,0x910442a2,0x910002c3
+.inst 0x8b140260,0x91000281,0x910442a2,0x9100c2c3
 bl {vg_aes_expand_key_scratch_aes}
-.inst 0xf94442d3,0xf94446d4,0xf9444ad5,0xf94452de,0xf9444ed6,0x912803ff,0xd65f03c0
+.inst 0xf94002d3,0xf94006d4,0xf9400ad5,0xf94012de,0xf9400ed6,0x9108c3ff,0xd2800001,0xd2800002
+.inst 0xd2800003,0xd2800004,0xd2800005,0xd2800006,0xd2800007,0xd2800008,0xd2800009,0xd280000a
+.inst 0xd280000b,0xd280000c,0xd280000d,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402
+.inst 0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412
+.inst 0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a
+.inst 0x6f00e41b,0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f,0xd2800000,0xd108c3ff
+.inst 0x6f00e41f,0x910003e9,0xd280010a
+20:
+.inst 0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x91010129,0xd100054a
+cbnz x10, 20b
+.inst 0x3d80013f,0x3d80053f,0x3d80093f,0x9108c3ff,0xd65f03c0
 .p2align 6",
         vg_aes_expand_key_scratch_aes = sym super::aes::vg_aes_expand_key_scratch_aes::vg_aes_expand_key_scratch_aes,
         vg_cmac_aes_subkeys_aes = sym super::cmac_aes::vg_cmac_aes_subkeys_aes::vg_cmac_aes_subkeys_aes,
@@ -39,24 +51,76 @@ bl {vg_aes_expand_key_scratch_aes}
 ///
 /// Contract: `VG.Spec.Siv.initContract`. The key context is `VG.Spec.Siv.KeyRepr`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `key` must be valid for reads of `key_len` bytes.
 /// * `ctx` must be valid for reads and writes of 512 bytes.
 /// * `key_len` must be 32, 48 or 64.
 /// * `ctx` must not overlap `key` (distinct Rust objects never do).
-/// * Neither `key` nor `ctx` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * Neither `key` nor `ctx` may overlap the 2224 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_aes_siv_init_neon(key: *const u8, key_len: usize, ctx: *mut [u64; 64]) {
+    core::arch::naked_asm!(
+        r".inst 0xd122c3ff,0x910003e3,0xf9000073,0xf9000474,0xf9000875,0xf9000c76,0xf900107e,0x91000013
+.inst 0xd341fc34,0x91000055,0x91000076,0x91000281,0x9100c063
+bl {vg_aes_expand_key_scratch}
+.inst 0x910002a0,0xd342fe81,0x91001821,0x9103c2a2,0x9100c2c3
+bl {vg_cmac_aes_subkeys_neon}
+.inst 0x8b140260,0x91000281,0x910442a2,0x9100c2c3
+bl {vg_aes_expand_key_scratch}
+.inst 0xf94002d3,0xf94006d4,0xf9400ad5,0xf94012de,0xf9400ed6,0x9122c3ff,0xd2800001,0xd2800002
+.inst 0xd2800003,0xd2800004,0xd2800005,0xd2800006,0xd2800007,0xd2800008,0xd2800009,0xd280000a
+.inst 0xd280000b,0xd280000c,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403
+.inst 0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413
+.inst 0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b
+.inst 0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f,0xd2800000,0xd122c3ff,0x6f00e41f
+.inst 0x910003e9,0xd280044a
+20:
+.inst 0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x91010129,0xd100054a
+cbnz x10, 20b
+.inst 0x3d80013f,0x3d80053f,0x3d80093f,0x9122c3ff,0xd65f03c0
+.p2align 6",
+        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
+        vg_cmac_aes_subkeys_neon = sym super::cmac_aes::vg_cmac_aes_subkeys_neon::vg_cmac_aes_subkeys_neon,
+    )
+}
+
+/// The AES-SIV key setup (RFC 5297 §2.6): writes the key context of the `key_len`-byte key `K = K1 ‖ K2` at `key` (the halves of `key_len / 2` bytes) to `*ctx`: the key schedule of `K1` for `Nr = key_len / 8 + 6` rounds (FIPS 197 §5.2, as `vg_aes_expand_key` writes it) in the first `16 * (Nr + 1)` bytes, its CMAC subkeys (NIST SP 800-38B §6.1) in bytes 240–271, and the key schedule of `K2` in the `16 * (Nr + 1)` bytes from byte 272. The other bytes are unspecified. The other `vg_aes_siv_*` functions read it, with `Nr` as their `rounds`.
+///
+/// Contract: `VG.Spec.Siv.initContract`. The key context is `VG.Spec.Siv.KeyRepr`. Constant time: only the pointers and `key_len` may affect timing, not the key.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// # Safety
+///
+/// * `key` must be valid for reads of `key_len` bytes.
+/// * `ctx` must be valid for reads and writes of 512 bytes.
+/// * `key_len` must be 32, 48 or 64.
+/// * `ctx` must not overlap `key` (distinct Rust objects never do).
+/// * Neither `key` nor `ctx` may overlap the 2224 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_siv_init(key: *const u8, key_len: usize, ctx: *mut [u64; 64]) {
     core::arch::naked_asm!(
-        r".inst 0xd12803ff,0x910003e3,0xf9044073,0xf9044474,0xf9044875,0xf9044c76,0xf904507e,0x91000013
-.inst 0xd341fc34,0x91000055,0x91000076,0x91000281
+        r".inst 0xd122c3ff,0x910003e3,0xf9000073,0xf9000474,0xf9000875,0xf9000c76,0xf900107e,0x91000013
+.inst 0xd341fc34,0x91000055,0x91000076,0x91000281,0x9100c063
 bl {vg_aes_expand_key_scratch}
-.inst 0x910002a0,0xd342fe81,0x91001821,0x9103c2a2,0x910002c3
+.inst 0x910002a0,0xd342fe81,0x91001821,0x9103c2a2,0x9100c2c3
 bl {vg_cmac_aes_subkeys}
-.inst 0x8b140260,0x91000281,0x910442a2,0x910002c3
+.inst 0x8b140260,0x91000281,0x910442a2,0x9100c2c3
 bl {vg_aes_expand_key_scratch}
-.inst 0xf94442d3,0xf94446d4,0xf9444ad5,0xf94452de,0xf9444ed6,0x912803ff,0xd65f03c0
+.inst 0xf94002d3,0xf94006d4,0xf9400ad5,0xf94012de,0xf9400ed6,0x9122c3ff,0xd2800001,0xd2800002
+.inst 0xd2800003,0xd2800004,0xd2800005,0xd2800006,0xd2800007,0xd2800008,0xd2800009,0xd280000a
+.inst 0xd280000b,0xd280000c,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403
+.inst 0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413
+.inst 0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b
+.inst 0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f,0xd2800000,0xd122c3ff,0x6f00e41f
+.inst 0x910003e9,0xd280044a
+20:
+.inst 0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x91010129,0xd100054a
+cbnz x10, 20b
+.inst 0x3d80013f,0x3d80053f,0x3d80093f,0x9122c3ff,0xd65f03c0
 .p2align 6",
         vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
         vg_cmac_aes_subkeys = sym super::cmac_aes::vg_cmac_aes_subkeys::vg_cmac_aes_subkeys,
@@ -70,6 +134,8 @@ pub const VG_AES_SIV_ENCRYPT_AES_FEATURES: verified_garbage_cpu::Features = veri
 ///
 /// Contract: `VG.Spec.Siv.encryptContract`. Constant time: only the pointers, `rounds`, `ads_count`, `len` and where the components are (their addresses and lengths) may affect timing, not the key context, the associated data or the plaintext.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads of 512 bytes.
@@ -78,15 +144,15 @@ pub const VG_AES_SIV_ENCRYPT_AES_FEATURES: verified_garbage_cpu::Features = veri
 /// * `siv` must be valid for reads and writes of 16 bytes.
 /// * `rounds` must be 10, 12 or 14.
 /// * `data` and `siv` must not overlap each other, `ctx`, `ads` or the slices `ads` lists (distinct Rust objects never do).
-/// * None of `ctx`, `ads`, the slices `ads` lists, `data` and `siv` may overlap the 2576 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `ads`, the slices `ads` lists, `data` and `siv` may overlap the 400 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_siv_encrypt_aes(ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        r".inst 0xd12843ff,0x910003e7,0xf90050f3,0xf90054f4,0xf90058f5,0xf9005cf6,0xf90060f7,0xf90064f8
+        r".inst 0xd10643ff,0x910003e7,0xf90050f3,0xf90054f4,0xf90058f5,0xf9005cf6,0xf90060f7,0xf90064f8
 .inst 0xf90068f9,0xf9006cfa,0xf90070fb,0xf90074fc,0xf90078fe,0xf9007ce6,0x910000f3,0x91000014
 .inst 0x91000035,0x91000058,0x91000079,0x9100009a,0x910000bb,0xd2800009,0xf9000a69,0xf9000e69
-.inst 0xf9050269,0xf9050669,0x91000280,0x910002a1,0x91280262,0x91004263,0xd2800204,0x91040265
+.inst 0xf9008269,0xf9008669,0x91000280,0x910002a1,0x91040262,0x91004263,0xd2800204,0x91044265
 bl {vg_cmac_aes_finalize_aes}
 cbz x25, 20f
 22:
@@ -96,14 +162,14 @@ cbz x23, 23f
 b 24f
 23:
 24:
-.inst 0xd344ff84,0x91000280,0x910002a1,0x91020262,0x910002c3,0x91040265
+.inst 0xd344ff84,0x91000280,0x910002a1,0x91020262,0x910002c3,0x91044265
 bl {vg_cmac_aes_update_aes}
-.inst 0x8b1c02c3,0xcb1c02e4,0x91000280,0x910002a1,0x91020262,0x91040265
+.inst 0x8b1c02c3,0xcb1c02e4,0x91000280,0x910002a1,0x91020262,0x91044265
 bl {vg_cmac_aes_finalize_aes}
-.inst 0xf9450269,0xf945066a,0xdac00d29,0xdac00d4a,0xd37ffd2b,0xd280000c,0xcb0b018b,0xd28010ec
+.inst 0xf9408269,0xf940866a,0xdac00d29,0xdac00d4a,0xd37ffd2b,0xd280000c,0xcb0b018b,0xd28010ec
 .inst 0x8a0c016b,0xd37ffd4c,0xd37ff929,0xaa0c0129,0xd37ff94a,0xca0b014a,0xdac00d29,0xdac00d4a
-.inst 0xf9050269,0xf905066a,0xf9450269,0xf940426a,0xca0a0129,0xf9050269,0xf9450669,0xf940466a
-.inst 0xca0a0129,0xf9050669,0x91004318,0xd1000739
+.inst 0xf9008269,0xf900866a,0xf9408269,0xf940426a,0xca0a0129,0xf9008269,0xf9408669,0xf940466a
+.inst 0xca0a0129,0xf9008669,0x91004318,0xd1000739
 cbnz x25, 22b
 b 21f
 20:
@@ -124,9 +190,9 @@ cbnz x8, 211b
 b 210f
 29:
 210:
-.inst 0xcb1c02e6,0x8b060266,0xf94008c9,0xf945026a,0xca0a0129,0xf90008c9,0xf9400cc9,0xf945066a
+.inst 0xcb1c02e6,0x8b060266,0xf94008c9,0xf940826a,0xca0a0129,0xf90008c9,0xf9400cc9,0xf940866a
 .inst 0xca0a0129,0xf9000cc9,0xd2800009,0xf9000269,0xf9000669,0xd344ff84,0x91000280,0x910002a1
-.inst 0x91000262,0x910002c3,0x91040265
+.inst 0x91000262,0x910002c3,0x91044265
 bl {vg_cmac_aes_update_aes}
 .inst 0xd10006e9,0xd344fd29,0xd2800019
 cbz x9, 212f
@@ -134,10 +200,10 @@ cbz x9, 212f
 b 213f
 212:
 213:
-.inst 0x91000324,0x91000280,0x910002a1,0x91000262,0x91008263,0x91040265
+.inst 0x91000324,0x91000280,0x910002a1,0x91000262,0x91008263,0x91044265
 bl {vg_cmac_aes_update_aes}
 .inst 0xd37cef29,0x91008263,0x8b090063,0xcb1c02e4,0xcb090084,0x91000280,0x910002a1,0x91000262
-.inst 0x91040265
+.inst 0x91044265
 bl {vg_cmac_aes_finalize_aes}
 b 26f
 25:
@@ -149,17 +215,17 @@ cbnz x8, 216b
 b 215f
 214:
 215:
-.inst 0x8b170266,0x910080c6,0xd2801009,0x390000c9,0xf9450269,0xf9004a69,0xf9450669,0xf9004e69
+.inst 0x8b170266,0x910080c6,0xd2801009,0x390000c9,0xf9408269,0xf9004a69,0xf9408669,0xf9004e69
 .inst 0xf9404a69,0xf9404e6a,0xdac00d29,0xdac00d4a,0xd37ffd2b,0xd280000c,0xcb0b018b,0xd28010ec
 .inst 0x8a0c016b,0xd37ffd4c,0xd37ff929,0xaa0c0129,0xd37ff94a,0xca0b014a,0xdac00d29,0xdac00d4a
 .inst 0xf9004a69,0xf9004e6a,0xf9401269,0xf9404a6a,0xca0a0129,0xf9001269,0xf9401669,0xf9404e6a
 .inst 0xca0a0129,0xf9001669,0xd2800009,0xf9000269,0xf9000669,0x91000280,0x910002a1,0x91000262
-.inst 0x91008263,0xd2800204,0x91040265
+.inst 0x91008263,0xd2800204,0x91044265
 bl {vg_cmac_aes_finalize_aes}
 26:
 .inst 0xf9400269,0xf9002269,0xf9400669,0xd280100a,0xf2c0100a,0x8aea0129,0xf9002669,0xf9402269
 .inst 0xf9003269,0xf9402669,0xf9003669,0xd344fee4,0xd35f7884,0xd361fc84,0x91044280,0x910002a1
-.inst 0x91018262,0x910002c3,0x91040265
+.inst 0x91018262,0x910002c3,0x91044265
 bl {vg_aes_ctr32_aes}
 .inst 0xd344fee9,0xd35f7929,0xd361fd29,0xf940266a,0xdac00d4a,0xf940226b,0xdac00d6b,0xab09014a
 .inst 0xd280000c,0x9a0c016b,0xdac00d4a,0xdac00d6b,0xf900226b,0xf900266a,0xd37ced29,0x8b0902d6
@@ -167,7 +233,7 @@ bl {vg_aes_ctr32_aes}
 cbz x23, 217f
 219:
 .inst 0xd2800009,0xf9002a69,0xf9002e69,0xf9402269,0xf9003269,0xf9402669,0xf9003669,0x91044280
-.inst 0x910002a1,0x91018262,0x91014263,0xd2800024,0x91040265
+.inst 0x910002a1,0x91018262,0x91014263,0xd2800024,0x91044265
 bl {vg_aes_ctr32_aes}
 .inst 0xd344fee9,0x910002e8,0x910002c6,0x91014267
 cbz x9, 220f
@@ -192,7 +258,16 @@ b 218f
 218:
 .inst 0x91000356,0x91000377,0xf9407e69,0xf940026a,0xf900012a,0xf940066a,0xf900052a,0xf9405674
 .inst 0xf9405a75,0xf9405e76,0xf9406277,0xf9406678,0xf9406a79,0xf9406e7a,0xf940727b,0xf940767c
-.inst 0xf9407a7e,0xf9405273,0x912843ff,0xd65f03c0
+.inst 0xf9407a7e,0xf9405273,0x910643ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005
+.inst 0xd2800006,0xd2800007,0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d
+.inst 0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404,0x6f00e405
+.inst 0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415
+.inst 0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c,0x6f00e41d
+.inst 0x6f00e41e,0x6f00e41f,0xea01003f,0xd2800000,0xd10643ff,0x6f00e41f,0x910003e9,0xd28000ca
+225:
+.inst 0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x91010129,0xd100054a
+cbnz x10, 225b
+.inst 0x3d80013f,0x910643ff,0xd65f03c0
 .p2align 6",
         vg_cmac_aes_finalize_aes = sym super::cmac_aes::vg_cmac_aes_finalize_aes::vg_cmac_aes_finalize_aes,
         vg_cmac_aes_update_aes = sym super::cmac_aes::vg_cmac_aes_update_aes::vg_cmac_aes_update_aes,
@@ -207,6 +282,8 @@ pub const VG_AES_SIV_DECRYPT_AES_FEATURES: verified_garbage_cpu::Features = veri
 ///
 /// Contract: `VG.Spec.Siv.decryptContract`. Constant time but for the result: only the pointers, `rounds`, `ads_count`, `len`, where the components are (their addresses and lengths) and whether the function returns 1 or 0 may affect timing, not the key context, the associated data, the data or `V`.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads of 512 bytes.
@@ -215,15 +292,15 @@ pub const VG_AES_SIV_DECRYPT_AES_FEATURES: verified_garbage_cpu::Features = veri
 /// * `siv` must be valid for reads of 16 bytes.
 /// * `rounds` must be 10, 12 or 14.
 /// * `data` must not overlap `ctx`, `ads`, the slices `ads` lists or `siv` (distinct Rust objects never do).
-/// * None of `ctx`, `ads`, the slices `ads` lists, `data` and `siv` may overlap the 2576 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `ads`, the slices `ads` lists, `data` and `siv` may overlap the 400 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_siv_decrypt_aes(ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
-        r".inst 0xd12843ff,0x910003e7,0xf90050f3,0xf90054f4,0xf90058f5,0xf9005cf6,0xf90060f7,0xf90064f8
+        r".inst 0xd10643ff,0x910003e7,0xf90050f3,0xf90054f4,0xf90058f5,0xf9005cf6,0xf90060f7,0xf90064f8
 .inst 0xf90068f9,0xf9006cfa,0xf90070fb,0xf90074fc,0xf90078fe,0xf9007ce6,0x910000f3,0x91000014
 .inst 0x91000035,0x91000058,0x91000079,0x9100009a,0x910000bb,0xd2800009,0xf9000a69,0xf9000e69
-.inst 0xf9050269,0xf9050669,0x91000280,0x910002a1,0x91280262,0x91004263,0xd2800204,0x91040265
+.inst 0xf9008269,0xf9008669,0x91000280,0x910002a1,0x91040262,0x91004263,0xd2800204,0x91044265
 bl {vg_cmac_aes_finalize_aes}
 cbz x25, 20f
 22:
@@ -233,14 +310,14 @@ cbz x23, 23f
 b 24f
 23:
 24:
-.inst 0xd344ff84,0x91000280,0x910002a1,0x91020262,0x910002c3,0x91040265
+.inst 0xd344ff84,0x91000280,0x910002a1,0x91020262,0x910002c3,0x91044265
 bl {vg_cmac_aes_update_aes}
-.inst 0x8b1c02c3,0xcb1c02e4,0x91000280,0x910002a1,0x91020262,0x91040265
+.inst 0x8b1c02c3,0xcb1c02e4,0x91000280,0x910002a1,0x91020262,0x91044265
 bl {vg_cmac_aes_finalize_aes}
-.inst 0xf9450269,0xf945066a,0xdac00d29,0xdac00d4a,0xd37ffd2b,0xd280000c,0xcb0b018b,0xd28010ec
+.inst 0xf9408269,0xf940866a,0xdac00d29,0xdac00d4a,0xd37ffd2b,0xd280000c,0xcb0b018b,0xd28010ec
 .inst 0x8a0c016b,0xd37ffd4c,0xd37ff929,0xaa0c0129,0xd37ff94a,0xca0b014a,0xdac00d29,0xdac00d4a
-.inst 0xf9050269,0xf905066a,0xf9450269,0xf940426a,0xca0a0129,0xf9050269,0xf9450669,0xf940466a
-.inst 0xca0a0129,0xf9050669,0x91004318,0xd1000739
+.inst 0xf9008269,0xf900866a,0xf9408269,0xf940426a,0xca0a0129,0xf9008269,0xf9408669,0xf940466a
+.inst 0xca0a0129,0xf9008669,0x91004318,0xd1000739
 cbnz x25, 22b
 b 21f
 20:
@@ -248,7 +325,7 @@ b 21f
 .inst 0x91000356,0x91000377,0xf9407e69,0xf940012a,0xf900026a,0xf940052a,0xf900066a,0xf9400269
 .inst 0xf9002269,0xf9400669,0xd280100a,0xf2c0100a,0x8aea0129,0xf9002669,0xf9402269,0xf9003269
 .inst 0xf9402669,0xf9003669,0xd344fee4,0xd35f7884,0xd361fc84,0x91044280,0x910002a1,0x91018262
-.inst 0x910002c3,0x91040265
+.inst 0x910002c3,0x91044265
 bl {vg_aes_ctr32_aes}
 .inst 0xd344fee9,0xd35f7929,0xd361fd29,0xf940266a,0xdac00d4a,0xf940226b,0xdac00d6b,0xab09014a
 .inst 0xd280000c,0x9a0c016b,0xdac00d4a,0xdac00d6b,0xf900226b,0xf900266a,0xd37ced29,0x8b0902d6
@@ -256,7 +333,7 @@ bl {vg_aes_ctr32_aes}
 cbz x23, 25f
 27:
 .inst 0xd2800009,0xf9002a69,0xf9002e69,0xf9402269,0xf9003269,0xf9402669,0xf9003669,0x91044280
-.inst 0x910002a1,0x91018262,0x91014263,0xd2800024,0x91040265
+.inst 0x910002a1,0x91018262,0x91014263,0xd2800024,0x91044265
 bl {vg_aes_ctr32_aes}
 .inst 0xd344fee9,0x910002e8,0x910002c6,0x91014267
 cbz x9, 28f
@@ -295,9 +372,9 @@ cbnz x8, 219b
 b 218f
 217:
 218:
-.inst 0xcb1c02e6,0x8b060266,0xf94008c9,0xf945026a,0xca0a0129,0xf90008c9,0xf9400cc9,0xf945066a
+.inst 0xcb1c02e6,0x8b060266,0xf94008c9,0xf940826a,0xca0a0129,0xf90008c9,0xf9400cc9,0xf940866a
 .inst 0xca0a0129,0xf9000cc9,0xd2800009,0xf9003a69,0xf9003e69,0xd344ff84,0x91000280,0x910002a1
-.inst 0x9101c262,0x910002c3,0x91040265
+.inst 0x9101c262,0x910002c3,0x91044265
 bl {vg_cmac_aes_update_aes}
 .inst 0xd10006e9,0xd344fd29,0xd2800019
 cbz x9, 220f
@@ -305,10 +382,10 @@ cbz x9, 220f
 b 221f
 220:
 221:
-.inst 0x91000324,0x91000280,0x910002a1,0x9101c262,0x91008263,0x91040265
+.inst 0x91000324,0x91000280,0x910002a1,0x9101c262,0x91008263,0x91044265
 bl {vg_cmac_aes_update_aes}
 .inst 0xd37cef29,0x91008263,0x8b090063,0xcb1c02e4,0xcb090084,0x91000280,0x910002a1,0x9101c262
-.inst 0x91040265
+.inst 0x91044265
 bl {vg_cmac_aes_finalize_aes}
 b 214f
 213:
@@ -320,12 +397,12 @@ cbnz x8, 224b
 b 223f
 222:
 223:
-.inst 0x8b170266,0x910080c6,0xd2801009,0x390000c9,0xf9450269,0xf9004a69,0xf9450669,0xf9004e69
+.inst 0x8b170266,0x910080c6,0xd2801009,0x390000c9,0xf9408269,0xf9004a69,0xf9408669,0xf9004e69
 .inst 0xf9404a69,0xf9404e6a,0xdac00d29,0xdac00d4a,0xd37ffd2b,0xd280000c,0xcb0b018b,0xd28010ec
 .inst 0x8a0c016b,0xd37ffd4c,0xd37ff929,0xaa0c0129,0xd37ff94a,0xca0b014a,0xdac00d29,0xdac00d4a
 .inst 0xf9004a69,0xf9004e6a,0xf9401269,0xf9404a6a,0xca0a0129,0xf9001269,0xf9401669,0xf9404e6a
 .inst 0xca0a0129,0xf9001669,0xd2800009,0xf9003a69,0xf9003e69,0x91000280,0x910002a1,0x9101c262
-.inst 0x91008263,0xd2800204,0x91040265
+.inst 0x91008263,0xd2800204,0x91044265
 bl {vg_cmac_aes_finalize_aes}
 214:
 .inst 0xf9400269,0xf9403a6a,0xca0a0129,0xf940066a,0xf9403e6b,0xca0b014a,0xaa0a0129,0xd100052a
@@ -346,7 +423,17 @@ b 229f
 228:
 229:
 .inst 0xf9405674,0xf9405a75,0xf9405e76,0xf9406277,0xf9406678,0xf9406a79,0xf9406e7a,0xf940727b
-.inst 0xf940767c,0xf9407a7e,0xf9405273,0x912843ff,0xd65f03c0
+.inst 0xf940767c,0xf9407a7e,0xf9405273,0x910643ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004
+.inst 0xd2800005,0xd2800006,0xd2800007,0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c
+.inst 0xd280000d,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404
+.inst 0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414
+.inst 0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c
+.inst 0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f,0x11000000,0xd10643ff,0x6f00e41f,0x910003e9
+.inst 0xd28000ca
+231:
+.inst 0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x91010129,0xd100054a
+cbnz x10, 231b
+.inst 0x3d80013f,0x910643ff,0xd65f03c0
 .p2align 6",
         vg_cmac_aes_finalize_aes = sym super::cmac_aes::vg_cmac_aes_finalize_aes::vg_cmac_aes_finalize_aes,
         vg_cmac_aes_update_aes = sym super::cmac_aes::vg_cmac_aes_update_aes::vg_cmac_aes_update_aes,
@@ -358,6 +445,8 @@ b 229f
 ///
 /// Contract: `VG.Spec.Siv.encryptContract`. Constant time: only the pointers, `rounds`, `ads_count`, `len` and where the components are (their addresses and lengths) may affect timing, not the key context, the associated data or the plaintext.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads of 512 bytes.
@@ -366,15 +455,15 @@ b 229f
 /// * `siv` must be valid for reads and writes of 16 bytes.
 /// * `rounds` must be 10, 12 or 14.
 /// * `data` and `siv` must not overlap each other, `ctx`, `ads` or the slices `ads` lists (distinct Rust objects never do).
-/// * None of `ctx`, `ads`, the slices `ads` lists, `data` and `siv` may overlap the 2576 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `ads`, the slices `ads` lists, `data` and `siv` may overlap the 2448 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_aes_siv_encrypt(ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *mut [u8; 16]) {
+pub(crate) unsafe extern "C" fn vg_aes_siv_encrypt_neon(ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        r".inst 0xd12843ff,0x910003e7,0xf90050f3,0xf90054f4,0xf90058f5,0xf9005cf6,0xf90060f7,0xf90064f8
+        r".inst 0xd12643ff,0x910003e7,0xf90050f3,0xf90054f4,0xf90058f5,0xf9005cf6,0xf90060f7,0xf90064f8
 .inst 0xf90068f9,0xf9006cfa,0xf90070fb,0xf90074fc,0xf90078fe,0xf9007ce6,0x910000f3,0x91000014
 .inst 0x91000035,0x91000058,0x91000079,0x9100009a,0x910000bb,0xd2800009,0xf9000a69,0xf9000e69
-.inst 0xf9050269,0xf9050669,0x91000280,0x910002a1,0x91280262,0x91004263,0xd2800204,0x91040265
-bl {vg_cmac_aes_finalize}
+.inst 0xf9008269,0xf9008669,0x91000280,0x910002a1,0x91040262,0x91004263,0xd2800204,0x91044265
+bl {vg_cmac_aes_finalize_neon}
 cbz x25, 20f
 22:
 .inst 0xf9400316,0xf9400717,0xd2800009,0xf9004269,0xf9004669,0xd280001c
@@ -383,14 +472,14 @@ cbz x23, 23f
 b 24f
 23:
 24:
-.inst 0xd344ff84,0x91000280,0x910002a1,0x91020262,0x910002c3,0x91040265
-bl {vg_cmac_aes_update}
-.inst 0x8b1c02c3,0xcb1c02e4,0x91000280,0x910002a1,0x91020262,0x91040265
-bl {vg_cmac_aes_finalize}
-.inst 0xf9450269,0xf945066a,0xdac00d29,0xdac00d4a,0xd37ffd2b,0xd280000c,0xcb0b018b,0xd28010ec
+.inst 0xd344ff84,0x91000280,0x910002a1,0x91020262,0x910002c3,0x91044265
+bl {vg_cmac_aes_update_neon}
+.inst 0x8b1c02c3,0xcb1c02e4,0x91000280,0x910002a1,0x91020262,0x91044265
+bl {vg_cmac_aes_finalize_neon}
+.inst 0xf9408269,0xf940866a,0xdac00d29,0xdac00d4a,0xd37ffd2b,0xd280000c,0xcb0b018b,0xd28010ec
 .inst 0x8a0c016b,0xd37ffd4c,0xd37ff929,0xaa0c0129,0xd37ff94a,0xca0b014a,0xdac00d29,0xdac00d4a
-.inst 0xf9050269,0xf905066a,0xf9450269,0xf940426a,0xca0a0129,0xf9050269,0xf9450669,0xf940466a
-.inst 0xca0a0129,0xf9050669,0x91004318,0xd1000739
+.inst 0xf9008269,0xf900866a,0xf9408269,0xf940426a,0xca0a0129,0xf9008269,0xf9408669,0xf940466a
+.inst 0xca0a0129,0xf9008669,0x91004318,0xd1000739
 cbnz x25, 22b
 b 21f
 20:
@@ -411,9 +500,314 @@ cbnz x8, 211b
 b 210f
 29:
 210:
-.inst 0xcb1c02e6,0x8b060266,0xf94008c9,0xf945026a,0xca0a0129,0xf90008c9,0xf9400cc9,0xf945066a
+.inst 0xcb1c02e6,0x8b060266,0xf94008c9,0xf940826a,0xca0a0129,0xf90008c9,0xf9400cc9,0xf940866a
 .inst 0xca0a0129,0xf9000cc9,0xd2800009,0xf9000269,0xf9000669,0xd344ff84,0x91000280,0x910002a1
-.inst 0x91000262,0x910002c3,0x91040265
+.inst 0x91000262,0x910002c3,0x91044265
+bl {vg_cmac_aes_update_neon}
+.inst 0xd10006e9,0xd344fd29,0xd2800019
+cbz x9, 212f
+.inst 0xd2800039
+b 213f
+212:
+213:
+.inst 0x91000324,0x91000280,0x910002a1,0x91000262,0x91008263,0x91044265
+bl {vg_cmac_aes_update_neon}
+.inst 0xd37cef29,0x91008263,0x8b090063,0xcb1c02e4,0xcb090084,0x91000280,0x910002a1,0x91000262
+.inst 0x91044265
+bl {vg_cmac_aes_finalize_neon}
+b 26f
+25:
+.inst 0xd2800009,0xf9001269,0xf9001669,0x91008266,0x910002c7,0x910002e8
+cbz x8, 214f
+216:
+.inst 0x394000e9,0x390000c9,0x910004e7,0x910004c6,0xd1000508
+cbnz x8, 216b
+b 215f
+214:
+215:
+.inst 0x8b170266,0x910080c6,0xd2801009,0x390000c9,0xf9408269,0xf9004a69,0xf9408669,0xf9004e69
+.inst 0xf9404a69,0xf9404e6a,0xdac00d29,0xdac00d4a,0xd37ffd2b,0xd280000c,0xcb0b018b,0xd28010ec
+.inst 0x8a0c016b,0xd37ffd4c,0xd37ff929,0xaa0c0129,0xd37ff94a,0xca0b014a,0xdac00d29,0xdac00d4a
+.inst 0xf9004a69,0xf9004e6a,0xf9401269,0xf9404a6a,0xca0a0129,0xf9001269,0xf9401669,0xf9404e6a
+.inst 0xca0a0129,0xf9001669,0xd2800009,0xf9000269,0xf9000669,0x91000280,0x910002a1,0x91000262
+.inst 0x91008263,0xd2800204,0x91044265
+bl {vg_cmac_aes_finalize_neon}
+26:
+.inst 0xf9400269,0xf9002269,0xf9400669,0xd280100a,0xf2c0100a,0x8aea0129,0xf9002669,0xf9402269
+.inst 0xf9003269,0xf9402669,0xf9003669,0xd344fee4,0xd35f7884,0xd361fc84,0x91044280,0x910002a1
+.inst 0x91018262,0x910002c3,0x91044265
+bl {vg_aes_ctr32_neon}
+.inst 0xd344fee9,0xd35f7929,0xd361fd29,0xf940266a,0xdac00d4a,0xf940226b,0xdac00d6b,0xab09014a
+.inst 0xd280000c,0x9a0c016b,0xdac00d4a,0xdac00d6b,0xf900226b,0xf900266a,0xd37ced29,0x8b0902d6
+.inst 0xcb0902f7
+cbz x23, 217f
+219:
+.inst 0xd2800009,0xf9002a69,0xf9002e69,0xf9402269,0xf9003269,0xf9402669,0xf9003669,0x91044280
+.inst 0x910002a1,0x91018262,0x91014263,0xd2800024,0x91044265
+bl {vg_aes_ctr32_neon}
+.inst 0xd344fee9,0x910002e8,0x910002c6,0x91014267
+cbz x9, 220f
+.inst 0xd2800208
+b 221f
+220:
+221:
+222:
+.inst 0x394000c9,0x394000ea,0xca0a0129,0x390000c9,0x910004c6,0x910004e7,0xd1000508
+cbnz x8, 222b
+.inst 0xf9402669,0xdac00d29,0xf940226a,0xdac00d4a,0xd280002b,0xab0b0129,0xd280000b,0x9a0b014a
+.inst 0xdac00d29,0xdac00d4a,0xf900226a,0xf9002669,0x910042d6,0xd344fee9,0xd280020a
+cbz x9, 223f
+.inst 0xcb0a02f7
+b 224f
+223:
+.inst 0xd2800017
+224:
+cbnz x23, 219b
+b 218f
+217:
+218:
+.inst 0x91000356,0x91000377,0xf9407e69,0xf940026a,0xf900012a,0xf940066a,0xf900052a,0xf9405674
+.inst 0xf9405a75,0xf9405e76,0xf9406277,0xf9406678,0xf9406a79,0xf9406e7a,0xf940727b,0xf940767c
+.inst 0xf9407a7e,0xf9405273,0x912643ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005
+.inst 0xd2800006,0xd2800007,0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd2800010
+.inst 0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e406
+.inst 0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416
+.inst 0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c,0x6f00e41d,0x6f00e41e
+.inst 0x6f00e41f,0xea01003f,0xd2800000,0xd12643ff,0x6f00e41f,0x910003e9,0xd28004ca
+225:
+.inst 0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x91010129,0xd100054a
+cbnz x10, 225b
+.inst 0x3d80013f,0x912643ff,0xd65f03c0
+.p2align 6",
+        vg_cmac_aes_finalize_neon = sym super::cmac_aes::vg_cmac_aes_finalize_neon::vg_cmac_aes_finalize_neon,
+        vg_cmac_aes_update_neon = sym super::cmac_aes::vg_cmac_aes_update_neon::vg_cmac_aes_update_neon,
+        vg_aes_ctr32_neon = sym super::aes::vg_aes_ctr32_neon::vg_aes_ctr32_neon,
+    )
+}
+
+/// AES-SIV decryption, `SIV-DECRYPT` (RFC 5297 §2.7): with the key context `*ctx` that `vg_aes_siv_init` wrote for `rounds` rounds and the received synthetic IV `V` at `siv`, decrypts the `len` bytes of ciphertext at `data` in place with AES-CTR under `K2` from `V` with bits 31 and 63 cleared, computes `S2V(K1, AD1, …, ADn, P)` of the `ads_count` components of associated data that `ads` lists (each an address and a length, in bytes) and the plaintext `P`, and returns 1 if it is `V`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The IVs are compared without a branch.
+///
+/// Contract: `VG.Spec.Siv.decryptContract`. Constant time but for the result: only the pointers, `rounds`, `ads_count`, `len`, where the components are (their addresses and lengths) and whether the function returns 1 or 0 may affect timing, not the key context, the associated data, the data or `V`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 512 bytes.
+/// * `ads` must be valid for reads of `2 * size_of::<usize>() * ads_count` bytes, and each slice it lists for reads of its length in bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `siv` must be valid for reads of 16 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `data` must not overlap `ctx`, `ads`, the slices `ads` lists or `siv` (distinct Rust objects never do).
+/// * None of `ctx`, `ads`, the slices `ads` lists, `data` and `siv` may overlap the 2448 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_aes_siv_decrypt_neon(ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *const [u8; 16]) -> u32 {
+    core::arch::naked_asm!(
+        r".inst 0xd12643ff,0x910003e7,0xf90050f3,0xf90054f4,0xf90058f5,0xf9005cf6,0xf90060f7,0xf90064f8
+.inst 0xf90068f9,0xf9006cfa,0xf90070fb,0xf90074fc,0xf90078fe,0xf9007ce6,0x910000f3,0x91000014
+.inst 0x91000035,0x91000058,0x91000079,0x9100009a,0x910000bb,0xd2800009,0xf9000a69,0xf9000e69
+.inst 0xf9008269,0xf9008669,0x91000280,0x910002a1,0x91040262,0x91004263,0xd2800204,0x91044265
+bl {vg_cmac_aes_finalize_neon}
+cbz x25, 20f
+22:
+.inst 0xf9400316,0xf9400717,0xd2800009,0xf9004269,0xf9004669,0xd280001c
+cbz x23, 23f
+.inst 0xd10006fc,0xd28001e9,0x8a090389,0xcb09039c
+b 24f
+23:
+24:
+.inst 0xd344ff84,0x91000280,0x910002a1,0x91020262,0x910002c3,0x91044265
+bl {vg_cmac_aes_update_neon}
+.inst 0x8b1c02c3,0xcb1c02e4,0x91000280,0x910002a1,0x91020262,0x91044265
+bl {vg_cmac_aes_finalize_neon}
+.inst 0xf9408269,0xf940866a,0xdac00d29,0xdac00d4a,0xd37ffd2b,0xd280000c,0xcb0b018b,0xd28010ec
+.inst 0x8a0c016b,0xd37ffd4c,0xd37ff929,0xaa0c0129,0xd37ff94a,0xca0b014a,0xdac00d29,0xdac00d4a
+.inst 0xf9008269,0xf900866a,0xf9408269,0xf940426a,0xca0a0129,0xf9008269,0xf9408669,0xf940466a
+.inst 0xca0a0129,0xf9008669,0x91004318,0xd1000739
+cbnz x25, 22b
+b 21f
+20:
+21:
+.inst 0x91000356,0x91000377,0xf9407e69,0xf940012a,0xf900026a,0xf940052a,0xf900066a,0xf9400269
+.inst 0xf9002269,0xf9400669,0xd280100a,0xf2c0100a,0x8aea0129,0xf9002669,0xf9402269,0xf9003269
+.inst 0xf9402669,0xf9003669,0xd344fee4,0xd35f7884,0xd361fc84,0x91044280,0x910002a1,0x91018262
+.inst 0x910002c3,0x91044265
+bl {vg_aes_ctr32_neon}
+.inst 0xd344fee9,0xd35f7929,0xd361fd29,0xf940266a,0xdac00d4a,0xf940226b,0xdac00d6b,0xab09014a
+.inst 0xd280000c,0x9a0c016b,0xdac00d4a,0xdac00d6b,0xf900226b,0xf900266a,0xd37ced29,0x8b0902d6
+.inst 0xcb0902f7
+cbz x23, 25f
+27:
+.inst 0xd2800009,0xf9002a69,0xf9002e69,0xf9402269,0xf9003269,0xf9402669,0xf9003669,0x91044280
+.inst 0x910002a1,0x91018262,0x91014263,0xd2800024,0x91044265
+bl {vg_aes_ctr32_neon}
+.inst 0xd344fee9,0x910002e8,0x910002c6,0x91014267
+cbz x9, 28f
+.inst 0xd2800208
+b 29f
+28:
+29:
+210:
+.inst 0x394000c9,0x394000ea,0xca0a0129,0x390000c9,0x910004c6,0x910004e7,0xd1000508
+cbnz x8, 210b
+.inst 0xf9402669,0xdac00d29,0xf940226a,0xdac00d4a,0xd280002b,0xab0b0129,0xd280000b,0x9a0b014a
+.inst 0xdac00d29,0xdac00d4a,0xf900226a,0xf9002669,0x910042d6,0xd344fee9,0xd280020a
+cbz x9, 211f
+.inst 0xcb0a02f7
+b 212f
+211:
+.inst 0xd2800017
+212:
+cbnz x23, 27b
+b 26f
+25:
+26:
+.inst 0x91000356,0x91000377,0xd344fee9
+cbz x9, 213f
+.inst 0xd10006e9,0xd344fd29,0xd280001c
+cbz x9, 215f
+.inst 0xd1000529,0xd37ced3c
+b 216f
+215:
+216:
+.inst 0x91008266,0x8b1c02c7,0xcb1c02e8
+cbz x8, 217f
+219:
+.inst 0x394000e9,0x390000c9,0x910004e7,0x910004c6,0xd1000508
+cbnz x8, 219b
+b 218f
+217:
+218:
+.inst 0xcb1c02e6,0x8b060266,0xf94008c9,0xf940826a,0xca0a0129,0xf90008c9,0xf9400cc9,0xf940866a
+.inst 0xca0a0129,0xf9000cc9,0xd2800009,0xf9003a69,0xf9003e69,0xd344ff84,0x91000280,0x910002a1
+.inst 0x9101c262,0x910002c3,0x91044265
+bl {vg_cmac_aes_update_neon}
+.inst 0xd10006e9,0xd344fd29,0xd2800019
+cbz x9, 220f
+.inst 0xd2800039
+b 221f
+220:
+221:
+.inst 0x91000324,0x91000280,0x910002a1,0x9101c262,0x91008263,0x91044265
+bl {vg_cmac_aes_update_neon}
+.inst 0xd37cef29,0x91008263,0x8b090063,0xcb1c02e4,0xcb090084,0x91000280,0x910002a1,0x9101c262
+.inst 0x91044265
+bl {vg_cmac_aes_finalize_neon}
+b 214f
+213:
+.inst 0xd2800009,0xf9001269,0xf9001669,0x91008266,0x910002c7,0x910002e8
+cbz x8, 222f
+224:
+.inst 0x394000e9,0x390000c9,0x910004e7,0x910004c6,0xd1000508
+cbnz x8, 224b
+b 223f
+222:
+223:
+.inst 0x8b170266,0x910080c6,0xd2801009,0x390000c9,0xf9408269,0xf9004a69,0xf9408669,0xf9004e69
+.inst 0xf9404a69,0xf9404e6a,0xdac00d29,0xdac00d4a,0xd37ffd2b,0xd280000c,0xcb0b018b,0xd28010ec
+.inst 0x8a0c016b,0xd37ffd4c,0xd37ff929,0xaa0c0129,0xd37ff94a,0xca0b014a,0xdac00d29,0xdac00d4a
+.inst 0xf9004a69,0xf9004e6a,0xf9401269,0xf9404a6a,0xca0a0129,0xf9001269,0xf9401669,0xf9404e6a
+.inst 0xca0a0129,0xf9001669,0xd2800009,0xf9003a69,0xf9003e69,0x91000280,0x910002a1,0x9101c262
+.inst 0x91008263,0xd2800204,0x91044265
+bl {vg_cmac_aes_finalize_neon}
+214:
+.inst 0xf9400269,0xf9403a6a,0xca0a0129,0xf940066a,0xf9403e6b,0xca0b014a,0xaa0a0129,0xd100052a
+.inst 0x8ae9014a,0xd37ffd40,0xd280000b,0xcb00016b,0x91000346,0xd343ff68
+cbz x8, 225f
+227:
+.inst 0xf94000c9,0x8a0b0129,0xf90000c9,0x910020c6,0xd1000508
+cbnz x8, 227b
+b 226f
+225:
+226:
+.inst 0xd3430b68,0xd37dfd08
+cbz x8, 228f
+230:
+.inst 0x394000c9,0x8a0b0129,0x390000c9,0x910004c6,0xd1000508
+cbnz x8, 230b
+b 229f
+228:
+229:
+.inst 0xf9405674,0xf9405a75,0xf9405e76,0xf9406277,0xf9406678,0xf9406a79,0xf9406e7a,0xf940727b
+.inst 0xf940767c,0xf9407a7e,0xf9405273,0x912643ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004
+.inst 0xd2800005,0xd2800006,0xd2800007,0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c
+.inst 0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404,0x6f00e405
+.inst 0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415
+.inst 0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c,0x6f00e41d
+.inst 0x6f00e41e,0x6f00e41f,0xea01003f,0x11000000,0xd12643ff,0x6f00e41f,0x910003e9,0xd28004ca
+231:
+.inst 0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x91010129,0xd100054a
+cbnz x10, 231b
+.inst 0x3d80013f,0x912643ff,0xd65f03c0
+.p2align 6",
+        vg_cmac_aes_finalize_neon = sym super::cmac_aes::vg_cmac_aes_finalize_neon::vg_cmac_aes_finalize_neon,
+        vg_cmac_aes_update_neon = sym super::cmac_aes::vg_cmac_aes_update_neon::vg_cmac_aes_update_neon,
+        vg_aes_ctr32_neon = sym super::aes::vg_aes_ctr32_neon::vg_aes_ctr32_neon,
+    )
+}
+
+/// AES-SIV encryption, `SIV-ENCRYPT` (RFC 5297 §2.6): with the key context `*ctx` that `vg_aes_siv_init` wrote for `rounds` rounds, computes the synthetic IV `V = S2V(K1, AD1, …, ADn, P)` of the `ads_count` components of associated data that `ads` lists (each an address and a length, in bytes; for nonce-based encryption, §3, the nonce is the last) and the `len` bytes of plaintext `P` at `data`, writes it to `*siv`, and encrypts the plaintext in place with AES-CTR under `K2` from `V` with bits 31 and 63 cleared. The RFC's output is `V` followed by the encrypted data.
+///
+/// Contract: `VG.Spec.Siv.encryptContract`. Constant time: only the pointers, `rounds`, `ads_count`, `len` and where the components are (their addresses and lengths) may affect timing, not the key context, the associated data or the plaintext.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 512 bytes.
+/// * `ads` must be valid for reads of `2 * size_of::<usize>() * ads_count` bytes, and each slice it lists for reads of its length in bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `siv` must be valid for reads and writes of 16 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `data` and `siv` must not overlap each other, `ctx`, `ads` or the slices `ads` lists (distinct Rust objects never do).
+/// * None of `ctx`, `ads`, the slices `ads` lists, `data` and `siv` may overlap the 2448 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_aes_siv_encrypt(ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *mut [u8; 16]) {
+    core::arch::naked_asm!(
+        r".inst 0xd12643ff,0x910003e7,0xf90050f3,0xf90054f4,0xf90058f5,0xf9005cf6,0xf90060f7,0xf90064f8
+.inst 0xf90068f9,0xf9006cfa,0xf90070fb,0xf90074fc,0xf90078fe,0xf9007ce6,0x910000f3,0x91000014
+.inst 0x91000035,0x91000058,0x91000079,0x9100009a,0x910000bb,0xd2800009,0xf9000a69,0xf9000e69
+.inst 0xf9008269,0xf9008669,0x91000280,0x910002a1,0x91040262,0x91004263,0xd2800204,0x91044265
+bl {vg_cmac_aes_finalize}
+cbz x25, 20f
+22:
+.inst 0xf9400316,0xf9400717,0xd2800009,0xf9004269,0xf9004669,0xd280001c
+cbz x23, 23f
+.inst 0xd10006fc,0xd28001e9,0x8a090389,0xcb09039c
+b 24f
+23:
+24:
+.inst 0xd344ff84,0x91000280,0x910002a1,0x91020262,0x910002c3,0x91044265
+bl {vg_cmac_aes_update}
+.inst 0x8b1c02c3,0xcb1c02e4,0x91000280,0x910002a1,0x91020262,0x91044265
+bl {vg_cmac_aes_finalize}
+.inst 0xf9408269,0xf940866a,0xdac00d29,0xdac00d4a,0xd37ffd2b,0xd280000c,0xcb0b018b,0xd28010ec
+.inst 0x8a0c016b,0xd37ffd4c,0xd37ff929,0xaa0c0129,0xd37ff94a,0xca0b014a,0xdac00d29,0xdac00d4a
+.inst 0xf9008269,0xf900866a,0xf9408269,0xf940426a,0xca0a0129,0xf9008269,0xf9408669,0xf940466a
+.inst 0xca0a0129,0xf9008669,0x91004318,0xd1000739
+cbnz x25, 22b
+b 21f
+20:
+21:
+.inst 0x91000356,0x91000377,0xd344fee9
+cbz x9, 25f
+.inst 0xd10006e9,0xd344fd29,0xd280001c
+cbz x9, 27f
+.inst 0xd1000529,0xd37ced3c
+b 28f
+27:
+28:
+.inst 0x91008266,0x8b1c02c7,0xcb1c02e8
+cbz x8, 29f
+211:
+.inst 0x394000e9,0x390000c9,0x910004e7,0x910004c6,0xd1000508
+cbnz x8, 211b
+b 210f
+29:
+210:
+.inst 0xcb1c02e6,0x8b060266,0xf94008c9,0xf940826a,0xca0a0129,0xf90008c9,0xf9400cc9,0xf940866a
+.inst 0xca0a0129,0xf9000cc9,0xd2800009,0xf9000269,0xf9000669,0xd344ff84,0x91000280,0x910002a1
+.inst 0x91000262,0x910002c3,0x91044265
 bl {vg_cmac_aes_update}
 .inst 0xd10006e9,0xd344fd29,0xd2800019
 cbz x9, 212f
@@ -421,10 +815,10 @@ cbz x9, 212f
 b 213f
 212:
 213:
-.inst 0x91000324,0x91000280,0x910002a1,0x91000262,0x91008263,0x91040265
+.inst 0x91000324,0x91000280,0x910002a1,0x91000262,0x91008263,0x91044265
 bl {vg_cmac_aes_update}
 .inst 0xd37cef29,0x91008263,0x8b090063,0xcb1c02e4,0xcb090084,0x91000280,0x910002a1,0x91000262
-.inst 0x91040265
+.inst 0x91044265
 bl {vg_cmac_aes_finalize}
 b 26f
 25:
@@ -436,17 +830,17 @@ cbnz x8, 216b
 b 215f
 214:
 215:
-.inst 0x8b170266,0x910080c6,0xd2801009,0x390000c9,0xf9450269,0xf9004a69,0xf9450669,0xf9004e69
+.inst 0x8b170266,0x910080c6,0xd2801009,0x390000c9,0xf9408269,0xf9004a69,0xf9408669,0xf9004e69
 .inst 0xf9404a69,0xf9404e6a,0xdac00d29,0xdac00d4a,0xd37ffd2b,0xd280000c,0xcb0b018b,0xd28010ec
 .inst 0x8a0c016b,0xd37ffd4c,0xd37ff929,0xaa0c0129,0xd37ff94a,0xca0b014a,0xdac00d29,0xdac00d4a
 .inst 0xf9004a69,0xf9004e6a,0xf9401269,0xf9404a6a,0xca0a0129,0xf9001269,0xf9401669,0xf9404e6a
 .inst 0xca0a0129,0xf9001669,0xd2800009,0xf9000269,0xf9000669,0x91000280,0x910002a1,0x91000262
-.inst 0x91008263,0xd2800204,0x91040265
+.inst 0x91008263,0xd2800204,0x91044265
 bl {vg_cmac_aes_finalize}
 26:
 .inst 0xf9400269,0xf9002269,0xf9400669,0xd280100a,0xf2c0100a,0x8aea0129,0xf9002669,0xf9402269
 .inst 0xf9003269,0xf9402669,0xf9003669,0xd344fee4,0xd35f7884,0xd361fc84,0x91044280,0x910002a1
-.inst 0x91018262,0x910002c3,0x91040265
+.inst 0x91018262,0x910002c3,0x91044265
 bl {vg_aes_ctr32}
 .inst 0xd344fee9,0xd35f7929,0xd361fd29,0xf940266a,0xdac00d4a,0xf940226b,0xdac00d6b,0xab09014a
 .inst 0xd280000c,0x9a0c016b,0xdac00d4a,0xdac00d6b,0xf900226b,0xf900266a,0xd37ced29,0x8b0902d6
@@ -454,7 +848,7 @@ bl {vg_aes_ctr32}
 cbz x23, 217f
 219:
 .inst 0xd2800009,0xf9002a69,0xf9002e69,0xf9402269,0xf9003269,0xf9402669,0xf9003669,0x91044280
-.inst 0x910002a1,0x91018262,0x91014263,0xd2800024,0x91040265
+.inst 0x910002a1,0x91018262,0x91014263,0xd2800024,0x91044265
 bl {vg_aes_ctr32}
 .inst 0xd344fee9,0x910002e8,0x910002c6,0x91014267
 cbz x9, 220f
@@ -479,7 +873,16 @@ b 218f
 218:
 .inst 0x91000356,0x91000377,0xf9407e69,0xf940026a,0xf900012a,0xf940066a,0xf900052a,0xf9405674
 .inst 0xf9405a75,0xf9405e76,0xf9406277,0xf9406678,0xf9406a79,0xf9406e7a,0xf940727b,0xf940767c
-.inst 0xf9407a7e,0xf9405273,0x912843ff,0xd65f03c0
+.inst 0xf9407a7e,0xf9405273,0x912643ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005
+.inst 0xd2800006,0xd2800007,0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd2800010
+.inst 0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e406
+.inst 0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417
+.inst 0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f
+.inst 0xea01003f,0xd2800000,0xd12643ff,0x6f00e41f,0x910003e9,0xd28004ca
+225:
+.inst 0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x91010129,0xd100054a
+cbnz x10, 225b
+.inst 0x3d80013f,0x912643ff,0xd65f03c0
 .p2align 6",
         vg_cmac_aes_finalize = sym super::cmac_aes::vg_cmac_aes_finalize::vg_cmac_aes_finalize,
         vg_cmac_aes_update = sym super::cmac_aes::vg_cmac_aes_update::vg_cmac_aes_update,
@@ -491,6 +894,8 @@ b 218f
 ///
 /// Contract: `VG.Spec.Siv.decryptContract`. Constant time but for the result: only the pointers, `rounds`, `ads_count`, `len`, where the components are (their addresses and lengths) and whether the function returns 1 or 0 may affect timing, not the key context, the associated data, the data or `V`.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads of 512 bytes.
@@ -499,14 +904,14 @@ b 218f
 /// * `siv` must be valid for reads of 16 bytes.
 /// * `rounds` must be 10, 12 or 14.
 /// * `data` must not overlap `ctx`, `ads`, the slices `ads` lists or `siv` (distinct Rust objects never do).
-/// * None of `ctx`, `ads`, the slices `ads` lists, `data` and `siv` may overlap the 2576 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `ads`, the slices `ads` lists, `data` and `siv` may overlap the 2448 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_siv_decrypt(ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
-        r".inst 0xd12843ff,0x910003e7,0xf90050f3,0xf90054f4,0xf90058f5,0xf9005cf6,0xf90060f7,0xf90064f8
+        r".inst 0xd12643ff,0x910003e7,0xf90050f3,0xf90054f4,0xf90058f5,0xf9005cf6,0xf90060f7,0xf90064f8
 .inst 0xf90068f9,0xf9006cfa,0xf90070fb,0xf90074fc,0xf90078fe,0xf9007ce6,0x910000f3,0x91000014
 .inst 0x91000035,0x91000058,0x91000079,0x9100009a,0x910000bb,0xd2800009,0xf9000a69,0xf9000e69
-.inst 0xf9050269,0xf9050669,0x91000280,0x910002a1,0x91280262,0x91004263,0xd2800204,0x91040265
+.inst 0xf9008269,0xf9008669,0x91000280,0x910002a1,0x91040262,0x91004263,0xd2800204,0x91044265
 bl {vg_cmac_aes_finalize}
 cbz x25, 20f
 22:
@@ -516,14 +921,14 @@ cbz x23, 23f
 b 24f
 23:
 24:
-.inst 0xd344ff84,0x91000280,0x910002a1,0x91020262,0x910002c3,0x91040265
+.inst 0xd344ff84,0x91000280,0x910002a1,0x91020262,0x910002c3,0x91044265
 bl {vg_cmac_aes_update}
-.inst 0x8b1c02c3,0xcb1c02e4,0x91000280,0x910002a1,0x91020262,0x91040265
+.inst 0x8b1c02c3,0xcb1c02e4,0x91000280,0x910002a1,0x91020262,0x91044265
 bl {vg_cmac_aes_finalize}
-.inst 0xf9450269,0xf945066a,0xdac00d29,0xdac00d4a,0xd37ffd2b,0xd280000c,0xcb0b018b,0xd28010ec
+.inst 0xf9408269,0xf940866a,0xdac00d29,0xdac00d4a,0xd37ffd2b,0xd280000c,0xcb0b018b,0xd28010ec
 .inst 0x8a0c016b,0xd37ffd4c,0xd37ff929,0xaa0c0129,0xd37ff94a,0xca0b014a,0xdac00d29,0xdac00d4a
-.inst 0xf9050269,0xf905066a,0xf9450269,0xf940426a,0xca0a0129,0xf9050269,0xf9450669,0xf940466a
-.inst 0xca0a0129,0xf9050669,0x91004318,0xd1000739
+.inst 0xf9008269,0xf900866a,0xf9408269,0xf940426a,0xca0a0129,0xf9008269,0xf9408669,0xf940466a
+.inst 0xca0a0129,0xf9008669,0x91004318,0xd1000739
 cbnz x25, 22b
 b 21f
 20:
@@ -531,7 +936,7 @@ b 21f
 .inst 0x91000356,0x91000377,0xf9407e69,0xf940012a,0xf900026a,0xf940052a,0xf900066a,0xf9400269
 .inst 0xf9002269,0xf9400669,0xd280100a,0xf2c0100a,0x8aea0129,0xf9002669,0xf9402269,0xf9003269
 .inst 0xf9402669,0xf9003669,0xd344fee4,0xd35f7884,0xd361fc84,0x91044280,0x910002a1,0x91018262
-.inst 0x910002c3,0x91040265
+.inst 0x910002c3,0x91044265
 bl {vg_aes_ctr32}
 .inst 0xd344fee9,0xd35f7929,0xd361fd29,0xf940266a,0xdac00d4a,0xf940226b,0xdac00d6b,0xab09014a
 .inst 0xd280000c,0x9a0c016b,0xdac00d4a,0xdac00d6b,0xf900226b,0xf900266a,0xd37ced29,0x8b0902d6
@@ -539,7 +944,7 @@ bl {vg_aes_ctr32}
 cbz x23, 25f
 27:
 .inst 0xd2800009,0xf9002a69,0xf9002e69,0xf9402269,0xf9003269,0xf9402669,0xf9003669,0x91044280
-.inst 0x910002a1,0x91018262,0x91014263,0xd2800024,0x91040265
+.inst 0x910002a1,0x91018262,0x91014263,0xd2800024,0x91044265
 bl {vg_aes_ctr32}
 .inst 0xd344fee9,0x910002e8,0x910002c6,0x91014267
 cbz x9, 28f
@@ -578,9 +983,9 @@ cbnz x8, 219b
 b 218f
 217:
 218:
-.inst 0xcb1c02e6,0x8b060266,0xf94008c9,0xf945026a,0xca0a0129,0xf90008c9,0xf9400cc9,0xf945066a
+.inst 0xcb1c02e6,0x8b060266,0xf94008c9,0xf940826a,0xca0a0129,0xf90008c9,0xf9400cc9,0xf940866a
 .inst 0xca0a0129,0xf9000cc9,0xd2800009,0xf9003a69,0xf9003e69,0xd344ff84,0x91000280,0x910002a1
-.inst 0x9101c262,0x910002c3,0x91040265
+.inst 0x9101c262,0x910002c3,0x91044265
 bl {vg_cmac_aes_update}
 .inst 0xd10006e9,0xd344fd29,0xd2800019
 cbz x9, 220f
@@ -588,10 +993,10 @@ cbz x9, 220f
 b 221f
 220:
 221:
-.inst 0x91000324,0x91000280,0x910002a1,0x9101c262,0x91008263,0x91040265
+.inst 0x91000324,0x91000280,0x910002a1,0x9101c262,0x91008263,0x91044265
 bl {vg_cmac_aes_update}
 .inst 0xd37cef29,0x91008263,0x8b090063,0xcb1c02e4,0xcb090084,0x91000280,0x910002a1,0x9101c262
-.inst 0x91040265
+.inst 0x91044265
 bl {vg_cmac_aes_finalize}
 b 214f
 213:
@@ -603,12 +1008,12 @@ cbnz x8, 224b
 b 223f
 222:
 223:
-.inst 0x8b170266,0x910080c6,0xd2801009,0x390000c9,0xf9450269,0xf9004a69,0xf9450669,0xf9004e69
+.inst 0x8b170266,0x910080c6,0xd2801009,0x390000c9,0xf9408269,0xf9004a69,0xf9408669,0xf9004e69
 .inst 0xf9404a69,0xf9404e6a,0xdac00d29,0xdac00d4a,0xd37ffd2b,0xd280000c,0xcb0b018b,0xd28010ec
 .inst 0x8a0c016b,0xd37ffd4c,0xd37ff929,0xaa0c0129,0xd37ff94a,0xca0b014a,0xdac00d29,0xdac00d4a
 .inst 0xf9004a69,0xf9004e6a,0xf9401269,0xf9404a6a,0xca0a0129,0xf9001269,0xf9401669,0xf9404e6a
 .inst 0xca0a0129,0xf9001669,0xd2800009,0xf9003a69,0xf9003e69,0x91000280,0x910002a1,0x9101c262
-.inst 0x91008263,0xd2800204,0x91040265
+.inst 0x91008263,0xd2800204,0x91044265
 bl {vg_cmac_aes_finalize}
 214:
 .inst 0xf9400269,0xf9403a6a,0xca0a0129,0xf940066a,0xf9403e6b,0xca0b014a,0xaa0a0129,0xd100052a
@@ -629,7 +1034,16 @@ b 229f
 228:
 229:
 .inst 0xf9405674,0xf9405a75,0xf9405e76,0xf9406277,0xf9406678,0xf9406a79,0xf9406e7a,0xf940727b
-.inst 0xf940767c,0xf9407a7e,0xf9405273,0x912843ff,0xd65f03c0
+.inst 0xf940767c,0xf9407a7e,0xf9405273,0x912643ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004
+.inst 0xd2800005,0xd2800006,0xd2800007,0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c
+.inst 0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404,0x6f00e405
+.inst 0x6f00e406,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416
+.inst 0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c,0x6f00e41d,0x6f00e41e
+.inst 0x6f00e41f,0xea01003f,0x11000000,0xd12643ff,0x6f00e41f,0x910003e9,0xd28004ca
+231:
+.inst 0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x91010129,0xd100054a
+cbnz x10, 231b
+.inst 0x3d80013f,0x912643ff,0xd65f03c0
 .p2align 6",
         vg_cmac_aes_finalize = sym super::cmac_aes::vg_cmac_aes_finalize::vg_cmac_aes_finalize,
         vg_cmac_aes_update = sym super::cmac_aes::vg_cmac_aes_update::vg_cmac_aes_update,

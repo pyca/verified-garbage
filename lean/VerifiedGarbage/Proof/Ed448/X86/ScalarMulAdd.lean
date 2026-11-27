@@ -1,9 +1,9 @@
 module
+
 public import VerifiedGarbage.Proof.Ed448.X86.ScalarIO
-public import VerifiedGarbage.Proof.X448.X86.Row
-import VerifiedGarbage.Proof.X448.X86.Init
-import VerifiedGarbage.Proof.X448.X86.RowPass
-import VerifiedGarbage.Proof.X448.X86.Carry
+public import VerifiedGarbage.Proof.X448.X86.FnVerified
+import VerifiedGarbage.Proof.X448.X86.Columns
+import VerifiedGarbage.Proof.X448.X86.Step
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Lit
 
@@ -23,7 +23,7 @@ namespace VG.Proof.X448.X86
 
 open VG VG.X86 VG.Impl.X448.X86 VG.Proof.X448.Radix16
 
-theorem mulLoopWith_ok {base : Addr} {x y : Nat} (hx : Slot x) (hy : Slot y)
+theorem mulLoopWith_ok {base : Addr} {x y : Nat} (hx : Slot16 x) (hy : Slot16 y)
     {s0 s : State} {ldA : List Instr} {mb : Nat → MemOp}
     (hlx : Bounded s0.mem base x) (hly : Bounded s0.mem base y)
     (hc : ∀ i < 28, RowCode base x y s0 i ldA mb) (hs : RowInv base x y s0 0 s) :
@@ -39,7 +39,7 @@ theorem mulLoopWith_ok {base : Addr} {x y : Nat} (hx : Slot x) (hy : Slot y)
   · exact .inr ⟨by simp only [eval, hz, decide_eq_false h28, Option.map_some, Bool.not_false],
       28 - (i + 1), by omega_using [hi], i + 1, rfl, by omega_using [hi, h28], ht⟩
 
-theorem mulLoop_ok {base : Addr} {x y : Nat} (hx : Slot x) (hy : Slot y)
+theorem mulLoop_ok {base : Addr} {x y : Nat} (hx : Slot16 x) (hy : Slot16 y)
     {s0 s : State} (hlx : Bounded s0.mem base x) (hly : Bounded s0.mem base y)
     (hs : RowInv base x y s0 0 s) :
     WP isa (.loop (.block (row x y)) .ne) s (RowInv base x y s0 28) :=
@@ -84,11 +84,12 @@ theorem reduceArg_ok {s₀ s : State} {n sc : Nat} (hA : Args s₀ n sc) {base :
     WP isa (reduceArg (4 + 4 * i) o) s fun t =>
       Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t ∧ Outside2 base W 160 o 112 s.mem t.mem ∧
       Bounded t.mem base o ∧
-      fe t.mem base o = decodeLE (bytesAt s₀.mem ((arg s₀ i).setWidth 64) 57) % L := by
+      fe16 t.mem base o = decodeLE (bytesAt s₀.mem ((arg s₀ i).setWidth 64) 57) % L := by
   unfold reduceArg
   refine WP.seq (hA.load hsp hr hwr (hbase ▸ hm) hi fun u hu => WP.block_nil ?_)
   have hinu : Input u base (arg s₀ i) 57 :=
-    ⟨hin.fit, by rw [hu.rd, hu.wr, hr, hwr]; exact hin.read, hin.far⟩
+    ⟨hin.fit, by rw [hu.rd, hu.wr, hr, hwr]; exact hin.read, hin.far,
+      by rw [hu.rd, hu.wr, hr, hwr]; exact hin.word⟩
   refine WP.mono (reduce57_ok ho (hs.of_upd hu (by decide)) hu.gpr hinu) fun t ⟨kt, lt, vt⟩ =>
     ⟨(hu.rest (by decide)).trans (kt.regs.mono (by decide)), by rw [← hu.mem]; exact kt.mem, lt, ?_⟩
   rw [vt, hu.mem, hin.bytes hm]
@@ -100,7 +101,7 @@ theorem product_ok {s : State} {base : Addr} (hs : Scr s base) (hk : Bounded s.m
     WP isa product s fun t => Scr t base ∧ Keeps [.eax, .ebx, .ecx, .edx, .ebp] s t ∧
       Outside base Impl.X448.X86.ACC 224 s.mem t.mem ∧
       (∀ j < 56, limbs t.mem base Impl.X448.X86.ACC j < radix) ∧
-      valN (limbs t.mem base Impl.X448.X86.ACC) 56 = fe s.mem base SK * fe s.mem base SS := by
+      valN (limbs t.mem base Impl.X448.X86.ACC) 56 = fe16 s.mem base SK * fe16 s.mem base SS := by
   unfold product
   refine WP.seq (WP.mono (mulPre_ok hs SK SS) fun u hu => ?_)
   refine WP.mono (mulLoop_ok (by decide) (by decide) hk hl hu) fun t ht =>
@@ -109,13 +110,13 @@ theorem product_ok {s : State} {base : Addr} (hs : Scr s base) (hk : Bounded s.m
 theorem reduceProduct_ok {s : State} {base : Addr} (hs : Scr s base)
     (hacc : ∀ j < 56, limbs s.mem base Impl.X448.X86.ACC j < radix) :
     WP isa reduceProduct s fun t => LoopKeep base RA s t ∧ Bounded t.mem base RA ∧
-      fe t.mem base RA = valN (limbs s.mem base Impl.X448.X86.ACC) 56 % L := by
+      fe16 t.mem base RA = valN (limbs s.mem base Impl.X448.X86.ACC) 56 % L := by
   have hA := ACC_eq
   have hR := RA_eq
   unfold reduceProduct
   have hinit : WP isa (.block (Impl.Ed448.X86.zeroR RA ++ ([.mov .ebp (.imm 224)] : List Instr))) s
       fun v => LoopKeep base RA s v ∧ v.gpr .ebp = BitVec.ofNat 32 (4 * 56) ∧
-        Bounded v.mem base RA ∧ fe v.mem base RA = 0 := by
+        Bounded v.mem base RA ∧ fe16 v.mem base RA = 0 := by
     rw [WP.block_append_iff]
     exact WP.mono (zeroR_ok (o := RA) (by decide) hs) fun u ⟨ku, fu, zu⟩ =>
       wp_mov rfl fun v hv => WP.block_nil
@@ -134,10 +135,10 @@ theorem reduceProduct_ok {s : State} {base : Addr} (hs : Scr s base)
 
 theorem addPass_ok {s : State} {base : Addr} (hs : Scr s base)
     (ha : Bounded s.mem base RA) (hr : Bounded s.mem base SR)
-    (hva : fe s.mem base RA < L) (hvr : fe s.mem base SR < L) :
+    (hva : fe16 s.mem base RA < L) (hvr : fe16 s.mem base SR < L) :
     WP isa (.block addPass) s fun t => Keeps [.eax, .ebx, .edx] s t ∧
       Outside base TF 112 s.mem t.mem ∧ Bounded t.mem base TF ∧
-      fe t.mem base TF = fe s.mem base RA + fe s.mem base SR := by
+      fe16 t.mem base TF = fe16 s.mem base RA + fe16 s.mem base SR := by
   have hT := TF_eq
   have hR := RA_eq
   have hS := SR_eq
@@ -170,7 +171,7 @@ theorem addPass_ok {s : State} {base : Addr} (hs : Scr s base)
     rw [toNat_add_lt (by rw [x1, x2]; have := ha k hk; have := hr k hk; simp only [radix] at *; omega_arith),
       x1, x2]
   · generalize hcf : (fun k => limbs s.mem base RA k + limbs s.mem base SR k) = c at ht
-    have hcv : valN c 28 = fe s.mem base RA + fe s.mem base SR := by rw [← hcf, valN_add]
+    have hcv : valN c 28 = fe16 s.mem base RA + fe16 s.mem base SR := by rw [← hcf, valN_add]
     have hlt : valN c 28 < radix ^ 28 := by
       have := two_L_le
       rw [hcv]; omega_using [hva, hvr, this]

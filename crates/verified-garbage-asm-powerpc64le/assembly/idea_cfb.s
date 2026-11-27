@@ -829,16 +829,26 @@ vg_idea_cfb64_encrypt:
 	ld %r0, 32(%r5)
 	mtlr %r0
 	addi %r12, %r1, 32
-	li %r11, 0
-	std %r11, 0(%r12)
-	std %r11, 8(%r12)
-	std %r11, 16(%r12)
-	std %r11, 24(%r12)
-	std %r11, 32(%r12)
-	std %r11, 40(%r12)
-	std %r11, 48(%r12)
-	std %r11, 56(%r12)
+	li %r0, 0
+	std %r0, 0(%r12)
+	std %r0, 8(%r12)
+	std %r0, 16(%r12)
+	std %r0, 24(%r12)
+	std %r0, 32(%r12)
+	std %r0, 40(%r12)
+	std %r0, 48(%r12)
+	std %r0, 56(%r12)
 	addi %r1, %r1, 96
+	li %r0, 0
+	li %r4, 0
+	li %r5, 0
+	li %r6, 0
+	li %r7, 0
+	li %r8, 0
+	li %r9, 0
+	li %r10, 0
+	li %r11, 0
+	li %r12, 0
 	blr
 
 vg_idea_cfb64_decrypt:
@@ -1666,16 +1676,26 @@ vg_idea_cfb64_decrypt:
 	ld %r0, 32(%r5)
 	mtlr %r0
 	addi %r12, %r1, 32
-	li %r11, 0
-	std %r11, 0(%r12)
-	std %r11, 8(%r12)
-	std %r11, 16(%r12)
-	std %r11, 24(%r12)
-	std %r11, 32(%r12)
-	std %r11, 40(%r12)
-	std %r11, 48(%r12)
-	std %r11, 56(%r12)
+	li %r0, 0
+	std %r0, 0(%r12)
+	std %r0, 8(%r12)
+	std %r0, 16(%r12)
+	std %r0, 24(%r12)
+	std %r0, 32(%r12)
+	std %r0, 40(%r12)
+	std %r0, 48(%r12)
+	std %r0, 56(%r12)
 	addi %r1, %r1, 96
+	li %r0, 0
+	li %r4, 0
+	li %r5, 0
+	li %r6, 0
+	li %r7, 0
+	li %r8, 0
+	li %r9, 0
+	li %r10, 0
+	li %r11, 0
+	li %r12, 0
 	blr
 
 vg_idea_cfb64_encrypt_final:
@@ -2524,16 +2544,26 @@ vg_idea_cfb64_encrypt_final:
 	ld %r0, 32(%r5)
 	mtlr %r0
 	addi %r12, %r1, 32
-	li %r11, 0
-	std %r11, 0(%r12)
-	std %r11, 8(%r12)
-	std %r11, 16(%r12)
-	std %r11, 24(%r12)
-	std %r11, 32(%r12)
-	std %r11, 40(%r12)
-	std %r11, 48(%r12)
-	std %r11, 56(%r12)
+	li %r0, 0
+	std %r0, 0(%r12)
+	std %r0, 8(%r12)
+	std %r0, 16(%r12)
+	std %r0, 24(%r12)
+	std %r0, 32(%r12)
+	std %r0, 40(%r12)
+	std %r0, 48(%r12)
+	std %r0, 56(%r12)
 	addi %r1, %r1, 96
+	li %r0, 0
+	li %r4, 0
+	li %r5, 0
+	li %r6, 0
+	li %r7, 0
+	li %r8, 0
+	li %r9, 0
+	li %r10, 0
+	li %r11, 0
+	li %r12, 0
 	blr
 
 vg_idea_cfb64_decrypt_final:
@@ -3382,14 +3412,24 @@ vg_idea_cfb64_decrypt_final:
 	ld %r0, 32(%r5)
 	mtlr %r0
 	addi %r12, %r1, 32
-	li %r11, 0
-	std %r11, 0(%r12)
-	std %r11, 8(%r12)
-	std %r11, 16(%r12)
-	std %r11, 24(%r12)
-	std %r11, 32(%r12)
-	std %r11, 40(%r12)
-	std %r11, 48(%r12)
-	std %r11, 56(%r12)
+	li %r0, 0
+	std %r0, 0(%r12)
+	std %r0, 8(%r12)
+	std %r0, 16(%r12)
+	std %r0, 24(%r12)
+	std %r0, 32(%r12)
+	std %r0, 40(%r12)
+	std %r0, 48(%r12)
+	std %r0, 56(%r12)
 	addi %r1, %r1, 96
+	li %r0, 0
+	li %r4, 0
+	li %r5, 0
+	li %r6, 0
+	li %r7, 0
+	li %r8, 0
+	li %r9, 0
+	li %r10, 0
+	li %r11, 0
+	li %r12, 0
 	blr

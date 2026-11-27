@@ -53,12 +53,7 @@ other address faults (`next` of the last is never run: any code but an
 indirect call). The printer prints only `i`; the emitter checks, as for
 `call`, that the function emitted as each `name` is `body`. So on a machine
 where distinct functions are at distinct addresses, the model runs the code
-of the function the processor calls. Which addresses an argument may hold
-is the precondition's: a table of functions (`Abi.withTables`).
-
-The CPU features the functions of the chain need are not the caller's
-(`Code.requires`): the caller runs only the one it is given, whose
-features its table states (`TCB/Rust.lean`).
+of the function the processor calls.
 
 ## Stack frames
 
@@ -99,6 +94,23 @@ inductive Leak where
   | addr (a : Addr)
   | branch (taken : Bool)
   deriving DecidableEq, Repr
+
+/-- Structured code. -/
+inductive Code (I C : Type) where
+  | block (is : List I)
+  | seq (c₁ c₂ : Code I C)
+  /-- `if c then t else e` -/
+  | ite (c : C) (t e : Code I C)
+  /-- `do body while c` -/
+  | loop (body : Code I C) (c : C)
+  /-- A call of the function `name`, whose code is `body`. -/
+  | call (name : String) (body : Code I C)
+  /-- `push; body; pop`: a stack frame around `body`. -/
+  | frame (push : I) (body : Code I C) (pop : I)
+  /-- An indirect call by the instruction `i`: of the function `name`,
+  whose code is `body`, if `i` calls its address, and otherwise `next`, an
+  indirect call by `i` of another function (see the module docs). -/
+  | icall (i : I) (name : String) (body : Code I C) (next : Code I C)
 
 /-- The interface between an architecture model and the generic framework. -/
 structure ISA where
@@ -156,23 +168,19 @@ structure ISA where
   linker resolves, fixed for the run of the program (as no instruction
   changes it). -/
   fnAddr : State → String → Addr := fun _ _ => 0
-
-/-- Structured code. -/
-inductive Code (I C : Type) where
-  | block (is : List I)
-  | seq (c₁ c₂ : Code I C)
-  /-- `if c then t else e` -/
-  | ite (c : C) (t e : Code I C)
-  /-- `do body while c` -/
-  | loop (body : Code I C) (c : C)
-  /-- A call of the function `name`, whose code is `body`. -/
-  | call (name : String) (body : Code I C)
-  /-- `push; body; pop`: a stack frame around `body`. -/
-  | frame (push : I) (body : Code I C) (pop : I)
-  /-- An indirect call by the instruction `i`: of the function `name`,
-  whose code is `body`, if `i` calls its address, and otherwise `next`, an
-  indirect call by `i` of another function (see the module docs). -/
-  | icall (i : I) (name : String) (body : Code I C) (next : Code I C)
+  /-- `withPtrEq` at this ISA's code: `k ()`, which the compiled code
+  returns at once if `a` and `b` are the same value in memory. The checks of
+  the emitter that compare the code of many calls use it
+  (`Code.distinctCalls`, `badCall`). Each ISA sets it to `withPtrEq`, at the
+  concrete type of its code: Lean 4.36 compiles `withPtrEq` only where it
+  can check that equal pointers are equal values, which it is there, and not
+  at a type variable (`Code I C`). -/
+  ptrEq : (a b : Code Instr Cond) → (k : Unit → Bool) → (a = b → k () = true) → Bool
+  /-- `withPtrEqDecEq` at this ISA's code, for the same reason: whether
+  `a = b`, at once if they are the same value in memory, else by `k`
+  (`Code.dec`). Each ISA sets it to `withPtrEqDecEq` with its `withPtrEq`,
+  which Lean's `withPtrEqDecEq` takes since it is polymorphic. -/
+  ptrEqDec : (a b : Code Instr Cond) → (Unit → Decidable (a = b)) → Decidable (a = b)
 
 /-- `if c then t else e`, with `t` laid out after the function's return
 (cold): `Code.ite c (.seq (.seq (.block []) (.block [])) t) e`. It is an
@@ -193,19 +201,6 @@ def Code.all {I C : Type} (p : I → Bool) : Code I C → Bool
   | .call _ b => b.all p
   | .frame i b j => p i && b.all p && p j
   | .icall i _ b n => p i && b.all p && n.all p
-
-/-- The features that the instructions of `c`, and of the functions it
-calls, require (`ISA.requires`), with repetitions: but not those of the
-functions an indirect call may reach, which need only the features of the
-one called (see the module docs). -/
-def Code.requires {I C : Type} (req : I → List String) : Code I C → List String
-  | .block is => is.flatMap req
-  | .seq a b => a.requires req ++ b.requires req
-  | .ite _ t e => t.requires req ++ e.requires req
-  | .loop b _ => b.requires req
-  | .call _ b => b.requires req
-  | .frame i b j => req i ++ b.requires req ++ req j
-  | .icall i _ _ n => req i ++ n.requires req
 
 /-- The calls in `c`, and in the functions it calls: each function's name
 and code, those an indirect call may reach included. -/

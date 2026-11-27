@@ -40,10 +40,7 @@ theorem pre_of {s : State} (h : ecdhAArch64.pre s) : EPre p256 s := by
 
 theorem post_of {s s' : State} (h : EPost p256 s s') : ecdhAArch64.post s s' := by
   unfold EPost at h
-  show match ex s.mem (s.gpr .x1) (s.gpr .x2) with
-    | some z => (s'.gpr .x0).setWidth 32 = 1 ∧ Spec.EcKey.bytesAt s'.mem (s.gpr .x0) 32 = z
-    | none => (s'.gpr .x0).setWidth 32 = 0 ∧
-        Spec.EcKey.bytesAt s'.mem (s.gpr .x0) 32 = List.replicate 32 0
+  dsimp only [ecdhAArch64]
   revert h
   generalize hq : ex s.mem (s.gpr .x1) (s.gpr .x2) = q
   rw [show Spec.Ecdh.exchange p256.C (dk p256 s)

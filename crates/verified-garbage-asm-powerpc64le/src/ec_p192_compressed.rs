@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.EcKey.Instance.compressPublicKeyContract`. The input is public: timing may depend on the pointers and the contents of `public`.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of 25 bytes.
@@ -18,34 +20,29 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ec_p192_compress_public_key(out: *mut [u8; 25], public: *const [u8; 49], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
-        r#".base64 "eCOMfAAAxfkIAOX7pgIIfBAABfh4G258eCujfBAAIDkoTAx9KAMD+QgAIDkoTAx9MAMD+QAAIDkoTAx9OAMD+RAAIDkoTAx9QAMD+QgAIDkoTAx9SAMD+QAAIDkoTAx9UAMD+RAAIDkoTAx9WAMD+QgAIDkoTAx9YAMD+QAAIDkoTAx9aAMD+f//YD3//2thQABjkf//YD3//2thRABjkf//YD3+/2thSABjkf//YD3//2thTABjkf//YD3//2thUABjkf//YD3//2thVABjkdK0YD0xKGthWABjkWsUYD2xyWthXABjkd6ZYD02+GthYABjkf//YD3//2thZABjkf//YD3//2thaABjkf//YD3//2thbABjkQAAYD0AAGthiABjkQAAYD0AAGthjABjkQAAYD0AAGthkABjkQAAYD0AAGthlABjkQAAYD0AAGthmABjkQAAYD0AAGthnABjkQAAYD0BAGthoABjkQAAYD0AAGthpABjkQAAYD0AAGthqABjkQAAYD0AAGthrABjkQAAYD0AAGthsABjkQAAYD0AAGthtABjkQAAYD0BAGthuABjkQAAYD0AAGthvABjkQAAYD0BAGthwABjkQAAYD0AAGthxABjkQAAYD0AAGthyABjkQAAYD0AAGthzABjkf//YD38/2th0ABjkf//YD3//2th1ABjkf//YD37/2th2ABjkf//YD3//2th3ABjkf//YD3//2th4ABjkf//YD3//2th5ABjkan0YD3Jr2th6ABjkY0oYD0TrGth7ABjkRZLYD2oQGth8ABjkYVXYD0WaWth9ABjkUIHYD2UE2th+ABjkVpbYD1QzGth/ABjkS8zYD0IoWthAAFjkYwNYD0Ms2thBAFjkdF2YD0JKWthCAFjkUuKYD3302thDAFjkdLzYD33GGthEAFjkUyVYD35yGthFAFjkUIeYD2JImthGAFjkRJ7YD03o2thHAFjkWaJYD1e8GthIAFjkSLeYD0ktWthJAFjke1qYD1NqGthKAFjkSlqYD2DPWthLAFjkbPeYD1hWWthMAFjkWbOYD3MumthNAFjkTq7YD3ua2thOAFjkZZGYD1b6mthPAFjkQXqYD2igWthQAFjkb4oYD13VmthRAFjkS1LYD3P12thSAFjkZTrYD1ONmthTAFjkSFmYD3JB2thUAFjkQAAYD0AAGthVAFjkQAAYD0AAGthWAFjkQAAYD0AAGthXAFjkf//YD39/2thYAFjkf//YD3//2thZAFjkf//YD3+/2thaAFjkf//YD3//2thbAFjkf//YD3//2thcAFjkf//YD3//2thdAFjkdK0YD0vKGtheAFjkWsUYD2xyWthfAFjkd6ZYD02+GthgAFjkf//YD3//2thhAFjkf//YD3//2thiAFjkf//YD3//2thjAFjkQAAYD0AAGthkAFjkQAAYD0AAGthlAFjkQAAYD0AAGthmAFjkQAAYD0AAGthnAFjkQAAYD0AAGthoAFjkQAAYD0AAGthpAFjkQAAYD0BAGthqAFjkQAAYD0AAGthrAFjkQAAYD0BAGthsAFjkQAAYD0AAGthtAFjkQAAYD0AAGthuAFjkQAAYD0AAGthvAFjkQAAYD0AAGthwAFjkQAAYD0AAGthxAFjkQAAYD0AAGthyAFjkQAAYD0AAGthzAFjkQAAYD0AAGth0AFjkQAAYD0AAGth1AFjkQAAgDj//4Q4YASD+AAAYD0BAGth6ANjkQAAYD0AAGth7ANjkQAAYD0CAGth8ANjkQAAYD0AAGth9ANjkQAAYD0BAGth+ANjkQAAYD0AAGth/ANjkeOmYD2YOmthAARjkdliYD0G5GthBARjkQcZYD3iamthCARjkYFyYD2yzWthDARjkcBXYD0xsWthEARjkchzYD3F7mthFARjkQEAzDgQACA5KEwGfVgDA/kIACA5KEwGfWADA/kAACA5KEwGfWgDA/kYAMY4EAAgOShMBn2gAwP5CAAgOShMBn2oAwP5AAAgOShMBn2wAwP5AACMiAQA4Dh4OoR8//+EOOAPhHgAAKA4UCikfGAEg+g4KIR8YASD+AAAADj//wBg//8AZAEAwDhYA+OAQAADgRQC53xQOOh8FDLnfCIA5nhcA+OARAADgRQC53xQOOh8FDLnfCIA5nhgA+OASAADgRQC53xQOOh8FDLnfCIA5nhkA+OATAADgRQC53xQOOh8FDLnfCIA5nhoA+OAUAADgRQC53xQOOh8FDLnfCIA5nhsA+OAVAADgRQC53xQOOh8FDLnfCIA5nj//6Y4YASD6DgohHxgBIP4AAAAOP//AGD//wBkAQDAOKAD44BAAAOBFALnfFA46HwUMud8IgDmeKQD44BEAAOBFALnfFA46HwUMud8IgDmeKgD44BIAAOBFALnfFA46HwUMud8IgDmeKwD44BMAAOBFALnfFA46HwUMud8IgDmeLAD44BQAAOBFALnfFA46HwUMud8IgDmeLQD44BUAAOBFALnfFA46HwUMud8IgDmeP//pjhgBIPoOCiEfGAEg/hwA4A4WAOgOOgDwDg="
-bl {vg_p192_mul_mod_p}
-.base64 "iAOAOKADoDjoA8A4"
-bl {vg_p192_mul_mod_p}
-.base64 "uAOAOIgDoDiIA8A4"
-bl {vg_p192_mul_mod_p}
-.base64 "GASAOHADoDhwA8A4"
-bl {vg_p192_mul_mod_p}
-.base64 "MASAOBgEoDhwA8A4"
-bl {vg_p192_mul_mod_p}
-.base64 "GASAONAAoDhwA8A4"
-bl {vg_p192_mul_mod_p}
-.base64 "0AOAODAEoDgYBMA4"
-bl {vg_p192_add_mod_p}
-.base64 "MASAONADoDgABMA4"
-bl {vg_p192_add_mod_p}
-.base64 "GASAOLgDoDgwBMA4"
-bl {vg_p192_sub_mod_p}
-.base64 "GASj6CAEg+h4I6V8KASD6HgjpXwAAIA4UCCFfHgrhHzgD4R4AACgOFAopHwAAIA4UCClfP//pThgBIPoOCiEfGAEg/hgBEPpAAGD6HADo+h4IqV8OFClfHgqhHzQA4P4CAGD6HgDo+h4IqV8OFClfHgqhHzYA4P4EAGD6IADo+h4IqV8OFClfHgqhHzgA4P4GAGD6IgDo+h4IqV8OFClfHgqhHxIBIP4IAGD6JADo+h4IqV8OFClfHgqhHxQBIP4KAGD6JgDo+h4IqV8OFClfHgqhHxYBIP4YARD6aADg+gBAKA4OCiEfAIAhDg4UIR8AACOmFgDg+g4UIR8EQDAOCg1jnxgA4PoOFCEfAkAwDgoNY58aAOD6DhQhHwBAMA4KDWOfAEAgDg4IER9EAAD6KYDCHwAAMPpCADj63gjg3wgAIBO""#,
-        vg_p192_mul_mod_p = sym super::ec_p192::vg_p192_mul_mod_p::vg_p192_mul_mod_p,
-        vg_p192_add_mod_p = sym super::ec_p192::vg_p192_add_mod_p::vg_p192_add_mod_p,
-        vg_p192_sub_mod_p = sym super::ec_p192::vg_p192_sub_mod_p::vg_p192_sub_mod_p,
+        r#".base64 "eCOMfAAAxfkIAOX7pgIIfBAABfh4G258eCujfBAAIDkoTAx9KAMD+QgAIDkoTAx9MAMD+QAAIDkoTAx9OAMD+RAAIDkoTAx9QAMD+QgAIDkoTAx9SAMD+QAAIDkoTAx9UAMD+RAAIDkoTAx9WAMD+QgAIDkoTAx9YAMD+QAAIDkoTAx9aAMD+aYCaH0="
+bcl 20, 31, 2f
+2:
+mflr %r4
+addis %r4, %r4, ({VG_P192_FRAME_CONSTS} - 2b)@ha
+addi %r4, %r4, ({VG_P192_FRAME_CONSTS} - 2b)@l
+.base64 "pgNofREA4DsAACM5"
+20:
+.base64 "////OwAAZOlAAGn5CABk6UgAafkQAGTpUABp+RgAhDgYACk5AAA/KA=="
+bne %cr0, 20b
+.base64 "AACAOP//hDhgBIP4AABgPQEAa2HoA2ORAABgPQAAa2HsA2ORAABgPQIAa2HwA2ORAABgPQAAa2H0A2ORAABgPQEAa2H4A2ORAABgPQAAa2H8A2OR46ZgPZg6a2EABGOR2WJgPQbka2EEBGORBxlgPeJqa2EIBGORgXJgPbLNa2EMBGORwFdgPTGxa2EQBGORyHNgPcXua2EUBGORAQDMOBAAIDkoTAZ9WAMD+QgAIDkoTAZ9YAMD+QAAIDkoTAZ9aAMD+RgAxjgQACA5KEwGfaADA/kIACA5KEwGfagDA/kAACA5KEwGfbADA/kAAIyIBADgOHg6hHz//4Q44A+EeAAAoDhQKKR8YASD6DgohHxgBIP4AAAAOP//AGD//wBkAQDAOFgD44BAAAOBFALnfFA46HwUMud8IgDmeFwD44BEAAOBFALnfFA46HwUMud8IgDmeGAD44BIAAOBFALnfFA46HwUMud8IgDmeGQD44BMAAOBFALnfFA46HwUMud8IgDmeGgD44BQAAOBFALnfFA46HwUMud8IgDmeGwD44BUAAOBFALnfFA46HwUMud8IgDmeP//pjhgBIPoOCiEfGAEg/gAAAA4//8AYP//AGQBAMA4oAPjgEAAA4EUAud8UDjofBQy53wiAOZ4pAPjgEQAA4EUAud8UDjofBQy53wiAOZ4qAPjgEgAA4EUAud8UDjofBQy53wiAOZ4rAPjgEwAA4EUAud8UDjofBQy53wiAOZ4sAPjgFAAA4EUAud8UDjofBQy53wiAOZ4tAPjgFQAA4EUAud8UDjofBQy53wiAOZ4//+mOGAEg+g4KIR8YASD+A=="
+bl {vg_p192_validate}
+.base64 "YARD6aADg+gBAKA4OCiEfAIAhDg4UIR8AACOmFgDg+g4UIR8EQDAOCg1jnxgA4PoOFCEfAkAwDgoNY58aAOD6DhQhHwBAMA4KDWOfAEAgDg4IER9EAAD6KYDCHwAAMPpCADj63gjg3wAAAA4xgdjeCIAY3gAAIA4AACgOAAAwDgAAOA4AAAAOQAAIDkAAEA5AABgOQAAgDkUAAB8IACATg==""#,
+        vg_p192_validate = sym super::ec_p192_compressed::vg_p192_validate::vg_p192_validate,
+        VG_P192_FRAME_CONSTS = sym super::consts::VG_P192_FRAME_CONSTS,
     )
 }
 
 /// Validate and decompress a P-192 public key (SEC 1 §2.3.4, SP 800-56A §5.6.2.3.3): reads `02` or `03` followed by `x` in 24 bytes, most significant first; checks `x` below the field prime and recovers a coordinate `y` satisfying the curve equation with even parity for `02`, odd for `03`. Writes `04` followed by `x` and `y` in 24 bytes each and returns 1. If no such finite point exists, writes 49 zero bytes and returns 0. Rejects infinity and hybrid encodings. The curve has cofactor one, so no subgroup multiplication is required.
 ///
 /// Contract: `VG.Spec.EcKey.Instance.decompressPublicKeyContract`. The input is public: timing may depend on the pointers and the contents of `public`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -58,7 +55,17 @@ bl {vg_p192_sub_mod_p}
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ec_p192_decompress_public_key(out: *mut [u8; 49], public: *const [u8; 25], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
-        r#".base64 "eCOMfAAAxfkIAOX7pgIIfBAABfh4G258eCujfBAAIDkoTAx9KAMD+QgAIDkoTAx9MAMD+QAAIDkoTAx9OAMD+RAAIDkoTAx9QAMD+QgAIDkoTAx9SAMD+QAAIDkoTAx9UAMD+RAAIDkoTAx9WAMD+QgAIDkoTAx9YAMD+QAAIDkoTAx9aAMD+f//YD3//2thQABjkf//YD3//2thRABjkf//YD3+/2thSABjkf//YD3//2thTABjkf//YD3//2thUABjkf//YD3//2thVABjkdK0YD0xKGthWABjkWsUYD2xyWthXABjkd6ZYD02+GthYABjkf//YD3//2thZABjkf//YD3//2thaABjkf//YD3//2thbABjkQAAYD0AAGthiABjkQAAYD0AAGthjABjkQAAYD0AAGthkABjkQAAYD0AAGthlABjkQAAYD0AAGthmABjkQAAYD0AAGthnABjkQAAYD0BAGthoABjkQAAYD0AAGthpABjkQAAYD0AAGthqABjkQAAYD0AAGthrABjkQAAYD0AAGthsABjkQAAYD0AAGthtABjkQAAYD0BAGthuABjkQAAYD0AAGthvABjkQAAYD0BAGthwABjkQAAYD0AAGthxABjkQAAYD0AAGthyABjkQAAYD0AAGthzABjkf//YD38/2th0ABjkf//YD3//2th1ABjkf//YD37/2th2ABjkf//YD3//2th3ABjkf//YD3//2th4ABjkf//YD3//2th5ABjkan0YD3Jr2th6ABjkY0oYD0TrGth7ABjkRZLYD2oQGth8ABjkYVXYD0WaWth9ABjkUIHYD2UE2th+ABjkVpbYD1QzGth/ABjkS8zYD0IoWthAAFjkYwNYD0Ms2thBAFjkdF2YD0JKWthCAFjkUuKYD3302thDAFjkdLzYD33GGthEAFjkUyVYD35yGthFAFjkUIeYD2JImthGAFjkRJ7YD03o2thHAFjkWaJYD1e8GthIAFjkSLeYD0ktWthJAFjke1qYD1NqGthKAFjkSlqYD2DPWthLAFjkbPeYD1hWWthMAFjkWbOYD3MumthNAFjkTq7YD3ua2thOAFjkZZGYD1b6mthPAFjkQXqYD2igWthQAFjkb4oYD13VmthRAFjkS1LYD3P12thSAFjkZTrYD1ONmthTAFjkSFmYD3JB2thUAFjkQAAYD0AAGthVAFjkQAAYD0AAGthWAFjkQAAYD0AAGthXAFjkf//YD39/2thYAFjkf//YD3//2thZAFjkf//YD3+/2thaAFjkf//YD3//2thbAFjkf//YD3//2thcAFjkf//YD3//2thdAFjkdK0YD0vKGtheAFjkWsUYD2xyWthfAFjkd6ZYD02+GthgAFjkf//YD3//2thhAFjkf//YD3//2thiAFjkf//YD3//2thjAFjkQAAYD0AAGthkAFjkQAAYD0AAGthlAFjkQAAYD0AAGthmAFjkQAAYD0AAGthnAFjkQAAYD0AAGthoAFjkQAAYD0AAGthpAFjkQAAYD0BAGthqAFjkQAAYD0AAGthrAFjkQAAYD0BAGthsAFjkQAAYD0AAGthtAFjkQAAYD0AAGthuAFjkQAAYD0AAGthvAFjkQAAYD0AAGthwAFjkQAAYD0AAGthxAFjkQAAYD0AAGthyAFjkQAAYD0AAGthzAFjkQAAYD0AAGth0AFjkQAAYD0AAGth1AFjkQAAgDj//4Q4YASD+AAAYD0BAGth6ANjkQAAYD0AAGth7ANjkQAAYD0CAGth8ANjkQAAYD0AAGth9ANjkQAAYD0BAGth+ANjkQAAYD0AAGth/ANjkeOmYD2YOmthAARjkdliYD0G5GthBARjkQcZYD3iamthCARjkYFyYD2yzWthDARjkcBXYD0xsWthEARjkchzYD3F7mthFARjkQEAzDgQACA5KEwGfVgDA/kIACA5KEwGfWADA/kAACA5KEwGfWgDA/kAAIyIQAOD+AEAoDh4K4R8AwCgOHgqhHz//4Q44A+EeAAAoDhQKKR8YASD6DgohHxgBIP4AAAAOP//AGD//wBkAQDAOFgD44BAAAOBFALnfFA46HwUMud8IgDmeFwD44BEAAOBFALnfFA46HwUMud8IgDmeGAD44BIAAOBFALnfFA46HwUMud8IgDmeGQD44BMAAOBFALnfFA46HwUMud8IgDmeGgD44BQAAOBFALnfFA46HwUMud8IgDmeGwD44BUAAOBFALnfFA46HwUMud8IgDmeP//pjhgBIPoOCiEfGAEg/hwA4A4WAOgOOgDwDg="
+        r#".base64 "eCOMfAAAxfkIAOX7pgIIfBAABfh4G258eCujfBAAIDkoTAx9KAMD+QgAIDkoTAx9MAMD+QAAIDkoTAx9OAMD+RAAIDkoTAx9QAMD+QgAIDkoTAx9SAMD+QAAIDkoTAx9UAMD+RAAIDkoTAx9WAMD+QgAIDkoTAx9YAMD+QAAIDkoTAx9aAMD+aYCaH0="
+bcl 20, 31, 2f
+2:
+mflr %r4
+addis %r4, %r4, ({VG_P192_FRAME_CONSTS} - 2b)@ha
+addi %r4, %r4, ({VG_P192_FRAME_CONSTS} - 2b)@l
+.base64 "pgNofREA4DsAACM5"
+20:
+.base64 "////OwAAZOlAAGn5CABk6UgAafkQAGTpUABp+RgAhDgYACk5AAA/KA=="
+bne %cr0, 20b
+.base64 "AACAOP//hDhgBIP4AABgPQEAa2HoA2ORAABgPQAAa2HsA2ORAABgPQIAa2HwA2ORAABgPQAAa2H0A2ORAABgPQEAa2H4A2ORAABgPQAAa2H8A2OR46ZgPZg6a2EABGOR2WJgPQbka2EEBGORBxlgPeJqa2EIBGORgXJgPbLNa2EMBGORwFdgPTGxa2EQBGORyHNgPcXua2EUBGORAQDMOBAAIDkoTAZ9WAMD+QgAIDkoTAZ9YAMD+QAAIDkoTAZ9aAMD+QAAjIhAA4P4AQCgOHgrhHwDAKA4eCqEfP//hDjgD4R4AACgOFAopHxgBIPoOCiEfGAEg/gAAAA4//8AYP//AGQBAMA4WAPjgEAAA4EUAud8UDjofBQy53wiAOZ4XAPjgEQAA4EUAud8UDjofBQy53wiAOZ4YAPjgEgAA4EUAud8UDjofBQy53wiAOZ4ZAPjgEwAA4EUAud8UDjofBQy53wiAOZ4aAPjgFAAA4EUAud8UDjofBQy53wiAOZ4bAPjgFQAA4EUAud8UDjofBQy53wiAOZ4//+mOGAEg+g4KIR8YASD+HADgDhYA6A46APAOA=="
 bl {vg_p192_mul_mod_p}
 .base64 "GASAOHADoDhwA8A4"
 bl {vg_p192_mul_mod_p}
@@ -71,17 +78,17 @@ bl {vg_p192_add_mod_p}
 .base64 "MASAONADoDgABMA4"
 bl {vg_p192_add_mod_p}
 .base64 "AABgPQAAa2FgAWORAMBgPQAAa2FkAWOR//9gPf//a2FoAWOR//9gPf//a2FsAWOR//9gPf//a2FwAWOR/z9gPf//a2F0AWORGADgOw=="
-20:
-.base64 "////OxT6g3xgAYSIJB/lexQqo3wBAOA4ODiGfIARxZhC+IZ4ODjGfIERxZiC8IZ4ODjGfIIRxZjC6IZ4ODjGfIMRxZgC4YZ4ODjGfIQRxZhC2YZ4ODjGfIURxZiC0YZ4ODjGfIYRxZjCyYZ4ODjGfIcRxZgAAD8o"
-bne %cr0, 20b
-.base64 "uACD6PgCg/jAAIPoAAOD+MgAg+gIA4P4wADgOw=="
 21:
+.base64 "////OxT6g3xgAYSIJB/lexQqo3wBAOA4ODiGfIARxZhC+IZ4ODjGfIERxZiC8IZ4ODjGfIIRxZjC6IZ4ODjGfIMRxZgC4YZ4ODjGfIQRxZhC2YZ4ODjGfIURxZiC0YZ4ODjGfIYRxZjCyYZ4ODjGfIcRxZgAAD8o"
+bne %cr0, 21b
+.base64 "uACD6PgCg/jAAIPoAAOD+MgAg+gIA4P4wADgOw=="
+22:
 .base64 "////O/gCgDj4AqA4+ALAOA=="
 bl {vg_p192_mul_mod_p}
 .base64 "EAOAOPgCoDgwBMA4"
 bl {vg_p192_mul_mod_p}
 .base64 "FPqDfIARhIgAAKA4UChEffgCg+gQA6PoeCKlfDhQpXx4KoR8+AKD+AADg+gYA6PoeCKlfDhQpXx4KoR8AAOD+AgDg+ggA6PoeCKlfDhQpXx4KoR8CAOD+AAAPyg="
-bne %cr0, 21b
+bne %cr0, 22b
 .base64 "oAOAOPgCoDigAMA4"
 bl {vg_p192_mul_mod_p}
 .base64 "uAOAOIgAoDigA8A4"
@@ -92,9 +99,14 @@ bl {vg_p192_mul_mod_p}
 bl {vg_p192_mul_mod_p}
 .base64 "0AOAOBgEoDgwBMA4"
 bl {vg_p192_sub_mod_p}
-.base64 "0AOj6NgDg+h4I6V84AOD6HgjpXwAAIA4UCCFfHgrhHzgD4R4AACgOFAopHwAAIA4UCClfP//pThgBIPoOCiEfGAEg/igA4PoQAOj6HgipXwBAIA4OCClfAAAgDhQIEV9AQCqOAAAgDhQIKV8YASD6DgohHxgBIP4YARD6QQAgDg4UIR8AACOmFgDg+g4UIR8EQDAOCg1jnxgA4PoOFCEfAkAwDgoNY58aAOD6DhQhHwBAMA4KDWOfKADg+g4UIR8KQDAOCg1jnyoA4PoOFCEfCEAwDgoNY58sAOD6DhQhHwZAMA4KDWOfAEAgDg4IER9EAAD6KYDCHwAAMPpCADj63gjg3wgAIBO""#,
+.base64 "0AOj6NgDg+h4I6V84AOD6HgjpXwAAIA4UCCFfHgrhHzgD4R4AACgOFAopHwAAIA4UCClfP//pThgBIPoOCiEfGAEg/igA4PoQAOj6HgipXwBAIA4OCClfAAAgDhQIEV9AQCqOAAAgDhQIKV8YASD6DgohHxgBIP4YARD6QQAgDg4UIR8AACOmFgDg+g4UIR8EQDAOCg1jnxgA4PoOFCEfAkAwDgoNY58aAOD6DhQhHwBAMA4KDWOfKADg+g4UIR8KQDAOCg1jnyoA4PoOFCEfCEAwDgoNY58sAOD6DhQhHwZAMA4KDWOfAEAgDg4IER9EAAD6KYDCHwAAMPpCADj63gjg3wAAAA4xgdjeCIAY3gAAIA4AACgOAAAwDgAAOA4AAAAOQAAIDkAAEA5AABgOQAAgDkUAAB8IACATg==""#,
         vg_p192_mul_mod_p = sym super::ec_p192::vg_p192_mul_mod_p::vg_p192_mul_mod_p,
         vg_p192_add_mod_p = sym super::ec_p192::vg_p192_add_mod_p::vg_p192_add_mod_p,
         vg_p192_sub_mod_p = sym super::ec_p192::vg_p192_sub_mod_p::vg_p192_sub_mod_p,
+        VG_P192_FRAME_CONSTS = sym super::consts::VG_P192_FRAME_CONSTS,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_p192_validate.rs"]
+pub(crate) mod vg_p192_validate;

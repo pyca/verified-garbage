@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Framework.AArch64.LaneRestore
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.AArch64.Reduce
 
 /-!
 # Registers kept in vector lanes, on AArch64
@@ -27,12 +28,12 @@ def umovOf (ks : List (Reg × VReg × Nat)) : List Instr := ks.map fun k => .umo
 
 theorem exec_ins {s : State} {r : Reg} {v : VReg} {l : Nat} (hl : l < 2) :
     exec (.vop (.ins .d2 v l r)) s = some (s.setV v (setLane (s.v v) 64 l (s.gpr r))) := by
-  simp only [exec, VOp.eval, hl, ite_true, Option.map_some]
+  simp only [reduceExec, VOp.eval, hl, ite_true, Option.map_some]
 
 theorem exec_umov {s : State} {r : Reg} {v : VReg} {l : Nat} (hl : l < 2) :
     exec (.umov .x r v l) s = some (s.write .x r (laneOf s v l)) := by
   have : 64 * l < 128 := by omega_using [hl]
-  simp only [exec, Size.bits, laneOf, Nat.mul_comm l 64, this, ite_true]
+  simp only [reduceExec, Size.bits, laneOf, Nat.mul_comm l 64, this, ite_true]
 
 theorem laneOf_setV {s : State} {v w : VReg} {x : BitVec 128} {l : Nat} :
     laneOf (s.setV v x) w l = if w = v then x.extractLsb' (64 * l) 64 else laneOf s w l := by

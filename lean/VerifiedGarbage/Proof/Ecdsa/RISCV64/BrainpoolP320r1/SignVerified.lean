@@ -1,0 +1,50 @@
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.RISCV64.BrainpoolP320r1.Sign
+public import VerifiedGarbage.Proof.Framework.RISCV64.Taint
+public import VerifiedGarbage.Spec.Ecdsa.BrainpoolP320r1
+import VerifiedGarbage.Proof.Ecdsa.RISCV64.BrainpoolP320r1.SignLit
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Ecdsa.Contract
+meta import VerifiedGarbage.Proof.Ecdsa.RISCV64.BrainpoolP320r1.Sign
+meta import VerifiedGarbage.Proof.Framework.RISCV64.Taint
+meta import VerifiedGarbage.Spec.Ecdsa.BrainpoolP320r1
+meta import VerifiedGarbage.Proof.Ecdsa.RISCV64.BrainpoolP320r1.SignLit
+meta import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RISCV64.TaintMono
+meta import VerifiedGarbage.Proof.Framework.RISCV64.TaintMono
+import VerifiedGarbage.Proof.Ecdsa.RISCV64.BrainpoolP320r1.MulVerified
+meta import VerifiedGarbage.Proof.Ecdsa.RISCV64.BrainpoolP320r1.MulVerified
+import VerifiedGarbage.Proof.Ecdsa.RISCV64.BrainpoolP320r1.MulFn
+meta import VerifiedGarbage.Proof.Ecdsa.RISCV64.BrainpoolP320r1.MulFn
+
+/-!
+# ECDSA signatures over brainpoolP320r1 on RISC-V: constant time
+
+`vg_ecdsa_brainpoolp320r1_sign`'s constant time, by taint tracking (only the pointers,
+in `a0`–`a4`, public: every address is a pointer plus a constant, and the
+only branches are the callees' loops, on their counters), for its calls by
+RFC 6979's signature (`Proof/Ecdsa/Rfc6979/RISCV64/BrainpoolP320r1.lean`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Ecdsa.RISCV64.BrainpoolP320r1
+
+open VG VG.RISCV64 VG.Impl.Ecdsa.RISCV64 VG.Impl.Ecdsa.RISCV64.Sign
+
+theorem sign_ct : ConstantTime isa signRV.pre signRV.pub signBrainpoolP320r1 :=
+  VG.Taint.constantTime_of_exists (A := taint) (Taint.ofRegs [.a0, .a1, .a2, .a3, .a4])
+    (fun _ _ _ _ ⟨hsp, h0, h1, h2, h3, h4⟩ => ⟨hsp, fun r hr => by
+      simp only [Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl | rfl
+      · exact h0
+      · exact h1
+      · exact h2
+      · exact h3
+      · exact h4⟩)
+    (by taint_decide_sum [VG.Proof.Ecdsa.RISCV64.BrainpoolP320r1.mulSum,
+      VG.Proof.Ecdsa.RISCV64.BrainpoolP320r1.pMulSum, VG.Proof.Ecdsa.RISCV64.BrainpoolP320r1.nMulSum,
+      VG.Proof.Ecdsa.RISCV64.BrainpoolP320r1.nAddSum])
+
+end VG.Proof.Ecdsa.RISCV64.BrainpoolP320r1

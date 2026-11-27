@@ -1,6 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Curve
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Scrub
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Reduce
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.TableSat
 public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.BrainpoolP384r1.Verified
@@ -9,10 +12,11 @@ import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
 import VerifiedGarbage.Proof.Framework.LitShare
 import VerifiedGarbage.Proof.Framework.OmegaLit
 public import VerifiedGarbage.Proof.Framework.ConstMem
+public import VerifiedGarbage.Proof.Framework.X86_64.InstrBits
 import VerifiedGarbage.Proof.Weierstrass.TCombWords
 meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.TableSat
 meta import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
-meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Curve
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Reduce
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.BrainpoolP384r1.Verified
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.BrainpoolP384r1.Lit
 meta import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
@@ -70,6 +74,12 @@ theorem brainpoolp384r1SatMem_held : ∀ i < brainpoolp384r1W.length,
 theorem brainpoolp384r1_blk : RfcT (cfgC Impl.Ecdsa.X86_64.brainpoolp384r1S false 0) := by rfcT_decide
 
 
+/-- The tests of the instructions of `sign_k`'s code: one walk of it, and one
+match for each instruction (`Proof/Framework/X86_64/InstrBits.lean`). -/
+theorem brainpoolp384r1_bits :
+    Impl.Ecdsa.X86_64.signBrainpoolP384r1.allInstrs (hasBits (bMx + bSp + bNs)) = true := by
+  lit_decide
+
 /-- brainpoolp384r1, with the group law `hL` and the inversions'
 soundness `hI`. -/
 def brainpoolp384r1 (hL : Weierstrass.Law Spec.BrainpoolP384r1.curve)
@@ -84,11 +94,11 @@ def brainpoolp384r1 (hL : Weierstrass.Law Spec.BrainpoolP384r1.curve)
   sh_eq := Proof.Ecdsa.X86_64.BrainpoolP384r1.brainpoolp384r1_sh
   coreN := "vg_ecdsa_brainpoolp384r1_sign_k"
   coreC := Impl.Ecdsa.X86_64.signBrainpoolP384r1
-  coreX := by rw [coreK_brainpoolp384r1]; exact Proof.Ecdsa.X86_64.BrainpoolP384r1.sign_call_x86 hL hI
+  coreX := by rw [coreK_brainpoolp384r1]; exact fun s h hc => Proof.Ecdsa.X86_64.BrainpoolP384r1.sign_call_x86 hL hI s h hc
   coreCT := by rw [coreK_brainpoolp384r1]; exact Proof.Ecdsa.X86_64.BrainpoolP384r1.sign_ct
-  coreNs := by lit_decide
-  coreSp := by lit_decide
-  coreMx := by lit_decide
+  coreNs := Code.noRsp_of_bits rfl brainpoolp384r1_bits
+  coreSp := Code.sp_of_bits rfl brainpoolp384r1_bits
+  coreMx := Code.noMx_of_bits rfl brainpoolp384r1_bits
   coreD := by lit_decide
   blk := brainpoolp384r1_blk
 
@@ -103,5 +113,29 @@ theorem brainpoolp384r1T_verified (hL : Weierstrass.Law Spec.BrainpoolP384r1.cur
   have hsat := sat_one (T := Spec.Ecdsa.Rfc6979.Curves.brainpoolp384r1) h.1 brainpoolp384r1SatMem h.2
     (by rw [brainpoolp384r1W_length]; decide) brainpoolp384r1SatMem_held (by decide) rfl
   exact signT_verified ⟨rfl, by decide, by decide⟩ rfl h.1 hsat
+
+
+/-! ## The function as emitted -/
+
+theorem brainpoolp384r1_stub (hL : Weierstrass.Law Spec.BrainpoolP384r1.curve) (hI : Weierstrass.X86_64.InvSounds) : SignStub (brainpoolp384r1 hL hI) Spec.Ecdsa.Rfc6979.Curves.brainpoolp384r1.tries := by
+  dsimp only [SignStub, cfgS, cfgT, brainpoolp384r1]; exact ⟨by lit_decide, by lit_decide⟩
+
+/-- `vg_ecdsa_brainpoolp384r1_sign`, with the tables of `vs`, as emitted (`Impl.Ecdsa.Rfc6979.X86_64.Fn.sign`), its
+cleanup included, meets its contract in constant time and returns without secret residue. -/
+theorem brainpoolp384r1T_scrubbed (hL : Weierstrass.Law Spec.BrainpoolP384r1.curve) (hI : Weierstrass.X86_64.InvSounds) (vs : List Proof.Pbkdf2.Md.X86_64.MdHash) (h : OK vs ∧ "VG_BRAINPOOLP384R1_COMB" ∉ Proof.HmacTable.X86_64.names vs)
+    (hu : ∀ w ∈ vs, Proof.HmacTable.X86_64.HmacUp w) :
+    VerifiedScrubbed X86_64.target (Impl.Ecdsa.Rfc6979.X86_64.Fn.sign (cfgT (brainpoolp384r1 hL hI) Spec.Ecdsa.Rfc6979.Curves.brainpoolp384r1.tries vs))
+      (specK Spec.Ecdsa.Rfc6979.Curves.brainpoolp384r1 Impl.Ecdsa.X86_64.brainpoolp384r1S.combConsts vs) 32 :=
+  sign_scrubbed (api := Spec.Ecdsa.Rfc6979.Curves.brainpoolp384r1SignApi)
+    { tables := [("hmac", Proof.HmacTable.X86_64.tables vs)]
+      code := signCodeT (brainpoolp384r1 hL hI) Spec.Ecdsa.Rfc6979.Curves.brainpoolp384r1.tries vs
+      verified := brainpoolp384r1T_verified hL hI vs h
+      spSafe := signCode_sp _ _ _ }
+    (signOut _ Impl.Ecdsa.X86_64.brainpoolp384r1S.combConsts _ _) rfl rfl hu (brainpoolp384r1_stub hL hI)
+
+theorem brainpoolp384r1T_spSafe (hL : Weierstrass.Law Spec.BrainpoolP384r1.curve) (hI : Weierstrass.X86_64.InvSounds) (vs : List Proof.Pbkdf2.Md.X86_64.MdHash) :
+    (Impl.Ecdsa.Rfc6979.X86_64.Fn.sign (cfgT (brainpoolp384r1 hL hI) Spec.Ecdsa.Rfc6979.Curves.brainpoolp384r1.tries vs)).all
+      (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  X86_64.Scrub.scrubKs_spSafe (signCode_sp _ _ _)
 
 end VG.Proof.Ecdsa.Rfc6979.X86_64

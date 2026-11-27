@@ -58,15 +58,15 @@ theorem field_lt (X d k : Nat) (hd : d ≤ 20) : X / 2 ^ (d * k) % 2 ^ d < 2 ^ 2
 theorem bu_wp {s₀ : State} (hp : bitUnpackK.pre s₀) :
     WP isa Impl.MlDsa.AArch64.Pack.bitUnpack s₀ fun s' => bitUnpackK.post s₀ s' := by
   obtain ⟨hrd, hwr, hsep, hab, hlen⟩ := hp
-  have hc := bp_cases hab hlen
-  have go : ∀ {d c nb B : Nat}, Shape d c nb → wArg s₀ .x3 = B → bitlen (wArg s₀ .x2 + wArg s₀ .x3) = d →
+  obtain hc := bp_cases hab hlen
+  obtain go : ∀ {d c nb B : Nat}, Shape d c nb → wArg s₀ .x3 = B → bitlen (wArg s₀ .x2 + wArg s₀ .x3) = d →
       ∀ s : State, s.gpr .x0 = s₀.gpr .x0 → s.gpr .x4 = s₀.gpr .x4 → s.gpr .x13 = BitVec.ofNat 64 q →
       s.rd = s₀.rd → s.wr = s₀.wr → s.mem = s₀.mem →
       WP isa (buWidth B d c nb) s fun s' => bitUnpackK.post s₀ s' := by
     intro d c nb B hs hB hd s h0 h4 h13 h3 h5 h6
     rw [hd] at hlen
     have hq : q = 8380417 := rfl
-    have hB19 : B ≤ 2 ^ 19 := by omega
+    obtain hB19 : B ≤ 2 ^ 19 := by omega
     refine WP.seq ?_
     rw [← List.append_nil (Impl.MlKem.AArch64.movImm _ _)]
     refine wp_movImm fun s₁ o₁ e₁ => wp_nil ?_
@@ -78,7 +78,7 @@ theorem bu_wp {s₀ : State} (hp : bitUnpackK.pre s₀) :
       fun s' ⟨hc', _, _⟩ => ?_
     show PolyIs s'.mem (s₀.gpr .x4) (toRq (bitUnpack (bytesAt s₀.mem (s₀.gpr .x0) (s₀.gpr .x1).toNat) _ _))
     refine polyIs_of_toNat fun i hi => ?_
-    have hy := field_lt (inNum s₀.mem (s₀.gpr .x0) d) d i hs.d20
+    obtain hy := field_lt (inNum s₀.mem (s₀.gpr .x0) d) d i hs.d20
     have hy' := hy
     unfold inNum at hy'
     rw [hc' i hi, buWord, BitVec.toNat_setWidth, subModQ_toNat (by omega_using [hq, hB19]) (by omega_using [hq, hy]),
@@ -88,16 +88,16 @@ theorem bu_wp {s₀ : State} (hp : bitUnpackK.pre s₀) :
   refine WP.seq ?_
   rw [← List.append_nil (Impl.MlKem.AArch64.movImm _ _)]
   refine wp_movImm fun s₂ o₂ e₂ => wp_nil ?_
-  have h0 : s₂.gpr .x0 = s₀.gpr .x0 := o₂.get .x0
-  have h1 : s₂.gpr .x1 = s₀.gpr .x1 := o₂.get .x1
-  have h4 : s₂.gpr .x4 = s₀.gpr .x4 := o₂.get .x4
+  obtain h0 : s₂.gpr .x0 = s₀.gpr .x0 := o₂.get .x0
+  obtain h1 : s₂.gpr .x1 = s₀.gpr .x1 := o₂.get .x1
+  obtain h4 : s₂.gpr .x4 = s₀.gpr .x4 := o₂.get .x4
   have h13 : s₂.gpr .x13 = BitVec.ofNat 64 q := e₂
   refine sel_ok (by decide) (fun s₃ o₃ h => ?_) (fun s₃ o₃ h => ?_)
   · rw [h1] at h
     exact go (d := 3) (c := 8) (nb := 3) ⟨by decide, by decide, rfl, by decide, by decide, rfl, rfl⟩
       (by omega_using [hc, h]) (by omega_using [hlen, h]) s₃ (by rw [o₃.get .x0, h0]) (by rw [o₃.get .x4, h4]) (by rw [o₃.get .x13, h13])
       (by rw [o₃.rd, o₂.rd]) (by rw [o₃.wr, o₂.wr]) (by rw [o₃.mem, o₂.mem])
-  have k₃ := o₂.trans o₃
+  obtain k₃ := o₂.trans o₃
   rw [h1] at h
   refine sel_ok (by decide) (fun s₄ o₄ h' => ?_) (fun s₄ o₄ h' => ?_)
   · rw [o₃.get .x1, h1] at h'
@@ -105,7 +105,7 @@ theorem bu_wp {s₀ : State} (hp : bitUnpackK.pre s₀) :
       (by omega_using [hc, h']) (by omega_using [hlen, h']) s₄ (by rw [o₄.get .x0, k₃.get .x0]) (by rw [o₄.get .x4, k₃.get .x4])
       (by rw [o₄.get .x13, o₃.get .x13, h13]) (by rw [o₄.rd, k₃.rd]) (by rw [o₄.wr, k₃.wr])
       (by rw [o₄.mem, k₃.mem])
-  have k₄ := k₃.trans o₄
+  obtain k₄ := k₃.trans o₄
   rw [o₃.get .x1, h1] at h'
   refine sel_ok (by decide) (fun s₅ o₅ h'' => ?_) (fun s₅ o₅ h'' => ?_)
   · rw [o₄.get .x1, o₃.get .x1, h1] at h''
@@ -113,7 +113,7 @@ theorem bu_wp {s₀ : State} (hp : bitUnpackK.pre s₀) :
       (by omega_using [hc, h'']) (by omega_using [hlen, h'']) s₅ (by rw [o₅.get .x0, k₄.get .x0]) (by rw [o₅.get .x4, k₄.get .x4])
       (by rw [o₅.get .x13, o₄.get .x13, o₃.get .x13, h13]) (by rw [o₅.rd, k₄.rd]) (by rw [o₅.wr, k₄.wr])
       (by rw [o₅.mem, k₄.mem])
-  have k₅ := k₄.trans o₅
+  obtain k₅ := k₄.trans o₅
   rw [o₄.get .x1, o₃.get .x1, h1] at h''
   refine sel_ok (by decide) (fun s₆ o₆ h''' => ?_) (fun s₆ o₆ h''' => ?_)
   · rw [o₅.get .x1, o₄.get .x1, o₃.get .x1, h1] at h'''
@@ -173,7 +173,7 @@ theorem t1_wp {s₀ : State} (hp : unpackT1K.pre s₀) :
     (by rw [hwr]; exact List.mem_singleton_self _) hsep (o₁.get .x0) e₁ rfl rfl o₁.rd o₁.wr o₁.mem)
     fun s' ⟨hc, _, _⟩ => ?_
   refine polyIs_of_toNat fun i hi => ?_
-  have hy : inNum s₀.mem (s₀.gpr .x0) 10 / 2 ^ (10 * i) % 2 ^ 10 < 2 ^ 10 := Nat.mod_lt _ (by decide)
+  obtain hy : inNum s₀.mem (s₀.gpr .x0) 10 / 2 ^ (10 * i) % 2 ^ 10 < 2 ^ 10 := Nat.mod_lt _ (by decide)
   rw [hc i hi, t1Word, BitVec.toNat_setWidth, toNat_lsl_n (by rw [BitVec.toNat_ofNat]; omega_using []),
     BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show _ < 2 ^ 64 by omega_using []), Nat.mod_eq_of_lt (show _ < 2 ^ 32 by omega_using []),
     Vector.getElem_map, simpleBitUnpack_get _ _ hi, show bitlen t1Max = 10 by decide, ofInt_t1 hy]

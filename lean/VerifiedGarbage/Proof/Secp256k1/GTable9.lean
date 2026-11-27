@@ -1,9 +1,8 @@
 module
 
 import VerifiedGarbage.Proof.Secp256k1.Point
-import VerifiedGarbage.Proof.Weierstrass.CombCheckFast
+public import VerifiedGarbage.Proof.Weierstrass.CombCheckFast
 public import VerifiedGarbage.Impl.Secp256k1.GTable9
-public import VerifiedGarbage.Proof.Weierstrass.CombCheckW
 public import VerifiedGarbage.Spec.Secp256k1
 
 /-!

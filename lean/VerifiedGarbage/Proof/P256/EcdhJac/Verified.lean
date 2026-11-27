@@ -2,31 +2,24 @@ module
 
 import VerifiedGarbage.Proof.P256.EcdhJac.Timing
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-public import VerifiedGarbage.Proof.P256.EcdhJac.Finish
+public import VerifiedGarbage.Proof.P256.EcdhJac.Window
 public import VerifiedGarbage.Proof.Ecdh.AArch64.MulOk
 public import VerifiedGarbage.Proof.P256.EcdhJac.State
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Stages
 public import VerifiedGarbage.Proof.P256.EcdhJac.Lit
 import VerifiedGarbage.Proof.Weierstrass.AArch64.AddConst
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Bits
-import VerifiedGarbage.Proof.P256.EcdhJac.Window
 import VerifiedGarbage.Proof.P256.EcdhJac.Exchange
-import VerifiedGarbage.Proof.P256.EcdhInverse.Inverse
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Verified
 public import VerifiedGarbage.Proof.P256.EcdhDouble.Certificate
-import Mathlib.Data.BitVec
 import Mathlib.Data.Int.ModEq
-import Mathlib.Tactic.Linarith
-import Mathlib.Tactic.LinearCombination
-import Mathlib.Tactic.Positivity
-import Mathlib.Tactic.Ring
-public import VerifiedGarbage.Proof.P256.EcdhInverse.Update
+public import VerifiedGarbage.Proof.P256.EcdhInverse
 public import VerifiedGarbage.Proof.Weierstrass.InvToM
 public import VerifiedGarbage.Proof.P256.EcdhJac.DbluCertificate
 public import VerifiedGarbage.Proof.P256.EcdhJac.OutCertificate
 public import VerifiedGarbage.Proof.P256.EcdhTable.Dblu
 public import VerifiedGarbage.Proof.P256.EcdhTable.Zaddu
-public import VerifiedGarbage.Proof.P256.Linear.WeakCertificate
+public import VerifiedGarbage.Proof.P256.EcdhDouble.Verified
 public import VerifiedGarbage.Proof.P256.VerifyAllocated.CachedHead
 public import VerifiedGarbage.Proof.P256.VerifyAllocated.JacTail
 public import VerifiedGarbage.Proof.P256.VerifyAllocated.MixedHead
@@ -43,11 +36,13 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256Bounds
 public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
 public import VerifiedGarbage.Proof.Ecdh.AArch64.Contract
 public import VerifiedGarbage.Proof.Ecdh.AArch64.Lit
-import Mathlib.Tactic.FieldSimp
 import VerifiedGarbage.Proof.Ecdh.AArch64.Verified
 import VerifiedGarbage.Proof.P256.Prime
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Lays
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import VerifiedGarbage.Proof.EcKey.AArch64.Scrub
+public import VerifiedGarbage.Spec.Ecdh.P256
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubProved
 
 /-! ### `P256.EcdhJac.Adapter`, which only this module used -/
 
@@ -313,11 +308,24 @@ theorem verified (hL : Weierstrass.Law Spec.P256.curve)
     Verified AArch64.target Impl.P256.EcdhJac.exchange
       (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P256.inst AArch64.abi) :=
   verified_of_mul hL hI (mulWithInverse_of_window (p256_ok hI)
-    (W:=EcdhInverse.inverseMemory) (by unfold FixedOk; decide +kernel) (by decide +kernel) (by decide +kernel)
+    (W:=EcdhInverse.inverseWrites) (by unfold FixedOk; decide +kernel) (by decide +kernel) (by decide +kernel)
     (fun hs hm hx => EcdhInverse.inverse_ok VG.Proof.P256.p_prime hT
       (invLayP (p256_ok hI)) (by decide) (Weierstrass.unitMod_pow_two (p256_ok hI).p_odd _) hs
       (modOkA_inv (p256_ok hI) hm (.inl rfl) rfl rfl) hx
       (p256_ok hI).inv_p)
     (window_ok hL (p256_ok hI).am3 hO))
+
+
+/-- ECDH over P-256 as it is emitted, its cleanup included
+(`Impl.Ecdh.AArch64.Fn.exchangeP256`), meets its contract in constant time and
+returns without secret residue. -/
+theorem exchange_scrubbed (hL : Weierstrass.Law Spec.P256.curve)
+    (hI : Weierstrass.AArch64.InvSounds) (hO : Weierstrass.PrimeOrder Spec.P256.curve)
+    (hT : Weierstrass.InvToM Spec.P256.curve.p) :
+    VerifiedScrubbed AArch64.target VG.Impl.Ecdh.AArch64.Fn.exchangeP256
+      (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P256.inst AArch64.abi) 32 :=
+  VG.AArch64.Scrub.verifiedScrubbedAll (api := Spec.Ecdh.P256.exchangeApi)
+    { code := Impl.P256.EcdhJac.exchange, verified := verified hL hI hO hT } _
+    (VG.Proof.EcKey.AArch64.Scrub.exchangeOk _) (by dsimp only; lit_decide)
 
 end VG.Proof.P256.EcdhJac

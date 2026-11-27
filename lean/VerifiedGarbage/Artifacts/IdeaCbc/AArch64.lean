@@ -1,21 +1,26 @@
 module
 
-public import VerifiedGarbage.Proof.Idea.AArch64.CbcVerified
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.AArch64.Print
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Idea.Cbc
+import VerifiedGarbage.Impl.Idea.AArch64.Fn
+import VerifiedGarbage.Proof.Idea.AArch64.CbcVerified
+import VerifiedGarbage.Proof.Idea.AArch64.ModesResidue
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # IDEA-CBC on AArch64 -/
 
-@[expose] public section
-
 namespace VG.Artifacts.IdeaCbc.AArch64
 
-def artifacts : List Artifact := [
+public def artifacts : List (Artifact AArch64.target) := [
   Spec.Idea.cbcEncryptChainedApi.artifact AArch64.target {
-    code := Impl.StackScratch.AArch64.withStackScratchWiped 208 .x4 26 Impl.Idea.AArch64.cbcEncryptChained
-    verified := Proof.Idea.AArch64.cbcEncryptChained_framed },
+    code := Impl.Idea.AArch64.Fn.cbcEncryptChained
+    verified := Proof.Idea.AArch64.ModesResidue.cbcEncryptChainedCode_scrubbed },
   Spec.Idea.cbcDecryptChainedApi.artifact AArch64.target {
-    code := Impl.StackScratch.AArch64.withStackScratchWiped 208 .x4 26 Impl.Idea.AArch64.cbcDecryptChained
-    verified := Proof.Idea.AArch64.cbcDecryptChained_framed }]
+    code := Impl.Idea.AArch64.Fn.cbcDecryptChained
+    verified := Proof.Idea.AArch64.ModesResidue.cbcDecryptChainedCode_scrubbed }]
+
+spec_apis artifacts
 
 end VG.Artifacts.IdeaCbc.AArch64

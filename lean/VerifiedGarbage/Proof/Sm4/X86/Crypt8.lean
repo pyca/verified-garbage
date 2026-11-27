@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Sm4.X86.LayersLit
 /-!
 # The transposes, and eight blocks of bitsliced SM4 on x86 (32-bit)
 
-As on ARMv7 (`Proof/Sm4/Arm/Crypt8.lean`): `toBs_step` turns the eight
+As on ARMv7 (`Proof/Sm4/Arm/Group.lean`): `toBs_step` turns the eight
 blocks of the tail buffer into the state's planes, `fromBs_step` turns the
 state's planes back into the output blocks (the words in reverse order),
 and `crypt8_wp` composes them with the 32 rounds (`rounds_wp`).

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.InitMemory
-public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Keep
+public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Pair
 
 import VerifiedGarbage.Proof.Framework.AArch64.Simd64
 import VerifiedGarbage.Proof.Framework.Block

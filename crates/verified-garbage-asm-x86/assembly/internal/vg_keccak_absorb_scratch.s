@@ -24,6 +24,24 @@ vg_keccak_absorb_scratch:
 22:
 	mov ecx, DWORD PTR [ebp+528]
 	mov edx, DWORD PTR [ebp+532]
+	mov eax, ecx
+	sub eax, ebx
+	add eax, 8
+	cmp edx, eax
+	jb 23f
+	cmp edi, 8
+	jb 25f
+	movq xmm0, QWORD PTR [esi]
+	movq xmm1, QWORD PTR [ecx]
+	pxor xmm0, xmm1
+	movq QWORD PTR [ecx], xmm0
+	add ecx, 8
+	mov DWORD PTR [ebp+528], ecx
+	mov DWORD PTR [ebp+532], edx
+	add esi, 8
+	sub edi, 8
+	jmp 26f
+25:
 	movzx eax, BYTE PTR [esi]
 	xor eax, DWORD PTR [ecx]
 	mov BYTE PTR [ecx], al
@@ -32,19 +50,31 @@ vg_keccak_absorb_scratch:
 	mov DWORD PTR [ebp+532], edx
 	add esi, 1
 	sub edi, 1
+26:
+	jmp 24f
+23:
+	movzx eax, BYTE PTR [esi]
+	xor eax, DWORD PTR [ecx]
+	mov BYTE PTR [ecx], al
+	add ecx, 1
+	mov DWORD PTR [ebp+528], ecx
+	mov DWORD PTR [ebp+532], edx
+	add esi, 1
+	sub edi, 1
+24:
 	mov eax, ecx
 	sub eax, ebx
 	cmp eax, edx
-	je 23f
-	jmp 24f
-23:
+	je 27f
+	jmp 28f
+27:
 	mov DWORD PTR [ebp+528], ebx
 	push ebp
 	push ebx
 	call {vg_keccak_f1600}
 	pop eax
 	pop eax
-24:
+28:
 	test edi, edi
 	jne 22b
 	jmp 21f

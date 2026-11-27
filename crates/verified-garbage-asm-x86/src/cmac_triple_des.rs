@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Cmac.tdesStreamInitContract`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 416 bytes.
@@ -36,14 +38,85 @@ jne 22b
 jne 24b
 .base64 "i01QuIAAAAApyAHGuAAAAAApyIlFUItFQItNRIlNQIlFRItFTIPoAYlFTA=="
 jne 23b
-.base64 "ge74AQAAi01AgeEABAAAi11AwcsDgeMBAEAAMdmLXUDBywaB4wAQAAAx2YtdQMHLCIHjAAAAATHZi11AwcsJg+MEMdmLXUDBywyB4wBAAAAx2YtdQMHLDoHjAAAABDHZi11AwcsPg+MQMdmLXUDByxGB4wAAAQAx2YtdQMHLFIHjAAAAEDHZi11AwcsVg+NAMdmLXUDByxeB4wAABAAx2YtdQMHLGoHjAAEAQDHZi11AwcsdgeMAABAAMdmLXUTBywKB4wIAgAAx2YtdRMHLBYHjACAAADHZi11EwcsHgeMAAAACMdmLXUTBywiD4wgx2YtdRMHLC4HjAIAAADHZi11EwcsNgeMAAAAIMdmLXUTByw6D4yAx2YtdRMHLEIHjAAACADHZi11EwcsTgeMAAAAgMdmLXUTByxSB44AAAAAx2YtdRMHLFoHjAAAIADHZi11EwcsZgeMAAgCAMdmLXUTByxyB4wAAIAAx2YtdRMHLH4HjAAgAADHZiU0Ai01A0cmB4QAAEACLXUDBywSB4wAEAAAx2YtdQMHLB4HjAQBAADHZi11AwcsKgeMAEAAAMdmLXUDBywyB4wAAAAEx2YtdQMHLDYPjBDHZi11AwcsQgeMAQAAAMdmLXUDByxKB4wAAAAQx2YtdQMHLE4PjEDHZi11AwcsVgeMAAAEAMdmLXUDByxiB4wAAABAx2YtdQMHLGYPjQDHZi11AwcsbgeMAAAQAMdmLXUDByx6B4wABAEAx2YtdRIHjAAAgADHZi11EwcsDgeMACAAAMdmLXUTBywaB4wIAgAAx2YtdRMHLCYHjACAAADHZi11EwcsLgeMAAAACMdmLXUTBywyD4wgx2YtdRMHLD4HjAIAAADHZi11EwcsRgeMAAAAIMdmLXUTByxKD4yAx2YtdRMHLFIHjAAACADHZi11EwcsXgeMAAAAgMdmLXUTByxiB44AAAAAx2YtdRMHLGoHjAAAIADHZi11EwcsdgeMAAgCAMdmJTQSLRQCLVQSLfCQMgceAAQAAicHB6R+7AAAAACnLg+MbidHB6R8BwAnIAdIx2onBD8mJD4nRD8mJTwSJwcHpH7sAAAAAKcuD4xuJ0cHpHwHACcgB0jHaicEPyYlPCInRD8mJTwyLXVSLdViLfVyLbWBYWFhYWItEJASLmJABAAC5AAAAAImIkAEAAImIlAEAAI2kJJQCAADD"
+.base64 "ge74AQAAi01AgeEABAAAi11AwcsDgeMBAEAAMdmLXUDBywaB4wAQAAAx2YtdQMHLCIHjAAAAATHZi11AwcsJg+MEMdmLXUDBywyB4wBAAAAx2YtdQMHLDoHjAAAABDHZi11AwcsPg+MQMdmLXUDByxGB4wAAAQAx2YtdQMHLFIHjAAAAEDHZi11AwcsVg+NAMdmLXUDByxeB4wAABAAx2YtdQMHLGoHjAAEAQDHZi11AwcsdgeMAABAAMdmLXUTBywKB4wIAgAAx2YtdRMHLBYHjACAAADHZi11EwcsHgeMAAAACMdmLXUTBywiD4wgx2YtdRMHLC4HjAIAAADHZi11EwcsNgeMAAAAIMdmLXUTByw6D4yAx2YtdRMHLEIHjAAACADHZi11EwcsTgeMAAAAgMdmLXUTByxSB44AAAAAx2YtdRMHLFoHjAAAIADHZi11EwcsZgeMAAgCAMdmLXUTByxyB4wAAIAAx2YtdRMHLH4HjAAgAADHZiU0Ai01A0cmB4QAAEACLXUDBywSB4wAEAAAx2YtdQMHLB4HjAQBAADHZi11AwcsKgeMAEAAAMdmLXUDBywyB4wAAAAEx2YtdQMHLDYPjBDHZi11AwcsQgeMAQAAAMdmLXUDByxKB4wAAAAQx2YtdQMHLE4PjEDHZi11AwcsVgeMAAAEAMdmLXUDByxiB4wAAABAx2YtdQMHLGYPjQDHZi11AwcsbgeMAAAQAMdmLXUDByx6B4wABAEAx2YtdRIHjAAAgADHZi11EwcsDgeMACAAAMdmLXUTBywaB4wIAgAAx2YtdRMHLCYHjACAAADHZi11EwcsLgeMAAAACMdmLXUTBywyD4wgx2YtdRMHLD4HjAIAAADHZi11EwcsRgeMAAAAIMdmLXUTByxKD4yAx2YtdRMHLFIHjAAACADHZi11EwcsXgeMAAAAgMdmLXUTByxiB44AAAAAx2YtdRMHLGoHjAAAIADHZi11EwcsdgeMAAgCAMdmJTQSLRQCLVQSLfCQMgceAAQAAicHB6R+7AAAAACnLg+MbidHB6R8BwAnIAdIx2onBD8mJD4nRD8mJTwSJwcHpH7sAAAAAKcuD4xuJ0cHpHwHACcgB0jHaicEPyYlPCInRD8mJTwyLXVSLdViLfVyLbWBYWFhYWItEJASLmJABAAC5AAAAAImIkAEAAImIlAEAAI2kJJQCAABmD+/AuQAAAACNpCRY/f//8w9/BCTzD39EJBDzD39EJCDzD39EJDDzD39EJEDzD39EJFDzD39EJGDzD39EJHDzD3+EJIAAAADzD3+EJJAAAADzD3+EJKAAAADzD3+EJLAAAADzD3+EJMAAAADzD3+EJNAAAADzD3+EJOAAAADzD3+EJPAAAADzD3+EJAABAADzD3+EJBABAADzD3+EJCABAADzD3+EJDABAADzD3+EJEABAADzD3+EJFABAADzD3+EJGABAADzD3+EJHABAADzD3+EJIABAADzD3+EJJABAADzD3+EJKABAADzD3+EJLABAADzD3+EJMABAADzD3+EJNABAADzD3+EJOABAADzD3+EJPABAADzD3+EJAACAADzD3+EJBACAADzD3+EJCACAADzD3+EJDACAADzD3+EJEACAADzD3+EJFACAADzD3+EJGACAADzD3+EJHACAADzD3+EJIACAADzD3+EJJACAACJjCSgAgAAiYwkpAIAAI2kJKgCAAC4AAAAALoAAAAAMclmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/8M="
 .p2align 6"#,
+    )
+}
+
+/// The CPU features `vg_cmac_triple_des_absorb_ssse3` requires (`Artifact.features`).
+pub const VG_CMAC_TRIPLE_DES_ABSORB_SSSE3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3);
+
+/// Absorbs data into a TDEA-CMAC computation (NIST SP 800-38B §6.2): if the streaming state `*state` represents a message of `count` bytes under a TDEA key (as `vg_cmac_triple_des_stream_init` set it up), it then represents that message followed by the `len` bytes at `data`, under the same key, provided that the two together are shorter than 2⁶⁴ bytes. It chains (step 6) every block of the message but its last bytes `Mₙ*` (step 3), which it holds back in the state, since only `vg_cmac_triple_des_finish` knows they are the last.
+///
+/// Contract: `VG.Spec.Cmac.tdesAbsorbContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 416 bytes.
+/// * `data` must be valid for reads of `len` bytes.
+/// * `state` must not overlap `data` or the arguments on the stack (distinct Rust objects never do).
+/// * Neither `state` nor `data` may overlap the return address on the stack or the 752 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `ssse3` target feature.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_cmac_triple_des_absorb_ssse3(state: *mut [u64; 52], count: u64, data: *const u8, len: usize) {
+    core::arch::naked_asm!(
+        r#".base64 "jaQkKP3//4uEJNwCAACJRCQEi4Qk4AIAAIlEJAiLhCTkAgAAiUQkDIuEJOgCAACJRCQQi4Qk7AIAAIlEJBSJ4IPAHIlEJBiLRCQYiZiAAgAAibCEAgAAibiIAgAAiaiMAgAAi0QkCItMJAwJwQ=="
+je 20f
+.base64 "g+gBg+AHg8AB"
+jmp 21f
+20:
+21:
+.base64 "uQgAAAApwYtUJBQ5yg=="
+jb 22f
+jmp 23f
+22:
+.base64 "idE="
+23:
+.base64 "ic2LdCQQi3wkBIHHmAEAAAHHhck="
+je 24f
+26:
+.base64 "D7YGiAeDxgGDxwGD6QE="
+jne 26b
+jmp 25f
+24:
+25:
+.base64 "vgAAAACLVCQUKeo="
+je 27f
+.base64 "vgEAAAA="
+jmp 28f
+27:
+28:
+.base64 "i0QkBInCgcKQAQAAicOBw5gBAACLfCQY"
+call {vg_cmac_triple_des_chain_ssse3}
+.base64 "uQAAAACLXCQEgcOYAQAAi1QkFCnq"
+je 29f
+.base64 "idGD6QGJyIPgBynBi1wkEAHr"
+jmp 210f
+29:
+210:
+.base64 "ic7B7gMBzYtEJASJwoHCkAEAAIt8JBg="
+call {vg_cmac_triple_des_chain_ssse3}
+.base64 "i3QkEAHui3wkBIHHmAEAAItMJBQp6YXJ"
+je 211f
+213:
+.base64 "D7YGiAeDxgGDxwGD6QE="
+jne 213b
+jmp 212f
+211:
+212:
+.base64 "i0QkGIuYgAIAAIuwhAIAAIu4iAIAAIuojAIAAI2kJNgCAABmD+/AjaQkEP3///MPfwQk8w9/RCQQ8w9/RCQg8w9/RCQw8w9/RCRA8w9/RCRQ8w9/RCRg8w9/RCRw8w9/hCSAAAAA8w9/hCSQAAAA8w9/hCSgAAAA8w9/hCSwAAAA8w9/hCTAAAAA8w9/hCTQAAAA8w9/hCTgAAAA8w9/hCTwAAAA8w9/hCQAAQAA8w9/hCQQAQAA8w9/hCQgAQAA8w9/hCQwAQAA8w9/hCRAAQAA8w9/hCRQAQAA8w9/hCRgAQAA8w9/hCRwAQAA8w9/hCSAAQAA8w9/hCSQAQAA8w9/hCSgAQAA8w9/hCSwAQAA8w9/hCTAAQAA8w9/hCTQAQAA8w9/hCTgAQAA8w9/hCTwAQAA8w9/hCQAAgAA8w9/hCQQAgAA8w9/hCQgAgAA8w9/hCQwAgAA8w9/hCRAAgAA8w9/hCRQAgAA8w9/hCRgAgAA8w9/hCRwAgAA8w9/hCSAAgAA8w9/hCSQAgAA8w9/hCSgAgAA8w9/hCSwAgAA8w9/hCTAAgAA8w9/hCTQAgAA8w9/hCTgAgAAjaQk8AIAALgAAAAAugAAAAAxyWYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ww=="
+.p2align 6"#,
+        vg_cmac_triple_des_chain_ssse3 = sym super::cmac_triple_des::vg_cmac_triple_des_chain_ssse3::vg_cmac_triple_des_chain_ssse3,
     )
 }
 
 /// Absorbs data into a TDEA-CMAC computation (NIST SP 800-38B §6.2): if the streaming state `*state` represents a message of `count` bytes under a TDEA key (as `vg_cmac_triple_des_stream_init` set it up), it then represents that message followed by the `len` bytes at `data`, under the same key, provided that the two together are shorter than 2⁶⁴ bytes. It chains (step 6) every block of the message but its last bytes `Mₙ*` (step 3), which it holds back in the state, since only `vg_cmac_triple_des_finish` knows they are the last.
 ///
 /// Contract: `VG.Spec.Cmac.tdesAbsorbContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -126,14 +199,107 @@ jne 223b
 jmp 222f
 221:
 222:
-.base64 "i0QkGIuYgAIAAIuwhAIAAIu4iAIAAIuojAIAAI2kJMwCAADD"
+.base64 "i0QkGIuYgAIAAIuwhAIAAIu4iAIAAIuojAIAAI2kJMwCAABmD+/AuQAAAACNpCQc/f//8w9/BCTzD39EJBDzD39EJCDzD39EJDDzD39EJEDzD39EJFDzD39EJGDzD39EJHDzD3+EJIAAAADzD3+EJJAAAADzD3+EJKAAAADzD3+EJLAAAADzD3+EJMAAAADzD3+EJNAAAADzD3+EJOAAAADzD3+EJPAAAADzD3+EJAABAADzD3+EJBABAADzD3+EJCABAADzD3+EJDABAADzD3+EJEABAADzD3+EJFABAADzD3+EJGABAADzD3+EJHABAADzD3+EJIABAADzD3+EJJABAADzD3+EJKABAADzD3+EJLABAADzD3+EJMABAADzD3+EJNABAADzD3+EJOABAADzD3+EJPABAADzD3+EJAACAADzD3+EJBACAADzD3+EJCACAADzD3+EJDACAADzD3+EJEACAADzD3+EJFACAADzD3+EJGACAADzD3+EJHACAADzD3+EJIACAADzD3+EJJACAADzD3+EJKACAADzD3+EJLACAADzD3+EJMACAADzD3+EJNACAACJjCTgAgAAjaQk5AIAALgAAAAAugAAAAAxyWYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ww=="
 .p2align 6"#,
+    )
+}
+
+/// The CPU features `vg_cmac_triple_des_finish_ssse3` requires (`Artifact.features`).
+pub const VG_CMAC_TRIPLE_DES_FINISH_SSSE3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3);
+
+/// Finishes a TDEA-CMAC computation (NIST SP 800-38B §6.2, with `Tlen = 64`): if the streaming state `*state` represents a message of `count` bytes, shorter than 2⁶⁴ bytes, under a TDEA key (as `vg_cmac_triple_des_stream_init` and `vg_cmac_triple_des_absorb` set it up), writes the MAC of that message under that key to `*out`: `Cₙ = CIPH_K(Cₙ₋₁ ⊕ Mₙ)`, where `Mₙ = K1 ⊕ Mₙ*` if the message's last bytes `Mₙ*` are a complete block, and `Mₙ = K2 ⊕ (Mₙ* ‖ 10ʲ)` otherwise (step 4). The caller truncates it (step 7) and compares it (§6.3).
+///
+/// Contract: `VG.Spec.Cmac.tdesFinishContract`. Constant time: only the pointers and `count` may affect timing, not the state.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 416 bytes.
+/// * `out` must be valid for reads and writes of 8 bytes.
+/// * The contents of `state` on return are unspecified.
+/// * `state` and `out` must not overlap each other or the arguments on the stack (distinct Rust objects never do).
+/// * Neither `state` nor `out` may overlap the return address on the stack or the 748 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `ssse3` target feature.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_cmac_triple_des_finish_ssse3(state: *mut [u64; 52], count: u64, out: *mut [u8; 8]) {
+    core::arch::naked_asm!(
+        r#".base64 "jaQkLP3//4uEJNgCAACJRCQEi4Qk3AIAAIlEJAiLhCTgAgAAiUQkDIuEJOQCAACJRCQQieCDwBiJRCQUi0QkFImYgAIAAImwhAIAAIm4iAIAAImojAIAAIt0JASBxpABAACLfCQQuQgAAACFyQ=="
+je 20f
+22:
+.base64 "D7YGiAeDxgGDxwGD6QE="
+jne 22b
+jmp 21f
+20:
+21:
+.base64 "i3QkCItMJAwJ8Q=="
+je 23f
+.base64 "g+4Bg+YHg8YB"
+jmp 24f
+23:
+24:
+.base64 "i0QkBItUJBCJw4HDmAEAAIt8JBSJn9gBAACJt9wBAACJh+ABAACJl+QBAACD/gg="
+je 25f
+.base64 "uAAAAACJh9ABAACJh9QBAACD/gE="
+jb 27f
+.base64 "D7YDiIfQAQAA"
+jmp 28f
+27:
+28:
+.base64 "g/4C"
+jb 29f
+.base64 "D7ZDAYiH0QEAAA=="
+jmp 210f
+29:
+210:
+.base64 "g/4D"
+jb 211f
+.base64 "D7ZDAoiH0gEAAA=="
+jmp 212f
+211:
+212:
+.base64 "g/4E"
+jb 213f
+.base64 "D7ZDA4iH0wEAAA=="
+jmp 214f
+213:
+214:
+.base64 "g/4F"
+jb 215f
+.base64 "D7ZDBIiH1AEAAA=="
+jmp 216f
+215:
+216:
+.base64 "g/4G"
+jb 217f
+.base64 "D7ZDBYiH1QEAAA=="
+jmp 218f
+217:
+218:
+.base64 "g/4H"
+jb 219f
+.base64 "D7ZDBoiH1gEAAA=="
+jmp 220f
+219:
+220:
+.base64 "ifkB8biAAAAAiIHQAQAAi4fQAQAAi5fUAQAAi4/gAQAAM4GIAQAAM5GMAQAA"
+jmp 26f
+25:
+.base64 "iwOLUwSLj+ABAAAzgYABAAAzkYQBAAA="
+26:
+.base64 "iYfQAQAAiZfUAQAAi4fgAQAAi5fkAQAAifuBw9ABAAC+AQAAAA=="
+call {vg_cmac_triple_des_chain_ssse3}
+.base64 "i5/YAQAAi7fcAQAAi0QkFIuYgAIAAIuwhAIAAIu4iAIAAIuojAIAAI2kJNQCAABmD+/AuQAAAACNpCQU/f//8w9/BCTzD39EJBDzD39EJCDzD39EJDDzD39EJEDzD39EJFDzD39EJGDzD39EJHDzD3+EJIAAAADzD3+EJJAAAADzD3+EJKAAAADzD3+EJLAAAADzD3+EJMAAAADzD3+EJNAAAADzD3+EJOAAAADzD3+EJPAAAADzD3+EJAABAADzD3+EJBABAADzD3+EJCABAADzD3+EJDABAADzD3+EJEABAADzD3+EJFABAADzD3+EJGABAADzD3+EJHABAADzD3+EJIABAADzD3+EJJABAADzD3+EJKABAADzD3+EJLABAADzD3+EJMABAADzD3+EJNABAADzD3+EJOABAADzD3+EJPABAADzD3+EJAACAADzD3+EJBACAADzD3+EJCACAADzD3+EJDACAADzD3+EJEACAADzD3+EJFACAADzD3+EJGACAADzD3+EJHACAADzD3+EJIACAADzD3+EJJACAADzD3+EJKACAADzD3+EJLACAADzD3+EJMACAADzD3+EJNACAACJjCTgAgAAiYwk5AIAAImMJOgCAACNpCTsAgAAuAAAAAC6AAAAADHJZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7//D"
+.p2align 6"#,
+        vg_cmac_triple_des_chain_ssse3 = sym super::cmac_triple_des::vg_cmac_triple_des_chain_ssse3::vg_cmac_triple_des_chain_ssse3,
     )
 }
 
 /// Finishes a TDEA-CMAC computation (NIST SP 800-38B §6.2, with `Tlen = 64`): if the streaming state `*state` represents a message of `count` bytes, shorter than 2⁶⁴ bytes, under a TDEA key (as `vg_cmac_triple_des_stream_init` and `vg_cmac_triple_des_absorb` set it up), writes the MAC of that message under that key to `*out`: `Cₙ = CIPH_K(Cₙ₋₁ ⊕ Mₙ)`, where `Mₙ = K1 ⊕ Mₙ*` if the message's last bytes `Mₙ*` are a complete block, and `Mₙ = K2 ⊕ (Mₙ* ‖ 10ʲ)` otherwise (step 4). The caller truncates it (step 7) and compares it (§6.3).
 ///
 /// Contract: `VG.Spec.Cmac.tdesFinishContract`. Constant time: only the pointers and `count` may affect timing, not the state.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -182,7 +348,11 @@ jmp 26f
 jne 211b
 .base64 "i01QuIAAAAApyAHGuAAAAAApyIlFUItFQItNRIlNQIlFRItFTIPoAYlFTA=="
 jne 210b
-.base64 "ge74AQAAi01AgeEABAAAi11AwcsDgeMBAEAAMdmLXUDBywaB4wAQAAAx2YtdQMHLCIHjAAAAATHZi11AwcsJg+MEMdmLXUDBywyB4wBAAAAx2YtdQMHLDoHjAAAABDHZi11AwcsPg+MQMdmLXUDByxGB4wAAAQAx2YtdQMHLFIHjAAAAEDHZi11AwcsVg+NAMdmLXUDByxeB4wAABAAx2YtdQMHLGoHjAAEAQDHZi11AwcsdgeMAABAAMdmLXUTBywKB4wIAgAAx2YtdRMHLBYHjACAAADHZi11EwcsHgeMAAAACMdmLXUTBywiD4wgx2YtdRMHLC4HjAIAAADHZi11EwcsNgeMAAAAIMdmLXUTByw6D4yAx2YtdRMHLEIHjAAACADHZi11EwcsTgeMAAAAgMdmLXUTByxSB44AAAAAx2YtdRMHLFoHjAAAIADHZi11EwcsZgeMAAgCAMdmLXUTByxyB4wAAIAAx2YtdRMHLH4HjAAgAADHZiU0Ai01A0cmB4QAAEACLXUDBywSB4wAEAAAx2YtdQMHLB4HjAQBAADHZi11AwcsKgeMAEAAAMdmLXUDBywyB4wAAAAEx2YtdQMHLDYPjBDHZi11AwcsQgeMAQAAAMdmLXUDByxKB4wAAAAQx2YtdQMHLE4PjEDHZi11AwcsVgeMAAAEAMdmLXUDByxiB4wAAABAx2YtdQMHLGYPjQDHZi11AwcsbgeMAAAQAMdmLXUDByx6B4wABAEAx2YtdRIHjAAAgADHZi11EwcsDgeMACAAAMdmLXUTBywaB4wIAgAAx2YtdRMHLCYHjACAAADHZi11EwcsLgeMAAAACMdmLXUTBywyD4wgx2YtdRMHLD4HjAIAAADHZi11EwcsRgeMAAAAIMdmLXUTByxKD4yAx2YtdRMHLFIHjAAACADHZi11EwcsXgeMAAAAgMdmLXUTByxiB44AAAAAx2YtdRMHLGoHjAAAIADHZi11EwcsdgeMAAgCAMdmJTQSLRQCLVQSLTCQID8gPyokBiVEEi11Ui3VYi31ci21gWFhYWFhYi0QkFIuYgAIAAIuwhAIAAIu4iAIAAIuojAIAAI2kJMgCAADD"
+.base64 "ge74AQAAi01AgeEABAAAi11AwcsDgeMBAEAAMdmLXUDBywaB4wAQAAAx2YtdQMHLCIHjAAAAATHZi11AwcsJg+MEMdmLXUDBywyB4wBAAAAx2YtdQMHLDoHjAAAABDHZi11AwcsPg+MQMdmLXUDByxGB4wAAAQAx2YtdQMHLFIHjAAAAEDHZi11AwcsVg+NAMdmLXUDByxeB4wAABAAx2YtdQMHLGoHjAAEAQDHZi11AwcsdgeMAABAAMdmLXUTBywKB4wIAgAAx2YtdRMHLBYHjACAAADHZi11EwcsHgeMAAAACMdmLXUTBywiD4wgx2YtdRMHLC4HjAIAAADHZi11EwcsNgeMAAAAIMdmLXUTByw6D4yAx2YtdRMHLEIHjAAACADHZi11EwcsTgeMAAAAgMdmLXUTByxSB44AAAAAx2YtdRMHLFoHjAAAIADHZi11EwcsZgeMAAgCAMdmLXUTByxyB4wAAIAAx2YtdRMHLH4HjAAgAADHZiU0Ai01A0cmB4QAAEACLXUDBywSB4wAEAAAx2YtdQMHLB4HjAQBAADHZi11AwcsKgeMAEAAAMdmLXUDBywyB4wAAAAEx2YtdQMHLDYPjBDHZi11AwcsQgeMAQAAAMdmLXUDByxKB4wAAAAQx2YtdQMHLE4PjEDHZi11AwcsVgeMAAAEAMdmLXUDByxiB4wAAABAx2YtdQMHLGYPjQDHZi11AwcsbgeMAAAQAMdmLXUDByx6B4wABAEAx2YtdRIHjAAAgADHZi11EwcsDgeMACAAAMdmLXUTBywaB4wIAgAAx2YtdRMHLCYHjACAAADHZi11EwcsLgeMAAAACMdmLXUTBywyD4wgx2YtdRMHLD4HjAIAAADHZi11EwcsRgeMAAAAIMdmLXUTByxKD4yAx2YtdRMHLFIHjAAACADHZi11EwcsXgeMAAAAgMdmLXUTByxiB44AAAAAx2YtdRMHLGoHjAAAIADHZi11EwcsdgeMAAgCAMdmJTQSLRQCLVQSLTCQID8gPyokBiVEEi11Ui3VYi31ci21gWFhYWFhYi0QkFIuYgAIAAIuwhAIAAIu4iAIAAIuojAIAAI2kJMgCAABmD+/AjaQkIP3///MPfwQk8w9/RCQQ8w9/RCQg8w9/RCQw8w9/RCRA8w9/RCRQ8w9/RCRg8w9/RCRw8w9/hCSAAAAA8w9/hCSQAAAA8w9/hCSgAAAA8w9/hCSwAAAA8w9/hCTAAAAA8w9/hCTQAAAA8w9/hCTgAAAA8w9/hCTwAAAA8w9/hCQAAQAA8w9/hCQQAQAA8w9/hCQgAQAA8w9/hCQwAQAA8w9/hCRAAQAA8w9/hCRQAQAA8w9/hCRgAQAA8w9/hCRwAQAA8w9/hCSAAQAA8w9/hCSQAQAA8w9/hCSgAQAA8w9/hCSwAQAA8w9/hCTAAQAA8w9/hCTQAQAA8w9/hCTgAQAA8w9/hCTwAQAA8w9/hCQAAgAA8w9/hCQQAgAA8w9/hCQgAgAA8w9/hCQwAgAA8w9/hCRAAgAA8w9/hCRQAgAA8w9/hCRgAgAA8w9/hCRwAgAA8w9/hCSAAgAA8w9/hCSQAgAA8w9/hCSgAgAA8w9/hCSwAgAA8w9/hCTAAgAA8w9/hCTQAgAAjaQk4AIAALgAAAAAugAAAAAxyWYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ww=="
 .p2align 6"#,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_cmac_triple_des_chain_ssse3.rs"]
+pub(crate) mod vg_cmac_triple_des_chain_ssse3;

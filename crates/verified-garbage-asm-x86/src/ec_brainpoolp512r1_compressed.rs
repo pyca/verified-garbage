@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.EcKey.Instance.compressPublicKeyContract`. The input is public: timing may depend on the pointers and the contents of `public`.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety
@@ -38,7 +40,7 @@ call {vg_brainpoolp512r1_add_mod_p}
 call {vg_brainpoolp512r1_add_mod_p}
 .base64 "WFhYWLjACgAAuYAJAAC6gAoAAFBRUlc="
 call {vg_brainpoolp512r1_sub_mod_p}
-.base64 "WFhYWIuXgAoAAAuXhAoAAAuXiAoAAAuXjAoAAAuXkAoAAAuXlAoAAAuXmAoAAAuXnAoAAAuXoAoAAAuXpAoAAAuXqAoAAAuXrAoAAAuXsAoAAAuXtAoAAAuXuAoAAAuXvAoAALkAAAAAKdEZ0oPy/4uHQAsAACHQiYdACwAAi49ACwAAi4dAAgAAi5fACAAAMcIhyjHQiYfACQAAi4dEAgAAi5fECAAAMcIhyjHQiYfECQAAi4dIAgAAi5fICAAAMcIhyjHQiYfICQAAi4dMAgAAi5fMCAAAMcIhyjHQiYfMCQAAi4dQAgAAi5fQCAAAMcIhyjHQiYfQCQAAi4dUAgAAi5fUCAAAMcIhyjHQiYfUCQAAi4dYAgAAi5fYCAAAMcIhyjHQiYfYCQAAi4dcAgAAi5fcCAAAMcIhyjHQiYfcCQAAi4dgAgAAi5fgCAAAMcIhyjHQiYfgCQAAi4dkAgAAi5fkCAAAMcIhyjHQiYfkCQAAi4doAgAAi5foCAAAMcIhyjHQiYfoCQAAi4dsAgAAi5fsCAAAMcIhyjHQiYfsCQAAi4dwAgAAi5fwCAAAMcIhyjHQiYfwCQAAi4d0AgAAi5f0CAAAMcIhyjHQiYf0CQAAi4d4AgAAi5f4CAAAMcIhyjHQiYf4CQAAi4d8AgAAi5f8CAAAMcIhyjHQiYf8CQAAi4eAAgAAi5cACQAAMcIhyjHQiYcACwAAi4eEAgAAi5cECQAAMcIhyjHQiYcECwAAi4eIAgAAi5cICQAAMcIhyjHQiYcICwAAi4eMAgAAi5cMCQAAMcIhyjHQiYcMCwAAi4eQAgAAi5cQCQAAMcIhyjHQiYcQCwAAi4eUAgAAi5cUCQAAMcIhyjHQiYcUCwAAi4eYAgAAi5cYCQAAMcIhyjHQiYcYCwAAi4ecAgAAi5ccCQAAMcIhyjHQiYccCwAAi4egAgAAi5cgCQAAMcIhyjHQiYcgCwAAi4ekAgAAi5ckCQAAMcIhyjHQiYckCwAAi4eoAgAAi5coCQAAMcIhyjHQiYcoCwAAi4esAgAAi5csCQAAMcIhyjHQiYcsCwAAi4ewAgAAi5cwCQAAMcIhyjHQiYcwCwAAi4e0AgAAi5c0CQAAMcIhyjHQiYc0CwAAi4e4AgAAi5c4CQAAMcIhyjHQiYc4CwAAi4e8AgAAi5c8CQAAMcIhyjHQiYc8CwAAi49ACwAAi1wkBIuHQAkAAIPgAYPIAiHIiAOLh4AIAAAhyA/IiUM9i4eECAAAIcgPyIlDOYuHiAgAACHID8iJQzWLh4wIAAAhyA/IiUMxi4eQCAAAIcgPyIlDLYuHlAgAACHID8iJQymLh5gIAAAhyA/IiUMli4ecCAAAIcgPyIlDIYuHoAgAACHID8iJQx2Lh6QIAAAhyA/IiUMZi4eoCAAAIcgPyIlDFYuHrAgAACHID8iJQxGLh7AIAAAhyA/IiUMNi4e0CAAAIcgPyIlDCYuHuAgAACHID8iJQwWLh7wIAAAhyA/IiUMBiciD4AGJ+osai3IEi2oMi3oIww=="
+.base64 "WFhYWIuXgAoAAAuXhAoAAAuXiAoAAAuXjAoAAAuXkAoAAAuXlAoAAAuXmAoAAAuXnAoAAAuXoAoAAAuXpAoAAAuXqAoAAAuXrAoAAAuXsAoAAAuXtAoAAAuXuAoAAAuXvAoAALkAAAAAKdEZ0oPy/4uHQAsAACHQiYdACwAAi49ACwAAi4dAAgAAi5fACAAAMcIhyjHQiYfACQAAi4dEAgAAi5fECAAAMcIhyjHQiYfECQAAi4dIAgAAi5fICAAAMcIhyjHQiYfICQAAi4dMAgAAi5fMCAAAMcIhyjHQiYfMCQAAi4dQAgAAi5fQCAAAMcIhyjHQiYfQCQAAi4dUAgAAi5fUCAAAMcIhyjHQiYfUCQAAi4dYAgAAi5fYCAAAMcIhyjHQiYfYCQAAi4dcAgAAi5fcCAAAMcIhyjHQiYfcCQAAi4dgAgAAi5fgCAAAMcIhyjHQiYfgCQAAi4dkAgAAi5fkCAAAMcIhyjHQiYfkCQAAi4doAgAAi5foCAAAMcIhyjHQiYfoCQAAi4dsAgAAi5fsCAAAMcIhyjHQiYfsCQAAi4dwAgAAi5fwCAAAMcIhyjHQiYfwCQAAi4d0AgAAi5f0CAAAMcIhyjHQiYf0CQAAi4d4AgAAi5f4CAAAMcIhyjHQiYf4CQAAi4d8AgAAi5f8CAAAMcIhyjHQiYf8CQAAi4eAAgAAi5cACQAAMcIhyjHQiYcACwAAi4eEAgAAi5cECQAAMcIhyjHQiYcECwAAi4eIAgAAi5cICQAAMcIhyjHQiYcICwAAi4eMAgAAi5cMCQAAMcIhyjHQiYcMCwAAi4eQAgAAi5cQCQAAMcIhyjHQiYcQCwAAi4eUAgAAi5cUCQAAMcIhyjHQiYcUCwAAi4eYAgAAi5cYCQAAMcIhyjHQiYcYCwAAi4ecAgAAi5ccCQAAMcIhyjHQiYccCwAAi4egAgAAi5cgCQAAMcIhyjHQiYcgCwAAi4ekAgAAi5ckCQAAMcIhyjHQiYckCwAAi4eoAgAAi5coCQAAMcIhyjHQiYcoCwAAi4esAgAAi5csCQAAMcIhyjHQiYcsCwAAi4ewAgAAi5cwCQAAMcIhyjHQiYcwCwAAi4e0AgAAi5c0CQAAMcIhyjHQiYc0CwAAi4e4AgAAi5c4CQAAMcIhyjHQiYc4CwAAi4e8AgAAi5c8CQAAMcIhyjHQiYc8CwAAi49ACwAAi1wkBIuHQAkAAIPgAYPIAiHIiAOLh4AIAAAhyA/IiUM9i4eECAAAIcgPyIlDOYuHiAgAACHID8iJQzWLh4wIAAAhyA/IiUMxi4eQCAAAIcgPyIlDLYuHlAgAACHID8iJQymLh5gIAAAhyA/IiUMli4ecCAAAIcgPyIlDIYuHoAgAACHID8iJQx2Lh6QIAAAhyA/IiUMZi4eoCAAAIcgPyIlDFYuHrAgAACHID8iJQxGLh7AIAAAhyA/IiUMNi4e0CAAAIcgPyIlDCYuHuAgAACHID8iJQwWLh7wIAAAhyA/IiUMBiciD4AGJ+osai3IEi2oMi3oIZg/vwLkAAAAAjWQk5PMPfwQkiUwkEIlMJBSJTCQYjWQkHLoAAAAAMclmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/8M="
 .p2align 6"#,
         vg_brainpoolp512r1_mul_mod_p = sym super::ec_brainpoolp512r1::vg_brainpoolp512r1_mul_mod_p::vg_brainpoolp512r1_mul_mod_p,
         vg_brainpoolp512r1_add_mod_p = sym super::ec_brainpoolp512r1::vg_brainpoolp512r1_add_mod_p::vg_brainpoolp512r1_add_mod_p,
@@ -49,6 +51,8 @@ call {vg_brainpoolp512r1_sub_mod_p}
 /// Validate and decompress a brainpoolP512r1 public key (SEC 1 §2.3.4, SP 800-56A §5.6.2.3.3): reads `02` or `03` followed by `x` in 64 bytes, most significant first; checks `x` below the field prime and recovers a coordinate `y` satisfying the curve equation with even parity for `02`, odd for `03`. Writes `04` followed by `x` and `y` in 64 bytes each and returns 1. If no such finite point exists, writes 129 zero bytes and returns 0. Rejects infinity and hybrid encodings. The curve has cofactor one, so no subgroup multiplication is required.
 ///
 /// Contract: `VG.Spec.EcKey.Instance.decompressPublicKeyContract`. The input is public: timing may depend on the pointers and the contents of `public`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -75,19 +79,827 @@ call {vg_brainpoolp512r1_mul_mod_p}
 call {vg_brainpoolp512r1_add_mod_p}
 .base64 "WFhYWLhACgAAucAJAAC6wAoAAFBRUlc="
 call {vg_brainpoolp512r1_add_mod_p}
-.base64 "WFhYWLg9kg6WiYdAAwAAuBWYKkqJh0QDAAC4obFgy4mHSAMAALjLfyCKiYdMAwAAuDngqLmJh1ADAAC4Smizq4mHVAMAALgQmvEmiYdYAwAAuMBmU1+Jh1wDAAC4HMIMnImHYAMAALgy55i1iYdkAwAAuIN08uyJh2gDAAC4bCPM8omHbAMAALgBf/KMiYdwAwAAuKs59c+Jh3QDAAC4InH6NomHeAMAALhuZ7cqiYd8AwAAvkAAAAA="
+.base64 "WFhYWIuHwAoAAImHgAcAAIuHxAoAAImHhAcAAIuHyAoAAImHiAcAAIuHzAoAAImHjAcAAIuH0AoAAImHkAcAAIuH1AoAAImHlAcAAIuH2AoAAImHmAcAAIuH3AoAAImHnAcAAIuH4AoAAImHoAcAAIuH5AoAAImHpAcAAIuH6AoAAImHqAcAAIuH7AoAAImHrAcAAIuH8AoAAImHsAcAAIuH9AoAAImHtAcAAIuH+AoAAImHuAcAAIuH/AoAAImHvAcAAIuHwAoAAImHwAcAAIuHxAoAAImHxAcAAIuHyAoAAImHyAcAAIuHzAoAAImHzAcAAIuH0AoAAImH0AcAAIuH1AoAAImH1AcAAIuH2AoAAImH2AcAAIuH3AoAAImH3AcAAIuH4AoAAImH4AcAAIuH5AoAAImH5AcAAIuH6AoAAImH6AcAAIuH7AoAAImH7AcAAIuH8AoAAImH8AcAAIuH9AoAAImH9AcAAIuH+AoAAImH+AcAAIuH/AoAAImH/AcAAIuHgAcAAImHQAMAAIuHhAcAAImHRAMAAIuHiAcAAImHSAMAAIuHjAcAAImHTAMAAIuHkAcAAImHUAMAAIuHlAcAAImHVAMAAIuHmAcAAImHWAMAAIuHnAcAAImHXAMAAIuHoAcAAImHYAMAAIuHpAcAAImHZAMAAIuHqAcAAImHaAMAAIuHrAcAAImHbAMAAIuHsAcAAImHcAMAAIuHtAcAAImHdAMAAIuHuAcAAImHeAMAAIuHvAcAAImHfAMAAL4BAAAA"
 20:
-.base64 "g+4BifgB8A+2gEADAACJ8wHbAdsB2wH7icKD4gGIkwgUAACJwtHqg+IBiJMJFAAAicLB6gKD4gGIkwoUAACJwsHqA4PiAYiTCxQAAInCweoEg+IBiJMMFAAAicLB6gWD4gGIkw0UAACJwsHqBoPiAYiTDhQAAInCweoHg+IBiJMPFAAAhfY="
+.base64 "g+4BuIAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIX2"
 jne 20b
-.base64 "i4eAAQAAiYeABwAAi4eEAQAAiYeEBwAAi4eIAQAAiYeIBwAAi4eMAQAAiYeMBwAAi4eQAQAAiYeQBwAAi4eUAQAAiYeUBwAAi4eYAQAAiYeYBwAAi4ecAQAAiYecBwAAi4egAQAAiYegBwAAi4ekAQAAiYekBwAAi4eoAQAAiYeoBwAAi4esAQAAiYesBwAAi4ewAQAAiYewBwAAi4e0AQAAiYe0BwAAi4e4AQAAiYe4BwAAi4e8AQAAiYe8BwAAvgACAAA="
+.base64 "i4eABwAAiYeACQAAi4eEBwAAiYeECQAAi4eIBwAAiYeICQAAi4eMBwAAiYeMCQAAi4eQBwAAiYeQCQAAi4eUBwAAiYeUCQAAi4eYBwAAiYeYCQAAi4ecBwAAiYecCQAAi4egBwAAiYegCQAAi4ekBwAAiYekCQAAi4eoBwAAiYeoCQAAi4esBwAAiYesCQAAi4ewBwAAiYewCQAAi4e0BwAAiYe0CQAAi4e4BwAAiYe4CQAAi4e8BwAAiYe8CQAAuEADAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIuHgAcAAImHgAMAAIuHhAcAAImHhAMAAIuHiAcAAImHiAMAAIuHjAcAAImHjAMAAIuHkAcAAImHkAMAAIuHlAcAAImHlAMAAIuHmAcAAImHmAMAAIuHnAcAAImHnAMAAIuHoAcAAImHoAMAAIuHpAcAAImHpAMAAIuHqAcAAImHqAMAAIuHrAcAAImHrAMAAIuHsAcAAImHsAMAAIuHtAcAAImHtAMAAIuHuAcAAImHuAMAAIuHvAcAAImHvAMAALiACQAAuYAHAAC6gAcAAFBRUlc="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIuHgAcAAImHAAYAAIuHhAcAAImHBAYAAIuHiAcAAImHCAYAAIuHjAcAAImHDAYAAIuHkAcAAImHEAYAAIuHlAcAAImHFAYAAIuHmAcAAImHGAYAAIuHnAcAAImHHAYAAIuHoAcAAImHIAYAAIuHpAcAAImHJAYAAIuHqAcAAImHKAYAAIuHrAcAAImHLAYAAIuHsAcAAImHMAYAAIuHtAcAAImHNAYAAIuHuAcAAImHOAYAAIuHvAcAAImHPAYAALiACQAAuYAHAAC6gAcAAFBRUlc="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIuHgAcAAImHQAYAAIuHhAcAAImHRAYAAIuHiAcAAImHSAYAAIuHjAcAAImHTAYAAIuHkAcAAImHUAYAAIuHlAcAAImHVAYAAIuHmAcAAImHWAYAAIuHnAcAAImHXAYAAIuHoAcAAImHYAYAAIuHpAcAAImHZAYAAIuHqAcAAImHaAYAAIuHrAcAAImHbAYAAIuHsAcAAImHcAYAAIuHtAcAAImHdAYAAIuHuAcAAImHeAYAAIuHvAcAAImHfAYAALiACQAAuYAHAAC6gAcAAFBRUlc="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIuHgAcAAImHgAYAAIuHhAcAAImHhAYAAIuHiAcAAImHiAYAAIuHjAcAAImHjAYAAIuHkAcAAImHkAYAAIuHlAcAAImHlAYAAIuHmAcAAImHmAYAAIuHnAcAAImHnAYAAIuHoAcAAImHoAYAAIuHpAcAAImHpAYAAIuHqAcAAImHqAYAAIuHrAcAAImHrAYAAIuHsAcAAImHsAYAAIuHtAcAAImHtAYAAIuHuAcAAImHuAYAAIuHvAcAAImHvAYAALiACQAAuYAHAAC6gAcAAFBRUlc="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIuHgAcAAImHwAYAAIuHhAcAAImHxAYAAIuHiAcAAImHyAYAAIuHjAcAAImHzAYAAIuHkAcAAImH0AYAAIuHlAcAAImH1AYAAIuHmAcAAImH2AYAAIuHnAcAAImH3AYAAIuHoAcAAImH4AYAAIuHpAcAAImH5AYAAIuHqAcAAImH6AYAAIuHrAcAAImH7AYAAIuHsAcAAImH8AYAAIuHtAcAAImH9AYAAIuHuAcAAImH+AYAAIuHvAcAAImH/AYAALiACQAAuYAHAAC6gAcAAFBRUlc="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIuHgAcAAImHAAcAAIuHhAcAAImHBAcAAIuHiAcAAImHCAcAAIuHjAcAAImHDAcAAIuHkAcAAImHEAcAAIuHlAcAAImHFAcAAIuHmAcAAImHGAcAAIuHnAcAAImHHAcAAIuHoAcAAImHIAcAAIuHpAcAAImHJAcAAIuHqAcAAImHKAcAAIuHrAcAAImHLAcAAIuHsAcAAImHMAcAAIuHtAcAAImHNAcAAIuHuAcAAImHOAcAAIuHvAcAAImHPAcAALiACQAAuYAHAAC6gAcAAFBRUlc="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIuHgAcAAImHQAcAAIuHhAcAAImHRAcAAIuHiAcAAImHSAcAAIuHjAcAAImHTAcAAIuHkAcAAImHUAcAAIuHlAcAAImHVAcAAIuHmAcAAImHWAcAAIuHnAcAAImHXAcAAIuHoAcAAImHYAcAAIuHpAcAAImHZAcAAIuHqAcAAImHaAcAAIuHrAcAAImHbAcAAIuHsAcAAImHcAcAAIuHtAcAAImHdAcAAIuHuAcAAImHeAcAAIuHvAcAAImHfAcAAIuHQAMAAImHgAcAAIuHRAMAAImHhAcAAIuHSAMAAImHiAcAAIuHTAMAAImHjAcAAIuHUAMAAImHkAcAAIuHVAMAAImHlAcAAIuHWAMAAImHmAcAAIuHXAMAAImHnAcAAIuHYAMAAImHoAcAAIuHZAMAAImHpAcAAIuHaAMAAImHqAcAAIuHbAMAAImHrAcAAIuHcAMAAImHsAcAAIuHdAMAAImHtAcAAIuHeAMAAImHuAcAAIuHfAMAAImHvAcAAL4EAAAA"
 21:
 .base64 "g+4BuIAHAAC5gAcAALqABwAAUFFSVw=="
 call {vg_brainpoolp512r1_mul_mod_p}
-.base64 "WFhYWLjACgAAuYAHAAC6wAcAAFBRUlc="
-call {vg_brainpoolp512r1_mul_mod_p}
-.base64 "WFhYWIn4AfAPtoAIFAAAuQAAAAApwYuHgAcAAIuXwAcAADHCIcox0ImHgAcAAIuHhAcAAIuXxAcAADHCIcox0ImHhAcAAIuHiAcAAIuXyAcAADHCIcox0ImHiAcAAIuHjAcAAIuXzAcAADHCIcox0ImHjAcAAIuHkAcAAIuX0AcAADHCIcox0ImHkAcAAIuHlAcAAIuX1AcAADHCIcox0ImHlAcAAIuHmAcAAIuX2AcAADHCIcox0ImHmAcAAIuHnAcAAIuX3AcAADHCIcox0ImHnAcAAIuHoAcAAIuX4AcAADHCIcox0ImHoAcAAIuHpAcAAIuX5AcAADHCIcox0ImHpAcAAIuHqAcAAIuX6AcAADHCIcox0ImHqAcAAIuHrAcAAIuX7AcAADHCIcox0ImHrAcAAIuHsAcAAIuX8AcAADHCIcox0ImHsAcAAIuHtAcAAIuX9AcAADHCIcox0ImHtAcAAIuHuAcAAIuX+AcAADHCIcox0ImHuAcAAIuHvAcAAIuX/AcAADHCIcox0ImHvAcAAIX2"
+.base64 "WFhYWIX2"
 jne 21b
-.base64 "uEABAAC5gAcAALpACQAAUFFSVw=="
+.base64 "uAAGAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWL4EAAAA"
+22:
+.base64 "g+4BuIAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 22b
+.base64 "uAAGAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWL4EAAAA"
+23:
+.base64 "g+4BuIAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 23b
+.base64 "uMAGAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWL4EAAAA"
+24:
+.base64 "g+4BuIAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 24b
+.base64 "uMAGAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWL4EAAAA"
+25:
+.base64 "g+4BuIAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 25b
+.base64 "uIADAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWL4EAAAA"
+26:
+.base64 "g+4BuIAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 26b
+.base64 "uMAGAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWL4EAAAA"
+27:
+.base64 "g+4BuIAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 27b
+.base64 "uEAGAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWL4EAAAA"
+28:
+.base64 "g+4BuIAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 28b
+.base64 "uEADAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWL4EAAAA"
+29:
+.base64 "g+4BuIAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 29b
+.base64 "uMAGAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWL4EAAAA"
+210:
+.base64 "g+4BuIAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 210b
+.base64 "uEAGAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWL4EAAAA"
+211:
+.base64 "g+4BuIAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 211b
+.base64 "uAAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWL4FAAAA"
+212:
+.base64 "g+4BuIAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 212b
+.base64 "uEAGAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWL4HAAAA"
+213:
+.base64 "g+4BuIAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 213b
+.base64 "uIAGAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWL4HAAAA"
+214:
+.base64 "g+4BuIAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 214b
+.base64 "uMAGAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWL4GAAAA"
+215:
+.base64 "g+4BuIAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 215b
+.base64 "uEAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWL4EAAAA"
+216:
+.base64 "g+4BuIAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 216b
+.base64 "uEAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWL4EAAAA"
+217:
+.base64 "g+4BuIAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 217b
+.base64 "uAAGAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWL4FAAAA"
+218:
+.base64 "g+4BuIAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 218b
+.base64 "uEAGAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWL4EAAAA"
+219:
+.base64 "g+4BuIAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 219b
+.base64 "uIADAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWL4EAAAA"
+220:
+.base64 "g+4BuIAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 220b
+.base64 "uAAGAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWL4EAAAA"
+221:
+.base64 "g+4BuIAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 221b
+.base64 "uEAGAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWL4FAAAA"
+222:
+.base64 "g+4BuIAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 222b
+.base64 "uIADAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWL4FAAAA"
+223:
+.base64 "g+4BuIAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 223b
+.base64 "uEAGAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWL4EAAAA"
+224:
+.base64 "g+4BuIAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 224b
+.base64 "uIAGAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWL4FAAAA"
+225:
+.base64 "g+4BuIAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 225b
+.base64 "uEAGAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWL4EAAAA"
+226:
+.base64 "g+4BuIAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 226b
+.base64 "uEAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWL4IAAAA"
+227:
+.base64 "g+4BuIAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 227b
+.base64 "uEADAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWL4EAAAA"
+228:
+.base64 "g+4BuIAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 228b
+.base64 "uEAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWL4GAAAA"
+229:
+.base64 "g+4BuIAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 229b
+.base64 "uMAGAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWL4EAAAA"
+230:
+.base64 "g+4BuIAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 230b
+.base64 "uIADAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWL4FAAAA"
+231:
+.base64 "g+4BuIAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 231b
+.base64 "uEADAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWL4HAAAA"
+232:
+.base64 "g+4BuIAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 232b
+.base64 "uAAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWL4EAAAA"
+233:
+.base64 "g+4BuIAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 233b
+.base64 "uMAGAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWL4EAAAA"
+234:
+.base64 "g+4BuIAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 234b
+.base64 "uIADAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWL4EAAAA"
+235:
+.base64 "g+4BuIAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 235b
+.base64 "uMAGAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWL4FAAAA"
+236:
+.base64 "g+4BuIAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 236b
+.base64 "uEAGAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWL4EAAAA"
+237:
+.base64 "g+4BuIAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 237b
+.base64 "uIAGAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWL4FAAAA"
+238:
+.base64 "g+4BuIAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 238b
+.base64 "uEAGAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWL4FAAAA"
+239:
+.base64 "g+4BuIAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 239b
+.base64 "uIAGAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWL4HAAAA"
+240:
+.base64 "g+4BuIAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 240b
+.base64 "uIADAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWL4EAAAA"
+241:
+.base64 "g+4BuIAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 241b
+.base64 "uMAGAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWL4FAAAA"
+242:
+.base64 "g+4BuIAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 242b
+.base64 "uMAGAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWL4EAAAA"
+243:
+.base64 "g+4BuIAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 243b
+.base64 "uIADAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWL4GAAAA"
+244:
+.base64 "g+4BuIAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 244b
+.base64 "uEAGAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWL4FAAAA"
+245:
+.base64 "g+4BuIAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 245b
+.base64 "uEAGAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWL4EAAAA"
+246:
+.base64 "g+4BuIAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 246b
+.base64 "uIADAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWL4FAAAA"
+247:
+.base64 "g+4BuIAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 247b
+.base64 "uAAGAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWL4FAAAA"
+248:
+.base64 "g+4BuIAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 248b
+.base64 "uEAGAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWL4IAAAA"
+249:
+.base64 "g+4BuIAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 249b
+.base64 "uIADAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWL4EAAAA"
+250:
+.base64 "g+4BuIAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 250b
+.base64 "uIADAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWL4FAAAA"
+251:
+.base64 "g+4BuIAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 251b
+.base64 "uEADAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWL4HAAAA"
+252:
+.base64 "g+4BuIAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 252b
+.base64 "uEAGAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWL4GAAAA"
+253:
+.base64 "g+4BuIAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 253b
+.base64 "uAAGAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWL4EAAAA"
+254:
+.base64 "g+4BuIAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 254b
+.base64 "uEAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWL4EAAAA"
+255:
+.base64 "g+4BuIAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 255b
+.base64 "uAAGAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWL4GAAAA"
+256:
+.base64 "g+4BuIAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 256b
+.base64 "uAAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWL4EAAAA"
+257:
+.base64 "g+4BuIAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 257b
+.base64 "uIAGAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWL4EAAAA"
+258:
+.base64 "g+4BuIAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 258b
+.base64 "uMAGAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWL4JAAAA"
+259:
+.base64 "g+4BuIAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 259b
+.base64 "uEADAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWL4EAAAA"
+260:
+.base64 "g+4BuIAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 260b
+.base64 "uIADAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWL4FAAAA"
+261:
+.base64 "g+4BuIAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 261b
+.base64 "uEAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWL4FAAAA"
+262:
+.base64 "g+4BuIAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 262b
+.base64 "uIADAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWL4GAAAA"
+263:
+.base64 "g+4BuIAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 263b
+.base64 "uAAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWL4FAAAA"
+264:
+.base64 "g+4BuIAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 264b
+.base64 "uEADAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWL4HAAAA"
+265:
+.base64 "g+4BuIAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 265b
+.base64 "uAAGAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWL4FAAAA"
+266:
+.base64 "g+4BuIAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 266b
+.base64 "uMAGAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWL4EAAAA"
+267:
+.base64 "g+4BuIAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 267b
+.base64 "uMAGAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWL4EAAAA"
+268:
+.base64 "g+4BuIAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 268b
+.base64 "uIADAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWL4FAAAA"
+269:
+.base64 "g+4BuIAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 269b
+.base64 "uAAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWL4IAAAA"
+270:
+.base64 "g+4BuIAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 270b
+.base64 "uIAGAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWL4EAAAA"
+271:
+.base64 "g+4BuIAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 271b
+.base64 "uAAGAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWL4EAAAA"
+272:
+.base64 "g+4BuIAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 272b
+.base64 "uEAGAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWL4EAAAA"
+273:
+.base64 "g+4BuIAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 273b
+.base64 "uIADAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWL4EAAAA"
+274:
+.base64 "g+4BuIAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 274b
+.base64 "uAAGAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWL4GAAAA"
+275:
+.base64 "g+4BuIAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 275b
+.base64 "uEAGAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWL4KAAAA"
+276:
+.base64 "g+4BuIAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 276b
+.base64 "uEAGAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWL4EAAAA"
+277:
+.base64 "g+4BuIAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 277b
+.base64 "uIADAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWL4GAAAA"
+278:
+.base64 "g+4BuIAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 278b
+.base64 "uAAGAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWL4EAAAA"
+279:
+.base64 "g+4BuIAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 279b
+.base64 "uEADAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWL4KAAAA"
+280:
+.base64 "g+4BuIAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 280b
+.base64 "uEAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWL4EAAAA"
+281:
+.base64 "g+4BuIAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 281b
+.base64 "uEAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWL4EAAAA"
+282:
+.base64 "g+4BuIAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 282b
+.base64 "uIAGAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWL4FAAAA"
+283:
+.base64 "g+4BuIAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 283b
+.base64 "uEAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWL4FAAAA"
+284:
+.base64 "g+4BuIAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 284b
+.base64 "uAAGAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWL4EAAAA"
+285:
+.base64 "g+4BuIAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 285b
+.base64 "uMAGAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWL4JAAAA"
+286:
+.base64 "g+4BuIAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 286b
+.base64 "uMAGAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWL4HAAAA"
+287:
+.base64 "g+4BuIAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 287b
+.base64 "uAAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWL4HAAAA"
+288:
+.base64 "g+4BuIAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 288b
+.base64 "uAAGAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWL4FAAAA"
+289:
+.base64 "g+4BuIAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 289b
+.base64 "uAAGAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWL4GAAAA"
+290:
+.base64 "g+4BuIAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 290b
+.base64 "uAAGAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWL4EAAAA"
+291:
+.base64 "g+4BuIAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 291b
+.base64 "uAAGAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWL4EAAAA"
+292:
+.base64 "g+4BuIAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 292b
+.base64 "uIADAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWL4HAAAA"
+293:
+.base64 "g+4BuIAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 293b
+.base64 "uEADAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWL4FAAAA"
+294:
+.base64 "g+4BuIAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 294b
+.base64 "uMAGAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWL4GAAAA"
+295:
+.base64 "g+4BuIAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 295b
+.base64 "uMAGAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWL4GAAAA"
+296:
+.base64 "g+4BuIAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 296b
+.base64 "uEADAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWL4EAAAA"
+297:
+.base64 "g+4BuIAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 297b
+.base64 "uAAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWL4GAAAA"
+298:
+.base64 "g+4BuIAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 298b
+.base64 "uIAGAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWL4FAAAA"
+299:
+.base64 "g+4BuIAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 299b
+.base64 "uIADAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWL4EAAAA"
+2100:
+.base64 "g+4BuIAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWIX2"
+jne 2100b
+.base64 "uAAHAAC5gAcAALqABwAAUFFSVw=="
+call {vg_brainpoolp512r1_mul_mod_p}
+.base64 "WFhYWLhAAQAAuYAHAAC6QAkAAFBRUlc="
 call {vg_brainpoolp512r1_mul_mod_p}
 .base64 "WFhYWLhACQAAuQABAAC6gAkAAFBRUlc="
 call {vg_brainpoolp512r1_sub_mod_p}
@@ -97,7 +909,7 @@ call {vg_brainpoolp512r1_mul_mod_p}
 call {vg_brainpoolp512r1_mul_mod_p}
 .base64 "WFhYWLjACgAAuYAKAAC6wAkAAFBRUlc="
 call {vg_brainpoolp512r1_sub_mod_p}
-.base64 "WFhYWIuXwAkAAAuXxAkAAAuXyAkAAAuXzAkAAAuX0AkAAAuX1AkAAAuX2AkAAAuX3AkAAAuX4AkAAAuX5AkAAAuX6AkAAAuX7AkAAAuX8AkAAAuX9AkAAAuX+AkAAAuX/AkAALkAAAAAKdEZ0oPy/4uHQAsAACHQiYdACwAAi4dACQAAi49ACAAAMcGD4QG6AAAAACnKidGJyoPCAbgAAAAAKdCJwouHQAsAACHQiYdACwAAi49ACwAAi1wkBLgEAAAAIciIA4uHgAgAACHID8iJQz2Lh4QIAAAhyA/IiUM5i4eICAAAIcgPyIlDNYuHjAgAACHID8iJQzGLh5AIAAAhyA/IiUMti4eUCAAAIcgPyIlDKYuHmAgAACHID8iJQyWLh5wIAAAhyA/IiUMhi4egCAAAIcgPyIlDHYuHpAgAACHID8iJQxmLh6gIAAAhyA/IiUMVi4esCAAAIcgPyIlDEYuHsAgAACHID8iJQw2Lh7QIAAAhyA/IiUMJi4e4CAAAIcgPyIlDBYuHvAgAACHID8iJQwGLh0AJAAAhyA/IiUN9i4dECQAAIcgPyIlDeYuHSAkAACHID8iJQ3WLh0wJAAAhyA/IiUNxi4dQCQAAIcgPyIlDbYuHVAkAACHID8iJQ2mLh1gJAAAhyA/IiUNli4dcCQAAIcgPyIlDYYuHYAkAACHID8iJQ12Lh2QJAAAhyA/IiUNZi4doCQAAIcgPyIlDVYuHbAkAACHID8iJQ1GLh3AJAAAhyA/IiUNNi4d0CQAAIcgPyIlDSYuHeAkAACHID8iJQ0WLh3wJAAAhyA/IiUNBiciD4AGJ+osai3IEi2oMi3oIww=="
+.base64 "WFhYWIuXwAkAAAuXxAkAAAuXyAkAAAuXzAkAAAuX0AkAAAuX1AkAAAuX2AkAAAuX3AkAAAuX4AkAAAuX5AkAAAuX6AkAAAuX7AkAAAuX8AkAAAuX9AkAAAuX+AkAAAuX/AkAALkAAAAAKdEZ0oPy/4uHQAsAACHQiYdACwAAi4dACQAAi49ACAAAMcGD4QG6AAAAACnKidGJyoPCAbgAAAAAKdCJwouHQAsAACHQiYdACwAAi49ACwAAi1wkBLgEAAAAIciIA4uHgAgAACHID8iJQz2Lh4QIAAAhyA/IiUM5i4eICAAAIcgPyIlDNYuHjAgAACHID8iJQzGLh5AIAAAhyA/IiUMti4eUCAAAIcgPyIlDKYuHmAgAACHID8iJQyWLh5wIAAAhyA/IiUMhi4egCAAAIcgPyIlDHYuHpAgAACHID8iJQxmLh6gIAAAhyA/IiUMVi4esCAAAIcgPyIlDEYuHsAgAACHID8iJQw2Lh7QIAAAhyA/IiUMJi4e4CAAAIcgPyIlDBYuHvAgAACHID8iJQwGLh0AJAAAhyA/IiUN9i4dECQAAIcgPyIlDeYuHSAkAACHID8iJQ3WLh0wJAAAhyA/IiUNxi4dQCQAAIcgPyIlDbYuHVAkAACHID8iJQ2mLh1gJAAAhyA/IiUNli4dcCQAAIcgPyIlDYYuHYAkAACHID8iJQ12Lh2QJAAAhyA/IiUNZi4doCQAAIcgPyIlDVYuHbAkAACHID8iJQ1GLh3AJAAAhyA/IiUNNi4d0CQAAIcgPyIlDSYuHeAkAACHID8iJQ0WLh3wJAAAhyA/IiUNBiciD4AGJ+osai3IEi2oMi3oIZg/vwLkAAAAAjWQk5PMPfwQkiUwkEIlMJBSJTCQYjWQkHLoAAAAAMclmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/8M="
 .p2align 6"#,
         vg_brainpoolp512r1_mul_mod_p = sym super::ec_brainpoolp512r1::vg_brainpoolp512r1_mul_mod_p::vg_brainpoolp512r1_mul_mod_p,
         vg_brainpoolp512r1_add_mod_p = sym super::ec_brainpoolp512r1::vg_brainpoolp512r1_add_mod_p::vg_brainpoolp512r1_add_mod_p,

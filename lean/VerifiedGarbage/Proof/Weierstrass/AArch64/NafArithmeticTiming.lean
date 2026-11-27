@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.PlainSimp
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Production
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Timing
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAddTiming
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafInvariant
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeStore
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.Naf
@@ -13,7 +13,6 @@ public import VerifiedGarbage.Impl.Weierstrass.AArch64.Jacobian
 public import VerifiedGarbage.Impl.Weierstrass.Slots
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256Bounds
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Fprog
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAddTiming
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTiming
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowLayout
 public import VerifiedGarbage.Proof.Weierstrass.CheckPointContract

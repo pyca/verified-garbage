@@ -5,6 +5,9 @@ public import VerifiedGarbage.Impl.NatPairs
 /-! Signed seven-bit fixed-base comb tables, checked against the shared group law. -/
 
 @[expose] public section
+-- The interpreter looks up each constant extracted from a table at every evaluation of it.
+set_option compiler.extract_closed false
+
 namespace VG.Impl.Secp256k1
 
 def secp256k1Comb7T0 : List (Nat × Nat) := nat_pairs% [

@@ -41,15 +41,15 @@ open VG.PPC64LE hiding wp_add wp_addi wp_and wp_ld wp_li wp_lsl wp_lsr wp_lwz wp
   wp_xor Upd Mupd
 open VG.Proof.ChaCha20Poly1305.PPC64LE (Upd Mupd wp_addi wp_li)
 open VG.Proof.AesCcm.PPC64LE (wp_mv Runs Runs.of_wp rel_seqR rel_of_eq2 rel_post)
-open VG.Proof.AesCtr.PPC64LE (CtrCall ctr_call)
+open VG.Proof.AesCtr.PPC64LE (CtrCallF ctr_callF)
 open VG.Proof.Gather.PPC64LE (Eq2 TT rel_ite eval_zero eval_nonzero)
 open VG.Spec.Aes (bytesAt)
 
 /-- `ctrPre`: the arguments of `vg_aes_ctr32` for the keystream block. -/
 theorem ctrPre_wp {c : Cx} (L : Lay c) {s : State} (E : Env c s) :
     WP isa (.block ctrPre) s fun s' => PK s s' ∧ s'.gpr .r19 = s.gpr .r19 ∧ s'.gpr .r20 = s.gpr .r20 ∧
-      CtrCall s' (c.C + BitVec.ofNat 64 272) (c.W + BitVec.ofNat 64 cbO) (c.W + BitVec.ofNat 64 ksO)
-        (c.W + BitVec.ofNat 64 scrO) c.R 1 := by
+      CtrCallF s' (c.C + BitVec.ofNat 64 272) (c.W + BitVec.ofNat 64 cbO) (c.W + BitVec.ofNat 64 ksO)
+        c.R 1 := by
   unfold ctrPre
   simp only [List.append_assoc]
   refine zero16_wp E (d := ksO) (by decide) (by decide) fun s₁ pk₁ g₁ _ => ?_
@@ -58,28 +58,26 @@ theorem ctrPre_wp {c : Cx} (L : Lay c) {s : State} (E : Env c s) :
   unfold ctrArgs
   simp only [List.cons_append, List.nil_append]
   refine wp_addi (by decide) (by decide) fun s₃ u₃ => wp_mv fun s₄ u₄ => wp_addi (by decide) (by decide)
-    fun s₅ u₅ => wp_addi (by decide) (by decide) fun s₆ u₆ => wp_addi (by decide) (by decide) fun s₇ u₇ =>
+    fun s₅ u₅ => wp_addi (by decide) (by decide) fun s₇ u₇ =>
     wp_li (by decide) fun s₈ u₈ => WP.block_nil ?_
-  have pk₈ : PK s₂ s₈ := (PK.ofUpd u₃).trans ((PK.ofUpd u₄).trans ((PK.ofUpd u₅).trans ((PK.ofUpd u₆).trans
-    ((PK.ofUpd u₇).trans (PK.ofUpd u₈)))))
+  have pk₈ : PK s₂ s₈ := (PK.ofUpd u₃).trans ((PK.ofUpd u₄).trans ((PK.ofUpd u₅).trans
+    ((PK.ofUpd u₇).trans (PK.ofUpd u₈))))
   have E₈ := E.of_pk (pk₁.trans (pk₂.trans pk₈))
   refine ⟨pk₁.trans (pk₂.trans pk₈),
-    by simp (disch := decide) only [u₈.other, u₇.other, u₆.other, u₅.other, u₄.other, u₃.other, g₂, g₁],
-    by simp (disch := decide) only [u₈.other, u₇.other, u₆.other, u₅.other, u₄.other, u₃.other, g₂, g₁], ?_⟩
+    by simp (disch := decide) only [u₈.other, u₇.other, u₅.other, u₄.other, u₃.other, g₂, g₁],
+    by simp (disch := decide) only [u₈.other, u₇.other, u₅.other, u₄.other, u₃.other, g₂, g₁], ?_⟩
   exact cargs L E₈ (E₈.perm.wC (by decide)) (by rw [L.wrapW (by decide)]; have := L.ww; simp only [ksO]; omega_arith)
     (L.c_w' (by decide) (by decide)) (L.w_w (.inr (by decide)) (by decide) (by decide))
-    (L.w_w (.inl (by decide)) (by decide) (by decide))
-    (by simp (disch := decide) only [u₈.other, u₇.other, u₆.other, u₅.other, u₄.other, u₃.gpr, g₂, g₁, E.r15])
-    (by simp (disch := decide) only [u₈.other, u₇.other, u₆.other, u₅.other, u₄.gpr, u₃.other, g₂, g₁, E.r16])
-    (by simp (disch := decide) only [u₈.other, u₇.other, u₆.other, u₅.gpr, u₄.other, u₃.other, g₂, g₁, E.r14])
-    (by simp (disch := decide) only [u₈.other, u₇.gpr, u₆.other, u₅.other, u₄.other, u₃.other, g₂, g₁, E.r14])
+    (by simp (disch := decide) only [u₈.other, u₇.other, u₅.other, u₄.other, u₃.gpr, g₂, g₁, E.r15])
+    (by simp (disch := decide) only [u₈.other, u₇.other, u₅.other, u₄.gpr, u₃.other, g₂, g₁, E.r16])
+    (by simp (disch := decide) only [u₈.other, u₇.other, u₅.gpr, u₄.other, u₃.other, g₂, g₁, E.r14])
+    (by simp (disch := decide) only [u₈.other, u₇.gpr, u₅.other, u₄.other, u₃.other, g₂, g₁, E.r14])
     (by simp (disch := decide) only [u₈.gpr])
-    (by simp (disch := decide) only [u₈.other, u₇.other, u₆.gpr, u₅.other, u₄.other, u₃.other, g₂, g₁, E.r14])
 
 /-- What a call of `vg_aes_ctr32` keeps. -/
-theorem ctrCall_keep {s : State} {K C D S : Addr} {R n : Nat} (h : CtrCall s K C D S R n) :
+theorem ctrCall_keep {s : State} {K C D : Addr} {R n : Nat} (h : CtrCallF s K C D R n) :
     Runs Impl.AesCtr.PPC64LE.ctrCall s fun t => PK s t ∧ t.gpr .r19 = s.gpr .r19 ∧ t.gpr .r20 = s.gpr .r20 :=
-  Runs.of_wp (WP.mono (ctr_call h) fun _ h' =>
+  Runs.of_wp (WP.mono (ctr_callF h) fun _ h' =>
     ⟨PK.ofSaved h'.rd h'.wr h'.sp h'.saved, h'.saved _ (by decide), h'.saved _ (by decide)⟩)
 
 /-- What a block of CTR leaves, from block `i`. -/

@@ -31,17 +31,27 @@ def decompressPeer (c : Cfg) : List Instr :=
   (Ecdh.AArch64.Cfg.consts c).flatMap (fun (i, x) => setConst c.n (c.sl i) x) ++
   decompressTag c ++ c.andFlag ++ Ecdh.AArch64.Cfg.checkLtP c (c.sl E)
 
+/-- `x³ + a x + b`'s operations, from `x` in Montgomery form. -/
 def rhsOps (c : Cfg) : List FOp :=
-  [.mul (c.sl QXM) (c.sl E) (c.sl R2P),
-    .mul (c.sl W1) (c.sl QXM) (c.sl QXM),
+  [.mul (c.sl W1) (c.sl QXM) (c.sl QXM),
     .mul (c.sl W2) (c.sl W1) (c.sl QXM),
     .mul (c.sl W1) (c.sl AP) (c.sl QXM),
     .add (c.sl W3) (c.sl W2) (c.sl W1),
     .add (c.sl W2) (c.sl W3) (c.sl BP)]
 
-/-- Reuse the inversion power's workspace, field backend and exponent chain. -/
+/-- `x³ + a x + b`, for an `x` that may not be below `p`. -/
+def rhs (c : Cfg) : Prog isa :=
+  .seq (c.mulPP (c.sl QXM) (c.sl E) (c.sl R2P)) (fprogB c.MP' (rhsOps c))
+
+/-- The modulus `p` as the root's power takes it: with its temporary area
+in the multiplication function's working space (`Mont.moAt`), so that its
+products are calls of `vg_<curve>_mul_mod_p` where the curve has one
+(`Mont.rootCallOf`), as on the other targets. -/
+def rootMod (c : Cfg) : Impl.Mont.Mod := { c.MP' with tmp := Impl.Weierstrass.AArch64.Mont.moAt c.n }
+
+/-- Reuse the inversion power's workspace and exponent chain, on `rootMod`. -/
 def rootChain (c : Cfg) (e : Nat) : ChainCfg :=
-  .ofExp c.MP' (c.sl ACC) (c.sl W2) (c.sl RX) e
+  .ofExp (rootMod c) (c.sl ACC) (c.sl W2) (c.sl RX) e
 
 def rootPower (c : Cfg) (e : Nat) : Prog isa := Chain.pow (rootChain c e)
 
@@ -97,7 +107,7 @@ def parityMask (c : Cfg) : List Instr :=
     zero7, .sub .x .x3 .x7 .x2]
 
 def selectRoot (c : Cfg) : Prog isa :=
-  progs [opProg c.MP' (.mul (c.sl QY) (c.sl ACC) (c.sl ONE)),
+  progs [c.mulPP (c.sl QY) (c.sl ACC) (c.sl ONE),
     .block (opCode c.MP' (.sub (c.sl W0) (c.sl ZERO) (c.sl QY)) ++
       parityMask c ++ sel c.n (c.sl QY) (c.sl QY) (c.sl W0))]
 
@@ -122,6 +132,6 @@ def recoverCoordinate (c : Cfg) : Prog isa :=
 
 def decompress (c : Cfg) : Prog isa :=
   progs [.block args, .block (c.setupWith none), .block (decompressPeer c),
-    fprogB c.MP' (rhsOps c), recoverCoordinate c, .block (decompressFinish c)]
+    rhs c, recoverCoordinate c, .block (decompressFinish c)]
 
 end VG.Impl.EcKey.Compressed.AArch64

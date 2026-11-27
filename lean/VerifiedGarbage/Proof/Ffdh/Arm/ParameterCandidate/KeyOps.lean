@@ -1,7 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.KeyFrame
-public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.KeyReady
+public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.KeyFrame
 public import VerifiedGarbage.Proof.Rsa.Arm.KeyOps
 import VerifiedGarbage.Proof.Rsa.Arm.KeyWord
 import VerifiedGarbage.Proof.Rsa.Arm.KeyBits
@@ -10,7 +9,6 @@ public import VerifiedGarbage.Impl.Rsa.Arm.KeyFrame
 public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
 public import VerifiedGarbage.Proof.Rsa.Arm.KeyWs
 public import VerifiedGarbage.Proof.Rsa.MontContract
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.KeyView
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Omega
 

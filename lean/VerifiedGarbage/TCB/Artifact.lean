@@ -48,6 +48,11 @@ structure Contract (M : ISA) where
   /-- When two entry states agree on everything public (e.g. lengths and
   pointers, but not keys or plaintexts). -/
   pub : M.State → M.State → Prop
+  /-- What the calling convention requires of the whole result register on
+  return, beyond the result's bits (`Abi.retExt` of the result's type, which
+  `Sig.contract` gives): `some f` if it must be `f` of itself, `none` if
+  the convention requires nothing more, or the function has no result. -/
+  retExt : Option (BitVec 64 → BitVec 64) := none
 
 /-- A code-generation target: an ISA model and its calling convention. What
 only the emitter reads of it (its printer, its Rust `cfg` and ABI string, and
@@ -67,9 +72,9 @@ structure Target where
   abi : Abi isa
   /-- What it means on this target for a function with code `c`, contract
   `k` and a result of `retBits` bits to return without secret residue
-  (`X86_64.NoResidue`), if the target defines it: then every artifact of the
-  target proves it (`Artifact.residue`), but those `ci/residue_allowlist.txt`
-  lists, as the emitter checks (`Rust.checkResidue`). -/
+  (`X86_64.NoResidue`), if the target defines it: every artifact proves it
+  of its code (`VerifiedScrubbed`, `Artifact.verified`), so a target has
+  artifacts only if it defines it. -/
   noResidue : Option (Prog isa → Contract isa → Nat → Prop) := none
 
 /-- The contract of a function with signature `sig` under the calling
@@ -101,7 +106,12 @@ entry (e.g. the sequence of table indices an algorithm reads, when the
 algorithm itself makes them depend on secrets). It is added to the public
 data, so two runs need identical leakage traces only if they agree on it:
 the function may reveal it through its timing, and nothing else secret.
-Every contract without `leak` is constant time in the usual sense. -/
+Every contract without `leak` is constant time in the usual sense.
+
+`post` sees only the result's own bits (`setWidth`); what the calling
+convention requires of the rest of the result register is `retExt`, the
+convention's `Abi.retExt` for the result's type, which every artifact's code
+meets (`RetAbi`, `VerifiedScrubbed`). -/
 def Sig.contract {M : ISA} (A : Abi M) (sig : Sig)
     (pre : Curry (sig.words A.ptrBits) (Mem → Prop) := Curry.const (fun _ => True) _)
     (post : sig.Post A.ptrBits) (writeArgs : Bool := false) (stack : Nat := 0)
@@ -139,7 +149,8 @@ def Sig.contract {M : ISA} (A : Abi M) (sig : Sig)
           ((vals s₁).getD i 0).setWidth (widths.getD i 64) =
             ((vals s₂).getD i 0).setWidth (widths.getD i 64)) ∧
         ∀ r ∈ Sig.descs A.ptrBits sig.params (vals s₁), ∀ i < r.len,
-          A.mem s₁ (r.base + BitVec.ofNat 64 i) = A.mem s₂ (r.base + BitVec.ofNat 64 i) }
+          A.mem s₁ (r.base + BitVec.ofNat 64 i) = A.mem s₂ (r.base + BitVec.ofNat 64 i)
+    retExt := sig.ret.bind A.retExt }
 
 /-- The proof obligation for emitting `c` on target `T` with contract `k`. -/
 def Verified (T : Target) (c : Prog T.isa) (k : Contract T.isa) : Prop :=
@@ -152,6 +163,39 @@ convention `A`, for an implementation whose calls and frames use `stack`
 bytes of stack below the stack pointer (`Sig.contract`'s `stack`; a contract
 that does not depend on it is the one with `stack` 0). -/
 abbrev Contracts : Type 1 := {M : ISA} → Abi M → Nat → Contract M
+
+/-- Outputs of a function of signature `sig` that reveal nothing secret
+(`PublicOut.Of`), as numbers: `out`, computed from the arguments, the memory on
+entry and on return, and the result (e.g. a length the function chose, which its
+caller allocates); `given` is what the caller left there that they may depend on,
+computed from the arguments and the memory on entry (e.g. the bytes of working
+space the function may leave as they were), besides what the contract makes
+public.
+
+A postcondition, of one run, cannot say it: one that allows several values (any
+length within bounds; each byte unchanged or zero) allows a choice among them that
+depends on a secret. -/
+structure PublicOut (sig : Sig) where
+  given : ∀ ptrBits, Curry (sig.words ptrBits) (Mem → List Nat) := fun _ => Curry.const (fun _ => []) _
+  out : ∀ ptrBits, Curry (sig.words ptrBits) (Mem → Mem → BitVec (sig.retBits ptrBits) → List Nat)
+
+/-- `c`, with contract `k`, has the public outputs `o`: any two runs of `c` from
+states that satisfy `k.pre`, agree on what `k.pub` says is public and agree on
+`o.given`, end in states that agree on `o.out`. Like `ConstantTime`, a property of
+two runs; what they agree on need not be all that is public, nor do they share
+anything else (`unknowns`, the memory outside the buffers). A calling convention
+that does not model the arguments gives a precondition that no state satisfies
+(`Sig.contract`). -/
+def PublicOut.Of {M : ISA} (A : Abi M) {sig : Sig} (o : PublicOut sig) (c : Prog M) (k : Contract M) :
+    Prop :=
+  match A.args ((sig.words A.ptrBits).map (·.bits A.ptrBits)) with
+  | none => True
+  | some vals => ∀ s₁ s₂ t₁ t₂ s₁' s₂', k.pre s₁ → k.pre s₂ → k.pub s₁ s₂ →
+      Curry.apply _ (o.given A.ptrBits) (vals s₁) (A.mem s₁) =
+        Curry.apply _ (o.given A.ptrBits) (vals s₂) (A.mem s₂) →
+      Exec M c s₁ t₁ s₁' → Exec M c s₂ t₂ s₂' →
+      Curry.apply _ (o.out A.ptrBits) (vals s₁) (A.mem s₁) (A.mem s₁') ((A.ret s₁').setWidth _) =
+        Curry.apply _ (o.out A.ptrBits) (vals s₂) (A.mem s₂) (A.mem s₂') ((A.ret s₂').setWidth _)
 
 /-- What a function is on every target: its Rust module, name and signature,
 whether its contract lets it overwrite its arguments in memory
@@ -174,9 +218,18 @@ structure Api where
   /-- The function's contract on every target, `fun A stack => fooContract A
   stack`. The emitter refuses an artifact without one (`Rust.checkApi`). -/
   contracts : Option Contracts := none
-  /-- Whether `contracts` make the mode public (`Abi.withMode`): only those
-  of `Spec/Dit.lean`, whose functions set it. -/
-  pubMode : Bool := false
+  /-- For a function that exists to change the mode its target's timing rests
+  on (`Abi.mode`), what it does to it and returns: `some q` if every run of it
+  must satisfy `q before after result`, for the mode before and after it and
+  the register(s) its result is returned in (`Abi.ret`, of which a narrower
+  result is the low bits). A contract cannot say it (its postcondition sees
+  only the arguments, the memory and the result). An `Artifact` made from the
+  `Api` proves it (`Artifact.modeOk`). -/
+  mode : Option (BitVec 64 → BitVec 64 → BitVec 64 → Prop) := none
+  /-- The function's outputs that must reveal nothing secret, though its contract
+  allows more than one value of them, if it has any. An `Artifact` made from the
+  `Api` proves it (`Artifact.publicOutOk`). -/
+  publicOut : Option (PublicOut sig) := none
   /-- The documentation, up to its `# Safety` section. -/
   summary : String
   /-- The items of the `# Safety` section, but for those `Sig.validDoc` and

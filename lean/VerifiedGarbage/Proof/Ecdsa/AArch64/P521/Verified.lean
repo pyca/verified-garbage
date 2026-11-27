@@ -1,7 +1,8 @@
 module
 
 import VerifiedGarbage.Proof.Weierstrass.AArch64.MontModuli
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Main
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.Main
+import VerifiedGarbage.Proof.Ecdsa.AArch64.CombCall
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.P521.Contract
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.Layout
 public import VerifiedGarbage.Proof.Weierstrass.CombW
@@ -13,6 +14,7 @@ import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
 import VerifiedGarbage.Proof.P521.Prime
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.MontModuli
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Main
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.CombCall
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.P521.Contract
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Layout
 meta import VerifiedGarbage.Proof.Weierstrass.CombW
@@ -21,6 +23,8 @@ meta import VerifiedGarbage.Proof.P521.Point
 meta import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
 meta import VerifiedGarbage.Proof.P521.Prime
+import VerifiedGarbage.Proof.Ecdsa.AArch64.AbiOnce
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.AbiOnce
 
 /-!
 # ECDSA over P-521 on AArch64: `Verified`
@@ -71,14 +75,13 @@ theorem p521_ok (hI : Weierstrass.AArch64.InvSounds) : CfgOk p521 where
   minv_n := by decide +kernel
   red_p := by decide +kernel
   red_n := by decide +kernel
-  n2 := by decide
   len8 := by decide
   len_lo := by decide
   len_hi := by decide
   sh := by rw [p521_sh]; decide
   n4 := by decide
   sound_p := hI (by
-    show Nat.Prime Spec.P521.curve.p
+    show IsPrime Spec.P521.curve.p
     rw [show Spec.P521.curve.p =
       6864797660130609714981900799081393217269435300143305409394463459185543183397656052122559640661454554977296311391480858037121987999716643812574028291115057151
       by decide +kernel]
@@ -105,17 +108,20 @@ theorem pre_of {s : State} (h : signAArch64.pre s) : Pre p521 s := by
   exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11,
     ⟨by rw [h1]; simp, held, fit, hdw _ (by simp)⟩⟩
 
+/-- A call of `vg_p521_comb` does what the comb does (`combCorrect_call`). -/
+theorem gMulP521_correct (hL : Weierstrass.Law Spec.P521.curve) (hI : Weierstrass.AArch64.InvSounds)
+    (hT : CombOkW p521.C Cfg.combW (Cfg.combJ p521.n) p521.tbl p521.start) : CombCorrect p521 gMulP521 :=
+  combCorrect_call (comb := combP521) (combCorrect (p521_ok hI) hL hT) (by lit_decide)
+
 theorem sign_a64 (hL : Weierstrass.Law Spec.P521.curve) (hI : Weierstrass.AArch64.InvSounds)
     (hT : CombOkW Spec.P521.curve 7 83 Impl.P521.p521Comb7 Impl.P521.p521Comb7Start) (s : State)
     (hs : signAArch64.pre s) :
     ∃ t s', Exec isa signP521 s t s' ∧ abiPreserved s s' ∧ signAArch64.post s s' := by
   -- In steps: elaborated in one term, the unifier would compare P-521's
   -- terms before the literals' facts are known.
-  have hn : CallsKeep signP521 := by lit_decide
-  have hu : KeepsUntouched signP521 := by lit_decide
-  have hv : signP521.allInstrs keepsV = true := by lit_decide
-  obtain ⟨t, s', he, hsv, hpost⟩ := sign_ok (p521_ok hI) hL hT (pre_of hs)
-  exact ⟨t, s', he, abiPreserved_of he hn hu hv hsv, hpost⟩
+  have ha : abiK signP521 = true := by lit_decide
+  obtain ⟨t, s', he, hsv, hpost⟩ := signWith_ok (p521_ok hI).toBaseCfgOk hL _ (gMulP521_correct hL hI hT) (pre_of hs)
+  exact ⟨t, s', he, abiPreserved_ofK he ha hsv, hpost⟩
 
 theorem sign_ct : ConstantTime isa signAArch64.pre signAArch64.pub signP521 :=
   VG.Taint.constantTime (A := taintS [p521.tsym]) (Taint.ofRegs [.x0, .x1, .x2, .x3, .x4])

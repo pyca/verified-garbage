@@ -1,6 +1,6 @@
 module
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Base
-public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Load
+public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Pair
 
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Zero
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Env

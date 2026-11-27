@@ -1,9 +1,8 @@
 module
 
 import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Mul
-public import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBasePrecomputedCT
+public import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBasePrecomputedVerified
 public import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
-import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBasePrecomputedVerified
 import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
 import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulCTLit
 import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.CombLit
@@ -11,9 +10,8 @@ import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Lit
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Spec.Weierstrass
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Mul
-meta import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBasePrecomputedCT
-meta import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBasePrecomputedVerified
+meta import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
 meta import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulCTLit
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.CombLit

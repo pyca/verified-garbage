@@ -1,25 +1,27 @@
 module
 
-public import VerifiedGarbage.Proof.Blake2.Arm.Blake2b
-public import VerifiedGarbage.Proof.Blake2.Arm.CompressB
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.Arm.Print
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Blake2.Contract
+import VerifiedGarbage.Proof.Blake2.Arm.Scrub
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # BLAKE2b (RFC 7693) on ARMv7 -/
 
-@[expose] public section
-
 namespace VG.Artifacts.Blake2b.Arm
 
-def artifacts : List Artifact := [
+public def artifacts : List (Artifact Arm.target) := [
   Spec.Blake2.initBApi.artifact Arm.target {
-    code := Impl.Blake2.Arm.Stream.init Spec.Blake2.b
-    verified := Proof.Blake2.ArmB.initB_verified },
+    code := Impl.Blake2.Arm.Fn.initB
+    verified := Proof.Blake2.Arm.Fn.initB },
   Spec.Blake2.updateBApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratch 592 2 (Impl.Blake2.Arm.Stream.update (w := 64) "vg_blake2b_compress" Impl.Blake2.Arm.B.compress)
-    verified := Proof.Blake2.ArmB.updateB_framed },
+    code := Impl.Blake2.Arm.Fn.updateB
+    verified := Proof.Blake2.Arm.Fn.updateB },
   Spec.Blake2.finalizeBApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratch 592 1 (Impl.Blake2.Arm.Stream.finalize (w := 64) "vg_blake2b_compress" Impl.Blake2.Arm.B.compress)
-    verified := Proof.Blake2.ArmB.finalizeB_framed }]
+    code := Impl.Blake2.Arm.Fn.finalizeB
+    verified := Proof.Blake2.Arm.Fn.finalizeB }]
+
+spec_apis artifacts
 
 end VG.Artifacts.Blake2b.Arm

@@ -1,18 +1,9 @@
 module
 
+-- separate module: checked once for all who use the S-box's circuit on slices
 public import VerifiedGarbage.Impl.Aes.PPC64LE.Sbox
-import VerifiedGarbage.Proof.Framework.PPC64LE.Linear
-public import VerifiedGarbage.Proof.Aes.SboxSpec
-public import VerifiedGarbage.Proof.Aes.Bitsliced
-import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.AddrArith
-public import VerifiedGarbage.Proof.Framework.Bitslice.Table
+public import VerifiedGarbage.Proof.Aes.Sbox0
 public import VerifiedGarbage.Proof.Framework.PPC64LE.StraightK
-
-@[expose] public section
-
--- separate module: SEED reuses the verified Boolean AES S-box.
 
 /-!
 # The bitsliced S-box on PPC64LE
@@ -20,39 +11,29 @@ public import VerifiedGarbage.Proof.Framework.PPC64LE.StraightK
 `sboxCode` only combines words bitwise, so it computes the same Boolean
 function at each of the 64 bit positions: the kernel evaluates it once on
 truth tables of the 256 inputs (`Bitslice.table`) and compares the result
-with the specification's S-box on the same tables (`sboxT`, proved right in
-`Proof/Aes/SboxSpec.lean`). `sbox_ok` then gives, at every bit position
-`p`, the S-box of the byte formed by bit `p` of the eight words.
+with the specification's S-box on the same tables (`Proof/Aes/Sbox0.lean`).
+`sbox_ok` then gives, at every bit position `p`, the S-box of the byte formed
+by bit `p` of the eight words.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Aes.PPC64LE
 
 open VG VG.PPC64LE VG.PPC64LE.StraightK VG.Bitslice VG.Impl.Aes.PPC64LE VG.Proof.Aes
-open VG.Spec.Aes (sbox)
 
 /-- The S-box's memory: its spill slots, at `r8`. -/
 def sboxCfg : Cfg := { base := sb, slots := 40, ext := sb, exts := 0 }
 
-/-- The truth table of bit `k` of the input. -/
-def inT (k : Nat) : Nat := tableOf (fun c => c.testBit k) 256
-
-def inTs : List Nat := (List.range 8).map inT
-
 def sboxEnv : Env Nat :=
-  { reg := fun r => ((List.range 8).find? (fun k => q k == r)).map inT, slot := fun _ => none }
+  { reg := fun r => ((List.range 8).find? (fun k => q k == r)).map sbIn, slot := fun _ => none }
 
 def sboxPost (e : Env Nat) : Bool :=
-  (List.range 8).all fun j => e.reg (q j) == some ((sboxT inTs).getD j 0)
+  (List.range 8).all fun j => e.reg (q j) == some (sboxOfT.getD j 0)
 
 theorem sbox_check :
     check (table 64 256) sboxCfg (fun _ => none) sboxCode sboxEnv sboxPost = true := by
   decide +kernel
-
-theorem row_inTs {c : Nat} (hc : c < 256) : row inTs c = BitVec.ofNat 8 c := by
-  refine row_ext fun j hj => ?_
-  simp only [inTs, List.getD_eq_getElem?_getD, List.getElem?_map, List.getElem?_range hj,
-    Option.map_some, Option.getD_some, inT, testBit_tableOf, hc, decide_true, Bool.true_and,
-    BitVec.getLsbD_ofNat, hj]
 
 /-- The registers the S-box writes. -/
 def sboxWrites : List Reg := [q 0, q 1, q 2, q 3, q 4, q 5, q 6, q 7, .r22, .r23, .r24, .r25,
@@ -62,13 +43,10 @@ def sboxWrites : List Reg := [q 0, q 1, q 2, q 3, q 4, q 5, q 6, q 7, .r22, .r23
 def restRegs : List Reg := [.r2, .r3, .r4, .r5, .r6, .r7, .r8, .r10, .r11, .r12]
 
 theorem sbox_writes_rest :
-    restRegs.all (fun r => sboxCode.all fun i => dstOf i != some r) =
-      true := by
+    restRegs.all (fun r => sboxCode.all fun i => dstOf i != some r) = true := by
   decide +kernel
 
-/-- The registers outside `sboxWrites`. -/
-theorem not_sboxWrites (r : Reg) (hr : r ∉ sboxWrites) :
-    r ∈ restRegs := by
+theorem not_sboxWrites (r : Reg) (hr : r ∉ sboxWrites) : r ∈ restRegs := by
   revert hr; cases r <;> decide
 
 theorem sbox_writes (r : Reg) (hr : r ∉ sboxWrites) :
@@ -79,11 +57,11 @@ theorem sbox_writes (r : Reg) (hr : r ∉ sboxWrites) :
 theorem sbox_ok {s : State} (hok : Ok sboxCfg s) :
     ∃ s', runBlock isa sboxCode s = some s' ∧
       (∀ j < 8, ∀ p < 64,
-        (s'.gpr (q j)).getLsbD p = (sbox (bsByte (fun k => s.gpr (q k)) p)).getLsbD j) ∧
+        (s'.gpr (q j)).getLsbD p = (Spec.Aes.sbox (bsByte (fun k => s.gpr (q k)) p)).getLsbD j) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ (∀ r, r ∉ sboxWrites → s'.gpr r = s.gpr r) ∧
       Frame [slotRegion sboxCfg s] s.mem s'.mem := by
   obtain ⟨e', he, hpost⟩ := of_check _ _ _ sbox_check
-  have hout : ∀ j < 8, e'.reg (q j) = some ((sboxT inTs).getD j 0) := by
+  have hout : ∀ j < 8, e'.reg (q j) = some (sboxOfT.getD j 0) := by
     intro j hj
     have := List.all_eq_true.mp hpost j (List.mem_range.mpr hj)
     simpa using this
@@ -101,17 +79,16 @@ theorem sbox_ok {s : State} (hok : Ok sboxCfg s) :
     have hk8 := List.mem_range.mp hkr
     simp only [beq_iff_eq] at hqk
     subst hqk
-    simp only [TableRel, inT, testBit_tableOf, hc, decide_true, Bool.true_and,
+    simp only [TableRel, sbIn, testBit_tableOf, hc, decide_true, Bool.true_and,
       BitVec.testBit_toNat, getLsbD_bsByte _ _ hk8]
-  obtain ⟨s', hs', p₀⟩ := key 0 (by omega_arith)
+  obtain ⟨s', hs', p₀⟩ := key 0 (by omega_using [])
   refine ⟨s', hs', fun j hj p hp => ?_, p₀.rd, p₀.wr, fun r hr => p₀.other r ?_, p₀.frame⟩
   · obtain ⟨s'', hs'', p₁⟩ := key p hp
     obtain rfl := run_unique hs'' hs'
     have hc := (bsByte (fun k => s.gpr (q k)) p).isLt
     have := p₁.rel.reg (q j) _ (hout j hj)
     simp only [TableRel] at this
-    rw [← this, ← getLsbD_row _ _ hj, row_sboxT (by simp [inTs]) hc, row_inTs hc]
-    simp
+    rw [← this, sboxOfT_bit hc hj, BitVec.ofNat_toNat, BitVec.setWidth_eq]
   · simp [sbox_writes r hr]
 
 end VG.Proof.Aes.PPC64LE

@@ -24,6 +24,7 @@ def hole : Impl.Sha3.AArch64.Callee where
   name := ""
   code := .block []
   suffix := ""
+  clear := ⟨[], [], []⟩
 
 /-- The fixed hash, calling the permutation `c`. -/
 abbrev fixedHash (c : Impl.Sha3.AArch64.Callee) : Impl.MlKem.AArch64.FixedHashCallers.HashFn :=

@@ -1,8 +1,7 @@
 module
 
 import VerifiedGarbage.Proof.Dsa.PPC64LE.RandomSign.CT
-import VerifiedGarbage.Proof.Dsa.PPC64LE.RandomSign.Fn
-public import VerifiedGarbage.Proof.Dsa.PPC64LE.RandomSign.Contract
+public import VerifiedGarbage.Proof.Dsa.PPC64LE.Random.Save
 public import VerifiedGarbage.Spec.Dsa.PrevalidatedSign
 public import VerifiedGarbage.Impl.Dsa.PPC64LE.RandomSign
 

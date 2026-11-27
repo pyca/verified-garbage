@@ -1,9 +1,8 @@
 module
 
-import VerifiedGarbage.Proof.Modes.Arm.Cbc
+public import VerifiedGarbage.Proof.Modes.Arm.Cbc
 public import VerifiedGarbage.Spec.Ofb
 public import VerifiedGarbage.Spec.Cfb
-public import VerifiedGarbage.Proof.Modes.Arm.SeqBody
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 
 /-!

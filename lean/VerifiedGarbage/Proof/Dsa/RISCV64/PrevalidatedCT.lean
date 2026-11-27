@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.Dsa.RISCV64.PrevalidatedFn
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 public meta import VerifiedGarbage.Proof.Bignum.RISCV64.Run
-import VerifiedGarbage.Proof.Dsa.RISCV64.CTKey
 import VerifiedGarbage.Proof.Dsa.RISCV64.CTParams
 import VerifiedGarbage.Proof.Dsa.RISCV64.ValidateFn
 import VerifiedGarbage.Proof.Dsa.PackedBytes
@@ -17,7 +16,6 @@ meta import VerifiedGarbage.Proof.Dsa.RISCV64.VerifyCT
 meta import VerifiedGarbage.Proof.Dsa.RISCV64.PrevalidatedFn
 meta import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Taint
-meta import VerifiedGarbage.Proof.Dsa.RISCV64.CTKey
 meta import VerifiedGarbage.Proof.Dsa.RISCV64.CTParams
 meta import VerifiedGarbage.Proof.Dsa.RISCV64.ValidateFn
 meta import VerifiedGarbage.Proof.Dsa.PackedBytes
@@ -228,7 +226,7 @@ theorem pinsTp6 : Pins (At C0p FTp 6) [.s6] :=
     obtain ⟨_, _, u₁, -, e₁, e₂⟩ := exec_seqL_append.mp e
     have h₁ : u₁.gpr .s6 = v.L.S := (at_sem (Φ := C0p) (F := FTp) (n := 1) (M := P0)
       (fun _ _ h => WP.of_flat (c := .block Verify.entry) rfl (front_P0 h.c0)) ⟨s₀, _, h₀, e₁⟩).1.regs.s6
-    exact ⟨(Exec.gpr_callFree s6_keptp e₂ rfl).trans h₁, trivial⟩
+    exact ⟨(Exec.gpr s6_keptp e₂).trans h₁, trivial⟩
 
 theorem prevalidated_rel : RelCT isa (Two C0p) Prevalidated.verify fun _ _ => True := by
   refine chain_start (chain_cons runTp (m := 1) (by decide) ?_ ?_)

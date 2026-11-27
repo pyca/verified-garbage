@@ -13,6 +13,8 @@ import VerifiedGarbage.Proof.Framework.X86.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Framework.X86.AllocFrame
+import VerifiedGarbage.Proof.Framework.OffsetBelow
 /-!
 # The randomized signer's context (x86)
 
@@ -120,22 +122,30 @@ def allocated (bytes : Nat) (s : State) : State :=
 def freed (bytes : Nat) (s : State) : State :=
   { s.setReg .esp (s.gpr .esp + BitVec.ofNat 32 bytes) with wr := s.wr.tail }
 
-/-- A frame of `bytes` bytes of stack around a body that never writes `esp`. -/
+/-- A frame of `bytes` bytes of stack around a body that never writes `esp`:
+the postcondition holds after the release whatever the frame's bytes and the
+unknowns are (`WP.frameAlloc`). -/
 theorem WP.alloc {bytes : Nat} {body : Prog isa} {s : State} {Q : State → Prop}
     (hn : 0 < bytes ∧ bytes < 4096 ∧ bytes % 4 = 0) (hsp : bytes ≤ (s.gpr .esp).toNat) (hb : NoSp body)
-    (h : WP isa body (allocated bytes s) fun s₂ => Q (freed bytes s₂)) :
-    WP isa (.frame (.alloc bytes) body (.free bytes)) s Q := by
-  obtain ⟨t, s₂, he, hq⟩ := h
-  obtain ⟨-, hw⟩ := Exec.rdwr he
-  have hp := Exec.gpr hb he
-  have ha : isa.push (.alloc bytes) s = some (allocated bytes s) := by
-    simp only [isa, push, hn.1, hn.2.1, hn.2.2, hsp, and_self, ite_true]
-    rfl
-  have hf : isa.pop (.free bytes) (allocated bytes s) s₂ = some (freed bytes s₂) := by
-    simp only [isa, pop]
-    refine ite_eq_left ⟨hn.1, hn.2.1, hn.2.2, hp, hw, ?_⟩
-    rfl
-  exact ⟨_, _, Exec.frame ha he hf, hq⟩
+    {P : State → Prop} (h : WP isa body (allocated bytes s) P)
+    (hP : ∀ s₂ m u, P s₂ → Frame [below (s.gpr .esp) bytes] s₂.mem m →
+      Q (freed bytes { s₂ with mem := m, unknowns := u })) :
+    WP isa (.frame (.alloc bytes) body (.free bytes)) s Q :=
+  WP.frameAlloc hn.1 hn.2.1 hn.2.2 hsp hb (WP.mono h fun s₂ hs m u fl => hP s₂ m u hs fl)
+
+/-- The calling convention's words, whatever the bytes of a frame below
+`esp` are and the unknowns. -/
+theorem abiPreserved_frame {s t : State} {n : Nat} {m : Mem} {u : Nat → BitVec 32}
+    (hn : n ≤ (s.gpr .esp).toNat) (h : abiPreserved s t) (fl : Frame [below (s.gpr .esp) n] t.mem m) :
+    abiPreserved s { t with mem := m, unknowns := u } := by
+  refine ⟨h.1, ?_⟩
+  show m.readW _ _ = _
+  rw [fl.readW (Region.contains_self _ _) (fun r hr => by
+    rw [List.mem_singleton.mp hr]
+    show Region.Disjoint _ ⟨(s.gpr .esp - BitVec.ofNat 32 n).setWidth 64, n⟩
+    rw [Taint.sub_setWidth hn]
+    exact (Offset.below_disjoint _ (by have := (s.gpr .esp).isLt; omega)).symm) (by decide)]
+  exact h.2
 
 theorem allocated_esp (n : Nat) (s : State) : (allocated n s).gpr .esp = s.gpr .esp - BitVec.ofNat 32 n :=
   RegUpd.gpr_setReg_self s .esp _

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.MlKem.X86_64.Common
 public import VerifiedGarbage.Impl.Sha3.X86_64.Stream
+public import VerifiedGarbage.Impl.ICall
 
 /-!
 # ML-DSA on x86-64, signing: the pieces of the top-level function
@@ -61,6 +62,10 @@ structure Prims where
   dotInv4 : Prog isa := .block []
   dotInv5 : Prog isa := .block []
   dotInv7 : Prog isa := .block []
+  /-- Whether the callees the variants differ in are called by the addresses in
+  the words above the return address (`callV`), which each variant's entry
+  fills, so that the variants share one body. -/
+  viaSlots : Bool := false
 
 /-! ## The layout of the working space (in bytes)
 
@@ -137,6 +142,16 @@ def setArgs (as : List Arg) : List Instr := (argRegs6.zip as).flatMap fun (d, a)
 /-- A call of `c`, named `name`, with the arguments `as`. -/
 def callP (name : String) (c : Prog isa) (as : List Arg) : Prog isa := .seq (.block (setArgs as)) (.call name c)
 
+/-- The word above the return address that holds the address of the variant
+callee `i`, when the body calls them by their addresses (`Prims.viaSlots`). -/
+def slotM (i : Nat) : MemOp := at_ .rsp (8 + 8 * i)
+
+/-- The call of the variant callee `i`, `name`: by the address in its word
+(`slotM`) if `viaSlots`, else directly. -/
+def callV (viaSlots : Bool) (i : Nat) (name : String) (c : Prog isa) (as : List Arg) : Prog isa :=
+  if viaSlots then .seq (.block (setArgs as)) (Code.icalls (.callm (slotM i)) [(name, c)])
+  else callP name c as
+
 /-! ## The sponge -/
 
 /-- The 25 lanes at `b + off`, zeroed (with `rax = 0`). -/
@@ -186,9 +201,9 @@ Each takes its working space (if any) at `PS`. -/
 section
 variable (P : Prims)
 
-def nttAt (f : Ptr) : Prog isa := callP ("vg_mldsa_ntt" ++ P.asfx) P.ntt [.ptr f, .ptr (sc oPS)]
+def nttAt (f : Ptr) : Prog isa := callV P.viaSlots 0 ("vg_mldsa_ntt" ++ P.asfx) P.ntt [.ptr f, .ptr (sc oPS)]
 
-def invNttAt (f : Ptr) : Prog isa := callP ((if P.montgomery then "vg_mldsa_montgomery_inv_ntt" else "vg_mldsa_inv_ntt") ++ P.asfx) P.invNtt [.ptr f, .ptr (sc oPS)]
+def invNttAt (f : Ptr) : Prog isa := callV P.viaSlots 1 ((if P.montgomery then "vg_mldsa_montgomery_inv_ntt" else "vg_mldsa_inv_ntt") ++ P.asfx) P.invNtt [.ptr f, .ptr (sc oPS)]
 
 /-- `vg_mldsa_dot_inverse{c}`, for `c` of 4, 5 and 7. -/
 abbrev Prims.dotInv (P : Prims) (c : Nat) : Prog isa := if c = 4 then P.dotInv4 else if c = 5 then P.dotInv5 else P.dotInv7
@@ -199,14 +214,14 @@ abbrev dotInvName (c : Nat) : String :=
   if c = 4 then "vg_mldsa_dot_inverse4" else if c = 5 then "vg_mldsa_dot_inverse5" else "vg_mldsa_dot_inverse7"
 
 def dotInvAt (count : Nat) (h f g : Ptr) : Prog isa :=
-  callP (dotInvName count ++ P.asfx) (P.dotInv count) [.ptr h, .ptr f, .ptr g, .ptr (sc oPS)]
+  callV P.viaSlots 2 (dotInvName count ++ P.asfx) (P.dotInv count) [.ptr h, .ptr f, .ptr g, .ptr (sc oPS)]
 
-def mulAt (h f g : Ptr) : Prog isa := callP ((if P.montgomery then "vg_mldsa_montgomery_multiply_ntt" else "vg_mldsa_multiply_ntt") ++ P.asfx) P.mul [.ptr h, .ptr f, .ptr g]
+def mulAt (h f g : Ptr) : Prog isa := callV P.viaSlots 3 ((if P.montgomery then "vg_mldsa_montgomery_multiply_ntt" else "vg_mldsa_multiply_ntt") ++ P.asfx) P.mul [.ptr h, .ptr f, .ptr g]
 
 
-def addAt (f g : Ptr) : Prog isa := callP ("vg_mldsa_add" ++ P.asfx) P.add [.ptr f, .ptr g]
+def addAt (f g : Ptr) : Prog isa := callV P.viaSlots 4 ("vg_mldsa_add" ++ P.asfx) P.add [.ptr f, .ptr g]
 
-def subAt (f g : Ptr) : Prog isa := callP ("vg_mldsa_sub" ++ P.asfx) P.sub [.ptr f, .ptr g]
+def subAt (f g : Ptr) : Prog isa := callV P.viaSlots 5 ("vg_mldsa_sub" ++ P.asfx) P.sub [.ptr f, .ptr g]
 
 /-- `RejNTTPoly` of the seed at `RS` to `a`, and `r15 ← r15 ∧ result`. -/
 def rejAt (a : Ptr) : Prog isa :=
@@ -216,13 +231,13 @@ def rejAt (a : Ptr) : Prog isa :=
 /-- `RejNTTPoly` of the four seeds at `RS4` to the four polynomials from `a`, with the working
 space `w`, and `r15 ← r15 ∧ result`. -/
 def rej4At (a w : Ptr) : Prog isa :=
-  .seq (callP ("vg_mldsa_rej_ntt_poly4" ++ P.sfx) P.rej4 [.ptr (sc oRS4), .ptr a, .ptr w])
+  .seq (callV P.viaSlots 6 ("vg_mldsa_rej_ntt_poly4" ++ P.sfx) P.rej4 [.ptr (sc oRS4), .ptr a, .ptr w])
     (.block [.alu32 .and .r15 (.reg .rax)])
 
 /-- Four polynomials of `ExpandMask` from the four seeds at `MS4` to the four polynomials from `a`,
 with the working space `w`. -/
 def mask4At (gamma1 : Nat) (a w : Ptr) : Prog isa :=
-  callP ("vg_mldsa_expand_mask_poly4" ++ P.sfx) P.expandMask4 [.ptr (sc oMS4), .imm gamma1, .ptr a, .ptr w]
+  callV P.viaSlots 7 ("vg_mldsa_expand_mask_poly4" ++ P.sfx) P.expandMask4 [.ptr (sc oMS4), .imm gamma1, .ptr a, .ptr w]
 
 /-- A polynomial of `ExpandMask` from the seed at `MS` to `a`. -/
 def maskAt (gamma1 : Nat) (a : Ptr) : Prog isa :=
@@ -233,18 +248,18 @@ def ballAt (len tau : Nat) (c : Ptr) : Prog isa :=
   callP "vg_mldsa_sample_in_ball" P.ball [.ptr (sc oCT), .imm len, .imm tau, .ptr c, .ptr (sc oPS)]
 
 def highBitsAt (r : Ptr) (gamma2 : Nat) (out : Ptr) : Prog isa :=
-  callP ("vg_mldsa_high_bits" ++ P.asfx) P.highBits [.ptr r, .imm gamma2, .ptr out]
+  callV P.viaSlots 8 ("vg_mldsa_high_bits" ++ P.asfx) P.highBits [.ptr r, .imm gamma2, .ptr out]
 
 def lowBitsAt (r : Ptr) (gamma2 : Nat) (out : Ptr) : Prog isa :=
-  callP ("vg_mldsa_low_bits" ++ P.asfx) P.lowBits [.ptr r, .imm gamma2, .ptr out]
+  callV P.viaSlots 9 ("vg_mldsa_low_bits" ++ P.asfx) P.lowBits [.ptr r, .imm gamma2, .ptr out]
 
 /-- `‖f‖∞ < bound`, and `r15 ← r15 ∧ result`. -/
 def normAt (f : Ptr) (bound : Nat) : Prog isa :=
-  .seq (callP ("vg_mldsa_norm_lt" ++ P.asfx) P.normLt [.ptr f, .imm bound]) (.block [.alu32 .and .r15 (.reg .rax)])
+  .seq (callV P.viaSlots 10 ("vg_mldsa_norm_lt" ++ P.asfx) P.normLt [.ptr f, .imm bound]) (.block [.alu32 .and .r15 (.reg .rax)])
 
 /-- `MakeHint` of `z` and `r` to `h`, and the number of 1s added to `ONES`. -/
 def makeHintAt (z r : Ptr) (gamma2 : Nat) (h : Ptr) : Prog isa :=
-  .seq (callP ("vg_mldsa_make_hint" ++ P.asfx) P.makeHint [.ptr z, .ptr r, .imm gamma2, .ptr h])
+  .seq (callV P.viaSlots 11 ("vg_mldsa_make_hint" ++ P.asfx) P.makeHint [.ptr z, .ptr r, .imm gamma2, .ptr h])
     (.block [.mov32 .rcx (.mem (at_ .rbx oONES)), .alu32 .add .rcx (.reg .rax), .store (at_ .rbx oONES) .rcx])
 
 def simpleBitPackAt (f : Ptr) (b : Nat) (out : Ptr) (len : Nat) : Prog isa :=
@@ -258,6 +273,23 @@ def bitUnpackAt (v : Ptr) (len a b : Nat) (f : Ptr) : Prog isa :=
 
 def hintBitPackAt (h : Ptr) (hlen omega : Nat) (y : Ptr) (len : Nat) : Prog isa :=
   callP "vg_mldsa_hint_bit_pack" P.hintBitPack [.ptr h, .imm hlen, .imm omega, .ptr y, .imm len]
+
+/-- The variant callees the body calls by their words when `viaSlots`
+(`callV`), in the order of their words, for `ℓ` the number of products of
+each dot product (`dotInvAt`). -/
+def slotNames (ℓ : Nat) : List String :=
+  ["vg_mldsa_ntt" ++ P.asfx,
+    (if P.montgomery then "vg_mldsa_montgomery_inv_ntt" else "vg_mldsa_inv_ntt") ++ P.asfx,
+    dotInvName ℓ ++ P.asfx,
+    (if P.montgomery then "vg_mldsa_montgomery_multiply_ntt" else "vg_mldsa_multiply_ntt") ++ P.asfx,
+    "vg_mldsa_add" ++ P.asfx, "vg_mldsa_sub" ++ P.asfx,
+    "vg_mldsa_rej_ntt_poly4" ++ P.sfx, "vg_mldsa_expand_mask_poly4" ++ P.sfx,
+    "vg_mldsa_high_bits" ++ P.asfx, "vg_mldsa_low_bits" ++ P.asfx, "vg_mldsa_norm_lt" ++ P.asfx,
+    "vg_mldsa_make_hint" ++ P.asfx]
+
+/-- The callees in the words above the return address: `slotNames` if
+`viaSlots`, else none. -/
+def slotsOf (ℓ : Nat) : List String := if P.viaSlots then slotNames P ℓ else []
 
 end
 

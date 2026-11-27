@@ -177,7 +177,7 @@ theorem slay1_ok {p : Params} {STK : Nat} {σ : State} (hp : SPre p STK σ) : Ok
     rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl <;>
     rcases (by omega_using [hj] : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4) with rfl | rfl | rfl | rfl | rfl <;>
     simp only [Lay.buf, slay1, Lay.size, List.getD_cons_zero, List.getD_cons_succ] <;>
-    first | omega | sdisj hp es
+    first | with_reducible sdisj hp es | omega | sdisj hp es
 
 theorem slay2_ok {p : Params} {STK : Nat} {σ : State} (hp : SPre p STK σ) : OkW (slay2 p STK σ) sWb2 := by
   have es : (⟨σ.sp - BitVec.ofNat 64 STK, STK⟩ : Region) = below σ.sp STK := rfl
@@ -190,7 +190,7 @@ theorem slay2_ok {p : Params} {STK : Nat} {σ : State} (hp : SPre p STK σ) : Ok
     rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl <;>
     rcases (by omega_using [hj] : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4) with rfl | rfl | rfl | rfl | rfl <;>
     simp only [Lay.buf, slay2, Lay.size, List.getD_cons_zero, List.getD_cons_succ] <;>
-    first | omega | sdisj hp es
+    first | with_reducible sdisj hp es | omega | sdisj hp es
 
 /-- Decides a fact about offsets in the buffers, for any parameter set with
 the facts `hF`. -/

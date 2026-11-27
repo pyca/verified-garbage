@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.RsaPss.RISCV64.Hash
 import VerifiedGarbage.Proof.RsaOaep.RISCV64.CTBlocks
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
 import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.RsaPss.RISCV64.Sg.Pre
+public import VerifiedGarbage.Proof.RsaPss.RISCV64.Sg.Spec
 public import VerifiedGarbage.Proof.RsaPss.RISCV64.Inst
 import VerifiedGarbage.Proof.RsaPss.RISCV64.ByIdx
 import VerifiedGarbage.Proof.Framework.Offset
@@ -623,12 +623,7 @@ theorem code_correct {vs : List MVar} {gs : List MVar} (hok : OK vs gs) (s : Sta
   rw [e]
   sig_post [Spec.RsaPss.signMdTableContract, Spec.RsaPss.signMdTableSig, Spec.MdHashTable.param, 
     Abi.withTables, abi, argRegs, stackArgs_sixteen, List.append_eq]
-  intro H' G' hH' hG'
-  rw [hH] at hH'
-  rw [hG] at hG'
-  cases hH'
-  cases hG'
-  exact hr
+  exact ⟨_, _, hH, hG, hr⟩
 
 /-! ## Constant time -/
 

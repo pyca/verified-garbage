@@ -60,9 +60,9 @@ theorem lastSwap_ok {s : State} {base : Addr} (hs : Scr s base) {st : Spec.X2551
     fun s₃ ⟨K₃, _, e₃⟩ => ?_
   refine ⟨(K₁.trans K₂).trans K₃, ?_, ?_⟩
   · rw [e₃, e₂, cswap_fst, ← h3, ← h5, ← k₁.2.1]
-    simp (config := {decide := true}) only [opSwap, Function.update_apply, ite_true, ite_false]
+    simp (config := {decide := true}) only [opSwap, Fun.update_apply, ite_true, ite_false]
   · rw [e₃, e₂, cswap_fst, ← h4, ← h6, ← k₁.2.1]
-    simp (config := {decide := true}) only [opSwap, Function.update_apply, ite_true, ite_false]
+    simp (config := {decide := true}) only [opSwap, Fun.update_apply, ite_true, ite_false]
 
 /-! ## The result -/
 

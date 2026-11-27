@@ -19,8 +19,14 @@ of its own that pushes the block function's five arguments. Each block, the
 block at `iv` is enciphered in place, giving the next output block, which is
 XORed into the data block a word at a time.
 
+With an implementation that has a chain (`Impl/Aes/X86/Chain.lean`) the code
+is not around the block function (`cryptChain`): as AES-CBC's encryption has
+it (`Impl.AesCbc.X86.encryptChain`), the keys are set up once and the output
+block is loaded into `xmm0` once, enciphered there for each block with no call
+and XORed into the data block, and stored at `iv` once after the last block.
+
 Only the pointers, `rounds` and `n` can affect timing: the only branches are
-on `n`.
+on `n` and, around a chain, on `rounds`.
 -/
 
 @[expose] public section
@@ -28,9 +34,9 @@ on `n`.
 namespace VG.Impl.AesOfb.X86
 
 open VG.X86
-open VG.Impl.Aes.X86 (Blocks)
-open VG.Impl.CmacAes.X86 (argOp advance xor4)
-open VG.Impl.AesCbc.X86 (whole blkCall)
+open VG.Impl.Aes.X86 (Blocks Chain)
+open VG.Impl.CmacAes.X86 (argOp at_ advance xor4)
+open VG.Impl.AesCbc.X86 (whole blkCall wholeChain)
 
 /-- The arguments of the block function: the schedule and the rounds (our
 stack arguments 0 and 1), the block at `iv` (our stack argument 2), `n = 1`,
@@ -46,5 +52,8 @@ data block. -/
 def body (b : Blocks) : Prog isa := .seq (.block ivArgs) (.seq (blkCall b) (.block post))
 
 def crypt (b : Blocks) : Prog isa := whole (body b)
+
+/-- `vg_aes_ofb` around a chain. -/
+def cryptChain (c : Chain) : Prog isa := wholeChain c Chain.ofb
 
 end VG.Impl.AesOfb.X86

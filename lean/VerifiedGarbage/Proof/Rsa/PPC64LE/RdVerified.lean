@@ -12,9 +12,7 @@ meta import VerifiedGarbage.Proof.Rsa.PPC64LE.RdCorrect
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
-import VerifiedGarbage.Proof.Rsa.PPC64LE.RdFinish
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.Seqs
-meta import VerifiedGarbage.Proof.Rsa.PPC64LE.RdFinish
 
 /-!
 # `vg_rsa_recover_primes_det` on PPC64LE: constant time, and verified
@@ -124,7 +122,7 @@ theorem branchD_ct [VG.Proof.Rsa.PPC64LE.InvLaw] :
       (fun s₁ s₂ ⟨⟨d, h₁, h₂, sp⟩, hc⟩ => ⟨d, ⟨h₁, hc⟩, ⟨h₂, (validD_eq h₁ h₂) ▸ hc⟩, sp⟩) fun _ _ h => h
 
 theorem rd_rel [VG.Proof.Rsa.PPC64LE.InvLaw] : RelCT isa (Two D0) code fun _ _ => True := by
-  unfold code
+  unfold Impl.Rsa.PPC64LE.RecoverDet.code
   exact RelCT.seq rd_entry_ct (RelCT.seq rd_check_ct (RelCT.seq branchD_ct (two_taint _ pins_DD (by taint_decide))))
 
 theorem rd_ct [VG.Proof.Rsa.PPC64LE.InvLaw] : ConstantTime isa rdP.pre rdP.pub code :=

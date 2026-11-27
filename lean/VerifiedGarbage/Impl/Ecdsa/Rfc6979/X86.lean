@@ -13,10 +13,10 @@ every argument on the stack (cdecl), as on x86-64
 (`Impl/Ecdsa/Rfc6979/X86_64.lean`), for a curve of `Q`-byte scalars in `w`
 32-bit words: RFC 6979 §3.2 with HMAC over the hash function of the table
 `hmac` of the interface `Hmac` (`Spec/HmacTable.lean`), whose functions it
-calls indirectly (`tcall`): HMAC's `init` (word 0), the streaming `update`
-(word 1), on the inner state, and HMAC's `finalize` (word 2), each in a
-frame of its arguments, pushed last to first; and each candidate tried by
-calling `core`, the signature with a given `k`
+calls indirectly (`tcall`): HMAC's `init` for a key of any length (word 0),
+the streaming `update` (word 1), on the inner state, and HMAC's `finalize`
+(word 2), each in a frame of its arguments, pushed last to first; and each
+candidate tried by calling `core`, the signature with a given `k`
 (`vg_ecdsa_<curve>_sign_k`), which reads `Q` bytes of the digest and of
 `k`, and takes their leftmost `qlen` bits (`bits2int`, a right shift by
 `sh = 8 Q - qlen` bits).
@@ -59,11 +59,13 @@ A frame of `frameBytes` (512) bytes is allocated: from `esp`, `K` and `V`
 left, `h`, `X` and `core`'s digest if `big` (72 bytes each), and `T` (136
 bytes). Our arguments stay where our caller put them, above the frame and
 the return address (`argM`). The calls use only `scratch`, which `core`
-overwrites entirely, and the stack below the frame (48 bytes for HMAC's
+overwrites entirely, and the stack below the frame (76 bytes for HMAC's
+`init` for a key of any length, which the table holds, 48 for its other
 functions, besides their arguments and return address); `K`, `V` and the
 frame above `B` are cleared before the frame is freed. In `scratch`: HMAC's
 inner and outer streaming states (192 bytes each), the working space of the
-table's functions, the message, the words of a shift, and the copy of the
+table's functions (3408 bytes: HMAC's `init` for a key of any length takes
+`W + S` words), the message, the words of a shift, and the copy of the
 states for `K`.
 
 1. `X`; `h` (`reduce`, or `prepC`); `V = 0x01…`, `K = 0x00…`.
@@ -125,11 +127,11 @@ def argM (i : Nat) : Src := .mem (stk (frameBytes + 4 + 4 * i))
 def sInner : Nat := 0
 def sOuter : Nat := 192
 def sWork : Nat := 384
-def sMsg : Nat := 2256
+def sMsg : Nat := 3792
 /-- The words of a conversion, if `big`. -/
-def sSlot : Nat := 2560
+def sSlot : Nat := 4096
 /-- A copy of HMAC's two states just after `init`, for the key `K`. -/
-def sSave : Nat := 3072
+def sSave : Nat := 4608
 
 /-- Our caller's registers, where the frame keeps them. -/
 def saved : List (Reg × Nat) := [(.ebx, fSave), (.esi, fSave + 4), (.edi, fSave + 8), (.ebp, fSave + 12)]

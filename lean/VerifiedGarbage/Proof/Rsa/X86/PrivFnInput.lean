@@ -27,6 +27,22 @@ theorem PrivFnInput.savedSp {g : PrivGeometry} {bs : Fin 8 → List Byte} {s : S
   rw [← h.context.sp]
   exact (BitVec.sub_add_cancel _ _).symm
 
+/-- The frame reserved below the saved registers is `innerRegion`. -/
+theorem PrivFnInput.innerBelow {g : PrivGeometry} {bs : Fin 8 → List Byte} {s : State} (h : PrivFnInput g bs s) :
+    below ((pushed savedRegisters s).gpr .esp) VG.Impl.Rsa.X86.PrivChecked.frameBytes = g.innerRegion := by
+  show (⟨((pushed savedRegisters s).gpr .esp - BitVec.ofNat 32 VG.Impl.Rsa.X86.PrivChecked.frameBytes).setWidth 64, VG.Impl.Rsa.X86.PrivChecked.frameBytes⟩ : Region) =
+    ⟨byteAddr g.stack, VG.Impl.Rsa.X86.PrivChecked.frameBytes⟩
+  rw [← allocated_esp, show (allocated VG.Impl.Rsa.X86.PrivChecked.frameBytes (pushed savedRegisters s)).gpr .esp = g.stack from h.context.sp]
+  rfl
+
+/-- The saved registers' words are `savedRegion`. -/
+theorem PrivFnInput.savedBelow {g : PrivGeometry} {bs : Fin 8 → List Byte} {s : State} (h : PrivFnInput g bs s) :
+    below (s.gpr .esp) (4 * savedRegisters.length) = g.savedRegion := by
+  show (⟨(s.gpr .esp - BitVec.ofNat 32 (4 * savedRegisters.length)).setWidth 64, 4 * savedRegisters.length⟩ :
+    Region) = ⟨byteAddr g.stack + BitVec.ofNat 64 VG.Impl.Rsa.X86.PrivChecked.frameBytes, 16⟩
+  rw [← pushed_esp, h.savedSp]
+  exact congrArg (fun a => Region.mk a 16) (h.context.valid.offsetAddr (by decide))
+
 theorem savedRegion_separate {g : PrivGeometry} (h : g.Valid) :
     ∀ r ∈ bodyWrites g, g.savedRegion.Disjoint r := by
   intro r hr

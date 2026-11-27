@@ -12,7 +12,7 @@
 pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha256_scratch() {
     core::arch::naked_asm!(
         r#".base64 "pgIIfNH/IfggAAH4AACK+ggAqvoQAMr6GADq+iAACvsoACr7AACqOgAAhjoAAMc6AADoOgAACTsAACU7AACjOAAAxDhwA3U40AOVOA=="
-bl {vg_hmac_sha256_init}
+bl {vg_hmac_sha256_init_core}
 .base64 "AQCAOdAEYDksXZV9AAA4KA=="
 beq %cr0, 20f
 22:
@@ -40,7 +40,7 @@ b 21f
 20:
 21:
 .base64 "AACV6hAA1eoYAPXqIAAV6ygANesIALXqIAAB6DAAITimAwh8IACATg==""#,
-        vg_hmac_sha256_init = sym crate::hmac_sha256::vg_hmac_sha256_init,
+        vg_hmac_sha256_init_core = sym crate::hmac_sha256::vg_hmac_sha256_init_core::vg_hmac_sha256_init_core,
         vg_sha256_update_scratch = sym crate::sha256::vg_sha256_update_scratch::vg_sha256_update_scratch,
         vg_hmac_sha256_finalize_scratch = sym crate::hmac_sha256::vg_hmac_sha256_finalize_scratch::vg_hmac_sha256_finalize_scratch,
         vg_pbkdf2_hmac_sha256_iterate = sym crate::pbkdf2_sha256::vg_pbkdf2_hmac_sha256_iterate::vg_pbkdf2_hmac_sha256_iterate,

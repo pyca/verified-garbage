@@ -1,11 +1,77 @@
 module
+
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.Points
 public import VerifiedGarbage.Proof.Ecdsa.X86.CombLays
-
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombPoints
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafMul
 import VerifiedGarbage.Proof.Ecdsa.X86.GMul
 import VerifiedGarbage.Proof.Weierstrass.X86.Rep
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.WindowLayout
+public import VerifiedGarbage.Proof.Weierstrass.Law3
+public import VerifiedGarbage.Proof.Weierstrass.X86.Ladder
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafMulSetup
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafLayout
+import VerifiedGarbage.Proof.Ecdsa.X86.Stages
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Spec.X25519
+
+/-! ### `Ecdsa.Verify.X86.NafMul`, which this module and modules that import it used -/
+
+section
+
+/-! # The x86 P-256 variable-base product -/
+
+@[expose] public section
+
+namespace VG.Proof.Ecdsa.Verify.X86
+open VG VG.X86 VG.Impl.Mont.X86 VG.Impl.Mont VG.Impl.Weierstrass.X86 VG.Impl.Weierstrass
+open VG.Impl.Ecdsa.X86 VG.Impl.Ecdsa.Verify.X86
+open VG.Impl.Ecdh.X86 (PX PY)
+open VG.Proof.Mont.X86 VG.Proof.Mont VG.Proof.Weierstrass.X86 VG.Proof.Weierstrass
+open VG.Proof.Ecdsa.X86 Spec.Weierstrass
+variable {c : Impl.Ecdsa.X86.Cfg}
+
+theorem windowMulQ_ok (hc : CfgOk c) (h4 : c.n = 4) (hC : Law c.C) (hM3 : AM3 c.C)
+    {s : State} {base : Addr} {g : Reg → BitVec 32} (hs : Scr s base size) (F : Fixed c base g s.mem)
+    {P : Point c.C} (hP : onCurve c.C P = true)
+    (hpx : sv c base s PX < c.C.p) (hpy : sv c base s PY < c.C.p)
+    (hQ : Rep c.C (tmv c.C c.n base s (c.sl PX)) (tmv c.C c.n base s (c.sl PY))
+      (tmv c.C c.n base s (c.sl ONEP)) P) :
+    WP isa (Impl.Ecdsa.Verify.X86.Cfg.windowMulQ c) s fun u =>
+      Keeps powClob s u ∧ Unch base (windowW c) s.mem u.mem ∧
+      ModOkW c.MP' size c.C.p u.mem base ∧
+      (∀ x ∈ [c.sl RX, c.sl RY, c.sl RZ], wordsVal u.mem base x c.n < c.C.p) ∧
+      Rep c.C (tmv c.C c.n base u (c.sl RX)) (tmv c.C c.n base u (c.sl RY))
+        (tmv c.C c.n base u (c.sl RZ)) (mul (sv c base s V) P) := by
+  have hp := hc.p_ge
+  have hmont : ∀ x,c.mont x<c.C.p := fun _ => Nat.mod_lt _ (by omega_using [hpx])
+  let K := Cfg.nafQ c
+  have hL := nafQLay (c:=c) h4
+  have hW := nafQWk hc h4
+  have hm := unitMod_pow_two hc.p_odd (64*c.n)
+  have hk : sv c base s V<2^256 := by
+    change wordsVal s.mem base (c.sl V) c.n<_
+    rw [h4]; exact wordsVal_lt ..
+  unfold Cfg.windowMulQ
+  apply WP.assoc
+  apply WP.seq
+  refine WP.mono (windowMulQ_setup_ok hc h4 hC hs F hpx hpy hQ)
+    fun s₂ ⟨k₂,u₂,_,i₂,p₂,_,_,_,_⟩ => ?_
+  refine WP.seq (WP.mono (nafWindow_ok hL rfl hW (by change 3580+260≤Mont.own c.n; rw [h4]; decide)
+    hm hC hM3 (hmont 1) hk hP i₂ p₂.point p₂.zero p₂.bits) fun s₃ ⟨k₃,u₃,c₃⟩ => ?_)
+  refine WP.mono (nafFinish_ok hL hW hm hC (hmont 1)
+    (by change toM c.C.p (2^(64*c.n)) (c.mont 1)=1; rw [toM_cmont hc]; rfl) c₃)
+    fun u ⟨ku,Mu,Lu,qu⟩ => ?_
+  have UW₃ := u₃.cover (nafQ_cover h4)
+  have UW₄ := (nafTable_progUnch ku (fun _ hx => List.mem_append_left _ hx)).cover (nafQ_cover h4)
+  exact ⟨k₂.trans ((k₃.mono (by change ∀ r∈clob++[Reg.esi],r∈powClob; decide)).trans
+      (Keeps.mono ⟨ku.gpr,ku.rd,ku.wr⟩ (by decide))),
+    fun x hx => (UW₄ x hx).trans ((UW₃ x hx).trans (u₂ x hx)),Mu,Lu,qu⟩
+
+end VG.Proof.Ecdsa.Verify.X86
+
+end
+
+end
 
 /-! # Comb and signed-window products for x86 P-256 verification -/
 
@@ -30,18 +96,19 @@ theorem pointsWindow_ok (hc : CfgOk c) (hn4 : c.n = 4) (hC : Law c.C) (hT : Comb
         Region.Disjoint ⟨(s₀.gpr .eax).setWidth 64, 8 * (c.combWords d).length⟩ r)
     (hPc : onCurve c.C P = true)
     (hQ : Rep c.C (tmv c.C c.n base s (c.sl PX)) (tmv c.C c.n base s (c.sl PY))
-      (tmv c.C c.n base s (c.sl ONEP)) P) (hspG : SpOk c.gMul 20)
+      (tmv c.C c.n base s (c.sl ONEP)) P) (hst : ∀ r ∈ s₀.wr, Region.Disjoint (below (s₀.gpr .esp) c.stk) r) (hspG : SpOk c.gMul c.stk)
     (hsp : SpOk (Impl.Ecdsa.Verify.X86.Cfg.pointsWindow c) c.stk) {rest : Prog isa} {Q : State → Prop}
-    (h : ∀ s', Pts c s₀ base (fun j X Y Z => Rep c.C X Y Z (mul (sv c base s U >>> j) (G c.C))) (fun j X Y Z => Rep c.C X Y Z (mul (sv c base s V >>> j) P)) s' → WP isa rest s' Q) :
+    (h : ∀ s', Pts c s₀ base (fun j X Y Z => Rep c.C X Y Z (mul (sv c base s U >>> j) (G c.C))) (fun j X Y Z => Rep c.C X Y Z (mul (sv c base s V >>> j) P)) s' →
+      sv c base s' K = sigR c s₀ → WP isa rest s' Q) :
     WP isa (.seq (Impl.Ecdsa.Verify.X86.Cfg.pointsWindow c) rest) s Q := by
   have h0 := hc.n0
   have h7 := hc.n10
   have hn := hM.scr.nowrap
-  have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
+  obtain hpR := unitMod_pow_two hc.p_odd (64 * c.n)
   have hp3 := hc.p_ge
   have F := hM.fixed
-  have hmont : ∀ x, c.mont x < c.C.p := fun x => Nat.mod_lt _ (by omega_using [hp3])
-  have tb : ∀ {i}, i < 45 → ∀ w ∈ [(bitsAt c.n 0, 64 * c.n)], c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i :=
+  obtain hmont : ∀ x, c.mont x < c.C.p := fun x => Nat.mod_lt _ (by omega_using [hp3])
+  obtain tb : ∀ {i}, i < 45 → ∀ w ∈ [(bitsAt c.n 0, 64 * c.n)], c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i :=
     fun hi => apart_tbl hi 0
   refine WP.seq (hM.keep.withSp hsp ?_)
   unfold Impl.Ecdsa.Verify.X86.Cfg.pointsWindow
@@ -49,12 +116,12 @@ theorem pointsWindow_ok (hc : CfgOk c) (hn4 : c.n = 4) (hC : Law c.C) (hT : Comb
   refine WP.seq (WP.mono (bits_ok hM.scr h0 (sl_le c h7 (i := U) (by decide)) (tbl_le h7)
     (Or.inl (by have := sl_below_bits c (i := U) (by decide) 0 0; omega_using [this])))
     fun s₁ ⟨b₁, k₁, O₁⟩ => ?_)
-  have hs₁ := hM.scr.of_keeps k₁ (by decide)
+  obtain hs₁ := hM.scr.of_keeps k₁ (by decide)
   have U₁ : Unch base [(bitsAt c.n 0, 64 * c.n)] s.mem s₁.mem := O₁.unch
-  have F₁ := F.unch h7 hn (fixedOk_tbl 0) U₁
-  have v₁ : ∀ {i}, i < 45 → sv c base s₁ i = sv c base s i := fun hi => sv_unch U₁ h7 hn hi (tb hi)
+  obtain F₁ := F.unch h7 hn (fixedOk_tbl 0) U₁
+  obtain v₁ : ∀ {i}, i < 45 → sv c base s₁ i = sv c base s i := fun hi => sv_unch U₁ h7 hn hi (tb hi)
   -- `[u]G`.
-  refine WP.seq (WP.mono (gMul_ok' hc hC hT hCo ham3 hs₁ F₁
+  refine WP.seq (WP.mono (gMul_ok' hc hC hT hCo hs₁ F₁
     (wordsVal_lt s.mem base (c.sl U) c.n)
     (by rw [v₁ (by decide), hM.rx]) (by rw [v₁ (by decide), hM.ry])
     (by rw [v₁ (by decide), hM.rz]) b₁ (fun d hd => by
@@ -62,27 +129,23 @@ theorem pointsWindow_ok (hc : CfgOk c) (hn4 : c.n = 4) (hC : Law c.C) (hT : Comb
       refine ⟨ht.of_unch (by rw [k₁.rd, k₁.wr]) U₁
         (fun w hw => by rw [List.mem_singleton.mp hw]; exact tbl_le h7) ho, ho, ?_⟩
       rw [k₁.wr, k₁.1 _ (by decide), hM.wr, hM.esp]
-      intro r hr
-      rcases List.mem_append.mp hr with hr | hr
-      · exact hap r (List.mem_append_left _ hr)
-      · rw [List.mem_singleton.mp hr]
-        exact (hap _ (List.mem_append_right _ (List.mem_singleton_self _))).sub_right
-          (below_sub (Cfg.stk_ge c) hM.sp_lo))
-    (by rw [k₁.1 _ (by decide), hM.esp]; exact Nat.le_trans (Cfg.stk_ge c) hM.sp_lo) hspG)
+      exact hap)
+    (by rw [k₁.wr, k₁.1 _ (by decide), hM.wr, hM.esp]; exact hst)
+    (by rw [k₁.1 _ (by decide), hM.esp]; exact hM.sp_lo) hspG)
     fun s₂ ⟨K₂, U₂, M₂, L₂, q₂⟩ => ?_)
-  have hs₂ := hs₁.of_keeps K₂ (by decide)
-  have F₂ := F₁.unch h7 hn fixedOk_gW U₂
+  obtain hs₂ := hs₁.of_keeps K₂ (by decide)
+  obtain F₂ := F₁.unch h7 hn fixedOk_gW U₂
   -- `U = [u]G`, `R = O`.
   refine WP.seq (WP.mono (save_ok hc hs₂) fun s₃ ⟨hs₃, k₃, U₃, ux₃, uy₃, uz₃, rx₃, ry₃, rz₃⟩ => ?_)
-  have F₃ := F₂.unch h7 hn (fixedOk_slW (by decide)) U₃
+  obtain F₃ := F₂.unch h7 hn (fixedOk_slW (by decide)) U₃
   -- Preserve the peer and scalar across the fixed-base multiplication.
-  have subG : ∀ i ∈ [RX, RY, RZ, TX, TY, TZ, PT, T0, T1, T2, T3, T4, T5, DX, DY, DZ, TMP, EM],
+  obtain subG : ∀ i ∈ [RX, RY, RZ, TX, TY, TZ, PT, T0, T1, T2, T3, T4, T5, DX, DY, DZ, TMP, EM],
       i ∈ combPtsW := by decide
-  have sub₃ : ∀ i ∈ saveW, i ∈ combPtsW := by decide
-  have W₃ : ∀ {i}, i < 45 → i ∉ combPtsW → sv c base s₃ i = sv c base s i := fun hi hl =>
+  obtain sub₃ : ∀ i ∈ saveW, i ∈ combPtsW := by decide
+  obtain W₃ : ∀ {i}, i < 45 → i ∉ combPtsW → sv c base s₃ i = sv c base s i := fun hi hl =>
     ((sv_unch U₃ h7 hn hi (apart_slW (fun h => hl (sub₃ _ h)))).trans
       (sv_unch U₂ h7 hn hi (apart_gW hi (fun h => hl (subG _ h))))).trans (v₁ hi)
-  have tv₃ : ∀ {i}, i < 45 → i ∉ combPtsW →
+  obtain tv₃ : ∀ {i}, i < 45 → i ∉ combPtsW →
       tmv c.C c.n base s₃ (c.sl i) = tmv c.C c.n base s (c.sl i) := fun hi hl => by
     change toM _ _ (sv c base s₃ _) = toM _ _ (sv c base s _)
     rw [W₃ hi hl]
@@ -91,19 +154,19 @@ theorem pointsWindow_ok (hc : CfgOk c) (hn4 : c.n = 4) (hC : Law c.C) (hT : Comb
     (by rw [W₃ (by decide) (by decide)]; exact hM.py_lt)
     (by rw [tv₃ (by decide) (by decide), tv₃ (by decide) (by decide), tv₃ (by decide) (by decide)]; exact hQ))
     fun s₅ ⟨K₅, U₅, M₅, L₅, q₅⟩ => ?_)
-  have hs₅ := hs₃.of_keeps K₅ (by decide)
-  have F₅ := F₃.unch h7 hn (windowW_fixed hn4) U₅
-  have v₅ : ∀ {i}, i < 45 → i ∉ combPtsW → sv c base s₅ i = sv c base s₃ i := fun hi hl =>
+  obtain hs₅ := hs₃.of_keeps K₅ (by decide)
+  obtain F₅ := F₃.unch h7 hn (windowW_fixed hn4) U₅
+  obtain v₅ : ∀ {i}, i < 45 → i ∉ combPtsW → sv c base s₅ i = sv c base s₃ i := fun hi hl =>
     sv_unch U₅ h7 hn hi (windowW_apart hn4 hi (fun h => hl (by
-      have sub : ∀ i ∈ windowSlots, i ∈ combPtsW := by decide
+      obtain sub : ∀ i ∈ windowSlots, i ∈ combPtsW := by decide
       exact sub _ h)))
   rw [W₃ (by decide) (by decide)] at q₅
   -- The sum.
-  have u₅ : ∀ {i}, i ∈ [UX, UY, UZ] → sv c base s₅ i = sv c base s₃ i := fun {i} hi => by
+  obtain u₅ : ∀ {i}, i ∈ [UX, UY, UZ] → sv c base s₅ i = sv c base s₃ i := fun {i} hi => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
     rcases hi with rfl | rfl | rfl <;>
       exact sv_unch U₅ h7 hn (by decide) (windowW_apart hn4 (by decide) (by decide))
-  refine WP.mono (sum_ok hc hs₅ M₅ (fun i hi => ?_)) fun s₆ ⟨hs₆, g₆, rd₆, wr₆, U₆, M₆, rz₆, t₆, rx₆⟩ f₆ => h s₆ ?_
+  refine WP.mono (sum_ok hc hs₅ M₅ (fun i hi => ?_)) fun s₆ ⟨hs₆, g₆, rd₆, wr₆, U₆, M₆, rz₆, t₆, rx₆⟩ f₆ => h s₆ ?_ ?_
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
     rcases hi with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · exact lt_of_eq_of_lt F₅.ap (hmont _)
@@ -115,27 +178,27 @@ theorem pointsWindow_ok (hc : CfgOk c) (hn4 : c.n = 4) (hC : Law c.C) (hT : Comb
     · exact L₅ _ (List.mem_cons_self ..)
     · exact L₅ _ (List.mem_cons_of_mem _ (List.mem_cons_self ..))
     · exact L₅ _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_singleton_self _)))
-  have F₆ := F₅.unch h7 hn (fixedOk_slWk (by decide)) U₆
-  have sub₆ : ∀ i ∈ sumW, i ∈ combPtsW := by decide
-  have tu : ∀ {i j}, i ∈ [UX, UY, UZ] → j ∈ [RX, RY, RZ] → sv c base s₃ i = sv c base s₂ j →
+  obtain F₆ := F₅.unch h7 hn (fixedOk_slWk (by decide)) U₆
+  obtain sub₆ : ∀ i ∈ sumW, i ∈ combPtsW := by decide
+  obtain tu : ∀ {i j}, i ∈ [UX, UY, UZ] → j ∈ [RX, RY, RZ] → sv c base s₃ i = sv c base s₂ j →
       tmv c.C c.n base s₅ (c.sl i) = tmv c.C c.n base s₂ (c.sl j) := fun hi _ e => by
     show toM _ _ (sv c base s₅ _) = toM _ _ (sv c base s₂ _)
     rw [u₅ hi, e]
-  have tR₅ : ∀ {i}, i ∈ [AP, B3P] → tmv c.C c.n base s₅ (c.sl i) = tmv c.C c.n base s (c.sl i) :=
+  obtain tR₅ : ∀ {i}, i ∈ [AP, B3P] → tmv c.C c.n base s₅ (c.sl i) = tmv c.C c.n base s (c.sl i) :=
     fun {i} hi => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
       show toM _ _ (sv c base s₅ _) = toM _ _ (sv c base s _)
       rcases hi with rfl | rfl <;> rw [v₅ (by decide) (by decide), W₃ (by decide) (by decide)]
-  have ha : tmv c.C c.n base s (c.sl AP) = Fin.ofNat c.C.p c.C.a := by
+  obtain ha : tmv c.C c.n base s (c.sl AP) = Fin.ofNat c.C.p c.C.a := by
     show toM _ _ (wordsVal s.mem base (c.sl AP) c.n) = _
     rw [F.ap]; exact toM_cmont hc _
-  have hb : tmv c.C c.n base s (c.sl B3P) = Fin.ofNat c.C.p (3 * c.C.b) := by
+  obtain hb : tmv c.C c.n base s (c.sl B3P) = Fin.ofNat c.C.p (3 * c.C.b) := by
     show toM _ _ (wordsVal s.mem base (c.sl B3P) c.n) = _
     rw [F.b3p]; exact toM_cmont hc _
-  have rm₆ : sv c base s₆ RM' = sv c base s RM' :=
+  obtain rm₆ : sv c base s₆ RM' = sv c base s RM' :=
     (sv_unch U₆ h7 hn (by decide) (apart_slWk (by decide) (by decide))).trans
       ((v₅ (by decide) (by decide)).trans (W₃ (by decide) (by decide)))
-  have flag₆ : flagW c base s₆ = flagW c base s := by
+  obtain flag₆ : flagW c base s₆ = flagW c base s := by
     rw [flagW, flag_unch U₆ h7 h0 hn (by decide), Unch.readW32 U₅ (fun w hw => ((windowW_apart hn4 (i := FLAG) (by decide) (by decide)) w hw).imp (fun h => by omega_using [hn4, h]) id) (by have := sl_le c h7 (i := FLAG) (by decide); omega_using [hn, this]),
       Unch.readW32 U₃ (fun w hw => (apart_slW (c := c) (i := FLAG) (by decide) w hw).imp (fun h => by omega_using [hn4, h]) id) (by have := sl_le c h7 (i := FLAG) (by decide); omega_using [hn, this]),
       flag_unch_gW U₂ h7 h0 hn,
@@ -159,9 +222,13 @@ theorem pointsWindow_ok (hc : CfgOk c) (hn4 : c.n = 4) (hC : Law c.C) (hT : Comb
   · exact fun _ => (sv_unch U₆ h7 hn (i := K) (by decide) (apart_slWk (by decide) (by decide))).trans
       ((v₅ (by decide) (by decide)).trans
         ((W₃ (by decide) (by decide)).trans hM.k))
+  · exact (sv_unch U₆ h7 hn (i := K) (by decide) (apart_slWk (by decide) (by decide))).trans
+      ((v₅ (by decide) (by decide)).trans
+        ((W₃ (by decide) (by decide)).trans hM.k))
 
-theorem pointsComb_ok (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c)
-    (hCo : ∀ d, c.comb = some d → CombOk c d) (ham3 : AM3 c.C) {s₀ : State} {base : Addr} {s : State}
+theorem pointsComb_ok (hc : CfgOk c) (hC : Law c.C) (hne : c.C.n < 2 ^ (8 * c.C.len)) (hT : CombTbls c)
+    (hCo : ∀ d, c.comb = some d → CombOk c d) (ham3 : c.n = 4 ∧ c.combJac = true → AM3 c.C)
+    {s₀ : State} {base : Addr} {s : State}
     (hM : Mid c s₀ base s) {P : Point c.C}
     (hTb : ∀ d, c.comb = some d → TblMem s ((s₀.gpr .eax).setWidth 64) (c.combWords d) ∧
       (∀ i < (c.combWords d).length, ∀ b < 8,
@@ -170,24 +237,23 @@ theorem pointsComb_ok (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c)
         Region.Disjoint ⟨(s₀.gpr .eax).setWidth 64, 8 * (c.combWords d).length⟩ r)
     (hPc : onCurve c.C P = true)
     (hQ : Rep c.C (tmv c.C c.n base s (c.sl PX)) (tmv c.C c.n base s (c.sl PY))
-      (tmv c.C c.n base s (c.sl ONEP)) P) (hspG : SpOk c.gMul 20)
+      (tmv c.C c.n base s (c.sl ONEP)) P) (hst : ∀ r ∈ s₀.wr, Region.Disjoint (below (s₀.gpr .esp) c.stk) r)
+    (h24 : c.stk = 24) (hspG : SpOk c.gMul c.stk)
     (hsp : SpOk (Impl.Ecdsa.Verify.X86.Cfg.pointsComb c) c.stk) {rest : Prog isa} {Q : State → Prop}
     (h : ∀ s', Pts c s₀ base (fun j X Y Z => Rep c.C X Y Z (mul (sv c base s U >>> j) (G c.C)))
-      (fun j X Y Z => Rep c.C X Y Z (mul (sv c base s V >>> j) P)) s' → WP isa rest s' Q) :
+      (fun j X Y Z => Rep c.C X Y Z (mul (sv c base s V >>> j) P)) s' →
+      sv c base s' K = sigR c s₀ → WP isa rest s' Q) :
     WP isa (.seq (Impl.Ecdsa.Verify.X86.Cfg.pointsComb c) rest) s Q := by
   unfold Impl.Ecdsa.Verify.X86.Cfg.pointsComb at hsp ⊢
-  by_cases h4 : c.n = 4
+  by_cases h4 : c.n = 4 ∧ c.combJac = true
   · rw [ite_eq_left h4] at hsp ⊢
-    exact pointsWindow_ok hc h4 hC hT hCo ham3 hM hTb hPc hQ hspG hsp h
+    exact pointsWindow_ok hc h4.1 hC hT hCo (ham3 h4) hM hTb hPc hQ hst hspG hsp h
   · rw [ite_eq_right h4] at hsp ⊢
-    have ha : tmv c.C c.n base s (c.sl AP) = Fin.ofNat c.C.p c.C.a := by
-      change toM _ _ (wordsVal s.mem base (c.sl AP) c.n) = _
-      rw [hM.fixed.ap]; exact toM_cmont hc _
-    have hb : tmv c.C c.n base s (c.sl B3P) = Fin.ofNat c.C.p (3 * c.C.b) := by
-      change toM _ _ (wordsVal s.mem base (c.sl B3P) c.n) = _
-      rw [hM.fixed.b3p]; exact toM_cmont hc _
-    exact pointsCombLadder_ok hc hC hT hCo ham3 hM hTb (step_rep hC hPc ha hb hQ)
-      (by rw [shiftRight_eq_zero (wordsVal_lt s.mem base (c.sl V) c.n), mul_zero_pt]; exact rep_infinity' hC)
-      hspG hsp h
+    obtain hQ' : Rep c.C (tmv c.C c.n base s (c.sl PX)) (tmv c.C c.n base s (c.sl PY)) 1 P := by
+      have h1 : tmv c.C c.n base s (c.sl ONEP) = 1 := by
+        change toM _ _ (wordsVal s.mem base (c.sl ONEP) c.n) = _
+        rw [hM.fixed.onep]; exact toM_one (unitMod_pow_two hc.p_odd _)
+      rw [← h1]; exact hQ
+    exact pointsCombLadder_ok hc hC hne hT hCo hM hTb hPc hQ' hst h24 hspG hsp h
 
 end VG.Proof.Ecdsa.Verify.X86

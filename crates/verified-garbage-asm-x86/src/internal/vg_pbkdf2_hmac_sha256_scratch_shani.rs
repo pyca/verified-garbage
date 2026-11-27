@@ -17,7 +17,7 @@ jae 20f
 jmp 21f
 20:
 .base64 "ie+Bx3AEAABX"
-call {vg_sha256_init}
+call {vg_sha256_init_core}
 .base64 "WLgAAAAAvgAAAACLTCQIi1QkBFVRUlBWVw=="
 call {vg_sha256_update_scratch_shani}
 .base64 "WFhYWFhYi0QkCLkAAAAAieqBwhAFAABVUlFQVw=="
@@ -66,7 +66,7 @@ jmp 24f
 24:
 .base64 "ieiLmEADAACLsEQDAACLuEgDAACLqEwDAADD"
 .p2align 6"#,
-        vg_sha256_init = sym crate::sha256::vg_sha256_init,
+        vg_sha256_init_core = sym crate::sha256::vg_sha256_init_core::vg_sha256_init_core,
         vg_sha256_update_scratch_shani = sym crate::sha256::vg_sha256_update_scratch_shani::vg_sha256_update_scratch_shani,
         vg_sha256_finalize_scratch_shani = sym crate::sha256::vg_sha256_finalize_scratch_shani::vg_sha256_finalize_scratch_shani,
         vg_hmac_sha256_init_scratch_shani = sym crate::hmac_sha256::vg_hmac_sha256_init_scratch_shani::vg_hmac_sha256_init_scratch_shani,

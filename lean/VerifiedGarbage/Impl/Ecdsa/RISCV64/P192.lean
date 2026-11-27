@@ -2,6 +2,9 @@ module
 
 public import VerifiedGarbage.Impl.Ecdsa.RISCV64.VerifyJ
 public import VerifiedGarbage.Impl.Ecdh.P192.RISCV64
+public import VerifiedGarbage.Impl.Ecdsa.RISCV64.VerifyHash
+public import VerifiedGarbage.Impl.Scrub.RISCV64
+public import VerifiedGarbage.Spec.Ecdsa.P192
 
 /-!
 # ECDSA over P-192 on RISC-V
@@ -56,8 +59,27 @@ def verifyP192 : Prog isa :=
   .seq (.block ((Sign.Cfg.nConsts p192).flatMap (fun (i, x) => setConst 4 (p192.sl i) x))) <|
   .seq (Verify.Cfg.uv p192 p192Order) <|
   .seq (VerifyJ.Cfg.joint p192 Impl.Weierstrass.dblJ) <|
-  .seq (chainPow (Cfg.chainP p192) (p192.sl ONEP) p192.FP) <|
+  .seq (Ecdh.RISCV64.Cfg.invP p192) <|
   .seq (Cfg.affineCoord p192 XM XO RX) <|
   .seq (Verify.Cfg.compare p192 p192Order) (.block (Verify.Cfg.finish p192))
 
 end VG.Impl.Ecdsa.RISCV64.P192
+
+/-! ## Verification as emitted
+
+`vg_ecdsa_p192_verify`: `VerifyHash.verifyHash` of the curve's verification,
+then its cleanup (`Impl.Scrub.RISCV64.scrubAll`): the caller-saved registers
+cleared but the 32 bits of its result, and the 80 bytes of stack its frames
+use zeroed, so that it returns without secret residue. -/
+
+namespace VG.Impl.Ecdsa.RISCV64.Fn
+
+open VG.RISCV64
+
+/-- `vg_ecdsa_p192_verify` as emitted. -/
+def verifyP192 : Prog isa :=
+  Impl.Scrub.RISCV64.scrubAll 32 80
+    (Impl.Ecdsa.RISCV64.VerifyHash.verifyHash Spec.Ecdsa.P192.inst.curve.len false
+      Impl.Ecdsa.RISCV64.P192.verifyP192)
+
+end VG.Impl.Ecdsa.RISCV64.Fn

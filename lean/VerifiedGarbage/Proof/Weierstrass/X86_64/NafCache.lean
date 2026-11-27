@@ -4,7 +4,6 @@ public import VerifiedGarbage.Impl.Weierstrass.X86_64.NafCache
 public import VerifiedGarbage.Proof.Mont.X86_64.Csub
 import VerifiedGarbage.Proof.Weierstrass.X86_64.NafTableIO
 import VerifiedGarbage.Proof.Weierstrass.X86_64.NafArith
-import VerifiedGarbage.Proof.Weierstrass.X86_64.NafCopy
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombSelectPass
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.RegionsSub

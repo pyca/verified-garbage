@@ -44,7 +44,7 @@ theorem step_upd {τ : T} {r : RegSet Reg} {f : Bool} {sl : Slots}
   | movdquStore m _ => exact hst m 16 hs
   | movqStore m _ => exact hst m 8 hs
   | mmxStore m _ => exact hst m 8 hs
-  | xop _ | pmuludq _ _ =>
+  | xop _ | pmuludq _ _ | pmullw _ _ | pmulhw _ _ | movdquTbl _ _ _ _ | movqTbl _ _ _ _ =>
     simp only [step, Option.some.injEq] at hs ⊢
     subst hs
     exact ⟨_, rfl, leR_upd hr hf hsl⟩
@@ -87,7 +87,7 @@ theorem step_keeps {F Φ σ σ' : T} (i : Instr) (hk : keepsI F i = true) (hΦF 
   | movdquStore m _ => exact hst m 16 hs
   | movqStore m _ => exact hst m 8 hs
   | mmxStore m _ => exact hst m 8 hs
-  | xop _ | pmuludq _ _ =>
+  | xop _ | pmuludq _ _ | pmullw _ _ | pmulhw _ _ | movdquTbl _ _ _ _ | movqTbl _ _ _ _ =>
     simp only [step, Option.some.injEq] at hs
     subst hs; exact hΦ
   | mop op =>
@@ -114,9 +114,15 @@ instance : VG.Taint.Frame sseTaint :=
     R_right := taintFrameOfTaint.R_right
     le_R := taintFrameOfTaint.le_R
     step := fun {τ σ τ'} i h hs => by
-      have hs : SseTaint.step τ i = some τ' := hs
-      obtain ⟨σ', h₁, h₂⟩ := SseTaint.LeR.step (leR_iff.mp h) i hs
-      exact ⟨σ', h₁, leR_iff.mpr h₂⟩
+      have hs : SseTaint.stepKeep τ i = some τ' := hs
+      rcases SseTaint.stepKeep_spec τ i with ⟨h', -⟩ | ⟨a, b, h₁, h₂, hab⟩
+      · rw [h'] at hs; cases hs
+      rw [h₁] at hs; cases hs
+      obtain ⟨σ'', h₃, h₄⟩ := SseTaint.LeR.step (leR_iff.mp h) i h₂
+      rcases SseTaint.stepKeep_spec σ i with ⟨-, h'⟩ | ⟨c, d, h₅, h₆, hcd⟩
+      · rw [h'] at h₃; cases h₃
+      rw [h₆] at h₃; cases h₃
+      exact ⟨c, h₅, leR_iff.mpr (h₄.sim hab hcd)⟩
     condPub := taintFrameOfTaint.condPub
     meet := taintFrameOfTaint.meet
     call := taintFrameOfTaint.call
@@ -142,10 +148,18 @@ instance : VG.Taint.Frame sseTaint :=
     keepsCall := taintFrameOfTaint.keepsCall
     keeps_bot := taintFrameOfTaint.keeps_bot
     keepsCall_bot := taintFrameOfTaint.keepsCall_bot
-    step_keeps := fun i hk hΦF hΦ hs => SseTaint.step_keeps i hk hΦF hΦ hs
+    step_keeps := fun {F Φ σ σ'} i hk hΦF hΦ hs => by
+      have hs : SseTaint.stepKeep σ i = some σ' := hs
+      rcases SseTaint.stepKeep_spec σ i with ⟨h', -⟩ | ⟨a, b, h₁, h₂, hab⟩
+      · rw [h'] at hs; cases hs
+      rw [h₁] at hs; cases hs
+      have h := frLe_iff.mp (SseTaint.step_keeps i hk hΦF hΦ h₂)
+      exact frLe_iff.mpr ⟨hab.regs ▸ h.1, fun e => hab.flags ▸ h.2 e⟩
     call_keeps := taintFrameOfTaint.call_keeps
     ret_keeps := taintFrameOfTaint.ret_keeps
     push_keeps := taintFrameOfTaint.push_keeps
     pop_keeps := taintFrameOfTaint.pop_keeps }
+
+kernel_fn VG.Taint.checkSum sseTaint, VG.Taint.checkSumLe sseTaint, VG.Taint.keepsSum sseTaint
 
 end VG.X86

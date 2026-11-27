@@ -75,7 +75,7 @@ theorem pub_data {s₁ s₂ : State} (h : (Proof.RsaKeyGen.keyContract RISCV64.a
     stackArgs_ten, List.append_eq] at h
   simp only [List.getD_cons_succ, List.getD_cons_zero] at h
   obtain ⟨hsp, hl, r0, r1, r2, r3, r4, r5, r6, r7, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9⟩ := h
-  have he : (eB s₁).map (·.toNat) = (eB s₂).map (·.toNat) :=
+  obtain he : (eB s₁).map (·.toNat) = (eB s₂).map (·.toNat) :=
     (List.append_inj hl (by simp only [Spec.Rsa.bytesAt, List.length_map, List.length_range, a7])).1
   unfold dataOf
   rw [he]
@@ -135,7 +135,7 @@ theorem exec_shaped {s s' : State} {t : List Leak} (h : Exec isa (.seq body (.bl
   obtain ⟨_, _, _, h8, g8, rfl⟩ := seq_inv g7
   obtain ⟨_, _, _, h9, g9, rfl⟩ := seq_inv g8
   obtain ⟨_, _, _, hl, hi, rfl⟩ := seq_inv g9
-  have e := Exec.seq (Exec.seq h1 (Exec.seq h2 (Exec.seq (Exec.seq h3 h4) (Exec.seq h5 (Exec.seq h6
+  obtain e := Exec.seq (Exec.seq h1 (Exec.seq h2 (Exec.seq (Exec.seq h3 h4) (Exec.seq h5 (Exec.seq h6
     (Exec.seq h7 (Exec.seq h8 h9))))))) (Exec.seq hl (Exec.seq hi (Exec.seq hR1 hR)))
   simp only [List.append_assoc] at e ⊢
   exact e
@@ -165,7 +165,7 @@ theorem exec_split {s s' : State} {t : List Leak} (h : Exec isa shaped s t s') :
   obtain ⟨_, _, _, h1, g5, rfl⟩ := seq_inv g4
   obtain ⟨_, _, _, h2, g6, rfl⟩ := seq_inv g5
   obtain ⟨_, _, _, h3, g7, rfl⟩ := seq_inv g6
-  have e := Exec.seq (Exec.seq (Exec.seq hp (Exec.seq hl hi)) (Exec.seq h1 (Exec.seq h2 h3))) (Exec.seq g7 hR)
+  obtain e := Exec.seq (Exec.seq (Exec.seq hp (Exec.seq hl hi)) (Exec.seq h1 (Exec.seq h2 h3))) (Exec.seq g7 hR)
   simp only [List.append_assoc] at e ⊢
   exact e
 
@@ -185,7 +185,7 @@ theorem exec_front {s s' : State} {t : List Leak}
   obtain ⟨_, _, _, h8, g8, rfl⟩ := seq_inv g7
   obtain ⟨_, _, _, h9, g9, rfl⟩ := seq_inv g8
   obtain ⟨_, _, _, hl, hi, rfl⟩ := seq_inv g9
-  have e := Exec.seq (Exec.seq (Exec.seq h1 (Exec.seq h2 (Exec.seq (Exec.seq h3 h4) (Exec.seq h5 (Exec.seq h6
+  obtain e := Exec.seq (Exec.seq (Exec.seq h1 (Exec.seq h2 (Exec.seq (Exec.seq h3 h4) (Exec.seq h5 (Exec.seq h6
     (Exec.seq h7 (Exec.seq h8 h9))))))) (Exec.seq hl hi)) gP
   simp only [front', front1, postA, seqs, List.append_assoc] at e ⊢
   exact e
@@ -205,7 +205,7 @@ theorem exec_front1 {s s' : State} {t : List Leak}
   obtain ⟨_, _, _, h8, g8, rfl⟩ := seq_inv g7
   obtain ⟨_, _, _, h9, g9, rfl⟩ := seq_inv g8
   obtain ⟨_, _, _, hl, hi, rfl⟩ := seq_inv g9
-  have e := Exec.seq (Exec.seq h1 (Exec.seq h2 (Exec.seq (Exec.seq h3 h4) (Exec.seq h5 (Exec.seq h6
+  obtain e := Exec.seq (Exec.seq h1 (Exec.seq h2 (Exec.seq (Exec.seq h3 h4) (Exec.seq h5 (Exec.seq h6
     (Exec.seq h7 (Exec.seq h8 h9))))))) (Exec.seq hl hi)
   simp only [front1, List.append_assoc] at e ⊢
   exact e
@@ -308,57 +308,57 @@ theorem pins_S5 : Pins S5 bodyPins := fun _ _ _ ⟨_x, hx, _, _, ex⟩ ⟨_y, hy
 theorem pre_ok [VG.Proof.Rsa.RISCV64.InvLaw] {s0 v : State} (h : PreC s0) (c : CB s0 s0.mem v)
     (ha7 : v.gpr .a7 = stackArg s0 7) :
     WP isa pre v fun t => ∃ V F, KE s0 V F t ∧ F X3 = Spec.Rsa.os2ip (eB s0) % 2 := by
-  have hpw : Spec.Rsa.os2ip (pB s0) < 2 ^ (8 * pLen s0) := os2ip_bytes_lt _ _ _
-  have hqw : Spec.Rsa.os2ip (qB s0) < 2 ^ (8 * pLen s0) := os2ip_bytes_lt _ _ _
-  have hew : Spec.Rsa.os2ip (eB s0) < 2 ^ 64 :=
+  obtain hpw : Spec.Rsa.os2ip (pB s0) < 2 ^ (8 * pLen s0) := os2ip_bytes_lt _ _ _
+  obtain hqw : Spec.Rsa.os2ip (qB s0) < 2 ^ (8 * pLen s0) := os2ip_bytes_lt _ _ _
+  obtain hew : Spec.Rsa.os2ip (eB s0) < 2 ^ 64 :=
     Nat.lt_of_lt_of_le (os2ip_bytes_lt _ _ _) (Nat.pow_le_pow_right (by decide) (by have := h.e2; omega_using [this]))
   unfold pre
   simp only [seqs]
   refine WP.seq (WP.mono (setup_ok h c ha7) fun t1 ⟨c1, a71⟩ => ?_)
   refine WP.seq (WP.mono (loads_ok h c1 a71) fun t2 ⟨c2, p2, q2, e2⟩ => ?_)
   refine WP.seq (WP.mono (consts_ok h c2 (by decide)) fun t3 ⟨c3, k3, o3⟩ => ?_)
-  have z3 : nm s0 t3.mem aZero = 0 := c3.zero (j := aZero) (by decide) (by decide)
+  obtain z3 : nm s0 t3.mem aZero = 0 := c3.zero (j := aZero) (by decide) (by decide)
   refine WP.seq (WP.mono (primes_ok c3 k3.one z3) fun t4 ⟨c4, o4, p4, q4, pm4, qm4⟩ => ?_)
-  have k4 : ∀ j, j < nArr → j ∉ primesArrs → j ∉ constArrs → nm s0 t4.mem j = nm s0 t2.mem j :=
+  obtain k4 : ∀ j, j < nArr → j ∉ primesArrs → j ∉ constArrs → nm s0 t4.mem j = nm s0 t2.mem j :=
     fun j hj h1 h2 => (o4 j hj h1).trans (o3 j hj h2)
-  have one4 : nm s0 t4.mem aOne = 1 := by rw [o4 _ (by decide) (by decide)]; exact k3.one
-  have two4 : nm s0 t4.mem aTwo = 2 := by rw [o4 _ (by decide) (by decide)]; exact k3.two
-  have three4 : nm s0 t4.mem aThree = 3 := by rw [o4 _ (by decide) (by decide)]; exact k3.three
-  have zero4 : nm s0 t4.mem aZero = 0 := by rw [o4 _ (by decide) (by decide)]; exact z3
-  have pq4 : nm s0 t4.mem aP < 2 ^ (8 * pLen s0) ∧ nm s0 t4.mem aQ < 2 ^ (8 * pLen s0) := by
-    have hp0 : nm s0 t3.mem aP0 = Spec.Rsa.os2ip (pB s0) := (o3 aP0 (by decide) (by decide)).trans p2
-    have hq0 : nm s0 t3.mem aQ0 = Spec.Rsa.os2ip (qB s0) := (o3 aQ0 (by decide) (by decide)).trans q2
+  obtain one4 : nm s0 t4.mem aOne = 1 := by rw [o4 _ (by decide) (by decide)]; exact k3.one
+  obtain two4 : nm s0 t4.mem aTwo = 2 := by rw [o4 _ (by decide) (by decide)]; exact k3.two
+  obtain three4 : nm s0 t4.mem aThree = 3 := by rw [o4 _ (by decide) (by decide)]; exact k3.three
+  obtain zero4 : nm s0 t4.mem aZero = 0 := by rw [o4 _ (by decide) (by decide)]; exact z3
+  obtain pq4 : nm s0 t4.mem aP < 2 ^ (8 * pLen s0) ∧ nm s0 t4.mem aQ < 2 ^ (8 * pLen s0) := by
+    obtain hp0 : nm s0 t3.mem aP0 = Spec.Rsa.os2ip (pB s0) := (o3 aP0 (by decide) (by decide)).trans p2
+    obtain hq0 : nm s0 t3.mem aQ0 = Spec.Rsa.os2ip (qB s0) := (o3 aQ0 (by decide) (by decide)).trans q2
     rw [p4, q4, hp0, hq0]
     constructor <;> split <;> with_reducible assumption
-  have hpm : nm s0 t4.mem aPm < 2 ^ (8 * pLen s0) := by rw [pm4]; have := pq4.1; omega_using [pq4]
-  have hqm : nm s0 t4.mem aQm < 2 ^ (8 * pLen s0) := by rw [qm4]; have := pq4.2; omega_using [pq4]
-  have hdv : word t4.mem (bOf s0) (arr (wOf s0) aDv + 8 * wOf s0) = 0 :=
+  obtain hpm : nm s0 t4.mem aPm < 2 ^ (8 * pLen s0) := by rw [pm4]; have := pq4.1; omega_using [pq4]
+  obtain hqm : nm s0 t4.mem aQm < 2 ^ (8 * pLen s0) := by rw [qm4]; have := pq4.2; omega_using [pq4]
+  obtain hdv : word t4.mem (bOf s0) (arr (wOf s0) aDv + 8 * wOf s0) = 0 :=
     c4.word_zero (j := aDv) (by decide) (by decide) (by omega_using [])
   refine WP.seq (WP.mono (lcmPart_ok h c4 one4 two4 three4 zero4 hpm hqm hdv) fun t5 ⟨c5, o5, _, dv5⟩ => ?_)
-  have e5 := KE.of_st c5 dv5
-  have v5 : ∀ j, j < nArr → j ∉ lcmArrs → j ∉ primesArrs → j ∉ constArrs →
+  obtain e5 := KE.of_st c5 dv5
+  obtain v5 : ∀ j, j < nArr → j ∉ lcmArrs → j ∉ primesArrs → j ∉ constArrs →
       nm s0 t5.mem j = nm s0 t2.mem j := fun j hj h1 h2 h3 => (o5 j hj h1).trans (k4 j hj h2 h3)
-  have one5 : nm s0 t5.mem aOne = 1 := by rw [o5 _ (by decide) (by decide)]; exact one4
-  have two5 : nm s0 t5.mem aTwo = 2 := by rw [o5 _ (by decide) (by decide)]; exact two4
-  have three5 : nm s0 t5.mem aThree = 3 := by rw [o5 _ (by decide) (by decide)]; exact three4
-  have zero5 : nm s0 t5.mem aZero = 0 := by rw [o5 _ (by decide) (by decide)]; exact zero4
-  have ve5 : nm s0 t5.mem aE = Spec.Rsa.os2ip (eB s0) := by
+  obtain one5 : nm s0 t5.mem aOne = 1 := by rw [o5 _ (by decide) (by decide)]; exact one4
+  obtain two5 : nm s0 t5.mem aTwo = 2 := by rw [o5 _ (by decide) (by decide)]; exact two4
+  obtain three5 : nm s0 t5.mem aThree = 3 := by rw [o5 _ (by decide) (by decide)]; exact three4
+  obtain zero5 : nm s0 t5.mem aZero = 0 := by rw [o5 _ (by decide) (by decide)]; exact zero4
+  obtain ve5 : nm s0 t5.mem aE = Spec.Rsa.os2ip (eB s0) := by
     rw [v5 _ (by decide) (by decide) (by decide) (by decide)]; exact e2
   refine WP.seq (WP.mono (eFlags_ok e5 one5 three5) fun t6 ⟨V6, F6, e6, o6, p6, x3, x4, x5⟩ => ?_)
-  have ve6 : V6 aE = Spec.Rsa.os2ip (eB s0) := by rw [o6 _ (by decide)]; exact ve5
-  have one6 : V6 aOne = 1 := by rw [o6 _ (by decide)]; exact one5
-  have two6 : V6 aTwo = 2 := by rw [o6 _ (by decide)]; exact two5
-  have three6 : V6 aThree = 3 := by rw [o6 _ (by decide)]; exact three5
-  have zero6 : V6 aZero = 0 := by rw [o6 _ (by decide)]; exact zero5
-  have hew6 : V6 aE < 2 ^ 64 := by rw [ve6]; exact hew
-  have x3' : F6 X3 = V6 aE % 2 := by rw [x3, o6 aE (by decide)]
-  have x5' : F6 X5 = if V6 aE < 3 then 1 else 0 := by rw [x5, o6 aE (by decide)]
+  obtain ve6 : V6 aE = Spec.Rsa.os2ip (eB s0) := by rw [o6 _ (by decide)]; exact ve5
+  obtain one6 : V6 aOne = 1 := by rw [o6 _ (by decide)]; exact one5
+  obtain two6 : V6 aTwo = 2 := by rw [o6 _ (by decide)]; exact two5
+  obtain three6 : V6 aThree = 3 := by rw [o6 _ (by decide)]; exact three5
+  obtain zero6 : V6 aZero = 0 := by rw [o6 _ (by decide)]; exact zero5
+  obtain hew6 : V6 aE < 2 ^ 64 := by rw [ve6]; exact hew
+  obtain x3' : F6 X3 = V6 aE % 2 := by rw [x3, o6 aE (by decide)]
+  obtain x5' : F6 X5 = if V6 aE < 3 then 1 else 0 := by rw [x5, o6 aE (by decide)]
   refine WP.seq (WP.mono (dOdd_ok h e6 hew6 one6 two6 three6 zero6 x3' x5')
     fun t7 ⟨V7, F7, e7, o7, p7, _, _, _, _, x6⟩ => ?_)
-  have one7 : V7 aOne = 1 := by rw [o7 _ (by decide) (by decide), o6 _ (by decide)]; exact one5
-  have b4 : F7 X4 ≤ 1 := by
+  obtain one7 : V7 aOne = 1 := by rw [o7 _ (by decide) (by decide), o6 _ (by decide)]; exact one5
+  obtain b4 : F7 X4 ≤ 1 := by
     rw [p7 X4 (by decide) (by decide) (by decide) (by decide), x4]; split <;> omega_using []
-  have b6 : F7 X6 ≤ 1 := by rw [x6]; split <;> omega_using []
+  obtain b6 : F7 X6 ≤ 1 := by rw [x6]; split <;> omega_using []
   refine WP.mono (dOne_ok e7 one7 b4 b6) fun t ⟨V8, F8, e8, _, p8, _, _⟩ => ⟨V8, F8, e8, ?_⟩
   rw [p8 X3 (by decide) (by decide) (by decide), p7 X3 (by decide) (by decide) (by decide) (by decide), x3]
   exact congrArg (· % 2) ve5
@@ -376,7 +376,7 @@ theorem ld_rel : RelCT isa (Two S3) ldX3 (Two S4) :=
 theorem shaped_rel [VG.Proof.Rsa.RISCV64.InvLaw] (hF1 : ∀ d s, S2 d s → WP isa front1 s (S5 d))
     (hF : ∀ d s, S2 d s → WP isa front' s (S5 d)) :
     RelCT isa (Two S2) (.seq front' postB) fun _ _ => True := by
-  have hA : RelCT isa (Two S2) front1 fun _ _ => True := by
+  obtain hA : RelCT isa (Two S2) front1 fun _ _ => True := by
     refine RelCT.seq (R := Two S3) pre_rel (RelCT.seq (R := Two S4) ld_rel (RelCT.ite ?_ ?_ ?_))
     · rintro s₁ s₂ ⟨a, ⟨x, hx, -, -, -, x5⟩, ⟨y, hy, -, -, -, y5⟩, -⟩
       rw [Steps.eval_nonzero, Steps.eval_nonzero, BitVec.eq_of_toNat_eq (x5.trans (by rw [(hx.same hy).e, y5]))]
@@ -384,8 +384,8 @@ theorem shaped_rel [VG.Proof.Rsa.RISCV64.InvLaw] (hF1 : ∀ d s, S2 d s → WP i
         fun _ _ h => h
     · exact RelCT.mono (two_taint (Φ := S4) bodyPins pins_S4 (by taint_decide)) (fun _ _ h => h.1)
         fun _ _ h => h
-  have hB : RelCT isa (Two S5) postA fun _ _ => True := two_taint bodyPins pins_S5 (by taint_decide)
-  have hfront : RelCT isa (Two S2) front' (Two S5) := two_post (RelCT.seq (two_post hA hF1) hB) hF
+  obtain hB : RelCT isa (Two S5) postA fun _ _ => True := two_taint bodyPins pins_S5 (by taint_decide)
+  obtain hfront : RelCT isa (Two S2) front' (Two S5) := two_post (RelCT.seq (two_post hA hF1) hB) hF
   exact RelCT.seq hfront (two_taint bodyPins pins_S5 (by taint_decide))
 
 theorem argRegs_ne_t0 : ∀ r ∈ argRegs, r ∉ ([.t0] : List Reg) := by decide
@@ -400,17 +400,17 @@ theorem key_rel [VG.Proof.Rsa.RISCV64.InvLaw] (hF1 : ∀ d s, S2 d s → WP isa 
   · -- `save`'s first part.
     refine two_post (two_taint [] (fun _ _ _ _ _ r hr => absurd hr List.not_mem_nil) (by taint_decide))
       fun a s c0 => ?_
-    have h := preC_of c0.1
+    obtain h := preC_of c0.1
     exact WP.mono (save1_ok s (i := 8) (by decide) (arg_in (by rw [h.hrd]; simp) (by decide)) (arg_al h 8))
       fun t ⟨tt, k⟩ => ⟨s, c0, tt, k⟩
   · -- `save`'s second part and the moves.
     refine two_post (two_taint (.t0 :: argRegs) ?_ (by taint_decide)) fun a s ⟨s0, c0, ht⟩ => ?_
     · rintro a s₁ s₂ ⟨x, hx, ⟨tx, -, -⟩, kx⟩ ⟨y, hy, ⟨ty, -, -⟩, ky⟩ r hr
-      have hs := hx.same hy
+      obtain hs := hx.same hy
       rcases List.mem_cons.mp hr with rfl | hr
       · rw [tx, ty, bOf, bOf, hs.args 8 (by decide)]
       · rw [kx.gpr (argRegs_ne_t0 r hr), ky.gpr (argRegs_ne_t0 r hr), hs.regs r hr]
-    have h := preC_of c0.1
+    obtain h := preC_of c0.1
     have hz := h.zk
     rw [WP.block_append_iff]
     exact WP.mono (save2_ok s0 h.scr (by omega_arith) ht) fun u hu => WP.mono (moves_ok h hu) fun v ⟨c, a7⟩ =>

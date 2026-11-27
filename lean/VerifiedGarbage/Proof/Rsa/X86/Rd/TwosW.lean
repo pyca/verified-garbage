@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Rsa.X86.WordRt.Prep
 public import VerifiedGarbage.Proof.Bignum.ShiftStages
 public import VerifiedGarbage.Spec.Rsa.RecoverDet
 import VerifiedGarbage.Proof.Rsa.X86.Rd.Loops
-import VerifiedGarbage.Proof.Rsa.X86.Rd.Move
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # The halvings of Appendix C.2 by stages on i686

@@ -116,7 +116,7 @@ theorem Prep.layout {s : State} {B : Addr} {L w c : Nat} (h : Prep s B L w c) :
 
 theorem Prep.prepared {s : State} {B : Addr} {L w c : Nat} (h : Prep s B L w c) (h5 : A s.mem B w 5 < c) :
     Proof.MillerRabin.Round.Prepared Proof.MillerRabin.Round.compact s.mem B := by
-  have hn : Proof.Rsa.Mont.numAt s.mem B w 0 = c := (numAt_eq s.mem B w 0).trans h.n
+  obtain hn : Proof.Rsa.Mont.numAt s.mem B w 0 = c := (numAt_eq s.mem B w 0).trans h.n
   simp only [Proof.MillerRabin.Round.Prepared, h.width, hn, Proof.MillerRabin.Round.compact]
   refine ⟨h.c3, h.odd, h.inv, ?_, ?_, ?_, ?_, ?_⟩
   · rw [numAt_eq]; exact h5
@@ -134,8 +134,8 @@ theorem Prep.keep {s t : State} {B : Addr} {L w c : Nat} (h : Prep s B L w c) (e
       d = slot w 27 + 8 * w) → word t.mem B d = word s.mem B d)
     (hv : ∀ j, (j = 0 ∨ j = 1 ∨ j = 9 ∨ j = 10 ∨ j = 27) → A t.mem B w j = A s.mem B w j) :
     Prep t B L w c := by
-  have h56 := hw 56 (by simp)
-  have h0 := hw (slot w 0) (by simp)
+  obtain h56 := hw 56 (by simp)
+  obtain h0 := hw (slot w 0) (by simp)
   refine ⟨env, (hw 0 (by simp)).trans h.len, (hw 48 (by simp)).trans h.wW, (hw 224 (by simp)).trans h.strideW,
     fun j hj => (hw _ (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨j, hj, rfl⟩)))))).trans (h.arrW j hj),
     (hv 0 (by simp)).trans h.n, h.c3, h.odd, by rw [h0, h56]; exact h.inv, by rw [h0]; exact ht1,
@@ -159,8 +159,8 @@ theorem Prep.transfer {s t : State} {B : Addr} {L w c : Nat} (h : Prep s B L w c
     (hv : ∀ j, slot w j + 8 * w ≤ 8 * L → (∀ i, slot w j ≤ i → i < slot w j + 8 * w → Kept w i) →
       A t.mem B w j = A s.mem B w j) : Prep t B L w c := by
   have hZ := env.hZ
-  have es : ∀ j, slot w j = 256 + j * (8 * (w + 2)) := fun _ => rfl
-  have hZ' : 256 + 28 * (8 * (w + 2)) ≤ 8 * L := by rw [← es]; exact hZ
+  obtain es : ∀ j, slot w j = 256 + j * (8 * (w + 2)) := fun _ => rfl
+  obtain hZ' : 256 + 28 * (8 * (w + 2)) ≤ 8 * L := by rw [← es]; exact hZ
   refine h.keep env ht1 (fun d hd => ?_) (fun j hj => ?_)
   · rcases hd with rfl | rfl | rfl | rfl | ⟨j, hj, rfl⟩ | rfl | rfl
     · exact hw 0 (by omega_arith) (by kept_tac)
@@ -173,7 +173,7 @@ theorem Prep.transfer {s t : State} {B : Addr} {L w c : Nat} (h : Prep s B L w c
     · have s27 := es 27
       exact hw (slot w 27 + 8 * w) (by omega_arith) (by kept_tac)
   · have s27 := es 27
-    have k27 : ∀ i, slot w 27 ≤ i → i < slot w 27 + 8 * w → Kept w i := by
+    obtain k27 : ∀ i, slot w 27 ≤ i → i < slot w 27 + 8 * w → Kept w i := by
       intro i h1 h2
       refine ⟨fun k hk => ?_, fun j hj => ?_, Or.inr h1⟩
       · simp only [List.mem_cons, List.not_mem_nil, or_false] at hk
@@ -220,7 +220,7 @@ structure RcMid (s : State) (B : Addr) (L w c a : Nat) (t : State) : Prop where
 theorem kept_sep {w : Nat} : ∀ d k, 0 < k → (∀ i, d ≤ i → i < d + k → Kept w i) → ∀ j ∈ [2, 3, 5],
     d + k ≤ slot w j ∨ slot w j + 8 * (w + 2) ≤ d := by
   intro d k hk0 hk j hj
-  have hjm : j ∈ [2, 3, 5, 6, 8] := by
+  obtain hjm : j ∈ [2, 3, 5, 6, 8] := by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hj ⊢
     rcases hj with rfl | rfl | rfl <;> simp
   by_contra hc
@@ -238,9 +238,9 @@ theorem rcHead_ok {s : State} {B : Addr} {L w c a : Nat} (h : Prep s B L w c)
   have hZ := e.hZ
   have hw4 := e.hw
   have hw128 := e.hw'
-  have es : ∀ j, slot w j = 256 + j * (8 * (w + 2)) := fun _ => rfl
-  have hZ' : 256 + 28 * (8 * (w + 2)) ≤ 8 * L := by rw [← es]; exact hZ
-  have hR : Nat.Coprime (2 ^ (64 * w)) c := VG.Proof.Bignum.coprime_pow2 h.odd _
+  obtain es : ∀ j, slot w j = 256 + j * (8 * (w + 2)) := fun _ => rfl
+  obtain hZ' : 256 + 28 * (8 * (w + 2)) ≤ 8 * L := by rw [← es]; exact hZ
+  obtain hR : Nat.Coprime (2 ^ (64 * w)) c := VG.Proof.Bignum.coprime_pow2 h.odd _
   -- The witness in Montgomery form.
   refine WP.seq (WP.mono (Pub.montOp_ok e.hs (o := 5) (a := 4) (b := 1) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) (by decide) (by omega_arith) (by omega_arith)
@@ -250,28 +250,28 @@ theorem rcHead_ok {s : State} {B : Addr} {L w c a : Nat} (h : Prep s B L w c)
   have hn0 : wordsVal s.mem B (slot w 0) w = c := h.n
   rw [hn0] at lt₁ eq₁
   rw [show wordsVal s.mem B (slot w 4) w = a from ha, show wordsVal s.mem B (slot w 1) w = _ from h.r1] at eq₁
-  have h5 : A s₁.mem B w 5 = a % c * 2 ^ (64 * w) % c := by
+  obtain h5 : A s₁.mem B w 5 = a % c * 2 ^ (64 * w) % c := by
     show wordsVal s₁.mem B (slot w 5) w = _
     rw [← Nat.mod_eq_of_lt lt₁, Nat.mod_eq_of_lt hac]
     refine VG.Proof.Bignum.mont_cancel hR ?_
     rw [eq₁, Nat.mul_mod, Nat.mod_mod, ← Nat.mul_mod, Nat.mul_assoc]
   -- What `montOp` keeps.
-  have sep₁ := @kept_sep w
-  have w₁ : ∀ d, d + 8 ≤ 8 * L → (∀ i, d ≤ i → i < d + 8 → Kept w i) → word s₁.mem B d = word s.mem B d :=
+  obtain sep₁ := @kept_sep w
+  obtain w₁ : ∀ d, d + 8 ≤ 8 * L → (∀ i, d ≤ i → i < d + 8 → Kept w i) → word s₁.mem B d = word s.mem B d :=
     fun d hd hk => o₁.word_eq (sep₁ d 8 (by decide) hk) (by omega_arith)
-  have v₁ : ∀ j, slot w j + 8 * w ≤ 8 * L → (∀ i, slot w j ≤ i → i < slot w j + 8 * w → Kept w i) →
+  obtain v₁ : ∀ j, slot w j + 8 * w ≤ 8 * L → (∀ i, slot w j ≤ i → i < slot w j + 8 * w → Kept w i) →
       A s₁.mem B w j = A s.mem B w j := by
     intro j hd hk
     simp only [A, Pre.wordsVal_eq_wv]
     exact o₁.wv_eq (sep₁ _ _ (by omega_arith) hk) (by omega_arith)
-  have p₁ : Prep s₁ B L w c :=
+  obtain p₁ : Prep s₁ B L w c :=
     h.transfer (e.keep k₁ (by decide)) (h.t1_of (k₁.gpr (by decide))) w₁ v₁
   -- The arguments.
-  have h6₁ : s₁.gpr .s6 = B := (k₁.gpr (by decide)).trans e.s6
+  obtain h6₁ : s₁.gpr .s6 = B := (k₁.gpr (by decide)).trans e.s6
   have hs₁ := p₁.env.hs
-  have r0 : s₁.mem.readW B 64 = BitVec.ofNat 64 L := by
+  obtain r0 : s₁.mem.readW B 64 = BitVec.ofNat 64 L := by
     have := p₁.len; simpa only [word, off, BitVec.add_zero] using this
-  have l0 : InRegions (s₁.rd ++ s₁.wr) B 8 := by
+  obtain l0 : InRegions (s₁.rd ++ s₁.wr) B 8 := by
     have := hs₁.ld (d := 0) (n := 8) (by omega_arith); simpa only [off, BitVec.add_zero] using this
   have al0 : B.toNat % 8 = 0 := hs₁.al
   refine WP.mono (WP.keep [.a0, .a1] (Q := fun u => u.gpr .a0 = B ∧ u.gpr .a1 = BitVec.ofNat 64 L ∧
@@ -279,9 +279,9 @@ theorem rcHead_ok {s : State} {B : Addr} {L w c a : Nat} (h : Prep s B L w c)
         simp only [ldh, hWsLen]
         brun [h6₁, l0, al0, r0, BitVec.add_zero]) (by rfl) (by rfl))
     fun s₂ ⟨⟨r0₂, r1₂, m₂⟩, k₂⟩ => ?_
-  have p₂ : Prep s₂ B L w c := p₁.transfer (p₁.env.keep k₂ (by decide)) (p₁.t1_of (k₂.gpr (by decide)))
+  obtain p₂ : Prep s₂ B L w c := p₁.transfer (p₁.env.keep k₂ (by decide)) (p₁.t1_of (k₂.gpr (by decide)))
     (fun d _ _ => by rw [m₂]) (fun j _ _ => by rw [m₂])
-  have k12 := k₁.trans k₂
+  obtain k12 := k₁.trans k₂
   exact ⟨p₂, by rw [m₂]; exact h5, r0₂, r1₂, by rw [m₂]; exact o₁, k12⟩
 
 /-- The working space's bytes are writable. -/
@@ -293,7 +293,7 @@ theorem scr_covers {s : State} {B : Addr} {Z : Nat} (hs : Scr s B Z) {x : Addr} 
   subst hr hb
   refine ⟨⟨B₀, L'⟩, hm, ?_⟩
   simp only [Region.Contains, VG.Proof.Mont.off] at hc ⊢
-  have e : x - B₀ = (x - (B₀ + BitVec.ofNat 64 o)) + BitVec.ofNat 64 o := by
+  obtain e : x - B₀ = (x - (B₀ + BitVec.ofNat 64 o)) + BitVec.ofNat 64 o := by
     simp only [BitVec.sub_eq_add_neg, BitVec.neg_add, BitVec.add_assoc, BitVec.add_left_neg, BitVec.add_zero]
   rw [e, BitVec.toNat_add, BitVec.toNat_ofNat]
   have := Nat.mod_le ((x - (B₀ + BitVec.ofNat 64 o)).toNat + o % 2 ^ 64) (2 ^ 64)
@@ -313,7 +313,7 @@ theorem rc_pre {s : State} {B : Addr} {L w c a : Nat} (p : Prep s B L w c)
       (s.callEntry.withRegions [] [⟨B, 8 * L⟩]) := by
   have e := p.env
   have hnw := e.hs.nowrap
-  have hL64 : L < 2 ^ 64 := by omega_arith
+  obtain hL64 : L < 2 ^ 64 := by omega_arith
   have e96 : (96 : Nat) = 95 + 1 := rfl
   rw [e96]
   sig_pre [Proof.MillerRabin.Round.roundContract, Proof.MillerRabin.Round.roundSig, RISCV64.abi, RISCV64.argRegs]
@@ -330,15 +330,15 @@ theorem roundCall_ok (R : RoundImpl) {s : State} {B : Addr} {L w c a : Nat} (h :
   have hZ := e.hZ
   have hw4 := e.hw
   have hw128 := e.hw'
-  have es : ∀ j, slot w j = 256 + j * (8 * (w + 2)) := fun _ => rfl
-  have hZ' : 256 + 28 * (8 * (w + 2)) ≤ 8 * L := by rw [← es]; exact hZ
+  obtain es : ∀ j, slot w j = 256 + j * (8 * (w + 2)) := fun _ => rfl
+  obtain hZ' : 256 + 28 * (8 * (w + 2)) ≤ 8 * L := by rw [← es]; exact hZ
   unfold roundCall
   refine WP.assoc (WP.seq (WP.mono (WP.rdwr (rcHead_ok h ha hac)) fun s₂ ⟨mid, _, _, sp₂⟩ => ?_))
-  have sep₁ := @kept_sep w
+  obtain sep₁ := @kept_sep w
   have p₂ := mid.prep
   have k12 := mid.keep
-  have hL64 : L < 2 ^ 64 := by omega_arith
-  have hwr₂ : ∀ x n, InRegions [⟨B, 8 * L⟩] x n → InRegions s₂.wr x n := fun _ _ => scr_covers p₂.env.hs
+  obtain hL64 : L < 2 ^ 64 := by omega_arith
+  obtain hwr₂ : ∀ x n, InRegions [⟨B, 8 * L⟩] x n → InRegions s₂.wr x n := fun _ _ => scr_covers p₂.env.hs
   -- The round.
   refine WP.seq (WP.callAny (k := Proof.MillerRabin.Round.roundContract abi Proof.MillerRabin.Round.compact 96)
     R.verified.1 (rd := []) (wr := [⟨B, 8 * L⟩])
@@ -350,21 +350,21 @@ theorem roundCall_ok (R : RoundImpl) {s : State} {B : Addr} {L w c a : Nat} (h :
   obtain ⟨hres, hk3⟩ := hpost
   rw [mid.a0, p₂.width] at hres hk3
   rw [mid.a1, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hL64] at hk3
-  have hn₂ : Proof.Rsa.Mont.numAt s₂.mem B w 0 = c := (numAt_eq _ _ _ _).trans p₂.n
-  have h5₂ : Proof.Rsa.Mont.numAt s₂.mem B w 5 = a % c * 2 ^ (64 * w) % c := by
+  obtain hn₂ : Proof.Rsa.Mont.numAt s₂.mem B w 0 = c := (numAt_eq _ _ _ _).trans p₂.n
+  obtain h5₂ : Proof.Rsa.Mont.numAt s₂.mem B w 5 = a % c * 2 ^ (64 * w) % c := by
     rw [numAt_eq]; exact mid.a5
   rw [hn₂] at hres
-  have hr0 := hres a h5₂
-  have h6₃ : s₃.gpr .s6 = B := (hcs .s6 (by decide)).trans ((k12.gpr (by decide)).trans e.s6)
-  have kw : ∀ d, d + 8 ≤ 8 * L → (∀ i, d ≤ i → i < d + 8 → Kept w i) → word s₃.mem B d = word s₂.mem B d :=
+  obtain hr0 := hres a h5₂
+  obtain h6₃ : s₃.gpr .s6 = B := (hcs .s6 (by decide)).trans ((k12.gpr (by decide)).trans e.s6)
+  obtain kw : ∀ d, d + 8 ≤ 8 * L → (∀ i, d ≤ i → i < d + 8 → Kept w i) → word s₃.mem B d = word s₂.mem B d :=
     fun d hd hk => keeps_word hk3 hd hk
-  have kv : ∀ j, slot w j + 8 * w ≤ 8 * L → (∀ i, slot w j ≤ i → i < slot w j + 8 * w → Kept w i) →
+  obtain kv : ∀ j, slot w j + 8 * w ≤ 8 * L → (∀ i, slot w j ≤ i → i < slot w j + 8 * w → Kept w i) →
       A s₃.mem B w j = A s₂.mem B w j :=
     fun j hd hk => keeps_A hk3 hd hk
-  have hs₃ : Scr s₃ B (8 * L) := e.hs.congr (hwr₃.trans k12.2.2)
-  have rd48 : s₃.mem.readW (B + BitVec.ofNat 64 48) 64 = BitVec.ofNat 64 w :=
+  obtain hs₃ : Scr s₃ B (8 * L) := e.hs.congr (hwr₃.trans k12.2.2)
+  obtain rd48 : s₃.mem.readW (B + BitVec.ofNat 64 48) 64 = BitVec.ofNat 64 w :=
     (kw 48 (by omega_arith) (by kept_tac)).trans p₂.wW
-  have rd56 : s₃.mem.readW (B + BitVec.ofNat 64 56) 64 = word s₂.mem B 56 := kw 56 (by omega_arith) (by kept_tac)
+  obtain rd56 : s₃.mem.readW (B + BitVec.ofNat 64 56) 64 = word s₂.mem B 56 := kw 56 (by omega_arith) (by kept_tac)
   -- The result and the registers back.
   refine WP.mono (WP.rdwr (WP.keep [.a0, .a7, .t0, .t1] (Q := fun u =>
       u.gpr .a0 = (s₃.gpr .a0 <<< 32) >>> 32 ∧ u.gpr .a7 = off B (slot w 0) ∧
@@ -374,12 +374,12 @@ theorem roundCall_ok (R : RoundImpl) {s : State} {B : Addr} {L w c a : Nat} (h :
     brun [h6₃, hs₃.ld (d := 48) (n := 8) (by omega_arith), hs₃.al8 (d := 48) (by omega_arith) (by decide),
       hs₃.ld (d := 56) (n := 8) (by omega_arith), hs₃.al8 (d := 56) (by omega_arith) (by decide), rd48, rd56]
     simp only [es, Nat.zero_mul, Nat.add_zero, off]
-  have env_t : Env t B (8 * L) w := ⟨e.hs.congr (kt.2.2.trans (hwr₃.trans k12.2.2)), t7,
+  obtain env_t : Env t B (8 * L) w := ⟨e.hs.congr (kt.2.2.trans (hwr₃.trans k12.2.2)), t7,
     (kt.gpr (by decide)).trans ((hcs .s5 (by decide)).trans ((k12.gpr (by decide)).trans e.s5)), tt0,
     (kt.gpr (by decide)).trans h6₃, hw4, hw128, hZ⟩
-  have ofs_add : ∀ i, i < 2 ^ 64 → ofs B (B + BitVec.ofNat 64 i) = i := fun i hi => by
+  obtain ofs_add : ∀ i, i < 2 ^ 64 → ofs B (B + BitVec.ofNat 64 i) = i := fun i hi => by
     simp only [ofs, Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hi]
-  have p_t : Prep t B L w c := p₂.transfer env_t (by rw [tt1]; exact p₂.inv)
+  obtain p_t : Prep t B L w c := p₂.transfer env_t (by rw [tt1]; exact p₂.inv)
     (fun d hd hk => by rw [tm]; exact kw d hd hk) (fun j hd hk => by rw [tm]; exact kv j hd hk)
   refine ⟨p_t, ?_, ?_, ?_, kt.2.1.trans (hrd.trans k12.2.1), kt.2.2.trans (hwr₃.trans k12.2.2),
     spt.trans (hsp₃.trans sp₂), fun r hr hm => ?_⟩
@@ -399,8 +399,8 @@ theorem roundCall_ok (R : RoundImpl) {s : State} {B : Addr} {L w c a : Nat} (h :
       rw [show i' = i by omega_arith]; exact ⟨hk, hj, ht⟩) j hj'
     omega_arith
   · intro x hx
-    have hx1 : ¬ (⟨B, 8 * L⟩ : Region).Contains x 1 := hx _ (List.mem_cons_self)
-    have hx2 : ¬ (below s.sp 96).Contains x 1 := hx _ (List.mem_cons_of_mem _ List.mem_cons_self)
+    obtain hx1 : ¬ (⟨B, 8 * L⟩ : Region).Contains x 1 := hx _ (List.mem_cons_self)
+    obtain hx2 : ¬ (below s.sp 96).Contains x 1 := hx _ (List.mem_cons_of_mem _ List.mem_cons_self)
     rw [tm, hf x fun r hr => ?_]
     · refine mid.arrs _ fun j hj => ?_
       simp only [Region.Contains] at hx1
@@ -412,7 +412,7 @@ theorem roundCall_ok (R : RoundImpl) {s : State} {B : Addr} {L w c a : Nat} (h :
       · rw [List.mem_singleton] at hr; subst hr
         exact fun hc => hx2 (below_sub (by have := R.stack; omega_arith) (by decide) _ (by rw [← sp₂]; exact hc))
   · have p1 : ∀ r ∈ preserved, r ∉ ([.a0, .a7, .t0, .t1] : List Reg) := by decide
-    have p2 : ∀ r ∈ preserved, r ∉ Pub.montRegs → r ∉ Pub.montRegs ++ ([.a0, .a1] : List Reg) := by decide
+    obtain p2 : ∀ r ∈ preserved, r ∉ Pub.montRegs → r ∉ Pub.montRegs ++ ([.a0, .a1] : List Reg) := by decide
     rw [kt.gpr (p1 r hr), hcs r hr, k12.gpr (p2 r hr hm)]
 
 end VG.Proof.MillerRabin.RISCV64.Search

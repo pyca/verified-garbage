@@ -1,13 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Lazy.ResidentBackend
-import Mathlib.Data.Finset.Attr
-import Mathlib.Data.Rat.Cast.Order
-import Mathlib.Tactic.NormNum.Abs
-import Mathlib.Tactic.NormNum.DivMod
-import Mathlib.Tactic.NormNum.OfScientific
-import Mathlib.Tactic.NormNum.Pow
-public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.ResidentBackend
+public import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Backend
+public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Backend
 
 /-! # The implementations of `Keccak` on AArch64 -/
 
@@ -15,11 +9,11 @@ public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.ResidentBackend
 
 namespace VG.Proof.Variants.Keccak.AArch64
 
-def scalar : Proof.Sha3.AArch64.Permutation := Proof.Sha3.AArch64.Scalar.Lazy.ResidentBackend.backend
+def scalar : Proof.Sha3.AArch64.Permutation := Proof.Sha3.AArch64.Scalar.backend
 
 -- FEAT_SHA3's Keccak is faster on Apple's cores, and slower on Neoverse N2.
 def sha3 : Proof.Sha3.AArch64.Permutation :=
-  { Proof.Sha3.AArch64.Sha3.ResidentBackend.backend with vendor := some "apple" }
+  { Proof.Sha3.AArch64.Sha3.Vector.backend with vendor := some "apple" }
 
 /-- Every implementation, best first: each function generic over them is
 emitted with each (the registration files that import this), and its

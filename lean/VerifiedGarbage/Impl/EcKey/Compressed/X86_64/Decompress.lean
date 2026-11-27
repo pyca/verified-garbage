@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.Scrub.X86_64.Fn
 public import VerifiedGarbage.Impl.EcKey.Compressed.X86_64
 public import VerifiedGarbage.Spec.Weierstrass
 
@@ -145,3 +146,13 @@ def decompress (c : Cfg) : Prog isa :=
     .block (decompressFinish c)]
 
 end VG.Impl.EcKey.Compressed.X86_64
+
+namespace VG.Impl.EcKey.Compressed.X86_64.Fn
+
+open VG.X86_64
+open VG.Impl.Scrub.X86_64 (scrubAll)
+
+/-- `vg_ec_<curve>_decompress_public_key` as emitted, with the configuration `c`: its code, then its cleanup. -/
+def decompress (c : VG.Impl.Ecdsa.X86_64.Cfg) : Prog isa := scrubAll .sse 32 8 (_root_.VG.Impl.EcKey.Compressed.X86_64.decompress c)
+
+end VG.Impl.EcKey.Compressed.X86_64.Fn

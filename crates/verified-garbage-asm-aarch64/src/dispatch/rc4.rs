@@ -8,6 +8,8 @@
 ///
 /// It runs `vg_rc4_init`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `key` must be valid for reads of `key_len` bytes.
@@ -27,6 +29,8 @@ pub unsafe fn vg_rc4_init_auto(_dit: verified_garbage_cpu::Dit<'_>, key: *const 
 /// Contract: `VG.Spec.Rc4.applyContract`. Constant time: only pointers, `len` and the initial PRGA index `i` (the public byte count modulo 256 for an initialized context) may affect timing. Key bytes, the permutation, `j`, keystream lookup indices and data remain secret. The function may leak `i`.
 ///
 /// It runs `vg_rc4_apply`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///

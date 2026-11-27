@@ -1,7 +1,6 @@
 module
 
 import VerifiedGarbage.Proof.Ecdh.X86.JacMain
-public import VerifiedGarbage.Proof.Ecdh.X86.Contract
 import VerifiedGarbage.Proof.Ecdsa.X86.Verified
 public import VerifiedGarbage.Proof.Framework.X86.SseTaintMono
 public import VerifiedGarbage.Proof.Framework.X86.NativeHintData
@@ -12,9 +11,7 @@ import VerifiedGarbage.Proof.Framework.X86.CallWith
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Ecdh.X86.Lit
 public import VerifiedGarbage.Impl.Ecdh.P256.X86
-import Mathlib.Data.Finset.Attr
 import Mathlib.Data.List.Forall2
-import Mathlib.Tactic.SetLike
 import Batteries.Data.List.Lemmas
 import VerifiedGarbage.Proof.Ecdh.X86.JacLayout
 import VerifiedGarbage.Proof.Ecdsa.X86.Lit
@@ -22,7 +19,6 @@ import VerifiedGarbage.Proof.Framework.NativeTaintCore
 import VerifiedGarbage.Proof.Weierstrass.WinLay
 import VerifiedGarbage.Proof.Weierstrass.X86.TComb
 meta import VerifiedGarbage.Proof.Ecdh.X86.JacMain
-meta import VerifiedGarbage.Proof.Ecdh.X86.Contract
 meta import VerifiedGarbage.Proof.Ecdsa.X86.Verified
 meta import VerifiedGarbage.Proof.Framework.X86.SseTaintMono
 meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
@@ -33,9 +29,7 @@ meta import VerifiedGarbage.Proof.Framework.X86.CallWith
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Ecdh.X86.Lit
 meta import VerifiedGarbage.Impl.Ecdh.P256.X86
-meta import Mathlib.Data.Finset.Attr
 meta import Mathlib.Data.List.Forall2
-meta import Mathlib.Tactic.SetLike
 meta import Batteries.Data.List.Lemmas
 meta import VerifiedGarbage.Proof.Ecdh.X86.JacLayout
 meta import VerifiedGarbage.Proof.Ecdsa.X86.Lit
@@ -44,6 +38,72 @@ meta import VerifiedGarbage.Proof.Weierstrass.WinLay
 meta import VerifiedGarbage.Proof.Weierstrass.X86.TComb
 meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Spec.EcKey.Generic
+public import VerifiedGarbage.Spec.Ecdh
+public import VerifiedGarbage.Spec.P256
+public import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.GetElem
+meta import VerifiedGarbage.TCB.X86.Target
+meta import VerifiedGarbage.Spec.EcKey.Generic
+meta import VerifiedGarbage.Spec.Ecdh
+meta import VerifiedGarbage.Spec.P256
+meta import VerifiedGarbage.Proof.Framework.PowLit
+meta import VerifiedGarbage.Proof.Framework.GetElem
+
+/-! ### `Ecdh.X86.Contract`, which only this module used -/
+
+section
+
+/-!
+# ECDH over P-256 on x86 (32-bit): the contract the proof is written against
+
+The facts of `Spec.Ecdh.P256.inst.exchangeContract` for x86, by name:
+`vg_ecdh_p256(out, d, peer, scratch)`, whose arguments are on the stack
+(cdecl), the result in `eax`. Its arguments' slots are readable here; the
+shared contract makes them writable (`Verified.narrowTo`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Ecdh.X86
+
+open VG VG.X86 Spec.Weierstrass Spec.EcKey
+
+/-- The shared secret of the private key at `d` and the public key at
+`peer`, as the specification computes it. -/
+abbrev ex (m : Mem) (d peer : Addr) : Option (List Byte) :=
+  Spec.Ecdh.exchange Spec.P256.curve (ofBytes (bytesAt m d 32)) (bytesAt m peer 65)
+
+def ecdhX86 : Contract X86.isa where
+  pre s :=
+    let out : Region := ⟨(arg s 0).setWidth 64, 32⟩
+    let d : Region := ⟨(arg s 1).setWidth 64, 32⟩
+    let peer : Region := ⟨(arg s 2).setWidth 64, 65⟩
+    let scratch : Region := ⟨(arg s 3).setWidth 64, 8192⟩
+    let args : Region := ⟨argAddr s 0, 16⟩
+    let ret : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
+    let stack : Region := ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 28, 28⟩
+    s.rd = [d, peer, args] ∧ s.wr = [out, scratch] ∧ out.Disjoint scratch ∧ out.Disjoint d ∧
+      out.Disjoint peer ∧ d.Disjoint scratch ∧ peer.Disjoint scratch ∧
+      args.Disjoint out ∧ args.Disjoint scratch ∧ ret.Disjoint out ∧ ret.Disjoint scratch ∧
+      (arg s 0).toNat + 32 ≤ 2 ^ 32 ∧ (arg s 1).toNat + 32 ≤ 2 ^ 32 ∧ (arg s 2).toNat + 65 ≤ 2 ^ 32 ∧
+      (arg s 3).toNat + 8192 ≤ 2 ^ 32 ∧ (s.gpr .esp).toNat + 20 ≤ 2 ^ 32 ∧
+      28 ≤ (s.gpr .esp).toNat ∧ stack.Disjoint out ∧ stack.Disjoint scratch
+  post s s' :=
+    match ex s.mem ((arg s 1).setWidth 64) ((arg s 2).setWidth 64) with
+    | some z => BitVec.setWidth 32 (s'.gpr .edx ++ s'.gpr .eax) = 1 ∧
+      bytesAt s'.mem ((arg s 0).setWidth 64) 32 = z
+    | none => BitVec.setWidth 32 (s'.gpr .edx ++ s'.gpr .eax) = 0 ∧
+      bytesAt s'.mem ((arg s 0).setWidth 64) 32 = List.replicate 32 0
+  pub s₁ s₂ := s₁.gpr .esp = s₂.gpr .esp ∧ arg s₁ 0 = arg s₂ 0 ∧ arg s₁ 1 = arg s₂ 1 ∧
+    arg s₁ 2 = arg s₂ 2 ∧ arg s₁ 3 = arg s₂ 3
+
+end VG.Proof.Ecdh.X86
+
+end
+
+end
 
 /-!
 # ECDH over P-256 on x86 (32-bit): `Verified`
@@ -73,11 +133,7 @@ theorem pre_of {s : State} (h : ecdhX86.pre s) : EPre p256 s := by
 
 theorem post_of {s s' : State} (h : EPost p256 s s') : ecdhX86.post s s' := by
   unfold EPost at h
-  show match ex s.mem ((arg s 1).setWidth 64) ((arg s 2).setWidth 64) with
-    | some z => BitVec.setWidth 32 (s'.gpr .edx ++ s'.gpr .eax) = 1 ∧
-        Spec.EcKey.bytesAt s'.mem ((arg s 0).setWidth 64) 32 = z
-    | none => BitVec.setWidth 32 (s'.gpr .edx ++ s'.gpr .eax) = 0 ∧
-        Spec.EcKey.bytesAt s'.mem ((arg s 0).setWidth 64) 32 = List.replicate 32 0
+  dsimp only [ecdhX86]
   rw [BitVec.setWidth_append_eq_right]
   revert h
   generalize hq : ex s.mem ((arg s 1).setWidth 64) ((arg s 2).setWidth 64) = q
@@ -108,7 +164,7 @@ holding `out` and `scratch` known to be the base addresses of the writable
 regions. -/
 def τ₀ : VG.X86.Taint.T :=
   { regs := .ofList [.esp], flags := false, lens := [32, 8192], argLen := 20, argBases := [(4, 0), (16, 1)],
-    room := 20 }
+    room := 24 }
 
 theorem wf₀ {s : State} (hp : EPre p256 s) : VG.X86.Taint.Wf τ₀ s := by
   have hsc := hp.sc_fit; have ho := hp.out_fit; have hs := hp.sp_fit
@@ -116,7 +172,7 @@ theorem wf₀ {s : State} (hp : EPre p256 s) : VG.X86.Taint.Wf τ₀ s := by
   rw [hn4] at ho
   refine VG.X86.Taint.Wf.entryRoom rfl ⟨fun _ => ⟨by simp [hp.wr, τ₀, hn4], by simpa [hp.wr, hn4] using hp.out_sc, ?_⟩,
     fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim,
-    fun _ => ⟨hs, ?_⟩, ?_⟩ fun _ => ⟨Nat.le_trans (by decide : 20 ≤ p256.stk) hp.sp_lo, ?_⟩
+    fun _ => ⟨hs, ?_⟩, ?_⟩ fun _ => ⟨Nat.le_trans (by decide : 24 ≤ p256.stk) hp.sp_lo, ?_⟩
   · simp only [hp.wr, List.mem_cons, List.not_mem_nil, or_false]
     rintro r (rfl | rfl) <;> simp only [BitVec.toNat_setWidth, hn4] <;> omega_using [hsc, ho]
   · simp only [hp.wr, List.mem_cons, List.not_mem_nil, or_false]
@@ -128,7 +184,7 @@ theorem wf₀ {s : State} (hp : EPre p256 s) : VG.X86.Taint.Wf τ₀ s := by
     rcases hp' with rfl | rfl <;> refine ⟨by decide, ?_⟩ <;>
       simp [VG.X86.Taint.region, hp.wr, addr, arg, argAddr]
   · simp only [hp.wr, List.mem_cons, List.not_mem_nil, or_false]
-    have hsub := Offset.sub_below ((s.gpr .esp).setWidth 64) (a := 20) (n := 20) (b := p256.stk)
+    have hsub := Offset.sub_below ((s.gpr .esp).setWidth 64) (a := 24) (n := 24) (b := p256.stk)
       (m := p256.stk) (by decide) (by decide)
     rintro r (rfl | rfl)
     · exact hp.stk_out.sub_left hsub
@@ -164,7 +220,7 @@ every call. -/
 def τCall : VG.X86.Taint.T :=
   { regs := ⟨215⟩, flags := false, lens := [16, 32, 8192], bases := [(.edi, 2, 0), (.esp, 0, 4)],
     slots := [(0, 12, 4), (0, 8, 4), (0, 4, 4), (0, 0, 4)], wbases := [(0, 0, 2)], argLen := 20,
-    argBases := [(4, 1), (16, 2)], stk := [none, some 16], room := 20 }
+    argBases := [(4, 1), (16, 2)], stk := [none, some 16], room := 24 }
 
 taint_summary mulSum : sseTaint τCall
   (Impl.Weierstrass.X86.Mont.mulFn Impl.Weierstrass.Mont.p256p.k Impl.Weierstrass.Mont.p256p.m)

@@ -79,7 +79,7 @@ def initPre (s : State) : Prop :=
 
 def initPub (s₁ s₂ : State) : Prop :=
   s₁.gpr .rdi = s₂.gpr .rdi ∧ s₁.gpr .rsi = s₂.gpr .rsi ∧ s₁.gpr .rdx = s₂.gpr .rdx ∧
-    s₁.gpr .rcx = s₂.gpr .rcx ∧ s₁.gpr .rsp = s₂.gpr .rsp
+    s₁.gpr .rcx = s₂.gpr .rcx ∧ s₁.gpr .rsp = s₂.gpr .rsp ∧ s₁.mxcsr = s₂.mxcsr
 
 def initK : Contract isa where
   pre := initPre
@@ -107,7 +107,7 @@ theorem initSpec_post {s s' : State} (h : (Spec.Gcm.streamInitContract X86_64.ab
 
 theorem initSpec_pub {s₁ s₂ : State} (h : initPub s₁ s₂) :
     (Spec.Gcm.streamInitContract X86_64.abi 2576).pub s₁ s₂ := by
-  obtain ⟨a₁, a₂, a₃, a₄, a₅⟩ := h
+  obtain ⟨a₁, a₂, a₃, a₄, a₅, aMd⟩ := h
   sig_pub [Spec.Gcm.streamInitContract, Spec.Gcm.streamInitSig, X86_64.abi, X86_64.argRegs]
   sig_reduce [Spec.Gcm.streamInitContract, Spec.Gcm.streamInitSig, X86_64.abi, X86_64.argRegs]
   sig_and_intros
@@ -128,7 +128,7 @@ def aadPre (s : State) : Prop :=
 
 def aadPub (s₁ s₂ : State) : Prop :=
   s₁.gpr .rdi = s₂.gpr .rdi ∧ s₁.gpr .rsi = s₂.gpr .rsi ∧ s₁.gpr .rdx = s₂.gpr .rdx ∧
-    s₁.gpr .rcx = s₂.gpr .rcx ∧ s₁.gpr .r8 = s₂.gpr .r8 ∧ s₁.gpr .rsp = s₂.gpr .rsp
+    s₁.gpr .rcx = s₂.gpr .rcx ∧ s₁.gpr .r8 = s₂.gpr .r8 ∧ s₁.gpr .rsp = s₂.gpr .rsp ∧ s₁.mxcsr = s₂.mxcsr
 
 def aadK : Contract isa where
   pre := aadPre
@@ -156,7 +156,7 @@ theorem aadSpec_post {s s' : State} (h : (Spec.Gcm.streamAadContract X86_64.abi 
 
 theorem aadSpec_pub {s₁ s₂ : State} (h : aadPub s₁ s₂) :
     (Spec.Gcm.streamAadContract X86_64.abi 2576).pub s₁ s₂ := by
-  obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆⟩ := h
+  obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, aMd⟩ := h
   sig_pub [Spec.Gcm.streamAadContract, Spec.Gcm.streamAadSig, X86_64.abi, X86_64.argRegs]
   sig_reduce [Spec.Gcm.streamAadContract, Spec.Gcm.streamAadSig, X86_64.abi, X86_64.argRegs]
   sig_and_intros
@@ -177,7 +177,7 @@ def finPre (s : State) : Prop :=
 
 def finPub (s₁ s₂ : State) : Prop :=
   s₁.gpr .rdi = s₂.gpr .rdi ∧ s₁.gpr .rsi = s₂.gpr .rsi ∧ s₁.gpr .rdx = s₂.gpr .rdx ∧
-    s₁.gpr .rcx = s₂.gpr .rcx ∧ s₁.gpr .r8 = s₂.gpr .r8 ∧ s₁.gpr .r9 = s₂.gpr .r9 ∧ s₁.gpr .rsp = s₂.gpr .rsp
+    s₁.gpr .rcx = s₂.gpr .rcx ∧ s₁.gpr .r8 = s₂.gpr .r8 ∧ s₁.gpr .r9 = s₂.gpr .r9 ∧ s₁.gpr .rsp = s₂.gpr .rsp ∧ s₁.mxcsr = s₂.mxcsr
 
 def finK : Contract isa where
   pre := finPre
@@ -206,7 +206,7 @@ theorem finSpec_post {s s' : State} (hR : rounds s) (h : (Proof.AesGcm.streamFin
 
 theorem finSpec_pub {s₁ s₂ : State} (h : finPub s₁ s₂) :
     (Proof.AesGcm.streamFinishRoundsContract X86_64.abi 2584).pub s₁ s₂ := by
-  obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇⟩ := h
+  obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, aMd⟩ := h
   sig_pub [Proof.AesGcm.streamFinishRoundsContract, Spec.Gcm.streamFinishSig, X86_64.abi, X86_64.argRegs]
   sig_reduce [Proof.AesGcm.streamFinishRoundsContract, Spec.Gcm.streamFinishSig, X86_64.abi, X86_64.argRegs]
   sig_and_intros
@@ -236,7 +236,7 @@ def toPre (M : CtxMode) (s : State) : Prop :=
 def toPub (s₁ s₂ : State) : Prop :=
   s₁.gpr .rdi = s₂.gpr .rdi ∧ s₁.gpr .rsi = s₂.gpr .rsi ∧ s₁.gpr .rdx = s₂.gpr .rdx ∧
     s₁.gpr .rcx = s₂.gpr .rcx ∧ s₁.gpr .r8 = s₂.gpr .r8 ∧ s₁.gpr .r9 = s₂.gpr .r9 ∧
-    s₁.gpr .rsp = s₂.gpr .rsp ∧ arg s₁ 0 = arg s₂ 0 ∧ arg s₁ 1 = arg s₂ 1 ∧ arg s₁ 2 = arg s₂ 2
+    s₁.gpr .rsp = s₂.gpr .rsp ∧ arg s₁ 0 = arg s₂ 0 ∧ arg s₁ 1 = arg s₂ 1 ∧ arg s₁ 2 = arg s₂ 2 ∧ s₁.mxcsr = s₂.mxcsr
 
 def toK (M : CtxMode) : Contract isa where
   pre := toPre M
@@ -300,7 +300,7 @@ theorem toSpecP_post {s s' : State} (hR : rounds s)
 
 theorem toSpec_pub {s₁ s₂ : State} (h : toPub s₁ s₂) :
     (Proof.Gcm.streamEncryptToContract X86_64.abi 4856).pub s₁ s₂ := by
-  obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, a₁₀⟩ := h
+  obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, a₁₀, aMd⟩ := h
   sig_pub [Proof.Gcm.streamEncryptToContract, Proof.Gcm.streamEncryptToSig, X86_64.abi, X86_64.argRegs]
   sig_reduce [Proof.Gcm.streamEncryptToContract, Proof.Gcm.streamEncryptToSig, X86_64.abi, X86_64.argRegs,
     X86_64.stackArg, X86_64.stackArgAddr, List.range, List.range.loop, Proof.AesGcm.arg]
@@ -310,7 +310,7 @@ theorem toSpec_pub {s₁ s₂ : State} (h : toPub s₁ s₂) :
 
 theorem toSpecP_pub {s₁ s₂ : State} (h : toPub s₁ s₂) :
     (Proof.Gcm.streamEncryptToPrecomputedContract X86_64.abi 4856).pub s₁ s₂ := by
-  obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, a₁₀⟩ := h
+  obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, a₁₀, aMd⟩ := h
   sig_pub [Proof.Gcm.streamEncryptToPrecomputedContract, Proof.Gcm.streamEncryptToPrecomputedSig, X86_64.abi,
     X86_64.argRegs]
   sig_reduce [Proof.Gcm.streamEncryptToPrecomputedContract, Proof.Gcm.streamEncryptToPrecomputedSig, X86_64.abi,

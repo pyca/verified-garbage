@@ -36,17 +36,17 @@ variable (mul : Nat → Nat → Nat → Prog isa) (ex : Nat → Nat → List (Pr
 
 /-- The checked generator's power over every byte of x, written as key
 generation writes it. -/
-def tail : List (Prog isa) :=
-  [r2] ++ pow mul ex sG sK sX sXl ++ GenerateKey.publicOutput ++ [.block status]
+def tail (rest : Option (List (Prog isa)) := none) : List (Prog isa) :=
+  [r2] ++ pow mul ex sG sK sX sXl rest ++ GenerateKey.publicOutput ++ [.block status]
 
-def main : Prog isa :=
+def main (rest : Option (List (Prog isa)) := none) : Prog isa :=
   seqs (([.block head] : List (Prog isa)) ++ pSetup ++ loadArr aXm sX sXl ++ CheckPrivate.scalarRange ++
-    [.block [.alu .test .rax (.reg .rax)], .ite .e (retInner 2) (seqs (tail mul ex r2))])
+    [.block [.alu .test .rax (.reg .rax)], .ite .e (retInner 2) (seqs (tail mul ex r2 rest))])
 
 /-- Zeros in y first: the scalar's rejection then leaves them. -/
-def body : Prog isa :=
-  .seq (.block entry) (.seq (Keys.zeroOut sY sK) (.seq (.block domHead) (.ite .ne (ret 0) (main mul ex r2))))
+def body (rest : Option (List (Prog isa)) := none) : Prog isa :=
+  .seq (.block entry) (.seq (Keys.zeroOut sY sK) (.seq (.block domHead) (.ite .ne (ret 0) (main mul ex r2 rest))))
 
-def code : Prog isa := .seq (body mul ex r2) (.block exit)
+def code (rest : Option (List (Prog isa)) := none) : Prog isa := .seq (body mul ex r2 rest) (.block exit)
 
 end VG.Impl.Ffdh.X86_64.Domain.DerivePublic

@@ -5,10 +5,10 @@
 // gives.
 
 vg_camellia_ofb:
-	sub sp, sp, #88
+	sub sp, sp, #2816
 	add r12, sp, #0
 	str lr, [r12, #8]
-	ldr lr, [sp, #88]
+	ldr lr, [sp, #2816]
 	str lr, [r12, #0]
 	add lr, sp, #12
 	str lr, [r12, #4]
@@ -39,12 +39,19 @@ vg_camellia_ofb:
 	str r9, [r8, #52]
 	cmp r7, #0
 	beq 20f
+	mov r0, r4
+	mov r1, r11
+	add r2, r8, #72
+	bl {vg_camellia_ecb_encrypt_keys}
 22:
 	mov r0, r4
 	mov r1, r11
 	add r2, r8, #40
 	mov r3, #1
-	bl {vg_camellia_ecb_encrypt}
+	add r12, r8, #72
+	push {r12, lr}
+	bl {vg_camellia_ecb_keyed}
+	ldr r12, [sp], #8
 	ldr r9, [r6, #0]
 	ldr r10, [r8, #40]
 	eor r9, r9, r10
@@ -84,8 +91,12 @@ vg_camellia_ofb:
 	ldr r11, [r8, #28]
 	ldr lr, [r8, #32]
 	ldr r8, [r8, #16]
-	add r12, sp, #12
+	add sp, sp, #2816
+	sub sp, sp, #2832
+	add r12, sp, #0
 	mov r2, #0
+	mov r3, #88
+23:
 	str r2, [r12, #0]
 	str r2, [r12, #4]
 	str r2, [r12, #8]
@@ -94,17 +105,20 @@ vg_camellia_ofb:
 	str r2, [r12, #20]
 	str r2, [r12, #24]
 	str r2, [r12, #28]
-	str r2, [r12, #32]
-	str r2, [r12, #36]
-	str r2, [r12, #40]
-	str r2, [r12, #44]
-	str r2, [r12, #48]
-	str r2, [r12, #52]
-	str r2, [r12, #56]
-	str r2, [r12, #60]
-	str r2, [r12, #64]
-	str r2, [r12, #68]
-	add sp, sp, #88
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 23b
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	add sp, sp, #2832
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_camellia_ofb_final:
@@ -147,7 +161,7 @@ vg_camellia_ofb_final:
 	mov r1, r11
 	add r2, r8, #40
 	mov r3, #1
-	bl {vg_camellia_ecb_encrypt}
+	bl {vg_camellia_ecb_encrypt_core}
 	lsr r9, r7, #4
 	cmp r9, #0
 	beq 23f
@@ -203,8 +217,12 @@ vg_camellia_ofb_final:
 	ldr r11, [r8, #28]
 	ldr lr, [r8, #32]
 	ldr r8, [r8, #16]
-	add r12, sp, #12
+	add sp, sp, #88
+	sub sp, sp, #2912
+	add r12, sp, #0
 	mov r2, #0
+	mov r3, #91
+26:
 	str r2, [r12, #0]
 	str r2, [r12, #4]
 	str r2, [r12, #8]
@@ -213,15 +231,14 @@ vg_camellia_ofb_final:
 	str r2, [r12, #20]
 	str r2, [r12, #24]
 	str r2, [r12, #28]
-	str r2, [r12, #32]
-	str r2, [r12, #36]
-	str r2, [r12, #40]
-	str r2, [r12, #44]
-	str r2, [r12, #48]
-	str r2, [r12, #52]
-	str r2, [r12, #56]
-	str r2, [r12, #60]
-	str r2, [r12, #64]
-	str r2, [r12, #68]
-	add sp, sp, #88
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 26b
+	add sp, sp, #2912
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr

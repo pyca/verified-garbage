@@ -113,7 +113,7 @@ theorem Verified.stackScratchArgsWiped {c : Prog isa} {words : Nat}
         (.addr (s.sp - BitVec.ofNat 64 bytes) :: (setArgsTrace bytes (s.sp - BitVec.ofNat 64 bytes) m ++
           (t ++ wipeTrace (s.sp - BitVec.ofNat 64 bytes + BitVec.ofNat 64 (104 + 8 * m)) words)))
         (popState bytes s s₄) ∧
-      abiPreserved s (popState bytes s s₄) ∧ (popState bytes s s₄).mem = s₄.mem ∧
+      abiPreserved s (popState bytes s s₄) ∧ Frame [⟨s.sp - BitVec.ofNat 64 bytes, bytes⟩] s₄.mem (popState bytes s s₄).mem ∧
       (popState bytes s s₄).gpr .r3 = s₃.gpr .r3 := by
     intro s hs
     obtain ⟨t, s₃, he, ha, hq⟩ := hcor _ (narrowA_pre hk hl hb hpre hs)
@@ -151,7 +151,7 @@ theorem Verified.stackScratchArgsWiped {c : Prog isa} {words : Nat}
       (post := Curry.withScratch abi.ptrBits nm e n sig.params post) hk').mp hq
     obtain ⟨-, -, -, hargs, -⟩ := narrowA_facts (e := e) (n := n) hk hl hb hs
     rw [hargs] at hq'
-    rw [hm, hr3]
+    rw [hr3]
     have hq'' := Eq.mp (congrFun (congrFun (congrFun (Curry.apply_withScratch abi.ptrBits nm e n
       sig.params post _ _ (hlen s)) _) s₃.mem) _) hq'
     have h₃ := hpost _ _ _ _ _ (hlen s) (narrowA_agree hk hl hb hs) hq''
@@ -160,9 +160,12 @@ theorem Verified.stackScratchArgsWiped {c : Prog isa} {words : Nat}
       rw [pre_stk hk hl] at hs'
       exact hs'.2.2.2.2.2.2
     refine hpostOut _ _ _ _ _ (hlen s) hpr (fun b hb' a ha' => ?_) h₃
-    exact (hfr a fun r hr => by
+    -- and the `free`, which loses only the frame.
+    exact ((hm a fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact bufs_disj_bufA hk hl hb hs b hb' a ha').symm
+      exact bufs_disj_frameA hk hl hb hs b hb' a ha').trans (hfr a fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact bufs_disj_bufA hk hl hb hs b hb' a ha')).symm
   · obtain ⟨u₁, r₁, _, f₁, -, -, x₁, -⟩ := hrun s₁ h₁
     obtain ⟨u₂, r₂, _, f₂, -, -, x₂, -⟩ := hrun s₂ h₂
     rw [(Exec.det e₁ x₁).1, (Exec.det e₂ x₂).1, ((pubL_stk hk hl).mp hp).1.1,

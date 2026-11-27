@@ -1,28 +1,22 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.X86.KcABI
+public import VerifiedGarbage.Proof.Rsa.X86.KcBuffers
 public import VerifiedGarbage.Impl.Rsa.X86.KeyCheckRt
-public import VerifiedGarbage.Proof.Rsa.X86.KcFrames
-public import VerifiedGarbage.Proof.Rsa.X86.KcPair
+public import VerifiedGarbage.Proof.Rsa.X86.KcLoad
 public import VerifiedGarbage.Proof.Rsa.X86.KcTimeCheck
-public import VerifiedGarbage.Proof.Rsa.X86.KcWordChecks
 public import VerifiedGarbage.Proof.Rsa.X86.KcResult
-public import VerifiedGarbage.Proof.Rsa.X86.KcLoads
 public import VerifiedGarbage.Proof.Rsa.X86.WordRt.Time
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Framework.X86.Taint
 public import VerifiedGarbage.Proof.Framework.X86.SseTaint
-import VerifiedGarbage.Proof.Rsa.X86.KcOps
+public import VerifiedGarbage.Proof.Rsa.X86.KcStart
 import VerifiedGarbage.Proof.Rsa.X86.InvParts
-import VerifiedGarbage.Proof.Rsa.X86.KcLoad
-import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Ops
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Scalar
 import VerifiedGarbage.Proof.Rsa.X86.WordRt.Mul
 import VerifiedGarbage.Proof.Rsa.X86.WordRt.Loop
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Rsa.X86.KcSized
 public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.TimeExp
 public import VerifiedGarbage.Proof.Rsa.X86.KcInputs
 public import VerifiedGarbage.Proof.Framework.PowLit
@@ -34,26 +28,632 @@ import VerifiedGarbage.Proof.Bignum.X86.ExponentCheckTiming
 import VerifiedGarbage.Proof.Bignum.X86.PublicArgs
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.Bignum.Octets
-import VerifiedGarbage.Proof.Rsa.X86.KcPublic
-import VerifiedGarbage.Proof.Bignum.X86.PublicExponentArgs
+import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Top
 import VerifiedGarbage.Proof.Framework.X86.RelCT
 public import VerifiedGarbage.Spec.RsaKeyGen
 public import VerifiedGarbage.Impl.Rsa.X86.KeyCheck
 public import VerifiedGarbage.Proof.Bignum.X86.PublicArgumentTiming
 public import VerifiedGarbage.Proof.Rsa.Contract
-import VerifiedGarbage.Proof.Rsa.X86.KcBounds
 import VerifiedGarbage.Proof.Bignum.X86.PublicEntryTiming
-import VerifiedGarbage.Proof.Rsa.X86.KcInstalled
-import VerifiedGarbage.Proof.Rsa.X86.KcBuffers
-import VerifiedGarbage.Proof.Rsa.X86.KcResources
-import VerifiedGarbage.Proof.Rsa.X86.KcBodyPublic
 import VerifiedGarbage.Proof.Bignum.MemoryFrame
-import VerifiedGarbage.Proof.Framework.X86.Spill
+public import VerifiedGarbage.Proof.Framework.X86.Spill
 import VerifiedGarbage.Proof.Bignum.X86.PublicReturn
 import VerifiedGarbage.Proof.Bignum.X86.PublicSave
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Bignum.Words
 import VerifiedGarbage.Proof.Weierstrass.Env
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Bignum.X86.ModulusCheck
+import VerifiedGarbage.Proof.Bignum.X86.ExponentCheck
+import VerifiedGarbage.Proof.Rsa.Octets
+import VerifiedGarbage.Spec.Rsa
+import VerifiedGarbage.Proof.Mont.X86.Words
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Spec.Weierstrass
+public import VerifiedGarbage.Proof.Rsa.X86.KeyArrs
+public import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Base
+import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Zero
+import VerifiedGarbage.Proof.Rsa.KeyWorkspace
+
+/-! ### `Rsa.X86.KcLoads`, which only this module used -/
+
+section
+
+/-! # Initialized RSA key workspace from the caller's byte arrays -/
+
+-- Formerly `VerifiedGarbage/Proof/Rsa/X86/KcLoadList.lean`, which only this module imported.
+section
+
+/-! # Importing all key components while preserving the input buffers -/
+
+@[expose] public section
+namespace VG.Proof.Rsa.X86.KeyCheck
+open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86
+open VG.Impl.Rsa.X86.Keys hiding slot
+open VG.Impl.Rsa.X86.KeyCheck
+open VG.Proof.Rsa.X86.Keys
+open VG.Proof.Rsa.X86.KeyRt (kw keep_outside)
+
+def loadValues (g : CallGeometry) (m : Mem) (A : Nat → Nat) : List (Nat × Nat) → Nat → Nat
+  | [] => A
+  | (i, j) :: rest => loadValues g m (upd A j (Spec.Rsa.os2ip (inputBytes g m i))) rest
+
+theorem loadValues_frame {g : CallGeometry} {s : State} {m : Mem} (h : Inputs g s)
+    (frame : Outside g.base 0 g.size s.mem m) (A : Nat → Nat) (ls : List (Nat × Nat))
+    (hi : ∀ p ∈ ls, 2 * p.1 < scratchArg g.full) :
+    loadValues g m A ls = loadValues g s.mem A ls := by
+  induction ls generalizing A with
+  | nil => rfl
+  | cons p ps ih =>
+    obtain ⟨i, j⟩ := p
+    simp only [loadValues]
+    rw [h.inputFrame frame i (hi (i, j) (by simp))]
+    exact ih _ (fun p hp => hi p (by simp [hp]))
+
+theorem loadInputs_ok {g : CallGeometry} {s : State} (h : Inputs g s) (len : Lengths g) (A : Nat → Nat)
+    (ha : Arrs s.mem g.base (kw (g.args 1).toNat) A (List.range nArr))
+    (top : w32 s.mem g.base (arr (kw (g.args 1).toNat) aVD + 4 * kw (g.args 1).toNat) = 0)
+    (ls : List (Nat × Nat))
+    (hi : ∀ p ∈ ls, 2 * p.1 < scratchArg g.full ∧ p.2 < nArr ∧ p.2 ≠ aVD ∧ A p.2 = 0)
+    (nd : (ls.map Prod.snd).Nodup) :
+    WP isa (VG.Impl.Rsa.X86.KeyCheckRt.loadInputs g.full ls) s fun t => Inputs g t ∧
+      Keep g.base (kw (g.args 1).toNat) (List.range nArr) [] s.mem t.mem ∧
+      Arrs t.mem g.base (kw (g.args 1).toNat) (loadValues g s.mem A ls) (List.range nArr) ∧
+      w32 t.mem g.base (arr (kw (g.args 1).toNat) aVD + 4 * kw (g.args 1).toNat) = 0 ∧
+      Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t := by
+  induction ls generalizing s A with
+  | nil => exact WP.block_nil ⟨h, Keep.refl _ _ _ _ _, ha, top, Keeps.refl _ _⟩
+  | cons p ps ih =>
+    obtain ⟨i, j⟩ := p
+    obtain ⟨hii, hj, hjd, hz⟩ := hi (i, j) (by simp)
+    simp only [List.map_cons, List.nodup_cons] at nd
+    have r := inputsRt h len
+    rw [VG.Impl.Rsa.X86.KeyCheckRt.loadInputs, WP.seq_iff]
+    refine WP.mono (load_ok h len i hii hj (by rw [ha.get (List.mem_range.mpr hj), hz]))
+      fun u ⟨hu, ku, vu, ru⟩ => ?_
+    have au : Arrs u.mem g.base (kw (g.args 1).toNat)
+        (upd A j (Spec.Rsa.os2ip (inputBytes g s.mem i))) (List.range nArr) :=
+      ha.write ku r.ws vu (fun k hk => by
+        by_cases e : k = j
+        · exact .inl e
+        · exact .inr ⟨List.mem_range.mp hk, by simpa using e⟩) (by simp)
+    have tu : w32 u.mem g.base (arr (kw (g.args 1).toNat) aVD + 4 * kw (g.args 1).toNat) = 0 := by
+      rw [ku.word (by unfold S; omega_using []) (by simpa using hjd) (by simp) (r.ws.fit64 (by decide)), top]
+    refine WP.mono (ih hu _ au tu (fun p hp => ?_) nd.2) fun t ⟨ht, kt, valuesT, tt, rt⟩ => ?_
+    · obtain ⟨a, b, c, d⟩ := hi p (by simp [hp])
+      have ne : p.2 ≠ j := fun e => nd.1 (by rw [← e]; exact List.mem_map_of_mem hp)
+      exact ⟨a, b, c, by rw [upd_ne _ _ ne, d]⟩
+    have frame := keep_outside r.ws ku (by simpa using hj) (by simp)
+    rw [loadValues_frame h frame _ ps (fun p hp => (hi p (by simp [hp])).1)] at valuesT
+    exact ⟨ht, (ku.mono (by simpa using hj) (by simp)).trans kt, valuesT, tt, ru.trans rt⟩
+end VG.Proof.Rsa.X86.KeyCheck
+end
+
+end
+
+@[expose] public section
+namespace VG.Proof.Rsa.X86.KeyCheck
+open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86
+open VG.Impl.Rsa.X86.Keys hiding slot
+open VG.Impl.Rsa.X86.KeyCheck
+open VG.Proof.Rsa.X86.Keys
+open VG.Proof.Rsa.X86.KeyRt (kw zeroArrays_ok)
+
+def geometry (g : CallGeometry) : Geo := ⟨g.base, g.size, (g.args 1).toNat, g.full⟩
+
+def numbers (g : CallGeometry) (m : Mem) : Vals :=
+  let v := fun i => Spec.Rsa.os2ip (inputBytes g m i)
+  ⟨v 0, v 1, v (if g.full then 3 else 2), v (if g.full then 4 else 3),
+    v (if g.full then 5 else 4), v (if g.full then 6 else 5), v (if g.full then 7 else 6),
+    if g.full then v 2 else 0⟩
+
+theorem inputs_fit (full : Bool) : ∀ p ∈ inputs full,
+    2 * p.1 < scratchArg full ∧ p.2 < nArr ∧ p.2 ≠ aVD ∧ (fun _ => 0 : Nat → Nat) p.2 = 0 := by
+  cases full <;> decide
+
+theorem inputs_nodup (full : Bool) : ((inputs full).map Prod.snd).Nodup := by cases full <;> decide
+
+theorem loaded_values (g : CallGeometry) (m : Mem) :
+    loadValues g m (fun _ => 0) (inputs g.full) = vals (numbers g m) := by
+  funext j
+  -- which array `j` is, once: `split` on both sides' nested `if`s visited every combination
+  have hj : j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7 ∨ j = 8 ∨ j = 9 ∨
+      (j ≠ 2 ∧ j ≠ 3 ∧ j ≠ 4 ∧ j ≠ 5 ∧ j ≠ 6 ∧ j ≠ 7 ∧ j ≠ 8 ∧ j ≠ 9) := by omega
+  cases e : g.full <;>
+    simp only [inputs, e, Bool.false_eq_true, ite_false, ite_true,
+      List.cons_append, List.nil_append, loadValues, numbers, vals, upd,
+      aN, aE, aD, aP, aQ, aDP, aDQ, aQI] <;>
+    rcases hj with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | ⟨h2, h3, h4, h5, h6, h7, h8, h9⟩ <;>
+    first
+      | (simp only [↓reduceIte, Nat.reduceEqDiff]; done)
+      | simp only [h2, h3, h4, h5, h6, h7, h8, h9, ↓reduceIte]
+
+/-- An input's length argument bounds it. -/
+theorem argLen_ok {g : CallGeometry} {t : State} (h : Inputs g t) (m : Mem) {i a : Nat}
+    (hi : 2 * i < scratchArg g.full) (ha : 2 * i + 1 = a) (ha' : a < scratchArg g.full + 2) :
+    ∃ b, 1 ≤ b ∧ b ≤ 1024 ∧ Spec.Rsa.os2ip (inputBytes g m i) < 2 ^ (8 * b) ∧
+      VG.Proof.Bignum.X86.CallArgument t g.base g.size a (BitVec.ofNat 32 b) := by
+  have pos := h.inputPositive _ hi
+  have bound := h.inputBound _ hi
+  have up := h.upper
+  simp only [CallGeometry.buffer, ha] at pos bound
+  refine ⟨(g.args a).toNat, pos, by omega_using [up, bound], ?_, ?_⟩
+  · have lt := VG.Proof.Bignum.os2ip_lt (inputBytes g m i)
+    have ln : (inputBytes g m i).length = (g.args a).toNat := by
+      rw [inputBytes, VG.Proof.Bignum.bytesAt_length]; simp only [CallGeometry.buffer, ha]
+    rw [ln, VG.Proof.Bignum.pow256_eq] at lt
+    exact lt
+  · rw [BitVec.ofNat_toNat, BitVec.setWidth_eq]
+    exact h.arguments _ ha'
+
+/-- `q`'s length argument bounds `q`. -/
+theorem qLen_ok {g : CallGeometry} {t : State} (h : Inputs g t) (m : Mem) :
+    ∃ a, 1 ≤ a ∧ a ≤ 1024 ∧ (numbers g m).q < 2 ^ (8 * a) ∧
+      VG.Proof.Bignum.X86.CallArgument t g.base g.size (qLenArg g.full) (BitVec.ofNat 32 a) :=
+  argLen_ok h m (i := if g.full then 4 else 3) (by cases g.full <;> decide) (by cases g.full <;> rfl)
+    (by cases g.full <;> decide)
+
+/-- `p`'s length argument bounds `p`. -/
+theorem pLen_ok {g : CallGeometry} {t : State} (h : Inputs g t) (m : Mem) :
+    ∃ a, 1 ≤ a ∧ a ≤ 1024 ∧ (numbers g m).p < 2 ^ (8 * a) ∧
+      VG.Proof.Bignum.X86.CallArgument t g.base g.size (VG.Impl.Rsa.X86.KeyCheckRt.pLenArg g.full)
+        (BitVec.ofNat 32 a) :=
+  argLen_ok h m (i := if g.full then 3 else 2) (by cases g.full <;> decide) (by cases g.full <;> rfl)
+    (by cases g.full <;> decide)
+
+theorem loads_ok {g : CallGeometry} {s : State} (h : Inputs g s) (len : Lengths g) :
+    WP isa (VG.Impl.Rsa.X86.KeyCheckRt.loads g.full) s fun t => Inputs g t ∧
+      BodyIn (geometry g) (numbers g s.mem) t ∧
+      Outside g.base 16 (g.size - 16) s.mem t.mem ∧
+      Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t := by
+  have r := inputsRt h len
+  have header := r.ws.hdr_le
+  have fits := r.ws.fits
+  have nw := r.ws.workspace.nowrap
+  have kwEq : kw (g.args 1).toNat = 2 * g.n := by rw [len.width]
+  unfold VG.Impl.Rsa.X86.KeyCheckRt.loads
+  rw [WP.seq_iff]
+  refine WP.mono (zeroArrays_ok r (n := nArr) (by decide) (by decide)) fun z ⟨rz, oz, zeros, kz⟩ => ?_
+  have a0 : arr (kw (g.args 1).toNat) 0 = hdr := by simp [arr]
+  have fitsN : hdr + 4 * (nArr * (kw (g.args 1).toNat + 2)) ≤ g.size := by
+    simp only [arr, S] at fits; rw [Nat.mul_left_comm] at fits; exact fits
+  rw [a0] at oz
+  have Oz : Outside g.base 0 g.size s.mem z.mem := oz.mono (Nat.zero_le _) (by omega_using [fitsN])
+  have Bz : Outside g.base 16 (g.size - 16) s.mem z.mem := oz.mono (by unfold hdr; omega_using []) (by unfold hdr at *; omega_using [fitsN])
+  have hz := h.after (kz.mono (rs' := [.eax, .ecx, .edx, .ebp]) (by decide)) (by decide) (by decide) (h.scratchFrame Oz)
+  have az : Arrs z.mem g.base (kw (g.args 1).toNat) (fun _ => 0) (List.range nArr) := by
+    intro j hj
+    have part := VG.Proof.Rsa.KeyWorkspace.val32_zero_part (zeros j (List.mem_range.mp hj))
+      (a := 0) (c := kw (g.args 1).toNat) (by omega_using [])
+    simpa only [Nat.mul_zero, Nat.add_zero] using part
+  have tz : w32 z.mem g.base (arr (kw (g.args 1).toNat) aVD + 4 * kw (g.args 1).toNat) = 0 := by
+    have part := VG.Proof.Rsa.KeyWorkspace.val32_zero_part (zeros aVD (by decide))
+      (a := kw (g.args 1).toNat) (c := 1) (by omega_using [])
+    simpa only [val32, Nat.mul_zero, Nat.add_zero] using part
+  refine WP.mono (loadInputs_ok hz len _ az tz (inputs g.full) (inputs_fit _) (inputs_nodup _))
+    fun t ⟨ht, kt, vt, tt, rt⟩ => ?_
+  rw [loadValues_frame h Oz _ _ (fun p hp => (inputs_fit _ p hp).1), loaded_values] at vt
+  have kt' : Keep g.base (2 * g.n) (List.range nArr) [] z.mem t.mem := by rw [← kwEq]; exact kt
+  exact ⟨ht, ⟨inputsRt ht len, vt, tt, qLen_ok ht s.mem, pLen_ok ht s.mem⟩,
+    Bz.trans (hz.keepBody kt' (fun j hj => List.mem_range.mp hj) (by simp)),
+    (kz.mono (by decide)).trans rt⟩
+end VG.Proof.Rsa.X86.KeyCheck
+
+end
+
+end
+
+/-! ### `Rsa.X86.KcInstalled`, which only this module used -/
+
+section
+
+/-! # Install key-check call resources after saving the caller's registers -/
+
+-- Formerly `VerifiedGarbage/Proof/Rsa/X86/KcEntry.lean`, which only this module imported.
+section
+
+/-! # Establishing the arithmetic workspace while preserving the caller ABI -/
+
+section
+namespace VG.Proof.Rsa.X86.KeyCheck
+open VG VG.X86 VG.X86.Wp VG.X86.Spill VG.Proof.Mont VG.Proof.Mont.X86 VG.Impl.Bignum.X86 VG.Proof.Bignum.X86
+
+theorem entry_ok (full : Bool) {s : State} {base : Addr} {size : Nat} {ptr : BitVec 32}
+    (read : readSrc s (.mem (PublicFn.argument (VG.Impl.Rsa.X86.KeyCheck.scratchArg full))) = some ptr)
+    (hb : ptr.setWidth 64 = base) (hf : ptr.toNat + size ≤ 2 ^ 32) (hz : 16 ≤ size)
+    (hw : (⟨base, size⟩ : Region) ∈ s.wr) (stk : StkOk (s.gpr .esp) base size) :
+    WP isa (.block (VG.Impl.Rsa.X86.KeyCheck.entry full)) s fun t =>
+      Scr t base size ∧ Saved t.mem (off base) s.gpr PublicFn.savedRegisters ∧
+      Keeps [.eax, .edi] s t ∧ Outside base 0 size s.mem t.mem := by
+  unfold VG.Impl.Rsa.X86.KeyCheck.entry
+  simp only [List.singleton_append]
+  refine wp_movS read fun u U _ => ?_
+  refine WP.block_append (WP.mono (entrySave_ok (base := base) (size := size) (by rw [U.gpr]; exact hb)
+    (by rw [U.gpr]; exact hf) hz (by rw [U.wr]; exact hw)) fun v ⟨G, Rd, Wr, S, F⟩ => ?_)
+  refine wp_movS rfl fun t T _ => WP.block_nil ⟨?_, ?_, ?_, ?_⟩
+  · refine ⟨?_, ?_, ?_, ?_⟩
+    · rw [T.gpr, G, U.gpr]; exact hb
+    · rw [T.wr, Wr, U.wr]; exact hw
+    · rw [← hb, BitVec.toNat_setWidth, Nat.mod_eq_of_lt (Nat.lt_trans ptr.isLt (by decide))]
+      exact hf
+    · rw [T.other _ (by decide), G, U.other _ (by decide)]
+      exact stk
+  · intro p hp
+    rw [T.mem, S p hp]
+    have H : p.1 ≠ .eax := by
+      simp only [PublicFn.savedRegisters, List.mem_cons, List.not_mem_nil, or_false] at hp
+      rcases hp with rfl | rfl | rfl | rfl <;> decide
+    exact U.other _ H
+  · refine ⟨?_, ?_, ?_⟩
+    · intro reg hr
+      rw [T.other reg (by intro H; subst reg; exact hr (by simp)), G]
+      exact U.other reg (by intro H; subst reg; exact hr (by simp))
+    · rw [T.rd, Rd, U.rd]
+    · rw [T.wr, Wr, U.wr]
+  · intro a ha
+    rw [T.mem]
+    have H : ¬ InRegions [⟨base, size⟩] a 1 := by
+      simp only [InRegions, List.mem_singleton, exists_eq_left, Region.Contains]
+      change ¬ (ofs base a + 1 ≤ size)
+      omega
+    exact (F a (by intro reg hreg hcontains; exact H ⟨reg, hreg, hcontains⟩)).trans (congrFun U.mem a)
+
+end VG.Proof.Rsa.X86.KeyCheck
+end
+
+end
+
+@[expose] public section
+namespace VG.Proof.Rsa.X86.KeyCheck
+open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Dsa.X86
+open VG.Proof.Bignum.X86 VG.Proof.Rsa.X86.Keys
+open VG.Impl.Bignum.X86 VG.Impl.Rsa.X86.KeyCheck
+
+theorem installed_ok {full : Bool} {s : State} (a : ABI full s) :
+    WP isa (.block (entry full)) s fun t => Inputs (caller full s) t ∧
+      Spill.Saved t.mem (off (caller full s).base) s.gpr PublicFn.savedRegisters ∧
+      Keeps [.eax, .edi] s t ∧ Outside (caller full s).base 0 (caller full s).size s.mem t.mem := by
+  refine WP.mono (entry_ok full (base := (caller full s).base) (ptr := arg s (scratchArg full))
+    (a.stackArgument (by omega_using [] : scratchArg full < scratchArg full + 2)).readSrc
+    rfl a.scratchBound (by have := a.used; omega_using [this]) (by rw [a.wr]; simp) a.stack)
+    fun t ⟨sc, saved, k, o⟩ => ?_
+  refine ⟨?_, saved, k, o⟩
+  have w := a.width
+  refine ⟨⟨sc, a.space, by omega_using [w], by omega_using [w]⟩, w.1, w.2.1, ?_, ?_,
+    (fun i hi => (a.inputLength hi).1), (fun i hi => (a.inputLength hi).2),
+    (fun i hi => a.inputFit hi), ?_, ?_⟩
+  · intro i hi
+    exact (CallArgument.mk (a.stackArgument hi) rfl).keep k (by decide) o
+  · intro i hi r hr
+    rw [show stackAddress t i = stackAddress s i by simp only [stackAddress, k.1 .esp (by decide)]]
+    exact a.stackApart hi hr
+  · intro i hi
+    rw [k.2.1, k.2.2]
+    exact ⟨_, List.mem_append_left _ (a.inputMember hi), Region.contains_self _ _⟩
+  · intro i hi r hr
+    simp only [CallGeometry.writes, List.mem_singleton] at hr
+    subst r
+    exact a.inApart _ (a.inputMember hi)
+end VG.Proof.Rsa.X86.KeyCheck
+
+end
+
+end
+
+/-! ### `Rsa.X86.KcBounds`, which only this module used -/
+
+section
+
+/-! # The signature's byte-length bounds imply the arithmetic factor bounds -/
+
+-- Formerly `VerifiedGarbage/Proof/Rsa/KeyByteBounds.lean`, which only this module imported.
+section
+
+/-! # A factor shorter than the modulus leaves room for modular addition -/
+
+section
+namespace VG.Proof.Rsa
+open VG
+
+theorem short_factor_bounds {bs : List Byte} {k w : Nat} (short : bs.length < k) (fits : k ≤ 4 * w) :
+    Spec.Rsa.os2ip bs < 256 ^ (k - 1) ∧
+    2 * Spec.Rsa.os2ip bs ≤ 2 ^ (32 * w) ∧ Spec.Rsa.os2ip bs < 2 ^ (32 * w) := by
+  have value := lt_of_os2ip bs
+  have small : 256 ^ bs.length ≤ 256 ^ (k - 1) := Nat.pow_le_pow_right (by decide) (by omega)
+  have room : 2 * 256 ^ bs.length ≤ 2 ^ (32 * w) := by
+    rw [show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul, ← Nat.pow_succ']
+    exact Nat.pow_le_pow_right (by decide) (by omega)
+  exact ⟨Nat.lt_of_lt_of_le value small, by omega, by omega⟩
+end VG.Proof.Rsa
+end
+
+end
+
+@[expose] public section
+namespace VG.Proof.Rsa.X86.KeyCheck
+open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Dsa.X86
+open VG.Proof.Bignum.X86
+open VG.Impl.Rsa.X86.KeyCheck
+
+theorem ABI.numberBounds {full : Bool} {s : State} (a : ABI full s) (m : Mem) :
+    Bounds (geometry (caller full s)) (arg s 1).toNat (numbers (caller full s) m) := by
+  have width : (arg s 1).toNat ≤ 4 * (2 * (caller full s).n) := by have := a.width.2.2; omega_using [this]
+  have pLen : (inputBytes (caller full s) m (if full then 3 else 2)).length < (arg s 1).toNat := by
+    rw [inputBytes, VG.Proof.Bignum.bytesAt_length]
+    cases full <;> exact a.pSmall
+  have qLen : (inputBytes (caller full s) m (if full then 4 else 3)).length < (arg s 1).toNat := by
+    rw [inputBytes, VG.Proof.Bignum.bytesAt_length]
+    cases full <;> exact a.qSmall
+  have p := VG.Proof.Rsa.short_factor_bounds pLen width
+  have q := VG.Proof.Rsa.short_factor_bounds qLen width
+  exact ⟨p.1, q.1, p.2.1, q.2.1⟩
+
+theorem numbers_entry {full : Bool} {s : State} {m : Mem} (a : ABI full s)
+    (o : Outside (caller full s).base 0 (caller full s).size s.mem m) :
+    numbers (caller full s) m = numbers (caller full s) s.mem := by
+  have same (i : Nat) (hi : 2 * i < scratchArg full) :
+      inputBytes (caller full s) m i = inputBytes (caller full s) s.mem i :=
+    VG.Proof.Bignum.scratch_bytes o
+      (by have := (a.inputLength hi).2; have := a.width.2.1; omega_arith)
+      (a.inApart _ (a.inputMember hi))
+  cases full
+  · simp only [numbers, show (caller false s).full = false from rfl, Bool.false_eq_true, ite_false]
+    rw [same 0 (by decide), same 1 (by decide), same 2 (by decide), same 3 (by decide),
+      same 4 (by decide), same 5 (by decide), same 6 (by decide)]
+  · simp only [numbers, show (caller true s).full = true from rfl, ite_true]
+    rw [same 0 (by decide), same 1 (by decide), same 2 (by decide), same 3 (by decide),
+      same 4 (by decide), same 5 (by decide), same 6 (by decide), same 7 (by decide)]
+end VG.Proof.Rsa.X86.KeyCheck
+
+end
+
+end
+
+/-! ### `Rsa.X86.KcBodyPublic`, which only this module used -/
+
+section
+
+/-! ### `Rsa.X86.KcPublic`, which this module and modules that import it used -/
+
+section
+
+/-! # Public modulus and exponent validation for both key-check APIs -/
+
+@[expose] public section
+namespace VG.Proof.Rsa.X86.KeyCheck
+open VG VG.X86 VG.X86.Wp VG.Proof.Mont VG.Proof.Mont.X86
+open VG.Proof.Bignum VG.Proof.Bignum.X86
+open VG.Impl.Rsa.X86.KeyCheck
+
+theorem modulus_ok {g : CallGeometry} {s : State} (h : Inputs g s)
+    (lo : 64 ≤ (g.args 1).toNat) (hi : (g.args 1).toNat ≤ 1024) :
+    WP isa (.seq (.block (VG.Impl.Rsa.X86.CrtValues.inputArgs 0))
+      (.block VG.Impl.Bignum.X86.modulusCheck)) s fun t =>
+      t.zf = some (Spec.Rsa.modulusValid (numbers g s.mem).n (g.args 1).toNat) ∧
+      t.mem = s.mem ∧ Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t := by
+  have zero : 2 * 0 < scratchArg g.full := by cases g.full <;> decide
+  refine WP.seq (WP.mono (argumentPair_ok (d := .esi) (by decide) (by decide)
+    (h.arguments 0 (by cases g.full <;> decide)).readSrc
+    (h.arguments 1 (by cases g.full <;> decide)).readSrc) fun u ⟨p, c, m, r⟩ => ?_)
+  refine WP.mono (modulusCheck_ok u lo hi (by rw [p]; exact h.inputFit 0 zero)
+    (by rw [p, r.2.1, r.2.2]; exact h.inputRead 0 zero)
+    (by simpa only [BitVec.ofNat_toNat, BitVec.setWidth_eq] using c)) fun t ⟨z, mt, rt⟩ => ?_
+  rw [p, m] at z
+  exact ⟨z, mt.trans m, (r.mono (by decide)).trans (rt.mono (by decide))⟩
+
+theorem exponent_ok {g : CallGeometry} {s : State} (h : Inputs g s) :
+    WP isa (.seq (.block (VG.Impl.Rsa.X86.CrtValues.inputArgs 2)) VG.Impl.Bignum.X86.exponentCheck) s
+      fun t => t.gpr .eax = BitVec.ofNat 32 (Spec.Rsa.exponentValid (numbers g s.mem).e).toNat ∧
+        t.mem = s.mem ∧ Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t := by
+  have one : 2 * 1 < scratchArg g.full := by cases g.full <;> decide
+  refine WP.seq (WP.mono (argumentPair_ok (d := .esi) (by decide) (by decide)
+    (h.arguments 2 (by cases g.full <;> decide)).readSrc
+    (h.arguments 3 (by cases g.full <;> decide)).readSrc) fun u ⟨p, c, m, r⟩ => ?_)
+  refine WP.mono (exponentCheck_ok u (eb := inputBytes g s.mem 1)
+    (by rw [inputBytes, bytesAt_length]; exact h.inputPositive 1 one)
+    (by rw [inputBytes, bytesAt_length]; exact (g.args 3).isLt)
+    (by rw [inputBytes, bytesAt_length]; exact h.inputFit 1 one)
+    (by rw [inputBytes, bytesAt_length, r.2.1, r.2.2]; exact h.inputRead 1 one)
+    (by intro i hi; rw [m]; simp only [inputBytes, Spec.Rsa.bytesAt, List.getElem_map, List.getElem_range]; rfl)
+    p (by rw [inputBytes, bytesAt_length]; simpa only [CallGeometry.buffer, BitVec.ofNat_toNat, BitVec.setWidth_eq] using c)) fun t ⟨v, mt, rt⟩ => ?_
+  exact ⟨v, mt.trans m, (r.mono (by decide)).trans (rt.mono (by decide))⟩
+
+theorem failure_ok {g : CallGeometry} {s : State} (h : Inputs g s) :
+    WP isa failure s fun t => Inputs g t ∧ t.gpr .eax = 0 ∧ t.mem = s.mem ∧ Keeps [.eax] s t := by
+  refine wp_movS rfl fun t T _ => WP.block_nil ?_
+  exact ⟨h.after T.keeps (by decide) (by decide) (by rw [T.mem]; exact Frame.refl _ _), T.gpr, T.mem, T.keeps⟩
+
+theorem invalid_modulus (full : Bool) (k : Nat) (v : Vals) (h : Spec.Rsa.modulusValid v.n k = false) :
+    validity full k v = false := by
+  cases full <;> simp only [validity, Bool.false_eq_true, ite_false, ite_true,
+    Spec.Rsa.keyValid, Spec.Rsa.crtKeyValid, h, Bool.false_and]
+
+theorem invalid_exponent (full : Bool) (k : Nat) (v : Vals) (h : Spec.Rsa.exponentValid v.e = false) :
+    validity full k v = false := by
+  cases full <;> simp only [validity, Bool.false_eq_true, ite_false, ite_true,
+    Spec.Rsa.keyValid, Spec.Rsa.crtKeyValid, h, Bool.and_false, Bool.false_and]
+end VG.Proof.Rsa.X86.KeyCheck
+
+end
+
+end
+
+/-! ### `Rsa.X86.KcSized`, which this module and modules that import it used -/
+
+section
+
+/-! # Complete key validation at the selected public word width -/
+
+@[expose] public section
+namespace VG.Proof.Rsa.X86.KeyCheck
+open VG VG.X86 VG.X86.Wp VG.Proof.Mont VG.Proof.Mont.X86
+open VG.Impl.Rsa.X86.Keys hiding slot
+open VG.Impl.Rsa.X86.KeyCheck
+open VG.Proof.Rsa.X86.Keys
+
+theorem sized_ok {g : CallGeometry} {s : State} (h : Inputs g s) (len : Lengths g)
+    (b : Bounds (geometry g) (g.args 1).toNat (numbers g s.mem))
+    (hm : Spec.Rsa.modulusValid (numbers g s.mem).n (g.args 1).toNat = true)
+    (he : Spec.Rsa.exponentValid (numbers g s.mem).e = true) :
+    WP isa (VG.Impl.Rsa.X86.KeyCheckRt.sized g.full) s fun t => Inputs g t ∧
+      t.gpr .eax = BitVec.ofNat 32 (validity g.full (g.args 1).toNat (numbers g s.mem)).toNat ∧
+      Outside g.base 16 (g.size - 16) s.mem t.mem ∧
+      Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t := by
+  have kwEq : VG.Proof.Rsa.X86.KeyRt.kw (g.args 1).toNat = 2 * g.n := by rw [len.width]
+  unfold VG.Impl.Rsa.X86.KeyCheckRt.sized
+  rw [wp_seqs_cons (List.cons_ne_nil _ _)]
+  refine WP.mono (loads_ok h len) fun u ⟨hu, bu, fu, ru⟩ => ?_
+  rw [wp_seqs_cons (List.cons_ne_nil _ _)]
+  refine WP.mono (checks_ok bu b hm he) fun v ⟨A, live, hv⟩ => ?_
+  have full := VG.Proof.Rsa.X86.KeyRt.keep_outside bu.ws.ws hv.keep (fun j hj => List.mem_range.mp hj) (by decide)
+  have keep' : Keep g.base (2 * g.n) (List.range nArr) bodySlots u.mem v.mem := by rw [← kwEq]; exact hv.keep
+  have body := hu.keepBody keep' (fun j hj => List.mem_range.mp hj) (by decide)
+  have iv := hu.after hv.rest (by decide) (by decide) (hu.scratchFrame full)
+  refine wp_movS (readSrc_sc iv.ws.workspace (by have := iv.ws.hdr_le; unfold sMask hdr at *; omega_using [this]))
+    fun t T _ => WP.block_nil ?_
+  refine ⟨iv.after T.keeps (by decide) (by decide) (by rw [T.mem]; exact Frame.refl _ _), ?_, ?_, ?_⟩
+  · apply BitVec.eq_of_toNat_eq
+    rw [T.gpr]
+    change slot v.mem (geometry g).B sMask = _
+    rw [hv.mask, show (geometry g).full = g.full from rfl]; cases validity g.full (g.args 1).toNat (numbers g s.mem) <;> rfl
+  · rw [T.mem]; exact fu.trans body
+  · exact ru.trans ((hv.rest.mono (by decide)).trans (T.keeps.mono (by decide)))
+/-- The checks run, whatever the numbers. -/
+theorem bodies_ok {g : Geo} {v : Vals} {s : State} (h : BodyIn g v s) :
+    WP isa (if g.full then VG.Impl.Rsa.X86.KeyCheckRt.keyBody g.full else VG.Impl.Rsa.X86.KeyCheckRt.crtBody g.full) s
+      fun t => ∃ A live c, Stg g s A live c t := by
+  obtain ⟨B, Z, len, full⟩ := g
+  cases full
+  · exact WP.mono (crtBody_ok h) fun _ ⟨_, _, _, _, A, live, ht⟩ => ⟨A, live, _, ht⟩
+  · exact WP.mono (keyBody_ok h) fun _ ⟨_, _, _, _, _, _, _, A, live, ht⟩ => ⟨A, live, _, ht⟩
+
+/-- `sized` runs from `Inputs`, whatever the numbers. -/
+theorem sized_wp {g : CallGeometry} {s : State} (h : Inputs g s) (len : Lengths g) :
+    WP isa (VG.Impl.Rsa.X86.KeyCheckRt.sized g.full) s fun t => Inputs g t := by
+  unfold VG.Impl.Rsa.X86.KeyCheckRt.sized
+  rw [wp_seqs_cons (List.cons_ne_nil _ _)]
+  refine WP.mono (loads_ok h len) fun u ⟨hu, bu, _, _⟩ => ?_
+  rw [wp_seqs_cons (List.cons_ne_nil _ _)]
+  refine WP.mono (bodies_ok bu) fun v ⟨A, live, c, hv⟩ => ?_
+  have full := VG.Proof.Rsa.X86.KeyRt.keep_outside bu.ws.ws hv.keep (fun j hj => List.mem_range.mp hj) (by decide)
+  have iv := hu.after hv.rest (by decide) (by decide) (hu.scratchFrame full)
+  refine wp_movS (readSrc_sc iv.ws.workspace (by have := iv.ws.hdr_le; unfold sMask hdr at *; omega_using [this]))
+    fun t T _ => WP.block_nil ?_
+  exact iv.after T.keeps (by decide) (by decide) (by rw [T.mem]; exact Frame.refl _ _)
+
+end VG.Proof.Rsa.X86.KeyCheck
+
+end
+
+end
+
+/-! # Public rejection branches and full key validation have the same result contract -/
+
+@[expose] public section
+namespace VG.Proof.Rsa.X86.KeyCheck
+open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86
+open VG.Proof.Bignum.X86
+open VG.Impl.Rsa.X86.KeyCheck
+
+def Post (g : CallGeometry) (m : Mem) (t : State) : Prop := Inputs g t ∧
+  t.gpr .eax = BitVec.ofNat 32 (validity g.full (g.args 1).toNat (numbers g m)).toNat ∧
+  Outside g.base 16 (g.size - 16) m t.mem
+
+theorem checkExponent_ok {g : CallGeometry} {s : State} (h : Inputs g s) (len : Lengths g)
+    (b : Bounds (geometry g) (g.args 1).toNat (numbers g s.mem))
+    (hm : Spec.Rsa.modulusValid (numbers g s.mem).n (g.args 1).toNat = true) :
+    WP isa (VG.Impl.Rsa.X86.KeyCheckRt.checkExponent g.full) s fun t => Post g s.mem t ∧
+      Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t := by
+  unfold VG.Impl.Rsa.X86.KeyCheckRt.checkExponent
+  refine WP.seq (WP.mono (exponent_ok h) fun u ⟨value, memU, restU⟩ => ?_)
+  refine WP.seq (WP.mono (exponentFlag_ok _ value) fun v ⟨flag, memV, restV⟩ => ?_)
+  have mem : v.mem = s.mem := memV.trans memU
+  have rest := restU.trans (restV.mono (by decide))
+  have hv := h.after rest (by decide) (by decide) (by rw [mem]; exact Frame.refl _ _)
+  refine WP.ite (!Spec.Rsa.exponentValid (numbers g s.mem).e) flag ?_ ?_
+  · intro bad
+    have invalid : Spec.Rsa.exponentValid (numbers g s.mem).e = false := by simpa using bad
+    refine WP.mono (failure_ok hv) fun t ⟨ht, zero, mt, rt⟩ => ?_
+    refine ⟨⟨ht, ?_, ?_⟩, rest.trans (rt.mono (by decide))⟩
+    · rw [invalid_exponent _ _ _ invalid]; exact zero
+    · rw [mt, mem]; exact Outside.refl _ _ _ _
+  · intro good
+    have accepted : Spec.Rsa.exponentValid (numbers g s.mem).e = true := by simpa using good
+    refine WP.mono (sized_ok hv len (mem ▸ b) (mem ▸ hm) (mem ▸ accepted))
+      fun t ⟨ht, value, frame, rt⟩ => ?_
+    exact ⟨⟨ht, mem ▸ value, mem ▸ frame⟩, rest.trans rt⟩
+
+theorem body_ok {g : CallGeometry} {s : State} (h : Inputs g s) (len : Lengths g)
+    (b : Bounds (geometry g) (g.args 1).toNat (numbers g s.mem)) :
+    WP isa (VG.Impl.Rsa.X86.KeyCheckRt.body g.full) s fun t => Post g s.mem t ∧
+      Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t := by
+  unfold VG.Impl.Rsa.X86.KeyCheckRt.body
+  refine WP.seq (WP.mono (modulus_ok h len.lower len.upper) fun u ⟨flag, mem, rest⟩ => ?_)
+  have hu := h.after rest (by decide) (by decide) (by rw [mem]; exact Frame.refl _ _)
+  refine WP.ite (Spec.Rsa.modulusValid (numbers g s.mem).n (g.args 1).toNat) flag ?_ ?_
+  · intro accepted
+    refine WP.mono (checkExponent_ok hu len (mem ▸ b) (mem ▸ accepted)) fun t ⟨post, rt⟩ => ?_
+    exact ⟨mem ▸ post, rest.trans rt⟩
+  · intro rejected
+    refine WP.mono (failure_ok hu) fun t ⟨ht, zero, mt, rt⟩ => ?_
+    refine ⟨⟨ht, ?_, ?_⟩, rest.trans (rt.mono (by decide))⟩
+    · rw [invalid_modulus _ _ _ rejected]; exact zero
+    · rw [mt, mem]; exact Outside.refl _ _ _ _
+end VG.Proof.Rsa.X86.KeyCheck
+
+end
+
+end
+
+/-! ### `Rsa.X86.KcPair`, which only this module used -/
+
+section
+
+/-! # Relate CRT calls with equal public pointers, lengths, and stack position -/
+
+@[expose] public section
+namespace VG.Proof.Rsa.X86.KeyCheck
+open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86
+open VG.Proof.Bignum.X86 VG.Proof.Dsa.X86
+
+structure Pair (g : CallGeometry) (s t : State) : Prop where
+  left : Inputs g s
+  right : Inputs g t
+  sp : s.gpr .esp = t.gpr .esp
+
+theorem Pair.agree {g : CallGeometry} {s t : State} (h : Pair g s t) :
+    VG.X86.Taint.Agree argumentTaint s t := by
+  apply agree_regs (rs := [.edi, .esp])
+  intro r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl
+  · exact BitVec.eq_of_toNat_eq (h.left.ws.workspace.edi_toNat.trans h.right.ws.workspace.edi_toNat.symm)
+  · exact h.sp
+
+theorem Pair.workspace {g : CallGeometry} {s t : State} (h : Pair g s t) :
+    VG.X86.Taint.Agree (VG.Proof.Mont.X86.Dynamic.workspaceTaint false) s t := by
+  apply agree_regs
+  intro r hr
+  obtain rfl := List.mem_singleton.mp hr
+  exact h.agree.rf.1 _ (by decide)
+
+theorem Pair.after {g : CallGeometry} {s t u v : State} {regs : List Reg} (h : Pair g s t)
+    (hu : Inputs g u) (hv : Inputs g v) (ku : Keeps regs s u) (kv : Keeps regs t v)
+    (sp : .esp ∉ regs) : Pair g u v :=
+  ⟨hu, hv, (ku.1 _ sp).trans (h.sp.trans (kv.1 _ sp).symm)⟩
+
+theorem Pair.keepMem {g : CallGeometry} {s t u v : State} {regs : List Reg} (h : Pair g s t)
+    (ks : Keeps regs s u) (kt : Keeps regs t v) (di : .edi ∉ regs) (sp : .esp ∉ regs)
+    (ms : u.mem = s.mem) (mt : v.mem = t.mem) : Pair g u v :=
+  h.after (h.left.after ks di sp (by rw [ms]; exact Frame.refl _ _))
+    (h.right.after kt di sp (by rw [mt]; exact Frame.refl _ _)) ks kt sp
+
+end VG.Proof.Rsa.X86.KeyCheck
+
+end
+
+end
 
 /-! ### `Rsa.X86.KcOperationTiming`, which only this module used -/
 

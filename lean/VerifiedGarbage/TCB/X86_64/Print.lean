@@ -11,9 +11,10 @@ public import VerifiedGarbage.TCB.X86_64.Target
 default dialect of Rust's `asm!`/`naked_asm!` on x86-64.
 
 Each straight-line instruction and the return are printed as their machine
-code (`Encode.lean`), `.byte <bytes>`, each after a line `// <the
-instruction's text>`, which the emitter writes in the module's assembly file, not in its code
-(`Rust.assembly`): the assembler only copies the bytes. The branches
+code (`Encode.lean`), a line of its bytes with the instruction's text
+(`Line.code`): the emitter writes the bytes in the module's code and the
+text in its assembly file (`Rust.template`, `Rust.assembly`), so the
+assembler only copies the bytes. The branches
 (`jcc`, `jmp`), the call and the address of a static (`symLines`) are
 printed as text, for the assembler and linker to lay out.
 -/
@@ -347,12 +348,17 @@ def Instr.asm : Instr → List String
   | .kStore m k r => [s!"kmovw k1, {k.name32}", s!"vmovdqu64 {m.str512} " ++ "{k1}" ++ s!", {r.zname}"]
   | .kLoad8 k d m => [s!"kmovq k1, {k.name}", s!"vmovdqu8 {d.zname} " ++ "{k1}{z}" ++ s!", {m.str512}"]
   | .kStore8 m k r => [s!"kmovq k1, {k.name}", s!"vmovdqu8 {m.str512} " ++ "{k1}" ++ s!", {r.zname}"]
+  | .evMaskAddQ k d a b => [s!"kmovw k1, {k.name32}",
+      s!"vpaddq {d.yname} " ++ "{k1}" ++ s!", {a.yname}, {b.yname}", "kxorw k1, k1, k1"]
+  | .evCmpUq gt d a b => [s!"vpcmpuq k1, {a.yname}, {b.yname}, {if gt then 6 else 0}",
+      s!"kmovw {d.name32}, k1", "kxorw k1, k1, k1"]
   | .vpcmpltuw d a b => [s!"vpcmpuw k1, {a.zname}, {b.zname}, 1", s!"kmovd {d.name32}, k1"]
   | .stmxcsr m => [s!"stmxcsr {m.str32}"]
   | .ldmxcsr m => [s!"ldmxcsr {m.str32}"]
   | .lfence => ["lfence"]
   | .mul r => [s!"mul {r.name}"]
   | .callr r => [s!"call {r.name}"]
+  | .callm m => [s!"call {m.str}"]
   | .imul d r => [s!"imul {d.name}, {r.name}"]
   | .imul3 d r v => [s!"imul {d.name}, {r.name}, {v.toInt}"]
   | .shld d r n => [s!"shld {d.name}, {r.name}, {n}"]
@@ -394,21 +400,21 @@ def Instr.memOps : Instr → List MemOp
   | .vpbroadcastdZ _ m | .zbcstd _ _ _ m
   | .evLoad _ m | .evStore m _ | .evMadd52Load _ _ _ m | .kLoad _ _ m | .kStore m _ _
   | .kLoad8 _ _ m | .kStore8 m _ _ | .evBroadcastLoad _ m | .e5InsertLoad _ _ m _ | .e5ExtractStore m _ _
-  | .stmxcsr m | .ldmxcsr m => [m]
+  | .stmxcsr m | .ldmxcsr m | .callm m => [m]
   | .shift32 .. | .bswap32 _ | .rorx32 .. | .andn32 .. | .rorx .. | .andn .. | .bswap _
   | .shift .. | .shiftCl .. | .shiftx .. | .movImm64 .. | .leaSym .. | .movqR .. | .xop _ | .vop _
-  | .vpmovmskb .. | .zop _ | .eop _ | .e5op _ | .vpcmpltuw ..
+  | .vpmovmskb .. | .zop _ | .eop _ | .e5op _ | .vpcmpltuw .. | .evCmpUq .. | .evMaskAddQ ..
   | .lfence | .mul _ | .imul .. | .imul3 .. | .shld .. | .btr ..
   | .push _ | .pop .. | .alloc _ | .free _ | .callr _ => []
 
-/-- The lines of an instruction: each of its instructions' text (`asm`) as a
-comment, then that instruction's bytes (`encode`); its text if it has no
+/-- The lines of an instruction: each of its instructions' text (`asm`) with
+that instruction's bytes (`encode`), a `Line.code`; its text if it has no
 encoding (`leaSym`, printed by `symLines`, or an instruction that
 `unencodable` reports, which the emitter refuses). -/
-def Instr.code (i : Instr) : List String :=
+def Instr.code (i : Instr) : List Line :=
   match i.encode with
-  | some bs => (i.asm.zip bs).flatMap fun (t, b) => [s!"// {t}", byteLine b]
-  | none => i.asm
+  | some bs => (i.asm.zip bs).map fun (t, b) => .code t b
+  | none => i.asm.map .text
 
 /-- The mnemonics of Intel's list of the instructions MXCSR-configuration-dependent
 timing affects ("MCDT Data Operand Independent Timing Instructions", Table 1),
@@ -419,16 +425,30 @@ def mcdtMnemonics : List String :=
     "pmuludq", "vplzcntd", "vplzcntq", "vpmadd52huq", "vpmadd52luq", "vpmaddubsw", "vpmaddwd",
     "vpmuldq", "vpmulhrsw", "vpmulhuw", "vpmulhw", "vpmulld", "vpmullq", "vpmullw", "vpmuludq"]
 
+/-- The first characters of `mcdtMnemonics`. -/
+def mcdtInitials : List Char := (mcdtMnemonics.map (·.front)).eraseDups
+
 /-- Whether the text of `i` (`asm`) has an instruction of Intel's list: one
-whose mnemonic, its first word, is among `mcdtMnemonics`. -/
+whose mnemonic, its first word, is among `mcdtMnemonics`. Only a line that
+starts with the first character of one of them (`mcdtInitials`) can be one,
+and few do: the others are not split. -/
 def Instr.mcdt (i : Instr) : Bool :=
-  i.asm.any fun t => mcdtMnemonics.contains ((t.splitOn " ").headD "")
+  i.asm.any fun t => mcdtInitials.contains t.front &&
+    mcdtMnemonics.contains ((t.splitOn " ").headD "")
+
+/-- `test eax, eax` and a branch on `e` (`je`), after a call of `vg_mcdt_enter`:
+the branch is taken exactly when it returned 0 (ZF is set exactly when
+`eax`, its `u32` result, is 0), so that the code it skips runs only once it
+has returned 1 (`Printer.mcdtGuard`). -/
+def Instr.mcdtGuard : Instr → Cond → Bool
+  | .alu32 .test .rax (.reg .rax), .e => true
+  | _, _ => false
 
 def printer : Printer isa where
   instr := Instr.code
-  branch c l := [s!"j{c.name} {l}"]
+  branch c l := [.text s!"j{c.name} {l}"]
   jump l := s!"jmp {l}"
-  ret := ["// ret", byteLine retBytes]
+  ret := [.code "ret" retBytes]
   call := "call"
   -- The static's RIP-relative address, which `TCB/Rust.lean` writes with
   -- its symbol; `asm` gives the same text, for reading.
@@ -448,6 +468,7 @@ def printer : Printer isa where
   cannot move them, and with them its performance. -/
   funcAlign := [".p2align 6"]
   mcdt := Instr.mcdt
+  mcdtGuard := Instr.mcdtGuard
   unencodable
     | .leaSym .. => none
     | i => match i.memOps.filter (!·.dispOk) with
@@ -456,8 +477,9 @@ def printer : Printer isa where
 
 /-- What the emitter needs of the target (`Emitter`): its printer, its Rust `cfg`
 and ABI string, and how documentation names its calling convention's
-argument area and reserved memory (`abi`'s `argArea` and `reserved`). -/
-instance : Emitter isa where
+argument area and reserved memory (`abi`'s `argArea` and `reserved`). Every
+artifact of the target is emitted with it (`Emit.driver`). -/
+def emitter : Emitter isa where
   printer := printer
   -- x32 targets (`x86_64-unknown-linux-gnux32`) have 32-bit pointers. The
   -- model's baseline includes SSE2 (see `Instr.requires`), which
@@ -471,5 +493,10 @@ instance : Emitter isa where
     some ("the arguments on the stack", false)
   reservedDoc n := some (if n = 0 then "the return address on the stack" else
     s!"the return address on the stack or the {n} bytes of stack below it")
+  callBytes := 8
+  frameBytes
+    | .push rs => 8 * rs.length
+    | .alloc bytes => bytes
+    | _ => 0
 
 end VG.X86_64

@@ -249,7 +249,7 @@ theorem valid_exit_rel (hF : ∀ d s, S5 d s → s.gpr .s0 = 0 → WP isa (seqs 
 
 theorem code_rel (hF : ∀ d s, S5 d s → s.gpr .s0 = 0 → WP isa (seqs [setup, loads, prod, det]) s (S7 d)) :
     RelCT isa (Two C0) code fun _ _ => True := by
-  unfold code
+  unfold Impl.Rsa.RISCV64.RecoverDet.code
   rw [entry_eq, save_eq]
   refine RelCT.seq (R := Two S2) (RelCT.block_append (RelCT.seq (R := Two S1) ?_ ?_)) ?_
   · -- `save`'s first part.

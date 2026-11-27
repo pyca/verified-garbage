@@ -54,13 +54,36 @@ theorem readW_getLsbD (m : Mem) (p : Addr) {j : Nat} (hj : j < 64) :
     decide_true, Bool.true_and]
   congr 1; omega_using []
 
+/-- Bit `8 (k + 1) + r` of `x ++ y`, for a byte `y`: bit `8 k + r` of `x`. -/
+private theorem getLsbD_append_byte_hi {n : Nat} (x : BitVec n) (y : BitVec 8) (k r : Nat) :
+    (x ++ y).getLsbD (8 * (k + 1) + r) = x.getLsbD (8 * k + r) := by
+  rw [BitVec.getLsbD_append, ite_eq_right (by omega)]
+  congr 1; omega
+
 /-- Bit `8 (7 - q) + r` of a block's big-endian word: bit `r` of byte `q`. -/
 theorem catBlock_bit (b : Block) {q r : Nat} (hq : q < 8) (hr : r < 8) :
     (VG.Proof.TripleDes.catBlock b).getLsbD (8 * (7 - q) + r) = b[q].getLsbD r := by
   have hcases : ∀ k < 8, k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4 ∨ k = 5 ∨ k = 6 ∨ k = 7 := by decide
-  rcases hcases q hq with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-    simp only [VG.Proof.TripleDes.catBlock, BitVec.getLsbD_append] <;>
-      (repeat' split) <;> first | omega | (congr 1; omega_using [])
+  have lo : ∀ {n : Nat} (x : BitVec n) (y : BitVec 8), (x ++ y).getLsbD (8 * 0 + r) = y.getLsbD r :=
+    fun x y => by rw [Nat.mul_zero, Nat.zero_add, BitVec.getLsbD_append, ite_eq_left hr]
+  unfold VG.Proof.TripleDes.catBlock
+  -- byte `q` is under `7 - q` appends: no `split` of the eight nested `if`s
+  rcases hcases q hq with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+  · iterate 7 refine (getLsbD_append_byte_hi _ _ _ r).trans ?_
+    rw [Nat.mul_zero, Nat.zero_add]
+  · iterate 6 refine (getLsbD_append_byte_hi _ _ _ r).trans ?_
+    exact lo _ _
+  · iterate 5 refine (getLsbD_append_byte_hi _ _ _ r).trans ?_
+    exact lo _ _
+  · iterate 4 refine (getLsbD_append_byte_hi _ _ _ r).trans ?_
+    exact lo _ _
+  · iterate 3 refine (getLsbD_append_byte_hi _ _ _ r).trans ?_
+    exact lo _ _
+  · iterate 2 refine (getLsbD_append_byte_hi _ _ _ r).trans ?_
+    exact lo _ _
+  · refine (getLsbD_append_byte_hi _ _ _ r).trans ?_
+    exact lo _ _
+  · exact lo _ _
 
 /-- The little-endian word of a block, bit by bit. -/
 theorem readW_bit (m : Mem) (p : Addr) {j : Nat} (hj : j < 64) :
@@ -234,6 +257,23 @@ theorem frame_in {rs : List Region} {m m' : Mem} {r : Region} (h : Frame [r] m m
 
 theorem shr3 : ∀ k ≤ 64, BitVec.ofNat 64 (8 * k) >>> 3 = BitVec.ofNat 64 k := by decide
 
+/-- The transposition, through its call. -/
+theorem transposeCall_ok {s : State} (h : Room s) (hm : MasksAt s) :
+    WP isa transposeCall s fun s' => (∀ j < 64, words s' j = transposeW (words s) j) ∧
+      s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧ s'.gpr .s0 = s.gpr .s0 ∧
+      s'.gpr .a1 = s.gpr .a1 ∧ s'.gpr .a2 = s.gpr .a2 ∧ s'.gpr .s11 = s.gpr .s11 ∧
+      Frame [stR s] s.mem s'.mem := by
+  let u := s.callEntry
+  have g : ∀ r, r ∉ linkRegs → u.gpr r = s.gpr r := fun r hl => State.callEntry_gpr _ hl
+  have s0u : u.gpr .s0 = s.gpr .s0 := g _ (by decide)
+  have hu : Room u := h.congr s0u rfl
+  have hmu : MasksAt u := fun k hk => by rw [s0u]; exact hm k hk
+  have wu : words u = words s := by funext x; simp only [words, sl, s0u]; rfl
+  obtain ⟨s', run, w, rd, wr, sp, s0, a1, a2, s11, ra, f⟩ := transpose_ok hu hmu
+  refine callBody_wp (WP.of_runBlock ⟨s', run, ra, fun j hj => by rw [w j hj, wu], rd, wr, sp,
+    s0.trans s0u, a1.trans (g _ (by decide)), a2.trans (g _ (by decide)), s11.trans (g _ (by decide)), ?_⟩)
+  rw [show stR u = stR s from stR_congr s0u] at f; exact f
+
 theorem batch_ok (d : Direction) {s : State} (h : BatchPre s) : WP isa (batch d) s (BatchPost d s) := by
   have hpos := h.pos
   have fit := h.data.fit
@@ -266,7 +306,7 @@ theorem batch_ok (d : Direction) {s : State} (h : BatchPre s) : WP isa (batch d)
       exact ⟨r, List.mem_append_right _ hr, hc⟩)
     (fun i hi => by
       rw [s0₁, wr₁]
-      exact ⟨_, h.room.frame, Offset.contains_base _ (by unfold frameBytes; omega_using [hk64, hi]) (by omega_using [hk64, hi])⟩)
+      exact h.room.frame i 1 (by unfold frameBytes; omega_using [hk64, hi]))
     (by
       rw [s0₁, a1₁]
       exact sep_of_disjoint ((hdisj.sub_right (Region.sub_prefix (by omega_using [hk64]))).symm))) fun s₂ ⟨c₂, f₂, g₂, wr₂⟩ => ?_
@@ -288,9 +328,8 @@ theorem batch_ok (d : Direction) {s : State} (h : BatchPre s) : WP isa (batch d)
     rw [Offset.add_add, e, ← Offset.add_add]
   -- the transposition
   apply WP.seq
-  obtain ⟨s₃, run₃, w₃, -, wr₃, -, s0₃, a1₃, a2₃, f₃⟩ :=
-    transpose_ok h₂ (masksAt_frame s0₂ h.room fs₂ h.masks)
-  refine WP.of_runBlock ⟨s₃, run₃, ?_⟩
+  refine WP.mono (transposeCall_ok h₂ (masksAt_frame s0₂ h.room fs₂ h.masks))
+    fun s₃ ⟨w₃, _, wr₃, _, s0₃, a1₃, a2₃, _, f₃⟩ => ?_
   have s0₃' : s₃.gpr .s0 = s.gpr .s0 := s0₃.trans s0₂
   have wr₃' : s₃.wr = s.wr := wr₃.trans (wr₂.trans wr₁)
   have h₃ : Room s₃ := h.room.congr s0₃' wr₃'
@@ -306,9 +345,8 @@ theorem batch_ok (d : Direction) {s : State} (h : BatchPre s) : WP isa (batch d)
     rw [show schedA s₃ = schedA s by simp only [schedA, s0₃']]; exact sched_frame h.room fs₃
   -- the transposition back
   apply WP.seq
-  obtain ⟨s₅, run₅, w₅, -, wr₅, -, s0₅, a1₅, a2₅, f₅⟩ :=
-    transpose_ok h₄ (masksAt_frame s0₄ h.room fs₄ h.masks)
-  refine WP.of_runBlock ⟨s₅, run₅, ?_⟩
+  refine WP.mono (transposeCall_ok h₄ (masksAt_frame s0₄ h.room fs₄ h.masks))
+    fun s₅ ⟨w₅, _, wr₅, _, s0₅, a1₅, a2₅, _, f₅⟩ => ?_
   have s0₅' : s₅.gpr .s0 = s.gpr .s0 := s0₅.trans s0₄
   have wr₅' : s₅.wr = s.wr := wr₅.trans wr₄'
   have fs₅ : Frame [stR s] s.mem s₅.mem := fs₄.trans (by rw [← stR_congr s0₄]; exact f₅)
@@ -328,8 +366,8 @@ theorem batch_ok (d : Direction) {s : State} (h : BatchPre s) : WP isa (batch d)
   refine WP.mono (copyBytes_ok (src := .s0) (dst := .a1) (by decide) s₆ (N := 8 * k) (by omega_using [hk1]) (by omega_using [hk64]) b₆
     (fun i hi => by
       rw [s0₆]
-      exact ⟨_, List.mem_append_right _ (wr₆' ▸ h.room.frame),
-        Offset.contains_base _ (by unfold frameBytes; omega_using [hk64, hi]) (by omega_using [hk64, hi])⟩)
+      obtain ⟨r, hr, hc⟩ := h.room.frame i 1 (by unfold frameBytes; omega_using [hk64, hi])
+      exact ⟨r, List.mem_append_right _ (wr₆' ▸ hr), hc⟩)
     (fun i hi => by rw [a1₆, wr₆']; exact h.data.byte (by omega_using [hkn, hi]))
     (by
       rw [s0₆, a1₆]
@@ -401,7 +439,7 @@ def maskR (s : State) : Region := ⟨wordAddr (s.gpr .s0) 112, 48⟩
 theorem maskCode_ok {s : State} (h : Room s) {k : Nat} (hk : k < 6) :
     WP isa (.block (maskCode k)) s fun s' =>
       s'.mem = s.mem.writeW (wordAddr (s.gpr .s0) (112 + k)) (swapMask (maskShifts.getD k 1)) ∧
-      (∀ r, r ≠ .t0 → r ≠ .t1 → s'.gpr r = s.gpr r) ∧ s'.wr = s.wr := by
+      (∀ r, r ≠ .t0 → r ≠ .t1 → s'.gpr r = s.gpr r) ∧ s'.wr = s.wr ∧ s'.rd = s.rd := by
   unfold maskCode
   rw [WP.block_append_iff]
   refine WP.mono (ByteLoad.li64_ok (s := s) (by decide) _) fun s₁ e => ?_
@@ -418,23 +456,24 @@ theorem maskCode_ok {s : State} (h : Room s) {k : Nat} (hk : k < 6) :
   let A := wordAddr (s.gpr .s0) (112 + k)
   let v := swapMask (maskShifts.getD k 1)
   refine WP.of_runBlock ⟨{ s₁ with mem := s₁.mem.writeW A v }, by rw [runBlock_cons, e, runStep_some, runBlock_nil, ea, t0₁], rfl,
-    fun r a b => ?_, rfl⟩
+    fun r a b => ?_, rfl, rfl⟩
   show s₁.gpr r = s.gpr r
   simp only [s₁, RegUpd.gpr_write, a, b, ite_false]
 
 theorem masks_ok {s : State} (h : Room s) : ∀ n ≤ 6,
     WP isa (.block ((List.range n).flatMap maskCode)) s fun s' =>
       (∀ k < n, s'.mem.readW (wordAddr (s.gpr .s0) (112 + k)) 64 = swapMask (maskShifts.getD k 1)) ∧
-      (∀ r, r ≠ .t0 → r ≠ .t1 → s'.gpr r = s.gpr r) ∧ s'.wr = s.wr ∧ Frame [maskR s] s.mem s'.mem
-  | 0, _ => WP.block_nil ⟨fun k hk => absurd hk (by omega_using []), fun _ _ _ => rfl, rfl, Frame.refl _ _⟩
+      (∀ r, r ≠ .t0 → r ≠ .t1 → s'.gpr r = s.gpr r) ∧ s'.wr = s.wr ∧ Frame [maskR s] s.mem s'.mem ∧
+      s'.rd = s.rd
+  | 0, _ => WP.block_nil ⟨fun k hk => absurd hk (by omega_using []), fun _ _ _ => rfl, rfl, Frame.refl _ _, rfl⟩
   | n + 1, hn => by
     rw [List.range_succ, List.flatMap_append, List.flatMap_cons, List.flatMap_nil, List.append_nil,
       WP.block_append_iff]
-    refine WP.mono (masks_ok h n (by omega_using [hn])) fun s₁ ⟨m₁, g₁, w₁, f₁⟩ => ?_
+    refine WP.mono (masks_ok h n (by omega_using [hn])) fun s₁ ⟨m₁, g₁, w₁, f₁, r₁⟩ => ?_
     have b₁ : s₁.gpr .s0 = s.gpr .s0 := g₁ _ (by decide) (by decide)
     have h₁ : Room s₁ := h.congr b₁ w₁
-    refine WP.mono (maskCode_ok h₁ (k := n) (by omega_using [hn])) fun s₂ ⟨m₂, g₂, w₂⟩ =>
-      ⟨fun k hk => ?_, fun r a b => (g₂ r a b).trans (g₁ r a b), w₂.trans w₁, ?_⟩
+    refine WP.mono (maskCode_ok h₁ (k := n) (by omega_using [hn])) fun s₂ ⟨m₂, g₂, w₂, r₂⟩ =>
+      ⟨fun k hk => ?_, fun r a b => (g₂ r a b).trans (g₁ r a b), w₂.trans w₁, ?_, r₂.trans r₁⟩
     · rw [m₂, b₁]
       by_cases e : k = n
       · subst e; exact Mem.readW_writeW_self64 _ _ _
@@ -550,11 +589,14 @@ theorem setup_ok {u : State} (h : SetupPre u) : WP isa setup u (SetupPost u) := 
   have s0₆ : u₆.gpr .s0 = u.sp := (k₆.1 _ (by decide)).trans s0₅
   have wr₆ : u₆.wr = u.wr := k₆.2.2
   have h₆ : Room u₆ :=
-    ⟨by simp only [frameR, s0₆, wr₆, frameBytes]; exact h.wr, by rw [s0₆]; exact h.al,
+    ⟨fun o n hn => by
+        rw [s0₆, wr₆]
+        exact ⟨_, h.wr, Offset.contains_base _ (by unfold frameBytes at hn; omega_using [hn])
+          (by unfold frameBytes at hn; omega_using [hn])⟩, by rw [s0₆]; exact h.al,
       by rw [s0₆]; unfold frameBytes; omega_using [fit]⟩
   -- the masks
   rw [storeMasks_eq]
-  refine WP.mono (masks_ok h₆ 6 (Nat.le_refl _)) fun v ⟨m₇, g₇, w₇, f₇⟩ => ?_
+  refine WP.mono (masks_ok h₆ 6 (Nat.le_refl _)) fun v ⟨m₇, g₇, w₇, f₇, _⟩ => ?_
   have s0₇ : v.gpr .s0 = u.sp := (g₇ _ (by decide) (by decide)).trans s0₆
   have hm₇ : maskR u₆ = ⟨u.sp + BitVec.ofNat 64 896, 48⟩ := by simp only [maskR, s0₆]
   rw [hm₇] at f₇
@@ -718,9 +760,8 @@ theorem finish_ok {d : Direction} {s : State} {B D : Addr} {n : Nat} {K : Schedu
   have fit := E.fit
   have al : B.toNat % 8 = 0 := by rw [← I.s0]; exact I.room.al
   have bfit : B.toNat + 1056 ≤ 2 ^ 64 := by rw [← I.s0]; exact I.room.fit
-  have inF : ∀ o m, o + m ≤ 1056 → InRegions v.wr (B + BitVec.ofNat 64 o) m := fun o m hm =>
-    ⟨_, by have := I.room.frame; rwa [frameR, I.s0] at this, Offset.contains_base _ (by unfold frameBytes; omega_using [hm])
-      (by omega_using [hm])⟩
+  have inF : ∀ o m, o + m ≤ 1056 → InRegions v.wr (B + BitVec.ofNat 64 o) m := fun o m hm => by
+    have := I.room.frame o m hm; rwa [I.s0] at this
   unfold finish
   have e₁ := exec_li (s := v) (d := .t1) (imm := 0) (by decide)
   let w₁ := v.write .t1 (BitVec.ofInt 64 0)
@@ -820,7 +861,7 @@ theorem ecb_wp (d : Direction) {s : State} (h : EcbPre s) :
     apply WP.seq
     refine WP.mono (loop_ok E hn I0) fun w J => ?_
     exact finish_ok E J
-  refine WP.mono (WP.rdwr body) fun y ⟨⟨gy, by_⟩, _, _, spy⟩ => ?_
+  refine WP.mono (WP.rdwr body) fun y ⟨⟨gy, by_⟩, _, _, spy⟩ m _ fl => ?_
   refine ⟨⟨fun r hr => ?_, ?_, ?_⟩, fun b hb => ?_⟩
   · show y.gpr r = s.gpr r
     exact gy r (preserved_saved r hr)
@@ -828,7 +869,11 @@ theorem ecb_wp (d : Direction) {s : State} (h : EcbPre s) :
     rw [spy, usp]; exact BitVec.sub_add_cancel s.sp _
   · show y.gpr .ra = s.gpr .ra
     exact gy .ra (by decide)
-  · have e : (freed frameBytes y).mem = y.mem := by simp only [freed]
-    rw [e]; exact by_ b hb
+  · -- The `free` loses the frame's bytes, which lie apart from the data.
+    show blockAt m (wAt D b) = _
+    rw [blockAt_frame fl fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact (h.stackData.symm.sub_left (Offset.sub_base _ (by omega_using [hb])))]
+    exact by_ b hb
 
 end VG.Proof.TripleDes.RISCV64.Bitsliced

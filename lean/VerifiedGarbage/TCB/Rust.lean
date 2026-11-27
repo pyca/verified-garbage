@@ -160,8 +160,9 @@ type's alignment.
 
 An artifact may take tables of functions (`Artifact.tables`,
 `Abi.withTables`): read-only arrays of pointer-sized words (`Param.table`,
-`*const [usize; k]`), each holding one of the tables of an interface, whose code calls their functions by indirect calls
-(`Code.icall`). `files` writes each table once per target, in a file of its
+`*const [usize; k]`), each holding one of the tables of an interface, the one
+its signature names (`TableIface`), whose code calls their functions by
+indirect calls (`Code.icall`). `files` writes each table once per target, in a file of its
 own, `fn_tables/<name>.rs` (its name in lowercase), and `fn_tables/mod.rs`
 declares the type of each interface, which only these statics have (its
 fields are private to the module), and re-exports each table's items:
@@ -195,10 +196,14 @@ its words (`repr(C)`: the pointer-sized addresses, then the data, each a
 parameter points: word `i`, of the target's pointer width, at offset `i *
 size_of::<usize>()`, the address of each function, the linker's resolution
 of its symbol (`ISA.fnAddr`), then the data, which `checkFnTables` checks
-fits in a word. `checkFnTables` checks that each parameter that takes
-tables is a table parameter (`Param.table`) of their length,
-that it lists every table of their interface on the target (the Rust caller
-may pass the `as_ptr()` of any static of the type), that tables of one name
+fits in a word. `checkFnTables` checks that the registration lists tables
+for each table parameter (`Param.table`) of the signature and for nothing
+else, each one a table of the interface the signature gives the parameter
+(`checkFnTable`: its interface, its shape, its name and the data a table of
+that name starts with), and that it lists every table of the interface on
+the target (the Rust caller may pass the `as_ptr()` of any static of the
+type): so a registration cannot choose which tables its proof is about, nor
+list tables that the contract says nothing of; that tables of one name
 are one table and tables of one interface have one shape, and that every
 function a table names is emitted, as an artifact or an internal function,
 with the code the model runs for every call of it, indirect calls included
@@ -208,9 +213,7 @@ whose address the instruction reads (`Code.icall`), so its proof covers the
 code the processor runs. A table's constant of CPU features is those of its
 functions (`fnTableFeatures`), and the documentation of a function taking
 tables says the CPU must support those of the table it is given
-(`fnTablesDoc`): a caller's own features (`Code.requires`) leave out those
-of the functions an indirect call may reach, of which it runs only the one
-its table names.
+(`fnTablesDoc`), which the caller's own (`Code.requiresDedup`) leave out.
 
 An artifact whose code needs CPU features beyond the target's baseline
 (`Artifact.features`) also gets a last `# Safety` item saying the CPU must
@@ -245,9 +248,67 @@ compiled only under it, `#[cfg(<predicate>)]`.
 
 @[expose] public section
 
+namespace VG
+
+/-- What an artifact is emitted for (`EmitArtifact`). -/
+structure EmitFor where
+  target : EmitTarget
+
+/-- An artifact with the target it is emitted for: the one its proof is on,
+with its `Emitter`. The emitter makes every one it emits of the artifacts the driver gives it
+(`TargetArtifacts`, `Prepared.art`). -/
+structure EmitArtifact extends EmitFor, Artifact target.toTarget
+
+/-- The artifact `a`, emitted with the emitter `e`. -/
+def EmitArtifact.of {T : Target} (e : Emitter T.isa) (a : Artifact T) : EmitArtifact where
+  target := .of T e
+  toArtifact := a
+
+/-- The artifacts of one target, those of each registration module with its name,
+with the emitter's target (`EmitTarget`) they are all emitted for: in one type, so
+that the code of two of them, and of their calls, is of one type (`ISA.ptrEq`). The
+emitter's driver makes those of each target (`Emit.driver`). -/
+structure TargetArtifacts where
+  target : EmitTarget
+  arts : List (String × List (Artifact target.toTarget))
+
+/-- The artifacts `arts` of the target `T`, emitted with the emitter `e`: both
+named where it is applied (`Emit.driver`), and `arts` checked against `T`. -/
+def TargetArtifacts.of (T : Target) (e : Emitter T.isa) (arts : List (String × List (Artifact T))) :
+    TargetArtifacts :=
+  ⟨.of T e, arts⟩
+
+end VG
+
 namespace VG.Rust
 
 universe u
+
+/-- Values by name: in the list of the name's hash, of a fixed number of them. (Lean's
+`Std.HashMap` would be a new import of the trusted base.) -/
+structure ByName (α : Type u) where
+  lists : Array (List (String × α)) := Array.replicate 1024 []
+
+namespace ByName
+
+variable {α : Type u}
+
+/-- The value of `n`, if it has one. -/
+def find? (m : ByName α) (n : String) : Option α :=
+  (m.lists.getD ((hash n).toNat % m.lists.size) []).lookup n
+
+/-- Whether `n` has a value. -/
+def contains (m : ByName α) (n : String) : Bool := (m.find? n).isSome
+
+/-- `m`, with the value `a` for `n`, in place of any it has. -/
+def insert (m : ByName α) (n : String) (a : α) : ByName α :=
+  ⟨m.lists.modify ((hash n).toNat % m.lists.size) fun l => (n, a) :: l⟩
+
+/-- `m`, with the value `a` for `n`, unless it has one. -/
+def insertIfNew (m : ByName α) (n : String) (a : α) : ByName α :=
+  if m.contains n then m else m.insert n a
+
+end ByName
 
 /-- Escape a string for a Rust string literal that is also an `asm!`
 template: `{`/`}` are template placeholders and must be doubled. -/
@@ -272,7 +333,7 @@ def escapeBraces (s : String) : String :=
 /-- A Rust string literal whose value is `s`: a raw string literal, which
 rustc reads faster (it maps each character of an ordinary literal's
 template back to the source by unescaping it), `r"…"`, or `r#"…"#` if `s`
-has a `"` (`.base64`'s string, `packRun`); an ordinary one if `s` has a
+has a `"` (`.base64`'s string, `packed`); an ordinary one if `s` has a
 carriage return, which a raw string literal cannot hold, or a `"#`. -/
 def literal (s : String) : String :=
   if s.contains '\r' || (s.splitOn "\"#").length > 1 then
@@ -300,7 +361,8 @@ def dedup (as : List String) : List String :=
 /-- The text of one line of the `naked_asm!` template (`escapeBraces`): a
 call names its function as the operand of the same name. `none` for the
 page of a static's address or its offset in the page, which a macro writes
-in the syntax of the object format (`line`). -/
+in the syntax of the object format (`line`), and for an encoded instruction,
+whose bytes `template` packs. -/
 def lineText (call : String) : Line → Option String
   | .text l => some (escapeBraces l)
   | .call n => some (escapeBraces call ++ " {" ++ n ++ "}")
@@ -311,6 +373,7 @@ def lineText (call : String) : Line → Option String
   | .sym s .ppcLo n => some (escapeBraces s ++ "{" ++ n ++ "} - 2b)@l")
   | .sym s .bare n => some (escapeBraces s ++ "{" ++ n ++ "}")
   | .sym _ .page _ | .sym _ .pageOff _ => none
+  | .code .. => none
 
 /-- One line of the `naked_asm!` template as an argument of its own. -/
 def line (call : String) : Line → String
@@ -325,77 +388,17 @@ directive after it), which is not a line of the assembly: `template` leaves
 it out, and the assembly file has it (`assembly`). -/
 def commentOf : Line → Option String
   | .text l =>
-    if l.startsWith "// " && !l.contains '\n' && !l.contains '\r' then some l else none
+    if l.startsWith "// " && !l.any (fun c => c == '\n' || c == '\r') then some l else none
   | _ => none
 
 /-- The directive of a printer's encoded instructions, one word each, that
 `pushLine` joins: `.inst` (AArch64's, `TCB/AArch64/Encode.lean`), which
 marks its words as instructions (the object's mapping symbols), unlike the
-data that `packRun` writes. -/
+data that `packed` writes. -/
 def joinable : List String := [".inst "]
 
-/-- The value of a hexadecimal digit. -/
-def hexDigit (c : Char) : Option Nat :=
-  if '0' ≤ c ∧ c ≤ '9' then some (c.toNat - '0'.toNat)
-  else if 'a' ≤ c ∧ c ≤ 'f' then some (c.toNat - 'a'.toNat + 10)
-  else none
-
-/-- The value of `n` lowercase hexadecimal digits after `0x`. -/
-def hexValue? (n : Nat) (p : String) : Option Nat :=
-  match p.toList with
-  | '0' :: 'x' :: ds =>
-    if ds.length == n then ds.foldlM (fun v c => return v * 16 + (← hexDigit c)) 0 else none
-  | _ => none
-
-/-- The bytes of an encoded `.byte` line, as x86's printers emit each
-instruction (`TCB/X86/Encode.lean`'s `byteLine`): `.byte ` then bytes of two
-lowercase hexadecimal digits each (`0xNN`), separated by commas alone;
-`none` for any other line (e.g. `symPush`'s `.byte 0x81, 199`). -/
-def byteLine? (l : String) : Option (List Nat) :=
-  if l.startsWith ".byte " then ((l.drop 6).toString.splitOn ",").mapM (hexValue? 2) else none
-
-/-- The bytes of an encoded `.long` line, as PPC64LE's printer emits each
-instruction (`TCB/PPC64LE/Encode.lean`'s `longLine`): `.long ` then words of
-eight lowercase hexadecimal digits each (`0xNNNNNNNN`), separated by commas
-alone, each little-endian (GNU as, "`.long`", in the target's byte order,
-little-endian on PPC64LE); `none` for any other line (e.g. x86's
-`.long {VG_TABLE} - 2b`). -/
-def wordLine? (l : String) : Option (List Nat) :=
-  if l.startsWith ".long " then
-    ((l.drop 6).toString.splitOn ",").flatMapM fun w => do
-      let v ← hexValue? 8 w
-      return [v % 256, v / 256 % 256, v / 65536 % 256, v / 16777216 % 256]
-  else none
-
-/-- The bytes of an encoded `.insn` line, as RISC-V's printer emits each
-instruction (`TCB/RISCV64/Encode.lean`'s `insnLine`): `.insn 4, ` then a word
-of eight lowercase hexadecimal digits (`0xNNNNNNNN`), or `.insn 2, ` then a
-compressed instruction's parcel of four (`0xNNNN`), each little-endian (The
-RISC-V Instruction Set Manual, Volume I, "Base Instruction-Length Encoding":
-"Instructions are stored in memory as a sequence of 16-bit little-endian
-parcels, regardless of memory system endianness. Parcels forming one
-instruction are stored at increasing halfword addresses, with the
-lowest-addressed parcel holding the lowest-numbered bits in the instruction
-specification"); `none` for any other line. Packed (`packRun`), the bytes
-are the same and the object's mapping symbols (RISC-V ELF psABI, "Mapping
-Symbol") mark them as data, `$d`, where `.insn` marked instructions, `$x`:
-a disassembler of the object then prints them as words, and the assembly
-file has their text. -/
-def insnLine? (l : String) : Option (List Nat) :=
-  if l.startsWith ".insn 4, " then
-    (hexValue? 8 (l.drop 9).toString).map fun v =>
-      [v % 256, v / 256 % 256, v / 65536 % 256, v / 16777216 % 256]
-  else if l.startsWith ".insn 2, " then
-    (hexValue? 4 (l.drop 9).toString).map fun v => [v % 256, v / 256 % 256]
-  else none
-
-/-- The bytes of a line that a printer emits as an instruction's machine
-code (`byteLine?`, `wordLine?`, `insnLine?`), if it is one. -/
-def dataBytes? (l : String) : Option (List Nat) :=
-  (byteLine? l).orElse fun _ => (wordLine? l).orElse fun _ => insnLine? l
-
-/-- The base64 encoding of the bytes `bs` (RFC 4648, §4: the standard
-alphabet, padded with `=`). -/
+/-- The base64 encoding of the bytes `bs`, each taken modulo 256 (RFC 4648,
+§4: the standard alphabet, padded with `=`). -/
 def base64 (bs : List Nat) : String :=
   let alphabet := "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/".toList.toArray
   let digit (n : Nat) : Char := alphabet.getD (n % 64) '='
@@ -404,38 +407,27 @@ where
   go (bs : List Nat) (digit : Nat → Char) : List Char :=
     match bs with
     | a :: b :: c :: rest =>
-      let v := a * 65536 + b * 256 + c
+      let v := a % 256 * 65536 + b % 256 * 256 + c % 256
       [digit (v / 262144), digit (v / 4096), digit (v / 64), digit v] ++ go rest digit
     | [a, b] =>
-      let v := a * 65536 + b * 256
+      let v := a % 256 * 65536 + b % 256 * 256
       [digit (v / 262144), digit (v / 4096), digit (v / 64), '=']
-    | [a] => let v := a * 65536; [digit (v / 262144), digit (v / 4096), '=', '=']
+    | [a] => let v := a % 256 * 65536; [digit (v / 262144), digit (v / 4096), '=', '=']
     | [] => []
 
-/-- The lines of a run of template lines `ls` as they are written: each run of
-consecutive lines of encoded instructions' bytes (`dataBytes?`) as one line,
+/-- The run of template lines `run` (reversed) with the bytes `acc`
+(reversed) of the encoded instructions after it, if any, as one more line:
 `.base64 "<their bytes>"` (the assembler's `.base64` directive, which emits
 the bytes its string encodes: LLVM 22's, Rust 1.95's assembler, the
 workspace's `rust-version`), so that rustc and the assembler read about 1.3
-characters a byte, not one directive an instruction; any other line as it
-is. -/
-def packRun (ls : List String) : List String :=
-  go ls []
-where
-  /-- The lines for `ls`, after the bytes `acc` (reversed) of the run of
-  encoded lines before it. -/
-  go : List String → List (List Nat) → List String
-    | [], acc => flush acc
-    | l :: ls, acc => match dataBytes? l with
-      | some bs => go ls (bs :: acc)
-      | none => flush acc ++ l :: go ls []
-  flush : List (List Nat) → List String
-    | [] => []
-    | acc => [".base64 \"" ++ base64 acc.reverse.flatten ++ "\""]
+characters a byte, not one directive an instruction. -/
+def packed : List (List Nat) → List String → List String
+  | [], run => run
+  | acc, run => (".base64 \"" ++ base64 acc.reverse.flatten ++ "\"") :: run
 
 /-- The template line `t` added to the run of lines `run` (reversed): joined
 to the line before it if both are lines of the same `joinable` directive, of
-one word (`t`) and of fewer than 8 (the line before), as
+one word (`t`) and of fewer than 8 (the line before: fewer than 7 commas), as
 `<directive> <words>,<word>`, which the assembler reads as the same words in
 turn (GNU as, "`.inst`": "one or more expressions"); else a line of its own.
 So a run of encoded instructions is a few lines for rustc and the assembler
@@ -445,7 +437,8 @@ def pushLine (t : String) : List String → List String
     match joinable.find? (t.startsWith ·) with
     | some d =>
       let w := (t.drop d.length).toString
-      if p.startsWith d && !w.contains ',' && (p.splitOn ",").length < 8 then
+      if p.startsWith d && !w.contains ',' &&
+          p.foldl (fun n c => if c == ',' then n + 1 else n) 0 < 7 then
         (p ++ "," ++ w) :: run
       else t :: p :: run
     | none => t :: p :: run
@@ -461,21 +454,23 @@ for rustc to parse and expand, not one per line.
 A comment line (`commentOf`) is not part of the template, nor of the Rust
 code: the assembly file has it (`assembly`), so that neither rustc nor the
 assembler reads it. Consecutive lines of an encoded instruction's directive
-are joined (`pushLine`), and encoded bytes written as `.base64`
-(`packRun`). -/
+are joined (`pushLine`), and each run of encoded instructions (`Line.code`)
+is one line, their bytes as `.base64` (`packed`). -/
 def template (call : String) (ls : List Line) : String :=
-  go (ls.filter (commentOf · |>.isNone)) []
+  go (ls.filter (commentOf · |>.isNone)) [] []
 where
-  /-- The arguments for `ls`, after the run of text lines `run` (reversed). -/
-  go : List Line → List String → String
-    | [], run => flush run
-    | l :: ls, run => match lineText call l with
-      | some t => go ls (pushLine t run)
-      | none => flush run ++ line call l ++ go ls []
+  /-- The arguments for `ls`, after the run of text lines `run` (reversed)
+  and the bytes `acc` (reversed) of the encoded instructions after them. -/
+  go : List Line → List String → List (List Nat) → String
+    | [], run, acc => flush (packed acc run)
+    | .code _ bs :: ls, run, acc => go ls run (bs :: acc)
+    | l :: ls, run, acc => match lineText call l with
+      | some t => go ls (pushLine t (packed acc run)) []
+      | none => flush (packed acc run) ++ line call l ++ go ls [] []
   /-- The run of text lines `run` as one string literal (reversed). -/
   flush : List String → String
     | [] => ""
-    | run => "        " ++ literal ("\n".intercalate (packRun run.reverse)) ++ ",\n"
+    | run => "        " ++ literal ("\n".intercalate run.reverse) ++ ",\n"
 
 /-- A line of a function's assembly file (`assembly`): a line of text as it is, a
 call or the address of a static as `lineText` writes it, the static's name
@@ -483,6 +478,7 @@ an operand of `naked_asm!` (`{NAME}`). -/
 def assemblyLine (call : String) : Line → String
   | .text l => l
   | .sym s _ n => s ++ "{" ++ n ++ "}"
+  | .code asm _ => asm
   | l => (lineText call l).getD ""
 
 /-- Whether a printed line is a directive: the machine code of the
@@ -591,15 +587,6 @@ def ownFirstSome? {I C : Type} (f : I → Option String) : Code I C → Option S
   | .frame i b j => f i <|> ownFirstSome? f b <|> f j
   | .icall i .. => f i
 
-/-- A `some` of `f` over the instructions of `c`, and of the functions it
-calls, if there is one: the first of those of `c` outside its calls
-(`ownFirstSome?`), or else that of the code of the first call that has one
-(`Code.calls`, which has every call, those in the code of a call too). A
-call whose value is the first call of the same function's is skipped
-(`distinctCalls`): that value is `none`, or the first call's was found. -/
-def firstSome? {I C : Type} (f : I → Option String) (c : Code I C) : Option String :=
-  ownFirstSome? f c <|> (Code.distinctCalls (ownFirstSome? f) c.calls).findSome? id
-
 /-- `doc` with the paragraphs `notes` inserted before its `# Safety` section. -/
 def insertNotes (doc : String) : List String → String
   | [] => doc
@@ -626,16 +613,16 @@ def prependSafety (doc : String) : List String → String
 /-- The `# Safety` items of the tables of functions `a` takes: each parameter
 must hold the words of one of the tables of its interface (`Abi.withTables`),
 and the CPU must have the features its functions need. -/
-def fnTablesDoc (a : Artifact) : List String :=
+def fnTablesDoc (a : EmitArtifact) : List String :=
   a.tables.filterMap fun (x, ts) => ts.head?.map fun T =>
     s!"`{x}` must be the `as_ptr()` of one of the `{T.iface}` tables of functions of this crate \
       (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` \
       gives, if it has one."
 
 /-- The note that a function returns without secret residue, if it runs one
-of `as` and each proves it (`Artifact.residue`). -/
-def residueDoc (as : List Artifact) : List String :=
-  if !as.isEmpty && as.all (·.residue.isSome) then
+of `as`: each proves it (`Artifact.verified`). -/
+def residueDoc (as : List EmitArtifact) : List String :=
+  if !as.isEmpty then
     ["It returns without secret residue: what it leaves in the registers, the flags and the \
       stack below the caller's stack pointer is determined by what its caller left there and \
       by public data (`Target.noResidue`)."]
@@ -647,7 +634,7 @@ buffers are (`Sig.layoutNote` before its `# Safety` section, `Sig.validDoc`
 first in it and `Sig.layoutDoc` at the end), and the CPU features it needs
 (`featureDoc`), what the tables of functions it takes must be
 (`fnTablesDoc`), and that it returns without secret residue (`residueDoc`). -/
-def fullDoc (a : Artifact) : String :=
+def fullDoc (a : EmitArtifact) : String :=
   fullDocWith a a.name a.stack a.written a.features (residueDoc [a])
 where
   /-- `fullDoc a`, for a function named `name` whose calls and frames use
@@ -655,7 +642,7 @@ where
   needs the CPU features `features`, with the paragraphs `notes` first
   among those before its `# Safety` section: what a dispatcher of `a`'s
   implementations documents (`dispatcher`). -/
-  fullDocWith (a : Artifact) (name : String) (stack : Nat) (written : List (String × Nat))
+  fullDocWith (a : EmitArtifact) (name : String) (stack : Nat) (written : List (String × Nat))
       (features notes : List String) : String :=
   let A := a.target.abi
   let items := Sig.layoutDoc a.target a.sig a.writeArgs stack ++ fnTablesDoc a
@@ -667,7 +654,7 @@ where
 signature (`fullDoc`), `doc` ends with its `# Safety` section, which starts
 with `"\n\n# Safety\n\n"`; and `doc` does not itself state what memory a
 buffer must be valid for, which the emitter generates (`Sig.validDoc`). -/
-def checkLayout (a : Artifact) : Except String Unit := do
+def checkLayout (a : EmitArtifact) : Except String Unit := do
   if (a.doc.splitOn "valid for").length > 1 then
     throw s!"{a.target.name}: {a.name}'s doc states what memory a buffer must be valid for, \
       which the emitter generates from its signature (`Sig.validDoc`)"
@@ -712,10 +699,10 @@ options after the function are what they were before it. The directives
 emit no bytes and change no instruction: the assembler accepts the `mul` and
 `mulhu` that the model describes, the only instructions of M the printer
 emits. `+c` likewise enables the C extension, whose compressed encodings
-the printer emits as `.insn 2, …` (`TCB/RISCV64/Encode.lean`'s `compress`),
-which the assembler accepts only with it, and which the target compiles only
-where Rust enables it (`target_feature = "c"`). (The Rust code has the
-printer's `.insn` lines as their bytes, `packRun`, which need neither
+the printer emits (`TCB/RISCV64/Encode.lean`'s `compress`), which the
+assembler accepts as instructions only with it, and which the target
+compiles only where Rust enables it (`target_feature = "c"`). (The Rust code
+has the printer's instructions as their bytes, `packed`, which need neither
 extension: the options are then for the branches, jumps and calls, which stay
 text.) (They are keyed on the target here, rather than being a field of its
 `Printer`, so that adding them did not change what every proof imports.) -/
@@ -725,7 +712,7 @@ def funcOptions : String → List String × List String
 
 /-- The `cfg` attribute of `a`'s function and constants (`cfgGate` of
 `Printer.featureCfg` of its features). -/
-def gateOf (a : Artifact) : String := cfgGate (a.features.filterMap a.target.printer.featureCfg)
+def gateOf (a : EmitArtifact) : String := cfgGate (a.features.filterMap a.target.printer.featureCfg)
 
 /-- The lines of a function on the target `T`, given its printed code
 `lines`: the target's opening `funcOptions`, `lines`, the printer's
@@ -736,28 +723,38 @@ def bodyLines (T : EmitTarget) (lines : List Line) : List Line :=
 
 /-- The lines of `a`'s function, given its printed code `lines`
 (`bodyLines`). -/
-def bodyOf (a : Artifact) (lines : List Line) : List Line :=
+def bodyOf (a : EmitArtifact) (lines : List Line) : List Line :=
   bodyLines a.target lines
 
 /-- The `naked_asm!` of a function of the target `T` whose lines are `body`:
 its template, then the `sym` operand of each function it calls, at the path
-`<root>::<module>::<name>` (`moduleOf` gives the module), and of each table
-of constants it names, at `<root>::consts::<name>`; `root` is the path of the
-crate's root from the function's file. -/
+`<root>::<module>::<name>` (`moduleOf` gives the module), and of each symbol
+it names (`Line.sym`): a function of the target (one `moduleOf` knows, with a
+module other than `""`) at the same path as a call of it, and a table of
+constants at `<root>::consts::<name>`; `root` is the path of the crate's
+root from the function's file. Which of the two a name is decides only how
+the linker resolves it: `checkConsts` requires each named symbol to be one
+of the artifact's tables or a function its code runs, whose code the model
+runs at the symbol's address (`ISA.fnAddr`, `Code.icall`), as `checkCalls`
+checks. -/
 def asmOf (T : EmitTarget) (body : List Line) (moduleOf : String → String) (root : String) :
     String :=
   let callees := dedup (body.filterMap fun | .call n => some n | _ => none)
   let syms := dedup (body.filterMap fun | .sym _ _ n => some n | _ => none)
+  let symPath (n : String) : String :=
+    match moduleOf n with
+    | "" => s!"{root}::consts::{n}"
+    | m => s!"{root}::{m}::{n}"
   "    core::arch::naked_asm!(\n" ++
   template T.printer.call body ++
   String.join (callees.map fun n => s!"        {n} = sym {root}::{moduleOf n}::{n},\n") ++
-  String.join (syms.map fun n => s!"        {n} = sym {root}::consts::{n},\n") ++
+  String.join (syms.map fun n => s!"        {n} = sym {symPath n},\n") ++
   "    )\n"
 
 /-- The text of `a`'s function after its name, given `a`'s printed code
 `lines`: its signature and its body, the `naked_asm!` of its code
 (`function`, `asmOf`). -/
-def codeOf (a : Artifact) (lines : List Line) (moduleOf : String → String) : String :=
+def codeOf (a : EmitArtifact) (lines : List Line) (moduleOf : String → String) : String :=
   s!"{a.sig.rust} " ++ "{\n" ++ asmOf a.target (bodyOf a lines) moduleOf "super" ++ "}\n"
 
 /-- Clippy's `missing_safety_doc`, which asks every `pub unsafe fn` for a
@@ -772,16 +769,16 @@ each function it calls. The printer's `funcAlign` comes after the return
 (`Printer.function`) and any directives that follow it, and only the
 target's closing `funcOptions` after that, which close what its opening
 ones, the first lines, opened. -/
-def function (a : Artifact) (moduleOf : String → String) : String :=
+def function (a : EmitArtifact) (moduleOf : String → String) : String :=
   functionOf a (a.target.printer.function a.code) moduleOf
 where
   /-- `function a`, given `a`'s printed code `lines`
   (`a.target.printer.function a.code`). -/
-  functionOf (a : Artifact) (lines : List Line) (moduleOf : String → String) : String :=
+  functionOf (a : EmitArtifact) (lines : List Line) (moduleOf : String → String) : String :=
   withCode a (codeOf a lines moduleOf)
   /-- `function a`, given the text of its function after its name, `code`
   (`codeOf`). -/
-  withCode (a : Artifact) (code : String) (vis : String := "pub") : String :=
+  withCode (a : EmitArtifact) (code : String) (vis : String := "pub") : String :=
   let gate := gateOf a
   let doc := fullDoc a
   featuresConst a.name gate a.features ++
@@ -795,109 +792,133 @@ where
 /-- The tables of constants of `a`: those its contract gives it
 (`Artifact.consts`) and those its instructions carry (`Printer.codeTables`,
 x86-64's `aluTbl`). -/
-def tablesOf (a : Artifact) : List (String × List (BitVec 64)) :=
+def tablesOf (a : EmitArtifact) : List (String × List (BitVec 64)) :=
   a.consts ++ a.target.printer.codeTables a.code
 
 /-- The distinct values of `f` over `as`, in first-seen order. -/
-def distinct (as : List Artifact) (f : Artifact → String) : List String :=
+def distinct (as : List EmitArtifact) (f : EmitArtifact → String) : List String :=
   dedup (as.map f)
 
-/-- The names of the functions that `calls` (`Code.calls`) calls, each once,
-in first-seen order: its first call of each. -/
-def firstCalls {I C : Type} (calls : List (String × Code I C)) : List (String × Code I C) :=
-  Id.run do
-  let mut names : List String := []
-  let mut out : List (String × Code I C) := []
-  for (n, body) in calls do
-    unless names.contains n do
-      names := n :: names
-      out := (n, body) :: out
-  return out.reverse
+/-- A function as emitted, its code and its printed code. -/
+abbrev Printed {M : ISA} (P : Printer M) : Type :=
+  { f : Prog M × List Line // f.2 = P.function f.1 }
 
-/-- The first of `calls` (`Code.calls`: the name of each function called and
-the code the model runs for it) that is not of a function with printed code
-(`some (n, false)`), or whose code `P` does not print as that function's
-printed code (`some (n, true)`); `none` if every call is of the code it runs.
-`first n` says it of the first call of each name `n`: `none` if `n` is not
-a function with printed code, else whether the first call's code prints as
-that code (`checkCalls` computes it once per name, `printsAs`).
+/-- Whether `b` and `b₀` call functions of the same names, in the same order (`Code.calls`),
+and, if they do, whether they and those functions have the same printed code. -/
+def samePrinted {M : ISA} (P : Printer M) (b b₀ : Prog M) : Bool :=
+  b.calls.map (·.1) == b₀.calls.map (·.1) && P.function b == P.function b₀ &&
+    b.calls.map (P.function ·.2) == b₀.calls.map (P.function ·.2)
 
-A function can be called hundreds of times in one artifact's `calls`, so
-every later call of a name is compared with the first one's code, by equal
-printed code, which `withPtrEq` returns at once if the two are the same value
-in memory, as they usually are. -/
-def badCall {M : ISA} (P : Printer M) (first : String → Option Bool)
-    (calls : List (String × Prog M)) : Option (String × Bool) := Id.run do
-  -- The first call of each function checked so far, with its code.
-  let mut seen : List (String × Prog M) := []
-  for (n, body) in calls do
-    match seen.find? (·.1 == n) with
-    | some (_, body₀) =>
-      unless withPtrEq body body₀ (fun _ => P.function body == P.function body₀)
-          (fun h => by simp [h]) do
-        return some (n, true)
-    | none =>
-      match first n with
-      | none => return some (n, false)
-      | some false => return some (n, true)
-      | some true => seen := (n, body) :: seen
-  return none
+/-- Every call in `c`, and in the code of the functions it calls, is of a function of
+`fns` (the functions emitted, by name) whose printed code is that of the code the
+model runs for the call; or the first that is not: of no function of `fns`
+(`(n, false)`), or of another code than the function's (`(n, true)`).
 
-/-- A function's code, with the target it is code of: the value `files` shares
-(`ShareCommon.shareCommon'`, which makes equal values the same value in
-memory) for the code of every artifact and of every call, so that a call of
-an artifact's code is the same value as the artifact's (`printsAs`). -/
-abbrev Fn := (T : EmitTarget) × Prog T.isa
+`seen` has the code of the first call of each function gone through, and the result
+those and the ones `c` calls. A function can be called hundreds of times by one
+artifact, and by many artifacts. A call is checked by comparing its code with the function
+as emitted, then checking the calls in it, unless it is a later call that has the printed
+code of the first, and calls functions of the same names and printed code
+(`samePrinted`): those have been checked. Both comparisons are by `ISA.ptrEq`, which
+returns at once if the two are the same value in memory, as they usually are
+(`files`): so the code of each function is gone through once, and printed once. (It is not
+refused if it calls others: an indirect call prints as its instruction alone, whatever
+functions it may reach.) -/
+def badCall {M : ISA} (P : Printer M) (fns : String → Option (Printed P)) :
+    Prog M → ByName (Prog M) → Except (String × Bool) (ByName (Prog M))
+  | .block _, seen => pure seen
+  | .seq a b, seen | .ite _ a b, seen => do badCall P fns b (← badCall P fns a seen)
+  | .loop b _, seen | .frame _ b _, seen => badCall P fns b seen
+  | .call n b, seen => do
+    if checked n b seen then return seen
+    check n b
+    return (← badCall P fns b seen).insertIfNew n b
+  | .icall _ n b next, seen => do
+    let seen ← if checked n b seen then pure seen else do
+      check n b
+      pure ((← badCall P fns b seen).insertIfNew n b)
+    badCall P fns next seen
+where
+  /-- Whether the call of `n`, of the code `b`, is a later call, as the first. -/
+  checked (n : String) (b : Prog M) (seen : ByName (Prog M)) : Bool :=
+    match seen.find? n with
+    | some b₀ =>
+      M.ptrEq b b₀ (fun _ => samePrinted P b b₀) (fun h => by simp [h, samePrinted])
+    | none => false
+  /-- The call of `n`, of the code `b`, is of the function as emitted. -/
+  check (n : String) (b : Prog M) : Except (String × Bool) Unit :=
+    match fns n with
+    | none => throw (n, false)
+    | some f =>
+      unless M.ptrEq b f.1.1 (fun _ => P.function b == f.1.2) (fun h => by simp [h, f.2]) do
+        throw (n, true)
 
-/-- Whether the code `f` prints as `lines`, the printed code of `g`: at once if
-`f` and `g` are the same value in memory (`withPtrEq`), for then `f` prints as
-`g` does; else by printing `f`. -/
-def printsAs (f g : Fn) (lines : List Line) (h : lines = g.1.printer.function g.2) : Bool :=
-  withPtrEq f g (fun _ => f.1.printer.function f.2 == lines) (fun e => by subst e; simp [h])
+/-- The functions that `c` calls, and that their code calls (`Code.calls`), but those of
+`seen`, each with the code of its first call, after those of `acc` (reversed): `seen` has
+the code of the first call of each gone through, and the result those too. A later call
+is gone into only if the names of the functions its code calls are not those of the
+first's, which are in `seen` too: `ISA.ptrEq` finds that they are at once if the two are
+the same value in memory, as they usually are (`files`). -/
+def newCalls {M : ISA} : Prog M → ByName (Prog M) × List (String × Prog M) →
+    ByName (Prog M) × List (String × Prog M)
+  | .block _, st => st
+  | .seq a b, st | .ite _ a b, st => newCalls b (newCalls a st)
+  | .loop b _, st | .frame _ b _, st => newCalls b st
+  | .call n b, (seen, acc) =>
+    match seen.find? n with
+    | some b₀ => if same b b₀ then (seen, acc) else newCalls b (seen, acc)
+    | none => newCalls b (seen.insert n b, (n, b) :: acc)
+  | .icall _ n b next, (seen, acc) =>
+    newCalls next <| match seen.find? n with
+    | some b₀ => if same b b₀ then (seen, acc) else newCalls b (seen, acc)
+    | none => newCalls b (seen.insert n b, (n, b) :: acc)
+where
+  /-- Whether the names of the functions that `b` and `b₀` call are the same. -/
+  same (b b₀ : Prog M) : Bool :=
+    M.ptrEq b b₀ (fun _ => b.calls.map (·.1) == b₀.calls.map (·.1)) (fun h => by simp [h])
 
-/-- An artifact, with its code as a `Fn`, and the first call of each function
-its code calls (`firstCalls`), each as a `Fn`: what `files` shares before it
-prepares the artifacts (`Prepared`). -/
-structure Shared where
-  art : Artifact
-  fn : Fn
-  calls : List (String × Fn)
-  fn_eq : fn = ⟨art.target, art.code⟩
-  calls_eq : calls = (firstCalls art.code.calls).map fun (n, b) => (n, ⟨art.target, b⟩)
-
-def Shared.of (a : Artifact) : Shared := ⟨a, _, _, rfl, rfl⟩
+/-- The names of the functions that `c` calls, and that their code calls, each once, in
+first-seen order (`newCalls`). -/
+def callNames {M : ISA} (c : Prog M) : List String :=
+  (newCalls c ({}, [])).2.reverse.map (·.1)
 
 /-- An artifact with what the checks read of it more than once, each computed
-once: its code and its calls as `Fn`s (`Shared`), its printed code
-(`Printer.function`, which a call of it is checked against in every function
-that calls it, `checkCalls`) and its tables of constants (`tablesOf`, which
-every artifact of the target is checked against, `checkConsts`). -/
-structure Prepared extends Shared where
+once: its printed code (`Printer.function`, which the first call of it is checked
+against, `checkCalls`), its tables of constants (`tablesOf`) and the names of the
+functions its code calls (`callNames`). -/
+structure Prepared (T : EmitTarget) where
+  own : Artifact T.toTarget
   lines : List Line
   tables : List (String × List (BitVec 64))
-  lines_eq : lines = fn.1.printer.function fn.2
-  tables_eq : tables = tablesOf art
+  calls : List String
+  lines_eq : lines = T.printer.function own.code
+  tables_eq : tables = tablesOf ⟨⟨T⟩, own⟩
+  calls_eq : calls = callNames (M := T.isa) own.code
 
-def Prepared.of (s : Shared) : Prepared := ⟨s, _, _, rfl, rfl⟩
+/-- The artifact, with its target. -/
+abbrev Prepared.art {T : EmitTarget} (p : Prepared T) : EmitArtifact := ⟨⟨T⟩, p.own⟩
+
+def Prepared.of {T : EmitTarget} (a : Artifact T.toTarget) : Prepared T :=
+  ⟨a, _, _, _, rfl, rfl, rfl⟩
 
 /-- The functions of a module, the artifacts of `ps` in order: each with the
 text of its function after its name (`codeOf`). -/
-def moduleItems (moduleOf : Artifact → String → String) (ps : List Prepared) :
-    List (Prepared × String) :=
-  ps.map fun p => (p, codeOf p.art p.lines (moduleOf p.art))
+def moduleItems {T : EmitTarget} (moduleOf : String → String) (ps : List (Prepared T)) :
+    List (Prepared T × String) :=
+  ps.map fun p => (p, codeOf p.art p.lines moduleOf)
 
 /-- The text of the functions of a module (`moduleItems`), each as `function`
 writes it, with the visibility `vis` gives its name. -/
-def moduleText (items : List (Prepared × String)) (vis : String → String := fun _ => "pub") :
+def moduleText {T : EmitTarget} (items : List (Prepared T × String)) (vis : String → String := fun _ => "pub") :
     String :=
   String.join (items.map fun (p, code) => "\n" ++ function.withCode p.art code (vis p.art.name))
 
 /-- The assembly file of the functions of a module (`moduleItems`), which the
 crate does not compile: each function's name, then its lines (`assembly`),
 each indented but its labels. -/
-def moduleAssembly (items : List (Prepared × String)) : String :=
+def moduleAssembly {T : EmitTarget} (items : List (Prepared T × String)) : String :=
   String.join (items.map fun (p, _) =>
-    functionAssembly p.art.target p.art.name (bodyOf p.art p.lines))
+    functionAssembly T p.own.name (bodyOf p.art p.lines))
 where
   /-- The function `name` of the target `T`, whose lines are `body`, in an
   assembly file: its name, then its lines (`assembly`), each indented but its
@@ -908,33 +929,33 @@ where
 
 /-- `p`'s artifact declares exactly the CPU features its code requires
 (`featureCheck`). -/
-def checkFeatures (p : Prepared) : Except String Unit :=
+def checkFeatures {T : EmitTarget} (p : Prepared T) : Except String Unit :=
   let a := p.art
-  featureCheck s!"{a.target.name}: {a.name}" a.doc (Code.requiresDedup a.target.isa.requires a.code)
-    a.features
+  featureCheck s!"{a.target.name}: {a.name}" a.doc
+    (Code.requiresDedup a.target.isa a.code (FnTable.tablesFns a.tables).contains) a.features
 
 /-- The target's printer can encode every instruction of the code of `p`'s
-artifact, and of the functions it calls, as the model describes it
-(`Printer.unencodable`). -/
-def checkEncodable (p : Prepared) : Except String Unit :=
+artifact as the model describes it (`Printer.unencodable`): of the code that
+is printed as its function, so not of the functions it calls, each of which
+is an artifact or an internal function (`checkCalls`) with a check of its own
+(`checkEncodableInternal`). -/
+def checkEncodable {T : EmitTarget} (p : Prepared T) : Except String Unit :=
   let a := p.art
-  match firstSome? a.target.printer.unencodable a.code with
+  match ownFirstSome? a.target.printer.unencodable a.code with
   | none => pure ()
   | some e => throw s!"{a.target.name}: {a.name}: {e}"
 
-/-- The artifact carries the contract of the `Api` it is made from
-(`Artifact.contracts`), which it is proven against (`Artifact.ofApi`): so its
-name, signature and documentation are those `Spec/` gives that contract. -/
-def checkApi (a : Artifact) : Except String Unit :=
+/-- The artifact's `Api` has a contract (`Api.contracts`), which the artifact is
+proven against (`Artifact.ofApi`). -/
+def checkApi (a : EmitArtifact) : Except String Unit :=
   unless a.contracts.isSome do
-    throw s!"{a.target.name}: {a.name} is not made from an `Api` with a contract \
-      (`Api.contracts`)"
+    throw s!"{a.target.name}: {a.name} is of an `Api` with no contract (`Api.contracts`)"
 
 /-- Each bound of `a.written` names a writable array parameter of its
 signature, no parameter twice, and is at most the parameter's size in bytes:
 so the constant `writtenConsts` exports for it is a bound on the bytes of
 that buffer the function may change. -/
-def checkWritten (a : Artifact) : Except String Unit := do
+def checkWritten (a : EmitArtifact) : Except String Unit := do
   let names := a.written.map (·.1)
   for (p, n) in a.written do
     unless (names.filter (· == p)).length == 1 do
@@ -950,44 +971,11 @@ def checkWritten (a : Artifact) : Except String Unit := do
     | none => throw s!"{a.target.name}: {a.name} bounds what it writes of `{p}`, which is not \
         one of its parameters"
 
-/-- The functions `ci/residue_allowlist.txt` lists, as `(target, name)`: its
-lines but blank ones and those starting with `#`, each a target's name and a
-function's, separated by spaces. -/
-def parseResidueAllowlist (text : String) : Except String (List (String × String)) :=
-  (text.splitOn "\n").filterMapM fun l =>
-    let l := l.trimAscii.toString
-    if l.isEmpty || l.startsWith "#" then pure none
-    else match (l.splitOn " ").filter (!·.isEmpty) with
-      | [t, n] => pure (some (t, n))
-      | _ => throw s!"ci/residue_allowlist.txt: `{l}` is not a target and a function's name"
-
-/-- Every artifact of a target that defines what it means to return without
-secret residue (`Target.noResidue`) proves it (`Artifact.residue`), or
-`pending` (`parseResidueAllowlist`) lists it. If `complete` (`as` are all the
-artifacts of their targets, as in a part of `Emit.lean`, not `EmitOne.lean`),
-every function `pending` lists of one of those targets is an artifact of it
-without a proof, so that the list only ever shrinks to what is left to
-prove. Every problem is reported, not only the first. -/
-def checkResidue (pending : List (String × String)) (complete : Bool) (as : List Artifact) :
-    Except String Unit := do
-  let missing := as.filter fun a =>
-    a.target.noResidue.isSome && a.residue.isNone && !pending.contains (a.target.name, a.name)
-  let targets := as.map (·.target.name)
-  let stale := if complete then
-      pending.filter fun (t, n) => targets.contains t &&
-        !as.any (fun a => a.target.name == t && a.name == n && a.residue.isNone)
-    else []
-  let msgs := missing.map (fun a => s!"{a.target.name}: {a.name} does not prove that it returns \
-      without secret residue (`Artifact.residue`), and ci/residue_allowlist.txt does not list it") ++
-    stale.map fun (t, n) => s!"ci/residue_allowlist.txt lists `{t} {n}`, which is not a function \
-      of {t} without a proof that it returns without secret residue: remove the line"
-  unless msgs.isEmpty do throw ("\n".intercalate msgs)
-
-/-- No two artifacts of a target have the same name. -/
-def checkUnique (as : List Artifact) : Except String Unit :=
-  as.forM fun a =>
-    unless (as.filter fun b => b.target.name == a.target.name && b.name == a.name).length == 1 do
-      throw s!"{a.target.name}: {a.name} is defined more than once"
+/-- No two artifacts of `as`, a target's, have the same name. -/
+def checkUnique (as : List EmitArtifact) : Except String Unit :=
+  discard <| as.foldlM (init := ({} : ByName Unit)) fun seen a => do
+    if seen.contains a.name then throw s!"{a.target.name}: {a.name} is defined more than once"
+    return seen.insert a.name ()
 
 /-- A table's name is a Rust constant's starting with `VG_`: `VG_`, then
 uppercase ASCII letters, digits and underscores; so its lowercase, the
@@ -999,22 +987,43 @@ def tableName (n : String) : Bool :=
 
 /-- Tables of the same name in `cs` and `ds` have the same words.
 
-Every artifact of a target is checked against every other (`checkConsts`),
-and a table of hundreds of kilobytes is usually the same value in memory in
+A table of hundreds of kilobytes is usually the same value in memory in
 each artifact that has it (`files` shares them): `withPtrEq` finds that at
 once, without comparing its words again. -/
 def consistent (cs ds : List (String × List (BitVec 64))) : Bool :=
   cs.all fun (n, ws) => ds.all fun (m, vs) =>
     m != n || withPtrEq vs ws (fun _ => vs == ws) (fun h => by simp [h])
 
-/-- The tables of constants of `a` (`Artifact.consts`) have distinct names,
-and so do those its instructions carry but for repeats of the same table;
-every name is a Rust constant's, none is named `consts` or the module of an
-artifact; every artifact of the target with a table of one of these names,
-given or carried, gives the same words; its code names only these tables;
+/-- Whether code may name the symbol `n` (`Line.sym`): `n` is one of the
+tables of constants `tables` it has or carries, or one of the functions
+`calls` its code runs (`Code.calls`, which has the candidates of its
+indirect calls), at whose symbol the model runs that function's code
+(`ISA.fnAddr`, `Code.icall`) and which `checkCalls` checks it is emitted
+with. -/
+def symNamed (tables calls : List String) (n : String) : Bool :=
+  tables.contains n || calls.contains n
+
+/-- Tables of the same name among `all`, the tables of each artifact and each internal
+function of a target with its description, have the same words (`consistent`): those of
+the first of that name, which are in `first`, each with the first that has it. -/
+def checkTables (t : String) (all : List (String × List (String × List (BitVec 64)))) :
+    Except String Unit :=
+  discard <| all.foldlM (init := ({} : ByName (String × List (BitVec 64)))) fun first (a, ts) =>
+    ts.foldlM (init := first) fun first (n, ws) =>
+      match first.find? n with
+      | none => return first.insert n (a, ws)
+      | some (b, vs) => do
+        unless consistent [(n, vs)] [(n, ws)] do
+          throw (if a == b then s!"{t}: {a} gives a table of constants two lists of words"
+            else s!"{t}: {a} and {b} give a table of constants different words")
+        return first
+
+/-- The tables of constants of `a` (`Artifact.consts`) have distinct names;
+the name of each, and of those its instructions carry, is a Rust constant's; none is
+named `consts` or the module of an artifact; its code names only these tables;
 and its target's code can name a `static` (`Abi.sym`), if it has any. Of
-`p`'s artifact, checked against the artifacts of `ps`. -/
-def checkConsts (ps : List Prepared) (p : Prepared) : Except String Unit := do
+`p`'s artifact. `checkTables` checks that every table of a name has the same words. -/
+def checkConsts {T : EmitTarget} (p : Prepared T) : Except String Unit := do
   let a := p.art
   let ts := p.tables
   unless ts.isEmpty || a.target.abi.sym.isSome do
@@ -1025,21 +1034,20 @@ def checkConsts (ps : List Prepared) (p : Prepared) : Except String Unit := do
   for (n, _) in ts do
     unless tableName n do
       throw s!"{a.target.name}: {a.name}'s table of constants {n} is not named as a Rust constant starting with `VG_`"
-  unless consistent ts ts do
-    throw s!"{a.target.name}: {a.name} gives a table of constants two lists of words"
-  for q in ps do
-    unless q.art.target.name != a.target.name || consistent ts q.tables do
-      throw s!"{a.target.name}: {a.name} and {q.art.name} give a table of constants different words"
-  if (ps.any fun q => q.art.target.name == a.target.name && q.art.module == "consts") then
+  if a.module == "consts" then
     throw s!"{a.target.name}: an artifact's module is `consts`, the module of the tables of constants"
-  if (ps.any fun q => q.art.target.name == a.target.name && q.art.module == "fn_tables") then
+  if a.module == "fn_tables" then
     throw s!"{a.target.name}: an artifact's module is `fn_tables`, the module of the tables of \
       functions"
+  -- A symbol the code names (`adrSym`, `leaSym`, ...) is one of its tables, or the
+  -- address of a function its code runs (a call or a candidate of an indirect
+  -- call: `Code.calls`), whose emitted code `checkCalls` compares with the code
+  -- the model runs at that address (`ISA.fnAddr`, `Code.icall`).
   let used := p.lines.filterMap fun | .sym _ _ n => some n | _ => none
   for n in used do
-    unless (ts.map (·.1)).contains n do
-      throw s!"{a.target.name}: {a.name} names the table {n}, which it does not have \
-        (`Artifact.consts`) or carry"
+    unless symNamed (ts.map (·.1)) p.calls n do
+      throw s!"{a.target.name}: {a.name} names the symbol {n}, which is neither a table it has \
+        (`Artifact.consts`) or carries nor a function its code runs"
 
 /-! ## Internal functions -/
 
@@ -1058,19 +1066,21 @@ printed code (`Printer.function`), the CPU features its code, and that of
 the functions it calls, requires (`requiresDedup`), which its function's
 `cfg` attribute follows, as an artifact's (`gateOf`); the tables of
 constants its instructions carry (`Printer.codeTables`), and the tables its printed code names. -/
-structure Internal where
-  /-- Its target and code, the `Fn` of the first call of it (`Shared.calls`). -/
-  fn : Fn
+structure Internal (T : EmitTarget) where
   name : String
   /-- The module whose file declares the internal function's (`internalOwner`). -/
   owner : String
+  /-- The functions of its target's tables of functions. -/
+  tabled : List String
+  /-- Its code, that of the first call of it. -/
+  code : Prog T.isa
   lines : List Line
   features : List String
   tables : List (String × List (BitVec 64))
   syms : List String
-  lines_eq : lines = fn.1.printer.function fn.2
-  features_eq : features = Code.requiresDedup fn.1.isa.requires fn.2
-  tables_eq : tables = fn.1.printer.codeTables fn.2
+  lines_eq : lines = T.printer.function code
+  features_eq : features = Code.requiresDedup T.isa code tabled.contains
+  tables_eq : tables = T.printer.codeTables code
   syms_eq : syms = dedup (lines.filterMap fun | .sym _ _ n => some n | _ => none)
 
 /-- The module whose file declares the internal function `name`: of the
@@ -1091,16 +1101,17 @@ def internalOwner (name : String) (modules callers : List String) : String :=
   | some m => m
   | none => sorted.headD ""
 
-/-- The target of an internal function. -/
-abbrev Internal.target (h : Internal) : EmitTarget := h.fn.1
+/-- The internal function `name` of the code `c`, declared by the module `owner`. -/
+def Internal.of {T : EmitTarget} (name owner : String) (tabled : List String) (c : Prog T.isa) :
+    Internal T :=
+  ⟨name, owner, tabled, c, _, _, _, _, rfl, rfl, rfl, rfl⟩
 
-/-- The code of an internal function. -/
-abbrev Internal.code (h : Internal) : Prog h.target.isa := h.fn.2
-
-/-- The internal function `name` whose target and code are `f`, declared by the
-module `owner`. -/
-def Internal.of (name owner : String) (f : Fn) : Internal :=
-  ⟨f, name, owner, _, _, _, _, rfl, rfl, rfl, rfl⟩
+/-- The target's printer can encode every instruction of the code of the
+internal function `h` as the model describes it (`checkEncodable`). -/
+def checkEncodableInternal {T : EmitTarget} (h : Internal T) : Except String Unit :=
+  match ownFirstSome? T.printer.unencodable h.code with
+  | none => pure ()
+  | some e => throw s!"{T.name}: the internal function {h.name}: {e}"
 
 /-- How many tasks `files` checks the artifacts on: the CPUs of CI's
 runners. The checks, and `render`, are pure functions of the artifacts, so
@@ -1108,41 +1119,61 @@ running them on tasks (`Task.spawn`) changes how long they take, never what
 they return. -/
 def tasks : Nat := 4
 
-/-- The internal functions of the artifacts of `ps` (`Internal`): of each
-target, every function the code of one of its artifacts calls (`Code.calls`,
-those in the code of the functions it calls too) that is not an artifact of
-the target, once, with the code of the first call of it, in order of the
-artifacts and of their calls. `checkCalls` checks that every other call of
-it is of that code. -/
-def internalsOf (ps : List Prepared) : List Internal := Id.run do
-  -- Each internal function found so far: its target and name, the code of its
-  -- first call, and the modules of the artifacts that call it.
-  let mut found : List (String × String × Σ T : EmitTarget, Prog T.isa) := []
-  let mut callers : List ((String × String) × List String) := []
-  for p in ps do
-    let a := p.art
-    let t := a.target.name
-    for (n, f) in p.calls do
-      if ps.any fun q => q.art.target.name == t && q.art.name == n then continue
-      unless found.any (fun (t', n', _) => t' == t && n' == n) do
-        found := (t, n, f) :: found
-      callers := match callers.find? (·.1 == (t, n)) with
-        | some _ => callers.map fun (k, ms) =>
-            if k == (t, n) && !ms.contains a.module then (k, a.module :: ms) else (k, ms)
-        | none => ((t, n), [a.module]) :: callers
-  let named := found.reverse.map fun (t, n, f) =>
-    let modules := Rust.dedup ((ps.filter (·.art.target.name == t)).map (·.art.module))
-    (n, internalOwner n modules (((callers.find? (·.1 == (t, n))).map (·.2)).getD []), f)
+/-- The internal functions of the artifacts `ps` of the target `T` (`Internal`): every
+function the code of one of them calls (`Code.calls`, those in the code of the functions
+it calls too) that is not one of them, once, with the code of the first call of it, in
+order of the artifacts and of their calls (`newCalls`). `checkCalls` checks that every
+other call of it is of that code. -/
+def internalsOf {T : EmitTarget} (ps : List (Prepared T)) : List (Internal T) :=
+  -- The artifacts, whose code is gone into as theirs.
+  let names : ByName (Prog T.isa) := ps.foldl (init := {}) fun m p =>
+    m.insertIfNew p.own.name p.own.code
+  let found := (ps.foldl (init := (names, [])) fun st p => newCalls p.own.code st).2.reverse
+  -- The modules of the artifacts that call each.
+  let callers : ByName (List String) := ps.foldl (init := {}) fun m p =>
+    p.calls.foldl (init := m) fun m n =>
+      if names.contains n then m else
+        let ms := (m.find? n).getD []
+        if ms.contains p.own.module then m else m.insert n (p.own.module :: ms)
+  let modules := Rust.dedup (ps.map (·.own.module))
+  let tabled := Rust.dedup (ps.flatMap fun q => FnTable.tablesFns q.own.tables)
   -- Each internal function's printed code on one of `tasks` tasks, as `prepareAll`.
-  let size := (named.length + tasks - 1) / tasks
+  let size := (found.length + tasks - 1) / tasks
   let parts := (List.range tasks).map fun j =>
-    Task.spawn fun _ => ((named.drop (j * size)).take size).map fun (n, owner, f) => Internal.of n owner f
-  return (parts.map Task.get).flatten
+    Task.spawn fun _ => ((found.drop (j * size)).take size).map fun (n, c) =>
+      Internal.of n (internalOwner n modules ((callers.find? n).getD [])) tabled c
+  (parts.map Task.get).flatten
 
-/-- The internal function of `hs` that a call of `name` in an artifact of the
-target `t` calls, if there is one. -/
-def internal? (hs : List Internal) (t name : String) : Option Internal :=
-  hs.find? fun h => h.target.name == t && h.name == name
+/-- The functions of a target: its artifacts, its internal functions, and both by
+name. -/
+structure Linked (T : EmitTarget) where
+  ps : List (Prepared T)
+  hs : List (Internal T)
+  artByName : ByName (Prepared T)
+  internalByName : ByName (Internal T)
+
+def Linked.of {T : EmitTarget} (ps : List (Prepared T)) (hs : List (Internal T)) : Linked T where
+  ps := ps
+  hs := hs
+  artByName := ps.foldl (init := {}) fun m p => m.insertIfNew p.own.name p
+  internalByName := hs.foldl (init := {}) fun m h => m.insertIfNew h.name h
+
+/-- The artifact named `n`, if there is one. -/
+def Linked.art? {T : EmitTarget} (l : Linked T) (n : String) : Option (Prepared T) := l.artByName.find? n
+
+/-- The internal function named `n`, if there is one. -/
+def Linked.internal? {T : EmitTarget} (l : Linked T) (n : String) : Option (Internal T) :=
+  l.internalByName.find? n
+
+/-- Whether `n` is an artifact or an internal function. -/
+def Linked.isFn {T : EmitTarget} (l : Linked T) (n : String) : Bool :=
+  (l.art? n).isSome || (l.internal? n).isSome
+
+/-- The function named `n` as emitted: an artifact, or else an internal function. -/
+def Linked.printed? {T : EmitTarget} (l : Linked T) (n : String) : Option (Printed T.printer) :=
+  match l.art? n with
+  | some p => some ⟨(p.own.code, p.lines), p.lines_eq⟩
+  | none => (l.internal? n).map fun h => ⟨(h.code, h.lines), h.lines_eq⟩
 
 /-- An internal function's name is a Rust function's starting with `vg_`:
 `vg_`, then lowercase ASCII letters, digits and underscores; so it is never
@@ -1155,35 +1186,23 @@ def internalName (n : String) : Bool :=
       ('a' ≤ c && c ≤ 'z') || c.isDigit || c == '_'
   | _ => false
 
-/-- The internal function `h` (of `hs`, of the artifacts of `ps`) is named as
+/-- The internal function `h` is named as
 `internalName` requires; the tables of constants its instructions carry are
-named as `tableName` requires, and every artifact and every other internal
-function of its target with a table of one of their names gives the same
-words (`consistent`); and its target's code can name a `static`
-(`Abi.sym`), if it names any. -/
-def checkInternal (ps : List Prepared) (hs : List Internal) (h : Internal) :
-    Except String Unit := do
-  let t := h.target.name
+named as `tableName` requires (`checkTables` checks that every artifact and every other
+internal function of its target with a table of one of their names gives the same
+words); and its target's code can name a `static` (`Abi.sym`), if it names any. -/
+def checkInternal {T : EmitTarget} (h : Internal T) : Except String Unit := do
+  let t := T.name
   unless internalName h.name do
     throw s!"{t}: the internal function {h.name} is not named as a Rust function starting \
       with `vg_` (lowercase letters, digits and underscores)"
-  unless h.syms.isEmpty || h.target.abi.sym.isSome do
+  unless h.syms.isEmpty || T.abi.sym.isSome do
     throw s!"{t}: the internal function {h.name} reads tables of constants, which its target's \
       code cannot name"
   for (n, _) in h.tables do
     unless tableName n do
       throw s!"{t}: the internal function {h.name}'s table of constants {n} is not named as a \
         Rust constant starting with `VG_`"
-  unless consistent h.tables h.tables do
-    throw s!"{t}: the internal function {h.name} gives a table of constants two lists of words"
-  for q in ps do
-    unless q.art.target.name != t || consistent h.tables q.tables do
-      throw s!"{t}: the internal function {h.name} and {q.art.name} give a table of constants \
-        different words"
-  for g in hs do
-    unless g.target.name != t || consistent h.tables g.tables do
-      throw s!"{t}: the internal functions {h.name} and {g.name} give a table of constants \
-        different words"
 
 /-- Every table of constants that an internal function the code of `p`'s
 artifact calls names is one of the artifact's (`Prepared.tables`: those its
@@ -1192,52 +1211,43 @@ one the internal function's instructions carry: the artifact's contract
 says where the memory holds the tables it gives (`Abi.withConsts`), which is
 what its proof, which runs the internal function's code, assumes of them,
 and every artifact with a table of a name gives the same words
-(`checkConsts`). No artifact's module is `internal`, the directory of the
-internal functions' files. -/
-def checkInternalTables (hs : List Internal) (p : Prepared) : Except String Unit := do
+(`checkTables`). Any other name is of a function whose address the
+artifact's contract makes public (`Artifact.fns`): its address, not memory,
+is all the code takes of it. No artifact's module is `internal`, the
+directory of the internal functions' files. -/
+def checkInternalTables {T : EmitTarget} (l : Linked T) (p : Prepared T) : Except String Unit := do
   let a := p.art
-  let t := a.target.name
+  let t := T.name
   if a.module == "internal" then
     throw s!"{t}: {a.name}'s module is `internal`, the directory of the internal functions' files"
   let own := p.tables.map (·.1)
-  for (n, _) in p.calls do
-    let some h := internal? hs t n | continue
+  for n in p.calls do
+    let some h := l.internal? n | continue
     for s in h.syms do
-      unless own.contains s || (h.tables.map (·.1)).contains s do
+      unless own.contains s || (h.tables.map (·.1)).contains s || a.fns.contains s do
         throw s!"{t}: {a.name} calls the internal function {n}, which names the table {s}, \
-          which {a.name} does not have (`Artifact.consts`) or carry"
+          which {a.name} does not have (`Artifact.consts`) or carry, nor a function of public \
+          address (`Artifact.fns`)"
 
-/-- Every call in the code of `p`'s artifact, and in the code of the functions
-it calls, is of an artifact of `ps` of the same target, or of an internal
-function of `hs` (`internalsOf`), whose printed code is that of the called
-code (`badCall`). The first call of each function is the `Fn` of `p.calls`,
-which `files` shared with the code of every artifact and internal function:
-so it is usually the same value in memory as the code of the function it
-calls, and `printsAs` compares it with that function's printed code without
-printing it again. -/
-def checkCalls (ps : List Prepared) (hs : List Internal) (p : Prepared) : Except String Unit :=
-  let a := p.art
-  let t := a.target.name
-  let first (n : String) : Option Bool :=
-    match p.calls.find? (·.1 == n) with
-    | none => none
-    | some (_, f) =>
-      match ps.find? fun (q : Prepared) => q.art.target.name == t && q.art.name == n with
-      | some q => some (printsAs f q.fn q.lines q.lines_eq)
-      | none => (internal? hs t n).map fun h => printsAs f h.fn h.lines h.lines_eq
-  match badCall a.target.printer first a.code.calls with
-  | none => pure ()
-  | some (n, false) =>
-    throw s!"{t}: {a.name} calls {n}, which is neither an artifact nor an internal function"
-  | some (n, true) =>
-    throw s!"{t}: {a.name} calls {n}, whose code is not what the call runs"
+/-- Every call in the code of each artifact of the target, and in the code of the functions
+it calls, is of an artifact of the same target, or of an internal
+function (`internalsOf`), whose printed code is that of the called
+code (`badCall`). -/
+def checkCalls {T : EmitTarget} (l : Linked T) : Except String Unit :=
+  discard <| l.ps.foldlM (init := ({} : ByName (Prog T.isa))) fun seen p =>
+    match badCall T.printer l.printed? p.own.code seen with
+    | .ok seen => return seen
+    | .error (n, false) =>
+      throw s!"{T.name}: {p.own.name} calls {n}, which is neither an artifact nor an internal function"
+    | .error (n, true) =>
+      throw s!"{T.name}: {p.own.name} calls {n}, whose code is not what the call runs"
 
 /-! ## Tables of functions -/
 
 /-- The tables of functions the artifacts `as` take (`Artifact.tables`),
 each once, in the order they first list them: the order a table's
 dispatcher tries its implementations in (`tableDispatcher`). -/
-def fnTables (as : List Artifact) : List FnTable :=
+def fnTables (as : List EmitArtifact) : List FnTable :=
   let all := as.flatMap fun a => a.tables.flatMap (·.2)
   (dedup (all.map (·.name))).filterMap fun n => all.find? (·.name == n)
 
@@ -1251,80 +1261,122 @@ def ifaceName (n : String) : Bool :=
   | c :: cs => 'A' ≤ c && c ≤ 'Z' && cs.all fun c => c.isAlpha || c.isDigit
   | [] => false
 
-/-- The CPU features the table `T` needs: those of each of its functions, the
-artifacts of `ps` and internal functions of `hs` of the target `t` named
+/-- The CPU features the table `tb` needs: those of each of its functions, the
+artifacts and internal functions of the target named
 by it (`Artifact.features`, which `checkFeatures` checks are what their code
 requires, and `Internal.features`), each once. -/
-def fnTableFeatures (ps : List Prepared) (hs : List Internal) (t : String) (T : FnTable) :
-    List String :=
-  dedup (T.fns.flatMap fun f =>
-    match ps.find? fun q => q.art.target.name == t && q.art.name == f with
-    | some q => q.art.features
-    | none => ((internal? hs t f).map (·.features)).getD [])
+def fnTableFeatures {T : EmitTarget} (l : Linked T) (tb : FnTable) : List String :=
+  dedup (tb.fns.flatMap fun f =>
+    match l.art? f with
+    | some q => q.own.features
+    | none => ((l.internal? f).map (·.features)).getD [])
+
+/-- The words that the data of a table named `n` of the interface `I` starts
+with (`TableIface.tables`): those of the table of `I` of that name, or else
+of the one of the longest name that `n` is with a suffix (so `VG_T_512_256`
+is a table of its own, if `I` has it, and not `VG_T_512` with a suffix). -/
+def tableData? (I : TableIface) (n : String) : Option (List (BitVec 64)) :=
+  let named := I.tables.filter fun (b, _) => n == b || n.startsWith (b ++ "_")
+  ((named.mergeSort fun a b => b.1.length ≤ a.1.length).head?).map (·.2)
+
+/-- `T` is a table of the interface `I` (`TableIface`): of its name, its number
+of words and its number of functions, named as one of its tables is or as one
+with a suffix, with the data that a table of that name starts with. What a
+contract reads of a table (the hash function it names, `hashAt`) is in those
+words, at the place the number of functions gives. -/
+def checkFnTable (I : TableIface) (T : FnTable) : Except String Unit := do
+  unless T.iface == I.name do
+    throw s!"the table of functions {T.name} is of the interface {T.iface}, not {I.name}"
+  unless T.fns.length == I.fns && T.fns.length + T.data.length == I.words do
+    throw s!"the table of functions {T.name} is not of the {I.words} words, the first {I.fns} of \
+      them functions', of {I.name}"
+  let some d := tableData? I T.name
+    | throw s!"{T.name} is not the name of a table of functions of {I.name}"
+  unless T.data.take d.length == d do
+    throw s!"the data of the table of functions {T.name} does not start with that of a table of \
+      {I.name} of its name"
+
+/-- The distinct tables of functions that artifacts of the target take, with whether two
+of them are of one name, so that they are not the same table, or of one interface and
+differ in shape: every table of a name is the same table, and every table of an interface
+has as many functions and as many words of data. -/
+def checkAllFnTables (t : String) (as : List EmitArtifact) : Except String (List FnTable) :=
+  as.foldlM (init := []) fun acc a => (a.tables.flatMap (·.2)).foldlM (init := acc) fun acc tb => do
+    if acc.any fun u => withPtrEq u tb (fun _ => u == tb) (fun h => by simp [h]) then return acc
+    for u in acc do
+      if u.name == tb.name then throw s!"{t}: two tables of functions named {tb.name} differ"
+      if u.iface == tb.iface && (u.fns.length != tb.fns.length || u.data.length != tb.data.length) then
+        throw s!"{t}: the tables of functions {tb.name} and {u.name} of {tb.iface} differ in shape"
+    return acc ++ [tb]
 
 /-- The tables of functions `p`'s artifact takes (`Artifact.tables`), checked
-against those of the artifacts of `ps` and the internal functions `hs`:
+against the functions of the target and `all`, the tables of functions that its
+artifacts take (`checkAllFnTables`, which checks them against each other):
 its target's code can name a `static`, and has pointers of 32 or 64 bits,
 the width of each table's words (`Abi.withTables`, `fnTableFile`), every
 word of data of each table fitting in it; each names a distinct table
-parameter (`Param.table k`, a `*const [usize; k]`), and tables
-of one interface, each of `k` words, named as `tableName` and `ifaceName`
-require, distinct, and every table of that interface that any artifact of
+parameter (`Param.table`, a `*const [usize; k]`), and every table parameter
+is one of them; its tables are of the parameter's interface (`checkFnTable`),
+named as `tableName` and `ifaceName`
+require, distinct, at least one, and every table of that interface that any artifact of
 the target takes: the Rust caller may pass the words of any static of the
-interface's type, which the emitter writes for every one of them. Every table
-of a name, of any artifact of the target, is the same table, and every table
-of an interface has as many functions and as many words of data; and every
+interface's type, which the emitter writes for every one of them; and every
 function a table names is an artifact or an internal function of the
 target, emitted with the code the model runs for each call of it
 (`checkCalls`): `Abi.withTables` says the functions of distinct names are
 at distinct addresses, as distinct naked functions are. -/
-def checkFnTables (ps : List Prepared) (hs : List Internal) (p : Prepared) :
+def checkFnTables {T : EmitTarget} (l : Linked T) (all : List FnTable) (p : Prepared T) :
     Except String Unit := do
   let a := p.art
+  let t := T.name
+  let params := a.tables.map (·.1)
+  for (x, q) in a.sig.params do
+    if q matches .table _ then
+      unless params.contains x do
+        throw s!"{t}: {a.name} lists no tables of functions for its parameter `{x}`"
   if a.tables.isEmpty then return
-  let t := a.target.name
-  let w := a.target.abi.ptrBits
-  unless a.target.abi.sym.isSome && (w == 32 || w == 64) do
+  let w := T.abi.ptrBits
+  unless T.abi.sym.isSome && (w == 32 || w == 64) do
     throw s!"{t}: {a.name} takes tables of functions, which its target's code cannot name or \
       whose pointers are neither 32 nor 64 bits"
-  let params := a.tables.map (·.1)
   unless (dedup params).length == params.length do
     throw s!"{t}: {a.name} gives a parameter two lists of tables of functions"
-  let others := (ps.filter (·.art.target.name == t)).flatMap fun q => q.art.tables.flatMap (·.2)
   for (x, ts) in a.tables do
-    let some (.table k) := a.sig.params.lookup x
+    let some (.table I) := a.sig.params.lookup x
       | throw s!"{t}: {a.name}'s table of functions `{x}` is not a table parameter (`Param.table`)"
-    let some T₀ := ts.head?
-      | throw s!"{t}: {a.name}'s parameter `{x}` has no tables of functions"
+    if ts.isEmpty then
+      throw s!"{t}: {a.name}'s parameter `{x}` has no tables of functions"
     let names := ts.map (·.name)
     unless (dedup names).length == names.length do
       throw s!"{t}: {a.name} lists a table of functions twice for `{x}`"
-    for T in ts do
-      unless tableName T.name && ifaceName T.iface do
-        throw s!"{t}: {a.name}'s table of functions {T.name} of {T.iface} is not named as a Rust \
+    for tb in ts do
+      unless tableName tb.name && ifaceName tb.iface do
+        throw s!"{t}: {a.name}'s table of functions {tb.name} of {tb.iface} is not named as a Rust \
           constant starting with `VG_` of a Rust type"
-      unless T.iface == T₀.iface do
-        throw s!"{t}: {a.name}'s parameter `{x}` has tables of two interfaces"
-      unless T.fns.length + T.data.length == k do
-        throw s!"{t}: {a.name}'s table of functions {T.name} is not of the {k} words of `{x}`"
-      unless T.data.all (·.toNat < 2 ^ w) do
-        throw s!"{t}: {a.name}'s table of functions {T.name} has a word of data wider than \
+      (checkFnTable I tb).mapError (s!"{t}: {a.name}'s parameter `{x}`: " ++ ·)
+      unless tb.data.all (·.toNat < 2 ^ w) do
+        throw s!"{t}: {a.name}'s table of functions {tb.name} has a word of data wider than \
           its target's {w}-bit pointers"
-      for f in T.fns do
-        unless ps.any (fun q => q.art.target.name == t && q.art.name == f) ||
-            (internal? hs t f).isSome do
-          throw s!"{t}: the table of functions {T.name} names {f}, which is neither an \
+      for f in tb.fns do
+        unless l.isFn f do
+          throw s!"{t}: the table of functions {tb.name} names {f}, which is neither an \
             artifact nor an internal function"
-    for U in others do
-      if U.iface == T₀.iface && !names.contains U.name then
-        throw s!"{t}: {a.name}'s parameter `{x}` does not list the table of functions {U.name} \
-          of {U.iface}, which its caller may pass"
-  for T in a.tables.flatMap (·.2) do
-    for U in others do
-      if U.name == T.name && U != T then
-        throw s!"{t}: two tables of functions named {T.name} differ"
-      if U.iface == T.iface && (U.fns.length != T.fns.length || U.data.length != T.data.length) then
-        throw s!"{t}: the tables of functions {T.name} and {U.name} of {T.iface} differ in shape"
+    for u in all do
+      if u.iface == I.name && !names.contains u.name then
+        throw s!"{t}: {a.name}'s parameter `{x}` does not list the table of functions {u.name} \
+          of {u.iface}, which its caller may pass"
+
+/-- Each function of `p`'s artifact's `fns`, listed once, is an artifact or an
+internal function of its target. -/
+def checkFns {T : EmitTarget} (l : Linked T) (p : Prepared T) : Except String Unit := do
+  let a := p.art
+  let t := T.name
+  unless (dedup a.fns).length == a.fns.length do
+    throw s!"{t}: {a.name} lists a function of public address twice (`Artifact.fns`)"
+  for f in a.fns do
+    unless l.isFn f do
+      throw s!"{t}: {a.name} makes public the address of {f} (`Artifact.fns`), which is \
+        neither an artifact nor an internal function"
 
 /-- The module of a table of functions, its name in lowercase. -/
 def fnTableModule (n : String) : String := n.toLower
@@ -1397,21 +1449,28 @@ def symMacros : String :=
   "#[cfg(not(target_vendor = \"apple\"))]\n#[allow(unused_macros)]\n" ++
   "macro_rules! vg_sym_pageoff {\n    ($s:literal) => {\n        concat!(\":lo12:\", $s)\n    };\n}\n"
 
-/-- The tables of constants of the artifacts `arts`, and those the
-instructions of the internal functions `hs` carry (`Internal.tables`), by
+/-- The tables of constants of the artifacts `arts`, and `carried`, those the
+instructions of the internal functions carry (`Internal.tables`), by
 name, each once. -/
-def tables (arts : List Artifact) (hs : List Internal := []) : List (String × List (BitVec 64)) :=
-  let all := arts.flatMap tablesOf ++ hs.flatMap (·.tables)
-  ((dedup (all.map (·.1))).mergeSort (· ≤ ·)).filterMap fun n => all.find? (·.1 == n)
+def tables (arts : List EmitArtifact) (carried : List (String × List (BitVec 64)) := []) :
+    List (String × List (BitVec 64)) :=
+  let all := arts.flatMap tablesOf ++ carried
+  let first : ByName (List (BitVec 64)) :=
+    all.foldl (init := {}) fun m (n, ws) => m.insertIfNew n ws
+  ((dedup (all.map (·.1))).mergeSort (· ≤ ·)).filterMap fun n => (first.find? n).map (n, ·)
 
 /-- The byte `b < 256` as an escape of a Rust byte string literal, `\xHH`. -/
 def byteEscape (b : Nat) : String :=
   let hex (d : Nat) : Char := Nat.digitChar d
-  "\\x" ++ (String.singleton (hex (b / 16))) ++ (String.singleton (hex (b % 16)))
+  ("\\x".push (hex (b / 16))).push (hex (b % 16))
 
-/-- The word `w` as the escapes of its 8 bytes, least significant first. -/
+/-- The word `w` as the escapes of its 8 bytes, least significant first. (As
+a `UInt64`, which it fits: its bytes are then shifts of a machine word, not
+quotients of a number that may be a big one by powers computed each time.) -/
 def wordBytes (w : BitVec 64) : String :=
-  String.join ((List.range 8).map fun i => byteEscape (w.toNat / 2 ^ (8 * i) % 256))
+  let x := w.toNat.toUInt64
+  (List.range 8).foldl (init := "") fun s i =>
+    s ++ byteEscape ((x >>> (8 * i).toUInt64) % 256).toNat
 
 /-- The module of a table of constants, its name in lowercase. -/
 def tableModule (n : String) : String := n.toLower
@@ -1464,19 +1523,17 @@ def forMPar {α : Type u} (as : List α) (check : α → Except String Unit) : E
   | some (_, e) => throw e
   | none => pure ()
 
-/-- `ss.map Prepared.of`, on `tasks` tasks, each preparing a run of consecutive
+/-- `as.map Prepared.of`, on `tasks` tasks, each preparing a run of consecutive
 artifacts. -/
-def prepareAll (ss : List Shared) : List Prepared :=
-  let size := (ss.length + tasks - 1) / tasks
+def prepareAll {T : EmitTarget} (as : List (Artifact T.toTarget)) : List (Prepared T) :=
+  let size := (as.length + tasks - 1) / tasks
   let parts := (List.range tasks).map fun j =>
-    Task.spawn fun _ => ((ss.drop (j * size)).take size).map Prepared.of
+    Task.spawn fun _ => ((as.drop (j * size)).take size).map Prepared.of
   (parts.map Task.get).flatten
 
-/-- The targets of the artifacts `as`, each once, with its Rust `cfg`
-(`Emitter.rustCfg`), in first-seen order. -/
-def targetsOf (as : List Artifact) : List (String × String) :=
-  (distinct as (·.target.name)).map fun t =>
-    (t, ((as.find? (·.target.name == t)).map (·.target.rustCfg)).getD "")
+/-- The targets of `gs`, each with its Rust `cfg` (`Emitter.rustCfg`). -/
+def targetsOf (gs : List TargetArtifacts) : List (String × String) :=
+  gs.map fun g => (g.target.name, g.target.rustCfg)
 
 /-- The directory of the target `t`'s crate, under `crates/`: its name. -/
 def crateDir (t : String) : String := s!"verified-garbage-asm-{t}"
@@ -1522,14 +1579,14 @@ def targetRoot (t cfg : String) (mods : List String) : String :=
 /-- The module of the internal function `h` (`Internal`), under the crate's
 root: `<owner>::<name>`, the file `internal/<name>.rs` of its `codeDir`, which
 the file of the module `owner` declares (`internalDecls`). -/
-def internalModule (h : Internal) : String := s!"{h.owner}::{h.name}"
+def internalModule {T : EmitTarget} (h : Internal T) : String := s!"{h.owner}::{h.name}"
 
 /-- The declarations of the modules of the internal functions `hs` in the file
 of the module that declares each (`Internal.owner`): each the file
 `internal/<name>.rs` (a `path` relative to the directory of that file,
 `codeDir`), `pub(crate)`, so that the generated code of the crate can name
 them and nothing outside it can. -/
-def internalDecls (hs : List Internal) : String :=
+def internalDecls {T : EmitTarget} (hs : List (Internal T)) : String :=
   String.join (hs.map fun h =>
     s!"\n#[rustfmt::skip]\n#[path = \"internal/{h.name}.rs\"]\npub(crate) mod {h.name};\n")
 
@@ -1548,8 +1605,7 @@ naked function of no parameters, `pub(crate)`, with the `cfg` attribute of
 the CPU features its code needs (`Printer.featureCfg`); `moduleOf` gives the
 module of each function it calls, from the crate's root (`internalModule`
 for an internal function). -/
-def internalFile (h : Internal) (moduleOf : String → String) : String :=
-  let T := h.target
+def internalFile {T : EmitTarget} (h : Internal T) (moduleOf : String → String) : String :=
   let gate := cfgGate (h.features.filterMap T.printer.featureCfg)
   header ++ s!"//! The internal function `{h.name}` for `{T.name}`, whose text is in\n" ++
   s!"//! `{assemblyFile s!"internal/{h.name}"}`.\n" ++
@@ -1690,7 +1746,9 @@ On x86-64, the dispatcher of a function any of whose implementations has, in
 its code or the code of a function it calls (`Code.all`: those of the tables
 of functions it takes too), an instruction that MXCSR-configuration-dependent
 timing (MCDT) affects (`Printer.mcdt`, Intel's list: see "MCDT" in
-`TCB/X86_64/Isa.lean`) first runs Intel's mitigation, the verified
+`TCB/X86_64/Isa.lean`), but for those its code runs only after calling
+`vg_mcdt_enter` itself and testing that it returned 1 (`mcdtOpen`,
+`needsMcdt`), first runs Intel's mitigation, the verified
 `vg_mcdt_enter` (`Spec/Mcdt.lean`), and panics unless it returns 1, MXCSR
 then holding `0x1FBF` (`verified_garbage_cpu::mcdt_entered`):
 
@@ -1705,7 +1763,12 @@ pub unsafe fn <base>_auto(_dit: verified_garbage_cpu::Dit<'_>, <the signature>) 
 `vg_mcdt_enter` sets MXCSR's status flags, which nothing but a load of
 MXCSR clears, and the verified code loads it only as Intel's prologue and
 epilogue do, which restore what they found: so MXCSR holds `0x1FBF` from
-there until the implementation returns. Every call of an implementation
+there until the implementation returns. The same holds from a call of
+`vg_mcdt_enter` in verified code that returned 1 until that code returns,
+so a function whose affected instructions all run only after such a call
+(`mcdtOpen`; for instance only on the path of large inputs) needs
+no line in its dispatcher, and the inputs that never reach them never pay
+for it. Every call of an implementation
 from Rust is through its dispatcher (the implementations are `pub(crate)`,
 and only the dispatchers and the tables of functions name them; a table's
 functions are run by the verified code that takes it, whose dispatcher
@@ -1748,37 +1811,188 @@ other implementation gets one, returning it. -/
 
 /-- The implementations of a function of a module: its base and each other. -/
 structure Group where
-  base : Artifact
-  members : List Artifact
+  base : EmitArtifact
+  members : List EmitArtifact
 
 /-- The functions of the artifacts `as` of one module and target, with their
 implementations: each artifact whose name is its `base` (`Artifact.base`,
 its `Api`'s name) is the base of a function, whose other implementations are
 the other artifacts of that `base`, in the order of `as`; an artifact whose
 base is not among `as` is the base of a function of its own. -/
-def groupsOf (as : List Artifact) : List Group :=
+def groupsOf (as : List EmitArtifact) : List Group :=
   let bases := as.filter fun a => a.name == a.base || !as.any (·.name == a.base)
   bases.map fun b =>
     ⟨b, if b.name == b.base then as.filter fun a => a.base == b.base && a.name != b.name else []⟩
 
 /-- Every implementation of a function of `as` (`groupsOf`) has its base's
 signature and documentation, which are what its dispatcher documents and
-calls them with: those of their `Api` (`Api.artifact`). -/
-def checkGroups (as : List Artifact) : Except String Unit :=
+calls them with: those of their `Api` (`Artifact.api`). -/
+def checkGroups (as : List EmitArtifact) : Except String Unit :=
   (groupsOf as).forM fun g => g.members.forM fun a => do
     unless a.sig == g.base.sig && a.doc == g.base.doc do
       throw s!"{a.target.name}: {a.name}, an implementation of {g.base.name}, has another \
         signature or documentation"
 
-/-- Whether the code of `a`, or of a function it calls (`Code.all`, the
-functions of the tables it takes among them), has an instruction that
-MXCSR-configuration-dependent timing affects (`Printer.mcdt`): its
-dispatcher then runs `vg_mcdt_enter` first (see "Dispatchers"). -/
-def needsMcdt (a : Artifact) : Bool := !a.code.all fun i => !a.target.printer.mcdt i
-
 /-- The name of the function that runs Intel's mitigation of MCDT
 (`Spec/Mcdt.lean`), in the module `mcdt`. -/
 def mcdtEnter : String := "vg_mcdt_enter"
+
+/-- Whether `c`, or a function it calls (as `Code.all` goes through them, the
+functions of the tables it takes among them), has an instruction that
+MXCSR-configuration-dependent timing affects (`Printer.mcdt`) that may run
+without a successful call of `vg_mcdt_enter` before it in the same
+function: all of them but those of the code `rest` in
+
+```
+.seq (.call "vg_mcdt_enter" e) (.seq (.block [i]) (.ite c fb rest))
+```
+
+with `i` and `c` testing its result (`Printer.mcdtGuard`: on x86-64,
+`test eax, eax` and `je`), and of the functions `rest` calls. The printer
+lays that out as the call, `i`, the branch on `c` to `fb`, and `rest` right
+after it (`Printer.lower`), so `rest` is entered only there, when the call
+returned 1: structured code jumps into `rest` from nowhere outside it. MXCSR
+then holds `0x1FBF` (`VG.Proof.Mcdt.X86_64.enter_mxcsr`; the emitter emits
+the call only of the function `vg_mcdt_enter` is, `files`), and keeps it
+until the function returns (see "Dispatchers"). `fb`, run when it returned
+0, counts as any other code. `ci/check_mcdt.py` checks the generated code
+for the same (`guarded`). -/
+def mcdtOpen {M : ISA} (P : Printer M) : Code M.Instr M.Cond → Bool
+  | .block is => is.any P.mcdt
+  | .seq (.call n e) (.seq (.block [i]) (.ite c fb rest)) =>
+    if n == mcdtEnter && P.mcdtGuard i c then mcdtOpen P e || mcdtOpen P fb
+    else mcdtOpen P e || P.mcdt i || mcdtOpen P fb || mcdtOpen P rest
+  | .seq a b => mcdtOpen P a || mcdtOpen P b
+  | .ite _ t e => mcdtOpen P t || mcdtOpen P e
+  | .loop b _ => mcdtOpen P b
+  | .call _ b => mcdtOpen P b
+  | .frame i b j => P.mcdt i || mcdtOpen P b || P.mcdt j
+  | .icall i _ b n => P.mcdt i || mcdtOpen P b || mcdtOpen P n
+
+/-- Whether the code of `a`, or of a function it calls, has an instruction
+that MXCSR-configuration-dependent timing affects (`Printer.mcdt`) that may
+run without its own code calling `vg_mcdt_enter` first (`mcdtOpen`):
+its dispatcher then runs `vg_mcdt_enter` first (see "Dispatchers"). -/
+def needsMcdt (a : EmitArtifact) : Bool := mcdtOpen a.target.printer a.code
+
+/-- `mcdtOpen P c`, but for the functions `c` calls: whether its own code has such an
+instruction, and the names of the functions it calls where one would count (`mcdtOpen`
+of their code). -/
+def mcdtOwn {M : ISA} (P : Printer M) : Code M.Instr M.Cond → Bool × List String
+  | .block is => (is.any P.mcdt, [])
+  | .seq (.call n _) (.seq (.block [i]) (.ite c fb rest)) =>
+    let (b, bs) := mcdtOwn P fb
+    if n == mcdtEnter && P.mcdtGuard i c then (b, n :: bs)
+    else
+      let (r, rs) := mcdtOwn P rest
+      (P.mcdt i || b || r, n :: bs ++ rs)
+  | .seq a b | .ite _ a b =>
+    let (x, xs) := mcdtOwn P a
+    let (y, ys) := mcdtOwn P b
+    (x || y, xs ++ ys)
+  | .loop b _ => mcdtOwn P b
+  | .call n _ => (false, [n])
+  | .frame i b j =>
+    let (x, xs) := mcdtOwn P b
+    (P.mcdt i || x || P.mcdt j, xs)
+  | .icall i n _ next =>
+    let (y, ys) := mcdtOwn P next
+    (P.mcdt i || y, n :: ys)
+
+/-- Whether the code of one of the functions `ns`, or of a function they call, has an
+instruction that counts, given `mcdtOwn` of each function by its name. `seen` has the
+answer for each function gone through before, and the result those and the ones gone
+through. `fuel` bounds the depth of the calls: no more than there are functions. Past it,
+or of a function `own` does not have, the answer is that it has. -/
+def mcdtReach (own : ByName (Bool × List String)) : (fuel : Nat) → List String → ByName Bool →
+    Bool × ByName Bool
+  | 0, _, seen => (true, seen)
+  | fuel + 1, ns, seen => ns.foldl (init := (false, seen)) fun (acc, seen) n =>
+    match seen.find? n with
+    | some a => (acc || a, seen)
+    | none =>
+      match own.find? n with
+      | none => (true, seen)
+      | some (x, calls) =>
+        let (y, seen) := mcdtReach own fuel calls seen
+        (acc || x || y, seen.insert n (x || y))
+
+/-- `needsMcdt` of each artifact of `l`, by its name, computed
+once for each: `targetFiles` asks it of an artifact several times (`checkMcdt`,
+and its dispatcher), after `checkCalls`. The code of
+each call of a function in the artifacts of a target prints as that function
+(`checkCalls`), and whether an instruction is one MCDT affects is a matter of
+its text (`Printer.mcdt`), as is where the printer lays out the code a
+successful `vg_mcdt_enter` guards: so the answer for the function as emitted is that for
+the code of each call of it, and each function's code is
+gone through once (`mcdtOwn`, on one of `tasks` tasks), not once for each call of it and of
+every function that calls it (`mcdtReach`). -/
+def needsMcdtAll {T : EmitTarget} (l : Linked T) : ByName Bool :=
+  let fns := l.ps.map (fun p => (p.own.name, p.own.code)) ++ l.hs.map fun h => (h.name, h.code)
+  let indexed := fns.zipIdx
+  let parts := (List.range tasks).map fun j => Task.spawn fun _ =>
+    (indexed.filter (·.2 % tasks == j)).map fun ((n, c), _) => (n, mcdtOwn T.printer c)
+  let own : ByName (Bool × List String) :=
+    (parts.flatMap Task.get).foldl (init := {}) fun m (n, r) => m.insertIfNew n r
+  -- The answer for each function, as the answer for the list of it alone.
+  (fns.foldl (init := ({} : ByName Bool)) fun seen (n, _) =>
+    (mcdtReach own (fns.length + 1) [n] seen).2)
+
+/-- `needsMcdt a`, as `known` (`needsMcdtAll`) has it, or computed if `known`
+does not list `a`. -/
+def needsMcdtIn (known : ByName Bool) (a : EmitArtifact) : Bool :=
+  (known.find? a.name).getD (needsMcdt a)
+
+/-- The most stack below the stack pointer that the calls and frames of `c`,
+and of the functions it calls or may call indirectly, take at once, in bytes
+(`Emitter.callBytes`, `Emitter.frameBytes`: a call is inside the frames around
+it, and no other instruction moves the stack pointer, `Artifact.spSafe`). With
+that of the code of each function gone through kept by the function's name:
+`seen` has those of the functions gone through before, and the result those and
+the ones `c` calls. The code of each call of a function in the artifacts of a
+target prints as that function (`checkCalls`), and what a push takes is in its
+text: so the answer for the code of one call of a function holds for the
+function as emitted, and each function's code is gone through once. -/
+def stackSeen (T : EmitTarget) : Prog T.isa → List (String × Nat) → Nat × List (String × Nat)
+  | .block _, seen => (0, seen)
+  | .seq a b, seen | .ite _ a b, seen =>
+    let (x, seen) := stackSeen T a seen
+    let (y, seen) := stackSeen T b seen
+    (max x y, seen)
+  | .loop b _, seen => stackSeen T b seen
+  | .call n b, seen =>
+    match seen.lookup n with
+    | some x => (T.callBytes + x, seen)
+    | none =>
+      let (x, seen) := stackSeen T b seen
+      (T.callBytes + x, (n, x) :: seen)
+  | .frame i b _, seen =>
+    let (x, seen) := stackSeen T b seen
+    (T.frameBytes i + x, seen)
+  | .icall _ n b next, seen =>
+    let (x, seen) := match seen.lookup n with
+      | some x => (x, seen)
+      | none =>
+        let (x, seen) := stackSeen T b seen
+        (x, (n, x) :: seen)
+    let (y, seen) := stackSeen T next seen
+    (max (T.callBytes + x) y, seen)
+
+/-- The artifacts of each target take no more stack than their contracts are for
+(`Artifact.stack`): the memory below the stack pointer that their contracts
+require no buffer to overlap (`Abi.reserved`), and that their documentation
+states (`Sig.layoutDoc`), has every byte their calls and frames may write
+(`stackSeen`). After `checkCalls`. -/
+def checkStack (as : List EmitArtifact) : Except String Unit :=
+  (distinct as (·.target.name)).forM fun t => do
+    let mut seen : List (String × Nat) := []
+    for a in as do
+      unless a.target.name == t do continue
+      let (n, s) := stackSeen a.target a.code seen
+      seen := s
+      unless n ≤ a.stack do
+        throw s!"{t}: the calls and frames of {a.name} take {n} bytes of stack, but its contract \
+          is for {a.stack}"
 
 /-- The first lines of the dispatcher of a function some of whose
 implementations need Intel's mitigation of MCDT (`needsMcdt`), or
@@ -1808,7 +2022,7 @@ structure Impl where
   notWith : List String := []
 
 /-- The function `a`, as an implementation a dispatcher may call. -/
-def Impl.ofArtifact (a : Artifact) : Impl :=
+def Impl.ofArtifact (a : EmitArtifact) : Impl :=
   { name := a.name, module := a.module, features := a.features
     gate := a.features.filterMap a.target.printer.featureCfg, extra := a.extra
     vendor := a.vendor, notWith := a.notWith }
@@ -1860,6 +2074,7 @@ of slices' count after it (`Param.rust`). -/
 def argsOf (sig : Sig) : String :=
   ", ".intercalate (sig.params.flatMap fun (n, p) => match p with
     | .slice _ _ len => [n, len]
+    | .inOutSlice _ dst len => [n, dst, len]
     | .slices _ count => [n, count]
     | _ => [n])
 
@@ -1923,7 +2138,7 @@ def dispatchNote (base : String) (arms : List Arm) : String :=
 /-- The body of a function returning the implementation, of the function
 whose base is `b`, that the first of `arms` that applies names, or else the
 base (see above), each line after `ind`. -/
-def choice (ind : String) (b : Artifact) (arms : List Arm) : String :=
+def choice (ind : String) (b : EmitArtifact) (arms : List Arm) : String :=
   (if arms.isEmpty then "" else s!"{ind}let cpu = verified_garbage_cpu::detected();\n") ++
   String.join (arms.map fun a =>
     String.join (a.impl.gate.map fun p => s!"{ind}#[cfg({p})]\n") ++
@@ -1933,8 +2148,9 @@ def choice (ind : String) (b : Artifact) (arms : List Arm) : String :=
   s!"{ind}crate::{b.module}::{b.name}\n"
 
 /-- The dispatcher of the function `g` of the module `m` (see above), given
-its implementations' `arms`. -/
-def dispatcher (g : Group) (arms : List Arm) : String :=
+its implementations' `arms`, and whether each needs Intel's mitigation of
+MCDT (`needs`: `needsMcdt`, as `files` computed it). -/
+def dispatcher (needs : EmitArtifact → Bool) (g : Group) (arms : List Arm) : String :=
   let b := g.base
   let auto := autoName b.name
   let all := b :: g.members
@@ -1953,7 +2169,7 @@ def dispatcher (g : Group) (arms : List Arm) : String :=
   "#[allow(clippy::too_many_arguments)]\n" ++
   "#[inline]\n" ++
   s!"pub unsafe fn {auto}{ditSig b.sig} " ++ "{\n" ++
-  mcdtLine (all.any needsMcdt) ++
+  mcdtLine (all.any needs) ++
   "    /// The type of the implementations.\n" ++
   s!"    type Impl = unsafe extern \"{abi}\" fn{b.sig.rust};\n" ++
   "    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only\n" ++
@@ -1982,8 +2198,9 @@ def dispatcher (g : Group) (arms : List Arm) : String :=
   "}\n"
 
 /-- The dispatcher of the function `g` whose base is its only implementation:
-a function that takes the token (`ditSig`) and calls it. -/
-def soleDispatcher (g : Group) : String :=
+a function that takes the token (`ditSig`) and calls it; `needs` as
+`dispatcher`'s. -/
+def soleDispatcher (needs : EmitArtifact → Bool) (g : Group) : String :=
   let b := g.base
   let auto := autoName b.name
   let note := s!"It runs `{b.name}`, the only implementation of it on this target, which needs \
@@ -1995,7 +2212,7 @@ def soleDispatcher (g : Group) : String :=
   "#[allow(clippy::too_many_arguments)]\n" ++
   "#[inline]\n" ++
   s!"pub unsafe fn {auto}{ditSig b.sig} " ++ "{\n" ++
-  mcdtLine (needsMcdt b) ++
+  mcdtLine (needs b) ++
   "    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.\n" ++
   "    unsafe { " ++ s!"crate::{b.module}::{b.name}({argsOf b.sig})" ++ " }\n" ++
   "}\n"
@@ -2009,9 +2226,31 @@ def vendorOk (v : String) : Bool :=
 def featureOk (f : String) : Bool :=
   !f.isEmpty && f.all fun c => c.isAlphanum || c == '.' || c == '_'
 
+/-- A module's name is a Rust module's and a file's: a lowercase ASCII
+letter, then lowercase ASCII letters, digits and underscores. -/
+def moduleName (n : String) : Bool :=
+  match n.toList with
+  | c :: cs => 'a' ≤ c && c ≤ 'z' && cs.all fun c => ('a' ≤ c && c ≤ 'z') || c.isDigit || c == '_'
+  | [] => false
+
+/-- The artifact `a`'s name, and its base's, which it extends, are named as an
+internal function's (`internalName`), and its module is named as `moduleName`
+requires. The emitter writes each into Rust code, in
+front of the code that `a`'s proof is of: so a registration's suffix
+(`Registration.suffix`), which `Artifact.name` appends to its `Api`'s name, can
+only add letters, digits and underscores to the name of the one function. -/
+def checkName (a : EmitArtifact) : Except String Unit := do
+  let t := a.target.name
+  unless internalName a.name && internalName a.base do
+    throw s!"{t}: the function {repr a.name} (of {repr a.base}) is not named as a Rust \
+      function starting with `vg_` (lowercase letters, digits and underscores)"
+  unless moduleName a.module do
+    throw s!"{t}: {a.name}'s module {repr a.module} is not named as a Rust module (lowercase \
+      letters, digits and underscores)"
+
 /-- The artifact `a`'s vendor, if it names one, and each of its `extra` and
 `notWith` features are as `vendorOk` and `featureOk` require. -/
-def checkChoice (a : Artifact) : Except String Unit := do
+def checkChoice (a : EmitArtifact) : Except String Unit := do
   if let some v := a.vendor then
     unless vendorOk v do
       throw s!"{a.target.name}: {a.name} names the vendor `{v}`"
@@ -2022,10 +2261,12 @@ def checkChoice (a : Artifact) : Except String Unit := do
 /-- That every function of `as` (a module's artifacts) whose code needs
 Intel's mitigation of MCDT (`needsMcdt`) has a dispatcher, which runs
 it: its base needs no CPU feature, and the target has `vg_mcdt_enter`, of
-the module `mcdt` (`names`: the names of the target's artifacts). -/
-def checkMcdt (names : List String) (as : List Artifact) : Except String Unit :=
+the module `mcdt` (`names`: the names of the target's artifacts; `needs`:
+`needsMcdt`, as `files` computed it). -/
+def checkMcdt (needs : EmitArtifact → Bool) (names : List String) (as : List EmitArtifact) :
+    Except String Unit :=
   (groupsOf as).forM fun g => do
-    if let some a := (g.base :: g.members).find? needsMcdt then
+    if let some a := (g.base :: g.members).find? needs then
       unless g.base.features.isEmpty do
         throw s!"{a.target.name}: {a.name} has an instruction that MCDT affects, but no \
           dispatcher to run vg_mcdt_enter first: its base {g.base.name} needs CPU features"
@@ -2036,20 +2277,20 @@ def checkMcdt (names : List String) (as : List Artifact) : Except String Unit :=
 /-- The dispatchers of the artifacts `as` of a module of a target (see
 above), as the text that follows its functions in its file; `names` are the
 names of every artifact of the target, none of which may be a
-dispatcher's. -/
-def dispatchers (names : List String) (as : List Artifact) :
+dispatcher's; `needs` is `needsMcdt`, as `files` computed it. -/
+def dispatchers (needs : EmitArtifact → Bool) (names : List String) (as : List EmitArtifact) :
     Except String String := do
   if let some g := (groupsOf as).find? (!·.base.notWith.isEmpty) then
     throw s!"{g.base.target.name}: {g.base.name} is a base, which its dispatcher falls back on: \
       `notWith` means nothing for it"
-  checkMcdt names as
+  checkMcdt needs names as
   let gs := (groupsOf as).filter (·.base.features.isEmpty)
   let texts ← gs.mapM fun g => do
     let auto := autoName g.base.name
     if names.contains auto then
       throw s!"{g.base.target.name}: {auto} is both an artifact and the dispatcher of {g.base.name}"
     let arms ← armsOf g.base.target.name (g.members.map Impl.ofArtifact)
-    return if g.members.isEmpty then soleDispatcher g else dispatcher g arms
+    return if g.members.isEmpty then soleDispatcher needs g else dispatcher needs g arms
   return String.join (texts.map ("\n" ++ ·))
 
 /-- The tables of functions `ts` of a target, with their implementations: a
@@ -2147,133 +2388,140 @@ name: `pub(crate)` if it is an implementation of a function with a
 dispatcher (whose base needs no CPU feature, `dispatchers`), so that the
 library calls it only through the dispatcher, which takes the token (see the
 top of this file); else `pub`. -/
-def visibilities (items : List (Prepared × String)) : String → String :=
+def visibilities {T : EmitTarget} (items : List (Prepared T × String)) : String → String :=
   let dispatched := ((groupsOf (items.map (·.1.art))).filter (·.base.features.isEmpty)).flatMap
     fun g => g.base.name :: g.members.map (·.name)
   fun n => if dispatched.contains n then "pub(crate)" else "pub"
 
-/-- The generated files of the artifacts of `ps`, given the module of each
-function each artifact calls; each artifact's code as `ps` printed it
+/-- The generated files of the target `T`, given the module of each
+function and the dispatchers of each module; each artifact's code as `l` printed it
 (`Prepared.lines`). -/
-def render (ps : List Prepared) (hs : List Internal) (moduleOf : String → String → String)
-    (disp : String → String → String := fun _ _ => "") :
+def render {T : EmitTarget} (l : Linked T) (moduleOf : String → String) (disp : String → String) :
     List (String × String) :=
+  let t := T.name
+  let as := l.ps.map (·.art)
+  -- In order of their names, wherever their artifacts or calls come in the lists.
+  let hs := l.hs.mergeSort (·.name ≤ ·.name)
+  let modules := (distinct as (·.module)).mergeSort (· ≤ ·)
+  let ts := tables as (hs.flatMap (·.tables))
+  let fts := fnTables as
+  let dmods := ((modules ++ (if fts.isEmpty then [] else ["fn_tables"])).filter fun m =>
+    !(disp m).isEmpty).mergeSort (· ≤ ·)
+  let mods := (modules ++ (if ts.isEmpty then [] else ["consts"]) ++
+    (if fts.isEmpty then [] else ["fn_tables"]) ++
+    (if dmods.isEmpty then [] else ["dispatch"])).mergeSort (· ≤ ·)
+  let src := codeDir t
+  (s!"{src}/lib.rs", targetRoot t T.rustCfg mods) ::
+  (if ts.isEmpty then [] else
+    (s!"{src}/consts/mod.rs", tablesMod t ts) ::
+      -- Each table's file on a task of its own.
+      (ts.map fun (n, ws) => Task.spawn fun _ =>
+        (s!"{src}/consts/{tableModule n}.rs", tableFile t n ws)).map Task.get) ++
+  (if fts.isEmpty then [] else
+    (s!"{src}/fn_tables/mod.rs", fnTablesMod t fts (fnTableFeatures l)) ::
+      fts.map fun tb => (s!"{src}/fn_tables/{fnTableModule tb.name}.rs",
+        fnTableFile T tb (fnTableFeatures l tb) moduleOf)) ++
+  (if dmods.isEmpty then [] else
+    (s!"{src}/dispatch/mod.rs", dispatchMod t dmods) ::
+      dmods.map fun m => (s!"{src}/dispatch/{m}.rs", dispatchFile t m (disp m))) ++
+  (hs.map fun h => Task.spawn fun _ =>
+    let m := s!"internal/{h.name}"
+    [(s!"{src}/{m}.rs", internalFile h moduleOf),
+     (s!"{crateDir t}/{assemblyFile m}", assemblyHeader t m ++
+       moduleAssembly.functionAssembly T h.name (bodyLines T h.lines))]).flatMap
+    Task.get ++
+  -- Each module's files on a task of their own: a part (`Emit.run`) has one target.
+  ((modules.map fun m => Task.spawn fun _ =>
+    let items := moduleItems moduleOf (l.ps.filter (·.own.module == m))
+    let vis := visibilities items
+    [(s!"{src}/{m}.rs",
+      header ++ s!"//! Verified `{m}` functions for `{t}`, whose text is in\n" ++
+      s!"//! `{assemblyFile m}`.\n" ++
+      "#![allow(dead_code)]\n" ++
+      moduleText items vis ++ internalDecls (hs.filter (·.owner == m))),
+     (s!"{crateDir t}/{assemblyFile m}", assemblyHeader t m ++ moduleAssembly items)]).map
+    Task.get).flatten
+
+/-- The generated files of the target `T`, whose artifacts are `as`, as `files` says. -/
+def targetFiles (T : EmitTarget) (as : List (Artifact T.toTarget)) :
+    Except String (List (String × String)) := do
+  let t := T.name
+  let ps := prepareAll as
   let as := ps.map (·.art)
-  let targets := distinct as (·.target.name)
-  let perTarget (t : String) : List (String × String) :=
-    let arts := ps.filter (·.art.target.name == t)
-    -- In order of their names, wherever their artifacts or calls come in the lists.
-    let hs := (hs.filter (·.target.name == t)).mergeSort (·.name ≤ ·.name)
-    let modules := (distinct (arts.map (·.art)) (·.module)).mergeSort (· ≤ ·)
-    let ts := tables (arts.map (·.art)) hs
-    let fts := fnTables (arts.map (·.art))
-    let dmods := ((modules ++ (if fts.isEmpty then [] else ["fn_tables"])).filter fun m =>
-      !(disp t m).isEmpty).mergeSort (· ≤ ·)
-    let mods := (modules ++ (if ts.isEmpty then [] else ["consts"]) ++
-      (if fts.isEmpty then [] else ["fn_tables"]) ++
-      (if dmods.isEmpty then [] else ["dispatch"])).mergeSort (· ≤ ·)
-    let cfg := ((targetsOf (arts.map (·.art))).map (·.2)).headD ""
-    let src := codeDir t
-    (s!"{src}/lib.rs", targetRoot t cfg mods) ::
-    (if ts.isEmpty then [] else
-      (s!"{src}/consts/mod.rs", tablesMod t ts) ::
-        -- Each table's file on a task of its own.
-        (ts.map fun (n, ws) => Task.spawn fun _ =>
-          (s!"{src}/consts/{tableModule n}.rs", tableFile t n ws)).map Task.get) ++
-    (match fts, arts.head? with
-      | [], _ | _, none => []
-      | fts, some p₀ =>
-        (s!"{src}/fn_tables/mod.rs", fnTablesMod t fts (fnTableFeatures arts hs t)) ::
-          fts.map fun T => (s!"{src}/fn_tables/{fnTableModule T.name}.rs",
-            fnTableFile p₀.art.target T (fnTableFeatures arts hs t T) (moduleOf t))) ++
-    (if dmods.isEmpty then [] else
-      (s!"{src}/dispatch/mod.rs", dispatchMod t dmods) ::
-        dmods.map fun m => (s!"{src}/dispatch/{m}.rs", dispatchFile t m (disp t m))) ++
-    (hs.map fun h => Task.spawn fun _ =>
-      let m := s!"internal/{h.name}"
-      [(s!"{src}/{m}.rs", internalFile h (moduleOf t)),
-       (s!"{crateDir t}/{assemblyFile m}", assemblyHeader t m ++
-         moduleAssembly.functionAssembly h.target h.name (bodyLines h.target h.lines))]).flatMap
-      Task.get ++
-    -- Each module's files on a task of their own: a part (`Emit.run`) has one target.
-    ((modules.map fun m => Task.spawn fun _ =>
-      let items := moduleItems (fun a => moduleOf a.target.name) (arts.filter (·.art.module == m))
-      let vis := visibilities items
-      [(s!"{src}/{m}.rs",
-        header ++ s!"//! Verified `{m}` functions for `{t}`, whose text is in\n" ++
-        s!"//! `{assemblyFile m}`.\n" ++
-        "#![allow(dead_code)]\n" ++
-        moduleText items vis ++ internalDecls (hs.filter (·.owner == m))),
-       (s!"{crateDir t}/{assemblyFile m}", assemblyHeader t m ++ moduleAssembly items)]).map
-      Task.get).flatten
-  -- Each target's files on a task of their own.
-  ((targets.map fun t => Task.spawn fun _ => perTarget t).map Task.get).flatten
+  forMPar as checkApi
+  forMPar as checkName
+  checkUnique as
+  let l := Linked.of ps (internalsOf ps)
+  checkCalls l
+  checkTables t (ps.map (fun p => (p.own.name, p.tables)) ++
+    l.hs.map fun h => (s!"the internal function {h.name}", h.tables))
+  forMPar ps checkConsts
+  forMPar l.hs checkInternal
+  forMPar ps (checkInternalTables l)
+  let fnTabs ← checkAllFnTables t as
+  forMPar ps (checkFnTables l fnTabs)
+  forMPar ps (checkFns l)
+  forMPar ps checkFeatures
+  forMPar ps checkEncodable
+  forMPar l.hs checkEncodableInternal
+  checkStack as
+  forMPar as checkLayout
+  forMPar as checkWritten
+  forMPar as checkChoice
+  let needs := needsMcdtIn (needsMcdtAll l)
+  let names := as.map (·.name)
+  let fns ← (distinct as (·.module)).mapM fun m => do
+    let ms := as.filter (·.module == m)
+    checkGroups ms
+    return (m, ← dispatchers needs names ms)
+  let tabs ← tableDispatchers t names (fnTables as) (fnTableFeatures l)
+    (·.filterMap T.printer.featureCfg)
+  let disp := fns ++ (if tabs.isEmpty then [] else [("fn_tables", tabs)])
+  return render l (fun n =>
+    match l.art? n with
+    | some p => p.own.module
+    | none => ((l.internal? n).map internalModule).getD "")
+    (fun m => (disp.lookup m).getD "")
 
 /-- The generated files, as paths relative to `crates/` and their contents:
 for each target, its crate's `lib.rs`, one `<module>.rs` per module and one
 `internal/<name>.rs` per internal function (`internalsOf`), in its `codeDir`;
-an error if an artifact is not made from an `Api` with a
-contract (`checkApi`), two artifacts of a target have the same name
+an error if two of `gs` are of targets of one name, an artifact's `Api` has no
+contract (`checkApi`), an artifact's name or module is not a Rust
+identifier (`checkName`), two artifacts of a target have the same name
 (`checkUnique`), a call is not of the code it runs (`checkCalls`), its
 tables of constants, or an internal function's name or tables, are not as
-`checkConsts`, `checkInternal` and `checkInternalTables` require, an
+`checkTables`, `checkConsts`, `checkInternal` and `checkInternalTables` require, its tables
+of functions or functions of public address are not as `checkAllFnTables`, `checkFnTables` and
+`checkFns` require, an
 artifact's features are not those its code requires (`checkFeatures`), its
 code has an instruction its target's printer cannot encode
-(`checkEncodable`), its doc has no `# Safety` section at its end for what
+(`checkEncodable`), its calls and frames take more stack than its contract is
+for (`checkStack`), its doc has no `# Safety` section at its end for what
 `fullDoc` adds to it (`checkLayout`), a bound on what it writes is not of a
 writable array parameter, at most its size (`checkWritten`), or its vendor
 or `extra` features are not names (`checkChoice`), an implementation of a
 function has another signature or documentation than its base's
 (`checkGroups`), or a dispatcher would never choose one of its
 implementations (`armsOf`); with each module's dispatchers after its
-functions. Each check of
-every artifact runs on `tasks` tasks (`forMPar`), one check after the other,
+functions. Most checks of
+every artifact run on `tasks` tasks (`forMPar`), one check after the other,
 so the error is the
 one checking them in order would give; what they read of an artifact more
 than once is computed once, on `tasks` tasks (`Prepared`, `prepareAll`). -/
-def files (as : List Artifact) :
-    Except String (List (String × String)) := do
+def files (gs : List TargetArtifacts) : Except String (List (String × String)) := do
+  let names := gs.map (·.target.name)
+  unless (dedup names).length == names.length do
+    throw s!"the artifacts of a target are in two lists: {names}"
   -- The same artifacts, with equal parts the same value in memory
   -- (`ShareCommon.shareCommon'` returns its argument): the code of every call
-  -- of a function in an artifact is then the same value as its first call's,
-  -- which `badCall` and `distinctCalls` skip at once. Most calls' code was
-  -- an equal value made again, not the same one. So is each artifact's `Fn`
-  -- and that of each first call of a function (`Shared`), with the same target
-  -- and code, which `checkCalls` compares by `printsAs`. First, as sharing
-  -- values that tasks have read takes several times longer.
-  let ss := ShareCommon.shareCommon' (as.map Shared.of)
-  let as := ss.map (·.art)
-  forMPar as checkApi
-  checkUnique as
-  let ps := prepareAll ss
-  let hs := internalsOf ps
-  forMPar ps (checkCalls ps hs)
-  forMPar ps (checkConsts ps)
-  forMPar hs (checkInternal ps hs)
-  forMPar ps (checkInternalTables hs)
-  forMPar ps (checkFnTables ps hs)
-  forMPar ps checkFeatures
-  forMPar ps checkEncodable
-  forMPar as checkLayout
-  forMPar as checkWritten
-  forMPar as checkChoice
-  let disp ← (targetsOf as).flatMapM fun (t, _) => do
-    let arts := as.filter (·.target.name == t)
-    let names := arts.map (·.name)
-    let fns ← (distinct arts (·.module)).mapM fun m => do
-      let ms := arts.filter (·.module == m)
-      checkGroups ms
-      return ((t, m), ← dispatchers names ms)
-    let tps := ps.filter (·.art.target.name == t)
-    let gate (fs : List String) : List String := match arts.head? with
-      | some a => fs.filterMap a.target.printer.featureCfg
-      | none => []
-    let tabs ← tableDispatchers t names (fnTables arts) (fnTableFeatures tps hs t) gate
-    return fns ++ (if tabs.isEmpty then [] else [((t, "fn_tables"), tabs)])
-  return render ps hs (fun t n =>
-    match as.find? fun b => b.target.name == t && b.name == n with
-    | some b => b.module
-    | none => ((internal? hs t n).map internalModule).getD "")
-    (fun t m => (disp.lookup (t, m)).getD "")
+  -- of a function is then the same value as its first call's,
+  -- which `badCall` and `Code.distinctCalls` skip at once. Most calls' code was
+  -- an equal value made again, not the same one. First, as sharing values
+  -- that tasks have read takes several times longer.
+  let gs := ShareCommon.shareCommon' gs
+  -- Each target's files on a task of their own.
+  let parts := gs.map fun g => Task.spawn fun _ => targetFiles g.target (g.arts.flatMap (·.2))
+  return (← parts.mapM Task.get).flatten
 
 end VG.Rust

@@ -5,23 +5,119 @@ public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Workspace
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Address
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Div
-import Mathlib.Data.Nat.Init
-import Mathlib.Logic.Function.Basic
-import Mathlib.Order.Defs.Prop
-import Mathlib.Tactic.Attr.Core
-import Mathlib.Tactic.Basic
-import Mathlib.Tactic.Set
-import Mathlib.Tactic.SplitIfs
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyDivisionLoad
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Copy
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Chain
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyDivisionStore
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyInverseFrame
 import VerifiedGarbage.Proof.Mont.RangeCover
-import VerifiedGarbage.Impl.Rsa.X86.KeyWs
+public import VerifiedGarbage.Impl.Rsa.X86.KeyWs
 import VerifiedGarbage.Proof.Mont.Words32
 import VerifiedGarbage.Proof.Mont.X86.Words
+public import VerifiedGarbage.Impl.RsaKeyGen.X86.KeyDivision
+import VerifiedGarbage.Proof.Rsa.X86.DivCopy
+import VerifiedGarbage.Impl.Mont.X86
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.RsaKeyGen.WordBounds32
+public import VerifiedGarbage.Proof.Rsa.X86.DivContext
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.InverseCall
+import VerifiedGarbage.Proof.Framework.X86.CallBody
+import VerifiedGarbage.Proof.Mont.OutsFrame
+
+/-! ### `RsaKeyGen.X86.KeyDivisionGeometry`, which this module and modules that import it used -/
+
+section
+
+/-! # The four-array native RSA division bank -/
+
+@[expose] public section
+namespace VG.Proof.RsaKeyGen.X86.Key
+open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Rsa.X86.Keys
+
+def divisionGeometry (B : Addr) (Z n : Nat) : VG.Proof.Rsa.X86.Div.Geometry :=
+  { base := B, size := Z, n := n, offsets := fun i => arr n i.val }
+
+theorem division_context {s : State} {B : Addr} {Z n : Nat} (h : Ws s B Z n 4) :
+    VG.Proof.Rsa.X86.Div.Context (divisionGeometry B Z n) s := by
+  refine ⟨h.workspace, h.wpos, by have := h.wle; change n < 2 ^ 24; omega_using [this], ?_, ?_⟩
+  · intro i
+    have fit := h.arr_fit i.isLt
+    change arr n i.val + 4 * (if i = 0 then n else n + 1) ≤ Z
+    unfold S at fit
+    split <;> omega_using [fit]
+  · intro i j ne
+    have indices : i.val ≠ j.val := fun e => ne (Fin.ext e)
+    have disj := arr_disj (w := n) indices
+    change arr n i.val + 4 * (if i = 0 then n else n + 1) ≤ arr n j.val ∨
+      arr n j.val + 4 * (if j = 0 then n else n + 1) ≤ arr n i.val
+    unfold S at disj
+    split <;> split <;> omega_using [disj]
+
+theorem division_frame {m m' : Mem} {B : Addr} {Z n : Nat}
+    (O : Outs B (divisionGeometry B Z n).ranges m m') :
+    Outside B VG.Impl.Rsa.X86.Keys.hdr (4 * (4 * (n + 2))) m m' := by
+  intro x hx
+  apply O x
+  intro r hr
+  simp only [VG.Proof.Rsa.X86.Div.Geometry.ranges, divisionGeometry,
+    List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl
+  all_goals simp only [arr, S] at hx ⊢
+  all_goals omega_using [hx]
+
+end VG.Proof.RsaKeyGen.X86.Key
+
+end
+
+end
+
+/-! ### `RsaKeyGen.X86.KeyDivisionStore`, which only this module used -/
+
+section
+
+/-! # Export native division results to persistent workspace arrays -/
+
+@[expose] public section
+namespace VG.Proof.RsaKeyGen.X86.Key
+open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Rsa.X86.Keys
+open VG.Impl.Rsa.X86.Keys hiding slot
+open VG.Impl.RsaKeyGen.X86.Key
+
+structure DivisionOutputs (Z n quotient remainder : Nat) : Prop where
+  quotient_bound : quotient + 4 * n ≤ Z
+  remainder_bound : remainder + 4 * n ≤ Z
+  quotient_outside : quotient + 4 * n ≤ hdr ∨ arr n 4 ≤ quotient
+  remainder_outside : remainder + 4 * n ≤ hdr ∨ arr n 4 ≤ remainder
+  separate : quotient + 4 * n ≤ remainder ∨ remainder + 4 * n ≤ quotient
+
+end VG.Proof.RsaKeyGen.X86.Key
+
+end
+
+end
+
+/-! ### `RsaKeyGen.X86.KeyDivisionLoad`, which this module and modules that import it used -/
+
+section
+
+/-! # Load the native division bank without clearing its temporary arrays -/
+
+@[expose] public section
+namespace VG.Proof.RsaKeyGen.X86.Key
+open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Rsa.X86.Keys
+open VG.Impl.Rsa.X86.Keys hiding slot
+open VG.Impl.RsaKeyGen.X86.Key
+
+structure DivisionInputs (Z n src divisor : Nat) : Prop where
+  source_bound : src + 4 * n ≤ Z
+  divisor_bound : divisor + 4 * n ≤ Z
+  source_outside : src + 4 * n ≤ hdr ∨ arr n 4 ≤ src
+  divisor_outside : divisor + 4 * n ≤ hdr ∨ arr n 4 ≤ divisor
+
+end VG.Proof.RsaKeyGen.X86.Key
+
+end
+
+end
 
 /-! ### `RsaKeyGen.X86.KeyRuntime.DivisionLoad`, which only this module used -/
 
@@ -215,6 +311,70 @@ end
 
 end
 
+@[expose] public section
+namespace VG.Proof.RsaKeyGen.X86.KeyRuntime
+open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Rsa.X86.Keys
+open VG.Impl.Rsa.X86.Keys hiding slot
+
+/-- A number in the workspace keeps its value. -/
+theorem OutsS.val32_eq {B : Addr} {sp : BitVec 32} {rs : List (Nat × Nat)} {m m' : Mem} {Z : Nat}
+    (h : OutsS B sp rs m m') (D : VG.Proof.RsaKeyGen.X86.KeyArgs.DeepStk sp B Z)
+    (nowrap : B.toNat + Z ≤ 2 ^ 32) {d k : Nat} (hd : ∀ r ∈ rs, d + 4 * k ≤ r.1 ∨ r.1 + r.2 ≤ d)
+    (hs : d + 4 * k ≤ Z) : val32 m' B d k = val32 m B d k := by
+  apply (h.outs D nowrap).val32 _ (by omega_using [nowrap, hs])
+  intro r hr
+  rcases List.mem_append.mp hr with hr | hr
+  · exact hd r hr
+  · obtain rfl := List.mem_singleton.mp hr
+    exact Or.inl hs
+
+/-- The memory with the stack below `sp` as in `m₁`, the rest as in `m₂`: what `OutsS` changes as
+`Outs` would. -/
+def hyb (sp : BitVec 32) (m₁ m₂ : Mem) : Mem := fun x => if (below sp 52).Contains x 1 then m₁ x else m₂ x
+
+theorem OutsS.outs_hyb {B : Addr} {sp : BitVec 32} {rs : List (Nat × Nat)} {m₁ m₂ : Mem}
+    (h : OutsS B sp rs m₁ m₂) : Outs B rs m₁ (hyb sp m₁ m₂) := by
+  intro x hx
+  unfold hyb
+  by_cases hz : (below sp 52).Contains x 1
+  · simp only [hz, ↓reduceIte]
+  · simp only [hz, ↓reduceIte]
+    exact h x hx hz
+
+/-- A number in the workspace changes as `Outs` lets it. -/
+theorem OutsS.read {B : Addr} {sp : BitVec 32} {rs : List (Nat × Nat)} {m₁ m₂ : Mem} {Z : Nat}
+    (h : OutsS B sp rs m₁ m₂) (D : VG.Proof.RsaKeyGen.X86.KeyArgs.DeepStk sp B Z)
+    (nowrap : B.toNat + Z ≤ 2 ^ 32) {d k : Nat} (fit : d + 4 * k ≤ Z)
+    (old : Outs B rs m₁ (hyb sp m₁ m₂) → val32 (hyb sp m₁ m₂) B d k = val32 m₁ B d k) :
+    val32 m₂ B d k = val32 m₁ B d k := by
+  rw [← old h.outs_hyb]
+  have far := stack_far D nowrap
+  have size : (stackRange B sp).2 = 52 := rfl
+  refine val32_congr fun j hj => congrArg BitVec.toNat (Mem.readW_congr fun i hi => ?_)
+  unfold hyb
+  have notStack : ¬ (below sp 52).Contains (off B (d + 4 * j) + BitVec.ofNat 64 i) 1 := by
+    intro c
+    have H := (stack_contains D nowrap _).mp c
+    rw [ofs_off B (by omega_using [nowrap, fit, hj, hi])] at H
+    omega_using [fit, far, hj, hi, H]
+  simp only [notStack, ↓reduceIte]
+
+theorem Ws.read_num {s : State} {B : Addr} {Z n N j : Nat} (W : Ws s B Z n N) (hj : j < N)
+    {rs : List (Nat × Nat)} {m₁ m₂ : Mem} (h : OutsS B (s.gpr .esp) rs m₁ m₂)
+    (old : Outs B rs m₁ (hyb (s.gpr .esp) m₁ m₂) → num (hyb (s.gpr .esp) m₁ m₂) B n j = num m₁ B n j) :
+    num m₂ B n j = num m₁ B n j :=
+  h.read W.deep W.old.workspace.nowrap (by have := W.arr_fit hj; unfold S at this; omega_using [this]) old
+
+theorem Ws.read_val32 {s : State} {B : Addr} {Z n N d k : Nat} (W : Ws s B Z n N) (fit : d + 4 * k ≤ hdr)
+    {rs : List (Nat × Nat)} {m₁ m₂ : Mem} (h : OutsS B (s.gpr .esp) rs m₁ m₂)
+    (old : Outs B rs m₁ (hyb (s.gpr .esp) m₁ m₂) → val32 (hyb (s.gpr .esp) m₁ m₂) B d k = val32 m₁ B d k) :
+    val32 m₂ B d k = val32 m₁ B d k :=
+  h.read W.deep W.old.workspace.nowrap (Nat.le_trans fit W.hdr_le) old
+
+end VG.Proof.RsaKeyGen.X86.KeyRuntime
+end
+
+
 /-! # Divide persistent arrays in the full native RSA workspace -/
 
 -- Formerly `VerifiedGarbage/Proof/RsaKeyGen/X86/KeyRuntime/Divide.lean`, which only this module imported.
@@ -229,28 +389,196 @@ open VG.Proof.Rsa.X86.Keys (num Keep arr)
 open VG.Impl.RsaKeyGen.X86.KeyRuntime hiding arr
 open VG.Impl.Rsa.X86.KeyRt (sCy sQb)
 
+/-! ## The division as `vg_rsa_keygen_div`
+
+The callee runs `KeyRt.div` at `calleeLay`, which finds the caller's arguments one word
+further, past the return address (`rtWs_callEntry`). The call changes only the stack below
+`esp` that the calls of `vg_rsa_keygen_inverse` use, which `OutsS` lets change. -/
+
+theorem callArgument_callEntry {s : State} {B : Addr} {Z i : Nat} {v : BitVec 32}
+    (A : VG.Proof.Bignum.X86.CallArgument s B Z i v) (low : 4 ≤ (s.gpr .esp).toNat)
+    (fit : (s.gpr .esp).toNat + 8 + 4 * i ≤ 2 ^ 32) : VG.Proof.Bignum.X86.CallArgument s.callEntry B Z (i + 1) v := by
+  have e : VG.Proof.Dsa.X86.stackAddress s.callEntry (i + 1) = VG.Proof.Dsa.X86.stackAddress s i := by
+    change argAddr s.callEntry (i + 1) = argAddr s i
+    rw [argAddr_callEntry]
+    unfold argAddr
+    rw [show 4 * (i + 1) = 4 + 4 * i by omega_using []]
+  refine ⟨⟨?_, ?_⟩, ?_⟩
+  · rw [e, State.callEntry_rd, State.callEntry_wr]; exact A.stack.read
+  · rw [e]; exact A.stack.apart
+  · change arg s.callEntry (i + 1) = v
+    rw [arg_callEntry low (by omega_using [fit]), show 4 * (i + 1) = 4 + 4 * i by omega_using []]
+    exact A.value
+
+theorem rtWs_callEntry {L : VG.Impl.Rsa.X86.KeyRt.Lay} {s : State} {B : Addr} {Z len N : Nat}
+    (h : VG.Proof.Rsa.X86.KeyRt.RtWs L s B Z len N)
+    (D : VG.Proof.RsaKeyGen.X86.KeyArgs.DeepStk (s.gpr .esp) B Z) (hl : L.len ≤ 20) (hw : L.ws ≤ 20) :
+    VG.Proof.Rsa.X86.KeyRt.RtWs { L with len := L.len + 1, ws := L.ws + 1 } s.callEntry B Z len N := by
+  obtain ⟨low, high, apart⟩ := D
+  have sp4 : (s.gpr .esp - 4).toNat = (s.gpr .esp).toNat - 4 := sub_toNat (k := 4) (by omega_using [low])
+  refine ⟨{ h.ws with workspace := ⟨?_, ?_, h.ws.workspace.nowrap, ?_⟩ }, ?_, ?_, h.lenLe, Nat.le_add_left _ _⟩
+  · rw [State.callEntry_gpr _ (by decide)]; exact h.ws.workspace.edi
+  · rw [State.callEntry_wr]; exact h.ws.workspace.wr
+  · unfold StkOk
+    rw [State.callEntry_esp, sp4]
+    omega_using [low, apart]
+  · obtain ⟨a, l, k, c⟩ := h.lenArg
+    exact ⟨a, l, k, callArgument_callEntry c (by omega_using [low]) (by omega_using [high, hl])⟩
+  · exact callArgument_callEntry h.wsArg (by omega_using [low]) (by omega_using [high, hw])
+
+/-- The call's return address is in the 4 bytes below `esp`. -/
+theorem callEntry_frame (s : State) (low : 4 ≤ (s.gpr .esp).toNat) :
+    Frame [below (s.gpr .esp) 4] s.mem s.callEntry.mem := by
+  rw [State.callEntry_mem]
+  exact Frame.writeW (Frame.refl _ _) (List.mem_singleton_self _) _
+    (below_top (Nat.le_refl 4) low (by decide))
+
+/-- Outside the stack below `esp` that the calls use, the call's return address changes nothing. -/
+theorem callEntry_outsS {s : State} {B : Addr} (low : 52 ≤ (s.gpr .esp).toNat) (rs : List (Nat × Nat)) :
+    OutsS B (s.gpr .esp) rs s.mem s.callEntry.mem := by
+  intro x _ hz
+  apply callEntry_frame s (by omega_using [low]) x
+  intro r hr
+  simp only [List.mem_singleton] at hr
+  subst hr
+  intro c
+  exact hz (below_sub (by decide : 4 ≤ 52) low x c)
+
+/-- Within the workspace, the call's return address changes nothing. -/
+theorem callEntry_outs {s : State} {B : Addr} {Z : Nat}
+    (D : VG.Proof.RsaKeyGen.X86.KeyArgs.DeepStk (s.gpr .esp) B Z) (nowrap : B.toNat + Z ≤ 2 ^ 32) :
+    Outs B [(Z, 2 ^ 64 - Z)] s.mem s.callEntry.mem := by
+  have O := (callEntry_outsS (B := B) D.1 []).outs D nowrap
+  exact O.mono (by intro r hr; simpa using hr)
+
+/-- The arrays and header words a division changes lie in the workspace. -/
+theorem division_ranges_fit {s : State} {B : Addr} {Z w N : Nat} (h : VG.Proof.Rsa.X86.Keys.Ws s B Z w N)
+    (bound : 4 ≤ N) : ∀ r ∈ VG.Proof.Rsa.X86.Keys.ranges w [0, 1, 3] [sCy, sQb], r.1 + r.2 ≤ Z := by
+  have fits := Nat.le_trans (VG.Proof.Rsa.X86.Keys.arr_mono bound) h.fits
+  have hd := h.hdr_le
+  have a4 : VG.Proof.Rsa.X86.Keys.arr w 4 = VG.Proof.Rsa.X86.Keys.arr w 3 + VG.Proof.Rsa.X86.Keys.S w :=
+    VG.Proof.Rsa.X86.Keys.arr_succ w 3
+  have a3 := VG.Proof.Rsa.X86.Keys.arr_mono (w := w) (by decide : 1 ≤ 3)
+  have a2 := VG.Proof.Rsa.X86.Keys.arr_mono (w := w) (by decide : 0 ≤ 3)
+  have b1 : VG.Proof.Rsa.X86.Keys.arr w 1 + VG.Proof.Rsa.X86.Keys.S w ≤ VG.Proof.Rsa.X86.Keys.arr w 3 + VG.Proof.Rsa.X86.Keys.S w :=
+    Nat.add_le_add_right a3 _
+  have b0 : VG.Proof.Rsa.X86.Keys.arr w 0 + VG.Proof.Rsa.X86.Keys.S w ≤ VG.Proof.Rsa.X86.Keys.arr w 3 + VG.Proof.Rsa.X86.Keys.S w :=
+    Nat.add_le_add_right a2 _
+  intro r hr
+  simp only [VG.Proof.Rsa.X86.Keys.ranges, List.map_cons, List.map_nil, List.cons_append, List.nil_append,
+    List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl | rfl
+  · omega_using [b0, a4, fits]
+  · omega_using [b1, a4, fits]
+  · omega_using [a4, fits]
+  · simp only [sCy]; simp only [VG.Impl.Rsa.X86.Keys.hdr] at hd; omega_using [hd]
+  · simp only [sQb]; simp only [VG.Impl.Rsa.X86.Keys.hdr] at hd; omega_using [hd]
+
+/-- The division at the modulus's width, called. -/
+theorem divCall_ok {s : State} {B : Addr} {Z n N : Nat} (h : Ws s B Z n N) (bound : 4 ≤ N)
+    (top : w32 s.mem B (arr (Width.modulus.words n) 2 + 4 * Width.modulus.words n) = 0) :
+    WP isa divCall s fun t => Ws t B Z n N ∧
+      OutsS B (s.gpr .esp) (VG.Proof.Rsa.X86.Keys.ranges (Width.modulus.words n) [0, 1, 3] [sCy, sQb])
+        s.mem t.mem ∧
+      Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t ∧
+      (0 < num s.mem B (Width.modulus.words n) 2 →
+        num t.mem B (Width.modulus.words n) 0 =
+          num s.mem B (Width.modulus.words n) 0 / num s.mem B (Width.modulus.words n) 2 ∧
+        num t.mem B (Width.modulus.words n) 1 =
+          num s.mem B (Width.modulus.words n) 0 % num s.mem B (Width.modulus.words n) 2) := by
+  have nowrap := h.old.workspace.nowrap
+  have D := h.deep
+  have low : 52 ≤ (s.gpr .esp).toNat := D.1
+  have H0 := shrinkRt (h.runtime (w := .modulus) (by decide)) bound
+  have H : VG.Proof.Rsa.X86.KeyRt.RtWs calleeLay s.callEntry B Z (Width.modulus.len n) 4 :=
+    rtWs_callEntry H0 D (by decide) (by decide)
+  have hk := kw_words h.width Width.modulus
+  have fitW := division_ranges_fit H0.ws (Nat.le_refl 4)
+  rw [hk] at fitW
+  have Oc := callEntry_outs D nowrap
+  have numC : ∀ j, j = 0 ∨ j = 2 →
+      num s.callEntry.mem B (Width.modulus.words n) j = num s.mem B (Width.modulus.words n) j := by
+    intro j hj
+    have fit : VG.Proof.Rsa.X86.Keys.arr n 2 + VG.Proof.Rsa.X86.Keys.S n ≤ Z :=
+      h.arr_fit (j := 2) (by omega_using [bound])
+    simp only [VG.Proof.Rsa.X86.Keys.arr, VG.Proof.Rsa.X86.Keys.S] at fit
+    change val32 _ B (VG.Proof.Rsa.X86.Keys.arr n j) n = val32 _ B (VG.Proof.Rsa.X86.Keys.arr n j) n
+    rcases hj with rfl | rfl
+    all_goals
+      apply Oc.val32 _ (by simp only [VG.Proof.Rsa.X86.Keys.arr, VG.Proof.Rsa.X86.Keys.S]; omega_using [fit, nowrap])
+      intro r hr
+      simp only [List.mem_singleton] at hr
+      subst hr
+      exact Or.inl (by simp only [VG.Proof.Rsa.X86.Keys.arr, VG.Proof.Rsa.X86.Keys.S]; omega_using [fit])
+  have top' : w32 s.callEntry.mem B (VG.Proof.Rsa.X86.Keys.arr (VG.Proof.Rsa.X86.KeyRt.kw (Width.modulus.len n)) 2 +
+      4 * VG.Proof.Rsa.X86.KeyRt.kw (Width.modulus.len n)) = 0 := by
+    rw [hk, ← top]
+    have fit : VG.Proof.Rsa.X86.Keys.arr n 2 + VG.Proof.Rsa.X86.Keys.S n ≤ Z :=
+      h.arr_fit (j := 2) (by omega_using [bound])
+    simp only [VG.Proof.Rsa.X86.Keys.arr, VG.Proof.Rsa.X86.Keys.S] at fit
+    change w32 _ B (VG.Proof.Rsa.X86.Keys.arr n 2 + 4 * n) = w32 _ B (VG.Proof.Rsa.X86.Keys.arr n 2 + 4 * n)
+    have e := Oc.val32 (d := VG.Proof.Rsa.X86.Keys.arr n 2 + 4 * n) (k := 1) (by
+      intro r hr
+      simp only [List.mem_singleton] at hr
+      subst hr
+      exact Or.inl (by simp only [VG.Proof.Rsa.X86.Keys.arr, VG.Proof.Rsa.X86.Keys.S]; omega_using [fit]))
+      (by simp only [VG.Proof.Rsa.X86.Keys.arr, VG.Proof.Rsa.X86.Keys.S]; omega_using [fit, nowrap])
+    simpa only [val32, w32, Nat.mul_zero, Nat.add_zero] using e
+  unfold divCall
+  refine WP.callBody (WP.mono (VG.Proof.Rsa.X86.KeyRt.div_ok H
+    (by decide : 0 < 4) (by decide : 1 < 4) (by decide : 2 < 4) (by decide : 3 < 4)
+    (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) top') fun u ⟨hu, O, K, V⟩ => ?_)
+  rw [hk] at O V
+  have espU : u.gpr .esp = s.gpr .esp - 4 := by rw [K.1 .esp (by decide), State.callEntry_esp]
+  let t := u.setReg .esp (s.gpr .esp)
+  have Kt : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t := by
+    refine ⟨fun r hr => ?_, K.2.1, K.2.2⟩
+    by_cases e : r = .esp
+    · subst e; simp [t, State.setReg]
+    · simp only [t, State.setReg, e, ↓reduceIte]
+      rw [K.1 r hr, State.callEntry_gpr _ e]
+  have Ot : OutsS B (s.gpr .esp) (VG.Proof.Rsa.X86.Keys.ranges (Width.modulus.words n) [0, 1, 3] [sCy, sQb])
+      s.mem t.mem := (callEntry_outsS low _).trans (OutsS.of_outs O)
+  refine ⟨espU, ?_, Ws.keepBelow h Kt (Ot.toFrame fun _ _ O' => VG.Proof.Mont.Outs.frame O' fitW), Ot, Kt, fun pos => ?_⟩
+  · -- The return address is where the call stored it.
+    have F : Frame [⟨B, Z⟩] s.callEntry.mem u.mem := VG.Proof.Mont.Outs.frame O fitW
+    rw [F.readW (r := ⟨(s.gpr .esp - 4).setWidth 64, 4⟩) (Region.contains_self _ 4) ?_ (by decide),
+      State.callEntry_mem, Mem.readW_writeW_self32]
+    intro r' hr'
+    simp only [List.mem_singleton] at hr'
+    subst hr'
+    exact ((deep_disjoint D nowrap).sub_right (below_sub (by decide : 4 ≤ 52) low)).symm
+  · rw [← numC 2 (.inr rfl)] at pos
+    obtain ⟨q, r⟩ := V pos
+    rw [numC 0 (.inl rfl), numC 2 (.inr rfl)] at q r
+    exact ⟨q, r⟩
+
+/-- The division at a width but the correction's: of the modulus's, called. -/
 theorem divide_ok {s : State} {B : Addr} {Z n N : Nat} {w : Width}
     (h : Ws s B Z n N) (bound : 4 ≤ N) (hw : w ≠ .correction)
     (top : w32 s.mem B (arr (w.words n) 2 + 4 * w.words n) = 0) :
     WP isa (divide w) s fun t => Ws t B Z n N ∧
-      Keep B (w.words n) [0, 1, 3] [sCy, sQb] s.mem t.mem ∧
+      OutsS B (s.gpr .esp) (VG.Proof.Rsa.X86.Keys.ranges (w.words n) [0, 1, 3] [sCy, sQb]) s.mem t.mem ∧
       Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t ∧
       (0 < num s.mem B (w.words n) 2 →
         num t.mem B (w.words n) 0 = num s.mem B (w.words n) 0 / num s.mem B (w.words n) 2 ∧
         num t.mem B (w.words n) 1 = num s.mem B (w.words n) 0 % num s.mem B (w.words n) 2) := by
-  have code : divide w = VG.Impl.Rsa.X86.KeyRt.div w.lay 0 1 2 3 := by
-    cases w <;> simp_all [divide]
-  rw [code]
-  have H := shrinkRt (h.runtime hw) bound
-  have core := VG.Proof.Rsa.X86.KeyRt.div_ok H
-    (by decide : 0 < 4) (by decide : 1 < 4) (by decide : 2 < 4) (by decide : 3 < 4)
-    (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-    (by simpa only [kw_words h.width] using top)
-  rw [kw_words h.width] at core
-  refine WP.mono core fun t ⟨_, O, K, V⟩ => ⟨h.afterBank hw K O ?_ (by decide), O, K, V⟩
-  intro j hj
-  have small := (by decide : ∀ j ∈ ([0, 1, 3] : List Nat), j < 4) j hj
-  omega
+  cases w with
+  | correction => exact absurd rfl hw
+  | modulus => exact divCall_ok h bound top
+  | prime | exponent =>
+    all_goals
+      change WP isa (VG.Impl.Rsa.X86.KeyRt.div _ 0 1 2 3) s _
+      have H := shrinkRt (h.runtime hw) bound
+      have core := VG.Proof.Rsa.X86.KeyRt.div_ok H
+        (by decide : 0 < 4) (by decide : 1 < 4) (by decide : 2 < 4) (by decide : 3 < 4)
+        (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+        (by simpa only [kw_words h.width] using top)
+      rw [kw_words h.width] at core
+      refine WP.mono core fun t ⟨_, O, K, V⟩ => ⟨h.afterBank hw K O ?_ (by decide), OutsS.of_outs O, K, V⟩
+      intro j hj
+      have small := (by decide : ∀ j ∈ ([0, 1, 3] : List Nat), j < 4) j hj
+      omega
 
 end VG.Proof.RsaKeyGen.X86.KeyRuntime
 end
@@ -285,7 +613,7 @@ theorem divisionFrom_ok {s : State} {B : Addr} {Z n N : Nat} {w : Width}
     (output : DivisionOutputs Z (w.words n) (quotient.offset n) (remainder.offset n))
     (positive : 0 < val32 s.mem B (divisor.offset n) (w.words n)) :
     WP isa (divisionFrom w src divisor quotient remainder) s fun t =>
-      Ws t B Z n N ∧ Outs B (divisionRanges (w.words n) (quotient.offset n) (remainder.offset n))
+      Ws t B Z n N ∧ OutsS B (s.gpr .esp) (divisionRanges (w.words n) (quotient.offset n) (remainder.offset n))
         s.mem t.mem ∧
       val32 t.mem B (quotient.offset n) (w.words n) =
         val32 s.mem B (src.offset n) (w.words n) / val32 s.mem B (divisor.offset n) (w.words n) ∧
@@ -303,8 +631,8 @@ theorem divisionFrom_ok {s : State} {B : Addr} {Z n N : Nat} {w : Width}
     (Ku.mono (by decide)).trans (Kv.trans (Kt.mono (by decide)))⟩
   have first : Outs B (divisionRanges (w.words n) (quotient.offset n) (remainder.offset n))
       s.mem u.mem := Outs.of_outside Ou (List.mem_cons_self ..)
-  have middle : Outs B (divisionRanges (w.words n) (quotient.offset n) (remainder.offset n))
-      u.mem v.mem := Ov.cover (by
+  have middle : OutsS B (u.gpr .esp) (divisionRanges (w.words n) (quotient.offset n) (remainder.offset n))
+      u.mem v.mem := Ov.lift fun _ _ O => O.cover (by
     intro region member
     simp only [VG.Proof.Rsa.X86.Keys.ranges, List.mem_append, List.mem_map] at member
     rcases member with ⟨j, hj, rfl⟩ | ⟨slot, hs, rfl⟩
@@ -322,7 +650,9 @@ theorem divisionFrom_ok {s : State} {B : Addr} {Z n N : Nat} {w : Width}
       v.mem t.mem := Ot.mono (by
     intro region member
     exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ member)))
-  exact (first.trans middle).trans last
+  have spU : u.gpr .esp = s.gpr .esp := Ku.1 .esp (by decide)
+  rw [spU] at middle
+  exact ((OutsS.of_outs first).trans middle).trans (OutsS.of_outs last)
 
 end VG.Proof.RsaKeyGen.X86.KeyRuntime
 end
@@ -344,7 +674,7 @@ theorem arrayDivision_ok {s : State} {B : Addr} {Z n a d q r : Nat} (h : Ws s B 
     (pa : 4 ≤ a) (pd : 4 ≤ d) (pq : 4 ≤ q) (pr : 4 ≤ r) (qr : q ≠ r)
     (positive : 0 < num s.mem B n d) :
     WP isa (divFull a d q r) s fun t =>
-      Ws t B Z n 32 ∧ Outs B (arrayDivisionRanges n q r) s.mem t.mem ∧
+      Ws t B Z n 32 ∧ OutsS B (s.gpr .esp) (arrayDivisionRanges n q r) s.mem t.mem ∧
       num t.mem B n q = num s.mem B n a / num s.mem B n d ∧
       num t.mem B n r = num s.mem B n a % num s.mem B n d ∧
       Keeps [.eax, .ecx, .edx, .ebp, .ebx, .esi] s t := by

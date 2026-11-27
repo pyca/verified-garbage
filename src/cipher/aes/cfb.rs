@@ -286,3 +286,44 @@ impl Drop for Key {
         zeroize(&mut self.schedule.0);
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::{AesCfb128Decryptor, AesCfb128Encryptor};
+
+    /// The longest message: more than two groups of the blocks an
+    /// implementation may take at a time, and a partial segment.
+    const MAX: usize = 16 * 129 + 5;
+
+    /// Decryption undoes encryption for messages of many blocks, which an
+    /// implementation may take many at a time, with and without a partial
+    /// last segment, split before any of the block counts it may change its
+    /// course at, and unaligned.
+    #[test]
+    fn block_batches_and_continuation() {
+        let iv = [0x3c; 16];
+        let key: [u8; 32] = core::array::from_fn(|i| (17 * i + 3) as u8);
+        let plain: [u8; MAX] = core::array::from_fn(|i| (73 * i + 5) as u8);
+        for key in [&key[..16], &key[..24], &key[..]] {
+            for blocks in [0, 1, 7, 8, 9, 63, 64, 65, 127, 128, 129] {
+                for tail in [0, 5] {
+                    let len = 16 * blocks + tail;
+                    let mut ciphertext = plain;
+                    AesCfb128Encryptor::new(key, &iv)
+                        .unwrap()
+                        .encrypt_final(&mut ciphertext[..len]);
+                    for split in [0, blocks.min(1), blocks / 2, blocks] {
+                        let mut guarded = [0xa5; MAX + 2];
+                        guarded[1..=len].copy_from_slice(&ciphertext[..len]);
+                        let mut decryptor = AesCfb128Decryptor::new(key, &iv).unwrap();
+                        let (first, rest) = guarded[1..=len].split_at_mut(16 * split);
+                        decryptor.decrypt(first).unwrap();
+                        decryptor.decrypt_final(rest);
+                        assert_eq!(guarded[1..=len], plain[..len]);
+                        assert_eq!((guarded[0], guarded[len + 1]), (0xa5, 0xa5));
+                    }
+                }
+            }
+        }
+    }
+}

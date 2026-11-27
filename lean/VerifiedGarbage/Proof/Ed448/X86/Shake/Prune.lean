@@ -33,9 +33,9 @@ open VG.WriteBytes (writeW8_apply)
 theorem bytesAt_split (m : Mem) (q : Addr) :
     Spec.Ed448.bytesAt m q 57 = m q :: (Spec.Ed448.bytesAt m (q + BitVec.ofNat 64 1) 54 ++
       [m (q + BitVec.ofNat 64 55), m (q + BitVec.ofNat 64 56)]) := by
-  have b1 : Spec.X25519.bytesAt m q 1 = [m q] := by
+  obtain b1 : Spec.X25519.bytesAt m q 1 = [m q] := by
     simp [Spec.X25519.bytesAt]
-  have b2 : ∀ p : Addr, Spec.X25519.bytesAt m p 2 = [m p, m (p + BitVec.ofNat 64 1)] := fun p => by
+  obtain b2 : ∀ p : Addr, Spec.X25519.bytesAt m p 2 = [m p, m (p + BitVec.ofNat 64 1)] := fun p => by
     simp [Spec.X25519.bytesAt, List.range_succ]
   rw [Proof.Ed448.bytesAt_eq, show 57 = 1 + (54 + 2) from rfl, VG.Proof.X25519.bytesAt_add,
     VG.Proof.X25519.bytesAt_add, b1, b2, Offset.add_add, Offset.add_add]
@@ -46,7 +46,7 @@ theorem decodeLE_split (m : Mem) (q : Addr) :
       (Spec.Ed448.decodeLE (Spec.Ed448.bytesAt m (q + BitVec.ofNat 64 1) 54) + 2 ^ 432 *
         ((m (q + BitVec.ofNat 64 55)).toNat + 256 * (m (q + BitVec.ofNat 64 56)).toNat)) := by
   rw [bytesAt_split, Spec.Ed448.decodeLE, Proof.Ed448.decodeLE_append]
-  have hl : (Spec.Ed448.bytesAt m (q + BitVec.ofNat 64 1) 54).length = 54 := by simp [Spec.Ed448.bytesAt]
+  obtain hl : (Spec.Ed448.bytesAt m (q + BitVec.ofNat 64 1) 54).length = 54 := by simp [Spec.Ed448.bytesAt]
   rw [hl, show (256 : Nat) ^ 54 = 2 ^ 432 by decide +kernel]
   simp only [Spec.Ed448.decodeLE, Nat.mul_zero, Nat.add_zero]
 
@@ -59,37 +59,37 @@ theorem pruned_value {m : Mem} {q : Addr} :
         (q + BitVec.ofNat 64 55) (BitVec.ofNat 8 ((m (q + BitVec.ofNat 64 55)).toNat ||| 128))).writeW
           (q + BitVec.ofNat 64 56) (0 : BitVec 8)) q 57) =
       (Spec.Ed448.decodeLE (Spec.Ed448.bytesAt m q 57) &&& (2 ^ 448 - 4)) ||| 2 ^ 447 := by
-  have ne : ∀ i j, i < 57 → j < 57 → i ≠ j → q + BitVec.ofNat 64 i ≠ q + BitVec.ofNat 64 j :=
+  obtain ne : ∀ i j, i < 57 → j < 57 → i ≠ j → q + BitVec.ofNat 64 i ≠ q + BitVec.ofNat 64 j :=
     fun i j hi hj h => Offset.add_ofNat_ne q (by omega_arith) (by omega_arith) h
-  have z : q + BitVec.ofNat 64 0 = q := BitVec.add_zero q
-  have ne0 : ∀ j, 0 < j → j < 57 → q + BitVec.ofNat 64 j ≠ q := fun j h1 h2 e =>
+  obtain z : q + BitVec.ofNat 64 0 = q := BitVec.add_zero q
+  obtain ne0 : ∀ j, 0 < j → j < 57 → q + BitVec.ofNat 64 j ≠ q := fun j h1 h2 e =>
     ne j 0 h2 (by omega_arith) (by omega_arith) (e.trans z.symm)
   generalize hm' : ((m.writeW q (BitVec.ofNat 8 ((m q).toNat &&& 252))).writeW
         (q + BitVec.ofNat 64 55) (BitVec.ofNat 8 ((m (q + BitVec.ofNat 64 55)).toNat ||| 128))).writeW
           (q + BitVec.ofNat 64 56) (0 : BitVec 8) = m'
-  have mid : Spec.Ed448.bytesAt m' (q + BitVec.ofNat 64 1) 54 = Spec.Ed448.bytesAt m (q + BitVec.ofNat 64 1) 54 := by
+  obtain mid : Spec.Ed448.bytesAt m' (q + BitVec.ofNat 64 1) 54 = Spec.Ed448.bytesAt m (q + BitVec.ofNat 64 1) 54 := by
     unfold Spec.Ed448.bytesAt
     refine List.map_congr_left fun i hi => ?_
-    have hi := List.mem_range.mp hi
+    obtain hi := List.mem_range.mp hi
     rw [← hm', Offset.add_add, writeW8_apply, ite_eq_right (ne (1 + i) 56 (by omega_arith) (by omega_arith) (by omega_arith)),
       writeW8_apply, ite_eq_right (ne (1 + i) 55 (by omega_arith) (by omega_arith) (by omega_arith)), writeW8_apply,
       ite_eq_right (ne0 (1 + i) (by omega_arith) (by omega_arith))]
-  have e0 : m' q = BitVec.ofNat 8 ((m q).toNat &&& 252) := by
+  obtain e0 : m' q = BitVec.ofNat 8 ((m q).toNat &&& 252) := by
     rw [← hm', writeW8_apply, ite_eq_right (ne0 56 (by omega_arith) (by omega_arith)).symm,
       writeW8_apply, ite_eq_right (ne0 55 (by omega_arith) (by omega_arith)).symm,
       writeW8_apply, ite_eq_left rfl]
-  have e55 : m' (q + BitVec.ofNat 64 55) = BitVec.ofNat 8 ((m (q + BitVec.ofNat 64 55)).toNat ||| 128) := by
+  obtain e55 : m' (q + BitVec.ofNat 64 55) = BitVec.ofNat 8 ((m (q + BitVec.ofNat 64 55)).toNat ||| 128) := by
     rw [← hm', writeW8_apply, ite_eq_right (ne 55 56 (by omega_arith) (by omega_arith) (by omega_arith)),
       writeW8_apply, ite_eq_left rfl]
-  have e56 : m' (q + BitVec.ofNat 64 56) = BitVec.ofNat 8 0 := by
+  obtain e56 : m' (q + BitVec.ofNat 64 56) = BitVec.ofNat 8 0 := by
     rw [← hm', writeW8_apply, ite_eq_left rfl]; rfl
   rw [decodeLE_split, decodeLE_split, mid, e0, e55, e56]
-  have h0 := (m q).isLt
-  have h55 := (m (q + BitVec.ofNat 64 55)).isLt
-  have hl : (Spec.Ed448.bytesAt m (q + BitVec.ofNat 64 1) 54).length = 54 := by simp [Spec.Ed448.bytesAt]
-  have hM' := Proof.Ed448.decodeLE_lt' (Spec.Ed448.bytesAt m (q + BitVec.ofNat 64 1) 54)
+  obtain h0 := (m q).isLt
+  obtain h55 := (m (q + BitVec.ofNat 64 55)).isLt
+  obtain hl : (Spec.Ed448.bytesAt m (q + BitVec.ofNat 64 1) 54).length = 54 := by simp [Spec.Ed448.bytesAt]
+  obtain hM' := Proof.Ed448.decodeLE_lt' (Spec.Ed448.bytesAt m (q + BitVec.ofNat 64 1) 54)
   rw [hl] at hM'
-  have hM : Spec.Ed448.decodeLE (Spec.Ed448.bytesAt m (q + BitVec.ofNat 64 1) 54) < 2 ^ 432 :=
+  obtain hM : Spec.Ed448.decodeLE (Spec.Ed448.bytesAt m (q + BitVec.ofNat 64 1) 54) < 2 ^ 432 :=
     Nat.lt_of_lt_of_le hM' (Nat.le_of_eq (by decide +kernel))
   rw [BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.zero_mod,
     Nat.mod_eq_of_lt (Nat.lt_of_le_of_lt Nat.and_le_left h0),
@@ -139,18 +139,18 @@ theorem Kit.prune_ok (hk : Kit E scr n ins outs) (hc : Whole.Ctx E g m₀ ins ou
         Spec.Ed448.prune (Spec.Ed448.bytesAt t.mem (E.setWidth 64 + BitVec.ofNat 64 q) 114) ∧
       ∀ r, r ≠ .eax → u.gpr r = t.gpr r := by
   have hf := hk.frame
-  have ea : ∀ k < 57, addr E (q + k) = E.setWidth 64 + BitVec.ofNat 64 q + BitVec.ofNat 64 k := fun k hk' => by
+  obtain ea : ∀ k < 57, addr E (q + k) = E.setWidth 64 + BitVec.ofNat 64 q + BitVec.ofNat 64 k := fun k hk' => by
     rw [addr_eq (by omega_arith), Offset.add_add]
-  have hw : ∀ k < 57, InRegions t.wr (E.setWidth 64 + BitVec.ofNat 64 q + BitVec.ofNat 64 k) 1 := fun k hk' => by
+  obtain hw : ∀ k < 57, InRegions t.wr (E.setWidth 64 + BitVec.ofNat 64 q + BitVec.ofNat 64 k) 1 := fun k hk' => by
     rw [Offset.add_add]
     exact hc.writable_frame (Offset.contains_base _ (by omega_arith) (by omega_arith))
-  have hr : ∀ k < 57, InRegions (t.rd ++ t.wr) (E.setWidth 64 + BitVec.ofNat 64 q + BitVec.ofNat 64 k) 1 :=
+  obtain hr : ∀ k < 57, InRegions (t.rd ++ t.wr) (E.setWidth 64 + BitVec.ofNat 64 q + BitVec.ofNat 64 k) 1 :=
     fun k hk' => by
       obtain ⟨R, hR, hcon⟩ := hw k hk'
       exact ⟨R, List.mem_append_right _ hR, hcon⟩
-  have e0 : addr E q = E.setWidth 64 + BitVec.ofNat 64 q := by
+  obtain e0 : addr E q = E.setWidth 64 + BitVec.ofNat 64 q := by
     rw [← Nat.add_zero q, ea 0 (by omega_arith), Nat.add_zero, BitVec.add_zero]
-  have z : E.setWidth 64 + BitVec.ofNat 64 q + BitVec.ofNat 64 0 = E.setWidth 64 + BitVec.ofNat 64 q :=
+  obtain z : E.setWidth 64 + BitVec.ofNat 64 q + BitVec.ofNat 64 0 = E.setWidth 64 + BitVec.ofNat 64 q :=
     BitVec.add_zero _
   generalize hP : E.setWidth 64 + BitVec.ofNat 64 q = P at ea hw hr e0 z
   unfold pruneAt
@@ -170,30 +170,30 @@ theorem Kit.prune_ok (hk : Kit E scr n ins outs) (hc : Whole.Ctx E g m₀ ins ou
       v3.gpr, v2.other _ (by decide), v1.other _ (by decide), hc.esp])
     (by rw [v7.wr, v6.wr, v5.wr, v4.wr, v3.wr, v2.wr, v1.wr, ea 56 (by omega_arith)]; exact hw 56 (by omega_arith))
     fun u vu => WP.block_nil ?_
-  have ne55 : P + BitVec.ofNat 64 55 ≠ P := fun e =>
+  obtain ne55 : P + BitVec.ofNat 64 55 ≠ P := fun e =>
     Offset.add_ofNat_ne P (a := 55) (b := 0) (by omega_arith) (by omega_arith) (by omega_arith) (e.trans z.symm)
-  have al : ∀ s : State, s.gpr Reg8.al.reg = s.gpr .eax := fun _ => rfl
-  have r2 : s2.gpr .eax = (t.mem P).setWidth 32 &&& 0xfc#32 := by rw [v2.gpr, v1.gpr, e0]; rfl
-  have m3 : s3.mem = t.mem.writeW P (BitVec.ofNat 8 ((t.mem P).toNat &&& 252)) := by
+  obtain al : ∀ s : State, s.gpr Reg8.al.reg = s.gpr .eax := fun _ => rfl
+  obtain r2 : s2.gpr .eax = (t.mem P).setWidth 32 &&& 0xfc#32 := by rw [v2.gpr, v1.gpr, e0]; rfl
+  obtain m3 : s3.mem = t.mem.writeW P (BitVec.ofNat 8 ((t.mem P).toNat &&& 252)) := by
     rw [v3.mem, v2.mem, v1.mem, e0, al, r2, ← and_fc]
-  have r5 : s5.gpr .eax = (t.mem (P + BitVec.ofNat 64 55)).setWidth 32 ||| 0x80#32 := by
+  obtain r5 : s5.gpr .eax = (t.mem (P + BitVec.ofNat 64 55)).setWidth 32 ||| 0x80#32 := by
     rw [v5.gpr, v4.gpr, ea 55 (by omega_arith), m3, writeW8_apply, ite_eq_right ne55]; rfl
-  have hm : u.mem = ((t.mem.writeW P (BitVec.ofNat 8 ((t.mem P).toNat &&& 252))).writeW
+  obtain hm : u.mem = ((t.mem.writeW P (BitVec.ofNat 8 ((t.mem P).toNat &&& 252))).writeW
       (P + BitVec.ofNat 64 55) (BitVec.ofNat 8 ((t.mem (P + BitVec.ofNat 64 55)).toNat ||| 128))).writeW
         (P + BitVec.ofNat 64 56) (0 : BitVec 8) := by
     rw [vu.mem, v7.mem, v6.mem, v5.mem, v4.mem, m3, al, al, v7.gpr, r5, or_80, ea 55 (by omega_arith),
       ea 56 (by omega_arith)]
     rfl
-  have hfr : Frame [fr E q 57] t.mem u.mem := by
+  obtain hfr : Frame [fr E q 57] t.mem u.mem := by
     rw [hm]
-    have c : ∀ k < 57, (fr E q 57).Contains (P + BitVec.ofNat 64 k) 1 := fun k hk' => by
+    obtain c : ∀ k < 57, (fr E q 57).Contains (P + BitVec.ofNat 64 k) 1 := fun k hk' => by
       rw [← hP]; exact Offset.contains_base _ (by omega_arith) (by omega_arith)
     refine (((Frame.refl _ _).writeW (List.mem_singleton_self _) _ ?_).writeW (List.mem_singleton_self _) _
       (c 55 (by omega_arith))).writeW (List.mem_singleton_self _) _ (c 56 (by omega_arith))
-    have h := c 0 (by omega_arith)
+    obtain h := c 0 (by omega_arith)
     rw [z] at h
     exact h
-  have gp : ∀ r, r ≠ .eax → u.gpr r = t.gpr r := fun r hr => by
+  obtain gp : ∀ r, r ≠ .eax → u.gpr r = t.gpr r := fun r hr => by
     rw [vu.gpr, v7.other r hr, v6.gpr, v5.other r hr, v4.other r hr, v3.gpr, v2.other r hr, v1.other r hr]
   refine ⟨?_, hfr, ?_, gp⟩
   · refine hc.of_frame (by rw [vu.rd, v7.rd, v6.rd, v5.rd, v4.rd, v3.rd, v2.rd, v1.rd])

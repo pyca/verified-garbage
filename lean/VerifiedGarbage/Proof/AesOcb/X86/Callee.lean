@@ -159,7 +159,10 @@ theorem blk_call {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State} {
   rw [stack] at f'
   have fE := callEntry_frame h.fit blkRegs_esp
   rw [show 4 * blkRegs.length + 4 = 24 from rfl] at fE
-  simp only [Proof.Aes.blocksX86, arg_withRegions, State.withRegions_mem, a0, a1, a2, a3, hR, hn, m₂] at post
+  simp only [Proof.Aes.blocksX86, arg_withRegions, State.withRegions_mem, a0, a1, a2, a3, hR, hn] at post
+  -- The pop loses the arguments' frame, below `esp`, apart from the buffers.
+  have fL : Frame [below (s.gpr .esp) 24] s₂.mem s'.mem := Frame.below_mono (wr := []) m₂ (by decide) h.esp
+  rw [← statesAt_frame fL (one_disj h.bd) (by have := h.fD; omega_using [hn])] at post
   have eK := bytesAt_frame fE (p := w64 K) (n := 16 * (R + 1))
     (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
@@ -211,10 +214,15 @@ theorem key_ok (v : BlocksImpl) {s : State} {K C S : BitVec 32} {L : Nat} (h : K
   rw [v.expandStack] at f'
   have fE := callEntry_frame h.fit keyRegs_esp
   rw [show 4 * keyRegs.length + 4 = 20 from rfl] at fE
-  simp only [Proof.Aes.expandKeyX86, arg_withRegions, State.withRegions_mem, a0, a1, a2, hL, m₂] at post
+  simp only [Proof.Aes.expandKeyX86, arg_withRegions, State.withRegions_mem, a0, a1, a2, hL] at post
+  -- The pop loses the arguments' frame, below `esp`, apart from the key context.
+  have fL : Frame [below (s.gpr .esp) 20] s₂.mem s'.mem := Frame.below_mono (wr := []) m₂ (by decide) h.esp
+  have hk : 16 * (Spec.Aes.rounds (L / 4) + 1) ≤ 240 := by rcases h.len with rfl | rfl | rfl <;> decide
   refine ⟨rd', wr', cs', ?_, ?_⟩
   · exact f'.mono fun r hr => by simp only [List.cons_append, List.nil_append] at hr; simpa using hr
-  · rw [post, bytesAt_frame fE (one_disj h.bk) (by rcases h.len with rfl | rfl | rfl <;> decide)]
+  · rw [bytesAt_frame fL (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact (h.bc.sub_right (Region.sub_prefix hk)).symm) (by omega_using [hk]), post, bytesAt_frame fE (one_disj h.bk) (by rcases h.len with rfl | rfl | rfl <;> decide)]
 
 open VG.Proof.AesGcm.X86 (KeyCall keyRd keyWr) in
 /-- Calls of `vg_aes_expand_key_scratch` with the same arguments and stack pointer

@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Aes.AArch64.BlocksVariant
+public import VerifiedGarbage.Proof.Variants.AesBlocks.AArch64.Neon
 
 /-! # The implementations of `AesBlocks` on AArch64 -/
 
@@ -15,6 +16,6 @@ def scalar : Proof.Aes.AArch64.BlocksImpl := .scalar
 /-- Every implementation, best first: each function generic over them is
 emitted with each (the registration files that import this), and its
 dispatcher tries them in this order. -/
-def variants := [aes, scalar]
+def variants := [aes, neon, scalar]
 
 end VG.Proof.Variants.AesBlocks.AArch64

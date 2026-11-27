@@ -7,7 +7,8 @@ public import VerifiedGarbage.Impl.Sm4.X86.Modes
 
 The modes' OFB and CFB (`Impl/Modes/X86/Seq.lean`) over SM4's core in the
 encryption direction (`Modes.lean`), with the scratch buffer as the fifth
-argument.
+argument. CFB128 decryption takes the blocks in groups (`levels`,
+`Impl/Modes/X86/Wide.lean`).
 -/
 
 @[expose] public section
@@ -23,6 +24,7 @@ def ofb : Prog isa := (dirCore .encrypt).seq (Modes.Mode.ofb 4)
 def cfbEncrypt : Prog isa := (dirCore .encrypt).seq (Modes.Mode.cfbEnc 4)
 
 /-- `vg_sm4_cfb128_decrypt`. -/
-def cfbDecrypt : Prog isa := (dirCore .encrypt).seq (Modes.Mode.cfbDec 4)
+def cfbDecrypt : Prog isa :=
+  (dirCore .encrypt).seqLevels (Modes.Mode.cfbDecWide 4) levels (Modes.Mode.cfbDecEarly 4)
 
 end VG.Impl.Sm4.X86

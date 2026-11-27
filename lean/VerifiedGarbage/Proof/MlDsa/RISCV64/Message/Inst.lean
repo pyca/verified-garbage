@@ -10,8 +10,10 @@ import VerifiedGarbage.Proof.MlKem.Mem
 # ML-DSA on RISC-V, `sign_message` and `verify_message_cached`, with this library's functions on `μ`
 
 `vg_mldsa*_sign_message` and `vg_mldsa*_verify_message_cached` calling the
-RISCV64 `vg_mldsa*_sign` and
-`vg_mldsa*_verify` (`PreparedKey/Inst.lean`), verified with 1184
+code of the RISCV64 `vg_mldsa*_sign` and `vg_mldsa*_verify`
+(`PreparedKey/Inst.lean`), without the clearing their registrations add
+(`Scrub.lean`), as the internal `vg_mldsa*_sign_core`, … (an `_core` suffix
+to each name, and so for the prepared keys'), verified with 1184
 bytes of stack, whose frames use no more (`sign44Fn`, …): so the functions on
 messages are verified with 1184 (`signMessage44_verified`,
 `verifyMessageCached44_verified`, …).
@@ -38,7 +40,7 @@ theorem signMessage44_sat : (signMessageContract mlDsa44 RISCV64.abi 1184).pre (
 
 theorem signMessage44_verified :
     Verified RISCV64.target
-      (Impl.MlDsa.RISCV64.Message.signMessage sign44Api.name Impl.MlDsa.RISCV64.Sign.sign44 mlDsa44)
+      (Impl.MlDsa.RISCV64.Message.signMessage (sign44Api.name ++ "_core") Impl.MlDsa.RISCV64.Sign.sign44 mlDsa44)
       (signMessageContract mlDsa44 RISCV64.abi 1184) :=
   signMessage_verified (.inl rfl) (q := false) (by decide) sign44Fn _ ⟨_, signMessage44_sat⟩
 
@@ -55,7 +57,7 @@ theorem verifyMessageCached44_sat :
 
 theorem verifyMessageCached44_verified :
     Verified RISCV64.target
-      (Impl.MlDsa.RISCV64.Message.verifyMessageCached verify44Api.name Impl.MlDsa.RISCV64.Verify.verify44 mlDsa44)
+      (Impl.MlDsa.RISCV64.Message.verifyMessageCached (verify44Api.name ++ "_core") Impl.MlDsa.RISCV64.Verify.verify44 mlDsa44)
       (verifyMessageCachedContract mlDsa44 RISCV64.abi 1184) :=
   verifyMessageCached_verified (.inl rfl) (q := false) (by decide) verify44Fn _ ⟨_, verifyMessageCached44_sat⟩
 
@@ -71,7 +73,7 @@ theorem signMessage65_sat : (signMessageContract mlDsa65 RISCV64.abi 1184).pre (
 
 theorem signMessage65_verified :
     Verified RISCV64.target
-      (Impl.MlDsa.RISCV64.Message.signMessage sign65Api.name Impl.MlDsa.RISCV64.Sign.sign65 mlDsa65)
+      (Impl.MlDsa.RISCV64.Message.signMessage (sign65Api.name ++ "_core") Impl.MlDsa.RISCV64.Sign.sign65 mlDsa65)
       (signMessageContract mlDsa65 RISCV64.abi 1184) :=
   signMessage_verified (.inr (.inl rfl)) (q := false) (by decide) sign65Fn _ ⟨_, signMessage65_sat⟩
 
@@ -88,7 +90,7 @@ theorem verifyMessageCached65_sat :
 
 theorem verifyMessageCached65_verified :
     Verified RISCV64.target
-      (Impl.MlDsa.RISCV64.Message.verifyMessageCached verify65Api.name Impl.MlDsa.RISCV64.Verify.verify65 mlDsa65)
+      (Impl.MlDsa.RISCV64.Message.verifyMessageCached (verify65Api.name ++ "_core") Impl.MlDsa.RISCV64.Verify.verify65 mlDsa65)
       (verifyMessageCachedContract mlDsa65 RISCV64.abi 1184) :=
   verifyMessageCached_verified (.inr (.inl rfl)) (q := false) (by decide) verify65Fn _ ⟨_, verifyMessageCached65_sat⟩
 
@@ -104,7 +106,7 @@ theorem signMessage87_sat : (signMessageContract mlDsa87 RISCV64.abi 1184).pre (
 
 theorem signMessage87_verified :
     Verified RISCV64.target
-      (Impl.MlDsa.RISCV64.Message.signMessage sign87Api.name Impl.MlDsa.RISCV64.Sign.sign87 mlDsa87)
+      (Impl.MlDsa.RISCV64.Message.signMessage (sign87Api.name ++ "_core") Impl.MlDsa.RISCV64.Sign.sign87 mlDsa87)
       (signMessageContract mlDsa87 RISCV64.abi 1184) :=
   signMessage_verified (.inr (.inr rfl)) (q := false) (by decide) sign87Fn _ ⟨_, signMessage87_sat⟩
 
@@ -121,7 +123,7 @@ theorem verifyMessageCached87_sat :
 
 theorem verifyMessageCached87_verified :
     Verified RISCV64.target
-      (Impl.MlDsa.RISCV64.Message.verifyMessageCached verify87Api.name Impl.MlDsa.RISCV64.Verify.verify87 mlDsa87)
+      (Impl.MlDsa.RISCV64.Message.verifyMessageCached (verify87Api.name ++ "_core") Impl.MlDsa.RISCV64.Verify.verify87 mlDsa87)
       (verifyMessageCachedContract mlDsa87 RISCV64.abi 1184) :=
   verifyMessageCached_verified (.inr (.inr rfl)) (q := false) (by decide) verify87Fn _ ⟨_, verifyMessageCached87_sat⟩
 
@@ -218,7 +220,7 @@ theorem verifyPrepared44Fn :
 
 theorem signMessagePrepared44_verified :
     Verified RISCV64.target
-      (Impl.MlDsa.RISCV64.Message.signMessage (Proof.MlDsa.preparedSignName "mldsa44")
+      (Impl.MlDsa.RISCV64.Message.signMessage (Proof.MlDsa.preparedSignName "mldsa44" ++ "_core")
         (Impl.MlDsa.RISCV64.Sign.sign44E true) mlDsa44)
       (preparedSignMessageContract mlDsa44 RISCV64.abi 1184) :=
   signMessage_verified (.inl rfl) (q := true) (by decide) signPrepared44Fn _
@@ -226,7 +228,7 @@ theorem signMessagePrepared44_verified :
 
 theorem verifyMessagePrepared44_verified :
     Verified RISCV64.target
-      (Impl.MlDsa.RISCV64.Message.verifyMessageCached (Proof.MlDsa.preparedVerifyName "mldsa44")
+      (Impl.MlDsa.RISCV64.Message.verifyMessageCached (Proof.MlDsa.preparedVerifyName "mldsa44" ++ "_core")
         (Impl.MlDsa.RISCV64.Verify.verify44E true) mlDsa44)
       (preparedVerifyMessageContract mlDsa44 RISCV64.abi 1184) :=
   verifyMessageCached_verified (.inl rfl) (q := true) (by decide) verifyPrepared44Fn _
@@ -242,7 +244,7 @@ theorem verifyPrepared65Fn :
 
 theorem signMessagePrepared65_verified :
     Verified RISCV64.target
-      (Impl.MlDsa.RISCV64.Message.signMessage (Proof.MlDsa.preparedSignName "mldsa65")
+      (Impl.MlDsa.RISCV64.Message.signMessage (Proof.MlDsa.preparedSignName "mldsa65" ++ "_core")
         (Impl.MlDsa.RISCV64.Sign.sign65E true) mlDsa65)
       (preparedSignMessageContract mlDsa65 RISCV64.abi 1184) :=
   signMessage_verified (.inr (.inl rfl)) (q := true) (by decide) signPrepared65Fn _
@@ -250,7 +252,7 @@ theorem signMessagePrepared65_verified :
 
 theorem verifyMessagePrepared65_verified :
     Verified RISCV64.target
-      (Impl.MlDsa.RISCV64.Message.verifyMessageCached (Proof.MlDsa.preparedVerifyName "mldsa65")
+      (Impl.MlDsa.RISCV64.Message.verifyMessageCached (Proof.MlDsa.preparedVerifyName "mldsa65" ++ "_core")
         (Impl.MlDsa.RISCV64.Verify.verify65E true) mlDsa65)
       (preparedVerifyMessageContract mlDsa65 RISCV64.abi 1184) :=
   verifyMessageCached_verified (.inr (.inl rfl)) (q := true) (by decide) verifyPrepared65Fn _
@@ -266,7 +268,7 @@ theorem verifyPrepared87Fn :
 
 theorem signMessagePrepared87_verified :
     Verified RISCV64.target
-      (Impl.MlDsa.RISCV64.Message.signMessage (Proof.MlDsa.preparedSignName "mldsa87")
+      (Impl.MlDsa.RISCV64.Message.signMessage (Proof.MlDsa.preparedSignName "mldsa87" ++ "_core")
         (Impl.MlDsa.RISCV64.Sign.sign87E true) mlDsa87)
       (preparedSignMessageContract mlDsa87 RISCV64.abi 1184) :=
   signMessage_verified (.inr (.inr rfl)) (q := true) (by decide) signPrepared87Fn _
@@ -274,7 +276,7 @@ theorem signMessagePrepared87_verified :
 
 theorem verifyMessagePrepared87_verified :
     Verified RISCV64.target
-      (Impl.MlDsa.RISCV64.Message.verifyMessageCached (Proof.MlDsa.preparedVerifyName "mldsa87")
+      (Impl.MlDsa.RISCV64.Message.verifyMessageCached (Proof.MlDsa.preparedVerifyName "mldsa87" ++ "_core")
         (Impl.MlDsa.RISCV64.Verify.verify87E true) mlDsa87)
       (preparedVerifyMessageContract mlDsa87 RISCV64.abi 1184) :=
   verifyMessageCached_verified (.inr (.inr rfl)) (q := true) (by decide) verifyPrepared87Fn _

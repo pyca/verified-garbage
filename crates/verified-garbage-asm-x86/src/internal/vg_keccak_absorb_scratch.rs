@@ -14,14 +14,27 @@ pub(crate) unsafe extern "C" fn vg_keccak_absorb_scratch() {
         r#".base64 "i0QkGImYAAIAAImwBAIAAIm4CAIAAImoDAIAAInFi1wkBItMJAwB2YmNEAIAAItMJAiJjRQCAACLdCQQi3wkFIX/"
 je 20f
 22:
-.base64 "i40QAgAAi5UUAgAAD7YGMwGIAYPBAYmNEAIAAImVFAIAAIPGAYPvAYnIKdg50A=="
-je 23f
+.base64 "i40QAgAAi5UUAgAAicgp2IPACDnC"
+jb 23f
+.base64 "g/8I"
+jb 25f
+.base64 "8w9+BvMPfglmD+/BZg/WAYPBCImNEAIAAImVFAIAAIPGCIPvCA=="
+jmp 26f
+25:
+.base64 "D7YGMwGIAYPBAYmNEAIAAImVFAIAAIPGAYPvAQ=="
+26:
 jmp 24f
 23:
+.base64 "D7YGMwGIAYPBAYmNEAIAAImVFAIAAIPGAYPvAQ=="
+24:
+.base64 "icgp2DnQ"
+je 27f
+jmp 28f
+27:
 .base64 "iZ0QAgAAVVM="
 call {vg_keccak_f1600}
 .base64 "WFg="
-24:
+28:
 .base64 "hf8="
 jne 22b
 jmp 21f

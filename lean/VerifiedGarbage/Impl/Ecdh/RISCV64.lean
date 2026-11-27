@@ -41,8 +41,9 @@ field functions, on their pointers: the function is constant time.
    point called (its point, or `G`, to `R`'s first two slots); for the public
    key, the flag set and `G` copied there;
 4. the masks of `d < n` and `d ≠ 0` anded into the flag, then `R = [d]P` by a
-   call of `vg_<curve>_mul`, `Z^(p-2)` by `chainPow`, `x = X Z^(p-2)` (and `y`)
-   out of Montgomery's form, and the mask of `Z ≠ 0` into the flag;
+   call of `vg_<curve>_mul`, `Z^(p-2)` by a call of `vg_<curve>_inv_mod_p`
+   (`chainCall`, which keeps `ra` among `mul`'s saves), `x = X Z^(p-2)`
+   (and `y`) out of Montgomery's form, and the mask of `Z ≠ 0` into the flag;
 5. `x` (and `y`) stored big-endian to `out` under the flag's mask
    (`storeLen`), the flag's low bit returned, the registers restored.
 
@@ -241,12 +242,19 @@ def wsCall (f : String) (body : Prog isa) : Prog isa :=
 def affineCoord (t o a : Nat) : Prog isa :=
   .seq (mulCall c.FP (c.sl t) (c.sl a) (c.sl ACC)) (mulCall c.FP (c.sl o) (c.sl t) (c.sl ONE))
 
+/-- Where `vg_<curve>_inv_mod_p` (`chainCall`) keeps `ra`: the first of
+`vg_<curve>_mul`'s saves, which nothing reads while the power runs. -/
+def invSave : Nat := c.mulSave
+
+/-- `Z^(p-2)`, by a call of `vg_<curve>_inv_mod_p`, the chain of `p - 2`. -/
+def invP : Prog isa := chainCall (c.FP.S.fn "inv") (chainP c) (c.sl ONEP) c.FP (invSave c)
+
 /-- What follows the point's setup: the range of `d`, `R = [d]P` (`mul`, its
-code `mulCode`), `Z^(p-2)`, and `x`. -/
+code `mulCode`), `Z^(p-2)` (`invP`), and `x`. -/
 def tail (mulName : String) (mulCode : Prog isa) : Prog isa :=
   .seq (.block (rangeCode c)) <|
   .seq (wsCall mulName mulCode) <|
-  .seq (chainPow (chainP c) (c.sl ONEP) c.FP) (affineCoord c XM XO RX)
+  .seq (invP c) (affineCoord c XM XO RX)
 
 /-- The flag `&=` the mask of `Z ≠ 0`, and the flag to `a7`. -/
 def zCode : List Instr :=

@@ -3,6 +3,78 @@ module
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256Bounds
 public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Jacobian
 
+/-! ### `Weierstrass.AArch64.Forward.P256DR`, which the modules that import this one used -/
+
+section
+
+/-! ### `Weierstrass.AArch64.Forward.P256RD`, which the modules that import this one used -/
+
+section
+
+@[expose] public section
+
+namespace VG.Proof.Weierstrass.AArch64.Forward.P256RD
+open VG VG.AArch64 VG.Impl.Weierstrass VG.Impl.Weierstrass.AArch64
+open VG.Proof.Weierstrass.AArch64.Forward
+
+
+def K := VG.Impl.Ecdsa.Verify.AArch64.Cfg.jacWinCfg VG.Impl.Ecdsa.AArch64.p256
+
+def original := fprog K.M (dblJMul K.S K.R K.D)
+def optimized := VG.Impl.Weierstrass.AArch64.Forward.optimize original
+theorem original_lit : original=P256Bounds.leftRD.lit := P256Bounds.leftRD.lit_eq
+theorem optimized_lit : optimized=P256Bounds.rightRD.lit := P256Bounds.rightRD.lit_eq
+
+theorem wf : wfK 8192 original (RegSet.empty,false)=true := by
+  rw [original_lit]; decide +kernel
+
+theorem leftBound : ∀ i∈original,instrBound i≤8192 := by
+  rw [original_lit]; exact bound_of_listAllK (by decide +kernel)
+
+theorem rightBound : ∀ i∈optimized,instrBound i≤8192 := by
+  rw [optimized_lit]; exact bound_of_listAllK (by decide +kernel)
+
+theorem checked : OptChecked 8192 original optimized :=
+  ⟨rfl,wf,writes_of_bound leftBound,writes_of_bound rightBound⟩
+
+end VG.Proof.Weierstrass.AArch64.Forward.P256RD
+
+end
+
+end
+
+@[expose] public section
+
+namespace VG.Proof.Weierstrass.AArch64.Forward.P256DR
+open VG VG.AArch64 VG.Impl.Weierstrass VG.Impl.Weierstrass.AArch64
+open VG.Proof.Weierstrass.AArch64.Forward
+
+
+def K := VG.Impl.Ecdsa.Verify.AArch64.Cfg.jacWinCfg VG.Impl.Ecdsa.AArch64.p256
+
+def original := fprog K.M (dblJMul K.S K.D K.R)
+def optimized := VG.Impl.Weierstrass.AArch64.Forward.optimize original
+theorem original_lit : original=P256Bounds.leftDR.lit := P256Bounds.leftDR.lit_eq
+theorem optimized_lit : optimized=P256Bounds.rightDR.lit := P256Bounds.rightDR.lit_eq
+
+theorem wf : wfK 8192 original (RegSet.empty,false)=true := by
+  rw [original_lit]; decide +kernel
+
+theorem leftBound : ∀ i∈original,instrBound i≤8192 := by
+  rw [original_lit]; exact bound_of_listAllK (by decide +kernel)
+
+theorem rightBound : ∀ i∈optimized,instrBound i≤8192 := by
+  rw [optimized_lit]; exact bound_of_listAllK (by decide +kernel)
+
+theorem checked : OptChecked 8192 original optimized :=
+  ⟨rfl,wf,writes_of_bound leftBound,writes_of_bound rightBound⟩
+
+end VG.Proof.Weierstrass.AArch64.Forward.P256DR
+
+end
+
+end
+
 @[expose] public section
 
 namespace VG.Proof.Weierstrass.AArch64.Forward.P256ED

@@ -1,9 +1,134 @@
 module
 
-public import VerifiedGarbage.Proof.MillerRabin.Arm.Top
 import VerifiedGarbage.Proof.MillerRabin.Arm.Body
 import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Arm.Frame
+import VerifiedGarbage.Proof.Framework.Arm.Inline
+public import VerifiedGarbage.Proof.MillerRabin.Arm.Contract
+public import VerifiedGarbage.Proof.Bignum.Arm.PcPush
+public import VerifiedGarbage.Proof.Bignum.Arm.CallOp
+public import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Rsa.Arm.Stage.VP
+import VerifiedGarbage.Proof.Rsa.Arm.Stage.KS
+
+/-! ### `MillerRabin.Arm.Top`, which this module and modules that import it used -/
+
+section
+
+/-! # The Miller–Rabin round on ARMv7: a call's result and constant time
+
+`mkP s`: the public parameters of a call from `s`. The body runs from the
+state after the push with the regions narrowed to the frame, the working
+space and its key view (`xRegs`), and is widened back; the frame then
+restores the callee-saved registers (`round_ok`). Two calls with the same
+public parameters leak the same (`round_ct`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.MillerRabin.Arm
+open VG VG.Arm VG.Proof.Mont VG.Impl.Rsa.Arm.Keys VG.Impl.MillerRabin.Arm VG.Proof.Rsa.Arm.Keys
+open VG.Proof.X25519.Arm VG.Proof.Bignum.Arm
+open VG.Proof.Rsa.Arm.Recover (VP)
+open VG.Proof.Rsa.Mont (arrAt numAt wOf wordAt Layout Keeps Operand)
+
+/-- The public parameters of a call. -/
+def mkP (s : State) : MP where
+  ws := s.gpr .r0
+  len := (s.gpr .r1).toNat
+  w := wOf s.mem (State.addr (s.gpr .r0))
+  sp := s.sp - BitVec.ofNat 32 56
+
+/-- The body's regions. -/
+def xRegs (s : State) : List Region := [(mkP s).rF, (mkP s).rS, (mkP s).rK]
+
+/-- The state the body starts from. -/
+abbrev bodyIn (s : State) : State := (pcPushed s).withRegions (pcPushed s).rd (xRegs s)
+
+section
+variable {s : State}
+
+/-- The push writes only the frame, apart from the working space. -/
+theorem roundPre.pushedWs (h : roundPre s) :
+    ∀ i < 8 * (s.gpr .r1).toNat, (pcPushed s).mem (State.addr (s.gpr .r0) + BitVec.ofNat 64 i) =
+      s.mem (State.addr (s.gpr .r0) + BitVec.ofNat 64 i) := by
+  obtain ⟨_, _, fit, spLo', disj', _⟩ := h
+  have spLo : 56 ≤ s.sp.toNat := by omega_arith
+  have disj := disj'.sub_left (FrameStack.belowA_sub (a := 56) (by decide) spLo')
+  have f := FrameStack.pushed_frameA (rs := [.r0, .r1, .r2, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12, .lr])
+    (s := s) spLo
+  intro i hi
+  refine f _ fun r hr hc => ?_
+  simp only [List.mem_singleton] at hr; subst hr
+  refine disj _ hc ?_
+  simp only [Region.Contains, Offset.add_sub_cancel_left, BitVec.toNat_ofNat]
+  omega_arith
+
+theorem in_x (h : roundPre s) : In (mkP s) (bodyIn s) := by
+  have h0 := h
+  obtain ⟨rd, wr, fit, spLo', disj', lay, prep⟩ := h0
+  have spLo : 56 ≤ s.sp.toNat := by omega_arith
+  have disj := disj'.sub_left (FrameStack.belowA_sub (a := 56) (by decide) spLo')
+  have disjB := disj'.sub_left (FrameStack.belowA_inner (a := 48) (k := 56) (by decide) spLo')
+  have ew := h.pushedWs
+  obtain ⟨lay', hw⟩ := layout_congr ew lay
+  have prep' := prepared_congr ew lay prep
+  have spN : (s.sp - BitVec.ofNat 32 56).toNat = s.sp.toNat - 56 := FrameStack.sub_toNat' spLo
+  obtain ⟨lM, w4, w128, fits⟩ := lay'
+  rw [hw] at w4 w128 fits
+  obtain ⟨c3, codd, inv, x5, one, m1, ex, lo⟩ := prep'
+  simp only [hw] at c3 codd inv x5 one m1 ex lo
+  refine ⟨rfl, rfl, by simp only [mkP]; omega_arith, by simp only [mkP]; rw [spN]; have := s.sp.isLt; omega_arith, ?_,
+    w4, w128, fits, ?_, hw, inv, c3, codd, x5, one, m1, ex, lo, ?_, by simp only [mkP]; rw [spN]; omega_arith,
+    disjB⟩
+  · show (⟨State.addr (s.sp - BitVec.ofNat 32 56), 56⟩ : Region).Disjoint _
+    exact disj
+  · simpa [mkP] using lM
+  · show (pcPushed s).mem.readW (State.addr (s.sp - BitVec.ofNat 32 56)) 32 = s.gpr .r0
+    have := pc_push_saved s spLo (.r0, 0) (by simp [pcAllSaved])
+    simpa using this
+
+end
+
+/-- What a stage keeps of `σ`, as the contract states it. -/
+theorem KS.keepsLite {P : MP} {σ s : State} {A : Nat → Nat} {L : List Nat} {V : Nat → Nat} {LS : List Nat}
+    (h : KS P σ A L V LS s) : KeepsLite (State.addr P.ws) P.len P.w σ.mem s.mem := by
+  have pre := h.pre
+  have fit := pre.fit
+  have len := pre.len
+  have hS := pre.S_eq
+  intro i hi hk hj
+  have hws : P.rS.Contains (State.addr P.ws + BitVec.ofNat 64 i) 1 := by
+    simp only [Region.Contains, Offset.add_sub_cancel_left, BitVec.toNat_ofNat]; omega_arith
+  by_cases hlo : i < kOff
+  · exact h.mem_out (pre.ofsB_lo hlo) (pre.notB_ws hws)
+  · have hof : ofs (State.addr P.ws) (State.addr P.ws + BitVec.ofNat 64 i) = i := ofs_off0 _ (by omega_arith)
+    have hB := pre.ofsB (x := State.addr P.ws + BitVec.ofNat 64 i) (by rw [hof]; omega_arith)
+    rw [hof] at hB
+    refine h.keep _ (pre.notB_ws hws) fun r hr => ?_
+    rw [hB]
+    simp only [ranges, List.mem_append, List.mem_map] at hr
+    rcases hr with ⟨j, hjm, rfl⟩ | ⟨d, hd, rfl⟩
+    · have := hj j hjm
+      have := pre.arr_eq j
+      dsimp only; rw [hS]; omega_arith
+    · have := wDs_ok d hd
+      have h23 := hk 23 (by simp)
+      have h26 := hk 26 (by simp)
+      have h29 := hk 29 (by simp)
+      have h30 := hk 30 (by simp)
+      dsimp only
+      simp only [wDs, List.mem_cons, List.not_mem_nil, or_false] at hd
+      rcases hd with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
+        simp only [sE1, sE2, sT, sV, sF, sK, sQ, sR, kOff] at * <;> omega_arith
+
+end VG.Proof.MillerRabin.Arm
+
+end
+
+end
 
 /-! # The Miller–Rabin round on ARMv7: a call's result (`round_ok`) -/
 
@@ -38,17 +163,17 @@ theorem roundPre.xCovers (h : roundPre s) : Covers (xRegs s) (pcPushed s).wr := 
 
 /-- The callee-saved registers' slots after the push. -/
 theorem roundPre.savedE (h : roundPre s) : Spill.Saved (pcPushed s).mem (State.addr (s.sp - 56)) s.gpr pcCalleeSaved :=
-  pc_push_callee_saved s h.2.2.2.1
+  pc_push_callee_saved s (by have := h.2.2.2.1; omega_arith)
 
 /-- A call's result. -/
-theorem round_ok (h : roundPre s) (fios : Bool := false) : WP isa (code (fios := fios)) s fun t => abiPreserved s t ∧ roundPost s t := by
-  have spLo := h.2.2.2.1
+theorem round_ok (M : CallOp) (h : roundPre s) : WP isa (code M.op) s fun t => abiPreserved s t ∧ roundPost s t := by
+  have spLo : 56 ≤ s.sp.toNat := by have := h.2.2.2.1; omega_arith
   have spN : (s.sp - BitVec.ofNat 32 56).toNat = s.sp.toNat - 56 := FrameStack.sub_toNat' spLo
   have pre := in_x h
   unfold code
   refine WP.frame (by decide) spLo (by decide) ?_
   rw [WP.seq_iff]
-  obtain ⟨tr, v, run, done⟩ := (body_vp (fios := fios)).wp (bodyIn s) (bodyIn s) ⟨rfl, pre, rfl⟩
+  obtain ⟨tr, v, run, done⟩ := (body_vp M).wp (bodyIn s) (bodyIn s) ⟨rfl, pre, rfl⟩
   have cov := h.xCovers
   have run' := Exec.widen (rd := (pcPushed s).rd) (wr := (pcPushed s).wr) run
     (Covers.append (Covers.refl _) cov) cov
@@ -75,7 +200,7 @@ theorem round_ok (h : roundPre s) (fios : Bool := false) : WP isa (code (fios :=
       (by rw [State.withRegions_wr, pushed_wr]; exact List.mem_cons_self), ?_⟩
     rw [State.withRegions_sp, vsp]; exact Region.contains_self _ _
   refine WP.mono (pc_restore_ok _ s.gpr fit read (by rw [State.withRegions_sp, vsp]; exact saved)) ?_
-  rintro t ⟨restored, memT, restT⟩
+  rintro t ⟨restored, memT, restT⟩ m u hfl
   have ret : t.gpr .r0 = v.gpr .r0 := restT.gpr .r0 (by simp [pcCalleeSaved])
   refine ⟨⟨?_, ?_⟩, ?_, ?_⟩
   · intro r hr
@@ -129,7 +254,11 @@ theorem round_ok (h : roundPre s) (fios : Bool := false) : WP isa (code (fios :=
   · -- What changed.
     have eσ := h.pushedWs
     intro i hi hk hj
-    rw [popped_mem, memT, State.withRegions_mem]
+    dsimp only
+    rw [show m (State.addr (s.gpr .r0) + BitVec.ofNat 64 i) = t.mem (State.addr (s.gpr .r0) + BitVec.ofNat 64 i)
+      from lost_byte hfl (R := ⟨State.addr (s.gpr .r0), 8 * (s.gpr .r1).toNat⟩)
+        (h.2.2.2.2.1.sub_left (FrameStack.belowA_sub (a := 56) (by decide) h.2.2.2.1)).symm hi,
+      memT, State.withRegions_mem]
     exact (ks.keepsLite i hi hk hj).trans (eσ i hi)
 
 end
@@ -142,10 +271,10 @@ open VG.Proof.X25519.Arm VG.Proof.Bignum.Arm
 open VG.Proof.Rsa.Arm.Recover (VP)
 
 /-- The body's run, widened to the caller's regions. -/
-theorem body_wide {s : State} (h : roundPre s) (fios : Bool := false) :
-    ∃ tr v, Exec isa (body (fios := fios)) (bodyIn s) tr v ∧
-      Exec isa (body (fios := fios)) (pcPushed s) tr (v.withRegions (pcPushed s).rd (pcPushed s).wr) := by
-  obtain ⟨tr, v, run, _⟩ := (body_vp (fios := fios)).wp (bodyIn s) (bodyIn s) ⟨rfl, in_x h, rfl⟩
+theorem body_wide (M : CallOp) {s : State} (h : roundPre s) :
+    ∃ tr v, Exec isa (body M.op) (bodyIn s) tr v ∧
+      Exec isa (body M.op) (pcPushed s) tr (v.withRegions (pcPushed s).rd (pcPushed s).wr) := by
+  obtain ⟨tr, v, run, _⟩ := (body_vp M).wp (bodyIn s) (bodyIn s) ⟨rfl, in_x h, rfl⟩
   have cov := h.xCovers
   have run' := Exec.widen (rd := (pcPushed s).rd) (wr := (pcPushed s).wr) run
     (Covers.append (Covers.refl _) cov) cov
@@ -153,16 +282,18 @@ theorem body_wide {s : State} (h : roundPre s) (fios : Bool := false) :
   exact ⟨tr, v, run, run'⟩
 
 /-- Two calls with the same public parameters leak the same. -/
-theorem round_ct (fios : Bool := false) : RelCT isa (fun s t => roundPre s ∧ roundPre t ∧ s.sp = t.sp ∧ mkP s = mkP t) (code (fios := fios))
+theorem round_ct (M : CallOp) : RelCT isa (fun s t => roundPre s ∧ roundPre t ∧ s.sp = t.sp ∧ mkP s = mkP t) (code M.op)
     (fun _ _ => True) := by
   unfold code
   apply RelCT.frame (fun _ _ h => h.2.2.1)
   intro s t tr1 tr2 u v hp e1 e2
   obtain ⟨s0, t0, ⟨hs, ht, sp, hP⟩, ps, pt⟩ := hp
   have ps' := push_pushed
-    (rs := [.r0, .r1, .r2, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12, .lr]) (by decide) hs.2.2.2.1
+    (rs := [.r0, .r1, .r2, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12, .lr]) (by decide)
+    (s := s0) (by have := hs.2.2.2.1; simp only [List.length_cons, List.length_nil]; omega_arith)
   have pt' := push_pushed
-    (rs := [.r0, .r1, .r2, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12, .lr]) (by decide) ht.2.2.2.1
+    (rs := [.r0, .r1, .r2, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12, .lr]) (by decide)
+    (s := t0) (by have := ht.2.2.2.1; simp only [List.length_cons, List.length_nil]; omega_arith)
   have es : pcPushed s0 = s := Option.some.inj (ps'.symm.trans ps)
   have et : pcPushed t0 = t := Option.some.inj (pt'.symm.trans pt)
   subst s; subst t
@@ -170,22 +301,22 @@ theorem round_ct (fios : Bool := false) : RelCT isa (fun s t => roundPre s ∧ r
   | seq body1 rest1 =>
     cases e2 with
     | seq body2 rest2 =>
-      obtain ⟨trB1, w1, runB1, wide1⟩ := body_wide (fios := fios) hs
-      obtain ⟨trB2, w2, runB2, wide2⟩ := body_wide (fios := fios) ht
+      obtain ⟨trB1, w1, runB1, wide1⟩ := body_wide M hs
+      obtain ⟨trB2, w2, runB2, wide2⟩ := body_wide M ht
       obtain ⟨rfl, rfl⟩ := Exec.det body1 wide1
       obtain ⟨rfl, rfl⟩ := Exec.det body2 wide2
       have pre1 := in_x hs
       have pre2 := in_x ht
       rw [← hP] at pre2
-      have trB := ((body_vp (fios := fios) (P := mkP s0)).ct _ _ _ _ _ _
+      have trB := ((body_vp M (P := mkP s0)).ct _ _ _ _ _ _
         ⟨_, _, ⟨rfl, pre1, rfl⟩, ⟨rfl, pre2, by show t0.gpr .r0 = (mkP s0).ws; rw [hP]; rfl⟩⟩ runB1 runB2).1
       have w1sp : w1.sp = s0.sp - BitVec.ofNat 32 56 := by
-        obtain ⟨_, _, run, done⟩ := (body_vp (fios := fios)).wp (bodyIn s0) (bodyIn s0) ⟨rfl, pre1, rfl⟩
+        obtain ⟨_, _, run, done⟩ := (body_vp M).wp (bodyIn s0) (bodyIn s0) ⟨rfl, pre1, rfl⟩
         obtain ⟨-, rfl⟩ := Exec.det runB1 run
         obtain ⟨⟨_, _, _, _, ks⟩, _⟩ := done
         exact ks.sp.trans pre1.sp
       have w2sp : w2.sp = t0.sp - BitVec.ofNat 32 56 := by
-        obtain ⟨_, _, run, done⟩ := (body_vp (fios := fios)).wp (bodyIn t0) (bodyIn t0) ⟨rfl, in_x ht, rfl⟩
+        obtain ⟨_, _, run, done⟩ := (body_vp M).wp (bodyIn t0) (bodyIn t0) ⟨rfl, in_x ht, rfl⟩
         obtain ⟨-, rfl⟩ := Exec.det runB2 run
         obtain ⟨⟨_, _, _, _, ks⟩, _⟩ := done
         exact ks.sp.trans (in_x ht).sp

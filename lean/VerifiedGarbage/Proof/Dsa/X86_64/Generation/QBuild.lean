@@ -4,25 +4,165 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Memory
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.QCandidate
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.Label
 public import VerifiedGarbage.Spec.Dsa
-
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.QArgs
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Hash
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Lit
-import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit
-import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
+public import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Lit
+public import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit
+public import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
 import VerifiedGarbage.Impl.Ffdh.X86_64.ParameterCandidate.Shape
 import VerifiedGarbage.Proof.Bignum.Words
-import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 import VerifiedGarbage.Spec.Rsa.Contract
 import VerifiedGarbage.Proof.Dsa.Generation.QCandidate
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Shape
 import VerifiedGarbage.Proof.Dsa.Encoding
 import VerifiedGarbage.TCB.X86_64.Isa
 import VerifiedGarbage.TCB.X86_64.State
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextFrame
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Context
+public import VerifiedGarbage.Proof.RsaKeyGen.Slots
+public import VerifiedGarbage.Proof.RsaKeyGen.Table
+import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.SeedSearch
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.Basic
+import VerifiedGarbage.Proof.RsaOaep.X86_64.Mgf
+import VerifiedGarbage.Proof.Framework.OmegaLit
+
+/-! ### `Dsa.X86_64.Generation.QArgs`, which this module and modules that import it used -/
+
+section
+
+/-! # Prepare the shared candidate shaper's arguments -/
+
+@[expose] public section
+namespace VG.Proof.Dsa.X86_64.Generation
+open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
+open VG.Impl.RsaOaep.X86_64 VG.Proof.RsaOaep.X86_64
+
+theorem qArgs_ok {s : State} {F S op : Addr} {len : Nat} (L : Lay s F S)
+    {V : Nat → Byte} {W : Nat → BitVec 64} (R : Rep s.mem F S V W)
+    (hop : W 0 = op) (hll : W 28 = BitVec.ofNat 64 len) :
+    WP isa (.block Impl.Dsa.X86_64.Generation.qArgs) s fun t =>
+      t.gpr .rdi = op ∧ t.gpr .rsi = off S oDig ∧
+      t.gpr .rcx = BitVec.ofNat 64 len ∧ t.gpr .rdx = BitVec.ofNat 64 (8 * len) ∧
+      t.mem = s.mem ∧ Keep [.rdi, .rsi, .rcx, .rdx] s t := by
+  refine WP.mono (WP.keep [.rdi, .rsi, .rcx, .rdx] (Q := fun t =>
+      t.gpr .rdi = op ∧ t.gpr .rsi = off S oDig ∧
+      t.gpr .rcx = BitVec.ofNat 64 len ∧ t.gpr .rdx = BitVec.ofNat 64 (8 * len) ∧ t.mem = s.mem) ?_ rfl)
+    fun _ ⟨⟨a, b, c, d, e⟩, hk⟩ => ⟨a, b, c, d, e, hk⟩
+  have hs := L.slot
+  simp only [VG.Proof.Bignum.word] at hs
+  have hld0 : InRegions (s.rd ++ s.wr) F 8 := by simpa [off] using L.ld (d := 0) (by decide)
+  have hv0 : s.mem.readW F 64 = op := by
+    simpa [off] using R.slot (d := 0) (k := 0) rfl (by decide) hop
+  xrun [Impl.Dsa.X86_64.Generation.qArgs, ea_sp, L.rsp,
+    hld0, hv0, L.ld (d := sScr) (by decide), L.ld (d := sLabLen) (by decide), hs,
+    R.slot (d := sLabLen) (k := 28) rfl (by decide) hll, sx_ofNat]
+  constructor
+  · exact congrArg (fun x : BitVec 64 => S + x) (by decide)
+  · rw [BitVec.shiftLeft_eq_mul_twoPow]
+    change BitVec.ofNat 64 len * BitVec.ofNat 64 8 = BitVec.ofNat 64 (8 * len)
+    rw [← BitVec.ofNat_mul, Nat.mul_comm]
+
+end VG.Proof.Dsa.X86_64.Generation
+
+end
+
+end
+
+/-! ### `Dsa.X86_64.Generation.ContextSeed`, which the modules that import this one used -/
+
+section
+
+/-! ### `Dsa.X86_64.Generation.SeedArguments`, which this module and modules that import it used -/
+
+section
+
+/-! # Bind each complete seed to q hashing without resetting witness consumption -/
+
+@[expose] public section
+namespace VG.Proof.Dsa.X86_64.Generation
+open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
+open VG.Proof.RsaOaep.X86_64 VG.Impl.RsaOaep.X86_64 VG.Impl.Dsa.Generation.Layout
+
+def seedWords (W : Nat → BitVec 64) (len : Nat) : Nat → BitVec 64 :=
+  upd (upd (upd W 0 (off (W 5) q)) 27 (W 1)) 28 (BitVec.ofNat 64 len)
+
+theorem seedArguments_ok {s : State} {F S : Addr} {V : Nat → Byte} {W : Nat → BitVec 64}
+    (L : Lay s F S) (R : Rep s.mem F S V W) {len : Nat} (hl : len < 2 ^ 32) :
+    WP isa (.block (Impl.Dsa.X86_64.Generation.seedArguments len)) s fun t =>
+      Lay t F S ∧ Rep t.mem F S V (seedWords W len) ∧
+      Frame [⟨F, frameBytes⟩] s.mem t.mem ∧ Keep [.rax] s t := by
+  have cast : (BitVec.ofNat 32 len).setWidth 64 = BitVec.ofNat 64 len := by
+    apply BitVec.eq_of_toNat_eq
+    simp [BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hl]
+  have read : (s.mem.writeW (off F 0) (off (W 5) q)).readW (off F 8) 64 = W 1 := by
+    exact (R.wf L.geo (by decide : 0 < nW) _).slot (d := 8) (k := 1) rfl (by decide) (by simp [upd])
+  have st0 : InRegions s.wr F 8 := by simpa [off] using L.st (d := 0) (by decide)
+  have read0 : (s.mem.writeW F (off (W 5) q)).readW (off F 8) 64 = W 1 := by simpa [off] using read
+  refine WP.mono (WP.keep [.rax] (Q := fun t =>
+      t.mem = ((s.mem.writeW (off F 0) (off (W 5) q)).writeW (off F 216) (W 1)).writeW
+        (off F 224) (BitVec.ofNat 64 len)) (by
+    xrun [Impl.Dsa.X86_64.Generation.seedArguments, ea_sp, L.rsp,
+      L.ld (d := 40) (by decide), R.slot (d := 40) (k := 5) rfl (by decide) rfl,
+      L.ld (d := 8) (by decide), st0, L.st (d := 216) (by decide),
+      L.st (d := 224) (by decide), sx_ofNat (by decide : q < 2 ^ 31), cast, read0]) rfl)
+    fun t ⟨hm, kt⟩ => ?_
+  have Rt : Rep t.mem F S V (seedWords W len) := by
+    rw [hm]
+    exact ((R.wf L.geo (by decide : 0 < nW) _).wf L.geo (by decide : 27 < nW) _).wf L.geo (by decide : 28 < nW) _
+  refine ⟨lay_of_rep L R Rt (by simp [seedWords, upd]) (kt.gpr (by decide)) kt.2.2, Rt, ?_, kt⟩
+  have ff : Outside F 0 frameBytes s.mem t.mem := by
+    rw [hm]
+    exact (((writeW_outside _ F _ (d := 0) (by decide)).mono (by decide) (by decide)).trans
+      ((writeW_outside _ F _ (d := 216) (by decide)).mono (by decide) (by decide))).trans
+      ((writeW_outside _ F _ (d := 224) (by decide)).mono (by decide) (by decide))
+  intro a ha
+  apply ff a
+  right
+  have hn := ha ⟨F, frameBytes⟩ (by simp)
+  change ¬ ofs F a < frameBytes at hn
+  omega_using [hn]
+
+end VG.Proof.Dsa.X86_64.Generation
+
+end
+
+end
+
+/-! # Prepare q hashing while retaining all persistent search inputs -/
+
+@[expose] public section
+namespace VG.Proof.Dsa.X86_64.Generation
+open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
+open VG.Proof.RsaOaep.X86_64 VG.Impl.RsaOaep.X86_64 VG.Impl.Dsa.Generation.Layout
+
+theorem prepareSeed_ok {p : GenerationContext} {W : Nat → BitVec 64} {s : State}
+    (h : GenerationMemory p W s) :
+    WP isa (.block (Impl.Dsa.X86_64.Generation.seedArguments p.geo.qLen)) s fun t =>
+      GenerationMemory p (seedWords W p.geo.qLen) t ∧ Frame p.changed s.mem t.mem ∧ Keep [.rax] s t := by
+  obtain ⟨V, R⟩ := h.rep
+  refine WP.mono (seedArguments_ok h.layout R (by rcases p.geo.qWidth with hh | hh <;> omega_using [hh]))
+    fun t ⟨Lt, Rt, ft, kt⟩ => ?_
+  have ff := GenerationContext.frame_single (p := p) ft
+  refine ⟨h.frame Lt ⟨V, Rt⟩ ?_ ff kt.2.1 kt.2.2, ff, kt⟩
+  intro k hk
+  simp only [generationSlots, List.mem_cons, List.not_mem_nil, or_false] at hk
+  rcases hk with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+  all_goals first
+    | rfl
+    | simpa [seedWords, upd] using ((h.slots 28 (by simp [generationSlots])).trans p.hashLenSlot).symm
+
+end VG.Proof.Dsa.X86_64.Generation
+
+end
+
+end
+
 /-! # Native subgroup-candidate construction from a seed
 
 The composition hashes the seed, selects SHA-1 or SHA-256 by its public
@@ -94,6 +234,8 @@ theorem qCandidate_ok {G1 G256 : Impl.Pbkdf2.Md.X86_64.Stream}
     {s : State} {F S rp op : Addr} {len : Nat} (hlen : len = 20 ∨ len = 32)
     (L : Lay s F S) {V : Nat → Byte} {W : Nat → BitVec 64}
     (R : Rep s.mem F S V W) (A : LabAt s F S W rp len) (hop : W 0 = op)
+    (hU : W 29 = s.syms (if len = 20 then G1 else G256).updN)
+    (hF : W 30 = s.syms (if len = 20 then G1 else G256).finN)
     (hout : ∀ i < len, InRegions s.wr (off op i) 1)
     (hsep : ∀ i < len, ∀ j < len, off (off S oDig) i ≠ off op j)
     (hbuf : HashBufferSeparate F S op len) :
@@ -104,7 +246,7 @@ theorem qCandidate_ok {G1 G256 : Impl.Pbkdf2.Md.X86_64.Stream}
       Frame [⟨op, len⟩, ⟨S, oRsa⟩, retR F] s.mem t.mem ∧
       Lay t F S ∧ ∃ V', Rep t.mem F S V' W := by
   unfold Impl.Dsa.X86_64.Generation.qCandidate
-  refine WP.seq (WP.mono (seedHashAt_frame_ok h1 h256 he1 he256 hs1 hs256 hd1 hd256 hlen L R A)
+  refine WP.seq (WP.mono (seedHashAt_frame_ok h1 h256 he1 he256 hs1 hs256 hd1 hd256 hlen L R A hU hF)
     fun u ⟨Lu, rdu, wru, csu, hfu, V', Ru, _, hb⟩ => ?_)
   refine WP.seq (WP.mono (qArgs_ok Lu Ru hop A.hll) fun v ⟨hdi, hsi, hcx, hdx, hm, hk⟩ => ?_)
   let seed := Spec.Rsa.bytesAt s.mem rp len

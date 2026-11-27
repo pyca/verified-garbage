@@ -1,14 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.MontPipelineLoop
-public import VerifiedGarbage.Proof.Bignum.Arm.MontBodyCT
+public import VerifiedGarbage.Proof.Bignum.Arm.MontFnBodyCT
 public import VerifiedGarbage.Proof.Bignum.Arm.MontPipelineCTRounds
 public import VerifiedGarbage.Impl.Bignum.Arm.MontPipeline
 import VerifiedGarbage.Proof.Bignum.Arm.StageCT
 public import VerifiedGarbage.Proof.Bignum.Arm.MontCoreCT
 import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Bignum.Arm.MontInitCT
-public import VerifiedGarbage.Proof.Bignum.Arm.MontFnBodyCT
 import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Impl.Bignum.Arm.MontFn
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint

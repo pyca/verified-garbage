@@ -41,6 +41,20 @@ vg_mlkem1024_check_ek:
 	pop ebx
 	pop ebx
 	pop ebx
+	pxor xmm0, xmm0
+	lea esp, [esp-16]
+	movdqu XMMWORD PTR [esp], xmm0
+	lea esp, [esp+16]
+	mov edx, 0
+	xor ecx, ecx
+	pxor xmm0, xmm0
+	pxor xmm1, xmm1
+	pxor xmm2, xmm2
+	pxor xmm3, xmm3
+	pxor xmm4, xmm4
+	pxor xmm5, xmm5
+	pxor xmm6, xmm6
+	pxor xmm7, xmm7
 	ret
 	.p2align 6
 
@@ -61,10 +75,33 @@ vg_mlkem1024_keygen:
 	mov DWORD PTR [esp], eax
 	mov eax, 49152
 	mov DWORD PTR [esp+4], eax
-	call {vg_zeroize}
+	call {vg_zeroize_core}
 	mov eax, DWORD PTR [esp+16]
 	mov edx, DWORD PTR [esp+20]
 	lea esp, [esp+28]
+	pxor xmm0, xmm0
+	mov ecx, 0
+	lea esp, [esp-120]
+	movdqu XMMWORD PTR [esp], xmm0
+	movdqu XMMWORD PTR [esp+16], xmm0
+	movdqu XMMWORD PTR [esp+32], xmm0
+	movdqu XMMWORD PTR [esp+48], xmm0
+	movdqu XMMWORD PTR [esp+64], xmm0
+	movdqu XMMWORD PTR [esp+80], xmm0
+	movdqu XMMWORD PTR [esp+96], xmm0
+	mov DWORD PTR [esp+112], ecx
+	mov DWORD PTR [esp+116], ecx
+	lea esp, [esp+120]
+	mov edx, 0
+	xor ecx, ecx
+	pxor xmm0, xmm0
+	pxor xmm1, xmm1
+	pxor xmm2, xmm2
+	pxor xmm3, xmm3
+	pxor xmm4, xmm4
+	pxor xmm5, xmm5
+	pxor xmm6, xmm6
+	pxor xmm7, xmm7
 	ret
 	.p2align 6
 
@@ -87,10 +124,33 @@ vg_mlkem1024_encaps:
 	mov DWORD PTR [esp], eax
 	mov eax, 49152
 	mov DWORD PTR [esp+4], eax
-	call {vg_zeroize}
+	call {vg_zeroize_core}
 	mov eax, DWORD PTR [esp+20]
 	mov edx, DWORD PTR [esp+24]
 	lea esp, [esp+28]
+	pxor xmm0, xmm0
+	mov ecx, 0
+	lea esp, [esp-120]
+	movdqu XMMWORD PTR [esp], xmm0
+	movdqu XMMWORD PTR [esp+16], xmm0
+	movdqu XMMWORD PTR [esp+32], xmm0
+	movdqu XMMWORD PTR [esp+48], xmm0
+	movdqu XMMWORD PTR [esp+64], xmm0
+	movdqu XMMWORD PTR [esp+80], xmm0
+	movdqu XMMWORD PTR [esp+96], xmm0
+	mov DWORD PTR [esp+112], ecx
+	mov DWORD PTR [esp+116], ecx
+	lea esp, [esp+120]
+	mov edx, 0
+	xor ecx, ecx
+	pxor xmm0, xmm0
+	pxor xmm1, xmm1
+	pxor xmm2, xmm2
+	pxor xmm3, xmm3
+	pxor xmm4, xmm4
+	pxor xmm5, xmm5
+	pxor xmm6, xmm6
+	pxor xmm7, xmm7
 	ret
 	.p2align 6
 
@@ -115,10 +175,34 @@ vg_mlkem1024_encaps_h:
 	mov DWORD PTR [esp], eax
 	mov eax, 49152
 	mov DWORD PTR [esp+4], eax
-	call {vg_zeroize}
+	call {vg_zeroize_core}
 	mov eax, DWORD PTR [esp+24]
 	mov edx, DWORD PTR [esp+28]
 	lea esp, [esp+44]
+	pxor xmm0, xmm0
+	mov ecx, 0
+	lea esp, [esp-136]
+	movdqu XMMWORD PTR [esp], xmm0
+	movdqu XMMWORD PTR [esp+16], xmm0
+	movdqu XMMWORD PTR [esp+32], xmm0
+	movdqu XMMWORD PTR [esp+48], xmm0
+	movdqu XMMWORD PTR [esp+64], xmm0
+	movdqu XMMWORD PTR [esp+80], xmm0
+	movdqu XMMWORD PTR [esp+96], xmm0
+	movdqu XMMWORD PTR [esp+112], xmm0
+	mov DWORD PTR [esp+128], ecx
+	mov DWORD PTR [esp+132], ecx
+	lea esp, [esp+136]
+	mov edx, 0
+	xor ecx, ecx
+	pxor xmm0, xmm0
+	pxor xmm1, xmm1
+	pxor xmm2, xmm2
+	pxor xmm3, xmm3
+	pxor xmm4, xmm4
+	pxor xmm5, xmm5
+	pxor xmm6, xmm6
+	pxor xmm7, xmm7
 	ret
 	.p2align 6
 
@@ -139,9 +223,32 @@ vg_mlkem1024_decaps:
 	mov DWORD PTR [esp], eax
 	mov eax, 49152
 	mov DWORD PTR [esp+4], eax
-	call {vg_zeroize}
+	call {vg_zeroize_core}
 	mov eax, DWORD PTR [esp+16]
 	mov edx, DWORD PTR [esp+20]
 	lea esp, [esp+28]
+	pxor xmm0, xmm0
+	mov ecx, 0
+	lea esp, [esp-120]
+	movdqu XMMWORD PTR [esp], xmm0
+	movdqu XMMWORD PTR [esp+16], xmm0
+	movdqu XMMWORD PTR [esp+32], xmm0
+	movdqu XMMWORD PTR [esp+48], xmm0
+	movdqu XMMWORD PTR [esp+64], xmm0
+	movdqu XMMWORD PTR [esp+80], xmm0
+	movdqu XMMWORD PTR [esp+96], xmm0
+	mov DWORD PTR [esp+112], ecx
+	mov DWORD PTR [esp+116], ecx
+	lea esp, [esp+120]
+	mov edx, 0
+	xor ecx, ecx
+	pxor xmm0, xmm0
+	pxor xmm1, xmm1
+	pxor xmm2, xmm2
+	pxor xmm3, xmm3
+	pxor xmm4, xmm4
+	pxor xmm5, xmm5
+	pxor xmm6, xmm6
+	pxor xmm7, xmm7
 	ret
 	.p2align 6

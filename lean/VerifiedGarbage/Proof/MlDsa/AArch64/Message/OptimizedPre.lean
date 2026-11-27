@@ -1,15 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRootsEntry
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Lit
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Lit
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Pre
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Lit
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Samp
-public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Lit
-public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentLit
+public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Lit
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTableWords
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TableWords
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Arith.Common
+public import VerifiedGarbage.Spec.MlDsa
 
 @[expose] public section
 

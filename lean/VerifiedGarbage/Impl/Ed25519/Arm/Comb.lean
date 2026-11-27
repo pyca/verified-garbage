@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Ed25519.Arm.FieldMemory
 public import VerifiedGarbage.Impl.Ed25519.Arm.PointSelect
+public import VerifiedGarbage.Impl.Ed25519.Arm.PointTableIO
 public import VerifiedGarbage.Impl.Ed25519.CombTable16
 
 /-!
@@ -124,7 +125,7 @@ def combSelect : List Instr :=
 /-- The entry in slots 4–6 negated if the digit is negative: `Y - X` and `Y + X` exchanged,
 and `2dT` with `0 - 2dT` (in slot 7, from the zero in slot 21), under the sign's mask. -/
 def combNeg : Prog isa :=
-  .seq (fieldCode [.sub 7 21 6]) (.block ([.ldr .r9 .r0 SGN] ++ swapFields [(4, 5), (6, 7)]))
+  .seq (fieldCode false [.sub 7 21 6]) (.block ([.ldr .r9 .r0 SGN] ++ swapFields [(4, 5), (6, 7)]))
 
 /-! ## The addition -/
 
@@ -141,10 +142,10 @@ def addAffineOps : List FieldOp := [
 
 /-- Step `r11 = i`: digit `i`'s entry of table `i`, negated for a negative digit, added to the
 accumulator. Z is clear while another step follows. -/
-def combStep : Prog isa :=
+def combStep (umaal : Bool) : Prog isa :=
   .seq (.block (combDigit ++ combSelect)) <|
   .seq combNeg <|
-  .seq (fieldCode addAffineOps) (.block [.dp .add .r11 .r11 (.imm 1), .cmp .r11 (.imm 64)])
+  .seq (fieldCode umaal addAffineOps) (.block [.dp .add .r11 .r11 (.imm 1), .cmp .r11 (.imm 64)])
 
 /-- `(x, y)` of `[17 G]B`. -/
 def combStartAff : Spec.X25519.Fe × Spec.X25519.Fe :=
@@ -157,12 +158,28 @@ def combStart : Spec.Ed25519.Point :=
 
 /-- The accumulator at `[17 G]B`, zero in slot 21, and the counter. -/
 def combInit : Prog isa :=
-  .seq (fieldCode ([.const 21 0] ++ constPointOps combStart)) (.block [.movw .r11 0])
+  .seq (fieldCode false ([.const 21 0] ++ constPointOps combStart)) (.block [.movw .r11 0])
 
 /-- The scalar's copy, then the accumulator at `[17 G]B` and the counter. -/
 def combPrepare : Prog isa := .seq (.block combCopy) combInit
 
 /-- `[s]B` into slots 0–3, for the scalar at `r12`. -/
-def combMultiply : Prog isa := .seq combPrepare (.loop combStep .ne)
+def combMultiplyInline (umaal : Bool) : Prog isa := .seq combPrepare (.loop (combStep umaal) .ne)
+
+/-- The helper's return address, beyond verification's headers and saved `lr`. -/
+def combReturn : Nat := 8176
+
+/-- The scalar pointer crosses the call in a temporary word: ARM veneers may clobber `r12`. -/
+def combInput : Nat := 60
+
+/-- The shared comb engine, preserving its own return address in the existing workspace. -/
+def combMultiplyFn (umaal : Bool) : Prog isa :=
+  .seq (.block (scratchAddr combReturn ++ [.str .lr .r12 0, .ldr .r12 .r0 combInput]))
+    (.seq (combMultiplyInline umaal) (.block (scratchAddr combReturn ++ [.ldr .lr .r12 0])))
+
+/-- `[s]B` into slots 0–3, shared by signing and verification. -/
+def combMultiply (umaal : Bool) : Prog isa :=
+  .seq (.block [.str .r12 .r0 combInput])
+    (.call ("vg_ed25519_comb_multiply" ++ if umaal then "_umaal" else "") (combMultiplyFn umaal))
 
 end VG.Impl.Ed25519.Arm

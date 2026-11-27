@@ -1,9 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.Inline
+public import VerifiedGarbage.Impl.Scrub.AArch64.Writes
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 public import VerifiedGarbage.Proof.Framework.AArch64.Taint
 public import VerifiedGarbage.TCB.AArch64.Target
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Inlining verified code (AArch64)
@@ -25,39 +28,13 @@ def State.withRegions (s : State) (rd wr : List Region) : State := { s with rd :
 
 @[simp] theorem State.withRegions_gpr (s : State) (rd wr) : (s.withRegions rd wr).gpr = s.gpr := rfl
 @[simp] theorem State.withRegions_sp (s : State) (rd wr) : (s.withRegions rd wr).sp = s.sp := rfl
+@[simp] theorem State.withRegions_dit (s : State) (rd wr) : (s.withRegions rd wr).dit = s.dit := rfl
 @[simp] theorem State.withRegions_mem (s : State) (rd wr) : (s.withRegions rd wr).mem = s.mem := rfl
 @[simp] theorem State.withRegions_rd (s : State) (rd wr) : (s.withRegions rd wr).rd = rd := rfl
 @[simp] theorem State.withRegions_wr (s : State) (rd wr) : (s.withRegions rd wr).wr = wr := rfl
 @[simp] theorem State.withRegions_self (s : State) : s.withRegions s.rd s.wr = s := rfl
 @[simp] theorem State.withRegions_withRegions (s : State) (rd wr rd' wr') :
     (s.withRegions rd wr).withRegions rd' wr' = s.withRegions rd' wr' := rfl
-
-/-- The register an instruction writes, if it writes exactly one (a frame's
-pop writes its register); none for `ldp`, which writes two (`dsts`). -/
-def dstOf : Instr → Option Reg
-  | .adds _ d .. | .adcs _ d .. | .subs _ d .. | .sbcs _ d .. | .adc _ d .. | .sbc _ d .. | .csel _ d .. | .umulh d .. | .umaddl d .. | .umull d .. | .adrSym d _ => some d
-  | .add _ d .. | .sub _ d .. | .addImm _ d .. | .subImm _ d .. | .logic _ _ d .. | .logicRor _ _ d .. | .bicRor _ d .. | .ror _ d .. | .extr _ d ..
-  | .lsr _ d .. | .lsl _ d .. | .madd _ d .. | .mul _ d .. | .rev32 d _ | .rev d _ | .clz _ d _ | .rbit _ d _ | .movz _ d ..
-  | .addSp d _ | .movk _ d .. | .ldr _ d .. | .ldrb d .. | .ldrSp d _ | .pop d | .umov _ d .. | .mrsDit d => some d
-  | .ldrTbl _ d .. => some d
-  | .cselc _ d .. | .csneg _ d .. => some d
-  | .str .. | .strb .. | .strSp .. | .alloc _ | .free _ | .push _ | .vop _ | .ldrq .. | .ldrqTbl .. | .strq .. | .tst .. | .ccmp ..
-  | .ldp .. | .stp .. | .align _ | .blr _ | .msrDitImm _ | .barrier _ => none
-
-/-- The general-purpose registers instruction `i` writes. -/
-def dsts (i : Instr) : List Reg :=
-  match i with
-  | .ldp t1 t2 _ _ => [t1, t2]
-  | _ => (dstOf i).toList
-
-/-- Whether instruction `i` writes the general-purpose register `r`, one of
-`dsts i`. The lemmas about the registers code keeps are stated with it (or
-`dsts`), not with `dstOf`, which names only an instruction's single
-destination. -/
-def clobbers (i : Instr) (r : Reg) : Bool :=
-  match i with
-  | .ldp t1 t2 _ _ => r == t1 || r == t2
-  | _ => dstOf i == some r
 
 theorem clobbers_iff {i : Instr} {r : Reg} : clobbers i r = true ↔ r ∈ dsts i := by
   unfold clobbers dsts
@@ -357,10 +334,6 @@ theorem eval_withRegions (c : Cond) (s : State) (rd wr : List Region) :
 
 end
 
-/-- The registers a call changes: the link register, and the
-intra-procedure-call scratch registers, which a linker veneer may change. -/
-def linkRegs : List Reg := [.x16, .x17, .x30]
-
 /-- Calls change only `linkRegs`. -/
 theorem call_eq {s s' : State} (h : isa.call s = some s') :
     s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧ s'.mem = s.mem ∧
@@ -445,7 +418,7 @@ def regionModel : RegionModel isa where
     exact ⟨rfl, rfl, fun _ _ => (ite_eq_left hc).trans rfl⟩
   push_widen := push_widen
   pop_widen h := ⟨(pop_eq h).1, (pop_eq h).2.1, (pop_eq h).2.2.1, fun _ _ hw => pop_widen h _ hw⟩
-  icall_with i _ _ _ := by cases i <;> rfl
+  icall_widen {i} _ _ _ _ _ h := by cases i <;> exact h
 /-- Calls change no memory, and returns nothing. -/
 theorem callsKeepMem : regionModel.CallsKeepMem := fun _ _ _ _ hc hr =>
   ⟨(call_eq hc).2.2.2.1, by rw [ret_eq hr]⟩
@@ -582,5 +555,24 @@ theorem Verified.widen {c : Prog isa} {k k' : Contract isa} (h : Verified target
       k.pub (s₁.withRegions s₁.rd (wr s₁)) (s₂.withRegions s₂.rd (wr s₂)))
     (hsat : ∃ s, k'.pre s) : Verified target c k' :=
   regionModel.verified_widen (T := target) (fun _ _ _ _ h => h) h wr hpre hwr hpost hpub hsat
+
+/-- The bytes a frame loses when it is released differ only within the frame. -/
+theorem lose_frame (m : Mem) (a : Addr) (n : Nat) (u : Nat → BitVec 64) :
+    Frame [⟨a, n⟩] m (lose m a n u) := fun x hx => by
+  have h : ¬ (x - a).toNat < n := fun h =>
+    hx ⟨a, n⟩ (List.mem_singleton_self _) (by simp only [Region.Contains]; omega_using [h])
+  simp only [lose, h, ite_false]
+
+/-- A byte of a region apart from a frame is what it was once the frame's
+bytes are lost. -/
+theorem lost_byte {F R : Region} {m m' : Mem} (f : Frame [F] m m') (hd : R.Disjoint F) {i : Nat}
+    (hi : i < R.len) : m' (R.base + BitVec.ofNat 64 i) = m (R.base + BitVec.ofNat 64 i) := by
+  refine f _ fun r hr hc => ?_
+  simp only [List.mem_singleton] at hr; subst hr
+  refine hd _ ?_ hc
+  simp only [Region.Contains]
+  rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat]
+  have := Nat.mod_le i (2 ^ 64)
+  omega_using [hi, this]
 
 end VG.AArch64

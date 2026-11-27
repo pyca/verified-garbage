@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Gather.Loop
-public import VerifiedGarbage.Proof.AesGcm.AArch64.Gather.Callee
 public import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.AesGcm.ScratchGather
 import VerifiedGarbage.Proof.AesGcm.CtxFrame
@@ -14,6 +13,326 @@ import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.AesGcm.Rounds
+public import VerifiedGarbage.Spec.Gcm.OutOfPlace
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Proof.Framework.AArch64.Depth
+public import VerifiedGarbage.Impl.AesGcm.AArch64
+import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Framework.AArch64.Taint
+
+/-! ### `AesGcm.AArch64.Gather.Callee`, which this module and modules that import it used -/
+
+section
+
+/-! ### `AesGcm.AArch64.Gather.Contract`, which only this module used -/
+
+section
+
+/-!
+# AES-GCM one-shot encryption out of place, from a list of slices, AArch64: the contract
+
+Untrusted: everything here is checked by Lean. The contract the proof of
+`vg_aes_gcm_seal_gather` is written against, which the shared one
+(`Proof.AesGcm.sealGatherRoundsContract`, with the 2592 bytes of stack below the stack
+pointer that its frame and its call use) implies (`Gather/Verified.lean`):
+`(ctx = x0, rounds = x1, nonce = x2, nonce_len = x3, aad = x4, aad_len = x5,
+src = x6, src_count = x7, dst = [sp], len = [sp + 8], tag = [sp + 16])`.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.AesGcm.AArch64.Gather
+
+open VG VG.AArch64
+open VG.Spec.Aes (bytesAt)
+open VG.Spec.Gcm (ctxCiph ctxH encryptWith gathered gatheredLen)
+
+/-- The key context the function reads and passes to the call of
+`vg_aes_gcm_seal`: its length, at least the 256 bytes of the AES key schedule
+and the hash subkey, and what it holds beyond them, which depends only on
+its bytes. -/
+structure CtxSpec where
+  len : Nat
+  le : 256 ≤ len
+  inv : Mem → Addr → Prop
+  congr : ∀ {m m' : Mem} {p : Addr}, (∀ i < len, m' (p + BitVec.ofNat 64 i) = m (p + BitVec.ofNat 64 i)) →
+    inv m p → inv m' p
+
+/-- The key context of `vg_aes_gcm_seal`: its 256 bytes. -/
+abbrev CtxSpec.plain : CtxSpec := ⟨256, Nat.le_refl _, fun _ _ => True, fun _ h => h⟩
+
+section
+variable (s : State)
+
+/-- The arguments. -/
+abbrev K : Addr := s.gpr .x0
+abbrev Nn : Addr := s.gpr .x2
+abbrev NL : Nat := (s.gpr .x3).toNat
+abbrev Ad : Addr := s.gpr .x4
+abbrev AL : Nat := (s.gpr .x5).toNat
+abbrev Src : Addr := s.gpr .x6
+abbrev Cnt : Nat := (s.gpr .x7).toNat
+abbrev Dst : Addr := stackArg s 0
+abbrev L : Nat := (stackArg s 1).toNat
+abbrev Tg : Addr := stackArg s 2
+
+/-- The regions: the nonce, the additional data, the
+descriptors, the slices they list, the output, the tag, the stack arguments
+and the stack below the stack pointer. -/
+abbrev nR : Region := ⟨Nn s, NL s⟩
+abbrev aR : Region := ⟨Ad s, AL s⟩
+abbrev dsR : Region := ⟨Src s, Cnt s * 16⟩
+abbrev lsR : List Region := Sig.listed 64 s.mem .u8 (Src s) (Cnt s)
+abbrev dR : Region := ⟨Dst s, L s⟩
+abbrev tgR : Region := ⟨Tg s, 16⟩
+abbrev argR : Region := ⟨stackArgAddr s 0, 24⟩
+abbrev stkR : Region := ⟨s.sp - BitVec.ofNat 64 2592, 2592⟩
+
+/-- The total length of the first `i` slices, and their bytes. -/
+abbrev gl (i : Nat) : Nat := gatheredLen 64 s.mem (Src s) i
+abbrev pt (i : Nat) : List Byte := gathered 64 s.mem (Src s) i
+
+end
+
+/-- The key context. -/
+abbrev kR (C : CtxSpec) (s : State) : Region := ⟨K s, C.len⟩
+
+/-- What the code of `vg_aes_gcm_seal_gather` needs, of the regions. -/
+def gatherPreFor (C : CtxSpec) (s : State) (sourceOK : Region → Prop) : Prop :=
+  s.rd = [kR C s, nR s, aR s, dsR s] ++ lsR s ++ [argR s] ∧ s.wr = [dR s, tgR s] ∧
+    (kR C s).Disjoint (dR s) ∧ (kR C s).Disjoint (tgR s) ∧ (nR s).Disjoint (dR s) ∧
+    (nR s).Disjoint (tgR s) ∧ (aR s).Disjoint (dR s) ∧ (aR s).Disjoint (tgR s) ∧
+    (dsR s).Disjoint (dR s) ∧ (dsR s).Disjoint (tgR s) ∧
+    (∀ r ∈ lsR s, sourceOK r ∧ r.Disjoint (tgR s)) ∧
+    (dR s).Disjoint (tgR s) ∧ (dR s).Disjoint (argR s) ∧ (tgR s).Disjoint (argR s) ∧
+    (stkR s).Disjoint (kR C s) ∧ (stkR s).Disjoint (nR s) ∧ (stkR s).Disjoint (aR s) ∧
+    (stkR s).Disjoint (dsR s) ∧ (∀ r ∈ lsR s, (stkR s).Disjoint r) ∧ (stkR s).Disjoint (argR s) ∧
+    (stkR s).Disjoint (dR s) ∧ (stkR s).Disjoint (tgR s) ∧
+    (K s).toNat + C.len ≤ 2 ^ 64 ∧ (Nn s).toNat + NL s ≤ 2 ^ 64 ∧ (Ad s).toNat + AL s ≤ 2 ^ 64 ∧
+    (Src s).toNat + Cnt s * 16 ≤ 2 ^ 64 ∧ (∀ r ∈ lsR s, r.base.toNat + r.len ≤ 2 ^ 64) ∧
+    (Dst s).toNat + L s ≤ 2 ^ 64 ∧ (Tg s).toNat + 16 ≤ 2 ^ 64 ∧
+    2592 ≤ s.sp.toNat ∧ s.sp.toNat + 24 ≤ 2 ^ 64 ∧
+    ((s.gpr .x1).toNat = 10 ∨ (s.gpr .x1).toNat = 12 ∨ (s.gpr .x1).toNat = 14) ∧ gl s (Cnt s) = L s
+
+/-- The public gather API accepts disjoint descriptors. A contiguous adapter
+may instead give a single descriptor naming its destination. -/
+abbrev gatherPre (C : CtxSpec) (s : State) := gatherPreFor C s (fun r => r.Disjoint (dR s))
+
+abbrev sharedSource (s : State) (r : Region) : Prop :=
+  r.Disjoint (dR s) ∨ (Cnt s = 1 ∧ r.base = Dst s)
+
+/-- What two runs agree on: the arguments and the descriptors. -/
+def gatherPub (s₁ s₂ : State) : Prop :=
+  s₁.gpr .x0 = s₂.gpr .x0 ∧ s₁.gpr .x1 = s₂.gpr .x1 ∧ s₁.gpr .x2 = s₂.gpr .x2 ∧
+    s₁.gpr .x3 = s₂.gpr .x3 ∧ s₁.gpr .x4 = s₂.gpr .x4 ∧ s₁.gpr .x5 = s₂.gpr .x5 ∧
+    s₁.gpr .x6 = s₂.gpr .x6 ∧ s₁.gpr .x7 = s₂.gpr .x7 ∧ s₁.sp = s₂.sp ∧ s₁.dit = s₂.dit ∧
+    stackArg s₁ 0 = stackArg s₂ 0 ∧ stackArg s₁ 1 = stackArg s₂ 1 ∧ stackArg s₁ 2 = stackArg s₂ 2 ∧
+    ∀ i < Cnt s₁ * 16, s₁.mem (Src s₁ + BitVec.ofNat 64 i) = s₂.mem (Src s₁ + BitVec.ofNat 64 i)
+
+/-- What `vg_aes_gcm_seal_gather` leaves: `sealGatherPost`. -/
+def gatherPost (s s' : State) : Prop :=
+  encryptWith (ctxCiph s.mem (K s) (s.gpr .x1).toNat) (ctxH s.mem (K s)) 16 (bytesAt s.mem (Nn s) (NL s))
+      (pt s (Cnt s)) (bytesAt s.mem (Ad s) (AL s)) =
+    (bytesAt s'.mem (Dst s) (L s), bytesAt s'.mem (Tg s) 16)
+
+/-- `vg_aes_gcm_seal_gather`, with the key context `C`. -/
+def gatherAArch64 (C : CtxSpec) : Contract isa where
+  pre s := gatherPre C s ∧ C.inv s.mem (K s)
+  post := gatherPost
+  pub := gatherPub
+
+end VG.Proof.AesGcm.AArch64.Gather
+
+end
+
+end
+
+
+/-!
+# AES-GCM one-shot encryption out of place, from a list of slices, AArch64: the function called
+
+Untrusted: everything here is checked by Lean. `vg_aes_gcm_seal_gather`
+calls an implementation of `vg_aes_gcm_seal` as an artifact (`SealFn`), with
+its working space in a frame of its own, so what the proof needs of it is
+its contract: its precondition from the layout the call gives it
+(`callPre`), its postcondition and its public data. For the shared contract
+(`Proof.AesGcm.sealRoundsContract`, with 2576 bytes of stack, `SealFn.plain`), they are
+`sealSpec_pre`, `sealSpec_post` and `sealSpec_pub`.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.AesGcm.AArch64.Gather
+
+open VG VG.AArch64
+open VG.Spec.Aes (bytesAt)
+open VG.Spec.Gcm (ctxCiph ctxH encryptWith)
+
+/-- What a call of `vg_aes_gcm_seal(ctx = x0, rounds = x1, nonce = x2,
+nonce_len = x3, aad = x4, aad_len = x5, data = x6, len = x7, tag = [sp])`
+needs, with the key context `C`. -/
+def callPre (C : CtxSpec) (s : State) : Prop :=
+  let ctx : Region := ⟨s.gpr .x0, C.len⟩
+  let nonce : Region := ⟨s.gpr .x2, (s.gpr .x3).toNat⟩
+  let aad : Region := ⟨s.gpr .x4, (s.gpr .x5).toNat⟩
+  let data : Region := ⟨s.gpr .x6, (s.gpr .x7).toNat⟩
+  let tag : Region := ⟨stackArg s 0, 16⟩
+  let arg : Region := ⟨stackArgAddr s 0, 8⟩
+  let stk : Region := ⟨s.sp - BitVec.ofNat 64 2576, 2576⟩
+  s.rd = [ctx, nonce, aad, arg] ∧ s.wr = [data, tag] ∧
+    ctx.Disjoint data ∧ ctx.Disjoint tag ∧ nonce.Disjoint data ∧ nonce.Disjoint tag ∧
+    aad.Disjoint data ∧ aad.Disjoint tag ∧ data.Disjoint tag ∧ data.Disjoint arg ∧ tag.Disjoint arg ∧
+    stk.Disjoint ctx ∧ stk.Disjoint nonce ∧ stk.Disjoint aad ∧ stk.Disjoint data ∧ stk.Disjoint tag ∧
+    stk.Disjoint arg ∧
+    (s.gpr .x0).toNat + C.len ≤ 2 ^ 64 ∧ (s.gpr .x2).toNat + (s.gpr .x3).toNat ≤ 2 ^ 64 ∧
+    (s.gpr .x4).toNat + (s.gpr .x5).toNat ≤ 2 ^ 64 ∧ (s.gpr .x6).toNat + (s.gpr .x7).toNat ≤ 2 ^ 64 ∧
+    (stackArg s 0).toNat + 16 ≤ 2 ^ 64 ∧ 2576 ≤ s.sp.toNat ∧ s.sp.toNat + 8 ≤ 2 ^ 64 ∧
+    ((s.gpr .x1).toNat = 10 ∨ (s.gpr .x1).toNat = 12 ∨ (s.gpr .x1).toNat = 14)
+
+/-- An implementation of `vg_aes_gcm_seal` reading the key context `C`, by
+its contract `k`, whose frames use at most the 2576 bytes below the stack
+pointer that the contract reserves: `k` holds of a call as `callPre` lays it
+out with `C.inv` of the context, and gives `seal`'s result. -/
+structure SealFn (C : CtxSpec) where
+  fn : Impl.AesGcm.AArch64.Fn
+  k : Contract isa
+  verified : Verified AArch64.target fn.code k
+  depth : 16 * fn.code.aarch64Depth ≤ 2576
+  pre : ∀ s, callPre C s → C.inv s.mem (s.gpr .x0) → k.pre s
+  post : ∀ s s', k.post s s' → ((s.gpr .x1).toNat = 10 ∨ (s.gpr .x1).toNat = 12 ∨ (s.gpr .x1).toNat = 14) →
+    encryptWith (ctxCiph s.mem (s.gpr .x0) (s.gpr .x1).toNat) (ctxH s.mem (s.gpr .x0)) 16
+        (bytesAt s.mem (s.gpr .x2) (s.gpr .x3).toNat) (bytesAt s.mem (s.gpr .x6) (s.gpr .x7).toNat)
+        (bytesAt s.mem (s.gpr .x4) (s.gpr .x5).toNat) =
+      (bytesAt s'.mem (s.gpr .x6) (s.gpr .x7).toNat, bytesAt s'.mem (stackArg s 0) 16)
+  pub : ∀ s₁ s₂, s₁.gpr .x0 = s₂.gpr .x0 ∧ s₁.gpr .x1 = s₂.gpr .x1 ∧
+    s₁.gpr .x2 = s₂.gpr .x2 ∧ s₁.gpr .x3 = s₂.gpr .x3 ∧ s₁.gpr .x4 = s₂.gpr .x4 ∧
+    s₁.gpr .x5 = s₂.gpr .x5 ∧ s₁.gpr .x6 = s₂.gpr .x6 ∧ s₁.gpr .x7 = s₂.gpr .x7 ∧ s₁.sp = s₂.sp ∧
+    stackArg s₁ 0 = stackArg s₂ 0 ∧ s₁.dit = s₂.dit → k.pub s₁ s₂
+
+theorem stackArgs_one (s : State) : List.map (stackArg s) (List.range 1) = [stackArg s 0] := rfl
+
+theorem sealSpec_pre {s : State} (h : callPre .plain s) : (Proof.AesGcm.sealRoundsContract AArch64.abi 2576).pre s := by
+  sig_split h
+  rename_i a₁ a₂ a₃ a₄ a₅ a₆ a₇ a₈ a₉ a₁₀ a₁₁ a₁₂ a₁₃ a₁₄ a₁₅ a₁₆ a₁₇ a₁₈ a₁₉ a₂₀ a₂₁ a₂₂ a₂₃ a₂₄
+  have a₂₅ := h
+  clear h
+  sig_pre [Proof.AesGcm.sealRoundsContract, Spec.Gcm.sealSig, Spec.Gcm.sealPre, AArch64.abi, AArch64.argRegs,
+    stackArgs_one, List.append_eq, List.range, List.range.loop]
+  sig_reduce [Proof.AesGcm.sealRoundsContract, Spec.Gcm.sealSig, AArch64.abi, AArch64.argRegs, List.getD, List.range, List.range.loop]
+  sig_and_intros
+  all_goals first
+    | with_reducible assumption
+    | trivial
+    | omega
+    | exact Region.Disjoint.symm ‹_›
+
+/-- The 784 bytes below the stack pointer, within the 2576 that `callPre`
+leaves to the call. -/
+theorem stk784_sub (sp : Addr) :
+    Region.Sub ⟨sp - BitVec.ofNat 64 784, 784⟩ ⟨sp - BitVec.ofNat 64 2576, 2576⟩ := by
+  have e : sp - BitVec.ofNat 64 784 = sp - BitVec.ofNat 64 2576 + BitVec.ofNat 64 1792 := by
+    rw [BitVec.sub_eq_add_neg, BitVec.sub_eq_add_neg, BitVec.add_assoc]; congr 1
+  rw [e]; exact Offset.sub_base _ (by decide)
+
+/-- `sealSpec_pre`, for an implementation whose frames use only 784 bytes
+of stack. -/
+theorem sealSpec_pre784 {s : State} (h : callPre .plain s) :
+    (Proof.AesGcm.sealRoundsContract AArch64.abi 784).pre s := by
+  sig_split h
+  rename_i a₁ a₂ a₃ a₄ a₅ a₆ a₇ a₈ a₉ a₁₀ a₁₁ a₁₂ a₁₃ a₁₄ a₁₅ a₁₆ a₁₇ a₁₈ a₁₉ a₂₀ a₂₁ a₂₂ a₂₃ a₂₄
+  have a₂₅ := h
+  clear h
+  have hsub := stk784_sub s.sp
+  sig_pre [Proof.AesGcm.sealRoundsContract, Spec.Gcm.sealSig, Spec.Gcm.sealPre, AArch64.abi, AArch64.argRegs,
+    stackArgs_one, List.append_eq, List.range, List.range.loop]
+  sig_reduce [Proof.AesGcm.sealRoundsContract, Spec.Gcm.sealSig, AArch64.abi, AArch64.argRegs, List.getD, List.range, List.range.loop]
+  sig_and_intros
+  all_goals first
+    | with_reducible assumption
+    | trivial
+    | omega
+    | exact Region.Disjoint.symm ‹_›
+    | exact (Region.Disjoint.sub_left ‹_› hsub)
+    | exact (Region.Disjoint.sub_left ‹_› hsub).symm
+
+theorem sealSpec_post {s s' : State} (h : (Proof.AesGcm.sealRoundsContract AArch64.abi 2576).post s s')
+    (hR : (s.gpr .x1).toNat = 10 ∨ (s.gpr .x1).toNat = 12 ∨ (s.gpr .x1).toNat = 14) :
+    encryptWith (ctxCiph s.mem (s.gpr .x0) (s.gpr .x1).toNat) (ctxH s.mem (s.gpr .x0)) 16
+        (bytesAt s.mem (s.gpr .x2) (s.gpr .x3).toNat) (bytesAt s.mem (s.gpr .x6) (s.gpr .x7).toNat)
+        (bytesAt s.mem (s.gpr .x4) (s.gpr .x5).toNat) =
+      (bytesAt s'.mem (s.gpr .x6) (s.gpr .x7).toNat, bytesAt s'.mem (stackArg s 0) 16) := by
+  sig_post [Proof.AesGcm.sealRoundsContract, Spec.Gcm.sealSig, Proof.AesGcm.sealRoundsPost, AArch64.abi, AArch64.argRegs,
+    stackArgs_one, List.append_eq, List.range, List.range.loop] at h
+  exact h hR
+
+theorem sealSpec_pub {s₁ s₂ : State} (h : s₁.gpr .x0 = s₂.gpr .x0 ∧ s₁.gpr .x1 = s₂.gpr .x1 ∧
+    s₁.gpr .x2 = s₂.gpr .x2 ∧ s₁.gpr .x3 = s₂.gpr .x3 ∧ s₁.gpr .x4 = s₂.gpr .x4 ∧
+    s₁.gpr .x5 = s₂.gpr .x5 ∧ s₁.gpr .x6 = s₂.gpr .x6 ∧ s₁.gpr .x7 = s₂.gpr .x7 ∧ s₁.sp = s₂.sp ∧
+    stackArg s₁ 0 = stackArg s₂ 0 ∧ s₁.dit = s₂.dit) :
+    (Proof.AesGcm.sealRoundsContract AArch64.abi 2576).pub s₁ s₂ := by
+  obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, a₁₀, aMd⟩ := h
+  sig_pub [Proof.AesGcm.sealRoundsContract, Spec.Gcm.sealSig, AArch64.abi, AArch64.argRegs, stackArgs_one, List.append_eq, List.range, List.range.loop]
+  sig_reduce [Proof.AesGcm.sealRoundsContract, Spec.Gcm.sealSig, AArch64.abi, AArch64.argRegs, List.range, List.range.loop]
+  sig_and_intros
+  all_goals first | with_reducible assumption | trivial
+
+/-- An implementation of `vg_aes_gcm_seal`, by its shared contract
+(`Proof.AesGcm.sealRoundsContract`, with 2576 bytes of stack). -/
+def SealFn.plain (fn : Impl.AesGcm.AArch64.Fn)
+    (verified : Verified AArch64.target fn.code (Proof.AesGcm.sealRoundsContract AArch64.abi 2576))
+    (depth : 16 * fn.code.aarch64Depth ≤ 2576) : SealFn .plain where
+  fn := fn
+  k := Proof.AesGcm.sealRoundsContract AArch64.abi 2576
+  verified := verified
+  depth := depth
+  pre _ h _ := sealSpec_pre h
+  post _ _ h hR := sealSpec_post h hR
+  pub _ _ h := sealSpec_pub h
+
+
+theorem sealSpec_post784 {s s' : State} (h : (Proof.AesGcm.sealRoundsContract AArch64.abi 784).post s s')
+    (hR : (s.gpr .x1).toNat = 10 ∨ (s.gpr .x1).toNat = 12 ∨ (s.gpr .x1).toNat = 14) :
+    encryptWith (ctxCiph s.mem (s.gpr .x0) (s.gpr .x1).toNat) (ctxH s.mem (s.gpr .x0)) 16
+        (bytesAt s.mem (s.gpr .x2) (s.gpr .x3).toNat) (bytesAt s.mem (s.gpr .x6) (s.gpr .x7).toNat)
+        (bytesAt s.mem (s.gpr .x4) (s.gpr .x5).toNat) =
+      (bytesAt s'.mem (s.gpr .x6) (s.gpr .x7).toNat, bytesAt s'.mem (stackArg s 0) 16) := by
+  sig_post [Proof.AesGcm.sealRoundsContract, Spec.Gcm.sealSig, Proof.AesGcm.sealRoundsPost, AArch64.abi, AArch64.argRegs,
+    stackArgs_one, List.append_eq, List.range, List.range.loop] at h
+  exact h hR
+
+theorem sealSpec_pub784 {s₁ s₂ : State} (h : s₁.gpr .x0 = s₂.gpr .x0 ∧ s₁.gpr .x1 = s₂.gpr .x1 ∧
+    s₁.gpr .x2 = s₂.gpr .x2 ∧ s₁.gpr .x3 = s₂.gpr .x3 ∧ s₁.gpr .x4 = s₂.gpr .x4 ∧
+    s₁.gpr .x5 = s₂.gpr .x5 ∧ s₁.gpr .x6 = s₂.gpr .x6 ∧ s₁.gpr .x7 = s₂.gpr .x7 ∧ s₁.sp = s₂.sp ∧
+    stackArg s₁ 0 = stackArg s₂ 0 ∧ s₁.dit = s₂.dit) :
+    (Proof.AesGcm.sealRoundsContract AArch64.abi 784).pub s₁ s₂ := by
+  obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, a₁₀, aMd⟩ := h
+  sig_pub [Proof.AesGcm.sealRoundsContract, Spec.Gcm.sealSig, AArch64.abi, AArch64.argRegs, stackArgs_one, List.append_eq, List.range, List.range.loop]
+  sig_reduce [Proof.AesGcm.sealRoundsContract, Spec.Gcm.sealSig, AArch64.abi, AArch64.argRegs, List.range, List.range.loop]
+  sig_and_intros
+  all_goals first | with_reducible assumption | trivial
+
+/-- `SealFn.plain`, for an implementation whose frames use only 784 bytes of
+stack (`sealSpec_pre784`). -/
+def SealFn.plain784 (fn : Impl.AesGcm.AArch64.Fn)
+    (verified : Verified AArch64.target fn.code (Proof.AesGcm.sealRoundsContract AArch64.abi 784))
+    (depth : 16 * fn.code.aarch64Depth ≤ 2576) : SealFn .plain where
+  fn := fn
+  k := Proof.AesGcm.sealRoundsContract AArch64.abi 784
+  verified := verified
+  depth := depth
+  pre _ h _ := sealSpec_pre784 h
+  post _ _ h hR := sealSpec_post784 h hR
+  pub _ _ h := sealSpec_pub784 h
+
+end VG.Proof.AesGcm.AArch64.Gather
+
+end
+
+end
 
 /-!
 # AES-GCM one-shot encryption out of place, from a list of slices, AArch64: the function
@@ -107,8 +426,8 @@ abbrev wrC : List Region := [dR s, tgR s]
 end
 
 /-- What `gatherPre` gives, with the stack below the stack pointer at `Bs s`. -/
-structure Lay (C : CtxSpec) (s : State) : Prop where
-  pre : gatherPre C s
+structure Lay (C : CtxSpec) (s : State) (sourceOK : Region → Prop := fun r => r.Disjoint (dR s)) : Prop where
+  pre : gatherPreFor C s sourceOK
   hB : s.sp = Bs s + BitVec.ofNat 64 2592
   hBn : (Bs s).toNat + 2616 ≤ 2 ^ 64
   bk : (⟨Bs s, 2592⟩ : Region).Disjoint (kR C s)
@@ -124,7 +443,7 @@ structure Lay (C : CtxSpec) (s : State) : Prop where
   hgl : gl s (Cnt s) = L s
   ods : (Src s).toNat + Cnt s * 16 ≤ 2 ^ 64
 
-theorem lay {s : State} (hs : gatherPre C s) : Lay C s := by
+theorem lay {s : State} {sourceOK : Region → Prop} (hs : gatherPreFor C s sourceOK) : Lay C s sourceOK := by
   sig_split hs
   rename_i rd wr kd kt nd nt ad at_ dsd dst lsdt dt darg targ bk bn ba bds bl barg bd bt ok on oa ods ol od ot
     w₁ w₂ hR
@@ -140,6 +459,11 @@ theorem lay {s : State} (hs : gatherPre C s) : Lay C s := by
     ok, on, oa, ods, ol, od, ot, w₁, w₂, hR, hgl⟩, hB, hBn, bk, bn, ba, bds, bl, bd, bt,
     by simp only [argR, stackArgAddr_eq s hB, Nat.mul_zero, Nat.add_zero], w₁, hR, hgl, ods⟩
 
+theorem Lay.shared {s : State} (l : Lay C s) : Lay C s (sharedSource s) := by
+  obtain ⟨rd,wr,kd,kt,nd,nt,ad,atg,dsd,dst,src,rest⟩ := l.pre
+  exact lay ⟨rd,wr,kd,kt,nd,nt,ad,atg,dsd,dst,
+    fun r hr => ⟨Or.inl (src r hr).1,(src r hr).2⟩,rest⟩
+
 /-- Parts of the stack below the stack pointer. -/
 theorem stk_sub (s : State) (d n : Nat) (h' : d + n ≤ 2592) :
     (⟨Bs s + BitVec.ofNat 64 d, n⟩ : Region).Sub ⟨Bs s, 2592⟩ :=
@@ -152,7 +476,8 @@ theorem frame_eMem (s : State) : Frame [FR s] s.mem (eMem s) :=
 
 namespace Lay
 
-variable {s : State} (h : Lay C s)
+section
+variable {s : State} {sourceOK : Region → Prop} (h : Lay C s sourceOK)
 include h
 
 theorem hA (i : Nat) : stackArgAddr s i = Bs s + BitVec.ofNat 64 (2592 + 8 * i) := stackArgAddr_eq s h.hB i
@@ -162,6 +487,11 @@ theorem argIn : argR s ∈ s.rd := by rw [h.pre.1]; simp
 theorem inArg (d : Nat) (h₁ : 2592 ≤ d) (h₂ : d + 8 ≤ 2616) (rs : List Region) :
     InRegions (s.rd ++ rs) (Bs s + BitVec.ofNat 64 d) 8 :=
   ⟨_, List.mem_append_left _ h.argIn, by rw [h.hargR]; exact contains_off _ h₁ (by omega_arith) (by omega_arith)⟩
+
+end
+
+variable {s : State} (h : Lay C s)
+include h
 
 theorem sa (i : Nat) : s.mem.read (Bs s + BitVec.ofNat 64 (2592 + 8 * i)) 8 = stackArg s i := by
   rw [← h.hA]; rfl
@@ -436,13 +766,16 @@ theorem called_wp (F : SealFn C) {s c : State} (h : Lay C s) (hi : C.inv s.mem (
 
 /-- The return address back in `x30`, and the frame freed. -/
 theorem ret_wp {s s' : State} (h : Lay C s) (hc : Called s s') :
-    WP isa (.block [.ldrSp .x30 8]) s' fun z => abiPreserved s (freed 16 z) ∧ gatherPost s (freed 16 z) := by
+    WP isa (.block [.ldrSp .x30 8]) s' fun z => ∀ m u, Frame [⟨s.sp - BitVec.ofNat 64 16, 16⟩] z.mem m →
+      abiPreserved s { freed 16 z with mem := m, unknowns := u } ∧
+        gatherPost s { freed 16 z with mem := m, unknowns := u } := by
   obtain ⟨rd, wr, kd, kt, nd, nt, ad, at_, dsd, dst, lsdt, dt, darg, targ, -, -, -, -, -, -, -, -,
     ok, on, oa, ods, ol, od, ot, w₁, w₂, hR, hgl⟩ := h.pre
   refine WP.mono (ldrSp_ok (t := .x30) (k := 8) s' (by decide) ?_) fun z ⟨x30z, gz, mz, spz, rdz, wrz, vz⟩ => ?_
   · rw [hc.sp, hc.rd, hc.wr, Offset.add_ofNat_add_ofNat]
     exact ⟨_, List.mem_append_right _ (List.mem_cons_self ..), contains_off _ (by decide) (by decide) (by decide)⟩
   rw [hc.sp, Offset.add_ofNat_add_ofNat, hc.ra] at x30z
+  intro m u fl
   refine ⟨⟨fun r hr => ?_, ?_, fun r hr => ?_⟩, ?_⟩
   · -- The callee-saved registers.
     show z.gpr r = s.gpr r
@@ -456,8 +789,21 @@ theorem ret_wp {s s' : State} (h : Lay C s) (hc : Called s s') :
     show (z.v r).extractLsb' 0 64 = (s.v r).extractLsb' 0 64
     rw [vz]; exact hc.v r hr
   · -- The ciphertext and the tag.
-    show encryptWith _ _ 16 _ _ _ = (bytesAt z.mem (Dst s) (L s), bytesAt z.mem (Tg s) 16)
-    rw [mz]
+    show encryptWith _ _ 16 _ _ _ = (bytesAt m (Dst s) (L s), bytesAt m (Tg s) 16)
+    -- The `free` loses the frame's bytes, which lie apart from the data and the tag.
+    have e : s.sp - BitVec.ofNat 64 16 = Bs s + BitVec.ofNat 64 2576 := by
+      rw [h.hB]
+      apply BitVec.eq_of_toNat_eq
+      simp only [BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_ofNat]
+      omega_using []
+    rw [e] at fl
+    have hD : bytesAt m (Dst s) (L s) = bytesAt z.mem (Dst s) (L s) :=
+      List.map_congr_left fun i hi =>
+        lost_byte fl (R := dR s) (h.bd.symm.sub_right (stk_sub s 2576 16 (by decide))) (List.mem_range.mp hi)
+    have hT : bytesAt m (Tg s) 16 = bytesAt z.mem (Tg s) 16 :=
+      List.map_congr_left fun i hi =>
+        lost_byte fl (R := tgR s) (h.bt.symm.sub_right (stk_sub s 2576 16 (by decide))) (List.mem_range.mp hi)
+    rw [hD, hT, mz]
     have hfc : Frame [FR s, dR s] s.mem (gMem s) := frame_gMem' h
     have apart {r : Region} (h₁ : (⟨Bs s, 2592⟩ : Region).Disjoint r) (h₂ : r.Disjoint (dR s)) :
         ∀ r' ∈ [FR s, dR s], r.Disjoint r' := by

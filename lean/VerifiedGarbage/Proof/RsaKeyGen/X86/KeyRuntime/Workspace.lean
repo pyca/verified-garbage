@@ -5,9 +5,6 @@ public import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Base
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyArgContext
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Scalar
 import VerifiedGarbage.Proof.Framework.Omega
-import Mathlib.Logic.Function.Basic
-import Mathlib.Tactic.Set
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Spec.Rsa.Contract
 
 /-! # The three public runtime widths of the key workspace

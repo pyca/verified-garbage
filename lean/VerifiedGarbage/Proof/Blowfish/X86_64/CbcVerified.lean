@@ -6,7 +6,6 @@ import VerifiedGarbage.Proof.Modes.X86_64.CbcEncChained
 public import VerifiedGarbage.Proof.Blowfish.CbcScratch
 import VerifiedGarbage.Proof.Blowfish.X86_64.ModesLit
 import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
-import VerifiedGarbage.Proof.Blowfish.X86_64.ModeCore
 import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
@@ -17,7 +16,6 @@ meta import VerifiedGarbage.Proof.Modes.X86_64.CbcEncChained
 meta import VerifiedGarbage.Proof.Blowfish.CbcScratch
 meta import VerifiedGarbage.Proof.Blowfish.X86_64.ModesLit
 meta import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
-meta import VerifiedGarbage.Proof.Blowfish.X86_64.ModeCore
 meta import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub

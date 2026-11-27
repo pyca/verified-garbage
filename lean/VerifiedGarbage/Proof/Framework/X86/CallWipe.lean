@@ -1221,20 +1221,36 @@ theorem cw_wp {name zname : String} {body zcode : Prog isa} {zst : Nat}
   obtain ⟨w, hrun, -, -, hmw, hgw, heax, hedx⟩ := restoreRet_run (m := slots sig) (g := g) fun d hd =>
     let ⟨r, hr, hc⟩ := hin d (by simp only [List.mem_cons, List.not_mem_nil, or_false] at hd; omega_using [hd, hFs])
     ⟨r, List.mem_append_right _ hr, hc⟩
-  refine WP.block ⟨_, hrun, ?_⟩
-  show abiPreserved s (freed (frameSize (slots sig)) w) ∧
-    (sig.contract abi pre post wa (stack + frameSize (slots sig) + 4) leak).post s (freed (frameSize (slots sig)) w) ∧
-    Spec.Zeroize.bytesAt (freed (frameSize (slots sig)) w).mem ((arg s j).setWidth 64) n = Spec.Zeroize.zeros n
-  refine ⟨⟨fun q hq => ?_, ?_⟩, ?_, by rw [freed_mem, hmw]; exact hz0⟩
+  refine WP.block ⟨_, hrun, fun mm u fl => ?_⟩
+  -- The `free` loses the frame's bytes, which lie apart from the buffers and
+  -- the return address.
+  have hF : below (s.gpr .esp) (frameSize (slots sig)) =
+      ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 (frameSize (slots sig)), frameSize (slots sig)⟩ := by
+    simp only [below]; rw [Taint.sub_setWidth (by omega_using [hsb])]
+  rw [hF] at fl
+  have hfl : ∀ b ∈ Sig.bufs sig.params (stackArgs sig s), ∀ x, b.1.Contains x 1 → mm x = w.mem x :=
+    fun b hb x hx => fl x fun R hR hc => by
+      simp only [List.mem_singleton] at hR; subst hR
+      exact hlow b (bufs_mem hb) _ _ (Nat.le_refl _) (by omega_using []) x hc hx
+  show abiPreserved s { freed (frameSize (slots sig)) w with mem := mm, unknowns := u } ∧
+    (sig.contract abi pre post wa (stack + frameSize (slots sig) + 4) leak).post s
+      { freed (frameSize (slots sig)) w with mem := mm, unknowns := u } ∧
+    Spec.Zeroize.bytesAt mm ((arg s j).setWidth 64) n = Spec.Zeroize.zeros n
+  refine ⟨⟨fun q hq => ?_, ?_⟩, ?_, ?_⟩
   · -- The callee-saved registers.
     by_cases hq' : q = .esp
     · subst hq'
+      show (freed (frameSize (slots sig)) w).gpr .esp = s.gpr .esp
       rw [freed_esp, hgw .esp (by decide) (by decide), hspg, BitVec.sub_add_cancel]
-    · rw [freed_gpr _ _ hq', hgw q (by intro h; subst h; simp [calleeSaved] at hq)
+    · show (freed (frameSize (slots sig)) w).gpr q = s.gpr q
+      rw [freed_gpr _ _ hq', hgw q (by intro h; subst h; simp [calleeSaved] at hq)
         (by intro h; subst h; simp [calleeSaved] at hq)]
       exact (hcsg q hq).resolve_right hq'
   · -- The return address: memory changes only within the writable buffers and below `esp`.
-    rw [freed_mem, hmw]
+    show mm.readW _ 32 = _
+    rw [fl.readW (r := ⟨(s.gpr .esp).setWidth 64, 4⟩) (Region.contains_self _ _) (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact Offset.base_disjoint_below _ (by omega_using [hsb, hE])) (by decide), hmw]
     refine hfs.readW (r := ⟨(s.gpr .esp).setWidth 64, 4⟩) (Region.contains_self _ _) (fun r hr => ?_) (by decide)
     rcases List.mem_append.mp hr with hr | hr
     · obtain ⟨y, hy, -, rfl⟩ := mem_filter_map hr
@@ -1242,13 +1258,22 @@ theorem cw_wp {name zname : String} {body zcode : Prog isa} {zst : Nat}
     · simp only [List.mem_singleton] at hr; subst hr
       exact Offset.base_disjoint_below _ (by omega_using [hsb, hE])
   · -- The postcondition, which reads the memory on return only within the buffers apart from the array.
-    rw [post_stack, freed_gpr _ _ (by decide), freed_gpr _ _ (by decide), heax, hedx, hra, hrd', freed_mem, hmw]
+    rw [post_stack]
+    show Curry.apply _ post (stackArgs sig s) s.mem mm
+      (((freed (frameSize (slots sig)) w).gpr .edx ++ (freed (frameSize (slots sig)) w).gpr .eax).setWidth _)
+    rw [freed_gpr _ _ (by decide), freed_gpr _ _ (by decide), heax, hedx, hra, hrd']
     refine hout c'.mem _ _ (fun b hb x hx hnx => ?_) hc'.2.2.2.2.2
-    refine (hfc x fun R hR hcR => ?_).symm
+    refine ((hfl b hb x hx).trans (hmw ▸ hfc x fun R hR hcR => ?_)).symm
     rcases List.mem_cons.mp hR with rfl | hR
     · exact hnx hcR
     · simp only [List.mem_singleton] at hR; subst hR
       exact hlow b (bufs_mem hb) _ _ (Nat.le_refl _) (Nat.le_refl _) x hcR hx
+  · -- The array, a buffer, is zero.
+    rw [← hz0, ← hmw]
+    simp only [Spec.Zeroize.bytesAt]
+    refine List.map_congr_left fun i hi => ?_
+    exact hfl _ harr _ (Offset.contains_base _ (by omega_using [hn, List.mem_range.mp hi])
+      (by omega_using [hn32, List.mem_range.mp hi]))
 
 end
 

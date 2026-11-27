@@ -6,8 +6,8 @@ public import VerifiedGarbage.Impl.Sha3.AArch64.Stream
 /-!
 # ML-DSA on AArch64: sampling from SHAKE
 
-The sampling functions `vg_mldsa_rej_ntt_poly`, `vg_mldsa_rej_bounded_poly`,
-`vg_mldsa_expand_mask_poly` and `vg_mldsa_sample_in_ball` share a layout and
+The sampling functions `vg_mldsa_rej_ntt_poly`, `vg_mldsa_expand_mask_poly`
+and `vg_mldsa_sample_in_ball` share a layout and
 a prologue, as on x86-64. Each keeps its working space `scratch` (2048
 bytes) in `x25`, its output polynomial in `x26` and its parameter (`eta`,
 `gamma1` or `tau`, zero-extended; 0 for `vg_mldsa_rej_ntt_poly`) in `x27`,

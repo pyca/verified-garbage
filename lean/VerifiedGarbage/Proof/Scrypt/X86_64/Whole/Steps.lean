@@ -97,7 +97,8 @@ def scryptX86_64 : Contract X86_64.isa where
     (Spec.Scrypt.blocks (Spec.Scrypt.bytesAt s₂.mem (s₂.gpr .rdi) (s₂.gpr .rsi).toNat)
         (Spec.Scrypt.bytesAt s₂.mem (s₂.gpr .rdx) (s₂.gpr .rcx).toNat) (s₂.gpr .r8).toNat
         ((stackArg s₂ 0).toNat / (s₂.gpr .r8).toNat)).flatMap
-      (Spec.Scrypt.roMixIndices (s₂.gpr .r8).toNat ((stackArg s₂ 2).toNat / (s₂.gpr .r8).toNat))
+      (Spec.Scrypt.roMixIndices (s₂.gpr .r8).toNat ((stackArg s₂ 2).toNat / (s₂.gpr .r8).toNat)) ∧
+    s₁.mxcsr = s₂.mxcsr
 
 end VG.Proof.Scrypt
 

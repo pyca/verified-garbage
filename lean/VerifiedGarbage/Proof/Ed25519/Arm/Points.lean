@@ -16,12 +16,14 @@ namespace VG.Proof.Ed25519.Arm
 
 open VG VG.Arm VG.Impl.Ed25519.Arm
 
+variable {umaal : Bool}
+
 def fieldDest : FieldOp → Slot
   | .copy o _ | .const o _ | .mul o _ _ | .mulc o _ _ | .add o _ _ | .sub o _ _ => o
 
 theorem evalOp_unchanged (op : FieldOp) (e : Env) (i : Slot) (hi : i ≠ fieldDest op) :
     evalOp op e i = e i := by
-  cases op <;> exact Function.update_of_ne hi _ _
+  cases op <;> exact Fun.update_of_ne hi _ _
 
 theorem evalOps_unchanged (ops : List FieldOp) (e : Env) (i : Slot)
     (hi : ∀ op ∈ ops, i ≠ fieldDest op) : evalOps ops e i = e i := by
@@ -59,19 +61,19 @@ theorem restorePoint_eval (e : Env) :
 theorem copyPointToQ_eval (e : Env) :
     point (evalOps copyPointToQOps e) 4 5 6 7 = point e 0 1 2 3 := rfl
 
-theorem pointDouble_ok {s : State} {base : BitVec 32} (hs : Ctx base s) (hl : AllLim s.mem base)
-    (hd : env s.mem base 16 = Spec.Ed25519.d) :
-    WP isa Point16.doubleCall s fun t =>
-      Keep base s t ∧ AllLim t.mem base ∧ point (env t.mem base) 0 1 2 3 =
-        Spec.Ed25519.pointAdd (point (env s.mem base) 0 1 2 3) (point (env s.mem base) 0 1 2 3) ∧
+theorem pointDouble_ok {s : State} {base : BitVec 32} (hs : Ctx base s) (hl : AllLim s.mem base) :
+    WP isa (Point16.doubleCall umaal) s fun t =>
+      Keep base s t ∧ AllLim t.mem base ∧
+      point (env t.mem base) 0 1 2 3 = dblXYZ (point (env s.mem base) 0 1 2 3) ∧
+      env t.mem base 11 * env t.mem base 14 = (Proof.Ed25519.dblPoint (point (env s.mem base) 0 1 2 3)).T ∧
       ∀ i : Slot, 16 ≤ i.val → env t.mem base i = env s.mem base i := by
   refine WP.mono (doubleCall_ok hs hl) fun t ⟨hk, hlt, hv⟩ => ?_
   rw [hv]
-  exact ⟨hk, hlt, pointDouble_eval _ hd, pointDouble_high _⟩
+  exact ⟨hk, hlt, pointDouble_eval _, pointDouble_t _, pointDouble_high _⟩
 
 theorem pointAdd_ok {s : State} {base : BitVec 32} (hs : Ctx base s) (hl : AllLim s.mem base)
     (hd : env s.mem base 16 = Spec.Ed25519.d) :
-    WP isa Point16.addCall s fun t =>
+    WP isa (Point16.addCall umaal) s fun t =>
       Keep base s t ∧ AllLim t.mem base ∧ point (env t.mem base) 0 1 2 3 =
         Spec.Ed25519.pointAdd (point (env s.mem base) 0 1 2 3) (point (env s.mem base) 4 5 6 7) ∧
       ∀ i : Slot, 16 ≤ i.val → env t.mem base i = env s.mem base i := by

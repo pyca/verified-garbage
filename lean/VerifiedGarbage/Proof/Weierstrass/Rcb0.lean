@@ -8,12 +8,13 @@ import VerifiedGarbage.Proof.Weierstrass.Law3
 /-!
 # Complete formulas for `a = 0`, and the ladder's step with them
 
-Algorithms 8 (an affine point's addition) and 9 (doubling) of Renes,
-Costello and Batina, as `Impl/Weierstrass/Rcb0.lean`'s code computes them
-(`rcbAdd0m`, `rcbDbl0`), over any commutative ring of Lean's core, are
-Algorithm 1 for `a = 0`: Algorithm 8 with `Z₂ = 1` (`rcbAdd0m_eq`), and
-Algorithm 9 for a point and itself on `Y²Z = X³ + bZ³` (`rcbDbl0_eq`). On
-numbered slots (`rcb0mN`, `dbl0N`), as `ofN_ok` takes them, and so are the ladders'
+Algorithms 7 (addition), 8 (an affine point's addition) and 9 (doubling) of
+Renes, Costello and Batina, as `Impl/Weierstrass/Rcb0.lean`'s code computes
+them (`rcbAdd0`, `rcbAdd0m`, `rcbDbl0`), over any commutative ring of Lean's
+core, are Algorithm 1 for `a = 0`: Algorithm 7 as it is (`rcbAdd0_eq`),
+Algorithm 8 with `Z₂ = 1` (`rcbAdd0m_eq`), and Algorithm 9 for a point and
+itself on `Y²Z = X³ + bZ³` (`rcbDbl0_eq`). On numbered slots (`rcb0N`,
+`rcb0mN`, `dbl0N`), as `ofN_ok` takes them, and so are the ladders'
 (`ladOps`).
 
 A ladder's iteration doubles and adds either by Algorithm 1 or, for a curve
@@ -34,6 +35,23 @@ open VG.Impl.Weierstrass Spec.Weierstrass
 section Ring
 
 variable {F : Type _} [Lean.Grind.CommRing F]
+
+/-- Algorithm 7 (`a = 0`), in its stated order, with `3b`. -/
+def rcbAdd0 (b3 X1 Y1 Z1 X2 Y2 Z2 : F) : F × F × F :=
+  let t0 := X1 * X2; let t1 := Y1 * Y2; let t2 := Z1 * Z2; let t3 := X1 + Y1; let t4 := X2 + Y2
+  let t3 := t3 * t4; let t4 := t0 + t1; let t3 := t3 - t4; let t4 := Y1 + Z1; let X3 := Y2 + Z2
+  let t4 := t4 * X3; let X3 := t1 + t2; let t4 := t4 - X3; let X3 := X1 + Z1; let Y3 := X2 + Z2
+  let X3 := X3 * Y3; let Y3 := t0 + t2; let Y3 := X3 - Y3; let X3 := t0 + t0; let t0 := X3 + t0
+  let t2 := b3 * t2; let Z3 := t1 + t2; let t1 := t1 - t2; let Y3 := b3 * Y3; let X3 := t4 * Y3
+  let t2 := t3 * t1; let X3 := t2 - X3; let Y3 := Y3 * t0; let t1 := t1 * Z3; let Y3 := t1 + Y3
+  let t0 := t0 * t3; let Z3 := Z3 * t4; let Z3 := Z3 + t0
+  (X3, Y3, Z3)
+
+/-- Algorithm 7 is Algorithm 1 with `a = 0`. -/
+theorem rcbAdd0_eq (b3 X1 Y1 Z1 X2 Y2 Z2 : F) :
+    rcbAdd0 b3 X1 Y1 Z1 X2 Y2 Z2 = rcbAdd 0 b3 X1 Y1 Z1 X2 Y2 Z2 := by
+  simp only [rcbAdd0, rcbAdd, Prod.mk.injEq]
+  refine ⟨?_, ?_, ?_⟩ <;> grind
 
 /-- Algorithm 8 (`a = 0`, the second point `(X₂ : Y₂ : 1)`), in its stated
 order, with `3b`. -/
@@ -80,10 +98,23 @@ end Ring
 
 /-! ## On numbered slots -/
 
+/-- Algorithm 7 on numbered slots. -/
+def rcb0N : List FOp := rcb0 ⟨9, 10, 0, 1, 2, 3, 4, 5⟩ ⟨11, 12, 13⟩ ⟨14, 15, 16⟩ ⟨6, 7, 8⟩
+
+theorem rcb0N_ok : NumOk rcb0N := ⟨by decide, by decide, by decide⟩
+
+theorem rcb0_eq (S : RcbSlots) (p q o : Pt) : rcb0 S p q o = ofN rcb0N S p q o := rfl
+
+theorem rcb0N_run {F : Type _} [Lean.Grind.CommRing F] (e : Nat → F) :
+    (runOps rcb0N e 6, runOps rcb0N e 7, runOps rcb0N e 8) =
+      rcbAdd0 (e 10) (e 11) (e 12) (e 13) (e 14) (e 15) (e 16) := rfl
+
 /-- Algorithm 8 on numbered slots (`q.z`, slot 16, not read). -/
 def rcb0mN : List FOp := rcb0m ⟨9, 10, 0, 1, 2, 3, 4, 5⟩ ⟨11, 12, 13⟩ ⟨14, 15, 16⟩ ⟨6, 7, 8⟩
 
 theorem rcb0mN_ok : NumOk rcb0mN := ⟨by decide, by decide, by decide⟩
+
+theorem rcb0m_eq (S : RcbSlots) (p q o : Pt) : rcb0m S p q o = ofN rcb0mN S p q o := rfl
 
 theorem rcb0mN_run {F : Type _} [Lean.Grind.CommRing F] (e : Nat → F) :
     (runOps rcb0mN e 6, runOps rcb0mN e 7, runOps rcb0mN e 8) =

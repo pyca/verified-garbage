@@ -80,7 +80,7 @@ theorem ghCall_mk {c st w sp k7 k8 : BitVec 32} (L : Lay c st w sp) {yo : Nat} (
 
 /-- The call itself, from a state whose registers are its arguments, for
 `n` blocks at the 32-bit pointer `P`. -/
-theorem ghCall_ok {c st w sp k7 k8 : BitVec 32} (L : Lay c st w sp) {yo : Nat} (hyo : yo = 0 ∨ yo = 16)
+theorem ghCall_ok [VG.Proof.Gcm.Arm.GhashLaw] {c st w sp k7 k8 : BitVec 32} (L : Lay c st w sp) {yo : Nat} (hyo : yo = 0 ∨ yo = 16)
     {s : State} (he : Env c st w sp k7 k8 s) {P : BitVec 32} {n : Nat}
     (h0 : s.gpr .r0 = c + BitVec.ofNat 32 240) (h1 : s.gpr .r1 = st + BitVec.ofNat 32 yo)
     (h2 : s.gpr .r2 = P) (h3 : s.gpr .r3 = BitVec.ofNat 32 n) (h12 : s.gpr .r12 = w + BitVec.ofNat 32 512)
@@ -120,7 +120,7 @@ theorem ghArgs_ok {c st w sp k7 k8 : BitVec 32} {s : State} (he : Env c st w sp 
     · exact ⟨rfl, rfl, rfl, rfl⟩
 
 /-- `ghash1 yo b o`, for the block at `P = b + o`. -/
-theorem ghash1_ok {c st w sp k7 k8 : BitVec 32} (L : Lay c st w sp) {yo : Nat} (hyo : yo = 0 ∨ yo = 16)
+theorem ghash1_ok [VG.Proof.Gcm.Arm.GhashLaw] {c st w sp k7 k8 : BitVec 32} (L : Lay c st w sp) {yo : Nat} (hyo : yo = 0 ∨ yo = 16)
     {s : State} (he : Env c st w sp k7 k8 s) (b : Reg) (o : Nat) (hb : b = .r10 ∨ b = .r11)
     (ho : encodable (BitVec.ofNat 32 o) = true) {P : BitVec 32}
     (hP : s.gpr b + BitVec.ofNat 32 o = P) (hfit : P.toNat + 16 ≤ 2 ^ 32)

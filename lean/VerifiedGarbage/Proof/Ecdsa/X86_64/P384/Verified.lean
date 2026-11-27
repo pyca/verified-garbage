@@ -2,10 +2,8 @@ module
 
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Lit
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Lit
-
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Main
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Contract
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.MulBase
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.MulFn
 public import VerifiedGarbage.Proof.Ecdsa.Contract
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.LitErase
 import VerifiedGarbage.Proof.P384.Point
@@ -15,15 +13,159 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
 import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.Main
-meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Contract
-meta import VerifiedGarbage.Proof.Ecdsa.X86_64.MulBase
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.MulFn
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.LitErase
 meta import VerifiedGarbage.Proof.P384.Point
 meta import VerifiedGarbage.Proof.P384.Prime
-import VerifiedGarbage.Proof.P384.Order
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 meta import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
 meta import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
+public import VerifiedGarbage.Spec.Ecdsa.P384
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Spec.Ecdsa.P384
+meta import VerifiedGarbage.TCB.X86_64.Target
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Ecdsa.Contract
+public import VerifiedGarbage.Impl.Ecdsa.P384.X86_64
+public import VerifiedGarbage.Proof.Framework.ConstMem
+public import VerifiedGarbage.TCB.Sig
+import VerifiedGarbage.Proof.Weierstrass.TCombWords
+import VerifiedGarbage.Proof.P384.Comb7Shape
+import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Impl.Ecdsa.P384.X86_64
+meta import VerifiedGarbage.Proof.Framework.ConstMem
+meta import VerifiedGarbage.TCB.Sig
+meta import VerifiedGarbage.Proof.Weierstrass.TCombWords
+meta import VerifiedGarbage.Proof.P384.Comb7Shape
+meta import VerifiedGarbage.Proof.Framework.Omega
+
+/-! ### `Ecdsa.X86_64.P384.Tables`, which this module and modules that import it used -/
+
+section
+
+/-!
+# ECDSA over P-384 on x86-64: the comb's tables in a static
+
+What the contracts of the functions that run the comb say of its tables
+(`TblHeld`): held at the address of the static `VG_P384_COMB`, not wrapping
+around, and apart from the writable regions and the return address; their
+length (`p384W_length`, from the tables' shape alone); and a memory holding
+them, for the contracts' witnesses (`satMem`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Ecdsa.X86_64.P384
+
+open VG VG.X86_64
+open VG.Impl.Ecdsa.X86_64 (p384 CombData)
+
+/-- P-384's comb. -/
+abbrev p384d : CombData := ⟨7, Impl.P384.p384Comb7, Impl.P384.p384Comb7Start, "VG_P384_COMB", true, true⟩
+
+/-- The words of P-384's tables. -/
+abbrev p384W : List (BitVec 64) := p384.combWords p384d
+
+theorem p384_combConsts : p384.combConsts = [("VG_P384_COMB", p384W)] := rfl
+
+/-- The comb's tables at the static `VG_P384_COMB`, held, not wrapping around,
+and apart from the regions `wr`. -/
+def TblHeld (s : State) (wr : List Region) : Prop :=
+  (∀ i < p384W.length, s.mem.readW (s.syms "VG_P384_COMB" + BitVec.ofNat 64 (8 * i)) 64 = p384W.getD i 0) ∧
+  (s.syms "VG_P384_COMB").toNat + 8 * p384W.length ≤ 2 ^ 64 ∧
+  ∀ r ∈ wr, Region.Disjoint ⟨s.syms "VG_P384_COMB", 8 * p384W.length⟩ r
+
+theorem p384_tbl_len : Impl.P384.p384Comb7.length = 55 :=
+  Proof.P384.p384Comb7_length
+
+theorem p384_tbl_lenH : ∀ j < 55, (Impl.P384.p384Comb7.getD j []).length = 64 :=
+  Proof.P384.p384Comb7_rows
+
+/-- `p384W` has `55 · 64 · 12` words. -/
+theorem p384W_length : p384W.length = 42240 :=
+  (Proof.Weierstrass.tcombWords_length (n := p384.n) (R := p384.R) (p := p384.C.p)
+    (H := 64) (tbl := Impl.P384.p384Comb7) p384_tbl_len p384_tbl_lenH).trans rfl
+
+theorem constRegions_single (f : String → BitVec 64) (n : String) (w : List (BitVec 64)) :
+    Abi.constRegions f [(n, w)] = [⟨f n, 8 * w.length⟩] := rfl
+
+/-- The tables' region, `8 · 42240` bytes at the static's address. The proofs
+rewrite with this rather than unfold `Abi.constRegions`: the kernel evaluates
+closed arithmetic such as `8 * p384W.length` when it compares two forms of
+it, which would build the tables' 42240 words. -/
+theorem p384_constRegions (f : String → BitVec 64) :
+    Abi.constRegions f [("VG_P384_COMB", p384W)] = [⟨f "VG_P384_COMB", 337920⟩] := by
+  rw [constRegions_single, p384W_length]
+
+/-- The memory of the contracts' witnesses: the tables at `0x100000`
+(irreducible: unfolding it in a definitional check would evaluate the
+tables). -/
+@[irreducible] def satMem : Mem := constMem 0x100000 p384W
+
+theorem satMem_held : ∀ i < p384W.length,
+    satMem.readW (0x100000 + BitVec.ofNat 64 (8 * i)) 64 = p384W.getD i 0 := by
+  unfold satMem
+  exact constMem_held _ _ (by rw [p384W_length]; omega_using [])
+
+end VG.Proof.Ecdsa.X86_64.P384
+
+end
+
+end
+
+/-! ### `Ecdsa.X86_64.P384.Contract`, which this module and modules that import it used -/
+
+section
+
+/-!
+# ECDSA over P-384 on x86-64: the contract the proof is written against
+
+The facts of `Proof.Ecdsa.Instance.signContract Spec.Ecdsa.P384.inst` for x86-64, under the
+calling convention with the comb's tables (`Abi.withConsts p384.combConsts`),
+by name: `vg_ecdsa_p384_sign(out = rdi, d = rsi, digest = rdx, k = rcx,
+scratch = r8)`, the result in `eax`, and the tables at the address of the
+static `VG_P384_COMB`.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Ecdsa.X86_64.P384
+
+open VG VG.X86_64 Spec.Weierstrass Spec.Ecdsa
+open VG.Impl.Ecdsa.X86_64 (p384)
+
+/-- The signature of the arguments, as the specification computes it. -/
+abbrev sig (m : Mem) (d digest k : Addr) : Option (Nat × Nat) :=
+  signWith Spec.P384.curve (ofBytes (bytesAt m d 48)) (hashToInt Spec.P384.curve (bytesAt m digest 48))
+    (ofBytes (bytesAt m k 48))
+
+def signX86_64 : Contract X86_64.isa where
+  pre s :=
+    let out : Region := ⟨s.gpr .rdi, 96⟩
+    let d : Region := ⟨s.gpr .rsi, 48⟩
+    let digest : Region := ⟨s.gpr .rdx, 48⟩
+    let k : Region := ⟨s.gpr .rcx, 48⟩
+    let scratch : Region := ⟨s.gpr .r8, 8192⟩
+    let ret : Region := ⟨s.gpr .rsp, 8⟩
+    s.rd = [d, digest, k, ⟨s.syms "VG_P384_COMB", 8 * p384W.length⟩] ∧ s.wr = [out, scratch] ∧
+      out.Disjoint scratch ∧ out.Disjoint d ∧ out.Disjoint digest ∧ out.Disjoint k ∧
+      d.Disjoint scratch ∧ digest.Disjoint scratch ∧ k.Disjoint scratch ∧
+      ret.Disjoint out ∧ ret.Disjoint scratch ∧
+      (s.gpr .rdi).toNat + 96 ≤ 2 ^ 64 ∧ (s.gpr .r8).toNat + 8192 ≤ 2 ^ 64 ∧ TblHeld s [out, scratch, ret]
+  post s s' :=
+    match sig s.mem (s.gpr .rsi) (s.gpr .rdx) (s.gpr .rcx) with
+    | some rs => (s'.gpr .rax).setWidth 32 = 1 ∧ bytesAt s'.mem (s.gpr .rdi) 96 = encode Spec.P384.curve rs
+    | none => (s'.gpr .rax).setWidth 32 = 0 ∧ bytesAt s'.mem (s.gpr .rdi) 96 = List.replicate 96 0
+  pub s₁ s₂ := s₁.gpr .rsp = s₂.gpr .rsp ∧ s₁.gpr .rdi = s₂.gpr .rdi ∧ s₁.gpr .rsi = s₂.gpr .rsi ∧
+    s₁.gpr .rdx = s₂.gpr .rdx ∧ s₁.gpr .rcx = s₂.gpr .rcx ∧ s₁.gpr .r8 = s₂.gpr .r8 ∧
+    s₁.syms "VG_P384_COMB" = s₂.syms "VG_P384_COMB"
+
+end VG.Proof.Ecdsa.X86_64.P384
+
+end
+
+end
 
 /-!
 # ECDSA over P-384 on x86-64: `Verified`
@@ -83,7 +225,7 @@ theorem p384_ok (hI : InvSounds) : CfgOk p384 where
   sh := by rw [p384_sh]; decide
   comb d h := by cases h; exact ⟨by decide, by decide, by decide⟩
   inv _ := ⟨by decide, @hI _ _ (by
-    show Nat.Prime Spec.P384.curve.p
+    show IsPrime Spec.P384.curve.p
     rw [show Spec.P384.curve.p =
       39402006196394479212279040100143613805079739270465446667948293404245721771496870329047266088258938001861606973112319
       by decide +kernel]

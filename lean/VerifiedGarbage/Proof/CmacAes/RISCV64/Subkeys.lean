@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.CmacAes.RISCV64.Contract
 import VerifiedGarbage.Proof.Cmac.RISCV64.Dbl
 public import VerifiedGarbage.Impl.CmacAes.RISCV64
 public import VerifiedGarbage.Proof.AesCbc.RISCV64.Call
@@ -20,6 +19,105 @@ public import VerifiedGarbage.Impl.AesCbc.RISCV64
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Spec.Cmac
+public import VerifiedGarbage.TCB.RISCV64.Isa
+public import Batteries.Tactic.Init
+public import Batteries.Tactic.PermuteGoals
+public import Batteries.Tactic.SeqFocus
+public import VerifiedGarbage.Proof.Framework.GetElem
+public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.TCB.Artifact
+
+/-! ### `CmacAes.RISCV64.Contract`, which this module and modules that import it used -/
+
+section
+
+/-!
+# AES-CMAC on RISC-V: the contracts the proofs are written against
+
+The artifacts' contracts are the shared ones of `Spec/Cmac/Contract.lean`,
+which imply these (`Verified.lean`). A call (`jal`) stores nothing in memory,
+so no stack is used.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.CmacAes.RISCV64
+
+open VG VG.RISCV64
+
+/-- `CIPH_K` for AES with the key schedule at `w` for `R` rounds, in `m`. -/
+abbrev ciphAt (m : Mem) (w : Addr) (R : Nat) : Spec.Cmac.Cipher :=
+  Spec.Cmac.aesWith R (Spec.Aes.bytesAt m w (16 * (R + 1)))
+
+/-- `vg_cmac_aes_subkeys(schedule = a0, rounds = a1, subkeys = a2, scratch = a3)`. -/
+def subkeysRISCV64 : Contract isa where
+  pre s :=
+    let sched : Region := ⟨s.gpr .a0, 240⟩
+    let subk : Region := ⟨s.gpr .a2, 32⟩
+    let scr : Region := ⟨s.gpr .a3, 2176⟩
+    s.rd = [sched] ∧ s.wr = [subk, scr] ∧
+      sched.Disjoint subk ∧ sched.Disjoint scr ∧ subk.Disjoint scr ∧
+      (s.gpr .a2).toNat + 32 ≤ 2 ^ 64 ∧ (s.gpr .a3).toNat + 2176 ≤ 2 ^ 64 ∧
+      ((s.gpr .a1).toNat = 10 ∨ (s.gpr .a1).toNat = 12 ∨ (s.gpr .a1).toNat = 14)
+  post s s' :=
+    let ks := Spec.Cmac.subkeys (ciphAt s.mem (s.gpr .a0) (s.gpr .a1).toNat) 16
+    Spec.Aes.bytesAt s'.mem (s.gpr .a2) 32 = ks.1 ++ ks.2
+  pub s₁ s₂ :=
+    s₁.gpr .a0 = s₂.gpr .a0 ∧ s₁.gpr .a1 = s₂.gpr .a1 ∧ s₁.gpr .a2 = s₂.gpr .a2 ∧
+      s₁.gpr .a3 = s₂.gpr .a3 ∧ s₁.sp = s₂.sp
+
+/-- `vg_cmac_aes_update(schedule = a0, rounds = a1, state = a2, data = a3, n = a4, scratch = a5)`. -/
+def updateRISCV64 : Contract isa where
+  pre s :=
+    let sched : Region := ⟨s.gpr .a0, 240⟩
+    let state : Region := ⟨s.gpr .a2, 16⟩
+    let data : Region := ⟨s.gpr .a3, 16 * (s.gpr .a4).toNat⟩
+    let scr : Region := ⟨s.gpr .a5, 2176⟩
+    s.rd = [sched, data] ∧ s.wr = [state, scr] ∧
+      sched.Disjoint state ∧ sched.Disjoint scr ∧ data.Disjoint state ∧ data.Disjoint scr ∧
+      state.Disjoint scr ∧
+      (s.gpr .a2).toNat + 16 ≤ 2 ^ 64 ∧ (s.gpr .a3).toNat + 16 * (s.gpr .a4).toNat ≤ 2 ^ 64 ∧
+      (s.gpr .a5).toNat + 2176 ≤ 2 ^ 64 ∧
+      ((s.gpr .a1).toNat = 10 ∨ (s.gpr .a1).toNat = 12 ∨ (s.gpr .a1).toNat = 14)
+  post s s' :=
+    Spec.Aes.bytesAt s'.mem (s.gpr .a2) 16 =
+      Spec.Cmac.chain (ciphAt s.mem (s.gpr .a0) (s.gpr .a1).toNat) (Spec.Aes.bytesAt s.mem (s.gpr .a2) 16)
+        (Spec.Cmac.blocksAt s.mem (s.gpr .a3) 16 (s.gpr .a4).toNat)
+  pub s₁ s₂ :=
+    s₁.gpr .a0 = s₂.gpr .a0 ∧ s₁.gpr .a1 = s₂.gpr .a1 ∧ s₁.gpr .a2 = s₂.gpr .a2 ∧
+      s₁.gpr .a3 = s₂.gpr .a3 ∧ s₁.gpr .a4 = s₂.gpr .a4 ∧ s₁.gpr .a5 = s₂.gpr .a5 ∧ s₁.sp = s₂.sp
+
+/-- `vg_cmac_aes_finalize(key = a0, rounds = a1, state = a2, last = a3, last_len = a4, scratch = a5)`. -/
+def finalizeRISCV64 : Contract isa where
+  pre s :=
+    let key : Region := ⟨s.gpr .a0, 272⟩
+    let state : Region := ⟨s.gpr .a2, 16⟩
+    let last : Region := ⟨s.gpr .a3, (s.gpr .a4).toNat⟩
+    let scr : Region := ⟨s.gpr .a5, 2176⟩
+    s.rd = [key, last] ∧ s.wr = [state, scr] ∧
+      key.Disjoint state ∧ key.Disjoint scr ∧ last.Disjoint state ∧ last.Disjoint scr ∧
+      state.Disjoint scr ∧
+      (s.gpr .a0).toNat + 272 ≤ 2 ^ 64 ∧ (s.gpr .a2).toNat + 16 ≤ 2 ^ 64 ∧
+      (s.gpr .a3).toNat + (s.gpr .a4).toNat ≤ 2 ^ 64 ∧ (s.gpr .a5).toNat + 2176 ≤ 2 ^ 64 ∧
+      ((s.gpr .a1).toNat = 10 ∨ (s.gpr .a1).toNat = 12 ∨ (s.gpr .a1).toNat = 14) ∧
+      (s.gpr .a4).toNat ≤ 16
+  post s s' :=
+    let ciph := ciphAt s.mem (s.gpr .a0) (s.gpr .a1).toNat
+    let ks := Spec.Cmac.subkeys ciph 16
+    Spec.Aes.bytesAt s.mem (s.gpr .a0 + 240) 32 = ks.1 ++ ks.2 →
+    ∀ msg : List Byte, msg.length % 16 = 0 → (msg = [] ∨ 0 < (s.gpr .a4).toNat) →
+      Spec.Aes.bytesAt s.mem (s.gpr .a2) 16 = Spec.Cmac.chain ciph (Spec.Cmac.zeros 16) (Spec.Cmac.blocks 16 msg) →
+      Spec.Aes.bytesAt s'.mem (s.gpr .a2) 16 =
+        Spec.Cmac.macFull ciph 16 (msg ++ Spec.Aes.bytesAt s.mem (s.gpr .a3) (s.gpr .a4).toNat)
+  pub s₁ s₂ :=
+    s₁.gpr .a0 = s₂.gpr .a0 ∧ s₁.gpr .a1 = s₂.gpr .a1 ∧ s₁.gpr .a2 = s₂.gpr .a2 ∧
+      s₁.gpr .a3 = s₂.gpr .a3 ∧ s₁.gpr .a4 = s₂.gpr .a4 ∧ s₁.gpr .a5 = s₂.gpr .a5 ∧ s₁.sp = s₂.sp
+
+end VG.Proof.CmacAes.RISCV64
+
+end
+
+end
 
 /-!
 # AES-CMAC on RISC-V: `vg_cmac_aes_subkeys`
@@ -118,7 +216,7 @@ theorem subkeysPre_wp {s₀ : State} {W K S : Addr} {R : Nat} (hp : SPre s₀ W 
   refine WP.mono (savePtr_ok .a3) fun s₁ e => ?_
   subst e
   rw [hp.a3, show skSaved.map (fun (r, d) => Instr.store .d r .t0 d) = Spill.saveCode .t0 skSaved from rfl]
-  have t₀ : (s₀.write .t0 (svOf S)).gpr .t0 = svOf S := RegUpd.gpr_write_self _ _ _
+  obtain t₀ : (s₀.write .t0 (svOf S)).gpr .t0 = svOf S := RegUpd.gpr_write_self _ _ _
   have g₀ (r : Reg) (hr : r ≠ .t0) : (s₀.write .t0 (svOf S)).gpr r = s₀.gpr r := RegUpd.gpr_write_of_ne _ _ hr
   refine Spill.save_ok (b := .t0) (l := skSaved) (by rw [t₀]; exact align_al _) (by decide)
     (fun p hp' => ?_) ?_
@@ -131,32 +229,32 @@ theorem subkeysPre_wp {s₀ : State} {W K S : Addr} {R : Nat} (hp : SPre s₀ W 
   generalize ht : ({ (s₀.write .t0 (svOf S)) with
     mem := Spill.saveMem (s₀.write .t0 (svOf S)).mem ((s₀.write .t0 (svOf S)).gpr .t0)
       (s₀.write .t0 (svOf S)).gpr skSaved } : State) = t
-  have memt : t.mem = Spill.saveMem s₀.mem (svOf S) (skG s₀ S) skSaved := by
+  obtain memt : t.mem = Spill.saveMem s₀.mem (svOf S) (skG s₀ S) skSaved := by
     rw [← ht]; show Spill.saveMem _ _ _ _ = _; rw [t₀]; rfl
   have gt (r : Reg) (hr : r ≠ .t0) : t.gpr r = s₀.gpr r := by rw [← ht]; exact g₀ r hr
-  have rdt : t.rd = s₀.rd := by rw [← ht]; rfl
-  have wrt : t.wr = s₀.wr := by rw [← ht]; rfl
-  have spt : t.sp = s₀.sp := by rw [← ht]; rfl
+  obtain rdt : t.rd = s₀.rd := by rw [← ht]; rfl
+  obtain wrt : t.wr = s₀.wr := by rw [← ht]; rfl
+  obtain spt : t.sp = s₀.sp := by rw [← ht]; rfl
   simp only [List.cons_append, List.nil_append]
   unfold Impl.AesCbc.RISCV64.mov
   refine wp_mv fun s₂ u₂ => wp_mv fun s₃ u₃ => ?_
-  have k₃ : s₃.gpr .s1 = K := by rw [u₃.other _ (by decide), u₂.gpr, gt _ (by decide), hp.a2]
+  obtain k₃ : s₃.gpr .s1 = K := by rw [u₃.other _ (by decide), u₂.gpr, gt _ (by decide), hp.a2]
   rw [WP.block_append_iff]
   refine WP.mono (Bytes.storeBytes_ok (tmp := .t1) (dst := .s1) (doff := 0) (bs := List.replicate 16 0)
     (by decide) (by decide) (by decide) (fun i hi => ?_)) fun s₄ h₄ => ?_
   · rw [u₃.wr, u₂.wr, wrt, k₃, Nat.zero_add]; exact inK i (by simp at hi; omega_using [hi])
   refine wp_mv fun s₅ u₅ => wp_li (by decide) fun s₆ u₆ => wp_mv fun s₇ u₇ => WP.block_nil ?_
-  have rd₇ : s₇.rd = s₀.rd := by rw [u₇.rd, u₆.rd, u₅.rd, h₄.rd, u₃.rd, u₂.rd, rdt]
-  have wr₇ : s₇.wr = s₀.wr := by rw [u₇.wr, u₆.wr, u₅.wr, h₄.wr, u₃.wr, u₂.wr, wrt]
-  have mem₇ : s₇.mem = s₄.mem := by rw [u₇.mem, u₆.mem, u₅.mem]
-  have k₄ : s₄.gpr .s1 = K := by rw [h₄.gpr _ (by decide), k₃]
-  have s2₄ : s₄.gpr .s2 = S := by
+  obtain rd₇ : s₇.rd = s₀.rd := by rw [u₇.rd, u₆.rd, u₅.rd, h₄.rd, u₃.rd, u₂.rd, rdt]
+  obtain wr₇ : s₇.wr = s₀.wr := by rw [u₇.wr, u₆.wr, u₅.wr, h₄.wr, u₃.wr, u₂.wr, wrt]
+  obtain mem₇ : s₇.mem = s₄.mem := by rw [u₇.mem, u₆.mem, u₅.mem]
+  obtain k₄ : s₄.gpr .s1 = K := by rw [h₄.gpr _ (by decide), k₃]
+  obtain s2₄ : s₄.gpr .s2 = S := by
     rw [h₄.gpr _ (by decide), u₃.gpr, u₂.other _ (by decide), gt _ (by decide), hp.a3]
   -- The memory.
-  have f₃ : Frame [⟨K, 16⟩] s₃.mem s₄.mem := by
+  obtain f₃ : Frame [⟨K, 16⟩] s₃.mem s₄.mem := by
     have := h₄.frame; rwa [k₃, BitVec.add_zero, List.length_replicate] at this
-  have m₃ : s₃.mem = Spill.saveMem s₀.mem (svOf S) (skG s₀ S) skSaved := by rw [u₃.mem, u₂.mem, memt]
-  have slotK : ∀ p ∈ skSaved, ∀ r ∈ [(⟨K, 16⟩ : Region)], Region.Disjoint ⟨svOf S + BitVec.ofNat 64 p.2, 8⟩ r := by
+  obtain m₃ : s₃.mem = Spill.saveMem s₀.mem (svOf S) (skG s₀ S) skSaved := by rw [u₃.mem, u₂.mem, memt]
+  obtain slotK : ∀ p ∈ skSaved, ∀ r ∈ [(⟨K, 16⟩ : Region)], Region.Disjoint ⟨svOf S + BitVec.ofNat 64 p.2, 8⟩ r := by
     intro p hp' r hr
     simp only [List.mem_singleton] at hr; subst hr
     have := sk_bound p hp'
@@ -200,7 +298,7 @@ theorem subkeysPre_wp {s₀ : State} {W K S : Addr} {R : Nat} (hp : SPre s₀ W 
     simp only [bytesAt, List.getElem_map, List.getElem_range, Spec.Cmac.zeros, List.getElem_replicate]
     have := h₄.stored j (by simpa using h₁)
     rw [k₃, Nat.zero_add] at this
-    have hz : ∀ j < 16, (List.replicate 16 (0 : Nat)).getD j 0 = 0 := by decide
+    obtain hz : ∀ j < 16, (List.replicate 16 (0 : Nat)).getD j 0 = 0 := by decide
     rw [this, hz j h₁]; rfl
   · have fa : Frame [⟨K, 16⟩, skSlots S] s₀.mem s₃.mem := by
       rw [m₃]
@@ -216,12 +314,12 @@ theorem cipher_bytes (R : Nat) (w : List Byte) (m : Mem) (p : Addr) :
 theorem subkeys_wp {s₀ : State} (h0 : subkeysRISCV64.pre s₀) :
     WP isa subkeys s₀ fun s' => (∀ r ∈ preserved, s'.gpr r = s₀.gpr r) ∧ s'.gpr .ra = s₀.gpr .ra ∧
       s'.sp = s₀.sp ∧ subkeysRISCV64.post s₀ s' := by
-  have hp := SPre.of h0
+  obtain hp := SPre.of h0
   generalize hW : s₀.gpr .a0 = W at hp
   generalize hK : s₀.gpr .a2 = K at hp
   generalize hS : s₀.gpr .a3 = S at hp
   generalize hR : (s₀.gpr .a1).toNat = R at hp
-  have hRb : 16 * (R + 1) ≤ 240 := by rcases hp.rounds with h | h | h <;> omega_using [h]
+  obtain hRb : 16 * (R + 1) ≤ 240 := by rcases hp.rounds with h | h | h <;> omega_using [h]
   have kw := hp.k_wrap
   have sw := hp.scr_wrap
   have inK (d : Nat) (h : d + 1 ≤ 32) : InRegions s₀.wr (K + BitVec.ofNat 64 d) 1 := by
@@ -232,8 +330,8 @@ theorem subkeys_wp {s₀ : State} (h0 : subkeysRISCV64.pre s₀) :
   refine WP.seq (WP.mono (blk_call (name := "vg_aes_encrypt_blocks") Proof.Aes.RISCV64.encryptBlocks_correct
     encryptBlocks_noFrames h₁.pre) fun s₂ c => ?_)
   have g₂ (r : Reg) (hr : r ∈ preserved) : s₂.gpr r = s₁.gpr r := c.saved r hr
-  have rdwr₂ : s₂.rd ++ s₂.wr = s₀.rd ++ s₀.wr := by rw [c.rd, c.wr, h₁.rd, h₁.wr]
-  have wr₂ : s₂.wr = s₀.wr := by rw [c.wr, h₁.wr]
+  obtain rdwr₂ : s₂.rd ++ s₂.wr = s₀.rd ++ s₀.wr := by rw [c.rd, c.wr, h₁.rd, h₁.wr]
+  obtain wr₂ : s₂.wr = s₀.wr := by rw [c.wr, h₁.wr]
   rw [subkeysPost, List.append_assoc, List.append_assoc]
   refine dbl_wp (K := K) (src := 0) (dst := 0) (by decide) (by decide) dbl_spec16
     (by rw [g₂ _ (by decide), h₁.s1]) (.inl rfl) (by decide)
@@ -245,7 +343,7 @@ theorem subkeys_wp {s₀ : State} (h0 : subkeysRISCV64.pre s₀) :
     (fun j hj => by rw [rd₃, wr₃, rdwr₂, Nat.zero_add]; exact rIn _ (inK j (by omega_using [hj])))
     (fun j hj => by rw [wr₃, wr₂]; exact inK (16 + j) (by omega_using [hj])) fun s₄ g₄ rd₄ wr₄ sp₄ f₄ b₄ => ?_
   -- The registers restored.
-  have s2₄ : s₄.gpr .s2 = S := by
+  obtain s2₄ : s₄.gpr .s2 = S := by
     rw [g₄ _ (by decide) (by decide) (by decide) (by decide), g₃ _ (by decide) (by decide) (by decide) (by decide),
       g₂ _ (by decide), h₁.s2]
   rw [WP.block_append_iff]
@@ -258,12 +356,12 @@ theorem subkeys_wp {s₀ : State} (h0 : subkeysRISCV64.pre s₀) :
   have slotK (p : Reg × Nat) (hp' : p ∈ skSaved) (e : Nat) (he : e ≤ 16) :
       (⟨svOf S + BitVec.ofNat 64 p.2, 8⟩ : Region).Disjoint ⟨K + BitVec.ofNat 64 e, 16⟩ :=
     (hp.k_scr.symm.sub_left (slotS p hp')).sub_right (Offset.sub_base _ (by omega_using [he]))
-  have sv₂ := h₁.saved.frame c.frame fun p hp' r hr => by
+  obtain sv₂ := h₁.saved.frame c.frame fun p hp' r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · have := slotK p hp' 0 (by decide); rwa [BitVec.add_zero] at this
     · exact svOf_ws S (by have := sk_bound p hp'; omega_using [this])
-  have sv₄ : Spill.Saved (svOf S) (skG s₀ S) skSaved s₄.mem :=
+  obtain sv₄ : Spill.Saved (svOf S) (skG s₀ S) skSaved s₄.mem :=
     (sv₂.frame f₃ fun p hp' r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact slotK p hp' 0 (by decide)).frame f₄
       fun p hp' r hr => by simp only [List.mem_singleton] at hr; subst hr; exact slotK p hp' 16 (by decide)
@@ -287,21 +385,21 @@ theorem subkeys_wp {s₀ : State} (h0 : subkeysRISCV64.pre s₀) :
   · rw [r₆.gpr (.ra, 16) (by decide), g₀ .ra (by decide)]
   · rw [r₆.sp, RegUpd.sp_write, sp₄, sp₃, c.sp, h₁.sp]
   · show bytesAt s₆.mem (s₀.gpr .a2) 32 = _
-    have schB : bytesAt s₁.mem W (16 * (R + 1)) = bytesAt s₀.mem W (16 * (R + 1)) := by
+    obtain schB : bytesAt s₁.mem W (16 * (R + 1)) = bytesAt s₀.mem W (16 * (R + 1)) := by
       refine Proof.Cmac.bytesAt_frame h₁.frame (fun r hr => ?_) (by omega_using [hRb])
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact (hp.sch_k.sub_left (Region.sub_prefix hRb)).sub_right (Region.sub_prefix (by decide))
       · exact (hp.sch_scr.sub_left (Region.sub_prefix hRb)).sub_right (svOf_sub S (by decide))
-    have L : bytesAt s₂.mem K 16 = ciphAt s₀.mem W R (Spec.Cmac.zeros 16) := by
+    obtain L : bytesAt s₂.mem K 16 = ciphAt s₀.mem W R (Spec.Cmac.zeros 16) := by
       rw [c.out, cipher_bytes, schB, h₁.zero]
-    have b3 : bytesAt s₃.mem K 16 = Spec.Cmac.dbl 16 (bytesAt s₂.mem K 16) := by
+    obtain b3 : bytesAt s₃.mem K 16 = Spec.Cmac.dbl 16 (bytesAt s₂.mem K 16) := by
       rw [BitVec.add_zero] at b₃; exact b₃
-    have b4lo : bytesAt s₄.mem K 16 = bytesAt s₃.mem K 16 :=
+    obtain b4lo : bytesAt s₄.mem K 16 = bytesAt s₃.mem K 16 :=
       Proof.Cmac.bytesAt_frame16 f₄ fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
         exact (Offset.disjoint_base K (by decide) (by omega_using [])).symm
-    have b4hi : bytesAt s₄.mem (K + BitVec.ofNat 64 16) 16 = Spec.Cmac.dbl 16 (bytesAt s₃.mem K 16) := by
+    obtain b4hi : bytesAt s₄.mem (K + BitVec.ofNat 64 16) 16 = Spec.Cmac.dbl 16 (bytesAt s₃.mem K 16) := by
       rw [BitVec.add_zero] at b₄; exact b₄
     rw [r₆.mem, RegUpd.mem_write, hK, Proof.Cmac.bytesAt_32, b4lo, b4hi, b3, L, hW, hR]
     rfl

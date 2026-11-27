@@ -11,9 +11,9 @@ public import VerifiedGarbage.Proof.RsaKeyGen.CandidateContract
 
 `vg_rsa_prime_search(out = r0, out_len = r1, used = r2, e = r3, e_len, p,
 p_len, rand, rand_len, scratch, scratch_len, state)`: four arguments in
-registers and eight on the stack. The search uses 184 bytes of stack: the
+registers and eight on the stack. The search uses 232 bytes of stack: the
 frame of 40 bytes saving the callee-saved registers, the candidate's frame of
-32 bytes and the candidate's own 112 (`Cand.stack`).
+32 bytes and the candidate's own 160 (`Cand.stack`).
 -/
 
 @[expose] public section
@@ -25,15 +25,15 @@ open VG.Spec.Rsa (bytesAt wordsAt i2osp)
 open VG.Spec.RsaKeyGen (primeSearch primeEntropy primeLimit primeLenValid PrimeSearchResult)
 
 /-- The stack the search uses below the stack pointer. -/
-abbrev stackUse : Nat := 184
+abbrev stackUse : Nat := 232
 
 /-- An implementation of `vg_rsa_keygen_candidate`, as the search calls it:
 its name, its code, the stack it uses and its proof. -/
 structure Cand where
   name : String
   code : Prog isa
-  verified : Verified target code (Proof.RsaKeyGen.candidateContract abi 112)
-  stack : FrameStack.armStack code ≤ 112
+  verified : Verified target code (Proof.RsaKeyGen.candidateContract abi 160)
+  stack : FrameStack.armStack code ≤ 160
 
 /-- The candidate, as the search calls it. -/
 abbrev Cand.call (c : Cand) : Prog isa := .call c.name c.code
@@ -93,7 +93,7 @@ def searchPost (s t : State) : Prop :=
     ∃ requested, wordsAt t.mem (State.addr (stackArg s 7)) 4 = [BitVec.ofNat 64 (searchResult s).remaining,
       BitVec.ofNat 64 (searchLen s), BitVec.ofNat 64 (primeEntropy (searchLen s)),
       BitVec.ofNat 64 requested] ∧
-      (searchResult s).Requests (primeEntropy (searchLen s)) requested
+      Asked (searchLen s) (searchResult s) requested
 
 /-- What timing may depend on: the arguments but the octets of `p` and the
 tape, `e`, the state's public words, and the result's status, consumption,

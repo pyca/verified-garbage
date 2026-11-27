@@ -1,9 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Variant
+public import VerifiedGarbage.Proof.Sha256.PostOut
 public import VerifiedGarbage.Proof.Pbkdf2.Contract
 public import VerifiedGarbage.Proof.Hmac.Contract
-public import VerifiedGarbage.Proof.Sha256.AArch64.OneShot
+public import VerifiedGarbage.Proof.Sha256.AArch64.Shared
 public import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Init
 import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
 import VerifiedGarbage.Proof.Hmac.Generic.Implies
@@ -11,13 +12,11 @@ import VerifiedGarbage.Proof.Framework.TaintBatch
 import VerifiedGarbage.Proof.Framework.KernelRfl
 meta import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Variant
 meta import VerifiedGarbage.Proof.Sha256.AArch64.Shared
-meta import VerifiedGarbage.Proof.Sha256.AArch64.OneShot
 meta import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Init
 meta import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
 meta import VerifiedGarbage.Proof.Hmac.Generic.Implies
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Framework.KernelRfl
-public import VerifiedGarbage.Proof.Sha256.AArch64.Shared
 
 /-!
 # SHA-256 on AArch64, as a Merkle–Damgård hash function
@@ -54,10 +53,11 @@ def hash (v : Compress) : Hash where
   hmacInitN := "vg_hmac_sha256_init_scratch" ++ v.suffix
   hmacFinN := "vg_hmac_sha256_finalize_scratch" ++ v.suffix
   iterN := "vg_pbkdf2_hmac_sha256_iterate" ++ v.suffix
+  hmacInitAnyN := "vg_hmac_sha256_init_any_scratch" ++ v.suffix
 
 /-- `hash` without the functions it calls. -/
 def coreH : Hash := ⟨Impl.Pbkdf2.AArch64.ofMd Impl.Sha256.AArch64.Stream.params, 32, 104, "", .block [], "",
-  .block [], "", .block [], "", .block [], "", "", ""⟩
+  .block [], "", .block [], "", .block [], "", "", "", ""⟩
 
 theorem coreOK : CoreOK coreH := by
   refine {
@@ -197,29 +197,57 @@ theorem satPF :
     Spec.Pbkdf2.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Sig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, Spec.Hmac.sha256S, Spec.Hmac.sha256, AArch64.abi,
     AArch64.argRegs, pbkFrameSat, pbkSat] using pbkFrameSat
 
-/-- The streaming `update` and `finalize` made with `v`, which keep their
-working space in a frame of their own, which
-`Generic/MdHash/AArch64/Stream.lean` emits. -/
-def stream : List StreamFn := [
-  { api := Spec.Sha256.updateApi
-    code := Impl.StackScratch.AArch64.withStackScratch 608 .x4 v.update
-    contract := Spec.Sha256.updateContract AArch64.abi (16 + 608)
-    stack := 16 + 608
-    verified := Proof.Sha256.AArch64.Shared.update_of v.update_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { api := Spec.Sha256.finalizeApi
-    code := Impl.StackScratch.AArch64.withStackScratch 608 .x3 v.finalize
-    contract := Spec.Sha256.finalizeContract AArch64.abi (16 + 608)
-    stack := 16 + 608
-    verified := Proof.Sha256.AArch64.Shared.finalize_of v.finalize_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { api := Spec.Sha256.digest256Api
-    code := Proof.Sha256.AArch64.oneShotWith Impl.Sha256.AArch64.Stream.out256 Spec.Sha256.H0 v.name v.code
-    contract := Spec.Sha256.digestContract AArch64.abi 32 Spec.Sha256.hash Proof.Sha256.AArch64.OneShot.stack
-    stack := Proof.Sha256.AArch64.OneShot.stack
-    verified := (v.oneShot_verified (by decide) Proof.Sha256.AArch64.Stream.shape.toD v.oneShot256).of_implies
-        (Proof.Sha256.AArch64.OneShot.implies (by decide) Proof.Sha256.AArch64.OneShot.hash_take)
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+/-- `Impl.Sha256.AArch64.Stream.Fn.update`, the function as emitted, cleanup included: it meets its
+contract in constant time and returns without secret residue. -/
+theorem update_scrubbed (v : Compress) :
+    VerifiedScrubbed AArch64.target (Impl.Sha256.AArch64.Stream.Fn.update v.name v.code)
+      (Spec.Sha256.updateContract AArch64.abi (16 + 160)) 0 :=
+  AArch64.Scrub.verifiedScrubbedOf
+    (Proof.Sha256.AArch64.Shared.update_of v.update_verified)
+    (AArch64.Scrub.scrubAllOk_regs (sig := Spec.Sha256.updateSig) (by decide) (by decide) (Nat.le_refl _) (Proof.Sha256.updatePost_out _))
+    (by decide) (depth_frame_le (mdUpdate_depth _ _ _ v.updateDepth))
+    (AArch64.Scrub.sideAll_withStackScratch rfl rfl rfl (mdUpdate_side _ _ (by kernel_rfl) v.side)) (Or.inl rfl)
+
+/-- `Impl.Sha256.AArch64.Stream.Fn.finalize`, the function as emitted, cleanup included: it meets its
+contract in constant time and returns without secret residue. -/
+theorem finalize_scrubbed (v : Compress) :
+    VerifiedScrubbed AArch64.target (Impl.Sha256.AArch64.Stream.Fn.finalize v.name v.code)
+      (Spec.Sha256.finalizeContract AArch64.abi (16 + 160)) 0 :=
+  AArch64.Scrub.verifiedScrubbedOf
+    (Proof.Sha256.AArch64.Shared.finalize_of v.finalize_verified)
+    (AArch64.Scrub.scrubAllOk_regs (sig := Spec.Sha256.finalizeSig) (by decide) (by decide) (Nat.le_refl _) (Proof.Sha256.finalizePost_out _))
+    (by decide) (depth_frame_le (mdFinalize_depth _ _ _ v.finalizeDepth))
+    (AArch64.Scrub.sideAll_withStackScratch rfl rfl rfl (mdFinalize_side _ _ (by kernel_rfl) v.side)) (Or.inl rfl)
+
+/-- `Impl.Sha256.AArch64.Stream.Fn.digest256`, the function as emitted, cleanup included: it meets its
+contract in constant time and returns without secret residue. -/
+theorem digest256_scrubbed (v : Compress) :
+    VerifiedScrubbed AArch64.target (Impl.Sha256.AArch64.Stream.Fn.digest256 v.name v.code)
+      (Spec.Sha256.digestContract AArch64.abi 32 Spec.Sha256.hash Proof.Sha256.AArch64.OneShot.stack) 0 :=
+  AArch64.Scrub.verifiedScrubbedOf
+    ((v.oneShot_verified (by decide) Proof.Sha256.AArch64.Stream.shape.toD v.oneShot256).of_implies (Proof.Sha256.AArch64.OneShot.implies (by decide) Proof.Sha256.AArch64.OneShot.hash_take))
+    (AArch64.Scrub.scrubAllOk_regs (sig := (Spec.Sha256.digestSig 32)) (by decide) (by decide) (Nat.le_refl _) (Proof.Sha256.digestPost_out _ _ _ (by decide)))
+    (by decide) (mdDigest_depth _ _ _ _ (by decide) v.noFrames)
+    (mdDigest_side _ _ _ (by kernel_rfl) v.side) (Or.inl rfl)
+
+/-- HMAC's buffers fit in the right-sized working space (`MdHash.initW`, `MdHash.finW`). -/
+theorem fitI (v : Compress) : (hash v).stream.buf ≤ 8 * 28 := by
+  simp only [hash, Hash.stream, Impl.Pbkdf2.Md.AArch64.Stream.buf, Impl.Pbkdf2.AArch64.ofMd,
+    Impl.Sha256.AArch64.Stream.params]
+  decide
+
+theorem fitF (v : Compress) : (hash v).stream.buf + (hash v).stream.F ≤ 8 * 32 := by
+  simp only [hash, Hash.stream, Impl.Pbkdf2.Md.AArch64.Stream.buf, Impl.Pbkdf2.AArch64.ofMd,
+    Impl.Sha256.AArch64.Stream.params]
+  decide
+
+theorem coreSide : CoreSide coreH := ⟨by kernel_rfl, by kernel_rfl, by kernel_rfl, by kernel_rfl⟩
+
+/-- The hash function's code that HMAC and PBKDF2 call writes no PSTATE.DIT
+and calls nothing indirectly: the compression function's (`Compress.side`),
+and the streaming functions' own instructions. -/
+theorem calleeSide (v : Compress) : CalleeSide (hash v) :=
+  ⟨v.side, by kernel_rfl, mdUpdate_side _ _ (by kernel_rfl) v.side, mdFinalize_side _ _ (by kernel_rfl) v.side⟩
 
 /-- Every construction follows the registered compression backend. -/
 def variant : MdHash :=
@@ -236,6 +264,18 @@ def variant : MdHash :=
       unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract
       exact AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
     (by decide) satPF
-    v.suffix v.features (stream v)
+    28 32 ⟨fitI v, by decide, by decide, by decide⟩ ⟨fitF v, by decide, by decide, by decide⟩
+    (by inst_sat [Proof.Hmac.initScratchContract, Spec.Hmac.sha256I, Proof.Hmac.initScratchSig, Spec.Hmac.initPre,
+      Spec.Hmac.initPost, Spec.Hmac.sha256S, Spec.Hmac.sha256, AArch64.abi, AArch64.argRegs] using initSat 96 28)
+    (by
+      unfold Spec.Hmac.Instance.initContract Spec.Hmac.initContract
+      exact AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (Nat.le_of_ble_eq_true rfl))
+    (by inst_sat [Proof.Hmac.finalizeScratchContract, Spec.Hmac.sha256I, Proof.Hmac.finalizeScratchSig,
+      Spec.Hmac.finalizePost, Spec.Hmac.sha256S, Spec.Hmac.sha256, AArch64.abi, AArch64.argRegs] using finSat 96 32 32)
+    (by
+      unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract
+      exact AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
+    (by kernel_rfl) (by kernel_rfl) (by decide) (by decide) (calleeSide v) coreSide
+    v.suffix v.features
 
 end VG.Proof.Pbkdf2.Md.AArch64.Sha256

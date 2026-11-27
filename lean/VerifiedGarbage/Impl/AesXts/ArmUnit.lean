@@ -18,7 +18,8 @@ whole-block functions, `[2176, 2192)` the tweak (`tO`), `[2192, 2208)` a
 second tweak (`zO`), and `[2208, 2236)` our caller's `r4`–`r7` and `r9`,
 our return address `lr`, and `r8`. `r4` holds `schedule`, `r5` `rounds`,
 `r7` `len`, `r8` the scratch buffer and `r9` `data` across the calls; the
-whole-block functions' `mulA` multiplies the tweak at `r6` by `α`.
+whole-block functions' `mulA` (`Impl/AesCbc/Arm/Groups.lean`) multiplies the
+tweak at `r6` by `α`.
 
 * The tweak `T = AES-enc(Key2, i)`: `i` is copied to the tweak, and the
   whole-block encryption with `tweak_schedule` enciphers it as one block
@@ -124,7 +125,7 @@ def argsL (o : Nat) : List Instr :=
 
 /-- The tweak times `α`, at `zO`. -/
 def nextT : List Instr :=
-  [.dp .add .r6 .r8 (.imm (BitVec.ofNat 32 zO))] ++ copy .r0 .r1 .r2 .r3 .r8 zO .r8 tO ++ Impl.AesXts.Arm.mulA
+  [.dp .add .r6 .r8 (.imm (BitVec.ofNat 32 zO))] ++ copy .r0 .r1 .r2 .r3 .r8 zO .r8 tO ++ Impl.AesCbc.Arm.mulA
 
 /-- The tweak, `T = AES-enc(Key2, i)`. -/
 def tweak : Prog isa := .seq (.block pro) encCall

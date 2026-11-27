@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Ed448.Arm.ScalarBase
+public import VerifiedGarbage.Impl.Scrub.Arm
 public import VerifiedGarbage.Impl.Sha3.Arm.Stream
 public import VerifiedGarbage.Spec.Sha3.Contract
 public import VerifiedGarbage.Impl.Ed25519.Arm.Whole.Setup
@@ -87,11 +88,23 @@ def baseArgs : List Instr := setup [(.r0, .caller 0 0), (.r1, .frame HASH), (.r2
 /-- The frame from `HASH` on, cleared. -/
 def wipe : List Instr := zeroWords 6 56
 
-def body : Prog isa :=
+def body (u : Bool) : Prog isa :=
   .seq hash <| .seq prune <|
-  .seq (callWith baseArgs "vg_ed448_scalar_base" Impl.Ed448.Arm.scalarBase) (.block wipe)
+  .seq (callWith baseArgs ("vg_ed448_scalar_base" ++ Impl.X448.Arm.suffix u) (Impl.Ed448.Arm.scalarBase u))
+    (.block wipe)
 
 /-- `vg_ed448_public_key`. -/
-def code : Prog isa := wrap 3 body
+def code (u : Bool) : Prog isa := wrap 3 (body u)
 
 end VG.Impl.Ed448.Arm.PublicKey
+
+namespace VG.Impl.Ed448.Arm.Fn
+
+open VG.Arm VG.Impl.Scrub.Arm
+
+/-- `vg_ed448_public_key`, with either multiplication of the field (`u`), then the 280 bytes
+of stack its contract reserves zeroed and the registers a callee may
+change and the flags set to constants. -/
+def publicKey (u : Bool) : Prog isa := scrubAll 0 280 (PublicKey.code u)
+
+end VG.Impl.Ed448.Arm.Fn

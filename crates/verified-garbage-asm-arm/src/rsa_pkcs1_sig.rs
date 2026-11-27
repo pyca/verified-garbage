@@ -11,6 +11,8 @@ pub const VG_RSA_PKCS1_SIGN_PRECOMPUTED_UMAAL_FEATURES: verified_garbage_cpu::Fe
 ///
 /// Contract: `VG.Spec.RsaPkcs1Sig.signPrecomputedContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, `hash`, the contents of `n` and `e` and the first `2 * ⌈n_len / 8⌉` words of `pre` (the modulus' values), not on `digest`, the private key or the rest of `pre`.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of `out_len` bytes.
@@ -34,7 +36,7 @@ pub const VG_RSA_PKCS1_SIGN_PRECOMPUTED_UMAAL_FEATURES: verified_garbage_cpu::Fe
 /// * `pre_len` must be `2 * ⌈n_len / 8⌉ + max(2, ⌈p_len / 8⌉) + max(2, ⌈q_len / 8⌉)`.
 /// * `pre` must hold what `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1), and not have changed since.
 /// * `out` and `scratch` must not overlap each other, `n`, `e`, `digest`, `p`, `q`, `dp`, `dq`, `qinv`, `pre` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `n`, `e`, `digest`, `p`, `q`, `dp`, `dq`, `qinv`, `scratch` and `pre` may overlap the 4616 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `out`, `n`, `e`, `digest`, `p`, `q`, `dp`, `dq`, `qinv`, `scratch` and `pre` may overlap the 4664 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `umaal` target feature.
 #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
 #[unsafe(naked)]
@@ -1094,6 +1096,51 @@ ldr r10, [sp, #40]
 ldr r11, [sp, #44]
 ldr lr, [sp, #52]
 ldr r12, [sp], #56
+sub sp, sp, #4080
+add r12, sp, #0
+mov r2, #0
+mov r3, #127
+2100:
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+add r12, r12, #32
+subs r3, r3, #1
+bne 2100b
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+sub sp, sp, #584
+add r12, sp, #0
+mov r2, #0
+mov r3, #18
+2101:
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+add r12, r12, #32
+subs r3, r3, #1
+bne 2101b
+str r2, [r12, #0]
+str r2, [r12, #4]
+add sp, sp, #584
+add sp, sp, #4080
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
         vg_rsa_private_checked_precomputed_umaal = sym super::rsa::vg_rsa_private_checked_precomputed_umaal::vg_rsa_private_checked_precomputed_umaal,
     )
@@ -1111,6 +1158,8 @@ pub const VG_RSA_PKCS1_VERIFY_PRECOMPUTED_UMAAL_FEATURES: verified_garbage_cpu::
 ///
 /// Contract: `VG.Spec.RsaPkcs1Sig.verifyPrecomputedContract`.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `n` must be valid for reads of `n_len` bytes.
@@ -1126,7 +1175,7 @@ pub const VG_RSA_PKCS1_VERIFY_PRECOMPUTED_UMAAL_FEATURES: verified_garbage_cpu::
 /// * `pre_len` must be `2 * ⌈n_len / 8⌉`.
 /// * For the result to be signature verification's, `pre` must hold what `vg_rsa_public_precompute` wrote for `n` (returning 1).
 /// * `scratch` must not overlap `n`, `e`, `digest`, `sig`, `pre` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `n`, `e`, `digest`, `sig`, `scratch` and `pre` may overlap the 2192 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `n`, `e`, `digest`, `sig`, `scratch` and `pre` may overlap the 2240 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `umaal` target feature.
 #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
 #[unsafe(naked)]
@@ -2169,6 +2218,28 @@ ldr r10, [sp, #40]
 ldr r11, [sp, #44]
 ldr lr, [sp, #52]
 ldr r12, [sp], #56
+sub sp, sp, #2240
+add r12, sp, #0
+mov r2, #0
+mov r3, #70
+299:
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+add r12, r12, #32
+subs r3, r3, #1
+bne 299b
+add sp, sp, #2240
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
         vg_rsa_public_precomputed_checked_umaal = sym super::rsa::vg_rsa_public_precomputed_checked_umaal::vg_rsa_public_precomputed_checked_umaal,
     )
@@ -2186,6 +2257,8 @@ pub const VG_RSA_PKCS1_RECOVER_PRECOMPUTED_UMAAL_FEATURES: verified_garbage_cpu:
 ///
 /// Contract: `VG.Spec.RsaPkcs1Sig.recoverPrecomputedContract`.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of `out_len` bytes.
@@ -2202,7 +2275,7 @@ pub const VG_RSA_PKCS1_RECOVER_PRECOMPUTED_UMAAL_FEATURES: verified_garbage_cpu:
 /// * `pre_len` must be `2 * ⌈n_len / 8⌉`.
 /// * For the result to be recovery's, `pre` must hold what `vg_rsa_public_precompute` wrote for `n` (returning 1).
 /// * `out` and `scratch` must not overlap each other, `n`, `e`, `sig`, `pre` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `n`, `e`, `sig`, `scratch` and `pre` may overlap the 2192 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `out`, `n`, `e`, `sig`, `scratch` and `pre` may overlap the 2240 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `umaal` target feature.
 #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
 #[unsafe(naked)]
@@ -3285,6 +3358,28 @@ ldr r10, [sp, #40]
 ldr r11, [sp, #44]
 ldr lr, [sp, #52]
 ldr r12, [sp], #56
+sub sp, sp, #2240
+add r12, sp, #0
+mov r2, #0
+mov r3, #70
+2102:
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+add r12, r12, #32
+subs r3, r3, #1
+bne 2102b
+add sp, sp, #2240
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
         vg_rsa_public_precomputed_checked_umaal = sym super::rsa::vg_rsa_public_precomputed_checked_umaal::vg_rsa_public_precomputed_checked_umaal,
     )
@@ -3293,6 +3388,8 @@ bx lr",
 /// `vg_rsa_pkcs1_sign`, given the key's precomputed values `pre`: computes and returns what `vg_rsa_pkcs1_sign` does with the same arguments. `pre` (`pre_len` words) must hold what `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1), as `n`, `p` and `q` must be valid.
 ///
 /// Contract: `VG.Spec.RsaPkcs1Sig.signPrecomputedContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, `hash`, the contents of `n` and `e` and the first `2 * ⌈n_len / 8⌉` words of `pre` (the modulus' values), not on `digest`, the private key or the rest of `pre`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -3317,7 +3414,7 @@ bx lr",
 /// * `pre_len` must be `2 * ⌈n_len / 8⌉ + max(2, ⌈p_len / 8⌉) + max(2, ⌈q_len / 8⌉)`.
 /// * `pre` must hold what `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1), and not have changed since.
 /// * `out` and `scratch` must not overlap each other, `n`, `e`, `digest`, `p`, `q`, `dp`, `dq`, `qinv`, `pre` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `n`, `e`, `digest`, `p`, `q`, `dp`, `dq`, `qinv`, `scratch` and `pre` may overlap the 4616 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `out`, `n`, `e`, `digest`, `p`, `q`, `dp`, `dq`, `qinv`, `scratch` and `pre` may overlap the 4664 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_rsa_pkcs1_sign_precomputed(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, hash: u32, digest: *const u8, digest_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
@@ -4375,6 +4472,51 @@ ldr r10, [sp, #40]
 ldr r11, [sp, #44]
 ldr lr, [sp, #52]
 ldr r12, [sp], #56
+sub sp, sp, #4080
+add r12, sp, #0
+mov r2, #0
+mov r3, #127
+2100:
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+add r12, r12, #32
+subs r3, r3, #1
+bne 2100b
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+sub sp, sp, #584
+add r12, sp, #0
+mov r2, #0
+mov r3, #18
+2101:
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+add r12, r12, #32
+subs r3, r3, #1
+bne 2101b
+str r2, [r12, #0]
+str r2, [r12, #4]
+add sp, sp, #584
+add sp, sp, #4080
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
         vg_rsa_private_checked_precomputed = sym super::rsa::vg_rsa_private_checked_precomputed::vg_rsa_private_checked_precomputed,
     )
@@ -4387,6 +4529,8 @@ bx lr",
 /// This entry point also takes `pre`, the `pre_len` words written by `vg_rsa_public_precompute` for `n` (returning 1). With those values, it returns exactly the result specified above. If `pre` does not hold those values, the result is unspecified; memory safety and the timing guarantee still apply. Timing may additionally depend on the contents of `pre`.
 ///
 /// Contract: `VG.Spec.RsaPkcs1Sig.verifyPrecomputedContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -4403,7 +4547,7 @@ bx lr",
 /// * `pre_len` must be `2 * ⌈n_len / 8⌉`.
 /// * For the result to be signature verification's, `pre` must hold what `vg_rsa_public_precompute` wrote for `n` (returning 1).
 /// * `scratch` must not overlap `n`, `e`, `digest`, `sig`, `pre` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `n`, `e`, `digest`, `sig`, `scratch` and `pre` may overlap the 2192 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `n`, `e`, `digest`, `sig`, `scratch` and `pre` may overlap the 2240 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_rsa_pkcs1_verify_precomputed(n: *const u8, n_len: usize, e: *const u8, e_len: usize, hash: u32, digest: *const u8, digest_len: usize, sig: *const u8, sig_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
@@ -5444,6 +5588,28 @@ ldr r10, [sp, #40]
 ldr r11, [sp, #44]
 ldr lr, [sp, #52]
 ldr r12, [sp], #56
+sub sp, sp, #2240
+add r12, sp, #0
+mov r2, #0
+mov r3, #70
+299:
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+add r12, r12, #32
+subs r3, r3, #1
+bne 299b
+add sp, sp, #2240
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
         vg_rsa_public_precomputed_checked = sym super::rsa::vg_rsa_public_precomputed_checked::vg_rsa_public_precomputed_checked,
     )
@@ -5456,6 +5622,8 @@ bx lr",
 /// This entry point also takes `pre`, the `pre_len` words written by `vg_rsa_public_precompute` for `n` (returning 1). With those values, it writes and returns exactly what is specified above. If `pre` does not hold those values, what it writes and returns is unspecified; memory safety still applies.
 ///
 /// Contract: `VG.Spec.RsaPkcs1Sig.recoverPrecomputedContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -5473,7 +5641,7 @@ bx lr",
 /// * `pre_len` must be `2 * ⌈n_len / 8⌉`.
 /// * For the result to be recovery's, `pre` must hold what `vg_rsa_public_precompute` wrote for `n` (returning 1).
 /// * `out` and `scratch` must not overlap each other, `n`, `e`, `sig`, `pre` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `n`, `e`, `sig`, `scratch` and `pre` may overlap the 2192 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `out`, `n`, `e`, `sig`, `scratch` and `pre` may overlap the 2240 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_rsa_pkcs1_recover_precomputed(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, hash: u32, sig: *const u8, sig_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
@@ -6554,6 +6722,28 @@ ldr r10, [sp, #40]
 ldr r11, [sp, #44]
 ldr lr, [sp, #52]
 ldr r12, [sp], #56
+sub sp, sp, #2240
+add r12, sp, #0
+mov r2, #0
+mov r3, #70
+2102:
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+add r12, r12, #32
+subs r3, r3, #1
+bne 2102b
+add sp, sp, #2240
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
         vg_rsa_public_precomputed_checked = sym super::rsa::vg_rsa_public_precomputed_checked::vg_rsa_public_precomputed_checked,
     )

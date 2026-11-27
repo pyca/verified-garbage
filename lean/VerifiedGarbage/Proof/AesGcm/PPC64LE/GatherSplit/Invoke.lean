@@ -13,9 +13,9 @@ namespace VG.Proof.AesGcm.PPC64LE.GatherSplit
 open VG VG.PPC64LE
 open VG.Proof.AesGcm.PPC64LE.Gather
 
-abbrev SplitOk : Prop := ∀ s,(Proof.Gcm.sealSplitContract PPC64LE.abi 2800).pre s →
+abbrev SplitOk : Prop := ∀ s,(Proof.Gcm.sealSplitContract PPC64LE.abi 1392).pre s →
   ∃ t z,Exec isa Impl.AesGcm.PPC64LE.GatherSplit.sealCode s t z ∧ abiPreserved s z ∧
-    (Proof.Gcm.sealSplitContract PPC64LE.abi 2800).post s z
+    (Proof.Gcm.sealSplitContract PPC64LE.abi 1392).post s z
 
 
 theorem Prepared.covers {s e c : State} (h : Gather.Lay s) (he : Gather.Entered s e)
@@ -69,7 +69,7 @@ theorem called_wp (hv : SplitOk) {s e c : State} (h : Layout s) (he : Gather.Ent
     WP isa (.call "vg_aes_gcm_seal_split" Impl.AesGcm.PPC64LE.GatherSplit.sealCode) c (Gather.Called s) := by
   have hl := prepared_layout h he hc hp
   obtain ⟨hcov,hw⟩ := hp.covers h.base he hc
-  refine WP.callAny (k := Proof.Gcm.sealSplitContract PPC64LE.abi 2800) hv (call_pre hl) hcov hw (fun z hrd hwr hsp hfr hpres hpost => ?_)
+  refine WP.callAny (k := Proof.Gcm.sealSplitContract PPC64LE.abi 1392) hv (call_pre hl) hcov hw (fun z hrd hwr hsp hfr hpres hpost => ?_)
     (by rw [split_sdepth]; decide)
   have out := call_post hpost hl.rounds hl.bound
   have g9 : (callView s e c).gpr .r9=e.mem.readW (Src s) 64 := by
@@ -108,9 +108,9 @@ theorem called_wp (hv : SplitOk) {s e c : State} (h : Layout s) (he : Gather.Ent
     · exact h.base.bd.sub_left (fr_sub s (by decide))
     · exact h.base.bt.sub_left (fr_sub s (by decide))
     · rw [hp.sp,split_sdepth]
-      have ha : slot s 6=(Pf s-BitVec.ofNat 64 2800)+BitVec.ofNat 64 2952 := by
-        rw [show 2952=2800+152 by decide,← Offset.add_ofNat_add_ofNat,BitVec.sub_add_cancel]
-      change Region.Disjoint ⟨slot s 6,8⟩ ⟨Pf s-BitVec.ofNat 64 2800,2800⟩
+      have ha : slot s 6=(Pf s-BitVec.ofNat 64 1392)+BitVec.ofNat 64 1544 := by
+        rw [show 1544=1392+152 by decide,← Offset.add_ofNat_add_ofNat,BitVec.sub_add_cancel]
+      change Region.Disjoint ⟨slot s 6,8⟩ ⟨Pf s-BitVec.ofNat 64 1392,1392⟩
       rw [ha]
       exact Offset.disjoint_base _ (by decide) (by decide)
   exact ⟨hra,(h.base.gMem_encrypt).trans out,fun r hr => (hpres r hr).trans (hp.pres r hr),

@@ -1,22 +1,20 @@
 module
-public import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightCtSetup
-public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightCtHead
 
+public import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightCtSetup
+public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightCtRows
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightCtSetup
 import VerifiedGarbage.Proof.Bignum.AArch64.FastFinishCT
 import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightCT
-import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightCtRows
 import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcCtSpill
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightCtSetup
-meta import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightCtHead
+meta import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightCtRows
 meta import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightCtSetup
 meta import VerifiedGarbage.Proof.Bignum.AArch64.FastFinishCT
 meta import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightCT
-meta import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightCtRows
 meta import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcCtSpill
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.Offset

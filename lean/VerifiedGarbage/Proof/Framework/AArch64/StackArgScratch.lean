@@ -149,6 +149,29 @@ theorem pre_args {s : State} (hA : ArgsOk sig) (hl : Sig.noLists sig.params = tr
   rw [wf_args]
   exact Iff.rfl
 
+/-- What the precondition of a contract says of the stack, the buffers and
+the arguments, whatever lists or tables its parameters describe. -/
+theorem pre_args_imp {s : State} (hA : ArgsOk sig) (hs : (sig.contract abi pre post wa stack leak).pre s) :
+    ((stack = 0 ∨ stack ≤ s.sp.toNat) ∧ s.sp.toNat + 8 * nStack sig ≤ 2 ^ 64) ∧
+      (∀ r ∈ stackBelow s.sp stack, ∀ a ∈ Sig.bufs sig.params (allArgs sig s), r.Disjoint a.1) ∧
+      Curry.apply (sig.words abi.ptrBits) pre (allArgs sig s) s.mem := by
+  simp only [Sig.contract] at hs
+  rw [hA] at hs
+  simp only [argArea_eq] at hs
+  rw [wf_args] at hs
+  obtain ⟨hw, -, -, -, hres, -, hpre⟩ := hs
+  exact ⟨hw, fun r hr a ha => hres r hr a (List.mem_append_left _ (List.mem_append_left _ ha)), hpre⟩
+
+/-- Two runs that agree on a contract's public data have the same stack
+pointer, whatever lists or tables its parameters describe. -/
+theorem pub_args_sp {s₁ s₂ : State} (hA : ArgsOk sig) (hp : (sig.contract abi pre post wa stack leak).pub s₁ s₂) :
+    s₁.sp = s₂.sp := by
+  simp only [Sig.contract] at hp
+  rw [hA] at hp
+  cases leak with
+  | none => exact hp.1.1
+  | some f => exact hp.1.1.1
+
 /-- The postcondition of a contract. -/
 theorem post_args {s s' : State} (hA : ArgsOk sig) :
     (sig.contract abi pre post wa stack leak).post s s' ↔
@@ -161,7 +184,7 @@ theorem post_args {s s' : State} (hA : ArgsOk sig) :
 /-- The public data of a contract, and what it may leak. -/
 theorem pub_args {s₁ s₂ : State} (hA : ArgsOk sig) (hl : Sig.noLists sig.params = true) :
     (sig.contract abi pre post wa stack leak).pub s₁ s₂ ↔
-      (s₁.sp = s₂.sp ∧ leakAgree leak (allArgs sig s₁) s₁.mem (allArgs sig s₂) s₂.mem) ∧
+      ((s₁.sp = s₂.sp ∧ s₁.dit = s₂.dit) ∧ leakAgree leak (allArgs sig s₁) s₁.mem (allArgs sig s₂) s₂.mem) ∧
       ∀ i, (sig.params.flatMap (·.2.pubs)).getD i false = true →
         ((allArgs sig s₁).getD i 0).setWidth (((sig.words abi.ptrBits).map (·.bits abi.ptrBits)).getD i 64) =
           ((allArgs sig s₂).getD i 0).setWidth (((sig.words abi.ptrBits).map (·.bits abi.ptrBits)).getD i 64) := by
@@ -534,6 +557,14 @@ def narrowS (sig : Sig) (e : Elem) (n bytes : Nat) (s : State) : State :=
     (((oldRegions sig e n bytes s).filter (!·.2)).map (·.1))
     (((oldRegions sig e n bytes s).filter (·.2)).map (·.1))
 
+theorem copiedState_dit (bytes : Nat) (w : State) : ∀ m, (copiedState bytes w m).dit = w.dit
+  | 0 => rfl
+  | m + 1 => copiedState_dit bytes w m
+
+/-- `narrowS` keeps PSTATE.DIT. -/
+theorem narrowS_dit (sig : Sig) (e : Elem) (n bytes : Nat) (s : State) : (narrowS sig e n bytes s).dit = s.dit :=
+  copiedState_dit bytes _ (nStack sig)
+
 section
 variable {sig : Sig} {nm : String} {e : Elem} {n : Nat}
   {pre : Curry (sig.words abi.ptrBits) (Mem → Prop)} {post : sig.Post abi.ptrBits} {wa : Bool}
@@ -743,7 +774,7 @@ theorem narrowS_pub (hA : ArgsOk sig) (hk : 8 ≤ (sig.words abi.ptrBits).length
     (Sig.scratchContract abi sig nm e n pre post wa stack leak).pub (narrowS sig e n bytes s₁)
       (narrowS sig e n bytes s₂) := by
   rw [pub_args hA hl] at hp
-  obtain ⟨⟨hsp, hlk⟩, hpa⟩ := hp
+  obtain ⟨⟨⟨hsp, hdit⟩, hlk⟩, hpa⟩ := hp
   obtain ⟨e₁, -, -, a₁, -⟩ := narrowS_facts (nm := nm) hA hk hb h₁ hl
   obtain ⟨e₂, -, -, a₂, -⟩ := narrowS_facts (nm := nm) hA hk hb h₂ hl
   have l₁ := allArgs_length sig s₁
@@ -754,7 +785,7 @@ theorem narrowS_pub (hA : ArgsOk sig) (hk : 8 ≤ (sig.words abi.ptrBits).length
     (leak := leak.map (Curry.withScratch abi.ptrBits nm e n sig.params))
     (argsOk_withScratch nm e n hk hA) (Sig.noLists_withScratch nm e n hl)).mpr ?_
   rw [e₁, e₂, a₁, a₂, hsp]
-  refine ⟨⟨rfl, leakAgree_withScratch hleak _ _ l₁ l₂ (narrowS_agree hA hk hb h₁ hl)
+  refine ⟨⟨⟨rfl, by rw [narrowS_dit, narrowS_dit, hdit]⟩, leakAgree_withScratch hleak _ _ l₁ l₂ (narrowS_agree hA hk hb h₁ hl)
     (narrowS_agree hA hk hb h₂ hl) hlk⟩, fun i hi => ?_⟩
   have lp := Sig.pubs_length sig.params abi.ptrBits
   have hps : ((sig.withScratch nm e n).params.flatMap (·.2.pubs)) =
@@ -778,7 +809,8 @@ theorem narrowS_pub (hA : ArgsOk sig) (hk : 8 ≤ (sig.words abi.ptrBits).length
 
 /-- A run of the code from `narrowS s` is a run of `withStackArgScratch`
 from `s`, after `setArgs`'s accesses, which keeps what the calling convention
-requires, and whose memory and registers are those of the code's run. -/
+requires, and whose memory and registers are those of the code's run but in
+the frame, whose bytes the `free` loses. -/
 theorem withStackArgScratch_run {c : Prog isa} (hA : ArgsOk sig)
     (hk : 8 ≤ (sig.words abi.ptrBits).length) (hb : ArgFits (nStack sig) bytes e n) {s : State}
     (hs : (sig.contract abi pre post wa (stack + bytes) leak).pre s) {t : List Leak} {s₃ : State}
@@ -787,7 +819,8 @@ theorem withStackArgScratch_run {c : Prog isa} (hA : ArgsOk sig)
     Exec isa (withStackArgScratch bytes (nStack sig) c) s
         (setArgsTrace bytes (s.sp - BitVec.ofNat 64 bytes) (nStack sig) ++ t)
         (popState bytes s s₃) ∧
-      abiPreserved s (popState bytes s s₃) ∧ (popState bytes s s₃).mem = s₃.mem ∧
+      abiPreserved s (popState bytes s s₃) ∧
+      Frame [⟨s.sp - BitVec.ofNat 64 bytes, bytes⟩] s₃.mem (popState bytes s s₃).mem ∧
       (popState bytes s s₃).gpr = s₃.gpr := by
   obtain ⟨hrun, -, -, -⟩ := argsState_run hs hA hb hl
   obtain ⟨hrsp, hg, hv, -, -⟩ := narrowS_facts (nm := "") hA hk hb hs hl
@@ -851,7 +884,7 @@ theorem withStackArgScratch_run {c : Prog isa} (hA : ArgsOk sig)
   have hex := Exec.frame hpush (Exec.seq (Exec.block hrun) hw) hpop
   simp only [isa, addrs, List.map_nil, List.nil_append, List.append_nil] at hex
   have hP : ∀ q ∈ preserved, q ≠ .x16 ∧ q ≠ .x17 := by decide
-  refine ⟨hex, ⟨fun q hq => ?_, rfl, fun q hq => ?_⟩, rfl, rfl⟩
+  refine ⟨hex, ⟨fun q hq => ?_, rfl, fun q hq => ?_⟩, lose_frame _ _ _ _, rfl⟩
   · show s₃.gpr q = s.gpr q
     rw [ha.1 q hq]
     exact hg q (hP q hq).1 (hP q hq).2
@@ -864,7 +897,9 @@ elements `e`, is passed on the stack after the eight argument registers and
 for the function without it, which allocates the buffer in a frame of
 `bytes` more bytes of stack (`withStackArgScratch`), if its precondition,
 postcondition and leak read memory only within the function's buffers
-(`hpre`, `hpost`, `hleak`, which holds of no leak). -/
+(`hpre`, `hpost`, `hleak`, which holds of no leak), and its postcondition,
+when the precondition holds, reads the memory on return only within them
+(`hpostOut`): they are apart from the frame, whose bytes the `free` loses. -/
 theorem Verified.stackArgScratch {c : Prog isa}
     (h : Verified target c (Sig.scratchContract abi sig nm e n pre post wa stack leak))
     (hk : 8 ≤ (sig.words abi.ptrBits).length) (hb : ArgFits (nStack sig) bytes e n)
@@ -875,6 +910,11 @@ theorem Verified.stackArgScratch {c : Prog isa}
       (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
       Curry.apply (sig.words abi.ptrBits) post vs m₁ m' r →
         Curry.apply (sig.words abi.ptrBits) post vs m₂ m' r)
+    (hpostOut : ∀ vs mm m₁ m₂ r, vs.length = (sig.words abi.ptrBits).length →
+      Curry.apply (sig.words abi.ptrBits) pre vs mm →
+      (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+      Curry.apply (sig.words abi.ptrBits) post vs mm m₁ r →
+        Curry.apply (sig.words abi.ptrBits) post vs mm m₂ r)
     (hsat : ∃ s, (sig.contract abi pre post wa (stack + bytes)).pre s)
     (hl : Sig.noLists sig.params = true := by decide)
     (hleak : Sig.LeakLocal abi.ptrBits sig leak := by trivial) :
@@ -882,6 +922,20 @@ theorem Verified.stackArgScratch {c : Prog isa}
       (sig.contract abi pre post wa (stack + bytes) leak) := by
   obtain ⟨hcor, hct, -⟩ := h
   have hA : ArgsOk sig := let ⟨_, hs⟩ := hsat; argsOk_of_pre hs
+  have hbo := bufOff_bounds (nStack sig)
+  -- The frame, below the stack the contract without it reserves, so apart
+  -- from the function's buffers.
+  have hfacts : ∀ s, (sig.contract abi pre post wa (stack + bytes) leak).pre s →
+      Curry.apply (sig.words abi.ptrBits) pre (allArgs sig s) s.mem ∧
+      ∀ b ∈ Sig.bufs sig.params (allArgs sig s), b.1.Disjoint ⟨s.sp - BitVec.ofNat 64 bytes, bytes⟩ := by
+    intro s hs
+    rw [pre_args hA hl] at hs
+    obtain ⟨-, -, -, -, hres, -, hpr⟩ := hs
+    have hbelow : below s.sp (stack + bytes) ∈ stackBelow s.sp (stack + bytes) := by
+      rw [stackBelow_pos _ (by omega_using [hbo, hb.1])]; simp
+    refine ⟨hpr, fun b hb' => ?_⟩
+    exact (Region.Disjoint.symm (hres _ hbelow b (List.mem_append_left _ hb'))).sub_right
+      (Offset.sub_below _ (by omega_using []) (by omega_using []))
   -- Every run is `setArgs`, then the code's run from `narrowS`.
   have hrun : ∀ s, (sig.contract abi pre post wa (stack + bytes) leak).pre s → ∃ t s₃,
       Exec isa c (narrowS sig e n bytes s) t s₃ ∧
@@ -889,7 +943,8 @@ theorem Verified.stackArgScratch {c : Prog isa}
       Exec isa (withStackArgScratch bytes (nStack sig) c) s
         (setArgsTrace bytes (s.sp - BitVec.ofNat 64 bytes) (nStack sig) ++ t)
         (popState bytes s s₃) ∧
-      abiPreserved s (popState bytes s s₃) ∧ (popState bytes s s₃).mem = s₃.mem ∧
+      abiPreserved s (popState bytes s s₃) ∧
+      Frame [⟨s.sp - BitVec.ofNat 64 bytes, bytes⟩] s₃.mem (popState bytes s s₃).mem ∧
       (popState bytes s s₃).gpr = s₃.gpr := by
     intro s hs
     obtain ⟨t, s₃, he, ha, hq⟩ := hcor _ (narrowS_pre hA hk hb hpre hs hl)
@@ -905,13 +960,19 @@ theorem Verified.stackArgScratch {c : Prog isa}
       (argsOk_withScratch nm e n hk hA)).mp hq
     obtain ⟨-, -, -, hargs, -⟩ := narrowS_facts (nm := nm) hA hk hb hs hl
     rw [hargs] at hq'
-    rw [hm, hg]
+    rw [hg]
     have hq'' := Eq.mp (congrFun (congrFun (congrFun (Curry.apply_withScratch abi.ptrBits nm e n
       sig.params post _ _ (allArgs_length sig s)) _) s₃.mem) _) hq'
-    exact hpost _ _ _ _ _ (allArgs_length sig s) (narrowS_agree hA hk hb hs hl) hq''
+    have h₄ := hpost _ _ _ _ _ (allArgs_length sig s) (narrowS_agree hA hk hb hs hl) hq''
+    -- The memory on return: after the `free`, which loses only the frame.
+    obtain ⟨hpr, hdisjF⟩ := hfacts s hs
+    refine hpostOut _ _ _ _ _ (allArgs_length sig s) hpr (fun b hb' a ha' => ?_) h₄
+    exact (hm a fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact hdisjF b hb' a ha').symm
   · obtain ⟨u₁, r₁, f₁, -, x₁, -⟩ := hrun s₁ h₁
     obtain ⟨u₂, r₂, f₂, -, x₂, -⟩ := hrun s₂ h₂
-    rw [(Exec.det e₁ x₁).1, (Exec.det e₂ x₂).1, ((pub_args hA hl).mp hp).1.1,
+    rw [(Exec.det e₁ x₁).1, (Exec.det e₂ x₂).1, ((pub_args hA hl).mp hp).1.1.1,
       hct _ _ _ _ _ _ (narrowS_pre hA hk hb hpre h₁ hl) (narrowS_pre hA hk hb hpre h₂ hl)
         (narrowS_pub hA hk hb h₁ h₂ hp hl hleak) f₁ f₂]
 
@@ -948,18 +1009,21 @@ theorem Verified.stackArgScratchWipedPre {c : Prog isa} {words : Nat}
   -- The buffer, in the frame, apart from the function's buffers.
   have hfacts : ∀ s, (sig.contract abi pre post wa (stack + bytes) leak).pre s →
       stack + bytes ≤ s.sp.toNat ∧ Curry.apply (sig.words abi.ptrBits) pre (allArgs sig s) s.mem ∧
-      ∀ b ∈ Sig.bufs sig.params (allArgs sig s),
-        b.1.Disjoint ⟨s.sp - BitVec.ofNat 64 bytes + BitVec.ofNat 64 (bufOff (nStack sig)), n * e.size⟩ := by
+      (∀ b ∈ Sig.bufs sig.params (allArgs sig s),
+        b.1.Disjoint ⟨s.sp - BitVec.ofNat 64 bytes + BitVec.ofNat 64 (bufOff (nStack sig)), n * e.size⟩) ∧
+      ∀ b ∈ Sig.bufs sig.params (allArgs sig s), b.1.Disjoint ⟨s.sp - BitVec.ofNat 64 bytes, bytes⟩ := by
     intro s hs
     rw [pre_args hA hl] at hs
     obtain ⟨⟨hst, -⟩, -, -, -, hres, -, hpr⟩ := hs
     have hsb : stack + bytes ≤ s.sp.toNat := by rcases hst with h | h <;> omega_using [h, hb.1, hbo]
     have hbelow : below s.sp (stack + bytes) ∈ stackBelow s.sp (stack + bytes) := by
       rw [stackBelow_pos _ (by omega_using [hbo, hb.1])]; simp
-    refine ⟨hsb, hpr, fun b hb' => ?_⟩
-    rw [sub_add_ofNat _ (by omega_using [hb.1, hbo])]
-    exact (Region.Disjoint.symm (hres _ hbelow b (List.mem_append_left _ hb'))).sub_right
-      (Offset.sub_below _ (by omega_using []) (by omega_using [hb.1]))
+    refine ⟨hsb, hpr, fun b hb' => ?_, fun b hb' => ?_⟩
+    · rw [sub_add_ofNat _ (by omega_using [hb.1, hbo])]
+      exact (Region.Disjoint.symm (hres _ hbelow b (List.mem_append_left _ hb'))).sub_right
+        (Offset.sub_below _ (by omega_using []) (by omega_using [hb.1]))
+    · exact (Region.Disjoint.symm (hres _ hbelow b (List.mem_append_left _ hb'))).sub_right
+        (Offset.sub_below _ (by omega_using []) (by omega_using []))
   -- Every run is `setArgs`, the code's run from `narrowS`, then the wipe.
   have hrun : ∀ s, (sig.contract abi pre post wa (stack + bytes) leak).pre s → ∃ t s₃ s₄,
       Exec isa c (narrowS sig e n bytes s) t s₃ ∧
@@ -971,10 +1035,11 @@ theorem Verified.stackArgScratchWipedPre {c : Prog isa} {words : Nat}
         (setArgsTrace bytes (s.sp - BitVec.ofNat 64 bytes) (nStack sig) ++
           (t ++ wipeTraceAt s₃.sp (bufOff (nStack sig)) words))
         (popState bytes s s₄) ∧
-      abiPreserved s (popState bytes s s₄) ∧ (popState bytes s s₄).mem = s₄.mem ∧
+      abiPreserved s (popState bytes s s₄) ∧
+      Frame [⟨s.sp - BitVec.ofNat 64 bytes, bytes⟩] s₄.mem (popState bytes s s₄).mem ∧
       (popState bytes s s₄).gpr .x0 = s₃.gpr .x0 := by
     intro s hs
-    obtain ⟨hsb, -, -⟩ := hfacts s hs
+    obtain ⟨hsb, -, -, -⟩ := hfacts s hs
     obtain ⟨t, s₃, he, ha, hq⟩ := hcor _ (narrowS_pre hA hk hb hpre hs hl)
     obtain ⟨hrsp, -, -, -, -⟩ := narrowS_facts (nm := nm) hA hk hb hs hl
     have hsp₃ : s₃.sp = s.sp - BitVec.ofNat 64 bytes := ha.2.1.trans hrsp
@@ -999,7 +1064,7 @@ theorem Verified.stackArgScratchWipedPre {c : Prog isa} {words : Nat}
     rw [hgp]; exact hg .x0 (by decide) (by decide)
   refine ⟨fun s hs => ?_, fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp e₁ e₂ => ?_, hsat⟩
   · obtain ⟨t, s₃, s₄, -, hq, hfr, -, hex, ha, hm, hx0⟩ := hrun s hs
-    obtain ⟨-, hpr, hdisj⟩ := hfacts s hs
+    obtain ⟨-, hpr, hdisj, hdisjF⟩ := hfacts s hs
     refine ⟨_, _, hex, ha, ?_⟩
     rw [post_args hA]
     have hq' := (post_args (sig := sig.withScratch nm e n)
@@ -1009,17 +1074,21 @@ theorem Verified.stackArgScratchWipedPre {c : Prog isa} {words : Nat}
       (argsOk_withScratch nm e n hk hA)).mp hq
     obtain ⟨-, -, -, hargs, -⟩ := narrowS_facts (nm := nm) hA hk hb hs hl
     rw [hargs] at hq'
-    rw [hm, hx0]
+    rw [hx0]
     have hq'' := Eq.mp (congrFun (congrFun (congrFun (Curry.apply_withScratch abi.ptrBits nm e n
       sig.params post _ _ (allArgs_length sig s)) _) s₃.mem) _) hq'
     have h₄ := hpost _ _ _ _ _ (allArgs_length sig s) (narrowS_agree hA hk hb hs hl) hq''
+    -- The memory on return: after the wipe, which writes only the buffer,
+    -- and the `free`, which loses only the frame.
     refine hpostOut _ _ _ _ _ (allArgs_length sig s) hpr (fun b hb' a ha' => ?_) h₄
-    exact (hfr a fun r hr => by
+    exact ((hm a fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact hdisj b hb' a ha').symm
+      exact hdisjF b hb' a ha').trans (hfr a fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact hdisj b hb' a ha')).symm
   · obtain ⟨u₁, _, _, f₁, _, _, p₁, x₁, _⟩ := hrun s₁ h₁
     obtain ⟨u₂, _, _, f₂, _, _, p₂, x₂, _⟩ := hrun s₂ h₂
-    have hsp₁₂ : s₁.sp = s₂.sp := ((pub_args hA hl).mp hp).1.1
+    have hsp₁₂ : s₁.sp = s₂.sp := ((pub_args hA hl).mp hp).1.1.1
     rw [(Exec.det e₁ x₁).1, (Exec.det e₂ x₂).1, p₁, p₂, hsp₁₂,
       hct _ _ _ _ _ _ (narrowS_pre hA hk hb hpre h₁ hl) (narrowS_pre hA hk hb hpre h₂ hl)
         (narrowS_pub hA hk hb h₁ h₂ hp hl hleak) f₁ f₂]

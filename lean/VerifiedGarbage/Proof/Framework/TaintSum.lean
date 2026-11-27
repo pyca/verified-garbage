@@ -305,11 +305,11 @@ theorem checkBlock_frame [hm : Frame A] {is : List M.Instr} {F Φ τ σ τ' : A.
     subst h; exact ⟨σ, rfl, hle, hΦ⟩
   | cons i is ih =>
     simp only [List.all_cons, Bool.and_eq_true] at hk
-    simp only [checkBlock, Option.bind_eq_some_iff] at h
+    rw [checkBlock_cons, Option.bind_eq_some_iff] at h
     obtain ⟨τ₁, hs, hr⟩ := h
     obtain ⟨σ₁, hs', hle'⟩ := hm.step i hle hs
     obtain ⟨σ', h', hle'', hΦ'⟩ := ih hr hk.2 hle' (hm.step_keeps i hk.1 hΦF hΦ hs')
-    exact ⟨σ', by simp only [checkBlock, Option.bind_eq_some_iff]; exact ⟨σ₁, hs', h'⟩, hle'', hΦ'⟩
+    exact ⟨σ', by rw [checkBlock_cons, Option.bind_eq_some_iff]; exact ⟨σ₁, hs', h'⟩, hle'', hΦ'⟩
 
 theorem checkChunks_frame [hm : Frame A] {chunkSize : Nat} {ms : List A.T} {is : List M.Instr} {F Φ τ σ τ' : A.T}
     (h : A.checkChunks chunkSize τ is ms = some τ') (hk : is.all (Frame.keeps (A := A) F) = true)
@@ -656,7 +656,7 @@ guess only fails it. -/
 def hintSumA [Frame A] (S : List (Summary M A.T)) (same : Prog M → Prog M → Bool) :
     List A.T → A.T → Prog M → Option (A.T × SHint A.T)
   | _, τ, .block is => sumOr (findSumCode A same (.block is) τ S 0) fun _ =>
-    (A.checkBlock τ is).map fun τ' => (τ', .block (chunkHints A chunk τ is is.length))
+    (blockHint A chunk τ is is.length).map fun (τ', ms) => (τ', .block ms)
   | anc, τ, .seq c₁ c₂ => sumOr (findSumCode A same (.seq c₁ c₂) τ S 0) fun _ =>
     (hintSumA S same anc τ c₁).bind fun (τ₁, h₁) =>
       let anc' := τ :: anc
@@ -788,7 +788,7 @@ has one; otherwise none. -/
 meta def sameFn (M : Expr) : MetaM Expr := do
   try
     let inst ← synthInstance (mkApp (mkConst ``Taint.CodeEq) M)
-    return mkApp2 (mkConst ``Taint.CodeEq.same) M inst
+    return mkApp2 (mkConst ``Taint.CodeEq.same) (← Taint.compiled M) inst
   catch _ =>
     let P := mkApp (mkConst ``Prog) M
     return .lam `a P (.lam `b P (mkConst ``Bool.false) .default) .default
@@ -849,9 +849,9 @@ meta def hintChecked (who : String) (names : Array Name) (M A fr S τ c : Expr) 
   let T' ← whnfD (mkApp2 (mkConst ``Taint.T) M A)
   let repTy ← mkAppM ``List #[← mkAppM ``Prod #[mkConst ``String, mkConst ``Nat]]
   let instT ← synthInstance (mkApp (mkConst ``ToExpr [0]) T')
-  let e := mkAppN (mkConst ``Taint.hintReportExpr) #[M, A, fr, instT, S, ← sameFn M, ← bodyFn M, τ, c]
+  let e := mkAppN (mkConst ``Taint.hintReportExpr) #[← Taint.compiled M, A, fr, instT, S, ← sameFn M, ← bodyFn M, τ, c]
   let ty ← mkAppM ``Prod #[mkConst ``Expr, repTy]
-  let (ph, missed) ← unsafe evalExpr (Expr × List (String × Nat)) ty e
+  let (ph, missed) ← unsafe VG.Lit.evalOnce (Expr × List (String × Nat)) ty e
   unless ph.isAppOfArity ``Prod.mk 4 do throwError "{who}: unexpected {ph}"
   checkUsed who names (ph.getArg! 3) missed
   return (ph.getArg! 2, ph.getArg! 3)

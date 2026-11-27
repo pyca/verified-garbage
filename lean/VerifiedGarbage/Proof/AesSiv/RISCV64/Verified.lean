@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.AesSiv.Rounds
+public import VerifiedGarbage.Proof.AesSiv.Scratch
 import VerifiedGarbage.Proof.AesSiv.RISCV64.Dec
 import VerifiedGarbage.Proof.AesSiv.RISCV64.TopCT
 public import VerifiedGarbage.Proof.AesSiv.RISCV64.MacCT
@@ -9,16 +9,19 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.Framework.RISCV64.StackScratch
 public import VerifiedGarbage.Impl.StackScratch.RISCV64
-public import VerifiedGarbage.Proof.AesSiv.Scratch
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.TCB.RISCV64.Target
 import VerifiedGarbage.Proof.Cmac.Spec
 import VerifiedGarbage.Proof.Siv.Spec
 public import VerifiedGarbage.Impl.AesSiv.RISCV64
-public import VerifiedGarbage.Proof.AesSiv.RISCV64.Entry
-public import VerifiedGarbage.Proof.AesSiv.RISCV64.S2v
+public import VerifiedGarbage.Proof.AesSiv.RISCV64.Enc
+public import VerifiedGarbage.Proof.AesSiv.RISCV64.Short
 public import VerifiedGarbage.Proof.Framework.Covers
 public import VerifiedGarbage.TCB.Artifact
+public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
+public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Impl.AesSiv.RISCV64.Fn
+import VerifiedGarbage.Proof.Aes.RISCV64.CodeLit
 
 /-!
 # AES-SIV on RISC-V: `Verified`
@@ -259,7 +262,9 @@ theorem encrypt_framed : Verified RISCV64.target (Impl.StackScratch.RISCV64.with
     Impl.AesSiv.RISCV64.encrypt) (Proof.AesSiv.encryptRoundsContract RISCV64.abi 2576) :=
   RISCV64.Verified.stackScratchLists (sig := Spec.Siv.encryptSig) (nm := "work") (e := .u64) (n := 322)
     (pre := Spec.Siv.encryptPre RISCV64.abi.ptrBits) (post := Proof.AesSiv.encryptRoundsPost RISCV64.abi.ptrBits)
-    (wa := true) (stack := 0) (bytes := 2576) encrypt_verified (by decide) (by decide) encFrameSat_pre
+    (wa := true) (stack := 0) (bytes := 2576) encrypt_verified (by decide) (by decide)
+    (fun vs m m₁ m₂ r hl _ => Proof.AesSiv.encryptPostOut_local _ vs m m₁ m₂ r hl)
+    encFrameSat_pre
 
 /-- `decrypt` with its working space in a frame of 2576 bytes. -/
 theorem decrypt_framed : Verified RISCV64.target (Impl.StackScratch.RISCV64.withStackScratch 2576 .a7
@@ -267,6 +272,94 @@ theorem decrypt_framed : Verified RISCV64.target (Impl.StackScratch.RISCV64.with
   RISCV64.Verified.stackScratchLists (sig := Spec.Siv.decryptSig) (nm := "work") (e := .u64) (n := 322)
     (pre := Spec.Siv.decryptPre RISCV64.abi.ptrBits) (post := Proof.AesSiv.decryptRoundsPost RISCV64.abi.ptrBits)
     (wa := true) (stack := 0) (bytes := 2576) (leak := some (Spec.Siv.decryptLeak RISCV64.abi.ptrBits))
-    decrypt_verified (by decide) (by decide) decFrameSat_pre
+    decrypt_verified (by decide) (by decide)
+    (fun vs m m₁ m₂ r hl _ => Proof.AesSiv.decryptPostOut_local _ vs m m₁ m₂ r hl)
+    decFrameSat_pre
 
 end VG.Proof.AesSiv.RISCV64
+
+/-! ## AES-SIV on RISC-V, without secret residue
+
+`vg_aes_siv_encrypt` and `vg_aes_siv_decrypt`, each followed by
+`Impl.Scrub.RISCV64.scrubTail` (`RISCV64.Scrub.verifiedScrubbedAll`), which clears the
+caller-saved registers and the whole 2576-byte frame (`withStackScratch`)
+that holds their working space and their callees': the residue analysis
+(`RISCV64.rtaint`) finds that all of it may hold secrets. Their
+postconditions read the memory on return only within the data and the
+synthetic IV, as on PPC64LE (`Proof/AesSiv/PPC64LE/Scrub.lean`). -/
+
+namespace VG.Proof.AesSiv.RISCV64.Scrub
+
+open VG.RISCV64 VG.RISCV64.Scrub VG.Proof.AesSiv.RISCV64
+
+theorem encryptOut (stack : Nat) :
+    PostOut (Spec.Siv.encryptContract RISCV64.abi stack) (Spec.Siv.encryptSig.retBits 64) :=
+  postOut_of_local (leak := none) ScrubAbi.plain fun vs m m₁ m₂ r hlen hb h => by
+    match vs, hlen with
+    | [ctx, rd, ads, cnt, data, len, siv], _ =>
+      simp only [Spec.Siv.encryptSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+        forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
+      change Curry.apply [ArgWord.addr, ArgWord.int 64, ArgWord.addr, ArgWord.int 64, ArgWord.addr,
+        ArgWord.int 64, ArgWord.addr] (Spec.Siv.encryptPost 64) _ m m₁ r at h
+      change Curry.apply [ArgWord.addr, ArgWord.int 64, ArgWord.addr, ArgWord.int 64, ArgWord.addr,
+        ArgWord.int 64, ArgWord.addr] (Spec.Siv.encryptPost 64) _ m m₂ r
+      dsimp only [Curry.apply, Spec.Siv.encryptPost, ArgWord.ofRaw, IntTy.bits] at h ⊢
+      intro key hk
+      rw [h key hk, Proof.AesSiv.bytesAt_congr fun i hi => Proof.AesSiv.agree_of hb.2.2 i (by omega),
+        Proof.AesSiv.bytesAt_congr fun i hi => Proof.AesSiv.agree_of hb.2.1 i (by simpa using hi)]
+
+theorem decryptOut (stack : Nat) :
+    PostOut (Spec.Siv.decryptContract RISCV64.abi stack) (Spec.Siv.decryptSig.retBits 64) :=
+  postOut_of_local ScrubAbi.plain fun vs m m₁ m₂ r hlen hb h => by
+    match vs, hlen with
+    | [ctx, rd, ads, cnt, data, len, siv], _ =>
+      simp only [Spec.Siv.decryptSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+        forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
+      change Curry.apply [ArgWord.addr, ArgWord.int 64, ArgWord.addr, ArgWord.int 64, ArgWord.addr,
+        ArgWord.int 64, ArgWord.addr] (Spec.Siv.decryptPost 64) _ m m₁ r at h
+      change Curry.apply [ArgWord.addr, ArgWord.int 64, ArgWord.addr, ArgWord.int 64, ArgWord.addr,
+        ArgWord.int 64, ArgWord.addr] (Spec.Siv.decryptPost 64) _ m m₂ r
+      dsimp only [Curry.apply, Spec.Siv.decryptPost, ArgWord.ofRaw, IntTy.bits] at h ⊢
+      intro key hk
+      have e := Proof.AesSiv.bytesAt_congr (n := (BitVec.setWidth 64 len).toNat) fun i hi =>
+        Proof.AesSiv.agree_of hb.2.1 i (by simpa using hi)
+      rw [e]
+      exact h key hk
+
+/-- What the cleanup needs of `vg_aes_siv_encrypt`'s code (`scrubSide`), by the kernel's
+evaluation, stated apart from the registration record so that `lit_decide` sees only the
+code. -/
+theorem encrypt_scrubSide :
+    scrubSide (Impl.StackScratch.RISCV64.withStackScratch 2576 .a7 Impl.AesSiv.RISCV64.encrypt) 2576 0 []
+      = true := by
+  lit_decide
+
+/-- `vg_aes_siv_encrypt` as emitted (`Impl.AesSiv.RISCV64.Fn.encrypt`) meets its contract in
+constant time and returns without secret residue: the theorem its registration binds. -/
+theorem encrypt_scrubbed :
+    VerifiedScrubbed target Impl.AesSiv.RISCV64.Fn.encrypt
+      (Spec.Siv.encryptContract RISCV64.abi 2576) 0 :=
+  verifiedScrubbedAll (api := Spec.Siv.encryptApi) (W := 2576)
+    { code := Impl.StackScratch.RISCV64.withStackScratch 2576 .a7 Impl.AesSiv.RISCV64.encrypt
+      verified := Proof.AesSiv.encrypt_keyed encrypt_framed }
+    (encryptOut _) encrypt_scrubSide
+
+/-- What the cleanup needs of `vg_aes_siv_decrypt`'s code (`scrubSide`), by the kernel's
+evaluation, stated apart from the registration record so that `lit_decide` sees only the
+code. -/
+theorem decrypt_scrubSide :
+    scrubSide (Impl.StackScratch.RISCV64.withStackScratch 2576 .a7 Impl.AesSiv.RISCV64.decrypt) 2576 32 []
+      = true := by
+  lit_decide
+
+/-- `vg_aes_siv_decrypt` as emitted (`Impl.AesSiv.RISCV64.Fn.decrypt`) meets its contract in
+constant time and returns without secret residue: the theorem its registration binds. -/
+theorem decrypt_scrubbed :
+    VerifiedScrubbed target Impl.AesSiv.RISCV64.Fn.decrypt
+      (Spec.Siv.decryptContract RISCV64.abi 2576) 32 :=
+  verifiedScrubbedAll (api := Spec.Siv.decryptApi) (W := 2576)
+    { code := Impl.StackScratch.RISCV64.withStackScratch 2576 .a7 Impl.AesSiv.RISCV64.decrypt
+      verified := Proof.AesSiv.decrypt_keyed decrypt_framed }
+    (decryptOut _) decrypt_scrubSide
+
+end VG.Proof.AesSiv.RISCV64.Scrub

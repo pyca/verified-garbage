@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.Camellia.AArch64.Ctr
 public import VerifiedGarbage.Impl.AesCtr.AArch64.Final
 public import VerifiedGarbage.Impl.StackScratch.AArch64
+public import VerifiedGarbage.Impl.Scrub.AArch64.Scrub
 
 /-!
 # Camellia-CTR of a message's last piece: AArch64 implementation
@@ -14,7 +15,10 @@ the caller's callee-saved registers and the return address, then a block of
 the code's own. It is AES-CTR's final function's
 (`Impl/AesCtr/AArch64/Final.lean`) with Camellia's arguments, around calls
 of `vg_camellia_ctr`, framed by its own working space on the stack
-(`ctrFramed`):
+(`ctrFramed`), as an internal function of its own, `vg_camellia_ctr_core`,
+which does not zero that space: the final function's registration zeroes the
+whole of its stack on return (`Impl.Scrub.AArch64.scrubAll`), as
+`vg_camellia_ctr`'s does:
 
 1. the registers saved in `save` (AES-CFB's final functions' slots,
    `finalSaved`), and the arguments kept in `x19` (schedule), `x20`
@@ -44,7 +48,7 @@ open VG.Impl.AesCtr.AArch64 (zeroSlots tailKey)
 open VG.Impl.Modes.AArch64 (xorByte)
 
 /-- `vg_camellia_ctr`, with its working space on the stack. -/
-def ctrFramed : Prog isa := Impl.StackScratch.AArch64.withStackScratchWiped 3344 .x5 418 ctr
+def ctrFramed : Prog isa := Impl.StackScratch.AArch64.withStackScratch 3344 .x5 ctr
 
 /-- The registers saved in `save`, at `x5`. -/
 def ctrFinalSave : List Instr := finalSaved.map fun (r, d) => .str .x r .x5 d
@@ -72,12 +76,31 @@ def ctrFinalTailArgs : List Instr :=
 /-- The partial last block: the output block `CIPH_K(Tₙ₊₁)` in the block of
 `save`, and its first `u` bytes XORed into the data. -/
 def ctrFinalTail : Prog isa :=
-  .seq (.block ctrFinalTailArgs) (.seq (.call "vg_camellia_ctr" ctrFramed)
+  .seq (.block ctrFinalTailArgs) (.seq (.call "vg_camellia_ctr_core" ctrFramed)
     (.seq (.block tailKey) (.loop (.block (xorByte .x22 .x23)) (.nonzero .x .x23))))
 
 /-- `vg_camellia_ctr_final`. -/
 def ctrFinal : Prog isa :=
-  .seq (.block ctrFinalSetup) (.seq (.call "vg_camellia_ctr" ctrFramed)
+  .seq (.block ctrFinalSetup) (.seq (.call "vg_camellia_ctr_core" ctrFramed)
     (.seq (.ite (.zero .x .x23) (.block []) ctrFinalTail) (.block finalRestore)))
 
 end VG.Impl.Camellia.AArch64
+
+namespace VG.Impl.Camellia.AArch64.Fn
+
+open VG.AArch64
+
+/-- The last blocks of Camellia-CTR as emitted: their code with the space
+for the saved registers on the stack
+(`Impl.StackScratch.AArch64.withStackScratchWiped`), then the registers it
+writes that the calling convention does not preserve cleared and its 3424
+bytes of stack zeroed (`Impl.Scrub.AArch64.scrubAll`), so that it returns
+without secret residue. -/
+def ctrFinal : Prog isa :=
+  VG.Impl.Scrub.AArch64.scrubAll 3424 0
+    ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16, .x17],
+     [.v26, .v27, .v28, .v29, .v30],
+     []⟩
+    (VG.Impl.StackScratch.AArch64.withStackScratchWiped 80 .x5 10 VG.Impl.Camellia.AArch64.ctrFinal)
+
+end VG.Impl.Camellia.AArch64.Fn

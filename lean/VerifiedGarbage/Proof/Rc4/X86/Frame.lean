@@ -3,29 +3,320 @@ module
 import VerifiedGarbage.Proof.Rc4.X86.ConstantTime
 public import VerifiedGarbage.Proof.Framework.X86.Inline
 import VerifiedGarbage.Proof.Rc4.Update
-import VerifiedGarbage.Proof.Rc4.X86.Schedule
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.X86.Lit
 import VerifiedGarbage.Proof.Rc4.Dword
 import VerifiedGarbage.Proof.Rc4.Stream
 import VerifiedGarbage.Proof.Rc4.Table
-import VerifiedGarbage.Proof.Rc4.X86.Apply
-import VerifiedGarbage.Proof.Rc4.X86.Save
-import VerifiedGarbage.Proof.Rc4.X86.Lookup
 public import VerifiedGarbage.Impl.Rc4.X86
 public import VerifiedGarbage.Proof.MlDsa.X86.Pack.Run
 public import VerifiedGarbage.Proof.Rc4.Memory
-import VerifiedGarbage.Proof.Rc4.X86.Replace
 public import VerifiedGarbage.Spec.Rc4
 public import VerifiedGarbage.Proof.Rc4.X86.Contract
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Impl.StackScratch.X86
-import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
+import VerifiedGarbage.Proof.Framework.X86.StackScratch
 import VerifiedGarbage.Proof.Rc4.X86.Lit
 public import VerifiedGarbage.Spec.Rc4.Contract
 import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Rc4.Identity
+public import VerifiedGarbage.Proof.Rc4.Schedule
+
+/-! ### `Rc4.X86.Schedule`, which only this module used -/
+
+section
+
+/-! # RC4 on x86 (32-bit): key scheduling -/
+
+@[expose] public section
+
+namespace VG.Proof.Rc4.X86
+open VG VG.X86 VG.Impl.Rc4.X86 VG.Spec.Rc4 VG.Proof.Rc4
+open VG.Proof.MlDsa.X86.Pack (Keep WP.keep writesOnly addr_of_fit)
+
+theorem and_mask32 (x : BitVec 32) (p : Bool) :
+    x &&& (0#32 - (BitVec.ofBool p).setWidth 32) = if p then x else 0 := by
+  rw [borrow_mask32]
+  cases p
+  · exact BitVec.and_zero
+  · exact BitVec.and_allOnes
+
+/-! ## The identity permutation -/
+
+def IdentityInv (s₀ : State) (r : Nat) (s : State) : Prop :=
+  s.mem = identityMem s₀.mem ((s₀.gpr .edi).setWidth 64) r ∧ s.rd = s₀.rd ∧ s.wr = s₀.wr ∧
+    s.gpr .edi = s₀.gpr .edi ∧ s.gpr .esp = s₀.gpr .esp ∧ s.gpr .esi = BitVec.ofNat 32 r
+
+theorem identity_step (s₀ s : State) {r : Nat} (hr : r < 256)
+    (hfit : (s₀.gpr .edi).toNat + 256 ≤ 2 ^ 32)
+    (hp : InRegions s₀.wr ((s₀.gpr .edi).setWidth 64) 256) (h : IdentityInv s₀ r s) :
+    WP isa (.block identityStep) s fun t => IdentityInv s₀ (r + 1) t ∧
+      t.zf = some (BitVec.ofNat 32 (r + 1) - BitVec.ofNat 32 256 == 0#32) := by
+  obtain ⟨hm, hrd, hwr, hdi, hsp, hsi⟩ := h
+  have he : addr (s₀.gpr .edi + BitVec.ofNat 32 r) 0 =
+      (s₀.gpr .edi).setWidth 64 + BitVec.ofNat 64 r := by
+    have := idx_addr hfit (BitVec.ofNat 8 r)
+    rwa [byte32, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hr] at this
+  have hw : InRegions s₀.wr ((s₀.gpr .edi).setWidth 64 + BitVec.ofNat 64 r) 1 :=
+    region_offset _ _ _ _ _ (by omega_arith) (by omega_arith) hp
+  have hadd : BitVec.ofNat 32 r + BitVec.ofNat 32 1 = BitVec.ofNat 32 (r + 1) := by
+    rw [← BitVec.ofNat_add]
+  unfold identityStep
+  rrun [hw, hm, hrd, hwr, hdi, hsp, hsi, hadd, writeW_byte8, ofNat_low32, IdentityInv, he]
+  exact ⟨identityMem_store _ _ _ hr, rfl⟩
+
+theorem identity_loop (s₀ s : State) {r : Nat} (hr : r < 256)
+    (hfit : (s₀.gpr .edi).toNat + 256 ≤ 2 ^ 32)
+    (hp : InRegions s₀.wr ((s₀.gpr .edi).setWidth 64) 256) (h : IdentityInv s₀ r s) :
+    WP isa (.loop (.block identityStep) .ne) s (IdentityInv s₀ 256) := by
+  refine WP.loop (M := isa) (fun rem t => ∃ j, j < 256 ∧ rem = 256 - j ∧ IdentityInv s₀ j t)
+    ?_ (256 - r) s ⟨r, hr, rfl, h⟩
+  intro rem t ⟨j, hj, hrem, ht⟩
+  refine WP.mono (identity_step s₀ t hj hfit hp ht) fun u ⟨hu, hz⟩ => ?_
+  by_cases hend : j + 1 = 256
+  · left
+    refine ⟨?_, hend ▸ hu⟩
+    simp only [eval, hz, hend, Option.map_some]
+    rfl
+  · right
+    have hnz : BitVec.ofNat 32 (j + 1) - BitVec.ofNat 32 256 ≠ 0#32 := by bv_omega
+    refine ⟨?_, 256 - (j + 1), by omega_arith, j + 1, by omega_arith, rfl, hu⟩
+    simp only [eval, hz, Option.map_some, beq_eq_false_iff_ne.mpr hnz, Bool.not_false]
+
+/-! ## One round -/
+
+theorem schedule_before (s : State) (i j : Byte) (K : BitVec 32)
+    (hsi : s.gpr .esi = i.setWidth 32) (hbp : s.gpr .ebp = j.setWidth 32)
+    (hfit : (s.gpr .edi).toNat + 256 ≤ 2 ^ 32)
+    (hp : InRegions (s.rd ++ s.wr) ((s.gpr .edi).setWidth 64) 256)
+    (hka : InRegions (s.rd ++ s.wr) (addr (s.gpr .esp) 4) 4)
+    (hkv : s.mem.readW (addr (s.gpr .esp) 4) 32 = K)
+    (hk : InRegions (s.rd ++ s.wr) (addr (K + s.gpr .ebx) 0) 1) :
+    WP isa (.block (loadI ++ ([.alu .add .ebp (.reg .edx), .mov .edx (.mem (at_ .esp 4)),
+      .alu .add .edx (.reg .ebx), .movzx8 .edx (at_ .edx 0), .alu .add .ebp (.reg .edx),
+      .alu .and .ebp (imm 255)] : List Instr))) s
+      fun t => t.gpr .ebp = (j + s.mem ((s.gpr .edi).setWidth 64 + BitVec.ofNat 64 i.toNat) +
+          s.mem (addr (K + s.gpr .ebx) 0)).setWidth 32 ∧ Keep [.ebp, .edx] s t ∧ t.mem = s.mem := by
+  rw [WP.block_append_iff]
+  refine WP.mono (loadI_ok s i hsi hfit hp) fun t ⟨tdx, tk, tm⟩ => ?_
+  have tbp : t.gpr .ebp = j.setWidth 32 := (tk.gpr (by decide)).trans hbp
+  have tbx : t.gpr .ebx = s.gpr .ebx := tk.gpr (by decide)
+  have tsp : t.gpr .esp = s.gpr .esp := tk.gpr (by decide)
+  refine WP.mono (WP.keep (Q := fun u => u.gpr .ebp = (j + s.mem ((s.gpr .edi).setWidth 64 +
+      BitVec.ofNat 64 i.toNat) + s.mem (addr (K + s.gpr .ebx) 0)).setWidth 32 ∧ u.mem = s.mem)
+      [.ebp, .edx] ?_ (by decide +kernel)) fun u ⟨h, hk'⟩ => ⟨h.1, ?_, h.2⟩
+  · rrun [tbp, tdx, tsp, tbx, tm, tk.2.1, tk.2.2, hka, hkv, hk]
+    rw [byte_add3_32]
+  · exact (tk.trans hk').mono (by decide)
+
+theorem schedule_after (s : State) (i b : Byte) (Lk : BitVec 32)
+    (hsi : s.gpr .esi = i.setWidth 32) (hax : s.gpr .eax = b.setWidth 32)
+    (hfit : (s.gpr .edi).toNat + 256 ≤ 2 ^ 32)
+    (hw : InRegions s.wr ((s.gpr .edi).setWidth 64 + BitVec.ofNat 64 i.toNat) 1)
+    (hla : InRegions (s.rd ++ s.wr) (addr (s.gpr .esp) 8) 4)
+    (hlv : s.mem.readW (addr (s.gpr .esp) 8) 32 = Lk) :
+    WP isa (.block [.alu .add .ebx (imm 1), .mov .edx (.mem (at_ .esp 8)),
+      .alu .cmp .ebx (.reg .edx), .mov .edx (imm 0), .alu .sbb .edx (.reg .edx),
+      .alu .and .ebx (.reg .edx), .mov .edx (.reg .edi), .alu .add .edx (.reg .esi),
+      .store8 (at_ .edx 0) .al, .alu .add .esi (imm 1), .alu .cmp .esi (imm 256)]) s fun t =>
+      t.mem = s.mem.write ((s.gpr .edi).setWidth 64 + BitVec.ofNat 64 i.toNat) 1 b ∧
+      t.gpr .ebx = (if (s.gpr .ebx + 1#32).toNat < Lk.toNat then s.gpr .ebx + 1#32 else 0#32) ∧
+      t.gpr .esi = i.setWidth 32 + 1#32 ∧
+      t.zf = some (i.setWidth 32 + 1#32 - BitVec.ofNat 32 256 == 0#32) ∧
+      Keep [.ebx, .esi, .edx] s t := by
+  have he := idx_addr hfit i
+  refine WP.mono (WP.keep (Q := fun t =>
+      t.mem = s.mem.write ((s.gpr .edi).setWidth 64 + BitVec.ofNat 64 i.toNat) 1 b ∧
+      t.gpr .ebx = (if (s.gpr .ebx + 1#32).toNat < Lk.toNat then s.gpr .ebx + 1#32 else 0#32) ∧
+      t.gpr .esi = i.setWidth 32 + 1#32 ∧
+      t.zf = some (i.setWidth 32 + 1#32 - BitVec.ofNat 32 256 == 0#32)) [.ebx, .esi, .edx] ?_
+    (by decide +kernel)) fun t ⟨h, hk⟩ => ⟨h.1, h.2.1, h.2.2.1, h.2.2.2, hk⟩
+  rrun [hsi, hax, he, hw, hla, hlv, writeW_byte8, low_byte32, and_mask32]
+  refine ⟨?_, rfl⟩
+  simp only [decide_eq_true_eq]
+  rfl
+
+/-- One concrete key-scheduling round, with both swap operands read before either write. -/
+theorem schedule_step (s : State) (i j : Byte) (K Lk : BitVec 32)
+    (hsi : s.gpr .esi = i.setWidth 32) (hbp : s.gpr .ebp = j.setWidth 32)
+    (hfit : (s.gpr .edi).toNat + 256 ≤ 2 ^ 32)
+    (hp : InRegions s.wr ((s.gpr .edi).setWidth 64) 256)
+    (hka : InRegions (s.rd ++ s.wr) (addr (s.gpr .esp) 4) 4)
+    (hkv : s.mem.readW (addr (s.gpr .esp) 4) 32 = K)
+    (hla : InRegions (s.rd ++ s.wr) (addr (s.gpr .esp) 8) 4)
+    (hlv : s.mem.readW (addr (s.gpr .esp) 8) 32 = Lk)
+    (hk : InRegions (s.rd ++ s.wr) (addr (K + s.gpr .ebx) 0) 1)
+    (hsl : Mem.Sep (addr (s.gpr .esp) 8) 4 ((s.gpr .edi).setWidth 64) 256) :
+    let p := (s.gpr .edi).setWidth 64
+    let a := s.mem (p + BitVec.ofNat 64 i.toNat)
+    let jj := j + a + s.mem (addr (K + s.gpr .ebx) 0)
+    let b := s.mem (p + BitVec.ofNat 64 jj.toNat)
+    WP isa (.block scheduleStep) s fun t =>
+      t.mem = (s.mem.write (p + BitVec.ofNat 64 jj.toNat) 1 a).write
+        (p + BitVec.ofNat 64 i.toNat) 1 b ∧
+      t.gpr .ebx = (if (s.gpr .ebx + 1#32).toNat < Lk.toNat then s.gpr .ebx + 1#32 else 0#32) ∧
+      t.gpr .ebp = jj.setWidth 32 ∧ t.gpr .esi = i.setWidth 32 + 1#32 ∧
+      t.zf = some (i.setWidth 32 + 1#32 - BitVec.ofNat 32 256 == 0#32) ∧
+      Keep ([.ebp, .edx] ++ [.eax, .ecx, .edx] ++ [.ebx, .esi, .edx]) s t := by
+  intro p a jj b
+  have hr : InRegions (s.rd ++ s.wr) p 256 := by
+    obtain ⟨r, hr, hc⟩ := hp
+    exact ⟨r, List.mem_append_right _ hr, hc⟩
+  unfold scheduleStep
+  rw [WP.block_append_iff, WP.block_append_iff]
+  refine WP.mono (schedule_before s i j K hsi hbp hfit hr hka hkv hk) fun t ⟨tbp, tk, tm⟩ => ?_
+  have tsi : t.gpr .esi = i.setWidth 32 := (tk.gpr (by decide)).trans hsi
+  have tdi : t.gpr .edi = s.gpr .edi := tk.gpr (by decide)
+  have tbx : t.gpr .ebx = s.gpr .ebx := tk.gpr (by decide)
+  have tsp : t.gpr .esp = s.gpr .esp := tk.gpr (by decide)
+  have htp : InRegions t.wr ((t.gpr .edi).setWidth 64) 256 := by rw [tk.2.2, tdi]; exact hp
+  refine WP.mono (WP.keep [.eax, .ecx, .edx]
+    (replace_core t jj i tbp tsi (by rw [tdi]; exact hfit) htp) (by decide +kernel))
+    fun u ⟨⟨uax, um⟩, uk⟩ => ?_
+  have usi : u.gpr .esi = i.setWidth 32 := (uk.gpr (by decide)).trans tsi
+  have udi : u.gpr .edi = s.gpr .edi := (uk.gpr (by decide)).trans tdi
+  have ubx : u.gpr .ebx = s.gpr .ebx := (uk.gpr (by decide)).trans tbx
+  have usp : u.gpr .esp = s.gpr .esp := (uk.gpr (by decide)).trans tsp
+  have ubp : u.gpr .ebp = jj.setWidth 32 := (uk.gpr (by decide)).trans tbp
+  rw [tm, tdi] at uax um
+  have hw : InRegions u.wr ((u.gpr .edi).setWidth 64 + BitVec.ofNat 64 i.toNat) 1 := by
+    rw [uk.2.2, tk.2.2, udi]
+    exact region_offset _ _ _ _ _ (by have := i.isLt; omega_arith) (by have := i.isLt; omega_arith) hp
+  have hla' : InRegions (u.rd ++ u.wr) (addr (u.gpr .esp) 8) 4 := by
+    rw [uk.2.1, uk.2.2, tk.2.1, tk.2.2, usp]; exact hla
+  have hlv' : u.mem.readW (addr (u.gpr .esp) 8) 32 = Lk := by
+    rw [um, usp, ← hlv]
+    simp only [Mem.readW, Nat.reduceDiv]
+    rw [Mem.read_write_sep (sep_offset_right hsl (by have := jj.isLt; omega_arith)
+      (by have := jj.isLt; omega_arith)) (by decide)]
+  refine WP.mono (schedule_after u i b Lk usi uax (by rw [udi]; exact hfit) hw hla' hlv')
+    fun v ⟨vm, vbx, vsi, vz, vk⟩ => ?_
+  refine ⟨?_, ?_, (vk.gpr (by decide)).trans ubp, vsi, vz, (tk.trans uk).trans vk⟩
+  · rw [vm, um, udi]
+  · rw [vbx, ubx]
+
+/-- The key bytes, at `K` (32-bit), `Lk` of them. -/
+def keyOf (m : Mem) (K Lk : BitVec 32) : List Byte := bytesAt m (K.setWidth 64) Lk.toNat
+
+structure ScheduleInv (s₀ : State) (K Lk : BitVec 32) (r : Nat) (s : State) : Prop where
+  frame : TableFrame ((s₀.gpr .edi).setWidth 64) s₀.mem s.mem
+  table : (contextAt s.mem ((s₀.gpr .edi).setWidth 64)).table =
+    (schedulePrefix (keyOf s₀.mem K Lk) r).1
+  j : s.gpr .ebp = (schedulePrefix (keyOf s₀.mem K Lk) r).2.setWidth 32
+  i : s.gpr .esi = BitVec.ofNat 32 r
+  off : s.gpr .ebx = BitVec.ofNat 32 (r % Lk.toNat)
+  p : s.gpr .edi = s₀.gpr .edi
+  sp : s.gpr .esp = s₀.gpr .esp
+  rd : s.rd = s₀.rd
+  wr : s.wr = s₀.wr
+
+/-- What key scheduling needs of the state it starts from. -/
+structure SchedulePre (s₀ : State) (K Lk : BitVec 32) : Prop where
+  len : 1 ≤ Lk.toNat ∧ Lk.toNat ≤ 256
+  fit : (s₀.gpr .edi).toNat + 256 ≤ 2 ^ 32
+  table : InRegions s₀.wr ((s₀.gpr .edi).setWidth 64) 256
+  key : InRegions (s₀.rd ++ s₀.wr) (K.setWidth 64) Lk.toNat
+  keyFit : K.toNat + Lk.toNat ≤ 2 ^ 32
+  keySep : Mem.Sep (K.setWidth 64) Lk.toNat ((s₀.gpr .edi).setWidth 64) 256
+  ka : InRegions (s₀.rd ++ s₀.wr) (addr (s₀.gpr .esp) 4) 4
+  kv : s₀.mem.readW (addr (s₀.gpr .esp) 4) 32 = K
+  la : InRegions (s₀.rd ++ s₀.wr) (addr (s₀.gpr .esp) 8) 4
+  lv : s₀.mem.readW (addr (s₀.gpr .esp) 8) 32 = Lk
+  ks : Mem.Sep (addr (s₀.gpr .esp) 4) 4 ((s₀.gpr .edi).setWidth 64) 256
+  ls : Mem.Sep (addr (s₀.gpr .esp) 8) 4 ((s₀.gpr .edi).setWidth 64) 256
+
+theorem key_addr {K : BitVec 32} {Lk : BitVec 32} (hfit : K.toNat + Lk.toNat ≤ 2 ^ 32) {o : Nat}
+    (ho : o < Lk.toNat) : addr (K + BitVec.ofNat 32 o) 0 = K.setWidth 64 + BitVec.ofNat 64 o := by
+  unfold addr
+  rw [BitVec.add_zero]
+  exact VG.Proof.MlKem.X86.ea_off (by omega_arith)
+
+theorem schedule_inv_step (s₀ s : State) (K Lk : BitVec 32) {r : Nat} (hr : r < 256)
+    (hpre : SchedulePre s₀ K Lk) (h : ScheduleInv s₀ K Lk r s) :
+    WP isa (.block scheduleStep) s fun t => ScheduleInv s₀ K Lk (r + 1) t ∧
+      t.zf = some (BitVec.ofNat 32 (r + 1) - BitVec.ofNat 32 256 == 0#32) := by
+  let key := keyOf s₀.mem K Lk
+  let st := schedulePrefix key r
+  have hlen := hpre.len
+  have hrt : (BitVec.ofNat 8 r).toNat = r := by
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt hr]
+  have hi : s.gpr .esi = (BitVec.ofNat 8 r).setWidth 32 := by
+    rw [h.i, byte32, hrt]
+  have hfit : (s.gpr .edi).toNat + 256 ≤ 2 ^ 32 := by rw [h.p]; exact hpre.fit
+  have hpoint : InRegions s.wr ((s.gpr .edi).setWidth 64) 256 := by rw [h.wr, h.p]; exact hpre.table
+  have hmod := Nat.mod_lt r (show 0 < Lk.toNat by omega_arith)
+  have hka : InRegions (s.rd ++ s.wr) (addr (s.gpr .esp) 4) 4 := by
+    rw [h.rd, h.wr, h.sp]; exact hpre.ka
+  have hla : InRegions (s.rd ++ s.wr) (addr (s.gpr .esp) 8) 4 := by
+    rw [h.rd, h.wr, h.sp]; exact hpre.la
+  have hkv : s.mem.readW (addr (s.gpr .esp) 4) 32 = K := by
+    rw [h.sp, table_frame_readW h.frame hpre.ks]; exact hpre.kv
+  have hlv : s.mem.readW (addr (s.gpr .esp) 8) 32 = Lk := by
+    rw [h.sp, table_frame_readW h.frame hpre.ls]; exact hpre.lv
+  have hkaddr : addr (K + s.gpr .ebx) 0 = K.setWidth 64 + BitVec.ofNat 64 (r % Lk.toNat) := by
+    rw [h.off]; exact key_addr hpre.keyFit hmod
+  have hkeypoint : InRegions (s.rd ++ s.wr) (addr (K + s.gpr .ebx) 0) 1 := by
+    rw [h.rd, h.wr, hkaddr]
+    exact region_offset _ _ _ _ _ (by omega_arith) (by omega_arith) hpre.key
+  have hkeybyte : s.mem (addr (K + s.gpr .ebx) 0) = key.getD (r % key.length) 0 := by
+    rw [hkaddr]
+    have hsep := hpre.keySep (K.setWidth 64 + BitVec.ofNat 64 (r % Lk.toNat))
+      (by rw [Mem.sub_ofNat_toNat _ (by omega_arith)]; exact hmod)
+    rw [h.frame _ hsep]
+    dsimp only [key, keyOf]
+    rw [bytes_length, bytes_get _ _ _ _ hmod]
+  have htablebyte : s.mem ((s.gpr .edi).setWidth 64 + BitVec.ofNat 64 r) = st.1.getD r 0 := by
+    rw [h.p]
+    have hg := table_get s.mem ((s₀.gpr .edi).setWidth 64) (BitVec.ofNat 8 r)
+    rw [hrt, h.table] at hg
+    exact hg.symm
+  have hsl : Mem.Sep (addr (s.gpr .esp) 8) 4 ((s.gpr .edi).setWidth 64) 256 := by
+    rw [h.sp, h.p]; exact hpre.ls
+  refine WP.mono (schedule_step s _ _ K Lk hi h.j hfit hpoint hka hkv hla hlv hkeypoint hsl)
+    fun t ⟨tm, tbx, tbp, tsi, tz, tk⟩ => ?_
+  have hnext := schedule_succ key r
+  dsimp only [scheduleRound] at hnext
+  have hcast : (BitVec.ofNat 8 r).setWidth 32 + 1#32 = BitVec.ofNat 32 (r + 1) := by
+    rw [byte32, hrt, ← BitVec.ofNat_add]
+  refine ⟨⟨?_, ?_, ?_, ?_, ?_, (tk.gpr (by decide)).trans h.p, (tk.gpr (by decide)).trans h.sp,
+    tk.2.1.trans h.rd, tk.2.2.trans h.wr⟩, ?_⟩
+  · rw [tm, h.p]
+    exact h.frame.trans (swap_frame _ _ _ _)
+  · rw [tm, h.p, table_swap, h.table, hnext, hrt]
+    have hb := htablebyte
+    rw [h.p] at hb
+    rw [hb, hkeybyte]
+  · rw [tbp, hrt, htablebyte, hkeybyte, hnext]
+  · rw [tsi, hcast]
+  · rw [tbx, h.off]
+    exact key_next32 r _ (by omega_arith) hlen.2
+  · rw [tz, hcast]
+
+/-- All 256 scheduling rounds realize the complete specified permutation. -/
+theorem schedule_loop (s₀ s : State) (K Lk : BitVec 32) {r : Nat} (hr : r < 256)
+    (hpre : SchedulePre s₀ K Lk) (h : ScheduleInv s₀ K Lk r s) :
+    WP isa (.loop (.block scheduleStep) .ne) s (ScheduleInv s₀ K Lk 256) := by
+  refine WP.loop (M := isa) (fun rem t => ∃ j, j < 256 ∧ rem = 256 - j ∧ ScheduleInv s₀ K Lk j t)
+    ?_ (256 - r) s ⟨r, hr, rfl, h⟩
+  intro rem t ⟨j, hj, hrem, ht⟩
+  refine WP.mono (schedule_inv_step s₀ t K Lk hj hpre ht) fun u ⟨hu, hz⟩ => ?_
+  by_cases hend : j + 1 = 256
+  · left
+    refine ⟨?_, hend ▸ hu⟩
+    simp only [eval, hz, hend, Option.map_some]
+    rfl
+  · right
+    have hnz : BitVec.ofNat 32 (j + 1) - BitVec.ofNat 32 256 ≠ 0#32 := by bv_omega
+    refine ⟨?_, 256 - (j + 1), by omega_arith, j + 1, by omega_arith, rfl, hu⟩
+    simp only [eval, hz, Option.map_some, beq_eq_false_iff_ne.mpr hnz, Bool.not_false]
+
+end VG.Proof.Rc4.X86
+
+end
+
+end
 
 /-! ### `Rc4.X86.Verified`, which only this module used -/
 
@@ -84,7 +375,7 @@ theorem InitPre.arg_eq {s : State} (hp : InitPre s) {m : Mem} (hf : InitFrame s 
 
 theorem InitPre.arg_in {s : State} (hp : InitPre s) {i : Nat} (hi : i < 4) :
     InRegions (s.rd ++ s.wr) (argAddr s i) 4 := by
-  have h := region_offset _ _ _ (4 * i) 4 (by omega_using [hi]) (by omega_using [hi]) hp.args
+  obtain h := region_offset _ _ _ (4 * i) 4 (by omega_using [hi]) (by omega_using [hi]) hp.args
   rw [← hp.arg_off i hi] at h
   obtain ⟨r, hr, hc⟩ := h
   exact ⟨r, List.mem_append_left _ hr, hc⟩
@@ -113,10 +404,10 @@ theorem init_finish (s : State) (hfit : (s.gpr .edi).toNat + 258 ≤ 2 ^ 32)
       fun t => t.gpr .eax = 0#32 ∧
         t.mem = (s.mem.write ((s.gpr .edi).setWidth 64 + 256#64) 1 0#8).write
           ((s.gpr .edi).setWidth 64 + 257#64) 1 0#8 ∧ Keep [.eax] s t := by
-  have h256 := region_offset _ _ _ 256 1 (by decide) (by decide) hp
-  have h257 := region_offset _ _ _ 257 1 (by decide) (by decide) hp
-  have a256 : addr (s.gpr .edi) 256 = (s.gpr .edi).setWidth 64 + 256#64 := addr_of_fit (by omega_using [hfit])
-  have a257 : addr (s.gpr .edi) 257 = (s.gpr .edi).setWidth 64 + 257#64 := addr_of_fit (by omega_using [hfit])
+  obtain h256 := region_offset _ _ _ 256 1 (by decide) (by decide) hp
+  obtain h257 := region_offset _ _ _ 257 1 (by decide) (by decide) hp
+  obtain a256 : addr (s.gpr .edi) 256 = (s.gpr .edi).setWidth 64 + 256#64 := addr_of_fit (by omega_using [hfit])
+  obtain a257 : addr (s.gpr .edi) 257 = (s.gpr .edi).setWidth 64 + 257#64 := addr_of_fit (by omega_using [hfit])
   refine WP.mono (WP.keep (Q := fun t => t.gpr .eax = 0#32 ∧
       t.mem = (s.mem.write ((s.gpr .edi).setWidth 64 + 256#64) 1 0#8).write
         ((s.gpr .edi).setWidth 64 + 257#64) 1 0#8) [.eax] ?_ (by decide +kernel))
@@ -137,52 +428,52 @@ theorem init_valid (s : State) (hp : InitPre s)
   rw [WP.block_append_iff]
   refine WP.mono (save_ok s (arg s 3) hp.scratchFit (hp.arg_in (i := 3) (by decide)) rfl hp.scratch)
     fun a ⟨ham, hak⟩ => ?_
-  have haf : InitFrame s a.mem := by
+  obtain haf : InitFrame s a.mem := by
     rw [ham]
     exact (savedMem_frame _ _ _ _ _ _).mono fun r hr => by
       simp only [List.mem_singleton] at hr
       subst hr
       exact List.mem_cons_of_mem _ List.mem_cons_self
-  have hasp : a.gpr .esp = s.gpr .esp := hak.gpr (by decide)
-  have hb : WP isa (.block [.mov .edi (.mem (at_ .esp 12)), .mov .esi (imm 0)]) a fun b =>
+  obtain hasp : a.gpr .esp = s.gpr .esp := hak.gpr (by decide)
+  obtain hb : WP isa (.block [.mov .edi (.mem (at_ .esp 12)), .mov .esi (imm 0)]) a fun b =>
       b.mem = a.mem ∧ b.rd = s.rd ∧ b.wr = s.wr ∧ b.gpr .edi = (arg s 2) ∧ b.gpr .esi = 0#32 ∧
         b.gpr .esp = s.gpr .esp := by
-    have h12 : InRegions (s.rd ++ s.wr) (addr (s.gpr .esp) 12) 4 := hp.arg_in (i := 2) (by decide)
-    have v12 : a.mem.readW (addr (s.gpr .esp) 12) 32 = (arg s 2) := hp.arg_eq haf (i := 2) (by decide)
+    obtain h12 : InRegions (s.rd ++ s.wr) (addr (s.gpr .esp) 12) 4 := hp.arg_in (i := 2) (by decide)
+    obtain v12 : a.mem.readW (addr (s.gpr .esp) 12) 32 = (arg s 2) := hp.arg_eq haf (i := 2) (by decide)
     rrun [hasp, hak.2.1, hak.2.2, h12, v12]
   refine WP.mono hb fun b ⟨hbm, hbr, hbw, hbdi, hbsi, hbsp⟩ => ?_
-  have hfit : (b.gpr .edi).toNat + 256 ≤ 2 ^ 32 := by rw [hbdi]; have := hp.ctxFit; omega_using [this]
-  have hpb : InRegions b.wr ((b.gpr .edi).setWidth 64) 256 := by
+  obtain hfit : (b.gpr .edi).toNat + 256 ≤ 2 ^ 32 := by rw [hbdi]; have := hp.ctxFit; omega_using [this]
+  obtain hpb : InRegions b.wr ((b.gpr .edi).setWidth 64) 256 := by
     rw [hbw, hbdi]
-    have h' := region_offset _ _ _ 0 256 (by decide) (by decide) hp.ctx
+    obtain h' := region_offset _ _ _ 0 256 (by decide) (by decide) hp.ctx
     simpa only [BitVec.ofNat_eq_ofNat, BitVec.add_zero] using h'
-  have hib : IdentityInv b 0 b := ⟨by rw [identityMem_zero], rfl, rfl, rfl, rfl, hbsi⟩
+  obtain hib : IdentityInv b 0 b := ⟨by rw [identityMem_zero], rfl, rfl, rfl, rfl, hbsi⟩
   refine WP.seq (WP.mono (identity_loop b b (by decide) hfit hpb hib) fun c hc => ?_)
   obtain ⟨hcm, hcr, hcw, hcdi, hcsp, _⟩ := hc
-  have hreset : WP isa (.block [.mov .esi (imm 0), .mov .ebx (imm 0), .mov .ebp (imm 0)]) c
+  obtain hreset : WP isa (.block [.mov .esi (imm 0), .mov .ebx (imm 0), .mov .ebp (imm 0)]) c
       fun d => d.mem = c.mem ∧ d.rd = c.rd ∧ d.wr = c.wr ∧ d.gpr .edi = c.gpr .edi ∧
         d.gpr .esp = c.gpr .esp ∧ d.gpr .esi = 0#32 ∧ d.gpr .ebx = 0#32 ∧ d.gpr .ebp = 0#32 := by
     rrun
   refine WP.seq (WP.mono hreset fun d hd => ?_)
   obtain ⟨hdm, hdr, hdw, hddi, hdsp, hdsi, hdbx, hdbp⟩ := hd
-  have hdf : InitFrame s d.mem := by
+  obtain hdf : InitFrame s d.mem := by
     rw [hdm, hcm, hbm, hbdi]
     exact haf.table (identityMem_frame _ _ _ (by decide))
-  have hdC : d.gpr .edi = (arg s 2) := by rw [hddi, hcdi, hbdi]
-  have hdS : d.gpr .esp = s.gpr .esp := by rw [hdsp, hcsp, hbsp]
-  have hdrd : d.rd = s.rd := by rw [hdr, hcr, hbr]
-  have hdwr : d.wr = s.wr := by rw [hdw, hcw, hbw]
-  have hkey : keyOf d.mem (arg s 0) (arg s 1) = bytesAt s.mem ((arg s 0).setWidth 64) (arg s 1).toNat := by
+  obtain hdC : d.gpr .edi = (arg s 2) := by rw [hddi, hcdi, hbdi]
+  obtain hdS : d.gpr .esp = s.gpr .esp := by rw [hdsp, hcsp, hbsp]
+  obtain hdrd : d.rd = s.rd := by rw [hdr, hcr, hbr]
+  obtain hdwr : d.wr = s.wr := by rw [hdw, hcw, hbw]
+  obtain hkey : keyOf d.mem (arg s 0) (arg s 1) = bytesAt s.mem ((arg s 0).setWidth 64) (arg s 1).toNat := by
     unfold keyOf bytesAt
     apply List.map_congr_left
     intro k hk
-    have hk' := List.mem_range.mp hk
+    obtain hk' := List.mem_range.mp hk
     exact hdf _ fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact hp.keyCtx _ (Offset.contains_base _ (by omega_using [hk']) (by omega_using [hk']))
       · exact hp.keyScratch _ (Offset.contains_base _ (by omega_using [hk']) (by omega_using [hk']))
-  have hpre : SchedulePre d (arg s 0) (arg s 1) := by
+  obtain hpre : SchedulePre d (arg s 0) (arg s 1) := by
     refine ⟨hlen, by rw [hdC]; have := hp.ctxFit; omega_using [this], by rw [hdwr, hdC, ← hbdi, ← hbw]; exact hpb, ?_,
       hp.keyFit, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
     · rw [hdrd, hdwr]
@@ -196,40 +487,40 @@ theorem init_valid (s : State) (hp : InitPre s)
     · rw [hdS]; exact hp.arg_eq hdf (i := 1) (by decide)
     · rw [hdS, hdC]; exact hp.arg_sep (i := 0) (by decide)
     · rw [hdS, hdC]; exact hp.arg_sep (i := 1) (by decide)
-  have hid : ScheduleInv d (arg s 0) (arg s 1) 0 d := by
+  obtain hid : ScheduleInv d (arg s 0) (arg s 1) 0 d := by
     refine ⟨TableFrame.refl _ _, ?_, ?_, ?_, ?_, rfl, rfl, rfl, rfl⟩
     · rw [hdm, hcm, hddi, hcdi, identityMem_table, schedule_zero]
     · rw [hdbp]; rfl
     · rw [hdsi]
     · rw [hdbx, Nat.zero_mod]
   refine WP.seq (WP.mono (schedule_loop d d _ _ (by decide) hpre hid) fun e he => ?_)
-  have heC : e.gpr .edi = arg s 2 := by rw [he.p, hdC]
-  have heS : e.gpr .esp = s.gpr .esp := by rw [he.sp, hdS]
-  have herd : e.rd = s.rd := by rw [he.rd, hdrd]
-  have hewr : e.wr = s.wr := by rw [he.wr, hdwr]
+  obtain heC : e.gpr .edi = arg s 2 := by rw [he.p, hdC]
+  obtain heS : e.gpr .esp = s.gpr .esp := by rw [he.sp, hdS]
+  obtain herd : e.rd = s.rd := by rw [he.rd, hdrd]
+  obtain hewr : e.wr = s.wr := by rw [he.wr, hdwr]
   rw [WP.block_append_iff]
   refine WP.mono (init_finish e (by rw [heC]; exact hp.ctxFit) (by rw [hewr, heC]; exact hp.ctx))
     fun f ⟨fax, fm, fk⟩ => ?_
-  have hfS : f.gpr .esp = s.gpr .esp := (fk.gpr (by decide)).trans heS
-  have hfrd : f.rd = s.rd := fk.2.1.trans herd
-  have hfwr : f.wr = s.wr := fk.2.2.trans hewr
-  have hctxf : Frame [⟨(arg s 2).setWidth 64, 258⟩] a.mem f.mem := by
+  obtain hfS : f.gpr .esp = s.gpr .esp := (fk.gpr (by decide)).trans heS
+  obtain hfrd : f.rd = s.rd := fk.2.1.trans herd
+  obtain hfwr : f.wr = s.wr := fk.2.2.trans hewr
+  obtain hctxf : Frame [⟨(arg s 2).setWidth 64, 258⟩] a.mem f.mem := by
     rw [fm, heC]
     refine frame_finish ?_ _ _
-    have h1 := frame_of_table he.frame
-    have h0 := frame_of_table (identityMem_frame a.mem ((arg s 2).setWidth 64) 256 (by decide))
+    obtain h1 := frame_of_table he.frame
+    obtain h0 := frame_of_table (identityMem_frame a.mem ((arg s 2).setWidth 64) 256 (by decide))
     rw [hdm, hcm, hbm, hdC] at h1
     rw [hbdi] at h1
     exact h0.trans h1
-  have hsaved : Saved f.mem (arg s 3) s := by
-    have h0 := saved_savedMem s.mem (arg s 3) s
+  obtain hsaved : Saved f.mem (arg s 3) s := by
+    obtain h0 := saved_savedMem s.mem (arg s 3) s
     rw [← ham] at h0
     refine h0.frame hctxf ?_
     intro r hr
     simp only [List.mem_singleton] at hr
     subst hr
     exact fun x h₁ h₂ => hp.ctxScratch x h₂ (by simp only [Region.Contains] at h₁ ⊢; omega_using [h₁])
-  have hff : InitFrame s f.mem := by
+  obtain hff : InitFrame s f.mem := by
     intro x hx
     rw [hctxf x (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact hx _ List.mem_cons_self)]
@@ -250,8 +541,8 @@ theorem valid_length32 (len : BitVec 32) :
 
 theorem InitPre.transport {s t : State} (hp : InitPre s) (hm : t.mem = s.mem)
     (hsp : t.gpr .esp = s.gpr .esp) (hrd : t.rd = s.rd) (hwr : t.wr = s.wr) : InitPre t := by
-  have ha : ∀ i, arg t i = arg s i := fun i => by unfold arg argAddr; rw [hm, hsp]
-  have hA : argAddr t 0 = argAddr s 0 := by unfold argAddr; rw [hsp]
+  obtain ha : ∀ i, arg t i = arg s i := fun i => by unfold arg argAddr; rw [hm, hsp]
+  obtain hA : argAddr t 0 = argAddr s 0 := by unfold argAddr; rw [hsp]
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13⟩ := hp
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [hrd, hA]; exact h1
@@ -276,8 +567,8 @@ theorem init_ok (s : State) (hp : InitPre s) :
       | .error .invalidKeyLength => t.gpr .eax = 1#32) ∧
       InitFrame s t.mem ∧ t.gpr .ebx = s.gpr .ebx ∧ t.gpr .esi = s.gpr .esi ∧
       t.gpr .edi = s.gpr .edi ∧ t.gpr .ebp = s.gpr .ebp := by
-  have h8 : InRegions (s.rd ++ s.wr) (addr (s.gpr .esp) 8) 4 := hp.arg_in (i := 1) (by decide)
-  have hcheck : WP isa (.block [.mov .eax (.mem (at_ .esp 8)), .alu .sub .eax (imm 1),
+  obtain h8 : InRegions (s.rd ++ s.wr) (addr (s.gpr .esp) 8) 4 := hp.arg_in (i := 1) (by decide)
+  obtain hcheck : WP isa (.block [.mov .eax (.mem (at_ .esp 8)), .alu .sub .eax (imm 1),
       .alu .cmp .eax (imm 256)]) s fun t =>
       t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ Keep [.eax] s t ∧
       t.cf = some (decide ((arg s 1 - 1#32).toNat < 256)) := by
@@ -289,11 +580,11 @@ theorem init_ok (s : State) (hp : InitPre s) :
   unfold VG.Impl.Rc4.X86.init
   refine WP.seq (WP.mono hcheck fun t ht => ?_)
   obtain ⟨htm, htr, htw, htk, htcf⟩ := ht
-  have htp : InitPre t := hp.transport htm (htk.gpr (by decide)) htr htw
-  have ha : ∀ i, arg t i = arg s i := fun i => by
+  obtain htp : InitPre t := hp.transport htm (htk.gpr (by decide)) htr htw
+  obtain ha : ∀ i, arg t i = arg s i := fun i => by
     unfold arg argAddr; rw [htm, htk.gpr (r := .esp) (by decide)]
   let good := 1 ≤ (arg s 1).toNat ∧ (arg s 1).toNat ≤ 256
-  have hcond : isa.eval .ae t = some (decide (¬ good)) := by
+  obtain hcond : isa.eval .ae t = some (decide (¬ good)) := by
     simp only [eval, htcf, Option.map_some]
     congr 1
     by_cases hg : good
@@ -357,7 +648,7 @@ theorem callee_saved {s t : State} (hsp : t.gpr .esp = s.gpr .esp)
 theorem init_correct (s : State) (hs : initC.pre s) :
     WP isa init s fun s' => abiPreserved s s' ∧ initC.post s s' := by
   obtain ⟨hrd, hwr, kc, ks, cs, ac, as, rc, rs, kfit, cfit, sfit, spfit⟩ := hs
-  have hp : InitPre s :=
+  obtain hp : InitPre s :=
     { args := ⟨_, by rw [hrd]; exact List.mem_cons_of_mem _ List.mem_cons_self,
         Region.contains_self _ _⟩
       key := ⟨_, by rw [hrd]; exact List.mem_cons_self, Region.contains_self _ _⟩
@@ -381,7 +672,7 @@ theorem init_correct (s : State) (hs : initC.pre s) :
 
 theorem apply_correct (s : State) (hs : applyC.pre s) :
     WP isa apply s fun s' => abiPreserved s s' ∧ applyC.post s s' := by
-  have hp := applyPre_of hs
+  obtain hp := applyPre_of hs
   obtain ⟨_, _, _, _, _, _, _, _, rc, rd, rs, _⟩ := hs
   refine WP.mono (WP.keep written (apply_ok s hp) (by lit_decide))
     fun t ⟨⟨hpost, hf, hbx, hsi, hdi, hbp⟩, hk⟩ => ⟨⟨callee_saved (hk.gpr (by decide)) hbx hsi hdi hbp, ?_⟩, hpost⟩
@@ -420,7 +711,7 @@ theorem wideApply_pre (s : State) (h : wideApply.pre s) :
 
 theorem init_verified : Verified target init (initScratchContract abi) := by
   have hsat := init_implies.sat_left
-  have narrowSat : ∃ s, initC.pre s := by
+  obtain narrowSat : ∃ s, initC.pre s := by
     obtain ⟨s, hs⟩ := hsat
     exact ⟨_, wideInit_pre s hs⟩
   apply Verified.of_implies _ init_implies
@@ -450,7 +741,7 @@ theorem init_verified : Verified target init (initScratchContract abi) := by
 
 theorem apply_verified : Verified target apply (applyScratchContract abi) := by
   have hsat := apply_implies.sat_left
-  have narrowSat : ∃ s, applyC.pre s := by
+  obtain narrowSat : ∃ s, applyC.pre s := by
     obtain ⟨s, hs⟩ := hsat
     exact ⟨_, wideApply_pre s hs⟩
   apply Verified.of_implies _ apply_implies
@@ -491,8 +782,9 @@ end
 `vg_rc4_init` and `vg_rc4_apply` keep our caller's `ebx`, `esi`, `edi` and
 `ebp`, and `vg_rc4_apply` the secret `j`, in their working space: they run
 their code, proved with it as an argument (`Verified.lean`), in a frame that
-allocates it and copies their three argument slots, and zero it after the
-code (`Verified.stackScratchWiped`): 84 bytes, 64 of working space. The code
+allocates it and copies their three argument slots (`Verified.stackScratch`):
+84 bytes, 64 of working space, which their registrations zero before
+returning (`Proof/Rc4/X86/Scrub.lean`). The code
 uses no other stack. The copies are read only where the postconditions and
 `vg_rc4_apply`'s leak, the context's `i`, read the buffers
 (`Proof/Rc4/Scratch.lean`).
@@ -541,22 +833,22 @@ theorem applyFrameSat_pre : ∃ s, (Spec.Rc4.applyContract X86.abi 84).pre s := 
     [applyFrameSat, X86.arg, X86.argAddr, Mem.readW, Mem.read] using applyFrameSat
 
 theorem init_framed :
-    Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 84 3 16 Impl.Rc4.X86.init)
+    Verified X86.target (Impl.StackScratch.X86.withStackScratch 84 3 Impl.Rc4.X86.init)
       (Spec.Rc4.initContract X86.abi 84) :=
-  X86.Verified.stackScratchWiped (sig := Spec.Rc4.initSig) (nm := "scratch") (e := .u64) (n := 8)
+  X86.Verified.stackScratch (sig := Spec.Rc4.initSig) (nm := "scratch") (e := .u64) (n := 8)
     (post := Spec.Rc4.initPost X86.abi.ptrBits) (wa := true) (stack := 0) (bytes := 84)
-    init_verified (by decide) (by lit_decide) (by lit_decide) (by decide)
+    init_verified (by decide) (by lit_decide) (by lit_decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Rc4.initPost_local _)
-    (Proof.Rc4.initPostOut_local _) initFrameSat_pre
+    (fun vs m m₁ m₂ r hl _ hb h => Proof.Rc4.initPostOut_local _ vs m m₁ m₂ r hl hb h) initFrameSat_pre
 
 theorem apply_framed :
-    Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 84 3 16 Impl.Rc4.X86.apply)
+    Verified X86.target (Impl.StackScratch.X86.withStackScratch 84 3 Impl.Rc4.X86.apply)
       (Spec.Rc4.applyContract X86.abi 84) :=
-  X86.Verified.stackScratchWiped (sig := Spec.Rc4.applySig) (nm := "scratch") (e := .u64) (n := 8)
+  X86.Verified.stackScratch (sig := Spec.Rc4.applySig) (nm := "scratch") (e := .u64) (n := 8)
     (post := Spec.Rc4.applyPost X86.abi.ptrBits) (wa := true) (stack := 0) (bytes := 84)
     (leak := some (Spec.Rc4.applyLeak X86.abi.ptrBits))
-    apply_verified (by decide) (by lit_decide) (by lit_decide) (by decide)
+    apply_verified (by decide) (by lit_decide) (by lit_decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Rc4.applyPost_local _)
-    (Proof.Rc4.applyPostOut_local _) applyFrameSat_pre (hleak := Proof.Rc4.applyLeak_local _)
+    (fun vs m m₁ m₂ r hl _ hb h => Proof.Rc4.applyPostOut_local _ vs m m₁ m₂ r hl hb h) applyFrameSat_pre (hleak := Proof.Rc4.applyLeak_local _)
 
 end VG.Proof.Rc4.X86

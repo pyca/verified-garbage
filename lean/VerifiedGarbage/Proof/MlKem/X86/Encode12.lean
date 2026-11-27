@@ -205,11 +205,11 @@ def satMem : Mem := fun a => if a = 0x5009 then 4 else 0
 theorem verified : Verified X86.target Impl.MlKem.X86.encode12 (encode12Contract X86.abi 16) := by
   refine Piece.verified ((piece.pre_mono (fun _ h => Pre.of h) fun s s' _ _ h => by
       sig_pub [encode12Contract, encode12Sig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at h
-      exact h).mono (fun _ _ _ h => h) fun s₀ s' _ hq => ?_) ?_
+      exact h).mono (fun _ _ _ h => h) fun s₀ s' h₀ hq => ?_) ?_
   · obtain ⟨habi, -, -, s, hinv, hm, -⟩ := hq
     refine ⟨habi, ?_⟩
     sig_post [encode12Contract, encode12Sig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
-    rw [hm]
+    rw [bytesAt_congr (leaf_keep (r := oR s₀) hm (by have hp := Pre.of h₀; rw [← hp.stk_eq]; exact hp.stk_o) (by show 384 ≤ 2 ^ 64; decide))]
     exact bytesAt_eq! (encode12_length _) fun j hj => hinv.out j (by omega_arith)
   · let st := satState satMem [⟨0, 1024⟩] [⟨0x400, 384⟩, ⟨0x5004, 8⟩]
     have a0 : arg st 0 = 0 := by decide

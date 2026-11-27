@@ -1,9 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.BrainpoolP512r1.Sum
-import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP512r1.Config
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointAll
 public import VerifiedGarbage.Proof.Framework.AArch64.Inline
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.AArch64.Lit
 meta import VerifiedGarbage.Proof.Framework.Lit
@@ -17,7 +16,8 @@ public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Proof.Weierstrass.MulContract
 meta import VerifiedGarbage.Proof.Weierstrass.MulContract
 
-/-! Frames and live point representations for the joint verification loop. -/
+/-! The curve's kit for the joint verification loop (`Proof/Ecdsa/Verify/AArch64/JointAll.lean`), with its
+frames and live point representations. -/
 
 @[expose] public section
 namespace VG.Proof.Ecdsa.Verify.AArch64.BrainpoolP512r1.Joint
@@ -34,47 +34,6 @@ abbrev coordinates (p : Pt) : List Nat := [p.x,p.y,p.z]
 abbrev num (base : Addr) (s : State) (o : Nat) := wordsVal s.mem base o cfg.n
 abbrev val (base : Addr) (s : State) (o : Nat) := tmv cfg.C cfg.n base s o
 
-def PointAt (base : Addr) (s : State) (p : Pt) (P : Point C) : Prop :=
-  (∀ o ∈ coordinates p,num base s o < C.p) ∧
-  Rep C (val base s p.x) (val base s p.y) (val base s p.z) P
-
-abbrev addWork : List (Nat × Nat) := slW cfg sumW
-abbrev entryWork : List (Nat × Nat) := (coordinates entry).map (·,64)
-abbrev loopWork : List (Nat × Nat) := addWork ++ entryWork
-abbrev work : List (Nat × Nat) := loopWork ++ [(cfg.sl EXPP,64),(bitsU,1024),(tableAt,2880)]
-
-structure Changes (base : Addr) (W : List (Nat × Nat)) (s t : State) : Prop where
-  x0 : t.gpr .x0 = s.gpr .x0
-  rd : t.rd = s.rd
-  wr : t.wr = s.wr
-  sp : t.sp = s.sp
-  mem : Unch base W s.mem t.mem
-
-theorem Changes.scr {base : Addr} {W : List (Nat × Nat)} {s t : State}
-    (h : Changes base W s t) (hs : Scr s base 8192) : Scr t base 8192 :=
-  ⟨h.x0.trans hs.x0,h.wr ▸ hs.wr,hs.nowrap,hs.enc⟩
-
-theorem Changes.trans {base : Addr} {W : List (Nat × Nat)} {s t u : State}
-    (h : Changes base W s t) (k : Changes base W t u) : Changes base W s u :=
-  ⟨k.x0.trans h.x0,k.rd.trans h.rd,k.wr.trans h.wr,k.sp.trans h.sp,(h.mem.trans k.mem).mono (fun _ h => (List.mem_append.mp h).elim id id)⟩
-
-theorem Changes.mono {base : Addr} {W W' : List (Nat × Nat)} {s t : State}
-    (h : Changes base W s t) (hs : ∀ w ∈ W,w ∈ W') : Changes base W' s t :=
-  ⟨h.x0,h.rd,h.wr,h.sp,h.mem.mono hs⟩
-
-theorem Changes.point {base : Addr} {W : List (Nat × Nat)} {s t : State}
-    (h : Changes base W s t) (hs : Scr s base 8192) {p : Pt} {P : Point C}
-    (hp : PointAt base s p P) (hle : ∀ x ∈ coordinates p,x+64 ≤ 8192)
-    (hsep : ∀ x ∈ coordinates p,∀ w ∈ W,x+64 ≤ w.1 ∨ w.1+w.2 ≤ x) :
-    PointAt base t p P := by
-  have e (x : Nat) (hx : x ∈ coordinates p) : num base t x = num base s x :=
-    h.mem.wordsVal (hsep x hx) (by have := hs.nowrap; have := hle x hx; have hn8 : cfg.n = 8 := rfl; omega_using [this, hn8])
-  refine ⟨fun x hx => Nat.lt_of_le_of_lt (Nat.le_of_eq (e x hx)) (hp.1 x hx),?_⟩
-  change Rep C (toM _ _ (num base t p.x)) (toM _ _ (num base t p.y))
-    (toM _ _ (num base t p.z)) P
-  rw [e _ (by simp),e _ (by simp),e _ (by simp)]
-  exact hp.2
-
 materialize_code Impl.Ecdsa.Verify.AArch64.BrainpoolP512r1.Joint.addPoints
 
 /-- Complete addition preserves the public loop counter, including through the field calls. -/
@@ -83,6 +42,20 @@ theorem sum_counter : ∀ i ∈ instrs (sum cfg),clobbers i .x19 = false := by
   have h : addPoints.allInstrs (fun i => decide (clobbers i .x19 = false)) = true := by lit_decide
   rw [Code.allInstrs_eq,List.all_eq_true] at h
   exact fun i hi => of_decide_eq_true (h i hi)
+
+/-- The curve's kit. -/
+instance kit : JointKit.Kit cfg := ⟨by decide, sum_counter⟩
+
+/-- The loop's rounds: a scalar of eight words. -/
+theorem rounds : JointKit.Rounds cfg cfg.n :=
+  ⟨by decide, by decide, fun hc => hc.n_lt⟩
+
+abbrev PointAt (base : Addr) (s : State) (p : Pt) (P : Point C) : Prop := JointKit.PointAt cfg base s p P
+abbrev addWork : List (Nat × Nat) := JointKit.addWork cfg
+abbrev entryWork : List (Nat × Nat) := JointKit.entryWork cfg
+abbrev loopWork : List (Nat × Nat) := JointKit.loopWork cfg
+abbrev work : List (Nat × Nat) := JointKit.work cfg
+abbrev Changes (base : Addr) (W : List (Nat × Nat)) (s t : State) : Prop := JointKit.Changes base W s t
 
 /-- Complete addition in the three live slots, with the same existing field and curve contracts. -/
 theorem sum_points {base : Addr} {s : State} (hc : BaseCfgOk cfg) (hC : Law C)
@@ -94,31 +67,6 @@ theorem sum_points {base : Addr} {s : State} (hc : BaseCfgOk cfg) (hC : Law C)
     (hp : PointAt base s entry P) (hq : PointAt base s resultPt Q) :
     WP isa (sum cfg) s fun t =>
       Changes base addWork s t ∧ PointAt base t resultPt (Spec.Weierstrass.add P Q) ∧
-      t.gpr .x19 = s.gpr .x19 := by
-  have hi : ∀ i ∈ sumR,sv cfg base s i < C.p := by
-    intro i hi
-    simp only [sumR,List.mem_cons,List.not_mem_nil,or_false] at hi
-    rcases hi with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-    · exact hal
-    · exact hbl
-    · exact hp.1 _ (by decide)
-    · exact hp.1 _ (by decide)
-    · exact hp.1 _ (by decide)
-    · exact hq.1 _ (by decide)
-    · exact hq.1 _ (by decide)
-    · exact hq.1 _ (by decide)
-  obtain ⟨trace,t,he,ht,rd,wr,unch,_,bounds,result⟩ := sum_full_ok hc hs hm hi
-  refine ⟨trace,t,he,⟨ht.x0.trans hs.x0.symm,rd,wr,VG.AArch64.Exec.sp he,unch⟩,⟨?_,?_⟩,Exec.gpr sum_counter he⟩
-  · intro o ho
-    simp only [coordinates,resultPt,Cfg.pt,List.mem_cons,List.not_mem_nil,or_false] at ho
-    rcases ho with rfl | rfl | rfl
-    · exact bounds.2.1
-    · exact bounds.2.2
-    · exact bounds.1
-  · change (val base t resultPt.x,val base t resultPt.y,val base t resultPt.z) =
-      rcbAdd (val base s (cfg.sl AP)) (val base s (cfg.sl EXPP))
-        (val base s entry.x) (val base s entry.y) (val base s entry.z)
-        (val base s resultPt.x) (val base s resultPt.y) (val base s resultPt.z) at result
-    rw [ha,hb] at result
-    exact Rep.add hC hP hQ hp.2 hq.2 result.symm
+      t.gpr .x19 = s.gpr .x19 :=
+  JointKit.sum_points (c := cfg) hc hC hs hm ha hb hal hbl hP hQ hp hq
 end VG.Proof.Ecdsa.Verify.AArch64.BrainpoolP512r1.Joint

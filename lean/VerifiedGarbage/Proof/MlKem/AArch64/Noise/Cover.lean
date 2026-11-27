@@ -4,13 +4,11 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Lay
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Rotate
 
 /-! # Coverage of the existing scratch allocation -/
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Noise
 open VG VG.AArch64 VG.Impl.MlKem.AArch64
-open VG.Proof.Sha3.AArch64.Neon
 
 def scratchOff (kg : Bool) : Nat := if kg then KG.SS else KEM.SS
 def seedOff (kg : Bool) : Nat := if kg then KG.SG else KEM.RB

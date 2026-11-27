@@ -15,4 +15,7 @@ open VG VG.Arm
 
 def reduceOperand (o : Nat) : Prog isa := .seq (montOp o o 4) (montOp o o 7)
 
+/-- `reduceOperand` by the product `op`. -/
+def reduceOperandWith (op : Nat → Nat → Nat → Prog isa) (o : Nat) : Prog isa := .seq (op o o 4) (op o o 7)
+
 end VG.Impl.Bignum.Arm

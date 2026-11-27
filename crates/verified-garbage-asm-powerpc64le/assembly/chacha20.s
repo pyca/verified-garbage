@@ -39,6 +39,11 @@ vg_chacha20_init:
 	subf %r12, %r9, %r12
 	rldicr %r12, %r12, 6, 57
 	std %r12, 128(%r3)
+	li %r4, 0
+	li %r9, 0
+	li %r10, 0
+	li %r11, 0
+	li %r12, 0
 	blr
 
 vg_chacha20_set_nonce:
@@ -67,6 +72,10 @@ vg_chacha20_set_nonce:
 	subf %r12, %r9, %r12
 	rldicr %r12, %r12, 6, 57
 	std %r12, 128(%r3)
+	li %r9, 0
+	li %r10, 0
+	li %r11, 0
+	li %r12, 0
 	blr
 
 vg_chacha20_apply:
@@ -203,4 +212,36 @@ vg_chacha20_apply:
 20:
 	li %r3, 0
 21:
+	li %r0, 0
+	rldicr %r3, %r3, 32, 31
+	rldicl %r3, %r3, 32, 32
+	li %r4, 0
+	li %r5, 0
+	li %r6, 0
+	li %r7, 0
+	li %r8, 0
+	li %r9, 0
+	li %r10, 0
+	li %r11, 0
+	li %r12, 0
+	vxor %v0, %v0, %v0
+	vxor %v1, %v1, %v1
+	vxor %v2, %v2, %v2
+	vxor %v3, %v3, %v3
+	vxor %v4, %v4, %v4
+	vxor %v5, %v5, %v5
+	vxor %v6, %v6, %v6
+	vxor %v7, %v7, %v7
+	vxor %v8, %v8, %v8
+	vxor %v9, %v9, %v9
+	vxor %v10, %v10, %v10
+	vxor %v11, %v11, %v11
+	vxor %v12, %v12, %v12
+	vxor %v13, %v13, %v13
+	vxor %v14, %v14, %v14
+	vxor %v15, %v15, %v15
+	vxor %v16, %v16, %v16
+	vxor %v17, %v17, %v17
+	vxor %v18, %v18, %v18
+	vxor %v19, %v19, %v19
 	blr

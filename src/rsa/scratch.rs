@@ -80,6 +80,9 @@ impl VerifyScratch {
             // ownership of the Box installed by a previous lease's release CAS.
             unsafe { Box::from_raw(pointer) }
         };
+        // NO-SECRET-RESIDUE: a pooled buffer is wiped before it is returned
+        // to the pool if it held secrets (`ScratchLease::drop`), so growing it
+        // frees only zeros or public data.
         buffer.resize(words, 0);
         ScratchLease {
             pool: self,

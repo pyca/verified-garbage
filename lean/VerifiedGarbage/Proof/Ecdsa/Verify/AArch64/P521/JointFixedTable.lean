@@ -1,6 +1,7 @@
 module
+
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointFixedSource
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombTbl
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
 public import VerifiedGarbage.Proof.Weierstrass.CombW
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.Layout
 import VerifiedGarbage.Proof.Ecdsa.AArch64.CombLays
@@ -10,6 +11,7 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Ecdh.AArch64.Peer
 import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombPublic
 import VerifiedGarbage.Proof.Weierstrass.TCombWords
+
 @[expose] public section
 namespace VG.Proof.Ecdsa.Verify.AArch64.P521.Joint
 open VG VG.AArch64 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.AArch64

@@ -10,9 +10,12 @@ instructions, https://www.intel.com/content/www/us/en/developer/articles/technic
 There are only eight XMM registers outside 64-bit mode. All operations
 below leave flags and memory unchanged. SSE2 is the target baseline;
 SSSE3, AES, PCLMULQDQ and SHA requirements are recorded in `Instr.requires`.
-No vector integer multiplication instructions with Intel's MCDT hazard
-are included. These are the same bit-value semantics as the x86-64 model,
-restricted to the instructions the 32-bit implementations need.
+The vector integer multiplications with Intel's MCDT hazard (`pmuludq`,
+`pmullw`, `pmulhw`) are not among the `XOp`s: their values are defined
+here, and they are instructions of their own, which run only inside an
+MCDT frame (`TCB/X86/Isa.lean`). These are the same bit-value semantics as
+the x86-64 model, restricted to the instructions the 32-bit implementations
+need.
 -/
 
 @[expose] public section
@@ -26,9 +29,10 @@ inductive XBinOp
   | pshufb | sha256msg1 | sha256msg2 | aesenc | aesenclast
   | paddq | sha1msg1 | sha1msg2 | sha1nexte
   | aesdec | aesdeclast | aesimc
+  | paddw | psubw | packssdw | punpcklwd | punpckhwd
   deriving DecidableEq, Repr
 
-inductive XShiftOp | pslld | psrld | psllq | psrlq | pslldq | psrldq
+inductive XShiftOp | pslld | psrld | psllq | psrlq | pslldq | psrldq | psraw
   deriving DecidableEq, Repr
 
 inductive XOp
@@ -234,6 +238,33 @@ def pmuludq (a b : BitVec 128) : BitVec 128 :=
   ((dword a 2).setWidth 64 * (dword b 2).setWidth 64) ++
     ((dword a 0).setWidth 64 * (dword b 0).setWidth 64)
 
+/-- The signed product of two words (SDM Vol. 2, "PMULLW" and "PMULHW":
+`TEMP0[31:0] := DEST[15:0] * SRC[15:0]`, "signed multiply"). -/
+def mulWordsSigned (a b : BitVec 16) : BitVec 32 := a.signExtend 32 * b.signExtend 32
+
+/-- SDM Vol. 2, "PMULLW—Multiply Packed Signed Integers and Store Low
+Result", 128-bit legacy SSE version (`66 0F D5 /r`): `TEMP0[31:0] :=
+DEST[15:0] * SRC[15:0]` (signed multiply; see `mulWordsSigned`), …
+`TEMP7[31:0] := DEST[127:112] * SRC[127:112]`; `DEST[15:0] := TEMP0[15:0]`, …
+`DEST[127:112] := TEMP7[15:0]`. It is an `Instr` of its own, not an `XOp`,
+as it runs only inside an MCDT frame (`TCB/X86/Isa.lean`). -/
+def pmullw (a b : BitVec 128) : BitVec 128 :=
+  ofWords fun i => (mulWordsSigned (word a i) (word b i)).extractLsb' 0 16
+
+/-- SDM Vol. 2, "PMULHW—Multiply Packed Signed Integers and Store High
+Result", 128-bit legacy SSE version (`66 0F E5 /r`): the same products as
+PMULLW; `DEST[15:0] := TEMP0[31:16]`, … `DEST[127:112] := TEMP7[31:16]`. It
+is an `Instr` of its own, not an `XOp`, as it runs only inside an MCDT frame
+(`TCB/X86/Isa.lean`). -/
+def pmulhw (a b : BitVec 128) : BitVec 128 :=
+  ofWords fun i => (mulWordsSigned (word a i) (word b i)).extractLsb' 16 16
+
+/-- SDM Vol. 2, "PACKSSDW", `SaturateSignedDwordToSignedWord`: the
+doubleword as a signed word, `7FFFH` if it is greater than 32767 and `8000H`
+if it is less than -32768. -/
+def satSignedWord (x : BitVec 32) : BitVec 16 :=
+  if 32767 < x.toInt then 0x7fff else if x.toInt < -32768 then 0x8000 else x.setWidth 16
+
 /-- SDM Vol. 2, named legacy register forms: MOVDQA copies all 128 bits;
 PADDD wraps independently in four doublewords; PXOR/POR/PAND/PANDN are
 bitwise (PANDN complements the old destination); PUNPCK interleaves the
@@ -254,7 +285,25 @@ AESDEC: `STATE := SRC1; RoundKey := SRC2; STATE := InvShiftRows(STATE);
 STATE := InvSubBytes(STATE); STATE := InvMixColumns(STATE); DEST[127:0] :=
 STATE XOR RoundKey`; AESDECLAST: as AESDEC, without `InvMixColumns`; AESIMC:
 `DEST[127:0] := InvMixColumns(SRC)` (AESDEC/AESDECLAST/AESIMC Operation
-pseudocode; `SRC1` is the destination, `SRC2` the source). -/
+pseudocode; `SRC1` is the destination, `SRC2` the source).
+PADDW ("PADDB/PADDW/PADDD/PADDQ", `66 0F FD /r`): `DEST[15:0] := DEST[15:0]
++ SRC[15:0]`, and likewise for words 1–7; PSUBW ("PSUBB/PSUBW/PSUBD", `66 0F
+F9 /r`): `DEST[15:0] := DEST[15:0] − SRC[15:0]`, and likewise for words 1–7
+(both wrapping; no carry or borrow between elements).
+PACKSSDW ("PACKSSWB/PACKSSDW", `66 0F 6B /r`): `DEST[15:0] :=
+SaturateSignedDwordToSignedWord (DEST[31:0])`, … `DEST[63:48] :=
+SaturateSignedDwordToSignedWord (DEST[127:96])`; `DEST[79:64] :=
+SaturateSignedDwordToSignedWord (SRC[31:0])`, … `DEST[127:112] :=
+SaturateSignedDwordToSignedWord (SRC[127:96])` (see `satSignedWord`).
+PUNPCKLWD ("PUNPCKLBW/PUNPCKLWD/PUNPCKLDQ/PUNPCKLQDQ", `66 0F 61 /r`,
+`INTERLEAVE_WORDS`): `DEST[15:0] := SRC1[15:0]; DEST[31:16] := SRC2[15:0];
+DEST[47:32] := SRC1[31:16]; DEST[63:48] := SRC2[31:16]; DEST[79:64] :=
+SRC1[47:32]; DEST[95:80] := SRC2[47:32]; DEST[111:96] := SRC1[63:48];
+DEST[127:112] := SRC2[63:48]`. PUNPCKHWD
+("PUNPCKHBW/PUNPCKHWD/PUNPCKHDQ/PUNPCKHQDQ", `66 0F 69 /r`,
+`INTERLEAVE_HIGH_WORDS`): the same, from `SRC1[127:64]` and `SRC2[127:64]`:
+`DEST[15:0] := SRC1[79:64]; DEST[31:16] := SRC2[79:64]; …; DEST[127:112] :=
+SRC2[127:112]`. -/
 def XBinOp.eval : XBinOp → BitVec 128 → BitVec 128 → BitVec 128
   | .movdqa, _, b => b
   | .paddd, a, b =>
@@ -287,9 +336,19 @@ def XBinOp.eval : XBinOp → BitVec 128 → BitVec 128 → BitVec 128
   | .aesdec, a, b => aesInvMixColumns (aesMapBytes aesInvSbox (aesInvShiftRows a)) ^^^ b
   | .aesdeclast, a, b => aesMapBytes aesInvSbox (aesInvShiftRows a) ^^^ b
   | .aesimc, _, b => aesInvMixColumns b
+  | .paddw, a, b => ofWords fun i => word a i + word b i
+  | .psubw, a, b => ofWords fun i => word a i - word b i
+  | .packssdw, a, b =>
+    ofWords fun i => if i < 4 then satSignedWord (dword a i) else satSignedWord (dword b (i - 4))
+  | .punpcklwd, a, b => ofWords fun i => if i % 2 = 0 then word a (i / 2) else word b (i / 2)
+  | .punpckhwd, a, b =>
+    ofWords fun i => if i % 2 = 0 then word a (4 + i / 2) else word b (4 + i / 2)
 /-- SDM Vol. 2 PSLLD/PSRLD/PSLLQ/PSRLQ: each element shifts logically,
 becoming zero for counts greater than its width minus one. PSLLDQ/PSRLDQ
 shift the whole register by bytes, becoming zero for counts at least 16.
+PSRAW ("PSRAW/PSRAD/PSRAQ", `66 0F 71 /4 ib`): `IF (COUNT > 15) THEN COUNT :=
+16; DEST[15:0] := SignExtend(DEST[15:0] >> COUNT)` (an arithmetic shift),
+and likewise for words 1–7.
 All forms use an imm8 and leave flags unchanged. -/
 def XShiftOp.eval (op : XShiftOp) (a : BitVec 128) (count : BitVec 8) : BitVec 128 :=
   let n := count.toNat
@@ -304,6 +363,7 @@ def XShiftOp.eval (op : XShiftOp) (a : BitVec 128) (count : BitVec 8) : BitVec 1
   | .psrlq => qwords (· >>> n)
   | .pslldq => a <<< (min n 16 * 8)
   | .psrldq => a >>> (min n 16 * 8)
+  | .psraw => ofWords fun i => (word a i).sshiftRight (min n 16)
 /-- SDM Vol. 2, "PSHUFD": `DEST[31:0] := (SRC >> (ORDER[1:0] * 32))[31:0];
 DEST[63:32] := (SRC >> (ORDER[3:2] * 32))[31:0]; DEST[95:64] := (SRC >>
 (ORDER[5:4] * 32))[31:0]; DEST[127:96] := (SRC >> (ORDER[7:6] * 32))[31:0]`.

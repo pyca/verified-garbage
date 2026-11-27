@@ -65,7 +65,7 @@ def pbkG : Contract isa where
     s₁.gpr .r9 = s₂.gpr .r9 ∧
     stackArg s₁ 0 = stackArg s₂ 0 ∧
     stackArg s₁ 1 = stackArg s₂ 1 ∧
-    s₁.gpr .rsp = s₂.gpr .rsp
+    s₁.gpr .rsp = s₂.gpr .rsp ∧ s₁.mxcsr = s₂.mxcsr
 
 theorem map_range2 {α : Type} (f : Nat → α) : List.map f (List.range 2) = [f 0, f 1] := rfl
 
@@ -91,11 +91,11 @@ theorem pbkImp (h : ∃ s, (Proof.Pbkdf2.pbkdf2ScratchContract S W X86_64.abi 24
         exact h
       pub := by
         rintro s₁ s₂ - - h
-        sig_pub [Proof.Pbkdf2.pbkdf2ScratchContract, Proof.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, pbkG, X86_64.abi, X86_64.argRegs, map_range2, List.append_eq] at h
+        sig_pub_keep [Proof.Pbkdf2.pbkdf2ScratchContract, Proof.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, pbkG, X86_64.abi, X86_64.argRegs, map_range2, List.append_eq] at h
         simp only [List.getD_cons_succ, List.getD_cons_zero] at h
         sig_split h
-        rename_i h1 h2 h3 h4 h5 h6 h7 h8
-        exact ⟨h2, h3, h4, h5, h6, h7, h8, h, h1⟩
+        rename_i h1 hm h2 h3 h4 h5 h6 h7 h8
+        exact ⟨h2, h3, h4, h5, h6, h7, h8, h, h1, hm⟩
       sat := h }
 
 /-! ## HMAC's `init` and `finalize` -/

@@ -36,9 +36,9 @@ them out, and each group of words is stored as soon as it is computed:
   (or lie past the schedule's `16 (Nr + 1)` bytes, in the rest of the
   240-byte buffer).
 
-`bcast(x)` is `x` in every doubleword (`pshufd`); `bcast(RotWord(x))` is
-`bcast(x)` shifted right by a byte (`psrldq`), whose doubleword 0 is
-`RotWord(x)`, broadcast again. `aesenclast` of a register whose four columns
+`bcast(x)` is `x` in every doubleword (`pshufd`); `bcast(RotWord(x))` is one
+`pshufb`, with a mask that selects the word's bytes rotated, four times
+(`rotMask`, in `xmm0`). `aesenclast` of a register whose four columns
 are equal is `SubWord` of each, since `ShiftRows` moves bytes only between
 columns, XORed with the round key: a register holding the round constant in
 every doubleword. The round constants are computed first, without a
@@ -92,12 +92,24 @@ def rcons128 : List Instr :=
   [.xop (.bin .movdqa .xmm13 .xmm5), .xop (.bin .pxor .xmm13 .xmm6), .xop (.bin .pxor .xmm13 .xmm8),
    .xop (.bin .pxor .xmm13 .xmm9), .xop (.bin .movdqa .xmm14 .xmm13), .xop (.bin .paddd .xmm14 .xmm14)]
 
-/-- `xmm3 ← bcast(RotWord(SubWord(dword sel of s))) ⊕ k` (for `rot`), or
+/-- The `pshufb` mask that puts `RotWord` of doubleword `i` in every
+doubleword: bytes `4i + 1`, `4i + 2`, `4i + 3`, `4i` in each. -/
+def rotMask (i : Nat) : BitVec 128 :=
+  let d : BitVec 32 := BitVec.ofNat 32 (4 * i) <<< 24 ||| BitVec.ofNat 32 (4 * i + 3) <<< 16 |||
+    BitVec.ofNat 32 (4 * i + 2) <<< 8 ||| BitVec.ofNat 32 (4 * i + 1)
+  d ++ d ++ d ++ d
+
+/-- `rotMask i` into `xmm0`, through `rax`. -/
+def rotMaskSet (i : Nat) : List Instr :=
+  [.movImm64 .rax ((rotMask i).extractLsb' 0 64), .xop (.movq .xmm0 .rax), .xop (.bin .punpcklqdq .xmm0 .xmm0)]
+
+/-- `xmm3 ← bcast(RotWord(SubWord(dword i of s))) ⊕ k` (for `rot`, with
+`rotMask i` in `xmm0`: one `pshufb`, so that a step's chain from one round
+key to the next is `pshufb`, `aesenclast`, `pxor`), or
 `bcast(SubWord(dword sel of s)) ⊕ k`. -/
 def kgen (s : XReg) (sel : BitVec 8) (rot : Bool) (k : XReg) : List Instr :=
-  .xop (.pshufd .xmm3 s sel) ::
-    ((if rot then [.xop (.shift .psrldq .xmm3 1), .xop (.pshufd .xmm3 .xmm3 0)] else []) ++
-      ([.xop (.bin .aesenclast .xmm3 k)] : List Instr))
+  (if rot then [.xop (.bin .movdqa .xmm3 s), .xop (.bin .pshufb .xmm3 .xmm0)]
+    else [.xop (.pshufd .xmm3 s sel)]) ++ ([.xop (.bin .aesenclast .xmm3 k)] : List Instr)
 
 /-- `d ← prefixXor(d) ⊕ xmm3`, then store `d` at `schedule + off`. `xmm4` is
 a temporary. -/
@@ -122,12 +134,12 @@ def kstepB6 (off : Nat) : List Instr :=
 
 /-- AES-128: 11 round keys. -/
 def expand128 : List Instr :=
-  rcons128 ++ ([.movdquLoad .xmm1 (at_ .rdi 0), .movdquStore (at_ .rdx 0) .xmm1] : List Instr) ++
+  rcons128 ++ rotMaskSet 3 ++ ([.movdquLoad .xmm1 (at_ .rdi 0), .movdquStore (at_ .rdx 0) .xmm1] : List Instr) ++
   (List.range 10).flatMap fun k => kstep .xmm1 .xmm1 0xff true (rcReg k) (16 * (k + 1))
 
 /-- AES-192: 13 round keys (52 words), 6 words at a time. -/
 def expand192 : List Instr :=
-  ([.movdquLoad .xmm1 (at_ .rdi 0), .movdquLoad .xmm2 (at_ .rdi 8), .xop (.shift .psrldq .xmm2 8),
+  rotMaskSet 1 ++ ([.movdquLoad .xmm1 (at_ .rdi 0), .movdquLoad .xmm2 (at_ .rdi 8), .xop (.shift .psrldq .xmm2 8),
    .movdquStore (at_ .rdx 0) .xmm1, .movdquStore (at_ .rdx 16) .xmm2] : List Instr) ++
   (List.range 7).flatMap (fun k =>
     kstep .xmm1 .xmm2 0x55 true (rcReg k) (24 * (k + 1)) ++ kstepB6 (24 * (k + 1) + 16)) ++
@@ -136,7 +148,7 @@ def expand192 : List Instr :=
 /-- AES-256: 15 round keys (60 words), 8 words at a time; the steps without
 a round constant use `aesenclast` with zero, in `xmm15`. -/
 def expand256 : List Instr :=
-  ([.xop (.bin .pxor .xmm15 .xmm15), .movdquLoad .xmm1 (at_ .rdi 0), .movdquLoad .xmm2 (at_ .rdi 16),
+  rotMaskSet 3 ++ ([.xop (.bin .pxor .xmm15 .xmm15), .movdquLoad .xmm1 (at_ .rdi 0), .movdquLoad .xmm2 (at_ .rdi 16),
    .movdquStore (at_ .rdx 0) .xmm1, .movdquStore (at_ .rdx 16) .xmm2] : List Instr) ++
   (List.range 6).flatMap (fun k =>
     kstep .xmm1 .xmm2 0xff true (rcReg k) (32 * (k + 1)) ++

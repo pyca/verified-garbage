@@ -1,27 +1,27 @@
 module
 
-public import VerifiedGarbage.Proof.AesSiv.Arm.Frame
-public import VerifiedGarbage.Proof.AesSiv.Arm.Verified
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.Arm.Print
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Siv.Contract
+import VerifiedGarbage.Proof.AesSiv.Arm.Scrub
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # AES-SIV (RFC 5297) on ARMv7 -/
 
-@[expose] public section
-
 namespace VG.Artifacts.AesSiv.Arm
 
-open VG.Proof.AesSiv.Arm
-
-def artifacts : List Artifact := [
+public def artifacts : List (Artifact Arm.target) := [
   Spec.Siv.initApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withRegScratch 2560 .r3 Impl.AesSiv.Arm.init
-    verified := init_framed },
+    code := Impl.AesSiv.Arm.Fn.init
+    verified := Proof.AesSiv.Arm.Fn.init },
   Spec.Siv.encryptApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratch 2608 3 Impl.AesSiv.Arm.encrypt
-    verified := Proof.AesSiv.encrypt_keyed encrypt_framed },
+    code := Impl.AesSiv.Arm.Fn.encrypt
+    verified := Proof.AesSiv.Arm.Fn.encrypt },
   Spec.Siv.decryptApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratch 2608 3 Impl.AesSiv.Arm.decrypt
-    verified := Proof.AesSiv.decrypt_keyed decrypt_framed }]
+    code := Impl.AesSiv.Arm.Fn.decrypt
+    verified := Proof.AesSiv.Arm.Fn.decrypt }]
+
+spec_apis artifacts
 
 end VG.Artifacts.AesSiv.Arm

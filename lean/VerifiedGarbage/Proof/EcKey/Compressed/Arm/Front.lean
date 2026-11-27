@@ -32,6 +32,8 @@ open VG.Proof.Mont VG.Proof.Mont.Arm VG.Proof.Weierstrass VG.Proof.Weierstrass.A
   disjoint : Region.Disjoint ⟨ptr s .r1, len⟩ ⟨ptr s .r2, 8192⟩
   pk_fit : (s.gpr .r1).toNat + len ≤ 2 ^ 32
   ws_fit : (s.gpr .r2).toNat + 8192 ≤ 2 ^ 32
+  /-- The table of constants the setup copies. -/
+  tbl : ConstTblOk c (ptr s .r2) s
 
  theorem input_setup {c : Cfg} {len : Nat} {s : State}
     (hp : InputPre c len s) (hlen : c.C.len ≤ len) :
@@ -46,7 +48,7 @@ open VG.Proof.Mont VG.Proof.Mont.Arm VG.Proof.Weierstrass VG.Proof.Weierstrass.A
       (by simpa using Offset.sub_base (ptr s .r2) (d := 0) (by decide : size ≤ 8192))
   refine ⟨.inl rfl, by simp [argsOk], ?_, hp.ws, hi, hi, hi, hd, hd, hd,
     by change (s.gpr .r1).toNat + c.C.len ≤ 2 ^ 32; omega_using [hlen, hf], by change (s.gpr .r1).toNat + c.C.len ≤ 2 ^ 32; omega_using [hlen, hf],
-    by change (s.gpr .r1).toNat + c.C.len ≤ 2 ^ 32; omega_using [hlen, hf], hp.ws_fit⟩
+    by change (s.gpr .r1).toNat + c.C.len ≤ 2 ^ 32; omega_using [hlen, hf], hp.ws_fit, hp.tbl⟩
   intro h
   cases h
 
@@ -98,7 +100,7 @@ open VG.Proof.X25519.Arm (Rest)
  theorem front_ok {c : Cfg} (hc : CfgOk c) {s₀ : State}
     (hp : InputPre c (1 + 2 * c.C.len) s₀) {rest : Prog isa} {Q : State → Prop}
     (h : ∀ s, Front c s₀ s → WP isa rest s Q) :
-    WP isa (.seq (.block (c.setupWith Impl.EcKey.Compressed.Arm.args))
+    WP isa (.seq (c.setupWith Impl.EcKey.Compressed.Arm.args)
       (.seq (.block (Impl.Ecdh.Arm.Cfg.peerAt c .r1))
       (.seq (Impl.Ecdh.Arm.Cfg.validate c) rest))) s₀ Q := by
   have h0 := hc.n0

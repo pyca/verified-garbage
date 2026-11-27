@@ -1,20 +1,21 @@
 module
 
-public import VerifiedGarbage.Proof.Argon2.Arm.Derive.Verified
-public import VerifiedGarbage.Proof.Argon2.Arm.CompressVerified
-public import VerifiedGarbage.Proof.Argon2.Arm.HPrime.Verified
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.Arm.Print
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Argon2.Contract
+import VerifiedGarbage.Proof.Argon2.Arm.Scrub
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # Argon2 (RFC 9106) on ARMv7 -/
 
-@[expose] public section
-
 namespace VG.Artifacts.Argon2.Arm
 
-def artifacts : List Artifact := [
+public def artifacts : List (Artifact Arm.target) := [
   Spec.Argon2.deriveApi.artifact Arm.target {
-    code := Impl.Argon2.Arm.Derive.derive
-    verified := Proof.Argon2.Arm.Derive.deriveShared_verified }]
+    code := Impl.Argon2.Arm.Fn.derive
+    verified := Proof.Argon2.Arm.Fn.derive }]
+
+spec_apis artifacts
 
 end VG.Artifacts.Argon2.Arm

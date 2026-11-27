@@ -1,5 +1,7 @@
 module
 
+import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 public import VerifiedGarbage.Impl.Rsa.X86.KeyCheckRt
 public import VerifiedGarbage.Proof.Rsa.X86.WordRt.Time
 meta import VerifiedGarbage.Proof.Rsa.X86.WordRt.Time
@@ -104,15 +106,19 @@ structure KcCk (full : Bool) : Prop where
     (.block (VG.Impl.Rsa.X86.WordModRt.balanced (lay full) 1 (pLenArg full) (qLenArg full) aN sG)) hint).isSome = true
   half : HalfCk full aVQ aP aQ
 
-theorem kcCkFull : KcCk true := by
-  refine ⟨?_, ?_, ⟨?_, ?_, ?_⟩, ?_, ?_, ?_, ?_, ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ⟨?_, ?_, ?_⟩, ⟨?_, ?_, ?_⟩, ⟨?_, ?_, ?_⟩,
-    ⟨?_, ?_, ?_⟩, ⟨?_, ?_, ?_⟩, ⟨?_, ?_, ?_⟩, ⟨?_, ?_, ?_⟩, ⟨?_, ?_, ?_⟩⟩, ?_, ?_, ⟨?_, ?_, ?_⟩⟩
-  all_goals exact ⟨_, by taint_decide⟩
+/-- The checks of both instances, in one declaration (`taint_decide_all`):
+the kernel analyses the code they share once, and the hints are computed in
+one evaluation. -/
+theorem kcCkBoth : KcCk true ∧ KcCk false := by
+  refine ⟨?_, ?_⟩ <;>
+    refine ⟨?_, ?_, ⟨?_, ?_, ?_⟩, ?_, ?_, ?_, ?_, ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ⟨?_, ?_, ?_⟩, ⟨?_, ?_, ?_⟩, ⟨?_, ?_, ?_⟩,
+      ⟨?_, ?_, ?_⟩, ⟨?_, ?_, ?_⟩, ⟨?_, ?_, ?_⟩, ⟨?_, ?_, ?_⟩, ⟨?_, ?_, ?_⟩⟩, ?_, ?_, ⟨?_, ?_, ?_⟩⟩
+  all_goals refine ⟨?_, ?_⟩
+  taint_decide_all
 
-theorem kcCkCrt : KcCk false := by
-  refine ⟨?_, ?_, ⟨?_, ?_, ?_⟩, ?_, ?_, ?_, ?_, ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ⟨?_, ?_, ?_⟩, ⟨?_, ?_, ?_⟩, ⟨?_, ?_, ?_⟩,
-    ⟨?_, ?_, ?_⟩, ⟨?_, ?_, ?_⟩, ⟨?_, ?_, ?_⟩, ⟨?_, ?_, ?_⟩, ⟨?_, ?_, ?_⟩⟩, ?_, ?_, ⟨?_, ?_, ?_⟩⟩
-  all_goals exact ⟨_, by taint_decide⟩
+theorem kcCkFull : KcCk true := kcCkBoth.1
+
+theorem kcCkCrt : KcCk false := kcCkBoth.2
 
 theorem kcCk (full : Bool) : KcCk full := by
   cases full

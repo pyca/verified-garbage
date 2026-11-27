@@ -2,23 +2,21 @@ module
 
 public import VerifiedGarbage.Proof.Gcm.PPC64LE.Ghash
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTBase
-public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Contract
+public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Fn
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTFin
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.Absorb
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.Compare
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.FinTag
-import VerifiedGarbage.Proof.AesGcm.PPC64LE.InitCT
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.StreamVerify
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.TextAbsorb
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Run
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTBase
-meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.Contract
+meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.Fn
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTFin
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.Absorb
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.Compare
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.FinTag
-meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.InitCT
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.StreamVerify
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.TextAbsorb
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
@@ -32,7 +30,7 @@ public import VerifiedGarbage.Impl.AesGcm.PPC64LE
 # AES-GCM on PPC64LE: `vg_aes_gcm_stream_verify` is constant time
 
 Untrusted: everything here is checked by Lean. As on ARMv7
-(`Proof/AesGcm/Arm/CTVerify.lean`): the invariant fixes what `finish`'s
+(`Proof/AesGcm/Arm/CTOpen.lean`): the invariant fixes what `finish`'s
 does (`FinI`), and the received tag's address and length (`r20`, `r19`);
 the branch on the tag length is on that public length, and the comparison
 does not branch.
@@ -51,7 +49,7 @@ apart from `W`, which the state may read. -/
 def VerI (c st w sp : Addr) (R : Nat) (A T Tp : BitVec 64) (tl : Nat) (s : State) : Prop :=
   ∃ V : Reg → BitVec 64, V .r29 = c ∧ V .r30 = st ∧ V .r31 = w ∧ V .r28 = BitVec.ofNat 64 R ∧ V .r22 = A ∧
     V .r23 = T ∧ V .r20 = Tp ∧ V .r19 = BitVec.ofNat 64 tl ∧ Env V sp s ∧ Covers [⟨Tp, tl⟩] (s.rd ++ s.wr) ∧
-    (⟨Tp, tl⟩ : Region).Disjoint ⟨w, 2560⟩
+    (⟨Tp, tl⟩ : Region).Disjoint ⟨w, 288⟩
 
 theorem verEntry_taint : ∃ h, (VG.Taint.check VG.PPC64LE.taint
     (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10]) (.block verEntry) h).isSome = true :=
@@ -143,7 +141,7 @@ theorem streamVerify_ct [VG.Proof.Gcm.PPC64LE.GhashLaw] : ConstantTime isa strea
   · refine WP.mono (ver1_wp (ver_W hs)) fun s₁ h1 => ?_
     have hT : Covers [⟨s.gpr .r8, (s.gpr .r9).toNat⟩] (s₁.rd ++ s₁.wr) := by
       rw [h1.en.keeps.rd, h1.en.keeps.wr, hs.1]; exact covers_mem (List.mem_append_left _ (by simp))
-    have hTd : (⟨s.gpr .r8, (s.gpr .r9).toNat⟩ : Region).Disjoint ⟨s.gpr .r10, 2560⟩ := hs.2.2.2.2.2.2.1
+    have hTd : (⟨s.gpr .r8, (s.gpr .r9).toNat⟩ : Region).Disjoint ⟨s.gpr .r10, 288⟩ := hs.2.2.2.2.2.2.1
     refine ⟨s₁.gpr, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
     · rw [h1.r29, e3]
     · rw [h1.r30, e5]

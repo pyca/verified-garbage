@@ -167,7 +167,7 @@ theorem update_frame {code : Prog isa}
       (Spec.Sha1.updateContract X86.abi (20 + 188)) :=
   X86.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 20) (stack := 20) (bytes := 188)
     h (by decide) hsp hd
-    (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Sha1.updatePost_local _)
+    (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Sha1.updatePost_local _) (fun vs m m₁ m₂ r hl _ hb => Proof.Sha1.updatePostOut_local _ vs m m₁ m₂ r hl hb)
     (by implies_sat [Spec.Sha1.updateContract, Spec.Sha1.updateSig, X86.abi, X86.argSlots, X86.argVal,
         X86.argBytes]
       [updateFrameSat, MdStream.X86.Update.sat₀, MdStream.X86.Update.satMem, X86.arg, X86.argAddr,
@@ -186,7 +186,7 @@ theorem finalize_frame {code : Prog isa}
       (Spec.Sha1.finalizeContract X86.abi (20 + 184)) :=
   X86.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 20) (stack := 20) (bytes := 184)
     h (by decide) hsp hd
-    (fun _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Sha1.finalizePost_local _)
+    (fun _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Sha1.finalizePost_local _) (fun vs m m₁ m₂ r hl _ hb => Proof.Sha1.finalizePostOut_local _ vs m m₁ m₂ r hl hb)
     (by implies_sat [Spec.Sha1.finalizeContract, Spec.Sha1.finalizeSig, X86.abi, X86.argSlots,
         X86.argVal, X86.argBytes]
       [finalizeFrameSat, MdStream.X86.Finalize.sat₀, MdStream.X86.Finalize.satMem, X86.arg,

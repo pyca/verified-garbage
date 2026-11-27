@@ -2,8 +2,6 @@ module
 
 public import VerifiedGarbage.Impl.MlDsa.Arm.PkTr
 public import VerifiedGarbage.Spec.MlDsa.PkTr
-public import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.StepsCT
-public import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Steps
 public import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Piece
 public import VerifiedGarbage.Proof.MlKem.Arm.RowSum
 import VerifiedGarbage.Proof.MlKem.Arm.SampleCT
@@ -20,8 +18,6 @@ import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Sig
 meta import VerifiedGarbage.Impl.MlDsa.Arm.PkTr
 meta import VerifiedGarbage.Spec.MlDsa.PkTr
-meta import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.StepsCT
-meta import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Steps
 meta import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Piece
 meta import VerifiedGarbage.Proof.MlKem.Arm.RowSum
 meta import VerifiedGarbage.Proof.MlKem.Arm.SampleCT
@@ -381,12 +377,5 @@ theorem pkTr_verified (p : Params) (hp : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlD
     rcases hp with rfl | rfl | rfl <;>
     sig_sat_check [Spec.MlDsa.pkTrContract, Spec.MlDsa.pkTrSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
       Arm.Loc.val, pkTrSat]
-
-theorem pkTr44_verified : Verified Arm.target (pkTr mlDsa44) (Spec.MlDsa.pkTrContract mlDsa44 Arm.abi 8) :=
-  pkTr_verified _ (.inl rfl)
-theorem pkTr65_verified : Verified Arm.target (pkTr mlDsa65) (Spec.MlDsa.pkTrContract mlDsa65 Arm.abi 8) :=
-  pkTr_verified _ (.inr (.inl rfl))
-theorem pkTr87_verified : Verified Arm.target (pkTr mlDsa87) (Spec.MlDsa.pkTrContract mlDsa87 Arm.abi 8) :=
-  pkTr_verified _ (.inr (.inr rfl))
 
 end VG.Proof.MlDsa.Arm.PkTr

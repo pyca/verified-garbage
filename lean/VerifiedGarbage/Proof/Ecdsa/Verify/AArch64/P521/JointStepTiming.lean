@@ -1,12 +1,12 @@
 module
 
+import Batteries.Logic
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.JointDigit
 public import VerifiedGarbage.Proof.Weierstrass.Joint
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointFixedEntry
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTiming
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.DigitTiming
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacMixedTiming
-
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointFixedBridge
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointLayout
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
@@ -16,7 +16,9 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTableTiming
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointFixedSignTiming
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacMixedTimingB
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeArithmetic
+import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.WindowTiming
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointChecks
+import VerifiedGarbage.Proof.Weierstrass.AArch64.NafNeg
 
 -- Formerly `VerifiedGarbage/Proof/Ecdsa/Verify/AArch64/P521/JointFixedLookupTiming.lean`, which only this module imported.
 section
@@ -227,49 +229,5 @@ def JointRelation (C : Curve) (base : Addr) (P G : Point C) (u v j : Nat) (s₀ 
  JointDigitPost P521Joint.K C base 8192 P t₀ t j (jointPoint G P u v j) ∧
  s.syms=s₀.syms ∧ t.syms=t₀.syms
 
-theorem jointStep_relCT {C : Curve} {base T : Addr} {P G : Point C} {s₀ t₀ : State} {u v j : Nat}
- (hL : NafLay P521Joint.K 8192) (hp : UnitMod C.p (2^(64*P521Joint.K.M.n))) (hC : Law C)
- (hM3 : AM3 C) (hone : P521Joint.K.one<C.p) (hP : onCurve C P=true) (hG : onCurve C G=true)
- (hF₁ : NafFixed P521Joint.K C base s₀ P v) (hF₂ : NafFixed P521Joint.K C base t₀ P v)
- (g₁ : GeneratorInput C base T G u s₀) (g₂ : GeneratorInput C base T G u t₀)
- (checks : StepChecks P521Joint.K)
- (mixed : JacMixedChecks P521Joint.K P521Joint.K.R P521Joint.K.E P521Joint.K.D)
- (hj : j<576) :
- RelCT isa (JointRelation C base P G u v (j+1) s₀ t₀) P521Joint.step
-  (JointRelation C base P G u v j s₀ t₀) := by
- intro s t ts tt s' t' ⟨pair,hs,ht,sys,syt⟩ es et
- have fs:=fixedStep_of_source hL hp hC hM3 hone hG hF₁ g₁.source g₁.bytes g₁.one
- have ft:=fixedStep_of_source hL hp hC hM3 hone hG hF₂ g₂.source g₂.bytes g₂.one
- obtain ⟨_,_,exs,postS⟩:=step_ok hL hp hC hM3 hone hP hG hF₁ fs hj sys hs
- obtain ⟨_,_,ext,postT⟩:=step_ok hL hp hC hM3 hone hP hG hF₂ ft hj syt ht
- obtain ⟨_,rfl⟩:=Exec.det es exs
- obtain ⟨_,rfl⟩:=Exec.det et ext
- have result : ts=tt ∧ ∃E,FieldPair P521Joint.K.M base 8192 C.p (·∈winSlots P521Joint.K)
-   (loopLive P521Joint.K) E s' t' := by
-  cases es with
-  | seq ds es => cases es with
-    | seq dbs es => cases es with
-      | seq ps gs =>
-       cases et with
-       | seq dt et => cases et with
-         | seq dbt et => cases et with
-           | seq pt gt =>
-            have eps : Exec isa (PubNaf.step P521Joint.K) _ _ _ := .seq ds (.seq dbs ps)
-            have ept : Exec isa (PubNaf.step P521Joint.K) _ _ _ := .seq dt (.seq dbt pt)
-            obtain ⟨he,E,hpair⟩:=stepRaw_relCT hL hp hone checks hF₁ hF₂ (j:=j) (by change j<577; omega_using [hj])
-             _ _ _ _ _ _ ⟨pair,hs.st,ht.st,hs.cache,ht.cache,hs.x19,ht.x19⟩ eps ept
-            have hcA:=jointPoint_curve hC hG hP u v (j+1)
-            obtain ⟨_,_,e1,h1⟩:=peerStep_ok hL hp hC hM3 hone hP hcA hF₁ hj hs
-            obtain ⟨_,_,e2,h2⟩:=peerStep_ok hL hp hC hM3 hone hP hcA hF₂ hj ht
-            obtain ⟨_,rfl⟩:=Exec.det eps e1
-            obtain ⟨_,rfl⟩:=Exec.det ept e2
-            have a:=g₁.current (by omega_using [hj]) ((Exec.syms eps).trans sys) h1
-            have b:=g₂.current (by omega_using [hj]) ((Exec.syms ept).trans syt) h2
-            have ev : E (p521.sl ONEP)=1 := by
-             rw [←hpair.left.val _ (by decide)]
-             exact a.2
-            obtain ⟨hg,res⟩:=fixedDigit_relCT hL hC hp hone ev (by omega_using [hj]) mixed
-             _ _ _ _ _ _ ⟨hpair,a.1,b.1⟩ gs gt
-            exact ⟨by simpa only [List.append_assoc] using congrArg₂ (·++·) he hg,res⟩
- exact ⟨result.1,result.2,postS,postT,(Exec.syms es).trans sys,(Exec.syms et).trans syt⟩
+
 end VG.Proof.Ecdsa.Verify.AArch64.P521.Joint

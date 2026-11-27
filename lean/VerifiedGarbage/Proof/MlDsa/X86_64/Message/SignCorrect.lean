@@ -2,7 +2,6 @@ module
 
 import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Message.SignCall
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Message.Entry
 import VerifiedGarbage.Proof.MlDsa.X86_64.Message.Hash
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.MlKem.Mem
@@ -10,12 +9,129 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Sha3.X86_64.Round
+public import VerifiedGarbage.Proof.Framework.X86_64.Frame
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Message.Layout
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+
+/-! ### `MlDsa.X86_64.Message.Entry`, which this module and modules that import it used -/
+
+section
+
+/-!
+# ML-DSA on x86-64, `sign_message` and `verify_message`: the frame
+
+Untrusted: everything here is checked by Lean. The frame's push of nine
+registers (`rs`) holding the key, `msg`, `msg_len`, `ctx`, `ctx_len`, `sig`,
+`rnd`, `scratch` and 0, then the store of `ctx_len` after the 0, give `Ctx`
+(`entry_ok`); a frame whose body keeps `Ctx` returns with the permissions,
+`rsp` and callee-saved registers of entry (`frame_ok`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.MlDsa.X86_64.Message
+
+open VG VG.X86_64 VG.Impl.MlDsa.X86_64.Message
+open VG.Proof.MlDsa.Message
+open VG.Spec.Sha3 (bytesAt)
+
+/-- The values the frame's push stores, the first at `SP + 64`. -/
+def Lay.vals (L : Lay) : List (BitVec 64) := [L.key, L.msg, L.len, L.ctx, L.ctxLen, L.sig, L.rnd, L.scr, 0]
+
+theorem push_slot (B : Addr) (j : Nat) (hj : j < 9) :
+    B + BitVec.ofNat 64 224 - BitVec.ofNat 64 (8 * (j + 1)) = B + BitVec.ofNat 64 152 + BitVec.ofNat 64 (64 - 8 * j) := by
+  rw [add_add, Offset.sub_ofNat_eq _ (a := 8 * (j + 1)) (b := 224) (by omega_using [hj]), BitVec.add_sub_cancel]
+  congr 2; omega_using [hj]
+
+theorem push_base (B : Addr) : B + BitVec.ofNat 64 224 - BitVec.ofNat 64 (8 * 9) = B + BitVec.ofNat 64 152 := by
+  have := push_slot B 8 (by omega_using []); simpa using this
+
+theorem setWidth8 (x : BitVec 64) (_h : x.toNat < 256) : x.setWidth 8 = BitVec.ofNat 8 x.toNat := by
+  apply BitVec.eq_of_toNat_eq
+  simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
+
+/-- After the push of the registers `rs` holding `L.vals` and the store of
+`ctx_len`: `Ctx`. -/
+theorem entry_ok {L : Lay} (hL : L.Ok) {rs : List Reg} (hlen : rs.length = 9) (hrs : .rsp ∉ rs) {s : State}
+    (hsp : s.gpr .rsp = L.B + BitVec.ofNat 64 224) (hrd : s.rd = L.rd) (hwr : s.wr = L.wr)
+    (hv : ∀ j (hj : j < 9), s.gpr (rs[j]'(by omega_using [hlen, hj])) = L.vals[j]'(by simp [Lay.vals]; omega_using [hj]))
+    (h8 : s.gpr .r8 = L.ctxLen) :
+    WP isa (.block setHdr) (pushed rs s) fun t => Ctx L s.gpr s.mxcsr s.mem t ∧
+      t.wr = (pushed rs s).wr ∧ t.gpr .rsp = (pushed rs s).gpr .rsp := by
+  have hn : 8 * rs.length ≤ (s.gpr .rsp).toNat := by
+    rw [hsp, hlen, BitVec.toNat_add, BitVec.toNat_ofNat]
+    have := hL.nB
+    rw [Nat.mod_eq_of_lt (a := 224) (by omega_using []), Nat.mod_eq_of_lt this]; omega_using []
+  obtain ⟨hf, hw⟩ := pushRegs_mem s rs hrs hn
+  have hslot : ∀ j (hj : j < 9), (pushed rs s).mem.readW (L.SP + BitVec.ofNat 64 (64 - 8 * j)) 64 =
+      L.vals[j]'(by simp [Lay.vals]; omega_using [hj]) := fun j hj => by
+    rw [← hv j hj, ← hw j (by omega_using [hlen, hj]), hsp, push_slot _ j hj]; rfl
+  have hrsp : (pushed rs s).gpr .rsp = L.SP := by rw [pushed_rsp, hsp, hlen, push_base]
+  have hwr' : (pushed rs s).wr = L.FR :: L.wr := by rw [pushed_wr, hsp, hlen, push_base, hwr]
+  have hin : InRegions (pushed rs s).wr (L.SP + BitVec.ofNat 64 1) 1 :=
+    ⟨L.FR, by rw [hwr']; simp, Offset.contains_base _ (by omega_using []) (by omega_using [])⟩
+  have h8' : (pushed rs s).gpr .r8 = L.ctxLen := by rw [pushed_gpr _ _ (by decide), h8]
+  apply WP.of_runBlock
+  simp only [setHdr, fHdr, runBlock_cons, runStep_some, runBlock_nil, exec, State.store8, ea_stk, hrsp,
+    Nat.reduceAdd, hin, ite_true, Option.some.injEq, exists_eq_left', h8',
+    setWidth8 _ hL.ctxLt]
+  -- The memory after the store.
+  generalize hm : (pushed rs s).mem.writeW (L.SP + BitVec.ofNat 64 1) (BitVec.ofNat 8 L.ctxLen.toNat) = m'
+  have hsep : ∀ j (hj : j < 8), m'.readW (L.SP + BitVec.ofNat 64 (64 - 8 * j)) 64 =
+      (pushed rs s).mem.readW (L.SP + BitVec.ofNat 64 (64 - 8 * j)) 64 := fun j hj => by
+    rw [← hm]
+    exact Mem.readW_writeW_sep (Offset.sep _ (by omega_using [hj]) (by omega_using []) (by omega_using [])) (by decide)
+  refine ⟨⟨by simp [hrd], hwr', hrsp, fun r hr hr' => pushed_gpr _ _ hr', by simp,
+    (hsep 7 (by omega_using [])).trans (hslot 7 (by omega_using [])), (hsep 6 (by omega_using [])).trans (hslot 6 (by omega_using [])),
+    (hsep 5 (by omega_using [])).trans (hslot 5 (by omega_using [])), (hsep 4 (by omega_using [])).trans (hslot 4 (by omega_using [])),
+    (hsep 3 (by omega_using [])).trans (hslot 3 (by omega_using [])), (hsep 2 (by omega_using [])).trans (hslot 2 (by omega_using [])),
+    (hsep 1 (by omega_using [])).trans (hslot 1 (by omega_using [])), (hsep 0 (by omega_using [])).trans (hslot 0 (by omega_using [])), ?_, ?_⟩,
+    trivial, trivial⟩
+  · -- The two bytes: the low byte of the pushed 0, and `ctx_len`.
+    have h0 := hslot 8 (by omega_using [])
+    simp only [Lay.vals, Nat.reduceMul, Nat.sub_self, BitVec.add_zero] at h0
+    have b0 : (pushed rs s).mem L.SP = 0 := by
+      have := Mem.extractLsb'_read (pushed rs s).mem L.SP (n := 8) (j := 0) (by omega_using [])
+      simp only [BitVec.add_zero, Nat.mul_zero] at this
+      rw [← this]
+      have e : (pushed rs s).mem.read L.SP 8 = (pushed rs s).mem.readW L.SP 64 := by
+        simp only [Mem.readW]; rfl
+      rw [e, h0]; rfl
+    rw [← hm]
+    simp only [bytesAt, List.range, List.range.loop, List.map_cons, List.map_nil, BitVec.add_zero]
+    refine List.cons_eq_cons.mpr ⟨?_, List.cons_eq_cons.mpr ⟨?_, rfl⟩⟩
+    · rw [Mem.writeW, Mem.write_apply (by
+        rw [Offset.toNat_sub_add _ _ (by decide), BitVec.sub_self]; simp)]
+      exact b0
+    · simp only [Mem.writeW, Mem.write, BitVec.sub_self, BitVec.toNat_zero, Nat.reduceDiv, Nat.lt_add_one,
+        ite_true]
+      ext i hi
+      simp
+  · show Frame [L.XS, L.STK] s.mem m'
+    rw [← hm]
+    have hf1 : Frame [L.STK] s.mem (pushed rs s).mem := by
+      refine Frame.sub hf fun r hr => ?_
+      simp only [List.mem_singleton] at hr; subst hr
+      refine ⟨L.STK, by simp, ?_⟩
+      rw [hsp, hlen, push_base]
+      exact Offset.sub_base _ (by omega_using [])
+    have hf2 : Frame [L.STK] s.mem ((pushed rs s).mem.writeW (L.SP + 1#64) (BitVec.ofNat 8 L.ctxLen.toNat)) :=
+      hf1.writeW (List.mem_singleton_self _) _ (by
+        rw [Lay.SP, add_add]; exact Offset.contains_base _ (by omega_using []) (by omega_using []))
+    exact hf2.mono fun r hr => by simp at hr ⊢; exact .inr hr
+
+end VG.Proof.MlDsa.X86_64.Message
+
+end
+
+end
 
 /-!
 # ML-DSA on x86-64, `sign_message`: correctness
 
 Untrusted: everything here is checked by Lean. From a state satisfying
-`signMessageContract p X86_64.abi 112`, `signMessage n c p` returns 2 if
+`signMessageContract p X86_64.abi 224`, `signMessage n c p` returns 2 if
 the context string is longer than 255 bytes; otherwise it computes `μ` of
 the formatted message and calls the signing function on `μ` `c`, which
 gives the signature of `ML-DSA.Sign_internal` on the formatted message
@@ -79,10 +195,10 @@ theorem cs_r11 : ∀ r ∈ calleeSaved, r ≠ .r11 := by decide
 theorem cs_tmp : ∀ r ∈ calleeSaved, r ∉ [Reg.r10, .r11, .rax] := by decide
 
 /-- The arguments of `signRegs`, pushed. -/
-theorem signRegs_vals {p : Params} {prep : Bool} {s s2 : State} (hk : ∀ r, r ∉ [Reg.r10, .r11, .rax] → s2.gpr r = s.gpr r)
+theorem signRegs_vals {p : Params} {prep : Bool} {ys : List Addr} {s s2 : State} (hk : ∀ r, r ∉ [Reg.r10, .r11, .rax] → s2.gpr r = s.gpr r)
     (h10 : s2.gpr .r10 = stackArg s 0) (h11 : s2.gpr .r11 = stackArg s 1) (hax : s2.gpr .rax = 0) :
     ∀ j (hj : j < 9), s2.gpr (signRegs[j]'(by simp [signRegs]; omega_using [hj])) =
-      (slay p prep s).vals[j]'(by simp [Lay.vals]; omega_using [hj]) := by
+      (slay p prep s ys).vals[j]'(by simp [Lay.vals]; omega_using [hj]) := by
   intro j hj
   have : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7 ∨ j = 8 := by omega_using [hj]
   rcases this with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
@@ -92,12 +208,20 @@ theorem signRegs_vals {p : Params} {prep : Bool} {s s2 : State} (hk : ∀ r, r �
 /-- The postcondition of `signMessageContract` and `preparedSignMessageContract`, spelled out. -/
 def SPost (p : Params) (s s' : State) : Prop :=
   match formatMessage (bytesAt s.mem (s.gpr .rcx) (s.gpr .r8).toNat) (bytesAt s.mem (s.gpr .rsi) (s.gpr .rdx).toNat) with
-  | none => (s'.gpr .rax).setWidth 32 = 2
+  | none => (s'.gpr .rax).setWidth 32 = 2 ∧
+    bytesAt s'.mem (stackArg s 0) p.sigLen = bytesAt s.mem (stackArg s 0) p.sigLen
   | some M' =>
     Outcome (fun b => signInternal p b (bytesAt s.mem (s.gpr .rdi) p.skLen) M' (bytesAt s.mem (s.gpr .r9) 32))
       ((s'.gpr .rax).setWidth 32) (bytesAt s'.mem (stackArg s 0) p.sigLen)
 
-theorem signMessage_wp {p : Params} {prep : Bool} {n : String} {c : Prog isa} (hS : SignFn p c)
+/-- The bytes of a region apart from a frame are what they were once the
+frame's bytes are lost. -/
+private theorem bytes_lost {F : Region} {m m' : Mem} (f : Frame [F] m m') {p : Addr} {n : Nat}
+    (hd : (⟨p, n⟩ : Region).Disjoint F) : bytesAt m' p n = bytesAt m p n := by
+  simp only [bytesAt]
+  exact List.map_congr_left fun i hi => lost_byte f hd (List.mem_range.mp hi)
+
+theorem signMessage_wp {p : Params} {prep : Bool} {N : List String} {n : String} {c : Prog isa} (hS : SignFn p N c)
     (hp : p ∈ params) {s : State} (h : SPre p prep s) :
     WP isa (signMessage n c p (flagOf prep)) s fun s' => abiPreserved s s' ∧ SPost p s s' := by
   have hK := keyLen_ge hp prep
@@ -108,7 +232,7 @@ theorem signMessage_wp {p : Params} {prep : Bool} {n : String} {c : Prog isa} (h
     refine wp_ite_t hc1 (WP.seq (WP.mono (signMov_ok h hg1 hm1 hrd1) fun s2 ⟨⟨h10, h11, hax, hm2, hx2⟩, k2⟩ => ?_))
     have hL := slay_ok (prep := prep) hp h h8
     have hg2 : ∀ r, r ∉ [Reg.r10, .r11, .rax] → s2.gpr r = s.gpr r := fun r hr => (k2.gpr hr).trans (by rw [hg1])
-    have hsp2 : s2.gpr .rsp = (slay p prep s).B + BitVec.ofNat 64 112 := by
+    have hsp2 : s2.gpr .rsp = (slay p prep s).B + BitVec.ofNat 64 224 := by
       rw [hg2 _ (by decide), slay_B]
     have hn : 8 * signRegs.length ≤ (s2.gpr .rsp).toNat := by
       rw [hg2 _ (by decide)]; have := h.sp; simp only [signRegs, List.length_cons, List.length_nil]; omega_using [this]
@@ -122,33 +246,43 @@ theorem signMessage_wp {p : Params} {prep : Bool} {n : String} {c : Prog isa} (h
       (fun t' hc' => by rw [hc'.slotOff, fKey, hc'.pKey]) ⟨_, List.mem_append_left _ hL.inKey, wtr⟩
       ((hL.xKey.symm.sub_left wtr.sub).sub_right (Region.sub_prefix (by decide : 200 ≤ 1024)))
       ((hL.xKey.symm.sub_left wtr.sub).sub_right (Offset.sub_base _ (by decide : 200 + 640 ≤ 1024)))
-      ((hL.kKey.sub_left (Region.sub_prefix (by decide : 40 ≤ 112))).sub_right wtr.sub))
+      ((hL.kKey.sub_left (Region.sub_prefix (by decide : 152 ≤ 224))).sub_right wtr.sub))
       fun t₁ ⟨hc₁, hf₁, hμ⟩ => ?_)
     refine WP.mono (signCall_ok hS hp h h8 hc₁ hm2.symm) fun s' ⟨hrd', hwr', hsp', hcs', hx', hf', hq⟩ => ?_
     have hm₀ : s2.mem = s.mem := hm2
-    refine ⟨by rw [hsp', hc₁.rsp, ← htsp, hc.rsp], by rw [hwr', hc₁.wr, ← htw, hc.wr], ?_, ?_⟩
+    refine ⟨by rw [hsp', hc₁.rsp, ← htsp, hc.rsp], by rw [hwr', hc₁.wr, ← htw, hc.wr], fun m uk fm => ?_⟩
+    -- The pop loses the frame's 72 bytes, in the stack below `rsp`, apart from
+    -- the signature and the return address.
+    rw [hg2 .rsp (by decide)] at fm
+    obtain hF : Region.Sub ⟨s.gpr .rsp - BitVec.ofNat 64 (8 * signRegs.length), 8 * signRegs.length⟩ (rStk s) :=
+      Offset.sub_below _ (by decide) (by decide)
+    dsimp only
+    refine ⟨?_, ?_⟩
     · -- The calling convention.
       refine ⟨fun r hr => ?_, ?_, ?_⟩
       · by_cases hr' : r = .rsp
         · subst hr'
-          rw [popped_rsp, hsp', hc₁.rsp, Lay.SP, add_add, show 40 + 8 * signRegs.length = 112 from rfl, slay_B]
+          rw [popped_rsp, hsp', hc₁.rsp, Lay.SP, add_add, show 152 + 8 * signRegs.length = 224 from rfl, slay_B]
         · rw [popped_gpr _ _ _ hr' (cs_r11 r hr), hcs' r hr, hc₁.cs r hr hr', hg2 r (cs_tmp r hr)]
-      · have eR : rRet s = ⟨(slay p prep s).B + BitVec.ofNat 64 112, 8⟩ := by rw [slay_B]
-        have dB : ∀ k, k ≤ 112 → (rRet s).Disjoint ⟨(slay p prep s).B, k⟩ := fun k hk => by
+      · have eR : rRet s = ⟨(slay p prep s).B + BitVec.ofNat 64 224, 8⟩ := by rw [slay_B]
+        have dB : ∀ k, k ≤ 224 → (rRet s).Disjoint ⟨(slay p prep s).B, k⟩ := fun k hk => by
           rw [eR]; exact Offset.disjoint_base _ hk (by have := hL.nB; omega_using [])
-        rw [popped_mem, hf'.readW (r := rRet s) (Region.contains_self _ _) (fun r hr => by
+        rw [fm.readW (r := rRet s) (Region.contains_self _ _) (fun r hr => by
+            rw [List.mem_singleton.mp hr]; exact Offset.base_disjoint_below (s.gpr .rsp) (by decide)) (by decide),
+          hf'.readW (r := rRet s) (Region.contains_self _ _) (fun r hr => by
             simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
             rcases hr with rfl | rfl | rfl
             · exact h.retSig
             · exact h.retScr.sub_right (scrMu_sub p s)
-            · exact dB 40 (by decide)) (by decide),
+            · exact dB 152 (by decide)) (by decide),
           hc₁.frame.readW (r := rRet s) (Region.contains_self _ _) (fun r hr => by
             simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
             rcases hr with rfl | rfl
             · exact h.retScr.sub_right (slay_X p prep s).sub
-            · exact dB 112 (by decide)) (by decide), hm₀]
+            · exact dB 224 (by decide)) (by decide), hm₀]
       · rw [popped_mxcsr, hx', hc₁.mx, hx2, hx1]
     · unfold SPost
+      rw [bytes_lost fm (h.stkSig.symm.sub_right hF)]
       rw [formatMessage_some (by rw [Proof.MlKem.bytesAt_length]; exact h8)]
       simp only [signInternal, messageRep, skTr]
       have ek : bytesAt t₁.mem (s.gpr .rdi) p.skLen = bytesAt s.mem (s.gpr .rdi) p.skLen := by
@@ -171,14 +305,14 @@ theorem signMessage_wp {p : Params} {prep : Bool} {n : String} {c : Prog isa} (h
     · rw [RegUpd.gpr_setReg_of_ne _ _ (fun e => by subst e; revert hr; decide), hg1]
     · unfold SPost
       rw [formatMessage_none (by rw [Proof.MlKem.bytesAt_length]; omega_using [h8])]
-      rfl
+      exact ⟨rfl, by rw [RegUpd.mem_setReg, hm1]⟩
 
-theorem sPost_of {p : Params} {s s' : State} (h : SPost p s s') : (signMessageContract p X86_64.abi 112).post s s' := by
+theorem sPost_of {p : Params} {s s' : State} (h : SPost p s s') : (signMessageContract p X86_64.abi 224).post s s' := by
   sig_post [signMessageContract, signMessageSig, X86_64.abi, X86_64.argRegs, List.range, List.range.loop]
   exact h
 
 theorem sPostP_of {p : Params} {s s' : State} (h : SPost p s s') :
-    (preparedSignMessageContract p X86_64.abi 112).post s s' := by
+    (preparedSignMessageContract p X86_64.abi 224).post s s' := by
   sig_post [preparedSignMessageContract, preparedSignMessageSig, X86_64.abi, X86_64.argRegs, List.range,
     List.range.loop]
   exact h

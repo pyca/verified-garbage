@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeStore
 public import VerifiedGarbage.Proof.Framework.AArch64.Inline
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTiming
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowState
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowLoad
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
 
 /-! Exact field equality through public in-scratch table transfers. -/

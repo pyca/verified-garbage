@@ -58,7 +58,9 @@ theorem code_ok (c : PdChecked) {s : State} (hp : PreP c.stack s) :
       fun t₂ h₂ => ?_)
     refine WP.seq (WP.mono (callP_ok c hp h₂ hsig) fun t₃ h₃ => ?_)
     refine WP.seq (WP.mono (afterPubP_ok hp hsig h₃) fun t₄ ⟨m₄, r₄⟩ => ?_)
-    exact WP.mono (restore_ok m₄) fun w ⟨habi, hx0⟩ => ⟨habi, fun hc => by rw [hx0]; exact r₄ hc⟩
+    exact WP.mono (restore_ok m₄) fun w ⟨habi, hx0⟩ _ _ _ => ⟨⟨habi.1, habi.2.1, habi.2.2⟩, fun hc => by
+      show ((freed frameBytes w).gpr .x0).setWidth 32 = _
+      rw [hx0]; exact r₄ hc⟩
   · refine WP.ite true (by rw [hne]; simp [hsig]) (fun _ => WP.mono (ret0_ok t₁) fun w ⟨o, e⟩ =>
       ⟨⟨fun r hr => ?_, ?_, fun r hr => ?_⟩, fun _ => ?_⟩) (by simp)
     · have h8 : r ∉ [Reg.x8] ++ [Reg.x0] := by

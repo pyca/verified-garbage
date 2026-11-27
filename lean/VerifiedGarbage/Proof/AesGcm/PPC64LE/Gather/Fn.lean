@@ -9,7 +9,6 @@ public import VerifiedGarbage.Impl.AesGcm.PPC64LE.SealGather
 import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Proof.Framework.PowLit
 import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Gather.Contract
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Alloc
 public import VerifiedGarbage.TCB.Artifact
 import VerifiedGarbage.Proof.AesGcm.CtxFrame
@@ -18,6 +17,104 @@ import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.Gcm.SealGather
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Spec.Gcm.OutOfPlace
+import VerifiedGarbage.Proof.Framework.PPC64LE.Reduce
+
+/-! ### `AesGcm.PPC64LE.Gather.Contract`, which this module and modules that import it used -/
+
+section
+
+/-!
+# AES-GCM encryption out of place, from a list of slices, PPC64LE: the contract
+
+Untrusted: everything here is checked by Lean. The contract the proof of
+`vg_aes_gcm_seal_gather` is written against, which the shared one
+(`Proof.AesGcm.sealGatherRoundsContract`, with the 1424 bytes of stack below the stack
+pointer that its frame and its call use) implies (`Gather/Verified.lean`):
+`(ctx = r3, rounds = r4, nonce = r5, nonce_len = r6, aad = r7, aad_len = r8,
+src = r9, src_count = r10, dst, len, tag)`, the last three in memory
+(`stackArg s 0` to `stackArg s 2`). As for ChaCha20-Poly1305
+(`Proof/ChaCha20Poly1305/PPC64LE/Gather/Fn.lean`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.AesGcm.PPC64LE.Gather
+
+open VG VG.PPC64LE
+open VG.Spec.Aes (bytesAt)
+open VG.Spec.Gcm (ctxCiph ctxH encryptWith gathered gatheredLen)
+
+section
+variable (s : State)
+
+/-- The arguments. -/
+abbrev C : Addr := s.gpr .r3
+abbrev Rn : Nat := (s.gpr .r4).toNat
+abbrev Nn : Addr := s.gpr .r5
+abbrev NL : Nat := (s.gpr .r6).toNat
+abbrev Ad : Addr := s.gpr .r7
+abbrev AL : Nat := (s.gpr .r8).toNat
+abbrev Src : Addr := s.gpr .r9
+abbrev Cnt : Nat := (s.gpr .r10).toNat
+abbrev Dst : Addr := stackArg s 0
+abbrev L : Nat := (stackArg s 1).toNat
+abbrev Tg : Addr := stackArg s 2
+
+/-- The regions: the key context, the nonce, the additional data, the
+descriptors, the slices they list, the output, the tag, the stack arguments
+and the stack below the stack pointer. -/
+abbrev cR : Region := ⟨C s, 256⟩
+abbrev nR : Region := ⟨Nn s, NL s⟩
+abbrev aR : Region := ⟨Ad s, AL s⟩
+abbrev dsR : Region := ⟨Src s, Cnt s * 16⟩
+abbrev lsR : List Region := Sig.listed 64 s.mem .u8 (Src s) (Cnt s)
+abbrev dR : Region := ⟨Dst s, L s⟩
+abbrev tgR : Region := ⟨Tg s, 16⟩
+abbrev argR : Region := ⟨stackArgAddr s 0, 24⟩
+abbrev stkR : Region := ⟨s.sp - BitVec.ofNat 64 1424, 1424⟩
+
+/-- The total length of the first `i` slices, and their bytes. -/
+abbrev gl (i : Nat) : Nat := gatheredLen 64 s.mem (Src s) i
+abbrev pt (i : Nat) : List Byte := gathered 64 s.mem (Src s) i
+
+end
+
+/-- What the code of `vg_aes_gcm_seal_gather` needs. -/
+def gatherPre (s : State) : Prop :=
+  s.rd = [cR s, nR s, aR s, dsR s] ++ lsR s ++ [argR s] ∧ s.wr = [dR s, tgR s] ∧
+    (cR s).Disjoint (dR s) ∧ (cR s).Disjoint (tgR s) ∧ (nR s).Disjoint (dR s) ∧
+    (nR s).Disjoint (tgR s) ∧ (aR s).Disjoint (dR s) ∧ (aR s).Disjoint (tgR s) ∧
+    (dsR s).Disjoint (dR s) ∧ (dsR s).Disjoint (tgR s) ∧
+    (∀ r ∈ lsR s, r.Disjoint (dR s) ∧ r.Disjoint (tgR s)) ∧
+    (dR s).Disjoint (tgR s) ∧ (dR s).Disjoint (argR s) ∧ (tgR s).Disjoint (argR s) ∧
+    (stkR s).Disjoint (cR s) ∧ (stkR s).Disjoint (nR s) ∧ (stkR s).Disjoint (aR s) ∧
+    (stkR s).Disjoint (dsR s) ∧ (∀ r ∈ lsR s, (stkR s).Disjoint r) ∧ (stkR s).Disjoint (argR s) ∧
+    (stkR s).Disjoint (dR s) ∧ (stkR s).Disjoint (tgR s) ∧
+    (C s).toNat + 256 ≤ 2 ^ 64 ∧ (Nn s).toNat + NL s ≤ 2 ^ 64 ∧ (Ad s).toNat + AL s ≤ 2 ^ 64 ∧
+    (Src s).toNat + Cnt s * 16 ≤ 2 ^ 64 ∧ (∀ r ∈ lsR s, r.base.toNat + r.len ≤ 2 ^ 64) ∧
+    (Dst s).toNat + L s ≤ 2 ^ 64 ∧ (Tg s).toNat + 16 ≤ 2 ^ 64 ∧
+    1424 ≤ s.sp.toNat ∧ s.sp.toNat + 120 ≤ 2 ^ 64 ∧ (Rn s = 10 ∨ Rn s = 12 ∨ Rn s = 14) ∧ gl s (Cnt s) = L s
+
+/-- What two runs agree on: the arguments and the descriptors. -/
+def gatherPub (s₁ s₂ : State) : Prop :=
+  s₁.gpr .r3 = s₂.gpr .r3 ∧ s₁.gpr .r4 = s₂.gpr .r4 ∧ s₁.gpr .r5 = s₂.gpr .r5 ∧
+    s₁.gpr .r6 = s₂.gpr .r6 ∧ s₁.gpr .r7 = s₂.gpr .r7 ∧ s₁.gpr .r8 = s₂.gpr .r8 ∧
+    s₁.gpr .r9 = s₂.gpr .r9 ∧ s₁.gpr .r10 = s₂.gpr .r10 ∧ s₁.sp = s₂.sp ∧ stackArg s₁ 0 = stackArg s₂ 0 ∧
+    stackArg s₁ 1 = stackArg s₂ 1 ∧ stackArg s₁ 2 = stackArg s₂ 2 ∧
+    ∀ i < Cnt s₁ * 16, s₁.mem (Src s₁ + BitVec.ofNat 64 i) = s₂.mem (Src s₁ + BitVec.ofNat 64 i)
+
+/-- What `vg_aes_gcm_seal_gather` leaves: `sealGatherPost`. -/
+def gatherPost (s s' : State) : Prop :=
+  encryptWith (ctxCiph s.mem (C s) (Rn s)) (ctxH s.mem (C s)) 16 (bytesAt s.mem (Nn s) (NL s)) (pt s (Cnt s))
+      (bytesAt s.mem (Ad s) (AL s)) =
+    (bytesAt s'.mem (Dst s) (L s), bytesAt s'.mem (Tg s) 16)
+
+end VG.Proof.AesGcm.PPC64LE.Gather
+
+end
+
+end
 
 /-! ### `AesGcm.PPC64LE.Gather.Callee`, which only this module used -/
 
@@ -27,8 +124,8 @@ section
 # AES-GCM encryption out of place, from a list of slices, PPC64LE: the function called
 
 Untrusted: everything here is checked by Lean. `vg_aes_gcm_seal_gather`
-calls `vg_aes_gcm_seal`, with its working space in a frame of its own, by
-its shared contract (`Proof.AesGcm.sealRoundsContract`, with 2672 bytes of stack,
+calls the code of `vg_aes_gcm_seal`, as the internal `vg_aes_gcm_seal_core`, with its working space in a frame of its own, by
+its shared contract (`Proof.AesGcm.sealRoundsContract`, with 1264 bytes of stack,
 which its frame uses: `seal_sdepth`): its precondition from the layout the
 call gives it (`callPre`: its stack argument `tag` in our frame,
 `sealSpec_pre`), its postcondition (`sealSpec_post`) and its public data
@@ -44,9 +141,9 @@ open VG VG.PPC64LE
 open VG.Spec.Aes (bytesAt)
 open VG.Spec.Gcm (ctxCiph ctxH encryptWith)
 
-/-- The frame of `vg_aes_gcm_seal` uses the 2672 bytes of stack its
+/-- The frame of `vg_aes_gcm_seal` uses the 1264 bytes of stack its
 contract reserves. -/
-theorem seal_sdepth : sdepth Impl.AesGcm.PPC64LE.SealGather.sealCode = 2672 := by
+theorem seal_sdepth : sdepth Impl.AesGcm.PPC64LE.SealGather.sealCode = 1264 := by
   decide +kernel
 
 /-- What a call of `vg_aes_gcm_seal(ctx = r3, rounds = r4, nonce = r5,
@@ -59,7 +156,7 @@ def callPre (s : State) : Prop :=
   let data : Region := ⟨s.gpr .r9, (s.gpr .r10).toNat⟩
   let tag : Region := ⟨stackArg s 0, 16⟩
   let arg : Region := ⟨stackArgAddr s 0, 8⟩
-  let stk : Region := ⟨s.sp - BitVec.ofNat 64 2672, 2672⟩
+  let stk : Region := ⟨s.sp - BitVec.ofNat 64 1264, 1264⟩
   s.rd = [ctx, nonce, aad, arg] ∧ s.wr = [data, tag] ∧
     ctx.Disjoint data ∧ ctx.Disjoint tag ∧ nonce.Disjoint data ∧ nonce.Disjoint tag ∧
     aad.Disjoint data ∧ aad.Disjoint tag ∧ data.Disjoint tag ∧ data.Disjoint arg ∧ tag.Disjoint arg ∧
@@ -67,12 +164,12 @@ def callPre (s : State) : Prop :=
     stk.Disjoint arg ∧
     (s.gpr .r3).toNat + 256 ≤ 2 ^ 64 ∧ (s.gpr .r5).toNat + (s.gpr .r6).toNat ≤ 2 ^ 64 ∧
     (s.gpr .r7).toNat + (s.gpr .r8).toNat ≤ 2 ^ 64 ∧ (s.gpr .r9).toNat + (s.gpr .r10).toNat ≤ 2 ^ 64 ∧
-    (stackArg s 0).toNat + 16 ≤ 2 ^ 64 ∧ 2672 ≤ s.sp.toNat ∧ s.sp.toNat + 104 ≤ 2 ^ 64 ∧
+    (stackArg s 0).toNat + 16 ≤ 2 ^ 64 ∧ 1264 ≤ s.sp.toNat ∧ s.sp.toNat + 104 ≤ 2 ^ 64 ∧
     ((s.gpr .r4).toNat = 10 ∨ (s.gpr .r4).toNat = 12 ∨ (s.gpr .r4).toNat = 14)
 
 theorem stackArgs_one (s : State) : List.map (stackArg s) (List.range 1) = [stackArg s 0] := rfl
 
-theorem sealSpec_pre {s : State} (h : callPre s) : (Proof.AesGcm.sealRoundsContract PPC64LE.abi 2672).pre s := by
+theorem sealSpec_pre {s : State} (h : callPre s) : (Proof.AesGcm.sealRoundsContract PPC64LE.abi 1264).pre s := by
   obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, a₁₀, a₁₁, a₁₂, a₁₃, a₁₄, a₁₅, a₁₆, a₁₇, a₁₈, a₁₉, a₂₀, a₂₁, a₂₂,
     a₂₃, a₂₄, a₂₅⟩ := h
   sig_pre [Proof.AesGcm.sealRoundsContract, Spec.Gcm.sealSig, Spec.Gcm.sealPre, PPC64LE.abi, PPC64LE.argRegs, stackArgs_one, List.range, List.range.loop]
@@ -85,7 +182,7 @@ theorem sealSpec_pre {s : State} (h : callPre s) : (Proof.AesGcm.sealRoundsContr
     | omega
     | exact Region.Disjoint.symm ‹_›
 
-theorem sealSpec_post {s s' : State} (h : (Proof.AesGcm.sealRoundsContract PPC64LE.abi 2672).post s s')
+theorem sealSpec_post {s s' : State} (h : (Proof.AesGcm.sealRoundsContract PPC64LE.abi 1264).post s s')
     (hR : (s.gpr .r4).toNat = 10 ∨ (s.gpr .r4).toNat = 12 ∨ (s.gpr .r4).toNat = 14) :
     encryptWith (ctxCiph s.mem (s.gpr .r3) (s.gpr .r4).toNat) (ctxH s.mem (s.gpr .r3)) 16
         (bytesAt s.mem (s.gpr .r5) (s.gpr .r6).toNat) (bytesAt s.mem (s.gpr .r9) (s.gpr .r10).toNat)
@@ -99,7 +196,7 @@ theorem sealSpec_pub {s₁ s₂ : State} (h : s₁.gpr .r3 = s₂.gpr .r3 ∧ s�
     s₁.gpr .r5 = s₂.gpr .r5 ∧ s₁.gpr .r6 = s₂.gpr .r6 ∧ s₁.gpr .r7 = s₂.gpr .r7 ∧
     s₁.gpr .r8 = s₂.gpr .r8 ∧ s₁.gpr .r9 = s₂.gpr .r9 ∧ s₁.gpr .r10 = s₂.gpr .r10 ∧ s₁.sp = s₂.sp ∧
     stackArg s₁ 0 = stackArg s₂ 0) :
-    (Proof.AesGcm.sealRoundsContract PPC64LE.abi 2672).pub s₁ s₂ := by
+    (Proof.AesGcm.sealRoundsContract PPC64LE.abi 1264).pub s₁ s₂ := by
   obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, a₁₀⟩ := h
   sig_pub [Proof.AesGcm.sealRoundsContract, Spec.Gcm.sealSig, PPC64LE.abi, PPC64LE.argRegs, stackArgs_one, List.range, List.range.loop]
   sig_reduce [Proof.AesGcm.sealRoundsContract, Spec.Gcm.sealSig, PPC64LE.abi, PPC64LE.argRegs, stackArgs_one, List.range, List.range.loop]
@@ -117,14 +214,14 @@ end
 # AES-GCM encryption out of place, from a list of slices, PPC64LE: the function
 
 Untrusted: everything here is checked by Lean. `vg_aes_gcm_seal_gather`
-allocates its frame of 160 bytes at `Pf = Bs + 2672`, with `Bs` the base of
-the 2832 bytes of stack below the stack pointer (`sp = Bs + 2832`); keeps
+allocates its frame of 160 bytes at `Pf = Bs + 1264`, with `Bs` the base of
+the 1424 bytes of stack below the stack pointer (`sp = Bs + 1424`); keeps
 `ctx`, `rounds`, `nonce`, `nonce_len`, `aad`, `aad_len` and our return
 address in the seven doublewords at `Pf + 104` (`slot`), and `tag`, from
 `Pf + 272`, at `Pf + 96`, the call's stack argument (`entered_wp`); gathers
-the slices to `dst` (`gathered_wp`); and calls `vg_aes_gcm_seal` on them in
+the slices to `dst` (`gathered_wp`); and calls it on them in
 place, by its contract (`sealSpec_pre`, `sealSpec_post`), whose frame is in
-the 2672 bytes below ours, so the return address comes back from it
+the 1264 bytes below ours, so the return address comes back from it
 (`called_wp`, `ret_wp`). As for ChaCha20-Poly1305
 (`Proof/ChaCha20Poly1305/PPC64LE/Gather/Fn.lean`).
 -/
@@ -141,8 +238,8 @@ open VG.Proof.ChaCha20Poly1305.PPC64LE (Upd Mupd LrUpd wp_std wp_ld wp_or wp_mfl
 
 /-- The correctness of `vg_aes_gcm_seal`, in its frame, by its shared contract. -/
 abbrev SealOk : Prop :=
-  ∀ s, (Proof.AesGcm.sealRoundsContract PPC64LE.abi 2672).pre s →
-    ∃ t s', Exec isa sealCode s t s' ∧ abiPreserved s s' ∧ (Proof.AesGcm.sealRoundsContract PPC64LE.abi 2672).post s s'
+  ∀ s, (Proof.AesGcm.sealRoundsContract PPC64LE.abi 1264).pre s →
+    ∃ t s', Exec isa sealCode s t s' ∧ abiPreserved s s' ∧ (Proof.AesGcm.sealRoundsContract PPC64LE.abi 1264).post s s'
 
 theorem add_ofNat_sub_ofNat (B : Addr) {a b : Nat} (h : b ≤ a) :
     B + BitVec.ofNat 64 a - BitVec.ofNat 64 b = B + BitVec.ofNat 64 (a - b) := by
@@ -154,7 +251,7 @@ theorem covers_mem {rs rs' : List Region} (h : ∀ r ∈ rs, r ∈ rs') : Covers
 theorem wp_addSp {is : List Instr} {s : State} {Q : State → Prop} {d : Reg} {imm : Nat} (h : imm < 2 ^ 15)
     (k : ∀ s', Upd s s' d (s.sp + BitVec.ofNat 64 imm) → WP isa (.block is) s' Q) :
     WP isa (.block (.addSp d imm :: is)) s Q :=
-  VG.Proof.ChaCha20Poly1305.PPC64LE.WP.cons (by simp [exec, show imm < 32768 from h]) (k _ (Upd.write _ _ _))
+  VG.Proof.ChaCha20Poly1305.PPC64LE.WP.cons (by simp [reduceExec, show imm < 32768 from h]) (k _ (Upd.write _ _ _))
 
 /-- `mov d n`, an `or` of `n` with itself. -/
 theorem wp_mov' {is : List Instr} {s : State} {Q : State → Prop} {d n : Reg}
@@ -167,11 +264,11 @@ theorem wp_mov' {is : List Instr} {s : State} {Q : State → Prop} {d n : Reg}
 section
 variable (s : State)
 
-/-- The base of the 2832 bytes of stack below the stack pointer. -/
-abbrev Bs : Addr := s.sp - BitVec.ofNat 64 2832
+/-- The base of the 1424 bytes of stack below the stack pointer. -/
+abbrev Bs : Addr := s.sp - BitVec.ofNat 64 1424
 
 /-- Our frame: the stack pointer in it. -/
-abbrev Pf : Addr := Bs s + BitVec.ofNat 64 2672
+abbrev Pf : Addr := Bs s + BitVec.ofNat 64 1264
 
 /-- Doubleword `k` of what the frame keeps, and the call's stack argument. -/
 abbrev slot (k : Nat) : Addr := Pf s + BitVec.ofNat 64 (104 + 8 * k)
@@ -206,17 +303,17 @@ end
 /-- What `gatherPre` gives, with the stack below the stack pointer at `Bs s`. -/
 structure Lay (s : State) : Prop where
   pre : gatherPre s
-  hB : s.sp = Bs s + BitVec.ofNat 64 2832
-  hBn : (Bs s).toNat + 2952 ≤ 2 ^ 64
-  bc : (⟨Bs s, 2832⟩ : Region).Disjoint (cR s)
-  bn : (⟨Bs s, 2832⟩ : Region).Disjoint (nR s)
-  ba : (⟨Bs s, 2832⟩ : Region).Disjoint (aR s)
-  bds : (⟨Bs s, 2832⟩ : Region).Disjoint (dsR s)
-  bl : ∀ r ∈ lsR s, (⟨Bs s, 2832⟩ : Region).Disjoint r
-  bd : (⟨Bs s, 2832⟩ : Region).Disjoint (dR s)
-  bt : (⟨Bs s, 2832⟩ : Region).Disjoint (tgR s)
+  hB : s.sp = Bs s + BitVec.ofNat 64 1424
+  hBn : (Bs s).toNat + 1544 ≤ 2 ^ 64
+  bc : (⟨Bs s, 1424⟩ : Region).Disjoint (cR s)
+  bn : (⟨Bs s, 1424⟩ : Region).Disjoint (nR s)
+  ba : (⟨Bs s, 1424⟩ : Region).Disjoint (aR s)
+  bds : (⟨Bs s, 1424⟩ : Region).Disjoint (dsR s)
+  bl : ∀ r ∈ lsR s, (⟨Bs s, 1424⟩ : Region).Disjoint r
+  bd : (⟨Bs s, 1424⟩ : Region).Disjoint (dR s)
+  bt : (⟨Bs s, 1424⟩ : Region).Disjoint (tgR s)
   hargR : argR s = ⟨Pf s + BitVec.ofNat 64 256, 24⟩
-  w₁ : 2832 ≤ s.sp.toNat
+  w₁ : 1424 ≤ s.sp.toNat
   hgl : gl s (Cnt s) = L s
   ods : (Src s).toNat + Cnt s * 16 ≤ 2 ^ 64
   hR : Rn s = 10 ∨ Rn s = 12 ∨ Rn s = 14
@@ -224,29 +321,29 @@ structure Lay (s : State) : Prop where
 theorem lay {s : State} (hs : gatherPre s) : Lay s := by
   obtain ⟨rd, wr, cd, ct, nd, nt, ad, at_, dsd, dst, lsdt, dt, darg, targ, bc, bn, ba, bds, bl, barg, bd, bt,
     oc, on, oa, ods, ol, od, ot, w₁, w₂, hR, hgl⟩ := hs
-  have hB : s.sp = Bs s + BitVec.ofNat 64 2832 := (BitVec.sub_add_cancel s.sp _).symm
-  have hBn : (Bs s).toNat + 2952 ≤ 2 ^ 64 := by
-    have e := congrArg BitVec.toNat hB
+  obtain hB : s.sp = Bs s + BitVec.ofNat 64 1424 := (BitVec.sub_add_cancel s.sp _).symm
+  obtain hBn : (Bs s).toNat + 1544 ≤ 2 ^ 64 := by
+    obtain e := congrArg BitVec.toNat hB
     rw [BitVec.toNat_add, BitVec.toNat_ofNat] at e
     have := (Bs s).isLt
     omega_arith
   refine ⟨⟨rd, wr, cd, ct, nd, nt, ad, at_, dsd, dst, lsdt, dt, darg, targ, bc, bn, ba, bds, bl, barg, bd, bt,
     oc, on, oa, ods, ol, od, ot, w₁, w₂, hR, hgl⟩, hB, hBn, bc, bn, ba, bds, bl, bd, bt, ?_, w₁, hgl, ods, hR⟩
   show (⟨s.sp + BitVec.ofNat 64 (32 + 8 * (8 + 0)), 24⟩ : Region) =
-    ⟨Bs s + BitVec.ofNat 64 2672 + BitVec.ofNat 64 256, 24⟩
+    ⟨Bs s + BitVec.ofNat 64 1264 + BitVec.ofNat 64 256, 24⟩
   rw [hB, Offset.add_ofNat_add_ofNat, Offset.add_ofNat_add_ofNat]
 
 /-- Parts of the stack below the stack pointer. -/
-theorem stk_sub (s : State) (d n : Nat) (h' : d + n ≤ 2832) :
-    (⟨Bs s + BitVec.ofNat 64 d, n⟩ : Region).Sub ⟨Bs s, 2832⟩ :=
+theorem stk_sub (s : State) (d n : Nat) (h' : d + n ≤ 1424) :
+    (⟨Bs s + BitVec.ofNat 64 d, n⟩ : Region).Sub ⟨Bs s, 1424⟩ :=
   Offset.sub_base _ h'
 
-theorem pf_off (s : State) (a : Nat) : Pf s + BitVec.ofNat 64 a = Bs s + BitVec.ofNat 64 (2672 + a) :=
+theorem pf_off (s : State) (a : Nat) : Pf s + BitVec.ofNat 64 a = Bs s + BitVec.ofNat 64 (1264 + a) :=
   Offset.add_ofNat_add_ofNat _ _ _
 
 /-- A doubleword of the frame past its header, in the stack below the stack pointer. -/
 theorem fr_sub (s : State) {a : Nat} (ha : a + 8 ≤ 160) :
-    (⟨Pf s + BitVec.ofNat 64 a, 8⟩ : Region).Sub ⟨Bs s, 2832⟩ := by
+    (⟨Pf s + BitVec.ofNat 64 a, 8⟩ : Region).Sub ⟨Bs s, 1424⟩ := by
   rw [pf_off]; exact stk_sub s _ _ (by omega_arith)
 
 theorem fr_in (s : State) {a : Nat} (h₁ : 32 ≤ a) (h₂ : a + 8 ≤ 160) (wr : List Region) :
@@ -266,7 +363,7 @@ theorem rd_sep (s : State) (m : Mem) (v : BitVec 64) {a b : Nat} (h : a + 8 ≤ 
 theorem frame_eMem0 (s : State) : Frame [FA s] s.mem (eMem0 s) := by
   have c (k : Nat) (hk : k < 7) : (FA s).Contains (slot s k) (64 / 8) :=
     Offset.contains_base _ (by omega_arith) (by omega_arith)
-  have m := List.mem_singleton_self (FA s)
+  obtain m := List.mem_singleton_self (FA s)
   exact (((((((Frame.refl _ _).write m _ (Region.contains_self' (by decide))).writeW m _ (c 0 (by decide))).writeW
     m _ (c 1 (by decide))).writeW m _ (c 2 (by decide))).writeW m _ (c 3 (by decide))).writeW m _ (c 4 (by decide))
     |>.writeW m _ (c 5 (by decide))).writeW m _ (c 6 (by decide))
@@ -297,7 +394,7 @@ include h
 theorem pf_eq : s.sp - BitVec.ofNat 64 160 = Pf s := by
   rw [h.hB, add_ofNat_sub_ofNat _ (by decide)]
 
-theorem pf_toNat : (Pf s).toNat = (Bs s).toNat + 2672 := by
+theorem pf_toNat : (Pf s).toNat = (Bs s).toNat + 1264 := by
   have := h.hBn
   rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega_arith
 
@@ -306,9 +403,9 @@ theorem argIn : argR s ∈ s.rd := by rw [h.pre.1]; simp
 /-- Our stack argument `i`, from its address in our frame's terms. -/
 theorem sa_eq {i : Nat} : stackArg s i = s.mem.readW (sa s i) 64 := by
   show s.mem.readW (s.sp + BitVec.ofNat 64 (32 + 8 * (8 + i))) 64 = _
-  show _ = s.mem.readW (Bs s + BitVec.ofNat 64 2672 + BitVec.ofNat 64 (256 + 8 * i)) 64
+  show _ = s.mem.readW (Bs s + BitVec.ofNat 64 1264 + BitVec.ofNat 64 (256 + 8 * i)) 64
   rw [h.hB, Offset.add_ofNat_add_ofNat, Offset.add_ofNat_add_ofNat,
-    show 2832 + (32 + 8 * (8 + i)) = 2672 + (256 + 8 * i) by omega_arith]
+    show 1424 + (32 + 8 * (8 + i)) = 1264 + (256 + 8 * i) by omega_arith]
 
 theorem sa_in {i : Nat} (hi : i < 3) (u : State) (hrd : u.rd = s.rd) :
     InRegions (u.rd ++ u.wr) (sa s i) 8 :=
@@ -320,11 +417,11 @@ theorem sa_in {i : Nat} (hi : i < 3) (u : State) (hrd : u.rd = s.rd) :
 
 omit h in
 /-- The memory the entry left outside the frame. -/
-theorem keepE {r : Region} (hr : r.Disjoint ⟨Bs s, 2832⟩) {x : Addr} (hx : r.Contains x 1) :
+theorem keepE {r : Region} (hr : r.Disjoint ⟨Bs s, 1424⟩) {x : Addr} (hx : r.Contains x 1) :
     eMem s x = s.mem x :=
   frame_eMem s x fun r' hr' hc => by
     simp only [List.mem_singleton] at hr'; subst hr'
-    exact hr x hx (stk_sub s 2672 160 (by decide) x hc)
+    exact hr x hx (stk_sub s 1264 160 (by decide) x hc)
 
 /-- Our stack arguments are apart from the frame. -/
 theorem sa_fa {i : Nat} (hi : i < 3) : ∀ r ∈ [FA s], (⟨sa s i, 8⟩ : Region).Disjoint r := by
@@ -364,7 +461,7 @@ theorem gFr {a : Nat} (ha : a + 8 ≤ 160) :
     exact (h.bd.sub_left (fr_sub s ha))) (by decide)
 
 theorem slots_gMem : Slots s (gMem s) := by
-  have e := slots_eMem s
+  obtain e := slots_eMem s
   exact ⟨(h.gFr (by decide)).trans e.c, (h.gFr (by decide)).trans e.r, (h.gFr (by decide)).trans e.n,
     (h.gFr (by decide)).trans e.nl, (h.gFr (by decide)).trans e.a, (h.gFr (by decide)).trans e.al,
     (h.gFr (by decide)).trans e.ra, (h.gFr (by decide)).trans e.tg⟩
@@ -397,19 +494,19 @@ structure Entered (s e : State) : Prop where
 
 theorem entered_wp {s : State} (h : Lay s) : WP isa (.block entry) (allocated 160 s) (Entered s) := by
   have asp : (allocated 160 s).sp = Pf s := h.pf_eq
-  have awr : (allocated 160 s).wr = FR s :: s.wr := by
+  obtain awr : (allocated 160 s).wr = FR s :: s.wr := by
     show (⟨s.sp - BitVec.ofNat 64 160 + 32, 160 - 32⟩ :: s.wr : List Region) = _
     rw [h.pf_eq]; rfl
-  have amem : (allocated 160 s).mem = s.mem.write (Pf s) 8 s.sp := by
+  obtain amem : (allocated 160 s).mem = s.mem.write (Pf s) 8 s.sp := by
     show s.mem.write (s.sp - BitVec.ofNat 64 160) 8 s.sp = _
     rw [h.pf_eq]
   have ag (r : Reg) : (allocated 160 s).gpr r = s.gpr r := rfl
-  have fin : ∀ {a : Nat}, 32 ≤ a → a + 8 ≤ 160 → InRegions (FR s :: s.wr) (Pf s + BitVec.ofNat 64 a) 8 :=
+  obtain fin : ∀ {a : Nat}, 32 ≤ a → a + 8 ≤ 160 → InRegions (FR s :: s.wr) (Pf s + BitVec.ofNat 64 a) 8 :=
     fun h₁ h₂ => fr_in s h₁ h₂ _
   unfold entry
   refine wp_addSp (by decide) fun u₁ v₁ => ?_
-  have p₁ : u₁.gpr .r12 = Pf s := by rw [v₁.gpr, asp]; exact BitVec.add_zero _
-  have w₁ : u₁.wr = FR s :: s.wr := by rw [v₁.wr, awr]
+  obtain p₁ : u₁.gpr .r12 = Pf s := by rw [v₁.gpr, asp]; exact BitVec.add_zero _
+  obtain w₁ : u₁.wr = FR s :: s.wr := by rw [v₁.wr, awr]
   refine wp_std (a := slot s 0) (by decide) (by decide) (by rw [p₁]) (by rw [w₁]; exact fin (by decide) (by decide)) fun u₂ v₂ => ?_
   refine wp_std (a := slot s 1) (by decide) (by decide) (by rw [v₂.gpr, p₁])
     (by rw [v₂.wr, w₁]; exact fin (by decide) (by decide)) fun u₃ v₃ => ?_
@@ -423,12 +520,12 @@ theorem entered_wp {s : State} (h : Lay s) : WP isa (.block entry) (allocated 16
     (by rw [v₆.wr, v₅.wr, v₄.wr, v₃.wr, v₂.wr, w₁]; exact fin (by decide) (by decide)) fun u₇ v₇ => ?_
   have g₇ (r : Reg) (hr : r ≠ .r12) : u₇.gpr r = s.gpr r := by
     rw [v₇.gpr, v₆.gpr, v₅.gpr, v₄.gpr, v₃.gpr, v₂.gpr, v₁.other _ hr, ag]
-  have p₇ : u₇.gpr .r12 = Pf s := by rw [v₇.gpr, v₆.gpr, v₅.gpr, v₄.gpr, v₃.gpr, v₂.gpr, p₁]
-  have w₇ : u₇.wr = FR s :: s.wr := by rw [v₇.wr, v₆.wr, v₅.wr, v₄.wr, v₃.wr, v₂.wr, w₁]
-  have rd₇ : u₇.rd = s.rd := by rw [v₇.rd, v₆.rd, v₅.rd, v₄.rd, v₃.rd, v₂.rd, v₁.rd]; rfl
-  have sp₇ : u₇.sp = Pf s := by rw [v₇.sp, v₆.sp, v₅.sp, v₄.sp, v₃.sp, v₂.sp, v₁.sp, asp]
-  have lr₇ : u₇.lr = s.lr := by rw [v₇.lr, v₆.lr, v₅.lr, v₄.lr, v₃.lr, v₂.lr, v₁.lr]; rfl
-  have m₇ : u₇.mem = ((((((s.mem.write (Pf s) 8 s.sp).writeW (slot s 0) (s.gpr .r3)).writeW (slot s 1)
+  obtain p₇ : u₇.gpr .r12 = Pf s := by rw [v₇.gpr, v₆.gpr, v₅.gpr, v₄.gpr, v₃.gpr, v₂.gpr, p₁]
+  obtain w₇ : u₇.wr = FR s :: s.wr := by rw [v₇.wr, v₆.wr, v₅.wr, v₄.wr, v₃.wr, v₂.wr, w₁]
+  obtain rd₇ : u₇.rd = s.rd := by rw [v₇.rd, v₆.rd, v₅.rd, v₄.rd, v₃.rd, v₂.rd, v₁.rd]; rfl
+  obtain sp₇ : u₇.sp = Pf s := by rw [v₇.sp, v₆.sp, v₅.sp, v₄.sp, v₃.sp, v₂.sp, v₁.sp, asp]
+  obtain lr₇ : u₇.lr = s.lr := by rw [v₇.lr, v₆.lr, v₅.lr, v₄.lr, v₃.lr, v₂.lr, v₁.lr]; rfl
+  obtain m₇ : u₇.mem = ((((((s.mem.write (Pf s) 8 s.sp).writeW (slot s 0) (s.gpr .r3)).writeW (slot s 1)
       (s.gpr .r4)).writeW (slot s 2) (s.gpr .r5)).writeW (slot s 3) (s.gpr .r6)).writeW (slot s 4)
       (s.gpr .r7)).writeW (slot s 5) (s.gpr .r8) := by
     rw [v₇.mem, v₆.mem, v₅.mem, v₄.mem, v₃.mem, v₂.mem, v₁.mem, amem, v₆.gpr, v₅.gpr, v₄.gpr, v₃.gpr, v₂.gpr,
@@ -437,26 +534,26 @@ theorem entered_wp {s : State} (h : Lay s) : WP isa (.block entry) (allocated 16
   refine wp_mflr fun u₈ v₈ => ?_
   refine wp_std (a := slot s 6) (by decide) (by decide) (by rw [v₈.other _ (by decide), p₇])
     (by rw [v₈.wr, w₇]; exact fin (by decide) (by decide)) fun u₉ v₉ => ?_
-  have m₉ : u₉.mem = eMem0 s := by rw [v₉.mem, v₈.gpr, v₈.mem, m₇, lr₇]
+  obtain m₉ : u₉.mem = eMem0 s := by rw [v₉.mem, v₈.gpr, v₈.mem, m₇, lr₇]
   refine wp_ld (a := sa s 2) (by decide) (by decide) (by rw [v₉.gpr, v₈.other _ (by decide), p₇])
     (h.sa_in (by decide) _ (by rw [v₉.rd, v₈.rd, rd₇])) fun u₁₀ v₁₀ => ?_
   refine wp_std (a := aOut s) (by decide) (by decide)
     (by rw [v₁₀.other _ (by decide), v₉.gpr, v₈.other _ (by decide), p₇])
     (by rw [v₁₀.wr, v₉.wr, v₈.wr, w₇]; exact fin (by decide) (by decide)) fun u₁₁ v₁₁ => ?_
-  have m₁₁ : u₁₁.mem = eMem s := by rw [v₁₁.mem, v₁₀.gpr, v₁₀.mem, m₉, h.e0Arg (by decide)]
+  obtain m₁₁ : u₁₁.mem = eMem s := by rw [v₁₁.mem, v₁₀.gpr, v₁₀.mem, m₉, h.e0Arg (by decide)]
   refine wp_mov' fun u₁₂ v₁₂ => wp_mov' fun u₁₃ v₁₃ => ?_
   have g₁₃ (r : Reg) (h0 : r ≠ .r0) (h7 : r ≠ .r7) (h8 : r ≠ .r8) (hr : r ≠ .r12) : u₁₃.gpr r = s.gpr r := by
     rw [v₁₃.other _ h8, v₁₂.other _ h7, v₁₁.gpr, v₁₀.other _ h0, v₉.gpr, v₈.other _ h0, g₇ r hr]
-  have p₁₃ : u₁₃.gpr .r12 = Pf s := by
+  obtain p₁₃ : u₁₃.gpr .r12 = Pf s := by
     rw [v₁₃.other _ (by decide), v₁₂.other _ (by decide), v₁₁.gpr, v₁₀.other _ (by decide), v₉.gpr,
       v₈.other _ (by decide), p₇]
-  have rd₁₃ : u₁₃.rd = s.rd := by rw [v₁₃.rd, v₁₂.rd, v₁₁.rd, v₁₀.rd, v₉.rd, v₈.rd, rd₇]
-  have wr₁₃ : u₁₃.wr = FR s :: s.wr := by rw [v₁₃.wr, v₁₂.wr, v₁₁.wr, v₁₀.wr, v₉.wr, v₈.wr, w₇]
-  have sp₁₃ : u₁₃.sp = Pf s := by rw [v₁₃.sp, v₁₂.sp, v₁₁.sp, v₁₀.sp, v₉.sp, v₈.sp, sp₇]
-  have m₁₃ : u₁₃.mem = eMem s := by rw [v₁₃.mem, v₁₂.mem, m₁₁]
+  obtain rd₁₃ : u₁₃.rd = s.rd := by rw [v₁₃.rd, v₁₂.rd, v₁₁.rd, v₁₀.rd, v₉.rd, v₈.rd, rd₇]
+  obtain wr₁₃ : u₁₃.wr = FR s :: s.wr := by rw [v₁₃.wr, v₁₂.wr, v₁₁.wr, v₁₀.wr, v₉.wr, v₈.wr, w₇]
+  obtain sp₁₃ : u₁₃.sp = Pf s := by rw [v₁₃.sp, v₁₂.sp, v₁₁.sp, v₁₀.sp, v₉.sp, v₈.sp, sp₇]
+  obtain m₁₃ : u₁₃.mem = eMem s := by rw [v₁₃.mem, v₁₂.mem, m₁₁]
   refine wp_ld (a := sa s 0) (by decide) (by decide) (by rw [p₁₃]) (h.sa_in (by decide) _ rd₁₃)
     fun u₁₄ v₁₄ => WP.block_nil ?_
-  have hpres : ∀ r ∈ preserved, r ≠ .r0 ∧ r ≠ .r7 ∧ r ≠ .r8 ∧ r ≠ .r9 ∧ r ≠ .r12 := by decide
+  obtain hpres : ∀ r ∈ preserved, r ≠ .r0 ∧ r ≠ .r7 ∧ r ≠ .r8 ∧ r ≠ .r9 ∧ r ≠ .r12 := by decide
   refine ⟨by rw [v₁₄.mem, m₁₃], ?_, ?_, by rw [v₁₄.gpr, m₁₃, h.eArg (by decide)], by
     rw [v₁₄.other _ (by decide), p₁₃], fun r hr => ?_, by rw [v₁₄.sp, sp₁₃], by rw [v₁₄.rd, rd₁₃],
     by rw [v₁₄.wr, wr₁₃]⟩
@@ -507,7 +604,7 @@ theorem gathered_wp {s e : State} (h : Lay s) (he : Entered s e) :
   refine WP.mono (gather_wp e (gatherPre_of h he)) fun g ⟨mg, kg⟩ => ?_
   rw [he.mem, h.hpt] at mg
   have hn : ∀ r, r ∉ gatherRegs → g.gpr r = e.gpr r := kg.gpr
-  have hpres : ∀ r ∈ preserved, r ∉ gatherRegs := by decide
+  obtain hpres : ∀ r ∈ preserved, r ∉ gatherRegs := by decide
   exact ⟨mg, (hn _ (by decide)).trans he.r12, fun r hr => (hn r (hpres r hr)).trans (he.pres r hr),
     kg.sp.trans he.sp, kg.rd.trans he.rd, kg.wr.trans he.wr⟩
 
@@ -548,10 +645,10 @@ theorem ready_wp {s g : State} (h : Lay s) (hg : Gathered s g) : WP isa (.block 
   have g₅ (r : Reg) (h3 : r ≠ .r3) (h4 : r ≠ .r4) (h5 : r ≠ .r5) (h6 : r ≠ .r6) (h7 : r ≠ .r7) :
       u₅.gpr r = g.gpr r := by
     rw [v₅.other _ h7, v₄.other _ h6, v₃.other _ h5, v₂.other _ h4, v₁.other _ h3]
-  have m₅ : u₅.mem = gMem s := by rw [v₅.mem, v₄.mem, v₃.mem, v₂.mem, v₁.mem, hg.mem]
-  have rd₅ : u₅.rd = s.rd := by rw [v₅.rd, v₄.rd, v₃.rd, v₂.rd, v₁.rd, hg.rd]
-  have wr₅ : u₅.wr = FR s :: s.wr := by rw [v₅.wr, v₄.wr, v₃.wr, v₂.wr, v₁.wr, hg.wr]
-  have p₅ : u₅.gpr .r12 = Pf s := by
+  obtain m₅ : u₅.mem = gMem s := by rw [v₅.mem, v₄.mem, v₃.mem, v₂.mem, v₁.mem, hg.mem]
+  obtain rd₅ : u₅.rd = s.rd := by rw [v₅.rd, v₄.rd, v₃.rd, v₂.rd, v₁.rd, hg.rd]
+  obtain wr₅ : u₅.wr = FR s :: s.wr := by rw [v₅.wr, v₄.wr, v₃.wr, v₂.wr, v₁.wr, hg.wr]
+  obtain p₅ : u₅.gpr .r12 = Pf s := by
     rw [g₅ _ (by decide) (by decide) (by decide) (by decide) (by decide), hg.r12]
   refine wp_ld (a := slot s 5) (by decide) (by decide) (by rw [p₅]) (hin (by decide) _ wr₅) fun u₆ v₆ => ?_
   refine wp_ld (a := sa s 0) (by decide) (by decide) (by rw [v₆.other _ (by decide), p₅])
@@ -560,8 +657,8 @@ theorem ready_wp {s g : State} (h : Lay s) (hg : Gathered s g) : WP isa (.block 
     (h.sa_in (by decide) _ (by rw [v₇.rd, v₆.rd, rd₅])) fun u₈ v₈ => WP.block_nil ?_
   have g₈ (r : Reg) (h8 : r ≠ .r8) (h9 : r ≠ .r9) (h10 : r ≠ .r10) : u₈.gpr r = u₅.gpr r := by
     rw [v₈.other _ h10, v₇.other _ h9, v₆.other _ h8]
-  have m₈ : u₈.mem = gMem s := by rw [v₈.mem, v₇.mem, v₆.mem, m₅]
-  have hpres : ∀ r ∈ preserved,
+  obtain m₈ : u₈.mem = gMem s := by rw [v₈.mem, v₇.mem, v₆.mem, m₅]
+  obtain hpres : ∀ r ∈ preserved,
       r ≠ .r3 ∧ r ≠ .r4 ∧ r ≠ .r5 ∧ r ≠ .r6 ∧ r ≠ .r7 ∧ r ≠ .r8 ∧ r ≠ .r9 ∧ r ≠ .r10 := by decide
   refine ⟨m₈, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, fun r hr => ?_, ?_, ?_, ?_⟩
   · rw [g₈ _ (by decide) (by decide) (by decide), v₅.other _ (by decide), v₄.other _ (by decide),
@@ -592,7 +689,7 @@ theorem Ready.callGpr {s c : State} (hc : Ready s c) :
     by rw [c.callEntry_gpr (by decide), hc.r7], by rw [c.callEntry_gpr (by decide), hc.r8],
     by rw [c.callEntry_gpr (by decide), hc.r9], by rw [c.callEntry_gpr (by decide), hc.r10]⟩
 
-theorem pf_sub (s : State) : Pf s - BitVec.ofNat 64 2672 = Bs s := BitVec.add_sub_cancel _ _
+theorem pf_sub (s : State) : Pf s - BitVec.ofNat 64 1264 = Bs s := BitVec.add_sub_cancel _ _
 
 /-- The call's stack argument, in its own terms. -/
 theorem Ready.argAddr {s c : State} (hc : Ready s c) (rd wr : List Region) :
@@ -614,7 +711,7 @@ theorem Ready.call {s c : State} (h : Lay s) (hc : Ready s c) :
   obtain ⟨c3, c4, c5, c6, c7, c8, c9, c10⟩ := hc.callGpr
   have hPn := h.pf_toNat
   have hBn := h.hBn
-  have aS : (⟨aOut s, 8⟩ : Region).Sub ⟨Bs s, 2832⟩ := fr_sub s (by decide)
+  obtain aS : (⟨aOut s, 8⟩ : Region).Sub ⟨Bs s, 1424⟩ := fr_sub s (by decide)
   refine ⟨?_, ?_, ?_⟩
   · simp only [callPre, State.withRegions_rd, State.withRegions_wr, State.withRegions_gpr, State.withRegions_sp,
       State.callEntry_sp, c3, c4, c5, c6, c7, c8, c9, c10, hc.sp, pf_sub, hc.argAddr, hc.arg h]
@@ -622,7 +719,7 @@ theorem Ready.call {s c : State} (h : Lay s) (hc : Ready s c) :
       h.bc.sub_left (Region.sub_prefix (by decide)), h.bn.sub_left (Region.sub_prefix (by decide)),
       h.ba.sub_left (Region.sub_prefix (by decide)), h.bd.sub_left (Region.sub_prefix (by decide)),
       h.bt.sub_left (Region.sub_prefix (by decide)), ?_, oc, on, oa, od, ot, by omega_arith, by omega_arith, hR⟩
-    show (⟨Bs s, 2672⟩ : Region).Disjoint ⟨Bs s + BitVec.ofNat 64 2672 + BitVec.ofNat 64 96, 8⟩
+    show (⟨Bs s, 1264⟩ : Region).Disjoint ⟨Bs s + BitVec.ofNat 64 1264 + BitVec.ofNat 64 96, 8⟩
     rw [Offset.add_ofNat_add_ofNat]
     exact (Offset.disjoint_base _ (by decide) (by omega_arith)).symm
   · refine Covers.of_sub fun r hr => ?_
@@ -647,17 +744,17 @@ theorem Lay.encrypt_frame {s : State} (h : Lay s) {m : Mem} (hf : Frame [FA s,dR
       encryptWith (ctxCiph s.mem (C s) (Rn s)) (ctxH s.mem (C s)) 16 (bytesAt s.mem (Nn s) (NL s)) plaintext
         (bytesAt s.mem (Ad s) (AL s)) := by
   obtain ⟨-, -, cd, -, nd, -, ad, -⟩ := h.pre
-  have apart {r : Region} (h₁ : (⟨Bs s,2832⟩ : Region).Disjoint r) (h₂ : r.Disjoint (dR s)) :
+  have apart {r : Region} (h₁ : (⟨Bs s,1424⟩ : Region).Disjoint r) (h₂ : r.Disjoint (dR s)) :
       ∀ r'∈[FA s,dR s],r.Disjoint r' := by
     intro r' hr'
     simp only [List.mem_cons,List.not_mem_nil,or_false] at hr'
     rcases hr' with rfl|rfl
-    · exact h₁.symm.sub_right (stk_sub s 2672 160 (by decide))
+    · exact h₁.symm.sub_right (stk_sub s 1264 160 (by decide))
     · exact h₂
   obtain ⟨hctx,hhash⟩ := Proof.AesGcm.ctx_frame hf (apart h.bc cd) h.hR
-  have hn : bytesAt m (Nn s) (NL s)=bytesAt s.mem (Nn s) (NL s) :=
+  obtain hn : bytesAt m (Nn s) (NL s)=bytesAt s.mem (Nn s) (NL s) :=
     Proof.Cmac.bytesAt_frame hf (apart h.bn nd) (Nat.le_of_lt (s.gpr .r6).isLt)
-  have ha : bytesAt m (Ad s) (AL s)=bytesAt s.mem (Ad s) (AL s) :=
+  obtain ha : bytesAt m (Ad s) (AL s)=bytesAt s.mem (Ad s) (AL s) :=
     Proof.Cmac.bytesAt_frame hf (apart h.ba ad) (Nat.le_of_lt (s.gpr .r8).isLt)
   rw [hctx,hhash,hn,ha]
 
@@ -667,10 +764,10 @@ theorem Lay.gMem_encrypt {s : State} (h : Lay s) :
         (bytesAt (gMem s) (Nn s) (NL s)) (bytesAt (gMem s) (Dst s) (L s)) (bytesAt (gMem s) (Ad s) (AL s)) =
       encryptWith (ctxCiph s.mem (C s) (Rn s)) (ctxH s.mem (C s)) 16
         (bytesAt s.mem (Nn s) (NL s)) (pt s (Cnt s)) (bytesAt s.mem (Ad s) (AL s)) := by
-  have hf : Frame [FA s,dR s] s.mem (gMem s) :=
+  obtain hf : Frame [FA s,dR s] s.mem (gMem s) :=
     ((frame_eMem s).mono (fun r hr => by rw [List.mem_singleton] at hr; subst r; simp)).trans
       (h.frame_gMem.mono (fun r hr => by rw [List.mem_singleton] at hr; subst r; simp))
-  have hd : bytesAt (gMem s) (Dst s) (L s)=pt s (Cnt s) := by
+  obtain hd : bytesAt (gMem s) (Dst s) (L s)=pt s (Cnt s) := by
     rw [← h.hlen]
     exact Proof.AesGcm.bytesAt_writeBytes_self _ _ _ (by rw [h.hlen]; exact (stackArg s 1).isLt)
   rw [hd]
@@ -688,16 +785,16 @@ structure Called (s z : State) : Prop where
   wr : z.wr = FR s :: s.wr
 
 theorem called_wp (hv : SealOk) {s c : State} (h : Lay s) (hc : Ready s c) :
-    WP isa (.call "vg_aes_gcm_seal" sealCode) c (Called s) := by
+    WP isa (.call "vg_aes_gcm_seal_core" sealCode) c (Called s) := by
   obtain ⟨hcp, hcov, hw⟩ := hc.call h
   obtain ⟨c3, c4, c5, c6, c7, c8, c9, c10⟩ := hc.callGpr
-  refine WP.callAny (k := Proof.AesGcm.sealRoundsContract PPC64LE.abi 2672) hv (sealSpec_pre hcp) hcov hw
+  refine WP.callAny (k := Proof.AesGcm.sealRoundsContract PPC64LE.abi 1264) hv (sealSpec_pre hcp) hcov hw
     (fun z rd' wr' sp' fr' pres' post' => ?_) (by rw [seal_sdepth]; decide)
-  have hpost := sealSpec_post post' (by simp only [State.withRegions_gpr, c4]; exact h.hR)
+  obtain hpost := sealSpec_post post' (by simp only [State.withRegions_gpr, c4]; exact h.hR)
   simp only [State.withRegions_gpr, State.withRegions_mem, State.callEntry_mem, c3, c4, c5, c6, c7, c8, c9, c10,
     hc.mem, hc.arg h] at hpost
   -- The return address, from the frame, which the call kept.
-  have ra : z.mem.readW (slot s 6) 64 = s.lr := by
+  obtain ra : z.mem.readW (slot s 6) 64 = s.lr := by
     rw [← h.slots_gMem.ra, ← hc.mem]
     refine Frame.readW fr' (Region.contains_self _ _) (fun r hr => ?_) (by decide)
     simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -722,7 +819,7 @@ theorem ret_wp {s z : State} (h : Lay s) (hz : Called s z) :
       exact ⟨r, List.mem_append_right _ (by rw [v₁.wr, hz.wr]; exact hr), hc⟩) fun u₂ v₂ => ?_
   refine wp_mtlr fun u₃ v₃ => WP.block_nil ⟨⟨fun r hr => ?_, ?_, ?_⟩, ?_⟩
   · -- The callee-saved registers.
-    have hpres : ∀ r ∈ preserved, r ≠ .r0 ∧ r ≠ .r12 := by decide
+    obtain hpres : ∀ r ∈ preserved, r ≠ .r0 ∧ r ≠ .r12 := by decide
     show u₃.gpr r = s.gpr r
     rw [v₃.gpr, v₂.other _ (hpres r hr).1, v₁.other _ (hpres r hr).2, hz.pres r hr]
   · -- The stack pointer.

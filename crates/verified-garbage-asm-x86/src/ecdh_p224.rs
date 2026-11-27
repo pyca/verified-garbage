@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Ecdh.Instance.exchangeContract`. Constant time but for the peer's public key: timing may depend on the pointers and the contents of `peer`, not on the private key.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety
@@ -51,9 +53,9 @@ call {vg_p224_add_mod_p}
 call {vg_p224_add_mod_p}
 .base64 "WFhYWLiABQAAueAEAAC6YAUAAFBRUlc="
 call {vg_p224_sub_mod_p}
-.base64 "WFhYWIuXYAUAAAuXZAUAAAuXaAUAAAuXbAUAAAuXcAUAAAuXdAUAAAuXeAUAAAuXfAUAALkAAAAAKdEZ0oPy/4uHwAUAACHQiYfABQAAi4/ABQAAi4dAAQAAi5eABAAAMcIhyjHQiYcABQAAi4dEAQAAi5eEBAAAMcIhyjHQiYcEBQAAi4dIAQAAi5eIBAAAMcIhyjHQiYcIBQAAi4dMAQAAi5eMBAAAMcIhyjHQiYcMBQAAi4dQAQAAi5eQBAAAMcIhyjHQiYcQBQAAi4dUAQAAi5eUBAAAMcIhyjHQiYcUBQAAi4dYAQAAi5eYBAAAMcIhyjHQiYcYBQAAi4dcAQAAi5ecBAAAMcIhyjHQiYccBQAAi4dgAQAAi5egBAAAMcIhyjHQiYegBQAAi4dkAQAAi5ekBAAAMcIhyjHQiYekBQAAi4doAQAAi5eoBAAAMcIhyjHQiYeoBQAAi4dsAQAAi5esBAAAMcIhyjHQiYesBQAAi4dwAQAAi5ewBAAAMcIhyjHQiYewBQAAi4d0AQAAi5e0BAAAMcIhyjHQiYe0BQAAi4d4AQAAi5e4BAAAMcIhyjHQiYe4BQAAi4d8AQAAi5e8BAAAMcIhyjHQiYe8BQAAi4cABQAAiYcAAgAAi4cEBQAAiYcEAgAAi4cIBQAAiYcIAgAAi4cMBQAAiYcMAgAAi4cQBQAAiYcQAgAAi4cUBQAAiYcUAgAAi4cYBQAAiYcYAgAAi4ccBQAAiYccAgAAi4egBQAAiYcgAgAAi4ekBQAAiYckAgAAi4eoBQAAiYcoAgAAi4esBQAAiYcsAgAAi4ewBQAAiYcwAgAAi4e0BQAAiYc0AgAAi4e4BQAAiYc4AgAAi4e8BQAAiYc8AgAAVw=="
-call {vg_p224_mul}
-.base64 "WIt8JBCLh+AAAACJh+ADAACLh+QAAACJh+QDAACLh+gAAACJh+gDAACLh+wAAACJh+wDAACLh/AAAACJh/ADAACLh/QAAACJh/QDAACLh/gAAACJh/gDAACLh/wAAACJh/wDAAC+AAEAAA=="
+.base64 "WFhYWIuXYAUAAAuXZAUAAAuXaAUAAAuXbAUAAAuXcAUAAAuXdAUAAAuXeAUAAAuXfAUAALkAAAAAKdEZ0oPy/4uHwAUAACHQiYfABQAAi4/ABQAAi4dAAQAAi5eABAAAMcIhyjHQiYcABQAAi4dEAQAAi5eEBAAAMcIhyjHQiYcEBQAAi4dIAQAAi5eIBAAAMcIhyjHQiYcIBQAAi4dMAQAAi5eMBAAAMcIhyjHQiYcMBQAAi4dQAQAAi5eQBAAAMcIhyjHQiYcQBQAAi4dUAQAAi5eUBAAAMcIhyjHQiYcUBQAAi4dYAQAAi5eYBAAAMcIhyjHQiYcYBQAAi4dcAQAAi5ecBAAAMcIhyjHQiYccBQAAi4dgAQAAi5egBAAAMcIhyjHQiYegBQAAi4dkAQAAi5ekBAAAMcIhyjHQiYekBQAAi4doAQAAi5eoBAAAMcIhyjHQiYeoBQAAi4dsAQAAi5esBAAAMcIhyjHQiYesBQAAi4dwAQAAi5ewBAAAMcIhyjHQiYewBQAAi4d0AQAAi5e0BAAAMcIhyjHQiYe0BQAAi4d4AQAAi5e4BAAAMcIhyjHQiYe4BQAAi4d8AQAAi5e8BAAAMcIhyjHQiYe8BQAA"
+call {vg_p224_window}
+.base64 "i4fgAAAAiYfgAwAAi4fkAAAAiYfkAwAAi4foAAAAiYfoAwAAi4fsAAAAiYfsAwAAi4fwAAAAiYfwAwAAi4f0AAAAiYf0AwAAi4f4AAAAiYf4AwAAi4f8AAAAiYf8AwAAvgABAAA="
 23:
 .base64 "g+4BuOADAAC54AMAALrgAwAAUFFSVw=="
 call {vg_p224_mul_mod_p}
@@ -65,11 +67,15 @@ jne 23b
 call {vg_p224_mul_mod_p}
 .base64 "WFhYWLjAAAAAuYAEAAC6oAQAAFBRUlc="
 call {vg_p224_mul_mod_p}
-.base64 "WFhYWIuXQAQAACtXYIuXRAQAABtXZIuXSAQAABtXaIuXTAQAABtXbIuXUAQAABtXcIuXVAQAABtXdIuXWAQAABtXeIuXXAQAABtXfBnAicOLl0AEAAALl0QEAAALl0gEAAALl0wEAAALl1AEAAALl1QEAAALl1gEAAALl1wEAAC5AAAAACnRGdIh2ouHwAUAACHQiYfABQAAi5dAAgAAC5dEAgAAC5dIAgAAC5dMAgAAC5dQAgAAC5dUAgAAC5dYAgAAC5dcAgAAuQAAAAAp0RnSi4fABQAAIdCJh8AFAACLj8AFAACLXCQEi4egBAAAIcgPyIlDGIuHpAQAACHID8iJQxSLh6gEAAAhyA/IiUMQi4esBAAAIcgPyIlDDIuHsAQAACHID8iJQwiLh7QEAAAhyA/IiUMEi4e4BAAAIcgPyIkDiciD4AGJ+osai3IEi2oMi3oIww=="
+.base64 "WFhYWIuXQAQAACtXYIuXRAQAABtXZIuXSAQAABtXaIuXTAQAABtXbIuXUAQAABtXcIuXVAQAABtXdIuXWAQAABtXeIuXXAQAABtXfBnAicOLl0AEAAALl0QEAAALl0gEAAALl0wEAAALl1AEAAALl1QEAAALl1gEAAALl1wEAAC5AAAAACnRGdIh2ouHwAUAACHQiYfABQAAi5dAAgAAC5dEAgAAC5dIAgAAC5dMAgAAC5dQAgAAC5dUAgAAC5dYAgAAC5dcAgAAuQAAAAAp0RnSi4fABQAAIdCJh8AFAACLj8AFAACLXCQEi4egBAAAIcgPyIlDGIuHpAQAACHID8iJQxSLh6gEAAAhyA/IiUMQi4esBAAAIcgPyIlDDIuHsAQAACHID8iJQwiLh7QEAAAhyA/IiUMEi4e4BAAAIcgPyIkDiciD4AGJ+osai3IEi2oMi3oIZg/vwLkAAAAAjWQk5PMPfwQkiUwkEIlMJBSJTCQYjWQkHLoAAAAAMclmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/8M="
 .p2align 6"#,
         vg_p224_mul_mod_p = sym super::ec_p224::vg_p224_mul_mod_p::vg_p224_mul_mod_p,
         vg_p224_add_mod_p = sym super::ec_p224::vg_p224_add_mod_p::vg_p224_add_mod_p,
         vg_p224_sub_mod_p = sym super::ec_p224::vg_p224_sub_mod_p::vg_p224_sub_mod_p,
-        vg_p224_mul = sym super::ec_p224::vg_p224_mul::vg_p224_mul,
+        vg_p224_window = sym super::ecdh_p224::vg_p224_window::vg_p224_window,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_p224_window.rs"]
+pub(crate) mod vg_p224_window;

@@ -16,7 +16,7 @@ meta import VerifiedGarbage.Proof.Framework.Lit
 
 namespace VG
 
-materialize_flat_code Impl.Rc2.AArch64.Cbc.encrypt
-materialize_flat_code Impl.Rc2.AArch64.Cbc.decrypt
+materialize_code Impl.Rc2.AArch64.Cbc.encrypt
+materialize_code Impl.Rc2.AArch64.Cbc.decrypt
 
 end VG

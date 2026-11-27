@@ -32,12 +32,31 @@ vg_chacha20_init:
 	add rcx, rcx
 	add rcx, rcx
 	mov QWORD PTR [rdi+128], rcx
+	pxor xmm0, xmm0
+	pxor xmm1, xmm1
+	pxor xmm2, xmm2
+	pxor xmm3, xmm3
+	pxor xmm4, xmm4
+	pxor xmm5, xmm5
+	pxor xmm6, xmm6
+	pxor xmm7, xmm7
+	pxor xmm8, xmm8
+	pxor xmm9, xmm9
+	pxor xmm10, xmm10
+	pxor xmm11, xmm11
+	pxor xmm12, xmm12
+	pxor xmm13, xmm13
+	pxor xmm14, xmm14
+	pxor xmm15, xmm15
 	xor eax, eax
 	xor ecx, ecx
 	xor edx, edx
 	xor esi, esi
+	xor edi, edi
 	xor r8d, r8d
 	xor r9d, r9d
+	xor r10d, r10d
+	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -60,9 +79,31 @@ vg_chacha20_set_nonce:
 	add rcx, rcx
 	add rcx, rcx
 	mov QWORD PTR [rdi+128], rcx
+	pxor xmm0, xmm0
+	pxor xmm1, xmm1
+	pxor xmm2, xmm2
+	pxor xmm3, xmm3
+	pxor xmm4, xmm4
+	pxor xmm5, xmm5
+	pxor xmm6, xmm6
+	pxor xmm7, xmm7
+	pxor xmm8, xmm8
+	pxor xmm9, xmm9
+	pxor xmm10, xmm10
+	pxor xmm11, xmm11
+	pxor xmm12, xmm12
+	pxor xmm13, xmm13
+	pxor xmm14, xmm14
+	pxor xmm15, xmm15
 	xor eax, eax
 	xor ecx, ecx
 	xor edx, edx
+	xor esi, esi
+	xor edi, edi
+	xor r8d, r8d
+	xor r9d, r9d
+	xor r10d, r10d
+	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -226,8 +267,13 @@ vg_chacha20_apply_avx512vl:
 	vpxor xmm13, xmm13, xmm13
 	vpxor xmm14, xmm14, xmm14
 	vpxor xmm15, xmm15, xmm15
-	lea rsp, [rsp-24]
-	lea rsp, [rsp+24]
+	xor r11d, r11d
+	lea rsp, [rsp-8]
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp-16]
+	movdqu XMMWORD PTR [rsp], xmm0
+	lea rsp, [rsp+16]
+	lea rsp, [rsp+8]
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -236,7 +282,6 @@ vg_chacha20_apply_avx512vl:
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -400,8 +445,13 @@ vg_chacha20_apply_avx512:
 	vpxor xmm13, xmm13, xmm13
 	vpxor xmm14, xmm14, xmm14
 	vpxor xmm15, xmm15, xmm15
-	lea rsp, [rsp-24]
-	lea rsp, [rsp+24]
+	xor r11d, r11d
+	lea rsp, [rsp-8]
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp-16]
+	movdqu XMMWORD PTR [rsp], xmm0
+	lea rsp, [rsp+16]
+	lea rsp, [rsp+8]
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -410,7 +460,6 @@ vg_chacha20_apply_avx512:
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -574,8 +623,13 @@ vg_chacha20_apply_avx2:
 	vpxor xmm13, xmm13, xmm13
 	vpxor xmm14, xmm14, xmm14
 	vpxor xmm15, xmm15, xmm15
-	lea rsp, [rsp-24]
-	lea rsp, [rsp+24]
+	xor r11d, r11d
+	lea rsp, [rsp-8]
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp-16]
+	movdqu XMMWORD PTR [rsp], xmm0
+	lea rsp, [rsp+16]
+	lea rsp, [rsp+8]
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -584,7 +638,6 @@ vg_chacha20_apply_avx2:
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -748,8 +801,13 @@ vg_chacha20_apply_ssse3:
 	pxor xmm13, xmm13
 	pxor xmm14, xmm14
 	pxor xmm15, xmm15
-	lea rsp, [rsp-24]
-	lea rsp, [rsp+24]
+	xor r11d, r11d
+	lea rsp, [rsp-8]
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp-16]
+	movdqu XMMWORD PTR [rsp], xmm0
+	lea rsp, [rsp+16]
+	lea rsp, [rsp+8]
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -758,7 +816,6 @@ vg_chacha20_apply_ssse3:
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -906,8 +963,29 @@ vg_chacha20_apply:
 20:
 	mov eax, 0
 21:
-	lea rsp, [rsp-24]
-	lea rsp, [rsp+24]
+	pxor xmm0, xmm0
+	pxor xmm1, xmm1
+	pxor xmm2, xmm2
+	pxor xmm3, xmm3
+	pxor xmm4, xmm4
+	pxor xmm5, xmm5
+	pxor xmm6, xmm6
+	pxor xmm7, xmm7
+	pxor xmm8, xmm8
+	pxor xmm9, xmm9
+	pxor xmm10, xmm10
+	pxor xmm11, xmm11
+	pxor xmm12, xmm12
+	pxor xmm13, xmm13
+	pxor xmm14, xmm14
+	pxor xmm15, xmm15
+	xor r11d, r11d
+	lea rsp, [rsp-8]
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp-16]
+	movdqu XMMWORD PTR [rsp], xmm0
+	lea rsp, [rsp+16]
+	lea rsp, [rsp+8]
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -916,6 +994,5 @@ vg_chacha20_apply:
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 	.p2align 6

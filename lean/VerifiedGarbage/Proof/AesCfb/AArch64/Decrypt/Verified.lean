@@ -22,7 +22,6 @@ public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.AesCfb.AArch64.Decrypt.Lit
 meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.AesCbc.AArch64.Block
-public import VerifiedGarbage.Proof.AesCbc.AArch64.Call
 public import VerifiedGarbage.Spec.Cfb.Contract
 
 /-! ### `AesCfb.AArch64.Decrypt.Correct`, which only this module used -/

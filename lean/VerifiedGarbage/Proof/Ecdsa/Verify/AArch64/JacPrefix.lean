@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.Ecdsa.AArch64
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Main
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
 public import VerifiedGarbage.Proof.Framework.RelCT
@@ -7,7 +8,7 @@ import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Proof.Ecdh.AArch64.Main
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Scalars
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Points
 public import VerifiedGarbage.Impl.NatPairs
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256Bounds
 import VerifiedGarbage.Proof.Ecdsa.AArch64.CombLays
@@ -336,10 +337,14 @@ def verifyPrefix (c : Cfg) : Prog isa :=
   .seq (bits (c.sl U) (bitsAt c.n 0) (8 * c.n)) (.block [])
 
 /-- After the public comb. -/
-def verifySuffix (c : Cfg) : Prog isa :=
+def verifySuffixWithWindow (c : Cfg) (window : Prog isa) : Prog isa :=
   .seq (.seq (.block (Impl.Ecdsa.Verify.AArch64.Cfg.save c))
-    (.seq (c.winPrep (c.sl V)) (.seq (WinCfg.window (winQ c)) (Impl.Ecdsa.Verify.AArch64.Cfg.sum c))))
+    (.seq c.preparePadd (.seq (c.winPrep (c.sl V))
+      (.seq window (Impl.Ecdsa.Verify.AArch64.Cfg.sum c)))))
     (Impl.Ecdsa.Verify.AArch64.Cfg.tail c)
+
+def verifySuffix (c : Cfg) : Prog isa :=
+  verifySuffixWithWindow c (WinCfg.window (winQ c) c.padd)
 
 theorem verifyPrefix_ok (hc : CfgOk c) {s₀ : State} (hp : VPre c s₀) :
     WP isa (verifyPrefix c) s₀ (CombReady c s₀) := by
@@ -347,10 +352,10 @@ theorem verifyPrefix_ok (hc : CfgOk c) {s₀ : State} (hp : VPre c s₀) :
   exact WP.seq (WP.mono (bits_combReady hc hM hp.tbl) fun _ h => WP.block_nil h)
 
 /-- Splitting a full execution at the public lookup, preserving its trace. -/
-theorem verify_cut {c : Cfg} {s s' : State} {t : List Leak}
-    (he : Exec isa (Impl.Ecdsa.Verify.AArch64.Cfg.verify c) s t s') :
+theorem verify_cutWithWindow {c : Cfg} {window : Prog isa} {s s' : State} {t : List Leak}
+    (he : Exec isa (Impl.Ecdsa.Verify.AArch64.Cfg.verifyWithWindow c window) s t s') :
     ∃ a b tp tc ts, Exec isa (verifyPrefix c) s tp a ∧
-      Exec isa (c.combCfg.comb true) a tc b ∧ Exec isa (verifySuffix c) b ts s' ∧
+      Exec isa (c.combCfg.comb true) a tc b ∧ Exec isa (verifySuffixWithWindow c window) b ts s' ∧
       t = tp ++ tc ++ ts := by
   cases he with
   | seq e0 h => cases h with
@@ -371,27 +376,33 @@ theorem verify_cut {c : Cfg} {s s' : State} {t : List Leak}
                         refine ⟨_, _, _, _, _, epre, ec, .seq er h, ?_⟩
                         simp only [List.append_nil, List.append_assoc]
 
+theorem verify_cut {c : Cfg} {s s' : State} {t : List Leak}
+    (he : Exec isa (Impl.Ecdsa.Verify.AArch64.Cfg.verify c) s t s') :
+    ∃ a b tp tc ts, Exec isa (verifyPrefix c) s tp a ∧
+      Exec isa (c.combCfg.comb true) a tc b ∧ Exec isa (verifySuffix c) b ts s' ∧
+      t = tp ++ tc ++ ts := verify_cutWithWindow he
+
 /-- The shared contract makes the scalar, pointers and table address public. -/
 def VerifyPublic (c : Cfg) (a b : State) : Prop :=
   AArch64.Taint.Agree (Taint.ofRegs [.x0, .x1, .x2, .x3]) a b ∧
     a.syms c.tsym = b.syms c.tsym ∧ publicU c a = publicU c b
 
-structure VerifyChecks (c : Cfg) : Prop where
+structure VerifyChecks (c : Cfg) (window : Prog isa := WinCfg.window (winQ c) c.padd) : Prop where
   comb : PublicChecks c.combCfg
   before : ConstantTime isa (fun _ => True)
     (AArch64.Taint.Agree (Taint.ofRegs [.x0, .x1, .x2, .x3])) (verifyPrefix c)
   after : ConstantTime isa (fun _ => True)
-    (AArch64.Taint.Agree (Taint.ofRegs [.x0])) (verifySuffix c)
+    (AArch64.Taint.Agree (Taint.ofRegs [.x0])) (verifySuffixWithWindow c window)
 
 /-- Timing of the entire verifier, allowing exactly its public inputs to
 influence the selected addresses. -/
-theorem verify_public_ct (hc : CfgOk c) (hC : Law c.C)
+theorem verify_public_ctWithWindow (window : Prog isa) (hc : CfgOk c) (hC : Law c.C)
     (hT : CombOkW c.C Cfg.combW (Cfg.combJ c.n) c.tbl c.start)
-    (checks : VerifyChecks c) :
-    ConstantTime isa (VPre c) (VerifyPublic c) (Impl.Ecdsa.Verify.AArch64.Cfg.verify c) := by
+    (checks : VerifyChecks c window) :
+    ConstantTime isa (VPre c) (VerifyPublic c) (Impl.Ecdsa.Verify.AArch64.Cfg.verifyWithWindow c window) := by
   intro s₁ s₂ t₁ t₂ s₁' s₂' pre₁ pre₂ ⟨pub, sym, scalar⟩ e₁ e₂
-  obtain ⟨a₁, b₁, tp₁, tc₁, ts₁, ep₁, ec₁, es₁, et₁⟩ := verify_cut e₁
-  obtain ⟨a₂, b₂, tp₂, tc₂, ts₂, ep₂, ec₂, es₂, et₂⟩ := verify_cut e₂
+  obtain ⟨a₁, b₁, tp₁, tc₁, ts₁, ep₁, ec₁, es₁, et₁⟩ := verify_cutWithWindow e₁
+  obtain ⟨a₂, b₂, tp₂, tc₂, ts₂, ep₂, ec₂, es₂, et₂⟩ := verify_cutWithWindow e₂
   have ht := checks.before _ _ _ _ _ _ trivial trivial pub ep₁ ep₂
   obtain ⟨_, _, wp₁, ready₁⟩ := verifyPrefix_ok hc pre₁
   obtain ⟨_, _, wp₂, ready₂⟩ := verifyPrefix_ok hc pre₂
@@ -419,6 +430,13 @@ theorem verify_public_ct (hc : CfgOk c) (hC : Law c.C)
       rw [keep₁.gpr _ (x0_not_tcombClob hc.n10), keep₂.gpr _ (x0_not_tcombClob hc.n10),
         ready₁.1.x0, ready₂.1.x0, base]⟩ es₁ es₂
   rw [et₁, et₂, ht, hh.1, ht']
+
+
+theorem verify_public_ct (hc : CfgOk c) (hC : Law c.C)
+    (hT : CombOkW c.C Cfg.combW (Cfg.combJ c.n) c.tbl c.start)
+    (checks : VerifyChecks c) :
+    ConstantTime isa (VPre c) (VerifyPublic c) (Impl.Ecdsa.Verify.AArch64.Cfg.verify c) :=
+  verify_public_ctWithWindow _ hc hC hT checks
 
 end VG.Proof.Ecdsa.Verify.AArch64
 

@@ -18,6 +18,16 @@ def dblJMul (S : RcbSlots) (p o : Pt) : List FOp :=
    .sub o.y S.t2 o.x, .mul o.y S.t3 o.y, .mul S.t1 S.t1 S.t1,
    .add S.t1 S.t1 S.t1, .sub o.y o.y S.t1]
 
+/-- `dblJMul` in place with its operations in another order, and other
+temporaries: the order measured fastest, of a search over the orders, for six
+words on x86-64 with BMI2 and ADX. -/
+def dblJMulT (S : RcbSlots) (p : Pt) : List FOp :=
+  [.mul S.t0 p.z p.z, .sub S.t1 p.x S.t0, .add S.t0 p.x S.t0, .mul S.t2 p.y p.y,
+   .mul S.t3 p.y p.z, .mul S.t1 S.t1 S.t0, .add S.t2 S.t2 S.t2, .add S.t0 S.t1 S.t1,
+   .add p.z S.t3 S.t3, .add S.t1 S.t0 S.t1, .mul S.t0 S.t1 S.t1, .mul S.t3 p.x S.t2,
+   .add S.t3 S.t3 S.t3, .sub S.t0 S.t0 S.t3, .mul S.t2 S.t2 S.t2, .sub p.x S.t0 S.t3,
+   .sub S.t3 S.t3 p.x, .add S.t2 S.t2 S.t2, .mul S.t3 S.t1 S.t3, .sub p.y S.t3 S.t2]
+
 /-- `dblJ`'s doubling (dbl-2001-b, for `a = -3`), its operations ordered so
 that each product's operands are ready well before it, the cheap operations
 between dependent ones: the processor overlaps a product's last carry chains

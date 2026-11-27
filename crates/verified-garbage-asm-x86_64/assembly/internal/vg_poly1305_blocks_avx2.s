@@ -7,6 +7,11 @@
 vg_poly1305_blocks_avx2:
 	cmp rdx, 32
 	jb 20f
+	mov r9, rdx
+	call {vg_mcdt_enter}
+	test eax, eax
+	je 22f
+	mov rdx, r9
 	mov r8d, 67108863
 	mov r9d, 16777216
 	movabs rax, 1152921487695413247
@@ -335,7 +340,7 @@ vg_poly1305_blocks_avx2:
 	mov rcx, rdx
 	shr rcx, 2
 	sub rcx, 1
-22:
+24:
 	vmovdqu ymm7, YMMWORD PTR [rsi]
 	vmovdqu ymm8, YMMWORD PTR [rsi+32]
 	vpunpcklqdq ymm5, ymm7, ymm8
@@ -439,7 +444,7 @@ vg_poly1305_blocks_avx2:
 	vpaddq ymm1, ymm1, ymm10
 	add rsi, 64
 	sub rcx, 1
-	jne 22b
+	jne 24b
 	mov eax, 5
 	mov r10d, 134217727
 	vmovdqu ymm7, YMMWORD PTR [rsi]
@@ -655,11 +660,16 @@ vg_poly1305_blocks_avx2:
 	add rsi, 64
 	and rdx, 3
 	test rdx, rdx
-	je 23f
+	je 25f
 	call {vg_poly1305_blocks}
-	jmp 24f
+	jmp 26f
+25:
+26:
+	jmp 23f
+22:
+	mov rdx, r9
+	call {vg_poly1305_blocks}
 23:
-24:
 	jmp 21f
 20:
 	call {vg_poly1305_blocks}

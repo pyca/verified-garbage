@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Impl.Bignum.Arm.PreparePrime
 public import VerifiedGarbage.Proof.Bignum.Arm.SanitizeModulusCT
 public import VerifiedGarbage.Proof.Bignum.Words
-public import VerifiedGarbage.Proof.Bignum.Arm.DoubleLoopState
+public import VerifiedGarbage.Proof.Bignum.Arm.DoubleCountMemory
 import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeInverse
 import VerifiedGarbage.Proof.Bignum.Arm.R2
 import VerifiedGarbage.Proof.Bignum.Arm.SanitizeModulus

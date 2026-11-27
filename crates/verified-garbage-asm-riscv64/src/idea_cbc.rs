@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Idea.cbcEncryptChainedContract`. Constant time: only the pointers and `n` may affect timing, not the subkeys, the chaining value or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 104 bytes.
@@ -42,7 +44,7 @@ j 26f
 28:
 .base64 "IzBTACED/RM="
 bnez t2, 28b
-.base64 "IWGCgA=="
+.base64 "IWGBQjlxCoMjMFMAIzRTACM4UwAjPFMAIzBTAiM0UwIjOFMCIzxTAiFhAUWBRQFGgUYBR4FHAUiBSIFCAUOBQwFOgU4BT4FPgoA="
 .option pop"#,
     )
 }
@@ -50,6 +52,8 @@ bnez t2, 28b
 /// IDEA-CBC decryption (NIST SP 800-38A §6.2, Lai 1992 §3.3) of whole blocks, in place: replaces the `n` 8-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = CIPH⁻¹_K(Cⱼ) ⊕ Cⱼ₋₁`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ`, the last block at `data` on entry (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH⁻¹_K` is IDEA under the decryption subkeys at `schedule`, as `vg_idea_invert_key` writes them. No padding is removed.
 ///
 /// Contract: `VG.Spec.Idea.cbcDecryptChainedContract`. Constant time: only the pointers and `n` may affect timing, not the subkeys, the chaining value or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -86,7 +90,7 @@ j 26f
 28:
 .base64 "IzBTACED/RM="
 bnez t2, 28b
-.base64 "IWGCgA=="
+.base64 "IWGBQjlxCoMjMFMAIzRTACM4UwAjPFMAIzBTAiM0UwIjOFMCIzxTAiFhAUWBRQFGgUYBR4FHAUiBSIFCAUOBQwFOgU4BT4FPgoA="
 .option pop"#,
     )
 }

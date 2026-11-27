@@ -1,26 +1,29 @@
 module
 
-public import VerifiedGarbage.Proof.Idea.RISCV64.Invert
-public import VerifiedGarbage.Proof.Idea.RISCV64.Key
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.RISCV64.Print
+public import VerifiedGarbage.TCB.RISCV64.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Idea.Contract
+import VerifiedGarbage.Proof.Idea.RISCV64.Scrub
+import VerifiedGarbage.Impl.Idea.RISCV64.Fn
+import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.Idea.RISCV64.Lit
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # IDEA on RISC-V -/
 
-@[expose] public section
-
 namespace VG.Artifacts.Idea.RISCV64
 
-def artifacts : List Artifact := [
+public def artifacts : List (Artifact RISCV64.target) := [
   Spec.Idea.expandKeyApi.artifact RISCV64.target {
-    code := Impl.Idea.RISCV64.expandKey
-    verified := Proof.Idea.RISCV64.expandKey_verified },
+    code := Impl.Idea.RISCV64.Fn.expandKey
+    verified := Proof.Idea.RISCV64.Scrub.expandKey_scrubbed },
   Spec.Idea.invertKeyApi.artifact RISCV64.target {
-    code := Impl.Idea.RISCV64.invertKey
-    verified := Proof.Idea.RISCV64.invertKey_verified },
+    code := Impl.Idea.RISCV64.Fn.invertKey
+    verified := Proof.Idea.RISCV64.Scrub.invertKey_scrubbed },
   Spec.Idea.ecbApi.artifact RISCV64.target {
-    code := Impl.Idea.RISCV64.ecb
-    verified := Proof.Idea.RISCV64.ecb_verified }]
+    code := Impl.Idea.RISCV64.Fn.ecb
+    verified := Proof.Idea.RISCV64.Scrub.ecb_scrubbed }]
+
+spec_apis artifacts
 
 end VG.Artifacts.Idea.RISCV64

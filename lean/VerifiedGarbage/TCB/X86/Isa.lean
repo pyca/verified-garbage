@@ -25,7 +25,8 @@ Modelling choices:
   these 128 bits. All XMM registers are caller-saved in the i386 ABI.
 * Only CF, ZF, SF and OF are modelled. Each is an `Option Bool`; `none` means
   "undefined" (as the SDM specifies for some instructions). Evaluating a
-  branch on an undefined flag faults, so verified code never depends on one.
+  branch on an undefined flag faults, so verified code never depends on one,
+  and returning with one counts as secret residue (`Residue.lean`).
   PF and AF are not modelled, and no modelled instruction reads them.
 * Effective addresses are computed modulo 2³² and zero-extended to the 64-bit
   addresses of `Mem` (segment bases are zero: the flat memory model of every
@@ -65,6 +66,25 @@ Modelling choices:
   changes `syms`. The CALL rel32 with displacement zero does not push a
   shadow-stack entry (SDM Vol. 2, CALL pseudocode, `DEST != 0`), so the
   sequence also works with CET shadow stacks enabled.
+* A table of constants an instruction carries (`movdquTbl` and `movqTbl`,
+  its name and its words) is the `static` of that name the emitter writes
+  from it (`TCB/Rust.lean`), as x86-64's `movdquTbl` is
+  (`TCB/X86_64/Isa.lean`): for the whole run of the program it is mapped
+  readable at `State.syms name` and holds exactly those words, 8 bytes each,
+  little-endian, and does not wrap around the address space; and no memory
+  any code writes overlaps it: no region a contract lets a function write,
+  nor the stack. This is what a Rust `static` without interior mutability
+  is: an immutable object, which the linker places in read-only memory,
+  apart from every other object and from the stack, and which no `&mut`
+  (safe Rust cannot make one to it) nor any other pointer the program may
+  write through can reach. So the model reads the words from the
+  instruction rather than from `State.mem`, whose writes never reach it,
+  and no contract states any of this. The printed load reads wherever its
+  base register points, so the model faults unless that register holds
+  `State.syms name`, which `symPush` puts in a register: an instruction
+  that executes reads the static. Its address, fixed when the program is
+  loaded, does not depend on the data the code works on: an access to it
+  is observed (`addrs`) as its offset in the table.
 * `push` and `pop` (of registers other than `esp`) only occur as the push
   and pop of a frame (see `push`), as a sequence of them.
 * A frame may instead allocate a buffer of `bytes` bytes on the stack
@@ -97,14 +117,15 @@ Modelling choices:
   otherwise; the MMX registers are caller-saved (the x87 registers are
   scratch registers in the ABI), and their values on entry are unknown.
 * MXCSR-configuration-dependent timing (MCDT): on some Intel processors,
-  `pmuludq`, although on Intel's DOIT list, may take up to a cycle longer
-  to retire for specific data values unless MXCSR holds `0x1FBF` (Intel,
+  `pmuludq`, `pmullw` and `pmulhw`, although on Intel's DOIT list, may take
+  up to a cycle longer to retire for specific data values unless MXCSR
+  holds `0x1FBF` (Intel,
   "MXCSR Configuration Dependent Timing", and its list of the instructions
   affected, "MCDT Data Operand Independent Timing Instructions"; the
   processors that enumerate `MCDT_NO`, CPUID.(EAX=7H,ECX=2):EDX[5], are not
-  affected). The leakage model does not see this, so `pmuludq` runs only
-  inside an *MCDT frame*, `frame (mcdtEnter r) body mcdtLeave`, and faults
-  outside one. The frame is a stack frame of 12 bytes around Intel's
+  affected). The leakage model does not see this, so each of them runs
+  only inside an *MCDT frame*, `frame (mcdtEnter r) body mcdtLeave`, and
+  faults outside one. The frame is a stack frame of 12 bytes around Intel's
   mitigation: its push is `lea esp, [esp - 12]`, then the prologue,
   `stmxcsr DWORD PTR [esp + 4]` (SDM Vol. 2, "STMXCSR": `m32 := MXCSR`),
   `mov r, 0x1FBF`, `mov DWORD PTR [esp], r`, `ldmxcsr DWORD PTR [esp]`
@@ -116,8 +137,8 @@ Modelling choices:
   MXCSR is modelled by the number of open MCDT frames (`State.mcdt`) and
   its value outside them (`State.mxcsr`), which no instruction changes:
   inside one MXCSR holds `0x1FBF`, which no modelled instruction reads
-  (integer and `pmuludq` instructions raise no SIMD floating-point
-  exceptions). So the push saves `State.mxcsr` outside an MCDT frame and
+  (integer instructions, `pmuludq`, `pmullw` and `pmulhw` among them, raise
+  no SIMD floating-point exceptions). So the push saves `State.mxcsr` outside an MCDT frame and
   `0x1FBF` inside one (frames may nest, as a callee may open one inside its
   caller's), and the pop faults unless the word it loads into MXCSR is the
   value that leaves it as it was before the push. A frame's region is 9
@@ -127,7 +148,8 @@ Modelling choices:
   no other frame. Every execution that returns therefore leaves MXCSR as it
   was on entry (its control bits are callee-saved in the System V i386 ABI;
   `abiPreserved` need not mention it, as with the x87 state of MMX frames),
-  and every `pmuludq` runs between Intel's prologue and epilogue.
+  and every `pmuludq`, `pmullw` and `pmulhw` runs between Intel's prologue
+  and epilogue.
   `ci/check_mcdt.py` also checks this in the generated code.
 -/
 
@@ -206,6 +228,15 @@ inductive Instr
   /-- `movq QWORD PTR [m], xmm` (66 0F D6 /r): a 64-bit store of the low
   quadword. -/
   | movqStore (dst : MemOp) (src : XReg)
+  /-- `movdqu xmm, XMMWORD PTR [m]` (F3 0F 6F /r, as `movdquLoad`), whose
+  base register holds the address of the `static` `name`, whose words are
+  `words`: the emitter writes that static from this instruction
+  (`TCB/Rust.lean`), as x86-64's `movdquTbl`. -/
+  | movdquTbl (dst : XReg) (m : MemOp) (name : String) (words : List (BitVec 64))
+  /-- `movq xmm, QWORD PTR [m]` (F3 0F 7E /r, as `movqLoad`), whose base
+  register holds the address of the `static` `name`, whose words are
+  `words`, as for `movdquTbl`. -/
+  | movqTbl (dst : XReg) (m : MemOp) (name : String) (words : List (BitVec 64))
   /-- A legacy SSE instruction that writes only an XMM register. -/
   | xop (op : XOp)
   /-- An MMX instruction that writes only an MMX or XMM register
@@ -220,6 +251,12 @@ inductive Instr
   /-- `pmuludq dst, src` (66 0F F4 /r, `pmuludq` in `TCB/X86/Sse.lean`); it
   faults outside an MCDT frame. -/
   | pmuludq (dst src : XReg)
+  /-- `pmullw dst, src` (66 0F D5 /r, `pmullw` in `TCB/X86/Sse.lean`); it
+  faults outside an MCDT frame. -/
+  | pmullw (dst src : XReg)
+  /-- `pmulhw dst, src` (66 0F E5 /r, `pmulhw` in `TCB/X86/Sse.lean`); it
+  faults outside an MCDT frame. -/
+  | pmulhw (dst src : XReg)
   /-- The push of an MCDT frame (see `push`): `lea esp, [esp - 12]`,
   `stmxcsr DWORD PTR [esp + 4]`, `mov r, 0x1FBF`, `mov DWORD PTR [esp], r`,
   `ldmxcsr DWORD PTR [esp]`, `lfence`. -/
@@ -349,10 +386,37 @@ def exec : Instr → State → Option State
   | .movdquStore m r, s => s.store128 (s.ea m) (s.xmm r)
   | .movqLoad d m, s => (s.load64 (s.ea m)).map fun v => s.setXmm d ((0 : BitVec 64) ++ v)
   | .movqStore m r, s => s.store64 (s.ea m) ((s.xmm r).extractLsb' 0 64)
+  -- `movdquTbl`: SDM Vol. 2, "MOVDQU—Move Unaligned Packed Integer Values",
+  -- `MOVDQU xmm1, xmm2/m128` (F3 0F 6F /r, SSE2): `DEST[127:0] :=
+  -- SRC[127:0]`, as `movdquLoad d m` (no alignment is required; "Flags
+  -- Affected: None"), its source the 16 bytes at `m`, little-endian (SDM
+  -- Vol. 1 §1.3.1): when `m`'s base register holds the static's address and
+  -- `m`'s displacement, the offset in the table, is a multiple of 8 with
+  -- two words of the table from there, words `disp / 8` and `disp / 8 + 1`
+  -- of the static `name` (bits 63:0 the first); otherwise it faults. The
+  -- static is the immutable object of these words the emitter writes (see
+  -- the module docs), so the bytes there are always these.
+  | .movdquTbl d m name ws, s =>
+    if s.gpr m.base = s.syms name ∧ m.disp % 8 = 0 ∧ m.disp / 8 + 2 ≤ ws.length then
+      some (s.setXmm d (ws.getD (m.disp / 8 + 1) 0 ++ ws.getD (m.disp / 8) 0))
+    else none
+  -- `movqTbl`: SDM Vol. 2, "MOVQ—Move Quadword", `MOVQ xmm1, xmm2/m64`
+  -- (F3 0F 7E /r, SSE2), "MOVQ instruction when the source operand is XMM
+  -- register or m64 and destination operand is XMM register": `DEST[63:0]
+  -- := SRC[63:0]; DEST[127:64] := 0000000000000000H`, as `movqLoad d m`,
+  -- its source the 8 bytes at `m`, little-endian: under the same conditions
+  -- on the base register and the displacement, with one word of the table
+  -- there, word `disp / 8` of the static `name`; otherwise it faults.
+  | .movqTbl d m name ws, s =>
+    if s.gpr m.base = s.syms name ∧ m.disp % 8 = 0 ∧ m.disp / 8 < ws.length then
+      some (s.setXmm d ((0 : BitVec 64) ++ ws.getD (m.disp / 8) 0))
+    else none
   | .xop op, s => some (op.exec s)
   | .mop op, s => op.exec s
   | .mmxStore m r, s => if s.mmx then s.store64 (s.ea m) (s.mm r) else none
   | .pmuludq d r, s => if 0 < s.mcdt then some (s.setXmm d (pmuludq (s.xmm d) (s.xmm r))) else none
+  | .pmullw d r, s => if 0 < s.mcdt then some (s.setXmm d (pmullw (s.xmm d) (s.xmm r))) else none
+  | .pmulhw d r, s => if 0 < s.mcdt then some (s.setXmm d (pmulhw (s.xmm d) (s.xmm r))) else none
   -- Only the push and pop of a frame (`push`, `pop`), and the instruction
   -- of an indirect call (`icall`).
   | .symPush .., _ | .push _, _ | .pop .., _ | .alloc _, _ | .free _, _ | .mmxEnter, _ | .emms, _
@@ -372,13 +436,17 @@ def addrs : Instr → State → List Addr
   | .callr _, _ => []
   | .mop op, s => op.addrs s
   | .mmxStore m _, s => [s.ea m]
-  | .mmxEnter, _ | .emms, _ | .pmuludq .., _ => []
+  | .mmxEnter, _ | .emms, _ | .pmuludq .., _ | .pmullw .., _ | .pmulhw .., _ => []
   -- `stmxcsr`, then the store and `ldmxcsr` of `0x1FBF`, below `esp`.
   | .mcdtEnter _, s =>
     [(s.gpr .esp - 8).setWidth 64, (s.gpr .esp - 12).setWidth 64, (s.gpr .esp - 12).setWidth 64]
   | .mcdtLeave, s => [(s.gpr .esp + 4).setWidth 64]
   | .movdquLoad _ m, s | .movdquStore m _, s => [s.ea m]
   | .movqLoad _ m, s | .movqStore m _, s => [s.ea m]
+  -- A table an instruction carries is observed as the offset in the table,
+  -- a constant of the instruction: the table's address does not depend on
+  -- the data (see the module docs).
+  | .movdquTbl _ m .., _ | .movqTbl _ m .., _ => [BitVec.ofNat 64 m.disp]
   | .push rs, s => (List.range rs.length).map fun i =>
     (s.gpr .esp - BitVec.ofNat 32 (4 * (i + 1))).setWidth 64
   | .pop _ k, s => (List.range k).map fun i =>
@@ -443,9 +511,10 @@ Address", with a 32-bit operand size and address size: `DEST :=
 EffectiveAddress(SRC)`, the address computed modulo 2³²; "Flags Affected:
 None". The `bytes` bytes below `esp` become a writable region, at the head
 of `wr`, which it does not write: they hold what memory held there, as the
-bytes a call or a push stores below `esp` before it does (and a contract
-says nothing of them: they are in the stack below the caller's stack
-pointer, `Abi.reserved`). Faults unless `0 < bytes < 4096` and `bytes` is a
+bytes a call or a push stores below `esp` before it does: bytes in the stack
+below the caller's stack pointer, of which a contract says nothing
+(`Abi.reserved`), or those of a frame the function released, which are
+`lose`'s, so a proof cannot know them either. Faults unless `0 < bytes < 4096` and `bytes` is a
 multiple of 4, or if the frame would wrap around the address space.
 
 Or the push of an MMX frame (`mmxEnter`, no instruction): a frame of no
@@ -502,15 +571,41 @@ def push : Instr → State → Option State
     else none
   | _, _ => none
 
+/-- The memory once the `n` bytes at `a`, a released frame, are below the
+stack pointer. The System V i386 psABI (version 1.2, §2.2.2 "The Stack
+Frame") has "The stack pointer, %esp, always points to the end of the
+latest allocated stack frame", and no red zone (removed in 2015): bytes
+below `esp` belong to no frame, anything that runs on the stack between two
+instructions (a signal handler) may write them, and the code can assume
+nothing of them. Each byte either keeps its value or takes one the model
+does not know, as the unknowns say: for the word `j` of the frame, the
+bytes of `u (2 * j)` say which of its bytes are replaced (those not zero),
+and the bytes of `u (2 * j + 1)` are what replaces them. A byte may keep its
+value, so what a function leaves in a frame it releases may be left there
+(`NoResidue`, whose two runs share their unknowns, still tells apart a
+frame that holds a secret). -/
+def lose (m : Mem) (a : Addr) (n : Nat) (u : Nat → BitVec 32) : Mem :=
+  fun x =>
+    let d := (x - a).toNat
+    if d < n then
+      if (u (2 * (d / 4))).extractLsb' (8 * (d % 4)) 8 = 0 then m x
+      else (u (2 * (d / 4) + 1)).extractLsb' (8 * (d % 4)) 8
+    else m x
+
 /-- The pop of a frame: `pop r`, `k` times (`popReg`), so that `r` holds the
 last word of the frame. Faults if `k = 0` or `r` is `esp`, and unless `esp`
 and the writable regions are those the push left (`s₁`), and the frame, the
 region at their head, has `4 * k` bytes; it removes the frame.
 
+Whatever the pop, the frame's bytes are then below `esp`, and are
+`lose`'s: the next of the state's `unknowns`, two for each word of the
+frame, say what each holds (none for `emms`, whose frame is empty; the 12
+bytes `mcdtEnter` moved `esp` by for `mcdtLeave`).
+
 Or `lea esp, [esp + bytes]` (`free`, "LEA" as for `alloc`), with the same
 conditions on `bytes` as `alloc` and on `esp` and the writable regions as
-`pop`, the frame having `bytes` bytes; it changes neither memory nor any
-other register.
+`pop`, the frame having `bytes` bytes; it changes no other register, and
+memory only as `lose` says.
 
 Or `emms`, the pop of an MMX frame: SDM Vol. 2, "EMMS": `x87FPUTagWord :=
 FFFFH` (the x87 stack empty); "Flags Affected: None". It leaves the frame,
@@ -525,7 +620,7 @@ closes the frame, faulting unless one is open, `esp` and the writable
 regions are those the push left (`s₁`) with the frame's region of 9 bytes
 at their head, which it removes, and the word at `esp + 4` is the value
 MXCSR had before the push (`mcdtSaved`); it changes no other register, no
-memory and no flags (SDM Vol. 2, "LDMXCSR", "LFENCE", "LEA"). -/
+memory but as `lose` says, and no flags (SDM Vol. 2, "LDMXCSR", "LFENCE", "LEA"). -/
 def pop : Instr → State → State → Option State
   | .emms, s₁, s₂ =>
     if s₂.mmx ∧ s₂.gpr .esp = s₁.gpr .esp ∧ s₂.wr = s₁.wr ∧
@@ -536,17 +631,27 @@ def pop : Instr → State → State → Option State
     if 0 < s₂.mcdt ∧ s₂.gpr .esp = s₁.gpr .esp ∧ s₂.wr = s₁.wr ∧
         s₁.wr.head? = some ⟨(s₁.gpr .esp).setWidth 64, 9⟩ ∧
         s₂.mem.readW ((s₂.gpr .esp + 4).setWidth 64) 32 = mcdtSaved (s₂.mcdt - 1) s₂.mxcsr then
-      some { s₂.setReg .esp (s₂.gpr .esp + 12) with mcdt := s₂.mcdt - 1, wr := s₂.wr.tail }
+      some { s₂.setReg .esp (s₂.gpr .esp + 12) with
+        mcdt := s₂.mcdt - 1
+        wr := s₂.wr.tail
+        mem := lose s₂.mem ((s₂.gpr .esp).setWidth 64) 12 s₂.unknowns
+        unknowns := fun n => s₂.unknowns (n + 6) }
     else none
   | .free bytes, s₁, s₂ =>
     if 0 < bytes ∧ bytes < 4096 ∧ bytes % 4 = 0 ∧ s₂.gpr .esp = s₁.gpr .esp ∧ s₂.wr = s₁.wr ∧
         s₁.wr.head? = some ⟨(s₁.gpr .esp).setWidth 64, bytes⟩ then
-      some { s₂.setReg .esp (s₂.gpr .esp + BitVec.ofNat 32 bytes) with wr := s₂.wr.tail }
+      some { s₂.setReg .esp (s₂.gpr .esp + BitVec.ofNat 32 bytes) with
+        wr := s₂.wr.tail
+        mem := lose s₂.mem ((s₂.gpr .esp).setWidth 64) bytes s₂.unknowns
+        unknowns := fun n => s₂.unknowns (n + bytes / 2) }
     else none
   | .pop r k, s₁, s₂ =>
     if k ≠ 0 ∧ r ≠ .esp ∧ s₂.gpr .esp = s₁.gpr .esp ∧ s₂.wr = s₁.wr ∧
         s₁.wr.head? = some ⟨(s₁.gpr .esp).setWidth 64, 4 * k⟩ then
-      some { popReg s₂ r k with wr := s₂.wr.tail }
+      some { popReg s₂ r k with
+        wr := s₂.wr.tail
+        mem := lose s₂.mem ((s₂.gpr .esp).setWidth 64) (4 * k) s₂.unknowns
+        unknowns := fun n => s₂.unknowns (n + 2 * k) }
     else none
   | _, _, _ => none
 
@@ -557,8 +662,8 @@ def Instr.dst : Instr → Option Reg
   | .symPush d _ | .mcdtEnter d => some d
   | .mov d _ | .alu _ d _ | .shift _ d _ | .bswap d | .movzx8 d _ | .pop d _ => some d
   | .store .. | .store8 .. | .push _ | .mul _ | .movdquLoad .. | .movdquStore .. | .xop _
-  | .movqLoad .. | .movqStore .. | .mop _ | .mmxStore .. | .mmxEnter | .emms
-  | .alloc _ | .free _ | .pmuludq .. | .mcdtLeave | .callr _ => none
+  | .movqLoad .. | .movqStore .. | .movdquTbl .. | .movqTbl .. | .mop _ | .mmxStore .. | .mmxEnter | .emms
+  | .alloc _ | .free _ | .pmuludq .. | .pmullw .. | .pmulhw .. | .mcdtLeave | .callr _ => none
 
 /-- The address an indirect call instruction calls: SDM Vol. 2, "CALL—Call
 Procedure", `FF /2`, "CALL r/m32": "Call near, absolute indirect, address
@@ -576,7 +681,8 @@ AESENC/AESENCLAST/AESDEC/AESDECLAST/AESIMC/AESKEYGENASSIST need AES
 (`66 0F 38 DC /r`, `66 0F 38 DD /r`, `66 0F 38 DE /r`, `66 0F 38 DF /r`,
 `66 0F 38 DB /r`, `66 0F 3A DF /r ib`), and PCLMULQDQ needs PCLMULQDQ.
 The remaining legacy instructions (among them PADDQ, PMULUDQ, PSHUFLW,
-PSHUFHW, MOVQ and LFENCE) are SSE2, STMXCSR and LDMXCSR are SSE, and the
+PSHUFHW, PADDW, PSUBW, PMULLW, PMULHW, PSRAW, PACKSSDW, PUNPCKLWD,
+PUNPCKHWD, MOVQ and LFENCE) are SSE2, STMXCSR and LDMXCSR are SSE, and the
 MMX instructions MMX or SSE2, all already in this target's i686
 baseline. -/
 def Instr.requires : Instr → List String
@@ -610,5 +716,7 @@ abbrev isa : ISA where
   icall := icall
   -- A function's symbol, as a static's (`symPush`).
   fnAddr s name := (s.syms name).setWidth 64
+  ptrEq := withPtrEq
+  ptrEqDec := withPtrEqDecEq withPtrEq (fun _ _ _ _ => rfl)
 
 end VG.X86

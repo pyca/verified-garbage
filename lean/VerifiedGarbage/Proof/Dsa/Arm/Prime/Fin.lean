@@ -1,4 +1,6 @@
 module
+public import VerifiedGarbage.Proof.Bignum.Arm.CallOp
+public import VerifiedGarbage.Proof.Bignum.Arm.DoubleBackend
 
 public import VerifiedGarbage.Proof.MillerRabin.Arm.Backend
 public import VerifiedGarbage.Proof.Dsa.Arm.Prime.Mr8
@@ -11,11 +13,10 @@ import VerifiedGarbage.Proof.Rc2.PairMem
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.Arm.Prime.Mr11
 import VerifiedGarbage.Proof.Dsa.Arm.Prime.Exp7
-import VerifiedGarbage.Proof.Dsa.Arm.Prime.Mont7
+import VerifiedGarbage.Proof.Dsa.Arm.Prime.Mont8
 import VerifiedGarbage.Proof.Dsa.Arm.Prime.Seqs
-import VerifiedGarbage.Proof.Dsa.Arm.Prime.Taint8
 import VerifiedGarbage.Proof.Dsa.Arm.Prime.Trial2
-import VerifiedGarbage.Proof.MillerRabin.Arm.Pieces
+import VerifiedGarbage.Proof.MillerRabin.Arm.Body
 import VerifiedGarbage.Proof.Dsa.Arm.Prime.Vals
 
 /-! # DSA's probable-prime test on ARMv7: the result
@@ -214,13 +215,13 @@ theorem mrResult_vp (hE : ∀ σ, E σ → In P σ ∧ EM P σ) :
         (fun σ e => by rw [hs σ e, hq]; rfl) hus |>.mono (fun σ s h => ⟨h.1.1.1, h.1.1.2, trivial⟩) fun _ _ h => h
 
 /-- Once the candidate passed trial division. -/
-theorem mrPart_vp (v : RoundImpl) (hE : ∀ σ, E σ → In P σ ∧ EM P σ) :
-    VP (S2 P E) (Impl.Dsa.Arm.ProbablePrime.mrPart v.name v.code) (RF P E (statD P) (usedD P)) :=
+theorem mrPart_vp (v : RoundImpl) (M : CallOp) (D : CallDbl) (hE : ∀ σ, E σ → In P σ ∧ EM P σ) :
+    VP (S2 P E) (Impl.Dsa.Arm.ProbablePrime.mrPart v.name v.code M.op D.dbl) (RF P E (statD P) (usedD P)) :=
   VP.seqs_app (a := [sub3 aCm1 aC aOne]) (List.cons_ne_nil _ _) (by simp) cm1_vp
-    (VP.seqs_app (b := [montA, montB, Impl.Dsa.Arm.ProbablePrime.millerRabin v.name v.code,
+    (VP.seqs_app (b := [montA M.op D.dbl, montB M.op, Impl.Dsa.Arm.ProbablePrime.millerRabin v.name v.code M.op,
         Impl.Dsa.Arm.ProbablePrime.mrResult]) (by simp [expSetup]) (List.cons_ne_nil _ _)
       (expSetup_vp fun σ e => (hE σ e).1)
-      (montA_vp.seq (montB_vp.seq ((millerRabin_vp v hE).seq (mrResult_vp hE)))))
+      ((montA_vp M D).seq ((montB_vp M).seq ((millerRabin_vp v M hE).seq (mrResult_vp hE)))))
 
 /-- Trial division rejected the candidate: 2, having read nothing. -/
 theorem composite_vp (hE : ∀ σ, E σ → In P σ ∧ compv P σ = true) :

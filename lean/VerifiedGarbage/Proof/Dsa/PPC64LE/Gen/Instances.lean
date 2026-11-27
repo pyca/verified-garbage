@@ -1,7 +1,8 @@
 module
 
+public import VerifiedGarbage.Proof.Dsa.ParameterPublic
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.Verified
-public import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.Hash
+public import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.PPart
 public import VerifiedGarbage.Proof.Sha1.PPC64LE.Stream.Md
 public import VerifiedGarbage.Proof.Sha256.Md
 public import VerifiedGarbage.Proof.Sha256.PPC64LE.Compress
@@ -400,7 +401,7 @@ theorem prime_stack (bits : Nat) (name : String) (rc : Prog isa) :
 
 theorem primeOk (v : RoundImpl) (bits : Nat) (hb : VG.Proof.Dsa.PPC64LE.Prime.Bits bits := by decide) :
     PrimeOk (Impl.Dsa.PPC64LE.ProbablePrime.layout bits) (Impl.Dsa.PPC64LE.ProbablePrime.code bits v.name v.code) :=
-  ⟨VG.Proof.Dsa.PPC64LE.Prime.verified v bits hb, (prime_stack bits v.name v.code).trans v.stack⟩
+  ⟨VG.Proof.Dsa.PPC64LE.Prime.verified v bits hb, Nat.le_trans (prime_stack bits v.name v.code) v.stack⟩
 
 /-- A test's layout in the working space of the tests of a `pLen`-byte search. -/
 theorem lay_ok (pL bits : Nat) (h : Impl.Dsa.PPC64LE.ProbablePrime.keyOff +
@@ -489,7 +490,7 @@ def geoOk3 (v : RoundImpl) {ck : Prog isa} (hck : CheckOk ck) : GeoOk (geo3 v ck
 its contract. -/
 theorem params_verified (v : RoundImpl) {ck : Prog isa} (hck : CheckOk ck) :
     Verified target (code (geo1 v ck) (geo2 v ck) (geo3 v ck))
-      (Spec.Dsa.parameterSearchContract (abi.withConsts Impl.RsaKeyGen.TrialTable32.consts) 176) :=
+      (Proof.Dsa.parameterSearchAskedContract (abi.withConsts Impl.RsaKeyGen.TrialTable32.consts) 176) :=
   search_verified (geoOk1 v hck) (geoOk2 v hck) (geoOk3 v hck)
 
 /-- `vg_dsa_check_parameters`, which uses no stack. -/
@@ -504,7 +505,7 @@ def gen3 (v : RoundImpl) : Geo := geo3 v Impl.Dsa.PPC64LE.Params.checkParameters
 /-- `vg_dsa_parameter_search` over the round `v` meets its contract. -/
 theorem search_params (v : RoundImpl) :
     Verified target (code (gen1 v) (gen2 v) (gen3 v))
-      (Spec.Dsa.parameterSearchContract (abi.withConsts Impl.RsaKeyGen.TrialTable32.consts) 176) :=
+      (Proof.Dsa.parameterSearchAskedContract (abi.withConsts Impl.RsaKeyGen.TrialTable32.consts) 176) :=
   params_verified v checkOk
 
 end VG.Proof.Dsa.PPC64LE.Gen

@@ -33,7 +33,8 @@ theorem prepareFrame_correct {bytes count : Nat} {body : Prog isa}
         bytesAt t.mem (pa s (.x26, 0)) bytes = bytesAt s.mem (pa s (.x25, 0)) bytes ∧
         B t.mem (pa s (.x26, 0)))
     {σ : State} (h : EntryPre bytes count σ)
-    (hb : bytes < 2 ^ 32) (ho : bytes + 1024 * count < 2 ^ 32) :
+    (hb : bytes < 2 ^ 32) (ho : bytes + 1024 * count < 2 ^ 32)
+    (hBf : ∀ m m', Frame [below σ.sp 64] m m' → B m (σ.gpr .x1) → B m' (σ.gpr .x1)) :
     WP isa (prepareFrame body) σ fun t => abiPreserved σ t ∧
       bytesAt t.mem (σ.gpr .x1) bytes = bytesAt σ.mem (σ.gpr .x0) bytes ∧
       B t.mem (σ.gpr .x1) := by
@@ -55,7 +56,12 @@ theorem prepareFrame_correct {bytes count : Nat} {body : Prog isa}
   change s.gpr .x26 = σ.gpr .x1 at h26
   change s.gpr .x28 = σ.gpr .x2 at h28
   have L := entry_layout h hb ho hs.rd hs.wr (hs.sp.trans (inner_sp σ)) h25 h26 h28
-  refine WP.mono (hbody s L) fun t ⟨ht, h24, hout, hB⟩ => ?_
+  refine WP.mono (hbody s L) fun t ⟨ht, h24, hout, hB⟩ m3 u3 f3 m2 u2 f2 m1 u1 f1 m0 u0 f0 => ?_
+  have F : Frame [below σ.sp 64] t.mem m0 :=
+    (((f3.sub (slot_sub (offset := 48) (N := 64) (by decide) (by decide) (by simp only [BitVec.sub_sub]; rfl))).trans
+      (f2.sub (slot_sub (offset := 32) (N := 64) (by decide) (by decide) (by simp only [BitVec.sub_sub]; rfl)))).trans
+      (f1.sub (slot_sub (offset := 16) (N := 64) (by decide) (by decide) rfl))).trans
+      (f0.sub (slot_sub (offset := 0) (N := 64) (by decide) (by decide) (by simp)))
   refine ⟨⟨?_, rfl, ?_⟩, ?_, ?_⟩
   · intro r hr
     by_cases e25 : r = .x25
@@ -79,10 +85,14 @@ theorem prepareFrame_correct {bytes count : Nat} {body : Prog isa}
       rfl
   · intro r hr
     exact (ht.vcs r hr).trans (hs.keep.vcs r hr)
-  · change bytesAt t.mem (σ.gpr .x1) bytes = bytesAt σ.mem (σ.gpr .x0) bytes
+  · change bytesAt m0 (σ.gpr .x1) bytes = bytesAt σ.mem (σ.gpr .x0) bytes
     rw [pa, pa, h25, h26, BitVec.add_zero, BitVec.add_zero, hs.mem, inner_source h hb] at hout
+    rw [Proof.MlKem.bytesAt_frame F (fun R hR => by
+      simp only [List.mem_singleton] at hR; subst hR
+      exact (h.so.sub_left (below_sub (by decide) (by decide))).symm.sub_left
+        (Region.sub_prefix (Nat.le_add_right _ _))) (Nat.le_of_lt (Nat.lt_trans hb (by decide)))]
     exact hout
-  · change B t.mem (σ.gpr .x1)
-    simpa only [pa, h26, BitVec.add_zero] using hB
+  · change B m0 (σ.gpr .x1)
+    exact hBf _ _ F (by simpa only [pa, h26, BitVec.add_zero] using hB)
 
 end VG.Proof.MlDsa.AArch64.PreparedKey

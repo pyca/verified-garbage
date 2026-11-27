@@ -197,6 +197,42 @@ theorem sealGatherPost_local : ∀ vs m₁ m₂ m' r, vs.length = (sealGatherSig
   dsimp only [Curry.apply, sealGatherRoundsPost, ArgWord.ofRaw] at h ⊢
   exact post_local pb (Nat.le_refl _) (agree_of hb.1) (agree_of hb.2.1) (agree_of hb.2.2.1) hl h
 
+/-- `sealGatherRoundsPost` reads the memory on return only within the buffers. -/
+theorem sealGatherPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (sealGatherSig.words pb).length →
+    (∀ b ∈ Sig.bufs sealGatherSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (sealGatherSig.words pb) (sealGatherRoundsPost pb) vs m m₁ r →
+      Curry.apply (sealGatherSig.words pb) (sealGatherRoundsPost pb) vs m m₂ r := by
+  intro vs m m₁ m₂ r hlen hb h
+  obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 10) hlen
+  replace hlen := Nat.succ.inj hlen
+  iterate 7
+    obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+  obtain ⟨dst, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨len, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨tag, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero hlen
+  simp only [sealGatherSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+    forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
+    ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr]
+    (sealGatherRoundsPost pb) _ m m₁ r at h
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
+    ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr]
+    (sealGatherRoundsPost pb) _ m m₂ r
+  dsimp only [Curry.apply, sealGatherRoundsPost, ArgWord.ofRaw] at h ⊢
+  intro hr hle
+  have := Nat.mod_le len.toNat (2 ^ pb)
+  rw [bytesAt_congr (m₁ := m₁) (m₂ := m₂) (p := dst) (n := (len.setWidth pb).toNat) fun i hi =>
+      agree_of hb.2.2.2.1 i (by rw [BitVec.toNat_setWidth] at hi; omega_using [this, hi]),
+    bytesAt_congr (m₁ := m₁) (m₂ := m₂) (p := tag) (n := 16) fun i hi =>
+      agree_of hb.2.2.2.2 i (by omega_using [hi])]
+  exact h hr hle
+
+
 theorem sealGatherPrecomputedPost_local : ∀ vs m₁ m₂ m' r,
     vs.length = (Proof.Gcm.sealGatherPrecomputedSig.words pb).length →
     (∀ b ∈ Sig.bufs Proof.Gcm.sealGatherPrecomputedSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
@@ -238,5 +274,41 @@ theorem sealGatherPrecomputedPost_local : ∀ vs m₁ m₂ m' r,
     (sealGatherRoundsPost pb) _ m₂ m' r
   dsimp only [Curry.apply, sealGatherRoundsPost, ArgWord.ofRaw] at h ⊢
   exact post_local pb (by decide) (agree_of hb.1) (agree_of hb.2.1) (agree_of hb.2.2.1) hl h
+
+/-- `sealGatherRoundsPost` reads the memory on return only within the buffers. -/
+theorem sealGatherPrecomputedPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (Proof.Gcm.sealGatherPrecomputedSig.words pb).length →
+    (∀ b ∈ Sig.bufs Proof.Gcm.sealGatherPrecomputedSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (Proof.Gcm.sealGatherPrecomputedSig.words pb) (sealGatherRoundsPost pb) vs m m₁ r →
+      Curry.apply (Proof.Gcm.sealGatherPrecomputedSig.words pb) (sealGatherRoundsPost pb) vs m m₂ r := by
+  intro vs m m₁ m₂ r hlen hb h
+  obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 10) hlen
+  replace hlen := Nat.succ.inj hlen
+  iterate 7
+    obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+  obtain ⟨dst, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨len, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨tag, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero hlen
+  simp only [Proof.Gcm.sealGatherPrecomputedSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+    forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
+    ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr]
+    (sealGatherRoundsPost pb) _ m m₁ r at h
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
+    ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr]
+    (sealGatherRoundsPost pb) _ m m₂ r
+  dsimp only [Curry.apply, sealGatherRoundsPost, ArgWord.ofRaw] at h ⊢
+  intro hr hle
+  have := Nat.mod_le len.toNat (2 ^ pb)
+  rw [bytesAt_congr (m₁ := m₁) (m₂ := m₂) (p := dst) (n := (len.setWidth pb).toNat) fun i hi =>
+      agree_of hb.2.2.2.1 i (by rw [BitVec.toNat_setWidth] at hi; omega_using [this, hi]),
+    bytesAt_congr (m₁ := m₁) (m₂ := m₂) (p := tag) (n := 16) fun i hi =>
+      agree_of hb.2.2.2.2 i (by omega_using [hi])]
+  exact h hr hle
+
 
 end VG.Proof.AesGcm

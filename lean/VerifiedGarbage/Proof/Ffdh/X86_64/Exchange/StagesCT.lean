@@ -10,17 +10,12 @@ import VerifiedGarbage.Proof.Bignum.Octets
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.ChecksCT
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.PowCT
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.Exchange.Arithmetic
-meta import VerifiedGarbage.Proof.Ffdh.X86_64.Exchange.Body
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.SetupCT
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Bignum.Octets
-meta import Mathlib.Tactic.TermCongr
-import Mathlib.Tactic.TermCongr
-import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import Mathlib.Data.Int.ModEq
-meta import Mathlib.Tactic.Set
 meta import VerifiedGarbage.Proof.Bignum.Math
 meta import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Framework.Offset

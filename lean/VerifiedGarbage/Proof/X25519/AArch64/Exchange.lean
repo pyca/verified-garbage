@@ -2,17 +2,15 @@ module
 
 public import VerifiedGarbage.Proof.X25519.Contract
 public import VerifiedGarbage.Proof.Xdh.AArch64
-public import VerifiedGarbage.Proof.X25519.AArch64.AltLadder.Verified
+public import VerifiedGarbage.Proof.X25519.AArch64.LadderVerified
 public import VerifiedGarbage.Spec.X25519.Contract
 import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.X25519.AArch64.Verified
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.PowLit
 meta import VerifiedGarbage.Proof.Xdh.AArch64
-meta import VerifiedGarbage.Proof.X25519.AArch64.AltLadder.Verified
+meta import VerifiedGarbage.Proof.X25519.AArch64.LadderVerified
 meta import VerifiedGarbage.Spec.X25519.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.X25519.AArch64.Verified
 meta import VerifiedGarbage.Proof.Framework.Sig
 meta import VerifiedGarbage.Proof.Framework.PowLit
 meta import VerifiedGarbage.Proof.X25519.Contract
@@ -33,10 +31,10 @@ namespace VG.Proof.X25519.AArch64.Exchange
 
 open VG VG.AArch64 VG.Proof.Xdh.AArch64
 
-theorem callee [VG.Proof.Ed25519.AArch64.Divstep.Sound] : Callee 32 4096 Spec.X25519.x25519 Impl.X25519.AArch64.AltLadder.x25519
+theorem callee [VG.Proof.Ed25519.AArch64.Divstep.Sound] : Callee 32 4096 Spec.X25519.x25519 Impl.X25519.AArch64.Ladder.x25519
     (Proof.X25519.x25519Contract AArch64.abi) where
-  hv := Proof.X25519.AArch64.AltLadder.x25519_verified.1
-  hct := Proof.X25519.AArch64.AltLadder.x25519_verified.2.1
+  hv := Proof.X25519.AArch64.Ladder.x25519_verified.1
+  hct := Proof.X25519.AArch64.Ladder.x25519_verified.2.1
   pre s h := by
     obtain ⟨rd, wr, d1, d2, d3, d4, d5, b0, b1, b2, b3⟩ := h
     sig_pre [Proof.X25519.x25519Contract, Proof.X25519.x25519Sig, AArch64.abi, AArch64.argRegs]
@@ -51,7 +49,7 @@ theorem callee [VG.Proof.Ed25519.AArch64.Divstep.Sound] : Callee 32 4096 Spec.X2
     sig_post [Proof.X25519.x25519Contract, Proof.X25519.x25519Sig, AArch64.abi, AArch64.argRegs] at h
     exact h
   pub s₁ s₂ h := by
-    obtain ⟨q0, q1, q2, q3, qsp⟩ := h
+    obtain ⟨q0, q1, q2, q3, qsp, qd⟩ := h
     sig_pub [Proof.X25519.x25519Contract, Proof.X25519.x25519Sig, AArch64.abi, AArch64.argRegs]
     sig_reduce [Proof.X25519.x25519Contract, Proof.X25519.x25519Sig, AArch64.abi, AArch64.argRegs]
     sig_and_intros
@@ -59,7 +57,7 @@ theorem callee [VG.Proof.Ed25519.AArch64.Divstep.Sound] : Callee 32 4096 Spec.X2
   nf := by lit_decide
 
 theorem exchange_verified [VG.Proof.Ed25519.AArch64.Divstep.Sound] :
-    Verified AArch64.target (Impl.Xdh.AArch64.exchange "vg_x25519" Impl.X25519.AArch64.AltLadder.x25519 32)
+    Verified AArch64.target (Impl.Xdh.AArch64.exchange "vg_x25519" Impl.X25519.AArch64.Ladder.x25519 32)
       (Spec.X25519.exchangeContract AArch64.abi 16) :=
   Verified.of_correct (k := exContract 32 4096 Spec.X25519.x25519) (exchange_correct callee (by decide))
     (exchange_ct callee ⟨_, by taint_decide⟩) (by

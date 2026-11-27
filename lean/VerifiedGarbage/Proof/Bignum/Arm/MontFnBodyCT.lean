@@ -1,7 +1,6 @@
 module
 
 import VerifiedGarbage.Proof.Bignum.Arm.LayoutBridge
-public import VerifiedGarbage.Proof.Bignum.Arm.MontBodyCT
 public import VerifiedGarbage.Impl.Bignum.Arm.MontFn
 public import VerifiedGarbage.Proof.Rsa.MontContract
 import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
@@ -9,13 +8,58 @@ import VerifiedGarbage.Proof.Framework.Arm.Taint
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Bignum.Arm.LayoutBridge
-meta import VerifiedGarbage.Proof.Bignum.Arm.MontBodyCT
 meta import VerifiedGarbage.Impl.Bignum.Arm.MontFn
 meta import VerifiedGarbage.Proof.Rsa.MontContract
 meta import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Impl.Bignum.Arm.MontBody
+public import VerifiedGarbage.Proof.Bignum.Arm.MontInit
+import VerifiedGarbage.Proof.Bignum.Arm.MontInitCT
+import VerifiedGarbage.Proof.Framework.PlainSimp
+meta import VerifiedGarbage.Impl.Bignum.Arm.MontBody
+meta import VerifiedGarbage.Proof.Bignum.Arm.MontInit
+meta import VerifiedGarbage.Proof.Bignum.Arm.MontInitCT
+meta import VerifiedGarbage.Proof.Framework.PlainSimp
+
+/-! ### `Bignum.Arm.MontBodyCT`, which this module and modules that import it used -/
+
+section
+
+/-! # Constant-time complete Montgomery arithmetic, including initialization -/
+
+@[expose] public section
+
+namespace VG.Proof.Bignum.Arm
+open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
+
+structure InitReady (base : BitVec 32) (size out tmp a b mod acc n : Nat) (s : State) : Prop where
+  ctx : RoundCtx s base size tmp a b mod acc n
+  secret : ∃ inv, InitRegs s base out tmp a b mod acc n inv ∧
+    (val32 s.mem (State.addr base) mod n * inv.toNat + 1) % 2 ^ 32 = 0
+  operand : val32 s.mem (State.addr base) b n < val32 s.mem (State.addr base) mod n
+
+theorem montBody_ct {base : BitVec 32} {size out tmp a b mod acc n : Nat} (ht : tmp + 32 ≤ size) :
+    RelCT isa (fun s t => InitReady base size out tmp a b mod acc n s ∧
+      InitReady base size out tmp a b mod acc n t) montBody (fun _ _ => True) := by
+  let P := InitReady base size out tmp a b mod acc n
+  have ct : RelCT isa (fun s t => P s ∧ P t) montInit (fun _ _ => True) := by
+    intro s t tr1 tr2 u v h e1 e2
+    obtain ⟨is, rs, _⟩ := h.1.secret
+    obtain ⟨it, rt, _⟩ := h.2.secret
+    exact ⟨montInit_ct s t tr1 tr2 u v trivial trivial
+      ⟨rs.tmpPtr.trans rt.tmpPtr.symm, rs.accPtr.trans rt.accPtr.symm, rs.count.trans rt.count.symm⟩ e1 e2, trivial⟩
+  have wp (s : State) (h : P s) : WP isa montInit s (CoreReady base size out tmp a b mod acc n) := by
+    obtain ⟨inv, regs, inverse⟩ := h.secret
+    exact WP.mono (montInit_ok s h.ctx regs h.operand inverse) (fun _ h => h.1)
+  exact (pair_posts ct wp).seq (montCore_ct ht)
+
+end VG.Proof.Bignum.Arm
+
+end
+
+end
 
 /-! # The callable body reveals only the workspace, indices, and RSA word count -/
 

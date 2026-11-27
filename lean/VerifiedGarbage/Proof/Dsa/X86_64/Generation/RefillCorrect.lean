@@ -1,13 +1,12 @@
 module
 
 -- separate module: its proofs (about 2 s) build in parallel with `RefillWidths`' and the backends' depth and safety lemmas (`BackendCorrect`), which `RefillBackend` also imports
-
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.RefillFinish
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.EntrySave
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Hashes
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeTest
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeCall
 public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 public import VerifiedGarbage.Proof.Framework.X86_64.FrameAlloc
+import VerifiedGarbage.Proof.Framework.X86_64.Syms
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Sig
@@ -16,8 +15,70 @@ import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
 import VerifiedGarbage.Proof.Framework.X86_64.CallFrame
 import VerifiedGarbage.Proof.Dsa.Generation.Memory
 import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Rsa.BytesFrame
 import VerifiedGarbage.Proof.RsaOaep.X86_64.Stack
 public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Entry
+public import VerifiedGarbage.Proof.Framework.X86_64.Spill
+public import Aesop.BuiltinRules
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+import VerifiedGarbage.Proof.RsaKeyGen.Slots
+import VerifiedGarbage.Proof.RsaKeyGen.Table
+import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Lit
+import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit
+import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
+import VerifiedGarbage.Proof.Framework.AddrArith
+
+/-! ### `Dsa.X86_64.Generation.EntrySave`, which this module and modules that import it used -/
+
+section
+
+/-! # Preserve System V callee-saved registers outside the search frame -/
+
+@[expose] public section
+namespace VG.Proof.Dsa.X86_64.Generation
+open VG VG.X86_64 VG.X86_64.Spill VG.Proof.Bignum VG.Proof.Bignum.X86_64
+open VG.Impl.Dsa.X86_64.Generation
+
+def spillSlots : List (Reg × Nat) :=
+  [(.rbx, 0), (.rbp, 8), (.r12, 16), (.r13, 24), (.r14, 32), (.r15, 40)]
+
+theorem spillSlots_fit : ∀ p ∈ spillSlots, p.2 + 8 ≤ 48 := by decide
+
+theorem entrySave_ok {s : State} (hw : (⟨s.gpr .rsp, 48⟩ : Region) ∈ s.wr) :
+    WP isa (.block saveRegisters) s fun t =>
+      t.gpr = s.gpr ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
+      Saved t.mem (s.gpr .rsp) s.gpr spillSlots ∧
+      Frame [⟨s.gpr .rsp, 48⟩] s.mem t.mem := by
+  change WP isa (.block (saveCode .rsp spillSlots)) s _
+  apply WP.mono (VG.X86_64.Spill.save_ok .rsp spillSlots s (fun p hp =>
+    ⟨_, hw, Offset.contains_base _ (spillSlots_fit p hp) (by have := spillSlots_fit p hp; omega_using [this])⟩))
+  intro t ⟨hg, hr, hw, hm⟩
+  refine ⟨hg, hr, hw, ?_, ?_⟩
+  · rw [hm]; exact saveMem_saved _ _ _ _ (by decide)
+  · rw [hm]; exact saveMem_frame_base _ _ _ _ spillSlots_fit (by decide)
+
+theorem entryRestore_ok {s : State} (g : Reg → BitVec 64)
+    (hw : (⟨s.gpr .rsp, 48⟩ : Region) ∈ s.wr)
+    (hs : Saved s.mem (s.gpr .rsp) g spillSlots) :
+    WP isa (.block restoreRegisters) s fun t =>
+      (∀ r ∈ spillSlots.map Prod.fst, t.gpr r = g r) ∧
+      t.gpr .rax = s.gpr .rax ∧ t.gpr .rsp = s.gpr .rsp ∧
+      t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr := by
+  change WP isa (.block (restoreCode .rsp spillSlots)) s _
+  apply WP.mono (restore_ok .rsp spillSlots g s (by decide) (fun p hp =>
+    ⟨_, List.mem_append_right _ hw, Offset.contains_base _ (spillSlots_fit p hp)
+      (by have := spillSlots_fit p hp; omega_using [this])⟩) hs)
+  intro t ⟨hr, hk, hm⟩
+  exact ⟨hr, hk .rax (by decide), hk .rsp (by decide), hm⟩
+
+end VG.Proof.Dsa.X86_64.Generation
+
+end
+
+end
 
 /-! # The refillable-tape search on x86-64: correctness for one width
 
@@ -130,20 +191,20 @@ def BodyPost (u t : State) : Prop :=
 variable {checkName : String}
 
 theorem body_ok {G1 G256 : Impl.Pbkdf2.Md.X86_64.Stream} {sq : Prog isa} {mul : Nat → Nat → Nat → Prog isa}
-    {prime : Prog isa} {qBytes : Nat} (hq : qBytes = Spec.Dsa.generationQLen pBytes)
-    (hA : AttemptOk h (Impl.Dsa.X86_64.Generation.Refill.refillAttempt (checkName := checkName) G1 G256 sq mul prime
+    {prime : Prog isa} {qBytes : Nat} (hq : qBytes = Spec.Dsa.generationQLen pBytes) {N : FnNames}
+    (hA : AttemptOk h N (Impl.Dsa.X86_64.Generation.Refill.refillAttempt (checkName := checkName) G1 G256 sq mul prime
       pBytes qBytes))
-    {u : State} (a : RefillAllocated h u) :
+    {u : State} (a : RefillAllocated h u) (hy : FnSyms N (refillContext h) u) :
     WP isa (Impl.Dsa.X86_64.Generation.Refill.body (checkName := checkName) G1 G256 sq mul prime pBytes qBytes) u
       (BodyPost h u) := by
   simp only [Impl.Dsa.X86_64.Generation.Refill.body, Impl.Dsa.X86_64.Generation.Refill.controller,
     Impl.Dsa.X86_64.Generation.Refill.finish, VG.Impl.Bignum.X86_64.seqs]
   apply WP.seq
-  refine WP.mono (entry_ok h a hq) fun v ⟨W, hm, h16, _, c0, c1, c2, fE, kE⟩ => ?_
+  refine WP.mono_syms (entry_ok h a hq) fun v ⟨W, hm, h16, _, c0, c1, c2, fE, kE⟩ yv => ?_
   have hcv : ctlRegion (refillBase s₀) ∈ v.wr := kE.2.2 ▸ a.ctl
   have hwv : ∀ r ∈ s₀.wr, r ∈ v.wr := fun r hr => kE.2.2 ▸ a.wr r hr
   apply WP.seq
-  refine WP.mono (controller_ok h hq hA hcv _ v (loop_initial h hm h16 c0 c1 c2)) fun t hd => ?_
+  refine WP.mono (controller_ok h hq hA hcv (hy.congr yv) _ v (loop_initial h hm h16 c0 c1 c2)) fun t hd => ?_
   apply WP.seq
   refine WP.mono (results_ok h hcv hwv hd) fun t₁ hr => ?_
   obtain ⟨hs, W', m₁, r0, r3, uv, hin, hm₁, fm₁, mem₁, e0, e3, eu, est, hres, sp₁, rd₁, wr₁⟩ := hr
@@ -274,13 +335,34 @@ theorem RefillRes.congr {t t' : State} (r : RefillRes h t) (hr : t'.gpr .rax = t
   obtain ⟨a, b, c, d⟩ := r
   exact ⟨hr.trans a, hm ▸ b, hm ▸ c, hm ▸ d⟩
 
+/-- `RefillRes` holds whatever the bytes of a frame on the stack hold once
+released: the results are apart from the stack. -/
+theorem RefillRes.lost {t t' : State} (r : RefillRes h t) (hr : t'.gpr .rax = t.gpr .rax) {R : Region}
+    (fm : Frame [R] t.mem t'.mem) (hR : R.Sub (below (s₀.gpr .rsp) Refill.refillStack)) : RefillRes h t' := by
+  obtain ⟨a, b, c, d⟩ := r
+  have sep : ∀ {B : Region}, (below (s₀.gpr .rsp) Refill.refillStack).Disjoint B → ∀ {B' : Region}, B'.Sub B →
+      ∀ q ∈ [R], B'.Disjoint q := fun hB _ hs q hq => by
+    simp only [List.mem_singleton] at hq; subst hq
+    exact fun x h₁ h₂ => hB x (hR x h₂) (hs x h₁)
+  have e : (s₀.gpr .rsi).toNat = 2 * pBytes + Spec.Dsa.generationQLen pBytes := by
+    rw [h.outLength, h.width]
+  have fit : 2 * pBytes + Spec.Dsa.generationQLen pBytes < 2 ^ 64 := by
+    rw [← e]; exact (s₀.gpr .rsi).isLt
+  refine ⟨hr.trans a, ?_, ?_, ?_⟩
+  · rw [Proof.Rsa.rsa_bytes_frame fm fit (sep h.stackOut fun x hx => by simp only [Refill.inOut, e]; exact hx)]
+    exact b
+  · rw [Proof.Rsa.wordsAt_frame fm (by decide) (sep h.stackUsed fun x hx => hx)]
+    exact c
+  · rw [Proof.Rsa.wordsAt_frame fm (by decide) (sep h.stackState fun x hx => hx)]
+    exact d
+
 theorem inner_ok {G1 G256 : Impl.Pbkdf2.Md.X86_64.Stream} {sq : Prog isa} {mul : Nat → Nat → Nat → Prog isa}
-    {prime : Prog isa} {qBytes : Nat} (hq : qBytes = Spec.Dsa.generationQLen pBytes)
-    (hA : AttemptOk h (Impl.Dsa.X86_64.Generation.Refill.refillAttempt (checkName := checkName) G1 G256 sq mul prime
+    {prime : Prog isa} {qBytes : Nat} (hq : qBytes = Spec.Dsa.generationQLen pBytes) {N : FnNames}
+    (hA : AttemptOk h N (Impl.Dsa.X86_64.Generation.Refill.refillAttempt (checkName := checkName) G1 G256 sq mul prime
       pBytes qBytes))
     {u : State} (hg : u.gpr = (allocState 48 s₀).gpr) (hr : u.rd = s₀.rd) (hw : u.wr = (allocState 48 s₀).wr)
     (hf : Frame [⟨(allocState 48 s₀).gpr .rsp, 48⟩] s₀.mem u.mem)
-    (saved : Saved u.mem ((allocState 48 s₀).gpr .rsp) s₀.gpr spillSlots) :
+    (saved : Saved u.mem ((allocState 48 s₀).gpr .rsp) s₀.gpr spillSlots) (hy : FnSyms N (refillContext h) u) :
     WP isa (.frame (.alloc 32) (.frame (.alloc Impl.Dsa.X86_64.Generation.Refill.frameBytes)
         (Impl.Dsa.X86_64.Generation.Refill.body (checkName := checkName) G1 G256 sq mul prime pBytes qBytes)
         (.free Impl.Dsa.X86_64.Generation.Refill.frameBytes)) (.free 32)) u fun t =>
@@ -314,27 +396,49 @@ theorem inner_ok {G1 G256 : Impl.Pbkdf2.Md.X86_64.Stream} {sq : Prog isa} {mul :
       mem := by
         change Frame _ s₀.mem u.mem
         rw [show off (low s₀) 520 = (allocState 48 s₀).gpr .rsp from (saved_alloc _).symm]; exact hf }
-  refine WP.mono (body_ok h hq hA a) fun t ⟨rax, bytes, uw, sw, fr, sp, rd, wr⟩ => ⟨sp, wr, ?_, ?_, ?_⟩
+  refine WP.mono (body_ok h hq hA a (hy.congr rfl)) fun t ⟨rax, bytes, uw, sw, fr, sp, rd, wr⟩ =>
+    ⟨sp, wr, fun m₁ u₁ fm₁ => ⟨?_, ?_, fun m₂ u₂ fm₂ => ?_⟩⟩
   · change (freeState 296 t).gpr .rsp = _; exact freeState_rsp sp
   · exact freeState_wr wr
-  refine ⟨RefillRes.congr h ⟨rax, bytes, uw, sw⟩ (by simp [freeState, State.setReg]) rfl, ?_,
+  replace fm₁ : Frame [⟨off (low s₀) 192, 296⟩] t.mem m₁ := by
+    have e : (allocState 32 u).gpr .rsp - BitVec.ofNat 64 296 = off (low s₀) 192 := by
+      change u.gpr .rsp - BitVec.ofNat 64 32 - BitVec.ofNat 64 296 = _
+      rw [ursp, rsp_alloc]; rfl
+    rw [e] at fm₁; exact fm₁
+  replace fm₂ : Frame [⟨off (low s₀) 488, 32⟩] m₁ m₂ := by
+    have e : u.gpr .rsp - BitVec.ofNat 64 32 = off (low s₀) 488 := by
+      rw [ursp, ctl_alloc]; simp only [off]; rw [Offset.add_add]; rfl
+    rw [e] at fm₂; exact fm₂
+  have r₁ := RefillRes.lost h (t' := { freeState 296 t with mem := m₁, unknowns := u₁ }) ⟨rax, bytes, uw, sw⟩
+    (by simp [freeState, State.setReg]) fm₁ (low_sub s₀ (by decide))
+  have saved₀ : Saved t.mem ((allocState 48 s₀).gpr .rsp) s₀.gpr spillSlots := by
+    apply saved.frame (rs := bodyRegions h) fr
+    intro p hp r hr
+    refine (saved_body h r hr).sub_left ?_
+    rw [savedRegion, show off (low s₀) 520 = (allocState 48 s₀).gpr .rsp from (saved_alloc _).symm]
+    exact Offset.sub_base _ (spillSlots_fit p hp)
+  have slot : ∀ {d n : Nat}, d + n ≤ 520 → ∀ p ∈ spillSlots, ∀ r ∈ [(⟨off (low s₀) d, n⟩ : Region)],
+      Region.Disjoint ⟨Spill.slot ((allocState 48 s₀).gpr .rsp) p.2, 8⟩ r := by
+    intro d n hdn p hp r hr
+    simp only [List.mem_singleton] at hr; subst hr
+    refine Region.Disjoint.sub_left (r₁ := savedRegion (s₀ := s₀))
+      (Offset.disjoint (low s₀) (Or.inr (by omega_using [hdn])) (by decide) (by omega_using [hdn])) ?_
+    rw [savedRegion, show off (low s₀) 520 = (allocState 48 s₀).gpr .rsp from (saved_alloc _).symm]
+    exact Offset.sub_base _ (spillSlots_fit p hp)
+  refine ⟨RefillRes.lost h r₁ (by simp [freeState, State.setReg]) fm₂ (low_sub s₀ (by decide)),
+    (saved₀.frame fm₁ (slot (by decide))).frame fm₂ (slot (by decide)),
     freeState_rsp (freeState_rsp sp), rd, freeState_wr (freeState_wr wr)⟩
-  apply saved.frame (rs := bodyRegions h) fr
-  intro p hp r hr
-  refine (saved_body h r hr).sub_left ?_
-  rw [savedRegion, show off (low s₀) 520 = (allocState 48 s₀).gpr .rsp from (saved_alloc _).symm]
-  exact Offset.sub_base _ (spillSlots_fit p hp)
 
 theorem run_ok {G1 G256 : Impl.Pbkdf2.Md.X86_64.Stream} {sq : Prog isa} {mul : Nat → Nat → Nat → Prog isa}
-    {prime : Prog isa} {qBytes : Nat} (hq : qBytes = Spec.Dsa.generationQLen pBytes)
-    (hA : AttemptOk h (Impl.Dsa.X86_64.Generation.Refill.refillAttempt (checkName := checkName) G1 G256 sq mul prime
-      pBytes qBytes)) :
+    {prime : Prog isa} {qBytes : Nat} (hq : qBytes = Spec.Dsa.generationQLen pBytes) {N : FnNames}
+    (hA : AttemptOk h N (Impl.Dsa.X86_64.Generation.Refill.refillAttempt (checkName := checkName) G1 G256 sq mul prime
+      pBytes qBytes)) (hN : FnRegs N s₀) :
     WP isa (Impl.Dsa.X86_64.Generation.Refill.code (checkName := checkName) G1 G256 sq mul prime pBytes qBytes) s₀
       fun t => RefillRes h t ∧ (∀ r ∈ calleeSaved, t.gpr r = s₀.gpr r) ∧ t.rd = s₀.rd ∧ t.wr = s₀.wr := by
   unfold Impl.Dsa.X86_64.Generation.Refill.code
   apply alloc_frame_ok (by decide) (by have hl : 568 ≤ (s₀.gpr .rsp).toNat := h.stackLower; omega_using [hl])
-  refine WP.seq (WP.mono (entrySave_ok (s := allocState 48 s₀) (List.mem_cons_self ..)) ?_)
-  intro u ⟨hg, hr, hw, saved, hf⟩
+  refine WP.seq (WP.mono_syms (entrySave_ok (s := allocState 48 s₀) (List.mem_cons_self ..)) ?_)
+  intro u ⟨hg, hr, hw, saved, hf⟩ yu
   have saved' : Saved u.mem ((allocState 48 s₀).gpr .rsp) s₀.gpr spillSlots := by
     intro p hp
     have hh := saved p hp
@@ -345,7 +449,7 @@ theorem run_ok {G1 G256 : Impl.Pbkdf2.Md.X86_64.Stream} {sq : Prog isa} {mul : N
       simp only [spillSlots, List.mem_cons, List.not_mem_nil, or_false] at hp
       rcases hp with rfl | rfl | rfl | rfl | rfl | rfl <;> decide
     simp [allocState, State.setReg, hn]
-  refine WP.seq (WP.mono (inner_ok h hq hA hg hr hw hf saved') ?_)
+  refine WP.seq (WP.mono (inner_ok h hq hA hg hr hw hf saved' ((fnSyms_entry h hN).congr yu)) ?_)
   intro v ⟨result, sv, spv, rdv, wrv⟩
   have vsp : v.gpr .rsp = (allocState 48 s₀).gpr .rsp := by rw [spv, hg]
   have vwr : (⟨v.gpr .rsp, 48⟩ : Region) ∈ v.wr := by
@@ -355,8 +459,9 @@ theorem run_ok {G1 G256 : Impl.Pbkdf2.Md.X86_64.Stream} {sq : Prog isa} {mul : N
   intro t ⟨restore, rax, sp, mem, rd, wr⟩
   have tsp : t.gpr .rsp = (allocState 48 s₀).gpr .rsp := by rw [sp, vsp]
   have twr : t.wr = (allocState 48 s₀).wr := wr.trans (wrv.trans hw)
-  refine ⟨tsp, twr, RefillRes.congr h (result.congr h rax mem) (by simp [freeState, State.setReg]) rfl, ?_,
-    rd.trans (rdv.trans hr), freeState_wr twr⟩
+  refine ⟨tsp, twr, fun m u fm => ⟨RefillRes.lost h (t' := { freeState 48 t with mem := m, unknowns := u })
+    (result.congr h rax mem) (by simp [freeState, State.setReg]) fm (Offset.sub_below _ (by decide) (by decide)), ?_,
+    rd.trans (rdv.trans hr), freeState_wr twr⟩⟩
   intro r hr
   by_cases hs : r = .rsp
   · subst r; exact freeState_rsp tsp
@@ -376,6 +481,7 @@ variable {checkName : String}
 /-- One seed's attempt is correct (`RefillAttempt.lean`'s `refillAttempt_ok`). -/
 def AttemptCorrect (H : GenerationHashes) (M : Mont) (Sq : MontS) (T : PrimeTest) : Prop :=
   ∀ {p : GenerationContext} {W : Nat → BitVec 64} {s : State}, GenerationMemory p W s →
+    FnSyms (fnNames H.sha1 H.sha256 T p.geo.qLen) p s →
     Region.Sub ⟨p.hs.ptr, p.hs.bytes.length⟩ ⟨p.rand.ptr, p.rand.bytes.length⟩ →
     ∀ (seed : GenerationTape p.geo), seed.bytes.length = p.geo.qLen → GenerationTapeMemory seed s →
     W 1 = seed.ptr → ∀ {used : Nat}, W 16 = BitVec.ofNat 64 used → used ≤ p.rand.bytes.length →
@@ -393,16 +499,17 @@ theorem refill_correct (H : GenerationHashes) (M : Mont) (Sq : MontS) (T : Prime
       pBytes qBytes).x86_64Depth ≤ refillStack)
     (ctl : ctlOk (Impl.Dsa.X86_64.Generation.Refill.code (checkName := checkName) H.sha1 H.sha256 Sq.mm M.mm T.run
       pBytes qBytes) = true)
-    (s : State) (pre : (contract pBytes abi refillStack).pre s) :
+    (s : State) (pre : (contractF (fnNames H.sha1 H.sha256 T qBytes) pBytes abi refillStack).pre s) :
     ∃ tr t, Exec isa (Impl.Dsa.X86_64.Generation.Refill.code (checkName := checkName) H.sha1 H.sha256 Sq.mm M.mm
         T.run pBytes qBytes) s tr t ∧
-      abiPreserved s t ∧ (contract pBytes abi refillStack).post s t := by
+      abiPreserved s t ∧ (contractF (fnNames H.sha1 H.sha256 T qBytes) pBytes abi refillStack).post s t := by
   subst hq
-  have h := refillABI_of pre
-  have hA : AttemptOk h (Impl.Dsa.X86_64.Generation.Refill.refillAttempt (checkName := checkName) H.sha1 H.sha256
+  have h := refillABI_of pre.1
+  have hA : AttemptOk h (fnNames H.sha1 H.sha256 T (Spec.Dsa.generationQLen pBytes))
+      (Impl.Dsa.X86_64.Generation.Refill.refillAttempt (checkName := checkName) H.sha1 H.sha256
       Sq.mm M.mm T.run pBytes (Spec.Dsa.generationQLen pBytes)) :=
-    fun hs W t seed hin hm hlen hseed h1 used h16 hu => attempt_ok hm hin seed hlen hseed h1 h16 hu
-  obtain ⟨tr, t, he, result, callee, _, _⟩ := run_ok h rfl hA
+    fun hs W t seed hin hm hy hlen hseed h1 used h16 hu => attempt_ok hm hy hin seed hlen hseed h1 h16 hu
+  obtain ⟨tr, t, he, result, callee, _, _⟩ := run_ok h rfl hA pre.2
   refine ⟨tr, t, he, ⟨callee, ?_, VG.X86_64.Exec.ctl ctl he⟩, ?_⟩
   · have hf := Exec.stackFrame (SpSafe.of_all sp) he (by have : refillStack = 568 := rfl; omega_using [depth, this])
     have hfb := VG.X86_64.Frame.below_mono hf depth (by decide)
@@ -436,7 +543,7 @@ theorem refill_correct (H : GenerationHashes) (M : Mont) (Sq : MontS) (T : Prime
       have := h.lengths; unfold Spec.Dsa.generationLengthsValid at this; omega_using [this]
     rw [hw, ht]
     refine ⟨?_, ?_, used, VG.Proof.Dsa.Generation.requested pBytes (total h), ?_,
-      VG.Proof.Dsa.Generation.requested_requests hp _ _⟩
+      VG.Proof.Dsa.Generation.requested_asked hp _ _⟩
     · have hs : (total h).status < 4 := by
         unfold Spec.Entropy.Result.status Spec.Entropy.Outcome.status; split <;> decide
       rw [rax, BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hs]), Nat.mod_eq_of_lt (by omega_using [hs])]

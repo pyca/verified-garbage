@@ -58,7 +58,7 @@ theorem update_verified : Verified AArch64.target Impl.Md5.AArch64.Stream.update
   have h := MdStream.AArch64.Update.verified (name := "vg_md5_compress") dims callee
     (VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3, .x4])
       (fun _ _ _ _ hp => MdStream.AArch64.Update.agree₀ hp) (by taint_decide))
-    (instrs_keeps (by decide +kernel)) (by decide +kernel)
+    (by decide +kernel)
   Verified.of_implies h ⟨fun _ h => h, fun _ _ _ h m hr hc => h Spec.Md5.H0 m hr hc, fun _ _ _ _ h => h, h.2.2⟩
 
 /-- A state satisfying `update`'s precondition. -/
@@ -72,7 +72,7 @@ theorem finalize_verified : Verified AArch64.target Impl.Md5.AArch64.Stream.fina
   have h := MdStream.AArch64.Finalize.verified (name := "vg_md5_compress") dims shape callee
     (VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3])
       (fun _ _ _ _ hp => MdStream.AArch64.Finalize.agree₀ hp) (by taint_decide))
-    (instrs_keeps (by decide +kernel)) (by decide +kernel)
+    (by decide +kernel)
   Verified.of_implies h
     ⟨fun _ h => h, fun _ _ _ h m hr hc => h Spec.Md5.H0 m hr trivial hc, fun _ _ _ _ h => h, h.2.2⟩
 

@@ -3,19 +3,14 @@ module
 public import VerifiedGarbage.Impl.MlKem.AArch64.Compress
 
 /-!
-# ML-KEM on AArch64: `MultiplyNTTs`, `add` and `sub`
+# ML-KEM on AArch64: `add` and `sub`, and the tables of `ζ` and `γ`
 
-These compute on four coefficients at a time, in the 32-bit lanes of
-vectors (see "Vectors"); the NTT and its inverse, on eight in 16-bit lanes,
-are in `Ntt16.lean`.
+`add` and `sub` compute on four coefficients at a time, in the 32-bit lanes
+of vectors (see "Vectors"), as do the products of `DotW.lean`, which load
+their constants with `vconsts`; the NTT and its inverse, on eight in 16-bit
+lanes, are in `Ntt16.lean`.
 
-The tables of `ζ^BitRev7(k)` (`zetas`) and of the `γᵢ` of `MultiplyNTTs`
-(`gammas`) are stored in `scratch` first, as 128 `u32`s (`table`).
-
-* `multiplyNTTs(h = x0, f = x1, g = x2, scratch = x3)`: for each pair,
-  `h[2i] = f[2i] g[2i] + (f[2i+1] g[2i+1] mod q) γᵢ` and
-  `h[2i+1] = f[2i] g[2i+1] + f[2i+1] g[2i]`, each reduced, four pairs at a
-  time in vectors (`vmulBody`).
+* `zetaTable`, `gammaTable`: `ζ^BitRev7(k)` and the `γᵢ` of `MultiplyNTTs`.
 * `add(f = x0, g = x1)`, `sub(f = x0, g = x1)`: `f[i] ← (f[i] ± g[i]) mod q`,
   four coefficients at a time.
 
@@ -52,15 +47,10 @@ def gammaTable : List Nat := [
   403, 2926, 1026, 2303, 1143, 2186, 2150, 1179, 2775, 554, 886, 2443, 1722, 1607, 1212, 2117,
   1874, 1455, 1029, 2300, 2110, 1219, 2935, 394, 885, 2444, 2154, 1175]
 
-/-- The 128 entries of `T` as `u32`s at `[b]`, through `x9`. -/
-def table (T : List Nat) (b : Reg) : List Instr :=
-  (List.range 128).flatMap fun k =>
-    [.movz .x .x9 (BitVec.ofNat 16 (T.getD k 0)) 0, .str .w .x9 b (4 * k)]
-
 /-! ## Vectors
 
-`multiplyNTTs`, `add` and `sub` compute on four coefficients at a time, in the
-32-bit lanes of AdvSIMD registers, with `q` in the lanes of `v16` and
+`add`, `sub` and the products of `DotW.lean` compute on four coefficients at a
+time, in the 32-bit lanes of AdvSIMD registers, with `q` in the lanes of `v16` and
 `M = ⌊2³¹ / q⌋ = 645083` in those of `v17`. A product `x < 2³¹` of two
 coefficients is reduced with `sqdmulh` by `M`, which gives
 `t = ⌊x · M / 2³¹⌋`, `⌊x / q⌋` or one less, so that `x - t · q` (`mls`) is
@@ -101,31 +91,5 @@ def add : Prog isa := vmapLoop vaddOp
 
 /-- `sub(f = x0, g = x1)`: `f[i] ← (f[i] - g[i]) mod q`. -/
 def sub : Prog isa := vmapLoop vsubOp
-
-/-! ## `multiplyNTTs` -/
-
-/-- Four pairs `i = 4c … 4c + 3`: `f` in `v0`, `v1` and `g` in `v4`, `v5`
-(`[x1]`, `[x2]`), the `γᵢ` in `v18` (`[x3]`); their even and odd
-coefficients gathered (`uzp1`, `uzp2`) into `v6`, `v7` (`f`) and `v19`,
-`v20` (`g`); `r = f[2i+1] g[2i+1]`, reduced to less than `2q`;
-`h[2i] = f[2i] g[2i] + r γᵢ` (`v23`) and `h[2i+1] = f[2i] g[2i+1] +
-f[2i+1] g[2i]` (`v24`), each less than `3q² < 2³¹` and reduced; and back in
-order (`zip1`, `zip2`) to `[x0]`. -/
-def vmulBody : List Instr :=
-  [.ldrq .v0 .x1 0, .ldrq .v1 .x1 16, .ldrq .v4 .x2 0, .ldrq .v5 .x2 16, .ldrq .v18 .x3 0,
-    .vop (.perm .uzp1 .s4 .v6 .v0 .v1), .vop (.perm .uzp2 .s4 .v7 .v0 .v1),
-    .vop (.perm .uzp1 .s4 .v19 .v4 .v5), .vop (.perm .uzp2 .s4 .v20 .v4 .v5),
-    .vop (.mul .v21 .v7 .v20), .vop (.sqdmulh .v22 .v21 .v17), .vop (.mls .v21 .v22 .v16),
-    .vop (.mul .v23 .v6 .v19), .vop (.mla .v23 .v21 .v18), .vop (.sqdmulh .v22 .v23 .v17),
-    .vop (.mls .v23 .v22 .v16)] ++ vcsub .v23 .v22 ++
-  [.vop (.mul .v24 .v6 .v20), .vop (.mla .v24 .v7 .v19), .vop (.sqdmulh .v22 .v24 .v17),
-    .vop (.mls .v24 .v22 .v16)] ++ vcsub .v24 .v22 ++
-  [.vop (.perm .zip1 .s4 .v0 .v23 .v24), .vop (.perm .zip2 .s4 .v1 .v23 .v24), .strq .v0 .x0 0,
-    .strq .v1 .x0 16, .addImm .x .x0 .x0 32, .addImm .x .x1 .x1 32, .addImm .x .x2 .x2 32,
-    .addImm .x .x3 .x3 16, .subImm .x .x11 .x11 1]
-
-def multiplyNTTs : Prog isa :=
-  .seq (.block (table gammaTable .x3 ++ vconsts ++ [.movz .x .x11 32 0]))
-    (.loop (.block vmulBody) (.nonzero .x .x11))
 
 end VG.Impl.MlKem.AArch64

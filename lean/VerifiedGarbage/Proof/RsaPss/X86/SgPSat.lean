@@ -33,7 +33,7 @@ theorem putWs_byte {a : Addr} : ∀ {ws : List (BitVec 32)} {m : Mem} {p : Addr}
     a.toNat < p.toNat → p.toNat + 4 * ws.length < 2 ^ 64 → putWs m p ws a = m a
   | [], _, _, _, _ => rfl
   | w :: ws, m, p, ha, hp => by
-    have e : (p + 4).toNat = p.toNat + 4 := by
+    obtain e : (p + 4).toNat = p.toNat + 4 := by
       rw [BitVec.toNat_add]; simp only [List.length_cons] at hp; simp; omega_using [hp]
     simp only [putWs]
     rw [putWs_byte (by rw [e]; omega_using [ha]) (by rw [e]; simp only [List.length_cons] at hp; omega_using [hp])]
@@ -65,7 +65,7 @@ theorem withTabsP_key (D : Nat) (vs : List MVar) (gs : List TVar) (w : MVar) (wg
       (Spec.Rsa.bytesAt (withTabs (satStateP D) vs gs w wg).mem 0x4300 32) =
     some (Spec.Rsa.wordsAt (withTabs (satStateP D) vs gs w wg).mem 0x4800 24) := by
   refine key_pre_of fun a ha => ?_
-  have hlt : a.toNat < 0x48C0 := by
+  obtain hlt : a.toNat < 0x48C0 := by
     simp only [keyIn, Bool.or_eq_true, Bool.and_eq_true, Nat.ble_eq, Nat.blt_eq] at ha; omega
   simp only [withTabs]
   rw [putWs_byte (by show a.toNat < 0x300100; omega_using [hlt]) (by simp [FnTable.words, Proof.HashTable.X86.tableOf,
@@ -78,39 +78,39 @@ theorem withTabsP_key (D : Nat) (vs : List MVar) (gs : List TVar) (w : MVar) (wg
 theorem sign_satP16 {vs : List MVar} {gs : List TVar} {w : MVar} {wg : TVar} (hw : w ∈ vs) (hwg : wg ∈ gs)
     (hD : w.h.D = 16) (hl : (Proof.MdHashTable.X86.names vs ++ Proof.HashTable.X86.names gs).length < 2 ^ 24) :
     ∃ s, (sspecP vs gs).pre s := by
-  have hA : ∀ j < 26, (argAddr (satStateP 16) j).toNat + 4 ≤ 0x300000 := by decide
-  have hhH := withTabs_heldH (satStateP 16) vs gs w wg
-  have hhG := withTabs_held (satStateP 16) vs gs w wg
-  have hH := Proof.MdHashTable.X86.hashAt_tableOf (by decide) (Proof.MdHashTable.X86.held_tableOf (by decide) hhH).2.2.2
-  have hk := withTabsP_key 16 vs gs w wg
+  obtain hA : ∀ j < 26, (argAddr (satStateP 16) j).toNat + 4 ≤ 0x300000 := by decide
+  obtain hhH := withTabs_heldH (satStateP 16) vs gs w wg
+  obtain hhG := withTabs_held (satStateP 16) vs gs w wg
+  obtain hH := Proof.MdHashTable.X86.hashAt_tableOf (by decide) (Proof.MdHashTable.X86.held_tableOf (by decide) hhH).2.2.2
+  obtain hk := withTabsP_key 16 vs gs w wg
   refine ⟨withTabs (satStateP 16) vs gs w wg, ?_⟩
-  have a0 : arg (withTabs (satStateP 16) vs gs w wg) 0 = 0x1000 := by rw [withTabs_arg _ vs gs w wg (hA 0 (by decide))]; decide
-  have a1 : arg (withTabs (satStateP 16) vs gs w wg) 1 = 0x40 := by rw [withTabs_arg _ vs gs w wg (hA 1 (by decide))]; decide
-  have a2 : arg (withTabs (satStateP 16) vs gs w wg) 2 = 0x2000 := by rw [withTabs_arg _ vs gs w wg (hA 2 (by decide))]; decide
-  have a3 : arg (withTabs (satStateP 16) vs gs w wg) 3 = 0x40 := by rw [withTabs_arg _ vs gs w wg (hA 3 (by decide))]; decide
-  have a4 : arg (withTabs (satStateP 16) vs gs w wg) 4 = 0x2100 := by rw [withTabs_arg _ vs gs w wg (hA 4 (by decide))]; decide
-  have a5 : arg (withTabs (satStateP 16) vs gs w wg) 5 = 1 := by rw [withTabs_arg _ vs gs w wg (hA 5 (by decide))]; decide
-  have a6 : arg (withTabs (satStateP 16) vs gs w wg) 6 = 0x4200 := by rw [withTabs_arg _ vs gs w wg (hA 6 (by decide))]; decide
-  have a7 : arg (withTabs (satStateP 16) vs gs w wg) 7 = 32 := by rw [withTabs_arg _ vs gs w wg (hA 7 (by decide))]; decide
-  have a8 : arg (withTabs (satStateP 16) vs gs w wg) 8 = 0x4300 := by rw [withTabs_arg _ vs gs w wg (hA 8 (by decide))]; decide
-  have a9 : arg (withTabs (satStateP 16) vs gs w wg) 9 = 32 := by rw [withTabs_arg _ vs gs w wg (hA 9 (by decide))]; decide
-  have a10 : arg (withTabs (satStateP 16) vs gs w wg) 10 = 0x3300 := by rw [withTabs_arg _ vs gs w wg (hA 10 (by decide))]; decide
-  have a11 : arg (withTabs (satStateP 16) vs gs w wg) 11 = 32 := by rw [withTabs_arg _ vs gs w wg (hA 11 (by decide))]; decide
-  have a12 : arg (withTabs (satStateP 16) vs gs w wg) 12 = 0x3400 := by rw [withTabs_arg _ vs gs w wg (hA 12 (by decide))]; decide
-  have a13 : arg (withTabs (satStateP 16) vs gs w wg) 13 = 32 := by rw [withTabs_arg _ vs gs w wg (hA 13 (by decide))]; decide
-  have a14 : arg (withTabs (satStateP 16) vs gs w wg) 14 = 0x3500 := by rw [withTabs_arg _ vs gs w wg (hA 14 (by decide))]; decide
-  have a15 : arg (withTabs (satStateP 16) vs gs w wg) 15 = 32 := by rw [withTabs_arg _ vs gs w wg (hA 15 (by decide))]; decide
-  have a16 : arg (withTabs (satStateP 16) vs gs w wg) 16 = 0x3000 := by rw [withTabs_arg _ vs gs w wg (hA 16 (by decide))]; decide
-  have a17 : arg (withTabs (satStateP 16) vs gs w wg) 17 = 0x10 := by rw [withTabs_arg _ vs gs w wg (hA 17 (by decide))]; decide
-  have a18 : arg (withTabs (satStateP 16) vs gs w wg) 18 = 0x3600 := by rw [withTabs_arg _ vs gs w wg (hA 18 (by decide))]; decide
-  have a19 : arg (withTabs (satStateP 16) vs gs w wg) 19 = 0 := by rw [withTabs_arg _ vs gs w wg (hA 19 (by decide))]; decide
-  have a20 : arg (withTabs (satStateP 16) vs gs w wg) 20 = 0x10000 := by rw [withTabs_arg _ vs gs w wg (hA 20 (by decide))]; decide
-  have a21 : arg (withTabs (satStateP 16) vs gs w wg) 21 = 0x820 := by rw [withTabs_arg _ vs gs w wg (hA 21 (by decide))]; decide
-  have a22 : arg (withTabs (satStateP 16) vs gs w wg) 22 = 0x300000 := by rw [withTabs_arg _ vs gs w wg (hA 22 (by decide))]; decide
-  have a23 : arg (withTabs (satStateP 16) vs gs w wg) 23 = 0x300100 := by rw [withTabs_arg _ vs gs w wg (hA 23 (by decide))]; decide
-  have a24 : arg (withTabs (satStateP 16) vs gs w wg) 24 = 0x4800 := by rw [withTabs_arg _ vs gs w wg (hA 24 (by decide))]; decide
-  have a25 : arg (withTabs (satStateP 16) vs gs w wg) 25 = 24 := by rw [withTabs_arg _ vs gs w wg (hA 25 (by decide))]; decide
-  have e : argAddr (withTabs (satStateP 16) vs gs w wg) 0 = 0x20004 := show argAddr (satStateP 16) 0 = _ by decide
+  obtain a0 : arg (withTabs (satStateP 16) vs gs w wg) 0 = 0x1000 := by rw [withTabs_arg _ vs gs w wg (hA 0 (by decide))]; decide
+  obtain a1 : arg (withTabs (satStateP 16) vs gs w wg) 1 = 0x40 := by rw [withTabs_arg _ vs gs w wg (hA 1 (by decide))]; decide
+  obtain a2 : arg (withTabs (satStateP 16) vs gs w wg) 2 = 0x2000 := by rw [withTabs_arg _ vs gs w wg (hA 2 (by decide))]; decide
+  obtain a3 : arg (withTabs (satStateP 16) vs gs w wg) 3 = 0x40 := by rw [withTabs_arg _ vs gs w wg (hA 3 (by decide))]; decide
+  obtain a4 : arg (withTabs (satStateP 16) vs gs w wg) 4 = 0x2100 := by rw [withTabs_arg _ vs gs w wg (hA 4 (by decide))]; decide
+  obtain a5 : arg (withTabs (satStateP 16) vs gs w wg) 5 = 1 := by rw [withTabs_arg _ vs gs w wg (hA 5 (by decide))]; decide
+  obtain a6 : arg (withTabs (satStateP 16) vs gs w wg) 6 = 0x4200 := by rw [withTabs_arg _ vs gs w wg (hA 6 (by decide))]; decide
+  obtain a7 : arg (withTabs (satStateP 16) vs gs w wg) 7 = 32 := by rw [withTabs_arg _ vs gs w wg (hA 7 (by decide))]; decide
+  obtain a8 : arg (withTabs (satStateP 16) vs gs w wg) 8 = 0x4300 := by rw [withTabs_arg _ vs gs w wg (hA 8 (by decide))]; decide
+  obtain a9 : arg (withTabs (satStateP 16) vs gs w wg) 9 = 32 := by rw [withTabs_arg _ vs gs w wg (hA 9 (by decide))]; decide
+  obtain a10 : arg (withTabs (satStateP 16) vs gs w wg) 10 = 0x3300 := by rw [withTabs_arg _ vs gs w wg (hA 10 (by decide))]; decide
+  obtain a11 : arg (withTabs (satStateP 16) vs gs w wg) 11 = 32 := by rw [withTabs_arg _ vs gs w wg (hA 11 (by decide))]; decide
+  obtain a12 : arg (withTabs (satStateP 16) vs gs w wg) 12 = 0x3400 := by rw [withTabs_arg _ vs gs w wg (hA 12 (by decide))]; decide
+  obtain a13 : arg (withTabs (satStateP 16) vs gs w wg) 13 = 32 := by rw [withTabs_arg _ vs gs w wg (hA 13 (by decide))]; decide
+  obtain a14 : arg (withTabs (satStateP 16) vs gs w wg) 14 = 0x3500 := by rw [withTabs_arg _ vs gs w wg (hA 14 (by decide))]; decide
+  obtain a15 : arg (withTabs (satStateP 16) vs gs w wg) 15 = 32 := by rw [withTabs_arg _ vs gs w wg (hA 15 (by decide))]; decide
+  obtain a16 : arg (withTabs (satStateP 16) vs gs w wg) 16 = 0x3000 := by rw [withTabs_arg _ vs gs w wg (hA 16 (by decide))]; decide
+  obtain a17 : arg (withTabs (satStateP 16) vs gs w wg) 17 = 0x10 := by rw [withTabs_arg _ vs gs w wg (hA 17 (by decide))]; decide
+  obtain a18 : arg (withTabs (satStateP 16) vs gs w wg) 18 = 0x3600 := by rw [withTabs_arg _ vs gs w wg (hA 18 (by decide))]; decide
+  obtain a19 : arg (withTabs (satStateP 16) vs gs w wg) 19 = 0 := by rw [withTabs_arg _ vs gs w wg (hA 19 (by decide))]; decide
+  obtain a20 : arg (withTabs (satStateP 16) vs gs w wg) 20 = 0x10000 := by rw [withTabs_arg _ vs gs w wg (hA 20 (by decide))]; decide
+  obtain a21 : arg (withTabs (satStateP 16) vs gs w wg) 21 = 0x820 := by rw [withTabs_arg _ vs gs w wg (hA 21 (by decide))]; decide
+  obtain a22 : arg (withTabs (satStateP 16) vs gs w wg) 22 = 0x300000 := by rw [withTabs_arg _ vs gs w wg (hA 22 (by decide))]; decide
+  obtain a23 : arg (withTabs (satStateP 16) vs gs w wg) 23 = 0x300100 := by rw [withTabs_arg _ vs gs w wg (hA 23 (by decide))]; decide
+  obtain a24 : arg (withTabs (satStateP 16) vs gs w wg) 24 = 0x4800 := by rw [withTabs_arg _ vs gs w wg (hA 24 (by decide))]; decide
+  obtain a25 : arg (withTabs (satStateP 16) vs gs w wg) 25 = 24 := by rw [withTabs_arg _ vs gs w wg (hA 25 (by decide))]; decide
+  obtain e : argAddr (withTabs (satStateP 16) vs gs w wg) 0 = 0x20004 := show argAddr (satStateP 16) 0 = _ by decide
   have esp : (withTabs (satStateP 16) vs gs w wg).gpr .esp = 0x20000 := rfl
   have rd : (withTabs (satStateP 16) vs gs w wg).rd = (satStateP 16).rd := rfl
   have wr : (withTabs (satStateP 16) vs gs w wg).wr = (satStateP 16).wr := rfl
@@ -138,39 +138,39 @@ theorem sign_satP16 {vs : List MVar} {gs : List TVar} {w : MVar} {wg : TVar} (hw
 theorem sign_satP20 {vs : List MVar} {gs : List TVar} {w : MVar} {wg : TVar} (hw : w ∈ vs) (hwg : wg ∈ gs)
     (hD : w.h.D = 20) (hl : (Proof.MdHashTable.X86.names vs ++ Proof.HashTable.X86.names gs).length < 2 ^ 24) :
     ∃ s, (sspecP vs gs).pre s := by
-  have hA : ∀ j < 26, (argAddr (satStateP 20) j).toNat + 4 ≤ 0x300000 := by decide
-  have hhH := withTabs_heldH (satStateP 20) vs gs w wg
-  have hhG := withTabs_held (satStateP 20) vs gs w wg
-  have hH := Proof.MdHashTable.X86.hashAt_tableOf (by decide) (Proof.MdHashTable.X86.held_tableOf (by decide) hhH).2.2.2
-  have hk := withTabsP_key 20 vs gs w wg
+  obtain hA : ∀ j < 26, (argAddr (satStateP 20) j).toNat + 4 ≤ 0x300000 := by decide
+  obtain hhH := withTabs_heldH (satStateP 20) vs gs w wg
+  obtain hhG := withTabs_held (satStateP 20) vs gs w wg
+  obtain hH := Proof.MdHashTable.X86.hashAt_tableOf (by decide) (Proof.MdHashTable.X86.held_tableOf (by decide) hhH).2.2.2
+  obtain hk := withTabsP_key 20 vs gs w wg
   refine ⟨withTabs (satStateP 20) vs gs w wg, ?_⟩
-  have a0 : arg (withTabs (satStateP 20) vs gs w wg) 0 = 0x1000 := by rw [withTabs_arg _ vs gs w wg (hA 0 (by decide))]; decide
-  have a1 : arg (withTabs (satStateP 20) vs gs w wg) 1 = 0x40 := by rw [withTabs_arg _ vs gs w wg (hA 1 (by decide))]; decide
-  have a2 : arg (withTabs (satStateP 20) vs gs w wg) 2 = 0x2000 := by rw [withTabs_arg _ vs gs w wg (hA 2 (by decide))]; decide
-  have a3 : arg (withTabs (satStateP 20) vs gs w wg) 3 = 0x40 := by rw [withTabs_arg _ vs gs w wg (hA 3 (by decide))]; decide
-  have a4 : arg (withTabs (satStateP 20) vs gs w wg) 4 = 0x2100 := by rw [withTabs_arg _ vs gs w wg (hA 4 (by decide))]; decide
-  have a5 : arg (withTabs (satStateP 20) vs gs w wg) 5 = 1 := by rw [withTabs_arg _ vs gs w wg (hA 5 (by decide))]; decide
-  have a6 : arg (withTabs (satStateP 20) vs gs w wg) 6 = 0x4200 := by rw [withTabs_arg _ vs gs w wg (hA 6 (by decide))]; decide
-  have a7 : arg (withTabs (satStateP 20) vs gs w wg) 7 = 32 := by rw [withTabs_arg _ vs gs w wg (hA 7 (by decide))]; decide
-  have a8 : arg (withTabs (satStateP 20) vs gs w wg) 8 = 0x4300 := by rw [withTabs_arg _ vs gs w wg (hA 8 (by decide))]; decide
-  have a9 : arg (withTabs (satStateP 20) vs gs w wg) 9 = 32 := by rw [withTabs_arg _ vs gs w wg (hA 9 (by decide))]; decide
-  have a10 : arg (withTabs (satStateP 20) vs gs w wg) 10 = 0x3300 := by rw [withTabs_arg _ vs gs w wg (hA 10 (by decide))]; decide
-  have a11 : arg (withTabs (satStateP 20) vs gs w wg) 11 = 32 := by rw [withTabs_arg _ vs gs w wg (hA 11 (by decide))]; decide
-  have a12 : arg (withTabs (satStateP 20) vs gs w wg) 12 = 0x3400 := by rw [withTabs_arg _ vs gs w wg (hA 12 (by decide))]; decide
-  have a13 : arg (withTabs (satStateP 20) vs gs w wg) 13 = 32 := by rw [withTabs_arg _ vs gs w wg (hA 13 (by decide))]; decide
-  have a14 : arg (withTabs (satStateP 20) vs gs w wg) 14 = 0x3500 := by rw [withTabs_arg _ vs gs w wg (hA 14 (by decide))]; decide
-  have a15 : arg (withTabs (satStateP 20) vs gs w wg) 15 = 32 := by rw [withTabs_arg _ vs gs w wg (hA 15 (by decide))]; decide
-  have a16 : arg (withTabs (satStateP 20) vs gs w wg) 16 = 0x3000 := by rw [withTabs_arg _ vs gs w wg (hA 16 (by decide))]; decide
-  have a17 : arg (withTabs (satStateP 20) vs gs w wg) 17 = 0x14 := by rw [withTabs_arg _ vs gs w wg (hA 17 (by decide))]; decide
-  have a18 : arg (withTabs (satStateP 20) vs gs w wg) 18 = 0x3600 := by rw [withTabs_arg _ vs gs w wg (hA 18 (by decide))]; decide
-  have a19 : arg (withTabs (satStateP 20) vs gs w wg) 19 = 0 := by rw [withTabs_arg _ vs gs w wg (hA 19 (by decide))]; decide
-  have a20 : arg (withTabs (satStateP 20) vs gs w wg) 20 = 0x10000 := by rw [withTabs_arg _ vs gs w wg (hA 20 (by decide))]; decide
-  have a21 : arg (withTabs (satStateP 20) vs gs w wg) 21 = 0x820 := by rw [withTabs_arg _ vs gs w wg (hA 21 (by decide))]; decide
-  have a22 : arg (withTabs (satStateP 20) vs gs w wg) 22 = 0x300000 := by rw [withTabs_arg _ vs gs w wg (hA 22 (by decide))]; decide
-  have a23 : arg (withTabs (satStateP 20) vs gs w wg) 23 = 0x300100 := by rw [withTabs_arg _ vs gs w wg (hA 23 (by decide))]; decide
-  have a24 : arg (withTabs (satStateP 20) vs gs w wg) 24 = 0x4800 := by rw [withTabs_arg _ vs gs w wg (hA 24 (by decide))]; decide
-  have a25 : arg (withTabs (satStateP 20) vs gs w wg) 25 = 24 := by rw [withTabs_arg _ vs gs w wg (hA 25 (by decide))]; decide
-  have e : argAddr (withTabs (satStateP 20) vs gs w wg) 0 = 0x20004 := show argAddr (satStateP 20) 0 = _ by decide
+  obtain a0 : arg (withTabs (satStateP 20) vs gs w wg) 0 = 0x1000 := by rw [withTabs_arg _ vs gs w wg (hA 0 (by decide))]; decide
+  obtain a1 : arg (withTabs (satStateP 20) vs gs w wg) 1 = 0x40 := by rw [withTabs_arg _ vs gs w wg (hA 1 (by decide))]; decide
+  obtain a2 : arg (withTabs (satStateP 20) vs gs w wg) 2 = 0x2000 := by rw [withTabs_arg _ vs gs w wg (hA 2 (by decide))]; decide
+  obtain a3 : arg (withTabs (satStateP 20) vs gs w wg) 3 = 0x40 := by rw [withTabs_arg _ vs gs w wg (hA 3 (by decide))]; decide
+  obtain a4 : arg (withTabs (satStateP 20) vs gs w wg) 4 = 0x2100 := by rw [withTabs_arg _ vs gs w wg (hA 4 (by decide))]; decide
+  obtain a5 : arg (withTabs (satStateP 20) vs gs w wg) 5 = 1 := by rw [withTabs_arg _ vs gs w wg (hA 5 (by decide))]; decide
+  obtain a6 : arg (withTabs (satStateP 20) vs gs w wg) 6 = 0x4200 := by rw [withTabs_arg _ vs gs w wg (hA 6 (by decide))]; decide
+  obtain a7 : arg (withTabs (satStateP 20) vs gs w wg) 7 = 32 := by rw [withTabs_arg _ vs gs w wg (hA 7 (by decide))]; decide
+  obtain a8 : arg (withTabs (satStateP 20) vs gs w wg) 8 = 0x4300 := by rw [withTabs_arg _ vs gs w wg (hA 8 (by decide))]; decide
+  obtain a9 : arg (withTabs (satStateP 20) vs gs w wg) 9 = 32 := by rw [withTabs_arg _ vs gs w wg (hA 9 (by decide))]; decide
+  obtain a10 : arg (withTabs (satStateP 20) vs gs w wg) 10 = 0x3300 := by rw [withTabs_arg _ vs gs w wg (hA 10 (by decide))]; decide
+  obtain a11 : arg (withTabs (satStateP 20) vs gs w wg) 11 = 32 := by rw [withTabs_arg _ vs gs w wg (hA 11 (by decide))]; decide
+  obtain a12 : arg (withTabs (satStateP 20) vs gs w wg) 12 = 0x3400 := by rw [withTabs_arg _ vs gs w wg (hA 12 (by decide))]; decide
+  obtain a13 : arg (withTabs (satStateP 20) vs gs w wg) 13 = 32 := by rw [withTabs_arg _ vs gs w wg (hA 13 (by decide))]; decide
+  obtain a14 : arg (withTabs (satStateP 20) vs gs w wg) 14 = 0x3500 := by rw [withTabs_arg _ vs gs w wg (hA 14 (by decide))]; decide
+  obtain a15 : arg (withTabs (satStateP 20) vs gs w wg) 15 = 32 := by rw [withTabs_arg _ vs gs w wg (hA 15 (by decide))]; decide
+  obtain a16 : arg (withTabs (satStateP 20) vs gs w wg) 16 = 0x3000 := by rw [withTabs_arg _ vs gs w wg (hA 16 (by decide))]; decide
+  obtain a17 : arg (withTabs (satStateP 20) vs gs w wg) 17 = 0x14 := by rw [withTabs_arg _ vs gs w wg (hA 17 (by decide))]; decide
+  obtain a18 : arg (withTabs (satStateP 20) vs gs w wg) 18 = 0x3600 := by rw [withTabs_arg _ vs gs w wg (hA 18 (by decide))]; decide
+  obtain a19 : arg (withTabs (satStateP 20) vs gs w wg) 19 = 0 := by rw [withTabs_arg _ vs gs w wg (hA 19 (by decide))]; decide
+  obtain a20 : arg (withTabs (satStateP 20) vs gs w wg) 20 = 0x10000 := by rw [withTabs_arg _ vs gs w wg (hA 20 (by decide))]; decide
+  obtain a21 : arg (withTabs (satStateP 20) vs gs w wg) 21 = 0x820 := by rw [withTabs_arg _ vs gs w wg (hA 21 (by decide))]; decide
+  obtain a22 : arg (withTabs (satStateP 20) vs gs w wg) 22 = 0x300000 := by rw [withTabs_arg _ vs gs w wg (hA 22 (by decide))]; decide
+  obtain a23 : arg (withTabs (satStateP 20) vs gs w wg) 23 = 0x300100 := by rw [withTabs_arg _ vs gs w wg (hA 23 (by decide))]; decide
+  obtain a24 : arg (withTabs (satStateP 20) vs gs w wg) 24 = 0x4800 := by rw [withTabs_arg _ vs gs w wg (hA 24 (by decide))]; decide
+  obtain a25 : arg (withTabs (satStateP 20) vs gs w wg) 25 = 24 := by rw [withTabs_arg _ vs gs w wg (hA 25 (by decide))]; decide
+  obtain e : argAddr (withTabs (satStateP 20) vs gs w wg) 0 = 0x20004 := show argAddr (satStateP 20) 0 = _ by decide
   have esp : (withTabs (satStateP 20) vs gs w wg).gpr .esp = 0x20000 := rfl
   have rd : (withTabs (satStateP 20) vs gs w wg).rd = (satStateP 20).rd := rfl
   have wr : (withTabs (satStateP 20) vs gs w wg).wr = (satStateP 20).wr := rfl
@@ -198,39 +198,39 @@ theorem sign_satP20 {vs : List MVar} {gs : List TVar} {w : MVar} {wg : TVar} (hw
 theorem sign_satP28 {vs : List MVar} {gs : List TVar} {w : MVar} {wg : TVar} (hw : w ∈ vs) (hwg : wg ∈ gs)
     (hD : w.h.D = 28) (hl : (Proof.MdHashTable.X86.names vs ++ Proof.HashTable.X86.names gs).length < 2 ^ 24) :
     ∃ s, (sspecP vs gs).pre s := by
-  have hA : ∀ j < 26, (argAddr (satStateP 28) j).toNat + 4 ≤ 0x300000 := by decide
-  have hhH := withTabs_heldH (satStateP 28) vs gs w wg
-  have hhG := withTabs_held (satStateP 28) vs gs w wg
-  have hH := Proof.MdHashTable.X86.hashAt_tableOf (by decide) (Proof.MdHashTable.X86.held_tableOf (by decide) hhH).2.2.2
-  have hk := withTabsP_key 28 vs gs w wg
+  obtain hA : ∀ j < 26, (argAddr (satStateP 28) j).toNat + 4 ≤ 0x300000 := by decide
+  obtain hhH := withTabs_heldH (satStateP 28) vs gs w wg
+  obtain hhG := withTabs_held (satStateP 28) vs gs w wg
+  obtain hH := Proof.MdHashTable.X86.hashAt_tableOf (by decide) (Proof.MdHashTable.X86.held_tableOf (by decide) hhH).2.2.2
+  obtain hk := withTabsP_key 28 vs gs w wg
   refine ⟨withTabs (satStateP 28) vs gs w wg, ?_⟩
-  have a0 : arg (withTabs (satStateP 28) vs gs w wg) 0 = 0x1000 := by rw [withTabs_arg _ vs gs w wg (hA 0 (by decide))]; decide
-  have a1 : arg (withTabs (satStateP 28) vs gs w wg) 1 = 0x40 := by rw [withTabs_arg _ vs gs w wg (hA 1 (by decide))]; decide
-  have a2 : arg (withTabs (satStateP 28) vs gs w wg) 2 = 0x2000 := by rw [withTabs_arg _ vs gs w wg (hA 2 (by decide))]; decide
-  have a3 : arg (withTabs (satStateP 28) vs gs w wg) 3 = 0x40 := by rw [withTabs_arg _ vs gs w wg (hA 3 (by decide))]; decide
-  have a4 : arg (withTabs (satStateP 28) vs gs w wg) 4 = 0x2100 := by rw [withTabs_arg _ vs gs w wg (hA 4 (by decide))]; decide
-  have a5 : arg (withTabs (satStateP 28) vs gs w wg) 5 = 1 := by rw [withTabs_arg _ vs gs w wg (hA 5 (by decide))]; decide
-  have a6 : arg (withTabs (satStateP 28) vs gs w wg) 6 = 0x4200 := by rw [withTabs_arg _ vs gs w wg (hA 6 (by decide))]; decide
-  have a7 : arg (withTabs (satStateP 28) vs gs w wg) 7 = 32 := by rw [withTabs_arg _ vs gs w wg (hA 7 (by decide))]; decide
-  have a8 : arg (withTabs (satStateP 28) vs gs w wg) 8 = 0x4300 := by rw [withTabs_arg _ vs gs w wg (hA 8 (by decide))]; decide
-  have a9 : arg (withTabs (satStateP 28) vs gs w wg) 9 = 32 := by rw [withTabs_arg _ vs gs w wg (hA 9 (by decide))]; decide
-  have a10 : arg (withTabs (satStateP 28) vs gs w wg) 10 = 0x3300 := by rw [withTabs_arg _ vs gs w wg (hA 10 (by decide))]; decide
-  have a11 : arg (withTabs (satStateP 28) vs gs w wg) 11 = 32 := by rw [withTabs_arg _ vs gs w wg (hA 11 (by decide))]; decide
-  have a12 : arg (withTabs (satStateP 28) vs gs w wg) 12 = 0x3400 := by rw [withTabs_arg _ vs gs w wg (hA 12 (by decide))]; decide
-  have a13 : arg (withTabs (satStateP 28) vs gs w wg) 13 = 32 := by rw [withTabs_arg _ vs gs w wg (hA 13 (by decide))]; decide
-  have a14 : arg (withTabs (satStateP 28) vs gs w wg) 14 = 0x3500 := by rw [withTabs_arg _ vs gs w wg (hA 14 (by decide))]; decide
-  have a15 : arg (withTabs (satStateP 28) vs gs w wg) 15 = 32 := by rw [withTabs_arg _ vs gs w wg (hA 15 (by decide))]; decide
-  have a16 : arg (withTabs (satStateP 28) vs gs w wg) 16 = 0x3000 := by rw [withTabs_arg _ vs gs w wg (hA 16 (by decide))]; decide
-  have a17 : arg (withTabs (satStateP 28) vs gs w wg) 17 = 0x1c := by rw [withTabs_arg _ vs gs w wg (hA 17 (by decide))]; decide
-  have a18 : arg (withTabs (satStateP 28) vs gs w wg) 18 = 0x3600 := by rw [withTabs_arg _ vs gs w wg (hA 18 (by decide))]; decide
-  have a19 : arg (withTabs (satStateP 28) vs gs w wg) 19 = 0 := by rw [withTabs_arg _ vs gs w wg (hA 19 (by decide))]; decide
-  have a20 : arg (withTabs (satStateP 28) vs gs w wg) 20 = 0x10000 := by rw [withTabs_arg _ vs gs w wg (hA 20 (by decide))]; decide
-  have a21 : arg (withTabs (satStateP 28) vs gs w wg) 21 = 0x820 := by rw [withTabs_arg _ vs gs w wg (hA 21 (by decide))]; decide
-  have a22 : arg (withTabs (satStateP 28) vs gs w wg) 22 = 0x300000 := by rw [withTabs_arg _ vs gs w wg (hA 22 (by decide))]; decide
-  have a23 : arg (withTabs (satStateP 28) vs gs w wg) 23 = 0x300100 := by rw [withTabs_arg _ vs gs w wg (hA 23 (by decide))]; decide
-  have a24 : arg (withTabs (satStateP 28) vs gs w wg) 24 = 0x4800 := by rw [withTabs_arg _ vs gs w wg (hA 24 (by decide))]; decide
-  have a25 : arg (withTabs (satStateP 28) vs gs w wg) 25 = 24 := by rw [withTabs_arg _ vs gs w wg (hA 25 (by decide))]; decide
-  have e : argAddr (withTabs (satStateP 28) vs gs w wg) 0 = 0x20004 := show argAddr (satStateP 28) 0 = _ by decide
+  obtain a0 : arg (withTabs (satStateP 28) vs gs w wg) 0 = 0x1000 := by rw [withTabs_arg _ vs gs w wg (hA 0 (by decide))]; decide
+  obtain a1 : arg (withTabs (satStateP 28) vs gs w wg) 1 = 0x40 := by rw [withTabs_arg _ vs gs w wg (hA 1 (by decide))]; decide
+  obtain a2 : arg (withTabs (satStateP 28) vs gs w wg) 2 = 0x2000 := by rw [withTabs_arg _ vs gs w wg (hA 2 (by decide))]; decide
+  obtain a3 : arg (withTabs (satStateP 28) vs gs w wg) 3 = 0x40 := by rw [withTabs_arg _ vs gs w wg (hA 3 (by decide))]; decide
+  obtain a4 : arg (withTabs (satStateP 28) vs gs w wg) 4 = 0x2100 := by rw [withTabs_arg _ vs gs w wg (hA 4 (by decide))]; decide
+  obtain a5 : arg (withTabs (satStateP 28) vs gs w wg) 5 = 1 := by rw [withTabs_arg _ vs gs w wg (hA 5 (by decide))]; decide
+  obtain a6 : arg (withTabs (satStateP 28) vs gs w wg) 6 = 0x4200 := by rw [withTabs_arg _ vs gs w wg (hA 6 (by decide))]; decide
+  obtain a7 : arg (withTabs (satStateP 28) vs gs w wg) 7 = 32 := by rw [withTabs_arg _ vs gs w wg (hA 7 (by decide))]; decide
+  obtain a8 : arg (withTabs (satStateP 28) vs gs w wg) 8 = 0x4300 := by rw [withTabs_arg _ vs gs w wg (hA 8 (by decide))]; decide
+  obtain a9 : arg (withTabs (satStateP 28) vs gs w wg) 9 = 32 := by rw [withTabs_arg _ vs gs w wg (hA 9 (by decide))]; decide
+  obtain a10 : arg (withTabs (satStateP 28) vs gs w wg) 10 = 0x3300 := by rw [withTabs_arg _ vs gs w wg (hA 10 (by decide))]; decide
+  obtain a11 : arg (withTabs (satStateP 28) vs gs w wg) 11 = 32 := by rw [withTabs_arg _ vs gs w wg (hA 11 (by decide))]; decide
+  obtain a12 : arg (withTabs (satStateP 28) vs gs w wg) 12 = 0x3400 := by rw [withTabs_arg _ vs gs w wg (hA 12 (by decide))]; decide
+  obtain a13 : arg (withTabs (satStateP 28) vs gs w wg) 13 = 32 := by rw [withTabs_arg _ vs gs w wg (hA 13 (by decide))]; decide
+  obtain a14 : arg (withTabs (satStateP 28) vs gs w wg) 14 = 0x3500 := by rw [withTabs_arg _ vs gs w wg (hA 14 (by decide))]; decide
+  obtain a15 : arg (withTabs (satStateP 28) vs gs w wg) 15 = 32 := by rw [withTabs_arg _ vs gs w wg (hA 15 (by decide))]; decide
+  obtain a16 : arg (withTabs (satStateP 28) vs gs w wg) 16 = 0x3000 := by rw [withTabs_arg _ vs gs w wg (hA 16 (by decide))]; decide
+  obtain a17 : arg (withTabs (satStateP 28) vs gs w wg) 17 = 0x1c := by rw [withTabs_arg _ vs gs w wg (hA 17 (by decide))]; decide
+  obtain a18 : arg (withTabs (satStateP 28) vs gs w wg) 18 = 0x3600 := by rw [withTabs_arg _ vs gs w wg (hA 18 (by decide))]; decide
+  obtain a19 : arg (withTabs (satStateP 28) vs gs w wg) 19 = 0 := by rw [withTabs_arg _ vs gs w wg (hA 19 (by decide))]; decide
+  obtain a20 : arg (withTabs (satStateP 28) vs gs w wg) 20 = 0x10000 := by rw [withTabs_arg _ vs gs w wg (hA 20 (by decide))]; decide
+  obtain a21 : arg (withTabs (satStateP 28) vs gs w wg) 21 = 0x820 := by rw [withTabs_arg _ vs gs w wg (hA 21 (by decide))]; decide
+  obtain a22 : arg (withTabs (satStateP 28) vs gs w wg) 22 = 0x300000 := by rw [withTabs_arg _ vs gs w wg (hA 22 (by decide))]; decide
+  obtain a23 : arg (withTabs (satStateP 28) vs gs w wg) 23 = 0x300100 := by rw [withTabs_arg _ vs gs w wg (hA 23 (by decide))]; decide
+  obtain a24 : arg (withTabs (satStateP 28) vs gs w wg) 24 = 0x4800 := by rw [withTabs_arg _ vs gs w wg (hA 24 (by decide))]; decide
+  obtain a25 : arg (withTabs (satStateP 28) vs gs w wg) 25 = 24 := by rw [withTabs_arg _ vs gs w wg (hA 25 (by decide))]; decide
+  obtain e : argAddr (withTabs (satStateP 28) vs gs w wg) 0 = 0x20004 := show argAddr (satStateP 28) 0 = _ by decide
   have esp : (withTabs (satStateP 28) vs gs w wg).gpr .esp = 0x20000 := rfl
   have rd : (withTabs (satStateP 28) vs gs w wg).rd = (satStateP 28).rd := rfl
   have wr : (withTabs (satStateP 28) vs gs w wg).wr = (satStateP 28).wr := rfl
@@ -258,39 +258,39 @@ theorem sign_satP28 {vs : List MVar} {gs : List TVar} {w : MVar} {wg : TVar} (hw
 theorem sign_satP32 {vs : List MVar} {gs : List TVar} {w : MVar} {wg : TVar} (hw : w ∈ vs) (hwg : wg ∈ gs)
     (hD : w.h.D = 32) (hl : (Proof.MdHashTable.X86.names vs ++ Proof.HashTable.X86.names gs).length < 2 ^ 24) :
     ∃ s, (sspecP vs gs).pre s := by
-  have hA : ∀ j < 26, (argAddr (satStateP 32) j).toNat + 4 ≤ 0x300000 := by decide
-  have hhH := withTabs_heldH (satStateP 32) vs gs w wg
-  have hhG := withTabs_held (satStateP 32) vs gs w wg
-  have hH := Proof.MdHashTable.X86.hashAt_tableOf (by decide) (Proof.MdHashTable.X86.held_tableOf (by decide) hhH).2.2.2
-  have hk := withTabsP_key 32 vs gs w wg
+  obtain hA : ∀ j < 26, (argAddr (satStateP 32) j).toNat + 4 ≤ 0x300000 := by decide
+  obtain hhH := withTabs_heldH (satStateP 32) vs gs w wg
+  obtain hhG := withTabs_held (satStateP 32) vs gs w wg
+  obtain hH := Proof.MdHashTable.X86.hashAt_tableOf (by decide) (Proof.MdHashTable.X86.held_tableOf (by decide) hhH).2.2.2
+  obtain hk := withTabsP_key 32 vs gs w wg
   refine ⟨withTabs (satStateP 32) vs gs w wg, ?_⟩
-  have a0 : arg (withTabs (satStateP 32) vs gs w wg) 0 = 0x1000 := by rw [withTabs_arg _ vs gs w wg (hA 0 (by decide))]; decide
-  have a1 : arg (withTabs (satStateP 32) vs gs w wg) 1 = 0x40 := by rw [withTabs_arg _ vs gs w wg (hA 1 (by decide))]; decide
-  have a2 : arg (withTabs (satStateP 32) vs gs w wg) 2 = 0x2000 := by rw [withTabs_arg _ vs gs w wg (hA 2 (by decide))]; decide
-  have a3 : arg (withTabs (satStateP 32) vs gs w wg) 3 = 0x40 := by rw [withTabs_arg _ vs gs w wg (hA 3 (by decide))]; decide
-  have a4 : arg (withTabs (satStateP 32) vs gs w wg) 4 = 0x2100 := by rw [withTabs_arg _ vs gs w wg (hA 4 (by decide))]; decide
-  have a5 : arg (withTabs (satStateP 32) vs gs w wg) 5 = 1 := by rw [withTabs_arg _ vs gs w wg (hA 5 (by decide))]; decide
-  have a6 : arg (withTabs (satStateP 32) vs gs w wg) 6 = 0x4200 := by rw [withTabs_arg _ vs gs w wg (hA 6 (by decide))]; decide
-  have a7 : arg (withTabs (satStateP 32) vs gs w wg) 7 = 32 := by rw [withTabs_arg _ vs gs w wg (hA 7 (by decide))]; decide
-  have a8 : arg (withTabs (satStateP 32) vs gs w wg) 8 = 0x4300 := by rw [withTabs_arg _ vs gs w wg (hA 8 (by decide))]; decide
-  have a9 : arg (withTabs (satStateP 32) vs gs w wg) 9 = 32 := by rw [withTabs_arg _ vs gs w wg (hA 9 (by decide))]; decide
-  have a10 : arg (withTabs (satStateP 32) vs gs w wg) 10 = 0x3300 := by rw [withTabs_arg _ vs gs w wg (hA 10 (by decide))]; decide
-  have a11 : arg (withTabs (satStateP 32) vs gs w wg) 11 = 32 := by rw [withTabs_arg _ vs gs w wg (hA 11 (by decide))]; decide
-  have a12 : arg (withTabs (satStateP 32) vs gs w wg) 12 = 0x3400 := by rw [withTabs_arg _ vs gs w wg (hA 12 (by decide))]; decide
-  have a13 : arg (withTabs (satStateP 32) vs gs w wg) 13 = 32 := by rw [withTabs_arg _ vs gs w wg (hA 13 (by decide))]; decide
-  have a14 : arg (withTabs (satStateP 32) vs gs w wg) 14 = 0x3500 := by rw [withTabs_arg _ vs gs w wg (hA 14 (by decide))]; decide
-  have a15 : arg (withTabs (satStateP 32) vs gs w wg) 15 = 32 := by rw [withTabs_arg _ vs gs w wg (hA 15 (by decide))]; decide
-  have a16 : arg (withTabs (satStateP 32) vs gs w wg) 16 = 0x3000 := by rw [withTabs_arg _ vs gs w wg (hA 16 (by decide))]; decide
-  have a17 : arg (withTabs (satStateP 32) vs gs w wg) 17 = 0x20 := by rw [withTabs_arg _ vs gs w wg (hA 17 (by decide))]; decide
-  have a18 : arg (withTabs (satStateP 32) vs gs w wg) 18 = 0x3600 := by rw [withTabs_arg _ vs gs w wg (hA 18 (by decide))]; decide
-  have a19 : arg (withTabs (satStateP 32) vs gs w wg) 19 = 0 := by rw [withTabs_arg _ vs gs w wg (hA 19 (by decide))]; decide
-  have a20 : arg (withTabs (satStateP 32) vs gs w wg) 20 = 0x10000 := by rw [withTabs_arg _ vs gs w wg (hA 20 (by decide))]; decide
-  have a21 : arg (withTabs (satStateP 32) vs gs w wg) 21 = 0x820 := by rw [withTabs_arg _ vs gs w wg (hA 21 (by decide))]; decide
-  have a22 : arg (withTabs (satStateP 32) vs gs w wg) 22 = 0x300000 := by rw [withTabs_arg _ vs gs w wg (hA 22 (by decide))]; decide
-  have a23 : arg (withTabs (satStateP 32) vs gs w wg) 23 = 0x300100 := by rw [withTabs_arg _ vs gs w wg (hA 23 (by decide))]; decide
-  have a24 : arg (withTabs (satStateP 32) vs gs w wg) 24 = 0x4800 := by rw [withTabs_arg _ vs gs w wg (hA 24 (by decide))]; decide
-  have a25 : arg (withTabs (satStateP 32) vs gs w wg) 25 = 24 := by rw [withTabs_arg _ vs gs w wg (hA 25 (by decide))]; decide
-  have e : argAddr (withTabs (satStateP 32) vs gs w wg) 0 = 0x20004 := show argAddr (satStateP 32) 0 = _ by decide
+  obtain a0 : arg (withTabs (satStateP 32) vs gs w wg) 0 = 0x1000 := by rw [withTabs_arg _ vs gs w wg (hA 0 (by decide))]; decide
+  obtain a1 : arg (withTabs (satStateP 32) vs gs w wg) 1 = 0x40 := by rw [withTabs_arg _ vs gs w wg (hA 1 (by decide))]; decide
+  obtain a2 : arg (withTabs (satStateP 32) vs gs w wg) 2 = 0x2000 := by rw [withTabs_arg _ vs gs w wg (hA 2 (by decide))]; decide
+  obtain a3 : arg (withTabs (satStateP 32) vs gs w wg) 3 = 0x40 := by rw [withTabs_arg _ vs gs w wg (hA 3 (by decide))]; decide
+  obtain a4 : arg (withTabs (satStateP 32) vs gs w wg) 4 = 0x2100 := by rw [withTabs_arg _ vs gs w wg (hA 4 (by decide))]; decide
+  obtain a5 : arg (withTabs (satStateP 32) vs gs w wg) 5 = 1 := by rw [withTabs_arg _ vs gs w wg (hA 5 (by decide))]; decide
+  obtain a6 : arg (withTabs (satStateP 32) vs gs w wg) 6 = 0x4200 := by rw [withTabs_arg _ vs gs w wg (hA 6 (by decide))]; decide
+  obtain a7 : arg (withTabs (satStateP 32) vs gs w wg) 7 = 32 := by rw [withTabs_arg _ vs gs w wg (hA 7 (by decide))]; decide
+  obtain a8 : arg (withTabs (satStateP 32) vs gs w wg) 8 = 0x4300 := by rw [withTabs_arg _ vs gs w wg (hA 8 (by decide))]; decide
+  obtain a9 : arg (withTabs (satStateP 32) vs gs w wg) 9 = 32 := by rw [withTabs_arg _ vs gs w wg (hA 9 (by decide))]; decide
+  obtain a10 : arg (withTabs (satStateP 32) vs gs w wg) 10 = 0x3300 := by rw [withTabs_arg _ vs gs w wg (hA 10 (by decide))]; decide
+  obtain a11 : arg (withTabs (satStateP 32) vs gs w wg) 11 = 32 := by rw [withTabs_arg _ vs gs w wg (hA 11 (by decide))]; decide
+  obtain a12 : arg (withTabs (satStateP 32) vs gs w wg) 12 = 0x3400 := by rw [withTabs_arg _ vs gs w wg (hA 12 (by decide))]; decide
+  obtain a13 : arg (withTabs (satStateP 32) vs gs w wg) 13 = 32 := by rw [withTabs_arg _ vs gs w wg (hA 13 (by decide))]; decide
+  obtain a14 : arg (withTabs (satStateP 32) vs gs w wg) 14 = 0x3500 := by rw [withTabs_arg _ vs gs w wg (hA 14 (by decide))]; decide
+  obtain a15 : arg (withTabs (satStateP 32) vs gs w wg) 15 = 32 := by rw [withTabs_arg _ vs gs w wg (hA 15 (by decide))]; decide
+  obtain a16 : arg (withTabs (satStateP 32) vs gs w wg) 16 = 0x3000 := by rw [withTabs_arg _ vs gs w wg (hA 16 (by decide))]; decide
+  obtain a17 : arg (withTabs (satStateP 32) vs gs w wg) 17 = 0x20 := by rw [withTabs_arg _ vs gs w wg (hA 17 (by decide))]; decide
+  obtain a18 : arg (withTabs (satStateP 32) vs gs w wg) 18 = 0x3600 := by rw [withTabs_arg _ vs gs w wg (hA 18 (by decide))]; decide
+  obtain a19 : arg (withTabs (satStateP 32) vs gs w wg) 19 = 0 := by rw [withTabs_arg _ vs gs w wg (hA 19 (by decide))]; decide
+  obtain a20 : arg (withTabs (satStateP 32) vs gs w wg) 20 = 0x10000 := by rw [withTabs_arg _ vs gs w wg (hA 20 (by decide))]; decide
+  obtain a21 : arg (withTabs (satStateP 32) vs gs w wg) 21 = 0x820 := by rw [withTabs_arg _ vs gs w wg (hA 21 (by decide))]; decide
+  obtain a22 : arg (withTabs (satStateP 32) vs gs w wg) 22 = 0x300000 := by rw [withTabs_arg _ vs gs w wg (hA 22 (by decide))]; decide
+  obtain a23 : arg (withTabs (satStateP 32) vs gs w wg) 23 = 0x300100 := by rw [withTabs_arg _ vs gs w wg (hA 23 (by decide))]; decide
+  obtain a24 : arg (withTabs (satStateP 32) vs gs w wg) 24 = 0x4800 := by rw [withTabs_arg _ vs gs w wg (hA 24 (by decide))]; decide
+  obtain a25 : arg (withTabs (satStateP 32) vs gs w wg) 25 = 24 := by rw [withTabs_arg _ vs gs w wg (hA 25 (by decide))]; decide
+  obtain e : argAddr (withTabs (satStateP 32) vs gs w wg) 0 = 0x20004 := show argAddr (satStateP 32) 0 = _ by decide
   have esp : (withTabs (satStateP 32) vs gs w wg).gpr .esp = 0x20000 := rfl
   have rd : (withTabs (satStateP 32) vs gs w wg).rd = (satStateP 32).rd := rfl
   have wr : (withTabs (satStateP 32) vs gs w wg).wr = (satStateP 32).wr := rfl
@@ -318,39 +318,39 @@ theorem sign_satP32 {vs : List MVar} {gs : List TVar} {w : MVar} {wg : TVar} (hw
 theorem sign_satP48 {vs : List MVar} {gs : List TVar} {w : MVar} {wg : TVar} (hw : w ∈ vs) (hwg : wg ∈ gs)
     (hD : w.h.D = 48) (hl : (Proof.MdHashTable.X86.names vs ++ Proof.HashTable.X86.names gs).length < 2 ^ 24) :
     ∃ s, (sspecP vs gs).pre s := by
-  have hA : ∀ j < 26, (argAddr (satStateP 48) j).toNat + 4 ≤ 0x300000 := by decide
-  have hhH := withTabs_heldH (satStateP 48) vs gs w wg
-  have hhG := withTabs_held (satStateP 48) vs gs w wg
-  have hH := Proof.MdHashTable.X86.hashAt_tableOf (by decide) (Proof.MdHashTable.X86.held_tableOf (by decide) hhH).2.2.2
-  have hk := withTabsP_key 48 vs gs w wg
+  obtain hA : ∀ j < 26, (argAddr (satStateP 48) j).toNat + 4 ≤ 0x300000 := by decide
+  obtain hhH := withTabs_heldH (satStateP 48) vs gs w wg
+  obtain hhG := withTabs_held (satStateP 48) vs gs w wg
+  obtain hH := Proof.MdHashTable.X86.hashAt_tableOf (by decide) (Proof.MdHashTable.X86.held_tableOf (by decide) hhH).2.2.2
+  obtain hk := withTabsP_key 48 vs gs w wg
   refine ⟨withTabs (satStateP 48) vs gs w wg, ?_⟩
-  have a0 : arg (withTabs (satStateP 48) vs gs w wg) 0 = 0x1000 := by rw [withTabs_arg _ vs gs w wg (hA 0 (by decide))]; decide
-  have a1 : arg (withTabs (satStateP 48) vs gs w wg) 1 = 0x40 := by rw [withTabs_arg _ vs gs w wg (hA 1 (by decide))]; decide
-  have a2 : arg (withTabs (satStateP 48) vs gs w wg) 2 = 0x2000 := by rw [withTabs_arg _ vs gs w wg (hA 2 (by decide))]; decide
-  have a3 : arg (withTabs (satStateP 48) vs gs w wg) 3 = 0x40 := by rw [withTabs_arg _ vs gs w wg (hA 3 (by decide))]; decide
-  have a4 : arg (withTabs (satStateP 48) vs gs w wg) 4 = 0x2100 := by rw [withTabs_arg _ vs gs w wg (hA 4 (by decide))]; decide
-  have a5 : arg (withTabs (satStateP 48) vs gs w wg) 5 = 1 := by rw [withTabs_arg _ vs gs w wg (hA 5 (by decide))]; decide
-  have a6 : arg (withTabs (satStateP 48) vs gs w wg) 6 = 0x4200 := by rw [withTabs_arg _ vs gs w wg (hA 6 (by decide))]; decide
-  have a7 : arg (withTabs (satStateP 48) vs gs w wg) 7 = 32 := by rw [withTabs_arg _ vs gs w wg (hA 7 (by decide))]; decide
-  have a8 : arg (withTabs (satStateP 48) vs gs w wg) 8 = 0x4300 := by rw [withTabs_arg _ vs gs w wg (hA 8 (by decide))]; decide
-  have a9 : arg (withTabs (satStateP 48) vs gs w wg) 9 = 32 := by rw [withTabs_arg _ vs gs w wg (hA 9 (by decide))]; decide
-  have a10 : arg (withTabs (satStateP 48) vs gs w wg) 10 = 0x3300 := by rw [withTabs_arg _ vs gs w wg (hA 10 (by decide))]; decide
-  have a11 : arg (withTabs (satStateP 48) vs gs w wg) 11 = 32 := by rw [withTabs_arg _ vs gs w wg (hA 11 (by decide))]; decide
-  have a12 : arg (withTabs (satStateP 48) vs gs w wg) 12 = 0x3400 := by rw [withTabs_arg _ vs gs w wg (hA 12 (by decide))]; decide
-  have a13 : arg (withTabs (satStateP 48) vs gs w wg) 13 = 32 := by rw [withTabs_arg _ vs gs w wg (hA 13 (by decide))]; decide
-  have a14 : arg (withTabs (satStateP 48) vs gs w wg) 14 = 0x3500 := by rw [withTabs_arg _ vs gs w wg (hA 14 (by decide))]; decide
-  have a15 : arg (withTabs (satStateP 48) vs gs w wg) 15 = 32 := by rw [withTabs_arg _ vs gs w wg (hA 15 (by decide))]; decide
-  have a16 : arg (withTabs (satStateP 48) vs gs w wg) 16 = 0x3000 := by rw [withTabs_arg _ vs gs w wg (hA 16 (by decide))]; decide
-  have a17 : arg (withTabs (satStateP 48) vs gs w wg) 17 = 0x30 := by rw [withTabs_arg _ vs gs w wg (hA 17 (by decide))]; decide
-  have a18 : arg (withTabs (satStateP 48) vs gs w wg) 18 = 0x3600 := by rw [withTabs_arg _ vs gs w wg (hA 18 (by decide))]; decide
-  have a19 : arg (withTabs (satStateP 48) vs gs w wg) 19 = 0 := by rw [withTabs_arg _ vs gs w wg (hA 19 (by decide))]; decide
-  have a20 : arg (withTabs (satStateP 48) vs gs w wg) 20 = 0x10000 := by rw [withTabs_arg _ vs gs w wg (hA 20 (by decide))]; decide
-  have a21 : arg (withTabs (satStateP 48) vs gs w wg) 21 = 0x820 := by rw [withTabs_arg _ vs gs w wg (hA 21 (by decide))]; decide
-  have a22 : arg (withTabs (satStateP 48) vs gs w wg) 22 = 0x300000 := by rw [withTabs_arg _ vs gs w wg (hA 22 (by decide))]; decide
-  have a23 : arg (withTabs (satStateP 48) vs gs w wg) 23 = 0x300100 := by rw [withTabs_arg _ vs gs w wg (hA 23 (by decide))]; decide
-  have a24 : arg (withTabs (satStateP 48) vs gs w wg) 24 = 0x4800 := by rw [withTabs_arg _ vs gs w wg (hA 24 (by decide))]; decide
-  have a25 : arg (withTabs (satStateP 48) vs gs w wg) 25 = 24 := by rw [withTabs_arg _ vs gs w wg (hA 25 (by decide))]; decide
-  have e : argAddr (withTabs (satStateP 48) vs gs w wg) 0 = 0x20004 := show argAddr (satStateP 48) 0 = _ by decide
+  obtain a0 : arg (withTabs (satStateP 48) vs gs w wg) 0 = 0x1000 := by rw [withTabs_arg _ vs gs w wg (hA 0 (by decide))]; decide
+  obtain a1 : arg (withTabs (satStateP 48) vs gs w wg) 1 = 0x40 := by rw [withTabs_arg _ vs gs w wg (hA 1 (by decide))]; decide
+  obtain a2 : arg (withTabs (satStateP 48) vs gs w wg) 2 = 0x2000 := by rw [withTabs_arg _ vs gs w wg (hA 2 (by decide))]; decide
+  obtain a3 : arg (withTabs (satStateP 48) vs gs w wg) 3 = 0x40 := by rw [withTabs_arg _ vs gs w wg (hA 3 (by decide))]; decide
+  obtain a4 : arg (withTabs (satStateP 48) vs gs w wg) 4 = 0x2100 := by rw [withTabs_arg _ vs gs w wg (hA 4 (by decide))]; decide
+  obtain a5 : arg (withTabs (satStateP 48) vs gs w wg) 5 = 1 := by rw [withTabs_arg _ vs gs w wg (hA 5 (by decide))]; decide
+  obtain a6 : arg (withTabs (satStateP 48) vs gs w wg) 6 = 0x4200 := by rw [withTabs_arg _ vs gs w wg (hA 6 (by decide))]; decide
+  obtain a7 : arg (withTabs (satStateP 48) vs gs w wg) 7 = 32 := by rw [withTabs_arg _ vs gs w wg (hA 7 (by decide))]; decide
+  obtain a8 : arg (withTabs (satStateP 48) vs gs w wg) 8 = 0x4300 := by rw [withTabs_arg _ vs gs w wg (hA 8 (by decide))]; decide
+  obtain a9 : arg (withTabs (satStateP 48) vs gs w wg) 9 = 32 := by rw [withTabs_arg _ vs gs w wg (hA 9 (by decide))]; decide
+  obtain a10 : arg (withTabs (satStateP 48) vs gs w wg) 10 = 0x3300 := by rw [withTabs_arg _ vs gs w wg (hA 10 (by decide))]; decide
+  obtain a11 : arg (withTabs (satStateP 48) vs gs w wg) 11 = 32 := by rw [withTabs_arg _ vs gs w wg (hA 11 (by decide))]; decide
+  obtain a12 : arg (withTabs (satStateP 48) vs gs w wg) 12 = 0x3400 := by rw [withTabs_arg _ vs gs w wg (hA 12 (by decide))]; decide
+  obtain a13 : arg (withTabs (satStateP 48) vs gs w wg) 13 = 32 := by rw [withTabs_arg _ vs gs w wg (hA 13 (by decide))]; decide
+  obtain a14 : arg (withTabs (satStateP 48) vs gs w wg) 14 = 0x3500 := by rw [withTabs_arg _ vs gs w wg (hA 14 (by decide))]; decide
+  obtain a15 : arg (withTabs (satStateP 48) vs gs w wg) 15 = 32 := by rw [withTabs_arg _ vs gs w wg (hA 15 (by decide))]; decide
+  obtain a16 : arg (withTabs (satStateP 48) vs gs w wg) 16 = 0x3000 := by rw [withTabs_arg _ vs gs w wg (hA 16 (by decide))]; decide
+  obtain a17 : arg (withTabs (satStateP 48) vs gs w wg) 17 = 0x30 := by rw [withTabs_arg _ vs gs w wg (hA 17 (by decide))]; decide
+  obtain a18 : arg (withTabs (satStateP 48) vs gs w wg) 18 = 0x3600 := by rw [withTabs_arg _ vs gs w wg (hA 18 (by decide))]; decide
+  obtain a19 : arg (withTabs (satStateP 48) vs gs w wg) 19 = 0 := by rw [withTabs_arg _ vs gs w wg (hA 19 (by decide))]; decide
+  obtain a20 : arg (withTabs (satStateP 48) vs gs w wg) 20 = 0x10000 := by rw [withTabs_arg _ vs gs w wg (hA 20 (by decide))]; decide
+  obtain a21 : arg (withTabs (satStateP 48) vs gs w wg) 21 = 0x820 := by rw [withTabs_arg _ vs gs w wg (hA 21 (by decide))]; decide
+  obtain a22 : arg (withTabs (satStateP 48) vs gs w wg) 22 = 0x300000 := by rw [withTabs_arg _ vs gs w wg (hA 22 (by decide))]; decide
+  obtain a23 : arg (withTabs (satStateP 48) vs gs w wg) 23 = 0x300100 := by rw [withTabs_arg _ vs gs w wg (hA 23 (by decide))]; decide
+  obtain a24 : arg (withTabs (satStateP 48) vs gs w wg) 24 = 0x4800 := by rw [withTabs_arg _ vs gs w wg (hA 24 (by decide))]; decide
+  obtain a25 : arg (withTabs (satStateP 48) vs gs w wg) 25 = 24 := by rw [withTabs_arg _ vs gs w wg (hA 25 (by decide))]; decide
+  obtain e : argAddr (withTabs (satStateP 48) vs gs w wg) 0 = 0x20004 := show argAddr (satStateP 48) 0 = _ by decide
   have esp : (withTabs (satStateP 48) vs gs w wg).gpr .esp = 0x20000 := rfl
   have rd : (withTabs (satStateP 48) vs gs w wg).rd = (satStateP 48).rd := rfl
   have wr : (withTabs (satStateP 48) vs gs w wg).wr = (satStateP 48).wr := rfl
@@ -378,39 +378,39 @@ theorem sign_satP48 {vs : List MVar} {gs : List TVar} {w : MVar} {wg : TVar} (hw
 theorem sign_satP64 {vs : List MVar} {gs : List TVar} {w : MVar} {wg : TVar} (hw : w ∈ vs) (hwg : wg ∈ gs)
     (hD : w.h.D = 64) (hl : (Proof.MdHashTable.X86.names vs ++ Proof.HashTable.X86.names gs).length < 2 ^ 24) :
     ∃ s, (sspecP vs gs).pre s := by
-  have hA : ∀ j < 26, (argAddr (satStateP 64) j).toNat + 4 ≤ 0x300000 := by decide
-  have hhH := withTabs_heldH (satStateP 64) vs gs w wg
-  have hhG := withTabs_held (satStateP 64) vs gs w wg
-  have hH := Proof.MdHashTable.X86.hashAt_tableOf (by decide) (Proof.MdHashTable.X86.held_tableOf (by decide) hhH).2.2.2
-  have hk := withTabsP_key 64 vs gs w wg
+  obtain hA : ∀ j < 26, (argAddr (satStateP 64) j).toNat + 4 ≤ 0x300000 := by decide
+  obtain hhH := withTabs_heldH (satStateP 64) vs gs w wg
+  obtain hhG := withTabs_held (satStateP 64) vs gs w wg
+  obtain hH := Proof.MdHashTable.X86.hashAt_tableOf (by decide) (Proof.MdHashTable.X86.held_tableOf (by decide) hhH).2.2.2
+  obtain hk := withTabsP_key 64 vs gs w wg
   refine ⟨withTabs (satStateP 64) vs gs w wg, ?_⟩
-  have a0 : arg (withTabs (satStateP 64) vs gs w wg) 0 = 0x1000 := by rw [withTabs_arg _ vs gs w wg (hA 0 (by decide))]; decide
-  have a1 : arg (withTabs (satStateP 64) vs gs w wg) 1 = 0x40 := by rw [withTabs_arg _ vs gs w wg (hA 1 (by decide))]; decide
-  have a2 : arg (withTabs (satStateP 64) vs gs w wg) 2 = 0x2000 := by rw [withTabs_arg _ vs gs w wg (hA 2 (by decide))]; decide
-  have a3 : arg (withTabs (satStateP 64) vs gs w wg) 3 = 0x40 := by rw [withTabs_arg _ vs gs w wg (hA 3 (by decide))]; decide
-  have a4 : arg (withTabs (satStateP 64) vs gs w wg) 4 = 0x2100 := by rw [withTabs_arg _ vs gs w wg (hA 4 (by decide))]; decide
-  have a5 : arg (withTabs (satStateP 64) vs gs w wg) 5 = 1 := by rw [withTabs_arg _ vs gs w wg (hA 5 (by decide))]; decide
-  have a6 : arg (withTabs (satStateP 64) vs gs w wg) 6 = 0x4200 := by rw [withTabs_arg _ vs gs w wg (hA 6 (by decide))]; decide
-  have a7 : arg (withTabs (satStateP 64) vs gs w wg) 7 = 32 := by rw [withTabs_arg _ vs gs w wg (hA 7 (by decide))]; decide
-  have a8 : arg (withTabs (satStateP 64) vs gs w wg) 8 = 0x4300 := by rw [withTabs_arg _ vs gs w wg (hA 8 (by decide))]; decide
-  have a9 : arg (withTabs (satStateP 64) vs gs w wg) 9 = 32 := by rw [withTabs_arg _ vs gs w wg (hA 9 (by decide))]; decide
-  have a10 : arg (withTabs (satStateP 64) vs gs w wg) 10 = 0x3300 := by rw [withTabs_arg _ vs gs w wg (hA 10 (by decide))]; decide
-  have a11 : arg (withTabs (satStateP 64) vs gs w wg) 11 = 32 := by rw [withTabs_arg _ vs gs w wg (hA 11 (by decide))]; decide
-  have a12 : arg (withTabs (satStateP 64) vs gs w wg) 12 = 0x3400 := by rw [withTabs_arg _ vs gs w wg (hA 12 (by decide))]; decide
-  have a13 : arg (withTabs (satStateP 64) vs gs w wg) 13 = 32 := by rw [withTabs_arg _ vs gs w wg (hA 13 (by decide))]; decide
-  have a14 : arg (withTabs (satStateP 64) vs gs w wg) 14 = 0x3500 := by rw [withTabs_arg _ vs gs w wg (hA 14 (by decide))]; decide
-  have a15 : arg (withTabs (satStateP 64) vs gs w wg) 15 = 32 := by rw [withTabs_arg _ vs gs w wg (hA 15 (by decide))]; decide
-  have a16 : arg (withTabs (satStateP 64) vs gs w wg) 16 = 0x3000 := by rw [withTabs_arg _ vs gs w wg (hA 16 (by decide))]; decide
-  have a17 : arg (withTabs (satStateP 64) vs gs w wg) 17 = 0x40 := by rw [withTabs_arg _ vs gs w wg (hA 17 (by decide))]; decide
-  have a18 : arg (withTabs (satStateP 64) vs gs w wg) 18 = 0x3600 := by rw [withTabs_arg _ vs gs w wg (hA 18 (by decide))]; decide
-  have a19 : arg (withTabs (satStateP 64) vs gs w wg) 19 = 0 := by rw [withTabs_arg _ vs gs w wg (hA 19 (by decide))]; decide
-  have a20 : arg (withTabs (satStateP 64) vs gs w wg) 20 = 0x10000 := by rw [withTabs_arg _ vs gs w wg (hA 20 (by decide))]; decide
-  have a21 : arg (withTabs (satStateP 64) vs gs w wg) 21 = 0x820 := by rw [withTabs_arg _ vs gs w wg (hA 21 (by decide))]; decide
-  have a22 : arg (withTabs (satStateP 64) vs gs w wg) 22 = 0x300000 := by rw [withTabs_arg _ vs gs w wg (hA 22 (by decide))]; decide
-  have a23 : arg (withTabs (satStateP 64) vs gs w wg) 23 = 0x300100 := by rw [withTabs_arg _ vs gs w wg (hA 23 (by decide))]; decide
-  have a24 : arg (withTabs (satStateP 64) vs gs w wg) 24 = 0x4800 := by rw [withTabs_arg _ vs gs w wg (hA 24 (by decide))]; decide
-  have a25 : arg (withTabs (satStateP 64) vs gs w wg) 25 = 24 := by rw [withTabs_arg _ vs gs w wg (hA 25 (by decide))]; decide
-  have e : argAddr (withTabs (satStateP 64) vs gs w wg) 0 = 0x20004 := show argAddr (satStateP 64) 0 = _ by decide
+  obtain a0 : arg (withTabs (satStateP 64) vs gs w wg) 0 = 0x1000 := by rw [withTabs_arg _ vs gs w wg (hA 0 (by decide))]; decide
+  obtain a1 : arg (withTabs (satStateP 64) vs gs w wg) 1 = 0x40 := by rw [withTabs_arg _ vs gs w wg (hA 1 (by decide))]; decide
+  obtain a2 : arg (withTabs (satStateP 64) vs gs w wg) 2 = 0x2000 := by rw [withTabs_arg _ vs gs w wg (hA 2 (by decide))]; decide
+  obtain a3 : arg (withTabs (satStateP 64) vs gs w wg) 3 = 0x40 := by rw [withTabs_arg _ vs gs w wg (hA 3 (by decide))]; decide
+  obtain a4 : arg (withTabs (satStateP 64) vs gs w wg) 4 = 0x2100 := by rw [withTabs_arg _ vs gs w wg (hA 4 (by decide))]; decide
+  obtain a5 : arg (withTabs (satStateP 64) vs gs w wg) 5 = 1 := by rw [withTabs_arg _ vs gs w wg (hA 5 (by decide))]; decide
+  obtain a6 : arg (withTabs (satStateP 64) vs gs w wg) 6 = 0x4200 := by rw [withTabs_arg _ vs gs w wg (hA 6 (by decide))]; decide
+  obtain a7 : arg (withTabs (satStateP 64) vs gs w wg) 7 = 32 := by rw [withTabs_arg _ vs gs w wg (hA 7 (by decide))]; decide
+  obtain a8 : arg (withTabs (satStateP 64) vs gs w wg) 8 = 0x4300 := by rw [withTabs_arg _ vs gs w wg (hA 8 (by decide))]; decide
+  obtain a9 : arg (withTabs (satStateP 64) vs gs w wg) 9 = 32 := by rw [withTabs_arg _ vs gs w wg (hA 9 (by decide))]; decide
+  obtain a10 : arg (withTabs (satStateP 64) vs gs w wg) 10 = 0x3300 := by rw [withTabs_arg _ vs gs w wg (hA 10 (by decide))]; decide
+  obtain a11 : arg (withTabs (satStateP 64) vs gs w wg) 11 = 32 := by rw [withTabs_arg _ vs gs w wg (hA 11 (by decide))]; decide
+  obtain a12 : arg (withTabs (satStateP 64) vs gs w wg) 12 = 0x3400 := by rw [withTabs_arg _ vs gs w wg (hA 12 (by decide))]; decide
+  obtain a13 : arg (withTabs (satStateP 64) vs gs w wg) 13 = 32 := by rw [withTabs_arg _ vs gs w wg (hA 13 (by decide))]; decide
+  obtain a14 : arg (withTabs (satStateP 64) vs gs w wg) 14 = 0x3500 := by rw [withTabs_arg _ vs gs w wg (hA 14 (by decide))]; decide
+  obtain a15 : arg (withTabs (satStateP 64) vs gs w wg) 15 = 32 := by rw [withTabs_arg _ vs gs w wg (hA 15 (by decide))]; decide
+  obtain a16 : arg (withTabs (satStateP 64) vs gs w wg) 16 = 0x3000 := by rw [withTabs_arg _ vs gs w wg (hA 16 (by decide))]; decide
+  obtain a17 : arg (withTabs (satStateP 64) vs gs w wg) 17 = 0x40 := by rw [withTabs_arg _ vs gs w wg (hA 17 (by decide))]; decide
+  obtain a18 : arg (withTabs (satStateP 64) vs gs w wg) 18 = 0x3600 := by rw [withTabs_arg _ vs gs w wg (hA 18 (by decide))]; decide
+  obtain a19 : arg (withTabs (satStateP 64) vs gs w wg) 19 = 0 := by rw [withTabs_arg _ vs gs w wg (hA 19 (by decide))]; decide
+  obtain a20 : arg (withTabs (satStateP 64) vs gs w wg) 20 = 0x10000 := by rw [withTabs_arg _ vs gs w wg (hA 20 (by decide))]; decide
+  obtain a21 : arg (withTabs (satStateP 64) vs gs w wg) 21 = 0x820 := by rw [withTabs_arg _ vs gs w wg (hA 21 (by decide))]; decide
+  obtain a22 : arg (withTabs (satStateP 64) vs gs w wg) 22 = 0x300000 := by rw [withTabs_arg _ vs gs w wg (hA 22 (by decide))]; decide
+  obtain a23 : arg (withTabs (satStateP 64) vs gs w wg) 23 = 0x300100 := by rw [withTabs_arg _ vs gs w wg (hA 23 (by decide))]; decide
+  obtain a24 : arg (withTabs (satStateP 64) vs gs w wg) 24 = 0x4800 := by rw [withTabs_arg _ vs gs w wg (hA 24 (by decide))]; decide
+  obtain a25 : arg (withTabs (satStateP 64) vs gs w wg) 25 = 24 := by rw [withTabs_arg _ vs gs w wg (hA 25 (by decide))]; decide
+  obtain e : argAddr (withTabs (satStateP 64) vs gs w wg) 0 = 0x20004 := show argAddr (satStateP 64) 0 = _ by decide
   have esp : (withTabs (satStateP 64) vs gs w wg).gpr .esp = 0x20000 := rfl
   have rd : (withTabs (satStateP 64) vs gs w wg).rd = (satStateP 64).rd := rfl
   have wr : (withTabs (satStateP 64) vs gs w wg).wr = (satStateP 64).wr := rfl
@@ -439,7 +439,7 @@ theorem sign_satP {vs : List MVar} {gs : List TVar} {w : MVar} {wg : TVar} (hw :
     (hs : Proof.MdHashTable.X86.Shape w)
     (hl : (Proof.MdHashTable.X86.names vs ++ Proof.HashTable.X86.names gs).length < 2 ^ 24) :
     ∃ s, (sspecP vs gs).pre s := by
-  have hDm := D_mem hs
+  obtain hDm := D_mem hs
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hDm
   rcases hDm with e | e | e | e | e | e
   exacts [sign_satP16 hw hwg e hl, sign_satP20 hw hwg e hl, sign_satP28 hw hwg e hl, sign_satP32 hw hwg e hl,

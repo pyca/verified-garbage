@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.Complete
 public import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Point
-public import VerifiedGarbage.Proof.Weierstrass.Affine
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-!

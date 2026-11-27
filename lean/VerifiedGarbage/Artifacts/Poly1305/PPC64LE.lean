@@ -1,24 +1,27 @@
 module
 
-public import VerifiedGarbage.Proof.Poly1305.PPC64LE.Shared
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.PPC64LE.Print
+public import VerifiedGarbage.TCB.PPC64LE.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Poly1305.Contract
+import VerifiedGarbage.Proof.Poly1305.PPC64LE.Scrub
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # Poly1305 (RFC 8439 §2.5) on PPC64LE -/
 
-@[expose] public section
-
 namespace VG.Artifacts.Poly1305.PPC64LE
 
-def artifacts : List Artifact := [
+public def artifacts : List (Artifact PPC64LE.target) := [
   Spec.Poly1305.initApi.artifact PPC64LE.target {
-    code := Impl.Poly1305.PPC64LE.init
-    verified := Proof.Poly1305.PPC64LE.Shared.init },
+    code := Impl.Poly1305.PPC64LE.Fn.init
+    verified := Proof.Poly1305.PPC64LE.Scrub.init_scrubbed },
   Spec.Poly1305.updateApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratch 160 .r7 Impl.Poly1305.PPC64LE.update
-    verified := Proof.Poly1305.PPC64LE.Shared.update },
+    code := Impl.Poly1305.PPC64LE.Fn.update
+    verified := Proof.Poly1305.PPC64LE.Scrub.update_scrubbed },
   Spec.Poly1305.finalizeApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratch 160 .r6 Impl.Poly1305.PPC64LE.finalize
-    verified := Proof.Poly1305.PPC64LE.Shared.finalize }]
+    code := Impl.Poly1305.PPC64LE.Fn.finalize
+    verified := Proof.Poly1305.PPC64LE.Scrub.finalize_scrubbed }]
+
+spec_apis artifacts
 
 end VG.Artifacts.Poly1305.PPC64LE

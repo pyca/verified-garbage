@@ -232,7 +232,7 @@ def x86_64Rdi (v : BitVec 64) : X86_64.State :=
 
 example : (pubU32.contract X86_64.abi (post := fun _ _ _ _ => True)).pub
     (x86_64Rdi 0x00000000_00000001) (x86_64Rdi 0xffffffff_00000001) :=
-  ⟨rfl, fun | 0, _ => rfl | _ + 1, _ => rfl, fun _ h => absurd h List.not_mem_nil⟩
+  ⟨⟨rfl, rfl⟩, fun | 0, _ => rfl | _ + 1, _ => rfl, fun _ h => absurd h List.not_mem_nil⟩
 
 example : ¬(pubU32.contract X86_64.abi (post := fun _ _ _ _ => True)).pub
     (x86_64Rdi 0x00000000_00000001) (x86_64Rdi 0x00000000_00000002) :=
@@ -244,7 +244,7 @@ def aarch64X0 (v : BitVec 64) : AArch64.State :=
 
 example : (pubU32.contract AArch64.abi (post := fun _ _ _ _ => True)).pub
     (aarch64X0 0x00000000_00000001) (aarch64X0 0xffffffff_00000001) :=
-  ⟨rfl, fun | 0, _ => rfl | _ + 1, _ => rfl, fun _ h => absurd h List.not_mem_nil⟩
+  ⟨⟨rfl, rfl⟩, fun | 0, _ => rfl | _ + 1, _ => rfl, fun _ h => absurd h List.not_mem_nil⟩
 
 example : ¬(pubU32.contract AArch64.abi (post := fun _ _ _ _ => True)).pub
     (aarch64X0 0x00000000_00000001) (aarch64X0 0x00000000_00000002) :=
@@ -323,6 +323,32 @@ def x86State : X86.State where
 #guard X86.abi.reserved 12 x86State == [⟨0x100, 4⟩, ⟨0xf4, 12⟩]
 #guard X86.abi.ret x86State == 0x0000000200000001
 
+/-! ## Contiguous input and output with a shared length -/
+
+def buffers : Sig where
+  params := [("src", .inOutSlice .u8 "dst" "len"), ("tag", .array true .u8 16)]
+
+#guard buffers.rust == "(src: *const u8, dst: *mut u8, len: usize, tag: *mut [u8; 16])"
+#guard buffers.words 32 == [.addr, .addr, .int 32, .addr]
+#guard buffers.words 64 == [.addr, .addr, .int 64, .addr]
+#guard (buffers.params.flatMap (·.2.pubs)) == [true, true, true, true]
+#guard Sig.bufs buffers.params [100, 100, 16, 200] == [(⟨100, 16⟩, true), (⟨200, 16⟩, true)]
+#guard Sig.bufs buffers.params [0, 100, 16, 200] ==
+  [(⟨0, 16⟩, false), (⟨100, 16⟩, true), (⟨200, 16⟩, true)]
+-- Distinct pointers into overlapping ranges keep both regions, so the
+-- contract's pairwise separation check applies even at a one-byte offset.
+#guard Sig.bufs buffers.params [100, 101, 16, 200] ==
+  [(⟨100, 16⟩, false), (⟨101, 16⟩, true), (⟨200, 16⟩, true)]
+#guard Sig.bufs buffers.params [100, 100, 0, 200] == [(⟨100, 0⟩, true), (⟨200, 16⟩, true)]
+
+-- The same separation predicate used by Sig.contract admits exactly the
+-- two intended layouts for any addresses and length.
+example (src dst len : BitVec 64) :
+    (Sig.bufs [("src", .inOutSlice .u8 "dst" "len")] [src, dst, len]).Pairwise
+        (fun a b => (a.2 || b.2) → a.1.Disjoint b.1) ↔
+      src = dst ∨ (⟨src, len.toNat⟩ : Region).Disjoint ⟨dst, len.toNat⟩ := by
+  by_cases h : src = dst <;> simp [Sig.bufs, h, Elem.size, List.pairwise_cons]
+
 /-! ## Lists of slices
 
 The memory of a list of slices is its descriptors (two pointer-sized words
@@ -374,7 +400,7 @@ def listState (m : Mem) : X86_64.State :=
 -- data; two that differ in a descriptor (a slice's length) do not.
 example : (listSig.contract X86_64.abi (post := fun _ _ _ _ _ _ => True)).pub
     (listState desc64) (listState (poke desc64 0x3000 5 0x1122334455)) := by
-  refine ⟨rfl, fun | 0, _ => rfl | 1, _ => rfl | 2, _ => rfl | _ + 3, _ => rfl, fun r hr => ?_⟩
+  refine ⟨⟨rfl, rfl⟩, fun | 0, _ => rfl | 1, _ => rfl | 2, _ => rfl | _ + 3, _ => rfl, fun r hr => ?_⟩
   have hr : r ∈ [(⟨0x2000, 32⟩ : Region)] := hr
   rw [List.mem_singleton] at hr
   subst hr

@@ -32,11 +32,11 @@ def tail (op : Nat → Nat → Nat → Prog isa) : Prog isa :=
   .seq (VG.Impl.Ffdh.Arm.SharedCheckPublic.powerAt op 56 40 44)
     (.seq (VG.Impl.Ffdh.Arm.inRange 6) (.seq SharedExchange.finish (.block status)))
 
-def main (op : Nat → Nat → Nat → Prog isa) : Prog isa :=
-  .seq (VG.Impl.Ffdh.Arm.NormalizedPrepare.prepareAt op 24) (.seq (importAt 1 40 44)
+def main (op : Nat → Nat → Nat → Prog isa) (dbl : Prog isa) : Prog isa :=
+  .seq (VG.Impl.Ffdh.Arm.NormalizedPrepare.prepareAt op dbl 24) (.seq (importAt 1 40 44)
     (.seq CheckPrivate.scalarRange (ifFlag (tail op) fail)))
 
-def code (op : Nat → Nat → Nat → Prog isa) : Prog isa :=
-  VG.Impl.Ffdh.Arm.framed (.seq (.block entry) (head (main op)))
+def code (op : Nat → Nat → Nat → Prog isa) (dbl : Prog isa) : Prog isa :=
+  VG.Impl.Ffdh.Arm.framed (.seq (.block entry) (head (main op dbl)))
 
 end VG.Impl.Ffdh.Arm.SharedDerive

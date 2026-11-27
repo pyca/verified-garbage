@@ -1,9 +1,8 @@
 module
+
 public import VerifiedGarbage.Impl.AesCcm.X86
 public import VerifiedGarbage.Proof.AesGcm.X86.Fn
-
 import VerifiedGarbage.Proof.AesCcm.X86.Run
-import VerifiedGarbage.Proof.AesCcm.X86.Env
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
 import VerifiedGarbage.Proof.Aes.X86.AesNi.Lit
 import VerifiedGarbage.Proof.Framework.RegionsSub
@@ -69,7 +68,7 @@ theorem entry_ok {s : State} {W : BitVec 32} (hW : arg s 10 = W) (wW : Covers [�
   have hA₁ : ∀ i < 11, s₁.mem.readW (argA SP i) 32 = arg s i := fun i hi => by
     rw [f₁'.readW (r := ⟨argA SP i, 4⟩) (Region.contains_self _ _) (argW hi (by decide)) (by decide)]
     rw [arg, argAddr, hSP]
-  have ke : KeepEnv W SP 11 s₁ := ⟨bp₁, sp₁, by rw [wr₁]; exact wW, by rw [rd₁, wr₁]; exact rA, aw, fa, fw⟩
+  have ke : KeepEnv 2560 W SP 11 s₁ := ⟨bp₁, sp₁, by rw [wr₁]; exact wW, by rw [rd₁, wr₁]; exact rA, aw, fa, fw, by decide⟩
   obtain ⟨s₃, run₃, sl₃, f₃, g₃, rd₃, wr₃⟩ := keeps_ok entryPs (fun p hp => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hp
     rcases hp with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide) (by decide) ke
