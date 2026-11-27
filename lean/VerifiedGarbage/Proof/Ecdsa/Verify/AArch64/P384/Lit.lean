@@ -40,6 +40,8 @@ def verifyCode : Prog isa :=
   .seq (Cfg.scalars p384) <| .seq p384.nPow <| .seq (Cfg.uv p384) <|
   .seq P384Joint.points (Cfg.tail p384)
 
+materialize_code Impl.Ecdsa.Verify.AArch64.P384Joint.digitsBody
+
 materialize_code verifyCode
 
 /-- `verifyCode`'s literal under the name of the code it is: equal to it by

@@ -1,5 +1,7 @@
 module
 
+import VerifiedGarbage.Proof.Ecdsa.AArch64.CombCall
+
 public import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointMain
@@ -158,7 +160,7 @@ theorem verify_a64 (hL : Weierstrass.Law Spec.P521.curve) (hO : Weierstrass.Prim
     ∃ t s', Exec isa verifyP521 s t s' ∧ abiPreserved s s' ∧ verifyAArch64.post s s' := by
   obtain ⟨t, s', he, hsv, hpost⟩ := Joint.verify_ok (p521_ok hI) hL hO (by decide) hT
     (pre_of hs)
-  exact ⟨t, s', he, abiPreserved_of he verify_callsKeep verify_untouched verify_keepsV hsv, hpost⟩
+  exact ⟨t, s', he, abiPreserved_ofN he verify_callsKeep verify_untouched verify_keepsV hsv, hpost⟩
 
 /-- The contract's public inputs: the pointers, the table, and the key, digest and signature. -/
 theorem jacPublic_of_spec {s₁ s₂ : State}

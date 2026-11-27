@@ -22,7 +22,7 @@ theorem fixedStep_of_source {C : Curve} {base T : Addr} {P G : Point C} {s₀ : 
  (bytes : ∀j<577,s₀.mem (off base (P521Joint.KG.bits+j))=FastNaf.byte 7 u j)
  (one : tmv C P521Joint.K.M.n base s₀ (p521.sl ONEP)=1) :
  FixedStep C base P G s₀ u := by
- intro s j A hj hA sy h
+ intro g s j A hj hA sy h
  have src := source.unch h.st.unch (by decide) h.st.keep.rd h.st.keep.wr sy
  have gb : s.mem (off base (P521Joint.KG.bits+j))=FastNaf.byte 7 u j := by
   rw [h.st.unch.byte (by
@@ -34,7 +34,7 @@ theorem fixedStep_of_source {C : Curve} {base T : Addr} {P G : Point C} {s₀ : 
   unfold tmv
   rw [h.st.unch.wordsVal (by decide) (by decide)]
   exact one
- exact fixedDigit_ok hL hp hC hM3 hone hG hA hF h ho src hj gb
+ exact fixedDigit_ok hL hp hC hM3 hone hG hA ⟨hF.ro_lt, hF.zero, hF.pt, hF.digits⟩ h ho src hj gb
 
 /-- The concrete fixed generator discharges the loop's arithmetic callback. -/
 theorem window_source_ok {C : Curve} {base T : Addr} {u v : Nat} (hL : NafLay P521Joint.K 8192)

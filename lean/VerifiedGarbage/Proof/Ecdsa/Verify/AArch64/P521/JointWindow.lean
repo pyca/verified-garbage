@@ -1,5 +1,10 @@
 module
 
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.Lit
+
+import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.DigitCall
+import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+
 public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.JointFinish
 import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Window
@@ -28,7 +33,7 @@ open VG.Proof.Weierstrass VG.Proof.Weierstrass.AArch64 VG.Proof.Weierstrass.AArc
 open Spec.Weierstrass
 
 /-- The joint loop's shared doubling, by a doubling that does what the window's does. -/
-private theorem jointDoubleBy_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : NafLay K size)
+theorem jointDoubleBy_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : NafLay K size)
     (hC : Law C) (hM3 : AM3 C)
     {P : Point C} {s₀ s : State} (hF : NafFixed K C base s₀ P k) {A : Point C} (hA : onCurve C A=true)
     {d : Prog isa} (hd : DblSpec K C base size d K.R K.D (dblVR K)) {j : Nat}
@@ -77,12 +82,26 @@ theorem dbl_spec {C : Curve} {base : Addr} (hL : NafLay P521Joint.K 8192)
  DblSpec P521Joint.K C base 8192 P521Joint.double P521Joint.K.R P521Joint.K.D (dblVR P521Joint.K) :=
  (P521.doubles_ok (by decide +kernel) hL.win hL.al hp _ rfl).1
 
-/-- Fixed-generator arithmetic is independent of the joint loop's group recurrence. -/
+/-- Fixed-generator arithmetic also permits rebasing the ghost origin's registers for a call. -/
 def FixedStep (C : Curve) (base : Addr) (P G : Point C) (s₀ : State) (u : Nat) : Prop :=
- ∀(s : State) (j : Nat) (A : Point C),j<577 → onCurve C A=true →
-  s.syms=s₀.syms → JointDigitPost P521Joint.K C base 8192 P s₀ s j A →
+ ∀(g : VG.AArch64.Reg → BitVec 64) (s : State) (j : Nat) (A : Point C),j<577 → onCurve C A=true →
+  s.syms=s₀.syms → JointDigitPost P521Joint.K C base 8192 P {s₀ with gpr := g} s j A →
   WP isa P521Joint.fixedDigit s fun t=>
-   JointDigitPost P521Joint.K C base 8192 P s₀ t j (add A (FastNaf.point C G 7 u j))
+   JointDigitPost P521Joint.K C base 8192 P {s₀ with gpr := g} t j (add A (FastNaf.point C G 7 u j))
+
+theorem digitsBody_ok {C : Curve} {base : Addr} {P G A : Point C} {s₀ s : State} {u v j : Nat}
+ (hL : NafLay P521Joint.K 8192) (hp : UnitMod C.p (2^(64*P521Joint.K.M.n))) (hC : Law C)
+ (hM3 : AM3 C) (hone : P521Joint.K.one<C.p) (hP : onCurve C P=true)
+ (hA : onCurve C A=true) (hF : NafFixed P521Joint.K C base s₀ P v)
+ (fixed : FixedStep C base P G s₀ u) (hj : j<577) (sym : s.syms=s₀.syms)
+ (h : JointDoublePost P521Joint.K C base 8192 P s₀ s j A) :
+ WP isa P521Joint.digitsBody s fun t=>
+  JointDigitPost P521Joint.K C base 8192 P s₀ t j
+   (add (add A (FastNaf.point C P 5 v j)) (FastNaf.point C G 7 u j)) := by
+ rw [P521Joint.digitsBody]
+ refine WP.seq (WP.mono_syms (jointDigit_ok hL hp hC hM3 hone hP hA h.st hF h.cache hj h.x19 h.dlt h.d)
+  fun a ha sy=>?_) 
+ exact fixed s₀.gpr a j _ hj (hC.onCurve_add hA (Naf5.onCurve_point hC hP v j)) (sy.trans sym) ha
 
 theorem digits_ok {C : Curve} {base : Addr} {P G A : Point C} {s₀ s : State} {u v j : Nat}
  (hL : NafLay P521Joint.K 8192) (hp : UnitMod C.p (2^(64*P521Joint.K.M.n))) (hC : Law C)
@@ -93,10 +112,14 @@ theorem digits_ok {C : Curve} {base : Addr} {P G A : Point C} {s₀ s : State} {
  WP isa P521Joint.digits s fun t=>
   JointDigitPost P521Joint.K C base 8192 P s₀ t j
    (add (add A (FastNaf.point C P 5 v j)) (FastNaf.point C G 7 u j)) := by
- rw [P521Joint.digits]
- refine WP.seq (WP.mono_syms (jointDigit_ok hL hp hC hM3 hone hP hA h.st hF h.cache hj h.x19 h.dlt h.d)
-  fun a ha sy=>?_) 
- exact fixed a j _ hj (hC.onCurve_add hA (Naf5.onCurve_point hC hP v j)) (sy.trans sym) ha
+ unfold P521Joint.digits
+ refine callDigits_wp _ (by decide) (by intro r; cases r <;> decide) ?_ ?_ sym h
+ · have hv : P521Joint.digitsBody.allInstrs (fun i => vdstOf i != some .v31) = true := by lit_decide
+   rw [Code.allInstrs_eq] at hv
+   exact fun i hi => by simpa only [bne_iff_ne] using List.all_eq_true.mp hv i hi
+ · intro g a sy ha
+   exact digitsBody_ok hL hp hC hM3 hone hP hA
+     ⟨hF.ro_lt, hF.zero, hF.pt, hF.digits⟩ (fun g' => fixed g') hj sy ha
 
 theorem step_ok {C : Curve} {base : Addr} {P G : Point C} {s₀ s : State} {u v j : Nat}
  (hL : NafLay P521Joint.K 8192) (hp : UnitMod C.p (2^(64*P521Joint.K.M.n))) (hC : Law C)

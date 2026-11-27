@@ -1,5 +1,10 @@
 module
 
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.CombCall
+
+import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.DigitCall
+import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+
 import Batteries.Logic
 public import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
@@ -630,12 +635,26 @@ open VG.Impl.Ecdsa.Verify.AArch64 VG.Proof.Mont VG.Proof.Mont.AArch64
 open VG.Proof.Weierstrass VG.Proof.Weierstrass.AArch64 VG.Proof.Weierstrass.AArch64.PubNaf
 open Spec.Weierstrass
 
-/-- Fixed-generator arithmetic is independent of the joint loop's group recurrence. -/
+/-- Fixed-generator arithmetic also permits rebasing the ghost origin's registers for a call. -/
 def FixedStep (C : Curve) (base : Addr) (P G : Point C) (s₀ : State) (u : Nat) : Prop :=
- ∀(s : State) (j : Nat) (A : Point C),j<385 → onCurve C A=true →
-  s.syms=s₀.syms → JointDigitPost P384Joint.K C base 8192 P s₀ s j A →
+ ∀(g : VG.AArch64.Reg → BitVec 64) (s : State) (j : Nat) (A : Point C),j<385 → onCurve C A=true →
+  s.syms=s₀.syms → JointDigitPost P384Joint.K C base 8192 P {s₀ with gpr := g} s j A →
   WP isa P384Joint.fixedDigit s fun t=>
-   JointDigitPost P384Joint.K C base 8192 P s₀ t j (add A (FastNaf.point C G 9 u j))
+   JointDigitPost P384Joint.K C base 8192 P {s₀ with gpr := g} t j (add A (FastNaf.point C G 9 u j))
+
+theorem digitsBody_ok {C : Curve} {base : Addr} {P G A : Point C} {s₀ s : State} {u v j : Nat}
+ (hL : NafLay P384Joint.K 8192) (hp : UnitMod C.p (2^(64*P384Joint.K.M.n))) (hC : Law C)
+ (hM3 : AM3 C) (hone : P384Joint.K.one<C.p) (hP : onCurve C P=true)
+ (hA : onCurve C A=true) (hF : NafFixed P384Joint.K C base s₀ P v)
+ (fixed : FixedStep C base P G s₀ u) (hj : j<385) (sym : s.syms=s₀.syms)
+ (h : JointDoublePost P384Joint.K C base 8192 P s₀ s j A) :
+ WP isa P384Joint.digitsBody s fun t=>
+  JointDigitPost P384Joint.K C base 8192 P s₀ t j
+   (add (add A (FastNaf.point C P 5 v j)) (FastNaf.point C G 9 u j)) := by
+ rw [P384Joint.digitsBody]
+ refine WP.seq (WP.mono_syms (jointDigit_ok hL hp hC hM3 hone hP hA h.st hF h.cache hj h.x19 h.dlt h.d)
+  fun a ha sy=>?_) 
+ exact fixed s₀.gpr a j _ hj (hC.onCurve_add hA (Naf5.onCurve_point hC hP v j)) (sy.trans sym) ha
 
 theorem digits_ok {C : Curve} {base : Addr} {P G A : Point C} {s₀ s : State} {u v j : Nat}
  (hL : NafLay P384Joint.K 8192) (hp : UnitMod C.p (2^(64*P384Joint.K.M.n))) (hC : Law C)
@@ -646,10 +665,14 @@ theorem digits_ok {C : Curve} {base : Addr} {P G A : Point C} {s₀ s : State} {
  WP isa P384Joint.digits s fun t=>
   JointDigitPost P384Joint.K C base 8192 P s₀ t j
    (add (add A (FastNaf.point C P 5 v j)) (FastNaf.point C G 9 u j)) := by
- rw [P384Joint.digits]
- refine WP.seq (WP.mono_syms (jointDigit_ok hL hp hC hM3 hone hP hA h.st hF h.cache hj h.x19 h.dlt h.d)
-  fun a ha sy=>?_) 
- exact fixed a j _ hj (hC.onCurve_add hA (Naf5.onCurve_point hC hP v j)) (sy.trans sym) ha
+ unfold P384Joint.digits
+ refine callDigits_wp _ (by decide) (by intro r; cases r <;> decide) ?_ ?_ sym h
+ · have hv : P384Joint.digitsBody.allInstrs (fun i => vdstOf i != some .v31) = true := by lit_decide
+   rw [Code.allInstrs_eq] at hv
+   exact fun i hi => by simpa only [bne_iff_ne] using List.all_eq_true.mp hv i hi
+ · intro g a sy ha
+   exact digitsBody_ok hL hp hC hM3 hone hP hA
+     ⟨hF.ro_lt, hF.zero, hF.pt, hF.digits⟩ (fun g' => fixed g') hj sy ha
 
 theorem step_ok {C : Curve} {base : Addr} {P G : Point C} {s₀ s : State} {u v j : Nat}
  (hL : NafLay P384Joint.K 8192) (hp : UnitMod C.p (2^(64*P384Joint.K.M.n))) (hC : Law C)
@@ -939,7 +962,7 @@ theorem fixedStep_of_source {C : Curve} {base T : Addr} {P G : Point C} {s₀ : 
  (bytes : ∀j<770,s₀.mem (off base (P384Joint.KG.bits+j))=FastNaf.wbyte u j)
  (one : tmv C P384Joint.K.M.n base s₀ (p384.sl ONEP)=1) :
  FixedStep C base P G s₀ u := by
- intro s j A hj hA sy h
+ intro g s j A hj hA sy h
  have src := source.unch h.st.unch (by decide) h.st.keep.rd h.st.keep.wr sy
  have gb : GBytes base u j s :=
   GBytes.of_unch h.st.unch (fun w hw => generator_apart w (List.mem_append_left _ hw)) bytes hj
@@ -947,7 +970,7 @@ theorem fixedStep_of_source {C : Curve} {base T : Addr} {P G : Point C} {s₀ : 
   unfold tmv
   rw [h.st.unch.wordsVal (by decide) (by decide)]
   exact one
- exact fixedDigit_ok hL hp hC hM3 hone hG hA hF h ho src hj gb
+ exact fixedDigit_ok hL hp hC hM3 hone hG hA ⟨hF.ro_lt, hF.zero, hF.pt, hF.digits⟩ h ho src hj gb
 
 /-- The concrete fixed generator discharges the loop's arithmetic callback. -/
 theorem window_source_ok {C : Curve} {base T : Addr} {u v : Nat} (hL : NafLay P384Joint.K 8192)
@@ -1457,6 +1480,94 @@ def JointRelation (C : Curve) (base : Addr) (P G : Point C) (u v j : Nat) (s₀ 
  JointDigitPost P384Joint.K C base 8192 P t₀ t j (jointPoint G P u v j 9) ∧
  s.syms=s₀.syms ∧ t.syms=t₀.syms
 
+theorem jointDigitsBody_relCT {C : Curve} {base T : Addr} {P G A : Point C} {s₀ t₀ : State} {u v j : Nat}
+ (hL : NafLay P384Joint.K 8192) (hp : UnitMod C.p (2^(64*P384Joint.K.M.n))) (hC : Law C)
+ (hM3 : AM3 C) (hone : P384Joint.K.one<C.p) (hP : onCurve C P=true) (hG : onCurve C G=true)
+ (hA : onCurve C A=true)
+ (hF₁ : NafFixed P384Joint.K C base s₀ P v) (hF₂ : NafFixed P384Joint.K C base t₀ P v)
+ (g₁ : GeneratorInput C base T G u s₀) (g₂ : GeneratorInput C base T G u t₀)
+ (checks : DigitChecks P384Joint.K)
+ (mixed : JacMixedChecks P384Joint.K P384Joint.K.R P384Joint.K.E P384Joint.K.D)
+ (hj : j<385) :
+ RelCT isa (fun s t=>
+  (∃E,FieldPair P384Joint.K.M base 8192 C.p (·∈winSlots P384Joint.K) (digitLive P384Joint.K) E s t) ∧
+  JointDoublePost P384Joint.K C base 8192 P s₀ s j A ∧
+  JointDoublePost P384Joint.K C base 8192 P t₀ t j A ∧ s.syms=s₀.syms ∧ t.syms=t₀.syms)
+ P384Joint.digitsBody (fun s t=>
+  (∃E,FieldPair P384Joint.K.M base 8192 C.p (·∈winSlots P384Joint.K) (loopLive P384Joint.K) E s t) ∧
+  JointDigitPost P384Joint.K C base 8192 P s₀ s j
+   (add (add A (FastNaf.point C P 5 v j)) (FastNaf.point C G 9 u j)) ∧
+  JointDigitPost P384Joint.K C base 8192 P t₀ t j
+   (add (add A (FastNaf.point C P 5 v j)) (FastNaf.point C G 9 u j)) ∧
+  s.syms=s₀.syms ∧ t.syms=t₀.syms) := by
+ intro s t ts tt s' t' ⟨⟨E,pair⟩,hs,ht,sys,syt⟩ es et
+ have fs:=fixedStep_of_source hL hp hC hM3 hone hG hF₁ g₁.source g₁.bytes g₁.one
+ have ft:=fixedStep_of_source hL hp hC hM3 hone hG hF₂ g₂.source g₂.bytes g₂.one
+ obtain ⟨_,_,exs,postS⟩:=digitsBody_ok hL hp hC hM3 hone hP hA hF₁ fs hj sys hs
+ obtain ⟨_,_,ext,postT⟩:=digitsBody_ok hL hp hC hM3 hone hP hA hF₂ ft hj syt ht
+ obtain ⟨_,rfl⟩:=Exec.det es exs
+ obtain ⟨_,rfl⟩:=Exec.det et ext
+ have result : ts=tt ∧ ∃E,FieldPair P384Joint.K.M base 8192 C.p (·∈winSlots P384Joint.K)
+   (loopLive P384Joint.K) E s' t' := by
+  cases es with
+  | seq ps gs => cases et with
+    | seq pt gt =>
+     obtain ⟨he,E',hpair⟩:=digit_relCT hL hp hone checks hF₁ hF₂ hj
+      _ _ _ _ _ _ ⟨pair,hs.st,ht.st,hs.cache,ht.cache,hs.x19,ht.x19⟩ ps pt
+     obtain ⟨_,_,e1,h1⟩:=jointDigit_ok hL hp hC hM3 hone hP hA hs.st hF₁ hs.cache hj hs.x19 hs.dlt hs.d
+     obtain ⟨_,_,e2,h2⟩:=jointDigit_ok hL hp hC hM3 hone hP hA ht.st hF₂ ht.cache hj ht.x19 ht.dlt ht.d
+     obtain ⟨_,rfl⟩:=Exec.det ps e1
+     obtain ⟨_,rfl⟩:=Exec.det pt e2
+     have a:=g₁.current hj ((Exec.syms ps).trans sys) h1
+     have b:=g₂.current hj ((Exec.syms pt).trans syt) h2
+     have pair' : FieldPair P384Joint.K.M base 8192 C.p (·∈winSlots P384Joint.K)
+       (loopLive P384Joint.K) E' _ _ := hpair.sub (by decide)
+     have ev : E' (p384.sl ONEP)=1 := by
+      rw [←pair'.left.val _ (by decide)]
+      exact a.2
+     obtain ⟨hg,res⟩:=fixedDigit_relCT hL hC hp hone ev hj mixed
+      _ _ _ _ _ _ ⟨pair',a.1,b.1⟩ gs gt
+     exact ⟨by rw [he,hg],res⟩
+ exact ⟨result.1,result.2,postS,postT,(Exec.syms es).trans sys,(Exec.syms et).trans syt⟩
+theorem jointDigits_relCT {C : Curve} {base T : Addr} {P G A : Point C} {s₀ t₀ : State} {u v j : Nat}
+ (hL : NafLay P384Joint.K 8192) (hp : UnitMod C.p (2^(64*P384Joint.K.M.n))) (hC : Law C)
+ (hM3 : AM3 C) (hone : P384Joint.K.one<C.p) (hP : onCurve C P=true) (hG : onCurve C G=true)
+ (hA : onCurve C A=true)
+ (hF₁ : NafFixed P384Joint.K C base s₀ P v) (hF₂ : NafFixed P384Joint.K C base t₀ P v)
+ (g₁ : GeneratorInput C base T G u s₀) (g₂ : GeneratorInput C base T G u t₀)
+ (checks : DigitChecks P384Joint.K)
+ (mixed : JacMixedChecks P384Joint.K P384Joint.K.R P384Joint.K.E P384Joint.K.D)
+ (hj : j<385) :
+ RelCT isa (fun s t=>
+  (∃E,FieldPair P384Joint.K.M base 8192 C.p (·∈winSlots P384Joint.K) (digitLive P384Joint.K) E s t) ∧
+  JointDoublePost P384Joint.K C base 8192 P s₀ s j A ∧
+  JointDoublePost P384Joint.K C base 8192 P t₀ t j A ∧ s.syms=s₀.syms ∧ t.syms=t₀.syms)
+ P384Joint.digits (fun s t=>
+  (∃E,FieldPair P384Joint.K.M base 8192 C.p (·∈winSlots P384Joint.K) (loopLive P384Joint.K) E s t) ∧
+  JointDigitPost P384Joint.K C base 8192 P s₀ s j
+   (add (add A (FastNaf.point C P 5 v j)) (FastNaf.point C G 9 u j)) ∧
+  JointDigitPost P384Joint.K C base 8192 P t₀ t j
+   (add (add A (FastNaf.point C P 5 v j)) (FastNaf.point C G 9 u j)) ∧
+  s.syms=s₀.syms ∧ t.syms=t₀.syms) := by
+ intro s t ts tt s' t' ⟨⟨E,pair⟩,hs,ht,sys,syt⟩ es et
+ have fs:=fixedStep_of_source hL hp hC hM3 hone hG hF₁ g₁.source g₁.bytes g₁.one
+ have ft:=fixedStep_of_source hL hp hC hM3 hone hG hF₂ g₂.source g₂.bytes g₂.one
+ obtain ⟨_,_,exs,postS⟩:=digits_ok hL hp hC hM3 hone hP hA hF₁ fs hj sys hs
+ obtain ⟨_,_,ext,postT⟩:=digits_ok hL hp hC hM3 hone hP hA hF₂ ft hj syt ht
+ obtain ⟨_,rfl⟩:=Exec.det es exs
+ obtain ⟨_,rfl⟩:=Exec.det et ext
+ have hf₁ : NafFixed P384Joint.K C base (digitOrigin s₀ s) P v := ⟨hF₁.ro_lt,hF₁.zero,hF₁.pt,hF₁.digits⟩
+ have hf₂ : NafFixed P384Joint.K C base (digitOrigin t₀ t) P v := ⟨hF₂.ro_lt,hF₂.zero,hF₂.pt,hF₂.digits⟩
+ have gg₁ : GeneratorInput C base T G u (digitOrigin s₀ s) := g₁.rebase (Unch.refl _ _ _) rfl rfl rfl
+ have gg₂ : GeneratorInput C base T G u (digitOrigin t₀ t) := g₂.rebase (Unch.refl _ _ _) rfl rfl rfl
+ obtain ⟨he,a,b,hq,rfl,rfl⟩ := callDigits_relCT "vg_ecdsa_p384_verify_digits"
+   (jointDigitsBody_relCT hL hp hC hM3 hone hP hG hA hf₁ hf₂ gg₁ gg₂ checks mixed hj)
+   _ _ _ _ _ _ (show _ from ⟨⟨E,pair.digitSaved⟩,
+     digitCall_pre (by intro r; cases r <;> decide) hs,
+     digitCall_pre (by intro r; cases r <;> decide) ht,sys,syt⟩) es et
+ obtain ⟨E',pair'⟩ := hq.1
+ exact ⟨he,⟨E',pair'.digitRestored⟩,postS,postT,(Exec.syms es).trans sys,(Exec.syms et).trans syt⟩
+
 theorem jointStep_relCT {C : Curve} {base T : Addr} {P G : Point C} {s₀ t₀ : State} {u v j : Nat}
  (hL : NafLay P384Joint.K 8192) (hp : UnitMod C.p (2^(64*P384Joint.K.M.n))) (hC : Law C)
  (hM3 : AM3 C) (hone : P384Joint.K.one<C.p) (hP : onCurve C P=true) (hG : onCurve C G=true)
@@ -1479,31 +1590,25 @@ theorem jointStep_relCT {C : Curve} {base T : Addr} {P G : Point C} {s₀ t₀ :
  have result : ts=tt ∧ ∃E,FieldPair P384Joint.K.M base 8192 C.p (·∈winSlots P384Joint.K)
    (loopLive P384Joint.K) E s' t' := by
   cases es with
-  | seq ds es => cases es with
-    | seq dbs es => cases es with
-      | seq ps gs =>
-       cases et with
-       | seq dt et => cases et with
-         | seq dbt et => cases et with
-           | seq pt gt =>
-            have eps : Exec isa (PubNaf.stepD P384Joint.K P384Joint.double) _ _ _ := .seq ds (.seq dbs ps)
-            have ept : Exec isa (PubNaf.stepD P384Joint.K P384Joint.double) _ _ _ := .seq dt (.seq dbt pt)
-            obtain ⟨he,E,hpair⟩:=stepDRaw_relCT hL hp hone checks hD hct hF₁ hF₂ (j:=j) (by change j<385; omega_using [hj])
-             _ _ _ _ _ _ ⟨pair,hs.st,ht.st,hs.cache,ht.cache,hs.x19,ht.x19⟩ eps ept
-            have hcA:=jointPoint_curve hC hG hP u v (j+1) 9
-            obtain ⟨_,_,e1,h1⟩:=peerStepD_ok hL hp hC hM3 hone hP hcA hD hF₁ hj hs
-            obtain ⟨_,_,e2,h2⟩:=peerStepD_ok hL hp hC hM3 hone hP hcA hD hF₂ hj ht
-            obtain ⟨_,rfl⟩:=Exec.det eps e1
-            obtain ⟨_,rfl⟩:=Exec.det ept e2
-            have a:=g₁.current (by omega_using [hj]) ((Exec.syms eps).trans sys) h1
-            have b:=g₂.current (by omega_using [hj]) ((Exec.syms ept).trans syt) h2
-            have ev : E (p384.sl ONEP)=1 := by
-             rw [←hpair.left.val _ (by decide)]
-             exact a.2
-            obtain ⟨hg,res⟩:=fixedDigit_relCT hL hC hp hone ev (by omega_using [hj]) mixed
-             _ _ _ _ _ _ ⟨hpair,a.1,b.1⟩ gs gt
-            exact ⟨by simpa only [List.append_assoc] using congr (congrArg HAppend.hAppend he) hg,res⟩
+  | seq ds rest => cases rest with
+    | seq dbs gs => cases et with
+      | seq dt rest => cases rest with
+        | seq dbt gt =>
+          have eps := Exec.seq ds dbs
+          have ept := Exec.seq dt dbt
+          have hcA := jointPoint_curve hC hG hP u v (j+1) 9
+          obtain ⟨_,_,e1,h1⟩ := jointDoubleD_ok hL hC hM3 hF₁ hcA hD (by change j<385; omega_using [hj]) hs
+          obtain ⟨_,_,e2,h2⟩ := jointDoubleD_ok hL hC hM3 hF₂ hcA hD (by change j<385; omega_using [hj]) ht
+          obtain ⟨_,rfl⟩ := Exec.det eps e1
+          obtain ⟨_,rfl⟩ := Exec.det ept e2
+          obtain ⟨he,⟨E',pair'⟩,_⟩ := doubleDRaw_relCT hL checks hD hct (j:=j) (by change j<385; omega_using [hj])
+            _ _ _ _ _ _ ⟨pair,hs.st,ht.st,hs.cache,ht.cache,hs.x19,ht.x19⟩ eps ept
+          obtain ⟨hg,⟨E'',pair''⟩,_⟩ := jointDigits_relCT hL hp hC hM3 hone hP hG (hC.onCurve_add hcA hcA)
+            hF₁ hF₂ g₁ g₂ checks.digit mixed (by omega_using [hj])
+            _ _ _ _ _ _ ⟨⟨E',pair'⟩,h1,h2,(Exec.syms eps).trans sys,(Exec.syms ept).trans syt⟩ gs gt
+          exact ⟨by simpa only [List.append_assoc] using congr (congrArg HAppend.hAppend he) hg,E'',pair''⟩
  exact ⟨result.1,result.2,postS,postT,(Exec.syms es).trans sys,(Exec.syms et).trans syt⟩
+
 end VG.Proof.Ecdsa.Verify.AArch64.P384.Joint
 
 end
@@ -1852,70 +1957,6 @@ theorem prepare_relCT {base : Addr}
  have tp:=PubNaf.prep_relCT P384Joint.K regs (by decide) (by decide) (by decide) (by decide) h5
    _ _ _ _ _ _ ⟨ss,st,ks.sp.trans (sp.trans kt.sp.symm),vv⟩ ps pt
  exact ⟨by rw [tr.1,tp.1],trivial⟩
-end VG.Proof.Ecdsa.Verify.AArch64.P384.Joint
-end
-
-end
-
--- Formerly `VerifiedGarbage/Proof/Ecdsa/Verify/AArch64/P384/JointDigitsTiming.lean`, which only this module imported.
-section
-
-section
-namespace VG.Proof.Ecdsa.Verify.AArch64.P384.Joint
-open VG VG.AArch64 VG.Impl.Mont VG.Impl.Mont.AArch64 VG.Impl.Weierstrass VG.Impl.Weierstrass.AArch64
-open VG.Impl.Ecdsa.Verify.AArch64 VG.Impl.Ecdsa.AArch64 VG.Proof.Mont VG.Proof.Mont.AArch64
-open VG.Proof.Weierstrass VG.Proof.Weierstrass.AArch64 VG.Proof.Weierstrass.AArch64.PubNaf
-open Spec.Weierstrass
-
-theorem jointDigits_relCT {C : Curve} {base T : Addr} {P G A : Point C} {s₀ t₀ : State} {u v j : Nat}
- (hL : NafLay P384Joint.K 8192) (hp : UnitMod C.p (2^(64*P384Joint.K.M.n))) (hC : Law C)
- (hM3 : AM3 C) (hone : P384Joint.K.one<C.p) (hP : onCurve C P=true) (hG : onCurve C G=true)
- (hA : onCurve C A=true)
- (hF₁ : NafFixed P384Joint.K C base s₀ P v) (hF₂ : NafFixed P384Joint.K C base t₀ P v)
- (g₁ : GeneratorInput C base T G u s₀) (g₂ : GeneratorInput C base T G u t₀)
- (checks : DigitChecks P384Joint.K)
- (mixed : JacMixedChecks P384Joint.K P384Joint.K.R P384Joint.K.E P384Joint.K.D)
- (hj : j<385) :
- RelCT isa (fun s t=>
-  (∃E,FieldPair P384Joint.K.M base 8192 C.p (·∈winSlots P384Joint.K) (digitLive P384Joint.K) E s t) ∧
-  JointDoublePost P384Joint.K C base 8192 P s₀ s j A ∧
-  JointDoublePost P384Joint.K C base 8192 P t₀ t j A ∧ s.syms=s₀.syms ∧ t.syms=t₀.syms)
- P384Joint.digits (fun s t=>
-  (∃E,FieldPair P384Joint.K.M base 8192 C.p (·∈winSlots P384Joint.K) (loopLive P384Joint.K) E s t) ∧
-  JointDigitPost P384Joint.K C base 8192 P s₀ s j
-   (add (add A (FastNaf.point C P 5 v j)) (FastNaf.point C G 9 u j)) ∧
-  JointDigitPost P384Joint.K C base 8192 P t₀ t j
-   (add (add A (FastNaf.point C P 5 v j)) (FastNaf.point C G 9 u j)) ∧
-  s.syms=s₀.syms ∧ t.syms=t₀.syms) := by
- intro s t ts tt s' t' ⟨⟨E,pair⟩,hs,ht,sys,syt⟩ es et
- have fs:=fixedStep_of_source hL hp hC hM3 hone hG hF₁ g₁.source g₁.bytes g₁.one
- have ft:=fixedStep_of_source hL hp hC hM3 hone hG hF₂ g₂.source g₂.bytes g₂.one
- obtain ⟨_,_,exs,postS⟩:=digits_ok hL hp hC hM3 hone hP hA hF₁ fs hj sys hs
- obtain ⟨_,_,ext,postT⟩:=digits_ok hL hp hC hM3 hone hP hA hF₂ ft hj syt ht
- obtain ⟨_,rfl⟩:=Exec.det es exs
- obtain ⟨_,rfl⟩:=Exec.det et ext
- have result : ts=tt ∧ ∃E,FieldPair P384Joint.K.M base 8192 C.p (·∈winSlots P384Joint.K)
-   (loopLive P384Joint.K) E s' t' := by
-  cases es with
-  | seq ps gs => cases et with
-    | seq pt gt =>
-     obtain ⟨he,E',hpair⟩:=digit_relCT hL hp hone checks hF₁ hF₂ hj
-      _ _ _ _ _ _ ⟨pair,hs.st,ht.st,hs.cache,ht.cache,hs.x19,ht.x19⟩ ps pt
-     obtain ⟨_,_,e1,h1⟩:=jointDigit_ok hL hp hC hM3 hone hP hA hs.st hF₁ hs.cache hj hs.x19 hs.dlt hs.d
-     obtain ⟨_,_,e2,h2⟩:=jointDigit_ok hL hp hC hM3 hone hP hA ht.st hF₂ ht.cache hj ht.x19 ht.dlt ht.d
-     obtain ⟨_,rfl⟩:=Exec.det ps e1
-     obtain ⟨_,rfl⟩:=Exec.det pt e2
-     have a:=g₁.current hj ((Exec.syms ps).trans sys) h1
-     have b:=g₂.current hj ((Exec.syms pt).trans syt) h2
-     have pair' : FieldPair P384Joint.K.M base 8192 C.p (·∈winSlots P384Joint.K)
-       (loopLive P384Joint.K) E' _ _ := hpair.sub (by decide)
-     have ev : E' (p384.sl ONEP)=1 := by
-      rw [←pair'.left.val _ (by decide)]
-      exact a.2
-     obtain ⟨hg,res⟩:=fixedDigit_relCT hL hC hp hone ev hj mixed
-      _ _ _ _ _ _ ⟨pair',a.1,b.1⟩ gs gt
-     exact ⟨by rw [he,hg],res⟩
- exact ⟨result.1,result.2,postS,postT,(Exec.syms es).trans sys,(Exec.syms et).trans syt⟩
 end VG.Proof.Ecdsa.Verify.AArch64.P384.Joint
 end
 
@@ -2340,7 +2381,7 @@ theorem dbl_spec (hI : Weierstrass.AArch64.InvSounds) (base : Addr) :
   (P384.EcdhDouble.dblsOk P384.EcdhDouble.p384_C_p (Ecdh.AArch64.winLayQ (p384_ok hI))
     (Ecdh.AArch64.winAQ (p384_ok hI)) (Weierstrass.unitMod_pow_two (p384_ok hI).p_odd _) base _ rfl).1
 
-theorem verify_callsKeep : CallsKeep verifyP384 := by lit_decide
+theorem verify_callsKeep : CallsKeepN verifyP384 := by lit_decide
 
 theorem verify_untouched : KeepsUntouched verifyP384 := by lit_decide
 
@@ -2353,7 +2394,7 @@ theorem verify_a64 (hL : Weierstrass.Law Spec.P384.curve) (hO : Weierstrass.Prim
     ∃ t s', Exec isa verifyP384 s t s' ∧ abiPreserved s s' ∧ verifyGAArch64.post s s' := by
   obtain ⟨t, s', he, hsv, hpost⟩ := Joint.verify_ok (p384_ok hI) hL hO (by decide) hT (dbl_spec hI)
     (vpreG_of hs)
-  exact ⟨t, s', he, abiPreserved_of he verify_callsKeep verify_untouched verify_keepsV hsv, hpost⟩
+  exact ⟨t, s', he, abiPreserved_ofN he verify_callsKeep verify_untouched verify_keepsV hsv, hpost⟩
 
 theorem verify_ct (hL : Weierstrass.Law Spec.P384.curve) (hO : Weierstrass.PrimeOrder Spec.P384.curve)
     (hI : Weierstrass.AArch64.InvSounds)
