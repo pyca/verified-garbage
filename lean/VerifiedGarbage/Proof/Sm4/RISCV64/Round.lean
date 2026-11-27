@@ -36,7 +36,7 @@ XOR of input bits given here.
 * The transposes (`toBs`, `fromBs`): the tail buffer's sixteen blocks
   (slots 96–127) are input words `0 … 31`; the state's planes are.
 * A round key's planes before their fill (`keyPre`; the fill,
-  `keyFill`, is a subtraction, `Keys.lean`): the schedule's word at
+  `keyFill`, is a multiplication, `Ecb.lean`): the schedule's word at
   `a0` is input word `0`.
 
 Position `p = 16 i + b` of a plane is byte `i` (from the most significant)
@@ -48,7 +48,7 @@ of the word of block `b`.
 namespace VG.Proof.Sm4.RISCV64
 
 open VG VG.RISCV64 VG.RISCV64.Straight VG.Bitslice VG.Impl.Sm4.RISCV64
-open VG.Impl.Aes.RISCV64 (q sb t0 t1 bsMasks)
+open VG.Impl.Aes.RISCV64 (q sb t0 t1)
 open VG.Proof.Sm4 (rotP)
 open VG.Impl.Sm4 (Lin)
 
