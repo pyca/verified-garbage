@@ -570,7 +570,7 @@ theorem setLane_bit_hi (x : BitVec 128) (v : BitVec 32) {j t : Nat} (h : ¬ j < 
     (ht : t < 8) : (setLane x 32 3 v).getLsbD (8 * j + t) = v.getLsbD (8 * (j - 12) + t) := by
   simp only [setLane, BitVec.getLsbD_or, BitVec.getLsbD_and, BitVec.getLsbD_not,
     BitVec.getLsbD_shiftLeft, BitVec.getLsbD_setWidth, BitVec.getLsbD_allOnes]
-  simp (disch := omega) only [decide_eq_true, decide_eq_false, Bool.not_true, Bool.not_false,
+  simp (disch := omega_arith) only [decide_eq_true, decide_eq_false, Bool.not_true, Bool.not_false,
     Bool.and_false, Bool.and_true, Bool.true_and, Bool.false_or]
   exact congrArg _ (by omega_using [h])
 

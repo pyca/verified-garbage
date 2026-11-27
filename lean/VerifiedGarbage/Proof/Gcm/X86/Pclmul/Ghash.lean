@@ -260,7 +260,7 @@ theorem shufDwords_4e (a : BitVec 128) : shufDwords a 0x4e = qword a 0 ++ qword 
   apply BitVec.eq_of_getLsbD_eq; intro i hi
   simp only [getLsbD_ofDwords, getLsbD_dword, qword, BitVec.getLsbD_append, BitVec.getLsbD_extractLsb']
   rcases (by omega_using [] : i < 32 ∨ (32 ≤ i ∧ i < 64) ∨ (64 ≤ i ∧ i < 96) ∨ 96 ≤ i) with h | h | h | h <;>
-  simp (disch := omega) only [ite_eq_left, ite_eq_right, decide_eq_true, Bool.true_and] <;>
+  simp (disch := omega_arith) only [ite_eq_left, ite_eq_right, decide_eq_true, Bool.true_and] <;>
   exact congrArg _ (by omega_arith)
 
 theorem qword_append_0 (h l : BitVec 64) : qword (h ++ l) 0 = l := by
@@ -318,11 +318,11 @@ theorem shl1 (h : BitVec 128) :
     BitVec.getLsbD_ushiftRight, qword, BitVec.getLsbD_extractLsb']
   rcases (by omega_using [] : i = 0 ∨ (1 ≤ i ∧ i < 64) ∨ i = 64 ∨ 64 < i) with h | h | h | h
   · subst h; simp only [Nat.ofNat_pos, ↓reduceIte, decide_true, Order.lt_one_iff, Bool.not_true, Bool.and_false, zero_tsub, mul_zero, add_zero, BitVec.getLsbD_eq_getElem, Bool.true_and, Bool.false_and, Nat.lt_add_one, zero_add, Nat.reduceLT, Bool.or_self]
-  · simp (disch := omega) only [ite_eq_left, decide_eq_true, decide_eq_false, Bool.true_and,
+  · simp (disch := omega_arith) only [ite_eq_left, decide_eq_true, decide_eq_false, Bool.true_and,
       Bool.not_false, Bool.false_and, Bool.or_false, Bool.and_false, Bool.and_true, Bool.not_true]
     exact congrArg _ (by omega_using [])
   · subst h; simp
-  · simp (disch := omega) only [ite_eq_left, ite_eq_right, decide_eq_true, decide_eq_false,
+  · simp (disch := omega_arith) only [ite_eq_left, ite_eq_right, decide_eq_true, decide_eq_false,
       Bool.true_and, Bool.not_false, Bool.false_and, Bool.or_false, Bool.and_false, Bool.and_true,
       Bool.not_true]
     exact congrArg _ (by omega_using [h])

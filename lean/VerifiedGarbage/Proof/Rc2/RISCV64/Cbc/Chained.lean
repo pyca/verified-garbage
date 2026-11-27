@@ -1034,12 +1034,12 @@ theorem pack_or (v : Spec.Rc2.State) :
   by_cases h₁ : j < 16
   · simp (disch := omega_arith) [h₁, hj, show j < 32 by omega_using [h₁], show j < 48 by omega_using [h₁]]
   · by_cases h₂ : j < 32
-    · simp (disch := omega) [h₁, h₂, hj, show j < 48 by omega_using [h₂], show j - 16 < 64 by omega_using [hj], show j - 16 < 16 by omega_using [h₂],
+    · simp (disch := omega_arith) [h₁, h₂, hj, show j < 48 by omega_using [h₂], show j - 16 < 64 by omega_using [hj], show j - 16 < 16 by omega_using [h₂],
         BitVec.getLsbD_of_ge]
     · by_cases h₃ : j < 48
-      · simp (disch := omega) [h₁, h₂, h₃, hj, show j - 32 < 64 by omega_using [hj], show ¬j - 16 < 16 by omega_using [h₂],
+      · simp (disch := omega_arith) [h₁, h₂, h₃, hj, show j - 32 < 64 by omega_using [hj], show ¬j - 16 < 16 by omega_using [h₂],
           show j - 16 - 16 = j - 32 by omega_using [], show j - 32 < 16 by omega_using [h₃], BitVec.getLsbD_of_ge]
-      · simp (disch := omega) [h₁, h₂, h₃, hj, show j - 48 < 64 by omega_using [hj], show ¬j - 16 < 16 by omega_using [h₂],
+      · simp (disch := omega_arith) [h₁, h₂, h₃, hj, show j - 48 < 64 by omega_using [hj], show ¬j - 16 < 16 by omega_using [h₂],
           show j - 16 - 16 = j - 32 by omega_using [], show ¬j - 32 < 16 by omega_using [h₃], show j - 32 - 16 = j - 48 by omega_using [],
           BitVec.getLsbD_of_ge]
 

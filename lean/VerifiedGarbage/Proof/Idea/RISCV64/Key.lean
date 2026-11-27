@@ -423,7 +423,7 @@ theorem append8_getLsbD (b0 b1 b2 b3 b4 b5 b6 b7 : BitVec 8) {k b : Nat} (hk : k
   obtain rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl :
       k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4 ∨ k = 5 ∨ k = 6 ∨ k = 7 := by omega_using [hk]
   all_goals
-    simp (disch := omega) only [BitVec.getLsbD_append, ite_eq_left, ite_eq_right, List.getD_cons_zero,
+    simp (disch := omega_arith) only [BitVec.getLsbD_append, ite_eq_left, ite_eq_right, List.getD_cons_zero,
       List.getD_cons_succ]
     congr 1
     omega_using []

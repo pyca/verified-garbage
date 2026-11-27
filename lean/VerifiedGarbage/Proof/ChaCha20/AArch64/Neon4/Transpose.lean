@@ -33,10 +33,10 @@ theorem zip1_d2 (x y : BitVec 128) :
   by_cases h : i < 64
   · by_cases h' : i < 32
     · simp (disch := omega_arith) only [↓ite_eq_left, decide_eq_true, Bool.true_and]
-    · simp (disch := omega) only [↓ite_eq_left, ↓ite_eq_right, decide_eq_true, Bool.true_and]
+    · simp (disch := omega_arith) only [↓ite_eq_left, ↓ite_eq_right, decide_eq_true, Bool.true_and]
       congr 1 <;> omega_using [h']
   · by_cases h' : i < 96
-    · simp (disch := omega) only [↓ite_eq_left, ↓ite_eq_right, decide_eq_true, Bool.true_and]
+    · simp (disch := omega_arith) only [↓ite_eq_left, ↓ite_eq_right, decide_eq_true, Bool.true_and]
       congr 1 <;> omega
     · simp (disch := omega_arith) only [↓ite_eq_right, decide_eq_true, Bool.true_and]
       congr 1 <;> omega_using [h']
@@ -52,10 +52,10 @@ theorem zip2_d2 (x y : BitVec 128) :
   by_cases h : i < 64
   · by_cases h' : i < 32
     · simp (disch := omega_arith) only [↓ite_eq_left, decide_eq_true, Bool.true_and]
-    · simp (disch := omega) only [↓ite_eq_left, ↓ite_eq_right, decide_eq_true, Bool.true_and]
+    · simp (disch := omega_arith) only [↓ite_eq_left, ↓ite_eq_right, decide_eq_true, Bool.true_and]
       congr 1 <;> omega_using [h']
   · by_cases h' : i < 96
-    · simp (disch := omega) only [↓ite_eq_left, ↓ite_eq_right, decide_eq_true, Bool.true_and]
+    · simp (disch := omega_arith) only [↓ite_eq_left, ↓ite_eq_right, decide_eq_true, Bool.true_and]
       congr 1 <;> omega
     · simp (disch := omega_arith) only [↓ite_eq_right, decide_eq_true, Bool.true_and]
       congr 1 <;> omega_using [h']

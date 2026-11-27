@@ -343,7 +343,7 @@ theorem byte4 (x0 x1 x2 x3 : BitVec 8) {b : Nat} (hb : b < 4) :
   rw [BitVec.getLsbD_and, BitVec.getLsbD_ofNat, Nat.testBit_two_pow_sub_one]
   rcases cases4 hb with rfl | rfl | rfl | rfl <;>
   by_cases h8 : j < 8 <;>
-    simp (disch := omega) [BitVec.getLsbD_setWidth, BitVec.getLsbD_or, BitVec.getLsbD_shiftLeft, hj, h8,
+    simp (disch := omega_arith) [BitVec.getLsbD_setWidth, BitVec.getLsbD_or, BitVec.getLsbD_shiftLeft, hj, h8,
       BitVec.getLsbD_of_ge, decide_eq_true, decide_eq_false]
 
 

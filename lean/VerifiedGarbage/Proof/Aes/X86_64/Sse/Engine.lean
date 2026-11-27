@@ -291,7 +291,7 @@ theorem qword_dup44 (a : BitVec 128) {l : Nat} (hl : l < 2) : qword (shufDwords 
   all_goals
     rcases (by omega : i < 32 ∨ 32 ≤ i) with h | h
     all_goals
-      simp (disch := omega) only [↓ite_eq_left, ↓ite_eq_right, decide_eq_true, Bool.true_and]
+      simp (disch := omega_arith) only [↓ite_eq_left, ↓ite_eq_right, decide_eq_true, Bool.true_and]
       exact congrArg _ (by omega)
 
 theorem qword_dupee (a : BitVec 128) {l : Nat} (hl : l < 2) : qword (shufDwords a 0xee) l = qword a 1 := by
@@ -302,7 +302,7 @@ theorem qword_dupee (a : BitVec 128) {l : Nat} (hl : l < 2) : qword (shufDwords 
   all_goals
     rcases (by omega : i < 32 ∨ 32 ≤ i) with h | h
     all_goals
-      simp (disch := omega) only [↓ite_eq_left, ↓ite_eq_right, decide_eq_true, Bool.true_and]
+      simp (disch := omega_arith) only [↓ite_eq_left, ↓ite_eq_right, decide_eq_true, Bool.true_and]
       exact congrArg _ (by omega)
 
 theorem qword_unpckl (a b : BitVec 128) {l : Nat} (hl : l < 2) :

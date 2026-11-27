@@ -1769,25 +1769,25 @@ theorem expStart_zero {r : Nat} (h0 : 0 < r) (h1 : r < 2 * l.R) : expStart l r =
   rw [expStart, ite_eq_right (by omega), ite_eq_left h1]
 
 theorem expStart_Bq : expStart l (znBq l 0) = zB0 l := by
-  simp (disch := omega) only [expStart, znBq, hR, ↓ite_eq_right, ↓ite_eq_left]
+  simp (disch := omega_arith) only [expStart, znBq, hR, ↓ite_eq_right, ↓ite_eq_left]
 
 theorem expStart_Uq : expStart l (znUq l 1) = .zero := by
-  simp (disch := omega) only [expStart, znBq, znUq, hR, ↓ite_eq_right, ↓ite_eq_left]
+  simp (disch := omega_arith) only [expStart, znBq, znUq, hR, ↓ite_eq_right, ↓ite_eq_left]
 
 theorem expStart_K :
     expStart l (znK l) = .ins (.perm (.lane0 .rax) 0x40) (.perm (.lane0 .rax) 0x40) := by
-  simp (disch := omega) only [expStart, znBq, znUq, znK, hR, ↓ite_eq_right, ↓ite_eq_left]
+  simp (disch := omega_arith) only [expStart, znBq, znUq, znK, hR, ↓ite_eq_right, ↓ite_eq_left]
 
 theorem expStart_M1 : expStart l (znM l 1) = .perm (zLd l .r10 (l.oMs + 32 * (l.R - 1))) 0x93 := by
-  simp (disch := omega) only [expStart, znBq, znUq, znK, znT, znM, hR, ↓ite_eq_right, ↓ite_eq_left]
+  simp (disch := omega_arith) only [expStart, znBq, znUq, znK, znT, znM, hR, ↓ite_eq_right, ↓ite_eq_left]
 
 theorem expStart_A {kk : Nat} (hkk : kk < 6) : expStart l (znA l kk) = zLd l .r8 (32 * kk) := by
-  simp (disch := omega) only [expStart, znBq, znUq, znK, znT, znM, znA, hR, ↓ite_eq_right, ↓ite_eq_left]
+  simp (disch := omega_arith) only [expStart, znBq, znUq, znK, znT, znM, znA, hR, ↓ite_eq_right, ↓ite_eq_left]
   congr 2; omega_using []
 
 theorem expStart_M {kk : Nat} (h1 : 2 ≤ kk) (hkk : kk < 8) :
     expStart l (znM l kk) = zLd l .r10 (l.oMs + 32 * (kk - 2)) := by
-  simp (disch := omega) only [expStart, znBq, znUq, znK, znT, znM, znA, hR, ↓ite_eq_right, ↓ite_eq_left]
+  simp (disch := omega_arith) only [expStart, znBq, znUq, znK, znT, znM, znA, hR, ↓ite_eq_right, ↓ite_eq_left]
   congr 3; omega_using []
 
 end StartRegs

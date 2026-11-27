@@ -49,7 +49,7 @@ theorem vword_pack4 (f : Nat → BitVec 32) {i : Nat} (hi : i < 4) :
     BitVec.getLsbD_or, BitVec.getLsbD_shiftLeft, BitVec.getLsbD_setWidth, BitVec.ofNat_eq_ofNat,
     BitVec.getLsbD_zero, Bool.false_or]
   rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3) with rfl | rfl | rfl | rfl
-  all_goals simp (disch := omega) only [decide_eq_true, decide_eq_false, BitVec.getLsbD_of_ge,
+  all_goals simp (disch := omega_arith) only [decide_eq_true, decide_eq_false, BitVec.getLsbD_of_ge,
     Bool.true_and, Bool.false_and, Bool.and_false, Bool.and_true, Bool.not_false, Bool.not_true,
     Bool.false_or, Bool.or_false]
   all_goals exact congrArg _ (by omega_using [])
@@ -92,7 +92,7 @@ theorem vword_row (m : Mem) (a : Addr) {p : Nat} (hp : p < 4) :
     ← Mem.readW_byte _ _ ht, BitVec.add_assoc, ← BitVec.ofNat_add]
   congr 3
   rcases (by omega_using [hp] : p = 0 ∨ p = 1 ∨ p = 2 ∨ p = 3) with rfl | rfl | rfl | rfl <;>
-    simp (disch := omega) only [↓ite_eq_left, ↓ite_eq_right, Nat.reduceXor] <;> omega_using []
+    simp (disch := omega_arith) only [↓ite_eq_left, ↓ite_eq_right, Nat.reduceXor] <;> omega_using []
 
 /-- Byte `k` of what `stxvd2x` stores of a vector of words `w₁, w₀, w₃, w₂`
 (most significant first): byte `k % 4` of word `k / 4`. -/
@@ -102,7 +102,7 @@ theorem store_byte (x : BitVec 128) {k : Nat} (hk : k < 16) :
   rw [swap_byte _ hk, vword_byte _ _ _ (by omega_using [])]
   congr 2
   rcases (by omega_using [hk] : k / 4 = 0 ∨ k / 4 = 1 ∨ k / 4 = 2 ∨ k / 4 = 3) with h | h | h | h <;>
-    simp (disch := omega) only [h, ↓ite_eq_left, ↓ite_eq_right, Nat.reduceXor] <;> omega_using [h]
+    simp (disch := omega_arith) only [h, ↓ite_eq_left, ↓ite_eq_right, Nat.reduceXor] <;> omega_using [h]
 
 /-- A word of a vector as its bytes, most significant first. -/
 theorem vword_bytes (x : BitVec 128) {p : Nat} (hp : p < 4) :
@@ -160,7 +160,7 @@ theorem vword_append4 (a b c d : BitVec 32) {j : Nat} (hj : j < 4) :
   intro t ht
   simp only [vword, BitVec.getLsbD_extractLsb', ht, decide_true, Bool.true_and, BitVec.getLsbD_append]
   rcases (by omega_using [hj] : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl <;>
-    simp (disch := omega) only [↓ite_eq_left, ↓ite_eq_right, List.getD_cons_zero, List.getD_cons_succ,
+    simp (disch := omega_arith) only [↓ite_eq_left, ↓ite_eq_right, List.getD_cons_zero, List.getD_cons_succ,
       Nat.reduceSub, Nat.reduceMul] <;> exact congrArg _ (by omega_using [])
 
 theorem ext_vword {x y : BitVec 128} (h : ∀ p < 4, vword x p = vword y p) : x = y := by

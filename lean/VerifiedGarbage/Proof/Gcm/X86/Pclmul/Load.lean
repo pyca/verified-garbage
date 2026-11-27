@@ -57,7 +57,7 @@ theorem assembled_eq (c : BitVec 128) : assembled c = c := by
     BitVec.getLsbD_append, BitVec.getLsbD_extractLsb']
   rcases (by omega_using [] : i < 32 ∨ (32 ≤ i ∧ i < 64) ∨ (64 ≤ i ∧ i < 96) ∨ 96 ≤ i)
     with h | h | h | h <;>
-    simp (disch := omega) only [ite_eq_left, ite_eq_right, decide_eq_true,
+    simp (disch := omega_arith) only [ite_eq_left, ite_eq_right, decide_eq_true,
       decide_eq_false, Bool.true_and, Bool.false_and, Bool.not_true, Bool.not_false,
       Bool.false_or, BitVec.ofNat_eq_ofNat, BitVec.getLsbD_zero, Bool.or_false] <;>
     exact congrArg _ (by omega_arith)

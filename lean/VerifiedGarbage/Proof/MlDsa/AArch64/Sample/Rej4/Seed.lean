@@ -142,7 +142,7 @@ theorem seedState_eq (m : Mem) (p : Addr) :
     · rw [ite_eq_right (by omega_using [h40] : ¬ j/8 = 4)]
       by_cases h20 : j/8 = 20
       · rw [ite_eq_left h20,pad_byte (j%8) (by omega_using [])]
-        by_cases he : j = 167 <;> simp (disch := omega) only [ite_eq_left,ite_eq_right]
+        by_cases he : j = 167 <;> simp (disch := omega_arith) only [ite_eq_left,ite_eq_right]
       · rw [ite_eq_right h20]
         simp (disch := omega_arith) only [ite_eq_right]
         apply BitVec.eq_of_getLsbD_eq

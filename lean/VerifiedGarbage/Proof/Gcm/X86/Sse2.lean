@@ -74,7 +74,7 @@ theorem dword_rev (v : BitVec 128) {i : Nat} (hi : i < 4) :
     getLsbD_bswap_block _ hj hr]
   simp only [byte, BitVec.getLsbD_extractLsb', decide_eq_true hr, Bool.true_and, getLsbD_dword]
   rcases cases4 hj with rfl | rfl | rfl | rfl <;>
-    simp (disch := omega) only [↓reduceIte, Nat.reduceEqDiff, decide_eq_true, Bool.true_and] <;>
+    simp (disch := omega_arith) only [↓reduceIte, Nat.reduceEqDiff, decide_eq_true, Bool.true_and] <;>
     exact congrArg _ (by omega)
 
 theorem bswap_masks (d : BitVec 32) :
@@ -87,7 +87,7 @@ theorem bswap_masks (d : BitVec 32) :
   simp only [BitVec.getLsbD_or, BitVec.getLsbD_and, BitVec.getLsbD_shiftLeft, BitVec.getLsbD_ushiftRight,
     BitVec.getLsbD_rotateLeft, hk _ hm]
   rcases cases4 hj with rfl | rfl | rfl | rfl <;>
-    simp (disch := omega) only [↓reduceIte, Nat.reduceEqDiff, decide_eq_true, decide_eq_false, Bool.true_and,
+    simp (disch := omega_arith) only [↓reduceIte, Nat.reduceEqDiff, decide_eq_true, decide_eq_false, Bool.true_and,
       Bool.false_and, Bool.and_false, Bool.and_true, Bool.or_false, Bool.false_or, Bool.not_true, Bool.not_false,
       hk, ite_eq_left, ite_eq_right, Nat.reduceMod] <;>
     exact congrArg _ (by omega)
@@ -794,12 +794,12 @@ theorem wsum_congr {v v' : BitVec 128} {w w' : Nat} (h : word v w = word v' w') 
 
 theorem dup_lo (v : BitVec 128) : Dup (XBinOp.eval .punpcklwd v v) := fun l hl => by
   rw [word_punpcklwd _ _ (by omega_arith), word_punpcklwd _ _ (by omega_arith)]
-  simp (disch := omega) only [ite_eq_left, ite_eq_right]
+  simp (disch := omega_arith) only [ite_eq_left, ite_eq_right]
   exact congrArg _ (by omega_arith)
 
 theorem dup_hi (v : BitVec 128) : Dup (XBinOp.eval .punpckhwd v v) := fun l hl => by
   rw [word_punpckhwd _ _ (by omega_arith), word_punpckhwd _ _ (by omega_arith)]
-  simp (disch := omega) only [ite_eq_left, ite_eq_right]
+  simp (disch := omega_arith) only [ite_eq_left, ite_eq_right]
   exact congrArg _ (by omega_arith)
 
 theorem hsum_lo (v : BitVec 128) : hsum (XBinOp.eval .punpcklwd v v) =

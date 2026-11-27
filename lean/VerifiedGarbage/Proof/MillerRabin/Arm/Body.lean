@@ -1266,14 +1266,14 @@ theorem AT_step {P : MP} {σ : State} {i : Nat} (hi : i < 14) :
     simp only [LT, List.mem_cons, List.not_mem_nil, or_false] at hj
     omega_using [e0, hj]
   rcases hj' with rfl | rfl | hj
-  · simp (disch := omega) only [upd, AT, ↓ite_eq_left, ↓ite_eq_right]
-  · simp (disch := omega) only [upd, AT, ↓ite_eq_left, ↓ite_eq_right]
+  · simp (disch := omega_arith) only [upd, AT, ↓ite_eq_left, ↓ite_eq_right]
+  · simp (disch := omega_arith) only [upd, AT, ↓ite_eq_left, ↓ite_eq_right]
   · have hY : j ≠ aY := by omega_using [e0, eY, hj]
     obtain hX : j ≠ aX := by omega_using [e0, eX, hj]
     by_cases he : j = aT0 + i + 2
     · subst j
       obtain hsub : aT0 + i + 2 - aT0 = i + 2 := by omega_using []
-      simp (disch := omega) only [upd, AT, tabEnt, hsub, ↓ite_eq_left, ↓ite_eq_right]
+      simp (disch := omega_arith) only [upd, AT, tabEnt, hsub, ↓ite_eq_left, ↓ite_eq_right]
     · have hidx : j - aT0 ≠ i + 2 := by omega_using [he]
       obtain hbound : (j - aT0 ≤ i + 1) = (j - aT0 ≤ (i + 1) + 1) := by apply propext; omega_using [he]
       simp only [upd, he, hY, hX, AT, tabEnt, ↓reduceIte, hbound]

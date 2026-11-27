@@ -25,16 +25,16 @@ theorem testBit_planeBits16 {n j p : Nat} (hp : p < 64) :
   simp only [planeBits, Nat.testBit_or, testBit_mask]
   rcases (by omega_using [] : p < 16 ∨ 16 ≤ p ∧ p < 32 ∨ 32 ≤ p ∧ p < 48 ∨ 48 ≤ p) with h | h | h | h
   · rw [show 8 * (3 - p / 16) + j = 24 + j by omega_using [h]]
-    simp (disch := omega) only [decide_eq_true, decide_eq_false, Bool.and_true, Bool.and_false,
+    simp (disch := omega_arith) only [decide_eq_true, decide_eq_false, Bool.and_true, Bool.and_false,
       Bool.or_false]
   · rw [show 8 * (3 - p / 16) + j = 16 + j by omega_using [h]]
-    simp (disch := omega) only [decide_eq_true, decide_eq_false, Bool.and_true, Bool.and_false,
+    simp (disch := omega_arith) only [decide_eq_true, decide_eq_false, Bool.and_true, Bool.and_false,
       Bool.or_false, Bool.false_or]
   · rw [show 8 * (3 - p / 16) + j = 8 + j by omega_using [h]]
-    simp (disch := omega) only [decide_eq_true, decide_eq_false, Bool.and_true, Bool.and_false,
+    simp (disch := omega_arith) only [decide_eq_true, decide_eq_false, Bool.and_true, Bool.and_false,
       Bool.or_false, Bool.false_or]
   · rw [show 8 * (3 - p / 16) + j = j by omega_using [h]]
-    simp (disch := omega) only [decide_eq_true, decide_eq_false, Bool.and_true, Bool.and_false,
+    simp (disch := omega_arith) only [decide_eq_true, decide_eq_false, Bool.and_true, Bool.and_false,
       Bool.or_false, Bool.false_or]
 
 /-- Bit `p` of a plane of 8 bits per byte: bit `j` of byte `p / 8`. -/
@@ -43,16 +43,16 @@ theorem testBit_planeBits8 {n j p : Nat} (hp : p < 32) :
   simp only [planeBits, Nat.testBit_or, testBit_mask]
   rcases (by omega_using [] : p < 8 ∨ 8 ≤ p ∧ p < 16 ∨ 16 ≤ p ∧ p < 24 ∨ 24 ≤ p) with h | h | h | h
   · rw [show 8 * (3 - p / 8) + j = 24 + j by omega_using [h]]
-    simp (disch := omega) only [decide_eq_true, decide_eq_false, Bool.and_true, Bool.and_false,
+    simp (disch := omega_arith) only [decide_eq_true, decide_eq_false, Bool.and_true, Bool.and_false,
       Bool.or_false]
   · rw [show 8 * (3 - p / 8) + j = 16 + j by omega_using [h]]
-    simp (disch := omega) only [decide_eq_true, decide_eq_false, Bool.and_true, Bool.and_false,
+    simp (disch := omega_arith) only [decide_eq_true, decide_eq_false, Bool.and_true, Bool.and_false,
       Bool.or_false, Bool.false_or]
   · rw [show 8 * (3 - p / 8) + j = 8 + j by omega_using [h]]
-    simp (disch := omega) only [decide_eq_true, decide_eq_false, Bool.and_true, Bool.and_false,
+    simp (disch := omega_arith) only [decide_eq_true, decide_eq_false, Bool.and_true, Bool.and_false,
       Bool.or_false, Bool.false_or]
   · rw [show 8 * (3 - p / 8) + j = j by omega_using [h]]
-    simp (disch := omega) only [decide_eq_true, decide_eq_false, Bool.and_true, Bool.and_false,
+    simp (disch := omega_arith) only [decide_eq_true, decide_eq_false, Bool.and_true, Bool.and_false,
       Bool.or_false, Bool.false_or]
 
 theorem testBit_bitsOf (f : Nat → Bool) (n c : Nat) :

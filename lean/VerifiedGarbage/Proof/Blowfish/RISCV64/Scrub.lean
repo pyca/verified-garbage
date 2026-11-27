@@ -194,7 +194,7 @@ theorem initWord32_byte (i : Nat) {b : Nat} (hb : b < 4) :
   simp only [initWord32, List.range, List.range.loop, List.foldl_cons, List.foldl_nil]
   apply BitVec.eq_of_getLsbD_eq; intro j hj
   rcases (by omega_using [hb] : b = 0 ∨ b = 1 ∨ b = 2 ∨ b = 3) with rfl | rfl | rfl | rfl <;>
-    simp (disch := omega) [hj, decide_eq_true, decide_eq_false, BitVec.getLsbD_of_ge]
+    simp (disch := omega_arith) [hj, decide_eq_true, decide_eq_false, BitVec.getLsbD_of_ge]
 
 theorem flatMap_range_succ {α : Type} (f : Nat → List α) (k : Nat) :
     (List.range (k + 1)).flatMap f = (List.range k).flatMap f ++ f k := by

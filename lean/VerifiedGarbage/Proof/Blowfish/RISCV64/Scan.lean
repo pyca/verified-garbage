@@ -362,7 +362,7 @@ theorem pack_byte (y : Nat → Byte) {c : Nat} (hc : c < 4) :
   simp only [BitVec.getLsbD_extractLsb', BitVec.getLsbD_setWidth, BitVec.getLsbD_or,
     BitVec.getLsbD_shiftLeft, hi, decide_true, Bool.true_and]
   rcases (by omega_using [hc] : c = 0 ∨ c = 1 ∨ c = 2 ∨ c = 3) with rfl | rfl | rfl | rfl <;>
-    simp (disch := omega) only [decide_eq_true, decide_eq_false, Bool.true_and, Bool.and_true,
+    simp (disch := omega_arith) only [decide_eq_true, decide_eq_false, Bool.true_and, Bool.and_true,
       Bool.false_and, Bool.and_false, Bool.false_or, Bool.or_false, Bool.not_true, Bool.not_false,
       Nat.add_sub_cancel_left, Nat.zero_add, BitVec.getLsbD_of_ge, Nat.reduceMul]
 

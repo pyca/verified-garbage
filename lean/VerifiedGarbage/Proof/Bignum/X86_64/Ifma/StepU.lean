@@ -480,11 +480,11 @@ theorem ammStartU_ok (hu : UOk l) {s : State} {p : Nat} (hp : p < l.nl) {a m : N
     simp only [expStartU, ite_true]
     exact hs0 t ht
   · rw [hs.reg _ t ht, vi_vreg _ (by omega_using [hb, this]), hσ _ (by omega_using [hb, this])]
-    simp (disch := omega) only [expStartU, ↓ite_eq_right, ↓ite_eq_left]
+    simp (disch := omega_arith) only [expStartU, ↓ite_eq_right, ↓ite_eq_left]
     simp only [b0U, T.eval, ite_true, G.eval]
     exact inb
   · rw [hs.reg _ t ht, vi_vreg _ (by omega_using [hb, this]), hσ _ (by omega_using [hb, this])]
-    simp (disch := omega) only [expStartU, ↓ite_eq_right, ↓ite_eq_left]
+    simp (disch := omega_arith) only [expStartU, ↓ite_eq_right, ↓ite_eq_left]
     simp only [k0U, T.eval]
     rw [hs0 0 (by decide), ink, show (0 : BitVec 64) = BitVec.ofNat 64 0 from rfl, mad_lo (by decide),
       Nat.zero_add, lo_comm]
@@ -543,12 +543,12 @@ theorem expRegU_other {p i r : Nat} (h1 : r < l.R * p ∨ l.R * p + l.R ≤ r)
 theorem expRegU_ub {p i : Nat} (hp : p < l.nl) (hn : ¬ l.S ≤ i + 1) :
     expRegU l p i (ubN l p ((i + 1) % 2)) = bnU l p i := by
   have := regsU hp i
-  simp (disch := omega) only [expRegU, ↓ite_eq_right, ↓ite_eq_left]
+  simp (disch := omega_arith) only [expRegU, ↓ite_eq_right, ↓ite_eq_left]
 
 theorem expRegU_uu {p i : Nat} (hp : p < l.nl) (hn : ¬ l.S ≤ i + 1) :
     expRegU l p i (uuN l p ((i + 1) % 2)) = .bc (kU l p i) := by
   have := regsU hp i
-  simp (disch := omega) only [expRegU, ↓ite_eq_right, ↓ite_eq_left]
+  simp (disch := omega_arith) only [expRegU, ↓ite_eq_right, ↓ite_eq_left]
 
 /-- Lane `p`'s step `i`. -/
 theorem ammStepU_ok (hu : UOk l) {s : State} {p i : Nat} (hp : p < l.nl) (hi : i < l.S) {L a m : Nat → Nat}
