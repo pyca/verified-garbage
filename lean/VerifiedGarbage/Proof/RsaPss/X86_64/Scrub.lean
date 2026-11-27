@@ -6,27 +6,9 @@ public import VerifiedGarbage.Proof.RsaPss.X86_64.SignPrecomputed
 public import VerifiedGarbage.Proof.Rsa.X86_64.Scrub
 public import VerifiedGarbage.Proof.Rsa.X86_64.PrivScrub
 public import VerifiedGarbage.Proof.Variants.MdHash.X86_64
-import VerifiedGarbage.Proof.Md5.X86_64.Lit
-meta import VerifiedGarbage.Proof.Md5.X86_64.Lit
-import VerifiedGarbage.Proof.Sha1.X86_64.AvxBmi.Lit
-meta import VerifiedGarbage.Proof.Sha1.X86_64.AvxBmi.Lit
-import VerifiedGarbage.Proof.Sha256.X86_64.Avx2.Lit
-meta import VerifiedGarbage.Proof.Sha256.X86_64.Avx2.Lit
-import VerifiedGarbage.Proof.Sha256.X86_64.Lit
-meta import VerifiedGarbage.Proof.Sha256.X86_64.Lit
-import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Lit
-meta import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Lit
-import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit
-meta import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit
-import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
-meta import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
+public import VerifiedGarbage.Proof.Framework.X86_64.TableFill
+public import VerifiedGarbage.Proof.MdHashTable.X86_64.Up
 import VerifiedGarbage.Proof.Framework.Lit
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
-meta import VerifiedGarbage.Proof.Variants.MdHash.X86_64
-meta import VerifiedGarbage.Impl.RsaPss.X86_64.Fn
-meta import VerifiedGarbage.Proof.RsaPss.X86_64.Sat
-meta import VerifiedGarbage.Proof.RsaPss.X86_64.SignPrecomputed
 import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-!
@@ -62,12 +44,30 @@ abbrev ts : List (String × List FnTable) :=
 abbrev F : Impl.RsaPss.X86_64.MdFns := Proof.MdHashTable.X86_64.fnsOf vs
 abbrev G : Impl.Mgf1.X86_64.Table.Fns := Proof.HashTable.X86_64.fnsOf vs
 
-/-- Signing's code over a stub of the checked private operation. -/
-def signStub : Prog isa := Impl.RsaPss.X86_64.signCP F G "priv" (.block [])
+/-- Stubs in the place of the functions the tables hold in each word. -/
+def Fs : Impl.RsaPss.X86_64.MdFns := ⟨[("t", tableStub 8)], [("t", tableStub 8)], [("t", tableStub 8)]⟩
+
+open Proof.MdHashTable.X86_64 (names MdUp variants_mdUp mdFns_up)
+open Proof.HashTable.X86_64 (stubFns fns_up mem_tableFns)
+
+/-- Signing's code over stubs of the tables' functions and of the checked
+private operation. -/
+def signStub : Prog isa := Impl.RsaPss.X86_64.signCP Fs stubFns "priv" (.block [])
 
 theorem sign_eq (c : CrtImpl) :
-    Impl.RsaPss.X86_64.signCP F G (privNameP c) (privCodeP c) = fillCallsG (callSigma c) signStub := by
+    Impl.RsaPss.X86_64.signCP Fs stubFns (privNameP c) (privCodeP c) = fillCallsG (callSigma c) signStub := by
   unfold signStub; kernel_rfl
+
+theorem sign_tfill {vs : List Proof.Pbkdf2.Md.X86_64.MdHash} (hv : ∀ w ∈ vs, MdUp w) (c : CrtImpl) :
+    TFill 8 (names vs) (fillCallsG (callSigma c) signStub)
+      (Impl.RsaPss.X86_64.signCP (Proof.MdHashTable.X86_64.fnsOf vs) (Proof.HashTable.X86_64.fnsOf vs)
+        (privNameP c) (privCodeP c)) := by
+  rw [← sign_eq]
+  obtain ⟨hf1, hf2, hf3⟩ := mdFns_up hv
+  obtain ⟨hg1, hg2, hg3⟩ := fns_up hv
+  have hc := sigma_inames (fun hl => callSigma_up c hl) (fun hl => callSigma_side c hl) "priv" _ _ rfl
+  unfold Impl.RsaPss.X86_64.signCP
+  tfill_calls
 
 theorem sign_spSafe' (h : OK vs) (c : CrtImpl) :
     (Impl.RsaPss.X86_64.signCP F G (privNameP c) (privCodeP c)).all (fun i => !isa.writesSp i) = true :=
@@ -86,21 +86,32 @@ meets its contract in constant time and returns without secret residue. -/
 theorem sign_scrubbed (h : OK vs) (c : CrtImpl) :
     VerifiedScrubbed target (Impl.RsaPss.X86_64.Fn.signPrecomputed (PrivScrub.level c) F G (privNameP c) (privCodeP c))
       (Proof.RsaPss.X86_64.pspec (Proof.MdHashTable.X86_64.tables vs) (Proof.MdHashTable.X86_64.tables vs)) 32 :=
-  verifiedScrubbedOrUp (signPlain h c) (PrivScrub.level c) ts (Proof.RsaPss.X86_64.signPrecomputed_postOut _ _)
-    (sign_eq c) (fun hl => callSigma_up c hl) (fun hl => callSigma_side c hl)
-    (hau := by rw [upStub, signStub]; lit_decide_lit)
+  verifiedScrubbedOrUpFill (signPlain h c) (PrivScrub.level c) (Proof.RsaPss.X86_64.signPrecomputed_postOut _ _)
+    (sign_tfill variants_mdUp c) (fun _ h => mem_tableFns h) (fun hl => callSigma_up c hl) (fun hl => callSigma_side c hl)
 
 theorem sign_spSafe (h : OK vs) (c : CrtImpl) :
     (Impl.RsaPss.X86_64.Fn.signPrecomputed (PrivScrub.level c) F G (privNameP c) (privCodeP c)).all
       (fun i => !isa.writesSp i) = true :=
   scrubKs_spSafe (sign_spSafe' h c)
 
-/-- Verification's code over a stub of the public operation. -/
-def verifyStub : Prog isa := Impl.RsaPss.X86_64.verifyC F G "pub" (.block [])
+/-- Verification's code over stubs of the tables' functions and of the public
+operation. -/
+def verifyStub : Prog isa := Impl.RsaPss.X86_64.verifyC Fs stubFns "pub" (.block [])
 
 theorem verify_eq (c : PublicImpl) :
-    Impl.RsaPss.X86_64.verifyC F G c.name c.code = fillCallsG (pubSigma c) verifyStub := by
+    Impl.RsaPss.X86_64.verifyC Fs stubFns c.name c.code = fillCallsG (pubSigma c) verifyStub := by
   unfold verifyStub; kernel_rfl
+
+theorem verify_tfill {vs : List Proof.Pbkdf2.Md.X86_64.MdHash} (hv : ∀ w ∈ vs, MdUp w) (c : PublicImpl) :
+    TFill 8 (names vs) (fillCallsG (pubSigma c) verifyStub)
+      (Impl.RsaPss.X86_64.verifyC (Proof.MdHashTable.X86_64.fnsOf vs) (Proof.HashTable.X86_64.fnsOf vs)
+        c.name c.code) := by
+  rw [← verify_eq]
+  obtain ⟨hf1, hf2, hf3⟩ := mdFns_up hv
+  obtain ⟨hg1, hg2, hg3⟩ := fns_up hv
+  have hc := sigma_inames (fun hl => pubSigma_up c hl) (fun hl => pubSigma_side c hl) "pub" _ _ rfl
+  unfold Impl.RsaPss.X86_64.verifyC
+  tfill_calls
 
 theorem verify_spSafe' (h : OK vs) (c : PublicImpl) :
     (Impl.RsaPss.X86_64.verifyC F G c.name c.code).all (fun i => !isa.writesSp i) = true :=
@@ -119,9 +130,8 @@ meets its contract in constant time and returns without secret residue. -/
 theorem verify_scrubbed (h : OK vs) (c : PublicImpl) :
     VerifiedScrubbed target (Impl.RsaPss.X86_64.Fn.verifyPrecomputed c.level F G c.name c.code)
       (Proof.RsaPss.X86_64.verifyC (Proof.MdHashTable.X86_64.tables vs) (Proof.MdHashTable.X86_64.tables vs)) 32 :=
-  verifiedScrubbedOrUp (verifyPlain h c) c.level ts (Proof.Rsa.X86_64.Scrub.pssVerifyOut _ _ _) (verify_eq c)
-    (fun hl => pubSigma_up c hl) (fun hl => pubSigma_side c hl)
-    (hau := by rw [upStub, verifyStub]; lit_decide_lit)
+  verifiedScrubbedOrUpFill (verifyPlain h c) c.level (Proof.Rsa.X86_64.Scrub.pssVerifyOut _ _ _) (verify_tfill variants_mdUp c)
+    (fun _ h => mem_tableFns h) (fun hl => pubSigma_up c hl) (fun hl => pubSigma_side c hl)
 
 theorem verify_spSafe (h : OK vs) (c : PublicImpl) :
     (Impl.RsaPss.X86_64.Fn.verifyPrecomputed c.level F G c.name c.code).all (fun i => !isa.writesSp i) = true :=

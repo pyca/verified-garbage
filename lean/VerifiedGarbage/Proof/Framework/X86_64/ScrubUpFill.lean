@@ -18,7 +18,7 @@ calls indirectly only its tables' functions (AVX hash functions that end with
 `vzeroupper`). For code generic over an implementation it calls
 (`fillCallsG σ a`, its code over a stub `a`), what this needs of the code
 follows from what the stub meets and what each implementation's code meets
-(`upCallee`, `TableFill.lean`): `fillCallsG_*`. `verifiedScrubbedOrUp` takes
+(`upCallee`, `TableFill.lean`): `fillCallsG_*`. `verifiedScrubbedOrUpFill` takes
 that route at the level `sse`, and `verifiedScrubbedAllFillG`'s above it.
 -/
 
@@ -189,56 +189,79 @@ theorem upCallee_call {d : Prog isa} {m : Nat} (g : String) (h : upCallee d m = 
 
 end
 
-/-- What `verifiedScrubbedOrUp` needs of a function's code over a stub `a`,
-at the level `sse`: its stack, instructions below the level `evex`, upper
-halves that agree at its end if they did at its start, and indirect calls
-only of its tables' functions. -/
-noncomputable def upStub (a : Prog isa) (n : String → Nat) (stack : Nat) (ts : List (String × List FnTable)) : Bool :=
-  Nat.ble (depthGK n a) stack && lvAll 1 a && upF a true && tablesCall a ts
+/-- What fills a call calls nothing indirectly. -/
+theorem sigma_inames {v : VecLevel} {n : String → Nat} {σ : String → Option (String × Prog isa)}
+    (hu : v = .sse → ∀ f g d, σ f = some (g, d) → upCallee (.call g d) (n f) = true)
+    (hs : v ≠ .sse → ∀ f g d, σ f = some (g, d) → calleeSide (.call g d) v.level (n f) = true)
+    (f g : String) (d : Prog isa) (h : σ f = some (g, d)) : UpperLock.inames d = [] := by
+  by_cases hv : v = .sse
+  · have := hu hv f g d h
+    simp only [upCallee, Bool.and_eq_true, List.isEmpty_iff] at this
+    simpa only [UpperLock.inames] using this.2
+  · have := hs hv f g d h
+    simp only [calleeSide_eq, Bool.and_eq_true, List.isEmpty_iff] at this
+    simpa only [UpperLock.inames] using this.2
 
-/-- `r`'s code, `fillCallsG σ a` (its code over a stub `a` with the
-implementations' code), followed by `scrubAll v rb stack`, meets `r`'s
-contract in constant time and returns without secret residue: at the level
-`sse` from `upStub` of the stub and `upCallee` of what fills its holes (for
-code that runs AVX functions through its tables), at a higher level `v` from
-`upStub`, which is more than `stubSideG` of the stub at the level `avx`, and
-`calleeSide` of what fills its holes at `v`. -/
-theorem verifiedScrubbedOrUp {api : Api} (r : Unscrubbed api target) (v : VecLevel) {a : Prog isa}
-    {σ : String → Option (String × Prog isa)} {n : String → Nat} {stack rb : Nat} (ts : List (String × List FnTable))
-    (hpost : PostOut r.contract (retBitsOf r)) (he : r.code = fillCallsG σ a)
+/-- What `verifiedScrubbedOrUpFill` needs of a function's code over a stub
+`a`, with stubs in the place of its tables' implementations (`tableStub`), at
+the level `sse`: its stack, instructions below the level `evex`, and upper
+halves that agree at its end if they did at its start. -/
+noncomputable def upStubT (a : Prog isa) (n : String → Nat) (stack : Nat) : Bool :=
+  Nat.ble (depthGK n a) stack && lvAll 1 a && upF a true
+
+/-- `r`'s code, generic over the implementations it calls (`fillCallsG`) and
+over those of the tables it takes (`TFill`, `TableFill.lean`), followed by
+`scrubAll v rb stack`, meets `r`'s contract in constant time and returns
+without secret residue: at the level `sse` from `upStubT` of its code with
+stubs in the place of both, `upCallee` of what fills its calls and of the
+tables' implementations (in `hf`; for code that runs AVX functions through
+its tables), and at a higher level `v` from the same, which is more than
+`calleeSide` at `v`, but `calleeSide` of what fills its calls. The kernel
+evaluates the code of each of the tables' implementations once, and not at
+each call of each table. -/
+theorem verifiedScrubbedOrUpFill {api : Api} (r : Unscrubbed api target) (v : VecLevel) {a : Prog isa}
+    {σ : String → Option (String × Prog isa)} {n : String → Nat} {m : Nat} {N : List String} {stack rb : Nat}
+    (hpost : PostOut r.contract (retBitsOf r)) (hf : TFill m N (fillCallsG σ a) r.code)
+    (hN : ∀ f ∈ N, f ∈ tableFns r.tables)
     (hσu : v = .sse → ∀ f g d, σ f = some (g, d) → upCallee (.call g d) (n f) = true)
     (hσc : v ≠ .sse → ∀ f g d, σ f = some (g, d) → calleeSide (.call g d) v.level (n f) = true)
-    (hn : r.stack = stack := by rfl) (hb : retBitsOf r = rb := by rfl) (htb : r.tables = ts := by rfl)
-    (hau : upStub a n stack ts = true := by rw [upStub]; lit_decide)
+    (hn : r.stack = stack := by rfl) (hb : retBitsOf r = rb := by rfl)
+    (ha : upStubT a n stack = true := by rw [upStubT]; lit_decide)
     (hl : litSide stack rb = true := by decide) :
     VerifiedScrubbed target (scrubAll v rb stack r.code) r.contract rb := by
-  have hac : stubSideG a VecLevel.avx.level n stack ts = true := by
-    simp only [upStub, Bool.and_eq_true] at hau
-    simp only [stubSideG, Bool.and_eq_true]
-    exact ⟨hau.1.1, hau.2⟩
+  simp only [upStubT, Bool.and_eq_true, ble_depthGK, decide_eq_true_eq] at ha
+  obtain ⟨⟨hd, hl1⟩, hup⟩ := ha
+  have hic : tablesCall r.code r.tables = true := by
+    unfold tablesCall
+    exact List.all_eq_true.mpr fun f hf' => decide_eq_true (hN f (hf.inames f hf'))
+  have side (hv : 1 ≤ v.level) (hσ : ∀ f g d, σ f = some (g, d) → calleeSide (.call g d) v.level (n f) = true) :
+      VerifiedScrubbed target (scrubAll v rb stack r.code) r.contract rb := by
+    have hg : FillG v.level n a (fillCallsG σ a) := fillG_of hσ a
+    rw [lvAll_eq] at hl1
+    obtain ⟨hlv, hmx⟩ := allInstrs_level (Nat.le_refl _) (hf.all (fun c h => by
+      simp only [upCallee, Bool.and_eq_true, lvAll_eq] at h
+      exact side_mono hv h.1.1.2) (hg.side (side_mono hv hl1)))
+    subst hn hb
+    exact verifiedScrubbedAllF r v hpost (Nat.le_trans hf.depth_le (Nat.le_trans hg.depth_le hd)) hlv
+      (mxSame_of_noLoad hmx) hic hl rfl rfl
   cases v with
   | sse =>
     have hσ := hσu rfl
     have hσ' : ∀ f g d, σ f = some (g, d) → (Code.call g d : Prog isa).x86_64Depth ≤ n f ∧
-        d.allInstrs (fun i => decide (i.vecLevel ≤ 1)) = true ∧ UpperLock.up d true = true ∧
-        UpperLock.inames d = [] := by
+        d.allInstrs (fun i => decide (i.vecLevel ≤ 1)) = true ∧ UpperLock.up d true = true := by
       intro f g d h
       have := hσ f g d h
-      simp only [upCallee, lvAll_one, upF_eq, Bool.and_eq_true, decide_eq_true_eq, List.isEmpty_iff] at this
-      exact ⟨this.1.1.1, this.1.1.2, this.1.2, by simpa [UpperLock.inames] using this.2⟩
-    simp only [upStub, ble_depthGK, lvAll_one, Bool.and_eq_true, decide_eq_true_eq, upF_eq] at hau
-    obtain ⟨⟨⟨hd, hl1⟩, hup⟩, hic⟩ := hau
-    subst hn hb htb
+      simp only [upCallee, lvAll_one, upF_eq, Bool.and_eq_true, decide_eq_true_eq] at this
+      exact ⟨this.1.1.1, this.1.1.2, this.1.2⟩
+    rw [lvAll_one] at hl1
+    rw [upF_eq] at hup
+    subst hn hb
     exact verifiedScrubbedAllUp r hpost
-      (he ▸ Nat.le_trans (fillCallsG_depth (fun f g d h => (hσ' f g d h).1) a) hd)
-      (he ▸ fillCallsG_allInstrs _ (fun f g d h => (hσ' f g d h).2.1) a hl1)
-      (he ▸ fillCallsG_up (fun f g d h => (hσ' f g d h).2.2.1) a true hup)
-      (by rw [he, tablesCall, fillCallsG_inames (fun f g d h => (hσ' f g d h).2.2.2)]; exact hic) hl
-  | avx =>
-    exact verifiedScrubbedAllFillG r .avx hpost (he ▸ fillG_of (hσc (by decide)) a) (Nat.le_refl _)
-      (Nat.le_refl _) ts hn hb htb hac hl
-  | evex =>
-    exact verifiedScrubbedAllFillG r .evex hpost (he ▸ fillG_of (hσc (by decide)) a) (by decide)
-      (Nat.le_refl _) ts hn hb htb hac hl
+      (Nat.le_trans hf.depth_le (Nat.le_trans (fillCallsG_depth (fun f g d h => (hσ' f g d h).1) a) hd))
+      (hf.all (fun c h => (TFill.upCallee_parts h).2.1)
+        (fillCallsG_allInstrs _ (fun f g d h => (hσ' f g d h).2.1) a hl1))
+      (hf.up true (fillCallsG_up (fun f g d h => (hσ' f g d h).2.2) a true hup)) hic hl
+  | avx => exact side (Nat.le_refl _) (hσc (by decide))
+  | evex => exact side (by decide) (hσc (by decide))
 
 end VG.X86_64.Scrub

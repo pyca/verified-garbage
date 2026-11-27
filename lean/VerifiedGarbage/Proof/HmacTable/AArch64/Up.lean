@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.HmacTable.AArch64
 public import VerifiedGarbage.Proof.Variants.MdHash.AArch64
 public import VerifiedGarbage.Proof.Framework.AArch64.TableFill
+public import VerifiedGarbage.Impl.MdHashTable.AArch64
 import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-!
@@ -27,15 +28,30 @@ open VG.Proof.Variants.MdHash.AArch64 (variants)
 def HmacUp (w : MdHash) : Prop :=
   tabCallee w.H.hmacInitAny 1 = true ∧ tabCallee w.H.updC 1 = true ∧ tabCallee w.H.hmacFin 1 = true
 
-/-- `HmacUp` of every variant, evaluated once. -/
+/-- What the cleanup of a caller through a table of `MdHash` needs of the functions of `w` it
+calls. -/
+structure MdUp (w : MdHash) : Prop where
+  init : tabCallee w.H.initC 1 = true
+  upd : tabCallee w.H.updC 1 = true
+  fin : tabCallee w.H.finC 1 = true
+  comp : tabCallee w.H.compC 1 = true
+  dig : tabCallee (Impl.MdHashTable.AArch64.digest w.H.P) 1 = true
+
+/-- `HmacUp` and `MdUp` of every variant, evaluated once. -/
 theorem variants_hmacUp : (variants.all fun w =>
-    tabCallee w.H.hmacInitAny 1 && tabCallee w.H.updC 1 && tabCallee w.H.hmacFin 1) = true := by
+    tabCallee w.H.hmacInitAny 1 && tabCallee w.H.updC 1 && tabCallee w.H.hmacFin 1 && tabCallee w.H.initC 1 &&
+      tabCallee w.H.finC 1 && tabCallee w.H.compC 1 && tabCallee (Impl.MdHashTable.AArch64.digest w.H.P) 1) = true := by
   kernel_rfl
 
 theorem variants_up : ∀ w ∈ variants, HmacUp w := fun w hw => by
   have h := List.all_eq_true.mp variants_hmacUp w hw
   simp only [Bool.and_eq_true] at h
-  exact ⟨h.1.1, h.1.2, h.2⟩
+  exact ⟨h.1.1.1.1.1.1, h.1.1.1.1.1.2, h.1.1.1.1.2⟩
+
+theorem variants_mdUp : ∀ w ∈ variants, MdUp w := fun w hw => by
+  have h := List.all_eq_true.mp variants_hmacUp w hw
+  simp only [Bool.and_eq_true] at h
+  exact ⟨h.1.1.1.2, h.1.1.1.1.1.2, h.1.1.2, h.1.2, h.2⟩
 
 /-- A stub in the place of each of HMAC's functions. -/
 def stubFns : Fns := ⟨[("t", tableStub 1)], [("t", tableStub 1)], [("t", tableStub 1)]⟩
