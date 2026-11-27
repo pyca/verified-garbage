@@ -9,6 +9,8 @@ public import VerifiedGarbage.Spec.Ffdh.Contract
 public import VerifiedGarbage.Spec.Ffdh.DerivePublicContract
 public import VerifiedGarbage.Spec.Ffdh.SievedContract
 import VerifiedGarbage.Impl.Ffdh.X86_64.Fn
+import VerifiedGarbage.Impl.Ffdh.X86_64.ScalarPower
+import VerifiedGarbage.Proof.Ffdh.X86_64.ScalarPower
 import VerifiedGarbage.Proof.Ffdh.X86_64.InitScrub
 import VerifiedGarbage.Proof.Ffdh.X86_64.RoundScrub
 import VerifiedGarbage.Proof.Ffdh.X86_64.DomainScrub
@@ -37,21 +39,33 @@ def artifacts (v : Proof.MillerRabin.X86_64.RoundImpl) (e : Proof.Ffdh.X86_64.Ex
     code := Impl.Ffdh.X86_64.Fn.checkPublic (Proof.Ffdh.X86_64.DomainScrub.level v e) v.mm (e.code v.mm)
     verified := Proof.Ffdh.X86_64.DomainScrub.public_scrubbed v e
     spSafe := Proof.Ffdh.X86_64.DomainScrub.public_spSafe v e },
-  Spec.Ffdh.exchangeApi.artifact X86_64.target {
+  Spec.Ffdh.exchangeApi.artifact X86_64.target (
+    if v.suffix.isEmpty && e.suffix.isEmpty then {
+      code := Impl.Ffdh.X86_64.Fn.exchangeScalar
+      verified := Proof.Ffdh.X86_64.ScalarPower.exchange_scrubbed }
+    else {
     suffix := qualifiedName "" [("mr", v.suffix), ("exp", e.suffix)]
     code := Impl.Ffdh.X86_64.Fn.exchange (Proof.Ffdh.X86_64.DomainScrub.level v e) v.mm (e.code v.mm)
     verified := Proof.Ffdh.X86_64.DomainScrub.exchange_scrubbed v e
-    spSafe := Proof.Ffdh.X86_64.DomainScrub.exchange_spSafe v e },
-  Spec.Ffdh.checkPrivateApi.artifact X86_64.target {
+    spSafe := Proof.Ffdh.X86_64.DomainScrub.exchange_spSafe v e }),
+  Spec.Ffdh.checkPrivateApi.artifact X86_64.target (
+    if v.suffix.isEmpty && e.suffix.isEmpty then {
+      code := Impl.Ffdh.X86_64.Fn.checkPrivateScalar
+      verified := Proof.Ffdh.X86_64.ScalarPower.private_scrubbed }
+    else {
     suffix := qualifiedName "" [("mr", v.suffix), ("exp", e.suffix)]
     code := Impl.Ffdh.X86_64.Fn.checkPrivate (Proof.Ffdh.X86_64.DomainScrub.level v e) v.mm (e.code v.mm)
     verified := Proof.Ffdh.X86_64.DomainScrub.private_scrubbed v e
-    spSafe := Proof.Ffdh.X86_64.DomainScrub.private_spSafe v e },
-  Spec.Ffdh.derivePublicApi.artifact X86_64.target {
+    spSafe := Proof.Ffdh.X86_64.DomainScrub.private_spSafe v e }),
+  Spec.Ffdh.derivePublicApi.artifact X86_64.target (
+    if v.suffix.isEmpty && e.suffix.isEmpty then {
+      code := Impl.Ffdh.X86_64.Fn.derivePublicScalar
+      verified := Proof.Ffdh.X86_64.ScalarPower.derive_scrubbed }
+    else {
     suffix := qualifiedName "" [("mr", v.suffix), ("exp", e.suffix)]
     code := Impl.Ffdh.X86_64.Fn.derivePublic (Proof.Ffdh.X86_64.DomainScrub.level v e) v.mm (e.code v.mm)
     verified := Proof.Ffdh.X86_64.DomainScrub.derive_scrubbed v e
-    spSafe := Proof.Ffdh.X86_64.DomainScrub.derive_spSafe v e },
+    spSafe := Proof.Ffdh.X86_64.DomainScrub.derive_spSafe v e }),
   Spec.Ffdh.checkDomainApi.artifact X86_64.target {
     suffix := qualifiedName "" [("mr", v.suffix), ("exp", e.suffix)]
     code := Impl.Ffdh.X86_64.Fn.checkDomain (Proof.Ffdh.X86_64.DomainScrub.level v e) v.mm (e.code v.mm)

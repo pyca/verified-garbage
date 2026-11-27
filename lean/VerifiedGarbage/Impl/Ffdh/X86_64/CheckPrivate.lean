@@ -31,16 +31,16 @@ variable (mul : Nat → Nat → Nat → Prog isa) (ex : Nat → Nat → List (Pr
 
 /-- A power of the checked generator is already in the optional q subgroup.
 Check its range and equality to the imported public value without branching. -/
-def tail : List (Prog isa) :=
-  [r2] ++ pow mul ex sG sK sX sXl ++ range aY ++ loadArr aXm sY sK ++ eqArr aY aXm ++
+def tail (rest : Option (List (Prog isa)) := none) : List (Prog isa) :=
+  [r2] ++ pow mul ex sG sK sX sXl rest ++ range aY ++ loadArr aXm sY sK ++ eqArr aY aXm ++
     [.block [.alu .and .rax (.mem (hdr sF)), leave]]
 
-def main : Prog isa :=
+def main (rest : Option (List (Prog isa)) := none) : Prog isa :=
   seqs (([.block head] : List (Prog isa)) ++ pSetup ++ loadArr aXm sX sXl ++ scalarRange ++
-    [.block [.alu .test .rax (.reg .rax)], .ite .e (retInner 2) (seqs (tail mul ex r2))])
+    [.block [.alu .test .rax (.reg .rax)], .ite .e (retInner 2) (seqs (tail mul ex r2 rest))])
 
-def body : Prog isa := .seq (.block (entry ++ domHead)) (.ite .ne (ret 0) (main mul ex r2))
+def body (rest : Option (List (Prog isa)) := none) : Prog isa := .seq (.block (entry ++ domHead)) (.ite .ne (ret 0) (main mul ex r2 rest))
 
-def code : Prog isa := .seq (body mul ex r2) (.block exit)
+def code (rest : Option (List (Prog isa)) := none) : Prog isa := .seq (body mul ex r2 rest) (.block exit)
 
 end VG.Impl.Ffdh.X86_64.Domain.CheckPrivate
