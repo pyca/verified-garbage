@@ -64,6 +64,8 @@ public import VerifiedGarbage.Proof.Weierstrass.Booth
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombJP2
 meta import VerifiedGarbage.Proof.Weierstrass.Booth
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombJP2
+import VerifiedGarbage.Proof.Ecdsa.AArch64.AbiOnce
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.AbiOnce
 
 /-! ### `Ecdsa.AArch64.P384.CombChecks`, which only this module used -/
 
@@ -261,12 +263,10 @@ theorem sign_a64 (hL : Weierstrass.Law Spec.P384.curve) (hI : Weierstrass.AArch6
     ∃ t s', Exec isa signP384 s t s' ∧ abiPreserved s s' ∧ signAArch64.post s s' := by
   -- In steps: elaborated in one term, the unifier would compare P-384's
   -- terms before the literals' facts are known.
-  have hn : CallsKeep signP384 := by lit_decide
-  have hu : KeepsUntouched signP384 := by lit_decide
-  have hv : signP384.allInstrs keepsV = true := by lit_decide
+  have ha : abiK signP384 = true := by lit_decide
   obtain ⟨t, s', he, hsv, hpost⟩ :=
     signWith_ok (p384_ok hI).toBaseCfgOk hL _ (comb_ok hL hI hT) (pre_of hs)
-  exact ⟨t, s', he, abiPreserved_of he hn hu hv hsv, hpost⟩
+  exact ⟨t, s', he, abiPreserved_ofK he ha hsv, hpost⟩
 
 theorem sign_ct : ConstantTime isa signAArch64.pre signAArch64.pub signP384 :=
   VG.Taint.constantTime (A := taintS [p384.tsym]) (Taint.ofRegs [.x0, .x1, .x2, .x3, .x4])

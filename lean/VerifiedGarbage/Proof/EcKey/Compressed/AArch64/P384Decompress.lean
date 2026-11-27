@@ -66,7 +66,7 @@ materialize_shared baseline := code
   have hc := (p384_ok hI).toBaseCfgOk
   exact Verified.of_correct (decompress_correct p384 hc _
     (candidateThree_correct hc (rootCall_of hc (by decide)) (by decide +kernel) chain_ok)
-    (by lit_decide) (by lit_decide) (by lit_decide)) ct
+    (by lit_decide)) ct
     (decompress_implies Spec.EcKey.P384.inst _
       (Proof.Weierstrass.rootFacts_three_mod_four hL (by decide +kernel)) sat)
 

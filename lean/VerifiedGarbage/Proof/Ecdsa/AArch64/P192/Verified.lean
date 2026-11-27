@@ -22,6 +22,8 @@ meta import VerifiedGarbage.Spec.Ecdsa.P192
 meta import VerifiedGarbage.TCB.AArch64.Target
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Ecdsa.Contract
+import VerifiedGarbage.Proof.Ecdsa.AArch64.AbiOnce
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.AbiOnce
 
 /-! ### `Ecdsa.AArch64.P192.Contract`, which this module and modules that import it used -/
 
@@ -92,11 +94,9 @@ theorem output_of {s : State} (h : signAArch64.pre s) : SignOutput p192 s :=
 theorem sign_a64 (hL : Weierstrass.Law Spec.P192.curve) (hI : InvSounds)
     (s : State) (hs : signAArch64.pre s) :
     ∃ t s', Exec isa signP192 s t s' ∧ abiPreserved s s' ∧ signAArch64.post s s' := by
-  have hn : CallsKeep signP192 := by lit_decide
-  have hu : KeepsUntouched signP192 := by lit_decide
-  have hv : signP192.allInstrs keepsV = true := by lit_decide
+  have ha : abiK signP192 = true := by lit_decide
   obtain ⟨t, s', he, hsv, hpost⟩ := sign_ok (p192_ok hI) hL (setup_of hs) (output_of hs)
-  exact ⟨t, s', he, abiPreserved_of he hn hu hv hsv, hpost⟩
+  exact ⟨t, s', he, abiPreserved_ofK he ha hsv, hpost⟩
 
 theorem sign_ct : ConstantTime isa signAArch64.pre signAArch64.pub signP192 :=
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3, .x4])

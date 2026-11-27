@@ -167,6 +167,8 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvEarlyTiming
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.InvEarlyTiming
 public import VerifiedGarbage.Impl.NatPairs
 meta import VerifiedGarbage.Impl.NatPairs
+import VerifiedGarbage.Proof.Ecdsa.AArch64.AbiOnce
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.AbiOnce
 
 /-! ### `Ecdsa.Verify.AArch64.AllocatedMain`, which only this module used -/
 
@@ -2044,9 +2046,7 @@ namespace VG.Proof.Ecdsa.Verify.AArch64
 open VG VG.AArch64 VG.Impl.Ecdsa.AArch64 VG.Impl.Ecdsa.Verify.AArch64
 open VG.Proof.Ecdsa.AArch64
 
-theorem jointVerify_callsKeep : CallsKeep P256Joint.verify := by lit_decide
-
-theorem jointVerify_untouched : KeepsUntouched P256Joint.verify := by lit_decide
+private theorem jointVerify_abi : abiK P256Joint.verify = true := by lit_decide
 
 end VG.Proof.Ecdsa.Verify.AArch64
 
@@ -2065,10 +2065,10 @@ open VG.Proof.Ecdsa.AArch64 VG.Proof.Weierstrass.AArch64
 
 private structure OldSafe (c : Prog isa) : Prop where
   untouched : KeepsUntouched c
-  callsKeep : CallsKeep c
+  callsKeep : CallsKeepN c
 
-private theorem callsKeep_seq {a b : Prog isa} : CallsKeep (.seq a b) ↔ CallsKeep a ∧ CallsKeep b := by
-  simp only [CallsKeep, Code.calls, List.all_append, Bool.and_eq_true]
+private theorem callsKeep_seq {a b : Prog isa} : CallsKeepN (.seq a b) ↔ CallsKeepN a ∧ CallsKeepN b := by
+  simp only [CallsKeepN, Code.calls, List.all_append, Bool.and_eq_true]
 
 private theorem OldSafe.left {a b : Prog isa} (h : OldSafe (.seq a b)) : OldSafe a :=
   ⟨(Bool.and_eq_true_iff.mp h.untouched).1,(callsKeep_seq.mp h.callsKeep).1⟩
@@ -2079,7 +2079,7 @@ private theorem OldSafe.right {a b : Prog isa} (h : OldSafe (.seq a b)) : OldSaf
 private theorem OldSafe.seq {a b : Prog isa} (ha : OldSafe a) (hb : OldSafe b) : OldSafe (.seq a b) :=
   ⟨Bool.and_eq_true_iff.mpr ⟨ha.untouched,hb.untouched⟩,callsKeep_seq.mpr ⟨ha.callsKeep,hb.callsKeep⟩⟩
 
-private theorem oldSafe : OldSafe P256Joint.verify := ⟨jointVerify_untouched,jointVerify_callsKeep⟩
+private theorem oldSafe : OldSafe P256Joint.verify := ⟨abiK_untouched jointVerify_abi,abiK_callsKeep jointVerify_abi⟩
 
 private theorem before_safe : OldSafe (beforeInverse p256) := by
   have h := oldSafe
@@ -2092,7 +2092,7 @@ private theorem tail_safe : OldSafe (Cfg.tail p256) := oldSafe.right.right.right
 
 private theorem OldSafe.keeps {c : Prog isa} {s t : State} {tr : List Leak} (h : OldSafe c)
     (he : Exec isa c s tr t) : ∀ r∈VG.Proof.Ecdsa.AArch64.untouched,t.gpr r=s.gpr r :=
-  untouched_keep he h.callsKeep h.untouched
+  untouched_keepN he h.callsKeep h.untouched
 
  theorem allocatedVerify_keepsV : P256Allocated.verify.allInstrs keepsV=true := by lit_decide
 

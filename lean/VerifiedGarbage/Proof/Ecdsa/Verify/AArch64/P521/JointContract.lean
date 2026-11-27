@@ -7,6 +7,7 @@ meta import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointMain
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointMain
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointAbi
+import VerifiedGarbage.Proof.Ecdsa.AArch64.AbiOnce
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacPrefix
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacPrefix
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.Lit
@@ -160,7 +161,7 @@ theorem verify_a64 (hL : Weierstrass.Law Spec.P521.curve) (hO : Weierstrass.Prim
     ∃ t s', Exec isa verifyP521 s t s' ∧ abiPreserved s s' ∧ verifyAArch64.post s s' := by
   obtain ⟨t, s', he, hsv, hpost⟩ := Joint.verify_ok (p521_ok hI) hL hO (by decide) hT
     (pre_of hs)
-  exact ⟨t, s', he, abiPreserved_ofN he verify_callsKeep verify_untouched verify_keepsV hsv, hpost⟩
+  exact ⟨t, s', he, abiPreserved_ofK he verify_abi hsv, hpost⟩
 
 /-- The contract's public inputs: the pointers, the table, and the key, digest and signature. -/
 theorem jacPublic_of_spec {s₁ s₂ : State}

@@ -27,6 +27,8 @@ meta import VerifiedGarbage.Proof.Framework.GetElem
 public import VerifiedGarbage.Proof.EcKey.AArch64.Scrub
 public import VerifiedGarbage.Spec.Ecdh.P224
 public import VerifiedGarbage.Proof.Framework.AArch64.ScrubProved
+import VerifiedGarbage.Proof.Ecdsa.AArch64.AbiOnce
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.AbiOnce
 
 /-! ### `Ecdh.AArch64.P224.Contract`, which only this module used -/
 
@@ -143,11 +145,9 @@ theorem ecdh_a64 (hL : Weierstrass.Law Spec.P224.curve) (hI : Weierstrass.AArch6
     ∃ t s', Exec isa exchangeP224 s t s' ∧ abiPreserved s s' ∧ ecdhAArch64.post s s' := by
   -- In steps: elaborated in one term, the unifier would compare P-224's
   -- terms before the literals' facts are known.
-  have hn : CallsKeep exchangeP224 := by lit_decide
-  have hu : KeepsUntouched exchangeP224 := by lit_decide
-  have hv : exchangeP224.allInstrs keepsV = true := by lit_decide
+  have ha : abiK exchangeP224 = true := by lit_decide
   obtain ⟨t, s', he, hsv, hpost⟩ := exchangeWithWindow_ok windowCallP224 Weierstrass.AArch64.windowCallP224_ok (p224_ok hI) hL (pre_of hs)
-  exact ⟨t, s', he, abiPreserved_of he hn hu hv hsv, post_of hpost⟩
+  exact ⟨t, s', he, abiPreserved_ofK he ha hsv, post_of hpost⟩
 
 theorem ecdh_ct : ConstantTime isa ecdhAArch64.pre ecdhAArch64.pub exchangeP224 :=
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3])

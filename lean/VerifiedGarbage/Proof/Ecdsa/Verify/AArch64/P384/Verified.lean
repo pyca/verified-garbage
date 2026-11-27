@@ -1,6 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.CombCall
+import VerifiedGarbage.Proof.Ecdsa.AArch64.AbiOnce
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.AbiOnce
 
 import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.DigitCall
 import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
@@ -2381,11 +2382,7 @@ theorem dbl_spec (hI : Weierstrass.AArch64.InvSounds) (base : Addr) :
   (P384.EcdhDouble.dblsOk P384.EcdhDouble.p384_C_p (Ecdh.AArch64.winLayQ (p384_ok hI))
     (Ecdh.AArch64.winAQ (p384_ok hI)) (Weierstrass.unitMod_pow_two (p384_ok hI).p_odd _) base _ rfl).1
 
-theorem verify_callsKeep : CallsKeepN verifyP384 := by lit_decide
-
-theorem verify_untouched : KeepsUntouched verifyP384 := by lit_decide
-
-theorem verify_keepsV : verifyP384.allInstrs keepsV = true := by lit_decide
+private theorem verify_abi : abiK verifyP384 = true := by lit_decide
 
 theorem verify_a64 (hL : Weierstrass.Law Spec.P384.curve) (hO : Weierstrass.PrimeOrder Spec.P384.curve)
     (hI : Weierstrass.AArch64.InvSounds)
@@ -2394,7 +2391,7 @@ theorem verify_a64 (hL : Weierstrass.Law Spec.P384.curve) (hO : Weierstrass.Prim
     ∃ t s', Exec isa verifyP384 s t s' ∧ abiPreserved s s' ∧ verifyGAArch64.post s s' := by
   obtain ⟨t, s', he, hsv, hpost⟩ := Joint.verify_ok (p384_ok hI) hL hO (by decide) hT (dbl_spec hI)
     (vpreG_of hs)
-  exact ⟨t, s', he, abiPreserved_ofN he verify_callsKeep verify_untouched verify_keepsV hsv, hpost⟩
+  exact ⟨t, s', he, abiPreserved_ofK he verify_abi hsv, hpost⟩
 
 theorem verify_ct (hL : Weierstrass.Law Spec.P384.curve) (hO : Weierstrass.PrimeOrder Spec.P384.curve)
     (hI : Weierstrass.AArch64.InvSounds)

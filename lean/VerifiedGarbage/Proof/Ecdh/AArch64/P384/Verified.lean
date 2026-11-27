@@ -521,7 +521,7 @@ theorem ecdh_a64 (hL : Weierstrass.Law Spec.P384.curve) (hI : Weierstrass.AArch6
     ∃ t s', Exec isa exchangeP384 s t s' ∧ abiPreserved s s' ∧ ecdhAArch64.post s s' := by
   -- In steps: elaborated in one term, the unifier would compare P-384's
   -- terms before the literals' facts are known.
-  have ha : AbiOk exchangeP384 := by lit_decide
+  have ha : abiK exchangeP384 = true := by lit_decide
   have hmc : CallsKeep (Impl.Ecdh.AArch64.Cfg.middle p384) :=
     callsKeep_ofK (c := Impl.Ecdh.AArch64.Cfg.middle p384) (by lit_decide)
   have hmu : KeepsUntouched (Impl.Ecdh.AArch64.Cfg.middle p384) :=

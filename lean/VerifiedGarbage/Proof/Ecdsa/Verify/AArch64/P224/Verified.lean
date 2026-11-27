@@ -32,6 +32,8 @@ import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.AArch64.Lit
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Ecdsa.AArch64.AbiOnce
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.AbiOnce
 
 /-!
 # ECDSA verification over P-224 on AArch64: `Verified`
@@ -58,11 +60,7 @@ theorem pre_of {s : State} (h : verifyAArch64.pre s) : VPre p224 s := by
   obtain ⟨h1, h2, h3, h4, h5, h6, held, fit, hdw⟩ := h
   exact ⟨h1, h2, h3, h4, h5, h6, ⟨by rw [h1]; simp, held, fit, hdw _ (by simp)⟩⟩
 
-theorem verify_callsKeep : CallsKeep verifyP224 := by lit_decide
-
-theorem verify_untouched : KeepsUntouched verifyP224 := by lit_decide
-
-theorem verify_keepsV : verifyP224.allInstrs keepsV = true := by lit_decide
+private theorem verify_abi : abiK verifyP224 = true := by lit_decide
 
 theorem verify_a64 (hL : Weierstrass.Law Spec.P224.curve) (hI : Weierstrass.AArch64.InvSounds)
     (hT : Weierstrass.CombOkW Spec.P224.curve 7 37 Impl.P224.p224Comb7 Impl.P224.p224Comb7Start)
@@ -70,7 +68,7 @@ theorem verify_a64 (hL : Weierstrass.Law Spec.P224.curve) (hI : Weierstrass.AArc
     (hs : verifyAArch64.pre s) :
     ∃ t s', Exec isa verifyP224 s t s' ∧ abiPreserved s s' ∧ verifyAArch64.post s s' := by
   obtain ⟨t, s', he, hsv, hpost⟩ := verifyWithWindow_ok windowCallP224 Weierstrass.AArch64.windowCallP224_ok (p224_ok hI) hL hT (pre_of hs)
-  exact ⟨t, s', he, abiPreserved_of he verify_callsKeep verify_untouched verify_keepsV hsv, hpost⟩
+  exact ⟨t, s', he, abiPreserved_ofK he verify_abi hsv, hpost⟩
 
 /-! The code before and after the public comb, and the comb's iteration after its lookup, as
 literals: their checks (`taint_decide`) read the literals of the field's functions

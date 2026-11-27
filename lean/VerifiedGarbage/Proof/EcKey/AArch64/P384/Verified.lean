@@ -22,6 +22,8 @@ meta import VerifiedGarbage.Spec.EcKey.P384
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.P384.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Ecdsa.AArch64.AbiOnce
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.AbiOnce
 
 /-! ### `EcKey.AArch64.P384.Contract`, which only this module used -/
 
@@ -173,12 +175,10 @@ theorem pk_a64 (hL : Weierstrass.Law Spec.P384.curve) (hI : Weierstrass.AArch64.
     ∃ t s', Exec isa publicKeyP384 s t s' ∧ abiPreserved s s' ∧ pkAArch64.post s s' := by
   -- In steps: elaborated in one term, the unifier would compare P-384's
   -- terms before the literals' facts are known.
-  have hn : CallsKeep publicKeyP384 := by lit_decide
-  have hu : KeepsUntouched publicKeyP384 := by lit_decide
-  have hv : publicKeyP384.allInstrs keepsV = true := by lit_decide
+  have ha : abiK publicKeyP384 = true := by lit_decide
   obtain ⟨t, s', he, hsv, hpost⟩ :=
     publicKeyWith_ok (p384_ok hI).toBaseCfgOk hL _ (Ecdsa.AArch64.P384.comb_ok hL hI hT) (pre_of hs)
-  exact ⟨t, s', he, abiPreserved_of he hn hu hv hsv, post_of hpost⟩
+  exact ⟨t, s', he, abiPreserved_ofK he ha hsv, post_of hpost⟩
 
 theorem pk_ct : ConstantTime isa pkAArch64.pre pkAArch64.pub publicKeyP384 :=
   VG.Taint.constantTime (A := taintS [p384.tsym]) (Taint.ofRegs [.x0, .x1, .x2])

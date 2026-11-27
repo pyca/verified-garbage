@@ -1004,7 +1004,7 @@ theorem rootCall : RootCall p224 := by
   obtain hc := (p224_ok hI).toBaseCfgOk
   exact Verified.of_correct (decompress_correct p224 hc _
     (candidateTonelli_correct hc rootCall (by decide +kernel) (by decide +kernel) chain_r chain_q body_no_v27)
-    (by lit_decide) (by lit_decide) (by lit_decide)) ct
+    (by lit_decide)) ct
     (decompress_implies Spec.EcKey.P224.inst _
       (Proof.P224.rootFacts hL) sat)
 

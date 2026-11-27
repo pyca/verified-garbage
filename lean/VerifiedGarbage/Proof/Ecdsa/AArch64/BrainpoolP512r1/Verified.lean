@@ -92,7 +92,7 @@ theorem output_of {s : State} (h : signAArch64.pre s) : SignOutput brainpoolp512
 theorem sign_a64 (hL : Weierstrass.Law Spec.BrainpoolP512r1.curve) (hI : InvSounds)
     (s : State) (hs : signAArch64.pre s) :
     ∃ t s', Exec isa signBrainpoolP512r1 s t s' ∧ abiPreserved s s' ∧ signAArch64.post s s' := by
-  have ha : AbiOk signBrainpoolP512r1 := by lit_decide
+  have ha : abiK signBrainpoolP512r1 = true := by lit_decide
   obtain ⟨t, s', he, hsv, hpost⟩ := sign_ok (brainpoolp512r1_ok hI) hL (setup_of hs) (output_of hs)
   exact ⟨t, s', he, abiPreserved_ofK he ha hsv, hpost⟩
 
