@@ -589,12 +589,12 @@ theorem _root_.VG.X86_64.Taint.step_lens {τ τ' : Taint.T} {i : Instr} (h : Tai
     τ'.lens = τ.lens := by
   cases i
   case vmovdquStore l _ _ =>
-    cases l <;> simp only [Taint.step, storeStep, Option.ite_none_right_eq_some, Option.some.injEq] at h <;>
+    cases l <;> simp only [Taint.reduceStep, storeStep, Option.ite_none_right_eq_some, Option.some.injEq] at h <;>
       obtain ⟨-, rfl⟩ := h <;> rfl
   case xop op =>
-    cases op <;> simp only [Taint.step, noX, Option.some.injEq] at h <;> subst h <;> rfl
+    cases op <;> simp only [Taint.reduceStep, noX, Option.some.injEq] at h <;> subst h <;> rfl
   all_goals
-    simp only [Taint.step, storeStep, aluStep, adxStep, cmovStep, mulStep, mulxStep, noX,
+    simp only [Taint.reduceStep, storeStep, aluStep, adxStep, cmovStep, mulStep, mulxStep, noX,
       Option.ite_none_right_eq_some, Option.some.injEq, reduceCtorEq] at h
   all_goals first
     | (obtain ⟨-, -, rfl⟩ := h; rfl)

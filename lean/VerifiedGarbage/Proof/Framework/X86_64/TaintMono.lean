@@ -431,7 +431,7 @@ theorem step_mono (h : Le τ σ) (i : Instr) {τ' : T} (hs : step τ i = some τ
   have hw := h.toLeW
   cases i with
   | mov d src =>
-    simp only [step] at hs ⊢
+    simp only [reduceStep] at hs ⊢
     split at hs <;> [rename_i hok; cases hs]
     cases hs
     rw [ite_t (hw.srcOkM hok)]
@@ -439,7 +439,7 @@ theorem step_mono (h : Le τ σ) (i : Instr) {τ' : T} (hs : step τ i = some τ
     simp only [Bool.or_eq_true] at hp ⊢
     exact hp.imp hw.srcPubM h.loadPubM
   | mov32 d src =>
-    simp only [step] at hs ⊢
+    simp only [reduceStep] at hs ⊢
     split at hs <;> [rename_i hok; cases hs]
     cases hs
     rw [ite_t (hw.srcOkM hok)]
@@ -451,7 +451,7 @@ theorem step_mono (h : Le τ σ) (i : Instr) {τ' : T} (hs : step τ i = some τ
   | store8 m r => exact h.store m (by decide) (hw.pubM) hs
   | store16 m r => exact h.store m (by decide) (hw.pubM) hs
   | alu op d src | alu32 op d src =>
-    simp only [step, aluStep] at hs ⊢
+    simp only [reduceStep, aluStep] at hs ⊢
     split at hs <;> [rename_i hok; cases hs]
     cases hs
     rw [ite_t (hw.srcOkM hok)]
@@ -464,21 +464,21 @@ theorem step_mono (h : Le τ σ) (i : Instr) {τ' : T} (hs : step τ i = some τ
     · exact h.regs
     · exact set_mono hw d hp
   | shift32 _ d _ | shift _ d _ | btr d _ =>
-    simp only [step, Option.some.injEq] at hs ⊢
+    simp only [reduceStep, Option.some.injEq] at hs ⊢
     cases hs
     refine ⟨_, rfl, h.upd h.regs (fun hp => ?_) (h.killM d) empty_subset'⟩
     simp only [Bool.and_eq_true] at hp ⊢
     exact ⟨h.flags hp.1, hw.pubM hp.2⟩
   | bswap32 d | bswap d =>
-    simp only [step, Option.some.injEq] at hs ⊢
+    simp only [reduceStep, Option.some.injEq] at hs ⊢
     cases hs
     exact ⟨_, rfl, h.upd h.regs h.flags (h.killM d) empty_subset'⟩
   | rorx32 d r _ | rorx d r _ =>
-    simp only [step, Option.some.injEq] at hs ⊢
+    simp only [reduceStep, Option.some.injEq] at hs ⊢
     cases hs
     exact ⟨_, rfl, h.upd (set_mono hw d hw.pubM) h.flags (h.killM d) empty_subset'⟩
   | shiftCl _ d =>
-    simp only [step, Option.some.injEq] at hs ⊢
+    simp only [reduceStep, Option.some.injEq] at hs ⊢
     cases hs
     have hp : (pub τ d && pub τ .rcx) = true → (pub σ d && pub σ .rcx) = true := fun hp => by
       simp only [Bool.and_eq_true] at hp ⊢; exact ⟨hw.pubM hp.1, hw.pubM hp.2⟩
@@ -486,40 +486,40 @@ theorem step_mono (h : Le τ σ) (i : Instr) {τ' : T} (hs : step τ i = some τ
     simp only [Bool.and_eq_true] at hf ⊢
     exact ⟨h.flags hf.1, by simpa only [Bool.and_eq_true] using hp (by simpa only [Bool.and_eq_true] using hf.2)⟩
   | shiftx _ d r c =>
-    simp only [step, Option.some.injEq] at hs ⊢
+    simp only [reduceStep, Option.some.injEq] at hs ⊢
     cases hs
     have hp : (pub τ r && pub τ c) = true → (pub σ r && pub σ c) = true := fun hp => by
       simp only [Bool.and_eq_true] at hp ⊢; exact ⟨hw.pubM hp.1, hw.pubM hp.2⟩
     exact ⟨_, rfl, h.upd (set_mono hw d hp) h.flags (h.killM d) empty_subset'⟩
   | andn32 d a b | andn d a b =>
-    simp only [step, Option.some.injEq] at hs ⊢
+    simp only [reduceStep, Option.some.injEq] at hs ⊢
     cases hs
     have hp : (pub τ a && pub τ b) = true → (pub σ a && pub σ b) = true := fun hp => by
       simp only [Bool.and_eq_true] at hp ⊢; exact ⟨hw.pubM hp.1, hw.pubM hp.2⟩
     exact ⟨_, rfl, h.upd (set_mono hw d hp) hp (h.killM d) empty_subset'⟩
   | imul d r | shld d r _ =>
-    simp only [step, Option.some.injEq] at hs ⊢
+    simp only [reduceStep, Option.some.injEq] at hs ⊢
     cases hs
     have hp : (pub τ d && pub τ r) = true → (pub σ d && pub σ r) = true := fun hp => by
       simp only [Bool.and_eq_true] at hp ⊢; exact ⟨hw.pubM hp.1, hw.pubM hp.2⟩
     exact ⟨_, rfl, h.upd (set_mono hw d hp) hp (h.killM d) empty_subset'⟩
   | imul3 d r _ =>
-    simp only [step, Option.some.injEq] at hs ⊢
+    simp only [reduceStep, Option.some.injEq] at hs ⊢
     cases hs
     have hp : pub τ r = true → pub σ r = true := hw.pubM
     exact ⟨_, rfl, h.upd (set_mono hw d hp) hp (h.killM d) empty_subset'⟩
   | movImm64 d _ =>
-    simp only [step, Option.some.injEq] at hs ⊢
+    simp only [reduceStep, Option.some.injEq] at hs ⊢
     cases hs
     exact ⟨_, rfl, h.upd (set_mono hw d id) h.flags (h.killM d) empty_subset'⟩
   | movzx8 d m | movzx16 d m =>
-    simp only [step] at hs ⊢
+    simp only [reduceStep] at hs ⊢
     split at hs <;> [rename_i hm; cases hs]
     cases hs
     rw [ite_t (hw.memPubM hm)]
     exact ⟨_, rfl, h.upd (set_mono hw d id) h.flags (h.killM d) empty_subset'⟩
   | aluTbl _ d m _ _ =>
-    simp only [step] at hs ⊢
+    simp only [reduceStep] at hs ⊢
     split at hs <;> [rename_i hm; cases hs]
     cases hs
     have hm' : idxPub σ m = true := by
@@ -528,7 +528,7 @@ theorem step_mono (h : Le τ σ) (i : Instr) {τ' : T} (hs : step τ i = some τ
     rw [ite_t hm']
     exact ⟨_, rfl, h.upd (set_mono hw d id) id (h.killM d) empty_subset'⟩
   | vmovdquTbl _ m _ _ | movdquTbl _ m _ _ =>
-    simp only [step] at hs ⊢
+    simp only [reduceStep] at hs ⊢
     split at hs <;> [rename_i hm; cases hs]
     cases hs
     have hm' : idxPub σ m = true := by
@@ -537,11 +537,11 @@ theorem step_mono (h : Le τ σ) (i : Instr) {τ' : T} (hs : step τ i = some τ
     rw [ite_t hm']
     exact ⟨_, rfl, h.clearX⟩
   | vpmovmskb _ d _ | leaSym d _ | vpcmpltuw d _ _ | evCmpUq _ d _ _ =>
-    simp only [step, Option.some.injEq] at hs ⊢
+    simp only [reduceStep, Option.some.injEq] at hs ⊢
     cases hs
     exact ⟨_, rfl, h.upd (set_mono hw d id) h.flags (h.killM d) empty_subset'⟩
   | movqR d r =>
-    simp only [step, Option.some.injEq] at hs ⊢
+    simp only [reduceStep, Option.some.injEq] at hs ⊢
     cases hs
     exact ⟨_, rfl, h.upd (set_mono hw d (RegSet.mem_of_subset hw.xregs)) h.flags (h.killM d) empty_subset'⟩
   | movdquLoad _ m | vmovdquLoad _ _ m | vbroadcasti128 _ m | vbinLoad _ _ _ _ m | vmovdqu32Load _ m
@@ -550,7 +550,7 @@ theorem step_mono (h : Le τ σ) (i : Instr) {τ' : T} (hs : step τ i = some τ
     exact h.memSomeX hs
   | ldmxcsr m => exact h.memSome hs
   | kLoad k _ m | kLoad8 k _ m =>
-    simp only [step] at hs ⊢
+    simp only [reduceStep] at hs ⊢
     split at hs <;> [rename_i hm; cases hs]
     cases hs
     simp only [Bool.and_eq_true] at hm
@@ -558,7 +558,7 @@ theorem step_mono (h : Le τ σ) (i : Instr) {τ' : T} (hs : step τ i = some τ
       simp only [Bool.and_eq_true]; exact ⟨hw.memPubM hm.1, hw.pubM hm.2⟩)]
     exact ⟨_, rfl, h.clearX⟩
   | kStore m k _ | kStore8 m k _ =>
-    simp only [step] at hs ⊢
+    simp only [reduceStep] at hs ⊢
     split at hs <;> [rename_i hk; cases hs]
     rw [ite_t (hw.pubM hk)]
     exact h.store m (by decide) id hs
@@ -570,23 +570,23 @@ theorem step_mono (h : Le τ σ) (i : Instr) {τ' : T} (hs : step τ i = some τ
   | xop op =>
     cases op
     case movq d r =>
-      simp only [step, Option.some.injEq] at hs ⊢
+      simp only [reduceStep, Option.some.injEq] at hs ⊢
       cases hs
       exact ⟨_, rfl, ⟨⟨h.regs, h.flags, h.lens, h.bases, h.slots, h.lo, setX_mono hw d hw.pubM⟩, h.fn⟩⟩
     all_goals
-      simp only [step, Option.some.injEq] at hs ⊢
+      simp only [reduceStep, Option.some.injEq] at hs ⊢
       cases hs
       exact ⟨_, rfl, h.clearX⟩
   | vop _ | zop _ | eop _ | e5op _ | evMaskAddQ _ _ _ _ =>
-    simp only [step, Option.some.injEq] at hs ⊢
+    simp only [reduceStep, Option.some.injEq] at hs ⊢
     cases hs
     exact ⟨_, rfl, h.clearX⟩
   | lfence =>
-    simp only [step, Option.some.injEq] at hs ⊢
+    simp only [reduceStep, Option.some.injEq] at hs ⊢
     cases hs
     exact ⟨_, rfl, h⟩
   | mul r =>
-    simp only [step, Option.some.injEq, mulStep] at hs ⊢
+    simp only [reduceStep, Option.some.injEq, mulStep] at hs ⊢
     cases hs
     have hp : (pub τ .rax && pub τ r) = true → (pub σ .rax && pub σ r) = true := fun hp => by
       simp only [Bool.and_eq_true] at hp ⊢; exact ⟨hw.pubM hp.1, hw.pubM hp.2⟩
@@ -600,7 +600,7 @@ theorem step_mono (h : Le τ σ) (i : Instr) {τ' : T} (hs : step τ i = some τ
     · exact absurd (hp e) (by rw [e']; exact Bool.false_ne_true)
     · exact RegSet.insert_mono (RegSet.insert_mono h.regs _) _
   | mulx hi lo src =>
-    simp only [step] at hs ⊢
+    simp only [reduceStep] at hs ⊢
     split at hs <;> [rename_i hok; cases hs]
     cases hs
     rw [ite_t (hw.srcOkM hok)]
@@ -617,7 +617,7 @@ theorem step_mono (h : Le τ σ) (i : Instr) {τ' : T} (hs : step τ i = some τ
     · exact absurd (hp e) (by rw [e']; exact Bool.false_ne_true)
     · exact RegSet.insert_mono (RegSet.insert_mono h.regs _) _
   | adcx d src | adox d src =>
-    simp only [step, adxStep] at hs ⊢
+    simp only [reduceStep, adxStep] at hs ⊢
     split at hs <;> [rename_i hok; cases hs]
     cases hs
     rw [ite_t (hw.srcOkM hok)]
@@ -626,7 +626,7 @@ theorem step_mono (h : Le τ σ) (i : Instr) {τ' : T} (hs : step τ i = some τ
       simp only [Bool.and_eq_true] at hp ⊢; exact ⟨⟨hw.pubM hp.1.1, hw.srcPubM hp.1.2⟩, h.flags hp.2⟩
     exact ⟨_, rfl, h.upd (set_mono hw d hp) hp (h.killM d) empty_subset'⟩
   | cmov _ d src =>
-    simp only [step, cmovStep] at hs ⊢
+    simp only [reduceStep, cmovStep] at hs ⊢
     split at hs <;> [rename_i hok; cases hs]
     cases hs
     rw [ite_t (hw.srcOkM hok)]
@@ -635,11 +635,11 @@ theorem step_mono (h : Le τ σ) (i : Instr) {τ' : T} (hs : step τ i = some τ
       simp only [Bool.and_eq_true, Bool.or_eq_true] at hp ⊢
       exact ⟨⟨hw.pubM hp.1.1, hp.1.2.imp hw.srcPubM h.loadPubM⟩, h.flags hp.2⟩
     exact ⟨_, rfl, h.upd (set_mono hw d hp) h.flags (h.killM d) empty_subset'⟩
-  | push _ => simp only [step, reduceCtorEq] at hs
-  | pop _ _ => simp only [step, reduceCtorEq] at hs
-  | alloc _ => simp only [step, reduceCtorEq] at hs
-  | free _ => simp only [step, reduceCtorEq] at hs
-  | callr _ | callm _ => simp only [step, reduceCtorEq] at hs
+  | push _ => simp only [reduceStep, reduceCtorEq] at hs
+  | pop _ _ => simp only [reduceStep, reduceCtorEq] at hs
+  | alloc _ => simp only [reduceStep, reduceCtorEq] at hs
+  | free _ => simp only [reduceStep, reduceCtorEq] at hs
+  | callr _ | callm _ => simp only [reduceStep, reduceCtorEq] at hs
 
 end
 
@@ -871,17 +871,17 @@ theorem step_bits {σ σ' : T} {i : Instr} (hs : step σ i = some σ') {j : Nat}
   case store | store32 | store8 | store16 | movdquStore | vmovdqu32Store | stmxcsr | evStore | e5ExtractStore =>
     rw [storeStep_regs hs]; exact hr
   case kStore | kStore8 =>
-    simp only [step] at hs
+    simp only [reduceStep] at hs
     split at hs <;> [skip; cases hs]
     rw [storeStep_regs hs]; exact hr
   case vmovdquStore l _ _ => cases l <;> (rw [storeStep_regs hs]; exact hr)
-  case push | pop | alloc | free | callr | callm => simp only [step, reduceCtorEq] at hs
+  case push | pop | alloc | free | callr | callm => simp only [reduceStep, reduceCtorEq] at hs
   case xop op =>
-    cases op <;> (simp only [step, Option.some.injEq] at hs; subst hs; first | exact hr | rw [noX_regs]; exact hr)
+    cases op <;> (simp only [reduceStep, Option.some.injEq] at hs; subst hs; first | exact hr | rw [noX_regs]; exact hr)
   case movqR d r =>
-    simp only [step, Option.some.injEq] at hs; subst hs; exact bit_set (ne_of_dst rfl hc) hr _
+    simp only [reduceStep, Option.some.injEq] at hs; subst hs; exact bit_set (ne_of_dst rfl hc) hr _
   case mul q =>
-    simp only [step, Option.some.injEq, mulStep] at hs
+    simp only [reduceStep, Option.some.injEq, mulStep] at hs
     subst hs
     have h₁ := ne_of_clobbers (d := .rax) (by simp [clobbers]) hc
     have h₂ := ne_of_clobbers (d := .rdx) (by simp [clobbers]) hc
@@ -889,7 +889,7 @@ theorem step_bits {σ σ' : T} {i : Instr} (hs : step σ i = some σ') {j : Nat}
     · exact bit_insert _ (bit_insert _ hr)
     · exact bit_erase h₂ (bit_erase h₁ hr)
   case mulx hi lo src =>
-    simp only [step] at hs
+    simp only [reduceStep] at hs
     split at hs <;> [skip; cases hs]
     simp only [Option.some.injEq, mulxStep] at hs
     subst hs
@@ -899,7 +899,7 @@ theorem step_bits {σ σ' : T} {i : Instr} (hs : step σ i = some σ') {j : Nat}
     · exact bit_insert _ (bit_insert _ hr)
     · exact bit_erase h₁ (bit_erase h₂ hr)
   case alu op d src | alu32 op d src =>
-    simp only [step, aluStep] at hs
+    simp only [reduceStep, aluStep] at hs
     split at hs <;> [skip; cases hs]
     simp only [Option.some.injEq] at hs
     subst hs
@@ -908,19 +908,19 @@ theorem step_bits {σ σ' : T} {i : Instr} (hs : step σ i = some σ') {j : Nat}
     · exact bit_set (ne_of_dst rfl hc) hr _
     · exact hr
   case adcx d src | adox d src =>
-    simp only [step, adxStep] at hs
+    simp only [reduceStep, adxStep] at hs
     split at hs <;> [skip; cases hs]
     simp only [Option.some.injEq] at hs
     subst hs
     exact bit_set (ne_of_dst rfl hc) hr _
   case cmov _ d src =>
-    simp only [step, cmovStep] at hs
+    simp only [reduceStep, cmovStep] at hs
     split at hs <;> [skip; cases hs]
     simp only [Option.some.injEq] at hs
     subst hs
     exact bit_set (ne_of_dst rfl hc) hr _
   all_goals
-    simp only [step] at hs
+    simp only [reduceStep] at hs
     first
     | (simp only [Option.some.injEq] at hs; subst hs
        first | exact hr | (rw [noX_regs]; exact hr) | exact bit_set (ne_of_dst rfl hc) hr _)

@@ -10,6 +10,8 @@ import VerifiedGarbage.Proof.Framework.X86_64.Masked
 import VerifiedGarbage.Proof.Framework.AddrArith
 public import Batteries.Data.List.Basic
 import VerifiedGarbage.Proof.Framework.X86_64.Reduce
+public import VerifiedGarbage.Proof.Framework.UnfoldStep
+public meta import VerifiedGarbage.Proof.Framework.UnfoldStep
 
 /-!
 # Taint tracking for x86-64
@@ -364,6 +366,11 @@ def step (τ : T) : Instr → Option T
   | .cmov _ d src => cmovStep τ d src
   -- Frames are not analysed.
   | .push _ | .pop .. | .alloc _ | .free _ | .callr _ | .callm _ => none
+
+/-- `step` unfolded on a constructor (see `unfoldStep?`). -/
+dsimproc reduceStep (step _ _) := fun e => do
+  let some e' ← unfoldStep? e | return .continue
+  return .visit e'
 
 def meet (τ₁ τ₂ : T) : T where
   regs := τ₁.regs.inter τ₂.regs
@@ -849,13 +856,18 @@ def keepsSp : Instr → Bool
   | .imul3 d .. | .shld d .. | .btr d _ | .vpcmpltuw d .. | .evCmpUq _ d .. => !Nat.beq d.ctorIdx Reg.rsp.ctorIdx
   | _ => true
 
+/-- `keepsSp` unfolded on a constructor (see `unfoldStep?`). -/
+dsimproc reduceKeepsSp (keepsSp _) := fun e => do
+  let some e' ← unfoldStep? e | return .continue
+  return .visit e'
+
 kernel_fn @Code.allInstrs isa.Instr isa.Cond keepsSp
 
 theorem ctorIdx_beq (a b : Reg) : Nat.beq a.ctorIdx b.ctorIdx = (a == b) := by
   cases a <;> cases b <;> rfl
 
 theorem keepsSp_eq (i : Instr) : keepsSp i = !isa.writesSp i := by
-  cases i <;> simp only [keepsSp, ctorIdx_beq] <;> rfl
+  cases i <;> simp only [reduceKeepsSp, ctorIdx_beq] <;> rfl
 
 instance : SpTest isa keepsSp where
   sound i h := by rw [keepsSp_eq] at h; simpa using h
@@ -1297,9 +1309,9 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     (hs : step τ i = some τ') (e₁ : exec i s₁ = some s₁') (e₂ : exec i s₂ = some s₂') :
     addrs i s₁ = addrs i s₂ ∧ Agree τ' s₁' s₂' := by
   cases i with
-  | push | pop | alloc | free | callr | callm => simp only [step, reduceCtorEq] at hs
+  | push | pop | alloc | free | callr | callm => simp only [reduceStep, reduceCtorEq] at hs
   | mov d src =>
-    simp only [step] at hs
+    simp only [reduceStep] at hs
     split at hs <;> [skip; cases hs]
     rename_i hok; cases hs
     simp only [reduceExec, Option.map_eq_some_iff] at e₁ e₂
@@ -1317,7 +1329,7 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
         exact ha.readW (w := 64) hok hp
       | _ => simp only [loadPub, Bool.false_eq_true] at hp
   | mov32 d src =>
-    simp only [step] at hs
+    simp only [reduceStep] at hs
     split at hs <;> [skip; cases hs]
     rename_i hok; cases hs
     refine ⟨ha.srcAddrs hok, ha.write rfl e₁ e₂ ⟨?_, ?_⟩ rfl rfl (fun _ h => h) rfl⟩
@@ -1346,7 +1358,7 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
       obtain ⟨v₁, hv₁, rfl⟩ := e₁; obtain ⟨v₂, hv₂, rfl⟩ := e₂
       exact ha.rf.2
   | store m r =>
-    simp only [step, storeStep] at hs
+    simp only [reduceStep, storeStep] at hs
     split at hs <;> [skip; cases hs]
     rename_i hok; cases hs
     simp only [reduceExec, State.store64] at e₁ e₂
@@ -1354,7 +1366,7 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     split at e₂ <;> [cases e₂; cases e₂]
     exact ⟨congrArg (fun a => [a]) (ha.ea hok), ha.store (n := 8) hok (by decide) fun hp => by rw [ha.reg hp]⟩
   | store32 m r =>
-    simp only [step, storeStep] at hs
+    simp only [reduceStep, storeStep] at hs
     split at hs <;> [skip; cases hs]
     rename_i hok; cases hs
     simp only [reduceExec, State.store32] at e₁ e₂
@@ -1362,7 +1374,7 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     split at e₂ <;> [cases e₂; cases e₂]
     exact ⟨congrArg (fun a => [a]) (ha.ea hok), ha.store (n := 4) hok (by decide) fun hp => by rw [ha.reg hp]⟩
   | store8 m r =>
-    simp only [step, storeStep] at hs
+    simp only [reduceStep, storeStep] at hs
     split at hs <;> [skip; cases hs]
     rename_i hok; cases hs
     simp only [reduceExec, State.store8] at e₁ e₂
@@ -1370,7 +1382,7 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     split at e₂ <;> [cases e₂; cases e₂]
     exact ⟨congrArg (fun a => [a]) (ha.ea hok), ha.store (n := 1) hok (by decide) fun hp => by rw [ha.reg hp]⟩
   | store16 m r =>
-    simp only [step, storeStep] at hs
+    simp only [reduceStep, storeStep] at hs
     split at hs <;> [skip; cases hs]
     rename_i hok; cases hs
     simp only [reduceExec, State.store16] at e₁ e₂
@@ -1378,14 +1390,14 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     split at e₂ <;> [cases e₂; cases e₂]
     exact ⟨congrArg (fun a => [a]) (ha.ea hok), ha.store (n := 2) hok (by decide) fun hp => by rw [ha.reg hp]⟩
   | movdquLoad d m =>
-    simp only [step] at hs
+    simp only [reduceStep] at hs
     split at hs <;> [skip; cases hs]
     rename_i hok; cases hs
     simp only [reduceExec, Option.map_eq_some_iff] at e₁ e₂
     obtain ⟨v₁, -, rfl⟩ := e₁; obtain ⟨v₂, -, rfl⟩ := e₂
     exact ⟨congrArg (fun a => [a]) (ha.ea hok), ha.withXmm _ _⟩
   | movdquStore m r =>
-    simp only [step, storeStep] at hs
+    simp only [reduceStep, storeStep] at hs
     split at hs <;> [skip; cases hs]
     rename_i hok; cases hs
     simp only [reduceExec, State.store128] at e₁ e₂
@@ -1399,7 +1411,7 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     cases hop : op
     case movq d r =>
       subst hop
-      simp only [step, Option.some.injEq] at hs
+      simp only [reduceStep, Option.some.injEq] at hs
       subst hs
       refine ha.keep ha.rf rfl rfl rfl rfl rfl rfl ha.wf₁.2 ha.wf₂.2 ha.lo fun x hx => ?_
       simp only [XOp.exec, State.setXmm]
@@ -1415,26 +1427,26 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
         · exact ha.xr x ((RegSet.mem_insert.mp hx).resolve_left h)
         · exact ha.xr x (RegSet.mem_erase.mp hx).2
     all_goals
-      simp only [hop, step, Option.some.injEq] at hs
+      simp only [hop, reduceStep, Option.some.injEq] at hs
       subst hs
       rw [← hop, XOp.exec_eq op s₁, XOp.exec_eq op s₂]
       exact ha.withXmm _ _
   | vop op =>
-    simp only [step, Option.some.injEq] at hs
+    simp only [reduceStep, Option.some.injEq] at hs
     subst hs
     simp only [reduceExec, Option.some.injEq] at e₁ e₂
     subst e₁ e₂
     rw [VOp.exec_eq op s₁, VOp.exec_eq op s₂]
     exact ⟨rfl, ha.withVec _ _ _ _ _ _⟩
   | vmovdquLoad len d m | vbinLoad _ len d _ m =>
-    simp only [step] at hs
+    simp only [reduceStep] at hs
     split at hs <;> [skip; cases hs]
     rename_i hok; cases hs
     cases len <;> simp only [reduceExec, Option.map_eq_some_iff] at e₁ e₂ <;>
       obtain ⟨v₁, -, rfl⟩ := e₁ <;> obtain ⟨v₂, -, rfl⟩ := e₂ <;>
-      exact ⟨by simp [addrs, ha.ea hok], ha.withVec _ _ _ _ _ _⟩
+      exact ⟨congrArg (fun a => [a]) (ha.ea hok), ha.withVec _ _ _ _ _ _⟩
   | vmovdquTbl d m n ws =>
-    simp only [step] at hs
+    simp only [reduceStep] at hs
     split at hs <;> [skip; cases hs]
     rename_i hok; cases hs
     simp only [reduceExec] at e₁ e₂
@@ -1443,7 +1455,7 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     cases e₁; cases e₂
     exact ⟨congrArg (fun a => [a]) (ha.off hok), ha.withVec _ _ _ _ _ _⟩
   | movdquTbl d m n ws =>
-    simp only [step] at hs
+    simp only [reduceStep] at hs
     split at hs <;> [skip; cases hs]
     rename_i hok; cases hs
     simp only [reduceExec] at e₁ e₂
@@ -1452,137 +1464,137 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     cases e₁; cases e₂
     exact ⟨congrArg (fun a => [a]) (ha.off hok), ha.withXmm _ _⟩
   | vbroadcasti128 d m =>
-    simp only [step] at hs
+    simp only [reduceStep] at hs
     split at hs <;> [skip; cases hs]
     rename_i hok; cases hs
     simp only [reduceExec, Option.map_eq_some_iff] at e₁ e₂
     obtain ⟨v₁, -, rfl⟩ := e₁; obtain ⟨v₂, -, rfl⟩ := e₂
-    exact ⟨by simp [addrs, ha.ea hok], ha.withVec _ _ _ _ _ _⟩
+    exact ⟨congrArg (fun a => [a]) (ha.ea hok), ha.withVec _ _ _ _ _ _⟩
   | zop op =>
-    simp only [step, Option.some.injEq] at hs
+    simp only [reduceStep, Option.some.injEq] at hs
     subst hs
     simp only [reduceExec, Option.some.injEq] at e₁ e₂
     subst e₁ e₂
     rw [ZOp.exec_eq op s₁, ZOp.exec_eq op s₂]
     exact ⟨rfl, ha.withVec _ _ _ _ _ _⟩
   | vmovdqu32Load d m =>
-    simp only [step] at hs
+    simp only [reduceStep] at hs
     split at hs <;> [skip; cases hs]
     rename_i hok; cases hs
     simp only [reduceExec, Option.map_eq_some_iff] at e₁ e₂
     obtain ⟨v₁, -, rfl⟩ := e₁; obtain ⟨v₂, -, rfl⟩ := e₂
-    exact ⟨by simp [addrs, ha.ea hok], ha.withVec _ _ _ _ _ _⟩
+    exact ⟨congrArg (fun a => [a]) (ha.ea hok), ha.withVec _ _ _ _ _ _⟩
   | vbroadcasti32x4 d m =>
-    simp only [step] at hs
+    simp only [reduceStep] at hs
     split at hs <;> [skip; cases hs]
     rename_i hok; cases hs
     simp only [reduceExec, Option.map_eq_some_iff] at e₁ e₂
     obtain ⟨v₁, -, rfl⟩ := e₁; obtain ⟨v₂, -, rfl⟩ := e₂
-    exact ⟨by simp [addrs, ha.ea hok], ha.withVec _ _ _ _ _ _⟩
+    exact ⟨congrArg (fun a => [a]) (ha.ea hok), ha.withVec _ _ _ _ _ _⟩
   | vbroadcasti32x4H d m =>
-    simp only [step] at hs
+    simp only [reduceStep] at hs
     split at hs <;> [skip; cases hs]
     rename_i hok; cases hs
     simp only [reduceExec, Option.map_eq_some_iff] at e₁ e₂
     obtain ⟨v₁, -, rfl⟩ := e₁; obtain ⟨v₂, -, rfl⟩ := e₂
-    exact ⟨by simp [addrs, ha.ea hok], ha.withVecH _ _ _ _ _ _ _ _ _ _⟩
+    exact ⟨congrArg (fun a => [a]) (ha.ea hok), ha.withVecH _ _ _ _ _ _ _ _ _ _⟩
   | zbcst op d a m =>
-    simp only [step] at hs
+    simp only [reduceStep] at hs
     split at hs <;> [skip; cases hs]
     rename_i hok; cases hs
     simp only [reduceExec, Option.map_eq_some_iff] at e₁ e₂
     obtain ⟨v₁, -, rfl⟩ := e₁; obtain ⟨v₂, -, rfl⟩ := e₂
-    exact ⟨by simp [addrs, ha.ea hok], ha.withVec _ _ _ _ _ _⟩
+    exact ⟨congrArg (fun a => [a]) (ha.ea hok), ha.withVec _ _ _ _ _ _⟩
   | vpbroadcastdZ d m =>
-    simp only [step] at hs
+    simp only [reduceStep] at hs
     split at hs <;> [skip; cases hs]
     rename_i hok; cases hs
     simp only [reduceExec, Option.map_eq_some_iff] at e₁ e₂
     obtain ⟨v₁, -, rfl⟩ := e₁; obtain ⟨v₂, -, rfl⟩ := e₂
-    exact ⟨by simp [addrs, ha.ea hok], ha.withVec _ _ _ _ _ _⟩
+    exact ⟨congrArg (fun a => [a]) (ha.ea hok), ha.withVec _ _ _ _ _ _⟩
   | zbcstd op d a m =>
-    simp only [step] at hs
+    simp only [reduceStep] at hs
     split at hs <;> [skip; cases hs]
     rename_i hok; cases hs
     simp only [reduceExec, Option.map_eq_some_iff] at e₁ e₂
     obtain ⟨v₁, -, rfl⟩ := e₁; obtain ⟨v₂, -, rfl⟩ := e₂
-    exact ⟨by simp [addrs, ha.ea hok], ha.withVec _ _ _ _ _ _⟩
+    exact ⟨congrArg (fun a => [a]) (ha.ea hok), ha.withVec _ _ _ _ _ _⟩
   | vpmadd52Load hi d a m =>
-    simp only [step] at hs
+    simp only [reduceStep] at hs
     split at hs <;> [skip; cases hs]
     rename_i hok; cases hs
     simp only [reduceExec, Option.map_eq_some_iff] at e₁ e₂
     obtain ⟨v₁, -, rfl⟩ := e₁; obtain ⟨v₂, -, rfl⟩ := e₂
-    exact ⟨by simp [addrs, ha.ea hok], ha.withVec _ _ _ _ _ _⟩
+    exact ⟨congrArg (fun a => [a]) (ha.ea hok), ha.withVec _ _ _ _ _ _⟩
   | evMaskAddQ k d a b =>
-    simp only [step, Option.some.injEq] at hs
+    simp only [reduceStep, Option.some.injEq] at hs
     subst hs
     simp only [reduceExec, Option.some.injEq] at e₁ e₂
     subst e₁ e₂
     exact ⟨rfl, ha.setVy _ _ _ _⟩
   | eop op =>
-    simp only [step, Option.some.injEq] at hs
+    simp only [reduceStep, Option.some.injEq] at hs
     subst hs
     simp only [reduceExec, Option.some.injEq] at e₁ e₂
     subst e₁ e₂
     rw [EOp.exec_eq op s₁, EOp.exec_eq op s₂]
     exact ⟨rfl, ha.withVecH _ _ _ _ _ _ _ _ _ _⟩
   | evLoad d m | evMadd52Load _ d _ m | evBroadcastLoad d m =>
-    simp only [step] at hs
+    simp only [reduceStep] at hs
     split at hs <;> [skip; cases hs]
     rename_i hok; cases hs
     simp only [reduceExec, Option.map_eq_some_iff] at e₁ e₂
     obtain ⟨v₁, -, rfl⟩ := e₁; obtain ⟨v₂, -, rfl⟩ := e₂
-    exact ⟨by simp [addrs, ha.ea hok], ha.setVy _ _ _ _⟩
+    exact ⟨congrArg (fun a => [a]) (ha.ea hok), ha.setVy _ _ _ _⟩
   | evStore m r =>
-    simp only [step, storeStep] at hs
+    simp only [reduceStep, storeStep] at hs
     split at hs <;> [skip; cases hs]
     rename_i hok; cases hs
     simp only [reduceExec, State.store256] at e₁ e₂
     split at e₁ <;> [cases e₁; cases e₁]
     split at e₂ <;> [cases e₂; cases e₂]
-    exact ⟨by simp [addrs, ha.ea hok], ha.store (n := 32) hok (by decide) fun hp => by cases hp⟩
+    exact ⟨congrArg (fun a => [a]) (ha.ea hok), ha.store (n := 32) hok (by decide) fun hp => by cases hp⟩
   | e5op op =>
-    simp only [step, Option.some.injEq] at hs
+    simp only [reduceStep, Option.some.injEq] at hs
     subst hs
     simp only [reduceExec, Option.some.injEq] at e₁ e₂
     subst e₁ e₂
     rw [E5Op.exec_eq op s₁, E5Op.exec_eq op s₂]
     exact ⟨rfl, ha.withVecH _ _ _ _ _ _ _ _ _ _⟩
   | e5InsertLoad d a m n =>
-    simp only [step] at hs
+    simp only [reduceStep] at hs
     split at hs <;> [skip; cases hs]
     rename_i hok; cases hs
     simp only [reduceExec, Option.map_eq_some_iff] at e₁ e₂
     obtain ⟨v₁, -, rfl⟩ := e₁; obtain ⟨v₂, -, rfl⟩ := e₂
     rw [setVz_eq s₁, setVz_eq s₂]
-    exact ⟨by simp [addrs, ha.ea hok], ha.withVecH _ _ _ _ _ _ _ _ _ _⟩
+    exact ⟨congrArg (fun a => [a]) (ha.ea hok), ha.withVecH _ _ _ _ _ _ _ _ _ _⟩
   | e5ExtractStore m r n =>
-    simp only [step, storeStep] at hs
+    simp only [reduceStep, storeStep] at hs
     split at hs <;> [skip; cases hs]
     rename_i hok; cases hs
     simp only [reduceExec, State.store256] at e₁ e₂
     split at e₁ <;> [cases e₁; cases e₁]
     split at e₂ <;> [cases e₂; cases e₂]
-    exact ⟨by simp [addrs, ha.ea hok], ha.store (n := 32) hok (by decide) fun hp => by cases hp⟩
+    exact ⟨congrArg (fun a => [a]) (ha.ea hok), ha.store (n := 32) hok (by decide) fun hp => by cases hp⟩
   | vmovdqu32Store m r =>
-    simp only [step, storeStep] at hs
+    simp only [reduceStep, storeStep] at hs
     split at hs <;> [skip; cases hs]
     rename_i hok; cases hs
     simp only [reduceExec, State.store512] at e₁ e₂
     split at e₁ <;> [cases e₁; cases e₁]
     split at e₂ <;> [cases e₂; cases e₂]
-    exact ⟨by simp [addrs, ha.ea hok], ha.store (n := 64) hok (by decide) fun hp => by cases hp⟩
+    exact ⟨congrArg (fun a => [a]) (ha.ea hok), ha.store (n := 64) hok (by decide) fun hp => by cases hp⟩
   | vmovdquStore len m r =>
     cases len
-    · simp only [step, storeStep] at hs
+    · simp only [reduceStep, storeStep] at hs
       split at hs <;> [skip; cases hs]
       rename_i hok; cases hs
       simp only [reduceExec, State.store128] at e₁ e₂
       split at e₁ <;> [cases e₁; cases e₁]
       split at e₂ <;> [cases e₂; cases e₂]
       exact ⟨congrArg (fun a => [a]) (ha.ea hok), ha.store (n := 16) hok (by decide) fun hp => by cases hp⟩
-    · simp only [step, storeStep] at hs
+    · simp only [reduceStep, storeStep] at hs
       split at hs <;> [skip; cases hs]
       rename_i hok; cases hs
       simp only [reduceExec, State.store256] at e₁ e₂
@@ -1590,7 +1602,7 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
       split at e₂ <;> [cases e₂; cases e₂]
       exact ⟨congrArg (fun a => [a]) (ha.ea hok), ha.store (n := 32) hok (by decide) fun hp => by cases hp⟩
   | kLoad k d m | kLoad8 k d m =>
-    simp only [step] at hs
+    simp only [reduceStep] at hs
     split at hs <;> [skip; cases hs]
     rename_i hok; cases hs
     simp only [Bool.and_eq_true] at hok
@@ -1598,7 +1610,7 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     obtain ⟨v₁, -, rfl⟩ := e₁; obtain ⟨v₂, -, rfl⟩ := e₂
     exact ⟨by simp only [addrs, ha.ea hok.1, ha.rf.1 k hok.2], ha.withVec _ _ _ _ _ _⟩
   | kStore m k r =>
-    simp only [step, storeStep] at hs
+    simp only [reduceStep, storeStep] at hs
     split at hs <;> [skip; cases hs]
     rename_i hk
     split at hs <;> [skip; cases hs]
@@ -1608,7 +1620,7 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     exact ⟨by simp only [addrs, ha.ea hok, ha.rf.1 k hk],
       ha.store (n := 64) hok (by decide) fun hp => by cases hp⟩
   | kStore8 m k r =>
-    simp only [step, storeStep] at hs
+    simp only [reduceStep, storeStep] at hs
     split at hs <;> [skip; cases hs]
     rename_i hk
     split at hs <;> [skip; cases hs]
@@ -1618,7 +1630,7 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     exact ⟨by simp only [addrs, ha.ea hok, ha.rf.1 k hk],
       ha.store (n := 64) hok (by decide) fun hp => by cases hp⟩
   | stmxcsr m =>
-    simp only [step, storeStep] at hs
+    simp only [reduceStep, storeStep] at hs
     split at hs <;> [skip; cases hs]
     rename_i hok; cases hs
     simp only [reduceExec, State.store32] at e₁ e₂
@@ -1626,7 +1638,7 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     split at e₂ <;> [cases e₂; cases e₂]
     exact ⟨congrArg (fun a => [a]) (ha.ea hok), ha.store (n := 4) hok (by decide) fun hp => by cases hp⟩
   | ldmxcsr m =>
-    simp only [step] at hs
+    simp only [reduceStep] at hs
     split at hs <;> [skip; cases hs]
     rename_i hok; cases hs
     simp only [reduceExec, Option.bind_eq_some_iff] at e₁ e₂
@@ -1635,13 +1647,13 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     split at e₂ <;> [cases e₂; cases e₂]
     exact ⟨congrArg (fun a => [a]) (ha.ea hok), ha.withMxcsr _ _⟩
   | lfence =>
-    simp only [step, Option.some.injEq] at hs
+    simp only [reduceStep, Option.some.injEq] at hs
     subst hs
     simp only [reduceExec, Option.some.injEq] at e₁ e₂
     subst e₁ e₂
     exact ⟨rfl, ha⟩
   | alu op d src =>
-    simp only [step, aluStep] at hs
+    simp only [reduceStep, aluStep] at hs
     split at hs <;> [skip; cases hs]
     rename_i hok; cases hs
     obtain ⟨-, hw₁, hm₁, hx₁, -⟩ := exec_nonstore_xmm (d := d) rfl e₁
@@ -1654,7 +1666,7 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
       (setReg_gpr_eq · d) (by simp only [State.setReg, ↓reduceIte, implies_true]) (by simp)
       (fun hp => by rw [ha.readSrc hp, hb₂] at hb₁; cases hb₁; rfl) ho₁ ho₂
   | alu32 op d src =>
-    simp only [step, aluStep] at hs
+    simp only [reduceStep, aluStep] at hs
     split at hs <;> [skip; cases hs]
     rename_i hok; cases hs
     refine ⟨ha.srcAddrs hok, ha.write rfl e₁ e₂ ?_ rfl rfl (fun _ h => by rwa [aluBases_narrow] at h) rfl⟩
@@ -1667,7 +1679,7 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
             implies_true])
       (fun hp => by rw [ha.readSrc32 hp, hb₂] at hb₁; cases hb₁; rfl) ho₁ ho₂
   | shift32 op d n =>
-    simp only [step, Option.some.injEq] at hs
+    simp only [reduceStep, Option.some.injEq] at hs
     subst hs
     refine ⟨rfl, ha.write rfl e₁ e₂ ?_ rfl rfl (fun _ h => h) rfl⟩
     by_cases hn : 1 ≤ n ∧ n ≤ 31
@@ -1701,7 +1713,7 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
             BitVec.getLsbD_setWidth, BitVec.ofNat_eq_ofNat, BitVec.msb_ushiftRight,
             BitVec.setWidth_ushiftRight]
   | bswap32 d =>
-    simp only [step, Option.some.injEq] at hs
+    simp only [reduceStep, Option.some.injEq] at hs
     subst hs
     refine ⟨rfl, ha.write rfl e₁ e₂ ?_ rfl rfl (fun _ h => h) rfl⟩
     simp only [reduceExec, Option.some.injEq] at e₁ e₂
@@ -1712,7 +1724,7 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     · subst hrd; simp only [State.setReg32, State.setReg, ha.rf.1 r hr, ↓reduceIte]
     · simp only [State.setReg32, State.setReg, hrd, ↓reduceIte, ha.rf.1 r hr]
   | rorx32 d r n =>
-    simp only [step, Option.some.injEq] at hs
+    simp only [reduceStep, Option.some.injEq] at hs
     subst hs
     refine ⟨rfl, ha.write rfl e₁ e₂ ?_ rfl rfl (fun _ h => h) rfl⟩
     by_cases hn : 1 ≤ n ∧ n ≤ 31
@@ -1724,7 +1736,7 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
                                                                         setReg_sf,
                                                                         setReg_of] using ha.rf.2 hf⟩
   | andn32 d a b =>
-    simp only [step, Option.some.injEq] at hs
+    simp only [reduceStep, Option.some.injEq] at hs
     subst hs
     refine ⟨rfl, ha.write rfl e₁ e₂ ?_ rfl rfl (fun _ h => h) rfl⟩
     simp only [reduceExec, execAndn32, State.setReg32, Option.some.injEq] at e₁ e₂
@@ -1738,7 +1750,7 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
         BitVec.ofNat_eq_ofNat, BitVec.msb_and, BitVec.msb_not, Nat.zero_lt_succ, decide_true,
         Bool.true_and, and_self]
   | rorx d r n =>
-    simp only [step, Option.some.injEq] at hs
+    simp only [reduceStep, Option.some.injEq] at hs
     subst hs
     refine ⟨rfl, ha.write rfl e₁ e₂ ?_ rfl rfl (fun _ h => h) rfl⟩
     by_cases hn : 1 ≤ n ∧ n ≤ 63
@@ -1749,7 +1761,7 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
                                                                         setReg_zf, setReg_sf,
                                                                         setReg_of] using ha.rf.2 hf⟩
   | andn d a b =>
-    simp only [step, Option.some.injEq] at hs
+    simp only [reduceStep, Option.some.injEq] at hs
     subst hs
     refine ⟨rfl, ha.write rfl e₁ e₂ ?_ rfl rfl (fun _ h => h) rfl⟩
     simp only [reduceExec, execAndn, Option.some.injEq] at e₁ e₂
@@ -1760,7 +1772,7 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     refine ⟨regs_set (fun r hr => ha.rf.1 r hr) fun hp => by rw [hv hp], fun hp => ?_⟩
     simp only [State.setReg, hv hp, arithFlags, State.setFlags, and_self]
   | shiftCl op d =>
-    simp only [step, Option.some.injEq] at hs
+    simp only [reduceStep, Option.some.injEq] at hs
     subst hs
     refine ⟨rfl, ha.write rfl e₁ e₂ ?_ rfl rfl (fun _ h => h) rfl⟩
     simp only [reduceExec, execShiftCl, Option.some.injEq] at e₁ e₂
@@ -1774,7 +1786,7 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     simp only [setReg_cf, setReg_zf, setReg_sf, setReg_of, State.setFlags, hd, hc, hcf, hzf, hsf, hof,
       and_self]
   | shiftx op d r c =>
-    simp only [step, Option.some.injEq] at hs
+    simp only [reduceStep, Option.some.injEq] at hs
     subst hs
     refine ⟨rfl, ha.write rfl e₁ e₂ ?_ rfl rfl (fun _ h => h) rfl⟩
     simp only [reduceExec, execShiftx, Option.some.injEq] at e₁ e₂
@@ -1783,7 +1795,7 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
       simpa only [setReg_cf, setReg_zf, setReg_sf, setReg_of] using ha.rf.2 hf⟩
     simp only [Bool.and_eq_true] at hp; rw [ha.reg hp.1, ha.reg hp.2]
   | imul d r =>
-    simp only [step, Option.some.injEq] at hs
+    simp only [reduceStep, Option.some.injEq] at hs
     subst hs
     refine ⟨rfl, ha.write rfl e₁ e₂ ?_ rfl rfl (fun _ h => h) rfl⟩
     simp only [reduceExec, execImul, Option.some.injEq] at e₁ e₂
@@ -1794,7 +1806,7 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     refine ⟨regs_set (fun r hr => ha.rf.1 r hr) fun hp => by rw [hv hp], fun hp => ?_⟩
     simp only [State.setReg, hv hp, State.setFlags, and_self]
   | imul3 d r v =>
-    simp only [step, Option.some.injEq] at hs
+    simp only [reduceStep, Option.some.injEq] at hs
     subst hs
     refine ⟨rfl, ha.write rfl e₁ e₂ ?_ rfl rfl (fun _ h => h) rfl⟩
     simp only [reduceExec, execImul3, Option.some.injEq] at e₁ e₂
@@ -1805,7 +1817,7 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     refine ⟨regs_set (fun r hr => ha.rf.1 r hr) fun hp => by rw [hv hp], fun hp => ?_⟩
     simp only [State.setReg, hv hp, State.setFlags, and_self]
   | shld d r n =>
-    simp only [step, Option.some.injEq] at hs
+    simp only [reduceStep, Option.some.injEq] at hs
     subst hs
     refine ⟨rfl, ha.write rfl e₁ e₂ ?_ rfl rfl (fun _ h => h) rfl⟩
     by_cases hn : 1 ≤ n ∧ n ≤ 63
@@ -1817,7 +1829,7 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     refine ⟨regs_set (fun r hr => ha.rf.1 r hr) fun hp => by rw [(hv hp).1, (hv hp).2], fun hp => ?_⟩
     simp only [State.setReg, (hv hp).1, (hv hp).2, State.setFlags, and_self]
   | btr d n =>
-    simp only [step, Option.some.injEq] at hs
+    simp only [reduceStep, Option.some.injEq] at hs
     subst hs
     refine ⟨rfl, ha.write rfl e₁ e₂ ?_ rfl rfl (fun _ h => h) rfl⟩
     by_cases hn : n < 64
@@ -1833,7 +1845,7 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
       obtain ⟨-, hz, -, -⟩ := ha.rf.2 hf.1
       simp only [State.setReg, hd, State.setFlags, hz, and_self]
   | movzx8 d m | movzx16 d m =>
-    simp only [step] at hs
+    simp only [reduceStep] at hs
     split at hs <;> [skip; cases hs]
     rename_i hok; cases hs
     refine ⟨congrArg (fun a => [a]) (ha.ea hok), ha.write rfl e₁ e₂ ?_ rfl rfl (fun _ h => h) rfl⟩
@@ -1841,7 +1853,7 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     obtain ⟨v₁, -, rfl⟩ := e₁; obtain ⟨v₂, -, rfl⟩ := e₂
     exact ⟨regs_set (p := false) ha.rf.1 (fun h => by cases h), ha.rf.2⟩
   | aluTbl op d m n ws =>
-    simp only [step] at hs
+    simp only [reduceStep] at hs
     split at hs <;> [skip; cases hs]
     rename_i hok; cases hs
     refine ⟨congrArg (fun a => [a]) (ha.off hok), ha.write rfl e₁ e₂ ⟨fun r hr => ?_, fun h => by cases h⟩
@@ -1851,7 +1863,7 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     rw [(exec_nonstore_xmm rfl e₁).2.2.2.2 r hrd, (exec_nonstore_xmm rfl e₂).2.2.2.2 r hrd]
     exact ha.rf.1 r hr'
   | bswap d =>
-    simp only [step, Option.some.injEq] at hs
+    simp only [reduceStep, Option.some.injEq] at hs
     subst hs
     refine ⟨rfl, ha.write rfl e₁ e₂ ?_ rfl rfl (fun _ h => h) rfl⟩
     simp only [reduceExec, Option.some.injEq] at e₁ e₂
@@ -1862,7 +1874,7 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     · subst hrd; simp only [State.setReg, ha.rf.1 r hr, ↓reduceIte]
     · simp only [State.setReg, hrd, ↓reduceIte, ha.rf.1 r hr]
   | shift op d n =>
-    simp only [step, Option.some.injEq] at hs
+    simp only [reduceStep, Option.some.injEq] at hs
     subst hs
     refine ⟨rfl, ha.write rfl e₁ e₂ ?_ rfl rfl (fun _ h => h) rfl⟩
     by_cases hn : 1 ≤ n ∧ n ≤ 63
@@ -1888,7 +1900,7 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
             BitVec.getMsbD_rotateRight, Nat.reduceLT, decide_true, Nat.reduceAdd, Bool.true_and,
             and_self, BitVec.ofNat_eq_ofNat, BitVec.msb_ushiftRight]
   | movImm64 d v =>
-    simp only [step, Option.some.injEq] at hs
+    simp only [reduceStep, Option.some.injEq] at hs
     subst hs
     refine ⟨rfl, ha.write rfl e₁ e₂ ?_ rfl rfl (fun _ h => h) rfl⟩
     simp only [reduceExec, Option.some.injEq] at e₁ e₂
@@ -1896,7 +1908,7 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     exact ⟨regs_set (p := true) ha.rf.1 fun _ => rfl, by simpa only [setReg_cf, setReg_zf,
                                                            setReg_sf, setReg_of] using ha.rf.2⟩
   | leaSym d name =>
-    simp only [step, Option.some.injEq] at hs
+    simp only [reduceStep, Option.some.injEq] at hs
     subst hs
     refine ⟨rfl, ha.write rfl e₁ e₂ ?_ rfl rfl (fun _ h => h) rfl⟩
     simp only [reduceExec, Option.some.injEq] at e₁ e₂
@@ -1904,7 +1916,7 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     exact ⟨regs_set (p := false) ha.rf.1 (fun h => by cases h), by simpa only [setReg_cf, setReg_zf,
                                                            setReg_sf, setReg_of] using ha.rf.2⟩
   | vpmovmskb len d r =>
-    simp only [step, Option.some.injEq] at hs
+    simp only [reduceStep, Option.some.injEq] at hs
     subst hs
     refine ⟨rfl, ha.write rfl e₁ e₂ ?_ rfl rfl (fun _ h => h) rfl⟩
     simp only [reduceExec, Option.some.injEq] at e₁ e₂
@@ -1912,7 +1924,7 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     exact ⟨regs_set (p := false) ha.rf.1 (fun h => by cases h), by simpa only [setReg_cf, setReg_zf,
                                                            setReg_sf, setReg_of] using ha.rf.2⟩
   | vpcmpltuw d a b | evCmpUq _ d a b =>
-    simp only [step, Option.some.injEq] at hs
+    simp only [reduceStep, Option.some.injEq] at hs
     subst hs
     refine ⟨rfl, ha.write rfl e₁ e₂ ?_ rfl rfl (fun _ h => h) rfl⟩
     simp only [reduceExec, State.setReg32, Option.some.injEq] at e₁ e₂
@@ -1920,7 +1932,7 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     exact ⟨regs_set (p := false) ha.rf.1 (fun h => by cases h), by simpa only [setReg_cf, setReg_zf,
                                                            setReg_sf, setReg_of] using ha.rf.2⟩
   | movqR d r =>
-    simp only [step, Option.some.injEq] at hs
+    simp only [reduceStep, Option.some.injEq] at hs
     subst hs
     refine ⟨rfl, ha.write rfl e₁ e₂ ?_ rfl rfl (fun _ h => h) rfl⟩
     simp only [reduceExec, Option.some.injEq] at e₁ e₂
@@ -1928,18 +1940,18 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     exact ⟨regs_set (p := xpub τ r) ha.rf.1 (fun h => by rw [ha.xr r h]), by simpa only [setReg_cf,
       setReg_zf, setReg_sf, setReg_of] using ha.rf.2⟩
   | mul r =>
-    simp only [step, Option.some.injEq] at hs
+    simp only [reduceStep, Option.some.injEq] at hs
     subst hs
     simp only [reduceExec, Option.some.injEq] at e₁ e₂
     subst e₁ e₂
     exact ⟨rfl, ha.mul⟩
   | mulx hi lo src =>
-    simp only [step] at hs
+    simp only [reduceStep] at hs
     split at hs <;> [skip; cases hs]
     rename_i hok; cases hs
     exact ⟨ha.srcAddrs hok, ha.mulx e₁ e₂⟩
   | adcx d src =>
-    simp only [step, adxStep] at hs
+    simp only [reduceStep, adxStep] at hs
     split at hs <;> [skip; cases hs]
     rename_i hok; cases hs
     refine ⟨ha.srcAddrs hok, ha.write rfl e₁ e₂ ?_ rfl rfl (fun _ h => h) rfl⟩
@@ -1965,7 +1977,7 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
       simp only [setReg_cf, setReg_zf, setReg_sf, setReg_of, State.setFlags, h1, h2, h3, h4, h5, h6,
         and_self]
   | adox d src =>
-    simp only [step, adxStep] at hs
+    simp only [reduceStep, adxStep] at hs
     split at hs <;> [skip; cases hs]
     rename_i hok; cases hs
     refine ⟨ha.srcAddrs hok, ha.write rfl e₁ e₂ ?_ rfl rfl (fun _ h => h) rfl⟩
@@ -1991,7 +2003,7 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
       simp only [setReg_cf, setReg_zf, setReg_sf, setReg_of, State.setFlags, h1, h2, h3, h4, h5, h6,
         and_self]
   | cmov cc d src =>
-    simp only [step, cmovStep] at hs
+    simp only [reduceStep, cmovStep] at hs
     split at hs <;> [skip; cases hs]
     rename_i hok; cases hs
     exact ⟨ha.srcAddrs hok, ha.write rfl e₁ e₂ (ha.cmov hok e₁ e₂) rfl rfl (fun _ h => h) rfl⟩
@@ -2520,6 +2532,11 @@ def stepK (τ : T) : Instr → Option T
   | .cmov _ d src => cmovStepK τ d src
   | .push _ | .pop .. | .alloc _ | .free _ | .callr _ | .callm _ => none
 
+/-- `stepK` unfolded on a constructor (see `unfoldStep?`). -/
+dsimproc reduceStepK (stepK _ _) := fun e => do
+  let some e' ← unfoldStep? e | return .continue
+  return .visit e'
+
 /-- `l.contains a`, for a known base address. -/
 def memB (a : Reg × Nat × Nat) (l : List (Reg × Nat × Nat)) : Bool :=
   any l fun b => regEq a.1 b.1 && Nat.beq a.2.1 b.2.1 && Nat.beq a.2.2 b.2.2
@@ -2592,9 +2609,9 @@ theorem cmovStepK_eq : cmovStepK = cmovStep := by
 theorem stepK_eq : stepK = step := by
   funext τ i
   cases i
-  case vmovdquStore l _ _ => cases l <;> simp only [stepK, step, storeStepK_eq]
-  case xop op => cases op <;> simp only [stepK, step, setXK_eq]
-  all_goals simp only [stepK, step, srcOkK_eq, setK_eq, loadPubK_eq, movBasesK_eq, killK_eq,
+  case vmovdquStore l _ _ => cases l <;> simp only [reduceStepK, reduceStep, storeStepK_eq]
+  case xop op => cases op <;> simp only [reduceStepK, reduceStep, setXK_eq]
+  all_goals simp only [reduceStepK, reduceStep, srcOkK_eq, setK_eq, loadPubK_eq, movBasesK_eq, killK_eq,
     storeStepK_eq, aluStepK_eq, mulxStepK_eq, adxStepK_eq, cmovStepK_eq, Bool.cond_eq_ite]
 
 theorem memB_eq (a : Reg × Nat × Nat) (l : List (Reg × Nat × Nat)) : memB a l = l.contains a := by
@@ -2813,6 +2830,11 @@ def stepKDFn : Instr → Step
   | .cmov _ d src => ⟨fun τ => cmovStepK τ d src⟩
   | .push _ | .pop .. | .alloc _ | .free _ | .callr _ | .callm _ => ⟨fun _ => none⟩
 
+/-- `stepKDFn` unfolded on a constructor (see `unfoldStep?`). -/
+dsimproc reduceStepKDFn (stepKDFn _) := fun e => do
+  let some e' ← unfoldStep? e | return .continue
+  return .visit e'
+
 /-- Apply the preclassified instruction to the incoming taint. -/
 def stepKD (τ : T) (i : Instr) : Option T := (stepKDFn i).run τ
 
@@ -2888,13 +2910,13 @@ theorem stepKD_spec (τ : T) (i : Instr) :
   case evStore m _ => exact st m 32 _
   case e5ExtractStore m _ _ => exact st m 32 _
   case kStore m k _ | kStore8 m k _ =>
-    simp only [stepKD, stepKDFn, step]
+    simp only [stepKD, reduceStepKDFn, reduceStep]
     cases pub τ k
     · exact .inl ⟨rfl, rfl⟩
     · exact st m 64 _
   case stmxcsr m => exact st m 4 _
   case xop op => cases op <;> exact other rfl
-  case mul r => exact other (by rw [stepKD, stepKDFn, stepK, mulStepKD_eq])
+  case mul r => exact other (by simp only [stepKD, reduceStepKDFn, reduceStepK, mulStepKD_eq])
   all_goals exact other rfl
 
 /-! ### Steps the kernel finds again
@@ -3138,6 +3160,11 @@ def stepKeepFn : Instr → Step
   | .stmxcsr m => ⟨fun τ => storeStepF τ m 4 false⟩
   | i => stepKDFn i
 
+/-- `stepKeepFn` unfolded on a constructor (see `unfoldStep?`). -/
+dsimproc reduceStepKeepFn (stepKeepFn _) := fun e => do
+  let some e' ← unfoldStep? e | return .continue
+  return .visit e'
+
 theorem keepBases_eq {same : Bool} {b slow : List (Reg × Nat × Nat)} (k : List (Reg × Nat × Nat) → T)
     (h : same = true → slow = b) : keepBases same b slow k = some (k slow) := by
   cases same
@@ -3205,33 +3232,33 @@ theorem stepKeepFn_run (i : Instr) (τ : T) : (stepKeepFn i).run τ = (stepKDFn 
     show (bif pub _ k then storeStepF _ m 64 false else none) = _
     rw [storeStepF_eq]; rfl
   case mov d src =>
-    simp only [stepKeepFn, stepKDFn]
+    simp only [reduceStepKeepFn, reduceStepKDFn]
     cases srcOkK _ src <;> simp only [Bool.cond_true, Bool.cond_false]
     exact keepBases_eq _ hm
   case alu op d src | alu32 op d src =>
-    simp only [stepKeepFn, stepKDFn, aluStepKeep, aluStepK]
+    simp only [reduceStepKeepFn, reduceStepKDFn, aluStepKeep, aluStepK]
     cases srcOkK _ src <;> simp only [Bool.cond_true, Bool.cond_false]
     exact keepBases_eq _ ha
   case mulx hi lo' src =>
-    simp only [stepKeepFn, stepKDFn, mulxStepK]
+    simp only [reduceStepKeepFn, reduceStepKDFn, mulxStepK]
     cases srcOkK _ src <;> simp only [Bool.cond_true, Bool.cond_false]
     exact keepBases_eq _ h2
   case mul r =>
-    simp only [stepKeepFn, stepKDFn, mulStepKD]
+    simp only [reduceStepKeepFn, reduceStepKDFn, mulStepKD]
     exact keepBases_eq _ h2
   case movzx8 d m | movzx16 d m =>
-    simp only [stepKeepFn, stepKDFn, keepKill]
+    simp only [reduceStepKeepFn, reduceStepKDFn, keepKill]
     cases memPub _ m <;> simp only [Bool.cond_true, Bool.cond_false]
     exact keepBases_eq _ hk
   case aluTbl _ d m _ _ =>
-    simp only [stepKeepFn, stepKDFn, keepKill]
+    simp only [reduceStepKeepFn, reduceStepKDFn, keepKill]
     cases idxPub _ m <;> simp only [Bool.cond_true, Bool.cond_false]
     exact keepBases_eq _ hk
   case mov32 d src | adcx d src | adox d src | cmov _ d src =>
-    simp only [stepKeepFn, stepKDFn, adxStepK, cmovStepK, keepKill]
+    simp only [reduceStepKeepFn, reduceStepKDFn, adxStepK, cmovStepK, keepKill]
     cases srcOkK _ src <;> simp only [Bool.cond_true, Bool.cond_false]
     exact keepBases_eq _ hk
-  all_goals (simp only [stepKeepFn, stepKDFn, keepKill]; exact keepBases_eq _ hk)
+  all_goals (simp only [reduceStepKeepFn, reduceStepKDFn, keepKill]; exact keepBases_eq _ hk)
 
 theorem stepKeepFn_eq (i : Instr) : stepKeepFn i = stepKDFn i := by
   have h := funext (stepKeepFn_run i)
