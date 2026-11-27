@@ -39,6 +39,8 @@ def verifyCode : Prog isa :=
   .seq (Cfg.scalars p521) <| .seq p521.nPow <| .seq (Cfg.uv p521) <|
   .seq P521Joint.points (Cfg.tail p521)
 
+materialize_code Impl.Ecdsa.Verify.AArch64.P521Joint.digitsBody
+
 materialize_code verifyCode
 
 /-- `verifyCode`'s literal under the name of the code it is: equal to it by

@@ -30,7 +30,7 @@ residue. -/
 def verifyHashP521 : Prog isa :=
   Scrub.AArch64.scrubAll 80 32
     ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16, .x17],
-     [.v16, .v17, .v18, .v19, .v20, .v21, .v22, .v24, .v25, .v26, .v28, .v29],
+     [.v16, .v17, .v18, .v19, .v20, .v21, .v22, .v24, .v25, .v26, .v28, .v29, .v31],
      []⟩
     (Impl.Ecdsa.AArch64.VerifyHash.verifyHash Spec.Ecdsa.P521.inst.curve.len true verifyP521)
 
