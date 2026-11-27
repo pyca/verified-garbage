@@ -13,7 +13,7 @@ public import VerifiedGarbage.Spec.Sm4.Ofb
 public import VerifiedGarbage.Spec.Sm4.OfbFinal
 public import VerifiedGarbage.Spec.Sm4.Ctr
 public import VerifiedGarbage.Spec.Sm4.CtrFinal
-public import VerifiedGarbage.Proof.Sm4.RISCV64.KeyVerified
+import VerifiedGarbage.Proof.Sm4.RISCV64.KeyCall
 public import VerifiedGarbage.Proof.Sm4.RISCV64.ModesVerified
 public import VerifiedGarbage.Proof.Sm4.Scratch
 import VerifiedGarbage.Proof.Sm4.CbcScratch
@@ -34,7 +34,7 @@ meta import VerifiedGarbage.Spec.Sm4.Ofb
 meta import VerifiedGarbage.Spec.Sm4.OfbFinal
 meta import VerifiedGarbage.Spec.Sm4.Ctr
 meta import VerifiedGarbage.Spec.Sm4.CtrFinal
-meta import VerifiedGarbage.Proof.Sm4.RISCV64.KeyVerified
+meta import VerifiedGarbage.Proof.Sm4.RISCV64.KeyCall
 meta import VerifiedGarbage.Proof.Sm4.RISCV64.ModesVerified
 meta import VerifiedGarbage.Proof.Sm4.Scratch
 meta import VerifiedGarbage.Proof.Sm4.CbcScratch
@@ -1322,8 +1322,8 @@ theorem expandKey_scrubbed :
     VerifiedScrubbed RISCV64.target Impl.Sm4.RISCV64.Fn.expandKey
       (Spec.Sm4.expandKeyContract RISCV64.abi 3168) 0 :=
   verifiedScrubbedSel (api := Spec.Sm4.expandKeyApi) (W := 3168) (rb := 0)
-    { code := Impl.StackScratch.RISCV64.withStackScratchWiped 3168 .a2 396 Impl.Sm4.RISCV64.expandKey
-      verified := Proof.Sm4.RISCV64.expandKey_framed }
+    { code := Impl.StackScratch.RISCV64.withStackScratchWiped 3168 .a2 396 Impl.Sm4.RISCV64.expandKeyCalled
+      verified := Proof.Sm4.RISCV64.KeyCall.framed_verified }
     _ [] (expandKeyOut _) (by lit_decide) (hbp_nil _) ⟨_, by taint_decide_ct⟩
 
 /-- `Spec.Sm4.ecbEncryptApi` as emitted (`Impl.Sm4.RISCV64.Fn.ecbEncrypt`) meets its contract

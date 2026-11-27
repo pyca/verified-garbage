@@ -25,6 +25,8 @@ code again.
 @[expose] public section
 
 namespace VG.Proof.Sm4.RISCV64
+materialize_code expandKeyCoreCode := Impl.Sm4.RISCV64.expandKeyCore
+materialize_code expandKeyCalledCode := Impl.Sm4.RISCV64.expandKeyCalled
 
 materialize_code expandKeyCode := Impl.Sm4.RISCV64.expandKey
 materialize_code ecbEncrypt := Impl.Sm4.RISCV64.ecb .encrypt

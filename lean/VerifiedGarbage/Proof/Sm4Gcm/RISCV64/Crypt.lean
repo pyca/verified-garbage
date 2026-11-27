@@ -20,7 +20,7 @@ public import VerifiedGarbage.Proof.Framework.RISCV64.Call
 public import VerifiedGarbage.Proof.AesGcm.RISCV64.Callee
 public import VerifiedGarbage.Proof.AesGcm.RISCV64.CTBase
 public import VerifiedGarbage.Proof.Sm4.RISCV64.Ctr32Verified
-public import VerifiedGarbage.Proof.Sm4.RISCV64.KeyVerified
+import VerifiedGarbage.Proof.Sm4.RISCV64.KeyCall
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.AesGcm.RISCV64.Env
 import VerifiedGarbage.Proof.Framework.Contract
@@ -140,7 +140,7 @@ theorem ctr_rel {name : String} {P : State → State → Prop}
 
 /-- `vg_sm4_expand_key`, in its frame. -/
 abbrev keyCode : Prog isa :=
-  Impl.StackScratch.RISCV64.withStackScratchWiped 3168 .a2 396 Impl.Sm4.RISCV64.expandKey
+  Impl.StackScratch.RISCV64.withStackScratchWiped 3168 .a2 396 Impl.Sm4.RISCV64.expandKeyCalled
 
 theorem key_sdepth : sdepth keyCode = 3168 := by lit_decide
 
@@ -194,7 +194,7 @@ theorem KeyCall.pre {s : State} {K C : Addr} (h : KeyCall s K C) :
 
 theorem key_call {name : String} {s : State} {K C : Addr} (h : KeyCall s K C) :
     WP isa (.call name keyCode) s (KeyPost s K C) := by
-  refine WP.callAny (k := Spec.Sm4.expandKeyContract RISCV64.abi 3168) Proof.Sm4.RISCV64.expandKey_framed.1
+  refine WP.callAny (k := Spec.Sm4.expandKeyContract RISCV64.abi 3168) Proof.Sm4.RISCV64.KeyCall.framed_verified.1
     (rd := [⟨K, 16⟩]) (wr := [⟨C, 128⟩]) h.pre h.reads h.writes ?_ (by rw [key_sdepth]; decide)
   intro s' hrd hwr hsp hf hcs hpost
   rw [key_sdepth] at hf
@@ -214,7 +214,7 @@ theorem key_rel {name : String} {P : State → State → Prop}
       obtain ⟨K, C, h₁, h₂, hsp⟩ := h s₁ s₂ hp
       exact ⟨(K, C), h₁, h₂, hsp⟩) fun _ _ h => h
   obtain ⟨K, C⟩ := x
-  refine RelCT.call Proof.Sm4.RISCV64.expandKey_framed.1 Proof.Sm4.RISCV64.expandKey_framed.2.1
+  refine RelCT.call Proof.Sm4.RISCV64.KeyCall.framed_verified.1 Proof.Sm4.RISCV64.KeyCall.framed_verified.2.1
     [⟨K, 16⟩] [⟨C, 128⟩] fun s₁ s₂ ⟨h₁, h₂, hsp⟩ => ?_
   refine ⟨h₁.pre, h₂.pre, ?_, h₁.reads, h₁.writes, h₂.reads, h₂.writes⟩
   have e0 := callEntry_gpr' s₁ (by decide : Reg.a0 ∉ linkRegs)

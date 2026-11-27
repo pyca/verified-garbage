@@ -13,10 +13,10 @@ public import VerifiedGarbage.Impl.Scrub.X86.Sel
 
 /-! # SM4 on x86 (32-bit): the functions as emitted
 
-Each function runs with its working space in a frame on the stack, wiped
-before it returns (`withStackScratchWiped`), and is followed by its cleanup.
-Key expansion calls nothing in its frame, so its cleanup clears the
-registers a callee may change alone (`Impl.Scrub.X86.scrub 0`). The others'
+Each function runs with its working space in a frame on the stack, wipes
+it before returning, and is followed by its cleanup.
+Key expansion calls the shared schedule and clears the four-word header with one SIMD store
+below its scratch buffer (the return address and argument header). The others'
 (`Impl.Scrub.X86.scrubSel 0 W ws`, `Impl/Scrub/X86/Sel.lean`) also zero, of
 the `W` bytes of stack below `esp` that their contract reserves, the
 doublewords `ws` that the residue analysis finds they may leave different in
@@ -46,7 +46,7 @@ def ctrFinalWords : List Nat := [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 379, 380, 381
 
 /-- `Spec.Sm4.expandKeyApi`'s function as emitted. -/
 def expandKey : Prog isa :=
-  Impl.Scrub.X86.scrub 0 (Impl.StackScratch.X86.withStackScratchWiped 1448 2 358 Impl.Sm4.X86.expandKey)
+  Impl.Scrub.X86.scrubSel 0 1448 [] Impl.Sm4.X86.expandKeyClean
 
 /-- `Spec.Sm4.ecbEncryptApi`'s function as emitted. -/
 def ecbEncrypt : Prog isa :=
