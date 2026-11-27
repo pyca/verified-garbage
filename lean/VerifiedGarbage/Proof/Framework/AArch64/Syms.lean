@@ -23,54 +23,21 @@ mode of its two runs after the call, now that the mode is public
 
 namespace VG.AArch64
 
-/-- What no instruction changes: SP, the addresses of statics and the unknowns, and PSTATE.DIT
-but by `msr DIT`, which gives it a value of its own. -/
-theorem exec_fixed {i : Instr} {s s' : State} (h : exec i s = some s') :
-    s'.sp = s.sp ∧ s'.syms = s.syms ∧ s'.unknowns = s.unknowns ∧
-      (s'.dit = s.dit ∨ ∃ on, i = .msrDitImm on ∧ s'.dit = on) := by
-  cases i with
-  | msrDitImm on => obtain rfl := Option.some.inj h; exact ⟨rfl, rfl, rfl, .inr ⟨on, rfl, rfl⟩⟩
-  | str sz t n off | strb t n off | strq t n off =>
-    simp only [reduceExec, Option.bind_eq_some_iff, State.store] at h
-    obtain ⟨a, -, h⟩ := h
-    split at h <;> cases h; exact ⟨rfl, rfl, rfl, .inl rfl⟩
-  | ldr sz t n off | ldrb t n off | ldrq t n off =>
-    simp only [reduceExec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at h
-    obtain ⟨a, -, v, -, rfl⟩ := h; exact ⟨rfl, rfl, rfl, .inl rfl⟩
-  | ldrqTbl t n off name ws =>
-    simp only [reduceExec] at h; split at h <;> cases h; exact ⟨rfl, rfl, rfl, .inl rfl⟩
-  | vop op =>
-    simp only [reduceExec, Option.map_eq_some_iff] at h
-    obtain ⟨⟨_, _⟩, -, rfl⟩ := h; exact ⟨rfl, rfl, rfl, .inl rfl⟩
-  | ldrSp t off =>
-    obtain ⟨-, h⟩ := Option.ite_none_right_eq_some.mp h
-    obtain ⟨_, _, rfl⟩ := Option.map_eq_some_iff.mp h; exact ⟨rfl, rfl, rfl, .inl rfl⟩
-  | strSp t off =>
-    obtain ⟨-, h⟩ := Option.ite_none_right_eq_some.mp h
-    simp only [State.store] at h
-    split at h <;> cases h; exact ⟨rfl, rfl, rfl, .inl rfl⟩
-  | ldp t1 t2 n off =>
+theorem exec_syms {i : Instr} {s s' : State} (h : exec i s = some s') : s'.syms = s.syms := by
+  cases i
+  case ldp =>
     obtain ⟨-, h⟩ := Option.ite_none_right_eq_some.mp h
     simp only [Option.bind_eq_some_iff, Option.map_eq_some_iff] at h
-    obtain ⟨_, -, _, -, rfl⟩ := h; exact ⟨rfl, rfl, rfl, .inl rfl⟩
-  | stp t1 t2 n off =>
+    obtain ⟨_, -, _, -, rfl⟩ := h; rfl
+  case stp =>
     obtain ⟨-, h⟩ := Option.ite_none_right_eq_some.mp h
     simp only [Option.bind_eq_some_iff, State.store] at h
     obtain ⟨_, h₁, h₂⟩ := h
-    split at h₁ <;> cases h₁; split at h₂ <;> cases h₂; exact ⟨rfl, rfl, rfl, .inl rfl⟩
-  | ccmp sz n imm nzcv cond =>
-    obtain ⟨-, h⟩ := Option.ite_none_right_eq_some.mp h; obtain rfl := Option.some.inj h
-    split <;> exact ⟨rfl, rfl, rfl, .inl rfl⟩
-  | push _ | pop _ | alloc _ | free _ | blr _ => simp only [reduceExec, reduceCtorEq] at h
-  | logicRor _ _ _ _ _ _ | bicRor _ _ _ _ _ | extr _ _ _ _ _ | addSp _ _ | addImm _ _ _ _
-  | subImm _ _ _ _ | ror _ _ _ _ | lsr _ _ _ _ | lsl _ _ _ _ | movz _ _ _ _ | movk _ _ _ _
-  | umov _ _ _ _ | ldrTbl _ _ _ _ _ _ =>
-    obtain ⟨-, h⟩ := Option.ite_none_right_eq_some.mp h; obtain rfl := Option.some.inj h
-    exact ⟨rfl, rfl, rfl, .inl rfl⟩
-  | _ => obtain rfl := Option.some.inj h; exact ⟨rfl, rfl, rfl, .inl rfl⟩
-
-theorem exec_syms {i : Instr} {s s' : State} (h : exec i s = some s') : s'.syms = s.syms :=
-  (exec_fixed h).2.1
+    split at h₁ <;> cases h₁; split at h₂ <;> cases h₂; rfl
+  all_goals simp only [reduceExec] at h <;> (repeat' split at h) <;>
+    simp_all [State.write, State.addWithCarry, State.store, State.setV, Option.bind_eq_some_iff,
+      Option.map_eq_some_iff] <;> (try subst h) <;> (try rfl) <;>
+    (obtain ⟨_, _, _, _, rfl⟩ := h; rfl)
 
 theorem push_syms {i : Instr} {s s' : State} (h : push i s = some s') : s'.syms = s.syms := by
   cases i <;> simp only [push] at h <;> (repeat' split at h) <;> simp_all <;> (subst h; rfl)
@@ -132,9 +99,21 @@ def Instr.writesDit : Instr → Bool
 
 theorem exec_dit {i : Instr} {s s' : State} (hi : i.writesDit = false) (h : exec i s = some s') :
     s'.dit = s.dit := by
-  rcases (exec_fixed h).2.2.2 with e | ⟨_, rfl, -⟩
-  · exact e
-  · cases hi
+  cases i
+  case msrDitImm => cases hi
+  case ldp =>
+    obtain ⟨-, h⟩ := Option.ite_none_right_eq_some.mp h
+    simp only [Option.bind_eq_some_iff, Option.map_eq_some_iff] at h
+    obtain ⟨_, -, _, -, rfl⟩ := h; rfl
+  case stp =>
+    obtain ⟨-, h⟩ := Option.ite_none_right_eq_some.mp h
+    simp only [Option.bind_eq_some_iff, State.store] at h
+    obtain ⟨_, h₁, h₂⟩ := h
+    split at h₁ <;> cases h₁; split at h₂ <;> cases h₂; rfl
+  all_goals simp only [reduceExec] at h <;> (repeat' split at h) <;>
+    simp_all [State.write, State.addWithCarry, State.store, State.setV, Option.bind_eq_some_iff,
+      Option.map_eq_some_iff] <;> (try subst h) <;> (try rfl) <;>
+    (obtain ⟨_, _, _, _, rfl⟩ := h; rfl)
 
 theorem push_dit {i : Instr} {s s' : State} (h : push i s = some s') : s'.dit = s.dit := by
   cases i <;> simp only [push] at h <;> (repeat' split at h) <;> simp_all <;> (subst h; rfl)

@@ -137,22 +137,47 @@ theorem parameterSearchOut {A : Abi isa} (hA : ScrubAbi A) (stack : Nat) :
 
 /-! ## The functions that call no implementation of a variant -/
 
-theorem generateKey_sp : Impl.Dsa.X86.Comb.generateKey.all (fun i => !isa.writesSp i) = true := by sp_safe
+/-- What the cleanups of the functions need of their code, and that it writes
+`esp` only in its frames and calls, in one check: they share code, which the
+kernel then evaluates once. -/
+private theorem sides :
+    (Impl.Dsa.X86.Comb.generateKey.allInstrs Taint.keepsSp && scrubFSide Impl.Dsa.X86.Comb.generateKey [] 232) = true ∧
+    (Impl.Dsa.X86.Generate.deriveKey.allInstrs Taint.keepsSp && scrubFSide Impl.Dsa.X86.Generate.deriveKey [] 108) = true ∧
+    (Impl.Dsa.X86.PrevalidatedSign.validate.allInstrs Taint.keepsSp && scrubFSide Impl.Dsa.X86.PrevalidatedSign.validate [] 108) = true ∧
+    ((Impl.Dsa.X86.RandomSign.code prevalidatedSignFn.name prevalidatedSignFn.code).allInstrs Taint.keepsSp && scrubFSide (Impl.Dsa.X86.RandomSign.code prevalidatedSignFn.name prevalidatedSignFn.code) [] 232) = true ∧
+    (Impl.Dsa.X86.Prevalidated.validate.allInstrs Taint.keepsSp && scrubFSide Impl.Dsa.X86.Prevalidated.validate [] 108) = true ∧
+    (Impl.Dsa.X86.Prevalidated.verify.allInstrs Taint.keepsSp && scrubFSide Impl.Dsa.X86.Prevalidated.verify [] 108) = true := by
+  lit_decide
 
-theorem deriveKey_sp : Impl.Dsa.X86.Generate.deriveKey.all (fun i => !isa.writesSp i) = true := by sp_safe
+theorem generateKey_sp : Impl.Dsa.X86.Comb.generateKey.all (fun i => !isa.writesSp i) = true :=
+  Code.all_of_spTest (Bool.and_eq_true .. ▸ sides.1).1
 
-theorem validatePrivateKey_sp :
-    Impl.Dsa.X86.PrevalidatedSign.validate.all (fun i => !isa.writesSp i) = true := by sp_safe
+private theorem generateKey_side : scrubFSide Impl.Dsa.X86.Comb.generateKey [] 232 = true := (Bool.and_eq_true .. ▸ sides.1).2
 
-theorem randomSignPrevalidated_sp :
-    (Impl.Dsa.X86.RandomSign.code prevalidatedSignFn.name prevalidatedSignFn.code).all
-      (fun i => !isa.writesSp i) = true := by sp_safe
+theorem deriveKey_sp : Impl.Dsa.X86.Generate.deriveKey.all (fun i => !isa.writesSp i) = true :=
+  Code.all_of_spTest (Bool.and_eq_true .. ▸ sides.2.1).1
 
-theorem validatePublicKey_sp : Impl.Dsa.X86.Prevalidated.validate.all (fun i => !isa.writesSp i) = true := by
-  sp_safe
+private theorem deriveKey_side : scrubFSide Impl.Dsa.X86.Generate.deriveKey [] 108 = true := (Bool.and_eq_true .. ▸ sides.2.1).2
 
-theorem verifyPrevalidated_sp : Impl.Dsa.X86.Prevalidated.verify.all (fun i => !isa.writesSp i) = true := by
-  sp_safe
+theorem validatePrivateKey_sp : Impl.Dsa.X86.PrevalidatedSign.validate.all (fun i => !isa.writesSp i) = true :=
+  Code.all_of_spTest (Bool.and_eq_true .. ▸ sides.2.2.1).1
+
+private theorem validatePrivateKey_side : scrubFSide Impl.Dsa.X86.PrevalidatedSign.validate [] 108 = true := (Bool.and_eq_true .. ▸ sides.2.2.1).2
+
+theorem randomSignPrevalidated_sp : (Impl.Dsa.X86.RandomSign.code prevalidatedSignFn.name prevalidatedSignFn.code).all (fun i => !isa.writesSp i) = true :=
+  Code.all_of_spTest (Bool.and_eq_true .. ▸ sides.2.2.2.1).1
+
+private theorem randomSignPrevalidated_side : scrubFSide (Impl.Dsa.X86.RandomSign.code prevalidatedSignFn.name prevalidatedSignFn.code) [] 232 = true := (Bool.and_eq_true .. ▸ sides.2.2.2.1).2
+
+theorem validatePublicKey_sp : Impl.Dsa.X86.Prevalidated.validate.all (fun i => !isa.writesSp i) = true :=
+  Code.all_of_spTest (Bool.and_eq_true .. ▸ sides.2.2.2.2.1).1
+
+private theorem validatePublicKey_side : scrubFSide Impl.Dsa.X86.Prevalidated.validate [] 108 = true := (Bool.and_eq_true .. ▸ sides.2.2.2.2.1).2
+
+theorem verifyPrevalidated_sp : Impl.Dsa.X86.Prevalidated.verify.all (fun i => !isa.writesSp i) = true :=
+  Code.all_of_spTest (Bool.and_eq_true .. ▸ sides.2.2.2.2.2).1
+
+private theorem verifyPrevalidated_side : scrubFSide Impl.Dsa.X86.Prevalidated.verify [] 108 = true := (Bool.and_eq_true .. ▸ sides.2.2.2.2.2).2
 
 theorem parameterInit_sp : Impl.Dsa.X86.Generation.init.all (fun i => !isa.writesSp i) = true := by sp_safe
 
@@ -163,7 +188,7 @@ theorem generateKey_scrubbed :
     { code := Impl.Dsa.X86.Comb.generateKey
       verified := Proof.Dsa.X86.Comb.key_verified
       spSafe := generateKey_sp }
-    (generateKeyOut _)
+    (generateKeyOut _) (hs := generateKey_side)
 
 theorem generateKey_spSafe : Impl.Dsa.X86.Fn.generateKey.all (fun i => !isa.writesSp i) = true :=
   scrubAll_spSafe generateKey_sp
@@ -175,7 +200,7 @@ theorem deriveKey_scrubbed :
     { code := Impl.Dsa.X86.Generate.deriveKey
       verified := Proof.Dsa.X86.deriving_verified
       spSafe := deriveKey_sp }
-    (deriveKeyOut _)
+    (deriveKeyOut _) (hs := deriveKey_side)
 
 theorem deriveKey_spSafe : Impl.Dsa.X86.Fn.deriveKey.all (fun i => !isa.writesSp i) = true :=
   scrubAll_spSafe deriveKey_sp
@@ -187,7 +212,7 @@ theorem validatePrivateKey_scrubbed :
     { code := Impl.Dsa.X86.PrevalidatedSign.validate
       verified := Proof.Dsa.X86.privateValidating_verified
       spSafe := validatePrivateKey_sp }
-    (validatePrivateKeyOut _)
+    (validatePrivateKeyOut _) (hs := validatePrivateKey_side)
 
 theorem validatePrivateKey_spSafe : Impl.Dsa.X86.Fn.validatePrivateKey.all (fun i => !isa.writesSp i) = true :=
   scrubAll_spSafe validatePrivateKey_sp
@@ -200,7 +225,7 @@ theorem randomSignPrevalidated_scrubbed :
     { code := Impl.Dsa.X86.RandomSign.code prevalidatedSignFn.name prevalidatedSignFn.code
       verified := Proof.Dsa.X86.randomSigningPrevalidated_verified
       spSafe := randomSignPrevalidated_sp }
-    (randomSignPrevalidatedOut _)
+    (randomSignPrevalidatedOut _) (hs := randomSignPrevalidated_side)
 
 theorem randomSignPrevalidated_spSafe :
     Impl.Dsa.X86.Fn.randomSignPrevalidated.all (fun i => !isa.writesSp i) = true :=
@@ -213,7 +238,7 @@ theorem validatePublicKey_scrubbed :
     { code := Impl.Dsa.X86.Prevalidated.validate
       verified := Proof.Dsa.X86.validating_verified
       spSafe := validatePublicKey_sp }
-    (validatePublicKeyOut _)
+    (validatePublicKeyOut _) (hs := validatePublicKey_side)
 
 theorem validatePublicKey_spSafe : Impl.Dsa.X86.Fn.validatePublicKey.all (fun i => !isa.writesSp i) = true :=
   scrubAll_spSafe validatePublicKey_sp
@@ -225,7 +250,7 @@ theorem verifyPrevalidated_scrubbed :
     { code := Impl.Dsa.X86.Prevalidated.verify
       verified := Proof.Dsa.X86.prevalidated_verified
       spSafe := verifyPrevalidated_sp }
-    (verifyPrevalidatedOut _)
+    (verifyPrevalidatedOut _) (hs := verifyPrevalidated_side)
 
 theorem verifyPrevalidated_spSafe : Impl.Dsa.X86.Fn.verifyPrevalidated.all (fun i => !isa.writesSp i) = true :=
   scrubAll_spSafe verifyPrevalidated_sp

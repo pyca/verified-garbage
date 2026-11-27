@@ -81,7 +81,7 @@ theorem dec_side (v : Backend) (c : CrtImpl) : calleeSide (decCode v c) 3568 = t
     match e : inames (decCode v c), ht with
     | [], _ => rfl
     | f :: _, ht => exact absurd (of_decide_eq_true (ht f (by simp))) (by simp [tableFns])
-  simp only [calleeSide, Bool.and_eq_true, decide_eq_true_eq]
+  rw [calleeSide_iff]
   exact ⟨hs, (calleeOk_iff _).mpr ⟨noIcall_of_inames hi, hm⟩⟩
 
 theorem dec_stack (v : Backend) (c : CrtImpl) : stackUse (decCode v c) ≤ 3568 :=

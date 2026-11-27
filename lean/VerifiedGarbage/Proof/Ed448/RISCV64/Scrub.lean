@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Spec.Ed448.Contract
 public import VerifiedGarbage.Proof.Framework.RISCV64.Scrub
 import VerifiedGarbage.Proof.Ed448.WholeLocal
-import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # Ed448 on RISC-V, without secret residue

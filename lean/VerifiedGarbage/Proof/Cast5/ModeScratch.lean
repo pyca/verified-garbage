@@ -7,7 +7,6 @@ public import VerifiedGarbage.Proof.Framework.Scratch
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.InstancePriority
 import VerifiedGarbage.Proof.Framework.GetElem
-import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # CAST5-CBC, CAST5-OFB and CAST5-CFB64 with their working space as an argument

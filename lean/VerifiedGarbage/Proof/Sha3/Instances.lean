@@ -6,7 +6,6 @@ import VerifiedGarbage.Proof.Sha3.Stream
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.GetElem
-import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # SHA-3 and SHAKE: each instance from the sponge

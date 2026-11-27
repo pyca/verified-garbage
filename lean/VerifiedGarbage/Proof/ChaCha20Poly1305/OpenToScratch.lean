@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.ChaCha20Poly1305.Scratch
 public import VerifiedGarbage.Proof.Framework.Scratch
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Sig
-import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # `vg_chacha20_poly1305_open_to` with its working space, and the locality of its contract

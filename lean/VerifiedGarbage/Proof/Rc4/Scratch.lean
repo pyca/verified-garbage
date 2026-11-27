@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Spec.Rc4.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.GetElem
-import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # RC4 with its working space as an argument

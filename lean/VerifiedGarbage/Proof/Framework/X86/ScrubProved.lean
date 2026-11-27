@@ -67,12 +67,33 @@ abbrev retBitsOf {api : Api} (r : Unscrubbed api target) : Nat :=
 /-- What `verifiedScrubbed` needs of code `c`: it calls nothing and has no frame,
 and none of its instructions is an MMX instruction. -/
 noncomputable def scrubSide (c : Prog isa) : Bool :=
-  c.noCalls && c.allInstrs (fun i => !i.isMmx)
+  c.noCalls && calleeOk c
 
 theorem of_scrubSide {c : Prog isa} (h : scrubSide c = true) :
     c.noCalls = true ∧ c.allInstrs (fun i => !i.isMmx) = true := by
-  simp only [scrubSide, Bool.and_eq_true] at h
-  exact h
+  simp only [scrubSide, Bool.and_eq_true, calleeOk_iff] at h
+  exact ⟨h.1, h.2.2⟩
+
+theorem inames_walk (c : Prog isa) : CodeWalk.inames c = inames c := by
+  induction c with
+  | block => rfl
+  | seq a b iha ihb | ite _ a b iha ihb => rw [CodeWalk.inames, inames, iha, ihb]
+  | loop b _ ih | call _ b ih | frame _ b _ ih => exact ih
+  | icall _ _ a b iha ihb => rw [CodeWalk.inames, inames, iha, ihb]
+
+/-- `stackUse c`. Only the kernel evaluates it. -/
+noncomputable def stackK (c : Prog isa) : Nat := CodeWalk.depth frameBytes 4 c
+
+theorem stackK_eq (c : Prog isa) : stackK c = stackUse c := by
+  unfold stackK
+  induction c with
+  | block => rfl
+  | seq a b iha ihb => rw [CodeWalk.depth_seq, stackUse, iha, ihb]
+  | ite _ a b iha ihb => rw [CodeWalk.depth_ite, stackUse, iha, ihb]
+  | icall _ _ a b iha ihb => rw [CodeWalk.depth_icall, stackUse, iha, ihb]
+  | loop b _ ih => exact ih
+  | call _ b ih => rw [CodeWalk.depth_call, stackUse, ih]
+  | frame i b _ ih => rw [CodeWalk.depth_frame, stackUse, ih]
 
 /-- What `verifiedScrubbedAll` needs of code `c` with tables of functions `ts`,
 scrubbed over `stack` bytes: its calls and frames use at most `stack` bytes
@@ -84,15 +105,22 @@ a multiple of 4).
 It is the one place these conditions are stated: covering more code changes
 this definition and `of_scrubFSide`, and call sites keep their proof. -/
 noncomputable def scrubFSide (c : Prog isa) (ts : List (String × List FnTable)) (stack : Nat) : Bool :=
-  decide (stackUse c ≤ stack) && tablesCall c ts && c.allInstrs (fun i => !i.isMmx) &&
+  Nat.ble (stackK c) stack && CodeWalk.sideAll (fun i => !i.isMmxK) (tableFns ts) c &&
     decide (0 < stack) && stack % 4 == 0
+
+theorem scrubFSide_iff {c : Prog isa} {ts : List (String × List FnTable)} {stack : Nat} :
+    scrubFSide c ts stack = true ↔ stackUse c ≤ stack ∧ tablesCall c ts = true ∧
+      c.allInstrs (fun i => !i.isMmx) = true ∧ 0 < stack ∧ stack % 4 = 0 := by
+  simp only [scrubFSide, Bool.and_eq_true, Nat.ble_eq, stackK_eq, CodeWalk.sideAll_iff, Instr.isMmxK_fn,
+    decide_eq_true_eq, beq_iff_eq, tablesCall, List.all_eq_true]
+  rw [← inames_walk]
+  exact ⟨fun h => ⟨h.1.1.1, h.1.1.2.2, h.1.1.2.1, h.1.2, h.2⟩, fun h => ⟨⟨⟨h.1, h.2.2.1, h.2.1⟩, h.2.2.2.1⟩, h.2.2.2.2⟩⟩
 
 theorem of_scrubFSide {c : Prog isa} {ts : List (String × List FnTable)} {stack : Nat}
     (h : scrubFSide c ts stack = true) :
     stackUse c ≤ stack ∧ tablesCall c ts = true ∧ c.allInstrs (fun i => !i.isMmx) = true ∧
       FrameOk stack := by
-  simp only [scrubFSide, Bool.and_eq_true, decide_eq_true_eq, beq_iff_eq] at h
-  exact ⟨h.1.1.1.1, h.1.1.1.2, h.1.1.2, h.1.2, h.2⟩
+  exact scrubFSide_iff.mp h
 
 /-- `r`'s code, which calls nothing and has no frame, followed by `tail rb`
 (`scrub`), meets `r`'s contract in constant time and returns without secret

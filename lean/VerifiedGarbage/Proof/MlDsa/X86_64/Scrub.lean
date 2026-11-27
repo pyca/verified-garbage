@@ -6,7 +6,6 @@ public import VerifiedGarbage.Spec.MlDsa.CachedVerify
 public import VerifiedGarbage.Spec.MlDsa.PkTr
 public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ML-DSA on x86-64, without secret residue

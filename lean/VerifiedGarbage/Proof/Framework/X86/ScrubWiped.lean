@@ -389,8 +389,8 @@ nothing and has no frame (so it writes no stack below the frame), never
 writes `esp`, and the function's code has no MMX instruction. One Boolean,
 which the call site proves by `lit_decide`. -/
 noncomputable def wipedSide (c : Prog isa) (bytes n words : Nat) : Bool :=
-  c.noCalls && stackUse c == 0 && c.allInstrs (fun i => !Taint.clobbers i .esp) &&
-    (withStackScratchWiped bytes n words c).allInstrs (fun i => !i.isMmx)
+  c.noCalls && Nat.beq (stackK c) 0 && c.allInstrs (fun i => !Taint.clobbers i .esp) &&
+    calleeOk (withStackScratchWiped bytes n words c)
 
 /-- `scrub rb` of code that wipes its own frame (`withStackScratchWiped`,
 with a wipe of all of its buffer), whose code in the frame `c` calls
@@ -430,8 +430,9 @@ theorem verifiedScrubbedWiped {c : Prog isa}
     (hleak : Sig.LeakLocal abi.ptrBits sig leak := by trivial) (hpub : argsPub sig = true := by decide) :
     VerifiedScrubbed target (scrub rb (withStackScratchWiped bytes (slots sig) words c))
       (sig.contract abi pre post false (0 + bytes) leak) rb := by
-  simp only [wipedSide, Bool.and_eq_true, beq_iff_eq] at hs
+  simp only [wipedSide, Bool.and_eq_true, Nat.beq_eq, stackK_eq] at hs
   obtain ⟨⟨⟨hn, hd0⟩, hsp⟩, hm⟩ := hs
+  have hm := ((calleeOk_iff _).mp hm).2
   have hd : stackUse c ≤ 0 := by omega_using [hd0]
   have hnsp : NoSp c := fun i hi => by
     rw [Code.allInstrs_eq, List.all_eq_true] at hsp

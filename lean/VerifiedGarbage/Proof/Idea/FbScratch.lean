@@ -7,7 +7,6 @@ import VerifiedGarbage.Proof.Idea.Arith
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.InstancePriority
 import VerifiedGarbage.Proof.Framework.GetElem
-import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # IDEA-OFB and -CFB64 with their working space as an argument

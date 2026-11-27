@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Poly1305.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # `vg_poly1305_blocks` with its working space as an argument

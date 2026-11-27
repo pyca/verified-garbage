@@ -438,16 +438,10 @@ def ofDom : XDom α where
     | op => (binMoves op).bind fun m => (movesA D a m.1).bind fun x => (movesA D b m.2).bind (D.xor x)
   const := D.const
 
-theorem unMoves_all (u : Un) : (unMoves u).all (fun l => realizes l u.src) = true := by
-  cases u with
-  | shift op n => cases op <;> (revert n; decide +kernel)
-  | pshufd o => revert o; decide +kernel
-  | pshuflw o => revert o; decide +kernel
-  | pshufhw o => revert o; decide +kernel
-
-theorem unMoves_ok {u : Un} {l : List (Nat × BitVec 128)} (h : unMoves u = some l) : realizes l u.src = true := by
-  have := unMoves_all u
-  rwa [h] at this
+theorem unMoves_ok : ∀ {u : Un} {l : List (Nat × BitVec 128)}, unMoves u = some l → realizes l u.src = true := by
+  intro u l h
+  unfold unMoves at h
+  split at h <;> first | (cases h; done) | (cases h; kernel_rfl)
 
 /-- The moves of an unpacking put together are what it does. -/
 def realizes2 (l : List (Nat × BitVec 128) × List (Nat × BitVec 128)) (g : Nat → Option (Bool × Nat)) : Bool :=

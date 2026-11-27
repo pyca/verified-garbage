@@ -12,7 +12,6 @@ import VerifiedGarbage.Proof.Framework.InstancePriority
 public import VerifiedGarbage.Proof.Framework.PowLit
 import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # HMAC's postconditions read memory only within the buffers
