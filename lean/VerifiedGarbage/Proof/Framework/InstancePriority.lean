@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Framework.FastDecide
 public meta import VerifiedGarbage.Proof.Framework.FastDecide
+public import VerifiedGarbage.Proof.Framework.FastElab
+public meta import VerifiedGarbage.Proof.Framework.FastElab
 
 /-!
 # Instance search without detours through Mathlib's hierarchies
@@ -27,7 +29,7 @@ The search finds the same instances as before, so every term (and what the
 kernel evaluates) is unchanged; this includes `omega`'s, `List.decidableBAll`
 deciding each `x = 0` by `Int.instDecidableEq`.
 
-`FastDecide` is imported for the modules that import this one.
+`FastDecide` and `FastElab` are imported for the modules that import this one.
 -/
 
 @[expose] public section

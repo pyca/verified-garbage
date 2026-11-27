@@ -333,6 +333,12 @@ Avoid these patterns (each has cost tens of seconds in one proof):
   `decide`. In a term `by decide` runs no tactic block; any other nested
   `(by tac)` first instantiates and shares every hypothesis, 2 to 5% of a long
   proof.
+* **Patterns and short tactic blocks:** `Proof/Framework/FastElab.lean`, which
+  `InstancePriority` imports, binds `fun ⟨a, b⟩ => …`, `match h with | ⟨a, b⟩ => …`,
+  `obtain`, `rintro` and `intro` patterns of `∧` and `∃` without a matcher or
+  `cases`, in proofs of propositions, and runs a nested `(by tac)` of at most
+  three tactics without sharing the context. A pattern on a structure, with
+  `rfl` or a constructor in it, still defines a matcher, 5 to 10 ms.
 * **Index bounds:** `xs[i]` proves `i < xs.length` with `get_elem_tactic`,
   whose core rules rewrite every hypothesis and run `omega`.
   `Proof/Framework/GetElem.lean` (which `Mem` imports) tries `decide`
