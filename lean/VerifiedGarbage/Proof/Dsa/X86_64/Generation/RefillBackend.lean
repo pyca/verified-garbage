@@ -532,7 +532,7 @@ private theorem prepare_side (v : RoundImpl) :
 private theorem prepare_depth (v : RoundImpl) :
     (Impl.Dsa.X86_64.Generation.primeSetup v.inlineMont.mm).x86_64Depth ≤ 8 := by
   have h := prepare_side v
-  simp only [VG.X86_64.Scrub.calleeSide, Bool.and_eq_true, decide_eq_true_eq] at h
+  simp only [VG.X86_64.Scrub.calleeSide_eq, Bool.and_eq_true, decide_eq_true_eq] at h
   exact h.1.1
 
 private theorem code_ok_prepare (mul : Nat → Nat → Nat → Prog isa) (round a b : Prog isa)

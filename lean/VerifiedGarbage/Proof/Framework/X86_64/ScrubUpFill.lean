@@ -194,7 +194,7 @@ at the level `sse`: its stack, instructions below the level `evex`, upper
 halves that agree at its end if they did at its start, and indirect calls
 only of its tables' functions. -/
 noncomputable def upStub (a : Prog isa) (n : String → Nat) (stack : Nat) (ts : List (String × List FnTable)) : Bool :=
-  decide (depthG n a ≤ stack) && lvAll 1 a && upF a true && tablesCall a ts
+  Nat.ble (depthGK n a) stack && lvAll 1 a && upF a true && tablesCall a ts
 
 /-- `r`'s code, `fillCallsG σ a` (its code over a stub `a` with the
 implementations' code), followed by `scrubAll v rb stack`, meets `r`'s
@@ -226,7 +226,7 @@ theorem verifiedScrubbedOrUp {api : Api} (r : Unscrubbed api target) (v : VecLev
       have := hσ f g d h
       simp only [upCallee, lvAll_one, upF_eq, Bool.and_eq_true, decide_eq_true_eq, List.isEmpty_iff] at this
       exact ⟨this.1.1.1, this.1.1.2, this.1.2, by simpa [UpperLock.inames] using this.2⟩
-    simp only [upStub, lvAll_one, Bool.and_eq_true, decide_eq_true_eq, upF_eq] at hau
+    simp only [upStub, ble_depthGK, lvAll_one, Bool.and_eq_true, decide_eq_true_eq, upF_eq] at hau
     obtain ⟨⟨⟨hd, hl1⟩, hup⟩, hic⟩ := hau
     subst hn hb htb
     exact verifiedScrubbedAllUp r hpost

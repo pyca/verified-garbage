@@ -57,8 +57,20 @@ theorem lvAll_eq (k : Nat) (c : Prog isa) :
 bytes of stack, vector instructions of at most the level `k`, no load of
 MXCSR, and no indirect call. Only the kernel evaluates it. -/
 noncomputable def calleeSide (c : Prog isa) (k n : Nat) : Bool :=
-  decide (c.x86_64Depth ≤ n) && lvAll k c &&
-    (UpperLock.inames c).isEmpty
+  Nat.ble (depthK c) n && CodeWalk.sideAll (lvOk k) [] c
+
+theorem calleeSide_eq (c : Prog isa) (k n : Nat) :
+    calleeSide c k n = (decide (c.x86_64Depth ≤ n) && lvAll k c && (UpperLock.inames c).isEmpty) := by
+  rw [calleeSide, Bool.eq_iff_iff]
+  simp only [Bool.and_eq_true, Nat.ble_eq, depthK_eq, CodeWalk.sideAll_iff, lvAll, decide_eq_true_eq,
+    List.isEmpty_iff, List.not_mem_nil, List.eq_nil_iff_forall_not_mem (l := UpperLock.inames c)]
+  rw [← inames_walk, and_assoc]
+
+/-- `calleeSide` of a call of code, from the code's. -/
+theorem calleeSide_call {c : Prog isa} {k n : Nat} (h : calleeSide c k n = true) (f : String) :
+    calleeSide (.call f c) k (n + 8) = true := by
+  rw [calleeSide, Bool.and_eq_true, CodeWalk.sideAll_iff, Nat.ble_eq] at h ⊢
+  exact ⟨Nat.add_le_add_right h.1 8, h.2⟩
 
 /-- `calleeSide` at the level of EVEX, which every instruction is within: of code whose depth is
 known and which is known to load no MXCSR, without asking its instructions. -/
@@ -74,7 +86,7 @@ theorem calleeSide_evex {c : Prog isa} {n : Nat} (hd : c.x86_64Depth ≤ n)
     split
     · decide
     · split <;> decide
-  rw [calleeSide, hl, hn, decide_eq_true hd]; rfl
+  rw [calleeSide_eq, hl, hn, decide_eq_true hd]; rfl
 
 /-- `Code.x86_64Depth` of code with a stub for the implementations it calls,
 each call `.call f (.block [])` of one (`Fill.hole`) taking `n f` bytes: the

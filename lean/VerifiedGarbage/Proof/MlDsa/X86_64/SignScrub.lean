@@ -165,7 +165,7 @@ theorem body_side (v : ArithImpl) {p : Spec.MlDsa.Params} (hℓ : p.ℓ = 4 ∨ 
   have hsd : ∀ f g d, sigmaV v.code p.ℓ f = some (g, d) →
       d.allInstrs (Ins v.level.level) = true ∧ UpperLock.inames d = [] := fun f g d h => by
     have := (sigmaV_side v hℓ f g d h).2
-    simp only [calleeSide, lvAll_eq, Bool.and_eq_true, List.isEmpty_iff] at this
+    simp only [calleeSide_eq, lvAll_eq, Bool.and_eq_true, List.isEmpty_iff] at this
     exact ⟨this.1.2, this.2⟩
   rw [he]
   refine ⟨fillI_allInstrs (fun f g d h => (hsd f g d h).1) _ (side_mono (Nat.zero_le _) hs),

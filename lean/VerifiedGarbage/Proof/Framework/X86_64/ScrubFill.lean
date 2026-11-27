@@ -21,7 +21,7 @@ theorem calleeSide_seqBlock {c : Prog isa} {b : List Instr} {k n : Nat}
     (h : calleeSide c k n = true)
     (hb : (Code.block b : Prog isa).allInstrs (fun i => decide (i.vecLevelR ≤ k) && !loadsMxcsr i) = true) :
     calleeSide (.seq c (.block b)) k n = true := by
-  simp only [calleeSide, lvAll_eq, Bool.and_eq_true, decide_eq_true_eq] at h ⊢
+  simp only [calleeSide_eq, lvAll_eq, Bool.and_eq_true, decide_eq_true_eq] at h ⊢
   refine ⟨⟨?_, ?_⟩, ?_⟩
   · simp only [Code.x86_64Depth]; exact Nat.max_le.mpr ⟨h.1.1, Nat.zero_le _⟩
   · show c.allInstrs _ && (Code.block b : Prog isa).allInstrs _ = true

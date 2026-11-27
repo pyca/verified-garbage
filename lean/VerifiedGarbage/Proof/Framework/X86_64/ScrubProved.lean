@@ -115,6 +115,48 @@ theorem mxSame_ofB {c : Prog isa} (h : mxSameB c = true) : MxSame c := by
   · exact MxSame.of_fun (mxFun_of h)
   · exact RScrub.Mx.mxSame_of h
 
+/-- No instruction of `c` loads MXCSR, so two runs of it leave the MXCSR
+they started with. -/
+theorem mxSame_of_noLoad {c : Prog isa} (h : c.allInstrs (fun i => !loadsMxcsr i) = true) : MxSame c :=
+  MxSame.of_fun ⟨id, fun _ _ _ e => Exec.mxcsr (fun i hi => by
+    simpa using List.all_eq_true.mp ((Code.allInstrs_eq _ c).symm.trans h) i hi) e⟩
+
+/-- What the scrub needs of every instruction, `sideI`, with `mxSameB`, and
+that the code calls indirectly only functions of `N`: one pass, which asks of
+the instructions that they load no MXCSR, and the rest only where it fails. -/
+noncomputable def sidesB (k : Nat) (vec : Bool) (kept : List Reg) (N : List String) (c : Prog isa) : Bool :=
+  Bool.rec (mxSameB c && CodeWalk.sideAll (sideI k vec kept) N c) true
+    (CodeWalk.sideAll (SideBits.none (Nat.lor (Nat.lor (SideBits.levelMask k)
+      (Nat.lor (bif vec then 0 else 65536) (SideBits.regsMask kept))) 524288)) N c)
+
+theorem of_sidesB {k : Nat} {vec : Bool} {kept : List Reg} {ts : List (String × List FnTable)} {c : Prog isa}
+    (h : sidesB k vec kept (tableFns ts) c = true) :
+    MxSame c ∧ c.allInstrs (sideI k vec kept) = true ∧ tablesCall c ts = true := by
+  have key : ∀ b : Bool, (Bool.rec (mxSameB c && CodeWalk.sideAll (sideI k vec kept) (tableFns ts) c) true b : Bool) = true →
+      (b = true → MxSame c ∧ c.allInstrs (sideI k vec kept) = true ∧ ∀ f ∈ CodeWalk.inames c, f ∈ tableFns ts) →
+      MxSame c ∧ c.allInstrs (sideI k vec kept) = true ∧ ∀ f ∈ CodeWalk.inames c, f ∈ tableFns ts := by
+    intro b hb ht
+    cases b with
+    | true => exact ht rfl
+    | false =>
+      have hb' : (mxSameB c && CodeWalk.sideAll (sideI k vec kept) (tableFns ts) c) = true := hb
+      rw [Bool.and_eq_true, CodeWalk.sideAll_iff] at hb'
+      exact ⟨mxSame_ofB hb'.1, hb'.2⟩
+  obtain ⟨h1, h2, h3⟩ := key _ h fun ht => by
+    obtain ⟨ha, hn⟩ := CodeWalk.sideAll_iff.mp ht
+    rw [Code.allInstrs_eq, List.all_eq_true] at ha
+    have hp : ∀ i ∈ instrs c, sideI k vec kept i = true ∧ SideBits.none 524288 i = true := fun i hi => by
+      have := ha i hi
+      rw [SideBits.none_or, Bool.and_eq_true] at this
+      exact this
+    refine ⟨mxSame_of_noLoad ?_, ?_, hn⟩
+    · rw [Code.allInstrs_eq, List.all_eq_true]
+      exact fun i hi => (SideBits.none_mx i).symm.trans (hp i hi).2
+    · rw [Code.allInstrs_eq, List.all_eq_true]
+      exact fun i hi => (hp i hi).1
+  refine ⟨h1, h2, List.all_eq_true.mpr fun f hf => decide_eq_true (h3 f ?_)⟩
+  rw [inames_walk]; exact hf
+
 /-- What the tail needs of the registers it clears, from `sideI` of every
 instruction: `TailOk`, that it clears every SSE register unless the code
 writes none, that the code writes none of the registers it leaves, and the
@@ -167,11 +209,10 @@ registers `gs` cleared, with the tables `ts`. One pass over the
 instructions, and `mxSameB`; only the kernel evaluates it. -/
 noncomputable def scrubSideG (c : Prog isa) (stack rb : Nat) (v : VecLevel) (vec : Bool) (ks cs : List Nat)
     (gs : List Reg) (ts : List (String × List FnTable)) : Bool :=
-  decide (c.x86_64Depth ≤ stack) && decide (stack + 8 < 2 ^ 64) && cs.sum == stack &&
+  Nat.ble (depthK c) stack && decide (stack + 8 < 2 ^ 64) && cs.sum == stack &&
   cs.all (fun b => decide (0 < b ∧ b < 4096 ∧ b % 8 = 0)) &&
   (decide (rb ≤ 32) || rb == 64) && gs.all (scratchRegs.contains ·) && !gs.isEmpty &&
-  mxSameB c && (decide (v ≠ .evex) || vec) &&
-  c.allInstrs (sideI v.level vec (keptG ks gs)) && tablesCall c ts
+  (decide (v ≠ .evex) || vec) && sidesB v.level vec (keptG ks gs) (tableFns ts) c
 
 /-- The chunks of `scrubSideG` sum to the stack, and each is one the wipe
 takes. -/
@@ -179,7 +220,7 @@ theorem scrubSideG_cs {c : Prog isa} {stack rb : Nat} {v : VecLevel} {vec : Bool
     {gs : List Reg} {ts : List (String × List FnTable)} (hs : scrubSideG c stack rb v vec ks cs gs ts = true) :
     cs.sum = stack ∧ ∀ b ∈ cs, 0 < b ∧ b < 4096 ∧ b % 8 = 0 := by
   simp only [scrubSideG, Bool.and_eq_true, beq_iff_eq] at hs
-  exact ⟨hs.1.1.1.1.1.1.1.1.2, fun b hb => of_decide_eq_true (List.all_eq_true.mp hs.1.1.1.1.1.1.1.2 b hb)⟩
+  exact ⟨hs.1.1.1.1.1.1.2, fun b hb => of_decide_eq_true (List.all_eq_true.mp hs.1.1.1.1.1.2 b hb)⟩
 
 /-- `r`'s code, scrubbed at the level `v` with the granules `ks` of the
 chunks `cs` wiped and the registers `xsFor vec ks` and `gs` cleared, without
@@ -193,8 +234,9 @@ theorem scrubSideG_ok {api : Api} (r : Unscrubbed api target) (v f : VecLevel) (
       NoResidue (scrubWith v (retBitsOf r) (xsFor vec ks) (psOf ks) gs ks cs r.code f) r.contract
         (retBitsOf r) := by
   obtain ⟨hcs, hcv⟩ := scrubSideG_cs hs
-  simp only [scrubSideG, Bool.and_eq_true, Bool.or_eq_true, decide_eq_true_eq, beq_iff_eq] at hs
-  obtain ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨hd, hst⟩, -⟩, -⟩, hrb⟩, hgs⟩, hgne⟩, hmx⟩, hxv⟩, hall⟩, hic⟩ := hs
+  simp only [scrubSideG, Bool.and_eq_true, Bool.or_eq_true, decide_eq_true_eq, beq_iff_eq, Nat.ble_eq, depthK_eq] at hs
+  obtain ⟨⟨⟨⟨⟨⟨⟨⟨hd, hst⟩, -⟩, -⟩, hrb⟩, hgs⟩, hgne⟩, hxv⟩, hall⟩ := hs
+  obtain ⟨hmx, hall, hic⟩ := of_sidesB hall
   obtain ⟨ht, hxs, hgk, hlv⟩ := sideI_facts (retBitsOf r) hall hgs hgne
   have hxe : v = .evex → ∀ x, x ∈ xsFor vec ks := fun e x => by
     have hv : vec = true := hxv.resolve_left (fun h => h e)
@@ -207,7 +249,7 @@ theorem scrubSideG_ok {api : Api} (r : Unscrubbed api target) (v f : VecLevel) (
   unfold retBitsOf at hrb' hp ht ⊢
   rw [e] at hv hp hr ⊢
   have key := Verified.scrubM (f := f) (ScrubAbi.of r.consts api.sig r.tables) hv (SpSafe.of_all r.spSafe) hd
-    hcs hst hcv hlv (fun _ => mxSame_ofB hmx) hrb' hp hr ht hxs hxe (fun _ _ e => absurd e hne) hgk
+    hcs hst hcv hlv (fun _ => hmx) hrb' hp hr ht hxs hxe (fun _ _ e => absurd e hne) hgk
   exact ⟨key.1, key.2 (tablesCall_syms hic rfl)⟩
 
 /-! ## The cleanup as part of the code -/
@@ -251,12 +293,6 @@ theorem gsAll_cover (ks : List Nat) : ∀ q ∈ scratchRegs, q ∈ gsAll ks ∨ 
     by_cases hr : q = .r11
     · exact .inr (by simp [hr])
     · exact .inl ((List.mem_erase_of_ne hr).mpr hq)
-
-/-- No instruction of `c` loads MXCSR, so two runs of it leave the MXCSR
-they started with. -/
-theorem mxSame_of_noLoad {c : Prog isa} (h : c.allInstrs (fun i => !loadsMxcsr i) = true) : MxSame c :=
-  MxSame.of_fun ⟨id, fun _ _ _ e => Exec.mxcsr (fun i hi => by
-    simpa using List.all_eq_true.mp ((Code.allInstrs_eq _ c).symm.trans h) i hi) e⟩
 
 /-- `verifiedScrubbedKs`, from what the cleanup needs of the code one fact
 at a time rather than as `scrubSideG`: its depth (`hd`), the level of its
