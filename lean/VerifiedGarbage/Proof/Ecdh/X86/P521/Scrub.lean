@@ -25,12 +25,15 @@ namespace VG.Proof.Ecdh.X86.P521.Scrub
 
 open VG.X86 VG.X86.Scrub VG.Proof.EcKey.X86.Scrub
 
+instance : SpSafe Impl.Ecdh.X86.Fn.exchangeP521 := spSafe_scrubAll Proof.Ecdh.X86.P521.ecdh_sp.1
+
 /-- `vg_ecdh_p521`. -/
 theorem exchange_scrubbed (hL : Weierstrass.Law Spec.P521.curve) :
     VerifiedScrubbed target Impl.Ecdh.X86.Fn.exchangeP521 (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P521.inst X86.abi 28) 32 :=
   verifiedScrubbedAll (api := Spec.Ecdh.P521.exchangeApi)
     { code := Impl.Ecdh.X86.exchangeP521
-      verified := Proof.Ecdh.X86.P521.ecdh_verified hL }
+      verified := Proof.Ecdh.X86.P521.ecdh_verified hL
+      spSafe := all_of_noSp Proof.Ecdh.X86.P521.ecdh_sp.1 }
     (exchangeOut _ _ [])
 
 end VG.Proof.Ecdh.X86.P521.Scrub

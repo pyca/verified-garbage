@@ -25,12 +25,15 @@ namespace VG.Proof.Ecdh.X86.BrainpoolP320r1.Scrub
 
 open VG.X86 VG.X86.Scrub VG.Proof.EcKey.X86.Scrub
 
+instance : SpSafe Impl.Ecdh.X86.Fn.exchangeBrainpoolP320r1 := spSafe_scrubAll Proof.Ecdh.X86.BrainpoolP320r1.ecdh_sp.1
+
 /-- `vg_ecdh_brainpoolp320r1`. -/
 theorem exchange_scrubbed (hL : Weierstrass.Law Spec.BrainpoolP320r1.curve) :
     VerifiedScrubbed target Impl.Ecdh.X86.Fn.exchangeBrainpoolP320r1 (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.BrainpoolP320r1.inst X86.abi 28) 32 :=
   verifiedScrubbedAll (api := Spec.Ecdh.BrainpoolP320r1.exchangeApi)
     { code := Impl.Ecdh.X86.exchangeBrainpoolP320r1
-      verified := Proof.Ecdh.X86.BrainpoolP320r1.ecdh_verified hL }
+      verified := Proof.Ecdh.X86.BrainpoolP320r1.ecdh_verified hL
+      spSafe := all_of_noSp Proof.Ecdh.X86.BrainpoolP320r1.ecdh_sp.1 }
     (exchangeOut _ _ [])
 
 end VG.Proof.Ecdh.X86.BrainpoolP320r1.Scrub

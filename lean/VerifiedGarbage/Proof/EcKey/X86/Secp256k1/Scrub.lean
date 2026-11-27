@@ -28,12 +28,18 @@ namespace VG.Proof.EcKey.X86.Secp256k1.Scrub
 
 open VG.X86 VG.X86.Scrub VG.Proof.EcKey.X86.Scrub
 
+instance : SpSafe Impl.EcKey.X86.Fn.publicKeySecp256k1 := spSafe_scrubAll Proof.EcKey.X86.Secp256k1.pk_sp.1
+instance : SpSafe Impl.EcKey.X86.Fn.compressSecp256k1 := spSafe_scrubAll Proof.EcKey.Compressed.X86.Secp256k1.sp.1
+instance : SpSafe Impl.EcKey.X86.Fn.decompressSecp256k1 :=
+  spSafe_scrubAll Proof.EcKey.Compressed.X86.Secp256k1Decompress.sp.1
+
 /-- `vg_ec_secp256k1_public_key`. -/
 theorem publicKey_scrubbed (hL : Weierstrass.Law Spec.Secp256k1.curve) (hI : Weierstrass.X86.Inv.InvSounds) :
     VerifiedScrubbed target Impl.EcKey.X86.Fn.publicKeySecp256k1 Proof.EcKey.X86.Secp256k1.pkSpec 32 :=
   verifiedScrubbedAll (api := Spec.EcKey.Secp256k1.publicKeyApi)
     { code := Impl.EcKey.X86.publicKeySecp256k1
-      verified := Proof.EcKey.X86.Secp256k1.pk_verified hL hI }
+      verified := Proof.EcKey.X86.Secp256k1.pk_verified hL hI
+      spSafe := all_of_noSp Proof.EcKey.X86.Secp256k1.pk_sp.1 }
     (publicKeyOut Spec.EcKey.Secp256k1.inst 24 Impl.Ecdsa.X86.secp256k1Comb.combConsts)
 
 /-- `vg_ec_secp256k1_compress_public_key`. -/
@@ -41,7 +47,8 @@ theorem compress_scrubbed (hI : Weierstrass.X86.Inv.InvSounds) :
     VerifiedScrubbed target Impl.EcKey.X86.Fn.compressSecp256k1 (Spec.EcKey.Secp256k1.inst.compressPublicKeyContract X86.abi 28) 32 :=
   verifiedScrubbedAll (api := Spec.EcKey.Secp256k1.inst.compressPublicKeyApi)
     { code := Proof.EcKey.Compressed.X86.Secp256k1.code
-      verified := Proof.EcKey.Compressed.X86.Secp256k1.verified hI }
+      verified := Proof.EcKey.Compressed.X86.Secp256k1.verified hI
+      spSafe := all_of_noSp Proof.EcKey.Compressed.X86.Secp256k1.sp.1 }
     (compressOut _ _ [])
 
 /-- `vg_ec_secp256k1_decompress_public_key`. -/
@@ -49,7 +56,8 @@ theorem decompress_scrubbed (hL : Weierstrass.Law Spec.Secp256k1.curve) (hI : We
     VerifiedScrubbed target Impl.EcKey.X86.Fn.decompressSecp256k1 (Spec.EcKey.Secp256k1.inst.decompressPublicKeyContract X86.abi 28) 32 :=
   verifiedScrubbedAll (api := Spec.EcKey.Secp256k1.inst.decompressPublicKeyApi)
     { code := Proof.EcKey.Compressed.X86.Secp256k1Decompress.code
-      verified := Proof.EcKey.Compressed.X86.Secp256k1Decompress.verified hL hI }
+      verified := Proof.EcKey.Compressed.X86.Secp256k1Decompress.verified hL hI
+      spSafe := all_of_noSp Proof.EcKey.Compressed.X86.Secp256k1Decompress.sp.1 }
     (decompressOut _ _ [])
 
 end VG.Proof.EcKey.X86.Secp256k1.Scrub

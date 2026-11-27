@@ -61,6 +61,9 @@ theorem brainpoolp320r1_nBits : Spec.Ecdsa.nBits Spec.BrainpoolP320r1.curve = 32
   have h₂ : Spec.BrainpoolP320r1.curve.n.log2 < 320 := (Nat.log2_lt (by decide +kernel)).mpr (by decide +kernel)
   omega_using [h₁, h₂]
 
+/-- The taint checks and instruction facts of the curve's blocks. -/
+theorem brainpoolp320r1_blk : RfcT (cfgC Impl.Ecdsa.X86.brainpoolp320r1Comb false 0) := by rfcT_decide
+
 /-- brainpoolP320r1, with the group law `hL`. -/
 def brainpoolp320r1 (hL : Weierstrass.Law Spec.BrainpoolP320r1.curve) : RfcCurve where
   E := Impl.Ecdsa.X86.brainpoolp320r1Comb
@@ -77,9 +80,9 @@ def brainpoolp320r1 (hL : Weierstrass.Law Spec.BrainpoolP320r1.curve) : RfcCurve
     Proof.Ecdsa.X86.BrainpoolP320r1.signComb_sp
   coreCT := coreCT_comb (Proof.Ecdsa.X86.BrainpoolP320r1.brainpoolp320r1Comb_ok) hL (Proof.Ecdsa.X86.BrainpoolP320r1.brainpoolp320r1Comb_tables hL) rfl Proof.Ecdsa.X86.BrainpoolP320r1.brainpoolp320r1Comb_shape
     (Proof.Ecdsa.X86.BrainpoolP320r1.brainpoolp320r1Comb_gMul hL) Proof.Ecdsa.X86.BrainpoolP320r1.signCT Proof.Ecdsa.X86.BrainpoolP320r1.signComb_sp
-  coreNs := NoSp.of_all (by lit_decide)
-  coreStack := by lit_decide
-  blk := by rfcT_decide
+  coreNs := Proof.Ecdsa.X86.BrainpoolP320r1.signComb_sp.1
+  coreStack := Proof.Ecdsa.X86.BrainpoolP320r1.signComb_sp.2
+  blk := brainpoolp320r1_blk
 
 /-- `vg_ecdsa_brainpoolp320r1_sign`, with the tables of `vs`. -/
 theorem brainpoolp320r1T_verified (hL : Weierstrass.Law Spec.BrainpoolP320r1.curve) (vs : List Proof.HmacTable.X86.HVar) (h : OK vs ∧ "VG_BRAINPOOLP320R1_COMB" ∉ Proof.HmacTable.X86.names vs) :
@@ -135,5 +138,9 @@ theorem brainpoolp320r1Sign_scrubbed (hL : Weierstrass.Law Spec.BrainpoolP320r1.
     (Proof.Ecdsa.Rfc6979.X86.Scrub.signOut Spec.Ecdsa.Rfc6979.Curves.brainpoolp320r1
       Impl.Ecdsa.X86.brainpoolp320r1Comb.combConsts _)
     (hs := brainpoolp320r1T_scrub hL)
+
+instance : SpSafe (Impl.Ecdsa.X86.Fn.signBrainpoolP320r1 (Proof.HmacTable.X86.fnsOf
+    (Proof.HmacTable.X86.vars Proof.Variants.Sha1.X86.variants Proof.Variants.Sha256.X86.variants))) :=
+  ⟨X86.Scrub.scrubAll_spSafe (signCode_sp (brainpoolp320r1 Proof.BrainpoolP320r1.X86.hasLaw.law) _ _)⟩
 
 end VG.Proof.Ecdsa.Rfc6979.X86

@@ -28,12 +28,18 @@ namespace VG.Proof.EcKey.X86.P192.Scrub
 
 open VG.X86 VG.X86.Scrub VG.Proof.EcKey.X86.Scrub
 
+instance : SpSafe Impl.EcKey.X86.Fn.publicKeyP192 := spSafe_scrubAll Proof.EcKey.X86.P192.pk_sp.1
+instance : SpSafe Impl.EcKey.X86.Fn.compressP192 := spSafe_scrubAll Proof.EcKey.Compressed.X86.P192.sp.1
+instance : SpSafe Impl.EcKey.X86.Fn.decompressP192 :=
+  spSafe_scrubAll Proof.EcKey.Compressed.X86.P192Decompress.sp.1
+
 /-- `vg_ec_p192_public_key`. -/
 theorem publicKey_scrubbed (hL : Weierstrass.Law Spec.P192.curve) :
     VerifiedScrubbed target Impl.EcKey.X86.Fn.publicKeyP192 Proof.EcKey.X86.P192.pkSpec 32 :=
   verifiedScrubbedAll (api := Spec.EcKey.P192.publicKeyApi)
     { code := Impl.EcKey.X86.publicKeyP192
-      verified := Proof.EcKey.X86.P192.pk_verified hL }
+      verified := Proof.EcKey.X86.P192.pk_verified hL
+      spSafe := all_of_noSp Proof.EcKey.X86.P192.pk_sp.1 }
     (publicKeyOut Spec.EcKey.P192.inst 24 Impl.Ecdsa.X86.p192Comb.combConsts)
 
 /-- `vg_ec_p192_compress_public_key`. -/
@@ -41,7 +47,8 @@ theorem compress_scrubbed :
     VerifiedScrubbed target Impl.EcKey.X86.Fn.compressP192 (Spec.EcKey.P192.inst.compressPublicKeyContract X86.abi 28) 32 :=
   verifiedScrubbedAll (api := Spec.EcKey.P192.inst.compressPublicKeyApi)
     { code := Proof.EcKey.Compressed.X86.P192.code
-      verified := Proof.EcKey.Compressed.X86.P192.verified }
+      verified := Proof.EcKey.Compressed.X86.P192.verified
+      spSafe := all_of_noSp Proof.EcKey.Compressed.X86.P192.sp.1 }
     (compressOut _ _ [])
 
 /-- `vg_ec_p192_decompress_public_key`. -/
@@ -49,7 +56,8 @@ theorem decompress_scrubbed (hL : Weierstrass.Law Spec.P192.curve) :
     VerifiedScrubbed target Impl.EcKey.X86.Fn.decompressP192 (Spec.EcKey.P192.inst.decompressPublicKeyContract X86.abi 28) 32 :=
   verifiedScrubbedAll (api := Spec.EcKey.P192.inst.decompressPublicKeyApi)
     { code := Proof.EcKey.Compressed.X86.P192Decompress.code
-      verified := Proof.EcKey.Compressed.X86.P192Decompress.verified hL }
+      verified := Proof.EcKey.Compressed.X86.P192Decompress.verified hL
+      spSafe := all_of_noSp Proof.EcKey.Compressed.X86.P192Decompress.sp.1 }
     (decompressOut _ _ [])
 
 end VG.Proof.EcKey.X86.P192.Scrub

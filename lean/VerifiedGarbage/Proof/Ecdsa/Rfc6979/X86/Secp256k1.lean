@@ -48,6 +48,9 @@ theorem secp256k1_nBits : Spec.Ecdsa.nBits Spec.Secp256k1.curve = 256 := by
   have h₂ : Spec.Secp256k1.curve.n.log2 < 256 := (Nat.log2_lt (by decide +kernel)).mpr (by decide +kernel)
   omega_using [h₁, h₂]
 
+/-- The taint checks and instruction facts of the curve's blocks. -/
+theorem secp256k1_blk : RfcT (cfgC Impl.Ecdsa.X86.secp256k1Comb false 0) := by rfcT_decide
+
 /-- secp256k1, with the group law `hL`. -/
 def secp256k1 (hL : Weierstrass.Law Spec.Secp256k1.curve) (hI : Proof.Weierstrass.X86.Inv.InvSounds) : RfcCurve where
   E := Impl.Ecdsa.X86.secp256k1Comb
@@ -64,9 +67,9 @@ def secp256k1 (hL : Weierstrass.Law Spec.Secp256k1.curve) (hI : Proof.Weierstras
     Proof.Ecdsa.X86.Secp256k1.signComb_sp
   coreCT := coreCT_comb (Proof.Ecdsa.X86.Secp256k1.secp256k1Comb_ok hI) hL (Proof.Ecdsa.X86.Secp256k1.secp256k1Comb_tables hL) rfl Proof.Ecdsa.X86.Secp256k1.secp256k1Comb_shape
     (Proof.Ecdsa.X86.Secp256k1.secp256k1Comb_gMul hL hI) Proof.Ecdsa.X86.Secp256k1.signCT Proof.Ecdsa.X86.Secp256k1.signComb_sp
-  coreNs := NoSp.of_all (by lit_decide)
-  coreStack := by lit_decide
-  blk := by rfcT_decide
+  coreNs := Proof.Ecdsa.X86.Secp256k1.signComb_sp.1
+  coreStack := Proof.Ecdsa.X86.Secp256k1.signComb_sp.2
+  blk := secp256k1_blk
 
 /-- `vg_ecdsa_secp256k1_sign`, with the tables of `vs`. -/
 theorem secp256k1T_verified (hL : Weierstrass.Law Spec.Secp256k1.curve) (hI : Proof.Weierstrass.X86.Inv.InvSounds) (vs : List Proof.HmacTable.X86.HVar) (h : OK vs ∧ "VG_SECP256K1_COMB" ∉ Proof.HmacTable.X86.names vs) :

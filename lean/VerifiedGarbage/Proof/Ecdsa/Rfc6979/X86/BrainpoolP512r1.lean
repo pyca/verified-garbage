@@ -50,6 +50,9 @@ theorem brainpoolp512r1_nBits : Spec.Ecdsa.nBits Spec.BrainpoolP512r1.curve = 51
   have h₂ : Spec.BrainpoolP512r1.curve.n.log2 < 512 := (Nat.log2_lt (by decide +kernel)).mpr (by decide +kernel)
   omega_using [h₁, h₂]
 
+/-- The taint checks and instruction facts of the curve's blocks. -/
+theorem brainpoolp512r1_blk : RfcT (cfgC Impl.Ecdsa.X86.brainpoolp512r1Comb false 0) := by rfcT_decide
+
 /-- brainpoolP512r1, with the group law `hL`. -/
 def brainpoolp512r1 (hL : Weierstrass.Law Spec.BrainpoolP512r1.curve) : RfcCurve where
   E := Impl.Ecdsa.X86.brainpoolp512r1Comb
@@ -67,9 +70,9 @@ def brainpoolp512r1 (hL : Weierstrass.Law Spec.BrainpoolP512r1.curve) : RfcCurve
     Proof.Ecdsa.X86.BrainpoolP512r1.signComb_sp
   coreCT := coreCT_comb (Proof.Ecdsa.X86.BrainpoolP512r1.brainpoolp512r1Comb_ok) hL (Proof.Ecdsa.X86.BrainpoolP512r1.brainpoolp512r1Comb_tables hL) rfl Proof.Ecdsa.X86.BrainpoolP512r1.brainpoolp512r1Comb_shape
     (Proof.Ecdsa.X86.BrainpoolP512r1.brainpoolp512r1Comb_gMul hL) Proof.Ecdsa.X86.BrainpoolP512r1.signCT Proof.Ecdsa.X86.BrainpoolP512r1.signComb_sp
-  coreNs := NoSp.of_all (by lit_decide)
-  coreStack := by lit_decide
-  blk := by rfcT_decide
+  coreNs := Proof.Ecdsa.X86.BrainpoolP512r1.signComb_sp.1
+  coreStack := Proof.Ecdsa.X86.BrainpoolP512r1.signComb_sp.2
+  blk := brainpoolp512r1_blk
 
 /-- `vg_ecdsa_brainpoolp512r1_sign`, with the tables of `vs`. -/
 theorem brainpoolp512r1T_verified (hL : Weierstrass.Law Spec.BrainpoolP512r1.curve) (vs : List Proof.HmacTable.X86.HVar) (h : OK vs ∧ "VG_BRAINPOOLP512R1_COMB" ∉ Proof.HmacTable.X86.names vs) :

@@ -42,6 +42,9 @@ namespace VG.Proof.Ecdsa.Rfc6979.X86
 
 open VG VG.X86
 
+/-- The taint checks and instruction facts of the curve's blocks. -/
+theorem p521_blk : RfcT (cfgC Impl.Ecdsa.X86.p521Comb true 7) := by rfcT_decide
+
 /-- P-521, with the group law `hL`. -/
 def p521 (hL : Weierstrass.Law Spec.P521.curve) : RfcCurve where
   E := Impl.Ecdsa.X86.p521Comb
@@ -58,9 +61,9 @@ def p521 (hL : Weierstrass.Law Spec.P521.curve) : RfcCurve where
     Proof.Ecdsa.X86.P521.signComb_sp
   coreCT := coreCT_comb (Proof.Ecdsa.X86.P521.p521Comb_ok) hL (Proof.Ecdsa.X86.P521.p521Comb_tables hL) rfl Proof.Ecdsa.X86.P521.p521Comb_shape
     (Proof.Ecdsa.X86.P521.p521Comb_gMul hL) Proof.Ecdsa.X86.P521.signCT Proof.Ecdsa.X86.P521.signComb_sp
-  coreNs := NoSp.of_all (by lit_decide)
-  coreStack := by lit_decide
-  blk := by rfcT_decide
+  coreNs := Proof.Ecdsa.X86.P521.signComb_sp.1
+  coreStack := Proof.Ecdsa.X86.P521.signComb_sp.2
+  blk := p521_blk
 
 /-- `vg_ecdsa_p521_sign`, with the tables of `vs`. -/
 theorem p521T_verified (hL : Weierstrass.Law Spec.P521.curve) (vs : List Proof.HmacTable.X86.HVar) (h : OK vs ∧ "VG_P521_COMB" ∉ Proof.HmacTable.X86.names vs) :

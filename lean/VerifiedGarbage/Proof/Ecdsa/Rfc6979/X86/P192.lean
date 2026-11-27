@@ -48,6 +48,9 @@ theorem p192_nBits : Spec.Ecdsa.nBits Spec.P192.curve = 192 := by
   have h₂ : Spec.P192.curve.n.log2 < 192 := (Nat.log2_lt (by decide +kernel)).mpr (by decide +kernel)
   omega_using [h₁, h₂]
 
+/-- The taint checks and instruction facts of the curve's blocks. -/
+theorem p192_blk : RfcT (cfgC Impl.Ecdsa.X86.p192Comb false 0) := by rfcT_decide
+
 /-- P-192, with the group law `hL`. -/
 def p192 (hL : Weierstrass.Law Spec.P192.curve) : RfcCurve where
   E := Impl.Ecdsa.X86.p192Comb
@@ -64,9 +67,9 @@ def p192 (hL : Weierstrass.Law Spec.P192.curve) : RfcCurve where
     Proof.Ecdsa.X86.P192.signComb_sp
   coreCT := coreCT_comb (Proof.Ecdsa.X86.P192.p192Comb_ok) hL (Proof.Ecdsa.X86.P192.p192Comb_tables hL) rfl Proof.Ecdsa.X86.P192.p192Comb_shape
     (Proof.Ecdsa.X86.P192.p192Comb_gMul hL) Proof.Ecdsa.X86.P192.signCT Proof.Ecdsa.X86.P192.signComb_sp
-  coreNs := NoSp.of_all (by lit_decide)
-  coreStack := by lit_decide
-  blk := by rfcT_decide
+  coreNs := Proof.Ecdsa.X86.P192.signComb_sp.1
+  coreStack := Proof.Ecdsa.X86.P192.signComb_sp.2
+  blk := p192_blk
 
 /-- `vg_ecdsa_p192_sign`, with the tables of `vs`. -/
 theorem p192T_verified (hL : Weierstrass.Law Spec.P192.curve) (vs : List Proof.HmacTable.X86.HVar) (h : OK vs ∧ "VG_P192_COMB" ∉ Proof.HmacTable.X86.names vs) :

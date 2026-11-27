@@ -50,6 +50,13 @@ open VG.Proof.HmacTable.X86 (tables names vars)
 abbrev vs : List HmacTable.X86.HVar :=
   vars VG.Proof.Variants.Sha1.X86.variants VG.Proof.Variants.Sha256.X86.variants
 
+instance : SpSafe Impl.Ecdsa.X86.Fn.verifyP192 :=
+  ⟨scrubAll_spSafe (verifyHash_all Proof.Ecdsa.Verify.X86.P192.verify_sp.1)⟩
+
+instance : SpSafe (Impl.Ecdsa.X86.Fn.signP192 (HmacTable.X86.fnsOf vs)) :=
+  ⟨scrubAll_spSafe (signCode_all (coreN := "vg_ecdsa_p192_sign_k") (coreC := Impl.Ecdsa.X86.signP192Comb) (tries := Spec.Ecdsa.Rfc6979.Curves.p192.tries) (vs := vs)
+    Proof.Ecdsa.Rfc6979.X86.p192_blk Proof.Ecdsa.X86.P192.signComb_sp.1)⟩
+
 /-- `vg_ecdsa_p192_verify`. -/
 theorem verify_scrubbed (hL : Weierstrass.Law Spec.P192.curve) :
     VerifiedScrubbed target Impl.Ecdsa.X86.Fn.verifyP192
@@ -58,7 +65,8 @@ theorem verify_scrubbed (hL : Weierstrass.Law Spec.P192.curve) :
   verifiedScrubbedAll (api := Spec.Ecdsa.P192.verifyHashApi)
     { code := Impl.Ecdsa.X86.VerifyHash.verifyHash Spec.Ecdsa.P192.inst.curve.len false
         Impl.Ecdsa.Verify.X86.verifyP192
-      verified := Proof.Ecdsa.Verify.X86.P192.verifyHash_verified hL }
+      verified := Proof.Ecdsa.Verify.X86.P192.verifyHash_verified hL
+      spSafe := verifyHash_all Proof.Ecdsa.Verify.X86.P192.verify_sp.1 }
     (verifyHashOut Spec.Ecdsa.P192.inst Impl.Ecdsa.X86.p192Comb.combConsts _)
 
 /-- What the cleanup needs of `vg_ecdsa_p192_sign`'s code, evaluated once. -/

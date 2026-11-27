@@ -52,6 +52,13 @@ open VG.Proof.HmacTable.X86 (tables names vars)
 abbrev vs : List HmacTable.X86.HVar :=
   vars VG.Proof.Variants.Sha1.X86.variants VG.Proof.Variants.Sha256.X86.variants
 
+instance : SpSafe Impl.Ecdsa.X86.Fn.verifyP256 :=
+  ⟨scrubAll_spSafe (verifyHash_all Proof.Ecdsa.Verify.X86.vComb_sp.1)⟩
+
+instance : SpSafe (Impl.Ecdsa.X86.Fn.signP256 (HmacTable.X86.fnsOf vs)) :=
+  ⟨scrubAll_spSafe (signCode_all (coreN := "vg_ecdsa_p256_sign_k") (coreC := Impl.Ecdsa.X86.signP256Comb) (tries := Spec.Ecdsa.Rfc6979.Curves.p256.tries) (vs := vs)
+    Proof.Ecdsa.Rfc6979.X86.p256_blk Proof.Ecdsa.X86.signComb_sp.1)⟩
+
 /-- `vg_ecdsa_p256_verify`. -/
 theorem verify_scrubbed (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.X86.Inv.InvSounds) :
     VerifiedScrubbed target Impl.Ecdsa.X86.Fn.verifyP256
@@ -60,7 +67,8 @@ theorem verify_scrubbed (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass
   verifiedScrubbedAll (api := Spec.Ecdsa.P256.verifyHashApi)
     { code := Impl.Ecdsa.X86.VerifyHash.verifyHash Spec.Ecdsa.P256.inst.curve.len false
         Proof.Ecdsa.Verify.X86.vCombCode
-      verified := Proof.Ecdsa.Verify.X86.vCombHash_verified hL hI }
+      verified := Proof.Ecdsa.Verify.X86.vCombHash_verified hL hI
+      spSafe := verifyHash_all Proof.Ecdsa.Verify.X86.vComb_sp.1 }
     (verifyHashOut Spec.Ecdsa.P256.inst Impl.Ecdsa.X86.p256Comb.combConsts _)
 
 /-- What the cleanup needs of `vg_ecdsa_p256_sign`'s code, evaluated once. -/
