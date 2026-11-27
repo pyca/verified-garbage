@@ -171,8 +171,9 @@ theorem invCall_ok {p : Nat} [NeZero p] (sound : InvSound p) {P : InvCfg} {name 
     exact U₀.wordsVal (fun w hw => by
       rw [List.mem_singleton.mp hw]; exact Or.inl (by have := L.base_bound; omega_using [this]))
       (by have := L.base_bound; omega_using [this, hn])
+  rw [← e] at hB
   refine WP.callWs hs hst hsp24 ⟨hsp, by rw [inv_stackUse]⟩
-    (WP.mono (sound L hp hR hs' hM' (e ▸ hB) ok) fun u ⟨K, U, lt, v⟩ => ?_)
+    (WP.mono (sound L hp hR hs' hM' hB ok) fun u ⟨K, U, lt, v⟩ => ?_)
   refine ⟨K.mono (by decide), ?_, lt, ?_⟩
   · rw [RegUpd.mem_setReg]
     refine Unch.cover (U₀.trans U) fun w hw => ?_
