@@ -792,7 +792,7 @@ theorem carries_lt {r : Nat → Nat} (hr : ∀ k < 16, r k < 2 ^ 64 - 2 ^ 40) :
   ⟨cin_le (b := 0) (r := r) (fun k hk => hr (0 + k) (by omega_arith)) 8 (by omega_arith),
     cin_le (b := 8) (r := r) (fun k hk => hr (8 + k) (by omega_arith)) 8 (by omega_arith)⟩
 
-theorem limbs28_lt {r : Nat → Nat} (hr : ∀ k < 16, r k < 2 ^ 64 - 2 ^ 40) {k : Nat} (hk : k < 16) :
+theorem limbs28_lt {r : Nat → Nat} (hr : ∀ k < 16, r k < 2 ^ 64 - 2 ^ 40) {k : Nat} (_hk : k < 16) :
     limbs28 r k < 2 ^ 28 + (if k = 0 then 2 ^ 36 else 0) + (if k = 8 then 2 ^ 37 else 0) := by
   obtain ⟨c7, c15⟩ := carries_lt hr
   have c7' : C7 r < 2 ^ 36 := c7
