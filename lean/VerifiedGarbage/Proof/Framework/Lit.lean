@@ -1058,12 +1058,15 @@ meta partial def specialTerm (mods : Array Name) (e : Expr) (unfold : Bool) :
   replaceFunctions (specialConst mods) e e₁
 
 /-- `e₁`, which is `e` by unfolding, with the functions in it replaced by those
-that `find` gives, and a proof that it is equal to `e`. -/
+that `find` gives, and a proof that it is equal to `e`. The proofs in `e₁` stay as they
+are: what one states may name the function. -/
 meta partial def replaceFunctions (find : Expr → SpecialM (Option (Expr × Expr))) (e e₁ : Expr) :
     SpecialM (Option (Expr × Expr)) := do
   let mut items : Array (Expr × Expr × Expr) := #[]
   let mut seen : Std.HashSet Expr := {}
   let mut keys : Std.HashSet Expr := {}
+  let env ← getEnv
+  let isThm (n : Name) : Bool := wasOriginallyTheorem env n
   let mut stack := #[e₁]
   while !stack.isEmpty do
     let t := stack.back!
@@ -1072,6 +1075,8 @@ meta partial def replaceFunctions (find : Expr → SpecialM (Option (Expr × Exp
     seen := seen.insert t
     match t with
     | .app .. | .const .. =>
+      if let .const n _ := t.getAppFn then
+        if isThm n then continue
       for c in ← functionsOf t do
         if keys.contains c then
           if items.any (·.1 == c) then break else continue
@@ -1091,7 +1096,7 @@ meta partial def replaceFunctions (find : Expr → SpecialM (Option (Expr × Exp
   let rec put (f : Nat → Expr) (t : Expr) : Expr := t.replace fun t =>
     match t.getAppFn with
     | .const n _ =>
-      if !heads.contains n then none else
+      if !heads.contains n then if isThm n then some t else none else
         let args := t.getAppArgs
         (List.range (args.size + 1)).findSome? fun j =>
           (idx[mkAppN t.getAppFn (args.extract 0 (args.size - j))]?).map fun i =>
