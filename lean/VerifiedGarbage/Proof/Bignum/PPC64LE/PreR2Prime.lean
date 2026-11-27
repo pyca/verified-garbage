@@ -112,6 +112,31 @@ theorem SqP.of_keep {s t u : State} {B : Addr} {Z w N e : Nat} (h : SqP s B Z w 
     by rw [hm]; exact h.n, by rw [hm]; exact h.lt, by rw [hm]; exact h.x, by rw [hm]; exact h.out,
     (h.keep.trans k).mono⟩
 
+/-- Finish Montgomery setup from the result of the doublings. -/
+theorem r2SquaresLoop_ok {s s₃ : State} {B : Addr} {Z w N : Nat}
+    (hw : 2 ≤ w) (hw' : w < 2 ^ 31) (hZ : slot w 8 ≤ Z) (hodd : N % 2 = 1)
+    (I0 : SqP s B Z w N w s₃) : WP isa r2SquaresLoop s₃ fun t =>
+      val32 t.mem B (slot w 1) (2 * w) = 2 ^ (128 * w) % N ∧
+      Mont.Outside B (slot w 1) (24 * (w + 2)) s.mem t.mem ∧ Keep r2PrimeRegs s t := by
+  unfold r2SquaresLoop
+  refine WP.seq (WP.mono (WP.keep [.r24] (Q := fun u => u.gpr .r24 = BitVec.ofNat 64 6 ∧ u.mem = s₃.mem)
+    (by prun) (by decide)) fun s₄ ⟨⟨a24, m4⟩, k4⟩ => ?_)
+  let Inv : Nat → State → Prop := fun j u => SqP s B Z w N (w * 2 ^ j) u
+  refine WP.mono (wp_countdown (cnt := .r24) (N := 6) (by decide) (by decide) Inv
+    (fun j _ u I _ => ?_) (by simp only [Inv, Nat.pow_zero, Nat.mul_one]; exact I0.of_keep k4 m4) a24)
+    fun t I6 => ?_
+  · refine WP.seq (WP.mono (sqP_step hw hw' hZ hodd I) fun u₁ ⟨I1, g24⟩ => ?_)
+    refine WP.mono (subi_ok u₁ .r24 (by decide)) fun u₂ e2 => ?_
+    subst e2
+    have he : w * 2 ^ (j + 1) = 2 * (w * 2 ^ j) := by rw [Nat.pow_succ, ← Nat.mul_assoc, Nat.mul_comm _ 2]
+    refine ⟨?_, by simp only [gpr_write, ↓reduceIte, g24]⟩
+    show SqP s B Z w N (w * 2 ^ (j + 1)) _
+    rw [he]
+    exact I1.of_keep (Keep.write _ _ _) (mem_write _ _ _)
+  refine ⟨?_, I6.out, I6.keep⟩
+  have h6 : w * 2 ^ 6 = 64 * w := by rw [show (2 : Nat) ^ 6 = 64 from rfl, Nat.mul_comm]
+  rw [← Nat.mod_eq_of_lt I6.lt, I6.x, h6, ← Nat.pow_add, show 64 * w + 64 * w = 128 * w by omega_using []]
+
 /-- `r2Prime`, with an odd `n > 1` in array 0, `-n⁻¹ mod 2³²` in `r12` and the
 bases of arrays 1–3 in `r5`, `r8`, `r9`: `x := 2^(128 w) mod n` in array 1,
 changing only arrays 1–3. -/
@@ -170,22 +195,35 @@ theorem r2Prime_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z)
       k3.mono⟩
     · rw [x3]; exact Nat.mod_lt _ hN0
     · rw [x3, Nat.mod_mod, show 64 * w + w = w + 64 * w by omega_using [], Nat.pow_add]
-  refine WP.seq (WP.mono (WP.keep [.r24] (Q := fun u => u.gpr .r24 = BitVec.ofNat 64 6 ∧ u.mem = s₃.mem)
-    (by prun) (by decide)) fun s₄ ⟨⟨a24, m4⟩, k4⟩ => ?_)
-  let Inv : Nat → State → Prop := fun j u => SqP s B Z w N (w * 2 ^ j) u
-  refine WP.mono (wp_countdown (cnt := .r24) (N := 6) (by decide) (by decide) Inv
-    (fun j _ u I _ => ?_) (by simp only [Inv, Nat.pow_zero, Nat.mul_one]; exact I0.of_keep k4 m4) a24)
-    fun t I6 => ?_
-  · refine WP.seq (WP.mono (sqP_step hw hw' hZ hodd I) fun u₁ ⟨I1, g24⟩ => ?_)
-    refine WP.mono (subi_ok u₁ .r24 (by decide)) fun u₂ e2 => ?_
-    subst e2
-    have he : w * 2 ^ (j + 1) = 2 * (w * 2 ^ j) := by rw [Nat.pow_succ, ← Nat.mul_assoc, Nat.mul_comm _ 2]
-    refine ⟨?_, by simp only [gpr_write, ↓reduceIte, g24]⟩
-    show SqP s B Z w N (w * 2 ^ (j + 1)) _
-    rw [he]
-    exact I1.of_keep (Keep.write _ _ _) (mem_write _ _ _)
-  refine ⟨?_, I6.out, I6.keep⟩
-  have h6 : w * 2 ^ 6 = 64 * w := by rw [show (2 : Nat) ^ 6 = 64 from rfl, Nat.mul_comm]
-  rw [← Nat.mod_eq_of_lt I6.lt, I6.x, h6, ← Nat.pow_add, show 64 * w + 64 * w = 128 * w by omega_using []]
+  exact r2SquaresLoop_ok hw hw' hZ hodd I0
+
+/-- Montgomery setup with a counted loop for the final six squares. -/
+theorem r2HiLoop_ok {s : State} {B : Addr} {Z w N : Nat} (hs : Scr s B Z)
+    (h8 : s.gpr .r8 = off B (slot w 2)) (h9 : s.gpr .r9 = off B (slot w 3))
+    (h10 : s.gpr .r10 = off B (slot w 0)) (h5 : s.gpr .r5 = off B (slot w 1))
+    (h11 : s.gpr .r11 = BitVec.ofNat 64 (2 * w)) (hw : 2 ≤ w) (hw' : w < 2 ^ 31) (hZ : slot w 8 ≤ Z)
+    (h12 : (s.gpr .r12).toNat < 2 ^ 32)
+    (hinv : (w32 s.mem B (slot w 0) * (s.gpr .r12).toNat + 1) % 2 ^ 32 = 0)
+    (hN : val32 s.mem B (slot w 0) (2 * w) = N) (hNt : 2 ^ (64 * (w - 1)) < N) (hodd : N % 2 = 1) :
+    WP isa r2HiLoop s fun t =>
+      val32 t.mem B (slot w 1) (2 * w) = 2 ^ (128 * w) % N ∧
+      Mont.Outside B (slot w 1) (24 * (w + 2)) s.mem t.mem ∧ Keep r2PrimeRegs s t := by
+  have hnw := hs.nowrap
+  obtain e : ∀ j, slot w j = hdrBytes + j * (8 * (w + 2)) := fun _ => rfl
+  obtain e0 := e 0; have e1 := e 1; have e4 := e 4; have e8 := e 8
+  have hh : hdrBytes = 256 := rfl
+  obtain hN0 : 0 < N := by omega_using [hodd]
+  unfold r2HiLoop
+  refine WP.seq (WP.mono (r2HiDbl_ok hs h8 h9 h10 h5 h11 hw hw' (by omega_using [hZ, e4, e8]) hN hNt) fun s₁ ⟨x1, o1, k1⟩ => ?_)
+  obtain w1 : w32 s₁.mem B (slot w 0) = w32 s.mem B (slot w 0) := by
+    have := o1.val32 (d := slot w 0) (k := 1) (by omega_using [e0, e1]) (by omega_using [e0, hh])
+    simpa [val32] using this
+  have I0 : SqP s B Z w N w s₁ := by
+    refine ⟨hs.congr k1.wr, (k1.gpr _ (by decide)).trans h10, (k1.gpr _ (by decide)).trans h11,
+      by rw [k1.gpr .r12 (by decide)]; exact h12, by rw [k1.gpr .r12 (by decide), w1]; exact hinv,
+      by rw [o1.val32 (by omega_using [e0, e1]) (by omega_using [hw', e0, hh]), hN],
+      by rw [x1]; exact Nat.mod_lt _ hN0, by rw [x1, Nat.mod_mod, Nat.pow_add], o1,
+      k1.mono⟩
+  exact r2SquaresLoop_ok hw hw' hZ hodd I0
 
 end VG.Proof.Bignum.PPC64LE.Pre

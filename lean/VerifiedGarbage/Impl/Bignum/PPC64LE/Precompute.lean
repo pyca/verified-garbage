@@ -159,6 +159,10 @@ power of 2 of `x = 2^e R mod n` (`(2^e R)² R⁻¹ = 2^(2 e) R`): from `2^w R mo
 to `2^(64 w) R mod n = R² mod n`. -/
 def r2Squares : Prog isa := .seq r2Sq (.seq r2Sq (.seq r2Sq (.seq r2Sq (.seq r2Sq r2Sq))))
 
+/-- The same six squares, counted in `r24`. -/
+def r2SquaresLoop : Prog isa :=
+  .seq (.block [.li .r24 6]) (.loop (.seq r2Sq (.block [.subi .r24 .r24 1])) (.nonzero .d .r24))
+
 /-- `64 + w` doublings of `x = 2^(64 (w - 1))` (`r2Top`), counted by `r4`:
 `2^w R mod n`, for `n` above `2^(64 (w - 1))`. -/
 def r2HiDbl : Prog isa :=
@@ -169,6 +173,9 @@ def r2HiDbl : Prog isa :=
 top word not zero, `-n⁻¹ mod 2³²` in `r12` and the bases of arrays 1–3 in
 `r5`, `r8` and `r9`: `r2HiDbl`, then `r2Squares`. -/
 def r2Hi : Prog isa := .seq r2HiDbl r2Squares
+
+/-- Montgomery setup for callers that can use `r24` as a loop counter. -/
+def r2HiLoop : Prog isa := .seq r2HiDbl r2SquaresLoop
 
 /-- `w` words from `r15` to `r14`, both advanced past them. -/
 def copyWords : Prog isa :=
@@ -355,7 +362,7 @@ then six Montgomery squares to `2^(64 w) R mod n`, as in `r2Hi`, counted by
 def r2Prime : Prog isa :=
   .seq one (.seq (.block [.lsl .r4 .r11 5, .lsr .d .r3 .r11 1, .add .r4 .r4 .r3])
     (.seq (.loop (.seq doubleMod64 (.block [.subi .r4 .r4 1])) (.nonzero .d .r4))
-      (.seq (.block [.li .r24 6]) (.loop (.seq r2Sq (.block [.subi .r24 .r24 1])) (.nonzero .d .r24)))))
+      r2SquaresLoop))
 
 /-- `n` and `x` into `pre`. -/
 def write : Prog isa :=
