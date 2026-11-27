@@ -67,15 +67,6 @@ abbrev ts : List (String × List FnTable) := [("hash", tables vs), ("mgf1", tabl
 /-- Decryption's code over a stub of the checked private operation. -/
 def decStub : Prog isa := Impl.RsaOaep.X86_64.decryptP (fnsOf vs) "priv" (.block [])
 
-/-- Encryption's code over a stub of the public operation. -/
-def encStub : Prog isa := Impl.RsaOaep.X86_64.Precomputed.encrypt (fnsOf vs) "pub" (.block [])
-
-/-- What the cleanups need of both stubs, in one declaration, so that the kernel
-walks the hash functions' code once. -/
-private theorem stubs_up :
-    upStub decStub callStack 3656 ts = true ∧ upStub encStub pubStack 808 ts = true := by
-  rw [upStub, upStub, decStub, encStub]; lit_decide_lit
-
 theorem dec_eq (c : CrtImpl) :
     Impl.RsaOaep.X86_64.decryptP (fnsOf vs) (privNameP c) (privCodeP c) = fillCallsG (callSigma c) decStub := by
   unfold decStub; kernel_rfl
@@ -94,12 +85,15 @@ theorem dec_scrubbed (h : OK vs) (c : CrtImpl) :
       (Impl.RsaOaep.X86_64.Fn.decryptPrecomputed (PrivScrub.level c) (fnsOf vs) (privNameP c) (privCodeP c))
       (pdspec (tables vs)) 32 :=
   verifiedScrubbedOrUp (decPlain h c) (PrivScrub.level c) ts (decPrecomputed_postOut _) (dec_eq c)
-    (fun hl => callSigma_up c hl) (fun hl => callSigma_side c hl) (hau := stubs_up.1)
+    (fun hl => callSigma_up c hl) (fun hl => callSigma_side c hl) (hau := by rw [upStub, decStub]; lit_decide_lit)
 
 theorem dec_spSafe (c : CrtImpl) :
     (Impl.RsaOaep.X86_64.Fn.decryptPrecomputed (PrivScrub.level c) (fnsOf vs) (privNameP c)
       (privCodeP c)).all (fun i => !isa.writesSp i) = true :=
   scrubKs_spSafe (decP_spSafe vs c)
+
+/-- Encryption's code over a stub of the public operation. -/
+def encStub : Prog isa := Impl.RsaOaep.X86_64.Precomputed.encrypt (fnsOf vs) "pub" (.block [])
 
 theorem enc_eq (c : PublicImpl) :
     Impl.RsaOaep.X86_64.Precomputed.encrypt (fnsOf vs) c.name c.code = fillCallsG (pubSigma c) encStub := by
@@ -118,7 +112,7 @@ theorem enc_scrubbed (h : OK vs) (c : PublicImpl) :
     VerifiedScrubbed target (Impl.RsaOaep.X86_64.Fn.encrypt c.level (fnsOf vs) c.name c.code)
       (Pc.encC (tables vs)) 32 :=
   verifiedScrubbedOrUp (encPlain h c) c.level ts (Proof.Rsa.X86_64.Scrub.oaepEncryptOut _ _) (enc_eq c)
-    (fun hl => pubSigma_up c hl) (fun hl => pubSigma_side c hl) (hau := stubs_up.2)
+    (fun hl => pubSigma_up c hl) (fun hl => pubSigma_side c hl) (hau := by rw [upStub, encStub]; lit_decide_lit)
 
 theorem enc_spSafe (c : PublicImpl) :
     (Impl.RsaOaep.X86_64.Fn.encrypt c.level (fnsOf vs) c.name c.code).all (fun i => !isa.writesSp i) = true :=

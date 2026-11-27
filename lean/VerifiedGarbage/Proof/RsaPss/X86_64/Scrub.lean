@@ -65,15 +65,6 @@ abbrev G : Impl.Mgf1.X86_64.Table.Fns := Proof.HashTable.X86_64.fnsOf vs
 /-- Signing's code over a stub of the checked private operation. -/
 def signStub : Prog isa := Impl.RsaPss.X86_64.signCP F G "priv" (.block [])
 
-/-- Verification's code over a stub of the public operation. -/
-def verifyStub : Prog isa := Impl.RsaPss.X86_64.verifyC F G "pub" (.block [])
-
-/-- What the cleanups need of both stubs, in one declaration, so that the kernel
-walks the hash functions' code once. -/
-private theorem stubs_up :
-    upStub signStub callStack 3656 ts = true ∧ upStub verifyStub pubStack 808 ts = true := by
-  rw [upStub, upStub, signStub, verifyStub]; lit_decide_lit
-
 theorem sign_eq (c : CrtImpl) :
     Impl.RsaPss.X86_64.signCP F G (privNameP c) (privCodeP c) = fillCallsG (callSigma c) signStub := by
   unfold signStub; kernel_rfl
@@ -97,12 +88,15 @@ theorem sign_scrubbed (h : OK vs) (c : CrtImpl) :
       (Proof.RsaPss.X86_64.pspec (Proof.MdHashTable.X86_64.tables vs) (Proof.MdHashTable.X86_64.tables vs)) 32 :=
   verifiedScrubbedOrUp (signPlain h c) (PrivScrub.level c) ts (Proof.RsaPss.X86_64.signPrecomputed_postOut _ _)
     (sign_eq c) (fun hl => callSigma_up c hl) (fun hl => callSigma_side c hl)
-    (hau := stubs_up.1)
+    (hau := by rw [upStub, signStub]; lit_decide_lit)
 
 theorem sign_spSafe (h : OK vs) (c : CrtImpl) :
     (Impl.RsaPss.X86_64.Fn.signPrecomputed (PrivScrub.level c) F G (privNameP c) (privCodeP c)).all
       (fun i => !isa.writesSp i) = true :=
   scrubKs_spSafe (sign_spSafe' h c)
+
+/-- Verification's code over a stub of the public operation. -/
+def verifyStub : Prog isa := Impl.RsaPss.X86_64.verifyC F G "pub" (.block [])
 
 theorem verify_eq (c : PublicImpl) :
     Impl.RsaPss.X86_64.verifyC F G c.name c.code = fillCallsG (pubSigma c) verifyStub := by
@@ -127,7 +121,7 @@ theorem verify_scrubbed (h : OK vs) (c : PublicImpl) :
       (Proof.RsaPss.X86_64.verifyC (Proof.MdHashTable.X86_64.tables vs) (Proof.MdHashTable.X86_64.tables vs)) 32 :=
   verifiedScrubbedOrUp (verifyPlain h c) c.level ts (Proof.Rsa.X86_64.Scrub.pssVerifyOut _ _ _) (verify_eq c)
     (fun hl => pubSigma_up c hl) (fun hl => pubSigma_side c hl)
-    (hau := stubs_up.2)
+    (hau := by rw [upStub, verifyStub]; lit_decide_lit)
 
 theorem verify_spSafe (h : OK vs) (c : PublicImpl) :
     (Impl.RsaPss.X86_64.Fn.verifyPrecomputed c.level F G c.name c.code).all (fun i => !isa.writesSp i) = true :=
