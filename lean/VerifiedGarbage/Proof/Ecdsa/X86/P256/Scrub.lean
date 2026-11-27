@@ -15,14 +15,6 @@ public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombFunction
 import VerifiedGarbage.Proof.Ecdsa.X86.CombLit
 import VerifiedGarbage.Proof.Ecdsa.X86.Lit
-import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Lit
-import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Lit
-import VerifiedGarbage.Proof.Md5.X86.Lit
-import VerifiedGarbage.Proof.Sha1.X86.Lit
-import VerifiedGarbage.Proof.Sha1.X86.ShaNi.Lit
-import VerifiedGarbage.Proof.Sha256.X86.Lit
-import VerifiedGarbage.Proof.Sha256.X86.ShaNi.Lit
-import VerifiedGarbage.Proof.Sha512.X86.Lit
 import VerifiedGarbage.Proof.Framework.X86.Lit
 import VerifiedGarbage.Proof.Framework.Lit
 
@@ -76,7 +68,7 @@ theorem signSide :
     scrubFSide (Impl.Ecdsa.Rfc6979.X86.signCode (cfgOf Impl.Ecdsa.X86.p256Comb false 0
       "vg_ecdsa_p256_sign_k" Impl.Ecdsa.X86.signP256Comb Spec.Ecdsa.Rfc6979.Curves.p256.tries vs))
       [("hmac", tables vs)] Rfc6979.X86.stackT = true := by
-  lit_decide
+  exact signSide_of_stub (by lit_decide)
 
 /-- `vg_ecdsa_p256_sign`, with the HMAC implementations of `vs` in its table. -/
 theorem sign_scrubbed (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.X86.Inv.InvSounds) (hv : OK vs ∧ "VG_P256_COMB" ∉ names vs) :

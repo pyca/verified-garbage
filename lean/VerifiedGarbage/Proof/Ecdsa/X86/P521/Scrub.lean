@@ -13,14 +13,6 @@ public import VerifiedGarbage.Spec.Ecdsa.Verify.P521
 public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
 import VerifiedGarbage.Proof.Ecdsa.X86.P521.CombLit
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86.P521.Lit
-import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Lit
-import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Lit
-import VerifiedGarbage.Proof.Md5.X86.Lit
-import VerifiedGarbage.Proof.Sha1.X86.Lit
-import VerifiedGarbage.Proof.Sha1.X86.ShaNi.Lit
-import VerifiedGarbage.Proof.Sha256.X86.Lit
-import VerifiedGarbage.Proof.Sha256.X86.ShaNi.Lit
-import VerifiedGarbage.Proof.Sha512.X86.Lit
 import VerifiedGarbage.Proof.Framework.X86.Lit
 import VerifiedGarbage.Proof.Framework.Lit
 
@@ -74,7 +66,7 @@ theorem signSide :
     scrubFSide (Impl.Ecdsa.Rfc6979.X86.signCode (cfgOf Impl.Ecdsa.X86.p521Comb true 7
       "vg_ecdsa_p521_sign_k" Impl.Ecdsa.X86.signP521Comb Spec.Ecdsa.Rfc6979.Curves.p521.tries vs))
       [("hmac", tables vs)] Rfc6979.X86.stackT = true := by
-  lit_decide
+  exact signSide_of_stub (by lit_decide)
 
 /-- `vg_ecdsa_p521_sign`, with the HMAC implementations of `vs` in its table. -/
 theorem sign_scrubbed (hL : Weierstrass.Law Spec.P521.curve) (hv : OK vs ∧ "VG_P521_COMB" ∉ names vs) :

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.TableSat
 public import VerifiedGarbage.Spec.Ecdsa.Verify.Generic
+public import VerifiedGarbage.Proof.HmacTable.X86.Up
 public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 public import VerifiedGarbage.Impl.Ecdsa.X86.VerifyHash
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86.Hash
@@ -89,6 +90,31 @@ def cfgOf (E : Impl.Ecdsa.X86.Cfg) (big : Bool) (sh : Nat) (coreN : String) (cor
   tries := tries
   coreN := coreN
   coreC := coreC
+
+/-- `cfgOf`, over stubs of the table's functions. -/
+def cfgS (E : Impl.Ecdsa.X86.Cfg) (big : Bool) (sh : Nat) (coreN : String) (coreC : Prog isa) (tries : Nat) :
+    Impl.Ecdsa.Rfc6979.X86.Cfg :=
+  { cfgOf E big sh coreN coreC tries [] with f := HmacTable.X86.stubFns }
+
+theorem sign_tfill {vs : List HVar} (hv : ∀ w ∈ vs, HmacTable.X86.HmacUp w) (E : Impl.Ecdsa.X86.Cfg) (big : Bool)
+    (sh : Nat) (coreN : String) (coreC : Prog isa) (tries : Nat) (hk : inames coreC = []) :
+    TFill (HmacTable.X86.names vs) (Impl.Ecdsa.Rfc6979.X86.signCode (cfgS E big sh coreN coreC tries))
+      (Impl.Ecdsa.Rfc6979.X86.signCode (cfgOf E big sh coreN coreC tries vs)) := by
+  obtain ⟨hI, hU, hF⟩ := HmacTable.X86.fnsOf_up hv
+  tfill_calls
+
+/-- `scrubFSide` of `vg_ecdsa_<curve>_sign`'s code with the registrations'
+HMAC implementations in its table, from what is evaluated of its code over
+stubs of them. -/
+theorem signSide_of_stub {E : Impl.Ecdsa.X86.Cfg} {big : Bool} {sh : Nat} {coreN : String} {coreC : Prog isa}
+    {tries W : Nat}
+    (h : (CodeWalk.namesIn [] coreC &&
+      stubSide (Impl.Ecdsa.Rfc6979.X86.signCode (cfgS E big sh coreN coreC tries)) W) = true) :
+    scrubFSide (Impl.Ecdsa.Rfc6979.X86.signCode (cfgOf E big sh coreN coreC tries HmacTable.X86.vs))
+      [("hmac", HmacTable.X86.tables HmacTable.X86.vs)] W = true := by
+  rw [Bool.and_eq_true] at h
+  exact (sign_tfill HmacTable.X86.vs_up E big sh coreN coreC tries (inames_of_namesIn h.1)).ok
+    (fun _ h => HmacTable.X86.mem_tableFns h) h.2
 
 /-- `scrubFSide` of `vg_ecdsa_<curve>_sign`'s code from that of the code of
 `cfgOf`, which the kernel evaluates without the curve's proofs. -/

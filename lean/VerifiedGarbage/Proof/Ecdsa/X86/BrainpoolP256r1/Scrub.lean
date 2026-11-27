@@ -14,14 +14,6 @@ public import VerifiedGarbage.Spec.Ecdsa.Verify.BrainpoolP256r1
 public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
 import VerifiedGarbage.Proof.Ecdsa.X86.BrainpoolP256r1.CombLit
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86.BrainpoolP256r1.Lit
-import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Lit
-import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Lit
-import VerifiedGarbage.Proof.Md5.X86.Lit
-import VerifiedGarbage.Proof.Sha1.X86.Lit
-import VerifiedGarbage.Proof.Sha1.X86.ShaNi.Lit
-import VerifiedGarbage.Proof.Sha256.X86.Lit
-import VerifiedGarbage.Proof.Sha256.X86.ShaNi.Lit
-import VerifiedGarbage.Proof.Sha512.X86.Lit
 import VerifiedGarbage.Proof.Framework.X86.Lit
 import VerifiedGarbage.Proof.Framework.Lit
 
@@ -75,7 +67,7 @@ theorem signSide :
     scrubFSide (Impl.Ecdsa.Rfc6979.X86.signCode (cfgOf Impl.Ecdsa.X86.brainpoolp256r1Comb false 0
       "vg_ecdsa_brainpoolp256r1_sign_k" Impl.Ecdsa.X86.signBrainpoolP256r1Comb Spec.Ecdsa.Rfc6979.Curves.brainpoolp256r1.tries vs))
       [("hmac", tables vs)] Rfc6979.X86.stackT = true := by
-  lit_decide
+  exact signSide_of_stub (by lit_decide)
 
 /-- `vg_ecdsa_brainpoolp256r1_sign`, with the HMAC implementations of `vs` in its table. -/
 theorem sign_scrubbed (hL : Weierstrass.Law Spec.BrainpoolP256r1.curve) (hI : Weierstrass.X86.Inv.InvSounds) (hv : OK vs ∧ "VG_BRAINPOOLP256R1_COMB" ∉ names vs) :
