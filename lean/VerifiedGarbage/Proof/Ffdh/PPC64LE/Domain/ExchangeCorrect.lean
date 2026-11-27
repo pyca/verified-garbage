@@ -17,7 +17,7 @@ public import VerifiedGarbage.Spec.Rsa.Contract
 public import VerifiedGarbage.TCB.PPC64LE.Isa
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.Body
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.WinPow
-import VerifiedGarbage.Proof.Bignum.PPC64LE.PreR2Fast
+import VerifiedGarbage.Proof.Bignum.PPC64LE.PreR2Prime
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PreCore
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PreR2
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubMinv
@@ -163,7 +163,7 @@ theorem exPower_split {s : State} {B Y X : Addr} {Z w k xl : Nat} (h : Env s B Z
   obtain e4' := e3'.keep k4 (by decide)
   obtain p4' : val32 s₄.mem B (slot w 0) (2 * w) = p := by rw [m4]; exact p3
   obtain k14 := (((k0.trans k1).trans k2).trans k3).trans k4
-  refine WP.seq (WP.mono (Pre.r2Hi_ok (N := p) e4'.hs ((k4.gpr .r8 (by decide)).trans ((k3.gpr .r8 (by decide)).trans a8))
+  refine WP.seq (WP.mono (Pre.r2HiLoop_ok (N := p) e4'.hs ((k4.gpr .r8 (by decide)).trans ((k3.gpr .r8 (by decide)).trans a8))
     ((k4.gpr .r9 (by decide)).trans a9) e4'.h10
     ((k4.gpr .r5 (by decide)).trans ((k3.gpr .r5 (by decide)).trans ((k2.gpr .r5 (by decide)).trans a5))) e4'.h11
     (by omega_arith) (by omega_arith) (by omega_arith) r12lt (by rw [m4]; exact r12inv) p4'
