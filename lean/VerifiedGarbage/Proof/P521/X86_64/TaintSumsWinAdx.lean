@@ -32,6 +32,7 @@ def winLoopJX : Prog isa := .loop (WinCfg.stepJ winKX) .ne
 def winLastJX : Prog isa := WinCfg.stepLast winKX
 
 materialize_code winBuildJX
+materialize_code winLoopJX
 
 theorem winKX_ok : p521XT.Ok winKX.M := p521XHT_ok
 

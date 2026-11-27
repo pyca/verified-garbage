@@ -237,7 +237,10 @@ Avoid these patterns (each has cost tens of seconds in one proof):
   constant with a literal and read it, so a generator runs once, in its own
   `lit_eq`, if every module that evaluates code using it imports the module
   with its literal (a literal module imports the literal modules of the
-  code it contains). Materializing code checked only once does not pay.
+  code it contains). Code checked only once pays for a literal only where it
+  is long and its check visits its parts several times, in loops and calls
+  (the summaries of `P521/X86_64/TaintSums*.lean`: 10.3 s to 4.3 s in the
+  kernel): measure it.
 * **The same check of code that shares code:** what the kernel evaluated is
   forgotten at the end of the declaration, so a check that every function of
   a family is proven by on its own (`lit_decide` of a cleanup's side

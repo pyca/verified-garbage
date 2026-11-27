@@ -30,6 +30,9 @@ def combGX : Prog isa := .loop (p521x.combCfg p521d).step .ne
 /-- The inversion's batches mod `p`. -/
 def invPX : Prog isa := .loop p521x.invP.batch .ne
 
+materialize_code combGX
+materialize_code invPX
+
 taint_summary combGXSum : (taintSym ["VG_P521_COMB"]) τL combGX
 taint_summary invPXSum : (taintSym ["VG_P521_COMB"]) τI invPX
 
