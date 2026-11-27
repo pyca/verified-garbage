@@ -4,7 +4,7 @@ public import VerifiedGarbage.Impl.Ecdsa.BrainpoolP512r1.RISCV64
 public import VerifiedGarbage.Proof.Weierstrass.RISCV64.Ladder
 public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Proof.Weierstrass.MulContract
-import VerifiedGarbage.Proof.Weierstrass.RISCV64.GenWide.Sqr
+import VerifiedGarbage.Proof.Weierstrass.RISCV64.GenWide.Wide8
 import VerifiedGarbage.Proof.Weierstrass.RISCV64.BrainpoolP512r1Field.Lit
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Framework.RISCV64.Taint
@@ -19,10 +19,9 @@ meta import VerifiedGarbage.Impl.Weierstrass.RISCV64.BrainpoolP512r1Field
 # brainpoolP512r1's field on RISC-V, for `vg_brainpoolp512r1_mul` and its callers
 
 The facts the proofs of `vg_brainpoolp512r1_mul` (`Proof/Ecdsa/RISCV64/BrainpoolP512r1/Window.lean`)
-and its callers share: brainpoolP512r1's field functions, those modulo any wide
-modulus (`Proof/Weierstrass/RISCV64/GenWide/Field.lean`) for its `p` (`p_ok`), the
-product squaring when its operands are the same (`Proof/Weierstrass/RISCV64/GenWide/Sqr.lean`),
-meet the contracts by register (`field_ok`), and `R = 2⁵¹²` is a unit modulo `p` (`unit`).
+and its callers share: brainpoolP512r1's field functions, the product modulo any eight-word
+modulus (`Proof/Weierstrass/RISCV64/GenWide/Wide8.lean`) and the sum and difference modulo any wide
+one (`Proof/Weierstrass/RISCV64/GenWide/Field.lean`) for its `p` (`p_ok`), meet the contracts by register (`field_ok`), and `R = 2⁵¹²` is a unit modulo `p` (`unit`).
 -/
 
 -- `p`, below `2^512`, is evaluated.
@@ -42,10 +41,10 @@ abbrev W : Curve := Spec.BrainpoolP512r1.curve
 private theorem p_ok : GenWide.WideOk Impl.Weierstrass.Mont.brainpoolp512r1p := ⟨by decide, by decide, by decide, by decide⟩
 
 theorem field_ok : FieldOk brainpoolp512r1Field :=
-  ⟨GenWide.mulSq_rv p_ok, GenWide.add_rv p_ok, GenWide.sub_rv p_ok,
+  ⟨Wide8.mul_rv p_ok rfl, GenWide.add_rv p_ok, GenWide.sub_rv p_ok,
     Impl.Weierstrass.RISCV64.BrainpoolP512r1Field.mulFn_noFrames,
     Impl.Weierstrass.RISCV64.BrainpoolP512r1Field.addFn_noFrames, Impl.Weierstrass.RISCV64.BrainpoolP512r1Field.subFn_noFrames,
-    GenWide.mulSqA_rv p_ok, GenWide.addA_rv p_ok, GenWide.subA_rv p_ok,
+    Wide8.mulA_rv p_ok rfl, GenWide.addA_rv p_ok, GenWide.subA_rv p_ok,
     Impl.Weierstrass.RISCV64.BrainpoolP512r1Field.mulFnA_noFrames,
     Impl.Weierstrass.RISCV64.BrainpoolP512r1Field.addFnA_noFrames, Impl.Weierstrass.RISCV64.BrainpoolP512r1Field.subFnA_noFrames⟩
 
@@ -60,15 +59,16 @@ abbrev sv (base : Addr) (s : State) (i : Nat) : Nat := wordsVal s.mem base (brai
 
 /-! The constant-time analyses of the calls of the functions of brainpoolP512r1's `p` from their
 arguments, each done once for every check of code that calls it (`taint_decide_sum`), which keep
-what is public of `s0`–`s11`: the functions write none of them. -/
+what is public of `s0`–`s5`: the functions write none of them (the product restores `s6`–`s11`
+from memory). -/
 taint_summary pMulSum : taint (Taint.ofRegs [.a0, .a1, .a2, .a3])
   (.call (Impl.Weierstrass.Mont.brainpoolp512r1p.fn "mul") Impl.Weierstrass.RISCV64.BrainpoolP512r1Field.mulFnA)
-  keeping (Taint.ofRegs [.s0, .s1, .s2, .s3, .s4, .s5, .s6, .s7, .s8, .s9, .s10, .s11])
+  keeping (Taint.ofRegs [.s0, .s1, .s2, .s3, .s4, .s5])
 taint_summary pAddSum : taint (Taint.ofRegs [.a0, .a1, .a2, .a3])
   (.call (Impl.Weierstrass.Mont.brainpoolp512r1p.fn "add") Impl.Weierstrass.RISCV64.BrainpoolP512r1Field.addFnA)
-  keeping (Taint.ofRegs [.s0, .s1, .s2, .s3, .s4, .s5, .s6, .s7, .s8, .s9, .s10, .s11])
+  keeping (Taint.ofRegs [.s0, .s1, .s2, .s3, .s4, .s5])
 taint_summary pSubSum : taint (Taint.ofRegs [.a0, .a1, .a2, .a3])
   (.call (Impl.Weierstrass.Mont.brainpoolp512r1p.fn "sub") Impl.Weierstrass.RISCV64.BrainpoolP512r1Field.subFnA)
-  keeping (Taint.ofRegs [.s0, .s1, .s2, .s3, .s4, .s5, .s6, .s7, .s8, .s9, .s10, .s11])
+  keeping (Taint.ofRegs [.s0, .s1, .s2, .s3, .s4, .s5])
 
 end VG.Proof.Ecdsa.RISCV64.BrainpoolP512r1

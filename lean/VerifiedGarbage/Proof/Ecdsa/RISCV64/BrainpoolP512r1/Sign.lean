@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Ecdh.RISCV64.BrainpoolP512r1.Exchange
 public import VerifiedGarbage.Impl.Ecdsa.BrainpoolP512r1.RISCV64.Ecdsa
 public import VerifiedGarbage.Spec.Ecdsa
 public import VerifiedGarbage.Proof.Ecdsa.Sign
-import VerifiedGarbage.Proof.Weierstrass.RISCV64.GenWide.Field
+import VerifiedGarbage.Proof.Weierstrass.RISCV64.GenWide.Wide8
 import VerifiedGarbage.Proof.Weierstrass.RISCV64.BrainpoolP512r1Order.Lit
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Framework.RISCV64.Taint
@@ -46,10 +46,10 @@ open VG.WriteBytes (writeBytes)
 private theorem n_ok : GenWide.WideOk Impl.Weierstrass.Mont.brainpoolp512r1n := ⟨by decide, by decide, by decide, by decide⟩
 
 theorem order_ok : FieldOk brainpoolp512r1Order :=
-  ⟨GenWide.mul_rv n_ok, GenWide.add_rv n_ok, GenWide.sub_rv n_ok,
+  ⟨Wide8.mul_rv n_ok rfl, GenWide.add_rv n_ok, GenWide.sub_rv n_ok,
     Impl.Weierstrass.RISCV64.BrainpoolP512r1Order.mulFn_noFrames,
     Impl.Weierstrass.RISCV64.BrainpoolP512r1Order.addFn_noFrames, Impl.Weierstrass.RISCV64.BrainpoolP512r1Order.subFn_noFrames,
-    GenWide.mulA_rv n_ok, GenWide.addA_rv n_ok, GenWide.subA_rv n_ok,
+    Wide8.mulA_rv n_ok rfl, GenWide.addA_rv n_ok, GenWide.subA_rv n_ok,
     Impl.Weierstrass.RISCV64.BrainpoolP512r1Order.mulFnA_noFrames,
     Impl.Weierstrass.RISCV64.BrainpoolP512r1Order.addFnA_noFrames, Impl.Weierstrass.RISCV64.BrainpoolP512r1Order.subFnA_noFrames⟩
 
@@ -118,18 +118,19 @@ theorem sign_rv (hL : VG.Proof.Weierstrass.Law W) (s : State) (hs : signRV.pre s
 
 /-! The constant-time analyses of the calls of the functions of brainpoolP512r1's `n` from their
 arguments, each done once for every check of code that calls it (`taint_decide_sum`), which keep
-what is public of `s0`–`s11`: the functions write none of them. -/
+what is public of `s0`–`s5`: the functions write none of them (the product restores `s6`–`s11`
+from memory). -/
 
 taint_summary nMulSum : taint (Taint.ofRegs [.a0, .a1, .a2, .a3])
   (.call (Impl.Weierstrass.Mont.brainpoolp512r1n.fn "mul") Impl.Weierstrass.RISCV64.BrainpoolP512r1Order.mulFnA)
-  keeping (Taint.ofRegs [.s0, .s1, .s2, .s3, .s4, .s5, .s6, .s7, .s8, .s9, .s10, .s11])
+  keeping (Taint.ofRegs [.s0, .s1, .s2, .s3, .s4, .s5])
 
 taint_summary nAddSum : taint (Taint.ofRegs [.a0, .a1, .a2, .a3])
   (.call (Impl.Weierstrass.Mont.brainpoolp512r1n.fn "add") Impl.Weierstrass.RISCV64.BrainpoolP512r1Order.addFnA)
-  keeping (Taint.ofRegs [.s0, .s1, .s2, .s3, .s4, .s5, .s6, .s7, .s8, .s9, .s10, .s11])
+  keeping (Taint.ofRegs [.s0, .s1, .s2, .s3, .s4, .s5])
 
 taint_summary nSubSum : taint (Taint.ofRegs [.a0, .a1, .a2, .a3])
   (.call (Impl.Weierstrass.Mont.brainpoolp512r1n.fn "sub") Impl.Weierstrass.RISCV64.BrainpoolP512r1Order.subFnA)
-  keeping (Taint.ofRegs [.s0, .s1, .s2, .s3, .s4, .s5, .s6, .s7, .s8, .s9, .s10, .s11])
+  keeping (Taint.ofRegs [.s0, .s1, .s2, .s3, .s4, .s5])
 
 end VG.Proof.Ecdsa.RISCV64.BrainpoolP512r1

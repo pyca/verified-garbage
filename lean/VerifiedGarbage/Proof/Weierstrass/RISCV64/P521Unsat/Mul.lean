@@ -313,10 +313,10 @@ theorem core_spec :
   rw [tight_xv] at hA hB
   obtain post : ∀ s', MulPost b O (lv (fun i => dw s.mem A (8 * i)) 9 * lv (fun j => dw s.mem B (8 * j)) 9) s s' →
       (Tight (ov s'.mem O 9) ∧ uv (ov s'.mem O 9) % p = uv (xv s.mem A 9) * uv (xv s.mem B 9) % p) ∧
-      Frame [GenWide.ownA 9 b, ⟨O, 8 * 9⟩] s.mem s'.mem ∧ (∀ r, r ∉ clobW → s'.gpr r = s.gpr r) ∧
+      Frame [GenWide.ownA 9 b, ⟨O, 8 * 9⟩] s.mem s'.mem ∧ (∀ r, r ∉ GenWide.clobF → s'.gpr r = s.gpr r) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp := fun s' h =>
-    let ⟨v, f, r⟩ := mul_post s' h
-    ⟨v, f.sub (ownR_sub 9 (by decide) _), r⟩
+    let ⟨v, f, g, r⟩ := mul_post s' h
+    ⟨v, f.sub (ownR_sub 9 (by decide) _), fun x hx => g x (GenWide.clobF_W hx), r⟩
   unfold core
   refine WP.ite (s.gpr .t4 == s.gpr .t5) rfl (fun he => ?_) (fun _ => ?_)
   · have hAB : A = B := by rw [← hC.a, ← hC.b']; exact beq_iff_eq.mp he

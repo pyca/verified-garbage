@@ -2176,15 +2176,21 @@ theorem subCore_spec {k m : Nat} (hm : m < 2 ^ (64 * k)) :
 /-- The whole own working space. -/
 abbrev ownA (k : Nat) (b : Addr) : Region := ⟨b + BitVec.ofNat 64 (T k), 64 * k⟩
 
+/-- The registers the functions write. -/
+abbrev clobF : List Reg := [.t0, .t1, .t2, .t3, .t4, .t5, .t6, .a0, .a1, .a2, .a3, .a4, .a5, .a6, .a7]
+
+theorem clobF_W {r : Reg} (h : r ∉ clobF) : r ∉ clobW := fun h' => h ((by decide : ∀ x ∈ clobW, x ∈ clobF) r h')
+
 /-- What an operation on the pointers does for operands and a result apart
-from the whole own working space: as `CoreSpec`, writing any of it. -/
+from the whole own working space: as `CoreSpec`, writing any of it and any
+caller-saved register. -/
 def FastSpec (k : Nat) (fast : Prog isa) (pre : Nat → Nat → Prop) (res : Nat → Nat → Nat → Prop) : Prop :=
   ∀ {b A B O : Addr} {s : State}, CoreOk k b A B O s →
     (∀ i < k, Region.Disjoint ⟨A + BitVec.ofNat 64 (8 * i), 8⟩ (ownA k b)) →
     (∀ i < k, Region.Disjoint ⟨B + BitVec.ofNat 64 (8 * i), 8⟩ (ownA k b)) →
     Region.Disjoint ⟨O, 8 * k⟩ (ownA k b) → pre (xv s.mem A k) (xv s.mem B k) →
     WP isa fast s fun s' => res (xv s.mem A k) (xv s.mem B k) (ov s'.mem O k) ∧
-      Frame [ownA k b, ⟨O, 8 * k⟩] s.mem s'.mem ∧ (∀ r, r ∉ clobW → s'.gpr r = s.gpr r) ∧
+      Frame [ownA k b, ⟨O, 8 * k⟩] s.mem s'.mem ∧ (∀ r, r ∉ clobF → s'.gpr r = s.gpr r) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp
 
 theorem ownR_sub (k : Nat) (h₁ : 1 ≤ k) (b : Addr) {O : Addr} :
@@ -2198,7 +2204,7 @@ theorem ownR_sub (k : Nat) (h₁ : 1 ≤ k) (b : Addr) {O : Addr} :
 theorem CoreSpec.fast {k : Nat} {core : List Instr} {pre : Nat → Nat → Prop} {res : Nat → Nat → Nat → Prop}
     (h : CoreSpec k core pre res) : FastSpec k (.block core) pre res :=
   fun hC _ _ _ hp => WP.mono (h hC hp) fun _ ⟨v, f, g, rd, wr, sp⟩ =>
-    ⟨v, f.sub (ownR_sub k (by have := hC.k7; omega_arith) _), g, rd, wr, sp⟩
+    ⟨v, f.sub (ownR_sub k (by have := hC.k7; omega_arith) _), fun r hr => g r (clobF_W hr), rd, wr, sp⟩
 
 /-! ## The byte-wise copies -/
 
@@ -2312,9 +2318,6 @@ theorem slowOut_ok {k : Nat} {W : Addr} {s : State} (hw : WsW W s) (hk : 7 ≤ k
 
 /-! ## The functions -/
 
-/-- The registers the functions write. -/
-abbrev clobF : List Reg := [.t0, .t1, .t2, .t3, .t4, .t5, .t6, .a0, .a1, .a2, .a3, .a4, .a5, .a6, .a7]
-
 /-- The regions the functions write: their own working space and the result. -/
 abbrev fnW (k : Nat) (W : Addr) (o : Nat) : List Region :=
   [⟨W + BitVec.ofNat 64 (8192 - 64 * k), 64 * k⟩, ⟨W + BitVec.ofNat 64 o, 8 * k⟩]
@@ -2416,7 +2419,7 @@ theorem fnWith_ok {k : Nat} (hk : 7 ≤ k) (hk' : k ≤ 30) {fast : Prog isa} {c
       fun s2 ⟨v2, f2, g2, rd2, wr2, sp2⟩ => ⟨by rw [← m1]; exact v2, ?_, ?_, ?_, ?_, ?_⟩
     · rw [← m1]; exact f2.sub (fast_fnW (by omega_arith) hk' W _)
     · intro r hr
-      rw [g2 r (fun h => hr (subW r h)), r1.gpr r (fun h => hr (sub1 r h))]
+      rw [g2 r hr, r1.gpr r (fun h => hr (sub1 r h))]
     · rw [rd2, r1.rd]
     · rw [wr2, r1.wr]
     · rw [sp2, r1.sp]
@@ -2494,7 +2497,6 @@ theorem fnA_ok {k : Nat} (hk : 7 ≤ k) (hk' : k ≤ 30) {fast : Prog isa}
   refine WP.seq (WP.mono (ptrsA_ok h0 h1.1 h2.1 h3.1) fun s1 ⟨p2, p4, p5, p3, r1, m1⟩ => ?_)
   obtain hw1 : WsW W s1 := ⟨hal, by rw [r1.wr]; exact hwr, hfit, p3⟩
   obtain sub1 : ∀ x ∈ [Reg.a3, .t2, .t4, .t5], x ∈ clobF := by decide
-  obtain subW : ∀ x ∈ clobW, x ∈ clobF := by decide
   obtain hlt : ∀ x, x + 8 * k ≤ 8192 - 64 * k → (W + BitVec.ofNat 64 x).toNat = W.toNat + x := fun x hx => by
     rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith : x < 2 ^ 64), Nat.mod_eq_of_lt (by omega_arith)]
   obtain wdis : ∀ x, x + 8 * k ≤ 8192 - 64 * k → ∀ i < k,
@@ -2544,7 +2546,7 @@ theorem fnA_ok {k : Nat} (hk : 7 ≤ k) (hk' : k ≤ 30) {fast : Prog isa}
     fun s2 ⟨v2, f2, g2, rd2, wr2, sp2⟩ => ⟨by rw [← m1]; exact v2, ?_, ?_, ?_, ?_, ?_⟩
   · rw [← m1]; exact f2.sub (fast_fnW (by omega_arith) hk' W _)
   · intro r hr
-    rw [g2 r (fun h => hr (subW r h)), r1.gpr r (fun h => hr (sub1 r h))]
+    rw [g2 r hr, r1.gpr r (fun h => hr (sub1 r h))]
   · rw [rd2, r1.rd]
   · rw [wr2, r1.wr]
   · rw [sp2, r1.sp]
