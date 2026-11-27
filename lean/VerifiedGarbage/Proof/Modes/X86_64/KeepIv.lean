@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Modes.X86_64.FbLoop
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.VecKeep
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-!
 # Code that keeps the IV's address in `ivX`
@@ -56,17 +57,17 @@ theorem exec_ivSafe {i : Instr} (hi : ivSafeI i = true) {s t : State} (h : exec 
   · exact congrFun (exec_vec hs h).1 _
   · cases i <;> first | exact absurd hm Bool.false_ne_true | skip
     all_goals first
-      | (simp only [exec, Option.some.injEq] at h; subst h; rfl)
-      | (simp only [exec, State.store128] at h
+      | (simp only [reduceExec, Option.some.injEq] at h; subst h; rfl)
+      | (simp only [reduceExec, State.store128] at h
          split at h
          · cases h; rfl
          · cases h)
   · cases i <;> first | exact absurd hq Bool.false_ne_true | skip
     all_goals simp only [xmmDst, bne_iff_ne, ne_eq] at hq
     all_goals first
-      | (simp only [exec, Option.some.injEq] at h; subst h
+      | (simp only [reduceExec, Option.some.injEq] at h; subst h
          exact xop_exec_xmm _ s (Ne.symm hq))
-      | (simp only [exec, Option.map_eq_some_iff] at h
+      | (simp only [reduceExec, Option.map_eq_some_iff] at h
          obtain ⟨v, -, rfl⟩ := h
          exact RegUpd.xmm_setXmm_of_ne _ _ (Ne.symm hq))
 

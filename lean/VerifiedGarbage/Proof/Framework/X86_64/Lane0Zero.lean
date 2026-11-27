@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Framework.X86_64.Lane0
 import VerifiedGarbage.Proof.Framework.X86_64.Avx512
 import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-!
 # x86-64: `VEX.128` blocks keep cleared upper lanes cleared
@@ -58,19 +59,19 @@ theorem lane0_zhi {i : Instr} {ss : List Instr} (h : lane0 i = some ss) {s s' : 
   case movImm64 d v => cases e; exact hz
   case vmovdquLoad len d m =>
     cases len
-    · simp only [exec, Option.map_eq_some_iff] at e
+    · simp only [reduceExec, Option.map_eq_some_iff] at e
       obtain ⟨v, -, rfl⟩ := e
       exact setV128_zhi _ _ _ _ _ hl1 hl4 hz
     · simp at h
   case vmovdquStore len m r' =>
     cases len
-    · simp only [exec, State.store128] at e
+    · simp only [reduceExec, State.store128] at e
       split at e
       · cases e; exact hz
       · cases e
     · simp at h
   case vop o =>
-    simp only [exec, Option.some.injEq] at e
+    simp only [reduceExec, Option.some.injEq] at e
     subst e
     obtain ⟨d, lo, hi, he⟩ := lane0V_setV h s
     rw [he]
@@ -108,19 +109,19 @@ theorem lane0_zkeep {i : Instr} {ss : List Instr} (h : lane0 i = some ss) {s s' 
   case vmovdquLoad len d m =>
     have hrd : d ≠ r := fun h => hr (by rw [h]; rfl)
     cases len
-    · simp only [exec, Option.map_eq_some_iff] at e
+    · simp only [reduceExec, Option.map_eq_some_iff] at e
       obtain ⟨v, -, rfl⟩ := e
       exact setV128_zkeep _ hrd _ _ hl4
     · simp at h
   case vmovdquStore len m r' =>
     cases len
-    · simp only [exec, State.store128] at e
+    · simp only [reduceExec, State.store128] at e
       split at e
       · cases e; rfl
       · cases e
     · simp at h
   case vop o =>
-    simp only [exec, Option.some.injEq] at e
+    simp only [reduceExec, Option.some.injEq] at e
     subst e
     cases o
     all_goals try (simp only [lane0V, reduceCtorEq] at h)

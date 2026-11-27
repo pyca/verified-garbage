@@ -13,6 +13,7 @@ public import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Sym
 import VerifiedGarbage.Proof.Framework.X86_64.Avx512
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-! ### `Poly1305.X86_64.Ifma.Bound`, which only this module used -/
 
@@ -296,7 +297,7 @@ theorem sstep_ok {ld : Bool} {s₀ : State} (hc : ld = true → Ctx s₀) {σ σ
       rw [h.rd, h.wr]; exact (hc hld).ld i hi
     let v := s.mem.readW (s₀.gpr .rsi + BitVec.ofNat 64 (8 * i)) 512
     refine ⟨s.setZ d (v.extractLsb' 0 128) (v.extractLsb' 128 128) (v.extractLsb' 256 128)
-      (v.extractLsb' 384 128), by simp only [exec, ea, State.load512, hin, ite_true, Option.map_some, v], ?_⟩
+      (v.extractLsb' 384 128), by simp only [reduceExec, ea, State.load512, hin, ite_true, Option.map_some, v], ?_⟩
     refine h.set (hv_of (fun k hk => ?_) (fun r hr k hk => by rw [qz_load _ _ _ _ hk, ite_eq_right hr]))
       (vec_setZ h.eq _ _ _ _ _)
     rw [qz_load _ _ _ _ hk, ite_eq_left rfl, h.mem, Offset.add_add]; simp only [Q.eval, Nat.mul_add]
@@ -315,7 +316,7 @@ theorem sstep_ok {ld : Bool} {s₀ : State} (hc : ld = true → Ctx s₀) {σ σ
     have hv' : v = s₀.mem.readW (s₀.gpr .rdi + BitVec.ofInt 64 (i : Int)) 64 := hv
     refine ⟨s.setZ d (op.sse.eval (s.zlane a 0) (v ++ v)) (op.sse.eval (s.zlane a 1) (v ++ v))
       (op.sse.eval (s.zlane a 2) (v ++ v)) (op.sse.eval (s.zlane a 3) (v ++ v)),
-      by simp only [exec, ea, State.load64, hin, ite_true, Option.map_some, v], ?_⟩
+      by simp only [reduceExec, ea, State.load64, hin, ite_true, Option.map_some, v], ?_⟩
     have he := vec_setZ h.eq d (op.sse.eval (s.zlane a 0) (v ++ v)) (op.sse.eval (s.zlane a 1) (v ++ v))
       (op.sse.eval (s.zlane a 2) (v ++ v)) (op.sse.eval (s.zlane a 3) (v ++ v))
     cases op <;> simp only [Sym.bcst] at e' <;> cases e' <;>

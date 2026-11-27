@@ -15,6 +15,7 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.Framework.AArch64.Taint
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Pair
 import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.AArch64.Reduce
 
 /-! ### `MlDsa.AArch64.Optimized.ResidentBlock`, which this module and modules that import it used -/
 
@@ -339,8 +340,8 @@ theorem advance_ok {s : State} {ra rb : Reg} {rate : Nat}
   let s1 := s.write .x ra (s.gpr ra + BitVec.ofNat 64 rate)
   let s2 := s1.write .x rb (s1.gpr rb + BitVec.ofNat 64 rate)
   let s3 := s2.write .x .x28 (s2.gpr .x28 - 1)
-  refine WP.block_cons_iff.mpr ⟨s1,by simp [isa,exec,hrate,State.read,s1],?_⟩
-  refine WP.block_cons_iff.mpr ⟨s2,by simp [isa,exec,hrate,State.read,s2],?_⟩
+  refine WP.block_cons_iff.mpr ⟨s1,by simp [isa,reduceExec,hrate,State.read,s1],?_⟩
+  refine WP.block_cons_iff.mpr ⟨s2,by simp [isa,reduceExec,hrate,State.read,s2],?_⟩
   refine WP.block_cons_iff.mpr ⟨s3,rfl,?_⟩
   apply WP.block_nil_iff.mpr
   dsimp only [s3,s2,s1]

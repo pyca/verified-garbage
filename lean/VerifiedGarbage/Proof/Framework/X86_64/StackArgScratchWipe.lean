@@ -51,7 +51,7 @@ theorem wipeStoresAt_run (R : Region) (u : State) (off : Nat) (hR : R ∈ u.wr) 
     refine ⟨m'.writeW (u.gpr .rsp + BitVec.ofNat 64 (off + 8 * w)) (u.gpr .r11), ?_,
       hf.writeW (List.mem_singleton_self _) _ (hc w (by omega_using []))⟩
     rw [wipeStoresAt_succ, execBlock_append, he]
-    simp only [Option.bind_some, execBlock, isa, exec, State.store64, State.ea, BitVec.ofInt_natCast,
+    simp only [Option.bind_some, execBlock, isa, reduceExec, State.store64, State.ea, BitVec.ofInt_natCast,
       hin, ↓reduceIte, Option.map_some, addrs, List.map_cons, List.map_nil, List.append_nil,
       wipeAtTrace, List.range_succ, List.map_append]
 
@@ -67,7 +67,7 @@ theorem wipeAt_run (R : Region) (u : State) (off words : Nat) (hR : R ∈ u.wr)
   obtain ⟨m', he, hf⟩ := wipeStoresAt_run R (u.setReg32 .r11 0) off
     (by simpa [State.setReg32, State.setReg]) words (by rw [hsp]; exact hc)
   refine ⟨m', ?_, by simpa [State.setReg32, State.setReg] using hf⟩
-  simp only [wipeAt, execBlock, isa, exec, readSrc32, Option.map_some]
+  simp only [wipeAt, execBlock, isa, reduceExec, readSrc32, Option.map_some]
   rw [he, hsp]
   simp [addrs, srcAddrs]
 
@@ -98,7 +98,7 @@ theorem wipeStoresAtX_run (R : Region) (u : State) (off : Nat) (hR : R ∈ u.wr)
     refine ⟨m'.writeW (u.gpr .rsp + BitVec.ofNat 64 (off + 16 * w)) (u.xmm .xmm0), ?_,
       hf.writeW (List.mem_singleton_self _) _ (hc w (by omega_using []))⟩
     rw [wipeStoresAtX_succ, execBlock_append, he]
-    simp only [Option.bind_some, execBlock, isa, exec, State.store128, State.ea, BitVec.ofInt_natCast,
+    simp only [Option.bind_some, execBlock, isa, reduceExec, State.store128, State.ea, BitVec.ofInt_natCast,
       hin, ↓reduceIte, Option.map_some, addrs, List.map_cons, List.map_nil, List.append_nil,
       wipeAtXTrace, List.range_succ, List.map_append]
 
@@ -115,7 +115,7 @@ theorem wipeAtX_run (R : Region) (u : State) (off n : Nat) (hR : R ∈ u.wr)
   obtain ⟨m', he, hf⟩ := wipeStoresAtX_run R (u.setXmm .xmm0 0) off (by simpa [State.setXmm]) n
     (by simpa [State.setXmm] using hc)
   refine ⟨m', ?_, by simpa [State.setXmm] using hf⟩
-  simp only [wipeAtX, execBlock, isa, exec, hx]
+  simp only [wipeAtX, execBlock, isa, reduceExec, hx]
   rw [he]
   simp [addrs, State.setXmm]
 

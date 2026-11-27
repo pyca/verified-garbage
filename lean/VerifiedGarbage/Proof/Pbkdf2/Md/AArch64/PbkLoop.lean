@@ -11,6 +11,7 @@ import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Contract
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Common
 import VerifiedGarbage.Proof.Sha256.Stream
+import VerifiedGarbage.Proof.Framework.AArch64.Reduce
 
 /-! ### `Pbkdf2.Md.AArch64.Pbkdf2`, which this module and modules that import it used -/
 
@@ -812,7 +813,7 @@ theorem wp_subImmW {is : List Instr} {s : State} {Q : State → Prop} {d n : Reg
       WP isa (.block is) s' Q) :
     WP isa (.block (.subImm .w d n imm :: is)) s Q :=
   VG.Proof.MdStream.AArch64.WP.cons (s' := s.write .w d ((s.gpr n).setWidth 32 - BitVec.ofNat 32 imm))
-    (by simp [exec, h, State.read]) (k _ (VG.Proof.MdStream.AArch64.Upd.write s .w d _))
+    (by simp [reduceExec, h, State.read]) (k _ (VG.Proof.MdStream.AArch64.Upd.write s .w d _))
 
 /-- `c - 1`, in 32 bits. -/
 theorem sub1_32 (x : BitVec 64) (h : 0 < (x.setWidth 32).toNat) :

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.AArch64.Taint
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import VerifiedGarbage.Proof.Framework.AArch64.Reduce
 
 /-!
 # AArch64 taint tracking with the addresses of statics
@@ -51,7 +52,7 @@ theorem stepS_sound {L : List String} {τ τ' : T} {i : Instr} {s₁ s₂ s₁' 
     split at hs
     · rename_i hn
       cases hs
-      simp only [exec, Option.some.injEq] at e₁ e₂
+      simp only [reduceExec, Option.some.injEq] at e₁ e₂
       subst e₁ e₂
       exact ⟨rfl, ha.1.write .x d (p := true) fun _ => ha.2 n hn, hsy⟩
     · exact ⟨(step_sound ha.1 hs e₁ e₂).1, (step_sound ha.1 hs e₁ e₂).2, hsy⟩

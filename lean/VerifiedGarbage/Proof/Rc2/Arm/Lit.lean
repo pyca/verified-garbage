@@ -23,9 +23,9 @@ open VG.Arm
 
 materialize_value keyLookup
 
-materialize_flat_code encryptBlock
-materialize_flat_code decryptBlock
+materialize_code encryptBlock
+materialize_code decryptBlock
 
-materialize_flat_code expandKey
+materialize_code expandKey
 
 end VG.Impl.Rc2.Arm

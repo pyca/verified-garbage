@@ -18,8 +18,8 @@ meta import VerifiedGarbage.Proof.Framework.X86.Lit
 
 namespace VG.Proof.Blowfish.X86
 
-materialize_flat_code cfbEncryptFinalCode := Impl.Blowfish.X86.cfbEncryptFinal
-materialize_flat_code cfbDecryptFinalCode := Impl.Blowfish.X86.cfbDecryptFinal
-materialize_flat_code ofbFinalCode := Impl.Blowfish.X86.ofbFinal
+materialize_code cfbEncryptFinalCode := Impl.Blowfish.X86.cfbEncryptFinal
+materialize_code cfbDecryptFinalCode := Impl.Blowfish.X86.cfbDecryptFinal
+materialize_code ofbFinalCode := Impl.Blowfish.X86.ofbFinal
 
 end VG.Proof.Blowfish.X86

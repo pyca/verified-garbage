@@ -14,6 +14,7 @@ import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentMemory
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.AArch64.Reduce
 
 /-! ### `MlDsa.AArch64.Sign.CommitTailModel`, which this module and modules that import it used -/
 
@@ -451,7 +452,7 @@ theorem paddingWord_ok {s : State} {A B : Spec.Sha3.State} {j : Nat} (hj : j<25)
       Pairs t (xorWord A j (imm.setWidth 64 <<< (16*shift))) B := by
   unfold paddingWord
   let w : BitVec 64 := imm.setWidth 64 <<< (16*shift)
-  refine WP.cons (s':=s.write .x .x7 w) (by simp [exec,w,Size.bits,Nat.mul_comm]; omega_using [hs]) ?_
+  refine WP.cons (s':=s.write .x .x7 w) (by simp [reduceExec,w,Size.bits,Nat.mul_comm]; omega_using [hs]) ?_
   have hu := Upd.write64 s .x7 w
   refine wp_vop (d:=.v25) rfl fun a ha =>
     wp_vop (d:=.v25) rfl fun b hb =>

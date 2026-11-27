@@ -7,6 +7,7 @@ public import VerifiedGarbage.TCB.PPC64LE.Target
 import VerifiedGarbage.Proof.Framework.Covers
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.PPC64LE.Call
+import VerifiedGarbage.Proof.Framework.PPC64LE.Reduce
 
 /-!
 # A scratch buffer on the stack, for a signature with lists of slices (PPC64LE)
@@ -297,7 +298,7 @@ theorem withStackScratch_runLists {c : Prog isa} (hk : (sig.words abi.ptrBits).l
     exact ite_eq_left ⟨hb0, hb1, hb2, by omega_arith⟩
   have hblk : Exec isa (.block [.addSp (argRegs.getD (sig.words abi.ptrBits).length .r3) 32])
       (allocated bytes s) [] (scratchState sig bytes s) :=
-    .block (by simp only [execBlock, isa, exec, show (32 : Nat) < 2 ^ 15 by decide, ite_true,
+    .block (by simp only [execBlock, isa, reduceExec, show (32 : Nat) < 2 ^ 15 by decide, ite_true,
       Option.map_some, addrs, List.map_nil, List.append_nil, scratchState]; rfl)
   have hcov : Covers (s.wr ++ [⟨s.sp - BitVec.ofNat 64 bytes + 32, n * e.size⟩])
       (frameR bytes s :: s.wr) :=

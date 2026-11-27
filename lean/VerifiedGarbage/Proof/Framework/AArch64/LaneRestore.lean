@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Framework.AArch64.Inline
 public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Reduce
 
 /-!
 # Registers restored from a vector lane, on AArch64
@@ -109,7 +110,7 @@ theorem keepsLane_ok {v : VReg} {l : Nat} (hl : l < 2) {i : Instr} (h : keepsLan
   split at h
   · rename_i d l' n
     simp only [Bool.or_eq_true, bne_iff_ne, ne_eq] at h
-    simp only [exec, VOp.eval] at he
+    simp only [reduceExec, VOp.eval] at he
     split at he
     · rename_i hl'
       simp only [Option.map_some, Option.some.injEq] at he
@@ -174,7 +175,7 @@ theorem restoresMid_ok {r : Reg} {v : VReg} {l : Nat} (hl : l < 2) :
       · rename_i hrvl
         obtain ⟨rfl, rfl, rfl⟩ := hrvl
         rw [keepsReg_ok h e₂]
-        simp only [exec, Size.bits] at he
+        simp only [reduceExec, Size.bits] at he
         split at he
         · simp only [Option.some.injEq] at he; subst he
           simp [State.write, laneOf, Nat.mul_comm]
@@ -201,7 +202,7 @@ theorem restores_ok {r : Reg} : ∀ {is : List Instr}, restores r is = true →
       · rename_i hr
         obtain ⟨rfl, hl⟩ := hr
         rw [restoresMid_ok hl h e₂]
-        simp only [exec, VOp.eval, hl, ite_true, Option.map_some, Option.some.injEq] at he
+        simp only [reduceExec, VOp.eval, hl, ite_true, Option.map_some, Option.some.injEq] at he
         subst he
         simp only [laneOf, RegUpd.v_setV, ite_true]
         rw [extract_setLane64 _ _ hl hl]; simp

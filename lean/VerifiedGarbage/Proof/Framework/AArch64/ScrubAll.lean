@@ -17,6 +17,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Cold
 import VerifiedGarbage.Proof.Framework.EntryBranch
 import VerifiedGarbage.Proof.Framework.CodeOnce
+import VerifiedGarbage.Proof.Framework.AArch64.Reduce
 
 /-!
 # Returning without secret residue, whatever the code leaves (AArch64)
@@ -293,7 +294,7 @@ theorem movzs_run : ∀ (rs : List Reg) (u : State),
   | [], u => by
     simp only [List.map_nil, execBlock, List.not_mem_nil, ↓reduceIte]
   | r :: rs, u => by
-    simp only [List.map_cons, execBlock, isa, exec, show 16 * 0 < Size.x.bits by decide, ↓reduceIte]
+    simp only [List.map_cons, execBlock, isa, reduceExec, show 16 * 0 < Size.x.bits by decide, ↓reduceIte]
     rw [movzs_run rs]
     simp only [addrs, List.map_nil, List.nil_append, Option.map_some, State.write, List.mem_cons,
       Option.some.injEq, Prod.mk.injEq, and_true]
@@ -311,7 +312,7 @@ theorem movis_run : ∀ (vs : List VReg) (u : State),
   | [], u => by
     simp only [List.map_nil, execBlock, List.not_mem_nil, ↓reduceIte]
   | v :: vs, u => by
-    simp only [List.map_cons, execBlock, isa, exec, VOp.eval, Option.map_some]
+    simp only [List.map_cons, execBlock, isa, reduceExec, VOp.eval, Option.map_some]
     rw [movis_run vs]
     simp only [addrs, List.map_nil, List.nil_append, Option.map_some, State.setV, List.mem_cons,
       Option.some.injEq, Prod.mk.injEq, and_true]
@@ -338,7 +339,7 @@ theorem inss_run (z : Reg) : ∀ (vs : List VReg) (u : State),
   | [], u => by
     simp only [List.map_nil, execBlock, List.not_mem_nil, ↓reduceIte]
   | v :: vs, u => by
-    simp only [List.map_cons, execBlock, isa, exec, VOp.eval, show 1 < 2 by decide, ↓reduceIte,
+    simp only [List.map_cons, execBlock, isa, reduceExec, VOp.eval, show 1 < 2 by decide, ↓reduceIte,
       Option.map_some]
     rw [inss_run z vs _]
     simp only [addrs, List.map_nil, List.nil_append, Option.map_some, State.setV, List.mem_cons,
@@ -457,7 +458,7 @@ theorem clears_run {cl : Clear} (hwf : cl.WF) (u : State) :
         c := false
         vf := false }, []) := by
     intro w
-    simp [execBlock, isa, exec, State.read, addrs]
+    simp [execBlock, isa, reduceExec, State.read, addrs]
   rw [ht, Option.map_some, Option.bind_some, inss_run .x1 cl.his _]
   simp only [Option.map_some, List.append_nil, cleared, clearedX1, Option.some.injEq, Prod.mk.injEq, and_true]
   congr 1
@@ -498,7 +499,7 @@ theorem retFix_hi {rb : Nat} (hrb : rb = 0 ∨ rb = 32 ∨ rb = 64) (s : State) 
       g .x0 >>> rb = (0 : BitVec 64) ∧ (g .x0).setWidth rb = (s.gpr .x0).setWidth rb := by
   rcases hrb with rfl | rfl | rfl
   · refine ⟨fun q => if q = .x0 then 0 else s.gpr q, ?_, fun q hq => by simp [hq], by simp, ?_⟩
-    · simp [retFix, execBlock, isa, exec, addrs, State.write]
+    · simp [retFix, execBlock, isa, reduceExec, addrs, State.write]
     · apply BitVec.eq_of_toNat_eq
       have h1 := ((0 : BitVec 64).setWidth 0).isLt
       have h2 := ((s.gpr .x0).setWidth 0).isLt
@@ -507,7 +508,7 @@ theorem retFix_hi {rb : Nat} (hrb : rb = 0 ∨ rb = 32 ∨ rb = 64) (s : State) 
       omega
   · refine ⟨fun q => if q = .x0 then ((s.gpr .x0).setWidth 32 + 0).setWidth 64 else s.gpr q, ?_,
       fun q hq => by simp [hq], ?_, by simp⟩
-    · simp [retFix, execBlock, isa, exec, addrs, State.write, State.read]
+    · simp [retFix, execBlock, isa, reduceExec, addrs, State.write, State.read]
     · apply BitVec.eq_of_toNat_eq
       have := ((s.gpr .x0).setWidth 32).isLt
       simp only [↓reduceIte, BitVec.toNat_ushiftRight, BitVec.toNat_setWidth, BitVec.toNat_add,

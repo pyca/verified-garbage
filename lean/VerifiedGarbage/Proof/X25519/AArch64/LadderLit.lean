@@ -14,6 +14,6 @@ meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 
 namespace VG
 
-materialize_flat_code Impl.X25519.AArch64.Ladder.x25519
+materialize_code Impl.X25519.AArch64.Ladder.x25519
 
 end VG

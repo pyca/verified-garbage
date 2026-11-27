@@ -616,7 +616,7 @@ theorem wp_shl {is : List Instr} {s : State} {Q : State → Prop} {d : Reg} {n :
   refine WP.cons (s' := (s.setFlags (some ((s.gpr d).getLsbD (64 - n)))
     (if n = 1 then some ((s.gpr d <<< n).msb ^^ (s.gpr d).getLsbD (64 - n)) else none)
     (some ((s.gpr d <<< n) == 0)) (some (s.gpr d <<< n).msb)).setReg d (s.gpr d <<< n)) ?_ (k _ ?_)
-  · simp [exec, execShift, hn]
+  · simp [reduceExec, execShift, hn]
   · exact ⟨by simp [State.setReg], fun r h => by simp [State.setReg, h]; rfl, rfl, rfl, rfl⟩
 
 theorem shr_lg {P : Params} (hd : Dims P) {n : Nat} (hn : n < 2 ^ 64) :
@@ -778,7 +778,7 @@ theorem wp_movdquLoad {is : List Instr} {s : State} {Q : State → Prop} {d : XR
     (ha : s.ea m = a) (hin : InRegions (s.rd ++ s.wr) a 16)
     (k : WP isa (.block is) (s.setXmm d (s.mem.readW a 128)) Q) :
     WP isa (.block (.movdquLoad d m :: is)) s Q :=
-  WP.cons (by simp [exec, State.load128, ha, hin]) k
+  WP.cons (by simp [reduceExec, State.load128, ha, hin]) k
 
 theorem ea_at' (t : State) (b : Reg) (d : Nat) : t.ea (at_ b d) = t.gpr b + BitVec.ofNat 64 d := by
   rw [ea_at, ofInt_natCast]
@@ -978,7 +978,7 @@ theorem wp_shrZ {is : List Instr} {s : State} {Q : State → Prop} {d : Reg} {n 
   refine WP.cons (s' := (s.setFlags (some ((s.gpr d).getLsbD (n - 1)))
     (if n = 1 then some (s.gpr d).msb else none) (some ((s.gpr d >>> n) == 0))
     (some (s.gpr d >>> n).msb)).setReg d (s.gpr d >>> n)) ?_ (k _ ?_ rfl)
-  · simp [exec, execShift, hn]
+  · simp [reduceExec, execShift, hn]
   · exact ⟨by simp [State.setReg], fun r h => by simp [State.setReg, h]; rfl, rfl, rfl, rfl⟩
 
 theorem and15 (x : BitVec 64) :

@@ -18,8 +18,8 @@ meta import VerifiedGarbage.Proof.Framework.X86.Lit
 
 namespace VG.Proof.Sm4.X86
 
-materialize_flat_code cfbEncryptFinalCode := Impl.Sm4.X86.cfbEncryptFinal
-materialize_flat_code cfbDecryptFinalCode := Impl.Sm4.X86.cfbDecryptFinal
-materialize_flat_code ofbFinalCode := Impl.Sm4.X86.ofbFinal
+materialize_code cfbEncryptFinalCode := Impl.Sm4.X86.cfbEncryptFinal
+materialize_code cfbDecryptFinalCode := Impl.Sm4.X86.cfbDecryptFinal
+materialize_code ofbFinalCode := Impl.Sm4.X86.ofbFinal
 
 end VG.Proof.Sm4.X86

@@ -758,7 +758,7 @@ def satState : State where
 /-! The compression function as a literal: its sixty-four unrolled rounds are built by
 functions, which the kernel would run again in each check that evaluates the code (the summary
 of its taint and the frame of that summary, below). -/
-materialize_flat_code Impl.Sha256.RISCV64.compress
+materialize_code Impl.Sha256.RISCV64.compress
 
 /-! The constant-time analysis of the compression function from its arguments, done once for
 every check of code that calls it (`taint_decide_sum [compressSum]`), which keeps what is public

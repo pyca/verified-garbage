@@ -34,45 +34,45 @@ theorem exec_vec {i : Instr} {r : VReg} {s s' : State}
     (hi : vdstOf i ≠ some r) (h : exec i s = some s') : s'.v r = s.v r := by
   cases i with
   | str sz t n off | strb t n off | strq t n off =>
-    simp only [exec, Option.bind_eq_some_iff, State.store] at h
+    simp only [reduceExec, Option.bind_eq_some_iff, State.store] at h
     obtain ⟨a, -, h⟩ := h
     split at h <;> cases h; rfl
   | strSp t off =>
-    simp only [exec] at h
+    simp only [reduceExec] at h
     split at h <;> [skip; cases h]
     simp only [State.store] at h
     split at h <;> cases h; rfl
   | ldr sz t n off | ldrb t n off =>
-    simp only [exec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at h
+    simp only [reduceExec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at h
     obtain ⟨a, -, v, -, rfl⟩ := h
     rfl
   | ldrq t n off =>
-    simp only [exec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at h
+    simp only [reduceExec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at h
     obtain ⟨a, -, v, -, rfl⟩ := h
     have ht : r ≠ t := fun e => hi (by simp [vdstOf, e])
     simp only [State.setV, ht, ite_false]
   | ldrqTbl t n off name ws =>
-    simp only [exec] at h
+    simp only [reduceExec] at h
     split at h <;> [skip; cases h]
     cases h
     have ht : r ≠ t := fun e => hi (by simp [vdstOf, e])
     simp only [State.setV, ht, ite_false]
   | vop op =>
-    simp only [exec, Option.map_eq_some_iff] at h
+    simp only [reduceExec, Option.map_eq_some_iff] at h
     obtain ⟨⟨d, v⟩, hd, rfl⟩ := h
     have ht : r ≠ d := fun e => hi (by simp [vdstOf, ← VOp.eval_dst hd, e])
     simp only [State.setV, ht, ite_false]
   | ldrSp t off =>
-    simp only [exec] at h
+    simp only [reduceExec] at h
     split at h <;> [skip; cases h]
     obtain ⟨v, -, rfl⟩ := Option.map_eq_some_iff.mp h
     rfl
   | ccmp sz n imm nzcv cond =>
-    simp only [exec] at h
+    simp only [reduceExec] at h
     split at h <;> [skip; cases h]
     simp only [Option.some.injEq] at h; subst h
     split <;> rfl
-  | push _ | pop _ | alloc _ | free _ | blr _ => simp only [exec, reduceCtorEq] at h
+  | push _ | pop _ | alloc _ | free _ | blr _ => simp only [reduceExec, reduceCtorEq] at h
   | ldp t1 t2 n off => obtain ⟨_, _, rfl⟩ := exec_ldp_eq h; rfl
   | stp t1 t2 n off => obtain ⟨_, rfl⟩ := exec_stp_eq h; rfl
   | logicRor _ _ _ _ _ _ | bicRor _ _ _ _ _ | extr _ _ _ _ _ | addSp _ _ | addImm _ _ _ _

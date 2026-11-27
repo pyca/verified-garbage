@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.HighPack
 public import VerifiedGarbage.Proof.MlKem.AArch64.Vec
+import VerifiedGarbage.Proof.Framework.AArch64.Reduce
 
 /-! ### `MlDsa.AArch64.Optimized.HighPackShuffle`, which only this module used -/
 
@@ -133,7 +134,7 @@ theorem storeEight_ok {s : State} {rest : List Instr} {Q : State → Prop}
   let u := s.write .x .x9 ((s.v .v4).extractLsb' 0 64)
   let t := { u with mem := s.mem.writeW (s.gpr .x1) ((s.v .v4).extractLsb' 0 64) }
   refine WP.cons (s' := u) (by rfl) (WP.cons (s' := t) ?_ ?_)
-  · simp [u, t, exec, addr, State.store, State.read, State.write, Size.bytes, Mem.writeW, hw]
+  · simp [u, t, reduceExec, addr, State.store, State.read, State.write, Size.bytes, Mem.writeW, hw]
   · apply k t
     · exact ⟨fun r hr => by simpa only [List.mem_singleton] using (only_write s .x .x9 _).gpr r hr,
         rfl, rfl, rfl, fun _ _ => rfl⟩
@@ -152,7 +153,7 @@ theorem storeFour_ok {s : State} {rest : List Instr} {Q : State → Prop}
   refine WP.cons (s' := u) (by rfl) (WP.cons (s' := t) ?_ ?_)
   · have hn (x : BitVec 32) : (x.setWidth 64).setWidth 32 = x := by
       rw [BitVec.setWidth_setWidth_of_le _ (by decide), BitVec.setWidth_eq]
-    simp [u, t, exec, addr, State.store, State.read, State.write, Size.bytes, hn, Mem.writeW]
+    simp [u, t, reduceExec, addr, State.store, State.read, State.write, Size.bytes, hn, Mem.writeW]
     exact hw
   · apply k t
     · exact ⟨fun r hr => by simpa only [List.mem_singleton] using (only_write s .w .x9 _).gpr r hr,

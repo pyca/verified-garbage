@@ -85,7 +85,7 @@ theorem storesL_run {W : Nat} (hW : W < 2 ^ 16) (b : Addr) :
     have hin : InRegions u.wr (b + BitVec.ofNat 64 (16 * k)) 16 := hR k (List.mem_cons_self ..)
     have hex : exec (.strq .v31 .x9 (16 * k)) u =
         some { u with mem := u.mem.write (b + BitVec.ofNat 64 (16 * k)) 16 0 } := by
-      simp only [exec, addr, hoff, and_self, ↓reduceIte, Option.bind_some, State.store, hb, hin, hv]
+      simp only [reduceExec, addr, hoff, and_self, ↓reduceIte, Option.bind_some, State.store, hb, hin, hv]
     have ih := storesL_run hW b ks { u with mem := u.mem.write (b + BitVec.ofNat 64 (16 * k)) 16 0 }
       hb hv (fun k' h => hR k' (List.mem_cons_of_mem _ h)) (fun k' h => hks k' (List.mem_cons_of_mem _ h))
     have h1 : execBlock isa [.strq .v31 .x9 (16 * k)] u =
@@ -127,7 +127,7 @@ theorem tailG_run {W : Nat} (hW : 0 < W ∧ W < 4096 ∧ W % 16 = 0) {ks : List 
     simp only [isa, push, hW.1, hW.2.1, hW.2.2, hsp, and_self, ↓reduceIte]; rfl
   let u₂ : State := (u₁.setV .v31 0).write .x .x9 u₁.sp
   have h₂ : execBlock isa [.vop (.movi0 .v31), .addSp .x9 0] u₁ = some (u₂, []) := by
-    simp [execBlock, isa, exec, VOp.eval, addrs, u₂, State.setV]
+    simp [execBlock, isa, reduceExec, VOp.eval, addrs, u₂, State.setV]
   have hb₂ : u₂.gpr .x9 = b := by simp [u₂, u₁, b, State.write]
   have hv₂ : u₂.v .v31 = 0 := by simp [u₂, State.write, State.setV]
   have hR : (⟨b, W⟩ : Region) ∈ u₂.wr := by simp [u₂, u₁, State.write, State.setV]
@@ -269,7 +269,7 @@ theorem pass_run {b : Addr} {W : Nat} (hW : W < 2 ^ 16) (m₀ : Mem) (j i : Nat)
     rw [h10]; apply BitVec.eq_of_toNat_eq; simp only [BitVec.toNat_sub, BitVec.toNat_ofNat]; omega
   rw [show scrubPass = scrubStoresL (List.range 4) ++ [.addImm .x .x9 .x9 64, .subImm .x .x10 .x10 1]
     from rfl, execBlock_append, hs, Option.bind_some]
-  simp only [execBlock, isa, exec, show (64 : Nat) < 4096 by decide, show (1 : Nat) < 4096 by decide,
+  simp only [execBlock, isa, reduceExec, show (64 : Nat) < 4096 by decide, show (1 : Nat) < 4096 by decide,
     ↓reduceIte, Option.map_some, addrs, List.map_nil, List.append_nil, State.read, State.write,
     Size.bits, BitVec.setWidth_eq, hm₁, Option.some.injEq, Prod.mk.injEq, and_true]
   simp only [passSt]
@@ -332,7 +332,7 @@ theorem loopBody_run {b : Addr} {W : Nat} (hW : W < 2 ^ 16) (h64 : 64 ≤ W) (h1
   let u₀ := passSt (u.setV .v31 0) b (BitVec.ofNat 64 n) u.mem
   have h₀ : execBlock isa [.vop (.movi0 .v31), .addSp .x9 0, .movz .x .x10 (BitVec.ofNat 16 n) 0] u =
       some (u₀, []) := by
-    simp only [execBlock, isa, exec, VOp.eval, show (0 : Nat) < 4096 by decide, Size.bits,
+    simp only [execBlock, isa, reduceExec, VOp.eval, show (0 : Nat) < 4096 by decide, Size.bits,
       show 16 * 0 < 64 by decide, ↓reduceIte, Option.map_some, addrs, List.map_nil, List.append_nil,
       Option.some.injEq, Prod.mk.injEq, and_true]
     simp only [u₀, passSt, State.write, State.setV, hb]

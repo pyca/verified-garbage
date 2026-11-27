@@ -42,6 +42,13 @@ open VG.Proof.HmacTable.X86 (tables names vars)
 abbrev vs : List HmacTable.X86.HVar :=
   vars VG.Proof.Variants.Sha1.X86.variants VG.Proof.Variants.Sha256.X86.variants
 
+instance : SpSafeCode Impl.Ecdsa.X86.Fn.verifyBrainpoolP512r1 :=
+  ⟨scrubAll_spSafe (verifyHash_all Proof.Ecdsa.Verify.X86.BrainpoolP512r1.verify_sp.1)⟩
+
+instance : SpSafeCode (Impl.Ecdsa.X86.Fn.signBrainpoolP512r1 (HmacTable.X86.fnsOf vs)) :=
+  ⟨scrubAll_spSafe (signCode_all (coreN := "vg_ecdsa_brainpoolp512r1_sign_k") (coreC := Impl.Ecdsa.X86.signBrainpoolP512r1Comb) (tries := Spec.Ecdsa.Rfc6979.Curves.brainpoolp512r1.tries) (vs := vs)
+    Proof.Ecdsa.Rfc6979.X86.brainpoolp512r1_blk Proof.Ecdsa.X86.BrainpoolP512r1.signComb_sp.1)⟩
+
 /-- `vg_ecdsa_brainpoolp512r1_verify`. -/
 theorem verify_scrubbed (hL : Weierstrass.Law Spec.BrainpoolP512r1.curve) :
     VerifiedScrubbed target Impl.Ecdsa.X86.Fn.verifyBrainpoolP512r1
@@ -50,7 +57,8 @@ theorem verify_scrubbed (hL : Weierstrass.Law Spec.BrainpoolP512r1.curve) :
   verifiedScrubbedAll (api := Spec.Ecdsa.BrainpoolP512r1.verifyHashApi)
     { code := Impl.Ecdsa.X86.VerifyHash.verifyHash Spec.Ecdsa.BrainpoolP512r1.inst.curve.len false
         Impl.Ecdsa.Verify.X86.verifyBrainpoolP512r1
-      verified := Proof.Ecdsa.Verify.X86.BrainpoolP512r1.verifyHash_verified hL }
+      verified := Proof.Ecdsa.Verify.X86.BrainpoolP512r1.verifyHash_verified hL
+      spSafe := verifyHash_all Proof.Ecdsa.Verify.X86.BrainpoolP512r1.verify_sp.1 }
     (verifyHashOut Spec.Ecdsa.BrainpoolP512r1.inst Impl.Ecdsa.X86.brainpoolp512r1Comb.combConsts _)
 
 /-- What the cleanup needs of `vg_ecdsa_brainpoolp512r1_sign`'s code, evaluated once. -/

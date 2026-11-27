@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Certificate
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Refine
+import VerifiedGarbage.Proof.Framework.AArch64.Reduce
 
 /-! ### `Weierstrass.AArch64.Forward.Concrete`, which this module and modules that import it used -/
 
@@ -378,7 +379,7 @@ theorem write_inv {ρ : Nat → BitVec 64} {s : FState} {eo eo' ep ep' : Env CVa
     have := h.memLe p hp; omega_arith
 
 theorem movz_zero (n : Nat) (a b c d : BitVec 64) (f : Bool) : ((Op.movz 0 n).eval a b c d f).1=0 := by
-  simp [Op.eval,Op.useA,Op.useB,Op.useC,Op.useD,Op.useCarry,scalarState,Op.instr,exec,
+  simp [Op.eval,Op.useA,Op.useB,Op.useC,Op.useD,Op.useCarry,scalarState,Op.instr,reduceExec,
     State.write,Size.bits,BitVec.setWidth_eq]
   split <;> rfl
 

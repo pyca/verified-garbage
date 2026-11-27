@@ -86,7 +86,8 @@ variable {L : List String}
 
 theorem checkBlockS_cons (τ : (taintS L).T) (i : Instr) (is : List Instr) :
     (taintS L).checkBlock τ (i :: is) = (Taint.stepS L τ i).bind fun τ' => (taintS L).checkBlock τ' is :=
-  congrArg (fun o => o.bind fun τ' => (taintS L).checkBlock τ' is) (taintS_step L τ i)
+  (VG.Taint.checkBlock_cons (A := taintS L) τ i is).trans
+    (congrArg (fun o => o.bind fun τ' => (taintS L).checkBlock τ' is) (taintS_step L τ i))
 
 theorem checkBlock_eraseT (τ : (taintS L).T) (is : List isa.Instr) :
     (taintS L).checkBlock τ (is.map Instr.eraseT) = (taintS L).checkBlock τ is := by
@@ -139,7 +140,7 @@ theorem checkBlock_append {M : ISA} (A : VG.Taint M) (τ : A.T) (a b : List M.In
   induction a generalizing τ with
   | nil => rfl
   | cons i a ih =>
-    show (A.step τ i).bind _ = ((A.step τ i).bind _).bind _
+    rw [List.cons_append, VG.Taint.checkBlock_cons, VG.Taint.checkBlock_cons]
     cases A.step τ i with
     | none => rfl
     | some τ₁ => exact ih τ₁

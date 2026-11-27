@@ -42,6 +42,13 @@ open VG.Proof.HmacTable.X86 (tables names vars)
 abbrev vs : List HmacTable.X86.HVar :=
   vars VG.Proof.Variants.Sha1.X86.variants VG.Proof.Variants.Sha256.X86.variants
 
+instance : SpSafeCode Impl.Ecdsa.X86.Fn.verifyP521 :=
+  ⟨scrubAll_spSafe (verifyHash_all Proof.Ecdsa.Verify.X86.P521.verify_sp.1)⟩
+
+instance : SpSafeCode (Impl.Ecdsa.X86.Fn.signP521 (HmacTable.X86.fnsOf vs)) :=
+  ⟨scrubAll_spSafe (signCode_all (coreN := "vg_ecdsa_p521_sign_k") (coreC := Impl.Ecdsa.X86.signP521Comb) (tries := Spec.Ecdsa.Rfc6979.Curves.p521.tries) (vs := vs)
+    Proof.Ecdsa.Rfc6979.X86.p521_blk Proof.Ecdsa.X86.P521.signComb_sp.1)⟩
+
 /-- `vg_ecdsa_p521_verify`. -/
 theorem verify_scrubbed (hL : Weierstrass.Law Spec.P521.curve) :
     VerifiedScrubbed target Impl.Ecdsa.X86.Fn.verifyP521
@@ -50,7 +57,8 @@ theorem verify_scrubbed (hL : Weierstrass.Law Spec.P521.curve) :
   verifiedScrubbedAll (api := Spec.Ecdsa.P521.verifyHashApi)
     { code := Impl.Ecdsa.X86.VerifyHash.verifyHash Spec.Ecdsa.P521.inst.curve.len true
         Impl.Ecdsa.Verify.X86.verifyP521
-      verified := Proof.Ecdsa.Verify.X86.P521.verifyHash_verified hL }
+      verified := Proof.Ecdsa.Verify.X86.P521.verifyHash_verified hL
+      spSafe := verifyHash_all Proof.Ecdsa.Verify.X86.P521.verify_sp.1 }
     (verifyHashOut Spec.Ecdsa.P521.inst Impl.Ecdsa.X86.p521Comb.combConsts _)
 
 /-- What the cleanup needs of `vg_ecdsa_p521_sign`'s code, evaluated once. -/

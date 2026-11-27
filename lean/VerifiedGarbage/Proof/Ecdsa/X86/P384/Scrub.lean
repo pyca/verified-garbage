@@ -42,6 +42,13 @@ open VG.Proof.HmacTable.X86 (tables names vars)
 abbrev vs : List HmacTable.X86.HVar :=
   vars VG.Proof.Variants.Sha1.X86.variants VG.Proof.Variants.Sha256.X86.variants
 
+instance : SpSafeCode Impl.Ecdsa.X86.Fn.verifyP384 :=
+  ⟨scrubAll_spSafe (verifyHash_all Proof.Ecdsa.Verify.X86.P384.verify_sp.1)⟩
+
+instance : SpSafeCode (Impl.Ecdsa.X86.Fn.signP384 (HmacTable.X86.fnsOf vs)) :=
+  ⟨scrubAll_spSafe (signCode_all (coreN := "vg_ecdsa_p384_sign_k") (coreC := Impl.Ecdsa.X86.signP384Comb) (tries := Spec.Ecdsa.Rfc6979.Curves.p384.tries) (vs := vs)
+    Proof.Ecdsa.Rfc6979.X86.p384_blk Proof.Ecdsa.X86.P384.signComb_sp.1)⟩
+
 /-- `vg_ecdsa_p384_verify`. -/
 theorem verify_scrubbed (hL : Weierstrass.Law Spec.P384.curve) :
     VerifiedScrubbed target Impl.Ecdsa.X86.Fn.verifyP384
@@ -50,7 +57,8 @@ theorem verify_scrubbed (hL : Weierstrass.Law Spec.P384.curve) :
   verifiedScrubbedAll (api := Spec.Ecdsa.P384.verifyHashApi)
     { code := Impl.Ecdsa.X86.VerifyHash.verifyHash Spec.Ecdsa.P384.inst.curve.len false
         Impl.Ecdsa.Verify.X86.verifyP384
-      verified := Proof.Ecdsa.Verify.X86.P384.verifyHash_verified hL }
+      verified := Proof.Ecdsa.Verify.X86.P384.verifyHash_verified hL
+      spSafe := verifyHash_all Proof.Ecdsa.Verify.X86.P384.verify_sp.1 }
     (verifyHashOut Spec.Ecdsa.P384.inst Impl.Ecdsa.X86.p384Comb.combConsts _)
 
 /-- What the cleanup needs of `vg_ecdsa_p384_sign`'s code, evaluated once. -/

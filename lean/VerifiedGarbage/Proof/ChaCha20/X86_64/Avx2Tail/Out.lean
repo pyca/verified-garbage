@@ -730,7 +730,7 @@ theorem store_ok {D : Nat} {s₀ : State} (hc : Ctx D s₀) {σ : Sym} {s : Stat
   have ea : s.ea m = (regn D s₀ b).base + BitVec.ofNat 64 (4 * i) := by rw [hea, h.gpr]; rfl
   have hin := in_regn hc hb h.wr hi' (by decide)
   refine ⟨s.setMem (s.mem.writeW ((regn D s₀ b).base + BitVec.ofNat 64 (4 * i)) (s.ymm r)),
-    by simp only [exec, ea, State.store256_eq, hin, ite_true], ⟨fun r' p hp => ?_,
+    by simp only [reduceExec, ea, State.store256_eq, hin, ite_true], ⟨fun r' p hp => ?_,
     fun b' i' hb' hi'' _ => ?_, (fun e => nomatch e), (fun e => nomatch e), by simp [h.gpr], by simp [h.rd],
     by simp [h.wr], ?_, fun hd => by cases hd⟩⟩
   · simp only [yw, State.setMem_lane]; exact h.reg r' p hp
@@ -784,7 +784,7 @@ theorem store3_ok {D : Nat} {s₀ : State} (hc : Ctx 0 s₀ ∧ Ctx3 (regn D s�
     · rw [ite_eq_right hx, ite_eq_right hx]
       exact h.mem3 rfl j hj
   refine ⟨s.setMem (s.mem.writeW ((dstR D s₀).base + BitVec.ofNat 64 (4 * i)) (s.ymm r)),
-    by simp only [exec, ea, State.store256_eq, hin, ite_true], ⟨fun r' p hp => ?_,
+    by simp only [reduceExec, ea, State.store256_eq, hin, ite_true], ⟨fun r' p hp => ?_,
     fun b' i' hb' hi'' hcl => ?_, fun _ => m3, fun _ => h.src rfl, by simp [h.gpr], by simp [h.rd],
     by simp [h.wr], F, fun hd => by cases hd⟩⟩
   · simp only [yw, State.setMem_lane]; exact h.reg r' p hp
@@ -841,7 +841,7 @@ theorem storeB_ok {D : Nat} {s₀ : State} (hc : Ctx 0 s₀ ∧ Ctx3 (regn D s�
   have hs2 : ∀ j, (symStore σ 1 i 8 (xidx r)).mem 2 j = .mem 2 j := fun j => by
     simp only [symStore, show (2 : Nat) ≠ 1 by decide, false_and, ite_false]; exact h.src rfl j
   refine ⟨s.setMem (s.mem.writeW ((regn D s₀ 1).base + BitVec.ofNat 64 (4 * i)) (s.ymm r)),
-    by simp only [exec, ea, State.store256_eq, hin, ite_true], ⟨fun r' p hp => ?_,
+    by simp only [reduceExec, ea, State.store256_eq, hin, ite_true], ⟨fun r' p hp => ?_,
     fun b' i' hb' hi'' hcl => ?_, fun _ => m3, fun _ j => ?_, by simp [h.gpr], by simp [h.rd],
     by simp [h.wr], F, fun hd => by cases hd⟩⟩
   · simp only [yw, State.setMem_lane]; exact h.reg r' p hp
@@ -937,7 +937,7 @@ theorem sstepT_ok {to : Bool} {D : Nat} {s₀ : State} (hc : CtxT to D s₀) {σ
     have hin := hc.rd hb h.rd h.wr hi (by decide)
     refine ⟨s.setV .l256 d ((s.mem.readW ((regn D s₀ b).base + BitVec.ofNat 64 (4 * i)) 256).extractLsb' 0 128)
       ((s.mem.readW ((regn D s₀ b).base + BitVec.ofNat 64 (4 * i)) 256).extractLsb' 128 128),
-      by simp only [exec, ea, State.load256, hin, ite_true, Option.map_some],
+      by simp only [reduceExec, ea, State.load256, hin, ite_true, Option.map_some],
       h.setReg (fun r p hp => ?_) (by simp) (by simp) (by simp) (by simp)⟩
     simp only [yw]
     rw [lane_setV256_lt _ _ _ (fun l => (s.mem.readW ((regn D s₀ b).base + BitVec.ofNat 64 (4 * i)) 256).extractLsb'
@@ -958,7 +958,7 @@ theorem sstepT_ok {to : Bool} {D : Nat} {s₀ : State} (hc : CtxT to D s₀) {σ
     have hin := hc.rd hb h.rd h.wr hi (by decide)
     refine ⟨s.setV .l256 d (s.mem.readW ((regn D s₀ b).base + BitVec.ofNat 64 (4 * i)) 128)
       (s.mem.readW ((regn D s₀ b).base + BitVec.ofNat 64 (4 * i)) 128),
-      by simp only [exec, ea, State.load128, hin, ite_true, Option.map_some],
+      by simp only [reduceExec, ea, State.load128, hin, ite_true, Option.map_some],
       h.setReg (fun r p hp => ?_) (by simp) (by simp) (by simp) (by simp)⟩
     simp only [yw]
     rw [lane_setV256_lt _ _ _ (fun _ => s.mem.readW ((regn D s₀ b).base + BitVec.ofNat 64 (4 * i)) 128)

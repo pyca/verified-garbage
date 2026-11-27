@@ -64,7 +64,7 @@ theorem writes_frame {i : Instr} {rs : List Reg} {s t : State}
     simp only [List.mem_cons,List.not_mem_nil,or_false,not_or] at hr
     exact Taint.execMul_gpr q s hr.1 hr.2
   case mulx hi lo src =>
-    simp only [exec,execMulx] at he
+    simp only [reduceExec,execMulx] at he
     split at he
     · cases he
     · simp only [Option.map_eq_some_iff] at he
@@ -101,7 +101,7 @@ theorem instruction_eq {cs : Cache} {i : Instr} {s : State} (hc : Valid cs s) :
     split
     · rename_i r hr
       have hv := lookup_valid hc hr
-      simp only [exec,readSrc,State.ea,hm.1,hm.2,hv,Option.map_some]
+      simp only [reduceExec,readSrc,State.ea,hm.1,hm.2,hv,Option.map_some]
     · rfl
   · rfl
 
@@ -164,7 +164,7 @@ private theorem stores_scr_back {rs : List Reg} {o size : Nat} {s : State} {base
   | cons r rs ih =>
     obtain ⟨t,he,ht⟩ := WP.block_cons_iff.mp h
     have hs := ih ht
-    simp only [exec,State.store64] at he
+    simp only [reduceExec,State.store64] at he
     split at he
     · cases he
       exact ⟨hs.rdi,hs.wr,hs.nowrap⟩

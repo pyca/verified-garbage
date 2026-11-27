@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Framework.Taint
 public import VerifiedGarbage.Proof.MlDsa.Arith.Mem
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.AArch64.Reduce
 
 /-! ### `MlDsa.AArch64.Optimized.HighPackBody`, which only this module used -/
 
@@ -97,7 +98,7 @@ theorem advance_ok (s : State) {g : Nat} (hg : IsG g) :
   refine WP.block_cons_iff.mpr ⟨a,rfl,?_⟩
   refine WP.block_cons_iff.mpr ⟨b,?_,?_⟩
   · have hw : 2*packWidth g<4096 := by rcases hg with rfl | rfl <;> decide
-    simp [isa,exec,hw,State.read,b]
+    simp [isa,reduceExec,hw,State.read,b]
   refine WP.block_cons_iff.mpr ⟨t,rfl,?_⟩
   apply WP.block_nil_iff.mpr
   dsimp only [t,b,a]

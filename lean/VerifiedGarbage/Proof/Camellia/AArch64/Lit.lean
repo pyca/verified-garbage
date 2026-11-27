@@ -69,12 +69,12 @@ private theorem sbox1Code.lit_eq :
   (congrArg Impl.Tbl.AArch64.loadTable (funext fun i => by
     rw [← sbox1Table_toNat, BitVec.ofNat_toNat, BitVec.setWidth_eq])).trans sbox1Load.lit_eq
 
-materialize_flat_code expandKeyCode := Impl.Camellia.AArch64.expandKey
-materialize_flat_code ecbEncrypt := Impl.Camellia.AArch64.ecb .encrypt
-materialize_flat_code ecbDecrypt := Impl.Camellia.AArch64.ecb .decrypt
-materialize_flat_code prepareKeysCode := Impl.Camellia.AArch64.prepareKeys
-materialize_flat_code cryptPreparedCode := Impl.Camellia.AArch64.cryptPrepared
-materialize_flat_code ctrCode := Impl.Camellia.AArch64.ctr
+materialize_code expandKeyCode := Impl.Camellia.AArch64.expandKey
+materialize_code ecbEncrypt := Impl.Camellia.AArch64.ecb .encrypt
+materialize_code ecbDecrypt := Impl.Camellia.AArch64.ecb .decrypt
+materialize_code prepareKeysCode := Impl.Camellia.AArch64.prepareKeys
+materialize_code cryptPreparedCode := Impl.Camellia.AArch64.cryptPrepared
+materialize_code ctrCode := Impl.Camellia.AArch64.ctr
 /-- `tableWord`, `SBOX1`'s entries read from the truth tables of their bits,
 which the kernel has evaluated in one pass over the specification's table
 (`sbox1T`): the table's literal below reads its 256 bytes through this
@@ -98,6 +98,6 @@ materialize_value serialTable := Impl.Camellia.AArch64.Serial.table
 materialize_code serialPrepareCode := Impl.Camellia.AArch64.Serial.prepareEncrypt
 materialize_code serialCryptCode := Impl.Camellia.AArch64.Serial.encryptPrepared
 materialize_code cbcEncryptChainedCode := Impl.Camellia.AArch64.cbcEncryptChained
-materialize_flat_code cbcDecryptChainedCode := Impl.Camellia.AArch64.cbcDecryptChained
+materialize_code cbcDecryptChainedCode := Impl.Camellia.AArch64.cbcDecryptChained
 
 end VG.Proof.Camellia.AArch64

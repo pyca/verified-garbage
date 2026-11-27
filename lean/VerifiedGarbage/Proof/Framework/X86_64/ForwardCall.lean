@@ -5,6 +5,7 @@ public import VerifiedGarbage.Impl.ForwardCall.X86_64
 import VerifiedGarbage.Proof.Framework.X86_64.Call
 import VerifiedGarbage.Proof.Framework.X86_64.Frame
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-!
 # A call that forwards a function's stack arguments (x86-64)
@@ -45,7 +46,7 @@ theorem copyDown_run {bytes j : Nat} {u : State}
     execBlock isa (copyDown bytes j) u = some (copyDState bytes j u,
       [.addr (u.gpr .rsp + BitVec.ofNat 64 (bytes + 8 + 8 * j)),
         .addr (u.gpr .rsp + BitVec.ofNat 64 (8 * j))]) := by
-  simp only [copyDown, execBlock, isa, exec, readSrc, State.load64, State.ea, ofInt_natCast, hr,
+  simp only [copyDown, execBlock, isa, reduceExec, readSrc, State.load64, State.ea, ofInt_natCast, hr,
     ite_true, Option.map_some, addrs, srcAddrs]
   simp [copyDState, State.setReg, State.store64, hw]
 

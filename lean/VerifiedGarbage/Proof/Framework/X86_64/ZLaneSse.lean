@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.Avx512
 import VerifiedGarbage.Proof.Framework.X86_64.Sse
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-!
 # x86-64: AVX-512 blocks as SSE blocks on each lane
@@ -100,11 +101,11 @@ theorem zlaneSse_ok {i : Instr} {ss : List Instr} (h : zlaneSse i = some ss) (s 
       zproj_setZ _ _ (fun i => op.sse.eval (s.zlane a i) (s.zlane b i)) hl]
     split at h
     · subst_vars; cases h
-      simp only [runBlock, exec, XOp.exec, Option.bind_some, State.zproj_xmm]
+      simp only [runBlock, reduceExec, XOp.exec, Option.bind_some, State.zproj_xmm]
     · split at h
       · cases h
       · rename_i h1 h2; cases h
-        simp only [runBlock, exec, XOp.exec, Option.bind_some, State.zproj_xmm]
+        simp only [runBlock, reduceExec, XOp.exec, Option.bind_some, State.zproj_xmm]
         rw [RegUpd.xmm_setXmm_self, RegUpd.xmm_setXmm_of_ne _ _ h2, setXmm_setXmm, eval_movdqa]; rfl
   case vpclmulqdq d a b n =>
     refine ⟨_, rfl, VKeep.setZ .., fun l hl => ?_⟩
@@ -114,11 +115,11 @@ theorem zlaneSse_ok {i : Instr} {ss : List Instr} (h : zlaneSse i = some ss) (s 
       zproj_setZ _ _ (fun i => pclmul (s.zlane a i) (s.zlane b i) n) hl]
     split at h
     · subst_vars; cases h
-      simp only [runBlock, exec, XOp.exec, Option.bind_some, State.zproj_xmm]
+      simp only [runBlock, reduceExec, XOp.exec, Option.bind_some, State.zproj_xmm]
     · split at h
       · cases h
       · rename_i h1 h2; cases h
-        simp only [runBlock, exec, XOp.exec, Option.bind_some, State.zproj_xmm]
+        simp only [runBlock, reduceExec, XOp.exec, Option.bind_some, State.zproj_xmm]
         rw [RegUpd.xmm_setXmm_self, RegUpd.xmm_setXmm_of_ne _ _ h2, setXmm_setXmm, eval_movdqa]; rfl
   case vpshufd d r o =>
     cases h
@@ -126,7 +127,7 @@ theorem zlaneSse_ok {i : Instr} {ss : List Instr} (h : zlaneSse i = some ss) (s 
     rw [show (ZOp.vpshufd d r o).exec s = s.setZ d (shufDwords (s.zlane r 0) o) (shufDwords (s.zlane r 1) o)
       (shufDwords (s.zlane r 2) o) (shufDwords (s.zlane r 3) o) from rfl,
       zproj_setZ _ _ (fun i => shufDwords (s.zlane r i) o) hl]
-    simp only [runBlock, exec, XOp.exec, Option.bind_some, State.zproj_xmm]
+    simp only [runBlock, reduceExec, XOp.exec, Option.bind_some, State.zproj_xmm]
   case vpternlogd d a b n =>
     split at h
     · rename_i hc; obtain ⟨rfl, ha, hb⟩ := hc; cases h
@@ -135,7 +136,7 @@ theorem zlaneSse_ok {i : Instr} {ss : List Instr} (h : zlaneSse i = some ss) (s 
         (ternlog (s.zlane d 1) (s.zlane a 1) (s.zlane b 1) 0x96) (ternlog (s.zlane d 2) (s.zlane a 2) (s.zlane b 2) 0x96)
         (ternlog (s.zlane d 3) (s.zlane a 3) (s.zlane b 3) 0x96) from rfl,
         zproj_setZ _ _ (fun i => ternlog (s.zlane d i) (s.zlane a i) (s.zlane b i) 0x96) hl]
-      simp only [runBlock, exec, XOp.exec, Option.bind_some, State.zproj_xmm]
+      simp only [runBlock, reduceExec, XOp.exec, Option.bind_some, State.zproj_xmm]
       rw [RegUpd.xmm_setXmm_self, RegUpd.xmm_setXmm_of_ne _ _ hb, setXmm_setXmm, ternlog_96]; rfl
     · cases h
 

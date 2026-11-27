@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.AArch64.Residue
 import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.AArch64.Reduce
 
 /-!
 # Code reads and writes memory only inside its regions (AArch64)
@@ -124,7 +125,7 @@ theorem exec_in {i : Instr} {s t : State} {m : Mem} (hm : MemIn (s.rd ++ s.wr) s
     have hsy : t.syms = s.syms := by
       cases i <;> cases hr
       all_goals
-        simp only [exec] at h
+        simp only [reduceExec] at h
         first
         | (obtain rfl := Option.some.inj h; rfl)
         | (split at h <;> first | (obtain rfl := Option.some.inj h; rfl) | cases h)
@@ -137,7 +138,7 @@ theorem exec_in {i : Instr} {s t : State} {m : Mem} (hm : MemIn (s.rd ++ s.wr) s
     exact runIn_same hm hrd hwr hsy hmem
   · cases i <;> simp only [regOnly, Bool.false_eq_true, not_false_eq_true, not_true_eq_false] at hr
     case ldr sz d n off =>
-      simp only [exec, addr_withMS] at h ⊢
+      simp only [reduceExec, addr_withMS] at h ⊢
       cases ha : addr s sz.bytes n off with
       | none => rw [ha] at h; cases h
       | some a =>
@@ -149,7 +150,7 @@ theorem exec_in {i : Instr} {s t : State} {m : Mem} (hm : MemIn (s.rd ++ s.wr) s
           rw [hl] at h; obtain rfl := Option.some.inj h
           exact runIn_same hm rfl rfl rfl rfl
     case ldrb d n off =>
-      simp only [exec, addr_withMS] at h ⊢
+      simp only [reduceExec, addr_withMS] at h ⊢
       cases ha : addr s 1 n off with
       | none => rw [ha] at h; cases h
       | some a =>
@@ -161,7 +162,7 @@ theorem exec_in {i : Instr} {s t : State} {m : Mem} (hm : MemIn (s.rd ++ s.wr) s
           rw [hl] at h; obtain rfl := Option.some.inj h
           exact runIn_same hm rfl rfl rfl rfl
     case ldrq d n off =>
-      simp only [exec, addr_withMS] at h ⊢
+      simp only [reduceExec, addr_withMS] at h ⊢
       cases ha : addr s 16 n off with
       | none => rw [ha] at h; cases h
       | some a =>
@@ -173,7 +174,7 @@ theorem exec_in {i : Instr} {s t : State} {m : Mem} (hm : MemIn (s.rd ++ s.wr) s
           rw [hl] at h; obtain rfl := Option.some.inj h
           exact runIn_same hm rfl rfl rfl rfl
     case ldrSp d off =>
-      simp only [exec] at h ⊢
+      simp only [reduceExec] at h ⊢
       split at h
       · rename_i hc
         rw [ite_eq_left_of_eq_true _ _ (eq_true hc), load_in hm]
@@ -184,7 +185,7 @@ theorem exec_in {i : Instr} {s t : State} {m : Mem} (hm : MemIn (s.rd ++ s.wr) s
           exact runIn_same hm rfl rfl rfl rfl
       · cases h
     case ldp d₁ d₂ n off =>
-      simp only [exec] at h ⊢
+      simp only [reduceExec] at h ⊢
       split at h
       · rename_i hc
         rw [ite_eq_left_of_eq_true _ _ (eq_true hc), load_in hm, load_in hm]
@@ -200,35 +201,35 @@ theorem exec_in {i : Instr} {s t : State} {m : Mem} (hm : MemIn (s.rd ++ s.wr) s
             exact runIn_same hm rfl rfl rfl rfl
       · cases h
     case str sz d n off =>
-      simp only [exec, addr_withMS] at h ⊢
+      simp only [reduceExec, addr_withMS] at h ⊢
       cases ha : addr s sz.bytes n off with
       | none => rw [ha] at h; cases h
       | some a =>
         rw [ha] at h; simp only [Option.bind_some] at h ⊢
         exact runIn_store hm h
     case strb d n off =>
-      simp only [exec, addr_withMS] at h ⊢
+      simp only [reduceExec, addr_withMS] at h ⊢
       cases ha : addr s 1 n off with
       | none => rw [ha] at h; cases h
       | some a =>
         rw [ha] at h; simp only [Option.bind_some] at h ⊢
         exact runIn_store hm h
     case strq d n off =>
-      simp only [exec, addr_withMS] at h ⊢
+      simp only [reduceExec, addr_withMS] at h ⊢
       cases ha : addr s 16 n off with
       | none => rw [ha] at h; cases h
       | some a =>
         rw [ha] at h; simp only [Option.bind_some] at h ⊢
         exact runIn_store hm h
     case strSp d off =>
-      simp only [exec] at h ⊢
+      simp only [reduceExec] at h ⊢
       split at h
       · rename_i hc
         rw [ite_eq_left_of_eq_true _ _ (eq_true hc)]
         exact runIn_store hm h
       · cases h
     case stp d₁ d₂ n off =>
-      simp only [exec] at h ⊢
+      simp only [reduceExec] at h ⊢
       split at h
       · rename_i hc
         rw [ite_eq_left_of_eq_true _ _ (eq_true hc)]
@@ -243,14 +244,14 @@ theorem exec_in {i : Instr} {s t : State} {m : Mem} (hm : MemIn (s.rd ++ s.wr) s
         · rw [← o₂ x (by rw [w₁]; exact hx), o₁ x hx]
       · cases h
     case ldrqTbl d n off name ws =>
-      simp only [exec] at h ⊢
+      simp only [reduceExec] at h ⊢
       split at h
       · rename_i hc
         rw [ite_eq_left_of_eq_true _ _ (eq_true hc)]; obtain rfl := Option.some.inj h
         exact runIn_same hm rfl rfl rfl rfl
       · cases h
     case ldrTbl sz d n off name ws =>
-      simp only [exec] at h ⊢
+      simp only [reduceExec] at h ⊢
       split at h
       · rename_i hc
         rw [ite_eq_left_of_eq_true _ _ (eq_true hc)]; obtain rfl := Option.some.inj h
@@ -259,20 +260,20 @@ theorem exec_in {i : Instr} {s t : State} {m : Mem} (hm : MemIn (s.rd ++ s.wr) s
     case ccmp sz n imm nzcv cond =>
       have e : exec (.ccmp sz n imm nzcv cond) (s.withM m) =
           (exec (.ccmp sz n imm nzcv cond) s).map (·.withM m) := by
-        simp only [exec, show CondCode.holds (s.withM m) cond = CondCode.holds s cond from rfl]
+        simp only [reduceExec, show CondCode.holds (s.withM m) cond = CondCode.holds s cond from rfl]
         split
         · rw [Option.map_some]; split <;> rfl
         · rfl
       rw [e, h, Option.map_some]
-      simp only [exec] at h
+      simp only [reduceExec] at h
       split at h
       · obtain rfl := Option.some.inj h
         split <;> exact runIn_same hm rfl rfl rfl rfl
       · cases h
     case adrSym d name =>
-      simp only [exec] at h ⊢
+      simp only [reduceExec] at h ⊢
       obtain rfl := Option.some.inj h
       exact runIn_same hm rfl rfl rfl rfl
-    all_goals simp only [exec] at h; cases h
+    all_goals simp only [reduceExec] at h; cases h
 
 end VG.AArch64.Residue

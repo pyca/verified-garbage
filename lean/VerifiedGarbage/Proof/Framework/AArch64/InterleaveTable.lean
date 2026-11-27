@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.AArch64.Interleave
 public import VerifiedGarbage.Proof.Framework.Interleave
+import VerifiedGarbage.Proof.Framework.AArch64.Reduce
 
 /-!
 # AArch64: interleaving scalar code with loads from a table
@@ -55,7 +56,7 @@ theorem exec_vres {xt : Reg} {T : Nat} {y : Instr} (hy : vecOk xt T y = true) (s
   cases y <;> simp only [vecOk, Bool.false_eq_true] at hy
   case vop op => rfl
   case ldrq t n off =>
-    simp only [exec, vres, Option.map_bind]
+    simp only [reduceExec, vres, Option.map_bind]
     congr 1
     funext a
     rw [Function.comp_apply, Option.map_map]

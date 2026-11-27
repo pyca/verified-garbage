@@ -18,8 +18,8 @@ meta import VerifiedGarbage.Proof.Framework.X86.Lit
 
 namespace VG.Proof.Cast5.X86
 
-materialize_flat_code cfbEncryptFinalCode := Impl.Cast5.X86.Modes.cfbEncryptFinal
-materialize_flat_code cfbDecryptFinalCode := Impl.Cast5.X86.Modes.cfbDecryptFinal
-materialize_flat_code ofbFinalCode := Impl.Cast5.X86.Modes.ofbFinal
+materialize_code cfbEncryptFinalCode := Impl.Cast5.X86.Modes.cfbEncryptFinal
+materialize_code cfbDecryptFinalCode := Impl.Cast5.X86.Modes.cfbDecryptFinal
+materialize_code ofbFinalCode := Impl.Cast5.X86.Modes.ofbFinal
 
 end VG.Proof.Cast5.X86
