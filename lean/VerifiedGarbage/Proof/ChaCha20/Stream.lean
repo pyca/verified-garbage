@@ -383,40 +383,47 @@ theorem apply_rest {m m' : Mem} {p : Addr} {len : Nat} (_hlen : len ≤ leftAt m
   have hnb : blocksOf m p len = (len - min (n % 64) len) / 64 := by simp only [blocksOf, hh]
   have ht : tailLen m p len = (len - min (n % 64) len) % 64 := by simp only [tailLen, hh]
   rw [hnb, ht] at hB ⊢
-  by_cases t0 : (len - min (n % 64) len) % 64 = 0
-  · simp only [t0, ite_true, Nat.add_zero] at hB ⊢
-    by_cases hlo : len ≤ n % 64
-    · have e1 : (n - len) % 64 = n % 64 - len := by omega_using [hlo]
-      have e2 : (len - min (n % 64) len) / 64 = 0 := by omega_using [hlo]
-      rw [e1, e2]
-      by_cases hi : i < n % 64 - len
-      · rw [ite_pos hi, ite_pos (by omega_using [hi])]
-        have := hB (64 - (n % 64 - len) + i) (by omega_using [hi])
-        rw [show 64 + (64 - (n % 64 - len) + i) = 128 - (n % 64 - len) + i by omega_using []] at this
-        rw [this, show 128 - n % 64 + (len + i) = 128 - (n % 64 - len) + i by omega_using [hi]]
-      · rw [ite_neg hi, ite_neg (by omega_using [hi])]
-        exact blk_congr (by omega_using [hlo]) (by omega_using [hlo])
-    · have hm : min (n % 64) len = n % 64 := Nat.min_eq_left (by omega_using [hlo])
-      rw [hm] at t0 ⊢
-      have e1 : (n - len) % 64 = 0 := by omega_using [t0, hlo]
-      rw [e1, ite_neg (by omega_using []), ite_neg (by omega_using [e1])]
-      exact blk_congr (by omega_using [t0, e1]) (by omega_using [t0, e1])
-  · simp only [t0, ite_false] at hB ⊢
-    have hm : min (n % 64) len = n % 64 := Nat.min_eq_left (by
-      rcases Nat.le_total (n % 64) len with h | h
-      · exact h
-      · exact absurd (by rw [Nat.min_eq_right h, Nat.sub_self]) t0)
-    rw [hm] at t0 hB ⊢
-    have e1 : (n - len) % 64 = 64 - (len - n % 64) % 64 := by omega_using [h₁, t0]
-    rw [e1]
-    by_cases hi : i < 64 - (len - n % 64) % 64
-    · rw [ite_pos hi, ite_neg (by omega_using [e1])]
-      have := hB ((len - n % 64) % 64 + i) (by omega_using [hi])
-      rw [show 64 + ((len - n % 64) % 64 + i) = 128 - (64 - (len - n % 64) % 64) + i by omega_using []]
-        at this
-      rw [this]
-      exact blk_congr (by omega_using [hi]) (by omega_using [e1, hi])
-    · rw [ite_neg hi, ite_neg (by omega_using [hi])]
-      exact blk_congr (by omega_using [e1, hi]) (by omega_using [e1, hi])
+  have ma : ∀ {k r : Nat}, r < 64 → (64 * k + r) % 64 = r := fun h => by rw [Nat.mul_add_mod, Nat.mod_eq_of_lt h]
+  clear hbl hh hnb ht hS hL hn
+  -- `n = 64 q + r`, and `len = r + 64 b + t` where it is past the buffered block.
+  obtain ⟨q, r, hr, rfl⟩ : ∃ q r, r < 64 ∧ n = 64 * q + r :=
+    ⟨n / 64, n % 64, Nat.mod_lt _ (by decide), (Nat.div_add_mod n 64).symm⟩
+  rw [ma hr] at hB ⊢
+  by_cases hlo : len ≤ r
+  · rw [Nat.min_eq_right hlo, Nat.sub_self] at hB ⊢
+    simp only [Nat.zero_mod, Nat.zero_div, ite_true, Nat.add_zero, Nat.zero_add] at hB ⊢
+    rw [show (64 * q + r - len) % 64 = r - len by
+      rw [Nat.add_sub_assoc hlo, ma (Nat.lt_of_le_of_lt (Nat.sub_le r len) hr)]]
+    by_cases hi : i < r - len
+    · rw [ite_pos hi, ite_pos (by omega_using [hi])]
+      have := hB (64 - (r - len) + i) (by omega_using [hi, hr])
+      rw [show 64 + (64 - (r - len) + i) = 128 - (r - len) + i by omega_using [hr]] at this
+      rw [this, show 128 - r + (len + i) = 128 - (r - len) + i by omega_using [hi, hr]]
+    · rw [ite_neg hi, ite_neg (by omega_using [hi, hlo])]
+      rw [show len + i - r = i - (r - len) by omega_using [hlo]]
+  · obtain ⟨b, t, h64, rfl⟩ : ∃ b t, t < 64 ∧ len = r + (64 * b + t) :=
+      ⟨(len - r) / 64, (len - r) % 64, Nat.mod_lt _ (by decide), by
+        rw [Nat.div_add_mod]; omega_using [hlo]⟩
+    rw [Nat.min_eq_left (by omega_using [hlo]), Nat.add_sub_cancel_left, ma h64,
+      Nat.mul_add_div (by decide), Nat.div_eq_of_lt h64, Nat.add_zero] at hB ⊢
+    by_cases t0 : t = 0
+    · subst t0
+      simp only [ite_true, Nat.add_zero] at hB ⊢
+      rw [show (64 * q + r - (r + 64 * b)) % 64 = 0 by omega_using []]
+      rw [ite_neg (Nat.not_lt_zero i), ite_neg (by omega_using []), Nat.sub_zero,
+        show r + 64 * b + i - r = 64 * b + i by omega_using [], Nat.mul_add_div (by decide), Nat.mul_add_mod]
+    · simp only [t0, ite_false] at hB ⊢
+      rw [show (64 * q + r - (r + (64 * b + t))) % 64 = 64 - t by omega_using [h₁, t0, h64]]
+      by_cases hi : i < 64 - t
+      · rw [ite_pos hi, ite_neg (by omega_using [])]
+        have := hB (t + i) (by omega_using [hi])
+        rw [show 64 + (t + i) = 128 - (64 - t) + i by omega_using [h64]] at this
+        rw [this, show r + (64 * b + t) + i - r = 64 * b + (t + i) by omega_using [],
+          ma (by omega_using [hi]), Nat.mul_add_div (by decide), Nat.div_eq_of_lt (by omega_using [hi]),
+          Nat.add_zero]
+      · rw [ite_neg hi, ite_neg (by omega_using [])]
+        obtain ⟨j, rfl⟩ : ∃ j, i = 64 - t + j := ⟨i - (64 - t), by omega_using [hi]⟩
+        rw [Nat.add_sub_cancel_left, show r + (64 * b + t) + (64 - t + j) - r = 64 * (b + 1) + j by omega_using [h64],
+          Nat.mul_add_div (by decide), Nat.mul_add_mod]
 
 end VG.Proof.ChaCha20

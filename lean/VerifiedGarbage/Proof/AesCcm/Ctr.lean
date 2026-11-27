@@ -116,9 +116,31 @@ theorem inc32_ctrBlock {nonce : List Byte} (hn₁ : 7 ≤ nonce.length) (hn₂ :
   rw [toNat_inc32, toNat_ofBytes (length_ctrBlock (by omega_arith) _), toNat_ofBytes (length_ctrBlock (by omega_arith) _),
     beVal_ctrBlock nonce (by omega_arith), beVal_ctrBlock nonce hi]
   generalize beVal (BitVec.ofNat 8 (15 - nonce.length - 1) :: nonce) = A
-  generalize hq : 15 - nonce.length = q at hi
-  have : q = 2 ∨ q = 3 ∨ q = 4 ∨ q = 5 ∨ q = 6 ∨ q = 7 ∨ q = 8 := by omega_arith
-  rcases this with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp only [Nat.reducePow] at hi ⊢ <;> omega_arith
+  generalize hq : 15 - nonce.length = q at hi ⊢
+  -- The low half of `A · 256^q + i + 1` is not zero either: `2³²` divides `256^q`, or the other way round.
+  have hx : (A * 256 ^ q + i + 1) % 2 ^ 32 ≠ 0 := by
+    intro e
+    have e := Nat.dvd_of_mod_eq_zero e
+    rw [Nat.add_assoc, show 256 = 2 ^ 8 from rfl, ← Nat.pow_mul] at e
+    rw [show 256 = 2 ^ 8 from rfl, ← Nat.pow_mul] at hi
+    rcases Nat.le_total 32 (8 * q) with h | h
+    · exact hw (Nat.mod_eq_zero_of_dvd
+        ((Nat.dvd_add_right (Nat.dvd_mul_left_of_dvd (Nat.pow_dvd_pow 2 h) A)).mp e))
+    · exact Nat.not_le_of_lt hi (Nat.le_of_dvd (Nat.succ_pos i)
+        ((Nat.dvd_add_right (Nat.dvd_mul_left _ A)).mp (Nat.dvd_trans (Nat.pow_dvd_pow 2 h) e)))
+  generalize A * 256 ^ q = B at hx ⊢
+  rw [← Nat.add_assoc]
+  generalize B + i = x at hx ⊢
+  have hd := Nat.div_add_mod x (2 ^ 32)
+  have hm := Nat.mod_lt x (show 0 < 2 ^ 32 by decide)
+  generalize x / 2 ^ 32 = d at hd ⊢
+  generalize x % 2 ^ 32 = r at hd hm ⊢
+  have hr : r + 1 ≠ 2 ^ 32 := by
+    intro e
+    refine hx (Nat.mod_eq_zero_of_dvd ⟨d + 1, ?_⟩)
+    omega_using [e, hd]
+  rw [Nat.mod_eq_of_lt (by omega_using [hm, hr])]
+  omega_using [hd]
 
 /-- `vg_aes_ctr32`'s counter blocks from `Ctrⱼ`, `k` of them, are
 `Ctrⱼ, …, Ctrⱼ₊ₖ₋₁` if the low 32 bits do not wrap around. -/

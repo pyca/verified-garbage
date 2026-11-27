@@ -166,10 +166,10 @@ theorem bytesAt_leBytes_words64 (m : Mem) (p : Addr) (x : Nat)
     (h₃ : (m.readW (p + 24) 64).toNat = x / 2 ^ 192 % 2 ^ 64) :
     bytesAt m p 32 = leBytes 32 x := by
   have e := leNum_bytesAt_words64 m p
-  rw [leNum_bytesAt_read, h₀, h₁, h₂, h₃] at e
+  have d : ∀ k k', k' = k + 64 → x % 2 ^ k + 2 ^ k * (x / 2 ^ k % 2 ^ 64) = x % 2 ^ k' := by
+    rintro k _ rfl; rw [Nat.pow_add, Nat.mod_mul]
+  rw [leNum_bytesAt_read, h₀, h₁, h₂, h₃, d 64 128 rfl, d 128 192 rfl, d 192 256 rfl] at e
   rw [bytesAt_leBytes, e, ← leBytes_mod 32 x]
-  congr 1
-  omega_using []
 
 /-- Eight little-endian 32-bit words in memory are the 32 bytes of `x`, if they
 are its eight 32-bit digits. -/
@@ -185,10 +185,12 @@ theorem bytesAt_leBytes_words32 (m : Mem) (p : Addr) (x : Nat)
   have h5 : (m.readW (p + 20) 32).toNat = x / 2 ^ 160 % 2 ^ 32 := h 5 (by omega_using [])
   have h6 : (m.readW (p + 24) 32).toNat = x / 2 ^ 192 % 2 ^ 32 := h 6 (by omega_using [])
   have h7 : (m.readW (p + 28) 32).toNat = x / 2 ^ 224 % 2 ^ 32 := h 7 (by omega_using [])
-  rw [leNum_bytesAt_read, h0, h1, h2, h3, h4, h5, h6, h7] at e
+  -- The digits add up from the lowest.
+  have d : ∀ k k', k' = k + 32 → x % 2 ^ k + 2 ^ k * (x / 2 ^ k % 2 ^ 32) = x % 2 ^ k' := by
+    rintro k _ rfl; rw [Nat.pow_add, Nat.mod_mul]
+  rw [leNum_bytesAt_read, h0, h1, h2, h3, h4, h5, h6, h7, d 32 64 rfl, d 64 96 rfl, d 96 128 rfl,
+    d 128 160 rfl, d 160 192 rfl, d 192 224 rfl, d 224 256 rfl] at e
   rw [bytesAt_leBytes, e, ← leBytes_mod 32 x]
-  congr 1
-  omega_using []
 
 /-! ## The encodings of RFC 7748 -/
 
