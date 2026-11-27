@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.P256.X86_64.Ifma.Arith
 public import VerifiedGarbage.Impl.P256.X86_64.Ifma.Code
 public import VerifiedGarbage.Proof.Weierstrass.Unch
 public import VerifiedGarbage.Proof.P256.X86_64.Ifma.Sym
+public import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-! ### `P256.X86_64.Ifma.Glue`, which this module and modules that import it used -/
 
@@ -125,6 +126,336 @@ def T.iv (B : Bnds) : T → Nat → Option (Int × Int)
   | .slr a _ j, k => (a.iv B k).map fun _ => (0, (2 ^ 64 - 1) / 2 ^ j)
   | .sel c a b, k => (c.iv B k).bind fun x => (a.iv B k).bind fun y => (b.iv B k).bind fun z =>
     if -1 ≤ x.1 ∧ x.2 ≤ 0 then some (min y.1 z.1, max y.2 z.2) else none
+
+/-! ### For the kernel
+
+`T.ivN` is `T.iv` on natural numbers, which the kernel computes with: each bound
+with `ivO` added, where that is not below zero. -/
+
+/-- What is added to the bounds. -/
+def ivO : Nat := 2 ^ 80
+
+/-- `some (l, h)`, if `c`. -/
+noncomputable def ivIf (c : Bool) (l h : Nat) : Option (Nat × Nat) := Bool.rec none (some (l, h)) c
+
+/-- `f` of the bounds `o`. -/
+noncomputable def ivBind (o : Option (Nat × Nat)) (f : Nat → Nat → Option (Nat × Nat)) : Option (Nat × Nat) :=
+  Option.rec none (fun x => Prod.rec (fun l h => f l h) x) o
+
+/-- An integer's bound, with `ivO` added. -/
+def ivLeaf (l h : Int) : Option (Nat × Nat) :=
+  if 0 ≤ l + ivO ∧ 0 ≤ h + ivO then some ((l + ivO).toNat, (h + ivO).toNat) else none
+
+/-- `cap`. -/
+noncomputable def capN (l h : Nat) : Nat :=
+  Bool.rec (2 ^ 52 - 1) (Bool.rec (2 ^ 52 - 1) (Nat.sub h ivO) (Nat.blt h (ivO + 2 ^ 52))) (Nat.ble ivO l)
+
+noncomputable def ivAdd (a b : Option (Nat × Nat)) : Option (Nat × Nat) :=
+  ivBind a fun l h => ivBind b fun l' h' =>
+    ivIf (Bool.rec false (Nat.ble ivO (Nat.add h h')) (Nat.ble ivO (Nat.add l l')))
+      (Nat.sub (Nat.add l l') ivO) (Nat.sub (Nat.add h h') ivO)
+
+noncomputable def ivSub (a b : Option (Nat × Nat)) : Option (Nat × Nat) :=
+  ivBind a fun l h => ivBind b fun l' h' =>
+    ivIf (Bool.rec false (Nat.ble l' (Nat.add h ivO)) (Nat.ble h' (Nat.add l ivO)))
+      (Nat.sub (Nat.add l ivO) h') (Nat.sub (Nat.add h ivO) l')
+
+noncomputable def ivShl (a : Option (Nat × Nat)) (n : Nat) : Option (Nat × Nat) :=
+  ivBind a fun l h =>
+    ivIf (Bool.rec false (Nat.ble (Nat.mul ivO (Nat.pow 2 n)) (Nat.add (Nat.mul h (Nat.pow 2 n)) ivO))
+        (Nat.ble (Nat.mul ivO (Nat.pow 2 n)) (Nat.add (Nat.mul l (Nat.pow 2 n)) ivO)))
+      (Nat.sub (Nat.add (Nat.mul l (Nat.pow 2 n)) ivO) (Nat.mul ivO (Nat.pow 2 n)))
+      (Nat.sub (Nat.add (Nat.mul h (Nat.pow 2 n)) ivO) (Nat.mul ivO (Nat.pow 2 n)))
+
+noncomputable def ivShr (a : Option (Nat × Nat)) (n : Nat) : Option (Nat × Nat) :=
+  ivBind a fun l h =>
+    ivIf (Bool.rec false (Nat.blt h (ivO + 2 ^ 64)) (Bool.rec false (Nat.ble ivO h) (Nat.ble ivO l)))
+      (Nat.add (Nat.div (Nat.sub l ivO) (Nat.pow 2 n)) ivO) (Nat.add (Nat.div (Nat.sub h ivO) (Nat.pow 2 n)) ivO)
+
+noncomputable def ivSra (a : Option (Nat × Nat)) (n : Nat) : Option (Nat × Nat) :=
+  ivBind a fun l h =>
+    ivIf (Bool.rec false (Nat.blt h (ivO + 2 ^ 63)) (Nat.ble (ivO - 2 ^ 63) l))
+      (Nat.div (Nat.add l (Nat.mul ivO (Nat.pred (Nat.pow 2 n)))) (Nat.pow 2 n))
+      (Nat.div (Nat.add h (Nat.mul ivO (Nat.pred (Nat.pow 2 n)))) (Nat.pow 2 n))
+
+noncomputable def ivMask (a : Option (Nat × Nat)) (j : Nat) : Option (Nat × Nat) :=
+  ivBind a fun l h =>
+    Bool.rec
+      (Bool.rec
+        (Bool.rec (some (ivO, Nat.add (Nat.pred (Nat.pow 2 j)) ivO)) (some (l, h))
+          (Bool.rec false (Nat.blt h (Nat.add ivO (Nat.pow 2 j))) (Nat.ble ivO l)))
+        (some (l, h)) (Nat.ble 64 j))
+      none (Nat.blt 64 j)
+
+noncomputable def ivMad (h : Bool) (c a b : Option (Nat × Nat)) : Option (Nat × Nat) :=
+  ivBind c fun l u => ivBind a fun l' u' => ivBind b fun l'' u'' =>
+    Bool.rec (some (l, Nat.add u (2 ^ 52 - 1)))
+      (ivIf (Bool.rec false (Nat.ble ivO u'') (Nat.ble ivO u')) l
+        (Nat.add u (Nat.div (Nat.mul (capN l' u') (capN l'' u'')) (2 ^ 52)))) h
+
+noncomputable def ivSlr (a : Option (Nat × Nat)) (j : Nat) : Option (Nat × Nat) :=
+  ivBind a fun _ _ => some (ivO, Nat.add (Nat.div (2 ^ 64 - 1) (Nat.pow 2 j)) ivO)
+
+noncomputable def ivSel (c a b : Option (Nat × Nat)) : Option (Nat × Nat) :=
+  ivBind c fun l u => ivBind a fun l' u' => ivBind b fun l'' u'' =>
+    ivIf (Bool.rec false (Nat.ble u ivO) (Nat.ble (ivO - 1) l)) (Nat.sub l' (Nat.sub l' l''))
+      (Nat.add (Nat.sub u' u'') u'')
+
+noncomputable def T.ivN (B : Bnds) (t : T) : Nat → Option (Nat × Nat) :=
+  T.rec (motive := fun _ => Nat → Option (Nat × Nat)) (fun r k => ivLeaf (B.vl r k) (B.vh r k))
+    (fun a b c d k => some (Nat.add (pick4 a b c d k) ivO, Nat.add (pick4 a b c d k) ivO))
+    (fun b d k => ivLeaf (B.ml b d k) (B.mh b d k)) (fun _ _ a b k => ivAdd (a k) (b k))
+    (fun _ _ a b k => ivSub (a k) (b k)) (fun _ n a k => ivShl (a k) n) (fun _ n a k => ivShr (a k) n)
+    (fun _ n a k => ivSra (a k) n) (fun _ j0 j1 j2 j3 a k => ivMask (a k) (pick4 j0 j1 j2 j3 k))
+    (fun _ _ m a b k => Bool.rec (a k) (b k) (m.testBit k)) (fun _ o a k => a (sel4 o k))
+    (fun h _ _ _ c a b k => ivMad h (c k) (a k) (b k)) (fun _ _ j a k => ivSlr (a k) j)
+    (fun _ _ _ c a b k => ivSel (c k) (a k) (b k)) t
+
+/-- `x` is the bounds `y`, with `ivO` added. -/
+def IvRep (x : Nat × Nat) (y : Int × Int) : Prop := y.1 = (x.1 : Int) - ivO ∧ y.2 = (x.2 : Int) - ivO
+
+theorem ivIf_some {c : Bool} {l h : Nat} {x : Nat × Nat} (e : ivIf c l h = some x) : c = true ∧ x = (l, h) := by
+  cases c with
+  | false => cases e
+  | true => exact ⟨rfl, (Option.some.inj e).symm⟩
+
+theorem ivBind_some {o : Option (Nat × Nat)} {f : Nat → Nat → Option (Nat × Nat)} {x : Nat × Nat}
+    (e : ivBind o f = some x) : ∃ l h, o = some (l, h) ∧ f l h = some x := by
+  cases o with
+  | none => cases e
+  | some p => exact ⟨p.1, p.2, rfl, e⟩
+
+theorem ivLeaf_some {l h : Int} {x : Nat × Nat} (e : ivLeaf l h = some x) : IvRep x (l, h) := by
+  unfold ivLeaf at e
+  split at e
+  · rename_i hc
+    cases e
+    exact ⟨by simp only; omega_using [hc], by simp only; omega_using [hc]⟩
+  · cases e
+
+theorem bool_rec_and (a b : Bool) : (Bool.rec false b a : Bool) = (a && b) := by cases a <;> rfl
+
+theorem ble_false {a b : Nat} (h : ¬ a ≤ b) : Nat.ble a b = false :=
+  Bool.eq_false_iff.mpr fun hb => h (Nat.ble_eq.mp hb)
+
+theorem blt_false {a b : Nat} (h : ¬ a < b) : Nat.blt a b = false :=
+  Bool.eq_false_iff.mpr fun hb => h (Nat.blt_eq.mp hb)
+
+theorem two_pow_cast (n : Nat) : (2 : Int) ^ n = ((2 ^ n : Nat) : Int) := (Int.natCast_pow 2 n).symm
+
+theorem capN_eq {l h : Nat} {y : Int × Int} (hy : IvRep (l, h) y) (c3 : ivO ≤ h) : cap y = (capN l h : Int) := by
+  obtain ⟨y1, y2⟩ := y
+  obtain ⟨h1, h2⟩ := hy
+  simp only at h1 h2
+  unfold cap capN
+  simp only
+  by_cases c1 : ivO ≤ l
+  · rw [Nat.ble_eq.mpr c1]
+    by_cases c2 : h < ivO + 2 ^ 52
+    · rw [Nat.blt_eq.mpr c2, ite_eq_left (by omega_using [h1, h2, c1, c2])]
+      show y2 = ((h - ivO : Nat) : Int)
+      omega_using [h2, c3]
+    · rw [blt_false c2, ite_eq_right (by omega_using [h1, h2, c1, c2])]
+      rfl
+  · rw [ble_false c1, ite_eq_right (by omega_using [h1, h2, c1])]
+    rfl
+
+theorem T.ivN_ok (B : Bnds) : ∀ (t : T) (k : Nat) {x : Nat × Nat}, t.ivN B k = some x →
+    ∃ y, t.iv B k = some y ∧ IvRep x y := by
+  intro t
+  induction t with
+  | reg r => exact fun k x e => ⟨_, rfl, ivLeaf_some e⟩
+  | lit a b c d =>
+    intro k x e
+    cases Option.some.inj e
+    exact ⟨_, rfl, by show _ = ((_ + ivO : Nat) : Int) - ivO; omega_using [], by show _ = ((_ + ivO : Nat) : Int) - ivO; omega_using []⟩
+  | ld b d => exact fun k x e => ⟨_, rfl, ivLeaf_some e⟩
+  | add a b iha ihb =>
+    intro k x e
+    have e : ivAdd (T.ivN B a k) (T.ivN B b k) = some x := e
+    obtain ⟨l, h, ea, e⟩ := ivBind_some e
+    obtain ⟨l', h', eb, e⟩ := ivBind_some e
+    obtain ⟨c, rfl⟩ := ivIf_some e
+    rw [bool_rec_and, Bool.and_eq_true, Nat.ble_eq, Nat.ble_eq] at c
+    obtain ⟨y, hy, r1, r2⟩ := iha k ea
+    obtain ⟨z, hz, s1, s2⟩ := ihb k eb
+    have c1 : ivO ≤ l + l' := c.1
+    have c2 : ivO ≤ h + h' := c.2
+    refine ⟨_, by rw [T.iv, hy, hz]; rfl, ?_, ?_⟩
+    · show y.1 + z.1 = ((l + l' - ivO : Nat) : Int) - ivO
+      omega_using [r1, s1, c1]
+    · show y.2 + z.2 = ((h + h' - ivO : Nat) : Int) - ivO
+      omega_using [r2, s2, c2]
+  | sub a b iha ihb =>
+    intro k x e
+    have e : ivSub (T.ivN B a k) (T.ivN B b k) = some x := e
+    obtain ⟨l, h, ea, e⟩ := ivBind_some e
+    obtain ⟨l', h', eb, e⟩ := ivBind_some e
+    obtain ⟨c, rfl⟩ := ivIf_some e
+    rw [bool_rec_and, Bool.and_eq_true, Nat.ble_eq, Nat.ble_eq] at c
+    obtain ⟨y, hy, r1, r2⟩ := iha k ea
+    obtain ⟨z, hz, s1, s2⟩ := ihb k eb
+    have c1 : h' ≤ l + ivO := c.1
+    have c2 : l' ≤ h + ivO := c.2
+    refine ⟨_, by rw [T.iv, hy, hz]; rfl, ?_, ?_⟩
+    · show y.1 - z.2 = ((l + ivO - h' : Nat) : Int) - ivO
+      omega_using [r1, s2, c1]
+    · show y.2 - z.1 = ((h + ivO - l' : Nat) : Int) - ivO
+      omega_using [r2, s1, c2]
+  | shl a n iha =>
+    intro k x e
+    have e : ivShl (T.ivN B a k) n = some x := e
+    obtain ⟨l, h, ea, e⟩ := ivBind_some e
+    obtain ⟨c, rfl⟩ := ivIf_some e
+    rw [bool_rec_and, Bool.and_eq_true, Nat.ble_eq, Nat.ble_eq] at c
+    obtain ⟨y, hy, r1, r2⟩ := iha k ea
+    have key (u : Nat) (v : Int) (hv : v = (u : Int) - ivO) (hu : ivO * 2 ^ n ≤ u * 2 ^ n + ivO) :
+        v * 2 ^ n = ((u * 2 ^ n + ivO - ivO * 2 ^ n : Nat) : Int) - ivO := by
+      rw [hv, Int.sub_mul, two_pow_cast, ← Int.natCast_mul, ← Int.natCast_mul]
+      generalize u * 2 ^ n = p at *
+      generalize ivO * 2 ^ n = q at *
+      omega_using [hu]
+    exact ⟨_, by rw [T.iv, hy]; rfl, key l y.1 r1 c.1, key h y.2 r2 c.2⟩
+  | shr a n iha =>
+    intro k x e
+    have e : ivShr (T.ivN B a k) n = some x := e
+    obtain ⟨l, h, ea, e⟩ := ivBind_some e
+    obtain ⟨c, rfl⟩ := ivIf_some e
+    rw [bool_rec_and, bool_rec_and, Bool.and_eq_true, Bool.and_eq_true, Nat.ble_eq, Nat.ble_eq, Nat.blt_eq] at c
+    obtain ⟨y, hy, r1, r2⟩ := iha k ea
+    have key (u : Nat) (v : Int) (hv : v = (u : Int) - ivO) (hu : ivO ≤ u) :
+        v / 2 ^ n = (((u - ivO) / 2 ^ n + ivO : Nat) : Int) - ivO := by
+      rw [show v = ((u - ivO : Nat) : Int) by omega_using [hv, hu], two_pow_cast, ← Int.natCast_ediv]
+      omega_using []
+    refine ⟨(y.1 / 2 ^ n, y.2 / 2 ^ n), ?_, key l y.1 r1 c.1.1, key h y.2 r2 c.1.2⟩
+    rw [T.iv, hy]
+    exact ite_eq_left ⟨by simp only at r1; omega_using [r1, c], by have := c.2; omega_using [r2, this]⟩
+  | sra a n iha =>
+    intro k x e
+    have e : ivSra (T.ivN B a k) n = some x := e
+    obtain ⟨l, h, ea, e⟩ := ivBind_some e
+    obtain ⟨c, rfl⟩ := ivIf_some e
+    rw [bool_rec_and, Bool.and_eq_true, Nat.ble_eq, Nat.blt_eq] at c
+    obtain ⟨y, hy, r1, r2⟩ := iha k ea
+    have key (u : Nat) (v : Int) (hv : v = (u : Int) - ivO) :
+        v / 2 ^ n = (((u + ivO * Nat.pred (2 ^ n)) / 2 ^ n : Nat) : Int) - ivO := by
+      have hp : 0 < 2 ^ n := Nat.two_pow_pos n
+      have e1 : ((u + ivO * Nat.pred (2 ^ n) : Nat) : Int) = v + (ivO : Int) * (2 ^ n : Nat) := by
+        rw [Nat.pred_eq_sub_one, Nat.mul_sub, Nat.mul_one, hv, ← Int.natCast_mul]
+        have : ivO ≤ ivO * 2 ^ n := Nat.le_mul_of_pos_right _ hp
+        generalize ivO * 2 ^ n = p at *
+        omega_using [this]
+      rw [Int.natCast_ediv, e1, Int.add_mul_ediv_right _ _ (by omega_using [hp]), two_pow_cast]
+      omega_using []
+    refine ⟨(y.1 / 2 ^ n, y.2 / 2 ^ n), ?_, key l y.1 r1, key h y.2 r2⟩
+    rw [T.iv, hy]
+    have c1 : ivO - 2 ^ 63 ≤ l := c.1
+    have c2 : h < ivO + 2 ^ 63 := c.2
+    have hO : (2 : Nat) ^ 63 ≤ ivO := by decide
+    exact ite_eq_left ⟨by simp only at r1; omega_using [r1, c1, hO], by simp only at r2; omega_using [r2, c2]⟩
+  | mask a j0 j1 j2 j3 iha =>
+    intro k x e
+    have e : ivMask (T.ivN B a k) (pick4 j0 j1 j2 j3 k) = some x := e
+    obtain ⟨l, h, ea, e⟩ := ivBind_some e
+    obtain ⟨y, hy, r1, r2⟩ := iha k ea
+    simp only at r1 r2
+    revert e
+    generalize hj : pick4 j0 j1 j2 j3 k = j
+    intro e
+    rw [T.iv, hy]
+    simp only [Option.bind_some, hj]
+    by_cases c1 : 64 < j
+    · rw [Nat.blt_eq.mpr c1] at e; cases e
+    rw [blt_false c1] at e
+    rw [ite_eq_right c1]
+    by_cases c2 : 64 ≤ j
+    · rw [Nat.ble_eq.mpr c2] at e
+      cases Option.some.inj e
+      exact ⟨y, ite_eq_left c2, r1, r2⟩
+    rw [ble_false c2, bool_rec_and] at e
+    rw [ite_eq_right c2]
+    by_cases c3 : ivO ≤ l ∧ h < ivO + 2 ^ j
+    · rw [Nat.ble_eq.mpr c3.1, show Nat.blt h (Nat.add ivO (Nat.pow 2 j)) = true from Nat.blt_eq.mpr c3.2] at e
+      cases Option.some.inj e
+      refine ⟨y, ite_eq_left ⟨by omega_using [r1, c3], ?_⟩, r1, r2⟩
+      rw [two_pow_cast]
+      omega_using [r2, c3]
+    · have hb : (Nat.ble ivO l && Nat.blt h (Nat.add ivO (Nat.pow 2 j))) = false :=
+        Bool.eq_false_iff.mpr fun hb => c3 (by
+          rw [Bool.and_eq_true, Nat.ble_eq, Nat.blt_eq] at hb; exact hb)
+      rw [hb] at e
+      cases Option.some.inj e
+      have hp : 0 < 2 ^ j := Nat.two_pow_pos j
+      refine ⟨_, ite_eq_right fun hc => c3 ?_, ?_, ?_⟩
+      · rw [two_pow_cast] at hc
+        exact ⟨by omega_using [r1, hc], by omega_using [r2, hc]⟩
+      · show (0 : Int) = (ivO : Int) - ivO
+        omega_using []
+      · show (2 : Int) ^ j - 1 = ((Nat.pred (2 ^ j) + ivO : Nat) : Int) - ivO
+        rw [two_pow_cast, Nat.pred_eq_sub_one]
+        omega_using [hp]
+  | blend a b m iha ihb =>
+    intro k x e
+    rw [T.iv]
+    cases hm : m.testBit k with
+    | true => exact ihb k (by simpa only [T.ivN, hm] using e)
+    | false => exact iha k (by simpa only [T.ivN, hm] using e)
+  | perm a o iha => exact fun k x e => iha (sel4 o k) e
+  | mad hi c a b ihc iha ihb =>
+    intro k x e
+    have e : ivMad hi (T.ivN B c k) (T.ivN B a k) (T.ivN B b k) = some x := e
+    obtain ⟨l, u, ec, e⟩ := ivBind_some e
+    obtain ⟨l', u', ea, e⟩ := ivBind_some e
+    obtain ⟨l'', u'', eb, e⟩ := ivBind_some e
+    obtain ⟨y, hy, r1, r2⟩ := ihc k ec
+    obtain ⟨y', hy', r'⟩ := iha k ea
+    obtain ⟨y'', hy'', r''⟩ := ihb k eb
+    simp only at r1 r2
+    cases hi with
+    | false =>
+      cases Option.some.inj e
+      refine ⟨(y.1, y.2 + (2 ^ 52 - 1)), by rw [T.iv, hy, hy', hy'']; rfl, r1, ?_⟩
+      show y.2 + (2 ^ 52 - 1) = ((u + (2 ^ 52 - 1) : Nat) : Int) - ivO
+      omega_using [r2]
+    | true =>
+      obtain ⟨c, rfl⟩ := ivIf_some e
+      rw [bool_rec_and, Bool.and_eq_true, Nat.ble_eq, Nat.ble_eq] at c
+      refine ⟨(y.1, y.2 + cap y' * cap y'' / 2 ^ 52), by rw [T.iv, hy, hy', hy'']; rfl, r1, ?_⟩
+      show y.2 + cap y' * cap y'' / 2 ^ 52 = ((u + capN l' u' * capN l'' u'' / 2 ^ 52 : Nat) : Int) - ivO
+      rw [capN_eq r' c.1, capN_eq r'' c.2, ← Int.natCast_mul]
+      omega_using [r2]
+  | slr a n j iha =>
+    intro k x e
+    have e : ivSlr (T.ivN B a k) j = some x := e
+    obtain ⟨l, h, ea, e⟩ := ivBind_some e
+    obtain ⟨y, hy, -⟩ := iha k ea
+    cases Option.some.inj e
+    refine ⟨_, by rw [T.iv, hy]; rfl, ?_, ?_⟩
+    · show (0 : Int) = (ivO : Int) - ivO
+      omega_using []
+    · show (2 ^ 64 - 1) / (2 : Int) ^ j = (((2 ^ 64 - 1) / 2 ^ j + ivO : Nat) : Int) - ivO
+      rw [two_pow_cast j, show ((2 : Int) ^ 64 - 1) = ((2 ^ 64 - 1 : Nat) : Int) from rfl, ← Int.natCast_ediv]
+      omega_using []
+  | sel c a b ihc iha ihb =>
+    intro k x e
+    have e : ivSel (T.ivN B c k) (T.ivN B a k) (T.ivN B b k) = some x := e
+    obtain ⟨l, u, ec, e⟩ := ivBind_some e
+    obtain ⟨l', u', ea, e⟩ := ivBind_some e
+    obtain ⟨l'', u'', eb, e⟩ := ivBind_some e
+    obtain ⟨g, rfl⟩ := ivIf_some e
+    rw [bool_rec_and, Bool.and_eq_true, Nat.ble_eq, Nat.ble_eq] at g
+    obtain ⟨y, hy, r1, r2⟩ := ihc k ec
+    obtain ⟨y', hy', r1', r2'⟩ := iha k ea
+    obtain ⟨y'', hy'', r1'', r2''⟩ := ihb k eb
+    simp only at r1 r2 r1' r2' r1'' r2''
+    have hO : 1 ≤ ivO := by decide
+    refine ⟨(min y'.1 y''.1, max y'.2 y''.2), ?_, ?_, ?_⟩
+    · rw [T.iv, hy, hy', hy'']
+      exact ite_eq_left ⟨by omega_using [r1, g, hO], by omega_using [r2, g]⟩
+    · show min y'.1 y''.1 = ((l' - (l' - l'') : Nat) : Int) - ivO
+      omega_using [r1', r1'']
+    · show max y'.2 y''.2 = ((u' - u'' + u'' : Nat) : Int) - ivO
+      omega_using [r2', r2'']
 
 /-- What a block starts from is within `B`. -/
 structure EnvOK (s₀ : State) (B : Bnds) : Prop where
@@ -503,24 +834,50 @@ def segT (seg : Seg Id T) (ins : List (F5 T)) : List T := (Id.run (seg ins)).fla
 only read. -/
 abbrev slotsLen : Nat := 288
 
+/-- The terms in the places `outs` after a run. -/
+noncomputable def termsAt (outs : List Loc) (t : SymRun.Tree T) (st : List (Nat × T)) : List T :=
+  List.rec [] (fun l _ ih => Loc.rec (fun r => t.get r fun x => x :: ih) (fun i => look st (slotOff i) :: ih) l) outs
+
+theorem termsAt_eq {σ : VSym} {t : SymRun.Tree T} (ht : t.Holds 5 σ.reg) :
+    ∀ {outs : List Loc}, (∀ l ∈ outs, locOk l = true) → termsAt outs t σ.st = outs.map (termAt σ)
+  | [], _ => rfl
+  | l :: outs, hl => by
+    have ih := termsAt_eq ht fun q hq => hl q (List.mem_cons_of_mem l hq)
+    rw [List.map_cons, ← ih]
+    cases l with
+    | reg r => exact SymRun.Tree.get_eq 5 ht (of_decide_eq_true (hl _ List.mem_cons_self) : r < 32) _
+    | slot i => rfl
+
+/-- The terms in the places `outs` after a run, if those are places and every store is into the first
+`w` bytes of the slots. -/
+noncomputable def endTerms (w : Nat) (outs : List Loc) (t : SymRun.Tree T) (st : List (Nat × T)) : Option (List T) :=
+  Bool.rec none (some (termsAt outs t st)) (outs.all locOk && st.all fun e => decide (cfg.sbase ≤ e.1 ∧ e.1 + 32 ≤ cfg.sbase + w))
+
 /-- The code of a stage computes its terms, into the places `outs`, and stores only into the first
 `w` bytes of the slots. -/
-def chkSegW (w : Nat) (code : List Instr) (ins : List (F5 T)) (seg : Seg Id T) (outs : List Loc) : Bool :=
-  match VSym.init.run par code with
-  | some σ => decide (outs.map (termAt σ) = segT seg ins) && outs.all locOk &&
-    σ.st.all fun e => decide (cfg.sbase ≤ e.1 ∧ e.1 + 32 ≤ cfg.sbase + w)
-  | none => false
+abbrev chkSegW (w : Nat) (code : List Instr) (ins : List (F5 T)) (seg : Seg Id T) (outs : List Loc) : Prop :=
+  VSym.runK par code (endTerms w outs) = some (segT seg ins)
 
 /-- `chkSegW`, for the first nine slots. -/
-abbrev chkSeg (code : List Instr) (ins : List (F5 T)) (seg : Seg Id T) (outs : List Loc) : Bool :=
+abbrev chkSeg (code : List Instr) (ins : List (F5 T)) (seg : Seg Id T) (outs : List Loc) : Prop :=
   chkSegW slotsLen code ins seg outs
 
-/-- Stage `j` of a block, from the terms `ins` at its start, its last stage's values into `fin`. -/
-def chkStage (pieces : List (List Instr)) (locs : List (List Loc)) (segs : List (Seg Id T)) (ins : List (F5 T))
-    (fin : List Loc) (j : Nat) : Bool :=
-  let i := if j = 0 then ins else group5 ((locs.getD (j - 1) []).map leafOf)
-  let o := if j + 1 = segs.length then fin else locs.getD j []
-  chkSeg (pieces.getD j []) i (segs.getD j (fun _ => pure [])) o
+/-- Proves `chkSegW`: the kernel compares the terms. -/
+macro "seg_rfl" : tactic => `(tactic| (delta chkSeg; delta chkSegW; kernel_rfl))
+macro "segw_rfl" : tactic => `(tactic| (delta chkSegW; kernel_rfl))
+
+theorem chkSegW_run {w : Nat} {c : List Instr} {ins : List (F5 T)} {seg : Seg Id T} {outs : List Loc}
+    (h : chkSegW w c ins seg outs) : ∃ σ, VSym.init.run par c = some σ ∧ outs.map (termAt σ) = segT seg ins ∧
+      outs.all locOk = true ∧ (σ.st.all fun e => decide (cfg.sbase ≤ e.1 ∧ e.1 + 32 ≤ cfg.sbase + w)) = true := by
+  obtain ⟨σ, t, hσ, ht, hc⟩ := VSym.runK_ok h
+  unfold endTerms at hc
+  cases hb : outs.all locOk && σ.st.all fun e => decide (cfg.sbase ≤ e.1 ∧ e.1 + 32 ≤ cfg.sbase + w) with
+  | false => rw [hb] at hc; cases hc
+  | true =>
+    rw [hb] at hc
+    have hc := Option.some.inj hc
+    rw [Bool.and_eq_true] at hb
+    exact ⟨σ, hσ, (termsAt_eq ht (List.all_eq_true.mp hb.1)).symm.trans hc, hb.1, hb.2⟩
 
 theorem slotOff_mod (i : Nat) : slotOff i % 32 = 0 := by
   simp only [slotOff, cfg]; omega_using []
@@ -562,24 +919,20 @@ theorem stores_unch_hi (s₀ : State) (lo hi : Nat) :
 term, of the state before; nothing else of the state changes but vector
 registers and the first nine slots of the working space. -/
 theorem stage_wp {w : Nat} {c : List Instr} {ins : List (F5 T)} {seg : Seg Id T} {outs : List Loc}
-    (h : chkSegW w c ins seg outs = true) {s₀ : State} (hc : Ctx par s₀) :
+    (h : chkSegW w c ins seg outs) {s₀ : State} (hc : Ctx par s₀) :
     WP isa (.block c) s₀ fun s =>
       (∃ σ, SRel par σ s₀ s) ∧ Unch (s₀.gpr .rdi) [(cfg.sbase, w)] s₀.mem s.mem ∧
       ∀ (j : Nat) (l : Loc) (t : T), outs[j]? = some l → (segT seg ins)[j]? = some t →
         ∀ k, k < 4 → lanesAt s l k = t.eval s₀ k := by
-  unfold chkSegW at h
-  split at h
-  case h_2 => cases h
-  rename_i σ hσ
-  simp only [Bool.and_eq_true, decide_eq_true_eq] at h
+  obtain ⟨σ, hσ, h1, h2, h3⟩ := chkSegW_run h
   refine WP.mono (srun_ok hc c (SRel.init par s₀) hσ) fun s hs => ⟨⟨σ, hs⟩, ?_, fun j l t hl ht k hk => ?_⟩
   · rw [hs.mem]
     have := stores_unch_hi s₀ cfg.sbase (cfg.sbase + w) σ.st fun e he => by
-      have := List.all_eq_true.1 h.2 e he
+      have := List.all_eq_true.1 h3 e he
       exact ⟨by simpa using this, (hs.al e he).2⟩
     rwa [Nat.add_sub_cancel_left] at this
-  · have hok : locOk l = true := List.all_eq_true.1 h.1.2 l (List.mem_of_getElem? hl)
-    rw [← h.1.1, List.getElem?_map, hl] at ht
+  · have hok : locOk l = true := List.all_eq_true.1 h2 l (List.mem_of_getElem? hl)
+    rw [← h1, List.getElem?_map, hl] at ht
     cases ht
     exact termAt_ok hs hok hk
 
@@ -593,7 +946,7 @@ theorem envOf_slot (s : State) (i k : Nat) : (envOf s).m .rdi (slotOff i) k = in
 /-- `stage_wp`, for integers: the quadwords of a place whose term has bounds
 (`T.iv`) within 64 signed bits are the term's integer. -/
 theorem stage_int {w : Nat} {c : List Instr} {ins : List (F5 T)} {seg : Seg Id T} {outs : List Loc}
-    (h : chkSegW w c ins seg outs = true) {s₀ : State} (hc : Ctx par s₀) {B : Bnds} (hB : EnvOK s₀ B) :
+    (h : chkSegW w c ins seg outs) {s₀ : State} (hc : Ctx par s₀) {B : Bnds} (hB : EnvOK s₀ B) :
     WP isa (.block c) s₀ fun s =>
       (∃ σ, SRel par σ s₀ s) ∧ Unch (s₀.gpr .rdi) [(cfg.sbase, w)] s₀.mem s.mem ∧
       ∀ (j : Nat) (l : Loc) (t : T), outs[j]? = some l → (segT seg ins)[j]? = some t →
@@ -1097,11 +1450,37 @@ def ivWithin (B : Bnds) (ts : List T) (bt : BT) : Bool :=
       | some iv => decide (b.1 ≤ iv.1 ∧ iv.2 ≤ b.2 ∧ -2 ^ 63 ≤ b.1 ∧ b.2 < 2 ^ 63)
       | none => false
 
+/-- `ivWithin`, as the kernel evaluates it. -/
+noncomputable def ivWithinN (B : Bnds) (ts : List T) (bt : BT) : Bool :=
+  ts.zipIdx.all fun (t, n) => (List.range 4).all fun k =>
+    match bt.get (n / 5) k with
+    | none => true
+    | some b => Option.rec false (fun iv => Prod.rec (fun l h =>
+        decide (b.1 + ivO ≤ (l : Int) ∧ (h : Int) ≤ b.2 + ivO ∧ -2 ^ 63 ≤ b.1 ∧ b.2 < 2 ^ 63)) iv) (t.ivN B k)
+
+theorem ivWithin_of {B : Bnds} {ts : List T} {bt : BT} (h : ivWithinN B ts bt = true) : ivWithin B ts bt = true := by
+  refine List.all_eq_true.mpr fun x hx => List.all_eq_true.mpr fun k hk => ?_
+  have h := List.all_eq_true.mp (List.all_eq_true.mp h x hx) k hk
+  dsimp only at h ⊢
+  cases hb : bt.get (x.2 / 5) k with
+  | none => rfl
+  | some b =>
+    rw [hb] at h
+    dsimp only at h ⊢
+    cases e : x.1.ivN B k with
+    | none => rw [e] at h; cases h
+    | some y =>
+      rw [e] at h
+      obtain ⟨z, hz, r1, r2⟩ := T.ivN_ok B x.1 k e
+      rw [hz]
+      have h := of_decide_eq_true h
+      exact decide_eq_true ⟨by omega_using [h, r1], by omega_using [h, r2], h.2.2.1, h.2.2.2⟩
+
 /-- What a piece does, for integers: in the lanes with bounds in `bt`, the
 limbs in the places of its results are those of the stage's terms, within
 those bounds. -/
 theorem stage_tab {w : Nat} {c : List Instr} {ins : List (F5 T)} {seg : Seg Id T} {outs : List Loc}
-    (h : chkSegW w c ins seg outs = true) {s₀ : State} (hc : Ctx par s₀) {B : Bnds} (hB : EnvOK s₀ B) {bt : BT}
+    (h : chkSegW w c ins seg outs) {s₀ : State} (hc : Ctx par s₀) {B : Bnds} (hB : EnvOK s₀ B) {bt : BT}
     (hiv : ivWithin B (segT seg ins) bt = true) :
     WP isa (.block c) s₀ fun s =>
       (∃ σ, SRel par σ s₀ s) ∧ Unch (s₀.gpr .rdi) [(cfg.sbase, w)] s₀.mem s.mem ∧
@@ -1773,7 +2152,7 @@ theorem BT.get_lt {bt : BT} {j k : Nat} {b : Int × Int} (h : bt.get j k = some 
 
 /-- What a stage's piece of code does to what is known between the stages. -/
 theorem cut_step {w : Nat} {c : List Instr} {ins : List (F5 T)} {seg : Seg Id T} {outs : List Loc}
-    (h : chkSegW w c ins seg outs = true) {s₀ : State} (hc : Ctx par s₀) {B : Bnds} (hB : EnvOK s₀ B)
+    (h : chkSegW w c ins seg outs) {s₀ : State} (hc : Ctx par s₀) {B : Bnds} (hB : EnvOK s₀ B)
     {iv bt : BT} {ovs : List (Nat × Nat)} (hiv : ivWithin B (segT seg ins) iv = true) (hov : ovOk bt iv ovs = true)
     (hlen : outs.length = 5 * (Id.run (seg ins)).length) (hrows : iv.length ≤ (Id.run (seg ins)).length)
     (hcar : ∀ j k, (j, k) ∈ ovs → Carried (envOf s₀) k ((Id.run (seg ins)).getD j zero5)) :

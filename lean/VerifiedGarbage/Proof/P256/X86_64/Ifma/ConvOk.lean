@@ -115,7 +115,8 @@ theorem set_s1 {s₀ : State} (hc : Ctx par s₀) (hB : EnvOK s₀ (bndsOf (setL
     hS.car 2 1 (by decide) rfl rfl a, hS.car 2 3 (by decide) rfl rfl x, hS.raw 3 1 (by decide) rfl rfl (Raw.sqr a),
     hS.raw 3 3 (by decide) rfl rfl (Raw.sqr x)⟩
 
-theorem setPieces_flat : setPieces.flatten = setPieces.getD 0 [] ++ setPieces.getD 1 [] := by decide +kernel
+theorem setPieces_flat : setPieces.flatten = setPieces.getD 0 [] ++ setPieces.getD 1 [] := by
+  kernel_rfl
 
 /-- The first point: the accumulator's vectors stand for the entry's triple, `(4 ex, ±4 ey, 2 ez)`. -/
 theorem set_ok {s₀ : State} (hc : Ctx par s₀) (hB : EnvOK s₀ setB) {p : AP (Fin pN)}
@@ -431,7 +432,8 @@ theorem words_ld {s₀ : State} {L : List Loc} {bt : BT} (hB : EnvOK s₀ (bndsO
   simp only [T.int]
   omega_using [this]
 
-theorem convQPieces_flat : convQPieces.flatten = convQPieces.getD 0 [] := by decide +kernel
+theorem convQPieces_flat : convQPieces.flatten = convQPieces.getD 0 [] := by
+  kernel_rfl
 
 /-- `convQ`'s vector before its carry. -/
 abbrev convQG : F5 T := Id.run (convQg tops (.ld .rcx 0) (.ld .rcx 32) (.ld .rcx 64) (.ld .rdx 0))
@@ -513,7 +515,8 @@ theorem convGg_val (vx vy : T) (E : Env) (hx : Words E vx) (hy : Words E vy) :
     limbs2 (fun _ => rfl) (fun _ => rfl) (fun _ => rfl) (fun _ => rfl) E 3 (hy 0 (by decide)) (hy 1 (by decide))
       (hy 2 (by decide)) (hy 3 (by decide))⟩
 
-theorem convGPieces_flat : convGPieces.flatten = convGPieces.getD 0 [] := by decide +kernel
+theorem convGPieces_flat : convGPieces.flatten = convGPieces.getD 0 [] := by
+  kernel_rfl
 
 /-- `convG`'s first vector. -/
 abbrev convGA : F5 T :=
@@ -647,14 +650,14 @@ def limT (b : Reg) (d k : Nat) : Bool := b == .rdx && (d == 0 || (d == 32 && k =
 /-- What `loadB` starts from: the accumulator, the entry's first vector and the quadwords of its second. -/
 def loadBT : List (F5 T) := stT ++ [t5 20, rawGT]
 
-theorem loadA_chk : chkSeg (loadAPieces.getD 0 []) convQT (fun xs => pure xs) regs25 = true := by decide +kernel
+theorem loadA_chk : chkSeg (loadAPieces.getD 0 []) convQT (fun xs => pure xs) regs25 := by seg_rfl
 
-theorem loadA_iv : ivWithin (limB stB limA) (segT (fun xs => pure xs) convQT) (stBT ++ entA) = true := by
-  decide +kernel
+theorem loadA_iv : ivWithin (limB stB limA) (segT (fun xs => pure xs) convQT) (stBT ++ entA) = true :=
+  ivWithin_of (by decide +kernel)
 
 theorem loadA_ov : ovOk (stBT ++ entA) (stBT ++ entA) [] = true := by decide +kernel
 
-theorem loadB_chk : chkSeg (loadBPieces.getD 0 []) loadBT (unpackT tops) regs30 = true := by decide +kernel
+theorem loadB_chk : chkSeg (loadBPieces.getD 0 []) loadBT (unpackT tops) regs30 := by seg_rfl
 
 theorem loadB_iv :
     ivWithin (limB (bndsOf regs25 (stBT ++ entA)) limT) (segT (unpackT tops) loadBT) (stBT ++ entBT) = true := by
@@ -662,9 +665,11 @@ theorem loadB_iv :
 
 theorem loadB_ov : ovOk (stBT ++ entBT) (stBT ++ entBT) [] = true := by decide +kernel
 
-theorem loadAPieces_flat : loadAPieces.flatten = loadAPieces.getD 0 [] := by decide +kernel
+theorem loadAPieces_flat : loadAPieces.flatten = loadAPieces.getD 0 [] := by
+  kernel_rfl
 
-theorem loadBPieces_flat : loadBPieces.flatten = loadBPieces.getD 0 [] := by decide +kernel
+theorem loadBPieces_flat : loadBPieces.flatten = loadBPieces.getD 0 [] := by
+  kernel_rfl
 
 theorem stBT_app (X : BT) {j k : Nat} {b : Int × Int} (h : stBT.get j k = some b) : (stBT ++ X).get j k = some b := by
   obtain hj : j < stBT.length := BT.get_lt h

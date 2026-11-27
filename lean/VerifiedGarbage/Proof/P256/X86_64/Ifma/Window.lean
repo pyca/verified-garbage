@@ -327,9 +327,10 @@ def slots5 : List Loc := (List.range 5).map .slot
 /-- The first five slots, as the rows of a vector of five limbs. -/
 abbrev sl5 : F5 T := (leaves slots5).getD 0 zero5
 
-theorem st_chk : chkSeg storeOut [t5 0] stSeg slots5 = true := by decide +kernel
+theorem st_chk : chkSeg storeOut [t5 0] stSeg slots5 := by seg_rfl
 
-theorem st_iv : ivWithin (bndsOf regs5 outBT2) (segT stSeg [t5 0]) outBT2 = true := by decide +kernel
+theorem st_iv : ivWithin (bndsOf regs5 outBT2) (segT stSeg [t5 0]) outBT2 = true :=
+  ivWithin_of (by decide +kernel)
 
 theorem st_ov : ovOk outBT2 outBT2 [] = true := by decide +kernel
 
