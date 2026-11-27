@@ -849,6 +849,8 @@ def keepsSp : Instr → Bool
   | .imul3 d .. | .shld d .. | .btr d _ | .vpcmpltuw d .. | .evCmpUq _ d .. => !Nat.beq d.ctorIdx Reg.rsp.ctorIdx
   | _ => true
 
+kernel_fn @Code.allInstrs isa.Instr isa.Cond keepsSp
+
 theorem ctorIdx_beq (a b : Reg) : Nat.beq a.ctorIdx b.ctorIdx = (a == b) := by
   cases a <;> cases b <;> rfl
 
@@ -3293,6 +3295,8 @@ def taint : VG.Taint isa where
   push_sound _ h := by cases h
   pop _ _ := none
   pop_sound _ h := by cases h
+
+kernel_fn VG.Taint.check taint
 
 /-- `taint`'s step is `stepKD`'s (`stepKeep_eq`). -/
 theorem taint_step (τ : Taint.T) (i : Instr) : taint.step τ i = Taint.stepKD τ i :=

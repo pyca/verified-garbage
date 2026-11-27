@@ -543,6 +543,8 @@ def taint : VG.Taint isa where
   pop := Taint.pop
   pop_sound := Taint.pop_sound
 
+kernel_fn VG.Taint.check taint
+
 /-- The step of `taint` is `Taint.step`, for the proofs about it: the kernel
 evaluates `Taint.stepK`. -/
 theorem taint_step (τ : Taint.T) (i : Instr) : taint.step τ i = Taint.step τ i :=

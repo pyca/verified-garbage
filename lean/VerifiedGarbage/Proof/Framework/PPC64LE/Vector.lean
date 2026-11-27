@@ -421,6 +421,8 @@ def vectorTaint : VG.Taint isa := { taint with
   step := VectorTaint.stepK
   step_sound := fun h hs => VectorTaint.step_sound h (VectorTaint.stepK_eq ▸ hs) }
 
+kernel_fn VG.Taint.check vectorTaint
+
 /-- `vectorTaint`'s step is `VectorTaint.step`'s (`stepK_eq`). -/
 theorem vectorTaint_step (τ : Taint.T) (i : Instr) : vectorTaint.step τ i = VectorTaint.step τ i :=
   congrFun (congrFun VectorTaint.stepK_eq τ) i

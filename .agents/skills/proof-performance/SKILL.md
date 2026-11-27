@@ -137,6 +137,16 @@ Avoid these patterns (each has cost tens of seconds in one proof):
   it: write `Code.all_of_spTest (by lit_decide)`, as `sp_safe` does, not
   `Code.all_of_allInstrs (by lit_decide)`, which tests `!isa.writesSp i`
   and takes twice as long for each instruction.
+* **A function the kernel evaluates at every instruction:** an analysis or a
+  check of code is written with matches, `&&`, `Option.bind` and an analysis
+  passed as an argument, each of which the kernel unfolds through a matcher, a
+  `casesOn` or a projection at every step: half of its unfoldings in the taint
+  analyses. Declare the function after its definition with `kernel_fn`
+  (`Proof/Framework/Lit.lean`; a function that takes an analysis, applied to
+  it: `kernel_fn VG.Taint.check taint`): the same function with those unfolded,
+  which `lit_decide` and `taint_decide` use wherever a goal has it (P-521's x86
+  verification: 12 s to 8 s in the kernel). Keep the function itself as the
+  proofs read it best.
 * **An analysis the kernel finds again:** the kernel evaluates a term when
   it is read, and remembers the value of every term it has evaluated, by
   the term. An analysis whose states are terms yet to be evaluated

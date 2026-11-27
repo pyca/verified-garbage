@@ -350,6 +350,8 @@ def rtaint : VG.Taint isa where
   pop _ _ := none
   pop_sound _ hs := nomatch hs
 
+kernel_fn VG.Taint.check rtaint
+
 namespace RTaint
 
 /-- Every register. -/
@@ -608,6 +610,8 @@ def rtaintL : VG.Taint isa where
   push_sound _ hs := nomatch hs
   pop _ _ := none
   pop_sound _ hs := nomatch hs
+
+kernel_fn VG.Taint.check rtaintL
 
 namespace RTaintL
 

@@ -1095,6 +1095,8 @@ def rtaint : VG.TaintCT isa where
   pop := RTaint.popK
   pop_sound ha hs e₁ e₂ hadr := RTaint.pop_sound ha ((RTaint.popK_eq _ _).symm.trans hs) e₁ e₂ hadr
 
+kernel_fn VG.TaintCT.check rtaint
+
 namespace RTaint
 
 /-- Where the analysis starts holds of two states that `NoResidue` compares,

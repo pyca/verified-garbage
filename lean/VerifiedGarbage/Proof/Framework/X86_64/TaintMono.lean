@@ -1045,6 +1045,8 @@ def taintS : VG.Taint isa where
   pop _ _ := none
   pop_sound _ h := by cases h
 
+kernel_fn VG.Taint.check taintS
+
 open VG.X86_64.Taint in
 instance : VG.Taint.LeFrame taintS where
   le_trans h₁ h₂ := leS_iff.mpr ((leS_iff.mp h₁).trans (leS_iff.mp h₂))
@@ -1107,6 +1109,8 @@ instance : VG.Taint.LeFrame taintS where
     exact leS_iff.mpr (le_of_frame hk (leS_iff.mp hΦF) (retStep_regs hs ▸ hΦ.regs) h₂.fn)
   push_keeps _ _ _ _ hs := by cases hs
   pop_keeps _ _ _ _ hs := by cases hs
+
+kernel_fn VG.Taint.checkSum taintS, VG.Taint.checkSumLe taintS, VG.Taint.keepsSum taintS
 
 instance : VG.Taint.CodeEq isa := ⟨@VG.Taint.codeBeq Instr Cond _ _⟩
 

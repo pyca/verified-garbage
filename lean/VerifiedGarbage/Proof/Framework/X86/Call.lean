@@ -40,6 +40,8 @@ def stackUse : Prog isa → Nat
   | .frame i b _ => stackUse b + frameBytes i
   | .icall _ _ b nx => max (stackUse b + 4) (stackUse nx)
 
+kernel_fn stackUse
+
 /-- The `n` bytes below `sp`. -/
 abbrev below (sp : BitVec 32) (n : Nat) : Region := ⟨(sp - BitVec.ofNat 32 n).setWidth 64, n⟩
 

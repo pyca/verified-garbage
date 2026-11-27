@@ -80,6 +80,8 @@ def taintMx : VG.Taint isa where
   pop := taintS.pop
   pop_sound _ h := by cases h
 
+kernel_fn VG.Taint.check taintMx
+
 theorem taintMx_step_mono {τ σ τ' : Taint.T} (i : Instr) (h : taintS.le τ σ = true)
     (hs : taintMx.step τ i = some τ') : ∃ σ', taintMx.step σ i = some σ' ∧ taintS.le τ' σ' = true := by
   obtain ⟨hl, hs⟩ := Taint.stepMx_eq hs
@@ -118,6 +120,8 @@ instance : LeFrame taintMx where
   ret_keeps := LeFrame.ret_keeps (A := taintS)
   push_keeps _ _ _ _ hs := by cases hs
   pop_keeps _ _ _ _ hs := by cases hs
+
+kernel_fn VG.Taint.checkSum taintMx, VG.Taint.checkSumLe taintMx, VG.Taint.keepsSum taintMx
 
 /-- What two runs end agreeing on, in `taintMx`, includes MXCSR. -/
 theorem taintMx_mx {s₁ s₂ : State} (h : ∃ τ, taintMx.Agree τ s₁ s₂) : s₁.mxcsr = s₂.mxcsr :=

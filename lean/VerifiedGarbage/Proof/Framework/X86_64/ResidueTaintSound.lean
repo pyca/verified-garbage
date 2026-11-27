@@ -2920,4 +2920,6 @@ def rtaint : VG.Taint isa where
   pop := popF
   pop_sound := pop_sound
 
+kernel_fn VG.Taint.check rtaint
+
 end VG.X86_64.RTaint

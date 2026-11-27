@@ -758,6 +758,8 @@ instance : VG.Taint.Frame taint where
       exact bit_erase (ne_of_dst rfl (hj j hb)) (RegSet.subset_iff.mp a₁ j hb)
     | _ => simp only [popStep, reduceCtorEq] at hs
 
+kernel_fn VG.Taint.checkSum taint, VG.Taint.checkSumLe taint, VG.Taint.keepsSum taint
+
 instance : VG.Taint.CodeEq isa := ⟨@VG.Taint.codeBeq Instr Cond _ _⟩
 
 end VG.X86

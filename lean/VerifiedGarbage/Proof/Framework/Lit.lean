@@ -386,25 +386,33 @@ section
 
 variable {α β : Type}
 
+noncomputable def andK (a b : Bool) : Bool := Bool.rec false b a
+noncomputable def orK (a b : Bool) : Bool := Bool.rec b true a
+noncomputable def condK {α : Type} (c : Bool) (x y : α) : α := Bool.rec y x c
+/-- `r z`. (What a recursor gives in tail position the kernel evaluates deeper in its
+stack, and what a function unfolds to it does not: a function that goes through a list
+goes on with its rest by this, or by one of those above, however long the list is.) -/
+noncomputable def nextK (r : α → β) (z : α) : β := r z
 noncomputable def appendK (a b : List α) : List α := List.rec b (fun x _ r => x :: r) a
 noncomputable def mapK (f : α → β) (a : List α) : List β := List.rec [] (fun x _ r => f x :: r) a
 noncomputable def flattenK (a : List (List α)) : List α := List.rec [] (fun x _ r => appendK x r) a
 noncomputable def flatMapK (f : α → List β) (a : List α) : List β := List.rec [] (fun x _ r => appendK (f x) r) a
+noncomputable def consSomeK (o : Option β) (r : List β) : List β := Option.rec r (fun y => y :: r) o
 noncomputable def filterMapK (f : α → Option β) (a : List α) : List β :=
-  List.rec [] (fun x _ r => Option.rec r (fun y => y :: r) (f x)) a
+  List.rec [] (fun x _ r => consSomeK (f x) r) a
 noncomputable def filterK (p : α → Bool) (a : List α) : List α :=
-  List.rec [] (fun x _ r => Bool.rec r (x :: r) (p x)) a
-noncomputable def anyK (a : List α) (p : α → Bool) : Bool := List.rec false (fun x _ r => Bool.rec r true (p x)) a
-noncomputable def allK (a : List α) (p : α → Bool) : Bool := List.rec true (fun x _ r => Bool.rec false r (p x)) a
+  List.rec [] (fun x _ r => condK (p x) (x :: r) r) a
+noncomputable def anyK (a : List α) (p : α → Bool) : Bool := List.rec false (fun x _ r => orK (p x) r) a
+noncomputable def allK (a : List α) (p : α → Bool) : Bool := List.rec true (fun x _ r => andK (p x) r) a
 noncomputable def foldlK (f : α → β → α) (z : α) (a : List β) : α :=
-  List.rec (motive := fun _ => α → α) (fun z => z) (fun x _ r z => r (f z x)) a z
+  List.rec (motive := fun _ => α → α) (fun z => z) (fun x _ r z => nextK r (f z x)) a z
 noncomputable def foldrK (f : α → β → β) (z : β) (a : List α) : β := List.rec z (fun x _ r => f x r) a
 noncomputable def reverseAuxK (a b : List α) : List α :=
-  List.rec (motive := fun _ => List α → List α) (fun b => b) (fun x _ r b => r (x :: b)) a b
+  List.rec (motive := fun _ => List α → List α) (fun b => b) (fun x _ r b => nextK r (x :: b)) a b
 noncomputable def concatK (a : List α) (y : α) : List α := List.rec [y] (fun x _ r => x :: r) a
 noncomputable def getOptK (a : List α) (i : Nat) : Option α :=
   List.rec (motive := fun _ => Nat → Option α) (fun _ => none)
-    (fun x _ r i => Nat.rec (some x) (fun j _ => r j) i) a i
+    (fun x _ r i => Nat.rec (some x) (fun j _ => nextK r j) i) a i
 noncomputable def getK (a : List α) (i : Fin a.length) : α :=
   List.rec (motive := fun a => (i : Nat) → i < a.length → α) (fun _ h => absurd h (Nat.not_lt_zero _))
     (fun x _ r i => Nat.rec (motive := fun i => i < _ → α) (fun _ => x) (fun j _ h => r j (Nat.lt_of_succ_lt_succ h)) i) a i.1 i.2
@@ -413,7 +421,7 @@ noncomputable def takeK (n : Nat) (a : List α) : List α :=
     (fun x _ r n => Nat.rec [] (fun m _ => x :: r m) n) a n
 noncomputable def dropK (n : Nat) (a : List α) : List α :=
   List.rec (motive := fun _ => Nat → List α) (fun _ => [])
-    (fun x t r n => Nat.rec (x :: t) (fun m _ => r m) n) a n
+    (fun x t r n => Nat.rec (x :: t) (fun m _ => nextK r m) n) a n
 noncomputable def setK (a : List α) (i : Nat) (y : α) : List α :=
   List.rec (motive := fun _ => Nat → List α) (fun _ => [])
     (fun x t r i => Nat.rec (y :: t) (fun j _ => x :: r j) i) a i
@@ -478,7 +486,7 @@ theorem chain8K_eq : chain8 = chain8K := by
 theorem filterMapK_eq : @List.filterMap.{0, 0} = @filterMapK := by
   funext α β f a; induction a with
   | nil => rfl
-  | cons x a ih => rw [List.filterMap_cons, ih]; simp only [filterMapK]; split <;> simp_all
+  | cons x a ih => rw [List.filterMap_cons, ih]; change _ = consSomeK (f x) (filterMapK f a); cases f x <;> rfl
 theorem filterK_eq : @List.filter.{0} = @filterK := by
   funext α p a; induction a with
   | nil => rfl
@@ -585,8 +593,18 @@ def iteBool (α : Type) (c : Bool) (x y : α) : α := ite (c = true) x y
 noncomputable def iteBoolK (α : Type) (c : Bool) (x y : α) : α := Bool.rec y x c
 theorem iteBoolK_eq : iteBool = iteBoolK := by
   funext α c x y; cases c <;> rfl
-noncomputable def andK (a b : Bool) : Bool := Bool.rec false b a
-noncomputable def orK (a b : Bool) : Bool := Bool.rec b true a
+noncomputable def notK (a : Bool) : Bool := Bool.rec true false a
+theorem notK_eq : not = notK := by funext a; cases a <;> rfl
+theorem condK_eq : @cond.{1} = @condK := by funext α c x y; cases c <;> rfl
+noncomputable def bindK {α β : Type} (o : Option α) (f : α → Option β) : Option β := Option.rec none f o
+theorem bindK_eq : @Option.bind.{0, 0} = @bindK := by funext α β o f; cases o <;> rfl
+noncomputable def optMapK {α β : Type} (f : α → β) (o : Option α) : Option β :=
+  Option.rec none (fun x => some (f x)) o
+theorem optMapK_eq : @Option.map.{0, 0} = @optMapK := by funext α β f o; cases o <;> rfl
+noncomputable def getDK {α : Type} (o : Option α) (d : α) : α := Option.rec d (fun x => x) o
+theorem getDK_eq : @Option.getD.{0} = @getDK := by funext α o d; cases o <;> rfl
+noncomputable def isSomeK {α : Type} (o : Option α) : Bool := Option.rec false (fun _ => true) o
+theorem isSomeK_eq : @Option.isSome.{0} = @isSomeK := by funext α o; cases o <;> rfl
 theorem andK_eq : and = andK := by funext a b; cases a <;> rfl
 theorem orK_eq : or = orK := by funext a b; cases a <;> rfl
 
@@ -610,7 +628,15 @@ meta def kernelPrims : List (Name × Name × Name) :=
     (``iteLt, ``iteLtK, ``iteLtK_eq), (``iteLe, ``iteLeK, ``iteLeK_eq),
     (``iteBool, ``iteBoolK, ``iteBoolK_eq), (``decideEq, ``Nat.beq, ``decideEq_eq),
     (``decideLt, ``ltK, ``decideLt_eq), (``decideLe, ``Nat.ble, ``decideLe_eq),
-    (``beqNat, ``Nat.beq, ``beqNat_eq), (``and, ``andK, ``andK_eq), (``or, ``orK, ``orK_eq)]
+    (``beqNat, ``Nat.beq, ``beqNat_eq), (``and, ``andK, ``andK_eq), (``or, ``orK, ``orK_eq),
+    (``not, ``notK, ``notK_eq), (``cond, ``condK, ``condK_eq), (``Option.bind, ``bindK, ``bindK_eq),
+    (``Option.map, ``optMapK, ``optMapK_eq), (``Option.getD, ``getDK, ``getDK_eq),
+    (``Option.isSome, ``isSomeK, ``isSomeK_eq)]
+
+/-- Whether `ls` are the levels at which a function of `kernelPrims` has one
+for the kernel. -/
+meta def primLevels (n : Name) (ls : List Level) : Bool :=
+  ls.all (· == if n == ``cond then Level.one else .zero)
 
 /-- The function of `Nat` the kernel computes with that a notation is. -/
 meta def natOps : List (Name × Name) :=
@@ -774,7 +800,7 @@ meta partial def kernelConst (look : Name → Bool) (c : Expr) : KernelM (Option
   let .const n ls := c | return none
   let r ← do
     if let some (_, c', p) := kernelPrims.find? (·.1 == n) then
-      pure (if ls.all (· == .zero) then some (mkConst c', mkConst p) else none)
+      pure (if primLevels n ls then some (mkConst c', mkConst p) else none)
     else
       let env ← getEnv
       if n matches .str _ "lit" then return none
@@ -833,6 +859,331 @@ evaluating `litTerm` of `v`. -/
 meta def litProof (N : Name) (ty v : Expr) : MetaM Expr := (·.2) <$> litTerm N ty v
 
 end Kernel
+
+/-! ### Analyses in terms the kernel evaluates cheaply
+
+A check the kernel evaluates at every instruction of every function (the
+taint analyses, `Code.allInstrs`, …) is a tower of wrappers: a matcher unfolds
+to `casesOn`, that to the recursor; `cond`, `&&` and `Option.bind` are
+matchers; `check` takes the analysis as an argument, a structure whose `step` it
+projects at every instruction. `kernel_fn f` declares, once, the function `f`
+(a closed term: a function applied to the analysis it is of,
+`Taint.check taint`) with all of these unfolded, all the way down
+(`specialTerm`), and that it is `f`, which the kernel checks by unfolding the
+two; `kernel_rw`, which `lit_decide` runs, rewrites `f` in a goal to it. Nothing
+else changes: what is evaluated, and in what order, are the function's own. -/
+
+/-- Whether `n` only wraps a recursor: a matcher or a `casesOn`. (`&&`,
+`Option.bind`, … are `kernelPrims`, functions of their own.) -/
+meta def isWrapper (env : Environment) (n : Name) : Bool :=
+  Lean.Meta.isMatcherCore env n || isCasesOnRecursor env n ||
+    (match n with | .str _ s => s.startsWith "_sparseCasesOn" | _ => false)
+
+/-- The size of `e` as a tree, up to `lim`. -/
+meta def treeSize (e : Expr) (lim : Nat) : Nat := Id.run do
+  let mut stack := [e]
+  let mut n := 0
+  while n < lim do
+    match stack with
+    | [] => return n
+    | x :: rest =>
+      n := n + 1
+      stack := match x with
+        | .app f a => f :: a :: rest
+        | .lam _ _ b _ | .mdata _ b | .proj _ _ b => b :: rest
+        | .letE _ _ v b _ => v :: b :: rest
+        | _ => rest
+  return n
+
+/-- `e` with its beta redexes reduced. -/
+meta partial def betaAll (e : Expr) : Expr :=
+  e.replace fun t => if t.isHeadBetaTarget then some (betaAll t.headBeta) else none
+
+/-- `e` with the wrappers unfolded, where that does not copy much (a matcher's
+alternative that several constructors share). The state is the wrappers'
+values, so unfolded. -/
+meta partial def unfoldWrappers (env : Environment) (e : Expr) : StateM (NameMap Expr) Expr := do
+  match e with
+  | .app .. =>
+    let f := e.getAppFn
+    let args ← e.getAppArgs.mapM (unfoldWrappers env)
+    match f with
+    | .const n ls =>
+      let e' := mkAppN f args
+      unless isWrapper env n do return e'
+      let some (.defnInfo d) := env.find? n | return e'
+      if args.size < d.value.getNumHeadLambdas then return e'
+      let v ← match (← get).find? n with
+        | some v => pure v
+        | none => do
+          let v ← unfoldWrappers env d.value
+          modify (·.insert n v)
+          pure v
+      let r := betaAll ((v.instantiateLevelParams d.levelParams ls).beta args)
+      return if treeSize r 4000 ≤ 2 * treeSize e' 4000 + 60 then r else e'
+    | .lam .. => unfoldWrappers env (f.beta e.getAppArgs)
+    | _ => return mkAppN (← unfoldWrappers env f) args
+  | .lam n t b bi => return .lam n t (← unfoldWrappers env b) bi
+  | .letE n t v b nd => return .letE n t (← unfoldWrappers env v) (← unfoldWrappers env b) nd
+  | .mdata _ b => unfoldWrappers env b
+  | .proj s i b => return .proj s i (← unfoldWrappers env b)
+  | _ => return e
+
+/-- Whether `specialConst` unfolds `c`: the project's definitions but the
+specifications', and core's functions of lists and options. -/
+meta def specialLooks (env : Environment) (mods : Array Name) (c : Name) : Bool :=
+  if c == ``List.length || c == ``Array.size || (c matches .str _ "ctorIdx") || (c matches .str _ "lit") then false
+  else if c.getRoot ∈ [`List, `Option, `Prod] then true
+  else match env.getModuleIdxFor? c with
+    | none => true
+    | some i => match mods[i.toNat]?.map (·.components) with
+      | some (`VerifiedGarbage :: k :: _) => k ∈ [`Impl, `Proof, `TCB]
+      | _ => false
+
+/-- The structures of functions a check takes as an argument. -/
+meta def staticTypes : List Name := [`VG.ISA, `VG.Taint, `VG.TaintCT]
+
+/-- For each parameter of the constant `n`, whether `specialConst` specializes
+the function to it: an analysis or an instance (`some true`), or a function,
+if it is a constant (`some false`). -/
+meta def staticParams (n : Name) : MetaM (Array (Option Bool)) := do
+  let mut ty := (← getConstInfo n).type
+  let mut out := #[]
+  while true do
+    match ty with
+    | .forallE _ d b bi =>
+      out := out.push <|
+        if bi.isInstImplicit || staticTypes.any (d.isAppOf ·) then some true
+        else if d.isForall && bi.isExplicit then some false else none
+      ty := b
+    | _ => break
+  return out
+
+/-- A projection of an analysis (`Taint.step A`) or of an instance, in `e`,
+reduced to the field. -/
+meta def reduceStatic (e : Expr) : MetaM Expr :=
+  Core.transform e (post := fun x => do
+    let .const n _ := x.getAppFn | return .done x
+    let .str S _ := n | return .done x
+    unless S ∈ [`VG.Taint, `VG.TaintCT] || (S.getRoot == `VG && isClass (← getEnv) S) do return .done x
+    let some p ← getProjectionFnInfo? n | return .done x
+    -- (Not the type of the taints.)
+    if (← getConstInfo n).type.getForallBody.isSort then return .done x
+    let args := x.getAppArgs
+    if args.size ≤ p.numParams then return .done x
+    let a := args[p.numParams]!
+    if a.hasLooseBVars then return .done x
+    let s ← whnfD a
+    unless s.isAppOf p.ctorName do return .done x
+    let v := s.getArg! (p.numParams + p.i)
+    return .visit (v.beta (args.extract (p.numParams + 1) args.size)))
+
+/-- What `specialTerm` has found for each function (applied to the analysis
+it is of): the function to use in its place and the proof that they are equal. -/
+meta structure Special where
+  found : Std.HashMap Expr (Option (Expr × Expr)) := {}
+  params : NameMap (Array (Option Bool)) := {}
+  wrappers : NameMap Expr := {}
+
+meta abbrev SpecialM := StateT Special MetaM
+
+/-- What `t` may be a function of: `f a₁ … aₖ`, with `aₖ` the last of the
+static arguments (`staticParams`) before any that is not closed, or of those
+before it, longest first; and `f`. -/
+meta def functionsOf (t : Expr) : SpecialM (List Expr) := do
+  let .const n _ := t.getAppFn | return []
+  if kernelPrims.any (·.1 == n) then return [t.getAppFn]
+  let ps ← match (← get).params.find? n with
+    | some ps => pure ps
+    | none => do
+      let ps ← staticParams n
+      modify fun s => { s with params := s.params.insert n ps }
+      pure ps
+  let args := t.getAppArgs
+  let mut out := [t.getAppFn]
+  for h : i in [0:args.size] do
+    if args[i].hasLooseBVars then break
+    if let some (some any) := ps[i]? then
+      if any || args[i].isConst then out := mkAppN t.getAppFn (args.extract 0 (i + 1)) :: out
+  return out
+
+/-- The last component of the name of the function that `kernel_fn` declares
+for `c`, the same in every module. -/
+meta def functionName (c : Expr) : Name :=
+  (c.getAppArgs.foldl (fun N a => match a.getAppFn with
+    | .const n _ => if n == ``List.nil then N else N ++ n
+    | _ => N) c.getAppFn.constName!) ++ `kernel
+
+/-- The function declared for `c` by a `kernel_fn` of this module, of one that
+defines a function or an argument of `c`, or of `Framework/Taint.lean`. -/
+meta def declared? (mods : Array Name) (c : Expr) : MetaM (Option (Expr × Expr)) := do
+  let env ← getEnv
+  let mut tried : List Name := []
+  for h in (c.getAppFn :: c.getAppArgs.toList.map (·.getAppFn)) do
+    let .const n _ := h | continue
+    let mod := match env.getModuleIdxFor? n with
+      | some i => mods[i.toNat]!
+      | none => env.mainModule
+    if tried.contains mod then continue
+    tried := mod :: tried
+    if let some r ← declaredIn? mod c then return some r
+  for mod in [env.mainModule, `VerifiedGarbage.Proof.Framework.Taint] do
+    unless tried.contains mod do
+      if let some r ← declaredIn? mod c then return some r
+  return none
+where
+  declaredIn? (mod : Name) (c : Expr) : MetaM (Option (Expr × Expr)) := do
+    let N := `VG.KernelFn ++ mod ++ functionName c
+    let some info := (← getEnv).find? (N ++ `eq) | return none
+    let (xs, _, ty) ← forallMetaTelescope info.type
+    let some (_, lhs, _) := ty.eq? | return none
+    unless lhs == c || (!xs.isEmpty && (← withReducible (isDefEq lhs c))) do return none
+    let xs ← xs.mapM instantiateMVars
+    return some (mkAppN (mkConst N) xs, mkAppN (mkConst (N ++ `eq)) xs)
+
+mutual
+
+/-- For a term `e`, the term with the wrappers in it unfolded, if `unfold`, and the
+functions that `specialConst` has another for replaced by it, and a proof that they are
+equal. -/
+meta partial def specialTerm (mods : Array Name) (e : Expr) (unfold : Bool) :
+    SpecialM (Option (Expr × Expr)) := do
+  let env ← getEnv
+  let e₁ ← reduceStatic (unfoldNotation e)
+  let e₁ ← if unfold then
+    let (e₁, ws) := (unfoldWrappers env e₁).run (← get).wrappers
+    modify fun s => { s with wrappers := ws }
+    pure e₁
+  else pure e₁
+  replaceFunctions (specialConst mods) e e₁
+
+/-- `e₁`, which is `e` by unfolding, with the functions in it replaced by those
+that `find` gives, and a proof that it is equal to `e`. -/
+meta partial def replaceFunctions (find : Expr → SpecialM (Option (Expr × Expr))) (e e₁ : Expr) :
+    SpecialM (Option (Expr × Expr)) := do
+  let mut items : Array (Expr × Expr × Expr) := #[]
+  let mut seen : Std.HashSet Expr := {}
+  let mut keys : Std.HashSet Expr := {}
+  let mut stack := #[e₁]
+  while !stack.isEmpty do
+    let t := stack.back!
+    stack := stack.pop
+    if seen.contains t then continue
+    seen := seen.insert t
+    match t with
+    | .app .. | .const .. =>
+      for c in ← functionsOf t do
+        if keys.contains c then
+          if items.any (·.1 == c) then break else continue
+        keys := keys.insert c
+        if let some it ← find c then
+          items := items.push (c, it)
+          break
+      unless t.getAppFn.isConst do stack := stack.push t.getAppFn
+      stack := stack ++ t.getAppArgs
+    | .lam _ _ b _ | .mdata _ b | .proj _ _ b => stack := stack.push b
+    | .letE _ _ v b _ => stack := (stack.push v).push b
+    | _ => pure ()
+  if items.isEmpty && e₁ == e then return none
+  let k := items.size
+  let idx : Std.HashMap Expr Nat := items.zipIdx.foldl (fun m ((c, _), i) => m.insert c i) {}
+  let heads : NameSet := items.foldl (fun s (c, _) => s.insert c.getAppFn.constName!) {}
+  let rec put (f : Nat → Expr) (t : Expr) : Expr := t.replace fun t =>
+    match t.getAppFn with
+    | .const n _ =>
+      if !heads.contains n then none else
+        let args := t.getAppArgs
+        (List.range (args.size + 1)).findSome? fun j =>
+          (idx[mkAppN t.getAppFn (args.extract 0 (args.size - j))]?).map fun i =>
+            mkAppN (f i) ((args.extract (args.size - j) args.size).map (put f))
+    | _ => none
+  let tys ← items.mapM fun (c, _, _) => inferType c
+  let xs ← (Array.range k).mapM fun _ => mkFVar <$> mkFreshFVarId
+  let F := tys.foldr (fun ty b => Expr.lam `x ty b .default) ((put (xs[·]!) e₁).abstract xs)
+  let ety ← inferType e
+  let u ← getLevel ety
+  let mut l := F
+  let mut r := F
+  let mut prf := mkApp2 (mkConst ``Eq.refl [u]) ety e
+  for i in [0:k] do
+    let (c, c', p) := items[i]!
+    let B := (tys.extract (i + 1) k).foldr (fun ty b => mkForall `x .default ty b) ety
+    let v ← getLevel tys[i]!
+    let w ← getLevel B
+    prf := if i == 0 then mkApp6 (mkConst ``congrArg [v, w]) tys[i]! B c c' F p
+      else mkAppN (mkConst ``congr [v, w]) #[tys[i]!, B, l, r, c, c', prf, p]
+    l := mkApp l c
+    r := mkApp r c'
+  return some (put (fun i => (items[i]!).2.1) e₁, prf)
+
+/-- The function to use in place of `c`, and the proof that they are equal:
+one that core's lists have (`kernelPrims`), one that a `kernel_fn` declared, or
+one declared here. -/
+meta partial def specialConst (mods : Array Name) (c : Expr) : SpecialM (Option (Expr × Expr)) := do
+  if let some r := (← get).found[c]? then return r
+  modify fun s => { s with found := s.found.insert c none }
+  let r ← specialConst' mods c
+  modify fun s => { s with found := s.found.insert c r }
+  return r
+
+/-- `specialConst` of `c` that is met the first time. -/
+meta partial def specialConst' (mods : Array Name) (c : Expr) : SpecialM (Option (Expr × Expr)) := do
+  let .const n ls := c.getAppFn | return none
+  if c.isConst then
+    if let some (_, c', p) := kernelPrims.find? (·.1 == n) then
+      return if primLevels n ls then some (mkConst c', mkConst p) else none
+  let env ← getEnv
+  let mod ← getMainModule
+  if let some r ← declared? mods c then return some r
+  unless specialLooks env mods n && !isWrapper env n do return none
+  let some (.defnInfo d) := env.find? n | return none
+  if ls.any (·.hasParam) || (← isProjectionFn n) then return none
+  let ty ← inferType c
+  if ty.getForallBody.isSort || staticTypes.any (ty.getForallBody.isAppOf ·) then return none
+  if ← forallTelescope ty fun _ b => isProp b then return none
+  if ← hasProofFields ty.getForallBody.getAppFn then return none
+  let value := (d.value.instantiateLevelParams d.levelParams ls).beta c.getAppArgs
+  -- (Not the wrappers in a recursion, which may be over a list as long as a function's code:
+  -- what a recursor gives in tail position the kernel evaluates deeper in its stack, and
+  -- what a function unfolds to it does not.)
+  let recursive := (n matches .str _ "_f") || (value.find? fun t =>
+    t.isConst && (t.isConstOf ``List.rec || t.constName! matches .str _ "brecOn")).isSome
+  let some (v, p) ← specialTerm mods value !recursive | return none
+  let N := `VG.KernelFn ++ mod ++ functionName c
+  if (← getEnv).contains N then return none
+  let xs := (collectFVars {} c).fvarIds.map mkFVar
+  let cN := mkAppN (mkConst N) xs
+  let eq := mkApp3 (mkConst ``Eq [← getLevel ty]) ty c cN
+  declareOr none do
+    addDecl (forceExpose := true) <| .defnDecl { d with
+      name := N, levelParams := [], type := ← mkForallFVars xs ty, value := ← mkLambdaFVars xs v, all := [N] }
+    addDecl <| .thmDecl {
+      name := N ++ `eq, levelParams := [], type := ← mkForallFVars xs eq, value := ← mkLambdaFVars xs p }
+    return some (cN, mkAppN (mkConst (N ++ `eq)) xs)
+
+end
+
+/-- `kernel_fn f₁, f₂, …` declares each function `f` (or, for `f` that depends on
+`x`, `fun x => f`) as the kernel evaluates it cheaply (see above). -/
+elab "kernel_fn " ts:term,+ : command => liftTermElabM do
+  let mods := (← getEnv).header.moduleNames
+  for t in ts.getElems do
+    let e ← instantiateMVars (← Term.elabTermAndSynthesize t none)
+    if e.hasMVar then throwError "kernel_fn: {e} is not closed"
+    lambdaTelescope e fun _ b => do
+      if (← (specialConst mods b).run' {}).isNone then throwError "kernel_fn: {b} has nothing to unfold"
+
+open Tactic in
+/-- Rewrites the functions of the goal with a `kernel_fn` to it. -/
+elab "kernel_rw" : tactic => withMainContext do
+  let g ← getMainGoal
+  let tgt ← instantiateMVars (← g.getType)
+  let mods := (← getEnv).header.moduleNames
+  let find (c : Expr) : SpecialM (Option (Expr × Expr)) := do
+    if c.hasFVar || c.hasMVar then return none
+    declared? mods c
+  let some (tgt', p) ← (replaceFunctions find tgt tgt).run' {} | return
+  replaceMainGoal [← g.replaceTargetEq tgt' p]
 
 /-! ### Templates
 
@@ -1407,7 +1758,8 @@ elab "rw_lit" : tactic => withMainContext do
     replaceMainGoal [← g.replaceTargetEq (tgt.replace fun t => if t == s then some s' else none) eqPrf]
 
 /-- `decide +kernel`, after rewriting the code constants of the goal to their
-literals (`rw_lit`). -/
-macro "lit_decide" : tactic => `(tactic| (rw_lit; decide +kernel))
+literals (`rw_lit`) and its functions to those the kernel evaluates cheaply
+(`kernel_rw`). -/
+macro "lit_decide" : tactic => `(tactic| (rw_lit; kernel_rw; decide +kernel))
 
 end VG

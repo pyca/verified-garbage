@@ -366,6 +366,8 @@ instance : VG.Taint.LeFrame taint where
         (le_iff.mp hΦ).2⟩
     · exact hΦ
 
+kernel_fn VG.Taint.checkSum taint, VG.Taint.checkSumLe taint, VG.Taint.keepsSum taint
+
 end AArch64.VectorTaint
 
 /-- Equality of AArch64 code, for summaries of code that is not a call. -/

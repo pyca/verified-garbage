@@ -216,6 +216,8 @@ def rtaintB : VG.TaintCT isa where
   pop _ _ := none
   pop_sound _ hs := nomatch hs
 
+kernel_fn VG.TaintCT.check rtaintB
+
 namespace RTaintB
 
 def init : T := (RTaintL.init, [])
