@@ -193,4 +193,10 @@ theorem verify (v : Permutation) :
         (Proof.Ed448.AArch64.Sparse.verified_eqOk Proof.Ed448.recover_ok) }
     _ Scrub.verifyOk (Scrub.verify_side v)
 
+-- The registrations' elaborator would otherwise unfold the functions, with what they
+-- call, to unify `Fn.publicKey ?c` with `Fn.publicKey v.callee` before it knows `v`.
+set_option allowUnsafeReducibility true in
+attribute [irreducible] Impl.Ed448.AArch64.Fn.publicKey Impl.Ed448.AArch64.Fn.signCached
+  Impl.Ed448.AArch64.Fn.verify
+
 end VG.Proof.Ed448.AArch64.Fn
