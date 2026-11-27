@@ -420,8 +420,10 @@ noncomputable def setK (a : List α) (i : Nat) (y : α) : List α :=
 noncomputable def replicateK (n : Nat) (x : α) : List α := Nat.rec [] (fun _ r => x :: r) n
 noncomputable def zipIdxK (a : List α) (n : Nat) : List (α × Nat) :=
   List.rec (motive := fun _ => Nat → List (α × Nat)) (fun _ => []) (fun x _ r n => (x, n) :: r (Nat.add n 1)) a n
-noncomputable def rangeLoopK (n : Nat) (a : List Nat) : List Nat :=
-  Nat.rec (motive := fun _ => List Nat → List Nat) (fun a => a) (fun m r a => r (m :: a)) n a
+noncomputable def rangeFromK (n k : Nat) : List Nat :=
+  Nat.rec (motive := fun _ => Nat → List Nat) (fun _ => []) (fun _ r k => k :: r (Nat.add k 1)) n k
+-- (Not `List.range.loop`, whose accumulator is a recursion as deep as the list is long.)
+noncomputable def rangeK (n : Nat) : List Nat := rangeFromK n 0
 end
 
 /-! Each is the function it is for. -/
@@ -524,8 +526,10 @@ theorem zipIdxK_eq : @List.zipIdx.{0} = @zipIdxK := by
   funext α a n; induction a generalizing n with
   | nil => rfl
   | cons x a ih => exact congrArg (List.cons (x, n)) (ih _)
-theorem rangeLoopK_eq : @List.range.loop = @rangeLoopK := by
-  funext n a; induction n generalizing a with | zero => rfl | succ n ih => exact ih _
+theorem rangeFromK_eq (n k : Nat) : rangeFromK n k = List.range' k n := by
+  induction n generalizing k with | zero => rfl | succ n ih => exact congrArg (List.cons k) (ih _)
+theorem rangeK_eq : List.range = rangeK := by
+  funext n; rw [rangeK, rangeFromK_eq, List.range_eq_range']
 
 /-! Conditionals on the comparison of `Nat`s, and on a `Bool`. -/
 
@@ -601,7 +605,7 @@ meta def kernelPrims : List (Name × Name × Name) :=
     (``List.get?Internal, ``getOptK, ``getOptK_eq),
     (``List.get, ``getK, ``getK_eq), (``List.take, ``takeK, ``takeK_eq), (``List.drop, ``dropK, ``dropK_eq),
     (``List.set, ``setK, ``setK_eq), (``List.replicate, ``replicateK, ``replicateK_eq),
-    (``List.zipIdx, ``zipIdxK, ``zipIdxK_eq), (``List.range.loop, ``rangeLoopK, ``rangeLoopK_eq),
+    (``List.zipIdx, ``zipIdxK, ``zipIdxK_eq), (``List.range, ``rangeK, ``rangeK_eq),
     (``diteEq, ``diteEqK, ``diteEqK_eq), (``iteEq, ``iteEqK, ``iteEqK_eq),
     (``iteLt, ``iteLtK, ``iteLtK_eq), (``iteLe, ``iteLeK, ``iteLeK_eq),
     (``iteBool, ``iteBoolK, ``iteBoolK_eq), (``decideEq, ``Nat.beq, ``decideEq_eq),
@@ -782,6 +786,8 @@ meta partial def kernelConst (look : Name → Bool) (c : Expr) : KernelM (Option
         if d.type.getForallBody.isProp || ls.any (·.hasParam) then return none
         -- (Code in a structure with proofs about it: the proofs are of the code as it is.)
         if ← hasProofFields d.type.getForallBody.getAppFn then return none
+        -- (The kernel would compare two closed numbers by evaluating both.)
+        if d.type.isConstOf ``Nat then return none
         let type := d.type.instantiateLevelParams d.levelParams ls
         let some (v, p) ← kernelTerm look (d.value.instantiateLevelParams d.levelParams ls) | return none
         declareOr none do
@@ -802,6 +808,8 @@ meta def forKernel (N : Name) (ty e : Expr) (stop : Array Name := #[]) : MetaM (
   let mods := env.header.moduleNames
   let u ← getLevel ty
   let refl := (e, mkApp2 (mkConst ``Eq.refl [u]) ty e)
+  -- (The kernel would compare two closed numbers by evaluating both.)
+  if ty.isConstOf ``Nat then return refl
   let some (e', q) ← (kernelTerm (fun c => kernelLooks env mods c && !stop.contains c) e).run' {}
     | return refl
   let name := mkPrivateName env (N ++ `kernel_eq)
