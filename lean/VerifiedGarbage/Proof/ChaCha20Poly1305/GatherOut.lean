@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Spec.ChaCha20Poly1305.OutOfPlace
 import VerifiedGarbage.Proof.ChaCha20Poly1305.Scratch
 import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # `vg_chacha20_poly1305_seal_gather`'s postcondition reads the memory on return only within its outputs

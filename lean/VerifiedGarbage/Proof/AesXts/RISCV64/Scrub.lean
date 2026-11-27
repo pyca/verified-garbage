@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Impl.Aes.RISCV64.Fn
 public import VerifiedGarbage.Proof.AesXts.RISCV64.Unit.Verified
 import VerifiedGarbage.Proof.Aes.ScrubLocal
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # XTS-AES on RISC-V, without secret residue

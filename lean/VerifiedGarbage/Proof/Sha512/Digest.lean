@@ -11,6 +11,7 @@ import Std.Data.DTreeMap.Internal.Operations
 import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.Scratch
 import VerifiedGarbage.Proof.Sha512.Stream
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # The truncated digests of the SHA-512 family, from the hash value in memory

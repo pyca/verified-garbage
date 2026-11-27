@@ -4,6 +4,7 @@ public import VerifiedGarbage.Spec.Argon2.Contract
 public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.ForallLength
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # Argon2 on x86-64, without secret residue

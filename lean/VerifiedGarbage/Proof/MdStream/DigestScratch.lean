@@ -4,6 +4,7 @@ public import VerifiedGarbage.Spec.Sha256.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Sha256.Stream
+import VerifiedGarbage.Proof.Framework.Contract
 
 -- separate module: target-independent, for every target whose digest keeps its working space in a wiped frame
 

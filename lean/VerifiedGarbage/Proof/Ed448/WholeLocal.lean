@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.Framework.Scratch
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.TCB.Sig
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # Ed448's whole functions: their contracts read only their buffers

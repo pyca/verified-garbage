@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Blake2.Stream
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.InstancePriority
 import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # BLAKE2's streaming postconditions read memory only within the buffers

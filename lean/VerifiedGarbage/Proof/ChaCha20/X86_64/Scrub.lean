@@ -11,6 +11,7 @@ public import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.ChaCha20.ScrubLocal
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ChaCha20's `apply` without secret residue (x86-64)

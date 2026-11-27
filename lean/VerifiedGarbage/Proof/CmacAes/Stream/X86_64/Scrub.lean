@@ -12,6 +12,7 @@ public import VerifiedGarbage.Proof.Framework.X86_64.Registration
 public import VerifiedGarbage.Proof.CmacAes.Stream.X86_64.Frame
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # Streaming AES-CMAC on x86-64, without secret residue

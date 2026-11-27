@@ -4,6 +4,7 @@ public import VerifiedGarbage.Spec.Sm3.Contract
 import VerifiedGarbage.Proof.Sm3.Stream
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # SM3's postconditions read only their buffers
