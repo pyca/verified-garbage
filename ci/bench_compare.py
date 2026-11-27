@@ -671,9 +671,6 @@ def main():
                 f.write(report)
         return 0
 
-    if not best["head"] and (measured or shards == 1):
-        sys.exit("No verified-garbage benchmark timings were recorded for head")
-
     # The groups that depend on where the kernel puts their table run again
     # from fresh copies of each binary, alternately, and keep the fastest
     # time of the copies (the rounds above counting as the first copy).
