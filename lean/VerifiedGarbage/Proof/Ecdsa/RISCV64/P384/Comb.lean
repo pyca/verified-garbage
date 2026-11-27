@@ -485,7 +485,7 @@ theorem scans_ok {base T : Addr} {j t : Nat} (hj : j < 55) : ∀ n ≤ 12, ∀ {
 
 theorem comb7_len : Impl.P384.p384Comb7.length = 55 := by decide
 
-theorem comb7_lenH : ∀ j < 55, (Impl.P384.p384Comb7.getD j []).length = 64 := by decide
+theorem comb7_lenH : ∀ j < 55, (Impl.P384.p384Comb7.getD j []).length = 64 := by decide +kernel
 
 /-- `x R mod p`. -/
 abbrev montP (x : Nat) : Nat := x * 2 ^ 384 % Spec.P384.curve.p

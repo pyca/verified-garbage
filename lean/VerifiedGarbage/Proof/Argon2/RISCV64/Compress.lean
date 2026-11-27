@@ -376,7 +376,7 @@ def sreg (i : Nat) : Reg :=
   if h : i < 16 then lane ⟨i, h⟩ else if i = 16 then .t5 else if i = 17 then .t6 else .s5
 
 theorem sreg_inj {i j : Nat} (hi : i < 19) (hj : j < 19) (h : sreg i = sreg j) : i = j := by
-  have key : ∀ i < 19, ∀ j < 19, sreg i = sreg j → i = j := by decide
+  have key : ∀ i < 19, ∀ j < 19, sreg i = sreg j → i = j := by decide +kernel
   exact key i hi j hj h
 
 theorem sreg_lane (j : Fin 16) : sreg j.1 = lane j := by simp [sreg, j.2]
@@ -631,8 +631,8 @@ theorem permute_code :
 theorem roundOps_fold (x : Nat → Word) :
     words (stepAll x (roundOps ncolumns ++ roundOps ndiagonals)) =
       alines (roundLines ncolumns ++ roundLines ndiagonals) (words x) := by
-  rw [osame_ok (l := linesOps (roundLines ncolumns ++ roundLines ndiagonals)) (by decide) x]
-  exact linesOps_words _ x (by decide)
+  rw [osame_ok (l := linesOps (roundLines ncolumns ++ roundLines ndiagonals)) (by decide +kernel) x]
+  exact linesOps_words _ x (by decide +kernel)
 
 theorem roundOps_valid : (roundOps ncolumns ++ roundOps ndiagonals).all Op.Valid = true := by
   rw [List.all_append, Bool.and_eq_true]

@@ -486,7 +486,7 @@ theorem checkKept_len (c : Cfg) : (Impl.Ecdh.AArch64.Cfg.checkKept c).length ≤
 /-- Every callee-saved register is either one the operations keep or one the function keeps. -/
 theorem checkKept_pres (hc : BaseCfgOk c) : ∀ r ∈ preserved, r ∉ clob c.n ∨ r ∈ Impl.Ecdh.AArch64.Cfg.checkKept c := by
   obtain key : ∀ n < 10, ∀ r ∈ preserved, r ∉ clob n ∨
-      r ∈ (if 7 ≤ n then [Reg.x21, .x22, .x23, .x24, .x25] else []) := by decide
+      r ∈ (if 7 ≤ n then [Reg.x21, .x22, .x23, .x24, .x25] else []) := by decide +kernel
   exact key c.n hc.n10
 
 /-- The function: what `checkBody` does, its callee-saved registers restored. -/

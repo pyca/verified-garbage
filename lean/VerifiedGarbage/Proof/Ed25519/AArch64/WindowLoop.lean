@@ -319,7 +319,7 @@ def mask15 : BitVec 128 := ofVBytes fun _ => (((15 : BitVec 16).setWidth 64).set
 
 private theorem nib_byte : ∀ b : BitVec 8,
     (b &&& ((15 : BitVec 16).setWidth 64).setWidth 8).toNat = b.toNat % 16 ∧
-    (VShiftOp.ushr.eval 4 8 0 b).toNat = b.toNat / 16 := by decide
+    (VShiftOp.ushr.eval 4 8 0 b).toNat = b.toNat / 16 := by decide +kernel
 
 /-- The nibbles of `x`'s byte `e / 2`, interleaved, low nibble first. -/
 theorem nib_lanes (x : BitVec 128) (v1 : BitVec 128) {e : Nat} (he : e < 32) :
@@ -935,7 +935,7 @@ theorem skipStore_ok {s : State} {base : Addr} (hs : Scr s base) (n : Nat)
   · rw [RegUpd.mem_write]; exact writeW_outside _ _ _ (by decide)
 
 private theorem byte_nonzero : ∀ b : BitVec 8,
-    (BitVec.ofNat 64 b.toNat != 0) = decide (b.toNat ≠ 0) := by decide
+    (BitVec.ofNat 64 b.toNat != 0) = decide (b.toNat ≠ 0) := by decide +kernel
 
 theorem movzZero_ok (s : State) :
     WP isa (.block [.movz .w .x19 0 0]) s fun t => eval (.nonzero .x .x19) t = some false ∧

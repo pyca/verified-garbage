@@ -347,14 +347,14 @@ theorem entries_succ (n : Nat) : entries (n+1)=entries n ++ dsts (n+1) := by
 theorem dst_slot {Sl : Nat → Prop} (hs : ∀ x∈buildSlots,Sl x) {m j : Nat} (hm : 1≤m) (hm8 : m≤8)
     (hj : j<5) : Sl (dst m j) := by
   apply hs
-  have h : ∀ a<8,∀ j<5,dst (a+1) j∈buildSlots := by decide
+  have h : ∀ a<8,∀ j<5,dst (a+1) j∈buildSlots := by decide +kernel
   have := h (m-1) (by omega_using [hm8]) j hj
   rwa [show m-1+1=m by omega_using [hm]] at this
 
 theorem entries_obs {n : Nat} (hn : n≤9) {x : Nat} (hx : x∈entries n) (d : Bool) :
     ∀ i<4,observe d (x+8*i) := by
   obtain ⟨a,ha,j,hj,rfl⟩ := mem_entries.mp hx
-  have h : ∀ d : Bool,∀ a<9,∀ j<5,∀ i<4,observe d (dst (a+1) j+8*i) := by decide
+  have h : ∀ d : Bool,∀ a<9,∀ j<5,∀ i<4,observe d (dst (a+1) j+8*i) := by decide +kernel
   exact h d a (by omega_using [hn, ha]) j hj
 
 theorem store_frame {base : Addr} {s t : State} {m : Nat} (hm : 1≤m) (hm8 : m≤8)
@@ -629,7 +629,7 @@ theorem dst_tblW {a j : Nat} (ha : 1≤a) (ha9 : a≤9) (hj : j<5) : dst a j∉t
 
 theorem dst_ne {a m j j' : Nat} (ha : 1≤a) (ha9 : a≤9) (hm : 1≤m) (hm9 : m≤9) (hj : j<5) (hj' : j'<5)
     (h : a≠m) : dst a j≠dst m j' := by
-  obtain hh : ∀ a<9,∀ m<9,∀ j<5,∀ j'<5,dst (a+1) j=dst (m+1) j' → a=m := by decide
+  obtain hh : ∀ a<9,∀ m<9,∀ j<5,∀ j'<5,dst (a+1) j=dst (m+1) j' → a=m := by decide +kernel
   intro he
   have := hh (a-1) (by omega_arith) (m-1) (by omega_arith) j hj j' hj'
     (by rwa [show a-1+1=a by omega_arith,show m-1+1=m by omega_arith])

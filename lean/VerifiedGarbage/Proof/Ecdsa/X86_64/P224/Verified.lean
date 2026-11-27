@@ -83,7 +83,7 @@ def TblHeld (s : State) (wr : List Region) : Prop :=
 
 theorem p224_tbl_len : Impl.P224.p224Comb7.length = 37 := by decide
 
-theorem p224_tbl_lenH : ∀ j < 37, (Impl.P224.p224Comb7.getD j []).length = 64 := by decide
+theorem p224_tbl_lenH : ∀ j < 37, (Impl.P224.p224Comb7.getD j []).length = 64 := by decide +kernel
 
 /-- `p224W` has `37 · 64 · 8` words. -/
 theorem p224W_length : p224W.length = 18944 :=

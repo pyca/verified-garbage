@@ -380,7 +380,7 @@ theorem idx_split : ∀ a < 8, ∀ b < 32,
     bitv (BitVec.ofNat 32 (32 * a + b)) 1 = BitVec.ofNat 32 ((32 * a + b) / 2 % 2) ∧
     bitv (BitVec.ofNat 32 (32 * a + b)) 2 = BitVec.ofNat 32 ((32 * a + b) / 4 % 2) ∧
     mlv (BitVec.ofNat 32 (32 * a + b)) = BitVec.ofNat 32 (2 ^ (8 * ((32 * a + b) % 4))) ∧
-    ohv (BitVec.ofNat 32 (32 * a + b)) = BitVec.ofNat 32 (2 ^ ((32 * a + b) / 8)) := by decide
+    ohv (BitVec.ofNat 32 (32 * a + b)) = BitVec.ofNat 32 (2 ^ ((32 * a + b) / 8)) := by decide +kernel
 
 theorem idx_vals {n : Nat} (h : n < 256) :
     bitv (BitVec.ofNat 32 n) 0 = BitVec.ofNat 32 (n % 2) ∧
@@ -392,7 +392,7 @@ theorem idx_vals {n : Nat} (h : n < 256) :
   rwa [Nat.div_add_mod] at this
 
 /-- The selector `rowSel` makes of the one-hot word of row `h`. -/
-theorem sel_low : ∀ h < 32, ∀ r < 31, (BitVec.ofNat 32 (2 ^ h) <<< (31 - r)) >>> 31 = selv h r := by decide
+theorem sel_low : ∀ h < 32, ∀ r < 31, (BitVec.ofNat 32 (2 ^ h) <<< (31 - r)) >>> 31 = selv h r := by decide +kernel
 
 theorem sel_top : ∀ h < 32, BitVec.ofNat 32 (2 ^ h) >>> 31 = selv h 31 := by decide
 

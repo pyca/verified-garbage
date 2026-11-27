@@ -40,8 +40,8 @@ open VG VG.AArch64
 open VG.Proof.MlKem.AArch64
 open VG.Impl.MlDsa.AArch64.Sample (rbLoad)
 
-private theorem lowByte : ∀b : Byte,(b.setWidth 64 &&& 15)=BitVec.ofNat 64 (b.toNat%16) := by decide
-private theorem highByte : ∀b : Byte,(b.setWidth 64 >>>4)=BitVec.ofNat 64 (b.toNat/16) := by decide
+private theorem lowByte : ∀b : Byte,(b.setWidth 64 &&& 15)=BitVec.ofNat 64 (b.toNat%16) := by decide +kernel
+private theorem highByte : ∀b : Byte,(b.setWidth 64 >>>4)=BitVec.ofNat 64 (b.toNat/16) := by decide +kernel +kernel
 
 theorem scalarLoad_ok {s : State} (h11 : s.gpr .x11=15)
     (hr : InRegions (s.rd++s.wr) (s.gpr .x2) 1) :

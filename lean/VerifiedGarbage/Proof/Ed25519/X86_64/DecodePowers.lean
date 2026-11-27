@@ -25,6 +25,7 @@ public import VerifiedGarbage.Proof.Ed25519.RootPower
 public import VerifiedGarbage.Proof.Ed25519.X86_64.FieldWide
 public import VerifiedGarbage.Proof.X25519.X86_64.Env
 public import VerifiedGarbage.Proof.X25519.Invert
+import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Impl.Ed25519.X86_64.Recover
@@ -1092,10 +1093,7 @@ theorem rootPowerUnrolled2_spec (base : Addr) :
     (sqn2_spec base (by decide) (by decide) 50 (by decide) (by decide)).seq <| (RSpec.ops base _).seq <|
     (sqn2_spec base (by decide) (by decide) 2 (by decide) (by decide)).seq (RSpec.ops base _),
     fun e => ⟨?_, ?_⟩⟩
-  all_goals
-    dsimp only [Fin.isValue, Fin.reduceEq, ↓reduceIte, upd2, evalOps, List.foldl_cons, List.foldl_nil,
-      evalOp, Fun.update_apply]
-    rfl
+  all_goals kernel_rfl
 
 /-- `rootPowerUnrolled2` in the scratch: A's power (of slot 2) into slot 15 and R's (of slot 3) into
 slot 19. -/

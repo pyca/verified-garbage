@@ -123,7 +123,7 @@ theorem gSlot_mem (i : Nat) : gSlot i ∈ arrays := by
   unfold gSlot; split <;> decide
 
 /-- `G`'s inputs have distinct lanes. -/
-theorem gIn_apart : ∀ i < 32, ∀ i' < 32, i ≠ i' → gSlot i ≠ gSlot i' ∨ i % 16 ≠ i' % 16 := by decide
+theorem gIn_apart : ∀ i < 32, ∀ i' < 32, i ≠ i' → gSlot i ≠ gSlot i' ∨ i % 16 ≠ i' % 16 := by decide +kernel
 
 /-- The first input of `G` in round `j + 1`, from `Key0 || Key1` and `Key2 || Key3`. -/
 def gIn0 (x y : BitVec 64) (c : BitVec 32) : BitVec 32 := (x >>> 32).setWidth 32 + (y >>> 32).setWidth 32 - c

@@ -311,7 +311,7 @@ theorem shr120 (x : BitVec 128) : x >>> 120 = (x.extractLsb' 120 8).setWidth 128
 theorem psllq_small : ∀ b : BitVec 8,
     XShiftOp.eval .psllq (b.setWidth 128) 1 = b.setWidth 128 <<< 1 ∧
     XShiftOp.eval .psllq (b.setWidth 128 <<< 1) 1 = b.setWidth 128 <<< 2 ∧
-    XShiftOp.eval .psllq (b.setWidth 128 <<< 2) 5 = b.setWidth 128 <<< 7 := by decide
+    XShiftOp.eval .psllq (b.setWidth 128 <<< 2) 5 = b.setWidth 128 <<< 7 := by decide +kernel
 
 /-- What `mul8` computes is `x ⊗ α⁸`. -/
 theorem mul8_val (x : BitVec 128) :

@@ -280,7 +280,7 @@ def ilVal (i : BitVec 32) : BitVec 32 :=
 /-- `ilVal` of the index `32 a + b`: the 256 indices, as two ranges that
 `decide` evaluates. -/
 theorem ilVal_split : ∀ a < 8, ∀ b < 32,
-    ilVal (BitVec.ofNat 32 (32 * a + b)) = BitVec.ofNat 32 (2 ^ (24 - 8 * ((32 * a + b) % 4))) := by decide
+    ilVal (BitVec.ofNat 32 (32 * a + b)) = BitVec.ofNat 32 (2 ^ (24 - 8 * ((32 * a + b) % 4))) := by decide +kernel
 
 theorem ilVal_ofNat : ∀ n < 256, ilVal (BitVec.ofNat 32 n) = BitVec.ofNat 32 (2 ^ (24 - 8 * (n % 4))) :=
   fun n h => by

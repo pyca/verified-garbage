@@ -461,12 +461,12 @@ def Regs4 (s : State) (A : Nat → KState) : Prop := ∀ i < 25, ∀ k < 4, qy s
 
 /-! ## Registers -/
 
-theorem vreg_inj : ∀ i < 31, ∀ j < 31, vreg i = vreg j → i = j := by decide
+theorem vreg_inj : ∀ i < 31, ∀ j < 31, vreg i = vreg j → i = j := by decide +kernel
 
 theorem lnum_lt : ∀ i < 25, lnum i < 31 := by decide
-theorem lnum_inj : ∀ i < 25, ∀ j < 25, lnum i = lnum j → i = j := by decide
+theorem lnum_inj : ∀ i < 25, ∀ j < 25, lnum i = lnum j → i = j := by decide +kernel
 /-- No lane is in the register of a `C[x]` or in `T`. -/
-theorem lnum_ne : ∀ i < 25, ∀ x < 6, lnum i ≠ 10 + x := by decide
+theorem lnum_ne : ∀ i < 25, ∀ x < 6, lnum i ≠ 10 + x := by decide +kernel
 
 theorem lreg_ne {i j : Nat} (hi : i < 25) (hj : j < 25) (h : i ≠ j) : lreg i ≠ lreg j :=
   fun e => h (lnum_inj i hi j hj (vreg_inj _ (lnum_lt i hi) _ (lnum_lt j hj) e))

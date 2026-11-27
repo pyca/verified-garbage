@@ -235,7 +235,7 @@ theorem sel_regs {n : Nat} (hn : n ≤ 9) {r : Reg} (hr : r = .x0 ∨ r = .x19) 
     first | exact absurd h (by decide) | exact entryRegs_regs n hn _ h (by simp)
 
 theorem tcombClob_sub : ∀ n ≤ 9, ∀ r ∈ [Reg.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x9, .x16, .x17] ++
-    entryRegs n, r ∈ tcombClob n := by decide
+    entryRegs n, r ∈ tcombClob n := by decide +kernel
 
 /-- After the selection and negation: `E` represents the signed entry of
 digit `i`, and only `E`, `-y` and the temporary area changed. -/

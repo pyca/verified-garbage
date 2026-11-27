@@ -69,12 +69,12 @@ def initEntry (mask : Nat) : List Instr :=
   .str .x .x6 .x19 (6000+64*mask+32)]
 
 theorem entryInit_eq {mask : Nat} (hm : mask<16) : entryInit true mask=initEntry mask := by
-  have h : ∀m : Fin 16,entryInit true m.val=initEntry m.val := by decide
+  have h : ∀m : Fin 16,entryInit true m.val=initEntry m.val := by decide +kernel
   exact h ⟨mask,hm⟩
 
 theorem init_words {mask : Nat} (hm : mask<16) :
     ofVDwords (initLo mask) (initHi mask)=shuffleWord mask := by
-  have h : ∀m : Fin 16,ofVDwords (initLo m.val) (initHi m.val)=shuffleWord m.val := by decide
+  have h : ∀m : Fin 16,ofVDwords (initLo m.val) (initHi m.val)=shuffleWord m.val := by decide +kernel
   exact h ⟨mask,hm⟩
 
 theorem init_count {mask : Nat} (hm : mask<16) :

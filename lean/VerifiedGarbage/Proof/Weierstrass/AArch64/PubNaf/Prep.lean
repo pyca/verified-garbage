@@ -51,7 +51,7 @@ structure Regs (n : Nat) : Prop where
 theorem regs_ok9 : ∀ n, 1 ≤ n → n ≤ 9 → Regs n := by
   obtain h : ∀ n < 10, 1 ≤ n → ((limbs n ++ csts n).Nodup ∧ low n = .x5 :: (low n).tail ∧
       (∀ r ∈ limbs n ++ csts n, r ∉ [Reg.x0, .x1, .x2, .x3, .x4, .x16, .x17, .x19, .x20]) ∧
-      (low n).length = n) := by decide
+      (low n).length = n) := by decide +kernel
   intro n h1 h6
   obtain ⟨a, b, c, d⟩ := h n (by omega_arith) h1
   exact ⟨a, b, c, d, h1, h6⟩

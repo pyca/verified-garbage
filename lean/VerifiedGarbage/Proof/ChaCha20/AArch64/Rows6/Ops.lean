@@ -18,7 +18,7 @@ open VG.Spec.ChaCha20 (Word)
 abbrev Rows := Vector Word 24
 
 theorem vreg_inj (a b : Fin 24) : vreg a = vreg b ↔ a = b :=
-  (show ∀ a b : Fin 24, vreg a = vreg b ↔ a = b by decide) a b
+  (show ∀ a b : Fin 24, vreg a = vreg b ↔ a = b by decide +kernel) a b
 
 theorem vreg_ne (a : Fin 24) : vreg a ≠ .v31 :=
   (show ∀ a : Fin 24, vreg a ≠ .v31 by decide) a

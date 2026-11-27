@@ -448,9 +448,9 @@ theorem counter_ok {s : State} {base : Addr} (hs : Scratch s base) {p : Nat}
   simp only [List.mem_singleton] at hr
   simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, hr, ite_false]
 
-private theorem byte_ofNat : ∀ b : BitVec 8, b.setWidth 64 = BitVec.ofNat 64 b.toNat := by decide
+private theorem byte_ofNat : ∀ b : BitVec 8, b.setWidth 64 = BitVec.ofNat 64 b.toNat := by decide +kernel
 
-private theorem byte_zero : ∀ b : BitVec 8, (b.setWidth 64 == 0) = decide (b.toNat = 0) := by decide
+private theorem byte_zero : ∀ b : BitVec 8, (b.setWidth 64 == 0) = decide (b.toNat = 0) := by decide +kernel
 
 theorem bytes_or_zero (b c : BitVec 8) :
     (b.setWidth 64 ||| c.setWidth 64 == 0) = decide (b.toNat = 0 ∧ c.toNat = 0) := by

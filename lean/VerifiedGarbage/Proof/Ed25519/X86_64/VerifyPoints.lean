@@ -1290,7 +1290,7 @@ theorem skipStop_ok {s : State} {base : Addr} (hs : Scratch s base) (j : Nat)
     ite_false]
 
 private theorem byte_zero : ∀ b : BitVec 8,
-    (b.setWidth 64 &&& b.setWidth 64 == 0) = decide (b.toNat = 0) := by decide
+    (b.setWidth 64 &&& b.setWidth 64 == 0) = decide (b.toNat = 0) := by decide +kernel
 
 theorem testByte_ok (s : State) (b : BitVec 8) (hc : s.gpr .rbx = b.setWidth 64) :
     WP isa (.block [.alu .test .rbx (.reg .rbx)]) s fun t =>

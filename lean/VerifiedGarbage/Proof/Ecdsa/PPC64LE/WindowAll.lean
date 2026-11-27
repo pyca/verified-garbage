@@ -174,7 +174,7 @@ theorem horner_eq (b0 b1 b2 b3 : Bool) :
   cases b0 <;> cases b1 <;> cases b2 <;> cases b3 <;> rfl
 
 theorem eqm_eq : ∀ a < 16, ∀ e < 16, (0 : BitVec 64) - (((BitVec.ofNat 64 a ^^^ BitVec.ofNat 64 e) -
-    BitVec.ofNat 64 1) >>> 63) = if a = e then BitVec.allOnes 64 else 0 := by decide
+    BitVec.ofNat 64 1) >>> 63) = if a = e then BitVec.allOnes 64 else 0 := by decide +kernel
 
 /-- The mask `r10` of `r9 = e`. -/
 theorem eqMask_ok {s : State} {a e : Nat} (ha : a < 16) (he : e < 16) (h9 : s.gpr .r9 = BitVec.ofNat 64 a) :

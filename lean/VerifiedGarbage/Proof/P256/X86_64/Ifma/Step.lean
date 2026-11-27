@@ -1129,7 +1129,7 @@ theorem blendOf_lanes : ∀ m < 16, blendOf (klit (K4.lanes m)) = some m := by d
 
 theorem maskOf_lanes : ∀ m < 16, maskOf (klit (K4.lanes m)) =
     some (if m.testBit 0 then 64 else 0, if m.testBit 1 then 64 else 0, if m.testBit 2 then 64 else 0,
-      if m.testBit 3 then 64 else 0) := by decide
+      if m.testBit 3 then 64 else 0) := by decide +kernel
 
 theorem tops_blend (a b : T) {m : Nat} (hm : m < 16) : tops.blend a b m = .blend a b m := by
   simp only [tops, selOf, blendOf_lanes m hm]

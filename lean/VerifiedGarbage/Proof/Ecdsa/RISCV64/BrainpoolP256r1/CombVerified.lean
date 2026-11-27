@@ -83,7 +83,7 @@ abbrev TabOk : State → Addr → Addr → Prop := TabOkW tabWords
 
 theorem comb7_len : Impl.BrainpoolP256r1.comb7.length = 37 := by decide
 
-theorem comb7_lenH : ∀ j < 37, (Impl.BrainpoolP256r1.comb7.getD j []).length = 64 := by decide
+theorem comb7_lenH : ∀ j < 37, (Impl.BrainpoolP256r1.comb7.getD j []).length = 64 := by decide +kernel
 
 /-- `x R mod p`. -/
 abbrev montP (x : Nat) : Nat := montOf Spec.BrainpoolP256r1.curve.p x
