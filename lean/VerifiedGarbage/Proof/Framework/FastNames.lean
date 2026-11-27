@@ -26,7 +26,8 @@ and contracts are elaborated by Lean's own rules alone):
   once, unless a local declaration might have the name (`namesLocal`): the head
   of an application, a term, and a lemma of a `simp` (here in any module);
 * the macros of the operators (`+`, `=`, `≤`, `∧`, `∈`, …) write such an
-  identifier, in the same syntax as Lean's.
+  identifier, in the same syntax as Lean's. (Not `^`, whose macro `PowLit` adds to:
+  a macro here would come before it.)
 
 Names that the source writes are not touched. Whatever is not of these forms is
 left to Lean's own elaborators and macros (`throwUnsupportedSyntax`).
@@ -112,7 +113,6 @@ private def binrel := infixOp ``Lean.Parser.Term.binrel "binrel%"
 @[macro «term_/_»] def mDiv : Macro := binop ``HDiv.hDiv
 @[macro «term_%_»] def mMod : Macro := binop ``HMod.hMod
 @[macro «term_++_»] def mAppend : Macro := binop ``HAppend.hAppend
-@[macro «term_^_»] def mPow : Macro := infixOp ``Lean.Parser.Term.rightact "rightact%" ``HPow.hPow
 @[macro «term_=_»] def mEq : Macro := binrel ``Eq
 @[macro «term_≠_»] def mNe : Macro := binrel ``Ne
 @[macro «term_≤_»] def mLe : Macro := binrel ``LE.le
