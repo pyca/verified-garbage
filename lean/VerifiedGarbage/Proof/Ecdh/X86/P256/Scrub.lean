@@ -34,7 +34,7 @@ theorem exchange_scrubbed (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstra
   verifiedScrubbedAll (api := Spec.Ecdh.P256.exchangeApi)
     { code := Impl.Ecdh.X86.exchangeP256
       verified := Proof.Ecdh.X86.ecdh_verified hL hI hO
-      spSafe := all_of_noSp Proof.Ecdh.X86.ecdh_sp.1 }
+      spSafe := writesSp_of_noSp Proof.Ecdh.X86.ecdh_sp.1 }
     (exchangeOut _ _ [])
 
 end VG.Proof.Ecdh.X86.P256.Scrub

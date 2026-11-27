@@ -33,7 +33,7 @@ theorem exchange_scrubbed (hL : Weierstrass.Law Spec.BrainpoolP384r1.curve) :
   verifiedScrubbedAll (api := Spec.Ecdh.BrainpoolP384r1.exchangeApi)
     { code := Impl.Ecdh.X86.exchangeBrainpoolP384r1
       verified := Proof.Ecdh.X86.BrainpoolP384r1.ecdh_verified hL
-      spSafe := all_of_noSp Proof.Ecdh.X86.BrainpoolP384r1.ecdh_sp.1 }
+      spSafe := writesSp_of_noSp Proof.Ecdh.X86.BrainpoolP384r1.ecdh_sp.1 }
     (exchangeOut _ _ [])
 
 end VG.Proof.Ecdh.X86.BrainpoolP384r1.Scrub

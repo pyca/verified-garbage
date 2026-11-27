@@ -39,7 +39,7 @@ theorem publicKey_scrubbed (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstr
   verifiedScrubbedAll (api := Spec.EcKey.P256.publicKeyApi)
     { code := Proof.EcKey.X86.pkCombCode
       verified := Proof.EcKey.X86.pkComb_verified hL hI
-      spSafe := all_of_noSp Proof.EcKey.X86.pkComb_sp.1 }
+      spSafe := writesSp_of_noSp Proof.EcKey.X86.pkComb_sp.1 }
     (publicKeyOut Spec.EcKey.P256.inst 24 Impl.Ecdsa.X86.p256Comb.combConsts)
 
 /-- `vg_ec_p256_compress_public_key`. -/
@@ -48,7 +48,7 @@ theorem compress_scrubbed (hI : Weierstrass.X86.Inv.InvSounds) :
   verifiedScrubbedAll (api := Spec.EcKey.P256.inst.compressPublicKeyApi)
     { code := Proof.EcKey.Compressed.X86.P256.code
       verified := Proof.EcKey.Compressed.X86.P256.verified hI
-      spSafe := all_of_noSp Proof.EcKey.Compressed.X86.P256.sp.1 }
+      spSafe := writesSp_of_noSp Proof.EcKey.Compressed.X86.P256.sp.1 }
     (compressOut _ _ [])
 
 /-- `vg_ec_p256_decompress_public_key`. -/
@@ -57,7 +57,7 @@ theorem decompress_scrubbed (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierst
   verifiedScrubbedAll (api := Spec.EcKey.P256.inst.decompressPublicKeyApi)
     { code := Proof.EcKey.Compressed.X86.P256Decompress.code
       verified := Proof.EcKey.Compressed.X86.P256Decompress.verified hL hI
-      spSafe := all_of_noSp Proof.EcKey.Compressed.X86.P256Decompress.sp.1 }
+      spSafe := writesSp_of_noSp Proof.EcKey.Compressed.X86.P256Decompress.sp.1 }
     (decompressOut _ _ [])
 
 end VG.Proof.EcKey.X86.P256.Scrub

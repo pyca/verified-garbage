@@ -114,7 +114,7 @@ theorem signCode_all {E : Impl.Ecdsa.X86.Cfg} {big : Bool} {sh : Nat} {coreN : S
 verification it runs does not. -/
 theorem verifyHash_all {len : Nat} {wide : Bool} {core : Prog isa} (h : NoSp core) :
     (Impl.Ecdsa.X86.VerifyHash.verifyHash len wide core).all (fun i => !isa.writesSp i) = true := by
-  have h₁ := all_of_noSp (Ecdsa.Verify.X86.Hash.hashed_noSp (len := len) (wide := wide) h)
+  have h₁ := writesSp_of_noSp (Ecdsa.Verify.X86.Hash.hashed_noSp (len := len) (wide := wide) h)
   simp only [Impl.Ecdsa.X86.VerifyHash.verifyHash, Impl.StackScratch.X86.withStackScratch, Code.all, h₁,
     Bool.and_true]
   decide

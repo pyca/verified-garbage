@@ -39,7 +39,7 @@ theorem publicKey_scrubbed (hL : Weierstrass.Law Spec.P521.curve) :
   verifiedScrubbedAll (api := Spec.EcKey.P521.publicKeyApi)
     { code := Impl.EcKey.X86.publicKeyP521
       verified := Proof.EcKey.X86.P521.pk_verified hL
-      spSafe := all_of_noSp Proof.EcKey.X86.P521.pk_sp.1 }
+      spSafe := writesSp_of_noSp Proof.EcKey.X86.P521.pk_sp.1 }
     (publicKeyOut Spec.EcKey.P521.inst 24 Impl.Ecdsa.X86.p521Comb.combConsts)
 
 /-- `vg_ec_p521_compress_public_key`. -/
@@ -48,7 +48,7 @@ theorem compress_scrubbed :
   verifiedScrubbedAll (api := Spec.EcKey.P521.inst.compressPublicKeyApi)
     { code := Proof.EcKey.Compressed.X86.P521.code
       verified := Proof.EcKey.Compressed.X86.P521.verified
-      spSafe := all_of_noSp Proof.EcKey.Compressed.X86.P521.sp.1 }
+      spSafe := writesSp_of_noSp Proof.EcKey.Compressed.X86.P521.sp.1 }
     (compressOut _ _ [])
 
 /-- `vg_ec_p521_decompress_public_key`. -/
@@ -57,7 +57,7 @@ theorem decompress_scrubbed (hL : Weierstrass.Law Spec.P521.curve) :
   verifiedScrubbedAll (api := Spec.EcKey.P521.inst.decompressPublicKeyApi)
     { code := Proof.EcKey.Compressed.X86.P521Decompress.code
       verified := Proof.EcKey.Compressed.X86.P521Decompress.verified hL
-      spSafe := all_of_noSp Proof.EcKey.Compressed.X86.P521Decompress.sp.1 }
+      spSafe := writesSp_of_noSp Proof.EcKey.Compressed.X86.P521Decompress.sp.1 }
     (decompressOut _ _ [])
 
 end VG.Proof.EcKey.X86.P521.Scrub

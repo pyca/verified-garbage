@@ -33,7 +33,7 @@ theorem exchange_scrubbed (hL : Weierstrass.Law Spec.P521.curve) :
   verifiedScrubbedAll (api := Spec.Ecdh.P521.exchangeApi)
     { code := Impl.Ecdh.X86.exchangeP521
       verified := Proof.Ecdh.X86.P521.ecdh_verified hL
-      spSafe := all_of_noSp Proof.Ecdh.X86.P521.ecdh_sp.1 }
+      spSafe := writesSp_of_noSp Proof.Ecdh.X86.P521.ecdh_sp.1 }
     (exchangeOut _ _ [])
 
 end VG.Proof.Ecdh.X86.P521.Scrub
