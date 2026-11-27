@@ -562,7 +562,7 @@ theorem ecdh_a64 (hL : Weierstrass.Law Spec.P521.curve) (hI : Weierstrass.AArch6
     ∃ t s', Exec isa exchangeP521 s t s' ∧ abiPreserved s s' ∧ ecdhAArch64.post s s' := by
   -- In steps: elaborated in one term, the unifier would compare P-521's
   -- terms before the literals' facts are known.
-  have ha : AbiOk exchangeP521 := by lit_decide
+  have ha : abiK exchangeP521 = true := by lit_decide
   have hmc : CallsKeep (Impl.Ecdh.AArch64.Cfg.middle p521) :=
     callsKeep_ofK (c := Impl.Ecdh.AArch64.Cfg.middle p521) (by lit_decide)
   have hmu : KeepsUntouched (Impl.Ecdh.AArch64.Cfg.middle p521) :=

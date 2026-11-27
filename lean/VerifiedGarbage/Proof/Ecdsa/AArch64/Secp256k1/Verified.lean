@@ -22,6 +22,8 @@ meta import VerifiedGarbage.Spec.Ecdsa.Secp256k1
 meta import VerifiedGarbage.TCB.AArch64.Target
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Ecdsa.Contract
+import VerifiedGarbage.Proof.Ecdsa.AArch64.AbiOnce
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.AbiOnce
 
 /-! ### `Ecdsa.AArch64.Secp256k1.Contract`, which this module and modules that import it used -/
 
@@ -92,11 +94,9 @@ theorem output_of {s : State} (h : signAArch64.pre s) : SignOutput secp256k1 s :
 theorem sign_a64 (hL : Weierstrass.Law Spec.Secp256k1.curve) (hI : InvSounds)
     (s : State) (hs : signAArch64.pre s) :
     ∃ t s', Exec isa signSecp256k1 s t s' ∧ abiPreserved s s' ∧ signAArch64.post s s' := by
-  have hn : CallsKeep signSecp256k1 := by lit_decide
-  have hu : KeepsUntouched signSecp256k1 := by lit_decide
-  have hv : signSecp256k1.allInstrs keepsV = true := by lit_decide
+  have ha : abiK signSecp256k1 = true := by lit_decide
   obtain ⟨t, s', he, hsv, hpost⟩ := sign_ok (secp256k1_ok hI) hL (setup_of hs) (output_of hs)
-  exact ⟨t, s', he, abiPreserved_of he hn hu hv hsv, hpost⟩
+  exact ⟨t, s', he, abiPreserved_ofK he ha hsv, hpost⟩
 
 theorem sign_ct : ConstantTime isa signAArch64.pre signAArch64.pub signSecp256k1 :=
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3, .x4])

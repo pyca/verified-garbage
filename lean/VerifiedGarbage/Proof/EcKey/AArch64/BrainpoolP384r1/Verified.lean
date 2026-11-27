@@ -26,6 +26,8 @@ public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Spec.EcKey.BrainpoolP384r1
 meta import VerifiedGarbage.TCB.AArch64.Target
 meta import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Ecdsa.AArch64.AbiOnce
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.AbiOnce
 
 /-! ### `EcKey.AArch64.BrainpoolP384r1.Contract`, which only this module used -/
 
@@ -247,7 +249,7 @@ theorem pk_a64 (hL : Weierstrass.Law Spec.BrainpoolP384r1.curve)
     (hI : Weierstrass.AArch64.InvSounds) (s : State) (hs : pkAArch64.pre s) :
     ∃ t s', Exec isa publicKeyBrainpoolP384r1 s t s' ∧ abiPreserved s s' ∧ pkAArch64.post s s' := by
   obtain ⟨t, s', he, hsv, hpost⟩ := publicKey_ok (brainpoolp384r1_ok hI) hL (pre_of hs)
-  exact ⟨t, s', he, abiPreserved_of he (by lit_decide) (by lit_decide) (by lit_decide) hsv, post_of hpost⟩
+  exact ⟨t, s', he, abiPreserved_ofK he (by lit_decide) hsv, post_of hpost⟩
 
 theorem pk_ct : ConstantTime isa pkAArch64.pre pkAArch64.pub publicKeyBrainpoolP384r1 :=
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2])

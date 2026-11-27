@@ -28,7 +28,7 @@ callee-saved registers they write (`Abi.lean`'s `restores`), so it writes
 them in instructions of the functions it calls, though none of its own:
 `CallsKeepN` accepts such a function, whose own instructions keep them,
 since the functions it calls are among those `CallsKeepN` checks
-(`abiPreserved_ofN`).
+(`abiPreserved_ofN`, `AbiOnce.lean`).
 -/
 
 @[expose] public section
@@ -218,116 +218,5 @@ theorem combCorrect_call {c : Cfg} {comb : Prog isa} (hcomb : CombCorrect c comb
       (State.callEntry_rd s) (State.callEntry_wr s) (State.callEntry_sp s) (State.callEntry_mem s)
       (fun q hq => RegUpd.gpr_write_of_ne _ _ _ (fun e : q = .x30 => hq (by rw [e]; simp [tcombClob])))
       rfl rfl rfl rfl h⟩
-
-/-- `CallsKeep`, which also accepts a function none of whose own instructions
-(outside the functions it calls, which it checks too) writes `untouched`. -/
-abbrev CallsKeepN (c : Prog isa) : Prop :=
-  (c.calls.all fun nb => nb.2.allInstrs (fun i => (dsts i).all fun r => !untouched.contains r) ||
-    (((straight nb.2).any fun is => untouched.all fun r => restores r is) ||
-      (untouched.all fun r => nb.2.allInstrs (keepsReg r)) ||
-      topAll (fun i => (dsts i).all fun r => !untouched.contains r) nb.2)) = true
-
-theorem topAll_mono {p q : Instr → Bool} (hpq : ∀ i, p i = true → q i = true) :
-    ∀ c : Prog isa, topAll p c = true → topAll q c = true := by
-  intro c
-  induction c with
-  | icall i _ _ n _ ihn =>
-    simp only [topAll, Bool.and_eq_true]; exact fun h => ⟨hpq i h.1, ihn h.2⟩
-  | block is =>
-    rw [topAll_block, topAll_block, List.all_eq_true, List.all_eq_true]
-    exact fun h i hi => hpq i (h i hi)
-  | seq a b iha ihb | ite _ a b iha ihb =>
-    simp only [topAll, Bool.and_eq_true]; exact fun h => ⟨iha h.1, ihb h.2⟩
-  | loop b _ ih => exact ih
-  | call _ _ _ => intro _; rfl
-  | frame i b j ih =>
-    simp only [topAll, Bool.and_eq_true]; exact fun h => ⟨⟨hpq i h.1.1, ih h.1.2⟩, hpq j h.2⟩
-
-/-- `gpr_top`, for functions that keep the register in their own instructions
-too. -/
-theorem gpr_topN {r : Reg} (hr : r ∉ linkRegs) {c : Prog isa} {s s' : State} {t : List Leak}
-    (h : Exec isa c s t s') (hc : topAll (keepsReg r) c = true)
-    (hb : (c.calls.all fun nb => (straight nb.2).any (restores r) || nb.2.allInstrs (keepsReg r) ||
-      topAll (keepsReg r) nb.2) = true) :
-    s'.gpr r = s.gpr r := by
-  induction h with
-  | icall _ hc₁ e hr' ih =>
-    simp only [Code.calls, List.all_append, List.all_cons, Bool.and_eq_true, Bool.or_eq_true] at hb
-    rcases hb.1.1 with (hb' | hb') | hb'
-    · obtain ⟨is, his, hres⟩ := (Option.any_eq_true _ _).mp hb'
-      obtain ⟨_, eb⟩ := straight_exec his e
-      rw [ret_eq hr', restores_ok hres eb, (call_eq hc₁).2.2.2.2 r hr]
-    · rw [ret_eq hr', Exec.gpr (fun i hi => by
-          have := List.all_eq_true.mp ((Code.allInstrs_eq _ _) ▸ hb') i hi
-          simpa [keepsReg] using this) e (.inr hr), (call_eq hc₁).2.2.2.2 r hr]
-    · rw [ret_eq hr', ih hb' hb.1.2, (call_eq hc₁).2.2.2.2 r hr]
-  | icallNext _ _ _ ih =>
-    exact ih (by simp only [topAll, Bool.and_eq_true] at hc ⊢; exact hc.2)
-      (by simp only [Code.calls, List.all_append, List.all_cons, Bool.and_eq_true] at hb ⊢; exact hb.2)
-  | block h =>
-    exact execBlock_keep (fun s : State => s.gpr r) (ok := fun i => keepsReg r i = true)
-      (fun hi he => exec_gpr (by simpa [keepsReg] using hi) he)
-      (List.all_eq_true.mp (by rwa [topAll_block] at hc)) h
-  | seq _ _ ih₁ ih₂ =>
-    simp only [topAll, Bool.and_eq_true] at hc
-    simp only [Code.calls, List.all_append, Bool.and_eq_true] at hb
-    rw [ih₂ hc.2 hb.2, ih₁ hc.1 hb.1]
-  | iteT _ _ ih =>
-    simp only [topAll, Bool.and_eq_true] at hc
-    simp only [Code.calls, List.all_append, Bool.and_eq_true] at hb
-    exact ih hc.1 hb.1
-  | iteF _ _ ih =>
-    simp only [topAll, Bool.and_eq_true] at hc
-    simp only [Code.calls, List.all_append, Bool.and_eq_true] at hb
-    exact ih hc.2 hb.2
-  | loopExit _ _ ih => exact ih hc hb
-  | loopNext _ _ _ ih₁ ih₂ => rw [ih₂ hc hb, ih₁ hc hb]
-  | call hc₁ e hr' ih =>
-    simp only [Code.calls, List.all_cons, Bool.and_eq_true, Bool.or_eq_true] at hb
-    rcases hb.1 with (hb' | hb') | hb'
-    · obtain ⟨is, his, hres⟩ := (Option.any_eq_true _ _).mp hb'
-      obtain ⟨_, eb⟩ := straight_exec his e
-      rw [ret_eq hr', restores_ok hres eb, (call_eq hc₁).2.2.2.2 r hr]
-    · rw [ret_eq hr', Exec.gpr (fun i hi => by
-          have := List.all_eq_true.mp ((Code.allInstrs_eq _ _) ▸ hb') i hi
-          simpa [keepsReg] using this) e (.inr hr), (call_eq hc₁).2.2.2.2 r hr]
-    · rw [ret_eq hr', ih hb' hb.2, (call_eq hc₁).2.2.2.2 r hr]
-  | frame hp _ hq ih =>
-    simp only [topAll, Bool.and_eq_true] at hc
-    simp only [Code.calls] at hb
-    obtain ⟨-, -, -, hg, -⟩ := push_eq hp
-    rw [(pop_eq hq).2.2.2.1 r (dstOf_ne_of_clobbers (by simpa [keepsReg] using hc.2)), ih hc.1.2 hb, hg]
-
-theorem untouched_keepN {c : Prog isa} {s s' : State} {t : List Leak} (he : Exec isa c s t s')
-    (hn : CallsKeepN c) (hu : KeepsUntouched c) : ∀ r ∈ untouched, s'.gpr r = s.gpr r := by
-  intro r h
-  refine gpr_topN (by revert h; revert r; decide) he
-    (topAll_mono (fun i hi => keepsReg_of_untouched h hi) c hu) ?_
-  refine List.all_eq_true.mpr fun nb hnb => ?_
-  rcases Bool.or_eq_true_iff.mp (List.all_eq_true.mp hn nb hnb) with h' | h'
-  · refine Bool.or_eq_true_iff.mpr (.inl (Bool.or_eq_true_iff.mpr (.inr ?_)))
-    rw [Code.allInstrs_eq] at h' ⊢
-    exact List.all_eq_true.mpr fun i hi => keepsReg_of_untouched h (List.all_eq_true.mp h' i hi)
-  rcases Bool.or_eq_true_iff.mp h' with h' | h'
-  · rcases Bool.or_eq_true_iff.mp h' with h' | h'
-    · obtain ⟨is, his, hres⟩ := (Option.any_eq_true _ _).mp h'
-      exact Bool.or_eq_true_iff.mpr (.inl (Bool.or_eq_true_iff.mpr
-        (.inl ((Option.any_eq_true _ _).mpr ⟨is, his, List.all_eq_true.mp hres r h⟩))))
-    · exact Bool.or_eq_true_iff.mpr (.inl (Bool.or_eq_true_iff.mpr (.inr (List.all_eq_true.mp h' r h))))
-  · exact Bool.or_eq_true_iff.mpr (.inr
-      (topAll_mono (fun i hi => keepsReg_of_untouched h hi) nb.2 h'))
-
-/-- `abiPreserved_of`, with `CallsKeepN`. -/
-theorem abiPreserved_ofN {c : Prog isa} {s s' : State} {t : List Leak} (he : Exec isa c s t s')
-    (hn : CallsKeepN c) (hu : KeepsUntouched c) (hv : c.allInstrs keepsV = true)
-    (hsv : ∀ r ∈ [Reg.x19, .x20, .x21, .x22, .x23, .x24, .x25, .x30], s'.gpr r = s.gpr r) :
-    abiPreserved s s' := by
-  refine ⟨fun r hr => ?_, Exec.sp he, Exec.preservedV he hv⟩
-  by_cases h : r ∈ untouched
-  · exact untouched_keepN he hn hu r h
-  · refine hsv r ?_
-    revert h
-    revert r
-    decide
 
 end VG.Proof.Ecdsa.AArch64

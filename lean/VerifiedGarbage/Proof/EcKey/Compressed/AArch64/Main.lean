@@ -20,6 +20,7 @@ import VerifiedGarbage.Proof.EcKey.Compressed.Encode
 import VerifiedGarbage.Proof.Ecdh.AArch64.Main
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
 import VerifiedGarbage.Proof.Framework.AArch64.Inline
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.AbiOnce
 
 /-! ### `EcKey.Compressed.AArch64.Finish`, which only this module used -/
 
@@ -237,9 +238,7 @@ theorem compress_key (c : Cfg) (s : State) :
   simp only [hv]
 
 theorem compress_correct (c : Cfg) (hc : BaseCfgOk c)
-    (hn : CallsKeep (Impl.EcKey.Compressed.AArch64.compress c))
-    (hu : KeepsUntouched (Impl.EcKey.Compressed.AArch64.compress c))
-    (hv : (Impl.EcKey.Compressed.AArch64.compress c).allInstrs keepsV = true)
+    (ha : abiK (Impl.EcKey.Compressed.AArch64.compress c) = true)
     (s : State) (hs : (compressContract c.C).pre s) :
     ∃ t s', Exec isa (Impl.EcKey.Compressed.AArch64.compress c) s t s' ∧
       abiPreserved s s' ∧ (compressContract c.C).post s s' := by
@@ -268,6 +267,6 @@ theorem compress_correct (c : Cfg) (hc : BaseCfgOk c)
     · rw [ite_eq_right hk] at hret hout ⊢
       exact ⟨hret, hout⟩
   obtain ⟨t, s', he, hpost, hsave⟩ := hrun
-  exact ⟨t, s', he, abiPreserved_of he hn hu hv hsave, hpost⟩
+  exact ⟨t, s', he, abiPreserved_ofK he ha hsave, hpost⟩
 
 end VG.Proof.EcKey.Compressed.AArch64

@@ -27,6 +27,8 @@ meta import VerifiedGarbage.Proof.Framework.GetElem
 public import VerifiedGarbage.Proof.EcKey.AArch64.Scrub
 public import VerifiedGarbage.Spec.Ecdh.BrainpoolP384r1
 public import VerifiedGarbage.Proof.Framework.AArch64.ScrubProved
+import VerifiedGarbage.Proof.Ecdsa.AArch64.AbiOnce
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.AbiOnce
 
 /-! ### `Ecdh.AArch64.BrainpoolP384r1.Contract`, which only this module used -/
 
@@ -142,7 +144,7 @@ theorem post_of {s s' : State} (h : EPost brainpoolp384r1 s s') : ecdhAArch64.po
 theorem ecdh_a64 (hL : Weierstrass.Law Spec.BrainpoolP384r1.curve) (hI : Weierstrass.AArch64.InvSounds) (s : State) (hs : ecdhAArch64.pre s) :
     ∃ t s', Exec isa VG.Impl.Ecdh.AArch64.BrainpoolP384r1.exchange s t s' ∧ abiPreserved s s' ∧ ecdhAArch64.post s s' := by
   obtain ⟨t, s', he, hsv, hpost⟩ := exchange_ok (brainpoolp384r1_ok hI) hL (pre_of hs)
-  exact ⟨t, s', he, abiPreserved_of he (by lit_decide) (by lit_decide) (by lit_decide) hsv, post_of hpost⟩
+  exact ⟨t, s', he, abiPreserved_ofK he (by lit_decide) hsv, post_of hpost⟩
 
 theorem ecdh_ct : ConstantTime isa ecdhAArch64.pre ecdhAArch64.pub VG.Impl.Ecdh.AArch64.BrainpoolP384r1.exchange :=
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3])

@@ -47,6 +47,7 @@ public import VerifiedGarbage.TCB.AArch64.Isa
 import VerifiedGarbage.Proof.EcKey.Compressed.Parity
 public import VerifiedGarbage.Proof.Weierstrass.CheckPointContract
 public import VerifiedGarbage.Proof.Weierstrass.InverseContract
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.AbiOnce
 
 /-! ### `EcKey.Compressed.AArch64.DecompressMiddle`, which this module and modules that import it used -/
 
@@ -1853,9 +1854,7 @@ theorem decompress_key (c : Cfg) (root : Fe c.C → Fe c.C) (s : State) :
 
 theorem decompress_correct (c : Cfg) (hc : BaseCfgOk c)
     (root : Fe c.C → Fe c.C) (hroot : CandidateCorrect c root)
-    (hn : CallsKeep (Impl.EcKey.Compressed.AArch64.decompress c))
-    (hu : KeepsUntouched (Impl.EcKey.Compressed.AArch64.decompress c))
-    (hv : (Impl.EcKey.Compressed.AArch64.decompress c).allInstrs keepsV = true)
+    (ha : abiK (Impl.EcKey.Compressed.AArch64.decompress c) = true)
     (s : State) (hs : (decompressContract c.C root).pre s) :
     ∃ t s', Exec isa (Impl.EcKey.Compressed.AArch64.decompress c) s t s' ∧
       abiPreserved s s' ∧ (decompressContract c.C root).post s s' := by
@@ -1888,6 +1887,6 @@ theorem decompress_correct (c : Cfg) (hc : BaseCfgOk c)
     · rw [ite_eq_right hk] at hret hout ⊢
       exact ⟨hret, by simpa only [Nat.add_comm] using hout⟩
   obtain ⟨t, s', he, hpost, hsave⟩ := hrun
-  exact ⟨t, s', he, abiPreserved_of he hn hu hv hsave, hpost⟩
+  exact ⟨t, s', he, abiPreserved_ofK he ha hsave, hpost⟩
 
 end VG.Proof.EcKey.Compressed.AArch64

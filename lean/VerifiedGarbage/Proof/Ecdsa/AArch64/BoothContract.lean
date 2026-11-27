@@ -12,6 +12,7 @@ public import VerifiedGarbage.Impl.P256.Booth
 public import VerifiedGarbage.Proof.Ecdsa.Contract
 import VerifiedGarbage.Proof.EcKey.AArch64.Lit
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
+import VerifiedGarbage.Proof.Ecdsa.AArch64.AbiOnce
 
 @[expose] public section
 
@@ -24,7 +25,7 @@ theorem booth_sign_a64 (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.
   obtain ⟨t, s', he, hsv, hpost⟩ := signWith_ok (p256_ok hI) hL Impl.P256.Booth.comb hcomb (pre_of hs)
   -- Named `sign`, so that `lit_decide` reads its literal.
   have he : Exec isa Impl.P256.Booth.sign s t s' := he
-  exact ⟨t, s', he, abiPreserved_of he (by lit_decide) (by lit_decide) (by lit_decide) hsv, hpost⟩
+  exact ⟨t, s', he, abiPreserved_ofK he (by lit_decide) hsv, hpost⟩
 
 end VG.Proof.Ecdsa.AArch64
 
@@ -39,7 +40,7 @@ theorem booth_pk_a64 (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.AA
   obtain ⟨t, s', he, hsv, hpost⟩ := publicKeyWith_ok (p256_ok hI) hL Impl.P256.Booth.comb hcomb (pre_of hs)
   -- Named `publicKey`, so that `lit_decide` reads its literal.
   have he : Exec isa Impl.P256.Booth.publicKey s t s' := he
-  exact ⟨t, s', he, abiPreserved_of he (by lit_decide) (by lit_decide) (by lit_decide) hsv, post_of hpost⟩
+  exact ⟨t, s', he, abiPreserved_ofK he (by lit_decide) hsv, post_of hpost⟩
 
 theorem booth_pk_verified_of_comb (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.AArch64.InvSounds)
     (hcomb : CombCorrect p256 Impl.P256.Booth.comb) :

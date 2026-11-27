@@ -28,6 +28,8 @@ meta import VerifiedGarbage.Spec.Ecdsa.P192
 public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Framework.Taint
 meta import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Ecdsa.AArch64.AbiOnce
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.AbiOnce
 
 /-! ### `Ecdsa.Verify.AArch64.P192.Joint.Timing`, which only this module used -/
 
@@ -204,7 +206,7 @@ theorem verify_a64 (hL : Weierstrass.Law Spec.P192.curve)
     (hI : Weierstrass.AArch64.InvSounds) (s : State) (hs : verifyAArch64.pre s) :
     ∃ t s',Exec isa verify s t s' ∧ abiPreserved s s' ∧ verifyAArch64.post s s' := by
   obtain ⟨t,s',he,hsv,hpost⟩ := verify_ok (p192_ok hI) hL (pre_of hs)
-  exact ⟨t,s',he,abiPreserved_of he (by lit_decide) (by lit_decide) (by lit_decide) hsv,hpost⟩
+  exact ⟨t,s',he,abiPreserved_ofK he (by lit_decide) hsv,hpost⟩
 
 theorem verify_verified (hL : Weierstrass.Law Spec.P192.curve)
     (hI : Weierstrass.AArch64.InvSounds) :

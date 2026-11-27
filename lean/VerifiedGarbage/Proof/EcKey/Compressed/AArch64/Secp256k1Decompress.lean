@@ -86,7 +86,7 @@ theorem rootCall : RootCall secp256k1 := by
   have hc := (secp256k1_ok hI)
   exact Verified.of_correct (decompress_correct secp256k1 hc _
     (candidateThree_correct hc rootCall (by decide +kernel) chain_ok)
-    (by lit_decide) (by lit_decide) (by lit_decide)) ct
+    (by lit_decide)) ct
     (decompress_implies Spec.EcKey.Secp256k1.inst _
       (Proof.Weierstrass.rootFacts_three_mod_four hL (by decide +kernel)) sat)
 

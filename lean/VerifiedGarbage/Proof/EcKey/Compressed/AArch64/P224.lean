@@ -59,7 +59,7 @@ materialize_shared baseline := code
  theorem verified (hI : Proof.Weierstrass.AArch64.InvSounds) :
     Verified target code (Spec.EcKey.P224.inst.compressPublicKeyContract abi 0) :=
   Verified.of_correct (compress_correct p224 (p224_ok hI).toBaseCfgOk
-    (by lit_decide) (by lit_decide) (by lit_decide)) ct (compress_implies _ sat)
+    (by lit_decide)) ct (compress_implies _ sat)
 
 /-- `vg_ec_p224_compress_public_key` as it is emitted, its cleanup included
 (`Impl.EcKey.AArch64.Fn.compressP224`), meets its contract in constant time and

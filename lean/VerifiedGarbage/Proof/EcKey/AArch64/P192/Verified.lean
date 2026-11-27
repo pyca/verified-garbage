@@ -26,6 +26,8 @@ public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Spec.EcKey.P192
 meta import VerifiedGarbage.TCB.AArch64.Target
 meta import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Ecdsa.AArch64.AbiOnce
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.AbiOnce
 
 /-! ### `EcKey.AArch64.P192.Contract`, which only this module used -/
 
@@ -247,7 +249,7 @@ theorem pk_a64 (hL : Weierstrass.Law Spec.P192.curve) (hI : Weierstrass.AArch64.
     (s : State) (hs : pkAArch64.pre s) :
     ∃ t s', Exec isa publicKeyP192 s t s' ∧ abiPreserved s s' ∧ pkAArch64.post s s' := by
   obtain ⟨t, s', he, hsv, hpost⟩ := publicKey_ok (p192_ok hI) hL (pre_of hs)
-  exact ⟨t, s', he, abiPreserved_of he (by lit_decide) (by lit_decide) (by lit_decide) hsv, post_of hpost⟩
+  exact ⟨t, s', he, abiPreserved_ofK he (by lit_decide) hsv, post_of hpost⟩
 
 theorem pk_ct : ConstantTime isa pkAArch64.pre pkAArch64.pub publicKeyP192 :=
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2])

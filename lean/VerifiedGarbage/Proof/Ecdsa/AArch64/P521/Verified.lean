@@ -23,6 +23,8 @@ meta import VerifiedGarbage.Proof.P521.Point
 meta import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
 meta import VerifiedGarbage.Proof.P521.Prime
+import VerifiedGarbage.Proof.Ecdsa.AArch64.AbiOnce
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.AbiOnce
 
 /-!
 # ECDSA over P-521 on AArch64: `Verified`
@@ -117,11 +119,9 @@ theorem sign_a64 (hL : Weierstrass.Law Spec.P521.curve) (hI : Weierstrass.AArch6
     ∃ t s', Exec isa signP521 s t s' ∧ abiPreserved s s' ∧ signAArch64.post s s' := by
   -- In steps: elaborated in one term, the unifier would compare P-521's
   -- terms before the literals' facts are known.
-  have hn : CallsKeepN signP521 := by lit_decide
-  have hu : KeepsUntouched signP521 := by lit_decide
-  have hv : signP521.allInstrs keepsV = true := by lit_decide
+  have ha : abiK signP521 = true := by lit_decide
   obtain ⟨t, s', he, hsv, hpost⟩ := signWith_ok (p521_ok hI).toBaseCfgOk hL _ (gMulP521_correct hL hI hT) (pre_of hs)
-  exact ⟨t, s', he, abiPreserved_ofN he hn hu hv hsv, hpost⟩
+  exact ⟨t, s', he, abiPreserved_ofK he ha hsv, hpost⟩
 
 theorem sign_ct : ConstantTime isa signAArch64.pre signAArch64.pub signP521 :=
   VG.Taint.constantTime (A := taintS [p521.tsym]) (Taint.ofRegs [.x0, .x1, .x2, .x3, .x4])

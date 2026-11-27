@@ -32,6 +32,8 @@ meta import VerifiedGarbage.Impl.Ecdsa.BrainpoolP320r1.AArch64.Comb
 meta import VerifiedGarbage.Proof.Framework.ConstMem
 meta import VerifiedGarbage.Proof.Weierstrass.TCombWords
 meta import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ecdsa.AArch64.AbiOnce
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.AbiOnce
 
 /-! ### `Ecdsa.AArch64.BrainpoolP320r1.Comb.Contract`, which this module and modules that import it used -/
 
@@ -158,7 +160,7 @@ theorem sign_a64 (hL : Weierstrass.Law Spec.BrainpoolP320r1.curve) (hI : Weierst
     (hs : signAArch64.pre s) :
     ∃ t s', Exec isa signComb s t s' ∧ abiPreserved s s' ∧ signAArch64.post s s' := by
   obtain ⟨t, s', he, hsv, hpost⟩ := signWith_ok (cfg_ok hI) hL comb (correct hL hI) (pre_of hs)
-  exact ⟨t, s', he, abiPreserved_of he (by lit_decide) (by lit_decide) (by lit_decide) hsv, hpost⟩
+  exact ⟨t, s', he, abiPreserved_ofK he (by lit_decide) hsv, hpost⟩
 
 theorem sign_ct : ConstantTime isa signAArch64.pre signAArch64.pub signComb :=
   VG.Taint.constantTime (A := taintS [combCfg.tsym]) (Taint.ofRegs [.x0, .x1, .x2, .x3, .x4])

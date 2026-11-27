@@ -65,7 +65,7 @@ materialize_shared baseline := code
   have hc := (p192_ok hI)
   exact Verified.of_correct (decompress_correct p192 hc _
     (candidateThree_correct hc (rootCall_none (by decide +kernel)) (by decide +kernel) chain_ok)
-    (by lit_decide) (by lit_decide) (by lit_decide)) ct
+    (by lit_decide)) ct
     (decompress_implies Spec.EcKey.P192.inst _
       (Proof.Weierstrass.rootFacts_three_mod_four hL (by decide +kernel)) sat)
 
