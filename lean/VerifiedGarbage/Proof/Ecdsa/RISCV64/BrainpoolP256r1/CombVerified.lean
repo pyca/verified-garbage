@@ -42,6 +42,7 @@ meta import VerifiedGarbage.Proof.Weierstrass.Words
 meta import VerifiedGarbage.Proof.BrainpoolP256r1.Comb7
 meta import VerifiedGarbage.Proof.BrainpoolP256r1.Point
 meta import VerifiedGarbage.Proof.Ecdh.RISCV64.Bytes
+import VerifiedGarbage.Proof.Framework.Apart
 
 /-! ### `Ecdsa.RISCV64.BrainpoolP256r1.Comb`, which only this module used -/
 
@@ -213,8 +214,7 @@ abbrev combSl : List Nat :=
   [256, 288, 512, 544, 576, 608, 640, 672, 704, 736, 768, 800, 832, 864, 896, 928, 960]
 
 theorem combLay : Lay brainpoolp256r1.MP' (own 4) (· ∈ combSl) :=
-  ⟨by decide, fun x y hx hy => (by decide : ∀ x ∈ combSl, ∀ y ∈ combSl, x ≠ y → x + 8 * 4 ≤ y ∨ y + 8 * 4 ≤ x)
-    x hx y hy, by decide, by decide⟩
+  ⟨by decide, fun x y hx hy => apart_of (n := 8 * 4) (l := combSl) (by decide +kernel) x hx y hy, by decide, by decide⟩
 
 /-- What the addition reads: `a`, `3 b`, `R` and `D`. -/
 abbrev addV : List Nat := [256, 288, 512, 544, 576, 608, 640, 672]

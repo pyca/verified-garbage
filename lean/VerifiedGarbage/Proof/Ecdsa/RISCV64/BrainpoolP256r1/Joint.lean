@@ -16,6 +16,7 @@ public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Proof.Weierstrass.MulContract
 import VerifiedGarbage.Proof.Weierstrass.RISCV64.Gen4
 import VerifiedGarbage.Proof.Weierstrass.RISCV64.BrainpoolP256r1Field.Lit
+import VerifiedGarbage.Proof.Framework.Apart
 
 /-! ### `Ecdsa.RISCV64.BrainpoolP256r1.MulFn`, which this module and modules that import it used -/
 
@@ -111,8 +112,7 @@ abbrev jSl : List Nat :=
     brainpoolp256r1.sl brainpoolp256r1.EX, brainpoolp256r1.sl brainpoolp256r1.EY, brainpoolp256r1.sl brainpoolp256r1.EZ]
 
 theorem jLay : Lay brainpoolp256r1.MP' (own 4) (· ∈ jSl) :=
-  ⟨by decide, fun x y hx hy => (by decide : ∀ x ∈ jSl, ∀ y ∈ jSl, x ≠ y → x + 8 * 4 ≤ y ∨ y + 8 * 4 ≤ x)
-    x hx y hy, by decide, by decide⟩
+  ⟨by decide, fun x y hx hy => apart_of (n := 8 * 4) (l := jSl) (by decide +kernel) x hx y hy, by decide, by decide⟩
 
 theorem jShort : Short (· ∈ jSl) := by decide
 

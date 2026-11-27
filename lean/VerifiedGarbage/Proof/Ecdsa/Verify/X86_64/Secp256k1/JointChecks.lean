@@ -108,6 +108,7 @@ meta import Batteries.Logic
 meta import VerifiedGarbage.Proof.Weierstrass.PointOpsContract
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.JointPrepFields
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.JointCachedEntry
+import VerifiedGarbage.Proof.Framework.Apart
 
 /-! ### `Secp256k1.X86_64.JointTable`, which this module and modules that import it used -/
 
@@ -128,7 +129,7 @@ open VG.Proof.Mont VG.Proof.Weierstrass.X86_64
 private theorem joint_lay : Lay publicJointF.K.M 8192 (·∈jointSlots publicJointF) := by
   refine ⟨by decide +kernel,?_,by decide +kernel,by decide +kernel⟩
   have h : ∀ x∈jointSlots publicJointF,∀ y∈jointSlots publicJointF,x≠y →
-      x+8*publicJointF.K.M.n≤y ∨ y+8*publicJointF.K.M.n≤x := by decide +kernel
+      x+8*publicJointF.K.M.n≤y ∨ y+8*publicJointF.K.M.n≤x := apart_of (by decide +kernel)
   exact fun x y hx hy => h x hx y hy
 
 theorem joint_layout : JointLayout publicJointF 8192 :=

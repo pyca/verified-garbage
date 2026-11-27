@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointPrepFields
 public import VerifiedGarbage.Impl.Ecdsa.Verify.X86_64
 public import VerifiedGarbage.Impl.P384.X86_64.Joint
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
+import VerifiedGarbage.Proof.Framework.Apart
 
 /-! Concrete separation checks for P-384's joint verifier's scratch allocation. -/
 
@@ -18,7 +19,7 @@ open VG.Proof.Mont VG.Proof.Weierstrass.X86_64
 private theorem joint_lay : Lay publicJointF.K.M 8192 (·∈jointSlots publicJointF) := by
   refine ⟨by decide +kernel,?_,by decide +kernel,by decide +kernel⟩
   have h : ∀ x∈jointSlots publicJointF,∀ y∈jointSlots publicJointF,x≠y →
-      x+8*publicJointF.K.M.n≤y ∨ y+8*publicJointF.K.M.n≤x := by decide +kernel
+      x+8*publicJointF.K.M.n≤y ∨ y+8*publicJointF.K.M.n≤x := apart_of (by decide +kernel)
   exact fun x y hx hy => h x hx y hy
 
 theorem joint_layout : JointLayout publicJointF 8192 :=

@@ -13,6 +13,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.P384.Point
 import VerifiedGarbage.Proof.Weierstrass.RISCV64.Ladder
 public import VerifiedGarbage.Proof.Weierstrass.Law3
+import VerifiedGarbage.Proof.Framework.Apart
 
 /-!
 # ECDSA verification over P-384 on RISC-V: the joint ladder
@@ -62,8 +63,7 @@ abbrev jSl : List Nat :=
     p384.sl p384.EX, p384.sl p384.EY, p384.sl p384.EZ]
 
 theorem jLay : Lay p384.MP' (own 6) (· ∈ jSl) :=
-  ⟨by decide, fun x y hx hy => (by decide : ∀ x ∈ jSl, ∀ y ∈ jSl, x ≠ y → x + 8 * 6 ≤ y ∨ y + 8 * 6 ≤ x)
-    x hx y hy, by decide, by decide⟩
+  ⟨by decide, fun x y hx hy => apart_of (n := 8 * 6) (l := jSl) (by decide +kernel) x hx y hy, by decide, by decide⟩
 
 theorem jShort : Short (· ∈ jSl) := by decide
 
