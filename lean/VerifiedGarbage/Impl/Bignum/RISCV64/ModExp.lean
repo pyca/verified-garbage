@@ -22,7 +22,8 @@ temporary).
 
 Each byte of the exponent is two windows: four Montgomery squares of `a`,
 then `a := a T_d` for the window's digit `d`, `T_d` selected by a masked scan
-of the whole table, so that no address and no branch depends on `d`.
+of the whole table (`WinSelect.lean`), so that no address and no branch
+depends on `d`.
 
 For `w = 8 q`, `2 ≤ q ≤ 6` (moduli of 1024 to 3072 bits), `powWin57` is used
 instead, with the windows' arithmetic in radix `2⁵⁷` (`Pow57.lean`) and the
@@ -32,8 +33,7 @@ table as above, but of `x^j 2^(64 w + q) mod m`.
 callers share (`powWinCall`).
 
 Registers: `s7` the exponent's bits (or, building the table, the entry), `s9`
-the exponent's pointer, `s10` its bytes left, `s8` the entry being scanned and
-`a1` the digit (`select`); `s4` the selection's mask.
+the exponent's pointer, `s10` its bytes left, and `a1` the digit (`select`).
 -/
 
 @[expose] public section
@@ -68,39 +68,9 @@ def table : Prog isa :=
         (.block [.addi .s7 .s7 1, .addi .t2 .s7 (-16)]))) (.nonzero .t2))
       (copy 6 8))))))
 
-/-- Public pointers to the first table word and destination, and the word count. -/
-def wordSelectInit : List Instr :=
-  [.shift .sll .d .t3 .s5 3, .add .t3 .a7 .t3, .shift .sll .d .s4 .s5 2,
-    .add .s4 .s4 .s5, .add .s4 .a7 .s4, .addi .t5 .t0 0]
-
-/-- Start one column's masked scan. The digit affects only a register shift. -/
-def wordSelectHead : List Instr :=
-  [.addi .s1 .t3 0, .li .s0 0, .li .s3 0, .li .t6 1, .shiftReg .sll .d .t6 .t6 .a1]
-
-/-- Accumulate one table word under the low bit of the one-hot digit. -/
-def wordSelectCell : List Instr :=
-  [.load .d .s2 .s1 0, .logicImm .and .t2 .t6 1, .sub .t2 .s3 .t2,
-    .logic .and .s2 .s2 .t2, .logic .or .s0 .s0 .s2]
-
-/-- Advance to the same column of the next table entry. -/
-def wordSelectAdvance : List Instr :=
-  [.shift .srl .d .t6 .t6 1, .add .s1 .s1 .s5]
-
-/-- A fixed number of cells, each followed by the public pointer advance. -/
-def wordSelectPrefix (n : Nat) : List Instr :=
-  (List.range n).flatMap fun _ => wordSelectCell ++ wordSelectAdvance
-
-/-- Store one selected word, then advance both column pointers. -/
-def wordSelectStore : List Instr :=
-  [.store .d .s0 .s4 0, .addi .s4 .s4 8, .addi .t3 .t3 8]
-
-/-- Scan every table entry for each word; only the selected word is stored. -/
-def wordSelect : Prog isa :=
-  .seq (.block wordSelectInit) (countLoop .t5
-    (wordSelectHead ++ wordSelectPrefix 15 ++ wordSelectCell ++ wordSelectStore))
-
-/-- Select the secret-indexed table entry with a fixed word-oriented scan. -/
-def select : Prog isa := wordSelect
+/-- Array 5 `:= T_d`, for the digit `d` in `a1`, by a scan of the whole table
+(`WinSelect.lean`). -/
+def select : Prog isa := .seq (.block [.addi .t6 .a1 0]) (WinSelect.winSelect 5 8)
 
 /-- One window, its digit at the top of `s7`: four squares, `a := a T_d`,
 then `s7 := s7 << 4`. -/

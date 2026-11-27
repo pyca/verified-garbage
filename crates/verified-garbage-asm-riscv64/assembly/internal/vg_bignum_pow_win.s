@@ -2478,131 +2478,166 @@ vg_bignum_pow_win:
 	slli t3, t0, 3
 	sub a5, a5, t3
 	srli a1, s7, 60
-	slli t3, s5, 3
-	add t3, a7, t3
-	slli s4, s5, 2
-	add s4, s4, s5
-	add s4, a7, s4
-	addi t5, t0, 0
+	addi t6, a1, 0
+	slli s4, t6, 60
+	srai s4, s4, 63
+	andi t5, t6, 7
+	addi t4, zero, 1
+	sll t4, t4, t5
+	slli a0, t4, 63
+	srai a0, a0, 63
+	slli a1, t4, 62
+	srai a1, a1, 63
+	slli a2, t4, 61
+	srai a2, a2, 63
+	slli a3, t4, 60
+	srai a3, a3, 63
+	slli a4, t4, 59
+	srai a4, a4, 63
+	slli a5, t4, 58
+	srai a5, a5, 63
+	slli a6, t4, 57
+	srai a6, a6, 63
+	slli t2, t4, 56
+	srai t2, t2, 63
+	addi t3, a7, 0
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	addi t4, a7, 0
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	addi t5, t0, 1
+	srli t5, t5, 1
 2110:
-	addi s1, t3, 0
-	addi s0, zero, 0
-	addi s3, zero, 0
-	addi t6, zero, 1
-	sll t6, t6, a1
-	ld s2, 0(s1)
-	andi t2, t6, 1
-	sub t2, s3, t2
-	and s2, s2, t2
-	or s0, s0, s2
-	srli t6, t6, 1
-	add s1, s1, s5
-	ld s2, 0(s1)
-	andi t2, t6, 1
-	sub t2, s3, t2
-	and s2, s2, t2
-	or s0, s0, s2
-	srli t6, t6, 1
-	add s1, s1, s5
-	ld s2, 0(s1)
-	andi t2, t6, 1
-	sub t2, s3, t2
-	and s2, s2, t2
-	or s0, s0, s2
-	srli t6, t6, 1
-	add s1, s1, s5
-	ld s2, 0(s1)
-	andi t2, t6, 1
-	sub t2, s3, t2
-	and s2, s2, t2
-	or s0, s0, s2
-	srli t6, t6, 1
-	add s1, s1, s5
-	ld s2, 0(s1)
-	andi t2, t6, 1
-	sub t2, s3, t2
-	and s2, s2, t2
-	or s0, s0, s2
-	srli t6, t6, 1
-	add s1, s1, s5
-	ld s2, 0(s1)
-	andi t2, t6, 1
-	sub t2, s3, t2
-	and s2, s2, t2
-	or s0, s0, s2
-	srli t6, t6, 1
-	add s1, s1, s5
-	ld s2, 0(s1)
-	andi t2, t6, 1
-	sub t2, s3, t2
-	and s2, s2, t2
-	or s0, s0, s2
-	srli t6, t6, 1
-	add s1, s1, s5
-	ld s2, 0(s1)
-	andi t2, t6, 1
-	sub t2, s3, t2
-	and s2, s2, t2
-	or s0, s0, s2
-	srli t6, t6, 1
-	add s1, s1, s5
-	ld s2, 0(s1)
-	andi t2, t6, 1
-	sub t2, s3, t2
-	and s2, s2, t2
-	or s0, s0, s2
-	srli t6, t6, 1
-	add s1, s1, s5
-	ld s2, 0(s1)
-	andi t2, t6, 1
-	sub t2, s3, t2
-	and s2, s2, t2
-	or s0, s0, s2
-	srli t6, t6, 1
-	add s1, s1, s5
-	ld s2, 0(s1)
-	andi t2, t6, 1
-	sub t2, s3, t2
-	and s2, s2, t2
-	or s0, s0, s2
-	srli t6, t6, 1
-	add s1, s1, s5
-	ld s2, 0(s1)
-	andi t2, t6, 1
-	sub t2, s3, t2
-	and s2, s2, t2
-	or s0, s0, s2
-	srli t6, t6, 1
-	add s1, s1, s5
-	ld s2, 0(s1)
-	andi t2, t6, 1
-	sub t2, s3, t2
-	and s2, s2, t2
-	or s0, s0, s2
-	srli t6, t6, 1
-	add s1, s1, s5
-	ld s2, 0(s1)
-	andi t2, t6, 1
-	sub t2, s3, t2
-	and s2, s2, t2
-	or s0, s0, s2
-	srli t6, t6, 1
-	add s1, s1, s5
-	ld s2, 0(s1)
-	andi t2, t6, 1
-	sub t2, s3, t2
-	and s2, s2, t2
-	or s0, s0, s2
-	srli t6, t6, 1
-	add s1, s1, s5
-	ld s2, 0(s1)
-	andi t2, t6, 1
-	sub t2, s3, t2
-	and s2, s2, t2
-	or s0, s0, s2
-	sd s0, 0(s4)
-	addi s4, s4, 8
-	addi t3, t3, 8
+	ld s0, 0(t3)
+	and s0, s0, a0
+	ld s1, 8(t3)
+	and s1, s1, a0
+	add t3, t3, s5
+	ld t6, 0(t3)
+	and t6, t6, a1
+	or s0, s0, t6
+	ld t6, 8(t3)
+	and t6, t6, a1
+	or s1, s1, t6
+	add t3, t3, s5
+	ld t6, 0(t3)
+	and t6, t6, a2
+	or s0, s0, t6
+	ld t6, 8(t3)
+	and t6, t6, a2
+	or s1, s1, t6
+	add t3, t3, s5
+	ld t6, 0(t3)
+	and t6, t6, a3
+	or s0, s0, t6
+	ld t6, 8(t3)
+	and t6, t6, a3
+	or s1, s1, t6
+	add t3, t3, s5
+	ld t6, 0(t3)
+	and t6, t6, a4
+	or s0, s0, t6
+	ld t6, 8(t3)
+	and t6, t6, a4
+	or s1, s1, t6
+	add t3, t3, s5
+	ld t6, 0(t3)
+	and t6, t6, a5
+	or s0, s0, t6
+	ld t6, 8(t3)
+	and t6, t6, a5
+	or s1, s1, t6
+	add t3, t3, s5
+	ld t6, 0(t3)
+	and t6, t6, a6
+	or s0, s0, t6
+	ld t6, 8(t3)
+	and t6, t6, a6
+	or s1, s1, t6
+	add t3, t3, s5
+	ld t6, 0(t3)
+	and t6, t6, t2
+	or s0, s0, t6
+	ld t6, 8(t3)
+	and t6, t6, t2
+	or s1, s1, t6
+	add t3, t3, s5
+	ld s2, 0(t3)
+	and s2, s2, a0
+	ld s3, 8(t3)
+	and s3, s3, a0
+	add t3, t3, s5
+	ld t6, 0(t3)
+	and t6, t6, a1
+	or s2, s2, t6
+	ld t6, 8(t3)
+	and t6, t6, a1
+	or s3, s3, t6
+	add t3, t3, s5
+	ld t6, 0(t3)
+	and t6, t6, a2
+	or s2, s2, t6
+	ld t6, 8(t3)
+	and t6, t6, a2
+	or s3, s3, t6
+	add t3, t3, s5
+	ld t6, 0(t3)
+	and t6, t6, a3
+	or s2, s2, t6
+	ld t6, 8(t3)
+	and t6, t6, a3
+	or s3, s3, t6
+	add t3, t3, s5
+	ld t6, 0(t3)
+	and t6, t6, a4
+	or s2, s2, t6
+	ld t6, 8(t3)
+	and t6, t6, a4
+	or s3, s3, t6
+	add t3, t3, s5
+	ld t6, 0(t3)
+	and t6, t6, a5
+	or s2, s2, t6
+	ld t6, 8(t3)
+	and t6, t6, a5
+	or s3, s3, t6
+	add t3, t3, s5
+	ld t6, 0(t3)
+	and t6, t6, a6
+	or s2, s2, t6
+	ld t6, 8(t3)
+	and t6, t6, a6
+	or s3, s3, t6
+	add t3, t3, s5
+	ld t6, 0(t3)
+	and t6, t6, t2
+	or s2, s2, t6
+	ld t6, 8(t3)
+	and t6, t6, t2
+	or s3, s3, t6
+	add t3, t3, s5
+	xor s2, s2, s0
+	and s2, s2, s4
+	xor s0, s0, s2
+	xor s3, s3, s1
+	and s3, s3, s4
+	xor s1, s1, s3
+	sd s0, 0(t4)
+	sd s1, 8(t4)
+	addi t4, t4, 16
+	slli t6, s5, 4
+	sub t3, t3, t6
+	addi t3, t3, 16
 	addi t5, t5, -1
 	bnez t5, 2110b
 	addi a2, a7, 0
@@ -4410,131 +4445,166 @@ vg_bignum_pow_win:
 	slli t3, t0, 3
 	sub a5, a5, t3
 	srli a1, s7, 60
-	slli t3, s5, 3
-	add t3, a7, t3
-	slli s4, s5, 2
-	add s4, s4, s5
-	add s4, a7, s4
-	addi t5, t0, 0
+	addi t6, a1, 0
+	slli s4, t6, 60
+	srai s4, s4, 63
+	andi t5, t6, 7
+	addi t4, zero, 1
+	sll t4, t4, t5
+	slli a0, t4, 63
+	srai a0, a0, 63
+	slli a1, t4, 62
+	srai a1, a1, 63
+	slli a2, t4, 61
+	srai a2, a2, 63
+	slli a3, t4, 60
+	srai a3, a3, 63
+	slli a4, t4, 59
+	srai a4, a4, 63
+	slli a5, t4, 58
+	srai a5, a5, 63
+	slli a6, t4, 57
+	srai a6, a6, 63
+	slli t2, t4, 56
+	srai t2, t2, 63
+	addi t3, a7, 0
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	addi t4, a7, 0
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	addi t5, t0, 1
+	srli t5, t5, 1
 2193:
-	addi s1, t3, 0
-	addi s0, zero, 0
-	addi s3, zero, 0
-	addi t6, zero, 1
-	sll t6, t6, a1
-	ld s2, 0(s1)
-	andi t2, t6, 1
-	sub t2, s3, t2
-	and s2, s2, t2
-	or s0, s0, s2
-	srli t6, t6, 1
-	add s1, s1, s5
-	ld s2, 0(s1)
-	andi t2, t6, 1
-	sub t2, s3, t2
-	and s2, s2, t2
-	or s0, s0, s2
-	srli t6, t6, 1
-	add s1, s1, s5
-	ld s2, 0(s1)
-	andi t2, t6, 1
-	sub t2, s3, t2
-	and s2, s2, t2
-	or s0, s0, s2
-	srli t6, t6, 1
-	add s1, s1, s5
-	ld s2, 0(s1)
-	andi t2, t6, 1
-	sub t2, s3, t2
-	and s2, s2, t2
-	or s0, s0, s2
-	srli t6, t6, 1
-	add s1, s1, s5
-	ld s2, 0(s1)
-	andi t2, t6, 1
-	sub t2, s3, t2
-	and s2, s2, t2
-	or s0, s0, s2
-	srli t6, t6, 1
-	add s1, s1, s5
-	ld s2, 0(s1)
-	andi t2, t6, 1
-	sub t2, s3, t2
-	and s2, s2, t2
-	or s0, s0, s2
-	srli t6, t6, 1
-	add s1, s1, s5
-	ld s2, 0(s1)
-	andi t2, t6, 1
-	sub t2, s3, t2
-	and s2, s2, t2
-	or s0, s0, s2
-	srli t6, t6, 1
-	add s1, s1, s5
-	ld s2, 0(s1)
-	andi t2, t6, 1
-	sub t2, s3, t2
-	and s2, s2, t2
-	or s0, s0, s2
-	srli t6, t6, 1
-	add s1, s1, s5
-	ld s2, 0(s1)
-	andi t2, t6, 1
-	sub t2, s3, t2
-	and s2, s2, t2
-	or s0, s0, s2
-	srli t6, t6, 1
-	add s1, s1, s5
-	ld s2, 0(s1)
-	andi t2, t6, 1
-	sub t2, s3, t2
-	and s2, s2, t2
-	or s0, s0, s2
-	srli t6, t6, 1
-	add s1, s1, s5
-	ld s2, 0(s1)
-	andi t2, t6, 1
-	sub t2, s3, t2
-	and s2, s2, t2
-	or s0, s0, s2
-	srli t6, t6, 1
-	add s1, s1, s5
-	ld s2, 0(s1)
-	andi t2, t6, 1
-	sub t2, s3, t2
-	and s2, s2, t2
-	or s0, s0, s2
-	srli t6, t6, 1
-	add s1, s1, s5
-	ld s2, 0(s1)
-	andi t2, t6, 1
-	sub t2, s3, t2
-	and s2, s2, t2
-	or s0, s0, s2
-	srli t6, t6, 1
-	add s1, s1, s5
-	ld s2, 0(s1)
-	andi t2, t6, 1
-	sub t2, s3, t2
-	and s2, s2, t2
-	or s0, s0, s2
-	srli t6, t6, 1
-	add s1, s1, s5
-	ld s2, 0(s1)
-	andi t2, t6, 1
-	sub t2, s3, t2
-	and s2, s2, t2
-	or s0, s0, s2
-	srli t6, t6, 1
-	add s1, s1, s5
-	ld s2, 0(s1)
-	andi t2, t6, 1
-	sub t2, s3, t2
-	and s2, s2, t2
-	or s0, s0, s2
-	sd s0, 0(s4)
-	addi s4, s4, 8
-	addi t3, t3, 8
+	ld s0, 0(t3)
+	and s0, s0, a0
+	ld s1, 8(t3)
+	and s1, s1, a0
+	add t3, t3, s5
+	ld t6, 0(t3)
+	and t6, t6, a1
+	or s0, s0, t6
+	ld t6, 8(t3)
+	and t6, t6, a1
+	or s1, s1, t6
+	add t3, t3, s5
+	ld t6, 0(t3)
+	and t6, t6, a2
+	or s0, s0, t6
+	ld t6, 8(t3)
+	and t6, t6, a2
+	or s1, s1, t6
+	add t3, t3, s5
+	ld t6, 0(t3)
+	and t6, t6, a3
+	or s0, s0, t6
+	ld t6, 8(t3)
+	and t6, t6, a3
+	or s1, s1, t6
+	add t3, t3, s5
+	ld t6, 0(t3)
+	and t6, t6, a4
+	or s0, s0, t6
+	ld t6, 8(t3)
+	and t6, t6, a4
+	or s1, s1, t6
+	add t3, t3, s5
+	ld t6, 0(t3)
+	and t6, t6, a5
+	or s0, s0, t6
+	ld t6, 8(t3)
+	and t6, t6, a5
+	or s1, s1, t6
+	add t3, t3, s5
+	ld t6, 0(t3)
+	and t6, t6, a6
+	or s0, s0, t6
+	ld t6, 8(t3)
+	and t6, t6, a6
+	or s1, s1, t6
+	add t3, t3, s5
+	ld t6, 0(t3)
+	and t6, t6, t2
+	or s0, s0, t6
+	ld t6, 8(t3)
+	and t6, t6, t2
+	or s1, s1, t6
+	add t3, t3, s5
+	ld s2, 0(t3)
+	and s2, s2, a0
+	ld s3, 8(t3)
+	and s3, s3, a0
+	add t3, t3, s5
+	ld t6, 0(t3)
+	and t6, t6, a1
+	or s2, s2, t6
+	ld t6, 8(t3)
+	and t6, t6, a1
+	or s3, s3, t6
+	add t3, t3, s5
+	ld t6, 0(t3)
+	and t6, t6, a2
+	or s2, s2, t6
+	ld t6, 8(t3)
+	and t6, t6, a2
+	or s3, s3, t6
+	add t3, t3, s5
+	ld t6, 0(t3)
+	and t6, t6, a3
+	or s2, s2, t6
+	ld t6, 8(t3)
+	and t6, t6, a3
+	or s3, s3, t6
+	add t3, t3, s5
+	ld t6, 0(t3)
+	and t6, t6, a4
+	or s2, s2, t6
+	ld t6, 8(t3)
+	and t6, t6, a4
+	or s3, s3, t6
+	add t3, t3, s5
+	ld t6, 0(t3)
+	and t6, t6, a5
+	or s2, s2, t6
+	ld t6, 8(t3)
+	and t6, t6, a5
+	or s3, s3, t6
+	add t3, t3, s5
+	ld t6, 0(t3)
+	and t6, t6, a6
+	or s2, s2, t6
+	ld t6, 8(t3)
+	and t6, t6, a6
+	or s3, s3, t6
+	add t3, t3, s5
+	ld t6, 0(t3)
+	and t6, t6, t2
+	or s2, s2, t6
+	ld t6, 8(t3)
+	and t6, t6, t2
+	or s3, s3, t6
+	add t3, t3, s5
+	xor s2, s2, s0
+	and s2, s2, s4
+	xor s0, s0, s2
+	xor s3, s3, s1
+	and s3, s3, s4
+	xor s1, s1, s3
+	sd s0, 0(t4)
+	sd s1, 8(t4)
+	addi t4, t4, 16
+	slli t6, s5, 4
+	sub t3, t3, t6
+	addi t3, t3, 16
 	addi t5, t5, -1
 	bnez t5, 2193b
 	addi a2, a7, 0

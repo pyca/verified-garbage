@@ -453,207 +453,8 @@ theorem sub1_sign {x : BitVec 64} (hx : x.toNat < 2 ^ 32) :
     this]
   split <;> omega_arith
 
-/-- A bounded one-hot bit produces exactly one all-ones selection mask. -/
-theorem wordSelect_mask : ∀ (d j : Fin 16),
-    (0#64 : BitVec 64) - ((((1#64 : BitVec 64) <<< d.val) >>> j.val) &&& 1#64) =
-      if j.val = d.val then BitVec.allOnes 64 else 0#64 := by decide
-
-/-- One column word is read without changing memory or its public pointer. -/
-theorem wordSelectCell_ok {s : State} {B : Addr} {Z w i j d : Nat} (hs : Scr s B Z)
-    (hptr : s.gpr .s1 = off B (slot w (8 + j) + 8 * i))
-    (hhot : s.gpr .t6 = ((1#64 : BitVec 64) <<< d) >>> j) (hzero : s.gpr .s3 = 0#64)
-    (hj : j < 16) (hd : d < 16) (hi : i < w) (hZ : slot w 24 ≤ Z) :
-    WP isa (.block wordSelectCell) s fun t =>
-      (t.gpr .s0 = (if j = d then s.gpr .s0 ||| word s.mem B (slot w (8 + j) + 8 * i)
-        else s.gpr .s0) ∧ t.mem = s.mem) ∧ Keep [.s2, .t2, .s0] s t := by
-  obtain hslot := slot_lt (w := w) (show 8 + j < 24 by omega_arith)
-  obtain hfit : slot w (8 + j) + 8 * i + 8 ≤ Z := by omega_arith
-  obtain hal : (slot w (8 + j) + 8 * i) % 8 = 0 := by
-    have := slot_al w (8 + j); omega_arith
-  obtain hm : (0#64 : BitVec 64) - ((((1#64 : BitVec 64) <<< d) >>> j) &&& 1#64) =
-      if j = d then BitVec.allOnes 64 else 0#64 := wordSelect_mask ⟨d, hd⟩ ⟨j, hj⟩
-  refine WP.keep _ ?_ (by rfl) (by rfl)
-  unfold wordSelectCell
-  brun [hptr, hhot, hzero, hs.ld hfit, hs.al8 hfit hal]
-  rw [hm]
-  by_cases he : j = d
-  · simp only [he, ↓reduceIte, BitVec.and_allOnes, word]
-  · simp only [he, ↓reduceIte, BitVec.and_zero, BitVec.or_zero]
-
-/-- The public address of the next cell in one table column. -/
-theorem wordSelect_next (w i j : Nat) :
-    slot w (8 + j) + 8 * i + 8 * (w + 2) = slot w (8 + (j + 1)) + 8 * i := by
-  unfold slot
-  rw [show 8 + (j + 1) = (8 + j) + 1 by omega_arith]
-  simp only [Nat.add_mul, Nat.one_mul]
-  omega_arith
-
-/-- The fixed prefix is extended by one cell and pointer advance. -/
-theorem wordSelectPrefix_succ (n : Nat) : wordSelectPrefix (n + 1) =
-    wordSelectPrefix n ++ (wordSelectCell ++ wordSelectAdvance) := by
-  simp only [wordSelectPrefix, List.range_succ, List.flatMap_append, List.flatMap_cons,
-    List.flatMap_nil, List.append_nil]
-
-/-- A read-only prefix of the column scan. The accumulator is zero until
-its digit's entry, then keeps that entry's word. -/
-theorem wordSelectPrefix_ok {s : State} {B : Addr} {Z w i d : Nat} (hs : Scr s B Z)
-    (hptr : s.gpr .s1 = off B (slot w 8 + 8 * i))
-    (hhot : s.gpr .t6 = (1#64 : BitVec 64) <<< d) (hacc : s.gpr .s0 = 0#64)
-    (hzero : s.gpr .s3 = 0#64) (hstride : s.gpr .s5 = BitVec.ofNat 64 (8 * (w + 2)))
-    (hd : d < 16) (hi : i < w) (hZ : slot w 24 ≤ Z) (n : Nat) (hn : n ≤ 15) :
-    WP isa (.block (wordSelectPrefix n)) s fun t =>
-      (t.gpr .s0 = (if d < n then word s.mem B (slot w (8 + d) + 8 * i) else 0#64) ∧
-        t.gpr .s1 = off B (slot w (8 + n) + 8 * i) ∧
-        t.gpr .t6 = ((1#64 : BitVec 64) <<< d) >>> n ∧ t.mem = s.mem) ∧
-        Keep [.s0, .s1, .s2, .t2, .t6] s t := by
-  induction n with
-  | zero =>
-    simp only [wordSelectPrefix, List.range_zero, List.flatMap_nil]
-    exact WP.block_nil ⟨⟨by simpa only [Nat.not_lt_zero, ↓reduceIte] using hacc,
-      by simpa only [Nat.add_zero] using hptr, by simpa only [BitVec.ushiftRight_zero] using hhot, rfl⟩,
-      Keep.refl _ _⟩
-  | succ n ih =>
-    rw [wordSelectPrefix_succ, WP.block_append_iff]
-    refine WP.mono (ih (by omega_arith)) fun t₁ ⟨⟨v1, p1, b1, m1⟩, k1⟩ => ?_
-    rw [WP.block_append_iff]
-    refine WP.mono (wordSelectCell_ok (hs.congr k1.2.2) p1 b1
-      ((k1.gpr (by decide)).trans hzero) (by omega_arith) hd hi hZ)
-      fun t₂ ⟨⟨v2, m2⟩, k2⟩ => ?_
-    obtain value : t₂.gpr .s0 = if d < n + 1 then word s.mem B (slot w (8 + d) + 8 * i) else 0#64 := by
-      rw [m1, v1] at v2
-      by_cases he : n = d
-      · simpa [he] using v2
-      · have e : (d < n) = (d < n + 1) := propext (by omega_arith)
-        simpa only [he, ↓reduceIte, e] using v2
-    obtain k12 := k1.trans k2
-    obtain hptr2 : t₂.gpr .s1 = off B (slot w (8 + n) + 8 * i) := (k2.gpr (by decide)).trans p1
-    obtain hhot2 : t₂.gpr .t6 = ((1#64 : BitVec 64) <<< d) >>> n := (k2.gpr (by decide)).trans b1
-    obtain hstride2 := (k12.gpr (r := .s5) (by decide)).trans hstride
-    obtain advance : WP isa (.block wordSelectAdvance) t₂ fun t =>
-        (t.gpr .s1 = off B (slot w (8 + (n + 1)) + 8 * i) ∧
-          t.gpr .t6 = ((1#64 : BitVec 64) <<< d) >>> (n + 1) ∧ t.mem = t₂.mem) ∧
-          Keep [.s1, .t6] t₂ t := by
-      refine WP.keep _ ?_ (by rfl) (by rfl)
-      unfold wordSelectAdvance
-      brun [hptr2, hhot2, hstride2, off_add, wordSelect_next, ← BitVec.shiftRight_add]
-    exact WP.mono advance fun t ⟨⟨p3, b3, m3⟩, k3⟩ =>
-      ⟨⟨(k3.gpr (by decide)).trans value, p3, b3, m3.trans (m2.trans m1)⟩,
-        (k12.trans k3).mono (by decide)⟩
-
-/-- Start a column with public addresses and a secret digit held only in a
-one-hot register. -/
-theorem wordSelectHead_ok {s : State} {B : Addr} {w i d : Nat}
-    (hptr : s.gpr .t3 = off B (slot w 8 + 8 * i))
-    (h1 : s.gpr .a1 = BitVec.ofNat 64 d) (hd : d < 16) :
-    WP isa (.block wordSelectHead) s fun t =>
-      (t.gpr .s1 = off B (slot w 8 + 8 * i) ∧ t.gpr .s0 = 0#64 ∧ t.gpr .s3 = 0#64 ∧
-        t.gpr .t6 = (1#64 : BitVec 64) <<< d ∧ t.mem = s.mem) ∧ Keep [.s1, .s0, .s3, .t6] s t := by
-  refine WP.keep _ ?_ (by rfl) (by rfl)
-  unfold wordSelectHead
-  brun [hptr, h1, Pub.pub_li0, Pub.pub_li1, exec_li, exec_sllReg, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show d < 2 ^ 64 by omega_arith),
-    Nat.mod_eq_of_lt (show d < 64 by omega_arith)]
-
-/-- All sixteen cells of one column select exactly its digit's word. -/
-theorem wordSelectWord_ok {s : State} {B : Addr} {Z w i d : Nat} (hs : Scr s B Z)
-    (hptr : s.gpr .t3 = off B (slot w 8 + 8 * i))
-    (h1 : s.gpr .a1 = BitVec.ofNat 64 d)
-    (hstride : s.gpr .s5 = BitVec.ofNat 64 (8 * (w + 2)))
-    (hd : d < 16) (hi : i < w) (hZ : slot w 24 ≤ Z) :
-    WP isa (.block (wordSelectHead ++ wordSelectPrefix 15 ++ wordSelectCell)) s fun t =>
-      (t.gpr .s0 = word s.mem B (slot w (8 + d) + 8 * i) ∧ t.mem = s.mem) ∧
-        Keep [.s0, .s1, .s2, .s3, .t2, .t6] s t := by
-  rw [List.append_assoc, WP.block_append_iff]
-  refine WP.mono (wordSelectHead_ok hptr h1 hd) fun t₁ ⟨⟨p1, v1, z1, b1, m1⟩, k1⟩ => ?_
-  rw [WP.block_append_iff]
-  refine WP.mono (wordSelectPrefix_ok (hs.congr k1.2.2) p1 b1 v1 z1
-    ((k1.gpr (by decide)).trans hstride) hd hi hZ 15 (by decide))
-    fun t₂ ⟨⟨v2, p2, b2, m2⟩, k2⟩ => ?_
-  refine WP.mono (wordSelectCell_ok ((hs.congr k1.2.2).congr k2.2.2) p2 b2
-    ((k2.gpr (by decide)).trans z1) (by decide) hd hi hZ) fun t ⟨⟨v3, m3⟩, k3⟩ => ?_
-  refine ⟨⟨?_, m3.trans (m2.trans m1)⟩, ((k1.trans k2).trans k3).mono (by decide)⟩
-  rw [v2, m2, m1] at v3
-  by_cases he : 15 = d
-  · simpa [he] using v3
-  · simpa only [he, ↓reduceIte, show d < 15 by omega_arith, ↓reduceIte] using v3
-
 /-- The registers the selection writes. -/
-def selectRegs : List Reg := [.t3, .s4, .t5, .s1, .s0, .s3, .t6, .s2, .t2]
-
-theorem wordSelect_shl2 (a : Nat) : BitVec.ofNat 64 a <<< 2 = BitVec.ofNat 64 (4 * a) := by
-  apply BitVec.eq_of_toNat_eq
-  simp only [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, Nat.shiftLeft_eq]
-  omega_arith
-
-/-- Initialize the two column pointers and the public word count. -/
-theorem wordSelectInit_ok {s : State} {B : Addr} {Z w N : Nat} (h : WCtx s B Z w N) :
-    WP isa (.block wordSelectInit) s fun t =>
-      (t.gpr .t3 = off B (slot w 8) ∧ t.gpr .s4 = off B (slot w 5) ∧
-        t.gpr .t5 = BitVec.ofNat 64 w ∧ t.mem = s.mem) ∧ Keep [.t3, .s4, .t5] s t := by
-  obtain e8 : slot w 0 + 8 * (8 * (w + 2)) = slot w 8 := by unfold slot; omega_arith
-  obtain e5 : slot w 0 + (4 * (8 * (w + 2)) + 8 * (w + 2)) = slot w 5 := by unfold slot; omega_arith
-  refine WP.keep _ ?_ (by rfl) (by rfl)
-  unfold wordSelectInit
-  brun [h.a7, h.s5, h.t0, sqr_shl3, wordSelect_shl2, ← BitVec.ofNat_add, off_add, e8, e5]
-
-/-- Store one selected word and advance the public pointers and counter. -/
-theorem wordSelectStore_ok {s : State} {B : Addr} {Z w i : Nat} (hs : Scr s B Z)
-    (hptr : s.gpr .s4 = off B (slot w 5 + 8 * i))
-    (ht3 : s.gpr .t3 = off B (slot w 8 + 8 * i))
-    (hi : i < w) (hZ : slot w 24 ≤ Z) :
-    WP isa (.block (wordSelectStore ++ ([.addi .t5 .t5 (-1)] : List Instr))) s fun t =>
-      (t.mem = s.mem.writeW (off B (slot w 5 + 8 * i)) (s.gpr .s0) ∧
-        t.gpr .s4 = off B (slot w 5 + 8 * (i + 1)) ∧
-        t.gpr .t3 = off B (slot w 8 + 8 * (i + 1)) ∧
-        t.gpr .t5 = s.gpr .t5 - BitVec.ofNat 64 1) ∧ Keep [.s4, .t3, .t5] s t := by
-  obtain hs5 := slot_lt (w := w) (show 5 < 24 by decide)
-  obtain hfit : slot w 5 + 8 * i + 8 ≤ Z := by omega_arith
-  obtain hal : (slot w 5 + 8 * i) % 8 = 0 := by have := slot_al w 5; omega_arith
-  refine WP.keep _ ?_ (by rfl) (by rfl)
-  unfold wordSelectStore
-  brun [hptr, ht3, hs.st hfit, hs.al8 hfit hal, show slot w 5 + 8 * i + 8 = slot w 5 + 8 * (i + 1) by omega_arith,
-    show slot w 8 + 8 * i + 8 = slot w 8 + 8 * (i + 1) by omega_arith]
-
-/-- The word-oriented scan reads every table entry and changes only array 5. -/
-theorem wordSelect_ok {s : State} {B : Addr} {Z w N d : Nat} (h : WCtx s B Z w N)
-    (h1 : s.gpr .a1 = BitVec.ofNat 64 d) (hd : d < 16) :
-    WP isa wordSelect s fun t =>
-      (A t.mem B w 5 = A s.mem B w (8 + d) ∧
-        (∀ j < 24, j ≠ 3 → j ≠ 5 → A t.mem B w j = A s.mem B w j) ∧
-        WCtx t B Z w N ∧ WinO B w s.mem t.mem) ∧ Keep selectRegs s t := by
-  have hn := h.nw
-  obtain hs5 := slot_lt (w := w) (show 5 < 24 by decide)
-  obtain hsd := slot_lt (w := w) (show 8 + d < 24 by omega_arith)
-  obtain sep := slot_lt (w := w) (show 5 < 8 + d by omega_arith)
-  unfold wordSelect countLoop
-  refine WP.seq (WP.mono (wordSelectInit_ok h) fun t₀ ⟨⟨p0, o0, c0, m0⟩, k0⟩ => ?_)
-  let I : Nat → State → Prop := fun i t =>
-    WCtx t B Z w N ∧ t.gpr .t3 = off B (slot w 8 + 8 * i) ∧
-      t.gpr .s4 = off B (slot w 5 + 8 * i) ∧ Outside B (slot w 5) (8 * i) s.mem t.mem ∧
-      wordsVal t.mem B (slot w 5) i = wordsVal s.mem B (slot w (8 + d)) i ∧ Keep selectRegs s t
-  obtain init : I 0 t₀ := ⟨h.regs k0 (by decide) m0, by simpa using p0, by simpa using o0,
-    by rw [m0]; exact Outside.refl _ _ _ _, by simp only [wordsVal], k0.mono (by decide)⟩
-  refine WP.mono (wp_countdown (cnt := .t5) (N := w) (by have := h.w31; omega_arith)
-    (by have := h.w2; omega_arith) I (fun i hi t ⟨ct, pt, po, ot, vt, kt⟩ hc => ?_) init c0)
-    fun t ⟨ct, _, _, ot, vt, kt⟩ => ⟨⟨vt, fun j hj _ h5 => arr_out ot hj h5 hn,
-      ct, arrO ot (by decide) (by decide)⟩, kt⟩
-  rw [List.append_assoc, WP.block_append_iff]
-  refine WP.mono (wordSelectWord_ok ct.scr pt ((kt.gpr (by decide)).trans h1) ct.s5 hd hi ct.hZ)
-    fun u ⟨⟨vu, mu⟩, ku⟩ => ?_
-  obtain cu := ct.regs ku (by decide) mu
-  obtain val_old : word t.mem B (slot w (8 + d) + 8 * i) = word s.mem B (slot w (8 + d) + 8 * i) :=
-    ot.word (Or.inr (by omega_arith)) (by omega_arith)
-  obtain val : u.gpr .s0 = word s.mem B (slot w (8 + d) + 8 * i) := vu.trans val_old
-  refine WP.mono (wordSelectStore_ok cu.scr ((ku.gpr (by decide)).trans po)
-    ((ku.gpr (by decide)).trans pt) hi cu.hZ) fun v ⟨⟨mv, pv, qv, cv⟩, kv⟩ => ?_
-  rw [mu, val] at mv
-  obtain ov : Outside B (slot w 5 + 8 * i) 8 t.mem v.mem := by
-    rw [mv]; exact writeW_outside _ _ _ (by omega_arith)
-  obtain ov_full : Outside B (slot w 5) (8 * w) t.mem v.mem := ov.mono (by omega_arith) (by omega_arith)
-  obtain cv' := cu.of kv (by decide) (by rw [mu]; exact arrO ov_full (by decide) (by decide))
-  refine ⟨⟨cv', qv, pv, ?_, ?_, ((kt.trans ku).trans kv).mono (by decide)⟩, ?_⟩
-  · exact (ot.mono (Nat.le_refl _) (by omega_arith)).trans (ov.mono (by omega_arith) (by omega_arith))
-  · rw [mv, fios_wordsVal_write_top _ _ _ _ _ (by omega_arith), vt, wordsVal_succ_top]
-  · rw [cv, ku.gpr (by decide)]
+def selectRegs : List Reg := .t6 :: WinSelect.RISCV64.selectRegs
 
 /-- `select`: array 5 := `T_d`, for `d` in `a1`; only arrays 3 and 5 change. -/
 theorem select_ok {s : State} {B : Addr} {Z w N d : Nat} (h : WCtx s B Z w N)
@@ -661,7 +462,16 @@ theorem select_ok {s : State} {B : Addr} {Z w N d : Nat} (h : WCtx s B Z w N)
     WP isa select s fun t =>
       (A t.mem B w 5 = A s.mem B w (8 + d) ∧ (∀ j < 24, j ≠ 3 → j ≠ 5 → A t.mem B w j = A s.mem B w j) ∧
         WCtx t B Z w N ∧ WinO B w s.mem t.mem) ∧ Keep selectRegs s t := by
-  exact wordSelect_ok h h1 hd
+  unfold select
+  refine WP.seq (WP.mono (WP.keep [.t6] (Q := fun t => t.gpr .t6 = BitVec.ofNat 64 d ∧ t.mem = s.mem)
+    (by brun [h1, BitVec.add_zero]) (by rfl) (by rfl)) fun u ⟨⟨u6, um⟩, uk⟩ => ?_)
+  have hu := h.regs uk (by decide) um
+  refine WP.mono (WinSelect.RISCV64.winSelect_ok (o := 5) (t := 8) hu.scr hu.a7 hu.s5 hu.t0
+    (by have := h.w2; omega_arith) h.w31 u6 hd (by decide) hu.hZ) fun t ⟨⟨t5, to⟩, tk⟩ => ?_
+  rw [um] at t5 to
+  have ht := win_of_arrays to (by decide)
+  exact ⟨⟨t5, fun j hj _ h5 => arr_eq to hj (by simpa using fun e => h5 e.symm) h.nw,
+    h.of (uk.trans tk) (by decide) ht, ht⟩, (uk.trans tk).mono (by decide)⟩
 
 /-! ## Windows -/
 
@@ -672,8 +482,9 @@ def Fix (B : Addr) (w : Nat) (m m' : Mem) : Prop :=
 theorem Fix.trans {B : Addr} {w : Nat} {m₁ m₂ m₃ : Mem} (a : Fix B w m₁ m₂) (b : Fix B w m₂ m₃) : Fix B w m₁ m₃ :=
   fun j hj h2 h3 h5 h6 => (b j hj h2 h3 h5 h6).trans (a j hj h2 h3 h5 h6)
 
-/-- The registers a window writes. -/
-def winRegs : List Reg := Pub.montRegs ++ sqRegs ++ selectRegs ++ [.a1, .s7]
+/-- The registers a window writes: the selection's are among the
+multiplication's. -/
+def winRegs : List Reg := Pub.montRegs ++ sqRegs ++ [.a1, .s7]
 
 /-- A square of `a` in the context. -/
 theorem sq_ok {s : State} {B : Addr} {Z w N : Nat} (h : WCtx s B Z w N) (hodd : N % 2 = 1)
@@ -873,7 +684,7 @@ theorem powWin1_ok {s : State} {B D : Addr} {Z w L : Nat} (hs : Scr s B Z) (hw2 
   obtain t7' : A u.mem B w 7 = 1 := by rw [hu.fix 7 (by decide) (by decide) (by decide) (by decide) (by decide), t7]
   refine WP.mono (hu.ctx.mont (o := 4) (a := 6) (b := 7) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) (by decide) (by rw [t7']; omega_arith)) fun t ⟨⟨_, lt, e, v, o⟩, k⟩ =>
-    ⟨⟨fun hE => ?_, hu.out.trans o, ?_⟩, Keep.within hu.keep k fun _ h => win_pow (List.mem_append_left _ (List.mem_append_left _ (List.mem_append_left _ h)))⟩
+    ⟨⟨fun hE => ?_, hu.out.trans o, ?_⟩, Keep.within hu.keep k fun _ h => win_pow (List.mem_append_left _ (List.mem_append_left _ h))⟩
   · rw [t7', Nat.mul_one] at e
     refine (Nat.mod_eq_of_lt lt).symm.trans ?_
     exact VG.Proof.Bignum.mont_cancel hR (by rw [e, hu.pw hE])
