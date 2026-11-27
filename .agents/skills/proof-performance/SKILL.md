@@ -322,6 +322,9 @@ Avoid these patterns (each has cost tens of seconds in one proof):
   states. Clear what they cannot use: `omega_arith`, `bv_omega_arith`
   (arithmetic hypotheses only) or `omega_using [h₁, …]`,
   `bv_omega_using [h₁, …]` (those facts only), `Proof/Framework/Omega.lean`.
+  Plain `omega` in a module that imports it tries the same first; what they
+  all leave to core's `omega` (integers, a search that needs more than
+  rounding) costs the elaborator and the kernel 10 ms or more.
 * **`by decide` of literals:** `Proof/Framework/FastDecide.lean`, which
   `InstancePriority` imports, evaluates memberships, inclusions and
   comparisons of literals (and their `∧`, `∨`, `¬`, `→`) itself, and has the

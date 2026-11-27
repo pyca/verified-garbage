@@ -52,19 +52,24 @@ lemmas, in about a millisecond, and finds them faster than `omega` does:
   `+` and `*` of the term (`ad`, `mu`, `mur`) and one for each monomial that merging two
   forms moves (`mm`, `ml`, `mr`, `sm`). The coefficients stay unevaluated sums and
   products of numerals (`Nat.add`, `Nat.mul`);
-* `x / k`, `x % k` and `x - y` are atoms, with the facts that define them (`dv1`, `dv2`,
-  `md1`, `md2`, `sub_cases`);
+* `x / k`, `x % k`, `x - y`, `min` and `max` are atoms, with the facts that define them
+  (`dv1`, `dv2`, `md1`, `md2`, `sub_cases`, `min_cases`, `max_cases`);
 * the facts, the negated goal and `0 ≤ x` for every atom are combined by Fourier–Motzkin
-  elimination, rounding where every coefficient has a common divisor (`fm`). That search
+  elimination, rounding where every coefficient has a common divisor (`fm`), once the
+  equations have eliminated an atom each (as `%` and `/` mostly are). That search
   runs here, untrusted; its derivation is replayed on the normal forms by `sc`, `pl` and
   `cut`;
 * the result is a fact `L ≤ R` whose left side has the larger coefficients and the larger
   constant, which `zs`, `zl` and `zk` refute. Only there does the kernel evaluate the
   coefficients: one comparison of numerals for each atom;
 * a case split (`∨`, `≠`, `-`, `↔`, `→`) is an `Or.elim`, with a derivation for each case.
+  The splits of which one case is absurd as it stands come first: they do not branch.
 
-It gives up, and `omega` runs, on what it does not read (integers, `min`, a product of
+It gives up, and `omega` runs, on what it does not read (integers; a product of
 two terms that are not numerals is an atom) and where the search needs more than rounding.
+
+`omega` itself, in the modules of `VerifiedGarbage.Proof` that import this one, first tries the
+same on the facts that `omega_arith` takes (`omegaClose`).
 -/
 
 public section
@@ -166,7 +171,11 @@ theorem impc (a b : Prop) (h : a → b) : ¬a ∨ b := by
   | inr ha => exact Or.inl ha
 theorem nimp (a b : Prop) (h : ¬(a → b)) : a ∧ ¬b :=
   ⟨Classical.byContradiction fun ha => h fun x => absurd x ha, fun hb => h fun _ => hb⟩
+/-- A proof of `p` that mentions `h`. -/
+theorem keep {p q : Prop} (a : p) (_ : q) : p := a
 theorem sub_cases (a b : Nat) : (b ≤ a ∧ a - b + b = a) ∨ (a < b ∧ a - b = 0) := by omega
+theorem min_cases (a b : Nat) : (a ≤ b ∧ min a b = a) ∨ (b < a ∧ min a b = b) := by omega
+theorem max_cases (a b : Nat) : (a ≤ b ∧ max a b = b) ∨ (b < a ∧ max a b = a) := by omega
 theorem dv1 (a k : Nat) : k * (a / k) ≤ a := Nat.mul_div_le a k
 theorem dv2 (a k : Nat) (hk : Nat.ble (nat_lit 1) k = true) : a < k * (a / k) + k := by
   have := Nat.lt_mul_div_succ a (Nat.le_of_ble_eq_true hk)
@@ -316,6 +325,8 @@ structure Split where
   pf : Expr
   P : Expr
   Q : Expr
+  /-- a disequality: worth splitting only when one side of it is absurd -/
+  ne : Bool := false
   deriving Inhabited
 
 structure St where
@@ -324,7 +335,7 @@ structure St where
   queue : Array Expr := #[]
   gfacts : Array Fact := #[]
   gsplits : Array Split := #[]
-  fuel : Nat := 24
+  fuel : Nat := 200
 
 abbrev AM := StateRefT St MetaM
 
@@ -401,6 +412,8 @@ def atom (e : Expr) : AM (Form × Expr) := do
       let push (p : Expr) : AM Unit := modify fun s => { s with queue := s.queue.push p }
       match_expr e with
       | HSub.hSub α _ _ _ a b => if nat α then push (mkApp2 (c ``sub_cases) a b)
+      | Min.min α inst a b => if nat α && inst.isConstOf ``instMinNat then push (mkApp2 (c ``min_cases) a b)
+      | Max.max α inst a b => if nat α && inst.isConstOf ``Nat.instMax then push (mkApp2 (c ``max_cases) a b)
       | HDiv.hDiv α _ _ _ a k =>
         if nat α then
           if let some n := lit? k then
@@ -476,16 +489,16 @@ partial def addProp (P h : Expr) (cx : Ctx) : AM Ctx := do
   let ne (a b : Expr) (h : Expr) (cx : Ctx) : AM Ctx := do
     let lt₁ ← mkAppM ``LT.lt #[a, b]
     let lt₂ ← mkAppM ``LT.lt #[b, a]
-    return { cx with splits := cx.splits.push ⟨mkApp3 (c ``ne_cases) a b h, lt₁, lt₂⟩ }
+    return { cx with splits := cx.splits.push ⟨mkApp3 (c ``ne_cases) a b h, lt₁, lt₂, true⟩ }
   if P.isArrow then
     let A := P.bindingDomain!
     let B := P.bindingBody!
     unless (← isProp A) && (← isProp B) do return cx
-    let sp : Split := ⟨mkApp3 (c ``impc) A B h, mkNot A, B⟩
+    let sp : Split := ⟨mkApp3 (c ``impc) A B h, mkNot A, B, false⟩
     return { cx with splits := cx.splits.push sp }
   match_expr P with
   | Iff A B =>
-    let sp : Split := ⟨mkApp3 (c ``iffc) A B h, mkAnd A B, mkAnd (mkNot A) (mkNot B)⟩
+    let sp : Split := ⟨mkApp3 (c ``iffc) A B h, mkAnd A B, mkAnd (mkNot A) (mkNot B), false⟩
     return { cx with splits := cx.splits.push sp }
   | LE.le α _ a b => if nat α then le a b h cx else return cx
   | LT.lt α _ a b => if nat α then lt a b h cx else return cx
@@ -502,7 +515,7 @@ partial def addProp (P h : Expr) (cx : Ctx) : AM Ctx := do
   | And A B =>
     let cx ← addProp A (mkApp3 (c ``And.left) A B h) cx
     addProp B (mkApp3 (c ``And.right) A B h) cx
-  | Or A B => return { cx with splits := cx.splits.push ⟨h, A, B⟩ }
+  | Or A B => return { cx with splits := cx.splits.push ⟨h, A, B, false⟩ }
   | False => return { cx with absurd := some h }
   | Not Q =>
     let Q := Q.consumeMData
@@ -513,7 +526,7 @@ partial def addProp (P h : Expr) (cx : Ctx) : AM Ctx := do
       return ← addProp (mkAnd A (mkNot B)) (mkApp3 (c ``nimp) A B h) cx
     match_expr Q with
     | Iff A B =>
-      let sp : Split := ⟨mkApp3 (c ``niffc) A B h, mkAnd A (mkNot B), mkAnd (mkNot A) B⟩
+      let sp : Split := ⟨mkApp3 (c ``niffc) A B h, mkAnd A (mkNot B), mkAnd (mkNot A) B, false⟩
       return { cx with splits := cx.splits.push sp }
     | LE.le α _ a b => if nat α then nle a b h cx else return cx
     | LT.lt α _ a b => if nat α then nlt a b h cx else return cx
@@ -527,7 +540,7 @@ partial def addProp (P h : Expr) (cx : Ctx) : AM Ctx := do
       let cx ← addProp (mkNot A) (.lam `a A (mkApp h (mkApp3 (c ``Or.inl) A B (.bvar 0))) .default) cx
       addProp (mkNot B) (.lam `b B (mkApp h (mkApp3 (c ``Or.inr) A B (.bvar 0))) .default) cx
     | And A B =>
-      let sp : Split := ⟨mkApp3 (c ``nand) A B h, mkNot A, mkNot B⟩
+      let sp : Split := ⟨mkApp3 (c ``nand) A B h, mkNot A, mkNot B, false⟩
       return { cx with splits := cx.splits.push sp }
     | True => return { cx with absurd := some (mkApp h (c ``True.intro)) }
     | _ => return cx
@@ -562,11 +575,72 @@ def tighten (cn : Cn) : Cn :=
   let g := cn.co.foldl (fun g x => Nat.gcd g x.natAbs) 0
   if g > 1 && cn.k.emod g != 0 then ⟨cn.co.map (·.ediv g), cn.k.ediv g, .cut g cn.pv⟩ else cn
 
+/-- Of the constraints with the same coefficients, the strongest; none that always holds. -/
+def prune (cs : Array Cn) : Array Cn := Id.run do
+  let mut at_ : Std.HashMap (Array Int) Nat := {}
+  let mut out : Array Cn := #[]
+  for cn in cs do
+    if cn.co.all (· == 0) && cn.k ≥ 0 then continue
+    match at_[cn.co]? with
+    | some i => if cn.k < out[i]!.k then out := out.set! i cn
+    | none =>
+      at_ := at_.insert cn.co out.size
+      out := out.push cn
+  return out
+
+/-- `p` with its multiple of `x` (coefficient `a`) taken away by `q`'s, of the other sign. -/
+def elim1 (v : Nat) (p q : Cn) : Cn :=
+  let a := p.co[v]!
+  let b := q.co[v]!
+  let g := Nat.gcd a.natAbs b.natAbs
+  let a := a.natAbs / g
+  let b := b.natAbs / g
+  let co := p.co.zipWith (fun x y => (b : Int) * x + (a : Int) * y) q.co
+  ⟨co, (b : Int) * p.k + (a : Int) * q.k, .comb b p.pv a q.pv⟩
+
+/-- Divide by the coefficients' common divisor. -/
+def divide (cn : Cn) : Cn :=
+  let g := cn.co.foldl (fun g x => Nat.gcd g x.natAbs) 0
+  if g > 1 then ⟨cn.co.map (·.ediv g), cn.k.ediv g, .cut g cn.pv⟩ else cn
+
 /-- Fourier–Motzkin with rounding: a derivation of a constraint `k ≥ 0` with `k < 0`. The
-constraints include `x ≥ 0` for every atom. -/
-def fm (n : Nat) (cs : Array Cn) : Option Prov := Id.run do
+constraints include `x ≥ 0` for every atom; `eqs` are equations, each as its two inequalities.
+Equations are used first, to eliminate an atom with coefficient 1 in each. -/
+def fm (n : Nat) (cs : Array Cn) (eqs : Array (Cn × Cn)) : Option Prov := Id.run do
   let mut cs := cs.map tighten
   let mut todo := (List.range n).toArray
+  let mut eqs := eqs.map fun (p, q) => (divide p, divide q)
+  let mut fuel := eqs.size
+  while fuel > 0 do
+    fuel := fuel - 1
+    -- an equation with a unit coefficient
+    let mut found : Option (Nat × Nat) := none
+    for j in [0:eqs.size] do
+      let (p, q) := eqs[j]!
+      if p.co.all (· == 0) then
+        if p.k < 0 then return some p.pv
+        if q.k < 0 then return some q.pv
+        continue
+      -- rounded to a contradiction: the constants no longer add up to zero
+      if p.k + q.k < 0 then return some (.comb 1 p.pv 1 q.pv)
+      match p.co.findIdx? (·.natAbs == 1) with
+      | some v => found := some (j, v); break
+      | none => pure ()
+    let some (j, v) := found | break
+    let (p, q) := eqs[j]!
+    -- the one with the negative coefficient, the one with the positive
+    let (neg, pos) := if p.co[v]! < 0 then (p, q) else (q, p)
+    let sub (cn : Cn) : Cn :=
+      let a := cn.co[v]!
+      if a > 0 then elim1 v cn neg else if a < 0 then elim1 v cn pos else cn
+    cs := prune (cs.map fun cn => tighten (sub cn))
+    eqs := (eqs.eraseIdxIfInBounds j).map fun (p, q) => (divide (sub p), divide (sub q))
+    todo := todo.filter (· != v)
+  -- what is left of the equations, as inequalities
+  for (p, q) in eqs do
+    if p.k + q.k < 0 && (p.co.zipWith (· + ·) q.co).all (· == 0) then return some (.comb 1 p.pv 1 q.pv)
+    cs := (cs.push p).push q
+  cs := prune cs
   while !todo.isEmpty do
     for cn in cs do
       if cn.co.all (· == 0) && cn.k < 0 then return some cn.pv
@@ -596,17 +670,12 @@ def fm (n : Nat) (cs : Array Cn) : Option Prov := Id.run do
       if a > 0 then pos := pos.push cn else if a < 0 then neg := neg.push cn else new := new.push cn
     for p in pos do
       for q in neg do
-        let a := p.co[v]!.toNat
-        let b := (-q.co[v]!).toNat
-        let g := Nat.gcd a b
-        let a := a / g
-        let b := b / g
-        let co := p.co.zipWith (fun x y => (b : Int) * x + (a : Int) * y) q.co
-        let k := (b : Int) * p.k + (a : Int) * q.k
-        if co.all (· == 0) && k ≥ 0 then continue
-        new := new.push (tighten ⟨co, k, .comb b p.pv a q.pv⟩)
-        if new.size > 120 then return none
-    cs := new
+        let r := elim1 v p q
+        if r.co.all (· == 0) && r.k ≥ 0 then continue
+        new := new.push (tighten r)
+        if new.size > 400 then return none
+    cs := prune new
+    if cs.size > 120 then return none
   for cn in cs do
     if cn.co.all (· == 0) && cn.k < 0 then return some cn.pv
   return none
@@ -676,7 +745,21 @@ def farkas (facts : Array Fact) : AM (Option Expr) := do
     for (x, a, _) in f.R.ms do co := co.modify x (· + a)
     for (x, a, _) in f.L.ms do co := co.modify x (· - a)
     return (⟨co, (f.R.k : Int) - f.L.k, .fact i⟩ : Cn)
-  let some pv := fm n cs | return none
+  -- an equation's two facts are next to each other
+  let mut ins : Array Cn := #[]
+  let mut eqs : Array (Cn × Cn) := #[]
+  let mut l := 0
+  while l < cs.size do
+    let p := cs[l]!
+    if l + 1 < cs.size then
+      let q := cs[l + 1]!
+      if p.k == -q.k && p.co.any (· != 0) && (p.co.zipWith (· + ·) q.co).all (· == 0) then
+        eqs := eqs.push (p, q)
+        l := l + 2
+        continue
+    ins := ins.push p
+    l := l + 1
+  let some pv := fm n ins eqs | return none
   let f ← build facts pv
   -- left coefficients are at least the right ones, and the left constant is larger
   let mut h := f.pf
@@ -696,29 +779,58 @@ def farkas (facts : Array Fact) : AM (Option Expr) := do
   if j < f.R.ms.size || f.L.k ≤ f.R.k then return none
   return some (mkApp4 (c ``zk) f.L.kE f.R.kE reflTrue h)
 
-/-- A proof of `False` in the branch `cx`, splitting cases. `gskip`: global splits taken. -/
-partial def solve (cx : Ctx) (gskip : Array Nat) : AM (Option Expr) := do
-  if let some h := cx.absurd then return some h
+/-- The facts and case splits of a branch. -/
+def addBranch (P : Expr) (h : Expr) (cx : Ctx) : AM Ctx := do
+  let cx ← addProp P h cx
   drain
+  return cx
+
+/-- A proof of `False` from a branch's facts alone. -/
+def close? (cx : Ctx) : AM (Option Expr) := do
+  if let some h := cx.absurd then return some h
   let s ← get
   if s.fuel == 0 then return none
   set { s with fuel := s.fuel - 1 }
-  if let some pf ← farkas (cx.facts ++ s.gfacts) then return some pf
-  -- a case split: the branch's own first
-  let branch (sp : Split) (cx : Ctx) (gskip : Array Nat) : AM (Option Expr) := do
-    let some p₁ ← withLocalDeclD `h sp.P fun h => do
-        let some pf ← solve (← addProp sp.P h cx) gskip | return none
-        return some (← mkLambdaFVars #[h] pf) | return none
-    let some p₂ ← withLocalDeclD `h sp.Q fun h => do
-        let some pf ← solve (← addProp sp.Q h cx) gskip | return none
-        return some (← mkLambdaFVars #[h] pf) | return none
-    return some (mkApp6 (c ``Or.elim) sp.P sp.Q (c ``False) sp.pf p₁ p₂)
-  if h : 0 < cx.splits.size then
-    return ← branch cx.splits[0] { cx with splits := cx.splits.extract 1 cx.splits.size } gskip
-  for i in [0:s.gsplits.size] do
-    unless gskip.contains i do
-      return ← branch s.gsplits[i]! cx (gskip.push i)
-  return none
+  farkas (cx.facts ++ s.gfacts)
+
+/-- A proof of `False` in the branch `cx`, splitting cases: first those of whose two cases one is
+absurd as it stands, so that nothing branches. `gskip`: global splits taken. -/
+partial def solve (cx : Ctx) (gskip : Array Nat) : AM (Option Expr) := do
+  drain
+  if let some pf ← close? cx then return some pf
+  let under (P : Expr) (k : Expr → AM (Option Expr)) : AM (Option Expr) :=
+    withLocalDeclD `h P fun h => do
+      let some pf ← k h | return none
+      return some (← mkLambdaFVars #[h] pf)
+  let cases (sp : Split) (p q : Expr) : Expr := mkApp6 (c ``Or.elim) sp.P sp.Q (c ``False) sp.pf p q
+  -- the branch's own splits, then those of the atoms
+  let gs := (← get).gsplits
+  let own := cx.splits.size
+  let split (i : Nat) : Split := if i < own then cx.splits[i]! else gs[i - own]!
+  let without (i : Nat) : Ctx × Array Nat :=
+    if i < own then ({ cx with splits := cx.splits.eraseIdxIfInBounds i }, gskip) else (cx, gskip.push (i - own))
+  let mut first : Option Nat := none
+  for i in [0:own + gs.size] do
+    if i ≥ own && gskip.contains (i - own) then continue
+    let better ← match first with
+      | none => pure true
+      | some j => pure ((split j).ne && !(split i).ne)
+    if better then first := some i
+    if (← get).fuel == 0 then return none
+    let sp := split i
+    let (rest, gskip') := without i
+    if let some p ← under sp.P fun h => do close? (← addBranch sp.P h rest) then
+      let some q ← under sp.Q fun h => do solve (← addProp sp.Q h rest) gskip' | return none
+      return some (cases sp p q)
+    if let some q ← under sp.Q fun h => do close? (← addBranch sp.Q h rest) then
+      let some p ← under sp.P fun h => do solve (← addProp sp.P h rest) gskip' | return none
+      return some (cases sp p q)
+  let some i := first | return none
+  let sp := split i
+  let (rest, gskip') := without i
+  let some p ← under sp.P fun h => do solve (← addProp sp.P h rest) gskip' | return none
+  let some q ← under sp.Q fun h => do solve (← addProp sp.Q h rest) gskip' | return none
+  return some (cases sp p q)
 
 /-- A proof of `goal` from the facts `hs` (proofs), by linear arithmetic over `Nat`. -/
 def prove? (goal : Expr) (hs : Array Expr) : MetaM (Option Expr) := do
@@ -825,7 +937,7 @@ that is not arithmetic. One such theorem serves every goal of its shape in a dec
 (Lean's cache of auxiliary lemmas finds it by its statement), and
 it is proven by `VG.Arith.prove?`. `false`, with the goal as it was, if the goal is not one
 `prop` reads or that does not prove the statement. -/
-def close (g : MVarId) (facts : Array Expr) (minimal := false) : MetaM Bool := g.withContext do
+def close (g : MVarId) (facts : Array Expr) (minimal := false) (extra : Array Expr := #[]) : MetaM Bool := g.withContext do
   let goal ← instantiateMVars (← g.getType)
   let read : M (Option (Expr × Array (Expr × Expr) × Nat)) := do
     let some goal' ← (prop goal).run | return none
@@ -884,19 +996,20 @@ def close (g : MVarId) (facts : Array Expr) (minimal := false) : MetaM Bool := g
     pure (name, usedX.map (st.atoms[·]!) ++ usedH.map (fs[·]!.1))
   -- Behind an auxiliary theorem of the goal's context, as `omega`'s proofs are: the atoms are
   -- not there for a later `rw` to find.
-  g.assign (← mkAuxTheorem goal (mkAppN (mkConst name) args) (zetaDelta := true))
+  let pf ← mkAuxTheorem goal (mkAppN (mkConst name) args) (zetaDelta := true)
+  g.assign <| ← extra.foldlM (fun pf h => return mkApp4 (mkConst ``VG.Arith.keep) goal (← inferType h) pf h) pf
   return true
 
 end Abs
 
 /-- Close the main goal from `facts` through a theorem about its shape (`Abs.close`), if that
 can. -/
-def tryClose (facts : Array Expr) (minimal := false) : TacticM Bool := do
+def tryClose (facts : Array Expr) (minimal := false) (extra : Array Expr := #[]) : TacticM Bool := do
   let saved ← saveState
   let g ← getMainGoal
   let rest := (← getGoals).tail
   -- whatever goes wrong in there, the caller's own way is still to come
-  if ← tryCatchRuntimeEx (Abs.close g facts minimal) (fun _ => do saved.restore; pure false) then
+  if ← tryCatchRuntimeEx (Abs.close g facts minimal extra) (fun _ => do saved.restore; pure false) then
     setGoals rest
     return true
   return false
@@ -1052,6 +1165,51 @@ def omegaArithOnce : TacticM Unit := do
     relevantFacts all (← getMainTarget)
   if ← tryClose facts (minimal := true) then return
   omegaFromFacts facts (exactTypeOnly := true)
+
+/-- `omegaArith`'s attempts alone, for `omega` itself. The proof mentions every fact connected to
+the goal (`Arith.keep`), as the unused-variables linter counts what `omega` would have used. -/
+def omegaClose : TacticM Bool := do
+  let some (stages, used) ← withMainContext do
+    let target := (← instantiateMVars (← getMainTarget)).consumeMData
+    if target.hasExprMVar then return none
+    unless ← isArithProp target do return none
+    let all ← (← getLocalHyps).filterM fun h => do isArithProp (← inferType h)
+    for f in all do
+      if (← instantiateMVars (← inferType f)) == target then
+        (← getMainGoal).assign f
+        return some (#[], #[])
+    let full ← relevantFacts all target
+    let mut st : Array (Array Expr) := #[]
+    for d in [1, 2] do
+      let f ← relevantFactsDepth all target d
+      if f.size < full.size && st.all (·.size < f.size) then st := st.push f
+    let mut seen ← atoms target {}
+    for f in full do seen ← atoms (← inferType f) seen
+    let used ← (← getLocalHyps).filterM fun f => do
+      let ty ← instantiateMVars (← inferType f)
+      if all.contains f then return (← atoms ty {}).any seen.contains
+      -- a fact by the name of an abbreviation, which `omega` unfolds
+      let some c := ty.getAppFn.constName? | return false
+      unless ← isReducible c do return false
+      let ty ← whnfR ty
+      return (← isArithProp ty) && (← atoms ty {}).any seen.contains
+    pure (some (st.push full, used))
+    | return false
+  if stages.isEmpty then
+    replaceMainGoal []
+    return true
+  for f in stages do
+    if ← tryClose f (extra := used.filter (!f.contains ·)) then return true
+  return false
+
+/-- Core's `omega`, after `omegaClose`. -/
+elab_rules : tactic
+  | `(tactic| omega) => do
+    unless (`VerifiedGarbage.Proof).isPrefixOf (← getEnv).mainModule do throwUnsupportedSyntax
+    -- What `simp`'s discharger asks for is `omega`'s: the proof may end up in a term (an index
+    -- bound), under an `if` whose condition it must then not mention.
+    if (← (← getMainGoal).getTag) == `simp.discharger then throwUnsupportedSyntax
+    unless ← omegaClose do throwUnsupportedSyntax
 
 /-- Clears every hypothesis `omega` cannot use. -/
 elab "clear_non_arith" : tactic => clearNonArith
