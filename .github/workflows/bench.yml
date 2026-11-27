@@ -244,7 +244,6 @@ jobs:
       - name: Benchmark the complete integration test
         if: ${{ inputs.test_filter }}
         id: test-benchmark
-        continue-on-error: true
         env:
           TEST_FILTER: ${{ inputs.test_filter }}
           ROUNDS: ${{ inputs.rounds || 6 }}
@@ -263,7 +262,6 @@ jobs:
       - name: Benchmark base and head
         if: ${{ !inputs.test_filter }}
         id: benchmark
-        continue-on-error: true
         env:
           MODULES: ${{ matrix.modules }}
           BENCH_GROUPS: ${{ inputs.groups }}
