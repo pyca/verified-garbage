@@ -1637,14 +1637,14 @@ theorem mulCore_spec :
       (fun A B r => r < 2 ^ 521 - 1 ∧ r * 2 ^ (64 * 9) % (2 ^ 521 - 1) = A * B % (2 ^ 521 - 1)) :=
   fun hC hB => WP.mono (mulCore_ok hC hB) fun _ ⟨g, rd, wr, sp, f, v1, v2⟩ => ⟨⟨v1, v2⟩, f, g, rd, wr, sp⟩
 
-open VG.Proof.Weierstrass.RISCV64.GenWide (FastSpec ownR_sub) in
+open VG.Proof.Weierstrass.RISCV64.GenWide (FastSpec ownR_sub clobF_W) in
 /-- `core`: the square if the pointers are equal, else the product. -/
 theorem core_spec :
     FastSpec 9 core (fun _ B => B < 2 ^ 521 - 1)
       (fun A B r => r < 2 ^ 521 - 1 ∧ r * 2 ^ (64 * 9) % (2 ^ 521 - 1) = A * B % (2 ^ 521 - 1)) := by
   intro b A B O s hC _ _ _ hB
-  refine WP.mono (Q := fun (s' : State) => _ ∧ Frame [ownR 9 b, ⟨O, 8 * 9⟩] s.mem s'.mem ∧ _) ?_
-    fun _ ⟨v, f, r⟩ => ⟨v, f.sub (ownR_sub 9 (by decide) _), r⟩
+  refine WP.mono (Q := fun (s' : State) => _ ∧ Frame [ownR 9 b, ⟨O, 8 * 9⟩] s.mem s'.mem ∧ (∀ r, r ∉ clobW → s'.gpr r = s.gpr r) ∧ _) ?_
+    fun _ ⟨v, f, g, r⟩ => ⟨v, f.sub (ownR_sub 9 (by decide) _), fun x hx => g x (clobF_W hx), r⟩
   unfold core
   refine WP.ite (s.gpr .t4 == s.gpr .t5) rfl (fun he => ?_) (fun _ => ?_)
   · have hAB : A = B := by rw [← hC.a, ← hC.b']; exact beq_iff_eq.mp he

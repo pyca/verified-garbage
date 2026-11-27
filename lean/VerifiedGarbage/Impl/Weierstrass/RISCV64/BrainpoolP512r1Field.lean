@@ -1,9 +1,9 @@
 module
 
-public import VerifiedGarbage.Impl.Weierstrass.RISCV64.GenWide
+public import VerifiedGarbage.Impl.Weierstrass.RISCV64.Wide8
 public import VerifiedGarbage.Impl.Weierstrass.Layout.Mont
 
-/-! # Arithmetic modulo brainpoolP512r1's prime on RISC-V: Montgomery's, for any modulus of seven words or more (`GenWide`), at eight words, squaring when the operands are the same -/
+/-! # Arithmetic modulo brainpoolP512r1's prime on RISC-V: Montgomery's, for any modulus of eight words (`Wide8`, and `GenWide`'s sum and difference) -/
 
 @[expose] public section
 
@@ -12,7 +12,7 @@ namespace VG.Impl.Weierstrass.RISCV64.BrainpoolP512r1Field
 open VG.RISCV64
 
 /-- `vg_brainpoolp512r1_mul_mod_p`. -/
-def mulFn : Prog isa := GenWide.mulSqFn 8 Impl.Weierstrass.Mont.brainpoolp512r1p.m
+def mulFn : Prog isa := Wide8.mulFn Impl.Weierstrass.Mont.brainpoolp512r1p.m
 
 /-- `vg_brainpoolp512r1_add_mod_p`. -/
 def addFn : Prog isa := GenWide.addFn 8 Impl.Weierstrass.Mont.brainpoolp512r1p.m
@@ -21,7 +21,7 @@ def addFn : Prog isa := GenWide.addFn 8 Impl.Weierstrass.Mont.brainpoolp512r1p.m
 def subFn : Prog isa := GenWide.subFn 8 Impl.Weierstrass.Mont.brainpoolp512r1p.m
 
 /-- `vg_brainpoolp512r1_mul_mod_p`, for aligned offsets. -/
-def mulFnA : Prog isa := GenWide.mulSqFnA 8 Impl.Weierstrass.Mont.brainpoolp512r1p.m
+def mulFnA : Prog isa := Wide8.mulFnA Impl.Weierstrass.Mont.brainpoolp512r1p.m
 
 /-- `vg_brainpoolp512r1_add_mod_p`, for aligned offsets. -/
 def addFnA : Prog isa := GenWide.addFnA 8 Impl.Weierstrass.Mont.brainpoolp512r1p.m

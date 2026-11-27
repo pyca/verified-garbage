@@ -225,10 +225,10 @@ theorem mul_rv (hL : VG.Proof.Weierstrass.Law W) (s : State) (hs : mulRVc.pre s)
 
 /-! The constant-time analysis of the call of `vg_brainpoolp512r1_mul` from its argument, done once for every
 check of code that calls it (`taint_decide_sum [mulSum]`: signing, ECDH and the public key), which
-keeps what is public of `s2`–`s11`: the function writes none of them (`s0` and `s1` it restores
+keeps what is public of `s2`–`s5`: the function writes none of them (`s0` and `s1` it restores
 from memory). -/
 taint_summary mulSum : taint (Taint.ofRegs [.a0]) (.call "vg_brainpoolp512r1_mul" mulBrainpoolP512r1)
-  keeping (Taint.ofRegs [.s2, .s3, .s4, .s5, .s6, .s7, .s8, .s9, .s10, .s11])
+  keeping (Taint.ofRegs [.s2, .s3, .s4, .s5])
   using pMulSum pAddSum pSubSum
 
 end VG.Proof.Ecdsa.RISCV64.BrainpoolP512r1

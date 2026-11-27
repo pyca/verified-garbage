@@ -222,33 +222,15 @@ def fnA (fast : Prog isa) : Prog isa := .seq (.block ptrsA) fast
 are multiples of 8, else on byte-wise copies (`fnWith`). -/
 def fn (core : List Instr) : Prog isa := fnWith k (.block core) core
 
-/-! ## The square
+/-! ## The square's doubling
 
-When both operands are the same pointer, `[t2] = [t4]² R⁻¹ mod m` by the
-square's product and the reduction of the product, as two passes:
-
-1. the product `P = a²`, `2 k` words at `SQ`, after the byte-wise copies'
-   space: `P` zero (`zeroP`), the
-   products `aᵢ aⱼ` for `i < j`, a row of `macStep`s for each `i` (`sqrRow`),
-   then `P` doubled with the squares `aᵢ²` added (`diag`, `dword`);
-2. Montgomery's reduction of `P` in place (separated operand scanning): for
-   each `i`, `q = Pᵢ m'` and `P += q m 2^(64 i)` (`sred`, its carry out of
-   word `i + k` in `a2`), then the top `k` words and the carry into `T`
-   (`copyT`), below `2 m`, reduced by `csub`.
+For the square's product `P = a²`, `2 k` words at `SQ` (after the byte-wise copies' space): from the sum
+of the products `aᵢ aⱼ` for `i < j` there, `P` doubled with the squares `aᵢ²` added (`diag`, `dword`).
+`Impl/Weierstrass/RISCV64/Wide8.lean` uses it.
 -/
 
 /-- The square's product. -/
 def SQ : Nat := SO k + 8 * k
-
-/-- `P` zero, through `a7`. -/
-def zeroP : List Instr := .li .a7 0 :: (List.range (2 * k)).map (fun j => .store .d .a7 .a3 (SQ k + 8 * j))
-
-/-- `P[2 i + 1 …] += aᵢ a[i + 1 …]`, the carry stored as `P[i + k]`. -/
-def sqrRow (i : Nat) : List Instr :=
-  [.load .d .a4 .t4 (8 * i), .li .a5 0] ++
-    ((List.range (k - 1 - i)).flatMap fun j =>
-      macStep .t4 (8 * (i + 1) + 8 * j) (SQ k + 8 * (2 * i + 1) + 8 * j) (SQ k + 8 * (2 * i + 1) + 8 * j)) ++
-    [.store .d .a5 .a3 (SQ k + 8 * (i + k))]
 
 /-- `P[j] := 2 P[j] + bi + x + a5`, the bit shifted out into `bo` and the
 carry in and out in `a5`, through `a6` and `a7`. -/
@@ -262,35 +244,7 @@ def diag (i : Nat) : List Instr :=
   [.load .d .a6 .t4 (8 * i), .mul .t0 .a6 .a6, .mulhu .a1 .a6 .a6] ++
     dword k (2 * i) .t0 .a2 .a4 ++ dword k (2 * i + 1) .a1 .a4 .a2
 
-/-- `P = a²`. -/
-def sqr : List Instr :=
-  zeroP k ++ (List.range (k - 1)).flatMap (sqrRow k) ++ [.li .a2 0, .li .a5 0] ++ (List.range k).flatMap (diag k)
-
-/-- `P += q m 2^(64 i)` for `q = Pᵢ m'` (into `a4`), as `redRound` but in
-place: the carry into word `i + k` added with the carry `a2` out of the round
-before, its carry into `a2`. -/
-def sred (i : Nat) : List Instr :=
-  [.load .d .a7 .a3 (SQ k + 8 * i), .mul .a4 .a7 .t6, .load .d .a6 .a3 (N k), .mulhu .a5 .a4 .a6, .li .t3 0,
-    .sltu .t3 .t3 .a7, .add .a5 .a5 .t3] ++
-    ((List.range (k - 1)).flatMap fun j =>
-      macStep .a3 (N k + 8 + 8 * j) (SQ k + 8 * (i + 1) + 8 * j) (SQ k + 8 * (i + 1) + 8 * j)) ++
-    [.load .d .a7 .a3 (SQ k + 8 * (i + k)), .add .t0 .a7 .a5, .sltu .t3 .t0 .a5, .add .t0 .t0 .a2,
-      .sltu .a2 .t0 .a2, .add .a2 .a2 .t3, .store .d .t0 .a3 (SQ k + 8 * (i + k))]
-
-/-- `T` = the top `k` words of `P` and the carry `a2`, through `a7`. -/
-def copyT : List Instr :=
-  (List.range k).flatMap (fun j => [.load .d .a7 .a3 (SQ k + 8 * k + 8 * j), .store .d .a7 .a3 (T k + 8 * j)]) ++
-    [.store .d .a2 .a3 (T k + 8 * k)]
-
-/-- `[t2] = [t4]² R⁻¹ mod m`. -/
-def sqrCore : List Instr :=
-  fillN k m ++ sqr k ++ li64 .t6 .a7 (BitVec.ofNat 64 (negInv m)) ++ [.li .a2 0] ++
-    (List.range k).flatMap (sred k) ++ copyT k ++ csub k
-
-/-- The function multiplying modulo `m`, squaring when the operands are the
-same pointer. -/
-def mulSqFn : Prog isa :=
-  fnWith k (.ite (.eq .t4 .t5) (.block (sqrCore k m)) (.block (mulCore k m))) (mulCore k m)
+/-! ## The functions -/
 
 /-- The function multiplying modulo `m`. -/
 def mulFn : Prog isa := fn k (mulCore k m)
@@ -303,10 +257,6 @@ def subFn : Prog isa := fn k (subCore k m)
 
 /-- The function multiplying modulo `m`, for aligned offsets. -/
 def mulFnA : Prog isa := fnA (.block (mulCore k m))
-
-/-- The function multiplying modulo `m`, squaring when the operands are the
-same pointer, for aligned offsets. -/
-def mulSqFnA : Prog isa := fnA (.ite (.eq .t4 .t5) (.block (sqrCore k m)) (.block (mulCore k m)))
 
 /-- The function adding modulo `m`, for aligned offsets. -/
 def addFnA : Prog isa := fnA (.block (addCore k m))
