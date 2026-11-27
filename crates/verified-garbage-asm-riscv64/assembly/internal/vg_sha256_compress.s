@@ -116,16 +116,13 @@ vg_sha256_compress:
 	lbu a6, 3(a1)
 	or a5, a5, a6
 	sw a5, 0(a3)
-	srliw a6, t4, 6
-	slliw a7, t4, 26
-	xor a6, a6, a7
-	srliw a7, t4, 11
-	xor a6, a6, a7
-	slliw a7, t4, 21
-	xor a6, a6, a7
-	srliw a7, t4, 25
-	xor a6, a6, a7
-	slliw a7, t4, 7
+	slli a6, t4, 32
+	srli a7, a6, 6
+	srli s0, a6, 11
+	xor a7, a7, s0
+	srli a6, a6, 25
+	xor a7, a7, a6
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add a4, a4, a6
 	xor a6, t5, t6
@@ -135,18 +132,15 @@ vg_sha256_compress:
 	lui a6, 272547
 	addiw a6, a6, -104
 	add a4, a4, a6
+	slli a6, t0, 32
+	srli a7, a6, 2
+	srli s0, a6, 13
 	add a4, a4, a5
+	xor a7, a7, s0
+	srli a6, a6, 22
+	xor a7, a7, a6
 	add t3, t3, a4
-	srliw a6, t0, 2
-	slliw a7, t0, 30
-	xor a6, a6, a7
-	srliw a7, t0, 13
-	xor a6, a6, a7
-	slliw a7, t0, 19
-	xor a6, a6, a7
-	srliw a7, t0, 22
-	xor a6, a6, a7
-	slliw a7, t0, 10
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add a4, a4, a6
 	or a6, t0, t1
@@ -165,16 +159,13 @@ vg_sha256_compress:
 	lbu a6, 7(a1)
 	or a5, a5, a6
 	sw a5, 4(a3)
-	srliw a6, t3, 6
-	slliw a7, t3, 26
-	xor a6, a6, a7
-	srliw a7, t3, 11
-	xor a6, a6, a7
-	slliw a7, t3, 21
-	xor a6, a6, a7
-	srliw a7, t3, 25
-	xor a6, a6, a7
-	slliw a7, t3, 7
+	slli a6, t3, 32
+	srli a7, a6, 6
+	srli s0, a6, 11
+	xor a7, a7, s0
+	srli a6, a6, 25
+	xor a7, a7, a6
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t6, t6, a6
 	xor a6, t4, t5
@@ -184,18 +175,15 @@ vg_sha256_compress:
 	lui a6, 463732
 	addiw a6, a6, 1169
 	add t6, t6, a6
+	slli a6, a4, 32
+	srli a7, a6, 2
+	srli s0, a6, 13
 	add t6, t6, a5
+	xor a7, a7, s0
+	srli a6, a6, 22
+	xor a7, a7, a6
 	add t2, t2, t6
-	srliw a6, a4, 2
-	slliw a7, a4, 30
-	xor a6, a6, a7
-	srliw a7, a4, 13
-	xor a6, a6, a7
-	slliw a7, a4, 19
-	xor a6, a6, a7
-	srliw a7, a4, 22
-	xor a6, a6, a7
-	slliw a7, a4, 10
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t6, t6, a6
 	or a6, a4, t0
@@ -214,16 +202,13 @@ vg_sha256_compress:
 	lbu a6, 11(a1)
 	or a5, a5, a6
 	sw a5, 8(a3)
-	srliw a6, t2, 6
-	slliw a7, t2, 26
-	xor a6, a6, a7
-	srliw a7, t2, 11
-	xor a6, a6, a7
-	slliw a7, t2, 21
-	xor a6, a6, a7
-	srliw a7, t2, 25
-	xor a6, a6, a7
-	slliw a7, t2, 7
+	slli a6, t2, 32
+	srli a7, a6, 6
+	srli s0, a6, 11
+	xor a7, a7, s0
+	srli a6, a6, 25
+	xor a7, a7, a6
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t5, t5, a6
 	xor a6, t3, t4
@@ -233,18 +218,15 @@ vg_sha256_compress:
 	lui a6, 744464
 	addiw a6, a6, -1073
 	add t5, t5, a6
+	slli a6, t6, 32
+	srli a7, a6, 2
+	srli s0, a6, 13
 	add t5, t5, a5
+	xor a7, a7, s0
+	srli a6, a6, 22
+	xor a7, a7, a6
 	add t1, t1, t5
-	srliw a6, t6, 2
-	slliw a7, t6, 30
-	xor a6, a6, a7
-	srliw a7, t6, 13
-	xor a6, a6, a7
-	slliw a7, t6, 19
-	xor a6, a6, a7
-	srliw a7, t6, 22
-	xor a6, a6, a7
-	slliw a7, t6, 10
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t5, t5, a6
 	or a6, t6, a4
@@ -263,16 +245,13 @@ vg_sha256_compress:
 	lbu a6, 15(a1)
 	or a5, a5, a6
 	sw a5, 12(a3)
-	srliw a6, t1, 6
-	slliw a7, t1, 26
-	xor a6, a6, a7
-	srliw a7, t1, 11
-	xor a6, a6, a7
-	slliw a7, t1, 21
-	xor a6, a6, a7
-	srliw a7, t1, 25
-	xor a6, a6, a7
-	slliw a7, t1, 7
+	slli a6, t1, 32
+	srli a7, a6, 6
+	srli s0, a6, 11
+	xor a7, a7, s0
+	srli a6, a6, 25
+	xor a7, a7, a6
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t4, t4, a6
 	xor a6, t2, t3
@@ -282,18 +261,15 @@ vg_sha256_compress:
 	lui a6, 957278
 	addiw a6, a6, -1115
 	add t4, t4, a6
+	slli a6, t5, 32
+	srli a7, a6, 2
+	srli s0, a6, 13
 	add t4, t4, a5
+	xor a7, a7, s0
+	srli a6, a6, 22
+	xor a7, a7, a6
 	add t0, t0, t4
-	srliw a6, t5, 2
-	slliw a7, t5, 30
-	xor a6, a6, a7
-	srliw a7, t5, 13
-	xor a6, a6, a7
-	slliw a7, t5, 19
-	xor a6, a6, a7
-	srliw a7, t5, 22
-	xor a6, a6, a7
-	slliw a7, t5, 10
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t4, t4, a6
 	or a6, t5, t6
@@ -312,16 +288,13 @@ vg_sha256_compress:
 	lbu a6, 19(a1)
 	or a5, a5, a6
 	sw a5, 16(a3)
-	srliw a6, t0, 6
-	slliw a7, t0, 26
-	xor a6, a6, a7
-	srliw a7, t0, 11
-	xor a6, a6, a7
-	slliw a7, t0, 21
-	xor a6, a6, a7
-	srliw a7, t0, 25
-	xor a6, a6, a7
-	slliw a7, t0, 7
+	slli a6, t0, 32
+	srli a7, a6, 6
+	srli s0, a6, 11
+	xor a7, a7, s0
+	srli a6, a6, 25
+	xor a7, a7, a6
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t3, t3, a6
 	xor a6, t1, t2
@@ -331,18 +304,15 @@ vg_sha256_compress:
 	lui a6, 234860
 	addiw a6, a6, 603
 	add t3, t3, a6
+	slli a6, t4, 32
+	srli a7, a6, 2
+	srli s0, a6, 13
 	add t3, t3, a5
+	xor a7, a7, s0
+	srli a6, a6, 22
+	xor a7, a7, a6
 	add a4, a4, t3
-	srliw a6, t4, 2
-	slliw a7, t4, 30
-	xor a6, a6, a7
-	srliw a7, t4, 13
-	xor a6, a6, a7
-	slliw a7, t4, 19
-	xor a6, a6, a7
-	srliw a7, t4, 22
-	xor a6, a6, a7
-	slliw a7, t4, 10
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t3, t3, a6
 	or a6, t4, t5
@@ -361,16 +331,13 @@ vg_sha256_compress:
 	lbu a6, 23(a1)
 	or a5, a5, a6
 	sw a5, 20(a3)
-	srliw a6, a4, 6
-	slliw a7, a4, 26
-	xor a6, a6, a7
-	srliw a7, a4, 11
-	xor a6, a6, a7
-	slliw a7, a4, 21
-	xor a6, a6, a7
-	srliw a7, a4, 25
-	xor a6, a6, a7
-	slliw a7, a4, 7
+	slli a6, a4, 32
+	srli a7, a6, 6
+	srli s0, a6, 11
+	xor a7, a7, s0
+	srli a6, a6, 25
+	xor a7, a7, a6
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t2, t2, a6
 	xor a6, t0, t1
@@ -380,18 +347,15 @@ vg_sha256_compress:
 	lui a6, 368401
 	addiw a6, a6, 497
 	add t2, t2, a6
+	slli a6, t3, 32
+	srli a7, a6, 2
+	srli s0, a6, 13
 	add t2, t2, a5
+	xor a7, a7, s0
+	srli a6, a6, 22
+	xor a7, a7, a6
 	add t6, t6, t2
-	srliw a6, t3, 2
-	slliw a7, t3, 30
-	xor a6, a6, a7
-	srliw a7, t3, 13
-	xor a6, a6, a7
-	slliw a7, t3, 19
-	xor a6, a6, a7
-	srliw a7, t3, 22
-	xor a6, a6, a7
-	slliw a7, t3, 10
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t2, t2, a6
 	or a6, t3, t4
@@ -410,16 +374,13 @@ vg_sha256_compress:
 	lbu a6, 27(a1)
 	or a5, a5, a6
 	sw a5, 24(a3)
-	srliw a6, t6, 6
-	slliw a7, t6, 26
-	xor a6, a6, a7
-	srliw a7, t6, 11
-	xor a6, a6, a7
-	slliw a7, t6, 21
-	xor a6, a6, a7
-	srliw a7, t6, 25
-	xor a6, a6, a7
-	slliw a7, t6, 7
+	slli a6, t6, 32
+	srli a7, a6, 6
+	srli s0, a6, 11
+	xor a7, a7, s0
+	srli a6, a6, 25
+	xor a7, a7, a6
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t1, t1, a6
 	xor a6, a4, t0
@@ -429,18 +390,15 @@ vg_sha256_compress:
 	lui a6, 599032
 	addiw a6, a6, 676
 	add t1, t1, a6
+	slli a6, t2, 32
+	srli a7, a6, 2
+	srli s0, a6, 13
 	add t1, t1, a5
+	xor a7, a7, s0
+	srli a6, a6, 22
+	xor a7, a7, a6
 	add t5, t5, t1
-	srliw a6, t2, 2
-	slliw a7, t2, 30
-	xor a6, a6, a7
-	srliw a7, t2, 13
-	xor a6, a6, a7
-	slliw a7, t2, 19
-	xor a6, a6, a7
-	srliw a7, t2, 22
-	xor a6, a6, a7
-	slliw a7, t2, 10
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t1, t1, a6
 	or a6, t2, t3
@@ -459,16 +417,13 @@ vg_sha256_compress:
 	lbu a6, 31(a1)
 	or a5, a5, a6
 	sw a5, 28(a3)
-	srliw a6, t5, 6
-	slliw a7, t5, 26
-	xor a6, a6, a7
-	srliw a7, t5, 11
-	xor a6, a6, a7
-	slliw a7, t5, 21
-	xor a6, a6, a7
-	srliw a7, t5, 25
-	xor a6, a6, a7
-	slliw a7, t5, 7
+	slli a6, t5, 32
+	srli a7, a6, 6
+	srli s0, a6, 11
+	xor a7, a7, s0
+	srli a6, a6, 25
+	xor a7, a7, a6
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t0, t0, a6
 	xor a6, t6, a4
@@ -478,18 +433,15 @@ vg_sha256_compress:
 	lui a6, 700870
 	addiw a6, a6, -299
 	add t0, t0, a6
+	slli a6, t1, 32
+	srli a7, a6, 2
+	srli s0, a6, 13
 	add t0, t0, a5
+	xor a7, a7, s0
+	srli a6, a6, 22
+	xor a7, a7, a6
 	add t4, t4, t0
-	srliw a6, t1, 2
-	slliw a7, t1, 30
-	xor a6, a6, a7
-	srliw a7, t1, 13
-	xor a6, a6, a7
-	slliw a7, t1, 19
-	xor a6, a6, a7
-	srliw a7, t1, 22
-	xor a6, a6, a7
-	slliw a7, t1, 10
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t0, t0, a6
 	or a6, t1, t2
@@ -508,16 +460,13 @@ vg_sha256_compress:
 	lbu a6, 35(a1)
 	or a5, a5, a6
 	sw a5, 32(a3)
-	srliw a6, t4, 6
-	slliw a7, t4, 26
-	xor a6, a6, a7
-	srliw a7, t4, 11
-	xor a6, a6, a7
-	slliw a7, t4, 21
-	xor a6, a6, a7
-	srliw a7, t4, 25
-	xor a6, a6, a7
-	slliw a7, t4, 7
+	slli a6, t4, 32
+	srli a7, a6, 6
+	srli s0, a6, 11
+	xor a7, a7, s0
+	srli a6, a6, 25
+	xor a7, a7, a6
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add a4, a4, a6
 	xor a6, t5, t6
@@ -527,18 +476,15 @@ vg_sha256_compress:
 	lui a6, 884859
 	addiw a6, a6, -1384
 	add a4, a4, a6
+	slli a6, t0, 32
+	srli a7, a6, 2
+	srli s0, a6, 13
 	add a4, a4, a5
+	xor a7, a7, s0
+	srli a6, a6, 22
+	xor a7, a7, a6
 	add t3, t3, a4
-	srliw a6, t0, 2
-	slliw a7, t0, 30
-	xor a6, a6, a7
-	srliw a7, t0, 13
-	xor a6, a6, a7
-	slliw a7, t0, 19
-	xor a6, a6, a7
-	srliw a7, t0, 22
-	xor a6, a6, a7
-	slliw a7, t0, 10
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add a4, a4, a6
 	or a6, t0, t1
@@ -557,16 +503,13 @@ vg_sha256_compress:
 	lbu a6, 39(a1)
 	or a5, a5, a6
 	sw a5, 36(a3)
-	srliw a6, t3, 6
-	slliw a7, t3, 26
-	xor a6, a6, a7
-	srliw a7, t3, 11
-	xor a6, a6, a7
-	slliw a7, t3, 21
-	xor a6, a6, a7
-	srliw a7, t3, 25
-	xor a6, a6, a7
-	slliw a7, t3, 7
+	slli a6, t3, 32
+	srli a7, a6, 6
+	srli s0, a6, 11
+	xor a7, a7, s0
+	srli a6, a6, 25
+	xor a7, a7, a6
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t6, t6, a6
 	xor a6, t4, t5
@@ -576,18 +519,15 @@ vg_sha256_compress:
 	lui a6, 75830
 	addiw a6, a6, -1279
 	add t6, t6, a6
+	slli a6, a4, 32
+	srli a7, a6, 2
+	srli s0, a6, 13
 	add t6, t6, a5
+	xor a7, a7, s0
+	srli a6, a6, 22
+	xor a7, a7, a6
 	add t2, t2, t6
-	srliw a6, a4, 2
-	slliw a7, a4, 30
-	xor a6, a6, a7
-	srliw a7, a4, 13
-	xor a6, a6, a7
-	slliw a7, a4, 19
-	xor a6, a6, a7
-	srliw a7, a4, 22
-	xor a6, a6, a7
-	slliw a7, a4, 10
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t6, t6, a6
 	or a6, a4, t0
@@ -606,16 +546,13 @@ vg_sha256_compress:
 	lbu a6, 43(a1)
 	or a5, a5, a6
 	sw a5, 40(a3)
-	srliw a6, t2, 6
-	slliw a7, t2, 26
-	xor a6, a6, a7
-	srliw a7, t2, 11
-	xor a6, a6, a7
-	slliw a7, t2, 21
-	xor a6, a6, a7
-	srliw a7, t2, 25
-	xor a6, a6, a7
-	slliw a7, t2, 7
+	slli a6, t2, 32
+	srli a7, a6, 6
+	srli s0, a6, 11
+	xor a7, a7, s0
+	srli a6, a6, 25
+	xor a7, a7, a6
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t5, t5, a6
 	xor a6, t3, t4
@@ -625,18 +562,15 @@ vg_sha256_compress:
 	lui a6, 148248
 	addiw a6, a6, 1470
 	add t5, t5, a6
+	slli a6, t6, 32
+	srli a7, a6, 2
+	srli s0, a6, 13
 	add t5, t5, a5
+	xor a7, a7, s0
+	srli a6, a6, 22
+	xor a7, a7, a6
 	add t1, t1, t5
-	srliw a6, t6, 2
-	slliw a7, t6, 30
-	xor a6, a6, a7
-	srliw a7, t6, 13
-	xor a6, a6, a7
-	slliw a7, t6, 19
-	xor a6, a6, a7
-	srliw a7, t6, 22
-	xor a6, a6, a7
-	slliw a7, t6, 10
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t5, t5, a6
 	or a6, t6, a4
@@ -655,16 +589,13 @@ vg_sha256_compress:
 	lbu a6, 47(a1)
 	or a5, a5, a6
 	sw a5, 44(a3)
-	srliw a6, t1, 6
-	slliw a7, t1, 26
-	xor a6, a6, a7
-	srliw a7, t1, 11
-	xor a6, a6, a7
-	slliw a7, t1, 21
-	xor a6, a6, a7
-	srliw a7, t1, 25
-	xor a6, a6, a7
-	slliw a7, t1, 7
+	slli a6, t1, 32
+	srli a7, a6, 6
+	srli s0, a6, 11
+	xor a7, a7, s0
+	srli a6, a6, 25
+	xor a7, a7, a6
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t4, t4, a6
 	xor a6, t2, t3
@@ -674,18 +605,15 @@ vg_sha256_compress:
 	lui a6, 348360
 	addiw a6, a6, -573
 	add t4, t4, a6
+	slli a6, t5, 32
+	srli a7, a6, 2
+	srli s0, a6, 13
 	add t4, t4, a5
+	xor a7, a7, s0
+	srli a6, a6, 22
+	xor a7, a7, a6
 	add t0, t0, t4
-	srliw a6, t5, 2
-	slliw a7, t5, 30
-	xor a6, a6, a7
-	srliw a7, t5, 13
-	xor a6, a6, a7
-	slliw a7, t5, 19
-	xor a6, a6, a7
-	srliw a7, t5, 22
-	xor a6, a6, a7
-	slliw a7, t5, 10
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t4, t4, a6
 	or a6, t5, t6
@@ -704,16 +632,13 @@ vg_sha256_compress:
 	lbu a6, 51(a1)
 	or a5, a5, a6
 	sw a5, 48(a3)
-	srliw a6, t0, 6
-	slliw a7, t0, 26
-	xor a6, a6, a7
-	srliw a7, t0, 11
-	xor a6, a6, a7
-	slliw a7, t0, 21
-	xor a6, a6, a7
-	srliw a7, t0, 25
-	xor a6, a6, a7
-	slliw a7, t0, 7
+	slli a6, t0, 32
+	srli a7, a6, 6
+	srli s0, a6, 11
+	xor a7, a7, s0
+	srli a6, a6, 25
+	xor a7, a7, a6
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t3, t3, a6
 	xor a6, t1, t2
@@ -723,18 +648,15 @@ vg_sha256_compress:
 	lui a6, 469990
 	addiw a6, a6, -652
 	add t3, t3, a6
+	slli a6, t4, 32
+	srli a7, a6, 2
+	srli s0, a6, 13
 	add t3, t3, a5
+	xor a7, a7, s0
+	srli a6, a6, 22
+	xor a7, a7, a6
 	add a4, a4, t3
-	srliw a6, t4, 2
-	slliw a7, t4, 30
-	xor a6, a6, a7
-	srliw a7, t4, 13
-	xor a6, a6, a7
-	slliw a7, t4, 19
-	xor a6, a6, a7
-	srliw a7, t4, 22
-	xor a6, a6, a7
-	slliw a7, t4, 10
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t3, t3, a6
 	or a6, t4, t5
@@ -753,16 +675,13 @@ vg_sha256_compress:
 	lbu a6, 55(a1)
 	or a5, a5, a6
 	sw a5, 52(a3)
-	srliw a6, a4, 6
-	slliw a7, a4, 26
-	xor a6, a6, a7
-	srliw a7, a4, 11
-	xor a6, a6, a7
-	slliw a7, a4, 21
-	xor a6, a6, a7
-	srliw a7, a4, 25
-	xor a6, a6, a7
-	slliw a7, a4, 7
+	slli a6, a4, 32
+	srli a7, a6, 6
+	srli s0, a6, 11
+	xor a7, a7, s0
+	srli a6, a6, 25
+	xor a7, a7, a6
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t2, t2, a6
 	xor a6, t0, t1
@@ -772,18 +691,15 @@ vg_sha256_compress:
 	lui a6, 527851
 	addiw a6, a6, 510
 	add t2, t2, a6
+	slli a6, t3, 32
+	srli a7, a6, 2
+	srli s0, a6, 13
 	add t2, t2, a5
+	xor a7, a7, s0
+	srli a6, a6, 22
+	xor a7, a7, a6
 	add t6, t6, t2
-	srliw a6, t3, 2
-	slliw a7, t3, 30
-	xor a6, a6, a7
-	srliw a7, t3, 13
-	xor a6, a6, a7
-	slliw a7, t3, 19
-	xor a6, a6, a7
-	srliw a7, t3, 22
-	xor a6, a6, a7
-	slliw a7, t3, 10
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t2, t2, a6
 	or a6, t3, t4
@@ -802,16 +718,13 @@ vg_sha256_compress:
 	lbu a6, 59(a1)
 	or a5, a5, a6
 	sw a5, 56(a3)
-	srliw a6, t6, 6
-	slliw a7, t6, 26
-	xor a6, a6, a7
-	srliw a7, t6, 11
-	xor a6, a6, a7
-	slliw a7, t6, 21
-	xor a6, a6, a7
-	srliw a7, t6, 25
-	xor a6, a6, a7
-	slliw a7, t6, 7
+	slli a6, t6, 32
+	srli a7, a6, 6
+	srli s0, a6, 11
+	xor a7, a7, s0
+	srli a6, a6, 25
+	xor a7, a7, a6
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t1, t1, a6
 	xor a6, a4, t0
@@ -821,18 +734,15 @@ vg_sha256_compress:
 	lui a6, 638400
 	addiw a6, a6, 1703
 	add t1, t1, a6
+	slli a6, t2, 32
+	srli a7, a6, 2
+	srli s0, a6, 13
 	add t1, t1, a5
+	xor a7, a7, s0
+	srli a6, a6, 22
+	xor a7, a7, a6
 	add t5, t5, t1
-	srliw a6, t2, 2
-	slliw a7, t2, 30
-	xor a6, a6, a7
-	srliw a7, t2, 13
-	xor a6, a6, a7
-	slliw a7, t2, 19
-	xor a6, a6, a7
-	srliw a7, t2, 22
-	xor a6, a6, a7
-	slliw a7, t2, 10
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t1, t1, a6
 	or a6, t2, t3
@@ -851,16 +761,13 @@ vg_sha256_compress:
 	lbu a6, 63(a1)
 	or a5, a5, a6
 	sw a5, 60(a3)
-	srliw a6, t5, 6
-	slliw a7, t5, 26
-	xor a6, a6, a7
-	srliw a7, t5, 11
-	xor a6, a6, a7
-	slliw a7, t5, 21
-	xor a6, a6, a7
-	srliw a7, t5, 25
-	xor a6, a6, a7
-	slliw a7, t5, 7
+	slli a6, t5, 32
+	srli a7, a6, 6
+	srli s0, a6, 11
+	xor a7, a7, s0
+	srli a6, a6, 25
+	xor a7, a7, a6
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t0, t0, a6
 	xor a6, t6, a4
@@ -870,18 +777,15 @@ vg_sha256_compress:
 	lui a6, 793023
 	addiw a6, a6, 372
 	add t0, t0, a6
+	slli a6, t1, 32
+	srli a7, a6, 2
+	srli s0, a6, 13
 	add t0, t0, a5
+	xor a7, a7, s0
+	srli a6, a6, 22
+	xor a7, a7, a6
 	add t4, t4, t0
-	srliw a6, t1, 2
-	slliw a7, t1, 30
-	xor a6, a6, a7
-	srliw a7, t1, 13
-	xor a6, a6, a7
-	slliw a7, t1, 19
-	xor a6, a6, a7
-	srliw a7, t1, 22
-	xor a6, a6, a7
-	slliw a7, t1, 10
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t0, t0, a6
 	or a6, t1, t2
@@ -890,41 +794,34 @@ vg_sha256_compress:
 	or a6, a6, a7
 	add t0, t0, a6
 	lwu a6, 56(a3)
-	srliw a5, a6, 17
-	slliw a7, a6, 15
+	slli a5, a6, 32
+	or a5, a5, a6
+	srli a7, a5, 17
+	srli a5, a5, 19
 	xor a5, a5, a7
-	srliw a7, a6, 19
-	xor a5, a5, a7
-	slliw a7, a6, 13
-	xor a5, a5, a7
-	srliw a7, a6, 10
-	xor a5, a5, a7
+	srli a6, a6, 10
+	xor a5, a5, a6
 	lwu a7, 36(a3)
 	add a5, a5, a7
 	lwu a6, 4(a3)
-	srliw a7, a6, 7
-	slliw s0, a6, 25
+	slli a7, a6, 32
+	or a7, a7, a6
+	srli s0, a7, 7
+	srli a7, a7, 18
 	xor a7, a7, s0
-	srliw s0, a6, 18
-	xor a7, a7, s0
-	slliw s0, a6, 14
-	xor a7, a7, s0
-	srliw s0, a6, 3
-	xor a7, a7, s0
+	srli a6, a6, 3
+	xor a7, a7, a6
 	add a5, a5, a7
 	lwu a7, 0(a3)
 	add a5, a5, a7
 	sw a5, 0(a3)
-	srliw a6, t4, 6
-	slliw a7, t4, 26
-	xor a6, a6, a7
-	srliw a7, t4, 11
-	xor a6, a6, a7
-	slliw a7, t4, 21
-	xor a6, a6, a7
-	srliw a7, t4, 25
-	xor a6, a6, a7
-	slliw a7, t4, 7
+	slli a6, t4, 32
+	srli a7, a6, 6
+	srli s0, a6, 11
+	xor a7, a7, s0
+	srli a6, a6, 25
+	xor a7, a7, a6
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add a4, a4, a6
 	xor a6, t5, t6
@@ -934,18 +831,15 @@ vg_sha256_compress:
 	lui a6, 936375
 	addiw a6, a6, -1599
 	add a4, a4, a6
+	slli a6, t0, 32
+	srli a7, a6, 2
+	srli s0, a6, 13
 	add a4, a4, a5
+	xor a7, a7, s0
+	srli a6, a6, 22
+	xor a7, a7, a6
 	add t3, t3, a4
-	srliw a6, t0, 2
-	slliw a7, t0, 30
-	xor a6, a6, a7
-	srliw a7, t0, 13
-	xor a6, a6, a7
-	slliw a7, t0, 19
-	xor a6, a6, a7
-	srliw a7, t0, 22
-	xor a6, a6, a7
-	slliw a7, t0, 10
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add a4, a4, a6
 	or a6, t0, t1
@@ -954,41 +848,34 @@ vg_sha256_compress:
 	or a6, a6, a7
 	add a4, a4, a6
 	lwu a6, 60(a3)
-	srliw a5, a6, 17
-	slliw a7, a6, 15
+	slli a5, a6, 32
+	or a5, a5, a6
+	srli a7, a5, 17
+	srli a5, a5, 19
 	xor a5, a5, a7
-	srliw a7, a6, 19
-	xor a5, a5, a7
-	slliw a7, a6, 13
-	xor a5, a5, a7
-	srliw a7, a6, 10
-	xor a5, a5, a7
+	srli a6, a6, 10
+	xor a5, a5, a6
 	lwu a7, 40(a3)
 	add a5, a5, a7
 	lwu a6, 8(a3)
-	srliw a7, a6, 7
-	slliw s0, a6, 25
+	slli a7, a6, 32
+	or a7, a7, a6
+	srli s0, a7, 7
+	srli a7, a7, 18
 	xor a7, a7, s0
-	srliw s0, a6, 18
-	xor a7, a7, s0
-	slliw s0, a6, 14
-	xor a7, a7, s0
-	srliw s0, a6, 3
-	xor a7, a7, s0
+	srli a6, a6, 3
+	xor a7, a7, a6
 	add a5, a5, a7
 	lwu a7, 4(a3)
 	add a5, a5, a7
 	sw a5, 4(a3)
-	srliw a6, t3, 6
-	slliw a7, t3, 26
-	xor a6, a6, a7
-	srliw a7, t3, 11
-	xor a6, a6, a7
-	slliw a7, t3, 21
-	xor a6, a6, a7
-	srliw a7, t3, 25
-	xor a6, a6, a7
-	slliw a7, t3, 7
+	slli a6, t3, 32
+	srli a7, a6, 6
+	srli s0, a6, 11
+	xor a7, a7, s0
+	srli a6, a6, 25
+	xor a7, a7, a6
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t6, t6, a6
 	xor a6, t4, t5
@@ -998,18 +885,15 @@ vg_sha256_compress:
 	lui a6, 981988
 	addiw a6, a6, 1926
 	add t6, t6, a6
+	slli a6, a4, 32
+	srli a7, a6, 2
+	srli s0, a6, 13
 	add t6, t6, a5
+	xor a7, a7, s0
+	srli a6, a6, 22
+	xor a7, a7, a6
 	add t2, t2, t6
-	srliw a6, a4, 2
-	slliw a7, a4, 30
-	xor a6, a6, a7
-	srliw a7, a4, 13
-	xor a6, a6, a7
-	slliw a7, a4, 19
-	xor a6, a6, a7
-	srliw a7, a4, 22
-	xor a6, a6, a7
-	slliw a7, a4, 10
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t6, t6, a6
 	or a6, a4, t0
@@ -1018,41 +902,34 @@ vg_sha256_compress:
 	or a6, a6, a7
 	add t6, t6, a6
 	lwu a6, 0(a3)
-	srliw a5, a6, 17
-	slliw a7, a6, 15
+	slli a5, a6, 32
+	or a5, a5, a6
+	srli a7, a5, 17
+	srli a5, a5, 19
 	xor a5, a5, a7
-	srliw a7, a6, 19
-	xor a5, a5, a7
-	slliw a7, a6, 13
-	xor a5, a5, a7
-	srliw a7, a6, 10
-	xor a5, a5, a7
+	srli a6, a6, 10
+	xor a5, a5, a6
 	lwu a7, 44(a3)
 	add a5, a5, a7
 	lwu a6, 12(a3)
-	srliw a7, a6, 7
-	slliw s0, a6, 25
+	slli a7, a6, 32
+	or a7, a7, a6
+	srli s0, a7, 7
+	srli a7, a7, 18
 	xor a7, a7, s0
-	srliw s0, a6, 18
-	xor a7, a7, s0
-	slliw s0, a6, 14
-	xor a7, a7, s0
-	srliw s0, a6, 3
-	xor a7, a7, s0
+	srli a6, a6, 3
+	xor a7, a7, a6
 	add a5, a5, a7
 	lwu a7, 8(a3)
 	add a5, a5, a7
 	sw a5, 8(a3)
-	srliw a6, t2, 6
-	slliw a7, t2, 26
-	xor a6, a6, a7
-	srliw a7, t2, 11
-	xor a6, a6, a7
-	slliw a7, t2, 21
-	xor a6, a6, a7
-	srliw a7, t2, 25
-	xor a6, a6, a7
-	slliw a7, t2, 7
+	slli a6, t2, 32
+	srli a7, a6, 6
+	srli s0, a6, 11
+	xor a7, a7, s0
+	srli a6, a6, 25
+	xor a7, a7, a6
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t5, t5, a6
 	xor a6, t3, t4
@@ -1062,18 +939,15 @@ vg_sha256_compress:
 	lui a6, 64538
 	addiw a6, a6, -570
 	add t5, t5, a6
+	slli a6, t6, 32
+	srli a7, a6, 2
+	srli s0, a6, 13
 	add t5, t5, a5
+	xor a7, a7, s0
+	srli a6, a6, 22
+	xor a7, a7, a6
 	add t1, t1, t5
-	srliw a6, t6, 2
-	slliw a7, t6, 30
-	xor a6, a6, a7
-	srliw a7, t6, 13
-	xor a6, a6, a7
-	slliw a7, t6, 19
-	xor a6, a6, a7
-	srliw a7, t6, 22
-	xor a6, a6, a7
-	slliw a7, t6, 10
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t5, t5, a6
 	or a6, t6, a4
@@ -1082,41 +956,34 @@ vg_sha256_compress:
 	or a6, a6, a7
 	add t5, t5, a6
 	lwu a6, 4(a3)
-	srliw a5, a6, 17
-	slliw a7, a6, 15
+	slli a5, a6, 32
+	or a5, a5, a6
+	srli a7, a5, 17
+	srli a5, a5, 19
 	xor a5, a5, a7
-	srliw a7, a6, 19
-	xor a5, a5, a7
-	slliw a7, a6, 13
-	xor a5, a5, a7
-	srliw a7, a6, 10
-	xor a5, a5, a7
+	srli a6, a6, 10
+	xor a5, a5, a6
 	lwu a7, 48(a3)
 	add a5, a5, a7
 	lwu a6, 16(a3)
-	srliw a7, a6, 7
-	slliw s0, a6, 25
+	slli a7, a6, 32
+	or a7, a7, a6
+	srli s0, a7, 7
+	srli a7, a7, 18
 	xor a7, a7, s0
-	srliw s0, a6, 18
-	xor a7, a7, s0
-	slliw s0, a6, 14
-	xor a7, a7, s0
-	srliw s0, a6, 3
-	xor a7, a7, s0
+	srli a6, a6, 3
+	xor a7, a7, a6
 	add a5, a5, a7
 	lwu a7, 12(a3)
 	add a5, a5, a7
 	sw a5, 12(a3)
-	srliw a6, t1, 6
-	slliw a7, t1, 26
-	xor a6, a6, a7
-	srliw a7, t1, 11
-	xor a6, a6, a7
-	slliw a7, t1, 21
-	xor a6, a6, a7
-	srliw a7, t1, 25
-	xor a6, a6, a7
-	slliw a7, t1, 7
+	slli a6, t1, 32
+	srli a7, a6, 6
+	srli s0, a6, 11
+	xor a7, a7, s0
+	srli a6, a6, 25
+	xor a7, a7, a6
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t4, t4, a6
 	xor a6, t2, t3
@@ -1126,18 +993,15 @@ vg_sha256_compress:
 	lui a6, 147658
 	addiw a6, a6, 460
 	add t4, t4, a6
+	slli a6, t5, 32
+	srli a7, a6, 2
+	srli s0, a6, 13
 	add t4, t4, a5
+	xor a7, a7, s0
+	srli a6, a6, 22
+	xor a7, a7, a6
 	add t0, t0, t4
-	srliw a6, t5, 2
-	slliw a7, t5, 30
-	xor a6, a6, a7
-	srliw a7, t5, 13
-	xor a6, a6, a7
-	slliw a7, t5, 19
-	xor a6, a6, a7
-	srliw a7, t5, 22
-	xor a6, a6, a7
-	slliw a7, t5, 10
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t4, t4, a6
 	or a6, t5, t6
@@ -1146,41 +1010,34 @@ vg_sha256_compress:
 	or a6, a6, a7
 	add t4, t4, a6
 	lwu a6, 8(a3)
-	srliw a5, a6, 17
-	slliw a7, a6, 15
+	slli a5, a6, 32
+	or a5, a5, a6
+	srli a7, a5, 17
+	srli a5, a5, 19
 	xor a5, a5, a7
-	srliw a7, a6, 19
-	xor a5, a5, a7
-	slliw a7, a6, 13
-	xor a5, a5, a7
-	srliw a7, a6, 10
-	xor a5, a5, a7
+	srli a6, a6, 10
+	xor a5, a5, a6
 	lwu a7, 52(a3)
 	add a5, a5, a7
 	lwu a6, 20(a3)
-	srliw a7, a6, 7
-	slliw s0, a6, 25
+	slli a7, a6, 32
+	or a7, a7, a6
+	srli s0, a7, 7
+	srli a7, a7, 18
 	xor a7, a7, s0
-	srliw s0, a6, 18
-	xor a7, a7, s0
-	slliw s0, a6, 14
-	xor a7, a7, s0
-	srliw s0, a6, 3
-	xor a7, a7, s0
+	srli a6, a6, 3
+	xor a7, a7, a6
 	add a5, a5, a7
 	lwu a7, 16(a3)
 	add a5, a5, a7
 	sw a5, 16(a3)
-	srliw a6, t0, 6
-	slliw a7, t0, 26
-	xor a6, a6, a7
-	srliw a7, t0, 11
-	xor a6, a6, a7
-	slliw a7, t0, 21
-	xor a6, a6, a7
-	srliw a7, t0, 25
-	xor a6, a6, a7
-	slliw a7, t0, 7
+	slli a6, t0, 32
+	srli a7, a6, 6
+	srli s0, a6, 11
+	xor a7, a7, s0
+	srli a6, a6, 25
+	xor a7, a7, a6
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t3, t3, a6
 	xor a6, t1, t2
@@ -1190,18 +1047,15 @@ vg_sha256_compress:
 	lui a6, 188051
 	addiw a6, a6, -913
 	add t3, t3, a6
+	slli a6, t4, 32
+	srli a7, a6, 2
+	srli s0, a6, 13
 	add t3, t3, a5
+	xor a7, a7, s0
+	srli a6, a6, 22
+	xor a7, a7, a6
 	add a4, a4, t3
-	srliw a6, t4, 2
-	slliw a7, t4, 30
-	xor a6, a6, a7
-	srliw a7, t4, 13
-	xor a6, a6, a7
-	slliw a7, t4, 19
-	xor a6, a6, a7
-	srliw a7, t4, 22
-	xor a6, a6, a7
-	slliw a7, t4, 10
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t3, t3, a6
 	or a6, t4, t5
@@ -1210,41 +1064,34 @@ vg_sha256_compress:
 	or a6, a6, a7
 	add t3, t3, a6
 	lwu a6, 12(a3)
-	srliw a5, a6, 17
-	slliw a7, a6, 15
+	slli a5, a6, 32
+	or a5, a5, a6
+	srli a7, a5, 17
+	srli a5, a5, 19
 	xor a5, a5, a7
-	srliw a7, a6, 19
-	xor a5, a5, a7
-	slliw a7, a6, 13
-	xor a5, a5, a7
-	srliw a7, a6, 10
-	xor a5, a5, a7
+	srli a6, a6, 10
+	xor a5, a5, a6
 	lwu a7, 56(a3)
 	add a5, a5, a7
 	lwu a6, 24(a3)
-	srliw a7, a6, 7
-	slliw s0, a6, 25
+	slli a7, a6, 32
+	or a7, a7, a6
+	srli s0, a7, 7
+	srli a7, a7, 18
 	xor a7, a7, s0
-	srliw s0, a6, 18
-	xor a7, a7, s0
-	slliw s0, a6, 14
-	xor a7, a7, s0
-	srliw s0, a6, 3
-	xor a7, a7, s0
+	srli a6, a6, 3
+	xor a7, a7, a6
 	add a5, a5, a7
 	lwu a7, 20(a3)
 	add a5, a5, a7
 	sw a5, 20(a3)
-	srliw a6, a4, 6
-	slliw a7, a4, 26
-	xor a6, a6, a7
-	srliw a7, a4, 11
-	xor a6, a6, a7
-	slliw a7, a4, 21
-	xor a6, a6, a7
-	srliw a7, a4, 25
-	xor a6, a6, a7
-	slliw a7, a4, 7
+	slli a6, a4, 32
+	srli a7, a6, 6
+	srli s0, a6, 11
+	xor a7, a7, s0
+	srli a6, a6, 25
+	xor a7, a7, a6
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t2, t2, a6
 	xor a6, t0, t1
@@ -1254,18 +1101,15 @@ vg_sha256_compress:
 	lui a6, 304968
 	addiw a6, a6, 1194
 	add t2, t2, a6
+	slli a6, t3, 32
+	srli a7, a6, 2
+	srli s0, a6, 13
 	add t2, t2, a5
+	xor a7, a7, s0
+	srli a6, a6, 22
+	xor a7, a7, a6
 	add t6, t6, t2
-	srliw a6, t3, 2
-	slliw a7, t3, 30
-	xor a6, a6, a7
-	srliw a7, t3, 13
-	xor a6, a6, a7
-	slliw a7, t3, 19
-	xor a6, a6, a7
-	srliw a7, t3, 22
-	xor a6, a6, a7
-	slliw a7, t3, 10
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t2, t2, a6
 	or a6, t3, t4
@@ -1274,41 +1118,34 @@ vg_sha256_compress:
 	or a6, a6, a7
 	add t2, t2, a6
 	lwu a6, 16(a3)
-	srliw a5, a6, 17
-	slliw a7, a6, 15
+	slli a5, a6, 32
+	or a5, a5, a6
+	srli a7, a5, 17
+	srli a5, a5, 19
 	xor a5, a5, a7
-	srliw a7, a6, 19
-	xor a5, a5, a7
-	slliw a7, a6, 13
-	xor a5, a5, a7
-	srliw a7, a6, 10
-	xor a5, a5, a7
+	srli a6, a6, 10
+	xor a5, a5, a6
 	lwu a7, 60(a3)
 	add a5, a5, a7
 	lwu a6, 28(a3)
-	srliw a7, a6, 7
-	slliw s0, a6, 25
+	slli a7, a6, 32
+	or a7, a7, a6
+	srli s0, a7, 7
+	srli a7, a7, 18
 	xor a7, a7, s0
-	srliw s0, a6, 18
-	xor a7, a7, s0
-	slliw s0, a6, 14
-	xor a7, a7, s0
-	srliw s0, a6, 3
-	xor a7, a7, s0
+	srli a6, a6, 3
+	xor a7, a7, a6
 	add a5, a5, a7
 	lwu a7, 24(a3)
 	add a5, a5, a7
 	sw a5, 24(a3)
-	srliw a6, t6, 6
-	slliw a7, t6, 26
-	xor a6, a6, a7
-	srliw a7, t6, 11
-	xor a6, a6, a7
-	slliw a7, t6, 21
-	xor a6, a6, a7
-	srliw a7, t6, 25
-	xor a6, a6, a7
-	slliw a7, t6, 7
+	slli a6, t6, 32
+	srli a7, a6, 6
+	srli s0, a6, 11
+	xor a7, a7, s0
+	srli a6, a6, 25
+	xor a7, a7, a6
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t1, t1, a6
 	xor a6, a4, t0
@@ -1318,18 +1155,15 @@ vg_sha256_compress:
 	lui a6, 379659
 	addiw a6, a6, -1572
 	add t1, t1, a6
+	slli a6, t2, 32
+	srli a7, a6, 2
+	srli s0, a6, 13
 	add t1, t1, a5
+	xor a7, a7, s0
+	srli a6, a6, 22
+	xor a7, a7, a6
 	add t5, t5, t1
-	srliw a6, t2, 2
-	slliw a7, t2, 30
-	xor a6, a6, a7
-	srliw a7, t2, 13
-	xor a6, a6, a7
-	slliw a7, t2, 19
-	xor a6, a6, a7
-	srliw a7, t2, 22
-	xor a6, a6, a7
-	slliw a7, t2, 10
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t1, t1, a6
 	or a6, t2, t3
@@ -1338,41 +1172,34 @@ vg_sha256_compress:
 	or a6, a6, a7
 	add t1, t1, a6
 	lwu a6, 20(a3)
-	srliw a5, a6, 17
-	slliw a7, a6, 15
+	slli a5, a6, 32
+	or a5, a5, a6
+	srli a7, a5, 17
+	srli a5, a5, 19
 	xor a5, a5, a7
-	srliw a7, a6, 19
-	xor a5, a5, a7
-	slliw a7, a6, 13
-	xor a5, a5, a7
-	srliw a7, a6, 10
-	xor a5, a5, a7
+	srli a6, a6, 10
+	xor a5, a5, a6
 	lwu a7, 0(a3)
 	add a5, a5, a7
 	lwu a6, 32(a3)
-	srliw a7, a6, 7
-	slliw s0, a6, 25
+	slli a7, a6, 32
+	or a7, a7, a6
+	srli s0, a7, 7
+	srli a7, a7, 18
 	xor a7, a7, s0
-	srliw s0, a6, 18
-	xor a7, a7, s0
-	slliw s0, a6, 14
-	xor a7, a7, s0
-	srliw s0, a6, 3
-	xor a7, a7, s0
+	srli a6, a6, 3
+	xor a7, a7, a6
 	add a5, a5, a7
 	lwu a7, 28(a3)
 	add a5, a5, a7
 	sw a5, 28(a3)
-	srliw a6, t5, 6
-	slliw a7, t5, 26
-	xor a6, a6, a7
-	srliw a7, t5, 11
-	xor a6, a6, a7
-	slliw a7, t5, 21
-	xor a6, a6, a7
-	srliw a7, t5, 25
-	xor a6, a6, a7
-	slliw a7, t5, 7
+	slli a6, t5, 32
+	srli a7, a6, 6
+	srli s0, a6, 11
+	xor a7, a7, s0
+	srli a6, a6, 25
+	xor a7, a7, a6
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t0, t0, a6
 	xor a6, t6, a4
@@ -1382,18 +1209,15 @@ vg_sha256_compress:
 	lui a6, 487321
 	addiw a6, a6, -1830
 	add t0, t0, a6
+	slli a6, t1, 32
+	srli a7, a6, 2
+	srli s0, a6, 13
 	add t0, t0, a5
+	xor a7, a7, s0
+	srli a6, a6, 22
+	xor a7, a7, a6
 	add t4, t4, t0
-	srliw a6, t1, 2
-	slliw a7, t1, 30
-	xor a6, a6, a7
-	srliw a7, t1, 13
-	xor a6, a6, a7
-	slliw a7, t1, 19
-	xor a6, a6, a7
-	srliw a7, t1, 22
-	xor a6, a6, a7
-	slliw a7, t1, 10
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t0, t0, a6
 	or a6, t1, t2
@@ -1402,41 +1226,34 @@ vg_sha256_compress:
 	or a6, a6, a7
 	add t0, t0, a6
 	lwu a6, 24(a3)
-	srliw a5, a6, 17
-	slliw a7, a6, 15
+	slli a5, a6, 32
+	or a5, a5, a6
+	srli a7, a5, 17
+	srli a5, a5, 19
 	xor a5, a5, a7
-	srliw a7, a6, 19
-	xor a5, a5, a7
-	slliw a7, a6, 13
-	xor a5, a5, a7
-	srliw a7, a6, 10
-	xor a5, a5, a7
+	srli a6, a6, 10
+	xor a5, a5, a6
 	lwu a7, 4(a3)
 	add a5, a5, a7
 	lwu a6, 36(a3)
-	srliw a7, a6, 7
-	slliw s0, a6, 25
+	slli a7, a6, 32
+	or a7, a7, a6
+	srli s0, a7, 7
+	srli a7, a7, 18
 	xor a7, a7, s0
-	srliw s0, a6, 18
-	xor a7, a7, s0
-	slliw s0, a6, 14
-	xor a7, a7, s0
-	srliw s0, a6, 3
-	xor a7, a7, s0
+	srli a6, a6, 3
+	xor a7, a7, a6
 	add a5, a5, a7
 	lwu a7, 32(a3)
 	add a5, a5, a7
 	sw a5, 32(a3)
-	srliw a6, t4, 6
-	slliw a7, t4, 26
-	xor a6, a6, a7
-	srliw a7, t4, 11
-	xor a6, a6, a7
-	slliw a7, t4, 21
-	xor a6, a6, a7
-	srliw a7, t4, 25
-	xor a6, a6, a7
-	slliw a7, t4, 7
+	slli a6, t4, 32
+	srli a7, a6, 6
+	srli s0, a6, 11
+	xor a7, a7, s0
+	srli a6, a6, 25
+	xor a7, a7, a6
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add a4, a4, a6
 	xor a6, t5, t6
@@ -1446,18 +1263,15 @@ vg_sha256_compress:
 	lui a6, 623589
 	addiw a6, a6, 338
 	add a4, a4, a6
+	slli a6, t0, 32
+	srli a7, a6, 2
+	srli s0, a6, 13
 	add a4, a4, a5
+	xor a7, a7, s0
+	srli a6, a6, 22
+	xor a7, a7, a6
 	add t3, t3, a4
-	srliw a6, t0, 2
-	slliw a7, t0, 30
-	xor a6, a6, a7
-	srliw a7, t0, 13
-	xor a6, a6, a7
-	slliw a7, t0, 19
-	xor a6, a6, a7
-	srliw a7, t0, 22
-	xor a6, a6, a7
-	slliw a7, t0, 10
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add a4, a4, a6
 	or a6, t0, t1
@@ -1466,41 +1280,34 @@ vg_sha256_compress:
 	or a6, a6, a7
 	add a4, a4, a6
 	lwu a6, 28(a3)
-	srliw a5, a6, 17
-	slliw a7, a6, 15
+	slli a5, a6, 32
+	or a5, a5, a6
+	srli a7, a5, 17
+	srli a5, a5, 19
 	xor a5, a5, a7
-	srliw a7, a6, 19
-	xor a5, a5, a7
-	slliw a7, a6, 13
-	xor a5, a5, a7
-	srliw a7, a6, 10
-	xor a5, a5, a7
+	srli a6, a6, 10
+	xor a5, a5, a6
 	lwu a7, 8(a3)
 	add a5, a5, a7
 	lwu a6, 40(a3)
-	srliw a7, a6, 7
-	slliw s0, a6, 25
+	slli a7, a6, 32
+	or a7, a7, a6
+	srli s0, a7, 7
+	srli a7, a7, 18
 	xor a7, a7, s0
-	srliw s0, a6, 18
-	xor a7, a7, s0
-	slliw s0, a6, 14
-	xor a7, a7, s0
-	srliw s0, a6, 3
-	xor a7, a7, s0
+	srli a6, a6, 3
+	xor a7, a7, a6
 	add a5, a5, a7
 	lwu a7, 36(a3)
 	add a5, a5, a7
 	sw a5, 36(a3)
-	srliw a6, t3, 6
-	slliw a7, t3, 26
-	xor a6, a6, a7
-	srliw a7, t3, 11
-	xor a6, a6, a7
-	slliw a7, t3, 21
-	xor a6, a6, a7
-	srliw a7, t3, 25
-	xor a6, a6, a7
-	slliw a7, t3, 7
+	slli a6, t3, 32
+	srli a7, a6, 6
+	srli s0, a6, 11
+	xor a7, a7, s0
+	srli a6, a6, 25
+	xor a7, a7, a6
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t6, t6, a6
 	xor a6, t4, t5
@@ -1510,18 +1317,15 @@ vg_sha256_compress:
 	lui a6, 688924
 	addiw a6, a6, 1645
 	add t6, t6, a6
+	slli a6, a4, 32
+	srli a7, a6, 2
+	srli s0, a6, 13
 	add t6, t6, a5
+	xor a7, a7, s0
+	srli a6, a6, 22
+	xor a7, a7, a6
 	add t2, t2, t6
-	srliw a6, a4, 2
-	slliw a7, a4, 30
-	xor a6, a6, a7
-	srliw a7, a4, 13
-	xor a6, a6, a7
-	slliw a7, a4, 19
-	xor a6, a6, a7
-	srliw a7, a4, 22
-	xor a6, a6, a7
-	slliw a7, a4, 10
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t6, t6, a6
 	or a6, a4, t0
@@ -1530,41 +1334,34 @@ vg_sha256_compress:
 	or a6, a6, a7
 	add t6, t6, a6
 	lwu a6, 32(a3)
-	srliw a5, a6, 17
-	slliw a7, a6, 15
+	slli a5, a6, 32
+	or a5, a5, a6
+	srli a7, a5, 17
+	srli a5, a5, 19
 	xor a5, a5, a7
-	srliw a7, a6, 19
-	xor a5, a5, a7
-	slliw a7, a6, 13
-	xor a5, a5, a7
-	srliw a7, a6, 10
-	xor a5, a5, a7
+	srli a6, a6, 10
+	xor a5, a5, a6
 	lwu a7, 12(a3)
 	add a5, a5, a7
 	lwu a6, 44(a3)
-	srliw a7, a6, 7
-	slliw s0, a6, 25
+	slli a7, a6, 32
+	or a7, a7, a6
+	srli s0, a7, 7
+	srli a7, a7, 18
 	xor a7, a7, s0
-	srliw s0, a6, 18
-	xor a7, a7, s0
-	slliw s0, a6, 14
-	xor a7, a7, s0
-	srliw s0, a6, 3
-	xor a7, a7, s0
+	srli a6, a6, 3
+	xor a7, a7, a6
 	add a5, a5, a7
 	lwu a7, 40(a3)
 	add a5, a5, a7
 	sw a5, 40(a3)
-	srliw a6, t2, 6
-	slliw a7, t2, 26
-	xor a6, a6, a7
-	srliw a7, t2, 11
-	xor a6, a6, a7
-	slliw a7, t2, 21
-	xor a6, a6, a7
-	srliw a7, t2, 25
-	xor a6, a6, a7
-	slliw a7, t2, 7
+	slli a6, t2, 32
+	srli a7, a6, 6
+	srli s0, a6, 11
+	xor a7, a7, s0
+	srli a6, a6, 25
+	xor a7, a7, a6
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t5, t5, a6
 	xor a6, t3, t4
@@ -1574,18 +1371,15 @@ vg_sha256_compress:
 	lui a6, 720946
 	addiw a6, a6, 1992
 	add t5, t5, a6
+	slli a6, t6, 32
+	srli a7, a6, 2
+	srli s0, a6, 13
 	add t5, t5, a5
+	xor a7, a7, s0
+	srli a6, a6, 22
+	xor a7, a7, a6
 	add t1, t1, t5
-	srliw a6, t6, 2
-	slliw a7, t6, 30
-	xor a6, a6, a7
-	srliw a7, t6, 13
-	xor a6, a6, a7
-	slliw a7, t6, 19
-	xor a6, a6, a7
-	srliw a7, t6, 22
-	xor a6, a6, a7
-	slliw a7, t6, 10
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t5, t5, a6
 	or a6, t6, a4
@@ -1594,41 +1388,34 @@ vg_sha256_compress:
 	or a6, a6, a7
 	add t5, t5, a6
 	lwu a6, 36(a3)
-	srliw a5, a6, 17
-	slliw a7, a6, 15
+	slli a5, a6, 32
+	or a5, a5, a6
+	srli a7, a5, 17
+	srli a5, a5, 19
 	xor a5, a5, a7
-	srliw a7, a6, 19
-	xor a5, a5, a7
-	slliw a7, a6, 13
-	xor a5, a5, a7
-	srliw a7, a6, 10
-	xor a5, a5, a7
+	srli a6, a6, 10
+	xor a5, a5, a6
 	lwu a7, 16(a3)
 	add a5, a5, a7
 	lwu a6, 48(a3)
-	srliw a7, a6, 7
-	slliw s0, a6, 25
+	slli a7, a6, 32
+	or a7, a7, a6
+	srli s0, a7, 7
+	srli a7, a7, 18
 	xor a7, a7, s0
-	srliw s0, a6, 18
-	xor a7, a7, s0
-	slliw s0, a6, 14
-	xor a7, a7, s0
-	srliw s0, a6, 3
-	xor a7, a7, s0
+	srli a6, a6, 3
+	xor a7, a7, a6
 	add a5, a5, a7
 	lwu a7, 44(a3)
 	add a5, a5, a7
 	sw a5, 44(a3)
-	srliw a6, t1, 6
-	slliw a7, t1, 26
-	xor a6, a6, a7
-	srliw a7, t1, 11
-	xor a6, a6, a7
-	slliw a7, t1, 21
-	xor a6, a6, a7
-	srliw a7, t1, 25
-	xor a6, a6, a7
-	slliw a7, t1, 7
+	slli a6, t1, 32
+	srli a7, a6, 6
+	srli s0, a6, 11
+	xor a7, a7, s0
+	srli a6, a6, 25
+	xor a7, a7, a6
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t4, t4, a6
 	xor a6, t2, t3
@@ -1638,18 +1425,15 @@ vg_sha256_compress:
 	lui a6, 783768
 	addiw a6, a6, -57
 	add t4, t4, a6
+	slli a6, t5, 32
+	srli a7, a6, 2
+	srli s0, a6, 13
 	add t4, t4, a5
+	xor a7, a7, s0
+	srli a6, a6, 22
+	xor a7, a7, a6
 	add t0, t0, t4
-	srliw a6, t5, 2
-	slliw a7, t5, 30
-	xor a6, a6, a7
-	srliw a7, t5, 13
-	xor a6, a6, a7
-	slliw a7, t5, 19
-	xor a6, a6, a7
-	srliw a7, t5, 22
-	xor a6, a6, a7
-	slliw a7, t5, 10
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t4, t4, a6
 	or a6, t5, t6
@@ -1658,41 +1442,34 @@ vg_sha256_compress:
 	or a6, a6, a7
 	add t4, t4, a6
 	lwu a6, 40(a3)
-	srliw a5, a6, 17
-	slliw a7, a6, 15
+	slli a5, a6, 32
+	or a5, a5, a6
+	srli a7, a5, 17
+	srli a5, a5, 19
 	xor a5, a5, a7
-	srliw a7, a6, 19
-	xor a5, a5, a7
-	slliw a7, a6, 13
-	xor a5, a5, a7
-	srliw a7, a6, 10
-	xor a5, a5, a7
+	srli a6, a6, 10
+	xor a5, a5, a6
 	lwu a7, 20(a3)
 	add a5, a5, a7
 	lwu a6, 52(a3)
-	srliw a7, a6, 7
-	slliw s0, a6, 25
+	slli a7, a6, 32
+	or a7, a7, a6
+	srli s0, a7, 7
+	srli a7, a7, 18
 	xor a7, a7, s0
-	srliw s0, a6, 18
-	xor a7, a7, s0
-	slliw s0, a6, 14
-	xor a7, a7, s0
-	srliw s0, a6, 3
-	xor a7, a7, s0
+	srli a6, a6, 3
+	xor a7, a7, a6
 	add a5, a5, a7
 	lwu a7, 48(a3)
 	add a5, a5, a7
 	sw a5, 48(a3)
-	srliw a6, t0, 6
-	slliw a7, t0, 26
-	xor a6, a6, a7
-	srliw a7, t0, 11
-	xor a6, a6, a7
-	slliw a7, t0, 21
-	xor a6, a6, a7
-	srliw a7, t0, 25
-	xor a6, a6, a7
-	slliw a7, t0, 7
+	slli a6, t0, 32
+	srli a7, a6, 6
+	srli s0, a6, 11
+	xor a7, a7, s0
+	srli a6, a6, 25
+	xor a7, a7, a6
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t3, t3, a6
 	xor a6, t1, t2
@@ -1702,18 +1479,15 @@ vg_sha256_compress:
 	lui a6, 814593
 	addiw a6, a6, -1037
 	add t3, t3, a6
+	slli a6, t4, 32
+	srli a7, a6, 2
+	srli s0, a6, 13
 	add t3, t3, a5
+	xor a7, a7, s0
+	srli a6, a6, 22
+	xor a7, a7, a6
 	add a4, a4, t3
-	srliw a6, t4, 2
-	slliw a7, t4, 30
-	xor a6, a6, a7
-	srliw a7, t4, 13
-	xor a6, a6, a7
-	slliw a7, t4, 19
-	xor a6, a6, a7
-	srliw a7, t4, 22
-	xor a6, a6, a7
-	slliw a7, t4, 10
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t3, t3, a6
 	or a6, t4, t5
@@ -1722,41 +1496,34 @@ vg_sha256_compress:
 	or a6, a6, a7
 	add t3, t3, a6
 	lwu a6, 44(a3)
-	srliw a5, a6, 17
-	slliw a7, a6, 15
+	slli a5, a6, 32
+	or a5, a5, a6
+	srli a7, a5, 17
+	srli a5, a5, 19
 	xor a5, a5, a7
-	srliw a7, a6, 19
-	xor a5, a5, a7
-	slliw a7, a6, 13
-	xor a5, a5, a7
-	srliw a7, a6, 10
-	xor a5, a5, a7
+	srli a6, a6, 10
+	xor a5, a5, a6
 	lwu a7, 24(a3)
 	add a5, a5, a7
 	lwu a6, 56(a3)
-	srliw a7, a6, 7
-	slliw s0, a6, 25
+	slli a7, a6, 32
+	or a7, a7, a6
+	srli s0, a7, 7
+	srli a7, a7, 18
 	xor a7, a7, s0
-	srliw s0, a6, 18
-	xor a7, a7, s0
-	slliw s0, a6, 14
-	xor a7, a7, s0
-	srliw s0, a6, 3
-	xor a7, a7, s0
+	srli a6, a6, 3
+	xor a7, a7, a6
 	add a5, a5, a7
 	lwu a7, 52(a3)
 	add a5, a5, a7
 	sw a5, 52(a3)
-	srliw a6, a4, 6
-	slliw a7, a4, 26
-	xor a6, a6, a7
-	srliw a7, a4, 11
-	xor a6, a6, a7
-	slliw a7, a4, 21
-	xor a6, a6, a7
-	srliw a7, a4, 25
-	xor a6, a6, a7
-	slliw a7, a4, 7
+	slli a6, a4, 32
+	srli a7, a6, 6
+	srli s0, a6, 11
+	xor a7, a7, s0
+	srli a6, a6, 25
+	xor a7, a7, a6
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t2, t2, a6
 	xor a6, t0, t1
@@ -1766,18 +1533,15 @@ vg_sha256_compress:
 	lui a6, 875129
 	addiw a6, a6, 327
 	add t2, t2, a6
+	slli a6, t3, 32
+	srli a7, a6, 2
+	srli s0, a6, 13
 	add t2, t2, a5
+	xor a7, a7, s0
+	srli a6, a6, 22
+	xor a7, a7, a6
 	add t6, t6, t2
-	srliw a6, t3, 2
-	slliw a7, t3, 30
-	xor a6, a6, a7
-	srliw a7, t3, 13
-	xor a6, a6, a7
-	slliw a7, t3, 19
-	xor a6, a6, a7
-	srliw a7, t3, 22
-	xor a6, a6, a7
-	slliw a7, t3, 10
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t2, t2, a6
 	or a6, t3, t4
@@ -1786,41 +1550,34 @@ vg_sha256_compress:
 	or a6, a6, a7
 	add t2, t2, a6
 	lwu a6, 48(a3)
-	srliw a5, a6, 17
-	slliw a7, a6, 15
+	slli a5, a6, 32
+	or a5, a5, a6
+	srli a7, a5, 17
+	srli a5, a5, 19
 	xor a5, a5, a7
-	srliw a7, a6, 19
-	xor a5, a5, a7
-	slliw a7, a6, 13
-	xor a5, a5, a7
-	srliw a7, a6, 10
-	xor a5, a5, a7
+	srli a6, a6, 10
+	xor a5, a5, a6
 	lwu a7, 28(a3)
 	add a5, a5, a7
 	lwu a6, 60(a3)
-	srliw a7, a6, 7
-	slliw s0, a6, 25
+	slli a7, a6, 32
+	or a7, a7, a6
+	srli s0, a7, 7
+	srli a7, a7, 18
 	xor a7, a7, s0
-	srliw s0, a6, 18
-	xor a7, a7, s0
-	slliw s0, a6, 14
-	xor a7, a7, s0
-	srliw s0, a6, 3
-	xor a7, a7, s0
+	srli a6, a6, 3
+	xor a7, a7, a6
 	add a5, a5, a7
 	lwu a7, 56(a3)
 	add a5, a5, a7
 	sw a5, 56(a3)
-	srliw a6, t6, 6
-	slliw a7, t6, 26
-	xor a6, a6, a7
-	srliw a7, t6, 11
-	xor a6, a6, a7
-	slliw a7, t6, 21
-	xor a6, a6, a7
-	srliw a7, t6, 25
-	xor a6, a6, a7
-	slliw a7, t6, 7
+	slli a6, t6, 32
+	srli a7, a6, 6
+	srli s0, a6, 11
+	xor a7, a7, s0
+	srli a6, a6, 25
+	xor a7, a7, a6
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t1, t1, a6
 	xor a6, a4, t0
@@ -1830,18 +1587,15 @@ vg_sha256_compress:
 	lui a6, 27814
 	addiw a6, a6, 849
 	add t1, t1, a6
+	slli a6, t2, 32
+	srli a7, a6, 2
+	srli s0, a6, 13
 	add t1, t1, a5
+	xor a7, a7, s0
+	srli a6, a6, 22
+	xor a7, a7, a6
 	add t5, t5, t1
-	srliw a6, t2, 2
-	slliw a7, t2, 30
-	xor a6, a6, a7
-	srliw a7, t2, 13
-	xor a6, a6, a7
-	slliw a7, t2, 19
-	xor a6, a6, a7
-	srliw a7, t2, 22
-	xor a6, a6, a7
-	slliw a7, t2, 10
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t1, t1, a6
 	or a6, t2, t3
@@ -1850,41 +1604,34 @@ vg_sha256_compress:
 	or a6, a6, a7
 	add t1, t1, a6
 	lwu a6, 52(a3)
-	srliw a5, a6, 17
-	slliw a7, a6, 15
+	slli a5, a6, 32
+	or a5, a5, a6
+	srli a7, a5, 17
+	srli a5, a5, 19
 	xor a5, a5, a7
-	srliw a7, a6, 19
-	xor a5, a5, a7
-	slliw a7, a6, 13
-	xor a5, a5, a7
-	srliw a7, a6, 10
-	xor a5, a5, a7
+	srli a6, a6, 10
+	xor a5, a5, a6
 	lwu a7, 32(a3)
 	add a5, a5, a7
 	lwu a6, 0(a3)
-	srliw a7, a6, 7
-	slliw s0, a6, 25
+	slli a7, a6, 32
+	or a7, a7, a6
+	srli s0, a7, 7
+	srli a7, a7, 18
 	xor a7, a7, s0
-	srliw s0, a6, 18
-	xor a7, a7, s0
-	slliw s0, a6, 14
-	xor a7, a7, s0
-	srliw s0, a6, 3
-	xor a7, a7, s0
+	srli a6, a6, 3
+	xor a7, a7, a6
 	add a5, a5, a7
 	lwu a7, 60(a3)
 	add a5, a5, a7
 	sw a5, 60(a3)
-	srliw a6, t5, 6
-	slliw a7, t5, 26
-	xor a6, a6, a7
-	srliw a7, t5, 11
-	xor a6, a6, a7
-	slliw a7, t5, 21
-	xor a6, a6, a7
-	srliw a7, t5, 25
-	xor a6, a6, a7
-	slliw a7, t5, 7
+	slli a6, t5, 32
+	srli a7, a6, 6
+	srli s0, a6, 11
+	xor a7, a7, s0
+	srli a6, a6, 25
+	xor a7, a7, a6
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t0, t0, a6
 	xor a6, t6, a4
@@ -1894,18 +1641,15 @@ vg_sha256_compress:
 	lui a6, 82579
 	addiw a6, a6, -1689
 	add t0, t0, a6
+	slli a6, t1, 32
+	srli a7, a6, 2
+	srli s0, a6, 13
 	add t0, t0, a5
+	xor a7, a7, s0
+	srli a6, a6, 22
+	xor a7, a7, a6
 	add t4, t4, t0
-	srliw a6, t1, 2
-	slliw a7, t1, 30
-	xor a6, a6, a7
-	srliw a7, t1, 13
-	xor a6, a6, a7
-	slliw a7, t1, 19
-	xor a6, a6, a7
-	srliw a7, t1, 22
-	xor a6, a6, a7
-	slliw a7, t1, 10
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t0, t0, a6
 	or a6, t1, t2
@@ -1914,41 +1658,34 @@ vg_sha256_compress:
 	or a6, a6, a7
 	add t0, t0, a6
 	lwu a6, 56(a3)
-	srliw a5, a6, 17
-	slliw a7, a6, 15
+	slli a5, a6, 32
+	or a5, a5, a6
+	srli a7, a5, 17
+	srli a5, a5, 19
 	xor a5, a5, a7
-	srliw a7, a6, 19
-	xor a5, a5, a7
-	slliw a7, a6, 13
-	xor a5, a5, a7
-	srliw a7, a6, 10
-	xor a5, a5, a7
+	srli a6, a6, 10
+	xor a5, a5, a6
 	lwu a7, 36(a3)
 	add a5, a5, a7
 	lwu a6, 4(a3)
-	srliw a7, a6, 7
-	slliw s0, a6, 25
+	slli a7, a6, 32
+	or a7, a7, a6
+	srli s0, a7, 7
+	srli a7, a7, 18
 	xor a7, a7, s0
-	srliw s0, a6, 18
-	xor a7, a7, s0
-	slliw s0, a6, 14
-	xor a7, a7, s0
-	srliw s0, a6, 3
-	xor a7, a7, s0
+	srli a6, a6, 3
+	xor a7, a7, a6
 	add a5, a5, a7
 	lwu a7, 0(a3)
 	add a5, a5, a7
 	sw a5, 0(a3)
-	srliw a6, t4, 6
-	slliw a7, t4, 26
-	xor a6, a6, a7
-	srliw a7, t4, 11
-	xor a6, a6, a7
-	slliw a7, t4, 21
-	xor a6, a6, a7
-	srliw a7, t4, 25
-	xor a6, a6, a7
-	slliw a7, t4, 7
+	slli a6, t4, 32
+	srli a7, a6, 6
+	srli s0, a6, 11
+	xor a7, a7, s0
+	srli a6, a6, 25
+	xor a7, a7, a6
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add a4, a4, a6
 	xor a6, t5, t6
@@ -1958,18 +1695,15 @@ vg_sha256_compress:
 	lui a6, 162673
 	addiw a6, a6, -1403
 	add a4, a4, a6
+	slli a6, t0, 32
+	srli a7, a6, 2
+	srli s0, a6, 13
 	add a4, a4, a5
+	xor a7, a7, s0
+	srli a6, a6, 22
+	xor a7, a7, a6
 	add t3, t3, a4
-	srliw a6, t0, 2
-	slliw a7, t0, 30
-	xor a6, a6, a7
-	srliw a7, t0, 13
-	xor a6, a6, a7
-	slliw a7, t0, 19
-	xor a6, a6, a7
-	srliw a7, t0, 22
-	xor a6, a6, a7
-	slliw a7, t0, 10
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add a4, a4, a6
 	or a6, t0, t1
@@ -1978,41 +1712,34 @@ vg_sha256_compress:
 	or a6, a6, a7
 	add a4, a4, a6
 	lwu a6, 60(a3)
-	srliw a5, a6, 17
-	slliw a7, a6, 15
+	slli a5, a6, 32
+	or a5, a5, a6
+	srli a7, a5, 17
+	srli a5, a5, 19
 	xor a5, a5, a7
-	srliw a7, a6, 19
-	xor a5, a5, a7
-	slliw a7, a6, 13
-	xor a5, a5, a7
-	srliw a7, a6, 10
-	xor a5, a5, a7
+	srli a6, a6, 10
+	xor a5, a5, a6
 	lwu a7, 40(a3)
 	add a5, a5, a7
 	lwu a6, 8(a3)
-	srliw a7, a6, 7
-	slliw s0, a6, 25
+	slli a7, a6, 32
+	or a7, a7, a6
+	srli s0, a7, 7
+	srli a7, a7, 18
 	xor a7, a7, s0
-	srliw s0, a6, 18
-	xor a7, a7, s0
-	slliw s0, a6, 14
-	xor a7, a7, s0
-	srliw s0, a6, 3
-	xor a7, a7, s0
+	srli a6, a6, 3
+	xor a7, a7, a6
 	add a5, a5, a7
 	lwu a7, 4(a3)
 	add a5, a5, a7
 	sw a5, 4(a3)
-	srliw a6, t3, 6
-	slliw a7, t3, 26
-	xor a6, a6, a7
-	srliw a7, t3, 11
-	xor a6, a6, a7
-	slliw a7, t3, 21
-	xor a6, a6, a7
-	srliw a7, t3, 25
-	xor a6, a6, a7
-	slliw a7, t3, 7
+	slli a6, t3, 32
+	srli a7, a6, 6
+	srli s0, a6, 11
+	xor a7, a7, s0
+	srli a6, a6, 25
+	xor a7, a7, a6
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t6, t6, a6
 	xor a6, t4, t5
@@ -2022,18 +1749,15 @@ vg_sha256_compress:
 	lui a6, 188850
 	addiw a6, a6, 312
 	add t6, t6, a6
+	slli a6, a4, 32
+	srli a7, a6, 2
+	srli s0, a6, 13
 	add t6, t6, a5
+	xor a7, a7, s0
+	srli a6, a6, 22
+	xor a7, a7, a6
 	add t2, t2, t6
-	srliw a6, a4, 2
-	slliw a7, a4, 30
-	xor a6, a6, a7
-	srliw a7, a4, 13
-	xor a6, a6, a7
-	slliw a7, a4, 19
-	xor a6, a6, a7
-	srliw a7, a4, 22
-	xor a6, a6, a7
-	slliw a7, a4, 10
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t6, t6, a6
 	or a6, a4, t0
@@ -2042,41 +1766,34 @@ vg_sha256_compress:
 	or a6, a6, a7
 	add t6, t6, a6
 	lwu a6, 0(a3)
-	srliw a5, a6, 17
-	slliw a7, a6, 15
+	slli a5, a6, 32
+	or a5, a5, a6
+	srli a7, a5, 17
+	srli a5, a5, 19
 	xor a5, a5, a7
-	srliw a7, a6, 19
-	xor a5, a5, a7
-	slliw a7, a6, 13
-	xor a5, a5, a7
-	srliw a7, a6, 10
-	xor a5, a5, a7
+	srli a6, a6, 10
+	xor a5, a5, a6
 	lwu a7, 44(a3)
 	add a5, a5, a7
 	lwu a6, 12(a3)
-	srliw a7, a6, 7
-	slliw s0, a6, 25
+	slli a7, a6, 32
+	or a7, a7, a6
+	srli s0, a7, 7
+	srli a7, a7, 18
 	xor a7, a7, s0
-	srliw s0, a6, 18
-	xor a7, a7, s0
-	slliw s0, a6, 14
-	xor a7, a7, s0
-	srliw s0, a6, 3
-	xor a7, a7, s0
+	srli a6, a6, 3
+	xor a7, a7, a6
 	add a5, a5, a7
 	lwu a7, 8(a3)
 	add a5, a5, a7
 	sw a5, 8(a3)
-	srliw a6, t2, 6
-	slliw a7, t2, 26
-	xor a6, a6, a7
-	srliw a7, t2, 11
-	xor a6, a6, a7
-	slliw a7, t2, 21
-	xor a6, a6, a7
-	srliw a7, t2, 25
-	xor a6, a6, a7
-	slliw a7, t2, 7
+	slli a6, t2, 32
+	srli a7, a6, 6
+	srli s0, a6, 11
+	xor a7, a7, s0
+	srli a6, a6, 25
+	xor a7, a7, a6
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t5, t5, a6
 	xor a6, t3, t4
@@ -2086,18 +1803,15 @@ vg_sha256_compress:
 	lui a6, 316103
 	addiw a6, a6, -516
 	add t5, t5, a6
+	slli a6, t6, 32
+	srli a7, a6, 2
+	srli s0, a6, 13
 	add t5, t5, a5
+	xor a7, a7, s0
+	srli a6, a6, 22
+	xor a7, a7, a6
 	add t1, t1, t5
-	srliw a6, t6, 2
-	slliw a7, t6, 30
-	xor a6, a6, a7
-	srliw a7, t6, 13
-	xor a6, a6, a7
-	slliw a7, t6, 19
-	xor a6, a6, a7
-	srliw a7, t6, 22
-	xor a6, a6, a7
-	slliw a7, t6, 10
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t5, t5, a6
 	or a6, t6, a4
@@ -2106,41 +1820,34 @@ vg_sha256_compress:
 	or a6, a6, a7
 	add t5, t5, a6
 	lwu a6, 4(a3)
-	srliw a5, a6, 17
-	slliw a7, a6, 15
+	slli a5, a6, 32
+	or a5, a5, a6
+	srli a7, a5, 17
+	srli a5, a5, 19
 	xor a5, a5, a7
-	srliw a7, a6, 19
-	xor a5, a5, a7
-	slliw a7, a6, 13
-	xor a5, a5, a7
-	srliw a7, a6, 10
-	xor a5, a5, a7
+	srli a6, a6, 10
+	xor a5, a5, a6
 	lwu a7, 48(a3)
 	add a5, a5, a7
 	lwu a6, 16(a3)
-	srliw a7, a6, 7
-	slliw s0, a6, 25
+	slli a7, a6, 32
+	or a7, a7, a6
+	srli s0, a7, 7
+	srli a7, a7, 18
 	xor a7, a7, s0
-	srliw s0, a6, 18
-	xor a7, a7, s0
-	slliw s0, a6, 14
-	xor a7, a7, s0
-	srliw s0, a6, 3
-	xor a7, a7, s0
+	srli a6, a6, 3
+	xor a7, a7, a6
 	add a5, a5, a7
 	lwu a7, 12(a3)
 	add a5, a5, a7
 	sw a5, 12(a3)
-	srliw a6, t1, 6
-	slliw a7, t1, 26
-	xor a6, a6, a7
-	srliw a7, t1, 11
-	xor a6, a6, a7
-	slliw a7, t1, 21
-	xor a6, a6, a7
-	srliw a7, t1, 25
-	xor a6, a6, a7
-	slliw a7, t1, 7
+	slli a6, t1, 32
+	srli a7, a6, 6
+	srli s0, a6, 11
+	xor a7, a7, s0
+	srli a6, a6, 25
+	xor a7, a7, a6
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t4, t4, a6
 	xor a6, t2, t3
@@ -2150,18 +1857,15 @@ vg_sha256_compress:
 	lui a6, 340865
 	addiw a6, a6, -749
 	add t4, t4, a6
+	slli a6, t5, 32
+	srli a7, a6, 2
+	srli s0, a6, 13
 	add t4, t4, a5
+	xor a7, a7, s0
+	srli a6, a6, 22
+	xor a7, a7, a6
 	add t0, t0, t4
-	srliw a6, t5, 2
-	slliw a7, t5, 30
-	xor a6, a6, a7
-	srliw a7, t5, 13
-	xor a6, a6, a7
-	slliw a7, t5, 19
-	xor a6, a6, a7
-	srliw a7, t5, 22
-	xor a6, a6, a7
-	slliw a7, t5, 10
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t4, t4, a6
 	or a6, t5, t6
@@ -2170,41 +1874,34 @@ vg_sha256_compress:
 	or a6, a6, a7
 	add t4, t4, a6
 	lwu a6, 8(a3)
-	srliw a5, a6, 17
-	slliw a7, a6, 15
+	slli a5, a6, 32
+	or a5, a5, a6
+	srli a7, a5, 17
+	srli a5, a5, 19
 	xor a5, a5, a7
-	srliw a7, a6, 19
-	xor a5, a5, a7
-	slliw a7, a6, 13
-	xor a5, a5, a7
-	srliw a7, a6, 10
-	xor a5, a5, a7
+	srli a6, a6, 10
+	xor a5, a5, a6
 	lwu a7, 52(a3)
 	add a5, a5, a7
 	lwu a6, 20(a3)
-	srliw a7, a6, 7
-	slliw s0, a6, 25
+	slli a7, a6, 32
+	or a7, a7, a6
+	srli s0, a7, 7
+	srli a7, a7, 18
 	xor a7, a7, s0
-	srliw s0, a6, 18
-	xor a7, a7, s0
-	slliw s0, a6, 14
-	xor a7, a7, s0
-	srliw s0, a6, 3
-	xor a7, a7, s0
+	srli a6, a6, 3
+	xor a7, a7, a6
 	add a5, a5, a7
 	lwu a7, 16(a3)
 	add a5, a5, a7
 	sw a5, 16(a3)
-	srliw a6, t0, 6
-	slliw a7, t0, 26
-	xor a6, a6, a7
-	srliw a7, t0, 11
-	xor a6, a6, a7
-	slliw a7, t0, 21
-	xor a6, a6, a7
-	srliw a7, t0, 25
-	xor a6, a6, a7
-	slliw a7, t0, 7
+	slli a6, t0, 32
+	srli a7, a6, 6
+	srli s0, a6, 11
+	xor a7, a7, s0
+	srli a6, a6, 25
+	xor a7, a7, a6
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t3, t3, a6
 	xor a6, t1, t2
@@ -2214,18 +1911,15 @@ vg_sha256_compress:
 	lui a6, 413863
 	addiw a6, a6, 852
 	add t3, t3, a6
+	slli a6, t4, 32
+	srli a7, a6, 2
+	srli s0, a6, 13
 	add t3, t3, a5
+	xor a7, a7, s0
+	srli a6, a6, 22
+	xor a7, a7, a6
 	add a4, a4, t3
-	srliw a6, t4, 2
-	slliw a7, t4, 30
-	xor a6, a6, a7
-	srliw a7, t4, 13
-	xor a6, a6, a7
-	slliw a7, t4, 19
-	xor a6, a6, a7
-	srliw a7, t4, 22
-	xor a6, a6, a7
-	slliw a7, t4, 10
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t3, t3, a6
 	or a6, t4, t5
@@ -2234,41 +1928,34 @@ vg_sha256_compress:
 	or a6, a6, a7
 	add t3, t3, a6
 	lwu a6, 12(a3)
-	srliw a5, a6, 17
-	slliw a7, a6, 15
+	slli a5, a6, 32
+	or a5, a5, a6
+	srli a7, a5, 17
+	srli a5, a5, 19
 	xor a5, a5, a7
-	srliw a7, a6, 19
-	xor a5, a5, a7
-	slliw a7, a6, 13
-	xor a5, a5, a7
-	srliw a7, a6, 10
-	xor a5, a5, a7
+	srli a6, a6, 10
+	xor a5, a5, a6
 	lwu a7, 56(a3)
 	add a5, a5, a7
 	lwu a6, 24(a3)
-	srliw a7, a6, 7
-	slliw s0, a6, 25
+	slli a7, a6, 32
+	or a7, a7, a6
+	srli s0, a7, 7
+	srli a7, a7, 18
 	xor a7, a7, s0
-	srliw s0, a6, 18
-	xor a7, a7, s0
-	slliw s0, a6, 14
-	xor a7, a7, s0
-	srliw s0, a6, 3
-	xor a7, a7, s0
+	srli a6, a6, 3
+	xor a7, a7, a6
 	add a5, a5, a7
 	lwu a7, 20(a3)
 	add a5, a5, a7
 	sw a5, 20(a3)
-	srliw a6, a4, 6
-	slliw a7, a4, 26
-	xor a6, a6, a7
-	srliw a7, a4, 11
-	xor a6, a6, a7
-	slliw a7, a4, 21
-	xor a6, a6, a7
-	srliw a7, a4, 25
-	xor a6, a6, a7
-	slliw a7, a4, 7
+	slli a6, a4, 32
+	srli a7, a6, 6
+	srli s0, a6, 11
+	xor a7, a7, s0
+	srli a6, a6, 25
+	xor a7, a7, a6
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t2, t2, a6
 	xor a6, t0, t1
@@ -2278,18 +1965,15 @@ vg_sha256_compress:
 	lui a6, 485025
 	addiw a6, a6, -1349
 	add t2, t2, a6
+	slli a6, t3, 32
+	srli a7, a6, 2
+	srli s0, a6, 13
 	add t2, t2, a5
+	xor a7, a7, s0
+	srli a6, a6, 22
+	xor a7, a7, a6
 	add t6, t6, t2
-	srliw a6, t3, 2
-	slliw a7, t3, 30
-	xor a6, a6, a7
-	srliw a7, t3, 13
-	xor a6, a6, a7
-	slliw a7, t3, 19
-	xor a6, a6, a7
-	srliw a7, t3, 22
-	xor a6, a6, a7
-	slliw a7, t3, 10
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t2, t2, a6
 	or a6, t3, t4
@@ -2298,41 +1982,34 @@ vg_sha256_compress:
 	or a6, a6, a7
 	add t2, t2, a6
 	lwu a6, 16(a3)
-	srliw a5, a6, 17
-	slliw a7, a6, 15
+	slli a5, a6, 32
+	or a5, a5, a6
+	srli a7, a5, 17
+	srli a5, a5, 19
 	xor a5, a5, a7
-	srliw a7, a6, 19
-	xor a5, a5, a7
-	slliw a7, a6, 13
-	xor a5, a5, a7
-	srliw a7, a6, 10
-	xor a5, a5, a7
+	srli a6, a6, 10
+	xor a5, a5, a6
 	lwu a7, 60(a3)
 	add a5, a5, a7
 	lwu a6, 28(a3)
-	srliw a7, a6, 7
-	slliw s0, a6, 25
+	slli a7, a6, 32
+	or a7, a7, a6
+	srli s0, a7, 7
+	srli a7, a7, 18
 	xor a7, a7, s0
-	srliw s0, a6, 18
-	xor a7, a7, s0
-	slliw s0, a6, 14
-	xor a7, a7, s0
-	srliw s0, a6, 3
-	xor a7, a7, s0
+	srli a6, a6, 3
+	xor a7, a7, a6
 	add a5, a5, a7
 	lwu a7, 24(a3)
 	add a5, a5, a7
 	sw a5, 24(a3)
-	srliw a6, t6, 6
-	slliw a7, t6, 26
-	xor a6, a6, a7
-	srliw a7, t6, 11
-	xor a6, a6, a7
-	slliw a7, t6, 21
-	xor a6, a6, a7
-	srliw a7, t6, 25
-	xor a6, a6, a7
-	slliw a7, t6, 7
+	slli a6, t6, 32
+	srli a7, a6, 6
+	srli s0, a6, 11
+	xor a7, a7, s0
+	srli a6, a6, 25
+	xor a7, a7, a6
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t1, t1, a6
 	xor a6, a4, t0
@@ -2342,18 +2019,15 @@ vg_sha256_compress:
 	lui a6, 531501
 	addiw a6, a6, -1746
 	add t1, t1, a6
+	slli a6, t2, 32
+	srli a7, a6, 2
+	srli s0, a6, 13
 	add t1, t1, a5
+	xor a7, a7, s0
+	srli a6, a6, 22
+	xor a7, a7, a6
 	add t5, t5, t1
-	srliw a6, t2, 2
-	slliw a7, t2, 30
-	xor a6, a6, a7
-	srliw a7, t2, 13
-	xor a6, a6, a7
-	slliw a7, t2, 19
-	xor a6, a6, a7
-	srliw a7, t2, 22
-	xor a6, a6, a7
-	slliw a7, t2, 10
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t1, t1, a6
 	or a6, t2, t3
@@ -2362,41 +2036,34 @@ vg_sha256_compress:
 	or a6, a6, a7
 	add t1, t1, a6
 	lwu a6, 20(a3)
-	srliw a5, a6, 17
-	slliw a7, a6, 15
+	slli a5, a6, 32
+	or a5, a5, a6
+	srli a7, a5, 17
+	srli a5, a5, 19
 	xor a5, a5, a7
-	srliw a7, a6, 19
-	xor a5, a5, a7
-	slliw a7, a6, 13
-	xor a5, a5, a7
-	srliw a7, a6, 10
-	xor a5, a5, a7
+	srli a6, a6, 10
+	xor a5, a5, a6
 	lwu a7, 0(a3)
 	add a5, a5, a7
 	lwu a6, 32(a3)
-	srliw a7, a6, 7
-	slliw s0, a6, 25
+	slli a7, a6, 32
+	or a7, a7, a6
+	srli s0, a7, 7
+	srli a7, a7, 18
 	xor a7, a7, s0
-	srliw s0, a6, 18
-	xor a7, a7, s0
-	slliw s0, a6, 14
-	xor a7, a7, s0
-	srliw s0, a6, 3
-	xor a7, a7, s0
+	srli a6, a6, 3
+	xor a7, a7, a6
 	add a5, a5, a7
 	lwu a7, 28(a3)
 	add a5, a5, a7
 	sw a5, 28(a3)
-	srliw a6, t5, 6
-	slliw a7, t5, 26
-	xor a6, a6, a7
-	srliw a7, t5, 11
-	xor a6, a6, a7
-	slliw a7, t5, 21
-	xor a6, a6, a7
-	srliw a7, t5, 25
-	xor a6, a6, a7
-	slliw a7, t5, 7
+	slli a6, t5, 32
+	srli a7, a6, 6
+	srli s0, a6, 11
+	xor a7, a7, s0
+	srli a6, a6, 25
+	xor a7, a7, a6
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t0, t0, a6
 	xor a6, t6, a4
@@ -2406,18 +2073,15 @@ vg_sha256_compress:
 	lui a6, 599843
 	addiw a6, a6, -891
 	add t0, t0, a6
+	slli a6, t1, 32
+	srli a7, a6, 2
+	srli s0, a6, 13
 	add t0, t0, a5
+	xor a7, a7, s0
+	srli a6, a6, 22
+	xor a7, a7, a6
 	add t4, t4, t0
-	srliw a6, t1, 2
-	slliw a7, t1, 30
-	xor a6, a6, a7
-	srliw a7, t1, 13
-	xor a6, a6, a7
-	slliw a7, t1, 19
-	xor a6, a6, a7
-	srliw a7, t1, 22
-	xor a6, a6, a7
-	slliw a7, t1, 10
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t0, t0, a6
 	or a6, t1, t2
@@ -2426,41 +2090,34 @@ vg_sha256_compress:
 	or a6, a6, a7
 	add t0, t0, a6
 	lwu a6, 24(a3)
-	srliw a5, a6, 17
-	slliw a7, a6, 15
+	slli a5, a6, 32
+	or a5, a5, a6
+	srli a7, a5, 17
+	srli a5, a5, 19
 	xor a5, a5, a7
-	srliw a7, a6, 19
-	xor a5, a5, a7
-	slliw a7, a6, 13
-	xor a5, a5, a7
-	srliw a7, a6, 10
-	xor a5, a5, a7
+	srli a6, a6, 10
+	xor a5, a5, a6
 	lwu a7, 4(a3)
 	add a5, a5, a7
 	lwu a6, 36(a3)
-	srliw a7, a6, 7
-	slliw s0, a6, 25
+	slli a7, a6, 32
+	or a7, a7, a6
+	srli s0, a7, 7
+	srli a7, a7, 18
 	xor a7, a7, s0
-	srliw s0, a6, 18
-	xor a7, a7, s0
-	slliw s0, a6, 14
-	xor a7, a7, s0
-	srliw s0, a6, 3
-	xor a7, a7, s0
+	srli a6, a6, 3
+	xor a7, a7, a6
 	add a5, a5, a7
 	lwu a7, 32(a3)
 	add a5, a5, a7
 	sw a5, 32(a3)
-	srliw a6, t4, 6
-	slliw a7, t4, 26
-	xor a6, a6, a7
-	srliw a7, t4, 11
-	xor a6, a6, a7
-	slliw a7, t4, 21
-	xor a6, a6, a7
-	srliw a7, t4, 25
-	xor a6, a6, a7
-	slliw a7, t4, 7
+	slli a6, t4, 32
+	srli a7, a6, 6
+	srli s0, a6, 11
+	xor a7, a7, s0
+	srli a6, a6, 25
+	xor a7, a7, a6
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add a4, a4, a6
 	xor a6, t5, t6
@@ -2470,18 +2127,15 @@ vg_sha256_compress:
 	lui a6, 666623
 	addiw a6, a6, -1887
 	add a4, a4, a6
+	slli a6, t0, 32
+	srli a7, a6, 2
+	srli s0, a6, 13
 	add a4, a4, a5
+	xor a7, a7, s0
+	srli a6, a6, 22
+	xor a7, a7, a6
 	add t3, t3, a4
-	srliw a6, t0, 2
-	slliw a7, t0, 30
-	xor a6, a6, a7
-	srliw a7, t0, 13
-	xor a6, a6, a7
-	slliw a7, t0, 19
-	xor a6, a6, a7
-	srliw a7, t0, 22
-	xor a6, a6, a7
-	slliw a7, t0, 10
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add a4, a4, a6
 	or a6, t0, t1
@@ -2490,41 +2144,34 @@ vg_sha256_compress:
 	or a6, a6, a7
 	add a4, a4, a6
 	lwu a6, 28(a3)
-	srliw a5, a6, 17
-	slliw a7, a6, 15
+	slli a5, a6, 32
+	or a5, a5, a6
+	srli a7, a5, 17
+	srli a5, a5, 19
 	xor a5, a5, a7
-	srliw a7, a6, 19
-	xor a5, a5, a7
-	slliw a7, a6, 13
-	xor a5, a5, a7
-	srliw a7, a6, 10
-	xor a5, a5, a7
+	srli a6, a6, 10
+	xor a5, a5, a6
 	lwu a7, 8(a3)
 	add a5, a5, a7
 	lwu a6, 40(a3)
-	srliw a7, a6, 7
-	slliw s0, a6, 25
+	slli a7, a6, 32
+	or a7, a7, a6
+	srli s0, a7, 7
+	srli a7, a7, 18
 	xor a7, a7, s0
-	srliw s0, a6, 18
-	xor a7, a7, s0
-	slliw s0, a6, 14
-	xor a7, a7, s0
-	srliw s0, a6, 3
-	xor a7, a7, s0
+	srli a6, a6, 3
+	xor a7, a7, a6
 	add a5, a5, a7
 	lwu a7, 36(a3)
 	add a5, a5, a7
 	sw a5, 36(a3)
-	srliw a6, t3, 6
-	slliw a7, t3, 26
-	xor a6, a6, a7
-	srliw a7, t3, 11
-	xor a6, a6, a7
-	slliw a7, t3, 21
-	xor a6, a6, a7
-	srliw a7, t3, 25
-	xor a6, a6, a7
-	slliw a7, t3, 7
+	slli a6, t3, 32
+	srli a7, a6, 6
+	srli s0, a6, 11
+	xor a7, a7, s0
+	srli a6, a6, 25
+	xor a7, a7, a6
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t6, t6, a6
 	xor a6, t4, t5
@@ -2534,18 +2181,15 @@ vg_sha256_compress:
 	lui a6, 688550
 	addiw a6, a6, 1611
 	add t6, t6, a6
+	slli a6, a4, 32
+	srli a7, a6, 2
+	srli s0, a6, 13
 	add t6, t6, a5
+	xor a7, a7, s0
+	srli a6, a6, 22
+	xor a7, a7, a6
 	add t2, t2, t6
-	srliw a6, a4, 2
-	slliw a7, a4, 30
-	xor a6, a6, a7
-	srliw a7, a4, 13
-	xor a6, a6, a7
-	slliw a7, a4, 19
-	xor a6, a6, a7
-	srliw a7, a4, 22
-	xor a6, a6, a7
-	slliw a7, a4, 10
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t6, t6, a6
 	or a6, a4, t0
@@ -2554,41 +2198,34 @@ vg_sha256_compress:
 	or a6, a6, a7
 	add t6, t6, a6
 	lwu a6, 32(a3)
-	srliw a5, a6, 17
-	slliw a7, a6, 15
+	slli a5, a6, 32
+	or a5, a5, a6
+	srli a7, a5, 17
+	srli a5, a5, 19
 	xor a5, a5, a7
-	srliw a7, a6, 19
-	xor a5, a5, a7
-	slliw a7, a6, 13
-	xor a5, a5, a7
-	srliw a7, a6, 10
-	xor a5, a5, a7
+	srli a6, a6, 10
+	xor a5, a5, a6
 	lwu a7, 12(a3)
 	add a5, a5, a7
 	lwu a6, 44(a3)
-	srliw a7, a6, 7
-	slliw s0, a6, 25
+	slli a7, a6, 32
+	or a7, a7, a6
+	srli s0, a7, 7
+	srli a7, a7, 18
 	xor a7, a7, s0
-	srliw s0, a6, 18
-	xor a7, a7, s0
-	slliw s0, a6, 14
-	xor a7, a7, s0
-	srliw s0, a6, 3
-	xor a7, a7, s0
+	srli a6, a6, 3
+	xor a7, a7, a6
 	add a5, a5, a7
 	lwu a7, 40(a3)
 	add a5, a5, a7
 	sw a5, 40(a3)
-	srliw a6, t2, 6
-	slliw a7, t2, 26
-	xor a6, a6, a7
-	srliw a7, t2, 11
-	xor a6, a6, a7
-	slliw a7, t2, 21
-	xor a6, a6, a7
-	srliw a7, t2, 25
-	xor a6, a6, a7
-	slliw a7, t2, 7
+	slli a6, t2, 32
+	srli a7, a6, 6
+	srli s0, a6, 11
+	xor a7, a7, s0
+	srli a6, a6, 25
+	xor a7, a7, a6
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t5, t5, a6
 	xor a6, t3, t4
@@ -2598,18 +2235,15 @@ vg_sha256_compress:
 	lui a6, 795833
 	addiw a6, a6, -1168
 	add t5, t5, a6
+	slli a6, t6, 32
+	srli a7, a6, 2
+	srli s0, a6, 13
 	add t5, t5, a5
+	xor a7, a7, s0
+	srli a6, a6, 22
+	xor a7, a7, a6
 	add t1, t1, t5
-	srliw a6, t6, 2
-	slliw a7, t6, 30
-	xor a6, a6, a7
-	srliw a7, t6, 13
-	xor a6, a6, a7
-	slliw a7, t6, 19
-	xor a6, a6, a7
-	srliw a7, t6, 22
-	xor a6, a6, a7
-	slliw a7, t6, 10
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t5, t5, a6
 	or a6, t6, a4
@@ -2618,41 +2252,34 @@ vg_sha256_compress:
 	or a6, a6, a7
 	add t5, t5, a6
 	lwu a6, 36(a3)
-	srliw a5, a6, 17
-	slliw a7, a6, 15
+	slli a5, a6, 32
+	or a5, a5, a6
+	srli a7, a5, 17
+	srli a5, a5, 19
 	xor a5, a5, a7
-	srliw a7, a6, 19
-	xor a5, a5, a7
-	slliw a7, a6, 13
-	xor a5, a5, a7
-	srliw a7, a6, 10
-	xor a5, a5, a7
+	srli a6, a6, 10
+	xor a5, a5, a6
 	lwu a7, 16(a3)
 	add a5, a5, a7
 	lwu a6, 48(a3)
-	srliw a7, a6, 7
-	slliw s0, a6, 25
+	slli a7, a6, 32
+	or a7, a7, a6
+	srli s0, a7, 7
+	srli a7, a7, 18
 	xor a7, a7, s0
-	srliw s0, a6, 18
-	xor a7, a7, s0
-	slliw s0, a6, 14
-	xor a7, a7, s0
-	srliw s0, a6, 3
-	xor a7, a7, s0
+	srli a6, a6, 3
+	xor a7, a7, a6
 	add a5, a5, a7
 	lwu a7, 44(a3)
 	add a5, a5, a7
 	sw a5, 44(a3)
-	srliw a6, t1, 6
-	slliw a7, t1, 26
-	xor a6, a6, a7
-	srliw a7, t1, 11
-	xor a6, a6, a7
-	slliw a7, t1, 21
-	xor a6, a6, a7
-	srliw a7, t1, 25
-	xor a6, a6, a7
-	slliw a7, t1, 7
+	slli a6, t1, 32
+	srli a7, a6, 6
+	srli s0, a6, 11
+	xor a7, a7, s0
+	srli a6, a6, 25
+	xor a7, a7, a6
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t4, t4, a6
 	xor a6, t2, t3
@@ -2662,18 +2289,15 @@ vg_sha256_compress:
 	lui a6, 816837
 	addiw a6, a6, 419
 	add t4, t4, a6
+	slli a6, t5, 32
+	srli a7, a6, 2
+	srli s0, a6, 13
 	add t4, t4, a5
+	xor a7, a7, s0
+	srli a6, a6, 22
+	xor a7, a7, a6
 	add t0, t0, t4
-	srliw a6, t5, 2
-	slliw a7, t5, 30
-	xor a6, a6, a7
-	srliw a7, t5, 13
-	xor a6, a6, a7
-	slliw a7, t5, 19
-	xor a6, a6, a7
-	srliw a7, t5, 22
-	xor a6, a6, a7
-	slliw a7, t5, 10
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t4, t4, a6
 	or a6, t5, t6
@@ -2682,41 +2306,34 @@ vg_sha256_compress:
 	or a6, a6, a7
 	add t4, t4, a6
 	lwu a6, 40(a3)
-	srliw a5, a6, 17
-	slliw a7, a6, 15
+	slli a5, a6, 32
+	or a5, a5, a6
+	srli a7, a5, 17
+	srli a5, a5, 19
 	xor a5, a5, a7
-	srliw a7, a6, 19
-	xor a5, a5, a7
-	slliw a7, a6, 13
-	xor a5, a5, a7
-	srliw a7, a6, 10
-	xor a5, a5, a7
+	srli a6, a6, 10
+	xor a5, a5, a6
 	lwu a7, 20(a3)
 	add a5, a5, a7
 	lwu a6, 52(a3)
-	srliw a7, a6, 7
-	slliw s0, a6, 25
+	slli a7, a6, 32
+	or a7, a7, a6
+	srli s0, a7, 7
+	srli a7, a7, 18
 	xor a7, a7, s0
-	srliw s0, a6, 18
-	xor a7, a7, s0
-	slliw s0, a6, 14
-	xor a7, a7, s0
-	srliw s0, a6, 3
-	xor a7, a7, s0
+	srli a6, a6, 3
+	xor a7, a7, a6
 	add a5, a5, a7
 	lwu a7, 48(a3)
 	add a5, a5, a7
 	sw a5, 48(a3)
-	srliw a6, t0, 6
-	slliw a7, t0, 26
-	xor a6, a6, a7
-	srliw a7, t0, 11
-	xor a6, a6, a7
-	slliw a7, t0, 21
-	xor a6, a6, a7
-	srliw a7, t0, 25
-	xor a6, a6, a7
-	slliw a7, t0, 7
+	slli a6, t0, 32
+	srli a7, a6, 6
+	srli s0, a6, 11
+	xor a7, a7, s0
+	srli a6, a6, 25
+	xor a7, a7, a6
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t3, t3, a6
 	xor a6, t1, t2
@@ -2726,18 +2343,15 @@ vg_sha256_compress:
 	lui a6, 858415
 	addiw a6, a6, -2023
 	add t3, t3, a6
+	slli a6, t4, 32
+	srli a7, a6, 2
+	srli s0, a6, 13
 	add t3, t3, a5
+	xor a7, a7, s0
+	srli a6, a6, 22
+	xor a7, a7, a6
 	add a4, a4, t3
-	srliw a6, t4, 2
-	slliw a7, t4, 30
-	xor a6, a6, a7
-	srliw a7, t4, 13
-	xor a6, a6, a7
-	slliw a7, t4, 19
-	xor a6, a6, a7
-	srliw a7, t4, 22
-	xor a6, a6, a7
-	slliw a7, t4, 10
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t3, t3, a6
 	or a6, t4, t5
@@ -2746,41 +2360,34 @@ vg_sha256_compress:
 	or a6, a6, a7
 	add t3, t3, a6
 	lwu a6, 44(a3)
-	srliw a5, a6, 17
-	slliw a7, a6, 15
+	slli a5, a6, 32
+	or a5, a5, a6
+	srli a7, a5, 17
+	srli a5, a5, 19
 	xor a5, a5, a7
-	srliw a7, a6, 19
-	xor a5, a5, a7
-	slliw a7, a6, 13
-	xor a5, a5, a7
-	srliw a7, a6, 10
-	xor a5, a5, a7
+	srli a6, a6, 10
+	xor a5, a5, a6
 	lwu a7, 24(a3)
 	add a5, a5, a7
 	lwu a6, 56(a3)
-	srliw a7, a6, 7
-	slliw s0, a6, 25
+	slli a7, a6, 32
+	or a7, a7, a6
+	srli s0, a7, 7
+	srli a7, a7, 18
 	xor a7, a7, s0
-	srliw s0, a6, 18
-	xor a7, a7, s0
-	slliw s0, a6, 14
-	xor a7, a7, s0
-	srliw s0, a6, 3
-	xor a7, a7, s0
+	srli a6, a6, 3
+	xor a7, a7, a6
 	add a5, a5, a7
 	lwu a7, 52(a3)
 	add a5, a5, a7
 	sw a5, 52(a3)
-	srliw a6, a4, 6
-	slliw a7, a4, 26
-	xor a6, a6, a7
-	srliw a7, a4, 11
-	xor a6, a6, a7
-	slliw a7, a4, 21
-	xor a6, a6, a7
-	srliw a7, a4, 25
-	xor a6, a6, a7
-	slliw a7, a4, 7
+	slli a6, a4, 32
+	srli a7, a6, 6
+	srli s0, a6, 11
+	xor a7, a7, s0
+	srli a6, a6, 25
+	xor a7, a7, a6
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t2, t2, a6
 	xor a6, t0, t1
@@ -2790,18 +2397,15 @@ vg_sha256_compress:
 	lui a6, 878992
 	addiw a6, a6, 1572
 	add t2, t2, a6
+	slli a6, t3, 32
+	srli a7, a6, 2
+	srli s0, a6, 13
 	add t2, t2, a5
+	xor a7, a7, s0
+	srli a6, a6, 22
+	xor a7, a7, a6
 	add t6, t6, t2
-	srliw a6, t3, 2
-	slliw a7, t3, 30
-	xor a6, a6, a7
-	srliw a7, t3, 13
-	xor a6, a6, a7
-	slliw a7, t3, 19
-	xor a6, a6, a7
-	srliw a7, t3, 22
-	xor a6, a6, a7
-	slliw a7, t3, 10
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t2, t2, a6
 	or a6, t3, t4
@@ -2810,41 +2414,34 @@ vg_sha256_compress:
 	or a6, a6, a7
 	add t2, t2, a6
 	lwu a6, 48(a3)
-	srliw a5, a6, 17
-	slliw a7, a6, 15
+	slli a5, a6, 32
+	or a5, a5, a6
+	srli a7, a5, 17
+	srli a5, a5, 19
 	xor a5, a5, a7
-	srliw a7, a6, 19
-	xor a5, a5, a7
-	slliw a7, a6, 13
-	xor a5, a5, a7
-	srliw a7, a6, 10
-	xor a5, a5, a7
+	srli a6, a6, 10
+	xor a5, a5, a6
 	lwu a7, 28(a3)
 	add a5, a5, a7
 	lwu a6, 60(a3)
-	srliw a7, a6, 7
-	slliw s0, a6, 25
+	slli a7, a6, 32
+	or a7, a7, a6
+	srli s0, a7, 7
+	srli a7, a7, 18
 	xor a7, a7, s0
-	srliw s0, a6, 18
-	xor a7, a7, s0
-	slliw s0, a6, 14
-	xor a7, a7, s0
-	srliw s0, a6, 3
-	xor a7, a7, s0
+	srli a6, a6, 3
+	xor a7, a7, a6
 	add a5, a5, a7
 	lwu a7, 56(a3)
 	add a5, a5, a7
 	sw a5, 56(a3)
-	srliw a6, t6, 6
-	slliw a7, t6, 26
-	xor a6, a6, a7
-	srliw a7, t6, 11
-	xor a6, a6, a7
-	slliw a7, t6, 21
-	xor a6, a6, a7
-	srliw a7, t6, 25
-	xor a6, a6, a7
-	slliw a7, t6, 7
+	slli a6, t6, 32
+	srli a7, a6, 6
+	srli s0, a6, 11
+	xor a7, a7, s0
+	srli a6, a6, 25
+	xor a7, a7, a6
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t1, t1, a6
 	xor a6, a4, t0
@@ -2854,18 +2451,15 @@ vg_sha256_compress:
 	lui a6, 999651
 	addiw a6, a6, 1413
 	add t1, t1, a6
+	slli a6, t2, 32
+	srli a7, a6, 2
+	srli s0, a6, 13
 	add t1, t1, a5
+	xor a7, a7, s0
+	srli a6, a6, 22
+	xor a7, a7, a6
 	add t5, t5, t1
-	srliw a6, t2, 2
-	slliw a7, t2, 30
-	xor a6, a6, a7
-	srliw a7, t2, 13
-	xor a6, a6, a7
-	slliw a7, t2, 19
-	xor a6, a6, a7
-	srliw a7, t2, 22
-	xor a6, a6, a7
-	slliw a7, t2, 10
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t1, t1, a6
 	or a6, t2, t3
@@ -2874,41 +2468,34 @@ vg_sha256_compress:
 	or a6, a6, a7
 	add t1, t1, a6
 	lwu a6, 52(a3)
-	srliw a5, a6, 17
-	slliw a7, a6, 15
+	slli a5, a6, 32
+	or a5, a5, a6
+	srli a7, a5, 17
+	srli a5, a5, 19
 	xor a5, a5, a7
-	srliw a7, a6, 19
-	xor a5, a5, a7
-	slliw a7, a6, 13
-	xor a5, a5, a7
-	srliw a7, a6, 10
-	xor a5, a5, a7
+	srli a6, a6, 10
+	xor a5, a5, a6
 	lwu a7, 32(a3)
 	add a5, a5, a7
 	lwu a6, 0(a3)
-	srliw a7, a6, 7
-	slliw s0, a6, 25
+	slli a7, a6, 32
+	or a7, a7, a6
+	srli s0, a7, 7
+	srli a7, a7, 18
 	xor a7, a7, s0
-	srliw s0, a6, 18
-	xor a7, a7, s0
-	slliw s0, a6, 14
-	xor a7, a7, s0
-	srliw s0, a6, 3
-	xor a7, a7, s0
+	srli a6, a6, 3
+	xor a7, a7, a6
 	add a5, a5, a7
 	lwu a7, 60(a3)
 	add a5, a5, a7
 	sw a5, 60(a3)
-	srliw a6, t5, 6
-	slliw a7, t5, 26
-	xor a6, a6, a7
-	srliw a7, t5, 11
-	xor a6, a6, a7
-	slliw a7, t5, 21
-	xor a6, a6, a7
-	srliw a7, t5, 25
-	xor a6, a6, a7
-	slliw a7, t5, 7
+	slli a6, t5, 32
+	srli a7, a6, 6
+	srli s0, a6, 11
+	xor a7, a7, s0
+	srli a6, a6, 25
+	xor a7, a7, a6
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t0, t0, a6
 	xor a6, t6, a4
@@ -2918,18 +2505,15 @@ vg_sha256_compress:
 	lui a6, 67242
 	addiw a6, a6, 112
 	add t0, t0, a6
+	slli a6, t1, 32
+	srli a7, a6, 2
+	srli s0, a6, 13
 	add t0, t0, a5
+	xor a7, a7, s0
+	srli a6, a6, 22
+	xor a7, a7, a6
 	add t4, t4, t0
-	srliw a6, t1, 2
-	slliw a7, t1, 30
-	xor a6, a6, a7
-	srliw a7, t1, 13
-	xor a6, a6, a7
-	slliw a7, t1, 19
-	xor a6, a6, a7
-	srliw a7, t1, 22
-	xor a6, a6, a7
-	slliw a7, t1, 10
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t0, t0, a6
 	or a6, t1, t2
@@ -2938,41 +2522,34 @@ vg_sha256_compress:
 	or a6, a6, a7
 	add t0, t0, a6
 	lwu a6, 56(a3)
-	srliw a5, a6, 17
-	slliw a7, a6, 15
+	slli a5, a6, 32
+	or a5, a5, a6
+	srli a7, a5, 17
+	srli a5, a5, 19
 	xor a5, a5, a7
-	srliw a7, a6, 19
-	xor a5, a5, a7
-	slliw a7, a6, 13
-	xor a5, a5, a7
-	srliw a7, a6, 10
-	xor a5, a5, a7
+	srli a6, a6, 10
+	xor a5, a5, a6
 	lwu a7, 36(a3)
 	add a5, a5, a7
 	lwu a6, 4(a3)
-	srliw a7, a6, 7
-	slliw s0, a6, 25
+	slli a7, a6, 32
+	or a7, a7, a6
+	srli s0, a7, 7
+	srli a7, a7, 18
 	xor a7, a7, s0
-	srliw s0, a6, 18
-	xor a7, a7, s0
-	slliw s0, a6, 14
-	xor a7, a7, s0
-	srliw s0, a6, 3
-	xor a7, a7, s0
+	srli a6, a6, 3
+	xor a7, a7, a6
 	add a5, a5, a7
 	lwu a7, 0(a3)
 	add a5, a5, a7
 	sw a5, 0(a3)
-	srliw a6, t4, 6
-	slliw a7, t4, 26
-	xor a6, a6, a7
-	srliw a7, t4, 11
-	xor a6, a6, a7
-	slliw a7, t4, 21
-	xor a6, a6, a7
-	srliw a7, t4, 25
-	xor a6, a6, a7
-	slliw a7, t4, 7
+	slli a6, t4, 32
+	srli a7, a6, 6
+	srli s0, a6, 11
+	xor a7, a7, s0
+	srli a6, a6, 25
+	xor a7, a7, a6
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add a4, a4, a6
 	xor a6, t5, t6
@@ -2982,18 +2559,15 @@ vg_sha256_compress:
 	lui a6, 105036
 	addiw a6, a6, 278
 	add a4, a4, a6
+	slli a6, t0, 32
+	srli a7, a6, 2
+	srli s0, a6, 13
 	add a4, a4, a5
+	xor a7, a7, s0
+	srli a6, a6, 22
+	xor a7, a7, a6
 	add t3, t3, a4
-	srliw a6, t0, 2
-	slliw a7, t0, 30
-	xor a6, a6, a7
-	srliw a7, t0, 13
-	xor a6, a6, a7
-	slliw a7, t0, 19
-	xor a6, a6, a7
-	srliw a7, t0, 22
-	xor a6, a6, a7
-	slliw a7, t0, 10
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add a4, a4, a6
 	or a6, t0, t1
@@ -3002,41 +2576,34 @@ vg_sha256_compress:
 	or a6, a6, a7
 	add a4, a4, a6
 	lwu a6, 60(a3)
-	srliw a5, a6, 17
-	slliw a7, a6, 15
+	slli a5, a6, 32
+	or a5, a5, a6
+	srli a7, a5, 17
+	srli a5, a5, 19
 	xor a5, a5, a7
-	srliw a7, a6, 19
-	xor a5, a5, a7
-	slliw a7, a6, 13
-	xor a5, a5, a7
-	srliw a7, a6, 10
-	xor a5, a5, a7
+	srli a6, a6, 10
+	xor a5, a5, a6
 	lwu a7, 40(a3)
 	add a5, a5, a7
 	lwu a6, 8(a3)
-	srliw a7, a6, 7
-	slliw s0, a6, 25
+	slli a7, a6, 32
+	or a7, a7, a6
+	srli s0, a7, 7
+	srli a7, a7, 18
 	xor a7, a7, s0
-	srliw s0, a6, 18
-	xor a7, a7, s0
-	slliw s0, a6, 14
-	xor a7, a7, s0
-	srliw s0, a6, 3
-	xor a7, a7, s0
+	srli a6, a6, 3
+	xor a7, a7, a6
 	add a5, a5, a7
 	lwu a7, 4(a3)
 	add a5, a5, a7
 	sw a5, 4(a3)
-	srliw a6, t3, 6
-	slliw a7, t3, 26
-	xor a6, a6, a7
-	srliw a7, t3, 11
-	xor a6, a6, a7
-	slliw a7, t3, 21
-	xor a6, a6, a7
-	srliw a7, t3, 25
-	xor a6, a6, a7
-	slliw a7, t3, 7
+	slli a6, t3, 32
+	srli a7, a6, 6
+	srli s0, a6, 11
+	xor a7, a7, s0
+	srli a6, a6, 25
+	xor a7, a7, a6
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t6, t6, a6
 	xor a6, t4, t5
@@ -3046,18 +2613,15 @@ vg_sha256_compress:
 	lui a6, 123767
 	addiw a6, a6, -1016
 	add t6, t6, a6
+	slli a6, a4, 32
+	srli a7, a6, 2
+	srli s0, a6, 13
 	add t6, t6, a5
+	xor a7, a7, s0
+	srli a6, a6, 22
+	xor a7, a7, a6
 	add t2, t2, t6
-	srliw a6, a4, 2
-	slliw a7, a4, 30
-	xor a6, a6, a7
-	srliw a7, a4, 13
-	xor a6, a6, a7
-	slliw a7, a4, 19
-	xor a6, a6, a7
-	srliw a7, a4, 22
-	xor a6, a6, a7
-	slliw a7, a4, 10
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t6, t6, a6
 	or a6, a4, t0
@@ -3066,41 +2630,34 @@ vg_sha256_compress:
 	or a6, a6, a7
 	add t6, t6, a6
 	lwu a6, 0(a3)
-	srliw a5, a6, 17
-	slliw a7, a6, 15
+	slli a5, a6, 32
+	or a5, a5, a6
+	srli a7, a5, 17
+	srli a5, a5, 19
 	xor a5, a5, a7
-	srliw a7, a6, 19
-	xor a5, a5, a7
-	slliw a7, a6, 13
-	xor a5, a5, a7
-	srliw a7, a6, 10
-	xor a5, a5, a7
+	srli a6, a6, 10
+	xor a5, a5, a6
 	lwu a7, 44(a3)
 	add a5, a5, a7
 	lwu a6, 12(a3)
-	srliw a7, a6, 7
-	slliw s0, a6, 25
+	slli a7, a6, 32
+	or a7, a7, a6
+	srli s0, a7, 7
+	srli a7, a7, 18
 	xor a7, a7, s0
-	srliw s0, a6, 18
-	xor a7, a7, s0
-	slliw s0, a6, 14
-	xor a7, a7, s0
-	srliw s0, a6, 3
-	xor a7, a7, s0
+	srli a6, a6, 3
+	xor a7, a7, a6
 	add a5, a5, a7
 	lwu a7, 8(a3)
 	add a5, a5, a7
 	sw a5, 8(a3)
-	srliw a6, t2, 6
-	slliw a7, t2, 26
-	xor a6, a6, a7
-	srliw a7, t2, 11
-	xor a6, a6, a7
-	slliw a7, t2, 21
-	xor a6, a6, a7
-	srliw a7, t2, 25
-	xor a6, a6, a7
-	slliw a7, t2, 7
+	slli a6, t2, 32
+	srli a7, a6, 6
+	srli s0, a6, 11
+	xor a7, a7, s0
+	srli a6, a6, 25
+	xor a7, a7, a6
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t5, t5, a6
 	xor a6, t3, t4
@@ -3110,18 +2667,15 @@ vg_sha256_compress:
 	lui a6, 160903
 	addiw a6, a6, 1868
 	add t5, t5, a6
+	slli a6, t6, 32
+	srli a7, a6, 2
+	srli s0, a6, 13
 	add t5, t5, a5
+	xor a7, a7, s0
+	srli a6, a6, 22
+	xor a7, a7, a6
 	add t1, t1, t5
-	srliw a6, t6, 2
-	slliw a7, t6, 30
-	xor a6, a6, a7
-	srliw a7, t6, 13
-	xor a6, a6, a7
-	slliw a7, t6, 19
-	xor a6, a6, a7
-	srliw a7, t6, 22
-	xor a6, a6, a7
-	slliw a7, t6, 10
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t5, t5, a6
 	or a6, t6, a4
@@ -3130,41 +2684,34 @@ vg_sha256_compress:
 	or a6, a6, a7
 	add t5, t5, a6
 	lwu a6, 4(a3)
-	srliw a5, a6, 17
-	slliw a7, a6, 15
+	slli a5, a6, 32
+	or a5, a5, a6
+	srli a7, a5, 17
+	srli a5, a5, 19
 	xor a5, a5, a7
-	srliw a7, a6, 19
-	xor a5, a5, a7
-	slliw a7, a6, 13
-	xor a5, a5, a7
-	srliw a7, a6, 10
-	xor a5, a5, a7
+	srli a6, a6, 10
+	xor a5, a5, a6
 	lwu a7, 48(a3)
 	add a5, a5, a7
 	lwu a6, 16(a3)
-	srliw a7, a6, 7
-	slliw s0, a6, 25
+	slli a7, a6, 32
+	or a7, a7, a6
+	srli s0, a7, 7
+	srli a7, a7, 18
 	xor a7, a7, s0
-	srliw s0, a6, 18
-	xor a7, a7, s0
-	slliw s0, a6, 14
-	xor a7, a7, s0
-	srliw s0, a6, 3
-	xor a7, a7, s0
+	srli a6, a6, 3
+	xor a7, a7, a6
 	add a5, a5, a7
 	lwu a7, 12(a3)
 	add a5, a5, a7
 	sw a5, 12(a3)
-	srliw a6, t1, 6
-	slliw a7, t1, 26
-	xor a6, a6, a7
-	srliw a7, t1, 11
-	xor a6, a6, a7
-	slliw a7, t1, 21
-	xor a6, a6, a7
-	srliw a7, t1, 25
-	xor a6, a6, a7
-	slliw a7, t1, 7
+	slli a6, t1, 32
+	srli a7, a6, 6
+	srli s0, a6, 11
+	xor a7, a7, s0
+	srli a6, a6, 25
+	xor a7, a7, a6
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t4, t4, a6
 	xor a6, t2, t3
@@ -3174,18 +2721,15 @@ vg_sha256_compress:
 	lui a6, 215820
 	addiw a6, a6, -843
 	add t4, t4, a6
+	slli a6, t5, 32
+	srli a7, a6, 2
+	srli s0, a6, 13
 	add t4, t4, a5
+	xor a7, a7, s0
+	srli a6, a6, 22
+	xor a7, a7, a6
 	add t0, t0, t4
-	srliw a6, t5, 2
-	slliw a7, t5, 30
-	xor a6, a6, a7
-	srliw a7, t5, 13
-	xor a6, a6, a7
-	slliw a7, t5, 19
-	xor a6, a6, a7
-	srliw a7, t5, 22
-	xor a6, a6, a7
-	slliw a7, t5, 10
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t4, t4, a6
 	or a6, t5, t6
@@ -3194,41 +2738,34 @@ vg_sha256_compress:
 	or a6, a6, a7
 	add t4, t4, a6
 	lwu a6, 8(a3)
-	srliw a5, a6, 17
-	slliw a7, a6, 15
+	slli a5, a6, 32
+	or a5, a5, a6
+	srli a7, a5, 17
+	srli a5, a5, 19
 	xor a5, a5, a7
-	srliw a7, a6, 19
-	xor a5, a5, a7
-	slliw a7, a6, 13
-	xor a5, a5, a7
-	srliw a7, a6, 10
-	xor a5, a5, a7
+	srli a6, a6, 10
+	xor a5, a5, a6
 	lwu a7, 52(a3)
 	add a5, a5, a7
 	lwu a6, 20(a3)
-	srliw a7, a6, 7
-	slliw s0, a6, 25
+	slli a7, a6, 32
+	or a7, a7, a6
+	srli s0, a7, 7
+	srli a7, a7, 18
 	xor a7, a7, s0
-	srliw s0, a6, 18
-	xor a7, a7, s0
-	slliw s0, a6, 14
-	xor a7, a7, s0
-	srliw s0, a6, 3
-	xor a7, a7, s0
+	srli a6, a6, 3
+	xor a7, a7, a6
 	add a5, a5, a7
 	lwu a7, 16(a3)
 	add a5, a5, a7
 	sw a5, 16(a3)
-	srliw a6, t0, 6
-	slliw a7, t0, 26
-	xor a6, a6, a7
-	srliw a7, t0, 11
-	xor a6, a6, a7
-	slliw a7, t0, 21
-	xor a6, a6, a7
-	srliw a7, t0, 25
-	xor a6, a6, a7
-	slliw a7, t0, 7
+	slli a6, t0, 32
+	srli a7, a6, 6
+	srli s0, a6, 11
+	xor a7, a7, s0
+	srli a6, a6, 25
+	xor a7, a7, a6
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t3, t3, a6
 	xor a6, t1, t2
@@ -3238,18 +2775,15 @@ vg_sha256_compress:
 	lui a6, 233921
 	addiw a6, a6, -845
 	add t3, t3, a6
+	slli a6, t4, 32
+	srli a7, a6, 2
+	srli s0, a6, 13
 	add t3, t3, a5
+	xor a7, a7, s0
+	srli a6, a6, 22
+	xor a7, a7, a6
 	add a4, a4, t3
-	srliw a6, t4, 2
-	slliw a7, t4, 30
-	xor a6, a6, a7
-	srliw a7, t4, 13
-	xor a6, a6, a7
-	slliw a7, t4, 19
-	xor a6, a6, a7
-	srliw a7, t4, 22
-	xor a6, a6, a7
-	slliw a7, t4, 10
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t3, t3, a6
 	or a6, t4, t5
@@ -3258,41 +2792,34 @@ vg_sha256_compress:
 	or a6, a6, a7
 	add t3, t3, a6
 	lwu a6, 12(a3)
-	srliw a5, a6, 17
-	slliw a7, a6, 15
+	slli a5, a6, 32
+	or a5, a5, a6
+	srli a7, a5, 17
+	srli a5, a5, 19
 	xor a5, a5, a7
-	srliw a7, a6, 19
-	xor a5, a5, a7
-	slliw a7, a6, 13
-	xor a5, a5, a7
-	srliw a7, a6, 10
-	xor a5, a5, a7
+	srli a6, a6, 10
+	xor a5, a5, a6
 	lwu a7, 56(a3)
 	add a5, a5, a7
 	lwu a6, 24(a3)
-	srliw a7, a6, 7
-	slliw s0, a6, 25
+	slli a7, a6, 32
+	or a7, a7, a6
+	srli s0, a7, 7
+	srli a7, a7, 18
 	xor a7, a7, s0
-	srliw s0, a6, 18
-	xor a7, a7, s0
-	slliw s0, a6, 14
-	xor a7, a7, s0
-	srliw s0, a6, 3
-	xor a7, a7, s0
+	srli a6, a6, 3
+	xor a7, a7, a6
 	add a5, a5, a7
 	lwu a7, 20(a3)
 	add a5, a5, a7
 	sw a5, 20(a3)
-	srliw a6, a4, 6
-	slliw a7, a4, 26
-	xor a6, a6, a7
-	srliw a7, a4, 11
-	xor a6, a6, a7
-	slliw a7, a4, 21
-	xor a6, a6, a7
-	srliw a7, a4, 25
-	xor a6, a6, a7
-	slliw a7, a4, 7
+	slli a6, a4, 32
+	srli a7, a6, 6
+	srli s0, a6, 11
+	xor a7, a7, s0
+	srli a6, a6, 25
+	xor a7, a7, a6
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t2, t2, a6
 	xor a6, t0, t1
@@ -3302,18 +2829,15 @@ vg_sha256_compress:
 	lui a6, 322955
 	addiw a6, a6, -1462
 	add t2, t2, a6
+	slli a6, t3, 32
+	srli a7, a6, 2
+	srli s0, a6, 13
 	add t2, t2, a5
+	xor a7, a7, s0
+	srli a6, a6, 22
+	xor a7, a7, a6
 	add t6, t6, t2
-	srliw a6, t3, 2
-	slliw a7, t3, 30
-	xor a6, a6, a7
-	srliw a7, t3, 13
-	xor a6, a6, a7
-	slliw a7, t3, 19
-	xor a6, a6, a7
-	srliw a7, t3, 22
-	xor a6, a6, a7
-	slliw a7, t3, 10
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t2, t2, a6
 	or a6, t3, t4
@@ -3322,41 +2846,34 @@ vg_sha256_compress:
 	or a6, a6, a7
 	add t2, t2, a6
 	lwu a6, 16(a3)
-	srliw a5, a6, 17
-	slliw a7, a6, 15
+	slli a5, a6, 32
+	or a5, a5, a6
+	srli a7, a5, 17
+	srli a5, a5, 19
 	xor a5, a5, a7
-	srliw a7, a6, 19
-	xor a5, a5, a7
-	slliw a7, a6, 13
-	xor a5, a5, a7
-	srliw a7, a6, 10
-	xor a5, a5, a7
+	srli a6, a6, 10
+	xor a5, a5, a6
 	lwu a7, 60(a3)
 	add a5, a5, a7
 	lwu a6, 28(a3)
-	srliw a7, a6, 7
-	slliw s0, a6, 25
+	slli a7, a6, 32
+	or a7, a7, a6
+	srli s0, a7, 7
+	srli a7, a7, 18
 	xor a7, a7, s0
-	srliw s0, a6, 18
-	xor a7, a7, s0
-	slliw s0, a6, 14
-	xor a7, a7, s0
-	srliw s0, a6, 3
-	xor a7, a7, s0
+	srli a6, a6, 3
+	xor a7, a7, a6
 	add a5, a5, a7
 	lwu a7, 24(a3)
 	add a5, a5, a7
 	sw a5, 24(a3)
-	srliw a6, t6, 6
-	slliw a7, t6, 26
-	xor a6, a6, a7
-	srliw a7, t6, 11
-	xor a6, a6, a7
-	slliw a7, t6, 21
-	xor a6, a6, a7
-	srliw a7, t6, 25
-	xor a6, a6, a7
-	slliw a7, t6, 7
+	slli a6, t6, 32
+	srli a7, a6, 6
+	srli s0, a6, 11
+	xor a7, a7, s0
+	srli a6, a6, 25
+	xor a7, a7, a6
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t1, t1, a6
 	xor a6, a4, t0
@@ -3366,18 +2883,15 @@ vg_sha256_compress:
 	lui a6, 375245
 	addiw a6, a6, -1457
 	add t1, t1, a6
+	slli a6, t2, 32
+	srli a7, a6, 2
+	srli s0, a6, 13
 	add t1, t1, a5
+	xor a7, a7, s0
+	srli a6, a6, 22
+	xor a7, a7, a6
 	add t5, t5, t1
-	srliw a6, t2, 2
-	slliw a7, t2, 30
-	xor a6, a6, a7
-	srliw a7, t2, 13
-	xor a6, a6, a7
-	slliw a7, t2, 19
-	xor a6, a6, a7
-	srliw a7, t2, 22
-	xor a6, a6, a7
-	slliw a7, t2, 10
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t1, t1, a6
 	or a6, t2, t3
@@ -3386,41 +2900,34 @@ vg_sha256_compress:
 	or a6, a6, a7
 	add t1, t1, a6
 	lwu a6, 20(a3)
-	srliw a5, a6, 17
-	slliw a7, a6, 15
+	slli a5, a6, 32
+	or a5, a5, a6
+	srli a7, a5, 17
+	srli a5, a5, 19
 	xor a5, a5, a7
-	srliw a7, a6, 19
-	xor a5, a5, a7
-	slliw a7, a6, 13
-	xor a5, a5, a7
-	srliw a7, a6, 10
-	xor a5, a5, a7
+	srli a6, a6, 10
+	xor a5, a5, a6
 	lwu a7, 0(a3)
 	add a5, a5, a7
 	lwu a6, 32(a3)
-	srliw a7, a6, 7
-	slliw s0, a6, 25
+	slli a7, a6, 32
+	or a7, a7, a6
+	srli s0, a7, 7
+	srli a7, a7, 18
 	xor a7, a7, s0
-	srliw s0, a6, 18
-	xor a7, a7, s0
-	slliw s0, a6, 14
-	xor a7, a7, s0
-	srliw s0, a6, 3
-	xor a7, a7, s0
+	srli a6, a6, 3
+	xor a7, a7, a6
 	add a5, a5, a7
 	lwu a7, 28(a3)
 	add a5, a5, a7
 	sw a5, 28(a3)
-	srliw a6, t5, 6
-	slliw a7, t5, 26
-	xor a6, a6, a7
-	srliw a7, t5, 11
-	xor a6, a6, a7
-	slliw a7, t5, 21
-	xor a6, a6, a7
-	srliw a7, t5, 25
-	xor a6, a6, a7
-	slliw a7, t5, 7
+	slli a6, t5, 32
+	srli a7, a6, 6
+	srli s0, a6, 11
+	xor a7, a7, s0
+	srli a6, a6, 25
+	xor a7, a7, a6
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t0, t0, a6
 	xor a6, t6, a4
@@ -3430,18 +2937,15 @@ vg_sha256_compress:
 	lui a6, 426727
 	addiw a6, a6, -13
 	add t0, t0, a6
+	slli a6, t1, 32
+	srli a7, a6, 2
+	srli s0, a6, 13
 	add t0, t0, a5
+	xor a7, a7, s0
+	srli a6, a6, 22
+	xor a7, a7, a6
 	add t4, t4, t0
-	srliw a6, t1, 2
-	slliw a7, t1, 30
-	xor a6, a6, a7
-	srliw a7, t1, 13
-	xor a6, a6, a7
-	slliw a7, t1, 19
-	xor a6, a6, a7
-	srliw a7, t1, 22
-	xor a6, a6, a7
-	slliw a7, t1, 10
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t0, t0, a6
 	or a6, t1, t2
@@ -3450,41 +2954,34 @@ vg_sha256_compress:
 	or a6, a6, a7
 	add t0, t0, a6
 	lwu a6, 24(a3)
-	srliw a5, a6, 17
-	slliw a7, a6, 15
+	slli a5, a6, 32
+	or a5, a5, a6
+	srli a7, a5, 17
+	srli a5, a5, 19
 	xor a5, a5, a7
-	srliw a7, a6, 19
-	xor a5, a5, a7
-	slliw a7, a6, 13
-	xor a5, a5, a7
-	srliw a7, a6, 10
-	xor a5, a5, a7
+	srli a6, a6, 10
+	xor a5, a5, a6
 	lwu a7, 4(a3)
 	add a5, a5, a7
 	lwu a6, 36(a3)
-	srliw a7, a6, 7
-	slliw s0, a6, 25
+	slli a7, a6, 32
+	or a7, a7, a6
+	srli s0, a7, 7
+	srli a7, a7, 18
 	xor a7, a7, s0
-	srliw s0, a6, 18
-	xor a7, a7, s0
-	slliw s0, a6, 14
-	xor a7, a7, s0
-	srliw s0, a6, 3
-	xor a7, a7, s0
+	srli a6, a6, 3
+	xor a7, a7, a6
 	add a5, a5, a7
 	lwu a7, 32(a3)
 	add a5, a5, a7
 	sw a5, 32(a3)
-	srliw a6, t4, 6
-	slliw a7, t4, 26
-	xor a6, a6, a7
-	srliw a7, t4, 11
-	xor a6, a6, a7
-	slliw a7, t4, 21
-	xor a6, a6, a7
-	srliw a7, t4, 25
-	xor a6, a6, a7
-	slliw a7, t4, 7
+	slli a6, t4, 32
+	srli a7, a6, 6
+	srli s0, a6, 11
+	xor a7, a7, s0
+	srli a6, a6, 25
+	xor a7, a7, a6
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add a4, a4, a6
 	xor a6, t5, t6
@@ -3494,18 +2991,15 @@ vg_sha256_compress:
 	lui a6, 477432
 	addiw a6, a6, 750
 	add a4, a4, a6
+	slli a6, t0, 32
+	srli a7, a6, 2
+	srli s0, a6, 13
 	add a4, a4, a5
+	xor a7, a7, s0
+	srli a6, a6, 22
+	xor a7, a7, a6
 	add t3, t3, a4
-	srliw a6, t0, 2
-	slliw a7, t0, 30
-	xor a6, a6, a7
-	srliw a7, t0, 13
-	xor a6, a6, a7
-	slliw a7, t0, 19
-	xor a6, a6, a7
-	srliw a7, t0, 22
-	xor a6, a6, a7
-	slliw a7, t0, 10
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add a4, a4, a6
 	or a6, t0, t1
@@ -3514,41 +3008,34 @@ vg_sha256_compress:
 	or a6, a6, a7
 	add a4, a4, a6
 	lwu a6, 28(a3)
-	srliw a5, a6, 17
-	slliw a7, a6, 15
+	slli a5, a6, 32
+	or a5, a5, a6
+	srli a7, a5, 17
+	srli a5, a5, 19
 	xor a5, a5, a7
-	srliw a7, a6, 19
-	xor a5, a5, a7
-	slliw a7, a6, 13
-	xor a5, a5, a7
-	srliw a7, a6, 10
-	xor a5, a5, a7
+	srli a6, a6, 10
+	xor a5, a5, a6
 	lwu a7, 8(a3)
 	add a5, a5, a7
 	lwu a6, 40(a3)
-	srliw a7, a6, 7
-	slliw s0, a6, 25
+	slli a7, a6, 32
+	or a7, a7, a6
+	srli s0, a7, 7
+	srli a7, a7, 18
 	xor a7, a7, s0
-	srliw s0, a6, 18
-	xor a7, a7, s0
-	slliw s0, a6, 14
-	xor a7, a7, s0
-	srliw s0, a6, 3
-	xor a7, a7, s0
+	srli a6, a6, 3
+	xor a7, a7, a6
 	add a5, a5, a7
 	lwu a7, 36(a3)
 	add a5, a5, a7
 	sw a5, 36(a3)
-	srliw a6, t3, 6
-	slliw a7, t3, 26
-	xor a6, a6, a7
-	srliw a7, t3, 11
-	xor a6, a6, a7
-	slliw a7, t3, 21
-	xor a6, a6, a7
-	srliw a7, t3, 25
-	xor a6, a6, a7
-	slliw a7, t3, 7
+	slli a6, t3, 32
+	srli a7, a6, 6
+	srli s0, a6, 11
+	xor a7, a7, s0
+	srli a6, a6, 25
+	xor a7, a7, a6
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t6, t6, a6
 	xor a6, t4, t5
@@ -3558,18 +3045,15 @@ vg_sha256_compress:
 	lui a6, 494166
 	addiw a6, a6, 879
 	add t6, t6, a6
+	slli a6, a4, 32
+	srli a7, a6, 2
+	srli s0, a6, 13
 	add t6, t6, a5
+	xor a7, a7, s0
+	srli a6, a6, 22
+	xor a7, a7, a6
 	add t2, t2, t6
-	srliw a6, a4, 2
-	slliw a7, a4, 30
-	xor a6, a6, a7
-	srliw a7, a4, 13
-	xor a6, a6, a7
-	slliw a7, a4, 19
-	xor a6, a6, a7
-	srliw a7, a4, 22
-	xor a6, a6, a7
-	slliw a7, a4, 10
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t6, t6, a6
 	or a6, a4, t0
@@ -3578,41 +3062,34 @@ vg_sha256_compress:
 	or a6, a6, a7
 	add t6, t6, a6
 	lwu a6, 32(a3)
-	srliw a5, a6, 17
-	slliw a7, a6, 15
+	slli a5, a6, 32
+	or a5, a5, a6
+	srli a7, a5, 17
+	srli a5, a5, 19
 	xor a5, a5, a7
-	srliw a7, a6, 19
-	xor a5, a5, a7
-	slliw a7, a6, 13
-	xor a5, a5, a7
-	srliw a7, a6, 10
-	xor a5, a5, a7
+	srli a6, a6, 10
+	xor a5, a5, a6
 	lwu a7, 12(a3)
 	add a5, a5, a7
 	lwu a6, 44(a3)
-	srliw a7, a6, 7
-	slliw s0, a6, 25
+	slli a7, a6, 32
+	or a7, a7, a6
+	srli s0, a7, 7
+	srli a7, a7, 18
 	xor a7, a7, s0
-	srliw s0, a6, 18
-	xor a7, a7, s0
-	slliw s0, a6, 14
-	xor a7, a7, s0
-	srliw s0, a6, 3
-	xor a7, a7, s0
+	srli a6, a6, 3
+	xor a7, a7, a6
 	add a5, a5, a7
 	lwu a7, 40(a3)
 	add a5, a5, a7
 	sw a5, 40(a3)
-	srliw a6, t2, 6
-	slliw a7, t2, 26
-	xor a6, a6, a7
-	srliw a7, t2, 11
-	xor a6, a6, a7
-	slliw a7, t2, 21
-	xor a6, a6, a7
-	srliw a7, t2, 25
-	xor a6, a6, a7
-	slliw a7, t2, 7
+	slli a6, t2, 32
+	srli a7, a6, 6
+	srli s0, a6, 11
+	xor a7, a7, s0
+	srli a6, a6, 25
+	xor a7, a7, a6
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t5, t5, a6
 	xor a6, t3, t4
@@ -3622,18 +3099,15 @@ vg_sha256_compress:
 	lui a6, 543880
 	addiw a6, a6, -2028
 	add t5, t5, a6
+	slli a6, t6, 32
+	srli a7, a6, 2
+	srli s0, a6, 13
 	add t5, t5, a5
+	xor a7, a7, s0
+	srli a6, a6, 22
+	xor a7, a7, a6
 	add t1, t1, t5
-	srliw a6, t6, 2
-	slliw a7, t6, 30
-	xor a6, a6, a7
-	srliw a7, t6, 13
-	xor a6, a6, a7
-	slliw a7, t6, 19
-	xor a6, a6, a7
-	srliw a7, t6, 22
-	xor a6, a6, a7
-	slliw a7, t6, 10
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t5, t5, a6
 	or a6, t6, a4
@@ -3642,41 +3116,34 @@ vg_sha256_compress:
 	or a6, a6, a7
 	add t5, t5, a6
 	lwu a6, 36(a3)
-	srliw a5, a6, 17
-	slliw a7, a6, 15
+	slli a5, a6, 32
+	or a5, a5, a6
+	srli a7, a5, 17
+	srli a5, a5, 19
 	xor a5, a5, a7
-	srliw a7, a6, 19
-	xor a5, a5, a7
-	slliw a7, a6, 13
-	xor a5, a5, a7
-	srliw a7, a6, 10
-	xor a5, a5, a7
+	srli a6, a6, 10
+	xor a5, a5, a6
 	lwu a7, 16(a3)
 	add a5, a5, a7
 	lwu a6, 48(a3)
-	srliw a7, a6, 7
-	slliw s0, a6, 25
+	slli a7, a6, 32
+	or a7, a7, a6
+	srli s0, a7, 7
+	srli a7, a7, 18
 	xor a7, a7, s0
-	srliw s0, a6, 18
-	xor a7, a7, s0
-	slliw s0, a6, 14
-	xor a7, a7, s0
-	srliw s0, a6, 3
-	xor a7, a7, s0
+	srli a6, a6, 3
+	xor a7, a7, a6
 	add a5, a5, a7
 	lwu a7, 44(a3)
 	add a5, a5, a7
 	sw a5, 44(a3)
-	srliw a6, t1, 6
-	slliw a7, t1, 26
-	xor a6, a6, a7
-	srliw a7, t1, 11
-	xor a6, a6, a7
-	slliw a7, t1, 21
-	xor a6, a6, a7
-	srliw a7, t1, 25
-	xor a6, a6, a7
-	slliw a7, t1, 7
+	slli a6, t1, 32
+	srli a7, a6, 6
+	srli s0, a6, 11
+	xor a7, a7, s0
+	srli a6, a6, 25
+	xor a7, a7, a6
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t4, t4, a6
 	xor a6, t2, t3
@@ -3686,18 +3153,15 @@ vg_sha256_compress:
 	lui a6, 576624
 	addiw a6, a6, 520
 	add t4, t4, a6
+	slli a6, t5, 32
+	srli a7, a6, 2
+	srli s0, a6, 13
 	add t4, t4, a5
+	xor a7, a7, s0
+	srli a6, a6, 22
+	xor a7, a7, a6
 	add t0, t0, t4
-	srliw a6, t5, 2
-	slliw a7, t5, 30
-	xor a6, a6, a7
-	srliw a7, t5, 13
-	xor a6, a6, a7
-	slliw a7, t5, 19
-	xor a6, a6, a7
-	srliw a7, t5, 22
-	xor a6, a6, a7
-	slliw a7, t5, 10
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t4, t4, a6
 	or a6, t5, t6
@@ -3706,41 +3170,34 @@ vg_sha256_compress:
 	or a6, a6, a7
 	add t4, t4, a6
 	lwu a6, 40(a3)
-	srliw a5, a6, 17
-	slliw a7, a6, 15
+	slli a5, a6, 32
+	or a5, a5, a6
+	srli a7, a5, 17
+	srli a5, a5, 19
 	xor a5, a5, a7
-	srliw a7, a6, 19
-	xor a5, a5, a7
-	slliw a7, a6, 13
-	xor a5, a5, a7
-	srliw a7, a6, 10
-	xor a5, a5, a7
+	srli a6, a6, 10
+	xor a5, a5, a6
 	lwu a7, 20(a3)
 	add a5, a5, a7
 	lwu a6, 52(a3)
-	srliw a7, a6, 7
-	slliw s0, a6, 25
+	slli a7, a6, 32
+	or a7, a7, a6
+	srli s0, a7, 7
+	srli a7, a7, 18
 	xor a7, a7, s0
-	srliw s0, a6, 18
-	xor a7, a7, s0
-	slliw s0, a6, 14
-	xor a7, a7, s0
-	srliw s0, a6, 3
-	xor a7, a7, s0
+	srli a6, a6, 3
+	xor a7, a7, a6
 	add a5, a5, a7
 	lwu a7, 48(a3)
 	add a5, a5, a7
 	sw a5, 48(a3)
-	srliw a6, t0, 6
-	slliw a7, t0, 26
-	xor a6, a6, a7
-	srliw a7, t0, 11
-	xor a6, a6, a7
-	slliw a7, t0, 21
-	xor a6, a6, a7
-	srliw a7, t0, 25
-	xor a6, a6, a7
-	slliw a7, t0, 7
+	slli a6, t0, 32
+	srli a7, a6, 6
+	srli s0, a6, 11
+	xor a7, a7, s0
+	srli a6, a6, 25
+	xor a7, a7, a6
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t3, t3, a6
 	xor a6, t1, t2
@@ -3750,18 +3207,15 @@ vg_sha256_compress:
 	lui a6, 592880
 	addiw a6, a6, -6
 	add t3, t3, a6
+	slli a6, t4, 32
+	srli a7, a6, 2
+	srli s0, a6, 13
 	add t3, t3, a5
+	xor a7, a7, s0
+	srli a6, a6, 22
+	xor a7, a7, a6
 	add a4, a4, t3
-	srliw a6, t4, 2
-	slliw a7, t4, 30
-	xor a6, a6, a7
-	srliw a7, t4, 13
-	xor a6, a6, a7
-	slliw a7, t4, 19
-	xor a6, a6, a7
-	srliw a7, t4, 22
-	xor a6, a6, a7
-	slliw a7, t4, 10
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t3, t3, a6
 	or a6, t4, t5
@@ -3770,41 +3224,34 @@ vg_sha256_compress:
 	or a6, a6, a7
 	add t3, t3, a6
 	lwu a6, 44(a3)
-	srliw a5, a6, 17
-	slliw a7, a6, 15
+	slli a5, a6, 32
+	or a5, a5, a6
+	srli a7, a5, 17
+	srli a5, a5, 19
 	xor a5, a5, a7
-	srliw a7, a6, 19
-	xor a5, a5, a7
-	slliw a7, a6, 13
-	xor a5, a5, a7
-	srliw a7, a6, 10
-	xor a5, a5, a7
+	srli a6, a6, 10
+	xor a5, a5, a6
 	lwu a7, 24(a3)
 	add a5, a5, a7
 	lwu a6, 56(a3)
-	srliw a7, a6, 7
-	slliw s0, a6, 25
+	slli a7, a6, 32
+	or a7, a7, a6
+	srli s0, a7, 7
+	srli a7, a7, 18
 	xor a7, a7, s0
-	srliw s0, a6, 18
-	xor a7, a7, s0
-	slliw s0, a6, 14
-	xor a7, a7, s0
-	srliw s0, a6, 3
-	xor a7, a7, s0
+	srli a6, a6, 3
+	xor a7, a7, a6
 	add a5, a5, a7
 	lwu a7, 52(a3)
 	add a5, a5, a7
 	sw a5, 52(a3)
-	srliw a6, a4, 6
-	slliw a7, a4, 26
-	xor a6, a6, a7
-	srliw a7, a4, 11
-	xor a6, a6, a7
-	slliw a7, a4, 21
-	xor a6, a6, a7
-	srliw a7, a4, 25
-	xor a6, a6, a7
-	slliw a7, a4, 7
+	slli a6, a4, 32
+	srli a7, a6, 6
+	srli s0, a6, 11
+	xor a7, a7, s0
+	srli a6, a6, 25
+	xor a7, a7, a6
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t2, t2, a6
 	xor a6, t0, t1
@@ -3814,18 +3261,15 @@ vg_sha256_compress:
 	lui a6, 673031
 	addiw a6, a6, -789
 	add t2, t2, a6
+	slli a6, t3, 32
+	srli a7, a6, 2
+	srli s0, a6, 13
 	add t2, t2, a5
+	xor a7, a7, s0
+	srli a6, a6, 22
+	xor a7, a7, a6
 	add t6, t6, t2
-	srliw a6, t3, 2
-	slliw a7, t3, 30
-	xor a6, a6, a7
-	srliw a7, t3, 13
-	xor a6, a6, a7
-	slliw a7, t3, 19
-	xor a6, a6, a7
-	srliw a7, t3, 22
-	xor a6, a6, a7
-	slliw a7, t3, 10
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t2, t2, a6
 	or a6, t3, t4
@@ -3834,41 +3278,34 @@ vg_sha256_compress:
 	or a6, a6, a7
 	add t2, t2, a6
 	lwu a6, 48(a3)
-	srliw a5, a6, 17
-	slliw a7, a6, 15
+	slli a5, a6, 32
+	or a5, a5, a6
+	srli a7, a5, 17
+	srli a5, a5, 19
 	xor a5, a5, a7
-	srliw a7, a6, 19
-	xor a5, a5, a7
-	slliw a7, a6, 13
-	xor a5, a5, a7
-	srliw a7, a6, 10
-	xor a5, a5, a7
+	srli a6, a6, 10
+	xor a5, a5, a6
 	lwu a7, 28(a3)
 	add a5, a5, a7
 	lwu a6, 60(a3)
-	srliw a7, a6, 7
-	slliw s0, a6, 25
+	slli a7, a6, 32
+	or a7, a7, a6
+	srli s0, a7, 7
+	srli a7, a7, 18
 	xor a7, a7, s0
-	srliw s0, a6, 18
-	xor a7, a7, s0
-	slliw s0, a6, 14
-	xor a7, a7, s0
-	srliw s0, a6, 3
-	xor a7, a7, s0
+	srli a6, a6, 3
+	xor a7, a7, a6
 	add a5, a5, a7
 	lwu a7, 56(a3)
 	add a5, a5, a7
 	sw a5, 56(a3)
-	srliw a6, t6, 6
-	slliw a7, t6, 26
-	xor a6, a6, a7
-	srliw a7, t6, 11
-	xor a6, a6, a7
-	slliw a7, t6, 21
-	xor a6, a6, a7
-	srliw a7, t6, 25
-	xor a6, a6, a7
-	slliw a7, t6, 7
+	slli a6, t6, 32
+	srli a7, a6, 6
+	srli s0, a6, 11
+	xor a7, a7, s0
+	srli a6, a6, 25
+	xor a7, a7, a6
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t1, t1, a6
 	xor a6, a4, t0
@@ -3878,18 +3315,15 @@ vg_sha256_compress:
 	lui a6, 782234
 	addiw a6, a6, 1015
 	add t1, t1, a6
+	slli a6, t2, 32
+	srli a7, a6, 2
+	srli s0, a6, 13
 	add t1, t1, a5
+	xor a7, a7, s0
+	srli a6, a6, 22
+	xor a7, a7, a6
 	add t5, t5, t1
-	srliw a6, t2, 2
-	slliw a7, t2, 30
-	xor a6, a6, a7
-	srliw a7, t2, 13
-	xor a6, a6, a7
-	slliw a7, t2, 19
-	xor a6, a6, a7
-	srliw a7, t2, 22
-	xor a6, a6, a7
-	slliw a7, t2, 10
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t1, t1, a6
 	or a6, t2, t3
@@ -3898,41 +3332,34 @@ vg_sha256_compress:
 	or a6, a6, a7
 	add t1, t1, a6
 	lwu a6, 52(a3)
-	srliw a5, a6, 17
-	slliw a7, a6, 15
+	slli a5, a6, 32
+	or a5, a5, a6
+	srli a7, a5, 17
+	srli a5, a5, 19
 	xor a5, a5, a7
-	srliw a7, a6, 19
-	xor a5, a5, a7
-	slliw a7, a6, 13
-	xor a5, a5, a7
-	srliw a7, a6, 10
-	xor a5, a5, a7
+	srli a6, a6, 10
+	xor a5, a5, a6
 	lwu a7, 32(a3)
 	add a5, a5, a7
 	lwu a6, 0(a3)
-	srliw a7, a6, 7
-	slliw s0, a6, 25
+	slli a7, a6, 32
+	or a7, a7, a6
+	srli s0, a7, 7
+	srli a7, a7, 18
 	xor a7, a7, s0
-	srliw s0, a6, 18
-	xor a7, a7, s0
-	slliw s0, a6, 14
-	xor a7, a7, s0
-	srliw s0, a6, 3
-	xor a7, a7, s0
+	srli a6, a6, 3
+	xor a7, a7, a6
 	add a5, a5, a7
 	lwu a7, 60(a3)
 	add a5, a5, a7
 	sw a5, 60(a3)
-	srliw a6, t5, 6
-	slliw a7, t5, 26
-	xor a6, a6, a7
-	srliw a7, t5, 11
-	xor a6, a6, a7
-	slliw a7, t5, 21
-	xor a6, a6, a7
-	srliw a7, t5, 25
-	xor a6, a6, a7
-	slliw a7, t5, 7
+	slli a6, t5, 32
+	srli a7, a6, 6
+	srli s0, a6, 11
+	xor a7, a7, s0
+	srli a6, a6, 25
+	xor a7, a7, a6
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t0, t0, a6
 	xor a6, t6, a4
@@ -3942,18 +3369,15 @@ vg_sha256_compress:
 	lui a6, 812824
 	addiw a6, a6, -1806
 	add t0, t0, a6
+	slli a6, t1, 32
+	srli a7, a6, 2
+	srli s0, a6, 13
 	add t0, t0, a5
+	xor a7, a7, s0
+	srli a6, a6, 22
+	xor a7, a7, a6
 	add t4, t4, t0
-	srliw a6, t1, 2
-	slliw a7, t1, 30
-	xor a6, a6, a7
-	srliw a7, t1, 13
-	xor a6, a6, a7
-	slliw a7, t1, 19
-	xor a6, a6, a7
-	srliw a7, t1, 22
-	xor a6, a6, a7
-	slliw a7, t1, 10
+	srli a6, a7, 32
 	xor a6, a6, a7
 	add t0, t0, a6
 	or a6, t1, t2

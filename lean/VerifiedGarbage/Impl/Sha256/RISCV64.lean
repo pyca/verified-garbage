@@ -13,11 +13,10 @@ rotates nor byte-reversed loads, and faults on misaligned accesses:
 * The working variables `a … h` live in the low words of `t0`–`t6` and
   `a4`; the fully unrolled rounds rename them: in round `t`, variable `k` is
   in `var t k`. The additions act on all 64 bits, so the high words hold
-  carries and the sign extensions of the `*w` shifts, which the word shifts
-  and the stores ignore.
-* A rotation right by `r` is `srliw` by `r` and `slliw` by `32 - r`, whose
-  bits do not overlap, so the three rotations of a `Σ` or `σ` are six
-  shifts combined by `xor`.
+  carries, which the shifts of `Σ` and the stores ignore; the words `σ` acts
+  on are zero-extended by the loads (`lwu`).
+* RV64I has no rotation, but a word shifted up by 32 (`bsig`), or in both
+  words of a register (`ssig`), is rotated by one 64-bit shift: see there.
 * The hash value (`state`, an array of `u32`) and the blocks are argument
   buffers, whose alignment the contract does not state. The hash value is
   read and written a word at a time if `state` is a multiple of 4
@@ -60,19 +59,31 @@ def restore : List Instr := [.load .d .s0 .a3 64]
 /-- The offset of `W[i mod 16]` in the scratch buffer. -/
 def slot (i : Nat) : Nat := 4 * (i % 16)
 
-/-- `d := d ⊕ (x ⋙ r)` for a word `x`, as two shifts into `tmp` (`0 < r < 32`). -/
-def xorRotr (d tmp x : Reg) (r : Nat) : List Instr :=
-  [.shift .srl .w tmp x r, .logic .xor d d tmp, .shift .sll .w tmp x (32 - r), .logic .xor d d tmp]
+/-- The first instructions of `bsig`: `x ≪ 32` in `d`, and two of its shifts
+in `t₁` and `t₂`. -/
+def bsigShifts (d t₁ t₂ x : Reg) (r₁ r₂ : Nat) : List Instr :=
+  [.shift .sll .d d x 32, .shift .srl .d t₁ d r₁, .shift .srl .d t₂ d r₂]
 
-/-- `d := (x ⋙ r₁) ⊕ (x ⋙ r₂) ⊕ (x ⋙ r₃)` (a `Σ`), with `tmp` clobbered. -/
-def bsig (d tmp x : Reg) (r₁ r₂ r₃ : Nat) : List Instr :=
-  [.shift .srl .w d x r₁, .shift .sll .w tmp x (32 - r₁), .logic .xor d d tmp] ++
-    xorRotr d tmp x r₂ ++ xorRotr d tmp x r₃
+/-- The next instructions of `bsig`: the `xor` of the three shifts, in `t₁`. -/
+def bsigXors (d t₁ t₂ : Reg) (r₃ : Nat) : List Instr :=
+  [.logic .xor t₁ t₁ t₂, .shift .srl .d d d r₃, .logic .xor t₁ t₁ d]
 
-/-- `d := (x ⋙ r₁) ⊕ (x ⋙ r₂) ⊕ (x ≫ r₃)` (a `σ`), with `tmp` clobbered. -/
-def ssig (d tmp x : Reg) (r₁ r₂ r₃ : Nat) : List Instr :=
-  [.shift .srl .w d x r₁, .shift .sll .w tmp x (32 - r₁), .logic .xor d d tmp] ++
-    xorRotr d tmp x r₂ ++ [.shift .srl .w tmp x r₃, .logic .xor d d tmp]
+/-- The last instructions of `bsig`: the `xor` of the two words of `t₁`. -/
+def bsigFold (d t₁ : Reg) : List Instr := [.shift .srl .d d t₁ 32, .logic .xor d d t₁]
+
+/-- `d := (x ⋙ r₁) ⊕ (x ⋙ r₂) ⊕ (x ⋙ r₃)` (a `Σ`) for a word `x`, with `t₁`
+and `t₂` clobbered: in `(x ≪ 32) ≫ r`, the word's bits shifted right by `r`
+are the high word, and those that wrap around the low word, so that the
+`xor` of the three has the two parts of the result in its two words. -/
+def bsig (d t₁ t₂ x : Reg) (r₁ r₂ r₃ : Nat) : List Instr :=
+  bsigShifts d t₁ t₂ x r₁ r₂ ++ bsigXors d t₁ t₂ r₃ ++ bsigFold d t₁
+
+/-- `d := (x ⋙ r₁) ⊕ (x ⋙ r₂) ⊕ (x ≫ r₃)` (a `σ`) for a zero-extended word
+`x`, with `t` and `x` clobbered: `d` first holds `x` in both of its words, so
+that the low word of `d ≫ r` is `x ⋙ r`. -/
+def ssig (d t x : Reg) (r₁ r₂ r₃ : Nat) : List Instr :=
+  [.shift .sll .d d x 32, .logic .or d d x, .shift .srl .d t d r₁, .shift .srl .d d d r₂,
+   .logic .xor d d t, .shift .srl .d x x r₃, .logic .xor d d x]
 
 /-- Leave `Wₜ` in the low word of `T0` and in its slot. The additions are in
 the order of the specification. -/
@@ -94,15 +105,17 @@ def round (t : Nat) : List Instr :=
   let a := var t 0; let b := var t 1; let c := var t 2; let d := var t 3
   let e := var t 4; let f := var t 5; let g := var t 6; let h := var t 7
   -- h := h + Σ₁(e)
-  bsig T1 T2 e 6 11 25 ++ [.add h h T1,
+  bsig T1 T2 T3 e 6 11 25 ++ [.add h h T1,
     -- h := h + Ch(e, f, g), as ((f ⊕ g) ∧ e) ⊕ g
     .logic .xor T1 f g, .logic .and T1 T1 e, .logic .xor T1 T1 g, .add h h T1] ++
   -- h := h + Kₜ + Wₜ, which is T₁
-  li32 T1 (K t) ++ [.add h h T1, .add h h T0,
+  li32 T1 (K t) ++ ([.add h h T1] : List Instr) ++
+    -- with Σ₀(a) started
+    bsigShifts T1 T2 T3 a 2 13 ++ ([.add h h T0] : List Instr) ++ bsigXors T1 T2 T3 22 ++
     -- e' := d + T₁
-    .add d d h] ++
+    ([.add d d h] : List Instr) ++ bsigFold T1 T2 ++
   -- h := h + Σ₀(a)
-  bsig T1 T2 a 2 13 22 ++ [.add h h T1,
+  [.add h h T1,
     -- h := h + Maj(a, b, c), as ((a ∨ b) ∧ c) ∨ (a ∧ b); now h = a' = T₁ + T₂
     .logic .or T1 a b, .logic .and T1 T1 c, .logic .and T2 a b, .logic .or T1 T1 T2,
     .add h h T1]

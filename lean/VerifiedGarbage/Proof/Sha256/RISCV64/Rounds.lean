@@ -28,25 +28,60 @@ open VG.Spec.Sha256 (HashValue Word Block K W bsig0 bsig1 ch maj ssig0 ssig1)
 
 /-! ## The functions as the shifts compute them -/
 
-theorem bsig1_shifts (x : Word) :
-    bsig1 x = x >>> 6 ^^^ x <<< 26 ^^^ x >>> 11 ^^^ x <<< 21 ^^^ x >>> 25 ^^^ x <<< 7 := by
-  simp only [bsig1, ← rotr_shifts x (show 6 < 32 by decide), ← rotr_shifts x (show 11 < 32 by decide),
-    ← rotr_shifts x (show 25 < 32 by decide), Nat.reduceSub, BitVec.xor_assoc]
+/-- A rotation as `Impl`'s `bsig` computes it: the bits shifted right are in
+the high word of `(x ≪ 32) ≫ r`, those that wrap around in its low word. -/
+theorem rotr_halves (x : BitVec 64) {r : Nat} (h0 : 0 < r) (h : r < 32) :
+    (x <<< 32 >>> r >>> 32).setWidth 32 ^^^ (x <<< 32 >>> r).setWidth 32 = (x.setWidth 32).rotateRight r := by
+  apply BitVec.eq_of_getLsbD_eq
+  intro i hi
+  rw [BitVec.getLsbD_rotateRight]
+  simp only [BitVec.getLsbD_xor, BitVec.getLsbD_setWidth, BitVec.getLsbD_ushiftRight,
+    BitVec.getLsbD_shiftLeft, hi, decide_true, Bool.true_and, Nat.mod_eq_of_lt h]
+  by_cases hr : i < 32 - r
+  · simp only [hr, ite_true, show ¬ r + (32 + i) < 32 by omega_arith, show r + (32 + i) < 64 by omega_arith,
+      show r + i < 32 by omega_arith, decide_true, decide_false, Bool.not_true, Bool.not_false,
+      Bool.and_true, Bool.true_and, Bool.and_false, Bool.false_and, Bool.xor_false,
+      show r + (32 + i) - 32 = r + i by omega_arith]
+  · simp only [hr, ite_false, show ¬ r + i < 32 by omega_arith, show r + i < 64 by omega_arith,
+      show ¬ r + (32 + i) < 64 by omega_arith, show i - (32 - r) < 32 by omega_arith,
+      decide_true, decide_false, Bool.not_false, Bool.true_and, Bool.false_and, Bool.false_xor,
+      show r + i - 32 = i - (32 - r) by omega_arith]
 
-theorem bsig0_shifts (x : Word) :
-    bsig0 x = x >>> 2 ^^^ x <<< 30 ^^^ x >>> 13 ^^^ x <<< 19 ^^^ x >>> 22 ^^^ x <<< 10 := by
-  simp only [bsig0, ← rotr_shifts x (show 2 < 32 by decide), ← rotr_shifts x (show 13 < 32 by decide),
-    ← rotr_shifts x (show 22 < 32 by decide), Nat.reduceSub, BitVec.xor_assoc]
+/-- A `Σ` as `bsig` computes it. -/
+theorem bsig_halves (x : BitVec 64) {r₁ r₂ r₃ : Nat} (h₁ : 0 < r₁ ∧ r₁ < 32) (h₂ : 0 < r₂ ∧ r₂ < 32)
+    (h₃ : 0 < r₃ ∧ r₃ < 32) :
+    (((x <<< 32 >>> r₁ ^^^ x <<< 32 >>> r₂ ^^^ x <<< 32 >>> r₃) >>> 32) ^^^
+      (x <<< 32 >>> r₁ ^^^ x <<< 32 >>> r₂ ^^^ x <<< 32 >>> r₃)).setWidth 32 =
+    (x.setWidth 32).rotateRight r₁ ^^^ (x.setWidth 32).rotateRight r₂ ^^^ (x.setWidth 32).rotateRight r₃ := by
+  rw [← rotr_halves x h₁.1 h₁.2, ← rotr_halves x h₂.1 h₂.2, ← rotr_halves x h₃.1 h₃.2]
+  simp only [BitVec.ushiftRight_xor_distrib, lo32_xor]
+  ac_rfl
 
-theorem ssig1_shifts (x : Word) :
-    ssig1 x = x >>> 17 ^^^ x <<< 15 ^^^ x >>> 19 ^^^ x <<< 13 ^^^ x >>> 10 := by
-  simp only [ssig1, ← rotr_shifts x (show 17 < 32 by decide), ← rotr_shifts x (show 19 < 32 by decide),
-    Nat.reduceSub, BitVec.xor_assoc]
+/-- A rotation of a word that is in both words of a register. -/
+theorem rotr_twice (x : BitVec 32) {r : Nat} (h : r < 32) :
+    ((x.setWidth 64 <<< 32 ||| x.setWidth 64) >>> r).setWidth 32 = x.rotateRight r := by
+  apply BitVec.eq_of_getLsbD_eq
+  intro i hi
+  rw [BitVec.getLsbD_rotateRight]
+  simp only [BitVec.getLsbD_or, BitVec.getLsbD_setWidth, BitVec.getLsbD_ushiftRight,
+    BitVec.getLsbD_shiftLeft, hi, decide_true, Bool.true_and, Nat.mod_eq_of_lt h,
+    show r + i < 64 by omega_arith]
+  by_cases hr : i < 32 - r
+  · simp only [hr, ite_true, show r + i < 32 by omega_arith, decide_true, Bool.not_true, Bool.false_and,
+      Bool.false_or]
+  · simp only [hr, ite_false, show ¬ r + i < 32 by omega_arith,
+      show i - (32 - r) < 64 by omega_arith, decide_true, decide_false, Bool.not_false, Bool.true_and,
+      BitVec.getLsbD_of_ge x (r + i) (by omega_arith), Bool.or_false,
+      show r + i - 32 = i - (32 - r) by omega_arith]
 
-theorem ssig0_shifts (x : Word) :
-    ssig0 x = x >>> 7 ^^^ x <<< 25 ^^^ x >>> 18 ^^^ x <<< 14 ^^^ x >>> 3 := by
-  simp only [ssig0, ← rotr_shifts x (show 7 < 32 by decide), ← rotr_shifts x (show 18 < 32 by decide),
-    Nat.reduceSub, BitVec.xor_assoc]
+/-- A shift of a zero-extended word. -/
+theorem shr_ext (x : BitVec 32) (r : Nat) : (x.setWidth 64 >>> r).setWidth 32 = x >>> r := by
+  apply BitVec.eq_of_getLsbD_eq
+  intro i hi
+  simp only [BitVec.getLsbD_setWidth, BitVec.getLsbD_ushiftRight, hi, decide_true, Bool.true_and]
+  by_cases h : r + i < 64
+  · simp only [h, decide_true, Bool.true_and]
+  · simp only [h, decide_false, Bool.false_and, BitVec.getLsbD_of_ge x (r + i) (by omega_arith)]
 
 /-! ## One round -/
 
@@ -90,8 +125,8 @@ theorem round_ok (t : Nat) (s : State) (v : HashValue) (w : Word)
   have hs' := (List.reverse_perm _).nodup_iff.mpr hs
   have hdj := (List.nodup_append.mp (round_nodup t)).2.2
   -- The registers the round writes are not in `pubRegs`.
-  have hpw : ∀ r ∈ pubRegs, r ≠ var t 3 ∧ r ≠ var t 7 ∧ r ≠ T1 ∧ r ≠ T2 :=
-    fun r hr => ⟨fun e => hdj _ (by simp) r hr e.symm, fun e => hdj _ (by simp) r hr e.symm,
+  have hpw : ∀ r ∈ pubRegs, r ≠ var t 3 ∧ r ≠ var t 7 ∧ r ≠ T1 ∧ r ≠ T2 ∧ r ≠ T3 :=
+    fun r hr => ⟨fun e => hdj _ (by simp) r hr e.symm, fun e => hdj _ (by simp) r hr e.symm, fun e => hdj _ (by simp) r hr e.symm,
       fun e => hdj _ (by simp) r hr e.symm, fun e => hdj _ (by simp) r hr e.symm⟩
   clear hdj
   simp only [Vars, var_succ_zero, var_succ t _ (show 0 < 7 by omega_arith),
@@ -100,7 +135,7 @@ theorem round_ok (t : Nat) (s : State) (v : HashValue) (w : Word)
     var_succ t _ (show 5 < 7 by omega_arith), var_succ t _ (show 6 < 7 by omega_arith)] at hv ⊢
   obtain ⟨h0, h1, h2, h3, h4, h5, h6, h7⟩ := hv
   apply WP.of_runBlock
-  simp only [Impl.Sha256.RISCV64.round, bsig, xorRotr, li32, List.cons_append, List.nil_append]
+  simp only [Impl.Sha256.RISCV64.round, bsig, bsigShifts, bsigXors, bsigFold, li32, List.cons_append, List.nil_append]
   generalize var t 0 = a at *
   generalize var t 1 = b at *
   generalize var t 2 = c at *
@@ -109,30 +144,31 @@ theorem round_ok (t : Nat) (s : State) (v : HashValue) (w : Word)
   generalize var t 5 = f at *
   generalize var t 6 = g at *
   generalize var t 7 = h at *
-  simp only [T0, T1, T2] at hpw hw ⊢
+  simp only [T0, T1, T2, T3] at hpw hw ⊢
   simp only [T0, T1, T2, T3, List.nodup_cons, List.mem_cons, List.not_mem_nil,
     List.reverse_cons, List.reverse_nil, List.nil_append, List.cons_append, or_false, not_or,
     List.nodup_nil, and_true] at hs hs'
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec_add, exec_logic,
-    exec_shift_w (show 6 < 32 by decide), exec_shift_w (show 32 - 6 < 32 by decide),
-    exec_shift_w (show 11 < 32 by decide), exec_shift_w (show 32 - 11 < 32 by decide),
-    exec_shift_w (show 25 < 32 by decide), exec_shift_w (show 32 - 25 < 32 by decide),
-    exec_shift_w (show 2 < 32 by decide), exec_shift_w (show 32 - 2 < 32 by decide),
-    exec_shift_w (show 13 < 32 by decide), exec_shift_w (show 32 - 13 < 32 by decide),
-    exec_shift_w (show 22 < 32 by decide), exec_shift_w (show 32 - 22 < 32 by decide),
+    exec_shift_d (show 32 < 64 by decide), exec_shift_d (show 6 < 64 by decide),
+    exec_shift_d (show 11 < 64 by decide), exec_shift_d (show 25 < 64 by decide),
+    exec_shift_d (show 2 < 64 by decide), exec_shift_d (show 13 < 64 by decide),
+    exec_shift_d (show 22 < 64 by decide),
     exec_lui, exec_addiw_lo12, RegUpd.gpr_write, RegUpd.mem_write, RegUpd.rd_write,
     RegUpd.wr_write, hs, hs', Option.some.injEq, exists_eq_left', ↓reduceIte, true_and]
   refine ⟨⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, fun r hr => ?_⟩
   rotate_right
-  · obtain ⟨n3, n7, n17, n18⟩ := hpw r hr
-    simp only [n3, n7, n17, n18, ↓reduceIte]
+  · obtain ⟨n3, n7, n17, n18, n19⟩ := hpw r hr
+    simp only [n3, n7, n17, n18, n19, ↓reduceIte]
   all_goals
-    simp only [lo32_add, lo32_xor, lo32_and, lo32_or, lo32_sext, li32_val, h0, h1, h2, h3, h4, h5,
+    simp only [lo32_add, bsig_halves _ (show 0 < 6 ∧ 6 < 32 by decide) (show 0 < 11 ∧ 11 < 32 by decide)
+        (show 0 < 25 ∧ 25 < 32 by decide), bsig_halves _ (show 0 < 2 ∧ 2 < 32 by decide)
+        (show 0 < 13 ∧ 13 < 32 by decide) (show 0 < 22 ∧ 22 < 32 by decide), ↓lo32_add, lo32_xor,
+      lo32_and, lo32_or, lo32_sext, li32_val, h0, h1, h2, h3, h4, h5,
       h6, h7, hw]
   all_goals
-    simp (config := {failIfUnchanged := false}) only [roundKW, bsig1_shifts, ch_eq, bsig0_shifts,
+    simp (config := {failIfUnchanged := false}) only [roundKW, bsig1, ch_eq, bsig0,
       maj_eq, Vector.getElem_mk, List.getElem_toArray, List.getElem_cons_zero,
-      List.getElem_cons_succ, Nat.reduceSub] <;>
+      List.getElem_cons_succ] <;>
     simp (config := {failIfUnchanged := false}) only [BitVec.add_assoc]
 
 /-! ## The message schedule -/
@@ -207,22 +243,24 @@ theorem schedule_ok (t : Nat) (s : State) (M : Block) (bp scr : Addr)
     rw [show slot (t - 7) = slot (t + 9) by simp only [slot]; omega_arith] at e7
     rw [show slot (t - 15) = slot (t + 1) by simp only [slot]; omega_arith] at e15
     rw [show slot (t - 16) = slot t by simp only [slot]; omega_arith] at e16
-    simp only [Impl.Sha256.RISCV64.schedule, ht, ite_false, ssig, xorRotr, T0, T1, T2, T3,
+    simp only [Impl.Sha256.RISCV64.schedule, ht, ite_false, ssig, T0, T1, T2, T3,
       List.cons_append, List.nil_append]
     apply WP.of_runBlock
     simp only [runBlock_cons, runStep_some, runBlock_nil, exec_add, exec_logic,
-      exec_shift_w (show 17 < 32 by decide), exec_shift_w (show 32 - 17 < 32 by decide),
-      exec_shift_w (show 19 < 32 by decide), exec_shift_w (show 32 - 19 < 32 by decide),
-      exec_shift_w (show 10 < 32 by decide), exec_shift_w (show 7 < 32 by decide),
-      exec_shift_w (show 32 - 7 < 32 by decide), exec_shift_w (show 18 < 32 by decide),
-      exec_shift_w (show 32 - 18 < 32 by decide), exec_shift_w (show 3 < 32 by decide),
+      exec_shift_d (show 32 < 64 by decide), exec_shift_d (show 17 < 64 by decide),
+      exec_shift_d (show 19 < 64 by decide), exec_shift_d (show 10 < 64 by decide),
+      exec_shift_d (show 7 < 64 by decide), exec_shift_d (show 18 < 64 by decide),
+      exec_shift_d (show 3 < 64 by decide),
       RegUpd.gpr_write, RegUpd.mem_write, RegUpd.rd_write, RegUpd.wr_write, reduceCtorEq,
       ↓reduceIte, hr3, exec_lw_slot, exec_sw_slot, hal, hin, hout, Option.some.injEq,
       exists_eq_left']
-    simp only [lo32_add, lo32_xor, lo32_sext, lo32_ext, e2, e7, e15, e16]
+    simp only [lo32_add, lo32_xor, lo32_ext, rotr_twice _ (show 17 < 32 by decide),
+      rotr_twice _ (show 19 < 32 by decide), rotr_twice _ (show 7 < 32 by decide),
+      rotr_twice _ (show 18 < 32 by decide), shr_ext, e2, e7, e15, e16]
     have hW := W_ge M (t := t) (by omega_arith)
-    rw [ssig1_shifts, ssig0_shifts] at hW
-    simp only [Nat.reduceSub, ← hW, true_and]
+    rw [ssig1, ssig0] at hW
+    simp only [BitVec.xor_comm (BitVec.rotateRight _ 17), BitVec.xor_comm (BitVec.rotateRight _ 7)] at hW
+    simp only [← hW, true_and]
     intro r h0 h1 h2 h3
     simp only [h0, h1, h2, h3, ↓reduceIte]
 
