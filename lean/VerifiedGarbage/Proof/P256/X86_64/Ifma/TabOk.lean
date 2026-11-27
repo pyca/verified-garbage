@@ -506,7 +506,7 @@ theorem zaddu_s6 {s₀ : State} (hc : Ctx par s₀) (hB : EnvOK s₀ (bndsOf (za
 theorem zadduPieces_flat : zadduPieces.flatten = zadduPieces.getD 0 [] ++ (zadduPieces.getD 1 [] ++
     (zadduPieces.getD 2 [] ++ (zadduPieces.getD 3 [] ++ (zadduPieces.getD 4 [] ++ (zadduPieces.getD 5 [] ++
     zadduPieces.getD 6 []))))) := by
-  decide +kernel
+  kernel_rfl
 
 /-- The next entry: from `2 Q` and the entry before with one `Z`, their sum's entry, and the two with
 the sum's `Z`. -/
@@ -822,7 +822,7 @@ theorem dblu_s4 {s₀ : State} (hc : Ctx par s₀) (hB : EnvOK s₀ (bndsOf (dbl
 
 theorem dbluPieces_flat : dbluPieces.flatten = dbluPieces.getD 0 [] ++ (dbluPieces.getD 1 [] ++
     (dbluPieces.getD 2 [] ++ (dbluPieces.getD 3 [] ++ dbluPieces.getD 4 []))) := by
-  decide +kernel
+  kernel_rfl
 
 /-- `2 Q` and `Q` with one `Z`, from `Q`'s entry in `ymm0`–`ymm4`. -/
 theorem dblu_ok {s₀ : State} (hc : Ctx par s₀) (hB : EnvOK s₀ (bndsOf regs10 entBT)) {p : DP (Fin pN)}
@@ -841,7 +841,8 @@ theorem dblu_ok {s₀ : State} (hc : Ctx par s₀) (hB : EnvOK s₀ (bndsOf regs
 
 /-! ### `Q`'s entry -/
 
-theorem tabGPieces_flat : tabGPieces.flatten = tabGPieces.getD 0 [] := by decide +kernel
+theorem tabGPieces_flat : tabGPieces.flatten = tabGPieces.getD 0 [] := by
+  kernel_rfl
 
 /-- `tabG`'s first vector. -/
 abbrev tabGA : F5 T :=

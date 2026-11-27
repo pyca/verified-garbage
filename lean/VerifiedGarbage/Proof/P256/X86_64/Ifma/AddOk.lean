@@ -500,7 +500,7 @@ theorem add_s6 {s₀ : State} (hc : Ctx par s₀) (hB : EnvOK s₀ (bndsOf (addL
 
 theorem addPieces_flat : addPieces.flatten = addPieces.getD 0 [] ++ (addPieces.getD 1 [] ++ (addPieces.getD 2 [] ++
     (addPieces.getD 3 [] ++ (addPieces.getD 4 [] ++ (addPieces.getD 5 [] ++ addPieces.getD 6 []))))) := by
-  decide +kernel
+  kernel_rfl
 
 /-- The addition: the accumulator's vectors stand for the sum's triple. -/
 theorem add_ok {s₀ : State} (hc : Ctx par s₀) (hB : EnvOK s₀ addB) {p : AP (Fin pN)}

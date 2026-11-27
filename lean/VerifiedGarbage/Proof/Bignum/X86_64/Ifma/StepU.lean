@@ -4,6 +4,7 @@ import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Block
 public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Terms
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Bignum.Amm52N
+import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-! ### `Bignum.X86_64.Ifma.LaneU`, which this module and modules that import it used -/
 
@@ -18,7 +19,7 @@ section
 
 For `CrtIfma.ammStepU l p i`, lane `p`'s step `i` of `ammCoreU`, the terms
 `ESym.run` computes, written for any `p`, `i` and `l` (`expRegU`), and checked
-against the run of each step of the layout that uses it (`checkStepU`).
+against the run of each step of the layout that uses it (`StepsUOk`).
 
 At the step's start, role 0 holds the low halves of `a₀ b_i` already, and
 the registers of the step's parity hold `b_i` (`bU`) and `u_i` (`uU`). Role 0
@@ -94,28 +95,21 @@ def expRegU (p i r : Nat) : T :=
   else if r = upnN l p ∧ ¬ l.S ≤ i + 1 then pnU l p i
   else .reg r
 
-/-- The run of lane `p`'s step `i` gives `expRegU p i` in the 32 registers,
-and loads `rax` but in the last step. -/
-noncomputable def checkStepU (p i : Nat) : Bool :=
-  match ESym.init.run (limU l) (ammStepU l p i) with
-  | some σ => (List.range 32).all (fun r => T.beqK (σ.reg r) (expRegU l p i r)) &&
-      (if l.S ≤ i + 1 then G.beq σ.rax (.gpr .rax) else G.beq σ.rax (.ld .r9 (l.D * p + l.off (i + 1))))
-  | none => false
+/-- The runs of the lanes' steps give `expRegU p i` in the 32 registers,
+and load `rax` but in the last step. -/
+abbrev StepsUOk : Prop :=
+  ((List.range l.nl).map fun p => (List.range l.S).map fun i =>
+    ESym.runK (limU l) (ammStepU l p i) (List.range 32)) =
+  (List.range l.nl).map fun p => (List.range l.S).map fun i =>
+    some ((List.range 32).map (expRegU l p i), if l.S ≤ i + 1 then .gpr .rax else .ld .r9 (l.D * p + l.off (i + 1)))
 
-theorem checkStepU_2048 : ∀ p < lay2048.nl, ∀ i < lay2048.S, checkStepU lay2048 p i = true := by
-  decide +kernel
+theorem checkStepU_2048 : StepsUOk lay2048 := by delta StepsUOk; kernel_rfl
 
-theorem checkStepU_p2048 : ∀ p < VG.Impl.Rsa.X86_64.PubIfma.pay2048.nl,
-    ∀ i < VG.Impl.Rsa.X86_64.PubIfma.pay2048.S, checkStepU VG.Impl.Rsa.X86_64.PubIfma.pay2048 p i = true := by
-  decide +kernel
+theorem checkStepU_p2048 : StepsUOk VG.Impl.Rsa.X86_64.PubIfma.pay2048 := by delta StepsUOk; kernel_rfl
 
-theorem checkStepU_p1024 : ∀ p < VG.Impl.Rsa.X86_64.PubIfma.pay1024.nl,
-    ∀ i < VG.Impl.Rsa.X86_64.PubIfma.pay1024.S, checkStepU VG.Impl.Rsa.X86_64.PubIfma.pay1024 p i = true := by
-  decide +kernel
+theorem checkStepU_p1024 : StepsUOk VG.Impl.Rsa.X86_64.PubIfma.pay1024 := by delta StepsUOk; kernel_rfl
 
-theorem checkStepU_p1536 : ∀ p < VG.Impl.Rsa.X86_64.PubIfma.pay1536.nl,
-    ∀ i < VG.Impl.Rsa.X86_64.PubIfma.pay1536.S, checkStepU VG.Impl.Rsa.X86_64.PubIfma.pay1536 p i = true := by
-  decide +kernel
+theorem checkStepU_p1536 : StepsUOk VG.Impl.Rsa.X86_64.PubIfma.pay1536 := by delta StepsUOk; kernel_rfl
 
 open VG.Impl.Rsa.X86_64.PubIfma (pay1024 pay1536 pay2048) in
 /-- The layouts whose multiplication has the look-ahead (`ammMul`): 2048
@@ -149,7 +143,7 @@ theorem UOk.regs (hu : UOk l) :
   · exact ⟨.inr (.inr (.inr (.inr (.inr rfl)))), by decide⟩
 
 variable {l} in
-theorem UOk.checkStep (hu : UOk l) : ∀ p < l.nl, ∀ i < l.S, checkStepU l p i = true := by
+theorem UOk.checkStep (hu : UOk l) : StepsUOk l := by
   rcases hu with rfl | rfl | rfl | rfl
   · exact checkStepU_2048
   · exact checkStepU_p2048
@@ -161,16 +155,10 @@ theorem run_ammStepU (hu : UOk l) {p i : Nat} (hp : p < l.nl) (hi : i < l.S) :
     ∃ σ, ESym.init.run (limU l) (ammStepU l p i) = some σ ∧
       (∀ r < 32, σ.reg r = expRegU l p i r) ∧
       σ.rax = (if l.S ≤ i + 1 then .gpr .rax else .ld .r9 (l.D * p + l.off (i + 1))) := by
-  have h := hu.checkStep p hp i hi
-  unfold checkStepU at h
-  split at h
-  · rename_i σ hσ
-    refine ⟨σ, hσ, fun r hr => ?_, ?_⟩
-    · simp only [Bool.and_eq_true, List.all_eq_true, List.mem_range] at h
-      exact T.eq_of_beqK (h.1 r hr)
-    · simp only [Bool.and_eq_true] at h
-      split at h <;> rename_i hl <;> simp only [hl, ite_true, ite_false] <;> exact G.eq_of_beq h.2
-  · cases h
+  have h := List.map_inj_left.mp hu.checkStep p (List.mem_range.mpr hp)
+  obtain ⟨σ, hσ, h, hx⟩ := ESym.runK_ok (fun _ => List.mem_range.mp)
+    (List.map_inj_left.mp h i (List.mem_range.mpr hi))
+  exact ⟨σ, hσ, fun r hr => List.map_inj_left.mp h r (List.mem_range.mpr hr), hx⟩
 
 end VG.Proof.Bignum.X86_64.Ifma
 
@@ -433,21 +421,18 @@ def expStartU (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (p r : Nat) : T :=
   else if r = uuN l p 0 then .bc (k0U l p)
   else .reg r
 
-noncomputable def checkStartU (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (p : Nat) : Bool :=
-  match ESym.init.run (limU l) (ammStartU l p) with
-  | some σ => (List.range 32).all (fun r => T.beqK (σ.reg r) (expStartU l p r))
-  | none => false
+/-- The runs of the lanes' starts give `expStartU p` in the 32 registers. -/
+abbrev StartsUOk (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) : Prop :=
+  ((List.range l.nl).map fun p => (ESym.runK (limU l) (ammStartU l p) (List.range 32)).map (·.1)) =
+  (List.range l.nl).map fun p => some ((List.range 32).map (expStartU l p))
 
-theorem checkStartU_2048 : ∀ p < lay2048.nl, checkStartU lay2048 p = true := by decide +kernel
+theorem checkStartU_2048 : StartsUOk lay2048 := by delta StartsUOk; kernel_rfl
 
-theorem checkStartU_p2048 : ∀ p < VG.Impl.Rsa.X86_64.PubIfma.pay2048.nl,
-    checkStartU VG.Impl.Rsa.X86_64.PubIfma.pay2048 p = true := by decide +kernel
-theorem checkStartU_p1024 : ∀ p < VG.Impl.Rsa.X86_64.PubIfma.pay1024.nl,
-    checkStartU VG.Impl.Rsa.X86_64.PubIfma.pay1024 p = true := by decide +kernel
-theorem checkStartU_p1536 : ∀ p < VG.Impl.Rsa.X86_64.PubIfma.pay1536.nl,
-    checkStartU VG.Impl.Rsa.X86_64.PubIfma.pay1536 p = true := by decide +kernel
+theorem checkStartU_p2048 : StartsUOk VG.Impl.Rsa.X86_64.PubIfma.pay2048 := by delta StartsUOk; kernel_rfl
+theorem checkStartU_p1024 : StartsUOk VG.Impl.Rsa.X86_64.PubIfma.pay1024 := by delta StartsUOk; kernel_rfl
+theorem checkStartU_p1536 : StartsUOk VG.Impl.Rsa.X86_64.PubIfma.pay1536 := by delta StartsUOk; kernel_rfl
 
-theorem UOk.checkStart (hu : UOk l) : ∀ p < l.nl, checkStartU l p = true := by
+theorem UOk.checkStart (hu : UOk l) : StartsUOk l := by
   rcases hu with rfl | rfl | rfl | rfl
   · exact checkStartU_2048
   · exact checkStartU_p2048
@@ -456,14 +441,10 @@ theorem UOk.checkStart (hu : UOk l) : ∀ p < l.nl, checkStartU l p = true := by
 
 theorem run_ammStartU (hu : UOk l) {p : Nat} (hp : p < l.nl) :
     ∃ σ, ESym.init.run (limU l) (ammStartU l p) = some σ ∧ ∀ r < 32, σ.reg r = expStartU l p r := by
-  have h := hu.checkStart p hp
-  unfold checkStartU at h
-  split at h
-  · rename_i σ hσ
-    refine ⟨σ, hσ, fun r hr => ?_⟩
-    simp only [List.all_eq_true, List.mem_range] at h
-    exact T.eq_of_beqK (h r hr)
-  · cases h
+  have h := List.map_inj_left.mp hu.checkStart p (List.mem_range.mpr hp)
+  obtain ⟨⟨_, _⟩, hk, rfl⟩ := Option.map_eq_some_iff.mp h
+  obtain ⟨σ, hσ, h, -⟩ := ESym.runK_ok (fun _ => List.mem_range.mp) hk
+  exact ⟨σ, hσ, fun r hr => List.map_inj_left.mp h r (List.mem_range.mpr hr)⟩
 
 /-- Lane `p`'s first role and the look-ahead's registers of the start. -/
 theorem regsS {p : Nat} (hp : p < l.nl) :

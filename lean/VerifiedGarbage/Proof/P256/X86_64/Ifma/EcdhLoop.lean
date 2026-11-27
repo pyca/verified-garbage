@@ -99,15 +99,17 @@ def slots20 : List Loc := (List.range 20).map .slot
 /-- Field vector `j` of the first twenty slots. -/
 abbrev slv (j : Nat) : F5 T := (leaves slots20).getD j zero5
 
-theorem sv_chk : chkSegW 640 saveAcc stT stSeg slots20 = true := by decide +kernel
+theorem sv_chk : chkSegW 640 saveAcc stT stSeg slots20 := by segw_rfl
 
-theorem sv_iv : ivWithin stB (segT stSeg stT) stBT = true := by decide +kernel
+theorem sv_iv : ivWithin stB (segT stSeg stT) stBT = true :=
+  ivWithin_of (by decide +kernel)
 
 theorem sv_ov : ovOk stBT stBT [] = true := by decide +kernel
 
-theorem ld_chk : chkSegW 640 loadAcc (leaves slots20) stSeg regs20 = true := by decide +kernel
+theorem ld_chk : chkSegW 640 loadAcc (leaves slots20) stSeg regs20 := by segw_rfl
 
-theorem ld_iv : ivWithin (bndsOf slots20 stBT) (segT stSeg (leaves slots20)) stBT = true := by decide +kernel
+theorem ld_iv : ivWithin (bndsOf slots20 stBT) (segT stSeg (leaves slots20)) stBT = true :=
+  ivWithin_of (by decide +kernel)
 
 /-- What is known of the accumulator goes with its limbs. -/
 theorem AccOk.same {E E' : Env} {xs ys : List (F5 T)} (h : Same stBT E' ys E xs) {xn un z : Fin pN}

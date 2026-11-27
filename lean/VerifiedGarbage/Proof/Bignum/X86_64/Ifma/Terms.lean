@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.ESym
 public import VerifiedGarbage.Impl.Rsa.X86_64.PubIfma
+import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
@@ -9,7 +10,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 
 For `CrtIfma.ammStep l i`, the terms `ESym.run` computes for
 step `i` of a block, written for any `i` and `l` (`expReg`), and checked
-against the run for each `i < R` of each layout (`checkStep`).
+against the run for each `i < R` of each layout (`StepsOk`).
 
 For each lane `p` (below `nl`, at `D p` from each base): `bT` the limb of the
 second operand, broadcast; `a1T` the accumulator of role `k` plus the low
@@ -69,124 +70,10 @@ def expReg (i r : Nat) : T :=
   else if r < l.nl * l.R + 2 * l.nl then uT l (r - l.nl * l.R - l.nl) i
   else if r = tN l then cT l (l.nl - 1) i else .reg r
 
-/-! Equality of terms as the kernel evaluates it: a structural comparison,
-rather than the derived `DecidableEq`, whose evaluation was most of
-`checkStep`'s. -/
-
-def G.beq : G → G → Bool
-  | .gpr a, .gpr b => decide (a = b)
-  | .ld a d, .ld b e => decide (a = b) && Nat.beq d e
-  | _, _ => false
-
-def T.beq : T → T → Bool
-  | .reg a, .reg b => Nat.beq a b
-  | .zero, .zero => true
-  | .lane0 g, .lane0 h => G.beq g h
-  | .bc a, .bc b => T.beq a b
-  | .ld a d, .ld b e => decide (a = b) && Nat.beq d e
-  | .mad h c a b, .mad h' c' a' b' => (h == h') && T.beq c c' && T.beq a a' && T.beq b b'
-  | .add a b, .add a' b' => T.beq a a' && T.beq b b'
-  | .shr a n, .shr a' n' => T.beq a a' && Nat.beq n n'
-  | .low a, .low b => T.beq a b
-  | .align a b n, .align a' b' n' => T.beq a a' && T.beq b b' && Nat.beq n n'
-  | .and a b, .and a' b' => T.beq a a' && T.beq b b'
-  | .or a b, .or a' b' => T.beq a a' && T.beq b b'
-  | _, _ => false
-
-theorem G.eq_of_beq : ∀ {a b : G}, G.beq a b = true → a = b := by
-  intro a b h
-  cases a <;> cases b <;> simp_all [G.beq, Nat.beq_eq]
-
-theorem T.eq_of_beq : ∀ {a b : T}, T.beq a b = true → a = b := by
-  intro a
-  induction a with
-  | reg r => intro b h; cases b <;> simp_all [T.beq, Nat.beq_eq]
-  | zero => intro b h; cases b <;> simp_all [T.beq]
-  | lane0 g => intro b h; cases b <;> simp only [T.beq, Bool.false_eq_true] at h; exact congrArg _ (G.eq_of_beq h)
-  | bc a iha => intro b h; cases b <;> simp only [T.beq, Bool.false_eq_true] at h; rw [iha h]
-  | ld r d => intro b h; cases b <;> simp_all [T.beq, Nat.beq_eq]
-  | mad x c a b ihc iha ihb =>
-    intro t h; cases t <;> simp only [T.beq, Bool.false_eq_true, Bool.and_eq_true, beq_iff_eq] at h
-    obtain ⟨⟨⟨rfl, h1⟩, h2⟩, h3⟩ := h; rw [ihc h1, iha h2, ihb h3]
-  | add a b iha ihb =>
-    intro t h; cases t <;> simp only [T.beq, Bool.false_eq_true, Bool.and_eq_true] at h
-    rw [iha h.1, ihb h.2]
-  | shr a n iha =>
-    intro t h; cases t <;> simp only [T.beq, Bool.false_eq_true, Bool.and_eq_true, Nat.beq_eq] at h
-    rw [iha h.1, h.2]
-  | low a iha => intro b h; cases b <;> simp only [T.beq, Bool.false_eq_true] at h; rw [iha h]
-  | align a b n iha ihb =>
-    intro t h; cases t <;> simp only [T.beq, Bool.false_eq_true, Bool.and_eq_true, Nat.beq_eq] at h
-    rw [iha h.1.1, ihb h.1.2, h.2]
-  | and a b iha ihb =>
-    intro t h; cases t <;> simp only [T.beq, Bool.false_eq_true, Bool.and_eq_true] at h
-    rw [iha h.1, ihb h.2]
-  | or a b iha ihb =>
-    intro t h; cases t <;> simp only [T.beq, Bool.false_eq_true, Bool.and_eq_true] at h
-    rw [iha h.1, ihb h.2]
-/-- `T.beq` by the recursor, which the kernel reduces in one step at each
-node, rather than through `T.beq`'s `brecOn` (`checkStep`). -/
-noncomputable def T.beqK (a : T) : T → Bool :=
-  T.rec (motive := fun _ => T → Bool)
-    (fun r b => T.casesOn (motive := fun _ => Bool) b (fun r' => Nat.beq r r') false (fun _ => false) (fun _ => false) (fun _ _ => false) (fun _ _ _ _ => false) (fun _ _ => false) (fun _ _ => false) (fun _ => false) (fun _ _ _ => false) (fun _ _ => false) (fun _ _ => false))
-    (fun b => T.casesOn (motive := fun _ => Bool) b (fun _ => false) true (fun _ => false) (fun _ => false) (fun _ _ => false) (fun _ _ _ _ => false) (fun _ _ => false) (fun _ _ => false) (fun _ => false) (fun _ _ _ => false) (fun _ _ => false) (fun _ _ => false))
-    (fun g b => T.casesOn (motive := fun _ => Bool) b (fun _ => false) false (fun g' => G.beq g g') (fun _ => false) (fun _ _ => false) (fun _ _ _ _ => false) (fun _ _ => false) (fun _ _ => false) (fun _ => false) (fun _ _ _ => false) (fun _ _ => false) (fun _ _ => false))
-    (fun _ ih b => T.casesOn (motive := fun _ => Bool) b (fun _ => false) false (fun _ => false) (fun a' => ih a') (fun _ _ => false) (fun _ _ _ _ => false) (fun _ _ => false) (fun _ _ => false) (fun _ => false) (fun _ _ _ => false) (fun _ _ => false) (fun _ _ => false))
-    (fun r d b => T.casesOn (motive := fun _ => Bool) b (fun _ => false) false (fun _ => false) (fun _ => false) (fun r' d' => decide (r = r') && Nat.beq d d') (fun _ _ _ _ => false) (fun _ _ => false) (fun _ _ => false) (fun _ => false) (fun _ _ _ => false) (fun _ _ => false) (fun _ _ => false))
-    (fun h _ _ _ ihc iha ihb b => T.casesOn (motive := fun _ => Bool) b (fun _ => false) false (fun _ => false) (fun _ => false) (fun _ _ => false) (fun h' c' a' b' => (h == h') && ihc c' && iha a' && ihb b') (fun _ _ => false) (fun _ _ => false) (fun _ => false) (fun _ _ _ => false) (fun _ _ => false) (fun _ _ => false))
-    (fun _ _ iha ihb b => T.casesOn (motive := fun _ => Bool) b (fun _ => false) false (fun _ => false) (fun _ => false) (fun _ _ => false) (fun _ _ _ _ => false) (fun a' b' => iha a' && ihb b') (fun _ _ => false) (fun _ => false) (fun _ _ _ => false) (fun _ _ => false) (fun _ _ => false))
-    (fun _ n iha b => T.casesOn (motive := fun _ => Bool) b (fun _ => false) false (fun _ => false) (fun _ => false) (fun _ _ => false) (fun _ _ _ _ => false) (fun _ _ => false) (fun a' n' => iha a' && Nat.beq n n') (fun _ => false) (fun _ _ _ => false) (fun _ _ => false) (fun _ _ => false))
-    (fun _ iha b => T.casesOn (motive := fun _ => Bool) b (fun _ => false) false (fun _ => false) (fun _ => false) (fun _ _ => false) (fun _ _ _ _ => false) (fun _ _ => false) (fun _ _ => false) (fun a' => iha a') (fun _ _ _ => false) (fun _ _ => false) (fun _ _ => false))
-    (fun _ _ n iha ihb b => T.casesOn (motive := fun _ => Bool) b (fun _ => false) false (fun _ => false) (fun _ => false) (fun _ _ => false) (fun _ _ _ _ => false) (fun _ _ => false) (fun _ _ => false) (fun _ => false) (fun a' b' n' => iha a' && ihb b' && Nat.beq n n') (fun _ _ => false) (fun _ _ => false))
-    (fun _ _ iha ihb b => T.casesOn (motive := fun _ => Bool) b (fun _ => false) false (fun _ => false) (fun _ => false) (fun _ _ => false) (fun _ _ _ _ => false) (fun _ _ => false) (fun _ _ => false) (fun _ => false) (fun _ _ _ => false) (fun a' b' => iha a' && ihb b') (fun _ _ => false))
-    (fun _ _ iha ihb b => T.casesOn (motive := fun _ => Bool) b (fun _ => false) false (fun _ => false) (fun _ => false) (fun _ _ => false) (fun _ _ _ _ => false) (fun _ _ => false) (fun _ _ => false) (fun _ => false) (fun _ _ _ => false) (fun _ _ => false) (fun a' b' => iha a' && ihb b'))
-    a
-
-theorem T.beqK_eq : ∀ a b : T, T.beqK a b = T.beq a b := by
-  intro a
-  induction a with
-  | reg r => intro b; cases b <;> rfl
-  | zero => intro b; cases b <;> rfl
-  | lane0 g => intro b; cases b <;> rfl
-  | bc a iha => intro b; cases b <;> first | rfl | exact iha _
-  | ld r d => intro b; cases b <;> rfl
-  | mad x c a b ihc iha ihb =>
-    intro t; cases t with
-    | mad x' c' a' b' =>
-      show ((x == x') && T.beqK c c' && T.beqK a a' && T.beqK b b') = ((x == x') && T.beq c c' && T.beq a a' && T.beq b b')
-      rw [ihc, iha, ihb]
-    | _ => rfl
-  | add a b iha ihb =>
-    intro t; cases t with
-    | add a' b' => show (T.beqK a a' && T.beqK b b') = (T.beq a a' && T.beq b b'); rw [iha, ihb]
-    | _ => rfl
-  | shr a n iha =>
-    intro t; cases t with
-    | shr a' n' => show (T.beqK a a' && Nat.beq n n') = (T.beq a a' && Nat.beq n n'); rw [iha]
-    | _ => rfl
-  | low a iha => intro b; cases b <;> first | rfl | exact iha _
-  | align a b n iha ihb =>
-    intro t; cases t with
-    | align a' b' n' =>
-      show (T.beqK a a' && T.beqK b b' && Nat.beq n n') = (T.beq a a' && T.beq b b' && Nat.beq n n')
-      rw [iha, ihb]
-    | _ => rfl
-  | and a b iha ihb =>
-    intro t; cases t with
-    | and a' b' => show (T.beqK a a' && T.beqK b b') = (T.beq a a' && T.beq b b'); rw [iha, ihb]
-    | _ => rfl
-  | or a b iha ihb =>
-    intro t; cases t with
-    | or a' b' => show (T.beqK a a' && T.beqK b b') = (T.beq a a' && T.beq b b'); rw [iha, ihb]
-    | _ => rfl
-
-theorem T.eq_of_beqK {a b : T} (h : T.beqK a b = true) : a = b := T.eq_of_beq (by rw [← T.beqK_eq]; exact h)
-/-- The run of step `i` gives `expReg i` in the 32 registers and loads `rax`. -/
-noncomputable def checkStep (i : Nat) : Bool :=
-  match ESym.init.run (lim l) (ammStep l i) with
-  | some σ => (List.range 32).all (fun r => T.beqK (σ.reg r) (expReg l i r)) &&
-      G.beq σ.rax (.ld .r9 (l.D * (l.nl - 1) + 32 * i))
-  | none => false
+/-- The run of the steps gives `expReg i` in the 32 registers and loads `rax`. -/
+abbrev StepsOk : Prop :=
+  ((List.range l.R).map fun i => ESym.runK (lim l) (ammStep l i) (List.range 32)) =
+    (List.range l.R).map fun i => some ((List.range 32).map (expReg l i), .ld .r9 (l.D * (l.nl - 1) + 32 * i))
 
 /-- The layouts the code runs. -/
 def LayOk (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) : Prop :=
@@ -206,10 +93,10 @@ theorem LayOf.ok {l2 l : VG.Impl.Rsa.X86_64.CrtIfma.Lay} (hl : LayOf l2 l) (h2 :
   · exact .inr (.inl rfl)
   · exact .inr (.inr (.inl rfl))
 
-theorem checkStep_2048 : ∀ i < lay2048.R, checkStep lay2048 i = true := by decide +kernel
-theorem checkStep_3072 : ∀ i < lay3072.R, checkStep lay3072 i = true := by decide +kernel
-theorem checkStep_4096 : ∀ i < lay4096.R, checkStep lay4096 i = true := by decide +kernel
-theorem checkStep_2048z : ∀ i < lay2048z.R, checkStep lay2048z i = true := by decide +kernel
+theorem checkStep_2048 : StepsOk lay2048 := by delta StepsOk; kernel_rfl
+theorem checkStep_3072 : StepsOk lay3072 := by delta StepsOk; kernel_rfl
+theorem checkStep_4096 : StepsOk lay4096 := by delta StepsOk; kernel_rfl
+theorem checkStep_2048z : StepsOk lay2048z := by delta StepsOk; kernel_rfl
 
 open VG.Impl.Rsa.X86_64.PubIfma (pay1024 pay1536 pay2048 pay3072 pay4096) in
 /-- The layouts the multiplication runs: the CRT's, the public operation's,
@@ -222,19 +109,14 @@ theorem LayOk.amm {l : VG.Impl.Rsa.X86_64.CrtIfma.Lay} (hl : LayOk l) : AmmOk l 
 /-- The CRT's layouts are among those of the multiplication. -/
 instance {l : VG.Impl.Rsa.X86_64.CrtIfma.Lay} : Coe (LayOk l) (AmmOk l) := ⟨LayOk.amm⟩
 
-theorem checkStep_p2048 : ∀ i < VG.Impl.Rsa.X86_64.PubIfma.pay2048.R,
-    checkStep VG.Impl.Rsa.X86_64.PubIfma.pay2048 i = true := by decide +kernel
-theorem checkStep_p3072 : ∀ i < VG.Impl.Rsa.X86_64.PubIfma.pay3072.R,
-    checkStep VG.Impl.Rsa.X86_64.PubIfma.pay3072 i = true := by decide +kernel
-theorem checkStep_p4096 : ∀ i < VG.Impl.Rsa.X86_64.PubIfma.pay4096.R,
-    checkStep VG.Impl.Rsa.X86_64.PubIfma.pay4096 i = true := by decide +kernel
+theorem checkStep_p2048 : StepsOk VG.Impl.Rsa.X86_64.PubIfma.pay2048 := by delta StepsOk; kernel_rfl
+theorem checkStep_p3072 : StepsOk VG.Impl.Rsa.X86_64.PubIfma.pay3072 := by delta StepsOk; kernel_rfl
+theorem checkStep_p4096 : StepsOk VG.Impl.Rsa.X86_64.PubIfma.pay4096 := by delta StepsOk; kernel_rfl
 
-theorem checkStep_p1024 : ∀ i < VG.Impl.Rsa.X86_64.PubIfma.pay1024.R,
-    checkStep VG.Impl.Rsa.X86_64.PubIfma.pay1024 i = true := by decide +kernel
-theorem checkStep_p1536 : ∀ i < VG.Impl.Rsa.X86_64.PubIfma.pay1536.R,
-    checkStep VG.Impl.Rsa.X86_64.PubIfma.pay1536 i = true := by decide +kernel
+theorem checkStep_p1024 : StepsOk VG.Impl.Rsa.X86_64.PubIfma.pay1024 := by delta StepsOk; kernel_rfl
+theorem checkStep_p1536 : StepsOk VG.Impl.Rsa.X86_64.PubIfma.pay1536 := by delta StepsOk; kernel_rfl
 
-theorem checkStep_ok {l : VG.Impl.Rsa.X86_64.CrtIfma.Lay} (hl : AmmOk l) : ∀ i < l.R, checkStep l i = true := by
+theorem checkStep_ok {l : VG.Impl.Rsa.X86_64.CrtIfma.Lay} (hl : AmmOk l) : StepsOk l := by
   rcases hl with (rfl | rfl | rfl | rfl) | rfl | rfl | rfl | rfl | rfl
   · exact checkStep_2048
   · exact checkStep_3072
@@ -248,13 +130,8 @@ theorem checkStep_ok {l : VG.Impl.Rsa.X86_64.CrtIfma.Lay} (hl : AmmOk l) : ∀ i
 
 theorem run_ammStep {l : VG.Impl.Rsa.X86_64.CrtIfma.Lay} (hl : AmmOk l) {i : Nat} (hi : i < l.R) :
     ∃ σ, ESym.init.run (lim l) (ammStep l i) = some σ ∧ ∀ r < 32, σ.reg r = expReg l i r := by
-  have h := checkStep_ok hl i hi
-  unfold checkStep at h
-  split at h
-  · rename_i σ hσ
-    refine ⟨σ, hσ, fun r hr => ?_⟩
-    simp only [Bool.and_eq_true, List.all_eq_true, List.mem_range] at h
-    exact T.eq_of_beqK (h.1 r hr)
-  · cases h
+  obtain ⟨σ, hσ, h, -⟩ := ESym.runK_ok (fun _ => List.mem_range.mp)
+    (List.map_inj_left.mp (checkStep_ok hl) i (List.mem_range.mpr hi))
+  exact ⟨σ, hσ, fun r hr => List.map_inj_left.mp h r (List.mem_range.mpr hr)⟩
 
 end VG.Proof.Bignum.X86_64.Ifma

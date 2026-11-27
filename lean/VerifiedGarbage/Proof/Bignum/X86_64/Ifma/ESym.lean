@@ -8,6 +8,7 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.Words
 public import VerifiedGarbage.Impl.Rsa.X86_64.CrtIfma
 public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 public import VerifiedGarbage.Proof.Bignum.Layout
+public import VerifiedGarbage.Proof.Framework.SymRun
 import VerifiedGarbage.Proof.Bignum.CrtFrame
 import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
 import VerifiedGarbage.Proof.Bignum.Math
@@ -1126,8 +1127,8 @@ structure ESym where
 def ESym.init : ESym := ⟨.reg, .gpr .rax⟩
 
 /-- (`Nat.beq` rather than `if r = vi d`: the kernel evaluates every lookup
-through every write, in `checkStep`, and `Nat.decEq` costs it several
-reductions more.) -/
+through every write, where it runs this, and `Nat.decEq` costs it several
+reductions more; `runK` keeps the registers in a tree instead.) -/
 def ESym.set (σ : ESym) (d : VReg) (t : T) : ESym :=
   { σ with reg := fun r => bif Nat.beq r (vi d) then t else σ.reg r }
 
@@ -1162,6 +1163,100 @@ def ESym.step (lim : Reg → Nat) (σ : ESym) : Instr → Option ESym
 def ESym.run (lim : Reg → Nat) (σ : ESym) : List Instr → Option ESym
   | [] => some σ
   | i :: is => (σ.step lim i).bind fun σ' => σ'.run lim is
+
+/-! ### For the kernel -/
+
+open VG.SymRun (Act)
+
+/-- `ESym.eop`, as an `Act`. -/
+def ESym.eact : EOp → Act T G
+  | .bin .vpxorq d a b => if a = b then .r0 (vi d) fun _ => some .zero else .bad
+  | .bin .vpaddq d a b => .r2 (vi d) (vi a) (vi b) fun _ x y => some (.add x y)
+  | .bin .vpandq d a b => .r2 (vi d) (vi a) (vi b) fun _ x y => some (.and x y)
+  | .bin .vporq d a b => .r2 (vi d) (vi a) (vi b) fun _ x y => some (.or x y)
+  | .shift .vpsrlq d a n => if n.toNat < 64 then .r1 (vi d) (vi a) fun _ x => some (.shr x n.toNat) else .bad
+  | .vpbroadcastq d a => .r1 (vi d) (vi a) fun _ x => some (.bc x)
+  | .vmovq d r => if r = .rax then .r0 (vi d) fun g => some (.lane0 g) else .bad
+  | .vmovqx d a => .r1 (vi d) (vi a) fun _ x => some (.low x)
+  | .valignq d a b n => if n.toNat < 4 then .r2 (vi d) (vi a) (vi b) fun _ x y => some (.align x y n.toNat) else .bad
+  | .vpternlogq d a b n =>
+    if n = 0xF8 then .r3 (vi d) (vi d) (vi a) (vi b) fun _ w x y => some (.or w (.and x y)) else .bad
+  | _ => .bad
+
+/-- `ESym.step`, as an `Act`. -/
+def ESym.act (lim : Reg → Nat) : Instr → Act T G
+  | .eop o => ESym.eact o
+  | .mov .rax (.mem m) => match baseOff m with
+    | none => .bad
+    | some bo => if bo.1 ≠ .rax ∧ bo.2 + 8 ≤ lim bo.1 then .s0 fun _ => some (.ld bo.1 bo.2) else .bad
+  | .evLoad d m => match baseOff m with
+    | none => .bad
+    | some bo => if bo.1 ≠ .rax ∧ bo.2 + 32 ≤ lim bo.1 then .r0 (vi d) fun _ => some (.ld bo.1 bo.2) else .bad
+  | .evMadd52Load h d a m => match baseOff m with
+    | none => .bad
+    | some bo => if bo.1 ≠ .rax ∧ bo.2 + 32 ≤ lim bo.1 then
+      .r2 (vi d) (vi d) (vi a) fun _ w x => some (.mad h w x (.ld bo.1 bo.2)) else .bad
+  | _ => .bad
+
+theorem vi_lt (r : VReg) : vi r < 32 := by
+  cases r with
+  | lo r => cases r <;> decide
+  | hi r => cases r <;> decide
+
+theorem ESym.eact_below (o : EOp) : (ESym.eact o).Below (2 ^ 5) := by
+  unfold ESym.eact
+  split <;> (try split) <;> first
+    | trivial | exact vi_lt _ | exact ⟨vi_lt _, vi_lt _⟩ | exact ⟨vi_lt _, vi_lt _, vi_lt _⟩
+    | exact ⟨vi_lt _, vi_lt _, vi_lt _, vi_lt _⟩
+
+theorem ESym.act_below (lim : Reg → Nat) (i : Instr) : (ESym.act lim i).Below (2 ^ 5) := by
+  unfold ESym.act
+  split <;> (try split) <;> (try split) <;> first
+    | trivial | exact ESym.eact_below _ | exact vi_lt _ | exact ⟨vi_lt _, vi_lt _, vi_lt _⟩
+
+theorem ESym.eop_act (g : Nat → T) (s : G) (o : EOp) :
+    (ESym.mk g s).eop o = ((ESym.eact o).app g s).map fun p => ⟨p.1, p.2⟩ := by
+  unfold ESym.eop ESym.eact
+  split <;> first | rfl | (split <;> rfl)
+
+theorem ESym.step_act (lim : Reg → Nat) (g : Nat → T) (s : G) (i : Instr) :
+    (ESym.mk g s).step lim i = ((ESym.act lim i).app g s).map fun p => ⟨p.1, p.2⟩ := by
+  unfold ESym.step ESym.act
+  split
+  · exact ESym.eop_act g s _
+  · cases baseOff _ with
+    | none => rfl
+    | some bo => simp only [Option.bind_some]; split <;> rfl
+  · cases baseOff _ with
+    | none => rfl
+    | some bo => simp only [Option.bind_some]; split <;> rfl
+  · cases baseOff _ with
+    | none => rfl
+    | some bo => simp only [Option.bind_some]; split <;> rfl
+  · rfl
+
+/-- `k t`, with `t` evaluated. -/
+noncomputable def T.seq {β : Type} (t : T) (k : T → β) : β :=
+  T.rec (motive := fun _ => (T → β) → β) (fun r k => k (.reg r)) (fun k => k .zero) (fun g k => k (.lane0 g))
+    (fun a _ k => k (.bc a)) (fun b d k => k (.ld b d)) (fun h c a b _ _ _ k => k (.mad h c a b))
+    (fun a b _ _ k => k (.add a b)) (fun a n _ k => k (.shr a n)) (fun a _ k => k (.low a))
+    (fun a b n _ _ k => k (.align a b n)) (fun a b _ _ k => k (.and a b)) (fun a b _ _ k => k (.or a b)) t k
+
+theorem T.seq_eq {β : Type} (t : T) (k : T → β) : t.seq k = k t := by cases t <;> rfl
+
+/-- The terms of the registers `L`, and of `rax`, after a block, as the kernel runs it. -/
+noncomputable def ESym.runK (lim : Reg → Nat) (is : List Instr) (L : List Nat) : Option (List T × G) :=
+  SymRun.run T.seq (ESym.act lim) is (SymRun.Tree.ofFn 5 .reg) (.gpr .rax) (SymRun.regs L)
+
+theorem ESym.runK_ok {lim : Reg → Nat} {is : List Instr} {L : List Nat} (hL : ∀ r ∈ L, r < 32) {l : List T} {g : G}
+    (h : ESym.runK lim is L = some (l, g)) :
+    ∃ σ, ESym.init.run lim is = some σ ∧ L.map σ.reg = l ∧ σ.rax = g := by
+  obtain ⟨f, s, t, e, ht, hc⟩ := SymRun.run_sound T.seq_eq (ESym.act_below lim) is (SymRun.Tree.holds_ofFn 5 T.reg) h
+  rw [SymRun.regs_eq ht hL, Option.some.injEq, Prod.mk.injEq] at hc
+  refine ⟨⟨f, s⟩, ?_, hc⟩
+  have := SymRun.runs (run := fun σ is => ESym.run lim σ is) (step := fun σ i => ESym.step lim σ i) ESym.mk
+    (ESym.step_act lim) (fun _ => rfl) (fun _ _ _ => rfl) is T.reg (.gpr .rax)
+  exact this.trans (by rw [e]; rfl)
 
 /-! ## The machine agrees -/
 
