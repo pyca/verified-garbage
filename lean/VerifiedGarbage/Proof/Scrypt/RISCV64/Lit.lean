@@ -16,8 +16,6 @@ meta import VerifiedGarbage.Proof.Framework.RISCV64.Lit
 
 namespace VG
 
-materialize_code salsaW := Impl.Scrypt.RISCV64.salsa true
-materialize_code salsaB := Impl.Scrypt.RISCV64.salsa false
 materialize_code blockMixW := Impl.Scrypt.RISCV64.blockMix true
 materialize_code blockMixB := Impl.Scrypt.RISCV64.blockMix false
 materialize_code roMixW := Impl.Scrypt.RISCV64.roMix true
