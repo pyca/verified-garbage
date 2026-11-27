@@ -41,6 +41,11 @@ open Lean Meta Elab Command
 
 namespace Lit
 
+/-- `evalExpr`, the compiler making no constant of the closed subterms of `e`: evaluated once,
+each would only cost its compilation and a look-up by its name. -/
+meta unsafe def evalOnce (α : Type) (ty e : Expr) : MetaM α :=
+  withOptions (·.setBool `compiler.extract_closed false) <| evalExpr α ty e
+
 /-- The functions `materialize_code` has materialized, whose literals the
 literals of their callers refer to: each `N` with a theorem `N.lit_eq`, in the
 modules of this project (`VerifiedGarbage…`) and the current one. They are
@@ -1276,7 +1281,7 @@ meta def materializeTemplate (N : Name) (f : Expr) : MetaM Unit := do
         throwError "materialize_template: a parameter is not a number: {x}"
     let inst ← synthInstance (mkApp (mkConst ``ToExpr [0]) body)
     let samples := tplSamples xs.size
-    let es ← samples.mapM fun s => unsafe evalExpr Expr (mkConst ``Expr)
+    let es ← samples.mapM fun s => unsafe evalOnce Expr (mkConst ``Expr)
       (mkApp3 (mkConst ``ToExpr.toExpr [0]) body inst (mkAppN f (Array.map mkNatLit s)))
     let (b, _) ← (antiUnify xs samples es).run {}
     addDecl (forceExpose := true) <| .defnDecl {
@@ -1345,13 +1350,16 @@ where
 /-- The value of the closed code `code : Code I C`, evaluated in compiled code,
 as a literal (`codeToExprUnsafe`). -/
 meta def evalCode (I C code : Expr) : MetaM Expr := do
-  let toE (T : Expr) : MetaM (NonScalar → Expr) := do
-    let inst ← synthInstance (mkApp (mkConst ``ToExpr [0]) T)
-    unsafe evalExpr (NonScalar → Expr) (← mkArrow T (mkConst ``Expr))
-      (mkApp2 (mkConst ``ToExpr.toExpr [0]) T inst)
-  let toI ← toE I
-  let toC ← toE C
-  let c ← unsafe evalExpr (Code NonScalar NonScalar) (mkApp2 (mkConst ``Code) I C) code
+  let toE (T : Expr) : MetaM Expr := do
+    return mkApp2 (mkConst ``ToExpr.toExpr [0]) T (← synthInstance (mkApp (mkConst ``ToExpr [0]) T))
+  -- in one evaluation: compiling an expression costs more than this one
+  let prod (a b : Expr) := mkApp2 (mkConst ``Prod [0, 0]) a b
+  let pair (α β a b : Expr) := mkApp4 (mkConst ``Prod.mk [0, 0]) α β a b
+  let eI ← mkArrow I (mkConst ``Expr)
+  let eC ← mkArrow C (mkConst ``Expr)
+  let ty := mkApp2 (mkConst ``Code) I C
+  let (toI, toC, c) ← unsafe evalOnce ((NonScalar → Expr) × (NonScalar → Expr) × Code NonScalar NonScalar)
+    (prod eI (prod eC ty)) (pair eI (prod eC ty) (← toE I) (pair eC ty (← toE C) code))
   return unsafe codeToExprUnsafe I C toI toC c
 
 /-- `abstractCalls` of `v`, a literal of type `ty`, for the functions
@@ -1510,9 +1518,9 @@ elab "materialize_table " id:ident n:num m:(num)? : command => liftTermElabM do
   -- A table of `Nat`s is packed in one number (`Lit.packed_eq`).
   if β == nat then
     let vals : List Nat ← match m with
-      | none => unsafe evalExpr (List Nat) (mkApp (mkConst ``List [0]) nat) (valsOf (mkConst f))
+      | none => unsafe evalOnce (List Nat) (mkApp (mkConst ``List [0]) nat) (valsOf (mkConst f))
       | some _ => do
-        let rows ← unsafe evalExpr (List (List Nat)) listTy (valsOf (mkConst f))
+        let rows ← unsafe evalOnce (List (List Nat)) listTy (valsOf (mkConst f))
         pure rows.flatten
     let w := max 1 (vals.foldl (fun w v => max w v.log2.succ) 0)
     let N := vals.foldr (fun v acc => v ||| (acc <<< w)) 0
@@ -1542,7 +1550,7 @@ elab "materialize_table " id:ident n:num m:(num)? : command => liftTermElabM do
       value := prf }
     return
   let inst ← synthInstance (mkApp (mkConst ``ToExpr [0]) listTy)
-  let l ← unsafe evalExpr Expr (mkConst ``Expr) (mkApp3 (mkConst ``ToExpr.toExpr [0]) listTy inst
+  let l ← unsafe evalOnce Expr (mkConst ``Expr) (mkApp3 (mkConst ``ToExpr.toExpr [0]) listTy inst
     (valsOf (mkConst f)))
   let l := ShareCommon.shareCommon' l
   -- `valsOf f = l`: by evaluation, of `f` with the literals it reaches
@@ -1578,7 +1586,7 @@ meta def materializeValue (N : Name) (v : Expr) : MetaM Unit := do
   let ty ← instantiateMVars (← inferType v)
   if ty.hasLevelParam || ty.hasMVar then throwError "materialize_value: {v} is universe polymorphic"
   let inst ← synthInstance (mkApp (mkConst ``ToExpr [0]) ty)
-  let l ← unsafe evalExpr Expr (mkConst ``Expr) (mkApp3 (mkConst ``ToExpr.toExpr [0]) ty inst v)
+  let l ← unsafe evalOnce Expr (mkConst ``Expr) (mkApp3 (mkConst ``ToExpr.toExpr [0]) ty inst v)
   addDecl (forceExpose := true) <| .defnDecl {
     name := N ++ `lit, levelParams := [], type := ty, value := ShareCommon.shareCommon' l
     hints := .abbrev, safety := .safe }

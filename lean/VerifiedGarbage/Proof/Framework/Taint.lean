@@ -7,6 +7,7 @@ public meta import Lean.Elab.Tactic.Basic
 public import Lean.Meta.Eval
 public meta import Lean.Meta.Eval
 public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.TaintTactic
 public import VerifiedGarbage.Proof.Framework.InlineMatch
 
 /-!
@@ -153,42 +154,69 @@ def check : A.T → Prog M → Hint A.T → Option A.T
 
 Nothing here needs to be sound: `check` checks the hint. -/
 
-/-- The hints for a block: the analysis after every `chunkSize` instructions but the last. -/
-def chunkHints (chunkSize : Nat) : A.T → List M.Instr → Nat → List A.T
-  | _, _, 0 => []
+/-- The analysis of a block, with its hints: the analysis after every `chunkSize`
+instructions but the last (of at most `n + 1` such chunks). -/
+def blockHint (chunkSize : Nat) : A.T → List M.Instr → Nat → Option (A.T × List A.T)
+  | τ, is, 0 => (A.checkBlock τ is).map (·, [])
   | τ, is, n + 1 =>
-    if is.length ≤ chunkSize then [] else
-    match A.checkBlock τ (is.take chunkSize) with
-    | some τ' => τ' :: chunkHints chunkSize τ' (is.drop chunkSize) n
-    | none => []
+    if is.length ≤ chunkSize then (A.checkBlock τ is).map (·, []) else
+    (A.checkBlock τ (is.take chunkSize)).bind fun τ' =>
+      (blockHint chunkSize τ' (is.drop chunkSize) n).map fun (τ'', ms) => (τ'', τ' :: ms)
 
 /-- How many times the search for a loop invariant weakens its candidate. -/
 def loopFuel : Nat := 4
+
+/-- The hint's first part, if any: where a search looks for what an earlier one found. -/
+def Hint.kid₁ {T : Type} : Option (Hint T) → Option (Hint T)
+  | some (.seq _ h _) | some (.ite h _) | some (.loop _ h) | some (.call h) | some (.frame h) => some h
+  | _ => none
+
+/-- The hint's second part, if any. -/
+def Hint.kid₂ {T : Type} : Option (Hint T) → Option (Hint T)
+  | some (.seq _ _ h) | some (.ite _ h) => some h
+  | _ => none
+
+/-- The first candidate for the invariant of a loop entered with `τ`: what is public in `τ` and
+in the invariant that the hint of an earlier search has for it, if any. -/
+def Hint.start {T : Type} (meet : T → T → T) (τ : T) : Option (Hint T) → T
+  | some (.loop σ _) => meet τ σ
+  | _ => τ
 
 /-- The analysis of structured code, with its hint. A loop's invariant is
 found by starting from the taint on entry and, while the body does not keep
 public everything the candidate says is public (or leaves the loop condition
 secret), weakening the candidate to what is public both before and after the
-body. -/
-def hint (chunkSize : Nat) : A.T → Prog M → Option (A.T × Hint A.T)
-  | τ, .block is => (A.checkBlock τ is).map fun τ' => (τ', .block (chunkHints A chunkSize τ is is.length) chunkSize)
-  | τ, .seq c₁ c₂ =>
-    (hint chunkSize τ c₁).bind fun (τ₁, h₁) => (hint chunkSize τ₁ c₂).map fun (τ₂, h₂) => (τ₂, .seq τ₁ h₁ h₂)
-  | τ, .ite _ t e =>
-    (hint chunkSize τ t).bind fun (τ₁, h₁) => (hint chunkSize τ e).map fun (τ₂, h₂) => (A.meet τ₁ τ₂, .ite h₁ h₂)
-  | τ, .loop body c => go c (hint chunkSize · body) loopFuel τ
-  | τ, .call _ body =>
-    (A.call τ).bind fun τ₁ => (hint chunkSize τ₁ body).bind fun (τ₂, h) => (A.ret τ₂).map (·, .call h)
-  | τ, .frame i body j =>
-    (A.push τ i).bind fun τ₁ => (hint chunkSize τ₁ body).bind fun (τ₂, h) => (A.pop τ₂ j).map (·, .frame h)
+body. The hint `g` is what an earlier search found of the same code, from a taint with more
+public: the loops in a loop's body start from the invariants found for the candidate before,
+rather than search for them again from nothing at every candidate. -/
+def hintFrom (chunkSize : Nat) : Option (Hint A.T) → A.T → Prog M → Option (A.T × Hint A.T)
+  | _, τ, .block is => (blockHint A chunkSize τ is is.length).map fun (τ', ms) => (τ', .block ms chunkSize)
+  | g, τ, .seq c₁ c₂ =>
+    (hintFrom chunkSize (Hint.kid₁ g) τ c₁).bind fun (τ₁, h₁) =>
+      (hintFrom chunkSize (Hint.kid₂ g) τ₁ c₂).map fun (τ₂, h₂) => (τ₂, .seq τ₁ h₁ h₂)
+  | g, τ, .ite _ t e =>
+    (hintFrom chunkSize (Hint.kid₁ g) τ t).bind fun (τ₁, h₁) =>
+      (hintFrom chunkSize (Hint.kid₂ g) τ e).map fun (τ₂, h₂) => (A.meet τ₁ τ₂, .ite h₁ h₂)
+  | g, τ, .loop body c =>
+    go c (hintFrom chunkSize · · body) loopFuel (Hint.kid₁ g) (Hint.start A.meet τ g)
+  | g, τ, .call _ body =>
+    (A.call τ).bind fun τ₁ => (hintFrom chunkSize (Hint.kid₁ g) τ₁ body).bind fun (τ₂, h) =>
+      (A.ret τ₂).map (·, .call h)
+  | g, τ, .frame i body j =>
+    (A.push τ i).bind fun τ₁ => (hintFrom chunkSize (Hint.kid₁ g) τ₁ body).bind fun (τ₂, h) =>
+      (A.pop τ₂ j).map (·, .frame h)
   -- `check` does not handle indirect calls.
-  | _, .icall .. => none
+  | _, _, .icall .. => none
 where
-  go (c : M.Cond) (body : A.T → Option (A.T × Hint A.T)) :
-      Nat → A.T → Option (A.T × Hint A.T)
-    | 0, _ => none
-    | n + 1, σ => (body σ).bind fun (σ', h) =>
-      if A.le σ σ' && A.condPub σ' c then some (σ', .loop σ h) else go c body n (A.meet σ σ')
+  go (c : M.Cond) (body : Option (Hint A.T) → A.T → Option (A.T × Hint A.T)) :
+      Nat → Option (Hint A.T) → A.T → Option (A.T × Hint A.T)
+    | 0, _, _ => none
+    | n + 1, g, σ => (body g σ).bind fun (σ', h) =>
+      if A.le σ σ' && A.condPub σ' c then some (σ', .loop σ h) else go c body n (some h) (A.meet σ σ')
+
+/-- `hintFrom`, with no earlier search. -/
+def hint (chunkSize : Nat) (τ : A.T) (c : Prog M) : Option (A.T × Hint A.T) :=
+  hintFrom A chunkSize none τ c
 
 /-- The hint for `c` from `τ` (any hint, if the analysis fails). -/
 @[nospecialize] def hintOfSize (chunkSize : Nat) (τ : A.T) (c : Prog M) : Hint A.T :=
@@ -413,62 +441,6 @@ def Hint.map {T U : Type} (f : T → U) : Hint T → Hint U
   | .frame h => .frame (h.map f)
 
 end Taint
-
-open Lean Meta Elab Tactic in
-/-- `taint_decide`, with the taints of the hint weakened by `w`, if given. -/
-meta def taintDecideAt (chunkSize : Expr) (name : String) (w : Option Term) : TacticM Unit := do
-  let g ← getMainGoal
-  let some (_, lhs, _) := (← instantiateMVars (← g.getType)).eq?
-    | throwError "{name}: the goal is not an equation about `Taint.check A τ c h`"
-  let some chk := lhs.find? (·.isAppOfArity ``Taint.check 5)
-    | throwError "{name}: the goal is not an equation about `Taint.check A τ c h`"
-  let args := chk.getAppArgs
-  let (m, a, τ, c, h) := (args[0]!, args[1]!, args[2]!, args[3]!, args[4]!)
-  let tT ← whnfD (mkApp2 (mkConst ``Taint.T) m a)
-  let mut hint := mkApp5 (mkConst ``Taint.hintOfSize) m a chunkSize τ c
-  if let some w := w then
-    unless h.isMVar do throwError "{name}: the hint is already given"
-    let wv ← Term.elabTermEnsuringType w (← mkArrow tT tT)
-    Term.synthesizeSyntheticMVarsNoPostponing
-    hint := mkApp4 (mkConst ``Taint.Hint.map) tT tT (← instantiateMVars wv) hint
-  let instT ← synthInstance (mkApp (mkConst ``ToExpr [0]) tT)
-  let hv ← unsafe evalExpr Expr (mkConst ``Expr) (mkApp3 (mkConst ``Taint.Hint.toExprNS) tT instT hint)
-  if h.isMVar then h.mvarId!.assign hv
-  -- The kernel evaluates the literal of any code that has one (`materialize_code`).
-  evalTactic (← `(tactic| lit_decide))
-
-open Lean Elab Tactic in
-/-- Try larger hint intervals, retaining the original bounded check as a fallback. -/
-meta def taintDecide (name : String) (w : Option Term) : TacticM Unit := do
-  let saved ← saveState
-  try
-    taintDecideAt (mkNatLit 1024) name w
-  catch _ =>
-    -- Discard the failed attempt's hint assignment before constructing another.
-    saved.restore
-    taintDecideAt (mkConst ``Taint.chunk) name w
-
-/-- Proves `(Taint.check A τ c ?hint).isSome = true`, or any decidable
-equation whose left side contains `Taint.check A τ c ?hint` (e.g. a property of
-the resulting taint): computes the hint (`Taint.hintOf`, in compiled code) and
-then has the kernel evaluate the goal, with each code constant that has a
-literal (`materialize_code`) rewritten to it. The domain `A.T` needs a `ToExpr`
-instance. -/
-elab "taint_decide" : tactic => taintDecide "taint_decide" none
-
-/-- `taint_decide`, with the taints of the hint weakened by `w : A.T → A.T`
-(computed in compiled code, like the hint).
-
-`Taint.check` accepts any hint whose taints are at most what the analysis
-computes (`le`): at every `chunkSize` instructions of a block, between the parts
-of a `seq` and at every loop, the analysis continues from the hint's taint.
-So a hint may forget public facts that the rest of the code never uses. The
-kernel is a slow evaluator, and the cost of each instruction grows with the
-size of the taint (e.g. the x86 analysis's list of public memory slots, which
-a table of constants stored on the stack fills), so forgetting them can make
-the kernel's check several times faster. Nothing about `w` needs to be sound:
-a hint it weakens too much only makes the check fail. -/
-elab "taint_decide_weak " w:term : tactic => taintDecide "taint_decide_weak" (some w)
 
 kernel_fn @Code.allInstrs, @Code.noCalls, @Code.noFrames, @Code.fdepth
 

@@ -45,6 +45,9 @@ registers secret. Any other write to the vector registers forgets them all
 
 @[expose] public section
 
+/-- `isa`, for the compiler to leave by name (`Taint.compiled`). -/
+@[noinline] def VG.X86_64.isaC : VG.ISA := VG.X86_64.isa
+
 namespace VG.X86_64.Taint
 
 deriving instance Lean.ToExpr for Reg

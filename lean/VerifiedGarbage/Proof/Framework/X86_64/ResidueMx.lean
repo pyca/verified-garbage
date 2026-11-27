@@ -195,5 +195,5 @@ elab_rules : term
   let e ← elabTerm (← `(VG.X86_64.RScrub.keepForOps $sig $stack $code $ops)) none
   synthesizeSyntheticMVarsNoPostponing
   let e ← instantiateMVars e
-  let v ← unsafe evalExpr (List Nat) (← inferType e) e
+  let v ← unsafe VG.Lit.evalOnce (List Nat) (← inferType e) e
   return toExpr v

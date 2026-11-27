@@ -146,7 +146,7 @@ precompileModules = true
 # The project's tactics, which run in most modules: the evaluator of
 # `sig_eval` (`Proof/Framework/SigEval.lean`), run on every contract, the
 # literal tactics (`materialize_code`, `rw_lit`, `Lit.lean`), run by every
-# `taint_decide` and `lit_decide`, the `omega` helpers, and the elaborator of
+# `taint_decide` (`TaintTactic.lean`) and `lit_decide`, the `omega` helpers, and the elaborator of
 # the comb tables (`nat_pairs%`, `Impl/NatPairs.lean`): compiled to a shared
 # library like `NativeSpec`, since the interpreter runs them an order of
 # magnitude slower. They import only Lean core and `NativeTCB`
@@ -157,7 +157,8 @@ name = "NativeTactics"
 plugins = ["NativeAuditRecords:shared"]
 roots = []
 globs = ["VerifiedGarbage.Proof.Framework.SigEval", "VerifiedGarbage.Proof.Framework.Lit",
-  "VerifiedGarbage.Proof.Framework.LitShare", "VerifiedGarbage.Proof.Framework.LitAlias",
+  "VerifiedGarbage.Proof.Framework.LitShare", "VerifiedGarbage.Proof.Framework.LitHidden",
+  "VerifiedGarbage.Proof.Framework.TaintTactic", "VerifiedGarbage.Proof.Framework.LitAlias",
   "VerifiedGarbage.Proof.Framework.Omega", "VerifiedGarbage.Proof.Framework.OmegaAll",
   "VerifiedGarbage.Proof.Framework.OmegaLit",
   "VerifiedGarbage.Proof.Framework.KernelRfl", "VerifiedGarbage.Proof.Framework.SpecApis",

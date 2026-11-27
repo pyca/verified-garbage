@@ -68,10 +68,9 @@ private meta def decideAt (chunkSize : Expr) (w : Option Term) : TacticM Unit :=
       let new ← convertState srcT natT (mkApp wv old)
       mkLambdaFVars #[t] new
     hint := mkAppN (mkConst (prov ++ `hintWeakOfSize)) (pre ++ #[chunkSize, nw, state, c])
-  let hty := mkApp (mkConst ``VG.NativeHints.Hint) nativeType
-  let inst ← synthInstance (mkApp (mkConst ``ToExpr [0]) hty)
-  let hv ← unsafe evalExpr Expr (mkConst ``Expr)
-    (mkApp3 (mkConst ``ToExpr.toExpr [0]) hty inst hint)
+  let inst ← synthInstance (mkApp (mkConst ``ToExpr [0]) nativeType)
+  let hv ← unsafe VG.Lit.evalOnce Expr (mkConst ``Expr)
+    (mkApp3 (mkConst ``VG.NativeHints.Hint.toExprNS) nativeType inst hint)
   if h.isMVar then h.mvarId!.assign (checkedHintExpr natT srcT hv)
   evalTactic (← `(tactic| lit_decide))
 
@@ -137,10 +136,10 @@ private meta def hintCheckedNative (who : String) (names : Array Name) (M c : Ex
   let repTy ← mkAppM ``List #[← mkAppM ``Prod #[mkConst ``String, mkConst ``Nat]]
   let r := mkAppN (mkConst (prov ++ `hintReport)) #[S, ← codeFn M true, ← codeFn M false, ← conv τ, c]
   let e ← withLetDecl `r (← mkAppM ``Prod #[phTy, repTy]) r fun r => do
-    let ph ← mkAppM ``ToExpr.toExpr #[← mkAppM ``Prod.snd #[← mkAppM ``Prod.fst #[r]]]
+    let ph ← mkAppM ``VG.NativeHints.SHint.toExprNS #[← mkAppM ``Prod.snd #[← mkAppM ``Prod.fst #[r]]]
     mkLetFVars #[r] (← mkAppM ``Prod.mk #[ph, ← mkAppM ``Prod.snd #[r]])
   let ty ← mkAppM ``Prod #[mkConst ``Expr, repTy]
-  let (h, missed) ← unsafe evalExpr (Expr × List (String × Nat)) ty e
+  let (h, missed) ← unsafe VG.Lit.evalOnce (Expr × List (String × Nat)) ty e
   -- The copy's constructors renamed to the checked domain's.
   let h := checkedHintExpr natT srcT h
   let h := h.replace fun t => match t with

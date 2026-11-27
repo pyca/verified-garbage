@@ -19,6 +19,9 @@ value, and branches never read them.
 
 @[expose] public section
 
+/-- `isa`, for the compiler to leave by name (`Taint.compiled`). -/
+@[noinline] def VG.AArch64.isaC : VG.ISA := VG.AArch64.isa
+
 namespace VG.AArch64.Taint
 
 deriving instance Lean.ToExpr for Reg

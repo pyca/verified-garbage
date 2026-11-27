@@ -2,8 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Framework.Lit
 public meta import VerifiedGarbage.Proof.Framework.Lit
-public import VerifiedGarbage.Proof.Framework.Taint
-public meta import VerifiedGarbage.Proof.Framework.Taint
+public import VerifiedGarbage.Proof.Framework.TaintTactic
+public meta import VerifiedGarbage.Proof.Framework.TaintTactic
 public meta import Lean.Meta.Eval
 public meta import Lean.Elab.Tactic.Basic
 
@@ -83,15 +83,22 @@ meta def codeLit (c : Expr) : MetaM (Expr × Expr) := do
 
 /-- The code of `e`, of the largest subterms that are code, that is reached
 through a structure with proofs (`hidden`). -/
-meta partial def hiddenCodes (e : Expr) (acc : Array Expr := #[]) : MetaM (Array Expr) := do
-  if !e.hasLooseBVars && !e.hasFVar && !e.hasMVar then
-    if (← whnfR (← inferType e)).isAppOfArity ``Code 2 then
-      return if !acc.contains e && (← hidden e) then acc.push e else acc
-  match e with
-  | .app f a => hiddenCodes a (← hiddenCodes f acc)
-  | .lam _ t b _ | .forallE _ t b _ => hiddenCodes b (← hiddenCodes t acc)
-  | .mdata _ b | .proj _ _ b => hiddenCodes b acc
-  | _ => return acc
+meta def hiddenCodes (e : Expr) : MetaM (Array Expr) :=
+  return (← (go e).run ({}, #[])).2.2
+where
+  go (e : Expr) : StateT (Std.HashSet Expr × Array Expr) MetaM Unit := do
+    -- each subterm once
+    if (← get).1.contains e then return
+    modify fun (seen, acc) => (seen.insert e, acc)
+    if !e.hasLooseBVars && !e.hasFVar && !e.hasMVar then
+      if (← whnfR (← inferType e)).isAppOfArity ``Code 2 then
+        if ← hidden e then modify fun (seen, acc) => (seen, acc.push e)
+        return
+    match e with
+    | .app f a => go f; go a
+    | .lam _ t b _ | .forallE _ t b _ => go t; go b
+    | .mdata _ b | .proj _ _ b => go b
+    | _ => return
 
 /-- The goal, with the code `c` in it replaced by its literal (`codeLit`). -/
 meta def rwCodeLit (c : Expr) : TacticM Unit := do
@@ -109,19 +116,19 @@ code that `rw_lit` has left to the functions that generate it (`hiddenCode`)
 is stated of the code's literal (`codeLit`) before the kernel evaluates it. -/
 meta def taintDecideLit (chunkSize : Expr) : TacticM Unit := do
   let g ← getMainGoal
-  let some chk := (← instantiateMVars (← g.getType)).find? (·.isAppOfArity ``VG.Taint.check 5)
+  let some chk := (← instantiateMVars (← g.getType)).find? (·.isAppOfArity `VG.Taint.check 5)
     | throwError "taint_decide_lit: the goal is not an equation about `Taint.check A τ c h`"
   let args := chk.getAppArgs
   let (m, a, τ, c, h) := (args[0]!, args[1]!, args[2]!, args[3]!, args[4]!)
   unless h.isMVar do throwError "taint_decide_lit: the hint is already given"
-  let tT ← whnfD (mkApp2 (mkConst ``VG.Taint.T) m a)
+  let tT ← whnfD (mkApp2 (mkConst `VG.Taint.T) m a)
   let instT ← synthInstance (mkApp (mkConst ``ToExpr [0]) tT)
-  let hv ← unsafe evalExpr Expr (mkConst ``Expr) (mkApp3 (mkConst ``VG.Taint.Hint.toExprNS) tT instT
-    (mkApp5 (mkConst ``VG.Taint.hintOfSize) m a chunkSize τ c))
+  let hv ← unsafe VG.Lit.evalOnce Expr (mkConst ``Expr) (mkApp3 (mkConst `VG.Taint.Hint.toExprNS) tT instT
+    (mkApp5 (mkConst `VG.Taint.hintOfSize) (← VG.Taint.compiled m) a chunkSize τ c))
   h.mvarId!.assign hv
   evalTactic (← `(tactic| rw_lit))
   let tgt ← instantiateMVars (← getMainTarget)
-  let some chk := tgt.find? (·.isAppOfArity ``VG.Taint.check 5)
+  let some chk := tgt.find? (·.isAppOfArity `VG.Taint.check 5)
     | throwError "taint_decide_lit: the goal is not an equation about `Taint.check A τ c h`"
   let c := chk.getArg! 3
   if ← hiddenCode c then rwCodeLit c
@@ -147,6 +154,6 @@ elab "taint_decide_lit" : tactic => withMainContext do
   catch _ =>
     -- Discard the failed attempt's hint assignment before constructing another.
     saved.restore
-    taintDecideLit (mkConst ``VG.Taint.chunk)
+    taintDecideLit (mkConst `VG.Taint.chunk)
 
 end VG.LitHidden

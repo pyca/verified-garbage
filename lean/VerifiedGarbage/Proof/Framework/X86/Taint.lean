@@ -66,6 +66,9 @@ The register a frame's pop loads is secret.
 
 @[expose] public section
 
+/-- `isa`, for the compiler to leave by name (`Taint.compiled`). -/
+@[noinline] def VG.X86.isaC : VG.ISA := VG.X86.isa
+
 namespace VG.X86.Taint
 
 deriving instance Lean.ToExpr for Reg

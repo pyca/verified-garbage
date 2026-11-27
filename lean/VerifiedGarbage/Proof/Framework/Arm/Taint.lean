@@ -49,6 +49,9 @@ writable region.
 
 @[expose] public section
 
+/-- `isa`, for the compiler to leave by name (`Taint.compiled`). -/
+@[noinline] def VG.Arm.isaC : VG.ISA := VG.Arm.isa
+
 namespace VG.Arm.Taint
 
 deriving instance Lean.ToExpr for Reg

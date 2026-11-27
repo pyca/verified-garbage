@@ -116,33 +116,43 @@ def check : A.T → Prog M → Hint A.T → Option A.T
 
 Nothing here needs to be sound: `check` checks the hint. -/
 
-/-- The hints for a block: the analysis after every `chunkSize` instructions but the last. -/
-def chunkHints (chunkSize : Nat) : A.T → List M.Instr → Nat → List A.T
-  | _, _, 0 => []
+/-- The analysis of a block, with its hints: the analysis after every `chunkSize`
+instructions but the last (of at most `n + 1` such chunks). -/
+def blockHint (chunkSize : Nat) : A.T → List M.Instr → Nat → Option (A.T × List A.T)
+  | τ, is, 0 => (A.checkBlock τ is).map (·, [])
   | τ, is, n + 1 =>
-    if is.length ≤ chunkSize then [] else
-    match A.checkBlock τ (is.take chunkSize) with
-    | some τ' => τ' :: chunkHints chunkSize τ' (is.drop chunkSize) n
-    | none => []
+    if is.length ≤ chunkSize then (A.checkBlock τ is).map (·, []) else
+    (A.checkBlock τ (is.take chunkSize)).bind fun τ' =>
+      (blockHint chunkSize τ' (is.drop chunkSize) n).map fun (τ'', ms) => (τ'', τ' :: ms)
 
-/-- The analysis of structured code, with its hint, as `Taint.hint`. -/
-def hint (chunkSize : Nat) : A.T → Prog M → Option (A.T × Hint A.T)
-  | τ, .block is => (A.checkBlock τ is).map fun τ' => (τ', .block (chunkHints A chunkSize τ is is.length) chunkSize)
-  | τ, .seq c₁ c₂ =>
-    (hint chunkSize τ c₁).bind fun (τ₁, h₁) => (hint chunkSize τ₁ c₂).map fun (τ₂, h₂) => (τ₂, .seq τ₁ h₁ h₂)
-  | τ, .ite _ t e =>
-    (hint chunkSize τ t).bind fun (τ₁, h₁) => (hint chunkSize τ e).map fun (τ₂, h₂) => (A.meet τ₁ τ₂, .ite h₁ h₂)
-  | τ, .loop body _ => go (hint chunkSize · body) Taint.loopFuel τ
-  | τ, .call _ body =>
-    (A.call τ).bind fun τ₁ => (hint chunkSize τ₁ body).bind fun (τ₂, h) => (A.ret τ₂).map (·, .call h)
-  | τ, .frame i body j =>
-    (A.push τ i).bind fun τ₁ => (hint chunkSize τ₁ body).bind fun (τ₂, h) => (A.pop τ₂ j).map (·, .frame h)
-  | _, .icall .. => none
+/-- The analysis of structured code, with its hint, as `Taint.hintFrom`. -/
+def hintFrom (chunkSize : Nat) : Option (Hint A.T) → A.T → Prog M → Option (A.T × Hint A.T)
+  | _, τ, .block is => (blockHint A chunkSize τ is is.length).map fun (τ', ms) => (τ', .block ms chunkSize)
+  | g, τ, .seq c₁ c₂ =>
+    (hintFrom chunkSize (Hint.kid₁ g) τ c₁).bind fun (τ₁, h₁) =>
+      (hintFrom chunkSize (Hint.kid₂ g) τ₁ c₂).map fun (τ₂, h₂) => (τ₂, .seq τ₁ h₁ h₂)
+  | g, τ, .ite _ t e =>
+    (hintFrom chunkSize (Hint.kid₁ g) τ t).bind fun (τ₁, h₁) =>
+      (hintFrom chunkSize (Hint.kid₂ g) τ e).map fun (τ₂, h₂) => (A.meet τ₁ τ₂, .ite h₁ h₂)
+  | g, τ, .loop body _ =>
+    go (hintFrom chunkSize · · body) Taint.loopFuel (Hint.kid₁ g) (Hint.start A.meet τ g)
+  | g, τ, .call _ body =>
+    (A.call τ).bind fun τ₁ => (hintFrom chunkSize (Hint.kid₁ g) τ₁ body).bind fun (τ₂, h) =>
+      (A.ret τ₂).map (·, .call h)
+  | g, τ, .frame i body j =>
+    (A.push τ i).bind fun τ₁ => (hintFrom chunkSize (Hint.kid₁ g) τ₁ body).bind fun (τ₂, h) =>
+      (A.pop τ₂ j).map (·, .frame h)
+  | _, _, .icall .. => none
 where
-  go (body : A.T → Option (A.T × Hint A.T)) : Nat → A.T → Option (A.T × Hint A.T)
-    | 0, _ => none
-    | n + 1, σ => (body σ).bind fun (σ', h) =>
-      if A.le σ σ' then some (σ', .loop σ h) else go body n (A.meet σ σ')
+  go (body : Option (Hint A.T) → A.T → Option (A.T × Hint A.T)) :
+      Nat → Option (Hint A.T) → A.T → Option (A.T × Hint A.T)
+    | 0, _, _ => none
+    | n + 1, g, σ => (body g σ).bind fun (σ', h) =>
+      if A.le σ σ' then some (σ', .loop σ h) else go body n (some h) (A.meet σ σ')
+
+/-- `hintFrom`, with no earlier search. -/
+def hint (chunkSize : Nat) (τ : A.T) (c : Prog M) : Option (A.T × Hint A.T) :=
+  hintFrom A chunkSize none τ c
 
 /-- The hint for `c` from `τ` (any hint, if the analysis fails). -/
 @[nospecialize] def hintOfSize (chunkSize : Nat) (τ : A.T) (c : Prog M) : Hint A.T :=
@@ -413,9 +423,9 @@ meta def taintDecideCTAt (chunkSize : Expr) : TacticM Unit := do
   let args := chk.getAppArgs
   let (m, a, τ, c, h) := (args[0]!, args[1]!, args[2]!, args[3]!, args[4]!)
   let tT ← whnfD (mkApp2 (mkConst ``TaintCT.T) m a)
-  let hint := mkApp5 (mkConst ``TaintCT.hintOfSize) m a chunkSize τ c
+  let hint := mkApp5 (mkConst ``TaintCT.hintOfSize) (← Taint.compiled m) a chunkSize τ c
   let instT ← synthInstance (mkApp (mkConst ``ToExpr [0]) tT)
-  let hv ← unsafe evalExpr Expr (mkConst ``Expr) (mkApp3 (mkConst ``Taint.Hint.toExprNS) tT instT hint)
+  let hv ← unsafe VG.Lit.evalOnce Expr (mkConst ``Expr) (mkApp3 (mkConst ``Taint.Hint.toExprNS) tT instT hint)
   if h.isMVar then h.mvarId!.assign hv
   evalTactic (← `(tactic| lit_decide))
 
