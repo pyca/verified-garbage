@@ -167,7 +167,7 @@ def unpack : Prog isa :=
   .seq (.block [.li .s4 (-1), .shift .srl .d .s4 .s4 7, .li .t2 0])
     (countLoop .t5 [.shift .srl .d .s0 .t2 6, .shift .sll .d .s0 .s0 3, .add .s0 .s0 .t3, .load .d .s1 .s0 0,
       .load .d .s2 .s0 8, .shiftReg .srl .d .s1 .s1 .t2, .logicImm .xor .s3 .t2 (-1), .shift .sll .d .s2 .s2 1,
-      .shiftReg .sll .d .s2 .s2 .s3, .logic .or .s1 .s1 .s2, .logic .and .s1 .s1 .s4, .store .d .s1 .t4 0,
+      .shiftReg .sll .d .s2 .s2 .s3, .add .s1 .s1 .s2, .logic .and .s1 .s1 .s4, .store .d .s1 .t4 0,
       .addi .t4 .t4 8, .addi .t2 .t2 57])
 
 /-- `unpack` from array 5, its word `w` zeroed. -/
@@ -197,7 +197,7 @@ def pack : Prog isa :=
     (countLoop .t5 [.mul .a3 .t6 .a2, .shift .srl .d .a3 .a3 16, .mul .a4 .a3 .s4, .sub .a4 .t6 .a4, .sub .a5 .s4 .a4,
       .shift .sll .d .a3 .a3 3, .add .a3 .a3 .t4, .load .d .s1 .a3 0, .load .d .s2 .a3 8, .load .d .s3 .a3 16,
       .shiftReg .srl .d .s1 .s1 .a4, .shiftReg .sll .d .s2 .s2 .a5, .shift .sll .d .s3 .s3 57,
-      .shiftReg .sll .d .s3 .s3 .a5, .logic .or .s1 .s1 .s2, .logic .or .s1 .s1 .s3, .store .d .s1 .t3 0,
+      .shiftReg .sll .d .s3 .s3 .a5, .add .s1 .s1 .s2, .add .s1 .s1 .s3, .store .d .s1 .t3 0,
       .addi .t3 .t3 8, .addi .t6 .t6 64])
 
 end VG.Impl.Bignum.RISCV64.Pow57
