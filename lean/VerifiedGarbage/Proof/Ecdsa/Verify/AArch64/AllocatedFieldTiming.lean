@@ -14,6 +14,7 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
 import VerifiedGarbage.Proof.Ecdsa.AArch64.SlotOps
 import VerifiedGarbage.Proof.Ecdh.AArch64.Peer
 public import VerifiedGarbage.Proof.Weierstrass.CheckPointContract
+import VerifiedGarbage.Proof.Framework.Apart
 
 /-! ## `JointLayout` -/
 
@@ -33,7 +34,7 @@ theorem layout : Weierstrass.AArch64.JointLayout P256Joint.cfg 8192 where
     le := by decide +kernel
     apart := by
       have h : ∀ x∈jointSlots P256Joint.cfg,∀ y∈jointSlots P256Joint.cfg,
-          x≠y → x+32≤y ∨ y+32≤x := by decide +kernel
+          x≠y → x+32≤y ∨ y+32≤x := apart_of (by decide +kernel)
       exact fun x y hx hy hxy => h x hx y hy hxy
     mo := by decide +kernel
     tmp := by decide +kernel }

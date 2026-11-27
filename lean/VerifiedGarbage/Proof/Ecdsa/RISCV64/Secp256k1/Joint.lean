@@ -19,6 +19,7 @@ public import VerifiedGarbage.Proof.Weierstrass.RISCV64.Gen4
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 import VerifiedGarbage.Proof.Framework.RISCV64.RegUpd
 import VerifiedGarbage.Proof.Weierstrass.RISCV64.Secp256k1Field.Lit
+import VerifiedGarbage.Proof.Framework.Apart
 
 /-! ### `Ecdsa.RISCV64.Secp256k1.MulFn`, which this module and modules that import it used -/
 
@@ -509,8 +510,7 @@ abbrev jSl : List Nat :=
     secp256k1.sl secp256k1.EX, secp256k1.sl secp256k1.EY, secp256k1.sl secp256k1.EZ]
 
 theorem jLay : Lay secp256k1.MP' (own 4) (· ∈ jSl) :=
-  ⟨by decide, fun x y hx hy => (by decide : ∀ x ∈ jSl, ∀ y ∈ jSl, x ≠ y → x + 8 * 4 ≤ y ∨ y + 8 * 4 ≤ x)
-    x hx y hy, by decide, by decide⟩
+  ⟨by decide, fun x y hx hy => apart_of (n := 8 * 4) (l := jSl) (by decide +kernel) x hx y hy, by decide, by decide⟩
 
 theorem jShort : Short (· ∈ jSl) := by decide
 

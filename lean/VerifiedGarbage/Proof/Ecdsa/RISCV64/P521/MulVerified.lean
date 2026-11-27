@@ -36,6 +36,7 @@ meta import VerifiedGarbage.Proof.Ecdsa.RISCV64.WindowA
 meta import VerifiedGarbage.Proof.Ecdsa.RISCV64.Joint.Table
 meta import VerifiedGarbage.Proof.Weierstrass.RISCV64.Ladder
 meta import VerifiedGarbage.Proof.Ecdh.RISCV64.Bytes
+import VerifiedGarbage.Proof.Framework.Apart
 
 /-! ### `Ecdsa.RISCV64.P521.Window`, which this module and modules that import it used -/
 
@@ -166,8 +167,7 @@ abbrev jSl : List Nat :=
     c.sl UONE, c.sl c.EX, c.sl c.EY, c.sl c.EZ]
 
 theorem jLay : ULay (· ∈ jSl) :=
-  ⟨by decide, fun x y hx hy => (by decide : ∀ x ∈ jSl, ∀ y ∈ jSl, x ≠ y → x + 72 ≤ y ∨ y + 72 ≤ x)
-    x hx y hy, by decide⟩
+  ⟨by decide, fun x y hx hy => apart_of (n := 72) (l := jSl) (by decide +kernel) x hx y hy, by decide⟩
 
 /-- What the additions write. -/
 abbrev addW (o : Pt) : List (Nat × Nat) :=
@@ -216,8 +216,7 @@ abbrev wSl : List Nat :=
     c.sl RX, c.sl RY, c.sl RZ, c.sl DX, c.sl DY, c.sl DZ, c.sl TX, c.sl TY, c.sl TZ]
 
 theorem wLay : ULay (· ∈ wSl) :=
-  ⟨by decide, fun x y hx hy => (by decide : ∀ x ∈ wSl, ∀ y ∈ wSl, x ≠ y → x + 72 ≤ y ∨ y + 72 ≤ x)
-    x hx y hy, by decide⟩
+  ⟨by decide, fun x y hx hy => apart_of (n := 72) (l := wSl) (by decide +kernel) x hx y hy, by decide⟩
 
 /-- What the field operations of `R = 16 R` write: `R`, `D`, `T`, the
 temporaries and the functions' own working space. -/

@@ -22,6 +22,7 @@ import VerifiedGarbage.Proof.P256.Comb7
 import VerifiedGarbage.Proof.P256.Point
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Ecdh.RISCV64.Bytes
+import VerifiedGarbage.Proof.Framework.Apart
 
 /-!
 # The comb on RISC-V: the body
@@ -938,8 +939,7 @@ abbrev combSl : List Nat :=
   [256, 1344, 512, 544, 576, 608, 640, 672, 704, 736, 768, 800, 832, 864, 896, 928, 960]
 
 theorem combLay : Lay p256.MP' (own 4) (· ∈ combSl) :=
-  ⟨by decide, fun x y hx hy => (by decide : ∀ x ∈ combSl, ∀ y ∈ combSl, x ≠ y → x + 8 * 4 ≤ y ∨ y + 8 * 4 ≤ x)
-    x hx y hy, by decide, by decide⟩
+  ⟨by decide, fun x y hx hy => apart_of (n := 8 * 4) (l := combSl) (by decide +kernel) x hx y hy, by decide, by decide⟩
 
 /-- The slots the addition reads. -/
 abbrev addV : List Nat := [256, 1344, 512, 544, 576, 608, 640, 672]

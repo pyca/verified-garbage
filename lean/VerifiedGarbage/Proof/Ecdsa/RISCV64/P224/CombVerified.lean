@@ -42,6 +42,7 @@ meta import VerifiedGarbage.Proof.Weierstrass.Words
 meta import VerifiedGarbage.Proof.P224.Comb7
 meta import VerifiedGarbage.Proof.P224.Point
 meta import VerifiedGarbage.Proof.Ecdh.RISCV64.Bytes
+import VerifiedGarbage.Proof.Framework.Apart
 
 /-! ### `Ecdsa.RISCV64.P224.Comb`, which only this module used -/
 
@@ -207,8 +208,7 @@ theorem negate_ok {s : State} {base : Addr} (hw : WsReg s base) (hZ : wordsVal s
       (r₃.mono (by decide))) (ws := [.a7, .t0, .t1]) (by decide))
 
 theorem combLay : Lay p224.MP' (own 4) (· ∈ combSl) :=
-  ⟨by decide, fun x y hx hy => (by decide : ∀ x ∈ combSl, ∀ y ∈ combSl, x ≠ y → x + 8 * 4 ≤ y ∨ y + 8 * 4 ≤ x)
-    x hx y hy, by decide, by decide⟩
+  ⟨by decide, fun x y hx hy => apart_of (n := 8 * 4) (l := combSl) (by decide +kernel) x hx y hy, by decide, by decide⟩
 
 /-- P-224's `a` is `-3`. -/
 theorem am3 : AM3 W := by unfold AM3; decide

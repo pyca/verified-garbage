@@ -40,6 +40,7 @@ meta import VerifiedGarbage.Proof.Weierstrass.Jac
 meta import VerifiedGarbage.Proof.Ecdsa.RISCV64.WindowA
 meta import VerifiedGarbage.Proof.Ecdsa.RISCV64.Joint.Table
 meta import VerifiedGarbage.Proof.Ecdsa.RISCV64.WindowAll
+import VerifiedGarbage.Proof.Framework.Apart
 
 /-! ### `Ecdsa.RISCV64.P384.MulVerified`, which this module and modules that import it used -/
 
@@ -99,8 +100,7 @@ abbrev jSl : List Nat :=
     p384w.sl ONEP, p384w.sl p384w.EX, p384w.sl p384w.EY, p384w.sl p384w.EZ]
 
 theorem jLay : Lay p384w.MP' (own 6) (· ∈ jSl) :=
-  ⟨by decide, fun x y hx hy => (by decide : ∀ x ∈ jSl, ∀ y ∈ jSl, x ≠ y → x + 8 * 6 ≤ y ∨ y + 8 * 6 ≤ x)
-    x hx y hy, by decide, by decide⟩
+  ⟨by decide, fun x y hx hy => apart_of (n := 8 * 6) (l := jSl) (by decide +kernel) x hx y hy, by decide, by decide⟩
 
 theorem jShort : Short (· ∈ jSl) := by decide
 
@@ -163,8 +163,7 @@ abbrev wSl : List Nat :=
     c.sl RX, c.sl RY, c.sl RZ, c.sl DX, c.sl DY, c.sl DZ, c.sl TX, c.sl TY, c.sl TZ]
 
 theorem wLay : Lay c.MP' (own 6) (· ∈ wSl) :=
-  ⟨by decide, fun x y hx hy => (by decide : ∀ x ∈ wSl, ∀ y ∈ wSl, x ≠ y → x + 8 * 6 ≤ y ∨ y + 8 * 6 ≤ x)
-    x hx y hy, by decide, by decide⟩
+  ⟨by decide, fun x y hx hy => apart_of (n := 8 * 6) (l := wSl) (by decide +kernel) x hx y hy, by decide, by decide⟩
 
 theorem wShort : Short (· ∈ wSl) := by decide
 

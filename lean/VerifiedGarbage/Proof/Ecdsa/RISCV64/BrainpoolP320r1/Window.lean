@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Ecdsa.RISCV64.BrainpoolP320r1.Joint
 public import VerifiedGarbage.Proof.Ecdsa.RISCV64.WindowA
 public import VerifiedGarbage.Proof.Weierstrass.JacDblA
 public import VerifiedGarbage.Proof.Ecdsa.RISCV64.WindowAll
+import VerifiedGarbage.Proof.Framework.Apart
 
 /-!
 # `vg_brainpoolp320r1_mul` by four-bit windows on RISC-V: the body
@@ -47,8 +48,7 @@ abbrev wSl : List Nat :=
     c.sl RX, c.sl RY, c.sl RZ, c.sl DX, c.sl DY, c.sl DZ, c.sl TX, c.sl TY, c.sl TZ]
 
 theorem wLay : Lay c.MP' (own 5) (· ∈ wSl) :=
-  ⟨by decide, fun x y hx hy => (by decide : ∀ x ∈ wSl, ∀ y ∈ wSl, x ≠ y → x + 8 * 5 ≤ y ∨ y + 8 * 5 ≤ x)
-    x hx y hy, by decide, by decide⟩
+  ⟨by decide, fun x y hx hy => apart_of (n := 8 * 5) (l := wSl) (by decide +kernel) x hx y hy, by decide, by decide⟩
 
 theorem wShort : Short (· ∈ wSl) := by decide
 

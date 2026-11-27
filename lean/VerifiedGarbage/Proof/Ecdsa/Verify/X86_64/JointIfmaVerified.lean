@@ -108,6 +108,7 @@ meta import VerifiedGarbage.Proof.Weierstrass.X86_64.JointPrepFields
 meta import VerifiedGarbage.Proof.Weierstrass.TCombWords
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.CombLays
 meta import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Apart
 
 /-! ### `Ecdsa.Verify.X86_64.JointIfma`, which only this module used -/
 
@@ -139,7 +140,7 @@ open VG.Proof.Mont VG.Proof.Weierstrass.X86_64 VG.Proof.P256.X86_64
 private theorem joint_ifma_lay : Lay publicJointIfma.K.M 8192 (· ∈ jointSlots publicJointIfma) := by
   refine ⟨by decide +kernel, ?_, by decide +kernel, by decide +kernel⟩
   have h : ∀ x ∈ jointSlots publicJointIfma, ∀ y ∈ jointSlots publicJointIfma, x ≠ y →
-      x + 8 * publicJointIfma.K.M.n ≤ y ∨ y + 8 * publicJointIfma.K.M.n ≤ x := by decide +kernel
+      x + 8 * publicJointIfma.K.M.n ≤ y ∨ y + 8 * publicJointIfma.K.M.n ≤ x := apart_of (by decide +kernel)
   exact fun x y hx hy => h x hx y hy
 
 theorem joint_ifma_layout : JointLayout publicJointIfma 8192 :=

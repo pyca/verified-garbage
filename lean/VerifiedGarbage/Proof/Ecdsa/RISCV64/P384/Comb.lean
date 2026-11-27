@@ -11,6 +11,7 @@ import VerifiedGarbage.Proof.P384.Comb7
 import VerifiedGarbage.Proof.P384.Point
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Ecdh.RISCV64.Bytes
+import VerifiedGarbage.Proof.Framework.Apart
 
 /-!
 # The comb on RISC-V over P-384: the body
@@ -739,8 +740,7 @@ abbrev combSl : List Nat :=
   [352, 1984, 736, 784, 832, 880, 928, 976, 1024, 1072, 1120, 1168, 1216, 1264, 1312, 1360, 1408]
 
 theorem combLay : Lay p384.MP' (own 6) (· ∈ combSl) :=
-  ⟨by decide, fun x y hx hy => (by decide : ∀ x ∈ combSl, ∀ y ∈ combSl, x ≠ y → x + 8 * 6 ≤ y ∨ y + 8 * 6 ≤ x)
-    x hx y hy, by decide, by decide⟩
+  ⟨by decide, fun x y hx hy => apart_of (n := 8 * 6) (l := combSl) (by decide +kernel) x hx y hy, by decide, by decide⟩
 
 /-- The slots the addition reads. -/
 abbrev addV : List Nat := [352, 1984, 736, 784, 832, 880, 928, 976]

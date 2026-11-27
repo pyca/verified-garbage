@@ -8,6 +8,7 @@ public import VerifiedGarbage.Impl.AArch64Instrs
 public import VerifiedGarbage.Impl.P256.EcdhJac.Base
 
 import VerifiedGarbage.Proof.Ecdsa.AArch64.SlotOps
+import VerifiedGarbage.Proof.Framework.Apart
 
 /-! Shared invariants for secret-scalar P-256 Jacobian windows. -/
 
@@ -44,7 +45,7 @@ theorem offset_eq : offset=16*Window5.geom 52 := by
 theorem layout : Lay M 8192 Sl where
   le := by decide +kernel
   apart := by
-    have h : ∀ x∈slots,∀ y∈slots,x≠y→x+32≤y ∨ y+32≤x := by decide +kernel
+    have h : ∀ x∈slots,∀ y∈slots,x≠y→x+32≤y ∨ y+32≤x := apart_of (by decide +kernel)
     exact fun x y hx hy hxy => h x hx y hy hxy
   mo := by decide +kernel
   tmp := by decide +kernel

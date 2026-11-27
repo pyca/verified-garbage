@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.Taint
 import VerifiedGarbage.Proof.Weierstrass.CombLay
+import VerifiedGarbage.Proof.Framework.Apart
 
 /-! # brainpoolP256r1 multiplication by the base point, by a call of `vg_brainpoolp256r1_mul` -/
 
@@ -24,7 +25,7 @@ theorem ladLayM : LadLay brainpoolp256r1.mulLadder size := by
   constructor
   · refine ⟨by decide +kernel, ?_, by decide +kernel, by decide +kernel⟩
     have h : ∀ x ∈ ladSlots brainpoolp256r1.mulLadder, ∀ y ∈ ladSlots brainpoolp256r1.mulLadder,
-        x ≠ y → x + 32 ≤ y ∨ y + 32 ≤ x := by decide +kernel
+        x ≠ y → x + 32 ≤ y ∨ y + 32 ≤ x := apart_of (by decide +kernel)
     exact fun x y hx hy => h x hx y hy
   · constructor <;> decide +kernel
   · constructor <;> decide +kernel

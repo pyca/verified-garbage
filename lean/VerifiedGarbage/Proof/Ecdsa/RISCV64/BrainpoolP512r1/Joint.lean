@@ -13,6 +13,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.BrainpoolP512r1.Point
 import VerifiedGarbage.Proof.Weierstrass.RISCV64.Ladder
 public import VerifiedGarbage.Proof.Weierstrass.Law3
+import VerifiedGarbage.Proof.Framework.Apart
 
 /-!
 # ECDSA verification over brainpoolP512r1 on RISC-V: the joint ladder
@@ -63,8 +64,7 @@ abbrev jSl : List Nat :=
     brainpoolp512r1.sl brainpoolp512r1.EX, brainpoolp512r1.sl brainpoolp512r1.EY, brainpoolp512r1.sl brainpoolp512r1.EZ]
 
 theorem jLay : Lay brainpoolp512r1.MP' (own 8) (· ∈ jSl) :=
-  ⟨by decide, fun x y hx hy => (by decide : ∀ x ∈ jSl, ∀ y ∈ jSl, x ≠ y → x + 8 * 8 ≤ y ∨ y + 8 * 8 ≤ x)
-    x hx y hy, by decide, by decide⟩
+  ⟨by decide, fun x y hx hy => apart_of (n := 8 * 8) (l := jSl) (by decide +kernel) x hx y hy, by decide, by decide⟩
 
 theorem jShort : Short (· ∈ jSl) := by decide
 

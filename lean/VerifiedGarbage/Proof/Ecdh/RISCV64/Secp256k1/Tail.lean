@@ -38,6 +38,7 @@ meta import VerifiedGarbage.Impl.Ecdsa.RISCV64.WindowA
 meta import VerifiedGarbage.Proof.Ecdsa.RISCV64.WindowA
 meta import VerifiedGarbage.Proof.Weierstrass.JacDbl0
 meta import VerifiedGarbage.Proof.Ecdsa.RISCV64.WindowAll
+import VerifiedGarbage.Proof.Framework.Apart
 
 /-! ### `Ecdsa.RISCV64.Secp256k1.MulVerified`, which this module and modules that import it used -/
 
@@ -84,8 +85,7 @@ abbrev wSl : List Nat :=
     c.sl RX, c.sl RY, c.sl RZ, c.sl DX, c.sl DY, c.sl DZ, c.sl TX, c.sl TY, c.sl TZ]
 
 theorem wLay : Lay c.MP' (own 4) (· ∈ wSl) :=
-  ⟨by decide, fun x y hx hy => (by decide : ∀ x ∈ wSl, ∀ y ∈ wSl, x ≠ y → x + 8 * 4 ≤ y ∨ y + 8 * 4 ≤ x)
-    x hx y hy, by decide, by decide⟩
+  ⟨by decide, fun x y hx hy => apart_of (n := 8 * 4) (l := wSl) (by decide +kernel) x hx y hy, by decide, by decide⟩
 
 theorem wShort : Short (· ∈ wSl) := by decide
 
