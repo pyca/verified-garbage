@@ -438,10 +438,28 @@ def ofDom : XDom α where
     | op => (binMoves op).bind fun m => (movesA D a m.1).bind fun x => (movesA D b m.2).bind (D.xor x)
   const := D.const
 
+private theorem of_dite {α : Type} {c P : Prop} [Decidable c] {a : c → Option α} {b : ¬c → Option α} {l : α}
+    (h : dite c a b = some l) (ha : ∀ hc, a hc = some l → P) (hb : ∀ hc, b hc = some l → P) : P := by
+  by_cases hc : c
+  · exact ha hc (by rwa [dite_eq_left hc] at h)
+  · exact hb hc (by rwa [dite_eq_right hc] at h)
+
+set_option hygiene false in
+/-- The cases of `h : (if c₁ then some l₁ else …) = some l`. -/
+local macro "unMoves_cases" : tactic => `(tactic| repeat' first
+  | (cases h; done)
+  | (refine of_dite h (fun hn h => ?_) (fun _ h => ?_) <;> [(subst hn; cases h; kernel_rfl); skip]))
+
 theorem unMoves_ok : ∀ {u : Un} {l : List (Nat × BitVec 128)}, unMoves u = some l → realizes l u.src = true := by
   intro u l h
-  unfold unMoves at h
-  split at h <;> first | (cases h; done) | (cases h; kernel_rfl)
+  -- By the `if`s the `match` is, without its splitter, which takes seconds to derive.
+  cases u with
+  | shift op n =>
+    cases op <;> delta unMoves unMoves.match_1 at h <;> dsimp only at h <;> unMoves_cases
+  | _ =>
+    delta unMoves unMoves.match_1 at h
+    dsimp only at h
+    unMoves_cases
 
 /-- The moves of an unpacking put together are what it does. -/
 def realizes2 (l : List (Nat × BitVec 128) × List (Nat × BitVec 128)) (g : Nat → Option (Bool × Nat)) : Bool :=
