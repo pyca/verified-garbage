@@ -171,7 +171,8 @@ globs = ["VerifiedGarbage.Proof.Framework.SigEval", "VerifiedGarbage.Proof.Frame
   "VerifiedGarbage.Proof.Framework.X86.Reduce", "VerifiedGarbage.Proof.Framework.AArch64.Reduce",
   "VerifiedGarbage.Proof.Framework.Arm.Reduce", "VerifiedGarbage.Proof.Framework.PPC64LE.Reduce",
   "VerifiedGarbage.Proof.MlDsa.DecideAt", "VerifiedGarbage.Impl.NatPairs",
-  "VerifiedGarbage.Impl.AArch64Instrs", "VerifiedGarbage.Proof.Framework.FastNames"]
+  "VerifiedGarbage.Impl.AArch64Instrs", "VerifiedGarbage.Proof.Framework.FastNames",
+  "VerifiedGarbage.Proof.Framework.FastOps"]
 precompileModules = true
 
 # The trusted base, which imports only Lean core: the code the emitter
