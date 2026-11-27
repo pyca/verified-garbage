@@ -310,21 +310,37 @@ theorem zero_mask (x : BitVec 64) : (if 0#64 < x then 1 else 0) - 1#64 = mask (d
     rfl
 
 /-- The registers `eqMask d a b` writes, but `d`. -/
-def eqRegs : List Reg := [.t3, .t4, .t5, .s0, .s1, .s2]
+def eqRegs : List Reg := [.t3, .t4, .t5, .s0, .s1, .s2, .s3]
 
-/-- `eqMask d a b`: `d` := all ones if arrays `a` and `b` are equal, else 0. -/
-theorem eqMask_ok {s : State} {B : Addr} {Z w N : Nat} (h : MCtx s B Z w N) {d : Reg} (hd : d = .a3 ∨ d = .a4)
-    {a b : Nat} (ha : a < 28) (hb : b < 28) :
-    WP isa (eqMask d a b) s fun t =>
-      (t.gpr d = mask (decide (A s.mem B w a = A s.mem B w b)) ∧ t.mem = s.mem) ∧ Keep (d :: eqRegs) s t := by
-  have hnw := h.scr.nowrap
-  have hA := h.sl ha
-  have hB := h.sl hb
+/-- `(w − 1) mod 4 + 1` words, in bytes. -/
+theorem eq_step {w : Nat} (h1 : 1 ≤ w) (hw : w < 2 ^ 31) :
+    ((BitVec.ofNat 64 w - BitVec.ofNat 64 1 &&& BitVec.ofNat 64 3) + BitVec.ofNat 64 1) <<< 3 =
+      BitVec.ofNat 64 (8 * ((w - 1) % 4 + 1)) := by
+  rw [show BitVec.ofNat 64 w - BitVec.ofNat 64 1 = BitVec.ofNat 64 (w - 1) by
+    apply BitVec.eq_of_toNat_eq
+    simp only [BitVec.toNat_sub, BitVec.toNat_ofNat]
+    omega_arith]
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.toNat_shiftLeft, BitVec.toNat_add, BitVec.toNat_and, show (BitVec.ofNat 64 3).toNat = 2 ^ 2 - 1 from rfl,
+    Nat.and_two_pow_sub_one_eq_mod]
+  simp only [BitVec.toNat_ofNat, Nat.shiftLeft_eq]
+  omega_arith
+
+/-- The groups of four words. -/
+theorem eq_groups {w : Nat} (hw : w < 2 ^ 31) :
+    (BitVec.ofNat 64 w + BitVec.ofNat 64 3) >>> 2 = BitVec.ofNat 64 ((w + 3) / 4) := by
+  rw [← BitVec.ofNat_add]
+  apply BitVec.eq_of_toNat_eq
+  simp only [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
+  omega_arith
+
+theorem eqInit_ok {s : State} {B : Addr} {Z w N : Nat} (h : MCtx s B Z w N) (a b : Nat) :
+    WP isa (.block (eqInit a b)) s fun t =>
+      (t.gpr .t3 = off B (slot w a) ∧ t.gpr .t4 = off B (slot w b) ∧ t.gpr .t5 = BitVec.ofNat 64 ((w + 3) / 4) ∧
+        t.gpr .s3 = BitVec.ofNat 64 (8 * ((w - 1) % 4 + 1)) ∧ t.gpr .s0 = 0 ∧ t.mem = s.mem) ∧
+        Keep [.t3, .t4, .t5, .s3, .s0] s t := by
   have hw := h.w4
-  have hw' := h.w128
-  have al := slot_al w
-  unfold eqMask
-  refine WP.seq ?_
+  unfold eqInit
   simp only [List.append_assoc]
   rw [WP.block_append_iff]
   refine WP.mono (Pub.base_ok (rd := .t3) (by decide) h.a7 h.s5 a) fun t₁ ⟨⟨a3, m1⟩, k1⟩ => ?_
@@ -332,50 +348,140 @@ theorem eqMask_ok {s : State} {B : Addr} {Z w N : Nat} (h : MCtx s B Z w N) {d :
   rw [WP.block_append_iff]
   refine WP.mono (Pub.base_ok (rd := .t4) (by decide) e1.a7 e1.s5 b) fun t₂ ⟨⟨a4, m2⟩, k2⟩ => ?_
   have e2 := e1.regs k2 (by decide) m2
-  have hpre : WP isa (.block [.addi .t5 .t0 0, .li .s0 0]) t₂ fun t₃ =>
-      (t₃.gpr .t5 = BitVec.ofNat 64 w ∧ t₃.gpr .s0 = 0 ∧ t₃.mem = t₂.mem) ∧ Keep [.t5, .s0] t₂ t₃ := by
+  have hpre : WP isa (.block [.addi .t5 .t0 3, .shift .srl .d .t5 .t5 2, .addi .s3 .t0 (-1),
+      .logicImm .and .s3 .s3 3, .addi .s3 .s3 1, .shift .sll .d .s3 .s3 3, .li .s0 0]) t₂ fun t₃ =>
+      (t₃.gpr .t5 = BitVec.ofNat 64 ((w + 3) / 4) ∧ t₃.gpr .s3 = BitVec.ofNat 64 (8 * ((w - 1) % 4 + 1)) ∧
+        t₃.gpr .s0 = 0 ∧ t₃.mem = t₂.mem) ∧ Keep [.t5, .s3, .s0] t₂ t₃ := by
     refine WP.keep _ ?_ (by rfl) (by rfl)
-    brun [exec_li (show imm12 0 by decide), e2.t0, BitVec.add_zero]
+    brun [exec_li (show imm12 0 by decide), e2.t0, eq_groups h.w31,
+      eq_step (show 1 ≤ w by omega_arith) h.w31]
     rfl
-  refine WP.mono hpre fun t₃ ⟨⟨a5, a0, m3⟩, k3⟩ => ?_
-  have k13 := ((k1.trans k2).trans k3)
-  have hm3 : t₃.mem = s.mem := by rw [m3, m2, m1]
+  refine WP.mono hpre fun t ⟨⟨t5, t3, t0, tm⟩, kt⟩ => ⟨⟨?_, ?_, t5, t3, t0, by rw [tm, m2, m1]⟩,
+    ((k1.trans k2).trans kt).mono (by decide)⟩
+  · rw [kt.gpr (by decide), k2.gpr (by decide), a3]
+  · rw [kt.gpr (by decide), a4]
+
+/-- Word `k` of a group. -/
+theorem eqWord_ok {s : State} {B : Addr} {Z p q k : Nat} (hs : Scr s B Z) (h3 : s.gpr .t3 = off B p)
+    (h4 : s.gpr .t4 = off B q) (hp8 : p % 8 = 0) (hq8 : q % 8 = 0) (hk : k < 4) (hp : p + 32 ≤ Z) (hq : q + 32 ≤ Z) :
+    WP isa (.block (eqWord k)) s fun t =>
+      (t.gpr .s0 = s.gpr .s0 ||| (Mont.word s.mem B (p + 8 * k) ^^^ Mont.word s.mem B (q + 8 * k)) ∧
+        t.mem = s.mem) ∧ Keep [.s0, .s1, .s2] s t := by
+  refine WP.keep _ ?_ (by rfl) (by rfl)
+  unfold eqWord
+  brun [h3, h4, show 8 * k < 2048 by omega_arith, hs.ld (show p + 8 * k + 8 ≤ Z by omega_arith),
+    hs.ld (show q + 8 * k + 8 ≤ Z by omega_arith), hs.al8 (show p + 8 * k + 8 ≤ Z by omega_arith) (by omega_arith),
+    hs.al8 (show q + 8 * k + 8 ≤ Z by omega_arith) (by omega_arith)]
+
+theorem eqWords_succ (n : Nat) : eqWords (n + 1) = eqWords n ++ eqWord n := by
+  simp only [eqWords, List.range_succ, List.flatMap_append, List.flatMap_cons, List.flatMap_nil, List.append_nil]
+
+/-- The first `n` words of a group: `s0` stays zero exactly if they are equal. -/
+theorem eqWords_ok {s : State} {B : Addr} {Z p q : Nat} (hs : Scr s B Z) (h3 : s.gpr .t3 = off B p)
+    (h4 : s.gpr .t4 = off B q) (hp8 : p % 8 = 0) (hq8 : q % 8 = 0) (hp : p + 32 ≤ Z) (hq : q + 32 ≤ Z) :
+    ∀ n ≤ 4, WP isa (.block (eqWords n)) s fun t =>
+      ((t.gpr .s0 = 0 ↔ s.gpr .s0 = 0 ∧ ∀ k < n, Mont.word s.mem B (p + 8 * k) = Mont.word s.mem B (q + 8 * k)) ∧
+        t.mem = s.mem) ∧ Keep [.s0, .s1, .s2] s t
+  | 0, _ => WP.block_nil ⟨⟨⟨fun h => ⟨h, fun _ hk => absurd hk (Nat.not_lt_zero _)⟩, fun h => h.1⟩, rfl⟩,
+      Keep.refl _ _⟩
+  | n + 1, hn => by
+    rw [eqWords_succ, WP.block_append_iff]
+    refine WP.mono (eqWords_ok hs h3 h4 hp8 hq8 hp hq n (by omega_arith)) fun t ⟨⟨t0, tm⟩, tk⟩ => ?_
+    refine WP.mono (eqWord_ok (hs.congr tk.2.2) ((tk.gpr (by decide)).trans h3) ((tk.gpr (by decide)).trans h4)
+      hp8 hq8 (by omega_arith) hp hq) fun u ⟨⟨u0, um⟩, uk⟩ => ⟨⟨?_, um.trans tm⟩, Keep.trans' tk uk⟩
+    rw [u0, or_xor_zero, t0, tm]
+    constructor
+    · rintro ⟨⟨h0, hk⟩, he⟩
+      refine ⟨h0, fun k hk' => ?_⟩
+      rcases Nat.lt_succ_iff_lt_or_eq.mp hk' with hk' | rfl
+      · exact hk k hk'
+      · exact he
+    · rintro ⟨h0, hk⟩
+      exact ⟨⟨h0, fun k hk' => hk k (by omega_arith)⟩, hk n (by omega_arith)⟩
+
+/-- The first word of group `i`, of `w` words from the last group's end. -/
+def eqAt (w i : Nat) : Nat := if i = 0 then 0 else (w - 1) % 4 + 1 + 4 * (i - 1)
+
+/-- The words compared by the first `i` groups. -/
+def eqTo (w i : Nat) : Nat := if i = 0 then 0 else eqAt w (i - 1) + 4
+
+theorem eqAt_succ (w i : Nat) : eqAt w (i + 1) = eqAt w i + if i = 0 then (w - 1) % 4 + 1 else 4 := by
+  unfold eqAt
+  by_cases h : i = 0
+  · subst h; simp
+  · simp only [h, ↓reduceIte, Nat.add_eq_zero_iff, Nat.one_ne_zero, and_false]; omega_arith
+
+theorem eqTo_succ (w i : Nat) : eqTo w (i + 1) = eqAt w i + 4 := by
+  simp only [eqTo, Nat.add_eq_zero_iff, Nat.one_ne_zero, and_false, ↓reduceIte, Nat.add_sub_cancel]
+
+theorem eqTo_at (w i : Nat) : eqAt w i ≤ eqTo w i ∧ eqTo w i ≤ eqAt w i + 4 := by
+  cases i with
+  | zero => simp [eqAt, eqTo]
+  | succ i => rw [eqTo_succ, eqAt_succ]; split <;> omega_arith
+
+theorem eqAt_le {w i : Nat} (hw : 4 ≤ w) (hi : i < (w + 3) / 4) : eqAt w i + 4 ≤ w := by
+  unfold eqAt; split <;> omega_arith
+
+theorem eqTo_last {w : Nat} (hw : 4 ≤ w) : eqTo w ((w + 3) / 4) = w := by
+  simp only [eqTo, eqAt]
+  by_cases h : w = 4
+  · subst h; rfl
+  · simp only [show ¬ (w + 3) / 4 = 0 by omega_arith, show ¬ (w + 3) / 4 - 1 = 0 by omega_arith, ↓reduceIte]
+    omega_arith
+
+/-- `eqMask d a b`: `d` := all ones if arrays `a` and `b` are equal, else 0. -/
+theorem eqMask_ok {s : State} {B : Addr} {Z w N : Nat} (h : MCtx s B Z w N) {d : Reg} (hd : d = .a3 ∨ d = .a4)
+    {a b : Nat} (ha : a < 28) (hb : b < 28) :
+    WP isa (eqMask d a b) s fun t =>
+      (t.gpr d = mask (decide (A s.mem B w a = A s.mem B w b)) ∧ t.mem = s.mem) ∧ Keep (d :: eqRegs) s t := by
+  have hA := h.sl ha
+  have hB := h.sl hb
+  have hw := h.w4
+  have hw' := h.w128
+  have al := slot_al w
+  unfold eqMask
+  refine WP.seq (WP.mono (eqInit_ok h a b) fun t₁ ⟨⟨a3, a4, a5, as, a0, m1⟩, k1⟩ => ?_)
   let Inv : Nat → State → Prop := fun i t =>
-    t.gpr .t3 = off B (slot w a + 8 * i) ∧ t.gpr .t4 = off B (slot w b + 8 * i) ∧
-      (t.gpr .s0 = 0 ↔ ∀ k < i, Mont.word s.mem B (slot w a + 8 * k) = Mont.word s.mem B (slot w b + 8 * k)) ∧
-      t.mem = s.mem ∧ Keep [.t3, .t4, .t5, .s0, .s1, .s2] s t
-  refine WP.seq (WP.mono (wp_countdown (body := .block ([.load .d .s1 .t3 0, .load .d .s2 .t4 0,
-      .logic .xor .s1 .s1 .s2, .logic .or .s0 .s0 .s1, .addi .t3 .t3 8, .addi .t4 .t4 8] ++
-      ([.addi .t5 .t5 (-1)] : List Instr))) (cnt := .t5) (N := w) (by omega_arith) (by omega_arith) Inv
-    (fun i hi t ⟨j3, j4, j0, jm, jk⟩ _ => ?_)
-    ⟨by rw [k3.gpr (r := .t3) (by decide), k2.gpr (r := .t3) (by decide), a3]; rfl,
-      by rw [k3.gpr (r := .t4) (by decide), a4]; rfl,
-      ⟨fun _ _ hk => absurd hk (by omega_arith), fun _ => a0⟩, hm3, k13.mono (by decide)⟩ a5)
+    t.gpr .t3 = off B (slot w a + 8 * eqAt w i) ∧ t.gpr .t4 = off B (slot w b + 8 * eqAt w i) ∧
+      t.gpr .s3 = BitVec.ofNat 64 (8 * if i = 0 then (w - 1) % 4 + 1 else 4) ∧
+      (t.gpr .s0 = 0 ↔ ∀ k < eqTo w i, Mont.word s.mem B (slot w a + 8 * k) = Mont.word s.mem B (slot w b + 8 * k)) ∧
+      t.mem = s.mem ∧ Keep eqRegs s t
+  refine WP.seq (WP.mono (wp_countdown (body := .block (eqWords 4 ++ eqNext ++ ([.addi .t5 .t5 (-1)] : List Instr)))
+      (cnt := .t5) (N := (w + 3) / 4) (by omega_arith) (by omega_arith) Inv
+    (fun i hi t ⟨j3, j4, js, j0, jm, jk⟩ _ => ?_)
+    ⟨a3, a4, as, ⟨fun _ _ hk => absurd hk (Nat.not_lt_zero _), fun _ => a0⟩, m1, k1.mono (by decide)⟩ a5)
     fun t hI => ?_)
   · have hs := h.scr.congr jk.2.2
-    have hst : WP isa (.block [.load .d .s1 .t3 0, .load .d .s2 .t4 0, .logic .xor .s1 .s1 .s2,
-        .logic .or .s0 .s0 .s1, .addi .t3 .t3 8, .addi .t4 .t4 8, .addi .t5 .t5 (-1)]) t fun t' =>
-        (t'.gpr .t3 = off B (slot w a + 8 * i + 8) ∧ t'.gpr .t4 = off B (slot w b + 8 * i + 8) ∧
-          t'.gpr .s0 = t.gpr .s0 ||| (Mont.word t.mem B (slot w a + 8 * i) ^^^ Mont.word t.mem B (slot w b + 8 * i)) ∧
-          t'.gpr .t5 = t.gpr .t5 - BitVec.ofNat 64 1 ∧ t'.mem = t.mem) ∧
-        Keep [.t3, .t4, .t5, .s0, .s1, .s2] t t' := by
+    have hle := eqAt_le hw hi
+    rw [List.append_assoc, WP.block_append_iff]
+    refine WP.mono (eqWords_ok hs j3 j4 (by have := al a; omega_arith) (by have := al b; omega_arith)
+      (by omega_arith) (by omega_arith) 4 (Nat.le_refl _)) fun u ⟨⟨u0, um⟩, uk⟩ => ?_
+    have hst : WP isa (.block (eqNext ++ ([.addi .t5 .t5 (-1)] : List Instr))) u fun v =>
+        (v.gpr .t3 = u.gpr .t3 + u.gpr .s3 ∧ v.gpr .t4 = u.gpr .t4 + u.gpr .s3 ∧ v.gpr .s3 = BitVec.ofNat 64 32 ∧
+          v.gpr .t5 = u.gpr .t5 - BitVec.ofNat 64 1 ∧ v.mem = u.mem) ∧ Keep [.t3, .t4, .t5, .s3] u v := by
       refine WP.keep _ ?_ (by rfl) (by rfl)
-      brun [j3, j4, hs.ld (show slot w a + 8 * i + 8 ≤ Z by omega_arith),
-        hs.ld (show slot w b + 8 * i + 8 ≤ Z by omega_arith),
-        hs.al8 (show slot w a + 8 * i + 8 ≤ Z by omega_arith) (by have := al a; omega_arith),
-        hs.al8 (show slot w b + 8 * i + 8 ≤ Z by omega_arith) (by have := al b; omega_arith)]
-    refine WP.mono hst fun t' ⟨⟨l3, l4, l0, l5, lm⟩, lk⟩ => ⟨⟨?_, ?_, ?_, lm.trans jm, Keep.trans' jk lk⟩, l5⟩
-    · rw [l3, show slot w a + 8 * i + 8 = slot w a + 8 * (i + 1) by omega_arith]
-    · rw [l4, show slot w b + 8 * i + 8 = slot w b + 8 * (i + 1) by omega_arith]
-    · rw [l0, or_xor_zero, j0, jm]
+      unfold eqNext
+      brun [exec_li]
+    refine WP.mono hst fun v ⟨⟨v3, v4, vs, v5, vm⟩, vk⟩ => ⟨⟨?_, ?_, ?_, ?_, by rw [vm, um, jm],
+      ((jk.trans uk).trans vk).mono (by decide)⟩, by rw [v5, uk.gpr (by decide)]⟩
+    · rw [v3, uk.gpr (by decide), uk.gpr (by decide), j3, js, off_add, eqAt_succ, Nat.mul_add, Nat.add_assoc]
+    · rw [v4, uk.gpr (by decide), uk.gpr (by decide), j4, js, off_add, eqAt_succ, Nat.mul_add, Nat.add_assoc]
+    · rw [vs]; rfl
+    · have ht := eqTo_at w i
+      rw [vk.gpr (by decide), u0, j0, jm, eqTo_succ]
       constructor
-      · rintro ⟨hk, he⟩ k hk'
-        rcases Nat.lt_succ_iff_lt_or_eq.mp hk' with hk' | rfl
-        · exact hk k hk'
-        · exact he
+      · rintro ⟨hk, hg⟩ k hk'
+        by_cases hc : k < eqTo w i
+        · exact hk k hc
+        · have := hg (k - eqAt w i) (by omega_arith)
+          rwa [show slot w a + 8 * eqAt w i + 8 * (k - eqAt w i) = slot w a + 8 * k by omega_arith,
+            show slot w b + 8 * eqAt w i + 8 * (k - eqAt w i) = slot w b + 8 * k by omega_arith] at this
       · intro hk
-        exact ⟨fun k hk' => hk k (by omega_arith), hk i (by omega_arith)⟩
-  · obtain ⟨_, _, j0, jm, jk⟩ := hI
+        refine ⟨fun k hk' => hk k (by omega_arith), fun k hk' => ?_⟩
+        have := hk (eqAt w i + k) (by omega_arith)
+        rwa [Nat.mul_add, ← Nat.add_assoc, ← Nat.add_assoc] at this
+  · obtain ⟨_, _, _, j0, jm, jk⟩ := hI
+    rw [eqTo_last hw] at j0
     have hv : (A s.mem B w a = A s.mem B w b) ↔ t.gpr .s0 = 0 := by
       rw [wordsVal_eq_iff, j0]
     have hfin : WP isa (.block [.li .s1 0, .sltu .s1 .s1 .s0, .addi d .s1 (-1)]) t fun t' =>

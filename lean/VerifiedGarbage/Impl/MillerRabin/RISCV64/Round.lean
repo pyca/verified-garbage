@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.RISCV64.ModExp
+public import VerifiedGarbage.Impl.Bignum.RISCV64.WinSelect
 public import VerifiedGarbage.Impl.StackScratch.RISCV64
 
 /-!
@@ -20,22 +21,21 @@ bits of `E` from its top, four squarings, each or'ing the flag `P` with `y =
 −1`, then `y := y T_d` and, if `d ≠ 0`, `P := y = 1 ∨ y = −1`; then three
 more squarings, the flag or'ed with `y = −1` under the mask of `σ > j`. `P`
 is a mask: nothing branches on a secret value, and `T_d` is selected by a
-scan of the whole table.
+scan of the whole table (`WinSelect.lean`).
 
 The squarings are `MontSqr.lean`'s `sqrTail` (its product in arrays 2 and 3,
 its temporary array 5, which the selection overwrites anyway), the
 multiplications `MontMul.lean`'s `tail` (`PublicChecked.montOp`), both
 inline, in the public-key operation's registers: `a7` array 0's base, `s5`
-the arrays' size, `t0` `w`, `t1` `-c⁻¹ mod 2⁶⁴` (header word 7). Copies and
-the selection are `selectAcc64`'s masked copies; a comparison `or`s the
-`xor`s of the words, and its mask is `(that = 0) − 1`, by `sltu`.
+the arrays' size, `t0` `w`, `t1` `-c⁻¹ mod 2⁶⁴` (header word 7). Copies
+are `selectAcc64`'s masked copies; a comparison `or`s the `xor`s of the words,
+four at a time, and its mask is `(that = 0) − 1`, by `sltu`.
 
 Registers kept across the multiplications: `s6` the flag, `s7` the word of
 `E` being scanned, `s8` its address, `s9` the words left, `s10` the windows
-left, `s11` the digit (or, building the table, the entry); `a1` the entry
-scanned by the selection. The callee-saved registers are saved in a frame of
-`frameBytes` bytes on the stack (`withStackScratch`, its address in `t2`):
-the round writes no header word.
+left, `s11` the digit (or, building the table, the entry). The callee-saved
+registers are saved in a frame of `frameBytes` bytes on the stack
+(`withStackScratch`, its address in `t2`): the round writes no header word.
 -/
 
 @[expose] public section
@@ -50,7 +50,6 @@ open VG.Impl.Bignum.RISCV64.ModExp (sqrOp copy)
 
 def aY : Nat := 6
 def aW : Nat := 5
-def aT : Nat := 3
 def aOne : Nat := 9
 def aMinus : Nat := 10
 def aTab : Nat := 11
@@ -86,13 +85,32 @@ def entry (rd rj : Reg) : List Instr := [.addi .t2 rj aTab, .mul .t2 .t2 .s5, .a
 def toEntry (a : Nat) : Prog isa :=
   .seq (.block ([.li .s4 (-1)] ++ entry .a2 .s11 ++ base .a5 a ++ base .a6 a)) selectAcc64
 
-/-- `d :=` all ones if the `w` words of arrays `a` and `b` are equal, else 0:
-the `or` of their `xor`s is zero, and `(0 <u that) − 1` the mask. It writes
-`t2`–`t5`, `s0`–`s2` and `d`. -/
+/-- The pointers of `eqMask` at arrays `a` and `b`, the groups `⌈w / 4⌉` in
+`t5`, and `s3` the bytes from the first group to the second, `8 ((w - 1) mod 4
++ 1)`. -/
+def eqInit (a b : Nat) : List Instr :=
+  base .t3 a ++ base .t4 b ++
+    [.addi .t5 .t0 3, .shift .srl .d .t5 .t5 2, .addi .s3 .t0 (-1), .logicImm .and .s3 .s3 3,
+      .addi .s3 .s3 1, .shift .sll .d .s3 .s3 3, .li .s0 0]
+
+/-- Word `k` past the pointers compared. -/
+def eqWord (k : Nat) : List Instr :=
+  [.load .d .s1 .t3 (8 * k), .load .d .s2 .t4 (8 * k), .logic .xor .s1 .s1 .s2, .logic .or .s0 .s0 .s1]
+
+/-- `n` words compared. -/
+def eqWords (n : Nat) : List Instr := (List.range n).flatMap eqWord
+
+/-- The pointers at the next group, 4 words after this one but after the
+first. -/
+def eqNext : List Instr := [.add .t3 .t3 .s3, .add .t4 .t4 .s3, .li .s3 32]
+
+/-- `d :=` all ones if the `w ≥ 4` words of arrays `a` and `b` are equal, else
+0: the `or` of their `xor`s is zero, and `(0 <u that) − 1` the mask. The words
+are compared in groups of four, from word 0 and then up to the last word, so
+the first two groups may overlap. It writes `t3`–`t5`, `s0`–`s3` and `d`. -/
 def eqMask (d : Reg) (a b : Nat) : Prog isa :=
-  .seq (.block (base .t3 a ++ base .t4 b ++ [.addi .t5 .t0 0, .li .s0 0]))
-    (.seq (countLoop .t5 [.load .d .s1 .t3 0, .load .d .s2 .t4 0, .logic .xor .s1 .s1 .s2,
-        .logic .or .s0 .s0 .s1, .addi .t3 .t3 8, .addi .t4 .t4 8])
+  .seq (.block (eqInit a b))
+    (.seq (countLoop .t5 (eqWords 4 ++ eqNext))
       (.block [.li .s1 0, .sltu .s1 .s1 .s0, .addi d .s1 (-1)]))
 
 /-! ## The table -/
@@ -112,17 +130,8 @@ def table : Prog isa :=
 def square : Prog isa :=
   .seq (sqrOp aY aY aW) (.seq (eqMask .a3 aY aMinus) (.block [.logic .or .s6 .s6 .a3]))
 
-/-- `s4 :=` all ones if `a1 = s11`, else 0 (both below 16). -/
-def isDigit : List Instr :=
-  [.logic .xor .t2 .a1 .s11, .addi .t2 .t2 (-1), .shift .srl .d .t2 .t2 63, .li .t3 0, .sub .s4 .t3 .t2]
-
-/-- `T_d` into array 5, `d` in `s11`: for each pair of entries `j`, `j + 1`,
-array 3 `:= j = d ? T_j : [5]`, then array 5 `:= j + 1 = d ? T_(j+1) : [3]`. -/
-def select : Prog isa :=
-  .seq (.block [.li .a1 0])
-    (.loop (.seq (.block (isDigit ++ entry .a5 .a1 ++ base .a6 aW ++ base .a2 aT)) (.seq selectAcc64
-      (.seq (.block ([.addi .a1 .a1 1] ++ isDigit ++ entry .a5 .a1 ++ base .a6 aT ++ base .a2 aW)) (.seq selectAcc64
-        (.block [.addi .a1 .a1 1, .addi .t2 .a1 (-16)]))))) (.nonzero .t2))
+/-- `T_d` into array 5, `d` in `s11`. -/
+def select : Prog isa := .seq (.block [.addi .t6 .s11 0]) (WinSelect.winSelect aW aTab)
 
 /-- After `y := y T_d`: the flag `P := d ≠ 0 ? (y = 1 ∨ y = −1) : P`. -/
 def update : Prog isa :=
