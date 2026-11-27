@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Ffdh.Contract
 public import VerifiedGarbage.Impl.RsaKeyGen.TrialTable32
 meta import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Ffdh.Contract
 
 /-!
 # An FFDH parameter candidate on PPC64LE: the callable contract

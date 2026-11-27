@@ -33,11 +33,9 @@ public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Contract
 public import VerifiedGarbage.Proof.Rsa.AArch64.CvStore
 import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.State
-meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Contract
 meta import VerifiedGarbage.Proof.Rsa.AArch64.CvStore
 meta import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Bignum.Octets
-meta import VerifiedGarbage.Proof.RsaKeyGen.Contract
 
 /-! ### `RsaKeyGen.AArch64.Key.CTBase`, which this module and modules that import it used -/
 

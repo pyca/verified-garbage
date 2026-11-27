@@ -9,7 +9,6 @@ import VerifiedGarbage.Proof.Bignum.X86_64.Template
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.RsaKeyGen.Hdr
-meta import VerifiedGarbage.Spec.Ffdh.DerivePublicContract
 meta import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CallPost
@@ -21,7 +20,6 @@ meta import VerifiedGarbage.Proof.RsaKeyGen.Hdr
 public import VerifiedGarbage.Proof.MillerRabin.X86_64.Backend
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ExpImpl
 public import VerifiedGarbage.Impl.Ffdh.X86_64.DerivePublic
-meta import VerifiedGarbage.Proof.MillerRabin.X86_64.Backend
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.ExpImpl
 meta import VerifiedGarbage.Impl.Ffdh.X86_64.DerivePublic
 public import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
@@ -39,12 +37,7 @@ import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupLoad
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Bignum.Octets
-meta import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.StagesCT
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
-meta import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.CT
-meta import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.TailCT
-meta import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.Scalar
-meta import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Math
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.FrontCT
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.Moves
 meta import VerifiedGarbage.Proof.Rsa.X86_64.CTBase
@@ -69,14 +62,10 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Framework.PowLit
 meta import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
-meta import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.Arithmetic
 meta import VerifiedGarbage.Proof.Bignum.X86_64.R2Impl
-meta import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.Start
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.Exchange.Output
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.Exit
-meta import VerifiedGarbage.Proof.Ffdh.Domain
 meta import VerifiedGarbage.Proof.Bignum.Math
-meta import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.Data
 meta import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
 meta import VerifiedGarbage.Proof.Rsa.X86_64.CvStore
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.Front

@@ -11,10 +11,8 @@ import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Mont.X86.Rt.Step
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Scalar
 meta import VerifiedGarbage.Impl.Rsa.X86.RecoverDetRt
-meta import VerifiedGarbage.Proof.Rsa.X86.Rd.Abi
 meta import VerifiedGarbage.Proof.Framework.X86.Taint
 meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
-meta import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Time.Base
 public import VerifiedGarbage.Proof.Rsa.X86.Rd.Abi
 public import VerifiedGarbage.Proof.Rsa.X86.Rd.SqrtWBase
 public import VerifiedGarbage.Proof.Framework.X86.Taint
@@ -22,7 +20,6 @@ public import VerifiedGarbage.Proof.Framework.X86.SseTaint
 public import VerifiedGarbage.Impl.Rsa.X86.RecoverDetRt
 import VerifiedGarbage.Proof.Framework.X86.RelCT
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
-meta import VerifiedGarbage.Proof.Rsa.X86.Rd.SqrtWBase
 meta import VerifiedGarbage.Proof.Framework.X86.RelCT
 meta import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 

@@ -5,7 +5,6 @@ import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Dsa.X86.RandomTwo
 meta import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.Search.Step
-meta import VerifiedGarbage.Proof.RsaKeyGen.X86.Search.Step
 
 /-! ### `RsaKeyGen.X86.Search.Loop`, which this module and modules that import it used -/
 

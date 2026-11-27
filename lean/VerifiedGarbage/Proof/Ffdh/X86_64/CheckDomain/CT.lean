@@ -10,9 +10,7 @@ import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Bignum.X86_64.R2Impl
-meta import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.OptionalCT
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.FrontCT
-meta import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Body
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.Moves
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc

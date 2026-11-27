@@ -28,20 +28,13 @@ meta import VerifiedGarbage.Proof.Framework.Covers
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Sig
 meta import VerifiedGarbage.Proof.MlKem.X86.Common
-meta import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyABI
-meta import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateABI
-meta import VerifiedGarbage.Proof.RsaKeyGen.X86.Search.ABI
 meta import VerifiedGarbage.Proof.Framework.X86.AllocFrame
-meta import VerifiedGarbage.Proof.Ffdh.X86.KeySearch.Zero
 meta import VerifiedGarbage.Proof.Mont.X86.Instr
 meta import VerifiedGarbage.Impl.RsaKeyGen.X86.Generate
 meta import VerifiedGarbage.Proof.MlDsa.X86.Pack.Run
 meta import VerifiedGarbage.Proof.Framework.X86.Syms
 meta import VerifiedGarbage.Proof.Framework.X86.Taint
 meta import VerifiedGarbage.Proof.Rc2.PairMem
-meta import VerifiedGarbage.Proof.Ffdh.X86.KeyInit
-meta import VerifiedGarbage.Proof.RsaKeyGen.InitWords
-meta import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyInit
 meta import VerifiedGarbage.Proof.Bignum.ByteDigits
 
 /-! # The controller to the key's call (i686)

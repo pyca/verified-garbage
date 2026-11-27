@@ -25,9 +25,7 @@ import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.LivePolicy
 meta import VerifiedGarbage.Impl.Ffdh.Arm.ParameterSearch
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CTState
-meta import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CTState
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Live
-meta import VerifiedGarbage.Proof.Ffdh.Contract
 
 /-! ### `Ffdh.Arm.ParameterSearch.CTClassify`, which only this module used -/
 

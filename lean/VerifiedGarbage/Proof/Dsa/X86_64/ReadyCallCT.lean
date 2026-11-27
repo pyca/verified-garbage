@@ -13,7 +13,6 @@ import VerifiedGarbage.Proof.Dsa.X86_64.StoreSuffix
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Impl.Dsa.X86_64.Core
-meta import VerifiedGarbage.Proof.Dsa.X86_64.StoreSuffix
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupLoad
@@ -28,27 +27,20 @@ meta import VerifiedGarbage.Impl.Dsa.X86_64.Arithmetic
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Dsa.X86_64.ReduceInitCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.ReduceInitCT
-meta import VerifiedGarbage.Proof.Dsa.X86_64.Add
 import VerifiedGarbage.Proof.Dsa.X86_64.SetupCT
 import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTRedc
 import VerifiedGarbage.Proof.Dsa.X86_64.Prepare
-meta import VerifiedGarbage.Proof.Dsa.X86_64.SetupCT
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTRedc
-meta import VerifiedGarbage.Proof.Dsa.X86_64.Prepare
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 import VerifiedGarbage.Proof.Dsa.X86_64.Load
-meta import VerifiedGarbage.Proof.Dsa.X86_64.Load
 public import VerifiedGarbage.Proof.Dsa.X86_64.PowerCT
 public import VerifiedGarbage.Proof.Dsa.X86_64.Frame
-meta import VerifiedGarbage.Proof.Dsa.X86_64.PowerCT
-meta import VerifiedGarbage.Proof.Dsa.X86_64.Frame
 public import VerifiedGarbage.Proof.Dsa.X86_64.ReduceByte
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtArith
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTGPow
-meta import VerifiedGarbage.Proof.Dsa.X86_64.ReduceByte
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtArith
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTGPow
 public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
@@ -56,7 +48,6 @@ public import Aesop.BuiltinRules
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 meta import Aesop.BuiltinRules
 public import VerifiedGarbage.Proof.Dsa.X86_64.ProductCT
-meta import VerifiedGarbage.Proof.Dsa.X86_64.ProductCT
 import VerifiedGarbage.Proof.Bignum.X86_64.Row
 import VerifiedGarbage.Proof.Bignum.X86_64.MulAdd
 public import VerifiedGarbage.Impl.Rsa.X86_64.Crt

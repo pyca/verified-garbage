@@ -12,7 +12,6 @@ public import VerifiedGarbage.Spec.Ffdh.KeyGenerationContract
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.TCB.Arm.Target
-meta import VerifiedGarbage.Spec.Ffdh.KeyGenerationContract
 public import Init.Data.BitVec.BasicAux
 public import Init.Data.List.Basic
 public import VerifiedGarbage.Impl.Ffdh.Arm.Init

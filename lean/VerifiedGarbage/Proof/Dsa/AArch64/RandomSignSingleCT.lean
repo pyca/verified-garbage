@@ -5,8 +5,6 @@ public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignPublic
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.TaintBatch
-meta import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignPublic
-meta import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCode
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
@@ -25,9 +23,6 @@ meta import VerifiedGarbage.Impl.Dsa.AArch64.RandomSign
 meta import Aesop.BuiltinRules
 meta import VerifiedGarbage.Proof.Framework.AArch64.RelCT
 meta import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCall
-meta import VerifiedGarbage.Proof.Dsa.AArch64.CallFinishCT
-meta import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCallMemory
 meta import VerifiedGarbage.Proof.Dsa.AArch64.RandomMemory
 meta import VerifiedGarbage.Proof.Bignum.Octets
 

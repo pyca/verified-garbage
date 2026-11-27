@@ -7,9 +7,6 @@ import VerifiedGarbage.Proof.Dsa.SizeBounds
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-meta import VerifiedGarbage.Proof.Dsa.Accepted
-meta import VerifiedGarbage.Proof.Dsa.RISCV64.Sizes
-meta import VerifiedGarbage.Proof.Dsa.SizeBounds
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
@@ -22,10 +19,7 @@ public import VerifiedGarbage.Proof.Bignum.RISCV64.Reach
 public import VerifiedGarbage.Proof.Bignum.RISCV64.PreCT
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Framework.RISCV64.Taint
-meta import VerifiedGarbage.Proof.Dsa.RISCV64.VerifyFn
-meta import VerifiedGarbage.Proof.Dsa.RISCV64.VerifyComb
 meta import VerifiedGarbage.Impl.Dsa.RISCV64.Sign
-meta import VerifiedGarbage.Proof.Dsa.DomainShape
 meta import VerifiedGarbage.Proof.Bignum.RISCV64.Reach
 meta import VerifiedGarbage.Proof.Bignum.RISCV64.PreCT
 meta import VerifiedGarbage.Proof.Framework.RelCT
@@ -33,8 +27,6 @@ meta import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 import VerifiedGarbage.Proof.Bignum.RISCV64.PubCorrect
 import VerifiedGarbage.Proof.Dsa.PackedBytes
 meta import VerifiedGarbage.Proof.Bignum.RISCV64.PubCorrect
-meta import VerifiedGarbage.Proof.Dsa.PackedBytes
-meta import VerifiedGarbage.Proof.Dsa.DomainWidths
 
 /-! ### `Dsa.RISCV64.CTKey`, which this module and modules that import it used -/
 

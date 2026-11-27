@@ -21,10 +21,8 @@ import VerifiedGarbage.Proof.Framework.X86_64.Depth
 import VerifiedGarbage.Proof.Ffdh.ControlMemory
 import VerifiedGarbage.Proof.Bignum.X86_64.WordIOBytes
 meta import VerifiedGarbage.Impl.RsaKeyGen.X86_64.KeyInit
-meta import VerifiedGarbage.Proof.RsaKeyGen.KeySearchPublic
 meta import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 meta import VerifiedGarbage.Proof.Framework.Semantics
-meta import VerifiedGarbage.Proof.RsaKeyGen.InitWords
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Words
 meta import VerifiedGarbage.Proof.Bignum.Words

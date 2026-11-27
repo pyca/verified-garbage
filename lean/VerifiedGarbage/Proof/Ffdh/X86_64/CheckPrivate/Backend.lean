@@ -9,8 +9,6 @@ import VerifiedGarbage.Proof.Bignum.X86_64.Template
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.RsaKeyGen.Hdr
-meta import VerifiedGarbage.Spec.Ffdh.Contract
-meta import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.Start
 meta import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTExp
@@ -21,7 +19,6 @@ meta import VerifiedGarbage.Proof.RsaKeyGen.Hdr
 public import VerifiedGarbage.Proof.MillerRabin.X86_64.Backend
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ExpImpl
 public import VerifiedGarbage.Impl.Ffdh.X86_64.CheckPrivate
-meta import VerifiedGarbage.Proof.MillerRabin.X86_64.Backend
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.ExpImpl
 meta import VerifiedGarbage.Impl.Ffdh.X86_64.CheckPrivate
 public import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
@@ -32,8 +29,6 @@ import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.Correct
 meta import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
 meta import VerifiedGarbage.Proof.Bignum.X86_64.R2Impl
-meta import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.CT
-meta import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.Correct
 
 /-! ### `Ffdh.X86_64.CheckPrivate.Verified`, which only this module used -/
 

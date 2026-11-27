@@ -12,8 +12,6 @@ import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.TaintBatch
-meta import VerifiedGarbage.Proof.Ffdh.AArch64.OutMaskCT
-meta import VerifiedGarbage.Proof.Ffdh.AArch64.CheckDomain.CT
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowExpCT
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTSetupLoad
 meta import VerifiedGarbage.Proof.Bignum.AArch64.PcMain
@@ -36,7 +34,6 @@ import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Ffdh.Domain
 import VerifiedGarbage.Proof.Bignum.AArch64.PcCode
-meta import VerifiedGarbage.Spec.Ffdh.Contract
 meta import VerifiedGarbage.TCB.AArch64.Target
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.GetElem
@@ -50,7 +47,6 @@ meta import VerifiedGarbage.Proof.Bignum.AArch64.PubOut
 meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
 meta import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Ffdh.Domain
 meta import VerifiedGarbage.Proof.Bignum.AArch64.PcCode
 
 /-! ### `Ffdh.AArch64.Exchange.CT`, which only this module used -/

@@ -32,7 +32,6 @@ import VerifiedGarbage.Proof.Ffdh.Arm.FrameCT
 import VerifiedGarbage.Proof.Framework.Lit
 import Batteries.Logic
 meta import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Spec.Ffdh.Contract
 meta import VerifiedGarbage.TCB.Arm.Target
 public import Init.Core
 import VerifiedGarbage.Proof.Ffdh.Arm.CheckPublicSpec
@@ -43,7 +42,6 @@ import VerifiedGarbage.Proof.Bignum.Arm.Stack
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
-meta import VerifiedGarbage.Impl.Ffdh.Arm.VettedGroups
 public import VerifiedGarbage.Proof.Ffdh.Arm.SampleEnvironment
 public import VerifiedGarbage.TCB.Arm.Isa
 import VerifiedGarbage.Proof.Ffdh.Arm.StackCT

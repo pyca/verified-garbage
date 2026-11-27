@@ -13,7 +13,6 @@ meta import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Proof.Framework.X86.RelCT
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.RsaKeyGen.Contract
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.Inverse
 public import VerifiedGarbage.Spec.RsaKeyGen.Contract
 public import VerifiedGarbage.TCB.X86.Target
@@ -28,9 +27,7 @@ import VerifiedGarbage.Proof.Mont.Words32
 import VerifiedGarbage.Proof.Mont.Read
 import VerifiedGarbage.Proof.Bignum.ByteWords
 meta import VerifiedGarbage.Impl.RsaKeyGen.X86.Inverse
-meta import VerifiedGarbage.Spec.RsaKeyGen.Contract
 meta import VerifiedGarbage.TCB.X86.Target
-meta import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Base
 meta import VerifiedGarbage.Proof.Mont.X86.Compact.Frame
 meta import VerifiedGarbage.Proof.Rsa.X86.KeyWs
 meta import VerifiedGarbage.Proof.RsaKeyGen.X86.DisjointBounds

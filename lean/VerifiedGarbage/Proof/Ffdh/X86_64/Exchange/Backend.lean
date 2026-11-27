@@ -11,9 +11,6 @@ import VerifiedGarbage.Proof.Bignum.X86_64.Template
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.RsaKeyGen.Hdr
-meta import VerifiedGarbage.Proof.Ffdh.X86_64.Exchange.Safety
-meta import VerifiedGarbage.Spec.Ffdh.Contract
-meta import VerifiedGarbage.Proof.Ffdh.X86_64.Exchange.Contract
 meta import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CallPost
@@ -34,10 +31,6 @@ import VerifiedGarbage.Proof.Ffdh.X86_64.FrontCT
 import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupLoad
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-meta import VerifiedGarbage.Proof.Ffdh.X86_64.Exchange.StagesCT
-meta import VerifiedGarbage.Proof.Ffdh.X86_64.Exchange.R2CT
-meta import VerifiedGarbage.Proof.Ffdh.X86_64.Exchange.OutputCT
-meta import VerifiedGarbage.Proof.Ffdh.X86_64.Exchange.Correct
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.FrontCT
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupLoad

@@ -10,7 +10,6 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.KeyInitVerified
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.TCB.Arm.Target
-meta import VerifiedGarbage.Proof.Ffdh.ParameterPublic
 public import Init.Data.List.Basic
 public import VerifiedGarbage.Impl.Ffdh.Arm.Init
 import VerifiedGarbage.Proof.Ffdh.Arm.Block

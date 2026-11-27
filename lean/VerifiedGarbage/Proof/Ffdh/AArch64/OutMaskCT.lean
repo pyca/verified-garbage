@@ -6,7 +6,6 @@ import VerifiedGarbage.Proof.Bignum.AArch64.PcMain
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.TaintBatch
-meta import VerifiedGarbage.Proof.Ffdh.AArch64.ScalarRangeCT
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTDefs
 meta import VerifiedGarbage.Proof.Bignum.AArch64.PcMain
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc

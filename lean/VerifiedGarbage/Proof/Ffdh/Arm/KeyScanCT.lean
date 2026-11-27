@@ -10,9 +10,7 @@ meta import VerifiedGarbage.Impl.Ffdh.Arm.GenerateKey
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
 public import VerifiedGarbage.Impl.Ffdh.Arm.GenerateKey
 public import VerifiedGarbage.Proof.Ffdh.Arm.Octets
-meta import VerifiedGarbage.Proof.Ffdh.Arm.Octets
 import VerifiedGarbage.Proof.Ffdh.Arm.KeyScanBlocks
-meta import VerifiedGarbage.Proof.Ffdh.Arm.KeyScanBlocks
 public import VerifiedGarbage.TCB.Arm.Isa
 meta import VerifiedGarbage.TCB.Arm.Isa
 

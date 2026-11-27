@@ -9,7 +9,6 @@ import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import Batteries.Logic
 meta import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Spec.Ffdh.CachedKeyGenerationContract
 meta import VerifiedGarbage.TCB.Arm.Target
 
 /-! A real canonical public context witnesses the cached native attempt ABI. -/

@@ -13,15 +13,11 @@ import VerifiedGarbage.Proof.Ffdh.X86.ParamInit
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.X86.Inline
 meta import VerifiedGarbage.Impl.RsaKeyGen.X86.KeyInit
-meta import VerifiedGarbage.Proof.RsaKeyGen.KeySearchPublic
 meta import VerifiedGarbage.Proof.MlDsa.X86.Pack.Run
 meta import VerifiedGarbage.Proof.Framework.X86.ArgTaint
 meta import VerifiedGarbage.Proof.Framework.Sig
 meta import VerifiedGarbage.Proof.Framework.CountedLoop
 meta import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.RsaKeyGen.InitWords
-meta import VerifiedGarbage.Proof.Ffdh.X86.KeyInit
-meta import VerifiedGarbage.Proof.Ffdh.X86.ParamInit
 meta import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Framework.X86.Inline
 

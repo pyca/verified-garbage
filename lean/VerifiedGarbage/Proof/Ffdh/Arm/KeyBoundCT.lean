@@ -1,6 +1,5 @@
 module
 
-meta import VerifiedGarbage.Proof.Ffdh.Arm.KeyGeometry
 import VerifiedGarbage.Proof.Ffdh.Arm.KeyGeometry
 public import VerifiedGarbage.Impl.Ffdh.Arm.Domain
 import VerifiedGarbage.Proof.Ffdh.Arm.KeyScanCT
@@ -12,13 +11,11 @@ meta import VerifiedGarbage.Impl.Ffdh.Arm.GenerateKey
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
 public import VerifiedGarbage.Impl.Ffdh.Arm.GenerateKey
 public import VerifiedGarbage.Proof.Ffdh.Arm.Context
-meta import VerifiedGarbage.Proof.Ffdh.Arm.Context
 public import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 meta import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 import VerifiedGarbage.Proof.Ffdh.Arm.QTest
-meta import VerifiedGarbage.Proof.Ffdh.Arm.QTest
 public import Batteries.Tactic.Init
 public import Batteries.Tactic.PermuteGoals
 public import Batteries.Tactic.SeqFocus
@@ -41,16 +38,12 @@ meta import Batteries.Tactic.SeqFocus
 meta import VerifiedGarbage.Proof.Framework.GetElem
 meta import VerifiedGarbage.Proof.Framework.Mem
 meta import VerifiedGarbage.Proof.Framework.TacticTemplate
-meta import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
 meta import VerifiedGarbage.Proof.X25519.Arm.Instr
 meta import VerifiedGarbage.Proof.Mont.Words
 meta import VerifiedGarbage.TCB.Arm.Isa
-meta import VerifiedGarbage.Proof.Ffdh.Arm.KeyScan
 meta import VerifiedGarbage.Proof.Ffdh.Arm.Block
-meta import VerifiedGarbage.Proof.Ffdh.Arm.StoreSlot
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Arm.Exec
-meta import VerifiedGarbage.Proof.Ffdh.KeyScalar
 meta import VerifiedGarbage.Impl.Ffdh.Arm.Domain
 
 /-! ### `Ffdh.Arm.KeyBound`, which this module and modules that import it used -/

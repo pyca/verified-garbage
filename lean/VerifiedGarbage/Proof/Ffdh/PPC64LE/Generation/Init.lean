@@ -12,7 +12,6 @@ meta import VerifiedGarbage.Proof.Ffdh.PPC64LE.InitCommon
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.RelCT
-meta import VerifiedGarbage.Proof.Ffdh.ParameterPublic
 meta import VerifiedGarbage.TCB.PPC64LE.Target
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Keep
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Keep

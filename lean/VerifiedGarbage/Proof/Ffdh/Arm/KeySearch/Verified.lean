@@ -32,8 +32,6 @@ import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Live
 import VerifiedGarbage.Proof.Framework.Arm.Frame
 meta import VerifiedGarbage.Impl.Ffdh.Arm.KeySearch
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
-meta import VerifiedGarbage.Proof.Ffdh.Arm.KeyBackend
-meta import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTPoint
 import VerifiedGarbage.Proof.Ffdh.Arm.CachedSatWitness
 import VerifiedGarbage.Proof.Ffdh.Arm.VettedGroupsConsts
 import VerifiedGarbage.Proof.Framework.ConstMem
@@ -42,18 +40,12 @@ import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.Lit
 import Batteries.Logic
 meta import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Spec.Ffdh.KeyGenerationContract
 meta import VerifiedGarbage.TCB.Arm.Target
 public import Init.Data.BitVec.BasicAux
 public import Init.Data.List.Basic
 public import Init.Data.Nat.Bitwise.Basic
-meta import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTClassify
-meta import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Live
-meta import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTBase
-meta import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Contract
 meta import VerifiedGarbage.Proof.Ffdh.Arm.Block
 meta import VerifiedGarbage.Proof.Framework.Arm.Exec
-meta import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Geometry
 import VerifiedGarbage.Proof.Bignum.Arm.RestoreSlots
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.FinishHead
 public import VerifiedGarbage.Proof.Ffdh.Arm.Output

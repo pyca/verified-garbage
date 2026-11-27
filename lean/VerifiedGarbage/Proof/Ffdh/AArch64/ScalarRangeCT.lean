@@ -6,7 +6,6 @@ import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTSetupLoad
 import VerifiedGarbage.Proof.Framework.TaintBatch
 import VerifiedGarbage.Proof.Bignum.AArch64.PcMain
 meta import VerifiedGarbage.Proof.Ffdh.AArch64.Out
-meta import VerifiedGarbage.Proof.Ffdh.AArch64.CheckDomain.CT
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTSetupLoad
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Bignum.AArch64.PcMain
@@ -19,8 +18,6 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.PowLit
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 meta import VerifiedGarbage.Proof.Ffdh.AArch64.Stage
-meta import VerifiedGarbage.Spec.Ffdh.Contract
-meta import VerifiedGarbage.Proof.Ffdh.Domain
 meta import VerifiedGarbage.Proof.Bignum.Octets
 meta import VerifiedGarbage.Proof.Ffdh.AArch64.CheckDomain.Pieces
 meta import VerifiedGarbage.Proof.Framework.Omega

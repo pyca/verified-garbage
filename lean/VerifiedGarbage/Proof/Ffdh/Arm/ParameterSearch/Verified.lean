@@ -34,7 +34,6 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidatePre
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CTBranch
 meta import VerifiedGarbage.Impl.Ffdh.Arm.ParameterSearch
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
-meta import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CallPost
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CTState
 import VerifiedGarbage.Proof.Ffdh.Arm.Block
 import VerifiedGarbage.Proof.Bignum.Arm.StackCT

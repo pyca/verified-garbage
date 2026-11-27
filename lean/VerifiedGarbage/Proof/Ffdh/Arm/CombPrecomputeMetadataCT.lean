@@ -14,7 +14,6 @@ public import VerifiedGarbage.Impl.Ffdh.Arm.CombPrecompute
 public import VerifiedGarbage.Proof.Ffdh.Arm.Locals
 meta import VerifiedGarbage.Proof.Ffdh.Arm.Locals
 public import VerifiedGarbage.Proof.Ffdh.ScalarWidth
-meta import VerifiedGarbage.Proof.Ffdh.ScalarWidth
 public import VerifiedGarbage.Proof.Ffdh.Arm.Output
 import VerifiedGarbage.Proof.Bignum.Arm.Store64
 import VerifiedGarbage.Proof.Framework.AddrArith
@@ -24,7 +23,6 @@ import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Spec.Rsa.FixedBaseComb
 import VerifiedGarbage.Proof.Ffdh.GenerationPrecomputeWidth
 public import VerifiedGarbage.TCB.Code
-meta import VerifiedGarbage.Proof.Ffdh.Arm.Output
 meta import VerifiedGarbage.Proof.Bignum.Arm.Store64
 meta import VerifiedGarbage.Proof.Framework.Arm.Exec
 meta import VerifiedGarbage.Proof.Framework.Offset
@@ -33,7 +31,6 @@ meta import VerifiedGarbage.Proof.Ffdh.Arm.Block
 meta import VerifiedGarbage.Proof.Bignum.Arm.Stack
 meta import VerifiedGarbage.Proof.Framework.Block
 meta import VerifiedGarbage.Spec.Rsa.FixedBaseComb
-meta import VerifiedGarbage.Proof.Ffdh.GenerationPrecomputeWidth
 meta import VerifiedGarbage.TCB.Code
 
 /-! ### `Ffdh.Arm.CombPrecomputeMetadataAll`, which this module and modules that import it used -/

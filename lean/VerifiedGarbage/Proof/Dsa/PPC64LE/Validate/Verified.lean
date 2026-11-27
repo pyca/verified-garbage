@@ -10,12 +10,9 @@ public import VerifiedGarbage.TCB.PPC64LE.Target
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Params.CT
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.VerifyCT
 import VerifiedGarbage.Proof.Dsa.PPC64LE.VerifyBody
-meta import VerifiedGarbage.Proof.Dsa.PPC64LE.Params.CT
 meta import VerifiedGarbage.Impl.Dsa.PPC64LE.Prevalidated
 meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Params.Front
-meta import VerifiedGarbage.Proof.Dsa.PPC64LE.Params.Front
-meta import VerifiedGarbage.Spec.Dsa.Prevalidated
 
 /-! ### `Dsa.PPC64LE.Validate.Contract`, which only this module used -/
 

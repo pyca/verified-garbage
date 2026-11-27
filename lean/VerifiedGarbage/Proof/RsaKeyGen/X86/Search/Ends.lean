@@ -6,7 +6,6 @@ import VerifiedGarbage.Proof.MlKem.X86.Common
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.MlKem.X86.Common
 public import VerifiedGarbage.Proof.Ffdh.X86.KeySearch.Zero
-meta import VerifiedGarbage.Proof.Ffdh.X86.KeySearch.Zero
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.Search
 public import VerifiedGarbage.Proof.MlDsa.X86.Pack.Run
 public import VerifiedGarbage.Proof.Framework.X86.Syms
@@ -21,9 +20,6 @@ public import VerifiedGarbage.Proof.RsaKeyGen.X86.Search.ABI
 public import VerifiedGarbage.Proof.RsaKeyGen.SearchSpec
 public import VerifiedGarbage.Proof.Framework.X86.Call
 public import VerifiedGarbage.Proof.Framework.Mem
-meta import VerifiedGarbage.Proof.EntropyRequest
-meta import VerifiedGarbage.Proof.RsaKeyGen.X86.Search.ABI
-meta import VerifiedGarbage.Proof.RsaKeyGen.SearchSpec
 meta import VerifiedGarbage.Proof.Framework.X86.Call
 meta import VerifiedGarbage.Proof.Framework.Mem
 

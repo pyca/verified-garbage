@@ -12,8 +12,6 @@ import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.TaintBatch
 import VerifiedGarbage.Proof.Framework.Block
-meta import VerifiedGarbage.Proof.Ffdh.AArch64.OutMaskCT
-meta import VerifiedGarbage.Proof.Ffdh.AArch64.CheckDomain.CT
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowExpCT
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTSetupLoad
 meta import VerifiedGarbage.Proof.Bignum.AArch64.PcMain
@@ -38,12 +36,10 @@ import VerifiedGarbage.Proof.Ffdh.Power
 import VerifiedGarbage.Proof.Ffdh.KeyScalar
 import VerifiedGarbage.Proof.Bignum.AArch64.PcCode
 import VerifiedGarbage.Proof.Bignum.Math
-meta import VerifiedGarbage.Spec.Ffdh.DerivePublicContract
 meta import VerifiedGarbage.TCB.AArch64.Target
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.GetElem
 meta import VerifiedGarbage.Proof.Framework.Lit
-meta import VerifiedGarbage.Proof.Ffdh.AArch64.ScalarRangeCT
 meta import VerifiedGarbage.Impl.Ffdh.AArch64.Derive
 meta import VerifiedGarbage.Proof.Rsa.AArch64.CvFail
 meta import VerifiedGarbage.Proof.Ffdh.AArch64.Out
@@ -52,9 +48,6 @@ meta import VerifiedGarbage.Proof.Framework.PowLit
 meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
 meta import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Ffdh.Domain
-meta import VerifiedGarbage.Proof.Ffdh.Power
-meta import VerifiedGarbage.Proof.Ffdh.KeyScalar
 meta import VerifiedGarbage.Proof.Bignum.AArch64.PcCode
 meta import VerifiedGarbage.Proof.Bignum.Math
 

@@ -21,7 +21,6 @@ meta import VerifiedGarbage.Proof.Framework.Arm.Taint
 public import VerifiedGarbage.Proof.Bignum.Arm.SetSmallFnCT
 meta import VerifiedGarbage.Proof.Bignum.Arm.SetSmallFnCT
 public import VerifiedGarbage.Proof.Ffdh.Arm.Context
-meta import VerifiedGarbage.Proof.Ffdh.Arm.Context
 import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 meta import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 import VerifiedGarbage.Proof.Bignum.Arm.MaskBytesCT

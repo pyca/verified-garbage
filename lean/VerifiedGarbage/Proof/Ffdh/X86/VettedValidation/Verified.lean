@@ -6,7 +6,6 @@ import VerifiedGarbage.Proof.Ffdh.VettedTableFacts
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.KernelRfl
 meta import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Spec.Ffdh.Contract
 meta import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Framework.X86.RelCT
@@ -14,7 +13,6 @@ import VerifiedGarbage.Proof.Framework.X86.Taint
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.X86.RelCT
 meta import VerifiedGarbage.Proof.Framework.X86.Taint
-meta import VerifiedGarbage.Impl.Ffdh.X86.VettedValidation
 import VerifiedGarbage.Proof.Ffdh.X86.VettedValidation.ScanTiming
 import VerifiedGarbage.Proof.Ffdh.X86.EntryCT
 public import VerifiedGarbage.Proof.Framework.X86.SymFrame

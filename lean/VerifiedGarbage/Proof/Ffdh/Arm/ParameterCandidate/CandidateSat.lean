@@ -8,8 +8,6 @@ import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Lit
 import Batteries.Logic
 meta import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Spec.Ffdh.Contract
-meta import VerifiedGarbage.Proof.Ffdh.Contract
 meta import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Spec.Ffdh.SievedContract
 

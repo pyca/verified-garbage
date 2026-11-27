@@ -16,13 +16,6 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Dsa.Arm.Leaves
 meta import VerifiedGarbage.Proof.Framework.Arm.ScrubProved
 meta import VerifiedGarbage.Impl.Dsa.Arm.Fn
-meta import VerifiedGarbage.Proof.Dsa.Arm.ValidatePrivateVerified
-meta import VerifiedGarbage.Proof.Dsa.Arm.GenerateVerified
-meta import VerifiedGarbage.Proof.Dsa.Arm.PrevalidatedVerified
-meta import VerifiedGarbage.Proof.Dsa.Arm.Gen.Init
-meta import VerifiedGarbage.Proof.Dsa.Arm.RandomSignVerified
-meta import VerifiedGarbage.Proof.Dsa.Arm.Key.Verified
-meta import VerifiedGarbage.Proof.Dsa.Arm.Gen.Instances
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Mem
 meta import VerifiedGarbage.Proof.Framework.AddrArith

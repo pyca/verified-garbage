@@ -10,7 +10,6 @@ import VerifiedGarbage.Proof.Bignum.Octets
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.ChecksCT
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.PowCT
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.Exchange.Arithmetic
-meta import VerifiedGarbage.Proof.Ffdh.X86_64.Exchange.Body
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.SetupCT
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Bignum.Octets

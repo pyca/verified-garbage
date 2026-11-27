@@ -16,9 +16,7 @@ import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Bignum.AArch64.PubSetup
 meta import VerifiedGarbage.Impl.Dsa.AArch64.Random
 meta import VerifiedGarbage.Proof.Dsa.AArch64.SignificantCT
-meta import VerifiedGarbage.Proof.Dsa.AArch64.RandomScan
 meta import VerifiedGarbage.Proof.Dsa.AArch64.RandomClear
-meta import VerifiedGarbage.Proof.Dsa.AArch64.SignificantLoop
 meta import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
 meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 meta import VerifiedGarbage.Proof.Framework.AArch64.Exec

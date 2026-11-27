@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.RsaKeyGen.Table
 public import VerifiedGarbage.Proof.Rsa.AArch64.KeyWs
 
 import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTFront
-meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTFront
 
 /-! Candidate loads disclose only source pointers and byte lengths. -/
 @[expose] public section

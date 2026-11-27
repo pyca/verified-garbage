@@ -38,7 +38,6 @@ import VerifiedGarbage.Proof.Framework.ConstMem
 import VerifiedGarbage.Proof.Framework.AddrArith
 import Batteries.Logic
 meta import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Spec.Ffdh.CachedKeyGenerationContract
 meta import VerifiedGarbage.TCB.X86_64.Target
 
 /-! ### `Ffdh.X86_64.Cached.PrecomputeSat`, which this module and modules that import it used -/

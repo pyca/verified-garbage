@@ -5,7 +5,6 @@ import VerifiedGarbage.Proof.Framework.X86_64.Syms
 import VerifiedGarbage.Proof.Framework.X86_64.Taint
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
-meta import VerifiedGarbage.Impl.Ffdh.X86_64.VettedValidation
 import VerifiedGarbage.Proof.Ffdh.X86_64.VettedValidation.Record
 public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Framework.X86_64.TaintErase

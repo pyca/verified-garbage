@@ -23,15 +23,7 @@ meta import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 meta import VerifiedGarbage.Impl.Rsa.X86.Fn
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.X86.Lit
-meta import VerifiedGarbage.Proof.Bignum.X86.CrtRt.TimeTop
-meta import VerifiedGarbage.Proof.Bignum.X86.PrecomputeVerified
-meta import VerifiedGarbage.Proof.Bignum.X86.PrivPre.Instance
-meta import VerifiedGarbage.Proof.Rsa.X86.CvVerified
-meta import VerifiedGarbage.Proof.Rsa.X86.KcVerified
-meta import VerifiedGarbage.Proof.Rsa.X86.Rd.TimingW
-meta import VerifiedGarbage.Proof.Rsa.X86.Rd.GcdDone
 meta import VerifiedGarbage.Proof.Rsa.X86.RtShape
-meta import VerifiedGarbage.Proof.Rsa.X86.BatchInstance
 import VerifiedGarbage.Proof.Framework.ForallLength
 
 /-!

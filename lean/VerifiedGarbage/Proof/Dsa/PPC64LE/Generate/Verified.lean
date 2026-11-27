@@ -3,8 +3,6 @@ module
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Generate.Fn
 public import VerifiedGarbage.Impl.Dsa.PPC64LE.Generate
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.RandomSign.CT
-meta import VerifiedGarbage.Proof.Dsa.PPC64LE.Generate.Fn
-meta import VerifiedGarbage.Proof.Dsa.PPC64LE.RandomSign.CT
 import VerifiedGarbage.Proof.Dsa.PPC64LE.Params.CT
 import VerifiedGarbage.Proof.Dsa.PPC64LE.Params.Fn
 import VerifiedGarbage.Proof.Dsa.PPC64LE.DeriveChecked.CT
@@ -20,9 +18,6 @@ import VerifiedGarbage.Proof.Bignum.Octets
 meta import VerifiedGarbage.Impl.Dsa.PPC64LE.Derive
 meta import VerifiedGarbage.Impl.Dsa.PPC64LE.Generate
 meta import VerifiedGarbage.Impl.Dsa.PPC64LE.Params
-meta import VerifiedGarbage.Proof.Dsa.PPC64LE.Derive.Front
-meta import VerifiedGarbage.Proof.Dsa.PPC64LE.Params.Front
-meta import VerifiedGarbage.Spec.Dsa.Derive
 public import VerifiedGarbage.Impl.Dsa.PPC64LE.Derive
 public import VerifiedGarbage.Impl.Dsa.PPC64LE.Params
 public import VerifiedGarbage.Spec.Dsa.Derive

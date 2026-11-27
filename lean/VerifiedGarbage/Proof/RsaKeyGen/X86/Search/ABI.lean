@@ -7,8 +7,6 @@ public import VerifiedGarbage.Impl.RsaKeyGen.TrialTable32
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateABI
 meta import VerifiedGarbage.Proof.Framework.Sig
-meta import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateABI
-meta import VerifiedGarbage.Proof.RsaKeyGen.SearchContract
 
 /-! # The RSA prime search on i686: what its cdecl contract supplies
 

@@ -8,7 +8,6 @@ public import Aesop.BuiltinRules
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Dsa.X86_64.SetupChoice
-meta import VerifiedGarbage.Proof.Dsa.X86_64.ProductCT
 meta import VerifiedGarbage.Proof.Bignum.X86_64.R2wCT
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
 meta import Aesop.BuiltinRules

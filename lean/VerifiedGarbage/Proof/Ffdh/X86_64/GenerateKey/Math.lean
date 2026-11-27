@@ -11,8 +11,6 @@ import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.Arithmetic
-meta import VerifiedGarbage.Proof.Ffdh.X86_64.Exchange.OutputCT
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.FrontCT
 meta import VerifiedGarbage.Proof.Rsa.X86_64.CTBase
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
@@ -20,7 +18,6 @@ meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Data
-meta import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Data
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Impl.Ffdh.X86_64.GenerateKey
 public import VerifiedGarbage.Proof.MlKem.X86_64.Wp

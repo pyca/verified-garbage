@@ -14,7 +14,6 @@ import Mathlib.Tactic.SplitIfs
 meta import VerifiedGarbage.Impl.Ffdh.AArch64.KeyGeneration.Init
 meta import VerifiedGarbage.Proof.Ffdh.ControlMemory
 meta import VerifiedGarbage.Proof.Bignum.AArch64.Run
-meta import VerifiedGarbage.Spec.Ffdh.KeyGenerationContract
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtGPow
 meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 meta import VerifiedGarbage.Proof.Framework.AArch64.Exec

@@ -11,7 +11,6 @@ import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.Block
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Impl.Ffdh.Arm.CachedPrepare
-meta import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
 public import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeState
 import VerifiedGarbage.Proof.Bignum.Arm.LayoutFrameReady
 import VerifiedGarbage.Proof.Ffdh.Domain

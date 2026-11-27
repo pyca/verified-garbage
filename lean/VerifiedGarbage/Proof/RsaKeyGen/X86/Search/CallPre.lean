@@ -7,15 +7,12 @@ public import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateABI
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.X86.Spill
-meta import VerifiedGarbage.Proof.RsaKeyGen.X86.Search.Args
 meta import VerifiedGarbage.Proof.Framework.X86.Call
 meta import VerifiedGarbage.Proof.Framework.X86.Inline
-meta import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateABI
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Sig
 meta import VerifiedGarbage.Proof.Framework.X86.Spill
 public import VerifiedGarbage.Proof.RsaKeyGen.CandidateContract
-meta import VerifiedGarbage.Proof.RsaKeyGen.CandidateContract
 
 -- separate module: the callee's precondition, whose facts build in parallel with the rest of the search
 

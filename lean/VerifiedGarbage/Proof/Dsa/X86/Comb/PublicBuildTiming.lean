@@ -17,12 +17,9 @@ meta import VerifiedGarbage.Impl.Dsa.X86.Comb
 meta import VerifiedGarbage.Proof.Mont.X86.DynamicTiming
 meta import VerifiedGarbage.Proof.Framework.X86.Taint
 meta import VerifiedGarbage.Proof.Framework.RelCT
-meta import VerifiedGarbage.Proof.Dsa.X86.Comb.PublicColumnTiming
 meta import VerifiedGarbage.Impl.Mont.X86.CombTable
 public import VerifiedGarbage.Proof.Mont.X86.ContextFrame
 meta import VerifiedGarbage.Proof.Mont.X86.ContextFrame
-meta import VerifiedGarbage.Proof.Dsa.X86.Comb.SelectTable
-meta import VerifiedGarbage.Proof.Mont.X86.CombBuild
 
 /-! ### `Dsa.X86.Comb.PublicSubsetLoopTiming`, which only this module used -/
 

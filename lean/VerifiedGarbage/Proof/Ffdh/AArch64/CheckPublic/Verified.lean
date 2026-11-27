@@ -39,13 +39,10 @@ meta import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Framework.PowLit
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWs
 meta import VerifiedGarbage.Proof.Bignum.AArch64.PubR2
-meta import VerifiedGarbage.Proof.Dsa.PackedBytes
-meta import VerifiedGarbage.Proof.Ffdh.Domain
 meta import VerifiedGarbage.Proof.Bignum.AArch64.PcCode
 meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
 meta import VerifiedGarbage.Proof.Bignum.Math
-meta import VerifiedGarbage.Spec.Ffdh.Contract
 meta import VerifiedGarbage.TCB.AArch64.Target
 meta import VerifiedGarbage.Proof.Framework.Contract
 

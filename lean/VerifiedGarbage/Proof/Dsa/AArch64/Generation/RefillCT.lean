@@ -10,8 +10,6 @@ import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.OmegaLit
 import VerifiedGarbage.Proof.Framework.TaintBatch
-meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.RefillCTFinish
-meta import VerifiedGarbage.Proof.Dsa.ParameterPublic
 meta import VerifiedGarbage.Proof.Framework.AArch64.RelCT
 meta import VerifiedGarbage.Proof.Framework.Sig
 meta import VerifiedGarbage.Proof.Framework.OmegaLit
@@ -39,24 +37,18 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
 import VerifiedGarbage.Proof.RsaOaep.AArch64.Hash
 import VerifiedGarbage.Proof.Bignum.AArch64.Run
 public import VerifiedGarbage.Spec.Dsa.ParameterSearch
-meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.RefillFinish
-meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.RefillAttempt
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.AArch64.Inline
 meta import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
 meta import VerifiedGarbage.Proof.Framework.AArch64.LaneSave
 meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Run
-meta import VerifiedGarbage.Proof.RsaKeyGen.Table
 meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.EntryAllocated
-meta import VerifiedGarbage.Proof.Dsa.Generation.Memory
 meta import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Bignum.Octets
 meta import VerifiedGarbage.Proof.Bignum.Words
 meta import VerifiedGarbage.Proof.Framework.AArch64.Spill
 meta import VerifiedGarbage.Impl.Dsa.AArch64.Generation.Entry
-meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.RefillEntry
 meta import VerifiedGarbage.Proof.Framework.AArch64.LaneRestore
 meta import VerifiedGarbage.Proof.Framework.AArch64.StackStore
 meta import VerifiedGarbage.Proof.Framework.Contract
@@ -64,7 +56,6 @@ meta import VerifiedGarbage.Proof.RsaOaep.AArch64.Basic
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Wp
 meta import VerifiedGarbage.Proof.RsaOaep.AArch64.Hash
 meta import VerifiedGarbage.Proof.Bignum.AArch64.Run
-meta import VerifiedGarbage.Spec.Dsa.ParameterSearch
 
 /-! ### `Dsa.AArch64.Generation.RefillCorrect`, which this module and modules that import it used -/
 

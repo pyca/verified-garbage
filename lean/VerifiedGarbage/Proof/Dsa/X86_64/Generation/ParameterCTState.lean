@@ -48,10 +48,8 @@ import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PackPart
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.ShapeCT
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
-meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Context
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.RsaKeyGen.Slots
-meta import VerifiedGarbage.Proof.RsaKeyGen.Table
 meta import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Lit
 meta import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit
 meta import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
@@ -59,31 +57,23 @@ meta import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Pack
 meta import VerifiedGarbage.Proof.RsaOaep.X86_64.Basic
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 meta import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PackPart
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ArenaSource
-meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextFrame
-meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeometryWork
 meta import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.ShapeCT
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.OnSuccess
 meta import VerifiedGarbage.Impl.Dsa.X86_64.Generation.SeedSearch
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.OnSuccess
-meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedSearchPlanCT
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ValidateCore
 meta import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Validate
-meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ValidateCore
 public import VerifiedGarbage.Proof.Dsa.X86_64.ParametersCT
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.DomainCall
 import VerifiedGarbage.Proof.Framework.X86_64.CallBody
-meta import VerifiedGarbage.Proof.Dsa.X86_64.ParametersCT
-meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.DomainCall
 meta import VerifiedGarbage.Proof.Framework.X86_64.CallBody
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchStable
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchLoop
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.AttemptStatus
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchStable
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchLoop
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.AttemptStatus
 meta import VerifiedGarbage.Proof.Framework.Offset
@@ -94,7 +84,6 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchControl
 public import Aesop.BuiltinRules
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchControl
 meta import Aesop.BuiltinRules
-meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchBody
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SourceFrame
 import Mathlib.Algebra.GroupWithZero.Nat
@@ -103,22 +92,17 @@ import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PConstructTest
 meta import VerifiedGarbage.Impl.Dsa.X86_64.Generation.PAttempt
 import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
 import VerifiedGarbage.Impl.Dsa.X86_64.Generation.PHash
-meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PConstructTest
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SourceFrame
-meta import VerifiedGarbage.Proof.Dsa.Encoding
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
 meta import VerifiedGarbage.Impl.Dsa.X86_64.Generation.PHash
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.PShape
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.HashShape
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PHashArgs
 meta import VerifiedGarbage.Impl.Dsa.X86_64.Generation.PShape
-meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.HashShape
-meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PHashArgs
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.CandidateWidth
 public import VerifiedGarbage.Spec.Dsa
 public import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
 meta import VerifiedGarbage.Impl.Dsa.X86_64.Generation.CandidateWidth
-meta import VerifiedGarbage.Spec.Dsa
 meta import VerifiedGarbage.Spec.Rsa.Contract
 meta import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
 meta import Mathlib.Algebra.GroupWithZero.Nat

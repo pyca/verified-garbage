@@ -7,7 +7,6 @@ public import VerifiedGarbage.Impl.RsaKeyGen.TrialTable32
 public import VerifiedGarbage.Proof.Mont.X86.StaticSquare.Shape
 import VerifiedGarbage.Proof.Rsa.X86.StackTactic
 meta import VerifiedGarbage.Proof.Rsa.X86.StackTactic
-meta import VerifiedGarbage.Proof.Ffdh.Contract
 import VerifiedGarbage.Proof.RsaKeyGen.TrialTable32
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateABI
 import VerifiedGarbage.Proof.Framework.Sig
