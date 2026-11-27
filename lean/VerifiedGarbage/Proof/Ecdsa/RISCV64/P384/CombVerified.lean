@@ -387,10 +387,11 @@ theorem tailG_ok (hL : Law W) {s : State} {base : Addr} (hw : WsReg s base)
 
 /-! The constant-time analyses of the calls of the functions of P-384's `p` from their arguments,
 with the comb's table public, each done once for every check of code that calls it
-(`taint_decide_sum`), which keep what is public of `s0`–`s11`: the functions write none of them. -/
+(`taint_decide_sum`), which keep what is public of `s0`–`s5`, or `s11` for the sum and the difference:
+the functions write none of them. -/
 taint_summary pMulSymSum : (taintSym [Impl.Ecdsa.RISCV64.Comb.p384Sym]) (Taint.ofRegs [.a0, .a1, .a2, .a3])
   (.call (Impl.Weierstrass.Mont.p384p.fn "mul") Impl.Weierstrass.RISCV64.P384Field.mulFnA)
-  keeping (Taint.ofRegs [.s0, .s1, .s2, .s3, .s4, .s5, .s6, .s7, .s8, .s9, .s10, .s11])
+  keeping (Taint.ofRegs [.s0, .s1, .s2, .s3, .s4, .s5])
 taint_summary pAddSymSum : (taintSym [Impl.Ecdsa.RISCV64.Comb.p384Sym]) (Taint.ofRegs [.a0, .a1, .a2, .a3])
   (.call (Impl.Weierstrass.Mont.p384p.fn "add") Impl.Weierstrass.RISCV64.P384Field.addFnA)
   keeping (Taint.ofRegs [.s0, .s1, .s2, .s3, .s4, .s5, .s6, .s7, .s8, .s9, .s10, .s11])
@@ -401,10 +402,10 @@ taint_summary pSubSymSum : (taintSym [Impl.Ecdsa.RISCV64.Comb.p384Sym]) (Taint.o
 /-! The constant-time analysis of the call of `vg_p384_mul_g` from its argument, with the comb's
 table public, done once for every check of code that calls it (`taint_decide_sum [mulGSum]`:
 signing, verification and the public key), which keeps what is public of `s2`, `s3` and
-`s5`–`s11`: the function writes none of them (`s0`, `s1` and `s4` it restores from memory). -/
+`s5`: the function writes none of them (`s0`, `s1` and `s4` it restores from memory). -/
 taint_summary mulGSum : (taintSym [Impl.Ecdsa.RISCV64.Comb.p384Sym]) (Taint.ofRegs [.a0])
   (.call Impl.Ecdsa.RISCV64.Comb.mulGP384Name Impl.Ecdsa.RISCV64.Comb.mulGP384)
-  keeping (Taint.ofRegs [.s2, .s3, .s5, .s6, .s7, .s8, .s9, .s10, .s11])
+  keeping (Taint.ofRegs [.s2, .s3, .s5])
   using pMulSymSum pAddSymSum pSubSymSum
 
 end VG.Proof.Ecdsa.RISCV64.P384.Comb

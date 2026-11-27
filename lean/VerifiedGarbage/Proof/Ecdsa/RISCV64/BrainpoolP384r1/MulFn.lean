@@ -512,31 +512,9 @@ theorem lay_ok : Rows.LOk Impl.Weierstrass.RISCV64.Gen6.lay :=
 
 theorem fast_core (hm : Ok m) :
     CoreOkA (Impl.Weierstrass.RISCV64.Rows.fast Impl.Weierstrass.RISCV64.Gen6.lay m Impl.Weierstrass.RISCV64.Gen6.order)
-      (fun _ B => B < m) (mulRes m) := fun {W s a bb o} hw h4 h5 h2 ha8 hb8 ho8 ha hb ho hB => by
-  obtain own : Rows.own Impl.Weierstrass.RISCV64.Gen6.lay (W + BitVec.ofNat 64 2048) = ⟨W + BitVec.ofNat 64 3712, 192⟩ :=
-    congrArg (Region.mk · 192) (off_add _ _ _)
-  obtain dis : ∀ x, x + 48 ≤ 3712 → ∀ i < 6, Region.Disjoint ⟨W + BitVec.ofNat 64 x + BitVec.ofNat 64 (8 * i), 8⟩
-      (Rows.own Impl.Weierstrass.RISCV64.Gen6.lay (W + BitVec.ofNat 64 2048)) := fun x hx i hi => by
-    rw [own, off_add]
-    exact Offset.disjoint W (.inl (by omega_using [hx, hi])) (by omega_using [hx, hi]) (by decide)
-  obtain disO : Region.Disjoint ⟨W + BitVec.ofNat 64 o, 48⟩
-      (Rows.own Impl.Weierstrass.RISCV64.Gen6.lay (W + BitVec.ofNat 64 2048)) := by
-    rw [own]
-    exact Offset.disjoint W (.inl (by omega_using [ho])) (by omega_using [ho]) (by decide)
-  refine WP.mono (Rows.fastWith_ok lay_ok (m := m) _ (Rows.tail_ok lay_ok (by show m < (2 ^ 64) ^ 6; exact hm.lt')
-    (by have h := hm.inv; rw [← wordOf_toNat] at h; exact h)) hw.ctx h4 h5 h2 (al8 hw.al ha8) (al8 hw.al hb8) (al8 hw.al ho8)
-    (hw.inR (by omega_using [ha])) (hw.inR (by omega_using [hb])) (hw.inW (by omega_using [ho])) (dis a ha) (dis bb hb) disO hB)
-    fun s' ⟨v1, v2, f, g, rd, wr, sp⟩ => ⟨⟨v1, ?_⟩, ?_, fun r hr => ?_, rd, wr, sp⟩
-  · have v2 : d6 s'.mem (W + BitVec.ofNat 64 o) * (2 ^ 64) ^ 6 % m = _ := v2
-    simp only [← Nat.pow_mul, Nat.reduceMul] at v2
-    exact v2
-  · rw [own] at f
-    refine f.sub fun r hr => ?_
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl
-    · exact ⟨_, List.mem_cons_self .., Offset.sub W (by decide) (by decide)⟩
-    · exact ⟨_, List.mem_cons_of_mem _ (List.mem_singleton_self _), fun _ h => h⟩
-  · exact g r (by revert hr; cases r <;> decide)
+      (fun _ B => B < m) (mulRes m) :=
+  @P384Field.rows_core m _ _ lay_ok rfl rfl rfl (by intro r; cases r <;> decide) _ (Rows.tail_ok lay_ok
+    (by show m < (2 ^ 64) ^ 6; exact hm.lt') (by have h := hm.inv; rw [← wordOf_toNat] at h; exact h))
 
 theorem addCore_core (hm : Ok m) :
     CoreOk (.block (Impl.Weierstrass.RISCV64.Gen6.addCore m)) (fun A B => A + B < 2 * m)

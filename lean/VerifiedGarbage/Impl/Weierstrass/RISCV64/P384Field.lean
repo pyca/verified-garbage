@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.X25519.RISCV64.R64
 public import VerifiedGarbage.Impl.Ed25519.RISCV64.MulFn
 public import VerifiedGarbage.Impl.Weierstrass.RISCV64.P256Field
+public import VerifiedGarbage.Impl.Weierstrass.RISCV64.Rows
 public import VerifiedGarbage.Impl.Words.RISCV64.Wide
 
 /-!
@@ -342,8 +343,75 @@ def addFn : Prog isa := fn (.block addCore)
 /-- `vg_p384_sub_mod_p`. -/
 def subFn : Prog isa := fn (.block subCore)
 
+/-! ## The multiplication for aligned offsets, by rows in registers
+
+`Rows`' product or square, the reduction above, and the final subtraction in
+registers (`csubR`). -/
+
+/-- The registers, and where in the own working space those kept and the product are. -/
+def lay : Rows.Lay where
+  k := 6
+  VL := [.t0, .t1, .a7, .s7, .s8, .s9]
+  AL := [.a0, .a1, .a2, .a4, .a5, .a6]
+  LO := [.t6, .s6, .s10]
+  HI := [.s11]
+  KR := [.s6, .s7, .s8, .s9, .s10, .s11, .t1]
+  sv := 1664
+  pp := 1760
+
+/-- The words 0 and 1 of `2³⁸⁴ - p` into `t0` and `a5`. -/
+def constR : List Instr :=
+  [.li .t0 (-1), .shift .sll .d .t0 .t0 32, .addi .t0 .t0 1, .li .a5 (-1), .shift .srl .d .a5 .a5 32]
+
+/-- `x + (2³⁸⁴ - p)` into `s6`–`s11`, its carry into `a7`. -/
+def sumR : List Instr :=
+  [.add .s6 .t5 .t0, .sltu .a7 .s6 .t0] ++ (([.add .s7 .t6 .a5, .sltu .a0 .s7 .a5] : List Instr) ++
+    ([.add .s7 .s7 .a7, .sltu .a7 .s7 .a7] ++ ([.add .a7 .a7 .a0, .addi .a7 .a7 1] ++
+    ([.add .s8 .t3 .a7, .sltu .a7 .s8 .a7] ++ ([.add .s9 .t4 .a7, .sltu .a7 .s9 .a7] ++
+    ([.add .s10 .a1 .a7, .sltu .a7 .s10 .a7] ++ [.add .s11 .a4 .a7, .sltu .a7 .s11 .a7]))))))
+
+/-- Word `j` of the result: the sum's, `d`, if the mask `t0` is all ones, else `x`'s, `v`. -/
+def selR (j : Nat) (d v : Reg) : List Instr :=
+  [.logic .xor d d v, .logic .and d d .t0, .logic .xor d d v, .store .d d .t2 (8 * j)]
+
+/-- The carry or `XC` (`x ≥ p`) as a mask, and the selection. -/
+def selsR : List Instr :=
+  [.logic .or .a7 .a7 XC, .li .t0 0, .sub .t0 .t0 .a7] ++ (selR 0 .s6 .t5 ++ (selR 1 .s7 .t6 ++ (selR 2 .s8 .t3 ++
+    (selR 3 .s9 .t4 ++ (selR 4 .s10 .a1 ++ selR 5 .s11 .a4)))))
+
+/-- `x mod p` at `[t2]`, for `x = x₀ + … + 2³²⁰ x₅ + 2³⁸⁴ XC` below `2p`. -/
+def csubR : List Instr := constR ++ (sumR ++ selsR)
+
+/-- The order of the code, found by timing orders on T-Head's C910. -/
+def order : Rows.Order where
+  mul := [
+    0, 0, 1, 0, 0, 0, 0, 1, 1, 5, 1, 1, 1, 6, 1, 2, 2, 1, 1, 10, 1, 1, 1, 0, 1, 0, 0, 7, 0, 0, 0, 0, 4, 0, 0, 0, 1,
+    2, 20, 12, 5, 2, 40, 11, 0, 10, 15, 0, 0, 13, 0, 0, 0, 1, 0, 0, 0, 0, 9, 0, 0, 0, 0, 0, 11, 0, 11, 0, 0, 0, 0, 7,
+    0, 0, 0, 0, 0, 0, 0, 5, 5, 6, 1, 0, 0, 0, 20, 12, 2, 4, 11, 0, 0, 37, 15, 15, 9, 0, 0, 0, 0, 0, 0, 0, 0, 2, 9, 0,
+    0, 8, 0, 0, 2, 0, 0, 8, 3, 0, 0, 6, 0, 0, 4, 0, 0, 0, 0, 1, 4, 25, 0, 3, 0, 3, 0, 0, 0, 0, 9, 2, 0, 37, 15, 15,
+    0, 0, 0, 5, 1, 0, 0, 2, 0, 0, 1, 0, 7, 0, 0, 0, 5, 1, 0, 0, 2, 6, 7, 0, 0, 5, 0, 0, 0, 0, 0, 5, 0, 4, 0, 0, 3,
+    21, 0, 2, 0, 41, 0, 0, 0, 16, 7, 0, 0, 0, 1, 0, 0, 9, 2, 0, 0, 0, 1, 0, 7, 0, 0, 2, 5, 10, 5, 0, 0, 8, 0, 0, 2,
+    0, 0, 0, 0, 1, 0, 1, 4, 0, 3, 0, 0, 13, 2, 19, 0, 12, 18, 0, 0, 0, 0, 1, 1, 0, 5, 0, 30, 0, 30, 0, 0, 2, 10, 0,
+    0, 9, 0, 2, 7, 0, 2, 9, 17, 10, 0, 0, 14, 0, 0, 2, 11, 5, 0, 0, 0, 0, 2, 0, 0, 0, 2]
+  sqr := [
+    1, 0, 0, 5, 0, 3, 7, 4, 4, 3, 2, 1, 0, 10, 0, 1, 3, 1, 0, 0, 9, 9, 22, 1, 1, 0, 0, 0, 0, 23, 0, 16, 16, 0, 7, 1,
+    0, 17, 17, 1, 0, 0, 19, 0, 0, 0, 0, 1, 14, 0, 0, 0, 0, 1, 0, 8, 0, 0, 7, 0, 6, 0, 23, 0, 13, 0, 0, 0, 3, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 1, 7, 0, 31, 6, 32, 0, 1, 0, 0, 3, 0, 0, 0, 0, 2, 0, 8, 0, 19, 0, 39, 0, 1, 0, 0, 0, 1, 1, 0,
+    0, 0, 0, 2, 0, 0, 0, 0, 0, 21, 11, 1, 1, 1, 0, 0, 0, 5, 5, 0, 4, 0, 0, 0, 7, 1, 1, 0, 0, 3, 2, 0, 0, 0, 18, 7, 0,
+    6, 6, 13, 6, 0, 0, 0, 3, 0, 0, 6, 0, 0, 4, 0, 3, 3, 0, 2, 1, 1, 0, 4, 4, 13, 4, 4, 0, 0, 0, 7, 7, 1, 0, 0, 0, 0,
+    1, 21, 1, 1, 1, 0, 6, 0, 0, 0, 12, 3, 3, 2, 0, 0, 0, 6, 0, 0, 0, 3, 2, 2, 2, 0, 0, 6, 15, 0, 5, 0, 0, 3, 0, 0, 1,
+    8, 1, 1, 1, 0, 3, 2, 0, 1, 1, 0, 0, 6, 0, 5, 0, 0, 2, 2, 2, 2, 2, 0, 0, 0, 0, 1]
+  tail := [
+    0, 3, 2, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 4, 0, 3, 0, 4, 3, 0, 0, 1, 1, 1, 2, 1,
+    3, 1, 2, 2, 2, 2, 2, 0, 1, 0, 0, 4, 0, 0, 2, 0, 2, 2, 2, 2, 1, 1, 2, 1, 3, 1, 1, 2, 2, 1, 1, 1, 6, 1, 5, 1, 4, 1,
+    0, 0, 2, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0, 0, 1, 1, 0, 0, 2, 5, 0, 52, 0, 3, 0, 2, 0, 2, 2, 0, 1, 1, 1, 2, 1, 1, 0,
+    1, 0, 1, 0, 0, 0, 0, 1, 0, 4, 4, 6, 5, 3, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 3, 1, 1, 0, 0, 0, 0, 1, 0, 3, 0, 0, 0, 1,
+    7, 1, 1, 0, 0, 3, 0, 0, 36, 36, 1, 35, 0, 0, 0, 1, 1, 0, 0, 0, 2, 0, 0, 0, 0, 3, 0, 2, 0, 0, 0, 0, 2, 2, 0, 0, 0,
+    3, 11, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10, 0, 0, 0, 0, 0, 8, 0, 2, 0, 12, 0, 18, 0, 3,
+    5, 11, 0, 10, 7, 0, 8, 3, 0, 0, 1, 0, 1, 0, 0, 1]
+
 /-- `vg_p384_mul_mod_p`, for aligned offsets. -/
-def mulFnA : Prog isa := fnA mulCore
+def mulFnA : Prog isa := fnA (Rows.fastWith lay (reduce ++ csubR) order)
 
 /-- `vg_p384_add_mod_p`, for aligned offsets. -/
 def addFnA : Prog isa := fnA (.block addCore)
