@@ -112,26 +112,11 @@ theorem decryptOut (ts : List FnTable) (stack : Nat) :
         exact this.symm
       exact fun H G h1 h2 => writtenDecrypt_of e' el (h H G h1 h2)
 
-/-! ## The function, with its cleanup -/
+/-! ## The functions, with their cleanup -/
 
 /-- The tables of every hash function on x86. -/
 abbrev allVars : List Proof.HashTable.X86.TVar :=
   vars Proof.Variants.Sha1.X86.variants Proof.Variants.Sha256.X86.variants
-
-/-- `vg_rsa_oaep_encrypt_precomputed`, with the tables of every hash function,
-the baseline public-key operation and its cleanup, returns without secret
-residue. -/
-theorem encrypt_scrubbed (h : OK allVars) :
-    VerifiedScrubbed target
-      (Impl.RsaOaep.X86.Fn.encryptPrecomputed (Proof.HashTable.X86.fnsOf allVars)
-        Proof.RsaPkcs1Sig.X86.Ver.baseline.name Proof.RsaPkcs1Sig.X86.Ver.baseline.code)
-      (Proof.RsaOaep.X86.Enc.espec allVars) 32 :=
-  verifiedScrubbedAll (api := Spec.RsaOaep.encryptMdTablesApi) {
-      tables := [("hash", tables allVars), ("mgf1", tables allVars)]
-      code := Proof.RsaOaep.X86.Enc.encryptCode allVars Proof.RsaPkcs1Sig.X86.Ver.baseline
-      verified := enc_ok _ h
-      spSafe := Proof.RsaOaep.X86.Enc.code_sp (vs := allVars) Proof.RsaPkcs1Sig.X86.Ver.baseline }
-    (encryptOut _ _)
 
 /-! ## Decryption, whatever the implementation of the private-key operation -/
 
@@ -145,12 +130,17 @@ def decryptStub : Prog isa :=
     (Impl.Rsa.X86.PrivChecked.codeP crtPBaseline.name crtPBaseline.code "" (holeStub 96) "" (holeStub 96))
     Impl.RsaOaep.X86.privArgsP
 
--- The stub as a literal, for the kernel's evaluation.
-materialize_code decryptStub
+/-- What the cleanups need of decryption's code and encryption's: in one
+declaration, so that the kernel walks the hash functions' code once. -/
+private theorem sides :
+    scrubFSide decryptStub [("hash", tables allVars), ("mgf1", tables allVars)] 3608 = true ∧
+    scrubFSide (Proof.RsaOaep.X86.Enc.encryptCode allVars Proof.RsaPkcs1Sig.X86.Ver.baseline)
+      [("hash", tables allVars), ("mgf1", tables allVars)] 260 = true := by
+  rw [decryptStub]; lit_decide
 
 theorem decrypt_side :
-    scrubFSide decryptStub [("hash", tables allVars), ("mgf1", tables allVars)] 3608 = true := by
-  lit_decide
+    scrubFSide decryptStub [("hash", tables allVars), ("mgf1", tables allVars)] 3608 = true :=
+  sides.1
 
 theorem decrypt_fill (c : CrtImpl) (hc : calleeSide c.pc 96 = true) (hd : calleeSide c.pd 96 = true) :
     FillB decryptStub (Proof.RsaOaep.X86.Dec.decCodeP allVars c crtPBaseline) := by
@@ -185,5 +175,22 @@ theorem decrypt_spSafe (c : CrtImpl) :
     (Impl.RsaOaep.X86.Fn.decryptPrecomputed (Proof.HashTable.X86.fnsOf allVars)
       (Proof.RsaOaep.X86.Dec.privNameP c) (privCodeP c crtPBaseline)).all (fun i => !isa.writesSp i) = true :=
   scrubAll_spSafe (Proof.RsaOaep.X86.Dec.code_spP c crtPBaseline)
+
+/-! ## Encryption -/
+
+/-- `vg_rsa_oaep_encrypt_precomputed`, with the tables of every hash function,
+the baseline public-key operation and its cleanup, returns without secret
+residue. -/
+theorem encrypt_scrubbed (h : OK allVars) :
+    VerifiedScrubbed target
+      (Impl.RsaOaep.X86.Fn.encryptPrecomputed (Proof.HashTable.X86.fnsOf allVars)
+        Proof.RsaPkcs1Sig.X86.Ver.baseline.name Proof.RsaPkcs1Sig.X86.Ver.baseline.code)
+      (Proof.RsaOaep.X86.Enc.espec allVars) 32 :=
+  verifiedScrubbedAll (api := Spec.RsaOaep.encryptMdTablesApi) {
+      tables := [("hash", tables allVars), ("mgf1", tables allVars)]
+      code := Proof.RsaOaep.X86.Enc.encryptCode allVars Proof.RsaPkcs1Sig.X86.Ver.baseline
+      verified := enc_ok _ h
+      spSafe := Proof.RsaOaep.X86.Enc.code_sp (vs := allVars) Proof.RsaPkcs1Sig.X86.Ver.baseline }
+    (encryptOut _ _) (hs := sides.2)
 
 end VG.Proof.RsaOaep.X86.Scrub

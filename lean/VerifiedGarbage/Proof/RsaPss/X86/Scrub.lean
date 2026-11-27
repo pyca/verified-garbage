@@ -77,8 +77,6 @@ theorem verifyOut (tsH tsG : List FnTable) (stack : Nat) :
       revert vs; refine forall_length (n := 16) ?_
       intro _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ h; exact h
 
-/-! ## The verification, with its cleanup -/
-
 /-- The hash functions of the tables, as PSS's hash. -/
 abbrev allMVars : List Proof.MdHashTable.X86.MVar :=
   mvars Proof.Variants.Sha1.X86.variants Proof.Variants.Sha256.X86.variants
@@ -86,21 +84,6 @@ abbrev allMVars : List Proof.MdHashTable.X86.MVar :=
 /-- The hash functions of the tables, as MGF1's. -/
 abbrev allVars : List Proof.HashTable.X86.TVar :=
   vars Proof.Variants.Sha1.X86.variants Proof.Variants.Sha256.X86.variants
-
-/-- `vg_rsa_pss_verify_precomputed`, with the tables of every hash function,
-the baseline public-key operation and its cleanup, returns without secret
-residue. -/
-theorem verify_scrubbed (h : Proof.RsaPss.X86.Sg.OK allMVars allVars) :
-    VerifiedScrubbed target
-      (Impl.RsaPss.X86.Fn.verifyPrecomputed (Proof.MdHashTable.X86.fnsOf allMVars) (Proof.HashTable.X86.fnsOf allVars)
-        Proof.RsaPkcs1Sig.X86.Ver.baseline.name Proof.RsaPkcs1Sig.X86.Ver.baseline.code)
-      (Proof.RsaPss.X86.Vf.vspec allMVars allVars) 32 :=
-  verifiedScrubbedAll (api := Spec.RsaPss.verifyPrecomputedMdTableApi) {
-      tables := [("hash", Proof.MdHashTable.X86.tables allMVars), ("mgf1", Proof.HashTable.X86.tables allVars)]
-      code := Proof.RsaPss.X86.Vf.verifyCode allMVars allVars Proof.RsaPkcs1Sig.X86.Ver.baseline
-      verified := verify_ok _ _ h Proof.RsaPkcs1Sig.X86.Ver.baseline
-      spSafe := Proof.RsaPss.X86.Vf.code_sp h Proof.RsaPkcs1Sig.X86.Ver.baseline }
-    (verifyOut _ _ _)
 
 /-! ## Signing, whatever the implementation of the private-key operation -/
 
@@ -135,13 +118,19 @@ def signStub : Prog isa :=
     (Impl.Rsa.X86.PrivChecked.codeP crtPBaseline.name crtPBaseline.code "" (holeStub 96) "" (holeStub 96))
     Impl.RsaPss.X86.privArgsP
 
--- The stub as a literal, for the kernel's evaluation.
-materialize_code signStub
+/-- What the cleanups need of signing's code and verification's: in one
+declaration, so that the kernel walks the hash functions' code once. -/
+private theorem sides :
+    scrubFSide signStub [("hash", Proof.MdHashTable.X86.tables allMVars),
+      ("mgf1", Proof.HashTable.X86.tables allVars)] 3608 = true ∧
+    scrubFSide (Proof.RsaPss.X86.Vf.verifyCode allMVars allVars Proof.RsaPkcs1Sig.X86.Ver.baseline)
+      [("hash", Proof.MdHashTable.X86.tables allMVars), ("mgf1", Proof.HashTable.X86.tables allVars)] 260 = true := by
+  rw [signStub]; lit_decide
 
 theorem sign_side :
     scrubFSide signStub [("hash", Proof.MdHashTable.X86.tables allMVars),
-      ("mgf1", Proof.HashTable.X86.tables allVars)] 3608 = true := by
-  lit_decide
+      ("mgf1", Proof.HashTable.X86.tables allVars)] 3608 = true :=
+  sides.1
 
 theorem sign_fill (c : CrtImpl) (hc : calleeSide c.pc 96 = true) (hd : calleeSide c.pd 96 = true) :
     FillB signStub (Proof.RsaPss.X86.Sg.signCodeP allMVars allVars c crtPBaseline) := by
@@ -175,5 +164,22 @@ theorem sign_spSafe (h : Proof.RsaPss.X86.Sg.OK allMVars allVars) (c : CrtImpl) 
     (Impl.RsaPss.X86.Fn.signPrecomputed (Proof.MdHashTable.X86.fnsOf allMVars) (Proof.HashTable.X86.fnsOf allVars)
       (Proof.RsaPss.X86.Sg.privNameP c) (privCodeP c crtPBaseline)).all (fun i => !isa.writesSp i) = true :=
   scrubAll_spSafe (Proof.RsaPss.X86.Sg.code_spP h c crtPBaseline)
+
+/-! ## The verification, with its cleanup -/
+
+/-- `vg_rsa_pss_verify_precomputed`, with the tables of every hash function,
+the baseline public-key operation and its cleanup, returns without secret
+residue. -/
+theorem verify_scrubbed (h : Proof.RsaPss.X86.Sg.OK allMVars allVars) :
+    VerifiedScrubbed target
+      (Impl.RsaPss.X86.Fn.verifyPrecomputed (Proof.MdHashTable.X86.fnsOf allMVars) (Proof.HashTable.X86.fnsOf allVars)
+        Proof.RsaPkcs1Sig.X86.Ver.baseline.name Proof.RsaPkcs1Sig.X86.Ver.baseline.code)
+      (Proof.RsaPss.X86.Vf.vspec allMVars allVars) 32 :=
+  verifiedScrubbedAll (api := Spec.RsaPss.verifyPrecomputedMdTableApi) {
+      tables := [("hash", Proof.MdHashTable.X86.tables allMVars), ("mgf1", Proof.HashTable.X86.tables allVars)]
+      code := Proof.RsaPss.X86.Vf.verifyCode allMVars allVars Proof.RsaPkcs1Sig.X86.Ver.baseline
+      verified := verify_ok _ _ h Proof.RsaPkcs1Sig.X86.Ver.baseline
+      spSafe := Proof.RsaPss.X86.Vf.code_sp h Proof.RsaPkcs1Sig.X86.Ver.baseline }
+    (verifyOut _ _ _) (hs := sides.2)
 
 end VG.Proof.RsaPss.X86.Scrub
