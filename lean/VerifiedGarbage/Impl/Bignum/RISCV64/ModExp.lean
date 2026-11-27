@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.Bignum.RISCV64.PublicChecked
 public import VerifiedGarbage.Impl.Bignum.RISCV64.MontSqr
 public import VerifiedGarbage.Impl.Bignum.RISCV64.Pow57
+public import VerifiedGarbage.Impl.Bignum.RISCV64.WinSelect
 
 /-!
 # Modular exponentiation by a secret exponent on RISC-V: four-bit windows
@@ -134,16 +135,16 @@ def table57 : Prog isa :=
 def init57 : Prog isa :=
   .seq (.block pads) (.seq (copy 5 0) (.seq (unpackFrom atM) (.seq (copy 5 8) (unpackFrom atA))))
 
-/-- The window's digit into `a1`, and the exponent's pointer moved after a byte's second one: `s10` is four times
+/-- The window's digit into `t6`, and the exponent's pointer moved after a byte's second one: `s10` is four times
 the windows left. -/
 def digit : List Instr :=
-  [.load .b .a1 .s9 0, .logicImm .and .t2 .s10 4, .shiftReg .srl .d .a1 .a1 .t2, .logicImm .and .a1 .a1 15,
-    .shift .srl .d .t2 .t2 2, .logicImm .xor .t2 .t2 1, .add .s9 .s9 .t2]
+  [.load .b .t6 .s9 0, .shift .srl .d .t2 .s10 2, .logicImm .and .t2 .t2 1, .shift .sll .d .s0 .t2 2,
+    .shiftReg .srl .d .t6 .t6 .s0, .logicImm .and .t6 .t6 15, .logicImm .xor .t2 .t2 1, .add .s9 .s9 .t2]
 
 /-- A window: four squares, then `A := A T_d`. -/
 def window57 : Prog isa :=
   .seq (.loop (.seq sqrOp57 (.block [.addi .s10 .s10 (-1), .logicImm .and .t2 .s10 3])) (.nonzero .t2))
-    (.seq (.block digit) (.seq select (.seq (unpackFrom atE) mulOp57)))
+    (.seq (.block digit) (.seq (WinSelect.winSelect 5 8) (.seq (unpackFrom atE) mulOp57)))
 
 /-- Out of Montgomery form: `A R'⁻¹` (at most `m`) into array 6, then reduced, by `R² mod m` and 1, into array 4. -/
 def exit57 : Prog isa :=
