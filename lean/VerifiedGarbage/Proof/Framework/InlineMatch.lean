@@ -44,6 +44,18 @@ partial def reduceCalls (fs : Array Name) (e : Expr) : MetaM Expr :=
     let some x' ← unfoldDefinition? x | return .continue
     return .visit (← whnfCore x'.headBeta))
 
+/-- `e` with its head reduced: matches, and the functions `fs` of constructors. Unlike
+`reduceCalls`, never looks into the cases of a match that is stuck, of which at most one is
+kept once its discriminant is known. -/
+partial def headReduce (fs : Array Name) (e : Expr) : MetaM Expr := do
+  let e ← whnfCore e
+  let .const g _ := e.getAppFn | return e
+  unless fs.contains g do return e
+  let .const c _ := e.appArg!.getAppFn | return e
+  unless (← getEnv).find? c matches some (.ctorInfo _) do return e
+  let some e' ← unfoldDefinition? e | return e
+  headReduce fs e'.headBeta
+
 /-- The free variables of inductive types that are arguments of the constructor
 applications `es`, in order. -/
 partial def ctorFVars (es : Array Expr) : MetaM (Array Expr) := do
@@ -59,14 +71,13 @@ partial def ctorFVars (es : Array Expr) : MetaM (Array Expr) := do
         out := out ++ (← ctorFVars e.getAppArgs)
   return out
 
-/-- `e`, a value of the type `β` that may be a match stuck on free variables of
-its discriminant: as a tree of `casesOn` on them, the match resolved in each branch. -/
+/-- `e`, a value of the type `β` whose head is reduced and that may be a match stuck on free
+variables of its discriminant: as a tree of `casesOn` on them, the match resolved in each branch. -/
 partial def build (fs : Array Name) (β : Expr) (u : Level) (e : Expr) : Nat → MetaM Expr
-  | 0 => return e
+  | 0 => reduceCalls fs e
   | fuel + 1 => do
-    let e ← whnfCore e
-    let .const h _ := e.getAppFn | return e
-    unless isCaseFn (← getEnv) h do return e
+    let .const h _ := e.getAppFn | reduceCalls fs e
+    unless isCaseFn (← getEnv) h do return ← reduceCalls fs e
     for x in ← ctorFVars e.getAppArgs do
       let t ← whnfD (← inferType x)
       let .const ind _ := t.getAppFn | continue
@@ -76,7 +87,7 @@ partial def build (fs : Array Name) (β : Expr) (u : Level) (e : Expr) : Nat →
       for c in iv.ctors do
         let cinfo ← getConstInfoCtor c
         let (m, p) ← forallTelescope (← instantiateForall cinfo.type t.getAppArgs) fun ys _ => do
-          let e' ← whnfCore (← reduceCalls fs (e.replaceFVar x (mkAppN (mkAppN (mkConst c) t.getAppArgs) ys)))
+          let e' ← headReduce fs (e.replaceFVar x (mkAppN (mkAppN (mkConst c) t.getAppArgs) ys))
           let p := match e'.getAppFn with
             | .const h' _ => !(h' == h && e'.getAppNumArgs == e.getAppNumArgs)
             | _ => true
@@ -85,7 +96,7 @@ partial def build (fs : Array Name) (β : Expr) (u : Level) (e : Expr) : Nat →
         progress := progress || p
       if progress then
         return mkAppN (mkApp2 (mkConst (ind ++ `casesOn) [u]) (Expr.lam `_ t β .default) x) minors
-    return e
+    reduceCalls fs e
 
 end InlineMatch
 
@@ -101,8 +112,7 @@ elab "inline_match% " f:ident gs:ident* : term => liftMetaM do
   let u ← getLevel cod
   let minors ← iv.ctors.toArray.mapM fun c => do
     forallTelescope (← getConstInfoCtor c).type fun xs _ => do
-      let e ← reduceCalls fs (mkApp (mkConst fn) (mkAppN (mkConst c) xs))
-      mkLambdaFVars xs (← build fs cod u e 3)
+      mkLambdaFVars xs (← build fs cod u (← headReduce fs (mkApp (mkConst fn) (mkAppN (mkConst c) xs))) 3)
   return Expr.lam `i dom
     (mkAppN (mkApp2 (mkConst (ind ++ `casesOn) [u]) (Expr.lam `_ dom cod .default) (.bvar 0)) minors) .default
 
