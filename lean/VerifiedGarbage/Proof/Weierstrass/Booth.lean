@@ -343,10 +343,11 @@ theorem booth_not_dvd {n w J kmax : Nat} (hsafe : BoothSafe n w J kmax) (hw : 1 
     generalize bdig w k j * (E : Int) = e at he habs
     generalize bpart w k j = P at hP habs
     have hx0 : x.natAbs ≠ 0 := by
-      intro h0; rw [h0, Nat.mul_zero] at habs; rcases he with rfl | rfl <;> omega_using [hw, hJ, hkJ, hn0, hk, hj1, hj, hm, hD, hm1, hmH, htop, h3, hs, hMH, hx, hsum, hEpos, hjle, hME, hE, hP, h0, habs]
+      intro h0; rw [h0, Nat.mul_zero] at habs; rcases he with rfl | rfl <;>
+        omega_using [hEpos, hME, hE, hP, habs]
     have : n * 1 ≤ n * x.natAbs := Nat.mul_le_mul_left _ (Nat.pos_of_ne_zero hx0)
     generalize n * x.natAbs = NX at habs this
-    rcases he with rfl | rfl <;> omega_using [hw, hJ, hkJ, hn0, hk, hj1, hj, hm, hD, hm1, hmH, htop, h3, hs, hMH, hx, hsum, hEpos, hjle, hME, hE, hP, hx0, this, habs]
+    rcases he with rfl | rfl <;> omega_using [h3, hs, hMH, hjle, hE, hP, this, habs]
   · -- The top window: `P + e = k`, so `e > 0`, `P - e = -t n`.
     have hjJ : j + 1 = J := by omega_using [hj, htop]
     rw [hjJ, bpart_top (by omega_using [hJ]) (Nat.lt_of_lt_of_le hk hkJ)] at hsum
@@ -357,15 +358,15 @@ theorem booth_not_dvd {n w J kmax : Nat} (hsafe : BoothSafe n w J kmax) (hw : 1 
     generalize 2 ^ (w * j) = E at *
     generalize bdig w k j * (E : Int) = e at he habs hsum hx
     generalize bpart w k j = P at hP habs hsum hx
-    have hep : e = (ME : Int) := by rcases he with h | h <;> omega_arith
+    have hep : e = (ME : Int) := by rcases he with h | h <;> omega_using [h, hsum, hP, hE, hEpos, hME]
     subst hep
     -- `n x = P - ME < 0`.
-    have hxneg : (n : Int) * x < 0 := by omega_using [hkJ, hn0, hk, hm, hD, hm1, hmH, hEpos, hME, hMH, hE, hP, he, habs, hsum, hx]
+    have hxneg : (n : Int) * x < 0 := by omega_using [hEpos, hME, hE, hP, hx]
     obtain ⟨t, ht1, rfl⟩ : ∃ t : Nat, 1 ≤ t ∧ x = -(t : Int) := by
       have hx0 : x < 0 := by
         refine Classical.byContradiction fun h => ?_
         have : 0 ≤ (n : Int) * x := Int.mul_nonneg (Int.natCast_nonneg _) (by omega_using [h])
-        omega_using [hw, hJ, hkJ, hn0, hk, hj1, hj, hm, hD, hm1, hmH, htop, hjJ, hEpos, hME, hMH, hE, hP, he, habs, hsum, hx, hxneg, h, this]
+        omega_using [hxneg, this]
       exact ⟨(-x).toNat, by omega_using [hx0], by omega_using [hx0]⟩
     have htn : ((t * n : Nat) : Int) = ME - P := by
       rw [Int.natCast_mul, Int.mul_comm]
@@ -374,7 +375,8 @@ theorem booth_not_dvd {n w J kmax : Nat} (hsafe : BoothSafe n w J kmax) (hw : 1 
     have h2 : t * n ≤ 2 * ME := by omega_using [hsum, htn]
     have hlt : t < 2 * ME / n + 1 := by
       have := (Nat.le_div_iff_mul_le hn0).mpr h2; omega_using [this]
-    exact hcheck t hlt ⟨hm1, ht1, h2, by omega_using [hkJ, hn0, hk, hME, hMH, he, hsum, ht1, habs, hx, hxneg, htn, h2, hlt], by omega_using [hn0, hME, hMH, hP, he, hsum, ht1, habs, hx, hxneg, htn, h2, hlt], by omega_using [hn0, hME, hMH, hP, he, hsum, ht1, habs, hx, hxneg, htn, h2, hlt]⟩
+    exact hcheck t hlt ⟨hm1, ht1, h2, by omega_using [hk, hsum, htn], by omega_using [hP, htn],
+      by omega_using [hP, htn]⟩
 
 /-- The sum below digit `j` is never the digit's term, as a multiple of `G`. -/
 theorem booth_ne (hC : Law C) (hG : onCurve C (G C) = true)

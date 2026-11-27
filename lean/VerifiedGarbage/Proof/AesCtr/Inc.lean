@@ -295,10 +295,35 @@ theorem inc_words32 (m : Mem) (P : Addr) (w0 w1 w2 w3 : BitVec 32)
     simp only [Nat.reducePow] at b0 b1 b2 b3
     rw [Nat.mod_eq_of_lt b0, Nat.mod_eq_of_lt b1, Nat.mod_eq_of_lt b2, Nat.mod_eq_of_lt b3]
     omega_using []
-  rw [inc, hv, show (16 : Nat) = 4 + (4 + (4 + 4)) from rfl, ofNat_add, ofNat_add, ofNat_add]
-  simp only [Nat.reducePow, Nat.reduceAdd] at *
-  exact congr (congrArg HAppend.hAppend (ofNat_congr (by omega_using [h0])))
-    (congr (congrArg HAppend.hAppend (ofNat_congr (by omega_using [h1])))
-      (congr (congrArg HAppend.hAppend (ofNat_congr (by omega_using [h2]))) (ofNat_congr (by omega_using [h3]))))
+  -- The sum by words: `2³² cᵢ + rᵢ` at each, with the carry out of the one below.
+  have d3 := Nat.div_add_mod (A3 + 1) (2 ^ 32)
+  have l3 := Nat.mod_lt (A3 + 1) (show 0 < 2 ^ 32 by decide)
+  rw [← h3] at d3 l3
+  generalize (A3 + 1) / 2 ^ 32 = c3 at *
+  have d2 := Nat.div_add_mod (A2 + c3) (2 ^ 32)
+  have l2 := Nat.mod_lt (A2 + c3) (show 0 < 2 ^ 32 by decide)
+  rw [← h2] at d2 l2
+  generalize (A2 + c3) / 2 ^ 32 = c2 at *
+  have d1 := Nat.div_add_mod (A1 + c2) (2 ^ 32)
+  have l1 := Nat.mod_lt (A1 + c2) (show 0 < 2 ^ 32 by decide)
+  rw [← h1] at d1 l1
+  generalize (A1 + c2) / 2 ^ 32 = c1 at *
+  have d0 := Nat.div_add_mod (A0 + c1) (2 ^ 32)
+  have l0 := Nat.mod_lt (A0 + c1) (show 0 < 2 ^ 32 by decide)
+  rw [← h0] at d0 l0
+  generalize (A0 + c1) / 2 ^ 32 = c0 at d0
+  rw [inc, hv, show A0 * 2 ^ 96 + A1 * 2 ^ 64 + A2 * 2 ^ 32 + A3 + 1 =
+      2 ^ 32 * (2 ^ 32 * (2 ^ 32 * (2 ^ 32 * c0 + w0.toNat) + w1.toNat) + w2.toNat) + w3.toNat by
+        rw [d0]; omega_using [d1, d2, d3],
+    show (16 : Nat) = 4 + (4 + (4 + 4)) from rfl, ofNat_add, ofNat_add, ofNat_add]
+  have q {a r : Nat} (h : r < 2 ^ 32) : (2 ^ 32 * a + r) / 2 ^ 32 = a := by
+    rw [Nat.mul_add_div (by decide), Nat.div_eq_of_lt h, Nat.add_zero]
+  have m {a r : Nat} (h : r < 2 ^ 32) : r % 256 ^ 4 = (2 ^ 32 * a + r) % 256 ^ 4 := by
+    rw [show 256 ^ 4 = 2 ^ 32 from rfl, Nat.mul_add_mod]
+  rw [show 256 ^ (4 + (4 + 4)) = 2 ^ 32 * 2 ^ 32 * 2 ^ 32 from rfl, show 256 ^ (4 + 4) = 2 ^ 32 * 2 ^ 32 from rfl,
+    show 256 ^ 4 = 2 ^ 32 from rfl]
+  simp only [← Nat.div_div_eq_div_mul, q l3, q l2, q l1]
+  exact congr (congrArg HAppend.hAppend (ofNat_congr (m l0))) (congr (congrArg HAppend.hAppend (ofNat_congr (m l1)))
+    (congr (congrArg HAppend.hAppend (ofNat_congr (m l2))) (ofNat_congr (m l3))))
 
 end VG.Proof.AesCtr

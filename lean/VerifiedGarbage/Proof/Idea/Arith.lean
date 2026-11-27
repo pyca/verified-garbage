@@ -78,33 +78,40 @@ theorem reduce (p : Nat) (hp : p ≤ 2 ^ 32) (m : BitVec 64) (hm : m.toNat = 655
   apply BitVec.eq_of_toNat_eq
   rw [mask_toNat _ _ hm, BitVec.toNat_add, BitVec.toNat_add, BitVec.toNat_shiftLeft,
     Nat.shiftLeft_eq, BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, hrn, BitVec.toNat_ofNat]
-  generalize hH : p / 65536 = H
-  generalize hL : p % 65536 = L
-  have hdec : p = 65536 * H + L := by omega_arith
-  have hL' : L < 65536 := by omega_arith
-  have hH' : H ≤ 65536 := by omega_arith
-  subst hdec
-  clear hrn hr hlo hhi hH hL hp
-  have e1 : (65536 * H + L) % 65537 = (L + 65537 - H) % 65537 := by omega_arith
+  have hH' : p / 65536 ≤ 65536 := Nat.div_le_of_le_mul hp
+  have hL' : p % 65536 < 65536 := Nat.mod_lt _ (by decide)
+  have e1 : p % 65537 = (p % 65536 + 65537 - p / 65536) % 65537 := by
+    have hd := Nat.div_add_mod p 65536
+    generalize p / 65536 = H at hd hH' ⊢
+    generalize p % 65536 = L at hd ⊢
+    rw [← Nat.add_mul_mod_self_left (L + 65537 - H) 65537 H, ← Nat.add_mod_right p]
+    exact congrArg (· % 65537) (by omega_using [hd, hH'])
   rw [e1]
+  generalize p / 65536 = H at hH' ⊢
+  generalize p % 65536 = L at hL' ⊢
+  clear e1 hrn hr hlo hhi hp
+  have fin (x : Nat) : x % 65537 % 65536 = x % 65537 % 65536 % 2 ^ 64 := (Nat.mod_eq_of_lt
+    (Nat.lt_of_lt_of_le (Nat.mod_lt _ (show 65536 > 0 by decide)) (show 65536 ≤ 2 ^ 64 by decide))).symm
   by_cases hc : L < H
-  · have hR : (2 ^ 64 - H + L) % 2 ^ 64 = 2 ^ 64 - (H - L) := by
-      rw [Nat.mod_eq_of_lt (by omega_arith)]; omega_arith
-    have ht : (2 ^ 64 - (H - L)) / 2 ^ 63 = 1 := by omega_arith
-    rw [hR, ht, Nat.mod_mod_of_dvd _ (by decide : 65536 ∣ 2 ^ 64),
+  · obtain ⟨d, hd, rfl⟩ : ∃ d, 0 < d ∧ H = L + d := ⟨H - L, Nat.sub_pos_of_lt hc, (Nat.add_sub_cancel' (Nat.le_of_lt hc)).symm⟩
+    have hd' : d ≤ 65536 := by omega_using [hH']
+    rw [show 2 ^ 64 - (L + d) + L = 2 ^ 64 - d by omega_using [hH'], Nat.mod_eq_of_lt (a := 2 ^ 64 - d) (by omega_using [hd]),
+      show (2 ^ 64 - d) / 2 ^ 63 = 1 from Nat.div_eq_of_lt_le (by omega_using [hd']) (by omega_using [hd]),
+      Nat.mod_mod_of_dvd _ (by decide : 65536 ∣ 2 ^ 64),
       show 1 * 2 ^ 16 % 2 ^ 64 = 65536 * 1 from rfl, Nat.add_mul_mod_self_left,
       Nat.mod_mod_of_dvd _ (by decide : 65536 ∣ 2 ^ 64),
-      show 2 ^ 64 - (H - L) + 1 = (L + 65537 - H) + 65536 * (2 ^ 48 - 1) by omega_arith,
-      Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt (a := L + 65537 - H) (b := 65537) (by omega_arith)]
-    exact (Nat.mod_eq_of_lt (Nat.lt_of_lt_of_le (Nat.mod_lt _ (show 65536 > 0 by decide)) (show 65536 ≤ 2 ^ 64 by decide))).symm
-  · have hR : (2 ^ 64 - H + L) % 2 ^ 64 = L - H := by omega_arith
-    have ht : (L - H) / 2 ^ 63 = 0 := by omega_arith
-    rw [hR, ht, Nat.mod_mod_of_dvd _ (by decide : 65536 ∣ 2 ^ 64)]
+      show 2 ^ 64 - d + 1 = (65537 - d) + 65536 * (2 ^ 48 - 1) by omega_using [hd'],
+      Nat.add_mul_mod_self_left, show L + 65537 - (L + d) = 65537 - d from Nat.add_sub_add_left L 65537 d, ← fin,
+      Nat.mod_eq_of_lt (a := 65537 - d) (b := 65537) (by omega_using [hd])]
+  · obtain ⟨d, rfl⟩ : ∃ d, L = H + d := ⟨L - H, (Nat.add_sub_cancel' (Nat.le_of_not_lt hc)).symm⟩
+    have hd' : d < 65536 := by omega_using [hL']
+    rw [show 2 ^ 64 - H + (H + d) = d + 2 ^ 64 by omega_using [hH'], Nat.add_mod_right,
+      Nat.mod_eq_of_lt (a := d) (b := 2 ^ 64) (by omega_using [hd']),
+      Nat.div_eq_of_lt (a := d) (b := 2 ^ 63) (by omega_using [hd']), Nat.mod_mod_of_dvd _ (by decide : 65536 ∣ 2 ^ 64)]
     simp only [Nat.add_zero, Nat.zero_mul, Nat.zero_mod]
-    rw [Nat.mod_eq_of_lt (a := L - H) (b := 2 ^ 64) (by omega_arith),
-      show L + 65537 - H = (L - H) + 65537 * 1 by omega_arith, Nat.add_mul_mod_self_left,
-      Nat.mod_eq_of_lt (a := L - H) (b := 65537) (by omega_arith)]
-    exact (Nat.mod_eq_of_lt (Nat.lt_of_lt_of_le (Nat.mod_lt _ (show 65536 > 0 by decide)) (show 65536 ≤ 2 ^ 64 by decide))).symm
+    rw [show H + d + 65537 - H = d + 65537 by rw [Nat.add_assoc, Nat.add_sub_cancel_left], Nat.add_mod_right, ← fin,
+      Nat.mod_eq_of_lt (a := d) (b := 2 ^ 64) (by omega_using [hd']),
+      Nat.mod_eq_of_lt (a := d) (b := 65537) (by omega_using [hd'])]
 
 theorem mul_toNat (a b : Spec.Idea.Word) :
     (Spec.Idea.mul a b).setWidth 64 =
