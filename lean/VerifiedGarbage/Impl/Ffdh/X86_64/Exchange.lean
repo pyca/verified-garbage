@@ -32,14 +32,14 @@ variable (mul : Nat → Nat → Nat → Prog isa) (ex : Nat → Nat → List (Pr
 
 /-- Compute the shared value over every scalar byte, check its range and
 write its fixed-width encoding, or zeros for a degenerate value. -/
-def main : Prog isa :=
-  seqs ([.block head] ++ pSetup ++ [r2] ++ pow mul ex sY sK sX sXl ++ range aY ++
+def main (rest : Option (List (Prog isa)) := none) : Prog isa :=
+  seqs ([.block head] ++ pSetup ++ [r2] ++ pow mul ex sY sK sX sXl rest ++ range aY ++
     [.block finBlk, storeBE, .block [.mov .rax (.mem (hdr sF)), leave]])
 
-def body : Prog isa :=
-  .seq (.block (entry ++ domHead)) (.ite .ne (ret 0) (main mul ex r2))
+def body (rest : Option (List (Prog isa)) := none) : Prog isa :=
+  .seq (.block (entry ++ domHead)) (.ite .ne (ret 0) (main mul ex r2 rest))
 
 /-- Restore the ABI registers after every path. -/
-def code : Prog isa := .seq (body mul ex r2) (.block exit)
+def code (rest : Option (List (Prog isa)) := none) : Prog isa := .seq (body mul ex r2 rest) (.block exit)
 
 end VG.Impl.Ffdh.X86_64.Domain.Exchange

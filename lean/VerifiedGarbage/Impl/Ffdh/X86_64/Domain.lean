@@ -58,9 +58,11 @@ def pSetup : List (Prog isa) := wsSetup sK ++ [.block [enter]] ++ modSetup sDom 
 /-- Fixed-window exponentiation `ex` over every exponent byte. Keep R² in
 `aX` while the exponentiation uses its usual base array. -/
 def pow (mul : Nat → Nat → Nat → Prog isa) (ex : Nat → Nat → List (Prog isa))
-    (bp bl ep el : Nat) : List (Prog isa) :=
-  loadArr aXm bp bl ++ [mul aY aR2 aOne, mul aXm aXm aR2] ++ copyArr aX aR2 ++
-  copyArr Crt.aXc aXm ++ ex ep el ++ [mul aY aY aOne] ++ copyArr aR2 aX
+    (bp bl ep el : Nat) (rest : Option (List (Prog isa)) := none) : List (Prog isa) :=
+  loadArr aXm bp bl ++ (match rest with
+    | none => [mul aY aR2 aOne, mul aXm aXm aR2] ++ copyArr aX aR2 ++
+      copyArr Crt.aXc aXm ++ ex ep el ++ [mul aY aY aOne] ++ copyArr aR2 aX
+    | some code => code)
 
 /-- The array pointers and public word count for a comparison. -/
 def ptrs (a b : Nat) : List Instr :=
