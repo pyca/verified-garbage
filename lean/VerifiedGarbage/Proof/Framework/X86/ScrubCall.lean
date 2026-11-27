@@ -50,40 +50,23 @@ open VG.X86
 /-- What the cleanup of a function that calls `c` needs of it: `calleeOk`,
 and at most `n` bytes of stack. -/
 noncomputable def calleeSide (c : Prog isa) (n : Nat) : Bool :=
-  decide (stackUse c ≤ n) && calleeOk c
+  Nat.ble (stackK c) n && calleeOk c
 
-theorem calleeOk_iff (c : Prog isa) :
-    calleeOk c = true ↔ noIcall c = true ∧ c.allInstrs (fun i => !i.isMmx) = true := by
-  induction c with
-  | block is =>
-    induction is with
-    | nil => simp only [calleeOk, noIcall, Code.allInstrs, true_and]
-    | cons i is ih =>
-      simp only [calleeOk, noIcall, Code.allInstrs, true_and, Bool.and_eq_true] at ih ⊢
-  | seq a b iha ihb =>
-    simp only [calleeOk, noIcall, Code.allInstrs, Bool.and_eq_true, iha, ihb]
-    exact ⟨fun h => ⟨⟨h.1.1, h.2.1⟩, h.1.2, h.2.2⟩, fun h => ⟨⟨h.1.1, h.2.1⟩, h.1.2, h.2.2⟩⟩
-  | ite _ t e iht ihe =>
-    simp only [calleeOk, noIcall, Code.allInstrs, Bool.and_eq_true, iht, ihe]
-    exact ⟨fun h => ⟨⟨h.1.1, h.2.1⟩, h.1.2, h.2.2⟩, fun h => ⟨⟨h.1.1, h.2.1⟩, h.1.2, h.2.2⟩⟩
-  | loop b _ ih => simp only [calleeOk, noIcall, Code.allInstrs, ih]
-  | call _ b ih => simp only [calleeOk, noIcall, Code.allInstrs, ih]
-  | frame i b j ih =>
-    simp only [calleeOk, noIcall, Code.allInstrs, Bool.and_eq_true, ih]
-    exact ⟨fun h => ⟨h.1.2.1, ⟨h.1.1, h.1.2.2⟩, h.2⟩, fun h => ⟨⟨h.2.1.1, h.1, h.2.1.2⟩, h.2.2⟩⟩
-  | icall => simp only [calleeOk, noIcall, Bool.false_eq_true, false_and]
+theorem calleeSide_iff {c : Prog isa} {n : Nat} :
+    calleeSide c n = true ↔ stackUse c ≤ n ∧ calleeOk c = true := by
+  rw [calleeSide, Bool.and_eq_true, Nat.ble_eq, stackK_eq]
 
 /-- `calleeSide` of an implementation from what it states: its stack `k`,
 at most `n`, and `calleeOk`. -/
 theorem calleeSide_of_eq {c : Prog isa} {k n : Nat} (hs : stackUse c = k) (h : calleeOk c = true)
     (hk : k ≤ n := by decide) : calleeSide c n = true := by
-  simp only [calleeSide, Bool.and_eq_true, decide_eq_true_eq]
+  rw [calleeSide_iff]
   exact ⟨hs ▸ hk, h⟩
 
 /-- `calleeSide` of an implementation that states a bound `k ≤ n` on its stack. -/
 theorem calleeSide_of_le {c : Prog isa} {k n : Nat} (hs : stackUse c ≤ k) (h : calleeOk c = true)
     (hk : k ≤ n := by decide) : calleeSide c n = true := by
-  simp only [calleeSide, Bool.and_eq_true, decide_eq_true_eq]
+  rw [calleeSide_iff]
   exact ⟨Nat.le_trans hs hk, h⟩
 
 /-- `b` is `a` with some of its empty blocks replaced by code that meets
@@ -120,7 +103,7 @@ theorem stackUse_le (h : Fill n a b) : stackUse b ≤ stackUse a + n := by
   induction h with
   | block => exact Nat.le_add_right _ _
   | hole hd =>
-    simp only [calleeSide, Bool.and_eq_true, decide_eq_true_eq] at hd
+    rw [calleeSide_iff] at hd
     simp only [stackUse, Nat.zero_add]; exact hd.1
   | seq _ _ iha ihb => simp only [stackUse]; omega
   | ite _ _ _ iht ihe => simp only [stackUse]; omega
@@ -136,7 +119,7 @@ theorem noMmx (h : Fill n a b) (ha : a.allInstrs (fun i => !i.isMmx) = true) :
   induction h with
   | block => exact ha
   | hole hd =>
-    simp only [calleeSide, Bool.and_eq_true] at hd
+    rw [calleeSide_iff] at hd
     exact ((calleeOk_iff _).mp hd.2).2
   | seq _ _ iha ihb | ite _ _ _ iha ihb =>
     simp only [Code.allInstrs, Bool.and_eq_true] at ha ⊢; exact ⟨iha ha.1, ihb ha.2⟩
@@ -152,7 +135,7 @@ theorem inames_eq (h : Fill n a b) : inames b = inames a := by
   induction h with
   | block => rfl
   | hole hd =>
-    simp only [calleeSide, Bool.and_eq_true] at hd
+    rw [calleeSide_iff] at hd
     exact (inames_of_noIcall ((calleeOk_iff _).mp hd.2).1).trans rfl
   | seq _ _ iha ihb | ite _ _ _ iha ihb => simp only [inames, iha, ihb]
   | loop _ _ ih | call _ _ _ ih | frame _ _ _ ih => simp only [inames, ih]
@@ -162,7 +145,7 @@ theorem mono {m : Nat} (hm : n ≤ m) (h : Fill n a b) : Fill m a b := by
   induction h with
   | block is => exact .block is
   | hole hd =>
-    simp only [calleeSide, Bool.and_eq_true, decide_eq_true_eq] at hd
+    rw [calleeSide_iff] at hd
     exact .hole (calleeSide_of_le hd.1 hd.2 hm)
   | seq _ _ iha ihb => exact .seq iha ihb
   | ite c _ _ iht ihe => exact .ite c iht ihe
@@ -196,8 +179,7 @@ theorem scrubFSide_of_fill {n m W : Nat} {ts : List (String × List FnTable)} {a
   obtain ⟨hs, ht, hm, hp, -⟩ := of_scrubFSide ha
   have hsb := hf.stackUse_le
   have ht' : tablesCall b ts = true := by rw [tablesCall, hf.inames_eq]; exact ht
-  simp only [scrubFSide, Bool.and_eq_true, decide_eq_true_eq, beq_iff_eq]
-  exact ⟨⟨⟨⟨by omega, ht'⟩, hf.noMmx hm⟩, by omega⟩, hW.2⟩
+  exact scrubFSide_iff.mpr ⟨by omega, ht', hf.noMmx hm, by omega, hW.2⟩
 
 /-- Proves `Fill n a b` of a function's code with a stub (`a`) and with
 implementations (`b`), from hypotheses `calleeSide c n = true` of each
@@ -245,7 +227,7 @@ theorem stackUse_le (h : FillB a b) : stackUse b ≤ stackUse a := by
   induction h with
   | refl => exact Nat.le_refl _
   | hole hd =>
-    simp only [calleeSide, Bool.and_eq_true, decide_eq_true_eq] at hd
+    rw [calleeSide_iff] at hd
     simp only [holeStub, stackUse, frameBytes, Nat.zero_add]; exact hd.1
   | seq _ _ iha ihb => simp only [stackUse]; omega
   | ite _ _ _ iht ihe => simp only [stackUse]; omega
@@ -259,7 +241,7 @@ theorem noMmx (h : FillB a b) (ha : a.allInstrs (fun i => !i.isMmx) = true) :
   induction h with
   | refl => exact ha
   | hole hd =>
-    simp only [calleeSide, Bool.and_eq_true] at hd
+    rw [calleeSide_iff] at hd
     exact ((calleeOk_iff _).mp hd.2).2
   | seq _ _ iha ihb | ite _ _ _ iha ihb =>
     simp only [Code.allInstrs, Bool.and_eq_true] at ha ⊢; exact ⟨iha ha.1, ihb ha.2⟩
@@ -273,7 +255,7 @@ theorem inames_eq (h : FillB a b) : inames b = inames a := by
   induction h with
   | refl => rfl
   | hole hd =>
-    simp only [calleeSide, Bool.and_eq_true] at hd
+    rw [calleeSide_iff] at hd
     exact (inames_of_noIcall ((calleeOk_iff _).mp hd.2).1).trans rfl
   | seq _ _ iha ihb | ite _ _ _ iha ihb => simp only [inames, iha, ihb]
   | loop _ _ ih | call _ _ _ ih | frame _ _ _ ih => simp only [inames, ih]
@@ -301,8 +283,7 @@ theorem scrubFSide_of_fillB {W : Nat} {ts : List (String × List FnTable)} {a b 
   have hsb := hf.stackUse_le
   have ht' : tablesCall b ts = true := by rw [tablesCall, hf.inames_eq]; exact ht
   have h4 : W % 4 = 0 := (of_scrubFSide ha).2.2.2.2
-  simp only [scrubFSide, Bool.and_eq_true, decide_eq_true_eq, beq_iff_eq]
-  exact ⟨⟨⟨⟨by omega, ht'⟩, hf.noMmx hm⟩, hp⟩, h4⟩
+  exact scrubFSide_iff.mpr ⟨by omega, ht', hf.noMmx hm, hp, h4⟩
 
 /-- `fill_calls` for `FillB`: proves `FillB a b` of a function's code with
 stubs (`a`, its holes `holeStub k`) and with implementations (`b`), from

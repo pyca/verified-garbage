@@ -6,7 +6,6 @@ import VerifiedGarbage.Proof.Sm3.Stream
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.InstancePriority
 import VerifiedGarbage.Proof.Framework.GetElem
-import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # Streaming SM3 with its working space as an argument

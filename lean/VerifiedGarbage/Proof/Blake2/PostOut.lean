@@ -4,7 +4,6 @@ public import VerifiedGarbage.Spec.Blake2.Contract
 public import VerifiedGarbage.Proof.Blake2.Scratch
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # BLAKE2b's and BLAKE2s's `init` postconditions read only their buffers

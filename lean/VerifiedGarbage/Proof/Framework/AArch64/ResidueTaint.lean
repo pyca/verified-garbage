@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Framework.AArch64.Inline
 public import VerifiedGarbage.Proof.Framework.AArch64.Residue
 public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 public import VerifiedGarbage.Proof.Framework.AArch64.LaneTaint
-import VerifiedGarbage.Proof.Framework.AArch64.Syms
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Reduce
 
@@ -104,41 +103,52 @@ def step (τ : T) (i : Instr) : Option T :=
 /-- An instruction that writes no flag leaves them as they were. -/
 theorem exec_flags {i : Instr} {s s' : State} (hi : setsFlags i = false) (he : exec i s = some s') :
     s'.c = s.c ∧ s'.nf = s.nf ∧ s'.zf = s.zf ∧ s'.vf = s.vf := by
-  cases i with
-  | adds | adcs | subs | sbcs | tst | ccmp => cases hi
-  | str sz t n off | strb t n off | strq t n off =>
-    simp only [reduceExec, Option.bind_eq_some_iff, State.store] at he
-    obtain ⟨a, -, he⟩ := he
-    split at he <;> cases he; exact ⟨rfl, rfl, rfl, rfl⟩
-  | ldr sz t n off | ldrb t n off | ldrq t n off =>
+  cases i <;> simp only [setsFlags, Bool.true_eq_false] at hi
+  case ldp => obtain ⟨_, _, rfl⟩ := exec_ldp_eq he; exact ⟨rfl, rfl, rfl, rfl⟩
+  case stp => obtain ⟨_, rfl⟩ := exec_stp_eq he; exact ⟨rfl, rfl, rfl, rfl⟩
+  all_goals
     simp only [reduceExec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at he
-    obtain ⟨a, -, v, -, rfl⟩ := he; exact ⟨rfl, rfl, rfl, rfl⟩
-  | ldrqTbl t n off name ws => simp only [reduceExec] at he; split at he <;> cases he; exact ⟨rfl, rfl, rfl, rfl⟩
-  | vop op =>
-    simp only [reduceExec, Option.map_eq_some_iff] at he
-    obtain ⟨⟨_, _⟩, -, rfl⟩ := he; exact ⟨rfl, rfl, rfl, rfl⟩
-  | ldrSp t off =>
-    obtain ⟨-, he⟩ := Option.ite_none_right_eq_some.mp he
-    obtain ⟨_, _, rfl⟩ := Option.map_eq_some_iff.mp he; exact ⟨rfl, rfl, rfl, rfl⟩
-  | strSp t off =>
-    obtain ⟨-, he⟩ := Option.ite_none_right_eq_some.mp he
-    simp only [State.store] at he
-    split at he <;> cases he; exact ⟨rfl, rfl, rfl, rfl⟩
-  | ldp => obtain ⟨_, _, rfl⟩ := exec_ldp_eq he; exact ⟨rfl, rfl, rfl, rfl⟩
-  | stp => obtain ⟨_, rfl⟩ := exec_stp_eq he; exact ⟨rfl, rfl, rfl, rfl⟩
-  | push _ | pop _ | alloc _ | free _ | blr _ => simp only [reduceExec, reduceCtorEq] at he
-  | logicRor _ _ _ _ _ _ | bicRor _ _ _ _ _ | extr _ _ _ _ _ | addSp _ _ | addImm _ _ _ _
-  | subImm _ _ _ _ | ror _ _ _ _ | lsr _ _ _ _ | lsl _ _ _ _ | movz _ _ _ _ | movk _ _ _ _
-  | umov _ _ _ _ | ldrTbl _ _ _ _ _ _ =>
-    obtain ⟨-, he⟩ := Option.ite_none_right_eq_some.mp he; obtain rfl := Option.some.inj he
-    exact ⟨rfl, rfl, rfl, rfl⟩
-  | _ => obtain rfl := Option.some.inj he; exact ⟨rfl, rfl, rfl, rfl⟩
+  all_goals
+    repeat' first
+      | split at he
+      | simp only [Option.map_eq_some_iff] at he
+      | rcases he with ⟨_, _, he⟩
+  all_goals
+    try simp_all only [State.store]
+  all_goals
+    repeat' first | split at he | cases he
+  all_goals first
+    | exact ⟨rfl, rfl, rfl, rfl⟩
+    | simp_all only [RegUpd.c_write, RegUpd.nf_write, RegUpd.zf_write, RegUpd.vf_write, and_self]
 
 /-- No instruction changes `unknowns`, and only `msr DIT` PSTATE.DIT, to a
 value of its own. -/
 theorem exec_ud {i : Instr} {s s' : State} (he : exec i s = some s') :
-    s'.unknowns = s.unknowns ∧ (s'.dit = s.dit ∨ ∃ on, i = .msrDitImm on ∧ s'.dit = on) :=
-  (exec_fixed he).2.2
+    s'.unknowns = s.unknowns ∧ (s'.dit = s.dit ∨ ∃ on, i = .msrDitImm on ∧ s'.dit = on) := by
+  cases i
+  case ldp => obtain ⟨_, _, rfl⟩ := exec_ldp_eq he; exact ⟨rfl, .inl rfl⟩
+  case stp => obtain ⟨_, rfl⟩ := exec_stp_eq he; exact ⟨rfl, .inl rfl⟩
+  case msrDitImm on =>
+    simp only [reduceExec, Option.some.injEq] at he
+    subst he; exact ⟨rfl, .inr ⟨on, rfl, rfl⟩⟩
+  case mrsDit t =>
+    simp only [reduceExec] at he
+    split at he <;> (cases he; exact ⟨rfl, .inl rfl⟩)
+  all_goals
+    simp only [reduceExec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at he
+  all_goals
+    repeat' first
+      | split at he
+      | simp only [Option.map_eq_some_iff] at he
+      | rcases he with ⟨_, _, he⟩
+  all_goals
+    try simp_all only [State.store]
+  all_goals
+    repeat' first | split at he | cases he
+  all_goals first
+    | exact ⟨rfl, .inl rfl⟩
+    | exact ⟨rfl, trivial⟩
+    | simp_all only [true_or, and_self]
 
 theorem dit_step {i : Instr} {s₁ s₂ s₁' s₂' : State} (h : s₁.dit = s₂.dit)
     (e₁ : exec i s₁ = some s₁') (e₂ : exec i s₂ = some s₂') : s₁'.dit = s₂'.dit := by
@@ -373,10 +383,10 @@ def done (r : Nat) (τ : T) : Bool :=
   (allRegs.erase .x0).subset τ.1.1 && allVRegs.subset τ.1.2 && τ.2.1 && Nat.ble τ.2.2 r
 
 theorem mem_allRegs (r : Reg) : r ∈ allRegs := by
-  cases r <;> decide
+  rw [allRegs, RegSet.mem_ofList]; cases r <;> simp
 
 theorem mem_allVRegs (v : VReg) : v ∈ allVRegs := by
-  cases v <;> decide
+  rw [allVRegs, RegSet.mem_ofList]; cases v <;> simp
 
 theorem agree_init {s₁ s₂ : State} (h : Outside 0 s₁ s₂) (hu : s₁.unknowns = s₂.unknowns) :
     rtaint.Agree init s₁ s₂ := by
@@ -520,11 +530,10 @@ theorem agreeV_ins {q : Part} {s₁ s₂ : State} (h : AgreeV q s₁ s₂) (d : 
   by_cases e : v = d
   · subst e
     simp only [RegUpd.v_setV, ite_true, VG.AArch64.LaneTaint.extract_setLane _ _ hk hb]
-    rcases (by omega_using [hk] : k = 0 ∨ k = 1) with rfl | rfl <;> cases b
-    · exact hp (mem_put_self.mp hv)
-    · exact h true v ((mem_put_other (by decide)).mp hv)
-    · exact h false v ((mem_put_other (by decide)).mp hv)
-    · exact hp (mem_put_self.mp hv)
+    rcases (by omega_using [hk] : k = 0 ∨ k = 1) with rfl | rfl <;> cases b <;>
+      first
+      | exact hp (mem_put_self.mp hv)
+      | exact h _ v ((mem_put_other (by decide)).mp hv)
   · simp only [RegUpd.v_setV, e, ite_false]
     exact h b v ((mem_put e).mp hv)
 
@@ -620,7 +629,7 @@ def vregs : List VReg :=
   [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15,
    .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23, .v24, .v25, .v26, .v27, .v28, .v29, .v30, .v31]
 
-theorem mem_vregs (v : VReg) : v ∈ vregs := by cases v <;> decide
+theorem mem_vregs (v : VReg) : v ∈ vregs := by cases v <;> simp [vregs]
 
 /-- Everything public, as `Outside 0` has it. -/
 def init : T := (RTaint.init, (RTaint.allVRegs, RTaint.allVRegs))

@@ -28,12 +28,18 @@ namespace VG.Proof.EcKey.X86.BrainpoolP320r1.Scrub
 
 open VG.X86 VG.X86.Scrub VG.Proof.EcKey.X86.Scrub
 
+instance : SpSafeCode Impl.EcKey.X86.Fn.publicKeyBrainpoolP320r1 := spSafe_scrubAll Proof.EcKey.X86.BrainpoolP320r1.pk_sp.1
+instance : SpSafeCode Impl.EcKey.X86.Fn.compressBrainpoolP320r1 := spSafe_scrubAll Proof.EcKey.Compressed.X86.BrainpoolP320r1.sp.1
+instance : SpSafeCode Impl.EcKey.X86.Fn.decompressBrainpoolP320r1 :=
+  spSafe_scrubAll Proof.EcKey.Compressed.X86.BrainpoolP320r1Decompress.sp.1
+
 /-- `vg_ec_brainpoolp320r1_public_key`. -/
 theorem publicKey_scrubbed (hL : Weierstrass.Law Spec.BrainpoolP320r1.curve) :
     VerifiedScrubbed target Impl.EcKey.X86.Fn.publicKeyBrainpoolP320r1 Proof.EcKey.X86.BrainpoolP320r1.pkSpec 32 :=
   verifiedScrubbedAll (api := Spec.EcKey.BrainpoolP320r1.publicKeyApi)
     { code := Impl.EcKey.X86.publicKeyBrainpoolP320r1
-      verified := Proof.EcKey.X86.BrainpoolP320r1.pk_verified hL }
+      verified := Proof.EcKey.X86.BrainpoolP320r1.pk_verified hL
+      spSafe := writesSp_of_noSp Proof.EcKey.X86.BrainpoolP320r1.pk_sp.1 }
     (publicKeyOut Spec.EcKey.BrainpoolP320r1.inst 24 Impl.Ecdsa.X86.brainpoolp320r1Comb.combConsts)
 
 /-- `vg_ec_brainpoolp320r1_compress_public_key`. -/
@@ -41,7 +47,8 @@ theorem compress_scrubbed :
     VerifiedScrubbed target Impl.EcKey.X86.Fn.compressBrainpoolP320r1 (Spec.EcKey.BrainpoolP320r1.inst.compressPublicKeyContract X86.abi 28) 32 :=
   verifiedScrubbedAll (api := Spec.EcKey.BrainpoolP320r1.inst.compressPublicKeyApi)
     { code := Proof.EcKey.Compressed.X86.BrainpoolP320r1.code
-      verified := Proof.EcKey.Compressed.X86.BrainpoolP320r1.verified }
+      verified := Proof.EcKey.Compressed.X86.BrainpoolP320r1.verified
+      spSafe := writesSp_of_noSp Proof.EcKey.Compressed.X86.BrainpoolP320r1.sp.1 }
     (compressOut _ _ [])
 
 /-- `vg_ec_brainpoolp320r1_decompress_public_key`. -/
@@ -49,7 +56,8 @@ theorem decompress_scrubbed (hL : Weierstrass.Law Spec.BrainpoolP320r1.curve) :
     VerifiedScrubbed target Impl.EcKey.X86.Fn.decompressBrainpoolP320r1 (Spec.EcKey.BrainpoolP320r1.inst.decompressPublicKeyContract X86.abi 28) 32 :=
   verifiedScrubbedAll (api := Spec.EcKey.BrainpoolP320r1.inst.decompressPublicKeyApi)
     { code := Proof.EcKey.Compressed.X86.BrainpoolP320r1Decompress.code
-      verified := Proof.EcKey.Compressed.X86.BrainpoolP320r1Decompress.verified hL }
+      verified := Proof.EcKey.Compressed.X86.BrainpoolP320r1Decompress.verified hL
+      spSafe := writesSp_of_noSp Proof.EcKey.Compressed.X86.BrainpoolP320r1Decompress.sp.1 }
     (decompressOut _ _ [])
 
 end VG.Proof.EcKey.X86.BrainpoolP320r1.Scrub

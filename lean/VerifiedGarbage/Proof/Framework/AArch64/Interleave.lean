@@ -1,11 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.AArch64Weave
-public import VerifiedGarbage.Impl.Scrub.AArch64.Writes
 public import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 import VerifiedGarbage.Proof.Framework.Mem
-import VerifiedGarbage.Proof.Framework.AArch64.Reduce
 
 /-!
 # AArch64: interleaving independent code
@@ -284,63 +281,65 @@ theorem Frame.store {F : Fp} {s s' : State} {off n : Nat} {v : BitVec (8 * n)}
   · cases h
 
 
-/-- A vector operation writes its destination register alone. -/
-theorem VOp.fp_shape {op : VOp} {F : Fp} (hf : VOp.fp op = some F) :
-    F.gw = 0 ∧ F.cw = false ∧ F.mw = 0 ∧ F.vw = vbit op.dst := by
-  cases op <;> cases hf <;> exact ⟨rfl, rfl, rfl, rfl⟩
-
-theorem vbit_self (d : VReg) : (vbit d).testBit d.ctorIdx = true := by
-  rw [testBit_vbit, decide_eq_true rfl]
-
-theorem gbit_self (d : Reg) : (gbit d).testBit d.ctorIdx = true := by
-  rw [testBit_gbit, decide_eq_true rfl]
-
 theorem VOp.frame {op : VOp} {F : Fp} (hf : VOp.fp op = some F) {s s' : State}
     (he : (op.eval s).map (fun (p : VReg × BitVec 128) => s.setV p.1 p.2) = some s') : Frame xb F s s' := by
-  obtain ⟨⟨d, x⟩, hx, rfl⟩ := Option.map_eq_some_iff.mp he
-  refine Frame.setV d x ?_
-  rw [(VOp.fp_shape hf).2.2.2, VOp.eval_dst hx, vbit_self]
+  cases op <;> cases hf
+  case ins a d i n =>
+    cases a <;> simp only [VOp.eval] at he <;> split at he <;>
+      simp only [Option.map_some, Option.map_none, Option.some.injEq, reduceCtorEq] at he <;>
+      subst he <;> exact Frame.setV _ _ (by simp)
+  all_goals simp only [VOp.eval, Option.map_some, Option.some.injEq] at he
+  all_goals first
+    | (subst he; exact Frame.setV _ _ (by simp [vecFp]))
+    | (split at he
+       · simp only [Option.map_some, Option.some.injEq] at he
+         subst he; exact Frame.setV _ _ (by simp [vecFp])
+       · cases he)
+    | (rename_i a _ _; cases a <;> simp only [Option.map_some, Option.some.injEq] at he <;> subst he <;>
+        exact Frame.setV _ _ (by simp))
 
 theorem frame {i : Instr} {F : Fp} (hf : fp xb i = some F) {s s' : State} (he : exec i s = some s') :
     Frame xb F s s' := by
-  cases i
+  cases i <;> simp only [fp, reduceCtorEq] at hf
   case vop op => exact VOp.frame hf he
-  case adds | subs | adcs | sbcs =>
-    cases hf; obtain rfl := Option.some.inj he; exact Frame.awc _ _ _ _ _ (gbit_self _) rfl
-  case add | sub | logic | mul | umulh | adc | sbc | csel | rev32 | rev | madd =>
-    cases hf; obtain rfl := Option.some.inj he; exact Frame.write _ _ _ (gbit_self _)
-  case extr | logicRor | bicRor | addImm | subImm | lsr | lsl | ror | movz | movk =>
-    cases hf; obtain ⟨-, he⟩ := Option.ite_none_right_eq_some.mp he; obtain rfl := Option.some.inj he
-    exact Frame.write _ _ _ (gbit_self _)
-  case ldr sz r n off =>
-    obtain ⟨a, -, he⟩ := Option.bind_eq_some_iff.mp he
-    obtain ⟨v, -, rfl⟩ := Option.map_eq_some_iff.mp he
-    simp only [fp] at hf
-    split at hf <;> cases hf <;> exact Frame.write _ _ _ (gbit_self _)
-  case ldrq r n off =>
-    obtain ⟨a, -, he⟩ := Option.bind_eq_some_iff.mp he
-    obtain ⟨v, -, rfl⟩ := Option.map_eq_some_iff.mp he
-    simp only [fp] at hf
-    split at hf <;> cases hf <;> exact Frame.setV _ _ (vbit_self _)
-  case str sz r n off =>
-    simp only [fp] at hf
-    split at hf
-    · rename_i hn; subst hn; cases hf
-      obtain ⟨a, ha, he⟩ := Option.bind_eq_some_iff.mp he
-      obtain ⟨-, ha⟩ := Option.ite_none_right_eq_some.mp ha
-      obtain rfl := Option.some.inj ha
-      exact Frame.store (fun o h1 h2 => by rw [testBit_range, decide_eq_true ⟨h1, h2⟩]) he
-    · cases hf
-  case strq r n off =>
-    simp only [fp] at hf
-    split at hf
-    · rename_i hn; subst hn; cases hf
-      obtain ⟨a, ha, he⟩ := Option.bind_eq_some_iff.mp he
-      obtain ⟨-, ha⟩ := Option.ite_none_right_eq_some.mp ha
-      obtain rfl := Option.some.inj ha
-      exact Frame.store (fun o h1 h2 => by rw [testBit_range, decide_eq_true ⟨h1, h2⟩]) he
-    · cases hf
-  all_goals cases hf
+  all_goals first
+    | (cases hf; simp only [exec, Option.some.injEq] at he; subst he
+       first
+       | exact Frame.write _ _ _ (by simp [regFp])
+       | exact Frame.awc _ _ _ _ _ (by simp) rfl)
+    | (cases hf; simp only [exec] at he; split at he
+       · simp only [Option.some.injEq] at he; subst he; exact Frame.write _ _ _ (by simp [regFp])
+       · cases he)
+    | (split at hf
+       · rename_i hn; subst hn; cases hf
+         simp only [exec, addr] at he
+         split at he
+         · simp only [Option.bind_some] at he
+           first
+           | exact Frame.store (fun o h1 h2 => by simp [testBit_range]; omega_using [h1, h2]) he
+           | (simp only [State.load] at he
+              split at he
+              · simp only [Option.map_some, Option.some.injEq] at he; subst he
+                first
+                | exact Frame.write _ _ _ (by simp)
+                | exact Frame.setV _ _ (by simp)
+              · cases he)
+         · cases he
+       · first
+         | (cases hf; done)
+         | (cases hf
+            simp only [exec] at he
+            cases ha : addr s _ _ _ with
+            | none => rw [ha] at he; cases he
+            | some a =>
+              rw [ha] at he
+              simp only [Option.bind_some, State.load] at he
+              split at he
+              · simp only [Option.map_some, Option.some.injEq] at he; subst he
+                first
+                | exact Frame.write _ _ _ (by simp)
+                | exact Frame.setV _ _ (by simp)
+              · cases he))
 
 /-! ## Reads determine writes -/
 
@@ -427,12 +426,27 @@ theorem VOp.det {op : VOp} {F : Fp} (hf : VOp.fp op = some F) {s t : State} (h :
   case ins a d i n => cases a <;> simp (disch := simp) only [VOp.eval, hg, hv]
   all_goals simp (disch := simp [vecFp, Nat.testBit_or]) only [VOp.eval, hv]
 
+theorem VOp.fp_shape {op : VOp} {F : Fp} (hf : VOp.fp op = some F) : F.gw = 0 ∧ F.cw = false ∧ F.mw = 0 := by
+  cases op <;> simp only [VOp.fp, reduceCtorEq, Option.some.injEq] at hf <;> subst hf <;>
+    exact ⟨rfl, rfl, rfl⟩
+
 theorem VOp.dst_eq {op : VOp} {F : Fp} (hf : VOp.fp op = some F) {s : State} {d : VReg} {x : BitVec 128}
     (he : VOp.eval s op = some (d, x)) : ∀ r : VReg, F.vw.testBit r.ctorIdx → r = d := by
   intro r hr
-  rw [(VOp.fp_shape hf).2.2.2] at hr
-  rw [VOp.eval_dst he]
-  exact only_vbit hr
+  cases op <;> cases hf
+  case dup a d' n =>
+    cases a <;> simp only [VOp.eval, Option.some.injEq, Prod.mk.injEq] at he <;>
+      obtain ⟨rfl, -⟩ := he <;> simpa using hr
+  case ins a d' i n =>
+    cases a <;> simp only [VOp.eval] at he <;> split at he <;>
+      simp only [Option.some.injEq, Prod.mk.injEq, reduceCtorEq] at he <;>
+      obtain ⟨rfl, -⟩ := he <;> simpa using hr
+  all_goals simp only [VOp.eval, Option.some.injEq, Prod.mk.injEq] at he
+  all_goals first
+    | (obtain ⟨rfl, -⟩ := he; simpa [vecFp] using hr)
+    | (split at he
+       · simp only [Option.some.injEq, Prod.mk.injEq] at he; obtain ⟨rfl, -⟩ := he; simpa [vecFp] using hr
+       · cases he)
 
 theorem det_add {sz : Size} {d : Reg} {n : Reg} {m : Reg} {F : Fp} (hf : fp xb (.add sz d n m) = some F) :
     Det xb (.add sz d n m) F := by
@@ -440,7 +454,7 @@ theorem det_add {sz : Size} {d : Reg} {n : Reg} {m : Reg} {F : Fp} (hf : fp xb (
   have hg := h.gpr
   simp only [fp, Option.some.injEq] at hf
   subst hf
-  simp (disch := simp [regFp, Nat.testBit_or]) only [reduceExec, State.read, hg, Option.some.injEq] at he
+  simp (disch := simp [regFp, Nat.testBit_or]) only [exec, State.read, hg, Option.some.injEq] at he
   subst he
   refine ⟨_, ?_, Writes.write (t := t) _ _ _ (fun r hr => only_gbit hr) rfl rfl rfl⟩
   rfl
@@ -451,7 +465,7 @@ theorem det_sub {sz : Size} {d : Reg} {n : Reg} {m : Reg} {F : Fp} (hf : fp xb (
   have hg := h.gpr
   simp only [fp, Option.some.injEq] at hf
   subst hf
-  simp (disch := simp [regFp, Nat.testBit_or]) only [reduceExec, State.read, hg, Option.some.injEq] at he
+  simp (disch := simp [regFp, Nat.testBit_or]) only [exec, State.read, hg, Option.some.injEq] at he
   subst he
   refine ⟨_, ?_, Writes.write (t := t) _ _ _ (fun r hr => only_gbit hr) rfl rfl rfl⟩
   rfl
@@ -462,7 +476,7 @@ theorem det_mul {sz : Size} {d : Reg} {n : Reg} {m : Reg} {F : Fp} (hf : fp xb (
   have hg := h.gpr
   simp only [fp, Option.some.injEq] at hf
   subst hf
-  simp (disch := simp [regFp, Nat.testBit_or]) only [reduceExec, State.read, hg, Option.some.injEq] at he
+  simp (disch := simp [regFp, Nat.testBit_or]) only [exec, State.read, hg, Option.some.injEq] at he
   subst he
   refine ⟨_, ?_, Writes.write (t := t) _ _ _ (fun r hr => only_gbit hr) rfl rfl rfl⟩
   rfl
@@ -473,7 +487,7 @@ theorem det_umulh {d : Reg} {n : Reg} {m : Reg} {F : Fp} (hf : fp xb (.umulh d n
   have hg := h.gpr
   simp only [fp, Option.some.injEq] at hf
   subst hf
-  simp (disch := simp [regFp, Nat.testBit_or]) only [reduceExec, hg, Option.some.injEq] at he
+  simp (disch := simp [regFp, Nat.testBit_or]) only [exec, hg, Option.some.injEq] at he
   subst he
   refine ⟨_, ?_, Writes.write (t := t) _ _ _ (fun r hr => only_gbit hr) rfl rfl rfl⟩
   rfl
@@ -484,7 +498,7 @@ theorem det_madd {sz : Size} {d : Reg} {n : Reg} {m : Reg} {a : Reg} {F : Fp} (h
   have hg := h.gpr
   simp only [fp, Option.some.injEq] at hf
   subst hf
-  simp (disch := simp [regFp, Nat.testBit_or]) only [reduceExec, State.read, hg, Option.some.injEq] at he
+  simp (disch := simp [regFp, Nat.testBit_or]) only [exec, State.read, hg, Option.some.injEq] at he
   subst he
   refine ⟨_, ?_, Writes.write (t := t) _ _ _ (fun r hr => only_gbit hr) rfl rfl rfl⟩
   rfl
@@ -495,7 +509,7 @@ theorem det_logic {op : LogicOp} {sz : Size} {d : Reg} {n : Reg} {m : Reg} {F : 
   have hg := h.gpr
   simp only [fp, Option.some.injEq] at hf
   subst hf
-  simp (disch := simp [regFp, Nat.testBit_or]) only [reduceExec, State.read, hg, Option.some.injEq] at he
+  simp (disch := simp [regFp, Nat.testBit_or]) only [exec, State.read, hg, Option.some.injEq] at he
   subst he
   refine ⟨_, ?_, Writes.write (t := t) _ _ _ (fun r hr => only_gbit hr) rfl rfl rfl⟩
   rfl
@@ -509,7 +523,7 @@ theorem det_adc {sz : Size} {d : Reg} {n : Reg} {m : Reg} {F : Fp} (hf : fp xb (
     simp only [State.flags, Prod.mk.injEq] at this; exact this.2.2.1
   simp only [fp, Option.some.injEq] at hf
   subst hf
-  simp (disch := simp [regFp, Nat.testBit_or]) only [reduceExec, State.read, hg, hc, Option.some.injEq] at he
+  simp (disch := simp [regFp, Nat.testBit_or]) only [exec, State.read, hg, hc, Option.some.injEq] at he
   subst he
   refine ⟨_, ?_, Writes.write (t := t) _ _ _ (fun r hr => only_gbit hr) rfl rfl rfl⟩
   rfl
@@ -523,7 +537,7 @@ theorem det_csel {sz : Size} {d : Reg} {n : Reg} {m : Reg} {F : Fp} (hf : fp xb 
     simp only [State.flags, Prod.mk.injEq] at this; exact this.2.2.1
   simp only [fp, Option.some.injEq] at hf
   subst hf
-  simp (disch := simp [regFp, Nat.testBit_or]) only [reduceExec, State.read, hg, hc, Option.some.injEq] at he
+  simp (disch := simp [regFp, Nat.testBit_or]) only [exec, State.read, hg, hc, Option.some.injEq] at he
   subst he
   refine ⟨_, ?_, Writes.write (t := t) _ _ _ (fun r hr => only_gbit hr) rfl rfl rfl⟩
   rfl
@@ -537,7 +551,7 @@ theorem det_sbc {sz : Size} {d : Reg} {n : Reg} {m : Reg} {F : Fp} (hf : fp xb (
     simp only [State.flags, Prod.mk.injEq] at this; exact this.2.2.1
   simp only [fp, Option.some.injEq] at hf
   subst hf
-  simp (disch := simp [regFp, Nat.testBit_or]) only [reduceExec, State.read, hg, hc, Option.some.injEq] at he
+  simp (disch := simp [regFp, Nat.testBit_or]) only [exec, State.read, hg, hc, Option.some.injEq] at he
   subst he
   refine ⟨_, ?_, Writes.write (t := t) _ _ _ (fun r hr => only_gbit hr) rfl rfl rfl⟩
   rfl
@@ -548,7 +562,7 @@ theorem det_adds {sz : Size} {d : Reg} {n : Reg} {m : Reg} {F : Fp} (hf : fp xb 
   have hg := h.gpr
   simp only [fp, Option.some.injEq] at hf
   subst hf
-  simp (disch := simp [Nat.testBit_or]) only [reduceExec, State.read, hg, Option.some.injEq] at he
+  simp (disch := simp [Nat.testBit_or]) only [exec, State.read, hg, Option.some.injEq] at he
   subst he
   refine ⟨_, ?_, Writes.awc (t := t) _ _ _ _ _ (fun r hr => only_gbit hr) rfl rfl⟩
   rfl
@@ -559,7 +573,7 @@ theorem det_subs {sz : Size} {d : Reg} {n : Reg} {m : Reg} {F : Fp} (hf : fp xb 
   have hg := h.gpr
   simp only [fp, Option.some.injEq] at hf
   subst hf
-  simp (disch := simp [Nat.testBit_or]) only [reduceExec, State.read, hg, Option.some.injEq] at he
+  simp (disch := simp [Nat.testBit_or]) only [exec, State.read, hg, Option.some.injEq] at he
   subst he
   refine ⟨_, ?_, Writes.awc (t := t) _ _ _ _ _ (fun r hr => only_gbit hr) rfl rfl⟩
   rfl
@@ -573,7 +587,7 @@ theorem det_adcs {sz : Size} {d : Reg} {n : Reg} {m : Reg} {F : Fp} (hf : fp xb 
     simp only [State.flags, Prod.mk.injEq] at this; exact this.2.2.1
   simp only [fp, Option.some.injEq] at hf
   subst hf
-  simp (disch := simp [Nat.testBit_or]) only [reduceExec, State.read, hg, hc, Option.some.injEq] at he
+  simp (disch := simp [Nat.testBit_or]) only [exec, State.read, hg, hc, Option.some.injEq] at he
   subst he
   refine ⟨_, ?_, Writes.awc (t := t) _ _ _ _ _ (fun r hr => only_gbit hr) rfl rfl⟩
   rfl
@@ -587,7 +601,7 @@ theorem det_sbcs {sz : Size} {d : Reg} {n : Reg} {m : Reg} {F : Fp} (hf : fp xb 
     simp only [State.flags, Prod.mk.injEq] at this; exact this.2.2.1
   simp only [fp, Option.some.injEq] at hf
   subst hf
-  simp (disch := simp [Nat.testBit_or]) only [reduceExec, State.read, hg, hc, Option.some.injEq] at he
+  simp (disch := simp [Nat.testBit_or]) only [exec, State.read, hg, hc, Option.some.injEq] at he
   subst he
   refine ⟨_, ?_, Writes.awc (t := t) _ _ _ _ _ (fun r hr => only_gbit hr) rfl rfl⟩
   rfl
@@ -598,13 +612,13 @@ theorem det_addImm {sz : Size} {d : Reg} {n : Reg} {imm : Nat} {F : Fp} (hf : fp
   have hg := h.gpr
   simp only [fp, Option.some.injEq] at hf
   subst hf
-  simp (disch := simp [regFp, Nat.testBit_or]) only [reduceExec, State.read, hg] at he
+  simp (disch := simp [regFp, Nat.testBit_or]) only [exec, State.read, hg] at he
   split at he
   · rename_i hcond
     simp only [Option.some.injEq] at he
     subst he
     refine ⟨_, ?_, Writes.write (t := t) _ _ _ (fun r hr => only_gbit hr) rfl rfl rfl⟩
-    simp only [reduceExec, State.read, hcond, ite_true]
+    simp only [exec, State.read, hcond, ite_true]
   · cases he
 
 theorem det_subImm {sz : Size} {d : Reg} {n : Reg} {imm : Nat} {F : Fp} (hf : fp xb (.subImm sz d n imm) = some F) :
@@ -613,13 +627,13 @@ theorem det_subImm {sz : Size} {d : Reg} {n : Reg} {imm : Nat} {F : Fp} (hf : fp
   have hg := h.gpr
   simp only [fp, Option.some.injEq] at hf
   subst hf
-  simp (disch := simp [regFp, Nat.testBit_or]) only [reduceExec, State.read, hg] at he
+  simp (disch := simp [regFp, Nat.testBit_or]) only [exec, State.read, hg] at he
   split at he
   · rename_i hcond
     simp only [Option.some.injEq] at he
     subst he
     refine ⟨_, ?_, Writes.write (t := t) _ _ _ (fun r hr => only_gbit hr) rfl rfl rfl⟩
-    simp only [reduceExec, State.read, hcond, ite_true]
+    simp only [exec, State.read, hcond, ite_true]
   · cases he
 
 theorem det_lsr {sz : Size} {d : Reg} {n : Reg} {sh : Nat} {F : Fp} (hf : fp xb (.lsr sz d n sh) = some F) :
@@ -628,13 +642,13 @@ theorem det_lsr {sz : Size} {d : Reg} {n : Reg} {sh : Nat} {F : Fp} (hf : fp xb 
   have hg := h.gpr
   simp only [fp, Option.some.injEq] at hf
   subst hf
-  simp (disch := simp [regFp, Nat.testBit_or]) only [reduceExec, State.read, hg] at he
+  simp (disch := simp [regFp, Nat.testBit_or]) only [exec, State.read, hg] at he
   split at he
   · rename_i hcond
     simp only [Option.some.injEq] at he
     subst he
     refine ⟨_, ?_, Writes.write (t := t) _ _ _ (fun r hr => only_gbit hr) rfl rfl rfl⟩
-    simp only [reduceExec, State.read, hcond, ite_true]
+    simp only [exec, State.read, hcond, ite_true]
   · cases he
 
 theorem det_lsl {sz : Size} {d : Reg} {n : Reg} {sh : Nat} {F : Fp} (hf : fp xb (.lsl sz d n sh) = some F) :
@@ -643,13 +657,13 @@ theorem det_lsl {sz : Size} {d : Reg} {n : Reg} {sh : Nat} {F : Fp} (hf : fp xb 
   have hg := h.gpr
   simp only [fp, Option.some.injEq] at hf
   subst hf
-  simp (disch := simp [regFp, Nat.testBit_or]) only [reduceExec, State.read, hg] at he
+  simp (disch := simp [regFp, Nat.testBit_or]) only [exec, State.read, hg] at he
   split at he
   · rename_i hcond
     simp only [Option.some.injEq] at he
     subst he
     refine ⟨_, ?_, Writes.write (t := t) _ _ _ (fun r hr => only_gbit hr) rfl rfl rfl⟩
-    simp only [reduceExec, State.read, hcond, ite_true]
+    simp only [exec, State.read, hcond, ite_true]
   · cases he
 
 theorem det_logicRor {op : LogicOp} {sz : Size} {d : Reg} {n : Reg} {m : Reg} {sh : Nat} {F : Fp} (hf : fp xb (.logicRor op sz d n m sh) = some F) :
@@ -658,13 +672,13 @@ theorem det_logicRor {op : LogicOp} {sz : Size} {d : Reg} {n : Reg} {m : Reg} {s
   have hg := h.gpr
   simp only [fp, Option.some.injEq] at hf
   subst hf
-  simp (disch := simp [regFp, Nat.testBit_or]) only [reduceExec, State.read, hg] at he
+  simp (disch := simp [regFp, Nat.testBit_or]) only [exec, State.read, hg] at he
   split at he
   · rename_i hcond
     simp only [Option.some.injEq] at he
     subst he
     refine ⟨_, ?_, Writes.write (t := t) _ _ _ (fun r hr => only_gbit hr) rfl rfl rfl⟩
-    simp only [reduceExec, State.read, hcond, ite_true]
+    simp only [exec, State.read, hcond, ite_true]
   · cases he
 
 theorem det_bicRor {sz : Size} {d : Reg} {n : Reg} {m : Reg} {sh : Nat} {F : Fp} (hf : fp xb (.bicRor sz d n m sh) = some F) :
@@ -673,13 +687,13 @@ theorem det_bicRor {sz : Size} {d : Reg} {n : Reg} {m : Reg} {sh : Nat} {F : Fp}
   have hg := h.gpr
   simp only [fp, Option.some.injEq] at hf
   subst hf
-  simp (disch := simp [regFp, Nat.testBit_or]) only [reduceExec, State.read, hg] at he
+  simp (disch := simp [regFp, Nat.testBit_or]) only [exec, State.read, hg] at he
   split at he
   · rename_i hcond
     simp only [Option.some.injEq] at he
     subst he
     refine ⟨_, ?_, Writes.write (t := t) _ _ _ (fun r hr => only_gbit hr) rfl rfl rfl⟩
-    simp only [reduceExec, State.read, hcond, ite_true]
+    simp only [exec, State.read, hcond, ite_true]
   · cases he
 
 theorem det_ror {sz : Size} {d : Reg} {n : Reg} {sh : Nat} {F : Fp} (hf : fp xb (.ror sz d n sh) = some F) :
@@ -688,13 +702,13 @@ theorem det_ror {sz : Size} {d : Reg} {n : Reg} {sh : Nat} {F : Fp} (hf : fp xb 
   have hg := h.gpr
   simp only [fp, Option.some.injEq] at hf
   subst hf
-  simp (disch := simp [regFp, Nat.testBit_or]) only [reduceExec, State.read, hg] at he
+  simp (disch := simp [regFp, Nat.testBit_or]) only [exec, State.read, hg] at he
   split at he
   · rename_i hcond
     simp only [Option.some.injEq] at he
     subst he
     refine ⟨_, ?_, Writes.write (t := t) _ _ _ (fun r hr => only_gbit hr) rfl rfl rfl⟩
-    simp only [reduceExec, State.read, hcond, ite_true]
+    simp only [exec, State.read, hcond, ite_true]
   · cases he
 
 theorem det_extr {sz : Size} {d : Reg} {n : Reg} {m : Reg} {lsb : Nat} {F : Fp} (hf : fp xb (.extr sz d n m lsb) = some F) :
@@ -703,13 +717,13 @@ theorem det_extr {sz : Size} {d : Reg} {n : Reg} {m : Reg} {lsb : Nat} {F : Fp} 
   have hg := h.gpr
   simp only [fp, Option.some.injEq] at hf
   subst hf
-  simp (disch := simp [regFp, Nat.testBit_or]) only [reduceExec, State.read, hg] at he
+  simp (disch := simp [regFp, Nat.testBit_or]) only [exec, State.read, hg] at he
   split at he
   · rename_i hcond
     simp only [Option.some.injEq] at he
     subst he
     refine ⟨_, ?_, Writes.write (t := t) _ _ _ (fun r hr => only_gbit hr) rfl rfl rfl⟩
-    simp only [reduceExec, State.read, hcond, ite_true]
+    simp only [exec, State.read, hcond, ite_true]
   · cases he
 
 theorem det_movz {sz : Size} {d : Reg} {imm : BitVec 16} {hw : Nat} {F : Fp} (hf : fp xb (.movz sz d imm hw) = some F) :
@@ -717,13 +731,13 @@ theorem det_movz {sz : Size} {d : Reg} {imm : BitVec 16} {hw : Nat} {F : Fp} (hf
   intro s t h s' he
   simp only [fp, Option.some.injEq] at hf
   subst hf
-  simp only [reduceExec] at he
+  simp only [exec] at he
   split at he
   · rename_i hcond
     simp only [Option.some.injEq] at he
     subst he
     refine ⟨_, ?_, Writes.write (t := t) _ _ _ (fun r hr => only_gbit hr) rfl rfl rfl⟩
-    simp only [reduceExec, hcond, ite_true]
+    simp only [exec, hcond, ite_true]
   · cases he
 
 theorem det_movk {sz : Size} {d : Reg} {imm : BitVec 16} {hw : Nat} {F : Fp} (hf : fp xb (.movk sz d imm hw) = some F) :
@@ -732,13 +746,13 @@ theorem det_movk {sz : Size} {d : Reg} {imm : BitVec 16} {hw : Nat} {F : Fp} (hf
   have hg := h.gpr
   simp only [fp, Option.some.injEq] at hf
   subst hf
-  simp (disch := simp [regFp, Nat.testBit_or]) only [reduceExec, State.read, hg] at he
+  simp (disch := simp [regFp, Nat.testBit_or]) only [exec, State.read, hg] at he
   split at he
   · rename_i hcond
     simp only [Option.some.injEq] at he
     subst he
     refine ⟨_, ?_, Writes.write (t := t) _ _ _ (fun r hr => only_gbit hr) rfl rfl rfl⟩
-    simp only [reduceExec, State.read, hcond, ite_true]
+    simp only [exec, State.read, hcond, ite_true]
   · cases he
 
 theorem det_str {sz : Size} {r n : Reg} {off : Nat} {F : Fp} (hf : fp xb (.str sz r n off) = some F) :
@@ -750,7 +764,7 @@ theorem det_str {sz : Size} {r n : Reg} {off : Nat} {F : Fp} (hf : fp xb (.str s
   · rename_i hn; subst hn
     simp only [Option.some.injEq] at hf
     subst hf
-    simp only [reduceExec, addr] at he ⊢
+    simp only [exec, addr] at he ⊢
     split at he
     · rename_i ha
       simp only [Option.bind_some, ha, and_self, ite_true] at he ⊢
@@ -770,7 +784,7 @@ theorem det_strq {r : VReg} {n : Reg} {off : Nat} {F : Fp} (hf : fp xb (.strq r 
   · rename_i hn; subst hn
     simp only [Option.some.injEq] at hf
     subst hf
-    simp only [reduceExec, addr] at he ⊢
+    simp only [exec, addr] at he ⊢
     split at he
     · rename_i ha
       simp only [Option.bind_some, ha, and_self, ite_true] at he ⊢
@@ -787,7 +801,7 @@ theorem det_ldr {sz : Size} {r n : Reg} {off : Nat} {F : Fp} (hf : fp xb (.ldr s
   · rename_i hn; subst hn
     simp only [Option.some.injEq] at hf
     subst hf
-    simp only [reduceExec, addr] at he ⊢
+    simp only [exec, addr] at he ⊢
     split at he
     · rename_i ha
       simp only [Option.bind_some, ha, and_self, ite_true] at he ⊢
@@ -806,7 +820,7 @@ theorem det_ldr {sz : Size} {r n : Reg} {off : Nat} {F : Fp} (hf : fp xb (.ldr s
     have hm : s.mem = t.mem := h.any rfl
     have hl : ∀ a k, t.load a k = s.load a k := fun a k => by simp only [State.load, hm, h.rd, h.wr]
     have ha' : addr t sz.bytes n off = addr s sz.bytes n off := by simp only [addr, hn']
-    simp only [reduceExec, ha', hl] at he ⊢
+    simp only [exec, ha', hl] at he ⊢
     cases ha : addr s sz.bytes n off with
     | none => rw [ha] at he; cases he
     | some a =>
@@ -828,7 +842,7 @@ theorem det_ldrq {r : VReg} {n : Reg} {off : Nat} {F : Fp} (hf : fp xb (.ldrq r 
   · rename_i hn; subst hn
     simp only [Option.some.injEq] at hf
     subst hf
-    simp only [reduceExec, addr] at he ⊢
+    simp only [exec, addr] at he ⊢
     split at he
     · rename_i ha
       simp only [Option.bind_some, ha, and_self, ite_true] at he ⊢
@@ -847,7 +861,7 @@ theorem det_ldrq {r : VReg} {n : Reg} {off : Nat} {F : Fp} (hf : fp xb (.ldrq r 
     have hm : s.mem = t.mem := h.any rfl
     have hl : ∀ a k, t.load a k = s.load a k := fun a k => by simp only [State.load, hm, h.rd, h.wr]
     have ha' : addr t 16 n off = addr s 16 n off := by simp only [addr, hn']
-    simp only [reduceExec, ha', hl] at he ⊢
+    simp only [exec, ha', hl] at he ⊢
     cases ha : addr s 16 n off with
     | none => rw [ha] at he; cases he
     | some a =>
@@ -866,7 +880,7 @@ theorem det_rev32 {d n : Reg} {F : Fp} (hf : fp xb (.rev32 d n) = some F) : Det 
   have hg := h.gpr
   simp only [fp, Option.some.injEq] at hf
   subst hf
-  simp (disch := simp [regFp, Nat.testBit_or]) only [reduceExec, State.read, hg, Option.some.injEq] at he
+  simp (disch := simp [regFp, Nat.testBit_or]) only [exec, State.read, hg, Option.some.injEq] at he
   subst he
   exact ⟨_, rfl, Writes.write (t := t) _ _ _ (fun r hr => only_gbit hr) rfl rfl rfl⟩
 
@@ -875,14 +889,14 @@ theorem det_rev {d n : Reg} {F : Fp} (hf : fp xb (.rev d n) = some F) : Det xb (
   have hg := h.gpr
   simp only [fp, Option.some.injEq] at hf
   subst hf
-  simp (disch := simp [regFp, Nat.testBit_or]) only [reduceExec, State.read, hg, Option.some.injEq] at he
+  simp (disch := simp [regFp, Nat.testBit_or]) only [exec, State.read, hg, Option.some.injEq] at he
   subst he
   exact ⟨_, rfl, Writes.write (t := t) _ _ _ (fun r hr => only_gbit hr) rfl rfl rfl⟩
 
 theorem det_vop {op : VOp} {F : Fp} (hf : fp xb (.vop op) = some F) : Det xb (.vop op) F := by
   intro s t h s' he
   simp only [fp] at hf
-  simp only [reduceExec] at he ⊢
+  simp only [exec] at he ⊢
   rw [← VOp.det hf h]
   cases e : VOp.eval s op with
   | none => rw [e] at he; cases he
@@ -890,7 +904,7 @@ theorem det_vop {op : VOp} {F : Fp} (hf : fp xb (.vop op) = some F) : Det xb (.v
     rw [e] at he
     simp only [Option.map_some, Option.some.injEq] at he
     subst he
-    obtain ⟨h1, h2, h3, -⟩ := VOp.fp_shape hf
+    obtain ⟨h1, h2, h3⟩ := VOp.fp_shape hf
     exact ⟨_, rfl, Writes.setV (t := t) _ _ (VOp.dst_eq hf e) h1 h2 h3⟩
 
 theorem det {i : Instr} {F : Fp} (hf : fp xb i = some F) : Det xb i F := by

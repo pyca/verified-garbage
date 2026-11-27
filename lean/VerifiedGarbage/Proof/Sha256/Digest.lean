@@ -8,7 +8,6 @@ import VerifiedGarbage.Proof.Sha256.Scratch
 import VerifiedGarbage.Proof.Sha256.Stream
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.GetElem
-import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # SHA-224's digest, from the hash value in memory

@@ -48,6 +48,9 @@ theorem p384_nBits : Spec.Ecdsa.nBits Spec.P384.curve = 384 := by
   have h₂ : Spec.P384.curve.n.log2 < 384 := (Nat.log2_lt (by decide +kernel)).mpr (by decide +kernel)
   omega_using [h₁, h₂]
 
+/-- The taint checks and instruction facts of the curve's blocks. -/
+theorem p384_blk : RfcT (cfgC Impl.Ecdsa.X86.p384Comb false 0) := by rfcT_decide
+
 /-- P-384, with the group law `hL`. -/
 def p384 (hL : Weierstrass.Law Spec.P384.curve) : RfcCurve where
   E := Impl.Ecdsa.X86.p384Comb
@@ -64,9 +67,9 @@ def p384 (hL : Weierstrass.Law Spec.P384.curve) : RfcCurve where
     Proof.Ecdsa.X86.P384.signComb_sp
   coreCT := coreCT_comb (Proof.Ecdsa.X86.P384.p384Comb_ok) hL (Proof.Ecdsa.X86.P384.p384Comb_tables hL) rfl Proof.Ecdsa.X86.P384.p384Comb_shape
     (Proof.Ecdsa.X86.P384.p384Comb_gMul hL) Proof.Ecdsa.X86.P384.signCT Proof.Ecdsa.X86.P384.signComb_sp
-  coreNs := NoSp.of_all (by lit_decide)
-  coreStack := by lit_decide
-  blk := by rfcT_decide
+  coreNs := Proof.Ecdsa.X86.P384.signComb_sp.1
+  coreStack := Proof.Ecdsa.X86.P384.signComb_sp.2
+  blk := p384_blk
 
 /-- `vg_ecdsa_p384_sign`, with the tables of `vs`. -/
 theorem p384T_verified (hL : Weierstrass.Law Spec.P384.curve) (vs : List Proof.HmacTable.X86.HVar) (h : OK vs ∧ "VG_P384_COMB" ∉ Proof.HmacTable.X86.names vs) :

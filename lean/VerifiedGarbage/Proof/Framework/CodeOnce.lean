@@ -62,10 +62,7 @@ theorem Code.allFrom_ok (p : M.Instr → Bool) : ∀ (c : Prog M) (k : List (Str
   | .block is, k, hk => ⟨rfl, hk⟩
   | .seq a b, k, hk => by
     obtain ⟨ha, ka⟩ := allFrom_ok p a k hk
-    show (if (allFrom p a k).1 then allFrom p b (allFrom p a k).2 else (false, (allFrom p a k).2)).1 =
-        (a.all p && b.all p) ∧
-      ∀ e ∈ (if (allFrom p a k).1 then allFrom p b (allFrom p a k).2 else (false, (allFrom p a k).2)).2,
-        e.2.2.2 = e.2.1.all p
+    simp only [allFrom, Code.all]
     split
     · rename_i h
       obtain ⟨hb, kb⟩ := allFrom_ok p b _ ka
@@ -74,10 +71,7 @@ theorem Code.allFrom_ok (p : M.Instr → Bool) : ∀ (c : Prog M) (k : List (Str
       exact ⟨by rw [← ha, Bool.not_eq_true _ |>.mp h, Bool.false_and], ka⟩
   | .ite _ t e, k, hk => by
     obtain ⟨ha, ka⟩ := allFrom_ok p t k hk
-    show (if (allFrom p t k).1 then allFrom p e (allFrom p t k).2 else (false, (allFrom p t k).2)).1 =
-        (t.all p && e.all p) ∧
-      ∀ x ∈ (if (allFrom p t k).1 then allFrom p e (allFrom p t k).2 else (false, (allFrom p t k).2)).2,
-        x.2.2.2 = x.2.1.all p
+    simp only [allFrom, Code.all]
     split
     · rename_i h
       obtain ⟨hb, kb⟩ := allFrom_ok p e _ ka
@@ -89,8 +83,7 @@ theorem Code.allFrom_ok (p : M.Instr → Bool) : ∀ (c : Prog M) (k : List (Str
     Code.memoCall_ok (n := n) (run := fun _ => allFrom p b k) (spec := fun c _ => c.all p) hk (allFrom_ok p b k hk)
   | .frame i b j, k, hk => by
     obtain ⟨hb, kb⟩ := allFrom_ok p b k hk
-    show (if p i && p j then allFrom p b k else (false, k)).1 = (p i && b.all p && p j) ∧
-      ∀ e ∈ (if p i && p j then allFrom p b k else (false, k)).2, e.2.2.2 = e.2.1.all p
+    simp only [allFrom, Code.all]
     split
     · rename_i h
       simp only [Bool.and_eq_true] at h
@@ -101,16 +94,7 @@ theorem Code.allFrom_ok (p : M.Instr → Bool) : ∀ (c : Prog M) (k : List (Str
   | .icall i n b nx, k, hk => by
     obtain ⟨hb, kb⟩ := Code.memoCall_ok (n := n) (run := fun _ => allFrom p b k) (spec := fun c _ => c.all p) hk
       (allFrom_ok p b k hk)
-    show (if p i then
-        if (Code.memoCall n b () k fun _ => allFrom p b k).1 then
-          allFrom p nx (Code.memoCall n b () k fun _ => allFrom p b k).2
-        else (false, (Code.memoCall n b () k fun _ => allFrom p b k).2)
-      else (false, k)).1 = (p i && b.all p && nx.all p) ∧
-      ∀ e ∈ (if p i then
-        if (Code.memoCall n b () k fun _ => allFrom p b k).1 then
-          allFrom p nx (Code.memoCall n b () k fun _ => allFrom p b k).2
-        else (false, (Code.memoCall n b () k fun _ => allFrom p b k).2)
-      else (false, k)).2, e.2.2.2 = e.2.1.all p
+    simp only [allFrom, Code.all]
     split
     · rename_i hi
       split

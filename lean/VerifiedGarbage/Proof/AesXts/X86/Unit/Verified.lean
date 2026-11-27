@@ -2428,13 +2428,17 @@ theorem xtsD_stack (v : BlocksImpl) : stackUse (Impl.AesXts.X86.decrypt v.dec) â
   decide
 
 theorem xtsE_calleeOk (v : BlocksImpl) : calleeOk (Impl.AesXts.X86.encrypt v.enc) = true := by
+  rw [calleeOk_iff]
   simp only [Impl.AesXts.X86.encrypt, Impl.AesXts.X86.crypt, Impl.AesXts.X86.batch, Impl.AesXts.X86.pass,
-    Impl.AesOcb.X86.blocksFrame, calleeOk, v.encScrub]
+    Impl.AesOcb.X86.blocksFrame, noIcall, Code.allInstrs, ((calleeOk_iff _).mp v.encScrub).1,
+    ((calleeOk_iff _).mp v.encScrub).2]
   decide
 
 theorem xtsD_calleeOk (v : BlocksImpl) : calleeOk (Impl.AesXts.X86.decrypt v.dec) = true := by
+  rw [calleeOk_iff]
   simp only [Impl.AesXts.X86.decrypt, Impl.AesXts.X86.crypt, Impl.AesXts.X86.batch, Impl.AesXts.X86.pass,
-    Impl.AesOcb.X86.blocksFrame, calleeOk, v.decScrub]
+    Impl.AesOcb.X86.blocksFrame, noIcall, Code.allInstrs, ((calleeOk_iff _).mp v.decScrub).1,
+    ((calleeOk_iff _).mp v.decScrub).2]
   decide
 
 namespace XtsImpl

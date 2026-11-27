@@ -98,55 +98,39 @@ theorem pushRegs_mem (s : State) (rs : List Reg) (hrs : .rsp ∉ rs)
     have hg₁ : ∀ r, r ≠ .rsp → s₁.gpr r = s.gpr r := fun r h => by simp [hs₁, State.setReg, h]
     have hm₁ : s₁.mem = s.mem.writeW (s.gpr .rsp - 8) (s.gpr x) := rfl
     have e₁ : (s₁.gpr .rsp).toNat = (s.gpr .rsp).toNat - 8 := by
-      rw [hsp₁]; exact toNat_sub_ofNat (k := 8) (by omega_using [hn])
+      rw [hsp₁]; have := (s.gpr .rsp).isLt; bv_omega_arith
     obtain ⟨ih₁, ih₂⟩ := ih s₁ hrs.2 (by omega_using [hn, e₁])
     have hp : pushRegs s (x :: xs) = pushRegs s₁ xs := rfl
-    rw [hp]
-    rw [hm₁] at ih₁
-    rw [hsp₁] at ih₁ ih₂
-    generalize s.gpr .rsp = S at *
-    generalize (pushRegs s₁ xs).mem = M at *
-    clear ih hp hsp₁ e₁ hs₁ hm₁
-    -- From the bottom `B` of the registers: the first is at `B + n`, the others are the `n` bytes below.
-    have hS : S = S - BitVec.ofNat 64 (8 * (xs.length + 1)) + BitVec.ofNat 64 (8 * xs.length) + 8 := by
-      rw [BitVec.add_assoc, show (8 : BitVec 64) = BitVec.ofNat 64 8 from rfl, ← BitVec.ofNat_add, Nat.mul_succ,
-        BitVec.sub_add_cancel]
-    have hj : ∀ j, S - 8 - BitVec.ofNat 64 (8 * (j + 1)) = S - BitVec.ofNat 64 (8 * (j + 1 + 1)) := fun j => by
-      rw [BitVec.sub_sub, show (8 : BitVec 64) = BitVec.ofNat 64 8 from rfl, ← BitVec.ofNat_add, Nat.add_comm 8,
-        ← Nat.mul_succ]
-    generalize S - BitVec.ofNat 64 (8 * (xs.length + 1)) = B at hS ⊢
-    generalize hN : 8 * xs.length = N at *
-    have hS8 : S - 8 = B + BitVec.ofNat 64 N := by rw [hS, BitVec.add_sub_cancel]
-    have hlt : N + 8 < 2 ^ 64 := by have := S.isLt; omega_using [this, hn, hN]
-    rw [hS8, BitVec.add_sub_cancel] at ih₁
-    refine ⟨fun y hy => ?_, fun j hj' => ?_⟩
+    generalize hS : s.gpr .rsp = S at *
+    generalize hT : s₁.gpr .rsp = T at *
+    subst hsp₁
+    clear ih
+    refine ⟨fun y hy => ?_, fun j hj => ?_⟩
     · have hy' := hy _ (List.mem_singleton_self _)
       simp only [Region.Contains] at hy'
-      rw [ih₁ y (fun r hr => by
+      rw [hp, ih₁ y (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
-        simp only [Region.Contains]; omega_using [hy', hN])]
+        simp only [Region.Contains]; bv_omega_arith), hm₁]
       apply Mem.write_apply
-      rw [show y - (B + BitVec.ofNat 64 N) = y - B - BitVec.ofNat 64 N from (BitVec.sub_sub _ _ _).symm,
-        toNat_sub_ofNat (by omega_using [hy', hN])]
-      show ¬ _ < 8
-      omega_using [hy', hN]
-    · cases j with
+      bv_omega_arith
+    · rw [hp]
+      cases j with
       | zero =>
         simp only [List.getElem_cons_zero]
-        rw [show S - BitVec.ofNat 64 (8 * (0 + 1)) = S - 8 from rfl, hS8]
-        conv => rhs; rw [← Mem.readW_writeW_self64 s.mem (B + BitVec.ofNat 64 N) (s.gpr x)]
+        rw [show S - BitVec.ofNat 64 (8 * (0 + 1)) = S - 8 from rfl,
+          ← Mem.readW_writeW_self64 s.mem (S - 8) (s.gpr x), ← hm₁]
         refine Mem.readW_congr fun t ht => ih₁ _ fun r hr => ?_
         simp only [List.mem_singleton] at hr; subst hr
+        simp only [Region.Contains]
         simp only [Nat.reduceDiv] at ht
-        rw [Region.Contains, BitVec.add_assoc, ← BitVec.ofNat_add, BitVec.add_comm, BitVec.add_sub_cancel,
-          BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [ht, hlt])]
-        show ¬ N + t + 1 ≤ N
-        omega_using []
+        bv_omega_arith
       | succ j =>
         simp only [List.getElem_cons_succ]
-        have := ih₂ j (by omega_using [hj'])
-        rw [hg₁ _ (fun h => hrs.2 (h ▸ List.getElem_mem _)), hj] at this
-        exact this
+        have := ih₂ j (by omega_using [hj])
+        rw [hg₁ _ (fun h => hrs.2 (h ▸ List.getElem_mem _))] at this
+        rw [← this]
+        congr 1
+        bv_omega_arith
 
 /-- The memory a release leaves, `lose`, differs from the frame's only in the
 frame. -/

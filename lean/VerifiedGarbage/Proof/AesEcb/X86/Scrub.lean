@@ -94,7 +94,7 @@ theorem wiped_scrub (b : Impl.Aes.X86.Blocks) (n : Nat) (hs : stackUse b.code = 
 /-- `scrubSide` of a block function's code that calls nothing. -/
 theorem free_scrub (b : Impl.Aes.X86.Blocks) (hn : b.code.noCalls = true) (hc : calleeOk b.code = true) :
     scrubSide b.code = true := by
-  simp only [scrubSide, hn, ((calleeOk_iff _).mp hc).2, Bool.and_self]
+  simp only [scrubSide, hn, hc, Bool.and_self]
 
 /-! ## The functions as emitted -/
 

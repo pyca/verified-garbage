@@ -9,7 +9,6 @@ public import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
 public import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.ChaCha20.ScrubLocal
-import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ChaCha20's `init` and `set_nonce` without secret residue (x86-64)

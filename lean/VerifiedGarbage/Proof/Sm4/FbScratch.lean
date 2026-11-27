@@ -7,7 +7,6 @@ import VerifiedGarbage.Proof.Sm4.CtrCipher
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.InstancePriority
 import VerifiedGarbage.Proof.Framework.GetElem
-import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # SM4-OFB and SM4-CFB128 with their working space as an argument

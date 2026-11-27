@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Framework.Scratch
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Sm4.CtrCipher
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.Contract
 
 -- separate module: shared by the final function's proofs of every target.
 

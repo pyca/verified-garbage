@@ -5,7 +5,6 @@ import VerifiedGarbage.Proof.Sha512.Stream
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.InstancePriority
 import VerifiedGarbage.Proof.Framework.GetElem
-import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # SHA-384's, SHA-512's, SHA-512/224's and SHA-512/256's's postconditions read only their buffers

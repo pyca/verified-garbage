@@ -56,8 +56,7 @@ theorem MapInv.checkBlock (hA : A.MapInv f P) (is : List M.Instr) :
   | nil => exact fun τ hτ => ⟨rfl, fun τ' h => by cases h; exact hτ⟩
   | cons i is ih =>
     intro τ hτ
-    show (A.step τ (f i)).bind (A.checkBlock · (KList.map f is)) = (A.step τ i).bind (A.checkBlock · is) ∧
-      ∀ τ', (A.step τ i).bind (A.checkBlock · is) = some τ' → P τ'
+    rw [show KList.map f (i :: is) = f i :: KList.map f is from rfl, Taint.checkBlock_cons, Taint.checkBlock_cons]
     rw [hA.step i hτ]
     cases e : A.step τ i with
     | none => exact ⟨rfl, fun _ h => by cases h⟩

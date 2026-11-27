@@ -5,7 +5,6 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Mem
-import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ChaCha20: the locality lemma of its residue proofs
