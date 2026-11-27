@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.PointOps
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.Joint
 public import VerifiedGarbage.Impl.Ecdsa.Verify.X86_64
 
@@ -13,8 +14,9 @@ open VG VG.X86_64 VG.Impl.Ecdsa.X86_64 VG.Impl.Weierstrass.X86_64
 
 namespace Cfg
 
-def jointPoints (c : Impl.Ecdsa.X86_64.Cfg) (j : Joint.Cfg) (double : Prog isa) : Prog isa :=
-  .seq (Joint.prep j (c.sl U) (c.sl V)) (Joint.window j double)
+def jointPoints (c : Impl.Ecdsa.X86_64.Cfg) (j : Joint.Cfg) (double : Prog isa)
+    (fin : Prog isa := PointOps.tailBody j.K j.dbl) : Prog isa :=
+  .seq (Joint.prep j (c.sl U) (c.sl V)) (Joint.window j double fin)
 
 def jointTail (c : Impl.Ecdsa.X86_64.Cfg) : Prog isa :=
   .seq (ForwardField.programB c.MP' [.mul (c.sl RZ) (c.sl RZ) (c.sl RZ)]) (tail c)
@@ -40,8 +42,9 @@ def jointVerifyWith (c : Impl.Ecdsa.X86_64.Cfg) (pts : Prog isa) : Prog isa :=
   .seq (shareV c "scalars" (scalars c)) <| .seq c.nPow <| .seq (shareV c "uv" (uv c)) <|
   .seq pts (shareV c "tail" (jointTail c))
 
-def jointVerify (c : Impl.Ecdsa.X86_64.Cfg) (j : Joint.Cfg) (double : Prog isa) : Prog isa :=
-  jointVerifyWith c (jointPoints c j double)
+def jointVerify (c : Impl.Ecdsa.X86_64.Cfg) (j : Joint.Cfg) (double : Prog isa)
+    (fin : Prog isa := PointOps.tailBody j.K j.dbl) : Prog isa :=
+  jointVerifyWith c (jointPoints c j double fin)
 
 end Cfg
 end VG.Impl.Ecdsa.Verify.X86_64
