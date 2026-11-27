@@ -26,10 +26,10 @@ code again.
 
 namespace VG.Proof.Sm4.RISCV64
 
-materialize_flat_code expandKeyCode := Impl.Sm4.RISCV64.expandKey
-materialize_flat_code ecbEncrypt := Impl.Sm4.RISCV64.ecb .encrypt
-materialize_flat_code ecbDecrypt := Impl.Sm4.RISCV64.ecb .decrypt
-materialize_flat_code prepareKeysCode := Impl.Sm4.RISCV64.prepareKeys
-materialize_flat_code cryptPreparedCode := Impl.Sm4.RISCV64.cryptPrepared
+materialize_code expandKeyCode := Impl.Sm4.RISCV64.expandKey
+materialize_code ecbEncrypt := Impl.Sm4.RISCV64.ecb .encrypt
+materialize_code ecbDecrypt := Impl.Sm4.RISCV64.ecb .decrypt
+materialize_code prepareKeysCode := Impl.Sm4.RISCV64.prepareKeys
+materialize_code cryptPreparedCode := Impl.Sm4.RISCV64.cryptPrepared
 
 end VG.Proof.Sm4.RISCV64

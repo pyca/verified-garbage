@@ -214,8 +214,8 @@ theorem ctrFinalOut (stack : Nat) :
 
 The code of the table's construction and of the encipherment from it, as
 literals, which the residue analysis of the modes (`taint_decide_ct`) reads. -/
-materialize_flat_code ecbKeysEncrypt := Impl.Camellia.Arm.ecbKeys .encrypt
-materialize_flat_code ecbKeyedCode := Impl.Camellia.Arm.ecbKeyed
+materialize_code ecbKeysEncrypt := Impl.Camellia.Arm.ecbKeys .encrypt
+materialize_code ecbKeyedCode := Impl.Camellia.Arm.ecbKeyed
 
 /-! ## The stack, rounded up to a frame size -/
 

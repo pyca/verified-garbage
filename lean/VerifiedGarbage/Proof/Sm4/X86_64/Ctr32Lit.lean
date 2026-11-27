@@ -28,6 +28,6 @@ function (`taint_decide`, `lit_decide`: the ABI, the stack scratch and
 
 namespace VG.Proof.Sm4.X86_64
 
-materialize_flat_code ctr32Code := Impl.Sm4.X86_64.ctr32
+materialize_code ctr32Code := Impl.Sm4.X86_64.ctr32
 
 end VG.Proof.Sm4.X86_64

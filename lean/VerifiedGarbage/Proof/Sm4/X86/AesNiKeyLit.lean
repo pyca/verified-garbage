@@ -15,7 +15,7 @@ meta import VerifiedGarbage.Proof.Framework.X86.Lit
 /-!
 # The SM4 key schedule by the AES S-box on x86 (32-bit): the code as a literal
 
-The key schedule's code as a literal (`materialize_flat_code`), which the
+The key schedule's code as a literal (`materialize_code`), which the
 checks of the whole function (`taint_decide`, `lit_decide`) read rather than
 build the code again.
 -/
@@ -24,6 +24,6 @@ build the code again.
 
 namespace VG.Proof.Sm4.X86.AesNiKey
 
-materialize_flat_code expandKeyCode := Impl.Sm4.X86.AesNiKey.expandKey
+materialize_code expandKeyCode := Impl.Sm4.X86.AesNiKey.expandKey
 
 end VG.Proof.Sm4.X86.AesNiKey

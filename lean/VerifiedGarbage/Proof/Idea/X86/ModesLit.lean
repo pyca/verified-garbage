@@ -15,7 +15,7 @@ meta import VerifiedGarbage.Proof.Framework.X86.Lit
 /-!
 # IDEA's modes on x86 (32-bit): the code as literals
 
-The code of CBC, OFB and CFB64 as literals (`materialize_flat_code`), which
+The code of CBC, OFB and CFB64 as literals (`materialize_code`), which
 the checks of the whole functions (`taint_decide`, `lit_decide`) read rather
 than build the code again.
 -/
@@ -24,10 +24,10 @@ than build the code again.
 
 namespace VG.Proof.Idea.X86
 
-materialize_flat_code cbcEncryptChainedCode := Impl.Idea.X86.cbcEncryptChained
-materialize_flat_code cbcDecryptChainedCode := Impl.Idea.X86.cbcDecryptChained
-materialize_flat_code ofbCode := Impl.Idea.X86.ofb
-materialize_flat_code cfbEncryptCode := Impl.Idea.X86.cfbEncrypt
-materialize_flat_code cfbDecryptCode := Impl.Idea.X86.cfbDecrypt
+materialize_code cbcEncryptChainedCode := Impl.Idea.X86.cbcEncryptChained
+materialize_code cbcDecryptChainedCode := Impl.Idea.X86.cbcDecryptChained
+materialize_code ofbCode := Impl.Idea.X86.ofb
+materialize_code cfbEncryptCode := Impl.Idea.X86.cfbEncrypt
+materialize_code cfbDecryptCode := Impl.Idea.X86.cfbDecrypt
 
 end VG.Proof.Idea.X86

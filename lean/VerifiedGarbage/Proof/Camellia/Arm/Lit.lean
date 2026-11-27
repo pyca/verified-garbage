@@ -25,8 +25,8 @@ code again in each of them.
 
 namespace VG.Proof.Camellia.Arm
 
-materialize_flat_code expandKeyCode := Impl.Camellia.Arm.expandKey
-materialize_flat_code ecbEncrypt := Impl.Camellia.Arm.ecb .encrypt
-materialize_flat_code ecbDecrypt := Impl.Camellia.Arm.ecb .decrypt
+materialize_code expandKeyCode := Impl.Camellia.Arm.expandKey
+materialize_code ecbEncrypt := Impl.Camellia.Arm.ecb .encrypt
+materialize_code ecbDecrypt := Impl.Camellia.Arm.ecb .decrypt
 
 end VG.Proof.Camellia.Arm

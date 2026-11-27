@@ -18,7 +18,7 @@ meta import VerifiedGarbage.Proof.Framework.X86.Lit
 # Camellia's wide modes by the AES S-box on x86 (32-bit): the code as literals
 
 The code of the modes over the core that enciphers four blocks at a time,
-as literals (`materialize_flat_code`), which the checks of the whole
+as literals (`materialize_code`), which the checks of the whole
 functions (`taint_decide`, `lit_decide`) read rather than build the code
 again.
 -/
@@ -27,10 +27,10 @@ again.
 
 namespace VG.Proof.Camellia.X86.AesNiWide
 
-materialize_flat_code cbcDecryptChainedCode := Impl.Camellia.X86.AesNiWide.cbcDecryptChained
-materialize_flat_code cfbDecryptCode := Impl.Camellia.X86.AesNiWide.cfbDecrypt
-materialize_flat_code ctrCode := Impl.Camellia.X86.AesNiWide.ctr
-materialize_flat_code ecbEncryptCode := Impl.Camellia.X86.AesNiWide.ecb .encrypt
-materialize_flat_code ecbDecryptCode := Impl.Camellia.X86.AesNiWide.ecb .decrypt
+materialize_code cbcDecryptChainedCode := Impl.Camellia.X86.AesNiWide.cbcDecryptChained
+materialize_code cfbDecryptCode := Impl.Camellia.X86.AesNiWide.cfbDecrypt
+materialize_code ctrCode := Impl.Camellia.X86.AesNiWide.ctr
+materialize_code ecbEncryptCode := Impl.Camellia.X86.AesNiWide.ecb .encrypt
+materialize_code ecbDecryptCode := Impl.Camellia.X86.AesNiWide.ecb .decrypt
 
 end VG.Proof.Camellia.X86.AesNiWide

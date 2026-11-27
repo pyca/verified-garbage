@@ -16,7 +16,7 @@ meta import VerifiedGarbage.Proof.Framework.X86.Lit
 # SM4's chained modes by the AES S-box on x86 (32-bit): the code as literals
 
 The code of the chained modes over the core that enciphers one block at a
-time, as literals (`materialize_flat_code`), which the checks of the whole
+time, as literals (`materialize_code`), which the checks of the whole
 functions (`taint_decide`, `lit_decide`) read rather than build the code
 again.
 -/
@@ -25,11 +25,11 @@ again.
 
 namespace VG.Proof.Sm4.X86.AesNi
 
-materialize_flat_code cbcEncryptChainedCode := Impl.Sm4.X86.AesNi.cbcEncryptChained
-materialize_flat_code ofbCode := Impl.Sm4.X86.AesNi.ofb
-materialize_flat_code cfbEncryptCode := Impl.Sm4.X86.AesNi.cfbEncrypt
-materialize_flat_code cfbEncryptFinalCode := Impl.Sm4.X86.AesNi.cfbEncryptFinal
-materialize_flat_code cfbDecryptFinalCode := Impl.Sm4.X86.AesNi.cfbDecryptFinal
-materialize_flat_code ofbFinalCode := Impl.Sm4.X86.AesNi.ofbFinal
+materialize_code cbcEncryptChainedCode := Impl.Sm4.X86.AesNi.cbcEncryptChained
+materialize_code ofbCode := Impl.Sm4.X86.AesNi.ofb
+materialize_code cfbEncryptCode := Impl.Sm4.X86.AesNi.cfbEncrypt
+materialize_code cfbEncryptFinalCode := Impl.Sm4.X86.AesNi.cfbEncryptFinal
+materialize_code cfbDecryptFinalCode := Impl.Sm4.X86.AesNi.cfbDecryptFinal
+materialize_code ofbFinalCode := Impl.Sm4.X86.AesNi.ofbFinal
 
 end VG.Proof.Sm4.X86.AesNi

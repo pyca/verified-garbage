@@ -20,16 +20,14 @@ X448 and Ed448 and by the verifier's `[S]B`. `combSum` analyses it once, without
 what the analysis does not read, for all of them (`taint_decide_sum [combSum]`); `x20`,
 which the comb does not write, stays as public as it was. The comb's step is built once, as a literal, which
 the summary and the check of the step's stores read: its field operations are
-the templates of `Proof/X448/AArch64/Fast/Lit.lean`, and its block, the
-negations and additions appended one after the other, is flattened
-(`materialize_flat_code`).
+the templates of `Proof/X448/AArch64/Fast/Lit.lean`.
 -/
 
 @[expose] public section
 
 namespace VG
 
-materialize_flat_code Impl.X448.AArch64.Base.stepR
+materialize_code Impl.X448.AArch64.Base.stepR
 
 end VG
 

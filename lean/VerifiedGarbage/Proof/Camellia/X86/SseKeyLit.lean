@@ -18,6 +18,6 @@ meta import VerifiedGarbage.Proof.Framework.X86.Lit
 
 namespace VG.Proof.Camellia.X86.SseKey
 
-materialize_flat_code expandKeyCode := Impl.Camellia.X86.SseKey.expandKey
+materialize_code expandKeyCode := Impl.Camellia.X86.SseKey.expandKey
 
 end VG.Proof.Camellia.X86.SseKey
