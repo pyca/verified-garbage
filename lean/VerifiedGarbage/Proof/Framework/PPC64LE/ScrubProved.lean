@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.PPC64LE.ScrubWiped
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
+public import VerifiedGarbage.Proof.Framework.CodeWalk
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
@@ -59,53 +60,127 @@ def keptG (cl : Clear) : List Reg :=
 /-- The vector registers the tail leaves as the code left them. -/
 def keptV (cl : Clear) : List VReg := vregs.filter fun v => !cl.vs.contains v
 
+/-- `VOp.dst`, with its cases closed (`inline_match%`). -/
+def vopDstK : VOp → VReg := inline_match% VG.PPC64LE.VOp.dst
+
+theorem vopDstK_eq (op : VOp) : vopDstK op = op.dst := by cases op <;> rfl
+
+/-- `sideI`, the instruction first: one match. -/
+def sideFn : Instr → RegSet Reg → RegSet VReg → Bool → Bool
+  | .addc d .. | .adde d .. | .addze d _ | .subc d .. | .sube d .. => fun g _ ca => !g.mem d && ca
+  | .vop op => fun _ v _ => !v.mem (vopDstK op)
+  | .lxvd2x d .. | .lxvd2xTbl d .. | .mtvsrd d _ => fun _ v _ => !v.mem d
+  | i => match dstOf i with
+    | some d => fun g _ _ => !g.mem d
+    | none => fun _ _ _ => true
+
+/-- `sideFn`, with its cases closed (`inline_match%`). -/
+def sideFnK : Instr → RegSet Reg → RegSet VReg → Bool → Bool :=
+  inline_match% VG.PPC64LE.Scrub.sideFn VG.PPC64LE.dstOf
+
 /-- Instruction `i` writes none of the registers `g` and `v`, nor CA unless
-`ca`. -/
-def sideI (g : RegSet Reg) (v : RegSet VReg) (ca : Bool) (i : Instr) : Bool :=
-  (match dstOf i with
-    | none => true
-    | some r => !g.mem r) &&
-  (match vdstOf i with
-    | none => true
-    | some w => !v.mem w) &&
-  (ca || !writesCa i)
+`ca` (`sideI_eq`). The kernel evaluates it at every instruction of the code:
+it is one match, with its cases closed. -/
+def sideI (g : RegSet Reg) (v : RegSet VReg) (ca : Bool) (i : Instr) : Bool := sideFnK i g v ca
+
+theorem sideI_eq (g : RegSet Reg) (v : RegSet VReg) (ca : Bool) (i : Instr) : sideI g v ca i =
+    ((match dstOf i with
+      | none => true
+      | some r => !g.mem r) &&
+    (match vdstOf i with
+      | none => true
+      | some w => !v.mem w) &&
+    (ca || !writesCa i)) := by
+  cases i <;> first
+    | (rename_i op; show (!v.mem (vopDstK op)) = _; rw [vopDstK_eq]; cases ca <;> simp [dstOf, vdstOf, writesCa])
+    | (cases ca <;> simp [sideI, sideFnK, dstOf, vdstOf, writesCa])
+
+/-- `writesCa`, with its cases closed (`inline_match%`). -/
+def writesCaK : Instr → Bool := inline_match% VG.PPC64LE.writesCa
+
+theorem writesCaK_eq (i : Instr) : writesCaK i = writesCa i := by cases i <;> rfl
+
+/-! ## The checks the kernel evaluates (`CodeWalk`) -/
+
+theorem inames_walk (c : Prog isa) : CodeWalk.inames c = inames c := by
+  induction c with
+  | block => rfl
+  | seq a b iha ihb | ite _ a b iha ihb => rw [CodeWalk.inames, inames, iha, ihb]
+  | loop b _ ih | call _ b ih | frame _ b _ ih => exact ih
+  | icall _ _ a b iha ihb => rw [CodeWalk.inames, inames, iha, ihb]
+
+theorem icallFree_of_namesIn {c : Prog isa} (h : CodeWalk.namesIn [] c = true) : icallFree c = true := by
+  have hn : inames c = [] := by
+    rw [← inames_walk]
+    exact List.eq_nil_iff_forall_not_mem.mpr fun f hf => nomatch CodeWalk.namesIn_iff.mp h f hf
+  clear h
+  induction c with
+  | block => rfl
+  | seq a b iha ihb | ite _ a b iha ihb =>
+    rw [inames, List.append_eq_nil_iff] at hn
+    rw [icallFree, iha hn.1, ihb hn.2, Bool.and_self]
+  | loop b _ ih | call _ b ih | frame _ b _ ih => exact ih hn
+  | icall i n b nx => cases hn
+
+/-- `c.ppc64leDepth`. Only the kernel evaluates it. -/
+noncomputable def depthK (c : Prog isa) : Nat := CodeWalk.depth frameBytes 0 c
+
+theorem depthK_eq (c : Prog isa) : depthK c = c.ppc64leDepth := by
+  unfold depthK
+  induction c with
+  | block => rfl
+  | seq a b iha ihb => rw [CodeWalk.depth_seq, Code.ppc64leDepth, iha, ihb]
+  | ite _ a b iha ihb => rw [CodeWalk.depth_ite, Code.ppc64leDepth, iha, ihb]
+  | icall _ _ a b iha ihb => rw [CodeWalk.depth_icall, Code.ppc64leDepth, iha, ihb, Nat.add_zero]
+  | loop b _ ih => exact ih
+  | call _ b ih => exact ih
+  | frame i b _ ih => rw [CodeWalk.depth_frame, Code.ppc64leDepth, ih]
 
 /-- Code `c` (callees included) writes no register the tail with `cl` leaves
 as it is, the link registers among them if `c` calls: `Clear.Keeps`, as one
-pass over the instructions with the registers as bit masks (`RegSet`). Only
-the kernel evaluates it (`Code.allInstrs`). When the tail clears every
-register, only writes to CA can matter. -/
-noncomputable def keepsB (c : Prog isa) (cl : Clear) : Bool :=
+pass over the instructions with the registers as bit masks (`RegSet`); and it
+calls indirectly only functions of `N`. Only the kernel evaluates it
+(`Code.allInstrs`). When the tail clears every register, only writes to CA can
+matter. -/
+noncomputable def keepsB (c : Prog isa) (cl : Clear) (N : List String) : Bool :=
   if keptG cl = [] ∧ keptV cl = [] then
-    cl.ca || c.allInstrs (fun i => !writesCa i)
+    Bool.rec (CodeWalk.sideAll (fun i => !writesCaK i) N c) (CodeWalk.namesIn N c) cl.ca
   else
-    c.allInstrs (sideI (RegSet.ofList (keptG cl)) (RegSet.ofList (keptV cl)) cl.ca) &&
+    CodeWalk.sideAll (sideI (RegSet.ofList (keptG cl)) (RegSet.ofList (keptV cl)) cl.ca) N c &&
       (callFree c || linkRegs.all fun r => !(keptG cl).contains r)
 
-private theorem keepsB_eq (c : Prog isa) (cl : Clear) : keepsB c cl =
-    (c.allInstrs (sideI (RegSet.ofList (keptG cl)) (RegSet.ofList (keptV cl)) cl.ca) &&
+private theorem keepsB_eq (c : Prog isa) (cl : Clear) (N : List String) : keepsB c cl N =
+    ((c.allInstrs (sideI (RegSet.ofList (keptG cl)) (RegSet.ofList (keptV cl)) cl.ca) &&
+      (inames c).all fun f => decide (f ∈ N)) &&
       (callFree c || linkRegs.all fun r => !(keptG cl).contains r)) := by
   unfold keepsB
   split
   · rename_i h
     obtain ⟨hg, hv⟩ := h
     rw [hg, hv]
-    have empty : sideI (RegSet.ofList ([] : List Reg))
-        (RegSet.ofList ([] : List VReg)) cl.ca = (fun i => cl.ca || !writesCa i) := by
+    have empty : sideI (RegSet.ofList ([] : List Reg)) (RegSet.ofList ([] : List VReg)) cl.ca =
+        fun i => cl.ca || !writesCa i := by
       funext i
-      cases hd : dstOf i <;> cases hvec : vdstOf i <;> simp [sideI, hd, hvec, RegSet.ofList, RegSet.mem, RegSet.empty]
+      cases hd : dstOf i <;> cases hvec : vdstOf i <;>
+        simp [sideI_eq, hd, hvec, RegSet.ofList, RegSet.mem, RegSet.empty]
     rw [empty]
-    cases cl.ca <;> simp [Code.allInstrs_eq, linkRegs]
-  · rfl
+    cases cl.ca
+    · rw [show (Bool.rec (CodeWalk.sideAll (fun i => !writesCaK i) N c) (CodeWalk.namesIn N c) false : Bool) =
+        CodeWalk.sideAll (fun i => !writesCaK i) N c from rfl, CodeWalk.sideAll_eq, inames_walk]
+      simp [Code.allInstrs_eq, linkRegs, writesCaK_eq]
+    · rw [show (Bool.rec (CodeWalk.sideAll (fun i => !writesCaK i) N c) (CodeWalk.namesIn N c) true : Bool) =
+        CodeWalk.namesIn N c from rfl, CodeWalk.namesIn_eq, inames_walk]
+      simp [Code.allInstrs_eq, linkRegs]
+  · rw [CodeWalk.sideAll_eq, inames_walk]
 
-theorem keeps_of_keepsB {c : Prog isa} {cl : Clear} (h : keepsB c cl = true) : cl.Keeps c := by
+theorem keeps_of_keepsB {c : Prog isa} {cl : Clear} {N : List String} (h : keepsB c cl N = true) : cl.Keeps c := by
   simp only [keepsB_eq, Bool.and_eq_true, Bool.or_eq_true] at h
-  obtain ⟨hi, hl⟩ := h
+  obtain ⟨⟨hi, -⟩, hl⟩ := h
   have hall : ∀ i ∈ instrs c, (∀ r ∈ keptG cl, dstOf i ≠ some r) ∧ (∀ w ∈ keptV cl, vdstOf i ≠ some w) ∧
       (cl.ca = false → writesCa i = false) := by
     intro i hi'
     have h1 := List.all_eq_true.mp ((Code.allInstrs_eq _ c).symm.trans hi) i hi'
-    simp only [sideI, Bool.and_eq_true, Bool.or_eq_true, Bool.not_eq_true'] at h1
+    simp only [sideI_eq, Bool.and_eq_true, Bool.or_eq_true, Bool.not_eq_true'] at h1
     obtain ⟨⟨hg, hv⟩, hca⟩ := h1
     refine ⟨fun r hr he => ?_, fun w hw he => ?_, fun hc => ?_⟩
     · rw [he] at hg
@@ -143,6 +218,11 @@ theorem keeps_of_keepsB {c : Prog isa} {cl : Clear} (h : keepsB c cl = true) : c
     exact hz hc
   · cases v <;> simp [vregs]
   · simpa using hv
+
+theorem inames_of_keepsB {c : Prog isa} {cl : Clear} {N : List String} (h : keepsB c cl N = true) :
+    ∀ n ∈ inames c, n ∈ N := by
+  simp only [keepsB_eq, Bool.and_eq_true] at h
+  exact fun n hn => of_decide_eq_true (List.all_eq_true.mp h.1.2 n hn)
 
 /-- `Verified.scrubAll`, with the registers the tail clears given: any `cl`
 that is well-formed for the levels and that the code keeps. The functions
@@ -182,13 +262,13 @@ theorem Verified.scrubWith {A : Abi isa} {sig : Sig} {pre : Curry (sig.words A.p
 /-- What `verifiedScrubbedAll` needs of code `c` run by `scrubAll rb d cl`,
 with the tables `ts` (none by default): conditions on its frames (which use
 `d` bytes) and its calls (indirectly, only of functions of `ts`:
-`tablesCall`, which with no table is that it makes no indirect call), that
+`tableFns`, which with no table is that it makes no indirect call), that
 the result has at most 64 bits, and that `cl` is a `Clear` the tail can run
 that has every volatile register `c` may write. -/
 noncomputable def scrubSide (c : Prog isa) (d rb : Nat) (cl : Clear)
     (ts : List (String × List FnTable) := []) : Bool :=
-  c.ppc64leDepth == d && d % 16 == 0 && (d == 0 || decide (48 ≤ d)) && tablesCall c ts &&
-    decide (rb ≤ 64) && wfB cl (chunks d) && keepsB c cl && (cl.r3 || rb != 32)
+  Nat.beq (depthK c) d && d % 16 == 0 && (d == 0 || decide (48 ≤ d)) &&
+    decide (rb ≤ 64) && wfB cl (chunks d) && keepsB c cl (tableFns ts) && (cl.r3 || rb != 32)
 
 /-- `r`'s code, scrubbed with the stack and the registers stated, is
 verified against `r`'s contract and returns without secret residue. -/
@@ -197,8 +277,8 @@ private theorem scrubAll_ok {api : Api} (r : Unscrubbed api target) {d : Nat} {c
     (hpost : PostOut r.contract (retBitsOf r)) :
     Verified target (scrubAll (retBitsOf r) d cl r.code) r.contract ∧
       NoResidue (scrubAll (retBitsOf r) d cl r.code) r.contract (retBitsOf r) := by
-  simp only [scrubSide, Bool.and_eq_true, Bool.or_eq_true, beq_iff_eq, decide_eq_true_eq] at hs
-  obtain ⟨⟨⟨⟨⟨⟨⟨hde, h16⟩, h48⟩, htc⟩, hrb⟩, hwf⟩, hk⟩, -⟩ := hs
+  simp only [scrubSide, Bool.and_eq_true, Bool.or_eq_true, beq_iff_eq, decide_eq_true_eq, depthK_eq, Nat.beq_eq] at hs
+  obtain ⟨⟨⟨⟨⟨⟨hde, h16⟩, h48⟩, hrb⟩, hwf⟩, hk⟩, -⟩ := hs
   subst hde
   obtain ⟨pre, post, leak, e⟩ := r.ofSig
   have hv := r.verified
@@ -209,7 +289,7 @@ private theorem scrubAll_ok {api : Api} (r : Unscrubbed api target) {d : Nat} {c
   refine Verified.scrubWith (ScrubAbi.of r.consts api.sig r.tables) hv hd h16 h48
     (fun s₁ s₂ hp n hn => tables_pub_syms (contract_pub hp) n ?_) hrb' hp
     (wf_of_wfB hwf) (keeps_of_keepsB hk)
-  simpa using List.all_eq_true.mp htc n hn
+  exact inames_of_keepsB hk n hn
 
 /-- What `verifiedScrubbedWiped` needs of code `c` that is
 `withStackScratchWiped bytes reg words body`: that the frame is one
@@ -219,7 +299,7 @@ and that `cl` is a `Clear` the tail can run, with no stack to wipe, that has
 every volatile register `c` may write. -/
 noncomputable def wipedSide (c body : Prog isa) (bytes words rb : Nat) (cl : Clear) : Bool :=
   decide (32 < bytes) && decide (bytes < 4096) && bytes % 16 == 0 && 8 * words == bytes - 32 &&
-    icallFree body && body.ppc64leDepth == 0 && decide (rb ≤ 64) && wfB cl [] && keepsB c cl &&
+    CodeWalk.namesIn [] body && Nat.beq (depthK body) 0 && decide (rb ≤ 64) && wfB cl [] && keepsB c cl [] &&
     (cl.r3 || rb != 32)
 
 /-- `r`'s code, followed by the clearing of the registers stated alone, is
@@ -230,8 +310,9 @@ private theorem scrubWiped_ok {api : Api} (r : Unscrubbed api target) {bytes : N
     (hpost : PostOut r.contract (retBitsOf r)) :
     Verified target (.seq r.code (scrubTail (retBitsOf r) [] cl)) r.contract ∧
       NoResidue (.seq r.code (scrubTail (retBitsOf r) [] cl)) r.contract (retBitsOf r) := by
-  simp only [wipedSide, Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at hs
+  simp only [wipedSide, Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq, depthK_eq, Nat.beq_eq] at hs
   obtain ⟨⟨⟨⟨⟨⟨⟨⟨⟨hB1, hB2⟩, hB3⟩, hw⟩, hic⟩, hd⟩, hrb⟩, hwf⟩, hk⟩, -⟩ := hs
+  have hic := icallFree_of_namesIn hic
   have sh : WipedShape r.code r.stack := ⟨bytes, reg, words, body, hc, ⟨hB1, hB2, hB3⟩, hw, hic, hd, hst⟩
   obtain ⟨pre, post, leak, e⟩ := r.ofSig
   have hv := r.verified
