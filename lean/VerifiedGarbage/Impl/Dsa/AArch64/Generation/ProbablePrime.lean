@@ -20,9 +20,7 @@ entries divides the candidate: the count `x10` is cleared when the mask `x1`
 is set (`x8` is all ones). The candidates of DSA's parameter search are
 public; RSA key generation's are not, and it keeps `Candidate.trial`. -/
 def trialEarly : List (Prog isa) := [
-  .block (ws ++ base aTab .x9 ++ tabWrite ++
-    [movi .x3 128, movi .x4 256, movi .x5 17, .subs .x .x6 .x12 .x5, .csel .x .x10 .x4 .x3, movi .x1 0,
-      movi .x7 0, .subImm .x .x8 .x7 1]),
+  trialHead,
   .loop (seqs (trialWord ++
     ([.block [.logic .eor .x .x3 .x1 .x8, .logic .and .x .x10 .x10 .x3]] : List (Prog isa))))
     (.nonzero .x .x10)]

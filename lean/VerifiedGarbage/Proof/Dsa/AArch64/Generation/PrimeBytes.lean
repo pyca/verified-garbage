@@ -491,10 +491,12 @@ theorem trialEarly_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) (hT : 
   unfold Impl.Dsa.AArch64.Generation.trialEarly
   simp only [seqs]
   refine WP.seq ?_
-  rw [WP.block_append_iff, WP.block_append_iff, WP.block_append_iff]
+  unfold VG.Impl.RsaKeyGen.AArch64.Candidate.trialHead
+  refine WP.seq ?_
+  rw [WP.block_append_iff]
   refine WP.mono h.ws_ok fun s₁ ⟨⟨h12₁, h11₁, hm₁, _⟩, k₁⟩ => ?_
   refine WP.mono (base_ok aTab .x9 ((k₁.gpr .x0 (by decide)).trans h.x0) h11₁) fun s₂ ⟨⟨h9₂, hm₂, _⟩, k₂⟩ => ?_
-  refine WP.mono (tabWrites_ok (h.scr.congr (k₁.trans k₂).wr) hT h9₂ 256 (Nat.le_refl _)) fun s₃ ⟨htab₃, ho₃, k₃⟩ => ?_
+  refine WP.seq (WP.mono (tabWriteShared_ok (h.scr.congr (k₁.trans k₂).wr) hT h9₂) fun s₃ ⟨htab₃, ho₃, k₃⟩ => ?_)
   rw [hm₂, hm₁] at ho₃
   have h12₃ : s₃.gpr .x12 = BitVec.ofNat 64 w := (k₃.gpr .x12 (by decide)).trans ((k₂.gpr .x12 (by decide)).trans h12₁)
   refine WP.mono (trialInit_ok s₃ h12₃ h.w2) fun s₄ ⟨⟨h10₄, h1₄, h7₄, h8₄, hm₄⟩, k₄⟩ => ?_
