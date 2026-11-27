@@ -408,7 +408,7 @@ theorem mulA_rv (hk : S.k = 4) (hp : S.m = P) (s : State)
     ∃ t s', Exec isa Impl.Weierstrass.RISCV64.Secp256k1Field.mulFnA s t s' ∧ abiPreserved s s' ∧ (mulRV S).post s s' := by
   obtain hc : CoreOk Impl.Weierstrass.RISCV64.Secp256k1Field.mulCore (fun _ B => B < S.m) (Gen4.mulRes S.m) := by
     rw [hp]; exact mulCore_core
-  obtain ⟨t, s', he, a, ⟨v1, v2⟩, k⟩ := P256Field.fnA_rv hk @hc hs.1.1 hs.2 (by exact hs.1.2)
+  obtain ⟨t, s', he, a, ⟨v1, v2⟩, k⟩ := P256Field.fnA_rv hk (@P256Field.CoreOk.toA _ _ _ @hc) hs.1.1 hs.2 (by exact hs.1.2)
   exact ⟨t, s', he, a, by rw [res, hk]; exact v1,
     by rw [res, Impl.Weierstrass.Mont.Modulus.R, hk]; exact v2, by rw [hk]; exact k⟩
 
@@ -418,7 +418,7 @@ theorem addA_rv (hk : S.k = 4) (hp : S.m = P) (s : State)
   obtain hc : CoreOk (.block Impl.Weierstrass.RISCV64.Secp256k1Field.addCore) (fun A B => A + B < 2 * S.m)
       (fun A B r => r = (A + B) % S.m) := by
     rw [hp]; exact addCore_core
-  obtain ⟨t, s', he, a, v, k⟩ := P256Field.fnA_rv hk @hc hs.1.1 hs.2 (by exact hs.1.2)
+  obtain ⟨t, s', he, a, v, k⟩ := P256Field.fnA_rv hk (@P256Field.CoreOk.toA _ _ _ @hc) hs.1.1 hs.2 (by exact hs.1.2)
   exact ⟨t, s', he, a, by rw [res, hk]; exact v, by rw [hk]; exact k⟩
 
 theorem subA_rv (hk : S.k = 4) (hp : S.m = P) (s : State)
@@ -427,7 +427,7 @@ theorem subA_rv (hk : S.k = 4) (hp : S.m = P) (s : State)
   obtain hc : CoreOk (.block Impl.Weierstrass.RISCV64.Secp256k1Field.subCore) (fun A B => A < S.m ∧ B < S.m)
       (fun A B r => r = (A + S.m - B) % S.m) := by
     rw [hp]; exact subCore_core
-  obtain ⟨t, s', he, a, v, k⟩ := P256Field.fnA_rv hk @hc hs.1.1 hs.2 (by exact hs.1.2)
+  obtain ⟨t, s', he, a, v, k⟩ := P256Field.fnA_rv hk (@P256Field.CoreOk.toA _ _ _ @hc) hs.1.1 hs.2 (by exact hs.1.2)
   exact ⟨t, s', he, a, by rw [res, hk]; exact v, by rw [hk]; exact k⟩
 
 end VG.Proof.Weierstrass.RISCV64.Secp256k1Field
