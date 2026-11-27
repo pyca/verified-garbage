@@ -55,6 +55,8 @@ attribute [local instance] tblInstrToExpr
 
 /-! The functions. -/
 
+materialize_code Impl.Cast5.AArch64.Tbl.batchFnEnc
+materialize_code Impl.Cast5.AArch64.Tbl.batchFnDec
 materialize_code Impl.Cast5.AArch64.Tbl.ecbEncrypt
 materialize_code Impl.Cast5.AArch64.Tbl.ecbDecrypt
 

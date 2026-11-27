@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Cast5.AArch64.TblBatch
+public import VerifiedGarbage.Proof.Cast5.AArch64.BatchCall
 public import VerifiedGarbage.Proof.Cast5.AArch64.FbVerified
 public import VerifiedGarbage.Proof.Blowfish.AArch64.ModeCore
 public import VerifiedGarbage.Proof.Cast5.ModeScratch
@@ -22,7 +22,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.Taint
 import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Cast5.AArch64.TblBatch
+meta import VerifiedGarbage.Proof.Cast5.AArch64.BatchCall
 meta import VerifiedGarbage.Proof.Cast5.AArch64.FbVerified
 meta import VerifiedGarbage.Proof.Blowfish.AArch64.ModeCore
 meta import VerifiedGarbage.Proof.Cast5.ModeScratch
@@ -209,17 +209,16 @@ theorem modeRestore_run (s : State) :
 
 theorem modeSetup_run (s : State) :
     ∃ s', runBlock isa modeSetup s = some s' ∧ s'.gpr .x22 = s.gpr sb ∧ s'.gpr .x4 = s.gpr sb ∧
-      s'.gpr .x16 = s.gpr .x1 ∧ s'.gpr .x9 = s'.syms planesSym ∧
+      s'.gpr .x16 = s.gpr .x1 ∧ s'.gpr .x9 = s.gpr .x9 ∧
       (∀ r, r ≠ .x22 → r ≠ .x4 → r ≠ .x16 → r ≠ .x6 → r ≠ .x9 → s'.gpr r = s.gpr r) ∧ Consts s' ∧
       s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   obtain ⟨s₁, e₁, r₁, o₁, m₁, rd₁, wr₁⟩ := movR_ok s .x22 sb
   obtain ⟨s₂, e₂, r₂, o₂, m₂, rd₂, wr₂⟩ := movR_ok s₁ .x4 sb
   obtain ⟨s₃, e₃, r₃, o₃, m₃, rd₃, wr₃⟩ := movR_ok s₂ .x16 .x1
   obtain ⟨s₄, e₄, c₄, o₄, m₄, rd₄, wr₄, -, -⟩ := constants_run s₃
-  let s₅ := s₄.write .x .x9 (s₄.syms planesSym)
-  have e₅ : runBlock isa ([.adrSym .x9 planesSym] : List Instr) s₄ = some s₅ := by
-    rw [runBlock_cons, exec_adrSym, runStep_some, runBlock_nil]
-  have o₅ : ∀ r, r ≠ .x9 → s₅.gpr r = s₄.gpr r := fun r hr => gpr_write_of_ne _ _ _ hr
+  let s₅ := s₄
+  have e₅ : runBlock isa ([] : List Instr) s₄ = some s₅ := rfl
+  have o₅ : ∀ r, r ≠ .x9 → s₅.gpr r = s₄.gpr r := fun _ _ => rfl
   refine ⟨s₅, ?_, by rw [o₅ _ (by decide), o₄ _ (by decide), o₃ _ (by decide), o₂ _ (by decide), r₁],
     by rw [o₅ _ (by decide), o₄ _ (by decide), o₃ _ (by decide), r₂, o₁ _ (by decide)],
     by rw [o₅ _ (by decide), o₄ _ (by decide), r₃, o₂ _ (by decide), o₁ _ (by decide)], ?_,
@@ -227,12 +226,11 @@ theorem modeSetup_run (s : State) :
     m₄.trans (m₃.trans (m₂.trans m₁)), rd₄.trans (rd₃.trans (rd₂.trans rd₁)),
     wr₄.trans (wr₃.trans (wr₂.trans wr₁))⟩
   · show runBlock isa ([movR .x22 sb] ++ ([movR .x4 sb] ++ ([movR .x16 .x1] ++
-      (constants ++ ([.adrSym .x9 planesSym] : List Instr))))) s = some s₅
+      (constants ++ ([] : List Instr))))) s = some s₅
     exact cat_run e₁ (cat_run e₂ (cat_run e₃ (cat_run e₄ e₅)))
-  · show (s₄.write .x .x9 _).gpr .x9 = s₄.syms planesSym
-    rw [gpr_write_self]; exact BitVec.setWidth_eq _
+  · rw [o₄ _ (by decide), o₃ _ (by decide), o₂ _ (by decide), o₁ _ (by decide)]
 
-theorem batchOf_eq (up : Bool) : batchOf up = batch up := by cases up <;> rfl
+theorem batchOf_eq (up : Bool) : batchOf up = batchCall up := by cases up <;> rfl
 
 /-! ## `crypt` -/
 
@@ -265,7 +263,7 @@ theorem crypt_wp {up : Bool} {s : State} {B : Addr} {kn : Spec.Cast5.Schedule ×
   rw [mem₁] at mem₂; rw [rd₁] at rd₂; rw [wr₁] at wr₂
   refine WP.seq (WP.of_runBlock ⟨s₁, e₁, WP.seq (WP.of_runBlock ⟨s₂, e₂, ?_⟩)⟩)
   -- The batch.
-  have P₂ : CPre s₂ k := ⟨x9₂, c₂, by
+  have P₂ : CallPre s₂ k := ⟨c₂, by
     rw [x0₂, rd₂]
     exact ⟨_, List.mem_append_left _ hS.rd, Region.contains_self _ _⟩, fun j hj => by
     rw [x0₂, mem₂, ← Proof.Cast5.scheduleAt_getD _ _ hj, hK]⟩
@@ -274,11 +272,11 @@ theorem crypt_wp {up : Bool} {s : State} {B : Addr} {kn : Spec.Cast5.Schedule ×
     exact ⟨_, hw, Offset.contains_base B (by omega_using [hj]) (by omega_using [hj])⟩
   have h16 : s₂.gpr .x16 = BitVec.ofNat 64 n := by rw [x16₂, g₁ _ (by decide), h1]
   rw [batchOf_eq]
-  refine WP.seq (WP.mono (batch_ok up P₂ hn h16 hW₂) fun s₃ P => ?_)
+  refine WP.seq (WP.mono (batchCall_ok up P₂ hn h16 hW₂) fun s₃ P => ?_)
   -- `v8`–`v15` and `sb` back.
   obtain ⟨s₄, e₄, -, sb₄, g₄, mem₄, rd₄, wr₄⟩ := modeRestore_run s₃
   refine WP.of_runBlock ⟨s₄, e₄, ?_⟩
-  have g₃ : ∀ r, r ∉ keepList → r ≠ .x22 → r ≠ .x4 → r ≠ .x16 → r ≠ .x6 → r ≠ .x9 → r ∉ batchG →
+  have g₃ : ∀ r, r ∉ keepList → r ≠ .x22 → r ≠ .x4 → r ≠ .x16 → r ≠ .x6 → r ≠ .x9 → r ∉ callG →
       s₄.gpr r = s.gpr r :=
     fun r h0 h22 h4 h16 h6 h9 hb => by
       rw [g₄ r (fun h => hb (by rw [h]; decide)), P.gpr r hb, g₂' r h0 h22 h4 h16 h6 h9]
@@ -322,10 +320,16 @@ def batchCoreSpec (up : Bool) : BlockSpec (batchCore up) where
 /-! ## What every run of `crypt` keeps -/
 
 /-- The batch writes none of the registers that keep `v8`–`v15`. -/
-theorem batch_regSafe (up : Bool) : ∀ k < 8, regSafe (modeKeep k) (batchOf up) = true := by
-  cases up
-  · show ∀ k < 8, regSafe (modeKeep k) batchDec = true; lit_decide
-  · show ∀ k < 8, regSafe (modeKeep k) batchEnc = true; lit_decide
+theorem batch_keeps (up : Bool) : ∀ k < 8, KeepsReg (modeKeep k) (batchOf up) := by
+  have hs : ∀ k < 8, (batchOf up).allInstrs (fun i => !clobbers i (modeKeep k)) = true := by
+    cases up <;> lit_decide
+  intro k hk s tr t he
+  have hc := hs k hk
+  rw [Code.allInstrs_eq] at hc
+  exact Exec.gpr (fun i hi => by simpa using List.all_eq_true.mp hc i hi) he
+    (.inr (by
+      have hp : ∀ k < 8, modeKeep k ∉ linkRegs := by decide
+      exact hp k hk))
 
 theorem setup_regSafe : ∀ k < 8, regSafe (modeKeep k) (.block modeSetup) = true := by decide
 
@@ -346,7 +350,7 @@ theorem crypt_vKeep (up : Bool) : ∀ s t s', Exec isa (batchCore up).crypt s t 
         subst q₁ q₄
         have hk : ∀ k < 8, (s'.v (modeV k)).extractLsb' 0 64 = (s.v (modeV k)).extractLsb' 0 64 :=
           fun k hk => by
-            rw [h₄ k hk, keepsReg_of_regSafe (batch_regSafe up k hk) _ _ _ e₅,
+            rw [h₄ k hk, batch_keeps up k hk _ _ _ e₅,
               keepsReg_of_regSafe (setup_regSafe k hk) _ _ _ e₃, h₁ k hk]
         intro r hr
         simp only [preservedV, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -488,13 +492,45 @@ theorem cbcDecryptChained_vSafe : VSafeBut (batchCore false).crypt cbcDecryptCha
 theorem cfbDecrypt_vSafe : VSafeBut (batchCore true).crypt cfbDecrypt := by
   unfold cfbDecrypt; vsafe_but
 
+theorem modeCrypt_keeps_link (up : Bool) : Modes.AArch64.KeepsReg .x30 (modeCrypt up) := by
+  unfold modeCrypt
+  refine Modes.AArch64.KeepsReg.seq (Modes.AArch64.keepsReg_of_regSafe (by decide))
+    (Modes.AArch64.KeepsReg.seq (Modes.AArch64.keepsReg_of_regSafe (by decide)) (Modes.AArch64.KeepsReg.seq ?_ (Modes.AArch64.keepsReg_of_regSafe (by decide))))
+  rw [batchOf_eq]
+  exact batchCall_keeps_link up
+
+theorem cbcDecryptChained_keeps_link : Modes.AArch64.KeepsReg .x30 cbcDecryptChained := by
+  unfold cbcDecryptChained
+  dsimp only [batchCore]
+  repeat (first
+    | exact modeCrypt_keeps_link false
+    | exact modeCrypt_keeps_link true
+    | exact batchCall_keeps_link false
+    | exact batchCall_keeps_link true
+    | apply Modes.AArch64.KeepsReg.seq
+    | apply Modes.AArch64.KeepsReg.ite
+    | apply Modes.AArch64.KeepsReg.loop
+    | exact Modes.AArch64.keepsReg_of_regSafe (by decide))
+
+theorem cfbDecrypt_keeps_link : Modes.AArch64.KeepsReg .x30 cfbDecrypt := by
+  unfold cfbDecrypt
+  dsimp only [batchCore]
+  repeat (first
+    | exact modeCrypt_keeps_link false
+    | exact modeCrypt_keeps_link true
+    | exact batchCall_keeps_link false
+    | exact batchCall_keeps_link true
+    | apply Modes.AArch64.KeepsReg.seq
+    | apply Modes.AArch64.KeepsReg.ite
+    | apply Modes.AArch64.KeepsReg.loop
+    | exact Modes.AArch64.keepsReg_of_regSafe (by decide))
+
 theorem cbcDecryptChained_verified :
     Verified AArch64.target cbcDecryptChained
       (Proof.Cast5.modeScratchContract AArch64.abi Spec.Cast5.cbcChainedSig 28
         (Proof.Cast5.cbcChainedPre AArch64.abi.ptrBits) (Proof.Cast5.cbcDecChainedPost AArch64.abi.ptrBits)) :=
   Verified.of_correct (k := cbcDecX) (fun s hs => by
-      obtain ⟨t, s', he, ⟨h₁, h₂⟩, h₃⟩ := WP.gprs (rs := [.x30]) (cbcDecryptChained_wp hs) (by lit_decide)
-        (by lit_decide)
+      obtain ⟨t, s', he, ⟨h₁, h₂⟩, h₃⟩ := keep_link cbcDecryptChained_keeps_link (cbcDecryptChained_wp hs)
       exact ⟨t, s', he, ⟨Proof.Modes.AArch64.preserved_of h₁ h₃, Exec.sp he,
         vKeep_of_vSafeBut cbcDecryptChained_vSafe (crypt_vKeep false) _ _ _ he⟩, h₂⟩)
     (VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3, .x4, .x5]) taint_agree
@@ -508,8 +544,7 @@ theorem cfbDecrypt_verified :
       (Proof.Cast5.modeScratchContract AArch64.abi Spec.Cast5.cfbSig 28
         (Spec.Cast5.cfbPre AArch64.abi.ptrBits) (Proof.Cast5.cfbDecPost AArch64.abi.ptrBits)) :=
   Verified.of_correct (k := cfbDecX) (fun s hs => by
-      obtain ⟨t, s', he, ⟨h₁, h₂⟩, h₃⟩ := WP.gprs (rs := [.x30]) (cfbDecrypt_wp hs) (by lit_decide)
-        (by lit_decide)
+      obtain ⟨t, s', he, ⟨h₁, h₂⟩, h₃⟩ := keep_link cfbDecrypt_keeps_link (cfbDecrypt_wp hs)
       exact ⟨t, s', he, ⟨Proof.Modes.AArch64.preserved_of h₁ h₃, Exec.sp he,
         vKeep_of_vSafeBut cfbDecrypt_vSafe (crypt_vKeep true) _ _ _ he⟩, h₂⟩)
     (VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3, .x4, .x5]) taint_agree
