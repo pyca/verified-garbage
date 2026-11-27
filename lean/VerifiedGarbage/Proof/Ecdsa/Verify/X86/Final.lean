@@ -81,6 +81,7 @@ abbrev finW : List Nat := [ACC, PT, TMP, XM, X, XN, W]
 /-- `Z^(p-2)`, `x`, the last checks and the result. -/
 theorem vtail_ok (hc : CfgOk c) {s₀ : State} {base : Addr}
     {Q₁ Q₂ : Nat → Fe c.C → Fe c.C → Fe c.C → Prop} {s : State} (hP : Pts c s₀ base Q₁ Q₂ s)
+    (hst : ∀ r ∈ s₀.wr, Region.Disjoint (below (s₀.gpr .esp) c.stk) r)
     (hsp₁ : SpOk c.pPow c.stk) (hsp₂ : SpOk (Impl.Ecdsa.Verify.X86.Cfg.final c) c.stk) :
     WP isa (.seq c.pPow (Impl.Ecdsa.Verify.X86.Cfg.final c)) s fun s' =>
       (∀ rd ∈ Cfg.saved, s'.gpr rd.1 = s₀.gpr rd.1) ∧ s'.gpr .esp = s₀.gpr .esp ∧
@@ -99,7 +100,7 @@ theorem vtail_ok (hc : CfgOk c) {s₀ : State} {base : Addr}
   have F := hP.fixed
   obtain hf : c.sl FLAG + 4 ≤ size := by have := sl_le c h7 (i := FLAG) (by decide); omega_arith
   -- `Z^(p-2)`.
-  refine WP.seq (hP.keep.withSp hsp₁ (WP.mono (pPow_ok hc hP.scr
+  refine WP.seq (hP.keep.withSp hsp₁ (WP.mono (pPow_ok hc hP.scr (hP.keep.stack24 hst) hP.keep.sp24 hsp₁.1
     (modP_of hc F.mp) hP.rz_lt F.onep hP.t₁ (show c.C.p - 2 < 2 ^ (64 * c.n) by have := hc.p_lt; omega_arith))
     fun s₁ ⟨K₁, U₁, lt₁, v₁⟩ f₁ => ?_))
   obtain hs₁ := hP.scr.of_keeps K₁ (by decide)

@@ -113,7 +113,7 @@ theorem verify_ok (hc : CfgOk c) (hC : Law c.C) (hcomb : c.comb = none)
     WP isa (Impl.Ecdsa.Verify.X86.Cfg.verify c) s₀ fun s' => VKeep c s₀ s' ∧ VPost c s₀ s' := by
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
   have H := VSp.of hsp
-  refine front_ok hc hp H.validate fun s₁ hF => mid_ok hc hF H.scalars H.nPow H.uv fun s₂ hM => ?_
+  refine front_ok hc hp H.validate fun s₁ hF => mid_ok hc hF hp.stk_wr H.scalars H.nPow H.uv fun s₂ hM => ?_
   have F₂ := hM.fixed
   obtain ⟨ha, hb, h1⟩ := consts_tmv hc F₂
   -- The point the second ladder multiplies.
@@ -146,7 +146,7 @@ theorem verify_ok (hc : CfgOk c) (hC : Law c.C) (hcomb : c.comb = none)
     (step_rep' (L := Impl.Ecdh.X86.Cfg.ladderQ c) (base := ptr s₀ 3) (s := s₂) hC hPc ha hb hQ h0)
     (by rw [shiftRight_eq_zero hv, mul_zero_pt]; exact rep_infinity' hC) H.points
     fun s₃ hP => ?_
-  refine WP.mono (vtail_ok hc hP H.pPow H.final) fun s' ⟨saved, esp, frame, xo, hxo, hx, ret⟩ =>
+  refine WP.mono (vtail_ok hc hP hp.stk_wr H.pPow H.final) fun s' ⟨saved, esp, frame, xo, hxo, hx, ret⟩ =>
     ⟨⟨saved, esp, frame⟩, ?_⟩
   obtain ⟨X1, Y1, Z1, X2, Y2, Z2, q1, q2, hsum⟩ := hP.pt
   have q1' : Rep c.C X1 Y1 Z1 (mul (sv c (ptr s₀ 3) s₂ U) (G c.C)) := by
@@ -557,6 +557,7 @@ theorem projectiveFinal_ok (hc : CfgOk c) (hC : Law c.C) (hnp : c.C.n < c.C.p)
 theorem tail_dispatch_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} {base : Addr}
     {Q₁ Q₂ : Nat → Fe c.C → Fe c.C → Fe c.C → Prop} {s : State} (hP : Pts c s₀ base Q₁ Q₂ s)
     (hk : sv c base s K = sigR c s₀)
+    (hst : ∀ r ∈ s₀.wr, Region.Disjoint (below (s₀.gpr .esp) c.stk) r)
     (hsp : SpOk (Impl.Ecdsa.Verify.X86.Cfg.tail c) c.stk) :
     WP isa (Impl.Ecdsa.Verify.X86.Cfg.tail c) s fun s' =>
       (∀ rd ∈ VG.Impl.Ecdsa.X86.Cfg.saved, s'.gpr rd.1 = s₀.gpr rd.1) ∧ s'.gpr .esp = s₀.gpr .esp ∧
@@ -570,7 +571,7 @@ theorem tail_dispatch_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} {base : Ad
   · rw [ite_eq_left h] at hsp ⊢
     exact projectiveFinal_ok hc hC h.1 h.2 hP hk hsp
   · rw [ite_eq_right h] at hsp ⊢
-    exact vtail_ok hc hP hsp.left hsp.right
+    exact vtail_ok hc hP hst hsp.left hsp.right
 
 end VG.Proof.Ecdsa.Verify.X86
 
@@ -621,7 +622,7 @@ theorem verifyCombBody_ok (hc : CfgOk c) (hC : Law c.C) (hne : c.C.n < 2 ^ (8 * 
   obtain H := VCSp.of hsp
   refine WP.seq (WP.mono (front_ok hc hp H.validate (rest := .block []) (fun _ h => WP.block_nil h))
     fun s₁ hF => ?_)
-  refine WP.seq (WP.mono (mid_ok hc hF H.scalars H.nPow H.uv (rest := .block []) (fun _ h => WP.block_nil h))
+  refine WP.seq (WP.mono (mid_ok hc hF hp.stk_wr H.scalars H.nPow H.uv (rest := .block []) (fun _ h => WP.block_nil h))
     fun s₂ hM => ?_)
   have F₂ := hM.fixed
   obtain ⟨_, _, h1⟩ := consts_tmv hc F₂
@@ -638,7 +639,7 @@ theorem verifyCombBody_ok (hc : CfgOk c) (hC : Law c.C) (hne : c.C.n < 2 ^ (8 * 
       exact ⟨ht.of_frame (by rw [hM.rd, hM.wr]) hM.whole hap, ho, hap⟩)
     hPc hQ hp.stk_wr h24 hspG H.points
     fun s₃ hP hK => ?_
-  refine WP.mono (tail_dispatch_ok hc hC hP hK H.tail) fun s' ⟨saved, esp, frame, xo, hxo, hx, ret⟩ =>
+  refine WP.mono (tail_dispatch_ok hc hC hP hK hp.stk_wr H.tail) fun s' ⟨saved, esp, frame, xo, hxo, hx, ret⟩ =>
     ⟨⟨saved, esp, frame⟩, ?_⟩
   obtain ⟨X1, Y1, Z1, X2, Y2, Z2, q1, q2, hsum⟩ := hP.pt
   obtain q1' : Rep c.C X1 Y1 Z1 (mul (sv c (ptr s₀ 3) s₂ U) (G c.C)) := by

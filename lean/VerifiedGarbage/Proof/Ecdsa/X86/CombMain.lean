@@ -62,7 +62,7 @@ theorem stage₂Comb (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c)
   have hs₅ := hS.scr.of_keeps K₅ (by decide)
   have F₅ := F.unch h7 hn (fixedOk_gW) U₅
   have k₅ : Keep c s₀ base s₅ := hS.toKeep.gMul hc K₅ U₅ f₅
-  refine WP.seq (k₅.withSp hsp₂ (WP.mono (pPow_ok hc hs₅ M₅
+  refine WP.seq (k₅.withSp hsp₂ (WP.mono (pPow_ok hc hs₅ (k₅.stack24 hst) k₅.sp24 hsp₂.1 M₅
     (L₅ (c.sl RZ) (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_singleton_self _)))) F₅.onep
     (fun t ht => by
       show s₅.mem (off base (bitsAt c.n 1 + t)) = _
@@ -117,7 +117,7 @@ theorem signCombBody_ok (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c)
   WP.seq (WP.mono (stage₁ hc hp.setup (rest := .block [])
     (Q := St₁ c .sign s₀ (ptr s₀ 4)) (fun _ h => WP.block_nil h))
     fun _ S₁ => stage₂Comb hc hC hT hCo S₁ hTb hp.stk_wr hsp₁ hsp.left fun _ S₂ =>
-      stage₃ hc S₂ h₂.left h₃.left fun _ S₃ => stage₄ hc hC hp rfl S₃ h₄)
+      stage₃ hc S₂ hp.stk_wr h₂.left h₃.left fun _ S₃ => stage₄ hc hC hp rfl S₃ h₄)
 
 
 end VG.Proof.Ecdsa.X86

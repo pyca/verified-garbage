@@ -43,16 +43,9 @@ open VG.Impl.Ecdsa.Verify.X86
 def vMidCode : Prog isa := Impl.Ecdsa.Verify.X86.Cfg.combMid p256Comb
 materialize_code vMidCode
 
-/-- The multiplication modulo `n`, whose analysis the summary below does once,
-in place of each call. -/
-def combMulNCode : Prog isa :=
-  Impl.Weierstrass.X86.Mont.mulFn Impl.Weierstrass.Mont.p256n.k Impl.Weierstrass.Mont.p256n.m
-materialize_code combMulNCode
-taint_summary combMulNSum : taint τComb combMulNCode
-
-theorem vMid_rel : RelCT isa (VG.X86.Taint.Agree (scratchArgτ 4 false)) vMidCode (fun _ _ => True) := by
-  obtain ⟨_, hc⟩ : ∃ h, (taint.check (scratchArgτ 4 false) vMidCode h).isSome = true := by
-    native_taint_decide_sum [combMulNSum]
+theorem vMid_rel : RelCT isa (VG.X86.Taint.Agree (scratchArgτ 4 false 24)) vMidCode (fun _ _ => True) := by
+  obtain ⟨_, hc⟩ : ∃ h, (taint.check (scratchArgτ 4 false 24) vMidCode h).isSome = true := by
+    native_taint_decide_sum []
   exact RelCT.taint (A := taint) _ (fun _ _ h => h) hc
 
 end VG.Proof.Ecdsa.Verify.X86

@@ -111,7 +111,7 @@ theorem exchangeJacWindow_ok (hc : CfgOk c) (hn4 : c.n = 4) (hC : Law c.C) (ham3
     rw [F₄.onep, toM_one hpR]; exact hQ
   obtain K₄ : Keep c s₀ (ptr s₀ 3) s₄ := ⟨hs₄, by rw [g₄ _ (by decide), K₃.esp], by rw [rd₄, K₃.rd],
     by rw [wr₄, K₃.wr], F₄, w₄, S₂.sp_lo⟩
-  refine jwinPow_ok hc hn4 hC ham3 hO hn17 hn64 K₄ H.window H.pPow (peerPt_onCurve hc _ _ _)
+  refine jwinPow_ok hc hn4 hC ham3 hO hn17 hn64 K₄ hp.stk_wr H.window H.pPow (peerPt_onCurve hc _ _ _)
     (by unfold peerPt; split <;> intro he <;> cases he) px_lt py_lt hQ'
     (fun t ht => by rw [t₄ (j := 1) (by decide) t ht, S₂.t₁ t ht]) fun s₅ L w₅ => ?_
   have hs₅ := L.scr

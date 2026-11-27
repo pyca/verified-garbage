@@ -444,7 +444,7 @@ theorem ladPow_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} {base : Addr} {s 
   obtain k₅ : Keep c s₀ base s₅ := ⟨hs₅, by rw [K₅.1 _ (by decide), K.esp], by rw [K₅.2.1, K.rd],
     by rw [K₅.2.2, K.wr], F₅, f₅, K.sp_lo⟩
   obtain rz₅ : wordsVal s₅.mem base (c.sl RZ) c.n < c.C.p := L₅ RZ (by decide)
-  refine WP.seq (k₅.withSp hsp₂ (WP.mono (pPow_ok hc hs₅ M₅ rz₅
+  refine WP.seq (k₅.withSp hsp₂ (WP.mono (pPow_ok hc hs₅ (k₅.stack24 hst) k₅.sp24 hsp₂.1 M₅ rz₅
     F₅.onep (fun t ht => by
       show s₅.mem (off base (bitsAt c.n 1 + t)) = _
       rw [tbl_unch U₅ h7 (j := 1) (by decide) ht ((winW_winTW h7).apart_bits h7 (by decide) ht)]

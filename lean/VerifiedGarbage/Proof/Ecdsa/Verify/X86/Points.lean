@@ -430,6 +430,8 @@ theorem sTab_lay (hc : CfgOk c) :
 /-- `w = s^(n-2)`: the signature's inversion, or the power by the order's
 sequence, which also writes its saved powers. -/
 theorem sPow_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
+    (hst : ∀ r ∈ s.wr, Region.Disjoint (below (s.gpr .esp) 24) r)
+    (hsp24 : 24 ≤ (s.gpr .esp).toNat) (hsp : NoSp (Impl.Ecdsa.Verify.X86.Cfg.sPow c))
     (hM : ModOkW c.MN' size c.C.n s.mem base) (hB : wordsVal s.mem base (c.sl KM) c.n < c.C.n)
     (hO : wordsVal s.mem base (c.sl ONEN) c.n = 2 ^ (64 * c.n) % c.C.n)
     (hbits : ∀ t < 64 * c.n, s.mem (off base (bitsAt c.n 2 + t)) = if (c.C.n - 2).testBit t then 1 else 0)
@@ -442,7 +444,9 @@ theorem sPow_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
   have h10 := hc.n10
   unfold Impl.Ecdsa.Verify.X86.Cfg.sPow
   split
-  · refine WP.mono (nPow_ok hc hs hM hB hO hbits he) fun z ⟨K, U, lt, v⟩ => ⟨K, U.cover ?_, lt, v⟩
+  · rename_i hfast
+    refine WP.mono (nPow_ok hc hs hst hsp24 (by
+      simpa only [Impl.Ecdsa.Verify.X86.Cfg.sPow, ite_eq_left hfast] using hsp) hM hB hO hbits he) fun z ⟨K, U, lt, v⟩ => ⟨K, U.cover ?_, lt, v⟩
     intro w hw
     rcases List.mem_append.mp hw with hw | hw
     · obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
@@ -470,7 +474,8 @@ theorem sPow_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
 
 /-- The checks of `r` and `s`, `w = s^(n-2)`, `u` and `v`. -/
 theorem mid_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State}
-    (hF : Front c s₀ base s) (hsp₁ : SpOk (Impl.Ecdsa.Verify.X86.Cfg.scalars c) c.stk)
+    (hF : Front c s₀ base s) (hst : ∀ r ∈ s₀.wr, Region.Disjoint (below (s₀.gpr .esp) c.stk) r)
+    (hsp₁ : SpOk (Impl.Ecdsa.Verify.X86.Cfg.scalars c) c.stk)
     (hsp₂ : SpOk (Impl.Ecdsa.Verify.X86.Cfg.sPow c) c.stk)
     (hsp₃ : SpOk (Impl.Ecdsa.Verify.X86.Cfg.uv c) c.stk)
     {rest : Prog isa} {Q : State → Prop}
@@ -522,7 +527,7 @@ theorem mid_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State}
   obtain sm₃ : toM c.C.n (2 ^ (64 * c.n)) (sv c base s₃ SM') = Fin.ofNat c.C.n (sigS c s₀) := by
     rw [toM_r2 hnR (by rw [e₃, show sv c base s₂ R2N = _ from F₂.r2n]), v₂ (by decide) (by decide), hF.pt]
   -- `w = s^(n-2)`.
-  refine WP.seq (K₃.withSp hsp₂ (WP.mono (sPow_ok hc hs₃ M₃ lt₃
+  refine WP.seq (K₃.withSp hsp₂ (WP.mono (sPow_ok hc hs₃ (K₃.stack24 hst) K₃.sp24 hsp₂.1 M₃ lt₃
     F₃.onen (fun t ht => by
       show s₃.mem (off base (bitsAt c.n 2 + t)) = _
       rw [tbl_unch U₃ h7 (j := 2) (by decide) ht (tbl_apart_slWk (by decide) (by decide) ht),

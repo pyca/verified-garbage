@@ -972,6 +972,7 @@ theorem flag_unchG {base : Addr} {l : List Nat} {m m' : Mem} (hu : Unch base (sl
 /-- `[k]G` (`gen`), then `Z^(p-2)`. -/
 theorem stage₂ (hc : CfgOk c) (hC : Law c.C) (hcomb : c.comb = none) {s₀ : State} {base : Addr} {s : State}
     (hS : St₁ c A s₀ base s)
+    (hst : ∀ r ∈ s₀.wr, Region.Disjoint (below (s₀.gpr .esp) c.stk) r)
     (hsp₁ : SpOk (c.gen A.ao) c.stk) (hsp₂ : SpOk c.pPow c.stk)
     {rest : Prog isa} {Q : State → Prop} (h : ∀ s', St₂ c A s₀ base s' → WP isa rest s' Q) :
     WP isa (.seq (c.gen A.ao) (.seq c.pPow rest)) s Q := by
@@ -1027,7 +1028,7 @@ theorem stage₂ (hc : CfgOk c) (hC : Law c.C) (hcomb : c.comb = none) {s₀ : S
     T3, T4, T5, TX, TY, TZ, TMP]) (by decide)) U₅
   obtain k₅ : Keep c s₀ base s₅ := ⟨hs₅, by rw [K₅.1 _ (by decide), hS.esp], by rw [K₅.2.1, hS.rd],
     by rw [K₅.2.2, hS.wr], F₅, f₅, hS.sp_lo⟩
-  refine WP.seq (k₅.withSp hsp₂ (WP.mono (pPow_ok hc hs₅ (modP_of hc F₅.mp)
+  refine WP.seq (k₅.withSp hsp₂ (WP.mono (pPow_ok hc hs₅ (k₅.stack24 hst) k₅.sp24 hsp₂.1 (modP_of hc F₅.mp)
     (L₅ (c.sl RZ) (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_singleton_self _)))) F₅.onep
     (fun t ht => by
       show s₅.mem (off base (bitsAt c.n 1 + t)) = _
@@ -1079,6 +1080,7 @@ structure St₃ (c : Cfg) (A : Args) (s₀ : State) (base : Addr) (s : State) : 
 
 /-- `x`, `r`, `k R mod n` and the checks, then `k^(n-2)`. -/
 theorem stage₃ (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State} (hS : St₂ c A s₀ base s)
+    (hst : ∀ r ∈ s₀.wr, Region.Disjoint (below (s₀.gpr .esp) c.stk) r)
     (hsp₁ : SpOk c.middle c.stk) (hsp₂ : SpOk c.nPow c.stk) {rest : Prog isa} {Q : State → Prop} (h : ∀ s', St₃ c A s₀ base s' → WP isa rest s' Q) :
     WP isa (.seq c.middle (.seq c.nPow rest)) s Q := by
   have h0 := hc.n0
@@ -1100,7 +1102,7 @@ theorem stage₃ (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State} (hS : S
     sv_unch Mp.unch h7 hn hi (apart_slWk hi hl)
   obtain K₈ : Keep c s₀ base s₈ := ⟨hs₈, by rw [k₈.1 _ (by decide), Mp.gpr _ (by decide), hS.esp],
     by rw [k₈.2.1, Mp.rd, hS.rd], by rw [k₈.2.2, Mp.wr, hS.wr], F₈, w₈, hS.sp_lo⟩
-  refine WP.seq (K₈.withSp hsp₂ (WP.mono (nPow_ok hc hs₈
+  refine WP.seq (K₈.withSp hsp₂ (WP.mono (nPow_ok hc hs₈ (K₈.stack24 hst) K₈.sp24 hsp₂.1
     (modN_of hc F₈.mn) (lt_of_eq_of_lt (e₈ (i := KM) (by decide) (by decide)) Mp.km_lt) F₈.onen
     (fun t ht => by
       show s₈.mem (off base (bitsAt c.n 2 + t)) = _
@@ -1305,7 +1307,7 @@ theorem sign_ok (hc : CfgOk c) (hC : Law c.C) (hcomb : c.comb = none) (hsp : SpO
     WP isa c.sign s₀ fun s' => SignKeep c s₀ s' ∧ SignPost c s₀ s' := by
   obtain H := SignSp.of hsp
   rw [sign_eq]
-  exact stage₁ hc hp.setup fun _ S₁ => stage₂ hc hC hcomb S₁ H.ladder H.pPow fun _ S₂ =>
-    stage₃ hc S₂ H.middle H.nPow fun _ S₃ => stage₄ hc hC hp rfl S₃ H.scalar
+  exact stage₁ hc hp.setup fun _ S₁ => stage₂ hc hC hcomb S₁ hp.stk_wr H.ladder H.pPow fun _ S₂ =>
+    stage₃ hc S₂ hp.stk_wr H.middle H.nPow fun _ S₃ => stage₄ hc hC hp rfl S₃ H.scalar
 
 end VG.Proof.Ecdsa.X86
