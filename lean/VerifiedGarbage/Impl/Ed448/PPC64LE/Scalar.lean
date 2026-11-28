@@ -74,9 +74,16 @@ def scalarRead : List Instr := [.subi .r15 .r15 1, .add .r7 .r14 .r15, .lbz .r16
 
 def scalarByte (o : Nat) : List Instr := scalarRead ++ (List.range 8).reverse.flatMap (scalarBit o)
 
-/-- The `n` bytes at `r14` modulo `L`, into the remainder at `o`. -/
-def scalarEngine (o n : Nat) : Prog isa :=
-  .seq (.block ([.li .r7 0] ++ storeN .r7 o 14 ++ [.li .r15 n])) (.loop (.block (scalarByte o)) (.nonzero .d .r15))
+/-- The unrolled reduction writes its result at `o`. The caller sets the
+input pointer in `r14` and its byte count in `r15`. -/
+def scalarEngine (o : Nat) : Prog isa :=
+  .seq (.block (.li .r7 0 :: storeN .r7 o 14))
+    (.loop (.block (scalarByte o)) (.nonzero .d .r15))
+
+/-- Save the incoming link in `r9`, which the reduction keeps. -/
+def scalarEngineCall (n : Nat) : Prog isa :=
+  .seq (.block [.mflr .r9, .li .r15 n]) <|
+    .seq (.call "vg_ed448_scalar_engine" (scalarEngine SR)) (.block [.mtlr .r9])
 
 /-! ## Saving the nonvolatile registers -/
 
@@ -102,13 +109,17 @@ def packScalar (a : Nat) : List Instr := packWords a 14 ++ [.li .r7 0, .stb .r7 
 /-- The remainder at `SR` to the output (in `r27`), and the registers restored. -/
 def scalarFinish : List Instr := [.addi .r14 .r27 0] ++ packScalar SR ++ scalarRestore
 
+/-- The seven doublewords at `rs + so` to `rd + d`, through `r7`. -/
+def cp7 (rs : Reg) (so : Nat) (rd : Reg) (d : Nat) : List Instr :=
+  (List.range 7).flatMap fun k => [.load .d .r7 rs (so + 8 * k), .store .d .r7 rd (d + 8 * k)]
+
 /-! ## `vg_ed448_scalar_reduce(out = r3, wide = r4, scratch = r5)` -/
 
 def scalarReduceSetup : List Instr :=
   scalarSave .r5 ++ [.addi .r6 .r5 0, .addi .r27 .r3 0, .addi .r14 .r4 0]
 
 def scalarReduce : Prog isa :=
-  .seq (.block scalarReduceSetup) (.seq (scalarEngine SR 114) (.block scalarFinish))
+  .seq (.block scalarReduceSetup) (.seq (scalarEngineCall 114) (.block scalarFinish))
 
 /-! ## `vg_ed448_scalar_mul_add(out = r3, r = r4, k = r5, s = r6, scratch = r7)` -/
 
@@ -117,10 +128,14 @@ into `r17`, the working space into `r6`, and `k` into `r14`. -/
 def scalarMulAddArgs : List Instr :=
   scalarSave .r7 ++ [.addi .r27 .r3 0, .addi .r26 .r4 0, .addi .r17 .r6 0, .addi .r6 .r7 0, .addi .r14 .r5 0]
 
+/-- Reduce the input and move the result from `SR` to its slot. -/
+def scalarInput (o : Nat) : Prog isa :=
+  .seq (scalarEngineCall 57) (.block (cp7 .r6 SR .r6 o))
+
 /-- `k`, `s` and `r` modulo `L` into `SK`, `SS` and `SA`. -/
 def scalarInputs : Prog isa :=
-  .seq (scalarEngine SK 57) <| .seq (.block [.addi .r14 .r17 0]) <| .seq (scalarEngine SS 57) <|
-    .seq (.block [.addi .r14 .r26 0]) (scalarEngine SA 57)
+  .seq (scalarInput SK) <| .seq (.block [.addi .r14 .r17 0]) <| .seq (scalarInput SS) <|
+    .seq (.block [.addi .r14 .r26 0]) (scalarInput SA)
 
 /-- The 28 limbs of the product of `SK` and `SS` at `ACC`. -/
 def scalarProduct : Prog isa :=
@@ -133,6 +148,6 @@ def scalarSum : List Instr :=
 
 def scalarMulAdd : Prog isa :=
   .seq (.block scalarMulAddArgs) <| .seq scalarInputs <| .seq scalarProduct <|
-    .seq (.block scalarSum) <| .seq (scalarEngine SR 112) (.block scalarFinish)
+    .seq (.block scalarSum) <| .seq (scalarEngineCall 112) (.block scalarFinish)
 
 end VG.Impl.Ed448.PPC64LE

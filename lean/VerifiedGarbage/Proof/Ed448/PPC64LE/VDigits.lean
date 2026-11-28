@@ -571,13 +571,13 @@ structure CInv (b : Addr) (s0 : State) (ps pd k : Nat) (s : State) : Prop where
   frame : Frame [⟨b + BitVec.ofNat 64 pd, 56⟩] s0.mem s.mem
   vals : ∀ i < k, dw s.mem b (pd + 8 * i) = dw s0.mem b (ps + 8 * i)
 
-theorem cp7_ok {s : State} (hc : VCtx b s) {rs rd : Reg} {so d ps pd : Nat} (hrs : rs ≠ .r7) (hrd : rd ≠ .r7)
+theorem cp7_core_ok {s : State} (hws : (⟨b, 8192⟩ : Region) ∈ s.wr) {rs rd : Reg} {so d ps pd : Nat} (hrs : rs ≠ .r7) (hrd : rd ≠ .r7)
     (hrs0 : rs ≠ .r0) (hrd0 : rd ≠ .r0) (hso : so + 48 < 2 ^ 15) (hso4 : so % 4 = 0)
     (hd : d + 48 < 2 ^ 15) (hd4 : d % 4 = 0)
     (hs : s.gpr rs + BitVec.ofNat 64 so = b + BitVec.ofNat 64 ps)
     (hdd : s.gpr rd + BitVec.ofNat 64 d = b + BitVec.ofNat 64 pd)
     (hps' : ps + 56 ≤ 8192) (hpd' : pd + 56 ≤ 8192) (hsep : ps + 56 ≤ pd ∨ pd + 56 ≤ ps) :
-    WP isa (.block (cp7 rs so rd d)) s fun t => VCtx b t ∧ Rest [.r7] s t ∧
+    WP isa (.block (cp7 rs so rd d)) s fun t => Rest [.r7] s t ∧
       Frame [⟨b + BitVec.ofNat 64 pd, 56⟩] s.mem t.mem ∧
       ∀ i < 7, dw t.mem b (pd + 8 * i) = dw s.mem b (ps + 8 * i) := by
   obtain as : ∀ k, s.gpr rs + BitVec.ofNat 64 (so + 8 * k) = b + BitVec.ofNat 64 (ps + 8 * k) := fun k => by
@@ -586,12 +586,12 @@ theorem cp7_ok {s : State} (hc : VCtx b s) {rs rd : Reg} {so d ps pd : Nat} (hrs
     rw [← Offset.add_add, hdd, Offset.add_add]
   refine WP.mono (wp_range_flatMap (M := isa) (CInv b s ps pd)
     (fun k t hk ht => ?_) 7 (Nat.le_refl _) s ⟨Rest.refl _ _, Frame.refl _ _, fun i hi => absurd hi (by omega_using [])⟩)
-    fun t ht => ⟨hc.of_rest ht.rest (by decide) (by decide), ht.rest, ht.frame, ht.vals⟩
-  obtain hct : VCtx b t := hc.of_rest ht.rest (by decide) (by decide)
+    fun t ht => ⟨ht.rest, ht.frame, ht.vals⟩
+  have hwt : (⟨b, 8192⟩ : Region) ∈ t.wr := by rw [ht.rest.wr]; exact hws
   refine Comb.wp_ld (a := b + BitVec.ofNat 64 (ps + 8 * k)) hrs0 ⟨by omega_using [hso, hk], by omega_using [hso4]⟩ (by rw [ht.rest.gpr _ (by simpa using hrs)]; exact as k)
-    (hct.inR (by omega_using [hps', hk])) fun t1 u1 => ?_
+    (in_base (List.mem_append_right _ hwt) (by omega_using [hps', hk]) (by omega_using [hps', hk])) fun t1 u1 => ?_
   refine Comb.wp_std (a := b + BitVec.ofNat 64 (pd + 8 * k)) hrd0 ⟨by omega_using [hd, hk], by omega_using [hd4]⟩ (by rw [u1.other _ hrd, ht.rest.gpr _ (by simpa using hrd)]; exact ad k)
-    (by rw [u1.wr]; exact hct.inW (by omega_using [hpd', hk])) fun t2 u2 => WP.block_nil ?_
+    (by rw [u1.wr]; exact in_base hwt (by omega_using [hpd', hk]) (by omega_using [hpd', hk])) fun t2 u2 => WP.block_nil ?_
   obtain src : t.mem.readW (b + BitVec.ofNat 64 (ps + 8 * k)) 64 = s.mem.readW (b + BitVec.ofNat 64 (ps + 8 * k)) 64 :=
     ht.frame.readW (Region.contains_self _ (64 / 8)) (fun r hr => by
       rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (by omega_using [hsep, hk]) (by omega_using [hps', hk]) (by omega_using [hpd'])) (by decide)
@@ -604,6 +604,18 @@ theorem cp7_ok {s : State} (hc : VCtx b s) {rs rd : Reg} {so d ps pd : Nat} (hrs
     · rw [Mem.readW_writeW_sep (Offset.sep _ (by omega_using [hi]) (by omega_arith) (by omega_using [hpd', hk])) (by decide)]
       exact ht.vals i hi
     · rw [Mem.readW_writeW_self64, src]
+
+theorem cp7_ok {s : State} (hc : VCtx b s) {rs rd : Reg} {so d ps pd : Nat} (hrs : rs ≠ .r7) (hrd : rd ≠ .r7)
+    (hrs0 : rs ≠ .r0) (hrd0 : rd ≠ .r0) (hso : so + 48 < 2 ^ 15) (hso4 : so % 4 = 0)
+    (hd : d + 48 < 2 ^ 15) (hd4 : d % 4 = 0)
+    (hs : s.gpr rs + BitVec.ofNat 64 so = b + BitVec.ofNat 64 ps)
+    (hdd : s.gpr rd + BitVec.ofNat 64 d = b + BitVec.ofNat 64 pd)
+    (hps' : ps + 56 ≤ 8192) (hpd' : pd + 56 ≤ 8192) (hsep : ps + 56 ≤ pd ∨ pd + 56 ≤ ps) :
+    WP isa (.block (cp7 rs so rd d)) s fun t => VCtx b t ∧ Rest [.r7] s t ∧
+      Frame [⟨b + BitVec.ofNat 64 pd, 56⟩] s.mem t.mem ∧
+      ∀ i < 7, dw t.mem b (pd + 8 * i) = dw s.mem b (ps + 8 * i) := by
+  exact WP.mono (cp7_core_ok hc.ws hrs hrd hrs0 hrd0 hso hso4 hd hd4 hs hdd hps' hpd' hsep)
+    fun t ⟨ht, hf, hv⟩ => ⟨hc.of_rest ht (by decide) (by decide), ht, hf, hv⟩
 
 /-- The copy keeps the element. -/
 theorem cp7_V {m m' : Mem} {ps pd : Nat} (h : ∀ i < 7, dw m' b (pd + 8 * i) = dw m b (ps + 8 * i)) :

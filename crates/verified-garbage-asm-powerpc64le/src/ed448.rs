@@ -178,6 +178,10 @@ pub(crate) mod vg_ed448_r32_double;
 pub(crate) mod vg_ed448_scalar_base;
 
 #[rustfmt::skip]
+#[path = "internal/vg_ed448_scalar_engine.rs"]
+pub(crate) mod vg_ed448_scalar_engine;
+
+#[rustfmt::skip]
 #[path = "internal/vg_ed448_scalar_mul_add.rs"]
 pub(crate) mod vg_ed448_scalar_mul_add;
 

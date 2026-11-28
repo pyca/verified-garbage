@@ -243,10 +243,6 @@ def KT : Nat := 4160
 `y`): `PublicTable.entry i`. -/
 def BT : Nat := 5504
 
-/-- The seven doublewords at `rs + so` to `rd + d`, through `r7`. -/
-def cp7 (rs : Reg) (so : Nat) (rd : Reg) (d : Nat) : List Instr :=
-  (List.range 7).flatMap fun k => [.load .d .r7 rs (so + 8 * k), .store .d .r7 rd (d + 8 * k)]
-
 /-- The element at `q` into `o`. -/
 def copySlot (o q : Nat) : List Instr := cp7 .r6 q .r6 o
 
