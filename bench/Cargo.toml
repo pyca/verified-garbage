@@ -37,6 +37,8 @@ openssl-gcm-siv = []
 openssl-mldsa = []
 # OpenSSL 3.5+ supplies ML-KEM.
 openssl-mlkem = ["dep:openssl-sys", "dep:foreign-types"]
+# OpenSSL 3.5+ supplies SLH-DSA.
+openssl-slhdsa = ["dep:openssl-sys", "dep:foreign-types"]
 
 [dev-dependencies]
 # AWS-LC, built from source by aws-lc-sys (with only a C compiler, on every

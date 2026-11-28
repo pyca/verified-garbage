@@ -1,0 +1,24 @@
+# NIST ACVP (https://github.com/usnistgov/ACVP-Server) test vector files not
+# vendored under vectors/ (those of a set whose files are too large), which ci/fetch_acvp_vectors.py downloads,
+# checking each file's SHA-256, into the directory the tests read from
+# `ACVP_ROOT` (tests/acvp/main.rs). Each `path` is the file's path under
+# `base`, the repository's gen-val/json-files/ at a pinned commit, and under
+# `ACVP_ROOT`.
+
+base = "https://raw.githubusercontent.com/usnistgov/ACVP-Server/975de31eb83d87039ec88934fdc47d8c312b892d/gen-val/json-files"
+retrieved = 2026-11-26
+
+[[file]]
+name = "NIST ACVP SLH-DSA keyGen test vectors (FIPS 205): each test case's inputs and expected results"
+path = "SLH-DSA-keyGen-FIPS205/internalProjection.json"
+sha256 = "d7c53a1b6450087047b57aae83a5a51a0ac89ecdb23ebe071e83fbb69ae9d920"
+
+[[file]]
+name = "NIST ACVP SLH-DSA sigGen test vectors (FIPS 205): each test case's inputs and expected results"
+path = "SLH-DSA-sigGen-FIPS205/internalProjection.json"
+sha256 = "62b42e7c27fda5de8a94aba2943ae413b59b6ea08141f3bc035b1eceae235dba"
+
+[[file]]
+name = "NIST ACVP SLH-DSA sigVer test vectors (FIPS 205): each test case's inputs and expected results"
+path = "SLH-DSA-sigVer-FIPS205/internalProjection.json"
+sha256 = "a013fc2104f4ed4799d96d51141f65b965969b2cf10646626a021b6d456ce792"

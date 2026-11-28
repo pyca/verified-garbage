@@ -2711,7 +2711,7 @@ provider built on it.
 
 <td>✅</td>
 
-<td>❌</td>
+<td>✅ AVX-512F, AVX-512VL, AVX2</td>
 
 <td>❌</td>
 
@@ -2731,7 +2731,7 @@ provider built on it.
 
 <td>✅</td>
 
-<td>❌</td>
+<td>✅ AVX-512F, AVX-512VL, AVX2</td>
 
 <td>❌</td>
 
@@ -2751,7 +2751,7 @@ provider built on it.
 
 <td>✅</td>
 
-<td>❌</td>
+<td>✅ AVX-512F, AVX-512VL, AVX2</td>
 
 <td>❌</td>
 
@@ -2771,7 +2771,7 @@ provider built on it.
 
 <td>✅</td>
 
-<td>❌</td>
+<td>✅ AVX-512F, AVX-512VL, AVX2</td>
 
 <td>❌</td>
 
@@ -2791,7 +2791,7 @@ provider built on it.
 
 <td>✅</td>
 
-<td>❌</td>
+<td>✅ AVX-512F, AVX-512VL, AVX2</td>
 
 <td>❌</td>
 
@@ -2811,7 +2811,7 @@ provider built on it.
 
 <td>✅</td>
 
-<td>❌</td>
+<td>✅ AVX-512F, AVX-512VL, AVX2</td>
 
 <td>❌</td>
 
@@ -3205,7 +3205,8 @@ algorithms it does part of the cryptography:
 
 ```sh
 git clone https://github.com/C2SP/wycheproof
-WYCHEPROOF_ROOT=$PWD/wycheproof cargo test   # without it, the Wycheproof tests are skipped
+python3 ci/fetch_acvp_vectors.py acvp       # the ACVP files too large to vendor
+WYCHEPROOF_ROOT=$PWD/wycheproof ACVP_ROOT=$PWD/acvp cargo test   # without them, their tests are skipped
 
 cd lean
 lake exe cache get                   # prebuilt Mathlib
