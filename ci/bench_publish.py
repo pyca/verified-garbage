@@ -6,8 +6,8 @@ publish: every run, their results and the report, in one command.
 Each BENCH is a benchmark of bench/benches/primitives (a file's name, a
 `BENCHES` entry of its main.rs), with, after `=`, a regular expression over
 its benchmark ids (`<group>/<library>/<size>`) for Criterion; `rustls` is
-the rustls provider's suite (crates/rustls-verified-garbage/bench/run.sh,
-Linux only), against aws-lc-rs, of `--rustls-rounds` rounds. The
+the rustls provider's suite (crates/rustls-verified-garbage/bench/run.sh),
+against aws-lc-rs, of `--rustls-rounds` rounds. The
 `benchmarking` skill has the command of the published run.
 
 Unlike `ci/bench_compare.py`, which looks for a slowdown of this library,
