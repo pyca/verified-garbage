@@ -1,0 +1,71 @@
+name: RISC-V test timings
+on:
+  push:
+    branches: [bench/riscv-test-timings]
+permissions:
+  contents: read
+env:
+  CARGO_TERM_COLOR: always
+  RUSTFLAGS: -D warnings -Cinstrument-coverage
+  CARGO_PROFILE_TEST_DEBUG: "0"
+  PACKAGES: -p verified-garbage -p rustls-verified-garbage
+jobs:
+  timings:
+    runs-on: ubuntu-24.04-riscv
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /*
+            !/lean/
+            !/docs/
+            !/crates/verified-garbage-asm-*/
+            /crates/verified-garbage-asm-*/Cargo.toml
+            /crates/verified-garbage-asm-riscv64/
+            !/crates/verified-garbage-asm-*/assembly/
+      - uses: ./.github/actions/runner-info
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          shared-key: rust
+          prefix-key: v1-rust
+          save-if: false
+      - name: Which lld the runner has
+        run: |
+          rustc -vV; cc --version | head -1; ld --version | head -1
+          LIB=$(rustc --print sysroot)/lib/rustlib/riscv64gc-unknown-linux-gnu
+          ls -la "$LIB/bin" "$LIB/bin/gcc-ld" || true
+          command -v ld.lld mold lld || true
+          if [ -x "$LIB/bin/gcc-ld/ld.lld" ]; then
+            echo "FOUND rust-lld"; echo "LLD_FLAGS=-B$LIB/bin/gcc-ld -fuse-ld=lld" >> "$GITHUB_ENV"
+          elif command -v ld.lld; then
+            echo "FOUND system lld"; echo "LLD_FLAGS=-fuse-ld=lld" >> "$GITHUB_ENV"
+          else
+            echo "NONE: installing Ubuntu's"; sudo apt-get update -qq && sudo apt-get install -y -qq lld
+            ld.lld --version; echo "LLD_FLAGS=-fuse-ld=lld" >> "$GITHUB_ENV"
+          fi
+      - name: Build with each linker, alternately
+        run: |
+          # rustc links with the first `cc` on PATH: this one adds $VG_LD.
+          mkdir -p "$RUNNER_TEMP/ccdir"
+          real=$(command -v cc)
+          printf '#!/bin/bash\nexec %s $VG_LD "$@"\n' "$real" > "$RUNNER_TEMP/ccdir/cc"
+          chmod +x "$RUNNER_TEMP/ccdir/cc"
+          export PATH=$RUNNER_TEMP/ccdir:$PATH VG_LD=
+          cargo test --locked $PACKAGES --no-run 2>&1 | tail -1
+          TIMEFORMAT='wall %R user %U sys %S'
+          for round in 1 2 3; do
+            for which in bfd lld; do
+              if [ $which = lld ]; then export VG_LD="$LLD_FLAGS"; else export VG_LD=; fi
+              touch src/lib.rs
+              out=$( { time cargo test --locked $PACKAGES --no-run > /dev/null 2> "$RUNNER_TEMP/err"; } 2>&1 ) || { cat "$RUNNER_TEMP/err"; echo "FAILED $which"; continue; }
+              bin=$(ls -t target/debug/deps/tests-* | grep -v '\.d$' | head -1)
+              echo "RESULT round $round $which: $out size=$(stat -c %s "$bin") linker=$(readelf -p .comment "$bin" | grep -c LLD)"
+              if [ $round = 3 ]; then
+                cavp=$(ls -t target/debug/deps/cavp-* | grep -v '\.d$' | head -1)
+                LLVM_PROFILE_FILE="$RUNNER_TEMP/p-%p.profraw" "$cavp" 2>&1 | grep 'test result'
+              fi
+            done
+          done
