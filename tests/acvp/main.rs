@@ -22,10 +22,8 @@ pub fn fetched(path: &str) -> Option<String> {
     let file = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
         .join(std::env::var_os(ROOT_VAR)?)
         .join(path);
-    Some(
-        std::fs::read_to_string(&file)
-            .unwrap_or_else(|e| panic!("reading {}: {e}", file.display())),
-    )
+    let text = std::fs::read_to_string(&file);
+    Some(text.unwrap_or_else(|e| panic!("reading {}: {e}", file.display())))
 }
 
 /// The text of the downloaded file `$path` ([`fetched`]), or, if `ACVP_ROOT`
