@@ -52,7 +52,7 @@ def loadP : Prog isa := .seq Precompute.loadN Precompute.check
 
 /-- `R² mod p` into array 1, with array 2 the doublings' accumulator and
 array 3 their temporary; `t1 := -p⁻¹ mod 2⁶⁴`. -/
-def r2 : Prog isa := .seq (.block (base .a2 1 ++ base .a5 2 ++ base .a6 3)) Precompute.r2
+def r2 : Prog isa := .seq (.block (base .a2 1 ++ base .a5 2 ++ base .a6 3)) Precompute.r2Loop
 
 /-- The peer's y into array 4, `R² mod p`, then x's address and length into
 `s9` and `s10`. -/

@@ -139,9 +139,17 @@ power of 2 of `x = 2^e R mod n` (`(2^e R)² R⁻¹ = 2^(2 e) R`): from `2^w R mo
 to `2^(64 w) R mod n = R² mod n`. -/
 def r2Squares : Prog isa := .seq r2Sq (.seq r2Sq (.seq r2Sq (.seq r2Sq (.seq r2Sq r2Sq))))
 
+/-- The same six squares, counted in `s8`. -/
+def r2SquaresLoop : Prog isa :=
+  .seq (.block [.li .s8 6])
+    (.loop (.seq r2Sq (.block [.addi .s8 .s8 (-1)])) (.nonzero .s8))
+
 /-- `x := R² mod n = 2^(128 w) mod n` in array 1, for `n` of `w` words with
 its top word not zero: `r2HiDbl`, `minv`, then `r2Squares`. -/
 def r2 : Prog isa := .seq r2HiDbl (.seq (.block minv) r2Squares)
+
+/-- Montgomery setup for callers that can use `s8` as a loop counter. -/
+def r2Loop : Prog isa := .seq r2HiDbl (.seq (.block minv) r2SquaresLoop)
 
 /-- One step of `lz`: if `s0`'s top bit is clear, `s0 := 2 s0` and `a1 += 1`. -/
 def lzStep : List Instr :=
