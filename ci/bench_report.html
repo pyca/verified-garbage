@@ -170,6 +170,7 @@ button.primary { color: var(--accent) !important; border-color: var(--accent); f
 .card-head { display: flex; gap: 8px; align-items: flex-start; cursor: grab; }
 .card-head .titles { flex: 1; min-width: 0; }
 .card-head h2 { font-size: 15px; font-weight: 600; margin: 0; overflow-wrap: anywhere; }
+.card-head h2 .cpu { color: var(--muted); font-weight: 400; margin-left: 8px; }
 .card-head .names { color: var(--muted); overflow-wrap: anywhere; }
 .card-head .actions { display: flex; flex-wrap: wrap; gap: 4px; justify-content: flex-end; }
 .card-head .actions button { font-size: 12px; padding: 1px 8px; color: var(--ink-2); }
@@ -736,6 +737,9 @@ const observer = new IntersectionObserver(entries => {
 
 function hiddenSizes(card) { return new Set(state.sizes[card.key] || []); }
 
+// The CPU, in a report of only one machine, whose plots do not name it.
+function onlyCpu() { return machines.length === 1 ? machines[0].cpu : ""; }
+
 function renderCard(card) {
   const target = currentList();
   const isCurrent = card.combined && target && sameList(card.groups, target.filter(g => card.groups.includes(g)));
@@ -746,7 +750,7 @@ function renderCard(card) {
   const numbers = el("div", {});
   const actions = el("div", { class: "actions" });
   const head = el("div", { class: "card-head", draggable: "true", title: "Drag onto another chart to combine them" },
-    el("div", { class: "titles" }, el("h2", {}, title, isCurrent && state.charts.length ? el("span", { class: "badge" }, "Adding here") : null),
+    el("div", { class: "titles" }, el("h2", {}, title, onlyCpu() ? el("span", { class: "cpu" }, onlyCpu()) : null, isCurrent && state.charts.length ? el("span", { class: "badge" }, "Adding here") : null),
       card.combined
         ? el("div", { class: "members" }, card.groups.map(g => el("span", { class: "member", title: g }, pretty(tokensOf(g)),
             el("button", { type: "button", "aria-label": `Take ${g} out`, onclick: () => {
@@ -841,7 +845,7 @@ function cardModel(card, lay, hiddenSizeLabels) {
       const outers = [...new Set(clusters.map(c => c.outer))].sort(collator.compare);
       clusters.sort((a, b) => outers.indexOf(a.outer) - outers.indexOf(b.outer));
     }
-    if (clusters.length) plots.push({ title: machines.length > 1 ? m.label : m.cpu || m.arch, clusters, small: card.groups.length === 1 });
+    if (clusters.length) plots.push({ title: machines.length > 1 ? m.label : null, clusters, small: card.groups.length === 1 });
   }
   // Relative to each group's baseline, where any group has two series to
   // compare; otherwise, times.
@@ -1019,11 +1023,15 @@ function chartSvg(model, title, box) {
   const font = 'system-ui, -apple-system, "Segoe UI", sans-serif';
   const pad = 16;
   const svgs = [...box.querySelectorAll("svg")];
-  const width = Math.max(...svgs.map(s => Number(s.getAttribute("width")))) + 2 * pad;
+  const cpu = onlyCpu();
+  const heading = textWidth(title, 16, 600) + (cpu ? 10 + textWidth(cpu, 14) : 0);
+  const width = Math.ceil(Math.max(heading, ...svgs.map(s => Number(s.getAttribute("width"))))) + 2 * pad;
   const out = svg("svg", { xmlns: SVG_NS, width, height: 0, "font-family": font });
   out.append(svg("rect", { width: "100%", height: "100%", fill: color("var(--surface)") }));
   let y = pad + 16;
-  out.append(svg("text", { x: pad, y, "font-size": 16, "font-weight": 600, fill: color("var(--ink)") }, title));
+  const head = svg("text", { x: pad, y, "font-size": 16, "font-weight": 600, fill: color("var(--ink)") }, title);
+  if (cpu) head.append(svg("tspan", { dx: 10, "font-size": 14, "font-weight": 400, fill: color("var(--muted)") }, cpu));
+  out.append(head);
   // The legend: the series in the chart.
   const used = series.filter(s => model.plots.some(p => p.clusters.some(c => c.bars.some(b => b.s === s))));
   if (used.length > 1) {
