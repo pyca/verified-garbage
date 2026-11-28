@@ -342,7 +342,7 @@ function sizeLabel(group, sizeText) {
 }
 function shortCpu(cpu) {
   return cpu.replace(/\((R|TM)\)/gi, "").replace(/\b(Processor|CPU)\b/gi, "").replace(/\b\d+-Core\b/gi, "")
-    .replace(/@.*$/, "").replace(/\s+/g, " ").trim();
+    .replace(/@.*$/, "").replace(/\s+/g, " ").replace(/\s*\([^()]*\)\s*$/, "").trim();
 }
 function sig(x) {
   const s = x.toPrecision(3);
@@ -396,7 +396,7 @@ function rebuild() {
   const ms = new Map();
   for (const r of records) {
     r.machine = `${r.arch}\u001f${r.cpu}`;
-    if (!ms.has(r.machine)) ms.set(r.machine, { key: r.machine, arch: r.arch, label: r.cpu ? `${r.arch} · ${shortCpu(r.cpu)}` : r.arch });
+    if (!ms.has(r.machine)) ms.set(r.machine, { key: r.machine, arch: r.arch, cpu: shortCpu(r.cpu), label: r.cpu ? `${r.arch} · ${shortCpu(r.cpu)}` : r.arch });
   }
   const archRank = a => { const i = ARCHES.indexOf(a); return i < 0 ? 99 : i; };
   machines = [...ms.values()].sort((a, b) => archRank(a.arch) - archRank(b.arch) || collator.compare(a.label, b.label));
@@ -841,7 +841,7 @@ function cardModel(card, lay, hiddenSizeLabels) {
       const outers = [...new Set(clusters.map(c => c.outer))].sort(collator.compare);
       clusters.sort((a, b) => outers.indexOf(a.outer) - outers.indexOf(b.outer));
     }
-    if (clusters.length) plots.push({ title: machines.length > 1 ? m.label : null, clusters, small: card.groups.length === 1 });
+    if (clusters.length) plots.push({ title: machines.length > 1 ? m.label : m.cpu || m.arch, clusters, small: card.groups.length === 1 });
   }
   // Relative to each group's baseline, where any group has two series to
   // compare; otherwise, times.
