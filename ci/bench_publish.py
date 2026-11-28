@@ -1,15 +1,27 @@
-"""Benchmarks this checkout against OpenSSL and aws-lc-rs, for numbers to
+r"""Benchmarks this checkout against OpenSSL and aws-lc-rs, for numbers to
 publish: every run, their results and the report, in one command.
 
     python3 ci/bench_publish.py OUT [--cpu N] BENCH[=FILTER] ... [rustls]
 
-    python3 ci/bench_publish.py results --cpu 4 mlkem768 mlkem1024 mldsa44 mldsa65 mldsa87 \\
-        x25519 ecdh_p256 ecdh_p384 ecdh_p521 \\
-        'ecdsa_p256=^ecdsa_p256_sha256_(sign|verify)/[^/]+/64$' \\
-        'ecdsa_p384=^ecdsa_p384_sha384_(sign|verify)/[^/]+/64$' \\
-        'ecdsa_p521=^ecdsa_p521_sha512_(sign|verify)/[^/]+/64$' \\
-        rsa_pkcs1_sig 'rsa_pss=^rsa_pss_sha(256|384|512)_mgf1_sha(256|384|512)_(sign|verify)/' \\
-        sha256 hmac_sha256 chacha20poly1305 aes_gcm rustls
+    python3 ci/bench_publish.py results --cpu 4 mlkem768 mlkem1024 mldsa44 mldsa65 mldsa87 \
+        x25519 ecdh_p256 ecdh_p384 ecdh_p521 \
+        'ecdsa_p256=^ecdsa_p256_sha256_(sign|verify)/[^/]+/64$' \
+        'ecdsa_p384=^ecdsa_p384_sha384_(sign|verify)/[^/]+/64$' \
+        'ecdsa_p521=^ecdsa_p521_sha512_(sign|verify)/[^/]+/64$' \
+        rsa_pkcs1_sig 'rsa_pss=^rsa_pss_sha(256|384|512)_mgf1_sha(256|384|512)_(sign|verify)/' \
+        sha256 hmac_sha256 chacha20poly1305 aes_gcm rustls \
+        --chart 'mlkem768_(keygen|encaps|decaps) mlkem1024_(keygen|encaps|decaps)' \
+        --chart 'mldsa(44|65|87)_(keygen|sign|verify)' \
+        --chart 'x25519 ecdh_p(256|384|521)' \
+        --chart 'ecdsa_p\d+_sha\d+_sign ecdsa_p\d+_sha\d+_verify' \
+        --chart 'rsa_pkcs1_sign rsa_pkcs1_verify' \
+        --chart 'rsa_pss_sha256_mgf1_sha256_sign rsa_pss_sha256_mgf1_sha256_verify' \
+        --chart 'aes-128-gcm-encrypt aes-128-gcm-decrypt' \
+        --chart 'aes-128-gcm-tls-seal aes-128-gcm-tls-open' \
+        --chart 'aes-256-gcm-tls-seal aes-256-gcm-tls-open' \
+        --chart 'chacha20poly1305-encrypt/(16|64|256|1024|16384) chacha20poly1305-decrypt/(16|64|256|1024|16384)' \
+        --chart 'sha256/(32|64|128|256|1024|16384)' --chart 'hmac-sha256' \
+        --chart 'rustls-tls-1\.3-handshake-(client|server)' --chart 'rustls-tls-1\.3-bulk-(send|recv)'
 
 Each BENCH is a benchmark of bench/benches/primitives (a file's name, a
 `BENCHES` entry of its main.rs), with, after `=`, a regular expression over
@@ -41,7 +53,8 @@ Run it on a machine doing nothing else, with `--cpu` (Linux), and check
     primitives.json, rustls.json   results files (ci/bench_report.py's format)
     primitives.csv                 every copy's time of each benchmark, and
                                    their spread, (max - min) / median
-    report.html                    their charts
+    report.html                    their charts, starting with each `--chart`
+                                   (as `ci/bench_report.py html`'s)
     environment.txt                the machine, and every version measured
     run.log                        each run's time and the load average
     raw/                           each copy's Criterion directory and
@@ -49,9 +62,7 @@ Run it on a machine doing nothing else, with `--cpu` (Linux), and check
 """
 
 import argparse
-import contextlib
 import csv
-import io
 import json
 import os
 import pathlib
@@ -69,26 +80,6 @@ from bench_compare import cpu_model
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 RUSTLS = ROOT / "crates/rustls-verified-garbage"
-SIZES = "16|64|256|1024|16384"
-# The charts the report starts with (`bench_report.py html --chart`); the
-# rest of what was measured is in the page.
-CHARTS = [
-    "mlkem768_(keygen|encaps|decaps) mlkem1024_(keygen|encaps|decaps)",
-    "mldsa(44|65|87)_(keygen|sign|verify)",
-    "x25519 ecdh_p(256|384|521)",
-    "ecdsa_p(256_sha256|384_sha384|521_sha512)_sign ecdsa_p(256_sha256|384_sha384|521_sha512)_verify",
-    "rsa_pkcs1_sign rsa_pkcs1_verify",
-    "rsa_pss_sha256_mgf1_sha256_sign rsa_pss_sha256_mgf1_sha256_verify",
-    "aes-128-gcm-encrypt aes-128-gcm-decrypt",
-    "aes-128-gcm-tls-seal aes-128-gcm-tls-open",
-    "aes-256-gcm-tls-seal aes-256-gcm-tls-open",
-    f"chacha20poly1305-encrypt/({SIZES}) chacha20poly1305-decrypt/({SIZES})",
-    "sha256/(32|64|128|256|1024|16384)",
-    "hmac-sha256",
-    r"rustls-tls-1\.3-handshake-(client|server)",
-    r"rustls-tls-1\.3-bulk-(send|recv)",
-]
-
 
 def sh(*cmd, cwd=None, env=None, out=None):
     """Runs `cmd`, which must succeed, returning its output (or, with `out`,
@@ -187,6 +178,8 @@ def main(argv=None):
     p.add_argument("--warm-up-time", default="1")
     p.add_argument("--measurement-time", default="2")
     p.add_argument("--rustls-rounds", default="5")
+    p.add_argument("--chart", action="append", default=[], metavar="PATTERNS",
+                   help="a chart the report starts with: regular expressions over groups or group/sizes")
     p.add_argument("--features", default="openssl-argon2,openssl-gcm-siv,openssl-mldsa,openssl-mlkem",
                    help="the benchmark crate's features, comma-separated")
     args = p.parse_args(argv)
@@ -264,10 +257,7 @@ def main(argv=None):
 
     data = view(bench_report.load(files))
     title = f"verified-garbage, {openssl_version.split(' (')[0]} and {aws_lc}: {context['cpu']}"
-    # (Without its warnings of the charts whose benchmarks did not run.)
-    with contextlib.redirect_stderr(io.StringIO()):
-        charts = bench_report.charts(CHARTS, data)
-    page = bench_report.embed(bench_report.TEMPLATE.read_text(), data, title, charts)
+    page = bench_report.embed(bench_report.TEMPLATE.read_text(), data, title, bench_report.charts(args.chart, data))
     (out / "report.html").write_text(page)
     print(f"{out}/report.html", file=sys.stderr)
     return 0
