@@ -171,6 +171,31 @@ def load(paths):
     return files
 
 
+def rename(rules, files):
+    """Renames the benchmarks of `files` as `rules` say, each
+    `PATTERN=GROUP/SIZE`: a benchmark whose `group/size` the regular
+    expression PATTERN matches in full becomes GROUP/SIZE, which may refer to
+    PATTERN's groups (`\\1`); the first rule that matches applies. For
+    charts of benchmarks whose names do not say how they belong together."""
+    compiled = []
+    for rule in rules:
+        pattern, sep, to = rule.rpartition("=")
+        if not sep or "/" not in to:
+            raise SystemExit(f"--rename {rule!r}: expected PATTERN=GROUP/SIZE")
+        try:
+            compiled.append((re.compile(pattern), to))
+        except re.error as e:
+            raise SystemExit(f"--rename {rule!r}: {e}")
+    for f in files:
+        for r in f["results"]:
+            for rx, to in compiled:
+                if m := rx.fullmatch(f"{r['group']}/{r['size']}"):
+                    r["group"], _, size = m.expand(to).rpartition("/")
+                    r["size"] = bench_size(size)
+                    break
+    return files
+
+
 def natural(s):
     """A sort key for names with numbers in them (p256 before p1024)."""
     return [int(t) if t.isdigit() else t for t in re.split(r"(\d+)", s)]
@@ -250,6 +275,9 @@ def main(argv=None):
     h.add_argument("--chart", action="append", default=[], metavar="PATTERNS",
                    help="a chart to start with: space-separated regular expressions, each matching a whole "
                         "group name or group/size (repeatable)")
+    h.add_argument("--rename", action="append", default=[], metavar="PATTERN=GROUP/SIZE",
+                   help="name the benchmarks whose group/size the regular expression matches in full GROUP/SIZE, "
+                        "which may refer to its groups, before the charts are chosen (repeatable)")
     args = p.parse_args(argv)
 
     if args.command == "collect":
@@ -261,7 +289,7 @@ def main(argv=None):
         args.output.write_text(json.dumps(doc, indent=1) + "\n")
         print(f"{args.output}: {len(doc['results'])} results", file=sys.stderr)
     else:
-        files = load(args.inputs)
+        files = rename(args.rename, load(args.inputs))
         args.output.write_text(embed(TEMPLATE.read_text(), files, args.title, charts(args.chart, files)))
         n = sum(len(f["results"]) for f in files)
         print(f"{args.output}: {n} results from {len(files)} file(s)", file=sys.stderr)
