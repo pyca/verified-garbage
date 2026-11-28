@@ -333,8 +333,128 @@ theorem step_ok (hkS : S.k = k) (hmS : S.m = m) (hM : ModOk k m) (hL : ChainLay 
     congr 1
     omega_using [hd, h0]
 
-theorem steps_ok (hkS : S.k = k) (hmS : S.m = m) (hM : ModOk k m) (hL : ChainLay P k)
+/-- Straight-line squarings preserve the counter of a run of full windows. -/
+private theorem unrolledSquares_ok (hkS : S.k = k) (hmS : S.m = m) (hM : ModOk k m) (hL : ChainLay P k)
     (hm : UnitMod m (2 ^ (64 * k))) {base : Addr} {s₀ : State} :
+    ∀ c {s : State} {v : Nat},
+      ChainSt P k base s₀ s → TblC P k base m (bv P k base m s₀) 8 s →
+      wordsVal s.mem base P.acc k < m →
+      toM m (2 ^ (64 * k)) (wordsVal s.mem base P.acc k) = bv P k base m s₀ ^ v →
+      WP isa (VG.Impl.Weierstrass.PPC64LE.ChainCfg.unrolledSquares P S (VG.Impl.Weierstrass.PPC64LE.Mont.mulFn S.k S.m) c) s fun t =>
+        ChainSt P k base s₀ t ∧ TblC P k base m (bv P k base m s₀) 8 t ∧
+        wordsVal t.mem base P.acc k < m ∧
+        toM m (2 ^ (64 * k)) (wordsVal t.mem base P.acc k) =
+          bv P k base m s₀ ^ (v * 2 ^ c) ∧ t.gpr .r31 = s.gpr .r31 := by
+  obtain ⟨cv, w, m', k', d⟩ := S
+  dsimp only at hkS hmS
+  subst hkS hmS
+  intro c
+  induction c with
+  | zero =>
+    intro s v h hT hlt hv
+    exact WP.block_nil ⟨h, hT, hlt, by simpa using hv, rfl⟩
+  | succ c ih =>
+    intro s v h hT hlt hv
+    rw [VG.Impl.Weierstrass.PPC64LE.ChainCfg.unrolledSquares]
+    refine WP.seq (WP.mono (mulCall_ok hM h.ws hL.acc hL.acc hL.acc hlt) fun u ⟨Ku, lu, eu⟩ => ?_)
+    have vu : toM m' (2 ^ (64 * k')) (wordsVal u.mem base P.acc k') =
+        bv P k' base m' s₀ ^ (v * 2) := by
+      rw [toM_mul hm eu, hv, ← Lean.Grind.Semiring.pow_add, Nat.mul_two]
+    refine WP.mono (ih (h.call (.inl rfl) Ku)
+      (hT.acc hL (Nat.le_refl _) Ku.unch) lu vu) fun t ⟨St, Tt, lt, vt, ct⟩ => ?_
+    refine ⟨St, Tt, lt, ?_, ct.trans (Ku.gpr _ (by decide))⟩
+    rw [vt, Nat.pow_succ, Nat.mul_assoc, Nat.mul_comm 2 (2 ^ c)]
+
+private theorem fullWindow_ok (hkS : S.k = k) (hmS : S.m = m) (hM : ModOk k m) (hL : ChainLay P k)
+    (hm : UnitMod m (2 ^ (64 * k))) {base : Addr} {s₀ s : State} {v : Nat}
+    (h : ChainSt P k base s₀ s) (hT : TblC P k base m (bv P k base m s₀) 8 s)
+    (hlt : wordsVal s.mem base P.acc k < m)
+    (hv : toM m (2 ^ (64 * k)) (wordsVal s.mem base P.acc k) = bv P k base m s₀ ^ v) :
+    WP isa (VG.Impl.Weierstrass.PPC64LE.ChainCfg.fullWindow P S (VG.Impl.Weierstrass.PPC64LE.Mont.mulFn S.k S.m)) s fun t =>
+      ChainSt P k base s₀ t ∧ TblC P k base m (bv P k base m s₀) 8 t ∧
+      wordsVal t.mem base P.acc k < m ∧
+      toM m (2 ^ (64 * k)) (wordsVal t.mem base P.acc k) =
+        bv P k base m s₀ ^ (v * 2 ^ 4 + 15) ∧ t.gpr .r31 = s.gpr .r31 := by
+  rw [VG.Impl.Weierstrass.PPC64LE.ChainCfg.fullWindow]
+  refine WP.seq (WP.mono (unrolledSquares_ok hkS hmS hM hL hm 4 h hT hlt hv) fun u ⟨Su, Tu, lu, vu, cu⟩ => ?_)
+  have T7 := Tu.1 7 (by decide)
+  obtain ⟨cv, w, m', k', d⟩ := S
+  dsimp only at hkS hmS
+  subst hkS hmS
+  refine WP.mono (mulCall_ok hM Su.ws hL.acc hL.acc (slot_own hL (i := 7) (by decide)) T7.1) fun t ⟨Kt, lt, et⟩ => ?_
+  refine ⟨Su.call (.inl rfl) Kt, Tu.acc hL (Nat.le_refl _) Kt.unch, lt, ?_,
+    (Kt.gpr _ (by decide)).trans cu⟩
+  rw [toM_mul hm et, vu, T7.2, ← Lean.Grind.Semiring.pow_add]
+
+private theorem chainVal_append (xs ys : List (Nat × Nat)) (v : Nat) :
+    chainVal v (xs ++ ys) = chainVal (chainVal v xs) ys := by
+  induction xs generalizing v with
+  | nil => rfl
+  | cons x xs ih => cases x; exact ih _
+
+private theorem chainVal_windows_succ (n v : Nat) :
+    chainVal v (List.replicate (n + 1) (4, 15)) =
+      chainVal v (List.replicate n (4, 15)) * 2 ^ 4 + 15 := by
+  rw [List.replicate_succ', chainVal_append]
+  rfl
+
+/-- The result of the counted loop is the exponent of the original run. -/
+private theorem fullWindows_ok (hkS : S.k = k) (hmS : S.m = m) (hM : ModOk k m) (hL : ChainLay P k)
+    (hm : UnitMod m (2 ^ (64 * k))) {base : Addr} {s₀ s : State} {v n : Nat}
+    (hn : 1 ≤ n) (hn' : n < 2 ^ 15)
+    (h : ChainSt P k base s₀ s) (hT : TblC P k base m (bv P k base m s₀) 8 s)
+    (hlt : wordsVal s.mem base P.acc k < m)
+    (hv : toM m (2 ^ (64 * k)) (wordsVal s.mem base P.acc k) = bv P k base m s₀ ^ v) :
+    WP isa (VG.Impl.Weierstrass.PPC64LE.ChainCfg.fullWindows P S (VG.Impl.Weierstrass.PPC64LE.Mont.mulFn S.k S.m) n) s fun t =>
+      ChainSt P k base s₀ t ∧ TblC P k base m (bv P k base m s₀) 8 t ∧
+      wordsVal t.mem base P.acc k < m ∧
+      toM m (2 ^ (64 * k)) (wordsVal t.mem base P.acc k) =
+        bv P k base m s₀ ^ chainVal v (List.replicate n (4, 15)) := by
+  rw [VG.Impl.Weierstrass.PPC64LE.ChainCfg.fullWindows]
+  refine WP.seq (wp_step (exec_li hn') (WP.block_nil ?_))
+  generalize hu : s.write .r31 (BitVec.ofNat 64 n) = u
+  have Ku : Kp [.r31] s u := by rw [← hu]; exact Kp.write _ _ (by decide)
+  have mu : u.mem = s.mem := by rw [← hu]; rfl
+  have cu : u.gpr .r31 = BitVec.ofNat 64 n := by rw [← hu]; simp only [write_gpr, ite_true]
+  have Su : ChainSt P k base s₀ u :=
+    ⟨h.ws.of_kp Ku, h.keep.trans (Ku.rk (rs' := powClob)), by rw [mu]; exact h.unch⟩
+  refine countLoop_ok (n := n) (Inv := fun j t => ChainSt P k base s₀ t ∧
+      TblC P k base m (bv P k base m s₀) 8 t ∧ t.gpr .r31 = BitVec.ofNat 64 j ∧
+      wordsVal t.mem base P.acc k < m ∧
+      toM m (2 ^ (64 * k)) (wordsVal t.mem base P.acc k) =
+        bv P k base m s₀ ^ chainVal v (List.replicate (n - j) (4, 15)))
+    (fun _ _ hi => hi.2.2.1) (fun j t h1 h2 ⟨St, Tt, ct, lt, vt⟩ => ?_)
+    (fun t ⟨St, Tt, _, lt, vt⟩ => ⟨St, Tt, lt, by simpa using vt⟩) hn (by omega_using [hn'])
+    ⟨Su, by unfold TblC; rw [mu]; exact hT, cu, by rw [mu]; exact hlt,
+      by simpa [mu, chainVal] using hv⟩
+  refine WP.seq (wp_decCounter h1 ct (WP.block_nil ?_))
+  generalize hw : t.write .r31 (BitVec.ofNat 64 (j - 1)) = w
+  have Kw : Kp [.r31] t w := by rw [← hw]; exact Kp.write _ _ (by decide)
+  have mw : w.mem = t.mem := by rw [← hw]; rfl
+  have cw : w.gpr .r31 = BitVec.ofNat 64 (j - 1) := by rw [← hw]; simp only [write_gpr, ite_true]
+  have Sw : ChainSt P k base s₀ w :=
+    ⟨St.ws.of_kp Kw, St.keep.trans (Kw.rk (rs' := powClob)), by rw [mw]; exact St.unch⟩
+  refine WP.mono (fullWindow_ok hkS hmS hM hL hm (v := chainVal v (List.replicate (n - j) (4, 15))) Sw
+    (by unfold TblC; rw [mw]; exact Tt)
+    (by rw [mw]; exact lt) (by rw [mw]; exact vt)) fun z ⟨Sz, Tz, lz, vz, cz⟩ => ?_
+  refine ⟨Sz, Tz, cz.trans cw, lz, ?_⟩
+  rw [vz, show n - (j - 1) = (n - j) + 1 by omega_arith, chainVal_windows_succ]
+
+private theorem fullWindowPrefix_spec (rest : List (Nat × Nat)) :
+    let n := (VG.Impl.Weierstrass.PPC64LE.ChainCfg.fullWindowPrefix rest).length
+    n ≤ 32766 ∧ List.replicate n (4, 15) ++ rest.drop n = rest := by
+  let windows := VG.Impl.Weierstrass.PPC64LE.ChainCfg.fullWindowPrefix rest
+  have hp : windows <+: rest := (List.takeWhile_prefix _).trans (List.take_prefix _ _)
+  have hlen : windows.length ≤ 32766 :=
+    Nat.le_trans (List.takeWhile_prefix _).length_le (by rw [List.length_take]; exact Nat.min_le_left _ _)
+  have hrepl : windows = List.replicate windows.length (4, 15) :=
+    List.eq_replicate_of_mem fun st hs =>
+      beq_iff_eq.mp (List.all_eq_true.mp List.all_takeWhile st hs)
+  have heq := hrepl.symm.trans (List.prefix_iff_eq_take.mp hp)
+  exact ⟨hlen, by rw [heq]; exact List.take_append_drop _ _⟩
+
+theorem steps_ok (hkS : S.k = k) (hmS : S.m = m) (hM : ModOk k m) (hL : ChainLay P k) (hm : UnitMod m (2 ^ (64 * k)))
+    {base : Addr} {s₀ : State} :
     ∀ (sts : List (Nat × Nat)) {s : State} {v : Nat},
       (∀ st ∈ sts, st.1 < 2 ^ 15 ∧ (st.2 = 0 ∨ (st.2 % 2 = 1 ∧ st.2 ≤ 15))) →
       ChainSt P k base s₀ s → TblC P k base m (bv P k base m s₀) 8 s →
@@ -342,13 +462,34 @@ theorem steps_ok (hkS : S.k = k) (hmS : S.m = m) (hM : ModOk k m) (hL : ChainLay
       toM m (2 ^ (64 * k)) (wordsVal s.mem base P.acc k) = bv P k base m s₀ ^ v →
       WP isa (VG.Impl.Weierstrass.PPC64LE.ChainCfg.steps P S sts) s fun s' => ChainSt P k base s₀ s' ∧
         wordsVal s'.mem base P.acc k < m ∧
-        toM m (2 ^ (64 * k)) (wordsVal s'.mem base P.acc k) = bv P k base m s₀ ^ chainVal v sts
-  | [], _, _, _, h, _, hlt, hv => WP.block_nil ⟨h, hlt, hv⟩
-  | (j, d) :: rest, s, v, hst, h, hT, hlt, hv => by
+        toM m (2 ^ (64 * k)) (wordsVal s'.mem base P.acc k) =
+          bv P k base m s₀ ^ chainVal v sts
+  | [], _, _, _, h, _, hlt, hv => by
     rw [VG.Impl.Weierstrass.PPC64LE.ChainCfg.steps, VG.Impl.Weierstrass.PPC64LE.ChainCfg.stepsOf]
-    have h1 := hst (j, d) (List.mem_cons_self ..)
-    exact WP.seq (WP.mono (step_ok hkS hmS hM hL hm h1.1 h1.2 h hT hlt hv) fun s₁ ⟨S₁, T₁, lt₁, v₁⟩ =>
-      steps_ok hkS hmS hM hL hm rest (fun st hs => hst st (List.mem_cons_of_mem _ hs)) S₁ T₁ lt₁ v₁)
+    exact WP.block_nil ⟨h, hlt, hv⟩
+  | (c, d) :: rest, s, v, hst, h, hT, hlt, hv => by
+    rw [VG.Impl.Weierstrass.PPC64LE.ChainCfg.steps, VG.Impl.Weierstrass.PPC64LE.ChainCfg.stepsOf]
+    dsimp only
+    split
+    · rename_i hrun
+      obtain ⟨⟨rfl, rfl⟩, hn⟩ := hrun
+      obtain ⟨hlen, ha⟩ := fullWindowPrefix_spec rest
+      let n := (VG.Impl.Weierstrass.PPC64LE.ChainCfg.fullWindowPrefix rest).length
+      have hc : n + 1 < 2 ^ 15 := by omega_arith
+      refine WP.seq (WP.mono (fullWindows_ok hkS hmS hM hL hm (n := n + 1) (Nat.succ_pos _) hc h hT hlt hv)
+        fun u ⟨Su, Tu, lu, vu⟩ => ?_)
+      refine WP.mono (steps_ok hkS hmS hM hL hm (rest.drop n)
+        (fun st hs => hst st (List.mem_cons_of_mem _ (List.mem_of_mem_drop hs))) Su Tu lu vu)
+        fun t ⟨St, lt, vt⟩ => ⟨St, lt, ?_⟩
+      rw [vt, ← chainVal_append, List.replicate_succ, List.cons_append, ha]
+    · obtain h1 := hst (c, d) (List.mem_cons_self ..)
+      exact WP.seq (WP.mono (step_ok hkS hmS hM hL hm h1.1 h1.2 h hT hlt hv) fun s₁ ⟨S₁, T₁, lt₁, v₁⟩ =>
+        steps_ok hkS hmS hM hL hm rest (fun st hs => hst st (List.mem_cons_of_mem _ hs)) S₁ T₁ lt₁ v₁)
+termination_by sts => sts.length
+decreasing_by
+  · simp only [List.length_cons, List.length_drop]
+    exact Nat.lt_succ_of_le (Nat.sub_le _ _)
+  · simp
 
 /-- `[acc] = [base]^e` in Montgomery form, for the exponent `e` of the chain,
 modulo `m` on numbers of `k` words (the functions' `S.m` and `S.k`); only
