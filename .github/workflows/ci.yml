@@ -483,6 +483,18 @@ jobs:
           rustc -vV
           echo "bin=$(dirname "$(rustc --print target-libdir)")/bin" >> "$GITHUB_OUTPUT"
           echo "key=llvm-tools-$(rustc -vV | sha256sum | cut -c1-16)" >> "$GITHUB_OUTPUT"
+      # The toolchain's own lld, which rustc uses on x86-64 but not on this
+      # target, links the job's nine test binaries in less CPU time than GNU
+      # ld (about 15 s of 280 s). Before the cache, whose key has RUSTFLAGS.
+      - name: Link with lld
+        if: ${{ matrix.rust == 'host' }}
+        run: |
+          lld="${{ steps.host-rust.outputs.bin }}/gcc-ld"
+          if [ ! -x "$lld/ld.lld" ]; then
+            echo "::error::the toolchain has no $lld/ld.lld"
+            exit 1
+          fi
+          echo "RUSTFLAGS=$RUSTFLAGS -Clink-arg=-B$lld -Clink-arg=-fuse-ld=lld" >> "$GITHUB_ENV"
       - id: llvm-tools
         if: ${{ matrix.rust == 'host' }}
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
