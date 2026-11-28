@@ -1,7 +1,7 @@
 //! What the SLH-DSA parameter sets share: their API, defined once by
 //! `slh_dsa!`.
 
-#![cfg(target_arch = "x86_64")]
+#![cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 
 /// Defines the API of one SLH-DSA parameter set: its `SigningKey` and
 /// `VerifyingKey`, over the dispatchers (`_auto`, which run the best

@@ -9,7 +9,7 @@
 //! Signing's timing may depend on the signature and the message digest it
 //! signs, both public once the signature is.
 
-#![cfg(target_arch = "x86_64")]
+#![cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 
 crate::slhdsa_common::slh_dsa! {
     name: "SLH-DSA-SHAKE-192f",

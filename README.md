@@ -2713,7 +2713,7 @@ provider built on it.
 
 <td>✅ AVX-512F, AVX-512VL, AVX2</td>
 
-<td>❌</td>
+<td>✅ SHA extensions</td>
 
 <td>❌</td>
 
@@ -2733,7 +2733,7 @@ provider built on it.
 
 <td>✅ AVX-512F, AVX-512VL, AVX2</td>
 
-<td>❌</td>
+<td>✅ SHA extensions</td>
 
 <td>❌</td>
 
@@ -2753,7 +2753,7 @@ provider built on it.
 
 <td>✅ AVX-512F, AVX-512VL, AVX2</td>
 
-<td>❌</td>
+<td>✅ SHA extensions</td>
 
 <td>❌</td>
 
@@ -2773,7 +2773,7 @@ provider built on it.
 
 <td>✅ AVX-512F, AVX-512VL, AVX2</td>
 
-<td>❌</td>
+<td>✅ SHA extensions</td>
 
 <td>❌</td>
 
@@ -2793,7 +2793,7 @@ provider built on it.
 
 <td>✅ AVX-512F, AVX-512VL, AVX2</td>
 
-<td>❌</td>
+<td>✅ SHA extensions</td>
 
 <td>❌</td>
 
@@ -2813,7 +2813,7 @@ provider built on it.
 
 <td>✅ AVX-512F, AVX-512VL, AVX2</td>
 
-<td>❌</td>
+<td>✅ SHA extensions</td>
 
 <td>❌</td>
 

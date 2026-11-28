@@ -27,11 +27,6 @@ open VG VG.X86_64
 open VG.Spec.SlhDsa
 open VG.Impl.SlhDsa.X86_64 (Layout)
 
-/-- The six SHAKE parameter sets' `n`, `a` and `k` (Table 2). -/
-def P6 (p : Params) : Prop :=
-  (p.n = 16 ∧ p.a = 12 ∧ p.k = 14) ∨ (p.n = 16 ∧ p.a = 6 ∧ p.k = 33) ∨ (p.n = 24 ∧ p.a = 14 ∧ p.k = 17) ∨
-    (p.n = 24 ∧ p.a = 8 ∧ p.k = 33) ∨ (p.n = 32 ∧ p.a = 14 ∧ p.k = 22) ∨ (p.n = 32 ∧ p.a = 9 ∧ p.k = 35)
-
 /-- The taint: `rbx` and `rs` public, `rbx` the base of `scratch` (the first
 writable region), and the 8-byte variables at the offsets `sl` public. -/
 def fT (rs : List Reg) (sl : List Nat) : X86_64.Taint.T :=

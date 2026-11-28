@@ -76,7 +76,7 @@ macro_rules! slhdsa_bench {
     ($name:literal, $module:ident, $ossl:literal, $sig:literal) => {
         use criterion::Criterion;
 
-        #[cfg(target_arch = "x86_64")]
+        #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
         pub fn bench(c: &mut Criterion) {
             use std::hint::black_box;
 
@@ -161,7 +161,7 @@ macro_rules! slhdsa_bench {
             g.finish();
         }
 
-        #[cfg(not(target_arch = "x86_64"))]
+        #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
         pub fn bench(_: &mut Criterion) {}
     };
 }

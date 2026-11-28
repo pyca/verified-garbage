@@ -553,6 +553,30 @@ pub mod sha512;
 
 #[cfg(all(target_arch = "aarch64", target_endian = "little", target_pointer_width = "64", target_feature = "neon"))]
 #[rustfmt::skip]
+pub mod slhdsa_shake_128f;
+
+#[cfg(all(target_arch = "aarch64", target_endian = "little", target_pointer_width = "64", target_feature = "neon"))]
+#[rustfmt::skip]
+pub mod slhdsa_shake_128s;
+
+#[cfg(all(target_arch = "aarch64", target_endian = "little", target_pointer_width = "64", target_feature = "neon"))]
+#[rustfmt::skip]
+pub mod slhdsa_shake_192f;
+
+#[cfg(all(target_arch = "aarch64", target_endian = "little", target_pointer_width = "64", target_feature = "neon"))]
+#[rustfmt::skip]
+pub mod slhdsa_shake_192s;
+
+#[cfg(all(target_arch = "aarch64", target_endian = "little", target_pointer_width = "64", target_feature = "neon"))]
+#[rustfmt::skip]
+pub mod slhdsa_shake_256f;
+
+#[cfg(all(target_arch = "aarch64", target_endian = "little", target_pointer_width = "64", target_feature = "neon"))]
+#[rustfmt::skip]
+pub mod slhdsa_shake_256s;
+
+#[cfg(all(target_arch = "aarch64", target_endian = "little", target_pointer_width = "64", target_feature = "neon"))]
+#[rustfmt::skip]
 pub mod sm3;
 
 #[cfg(all(target_arch = "aarch64", target_endian = "little", target_pointer_width = "64", target_feature = "neon"))]
