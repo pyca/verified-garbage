@@ -514,7 +514,7 @@ checksum = "accd4ea62f7bb7a82fe23066fb0957d48ef677f6eeb8215f372f52e48bb32426"
 
 [[package]]
 name = "verified-garbage"
-version = "0.0.0"
+version = "0.1.0"
 dependencies = [
  "getrandom",
  "verified-garbage-asm-aarch64",
@@ -528,42 +528,42 @@ dependencies = [
 
 [[package]]
 name = "verified-garbage-asm-aarch64"
-version = "0.0.0"
+version = "0.1.0"
 dependencies = [
  "verified-garbage-cpu",
 ]
 
 [[package]]
 name = "verified-garbage-asm-arm"
-version = "0.0.0"
+version = "0.1.0"
 dependencies = [
  "verified-garbage-cpu",
 ]
 
 [[package]]
 name = "verified-garbage-asm-powerpc64le"
-version = "0.0.0"
+version = "0.1.0"
 dependencies = [
  "verified-garbage-cpu",
 ]
 
 [[package]]
 name = "verified-garbage-asm-riscv64"
-version = "0.0.0"
+version = "0.1.0"
 dependencies = [
  "verified-garbage-cpu",
 ]
 
 [[package]]
 name = "verified-garbage-asm-x86"
-version = "0.0.0"
+version = "0.1.0"
 dependencies = [
  "verified-garbage-cpu",
 ]
 
 [[package]]
 name = "verified-garbage-asm-x86_64"
-version = "0.0.0"
+version = "0.1.0"
 dependencies = [
  "verified-garbage-cpu",
 ]
@@ -583,7 +583,7 @@ dependencies = [
 
 [[package]]
 name = "verified-garbage-cpu"
-version = "0.0.0"
+version = "0.1.0"
 
 [[package]]
 name = "walkdir"
