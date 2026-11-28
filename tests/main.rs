@@ -1,6 +1,6 @@
-//! Every test outside the library's own unit tests but CAVP's
-//! (`tests/cavp.rs`, a binary of its own, so that the two compile in
-//! parallel), in one binary: each directory here is a module,
+//! Every test outside the library's own unit tests but CAVP's and
+//! Wycheproof's (`tests/cavp.rs` and `tests/wycheproof.rs`, binaries of their
+//! own, so that they compile in parallel), in one binary: each directory here is a module,
 //! `#[path]`-declared below, whose `main.rs` documents what it tests. One
 //! binary runs all of them on one pool of threads, and starts once, rather
 //! than once per directory, in every `cargo test` (a second or more each
@@ -70,5 +70,3 @@ mod schneier_blowfish;
 mod secp256k1;
 #[path = "sm3/main.rs"]
 mod sm3;
-#[path = "wycheproof/main.rs"]
-mod wycheproof;

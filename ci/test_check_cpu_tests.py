@@ -37,10 +37,12 @@ class SelectTests(unittest.TestCase):
         self.assertEqual(cpu_tests.select("tests", LISTED, ["aes_gcm", "sha256"]),
                          ["wycheproof::aes_gcm::aes_gcm", "wycheproof::ecdsa_p256::sha256_test"])
 
-    def test_cavp_tests_run_in_their_own_binary(self):
+    def test_cavp_and_wycheproof_run_in_their_own_binaries(self):
         self.assertTrue(cpu_tests.runs_in("cavp", "cavp::aes_gcm::aes_gcm"))
         self.assertFalse(cpu_tests.runs_in("cavp", "wycheproof::aes_gcm::aes_gcm"))
-        self.assertTrue(cpu_tests.runs_in("tests", "wycheproof::aes_gcm::aes_gcm"))
+        self.assertTrue(cpu_tests.runs_in("wycheproof", "wycheproof::aes_gcm::aes_gcm"))
+        self.assertFalse(cpu_tests.runs_in("tests", "wycheproof::aes_gcm::aes_gcm"))
+        self.assertTrue(cpu_tests.runs_in("tests", "rfc6979::errors"))
         self.assertFalse(cpu_tests.runs_in("tests", "cavp::aes_gcm::aes_gcm"))
         self.assertTrue(cpu_tests.runs_in("lib", "aes_gcm::tests::round_trip"))
 

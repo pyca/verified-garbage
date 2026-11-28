@@ -6,16 +6,17 @@ ci/rust_matrix.toml):
 `all` for every test, or the names of groups in `GROUPS`, each the tests of
 one primitive, or of what is built on it, whose implementation the CPU's
 features choose. A group names its tests by their paths in the library's
-unit tests (`lib`) and in the integration tests (`tests`), which two
-binaries hold (`cavp`, `tests/cavp.rs`, those under `cavp::`, and `tests`,
+unit tests (`lib`) and in the integration tests (`tests`), which three
+binaries hold (`cavp`, `tests/cavp.rs`, those under `cavp::`, `wycheproof`,
+`tests/wycheproof.rs`, those under `wycheproof::`, and `tests`,
 `tests/main.rs`, the rest): a path
 selects the test of that name and every test in the module of that name,
 and nothing else, so a test runs on a line only if a group of it names the
 test or a module around it. A new test of a primitive that varies by CPU
 feature goes into the group of each line that should run it.
 
-Each line runs every test its groups select, by exact name, in the one
-binary or both that hold them. A group that selects no test on a line's CPU
+Each line runs every test its groups select, by exact name, in the
+binaries that hold them. A group that selects no test on a line's CPU
 fails the line, and a path that selects no test on any CPU of the matrix
 fails CI: a typo, a renamed test or a moved one never makes a line run less
 than it says. A path may select nothing on the CPUs whose `runs` use its
@@ -27,7 +28,7 @@ built there too.
       of the runs on stdin, focused RSA, DSA and FFDH groups for ICX/DMR; use only after
       detecting SDE on a host without AVX512_IFMA
   cpu_tests.py select BINARY LIB TESTS GROUP...
-      the tests of the groups in BINARY (`lib`, `tests` or `cavp`), one per
+      the tests of the groups in BINARY (`lib`, `tests`, `cavp` or `wycheproof`), one per
       line, of the tests listed (`--list --format terse`) in the files LIB
       and TESTS (the integration tests of both binaries)
   cpu_tests.py record CPU RUNS LIB TESTS
@@ -50,13 +51,20 @@ import tomllib
 BINARIES = ("lib", "tests")
 
 # The binaries that run the tests, and the list (of `BINARIES`) that has
-# theirs: `cavp` runs the integration tests under `cavp::`, `tests` the rest.
-RUNNERS = {"lib": "lib", "tests": "tests", "cavp": "tests"}
+# theirs: `cavp` runs the integration tests under `cavp::`, `wycheproof` those
+# under `wycheproof::`, `tests` the rest.
+RUNNERS = {"lib": "lib", "tests": "tests", "cavp": "tests", "wycheproof": "tests"}
+
+# The directory of tests that each binary but `tests` has alone.
+OWN_BINARY = ("cavp", "wycheproof")
 
 
 def runs_in(runner, test):
     """Whether the binary `runner` holds the test named `test` of its list."""
-    return runner == "lib" or test.startswith("cavp::") == (runner == "cavp")
+    if runner == "lib":
+        return True
+    directory = test.split("::", 1)[0]
+    return (directory if directory in OWN_BINARY else "tests") == runner
 
 GROUPS = {
     "aes_cbc": {

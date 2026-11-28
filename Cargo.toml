@@ -126,6 +126,10 @@ path = "tests/main.rs"
 name = "cavp"
 path = "tests/cavp.rs"
 
+[[test]]
+name = "wycheproof"
+path = "tests/wycheproof.rs"
+
 [dev-dependencies]
 # Parsing the JSON test vector files (`tests/json.rs` reads them into Rust
 # types, without serde's derive).
