@@ -27,23 +27,29 @@ bl {vg_p256_mul_mod_p}
 bl {vg_p256_mul_mod_p}
 .base64 "QAOAOCADoDhgA8A4"
 bl {vg_p256_mul_mod_p}
-.base64 "QAOD6OADg/hIA4Po6AOD+FADg+jwA4P4WAOD6PgDg/gEAOA7"
+.base64 "QAOD6OADg/hIA4Po6AOD+FADg+jwA4P4WAOD6PgDg/gHAOA7"
 20:
 .base64 "////O+ADgDjgA6A44APAOA=="
 bl {vg_p256_mul_mod_p}
-.base64 "AAA/KA=="
-bne %cr0, 20b
+.base64 "4AOAOOADoDjgA8A4"
+bl {vg_p256_mul_mod_p}
+.base64 "4AOAOOADoDjgA8A4"
+bl {vg_p256_mul_mod_p}
+.base64 "4AOAOOADoDjgA8A4"
+bl {vg_p256_mul_mod_p}
 .base64 "4AOAOOADoDhAA8A4"
 bl {vg_p256_mul_mod_p}
-.base64 "BADgOw=="
+.base64 "AAA/KA=="
+bne %cr0, 20b
+.base64 "IADgOw=="
 21:
 .base64 "////O+ADgDjgA6A44APAOA=="
 bl {vg_p256_mul_mod_p}
 .base64 "AAA/KA=="
 bne %cr0, 21b
-.base64 "4AOAOOADoDhAA8A4"
+.base64 "4AOAOOADoDhgAsA4"
 bl {vg_p256_mul_mod_p}
-.base64 "BADgOw=="
+.base64 "ZADgOw=="
 22:
 .base64 "////O+ADgDjgA6A44APAOA=="
 bl {vg_p256_mul_mod_p}
@@ -51,236 +57,26 @@ bl {vg_p256_mul_mod_p}
 bne %cr0, 22b
 .base64 "4AOAOOADoDhAA8A4"
 bl {vg_p256_mul_mod_p}
-.base64 "BADgOw=="
+.base64 "FgDgOw=="
 23:
 .base64 "////O+ADgDjgA6A44APAOA=="
 bl {vg_p256_mul_mod_p}
-.base64 "AAA/KA=="
-bne %cr0, 23b
+.base64 "4AOAOOADoDjgA8A4"
+bl {vg_p256_mul_mod_p}
+.base64 "4AOAOOADoDjgA8A4"
+bl {vg_p256_mul_mod_p}
+.base64 "4AOAOOADoDjgA8A4"
+bl {vg_p256_mul_mod_p}
 .base64 "4AOAOOADoDhAA8A4"
 bl {vg_p256_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 23b
 .base64 "BADgOw=="
 24:
 .base64 "////O+ADgDjgA6A44APAOA=="
 bl {vg_p256_mul_mod_p}
 .base64 "AAA/KA=="
 bne %cr0, 24b
-.base64 "4AOAOOADoDhAA8A4"
-bl {vg_p256_mul_mod_p}
-.base64 "BADgOw=="
-25:
-.base64 "////O+ADgDjgA6A44APAOA=="
-bl {vg_p256_mul_mod_p}
-.base64 "AAA/KA=="
-bne %cr0, 25b
-.base64 "4AOAOOADoDhAA8A4"
-bl {vg_p256_mul_mod_p}
-.base64 "BADgOw=="
-26:
-.base64 "////O+ADgDjgA6A44APAOA=="
-bl {vg_p256_mul_mod_p}
-.base64 "AAA/KA=="
-bne %cr0, 26b
-.base64 "4AOAOOADoDhAA8A4"
-bl {vg_p256_mul_mod_p}
-.base64 "IADgOw=="
-27:
-.base64 "////O+ADgDjgA6A44APAOA=="
-bl {vg_p256_mul_mod_p}
-.base64 "AAA/KA=="
-bne %cr0, 27b
-.base64 "4AOAOOADoDhgAsA4"
-bl {vg_p256_mul_mod_p}
-.base64 "ZADgOw=="
-28:
-.base64 "////O+ADgDjgA6A44APAOA=="
-bl {vg_p256_mul_mod_p}
-.base64 "AAA/KA=="
-bne %cr0, 28b
-.base64 "4AOAOOADoDhAA8A4"
-bl {vg_p256_mul_mod_p}
-.base64 "BADgOw=="
-29:
-.base64 "////O+ADgDjgA6A44APAOA=="
-bl {vg_p256_mul_mod_p}
-.base64 "AAA/KA=="
-bne %cr0, 29b
-.base64 "4AOAOOADoDhAA8A4"
-bl {vg_p256_mul_mod_p}
-.base64 "BADgOw=="
-210:
-.base64 "////O+ADgDjgA6A44APAOA=="
-bl {vg_p256_mul_mod_p}
-.base64 "AAA/KA=="
-bne %cr0, 210b
-.base64 "4AOAOOADoDhAA8A4"
-bl {vg_p256_mul_mod_p}
-.base64 "BADgOw=="
-211:
-.base64 "////O+ADgDjgA6A44APAOA=="
-bl {vg_p256_mul_mod_p}
-.base64 "AAA/KA=="
-bne %cr0, 211b
-.base64 "4AOAOOADoDhAA8A4"
-bl {vg_p256_mul_mod_p}
-.base64 "BADgOw=="
-212:
-.base64 "////O+ADgDjgA6A44APAOA=="
-bl {vg_p256_mul_mod_p}
-.base64 "AAA/KA=="
-bne %cr0, 212b
-.base64 "4AOAOOADoDhAA8A4"
-bl {vg_p256_mul_mod_p}
-.base64 "BADgOw=="
-213:
-.base64 "////O+ADgDjgA6A44APAOA=="
-bl {vg_p256_mul_mod_p}
-.base64 "AAA/KA=="
-bne %cr0, 213b
-.base64 "4AOAOOADoDhAA8A4"
-bl {vg_p256_mul_mod_p}
-.base64 "BADgOw=="
-214:
-.base64 "////O+ADgDjgA6A44APAOA=="
-bl {vg_p256_mul_mod_p}
-.base64 "AAA/KA=="
-bne %cr0, 214b
-.base64 "4AOAOOADoDhAA8A4"
-bl {vg_p256_mul_mod_p}
-.base64 "BADgOw=="
-215:
-.base64 "////O+ADgDjgA6A44APAOA=="
-bl {vg_p256_mul_mod_p}
-.base64 "AAA/KA=="
-bne %cr0, 215b
-.base64 "4AOAOOADoDhAA8A4"
-bl {vg_p256_mul_mod_p}
-.base64 "BADgOw=="
-216:
-.base64 "////O+ADgDjgA6A44APAOA=="
-bl {vg_p256_mul_mod_p}
-.base64 "AAA/KA=="
-bne %cr0, 216b
-.base64 "4AOAOOADoDhAA8A4"
-bl {vg_p256_mul_mod_p}
-.base64 "BADgOw=="
-217:
-.base64 "////O+ADgDjgA6A44APAOA=="
-bl {vg_p256_mul_mod_p}
-.base64 "AAA/KA=="
-bne %cr0, 217b
-.base64 "4AOAOOADoDhAA8A4"
-bl {vg_p256_mul_mod_p}
-.base64 "BADgOw=="
-218:
-.base64 "////O+ADgDjgA6A44APAOA=="
-bl {vg_p256_mul_mod_p}
-.base64 "AAA/KA=="
-bne %cr0, 218b
-.base64 "4AOAOOADoDhAA8A4"
-bl {vg_p256_mul_mod_p}
-.base64 "BADgOw=="
-219:
-.base64 "////O+ADgDjgA6A44APAOA=="
-bl {vg_p256_mul_mod_p}
-.base64 "AAA/KA=="
-bne %cr0, 219b
-.base64 "4AOAOOADoDhAA8A4"
-bl {vg_p256_mul_mod_p}
-.base64 "BADgOw=="
-220:
-.base64 "////O+ADgDjgA6A44APAOA=="
-bl {vg_p256_mul_mod_p}
-.base64 "AAA/KA=="
-bne %cr0, 220b
-.base64 "4AOAOOADoDhAA8A4"
-bl {vg_p256_mul_mod_p}
-.base64 "BADgOw=="
-221:
-.base64 "////O+ADgDjgA6A44APAOA=="
-bl {vg_p256_mul_mod_p}
-.base64 "AAA/KA=="
-bne %cr0, 221b
-.base64 "4AOAOOADoDhAA8A4"
-bl {vg_p256_mul_mod_p}
-.base64 "BADgOw=="
-222:
-.base64 "////O+ADgDjgA6A44APAOA=="
-bl {vg_p256_mul_mod_p}
-.base64 "AAA/KA=="
-bne %cr0, 222b
-.base64 "4AOAOOADoDhAA8A4"
-bl {vg_p256_mul_mod_p}
-.base64 "BADgOw=="
-223:
-.base64 "////O+ADgDjgA6A44APAOA=="
-bl {vg_p256_mul_mod_p}
-.base64 "AAA/KA=="
-bne %cr0, 223b
-.base64 "4AOAOOADoDhAA8A4"
-bl {vg_p256_mul_mod_p}
-.base64 "BADgOw=="
-224:
-.base64 "////O+ADgDjgA6A44APAOA=="
-bl {vg_p256_mul_mod_p}
-.base64 "AAA/KA=="
-bne %cr0, 224b
-.base64 "4AOAOOADoDhAA8A4"
-bl {vg_p256_mul_mod_p}
-.base64 "BADgOw=="
-225:
-.base64 "////O+ADgDjgA6A44APAOA=="
-bl {vg_p256_mul_mod_p}
-.base64 "AAA/KA=="
-bne %cr0, 225b
-.base64 "4AOAOOADoDhAA8A4"
-bl {vg_p256_mul_mod_p}
-.base64 "BADgOw=="
-226:
-.base64 "////O+ADgDjgA6A44APAOA=="
-bl {vg_p256_mul_mod_p}
-.base64 "AAA/KA=="
-bne %cr0, 226b
-.base64 "4AOAOOADoDhAA8A4"
-bl {vg_p256_mul_mod_p}
-.base64 "BADgOw=="
-227:
-.base64 "////O+ADgDjgA6A44APAOA=="
-bl {vg_p256_mul_mod_p}
-.base64 "AAA/KA=="
-bne %cr0, 227b
-.base64 "4AOAOOADoDhAA8A4"
-bl {vg_p256_mul_mod_p}
-.base64 "BADgOw=="
-228:
-.base64 "////O+ADgDjgA6A44APAOA=="
-bl {vg_p256_mul_mod_p}
-.base64 "AAA/KA=="
-bne %cr0, 228b
-.base64 "4AOAOOADoDhAA8A4"
-bl {vg_p256_mul_mod_p}
-.base64 "BADgOw=="
-229:
-.base64 "////O+ADgDjgA6A44APAOA=="
-bl {vg_p256_mul_mod_p}
-.base64 "AAA/KA=="
-bne %cr0, 229b
-.base64 "4AOAOOADoDhAA8A4"
-bl {vg_p256_mul_mod_p}
-.base64 "BADgOw=="
-230:
-.base64 "////O+ADgDjgA6A44APAOA=="
-bl {vg_p256_mul_mod_p}
-.base64 "AAA/KA=="
-bne %cr0, 230b
-.base64 "4AOAOOADoDhAA8A4"
-bl {vg_p256_mul_mod_p}
-.base64 "BADgOw=="
-231:
-.base64 "////O+ADgDjgA6A44APAOA=="
-bl {vg_p256_mul_mod_p}
-.base64 "AAA/KA=="
-bne %cr0, 231b
 .base64 "4AOAOOADoDggA8A4"
 bl {vg_p256_mul_mod_p}
 .base64 "6AUD6KYDCHwgAIBO""#,

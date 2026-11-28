@@ -10,8 +10,9 @@ public import VerifiedGarbage.Impl.Weierstrass.Chain
 as on AArch64 (`Impl/Weierstrass/AArch64/Chain.lean`): the table
 `x, x³, …, x¹⁵` (and `x²`) in its slots, `acc` the first window's power, then
 each step's squarings, by a loop counting `r31` down, and its multiplication by
-the table, by calls of the functions of `S`. The exponent is the code's, so
-nothing depends on the numbers.
+the table, by calls of the functions of `S`. A run of full windows uses one
+counted loop with the four squarings in its body. The exponent is the
+code's, so nothing depends on the numbers.
 -/
 
 @[expose] public section
@@ -55,10 +56,39 @@ def stepOf (mul : Prog isa) : Nat × Nat → Prog isa
 /-- A step: `acc = acc^(2^s) x^d`. -/
 def step (st : Nat × Nat) : Prog isa := stepOf P S (Mont.mulFn S.k S.m) st
 
-/-- The steps in order, by calls of the multiplication, whose code is `mul`. -/
+/-- Straight-line squarings, preserving the outer window counter. -/
+def unrolledSquares (mul : Prog isa) : Nat → Prog isa
+  | 0 => .block []
+  | n + 1 => .seq (callOp (S.fn "mul") mul P.acc P.acc P.acc) (unrolledSquares mul n)
+
+/-- A four-bit window of all ones: square four times, then multiply by `x^15`. -/
+def fullWindow (mul : Prog isa) : Prog isa :=
+  .seq (unrolledSquares P S mul 4) (callOp (S.fn "mul") mul P.acc P.acc (P.slot 7))
+
+/-- A run of full windows, with `r31` as the count and the field operations
+preserving it. -/
+def fullWindows (mul : Prog isa) (n : Nat) : Prog isa :=
+  .seq (.block [.li .r31 n]) (.loop (.seq (.block [decCounter]) (fullWindow P S mul)) more)
+
+/-- The following full windows that can share a positive 16-bit immediate with the
+first. -/
+def fullWindowPrefix (rest : List (Nat × Nat)) : List (Nat × Nat) :=
+  (rest.take 32766).takeWhile (· == (4, 15))
+
+/-- The steps in order, emitting one loop per run of four or more full windows. -/
 def stepsOf (mul : Prog isa) : List (Nat × Nat) → Prog isa
   | [] => .block []
-  | st :: rest => .seq (stepOf P S mul st) (stepsOf mul rest)
+  | st :: rest =>
+    let n := (fullWindowPrefix rest).length
+    if st = (4, 15) ∧ 3 ≤ n then
+      .seq (fullWindows P S mul (n + 1)) (stepsOf mul (rest.drop n))
+    else
+      .seq (stepOf P S mul st) (stepsOf mul rest)
+termination_by sts => sts.length
+decreasing_by
+  · simp only [List.length_cons, List.length_drop]
+    exact Nat.lt_succ_of_le (Nat.sub_le _ _)
+  · simp
 
 /-- The steps in order. -/
 def steps (l : List (Nat × Nat)) : Prog isa := stepsOf P S (Mont.mulFn S.k S.m) l
