@@ -297,6 +297,28 @@ GROUPS = {
         "lib": [],
         "tests": ["wycheproof::mldsa44::verify", "wycheproof::mldsa65::verify", "wycheproof::mldsa87::verify"],
     },
+    "slhdsa": {
+        "lib": [],
+        "tests": [
+            "acvp::slhdsa_shake_128f",
+            "acvp::slhdsa_shake_128s",
+            "acvp::slhdsa_shake_192f",
+            "acvp::slhdsa_shake_192s",
+            "acvp::slhdsa_shake_256f",
+            "acvp::slhdsa_shake_256s",
+        ],
+    },
+    "slhdsa_once": {
+        "lib": [],
+        "tests": [
+            "acvp::slhdsa_shake_128f::once",
+            "acvp::slhdsa_shake_128s::once",
+            "acvp::slhdsa_shake_192f::once",
+            "acvp::slhdsa_shake_192s::once",
+            "acvp::slhdsa_shake_256f::once",
+            "acvp::slhdsa_shake_256s::once",
+        ],
+    },
     "mlkem": {
         "lib": [],
         "tests": ["acvp::mlkem1024", "acvp::mlkem768", "wycheproof::mlkem1024", "wycheproof::mlkem768"],

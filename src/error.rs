@@ -83,6 +83,16 @@ pub enum MlDsaError {
     Randomness,
 }
 
+/// Why an SLH-DSA operation failed.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum SlhDsaError {
+    /// The context string to sign with is longer than 255 bytes (FIPS 205
+    /// Algorithm 22).
+    ContextTooLong,
+    /// The operating system's random number generator failed.
+    Randomness,
+}
+
 /// Why scrypt or Argon2 refused to derive a key, or to accept one.
 #[cfg(feature = "alloc")]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -164,6 +174,13 @@ impl_error! {
     }
 }
 
+impl_error! {
+    SlhDsaError {
+        ContextTooLong => "context is longer than 255 bytes",
+        Randomness => "random number generator failed",
+    }
+}
+
 #[cfg(feature = "alloc")]
 impl_error! {
     PasswordHashError {
@@ -200,6 +217,8 @@ mod tests {
             super::MlDsaError::LoopBound,
             super::MlDsaError::Randomness,
             super::MlKemError::Randomness,
+            super::SlhDsaError::ContextTooLong,
+            super::SlhDsaError::Randomness,
             super::MlKemError::SampleBound,
             super::OutputTooSmall,
             super::XdhError::Randomness,

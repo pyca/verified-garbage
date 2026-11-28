@@ -435,6 +435,8 @@ jobs:
       # Both relative to the crate root, where the test binaries run.
       LLVM_PROFILE_FILE: .rust-cov/cov-%p-%m.profraw
       WYCHEPROOF_ROOT: wycheproof
+      # The ACVP files too large to vendor (ci/acvp_vectors.toml).
+      ACVP_ROOT: acvp
       # The crates whose tests run, and whose coverage is exported: the
       # library and the rustls provider.
       PACKAGES: -p verified-garbage -p rustls-verified-garbage
@@ -574,9 +576,9 @@ jobs:
       # libtest's per-test elapsed times are still unstable, including on
       # the MSRV. Enable its reporting flag without changing toolchains.
       # Hide durations that round to zero at libtest's millisecond precision.
-      # Wycheproof's vectors, which only running the tests reads, are cloned
-      # while the tests build (a checkout step before the build took RISC-V's
-      # runners 12-15 s).
+      # Wycheproof's vectors and the ACVP files, which only running the tests
+      # reads, are fetched while the tests build (a checkout step before the
+      # build took RISC-V's runners 12-15 s).
       - name: Build and run the tests
         if: ${{ steps.cached.outputs.cache-hit != 'true' }}
         shell: bash
@@ -584,6 +586,8 @@ jobs:
           if [ "$TESTS" = true ]; then
             git clone -q --depth 1 --branch main https://github.com/C2SP/wycheproof wycheproof &
             clone=$!
+            $(command -v python3 || command -v python) ci/fetch_acvp_vectors.py "$ACVP_ROOT" &
+            fetch=$!
           fi
           source ci/rust_test_timing.sh
           # Each test binary runs in its crate's directory: the provider's
@@ -592,6 +596,7 @@ jobs:
           cargo test --locked $PACKAGES --no-run
           if [ "$TESTS" = true ]; then
             wait "$clone"
+            wait "$fetch"
             cargo test --locked $PACKAGES -- -Z unstable-options --report-time | vg_hide_zero_times
           fi
       - name: Export coverage
@@ -647,6 +652,8 @@ jobs:
       CARGO_BUILD_TARGET: thumbv7neon-unknown-linux-gnueabihf
       RUSTFLAGS: -D warnings
       WYCHEPROOF_ROOT: wycheproof
+      # The ACVP files too large to vendor (ci/acvp_vectors.toml).
+      ACVP_ROOT: acvp
       # Whether this job runs its tests (see `rust-arches`).
       TESTS: ${{ matrix.tests }}
     steps:
@@ -676,6 +683,8 @@ jobs:
           persist-credentials: false
           # Naming the branch saves the action's lookup of the default one.
           ref: main
+      - name: Download the ACVP files
+        run: python3 ci/fetch_acvp_vectors.py "$ACVP_ROOT"
 
       - name: Install Rust
         run: rustup toolchain install ${{ matrix.rust }} --profile minimal --target thumbv7neon-unknown-linux-gnueabihf
@@ -900,6 +909,8 @@ jobs:
       RUSTFLAGS: -D warnings -Cinstrument-coverage
       LLVM_PROFILE_FILE: .rust-cov/cov-%p-%m.profraw
       WYCHEPROOF_ROOT: wycheproof
+      # The ACVP files too large to vendor (ci/acvp_vectors.toml).
+      ACVP_ROOT: acvp
       # Whether this job runs its tests (see `rust-arches`).
       TESTS: ${{ matrix.tests }}
       SDE_VERSION: 10.13.1-2026-07-28
@@ -931,6 +942,8 @@ jobs:
           persist-credentials: false
           # Naming the branch saves the action's lookup of the default one.
           ref: main
+      - name: Download the ACVP files
+        run: python3 ci/fetch_acvp_vectors.py "$ACVP_ROOT"
       - name: This runner's CPU
         run: |
           if [ "$(uname -m)" = aarch64 ]; then

@@ -93,11 +93,13 @@ NOT_RUST_FILES = {
 # every other one is the Lean build's, the benchmarks' or a static check's.
 # ci/test_check_rust_arches.py checks that ci.yml's Rust jobs use no other.
 RUST_CI = {
+    "ci/acvp_vectors.toml",
     "ci/arm32-run",
     "ci/bench_cache_key.sh",
     "ci/cpu_shards.py",
     "ci/cpu_tests.py",
     "ci/export_rust_coverage.py",
+    "ci/fetch_acvp_vectors.py",
     "ci/merge_rust_coverage.py",
     "ci/requirements-coverage.txt",
     "ci/runner.Dockerfile",

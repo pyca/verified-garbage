@@ -1,7 +1,8 @@
 /target
 /lean/.lake
-# Optional local checkout for WYCHEPROOF_ROOT
+# Optional local checkout for WYCHEPROOF_ROOT, and ACVP_ROOT's downloads
 /wycheproof
+/acvp
 # Coverage (ci/export_rust_coverage.py, ci/merge_rust_coverage.py)
 /.rust-cov
 /*.lcov

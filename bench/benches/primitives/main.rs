@@ -142,6 +142,13 @@ mod sha384;
 mod sha512;
 mod sha512_224;
 mod sha512_256;
+mod slhdsa;
+mod slhdsa_shake_128f;
+mod slhdsa_shake_128s;
+mod slhdsa_shake_192f;
+mod slhdsa_shake_192s;
+mod slhdsa_shake_256f;
+mod slhdsa_shake_256s;
 mod sm3;
 mod sm4_cbc;
 mod sm4_cfb;
@@ -669,6 +676,12 @@ benches! {
     (mldsa44::USES, mldsa44::bench),
     (mldsa65::USES, mldsa65::bench),
     (mldsa87::USES, mldsa87::bench),
+    (slhdsa_shake_128f::USES, slhdsa_shake_128f::bench),
+    (slhdsa_shake_128s::USES, slhdsa_shake_128s::bench),
+    (slhdsa_shake_192f::USES, slhdsa_shake_192f::bench),
+    (slhdsa_shake_192s::USES, slhdsa_shake_192s::bench),
+    (slhdsa_shake_256f::USES, slhdsa_shake_256f::bench),
+    (slhdsa_shake_256s::USES, slhdsa_shake_256s::bench),
     (mlkem1024::USES, mlkem1024::bench),
     (mlkem768::USES, mlkem768::bench),
     (pbkdf2_md5::USES, pbkdf2_md5::bench),

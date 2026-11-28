@@ -122,7 +122,12 @@ own changes are rebuilt either way, on top of the restored build.
   a test. Use Wycheproof (`tests/wycheproof/`), or vendor the published
   files byte for byte into a directory under `vectors/`, with a new
   `vectors/sources/<name>.toml` for that directory saying where they came
-  from (`ci/check_vectors.py` checks it), and read them from there.
+  from (`ci/check_vectors.py` checks it), and read them from there. ACVP
+  files too large to vendor (tens of MB), and the rest of their set, are
+  listed instead, with their URL at a pinned commit and their SHA-256, in
+  `ci/acvp_vectors.toml`,
+  which CI downloads (`ci/fetch_acvp_vectors.py`) to `ACVP_ROOT`; its tests
+  skip without it (`tests/acvp/main.rs`).
   Tests check published vectors, never a reference implementation written
   in the tests (a mode built from ECB, a KDF from its MAC, a model of the
   cipher or the encoding): the formal proofs cover the rest. To reach the
