@@ -10,6 +10,8 @@ repository.workspace = true
 publish.workspace = true
 # Not the patches and scripts that test and benchmark it in rustls.
 include = ["/src", "/tests", "/LICENSE*", "/README.md"]
+# Every integration test is a module of the one test binary, `tests/main.rs`.
+autotests = false
 
 [lints]
 workspace = true
@@ -30,6 +32,10 @@ pki-types = { package = "rustls-pki-types", version = "1.15", features = ["alloc
 rustls = { version = "=0.24.0-dev.3", default-features = false }
 verified-garbage.workspace = true
 zeroize = "1.8"
+
+[[test]]
+name = "tests"
+path = "tests/main.rs"
 
 [dev-dependencies]
 rustls = { version = "=0.24.0-dev.3", features = ["webpki"] }
