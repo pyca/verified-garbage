@@ -33,7 +33,8 @@ The key setup and the rounds write neither `a2`, `a3`, `a5` nor `ra`, and
 memory is secret to the analysis of constant time, so the modes' state
 (`s1`–`s3`, which address and count) waits in `a2`, `a3` and `ra`
 (`park`), `ra` itself and `a0` in two slots of the scratch buffer that ECB
-does not use (`raSlot`, `a0Slot`); the frame's base (`s4`) is ECB's base
+does not use (`raSlot`, `a0Slot`). When the rounds run as a shared call,
+`crypt8Call` keeps `ra` in `a0`. The frame's base (`s4`) is ECB's base
 less `ecbOff` (`unpark`).
 
 The functions take the number of rounds as their second argument, which the
@@ -91,7 +92,7 @@ the registers saved, `a4` at the postwhitening's entry, the rounds, and the
 registers back. -/
 def cryptBlocks (R : Nat) : Prog isa :=
   .seq (.block (park ++ ([movR sb t0] : List Instr) ++ saveRegs ++ endAddr (R / 6)))
-    (.seq crypt8 (.block (restoreRegs ++ unpark)))
+    (.seq crypt8Call (.block (restoreRegs ++ unpark)))
 
 /-- Camellia's core for the modes, with `R` rounds in the direction `d`. -/
 def inlineCore (d : Dir) (R : Nat) : Modes.RISCV64.Core where

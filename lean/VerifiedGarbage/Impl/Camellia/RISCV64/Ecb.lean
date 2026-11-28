@@ -23,7 +23,7 @@ artifact allocates on the stack. As on PPC64LE (`Impl/Camellia/PPC64LE/Ecb.lean`
 
 The schedule and the data have no alignment, so they are read and written
 a byte at a time; the scratch buffer is aligned, as the artifact allocates
-it on the stack. `a0` (the schedule, then the end of six rounds), `a1`
+it on the stack. `a0` (the schedule, then the saved link), `a1`
 (the table, then the round key's entry), `a2` (the data), `a3` (the blocks
 left), `a4` (the postwhitening's entry), `a5`, the copies' pointers
 (`t3`, `t4`) and counts (`t5`, `t6`), and the loop tests (`t0`, `t1`)
@@ -109,18 +109,18 @@ def head : List Instr :=
   ([.addi kp kp 128] : List Instr)
 
 /-- Two rounds: `D2 ^= F(D1, k)`, `D1 ^= F(D2, k')`, with the state holding
-`D1` before and after; `t0` is zero when `kp` reaches `a0`. -/
+`D1` before and after; `t0` is zero when `kp` reaches a group boundary. Each group spans 512 bytes of
+subkeys, and the table starts 1024 bytes from `sb`. -/
 def pairBody : List Instr :=
-  round 0 d2Slot ++ round 8 d1Slot ++ ([.addi kp kp 128, .sub t0 kp .a0] : List Instr)
+  round 0 d2Slot ++ round 8 d1Slot ++ ([.addi kp kp 128, .sub t0 kp sb, .logicImm .and t0 t0 511] : List Instr)
 
 /-- Six rounds, then FL and FLINV unless they were the last; `t0` is zero
 when `kp` is at the postwhitening's entry. -/
 def groupBody : Prog isa :=
-  .seq (.block [.addi .a0 kp 384])
-    (.seq (.loop (.block pairBody) (.nonzero t0))
-      (.seq (.block [.sub t0 kp .a4])
-        (.seq (.ite (.nonzero t0) (.block flLayer) (.block []))
-          (.block [.sub t0 kp .a4]))))
+  .seq (.loop (.block pairBody) (.nonzero t0))
+    (.seq (.block [.sub t0 kp .a4])
+      (.seq (.ite (.nonzero t0) (.block flLayer) (.block []))
+        (.block [.sub t0 kp .a4])))
 
 /-- The postwhitening, and the halves back to the blocks, swapped: `D2`
 to the left halves, `D1` to the right. -/
@@ -129,6 +129,12 @@ def tail : List Instr :=
 
 /-- The eight blocks in the tail buffer, in place. -/
 def crypt8 : Prog isa := .seq (.block head) (.seq (.loop groupBody (.nonzero t0)) (.block tail))
+
+/-- Share the eight-block body. It keeps `a0`, which holds the caller's
+link while the body runs. -/
+def crypt8Call : Prog isa :=
+  .seq (.block [.addi .a0 .ra 0])
+    (.seq (.call "vg_camellia_crypt8" crypt8) (.block [.addi .ra .a0 0]))
 
 /-! ## The groups -/
 
@@ -165,7 +171,7 @@ def copyOut : Prog isa :=
 
 /-- Eight blocks, or the last one to seven, and on to the next. -/
 def group : Prog isa :=
-  .seq copyIn (.seq crypt8 (.seq copyOut (.block [.sub .a3 .a3 .t6, .addi .a2 .a2 128])))
+  .seq copyIn (.seq crypt8Call (.seq copyOut (.block [.sub .a3 .a3 .t6, .addi .a2 .a2 128])))
 
 /-- The prologue: the scratch buffer (passed in `r`) to `a5`, the
 callee-saved registers saved, the masks set, and `t0 = rounds - 18`. -/

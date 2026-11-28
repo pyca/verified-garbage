@@ -186,7 +186,7 @@ theorem prologue_ok {s₀ : State} {a : Reg} {b : Addr} (hb : s₀.gpr a = b) (h
 
 theorem ecb_wp (dir : Dir) {s₀ : State} (hp : (ecbRISCV64 dir).pre s₀) :
     WP isa (ecb dir) s₀ fun s' => (∀ i < 12, s'.gpr (sreg i) = s₀.gpr (sreg i)) ∧
-      (ecbRISCV64 dir).post s₀ s' := by
+      s'.gpr .ra = s₀.gpr .ra ∧ (ecbRISCV64 dir).post s₀ s' := by
   obtain ⟨hrd, hwr, dSD, dSS, dDS, fitK, fitD, fitB, hR, hal⟩ := hp
   let b := s₀.gpr .a4
   let D := s₀.gpr .a2
@@ -257,6 +257,8 @@ theorem ecb_wp (dir : Dir) {s₀ : State} (hp : (ecbRISCV64 dir).pre s₀) :
     rw [k₂.regs _ (by decide) (by decide) (by decide) (by decide), g₁ _ (by decide) (by decide) (by decide)]
   obtain a2₂ : s₂.gpr .a2 = D := by
     rw [k₂.regs _ (by decide) (by decide) (by decide) (by decide), g₁ _ (by decide) (by decide) (by decide)]
+  have ra₂ : s₂.gpr .ra = s₀.gpr .ra := by
+    rw [k₂.regs _ (by decide) (by decide) (by decide) (by decide), g₁ _ (by decide) (by decide) (by decide)]
   obtain rd₂ : s₂.rd = s₀.rd := by rw [k₂.rd, rd₁]
   obtain wr₂ : s₂.wr = s₀.wr := by rw [k₂.wr, wr₁]
   -- Any blocks?
@@ -267,14 +269,14 @@ theorem ecb_wp (dir : Dir) {s₀ : State} (hp : (ecbRISCV64 dir).pre s₀) :
     (WP.ite (decide (n = 0)) ((eval_zero s₂ .a3).trans (by rw [hz₃])) (fun h0 => ?_) (fun h0 => ?_))
     fun s₄ d₄ => ?_)
   · have hn0 : n = 0 := by simpa using h0
-    exact WP.block_nil ⟨base₂, sc₂, fun i hi => by omega, fr₂, rd₂, wr₂⟩
+    exact WP.block_nil ⟨base₂, sc₂, fun i hi => by omega, fr₂, rd₂, wr₂, ra₂⟩
   · have hn0 : n ≠ 0 := by simpa using h0
     refine dataLoop_wp ⟨hwS, hwD, dDS, fitB, fitD, hg, hal⟩ ⟨base₂, by rw [a2₂]; simp,
-      by rw [a3₂, Nat.mul_zero, Nat.sub_zero]; simp [n], by omega_using [hn0], a4₂, sc₂, fun i hi => ?_, fr₂, rd₂, wr₂⟩
+      by rw [a3₂, Nat.mul_zero, Nat.sub_zero]; simp [n], by omega_using [hn0], a4₂, sc₂, fun i hi => ?_, fr₂, rd₂, wr₂, ra₂⟩
     rw [data₂ i hi, ite_eq_right (by omega_using [])]
   -- The epilogue.
-  obtain ⟨s₅, e₅, rg₅, -, m₅, -, -⟩ := restore_ok (by rw [d₄.wr]; exact hwS) d₄.base hal d₄.scr.saved
-  refine WP.of_runBlock ⟨s₅, e₅, rg₅, ?_⟩
+  obtain ⟨s₅, e₅, rg₅, o₅, m₅, -, -⟩ := restore_ok (by rw [d₄.wr]; exact hwS) d₄.base hal d₄.scr.saved
+  refine WP.of_runBlock ⟨s₅, e₅, rg₅, (o₅ .ra (by decide)).trans d₄.ra, ?_⟩
   obtain hd₅ : DInv s₀.mem s₅.mem D n n (outF s₀.mem D g E) := fun i hi => by
     rw [m₅]; exact d₄.data i hi
   show Spec.Camellia.blocksAt s₅.mem D n = _
