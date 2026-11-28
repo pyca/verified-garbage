@@ -84,9 +84,10 @@ pub fn groups<T: crate::json::FromJson>(name: &str, json: &str) -> Vec<Group<T>>
 
 /// Defines the tests of the parameter set named `$name`
 /// (`"SLH-DSA-SHAKE-128s"`), of the module `$module`
-/// (`verified_garbage::slhdsa_shake_128s`, …), whose seeds are `$n` bytes.
+/// (`verified_garbage::slhdsa_shake_128s`, …), whose seeds are `$n` bytes;
+/// `$fast` says whether it is a fast-signing (`f`) set.
 macro_rules! slhdsa_tests {
-    ($name:literal, $module:ident, $n:literal) => {
+    ($name:literal, $module:ident, $n:literal, $fast:literal) => {
         use super::slhdsa::{KeyGen, SigGen, SigVer, groups};
         use verified_garbage::error::{InvalidSignature, SlhDsaError};
         use verified_garbage::$module::{SigningKey, VerifyingKey};
@@ -149,6 +150,29 @@ macro_rules! slhdsa_tests {
                 }
             }
             assert_eq!(count, 14);
+        }
+
+        /// Each function once, with as little work as it can do, for a CPU
+        /// that is emulated (`ci/cpu_tests.py`'s `slhdsa_once`), on which the
+        /// other tests take too long: key generation; signing, of the fast
+        /// set (a slow set's refuses a context string that is too long); and
+        /// verification, of that signature or of one that is not valid.
+        #[test]
+        fn once() {
+            let key = SigningKey::from_seeds(&[7; 3 * $n]);
+            let pk = key.verifying_key();
+            let long = [0u8; 256];
+            assert_eq!(
+                key.sign_deterministic(b"", &long),
+                Err(SlhDsaError::ContextTooLong)
+            );
+            if $fast {
+                let sig = key.sign_deterministic(b"message", b"").unwrap();
+                assert_eq!(pk.verify(b"message", b"", &sig), Ok(()));
+            } else {
+                let sig = [0u8; VerifyingKey::SIGNATURE_SIZE];
+                assert_eq!(pk.verify(b"message", b"", &sig), Err(InvalidSignature));
+            }
         }
 
         /// Signing, hedged and deterministic, gives signatures that verify;

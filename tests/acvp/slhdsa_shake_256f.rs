@@ -2,4 +2,4 @@
 
 #![cfg(target_arch = "x86_64")]
 
-super::slhdsa::slhdsa_tests!("SLH-DSA-SHAKE-256f", slhdsa_shake_256f, 32);
+super::slhdsa::slhdsa_tests!("SLH-DSA-SHAKE-256f", slhdsa_shake_256f, 32, true);

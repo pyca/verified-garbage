@@ -265,8 +265,9 @@ ssse3 | aes_ccm aes_gcm aes_gcm_siv aes_ocb aes_ecb aes_cbc aes_ofb aes_cfb aes_
 # Argon2 with BLAKE2b's AVX2 code and G's AVX-512 code, which its
 # AVX-512 BLAKE2b replaces only with AVX512VL, and for ChaCha20's and
 # ChaCha20-Poly1305's `_avx512` instances, which the CPU's AVX512VL
-# replaces with `_avx512vl`. And SLH-DSA's `_avx512vl` `thash4`, for a
-# native runner without AVX-512.
+# replaces with `_avx512vl`. And SLH-DSA's `_avx512vl` functions, for a
+# native runner without AVX-512: each once (`slhdsa_once`), since SDE runs
+# its other tests for over an hour.
 # The unrestricted line runs RSA's ADX arithmetic in full; the line
 # without BMI1 (whose SHA-256 is then the baseline's) runs only the small
 # RSA groups that reach each hash's implementation.
@@ -277,7 +278,7 @@ runs = """
 - | dsa sha1 sha224 sha256 sha384 sha512 blake2 aes_gcm cmac chacha20 triple_des_ecb triple_des_cbc triple_des_cfb poly1305 mlkem mldsa scrypt argon2 rfc9106 x25519 x448 ed25519 ed448 rsa message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
 avx,avx2,bmi2,adx | ffdh dsa ed448 rsa_pkcs1_hashes rsa_pss_hashes rsa_oaep_pairs p256 p384 p521 ed25519 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
 avx,avx2,avx512f | argon2 rfc9106 mlkem chacha20 cpu
-avx,avx2,avx512f,avx512vl | mldsa slhdsa cpu
+avx,avx2,avx512f,avx512vl | mldsa slhdsa_once cpu
 """
 
 # AVX2, but not AVX-512F or ADX; AES-NI and PCLMULQDQ with AVX, but
