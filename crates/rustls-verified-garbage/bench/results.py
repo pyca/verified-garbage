@@ -39,7 +39,7 @@ ROOT = pathlib.Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT / "ci"))
 
 import bench_report  # noqa: E402
-from bench_compare import cpu_model  # noqa: E402
+from bench_run import cpu_model  # noqa: E402
 
 FILE = re.compile(r"rustls-bench-(?P<library>.+)-(?P<round>\d+)\.tsv")
 

@@ -52,6 +52,8 @@ import subprocess
 import sys
 import time
 
+import bench_run
+
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 TEMPLATE = pathlib.Path(__file__).resolve().parent / "bench_report.html"
 FORMAT = "verified-garbage-bench"
@@ -253,8 +255,7 @@ def main(argv=None):
     if args.command == "collect":
         if not args.criterion.is_dir():
             p.error(f"{args.criterion}: no Criterion directory (run `cargo bench` in bench/ first)")
-        from bench_compare import cpu_model
-        doc = collect(args.criterion, parse_meta(args.meta), cpu_model())
+        doc = collect(args.criterion, parse_meta(args.meta), bench_run.cpu_model())
         if not doc["results"]:
             p.error(f"{args.criterion}: no benchmark results")
         args.output.write_text(json.dumps(doc, indent=1) + "\n")
