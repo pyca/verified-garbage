@@ -51,7 +51,7 @@ open VG VG.RISCV64 VG.RISCV64.RegUpd VG.RISCV64.Taint VG.Proof.Mont VG.Proof.Big
   VG.Proof.Rsa.RISCV64.Keys
 open VG.Impl.Rsa.RISCV64.Keys (saved save restore mov)
 open VG.Impl.Rsa.RISCV64.CrtValues (code entry nCheck valid fail front dPartsAll stores nArr setup loads checks
-  invPart storeQ)
+  invStart invEnd storeQ)
 open VG.Proof.Rsa.CrtValues (maskOf)
 open VG.Impl.Bignum.RISCV64.Precompute (check1 check2)
 open VG.Proof.Bignum.RISCV64.Pre (Two Pins two_post two_taint getD_of_lt)
@@ -203,6 +203,10 @@ theorem pub_pins {s0 s1 x y : State} {M M' : Mem} (sm : Same s0 s1) (cx : CB s0 
     · rw [wx.s9, wy.s9, wOf, wOf, hk]
     · rw [wx.s10, wy.s10, wOf, wOf, hk]
 
+/-- After the shared divsteps and before the public key-shape branch. -/
+def SI (d : Dt) (t : State) : Prop :=
+  ∃ s0, C0 d s0 ∧ Spec.Rsa.modulusValid (Nv s0) (kOf s0) = true ∧ ∃ X₁ X₂, InvMid s0 X₁ X₂ t
+
 /-- After `front` but the write of `qInv`, for a valid modulus. -/
 def SA' (d : Dt) (t : State) : Prop :=
   ∃ s0, C0 d s0 ∧ Spec.Rsa.modulusValid (Nv s0) (kOf s0) = true ∧ ∃ X₁ X₂ V X, IvA s0 X₁ X₂ V X t
@@ -217,7 +221,9 @@ def SB (d : Dt) (u : State) : Prop :=
 
 /-! ## The pieces -/
 
-theorem valid_eq : valid = .seq (.seq (VG.Impl.Rsa.RISCV64.Keys.seqs [setup, loads, checks, invPart]) storeQ) (.seq dPartsAll stores) := rfl
+theorem valid_eq : valid =
+    .seq (.seq (.seq (VG.Impl.Rsa.RISCV64.Keys.seqs [setup, loads, checks, invStart]) invEnd) storeQ)
+      (.seq dPartsAll stores) := rfl
 
 theorem nCheck_eq : nCheck = .seq (.block [mov .s7 .s1, mov .s8 .s2]) (.seq (.block check1) check2) := rfl
 
@@ -310,15 +316,28 @@ theorem code_rel [InvLaw] : RelCT isa (Two C0) code fun _ _ => True := by
         -- public registers are those `CB` pins again.
         rw [valid_eq]
         refine RelCT.mono (P := Two fun a s => S5 a s ∧ s.gpr .s0 = 0)
-          (RelCT.seq (R := Two SA) (RelCT.seq (R := Two SA') ?_ ?_) (RelCT.seq (R := Two SB) ?_ ?_)) ?_
+          (RelCT.seq (R := Two SA) (RelCT.seq (R := Two SA') (RelCT.seq (R := Two SI) ?_ ?_) ?_)
+            (RelCT.seq (R := Two SB) ?_ ?_)) ?_
           fun _ _ h => h
         · refine two_post (Φ := fun a s => S5 a s ∧ s.gpr .s0 = 0)
             (two_taint bodyRegs ?_ (by taint_decide)) ?_
           · rintro a s₁ s₂ ⟨⟨x, hx, cx, -⟩, -⟩ ⟨⟨y, hy, cy, -⟩, -⟩ r hr
             exact CB.pins (hx.same hy) cx cy r hr
           · rintro a t ⟨⟨s0, c0, c, x0⟩, z⟩
-            exact WP.mono (frontA_ok (preC_of c0.1) c) fun u ⟨X₁, X₂, V, X, ia⟩ =>
-              ⟨s0, c0, x0.mp z, X₁, X₂, V, X, ia⟩
+            exact WP.mono (frontStart_ok (preC_of c0.1) c) fun _ ⟨X₁, X₂, hi⟩ =>
+              ⟨s0, c0, x0.mp z, X₁, X₂, hi⟩
+        · -- The divsteps restore the public length registers from the workspace.
+          refine two_post (two_taint (.s8 :: pubRegs) ?_ (by taint_decide)) ?_
+          · rintro a s₁ s₂ ⟨x, hx, -, _, _, ⟨_, _, _, cx, _, _, dx⟩⟩ ⟨y, hy, -, _, _, ⟨_, _, _, cy, _, _, dy⟩⟩ r hr
+            have sm := hx.same hy
+            rcases List.mem_cons.mp hr with rfl | hr
+            · rw [dx.ctx.s8, dy.ctx.s8]
+              simp only [nP, pL, qL, sm.args 1 (by decide), sm.args 3 (by decide)]
+            · exact pub_pins sm (divstepsCB (preC_of hx.1) cx dx) (divstepsCB (preC_of hy.1) cy dy)
+                dx.ctx.ws dy.ctx.ws r hr
+          · rintro a t ⟨s0, c0, hv, X₁, X₂, hi⟩
+            exact WP.mono (invEnd_ok (preC_of c0.1) hi) fun _ ⟨V, X, ia⟩ =>
+              ⟨s0, c0, hv, X₁, X₂, V, X, ia⟩
         · -- The write of `qInv`, its registers pinned again after the tail's restore.
           refine two_post (two_taint pubRegs ?_ (by taint_decide)) ?_
           · rintro a s₁ s₂ ⟨x, hx, -, _, _, _, _, ix⟩ ⟨y, hy, -, _, _, _, _, iy⟩ r hr

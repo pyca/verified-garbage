@@ -28,7 +28,7 @@ scratch_len)`, the last eight on the stack. As on PPC64LE
   numbers of the primes' digits of 32 bits `⌈max(p_len, q_len) / 4⌉` (`s8`,
   computed without a branch), in arrays 0–14, which hold nothing the rest
   needs by then. For a balanced key (`shape`), the inverse leaves out its
-  `5 (3 ν + 2)` doublings modulo `p | 1` (`InvBatch.inverseS`), and `tail`
+  `5 (3 ν + 2)` doublings modulo `p | 1` (`InvBatch.finish`), and `tail`
   multiplies it by `2^(5 (3 ν + 2))` modulo `p | 1` by one shift and one
   division by words (`WordDiv.divW`) instead; `qInv` is written last, after
   the registers `divW` writes are restored.
@@ -196,10 +196,11 @@ def tail : Prog isa := seqs [InvBatch.zeroW aDR, .block tailSetup, countLoop .t3
   InvBatch.zeroW InvBatch.aY, copy aTD InvBatch.aMin, .block (WordDiv.fixTop aTD),
   WordDiv.divW aDR InvBatch.aY aTD aTT]
 
-/-- The inverse: for a balanced key (`shape`) without its doublings, then
-`tail`, around which the registers are kept; else as it is. -/
-def invG : Prog isa := .seq (.block shape)
-  (.ite (.zero .t0) (seqs [InvBatch.inverseS, .block saveK, tail, .block restoreK]) InvBatch.inverse)
+/-- Scale the inverse using the balanced tail or the standard doublings. -/
+def invFinish : Prog isa := .seq (.block shape)
+  (.ite (.zero .t0)
+    (seqs [InvBatch.finish, .block saveK, tail, .block restoreK])
+    (.seq InvBatch.doublings InvBatch.finish))
 
 /-- The inverse's start: `x = q`, `m = p | 1`, the primes' digits in `s8`, and
 `[aOne] = 1`. -/
@@ -210,10 +211,13 @@ def invSetup : List (Prog isa) :=
 /-- The mask `0 - [sMask]` into `t4`. -/
 def mask : List Instr := [.load .d .t4 .s11 sMask, .li .t5 0, .sub .t4 .t5 .t4]
 
-/-- `qInv`, the gcd's check and the checks' mask. -/
-def invPart : Prog isa := seqs (invSetup ++ [
-  invG, eqS sE3 1 aOne,
-  .block (andS sMask sPodd sE1 ++ andS sMask sMask sE2 ++ andS sMask sMask sE3 ++ mask)])
+/-- Set up and run the common divsteps before testing the key shape. -/
+def invStart : Prog isa := seqs (invSetup ++ [InvBatch.callDivsteps 96])
+
+/-- Finish `qInv`, check the gcd and combine the checks' mask. -/
+def invEnd : Prog isa := seqs [
+  invFinish, eqS sE3 1 aOne,
+  .block (andS sMask sPodd sE1 ++ andS sMask sMask sE2 ++ andS sMask sMask sE3 ++ mask)]
 
 /-- `qInv` written under the mask. -/
 def storeQ : Prog isa := storeBytes 3 .a6 .s4
@@ -239,7 +243,7 @@ def dPartsAll : Prog isa := .seq (.block shape) (.ite (.zero .t0) dPartsW dParts
 
 /-- The set-up, the loads, the checks and the inverse: what comes before the
 divisions of `d`. -/
-def front : Prog isa := .seq (seqs [setup, loads, checks, invPart]) storeQ
+def front : Prog isa := .seq (.seq (seqs [setup, loads, checks, invStart]) invEnd) storeQ
 
 /-- `dP` and `dQ` written out under the mask, and the mask's bit returned. -/
 def stores : Prog isa := seqs [

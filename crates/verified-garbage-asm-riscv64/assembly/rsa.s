@@ -5119,6 +5119,9 @@ vg_rsa_crt_values:
 	addi t0, t0, 256
 	addi t5, zero, 1
 	sd t5, 0(t0)
+	sd ra, 96(s11)
+	call {vg_rsa_inverse_divsteps}
+	ld ra, 96(s11)
 	andi t0, s4, 7
 	slli t1, s9, 2
 	xor t1, t1, s4
@@ -5129,2404 +5132,12 @@ vg_rsa_crt_values:
 	sltu t1, s4, t1
 	or t0, t0, t1
 	beqz t0, 239f
-	addi t0, zero, 2
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t1, zero, 8
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
 	addi t3, s8, 1
 	srli t3, t3, 1
+	slli s7, t3, 4
+	sub s7, s7, t3
+	addi s7, s7, 10
 241:
-	ld t5, 0(t1)
-	sd t5, 0(t0)
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t3, t3, -1
-	bnez t3, 241b
-	addi t1, zero, 2
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t3, s8, 1
-	srli t3, t3, 1
-	slli t3, t3, 3
-	add t1, t1, t3
-	addi t5, zero, 0
-	sd t5, 0(t1)
-	addi a4, zero, 2
-	mul a4, a4, s10
-	add a4, a4, s11
-	addi a4, a4, 256
-	ld t5, 0(a4)
-	addi t6, t5, 0
-	mul a5, t5, t6
-	addi t4, zero, 2
-	sub a5, t4, a5
-	mul t6, t6, a5
-	mul a5, t5, t6
-	addi t4, zero, 2
-	sub a5, t4, a5
-	mul t6, t6, a5
-	mul a5, t5, t6
-	addi t4, zero, 2
-	sub a5, t4, a5
-	mul t6, t6, a5
-	mul a5, t5, t6
-	addi t4, zero, 2
-	sub a5, t4, a5
-	mul t6, t6, a5
-	mul a5, t5, t6
-	addi t4, zero, 2
-	sub a5, t4, a5
-	mul t6, t6, a5
-	addi a5, zero, 0
-	sub t1, a5, t6
-	addi a4, zero, 9
-	mul a4, a4, s10
-	add a4, a4, s11
-	addi a4, a4, 256
-	sd t1, 40(a4)
-	addi t0, zero, 4
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t1, zero, 2
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t3, s8, 1
-	srli t3, t3, 1
-	addi t3, t3, 1
-242:
-	ld t5, 0(t1)
-	sd t5, 0(t0)
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t3, t3, -1
-	bnez t3, 242b
-	addi t0, zero, 0
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	ld a5, 0(t0)
-	andi a5, a5, 1
-	xori a5, a5, 1
-	addi t0, zero, 5
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t1, zero, 0
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t2, zero, 2
-	mul t2, t2, s10
-	add t2, t2, s11
-	addi t2, t2, 256
-	addi t3, s8, 1
-	srli t3, t3, 1
-	addi t4, zero, 0
-243:
-	ld t5, 0(t2)
-	mul t6, a5, t5
-	mulhu t5, a5, t5
-	ld a4, 0(t1)
-	add t6, t6, a4
-	sltu a4, t6, a4
-	add t5, t5, a4
-	add t6, t6, t4
-	sltu a4, t6, t4
-	add t4, t5, a4
-	sd t6, 0(t0)
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t2, t2, 8
-	addi t3, t3, -1
-	bnez t3, 243b
-	sd t4, 0(t0)
-	addi t0, zero, 6
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t3, s8, 1
-	srli t3, t3, 1
-	addi t3, t3, 1
-	addi t5, zero, 0
-244:
-	sd t5, 0(t0)
-	addi t0, t0, 8
-	addi t3, t3, -1
-	bnez t3, 244b
-	addi t0, zero, 7
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t3, s8, 1
-	srli t3, t3, 1
-	addi t3, t3, 1
-	addi t5, zero, 0
-245:
-	sd t5, 0(t0)
-	addi t0, t0, 8
-	addi t3, t3, -1
-	bnez t3, 245b
-	addi t0, zero, 7
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t5, zero, 1
-	sd t5, 0(t0)
-	addi t0, zero, 9
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	sd t5, 0(t0)
-	addi t3, s8, 1
-	srli t3, t3, 1
-	add s7, t3, t3
-	add s7, s7, t3
-	addi s7, s7, 2
-246:
-	addi t0, zero, 4
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	ld a4, 0(t0)
-	addi t0, zero, 5
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	ld t0, 0(t0)
-	addi t6, zero, 9
-	mul t6, t6, s10
-	add t6, t6, s11
-	addi t6, t6, 256
-	ld t6, 0(t6)
-	addi t1, zero, 1
-	addi t2, zero, 0
-	addi t3, zero, 0
-	addi t4, zero, 1
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	addi a4, zero, 9
-	mul a4, a4, s10
-	add a4, a4, s11
-	addi a4, a4, 256
-	sd t6, 0(a4)
-	sd t1, 8(a4)
-	sd t2, 16(a4)
-	sd t3, 24(a4)
-	sd t4, 32(a4)
-	addi t0, zero, 11
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	sd s0, 0(t0)
-	sd s1, 8(t0)
-	sd s2, 16(t0)
-	sd s3, 24(t0)
-	sd s4, 32(t0)
-	sd s5, 40(t0)
-	addi t0, zero, 12
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	sd s6, 0(t0)
-	sd a0, 8(t0)
-	sd a1, 16(t0)
-	sd a2, 24(t0)
-	sd a3, 32(t0)
-	sd a6, 40(t0)
-	addi a5, zero, 9
-	mul a5, a5, s10
-	add a5, a5, s11
-	addi a5, a5, 256
-	ld a5, 8(a5)
-	addi a7, zero, 9
-	mul a7, a7, s10
-	add a7, a7, s11
-	addi a7, a7, 256
-	ld a7, 16(a7)
-	addi s1, zero, 9
-	mul s1, s1, s10
-	add s1, s1, s11
-	addi s1, s1, 256
-	ld s1, 24(s1)
-	addi s2, zero, 9
-	mul s2, s2, s10
-	add s2, s2, s11
-	addi s2, s2, 256
-	ld s2, 32(s2)
-	srai s3, a5, 63
-	srai s4, a7, 63
-	srai s5, s1, 63
-	addi t0, zero, 4
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t1, zero, 5
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t4, zero, 0
-	addi a4, zero, 0
-	addi a0, zero, 0
-	addi a1, zero, 0
-	srai s6, s2, 63
-	ld t5, 0(t0)
-	ld t6, 0(t1)
-	mul t2, a5, t5
-	add t4, t4, t2
-	sltu t2, t4, t2
-	add a4, a4, t2
-	mulhu t2, a5, t5
-	add a4, a4, t2
-	and t2, s3, t5
-	sub a4, a4, t2
-	mul t2, a7, t6
-	add t4, t4, t2
-	sltu t2, t4, t2
-	add a4, a4, t2
-	mulhu t2, a7, t6
-	add a4, a4, t2
-	and t2, s4, t6
-	sub a4, a4, t2
-	mul t2, s1, t5
-	add a0, a0, t2
-	sltu t2, a0, t2
-	add a1, a1, t2
-	mulhu t2, s1, t5
-	add a1, a1, t2
-	and t2, s5, t5
-	sub a1, a1, t2
-	mul t2, s2, t6
-	add a0, a0, t2
-	sltu t2, a0, t2
-	add a1, a1, t2
-	mulhu t2, s2, t6
-	add a1, a1, t2
-	and t2, s6, t6
-	sub a1, a1, t2
-	srli a2, t4, 59
-	addi t4, a4, 0
-	srai a4, a4, 63
-	srli a3, a0, 59
-	addi a0, a1, 0
-	srai a1, a1, 63
-	addi t3, s8, 1
-	srli t3, t3, 1
-247:
-	ld t5, 8(t0)
-	ld t6, 8(t1)
-	mul t2, a5, t5
-	add t4, t4, t2
-	sltu t2, t4, t2
-	add a4, a4, t2
-	mulhu t2, a5, t5
-	add a4, a4, t2
-	and t2, s3, t5
-	sub a4, a4, t2
-	mul t2, a7, t6
-	add t4, t4, t2
-	sltu t2, t4, t2
-	add a4, a4, t2
-	mulhu t2, a7, t6
-	add a4, a4, t2
-	and t2, s4, t6
-	sub a4, a4, t2
-	mul t2, s1, t5
-	add a0, a0, t2
-	sltu t2, a0, t2
-	add a1, a1, t2
-	mulhu t2, s1, t5
-	add a1, a1, t2
-	and t2, s5, t5
-	sub a1, a1, t2
-	mul t2, s2, t6
-	add a0, a0, t2
-	sltu t2, a0, t2
-	add a1, a1, t2
-	mulhu t2, s2, t6
-	add a1, a1, t2
-	and t2, s6, t6
-	sub a1, a1, t2
-	slli t2, t4, 5
-	add t2, a2, t2
-	sd t2, 0(t0)
-	slli t2, a0, 5
-	add t2, a3, t2
-	sd t2, 0(t1)
-	srli a2, t4, 59
-	addi t4, a4, 0
-	srai a4, a4, 63
-	srli a3, a0, 59
-	addi a0, a1, 0
-	srai a1, a1, 63
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t3, t3, -1
-	bnez t3, 247b
-	slli t2, a2, 59
-	srai t2, t2, 59
-	sd t2, 0(t0)
-	slli t2, a3, 59
-	srai t2, t2, 59
-	sd t2, 0(t1)
-	addi t0, zero, 11
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	ld s0, 0(t0)
-	ld s1, 8(t0)
-	ld s2, 16(t0)
-	ld s3, 24(t0)
-	ld s4, 32(t0)
-	ld s5, 40(t0)
-	addi t0, zero, 12
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	ld s6, 0(t0)
-	ld a0, 8(t0)
-	ld a1, 16(t0)
-	ld a2, 24(t0)
-	ld a3, 32(t0)
-	ld a6, 40(t0)
-	addi t0, zero, 11
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	sd s0, 0(t0)
-	sd s1, 8(t0)
-	sd s2, 16(t0)
-	sd s3, 24(t0)
-	sd s4, 32(t0)
-	sd s5, 40(t0)
-	addi t0, zero, 12
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	sd s6, 0(t0)
-	sd a0, 8(t0)
-	sd a1, 16(t0)
-	sd a2, 24(t0)
-	sd a3, 32(t0)
-	sd a6, 40(t0)
-	addi a5, zero, 9
-	mul a5, a5, s10
-	add a5, a5, s11
-	addi a5, a5, 256
-	ld a5, 8(a5)
-	addi a7, zero, 9
-	mul a7, a7, s10
-	add a7, a7, s11
-	addi a7, a7, 256
-	ld a7, 16(a7)
-	addi s1, zero, 9
-	mul s1, s1, s10
-	add s1, s1, s11
-	addi s1, s1, 256
-	ld s1, 24(s1)
-	addi s2, zero, 9
-	mul s2, s2, s10
-	add s2, s2, s11
-	addi s2, s2, 256
-	ld s2, 32(s2)
-	srai s3, a5, 63
-	srai s4, a7, 63
-	srai s5, s1, 63
-	addi t0, zero, 6
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t1, zero, 7
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t4, zero, 0
-	addi a4, zero, 0
-	addi a0, zero, 0
-	addi a1, zero, 0
-	addi t2, zero, 2
-	mul t2, t2, s10
-	add t2, t2, s11
-	addi t2, t2, 256
-	addi a6, zero, 0
-	addi s0, zero, 0
-	ld t5, 0(t0)
-	ld t6, 0(t1)
-	mul s6, a5, t5
-	add t4, t4, s6
-	sltu s6, t4, s6
-	add a4, a4, s6
-	mulhu s6, a5, t5
-	add a4, a4, s6
-	and s6, s3, t5
-	sub a4, a4, s6
-	mul s6, a7, t6
-	add t4, t4, s6
-	sltu s6, t4, s6
-	add a4, a4, s6
-	mulhu s6, a7, t6
-	add a4, a4, s6
-	and s6, s4, t6
-	sub a4, a4, s6
-	mul s6, s1, t5
-	add a0, a0, s6
-	sltu s6, a0, s6
-	add a1, a1, s6
-	mulhu s6, s1, t5
-	add a1, a1, s6
-	and s6, s5, t5
-	sub a1, a1, s6
-	mul s6, s2, t6
-	add a0, a0, s6
-	sltu s6, a0, s6
-	add a1, a1, s6
-	mulhu s6, s2, t6
-	add a1, a1, s6
-	srai s6, s2, 63
-	and s6, s6, t6
-	sub a1, a1, s6
-	addi t5, zero, 9
-	mul t5, t5, s10
-	add t5, t5, s11
-	addi t5, t5, 256
-	ld t5, 40(t5)
-	mul a2, t4, t5
-	mul a3, a0, t5
-	ld t5, 0(t2)
-	mul s6, a2, t5
-	add s6, s6, t4
-	sltu t4, s6, t4
-	mulhu t6, a2, t5
-	add t6, t6, t4
-	add t4, s6, a6
-	sltu s6, t4, a6
-	add a6, t6, s6
-	mul s6, a3, t5
-	add s6, s6, a0
-	sltu a0, s6, a0
-	mulhu t6, a3, t5
-	add t6, t6, a0
-	add a0, s6, s0
-	sltu s6, a0, s0
-	add s0, t6, s6
-	addi t4, a4, 0
-	srai a4, a4, 63
-	addi a0, a1, 0
-	srai a1, a1, 63
-	addi t3, s8, 1
-	srli t3, t3, 1
-	addi t3, t3, -1
-	beqz t3, 248f
-250:
-	ld t5, 8(t0)
-	ld t6, 8(t1)
-	mul s6, a5, t5
-	add t4, t4, s6
-	sltu s6, t4, s6
-	add a4, a4, s6
-	mulhu s6, a5, t5
-	add a4, a4, s6
-	and s6, s3, t5
-	sub a4, a4, s6
-	mul s6, a7, t6
-	add t4, t4, s6
-	sltu s6, t4, s6
-	add a4, a4, s6
-	mulhu s6, a7, t6
-	add a4, a4, s6
-	and s6, s4, t6
-	sub a4, a4, s6
-	mul s6, s1, t5
-	add a0, a0, s6
-	sltu s6, a0, s6
-	add a1, a1, s6
-	mulhu s6, s1, t5
-	add a1, a1, s6
-	and s6, s5, t5
-	sub a1, a1, s6
-	mul s6, s2, t6
-	add a0, a0, s6
-	sltu s6, a0, s6
-	add a1, a1, s6
-	mulhu s6, s2, t6
-	add a1, a1, s6
-	srai s6, s2, 63
-	and s6, s6, t6
-	sub a1, a1, s6
-	ld t5, 8(t2)
-	mul s6, a2, t5
-	add s6, s6, t4
-	sltu t4, s6, t4
-	mulhu t6, a2, t5
-	add t6, t6, t4
-	add t4, s6, a6
-	sltu s6, t4, a6
-	add a6, t6, s6
-	sd t4, 0(t0)
-	mul s6, a3, t5
-	add s6, s6, a0
-	sltu a0, s6, a0
-	mulhu t6, a3, t5
-	add t6, t6, a0
-	add a0, s6, s0
-	sltu s6, a0, s0
-	add s0, t6, s6
-	sd a0, 0(t1)
-	addi t4, a4, 0
-	srai a4, a4, 63
-	addi a0, a1, 0
-	srai a1, a1, 63
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t2, t2, 8
-	addi t3, t3, -1
-	bnez t3, 250b
-	j 249f
-248:
-249:
-	ld t5, 8(t0)
-	ld t6, 8(t1)
-	mul s6, a5, t5
-	add t4, t4, s6
-	sltu s6, t4, s6
-	add a4, a4, s6
-	mulhu s6, a5, t5
-	add a4, a4, s6
-	and s6, s3, t5
-	sub a4, a4, s6
-	mul s6, a7, t6
-	add t4, t4, s6
-	sltu s6, t4, s6
-	add a4, a4, s6
-	mulhu s6, a7, t6
-	add a4, a4, s6
-	and s6, s4, t6
-	sub a4, a4, s6
-	mul s6, s1, t5
-	add a0, a0, s6
-	sltu s6, a0, s6
-	add a1, a1, s6
-	mulhu s6, s1, t5
-	add a1, a1, s6
-	and s6, s5, t5
-	sub a1, a1, s6
-	mul s6, s2, t6
-	add a0, a0, s6
-	sltu s6, a0, s6
-	add a1, a1, s6
-	mulhu s6, s2, t6
-	add a1, a1, s6
-	srai s6, s2, 63
-	and s6, s6, t6
-	sub a1, a1, s6
-	srai t5, t4, 63
-	add t4, t4, a6
-	sltu t6, t4, a6
-	sd t4, 0(t0)
-	add t5, t5, t6
-	sd t5, 8(t0)
-	srai t5, a0, 63
-	add a0, a0, s0
-	sltu t6, a0, s0
-	sd a0, 0(t1)
-	add t5, t5, t6
-	sd t5, 8(t1)
-	addi t0, zero, 11
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	ld s0, 0(t0)
-	ld s1, 8(t0)
-	ld s2, 16(t0)
-	ld s3, 24(t0)
-	ld s4, 32(t0)
-	ld s5, 40(t0)
-	addi t0, zero, 12
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	ld s6, 0(t0)
-	ld a0, 8(t0)
-	ld a1, 16(t0)
-	ld a2, 24(t0)
-	ld a3, 32(t0)
-	ld a6, 40(t0)
-	addi s7, s7, -1
-	bnez s7, 246b
 	addi a5, zero, 1
 	addi t0, zero, 13
 	mul t0, t0, s10
@@ -7536,7 +5147,7 @@ vg_rsa_crt_values:
 	mul t1, t1, s10
 	add t1, t1, s11
 	addi t1, t1, 256
-	addi t2, zero, 2
+	addi t2, zero, 6
 	mul t2, t2, s10
 	add t2, t2, s11
 	addi t2, t2, 256
@@ -7544,7 +5155,7 @@ vg_rsa_crt_values:
 	srli t3, t3, 1
 	addi t3, t3, 1
 	addi t4, zero, 0
-251:
+242:
 	ld t5, 0(t2)
 	mul t6, a5, t5
 	mulhu t5, a5, t5
@@ -7560,8 +5171,110 @@ vg_rsa_crt_values:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 251b
-	addi t1, zero, 6
+	bnez t3, 242b
+	addi t0, zero, 11
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	addi t1, zero, 13
+	mul t1, t1, s10
+	add t1, t1, s11
+	addi t1, t1, 256
+	addi t2, zero, 2
+	mul t2, t2, s10
+	add t2, t2, s11
+	addi t2, t2, 256
+	addi t3, s8, 1
+	srli t3, t3, 1
+	addi t3, t3, 1
+	addi t4, zero, 0
+243:
+	ld t5, 0(t1)
+	ld t6, 0(t2)
+	sltu a4, t5, t6
+	sub t5, t5, t6
+	sltu t6, t5, t4
+	sub t5, t5, t4
+	or t4, a4, t6
+	sd t5, 0(t0)
+	addi t0, t0, 8
+	addi t1, t1, 8
+	addi t2, t2, 8
+	addi t3, t3, -1
+	bnez t3, 243b
+	addi t0, zero, 6
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	addi t1, zero, 11
+	mul t1, t1, s10
+	add t1, t1, s11
+	addi t1, t1, 256
+	addi t2, zero, 13
+	mul t2, t2, s10
+	add t2, t2, s11
+	addi t2, t2, 256
+	addi t3, s8, 1
+	srli t3, t3, 1
+	addi t3, t3, 1
+	addi t5, zero, 0
+	sub t4, t5, t4
+244:
+	ld t5, 0(t1)
+	ld t6, 0(t2)
+	xor t6, t6, t5
+	and t6, t6, t4
+	xor t6, t6, t5
+	sd t6, 0(t0)
+	addi t0, t0, 8
+	addi t1, t1, 8
+	addi t2, t2, 8
+	addi t3, t3, -1
+	bnez t3, 244b
+	addi s7, s7, -1
+	bnez s7, 241b
+	addi t0, zero, 1
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	addi t3, s9, 1
+	addi t5, zero, 0
+245:
+	sd t5, 0(t0)
+	addi t0, t0, 8
+	addi t3, t3, -1
+	bnez t3, 245b
+	addi t0, zero, 11
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	addi t1, zero, 1
+	mul t1, t1, s10
+	add t1, t1, s11
+	addi t1, t1, 256
+	addi t2, zero, 4
+	mul t2, t2, s10
+	add t2, t2, s11
+	addi t2, t2, 256
+	addi t3, s8, 1
+	srli t3, t3, 1
+	addi t3, t3, 1
+	addi t4, zero, 0
+246:
+	ld t5, 0(t1)
+	ld t6, 0(t2)
+	sltu a4, t5, t6
+	sub t5, t5, t6
+	sltu t6, t5, t4
+	sub t5, t5, t4
+	or t4, a4, t6
+	sd t5, 0(t0)
+	addi t0, t0, 8
+	addi t1, t1, 8
+	addi t2, t2, 8
+	addi t3, t3, -1
+	bnez t3, 246b
+	addi t1, zero, 4
 	mul t1, t1, s10
 	add t1, t1, s11
 	addi t1, t1, 256
@@ -7571,7 +5284,45 @@ vg_rsa_crt_values:
 	add t1, t1, t3
 	ld t4, 0(t1)
 	srai t4, t4, 63
-	addi t0, zero, 6
+	addi t0, zero, 1
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	addi t1, zero, 4
+	mul t1, t1, s10
+	add t1, t1, s11
+	addi t1, t1, 256
+	addi t2, zero, 11
+	mul t2, t2, s10
+	add t2, t2, s11
+	addi t2, t2, 256
+	addi t3, s8, 1
+	srli t3, t3, 1
+	addi t3, t3, 1
+247:
+	ld t5, 0(t1)
+	ld t6, 0(t2)
+	xor t6, t6, t5
+	and t6, t6, t4
+	xor t6, t6, t5
+	sd t6, 0(t0)
+	addi t0, t0, 8
+	addi t1, t1, 8
+	addi t2, t2, 8
+	addi t3, t3, -1
+	bnez t3, 247b
+	addi t0, zero, 3
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	addi t3, s9, 1
+	addi t5, zero, 0
+248:
+	sd t5, 0(t0)
+	addi t0, t0, 8
+	addi t3, t3, -1
+	bnez t3, 248b
+	addi t0, zero, 3
 	mul t0, t0, s10
 	add t0, t0, s11
 	addi t0, t0, 256
@@ -7579,7 +5330,78 @@ vg_rsa_crt_values:
 	mul t1, t1, s10
 	add t1, t1, s11
 	addi t1, t1, 256
-	addi t2, zero, 13
+	addi t3, s8, 1
+	srli t3, t3, 1
+	addi t3, t3, 1
+249:
+	ld t5, 0(t1)
+	sd t5, 0(t0)
+	addi t0, t0, 8
+	addi t1, t1, 8
+	addi t3, t3, -1
+	bnez t3, 249b
+	j 240f
+239:
+	addi t0, zero, 1
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	addi t3, s9, 1
+	addi t5, zero, 0
+250:
+	sd t5, 0(t0)
+	addi t0, t0, 8
+	addi t3, t3, -1
+	bnez t3, 250b
+	addi t0, zero, 11
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	addi t1, zero, 1
+	mul t1, t1, s10
+	add t1, t1, s11
+	addi t1, t1, 256
+	addi t2, zero, 4
+	mul t2, t2, s10
+	add t2, t2, s11
+	addi t2, t2, 256
+	addi t3, s8, 1
+	srli t3, t3, 1
+	addi t3, t3, 1
+	addi t4, zero, 0
+251:
+	ld t5, 0(t1)
+	ld t6, 0(t2)
+	sltu a4, t5, t6
+	sub t5, t5, t6
+	sltu t6, t5, t4
+	sub t5, t5, t4
+	or t4, a4, t6
+	sd t5, 0(t0)
+	addi t0, t0, 8
+	addi t1, t1, 8
+	addi t2, t2, 8
+	addi t3, t3, -1
+	bnez t3, 251b
+	addi t1, zero, 4
+	mul t1, t1, s10
+	add t1, t1, s11
+	addi t1, t1, 256
+	addi t3, s8, 1
+	srli t3, t3, 1
+	slli t3, t3, 3
+	add t1, t1, t3
+	ld t4, 0(t1)
+	srai t4, t4, 63
+	addi t0, zero, 1
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	addi t1, zero, 4
+	mul t1, t1, s10
+	add t1, t1, s11
+	addi t1, t1, 256
+	addi t2, zero, 11
 	mul t2, t2, s10
 	add t2, t2, s11
 	addi t2, t2, 256
@@ -7598,3162 +5420,35 @@ vg_rsa_crt_values:
 	addi t2, t2, 8
 	addi t3, t3, -1
 	bnez t3, 252b
-	addi t0, zero, 11
+	addi t0, zero, 3
 	mul t0, t0, s10
 	add t0, t0, s11
 	addi t0, t0, 256
-	addi t1, zero, 6
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t2, zero, 2
-	mul t2, t2, s10
-	add t2, t2, s11
-	addi t2, t2, 256
-	addi t3, s8, 1
-	srli t3, t3, 1
-	addi t3, t3, 1
-	addi t4, zero, 0
+	addi t3, s9, 1
+	addi t5, zero, 0
 253:
-	ld t5, 0(t1)
-	ld t6, 0(t2)
-	sltu a4, t5, t6
-	sub t5, t5, t6
-	sltu t6, t5, t4
-	sub t5, t5, t4
-	or t4, a4, t6
 	sd t5, 0(t0)
 	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t2, t2, 8
 	addi t3, t3, -1
 	bnez t3, 253b
-	addi t0, zero, 6
+	addi t0, zero, 3
 	mul t0, t0, s10
 	add t0, t0, s11
 	addi t0, t0, 256
-	addi t1, zero, 11
+	addi t1, zero, 6
 	mul t1, t1, s10
 	add t1, t1, s11
 	addi t1, t1, 256
-	addi t2, zero, 6
-	mul t2, t2, s10
-	add t2, t2, s11
-	addi t2, t2, 256
 	addi t3, s8, 1
 	srli t3, t3, 1
 	addi t3, t3, 1
-	addi t5, zero, 0
-	sub t4, t5, t4
 254:
 	ld t5, 0(t1)
-	ld t6, 0(t2)
-	xor t6, t6, t5
-	and t6, t6, t4
-	xor t6, t6, t5
-	sd t6, 0(t0)
+	sd t5, 0(t0)
 	addi t0, t0, 8
 	addi t1, t1, 8
-	addi t2, t2, 8
 	addi t3, t3, -1
 	bnez t3, 254b
-	addi t0, zero, 13
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t1, zero, 2
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t2, zero, 6
-	mul t2, t2, s10
-	add t2, t2, s11
-	addi t2, t2, 256
-	addi t3, s8, 1
-	srli t3, t3, 1
-	addi t3, t3, 1
-	addi t4, zero, 0
-255:
-	ld t5, 0(t1)
-	ld t6, 0(t2)
-	sltu a4, t5, t6
-	sub t5, t5, t6
-	sltu t6, t5, t4
-	sub t5, t5, t4
-	or t4, a4, t6
-	sd t5, 0(t0)
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t2, t2, 8
-	addi t3, t3, -1
-	bnez t3, 255b
-	addi t1, zero, 4
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t3, s8, 1
-	srli t3, t3, 1
-	slli t3, t3, 3
-	add t1, t1, t3
-	ld t4, 0(t1)
-	srai t4, t4, 63
-	addi t0, zero, 6
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t1, zero, 6
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t2, zero, 13
-	mul t2, t2, s10
-	add t2, t2, s11
-	addi t2, t2, 256
-	addi t3, s8, 1
-	srli t3, t3, 1
-	addi t3, t3, 1
-256:
-	ld t5, 0(t1)
-	ld t6, 0(t2)
-	xor t6, t6, t5
-	and t6, t6, t4
-	xor t6, t6, t5
-	sd t6, 0(t0)
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t2, t2, 8
-	addi t3, t3, -1
-	bnez t3, 256b
-	addi t0, zero, 11
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t1, zero, 6
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t2, zero, 2
-	mul t2, t2, s10
-	add t2, t2, s11
-	addi t2, t2, 256
-	addi t3, s8, 1
-	srli t3, t3, 1
-	addi t3, t3, 1
-	addi t4, zero, 0
-257:
-	ld t5, 0(t1)
-	ld t6, 0(t2)
-	sltu a4, t5, t6
-	sub t5, t5, t6
-	sltu t6, t5, t4
-	sub t5, t5, t4
-	or t4, a4, t6
-	sd t5, 0(t0)
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t2, t2, 8
-	addi t3, t3, -1
-	bnez t3, 257b
-	addi t0, zero, 6
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t1, zero, 11
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t2, zero, 6
-	mul t2, t2, s10
-	add t2, t2, s11
-	addi t2, t2, 256
-	addi t3, s8, 1
-	srli t3, t3, 1
-	addi t3, t3, 1
-	addi t5, zero, 0
-	sub t4, t5, t4
-258:
-	ld t5, 0(t1)
-	ld t6, 0(t2)
-	xor t6, t6, t5
-	and t6, t6, t4
-	xor t6, t6, t5
-	sd t6, 0(t0)
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t2, t2, 8
-	addi t3, t3, -1
-	bnez t3, 258b
-	addi t3, s8, 1
-	srli t3, t3, 1
-	slli s7, t3, 4
-	sub s7, s7, t3
-	addi s7, s7, 10
-259:
-	addi a5, zero, 1
-	addi t0, zero, 13
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t1, zero, 6
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t2, zero, 6
-	mul t2, t2, s10
-	add t2, t2, s11
-	addi t2, t2, 256
-	addi t3, s8, 1
-	srli t3, t3, 1
-	addi t3, t3, 1
-	addi t4, zero, 0
-260:
-	ld t5, 0(t2)
-	mul t6, a5, t5
-	mulhu t5, a5, t5
-	ld a4, 0(t1)
-	add t6, t6, a4
-	sltu a4, t6, a4
-	add t5, t5, a4
-	add t6, t6, t4
-	sltu a4, t6, t4
-	add t4, t5, a4
-	sd t6, 0(t0)
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t2, t2, 8
-	addi t3, t3, -1
-	bnez t3, 260b
-	addi t0, zero, 11
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t1, zero, 13
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t2, zero, 2
-	mul t2, t2, s10
-	add t2, t2, s11
-	addi t2, t2, 256
-	addi t3, s8, 1
-	srli t3, t3, 1
-	addi t3, t3, 1
-	addi t4, zero, 0
-261:
-	ld t5, 0(t1)
-	ld t6, 0(t2)
-	sltu a4, t5, t6
-	sub t5, t5, t6
-	sltu t6, t5, t4
-	sub t5, t5, t4
-	or t4, a4, t6
-	sd t5, 0(t0)
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t2, t2, 8
-	addi t3, t3, -1
-	bnez t3, 261b
-	addi t0, zero, 6
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t1, zero, 11
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t2, zero, 13
-	mul t2, t2, s10
-	add t2, t2, s11
-	addi t2, t2, 256
-	addi t3, s8, 1
-	srli t3, t3, 1
-	addi t3, t3, 1
-	addi t5, zero, 0
-	sub t4, t5, t4
-262:
-	ld t5, 0(t1)
-	ld t6, 0(t2)
-	xor t6, t6, t5
-	and t6, t6, t4
-	xor t6, t6, t5
-	sd t6, 0(t0)
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t2, t2, 8
-	addi t3, t3, -1
-	bnez t3, 262b
-	addi s7, s7, -1
-	bnez s7, 259b
-	addi t0, zero, 1
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t3, s9, 1
-	addi t5, zero, 0
-263:
-	sd t5, 0(t0)
-	addi t0, t0, 8
-	addi t3, t3, -1
-	bnez t3, 263b
-	addi t0, zero, 11
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t1, zero, 1
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t2, zero, 4
-	mul t2, t2, s10
-	add t2, t2, s11
-	addi t2, t2, 256
-	addi t3, s8, 1
-	srli t3, t3, 1
-	addi t3, t3, 1
-	addi t4, zero, 0
-264:
-	ld t5, 0(t1)
-	ld t6, 0(t2)
-	sltu a4, t5, t6
-	sub t5, t5, t6
-	sltu t6, t5, t4
-	sub t5, t5, t4
-	or t4, a4, t6
-	sd t5, 0(t0)
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t2, t2, 8
-	addi t3, t3, -1
-	bnez t3, 264b
-	addi t1, zero, 4
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t3, s8, 1
-	srli t3, t3, 1
-	slli t3, t3, 3
-	add t1, t1, t3
-	ld t4, 0(t1)
-	srai t4, t4, 63
-	addi t0, zero, 1
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t1, zero, 4
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t2, zero, 11
-	mul t2, t2, s10
-	add t2, t2, s11
-	addi t2, t2, 256
-	addi t3, s8, 1
-	srli t3, t3, 1
-	addi t3, t3, 1
-265:
-	ld t5, 0(t1)
-	ld t6, 0(t2)
-	xor t6, t6, t5
-	and t6, t6, t4
-	xor t6, t6, t5
-	sd t6, 0(t0)
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t2, t2, 8
-	addi t3, t3, -1
-	bnez t3, 265b
-	addi t0, zero, 3
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t3, s9, 1
-	addi t5, zero, 0
-266:
-	sd t5, 0(t0)
-	addi t0, t0, 8
-	addi t3, t3, -1
-	bnez t3, 266b
-	addi t0, zero, 3
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t1, zero, 6
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t3, s8, 1
-	srli t3, t3, 1
-	addi t3, t3, 1
-267:
-	ld t5, 0(t1)
-	sd t5, 0(t0)
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t3, t3, -1
-	bnez t3, 267b
-	j 240f
-239:
-	addi t0, zero, 2
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t1, zero, 8
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t3, s8, 1
-	srli t3, t3, 1
-268:
-	ld t5, 0(t1)
-	sd t5, 0(t0)
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t3, t3, -1
-	bnez t3, 268b
-	addi t1, zero, 2
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t3, s8, 1
-	srli t3, t3, 1
-	slli t3, t3, 3
-	add t1, t1, t3
-	addi t5, zero, 0
-	sd t5, 0(t1)
-	addi a4, zero, 2
-	mul a4, a4, s10
-	add a4, a4, s11
-	addi a4, a4, 256
-	ld t5, 0(a4)
-	addi t6, t5, 0
-	mul a5, t5, t6
-	addi t4, zero, 2
-	sub a5, t4, a5
-	mul t6, t6, a5
-	mul a5, t5, t6
-	addi t4, zero, 2
-	sub a5, t4, a5
-	mul t6, t6, a5
-	mul a5, t5, t6
-	addi t4, zero, 2
-	sub a5, t4, a5
-	mul t6, t6, a5
-	mul a5, t5, t6
-	addi t4, zero, 2
-	sub a5, t4, a5
-	mul t6, t6, a5
-	mul a5, t5, t6
-	addi t4, zero, 2
-	sub a5, t4, a5
-	mul t6, t6, a5
-	addi a5, zero, 0
-	sub t1, a5, t6
-	addi a4, zero, 9
-	mul a4, a4, s10
-	add a4, a4, s11
-	addi a4, a4, 256
-	sd t1, 40(a4)
-	addi t0, zero, 4
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t1, zero, 2
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t3, s8, 1
-	srli t3, t3, 1
-	addi t3, t3, 1
-269:
-	ld t5, 0(t1)
-	sd t5, 0(t0)
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t3, t3, -1
-	bnez t3, 269b
-	addi t0, zero, 0
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	ld a5, 0(t0)
-	andi a5, a5, 1
-	xori a5, a5, 1
-	addi t0, zero, 5
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t1, zero, 0
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t2, zero, 2
-	mul t2, t2, s10
-	add t2, t2, s11
-	addi t2, t2, 256
-	addi t3, s8, 1
-	srli t3, t3, 1
-	addi t4, zero, 0
-270:
-	ld t5, 0(t2)
-	mul t6, a5, t5
-	mulhu t5, a5, t5
-	ld a4, 0(t1)
-	add t6, t6, a4
-	sltu a4, t6, a4
-	add t5, t5, a4
-	add t6, t6, t4
-	sltu a4, t6, t4
-	add t4, t5, a4
-	sd t6, 0(t0)
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t2, t2, 8
-	addi t3, t3, -1
-	bnez t3, 270b
-	sd t4, 0(t0)
-	addi t0, zero, 6
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t3, s8, 1
-	srli t3, t3, 1
-	addi t3, t3, 1
-	addi t5, zero, 0
-271:
-	sd t5, 0(t0)
-	addi t0, t0, 8
-	addi t3, t3, -1
-	bnez t3, 271b
-	addi t0, zero, 7
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t3, s8, 1
-	srli t3, t3, 1
-	addi t3, t3, 1
-	addi t5, zero, 0
-272:
-	sd t5, 0(t0)
-	addi t0, t0, 8
-	addi t3, t3, -1
-	bnez t3, 272b
-	addi t0, zero, 7
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t5, zero, 1
-	sd t5, 0(t0)
-	addi t0, zero, 9
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	sd t5, 0(t0)
-	addi t3, s8, 1
-	srli t3, t3, 1
-	add s7, t3, t3
-	add s7, s7, t3
-	addi s7, s7, 2
-273:
-	addi t0, zero, 4
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	ld a4, 0(t0)
-	addi t0, zero, 5
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	ld t0, 0(t0)
-	addi t6, zero, 9
-	mul t6, t6, s10
-	add t6, t6, s11
-	addi t6, t6, 256
-	ld t6, 0(t6)
-	addi t1, zero, 1
-	addi t2, zero, 0
-	addi t3, zero, 0
-	addi t4, zero, 1
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	andi t5, t0, 1
-	addi a5, zero, 0
-	sub a5, a5, t5
-	srli a7, t6, 63
-	addi a7, a7, -1
-	and a7, a7, a5
-	xor t5, a4, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t0, t0, t5
-	xor t5, t1, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t3, t3, t5
-	xor t5, t2, a7
-	sub t5, t5, a7
-	and t5, t5, a5
-	add t4, t4, t5
-	xor t6, t6, a7
-	sub t6, t6, a7
-	addi t6, t6, 2
-	and t5, t0, a7
-	add a4, a4, t5
-	srli t0, t0, 1
-	and t5, t3, a7
-	add t1, t1, t5
-	add t1, t1, t1
-	and t5, t4, a7
-	add t2, t2, t5
-	add t2, t2, t2
-	addi a4, zero, 9
-	mul a4, a4, s10
-	add a4, a4, s11
-	addi a4, a4, 256
-	sd t6, 0(a4)
-	sd t1, 8(a4)
-	sd t2, 16(a4)
-	sd t3, 24(a4)
-	sd t4, 32(a4)
-	addi t0, zero, 11
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	sd s0, 0(t0)
-	sd s1, 8(t0)
-	sd s2, 16(t0)
-	sd s3, 24(t0)
-	sd s4, 32(t0)
-	sd s5, 40(t0)
-	addi t0, zero, 12
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	sd s6, 0(t0)
-	sd a0, 8(t0)
-	sd a1, 16(t0)
-	sd a2, 24(t0)
-	sd a3, 32(t0)
-	sd a6, 40(t0)
-	addi a5, zero, 9
-	mul a5, a5, s10
-	add a5, a5, s11
-	addi a5, a5, 256
-	ld a5, 8(a5)
-	addi a7, zero, 9
-	mul a7, a7, s10
-	add a7, a7, s11
-	addi a7, a7, 256
-	ld a7, 16(a7)
-	addi s1, zero, 9
-	mul s1, s1, s10
-	add s1, s1, s11
-	addi s1, s1, 256
-	ld s1, 24(s1)
-	addi s2, zero, 9
-	mul s2, s2, s10
-	add s2, s2, s11
-	addi s2, s2, 256
-	ld s2, 32(s2)
-	srai s3, a5, 63
-	srai s4, a7, 63
-	srai s5, s1, 63
-	addi t0, zero, 4
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t1, zero, 5
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t4, zero, 0
-	addi a4, zero, 0
-	addi a0, zero, 0
-	addi a1, zero, 0
-	srai s6, s2, 63
-	ld t5, 0(t0)
-	ld t6, 0(t1)
-	mul t2, a5, t5
-	add t4, t4, t2
-	sltu t2, t4, t2
-	add a4, a4, t2
-	mulhu t2, a5, t5
-	add a4, a4, t2
-	and t2, s3, t5
-	sub a4, a4, t2
-	mul t2, a7, t6
-	add t4, t4, t2
-	sltu t2, t4, t2
-	add a4, a4, t2
-	mulhu t2, a7, t6
-	add a4, a4, t2
-	and t2, s4, t6
-	sub a4, a4, t2
-	mul t2, s1, t5
-	add a0, a0, t2
-	sltu t2, a0, t2
-	add a1, a1, t2
-	mulhu t2, s1, t5
-	add a1, a1, t2
-	and t2, s5, t5
-	sub a1, a1, t2
-	mul t2, s2, t6
-	add a0, a0, t2
-	sltu t2, a0, t2
-	add a1, a1, t2
-	mulhu t2, s2, t6
-	add a1, a1, t2
-	and t2, s6, t6
-	sub a1, a1, t2
-	srli a2, t4, 59
-	addi t4, a4, 0
-	srai a4, a4, 63
-	srli a3, a0, 59
-	addi a0, a1, 0
-	srai a1, a1, 63
-	addi t3, s8, 1
-	srli t3, t3, 1
-274:
-	ld t5, 8(t0)
-	ld t6, 8(t1)
-	mul t2, a5, t5
-	add t4, t4, t2
-	sltu t2, t4, t2
-	add a4, a4, t2
-	mulhu t2, a5, t5
-	add a4, a4, t2
-	and t2, s3, t5
-	sub a4, a4, t2
-	mul t2, a7, t6
-	add t4, t4, t2
-	sltu t2, t4, t2
-	add a4, a4, t2
-	mulhu t2, a7, t6
-	add a4, a4, t2
-	and t2, s4, t6
-	sub a4, a4, t2
-	mul t2, s1, t5
-	add a0, a0, t2
-	sltu t2, a0, t2
-	add a1, a1, t2
-	mulhu t2, s1, t5
-	add a1, a1, t2
-	and t2, s5, t5
-	sub a1, a1, t2
-	mul t2, s2, t6
-	add a0, a0, t2
-	sltu t2, a0, t2
-	add a1, a1, t2
-	mulhu t2, s2, t6
-	add a1, a1, t2
-	and t2, s6, t6
-	sub a1, a1, t2
-	slli t2, t4, 5
-	add t2, a2, t2
-	sd t2, 0(t0)
-	slli t2, a0, 5
-	add t2, a3, t2
-	sd t2, 0(t1)
-	srli a2, t4, 59
-	addi t4, a4, 0
-	srai a4, a4, 63
-	srli a3, a0, 59
-	addi a0, a1, 0
-	srai a1, a1, 63
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t3, t3, -1
-	bnez t3, 274b
-	slli t2, a2, 59
-	srai t2, t2, 59
-	sd t2, 0(t0)
-	slli t2, a3, 59
-	srai t2, t2, 59
-	sd t2, 0(t1)
-	addi t0, zero, 11
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	ld s0, 0(t0)
-	ld s1, 8(t0)
-	ld s2, 16(t0)
-	ld s3, 24(t0)
-	ld s4, 32(t0)
-	ld s5, 40(t0)
-	addi t0, zero, 12
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	ld s6, 0(t0)
-	ld a0, 8(t0)
-	ld a1, 16(t0)
-	ld a2, 24(t0)
-	ld a3, 32(t0)
-	ld a6, 40(t0)
-	addi t0, zero, 11
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	sd s0, 0(t0)
-	sd s1, 8(t0)
-	sd s2, 16(t0)
-	sd s3, 24(t0)
-	sd s4, 32(t0)
-	sd s5, 40(t0)
-	addi t0, zero, 12
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	sd s6, 0(t0)
-	sd a0, 8(t0)
-	sd a1, 16(t0)
-	sd a2, 24(t0)
-	sd a3, 32(t0)
-	sd a6, 40(t0)
-	addi a5, zero, 9
-	mul a5, a5, s10
-	add a5, a5, s11
-	addi a5, a5, 256
-	ld a5, 8(a5)
-	addi a7, zero, 9
-	mul a7, a7, s10
-	add a7, a7, s11
-	addi a7, a7, 256
-	ld a7, 16(a7)
-	addi s1, zero, 9
-	mul s1, s1, s10
-	add s1, s1, s11
-	addi s1, s1, 256
-	ld s1, 24(s1)
-	addi s2, zero, 9
-	mul s2, s2, s10
-	add s2, s2, s11
-	addi s2, s2, 256
-	ld s2, 32(s2)
-	srai s3, a5, 63
-	srai s4, a7, 63
-	srai s5, s1, 63
-	addi t0, zero, 6
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t1, zero, 7
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t4, zero, 0
-	addi a4, zero, 0
-	addi a0, zero, 0
-	addi a1, zero, 0
-	addi t2, zero, 2
-	mul t2, t2, s10
-	add t2, t2, s11
-	addi t2, t2, 256
-	addi a6, zero, 0
-	addi s0, zero, 0
-	ld t5, 0(t0)
-	ld t6, 0(t1)
-	mul s6, a5, t5
-	add t4, t4, s6
-	sltu s6, t4, s6
-	add a4, a4, s6
-	mulhu s6, a5, t5
-	add a4, a4, s6
-	and s6, s3, t5
-	sub a4, a4, s6
-	mul s6, a7, t6
-	add t4, t4, s6
-	sltu s6, t4, s6
-	add a4, a4, s6
-	mulhu s6, a7, t6
-	add a4, a4, s6
-	and s6, s4, t6
-	sub a4, a4, s6
-	mul s6, s1, t5
-	add a0, a0, s6
-	sltu s6, a0, s6
-	add a1, a1, s6
-	mulhu s6, s1, t5
-	add a1, a1, s6
-	and s6, s5, t5
-	sub a1, a1, s6
-	mul s6, s2, t6
-	add a0, a0, s6
-	sltu s6, a0, s6
-	add a1, a1, s6
-	mulhu s6, s2, t6
-	add a1, a1, s6
-	srai s6, s2, 63
-	and s6, s6, t6
-	sub a1, a1, s6
-	addi t5, zero, 9
-	mul t5, t5, s10
-	add t5, t5, s11
-	addi t5, t5, 256
-	ld t5, 40(t5)
-	mul a2, t4, t5
-	mul a3, a0, t5
-	ld t5, 0(t2)
-	mul s6, a2, t5
-	add s6, s6, t4
-	sltu t4, s6, t4
-	mulhu t6, a2, t5
-	add t6, t6, t4
-	add t4, s6, a6
-	sltu s6, t4, a6
-	add a6, t6, s6
-	mul s6, a3, t5
-	add s6, s6, a0
-	sltu a0, s6, a0
-	mulhu t6, a3, t5
-	add t6, t6, a0
-	add a0, s6, s0
-	sltu s6, a0, s0
-	add s0, t6, s6
-	addi t4, a4, 0
-	srai a4, a4, 63
-	addi a0, a1, 0
-	srai a1, a1, 63
-	addi t3, s8, 1
-	srli t3, t3, 1
-	addi t3, t3, -1
-	beqz t3, 275f
-277:
-	ld t5, 8(t0)
-	ld t6, 8(t1)
-	mul s6, a5, t5
-	add t4, t4, s6
-	sltu s6, t4, s6
-	add a4, a4, s6
-	mulhu s6, a5, t5
-	add a4, a4, s6
-	and s6, s3, t5
-	sub a4, a4, s6
-	mul s6, a7, t6
-	add t4, t4, s6
-	sltu s6, t4, s6
-	add a4, a4, s6
-	mulhu s6, a7, t6
-	add a4, a4, s6
-	and s6, s4, t6
-	sub a4, a4, s6
-	mul s6, s1, t5
-	add a0, a0, s6
-	sltu s6, a0, s6
-	add a1, a1, s6
-	mulhu s6, s1, t5
-	add a1, a1, s6
-	and s6, s5, t5
-	sub a1, a1, s6
-	mul s6, s2, t6
-	add a0, a0, s6
-	sltu s6, a0, s6
-	add a1, a1, s6
-	mulhu s6, s2, t6
-	add a1, a1, s6
-	srai s6, s2, 63
-	and s6, s6, t6
-	sub a1, a1, s6
-	ld t5, 8(t2)
-	mul s6, a2, t5
-	add s6, s6, t4
-	sltu t4, s6, t4
-	mulhu t6, a2, t5
-	add t6, t6, t4
-	add t4, s6, a6
-	sltu s6, t4, a6
-	add a6, t6, s6
-	sd t4, 0(t0)
-	mul s6, a3, t5
-	add s6, s6, a0
-	sltu a0, s6, a0
-	mulhu t6, a3, t5
-	add t6, t6, a0
-	add a0, s6, s0
-	sltu s6, a0, s0
-	add s0, t6, s6
-	sd a0, 0(t1)
-	addi t4, a4, 0
-	srai a4, a4, 63
-	addi a0, a1, 0
-	srai a1, a1, 63
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t2, t2, 8
-	addi t3, t3, -1
-	bnez t3, 277b
-	j 276f
-275:
-276:
-	ld t5, 8(t0)
-	ld t6, 8(t1)
-	mul s6, a5, t5
-	add t4, t4, s6
-	sltu s6, t4, s6
-	add a4, a4, s6
-	mulhu s6, a5, t5
-	add a4, a4, s6
-	and s6, s3, t5
-	sub a4, a4, s6
-	mul s6, a7, t6
-	add t4, t4, s6
-	sltu s6, t4, s6
-	add a4, a4, s6
-	mulhu s6, a7, t6
-	add a4, a4, s6
-	and s6, s4, t6
-	sub a4, a4, s6
-	mul s6, s1, t5
-	add a0, a0, s6
-	sltu s6, a0, s6
-	add a1, a1, s6
-	mulhu s6, s1, t5
-	add a1, a1, s6
-	and s6, s5, t5
-	sub a1, a1, s6
-	mul s6, s2, t6
-	add a0, a0, s6
-	sltu s6, a0, s6
-	add a1, a1, s6
-	mulhu s6, s2, t6
-	add a1, a1, s6
-	srai s6, s2, 63
-	and s6, s6, t6
-	sub a1, a1, s6
-	srai t5, t4, 63
-	add t4, t4, a6
-	sltu t6, t4, a6
-	sd t4, 0(t0)
-	add t5, t5, t6
-	sd t5, 8(t0)
-	srai t5, a0, 63
-	add a0, a0, s0
-	sltu t6, a0, s0
-	sd a0, 0(t1)
-	add t5, t5, t6
-	sd t5, 8(t1)
-	addi t0, zero, 11
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	ld s0, 0(t0)
-	ld s1, 8(t0)
-	ld s2, 16(t0)
-	ld s3, 24(t0)
-	ld s4, 32(t0)
-	ld s5, 40(t0)
-	addi t0, zero, 12
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	ld s6, 0(t0)
-	ld a0, 8(t0)
-	ld a1, 16(t0)
-	ld a2, 24(t0)
-	ld a3, 32(t0)
-	ld a6, 40(t0)
-	addi s7, s7, -1
-	bnez s7, 273b
-	addi a5, zero, 1
-	addi t0, zero, 13
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t1, zero, 6
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t2, zero, 2
-	mul t2, t2, s10
-	add t2, t2, s11
-	addi t2, t2, 256
-	addi t3, s8, 1
-	srli t3, t3, 1
-	addi t3, t3, 1
-	addi t4, zero, 0
-278:
-	ld t5, 0(t2)
-	mul t6, a5, t5
-	mulhu t5, a5, t5
-	ld a4, 0(t1)
-	add t6, t6, a4
-	sltu a4, t6, a4
-	add t5, t5, a4
-	add t6, t6, t4
-	sltu a4, t6, t4
-	add t4, t5, a4
-	sd t6, 0(t0)
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t2, t2, 8
-	addi t3, t3, -1
-	bnez t3, 278b
-	addi t1, zero, 6
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t3, s8, 1
-	srli t3, t3, 1
-	slli t3, t3, 3
-	add t1, t1, t3
-	ld t4, 0(t1)
-	srai t4, t4, 63
-	addi t0, zero, 6
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t1, zero, 6
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t2, zero, 13
-	mul t2, t2, s10
-	add t2, t2, s11
-	addi t2, t2, 256
-	addi t3, s8, 1
-	srli t3, t3, 1
-	addi t3, t3, 1
-279:
-	ld t5, 0(t1)
-	ld t6, 0(t2)
-	xor t6, t6, t5
-	and t6, t6, t4
-	xor t6, t6, t5
-	sd t6, 0(t0)
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t2, t2, 8
-	addi t3, t3, -1
-	bnez t3, 279b
-	addi t0, zero, 11
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t1, zero, 6
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t2, zero, 2
-	mul t2, t2, s10
-	add t2, t2, s11
-	addi t2, t2, 256
-	addi t3, s8, 1
-	srli t3, t3, 1
-	addi t3, t3, 1
-	addi t4, zero, 0
-280:
-	ld t5, 0(t1)
-	ld t6, 0(t2)
-	sltu a4, t5, t6
-	sub t5, t5, t6
-	sltu t6, t5, t4
-	sub t5, t5, t4
-	or t4, a4, t6
-	sd t5, 0(t0)
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t2, t2, 8
-	addi t3, t3, -1
-	bnez t3, 280b
-	addi t0, zero, 6
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t1, zero, 11
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t2, zero, 6
-	mul t2, t2, s10
-	add t2, t2, s11
-	addi t2, t2, 256
-	addi t3, s8, 1
-	srli t3, t3, 1
-	addi t3, t3, 1
-	addi t5, zero, 0
-	sub t4, t5, t4
-281:
-	ld t5, 0(t1)
-	ld t6, 0(t2)
-	xor t6, t6, t5
-	and t6, t6, t4
-	xor t6, t6, t5
-	sd t6, 0(t0)
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t2, t2, 8
-	addi t3, t3, -1
-	bnez t3, 281b
-	addi t0, zero, 13
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t1, zero, 2
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t2, zero, 6
-	mul t2, t2, s10
-	add t2, t2, s11
-	addi t2, t2, 256
-	addi t3, s8, 1
-	srli t3, t3, 1
-	addi t3, t3, 1
-	addi t4, zero, 0
-282:
-	ld t5, 0(t1)
-	ld t6, 0(t2)
-	sltu a4, t5, t6
-	sub t5, t5, t6
-	sltu t6, t5, t4
-	sub t5, t5, t4
-	or t4, a4, t6
-	sd t5, 0(t0)
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t2, t2, 8
-	addi t3, t3, -1
-	bnez t3, 282b
-	addi t1, zero, 4
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t3, s8, 1
-	srli t3, t3, 1
-	slli t3, t3, 3
-	add t1, t1, t3
-	ld t4, 0(t1)
-	srai t4, t4, 63
-	addi t0, zero, 6
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t1, zero, 6
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t2, zero, 13
-	mul t2, t2, s10
-	add t2, t2, s11
-	addi t2, t2, 256
-	addi t3, s8, 1
-	srli t3, t3, 1
-	addi t3, t3, 1
-283:
-	ld t5, 0(t1)
-	ld t6, 0(t2)
-	xor t6, t6, t5
-	and t6, t6, t4
-	xor t6, t6, t5
-	sd t6, 0(t0)
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t2, t2, 8
-	addi t3, t3, -1
-	bnez t3, 283b
-	addi t0, zero, 11
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t1, zero, 6
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t2, zero, 2
-	mul t2, t2, s10
-	add t2, t2, s11
-	addi t2, t2, 256
-	addi t3, s8, 1
-	srli t3, t3, 1
-	addi t3, t3, 1
-	addi t4, zero, 0
-284:
-	ld t5, 0(t1)
-	ld t6, 0(t2)
-	sltu a4, t5, t6
-	sub t5, t5, t6
-	sltu t6, t5, t4
-	sub t5, t5, t4
-	or t4, a4, t6
-	sd t5, 0(t0)
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t2, t2, 8
-	addi t3, t3, -1
-	bnez t3, 284b
-	addi t0, zero, 6
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t1, zero, 11
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t2, zero, 6
-	mul t2, t2, s10
-	add t2, t2, s11
-	addi t2, t2, 256
-	addi t3, s8, 1
-	srli t3, t3, 1
-	addi t3, t3, 1
-	addi t5, zero, 0
-	sub t4, t5, t4
-285:
-	ld t5, 0(t1)
-	ld t6, 0(t2)
-	xor t6, t6, t5
-	and t6, t6, t4
-	xor t6, t6, t5
-	sd t6, 0(t0)
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t2, t2, 8
-	addi t3, t3, -1
-	bnez t3, 285b
-	addi t0, zero, 1
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t3, s9, 1
-	addi t5, zero, 0
-286:
-	sd t5, 0(t0)
-	addi t0, t0, 8
-	addi t3, t3, -1
-	bnez t3, 286b
-	addi t0, zero, 11
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t1, zero, 1
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t2, zero, 4
-	mul t2, t2, s10
-	add t2, t2, s11
-	addi t2, t2, 256
-	addi t3, s8, 1
-	srli t3, t3, 1
-	addi t3, t3, 1
-	addi t4, zero, 0
-287:
-	ld t5, 0(t1)
-	ld t6, 0(t2)
-	sltu a4, t5, t6
-	sub t5, t5, t6
-	sltu t6, t5, t4
-	sub t5, t5, t4
-	or t4, a4, t6
-	sd t5, 0(t0)
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t2, t2, 8
-	addi t3, t3, -1
-	bnez t3, 287b
-	addi t1, zero, 4
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t3, s8, 1
-	srli t3, t3, 1
-	slli t3, t3, 3
-	add t1, t1, t3
-	ld t4, 0(t1)
-	srai t4, t4, 63
-	addi t0, zero, 1
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t1, zero, 4
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t2, zero, 11
-	mul t2, t2, s10
-	add t2, t2, s11
-	addi t2, t2, 256
-	addi t3, s8, 1
-	srli t3, t3, 1
-	addi t3, t3, 1
-288:
-	ld t5, 0(t1)
-	ld t6, 0(t2)
-	xor t6, t6, t5
-	and t6, t6, t4
-	xor t6, t6, t5
-	sd t6, 0(t0)
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t2, t2, 8
-	addi t3, t3, -1
-	bnez t3, 288b
-	addi t0, zero, 3
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t3, s9, 1
-	addi t5, zero, 0
-289:
-	sd t5, 0(t0)
-	addi t0, t0, 8
-	addi t3, t3, -1
-	bnez t3, 289b
-	addi t0, zero, 3
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t1, zero, 6
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t3, s8, 1
-	srli t3, t3, 1
-	addi t3, t3, 1
-290:
-	ld t5, 0(t1)
-	sd t5, 0(t0)
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t3, t3, -1
-	bnez t3, 290b
 	addi t0, zero, 18
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -10773,11 +5468,11 @@ vg_rsa_crt_values:
 	addi t0, t0, 256
 	addi t3, s9, 1
 	addi t5, zero, 0
-291:
+255:
 	sd t5, 0(t0)
 	addi t0, t0, 8
 	addi t3, t3, -1
-	bnez t3, 291b
+	bnez t3, 255b
 	addi t0, zero, 3
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -10799,7 +5494,7 @@ vg_rsa_crt_values:
 	addi a4, zero, 0
 	srli t3, s9, 1
 	addi t3, t3, 1
-292:
+256:
 	ld t5, 0(t0)
 	sll t4, t5, t2
 	or t4, t4, a4
@@ -10809,18 +5504,18 @@ vg_rsa_crt_values:
 	addi t0, t0, 8
 	addi t1, t1, 8
 	addi t3, t3, -1
-	bnez t3, 292b
+	bnez t3, 256b
 	addi t0, zero, 3
 	mul t0, t0, s10
 	add t0, t0, s11
 	addi t0, t0, 256
 	addi t3, s9, 1
 	addi t5, zero, 0
-293:
+257:
 	sd t5, 0(t0)
 	addi t0, t0, 8
 	addi t3, t3, -1
-	bnez t3, 293b
+	bnez t3, 257b
 	addi t0, zero, 4
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -10830,13 +5525,13 @@ vg_rsa_crt_values:
 	add t1, t1, s11
 	addi t1, t1, 256
 	addi t3, s9, 0
-294:
+258:
 	ld t5, 0(t1)
 	sd t5, 0(t0)
 	addi t0, t0, 8
 	addi t1, t1, 8
 	addi t3, t3, -1
-	bnez t3, 294b
+	bnez t3, 258b
 	addi a7, zero, 4
 	mul a7, a7, s10
 	add a7, a7, s11
@@ -10866,13 +5561,13 @@ vg_rsa_crt_values:
 	ld s0, 0(t3)
 	addi a1, zero, 0
 	addi t5, zero, 63
-295:
+259:
 	srli s1, s0, 63
 	xori s1, s1, 1
 	sll s0, s0, s1
 	add a1, a1, s1
 	addi t5, t5, -1
-	bnez t5, 295b
+	bnez t5, 259b
 	addi s0, zero, 1
 	sll s0, s0, a1
 	slli t3, t0, 3
@@ -10895,7 +5590,7 @@ vg_rsa_crt_values:
 	sub s3, s3, s2
 	addi s4, zero, 0
 	addi t5, zero, 64
-296:
+260:
 	srli s1, s3, 63
 	slli s3, s3, 1
 	ori s3, s3, 1
@@ -10908,7 +5603,7 @@ vg_rsa_crt_values:
 	slli s4, s4, 1
 	or s4, s4, s0
 	addi t5, t5, -1
-	bnez t5, 296b
+	bnez t5, 260b
 	sd s4, 16(a6)
 	addi a5, zero, 19
 	mul a5, a5, s10
@@ -10938,7 +5633,7 @@ vg_rsa_crt_values:
 	addi t5, t5, -1
 	andi s3, t1, 63
 	xori a3, s3, 63
-297:
+261:
 	ld s0, 0(t3)
 	ld s2, 8(t3)
 	srl s0, s0, s3
@@ -10949,11 +5644,11 @@ vg_rsa_crt_values:
 	addi t3, t3, 8
 	addi t4, t4, 8
 	addi t5, t5, -1
-	bnez t5, 297b
+	bnez t5, 261b
 	ld s0, 0(t3)
 	srl s0, s0, s3
 	sd s0, 0(t4)
-298:
+262:
 	slli t3, t0, 3
 	add t3, t3, a2
 	addi t3, t3, -16
@@ -11052,7 +5747,7 @@ vg_rsa_crt_values:
 	addi t5, t0, 0
 	addi s0, zero, 0
 	addi s4, zero, 0
-299:
+263:
 	ld s2, 0(t4)
 	mul s3, s2, s1
 	mulhu s2, s2, s1
@@ -11073,7 +5768,7 @@ vg_rsa_crt_values:
 	addi t3, t3, 8
 	addi t4, t4, 8
 	addi t5, t5, -1
-	bnez t5, 299b
+	bnez t5, 263b
 	ld a0, 0(t3)
 	sub s3, a0, s0
 	sub s3, s3, s4
@@ -11082,13 +5777,13 @@ vg_rsa_crt_values:
 	or a0, a0, a3
 	sd a0, 0(t3)
 	addi a1, a1, -1
-	bnez a1, 298b
+	bnez a1, 262b
 	addi t3, a2, 0
 	addi t4, a7, 0
 	addi t5, t0, 0
 	addi s4, zero, 0
 	ld s2, 0(a2)
-2100:
+264:
 	ld s3, 8(t3)
 	srli s2, s2, 63
 	slli a0, s3, 1
@@ -11103,7 +5798,7 @@ vg_rsa_crt_values:
 	addi t3, t3, 8
 	addi t4, t4, 8
 	addi t5, t5, -1
-	bnez t5, 2100b
+	bnez t5, 264b
 	srli s2, s2, 63
 	sd s2, 0(t3)
 	sltu s4, s2, s4
@@ -11113,7 +5808,7 @@ vg_rsa_crt_values:
 	addi t4, a7, 0
 	addi t5, t0, 0
 	addi s4, zero, 0
-2101:
+265:
 	ld s2, 0(t3)
 	ld s3, 0(t4)
 	and s3, s3, s1
@@ -11126,7 +5821,7 @@ vg_rsa_crt_values:
 	addi t3, t3, 8
 	addi t4, t4, 8
 	addi t5, t5, -1
-	bnez t5, 2101b
+	bnez t5, 265b
 	ld s2, 0(t3)
 	sub s2, s2, s4
 	sd s2, 0(t3)
@@ -11154,7 +5849,7 @@ vg_rsa_crt_values:
 	addi t2, t2, 256
 	addi t4, zero, 0
 	addi t3, s9, 0
-2102:
+266:
 	ld t5, 0(t1)
 	ld t6, 0(t2)
 	xor t5, t5, t6
@@ -11162,7 +5857,7 @@ vg_rsa_crt_values:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 2102b
+	bnez t3, 266b
 	addi t5, zero, 0
 	sltu t5, t5, t4
 	xori t5, t5, 1
@@ -11190,14 +5885,14 @@ vg_rsa_crt_values:
 	addi t1, t1, -1
 	addi t0, a6, 0
 	addi t3, s4, 0
-2103:
+267:
 	lbu t5, 0(t1)
 	and t5, t5, t4
 	sb t5, 0(t0)
 	addi t0, t0, 1
 	addi t1, t1, -1
 	addi t3, t3, -1
-	bnez t3, 2103b
+	bnez t3, 267b
 	andi t0, s4, 7
 	slli t1, s9, 2
 	xor t1, t1, s4
@@ -11207,7 +5902,7 @@ vg_rsa_crt_values:
 	addi t1, zero, 32
 	sltu t1, s4, t1
 	or t0, t0, t1
-	beqz t0, 2104f
+	beqz t0, 268f
 	addi t0, zero, 18
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -11217,13 +5912,13 @@ vg_rsa_crt_values:
 	add t1, t1, s11
 	addi t1, t1, 256
 	addi t3, s9, 0
-2106:
+270:
 	ld t5, 0(t1)
 	sd t5, 0(t0)
 	addi t0, t0, 8
 	addi t1, t1, 8
 	addi t3, t3, -1
-	bnez t3, 2106b
+	bnez t3, 270b
 	addi t0, zero, 20
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -11233,13 +5928,13 @@ vg_rsa_crt_values:
 	add t1, t1, s11
 	addi t1, t1, 256
 	addi t3, s9, 0
-2107:
+271:
 	ld t5, 0(t1)
 	sd t5, 0(t0)
 	addi t0, t0, 8
 	addi t1, t1, 8
 	addi t3, t3, -1
-	bnez t3, 2107b
+	bnez t3, 271b
 	addi t0, zero, 20
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -11255,14 +5950,14 @@ vg_rsa_crt_values:
 	addi t0, t0, 256
 	addi t3, s9, 1
 	addi t5, zero, 0
-2108:
+272:
 	sd t5, 0(t0)
 	addi t0, t0, 8
 	addi t3, t3, -1
-	bnez t3, 2108b
+	bnez t3, 272b
 	slli s7, s9, 6
 	addi a4, zero, -1
-2109:
+273:
 	addi t2, zero, 18
 	mul t2, t2, s10
 	add t2, t2, s11
@@ -11284,8 +5979,8 @@ vg_rsa_crt_values:
 	andi t4, a4, 1
 	addi t2, s8, 1
 	andi t2, t2, 3
-	beqz t2, 2110f
-2112:
+	beqz t2, 274f
+276:
 	ld t5, 0(t0)
 	slli t6, t5, 1
 	or t6, t6, t3
@@ -11301,14 +5996,14 @@ vg_rsa_crt_values:
 	addi t0, t0, 8
 	addi t1, t1, 8
 	addi t2, t2, -1
-	bnez t2, 2112b
-	j 2111f
-2110:
-2111:
+	bnez t2, 276b
+	j 275f
+274:
+275:
 	addi t2, s8, 1
 	srli t2, t2, 2
-	beqz t2, 2113f
-2115:
+	beqz t2, 277f
+279:
 	ld t5, 0(t0)
 	slli t6, t5, 1
 	or t6, t6, t3
@@ -11360,10 +6055,10 @@ vg_rsa_crt_values:
 	addi t0, t0, 32
 	addi t1, t1, 32
 	addi t2, t2, -1
-	bnez t2, 2115b
-	j 2114f
-2113:
-2114:
+	bnez t2, 279b
+	j 278f
+277:
+278:
 	srli t5, t6, 63
 	addi a4, t5, -1
 	andi a5, a4, 1
@@ -11380,7 +6075,7 @@ vg_rsa_crt_values:
 	or t5, t5, a5
 	sd t5, 0(t2)
 	addi s7, s7, -1
-	bnez s7, 2109b
+	bnez s7, 273b
 	addi t0, zero, 22
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -11392,7 +6087,7 @@ vg_rsa_crt_values:
 	xori a4, a4, -1
 	addi t4, zero, 0
 	addi t3, s8, 1
-2116:
+280:
 	ld t5, 0(t0)
 	ld t6, 0(t1)
 	and t6, t6, a4
@@ -11405,7 +6100,7 @@ vg_rsa_crt_values:
 	addi t0, t0, 8
 	addi t1, t1, 8
 	addi t3, t3, -1
-	bnez t3, 2116b
+	bnez t3, 280b
 	addi t0, zero, 18
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -11415,13 +6110,13 @@ vg_rsa_crt_values:
 	add t1, t1, s11
 	addi t1, t1, 256
 	addi t3, s9, 0
-2117:
+281:
 	ld t5, 0(t1)
 	sd t5, 0(t0)
 	addi t0, t0, 8
 	addi t1, t1, 8
 	addi t3, t3, -1
-	bnez t3, 2117b
+	bnez t3, 281b
 	addi t0, zero, 20
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -11431,13 +6126,13 @@ vg_rsa_crt_values:
 	add t1, t1, s11
 	addi t1, t1, 256
 	addi t3, s9, 0
-2118:
+282:
 	ld t5, 0(t1)
 	sd t5, 0(t0)
 	addi t0, t0, 8
 	addi t1, t1, 8
 	addi t3, t3, -1
-	bnez t3, 2118b
+	bnez t3, 282b
 	addi t0, zero, 20
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -11453,14 +6148,14 @@ vg_rsa_crt_values:
 	addi t0, t0, 256
 	addi t3, s9, 1
 	addi t5, zero, 0
-2119:
+283:
 	sd t5, 0(t0)
 	addi t0, t0, 8
 	addi t3, t3, -1
-	bnez t3, 2119b
+	bnez t3, 283b
 	slli s7, s9, 6
 	addi a4, zero, -1
-2120:
+284:
 	addi t2, zero, 18
 	mul t2, t2, s10
 	add t2, t2, s11
@@ -11482,8 +6177,8 @@ vg_rsa_crt_values:
 	andi t4, a4, 1
 	addi t2, s8, 1
 	andi t2, t2, 3
-	beqz t2, 2121f
-2123:
+	beqz t2, 285f
+287:
 	ld t5, 0(t0)
 	slli t6, t5, 1
 	or t6, t6, t3
@@ -11499,14 +6194,14 @@ vg_rsa_crt_values:
 	addi t0, t0, 8
 	addi t1, t1, 8
 	addi t2, t2, -1
-	bnez t2, 2123b
-	j 2122f
-2121:
-2122:
+	bnez t2, 287b
+	j 286f
+285:
+286:
 	addi t2, s8, 1
 	srli t2, t2, 2
-	beqz t2, 2124f
-2126:
+	beqz t2, 288f
+290:
 	ld t5, 0(t0)
 	slli t6, t5, 1
 	or t6, t6, t3
@@ -11558,10 +6253,10 @@ vg_rsa_crt_values:
 	addi t0, t0, 32
 	addi t1, t1, 32
 	addi t2, t2, -1
-	bnez t2, 2126b
-	j 2125f
-2124:
-2125:
+	bnez t2, 290b
+	j 289f
+288:
+289:
 	srli t5, t6, 63
 	addi a4, t5, -1
 	andi a5, a4, 1
@@ -11578,7 +6273,7 @@ vg_rsa_crt_values:
 	or t5, t5, a5
 	sd t5, 0(t2)
 	addi s7, s7, -1
-	bnez s7, 2120b
+	bnez s7, 284b
 	addi t0, zero, 23
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -11590,7 +6285,7 @@ vg_rsa_crt_values:
 	xori a4, a4, -1
 	addi t4, zero, 0
 	addi t3, s8, 1
-2127:
+291:
 	ld t5, 0(t0)
 	ld t6, 0(t1)
 	and t6, t6, a4
@@ -11603,9 +6298,9 @@ vg_rsa_crt_values:
 	addi t0, t0, 8
 	addi t1, t1, 8
 	addi t3, t3, -1
-	bnez t3, 2127b
-	j 2105f
-2104:
+	bnez t3, 291b
+	j 269f
+268:
 	addi t0, zero, 18
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -11625,11 +6320,11 @@ vg_rsa_crt_values:
 	addi t0, t0, 256
 	addi t3, s9, 1
 	addi t5, zero, 0
-2128:
+292:
 	sd t5, 0(t0)
 	addi t0, t0, 8
 	addi t3, t3, -1
-	bnez t3, 2128b
+	bnez t3, 292b
 	addi t0, zero, 20
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -11639,13 +6334,13 @@ vg_rsa_crt_values:
 	add t1, t1, s11
 	addi t1, t1, 256
 	addi t3, s9, 0
-2129:
+293:
 	ld t5, 0(t1)
 	sd t5, 0(t0)
 	addi t0, t0, 8
 	addi t1, t1, 8
 	addi t3, t3, -1
-	bnez t3, 2129b
+	bnez t3, 293b
 	addi t0, zero, 20
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -11682,13 +6377,13 @@ vg_rsa_crt_values:
 	ld s0, 0(t3)
 	addi a1, zero, 0
 	addi t5, zero, 63
-2130:
+294:
 	srli s1, s0, 63
 	xori s1, s1, 1
 	sll s0, s0, s1
 	add a1, a1, s1
 	addi t5, t5, -1
-	bnez t5, 2130b
+	bnez t5, 294b
 	addi s0, zero, 1
 	sll s0, s0, a1
 	slli t3, t0, 3
@@ -11711,7 +6406,7 @@ vg_rsa_crt_values:
 	sub s3, s3, s2
 	addi s4, zero, 0
 	addi t5, zero, 64
-2131:
+295:
 	srli s1, s3, 63
 	slli s3, s3, 1
 	ori s3, s3, 1
@@ -11724,7 +6419,7 @@ vg_rsa_crt_values:
 	slli s4, s4, 1
 	or s4, s4, s0
 	addi t5, t5, -1
-	bnez t5, 2131b
+	bnez t5, 295b
 	sd s4, 16(a6)
 	addi a5, zero, 24
 	mul a5, a5, s10
@@ -11754,7 +6449,7 @@ vg_rsa_crt_values:
 	addi t5, t5, -1
 	andi s3, t1, 63
 	xori a3, s3, 63
-2132:
+296:
 	ld s0, 0(t3)
 	ld s2, 8(t3)
 	srl s0, s0, s3
@@ -11765,11 +6460,11 @@ vg_rsa_crt_values:
 	addi t3, t3, 8
 	addi t4, t4, 8
 	addi t5, t5, -1
-	bnez t5, 2132b
+	bnez t5, 296b
 	ld s0, 0(t3)
 	srl s0, s0, s3
 	sd s0, 0(t4)
-2133:
+297:
 	slli t3, t0, 3
 	add t3, t3, a2
 	addi t3, t3, -16
@@ -11868,7 +6563,7 @@ vg_rsa_crt_values:
 	addi t5, t0, 0
 	addi s0, zero, 0
 	addi s4, zero, 0
-2134:
+298:
 	ld s2, 0(t4)
 	mul s3, s2, s1
 	mulhu s2, s2, s1
@@ -11889,7 +6584,7 @@ vg_rsa_crt_values:
 	addi t3, t3, 8
 	addi t4, t4, 8
 	addi t5, t5, -1
-	bnez t5, 2134b
+	bnez t5, 298b
 	ld a0, 0(t3)
 	sub s3, a0, s0
 	sub s3, s3, s4
@@ -11898,13 +6593,13 @@ vg_rsa_crt_values:
 	or a0, a0, a3
 	sd a0, 0(t3)
 	addi a1, a1, -1
-	bnez a1, 2133b
+	bnez a1, 297b
 	addi t3, a2, 0
 	addi t4, a7, 0
 	addi t5, t0, 0
 	addi s4, zero, 0
 	ld s2, 0(a2)
-2135:
+299:
 	ld s3, 8(t3)
 	srli s2, s2, 63
 	slli a0, s3, 1
@@ -11919,7 +6614,7 @@ vg_rsa_crt_values:
 	addi t3, t3, 8
 	addi t4, t4, 8
 	addi t5, t5, -1
-	bnez t5, 2135b
+	bnez t5, 299b
 	srli s2, s2, 63
 	sd s2, 0(t3)
 	sltu s4, s2, s4
@@ -11929,7 +6624,7 @@ vg_rsa_crt_values:
 	addi t4, a7, 0
 	addi t5, t0, 0
 	addi s4, zero, 0
-2136:
+2100:
 	ld s2, 0(t3)
 	ld s3, 0(t4)
 	and s3, s3, s1
@@ -11942,7 +6637,7 @@ vg_rsa_crt_values:
 	addi t3, t3, 8
 	addi t4, t4, 8
 	addi t5, t5, -1
-	bnez t5, 2136b
+	bnez t5, 2100b
 	ld s2, 0(t3)
 	sub s2, s2, s4
 	sd s2, 0(t3)
@@ -11952,11 +6647,11 @@ vg_rsa_crt_values:
 	addi t0, t0, 256
 	addi t3, s9, 1
 	addi t5, zero, 0
-2137:
+2101:
 	sd t5, 0(t0)
 	addi t0, t0, 8
 	addi t3, t3, -1
-	bnez t3, 2137b
+	bnez t3, 2101b
 	addi t0, zero, 20
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -11966,13 +6661,13 @@ vg_rsa_crt_values:
 	add t1, t1, s11
 	addi t1, t1, 256
 	addi t3, s9, 0
-2138:
+2102:
 	ld t5, 0(t1)
 	sd t5, 0(t0)
 	addi t0, t0, 8
 	addi t1, t1, 8
 	addi t3, t3, -1
-	bnez t3, 2138b
+	bnez t3, 2102b
 	addi t0, zero, 20
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -12009,13 +6704,13 @@ vg_rsa_crt_values:
 	ld s0, 0(t3)
 	addi a1, zero, 0
 	addi t5, zero, 63
-2139:
+2103:
 	srli s1, s0, 63
 	xori s1, s1, 1
 	sll s0, s0, s1
 	add a1, a1, s1
 	addi t5, t5, -1
-	bnez t5, 2139b
+	bnez t5, 2103b
 	addi s0, zero, 1
 	sll s0, s0, a1
 	slli t3, t0, 3
@@ -12038,7 +6733,7 @@ vg_rsa_crt_values:
 	sub s3, s3, s2
 	addi s4, zero, 0
 	addi t5, zero, 64
-2140:
+2104:
 	srli s1, s3, 63
 	slli s3, s3, 1
 	ori s3, s3, 1
@@ -12051,7 +6746,7 @@ vg_rsa_crt_values:
 	slli s4, s4, 1
 	or s4, s4, s0
 	addi t5, t5, -1
-	bnez t5, 2140b
+	bnez t5, 2104b
 	sd s4, 16(a6)
 	addi a5, zero, 24
 	mul a5, a5, s10
@@ -12081,7 +6776,7 @@ vg_rsa_crt_values:
 	addi t5, t5, -1
 	andi s3, t1, 63
 	xori a3, s3, 63
-2141:
+2105:
 	ld s0, 0(t3)
 	ld s2, 8(t3)
 	srl s0, s0, s3
@@ -12092,11 +6787,11 @@ vg_rsa_crt_values:
 	addi t3, t3, 8
 	addi t4, t4, 8
 	addi t5, t5, -1
-	bnez t5, 2141b
+	bnez t5, 2105b
 	ld s0, 0(t3)
 	srl s0, s0, s3
 	sd s0, 0(t4)
-2142:
+2106:
 	slli t3, t0, 3
 	add t3, t3, a2
 	addi t3, t3, -16
@@ -12195,7 +6890,7 @@ vg_rsa_crt_values:
 	addi t5, t0, 0
 	addi s0, zero, 0
 	addi s4, zero, 0
-2143:
+2107:
 	ld s2, 0(t4)
 	mul s3, s2, s1
 	mulhu s2, s2, s1
@@ -12216,7 +6911,7 @@ vg_rsa_crt_values:
 	addi t3, t3, 8
 	addi t4, t4, 8
 	addi t5, t5, -1
-	bnez t5, 2143b
+	bnez t5, 2107b
 	ld a0, 0(t3)
 	sub s3, a0, s0
 	sub s3, s3, s4
@@ -12225,13 +6920,13 @@ vg_rsa_crt_values:
 	or a0, a0, a3
 	sd a0, 0(t3)
 	addi a1, a1, -1
-	bnez a1, 2142b
+	bnez a1, 2106b
 	addi t3, a2, 0
 	addi t4, a7, 0
 	addi t5, t0, 0
 	addi s4, zero, 0
 	ld s2, 0(a2)
-2144:
+2108:
 	ld s3, 8(t3)
 	srli s2, s2, 63
 	slli a0, s3, 1
@@ -12246,7 +6941,7 @@ vg_rsa_crt_values:
 	addi t3, t3, 8
 	addi t4, t4, 8
 	addi t5, t5, -1
-	bnez t5, 2144b
+	bnez t5, 2108b
 	srli s2, s2, 63
 	sd s2, 0(t3)
 	sltu s4, s2, s4
@@ -12256,7 +6951,7 @@ vg_rsa_crt_values:
 	addi t4, a7, 0
 	addi t5, t0, 0
 	addi s4, zero, 0
-2145:
+2109:
 	ld s2, 0(t3)
 	ld s3, 0(t4)
 	and s3, s3, s1
@@ -12269,7 +6964,7 @@ vg_rsa_crt_values:
 	addi t3, t3, 8
 	addi t4, t4, 8
 	addi t5, t5, -1
-	bnez t5, 2145b
+	bnez t5, 2109b
 	ld s2, 0(t3)
 	sub s2, s2, s4
 	sd s2, 0(t3)
@@ -12286,7 +6981,7 @@ vg_rsa_crt_values:
 	ld a2, 48(t0)
 	ld a3, 56(t0)
 	ld a6, 64(t0)
-2105:
+269:
 	ld t4, 184(s11)
 	addi t5, zero, 0
 	sub t4, t5, t4
@@ -12298,14 +6993,14 @@ vg_rsa_crt_values:
 	addi t1, t1, -1
 	addi t0, a2, 0
 	addi t3, s4, 0
-2146:
+2110:
 	lbu t5, 0(t1)
 	and t5, t5, t4
 	sb t5, 0(t0)
 	addi t0, t0, 1
 	addi t1, t1, -1
 	addi t3, t3, -1
-	bnez t3, 2146b
+	bnez t3, 2110b
 	addi t1, zero, 23
 	mul t1, t1, s10
 	add t1, t1, s11
@@ -12314,14 +7009,14 @@ vg_rsa_crt_values:
 	addi t1, t1, -1
 	addi t0, a3, 0
 	addi t3, s6, 0
-2147:
+2111:
 	lbu t5, 0(t1)
 	and t5, t5, t4
 	sb t5, 0(t0)
 	addi t0, t0, 1
 	addi t1, t1, -1
 	addi t3, t3, -1
-	bnez t3, 2147b
+	bnez t3, 2111b
 	ld a0, 184(s11)
 25:
 	ld s0, 0(s11)

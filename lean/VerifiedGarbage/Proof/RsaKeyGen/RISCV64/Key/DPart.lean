@@ -373,11 +373,7 @@ theorem invOfE [VG.Proof.Rsa.RISCV64.InvLaw] (e : KE s0 V F s) {a m n : Nat} {k 
   have hj : ∀ j ∈ invOfArrs, j < nArr := by decide
   refine ⟨fun j => if j ∈ invOfArrs then num u.mem (bOf s0) (wOf s0) j else V j, ?_, ?_, ?_, ?_, ?_⟩
   · refine e.next hu fu hj (by decide) ku (by decide) (fun j _ hn => ?_) (fun j hj => ?_)
-      (fun _ _ _ => rfl) (fun d hd => by
-        rw [List.mem_singleton] at hd
-        subst d
-        intro hf
-        exact False.elim ((by decide : 96 ∉ flags) hf))
+      (fun _ _ _ => rfl) (fun d hd hf => False.elim ((by decide : ∀ k ∈ [96, 104], k ∉ flags) d hd hf))
       (fun hd => absurd hd (by decide)) (by decide)
     · simp only [hn, ↓reduceIte]
     · simp only [hj, ↓reduceIte]

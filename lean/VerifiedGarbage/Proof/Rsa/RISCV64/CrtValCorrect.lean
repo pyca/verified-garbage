@@ -243,7 +243,7 @@ theorem bal_inW {s0 : State} (hv : Spec.Rsa.modulusValid (Nv s0) (kOf s0) = true
   exact ⟨⟨by omega_using [plo], by rw [e64]; omega_using [pv]⟩, ⟨by omega_using [qlo], by rw [e64]; omega_using [qv]⟩⟩
 
 open VG.Impl.Rsa.RISCV64.Keys (storeBytes restore)
-open VG.Impl.Rsa.RISCV64.CrtValues (code stores valid front mask checks invPart setup loads storeQ)
+open VG.Impl.Rsa.RISCV64.CrtValues (code stores valid front mask checks invStart invEnd setup loads storeQ)
 
 /-- The outputs, as the function leaves them. -/
 structure Out (s0 : State) (X₁ X₂ V X R₂ R₃ : Nat) (u : State) : Prop where
@@ -444,23 +444,24 @@ def VP (s0 u : State) : Prop :=
     IC s0 V X ∧ (maskOf (Pv s0) (Qv s0) X₁ X₂ V = true → 0 < 2 * (Pv s0 / 2) → R₂ = Dv s0 % (2 * (Pv s0 / 2))) ∧
     (maskOf (Pv s0) (Qv s0) X₁ X₂ V = true → 0 < 2 * (Qv s0 / 2) → R₃ = Dv s0 % (2 * (Qv s0 / 2)))
 
-/-- `front` before `qInv` is written. -/
-theorem frontA_ok [InvLaw] {s0 s : State} (h : PreC s0) (c : CB s0 s0.mem s) :
-    WP isa (seqs [setup, loads, checks, invPart]) s fun t => ∃ X₁ X₂ V X, IvA s0 X₁ X₂ V X t := by
+/-- `front` through the shared divsteps. -/
+theorem frontStart_ok [InvLaw] {s0 s : State} (h : PreC s0) (c : CB s0 s0.mem s) :
+    WP isa (seqs [setup, loads, checks, invStart]) s fun t => ∃ X₁ X₂, InvMid s0 X₁ X₂ t := by
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (setup_ok h c) fun t1 ⟨c1, w1, z1⟩ => ?_
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (loads_ok h c1 w1 z1) fun t2 l2 => ?_
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (checks_ok h l2) fun t3 ⟨X₁, X₂, ck⟩ => ?_
-  exact WP.mono (invPart_ok h ck) fun t4 ⟨V, X, ia⟩ => ⟨X₁, X₂, V, X, ia⟩
+  exact WP.mono (invStart_ok h ck) fun _ hu => ⟨X₁, X₂, hu⟩
 
 /-- `front`: the set-up, the loads, the checks, the inverse and `qInv` written. -/
 theorem front_ok [InvLaw] {s0 s : State} (h : PreC s0) (c : CB s0 s0.mem s) :
     WP isa front s fun t => ∃ X₁ X₂ V X, Iv s0 X₁ X₂ V X t := by
   unfold front
-  rw [WP.seq_iff]
-  exact WP.mono (frontA_ok h c) fun t4 ⟨X₁, X₂, V, X, ia⟩ =>
+  rw [WP.seq_iff, WP.seq_iff]
+  exact WP.mono (frontStart_ok h c) fun u ⟨X₁, X₂, hu⟩ =>
+    WP.mono (invEnd_ok h hu) fun _ ⟨V, X, ia⟩ =>
     WP.mono (storeQ_ok h ia) fun t5 iv => ⟨X₁, X₂, V, X, iv⟩
 
 theorem valid_ok [InvLaw] {s0 s : State} (h : PreC s0) (hv : Spec.Rsa.modulusValid (Nv s0) (kOf s0) = true)

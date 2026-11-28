@@ -7,10 +7,12 @@ public import VerifiedGarbage.Proof.Rsa.Divstep.InvResult
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
+import VerifiedGarbage.Proof.Framework.RISCV64.Call
 import VerifiedGarbage.Proof.Bignum.RISCV64.MontFinish64
 import VerifiedGarbage.Proof.Bignum.RISCV64.PreR2
 import VerifiedGarbage.Proof.Bignum.Math
 public import VerifiedGarbage.Proof.Rsa.RISCV64.InvLaw
+import VerifiedGarbage.Proof.Rsa.RISCV64.KeyOps
 import Mathlib.Tactic.Ring
 import Mathlib.Tactic.Linarith
 public import VerifiedGarbage.Proof.Rsa.RISCV64.IbOps
@@ -1962,12 +1964,114 @@ theorem inputs_lt {n m x : Nat} (hmn : m < 2 ^ (32 * n)) (hxn : x < 2 ^ (32 * n)
   obtain ox : oddInput m x ≤ m + x := by unfold oddInput; split <;> omega_using []
   omega
 
-theorem inverse_ok [Divstep.TcSLaw] {s : State} {B : Addr} {Z w N n : Nat} (h : Ctx s B Z w N n) (hN : N ≤ 256) {x m : Nat}
-    (hx : num s.mem B w aX = x) (hxn : x < 2 ^ (32 * n)) (hm : num s.mem B w aMin = m) (hmn : m < 2 ^ (32 * n))
-    (hodd : m % 2 = 1) :
-    WP isa inverse s fun t => Ws t B Z w N ∧ Keys.Frame B w invArrs [] s.mem t.mem ∧ Keep invRegs s t ∧
+theorem divstepsCore_ok [Divstep.TcSLaw] {s : State} {B : Addr} {Z w N n : Nat}
+    (h : Ctx s B Z w N n) (hN : N ≤ 256) {x m : Nat}
+    (hx : num s.mem B w aX = x) (hxn : x < 2 ^ (32 * n))
+    (hm : num s.mem B w aMin = m) (hmn : m < 2 ^ (32 * n)) (hodd : m % 2 = 1) :
+    WP isa divstepsCore s (DivstepsOut B Z w N n x m s) := by
+  have := h.ws.wle
+  have hn := h.nuw
+  have room := h.room
+  have hS : S w = 8 * (w + 2) := rfl
+  have hk1 : 8 * (nu n + 1) ≤ S w := by omega_using [hn, hS]
+  have nF : aF < N := by unfold aF; omega_using [room]
+  have nM : aMz < N := by unfold aMz; omega_using [room]
+  obtain ⟨pc, xc⟩ := inputs_lt hmn hxn
+  simp only [divstepsCore, seqs]
+  rw [WP.seq_iff]
+  refine WP.mono (init_ok h hN hx hxn hm hmn hodd) fun t0 ⟨h0, r0, ⟨iv, hiv, st0⟩, K0, k0⟩ => ?_
+  rw [WP.seq_iff]
+  refine WP.mono (loop_ok hN h0 r0 st0 hodd (by omega_using [hodd]) hiv pc xc) fun t1 ⟨h1, _, st1, K1, k1⟩ => ?_
+  obtain ⟨-, -, -, -, ha, -⟩ := run_bounds (k := 3 * nu n + 2) hodd hiv pc xc
+  obtain ⟨hfI, hcong⟩ := run_done hodd hiv hmn hxn (by omega_arith)
+  generalize Divstep.invRunS 59 m iv (oddInput m x) (3 * nu n + 2) = I at st1 ha hfI hcong
+  have gle := Nat.le_of_dvd (by omega_using [hodd]) (Nat.gcd_dvd_left m x)
+  have hf1 : -(m : Int) ≤ I.f := by omega_using [hfI, gle]
+  have hf2 : I.f ≤ m := by omega_using [hfI, gle]
+  refine WP.mono (normalize_ok h1 hN st1.P1 pc st1.a ha.1 ha.2 st1.f hf1 hf2)
+    fun t2 ⟨h2, K2, y2, c2, k2⟩ => ?_
+  refine ⟨h2, (K0.mono (by decide)).trans ((K1.mono (by decide)).trans (K2.mono (by decide))),
+    Keep.trans' (Keep.trans' k0 k1) (k2.mono (by decide)), ?_, y2, ⟨I.f, ?_, hfI⟩, ?_⟩
+  · rw [keep_wv K2 hk1 (by decide) (h.ws.fit64 nM)]
+    exact st1.P1
+  · rw [keep_wv K2 hk1 (by decide) (h.ws.fit64 nF)]
+    exact st1.f
+  · refine ((c2.mul_right ((2 : Int) ^ (5 * (3 * nu n + 2)))).mul_right (x : Int)).trans ?_
+    rw [show (if 0 ≤ I.f then 1 else -1) * I.a * 2 ^ (5 * (3 * nu n + 2)) * (x : Int) =
+      (x : Int) * ((if 0 ≤ I.f then 1 else -1) * I.a) * 2 ^ (5 * (3 * nu n + 2)) by ring]
+    exact hcong
+
+/-- The internal call changes the divsteps arrays and its chosen link slot. -/
+theorem callDivsteps_ok [Divstep.TcSLaw] {s : State} {B : Addr} {Z w N n d : Nat}
+    (h : Ctx s B Z w N n) (hN : N ≤ 256) (hd : d + 8 ≤ VG.Impl.Rsa.RISCV64.Keys.hdr)
+    (hd8 : d % 8 = 0) {x m : Nat}
+    (hx : num s.mem B w aX = x) (hxn : x < 2 ^ (32 * n))
+    (hm : num s.mem B w aMin = m) (hmn : m < 2 ^ (32 * n)) (hodd : m % 2 = 1) :
+    WP isa (callDivsteps d) s (fun t => DivstepsOut B Z w N n x m s t [d]) := by
+  have simm : d < 2048 := by simp only [hdr_eq] at hd; omega_using [hd]
+  have hz := h.ws.hdr_le
+  have hdZ : d + 8 ≤ Z := hd.trans hz
+  have save : WP isa (.block [.store .d .ra .s11 d]) s fun a =>
+      a.mem = s.mem.writeW (off B d) (s.gpr .ra) ∧ Keep [] s a := by
+    refine WP.keep [] ?_ (by rfl) (by rfl)
+    brun [h.ws.s11, h.ws.scr.st (d := d) (n := 8) hdZ, h.ws.scr.al8 (d := d) (by omega_using [hdZ]) hd8, simm]
+  simp only [callDivsteps, seqs]
+  refine WP.seq (WP.mono save fun a ⟨ma, ka⟩ => ?_)
+  have fs := slot_write (m := s.mem) (B := B) (w := w) (d := d) (s.gpr .ra)
+    (by simp only [hdr_eq] at hd; omega_using [hd])
+  rw [← ma] at fs
+  have kc : Keep linkRegs a a.callEntry :=
+    ⟨fun r hr => State.callEntry_gpr a hr, State.callEntry_rd a, State.callEntry_wr a⟩
+  have hc := (h.of_keep' ka).of_keep' kc
+  have xa : num a.callEntry.mem B w aX = x := by
+    rw [State.callEntry_mem, fs.1.num (by simp) (by simpa) (h.ws.fit64 (by unfold aX; omega_using [h.room]))]
+    exact hx
+  have mm : num a.callEntry.mem B w aMin = m := by
+    rw [State.callEntry_mem, fs.1.num (by simp) (by simpa) (h.ws.fit64 (by unfold aMin; omega_using [h.room]))]
+    exact hm
+  obtain ⟨_, u, eu, hu⟩ := divstepsCore_ok hc hN xa hxn mm hmn hodd
+  have ret : isa.ret a.callEntry u = some u := by
+    simp only [isa, VG.RISCV64.ret, hu.keep.gpr (r := .ra) (by decide), ite_true]
+  refine WP.seq (show WP isa (.call "vg_rsa_inverse_divsteps" divstepsCore) a _ from
+    ⟨_, u, Exec.call (call_callEntry a) eu ret, ?_⟩)
+  have saved : word u.mem B d = s.gpr .ra := by
+    apply BitVec.eq_of_toNat_eq
+    change slot u.mem B d = (s.gpr .ra).toNat
+    rw [hu.frame.slot hd (by simp), State.callEntry_mem, fs.2]
+  have load : WP isa (.block [.load .d .ra .s11 d]) u fun t =>
+      (t.gpr .ra = word u.mem B d ∧ t.mem = u.mem) ∧ Keep [.ra] u t := by
+    refine WP.keep [.ra] ?_ (by rfl) (by rfl)
+    brun [hu.ctx.ws.s11, hu.ctx.ws.scr.ld (d := d) (n := 8) hdZ,
+      hu.ctx.ws.scr.al8 (d := d) (by omega_using [hdZ]) hd8, simm]
+  refine WP.mono load fun t ⟨⟨tr, tm⟩, kt⟩ => ?_
+  have links : ∀ r, r ≠ .ra → r ∉ invRegs → r ∉ linkRegs := by
+    intro r hr hi
+    revert hr hi
+    cases r <;> decide
+  have keep : Keep invRegs s t := by
+    refine ⟨fun r hr => ?_, kt.2.1.trans (hu.keep.2.1.trans (kc.2.1.trans ka.2.1)),
+      kt.2.2.trans (hu.keep.2.2.trans (kc.2.2.trans ka.2.2))⟩
+    by_cases he : r = .ra
+    · subst r
+      exact tr.trans saved
+    · rw [kt.gpr (by simpa using he), hu.keep.gpr hr, kc.gpr (links r he hr), ka.gpr (by simp)]
+  refine ⟨hu.ctx.of_keep' kt, ?_, keep, ?_, ?_, ?_, ?_⟩
+  · rw [tm]
+    have f := hu.frame
+    rw [State.callEntry_mem] at f
+    exact (fs.1.mono (by simp) (by simp)).trans (f.mono (by simp) (by simp))
+  · simpa only [tm] using hu.modulus
+  · simpa only [tm] using hu.scaled_lt
+  · simpa only [tm] using hu.gcd
+  · simpa only [tm] using hu.congruence
+
+theorem finishUnscaled_ok {s t2 : State} {B : Addr} {Z w N n x m : Nat} {slots : List Nat}
+    (h : DivstepsOut B Z w N n x m s t2 slots) (hN : N ≤ 256)
+    (pc : m < 2 ^ (64 * nu n)) (hodd : m % 2 = 1) :
+    WP isa (.seq doublings finish) t2 fun t => Ws t B Z w N ∧ Keys.Frame B w invArrs [] t2.mem t.mem ∧ Keep invRegs t2 t ∧
       (1 < m → num t.mem B w 1 = Nat.gcd x m ∧
         (m : Int) ∣ (num t.mem B w 3 : Int) * x - num t.mem B w 1 ∧ num t.mem B w 3 < m) := by
+  obtain ⟨h, _, _, v2, y2, ⟨f, hf2, hfI⟩, hcong⟩ := h
   have := h.ws.wle
   have := h.nuw
   obtain fit : ∀ j < N, arr w j + S w ≤ 2 ^ 64 := fun j hj => h.ws.fit64 hj
@@ -1976,27 +2080,13 @@ theorem inverse_ok [Divstep.TcSLaw] {s : State} {B : Addr} {Z w N n : Nat} (h : 
   obtain hk1 : 8 * (nu n + 1) ≤ S w := by omega_using [this, hS]
   obtain nF : aF < N := by unfold aF; omega_using [room]
   obtain nA : aA < N := by unfold aA; omega_using [room]
-  obtain nM : aMz < N := by unfold aMz; omega_using [room]
-  obtain ⟨pc, xc⟩ := inputs_lt hmn hxn
   obtain hw : 2 ^ (64 * nu n) ≤ 2 ^ (64 * w) := Nat.pow_le_pow_right (by decide) (by omega_using [this])
-  simp only [inverse, seqs]
+  have gle : Nat.gcd m x ≤ m := Nat.le_of_dvd (by omega_using [hodd]) (Nat.gcd_dvd_left m x)
   rw [WP.seq_iff]
-  refine WP.mono (init_ok h hN hx hxn hm hmn hodd) fun t0 ⟨h0, r0, ⟨iv, hiv, st0⟩, K0, k0⟩ => ?_
-  rw [WP.seq_iff]
-  refine WP.mono (loop_ok hN h0 r0 st0 hodd (by omega_using [hodd]) hiv pc xc) fun t1 ⟨h1, _, st1, K1, k1⟩ => ?_
-  obtain ⟨-, -, -, -, ha, -⟩ := run_bounds (k := 3 * nu n + 2) hodd hiv pc xc
-  obtain ⟨hfI, hcong⟩ := run_done hodd hiv hmn hxn (by omega_arith)
-  generalize Divstep.invRunS 59 m iv (oddInput m x) (3 * nu n + 2) = I at st1 ha hfI hcong
-  obtain gle : Nat.gcd m x ≤ m := Nat.le_of_dvd (by omega_using [hodd]) (Nat.gcd_dvd_left _ _)
-  obtain hf1 : -(m : Int) ≤ I.f := by omega_using [hfI, gle]
-  obtain hf2 : I.f ≤ m := by omega_using [hfI, gle]
-  rw [WP.seq_iff]
-  refine WP.mono (normalize_ok h1 hN st1.P1 pc st1.a ha.1 ha.2 st1.f hf1 hf2) fun t2 ⟨h2, K2, y2, c2, k2⟩ => ?_
-  rw [WP.seq_iff]
-  refine WP.mono (doublings_ok h2 hN (by rw [keep_wv K2 hk1 (by decide) (fit _ nM)]; exact st1.P1) rfl y2 pc)
+  refine WP.mono (doublings_ok h hN v2 rfl y2 pc)
     fun t3 ⟨h3, _, v3, K3, k3⟩ => ?_
-  obtain hf3 : (wordsVal t3.mem B (arr w aF) (nu n + 1) : Int) % 2 ^ (64 * (nu n + 1)) = I.f % 2 ^ (64 * (nu n + 1)) := by
-    rw [keep_wv K3 hk1 (by decide) (fit _ nF), keep_wv K2 hk1 (by decide) (fit _ nF)]; exact st1.f
+  obtain hf3 : (wordsVal t3.mem B (arr w aF) (nu n + 1) : Int) % 2 ^ (64 * (nu n + 1)) = f % 2 ^ (64 * (nu n + 1)) := by
+    rw [keep_wv K3 hk1 (by decide) (fit _ nF)]; exact hf2
   obtain hyr := Rsa.Divstep.doubled_lt (p := m) (a := wordsVal t2.mem B (arr w aA) (nu n + 1))
     (k := 5 * (3 * nu n + 2)) (by omega_using [hodd])
   rw [finish, WP.seq_iff]
@@ -2004,11 +2094,9 @@ theorem inverse_ok [Divstep.TcSLaw] {s : State} {B : Addr} {Z w N n : Nat} (h : 
   refine WP.mono (finishY_ok h4 hN (y := Rsa.Divstep.doubled m (wordsVal t2.mem B (arr w aA) (nu n + 1))
     (5 * (3 * nu n + 2))) (by rw [keep_wv K4 hk1 (by decide) (fit _ nA)]; exact v3) (by omega_using [pc, hw, hyr]))
     fun t5 ⟨h5, K5, y5, k5⟩ => ?_
-  refine ⟨h5.ws, ((K0.mono (by decide)).trans ((K1.mono (by decide)).trans ((K2.mono (by decide)).trans
-    ((K3.mono (by decide)).trans ((K4.mono (by decide)).trans (K5.mono (by decide))))))),
-    Keep.trans' (Keep.trans' (Keep.trans' (Keep.trans' (Keep.trans' k0 k1) (k2.mono (by decide))) k3)
-      (k4.mono (by decide))) (k5.mono (by decide)), fun _ => ?_⟩
-  obtain g5 : num t5.mem B w 1 = I.f.natAbs := by
+  refine ⟨h5.ws, (K3.mono (by decide)).trans ((K4.mono (by decide)).trans (K5.mono (by decide))),
+    Keep.trans' (Keep.trans' k3 (k4.mono (by decide))) (k5.mono (by decide)), fun _ => ?_⟩
+  obtain g5 : num t5.mem B w 1 = f.natAbs := by
     rw [show (1 : Nat) = aGcd from rfl, ← g4]; exact Keys.Frame.num K5 (by decide) (by simp) (fit _ (by unfold aGcd; omega_using [room]))
   rw [show aY = 3 from rfl] at y5
   rw [g5, y5, hfI]
@@ -2021,56 +2109,34 @@ theorem inverse_ok [Divstep.TcSLaw] {s : State} {B : Addr} {Z w N n : Nat} (h : 
     obtain h1 : ((wordsVal t2.mem B (arr w aA) (nu n + 1) : Int) * 2 ^ (5 * (3 * nu n + 2))) % m * x ≡
         (wordsVal t2.mem B (arr w aA) (nu n + 1) : Int) * 2 ^ (5 * (3 * nu n + 2)) * x [ZMOD m] :=
       (Int.mod_modEq _ _).mul_right _
-    refine h1.trans ?_
-    obtain h2 := (c2.mul_right ((2 : Int) ^ (5 * (3 * nu n + 2)))).mul_right (x : Int)
-    refine h2.trans ?_
-    rw [show (if 0 ≤ I.f then 1 else -1) * I.a * 2 ^ (5 * (3 * nu n + 2)) * (x : Int) =
-      (x : Int) * ((if 0 ≤ I.f then 1 else -1) * I.a) * 2 ^ (5 * (3 * nu n + 2)) by ring]
+    exact h1
   exact e.symm.dvd
 
-theorem inverseS_ok [Divstep.TcSLaw] {s : State} {B : Addr} {Z w N n : Nat} (h : Ctx s B Z w N n) (hN : N ≤ 256) {x m : Nat}
-    (hx : num s.mem B w aX = x) (hxn : x < 2 ^ (32 * n)) (hm : num s.mem B w aMin = m) (hmn : m < 2 ^ (32 * n))
-    (hodd : m % 2 = 1) :
-    WP isa inverseS s fun t => Ws t B Z w N ∧ Keys.Frame B w invArrs [] s.mem t.mem ∧ Keep invRegs s t ∧
+theorem finishScaled_ok {s t2 : State} {B : Addr} {Z w N n x m : Nat} {slots : List Nat}
+    (h : DivstepsOut B Z w N n x m s t2 slots) (hN : N ≤ 256)
+    (pc : m < 2 ^ (64 * nu n)) (hodd : m % 2 = 1) :
+    WP isa finish t2 fun t => Ws t B Z w N ∧ Keys.Frame B w invArrs [] t2.mem t.mem ∧ Keep invRegs t2 t ∧
       (1 < m → num t.mem B w 1 = Nat.gcd x m ∧
         (m : Int) ∣ ((num t.mem B w 3 * 2 ^ (5 * (3 * nu n + 2)) % m : Nat) : Int) * x - num t.mem B w 1 ∧
         num t.mem B w 3 < m) := by
+  obtain ⟨h, _, _, _, y2, ⟨f, hf2, hfI⟩, hcong⟩ := h
   have := h.ws.wle
   have := h.nuw
   obtain fit : ∀ j < N, arr w j + S w ≤ 2 ^ 64 := fun j hj => h.ws.fit64 hj
   have room := h.room
   have hS : S w = 8 * (w + 2) := rfl
   obtain hk1 : 8 * (nu n + 1) ≤ S w := by omega_using [this, hS]
-  obtain nF : aF < N := by unfold aF; omega_using [room]
   obtain nA : aA < N := by unfold aA; omega_using [room]
-  obtain nM : aMz < N := by unfold aMz; omega_using [room]
-  obtain ⟨pc, xc⟩ := inputs_lt hmn hxn
   obtain hw : 2 ^ (64 * nu n) ≤ 2 ^ (64 * w) := Nat.pow_le_pow_right (by decide) (by omega_using [this])
-  simp only [inverseS, seqs]
-  rw [WP.seq_iff]
-  refine WP.mono (init_ok h hN hx hxn hm hmn hodd) fun t0 ⟨h0, r0, ⟨iv, hiv, st0⟩, K0, k0⟩ => ?_
-  rw [WP.seq_iff]
-  refine WP.mono (loop_ok hN h0 r0 st0 hodd (by omega_using [hodd]) hiv pc xc) fun t1 ⟨h1, _, st1, K1, k1⟩ => ?_
-  obtain ⟨-, -, -, -, ha, -⟩ := run_bounds (k := 3 * nu n + 2) hodd hiv pc xc
-  obtain ⟨hfI, hcong⟩ := run_done hodd hiv hmn hxn (by omega_arith)
-  generalize Divstep.invRunS 59 m iv (oddInput m x) (3 * nu n + 2) = I at st1 ha hfI hcong
-  obtain gle : Nat.gcd m x ≤ m := Nat.le_of_dvd (by omega_using [hodd]) (Nat.gcd_dvd_left _ _)
-  obtain hf1 : -(m : Int) ≤ I.f := by omega_using [hfI, gle]
-  obtain hf2 : I.f ≤ m := by omega_using [hfI, gle]
-  rw [WP.seq_iff]
-  refine WP.mono (normalize_ok h1 hN st1.P1 pc st1.a ha.1 ha.2 st1.f hf1 hf2) fun t2 ⟨h2, K2, y2, c2, k2⟩ => ?_
-  obtain hf3 : (wordsVal t2.mem B (arr w aF) (nu n + 1) : Int) % 2 ^ (64 * (nu n + 1)) = I.f % 2 ^ (64 * (nu n + 1)) := by
-    rw [keep_wv K2 hk1 (by decide) (fit _ nF)]; exact st1.f
+  have gle : Nat.gcd m x ≤ m := Nat.le_of_dvd (by omega_using [hodd]) (Nat.gcd_dvd_left m x)
   rw [finish, WP.seq_iff]
-  refine WP.mono (finishG_ok h2 hN hf3 (by rw [hfI]; omega_using [pc, gle])) fun t4 ⟨h4, K4, g4, k4⟩ => ?_
+  refine WP.mono (finishG_ok h hN hf2 (by rw [hfI]; omega_using [pc, gle])) fun t4 ⟨h4, K4, g4, k4⟩ => ?_
   refine WP.mono (finishY_ok h4 hN (y := wordsVal t2.mem B (arr w aA) (nu n + 1))
     (by rw [keep_wv K4 hk1 (by decide) (fit _ nA)]) (by omega_using [pc, hw, y2]))
     fun t5 ⟨h5, K5, y5, k5⟩ => ?_
-  refine ⟨h5.ws, ((K0.mono (by decide)).trans ((K1.mono (by decide)).trans ((K2.mono (by decide)).trans
-    ((K4.mono (by decide)).trans (K5.mono (by decide)))))),
-    Keep.trans' (Keep.trans' (Keep.trans' (Keep.trans' k0 k1) (k2.mono (by decide)))
-      (k4.mono (by decide))) (k5.mono (by decide)), fun _ => ?_⟩
-  obtain g5 : num t5.mem B w 1 = I.f.natAbs := by
+  refine ⟨h5.ws, (K4.mono (by decide)).trans (K5.mono (by decide)),
+    (k4.trans k5).mono (by decide), fun _ => ?_⟩
+  obtain g5 : num t5.mem B w 1 = f.natAbs := by
     rw [show (1 : Nat) = aGcd from rfl, ← g4]; exact Keys.Frame.num K5 (by decide) (by simp) (fit _ (by unfold aGcd; omega_using [room]))
   rw [show aY = 3 from rfl] at y5
   rw [g5, y5, hfI]
@@ -2082,12 +2148,20 @@ theorem inverseS_ok [Divstep.TcSLaw] {s : State} {B : Addr} {Z w N n : Nat} (h :
     obtain h1 : ((wordsVal t2.mem B (arr w aA) (nu n + 1) : Int) * 2 ^ (5 * (3 * nu n + 2))) % m * x ≡
         (wordsVal t2.mem B (arr w aA) (nu n + 1) : Int) * 2 ^ (5 * (3 * nu n + 2)) * x [ZMOD m] :=
       (Int.mod_modEq _ _).mul_right _
-    refine h1.trans ?_
-    obtain h2 := (c2.mul_right ((2 : Int) ^ (5 * (3 * nu n + 2)))).mul_right (x : Int)
-    refine h2.trans ?_
-    rw [show (if 0 ≤ I.f then 1 else -1) * I.a * 2 ^ (5 * (3 * nu n + 2)) * (x : Int) =
-      (x : Int) * ((if 0 ≤ I.f then 1 else -1) * I.a) * 2 ^ (5 * (3 * nu n + 2)) by ring]
+    exact h1
   exact e.symm.dvd
+
+theorem inverse_ok [Divstep.TcSLaw] {s : State} {B : Addr} {Z w N n : Nat} (h : Ctx s B Z w N n) (hN : N ≤ 256) {x m : Nat}
+    (hx : num s.mem B w aX = x) (hxn : x < 2 ^ (32 * n)) (hm : num s.mem B w aMin = m) (hmn : m < 2 ^ (32 * n))
+    (hodd : m % 2 = 1) :
+    WP isa inverse s fun t => Ws t B Z w N ∧ Keys.Frame B w invArrs [104] s.mem t.mem ∧ Keep invRegs s t ∧
+      (1 < m → num t.mem B w 1 = Nat.gcd x m ∧
+        (m : Int) ∣ (num t.mem B w 3 : Int) * x - num t.mem B w 1 ∧ num t.mem B w 3 < m) := by
+  simp only [inverse, seqs]
+  rw [WP.seq_iff]
+  refine WP.mono (callDivsteps_ok h hN (by decide) (by decide) hx hxn hm hmn hodd) fun u hu => ?_
+  refine WP.mono (finishUnscaled_ok hu hN (inputs_lt hmn hxn).1 hodd) fun t ⟨ht, ft, kt, vt⟩ => ?_
+  exact ⟨ht, hu.frame.trans (ft.mono (by simp) (by simp)), Keep.trans' hu.keep kt, vt⟩
 
 theorem gcd_ok [Divstep.TcSLaw] {s : State} {B : Addr} {Z w N n : Nat} (h : Ctx s B Z w N n) (hN : N ≤ 256) {x m : Nat}
     (hx : num s.mem B w aX = x) (hxn : x < 2 ^ (32 * n)) (hm : num s.mem B w aMin = m) (hmn : m < 2 ^ (32 * n))
@@ -2119,7 +2193,9 @@ algebra (`Divstep.TcSLaw`, whose instance they take from `Proof/Divstep/TcSBound
 they import that algebra). -/
 instance invLaw [Divstep.TcSLaw] : InvLaw where
   inverse_ok := InvBatch.inverse_ok
-  inverseS_ok := InvBatch.inverseS_ok
+  callDivsteps_ok := InvBatch.callDivsteps_ok
+  finishUnscaled_ok := InvBatch.finishUnscaled_ok
+  finishScaled_ok := InvBatch.finishScaled_ok
   gcd_ok := InvBatch.gcd_ok
 
 end VG.Proof.Rsa.RISCV64
