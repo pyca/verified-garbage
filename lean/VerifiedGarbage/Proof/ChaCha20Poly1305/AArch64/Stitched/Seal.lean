@@ -26,7 +26,9 @@ import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Xor
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.CachedAdd
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.Save
 import VerifiedGarbage.Proof.ChaCha20Poly1305.Spec
+import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.LaneSave
 import VerifiedGarbage.Proof.Framework.AArch64.Lit
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
@@ -1013,6 +1015,70 @@ theorem cryptStitchedSeal_ok (sve : Bool) {s₀ : State} (hp : APre true s₀) {
       have hle := hc.le
       exact (rest_ok sve hp hc E.o64 hT (by omega_using [h₁])).mono fun w ⟨P, hw⟩ => ⟨P, _, hw⟩
 
+/-- The stitched body keeps its link in the unused upper lane of `v15`.
+The setup and the arithmetic use no inputs clobbered by the veneer. -/
+theorem cryptStitchedSealCall_ok (sve : Bool) {s₀ : State} (hp : APre true s₀) {o : Nat} {s w₀ : State}
+    {key msg : List Byte} (E : Entry true o s₀ s key msg w₀) :
+    WP isa (cryptStitchedSealCall sve) w₀ fun u => ∃ P A, Sealed s₀ s w₀ key msg P A u := by
+  let w := w₀.callEntry
+  have g (r : Reg) (hr : r ∉ linkRegs) : w.gpr r = w₀.gpr r := State.callEntry_gpr w₀ hr
+  suffices h : WP isa (cryptStitchedSealBody sve) w (fun z => isa.ret w z = some z ∧
+      ∃ P A, Sealed s₀ s w₀ key msg P A z) by
+    obtain ⟨tr, z, run, ret, ok⟩ := h
+    exact ⟨_, z, Exec.call (call_callEntry w₀) run ret, ok⟩
+  refine WP.seq ((insOf_ok [(.x30, .v15, 1)] w (by simp) (by decide)).mono ?_)
+  intro t ⟨gt, mt, rt, wt, st, lane, low⟩
+  have gr (r : Reg) (hr : r ∉ linkRegs) : t.gpr r = w₀.gpr r := (congrFun gt r).trans (g r hr)
+  have hm : t.mem = w₀.mem := mt
+  have entry : Entry true o s₀ s key msg t := {
+    E with
+    inv := {
+      x21 := (gr _ (by decide)).trans E.inv.x21
+      un := fun r hr => (gr r (by revert r; decide)).trans (E.inv.un r hr)
+      sp := st.trans E.inv.sp
+      rd := rt.trans E.inv.rd
+      wr := wt.trans E.inv.wr
+      saved := hm.symm ▸ E.inv.saved
+      frame := hm.symm ▸ E.inv.frame }
+    x22 := (gr _ (by decide)).trans E.x22
+    x23 := (gr _ (by decide)).trans E.x23
+    st := hm.symm ▸ E.st
+    data := hm.symm ▸ E.data
+    out := hm.symm ▸ E.out
+    mac := hm.symm ▸ E.mac
+    vec := fun r hr => (low r 0 (by decide) (by simp)).trans (E.vec r hr) }
+  obtain ⟨tr, u, run, P, A, hu⟩ := cryptStitchedSeal_ok sve hp entry
+  have hn : (cryptStitched sve true false).allInstrs (fun i => vdstOf i != some .v15) = true := by
+    cases sve <;> simp only [cryptStitched, afterBulk, ite_true] <;> lit_decide
+  rw [Code.allInstrs_eq] at hn
+  have v15 : u.v .v15 = t.v .v15 :=
+    Exec.vec (fun i hi => by simpa using List.all_eq_true.mp hn i hi) run
+  let z := u.write .x .x30 (laneOf u .v15 1)
+  have ez : exec (.umov .x .x30 .v15 1) u = some z := exec_umov (by decide)
+  have lz : z.gpr .x30 = w.gpr .x30 := by
+    change laneOf u .v15 1 = w.gpr .x30
+    simp only [laneOf, v15]
+    exact lane (.x30, .v15, 1) (by simp)
+  have gz (r : Reg) (hr : r ≠ .x30) : z.gpr r = u.gpr r := by simp [z, RegUpd.gpr_write, hr]
+  have ok : Sealed s₀ s w₀ key msg P A z := {
+    hu with
+    inv := { hu.inv with
+      x21 := (gz _ (by decide)).trans hu.inv.x21
+      un := fun r hr => (gz r (by revert r; decide)).trans (hu.inv.un r hr) }
+    x0 := (gz _ (by decide)).trans hu.x0
+    x1 := (gz _ (by decide)).trans hu.x1
+    x2 := (gz _ (by decide)).trans hu.x2
+    x3 := (gz _ (by decide)).trans hu.x3
+    x22 := (gz _ (by decide)).trans hu.x22
+    x23 := (gz _ (by decide)).trans hu.x23
+    frame := hm ▸ hu.frame }
+  have ret : isa.ret w z = some z := by simp only [isa, VG.AArch64.ret, lz, ↓reduceIte]
+  have restore : WP isa (.block [.umov .x .x30 .v15 1]) u
+      (fun z => isa.ret w z = some z ∧ ∃ P A, Sealed s₀ s w₀ key msg P A z) :=
+    WP.block_cons_iff.mpr ⟨z, ez, WP.block_nil ⟨ret, P, A, ok⟩⟩
+  obtain ⟨tz, z', e, hz⟩ := restore
+  exact ⟨_, z', Exec.seq run e, hz⟩
+
 end VG.Proof.ChaCha20Poly1305.AArch64.Tail
 
 end
@@ -1185,7 +1251,7 @@ theorem sealStitchedMain_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} 
   refine WP.seq (WP.mono (counterOne_ok hp i₃) fun s₃' ⟨m₃', k₃', v₃'⟩ => ?_)
   obtain D₃' : bytesAt s₃'.mem (dp s₀) (L s₀) = D s₀ := by
     rw [bytesAt_frame k₃'.frame (by rdisj_all) hL', D₃]
-  refine WP.seq ((Tail.cryptStitchedSeal_ok v.callee.sve hp (entry_zero true i₃ st₃ R₃ m₃' k₃')).mono
+  refine WP.seq ((Tail.cryptStitchedSealCall_ok v.callee.sve hp (entry_zero true i₃ st₃ R₃ m₃' k₃')).mono
     fun s₄ ⟨P, A, hc⟩ => ?_)
   refine WP.seq (rest_call v hp hc.le hc.p64 hc.x0 hc.x1 hc.x2 hc.x3 hc.inv.rd hc.inv.wr (hc.inv.un .x28 (by decide)) hc.cnt hc.data
     |>.mono fun s₅ ⟨v₅, k₅, f₅, ct₅⟩ => ?_)
@@ -1277,7 +1343,7 @@ theorem sealWideMain_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp 
     · rw [m₇, bytesAt_frame k₆.frame f₆ (by omega_using [])]
       exact r₆ _ _ (Repr.frame k₅.frame (by rdisj_all) R₄)
     · exact (v₇ r hr).trans ((v₆ r hr).trans (v₅ r hr))
-  refine WP.seq ((Tail.cryptStitchedSeal_ok v.callee.sve hp E).mono fun s₈ ⟨P, A', hc⟩ => ?_)
+  refine WP.seq ((Tail.cryptStitchedSealCall_ok v.callee.sve hp E).mono fun s₈ ⟨P, A', hc⟩ => ?_)
   refine WP.seq (rest_call v hp hc.le hc.p64 hc.x0 hc.x1 hc.x2 hc.x3 hc.inv.rd hc.inv.wr (hc.inv.un .x28 (by decide)) hc.cnt hc.data
     |>.mono fun s₉ ⟨v₉, k₉, f₉, ct₉⟩ => ?_)
   rw [D₄] at ct₉

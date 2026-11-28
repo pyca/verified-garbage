@@ -75,7 +75,7 @@ structure XorImpl where
   the cleanups need of them, which the kernel evaluates where the
   implementation is defined, as it does `sealTaint` and `openTaint`. -/
   sealSide : (AArch64.Scrub.calleeSide (Impl.ChaCha20Poly1305.AArch64.Fn.sealBody callee stitched)
-      (Impl.ChaCha20Poly1305.AArch64.Fn.sealOwn.union callee.clear) &&
+      ((Impl.ChaCha20Poly1305.AArch64.Fn.sealOwn stitched).union callee.clear) &&
     decide (16 * (Impl.ChaCha20Poly1305.AArch64.Fn.sealBody callee stitched).aarch64Depth ≤ 1280)) = true
   /-- The shared opening body leaves the return-address lane untouched. -/
   openNoV15 : (Impl.ChaCha20Poly1305.AArch64.openCode callee stitched).allInstrs

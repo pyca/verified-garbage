@@ -55,12 +55,16 @@ Of `seal`, `open` and `open_to` in their frames with the stream `v`, it is
 what `v` proves where it is defined (`XorImpl.sealSide`, `openSide`,
 `openToSide`); of `seal_gather`, its own instructions' and `seal`'s. -/
 
+private theorem sealOwn_link (st : Bool) :
+    (linkRegs.all fun q => !(keptG (Impl.ChaCha20Poly1305.AArch64.Fn.sealOwn st)).contains q) = true := by
+  cases st <;> decide
+
 theorem seal_side (v : Proof.ChaCha20.AArch64.XorImpl) :
     scrubSide (Impl.ChaCha20Poly1305.AArch64.Fn.sealBody v.callee v.stitched) 1280 0
-      (Impl.ChaCha20Poly1305.AArch64.Fn.sealOwn.union v.callee.clear) [] = true := by
+      ((Impl.ChaCha20Poly1305.AArch64.Fn.sealOwn v.stitched).union v.callee.clear) [] = true := by
   have h := v.sealSide
   rw [Bool.and_eq_true, decide_eq_true_eq] at h
-  exact scrubSide_union (by decide) h.2 (by decide) h.1 (by decide)
+  exact scrubSide_union (by decide) h.2 (by decide) h.1 (sealOwn_link v.stitched)
 
 theorem open_side (v : Proof.ChaCha20.AArch64.XorImpl) :
     scrubSide (Impl.ChaCha20Poly1305.AArch64.Fn.openBody v.callee v.stitched) 1312 32
@@ -78,10 +82,10 @@ theorem openTo_side (v : Proof.ChaCha20.AArch64.XorImpl) :
 
 /-- `seal_gather`'s own instructions, with nothing in `seal`'s place, write
 only the registers `Impl/` states (`Impl.ChaCha20Poly1305.AArch64.Fn.sealOwn`). -/
-private theorem gather_own :
+private theorem gather_own (st : Bool) :
     calleeSide (Impl.ChaCha20Poly1305.AArch64.SealGather.sealGather "" (.block []))
-      Impl.ChaCha20Poly1305.AArch64.Fn.sealOwn = true := by
-  kernel_rfl
+      (Impl.ChaCha20Poly1305.AArch64.Fn.sealOwn st) = true := by
+  cases st <;> kernel_rfl
 
 end VG.Proof.ChaCha20Poly1305.AArch64.Scrub
 
@@ -172,25 +176,25 @@ stack zeroed. -/
 private theorem sealWhole_eq (c : Impl.ChaCha20.AArch64.XorCallee) (st : Bool) :
     Impl.ChaCha20Poly1305.AArch64.Fn.sealWhole c st =
       .seq (.seq (.seq (Impl.ChaCha20Poly1305.AArch64.Fn.sealBody c st)
-        (.block (clearsOf (Impl.ChaCha20Poly1305.AArch64.Fn.sealOwn.union c.clear))))
+        (.block (clearsOf ((Impl.ChaCha20Poly1305.AArch64.Fn.sealOwn st).union c.clear))))
         (.block (retFix 0))) (scrubTailLoop 1280) := rfl
 
 /-- `seal`'s cleanup but its clears: the result's bits, then the stack
 zeroed, which write only registers `seal` clears. -/
-private theorem tail_own :
+private theorem tail_own (st : Bool) :
     calleeSide (.seq (.block (retFix 0)) (scrubTailLoop 1280))
-      Impl.ChaCha20Poly1305.AArch64.Fn.sealOwn = true := by
-  kernel_rfl
+      (Impl.ChaCha20Poly1305.AArch64.Fn.sealOwn st) = true := by
+  cases st <;> kernel_rfl
 
 /-- `seal` as exported, cleanup included, writes only the registers it
 clears. -/
 theorem sealWhole_side (v : Proof.ChaCha20.AArch64.XorImpl) :
     calleeSide (Impl.ChaCha20Poly1305.AArch64.Fn.sealWhole v.callee v.stitched)
-      (Impl.ChaCha20Poly1305.AArch64.Fn.sealOwn.union v.callee.clear) = true := by
+      ((Impl.ChaCha20Poly1305.AArch64.Fn.sealOwn v.stitched).union v.callee.clear) = true := by
   have h := v.sealSide
   rw [Bool.and_eq_true, decide_eq_true_eq] at h
-  have ht := sideAll_union_left (b := v.callee.clear) tail_own
-  have hc := clears_side (Impl.ChaCha20Poly1305.AArch64.Fn.sealOwn.union v.callee.clear) (wfB_union _ _)
+  have ht := sideAll_union_left (b := v.callee.clear) (tail_own v.stitched)
+  have hc := clears_side ((Impl.ChaCha20Poly1305.AArch64.Fn.sealOwn v.stitched).union v.callee.clear) (wfB_union _ _)
   rw [sealWhole_eq]
   simp only [calleeSide, sideAll, Bool.and_eq_true] at ht hc h ⊢
   exact ⟨⟨⟨h.1, hc⟩, ht.1⟩, ht.2⟩
@@ -215,11 +219,11 @@ def sealFnWhole (v : Proof.ChaCha20.AArch64.XorImpl) : Proof.ChaCha20Poly1305.AA
 
 theorem gather_side (v : Proof.ChaCha20.AArch64.XorImpl) :
     scrubSide (Impl.ChaCha20Poly1305.AArch64.Fn.sealGatherBody v.callee v.stitched) 1296 0
-      (Impl.ChaCha20Poly1305.AArch64.Fn.sealOwn.union v.callee.clear) [] = true := by
+      ((Impl.ChaCha20Poly1305.AArch64.Fn.sealOwn v.stitched).union v.callee.clear) [] = true := by
   have hs := sealWhole_side v
   have hd := sealWhole_depth v
-  have h0 := sideAll_union_left (b := v.callee.clear) gather_own
-  refine scrubSide_union (by decide) ?_ (by decide) ?_ (by decide)
+  have h0 := sideAll_union_left (b := v.callee.clear) (gather_own v.stitched)
+  refine scrubSide_union (by decide) ?_ (by decide) ?_ (sealOwn_link v.stitched)
   · have hg : Impl.AesGcm.AArch64.SealGather.gather.aarch64Depth = 0 := by decide
     simp only [Impl.ChaCha20Poly1305.AArch64.Fn.sealGatherBody,
       Impl.ChaCha20Poly1305.AArch64.SealGather.sealGather, Code.aarch64Depth, Instr.frameUnits, hg,

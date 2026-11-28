@@ -188,6 +188,17 @@ def cryptStitched (sve enc to : Bool) : Prog isa :=
     (.ite (.nonzero .x .x5) (.block [])
       (.seq (.block (polyIn ++ [bulkDst to])) (.seq (Stitch.bulk sve enc) (afterBulk sve enc))))
 
+/-- Keep the helper's return address in the unused high lane of `v15`.
+The Poly1305 arithmetic uses `x30` as a temporary. -/
+def cryptStitchedSealBody (sve : Bool) : Prog isa :=
+  .seq (.block [.vop (.ins .d2 .v15 1 .x30)])
+    (.seq (cryptStitched sve true false) (.block [.umov .x .x30 .v15 1]))
+
+/-- Share the stitched sealing body between the two long-message routes.
+The prologue already saved the caller's link register. -/
+def cryptStitchedSealCall (sve : Bool) : Prog isa :=
+  .call ("vg_chachapoly_stitched_seal" ++ if sve then "_sve2" else "") (cryptStitchedSealBody sve)
+
 /-- The data from `x22` (`x23` bytes) decrypted into its destination
 (`XorCallee.callWith to`), continuing the stream's counter. -/
 def cryptRest (c : XorCallee) (to : Bool) : Prog isa :=
@@ -442,7 +453,7 @@ def sealStitchedMain (c : XorCallee) : Prog isa :=
   (.seq (macPad .x24 .x25)
   (.seq (.block lengths)
   (.seq (.block counterOne)
-  (.seq (cryptStitched c.sve true false)
+  (.seq (cryptStitchedSealCall c.sve)
   (.seq c.inPlace
   (.seq (macPad .x22 .x23)
     absorbLengths))))))
@@ -489,7 +500,7 @@ def sealWideMain (c : XorCallee) : Prog isa :=
   (.seq (ShortRest.first false)
   (.seq absorbFirst
   (.seq (.block skipFirst)
-  (.seq (cryptStitched c.sve true false)
+  (.seq (cryptStitchedSealCall c.sve)
   (.seq c.inPlace
   (.seq (macPad .x22 .x23)
     absorbLengths)))))))))

@@ -69,11 +69,11 @@ open VG.Impl.Scrub.AArch64 (Clear scrubAll)
 open VG.Impl.StackScratch.AArch64 (withStackScratchWiped withStackArgScratchWiped)
 
 /-- The registers `seal` and `seal_gather` write themselves. -/
-def sealOwn : Clear :=
+def sealOwn (stitched : Bool) : Clear :=
   ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16, .x17],
    [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23, .v24,
     .v25, .v26, .v27, .v30, .v31],
-   []⟩
+   if stitched then [.v15] else []⟩
 
 /-- The registers `open` and `open_to` write themselves. -/
 def openOwn : Clear :=
@@ -99,7 +99,7 @@ def openToBody (c : XorCallee) (stitched : Bool) : Prog isa :=
 /-- `vg_chacha20_poly1305_seal`, with the stream `c`, the data absorbed
 inside the eight-block kernel if `stitched`. -/
 def sealWhole (c : XorCallee) (stitched : Bool) : Prog isa :=
-  scrubAll 1280 0 (sealOwn.union c.clear) (sealBody c stitched)
+  scrubAll 1280 0 ((sealOwn stitched).union c.clear) (sealBody c stitched)
 
 /-- `vg_chacha20_poly1305_open`. -/
 def openZero (c : XorCallee) (stitched : Bool) : Prog isa :=
@@ -116,6 +116,6 @@ def sealGatherBody (c : XorCallee) (stitched : Bool) : Prog isa :=
 
 /-- `vg_chacha20_poly1305_seal_gather`. -/
 def sealGather (c : XorCallee) (stitched : Bool) : Prog isa :=
-  scrubAll 1296 0 (sealOwn.union c.clear) (sealGatherBody c stitched)
+  scrubAll 1296 0 ((sealOwn stitched).union c.clear) (sealGatherBody c stitched)
 
 end VG.Impl.ChaCha20Poly1305.AArch64.Fn
