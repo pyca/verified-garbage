@@ -9,11 +9,14 @@
 //! of those files are skipped (CI always sets it).
 
 /// The environment variable naming the directory of the downloaded ACVP
-/// files. A relative path is relative to the crate root.
+/// files. A relative path is relative to the crate root. Built only for the
+/// architectures of the tests that read them (SLH-DSA's).
+#[cfg(target_arch = "x86_64")]
 pub const ROOT_VAR: &str = "ACVP_ROOT";
 
 /// The text of the downloaded file `path` (as `ci/acvp_vectors.toml` names
 /// it), or `None` if `ACVP_ROOT` is not set (the test is then skipped).
+#[cfg(target_arch = "x86_64")]
 pub fn fetched(path: &str) -> Option<String> {
     let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join(std::env::var_os(ROOT_VAR)?);
     let file = root.join(path);
