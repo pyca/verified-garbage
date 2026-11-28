@@ -1,0 +1,5 @@
+name = "SLH-DSA-SHAKE-192f"
+family = "Signatures"
+specs = ["SlhDsa"]
+modules = ["src/slhdsa_shake_192f.rs"]
+asm = ["slhdsa_shake_192f"]
