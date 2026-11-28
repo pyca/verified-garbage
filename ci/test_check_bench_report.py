@@ -107,6 +107,17 @@ class Page(unittest.TestCase):
         data = re.search(r'<script type="application/json" id="bench-data">([\s\S]*?)</script>', page)[1]
         self.assertEqual(json.loads(data), {"files": [doc]})
 
+    def test_rename(self):
+        files = [{"results": [{"group": "chacha20poly1305", "size": 64}, {"group": "chacha20poly1305-decrypt", "size": 64},
+                              {"group": "bulk-AES_128_GCM-send", "size": "default"}]}]
+        bench_report.rename([r"chacha20poly1305/(.*)=chacha20poly1305-encrypt/\1", r"bulk-(\w+)-(send|recv)/default=bulk-\2/\1",
+                             "bulk-.*=never/reached"], files)
+        self.assertEqual([(r["group"], r["size"]) for r in files[0]["results"]],
+                         [("chacha20poly1305-encrypt", 64), ("chacha20poly1305-decrypt", 64), ("bulk-send", "AES_128_GCM")])
+        for bad in ("sha256", "sha256=sha-256", "sha(256=a/b"):
+            with self.assertRaises(SystemExit):
+                bench_report.rename([bad], files)
+
     def test_charts(self):
         files = [bench_report.document({"arch": "x86_64"}, [
             bench_report.record(g, "openssl", size, 1.0)

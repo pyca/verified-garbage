@@ -56,10 +56,42 @@ results*.json -o report.html` builds them into one page to share; each
 starts with, of the groups (or `group/size`s) that its regular expressions
 match, e.g. `--chart 'ecdh_p(256|384|521) ecdsa_p(256_sha256|384_sha384|521_sha512)_sign/64'`.
 
-For numbers that compare this library with OpenSSL and aws-lc-rs (to
-publish, say), run the branch alone with `--reference-copies`, which runs
-theirs from the same copies as this library's rather than once:
-`python3 ci/bench_compare.py none . --reference-copies --json results.json`.
+For numbers to publish, which compare this library with OpenSSL and
+aws-lc-rs, run `ci/bench_publish.py` on a machine doing nothing else: it
+measures every library alike (each benchmark's median over fresh copies of
+the binary), runs the rustls provider's benchmarks, and writes the results,
+the versions measured and the report. Everything it measures and charts is
+an argument; the published run, with the latest OpenSSL built with its
+default configuration in `~/openssl`, is:
+
+```sh
+OPENSSL_DIR=$HOME/openssl OPENSSL_STATIC=1 python3 ci/bench_publish.py results --cpu 4 \
+  --features openssl-mldsa,openssl-mlkem \
+  mlkem768 mlkem1024 mldsa44 mldsa65 mldsa87 x25519 ecdh_p256 ecdh_p384 ecdh_p521 \
+  'ecdsa_p256=^ecdsa_p256_sha256_(sign|verify)/[^/]+/64$' \
+  'ecdsa_p384=^ecdsa_p384_sha384_(sign|verify)/[^/]+/64$' \
+  'ecdsa_p521=^ecdsa_p521_sha512_(sign|verify)/[^/]+/64$' \
+  rsa_pkcs1_sig 'rsa_pss=^rsa_pss_sha(256|384|512)_mgf1_sha(256|384|512)_(sign|verify)/' \
+  sha256 hmac_sha256 chacha20poly1305 aes_gcm rustls \
+  --rename 'chacha20poly1305/(.*)=chacha20poly1305-encrypt/\1' \
+  --rename 'rustls-handshakes-TLSv1_3-(\w+)-TLS13_AES_128_GCM_SHA256-(client|server)-server-auth/no-resume=rustls-tls-1.3-handshake-\2/\1' \
+  --rename 'rustls-bulk-TLSv1_3-TLS13_(\w+)_SHA256-(send|recv)/default=rustls-tls-1.3-bulk-\2/\1' \
+  --chart 'mlkem768_(keygen|encaps|decaps) mlkem1024_(keygen|encaps|decaps)' \
+  --chart 'mldsa(44|65|87)_(keygen|sign|verify)' \
+  --chart 'x25519 ecdh_p(256|384|521)' \
+  --chart 'ecdsa_p\d+_sha\d+_sign ecdsa_p\d+_sha\d+_verify' \
+  --chart 'rsa_pkcs1_sign rsa_pkcs1_verify' \
+  --chart 'rsa_pss_sha256_mgf1_sha256_sign rsa_pss_sha256_mgf1_sha256_verify' \
+  --chart 'aes-128-gcm-encrypt aes-128-gcm-decrypt' \
+  --chart 'aes-128-gcm-tls-seal aes-128-gcm-tls-open' \
+  --chart 'aes-256-gcm-tls-seal aes-256-gcm-tls-open' \
+  --chart 'chacha20poly1305-encrypt/(16|64|256|1024|16384) chacha20poly1305-decrypt/(16|64|256|1024|16384)' \
+  --chart 'sha256/(32|64|128|256|1024|16384)' --chart 'hmac-sha256' \
+  --chart 'rustls-tls-1\.3-handshake-(client|server)' --chart 'rustls-tls-1\.3-bulk-(send|recv)'
+```
+
+`bench_compare.py --reference-copies` only makes a comparison's reference
+times as favourable as head's.
 
 For another architecture, or features this CPU lacks, run the Benchmarks
 workflow by hand: it never runs on its own (not on pull requests, not on
