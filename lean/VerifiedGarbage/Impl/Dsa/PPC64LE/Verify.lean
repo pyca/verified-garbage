@@ -171,12 +171,16 @@ def jointWindow : Prog isa :=
       .add .r18 .r18 .r3])
     (.seq ModExp.select (.seq (montOp 6 6 5) (.block [.lsl .r24 .r24 2])))))
 
+/-- One iteration of the four-window loop. -/
+def jointWindowStep : Prog isa :=
+  .seq jointWindow (.block [.subi .r23 .r23 1])
+
 /-- The four joint windows of u1's byte at `r30` and u2's at `r25`, both
-advanced. -/
+advanced. `r23` counts the windows until `combine` restores the P space. -/
 def jointByte : Prog isa :=
   .seq (.block [.lbz .r24 .r30 0, .lsl .r24 .r24 56, .lbz .r0 .r25 0, .lsl .r0 .r0 48, .add .r24 .r24 .r0,
-      .addi .r30 .r30 1, .addi .r25 .r25 1])
-    (.seq jointWindow (.seq jointWindow (.seq jointWindow jointWindow)))
+      .addi .r30 .r30 1, .addi .r25 .r25 1, .li .r23 4])
+    (.loop jointWindowStep (.nonzero .d .r23))
 
 /-- `v = g^u1 y^u2 mod p` into array 4, then to the buffer (`p_len` octets):
 g into array 4 and y into array 5, `R² mod p` into array 1, u1's octets
@@ -188,7 +192,7 @@ def combine : Prog isa :=
   .seq (.block (enterP ++ ptrG)) (.seq (loadArr 4) (.seq (.block ptrY) (.seq (loadArr 5) (.seq (copy 1 24)
     (.seq (.block (ptrBuf ++ [.addi .r30 .r12 0, .add .r25 .r12 .r6, .addi .r31 .r6 0] ++ minv))
     (.seq jointTable (.seq (.loop (.seq jointByte (.block [.subi .r31 .r31 1])) (.nonzero .d .r31))
-    (.seq (.block [.addi .r31 .r23 0]) (.seq (montOp 4 6 7)
+    (.seq (.block [.addi .r23 .r21 0, .addi .r31 .r23 0]) (.seq (montOp 4 6 7)
       (.seq (.block (bufBase .r12 .r0 ++ getP .r6)) (storeBE 4)))))))))))
 
 /-- In the Q space, `v mod q` (`reduce` of the buffer's `p_len` octets) into

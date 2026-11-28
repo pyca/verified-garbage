@@ -141,12 +141,17 @@ def jointWindow : Prog isa :=
       .shift .sll .d .t3 .t3 2, .add .a1 .a1 .t3])
     (.seq ModExp.select (.seq (montOp 6 6 5) (.block [.shift .sll .d .s7 .s7 2])))))
 
+/-- One iteration of the four-window loop. -/
+def jointWindowStep : Prog isa :=
+  .seq jointWindow (.block [.addi .s8 .s8 (-1)])
+
 /-- The four joint windows of u1's byte at `s9` and u2's 32 bytes on, `s9`
-advanced. -/
+advanced. The byte length in `s8` is dead here. -/
 def jointByte : Prog isa :=
   .seq (.block [.load .b .s7 .s9 0, .shift .sll .d .s7 .s7 56, .load .b .t3 .s9 32,
-      .shift .sll .d .t3 .t3 56, .shift .srl .d .t3 .t3 8, .add .s7 .s7 .t3, .addi .s9 .s9 1])
-    (.seq jointWindow (.seq jointWindow (.seq jointWindow jointWindow)))
+      .shift .sll .d .t3 .t3 56, .shift .srl .d .t3 .t3 8, .add .s7 .s7 .t3, .addi .s9 .s9 1,
+      .li .s8 4])
+    (.loop jointWindowStep (.nonzero .s8))
 
 /-- `v = g^u1 y^u2 mod p` into array 4, then to the buffer (`p_len` octets):
 g into array 4 and y into array 5, the joint table, the joint windows of
