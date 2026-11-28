@@ -2551,7 +2551,7 @@ theorem sPreM_ofFlagged {s₀ : VG.X86_64.State} {lo : Nat} (h : SPreM Proof.Gcm
   wrap_k := by have := h.wrap_k; change _ + 1032 ≤ _ at this; change _ + 1024 ≤ _; omega_using [this]
   d_k := h.d_k.sub_right (sub_1024 _)
   p_k := h.p_k.sub_right (sub_1024 _)
-  ok := h.ok.2.2 h.ok.1
+  ok := h.ok.2.2.2 h.ok.1
   c_k := h.c_k.sub_right (sub_1024 _)
   y_k := h.y_k.sub_right (sub_1024 _)
 
@@ -2563,7 +2563,7 @@ theorem sPreTo_ofFlagged {s₀ : VG.X86_64.State} {lo : Nat} (h : SPreTo Proof.G
     k_o := h.k_o.sub_left (sub_1024 _)
     k_p := h.k_p.sub_left (sub_1024 _)
     wrap_k := by have := h.wrap_k; change _ + 1032 ≤ _ at this; change _ + 1024 ≤ _; omega_using [this]
-    ok := h.ok.2.2 h.ok.1 }
+    ok := h.ok.2.2.2 h.ok.1 }
 
 /-- Loops on the prepared powers, on a context whose powers are present. -/
 def StitchCode.flagged {al : Bool} (c : StitchCode Proof.Gcm.X86_64.Stitch.CtxMode.prepared al) : StitchCode Proof.Gcm.X86_64.Stitch.CtxMode.flagged al :=
@@ -2836,7 +2836,7 @@ def splitFnF (v : GcmVariant) : Gather.SplitFn Proof.Gcm.X86_64.Stitch.CtxMode.f
         (Impl.AesGcm.X86_64.SealSplit.«seal» (v.impl.splitMidR (v.impl.withBlk (blkR v)) (blkToR v).fn))⟩
     (VG.X86_64.Verified.widenFirstArray (n := 128) (n' := 129) (by decide)
       (Split.sealSplitPrepared_framed v.impl (blkR v) (blkToR v) Short.shortFacts)
-      (fun _ _ _ _ _ _ _ _ _ _ _ _ h => ⟨h.1, h.2.1, h.2.2.2.2 h.2.2.1⟩) (splitFrameSatF_pre (by decide)))
+      (fun _ _ _ _ _ _ _ _ _ _ _ _ h => ⟨h.1, h.2.1, h.2.2.2.2.2 h.2.2.1⟩) (splitFrameSatF_pre (by decide)))
     (X86_64.withStackArgScratch_spSafe (Split.sealSplitR_spSafe v.impl (blkR v) (blkToR v)))
     (StreamTo.framed_xdepth (Split.sealSplitR_xdepth v.impl (blkR v) (blkToR v)))
     (StreamTo.framed_mx (Split.sealSplitR_mx v.impl (blkR v) (blkToR v)))
@@ -2890,7 +2890,7 @@ theorem sPreM_ofFlagged16 {s₀ : VG.X86_64.State} {lo : Nat}
   wrap_k := by have := h.wrap_k; change _ + 1032 ≤ _ at this; change _ + 1024 ≤ _; omega_using [this]
   d_k := h.d_k.sub_right (sub_1024 _)
   p_k := h.p_k.sub_right (sub_1024 _)
-  ok := h.ok.2.1 h.ok.1
+  ok := h.ok.2.2.1 h.ok.1
   c_k := h.c_k.sub_right (sub_1024 _)
   y_k := h.y_k.sub_right (sub_1024 _)
 
@@ -2903,7 +2903,7 @@ theorem sPreTo_ofFlagged16 {s₀ : VG.X86_64.State} {lo : Nat} (h : SPreTo (Proo
     k_o := h.k_o.sub_left (sub_1024 _)
     k_p := h.k_p.sub_left (sub_1024 _)
     wrap_k := by have := h.wrap_k; change _ + 1032 ≤ _ at this; change _ + 1024 ≤ _; omega_using [this]
-    ok := h.ok.2.1 h.ok.1 }
+    ok := h.ok.2.2.1 h.ok.1 }
 
 /-- Loops on the first 16 prepared powers, on a context whose count is at
 least 16. -/
@@ -3226,7 +3226,7 @@ def splitFnF16 (v : GcmVariant) (r : R16 v) : Gather.SplitFn (Proof.Gcm.X86_64.S
         (Impl.AesGcm.X86_64.SealSplit.«seal» (v.impl.splitMidR (v.impl.withBlk (blkR16 v)) (blkToR16 v).fn))⟩
     (VG.X86_64.Verified.widenFirstArray (n := 128) (n' := 129) (by decide)
       (Split.sealSplitPrepared16_framed v.impl (blkR16 v) (blkToR16 v) Short.shortFacts r.onePass)
-      (fun _ _ _ _ _ _ _ _ _ _ _ _ h => ⟨h.1, h.2.1, h.2.2.2.1 h.2.2.1⟩) (splitFrameSatF_pre (by decide)))
+      (fun _ _ _ _ _ _ _ _ _ _ _ _ h => ⟨h.1, h.2.1, h.2.2.2.2.1 h.2.2.1⟩) (splitFrameSatF_pre (by decide)))
     (X86_64.withStackArgScratch_spSafe (Split.sealSplitR_spSafe v.impl (blkR16 v) (blkToR16 v)))
     (StreamTo.framed_xdepth (Split.sealSplitR_xdepth v.impl (blkR16 v) (blkToR16 v)))
     (StreamTo.framed_mx (Split.sealSplitR_mx v.impl (blkR16 v) (blkToR16 v)))

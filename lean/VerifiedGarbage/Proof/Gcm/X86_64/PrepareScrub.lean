@@ -71,9 +71,11 @@ theorem powerCount_of (h : ∀ a, Region.Contains ⟨p, L⟩ a 1 → m₁ a = m�
 
 theorem preparedRepr_of (h : ∀ a, Region.Contains ⟨p, L⟩ a 1 → m₁ a = m₂ a) (hn : 1032 ≤ L)
     (hr : Spec.Gcm.PreparedRepr m₁ p) : Spec.Gcm.PreparedRepr m₂ p := by
-  obtain ⟨h16, h48⟩ := hr
+  obtain ⟨h8, h16, h48⟩ := hr
   simp only [Spec.Gcm.PreparedRepr, powerCount_of h hn]
-  refine ⟨fun hc k hk => ?_, fun hc k hk => ?_⟩
+  refine ⟨fun hc k hk => ?_, fun hc k hk => ?_, fun hc k hk => ?_⟩
+  · rw [readW_of h (by omega_using [hn, hk]), readW_of h (by omega_using [hn, hk]), ctxH_of h (by omega_using [hn])]
+    exact h8 hc k hk
   · rw [readW_of h (by omega_using [hn, hk]), readW_of h (by omega_using [hn, hk]), ctxH_of h (by omega_using [hn])]
     exact h16 hc k hk
   · rw [readW_of h (by omega_using [hn, hk]), readW_of h (by omega_using [hn, hk]), ctxH_of h (by omega_using [hn])]
@@ -98,7 +100,9 @@ theorem prepareOut (stack : Nat) :
       have hle : Spec.Gcm.wipePreparedLen m₁ ctx ≤ 1024 := by
         unfold Spec.Gcm.wipePreparedLen; split
         · decide
-        · split <;> decide
+        · split
+          · decide
+          · split <;> decide
       unfold Spec.Gcm.preparePost
       rw [hl, hp]
       refine ⟨?_, preparedRepr_of hb (by decide) h2, h3, ?_⟩
@@ -121,7 +125,9 @@ theorem wipePreparedOut (stack : Nat) :
       have hl : Spec.Gcm.wipePreparedLen m ctx ≤ 1032 := by
         unfold Spec.Gcm.wipePreparedLen; split
         · decide
-        · split <;> decide
+        · split
+          · decide
+          · split <;> decide
       refine ⟨?_, ?_⟩
       · have := bytesAt_of hb (d := 0) (n := Spec.Gcm.wipePreparedLen m ctx) (by simp only [Elem.size]; omega_using [hl])
         simp only [BitVec.add_zero] at this

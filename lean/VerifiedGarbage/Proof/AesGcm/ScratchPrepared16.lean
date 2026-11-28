@@ -72,6 +72,20 @@ theorem preparedPowers16Repr_congr {m₁ m₂ : Mem} {p : Addr}
   rw [keep _ (by omega_using [hk]), keep _ (by omega_using [hk]), ctxH_congr fun i hi => h i (by omega_using [hi])]
   exact hr k hk
 
+/-- The first 8 prepared powers depend only on bytes within the context. -/
+theorem preparedPowers8Repr_congr {m₁ m₂ : Mem} {p : Addr}
+    (h : ∀ i < 128 * 8, m₂ (p + BitVec.ofNat 64 i) = m₁ (p + BitVec.ofNat 64 i))
+    (hr : PreparedPowers8Repr m₁ p) : PreparedPowers8Repr m₂ p := by
+  have keep (o : Nat) (ho : o + 16 ≤ 1024) :
+      m₂.readW (p + BitVec.ofNat 64 o) 128 = m₁.readW (p + BitVec.ofNat 64 o) 128 := by
+    apply Mem.readW_congr
+    intro i hi
+    rw [BitVec.add_assoc, ← BitVec.ofNat_add]
+    exact h (o + i) (by omega_using [ho, hi])
+  intro k hk
+  rw [keep _ (by omega_using [hk]), keep _ (by omega_using [hk]), ctxH_congr fun i hi => h i (by omega_using [hi])]
+  exact hr k hk
+
 /-- Zero memory has the prepared powers of the zero subkey. -/
 theorem preparedPowers16Repr_zeroMem (p : Addr) : PreparedPowers16Repr (fun _ => 0) p :=
   fun k hk => preparedPowersRepr_zeroMem p k (by omega_using [hk])

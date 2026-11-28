@@ -75,6 +75,17 @@ local instance (m : Mem) (p : Addr) : Decidable (PreparedPowersRepr m p) := by
         rawMem (0x1000 + BitVec.ofNat 64 i))
 #guard !decide (PreparedPowersRepr rawMem 0x1000)
 
+-- The first 8 powers, all that a count of 8 promises, are bytes 256 to 383
+-- of the same context.
+local instance (m : Mem) (p : Addr) : Decidable (PreparedPowers8Repr m p) := by
+  unfold PreparedPowers8Repr
+  infer_instance
+
+#guard match prepared with
+  | none => false
+  | some s => decide (PreparedPowers8Repr s.mem 0x1000)
+#guard !decide (PreparedPowers8Repr rawMem 0x1000)
+
 /-! ## What `prepare` writes, `wipe` zeroes (#6333)
 
 Of the contracts alone, whatever the implementations. -/
@@ -96,7 +107,9 @@ theorem prepare_wipe {pb : Nat} {ctx : Addr} {m m' m'' : Mem} {r r'} (hp : prepa
   have hl : 256 ≤ wipePreparedLen m' ctx ∧ wipePreparedLen m' ctx ≤ 1024 := by
     unfold wipePreparedLen; split
     · decide
-    · split <;> decide
+    · split
+      · decide
+      · split <;> decide
   by_cases h : i < wipePreparedLen m' ctx
   · left
     have := congrArg (·[i]?) zero
@@ -110,10 +123,11 @@ theorem prepare_wipe {pb : Nat} {ctx : Addr} {m m' m'' : Mem} {r r'} (hp : prepa
     rw [e, bytesAt_byte rest (by omega), bytesAt_byte keep (by omega)]
 
 /-- `prepare` may not leave the count as it finds it: the caller need not
-initialize it, and any other value than 0, 16 and 48 breaks the contract. -/
+initialize it, and any other value than 0, 8, 16 and 48 breaks the contract. -/
 example {pb : Nat} {ctx : Addr} {m m' : Mem} {r} (stale : powerCount m' ctx = powerCount m ctx)
-    (h0 : powerCount m ctx ≠ 0) (h16 : powerCount m ctx ≠ 16) (h48 : powerCount m ctx ≠ 48) :
+    (h0 : powerCount m ctx ≠ 0) (h8 : powerCount m ctx ≠ 8) (h16 : powerCount m ctx ≠ 16)
+    (h48 : powerCount m ctx ≠ 48) :
     ¬ preparePost pb ctx m m' r := by
-  rintro ⟨-, -, h | h | h, -⟩ <;> omega
+  rintro ⟨-, -, h | h | h | h, -⟩ <;> omega
 
 end VG.Test.GcmPrepared

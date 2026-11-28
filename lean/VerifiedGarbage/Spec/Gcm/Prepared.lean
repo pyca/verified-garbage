@@ -11,8 +11,9 @@ The first 256 bytes are the existing `KeyRepr`; the next 768 bytes hold up
 to 24 pairs, with the even power first and the odd power second, each
 encoded by `preparedPower` and stored little-endian; the 64-bit word at byte
 1024 counts the powers present (`PreparedRepr`): 48 (24 pairs), 16 (the
-first 8 pairs, bytes 256 through 511) or 0, so that a `prepare` computes only
-the powers its CPU's functions read. This is a storage convention, not a
+first 8 pairs, bytes 256 through 511), 8 (the first 4 pairs, bytes 256 through
+383) or 0, so that a `prepare` computes only the powers its CPU's functions
+read. This is a storage convention, not a
 change to GCM's field arithmetic (NIST SP 800-38D §6.3).
 
 These APIs have the existing GCM postconditions, memory bounds, disjointness
@@ -56,35 +57,48 @@ def PreparedPowers16Repr (m : Mem) (p : Addr) : Prop :=
     m.readW (p + BitVec.ofNat 64 (272 + 32 * k)) 128 =
       preparedPower (hpow (ctxH m p) (2 * k + 1))
 
+/-- The first 4 pairs of `PreparedPowersRepr`, bytes 256 through 383: the
+first 8 powers. -/
+def PreparedPowers8Repr (m : Mem) (p : Addr) : Prop :=
+  ∀ k < 4,
+    m.readW (p + BitVec.ofNat 64 (256 + 32 * k)) 128 =
+      preparedPower (hpow (ctxH m p) (2 * k + 2)) ∧
+    m.readW (p + BitVec.ofNat 64 (272 + 32 * k)) 128 =
+      preparedPower (hpow (ctxH m p) (2 * k + 1))
+
 /-- The count of powers of the prepared key context at `p`: the 64-bit word
 at byte 1024. -/
 def powerCount (m : Mem) (p : Addr) : Nat := (m.readW (p + 1024) 64).toNat
 
-/-- A prepared key context: if its count is at least 16, the first 16 powers
-are present (`PreparedPowers16Repr`), and if it is at least 48, all 48
+/-- A prepared key context: if its count is at least 8, the first 8 powers
+are present (`PreparedPowers8Repr`), if it is at least 16, the first 16
+(`PreparedPowers16Repr`), and if it is at least 48, all 48
 (`PreparedPowersRepr`). -/
 def PreparedRepr (m : Mem) (p : Addr) : Prop :=
-  (16 ≤ powerCount m p → PreparedPowers16Repr m p) ∧
+  (8 ≤ powerCount m p → PreparedPowers8Repr m p) ∧
+    (16 ≤ powerCount m p → PreparedPowers16Repr m p) ∧
     (48 ≤ powerCount m p → PreparedPowersRepr m p)
 
 /-- What a function on the prepared key context at `p` may leak of it: which
 of the counts that tell its functions apart it has (at least 48, at least 16,
-or fewer). -/
+at least 8, or fewer). -/
 def flagLeak (m : Mem) (p : Addr) : Nat :=
-  if 48 ≤ powerCount m p then 2 else if 16 ≤ powerCount m p then 1 else 0
+  if 48 ≤ powerCount m p then 3 else if 16 ≤ powerCount m p then 2
+  else if 8 ≤ powerCount m p then 1 else 0
 
 /-- How many bytes of the prepared key context at `p` hold secrets: the key
 context and the powers its count says are present, 48 (1024 bytes in all),
-16 (512) or none (256). -/
+16 (512), 8 (384) or none (256). -/
 def wipePreparedLen (m : Mem) (p : Addr) : Nat :=
-  if 48 ≤ powerCount m p then 1024 else if 16 ≤ powerCount m p then 512 else 256
+  if 48 ≤ powerCount m p then 1024 else if 16 ≤ powerCount m p then 512
+  else if 8 ≤ powerCount m p then 384 else 256
 
 /-- A 1032-byte context, whose first 256 bytes are a key context. -/
 def prepareSig : Sig where
   params := [("ctx", .array true .u64 129)]
 
 /-- Keeps the first 256 bytes, and makes the context a prepared key context of
-the hash subkey in its bytes 240–255 (`ctxH`): writes 48, 16 or none of its
+the hash subkey in its bytes 240–255 (`ctxH`): writes 48, 16, 8 or none of its
 prepared powers, and their count. With those bytes a key context
 (`KeyRepr`, as `vg_aes_gcm_init` writes it), the result is the prepared key
 context of the same key (`KeyRepr` and `PreparedRepr`).
@@ -96,7 +110,8 @@ present (`wipePreparedLen`), is as it was: so that wipe leaves nothing this
 function wrote but the count. -/
 def preparePost (pb : Nat) : prepareSig.Post pb := fun ctx m m' _ =>
   Aes.bytesAt m' ctx 256 = Aes.bytesAt m ctx 256 ∧ PreparedRepr m' ctx ∧
-    (powerCount m' ctx = 0 ∨ powerCount m' ctx = 16 ∨ powerCount m' ctx = 48) ∧
+    (powerCount m' ctx = 0 ∨ powerCount m' ctx = 8 ∨ powerCount m' ctx = 16 ∨
+      powerCount m' ctx = 48) ∧
     Aes.bytesAt m' (ctx + BitVec.ofNat 64 (wipePreparedLen m' ctx)) (1024 - wipePreparedLen m' ctx) =
       Aes.bytesAt m (ctx + BitVec.ofNat 64 (wipePreparedLen m' ctx)) (1024 - wipePreparedLen m' ctx)
 
@@ -117,7 +132,7 @@ def prepareApi : Api where
     256 bytes, at byte `256 + 32*k`, for `k` from 0 to `n/2 - 1`, stores \
     `preparedPower(H^(2*k+2))` and then `preparedPower(H^(2*k+1))`, as two little-endian \
     128-bit words, `H` being the hash subkey in its bytes 240–255, and stores `n` in the \
-    64-bit word at byte 1024, `n` being 48, 16 or 0, as the implementation's other \
+    64-bit word at byte 1024, `n` being 48, 16, 8 or 0, as the implementation's other \
     functions read; it writes nothing else. Use only the \
     `*_prepared` APIs, or APIs that read the first 256 bytes, with this format. \
     Contract: `VG.Spec.Gcm.prepareContract`: the first 256 bytes are kept, the context \
@@ -156,7 +171,7 @@ def wipePreparedApi : Api where
   summary := "Wipes the 1032-byte `*ctx`, a prepared key context of `vg_aes_gcm_prepare`: \
     sets to zero the key context and the powers its count (the 64-bit word at byte 1024) \
     says are present: its first 1024 bytes if the count is at least 48, 512 if it is at \
-    least 16, and 256 otherwise (`vg_aes_gcm_prepare` did not write the bytes after them, \
+    least 16, 384 if it is at least 8, and 256 otherwise (`vg_aes_gcm_prepare` did not write the bytes after them, \
     but the count), and leaves the others unchanged. \
     Contract: `VG.Spec.Gcm.wipePreparedContract`. Constant time: only the pointer and \
     which of those the count is may affect timing, not the bytes wiped."

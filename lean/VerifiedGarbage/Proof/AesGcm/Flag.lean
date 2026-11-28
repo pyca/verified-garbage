@@ -75,7 +75,8 @@ theorem flagBit_of_flagLeak {t : Nat} (ht : t = 16 ∨ t = 48) {m₁ m₂ : Mem}
     generalize powerCount m₁ p₁ = a at h ⊢
     generalize powerCount m₂ p₂ = b at h ⊢
     by_cases h48a : 48 ≤ a <;> by_cases h48b : 48 ≤ b <;> by_cases h16a : 16 ≤ a <;>
-      by_cases h16b : 16 ≤ b <;> simp only [h48a, h48b, h16a, h16b, ↓reduceIte] at h <;>
+      by_cases h16b : 16 ≤ b <;> by_cases h8a : 8 ≤ a <;> by_cases h8b : 8 ≤ b <;>
+      simp only [h48a, h48b, h16a, h16b, h8a, h8b, ↓reduceIte] at h <;>
       rcases ht with rfl | rfl <;> omega
   simp only [flagBit, hi]
 
@@ -192,8 +193,9 @@ theorem flaggedPowers_congr {t : Nat} {m₁ m₂ : Mem} {p : Addr}
   have ec : powerCount m₂ p = powerCount m₁ p := by
     simp only [powerCount]
     rw [show (p + 1024 : Addr) = p + BitVec.ofNat 64 1024 from rfl, e]
-  refine ⟨?_, fun h16 => AesGcm.preparedPowers16Repr_congr (fun i hi => h i (by omega_using [hi])) (hr.2.1 (ec ▸ h16)),
-    fun h48 => AesGcm.preparedPowersRepr_congr (fun i hi => h i (by omega_using [hi])) (hr.2.2 (ec ▸ h48))⟩
+  refine ⟨?_, fun h8 => AesGcm.preparedPowers8Repr_congr (fun i hi => h i (by omega_using [hi])) (hr.2.1 (ec ▸ h8)),
+    fun h16 => AesGcm.preparedPowers16Repr_congr (fun i hi => h i (by omega_using [hi])) (hr.2.2.1 (ec ▸ h16)),
+    fun h48 => AesGcm.preparedPowersRepr_congr (fun i hi => h i (by omega_using [hi])) (hr.2.2.2 (ec ▸ h48))⟩
   rw [show (p + 1024 : Addr) = p + BitVec.ofNat 64 1024 from rfl, e]
   exact hr.1
 
@@ -211,7 +213,9 @@ subkey 0), and a count of 48 says so. -/
 theorem flaggedPowers_of_zeroMem {t : Nat} (ht : t ≤ 48) {m : Mem} {p : Addr}
     (h : ∀ i < 128 * 8, m (p + BitVec.ofNat 64 i) = 0)
     (hc : m.readW (p + 1024) 64 = 48) : FlaggedPowers t m p :=
-  ⟨by rw [hc]; exact ht, fun _ => AesGcm.preparedPowers16Repr_of (AesGcm.preparedPowersRepr_of_zeroMem h),
+  ⟨by rw [hc]; exact ht,
+    fun _ => AesGcm.preparedPowers8Repr_of (AesGcm.preparedPowers16Repr_of (AesGcm.preparedPowersRepr_of_zeroMem h)),
+    fun _ => AesGcm.preparedPowers16Repr_of (AesGcm.preparedPowersRepr_of_zeroMem h),
     fun _ => AesGcm.preparedPowersRepr_of_zeroMem h⟩
 
 theorem openToFlaggedPre_local (t pb : Nat) : ∀ vs m₁ m₂, vs.length = (openToPreparedSig.words pb).length →

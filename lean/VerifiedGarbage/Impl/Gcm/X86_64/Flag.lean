@@ -7,9 +7,11 @@ public import VerifiedGarbage.TCB.Code
 # The prepared key context's count of powers, on x86-64
 
 A prepared key context of 1032 bytes holds, at byte 1024, a word that counts
-the prepared powers after the key context: 0, 16 or 48. `onFlag t c₁ c₂`
+the prepared powers after the key context: 0, 16 or 48 here. `onFlag t c₁ c₂`
 reads it and runs `c₁` if it is at least `t` (the code that reads `t`
-powers) and `c₂` if not (the code that reads only the key context).
+powers) and `c₂` if not (the code that reads only the key context). A
+context of another target may count 8 powers, which only the wipe tells
+apart.
 -/
 
 @[expose] public section
@@ -74,10 +76,12 @@ def zeroBlocks (avx : Bool) (bytes : Nat) : List Instr :=
 
 /-- `vg_aes_gcm_wipe_prepared`: zeroes what `vg_aes_gcm_init` and
 `vg_aes_gcm_prepare` wrote but the count: the 256 bytes of the key context
-and the powers after it, 16 (512 bytes in all) or 48 (1024); with AVX if
+and the powers after it, 48 (1024 bytes in all), 16 (512) or 8 (384, which
+x86-64's `prepare` never writes but another target's does); with AVX if
 `avx`. -/
 def wipe (avx : Bool) : Prog isa :=
   onFlag 48 (.block (zeroBlocks avx 1024))
-    (onFlag 16 (.block (zeroBlocks avx 512)) (.block (zeroBlocks avx 256)))
+    (onFlag 16 (.block (zeroBlocks avx 512))
+      (onFlag 8 (.block (zeroBlocks avx 384)) (.block (zeroBlocks avx 256))))
 
 end VG.Impl.Gcm.X86_64.Flag

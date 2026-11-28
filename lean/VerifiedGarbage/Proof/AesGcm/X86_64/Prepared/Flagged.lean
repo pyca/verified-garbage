@@ -360,7 +360,7 @@ theorem encSpecF_pre {t : Nat} {s : State} (h : encCallPre (CtxMode.flaggedT t) 
   have a₂₂ := h
   clear h
   simp only [Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.ret, X86_64.stackArg, X86_64.stackArgAddr,
-    VG.X86_64.below, Nat.mul_one, Proof.AesGcm.rounds, CtxMode.flaggedT, Proof.AesGcm.Flag.FlaggedPowers, Spec.Gcm.powerCount, Spec.Gcm.PreparedRepr, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowersRepr, Spec.Gcm.PreparedPowers16Repr] at *
+    VG.X86_64.below, Nat.mul_one, Proof.AesGcm.rounds, CtxMode.flaggedT, Proof.AesGcm.Flag.FlaggedPowers, Spec.Gcm.powerCount, Spec.Gcm.PreparedRepr, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowersRepr, Spec.Gcm.PreparedPowers16Repr, Spec.Gcm.PreparedPowers8Repr] at *
   sig_pre [Proof.AesGcm.Flag.streamEncryptRoundsContractB, Spec.Gcm.streamCryptPreparedSig, Spec.Gcm.streamCryptPreparedSig,
     Spec.Gcm.streamCryptPreparedPre, X86_64.abi, X86_64.argRegs, List.range, List.range.loop]
   sig_reduce [Proof.AesGcm.Flag.streamEncryptRoundsContractB, Spec.Gcm.streamCryptPreparedSig, Spec.Gcm.streamCryptPreparedSig,
@@ -369,10 +369,12 @@ theorem encSpecF_pre {t : Nat} {s : State} (h : encCallPre (CtxMode.flaggedT t) 
     VG.X86_64.below]
   sig_and_intros
   all_goals try simp only [Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.ret, X86_64.stackArg, X86_64.stackArgAddr,
-    VG.X86_64.below, Nat.mul_one, Proof.AesGcm.rounds, CtxMode.flaggedT, Proof.AesGcm.Flag.FlaggedPowers, Spec.Gcm.powerCount, Spec.Gcm.PreparedRepr, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowersRepr, Spec.Gcm.PreparedPowers16Repr]
+    VG.X86_64.below, Nat.mul_one, Proof.AesGcm.rounds, CtxMode.flaggedT, Proof.AesGcm.Flag.FlaggedPowers, Spec.Gcm.powerCount, Spec.Gcm.PreparedRepr, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowersRepr, Spec.Gcm.PreparedPowers16Repr, Spec.Gcm.PreparedPowers8Repr]
   all_goals first
     | with_reducible assumption
     | exact ⟨by assumption, by assumption⟩
+    | exact ⟨by assumption, by assumption, by assumption⟩
+    | exact ⟨by assumption, by assumption, by assumption, by assumption⟩
 
 theorem encSpecF_post {t : Nat} {s s' : State} (hR : Proof.AesGcm.rounds s)
     (h : (Proof.AesGcm.Flag.streamEncryptRoundsContractB t X86_64.abi 2608).post s s') :
@@ -432,7 +434,7 @@ theorem sealSpecF_pre {t : Nat} {s : State} (h : sealPreK (CtxMode.flaggedT t) s
   have a₃₂ := h
   clear h
   simp only [Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.ret, X86_64.stackArg,
-    X86_64.stackArgAddr, VG.X86_64.below, Nat.mul_one, Proof.AesGcm.rounds, CtxMode.flaggedT, Proof.AesGcm.Flag.FlaggedPowers, Spec.Gcm.powerCount, Spec.Gcm.PreparedRepr, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowersRepr, Spec.Gcm.PreparedPowers16Repr] at *
+    X86_64.stackArgAddr, VG.X86_64.below, Nat.mul_one, Proof.AesGcm.rounds, CtxMode.flaggedT, Proof.AesGcm.Flag.FlaggedPowers, Spec.Gcm.powerCount, Spec.Gcm.PreparedRepr, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowersRepr, Spec.Gcm.PreparedPowers16Repr, Spec.Gcm.PreparedPowers8Repr] at *
   sig_pre [Proof.AesGcm.Flag.sealRoundsContractB, Spec.Gcm.sealPreparedSig, Spec.Gcm.sealPreparedSig, Spec.Gcm.sealPreparedPre,
     X86_64.abi, X86_64.argRegs, List.range, List.range.loop]
   sig_reduce [Proof.AesGcm.Flag.sealRoundsContractB, Spec.Gcm.sealPreparedSig, Spec.Gcm.sealPreparedSig, Spec.Gcm.sealPreparedPre,
@@ -440,10 +442,12 @@ theorem sealSpecF_pre {t : Nat} {s : State} (h : sealPreK (CtxMode.flaggedT t) s
     X86_64.stackArgAddr, List.getD, List.range, List.range.loop, VG.X86_64.below]
   sig_and_intros
   all_goals try simp only [Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.ret, X86_64.stackArg,
-    X86_64.stackArgAddr, VG.X86_64.below, Nat.mul_one, Proof.AesGcm.rounds, CtxMode.flaggedT, Proof.AesGcm.Flag.FlaggedPowers, Spec.Gcm.powerCount, Spec.Gcm.PreparedRepr, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowersRepr, Spec.Gcm.PreparedPowers16Repr]
+    X86_64.stackArgAddr, VG.X86_64.below, Nat.mul_one, Proof.AesGcm.rounds, CtxMode.flaggedT, Proof.AesGcm.Flag.FlaggedPowers, Spec.Gcm.powerCount, Spec.Gcm.PreparedRepr, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowersRepr, Spec.Gcm.PreparedPowers16Repr, Spec.Gcm.PreparedPowers8Repr]
   all_goals first
     | with_reducible assumption
     | exact ⟨by assumption, by assumption⟩
+    | exact ⟨by assumption, by assumption, by assumption⟩
+    | exact ⟨by assumption, by assumption, by assumption, by assumption⟩
 
 theorem sealSpecF_post {t : Nat} {s s' : State} (hR : rounds s)
     (h : (Proof.AesGcm.Flag.sealRoundsContractB t X86_64.abi 2624).post s s') :
@@ -492,7 +496,7 @@ theorem splitSpecF_pre {t : Nat} {s : State} (h : splitPreK (CtxMode.flaggedT t)
   clear h
   simp only [Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.ret, X86_64.stackArg,
     X86_64.stackArgAddr, VG.X86_64.below, Nat.mul_one, Proof.AesGcm.rounds, CtxMode.flaggedT, Proof.AesGcm.Flag.FlaggedPowers, Spec.Gcm.powerCount, Spec.Gcm.PreparedRepr, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowersRepr,
-    Spec.Gcm.PreparedPowers16Repr, BitVec.setWidth_eq] at *
+    Spec.Gcm.PreparedPowers16Repr, Spec.Gcm.PreparedPowers8Repr, BitVec.setWidth_eq] at *
   sig_pre [Proof.AesGcm.Flag.sealSplitFlaggedContract, Proof.AesGcm.Flag.sealSplitFlaggedSig,
     Proof.AesGcm.Flag.sealSplitFlaggedPre, X86_64.abi, X86_64.argRegs, List.range, List.range.loop]
   sig_reduce [Proof.AesGcm.Flag.sealSplitFlaggedContract, Proof.AesGcm.Flag.sealSplitFlaggedSig,
@@ -502,11 +506,12 @@ theorem splitSpecF_pre {t : Nat} {s : State} (h : splitPreK (CtxMode.flaggedT t)
   sig_and_intros
   all_goals try simp only [Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.ret, X86_64.stackArg,
     X86_64.stackArgAddr, VG.X86_64.below, Nat.mul_one, Proof.AesGcm.rounds, CtxMode.flaggedT, Proof.AesGcm.Flag.FlaggedPowers, Spec.Gcm.powerCount, Spec.Gcm.PreparedRepr, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowersRepr,
-    Spec.Gcm.PreparedPowers16Repr, BitVec.setWidth_eq]
+    Spec.Gcm.PreparedPowers16Repr, Spec.Gcm.PreparedPowers8Repr, BitVec.setWidth_eq]
   all_goals first
     | with_reducible assumption
     | exact ⟨by assumption, by assumption⟩
     | exact ⟨by assumption, by assumption, by assumption⟩
+    | exact ⟨by assumption, by assumption, by assumption, by assumption⟩
     | omega
 
 theorem splitSpecF_post {t : Nat} {M : CtxMode} {s s' : State}
@@ -546,7 +551,7 @@ theorem toSpecF_pre {t : Nat} {s : State} (h : toPre (CtxMode.flaggedT t) s) :
   have a₂₈ := h
   clear h
   simp only [Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.ret, X86_64.stackArg,
-    X86_64.stackArgAddr, VG.X86_64.below, Nat.mul_one, Proof.AesGcm.rounds, CtxMode.flaggedT, Proof.AesGcm.Flag.FlaggedPowers, Spec.Gcm.powerCount, Spec.Gcm.PreparedRepr, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowersRepr, Spec.Gcm.PreparedPowers16Repr] at *
+    X86_64.stackArgAddr, VG.X86_64.below, Nat.mul_one, Proof.AesGcm.rounds, CtxMode.flaggedT, Proof.AesGcm.Flag.FlaggedPowers, Spec.Gcm.powerCount, Spec.Gcm.PreparedRepr, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowersRepr, Spec.Gcm.PreparedPowers16Repr, Spec.Gcm.PreparedPowers8Repr] at *
   sig_pre [Proof.AesGcm.Flag.streamEncryptToFlaggedContract, Proof.AesGcm.Flag.streamEncryptToFlaggedSig,
     Proof.AesGcm.Flag.streamEncryptToFlaggedPre, X86_64.abi, X86_64.argRegs, List.range, List.range.loop]
   sig_reduce [Proof.AesGcm.Flag.streamEncryptToFlaggedContract, Proof.AesGcm.Flag.streamEncryptToFlaggedSig,
@@ -555,12 +560,13 @@ theorem toSpecF_pre {t : Nat} {s : State} (h : toPre (CtxMode.flaggedT t) s) :
     VG.X86_64.below]
   sig_and_intros
   all_goals try simp only [Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.ret, X86_64.stackArg,
-    X86_64.stackArgAddr, VG.X86_64.below, Nat.mul_one, Proof.AesGcm.rounds, CtxMode.flaggedT, Proof.AesGcm.Flag.FlaggedPowers, Spec.Gcm.powerCount, Spec.Gcm.PreparedRepr, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowersRepr, Spec.Gcm.PreparedPowers16Repr]
+    X86_64.stackArgAddr, VG.X86_64.below, Nat.mul_one, Proof.AesGcm.rounds, CtxMode.flaggedT, Proof.AesGcm.Flag.FlaggedPowers, Spec.Gcm.powerCount, Spec.Gcm.PreparedRepr, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowersRepr, Spec.Gcm.PreparedPowers16Repr, Spec.Gcm.PreparedPowers8Repr]
   all_goals first
     | with_reducible assumption
     | omega
     | exact ⟨by assumption, by assumption⟩
     | exact ⟨by assumption, by assumption, by assumption⟩
+    | exact ⟨by assumption, by assumption, by assumption, by assumption⟩
     | exact congrArg (BitVec.setWidth 64) a₂
 
 theorem toSpecF_post {t : Nat} {s s' : State} (hR : rounds s)
@@ -618,7 +624,7 @@ theorem streamToFlagged_implies {t : Nat} (ht : t ≤ 48) : (Proof.AesGcm.stream
       Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stkS, Proof.AesGcm.ret, Proof.AesGcm.rounds,
       X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop, VG.X86_64.below,
       X86_64.argRegs, CtxMode.flaggedT, Proof.AesGcm.Flag.FlaggedPowers, Spec.Gcm.powerCount, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowersRepr,
-      Spec.Gcm.PreparedRepr, Spec.Gcm.PreparedPowers16Repr]
+      Spec.Gcm.PreparedRepr, Spec.Gcm.PreparedPowers16Repr, Spec.Gcm.PreparedPowers8Repr]
           post := by sig_implies_post [Proof.AesGcm.Flag.streamEncryptToFlaggedScratchContract,
       Proof.AesGcm.Flag.streamEncryptToFlaggedScratchSig, Proof.AesGcm.Flag.streamEncryptToFlaggedPre,
       Proof.Gcm.streamEncryptToPost, Proof.AesGcm.streamEncryptToX86_64M,
@@ -626,7 +632,7 @@ theorem streamToFlagged_implies {t : Nat} (ht : t ≤ 48) : (Proof.AesGcm.stream
       Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stkS, Proof.AesGcm.ret, Proof.AesGcm.rounds,
       X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop, VG.X86_64.below,
       X86_64.argRegs, CtxMode.flaggedT, Proof.AesGcm.Flag.FlaggedPowers, Spec.Gcm.powerCount, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowersRepr,
-      Spec.Gcm.PreparedRepr, Spec.Gcm.PreparedPowers16Repr]
+      Spec.Gcm.PreparedRepr, Spec.Gcm.PreparedPowers16Repr, Spec.Gcm.PreparedPowers8Repr]
           pub := by sig_implies_pub [Proof.AesGcm.Flag.streamEncryptToFlaggedScratchContract,
       Proof.AesGcm.Flag.streamEncryptToFlaggedScratchSig, Proof.AesGcm.Flag.streamEncryptToFlaggedPre,
       Proof.Gcm.streamEncryptToPost, Proof.AesGcm.streamEncryptToX86_64M,
@@ -634,7 +640,7 @@ theorem streamToFlagged_implies {t : Nat} (ht : t ≤ 48) : (Proof.AesGcm.stream
       Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stkS, Proof.AesGcm.ret, Proof.AesGcm.rounds,
       X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop, VG.X86_64.below,
       X86_64.argRegs, CtxMode.flaggedT, Proof.AesGcm.Flag.FlaggedPowers, Spec.Gcm.powerCount, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowersRepr,
-      Spec.Gcm.PreparedRepr, Spec.Gcm.PreparedPowers16Repr]
+      Spec.Gcm.PreparedRepr, Spec.Gcm.PreparedPowers16Repr, Spec.Gcm.PreparedPowers8Repr]
           sat := ⟨streamToSatF, by
             sig_pre [Proof.AesGcm.Flag.streamEncryptToFlaggedScratchContract,
               Proof.AesGcm.Flag.streamEncryptToFlaggedScratchSig, Proof.AesGcm.Flag.streamEncryptToFlaggedPre,
@@ -811,7 +817,7 @@ theorem sealGather_onFlagF {t : Nat} (ht : t = 16 ∨ t = 48) {c₁ c₂ : Prog 
     (h₁ : Verified target c₁ (AesGcm.Flag.sealGatherFlaggedRoundsContract t abi stack))
     (h₂ : Verified target c₂ (Proof.AesGcm.sealGatherRoundsContract abi stack)) (bound : stack ≤ 5128 := by decide) :
     Verified target (Impl.Gcm.X86_64.Flag.onFlag t c₁ c₂) (AesGcm.Flag.sealGatherRoundsContract abi stack) :=
-  Verified.of_onFlagCtx ht (by decide) h₁
+  Verified.of_onFlagCtx (.inr ht) (by decide) h₁
     (VG.X86_64.Verified.widenFirstArray (n := 32) (n' := 129) (by decide) h₂
       (fun _ _ _ _ _ _ _ _ _ _ _ _ h => h) (frameSat_of_le (sig := Spec.Gcm.sealGatherPreparedSig) (by decide) bound (by decide) sealGather_satbase))
     (fun _ _ _ _ _ _ _ _ _ _ _ _ h hf => ⟨h.1, h.2.1, hf, h.2.2⟩)

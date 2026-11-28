@@ -66,6 +66,12 @@ theorem seal_satF : ∃ s, (Spec.Gcm.sealPreparedSig.contract abi (Spec.Gcm.seal
        split
        · next h => exfalso; bv_omega
        · rfl)
+    | (intro _
+       refine preparedPowers8Repr_of (preparedPowers16Repr_of ?_)
+       refine preparedPowersRepr_of_zero fun i hi => ?_
+       split
+       · next h => exfalso; bv_omega
+       · rfl)
 
 
 theorem seal_satpow : ∃ s, (Spec.Gcm.sealPreparedSig.contract abi (Proof.Gcm.sealPowersPre 64)
@@ -132,12 +138,12 @@ theorem seal_onFlagB {c₁ c₂ : Prog isa}
     (h₁ : Verified target c₁ (Proof.AesGcm.sealPreparedRoundsContract abi 2624))
     (h₂ : Verified target c₂ (Proof.AesGcm.sealRoundsContract abi 2624)) :
     Verified target (Impl.Gcm.X86_64.Flag.onFlag 48 c₁ c₂) (AesGcm.Flag.sealRoundsContractB 48 abi 2624) :=
-  Verified.of_onFlagCtxL (Or.inr rfl) (VG.X86_64.flagBit 48) VG.X86_64.flagBit_iff (by decide)
+  Verified.of_onFlagCtxL (.inr (.inr rfl)) (VG.X86_64.flagBit 48) VG.X86_64.flagBit_iff (by decide)
     (VG.X86_64.Verified.widenFirstArray (n := 128) (n' := 129) (by decide) h₁
       (fun _ _ _ _ _ _ _ _ _ _ h => h) seal_satpow)
     (VG.X86_64.Verified.widenFirstArray (n := 32) (n' := 129) (by decide) h₂
       (fun _ _ _ _ _ _ _ _ _ _ h => h) seal_satbase)
-    (fun _ _ _ _ _ _ _ _ _ _ h hf => ⟨h.1, h.2.2 hf⟩)
+    (fun _ _ _ _ _ _ _ _ _ _ h hf => ⟨h.1, h.2.2.2 hf⟩)
     (fun _ _ _ _ _ _ _ _ _ _ h _ => h.1)
     (fun _ _ _ _ _ _ _ _ _ _ => rfl)
     seal_satF
@@ -154,12 +160,12 @@ theorem seal_onFlag16B {c₁ c₂ : Prog isa}
     (h₁ : Verified target c₁ (Proof.AesGcm.sealPrepared16RoundsContract abi 2624))
     (h₂ : Verified target c₂ (Proof.AesGcm.sealRoundsContract abi 2624)) :
     Verified target (Impl.Gcm.X86_64.Flag.onFlag 16 c₁ c₂) (AesGcm.Flag.sealRoundsContractB 16 abi 2624) :=
-  Verified.of_onFlagCtxL (Or.inl rfl) (VG.X86_64.flagBit 16) VG.X86_64.flagBit_iff (by decide)
+  Verified.of_onFlagCtxL (.inr (.inl rfl)) (VG.X86_64.flagBit 16) VG.X86_64.flagBit_iff (by decide)
     (VG.X86_64.Verified.widenFirstArray (n := 128) (n' := 129) (by decide) h₁
       (fun _ _ _ _ _ _ _ _ _ _ h => h) seal_satpow16)
     (VG.X86_64.Verified.widenFirstArray (n := 32) (n' := 129) (by decide) h₂
       (fun _ _ _ _ _ _ _ _ _ _ h => h) seal_satbase)
-    (fun _ _ _ _ _ _ _ _ _ _ h hf => ⟨h.1, h.2.1 hf⟩)
+    (fun _ _ _ _ _ _ _ _ _ _ h hf => ⟨h.1, h.2.2.1 hf⟩)
     (fun _ _ _ _ _ _ _ _ _ _ h _ => h.1)
     (fun _ _ _ _ _ _ _ _ _ _ => rfl)
     seal_satF
@@ -190,6 +196,8 @@ theorem open_satF : ∃ s, (Spec.Gcm.openPreparedSig.contract abi (Spec.Gcm.open
     | (intro _
        refine preparedPowers16Repr_of ?_
        exact preparedPowersRepr_of_zero fun _ _ => rfl)
+    | (intro _
+       exact preparedPowers8Repr_of (preparedPowers16Repr_of (preparedPowersRepr_of_zero fun _ _ => rfl)))
 
 
 theorem open_satpow : ∃ s, (Spec.Gcm.openPreparedSig.contract abi (Proof.Gcm.openPowersPre 64)
@@ -250,12 +258,12 @@ theorem open_onFlagB {c₁ c₂ : Prog isa}
     (h₁ : Verified target c₁ (Proof.AesGcm.openPreparedRoundsContract abi 2632))
     (h₂ : Verified target c₂ (Proof.AesGcm.openRoundsContract abi 2632)) :
     Verified target (Impl.Gcm.X86_64.Flag.onFlag 48 c₁ c₂) (AesGcm.Flag.openRoundsContractB 48 abi 2632) :=
-  Verified.of_onFlagCtxL (Or.inr rfl) (VG.X86_64.flagBit 48) VG.X86_64.flagBit_iff (by decide)
+  Verified.of_onFlagCtxL (.inr (.inr rfl)) (VG.X86_64.flagBit 48) VG.X86_64.flagBit_iff (by decide)
     (VG.X86_64.Verified.widenFirstArray (n := 128) (n' := 129) (by decide) h₁
       (fun _ _ _ _ _ _ _ _ _ _ _ h => h) open_satpow)
     (VG.X86_64.Verified.widenFirstArray (n := 32) (n' := 129) (by decide) h₂
       (fun _ _ _ _ _ _ _ _ _ _ _ h => h) open_satbase)
-    (fun _ _ _ _ _ _ _ _ _ _ _ h hf => ⟨h.1, h.2.2 hf⟩)
+    (fun _ _ _ _ _ _ _ _ _ _ _ h hf => ⟨h.1, h.2.2.2 hf⟩)
     (fun _ _ _ _ _ _ _ _ _ _ _ h _ => h.1)
     (fun _ _ _ _ _ _ _ _ _ _ _ => rfl)
     open_satF
@@ -272,12 +280,12 @@ theorem open_onFlag16B {c₁ c₂ : Prog isa}
     (h₁ : Verified target c₁ (Proof.AesGcm.openPrepared16RoundsContract abi 2632))
     (h₂ : Verified target c₂ (Proof.AesGcm.openRoundsContract abi 2632)) :
     Verified target (Impl.Gcm.X86_64.Flag.onFlag 16 c₁ c₂) (AesGcm.Flag.openRoundsContractB 16 abi 2632) :=
-  Verified.of_onFlagCtxL (Or.inl rfl) (VG.X86_64.flagBit 16) VG.X86_64.flagBit_iff (by decide)
+  Verified.of_onFlagCtxL (.inr (.inl rfl)) (VG.X86_64.flagBit 16) VG.X86_64.flagBit_iff (by decide)
     (VG.X86_64.Verified.widenFirstArray (n := 128) (n' := 129) (by decide) h₁
       (fun _ _ _ _ _ _ _ _ _ _ _ h => h) open_satpow16)
     (VG.X86_64.Verified.widenFirstArray (n := 32) (n' := 129) (by decide) h₂
       (fun _ _ _ _ _ _ _ _ _ _ _ h => h) open_satbase)
-    (fun _ _ _ _ _ _ _ _ _ _ _ h hf => ⟨h.1, h.2.1 hf⟩)
+    (fun _ _ _ _ _ _ _ _ _ _ _ h hf => ⟨h.1, h.2.2.1 hf⟩)
     (fun _ _ _ _ _ _ _ _ _ _ _ h _ => h.1)
     (fun _ _ _ _ _ _ _ _ _ _ _ => rfl)
     open_satF
@@ -307,6 +315,8 @@ theorem streamEncrypt_satF : ∃ s, (Spec.Gcm.streamCryptPreparedSig.contract ab
     | (intro _
        refine preparedPowers16Repr_of ?_
        exact preparedPowersRepr_of_zero fun _ _ => rfl)
+    | (intro _
+       exact preparedPowers8Repr_of (preparedPowers16Repr_of (preparedPowersRepr_of_zero fun _ _ => rfl)))
 
 
 theorem streamEncrypt_satpow : ∃ s, (Spec.Gcm.streamCryptPreparedSig.contract abi (Proof.Gcm.streamCryptPowersPre 64)
@@ -367,12 +377,12 @@ theorem streamEncrypt_onFlagB {c₁ c₂ : Prog isa}
     (h₁ : Verified target c₁ (Proof.AesGcm.streamEncryptPreparedRoundsContract abi 2608))
     (h₂ : Verified target c₂ (Proof.AesGcm.streamEncryptRoundsContract abi 2608)) :
     Verified target (Impl.Gcm.X86_64.Flag.onFlag 48 c₁ c₂) (AesGcm.Flag.streamEncryptRoundsContractB 48 abi 2608) :=
-  Verified.of_onFlagCtxL (Or.inr rfl) (VG.X86_64.flagBit 48) VG.X86_64.flagBit_iff (by decide)
+  Verified.of_onFlagCtxL (.inr (.inr rfl)) (VG.X86_64.flagBit 48) VG.X86_64.flagBit_iff (by decide)
     (VG.X86_64.Verified.widenFirstArray (n := 128) (n' := 129) (by decide) h₁
       (fun _ _ _ _ _ _ _ _ h => h) streamEncrypt_satpow)
     (VG.X86_64.Verified.widenFirstArray (n := 32) (n' := 129) (by decide) h₂
       (fun _ _ _ _ _ _ _ _ h => h) streamEncrypt_satbase)
-    (fun _ _ _ _ _ _ _ _ h hf => ⟨h.1, h.2.2 hf⟩)
+    (fun _ _ _ _ _ _ _ _ h hf => ⟨h.1, h.2.2.2 hf⟩)
     (fun _ _ _ _ _ _ _ _ h _ => h.1)
     (fun _ _ _ _ _ _ _ _ => rfl)
     streamEncrypt_satF
@@ -389,12 +399,12 @@ theorem streamEncrypt_onFlag16B {c₁ c₂ : Prog isa}
     (h₁ : Verified target c₁ (Proof.AesGcm.streamEncryptPrepared16RoundsContract abi 2608))
     (h₂ : Verified target c₂ (Proof.AesGcm.streamEncryptRoundsContract abi 2608)) :
     Verified target (Impl.Gcm.X86_64.Flag.onFlag 16 c₁ c₂) (AesGcm.Flag.streamEncryptRoundsContractB 16 abi 2608) :=
-  Verified.of_onFlagCtxL (Or.inl rfl) (VG.X86_64.flagBit 16) VG.X86_64.flagBit_iff (by decide)
+  Verified.of_onFlagCtxL (.inr (.inl rfl)) (VG.X86_64.flagBit 16) VG.X86_64.flagBit_iff (by decide)
     (VG.X86_64.Verified.widenFirstArray (n := 128) (n' := 129) (by decide) h₁
       (fun _ _ _ _ _ _ _ _ h => h) streamEncrypt_satpow16)
     (VG.X86_64.Verified.widenFirstArray (n := 32) (n' := 129) (by decide) h₂
       (fun _ _ _ _ _ _ _ _ h => h) streamEncrypt_satbase)
-    (fun _ _ _ _ _ _ _ _ h hf => ⟨h.1, h.2.1 hf⟩)
+    (fun _ _ _ _ _ _ _ _ h hf => ⟨h.1, h.2.2.1 hf⟩)
     (fun _ _ _ _ _ _ _ _ h _ => h.1)
     (fun _ _ _ _ _ _ _ _ => rfl)
     streamEncrypt_satF
@@ -422,6 +432,8 @@ theorem streamDecrypt_satF : ∃ s, (Spec.Gcm.streamCryptPreparedSig.contract ab
     | (intro _
        refine preparedPowers16Repr_of ?_
        exact preparedPowersRepr_of_zero fun _ _ => rfl)
+    | (intro _
+       exact preparedPowers8Repr_of (preparedPowers16Repr_of (preparedPowersRepr_of_zero fun _ _ => rfl)))
 
 
 theorem streamDecrypt_satpow : ∃ s, (Spec.Gcm.streamCryptPreparedSig.contract abi (Proof.Gcm.streamCryptPowersPre 64)
@@ -482,12 +494,12 @@ theorem streamDecrypt_onFlagB {c₁ c₂ : Prog isa}
     (h₁ : Verified target c₁ (Proof.AesGcm.streamDecryptPreparedRoundsContract abi 2608))
     (h₂ : Verified target c₂ (Proof.AesGcm.streamDecryptRoundsContract abi 2608)) :
     Verified target (Impl.Gcm.X86_64.Flag.onFlag 48 c₁ c₂) (AesGcm.Flag.streamDecryptRoundsContractB 48 abi 2608) :=
-  Verified.of_onFlagCtxL (Or.inr rfl) (VG.X86_64.flagBit 48) VG.X86_64.flagBit_iff (by decide)
+  Verified.of_onFlagCtxL (.inr (.inr rfl)) (VG.X86_64.flagBit 48) VG.X86_64.flagBit_iff (by decide)
     (VG.X86_64.Verified.widenFirstArray (n := 128) (n' := 129) (by decide) h₁
       (fun _ _ _ _ _ _ _ _ h => h) streamDecrypt_satpow)
     (VG.X86_64.Verified.widenFirstArray (n := 32) (n' := 129) (by decide) h₂
       (fun _ _ _ _ _ _ _ _ h => h) streamDecrypt_satbase)
-    (fun _ _ _ _ _ _ _ _ h hf => ⟨h.1, h.2.2 hf⟩)
+    (fun _ _ _ _ _ _ _ _ h hf => ⟨h.1, h.2.2.2 hf⟩)
     (fun _ _ _ _ _ _ _ _ h _ => h.1)
     (fun _ _ _ _ _ _ _ _ => rfl)
     streamDecrypt_satF
@@ -504,12 +516,12 @@ theorem streamDecrypt_onFlag16B {c₁ c₂ : Prog isa}
     (h₁ : Verified target c₁ (Proof.AesGcm.streamDecryptPrepared16RoundsContract abi 2608))
     (h₂ : Verified target c₂ (Proof.AesGcm.streamDecryptRoundsContract abi 2608)) :
     Verified target (Impl.Gcm.X86_64.Flag.onFlag 16 c₁ c₂) (AesGcm.Flag.streamDecryptRoundsContractB 16 abi 2608) :=
-  Verified.of_onFlagCtxL (Or.inl rfl) (VG.X86_64.flagBit 16) VG.X86_64.flagBit_iff (by decide)
+  Verified.of_onFlagCtxL (.inr (.inl rfl)) (VG.X86_64.flagBit 16) VG.X86_64.flagBit_iff (by decide)
     (VG.X86_64.Verified.widenFirstArray (n := 128) (n' := 129) (by decide) h₁
       (fun _ _ _ _ _ _ _ _ h => h) streamDecrypt_satpow16)
     (VG.X86_64.Verified.widenFirstArray (n := 32) (n' := 129) (by decide) h₂
       (fun _ _ _ _ _ _ _ _ h => h) streamDecrypt_satbase)
-    (fun _ _ _ _ _ _ _ _ h hf => ⟨h.1, h.2.1 hf⟩)
+    (fun _ _ _ _ _ _ _ _ h hf => ⟨h.1, h.2.2.1 hf⟩)
     (fun _ _ _ _ _ _ _ _ h _ => h.1)
     (fun _ _ _ _ _ _ _ _ => rfl)
     streamDecrypt_satF
@@ -540,6 +552,8 @@ theorem sealGather_satF : ∃ s, (Spec.Gcm.sealGatherPreparedSig.contract abi (S
     | (intro _
        refine preparedPowers16Repr_of ?_
        exact preparedPowersRepr_of_zero fun _ hi => by simp only [Gather.ctx_low hi, ite_false])
+    | (intro _
+       exact preparedPowers8Repr_of (preparedPowers16Repr_of (preparedPowersRepr_of_zero fun _ hi => by simp only [Gather.ctx_low hi, ite_false])))
 
 
 theorem sealGather_satpow : ∃ s, (Spec.Gcm.sealGatherPreparedSig.contract abi (Proof.Gcm.sealGatherPowersPre 64)
@@ -593,12 +607,12 @@ theorem sealGather_onFlag {c₁ c₂ : Prog isa}
     (h₁ : Verified target c₁ (Proof.AesGcm.sealGatherPreparedRoundsContract abi 5128))
     (h₂ : Verified target c₂ (Proof.AesGcm.sealGatherRoundsContract abi 5128)) :
     Verified target (Impl.Gcm.X86_64.Flag.onFlag 48 c₁ c₂) (AesGcm.Flag.sealGatherRoundsContract abi 5128) :=
-  Verified.of_onFlagCtx (Or.inr rfl) (by decide)
+  Verified.of_onFlagCtx (.inr (.inr rfl)) (by decide)
     (VG.X86_64.Verified.widenFirstArray (n := 128) (n' := 129) (by decide) h₁
       (fun _ _ _ _ _ _ _ _ _ _ _ _ h => h) sealGather_satpow)
     (VG.X86_64.Verified.widenFirstArray (n := 32) (n' := 129) (by decide) h₂
       (fun _ _ _ _ _ _ _ _ _ _ _ _ h => h) sealGather_satbase)
-    (fun _ _ _ _ _ _ _ _ _ _ _ _ h hf => ⟨h.1, h.2.1, h.2.2.2 hf⟩)
+    (fun _ _ _ _ _ _ _ _ _ _ _ _ h hf => ⟨h.1, h.2.1, h.2.2.2.2 hf⟩)
     (fun _ _ _ _ _ _ _ _ _ _ _ _ h _ => ⟨h.1, h.2.1⟩)
     (fun _ _ _ _ _ _ _ _ _ _ _ _ => rfl)
     sealGather_satF
@@ -609,12 +623,12 @@ theorem sealGather_onFlag16 {c₁ c₂ : Prog isa}
     (h₁ : Verified target c₁ (Proof.AesGcm.sealGatherPrepared16RoundsContract abi 5128))
     (h₂ : Verified target c₂ (Proof.AesGcm.sealGatherRoundsContract abi 5128)) :
     Verified target (Impl.Gcm.X86_64.Flag.onFlag 16 c₁ c₂) (AesGcm.Flag.sealGatherRoundsContract abi 5128) :=
-  Verified.of_onFlagCtx (Or.inl rfl) (by decide)
+  Verified.of_onFlagCtx (.inr (.inl rfl)) (by decide)
     (VG.X86_64.Verified.widenFirstArray (n := 128) (n' := 129) (by decide) h₁
       (fun _ _ _ _ _ _ _ _ _ _ _ _ h => h) sealGather_satpow16)
     (VG.X86_64.Verified.widenFirstArray (n := 32) (n' := 129) (by decide) h₂
       (fun _ _ _ _ _ _ _ _ _ _ _ _ h => h) sealGather_satbase)
-    (fun _ _ _ _ _ _ _ _ _ _ _ _ h hf => ⟨h.1, h.2.1, h.2.2.1 hf⟩)
+    (fun _ _ _ _ _ _ _ _ _ _ _ _ h hf => ⟨h.1, h.2.1, h.2.2.2.1 hf⟩)
     (fun _ _ _ _ _ _ _ _ _ _ _ _ h _ => ⟨h.1, h.2.1⟩)
     (fun _ _ _ _ _ _ _ _ _ _ _ _ => rfl)
     sealGather_satF
@@ -643,6 +657,8 @@ theorem openTo_satF2776 : ∃ s, (Spec.Gcm.openToPreparedSig.contract abi (Spec.
     | (intro _
        refine preparedPowers16Repr_of ?_
        exact Proof.AesGcm.preparedPowersRepr_of_zeroMem fun _ hi => by simp only [OpenTo.ctx_low hi, ite_false])
+    | (intro _
+       exact preparedPowers8Repr_of (preparedPowers16Repr_of (Proof.AesGcm.preparedPowersRepr_of_zeroMem fun _ hi => by simp only [OpenTo.ctx_low hi, ite_false])))
 
 
 
@@ -672,7 +688,7 @@ theorem openTo_onFlagF2776 {t : Nat} (ht : t = 16 ∨ t = 48) {c₁ c₂ : Prog 
     (h₁ : Verified target c₁ (AesGcm.Flag.openToFlaggedRoundsContract t abi 2776))
     (h₂ : Verified target c₂ (Proof.AesGcm.openToRoundsContract abi 2776)) :
     Verified target (Impl.Gcm.X86_64.Flag.onFlag t c₁ c₂) (AesGcm.Flag.openToRoundsContract abi 2776) :=
-  Verified.of_onFlagCtx ht (by decide) h₁
+  Verified.of_onFlagCtx (.inr ht) (by decide) h₁
     (VG.X86_64.Verified.widenFirstArray (n := 32) (n' := 129) (by decide) h₂
       (fun _ _ _ _ _ _ _ _ _ _ _ _ _ h => h) openTo_satbase2776)
     (fun _ _ _ _ _ _ _ _ _ _ _ _ _ h hf => ⟨h.1, h.2.1, hf, h.2.2⟩)

@@ -298,8 +298,8 @@ def flaggedX86_64 : Contract isa where
     (⟨s.gpr .rsp, 8⟩ : Region).Disjoint ⟨s.gpr .rdi, 1032⟩
   post s s' := Spec.Aes.bytesAt s'.mem (s.gpr .rdi) 256 = Spec.Aes.bytesAt s.mem (s.gpr .rdi) 256 ∧
     Spec.Gcm.PreparedRepr s'.mem (s.gpr .rdi) ∧
-    (Spec.Gcm.powerCount s'.mem (s.gpr .rdi) = 0 ∨ Spec.Gcm.powerCount s'.mem (s.gpr .rdi) = 16 ∨
-      Spec.Gcm.powerCount s'.mem (s.gpr .rdi) = 48) ∧
+    (Spec.Gcm.powerCount s'.mem (s.gpr .rdi) = 0 ∨ Spec.Gcm.powerCount s'.mem (s.gpr .rdi) = 8 ∨
+      Spec.Gcm.powerCount s'.mem (s.gpr .rdi) = 16 ∨ Spec.Gcm.powerCount s'.mem (s.gpr .rdi) = 48) ∧
     Spec.Aes.bytesAt s'.mem (s.gpr .rdi + BitVec.ofNat 64 (Spec.Gcm.wipePreparedLen s'.mem (s.gpr .rdi)))
         (1024 - Spec.Gcm.wipePreparedLen s'.mem (s.gpr .rdi)) =
       Spec.Aes.bytesAt s.mem (s.gpr .rdi + BitVec.ofNat 64 (Spec.Gcm.wipePreparedLen s'.mem (s.gpr .rdi)))
@@ -386,7 +386,8 @@ theorem absent_correct (s₀ : State) (hp : flaggedX86_64.pre s₀) :
       rw [show (s₀.gpr .rdi + 1024 : Addr) = s₀.gpr .rdi + BitVec.ofNat 64 1024 from rfl, hm,
         Mem.readW_writeW_self64]
       rfl
-    refine ⟨⟨fun h => absurd (hc ▸ h) (by decide), fun h => absurd (hc ▸ h) (by decide)⟩, .inl hc, ?_⟩
+    refine ⟨⟨fun h => absurd (hc ▸ h) (by decide), fun h => absurd (hc ▸ h) (by decide),
+      fun h => absurd (hc ▸ h) (by decide)⟩, .inl hc, ?_⟩
     simp only [Spec.Gcm.wipePreparedLen, hc]
     exact bytesAt_frame fr (fun r hr => by
       obtain rfl := List.mem_singleton.mp hr
@@ -457,7 +458,8 @@ theorem flagged_correct {n : Nat} (hn : n = 16 ∨ n = 48) {c : Prog isa}
       rw [show 256 + 32 * k + 16 * 1 = 272 + 32 * k by omega_using [], show 2 * k + 2 - 1 = 2 * k + 1 by omega_using []] at p1
       exact ⟨p0, p1⟩
     refine ⟨flagged_gpr hp hm₁ hg₁ (by decide) fr g, keep.trans keep₁,
-      ⟨fun h => pairs 8 ?_, fun h => pairs 24 ?_⟩, by rw [hc]; exact .inr hn, ?_⟩
+      ⟨fun h => pairs 4 ?_, fun h => pairs 8 ?_, fun h => pairs 24 ?_⟩, by rw [hc]; exact .inr (.inr hn), ?_⟩
+    · omega_using [hn]
     · rw [hc] at h; omega_using [hn]
     · rw [hc] at h; omega_using [h]
     · have hl : Spec.Gcm.wipePreparedLen s.mem (s₀.gpr .rdi) = 256 + 16 * n := by
@@ -515,15 +517,15 @@ theorem flaggedAvx_ct :
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   subst hr; exact h
 
-/-! `vg_aes_gcm_wipe_prepared` (`wipe avx`): `onFlag 48` and `onFlag 16`
-choose among three blocks that zero the context from a zero vector register,
-32 bytes at a time from `ymm0` with AVX and 16 from `xmm0` without: the first
-1024 bytes where the count is at least 48, 512 where it is at least 16, and
-256 where it is less. Each block is verified against `wipePreparedContract`
-with the count's range in its precondition and no leak (`wipeBranch`), and
-`Verified.of_onFlagCtx` joins them: the inner choice leaks `flagLeak`, the
-outer `flagLeak` again, which the contract's one `flagLeak` gives
-(`Verified.leak_mono`). -/
+/-! `vg_aes_gcm_wipe_prepared` (`wipe avx`): `onFlag 48`, `onFlag 16` and
+`onFlag 8` choose among four blocks that zero the context from a zero vector
+register, 32 bytes at a time from `ymm0` with AVX and 16 from `xmm0` without:
+the first 1024 bytes where the count is at least 48, 512 where it is at least
+16, 384 where it is at least 8, and 256 where it is less. Each block is
+verified against `wipePreparedContract` with the count's range in its
+precondition and no leak (`wipeBranch`), and `Verified.of_onFlagCtx` joins
+them: each choice leaks `flagLeak`, and the choices nested in it `flagLeak`
+again, which the contract's one `flagLeak` gives (`Verified.leak_mono`). -/
 
 open VG.Impl.Gcm.X86_64.Flag (storeBytes zeroStore zeroStores zeroReg zeroBlocks wipe)
 open VG.Proof.Zeroize (Prefix prefix_writeW prefix_spec)
@@ -674,6 +676,15 @@ theorem zeroBlocks512_ct (avx : Bool) (F : Nat → Prop) :
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     subst hr; exact h
 
+theorem zeroBlocks384_ct (avx : Bool) (F : Nat → Prop) :
+    ConstantTime isa (wipeX86_64 F).pre (wipeX86_64 F).pub (.block (zeroBlocks avx 384)) := by
+  cases avx <;>
+  · refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi]) ?_ (by taint_decide)
+    intro s₁ s₂ _ _ h
+    refine Taint.agree_ofRegs fun r hr => ?_
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    subst hr; exact h
+
 theorem zeroBlocks256_ct (avx : Bool) (F : Nat → Prop) :
     ConstantTime isa (wipeX86_64 F).pre (wipeX86_64 F).pub (.block (zeroBlocks avx 256)) := by
   cases avx <;>
@@ -711,32 +722,69 @@ theorem wipe_implies16 : (wipeX86_64 fun c => ¬ 48 ≤ c ∧ 16 ≤ c).Implies
   sig_implies [wipeBranch, Spec.Gcm.wipePreparedSig, Spec.Gcm.wipePreparedPost, wipeX86_64,
     X86_64.abi, X86_64.argRegs] [wipeSat] using wipeSat 16
 
-theorem wipe_implies0 : (wipeX86_64 fun c => ¬ 48 ≤ c ∧ ¬ 16 ≤ c).Implies
-    (wipeBranch fun c => ¬ 48 ≤ c ∧ ¬ 16 ≤ c) := by
+theorem wipe_implies8 : (wipeX86_64 fun c => ¬ 48 ≤ c ∧ ¬ 16 ≤ c ∧ 8 ≤ c).Implies
+    (wipeBranch fun c => ¬ 48 ≤ c ∧ ¬ 16 ≤ c ∧ 8 ≤ c) := by
+  sig_implies [wipeBranch, Spec.Gcm.wipePreparedSig, Spec.Gcm.wipePreparedPost, wipeX86_64,
+    X86_64.abi, X86_64.argRegs] [wipeSat] using wipeSat 8
+
+theorem wipe_implies0 : (wipeX86_64 fun c => ¬ 48 ≤ c ∧ ¬ 16 ≤ c ∧ ¬ 8 ≤ c).Implies
+    (wipeBranch fun c => ¬ 48 ≤ c ∧ ¬ 16 ≤ c ∧ ¬ 8 ≤ c) := by
   sig_implies [wipeBranch, Spec.Gcm.wipePreparedSig, Spec.Gcm.wipePreparedPost, wipeX86_64,
     X86_64.abi, X86_64.argRegs] [wipeSat] using wipeSat 0
 
-/-- The blocks of `wipe avx` on counts under 48: by the count, 512 bytes or
+/-- The blocks of `wipe avx` on counts under 16: by the count, 384 bytes or
 256. -/
+theorem wipeLowest_verified (avx : Bool) :
+    Verified X86_64.target (Impl.Gcm.X86_64.Flag.onFlag 8 (.block (zeroBlocks avx 384)) (.block (zeroBlocks avx 256)))
+      (Spec.Gcm.wipePreparedSig.contract X86_64.abi
+        (pre := fun ctx m => ¬ 48 ≤ (m.readW (ctx + 1024) 64).toNat ∧ ¬ 16 ≤ (m.readW (ctx + 1024) 64).toNat)
+        (post := Spec.Gcm.wipePreparedPost 64) (writeArgs := true)
+        (leak := some fun ctx m => [VG.X86_64.flagLeak m ctx])) :=
+  Verified.of_onFlagCtx (.inl rfl) (by decide)
+    (Verified.of_correct (zeroBlocks_correct avx 384 (by decide) (by cases avx <;> rfl)
+      (fun m p h => by simp only [Spec.Gcm.wipePreparedLen, Spec.Gcm.powerCount, h.1, h.2.1, h.2.2, ↓reduceIte]))
+      (zeroBlocks384_ct avx _) wipe_implies8)
+    (Verified.of_correct (zeroBlocks_correct avx 256 (by decide) (by cases avx <;> rfl)
+      (fun m p h => by simp only [Spec.Gcm.wipePreparedLen, Spec.Gcm.powerCount, h.1, h.2.1, h.2.2, ↓reduceIte]))
+      (zeroBlocks256_ct avx _) wipe_implies0)
+    (fun _ _ h₁ h₂ => ⟨h₁.1, h₁.2, h₂⟩) (fun _ _ h₁ h₂ => ⟨h₁.1, h₁.2, h₂⟩) (fun _ _ => rfl)
+    (by obtain ⟨s, hs⟩ := wipe_implies0.sat
+        exact ⟨s, pre_of_rel (name := "ctx") (w := true) (N := 129) (rest := []) (ret := none)
+          (C := fun _ _ => True) (pre := fun ctx m => ¬ 48 ≤ (m.readW (ctx + 1024) 64).toNat ∧
+            ¬ 16 ≤ (m.readW (ctx + 1024) 64).toNat ∧ ¬ 8 ≤ (m.readW (ctx + 1024) 64).toNat)
+          (fun _ _ h _ => ⟨h.1, h.2.1⟩) hs trivial⟩)
+
+/-- Two `flagLeak`s, as the nested choices of `wipe avx` leak them, are one
+`flagLeak` twice. -/
+theorem flagLeak_twice : ∀ v m, Curry.apply (Spec.Gcm.wipePreparedSig.words abi.ptrBits)
+    (fun ctx m => [VG.X86_64.flagLeak m ctx, VG.X86_64.flagLeak m ctx]) v m =
+    Curry.apply (Spec.Gcm.wipePreparedSig.words abi.ptrBits) (fun ctx m => [VG.X86_64.flagLeak m ctx]) v m ++
+      Curry.apply (Spec.Gcm.wipePreparedSig.words abi.ptrBits) (fun ctx m => [VG.X86_64.flagLeak m ctx]) v m := by
+  intro v m; cases v <;> rfl
+
+/-- The blocks of `wipe avx` on counts under 48: by the count, 512 bytes,
+384 or 256. -/
 theorem wipeLow_verified (avx : Bool) :
-    Verified X86_64.target (Impl.Gcm.X86_64.Flag.onFlag 16 (.block (zeroBlocks avx 512)) (.block (zeroBlocks avx 256)))
+    Verified X86_64.target (Impl.Gcm.X86_64.Flag.onFlag 16 (.block (zeroBlocks avx 512))
+        (Impl.Gcm.X86_64.Flag.onFlag 8 (.block (zeroBlocks avx 384)) (.block (zeroBlocks avx 256))))
       (Spec.Gcm.wipePreparedSig.contract X86_64.abi
         (pre := fun ctx m => ¬ 48 ≤ (m.readW (ctx + 1024) 64).toNat)
         (post := Spec.Gcm.wipePreparedPost 64) (writeArgs := true)
-        (leak := some fun ctx m => [VG.X86_64.flagLeak m ctx])) :=
-  Verified.of_onFlagCtx (Or.inl rfl) (by decide)
+        (leak := some fun ctx m => [VG.X86_64.flagLeak m ctx])) := by
+  have h16 := Verified.leak_flag (name := "ctx") (rest := []) (ret := none)
+    (leak := fun ctx m => [VG.X86_64.flagLeak m ctx])
     (Verified.of_correct (zeroBlocks_correct avx 512 (by decide) (by cases avx <;> rfl)
       (fun m p h => by simp only [Spec.Gcm.wipePreparedLen, Spec.Gcm.powerCount, h.1, h.2, ↓reduceIte]))
-      (zeroBlocks512_ct avx _) wipe_implies16)
-    (Verified.of_correct (zeroBlocks_correct avx 256 (by decide) (by cases avx <;> rfl)
-      (fun m p h => by simp only [Spec.Gcm.wipePreparedLen, Spec.Gcm.powerCount, h.1, h.2, ↓reduceIte]))
-      (zeroBlocks256_ct avx _) wipe_implies0)
+      (zeroBlocks512_ct avx _) wipe_implies16) (fun _ _ => rfl)
+  have h := Verified.of_onFlagCtx (.inr (.inl rfl)) (by decide) (leak := fun ctx m => [VG.X86_64.flagLeak m ctx,
+      VG.X86_64.flagLeak m ctx]) h16 (wipeLowest_verified avx)
     (fun _ _ h₁ h₂ => ⟨h₁, h₂⟩) (fun _ _ h₁ h₂ => ⟨h₁, h₂⟩) (fun _ _ => rfl)
     (by obtain ⟨s, hs⟩ := wipe_implies0.sat
         exact ⟨s, pre_of_rel (name := "ctx") (w := true) (N := 129) (rest := []) (ret := none)
           (C := fun _ _ => True) (pre := fun ctx m => ¬ 48 ≤ (m.readW (ctx + 1024) 64).toNat ∧
-            ¬ 16 ≤ (m.readW (ctx + 1024) 64).toNat)
+            ¬ 16 ≤ (m.readW (ctx + 1024) 64).toNat ∧ ¬ 8 ≤ (m.readW (ctx + 1024) 64).toNat)
           (fun _ _ h _ => h.1) hs trivial⟩)
+  exact Verified.leak_mono h fun v₁ v₂ m₁ m₂ e => by rw [flagLeak_twice, flagLeak_twice, e]
 
 /-- `vg_aes_gcm_wipe_prepared`, with AVX if `avx`. -/
 theorem wipe_verified (avx : Bool) :
@@ -746,7 +794,7 @@ theorem wipe_verified (avx : Bool) :
     (Verified.of_correct (zeroBlocks_correct avx (F := (48 ≤ ·)) 1024 (by decide) (by cases avx <;> rfl)
       (fun m p h => by simp only [Spec.Gcm.wipePreparedLen, Spec.Gcm.powerCount, h, ↓reduceIte]))
       (zeroBlocks1024_ct avx _) wipe_implies48) (fun _ _ => rfl)
-  have h := Verified.of_onFlagCtx (Or.inr rfl) (by decide) (leak := fun ctx m => [VG.X86_64.flagLeak m ctx,
+  have h := Verified.of_onFlagCtx (.inr (.inr rfl)) (by decide) (leak := fun ctx m => [VG.X86_64.flagLeak m ctx,
       VG.X86_64.flagLeak m ctx]) h48 (wipeLow_verified avx)
     (fun _ _ _ h => h) (fun _ _ _ h => h) (fun _ _ => rfl)
     (by obtain ⟨s, hs⟩ := wipe_implies48.sat

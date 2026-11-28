@@ -2877,12 +2877,12 @@ theorem stitched16 (v : GcmVariant) {b} (hb : b∈sealLeafR16 v) : Certificate
     (prepared v.lvT false false 16 v.impl.callees (ctrFn v) (some b.fn)) :=
   stitched v false b v.one_le_lvT (calleeSide_mono (DirectGather.lvG_le_T v) (Nat.le_refl _)
     (selectSealLeaf_side v _ _ _ _ _ hb)) (ready16Proof v hb v.one_le_lvT)
-    (fun h => ⟨h.1,h.2.2.1 h.2.1⟩)
+    (fun h => ⟨h.1,h.2.2.2.1 h.2.1⟩)
 
 theorem stitched48 (v : GcmVariant) {b} (hb : b∈sealLeafR v) (level : 2≤v.lvT.level) : Certificate
     (prepared v.lvT false true 48 v.impl.callees (ctrFn v) (some b.fn)) :=
   stitched v true b level (calleeSide_mono (DirectGather.lvG_le_T v) (Nat.le_refl _)
     (selectSealLeaf_side v _ _ _ _ _ hb)) (ready48Proof v hb level)
-    (fun h => ⟨h.1,h.2.2.2 h.2.1⟩)
+    (fun h => ⟨h.1,h.2.2.2.2 h.2.1⟩)
 
 end VG.Proof.AesGcm.X86_64.ContiguousSeal

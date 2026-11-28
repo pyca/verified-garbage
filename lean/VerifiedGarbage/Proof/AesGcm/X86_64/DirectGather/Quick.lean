@@ -173,7 +173,7 @@ theorem key_schedule (hf : ShortFacts) (ht : 16 ≤ th) (g : frontGo false s = t
   have rd : v.rd=s.rd := whole.2.rd.trans whole.1.rd
   have wr : v.wr=s.wr := whole.2.wr.trans whole.1.wr
   have ext := h.ext.keep rd wr frame h.ext_apart
-  have pp := ext.ok.2.1 (Nat.le_trans ht ext.ok.1) 0 (by decide)
+  have pp := ext.ok.2.2.1 (Nat.le_trans ht ext.ok.1) 0 (by decide)
   simp only [Nat.mul_zero, Nat.add_zero] at pp
   have cov (o : Nat) (hle : o+16≤1032) : InRegions (v.rd++v.wr) (K s+BitVec.ofNat 64 o) 16 :=
     in_off ext.cov hle (show 1032<2^64 by decide)
