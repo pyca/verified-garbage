@@ -957,6 +957,7 @@ structure GInv (s₀ : State) (b D : Addr) (n g : Nat) (E : Nat → BitVec 64) (
   frame : Frame [⟨b, 8 * slots⟩, ⟨D, 16 * n⟩] s₀.mem s.mem
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
+  ra : s.gpr .ra = s₀.gpr .ra
 
 /-- The data loop, done. -/
 structure GDone (s₀ : State) (b D : Addr) (n g : Nat) (E : Nat → BitVec 64) (s : State) : Prop where
@@ -966,6 +967,7 @@ structure GDone (s₀ : State) (b D : Addr) (n g : Nat) (E : Nat → BitVec 64) 
   frame : Frame [⟨b, 8 * slots⟩, ⟨D, 16 * n⟩] s₀.mem s.mem
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
+  ra : s.gpr .ra = s₀.gpr .ra
 
 theorem inRd {s : State} {a : Addr} {n : Nat} (h : InRegions s.wr a n) : InRegions (s.rd ++ s.wr) a n :=
   let ⟨r, hr, hc⟩ := h; ⟨r, List.mem_append_right _ hr, hc⟩
@@ -1044,7 +1046,7 @@ theorem dataGroup_wp {s₀ : State} {b D : Addr} {n g : Nat} {E : Nat → BitVec
       masks := sc₃.masks.ok base₃
       bound := by rw [g₃' _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), hi.a4, base₃]
       keys := fun i hi' => by rw [base₃]; exact sc₃.keys i hi' }
-  refine WP.seq (WP.mono (crypt8_ok hcore) fun s₅ ⟨c₅, b₅⟩ => ?_)
+  refine WP.seq (WP.mono (crypt8Call_ok hcore) fun s₅ ⟨c₅, b₅⟩ => ?_)
   obtain base₅ : s₅.gpr sb = b := by rw [c₅.base, base₃]
   obtain f₅ : Frame [⟨b, 8 * savedSlot⟩, ⟨T, 128⟩] s₃.mem s₅.mem := by
     have := c₅.frame; rw [ctxRegions, base₃] at this; exact this
@@ -1183,12 +1185,17 @@ theorem dataGroup_wp {s₀ : State} {b D : Addr} {n g : Nat} {E : Nat → BitVec
   obtain base₁₁ : s₁₁.gpr sb = b := by rw [o₁₁ _ (by decide), o₁₀ _ (by decide), base₉]
   obtain rd₁₁' : s₁₁.rd = s₀.rd := by rw [rd₁₁, rd₁₀, rd₉']
   obtain wr₁₁' : s₁₁.wr = s₀.wr := by rw [wr₁₁, wr₁₀, wr₉']
+  have ra₁₁ : s₁₁.gpr .ra = s₀.gpr .ra := by
+    rw [o₁₁ _ (by decide), o₁₀ _ (by decide),
+      g₉' _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide),
+      k₅ _ (by decide) (by decide) (by decide),
+      g₃' _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), hi.ra]
   by_cases hlt : v ≤ 8
   · have hn : 8 * k + c = n := by omega_arith
     refine .inl ⟨by rw [a3₁₁, show v - c = 0 by omega_arith]; rfl, base₁₁, hm ▸ sc₉,
-      fun i hi' => by rw [hm, hdata i hi', hn], hm ▸ fr, rd₁₁', wr₁₁'⟩
+      fun i hi' => by rw [hm, hdata i hi', hn], hm ▸ fr, rd₁₁', wr₁₁', ra₁₁⟩
   · have hc : c = 8 := by omega_arith
-    refine .inr ⟨fun h => ?_, base₁₁, ?_, ?_, by omega_arith, ?_, hm ▸ sc₉, ?_, hm ▸ fr, rd₁₁', wr₁₁'⟩
+    refine .inr ⟨fun h => ?_, base₁₁, ?_, ?_, by omega_arith, ?_, hm ▸ sc₉, ?_, hm ▸ fr, rd₁₁', wr₁₁', ra₁₁⟩
     · have hne : v - c ≠ 0 := by omega_arith
       rw [a3₁₁] at h
       apply hne

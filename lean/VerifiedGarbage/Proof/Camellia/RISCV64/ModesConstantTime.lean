@@ -50,10 +50,10 @@ theorem modes_ofRegs (s₁ s₂ : State) (h : modePub s₁ s₂) :
 
 /-! The constant-time analysis of the eight blocks' encryption, from ECB's base (`a5`) and the
 postwhitening's entry (`a4`), done once for every check of code that has it
-(`taint_decide_sum [crypt8Sum]`), which keeps what is public of `a2`, `a3` and `ra`, where the
-modes' state waits: it writes none of them. -/
+(`taint_decide_sum [crypt8Sum]`), which keeps what is public of `a2`, `a3` and `ra`, as well as `a0`, where the
+modes' third public value waits across the call. -/
 taint_summary crypt8Sum : taint (Taint.ofRegs [.a4, .a5]) crypt8
-  keeping (Taint.ofRegs [.a2, .a3, .ra])
+  keeping (Taint.ofRegs [.a0, .a2, .a3, .ra])
 
 theorem cbcEncryptChained_constantTime (pre : State → Prop) :
     ConstantTime isa pre modePub cbcEncryptChained :=

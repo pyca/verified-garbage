@@ -539,7 +539,7 @@ theorem cryptBody_wp (d : Dir) {R : Nat} (hR : R = 18 ∨ R = 24) {s : State} {B
         rw [b₄, entryW_word, entryW_word, pres _ (.inr ⟨by omega_using [], by rw [keySlot_eq, slots_eq]; omega_using [hg, hi, hj]⟩)]
       hg := hg
       bound := by rw [a4₄, o₄ _ (by decide), g₃] }
-  refine WP.seq (WP.mono (crypt8_ok hcore) fun s₅ ⟨c₅, k₅⟩ => ?_)
+  refine WP.seq (WP.mono (crypt8Call_ok hcore) fun s₅ ⟨c₅, k₅⟩ => ?_)
   obtain b₅ : s₅.gpr sb = b := by rw [c₅.base, b₄]
   obtain f₅ : Frame (ctxRegions b) s₄.mem s₅.mem := by have := c₅.frame; rwa [b₄] at this
   obtain sv₅ : Saved s₂ b s₅.mem := fun i hi => by

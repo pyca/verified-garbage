@@ -112,11 +112,8 @@ meta import VerifiedGarbage.Proof.Framework.Taint
 meta import VerifiedGarbage.Proof.Framework.RISCV64.TaintMono
 public import VerifiedGarbage.Proof.Camellia.RISCV64.Ecb
 public import VerifiedGarbage.TCB.RISCV64.Target
-import VerifiedGarbage.Proof.Framework.RISCV64.Keep
 meta import VerifiedGarbage.Proof.Camellia.RISCV64.Ecb
 meta import VerifiedGarbage.TCB.RISCV64.Target
-meta import VerifiedGarbage.Proof.Framework.RISCV64.Keep
-
 /-! ### `Camellia.RISCV64.Verified`, which only this module used -/
 
 section
@@ -152,18 +149,12 @@ theorem ecb_ct (dir : Dir) : ConstantTime isa (ecbRISCV64 dir).pre (ecbRISCV64 d
   · exact VG.Taint.constantTime (A := taint) (Taint.ofRegs [.a0, .a1, .a2, .a3, .a4])
       (ecbTaint_agree .decrypt) (by taint_decide)
 
-/-- The registers ECB writes. -/
-def ecbWrites : List Reg :=
-  [.t0, .t1, .t2, .t3, .t4, .t5, .t6, .a0, .a1, .a2, .a3, .a4, .a5, .a6, .a7,
-   .s0, .s1, .s2, .s3, .s4, .s5, .s6, .s7, .s8, .s9, .s10, .s11]
-
 theorem ecb_correct (dir : Dir) (s : State) (hs : (ecbRISCV64 dir).pre s) :
     ∃ t s', Exec isa (ecb dir) s t s' ∧ abiPreserved s s' ∧ (ecbRISCV64 dir).post s s' := by
-  obtain ⟨t, s', he, ⟨h₁, h₂⟩, hk⟩ := WP.keep ecbWrites (ecb_wp dir hs) (by cases dir <;> lit_decide)
-    (by cases dir <;> lit_decide)
-  refine ⟨t, s', he, ⟨fun r hr => ?_, Exec.sp he, hk.gpr (by decide)⟩, h₂⟩
+  obtain ⟨t, s', he, hsreg, hra, hpost⟩ := ecb_wp dir hs
+  refine ⟨t, s', he, ⟨fun r hr => ?_, Exec.sp he, hra⟩, hpost⟩
   obtain ⟨i, hi, rfl⟩ := preserved_sreg r hr
-  exact h₁ i hi
+  exact hsreg i hi
 
 /-- A state satisfying the precondition (one block). -/
 def ecbSat : State where
