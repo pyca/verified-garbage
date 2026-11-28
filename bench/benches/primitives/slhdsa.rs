@@ -54,7 +54,11 @@ pub mod openssl_slhdsa {
         // SAFETY: the context is created from a C string, freed once, and
         // a non-null key is owned by the `PKey`.
         unsafe {
-            let ctx = openssl_sys::EVP_PKEY_CTX_new_from_name(std::ptr::null_mut(), name.as_ptr(), std::ptr::null());
+            let ctx = openssl_sys::EVP_PKEY_CTX_new_from_name(
+                std::ptr::null_mut(),
+                name.as_ptr(),
+                std::ptr::null(),
+            );
             assert!(!ctx.is_null());
             assert_eq!(openssl_sys::EVP_PKEY_keygen_init(ctx), 1);
             let mut p = std::ptr::null_mut();
@@ -120,7 +124,9 @@ macro_rules! slhdsa_bench {
             g.finish();
             let mut g = c.benchmark_group(concat!($name, "_sign"));
             g.sample_size(10);
-            g.bench(BenchmarkId::new(VG, $sig), |b| b.iter(|| key.sign(black_box(&msg), b"").unwrap()));
+            g.bench(BenchmarkId::new(VG, $sig), |b| {
+                b.iter(|| key.sign(black_box(&msg), b"").unwrap())
+            });
             #[cfg(feature = "openssl-slhdsa")]
             g.bench(BenchmarkId::new(crate::OPENSSL, $sig), |b| {
                 b.iter(|| {

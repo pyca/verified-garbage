@@ -142,6 +142,13 @@ mod sha384;
 mod sha512;
 mod sha512_224;
 mod sha512_256;
+mod slhdsa;
+mod slhdsa_shake_128f;
+mod slhdsa_shake_128s;
+mod slhdsa_shake_192f;
+mod slhdsa_shake_192s;
+mod slhdsa_shake_256f;
+mod slhdsa_shake_256s;
 mod sm3;
 mod sm4_cbc;
 mod sm4_cfb;
@@ -156,13 +163,6 @@ mod triple_des_ecb;
 mod triple_des_ofb;
 mod x25519;
 mod x448;
-mod slhdsa;
-mod slhdsa_shake_128f;
-mod slhdsa_shake_128s;
-mod slhdsa_shake_192f;
-mod slhdsa_shake_192s;
-mod slhdsa_shake_256f;
-mod slhdsa_shake_256s;
 
 const SIZES: [usize; 3] = [64, 1024, 16384];
 
