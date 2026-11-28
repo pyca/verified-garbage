@@ -76,7 +76,7 @@ import time
 import tomllib
 
 import bench_report
-from bench_compare import cpu_model
+import bench_run
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 RUSTLS = ROOT / "crates/rustls-verified-garbage"
@@ -109,16 +109,14 @@ def primitives(binary, benches, args, raw, log):
     for n in range(args.copies):
         d = raw / f"copy-{n + 1}"
         d.mkdir(parents=True)
-        # A new file: the page cache holds a file's pages by inode, so this
-        # copy's code and tables are read into newly chosen physical pages.
-        copy = d / "primitives"
-        shutil.copyfile(binary, copy)
-        copy.chmod(0o755)
+        copy = bench_run.fresh_copy(binary, d / "primitives")
         for name, pattern in benches.items():
             log(f"copy {n + 1}/{args.copies}: {name}")
-            sh(*pin, copy, "--bench", "--warm-up-time", args.warm_up_time, "--measurement-time",
-               args.measurement_time, *([pattern] if pattern else []), out=d / f"{name}.out",
-               env={**os.environ, "VG_BENCHES": name, "CRITERION_HOME": str(d / "criterion")})
+            proc = bench_run.criterion(copy, d / "criterion", args.warm_up_time, args.measurement_time,
+                                       [pattern] if pattern else [], {**os.environ, "VG_BENCHES": name}, pin)
+            (d / f"{name}.out").write_text(proc.stdout + proc.stderr)
+            if proc.returncode:
+                raise SystemExit(f"{name}: the benchmarks failed: see {d / f'{name}.out'}")
         copy.unlink()
         for group, library, size, t in bench_report.read_criterion(d / "criterion"):
             times.setdefault((group, library, size), []).append(t)
@@ -208,7 +206,7 @@ def main(argv=None):
     context = {
         "arch": bench_report.arch_name(),
         "os": platform.system(),
-        "cpu": cpu_model(),
+        "cpu": bench_run.cpu_model(),
         "cpu_features": "",
         "ref": bench_report.git(ROOT, "rev-parse", "--abbrev-ref", "HEAD"),
         "date": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
@@ -232,12 +230,7 @@ def main(argv=None):
 
     files = []
     if benches:
-        build = sh("cargo", "bench", "--no-run", "--message-format=json-render-diagnostics",
-                   *(["--features", args.features] if args.features else []), cwd=ROOT / "bench", env=env)
-        binary = next(m["executable"] for m in map(json.loads, build.splitlines())
-                      if m.get("reason") == "compiler-artifact" and m.get("executable")
-                      and m["target"]["name"] == "primitives")
-        times = primitives(binary, benches, args, out / "raw", log)
+        times = primitives(bench_run.build(ROOT / "bench", env, args.features), benches, args, out / "raw", log)
         results = [bench_report.record(group, library, size, statistics.median(ts), samples=ts, commit=commit)
                    for (group, library, size), ts in times.items()]
         (out / "primitives.json").write_text(json.dumps(bench_report.document(context, results), indent=1) + "\n")
