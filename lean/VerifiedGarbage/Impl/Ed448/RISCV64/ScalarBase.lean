@@ -35,9 +35,9 @@ The slots `P`, `T`, the addition's temporaries and `sel` serve verification's
 equation (`VerifyEquation.lean`), whose loop runs RFC 8032's addition
 (`addition`) of `R` and `P`.
 
-The function uses only caller-saved registers and no stack. The only branches are on the
-loop counters, and every address is a pointer plus a constant or a counter,
-so only the pointers can affect timing.
+The comb saves its extra registers in its working space. The only branches
+are on the loop counters, and every address is a pointer plus a constant or
+a counter, so only the pointers can affect timing.
 -/
 
 @[expose] public section
@@ -46,7 +46,7 @@ namespace VG.Impl.Ed448.RISCV64
 
 open VG.RISCV64 VG.Impl.Words.RISCV64
 open VG.Impl.X448.RISCV64 (freeze bitsBody BITS R X2 Z2 align)
-open VG.Impl.X448.RISCV64.R64 (mul add sub cswap invert)
+open VG.Impl.X448.RISCV64.R64 (mul add sub cswap invert product reduce)
 
 /-! ## The slots -/
 
@@ -218,9 +218,9 @@ def combInit : List Instr :=
     constField RZ Spec.Ed448.identity.Z.val ++ constField DK Spec.Ed448.d.val
 
 /-- The row's index into `a5`: bits `t`, `t + 114`, `t + 228` and `t + 342`
-of the scalar (`t = t1`), as `i₀ + 2 i₁ + 4 i₂ + 8 i₃`. -/
-def combDigit : List Instr :=
-  [.add .a1 .a3 .t1, .load .b .a5 .a1 (BITS + 342), .load .b .a4 .a1 (BITS + 228),
+of the scalar (`t = counter`), as `i₀ + 2 i₁ + 4 i₂ + 8 i₃`. -/
+def combDigitAt (counter : Reg) : List Instr :=
+  [.add .a1 .a3 counter, .load .b .a5 .a1 (BITS + 342), .load .b .a4 .a1 (BITS + 228),
     .add .a5 .a5 .a5, .add .a5 .a5 .a4, .load .b .a4 .a1 (BITS + 114), .add .a5 .a5 .a5,
     .add .a5 .a5 .a4, .load .b .a4 .a1 BITS, .add .a5 .a5 .a5, .add .a5 .a5 .a4]
 
@@ -240,13 +240,51 @@ def combSelect : List Instr :=
   .li .a2 0 :: (List.range 14).flatMap (fun k => [.store .d .a2 .a3 (SX + 8 * k)]) ++
     [.addi .t2 .a3 2047, .addi .t2 .t2 1] ++ (List.range 16).flatMap selEntry
 
-/-- One row, `t = t1 - 1`. -/
+/-- Use `s1` and `s2` for the product's inputs, `a0` for its output, and `a3`
+for the working space's accumulator. -/
+def productArg : Instr → Instr
+  | .load z d .a3 off =>
+    if off < 56 then .load z d .s1 off
+    else if off < 112 then .load z d .s2 (off - 56)
+    else .load z d .a3 off
+  | .store z r .a3 off =>
+    if 112 ≤ off && off < 168 then .store z r .a0 (off - 112)
+    else .store z r .a3 off
+  | i => i
+
+def combProduct : List Instr := (product 0 56 ++ reduce 112).map productArg
+
+/-- Call the shared field product, then restore the output pointer from `s0`. -/
+def productCall (o x y : Nat) : Prog isa :=
+  .seq (.block [.addi .a0 .a3 o, .addi .s1 .a3 x, .addi .s2 .a3 y])
+    (.seq (.call "vg_ed448_comb_product" (.block combProduct)) (.block [.addi .a0 .s0 0]))
+
+def addOp : COp → Prog isa
+  | .mul o x y => if x = y then mul o x y else productCall o x y
+  | op => op.code
+
+def addProg : List COp → Prog isa
+  | [] => .block []
+  | op :: ops => .seq (addOp op) (addProg ops)
+
+/-- One row, `t = s3 - 1`. The extra registers are saved in X448's slot `Y`. -/
 def combStep : Prog isa :=
-  .seq (.block [.addi .t1 .t1 (-1)]) <| .seq (opsProg dblOps) <|
-    .seq (.block (combDigit ++ combSelect)) (opsProg addOps)
+  .seq (.block [.addi .s3 .s3 (-1)]) <| .seq (opsProg dblOps) <|
+    .seq (.block (combDigitAt .s3 ++ combSelect)) (addProg addOps)
+
+/-- Saved registers in the 56 bytes of slot `Y`, which the field code does not use. -/
+def combSpill : List (Reg × Nat) := [(.s0, 920), (.s1, 896), (.s2, 904), (.ra, 912), (.s3, 928)]
+
+def combSave : List Instr :=
+  combSpill.map (fun (r, off) => .store .d r .a3 off) ++ [.addi .s0 .a0 0, .li .s3 114]
+
+def combReload : List (Reg × Nat) := [(.s0, 920), (.s1, 896), (.s2, 904), (.s3, 928), (.ra, 912)]
+
+def combRestore : List Instr := combReload.map fun (r, off) => .load .d r .a3 off
 
 /-- The 114 rows, from 113 down to 0. -/
-def combLoop : Prog isa := .seq (.block [.li .t1 114]) (.loop combStep (.nonzero .t1))
+def combLoop : Prog isa :=
+  .seq (.block combSave) (.seq (.loop combStep (.nonzero .s3)) (.block combRestore))
 
 /-- `vg_ed448_scalar_base(out = a0, scalar = a1, scratch = a2)`. -/
 def scalarBase : Prog isa :=

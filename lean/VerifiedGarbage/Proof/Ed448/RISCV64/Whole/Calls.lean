@@ -219,46 +219,39 @@ theorem scalarBase_correct (_hl : Proof.Ed448.BaseLadder2Ok) {s : State} (hp : b
       rw [List.mem_singleton.mp hr, Comb.tb, Offset.add_add]
       exact Offset.disjoint _ (.inr (by simp only [CTAB]; omega_using [hB])) (by simp only [CTAB]; omega_using [ho, hk]) (by omega_using [hB])
     exact ⟨by rw [keep _ (by omega_using [hi]), e1], by rw [keep _ (by omega_using [hi]), e2]⟩
-  -- The loop.
-  unfold combLoop
-  refine WP.seq (WP.seq (wp_li (by decide) fun s4 u4 => WP.block_nil ?_))
-  obtain hc4 : Ctx b s4 := hc3.of_rest (u4.rest (ws := [.t1]) (by decide)) (by decide)
-  have m4 : s4.mem = s3.mem := u4.mem
-  obtain fx : Comb.Fixed b K s4 :=
-    ⟨fun d n hdn => by rw [u4.wr, hr3.wr, hr2''.wr]; exact tw2 d n hdn, by rw [m4]; exact tab3,
-      by rw [m4]; exact hb3⟩
-  obtain L0 : Comb.LInv b K s4 114 s4 := by
-    refine ⟨hc4, R64.Stp.refl _ _, by rw [u4.gpr], ?_, ?_⟩
-    · rw [m4, fs3 DK (by decide)]; rfl
-    · have e : Comb.ptOf (FS s4.mem b) = Spec.Ed448.identity := by
-        simp only [Comb.ptOf]
-        rw [m4, fs3 RX (by decide), fs3 RY (by decide), fs3 RZ (by decide)]
-        rfl
-      rw [e, Proof.Ed448.Comb.accScalar_start, zero_smul]
-      exact Proof.Ed448.identity_rep
-  refine WP.mono (Comb.loop_ok fx 114 s4 (by decide) (Nat.le_refl _) L0) fun s5 h5 => ?_
+  -- The loop, including its register save and restore.
+  obtain fx : Comb.Fixed b K s3 :=
+    ⟨fun d n hdn => by rw [hr3.wr, hr2''.wr]; exact tw2 d n hdn, tab3, hb3⟩
+  have rep3 : Proof.Ed448.Rep (Comb.ptOf (FS s3.mem b)) (Proof.Ed448.Comb.accScalar K 114 • Proof.Ed448.baseAff) := by
+    obtain e : Comb.ptOf (FS s3.mem b) = Spec.Ed448.identity := by
+      simp only [Comb.ptOf]
+      rw [fs3 RX (by decide), fs3 RY (by decide), fs3 RZ (by decide)]
+      rfl
+    rw [e, Proof.Ed448.Comb.accScalar_start, zero_smul]
+    exact Proof.Ed448.identity_rep
+  refine WP.seq (WP.mono (Comb.combLoop_ok fx hc3 (by rw [fs3 DK (by decide)]; rfl) rep3)
+    fun s5 ⟨hc5, hr5, hd5, rep5⟩ => ?_)
   -- The encoding.
   obtain h05 : s5.gpr .a0 = s.gpr .a0 := by
-    rw [h5.stp.rest.gpr _ (by decide), u4.other _ (by decide), hr3.gpr _ (by decide), hr3'.gpr _ (by decide)]
-  refine WP.mono (baseEncode_ok h5.ctx h05 (by
-      rw [h5.stp.rest.wr, u4.wr, hr3.wr, hr3'.wr, hwr]; simp) hwo
+    rw [hr5.gpr _ (by decide), hr3.gpr _ (by decide), hr3'.gpr _ (by decide)]
+  refine WP.mono (baseEncode_ok hc5 h05 (by
+      rw [hr5.wr, hr3.wr, hr3'.wr, hwr]; simp) hwo
     (p := Comb.ptOf (FS s5.mem b)) fun q hq => ?_) fun s6 h6 => ?_
   · simp only [RQ, List.mem_cons, List.not_mem_nil, or_false] at hq
     rcases hq with rfl | rfl | rfl | rfl
     · rfl
     · rfl
     · rfl
-    · exact h5.d
+    · exact hd5
   · refine ⟨?_, (hr3'.mono (by decide)).trans ((hr3.mono (by decide)).trans
-      (((u4.rest (ws := [.t1]) (by decide)).mono (by decide)).trans
-      ((h5.stp.rest.mono (by decide)).trans (h6.2.mono (by decide)))))⟩
+      ((hr5.mono (by decide)).trans (h6.2.mono (by decide))))⟩
     show Spec.Ed448.bytesAt s6.mem (s.gpr .a0) 57 = _
     obtain hlen : (Spec.Ed448.bytesAt s.mem (s.gpr .a1) 57).length = 57 := by
       simp only [Spec.Ed448.bytesAt, List.length_map, List.length_range]
     obtain hk := Proof.Ed448.decodeLE_below hlen
     rw [hK] at hk
     unfold Proof.Ed448.Below456 at hk
-    have r5 := h5.rep
+    have r5 := rep5
     -- `Proof/Ed448/Comb.lean` states the bound with `Monoid.npow`: the same, without evaluating it.
     obtain lt_npow : ∀ {k a n : Nat},
         k < @HPow.hPow Nat Nat Nat (@instHPow Nat Nat (@instPowNat Nat instNatPowNat)) a n →

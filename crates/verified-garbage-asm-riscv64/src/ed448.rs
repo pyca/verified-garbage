@@ -167,6 +167,10 @@ call {vg_ed448_verify_equation}
 }
 
 #[rustfmt::skip]
+#[path = "internal/vg_ed448_comb_product.rs"]
+pub(crate) mod vg_ed448_comb_product;
+
+#[rustfmt::skip]
 #[path = "internal/vg_ed448_decode_core.rs"]
 pub(crate) mod vg_ed448_decode_core;
 
