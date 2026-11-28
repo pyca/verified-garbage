@@ -90,7 +90,10 @@ namespace VG.Proof.Dsa.AArch64.Generation
 open VG VG.AArch64 VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Proof.MlKem.AArch64
 open VG.Proof.RsaOaep.AArch64 VG.Impl.RsaOaep.AArch64 VG.Impl.Dsa.Generation.Layout
 
-theorem validateCore_ok (M : Mont) {s : State} {F S : Addr}
+private theorem validateEntry_keeps (s : State) : Keep linkRegs s s.callEntry :=
+  ⟨fun _ hr => s.callEntry_gpr hr, rfl, rfl, rfl, fun _ _ => rfl⟩
+
+theorem validateCore_ok (M : Mont) {suffix : String} {s : State} {F S : Addr}
     {V : Nat → Byte} {W : Nat → BitVec 64} (p : ParametersInput)
     (L : Lay s F S) (R : Rep s.mem F S V W)
     (hbase : p.base = VG.Proof.Bignum.off (W 5) domainCheck)
@@ -100,23 +103,31 @@ theorem validateCore_ok (M : Mont) {s : State} {F S : Addr}
     (hF : (⟨F, frameBytes⟩ : Region).Disjoint ⟨p.base, Impl.Dsa.Layout.usedBytes⟩)
     (hS : (⟨S, oRsa⟩ : Region).Disjoint ⟨p.base, Impl.Dsa.Layout.usedBytes⟩) :
     WP isa (.seq (.block (Impl.Dsa.AArch64.Generation.validateArgs p.pLen p.qLen))
-      (Impl.Dsa.AArch64.Generate.checkParameters M.mm)) s fun t =>
+      (Impl.Dsa.AArch64.Generation.validateCall M.mm suffix)) s fun t =>
       t.gpr .x0 = BitVec.ofNat 64 (if Spec.Dsa.checkParametersBytes p.pLen p.qLen p.params then 1 else 0) ∧
       Lay t F S ∧ Rep t.mem F S V W ∧
-      Frame [⟨p.base, Impl.Dsa.Layout.usedBytes⟩] s.mem t.mem ∧ Keep coreRegs s t := by
+      Frame [⟨p.base, Impl.Dsa.Layout.usedBytes⟩] s.mem t.mem ∧ Keep (.x30 :: coreRegs) s t := by
   refine WP.seq (WP.mono (validateArgs_ok L R hp hq) fun u ⟨hdi, h8, hdx, hcx, hm, ku⟩ => ?_)
-  have pre : ParametersPre p u := ⟨hs.congr ku.wr, h8.trans hbase.symm, hdx, hcx,
-    hdi ▸ src.congrK (fun a _ => by rw [hm]) ku⟩
-  refine WP.mono (parametersMain_ok M pre) fun t ⟨result, ft, kt⟩ => ?_
+  have kc := ku.trans (validateEntry_keeps u)
+  have hptr := (u.callEntry_gpr (r := .x0) (by decide)).trans hdi
+  have pre : ParametersPre p u.callEntry :=
+    ⟨hs.congr kc.wr, (u.callEntry_gpr (r := .x4) (by decide)).trans (h8.trans hbase.symm),
+      (u.callEntry_gpr (r := .x2) (by decide)).trans hdx,
+      (u.callEntry_gpr (r := .x3) (by decide)).trans hcx,
+      hptr ▸ src.congrK (fun a _ => by rw [State.callEntry_mem, hm]) kc⟩
+  obtain ⟨trace, t, run, result, ft, kt⟩ := parametersMain_ok M pre
+  have hret : isa.ret u.callEntry t = some t := by
+    simp only [isa, ret, kt.get .x30 (by decide), ite_true]
+  refine ⟨_, t, Exec.call (call_callEntry u) run hret, ?_⟩
   have frame : Frame [⟨p.base, Impl.Dsa.Layout.usedBytes⟩] s.mem t.mem := by
     intro a ha
     have hn := ha ⟨p.base, Impl.Dsa.Layout.usedBytes⟩ (by simp)
     change ¬ ofs p.base a < Impl.Dsa.Layout.usedBytes at hn
-    rw [ft a (by omega_using [hn]), hm]
+    rw [ft a (by omega_using [hn]), State.callEntry_mem, hm]
   have Rt := rep_of_disjoint_frame R frame
     (by intro r hr; rcases List.mem_singleton.mp hr with rfl; exact hF)
     (by intro r hr; rcases List.mem_singleton.mp hr with rfl; exact hS)
-  have keep := ku.trans kt
+  have keep := kc.trans kt
   exact ⟨result, lay_of_rep L R Rt rfl keep.sp keep.wr, Rt, frame, keep.mono (by decide)⟩
 
 theorem validateTest_ok {s : State} {valid : Bool}
@@ -1126,7 +1137,7 @@ namespace VG.Proof.Dsa.AArch64.Generation
 open VG VG.AArch64 VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Proof.MlKem.AArch64
 open VG.Proof.RsaOaep.AArch64 VG.Impl.RsaOaep.AArch64 VG.Impl.Dsa.Generation.Layout
 
-theorem validate_ok (M : Mont) {s : State} {F S : Addr}
+theorem validate_ok (M : Mont) {suffix : String} {s : State} {F S : Addr}
     {V : Nat → Byte} {W : Nat → BitVec 64} (p : ParametersInput)
     (L : Lay s F S) (R : Rep s.mem F S V W)
     (hbase : p.base = VG.Proof.Bignum.off (W 5) domainCheck)
@@ -1135,10 +1146,10 @@ theorem validate_ok (M : Mont) {s : State} {F S : Addr}
     (src : Src s p.base Impl.Dsa.Layout.usedBytes (VG.Proof.Bignum.off (W 5) packed) p.params)
     (hF : (⟨F, frameBytes⟩ : Region).Disjoint ⟨p.base, Impl.Dsa.Layout.usedBytes⟩)
     (hS : (⟨S, oRsa⟩ : Region).Disjoint ⟨p.base, Impl.Dsa.Layout.usedBytes⟩) :
-    WP isa (Impl.Dsa.AArch64.Generation.validate M.mm p.pLen p.qLen) s fun t =>
+    WP isa (Impl.Dsa.AArch64.Generation.validate M.mm p.pLen p.qLen suffix) s fun t =>
       Lay t F S ∧ Rep t.mem F S V
         (upd W 19 (BitVec.ofNat 64 (if Spec.Dsa.checkParametersBytes p.pLen p.qLen p.params then 1 else 2))) ∧
-      Frame [⟨p.base, Impl.Dsa.Layout.usedBytes⟩, ⟨F, frameBytes⟩] s.mem t.mem ∧ Keep coreRegs s t := by
+      Frame [⟨p.base, Impl.Dsa.Layout.usedBytes⟩, ⟨F, frameBytes⟩] s.mem t.mem ∧ Keep (.x30 :: coreRegs) s t := by
   unfold Impl.Dsa.AArch64.Generation.validate
   refine WP.seq (WP.mono (validateCore_ok M p L R hbase hp hq hs src hF hS)
     fun u ⟨hr, Lu, Ru, fu, ku⟩ => ?_)
@@ -1148,7 +1159,7 @@ theorem validate_ok (M : Mont) {s : State} {F S : Addr}
   have finish (status : Nat) (hstatus : status < 2 ^ 16) :
       WP isa (.block (Impl.Dsa.AArch64.Generation.stackStatus status)) u fun t =>
         Lay t F S ∧ Rep t.mem F S V (upd W 19 (BitVec.ofNat 64 status)) ∧
-        Frame [⟨p.base, Impl.Dsa.Layout.usedBytes⟩, ⟨F, frameBytes⟩] s.mem t.mem ∧ Keep coreRegs s t := by
+        Frame [⟨p.base, Impl.Dsa.Layout.usedBytes⟩, ⟨F, frameBytes⟩] s.mem t.mem ∧ Keep (.x30 :: coreRegs) s t := by
     refine WP.mono (stackStatus_ok Lu Ru status hstatus) fun t ⟨Lt, Rt, ft, kt⟩ => ?_
     refine ⟨Lt, Rt, fv.trans ?_, (ku.trans kt).mono (by decide)⟩
     intro a ha
@@ -1409,8 +1420,8 @@ theorem Packed.check_scr {hb : Supported pLen} {A : StageABI pLen s} {u t : Stat
     Scr t (checkInput hb s (plan hb A)).base Impl.Dsa.Layout.usedBytes :=
   P.scr.sub (StageABI.domainCheck_room hb) (by decide)
 
-theorem stage_ok (M : Mont) (hb : Supported pLen) (A : StageABI pLen s) {u : State} (E : Entered pLen s u) :
-    WP isa (Impl.Dsa.AArch64.Generator.stage M.mm pLen) u (Staged pLen s u) := by
+theorem stage_ok (M : Mont) {suffix : String} (hb : Supported pLen) (A : StageABI pLen s) {u : State} (E : Entered pLen s u) :
+    WP isa (Impl.Dsa.AArch64.Generator.stage M.mm pLen suffix) u (Staged pLen s u) := by
   have pn : pLen ≤ 384 := by rcases hb with rfl | rfl | rfl <;> decide
   have qn := hb.q_le
   have hhash := used_small hb (d := VG.Impl.Dsa.Generation.Layout.hash) (n := oRsa) (by decide) (by decide)

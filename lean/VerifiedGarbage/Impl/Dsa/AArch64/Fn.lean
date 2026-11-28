@@ -71,7 +71,7 @@ def deriveKey (mul : Nat → Nat → Nat → Prog isa) (stack : Nat) : Prog isa 
 /-- `vg_dsa_generator_<bits>`, the generator stage for a p of `pLen` bytes
 with the multiplication `mm`, as `vg_dsa_parameter_search` calls it. -/
 def generator (suffix : String) (mm : Nat → Nat → Nat → Prog isa) (pLen : Nat) : Prog isa :=
-  .call (s!"vg_dsa_generator_{8 * (Generator.layout pLen).pLen}" ++ suffix) (Generator.code mm pLen)
+  .call (s!"vg_dsa_generator_{8 * (Generator.layout pLen).pLen}" ++ suffix) (Generator.code mm pLen suffix)
 
 /-- `vg_dsa_probable_prime_<bits>`, the test with the multiplication `mm`,
 calling the round for public candidates, whose multiplication is `rmm`, as

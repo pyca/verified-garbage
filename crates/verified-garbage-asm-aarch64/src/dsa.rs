@@ -7284,6 +7284,10 @@ pub(crate) mod vg_dsa_check_parameters;
 pub(crate) mod vg_dsa_derive_key_checked;
 
 #[rustfmt::skip]
+#[path = "internal/vg_dsa_generated_domain_check.rs"]
+pub(crate) mod vg_dsa_generated_domain_check;
+
+#[rustfmt::skip]
 #[path = "internal/vg_dsa_generator_1024.rs"]
 pub(crate) mod vg_dsa_generator_1024;
 

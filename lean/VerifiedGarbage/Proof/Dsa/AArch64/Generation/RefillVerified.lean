@@ -315,9 +315,30 @@ theorem domainCall_related {s t : State} (h : Two DomainCallBefore s t) : Two Pa
     simp only [ParametersInput.layout, fields]
   exact ⟨a, ⟨a, ⟨rfl, rfl⟩, rfl⟩, ⟨b, ⟨layout, rfl⟩, rfl⟩, hsp⟩
 
-theorem domainCall_ct (M : Mont)  :
-    RelCT isa (Two DomainCallBefore) (Generate.checkParameters M.mm) (fun _ _ => True) :=
-  (parametersMain_ct M).mono (fun _ _ h => domainCall_related h) (fun _ _ h => h)
+private theorem domainCallBefore_entry {p : DomainCallPublic} {s : State}
+    (h : DomainCallBefore p s) : DomainCallBefore p s.callEntry := by
+  obtain ⟨pre, hptr⟩ := h
+  have g0 := s.callEntry_gpr (r := .x0) (by decide)
+  refine ⟨⟨pre.scratch.congr rfl, (s.callEntry_gpr (r := .x4) (by decide)).trans pre.base,
+    (s.callEntry_gpr (r := .x2) (by decide)).trans pre.pLength,
+    (s.callEntry_gpr (r := .x3) (by decide)).trans pre.qLength, ?_⟩, g0.trans hptr⟩
+  rw [g0]
+  exact pre.paramsSource.congr (fun _ _ => rfl) rfl rfl
+
+theorem domainCall_ct (M : Mont) {suffix : String} :
+    RelCT isa (Two DomainCallBefore) (Impl.Dsa.AArch64.Generation.validateCall M.mm suffix)
+      (fun _ _ => True) := by
+  intro s t xs ys u v h es et
+  cases es with
+  | call hc e _ =>
+    cases et with
+    | call hd f _ =>
+      rw [call_callEntry, Option.some.injEq] at hc hd
+      subst hc hd
+      obtain ⟨p, hs, ht, hsp⟩ := h
+      have hentry := domainCall_related ⟨p, domainCallBefore_entry hs, domainCallBefore_entry ht, hsp⟩
+      have he := (parametersMain_ct M) _ _ _ _ _ _ hentry e f
+      simpa only [isa, List.map_nil, List.nil_append, List.append_nil] using he
 
 end VG.Proof.Dsa.AArch64.Generation
 
@@ -366,24 +387,24 @@ def ValidateResult (p : ValidatePublic) (s : State) : Prop :=
   s.sp = p.F ∧ s.gpr .x0 = BitVec.ofNat 64
     (if Spec.Dsa.checkParametersBytes p.input.pLen p.input.qLen p.input.params then 1 else 0)
 
-theorem validateCore_result (M : Mont)  {pLen qLen : Nat} {p : ValidatePublic} {s : State}
+theorem validateCore_result (M : Mont) {suffix : String} {pLen qLen : Nat} {p : ValidatePublic} {s : State}
     (hp : pLen < 2 ^ 16) (hq : qLen < 2 ^ 16) (h : ValidateBefore pLen qLen p s) :
-    WP isa (.seq (.block (validateArgs pLen qLen)) (Impl.Dsa.AArch64.Generate.checkParameters M.mm))
+    WP isa (.seq (.block (validateArgs pLen qLen)) (validateCall M.mm suffix))
       s (ValidateResult p) := by
   obtain ⟨L, ⟨V, W, R, hb⟩, hs, src, heP, heQ⟩ := h
-  have step := validateCore_ok M p.input L R (by rw [hb]; exact p.base)
+  have step := validateCore_ok M (suffix := suffix) p.input L R (by rw [hb]; exact p.base)
     (by rw [heP]; exact hp) (by rw [heQ]; exact hq) hs (hb ▸ src) p.frame p.hash
   rw [heP, heQ] at step
   exact WP.mono step fun t ⟨hr, Lt, _, _, _⟩ =>
     ⟨Lt.sp, by simpa only [heP, heQ] using hr⟩
 
-theorem validate_ct_of (M : Mont)  (pLen qLen : Nat)
+theorem validate_ct_of (M : Mont) {suffix : String} (pLen qLen : Nat)
     (hp : pLen < 2 ^ 16) (hq : qLen < 2 ^ 16)
     {hc : VG.Taint.Hint VG.AArch64.Taint.T}
     (ht : (taint.check (Taint.ofRegs []) (.block (validateArgs pLen qLen)) hc).isSome = true) :
-    RelCT isa (Two (ValidateBefore pLen qLen)) (validate M.mm pLen qLen) (fun _ _ => True) := by
+    RelCT isa (Two (ValidateBefore pLen qLen)) (validate M.mm pLen qLen suffix) (fun _ _ => True) := by
   have core : RelCT isa (Two (ValidateBefore pLen qLen))
-      (.seq (.block (validateArgs pLen qLen)) (Impl.Dsa.AArch64.Generate.checkParameters M.mm))
+      (.seq (.block (validateArgs pLen qLen)) (validateCall M.mm suffix))
       (Two ValidateResult) := by
     refine two_post (RelCT.seq (two_post
       (two_taint [] (by intro _ _ _ _ _ _ h; cases h) ht)
@@ -396,9 +417,9 @@ theorem validate_ct_of (M : Mont)  (pLen qLen : Nat)
     simp only [State.read, Size.bits, BitVec.setWidth_eq, hs.2, ht.2]) ?_ ?_)
   all_goals exact two_taint [] (by intro _ _ _ _ _ _ h; cases h) (by taint_decide)
 
-theorem validate_ct (M : Mont)  (pLen qLen : Nat)
+theorem validate_ct (M : Mont) {suffix : String} (pLen qLen : Nat)
     (sizes : (pLen = 128 ∧ qLen = 20) ∨ (pLen = 256 ∧ qLen = 32) ∨ (pLen = 384 ∧ qLen = 32)) :
-    RelCT isa (Two (ValidateBefore pLen qLen)) (validate M.mm pLen qLen) (fun _ _ => True) := by
+    RelCT isa (Two (ValidateBefore pLen qLen)) (validate M.mm pLen qLen suffix) (fun _ _ => True) := by
   rcases sizes with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
   all_goals exact validate_ct_of M _ _ (by decide) (by decide) (by taint_decide)
 
@@ -693,8 +714,8 @@ open VG.Proof.Dsa.AArch64.Generation (allocState)
 open VG.Proof.RsaOaep.AArch64 (Lay Rep)
 
 /-- The body of the function, inside its frame. -/
-abbrev body (mul : Nat → Nat → Nat → Prog isa) (pLen : Nat) : Prog isa :=
-  Impl.Bignum.AArch64.seqs [.block save, .block entry, stage mul pLen, .block exit, .block restore]
+abbrev body (mul : Nat → Nat → Nat → Prog isa) (pLen : Nat) (suffix : String) : Prog isa :=
+  Impl.Bignum.AArch64.seqs [.block save, .block entry, stage mul pLen suffix, .block exit, .block restore]
 
 variable {pLen : Nat} {s : State}
 
@@ -767,8 +788,8 @@ theorem entry_entered (s : State) :
     frame := (fl.mono (by simp)).trans (fe.mono (by simp))
     words := fun k hk => by rw [hmu, entryMem_word _ _ hk, g0, g2, g3] }, fe⟩
 
-theorem body_ok (M : Mont) (hb : Supported pLen) (A : StageABI pLen s) :
-    WP isa (body M.mm pLen) (allocState 272 s) (BodyPost pLen s) := by
+theorem body_ok (M : Mont) {suffix : String} (hb : Supported pLen) (A : StageABI pLen s) :
+    WP isa (body M.mm pLen suffix) (allocState 272 s) (BodyPost pLen s) := by
   simp only [body, Impl.Bignum.AArch64.seqs]
   refine WP.seq (WP.mono (save_saved hb A) fun l hl => ?_)
   subst hl
@@ -964,9 +985,9 @@ theorem Supported.sizes {pLen : Nat} (hb : Supported pLen) :
     (pLen = 128 ∧ qLen pLen = 20) ∨ (pLen = 256 ∧ qLen pLen = 32) ∨ (pLen = 384 ∧ qLen pLen = 32) := by
   rcases hb with rfl | rfl | rfl <;> decide
 
-theorem finish_ct (M : Mont) (hb : Supported pLen) :
+theorem finish_ct (M : Mont) {suffix : String} (hb : Supported pLen) :
     RelCT isa (Two fun P t => Srch hb P t ∧ P.status = 1)
-      (Impl.Dsa.AArch64.Generation.finishDomain M.mm pLen (qLen pLen)) fun _ _ => True := by
+      (Impl.Dsa.AArch64.Generation.finishDomain M.mm pLen (qLen pLen) suffix) fun _ _ => True := by
   unfold Impl.Dsa.AArch64.Generation.finishDomain
   refine RelCT.seq (two_post (Ψ := Pk hb) (two_map (fun P => P) (fun P t ⟨⟨s, A, u, hP, S⟩, _⟩ => by
       obtain ⟨V, W, R, h5, _⟩ := S.rep
@@ -980,8 +1001,8 @@ theorem finish_ct (M : Mont) (hb : Supported pLen) :
   obtain ⟨V, W, R, h5, _⟩ := Pd.rep
   exact ⟨Pd.lay, ⟨V, W, R, h5⟩, Pd.check_scr, Pd.check_src, rfl, rfl⟩
 
-theorem stage_ct (M : Mont) (hb : Supported pLen) :
-    RelCT isa (Two (Ready hb)) (Impl.Dsa.AArch64.Generator.stage M.mm pLen) fun _ _ => True := by
+theorem stage_ct (M : Mont) {suffix : String} (hb : Supported pLen) :
+    RelCT isa (Two (Ready hb)) (Impl.Dsa.AArch64.Generator.stage M.mm pLen suffix) fun _ _ => True := by
   unfold Impl.Dsa.AArch64.Generator.stage
   refine RelCT.seq (search_ct M hb) (VG.Proof.Dsa.AArch64.Generation.onSuccess_ct_of StagePublic.status
     (fun P t ⟨s, A, u, hP, S⟩ => ?_) (fun P t t' ⟨s, A, u, hP, S⟩ hm hk => ⟨s, A, u, hP, S.congr hm hk⟩)
@@ -999,8 +1020,8 @@ def Exited (hb : Supported pLen) (P : StagePublic) (t : State) : Prop :=
 
 def Based (P : StagePublic) (t : State) : Prop := t.gpr .x9 = P.plan.core.B
 
-theorem staged_ct (M : Mont) (hb : Supported pLen) :
-    RelCT isa (Two (Ready hb)) (Impl.Dsa.AArch64.Generator.stage M.mm pLen) (Two (Done hb)) :=
+theorem staged_ct (M : Mont) {suffix : String} (hb : Supported pLen) :
+    RelCT isa (Two (Ready hb)) (Impl.Dsa.AArch64.Generator.stage M.mm pLen suffix) (Two (Done hb)) :=
   two_post (stage_ct M hb) fun _ u ⟨s, A, hP, E⟩ => WP.mono (stage_ok M hb A E) fun _ T => ⟨s, A, u, hP, T⟩
 
 theorem exit_ct (hb : Supported pLen) : RelCT isa (Two (Done hb)) (.block exit) (Two (Exited hb)) :=
@@ -1025,11 +1046,11 @@ theorem restore_ct (hb : Supported pLen) : RelCT isa (Two (Exited hb)) (.block r
     obtain rfl := List.mem_singleton.mp hr
     exact h₁.trans h₂.symm) (by taint_decide)
 
-theorem code_ct (M : Mont) (hb : Supported pLen) :
-    ConstantTime isa (contract pLen).pre (contract pLen).pub (code M.mm pLen) := by
+theorem code_ct (M : Mont) {suffix : String} (hb : Supported pLen) :
+    ConstantTime isa (contract pLen).pre (contract pLen).pub (code M.mm pLen suffix) := by
   intro s t xs ys u v hs ht hp es et
   have ct : RelCT isa (fun s t => (contract pLen).pre s ∧ (contract pLen).pre t ∧ (contract pLen).pub s t)
-      (code M.mm pLen) (fun _ _ => True) := by
+      (code M.mm pLen suffix) (fun _ _ => True) := by
     apply RelCT.alloc
     refine RelCT.mono (RelCT.seq (save_ct hb) (RelCT.seq (entry_ct hb) (RelCT.seq (staged_ct M hb)
       (RelCT.seq (exit_ct hb) (restore_ct hb))))) ?_ fun _ _ _ => True.intro
@@ -1092,8 +1113,8 @@ theorem keeps_of_frame (hb : Supported pLen) {s : State} (A : StageABI pLen s) {
   · exact (A.stackWs.sub_left (frame_sub0 s (Nat.le_refl _))) _ hx hc
   · exact part (by simp [Impl.Dsa.AArch64.Generator.layout, Impl.Dsa.AArch64.Generator.scratch]) (by decide) hx
 
-theorem correct (M : Mont) (hb : Supported pLen) (s : State) (pre : (contract pLen).pre s) :
-    ∃ trace t, Exec isa (Impl.Dsa.AArch64.Generator.code M.mm pLen) s trace t ∧ abiPreserved s t ∧
+theorem correct (M : Mont) {suffix : String} (hb : Supported pLen) (s : State) (pre : (contract pLen).pre s) :
+    ∃ trace t, Exec isa (Impl.Dsa.AArch64.Generator.code M.mm pLen suffix) s trace t ∧ abiPreserved s t ∧
       (contract pLen).post s t := by
   have A := stageABI_of pre
   obtain ⟨trace, t, he, hpre, hst, hpk, hf⟩ := alloc_frame_ok (bytes := 272) (by decide)
@@ -1213,32 +1234,32 @@ open VG VG.AArch64 VG.Proof.MillerRabin.AArch64
 open VG.Impl.Dsa.AArch64.Generation
 
 theorem stage_noFrames (v : RoundImpl) (pLen : Nat) :
-    (Impl.Dsa.AArch64.Generator.stage v.mont.mm pLen).noFrames = true := by
-  simp only [Impl.Dsa.AArch64.Generator.stage, generatorSearch, tapeLoop, tapeIteration, generatorStep, generatorRangeFromFrame, generatorEvaluate, onSuccess, finishDomain, pack, packPart, validate, Code.noFrames, Impl.Bignum.AArch64.seqs, workspace, generatorRange, generatorResult, generatorPowerFresh, generatorModulus, generatorPower, generatorLoadPair, Impl.Dsa.AArch64.Random.copyRest, Impl.Dsa.AArch64.Generate.checkParameters, Impl.Dsa.AArch64.Core.publicPow, Impl.Dsa.AArch64.Checks.signingKey, Impl.Dsa.AArch64.Checks.publicPrefix, Impl.Dsa.AArch64.PublicPower.power, Impl.Dsa.AArch64.Core.reduce, Impl.Dsa.AArch64.Arithmetic.constants, Impl.Dsa.AArch64.PublicPower.powerCore, Impl.Dsa.AArch64.Arithmetic.load, Impl.Dsa.AArch64.Core.finish, Impl.Rsa.AArch64.r2Steps, Impl.Dsa.AArch64.Arithmetic.encodePower, Impl.Dsa.AArch64.PublicPower.encodedPower, Impl.Dsa.AArch64.Arithmetic.reduce, Impl.Bignum.AArch64.R2Div.choice, Impl.Rsa.AArch64.r2StepsOld, Impl.Rsa.AArch64.sqs, Impl.Dsa.AArch64.PublicPower.expLoop, Impl.Dsa.AArch64.Arithmetic.reduceSetup, Impl.Dsa.AArch64.Arithmetic.reduceByte, Impl.Rsa.AArch64.Crt.tabBuild, Impl.Rsa.AArch64.Crt.toEnt, Impl.Rsa.AArch64.Crt.copyArr, Impl.Rsa.AArch64.Crt.nextEnt, Impl.Dsa.AArch64.PublicPower.window, Impl.Dsa.AArch64.PublicPower.applyWindow, Impl.Dsa.AArch64.Arithmetic.reduceStep, List.append_assoc, v.mmNoFrames, Bool.and_eq_true, List.cons_append, List.nil_append]
+    (Impl.Dsa.AArch64.Generator.stage v.mont.mm pLen v.suffix).noFrames = true := by
+  simp only [Impl.Dsa.AArch64.Generator.stage, generatorSearch, tapeLoop, tapeIteration, generatorStep, generatorRangeFromFrame, generatorEvaluate, onSuccess, finishDomain, pack, packPart, validate, validateCall, Code.noFrames, Impl.Bignum.AArch64.seqs, workspace, generatorRange, generatorResult, generatorPowerFresh, generatorModulus, generatorPower, generatorLoadPair, Impl.Dsa.AArch64.Random.copyRest, Impl.Dsa.AArch64.Generate.checkParameters, Impl.Dsa.AArch64.Core.publicPow, Impl.Dsa.AArch64.Checks.signingKey, Impl.Dsa.AArch64.Checks.publicPrefix, Impl.Dsa.AArch64.PublicPower.power, Impl.Dsa.AArch64.Core.reduce, Impl.Dsa.AArch64.Arithmetic.constants, Impl.Dsa.AArch64.PublicPower.powerCore, Impl.Dsa.AArch64.Arithmetic.load, Impl.Dsa.AArch64.Core.finish, Impl.Rsa.AArch64.r2Steps, Impl.Dsa.AArch64.Arithmetic.encodePower, Impl.Dsa.AArch64.PublicPower.encodedPower, Impl.Dsa.AArch64.Arithmetic.reduce, Impl.Bignum.AArch64.R2Div.choice, Impl.Rsa.AArch64.r2StepsOld, Impl.Rsa.AArch64.sqs, Impl.Dsa.AArch64.PublicPower.expLoop, Impl.Dsa.AArch64.Arithmetic.reduceSetup, Impl.Dsa.AArch64.Arithmetic.reduceByte, Impl.Rsa.AArch64.Crt.tabBuild, Impl.Rsa.AArch64.Crt.toEnt, Impl.Rsa.AArch64.Crt.copyArr, Impl.Rsa.AArch64.Crt.nextEnt, Impl.Dsa.AArch64.PublicPower.window, Impl.Dsa.AArch64.PublicPower.applyWindow, Impl.Dsa.AArch64.Arithmetic.reduceStep, List.append_assoc, v.mmNoFrames, Bool.and_eq_true, List.cons_append, List.nil_append]
   and_intros
   all_goals decide +kernel
 
 /-- The stage never touches PSTATE.DIT: neither its own code (decided for each
 size, `Generator.Supported`) nor its arithmetic. -/
 theorem stage_noDit (v : RoundImpl) {pLen : Nat} (hp : pLen = 128 ∨ pLen = 256 ∨ pLen = 384) :
-    (Impl.Dsa.AArch64.Generator.stage v.mont.mm pLen).all (fun i => !i.touchesDit) = true := by
+    (Impl.Dsa.AArch64.Generator.stage v.mont.mm pLen v.suffix).all (fun i => !i.touchesDit) = true := by
   rcases hp with rfl | rfl | rfl <;>
-  simp only [Impl.Dsa.AArch64.Generator.stage, generatorSearch, tapeLoop, tapeIteration, generatorStep, generatorRangeFromFrame, generatorEvaluate, onSuccess, finishDomain, pack, packPart, validate, Code.all, Impl.Bignum.AArch64.seqs, workspace, generatorRange, generatorResult, generatorPowerFresh, generatorModulus, generatorPower, generatorLoadPair, Impl.Dsa.AArch64.Random.copyRest, Impl.Dsa.AArch64.Generate.checkParameters, Impl.Dsa.AArch64.Core.publicPow, Impl.Dsa.AArch64.Checks.signingKey, Impl.Dsa.AArch64.Checks.publicPrefix, Impl.Dsa.AArch64.PublicPower.power, Impl.Dsa.AArch64.Core.reduce, Impl.Dsa.AArch64.Arithmetic.constants, Impl.Dsa.AArch64.PublicPower.powerCore, Impl.Dsa.AArch64.Arithmetic.load, Impl.Dsa.AArch64.Core.finish, Impl.Rsa.AArch64.r2Steps, Impl.Dsa.AArch64.Arithmetic.encodePower, Impl.Dsa.AArch64.PublicPower.encodedPower, Impl.Dsa.AArch64.Arithmetic.reduce, Impl.Bignum.AArch64.R2Div.choice, Impl.Rsa.AArch64.r2StepsOld, Impl.Rsa.AArch64.sqs, Impl.Dsa.AArch64.PublicPower.expLoop, Impl.Dsa.AArch64.Arithmetic.reduceSetup, Impl.Dsa.AArch64.Arithmetic.reduceByte, Impl.Rsa.AArch64.Crt.tabBuild, Impl.Rsa.AArch64.Crt.toEnt, Impl.Rsa.AArch64.Crt.copyArr, Impl.Rsa.AArch64.Crt.nextEnt, Impl.Dsa.AArch64.PublicPower.window, Impl.Dsa.AArch64.PublicPower.applyWindow, Impl.Dsa.AArch64.Arithmetic.reduceStep, List.append_assoc, v.mmNoDit, Bool.and_eq_true, List.cons_append, List.nil_append] <;>
+  simp only [Impl.Dsa.AArch64.Generator.stage, generatorSearch, tapeLoop, tapeIteration, generatorStep, generatorRangeFromFrame, generatorEvaluate, onSuccess, finishDomain, pack, packPart, validate, validateCall, Code.all, Impl.Bignum.AArch64.seqs, workspace, generatorRange, generatorResult, generatorPowerFresh, generatorModulus, generatorPower, generatorLoadPair, Impl.Dsa.AArch64.Random.copyRest, Impl.Dsa.AArch64.Generate.checkParameters, Impl.Dsa.AArch64.Core.publicPow, Impl.Dsa.AArch64.Checks.signingKey, Impl.Dsa.AArch64.Checks.publicPrefix, Impl.Dsa.AArch64.PublicPower.power, Impl.Dsa.AArch64.Core.reduce, Impl.Dsa.AArch64.Arithmetic.constants, Impl.Dsa.AArch64.PublicPower.powerCore, Impl.Dsa.AArch64.Arithmetic.load, Impl.Dsa.AArch64.Core.finish, Impl.Rsa.AArch64.r2Steps, Impl.Dsa.AArch64.Arithmetic.encodePower, Impl.Dsa.AArch64.PublicPower.encodedPower, Impl.Dsa.AArch64.Arithmetic.reduce, Impl.Bignum.AArch64.R2Div.choice, Impl.Rsa.AArch64.r2StepsOld, Impl.Rsa.AArch64.sqs, Impl.Dsa.AArch64.PublicPower.expLoop, Impl.Dsa.AArch64.Arithmetic.reduceSetup, Impl.Dsa.AArch64.Arithmetic.reduceByte, Impl.Rsa.AArch64.Crt.tabBuild, Impl.Rsa.AArch64.Crt.toEnt, Impl.Rsa.AArch64.Crt.copyArr, Impl.Rsa.AArch64.Crt.nextEnt, Impl.Dsa.AArch64.PublicPower.window, Impl.Dsa.AArch64.PublicPower.applyWindow, Impl.Dsa.AArch64.Arithmetic.reduceStep, List.append_assoc, v.mmNoDit, Bool.and_eq_true, List.cons_append, List.nil_append] <;>
   and_intros <;>
   lit_decide
 
 /-- As `stage_noDit`, for writes of PSTATE.DIT and indirect calls
 (`Scrub.sideAll`). -/
 theorem stage_side (v : RoundImpl) {pLen : Nat} (hp : pLen = 128 ∨ pLen = 256 ∨ pLen = 384) :
-    Scrub.sideAll (fun i => !i.writesDit) (Impl.Dsa.AArch64.Generator.stage v.mont.mm pLen) = true := by
+    Scrub.sideAll (fun i => !i.writesDit) (Impl.Dsa.AArch64.Generator.stage v.mont.mm pLen v.suffix) = true := by
   rcases hp with rfl | rfl | rfl <;>
-  simp only [Impl.Dsa.AArch64.Generator.stage, generatorSearch, tapeLoop, tapeIteration, generatorStep, generatorRangeFromFrame, generatorEvaluate, onSuccess, finishDomain, pack, packPart, validate, Scrub.sideAll, Impl.Bignum.AArch64.seqs, workspace, generatorRange, generatorResult, generatorPowerFresh, generatorModulus, generatorPower, generatorLoadPair, Impl.Dsa.AArch64.Random.copyRest, Impl.Dsa.AArch64.Generate.checkParameters, Impl.Dsa.AArch64.Core.publicPow, Impl.Dsa.AArch64.Checks.signingKey, Impl.Dsa.AArch64.Checks.publicPrefix, Impl.Dsa.AArch64.PublicPower.power, Impl.Dsa.AArch64.Core.reduce, Impl.Dsa.AArch64.Arithmetic.constants, Impl.Dsa.AArch64.PublicPower.powerCore, Impl.Dsa.AArch64.Arithmetic.load, Impl.Dsa.AArch64.Core.finish, Impl.Rsa.AArch64.r2Steps, Impl.Dsa.AArch64.Arithmetic.encodePower, Impl.Dsa.AArch64.PublicPower.encodedPower, Impl.Dsa.AArch64.Arithmetic.reduce, Impl.Bignum.AArch64.R2Div.choice, Impl.Rsa.AArch64.r2StepsOld, Impl.Rsa.AArch64.sqs, Impl.Dsa.AArch64.PublicPower.expLoop, Impl.Dsa.AArch64.Arithmetic.reduceSetup, Impl.Dsa.AArch64.Arithmetic.reduceByte, Impl.Rsa.AArch64.Crt.tabBuild, Impl.Rsa.AArch64.Crt.toEnt, Impl.Rsa.AArch64.Crt.copyArr, Impl.Rsa.AArch64.Crt.nextEnt, Impl.Dsa.AArch64.PublicPower.window, Impl.Dsa.AArch64.PublicPower.applyWindow, Impl.Dsa.AArch64.Arithmetic.reduceStep, List.append_assoc, v.mmSide, Bool.and_eq_true, List.cons_append, List.nil_append] <;>
+  simp only [Impl.Dsa.AArch64.Generator.stage, generatorSearch, tapeLoop, tapeIteration, generatorStep, generatorRangeFromFrame, generatorEvaluate, onSuccess, finishDomain, pack, packPart, validate, validateCall, Scrub.sideAll, Impl.Bignum.AArch64.seqs, workspace, generatorRange, generatorResult, generatorPowerFresh, generatorModulus, generatorPower, generatorLoadPair, Impl.Dsa.AArch64.Random.copyRest, Impl.Dsa.AArch64.Generate.checkParameters, Impl.Dsa.AArch64.Core.publicPow, Impl.Dsa.AArch64.Checks.signingKey, Impl.Dsa.AArch64.Checks.publicPrefix, Impl.Dsa.AArch64.PublicPower.power, Impl.Dsa.AArch64.Core.reduce, Impl.Dsa.AArch64.Arithmetic.constants, Impl.Dsa.AArch64.PublicPower.powerCore, Impl.Dsa.AArch64.Arithmetic.load, Impl.Dsa.AArch64.Core.finish, Impl.Rsa.AArch64.r2Steps, Impl.Dsa.AArch64.Arithmetic.encodePower, Impl.Dsa.AArch64.PublicPower.encodedPower, Impl.Dsa.AArch64.Arithmetic.reduce, Impl.Bignum.AArch64.R2Div.choice, Impl.Rsa.AArch64.r2StepsOld, Impl.Rsa.AArch64.sqs, Impl.Dsa.AArch64.PublicPower.expLoop, Impl.Dsa.AArch64.Arithmetic.reduceSetup, Impl.Dsa.AArch64.Arithmetic.reduceByte, Impl.Rsa.AArch64.Crt.tabBuild, Impl.Rsa.AArch64.Crt.toEnt, Impl.Rsa.AArch64.Crt.copyArr, Impl.Rsa.AArch64.Crt.nextEnt, Impl.Dsa.AArch64.PublicPower.window, Impl.Dsa.AArch64.PublicPower.applyWindow, Impl.Dsa.AArch64.Arithmetic.reduceStep, List.append_assoc, v.mmSide, Bool.and_eq_true, List.cons_append, List.nil_append] <;>
   and_intros <;>
   lit_decide
 
 /-- The stage's frames: its own 272 bytes. -/
 theorem code_depth (v : RoundImpl) (pLen : Nat) :
-    16 * (Impl.Dsa.AArch64.Generator.code v.mont.mm pLen).aarch64Depth ≤ 272 := by
+    16 * (Impl.Dsa.AArch64.Generator.code v.mont.mm pLen v.suffix).aarch64Depth ≤ 272 := by
   have h := ProbablePrime.aarch64Depth_of_noFrames _ (stage_noFrames v pLen)
   simp only [Impl.Dsa.AArch64.Generator.code, Impl.Bignum.AArch64.seqs, Code.aarch64Depth, h,
     AArch64.Instr.frameUnits]
@@ -1247,7 +1268,7 @@ theorem code_depth (v : RoundImpl) (pLen : Nat) :
 /-- No instruction of the stage as called writes PSTATE.DIT, and it calls
 nothing indirectly. -/
 theorem code_side (v : RoundImpl) {pLen : Nat} (hp : pLen = 128 ∨ pLen = 256 ∨ pLen = 384) :
-    Scrub.sideAll (fun i => !i.writesDit) (Impl.Dsa.AArch64.Generator.code v.mont.mm pLen) = true := by
+    Scrub.sideAll (fun i => !i.writesDit) (Impl.Dsa.AArch64.Generator.code v.mont.mm pLen v.suffix) = true := by
   have h := stage_side v hp
   simp only [Impl.Dsa.AArch64.Generator.code, Impl.Bignum.AArch64.seqs, Scrub.sideAll, h]
   rfl
@@ -1270,7 +1291,7 @@ open VG VG.AArch64 VG.Proof.MillerRabin.AArch64
 
 /-- The stage's code with the round implementation `v`'s arithmetic. -/
 abbrev stageCode (v : RoundImpl) (pLen : Nat) : Prog isa :=
-  Impl.Dsa.AArch64.Generator.code v.mont.mm pLen
+  Impl.Dsa.AArch64.Generator.code v.mont.mm pLen v.suffix
 
 theorem verified (v : RoundImpl) {pLen : Nat} (hb : Supported pLen) :
     Verified target (stageCode v pLen) (contract pLen) :=

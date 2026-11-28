@@ -21,7 +21,7 @@ def successStatus : List Instr := [.ldrSp .x3 152, .subImm .x .x3 .x3 1]
 def onSuccess (next : Prog isa) : Prog isa :=
   .seq (.block successStatus) (.ite (.zero .x .x3) next (.block []))
 
-def finishDomain (mul : Nat → Nat → Nat → Prog isa) (pLen qLen : Nat) : Prog isa :=
-  .seq (pack pLen qLen) (validate mul pLen qLen)
+def finishDomain (mul : Nat → Nat → Nat → Prog isa) (pLen qLen : Nat) (suffix : String) : Prog isa :=
+  .seq (pack pLen qLen) (validate mul pLen qLen suffix)
 
 end VG.Impl.Dsa.AArch64.Generation

@@ -94,10 +94,10 @@ def exit : List Instr :=
   [.ldrSp .x3 152, .ldrSp .x4 160, .lsl .x .x4 .x4 2, .add .x .x0 .x3 .x4]
 
 /-- The stage the generation runs once p is accepted. -/
-def stage (mul : Nat → Nat → Nat → Prog isa) (pLen : Nat) : Prog isa :=
-  .seq (generatorSearch mul pLen) (onSuccess (finishDomain mul pLen (qLen pLen)))
+def stage (mul : Nat → Nat → Nat → Prog isa) (pLen : Nat) (suffix : String) : Prog isa :=
+  .seq (generatorSearch mul pLen) (onSuccess (finishDomain mul pLen (qLen pLen) suffix))
 
-def code (mul : Nat → Nat → Nat → Prog isa) (pLen : Nat) : Prog isa :=
-  .frame (.alloc 272) (seqs [.block save, .block entry, stage mul pLen, .block exit, .block restore]) (.free 272)
+def code (mul : Nat → Nat → Nat → Prog isa) (pLen : Nat) (suffix : String) : Prog isa :=
+  .frame (.alloc 272) (seqs [.block save, .block entry, stage mul pLen suffix, .block exit, .block restore]) (.free 272)
 
 end VG.Impl.Dsa.AArch64.Generator
