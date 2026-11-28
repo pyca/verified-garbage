@@ -11,18 +11,19 @@ instance (`Instances.lean`).
 
 From `x` in array 0 and an odd `m` in array 8, both below `2^(32 n)` for `n`
 in `s8` (`1 ≤ n ≤ 2 w`), `inverse` leaves `gcd(x, m)` in array 1 and, for
-`m > 1`, `y < m` with `y x ≡ gcd(x, m) (mod m)` in array 3; `inverseS`
+`m > 1`, `y < m` with `y x ≡ gcd(x, m) (mod m)` in array 3. For the balanced CRT path, `finish`
 leaves `y` without its factor, `y 2^(5 (3 ν + 2)) x ≡ gcd(x, m)` for `ν = ⌈n / 2⌉`
 (`nu n`); `gcd` leaves
-only the GCD. Each writes only the arrays `invArrs` (`gcdArrs`) and the registers
-`invRegs`.
+only the GCD. The code writes the arrays `invArrs` (`gcdArrs` for `gcd`) and registers
+`invRegs`. The shared divsteps call also writes its link slot.
 -/
 
 @[expose] public section
 
 namespace VG.Proof.Rsa.RISCV64.InvBatch
 
-open VG VG.RISCV64 VG.Proof.Bignum.RISCV64 VG.Proof.Rsa.RISCV64.Keys
+open VG VG.RISCV64 VG.Proof.Mont VG.Proof.Bignum.RISCV64 VG.Proof.Rsa.RISCV64.Keys
+open VG.Impl.Rsa.RISCV64.InvBatch (aMz aA aF)
 
 /-- The arrays `inverse` writes. -/
 abbrev invArrs : List Nat := [1, 2, 3, 4, 5, 6, 7, 9, 11, 12, 13]
@@ -32,6 +33,18 @@ abbrev gcdArrs : List Nat := [1, 2, 4, 5, 6, 7, 9, 11, 12]
 
 /-- The registers `inverse` and `gcd` change. -/
 abbrev invRegs : List Reg := .s7 :: kRegs
+
+/-- The common divsteps, through normalization before the optional doublings. -/
+structure DivstepsOut (B : Addr) (Z w N n x m : Nat) (s t : State) (slots : List Nat := []) : Prop where
+  ctx : Ctx t B Z w N n
+  frame : Keys.Frame B w invArrs slots s.mem t.mem
+  keep : Keep invRegs s t
+  modulus : wordsVal t.mem B (arr w aMz) (nu n + 1) = m
+  scaled_lt : wordsVal t.mem B (arr w aA) (nu n + 1) < m
+  gcd : ∃ f : Int, (wordsVal t.mem B (arr w aF) (nu n + 1) : Int) % 2 ^ (64 * (nu n + 1)) =
+      f % 2 ^ (64 * (nu n + 1)) ∧ f.natAbs = Nat.gcd m x
+  congruence : ((wordsVal t.mem B (arr w aA) (nu n + 1) : Int) * 2 ^ (5 * (3 * nu n + 2)) * x) % m =
+    (Nat.gcd m x : Int) % m
 
 end VG.Proof.Rsa.RISCV64.InvBatch
 
@@ -45,15 +58,25 @@ class InvLaw : Prop where
       (hm : num s.mem B w Impl.Rsa.RISCV64.InvBatch.aMin = m) (hmn : m < 2 ^ (32 * n))
       (hodd : m % 2 = 1) :
       WP isa Impl.Rsa.RISCV64.InvBatch.inverse s fun t => Ws t B Z w N ∧
-        Keys.Frame B w invArrs [] s.mem t.mem ∧ Keep invRegs s t ∧
+        Keys.Frame B w invArrs [104] s.mem t.mem ∧ Keep invRegs s t ∧
         (1 < m → num t.mem B w 1 = Nat.gcd x m ∧
           (m : Int) ∣ (num t.mem B w 3 : Int) * x - num t.mem B w 1 ∧ num t.mem B w 3 < m)
-  inverseS_ok {s : State} {B : Addr} {Z w N n : Nat} (h : Ctx s B Z w N n) (hN : N ≤ 256) {x m : Nat}
+  callDivsteps_ok {s : State} {B : Addr} {Z w N n d : Nat}
+      (h : Ctx s B Z w N n) (hN : N ≤ 256) (hd : d + 8 ≤ VG.Impl.Rsa.RISCV64.Keys.hdr)
+      (hd8 : d % 8 = 0) {x m : Nat}
       (hx : num s.mem B w Impl.Rsa.RISCV64.InvBatch.aX = x) (hxn : x < 2 ^ (32 * n))
-      (hm : num s.mem B w Impl.Rsa.RISCV64.InvBatch.aMin = m) (hmn : m < 2 ^ (32 * n))
-      (hodd : m % 2 = 1) :
-      WP isa Impl.Rsa.RISCV64.InvBatch.inverseS s fun t => Ws t B Z w N ∧
-        Keys.Frame B w invArrs [] s.mem t.mem ∧ Keep invRegs s t ∧
+      (hm : num s.mem B w Impl.Rsa.RISCV64.InvBatch.aMin = m) (hmn : m < 2 ^ (32 * n)) (hodd : m % 2 = 1) :
+      WP isa (Impl.Rsa.RISCV64.InvBatch.callDivsteps d) s (fun t => DivstepsOut B Z w N n x m s t [d])
+  finishUnscaled_ok {s t2 : State} {B : Addr} {Z w N n x m : Nat} {slots : List Nat}
+      (h : DivstepsOut B Z w N n x m s t2 slots) (hN : N ≤ 256)
+      (pc : m < 2 ^ (64 * nu n)) (hodd : m % 2 = 1) :
+      WP isa (.seq Impl.Rsa.RISCV64.InvBatch.doublings Impl.Rsa.RISCV64.InvBatch.finish) t2 fun t => Ws t B Z w N ∧ Keys.Frame B w invArrs [] t2.mem t.mem ∧ Keep invRegs t2 t ∧
+        (1 < m → num t.mem B w 1 = Nat.gcd x m ∧
+          (m : Int) ∣ (num t.mem B w 3 : Int) * x - num t.mem B w 1 ∧ num t.mem B w 3 < m)
+  finishScaled_ok {s t2 : State} {B : Addr} {Z w N n x m : Nat} {slots : List Nat}
+      (h : DivstepsOut B Z w N n x m s t2 slots) (hN : N ≤ 256)
+      (pc : m < 2 ^ (64 * nu n)) (hodd : m % 2 = 1) :
+      WP isa Impl.Rsa.RISCV64.InvBatch.finish t2 fun t => Ws t B Z w N ∧ Keys.Frame B w invArrs [] t2.mem t.mem ∧ Keep invRegs t2 t ∧
         (1 < m → num t.mem B w 1 = Nat.gcd x m ∧
           (m : Int) ∣ ((num t.mem B w 3 * 2 ^ (5 * (3 * nu n + 2)) % m : Nat) : Int) * x - num t.mem B w 1 ∧
           num t.mem B w 3 < m)

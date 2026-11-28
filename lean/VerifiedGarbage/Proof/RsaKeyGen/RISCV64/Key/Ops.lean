@@ -186,13 +186,13 @@ private theorem saveInverseRA_ok {s : State} {B : Addr} {Z w N : Nat} (h : Ws s 
     h.scr.al8 (d := 96) (by omega_using [hz]) (by decide)]
 
 /-- The inverse's arithmetic is unchanged by the internal call. Only its
-existing arrays and the link-save word at byte 96 can change. -/
+existing arrays and the link-save words at bytes 96 and 104 can change. -/
 private theorem inverseCall_ok [InvLaw] {s : State} {B : Addr} {Z w N n x m : Nat}
     (h : VG.Proof.Rsa.RISCV64.InvBatch.Ctx s B Z w N n) (hN : N ≤ 256)
     (hx : num s.mem B w 0 = x) (hxn : x < 2 ^ (32 * n))
     (hm : num s.mem B w 8 = m) (hmn : m < 2 ^ (32 * n)) (hodd : m % 2 = 1) :
     WP isa Impl.RsaKeyGen.RISCV64.Key.inverseCall s fun t => Ws t B Z w N ∧
-      Frame B w VG.Proof.Rsa.RISCV64.InvBatch.invArrs [96] s.mem t.mem ∧
+      Frame B w VG.Proof.Rsa.RISCV64.InvBatch.invArrs [96, 104] s.mem t.mem ∧
       Keep VG.Proof.Rsa.RISCV64.InvBatch.invRegs s t ∧
       (1 < m → num t.mem B w 1 = Nat.gcd x m ∧
         (m : Int) ∣ (num t.mem B w 3 : Int) * x - num t.mem B w 1 ∧ num t.mem B w 3 < m) := by
@@ -220,7 +220,7 @@ private theorem inverseCall_ok [InvLaw] {s : State} {B : Addr} {Z w N n x m : Na
   have saved : word u.mem B 96 = s.gpr .ra := by
     apply BitVec.eq_of_toNat_eq
     change slot u.mem B 96 = (s.gpr .ra).toNat
-    rw [fu.slot (by decide) (by simp), State.callEntry_mem, fs.2]
+    rw [fu.slot (by decide) (by decide), State.callEntry_mem, fs.2]
   have load : WP isa (.block [.load .d .ra .s11 96]) u fun z =>
       (z.gpr .ra = word u.mem B 96 ∧ z.mem = u.mem) ∧ Keep [.ra] u z := by
     have hz := wu.hdr_le
@@ -258,7 +258,7 @@ theorem invOf_ok [InvLaw] {s : State} {B : Addr} {Z w N a m n : Nat} {k : List I
     (hxn : num s.mem B w a < 2 ^ (32 * n)) (hmn : num s.mem B w m < 2 ^ (32 * n))
     (hodd : num s.mem B w m % 2 = 1) :
     WP isa (Impl.RsaKeyGen.RISCV64.Key.invOf a m k) s fun t => Ws t B Z w N ∧
-      Frame B w invOfArrs [96] s.mem t.mem ∧ Keep invOfRegs s t ∧
+      Frame B w invOfArrs [96, 104] s.mem t.mem ∧ Keep invOfRegs s t ∧
       (1 < num s.mem B w m →
         num t.mem B w 1 = Nat.gcd (num s.mem B w a) (num s.mem B w m) ∧
         (num s.mem B w m : Int) ∣ (num t.mem B w 3 : Int) * num s.mem B w a - num t.mem B w 1 ∧

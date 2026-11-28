@@ -378,11 +378,16 @@ def finish : Prog isa := .seq finishG finishY
 /-- `gcd(x, m)` alone into array 1. -/
 def gcd : Prog isa := seqs [init, .loop batchG (.nonzero .s7), finishG]
 
-/-- The inverse at the working space's width `w` (`s9`). -/
-def inverse : Prog isa := seqs [init, .loop batch (.nonzero .s7), normalize, doublings, finish]
+/-- Initialize the divsteps, batch them and normalize the scaled inverse. -/
+def divstepsCore : Prog isa := seqs [init, .loop batch (.nonzero .s7), normalize]
 
-/-- The inverse without its doublings: `[3] = y` with
-`y 2^(5 (3 ν + 2)) x ≡ gcd(x, m) (mod m)`, for a caller that scales `y` itself. -/
-def inverseS : Prog isa := seqs [init, .loop batch (.nonzero .s7), normalize, finish]
+/-- Run the shared divsteps leaf, saving the caller's link in a workspace header slot. -/
+def callDivsteps (d : Nat) : Prog isa := seqs [
+  .block [.store .d .ra .s11 d],
+  .call "vg_rsa_inverse_divsteps" divstepsCore,
+  .block [.load .d .ra .s11 d]]
+
+/-- The inverse at the working space's width `w` (`s9`). Its caller keeps a separate link at byte 96. -/
+def inverse : Prog isa := seqs [callDivsteps 104, doublings, finish]
 
 end VG.Impl.Rsa.RISCV64.InvBatch

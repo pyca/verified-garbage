@@ -16,12 +16,12 @@ import VerifiedGarbage.Proof.Framework.Omega
 `nCalc_ok`: the primes' digits `nP = ⌈max(p_len, q_len) / 4⌉` into `s8`;
 `invSetup_ok`: the inverse's start (`IS`); `invCore_ok`: the batched inverse
 (`Proof/Rsa/RISCV64/IbInverse.lean`) and the gcd's check (`IC`);
-`maskBlk_ok`: the checks' mask. `invPart_ok`: from the checks of `p q = n`
+`maskBlk_ok`: the checks' mask. `invEnd_ok`: from the checks of `p q = n`
 (`Ck`), the whole phase: the mask of every check in `sMask` and `qInv`
 written under it, the arrays from 16 on as they were (`Iv`).
 -/
 
--- separate module: its proofs (the inverse and `invPart_ok`) are not re-checked with every change to the
+-- separate module: its proofs (the inverse and `invEnd_ok`) are not re-checked with every change to the
 -- divisions', the stores' or the constant-time proofs
 
 @[expose] public section
@@ -32,7 +32,7 @@ open VG VG.RISCV64 VG.RISCV64.RegUpd VG.Proof.Mont VG.Proof.Bignum.RISCV64 VG.Pr
 open VG.Impl.Rsa.RISCV64.Keys (seqs mov)
 open VG.Impl.Rsa.RISCV64.Keys (orOne copy setOne eqS sOdd sB sC)
 open VG.Impl.Rsa.RISCV64.Keys (andS)
-open VG.Impl.Rsa.RISCV64.CrtValues (nCalc invSetup invG nArr aOne aP aQ aDQ aDR sE3 sPodd sE1 sE2 sMask mask
+open VG.Impl.Rsa.RISCV64.CrtValues (nCalc invSetup invFinish nArr aOne aP aQ aDQ aDR sE3 sPodd sE1 sE2 sMask mask
   restoreK)
 
 /-- The primes' digits. -/
@@ -180,43 +180,76 @@ structure IC (s0 : State) (V X : Nat) : Prop where
   vx : 1 < Mv s0 → V = Nat.gcd (Qv s0) (Mv s0) ∧ ∃ X' : Nat, (Mv s0 : Int) ∣ (X' : Int) * Qv s0 - V ∧
     X' < Mv s0 ∧ ((Bal s0 → InW (wOf s0) (Mv s0)) → X = X')
 
-/-- The inverse: for a balanced key without its doublings, then the tail. -/
-theorem invG_ok [InvLaw] {s0 s : State} (h : PreC s0) (c : CB s0 s0.mem s)
-    (ws : Ws s (bOf s0) (zOf s0) (wOf s0) nArr) (is : IS s0 s) :
-    WP isa invG s fun t => CB s0 s0.mem t ∧ Ws t (bOf s0) (zOf s0) (wOf s0) nArr ∧
-      Keys.Frame (bOf s0) (wOf s0) (aDQ :: aDR :: InvBatch.invArrs) [] s.mem t.mem ∧
-      Keep (.s0 :: InvBatch.invRegs) s t ∧
-      (1 < Mv s0 → num t.mem (bOf s0) (wOf s0) 1 = Nat.gcd (Qv s0) (Mv s0) ∧
-        ∃ X' : Nat, (Mv s0 : Int) ∣ (X' : Int) * Qv s0 - num t.mem (bOf s0) (wOf s0) 1 ∧ X' < Mv s0 ∧
-          ((Bal s0 → InW (wOf s0) (Mv s0)) → num t.mem (bOf s0) (wOf s0) 3 = X')) := by
-  have ⟨b1, b2, b3, b4⟩ := h.nP_bounds
-  have ⟨w1, w2⟩ := h.w_bounds
-  have hz := h.zk
+/-- What the shared divsteps leave before the public shape check. -/
+abbrev CrtDivsteps (s0 s t : State) : Prop :=
+  InvBatch.DivstepsOut (bOf s0) (zOf s0) (wOf s0) nArr (nP s0) (Qv s0) (Mv s0) s t [96]
+
+private theorem modulus_lt (s0 : State) (h : PreC s0) : Mv s0 < 2 ^ (32 * nP s0) := by
+  have ⟨_, _, hp, _⟩ := h.nP_bounds
   have hp1 := h.p1
-  have ⟨lp, lq⟩ := lt32 h
-  obtain fitZ : ∀ j < nArr, arr (wOf s0) j + S (wOf s0) ≤ zOf s0 := fun j hj =>
-    Nat.le_trans (arr_end hj) ws.fits
-  obtain fit : ∀ j < nArr, arr (wOf s0) j + S (wOf s0) ≤ 2 ^ 64 := fun j hj => ws.fit64 hj
+  have hm := (Mv_lt s0).resolve_right (by simp only [pL]; omega_arith)
+  have : 2 ^ (8 * pL s0) ≤ 2 ^ (32 * nP s0) := Nat.pow_le_pow_right (by decide) (by omega_arith)
+  omega_arith
+
+private theorem modulus_odd (s0 : State) : Mv s0 % 2 = 1 := by simp only [Mv]; omega_arith
+
+theorem invDivsteps_ok [InvLaw] {s0 s : State} (h : PreC s0)
+    (ws : Ws s (bOf s0) (zOf s0) (wOf s0) nArr) (is : IS s0 s) :
+    WP isa (Impl.Rsa.RISCV64.InvBatch.callDivsteps 96) s (CrtDivsteps s0 s) := by
+  have ⟨b1, b2, _, b4⟩ := h.nP_bounds
+  have ⟨w1, _⟩ := h.w_bounds
   obtain ctx : InvBatch.Ctx s (bOf s0) (zOf s0) (wOf s0) nArr (nP s0) := ⟨ws, is.s8, b1, b2, by decide, by omega_arith⟩
   obtain hq : Qv s0 < 2 ^ (32 * nP s0) := by
     have := os2ip_bytes_lt s0.mem (stackArg s0 2) (qL s0)
     have : 2 ^ (8 * qL s0) ≤ 2 ^ (32 * nP s0) := Nat.pow_le_pow_right (by decide) (by omega_arith)
     simp only [Qv, qB] at *; omega_arith
+  exact InvLaw.callDivsteps_ok ctx (by decide) (by decide) (by decide)
+    is.nx hq is.nm (modulus_lt s0 h) (modulus_odd s0)
+
+theorem divstepsCB {s0 s t : State} (h : PreC s0) (c : CB s0 s0.mem s) (hd : CrtDivsteps s0 s t) :
+    CB s0 s0.mem t := by
+  have hz := h.zk
+  refine c.of_frame hd.frame ?_ (by decide)
+    (by simp only [hdr_eq, zOf] at hz ⊢; omega_arith) hd.keep (by decide)
+  intro j hj
+  exact Nat.le_trans (arr_end (by revert j; decide)) hd.ctx.ws.fits
+
+/-- The inverse: for a balanced key without its doublings, then the tail. -/
+theorem invFinish_ok [InvLaw] {s0 s u0 : State} (h : PreC s0) (c : CB s0 s0.mem s)
+    (is : IS s0 s) (hc : CrtDivsteps s0 s u0) :
+    WP isa invFinish u0 fun t => CB s0 s0.mem t ∧ Ws t (bOf s0) (zOf s0) (wOf s0) nArr ∧
+      Keys.Frame (bOf s0) (wOf s0) (aDQ :: aDR :: InvBatch.invArrs) [96] s.mem t.mem ∧
+      Keep (.s0 :: InvBatch.invRegs) s t ∧
+      (1 < Mv s0 → num t.mem (bOf s0) (wOf s0) 1 = Nat.gcd (Qv s0) (Mv s0) ∧
+        ∃ X' : Nat, (Mv s0 : Int) ∣ (X' : Int) * Qv s0 - num t.mem (bOf s0) (wOf s0) 1 ∧ X' < Mv s0 ∧
+          ((Bal s0 → InW (wOf s0) (Mv s0)) → num t.mem (bOf s0) (wOf s0) 3 = X')) := by
+  have ⟨w1, w2⟩ := h.w_bounds
+  have hz := h.zk
+  have hp1 := h.p1
+  have ⟨lp, lq⟩ := lt32 h
+  have ws := hc.ctx.ws
+  obtain fitZ : ∀ j < nArr, arr (wOf s0) j + S (wOf s0) ≤ zOf s0 := fun j hj =>
+    Nat.le_trans (arr_end hj) ws.fits
+  obtain fit : ∀ j < nArr, arr (wOf s0) j + S (wOf s0) ≤ 2 ^ 64 := fun j hj => ws.fit64 hj
   obtain hmp := (Mv_lt s0).resolve_right (by simp only [pL]; omega_arith)
-  obtain hm : Mv s0 < 2 ^ (32 * nP s0) := by
-    have : 2 ^ (8 * pL s0) ≤ 2 ^ (32 * nP s0) := Nat.pow_le_pow_right (by decide) (by omega_arith)
-    omega_arith
-  obtain hodd : Mv s0 % 2 = 1 := by simp only [Mv]; omega_arith
-  unfold invG
+  have hodd := modulus_odd s0
+  have pc := Nat.lt_of_lt_of_le (modulus_lt s0 h) (InvBatch.pow_nu (nP s0))
+  unfold invFinish
   rw [WP.seq_iff]
-  refine WP.mono (shape_ok (pl := pL s0) (ql := qL s0) (w := wOf s0) (c.s4.trans (toNat_ofNat_eq _))
-    (c.s6.trans (toNat_ofNat_eq _)) ws.s9 lp lq ws.wle) fun t ⟨⟨hiff, tm⟩, kt⟩ => ?_
-  obtain ct := c.of_keep kt tm
-  obtain wt := ws.of_keep kt
-  obtain ctxt : InvBatch.Ctx t (bOf s0) (zOf s0) (wOf s0) nArr (nP s0) :=
-    ⟨wt, (kt.gpr (by decide)).trans is.s8, b1, b2, by decide, by omega_arith⟩
-  obtain nxt : num t.mem (bOf s0) (wOf s0) Impl.Rsa.RISCV64.InvBatch.aX = Qv s0 := by rw [tm]; exact is.nx
-  obtain nmt : num t.mem (bOf s0) (wOf s0) Impl.Rsa.RISCV64.InvBatch.aMin = Mv s0 := by rw [tm]; exact is.nm
+  refine WP.mono (shape_ok (pl := pL s0) (ql := qL s0) (w := wOf s0)
+    ((hc.keep.gpr (by decide)).trans c.s4 |>.trans (toNat_ofNat_eq _))
+    ((hc.keep.gpr (by decide)).trans c.s6 |>.trans (toNat_ofNat_eq _)) hc.ctx.ws.s9 lp lq ws.wle)
+    fun t ⟨⟨hiff, tm⟩, kt⟩ => ?_
+  have Kt := Keep.trans' hc.keep (kt.mono (by decide))
+  have Ft : Keys.Frame (bOf s0) (wOf s0) InvBatch.invArrs [96] s.mem t.mem := by
+    rw [tm]
+    exact hc.frame
+  have ht : InvBatch.DivstepsOut (bOf s0) (zOf s0) (wOf s0) nArr (nP s0) (Qv s0) (Mv s0) s t [96] :=
+    ⟨hc.ctx.of_keep' kt, Ft, Kt, by rw [tm]; exact hc.modulus, by rw [tm]; exact hc.scaled_lt,
+      by rw [tm]; exact hc.gcd, by rw [tm]; exact hc.congruence⟩
+  have nmt : num t.mem (bOf s0) (wOf s0) Impl.Rsa.RISCV64.InvBatch.aMin = Mv s0 := by
+    rw [Ft.num (by decide) (by decide) (fit _ (by decide))]
+    exact is.nm
   refine WP.ite _ (Steps.eval_zero t .t0) (fun hz0 => ?_) (fun _ => ?_)
   · -- A balanced key: the inverse without its doublings, then the tail.
     obtain hb : Bal s0 := hiff.mp (by simpa using hz0)
@@ -225,7 +258,7 @@ theorem invG_ok [InvLaw] {s0 s : State} (h : PreC s0) (c : CB s0 s0.mem s)
     obtain hw2 : wOf s0 % 2 = 0 := by omega_using [hb8, hb4]
     obtain hnw : nP s0 = wOf s0 := by simp only [nP]; omega_using [hb4, hbq]
     rw [wp_seqs_cons (List.cons_ne_nil _ _)]
-    refine WP.mono (InvLaw.inverseS_ok ctxt (by decide) nxt hq nmt hm hodd) fun t1 ⟨w1', f1, k1, v1⟩ => ?_
+    refine WP.mono (InvLaw.finishScaled_ok ht (by decide) pc hodd) fun t1 ⟨w1', f1, k1, v1⟩ => ?_
     rw [wp_seqs_cons (List.cons_ne_nil _ _)]
     refine WP.mono (saveK_ok w1' (by decide) (by omega_using [w1])) fun t2 ⟨w2', f2, k2, e1, e2, e3, e4, e5, e6, e7, e8, e9⟩ => ?_
     rw [wp_seqs_cons (List.cons_ne_nil _ _), show seqs [.block restoreK] = .block restoreK from rfl]
@@ -265,11 +298,11 @@ theorem invG_ok [InvLaw] {s0 s : State} (h : PreC s0) (c : CB s0 s0.mem s)
         · have sub : ∀ x ∈ (((InvBatch.invRegs ++ [.t0]) ++ dwRegs) ++ [.t0, .s1, .s2, .s3, .s4, .a0, .a1, .a2, .a3, .a6]),
               x ∈ (.s0 :: InvBatch.invRegs) ∨ x ∈ VG.Impl.Rsa.RISCV64.CrtValues.kept := by decide
           exact (((k1.trans k2).trans k3).trans k4).gpr fun hm => (sub r hm).elim hr hk
-      exact (kt.trans K1).mono (by decide)
-    obtain F : Keys.Frame (bOf s0) (wOf s0) (aDQ :: aDR :: InvBatch.invArrs) [] s.mem u.mem := by
-      rw [um, ← tm]
-      exact (f1.mono (by simp) (by simp)).trans ((f2.mono (by simp) (by simp)).trans (f3.mono (by decide) (by simp)))
-    refine ⟨c.of_frame F (fun j hj => fitZ j (by revert j hj; decide)) (by simp)
+      exact (Kt.trans K1).mono (by decide)
+    obtain F : Keys.Frame (bOf s0) (wOf s0) (aDQ :: aDR :: InvBatch.invArrs) [96] s.mem u.mem := by
+      rw [um]
+      exact (Ft.mono (by simp) (by simp)).trans <| (f1.mono (by simp) (by simp)).trans ((f2.mono (by simp) (by simp)).trans (f3.mono (by decide) (by simp)))
+    refine ⟨c.of_frame F (fun j hj => fitZ j (by revert j hj; decide)) (by decide)
       (by simp only [hdr_eq, zOf] at hz ⊢; omega_arith) K (by decide), w3'.of_keep k4, F, K, fun h1M => ?_⟩
     obtain ⟨g, d, l⟩ := v1 h1M
     obtain g3 : num u.mem (bOf s0) (wOf s0) 1 = num t1.mem (bOf s0) (wOf s0) 1 := by
@@ -288,32 +321,32 @@ theorem invG_ok [InvLaw] {s0 s : State} (h : PreC s0) (c : CB s0 s0.mem s)
     rw [um, v3 (by rw [y2]; exact yv) (by rw [m2, m1]; exact hin ⟨hb8, hb4, hbq, hb32⟩), y2, m2, m1,
       show InvBatch.nu (wOf s0) = wOf s0 / 2 by unfold InvBatch.nu; omega_using [hw2]]
   · -- Else as it is.
-    refine WP.mono (InvLaw.inverse_ok ctxt (by decide) nxt hq nmt hm hodd) fun u ⟨w1', f1, k1, v1⟩ => ?_
-    obtain F : Keys.Frame (bOf s0) (wOf s0) (aDQ :: aDR :: InvBatch.invArrs) [] s.mem u.mem := by
-      rw [← tm]; exact f1.mono (by simp) (by simp)
-    obtain K : Keep (.s0 :: InvBatch.invRegs) s u := (kt.trans k1).mono (by decide)
-    refine ⟨c.of_frame F (fun j hj => fitZ j (by revert j hj; decide)) (by simp)
+    refine WP.mono (InvLaw.finishUnscaled_ok ht (by decide) pc hodd) fun u ⟨w1', f1, k1, v1⟩ => ?_
+    obtain F : Keys.Frame (bOf s0) (wOf s0) (aDQ :: aDR :: InvBatch.invArrs) [96] s.mem u.mem := by
+      exact (Ft.mono (by simp) (by simp)).trans (f1.mono (by simp) (by simp))
+    obtain K : Keep (.s0 :: InvBatch.invRegs) s u := (Kt.trans k1).mono (by decide)
+    refine ⟨c.of_frame F (fun j hj => fitZ j (by revert j hj; decide)) (by decide)
       (by simp only [hdr_eq, zOf] at hz ⊢; omega_arith) K (by decide), w1', F, K, fun h1M => ?_⟩
     obtain ⟨g, d, l⟩ := v1 h1M
     exact ⟨by rw [g, Nat.gcd_comm], _, d, l, fun _ => rfl⟩
 
-theorem invCore_ok [InvLaw] {s0 s : State} (h : PreC s0) (c : CB s0 s0.mem s)
-    (ws : Ws s (bOf s0) (zOf s0) (wOf s0) nArr) (is : IS s0 s) :
-    WP isa (.seq invG (eqS sE3 1 aOne)) s fun t => CB s0 s0.mem t ∧
+theorem invCore_ok [InvLaw] {s0 s u0 : State} (h : PreC s0) (c : CB s0 s0.mem s)
+    (is : IS s0 s) (hc : CrtDivsteps s0 s u0) :
+    WP isa (.seq invFinish (eqS sE3 1 aOne)) u0 fun t => CB s0 s0.mem t ∧
       Ws t (bOf s0) (zOf s0) (wOf s0) nArr ∧
-      Keys.Frame (bOf s0) (wOf s0) (aDQ :: aDR :: InvBatch.invArrs) [sE3] s.mem t.mem ∧
+      Keys.Frame (bOf s0) (wOf s0) (aDQ :: aDR :: InvBatch.invArrs) [96, sE3] s.mem t.mem ∧
       IC s0 (num t.mem (bOf s0) (wOf s0) 1) (num t.mem (bOf s0) (wOf s0) 3) ∧
       slot t.mem (bOf s0) sE3 = (if num t.mem (bOf s0) (wOf s0) 1 = 1 then 1 else 0) ∧
       Keep (.s0 :: InvBatch.invRegs) s t := by
   have hz := h.zk
-  obtain fit : ∀ j < nArr, arr (wOf s0) j + S (wOf s0) ≤ 2 ^ 64 := fun j hj => ws.fit64 hj
+  obtain fit : ∀ j < nArr, arr (wOf s0) j + S (wOf s0) ≤ 2 ^ 64 := fun j hj => hc.ctx.ws.fit64 hj
   rw [WP.seq_iff]
-  refine WP.mono (invG_ok h c ws is) fun t1 ⟨c1, w1', f1, k1, v1⟩ => ?_
+  refine WP.mono (invFinish_ok h c is hc) fun t1 ⟨c1, w1', f1, k1, v1⟩ => ?_
   refine WP.mono (eqS_ok w1' (d := sE3) (a := 1) (b := aOne) (by decide) (by decide) (by decide) (by decide)
     (by decide)) fun t ⟨w2', f2, v2, k2⟩ => ?_
   obtain c2 := c1.of_frame f2 (by simp) (by decide) (by simp only [hdr_eq, zOf] at hz ⊢; omega_arith) k2 (by decide)
   obtain o1 : num t1.mem (bOf s0) (wOf s0) aOne = 1 := by
-    rw [f1.num (j := aOne) (by decide) (by simp) (fit _ (by decide)), is.nOne]
+    rw [f1.num (j := aOne) (by decide) (by decide) (fit _ (by decide)), is.nOne]
   obtain n1 : num t.mem (bOf s0) (wOf s0) 1 = num t1.mem (bOf s0) (wOf s0) 1 :=
     f2.num (j := 1) (by simp) (by decide) (fit _ (by decide))
   obtain n3 : num t.mem (bOf s0) (wOf s0) 3 = num t1.mem (bOf s0) (wOf s0) 3 :=
@@ -378,7 +411,7 @@ namespace VG.Proof.Rsa.RISCV64.CrtValues
 
 open VG VG.RISCV64 VG.RISCV64.RegUpd VG.Proof.Mont VG.Proof.Bignum.RISCV64 VG.Proof.Rsa.RISCV64.Keys
 open VG.Impl.Rsa.RISCV64.Keys (seqs eqS storeBytes andS sOdd sB sC)
-open VG.Impl.Rsa.RISCV64.CrtValues (invSetup invPart storeQ nArr aOne aP aQ aD aDD sE3 sPodd sE1
+open VG.Impl.Rsa.RISCV64.CrtValues (invSetup invStart invEnd storeQ nArr aOne aP aQ aD aDD sE3 sPodd sE1
   sE2 sMask mask)
 open VG.Proof.Rsa.CrtValues (maskOf)
 
@@ -433,18 +466,27 @@ theorem wordsVal_of_out {O B : Addr} {L Z : Nat} {m m' : Mem} (hd : (⟨O, L⟩ 
 /-- The arrays and slots that the inverse's phase writes. -/
 abbrev phaseArrs : List Nat := [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12, 13, 15, 18, 19]
 
-theorem invPart_ok [InvLaw] {s0 s : State} (h : PreC s0) {X₁ X₂ : Nat} (ck : Ck s0 X₁ X₂ s) :
-    WP isa invPart s fun t => ∃ V X, IvA s0 X₁ X₂ V X t := by
-  have ⟨b1, b2, b3, b4⟩ := h.nP_bounds
-  have ⟨w1, w2⟩ := h.w_bounds
+/-- The inverse inputs and the state after the shared divsteps. -/
+def InvMid (s0 : State) (X₁ X₂ : Nat) (u : State) : Prop :=
+  ∃ s t, Ck s0 X₁ X₂ s ∧ CB s0 s0.mem t ∧ IS s0 t ∧
+    Keys.Frame (bOf s0) (wOf s0) setupArrs [] s.mem t.mem ∧ CrtDivsteps s0 t u
+
+theorem invStart_ok [InvLaw] {s0 s : State} (h : PreC s0) {X₁ X₂ : Nat} (ck : Ck s0 X₁ X₂ s) :
+    WP isa invStart s (InvMid s0 X₁ X₂) := by
+  unfold invStart
+  rw [wp_seqs_append (by unfold invSetup; simp) (by simp)]
+  refine WP.mono (invSetup_ok h ck) fun t ⟨ct, wt, ft, it, _⟩ => ?_
+  exact WP.mono (invDivsteps_ok h wt it) fun u hu => ⟨s, t, ck, ct, it, ft, hu⟩
+
+theorem invEnd_ok [InvLaw] {s0 u : State} (h : PreC s0) {X₁ X₂ : Nat} (mid : InvMid s0 X₁ X₂ u) :
+    WP isa invEnd u fun t => ∃ V X, IvA s0 X₁ X₂ V X t := by
+  obtain ⟨s, t2, ck, c2, is2, f2, hc⟩ := mid
   have hz := h.zk
   obtain fitW : ∀ j < nArr, arr (wOf s0) j + S (wOf s0) ≤ 2 ^ 64 := fun j hj => ck.ws.fit64 hj
   obtain lt16 : ∀ k ∈ phaseArrs, k < 20 := by decide
-  unfold invPart
-  rw [wp_seqs_append (by unfold invSetup; simp) (by simp)]
-  refine WP.mono (invSetup_ok h ck) fun t2 ⟨c2, ws2, f2, is2, k2⟩ => ?_
+  unfold invEnd
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
-  refine WP.mono (WP.seq_iff.mp (invCore_ok h c2 ws2 is2)) fun t3 h3 => ?_
+  refine WP.mono (WP.seq_iff.mp (invCore_ok h c2 is2 hc)) fun t3 h3 => ?_
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono h3 fun t4 ⟨c4, ws4, f4, ic4, e4, k4⟩ => ?_
   -- The checks' slots, kept.
@@ -463,7 +505,7 @@ theorem invPart_ok [InvLaw] {s0 s : State} (h : PreC s0) {X₁ X₂ : Nat} (ck :
   rw [sp4, se1, se2, ck.e12, e4, mask_prod] at v5
   obtain c5 := c4.of_frame f5 (by simp) (by decide) (by simp only [hdr_eq, zOf] at hz ⊢; omega_arith) k5
   -- Memory past the inverse's arrays, and the slot `sMask`.
-  obtain Fw : Keys.Frame (bOf s0) (wOf s0) phaseArrs [sE3, sMask] s.mem t5.mem :=
+  obtain Fw : Keys.Frame (bOf s0) (wOf s0) phaseArrs [96, sE3, sMask] s.mem t5.mem :=
     (f2.mono (by decide) (by simp)).trans ((f4.mono (by decide) (by simp)).trans (f5.mono (by simp) (by simp)))
   obtain nW : ∀ j, 20 ≤ j → j < nArr → num t5.mem (bOf s0) (wOf s0) j = num s.mem (bOf s0) (wOf s0) j :=
     fun j hj hj' => Fw.num (fun k hk => by have := lt16 k hk; omega_using [hj, this]) (by decide) (fitW _ hj')

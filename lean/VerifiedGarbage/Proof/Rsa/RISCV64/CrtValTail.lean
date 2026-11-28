@@ -13,8 +13,8 @@ import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # `vg_rsa_crt_values` on RISC-V: the inverse's tail by words
 
-For a balanced key, `CrtValues.invG` runs the inverse without its doublings
-(`InvBatch.inverseS`) and then `CrtValues.tail`, `y := y 2^K mod m` for
+For a balanced key, `CrtValues.invFinish` runs the inverse without its doublings
+(`InvBatch.finish`) and then `CrtValues.tail`, `y := y 2^K mod m` for
 `K = 5 (3 v + 2) = 64 Q + T` (`v = w / 2`): `y`'s words shifted left by `T`
 (which may be 0) into word `Q` of a zeroed array (`shlTLoop_ok`), and one
 division by words (`divW_ok`). -/

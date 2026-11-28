@@ -383,7 +383,7 @@ theorem gcdUV_ok [VG.Proof.Rsa.RISCV64.InvLaw] (h : Ws s B Z w nArr) {L : Nat}
     (odd : 2 ≤ (if num s.mem B w aV % 2 = 0 then num s.mem B w aU else num s.mem B w aV) →
       (if num s.mem B w aV % 2 = 0 then num s.mem B w aU else num s.mem B w aV) % 2 = 1) :
     WP isa gcdUV s fun t => Ws t B Z w nArr ∧
-      VG.Proof.Rsa.RISCV64.Keys.Frame B w gcdArrs [96, X0, X1] s.mem t.mem ∧
+      VG.Proof.Rsa.RISCV64.Keys.Frame B w gcdArrs [96, 104, X0, X1] s.mem t.mem ∧
       num t.mem B w aG = (if (if num s.mem B w aV % 2 = 0 then num s.mem B w aU else num s.mem B w aV) ≤ 1
         then 1 else Nat.gcd (if num s.mem B w aV % 2 = 0 then num s.mem B w aV else num s.mem B w aU)
           (if num s.mem B w aV % 2 = 0 then num s.mem B w aU else num s.mem B w aV)) ∧
@@ -579,7 +579,7 @@ theorem lcmPart_ok [VG.Proof.Rsa.RISCV64.InvLaw] {s0 s : State} {used : List Nat
     · simp only [e, ↓reduceIte]; exact Nat.gcd_pos_of_pos_right _ (by omega)
   refine WP.mono (divBy_ok h3 (q := aL) (d := aG) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) d3 gpos) fun t ⟨ht, ft, vt, dt, kt⟩ => ?_
-  obtain F : VG.Proof.Rsa.RISCV64.Keys.Frame (bOf s0) (wOf s0) lcmArrs [96, X0, X1, X2] s.mem t.mem :=
+  obtain F : VG.Proof.Rsa.RISCV64.Keys.Frame (bOf s0) (wOf s0) lcmArrs [96, 104, X0, X1, X2] s.mem t.mem :=
     ((f1.mono.trans f2.mono).trans f3.mono).trans ft.mono
   obtain K : Keep stRegs s t := (((kp.trans k2).trans k3).trans kt).mono (by simp)
   refine ⟨c.step ht F (by decide) (by decide) K, fun j hj hn => F.num (j := j) (fun k hk e => hn (e ▸ hk))
