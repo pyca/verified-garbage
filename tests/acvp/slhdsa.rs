@@ -2,7 +2,7 @@
 //! vector of key generation (the private and public key of each triple of
 //! seeds), and of pure signature generation (hedged, with the vector's
 //! `addrnd`, and deterministic) and verification, with the message and its
-//! context string, from the downloaded files ([`super::fetched`]).
+//! context string, from the downloaded files (`fetched!`).
 //! HashSLH-DSA and the internal interface (`M′` given) are not provided, so
 //! their vectors are skipped.
 
@@ -95,10 +95,7 @@ macro_rules! slhdsa_tests {
 
         #[test]
         fn keygen() {
-            let Some(json) = super::fetched("SLH-DSA-keyGen-FIPS205/internalProjection.json")
-            else {
-                return;
-            };
+            let json = fetched!("SLH-DSA-keyGen-FIPS205/internalProjection.json");
             let mut count = 0;
             for g in groups::<KeyGen>($name, &json) {
                 for t in &g.tests {
@@ -114,10 +111,7 @@ macro_rules! slhdsa_tests {
 
         #[test]
         fn siggen() {
-            let Some(json) = super::fetched("SLH-DSA-sigGen-FIPS205/internalProjection.json")
-            else {
-                return;
-            };
+            let json = fetched!("SLH-DSA-sigGen-FIPS205/internalProjection.json");
             let mut count = 0;
             for g in groups::<SigGen>($name, &json) {
                 for t in &g.tests {
@@ -139,10 +133,7 @@ macro_rules! slhdsa_tests {
 
         #[test]
         fn sigver() {
-            let Some(json) = super::fetched("SLH-DSA-sigVer-FIPS205/internalProjection.json")
-            else {
-                return;
-            };
+            let json = fetched!("SLH-DSA-sigVer-FIPS205/internalProjection.json");
             let mut count = 0;
             for g in groups::<SigVer>($name, &json) {
                 for t in &g.tests {

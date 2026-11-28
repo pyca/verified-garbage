@@ -4,9 +4,10 @@
 //! under `vectors/nist-acvp/` (see `vectors/sources/` for where each one comes
 //! from) and read at run time (`tests/vectors.rs`), so these tests always run.
 //! The files of a set too large to vendor (SLH-DSA's) are listed in
-//! `ci/acvp_vectors.toml`, with their SHA-256, and read from the directory `ci/fetch_acvp_vectors.py` downloads
-//! them to, named by `ACVP_ROOT` ([`fetched`]); if it is not set, the tests
-//! of those files are skipped (CI always sets it).
+//! `ci/acvp_vectors.toml`, with their SHA-256, and read from the directory
+//! `ci/fetch_acvp_vectors.py` downloads them to, named by `ACVP_ROOT`
+//! (`fetched!`); if it is not set, the tests of those files are skipped (CI
+//! always sets it).
 
 /// The environment variable naming the directory of the downloaded ACVP
 /// files. A relative path is relative to the crate root. Built only for the
@@ -15,18 +16,34 @@
 pub const ROOT_VAR: &str = "ACVP_ROOT";
 
 /// The text of the downloaded file `path` (as `ci/acvp_vectors.toml` names
-/// it), or `None` if `ACVP_ROOT` is not set (the test is then skipped).
+/// it), or `None` if `ACVP_ROOT` is not set.
 #[cfg(target_arch = "x86_64")]
 pub fn fetched(path: &str) -> Option<String> {
-    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join(std::env::var_os(ROOT_VAR)?);
-    let file = root.join(path);
-    let text = std::fs::read_to_string(&file);
-    Some(text.unwrap_or_else(|e| {
-        panic!(
-            "reading {}: {e} (see ci/fetch_acvp_vectors.py)",
-            file.display()
-        )
-    }))
+    let file = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join(std::env::var_os(ROOT_VAR)?)
+        .join(path);
+    Some(
+        std::fs::read_to_string(&file)
+            .unwrap_or_else(|e| panic!("reading {}: {e}", file.display())),
+    )
+}
+
+/// The text of the downloaded file `$path` ([`fetched`]), or, if `ACVP_ROOT`
+/// is not set, a return from the calling test, which is then skipped.
+#[cfg(target_arch = "x86_64")]
+macro_rules! fetched {
+    ($path:expr) => {
+        match $crate::acvp::fetched($path) {
+            Some(text) => text,
+            None => {
+                eprintln!(
+                    "skipping: set {} (ci/fetch_acvp_vectors.py)",
+                    $crate::acvp::ROOT_VAR
+                );
+                return;
+            }
+        }
+    };
 }
 
 mod mldsa;
