@@ -2,7 +2,7 @@ name = "VerifiedGarbage"
 # Resolve the compiled libraries before the broad library glob. Otherwise
 # Lake can first assign one of these modules to VerifiedGarbage, then try to
 # load a native library (which includes that same module) while compiling it.
-defaultTargets = ["NativeAuditRecords", "NativeTCB", "NativeTCBX86_64", "NativeTCBX86", "NativeTCBAArch64", "NativeTCBArm",
+defaultTargets = ["NativeAuditRecords", "ProofBounds", "NativeTCB", "NativeTCBX86_64", "NativeTCBX86", "NativeTCBAArch64", "NativeTCBArm",
   "NativeTCBPPC64LE", "NativeTCBRISCV64", "NativeSpec", "NativeForward", "NativeHintSearch", "NativeCodeOnce",
   "NativeScrubX86_64", "NativeScrubAArch64",
   "VerifiedGarbage", "VerifiedGarbageTest", "AuditBase"]
@@ -92,11 +92,10 @@ globs = ["VerifiedGarbage.+"]
 # shared library out of the trace (it is still loaded), so a module is
 # rebuilt only when something it imports changes.
 platformIndependent = true
-# Writes the audit records of each module (`NativeAuditRecords`). Lake leaves
-# the plugin out of the trace too (`platformIndependent`), but not `needs`: a
-# module is rebuilt when the plugin changes, which changes its records.
-plugins = ["NativeAuditRecords:shared"]
-needs = ["NativeAuditRecords:shared"]
+# Lake omits plugins from a platform-independent trace. Track them as `needs`
+# so a change to the audit records or the proof linter rechecks the modules.
+plugins = ["NativeAuditRecords:shared", "ProofBounds:shared"]
+needs = ["NativeAuditRecords:shared", "ProofBounds:shared"]
 
 [[lean_lib]]
 name = "VerifiedGarbageTest"
@@ -105,6 +104,16 @@ globs = ["VerifiedGarbageTest.+"]
 platformIndependent = true
 plugins = ["NativeAuditRecords:shared"]
 needs = ["NativeAuditRecords:shared"]
+
+# Loaded while compiling the libraries that contain proof modules. The linter
+# examines each module's own theorem statements once, including private ones.
+[[lean_lib]]
+name = "ProofBounds"
+libName = "VerifiedGarbage_VerifiedGarbage_Proof_Framework_ConflictingBounds"
+roots = []
+globs = ["VerifiedGarbage.Proof.Framework.ConflictingBounds"]
+precompileModules = true
+defaultFacets = ["shared"]
 
 # The known-answer tests (`VerifiedGarbageTest`) evaluate the specifications,
 # which is an order of magnitude faster in compiled code than in the
@@ -154,7 +163,7 @@ precompileModules = true
 [[lean_lib]]
 name = "NativeTactics"
 # Writes the audit records of each module (`NativeAuditRecords`).
-plugins = ["NativeAuditRecords:shared"]
+plugins = ["NativeAuditRecords:shared", "ProofBounds:shared"]
 roots = []
 globs = ["VerifiedGarbage.Proof.Framework.SigEval", "VerifiedGarbage.Proof.Framework.Lit",
   "VerifiedGarbage.Proof.Framework.LitShare", "VerifiedGarbage.Proof.Framework.LitHidden",
@@ -290,7 +299,7 @@ defaultFacets = ["shared"]
 [[lean_lib]]
 name = "NativeForward"
 # Writes the audit records of each module (`NativeAuditRecords`).
-plugins = ["NativeAuditRecords:shared"]
+plugins = ["NativeAuditRecords:shared", "ProofBounds:shared"]
 roots = []
 globs = ["VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Data"]
 precompileModules = true
@@ -299,7 +308,7 @@ precompileModules = true
 [[lean_lib]]
 name = "NativeHintSearch"
 # Writes the audit records of each module (`NativeAuditRecords`).
-plugins = ["NativeAuditRecords:shared"]
+plugins = ["NativeAuditRecords:shared", "ProofBounds:shared"]
 roots = []
 globs = ["VerifiedGarbage.Proof.Framework.RegSet", "VerifiedGarbage.Proof.Framework.Slots", "VerifiedGarbage.Proof.Framework.NativeHintOps", "VerifiedGarbage.Proof.Framework.X86.NativeHintData", "VerifiedGarbage.Proof.Framework.Arm.NativeHintData"]
 precompileModules = true
@@ -322,7 +331,7 @@ precompileModules = true
 [[lean_lib]]
 name = "NativeScrubX86_64"
 # Writes the audit records of each module (`NativeAuditRecords`).
-plugins = ["NativeAuditRecords:shared"]
+plugins = ["NativeAuditRecords:shared", "ProofBounds:shared"]
 roots = []
 globs = ["VerifiedGarbage.Proof.Framework.CodeOnce", "VerifiedGarbage.Impl.Scrub.X86_64",
   "VerifiedGarbage.Proof.Framework.X86_64.ScrubChecks", "VerifiedGarbage.Proof.Framework.X86_64.ScrubPaths"]
