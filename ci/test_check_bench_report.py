@@ -9,6 +9,7 @@ import tempfile
 import unittest
 
 import bench_report
+import bench_run
 
 
 def criterion(root, group, library, size, median):
@@ -79,11 +80,10 @@ class Page(unittest.TestCase):
         self.assertEqual([f["name"] for f in files], ["a", "b"])
 
     def test_lscpu_model(self):
-        import bench_compare
-        self.assertEqual(bench_compare.lscpu_model("Architecture: aarch64\nVendor ID: ARM\nModel name: Neoverse-N2\n"),
+        self.assertEqual(bench_run.lscpu_model("Architecture: aarch64\nVendor ID: ARM\nModel name: Neoverse-N2\n"),
                          "Neoverse-N2")
-        self.assertIsNone(bench_compare.lscpu_model("Model name: -\n"))
-        self.assertIsNone(bench_compare.lscpu_model("Architecture: riscv64\n"))
+        self.assertIsNone(bench_run.lscpu_model("Model name: -\n"))
+        self.assertIsNone(bench_run.lscpu_model("Architecture: riscv64\n"))
 
     def test_load_rejects_other_json(self):
         with tempfile.TemporaryDirectory() as tmp:

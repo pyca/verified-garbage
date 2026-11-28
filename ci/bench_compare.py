@@ -132,7 +132,6 @@ import time
 import bench_report
 import bench_run
 from bench_arches import NAMES, QUOTED, bench_catalog
-from bench_run import cpu_model, lscpu_model  # noqa: F401 (theirs, and their users')
 
 # Criterion filters (regexes over benchmark ids, which are
 # `<primitive>/<library>/<bytes>`, see bench/benches/primitives/main.rs).
@@ -609,7 +608,7 @@ def main():
             keep_fastest(runs)
     except Lacking as e:
         # The first run of either side stops, before any other.
-        report = not_measured(os.environ.get("VG_CPU_FEATURES", ""), e.args[0], cpu_model())
+        report = not_measured(os.environ.get("VG_CPU_FEATURES", ""), e.args[0], bench_run.cpu_model())
         print(f"::warning::{report.splitlines()[-1]}")
         print(report)
         if args.summary:
@@ -778,7 +777,7 @@ def main():
                     for (primitive, size), t in sorted(times.items(), key=lambda kv: bench_key(kv[0]))]
         context = {
             "arch": args.arch or bench_report.arch_name(),
-            "cpu": cpu_model(),
+            "cpu": bench_run.cpu_model(),
             "cpu_features": cpu_features,
             "os": platform.system(),
             "shard": args.shard or None,
