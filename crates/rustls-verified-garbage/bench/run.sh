@@ -4,8 +4,9 @@
 # (default 2), into $BENCH_OUT (default target/bench-results), and writes
 # the results there as a results file of ci/bench_report.py's format,
 # rustls-bench.json (bench/results.py, with the context it records as the
-# run starts), which `python3 ci/bench_report.py html` charts. Linux only
-# (`taskset`).
+# run starts), which `python3 ci/bench_report.py html` charts. Where there
+# is no `taskset` (macOS) and no $BENCH_CPU, it runs on whichever CPUs the
+# system chooses.
 #
 # To measure an older CPU class on a newer x86-64 machine, restrict both
 # libraries' CPU features: verified-garbage's with VG_CPU_FEATURES (the
@@ -26,6 +27,8 @@ rustls=$here/../../target/rustls
 out=${BENCH_OUT:-$here/../../target/bench-results}
 cpu=${BENCH_CPU:-2}
 rounds=${1:-5}
+pin="taskset -c $cpu"
+command -v taskset >/dev/null || [ -n "${BENCH_CPU:-}" ] || pin=
 
 [ -d "$rustls" ] || "$here/rustls/setup.sh" "$rustls"
 (cd "$rustls" && cargo build --profile=bench -p rustls-bench --features aws-lc-rs,verified-garbage)
@@ -34,7 +37,7 @@ python3 "$here/bench/results.py" --start "$out"
 for r in $(seq 1 "$rounds"); do
     for p in aws-lc-rs verified-garbage; do
         echo "rustls-bench $p, round $r" >&2
-        taskset -c "$cpu" "$rustls/target/release/rustls-bench" --provider "$p" --api buffered \
+        $pin "$rustls/target/release/rustls-bench" --provider "$p" --api buffered \
             > "$out/rustls-bench-$p-$r.tsv"
     done
 done
