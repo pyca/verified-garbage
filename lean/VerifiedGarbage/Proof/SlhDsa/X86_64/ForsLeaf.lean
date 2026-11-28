@@ -3,7 +3,8 @@ module
 -- separate module: the leaves, which the later stages of the proof (`ForsTree`, `ForsSub`) do not rebuild when they change
 
 public import VerifiedGarbage.Proof.SlhDsa.X86_64.LevelsCorrect
-public import VerifiedGarbage.Proof.SlhDsa.X86_64.ForsSpec
+public import VerifiedGarbage.Proof.SlhDsa.ForsSpec
+public import VerifiedGarbage.Proof.SlhDsa.X86_64.WotsBlocks
 public import VerifiedGarbage.Impl.SlhDsa.X86_64.Fors
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset

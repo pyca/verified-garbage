@@ -12,12 +12,12 @@
 /// The environment variable naming the directory of the downloaded ACVP
 /// files. A relative path is relative to the crate root. Built only for the
 /// architectures of the tests that read them (SLH-DSA's).
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 pub const ROOT_VAR: &str = "ACVP_ROOT";
 
 /// The text of the downloaded file `path` (as `ci/acvp_vectors.toml` names
 /// it), or `None` if `ACVP_ROOT` is not set.
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 pub fn fetched(path: &str) -> Option<String> {
     let file = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
         .join(std::env::var_os(ROOT_VAR)?)
@@ -30,7 +30,7 @@ pub fn fetched(path: &str) -> Option<String> {
 
 /// The text of the downloaded file `$path` ([`fetched`]), or, if `ACVP_ROOT`
 /// is not set, a return from the calling test, which is then skipped.
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 macro_rules! fetched {
     ($path:expr) => {
         match $crate::acvp::fetched($path) {

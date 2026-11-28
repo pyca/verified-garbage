@@ -3,6 +3,7 @@ module
 -- separate module: the calling convention of `forsPk`, which its constant-time proof builds on
 
 public import VerifiedGarbage.Proof.SlhDsa.X86_64.VerifyPkForsMain
+public import VerifiedGarbage.Proof.SlhDsa.VerifyTopSpec
 public import VerifiedGarbage.Proof.SlhDsa.X86_64.VerifyPkXmssV
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
@@ -60,17 +61,6 @@ theorem forsPk_depth (p : Params) (f : Impl.SlhDsa.X86_64.Shake.Fns) :
   simp [Impl.SlhDsa.X86_64.Verify.forsPk, Impl.SlhDsa.X86_64.Verify.forsGroup,
     Impl.SlhDsa.X86_64.Verify.forsLeaves, Impl.SlhDsa.X86_64.Verify.forsUp, Impl.SlhDsa.X86_64.Verify.forsUpLane,
     Impl.SlhDsa.X86_64.Fors.pkFors, Impl.SlhDsa.X86_64.thashCall, Code.depth]
-
-/-- The parameters `forsPk` is proved for: SHAKE, `n` of 16, 24 or 32 bytes,
-`1 ≤ a ≤ 14`, `1 ≤ k ≤ 35`. -/
-structure FPar (p : Params) : Prop where
-  n : p.n = 16 ∨ p.n = 24 ∨ p.n = 32
-  fam : p.family = .shake
-  a1 : 1 ≤ p.a
-  a : p.a ≤ 14
-  k1 : 1 ≤ p.k
-  k : p.k ≤ 35
-  md : p.mdLen + 2 ≤ 64
 
 /-- `forsPk`, from its precondition: an execution to its postcondition that
 keeps the calling convention. -/

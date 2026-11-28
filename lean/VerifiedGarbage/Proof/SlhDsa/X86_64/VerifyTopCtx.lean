@@ -1,6 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.SlhDsa.X86_64.VerifyTopSpec
+public import VerifiedGarbage.Proof.SlhDsa.VerifyTopSpec
+public import VerifiedGarbage.Proof.SlhDsa.X86_64.VerifyPkForsCTBase
 public import VerifiedGarbage.Proof.SlhDsa.X86_64.Contracts
 public import VerifiedGarbage.Impl.SlhDsa.X86_64.Verify
 import VerifiedGarbage.Proof.Framework.Omega

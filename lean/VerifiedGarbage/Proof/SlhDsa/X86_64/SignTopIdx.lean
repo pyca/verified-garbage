@@ -3,7 +3,7 @@ module
 -- separate module: the digest parsed to the tree and leaf indices and the lanes' addresses, apart from the calls' proofs
 
 public import VerifiedGarbage.Proof.SlhDsa.X86_64.SignTopCtx
-public import VerifiedGarbage.Proof.SlhDsa.X86_64.SignTopSpec
+public import VerifiedGarbage.Proof.SlhDsa.SignTopSpec
 public import VerifiedGarbage.Proof.SlhDsa.X86_64.KeyGenPro
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset

@@ -378,6 +378,24 @@ pub mod sha3;
 pub mod sha512;
 
 #[rustfmt::skip]
+pub mod slhdsa_shake_128f;
+
+#[rustfmt::skip]
+pub mod slhdsa_shake_128s;
+
+#[rustfmt::skip]
+pub mod slhdsa_shake_192f;
+
+#[rustfmt::skip]
+pub mod slhdsa_shake_192s;
+
+#[rustfmt::skip]
+pub mod slhdsa_shake_256f;
+
+#[rustfmt::skip]
+pub mod slhdsa_shake_256s;
+
+#[rustfmt::skip]
 pub mod sm3;
 
 #[rustfmt::skip]

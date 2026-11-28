@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 
 The loop of `pathBody` (`Impl/SlhDsa/X86_64/Verify.lean`) from height 0 to
 `h′`: with the WOTS⁺ public key first in lane 0 of `A`'s message, it leaves
-there the root the path gives (`path`, `Proof/SlhDsa/X86_64/VerifyPkSpec.lean`),
+there the root the path gives (`path`, `Proof/SlhDsa/VerifySpec.lean`),
 from the authentication path, the `h′·n` bytes after the WOTS⁺ signature at
 `sig`, which is read only.
 -/

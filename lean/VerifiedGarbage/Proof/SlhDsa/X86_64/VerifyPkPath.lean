@@ -4,7 +4,7 @@ module
 
 public import VerifiedGarbage.Proof.SlhDsa.X86_64.VerifyPkCall
 public import VerifiedGarbage.Proof.SlhDsa.X86_64.Contracts
-public import VerifiedGarbage.Proof.SlhDsa.X86_64.VerifyPkSpec
+public import VerifiedGarbage.Proof.SlhDsa.VerifySpec
 public import VerifiedGarbage.Proof.SlhDsa.X86_64.LevelsBase
 public import VerifiedGarbage.Proof.SlhDsa.X86_64.WotsBlocks
 public import VerifiedGarbage.Impl.SlhDsa.X86_64.Verify
