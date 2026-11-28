@@ -130,7 +130,9 @@ import sys
 import time
 
 import bench_report
+import bench_run
 from bench_arches import NAMES, QUOTED, bench_catalog
+from bench_run import cpu_model, lscpu_model  # noqa: F401 (theirs, and their users')
 
 # Criterion filters (regexes over benchmark ids, which are
 # `<primitive>/<library>/<bytes>`, see bench/benches/primitives/main.rs).
@@ -205,28 +207,11 @@ def stage(checkout, bench=None):
 def build(checkout, bench=None):
     """Builds `checkout`'s library with the benchmark crate `bench`
     (`checkout`'s own by default) at `STAGE`, returning the binary's path."""
-    out = subprocess.run(
-        [
-            "cargo",
-            "bench",
-            "--no-run",
-            "--message-format=json-render-diagnostics",
-        ],
-        cwd=stage(checkout, bench),
-        env={**os.environ, "CARGO_TARGET_DIR": str(TARGET)},
-        check=True,
-        stdout=subprocess.PIPE,
-        text=True,
-    ).stdout
-    for line in out.splitlines():
-        msg = json.loads(line)
-        if msg.get("reason") == "compiler-artifact" and msg.get("executable"):
-            if msg["target"]["name"] == "primitives":
-                # A copy, which the next build can't overwrite.
-                binary = TARGET / f"primitives-{len(list(TARGET.glob('primitives-*')))}"
-                shutil.copy2(msg["executable"], binary)
-                return str(binary)
-    raise RuntimeError(f"no benchmark binary built for {checkout}")
+    built = bench_run.build(stage(checkout, bench), {**os.environ, "CARGO_TARGET_DIR": str(TARGET)})
+    # A copy, which the next build can't overwrite.
+    binary = TARGET / f"primitives-{len(list(TARGET.glob('primitives-*')))}"
+    shutil.copy2(built, binary)
+    return str(binary)
 
 
 # The executable format of each `--arch` (ci/bench_arches.py's platforms):
@@ -265,10 +250,7 @@ def check_arch(binary, arch):
 def fresh_copy(binary, i):
     """A copy of `binary` in a new file: the page cache holds a file's pages
     by inode, so the copy's table is read into newly chosen physical pages."""
-    copy = TARGET / f"{pathlib.Path(binary).name}-copy-{i}"
-    shutil.copyfile(binary, copy)
-    copy.chmod(0o755)
-    return copy
+    return bench_run.fresh_copy(binary, TARGET / f"{pathlib.Path(binary).name}-copy-{i}")
 
 
 def build_base(base, head):
@@ -429,15 +411,13 @@ def run(binary, home, library, args, checkout, modules, groups=None, bench=None)
     pattern = f"/{library}/"
     if groups is not None:
         pattern = f"^(?:{'|'.join(map(re.escape, groups))})/{library}/"
-    proc = subprocess.run(
+    proc = bench_run.criterion(
+        binary,
+        home,
+        args.warm_up_time,
+        args.measurement_time,
         [
-            binary,
-            "--bench",
             "--noplot",
-            "--warm-up-time",
-            str(args.warm_up_time),
-            "--measurement-time",
-            str(args.measurement_time),
             # Criterion's default 100 samples cannot fit in a short
             # measurement once an iteration takes more than a few
             # milliseconds (PBKDF2 at 16384 iterations, signatures), so
@@ -452,16 +432,12 @@ def run(binary, home, library, args, checkout, modules, groups=None, bench=None)
             "1000",
             pattern,
         ],
-        env={
+        {
             **os.environ,
-            "CRITERION_HOME": str(home),
             "VG_BENCH_MODULES": modules,
             "VG_BENCHES": bench or "",
             "VG_CPU_FEATURES": cpu_features(checkout),
         },
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.PIPE,
-        text=True,
     )
     sys.stderr.write(proc.stderr)
     if proc.returncode:
@@ -492,36 +468,6 @@ def read_times(home, library):
         primitive, _, size = est.relative_to(home).parts[:3]
         times[primitive, bench_size(size)] = json.loads(est.read_text())["median"]["point_estimate"]
     return times
-
-
-def cpu_model():
-    """This machine's CPU model, from /proc/cpuinfo (or, on macOS, `sysctl`),
-    or None."""
-    try:
-        cpuinfo = pathlib.Path("/proc/cpuinfo").read_text()
-    except OSError:
-        try:
-            out = subprocess.run(["sysctl", "-n", "machdep.cpu.brand_string"], capture_output=True,
-                                 text=True, check=True).stdout.strip()
-        except (OSError, subprocess.CalledProcessError):
-            return None
-        return out or None
-    m = re.search(r"^model name\s*:\s*(.+)$", cpuinfo, re.M)
-    if m:
-        return m[1].strip()
-    # Arm's /proc/cpuinfo names only the parts' numbers; lscpu names them.
-    try:
-        out = subprocess.run(["lscpu"], capture_output=True, text=True, check=True).stdout
-    except (OSError, subprocess.CalledProcessError):
-        return None
-    return lscpu_model(out)
-
-
-def lscpu_model(out):
-    """The CPU model `lscpu` printed in `out` (the first, on a machine of
-    several kinds of core), or None."""
-    m = re.search(r"^Model name\s*:\s*(.+)$", out, re.M)
-    return m[1].strip() if m and m[1].strip() != "-" else None
 
 
 def not_measured(cpu_features, lacking, model):
