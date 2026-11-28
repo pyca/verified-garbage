@@ -14,8 +14,12 @@ def validateArgs (pLen qLen : Nat) : List Instr :=
    .add .x .x0 .x0 .x3, movi .x3 VG.Impl.Dsa.Generation.Layout.domainCheck,
    .add .x .x4 .x4 .x3, movi .x2 pLen, movi .x3 qLen]
 
-def validate (mul : Nat → Nat → Nat → Prog isa) (pLen qLen : Nat) : Prog isa :=
-  .seq (.seq (.block (validateArgs pLen qLen)) (Generate.checkParameters mul))
+/-- Share the domain checker across the generator's parameter sizes. -/
+def validateCall (mul : Nat → Nat → Nat → Prog isa) (suffix : String) : Prog isa :=
+  .call ("vg_dsa_generated_domain_check" ++ suffix) (Generate.checkParameters mul)
+
+def validate (mul : Nat → Nat → Nat → Prog isa) (pLen qLen : Nat) (suffix : String) : Prog isa :=
+  .seq (.seq (.block (validateArgs pLen qLen)) (validateCall mul suffix))
     (.ite (.zero .x .x0) (.block (stackStatus 2)) (.block (stackStatus 1)))
 
 end VG.Impl.Dsa.AArch64.Generation
