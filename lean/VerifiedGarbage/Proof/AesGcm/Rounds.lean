@@ -258,6 +258,11 @@ theorem preparedPowers16Repr_of {m : Mem} {p : Addr} (h : Spec.Gcm.PreparedPower
     Spec.Gcm.PreparedPowers16Repr m p :=
   fun k hk => h k (by omega_using [hk])
 
+/-- A context of 8 prepared pairs holds the first 4. -/
+theorem preparedPowers8Repr_of {m : Mem} {p : Addr} (h : Spec.Gcm.PreparedPowers16Repr m p) :
+    Spec.Gcm.PreparedPowers8Repr m p :=
+  fun k hk => h k (by omega_using [hk])
+
 /-- The unchanged `sealRoundsContract` postcondition with 16 prepared powers. -/
 def sealPrepared16RoundsContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   Proof.Gcm.sealPrecomputedSig.contract A (pre := Proof.Gcm.sealPrepared16Pre A.ptrBits)

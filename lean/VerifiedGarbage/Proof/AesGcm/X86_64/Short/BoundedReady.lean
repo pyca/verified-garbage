@@ -39,7 +39,7 @@ abbrev Small (s : State) := IsShort (NL s) (AL s).toNat (L s)
 
 theorem fullExt (p : Layout (CtxMode.flaggedT 48) s) :
     CtxExt CtxMode.prepared (K s) (W s+16#64) (W s) (SP s) (Dst s) (L s) s :=
-  { p.preparedExt (by decide) with ok := p.ok.2.2 p.ok.1 }
+  { p.preparedExt (by decide) with ok := p.ok.2.2.2 p.ok.1 }
 
 theorem runDescriptor (p : Layout (CtxMode.flaggedT 48) s) (hf : ShortFacts)
     (c : Cnt s=1 ∨ Cnt s=2) (sh : Small s) (u : State) (hu : ArgsReady s u) : CallRun u (BodyDone (CtxMode.flaggedT 48) s) :=

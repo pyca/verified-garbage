@@ -281,12 +281,12 @@ theorem openSpecF_pre {t : Nat} {s : State} (h : openPreK (CtxMode.flaggedT t) s
   simp only [Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.ret, X86_64.stackArg,
     X86_64.stackArgAddr, VG.X86_64.below, Nat.mul_one, Proof.AesGcm.rounds, CtxMode.flaggedT, Spec.Gcm.PreparedRepr,
     Spec.Gcm.powerCount, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowersRepr,
-    Spec.Gcm.PreparedPowers16Repr] at *
+    Spec.Gcm.PreparedPowers16Repr, Spec.Gcm.PreparedPowers8Repr] at *
   sig_and_intros
   all_goals first
     | with_reducible assumption
     | omega
-    | exact ⟨by assumption, by assumption⟩
+    | exact ⟨by assumption, by assumption, by assumption⟩
 theorem openSpecF_post {t : Nat} {s s' : State} (hR : rounds s)
     (h : (Proof.AesGcm.Flag.openRoundsContractB t X86_64.abi 2632).post s s') :
     Proof.AesGcm.openX86_64.post s s' := by

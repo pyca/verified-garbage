@@ -43,7 +43,7 @@ theorem Same.abi {s u s' : State} (h : Same s u) (a : abiPreserved u s') : abiPr
 
 /-- `testFlag t` from `s`: it reads the word at `rdi + 1024`, and clears CF if
 it is at least `t`. -/
-theorem testFlag_run {t : Nat} (htv : t = 16 ∨ t = 48) (s : State)
+theorem testFlag_run {t : Nat} (htv : t = 8 ∨ t = 16 ∨ t = 48) (s : State)
     (hin : InRegions (s.rd ++ s.wr) (s.gpr .rdi + 1024) 8) :
     ∃ u, execBlock isa (testFlag t) s = some (u, [.addr (s.gpr .rdi + 1024)]) ∧ Same s u ∧
       eval .ae u = some (decide (t ≤ (s.mem.readW (s.gpr .rdi + 1024) 64).toNat)) := by
@@ -62,7 +62,7 @@ theorem testFlag_run {t : Nat} (htv : t = 16 ∨ t = 48) (s : State)
   case h7 =>
     simp only [eval, cf_arithFlags, gpr_setReg, ↓reduceIte, Option.map_some]
     have e : ((BitVec.ofNat 32 t).signExtend 64).toNat = t := by
-      rcases htv with rfl | rfl <;> rfl
+      rcases htv with rfl | rfl | rfl <;> rfl
     simp only [e, Option.some.injEq]
     generalize (s.mem.readW _ 64).toNat = x
     by_cases h : t ≤ x <;> simp [h] <;> omega_using [h]
@@ -137,7 +137,7 @@ precondition, the count at `rdi + 1024` is readable, and `k₁`'s precondition
 holds if it is at least `t` and `k₂`'s if not; and two runs with the same
 public data have the same `rdi` and agree on whether the count is at least
 `t`, and have the same public data for `k₁` and `k₂`. -/
-theorem Verified.of_onFlag {t : Nat} (htv : t = 16 ∨ t = 48) {c₁ c₂ : Prog isa} {pre₁ pre₂ : Curry (sig.words 64) (Mem → Prop)}
+theorem Verified.of_onFlag {t : Nat} (htv : t = 8 ∨ t = 16 ∨ t = 48) {c₁ c₂ : Prog isa} {pre₁ pre₂ : Curry (sig.words 64) (Mem → Prop)}
     {leak₁ leak₂ : Option (Curry (sig.words 64) (Mem → List Nat))}
     (h₁ : Verified target c₁ (sig.contract abi pre₁ post wa stack leak₁))
     (h₂ : Verified target c₂ (sig.contract abi pre₂ post wa stack leak₂))
@@ -188,22 +188,24 @@ theorem abi_args_rdi {ws : List Nat} {vals : State → List (BitVec 64)}
   · exact ⟨_, rfl⟩
 
 /-- What the count at `ctx + 1024` leaks: whether it is at least 48, at least
-16, or less. -/
+16, at least 8, or less. -/
 abbrev flagLeak (m : Mem) (ctx : Addr) : Nat :=
-  if 48 ≤ (m.readW (ctx + 1024) 64).toNat then 2
-  else if 16 ≤ (m.readW (ctx + 1024) 64).toNat then 1 else 0
+  if 48 ≤ (m.readW (ctx + 1024) 64).toNat then 3
+  else if 16 ≤ (m.readW (ctx + 1024) 64).toNat then 2
+  else if 8 ≤ (m.readW (ctx + 1024) 64).toNat then 1 else 0
 
-/-- Two counts of the same `flagLeak` are both at least 16, or both not, and
-both at least 48, or both not. -/
-theorem flagLeak_iff {t : Nat} (htv : t = 16 ∨ t = 48) {m m' : Mem} {p p' : Addr}
+/-- Two counts of the same `flagLeak` are both at least `t`, or both not, for
+`t` of 8, 16 or 48. -/
+theorem flagLeak_iff {t : Nat} (htv : t = 8 ∨ t = 16 ∨ t = 48) {m m' : Mem} {p p' : Addr}
     (h : flagLeak m p = flagLeak m' p') :
     t ≤ (m.readW (p + 1024) 64).toNat ↔ t ≤ (m'.readW (p' + 1024) 64).toNat := by
   simp only [flagLeak] at h
   generalize (m.readW (p + 1024) 64).toNat = a at h ⊢
   generalize (m'.readW (p' + 1024) 64).toNat = b at h ⊢
   by_cases h48a : 48 ≤ a <;> by_cases h48b : 48 ≤ b <;> by_cases h16a : 16 ≤ a <;>
-    by_cases h16b : 16 ≤ b <;> simp only [h48a, h48b, h16a, h16b, ↓reduceIte] at h <;>
-    rcases htv with rfl | rfl <;> omega
+    by_cases h16b : 16 ≤ b <;> by_cases h8a : 8 ≤ a <;> by_cases h8b : 8 ≤ b <;>
+    simp only [h48a, h48b, h16a, h16b, h8a, h8b, ↓reduceIte] at h <;>
+    rcases htv with rfl | rfl | rfl <;> omega
 
 /-- What the count at `ctx + 1024` leaks to code that tests it against `t`
 alone: whether it is at least `t`. -/
@@ -216,8 +218,8 @@ theorem flagBit_iff {t : Nat} {m m' : Mem} {p p' : Addr} (h : flagBit t m p = fl
   by_cases a : t ≤ (m.readW (p + 1024) 64).toNat <;> by_cases b : t ≤ (m'.readW (p' + 1024) 64).toNat <;>
     simp only [a, b, ↓reduceIte] at h <;> first | exact absurd h (by decide) | simp only [a, b]
 
-/-- Two counts of the same `flagLeak` have the same `flagBit` of 16 or 48. -/
-theorem flagBit_of_flagLeak {t : Nat} (htv : t = 16 ∨ t = 48) {m m' : Mem} {p p' : Addr}
+/-- Two counts of the same `flagLeak` have the same `flagBit` of 8, 16 or 48. -/
+theorem flagBit_of_flagLeak {t : Nat} (htv : t = 8 ∨ t = 16 ∨ t = 48) {m m' : Mem} {p p' : Addr}
     (h : flagLeak m p = flagLeak m' p') : flagBit t m p = flagBit t m' p' := by
   simp only [flagBit, flagLeak_iff htv h]
 
@@ -301,8 +303,8 @@ theorem flag_inRegions (hN : 129 ≤ N) {pre : Curry ((firstArraySigB name w .u6
 
 /-- `Verified.of_onFlag` for a first argument that is an array of `N ≥ 129` words: the preconditions as relations between curried functions of the
 other arguments, given the first; and `leak`, `leak₁`'s (none: nothing)
-after `flagLeak`, the class of the count, for a threshold `t` of 16 or 48. -/
-theorem Verified.of_onFlagCtxL {t : Nat} (htv : t = 16 ∨ t = 48) (L : Mem → Addr → Nat)
+after `flagLeak`, the class of the count, for a threshold `t` of 8, 16 or 48. -/
+theorem Verified.of_onFlagCtxL {t : Nat} (htv : t = 8 ∨ t = 16 ∨ t = 48) (L : Mem → Addr → Nat)
     (hL : ∀ {m m' : Mem} {p p' : Addr}, L m p = L m' p' →
       (t ≤ (m.readW (p + 1024) 64).toNat ↔ t ≤ (m'.readW (p' + 1024) 64).toNat))
     (hN : 129 ≤ N) {c₁ c₂ : Prog isa}
@@ -365,7 +367,7 @@ theorem Verified.of_onFlagCtxL {t : Nat} (htv : t = 16 ∨ t = 48) (L : Mem → 
     exact hL hf
 
 /-- `Verified.of_onFlagCtxL` leaking `flagLeak`, the class of the count. -/
-theorem Verified.of_onFlagCtx {t : Nat} (htv : t = 16 ∨ t = 48) (hN : 129 ≤ N) {c₁ c₂ : Prog isa}
+theorem Verified.of_onFlagCtx {t : Nat} (htv : t = 8 ∨ t = 16 ∨ t = 48) (hN : 129 ≤ N) {c₁ c₂ : Prog isa}
     {pre pre₁ pre₂ : Curry ((firstArraySigB name w .u64 N rest ret).words 64) (Mem → Prop)}
     {leak₁ : Option (Curry ((firstArraySigB name w .u64 N rest ret).words 64) (Mem → List Nat))}
     {leak : Curry ((firstArraySigB name w .u64 N rest ret).words 64) (Mem → List Nat)}

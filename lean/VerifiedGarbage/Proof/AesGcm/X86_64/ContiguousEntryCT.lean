@@ -404,7 +404,7 @@ theorem plainPublic {c : Prog isa} (h : Verified target c (recordContract prepar
 theorem onPowers {t : Nat} (ht : t=16 ∨ t=48) {a b : Prog isa}
     (ha : Verified target a (recordContract (powerP t))) (hb : Verified target b (recordContract preparedP)) :
     Verified target (Impl.Gcm.X86_64.Flag.onFlag t a b) apiContract :=
-  Verified.of_onFlagCtx ht (by decide) ha hb (fun _ _ _ _ _ _ _ _ _ _ _ p hf => ⟨p.1,hf,p.2⟩)
+  Verified.of_onFlagCtx (.inr ht) (by decide) ha hb (fun _ _ _ _ _ _ _ _ _ _ _ p hf => ⟨p.1,hf,p.2⟩)
     (fun _ _ _ _ _ _ _ _ _ _ _ p _ => p) (fun _ _ _ _ _ _ _ _ _ _ _ => rfl) ⟨_,publicSat prepInhabited⟩
 
 theorem outputLocal : VG.X86_64.Scrub.PostOut apiContract 0 :=

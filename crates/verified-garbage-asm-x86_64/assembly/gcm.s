@@ -46759,6 +46759,9 @@ vg_aes_gcm_wipe_prepared_avx:
 	mov rax, QWORD PTR [rdi+1024]
 	cmp rax, 16
 	jae 22f
+	mov rax, QWORD PTR [rdi+1024]
+	cmp rax, 8
+	jae 24f
 	vpxor xmm0, xmm0, xmm0
 	vmovdqu YMMWORD PTR [rdi], ymm0
 	vmovdqu YMMWORD PTR [rdi+32], ymm0
@@ -46769,6 +46772,7 @@ vg_aes_gcm_wipe_prepared_avx:
 	vmovdqu YMMWORD PTR [rdi+192], ymm0
 	vmovdqu YMMWORD PTR [rdi+224], ymm0
 	vzeroupper
+25:
 23:
 21:
 	vpxor xmm0, xmm0, xmm0
@@ -46797,6 +46801,22 @@ vg_aes_gcm_wipe_prepared_avx:
 	xor r10d, r10d
 	xor r11d, r11d
 	ret
+24:
+	vpxor xmm0, xmm0, xmm0
+	vmovdqu YMMWORD PTR [rdi], ymm0
+	vmovdqu YMMWORD PTR [rdi+32], ymm0
+	vmovdqu YMMWORD PTR [rdi+64], ymm0
+	vmovdqu YMMWORD PTR [rdi+96], ymm0
+	vmovdqu YMMWORD PTR [rdi+128], ymm0
+	vmovdqu YMMWORD PTR [rdi+160], ymm0
+	vmovdqu YMMWORD PTR [rdi+192], ymm0
+	vmovdqu YMMWORD PTR [rdi+224], ymm0
+	vmovdqu YMMWORD PTR [rdi+256], ymm0
+	vmovdqu YMMWORD PTR [rdi+288], ymm0
+	vmovdqu YMMWORD PTR [rdi+320], ymm0
+	vmovdqu YMMWORD PTR [rdi+352], ymm0
+	vzeroupper
+	jmp 25b
 22:
 	vpxor xmm0, xmm0, xmm0
 	vmovdqu YMMWORD PTR [rdi], ymm0
@@ -46862,6 +46882,9 @@ vg_aes_gcm_wipe_prepared:
 	mov rax, QWORD PTR [rdi+1024]
 	cmp rax, 16
 	jae 22f
+	mov rax, QWORD PTR [rdi+1024]
+	cmp rax, 8
+	jae 24f
 	pxor xmm0, xmm0
 	movdqu XMMWORD PTR [rdi], xmm0
 	movdqu XMMWORD PTR [rdi+16], xmm0
@@ -46879,6 +46902,7 @@ vg_aes_gcm_wipe_prepared:
 	movdqu XMMWORD PTR [rdi+208], xmm0
 	movdqu XMMWORD PTR [rdi+224], xmm0
 	movdqu XMMWORD PTR [rdi+240], xmm0
+25:
 23:
 21:
 	pxor xmm0, xmm0
@@ -46907,6 +46931,33 @@ vg_aes_gcm_wipe_prepared:
 	xor r10d, r10d
 	xor r11d, r11d
 	ret
+24:
+	pxor xmm0, xmm0
+	movdqu XMMWORD PTR [rdi], xmm0
+	movdqu XMMWORD PTR [rdi+16], xmm0
+	movdqu XMMWORD PTR [rdi+32], xmm0
+	movdqu XMMWORD PTR [rdi+48], xmm0
+	movdqu XMMWORD PTR [rdi+64], xmm0
+	movdqu XMMWORD PTR [rdi+80], xmm0
+	movdqu XMMWORD PTR [rdi+96], xmm0
+	movdqu XMMWORD PTR [rdi+112], xmm0
+	movdqu XMMWORD PTR [rdi+128], xmm0
+	movdqu XMMWORD PTR [rdi+144], xmm0
+	movdqu XMMWORD PTR [rdi+160], xmm0
+	movdqu XMMWORD PTR [rdi+176], xmm0
+	movdqu XMMWORD PTR [rdi+192], xmm0
+	movdqu XMMWORD PTR [rdi+208], xmm0
+	movdqu XMMWORD PTR [rdi+224], xmm0
+	movdqu XMMWORD PTR [rdi+240], xmm0
+	movdqu XMMWORD PTR [rdi+256], xmm0
+	movdqu XMMWORD PTR [rdi+272], xmm0
+	movdqu XMMWORD PTR [rdi+288], xmm0
+	movdqu XMMWORD PTR [rdi+304], xmm0
+	movdqu XMMWORD PTR [rdi+320], xmm0
+	movdqu XMMWORD PTR [rdi+336], xmm0
+	movdqu XMMWORD PTR [rdi+352], xmm0
+	movdqu XMMWORD PTR [rdi+368], xmm0
+	jmp 25b
 22:
 	pxor xmm0, xmm0
 	movdqu XMMWORD PTR [rdi], xmm0

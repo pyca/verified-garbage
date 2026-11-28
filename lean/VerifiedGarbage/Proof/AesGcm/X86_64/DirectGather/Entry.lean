@@ -140,7 +140,7 @@ theorem preparedExt (ht : 16 ≤ th) :
   have e := h.ext
   have sub : (⟨K s, 1024⟩ : Region).Sub (kR (CtxMode.flaggedT th) s) := Region.sub_prefix (show 1024 ≤ 1032 by decide)
   refine ⟨?_, e.cs.sub_left sub, e.cw.sub_left sub, e.cd.sub_left sub, e.ct.sub_right sub,
-    Split.covers_pre e.cov (show 1024 ≤ 1032 by decide), e.ok.2.1 (Nat.le_trans ht e.ok.1)⟩
+    Split.covers_pre e.cov (show 1024 ≤ 1032 by decide), e.ok.2.2.1 (Nat.le_trans ht e.ok.1)⟩
   have w : (K s).toNat + 1032 ≤ 2^64 := e.w
   change (K s).toNat + 1024 ≤ 2^64
   omega

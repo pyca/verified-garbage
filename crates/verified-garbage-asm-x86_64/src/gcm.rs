@@ -12756,7 +12756,7 @@ jmp 21f
 /// The CPU features `vg_aes_gcm_prepare_vpclmul_avx512` requires (`Artifact.features`).
 pub const VG_AES_GCM_PREPARE_VPCLMUL_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AVX512F);
 
-/// Makes the 1032-byte `*ctx`, whose first 256 bytes are a key context of `vg_aes_gcm_init`, the prepared key context of the same key, in place: keeps its first 256 bytes, at byte `256 + 32*k`, for `k` from 0 to `n/2 - 1`, stores `preparedPower(H^(2*k+2))` and then `preparedPower(H^(2*k+1))`, as two little-endian 128-bit words, `H` being the hash subkey in its bytes 240–255, and stores `n` in the 64-bit word at byte 1024, `n` being 48, 16 or 0, as the implementation's other functions read; it writes nothing else. Use only the `*_prepared` APIs, or APIs that read the first 256 bytes, with this format. Contract: `VG.Spec.Gcm.prepareContract`: the first 256 bytes are kept, the context satisfies `PreparedRepr`, and the bytes between its powers and their count are unchanged. Constant time: only the pointer may affect timing, not the hash subkey.
+/// Makes the 1032-byte `*ctx`, whose first 256 bytes are a key context of `vg_aes_gcm_init`, the prepared key context of the same key, in place: keeps its first 256 bytes, at byte `256 + 32*k`, for `k` from 0 to `n/2 - 1`, stores `preparedPower(H^(2*k+2))` and then `preparedPower(H^(2*k+1))`, as two little-endian 128-bit words, `H` being the hash subkey in its bytes 240–255, and stores `n` in the 64-bit word at byte 1024, `n` being 48, 16, 8 or 0, as the implementation's other functions read; it writes nothing else. Use only the `*_prepared` APIs, or APIs that read the first 256 bytes, with this format. Contract: `VG.Spec.Gcm.prepareContract`: the first 256 bytes are kept, the context satisfies `PreparedRepr`, and the bytes between its powers and their count are unchanged. Constant time: only the pointer may affect timing, not the hash subkey.
 ///
 /// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
@@ -12783,7 +12783,7 @@ lea rax, [rip + {VG_GCM_CONSTS}]
 /// The CPU features `vg_aes_gcm_prepare_vpclmul` requires (`Artifact.features`).
 pub const VG_AES_GCM_PREPARE_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AVX);
 
-/// Makes the 1032-byte `*ctx`, whose first 256 bytes are a key context of `vg_aes_gcm_init`, the prepared key context of the same key, in place: keeps its first 256 bytes, at byte `256 + 32*k`, for `k` from 0 to `n/2 - 1`, stores `preparedPower(H^(2*k+2))` and then `preparedPower(H^(2*k+1))`, as two little-endian 128-bit words, `H` being the hash subkey in its bytes 240–255, and stores `n` in the 64-bit word at byte 1024, `n` being 48, 16 or 0, as the implementation's other functions read; it writes nothing else. Use only the `*_prepared` APIs, or APIs that read the first 256 bytes, with this format. Contract: `VG.Spec.Gcm.prepareContract`: the first 256 bytes are kept, the context satisfies `PreparedRepr`, and the bytes between its powers and their count are unchanged. Constant time: only the pointer may affect timing, not the hash subkey.
+/// Makes the 1032-byte `*ctx`, whose first 256 bytes are a key context of `vg_aes_gcm_init`, the prepared key context of the same key, in place: keeps its first 256 bytes, at byte `256 + 32*k`, for `k` from 0 to `n/2 - 1`, stores `preparedPower(H^(2*k+2))` and then `preparedPower(H^(2*k+1))`, as two little-endian 128-bit words, `H` being the hash subkey in its bytes 240–255, and stores `n` in the 64-bit word at byte 1024, `n` being 48, 16, 8 or 0, as the implementation's other functions read; it writes nothing else. Use only the `*_prepared` APIs, or APIs that read the first 256 bytes, with this format. Contract: `VG.Spec.Gcm.prepareContract`: the first 256 bytes are kept, the context satisfies `PreparedRepr`, and the bytes between its powers and their count are unchanged. Constant time: only the pointer may affect timing, not the hash subkey.
 ///
 /// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
@@ -12810,7 +12810,7 @@ lea rax, [rip + {VG_GCM_CONSTS}]
 /// The CPU features `vg_aes_gcm_prepare_pclmul_avx` requires (`Artifact.features`).
 pub const VG_AES_GCM_PREPARE_PCLMUL_AVX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::PCLMULQDQ);
 
-/// Makes the 1032-byte `*ctx`, whose first 256 bytes are a key context of `vg_aes_gcm_init`, the prepared key context of the same key, in place: keeps its first 256 bytes, at byte `256 + 32*k`, for `k` from 0 to `n/2 - 1`, stores `preparedPower(H^(2*k+2))` and then `preparedPower(H^(2*k+1))`, as two little-endian 128-bit words, `H` being the hash subkey in its bytes 240–255, and stores `n` in the 64-bit word at byte 1024, `n` being 48, 16 or 0, as the implementation's other functions read; it writes nothing else. Use only the `*_prepared` APIs, or APIs that read the first 256 bytes, with this format. Contract: `VG.Spec.Gcm.prepareContract`: the first 256 bytes are kept, the context satisfies `PreparedRepr`, and the bytes between its powers and their count are unchanged. Constant time: only the pointer may affect timing, not the hash subkey.
+/// Makes the 1032-byte `*ctx`, whose first 256 bytes are a key context of `vg_aes_gcm_init`, the prepared key context of the same key, in place: keeps its first 256 bytes, at byte `256 + 32*k`, for `k` from 0 to `n/2 - 1`, stores `preparedPower(H^(2*k+2))` and then `preparedPower(H^(2*k+1))`, as two little-endian 128-bit words, `H` being the hash subkey in its bytes 240–255, and stores `n` in the 64-bit word at byte 1024, `n` being 48, 16, 8 or 0, as the implementation's other functions read; it writes nothing else. Use only the `*_prepared` APIs, or APIs that read the first 256 bytes, with this format. Contract: `VG.Spec.Gcm.prepareContract`: the first 256 bytes are kept, the context satisfies `PreparedRepr`, and the bytes between its powers and their count are unchanged. Constant time: only the pointer may affect timing, not the hash subkey.
 ///
 /// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
@@ -12827,7 +12827,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_prepare_pclmul_avx(ctx: *mut [u6
     )
 }
 
-/// Makes the 1032-byte `*ctx`, whose first 256 bytes are a key context of `vg_aes_gcm_init`, the prepared key context of the same key, in place: keeps its first 256 bytes, at byte `256 + 32*k`, for `k` from 0 to `n/2 - 1`, stores `preparedPower(H^(2*k+2))` and then `preparedPower(H^(2*k+1))`, as two little-endian 128-bit words, `H` being the hash subkey in its bytes 240–255, and stores `n` in the 64-bit word at byte 1024, `n` being 48, 16 or 0, as the implementation's other functions read; it writes nothing else. Use only the `*_prepared` APIs, or APIs that read the first 256 bytes, with this format. Contract: `VG.Spec.Gcm.prepareContract`: the first 256 bytes are kept, the context satisfies `PreparedRepr`, and the bytes between its powers and their count are unchanged. Constant time: only the pointer may affect timing, not the hash subkey.
+/// Makes the 1032-byte `*ctx`, whose first 256 bytes are a key context of `vg_aes_gcm_init`, the prepared key context of the same key, in place: keeps its first 256 bytes, at byte `256 + 32*k`, for `k` from 0 to `n/2 - 1`, stores `preparedPower(H^(2*k+2))` and then `preparedPower(H^(2*k+1))`, as two little-endian 128-bit words, `H` being the hash subkey in its bytes 240–255, and stores `n` in the 64-bit word at byte 1024, `n` being 48, 16, 8 or 0, as the implementation's other functions read; it writes nothing else. Use only the `*_prepared` APIs, or APIs that read the first 256 bytes, with this format. Contract: `VG.Spec.Gcm.prepareContract`: the first 256 bytes are kept, the context satisfies `PreparedRepr`, and the bytes between its powers and their count are unchanged. Constant time: only the pointer may affect timing, not the hash subkey.
 ///
 /// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
@@ -12846,7 +12846,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_prepare(ctx: *mut [u64; 129]) {
 /// The CPU features `vg_aes_gcm_wipe_prepared_avx` requires (`Artifact.features`).
 pub const VG_AES_GCM_WIPE_PREPARED_AVX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX);
 
-/// Wipes the 1032-byte `*ctx`, a prepared key context of `vg_aes_gcm_prepare`: sets to zero the key context and the powers its count (the 64-bit word at byte 1024) says are present: its first 1024 bytes if the count is at least 48, 512 if it is at least 16, and 256 otherwise (`vg_aes_gcm_prepare` did not write the bytes after them, but the count), and leaves the others unchanged. Contract: `VG.Spec.Gcm.wipePreparedContract`. Constant time: only the pointer and which of those the count is may affect timing, not the bytes wiped.
+/// Wipes the 1032-byte `*ctx`, a prepared key context of `vg_aes_gcm_prepare`: sets to zero the key context and the powers its count (the 64-bit word at byte 1024) says are present: its first 1024 bytes if the count is at least 48, 512 if it is at least 16, 384 if it is at least 8, and 256 otherwise (`vg_aes_gcm_prepare` did not write the bytes after them, but the count), and leaves the others unchanged. Contract: `VG.Spec.Gcm.wipePreparedContract`. Constant time: only the pointer and which of those the count is may affect timing, not the bytes wiped.
 ///
 /// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
@@ -12862,10 +12862,16 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_wipe_prepared_avx(ctx: *mut [u64
 jae 20f
 .base64 "SIuHAAQAAEiD+BA="
 jae 22f
+.base64 "SIuHAAQAAEiD+Ag="
+jae 24f
 .base64 "xfnvwMX+fwfF/n9HIMX+f0dAxf5/R2DF/n+HgAAAAMX+f4egAAAAxf5/h8AAAADF/n+H4AAAAMX4dw=="
+25:
 23:
 21:
 .base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//McAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
+24:
+.base64 "xfnvwMX+fwfF/n9HIMX+f0dAxf5/R2DF/n+HgAAAAMX+f4egAAAAxf5/h8AAAADF/n+H4AAAAMX+f4cAAQAAxf5/hyABAADF/n+HQAEAAMX+f4dgAQAAxfh3"
+jmp 25b
 22:
 .base64 "xfnvwMX+fwfF/n9HIMX+f0dAxf5/R2DF/n+HgAAAAMX+f4egAAAAxf5/h8AAAADF/n+H4AAAAMX+f4cAAQAAxf5/hyABAADF/n+HQAEAAMX+f4dgAQAAxf5/h4ABAADF/n+HoAEAAMX+f4fAAQAAxf5/h+ABAADF+Hc="
 jmp 23b
@@ -12876,7 +12882,7 @@ jmp 21b
     )
 }
 
-/// Wipes the 1032-byte `*ctx`, a prepared key context of `vg_aes_gcm_prepare`: sets to zero the key context and the powers its count (the 64-bit word at byte 1024) says are present: its first 1024 bytes if the count is at least 48, 512 if it is at least 16, and 256 otherwise (`vg_aes_gcm_prepare` did not write the bytes after them, but the count), and leaves the others unchanged. Contract: `VG.Spec.Gcm.wipePreparedContract`. Constant time: only the pointer and which of those the count is may affect timing, not the bytes wiped.
+/// Wipes the 1032-byte `*ctx`, a prepared key context of `vg_aes_gcm_prepare`: sets to zero the key context and the powers its count (the 64-bit word at byte 1024) says are present: its first 1024 bytes if the count is at least 48, 512 if it is at least 16, 384 if it is at least 8, and 256 otherwise (`vg_aes_gcm_prepare` did not write the bytes after them, but the count), and leaves the others unchanged. Contract: `VG.Spec.Gcm.wipePreparedContract`. Constant time: only the pointer and which of those the count is may affect timing, not the bytes wiped.
 ///
 /// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
@@ -12891,10 +12897,16 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_wipe_prepared(ctx: *mut [u64; 12
 jae 20f
 .base64 "SIuHAAQAAEiD+BA="
 jae 22f
+.base64 "SIuHAAQAAEiD+Ag="
+jae 24f
 .base64 "Zg/vwPMPfwfzD39HEPMPf0cg8w9/RzDzD39HQPMPf0dQ8w9/R2DzD39HcPMPf4eAAAAA8w9/h5AAAADzD3+HoAAAAPMPf4ewAAAA8w9/h8AAAADzD3+H0AAAAPMPf4fgAAAA8w9/h/AAAAA="
+25:
 23:
 21:
 .base64 "Zg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//McAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
+24:
+.base64 "Zg/vwPMPfwfzD39HEPMPf0cg8w9/RzDzD39HQPMPf0dQ8w9/R2DzD39HcPMPf4eAAAAA8w9/h5AAAADzD3+HoAAAAPMPf4ewAAAA8w9/h8AAAADzD3+H0AAAAPMPf4fgAAAA8w9/h/AAAADzD3+HAAEAAPMPf4cQAQAA8w9/hyABAADzD3+HMAEAAPMPf4dAAQAA8w9/h1ABAADzD3+HYAEAAPMPf4dwAQAA"
+jmp 25b
 22:
 .base64 "Zg/vwPMPfwfzD39HEPMPf0cg8w9/RzDzD39HQPMPf0dQ8w9/R2DzD39HcPMPf4eAAAAA8w9/h5AAAADzD3+HoAAAAPMPf4ewAAAA8w9/h8AAAADzD3+H0AAAAPMPf4fgAAAA8w9/h/AAAADzD3+HAAEAAPMPf4cQAQAA8w9/hyABAADzD3+HMAEAAPMPf4dAAQAA8w9/h1ABAADzD3+HYAEAAPMPf4dwAQAA8w9/h4ABAADzD3+HkAEAAPMPf4egAQAA8w9/h7ABAADzD3+HwAEAAPMPf4fQAQAA8w9/h+ABAADzD3+H8AEAAA=="
 jmp 23b

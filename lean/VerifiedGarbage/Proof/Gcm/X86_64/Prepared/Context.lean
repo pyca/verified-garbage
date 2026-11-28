@@ -47,12 +47,28 @@ abbrev CtxMode.prepared : CtxMode := CtxMode.preparedN 24
 /-- A prepared key context's first 8 pairs, which the 256-bit loops read. -/
 abbrev CtxMode.prepared16 : CtxMode := CtxMode.preparedN 8
 
+/-- The first 4 pairs of powers of a prepared key context are kept by writes
+outside its first 1024 bytes, as `CtxMode.preparedN`'s are. -/
+theorem powers4_frame {rs : List Region} {m m' : Mem} {p : Addr} (hf : Frame rs m m')
+    (hd : ∀ r ∈ rs, (⟨p, 1024⟩ : Region).Disjoint r) (h : PowersN 4 m p) : PowersN 4 m' p := by
+  have hH : Spec.Gcm.ctxH m' p = Spec.Gcm.ctxH m p :=
+    VG.Proof.Aes.X86_64.AesNi.blockAt_frame hf fun r hr =>
+      (hd r hr).sub_left (Offset.sub_base _ (show 240 + 16 ≤ 1024 by decide))
+  have keep (o : Nat) (ho : o + 16 ≤ 1024) :
+      m'.readW (p + BitVec.ofNat 64 o) 128 = m.readW (p + BitVec.ofNat 64 o) 128 :=
+    hf.readW (r := ⟨p, 1024⟩) (Offset.contains_base _ ho (by omega_using [ho])) hd (by decide)
+  intro k hk
+  rw [keep _ (by omega_using [hk]), keep _ (by omega_using [hk]), hH]
+  exact h k hk
+
 /-- The 1032-byte prepared key context of `vg_aes_gcm_prepare`
-(`Spec.Gcm.PreparedRepr`) whose count is at least `t`: it holds the first 8
-pairs if the count is at least 16 and all 24 if it is at least 48. -/
+(`Spec.Gcm.PreparedRepr`) whose count is at least `t`: it holds the first 4
+pairs if the count is at least 8, the first 8 if it is at least 16 and all 24
+if it is at least 48. -/
 def CtxMode.flaggedT (t : Nat) : CtxMode where
   len := 1032
-  ok m p := t ≤ (m.readW (p + 1024) 64).toNat ∧ (16 ≤ (m.readW (p + 1024) 64).toNat → PowersN 8 m p) ∧
+  ok m p := t ≤ (m.readW (p + 1024) 64).toNat ∧ (8 ≤ (m.readW (p + 1024) 64).toNat → PowersN 4 m p) ∧
+    (16 ≤ (m.readW (p + 1024) 64).toNat → PowersN 8 m p) ∧
     (48 ≤ (m.readW (p + 1024) 64).toNat → PowersN 24 m p)
   ge := by decide
   le := by decide
@@ -64,16 +80,17 @@ def CtxMode.flaggedT (t : Nat) : CtxMode where
       rw [show (p + 1024 : Addr) = p + BitVec.ofNat 64 1024 from rfl,
         hf.readW (r := ⟨p, 1032⟩) (Offset.contains_base _ (by decide) (by omega_using [])) hd (by decide)]
     rw [hc]
-    exact ⟨h.1, fun h16 => CtxMode.prepared16.frame hf hd' hw' (h.2.1 h16),
-      fun h48 => CtxMode.prepared.frame hf hd' hw' (h.2.2 h48)⟩
+    exact ⟨h.1, fun h8 => powers4_frame hf hd' (h.2.1 h8),
+      fun h16 => CtxMode.prepared16.frame hf hd' hw' (h.2.2.1 h16),
+      fun h48 => CtxMode.prepared.frame hf hd' hw' (h.2.2.2 h48)⟩
 
 /-- The pairs of a context whose count is at least 16 or 48: the first 8 or
 all 24. -/
 theorem CtxMode.flaggedT_pow {t : Nat} (ht : t = 16 ∨ t = 48) {m : Mem} {p : Addr}
     (h : (CtxMode.flaggedT t).ok m p) : PowersN (t / 2) m p := by
   rcases ht with rfl | rfl
-  · exact h.2.1 h.1
-  · exact h.2.2 h.1
+  · exact h.2.2.1 h.1
+  · exact h.2.2.2 h.1
 
 /-- `CtxMode.flaggedT` of the 48 powers. -/
 abbrev CtxMode.flagged : CtxMode := CtxMode.flaggedT 48
